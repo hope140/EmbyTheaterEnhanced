@@ -241,7 +241,7 @@
     function emitDiagnostic(dependencies, event, details) {
         try {
             if (!dependencies || typeof dependencies.onDiagnostic !== 'function') return;
-            var pending = dependencies.onDiagnostic({level: event === 'resolve-hit' ? 'info' : 'warn', category: 'mount', event: event, details: details || {}});
+            var pending = dependencies.onDiagnostic({level: event === 'resolve-start' || event === 'resolve-hit' ? 'info' : 'warn', category: 'mount', event: event, details: details || {}});
             if (pending && typeof pending.catch === 'function') pending.catch(function () {});
         } catch (_) { /* Observability is fail-open. */ }
     }

@@ -5,6 +5,7 @@ const path = require('path');
 const diagnostics = require('./diagnostics');
 
 const CHANNELS = Object.freeze({
+    LOG: 'enhanced-diagnostics-log',
     GET_STATUS: 'enhanced-diagnostics-status',
     EXPORT: 'enhanced-diagnostics-export',
     OPEN_DIRECTORY: 'enhanced-diagnostics-open-directory',
@@ -21,6 +22,7 @@ function register(options) {
     const shell = settings.shell;
     const fileSystem = settings.fs || fs;
     const registered = [];
+    const listeners = [];
 
     function isTrusted(event) {
         const expected = typeof getWebContents === 'function' ? getWebContents() : null;
@@ -42,6 +44,20 @@ function register(options) {
         });
         registered.push(channel);
     }
+
+    function registerListener(channel, listener) {
+        if (!ipcMain || typeof ipcMain.on !== 'function') return;
+        ipcMain.on(channel, listener);
+        listeners.push({channel: channel, listener: listener});
+    }
+
+    registerListener(CHANNELS.LOG, function (event, record) {
+        if (!isTrusted(event) || typeof logger !== 'function') return;
+        try {
+            const pending = logger(record);
+            if (pending && typeof pending.catch === 'function') pending.catch(function () {});
+        } catch (_) { /* Structured logging is fail-open. */ }
+    });
 
     registerHandler(CHANNELS.GET_STATUS, async function () {
         if (!logger || typeof logger.status !== 'function') return {status: 'error', reason: 'diagnostics_unavailable'};
@@ -92,6 +108,9 @@ function register(options) {
 
     return function unregister() {
         if (typeof ipcMain.removeHandler === 'function') registered.forEach(function (channel) { ipcMain.removeHandler(channel); });
+        if (typeof ipcMain.removeListener === 'function') {
+            listeners.forEach(function (entry) { ipcMain.removeListener(entry.channel, entry.listener); });
+        }
     };
 }
 

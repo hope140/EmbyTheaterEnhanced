@@ -8,7 +8,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
     function emitClientDiagnostic(level, category, event, details) {
         try {
             if (typeof window === 'undefined' || !window.ipc || typeof window.ipc.send !== 'function') return;
-            var pending = window.ipc.send('enhanced-diagnostics', {
+            var pending = window.ipc.send('enhanced-diagnostics-log', {
                 schemaVersion: 1,
                 level: level || 'info',
                 category: category,
@@ -30,7 +30,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         if (strmResolver && typeof strmResolver.routeForResult === 'function') return strmResolver.routeForResult(result);
         if (result && result.sourceKind === 'direct-url') return 'direct-url';
         if (result && result.type === 'url' && result.sourceKind === 'cd2-url') return 'cd2-http';
-        if (result && result.type === 'local') return 'mount';
+        if (result && result.type === 'local' && result.reason === 'mount_hit') return 'mount';
         if (result && result.type === 'native') return 'native';
         return 'unknown';
     }

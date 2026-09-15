@@ -45,6 +45,8 @@ ete-client.jsonl.3
 - `playback`：`play-request`、`resolver-complete`、`loadfile-requested`、`core-playing`、`pause`、`resume`、`seek`、`next`、`stop`、`playback-error`。
 - `mpv`：ready/playing 属性快照；不导出 `mpv.conf` 原文。
 
+IPC 也保持两条明确边界：`enhanced-diagnostics` 只接收旧的 mpv property snapshot，`enhanced-diagnostics-log` 只接收 structured client event。两条通道都只接受当前 BrowserWindow 的 trusted sender；logger 自身继续负责最终 sanitizer 和 fail-open。
+
 CD2 事件只记录 request id、rule id、mode、candidate 数量、reason、耗时、timeout/cancelled 状态和安全的 `sourceKind`。Mount 事件只记录 request id、rule id、candidate 数量、reason、`localExists` 与 `mappedPathHash`。
 
 ## Resolver route meanings

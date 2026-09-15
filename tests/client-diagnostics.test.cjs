@@ -215,7 +215,10 @@ test('resolver results map to the four stable route names and mount telemetry co
     assert.equal(mount.result.type, 'local');
     assert.equal(strmResolver.routeForResult(mount.result), 'mount');
     const mountHit = mount.events.find(event => event.category === 'mount' && event.event === 'resolve-hit');
+    const mountStart = mount.events.find(event => event.category === 'mount' && event.event === 'resolve-start');
     assert.ok(mountHit);
+    assert.ok(mountStart);
+    assert.equal(mountStart.level, 'info');
     assert.equal(typeof mountHit.details.mappedPathHash, 'string');
     assert.equal(mountHit.details.mappedPathHash.length, 16);
     assert.doesNotMatch(JSON.stringify(mountHit), /C:\\Source|Movie\.mkv|https:\/\//);
@@ -224,6 +227,7 @@ test('resolver results map to the four stable route names and mount telemetry co
     assert.equal(native.result.type, 'native');
     assert.equal(strmResolver.routeForResult(native.result), 'native');
     assert.equal(native.result.source, baseContext().url);
+    assert.equal(strmResolver.routeForResult({type: 'local', reason: 'unexpected'}), 'unknown');
 });
 
 test('CD2 telemetry records bounded result facts without candidates, source URLs or tokens', async () => {
@@ -268,6 +272,82 @@ test('CD2 telemetry records bounded result facts without candidates, source URLs
         assert.doesNotMatch(JSON.stringify(events), /Movie\.mkv|secret123|127\.0\.0\.1/);
     } finally {
         service.close();
+    }
+});
+
+test('unexpected CD2 service exceptions are logged as resolve-error while the resolver result stays a miss', async () => {
+    const events = [];
+    const service = cd2Service.createService({
+        config: {
+            enabled: true,
+            origin: cd2Service.parseOrigin('http://127.0.0.1:19798'),
+            token: 'secret123',
+            localPrefix: 'X:\\Media',
+            cloudPrefix: '/cloud/media',
+            totalBudgetMs: 100
+        },
+        transportFactory: () => { throw new Error('unexpected transport failure'); },
+        onDiagnostic: event => events.push(event)
+    });
+    try {
+        const result = await service.resolve({requestId: 'cd2-unexpected', candidates: ['X:\\Media\\Movie.mkv']});
+        assert.equal(result.status, 'miss');
+        assert.equal(result.reason, 'client_unavailable');
+        assert.equal(events[events.length - 1].event, 'resolve-error');
+        assert.equal(events[events.length - 1].details.reason, 'client_unavailable');
+        assert.doesNotMatch(JSON.stringify(events), /unexpected transport failure|secret123|Movie\.mkv/);
+    } finally {
+        service.close();
+    }
+});
+
+test('structured renderer records use the dedicated IPC channel while mpv snapshots keep their legacy channel', async () => {
+    const root = tempRoot('ete-client-wiring-');
+    const trusted = {};
+    const handlers = {};
+    const listeners = {};
+    const ipcMain = {
+        handle(channel, handler) { handlers[channel] = handler; },
+        on(channel, handler) { listeners[channel] = handler; },
+        removeHandler(channel) { delete handlers[channel]; },
+        removeListener(channel, handler) { if (listeners[channel] === handler) delete listeners[channel]; }
+    };
+    const logger = diagnostics.createLogger(root);
+    const mainSource = fs.readFileSync(path.join(__dirname, '..', 'src/electronapp/main.js'), 'utf8');
+    const libmpvSource = fs.readFileSync(path.join(__dirname, '..', 'src/electronapp/plugins/libmpv.js'), 'utf8');
+    let unregister;
+    try {
+        unregister = diagnosticsIpc.register({
+            ipcMain,
+            logger,
+            getWebContents: () => trusted,
+            dialog: {showSaveDialog: async () => ({canceled: true})},
+            shell: {openPath: async () => ''}
+        });
+        assert.equal(typeof listeners[diagnosticsIpc.CHANNELS.LOG], 'function');
+        listeners[diagnosticsIpc.CHANNELS.LOG]({sender: trusted}, {
+            category: 'resolver',
+            event: 'route-selected',
+            details: {requestId: 'wiring-1', route: 'cd2-http', reason: 'cd2_hit'}
+        });
+        await logger.flush();
+        const rawLog = fs.readFileSync(logger.getPaths().file, 'utf8');
+        assert.match(rawLog, /"category":"resolver"/);
+        assert.match(rawLog, /"event":"route-selected"/);
+        assert.doesNotMatch(rawLog, /"category":"mpv"/);
+
+        const report = await logger.exportReport({appVersion: '0.1.1'}, new Date('2026-09-16T00:00:00.000Z'));
+        assert.match(report, /Last STRM Route: CD2 HTTP/);
+        assert.doesNotMatch(report, /category":"mpv.*event":"snapshot/);
+
+        assert.match(mainSource, /ipcMain\.on\('enhanced-diagnostics', function \(event, snapshot\)/);
+        assert.match(mainSource, /enhancedDiagnostics\.sanitize\(snapshot\)/);
+        assert.match(libmpvSource, /window\.ipc\.send\('enhanced-diagnostics-log'/);
+        assert.doesNotMatch(libmpvSource, /window\.ipc\.send\('enhanced-diagnostics',/);
+    } finally {
+        if (unregister) unregister();
+        assert.equal(listeners[diagnosticsIpc.CHANNELS.LOG], undefined);
+        fs.rmSync(root, {recursive: true, force: true});
     }
 });
 

@@ -144,7 +144,7 @@
         var type = result && result.type;
         if (sourceKind === 'direct-url') return 'direct-url';
         if (type === 'url' && sourceKind === 'cd2-url') return 'cd2-http';
-        if (type === 'local') return 'mount';
+        if (type === 'local' && result.reason === 'mount_hit') return 'mount';
         if (type === 'native') return 'native';
         return 'unknown';
     }

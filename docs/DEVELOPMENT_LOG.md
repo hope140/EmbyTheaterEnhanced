@@ -10,7 +10,15 @@ Model Tier：2。Reason：任务跨 main-process logger/IPC、renderer/libmpv re
 
 新增设置页 `mpvplayer/diagnostics.html/js/css`，只显示安全的简化目录说明；生成式 preload 只增加 path hash helper，不携带 token。更新 `docs/CLIENT_DIAGNOSTICS.md`、DECISIONS 与 libmpv runtime 说明。测试覆盖 Authorization/Bearer、X-Emby-Token、api key、Cookie、password、URL query、Windows/UNC/POSIX path、circular/undefined/null/huge Error、目录/追加/轮转失败、malformed JSONL、四 route、CD2 telemetry 和 trusted IPC。
 
-验证：本轮 targeted diagnostics/preload `10/10`，全量 `npm test` `118/118`；相关 JavaScript syntax 与 `git diff --check` 已通过。真实 Windows route 播放、TXT 导出、AI 判读、Session/remote observability 保持 `MANUAL ACCEPTANCE REQUIRED` 或 `DEFERRED OBSERVABILITY`，不以 synthetic 证据替代。
+验证：本轮 targeted diagnostics/preload `12/12`，全量 `npm test` `120/120`；相关 JavaScript syntax 与 `git diff --check` 已通过。真实 Windows route 播放、TXT 导出、AI 判读、Session/remote observability 保持 `MANUAL ACCEPTANCE REQUIRED` 或 `DEFERRED OBSERVABILITY`，不以 synthetic 证据替代。
+
+## 2026-09-16 — Client Diagnostics IPC wiring follow-up
+
+复核 `911c19e` 后发现 structured client event 与旧 mpv snapshot 共用 `enhanced-diagnostics`，main handler 会把 resolver/playback 事件转换为 `mpv/snapshot`。本次在现有分支继续修复，没有新建分支、PR 或 merge：`diagnostics-ipc.js` 新增 trusted `CHANNELS.LOG = enhanced-diagnostics-log` listener，直接交给 logger 并吞掉 Promise rejection；unregister 使用 `removeListener`。旧 `enhanced-diagnostics` snapshot handler 保持不变，`libmpv.js` structured event 改发新 channel。
+
+同时将 Mount `resolve-start` 调整为 `info`，`routeForResult` 收紧为 `type=local && reason=mount_hit`；CD2 wrapper 的 unexpected exception telemetry 使用明确 `status=error`/`reason=unexpected_exception`，不改变原有 miss、timeout 或 fallback 返回值。
+
+新增 wiring regression：renderer structured `resolver/route-selected(route=cd2-http)` → IPC listener → JSONL → `exportReport`，确认持久化仍是 resolver event、导出为 `Last STRM Route: CD2 HTTP`，不会变成 `mpv/snapshot`；同时确认旧 snapshot sanitizer 通路和 listener 卸载边界。验证：targeted diagnostics/preload `12/12`，全量 `npm test` `120/120`，相关 JS syntax 与 `git diff --check` 通过。构建、provenance、package 和 candidate installer 将绑定本次修复后的最终 HEAD。
 
 ## 2026-09-15 — Stable Enhanced DeviceId
 

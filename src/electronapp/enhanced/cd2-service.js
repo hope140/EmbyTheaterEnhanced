@@ -330,11 +330,13 @@ function createService(options) {
         const reason = response && response.reason;
         const event = status === 'hit'
             ? 'resolve-hit'
-            : status === 'cancelled' || reason === 'cancelled'
-                ? 'resolve-cancelled'
-                : ['client_unavailable', 'proto_integrity', 'transport_error', 'rpc_error'].includes(reason)
-                    ? 'resolve-error'
-                    : 'resolve-miss';
+            : status === 'error'
+                ? 'resolve-error'
+                : status === 'cancelled' || reason === 'cancelled'
+                    ? 'resolve-cancelled'
+                    : ['client_unavailable', 'proto_integrity', 'transport_error', 'rpc_error'].includes(reason)
+                        ? 'resolve-error'
+                        : 'resolve-miss';
         const details = {
             requestId: request && request.requestId,
             ruleId: request && request.ruleId,
@@ -345,6 +347,7 @@ function createService(options) {
             timeout: reason === 'timeout',
             cancelled: event === 'resolve-cancelled'
         };
+        if (response && response.errorType) details.errorType = response.errorType;
         if (response && response.sourceKind) details.sourceKind = response.sourceKind;
         emitDiagnostic(event === 'resolve-hit' ? 'info' : 'warn', event, details);
     }
@@ -777,7 +780,11 @@ function createService(options) {
             finishDiagnostic(request, request && request.mode, startedAt, response);
             return response;
         } catch (error) {
-            finishDiagnostic(request, request && request.mode, startedAt, {status: 'miss', reason: error && error.message || 'resolve_error'});
+            finishDiagnostic(request, request && request.mode, startedAt, {
+                status: 'error',
+                reason: 'unexpected_exception',
+                errorType: error && error.name || 'Error'
+            });
             throw error;
         }
     }
@@ -790,7 +797,11 @@ function createService(options) {
             finishDiagnostic(request, 'legacy', startedAt, response);
             return response;
         } catch (error) {
-            finishDiagnostic(request, 'legacy', startedAt, {status: 'miss', reason: error && error.message || 'resolve_error'});
+            finishDiagnostic(request, 'legacy', startedAt, {
+                status: 'error',
+                reason: 'unexpected_exception',
+                errorType: error && error.name || 'Error'
+            });
             throw error;
         }
     }
