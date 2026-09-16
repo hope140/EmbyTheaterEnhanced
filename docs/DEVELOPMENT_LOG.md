@@ -1,5 +1,15 @@
 # 开发日志
 
+## 2026-09-16 — Diagnostics run correlation and native Stats source
+
+Model Tier：2。Reason：导出关联涉及跨 run 事件边界，Stats 状态必须与 libmpv request generation、supersede、stop/destroy 生命周期严格一致；未改变 PlaybackManager、Session、WebSocket、resolver source selection 或 timeout。Escalated：no。
+
+`diagnostics.buildDiagnosticReport()` 现在从最新 `resolver/route-selected` 反向定位最近 `app/start`，并以该 app run 的数组边界加 request id 关联 CD2、Mount、core-playing 与 playback error。不存在 run boundary 时不回退到全量同 request id 查询，保守显示 `UNKNOWN`。新增重复 request id 跨 run、同 run Direct → Same-Origin → Mount、同 run 多 request 三个回归。
+
+审计 prepared `playerstats.js` 证实 `player.getStats().categories` 无过滤加入面板，只有 audio/video type 会替换标题；因此 `libmpv.getStats()` 追加显式命名的 `enhanced` category，不修改 Emby Web UI。新增 instance-local `playback-route-stats`，只保存 request/route/isStrm/reason/sourceKind/ruleId/CD2 结果等安全枚举，绝不保存 source、路径、URL、token 或 headers。新播放先清空，resolver 仅在 current request 校验后提交，stop/destroy 同样清空；普通非 STRM 显示 Emby 原生与 STRM 否。Media/Video/Audio 顺序和值保持不变。
+
+验证：diagnostics + route Stats targeted `20/20`，consumer contract test、JavaScript syntax 与 `git diff --check` 通过。`tests/pipeline-browser.js` 同步扩展为在实际 libmpv player 上读取 Stats category，供隔离 runtime pipeline 验证。未构建 candidate、未运行真实 Emby 播放，CD2 timeout/budget 未改变。
+
 ## 2026-09-16 — CD2 REAL PLAYBACK TIMEOUT audit and timing
 
 Model Tier：2。Reason：真实 STRM 播放已验证 identity recovery、resolver participation、Mount route 与 core-playing；本轮只定位 CD2 gRPC lifecycle/deadline，不改变 PlaybackManager、Session、WebSocket、Mount 或 timeout 数值。Escalated：no。

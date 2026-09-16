@@ -167,13 +167,11 @@ test('export tolerates malformed rotation lines and produces an AI-friendly dete
         const logger = diagnostics.createLogger(root);
         const paths = logger.getPaths();
         fs.mkdirSync(paths.directory, {recursive: true});
-        fs.writeFileSync(paths.rotations[2], JSON.stringify({
-            timestamp: '2026-09-16T00:00:00.000Z',
-            level: 'info',
-            category: 'resolver',
-            event: 'route-selected',
-            details: {requestId: 'r1', route: 'cd2-http', reason: 'cd2_hit', source: 'https://cdn.example.test/file?token=secret123'}
-        }) + '\nnot-json\n', 'utf8');
+        fs.writeFileSync(paths.rotations[2], [
+            JSON.stringify({timestamp: '2026-09-16T00:00:00.000Z', level: 'info', category: 'app', event: 'start', details: {}}),
+            JSON.stringify({timestamp: '2026-09-16T00:00:00.500Z', level: 'info', category: 'resolver', event: 'route-selected', details: {requestId: 'r1', route: 'cd2-http', reason: 'cd2_hit', source: 'https://cdn.example.test/file?token=secret123'}}),
+            'not-json'
+        ].join('\n') + '\n', 'utf8');
         fs.writeFileSync(paths.file, [
             JSON.stringify({timestamp: '2026-09-16T00:00:01.000Z', level: 'info', category: 'cd2', event: 'resolve-hit', details: {requestId: 'r1', reason: 'cd2_hit', sourceKind: 'cd2-url'}}),
             JSON.stringify({timestamp: '2026-09-16T00:00:02.000Z', level: 'info', category: 'playback', event: 'core-playing', details: {requestId: 'r1'}})
@@ -201,6 +199,47 @@ test('export tolerates malformed rotation lines and produces an AI-friendly dete
     } finally {
         fs.rmSync(root, {recursive: true, force: true});
     }
+});
+
+test('export summary correlates only within the latest app run when request ids repeat', () => {
+    const report = diagnostics.buildDiagnosticReport([
+        {category: 'app', event: 'start', details: {}},
+        {category: 'resolver', event: 'route-selected', details: {requestId: 'play-1-1', route: 'mount', reason: 'mount_hit'}},
+        {category: 'mount', event: 'resolve-hit', details: {requestId: 'play-1-1', reason: 'mount_hit'}},
+        {category: 'app', event: 'start', details: {}},
+        {category: 'resolver', event: 'route-selected', details: {requestId: 'play-1-1', route: 'direct-url', reason: 'direct_url_hit'}},
+        {category: 'cd2', event: 'resolve-hit', details: {requestId: 'play-1-1', reason: 'direct_url_hit'}}
+    ]);
+    assert.match(report, /Last STRM Route: DIRECT URL/);
+    assert.match(report, /Last CD2 Result: HIT/);
+    assert.match(report, /Last Mount Result: NOT REACHED/);
+    assert.doesNotMatch(report, /Last Mount Result: HIT/);
+});
+
+test('export summary keeps Direct to Same-Origin to Mount correlation within one app run', () => {
+    const report = diagnostics.buildDiagnosticReport([
+        {category: 'app', event: 'start', details: {}},
+        {category: 'cd2', event: 'resolve-miss', details: {requestId: 'play-2-1', reason: 'direct_url_unavailable'}},
+        {category: 'cd2', event: 'resolve-miss', details: {requestId: 'play-2-1', reason: 'timeout'}},
+        {category: 'mount', event: 'resolve-hit', details: {requestId: 'play-2-1', reason: 'mount_hit'}},
+        {category: 'resolver', event: 'route-selected', details: {requestId: 'play-2-1', route: 'mount', reason: 'mount_hit'}}
+    ]);
+    assert.match(report, /Last STRM Route: MOUNT/);
+    assert.match(report, /Last CD2 Result: MISS: timeout/);
+    assert.match(report, /Last Mount Result: HIT/);
+});
+
+test('export summary selects only the latest playback request in an app run', () => {
+    const report = diagnostics.buildDiagnosticReport([
+        {category: 'app', event: 'start', details: {}},
+        {category: 'resolver', event: 'route-selected', details: {requestId: 'play-1-1', route: 'mount', reason: 'mount_hit'}},
+        {category: 'mount', event: 'resolve-hit', details: {requestId: 'play-1-1', reason: 'mount_hit'}},
+        {category: 'resolver', event: 'route-selected', details: {requestId: 'play-2-2', route: 'cd2-http', reason: 'cd2_hit'}},
+        {category: 'cd2', event: 'resolve-hit', details: {requestId: 'play-2-2', reason: 'cd2_hit'}}
+    ]);
+    assert.match(report, /Last STRM Route: CD2 HTTP/);
+    assert.match(report, /Last CD2 Result: HIT/);
+    assert.match(report, /Last Mount Result: NOT REACHED/);
 });
 
 test('resolver results map to the four stable route names and mount telemetry contains only hashes', async () => {

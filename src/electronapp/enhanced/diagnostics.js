@@ -522,6 +522,30 @@ function latestRecord(records, predicate) {
     return null;
 }
 
+function latestRouteRunRecords(records) {
+    var routeIndex = -1;
+    for (var index = records.length - 1; index >= 0; index--) {
+        if (records[index].category === 'resolver' && records[index].event === 'route-selected') {
+            routeIndex = index;
+            break;
+        }
+    }
+    if (routeIndex < 0) return {routeRecord: null, records: []};
+    for (var startIndex = routeIndex; startIndex >= 0; startIndex--) {
+        if (records[startIndex].category === 'app' && records[startIndex].event === 'start') {
+            var endIndex = records.length;
+            for (var nextIndex = routeIndex + 1; nextIndex < records.length; nextIndex++) {
+                if (records[nextIndex].category === 'app' && records[nextIndex].event === 'start') {
+                    endIndex = nextIndex;
+                    break;
+                }
+            }
+            return {routeRecord: records[routeIndex], records: records.slice(startIndex, endIndex)};
+        }
+    }
+    return {routeRecord: records[routeIndex], records: []};
+}
+
 function routeForRecord(record) {
     const details = recordDetails(record);
     if (details.route === 'direct-url') return 'DIRECT URL';
@@ -546,24 +570,24 @@ function buildDiagnosticReport(input, appInfo, exportTime) {
     const read = Array.isArray(input) ? {records: input, malformedLines: 0} : (input || {records: [], malformedLines: 0});
     const records = Array.isArray(read.records) ? read.records.map(sanitizeRecord) : [];
     const info = appInfo || {};
-    const routeRecord = latestRecord(records, function (record) {
-        return record.category === 'resolver' && record.event === 'route-selected';
-    });
+    const run = latestRouteRunRecords(records);
+    const routeRecord = run.routeRecord;
+    const runRecords = run.records;
     const routeDetails = recordDetails(routeRecord);
     const requestId = routeDetails.requestId || routeDetails.playRequestId || null;
-    const cd2Record = latestRecord(records, function (record) {
+    const cd2Record = latestRecord(runRecords, function (record) {
         return record.category === 'cd2' && ['resolve-hit', 'resolve-miss', 'resolve-error', 'resolve-cancelled'].includes(record.event) && sameRequest(record, requestId);
     });
-    const mountRecord = latestRecord(records, function (record) {
+    const mountRecord = latestRecord(runRecords, function (record) {
         return record.category === 'mount' && ['resolve-hit', 'resolve-miss', 'resolve-error', 'resolve-cancelled'].includes(record.event) && sameRequest(record, requestId);
     });
-    const playbackRecord = latestRecord(records, function (record) {
+    const playbackRecord = latestRecord(runRecords, function (record) {
         return record.category === 'playback' && ['core-playing', 'pause', 'resume', 'stop', 'playback-error'].includes(record.event) && sameRequest(record, requestId);
     });
-    const coreRecord = latestRecord(records, function (record) {
+    const coreRecord = latestRecord(runRecords, function (record) {
         return record.category === 'playback' && record.event === 'core-playing' && sameRequest(record, requestId);
     });
-    const playbackError = latestRecord(records, function (record) {
+    const playbackError = latestRecord(runRecords, function (record) {
         return record.category === 'playback' && record.event === 'playback-error' && sameRequest(record, requestId);
     });
     const route = routeForRecord(routeRecord);

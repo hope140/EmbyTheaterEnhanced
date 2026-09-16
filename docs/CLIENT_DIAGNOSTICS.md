@@ -64,6 +64,12 @@ CD2 resolve 事件只记录 request id、rule id、mode、candidate 数量、rea
 
 `resolver/context-observed` 只记录上下文是否存在、字段类型、扩展名、`.strm` 后缀、Container、协议、播放方法和 DirectStream/Transcoding URL 是否存在，不记录原始路径或 URL。`resolver/invalid-context` 额外记录 `missingFields` 与 `isStrmDetected`，用于区分 `item`、`mediaSource`、`sidecarPath`、`sourcePath` 和 `nativeSource` 哪一项缺失；它不会改变原有 `invalid_context` 返回值。
 
+## 导出关联与原生播放信息
+
+导出 Summary 以最新 `resolver/route-selected` 所在的 app run 为边界：从该 route 向前找到最近的 `app/start`，并只在这个 run 内以对应 request id 关联 CD2、Mount、native fallback 与 playback lifecycle。请求 id 在新 app run 中可重新开始，因此找不到 `app/start` 时 Summary 保守显示 `UNKNOWN`，不会跨 run 关联旧事件。
+
+播放中的原生“播放信息 / Stats”面板会追加一个 `Emby Theater Enhanced` 分类。它只显示当前 libmpv player instance 已完成解析的安全 observation：播放源、STRM、CD2、Mount、Fallback，以及存在时的 rule ID；不显示路径、URL、token、headers、阶段耗时或原始诊断数据。新请求开始、stop 和 destroy 都会清除旧 observation；被 supersede 的旧请求不能写入新播放的 Stats。普通非 STRM 显示“播放源：Emby 原生、STRM：否”。
+
 ## 隐私与脱敏
 
 所有落盘记录都会经过同一个 sanitizer。以下内容禁止落盘：

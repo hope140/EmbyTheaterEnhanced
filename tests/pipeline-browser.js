@@ -104,15 +104,25 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
         send('Pause'); await sleep(150); const paused=player.paused();
         send('Seek',{SeekPositionTicks:20000000}); await sleep(200); const sought=player.currentTime()>=1800;
         send('Unpause'); await sleep(200); const resumed=!player.paused();
+        const expectedMount = typeof mountSidecar === 'string' && /\.strm$/i.test(mountSidecar)
+            ? mountSidecar.slice(0, -5)
+            : null;
+        const sourceUsed = embedded.currentSrc();
+        const playerStats = await player.getStats();
+        const enhancedCategory = (playerStats.categories || []).find(category => category && category.type === 'enhanced');
+        const enhancedValues = Object.fromEntries((enhancedCategory && enhancedCategory.stats || []).map(stat => [stat.label, stat.value]));
+        const expectedRouteSource = kind === 'strm' && cd2Mode === 'direct'
+            ? 'CD2 DirectUrl'
+            : kind === 'strm' && cd2AsyncHit
+            ? 'CD2 HTTP'
+            : kind === 'strm' && mountSidecar
+            ? '本地挂载'
+            : 'Emby 原生';
         send('Stop'); await sleep(250);
         const itemRecords=records.filter(r=>r.body.ItemId===activeItem.Id);
         const start=itemRecords.find(r=>r.endpoint.endsWith('/Playing'));
         const progress=itemRecords.filter(r=>r.endpoint.endsWith('/Progress'));
         const stop=itemRecords.find(r=>r.endpoint.endsWith('/Stopped'));
-        const expectedMount = typeof mountSidecar === 'string' && /\.strm$/i.test(mountSidecar)
-            ? mountSidecar.slice(0, -5)
-            : null;
-        const sourceUsed = embedded.currentSrc();
         let mountCandidateExists = !expectedMount;
         if (expectedMount) {
             try {
@@ -134,7 +144,11 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
             sessionPreserved:!!start && !!stop && itemRecords.every(r=>r.body.PlaySessionId==='play-'+activeItem.Id && r.body.MediaSourceId==='source-'+activeItem.Id),
             hasStart:!!start,hasProgress:progress.length>0,hasStop:!!stop,
             pauseReported:progress.some(r=>r.body.IsPaused===true),
-            seekReported:progress.some(r=>r.body.PositionTicks>=18000000)});
+            seekReported:progress.some(r=>r.body.PositionTicks>=18000000),
+            enhancedCategoryPresent:!!enhancedCategory,
+            enhancedStatsMatch:enhancedValues['播放源:']===expectedRouteSource &&
+                enhancedValues['STRM:']===(kind==='strm' ? '是' : '否') &&
+                (kind!=='strm' || typeof enhancedValues['Fallback:']==='string')});
     }
     const queueSidecar = mountSidecar || 'X:\\Media\\queue.y4m.strm';
     const queue = ['a','b','c'].map(suffix=>({Id:'fixture-next-'+suffix,ServerId:'fixture-server',Name:'Queue '+suffix,MediaType:'Video',Type:'Movie',

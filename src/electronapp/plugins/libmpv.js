@@ -1,4 +1,4 @@
-define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter', 'appSettings', 'userSettings', 'require', 'connectionManager', '../resolvers/strm-resolver.js', '../resolvers/strm-config-client.js', '../resolvers/strm-identity-recovery.js'], function (globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, require, connectionManager, strmResolver, strmConfigClient, strmIdentityRecovery) {
+define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter', 'appSettings', 'userSettings', 'require', 'connectionManager', '../resolvers/strm-resolver.js', '../resolvers/strm-config-client.js', '../resolvers/strm-identity-recovery.js', '../enhanced/playback-route-stats.js'], function (globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, require, connectionManager, strmResolver, strmConfigClient, strmIdentityRecovery, playbackRouteStats) {
     'use strict';
 
     function getTextTrackUrl(subtitleStream, serverId) {
@@ -129,6 +129,9 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         var playGeneration = 0;
         var highestPlaybackRequestId = 0;
         var activePlayRequest;
+        var enhancedRouteState = playbackRouteStats && typeof playbackRouteStats.create === 'function'
+            ? playbackRouteStats.create()
+            : null;
 
         function supersededError() {
             var error = new Error('Playback request was superseded');
@@ -156,6 +159,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
         function invalidatePlayRequest() {
             playGeneration++;
+            if (enhancedRouteState) enhancedRouteState.clear();
             if (activePlayRequest) {
                 var previous = activePlayRequest;
                 activePlayRequest = null;
@@ -181,6 +185,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 corePlayingLogged: false
             };
             activePlayRequest = request;
+            if (enhancedRouteState) enhancedRouteState.begin(request);
             return request;
         }
 
@@ -830,6 +835,20 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 } catch (_) { /* Context diagnostics are optional and fail-open. */ }
             }
             var resolverObservation = logStrmResolverResult(resolverResult, request, isStrmRequest);
+            if (enhancedRouteState) {
+                enhancedRouteState.commit(request, {
+                    requestId: request.requestId,
+                    isStrm: isStrmRequest || resolverResult && resolverResult.isStrm === true,
+                    route: resolverObservation.route,
+                    reason: resolverResult && resolverResult.reason,
+                    sourceKind: resolverResult && resolverResult.sourceKind,
+                    ruleId: resolverResult && resolverResult.ruleId,
+                    cd2Reason: resolverResult && resolverResult.cd2Reason,
+                    directReason: resolverResult && resolverResult.directReason,
+                    localExists: resolverResult && resolverResult.localExists === true,
+                    fallback: resolverResult && resolverResult.fallback === true
+                });
+            }
             emitClientDiagnostic('info', 'playback', 'resolver-complete', Object.assign(requestDiagnosticDetails(request), {
                 isStrm: isStrmRequest,
                 route: resolverObservation.route,
@@ -1115,6 +1134,8 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 for (var i = 0, length = responses.length; i < length; i++) {
                     categories.push(responses[i]);
                 }
+                var enhancedCategory = enhancedRouteState && enhancedRouteState.category();
+                if (enhancedCategory) categories.push(enhancedCategory);
 
                 return {
                     categories: categories
