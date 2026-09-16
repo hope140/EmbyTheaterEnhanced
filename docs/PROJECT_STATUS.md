@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-09-16 — CD2 budget and Native fallback Toast REAL acceptance
+
+已验收实现 `9c9ec3871699d26157a4e29a52bf9198c8e03748` 的 Windows candidate REAL acceptance 通过。Candidate 为 `EmbyTheaterEnhanced-0.1.1-cd2-toast-candidate-9c9ec38-setup.exe`，大小 `125,182,889` bytes，SHA256 为 `3c2c136610d2d2cb8e53f8636db7af3a4e5dc0f7333254b5fb6408150e2c6d69`；Build、Provenance、Package verify、Installer verify 均通过，`missing=0`、`extra=0`、`mismatch=0`。
+
+真实 CD2 证据：client ready 约 `7ms`、Find 约 `9ms`，Direct download RPC 约 `336ms`，在 `500ms` contract 下成功 `direct_url_hit`、CD2 HIT、`route=direct-url` 与 `core-playing`。这只证明当前 Windows 环境的约 `336ms` 响应已被覆盖，不推断所有环境的最优值。真实 fallback 证据：Direct/Same-Origin `not_found`、Mount `mount_missing` 后最终 `route=native`、`reason=native_fallback`，原生 Toast 实际显示一次，Stats 正确显示 Emby 原生、STRM 是、CD2/Mount 未命中、Fallback 是。
+
+当前 CD2 budget、Same-Origin reserve、Native fallback Toast 与 Stats semantics 可进入 main。错误 mapping 仅为本地测试配置，未写入仓库；本轮未修改代码、测试、版本或用户/服务器配置。
+
 ## 2026-09-16 — CD2 download budget relaxed
 
 真实 Windows telemetry 已证明旧 `300ms` `GetDownloadUrlPath` deadline 偏紧：成功样本约 `133ms`，另一真实样本约 `302ms` 因旧 deadline 超时；同一次播放随后 Mount 与 `core-playing` 通过。当前 contract 已将 STRM Resolver overall budget 从 `750ms` 调整为 `1200ms`，Direct 与 Same-Origin download 均为 `500ms`，Direct 为 Same-Origin 保留 `500ms`；CONNECT/readiness `200ms`、Find `350ms` 保持不变。Resolver 传入的 absolute deadline 仍是 CD2 service 的硬上限。

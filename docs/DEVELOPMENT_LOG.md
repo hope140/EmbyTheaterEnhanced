@@ -1,5 +1,17 @@
 # 开发日志
 
+## 2026-09-16 — CD2 budget and Native fallback Toast REAL acceptance
+
+Model Tier：1。Reason：本轮仅收录用户完成的 Windows candidate REAL acceptance，不修改产品代码、测试或配置。Escalated：no。
+
+在已验收实现 `9c9ec3871699d26157a4e29a52bf9198c8e03748` 上完成 candidate 验收。Artifact 为 `EmbyTheaterEnhanced-0.1.1-cd2-toast-candidate-9c9ec38-setup.exe`，大小 `125,182,889` bytes，SHA256 为 `3c2c136610d2d2cb8e53f8636db7af3a4e5dc0f7333254b5fb6408150e2c6d69`；Build、Provenance、Package verify 与 Installer verify 均通过，`missing=0`、`extra=0`、`mismatch=0`。
+
+Windows REAL 1：一次真实 candidate 播放中，client ready 约 `7ms`、`FindFileByPath` 约 `9ms`，Direct `GetDownloadUrlPath` 从 elapsed `≈16ms` 到 `≈352ms`，RPC 约 `336ms`，在当前 `500ms` download contract 下得到 `direct_url_hit`、CD2 HIT、`route=direct-url` 与 `core-playing PASS`。该证据证明旧 `300ms` deadline 会误杀此环境中的正常约 `300ms+` 响应；不表述为所有环境的最终最优值。
+
+Windows REAL 2：使用故意错误的更具体 STRM mapping，使 Direct 与 Same-Origin 均 `not_found`、Mount `mount_missing`，最终得到 `route=native`、`reason=native_fallback`、`fallback=true`，并通过 `core-playing`。用户实际观察到原生 Toast 文案“增强播放源不可用，已回退 Emby 原生播放”，同一次播放仅显示一次；Emby Playback Stats 显示播放源为 Emby 原生、STRM 为是、CD2 与 Mount 为未命中、Fallback 为是。因此 STRM Enhanced all-fail → Native、Native fallback Toast 与 Stats semantics 均为 REAL PASS。
+
+错误 mapping 仅存在于用户本地测试配置，未写入仓库。当前 `500ms` Direct/Same-Origin download、`1200ms` Resolver total、`500ms` Same-Origin reserve 与 Native fallback Toast 均具备进入 main 的 REAL acceptance 证据；本轮不开始下一阶段 bridge 工作。
+
 ## 2026-09-16 — CD2 download budget relaxation
 
 Model Tier：2。Reason：真实 Windows telemetry 指向 CD2 download stage 的 deadline 长尾，且 Resolver/main service 必须共享同一个 absolute deadline contract；不改变 resolver precedence、source identity、PlaybackManager ownership、Session、WebSocket 或播放器生命周期。Escalated：no。
