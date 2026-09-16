@@ -320,9 +320,17 @@ function createService(options) {
             requestId: request && request.requestId,
             ruleId: request && request.ruleId,
             mode: mode || (request && request.mode) || 'legacy',
-            candidateCount: candidates.length
+            candidateCount: candidates.length,
+            elapsedMs: 0
         });
         return startedAt;
+    }
+
+    function phaseDiagnostic(mode, event, startedAt) {
+        emitDiagnostic('info', event, {
+            mode: mode || 'legacy',
+            elapsedMs: Math.max(0, now() - startedAt)
+        });
     }
 
     function finishDiagnostic(request, mode, startedAt, response) {
@@ -536,9 +544,12 @@ function createService(options) {
                 reply = await waitForReady(entry, Math.min(overallDeadline, startedAt + CONNECT_BUDGET_MS));
                 if (entry.cancelled) return result('cancelled', 'cancelled');
                 if (reply.error) return result('miss', reply.error.localReason);
+                phaseDiagnostic(mode, 'client-ready', startedAt);
 
+                phaseDiagnostic(mode, 'find-file-start', startedAt);
                 reply = await unary(entry, 'FindFileByPath', {parentPath: '', path: cloudPath},
                     Math.min(overallDeadline, startedAt + FIND_BUDGET_MS));
+                phaseDiagnostic(mode, 'find-file-end', startedAt);
                 if (entry.cancelled) return result('cancelled', 'cancelled');
                 if (reply.error) return result('miss', classifyError(reply.error, getTransport().status));
                 if (!isRegularFile(reply.response)) return result('miss', 'invalid_file');
@@ -561,12 +572,14 @@ function createService(options) {
                 overallDeadline - (mode === 'direct' ? sameOriginReserveMs : 0),
                 acquiredAt + (mode === 'direct' ? DIRECT_DOWNLOAD_BUDGET_MS : DOWNLOAD_BUDGET_MS)
             );
+            phaseDiagnostic(mode, 'download-url-start', startedAt);
             reply = await unary(entry, 'GetDownloadUrlPath', {
                 path: cloudPath,
                 preview: false,
                 lazy_read: false,
                 get_direct_url: mode === 'direct'
             }, deadline);
+            phaseDiagnostic(mode, 'download-url-end', startedAt);
             if (entry.cancelled) return result('cancelled', 'cancelled');
             if (reply.error) {
                 if (mode === 'direct') {
@@ -608,12 +621,14 @@ function createService(options) {
             if (directResult.reacquire && now() < overallDeadline) {
                 acquiredAt = now();
                 deadline = Math.min(overallDeadline - sameOriginReserveMs, acquiredAt + DIRECT_DOWNLOAD_BUDGET_MS);
+                phaseDiagnostic(mode, 'download-url-start', startedAt);
                 reply = await unary(entry, 'GetDownloadUrlPath', {
                     path: cloudPath,
                     preview: false,
                     lazy_read: false,
                     get_direct_url: true
                 }, deadline);
+                phaseDiagnostic(mode, 'download-url-end', startedAt);
                 if (entry.cancelled) return result('cancelled', 'cancelled');
                 if (!reply.error) {
                     directResponse = reply.response;

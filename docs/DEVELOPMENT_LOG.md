@@ -1,5 +1,17 @@
 # 开发日志
 
+## 2026-09-16 — CD2 REAL PLAYBACK TIMEOUT audit and timing
+
+Model Tier：2。Reason：真实 STRM 播放已验证 identity recovery、resolver participation、Mount route 与 core-playing；本轮只定位 CD2 gRPC lifecycle/deadline，不改变 PlaybackManager、Session、WebSocket、Mount 或 timeout 数值。Escalated：no。
+
+审计确认 `DEFAULT_TOTAL_BUDGET_MS=750` 仍不变。persistent resolver 在 renderer 创建一次 750ms absolute deadline；main service 对每个 mode 取不超过该 deadline 的上限，`waitForReady` 最多 200ms，`FindFileByPath` 为从该 mode 开始计的 350ms absolute deadline，`GetDownloadUrlPath` 最多 300ms；DirectUrl 另为 same-origin 预留最多 200ms。现有约 319ms / 312ms 仅是整次 CD2 mode 的 aggregate elapsed，不能仅凭旧日志判定具体 RPC；它们更接近 300ms download budget 加调度开销，但也可能是 readiness 消耗后的 Find deadline，必须以新阶段事件确认。
+
+main process 继续持有单一 lazy transport/gRPC client；创建 service 时仅预载 transport，首次播放仍可能在 `waitForReady` 发生连接冷启动。Direct 的下载阶段 miss 会保存 mode session，随后 same-origin 复用同一 client/channel 与 Find result；若 Direct 在 readiness 或 Find 阶段失败，same-origin 仍会重新执行 readiness/Find，但不会新建 client/channel。设置页“测试映射”的 `mapped` 只做纯 prefix replacement；“测试连接”创建并关闭临时 service，执行 1.5s ready 加 500ms `FindFileByPath('/')`，两者都不证明实际媒体下载链。
+
+新增 CD2-only timing 事件 `resolve-start`、`client-ready`、`find-file-start/end`、`download-url-start/end`、`resolve-hit/miss`。新增阶段事件仅记录 mode 和 elapsedMs，不记录 Path、URL、token 或 RPC 参数。persistent config 线路在 CD2 direct/same-origin miss 后由 Mount 命中时，现在保留最近一次 `cd2Reason` 作为 route diagnostics metadata；route/source selection 保持不变。
+
+验证：CD2/STRM targeted `72/72`，全量 `npm test` `129/129`，相关 JavaScript syntax 与 `git diff --check` 通过。未构建、打包、生成 candidate 或执行新的真实客户端播放；下一次真实日志应使用阶段事件判定卡在 readiness、Find 还是 download 后，再决定是否需要产品层 budget 调整。
+
 ## 2026-09-16 — Client Diagnostics v1
 
 Model Tier：2。Reason：任务跨 main-process logger/IPC、renderer/libmpv resolver 观测、CD2/Mount 事件和设置页，但明确禁止改变播放、Session、WebSocket 与 fallback contract。Escalated：no。

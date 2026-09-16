@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-09-16 — CD2 REAL PLAYBACK TIMEOUT audit
+
+真实验收已确认 STRM identity recovery、resolver participation、Mount route 和 `core-playing` 均为 `REAL PASS`。本轮审计未调整 `DEFAULT_TOTAL_BUDGET_MS=750` 或 200ms readiness / 350ms Find / 300ms download 上限。约 319ms 与 312ms 旧日志是 CD2 mode 的 aggregate elapsed，当前不能证明具体卡在 `waitForReady`、`FindFileByPath`、`GetDownloadUrlPath` 或 total deadline；最可能但未证实的方向是 300ms download deadline 加少量调度开销。新的 CD2 阶段 timing 将在下一次真实播放区分 client-ready、Find 和 download。
+
+main service 已复用同一 transport/gRPC client/channel；Direct 到达 download miss 后 same-origin 会复用 Find result，Direct 若在 readiness/Find 失败则 same-origin 重新进行这些阶段但不新建 channel。设置页 `mapped` 只验证纯 sourcePrefix → cloudPrefix 替换，不能代表 gRPC/文件/下载 resolve 成功；连接测试使用临时 service 的 1.5s readiness + 500ms 根目录 probe，也不覆盖实际媒体路径与下载。
+
+本轮新增安全 CD2 timing（无 Path/URL/token）并修正 persistent CD2 miss → Mount hit 的 `cd2Reason` 保留；不改变 resolver precedence、source selection、Mount、PlaybackManager、Session、WebSocket、DeviceId、WatchTogether、Electron 或 mpv。自动验证：targeted `72/72`、`npm test` `129/129`、相关 JS syntax 与 `git diff --check` 均通过。未生成 candidate，新的真实 Windows CD2 playback timing 仍待用户验收。
+
 ## 2026-09-16 — Client Diagnostics v1
 
 基于 `origin/main@aad4a0ddfd489cf0a9e3bf1f9b7af147d9376f38` 创建分支 `feat/client-diagnostics-log`。本轮新增客户端诊断日志、统一脱敏、轮转、导出 IPC、设置页入口，以及 resolver/CD2/Mount/libmpv 的低风险结构化事件；产品版本保持 `0.1.1`。日志只替换可观测性，不改变 Resolver precedence、DirectUrl、CD2 timeout/budget、Mount 判定、PlaybackManager、Session、WebSocket、DeviceId、播放上报、NextTrack 或 WatchTogether。

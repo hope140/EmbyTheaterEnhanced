@@ -336,6 +336,7 @@
                         if (result && result.type === 'local') {
                             result.isStrm = true;
                             result.ruleId = rule.id;
+                            if (cd2Reason) result.cd2Reason = cd2Reason;
                             return result;
                         }
                         continue;
