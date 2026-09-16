@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const webOverlays = require('./prepare-web-overlays.cjs');
+const trackedFileHash = require('./tracked-file-hash.cjs');
 
 const MANIFEST_NAME = 'source-provenance.json';
 const ELECTRON_PATH = 'x64/electron/electron.exe';
@@ -100,7 +101,7 @@ function productionDependencyClosure(root, runtime) {
         packageLockPath: 'package-lock.json',
         packageLockSha256: hashFile(lockPath, 'package-lock.json'),
         generatorPath: 'tools/copy-runtime-dependencies.cjs',
-        generatorSha256: hashFile(path.join(root, 'tools', 'copy-runtime-dependencies.cjs'), 'Dependency generator'),
+        generatorSha256: trackedFileHash.hashTrackedTextFile(root, 'tools/copy-runtime-dependencies.cjs'),
         packageCount: packages.length,
         packages,
         runtimeTree: treeIdentity(runtimeElectronApp, files)

@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const externalPlayerRegistration = require('./patch-external-player-registration.cjs');
+const trackedFileHash = require('./tracked-file-hash.cjs');
 
 const GENERATOR_PATH = 'tools/prepare-web-overlays.cjs';
 const APP_GENERATOR_PATH = 'tools/patch-external-player-registration.cjs';
@@ -85,7 +86,7 @@ function generatorHashes(root, contract) {
         if (!fs.existsSync(file) || !fs.statSync(file).isFile()) {
             throw new Error('Web overlay generator missing: ' + generatorPath);
         }
-        return {path: generatorPath, sha256: sha256(fs.readFileSync(file))};
+        return {path: generatorPath, sha256: trackedFileHash.hashTrackedTextFile(root, generatorPath)};
     });
 }
 

@@ -2,6 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const childProcess = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -20,13 +21,24 @@ function createContractRoot() {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-web-overlay-root-'));
     const paths = new Set([
         'tools/prepare-web-overlays.cjs',
-        'tools/patch-external-player-registration.cjs'
+        'tools/patch-external-player-registration.cjs',
+        'tools/tracked-file-hash.cjs'
     ]);
     for (const contract of preparation.WEB_OVERLAY_CONTRACT) {
         paths.add(contract.basePath);
         if (contract.inputPath) paths.add(contract.inputPath);
     }
     for (const relativePath of paths) copyFile(root, relativePath);
+    for (const args of [
+        ['init', root],
+        ['-C', root, 'config', 'user.name', 'ETE Test'],
+        ['-C', root, 'config', 'user.email', 'ete-test@example.invalid'],
+        ['-C', root, 'add', 'tools'],
+        ['-C', root, 'commit', '-m', 'fixture']
+    ]) {
+        const result = childProcess.spawnSync('git', args, {encoding: 'utf8'});
+        assert.equal(result.status, 0, result.stderr);
+    }
     return root;
 }
 

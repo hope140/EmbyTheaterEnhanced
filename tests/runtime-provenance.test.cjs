@@ -77,7 +77,8 @@ function createFixture(root) {
         'tools/prepare-preload.cjs',
         'tools/prepare-web-overlays.cjs',
         'tools/patch-external-player-registration.cjs',
-        'tools/copy-runtime-dependencies.cjs'
+        'tools/copy-runtime-dependencies.cjs',
+        'tools/tracked-file-hash.cjs'
     ]) copyRepoFile(root, relativePath);
     writeFile(path.join(root, 'tools', 'patch-playbackmanager.cjs'), 'generator: playbackmanager\n');
     writeFile(path.join(root, 'tools', 'build.ps1'), 'generator: package-metadata\n');
@@ -86,8 +87,12 @@ function createFixture(root) {
     writeFile(path.join(root, 'src', 'electronapp', 'preload.js'), preloadPreparation.buildPreparedPreload(vendorPreload));
     const init = childProcess.spawnSync('git', ['init', root], {encoding: 'utf8'});
     assert.equal(init.status, 0, init.stderr);
-    const add = childProcess.spawnSync('git', ['-C', root, 'add', 'src/electronapp/some-normal-file.js'], {encoding: 'utf8'});
+    childProcess.spawnSync('git', ['-C', root, 'config', 'user.name', 'ETE Test'], {encoding: 'utf8'});
+    childProcess.spawnSync('git', ['-C', root, 'config', 'user.email', 'ete-test@example.invalid'], {encoding: 'utf8'});
+    const add = childProcess.spawnSync('git', ['-C', root, 'add', 'src/electronapp/some-normal-file.js', 'tools'], {encoding: 'utf8'});
     assert.equal(add.status, 0, add.stderr);
+    const commit = childProcess.spawnSync('git', ['-C', root, 'commit', '-m', 'fixture'], {encoding: 'utf8'});
+    assert.equal(commit.status, 0, commit.stderr);
 }
 
 function createRuntime(root, name) {

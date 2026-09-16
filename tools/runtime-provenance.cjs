@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const preloadPreparation = require('./prepare-preload.cjs');
 const sourceProvenance = require('./source-provenance.cjs');
+const trackedFileHash = require('./tracked-file-hash.cjs');
 
 const OVERLAY_RUNTIME_PATH = 'electronapp/www/modules/common/playback/playbackmanager.js';
 const OVERLAY_GENERATOR_PATH = 'tools/patch-playbackmanager.cjs';
@@ -88,7 +89,7 @@ function buildOverlayEntries(root, runtime) {
         return Object.assign({}, contract, {
             sourcePresent,
             sourceSha256: sourcePresent ? hashFile(sourceFile) : null,
-            generatorSha256: hashFile(generatorFile),
+            generatorSha256: trackedFileHash.hashTrackedTextFile(root, contract.generatorPath),
             runtimeSha256: hashFile(runtimeFile)
         });
     });
@@ -137,7 +138,7 @@ function buildPreparedArtifactEntries(root, runtime) {
         const baseText = fs.readFileSync(baseFile, 'utf8');
         const expectedText = preloadPreparation.buildPreparedPreload(baseText);
         const baseSha256 = hashFile(baseFile);
-        const generatorSha256 = hashFile(generatorFile);
+        const generatorSha256 = trackedFileHash.hashTrackedTextFile(root, contract.generatorPath);
         const preparedSha256 = hashFile(preparedFile);
         const runtimeSha256 = hashFile(runtimeFile);
         const expectedPreparedSha256 = preloadPreparation.sha256(Buffer.from(expectedText, 'utf8'));
@@ -189,7 +190,7 @@ function writeManifest(root, runtime, sourceCommit) {
             sourceSha256: hashFile(sourceFile),
             runtimeSha256: hashFile(runtimeFile)
         });
-        if (value.overlay) value.overlay.generatorSha256 = hashFile(path.join(root, value.overlay.generatorPath));
+        if (value.overlay) value.overlay.generatorSha256 = trackedFileHash.hashTrackedTextFile(root, value.overlay.generatorPath);
         return value;
     });
     const manifest = {
@@ -384,7 +385,7 @@ function validateManifest(root, runtime, sourceCommit) {
             check.generatorMatch = !!expectedOverlay && !!actualOverlay &&
                 generatorPath === expectedOverlay.generatorPath &&
                 entry.relation === 'overlay' && exists(generatorFile) &&
-                hashFile(generatorFile) === actualOverlay.generatorSha256;
+                trackedFileHash.hashTrackedTextFile(root, generatorPath) === actualOverlay.generatorSha256;
             check.valid = check.valid && check.generatorMatch;
             if (!check.generatorMatch) errors.push('overlay-generator-mismatch:' + (generatorPath || entry.sourcePath));
         }
