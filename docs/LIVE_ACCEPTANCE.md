@@ -73,3 +73,17 @@
 分支 `fix/pepper-ready-listener-race` 的产品修复 commit 为 `731dc2ad5ca4898475a5e641b6975563f9cf8c74`。按该 commit 构建新 runtime 后只执行一次 `inspect,select,play,stop`，结果为 inspect PASS、select PASS、isStrm=true、unique embed=1、Pepper ready、resolver-result、manager-play-resolved 和 classification success；runner completed、cleanup verified-clean、residual=0。
 
 本次 timing 为 `play→embed=4724ms`、`embed→Pepper ready=22ms`。它只证明 listener 顺序修复没有破坏当前播放链，不证明性能改善，也不改变历史 `ROOT CAUSE NOT YET CONFIRMED` 结论。`loadfileObservation=unavailable` 继续作为 observability gap。
+
+## 2026-09-16 — CD2 budget and Native fallback Toast candidate
+
+本节记录已验收实现 `9c9ec3871699d26157a4e29a52bf9198c8e03748` 的 Windows candidate REAL acceptance。Artifact 为 `EmbyTheaterEnhanced-0.1.1-cd2-toast-candidate-9c9ec38-setup.exe`，大小 `125,182,889` bytes，SHA256 为 `3c2c136610d2d2cb8e53f8636db7af3a4e5dc0f7333254b5fb6408150e2c6d69`。Build、Provenance、Package verify 和 Installer verify 均通过，解包逐文件结果为 `missing=0`、`extra=0`、`mismatch=0`。
+
+### CD2 timeout budget
+
+真实 candidate 播放观察到 client ready 约 `7ms`、`FindFileByPath` 约 `9ms`；Direct `GetDownloadUrlPath` 从 elapsed `≈16ms` 到 `≈352ms`，RPC 约 `336ms`，最终 `direct_url_hit`、CD2 HIT、`route=direct-url` 和 `core-playing PASS`。该样本的响应明显超过旧 `300ms` download deadline，在当前 `500ms` contract 下成功。证据范围是当前 Windows 环境覆盖约 `336ms` 响应，不代表所有环境的最终最优 budget。
+
+### Native fallback Toast
+
+另一条真实播放使用故意错误的更具体 STRM mapping。Direct 与 Same-Origin 均为 `not_found`，Mount 为 `mount_missing`，最终为 `route=native`、`reason=native_fallback`、`fallback=true`，随后 `core-playing PASS`。用户实际观察到一次原生 Toast：`增强播放源不可用，已回退 Emby 原生播放`。Emby Playback Stats 同时显示播放源为 Emby 原生、STRM 为是、CD2 为未命中、Mount 为未命中、Fallback 为是，因此 all-fail → Native、Toast 和 Stats semantics 均为 REAL PASS。
+
+错误 mapping 仅存在于用户本地测试配置，未进入源码、文档中的配置数据或服务器。该验收证明当前 candidate 可用于下一步日用观察；不扩大到未覆盖编码、长期稳定性或下一阶段 bridge 工作。

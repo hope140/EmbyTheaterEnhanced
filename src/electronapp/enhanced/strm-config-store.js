@@ -427,7 +427,7 @@ function createStore(options) {
             token: token,
             directUrlEnabled: config.cd2.directUrlEnabled,
             rules: config.rules.map(rule => clone(rule)),
-            totalBudgetMs: 750
+            totalBudgetMs: 1200
         };
     }
 

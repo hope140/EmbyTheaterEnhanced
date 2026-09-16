@@ -5,12 +5,12 @@ const fs = require('fs');
 const path = require('path');
 const pathRules = require('../resolvers/path-rules');
 
-const DEFAULT_TOTAL_BUDGET_MS = 750;
+const DEFAULT_TOTAL_BUDGET_MS = 1200;
 const CONNECT_BUDGET_MS = 200;
 const FIND_BUDGET_MS = 350;
-const DOWNLOAD_BUDGET_MS = 300;
-const DIRECT_DOWNLOAD_BUDGET_MS = 300;
-const SAME_ORIGIN_RESERVE_MS = 200;
+const DOWNLOAD_BUDGET_MS = 500;
+const DIRECT_DOWNLOAD_BUDGET_MS = 500;
+const SAME_ORIGIN_RESERVE_MS = 500;
 const EXPECTED_PROTO_SHA256 = 'dbd103f5530863d7ef3726ef7c39e4a686e960296a750389bbf454cc252accb6';
 const PROTO_PATH = path.join(__dirname, 'proto', 'clouddrive-v1.proto');
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
@@ -294,8 +294,12 @@ function createService(options) {
     const config = settings.config
         ? normalizeProvidedConfig(settings.config)
         : readConfig(settings.environment || process.env);
+    const configuredTotalBudgetMs = Number(config.totalBudgetMs);
+    const reserveCapacityMs = Number.isFinite(configuredTotalBudgetMs)
+        ? Math.max(0, configuredTotalBudgetMs - CONNECT_BUDGET_MS - FIND_BUDGET_MS)
+        : 0;
     const sameOriginReserveMs = Math.min(SAME_ORIGIN_RESERVE_MS,
-        Math.max(1, Math.floor(config.totalBudgetMs / 3)));
+        reserveCapacityMs);
     const now = settings.now || Date.now;
     const setTimer = settings.setTimeout || setTimeout;
     const clearTimer = settings.clearTimeout || clearTimeout;

@@ -1,5 +1,27 @@
 # 项目状态
 
+## 2026-09-16 — CD2 budget and Native fallback Toast REAL acceptance
+
+已验收实现 `9c9ec3871699d26157a4e29a52bf9198c8e03748` 的 Windows candidate REAL acceptance 通过。Candidate 为 `EmbyTheaterEnhanced-0.1.1-cd2-toast-candidate-9c9ec38-setup.exe`，大小 `125,182,889` bytes，SHA256 为 `3c2c136610d2d2cb8e53f8636db7af3a4e5dc0f7333254b5fb6408150e2c6d69`；Build、Provenance、Package verify、Installer verify 均通过，`missing=0`、`extra=0`、`mismatch=0`。
+
+真实 CD2 证据：client ready 约 `7ms`、Find 约 `9ms`，Direct download RPC 约 `336ms`，在 `500ms` contract 下成功 `direct_url_hit`、CD2 HIT、`route=direct-url` 与 `core-playing`。这只证明当前 Windows 环境的约 `336ms` 响应已被覆盖，不推断所有环境的最优值。真实 fallback 证据：Direct/Same-Origin `not_found`、Mount `mount_missing` 后最终 `route=native`、`reason=native_fallback`，原生 Toast 实际显示一次，Stats 正确显示 Emby 原生、STRM 是、CD2/Mount 未命中、Fallback 是。
+
+当前 CD2 budget、Same-Origin reserve、Native fallback Toast 与 Stats semantics 可进入 main。错误 mapping 仅为本地测试配置，未写入仓库；本轮未修改代码、测试、版本或用户/服务器配置。
+
+## 2026-09-16 — CD2 download budget relaxed
+
+真实 Windows telemetry 已证明旧 `300ms` `GetDownloadUrlPath` deadline 偏紧：成功样本约 `133ms`，另一真实样本约 `302ms` 因旧 deadline 超时；同一次播放随后 Mount 与 `core-playing` 通过。当前 contract 已将 STRM Resolver overall budget 从 `750ms` 调整为 `1200ms`，Direct 与 Same-Origin download 均为 `500ms`，Direct 为 Same-Origin 保留 `500ms`；CONNECT/readiness `200ms`、Find `350ms` 保持不变。Resolver 传入的 absolute deadline 仍是 CD2 service 的硬上限。
+
+本轮只修改 CD2 budget 常量、persistent runtime default 和受控时钟测试，不改变 Resolver precedence、STRM identity recovery、Mapping、Mount 判定、PlaybackManager ownership、Session/PlaySessionId、WebSocket、DeviceId、WatchTogether、mpv 或 Electron。CD2/Resolver targeted `76/76`，全量 `npm test` `140/140`；未生成 candidate，真实 Windows playback 尚待用新 budget 重新取证。
+
+## 2026-09-16 — STRM native fallback Toast
+
+当前 prepared Web runtime 已确认使用原生 AMD `toast` 模块；既有 `common/input/api.js` 的 `DisplayMessage` 通过同一模块显示短消息。模块自身未实现 `timeoutMs`，原生动画/回收默认约 3.3 秒，本轮复用默认行为，不引入自定义 DOM、CSS 或动画。
+
+Toast 只在当前播放确认 STRM，且最终 Resolver result 派生为 `route=native`、`reason=native_fallback` 时触发。DirectUrl、CD2 HTTP、Mount、普通非 STRM Native、resolver_disabled、no_matching_rule、transcode_skip、invalid_context 及任何中间阶段失败后命中后续增强路径均不触发。request 级幂等、current request 检查和 stop/destroy/supersede 保护已实现；module/API 异常 fail-open，原生播放与既有 Stats/Session contract 不受影响。
+
+Toast/playback lifecycle targeted `4/4`、全量 `npm test` `144/144`、相关 JS syntax 与 `git diff --check` 通过。未生成 candidate，真实 Windows Toast 视觉验收仍待手工确认。
+
 ## 2026-09-16 — Stats 未尝试阶段展示语义
 
 修正 `playback-route-stats` 的用户态映射：Mount-first 直接命中时 CD2 显示“未使用”，`not_attempted` 不再透传；timeout 仍显示“超时”，miss/not_found 仍显示“未命中”。仅调整 Stats 展示语义，不改变 Resolver、CD2、Mount 或 timeout/budget。targeted `4/4`、全量 `npm test` `136/136`、JS syntax 与 `git diff --check` 通过。

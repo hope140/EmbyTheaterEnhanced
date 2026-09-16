@@ -450,7 +450,7 @@ test('DirectUrl timeout reserves part of the absolute budget for same-origin fal
         GetDownloadUrlPath: (call, cb) => {
             if (!call.request.get_direct_url) cb(null, {downloadUrlPath: '/fallback/after-timeout'});
         }
-    }, readyConfig({totalBudgetMs: 430}));
+    }, readyConfig({totalBudgetMs: 900}));
     const started = Date.now();
     const response = await service.resolve({requestId: 'direct-timeout-fallback', candidates: ['X:\\Media\\x.mkv']});
 

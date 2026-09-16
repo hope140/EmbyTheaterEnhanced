@@ -1,5 +1,39 @@
 # 开发日志
 
+## 2026-09-16 — CD2 budget and Native fallback Toast REAL acceptance
+
+Model Tier：1。Reason：本轮仅收录用户完成的 Windows candidate REAL acceptance，不修改产品代码、测试或配置。Escalated：no。
+
+在已验收实现 `9c9ec3871699d26157a4e29a52bf9198c8e03748` 上完成 candidate 验收。Artifact 为 `EmbyTheaterEnhanced-0.1.1-cd2-toast-candidate-9c9ec38-setup.exe`，大小 `125,182,889` bytes，SHA256 为 `3c2c136610d2d2cb8e53f8636db7af3a4e5dc0f7333254b5fb6408150e2c6d69`；Build、Provenance、Package verify 与 Installer verify 均通过，`missing=0`、`extra=0`、`mismatch=0`。
+
+Windows REAL 1：一次真实 candidate 播放中，client ready 约 `7ms`、`FindFileByPath` 约 `9ms`，Direct `GetDownloadUrlPath` 从 elapsed `≈16ms` 到 `≈352ms`，RPC 约 `336ms`，在当前 `500ms` download contract 下得到 `direct_url_hit`、CD2 HIT、`route=direct-url` 与 `core-playing PASS`。该证据证明旧 `300ms` deadline 会误杀此环境中的正常约 `300ms+` 响应；不表述为所有环境的最终最优值。
+
+Windows REAL 2：使用故意错误的更具体 STRM mapping，使 Direct 与 Same-Origin 均 `not_found`、Mount `mount_missing`，最终得到 `route=native`、`reason=native_fallback`、`fallback=true`，并通过 `core-playing`。用户实际观察到原生 Toast 文案“增强播放源不可用，已回退 Emby 原生播放”，同一次播放仅显示一次；Emby Playback Stats 显示播放源为 Emby 原生、STRM 为是、CD2 与 Mount 为未命中、Fallback 为是。因此 STRM Enhanced all-fail → Native、Native fallback Toast 与 Stats semantics 均为 REAL PASS。
+
+错误 mapping 仅存在于用户本地测试配置，未写入仓库。当前 `500ms` Direct/Same-Origin download、`1200ms` Resolver total、`500ms` Same-Origin reserve 与 Native fallback Toast 均具备进入 main 的 REAL acceptance 证据；本轮不开始下一阶段 bridge 工作。
+
+## 2026-09-16 — CD2 download budget relaxation
+
+Model Tier：2。Reason：真实 Windows telemetry 指向 CD2 download stage 的 deadline 长尾，且 Resolver/main service 必须共享同一个 absolute deadline contract；不改变 resolver precedence、source identity、PlaybackManager ownership、Session、WebSocket 或播放器生命周期。Escalated：no。
+
+基于正式 `main@1dd9bb20e19c3cf86ce62bef7aac33aaa89f1885` 创建 `fix/cd2-budget-native-fallback-toast`。真实成功样本显示 `client-ready≈6ms`、`FindFileByPath≈8ms`、`GetDownloadUrlPath≈133ms`；另一真实样本的 download 约 `302ms` 在旧 `300ms` deadline 下超时，随后 Mount 与 `core-playing` 仍通过。由此确认旧 download budget 偏紧，readiness 不是根因。
+
+本 commit 将 Resolver overall budget 从 `750ms` 调整为 `1200ms`；main CD2 service 的 Direct 与 Same-Origin `GetDownloadUrlPath` 均从 `300ms` 调整为 `500ms`，Direct 仍为 Same-Origin 保留 `500ms`，CONNECT/readiness `200ms` 与 Find `350ms` 保持不变。所有阶段继续受 shared absolute deadline 限制，未取消硬上限；persistent config runtime default 同步为 `1200ms`。
+
+本次修正旧 one-third cap 导致默认 runtime 实际仅保留 `400ms` 的实现偏差。
+
+新增 fake-clock/controlled-timer 回归覆盖 320ms Direct 成功、Direct timeout → Same-Origin 320ms 成功、超过 500ms 仍 timeout，以及 Resolver 向每个 CD2 stage 传递同一 `1200ms` deadline。验证：CD2/Resolver targeted `76/76`，全量 `npm test` `140/140`。未生成 installer candidate，未执行真实客户端播放。
+
+## 2026-09-16 — STRM native fallback Toast
+
+Model Tier：2。Reason：通知触发点必须与 libmpv 当前 playback request、Resolver 最终 route/reason、stop/destroy 和 supersede 生命周期一致；实现只复用现有 Emby Web runtime，不改变播放 source、Stats、Session 或 PlaybackManager ownership。Escalated：no。
+
+审计 prepared/Carnival Web runtime：`src/electronapp/www/modules/toast/toast.js` 是现有原生 AMD Toast 模块，`common/input/api.js` 的 `DisplayMessage` 已通过 `require(["toast"], ...)` 使用它。当前模块接受字符串/选项对象，但不读取 `timeoutMs`；其原生动画/回收默认约 3.3 秒，因此沿用默认时长，不增加 HTML overlay、CSS、动画或通知框架。
+
+`libmpv.playInternal` 在最终 `resolver-result` 已确定后，仅当当前 request 已确认 STRM 且结果为 `route=native`、`reason=native_fallback` 时异步请求原生 Toast。每个 request 有独立幂等标记；加载回调再次检查 current request，新的 Play/NextTrack、stop 或 destroy 会使旧回调失效。Toast module 缺失、API 不存在、throw 或 reject 均 fail-open，不影响原生 `loadfile`、Session、上报和 playback error；现有 Stats contract 未改。
+
+新增 Toast/playback lifecycle targeted `4/4`，覆盖 DirectUrl/CD2 HTTP/Mount/普通 Native、resolver_disabled/no_matching_rule/transcode_skip/invalid_context、最终 native fallback、supersede、stop/destroy、重复 loader callback 和 fail-open。全量 `npm test` `144/144` 通过；未生成 installer candidate，未执行真实客户端播放。
+
 ## 2026-09-16 — Stats 未尝试阶段展示语义
 
 本轮只修正 `playback-route-stats.js` 的用户态文本：空 CD2 reason 与 `not_attempted` 统一显示“未使用”，保留 timeout“超时”、miss/not_found“未命中”及 DirectUrl/CD2 HTTP“命中”。新增 Mount-first → Mount hit → CD2 未使用回归；Resolver/CD2/Mount 行为与 timeout/budget 未改。targeted `4/4`、全量 `npm test` `136/136`、JS syntax 与 `git diff --check` 通过。
