@@ -1,0 +1,75 @@
+{
+  "status": "PASS",
+  "results": [
+    {
+      "name": "rapid Play A -> B -> C",
+      "status": "PASS",
+      "evidence": {
+        "authoritativeMedia": "C",
+        "staleEventsDropped": 3
+      }
+    },
+    {
+      "name": "Stop during pending load",
+      "status": "PASS",
+      "evidence": {
+        "finalStatus": "stopped",
+        "resurrection": false
+      }
+    },
+    {
+      "name": "event storm from stale generation",
+      "status": "PASS",
+      "evidence": {
+        "staleEvents": 1000,
+        "currentPropertyEvents": 1000,
+        "diagnostics": 1000,
+        "commandBurst": 1000,
+        "retainedDropRecords": 64,
+        "retainedDiagnostics": 32,
+        "retainedOutboundHistory": 128,
+        "commandAccepted": true
+      }
+    },
+    {
+      "name": "NextTrack late event race",
+      "status": "PASS",
+      "evidence": {
+        "authoritativeMedia": "episode-B",
+        "staleEventKinds": 7
+      }
+    },
+    {
+      "name": "critical Play A -> B late completion",
+      "status": "PASS",
+      "evidence": {
+        "aLoaded": false,
+        "aBecameCurrent": false,
+        "currentMedia": "B",
+        "loadCalls": [
+          "B.mkv"
+        ],
+        "playingTransitions": [
+          "B"
+        ]
+      }
+    },
+    {
+      "name": "resolved callback after generation change",
+      "status": "PASS",
+      "evidence": {
+        "resolvedUnder": "A",
+        "callbackRanUnder": "B",
+        "application": "dropped-by-local-token"
+      }
+    },
+    {
+      "name": "destroy/recreate shared transport",
+      "status": "PASS",
+      "evidence": {
+        "oldControllerMessage": "dropped",
+        "currentPath": "B.mkv"
+      }
+    }
+  ]
+}

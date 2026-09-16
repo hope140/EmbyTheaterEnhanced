@@ -1,0 +1,50 @@
+{
+  "status": "PASS",
+  "identityDecision": {
+    "helperInstanceId": "REQUIRED",
+    "generationId": "REQUIRED_FOR_MEDIA_SCOPED_MESSAGES",
+    "requestId": "REQUIRED_FOR_RESPONSE_BEARING_REQUESTS",
+    "playerInstanceId": "NOT_REQUIRED_ON_WIRE"
+  },
+  "messageTaxonomy": [
+    "COMMAND",
+    "REQUEST",
+    "RESPONSE",
+    "EVENT",
+    "LIFECYCLE",
+    "ERROR"
+  ],
+  "framing": {
+    "selectedResearchModel": "uint32be-length-prefixed-utf8-json",
+    "partialRead": "PASS",
+    "concatenatedFrames": "PASS",
+    "malformedFrame": "PASS",
+    "messageSizeLimit": "64 KiB default; oversize closes the identity boundary"
+  },
+  "commandAcknowledgement": {
+    "ipcAccepted": "local write/submission only",
+    "mpvCommandSubmitted": "request/response only when a caller requires native submission result",
+    "operationCompleted": "generation-scoped property or lifecycle event; never inferred from submission"
+  },
+  "securityBoundary": {
+    "transport": "private inherited pipes",
+    "listener": false,
+    "publicEndpoint": false,
+    "shellForwarding": false,
+    "filesystemRpc": false
+  },
+  "backpressure": {
+    "staleEventRetentionBounded": "PASS",
+    "diagnosticRetentionBounded": "PASS",
+    "commandPathAfterStorm": "PASS",
+    "scope": "bounded model retention and synchronous dispatch; not a native pipe throughput benchmark"
+  },
+  "matrixCoverage": {
+    "status": "PASS",
+    "expected": 36,
+    "actual": 36,
+    "missingNames": [],
+    "unexpectedNames": [],
+    "duplicateNames": []
+  }
+}

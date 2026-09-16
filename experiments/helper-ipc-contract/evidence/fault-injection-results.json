@@ -1,0 +1,309 @@
+{
+  "testTimeoutMs": 50,
+  "total": 36,
+  "passed": 36,
+  "failed": 0,
+  "results": [
+    {
+      "name": "response in order",
+      "status": "PASS",
+      "evidence": {
+        "resolved": 2
+      }
+    },
+    {
+      "name": "response reversed order",
+      "status": "PASS",
+      "evidence": {
+        "correlation": "requestId"
+      }
+    },
+    {
+      "name": "duplicate response",
+      "status": "PASS",
+      "evidence": {
+        "terminalTransitions": 1,
+        "duplicate": "dropped"
+      }
+    },
+    {
+      "name": "unknown requestId",
+      "status": "PASS",
+      "evidence": {
+        "stateMutated": false
+      }
+    },
+    {
+      "name": "stale generation response",
+      "status": "PASS",
+      "evidence": {
+        "oldState": "GENERATION_RETIRED",
+        "currentMedia": "B"
+      }
+    },
+    {
+      "name": "stale helper instance response",
+      "status": "PASS",
+      "evidence": {
+        "oldHelper": "dropped",
+        "currentHelper": "H2"
+      }
+    },
+    {
+      "name": "timeout then response",
+      "status": "PASS",
+      "evidence": {
+        "deadlineMs": 50,
+        "lateResponse": "dropped"
+      }
+    },
+    {
+      "name": "cancel then response",
+      "status": "PASS",
+      "evidence": {
+        "terminalState": "CANCELLED"
+      }
+    },
+    {
+      "name": "helper crash with pending requests",
+      "status": "PASS",
+      "evidence": {
+        "terminatedRequests": 2
+      }
+    },
+    {
+      "name": "helper recreate",
+      "status": "PASS",
+      "evidence": {
+        "helperBoundary": "H1->H2",
+        "generationId": 2
+      }
+    },
+    {
+      "name": "old helper event after recreate",
+      "status": "PASS",
+      "evidence": {
+        "authoritativePath": "B.mkv"
+      }
+    },
+    {
+      "name": "rapid Play A -> B -> C",
+      "status": "PASS",
+      "evidence": {
+        "authoritativeMedia": "C",
+        "staleEventsDropped": 3
+      }
+    },
+    {
+      "name": "Stop during pending load",
+      "status": "PASS",
+      "evidence": {
+        "finalStatus": "stopped",
+        "resurrection": false
+      }
+    },
+    {
+      "name": "destroy during pending request",
+      "status": "PASS",
+      "evidence": {
+        "terminalState": "CONTROLLER_DESTROYED"
+      }
+    },
+    {
+      "name": "malformed message",
+      "status": "PASS",
+      "evidence": {
+        "malformedDropped": 2
+      }
+    },
+    {
+      "name": "missing identity field",
+      "status": "PASS",
+      "evidence": {
+        "missingHelperInstanceId": "dropped"
+      }
+    },
+    {
+      "name": "impossible future generation",
+      "status": "PASS",
+      "evidence": {
+        "futureGeneration": "dropped"
+      }
+    },
+    {
+      "name": "event storm from stale generation",
+      "status": "PASS",
+      "evidence": {
+        "staleEvents": 1000,
+        "currentPropertyEvents": 1000,
+        "diagnostics": 1000,
+        "commandBurst": 1000,
+        "retainedDropRecords": 64,
+        "retainedDiagnostics": 32,
+        "retainedOutboundHistory": 128,
+        "commandAccepted": true
+      }
+    },
+    {
+      "name": "response just before deadline",
+      "status": "PASS",
+      "evidence": {
+        "responseAtMs": 49,
+        "deadlineMs": 50
+      }
+    },
+    {
+      "name": "response exactly at deadline",
+      "status": "PASS",
+      "evidence": {
+        "policy": "deadline-is-exclusive",
+        "terminalState": "TIMED_OUT"
+      }
+    },
+    {
+      "name": "never responds",
+      "status": "PASS",
+      "evidence": {
+        "terminalState": "TIMED_OUT",
+        "timerLeak": false
+      }
+    },
+    {
+      "name": "helper-global vs generation event",
+      "status": "PASS",
+      "evidence": {
+        "staleMediaEvent": "dropped",
+        "helperGlobalEvent": "accepted"
+      }
+    },
+    {
+      "name": "NextTrack late event race",
+      "status": "PASS",
+      "evidence": {
+        "authoritativeMedia": "episode-B",
+        "staleEventKinds": 7
+      }
+    },
+    {
+      "name": "critical Play A -> B late completion",
+      "status": "PASS",
+      "evidence": {
+        "aLoaded": false,
+        "aBecameCurrent": false,
+        "currentMedia": "B",
+        "loadCalls": [
+          "B.mkv"
+        ],
+        "playingTransitions": [
+          "B"
+        ]
+      }
+    },
+    {
+      "name": "resolved callback after generation change",
+      "status": "PASS",
+      "evidence": {
+        "resolvedUnder": "A",
+        "callbackRanUnder": "B",
+        "application": "dropped-by-local-token"
+      }
+    },
+    {
+      "name": "helper identity reuse rejected",
+      "status": "PASS",
+      "evidence": {
+        "reusedIdentity": "rejected",
+        "replacementIdentity": "H2"
+      }
+    },
+    {
+      "name": "transport write failure",
+      "status": "PASS",
+      "evidence": {
+        "requestTerminated": 2,
+        "commandRejected": true,
+        "timerLeak": false
+      }
+    },
+    {
+      "name": "synchronous response state machine",
+      "status": "PASS",
+      "evidence": {
+        "transitions": [
+          "CREATED",
+          "SENT",
+          "RESOLVED"
+        ]
+      }
+    },
+    {
+      "name": "scheduled late response after helper crash",
+      "status": "PASS",
+      "evidence": {
+        "terminalState": "HELPER_DIED",
+        "delayedResponse": "dropped"
+      }
+    },
+    {
+      "name": "scheduled late response after generation change",
+      "status": "PASS",
+      "evidence": {
+        "terminalState": "GENERATION_RETIRED",
+        "delayedResponse": "dropped"
+      }
+    },
+    {
+      "name": "destroy/recreate shared transport",
+      "status": "PASS",
+      "evidence": {
+        "oldControllerMessage": "dropped",
+        "currentPath": "B.mkv"
+      }
+    },
+    {
+      "name": "partial and concatenated framing",
+      "status": "PASS",
+      "evidence": {
+        "partialRead": "buffered",
+        "concatenatedFrames": 2
+      }
+    },
+    {
+      "name": "malformed and oversized framing",
+      "status": "PASS",
+      "evidence": {
+        "malformed": "connection-failed-closed",
+        "oversized": "connection-failed-closed",
+        "invalidUtf8": "connection-failed-closed",
+        "missingIdentity": "connection-failed-closed",
+        "decoderRemainsFailed": true
+      }
+    },
+    {
+      "name": "framing receive buffer limit",
+      "status": "PASS",
+      "evidence": {
+        "declaredFrameBytes": 20,
+        "receiveBufferBytes": 16,
+        "result": "connection-failed-closed"
+      }
+    },
+    {
+      "name": "framing failure closes helper boundary",
+      "status": "PASS",
+      "evidence": {
+        "pendingTerminated": 1,
+        "timerLeak": false,
+        "laterFramesAccepted": false
+      }
+    },
+    {
+      "name": "command submission acknowledgement",
+      "status": "PASS",
+      "evidence": {
+        "commandPromise": "submission-only",
+        "operationObservedBy": "generation-scoped-event"
+      }
+    }
+  ]
+}

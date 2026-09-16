@@ -1,0 +1,140 @@
+{
+  "status": "PASS",
+  "invariants": {
+    "INV-01": true,
+    "INV-02": true,
+    "INV-03": true,
+    "INV-04": true,
+    "INV-05": true,
+    "INV-06": true,
+    "INV-07": true,
+    "INV-08": true,
+    "INV-09": true,
+    "INV-10": true,
+    "INV-11": true,
+    "INV-12": true
+  },
+  "results": [
+    {
+      "name": "timeout then response",
+      "status": "PASS",
+      "evidence": {
+        "deadlineMs": 50,
+        "lateResponse": "dropped"
+      }
+    },
+    {
+      "name": "cancel then response",
+      "status": "PASS",
+      "evidence": {
+        "terminalState": "CANCELLED"
+      }
+    },
+    {
+      "name": "helper crash with pending requests",
+      "status": "PASS",
+      "evidence": {
+        "terminatedRequests": 2
+      }
+    },
+    {
+      "name": "helper recreate",
+      "status": "PASS",
+      "evidence": {
+        "helperBoundary": "H1->H2",
+        "generationId": 2
+      }
+    },
+    {
+      "name": "old helper event after recreate",
+      "status": "PASS",
+      "evidence": {
+        "authoritativePath": "B.mkv"
+      }
+    },
+    {
+      "name": "destroy during pending request",
+      "status": "PASS",
+      "evidence": {
+        "terminalState": "CONTROLLER_DESTROYED"
+      }
+    },
+    {
+      "name": "response just before deadline",
+      "status": "PASS",
+      "evidence": {
+        "responseAtMs": 49,
+        "deadlineMs": 50
+      }
+    },
+    {
+      "name": "response exactly at deadline",
+      "status": "PASS",
+      "evidence": {
+        "policy": "deadline-is-exclusive",
+        "terminalState": "TIMED_OUT"
+      }
+    },
+    {
+      "name": "never responds",
+      "status": "PASS",
+      "evidence": {
+        "terminalState": "TIMED_OUT",
+        "timerLeak": false
+      }
+    },
+    {
+      "name": "helper identity reuse rejected",
+      "status": "PASS",
+      "evidence": {
+        "reusedIdentity": "rejected",
+        "replacementIdentity": "H2"
+      }
+    },
+    {
+      "name": "transport write failure",
+      "status": "PASS",
+      "evidence": {
+        "requestTerminated": 2,
+        "commandRejected": true,
+        "timerLeak": false
+      }
+    },
+    {
+      "name": "synchronous response state machine",
+      "status": "PASS",
+      "evidence": {
+        "transitions": [
+          "CREATED",
+          "SENT",
+          "RESOLVED"
+        ]
+      }
+    },
+    {
+      "name": "scheduled late response after helper crash",
+      "status": "PASS",
+      "evidence": {
+        "terminalState": "HELPER_DIED",
+        "delayedResponse": "dropped"
+      }
+    },
+    {
+      "name": "scheduled late response after generation change",
+      "status": "PASS",
+      "evidence": {
+        "terminalState": "GENERATION_RETIRED",
+        "delayedResponse": "dropped"
+      }
+    },
+    {
+      "name": "framing failure closes helper boundary",
+      "status": "PASS",
+      "evidence": {
+        "pendingTerminated": 1,
+        "timerLeak": false,
+        "laterFramesAccepted": false
+      }
+    }
+  ]
+}
