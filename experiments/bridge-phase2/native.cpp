@@ -48,11 +48,13 @@ class Bridge {
     MPV_FUNCS(FIELD)
 #undef FIELD
     mpv_handle* core = nullptr;
-    HWND parent = nullptr, child = nullptr;
+    HWND parent = nullptr, child = nullptr, overlay = nullptr, away = nullptr;
     std::thread surface;
     std::atomic<bool> closing{false}, initialized{false}, dirty{true};
     std::atomic<int> phase{0};
     std::atomic<unsigned> frames{0};
+    std::atomic<unsigned> mouseMoves{0}, mouseDowns{0}, mouseUps{0}, dpiChanges{0};
+    std::string surfaceThreadAwareness = "unavailable";
     bool renderApi;
     static void update(void* p) { static_cast<Bridge*>(p)->dirty = true; }
     static void* glProc(void*, const char* name) {
@@ -61,15 +63,92 @@ class Bridge {
             p = GetProcAddress(GetModuleHandleW(L"opengl32.dll"), name);
         return reinterpret_cast<void*>(p);
     }
+    static LRESULT CALLBACK surfaceWindowProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
+        Bridge* self = reinterpret_cast<Bridge*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+        if (message == WM_NCCREATE) {
+            auto* create = reinterpret_cast<CREATESTRUCTW*>(lparam);
+            self = static_cast<Bridge*>(create->lpCreateParams);
+            SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(self));
+        }
+        if (self) {
+            if (message == WM_MOUSEMOVE) ++self->mouseMoves;
+            if (message == WM_LBUTTONDOWN) ++self->mouseDowns;
+            if (message == WM_LBUTTONUP) ++self->mouseUps;
+            if (message == WM_DPICHANGED) ++self->dpiChanges;
+        }
+        return DefWindowProcW(hwnd, message, wparam, lparam);
+    }
+    static bool isSameOrChild(HWND ancestor, HWND candidate) {
+        return ancestor && candidate && (ancestor == candidate || IsChild(ancestor, candidate));
+    }
+    static std::string rectJson(HWND hwnd) {
+        RECT rect{};
+        if (!hwnd || !GetWindowRect(hwnd, &rect)) return "null";
+        return "{\"left\":" + std::to_string(rect.left) + ",\"top\":" + std::to_string(rect.top) +
+            ",\"right\":" + std::to_string(rect.right) + ",\"bottom\":" + std::to_string(rect.bottom) +
+            ",\"width\":" + std::to_string(rect.right - rect.left) +
+            ",\"height\":" + std::to_string(rect.bottom - rect.top) + '}';
+    }
+    static std::string awarenessName(DPI_AWARENESS_CONTEXT context) {
+        if (!context) return "invalid";
+        if (AreDpiAwarenessContextsEqual(context, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)) return "per-monitor-v2";
+        if (AreDpiAwarenessContextsEqual(context, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE)) return "per-monitor";
+        if (AreDpiAwarenessContextsEqual(context, DPI_AWARENESS_CONTEXT_SYSTEM_AWARE)) return "system";
+        if (AreDpiAwarenessContextsEqual(context, DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED)) return "unaware-gdi-scaled";
+        if (AreDpiAwarenessContextsEqual(context, DPI_AWARENESS_CONTEXT_UNAWARE)) return "unaware";
+        return "unknown";
+    }
+    static std::string processAwareness(DWORD pid) {
+        HMODULE shcore = LoadLibraryW(L"shcore.dll");
+        if (!shcore) return "unavailable";
+        using GetProcessDpiAwarenessFn = HRESULT (WINAPI*)(HANDLE, int*);
+        auto getAwareness = reinterpret_cast<GetProcessDpiAwarenessFn>(GetProcAddress(shcore, "GetProcessDpiAwareness"));
+        HANDLE process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+        int value = -1;
+        HRESULT result = (!getAwareness || !process) ? E_FAIL : getAwareness(process, &value);
+        if (process) CloseHandle(process);
+        FreeLibrary(shcore);
+        if (FAILED(result)) return "unavailable";
+        if (value == 0) return "unaware";
+        if (value == 1) return "system";
+        if (value == 2) return "per-monitor";
+        return "unknown";
+    }
+    static bool setCursorFromClient(HWND hwnd, int x, int y, POINT& screenPoint) {
+        if (!hwnd || !IsWindow(hwnd)) return false;
+        screenPoint = POINT{x, y};
+        return ClientToScreen(hwnd, &screenPoint) && SetCursorPos(screenPoint.x, screenPoint.y);
+    }
+    static bool sendMouseClick() {
+        INPUT input[2]{};
+        input[0].type = INPUT_MOUSE; input[0].mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
+        input[1].type = INPUT_MOUSE; input[1].mi.dwFlags = MOUSEEVENTF_LEFTUP;
+        return SendInput(2, input, sizeof(INPUT)) == 2;
+    }
+    static bool sendKey(WORD key) {
+        INPUT input[2]{};
+        input[0].type = INPUT_KEYBOARD; input[0].ki.wVk = key;
+        input[1].type = INPUT_KEYBOARD; input[1].ki.wVk = key; input[1].ki.dwFlags = KEYEVENTF_KEYUP;
+        return SendInput(2, input, sizeof(INPUT)) == 2;
+    }
+    static bool sendAltTab() {
+        INPUT input[4]{};
+        input[0].type = INPUT_KEYBOARD; input[0].ki.wVk = VK_MENU;
+        input[1].type = INPUT_KEYBOARD; input[1].ki.wVk = VK_TAB;
+        input[2].type = INPUT_KEYBOARD; input[2].ki.wVk = VK_TAB; input[2].ki.dwFlags = KEYEVENTF_KEYUP;
+        input[3].type = INPUT_KEYBOARD; input[3].ki.wVk = VK_MENU; input[3].ki.dwFlags = KEYEVENTF_KEYUP;
+        return SendInput(4, input, sizeof(INPUT)) == 4;
+    }
     void surfaceLoop() {
         // Match the Electron parent context before creating a cross-process child.
         auto dpi = GetWindowDpiAwarenessContext(parent);
         SetThreadDpiAwarenessContext(dpi);
-        WNDCLASSW wc{}; wc.style = CS_OWNDC; wc.lpfnWndProc = DefWindowProcW;
+        surfaceThreadAwareness = awarenessName(GetThreadDpiAwarenessContext());
+        WNDCLASSW wc{}; wc.style = CS_OWNDC; wc.lpfnWndProc = surfaceWindowProc;
         wc.hInstance = GetModuleHandleW(nullptr); wc.lpszClassName = L"ETEPhase2Surface";
         RegisterClassW(&wc);
         child = CreateWindowExW(0, wc.lpszClassName, L"", WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS,
-            0, 80, 640, 360, parent, nullptr, wc.hInstance, nullptr);
+            0, 80, 640, 360, parent, nullptr, wc.hInstance, this);
         if (!child) { phase = -1; return; }
         phase = 1;
         while (!initialized && !closing) Sleep(1);
@@ -184,6 +263,16 @@ public:
     std::string execute(const std::string& line) {
         auto args = split(line); const auto& op = args.at(0); int rc = 0;
         if (op == "get") return "{\"value\":" + get(args.at(1)) + '}';
+#ifndef ADDON
+        if (op == "set-window") {
+            HWND value = reinterpret_cast<HWND>(static_cast<uintptr_t>(std::stoull(args.at(2))));
+            if (!IsWindow(value)) throw std::runtime_error("invalid-window");
+            if (args.at(1) == "overlay") overlay = value;
+            else if (args.at(1) == "away") away = value;
+            else throw std::runtime_error("unknown-window-role");
+            return "{\"ok\":true}";
+        }
+#endif
         if (op == "capture") {
             RECT r{}; GetWindowRect(parent,&r);int w=r.right-r.left,h=r.bottom-r.top;
             HDC dc=GetDC(parent), memory=CreateCompatibleDC(dc);void* pixels=nullptr;
@@ -197,12 +286,120 @@ public:
             SelectObject(memory,old);DeleteObject(bitmap);DeleteDC(memory);ReleaseDC(parent,dc);
             return "{\"width\":"+std::to_string(w)+",\"height\":"+std::to_string(h)+",\"ok\":"+(ok?"true":"false")+'}';
         }
+#ifndef ADDON
+        if (op == "capture-screen") {
+            RECT r{}; GetWindowRect(parent,&r);int w=r.right-r.left,h=r.bottom-r.top;
+            HDC dc=GetDC(nullptr), memory=CreateCompatibleDC(dc);void* pixels=nullptr;
+            BITMAPINFO bi{};bi.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);
+            bi.bmiHeader.biWidth=w;bi.bmiHeader.biHeight=-h;bi.bmiHeader.biPlanes=1;bi.bmiHeader.biBitCount=32;
+            HBITMAP bitmap=CreateDIBSection(dc,&bi,DIB_RGB_COLORS,&pixels,nullptr,0);
+            auto old=SelectObject(memory,bitmap);
+            BOOL ok=BitBlt(memory,0,0,w,h,dc,r.left,r.top,SRCCOPY|CAPTUREBLT);
+            auto bytes=static_cast<unsigned char*>(pixels);
+            for(size_t i=3;i<(size_t)w*h*4;i+=4)bytes[i]=255;
+            std::ofstream file(args.at(1),std::ios::binary);file.write((char*)pixels,(size_t)w*h*4);file.close();
+            SelectObject(memory,old);DeleteObject(bitmap);DeleteDC(memory);ReleaseDC(nullptr,dc);
+            return "{\"width\":"+std::to_string(w)+",\"height\":"+std::to_string(h)+",\"ok\":"+(ok?"true":"false")+'}';
+        }
+#endif
         if (op == "surface") {
             RECT r{}; GetClientRect(child, &r);
             return "{\"width\":" + std::to_string(r.right) + ",\"height\":" + std::to_string(r.bottom) +
                 ",\"frames\":" + std::to_string(frames.load()) + ",\"child\":" + (GetParent(child)==parent ? "true" : "false") +
                 ",\"dpi\":" + std::to_string(GetDpiForWindow(parent)) + '}';
         }
+#ifndef ADDON
+        if (op == "topology") {
+            DWORD parentPid = 0; GetWindowThreadProcessId(parent, &parentPid);
+            DWORD helperPid = GetCurrentProcessId();
+            HMONITOR monitor = MonitorFromWindow(parent, MONITOR_DEFAULTTONEAREST);
+            MONITORINFO info{}; info.cbSize = sizeof(info); GetMonitorInfoW(monitor, &info);
+            return "{\"parentRect\":" + rectJson(parent) + ",\"childRect\":" + rectJson(child) +
+                ",\"overlayRect\":" + rectJson(overlay) +
+                ",\"parentDpi\":" + std::to_string(GetDpiForWindow(parent)) +
+                ",\"childDpi\":" + std::to_string(GetDpiForWindow(child)) +
+                ",\"overlayDpi\":" + std::to_string(overlay ? GetDpiForWindow(overlay) : 0) +
+                ",\"parentAwareness\":" + quote(awarenessName(GetWindowDpiAwarenessContext(parent))) +
+                ",\"childAwareness\":" + quote(awarenessName(GetWindowDpiAwarenessContext(child))) +
+                ",\"overlayAwareness\":" + quote(awarenessName(overlay ? GetWindowDpiAwarenessContext(overlay) : nullptr)) +
+                ",\"surfaceThreadAwareness\":" + quote(surfaceThreadAwareness) +
+                ",\"helperCommandThreadAwareness\":" + quote(awarenessName(GetThreadDpiAwarenessContext())) +
+                ",\"parentProcessAwareness\":" + quote(processAwareness(parentPid)) +
+                ",\"helperProcessAwareness\":" + quote(processAwareness(helperPid)) +
+                ",\"sameMonitor\":" + (overlay && MonitorFromWindow(overlay,MONITOR_DEFAULTTONEAREST)==monitor ? "true" : "false") +
+                ",\"monitorPrimary\":" + ((info.dwFlags & MONITORINFOF_PRIMARY) ? "true" : "false") +
+                ",\"monitorRect\":{\"left\":" + std::to_string(info.rcMonitor.left) +
+                ",\"top\":" + std::to_string(info.rcMonitor.top) +
+                ",\"right\":" + std::to_string(info.rcMonitor.right) +
+                ",\"bottom\":" + std::to_string(info.rcMonitor.bottom) + "}" +
+                ",\"wmDpiChanged\":" + std::to_string(dpiChanges.load()) + '}';
+        }
+        if (op == "focus") {
+            HWND foreground = GetForegroundWindow();
+            DWORD thread = GetWindowThreadProcessId(foreground, nullptr);
+            GUITHREADINFO info{}; info.cbSize = sizeof(info);
+            HWND focused = GetGUIThreadInfo(thread, &info) ? info.hwndFocus : nullptr;
+            return "{\"foregroundMain\":" + std::string(foreground==parent?"true":"false") +
+                ",\"foregroundOverlay\":" + (foreground==overlay?"true":"false") +
+                ",\"foregroundAway\":" + (foreground==away?"true":"false") +
+                ",\"focusInMain\":" + (isSameOrChild(parent,focused)?"true":"false") +
+                ",\"focusInVideo\":" + (isSameOrChild(child,focused)?"true":"false") +
+                ",\"focusInOverlay\":" + (isSameOrChild(overlay,focused)?"true":"false") + '}';
+        }
+        if (op == "activate") {
+            HWND target = args.at(1) == "overlay" ? overlay : parent;
+            if (!target || !IsWindow(target)) throw std::runtime_error("activate-window");
+            ShowWindow(target, SW_SHOW);
+            SetWindowPos(target, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+            SetWindowPos(target, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+            sendKey(VK_MENU);
+            BringWindowToTop(target);
+            BOOL foreground = SetForegroundWindow(target);
+            return "{\"ok\":" + std::string(foreground?"true":"false") +
+                ",\"foreground\":" + (GetForegroundWindow()==target?"true":"false") + '}';
+        }
+        if (op == "point") {
+            POINT point{std::stoi(args.at(1)),std::stoi(args.at(2))};
+            HWND target=WindowFromPoint(point);
+            return "{\"inMain\":" + std::string(isSameOrChild(parent,target)?"true":"false") +
+                ",\"inVideo\":" + (isSameOrChild(child,target)?"true":"false") +
+                ",\"inOverlay\":" + (isSameOrChild(overlay,target)?"true":"false") + '}';
+        }
+        if (op == "mouse-move" || op == "mouse-click") {
+            HWND target = args.at(1) == "overlay" ? overlay : parent;
+            POINT point{};
+            if (!setCursorFromClient(target, std::stoi(args.at(2)), std::stoi(args.at(3)), point))
+                throw std::runtime_error("cursor-position");
+            HWND hit = WindowFromPoint(point);
+            if (op == "mouse-click" && !sendMouseClick()) throw std::runtime_error("mouse-input");
+            return "{\"ok\":true,\"screenX\":" + std::to_string(point.x) +
+                ",\"screenY\":" + std::to_string(point.y) +
+                ",\"targetInMain\":" + (isSameOrChild(parent,hit)?"true":"false") +
+                ",\"targetInVideo\":" + (isSameOrChild(child,hit)?"true":"false") +
+                ",\"targetInOverlay\":" + (isSameOrChild(overlay,hit)?"true":"false") + '}';
+        }
+        if (op == "key") {
+            if (!sendKey(static_cast<WORD>(std::stoul(args.at(1))))) throw std::runtime_error("key-input");
+            return "{\"ok\":true}";
+        }
+        if (op == "alt-tab") {
+            if (!sendAltTab()) throw std::runtime_error("alt-tab-input");
+            return "{\"ok\":true}";
+        }
+        if (op == "cpu") {
+            FILETIME created{}, exited{}, kernel{}, user{};
+            if (!GetProcessTimes(GetCurrentProcess(),&created,&exited,&kernel,&user)) throw std::runtime_error("process-times");
+            ULARGE_INTEGER k{},u{}; k.LowPart=kernel.dwLowDateTime;k.HighPart=kernel.dwHighDateTime;
+            u.LowPart=user.dwLowDateTime;u.HighPart=user.dwHighDateTime;
+            return "{\"kernelMs\":" + std::to_string(k.QuadPart/10000.0) +
+                ",\"userMs\":" + std::to_string(u.QuadPart/10000.0) + '}';
+        }
+        if (op == "input-counters") {
+            return "{\"moves\":" + std::to_string(mouseMoves.load()) +
+                ",\"downs\":" + std::to_string(mouseDowns.load()) +
+                ",\"ups\":" + std::to_string(mouseUps.load()) + '}';
+        }
+#endif
         if (op == "pause") rc = p_mpv_set_property_string(core, "pause", args.at(1).c_str());
         else {
             std::vector<const char*> cmd;

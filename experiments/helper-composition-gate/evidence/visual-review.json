@@ -1,0 +1,27 @@
+{
+  "reviewedDate": "2026-09-16",
+  "classification": "VISUAL PASS",
+  "reviewMethod": "Each accepted PNG was opened at original stored resolution after the final natural-exit run.",
+  "captureMethod": "Physical desktop BitBlt cropped to the parent window rectangle; no DOM or telemetry substitute.",
+  "generatedMedia": "Runtime-generated H.264 640x360 SDR BT.709 test source",
+  "states": {
+    "playing-overlay-visible.png": "PASS: translucent HTML OSD overlaps an actual native moving-video frame",
+    "overlay-hidden.png": "PASS: native moving-video frame remains and HTML OSD pixels are absent",
+    "overlay-visible-again.png": "PASS: HTML OSD returns above a later native frame",
+    "resized.png": "PASS: video and HTML OSD remain aligned after resize",
+    "maximized.png": "PASS: video and HTML OSD remain aligned after maximize",
+    "restore-after-minimize.png": "PASS: video and HTML OSD recover after minimize/restore",
+    "fullscreen.png": "PASS: primary-display fullscreen contains native video plus HTML OSD",
+    "fullscreen-exit.png": "PASS: video and HTML OSD recover after HTML Escape exits fullscreen",
+    "monitor-0.png": "PASS: primary-monitor native video plus HTML OSD",
+    "monitor-1.png": "PASS: second-monitor native video plus HTML OSD at the available same DPI",
+    "secondary-fullscreen.png": "PASS: fullscreen uses the second monitor geometry",
+    "after-crash-reload.png": "PASS: a new helper generation reloads video below the surviving HTML OSD"
+  },
+  "captureLimitations": [
+    "Discarded early desktop captures showed an occluding foreground application.",
+    "PrintWindow(parent) returned black for the hidden-OSD state and was not used as accepted visual evidence."
+  ],
+  "mixedDpi": "BLOCKED: both real displays exposed scaleFactor 1.5 and 144 DPI.",
+  "matchingResidualProcessesAfterRun": 0
+}

@@ -1,0 +1,2083 @@
+{
+  "gate": "helper-composition-input-mixed-dpi",
+  "versions": {
+    "node": "16.13.2",
+    "v8": "10.0.139.18-electron.0",
+    "uv": "1.42.0",
+    "zlib": "1.2.11",
+    "brotli": "1.0.9",
+    "ares": "1.18.1",
+    "modules": "103",
+    "nghttp2": "1.45.1",
+    "napi": "8",
+    "llhttp": "6.0.4",
+    "openssl": "1.1.1",
+    "icu": "70.1",
+    "unicode": "14.0",
+    "electron": "18.3.15",
+    "chrome": "100.0.4896.160"
+  },
+  "checks": {
+    "SECURITY_BASELINE": {
+      "status": "PASS",
+      "detail": true
+    },
+    "INITIALIZE": {
+      "status": "PASS",
+      "detail": true
+    },
+    "LOAD_AND_CORE_PLAYING": {
+      "status": "PASS",
+      "detail": true
+    },
+    "NATIVE_VIDEO_PATH": {
+      "status": "PASS",
+      "detail": true
+    },
+    "OVERLAY_SHOW_HIDE_CAPTURED": {
+      "status": "PASS",
+      "detail": true
+    },
+    "OVERLAY_MOUSE_INPUT": {
+      "status": "PASS",
+      "detail": true
+    },
+    "VIDEO_AREA_CLICK_THROUGH": {
+      "status": "PASS",
+      "detail": {
+        "targetBeforeClick": {
+          "inMain": true,
+          "inVideo": true,
+          "inOverlay": false
+        },
+        "clickInjection": {
+          "ok": true,
+          "screenX": 330,
+          "screenY": 427,
+          "targetInMain": true,
+          "targetInVideo": true,
+          "targetInOverlay": false
+        }
+      }
+    },
+    "FOCUS_RECOVERY_AFTER_VIDEO_CLICK": {
+      "status": "PASS",
+      "detail": true
+    },
+    "KEYBOARD_SPACE_LEFT_RIGHT_ENTER": {
+      "status": "PASS",
+      "detail": true
+    },
+    "RESIZE": {
+      "status": "PASS",
+      "detail": true
+    },
+    "MAXIMIZE": {
+      "status": "PASS",
+      "detail": true
+    },
+    "RESTORE_AFTER_MAXIMIZE": {
+      "status": "PASS",
+      "detail": true
+    },
+    "MINIMIZE_RESTORE": {
+      "status": "PASS",
+      "detail": true
+    },
+    "FULLSCREEN_ENTER_EXIT_BY_HTML_ESCAPE": {
+      "status": "PASS",
+      "detail": true
+    },
+    "ALT_TAB_AWAY_BACK": {
+      "status": "PASS",
+      "detail": true
+    },
+    "MONITOR_TRANSITION": {
+      "status": "PASS",
+      "detail": true
+    },
+    "INPUT_ALIGNMENT_AFTER_MONITOR_TRANSITION": {
+      "status": "PASS",
+      "detail": true
+    },
+    "FULLSCREEN_USES_CURRENT_MONITOR": {
+      "status": "PASS",
+      "detail": true
+    },
+    "REAL_MIXED_DPI": {
+      "status": "BLOCKED",
+      "detail": {
+        "reason": "No two currently enumerated displays have different real scale factors.",
+        "displays": [
+          {
+            "id": "2779098405",
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 2560,
+              "height": 1440
+            },
+            "workArea": {
+              "x": 0,
+              "y": 0,
+              "width": 2560,
+              "height": 1392
+            },
+            "scaleFactor": 1.5,
+            "rotation": 0
+          },
+          {
+            "id": "2528732444",
+            "bounds": {
+              "x": -2560,
+              "y": 0,
+              "width": 2560,
+              "height": 1440
+            },
+            "workArea": {
+              "x": -2560,
+              "y": 0,
+              "width": 2560,
+              "height": 1440
+            },
+            "scaleFactor": 1.5,
+            "rotation": 0
+          }
+        ]
+      }
+    },
+    "PERFORMANCE_OBSERVATION": {
+      "status": "PASS",
+      "detail": true
+    },
+    "HELPER_ACCESS_VIOLATION_ISOLATED": {
+      "status": "PASS",
+      "detail": true
+    },
+    "OVERLAY_SURVIVED_HELPER_CRASH": {
+      "status": "PASS",
+      "detail": true
+    },
+    "HELPER_RECREATE_AND_VIDEO_RELOAD": {
+      "status": "PASS",
+      "detail": true
+    },
+    "FINAL_DESTROY": {
+      "status": "PASS",
+      "detail": true
+    }
+  },
+  "observations": {
+    "nativeEventCount": 635,
+    "lastOverlaySync": {
+      "reason": "capture:after-crash-reload",
+      "main": {
+        "x": -2520,
+        "y": 40,
+        "width": 1000,
+        "height": 680
+      },
+      "overlay": {
+        "x": -2520,
+        "y": 40,
+        "width": 1000,
+        "height": 680
+      }
+    },
+    "initializeMs": [
+      174.07,
+      61.73
+    ],
+    "loadToAdvancingMs": 441.25,
+    "mpv-version": "mpv v0.41.0-920-gdd5d17d32",
+    "current-vo": "gpu-next",
+    "gpu-api": "d3d11",
+    "gpu-context": "d3d11",
+    "hwdec": "d3d11va",
+    "hwdec-current": "d3d11va",
+    "video-codec": "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10",
+    "video-params": "{\"pixelformat\":\"d3d11\",\"hw-pixelformat\":\"nv12\",\"average-bpp\":12,\"w\":640,\"h\":360,\"dw\":640,\"dh\":360,\"crop-x\":0,\"crop-y\":0,\"crop-w\":640,\"crop-h\":360,\"aspect\":1.777778,\"aspect-name\":\"16:9\",\"par\":1.000000,\"sar\":1.777778,\"sar-name\":\"16:9\",\"colormatrix\":\"bt.709\",\"colorlevels\":\"limited\",\"primaries\":\"bt.709\",\"gamma\":\"bt.1886\",\"sig-peak\":0.000000,\"light\":\"display\",\"chroma-location\":\"mpeg2/4/h264\",\"stereo-in\":\"mono\",\"rotate\":0,\"alpha\":\"none\"}",
+    "duration": "30.000000",
+    "d3d11-output-mode": "auto",
+    "lastOverlayInteractive": false,
+    "buttonRoundTripMs": 46.26,
+    "sliderRoundTripMs": 21.79,
+    "clickThrough": {
+      "targetBeforeClick": {
+        "inMain": true,
+        "inVideo": true,
+        "inOverlay": false
+      },
+      "clickInjection": {
+        "ok": true,
+        "screenX": 330,
+        "screenY": 427,
+        "targetInMain": true,
+        "targetInVideo": true,
+        "targetInOverlay": false
+      },
+      "focusAfterVideoClick": {
+        "foregroundMain": true,
+        "foregroundOverlay": false,
+        "foregroundAway": false,
+        "focusInMain": true,
+        "focusInVideo": false,
+        "focusInOverlay": false
+      }
+    },
+    "altTab": {
+      "away": {
+        "foregroundMain": false,
+        "foregroundOverlay": false,
+        "foregroundAway": true,
+        "focusInMain": false,
+        "focusInVideo": false,
+        "focusInOverlay": false
+      },
+      "recovered": {
+        "foregroundMain": false,
+        "foregroundOverlay": true,
+        "foregroundAway": false,
+        "focusInMain": false,
+        "focusInVideo": false,
+        "focusInOverlay": true
+      }
+    },
+    "performance": [
+      {
+        "label": "overlay-visible",
+        "overlayVisible": true,
+        "intervalMs": 1413.7,
+        "helperCpuMs": 31.25,
+        "helperApproxOneCorePercent": 2.21,
+        "electronMainCpuMs": 0,
+        "electronMainApproxOneCorePercent": 0,
+        "appMetrics": [
+          {
+            "type": "Browser",
+            "pid": 17208,
+            "cpuPercent": 0
+          },
+          {
+            "type": "GPU",
+            "pid": 45432,
+            "cpuPercent": 0
+          },
+          {
+            "type": "Utility",
+            "pid": 56352,
+            "cpuPercent": 0
+          },
+          {
+            "type": "Tab",
+            "pid": 16760,
+            "cpuPercent": 0
+          },
+          {
+            "type": "Tab",
+            "pid": 26928,
+            "cpuPercent": 0
+          }
+        ]
+      },
+      {
+        "label": "overlay-hidden",
+        "overlayVisible": false,
+        "intervalMs": 1406,
+        "helperCpuMs": 15.63,
+        "helperApproxOneCorePercent": 1.11,
+        "electronMainCpuMs": 0,
+        "electronMainApproxOneCorePercent": 0,
+        "appMetrics": [
+          {
+            "type": "Browser",
+            "pid": 17208,
+            "cpuPercent": 0
+          },
+          {
+            "type": "GPU",
+            "pid": 45432,
+            "cpuPercent": 0
+          },
+          {
+            "type": "Utility",
+            "pid": 56352,
+            "cpuPercent": 0
+          },
+          {
+            "type": "Tab",
+            "pid": 16760,
+            "cpuPercent": 0
+          },
+          {
+            "type": "Tab",
+            "pid": 26928,
+            "cpuPercent": 0
+          }
+        ]
+      }
+    ],
+    "crash": {
+      "helperExit": {
+        "code": 3221225477,
+        "signal": null
+      },
+      "mainAlive": true,
+      "rendererAlive": true,
+      "overlayVisible": true
+    },
+    "windowTopology": "frameless main BrowserWindow + helper-owned WS_CHILD video + parent-owned transparent frameless overlay BrowserWindow",
+    "captureClassification": "DESKTOP COMPOSITION CAPTURE; screenshots require separate visual review before VISUAL PASS",
+    "willQuit": true
+  },
+  "captures": [
+    {
+      "label": "playing-overlay-visible",
+      "method": "desktop BitBlt of the parent physical window rectangle",
+      "foregroundAssist": false,
+      "overlayExpected": true,
+      "sourceWidth": 1500,
+      "sourceHeight": 1020,
+      "storedWidth": 1500,
+      "storedHeight": 1020,
+      "sha256": "b3e1578b8f8a980fbf89532222a5151cc21b3bf2351fee7bec8b5a227f440602",
+      "timePosBefore": 0.833333,
+      "timePosAfter": 1.233333
+    },
+    {
+      "label": "overlay-hidden",
+      "method": "desktop BitBlt of the parent physical window rectangle",
+      "foregroundAssist": false,
+      "overlayExpected": false,
+      "sourceWidth": 1500,
+      "sourceHeight": 1020,
+      "storedWidth": 1500,
+      "storedHeight": 1020,
+      "sha256": "522ec43f3e1fde808bf407b83b840feb49d4ca39c047a04db8f262db04f25824",
+      "timePosBefore": 2.066667,
+      "timePosAfter": 2.433333
+    },
+    {
+      "label": "overlay-visible-again",
+      "method": "desktop BitBlt of the parent physical window rectangle",
+      "foregroundAssist": false,
+      "overlayExpected": true,
+      "sourceWidth": 1500,
+      "sourceHeight": 1020,
+      "storedWidth": 1500,
+      "storedHeight": 1020,
+      "sha256": "b9ad7f09effa087068f05e1126c38d511ffac5fdb6d476cd42ad92db540fcc5a",
+      "timePosBefore": 3.266667,
+      "timePosAfter": 3.666667
+    },
+    {
+      "label": "resized",
+      "method": "desktop BitBlt of the parent physical window rectangle",
+      "foregroundAssist": false,
+      "overlayExpected": true,
+      "sourceWidth": 1680,
+      "sourceHeight": 1140,
+      "storedWidth": 1600,
+      "storedHeight": 1086,
+      "sha256": "34151482d0b43a3c5afafe6d5a88ad7fa0ea3b79411c7caf28557a8eec9e78f4",
+      "timePosBefore": 5.5,
+      "timePosAfter": 5.966667
+    },
+    {
+      "label": "maximized",
+      "method": "desktop BitBlt of the parent physical window rectangle",
+      "foregroundAssist": false,
+      "overlayExpected": true,
+      "sourceWidth": 3862,
+      "sourceHeight": 2110,
+      "storedWidth": 1600,
+      "storedHeight": 874,
+      "sha256": "c3a480eeb28d3715dbd08db99a6e995a5c43f276261ec7808c3307d25ca11356",
+      "timePosBefore": 7.066667,
+      "timePosAfter": 7.6
+    },
+    {
+      "label": "restore-after-minimize",
+      "method": "desktop BitBlt of the parent physical window rectangle",
+      "foregroundAssist": false,
+      "overlayExpected": true,
+      "sourceWidth": 1680,
+      "sourceHeight": 1140,
+      "storedWidth": 1600,
+      "storedHeight": 1086,
+      "sha256": "30879e6de324334da40cedd9e7b7bc6b0fec723e83f18bbfda07133ed3d4cdff",
+      "timePosBefore": 9.1,
+      "timePosAfter": 9.566667
+    },
+    {
+      "label": "fullscreen",
+      "method": "desktop BitBlt of the parent physical window rectangle",
+      "foregroundAssist": false,
+      "overlayExpected": true,
+      "sourceWidth": 3840,
+      "sourceHeight": 2159,
+      "storedWidth": 1600,
+      "storedHeight": 900,
+      "sha256": "071cbd792915ff1f35b9982f26b735a473b4930c810bd171baf7760fbdb5c64c",
+      "timePosBefore": 10.733333,
+      "timePosAfter": 11.3
+    },
+    {
+      "label": "fullscreen-exit",
+      "method": "desktop BitBlt of the parent physical window rectangle",
+      "foregroundAssist": false,
+      "overlayExpected": true,
+      "sourceWidth": 1680,
+      "sourceHeight": 1140,
+      "storedWidth": 1600,
+      "storedHeight": 1086,
+      "sha256": "efd2229e43676719968a0fbfe3e8b0e1a9aeb6b82484776cbc3856d3c73e41f8",
+      "timePosBefore": 12.4,
+      "timePosAfter": 12.866667
+    },
+    {
+      "label": "monitor-0",
+      "method": "desktop BitBlt of the parent physical window rectangle",
+      "foregroundAssist": false,
+      "overlayExpected": true,
+      "sourceWidth": 1500,
+      "sourceHeight": 1020,
+      "storedWidth": 1500,
+      "storedHeight": 1020,
+      "sha256": "3d6677797d7b6d7ee2ee30e5c557de878afe417becf731449899cefe2558fe5c",
+      "timePosBefore": 14.533333,
+      "timePosAfter": 14.9
+    },
+    {
+      "label": "monitor-1",
+      "method": "desktop BitBlt of the parent physical window rectangle",
+      "foregroundAssist": false,
+      "overlayExpected": true,
+      "sourceWidth": 1500,
+      "sourceHeight": 1020,
+      "storedWidth": 1500,
+      "storedHeight": 1020,
+      "sha256": "24ac62f0ca43560d139c23d200a7116ddafd5e140ed6ee91e7b1f5eca7827a0a",
+      "timePosBefore": 16.133333,
+      "timePosAfter": 16.533333
+    },
+    {
+      "label": "secondary-fullscreen",
+      "method": "desktop BitBlt of the parent physical window rectangle",
+      "foregroundAssist": false,
+      "overlayExpected": true,
+      "sourceWidth": 3840,
+      "sourceHeight": 2159,
+      "storedWidth": 1600,
+      "storedHeight": 900,
+      "sha256": "0ac81b3291163179a2e12024f6e3b57682de1146e7f13b6e0d5d6896202e1f6f",
+      "timePosBefore": 17.966667,
+      "timePosAfter": 18.5
+    },
+    {
+      "label": "after-crash-reload",
+      "method": "desktop BitBlt of the parent physical window rectangle",
+      "foregroundAssist": false,
+      "overlayExpected": true,
+      "sourceWidth": 1500,
+      "sourceHeight": 1020,
+      "storedWidth": 1500,
+      "storedHeight": 1020,
+      "sha256": "193a26ef84aea2f7e23925e5cecab9b3614128ceef002066ef11ab062fa2e2e6",
+      "timePosBefore": 0.8,
+      "timePosAfter": 1.166667
+    }
+  ],
+  "topologies": [
+    {
+      "label": "normal",
+      "mainDipBounds": {
+        "x": 40,
+        "y": 40,
+        "width": 1000,
+        "height": 680
+      },
+      "overlayDipBounds": {
+        "x": 40,
+        "y": 40,
+        "width": 1000,
+        "height": 680
+      },
+      "electronDisplay": {
+        "id": "2779098405",
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 2560,
+          "height": 1440
+        },
+        "workArea": {
+          "x": 0,
+          "y": 0,
+          "width": 2560,
+          "height": 1392
+        },
+        "scaleFactor": 1.5,
+        "rotation": 0
+      },
+      "native": {
+        "parentRect": {
+          "left": 60,
+          "top": 60,
+          "right": 1560,
+          "bottom": 1080,
+          "width": 1500,
+          "height": 1020
+        },
+        "childRect": {
+          "left": 60,
+          "top": 180,
+          "right": 1560,
+          "bottom": 1080,
+          "width": 1500,
+          "height": 900
+        },
+        "overlayRect": {
+          "left": 60,
+          "top": 60,
+          "right": 1560,
+          "bottom": 1080,
+          "width": 1500,
+          "height": 1020
+        },
+        "parentDpi": 144,
+        "childDpi": 144,
+        "overlayDpi": 144,
+        "parentAwareness": "per-monitor",
+        "childAwareness": "per-monitor",
+        "overlayAwareness": "per-monitor",
+        "surfaceThreadAwareness": "per-monitor",
+        "helperCommandThreadAwareness": "per-monitor",
+        "parentProcessAwareness": "per-monitor",
+        "helperProcessAwareness": "per-monitor",
+        "sameMonitor": true,
+        "monitorPrimary": true,
+        "monitorRect": {
+          "left": 0,
+          "top": 0,
+          "right": 3840,
+          "bottom": 2160
+        },
+        "wmDpiChanged": 0
+      },
+      "overlayPhysicalMatchesParent": true,
+      "videoInsideParent": true
+    },
+    {
+      "label": "resized",
+      "mainDipBounds": {
+        "x": 40,
+        "y": 40,
+        "width": 1120,
+        "height": 760
+      },
+      "overlayDipBounds": {
+        "x": 40,
+        "y": 40,
+        "width": 1120,
+        "height": 760
+      },
+      "electronDisplay": {
+        "id": "2779098405",
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 2560,
+          "height": 1440
+        },
+        "workArea": {
+          "x": 0,
+          "y": 0,
+          "width": 2560,
+          "height": 1392
+        },
+        "scaleFactor": 1.5,
+        "rotation": 0
+      },
+      "native": {
+        "parentRect": {
+          "left": 60,
+          "top": 60,
+          "right": 1740,
+          "bottom": 1200,
+          "width": 1680,
+          "height": 1140
+        },
+        "childRect": {
+          "left": 60,
+          "top": 180,
+          "right": 1740,
+          "bottom": 1200,
+          "width": 1680,
+          "height": 1020
+        },
+        "overlayRect": {
+          "left": 60,
+          "top": 60,
+          "right": 1740,
+          "bottom": 1200,
+          "width": 1680,
+          "height": 1140
+        },
+        "parentDpi": 144,
+        "childDpi": 144,
+        "overlayDpi": 144,
+        "parentAwareness": "per-monitor",
+        "childAwareness": "per-monitor",
+        "overlayAwareness": "per-monitor",
+        "surfaceThreadAwareness": "per-monitor",
+        "helperCommandThreadAwareness": "per-monitor",
+        "parentProcessAwareness": "per-monitor",
+        "helperProcessAwareness": "per-monitor",
+        "sameMonitor": true,
+        "monitorPrimary": true,
+        "monitorRect": {
+          "left": 0,
+          "top": 0,
+          "right": 3840,
+          "bottom": 2160
+        },
+        "wmDpiChanged": 0
+      },
+      "overlayPhysicalMatchesParent": true,
+      "videoInsideParent": true
+    },
+    {
+      "label": "maximized",
+      "mainDipBounds": {
+        "x": -8,
+        "y": -8,
+        "width": 2576,
+        "height": 1408
+      },
+      "overlayDipBounds": {
+        "x": -8,
+        "y": -8,
+        "width": 2576,
+        "height": 1408
+      },
+      "electronDisplay": {
+        "id": "2779098405",
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 2560,
+          "height": 1440
+        },
+        "workArea": {
+          "x": 0,
+          "y": 0,
+          "width": 2560,
+          "height": 1392
+        },
+        "scaleFactor": 1.5,
+        "rotation": 0
+      },
+      "native": {
+        "parentRect": {
+          "left": -11,
+          "top": -11,
+          "right": 3851,
+          "bottom": 2099,
+          "width": 3862,
+          "height": 2110
+        },
+        "childRect": {
+          "left": 0,
+          "top": 120,
+          "right": 3840,
+          "bottom": 2088,
+          "width": 3840,
+          "height": 1968
+        },
+        "overlayRect": {
+          "left": -12,
+          "top": -12,
+          "right": 3852,
+          "bottom": 2100,
+          "width": 3864,
+          "height": 2112
+        },
+        "parentDpi": 144,
+        "childDpi": 144,
+        "overlayDpi": 144,
+        "parentAwareness": "per-monitor",
+        "childAwareness": "per-monitor",
+        "overlayAwareness": "per-monitor",
+        "surfaceThreadAwareness": "per-monitor",
+        "helperCommandThreadAwareness": "per-monitor",
+        "parentProcessAwareness": "per-monitor",
+        "helperProcessAwareness": "per-monitor",
+        "sameMonitor": true,
+        "monitorPrimary": true,
+        "monitorRect": {
+          "left": 0,
+          "top": 0,
+          "right": 3840,
+          "bottom": 2160
+        },
+        "wmDpiChanged": 0
+      },
+      "overlayPhysicalMatchesParent": true,
+      "videoInsideParent": true
+    },
+    {
+      "label": "restored-after-maximize",
+      "mainDipBounds": {
+        "x": 40,
+        "y": 40,
+        "width": 1120,
+        "height": 760
+      },
+      "overlayDipBounds": {
+        "x": 40,
+        "y": 40,
+        "width": 1120,
+        "height": 760
+      },
+      "electronDisplay": {
+        "id": "2779098405",
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 2560,
+          "height": 1440
+        },
+        "workArea": {
+          "x": 0,
+          "y": 0,
+          "width": 2560,
+          "height": 1392
+        },
+        "scaleFactor": 1.5,
+        "rotation": 0
+      },
+      "native": {
+        "parentRect": {
+          "left": 60,
+          "top": 60,
+          "right": 1740,
+          "bottom": 1200,
+          "width": 1680,
+          "height": 1140
+        },
+        "childRect": {
+          "left": 60,
+          "top": 180,
+          "right": 1740,
+          "bottom": 1200,
+          "width": 1680,
+          "height": 1020
+        },
+        "overlayRect": {
+          "left": 60,
+          "top": 60,
+          "right": 1740,
+          "bottom": 1200,
+          "width": 1680,
+          "height": 1140
+        },
+        "parentDpi": 144,
+        "childDpi": 144,
+        "overlayDpi": 144,
+        "parentAwareness": "per-monitor",
+        "childAwareness": "per-monitor",
+        "overlayAwareness": "per-monitor",
+        "surfaceThreadAwareness": "per-monitor",
+        "helperCommandThreadAwareness": "per-monitor",
+        "parentProcessAwareness": "per-monitor",
+        "helperProcessAwareness": "per-monitor",
+        "sameMonitor": true,
+        "monitorPrimary": true,
+        "monitorRect": {
+          "left": 0,
+          "top": 0,
+          "right": 3840,
+          "bottom": 2160
+        },
+        "wmDpiChanged": 0
+      },
+      "overlayPhysicalMatchesParent": true,
+      "videoInsideParent": true
+    },
+    {
+      "label": "restored-after-minimize",
+      "mainDipBounds": {
+        "x": 40,
+        "y": 40,
+        "width": 1120,
+        "height": 760
+      },
+      "overlayDipBounds": {
+        "x": 40,
+        "y": 40,
+        "width": 1120,
+        "height": 760
+      },
+      "electronDisplay": {
+        "id": "2779098405",
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 2560,
+          "height": 1440
+        },
+        "workArea": {
+          "x": 0,
+          "y": 0,
+          "width": 2560,
+          "height": 1392
+        },
+        "scaleFactor": 1.5,
+        "rotation": 0
+      },
+      "native": {
+        "parentRect": {
+          "left": 60,
+          "top": 60,
+          "right": 1740,
+          "bottom": 1200,
+          "width": 1680,
+          "height": 1140
+        },
+        "childRect": {
+          "left": 60,
+          "top": 180,
+          "right": 1740,
+          "bottom": 1200,
+          "width": 1680,
+          "height": 1020
+        },
+        "overlayRect": {
+          "left": 60,
+          "top": 60,
+          "right": 1740,
+          "bottom": 1200,
+          "width": 1680,
+          "height": 1140
+        },
+        "parentDpi": 144,
+        "childDpi": 144,
+        "overlayDpi": 144,
+        "parentAwareness": "per-monitor",
+        "childAwareness": "per-monitor",
+        "overlayAwareness": "per-monitor",
+        "surfaceThreadAwareness": "per-monitor",
+        "helperCommandThreadAwareness": "per-monitor",
+        "parentProcessAwareness": "per-monitor",
+        "helperProcessAwareness": "per-monitor",
+        "sameMonitor": true,
+        "monitorPrimary": true,
+        "monitorRect": {
+          "left": 0,
+          "top": 0,
+          "right": 3840,
+          "bottom": 2160
+        },
+        "wmDpiChanged": 0
+      },
+      "overlayPhysicalMatchesParent": true,
+      "videoInsideParent": true
+    },
+    {
+      "label": "fullscreen",
+      "mainDipBounds": {
+        "x": 0,
+        "y": 0,
+        "width": 2560,
+        "height": 1440
+      },
+      "overlayDipBounds": {
+        "x": 0,
+        "y": 0,
+        "width": 2560,
+        "height": 1440
+      },
+      "electronDisplay": {
+        "id": "2779098405",
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 2560,
+          "height": 1440
+        },
+        "workArea": {
+          "x": 0,
+          "y": 0,
+          "width": 2560,
+          "height": 1392
+        },
+        "scaleFactor": 1.5,
+        "rotation": 0
+      },
+      "native": {
+        "parentRect": {
+          "left": 0,
+          "top": 0,
+          "right": 3840,
+          "bottom": 2160,
+          "width": 3840,
+          "height": 2160
+        },
+        "childRect": {
+          "left": 0,
+          "top": 120,
+          "right": 3840,
+          "bottom": 2160,
+          "width": 3840,
+          "height": 2040
+        },
+        "overlayRect": {
+          "left": 0,
+          "top": 0,
+          "right": 3840,
+          "bottom": 2160,
+          "width": 3840,
+          "height": 2160
+        },
+        "parentDpi": 144,
+        "childDpi": 144,
+        "overlayDpi": 144,
+        "parentAwareness": "per-monitor",
+        "childAwareness": "per-monitor",
+        "overlayAwareness": "per-monitor",
+        "surfaceThreadAwareness": "per-monitor",
+        "helperCommandThreadAwareness": "per-monitor",
+        "parentProcessAwareness": "per-monitor",
+        "helperProcessAwareness": "per-monitor",
+        "sameMonitor": true,
+        "monitorPrimary": true,
+        "monitorRect": {
+          "left": 0,
+          "top": 0,
+          "right": 3840,
+          "bottom": 2160
+        },
+        "wmDpiChanged": 0
+      },
+      "overlayPhysicalMatchesParent": true,
+      "videoInsideParent": true
+    },
+    {
+      "label": "fullscreen-exit",
+      "mainDipBounds": {
+        "x": 40,
+        "y": 40,
+        "width": 1120,
+        "height": 760
+      },
+      "overlayDipBounds": {
+        "x": 40,
+        "y": 40,
+        "width": 1120,
+        "height": 760
+      },
+      "electronDisplay": {
+        "id": "2779098405",
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 2560,
+          "height": 1440
+        },
+        "workArea": {
+          "x": 0,
+          "y": 0,
+          "width": 2560,
+          "height": 1392
+        },
+        "scaleFactor": 1.5,
+        "rotation": 0
+      },
+      "native": {
+        "parentRect": {
+          "left": 60,
+          "top": 60,
+          "right": 1740,
+          "bottom": 1200,
+          "width": 1680,
+          "height": 1140
+        },
+        "childRect": {
+          "left": 60,
+          "top": 180,
+          "right": 1740,
+          "bottom": 1200,
+          "width": 1680,
+          "height": 1020
+        },
+        "overlayRect": {
+          "left": 60,
+          "top": 60,
+          "right": 1740,
+          "bottom": 1200,
+          "width": 1680,
+          "height": 1140
+        },
+        "parentDpi": 144,
+        "childDpi": 144,
+        "overlayDpi": 144,
+        "parentAwareness": "per-monitor",
+        "childAwareness": "per-monitor",
+        "overlayAwareness": "per-monitor",
+        "surfaceThreadAwareness": "per-monitor",
+        "helperCommandThreadAwareness": "per-monitor",
+        "parentProcessAwareness": "per-monitor",
+        "helperProcessAwareness": "per-monitor",
+        "sameMonitor": true,
+        "monitorPrimary": true,
+        "monitorRect": {
+          "left": 0,
+          "top": 0,
+          "right": 3840,
+          "bottom": 2160
+        },
+        "wmDpiChanged": 0
+      },
+      "overlayPhysicalMatchesParent": true,
+      "videoInsideParent": true
+    },
+    {
+      "label": "monitor-0",
+      "mainDipBounds": {
+        "x": 40,
+        "y": 40,
+        "width": 1000,
+        "height": 680
+      },
+      "overlayDipBounds": {
+        "x": 40,
+        "y": 40,
+        "width": 1000,
+        "height": 680
+      },
+      "electronDisplay": {
+        "id": "2779098405",
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 2560,
+          "height": 1440
+        },
+        "workArea": {
+          "x": 0,
+          "y": 0,
+          "width": 2560,
+          "height": 1392
+        },
+        "scaleFactor": 1.5,
+        "rotation": 0
+      },
+      "native": {
+        "parentRect": {
+          "left": 60,
+          "top": 60,
+          "right": 1560,
+          "bottom": 1080,
+          "width": 1500,
+          "height": 1020
+        },
+        "childRect": {
+          "left": 60,
+          "top": 180,
+          "right": 1560,
+          "bottom": 1080,
+          "width": 1500,
+          "height": 900
+        },
+        "overlayRect": {
+          "left": 60,
+          "top": 60,
+          "right": 1560,
+          "bottom": 1080,
+          "width": 1500,
+          "height": 1020
+        },
+        "parentDpi": 144,
+        "childDpi": 144,
+        "overlayDpi": 144,
+        "parentAwareness": "per-monitor",
+        "childAwareness": "per-monitor",
+        "overlayAwareness": "per-monitor",
+        "surfaceThreadAwareness": "per-monitor",
+        "helperCommandThreadAwareness": "per-monitor",
+        "parentProcessAwareness": "per-monitor",
+        "helperProcessAwareness": "per-monitor",
+        "sameMonitor": true,
+        "monitorPrimary": true,
+        "monitorRect": {
+          "left": 0,
+          "top": 0,
+          "right": 3840,
+          "bottom": 2160
+        },
+        "wmDpiChanged": 0
+      },
+      "overlayPhysicalMatchesParent": true,
+      "videoInsideParent": true
+    },
+    {
+      "label": "monitor-1",
+      "mainDipBounds": {
+        "x": -2520,
+        "y": 40,
+        "width": 1000,
+        "height": 680
+      },
+      "overlayDipBounds": {
+        "x": -2520,
+        "y": 40,
+        "width": 1000,
+        "height": 680
+      },
+      "electronDisplay": {
+        "id": "2528732444",
+        "bounds": {
+          "x": -2560,
+          "y": 0,
+          "width": 2560,
+          "height": 1440
+        },
+        "workArea": {
+          "x": -2560,
+          "y": 0,
+          "width": 2560,
+          "height": 1440
+        },
+        "scaleFactor": 1.5,
+        "rotation": 0
+      },
+      "native": {
+        "parentRect": {
+          "left": -3780,
+          "top": 60,
+          "right": -2280,
+          "bottom": 1080,
+          "width": 1500,
+          "height": 1020
+        },
+        "childRect": {
+          "left": -3780,
+          "top": 180,
+          "right": -2280,
+          "bottom": 1080,
+          "width": 1500,
+          "height": 900
+        },
+        "overlayRect": {
+          "left": -3780,
+          "top": 60,
+          "right": -2280,
+          "bottom": 1080,
+          "width": 1500,
+          "height": 1020
+        },
+        "parentDpi": 144,
+        "childDpi": 144,
+        "overlayDpi": 144,
+        "parentAwareness": "per-monitor",
+        "childAwareness": "per-monitor",
+        "overlayAwareness": "per-monitor",
+        "surfaceThreadAwareness": "per-monitor",
+        "helperCommandThreadAwareness": "per-monitor",
+        "parentProcessAwareness": "per-monitor",
+        "helperProcessAwareness": "per-monitor",
+        "sameMonitor": true,
+        "monitorPrimary": false,
+        "monitorRect": {
+          "left": -3840,
+          "top": 0,
+          "right": 0,
+          "bottom": 2160
+        },
+        "wmDpiChanged": 0
+      },
+      "overlayPhysicalMatchesParent": true,
+      "videoInsideParent": true
+    },
+    {
+      "label": "secondary-fullscreen",
+      "mainDipBounds": {
+        "x": -2560,
+        "y": 0,
+        "width": 2560,
+        "height": 1440
+      },
+      "overlayDipBounds": {
+        "x": -2560,
+        "y": 0,
+        "width": 2560,
+        "height": 1440
+      },
+      "electronDisplay": {
+        "id": "2528732444",
+        "bounds": {
+          "x": -2560,
+          "y": 0,
+          "width": 2560,
+          "height": 1440
+        },
+        "workArea": {
+          "x": -2560,
+          "y": 0,
+          "width": 2560,
+          "height": 1440
+        },
+        "scaleFactor": 1.5,
+        "rotation": 0
+      },
+      "native": {
+        "parentRect": {
+          "left": -3840,
+          "top": 0,
+          "right": 0,
+          "bottom": 2160,
+          "width": 3840,
+          "height": 2160
+        },
+        "childRect": {
+          "left": -3840,
+          "top": 120,
+          "right": 0,
+          "bottom": 2160,
+          "width": 3840,
+          "height": 2040
+        },
+        "overlayRect": {
+          "left": -3840,
+          "top": 0,
+          "right": 0,
+          "bottom": 2160,
+          "width": 3840,
+          "height": 2160
+        },
+        "parentDpi": 144,
+        "childDpi": 144,
+        "overlayDpi": 144,
+        "parentAwareness": "per-monitor",
+        "childAwareness": "per-monitor",
+        "overlayAwareness": "per-monitor",
+        "surfaceThreadAwareness": "per-monitor",
+        "helperCommandThreadAwareness": "per-monitor",
+        "parentProcessAwareness": "per-monitor",
+        "helperProcessAwareness": "per-monitor",
+        "sameMonitor": true,
+        "monitorPrimary": false,
+        "monitorRect": {
+          "left": -3840,
+          "top": 0,
+          "right": 0,
+          "bottom": 2160
+        },
+        "wmDpiChanged": 0
+      },
+      "overlayPhysicalMatchesParent": true,
+      "videoInsideParent": true
+    },
+    {
+      "label": "after-crash-recreate",
+      "mainDipBounds": {
+        "x": -2520,
+        "y": 40,
+        "width": 1000,
+        "height": 680
+      },
+      "overlayDipBounds": {
+        "x": -2520,
+        "y": 40,
+        "width": 1000,
+        "height": 680
+      },
+      "electronDisplay": {
+        "id": "2528732444",
+        "bounds": {
+          "x": -2560,
+          "y": 0,
+          "width": 2560,
+          "height": 1440
+        },
+        "workArea": {
+          "x": -2560,
+          "y": 0,
+          "width": 2560,
+          "height": 1440
+        },
+        "scaleFactor": 1.5,
+        "rotation": 0
+      },
+      "native": {
+        "parentRect": {
+          "left": -3780,
+          "top": 60,
+          "right": -2280,
+          "bottom": 1080,
+          "width": 1500,
+          "height": 1020
+        },
+        "childRect": {
+          "left": -3780,
+          "top": 180,
+          "right": -2280,
+          "bottom": 1080,
+          "width": 1500,
+          "height": 900
+        },
+        "overlayRect": {
+          "left": -3780,
+          "top": 60,
+          "right": -2280,
+          "bottom": 1080,
+          "width": 1500,
+          "height": 1020
+        },
+        "parentDpi": 144,
+        "childDpi": 144,
+        "overlayDpi": 144,
+        "parentAwareness": "per-monitor",
+        "childAwareness": "per-monitor",
+        "overlayAwareness": "per-monitor",
+        "surfaceThreadAwareness": "per-monitor",
+        "helperCommandThreadAwareness": "per-monitor",
+        "parentProcessAwareness": "per-monitor",
+        "helperProcessAwareness": "per-monitor",
+        "sameMonitor": true,
+        "monitorPrimary": false,
+        "monitorRect": {
+          "left": -3840,
+          "top": 0,
+          "right": 0,
+          "bottom": 2160
+        },
+        "wmDpiChanged": 0
+      },
+      "overlayPhysicalMatchesParent": true,
+      "videoInsideParent": true
+    }
+  ],
+  "inputEvents": [
+    {
+      "type": "ready",
+      "detail": {
+        "sandboxed": true,
+        "nodeGlobalsAbsent": true
+      },
+      "atMs": 325.749
+    },
+    {
+      "type": "metrics",
+      "detail": {
+        "devicePixelRatio": 1.5,
+        "viewport": {
+          "width": 800,
+          "height": 600
+        },
+        "button": {
+          "left": 41,
+          "top": 524.6666870117188,
+          "width": 104.0625,
+          "height": 35.333335876464844
+        },
+        "slider": {
+          "left": 157.0625,
+          "top": 533.3333740234375,
+          "width": 454.9375,
+          "height": 18
+        },
+        "videoProbe": {
+          "x": 144,
+          "y": 216
+        }
+      },
+      "atMs": 339.61
+    },
+    {
+      "type": "metrics",
+      "detail": {
+        "devicePixelRatio": 1.5,
+        "viewport": {
+          "width": 1000,
+          "height": 680
+        },
+        "button": {
+          "left": 41,
+          "top": 604.6666870117188,
+          "width": 104.0625,
+          "height": 35.333335876464844
+        },
+        "slider": {
+          "left": 157.0625,
+          "top": 613.3333740234375,
+          "width": 654.9375,
+          "height": 18
+        },
+        "videoProbe": {
+          "x": 180,
+          "y": 244.79999999999998
+        }
+      },
+      "atMs": 476.394
+    },
+    {
+      "type": "focus",
+      "detail": {},
+      "atMs": 1013.82
+    },
+    {
+      "type": "focus",
+      "detail": {},
+      "atMs": 1017.565
+    },
+    {
+      "type": "blur",
+      "detail": {},
+      "atMs": 2243.594
+    },
+    {
+      "type": "focus",
+      "detail": {},
+      "atMs": 2263.658
+    },
+    {
+      "type": "blur",
+      "detail": {},
+      "atMs": 3451.014
+    },
+    {
+      "type": "focus",
+      "detail": {},
+      "atMs": 3467.956
+    },
+    {
+      "type": "metrics",
+      "detail": {
+        "devicePixelRatio": 1.5,
+        "viewport": {
+          "width": 1000,
+          "height": 680
+        },
+        "button": {
+          "left": 41,
+          "top": 604.6666870117188,
+          "width": 104.0625,
+          "height": 35.333335876464844
+        },
+        "slider": {
+          "left": 157.0625,
+          "top": 613.3333740234375,
+          "width": 654.9375,
+          "height": 18
+        },
+        "videoProbe": {
+          "x": 180,
+          "y": 244.79999999999998
+        }
+      },
+      "atMs": 4414.62
+    },
+    {
+      "type": "blur",
+      "detail": {},
+      "atMs": 4463.379
+    },
+    {
+      "type": "focus",
+      "detail": {},
+      "atMs": 4478.866
+    },
+    {
+      "type": "hover",
+      "detail": {
+        "target": "button"
+      },
+      "atMs": 4689.369
+    },
+    {
+      "type": "mousemove",
+      "detail": {
+        "x": 93,
+        "y": 622,
+        "interactive": true
+      },
+      "atMs": 4690.512
+    },
+    {
+      "type": "button",
+      "detail": {
+        "id": "probe"
+      },
+      "atMs": 4695.397
+    },
+    {
+      "type": "blur",
+      "detail": {},
+      "atMs": 4728.041
+    },
+    {
+      "type": "focus",
+      "detail": {},
+      "atMs": 4745.371
+    },
+    {
+      "type": "mousemove",
+      "detail": {
+        "x": 484,
+        "y": 622,
+        "interactive": true
+      },
+      "atMs": 4952.199
+    },
+    {
+      "type": "slider",
+      "detail": {
+        "ratio": 0.4991888538982727
+      },
+      "atMs": 4952.932
+    },
+    {
+      "type": "blur",
+      "detail": {},
+      "atMs": 5006.555
+    },
+    {
+      "type": "focus",
+      "detail": {},
+      "atMs": 5136.225
+    },
+    {
+      "type": "keydown",
+      "detail": {
+        "key": " ",
+        "code": ""
+      },
+      "atMs": 5143.956
+    },
+    {
+      "type": "keydown",
+      "detail": {
+        "key": "ArrowLeft",
+        "code": ""
+      },
+      "atMs": 5152.192
+    },
+    {
+      "type": "keydown",
+      "detail": {
+        "key": "ArrowRight",
+        "code": ""
+      },
+      "atMs": 5154.867
+    },
+    {
+      "type": "keydown",
+      "detail": {
+        "key": "Enter",
+        "code": ""
+      },
+      "atMs": 5161.247
+    },
+    {
+      "type": "metrics",
+      "detail": {
+        "devicePixelRatio": 1.5,
+        "viewport": {
+          "width": 1120,
+          "height": 760
+        },
+        "button": {
+          "left": 41,
+          "top": 684.6666870117188,
+          "width": 104.0625,
+          "height": 35.333335876464844
+        },
+        "slider": {
+          "left": 157.0625,
+          "top": 693.3333740234375,
+          "width": 774.9375,
+          "height": 18
+        },
+        "videoProbe": {
+          "x": 201.6,
+          "y": 273.59999999999997
+        }
+      },
+      "atMs": 5185.819
+    },
+    {
+      "type": "blur",
+      "detail": {},
+      "atMs": 5694.158
+    },
+    {
+      "type": "focus",
+      "detail": {},
+      "atMs": 5713.814
+    },
+    {
+      "type": "blur",
+      "detail": {},
+      "atMs": 6726.701
+    },
+    {
+      "type": "metrics",
+      "detail": {
+        "devicePixelRatio": 1.5,
+        "viewport": {
+          "width": 2576,
+          "height": 1408
+        },
+        "button": {
+          "left": 41,
+          "top": 1332.666748046875,
+          "width": 104.0625,
+          "height": 35.333335876464844
+        },
+        "slider": {
+          "left": 157.0625,
+          "top": 1341.3333740234375,
+          "width": 2230.9375,
+          "height": 18
+        },
+        "videoProbe": {
+          "x": 463.68,
+          "y": 506.88
+        }
+      },
+      "atMs": 6760.509
+    },
+    {
+      "type": "focus",
+      "detail": {},
+      "atMs": 6812.412
+    },
+    {
+      "type": "blur",
+      "detail": {},
+      "atMs": 7246.7
+    },
+    {
+      "type": "focus",
+      "detail": {},
+      "atMs": 7262.936
+    },
+    {
+      "type": "blur",
+      "detail": {},
+      "atMs": 8364.651
+    },
+    {
+      "type": "metrics",
+      "detail": {
+        "devicePixelRatio": 1.5,
+        "viewport": {
+          "width": 1120,
+          "height": 760
+        },
+        "button": {
+          "left": 41,
+          "top": 684.6666870117188,
+          "width": 104.0625,
+          "height": 35.333335876464844
+        },
+        "slider": {
+          "left": 157.0625,
+          "top": 693.3333740234375,
+          "width": 774.9375,
+          "height": 18
+        },
+        "videoProbe": {
+          "x": 201.6,
+          "y": 273.59999999999997
+        }
+      },
+      "atMs": 8385.932
+    },
+    {
+      "type": "focus",
+      "detail": {},
+      "atMs": 8431.905
+    },
+    {
+      "type": "blur",
+      "detail": {},
+      "atMs": 8828.848
+    },
+    {
+      "type": "mousemove",
+      "detail": {
+        "x": 180,
+        "y": 244,
+        "interactive": false
+      },
+      "atMs": 8868.807
+    },
+    {
+      "type": "focus",
+      "detail": {},
+      "atMs": 8904.515
+    },
+    {
+      "type": "blur",
+      "detail": {},
+      "atMs": 9291.948
+    },
+    {
+      "type": "focus",
+      "detail": {},
+      "atMs": 9311.076
+    },
+    {
+      "type": "metrics",
+      "detail": {
+        "devicePixelRatio": 1.5,
+        "viewport": {
+          "width": 2560,
+          "height": 1440
+        },
+        "button": {
+          "left": 41,
+          "top": 1364.666748046875,
+          "width": 104.0625,
+          "height": 35.333335876464844
+        },
+        "slider": {
+          "left": 157.0625,
+          "top": 1373.3333740234375,
+          "width": 2214.9375,
+          "height": 18
+        },
+        "videoProbe": {
+          "x": 460.79999999999995,
+          "y": 518.4
+        }
+      },
+      "atMs": 10377.761
+    },
+    {
+      "type": "blur",
+      "detail": {},
+      "atMs": 10920.244
+    },
+    {
+      "type": "focus",
+      "detail": {},
+      "atMs": 10943.431
+    },
+    {
+      "type": "keydown",
+      "detail": {
+        "key": "Escape",
+        "code": ""
+      },
+      "atMs": 12058.523
+    },
+    {
+      "type": "metrics",
+      "detail": {
+        "devicePixelRatio": 1.5,
+        "viewport": {
+          "width": 1120,
+          "height": 760
+        },
+        "button": {
+          "left": 41,
+          "top": 684.6666870117188,
+          "width": 104.0625,
+          "height": 35.333335876464844
+        },
+        "slider": {
+          "left": 157.0625,
+          "top": 693.3333740234375,
+          "width": 774.9375,
+          "height": 18
+        },
+        "videoProbe": {
+          "x": 201.6,
+          "y": 273.59999999999997
+        }
+      },
+      "atMs": 12117.942
+    },
+    {
+      "type": "blur",
+      "detail": {},
+      "atMs": 12596.168
+    },
+    {
+      "type": "focus",
+      "detail": {},
+      "atMs": 12610.713
+    },
+    {
+      "type": "blur",
+      "detail": {},
+      "atMs": 13707.81
+    },
+    {
+      "type": "focus",
+      "detail": {},
+      "atMs": 13725.717
+    },
+    {
+      "type": "blur",
+      "detail": {},
+      "atMs": 13739.463
+    },
+    {
+      "type": "focus",
+      "detail": {},
+      "atMs": 13885.004
+    },
+    {
+      "type": "metrics",
+      "detail": {
+        "devicePixelRatio": 1.5,
+        "viewport": {
+          "width": 1000,
+          "height": 680
+        },
+        "button": {
+          "left": 41,
+          "top": 604.6666870117188,
+          "width": 104.0625,
+          "height": 35.333335876464844
+        },
+        "slider": {
+          "left": 157.0625,
+          "top": 613.3333740234375,
+          "width": 654.9375,
+          "height": 18
+        },
+        "videoProbe": {
+          "x": 180,
+          "y": 244.79999999999998
+        }
+      },
+      "atMs": 14058.792
+    },
+    {
+      "type": "blur",
+      "detail": {},
+      "atMs": 14715.741
+    },
+    {
+      "type": "focus",
+      "detail": {},
+      "atMs": 14730.294
+    },
+    {
+      "type": "blur",
+      "detail": {},
+      "atMs": 16338.605
+    },
+    {
+      "type": "focus",
+      "detail": {},
+      "atMs": 16353.819
+    },
+    {
+      "type": "metrics",
+      "detail": {
+        "devicePixelRatio": 1.5,
+        "viewport": {
+          "width": 1000,
+          "height": 680
+        },
+        "button": {
+          "left": 41,
+          "top": 604.6666870117188,
+          "width": 104.0625,
+          "height": 35.333335876464844
+        },
+        "slider": {
+          "left": 157.0625,
+          "top": 613.3333740234375,
+          "width": 654.9375,
+          "height": 18
+        },
+        "videoProbe": {
+          "x": 180,
+          "y": 244.79999999999998
+        }
+      },
+      "atMs": 17282.547
+    },
+    {
+      "type": "blur",
+      "detail": {},
+      "atMs": 17322.635
+    },
+    {
+      "type": "focus",
+      "detail": {},
+      "atMs": 17342.09
+    },
+    {
+      "type": "hover",
+      "detail": {
+        "target": "button"
+      },
+      "atMs": 17552.795
+    },
+    {
+      "type": "mousemove",
+      "detail": {
+        "x": 93,
+        "y": 622,
+        "interactive": true
+      },
+      "atMs": 17600.426
+    },
+    {
+      "type": "button",
+      "detail": {
+        "id": "probe"
+      },
+      "atMs": 17601.297
+    },
+    {
+      "type": "metrics",
+      "detail": {
+        "devicePixelRatio": 1.5,
+        "viewport": {
+          "width": 2560,
+          "height": 1440
+        },
+        "button": {
+          "left": 41,
+          "top": 1364.666748046875,
+          "width": 104.0625,
+          "height": 35.333335876464844
+        },
+        "slider": {
+          "left": 157.0625,
+          "top": 1373.3333740234375,
+          "width": 2214.9375,
+          "height": 18
+        },
+        "videoProbe": {
+          "x": 460.79999999999995,
+          "y": 518.4
+        }
+      },
+      "atMs": 17655.773
+    },
+    {
+      "type": "mousemove",
+      "detail": {
+        "x": 133,
+        "y": 662,
+        "interactive": false
+      },
+      "atMs": 17665.025
+    },
+    {
+      "type": "blur",
+      "detail": {},
+      "atMs": 18136.033
+    },
+    {
+      "type": "focus",
+      "detail": {},
+      "atMs": 18159.388
+    },
+    {
+      "type": "metrics",
+      "detail": {
+        "devicePixelRatio": 1.5,
+        "viewport": {
+          "width": 1000,
+          "height": 680
+        },
+        "button": {
+          "left": 41,
+          "top": 604.6666870117188,
+          "width": 104.0625,
+          "height": 35.333335876464844
+        },
+        "slider": {
+          "left": 157.0625,
+          "top": 613.3333740234375,
+          "width": 654.9375,
+          "height": 18
+        },
+        "videoProbe": {
+          "x": 180,
+          "y": 244.79999999999998
+        }
+      },
+      "atMs": 19321.674
+    },
+    {
+      "type": "blur",
+      "detail": {},
+      "atMs": 23807.594
+    },
+    {
+      "type": "focus",
+      "detail": {},
+      "atMs": 23830.182
+    }
+  ],
+  "security": {
+    "sandbox": true,
+    "contextIsolation": true,
+    "nodeIntegrationDisabled": true,
+    "rendererReported": {
+      "sandboxed": true,
+      "nodeGlobalsAbsent": true
+    },
+    "exposedApi": [
+      "onState",
+      "setInteractive",
+      "report",
+      "security"
+    ],
+    "rawHwndExposed": false,
+    "arbitraryNativeCommandExposed": false,
+    "filesystemExposed": false,
+    "childProcessExposed": false,
+    "helperPipeExposed": false
+  },
+  "displayInventory": [
+    {
+      "id": "2779098405",
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 2560,
+        "height": 1440
+      },
+      "workArea": {
+        "x": 0,
+        "y": 0,
+        "width": 2560,
+        "height": 1392
+      },
+      "scaleFactor": 1.5,
+      "rotation": 0
+    },
+    {
+      "id": "2528732444",
+      "bounds": {
+        "x": -2560,
+        "y": 0,
+        "width": 2560,
+        "height": 1440
+      },
+      "workArea": {
+        "x": -2560,
+        "y": 0,
+        "width": 2560,
+        "height": 1440
+      },
+      "scaleFactor": 1.5,
+      "rotation": 0
+    }
+  ],
+  "classifications": {}
+}

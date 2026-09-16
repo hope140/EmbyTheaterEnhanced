@@ -1,0 +1,15 @@
+{
+  "rootIdentity": {
+    "pid": 17208,
+    "startTimeUtc": "2026-09-16T09:50:17.8217509Z"
+  },
+  "exitCode": 0,
+  "signal": null,
+  "timedOut": false,
+  "naturalExit": true,
+  "cleanup": {
+    "attempted": false,
+    "ownershipVerified": null,
+    "result": "not-needed"
+  }
+}
