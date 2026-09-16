@@ -1,6 +1,13 @@
 # 长期决策
 
-## 待批准的 Phase 2 研究建议
+## Phase 2B 当前决策
+
+| 决策 | 原因与下一步 |
+|---|---|
+| B isolated native helper architecture = PRODUCTION ARCHITECTURE CANDIDATE | 真实 native helper、真实 libmpv、private framed pipes、event attribution、generation safety、crash safety、parent-death cleanup 与 backpressure 均有证据；仍需 Production Bridge Adapter — Electron 18 First，不能写成 production ready。 |
+| Mixed-DPI = PRE-EXISTING KNOWN ISSUE / DEFERRED | Electron/Windows 窗口 bounds 与 DPI 变化后的输入对齐不阻塞 Phase 2B 架构；后续若重开，应作为独立兼容性任务，并保持不劣于现有 baseline。 |
+
+## Phase 2A/bridge 研究历史
 
 [Phase 2A helper composition gate](HELPER-COMPOSITION-GATE.md) 的最终 run-11 结果为 **CONDITIONAL PASS**。在冻结 Electron 18.3.15 上，B 的 helper-owned D3D11 video、parent-owned transparent HTML overlay、控制输入、窗口生命周期和 helper crash/recreate 均取得同 DPI 的真实视觉或 telemetry 证据。两台实际显示器都是 `scaleFactor=1.5` / native DPI `144`，所以 REAL MIXED-DPI 和 INPUT ALIGNMENT AFTER DPI CHANGE 仍为 BLOCKED；不能用 API 模拟填补该 gate。B 仍只是 **RESEARCH DIRECTION**，等待架构批准，不得据此接入正式播放链。早期遮挡/PrintWindow 黑屏只记为 capture limitation，最终 desktop BitBlt run 已取得请求状态。性能只作短样本观察，不形成性能结论；不做 DirectComposition。
 

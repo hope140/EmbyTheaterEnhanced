@@ -45,6 +45,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/package.ps1 -RuntimeNa
 - [STRM 智能解析设置契约](docs/STRM_RESOLVER_SETTINGS.md)
 - [架构与未来 Resolver 边界](docs/ARCHITECTURE.md)
 - [播放链路](docs/PLAYBACK_PIPELINE.md) / [Session 与远控](docs/SESSION_CONTROL.md)
+- [已知问题](docs/KNOWN-ISSUES.md)
 - [测试](docs/TESTING.md) / [构建与安装](docs/PACKAGING.md)
 - [Carnival 审计](docs/CARNIVAL_BASELINE.md) / [libmpv 环境](docs/LIBMPV_RUNTIME.md)
 - [许可与公开范围](docs/LICENSING.md) / [第三方声明](THIRD_PARTY_NOTICES.md)

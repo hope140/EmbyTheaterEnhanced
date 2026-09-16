@@ -17,4 +17,11 @@
 - [ ] 核对来源未明的 Web 资源和精确 native bridge 构建来源。
 - [ ] 用户授权后初始化 Git 并按小范围提交。
 
+## Post-Bridge
+
+- [ ] **Next Episode Prefetch**（POST-BRIDGE / DEFERRED）
+  - 在固定 playback-progress threshold 后 best-effort 预热 STRM/CD2 下一集。
+  - 真正 NextTrack 仍走正常 PlaybackManager → Resolver → fresh DirectUrl，不复用 Session/PlaySessionId 或长期缓存 URL。
+  - 先调查 CloudDrive2 是否有针对真实云文件的 prefetch/read-ahead API；失败不得影响当前播放。
+
 第一轮按当前用户确认口径关闭。后续 Mount、CD2 和自动映射需另行确认范围，尚未进入实现。

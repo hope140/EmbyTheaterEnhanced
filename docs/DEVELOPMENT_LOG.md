@@ -1,5 +1,11 @@
 # 开发日志
 
+## 2026-09-16 — Phase 2B documentation consolidation
+
+- Consolidated the Phase 2B native helper evidence: B is a **PRODUCTION ARCHITECTURE CANDIDATE**, not production ready; the next gate is Production Bridge Adapter — Electron 18 First.
+- Mixed-DPI bounds/input alignment is recorded as a pre-existing deferred compatibility issue and not a Phase 2B architecture blocker.
+- Added the user-facing Known Issues entry and recorded Next Episode Prefetch as POST-BRIDGE / DEFERRED roadmap work without implementing it.
+
 ## 2026-09-16 — Phase 2B native event attribution / framed-pipe integration
 
 - Model Tier: 2；Model: GPT-5.6 Sol High；Reason：真实 libmpv event identity、跨进程 request/generation lifecycle、pipe EOF/close ordering、native crash 与 backpressure 属于高风险异步边界；Escalated：no。bounded worker 只执行 local header/API evidence audit 和 parent-death/media helper 支持，主线程完成 attribution contract、native implementation、真实运行与最终 review。

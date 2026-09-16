@@ -8,6 +8,12 @@
 
 Gate 结论为 **PASS**，B architecture 升为 **PRODUCTION ARCHITECTURE CANDIDATE**，不是 production ready。下一步仅建议 Electron 18 first 的 production bridge adapter review；本轮未修改 `src/**`、PlaybackManager、Session、Resolver、WebSocket、版本、依赖、runtime 或 installer，也未进行 Emby/UI/mixed-DPI 验收。完整结论见 `docs/HELPER-NATIVE-PIPE-INTEGRATION.md`。
 
+## Phase 2B consolidated decisions
+
+B isolated native helper architecture 已从 research direction 提升为 **PRODUCTION ARCHITECTURE CANDIDATE**。依据为真实 native helper、真实 bundled libmpv、private framed pipes、event attribution、generation safety、crash safety、parent-death cleanup 和 backpressure evidence；仍不等同于 production ready。下一步为 **Production Bridge Adapter — Electron 18 First**，需另行完成架构 review 与产品集成验收。
+
+Mixed-DPI BrowserWindow bounds 与 DPI 变化后的 input alignment 归类为 **PRE-EXISTING KNOWN ISSUE / DEFERRED / NOT A PHASE 2B ARCHITECTURE BLOCKER**。不继续 pure Win32 root-cause work，除非未来独立重新开启兼容性任务；新架构不得比现有 baseline 更差。
+
 ## 2026-09-16 — Helper IPC lifecycle / generation safety spike
 
 基于 `add2c32` 创建独立分支 `spike/helper-ipc-lifecycle-contract`，保留 Phase 2 bridge 与 helper composition research，不带入后续 mixed-DPI 提交。新增纯 JS research model、fake helper、controlled scheduler、length-prefixed framing decoder、27 项 deterministic fault injection 与机器可读 evidence；没有导入 production player，也没有运行 GUI、真实 Emby、真实媒体或真实 libmpv。
