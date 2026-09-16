@@ -294,8 +294,12 @@ function createService(options) {
     const config = settings.config
         ? normalizeProvidedConfig(settings.config)
         : readConfig(settings.environment || process.env);
+    const configuredTotalBudgetMs = Number(config.totalBudgetMs);
+    const reserveCapacityMs = Number.isFinite(configuredTotalBudgetMs)
+        ? Math.max(0, configuredTotalBudgetMs - CONNECT_BUDGET_MS - FIND_BUDGET_MS)
+        : 0;
     const sameOriginReserveMs = Math.min(SAME_ORIGIN_RESERVE_MS,
-        Math.max(1, Math.floor(config.totalBudgetMs / 3)));
+        reserveCapacityMs);
     const now = settings.now || Date.now;
     const setTimer = settings.setTimeout || setTimeout;
     const clearTimer = settings.clearTimeout || clearTimeout;

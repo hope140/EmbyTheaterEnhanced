@@ -8,6 +8,8 @@ Model Tier：2。Reason：真实 Windows telemetry 指向 CD2 download stage 的
 
 本 commit 将 Resolver overall budget 从 `750ms` 调整为 `1200ms`；main CD2 service 的 Direct 与 Same-Origin `GetDownloadUrlPath` 均从 `300ms` 调整为 `500ms`，Direct 仍为 Same-Origin 保留 `500ms`，CONNECT/readiness `200ms` 与 Find `350ms` 保持不变。所有阶段继续受 shared absolute deadline 限制，未取消硬上限；persistent config runtime default 同步为 `1200ms`。
 
+本次修正旧 one-third cap 导致默认 runtime 实际仅保留 `400ms` 的实现偏差。
+
 新增 fake-clock/controlled-timer 回归覆盖 320ms Direct 成功、Direct timeout → Same-Origin 320ms 成功、超过 500ms 仍 timeout，以及 Resolver 向每个 CD2 stage 传递同一 `1200ms` deadline。验证：CD2/Resolver targeted `76/76`，全量 `npm test` `140/140`。未生成 installer candidate，未执行真实客户端播放。
 
 ## 2026-09-16 — STRM native fallback Toast

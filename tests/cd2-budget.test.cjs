@@ -64,21 +64,31 @@ async function flushMicrotasks() {
     for (let index = 0; index < 8; index++) await Promise.resolve();
 }
 
-function makeTransport(clock, downloadPlan) {
+function makeTransport(clock, downloadPlan, phasePlan) {
     const calls = [];
+    const phases = phasePlan || {};
     const client = {
         waitForReady(deadline, callback) {
             calls.push({method: 'waitForReady', deadline});
-            callback(null);
+            if (phases.readyDelay !== undefined) {
+                clock.setTimeout(() => callback(null), phases.readyDelay);
+            } else {
+                callback(null);
+            }
         },
         FindFileByPath(request, metadata, options, callback) {
             calls.push({method: 'FindFileByPath', request, metadata, options});
-            callback(null, {
+            const response = {
                 fullPathName: request.path,
                 size: '10',
                 fileType: 'File',
                 isDirectory: false
-            });
+            };
+            if (phases.findDelay !== undefined) {
+                clock.setTimeout(() => callback(null, response), phases.findDelay);
+            } else {
+                callback(null, response);
+            }
         },
         GetDownloadUrlPath(request, metadata, options, callback) {
             const call = {method: 'GetDownloadUrlPath', request, metadata, options, cancelled: false};
@@ -143,6 +153,32 @@ test('320ms DirectUrl download succeeds with the 500ms stage budget', async () =
     }
 });
 
+test('late DirectUrl start uses the full 500ms Same-Origin reserve in its RPC deadline', async () => {
+    const clock = createClock(1000);
+    const transport = makeTransport(clock, () => ({
+        delay: 10,
+        response: {directUrl: 'https://cdn.example.test/late-start.mkv'}
+    }), {readyDelay: 150, findDelay: 180});
+    const service = createService(clock, transport);
+
+    try {
+        const pending = service.resolve(request('direct', 'budget-reserve', 2200));
+        await flushMicrotasks();
+        clock.advance(150);
+        await flushMicrotasks();
+        clock.advance(180);
+        await flushMicrotasks();
+
+        const downloadCall = transport.calls.find(call => call.method === 'GetDownloadUrlPath');
+        assert.equal(downloadCall.options.deadline.getTime(), 1700);
+        clock.advance(10);
+        await flushMicrotasks();
+        assert.equal((await pending).status, 'hit');
+    } finally {
+        service.close();
+    }
+});
+
 test('Direct timeout still gives Same-Origin a 320ms window under one 1200ms deadline', async () => {
     const clock = createClock(1000);
     const deadlineAt = clock.now() + 1200;
@@ -197,6 +233,24 @@ test('download latency beyond 500ms still times out and cancels the RPC', async 
         clock.advance(1);
         await flushMicrotasks();
         assert.equal(response.reason, 'timeout');
+    } finally {
+        service.close();
+    }
+});
+
+test('a smaller total budget keeps the Direct deadline within the overall window', async () => {
+    const clock = createClock(1000);
+    const transport = makeTransport(clock, () => null);
+    const service = createService(clock, transport, {totalBudgetMs: 430});
+
+    try {
+        const pending = service.resolve(request('direct', 'budget-small-total'));
+        await flushMicrotasks();
+        const downloadCall = transport.calls.find(call => call.method === 'GetDownloadUrlPath');
+        assert.equal(downloadCall.options.deadline.getTime(), 1430);
+        clock.advance(430);
+        await flushMicrotasks();
+        assert.equal((await pending).reason, 'timeout');
     } finally {
         service.close();
     }
