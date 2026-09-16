@@ -1,4 +1,4 @@
-define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter', 'appSettings', 'userSettings', 'require', 'connectionManager', '../resolvers/strm-resolver.js', '../resolvers/strm-config-client.js'], function (globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, require, connectionManager, strmResolver, strmConfigClient) {
+define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter', 'appSettings', 'userSettings', 'require', 'connectionManager', '../resolvers/strm-resolver.js', '../resolvers/strm-config-client.js', '../resolvers/strm-identity-recovery.js'], function (globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, require, connectionManager, strmResolver, strmConfigClient, strmIdentityRecovery) {
     'use strict';
 
     function getTextTrackUrl(subtitleStream, serverId) {
@@ -732,6 +732,12 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             var resolverConfig = null;
             var fileLocalLoadOptions;
             var isStrmRequest = false;
+            var identityObservation = {
+                strmIdentitySource: 'none',
+                metadataRecoveryAttempted: false,
+                metadataRecoverySucceeded: false,
+                recoveredPathEndsWithStrm: false
+            };
             var resolverContext = {
                 item: item,
                 mediaSource: mediaSource,
@@ -743,8 +749,35 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             };
 
             try {
+                if (strmIdentityRecovery && typeof strmIdentityRecovery.recover === 'function') {
+                    var identityRecovery = await strmIdentityRecovery.recover({
+                        item: item,
+                        connectionManager: connectionManager,
+                        signal: request.controller.signal
+                    });
+                    assertCurrentPlayRequest(request);
+                    identityObservation = {
+                        strmIdentitySource: identityRecovery.strmIdentitySource || 'none',
+                        metadataRecoveryAttempted: identityRecovery.metadataRecoveryAttempted === true,
+                        metadataRecoverySucceeded: identityRecovery.metadataRecoverySucceeded === true,
+                        recoveredPathEndsWithStrm: identityRecovery.recoveredPathEndsWithStrm === true
+                    };
+                    if (identityRecovery.recoveredPath) resolverContext.sidecarPath = identityRecovery.recoveredPath;
+                }
+            } catch (err) {
+                if (err && (err.name === 'AbortError' || err.playbackSuperseded)) throw supersededError();
+                identityObservation = {
+                    strmIdentitySource: 'none',
+                    metadataRecoveryAttempted: false,
+                    metadataRecoverySucceeded: false,
+                    recoveredPathEndsWithStrm: false
+                };
+            }
+
+            try {
                 emitClientDiagnostic('info', 'resolver', 'context-observed', Object.assign(
                     requestDiagnosticDetails(request),
+                    identityObservation,
                     strmResolver && typeof strmResolver.describeContext === 'function'
                         ? strmResolver.describeContext(resolverContext)
                         : {}

@@ -9,6 +9,7 @@ const path = require('node:path');
 const diagnostics = require('../src/electronapp/enhanced/diagnostics');
 const diagnosticsIpc = require('../src/electronapp/enhanced/diagnostics-ipc');
 const cd2Service = require('../src/electronapp/enhanced/cd2-service');
+const strmIdentityRecovery = require('../src/electronapp/resolvers/strm-identity-recovery');
 const strmResolver = require('../src/electronapp/resolvers/strm-resolver');
 
 function tempRoot(prefix) {
@@ -317,6 +318,138 @@ test('resolver context diagnostics describe DirectStream fields and identify inv
     assert.match(libmpvSource, /'context-observed'/);
     assert.match(libmpvSource, /'invalid-context'/);
     assert.ok(libmpvSource.indexOf("'context-observed'") < libmpvSource.indexOf('strmResolver.isStrm(resolverContext)'));
+});
+
+test('STRM identity recovery reuses getItem once, accepts only metadata STRM identity and preserves ordinary media safety', async () => {
+    let calls = 0;
+    let existingPathRequests = 0;
+    const existingPath = await strmIdentityRecovery.recover({
+        item: {Path: 'C:\\Library\\Existing.mkv.strm'},
+        connectionManager: {getApiClient: () => { existingPathRequests++; return null; }}
+    });
+    assert.equal(existingPath.status, 'not-needed');
+    assert.equal(existingPath.strmIdentitySource, 'item-path');
+    assert.equal(existingPathRequests, 0);
+
+    const item = {Id: 'episode-1', ServerId: 'server-1'};
+    const recovery = await strmIdentityRecovery.recover({
+        item,
+        connectionManager: {
+            getApiClient: serverId => {
+                assert.equal(serverId, 'server-1');
+                return {
+                    getCurrentUserId: () => 'user-1',
+                    getItem: (userId, itemId, options, signal) => {
+                        calls++;
+                        assert.equal(userId, 'user-1');
+                        assert.equal(itemId, 'episode-1');
+                        assert.deepEqual(options, {Fields: 'Path'});
+                        assert.equal(signal && typeof signal.aborted, 'boolean');
+                        return Promise.resolve({Path: 'C:\\Library\\Episode.mkv.strm'});
+                    }
+                };
+            }
+        }
+    });
+    assert.equal(calls, 1);
+    assert.deepEqual(recovery, {
+        status: 'recovered',
+        metadataRecoveryAttempted: true,
+        metadataRecoverySucceeded: true,
+        recoveredPathEndsWithStrm: true,
+        recoveredPath: 'C:\\Library\\Episode.mkv.strm',
+        strmIdentitySource: 'metadata-recovery'
+    });
+    const recoveredContext = {
+        item,
+        mediaSource: {Path: 'C:\\Resolved\\Episode.mkv', Container: 'mkv'},
+        sidecarPath: recovery.recoveredPath,
+        sourcePath: 'C:\\Resolved\\Episode.mkv',
+        nativeSource: 'https://emby.example.test/videos/episode',
+        playMethod: 'DirectStream'
+    };
+    assert.equal(strmResolver.isStrm(recoveredContext), true);
+    assert.equal(strmResolver.resolve(recoveredContext, {fs: {existsSync: () => false}}).isStrm, true);
+
+    const ordinary = await strmIdentityRecovery.recover({
+        item: {Id: 'ordinary-1', ServerId: 'server-1'},
+        connectionManager: {
+            getApiClient: () => ({getItem: async () => ({Path: 'C:\\Media\\ordinary.mkv'})})
+        }
+    });
+    assert.equal(ordinary.metadataRecoverySucceeded, true);
+    assert.equal(ordinary.recoveredPathEndsWithStrm, false);
+    assert.equal(ordinary.strmIdentitySource, 'none');
+    const ordinaryContext = {
+        item: {Id: 'ordinary-1', ServerId: 'server-1'},
+        mediaSource: {Path: 'C:\\Media\\ordinary.mkv', Container: 'mkv'},
+        sidecarPath: ordinary.recoveredPath,
+        sourcePath: 'C:\\Media\\ordinary.mkv',
+        nativeSource: 'https://emby.example.test/videos/ordinary',
+        playMethod: 'DirectStream'
+    };
+    assert.equal(strmResolver.isStrm(ordinaryContext), false);
+    assert.deepEqual(strmResolver.resolve(ordinaryContext, {fs: {existsSync: () => false}}), {
+        type: 'native',
+        source: ordinaryContext.nativeSource,
+        reason: 'not_strm',
+        isStrm: false,
+        localExists: false,
+        fallback: true
+    });
+
+    let ordinaryRequests = 0;
+    const noIdentity = await strmIdentityRecovery.recover({
+        item: {},
+        connectionManager: {getApiClient: () => { ordinaryRequests++; return null; }}
+    });
+    assert.equal(noIdentity.metadataRecoveryAttempted, false);
+    assert.equal(ordinaryRequests, 0);
+    assert.equal(strmResolver.isStrm({
+        item: {Name: 'ordinary'},
+        mediaSource: {Path: 'C:\\Media\\ordinary.mkv', Container: 'mkv'},
+        nativeSource: 'https://emby.example.test/videos/ordinary',
+        playMethod: 'DirectStream'
+    }), false);
+});
+
+test('STRM identity recovery fails open on metadata failure, timeout and superseded late response', async () => {
+    const failed = await strmIdentityRecovery.recover({
+        item: {Id: 'failed-1', ServerId: 'server-1'},
+        connectionManager: {getApiClient: () => ({getItem: async () => { throw new Error('metadata-failed'); }})}
+    });
+    assert.equal(failed.status, 'failed');
+    assert.equal(failed.metadataRecoveryAttempted, true);
+    assert.equal(failed.metadataRecoverySucceeded, false);
+    assert.equal(strmResolver.resolve({
+        item: {Id: 'failed-1', ServerId: 'server-1'},
+        mediaSource: {Path: 'C:\\Resolved\\failed.mkv', Container: 'mkv'},
+        nativeSource: 'https://emby.example.test/videos/failed',
+        playMethod: 'DirectStream'
+    }, {fs: {existsSync: () => false}}).reason, 'invalid_context');
+
+    const timeout = await strmIdentityRecovery.recover({
+        item: {Id: 'timeout-1', ServerId: 'server-1'},
+        timeoutMs: 10,
+        connectionManager: {getApiClient: () => ({getItem: () => new Promise(() => {})})}
+    });
+    assert.equal(timeout.status, 'timeout');
+    assert.equal(timeout.metadataRecoveryAttempted, true);
+    assert.equal(timeout.recoveredPath, null);
+
+    const controller = new AbortController();
+    let resolveLate;
+    const pending = strmIdentityRecovery.recover({
+        item: {Id: 'late-1', ServerId: 'server-1'},
+        signal: controller.signal,
+        connectionManager: {getApiClient: () => ({getItem: () => new Promise(resolve => { resolveLate = resolve; })})}
+    });
+    controller.abort();
+    const superseded = await pending;
+    assert.equal(superseded.status, 'superseded');
+    resolveLate({Path: 'C:\\Library\\late.mkv.strm'});
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(superseded.recoveredPath, null);
 });
 
 test('CD2 telemetry records bounded result facts without candidates, source URLs or tokens', async () => {

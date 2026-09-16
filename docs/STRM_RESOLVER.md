@@ -11,6 +11,8 @@ Resolver 运行在现有 `PlaybackManager → libmpv` 播放链内，只决定 E
 
 普通媒体直接返回 native source，不进入本地路径推导。
 
+当 `Item.Path` 缺失时，`libmpv.playInternal` 只在 `item.Id` 与 `item.ServerId` 同时存在的情况下，通过现有 `connectionManager` 找到 ApiClient，并调用 `getItem(userId, itemId, {Fields:'Path'}, signal)` 做一次有界 metadata recovery。返回的 Path 以 `.strm` 结尾时才作为 `sidecarPath`；返回普通媒体 Path、请求失败、超时或 request superseded 都保持 native 行为。`DirectStream + file + mkv` 本身不是 STRM 证据。
+
 ## Context
 
 Resolver 使用三个严格分离的路径字段。
@@ -22,6 +24,8 @@ Resolver 使用三个严格分离的路径字段。
 | `nativeSource` | `options.url` | PlaybackManager 已决定的最终原生播放 source |
 
 `item`、`mediaSource`、`playMethod` 和完整 `streamInfo` 只作为现有播放上下文传入。Resolver 不修改这些对象。
+
+若发生 recovery，`sidecarPath` 的来源在 diagnostics 中标记为 `metadata-recovery`；原始 `sourcePath` 仍来自 `MediaSource.Path`，不会改回 `.strm`。
 
 ## Resolver contract
 
@@ -67,14 +71,14 @@ Mount 规则命中时，会将 candidate 按 `sourcePrefix → mountPrefix` 做�
 
 ## Fallback and playback safety
 
-- 非 STRM、缺少 `item`/`mediaSource`/任一三个路径字段、未知播放方式和任何 Resolver 异常都保留 `nativeSource`。
+- 非 STRM、缺少 `item`/`mediaSource`/任一三个路径字段、未知播放方式和任何 Resolver 异常都保留 `nativeSource`。metadata recovery 的 ApiClient 缺失、identity 缺失、失败和超时同样 fail-open。
 - `Transcode` 始终保留 `nativeSource`。
 - `DirectPlay` 和 `DirectStream` 只有在确定性本地文件命中时才替换 source。
 - renderer Resolver 只通过窄 IPC 请求 main-process CD2 service，不自行 seek，也不改变 resume offset、音轨、字幕、`MediaSourceId` 或 `PlaySessionId`。
 - `libmpv.playInternal` 仅使用结果的 `source` 调用原有 `loadfile`；原始 `options` 继续用于字幕、音轨、上报和 Session 控制。
 - PlaybackManager request id 与 libmpv generation 使新 Play/NextTrack/Stop/destroy 立即淘汰旧请求；旧 RPC、旧 `core-playing` listener 和旧 error recovery 不得影响新播放。
 
-诊断只记录 `isStrm`、结果类型、reason、local exists 和 fallback，不记录完整媒体路径、URL、凭据、媒体名称或 Item 标识。当前 reason 包括 `mount_hit`、`mount_missing`、`mapping_miss`、`transport_error`、`not_strm`、`transcode_skip`、`invalid_context`、`parse_failed` 和 `native_fallback`。
+诊断只记录 `isStrm`、结果类型、reason、local exists 和 fallback；context event 另记录 identity source、字段存在性、类型、扩展名和 recovery 事实，不记录完整媒体路径、URL、凭据、媒体名称或 Item 标识。当前 reason 包括 `mount_hit`、`mount_missing`、`mapping_miss`、`transport_error`、`not_strm`、`transcode_skip`、`invalid_context`、`parse_failed` 和 `native_fallback`。
 
 ## Known limitations
 

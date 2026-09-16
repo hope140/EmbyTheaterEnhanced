@@ -6,9 +6,15 @@
 
 日志位置为 `%APPDATA%\EmbyTheaterEnhanced\logs\ete-client.jsonl`，UTF-8 JSONL 追加写入，约 2 MiB 后保留 `.1`、`.2`、`.3`。所有落盘记录统一经过 sanitizer；凭据、认证 query、完整 URL、完整媒体路径、Local Storage/Cookie database 和 `mpv.conf` 原文不落盘，路径与设备/会话标识只保留 16 位哈希。日志和导出失败 fail-open，不传播到播放链。
 
-设置页“诊断与日志”提供状态、导出 TXT、打开日志目录和二次确认清空。导出报告按轮转文件到当前文件顺序合并，并生成最近 route、CD2、Mount、Native fallback、core-playing 和 playback 摘要；不确定值写 `UNKNOWN`。当前自动回归为 `npm test 121/121`，其中本轮 diagnostics/preload targeted 为 `13/13`；构建、provenance、package 和候选安装包结果以本分支最终验证记录为准。
+设置页“诊断与日志”提供状态、导出 TXT、打开日志目录和二次确认清空。导出报告按轮转文件到当前文件顺序合并，并生成最近 route、CD2、Mount、Native fallback、core-playing 和 playback 摘要；不确定值写 `UNKNOWN`。当前自动回归为 `npm test 123/123`，其中本轮 diagnostics/preload targeted 为 `15/15`；构建、provenance、package 和候选安装包结果以本分支最终验证记录为准。
 
 真实 Windows 客户端各 route 播放、真实导出 TXT、AI 可判定性和 Session/remote 状态事件仍需人工验收；旧 upstream Web UI、`apiclient.js`、`connectionmanager.js`、PlaybackManager vendor snapshot 与 WebSocket 生命周期相关观测本轮保持 deferred。详细 contract 见 [CLIENT_DIAGNOSTICS](CLIENT_DIAGNOSTICS.md)。
+
+## 2026-09-16 — STRM identity recovery
+
+真实客户端取证确认：`item` 和 `mediaSource` 存在，但 `item.Path` 缺失；`MediaSource.Path` 已是实际 `.mkv`，Container 为 `mkv`，播放方式为 `DirectStream`。因此本轮没有采用 `DirectStream + file + mkv` 启发式，而是在 `item.Path` 缺失且 `item.Id`/`item.ServerId` 充分时，复用现有 `connectionManager` 与 `apiClient.getItem(userId, itemId, {Fields:'Path'}, signal)` 做一次有界 recovery。
+
+仅当 metadata 返回的 Path 以 `.strm` 结尾时才补入 resolver `sidecarPath`；`MediaSource.Path` 继续作为 source identity，普通 `.mkv`、请求失败、超时和 superseded request 均保持 Native 行为。context diagnostics 新增 `strmIdentitySource`、`metadataRecoveryAttempted`、`metadataRecoverySucceeded` 与 `recoveredPathEndsWithStrm`。
 
 ## 2026-09-15 — Stable Enhanced DeviceId implementation
 
