@@ -18,7 +18,7 @@
 
     function reasonText(reason) {
         var value = typeof reason === 'string' ? reason : '';
-        if (!value) return '未知';
+        if (!value || value === 'not_attempted') return '未使用';
         if (value.indexOf('timeout') >= 0) return '超时';
         if (value.indexOf('cancel') >= 0) return '已取消';
         if (value.indexOf('error') >= 0) return '错误';

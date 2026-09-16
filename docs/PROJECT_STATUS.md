@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-09-16 — Stats 未尝试阶段展示语义
+
+修正 `playback-route-stats` 的用户态映射：Mount-first 直接命中时 CD2 显示“未使用”，`not_attempted` 不再透传；timeout 仍显示“超时”，miss/not_found 仍显示“未命中”。仅调整 Stats 展示语义，不改变 Resolver、CD2、Mount 或 timeout/budget。targeted `4/4`、全量 `npm test` `136/136`、JS syntax 与 `git diff --check` 通过。
+
 ## 2026-09-16 — Diagnostics run correlation and native Stats source
 
 修复 Diagnostics Export 的跨 app run request-id 串联：Summary 现在以最新 `route-selected` 向前最近的 `app/start` 为边界，只关联该 run 内相同 request 的 CD2、Mount、native fallback 与 playback event；无边界时保守为 `UNKNOWN`，不会把旧 run 的 Mount HIT 显示到新的 DirectUrl 播放。回归覆盖重复 `play-1-1`、同 run Direct → Same-Origin → Mount、以及同 run 多播放请求。

@@ -21,6 +21,11 @@ test('route stats map DirectUrl, CD2 HTTP, Mount, native fallback, and ordinary 
     const mount = values(routeStats.makeStats({isStrm: true, route: 'mount', cd2Reason: 'timeout'}));
     assert.deepEqual(mount, {'播放源:': '本地挂载', 'STRM:': '是', 'CD2:': '超时', 'Mount:': '命中', 'Fallback:': '否'});
 
+    const mountFirst = values(routeStats.makeStats({isStrm: true, route: 'mount', cd2Reason: null}));
+    assert.equal(mountFirst['CD2:'], '未使用', 'a Mount-first hit must not describe an unattempted CD2 stage as unknown');
+    const explicitNotAttempted = values(routeStats.makeStats({isStrm: true, route: 'mount', cd2Reason: 'not_attempted'}));
+    assert.equal(explicitNotAttempted['CD2:'], '未使用');
+
     const fallback = values(routeStats.makeStats({isStrm: true, route: 'native', reason: 'native_fallback', cd2Reason: 'missing_file'}));
     assert.deepEqual(fallback, {'播放源:': 'Emby 原生', 'STRM:': '是', 'CD2:': '未命中', 'Mount:': '未命中', 'Fallback:': '是'});
 

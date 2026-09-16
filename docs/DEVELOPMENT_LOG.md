@@ -1,5 +1,9 @@
 # 开发日志
 
+## 2026-09-16 — Stats 未尝试阶段展示语义
+
+本轮只修正 `playback-route-stats.js` 的用户态文本：空 CD2 reason 与 `not_attempted` 统一显示“未使用”，保留 timeout“超时”、miss/not_found“未命中”及 DirectUrl/CD2 HTTP“命中”。新增 Mount-first → Mount hit → CD2 未使用回归；Resolver/CD2/Mount 行为与 timeout/budget 未改。targeted `4/4`、全量 `npm test` `136/136`、JS syntax 与 `git diff --check` 通过。
+
 ## 2026-09-16 — Diagnostics run correlation and native Stats source
 
 Model Tier：2。Reason：导出关联涉及跨 run 事件边界，Stats 状态必须与 libmpv request generation、supersede、stop/destroy 生命周期严格一致；未改变 PlaybackManager、Session、WebSocket、resolver source selection 或 timeout。Escalated：no。
