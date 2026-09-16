@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-09-17 — Production application identity parity
+
+基于 `origin/main@73eac9fa64c43804e9c5c53690ed087b2c5bb077` 独立修复正式 Electron 与 acceptance 的 application identity 漂移。正式启动与 acceptance 现在共同调用 `product-identity.js`，唯一语义为 runtime `package.productName || package.name`；正式启动在 bootstrap、persistent DeviceId、`loadStartInfo()` 与 `BrowserWindow` 创建前完成 `app.setName()`。当前构建 metadata 对应有效 identity 为 `Emby Theater Enhanced`。
+
+本轮未修改 persistent DeviceId helper、存储格式或传播链，也未修改 PlaybackManager、Session/PlaySessionId、MediaSourceId、WebSocket、report、Resolver、CD2、libmpv、Electron、依赖或安装器。Product identity 专项测试 `4/4` 与修改 JS/CJS syntax 通过；`npm test` 为 `144/152`，其余 8 项均由 clean worktree 缺少 private/ignored Carnival Web input 与 prepared preload 导致，未发现真实代码失败。因同一输入缺失且没有当前分支 runtime，未执行 Electron smoke；未开始 Production Bridge Adapter。
+
 ## 2026-09-16 — Phase 1 tracked source Git-blob binding
 
 修复远程审核发现的最后一个 source binding blocker：`build.ps1` 不再从 working tree 物理 `src/electronapp` 路径复制普通 tracked 文件，而是从固定 `sourceCommit` 的 Git tree 枚举 regular blob，并以原始 bytes 写入 runtime。dirty/staged index、CRLF/LF checkout policy 与 binary 工作文件变化不会影响输出；prepared preload、Web overlay、PlaybackManager/package overlay contract 未改变。

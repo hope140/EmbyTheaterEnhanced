@@ -76,15 +76,18 @@ test('randomBytes fallback creates a UUID v4 without a machine-specific value', 
     assert.match(value[19], /[89ab]/i);
 });
 
-test('startup resolves the persistent id before loadStartInfo and does not add app identity logic', () => {
+test('startup resolves the persistent id before loadStartInfo without coupling it to product identity', () => {
     const mainPath = path.join(repoRoot, 'src/electronapp/main.js');
     const main = fs.readFileSync(mainPath, 'utf8');
+    const productIdentityCall = main.indexOf('productIdentity.setAppName(app, productMetadata);');
     const identityCall = main.indexOf('deviceIdentity.getOrCreateDeviceId(');
+    assert.ok(productIdentityCall >= 0, 'startup must set the product identity');
     assert.ok(identityCall >= 0, 'startup must resolve a persistent device id');
+    assert.ok(productIdentityCall < identityCall, 'product identity must be set without replacing persistent device identity');
     assert.ok(identityCall < main.indexOf('function loadStartInfo()'), 'device id must precede loadStartInfo');
     assert.ok(identityCall < main.indexOf("app.on('ready'"), 'device id must precede the ready handler');
     assert.match(main, /appBootstrapState\.configDirectory/);
-    assert.doesNotMatch(main, /app\.setName\(/, 'this branch must not carry the product-session-identity fix');
+    assert.match(main, /deviceId:\s*persistentDeviceId/);
 });
 
 test('HTTP and WebSocket identity chains consume the same appStartInfo device id', () => {

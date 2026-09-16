@@ -1,5 +1,15 @@
 # 开发日志
 
+## 2026-09-17 — Production application identity parity
+
+Model Tier：2。Model：GPT-5.6 Sol High。Reason：修改虽小，但必须核对正式 Electron startup、acceptance harness、`loadStartInfo`、BrowserWindow、ConnectionManager 与既有 persistent DeviceId 的初始化边界。Escalated：no。
+
+先核验 `origin/main=73eac9fa64c43804e9c5c53690ed087b2c5bb077`，并在独立 worktree 的 `fix/product-session-identity-v2` 上审计旧 reference `8eb50624c03acbf42229bac1bfebd07041f7ed6f`。当前 base 的正式 `main.js` 没有设置 application name，`loadStartInfo()` 却使用 `app.name`；acceptance 则自行使用 `metadata.productName || metadata.name`，因此旧 production gap 仍存在。旧测试中的 hostname DeviceId 断言已不适用于当前 main 的 persistent UUID baseline，未原样复刻。
+
+新增小型 `product-identity.js`，集中实现 runtime `productName || name` 与 `app.setName()`；正式 startup 和 acceptance 均调用该 helper，不再保留两套 fallback。正式调用位于 bootstrap、persistent DeviceId、`loadStartInfo()` 与 `BrowserWindow` 之前，之后仍由 `loadStartInfo.name = app.name` 进入既有 apphost/ConnectionManager client identity 链。DeviceId 继续从 Enhanced config 的 `device-identity.json` 读取或生成，`deviceName` 继续使用 hostname。
+
+验证：product identity 专项 `4/4`；修改的 JS/CJS `node --check` 全部通过。安装锁定依赖后全量 `npm test` 为 `144/152`；8 项失败均为 `ENOENT` 或显式 missing-base，源于 clean worktree 不含 `vendor/carnival/electronapp/www` 与 prepared `src/electronapp/preload.js`，归类为 `ENVIRONMENT_INPUT_MISSING`，真实代码失败为 0。缺少这些 private/ignored input 且不存在当前分支 runtime，因此未运行 build 或 Electron smoke，也未用代码规避测试。本轮未修改 PlaybackManager、Session/PlaySessionId、MediaSourceId、WebSocket、reports、Resolver、CD2、libmpv、Electron、依赖或安装器，未开始 Bridge Adapter。
+
 ## 2026-09-16 — Bind tracked runtime sources to Git blobs
 
 Model Tier：1。Model：GPT-5 Codex（current session）。Reason：远程审核已明确 blocker、允许文件、输入输出与验收标准；修改限定为 build source acquisition、runtime provenance 和回归测试。Escalated：no。
