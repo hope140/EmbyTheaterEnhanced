@@ -743,6 +743,15 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             };
 
             try {
+                emitClientDiagnostic('info', 'resolver', 'context-observed', Object.assign(
+                    requestDiagnosticDetails(request),
+                    strmResolver && typeof strmResolver.describeContext === 'function'
+                        ? strmResolver.describeContext(resolverContext)
+                        : {}
+                ));
+            } catch (_) { /* Context diagnostics are optional and fail-open. */ }
+
+            try {
                 isStrmRequest = !!(strmResolver && typeof strmResolver.isStrm === 'function' && strmResolver.isStrm(resolverContext));
                 if (isStrmRequest && strmConfigClient && typeof strmConfigClient.get === 'function') {
                     resolverConfig = await strmConfigClient.get();
@@ -777,6 +786,16 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 url = resolverResult.source;
             }
             fileLocalLoadOptions = getFileLocalLoadOptions(resolverResult);
+            if (resolverResult && resolverResult.reason === 'invalid_context') {
+                try {
+                    emitClientDiagnostic('warn', 'resolver', 'invalid-context', Object.assign(
+                        requestDiagnosticDetails(request),
+                        strmResolver && typeof strmResolver.diagnoseContext === 'function'
+                            ? strmResolver.diagnoseContext(resolverContext)
+                            : {missingFields: [], isStrmDetected: false, playMethod: null, mediaSourceContainer: null}
+                    ));
+                } catch (_) { /* Context diagnostics are optional and fail-open. */ }
+            }
             var resolverObservation = logStrmResolverResult(resolverResult, request, isStrmRequest);
             emitClientDiagnostic('info', 'playback', 'resolver-complete', Object.assign(requestDiagnosticDetails(request), {
                 isStrm: isStrmRequest,

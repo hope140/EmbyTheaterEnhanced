@@ -230,6 +230,95 @@ test('resolver results map to the four stable route names and mount telemetry co
     assert.equal(strmResolver.routeForResult({type: 'local', reason: 'unexpected'}), 'unknown');
 });
 
+test('resolver context diagnostics describe DirectStream fields and identify invalid-context omissions without changing results', () => {
+    const complete = {
+        item: {Path: 'C:\\Library\\Episode.strm', MediaType: 'Video', Type: 'Episode'},
+        mediaSource: {
+            Path: 'https://media.example.test/episode.mkv?opaque=1',
+            Container: 'strm',
+            Protocol: 'https',
+            Type: 'Video'
+        },
+        url: 'https://emby.example.test/videos/native',
+        directStreamUrl: 'https://emby.example.test/videos/direct',
+        transcodingUrl: 'https://emby.example.test/videos/transcode',
+        playMethod: 'DirectStream'
+    };
+    assert.deepEqual(strmResolver.describeContext(complete), {
+        itemPresent: true,
+        mediaSourcePresent: true,
+        itemPathPresent: true,
+        itemPathType: 'string',
+        itemPathEndsWithStrm: true,
+        itemPathExtension: '.strm',
+        mediaSourcePathPresent: true,
+        mediaSourcePathType: 'string',
+        mediaSourcePathExtension: '.mkv',
+        mediaSourceContainer: 'strm',
+        nativeSourcePresent: true,
+        nativeSourceType: 'string',
+        playMethod: 'DirectStream',
+        itemMediaType: 'Video',
+        itemType: 'Episode',
+        mediaSourceProtocol: 'https',
+        mediaSourceType: 'Video',
+        directStreamUrlPresent: true,
+        transcodingUrlPresent: true
+    });
+    assert.deepEqual(strmResolver.diagnoseContext(complete), {
+        missingFields: [],
+        isStrmDetected: true,
+        playMethod: 'DirectStream',
+        mediaSourceContainer: 'strm'
+    });
+
+    const missingItemPath = Object.assign({}, complete, {item: {MediaType: 'Video', Type: 'Episode'}});
+    const missingSourcePath = Object.assign({}, complete, {mediaSource: {Container: 'strm', Protocol: 'https', Type: 'Video'}});
+    const missingNativeSource = Object.assign({}, complete, {url: undefined});
+    assert.deepEqual(strmResolver.diagnoseContext(missingItemPath).missingFields, ['sidecarPath']);
+    assert.deepEqual(strmResolver.diagnoseContext(missingSourcePath).missingFields, ['sourcePath']);
+    assert.deepEqual(strmResolver.diagnoseContext(missingNativeSource).missingFields, ['nativeSource']);
+    assert.equal(strmResolver.diagnoseContext(missingItemPath).isStrmDetected, true);
+
+    assert.deepEqual(strmResolver.resolve(complete, {fs: {existsSync: () => false}}), {
+        type: 'native',
+        source: complete.url,
+        reason: 'mount_missing',
+        isStrm: true,
+        localExists: false,
+        fallback: true
+    });
+    assert.deepEqual(strmResolver.resolve(missingItemPath, {fs: {existsSync: () => false}}), {
+        type: 'native',
+        source: complete.url,
+        reason: 'invalid_context',
+        isStrm: true,
+        localExists: false,
+        fallback: true
+    });
+    assert.deepEqual(strmResolver.resolve(missingSourcePath, {fs: {existsSync: () => false}}), {
+        type: 'native',
+        source: complete.url,
+        reason: 'invalid_context',
+        isStrm: true,
+        localExists: false,
+        fallback: true
+    });
+    assert.deepEqual(strmResolver.resolve(missingNativeSource, {fs: {existsSync: () => false}}), {
+        type: 'native',
+        source: undefined,
+        reason: 'invalid_context',
+        isStrm: true,
+        localExists: false,
+        fallback: true
+    });
+
+    const libmpvSource = fs.readFileSync(path.join(__dirname, '..', 'src/electronapp/plugins/libmpv.js'), 'utf8');
+    assert.match(libmpvSource, /'context-observed'/);
+    assert.match(libmpvSource, /'invalid-context'/);
+    assert.ok(libmpvSource.indexOf("'context-observed'") < libmpvSource.indexOf('strmResolver.isStrm(resolverContext)'));
+});
+
 test('CD2 telemetry records bounded result facts without candidates, source URLs or tokens', async () => {
     const events = [];
     const transport = {

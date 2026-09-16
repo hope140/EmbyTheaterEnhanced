@@ -10,7 +10,13 @@ Model Tier：2。Reason：任务跨 main-process logger/IPC、renderer/libmpv re
 
 新增设置页 `mpvplayer/diagnostics.html/js/css`，只显示安全的简化目录说明；生成式 preload 只增加 path hash helper，不携带 token。更新 `docs/CLIENT_DIAGNOSTICS.md`、DECISIONS 与 libmpv runtime 说明。测试覆盖 Authorization/Bearer、X-Emby-Token、api key、Cookie、password、URL query、Windows/UNC/POSIX path、circular/undefined/null/huge Error、目录/追加/轮转失败、malformed JSONL、四 route、CD2 telemetry 和 trusted IPC。
 
-验证：本轮 targeted diagnostics/preload `12/12`，全量 `npm test` `120/120`；相关 JavaScript syntax 与 `git diff --check` 已通过。真实 Windows route 播放、TXT 导出、AI 判读、Session/remote observability 保持 `MANUAL ACCEPTANCE REQUIRED` 或 `DEFERRED OBSERVABILITY`，不以 synthetic 证据替代。
+验证：本轮 targeted diagnostics/preload `13/13`，全量 `npm test` `121/121`；相关 JavaScript syntax 与 `git diff --check` 已通过。真实 Windows route 播放、TXT 导出、AI 判读、Session/remote observability 保持 `MANUAL ACCEPTANCE REQUIRED` 或 `DEFERRED OBSERVABILITY`，不以 synthetic 证据替代。
+
+## 2026-09-16 — Resolver runtime context diagnostics
+
+在现有 `feat/client-diagnostics-log` 上继续增加一次最小 context 观测，不修 Resolver。`libmpv.playInternal` 在 `strmResolver.isStrm/resolveAsync` 前记录 `resolver/context-observed`，包括字段存在性、类型、扩展名、STRM 后缀、Container、协议、播放方法、媒体类型和 direct/transcode URL 存在性；若结果仍为 `invalid_context`，追加 `resolver/invalid-context` 与确定的 `missingFields`。路径和 URL 不进入该事件，原 sanitizer 和日志架构保持不变。
+
+新增 `strm-resolver.js` 纯诊断 helper `describeContext/diagnoseContext`，覆盖完整 context、缺 item.Path、缺 MediaSource.Path、缺 native source、Container=strm、`.strm` 和 DirectStream；回归同时断言 Resolver 原返回值不变。真实 DirectStream 的 item/media source/Container 是否被 Emby 改写，需从新 candidate 的 context event 取证，不根据猜测修改产品逻辑。
 
 ## 2026-09-16 — Client Diagnostics IPC wiring follow-up
 

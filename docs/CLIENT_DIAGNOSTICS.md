@@ -39,7 +39,7 @@ ete-client.jsonl.3
 当前主要类别如下：
 
 - `app`：`start`、自然可观测的 `shutdown`，以及版本、平台、架构和安全摘要。
-- `resolver`：每次 STRM resolve 的 `route-selected`。
+- `resolver`：`context-observed`、必要时的 `invalid-context`，以及每次 STRM resolve 的 `route-selected`。
 - `cd2`：`resolve-start`、`resolve-hit`、`resolve-miss`、`resolve-error`、`resolve-cancelled`。
 - `mount`：`resolve-start`、`resolve-hit`、`resolve-miss`。
 - `playback`：`play-request`、`resolver-complete`、`loadfile-requested`、`core-playing`、`pause`、`resume`、`seek`、`next`、`stop`、`playback-error`。
@@ -61,6 +61,8 @@ CD2 事件只记录 request id、rule id、mode、candidate 数量、reason、�
 | `native` | `type=native` | NATIVE FALLBACK |
 
 路由记录包含 `requestId`、`playRequestId`、`isStrm`、`ruleId`、`type`、`reason`、`sourceKind`、`cd2Reason`、`directReason`、`localExists` 和 `fallback`。`result.source` 永远不写入日志。
+
+`resolver/context-observed` 只记录上下文是否存在、字段类型、扩展名、`.strm` 后缀、Container、协议、播放方法和 DirectStream/Transcoding URL 是否存在，不记录原始路径或 URL。`resolver/invalid-context` 额外记录 `missingFields` 与 `isStrmDetected`，用于区分 `item`、`mediaSource`、`sidecarPath`、`sourcePath` 和 `nativeSource` 哪一项缺失；它不会改变原有 `invalid_context` 返回值。
 
 ## 隐私与脱敏
 
