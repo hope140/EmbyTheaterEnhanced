@@ -1,0 +1,145 @@
+{
+  "status": "PASS",
+  "generationId": 101,
+  "reply": {
+    "commandAccepted": true,
+    "mediaIdentity": 1
+  },
+  "finalState": {
+    "status": "playing",
+    "path": "E:\\ETE-helper-native-pipe\\.work\\helper-native-pipe-final4\\media\\A.wav",
+    "playing": true,
+    "fileLoaded": true
+  },
+  "timeline": [
+    {
+      "atParentMicros": 365960612555,
+      "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+      "generationId": 101,
+      "requestId": null,
+      "rawEventId": null,
+      "rawEventName": null,
+      "mediaIdentity": null,
+      "name": "generation-begin",
+      "currentAuthoritativeGeneration": 101,
+      "action": "BEGIN_GENERATION",
+      "label": "single-A"
+    },
+    {
+      "atParentMicros": 365960630248,
+      "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+      "generationId": 101,
+      "requestId": 1,
+      "rawEventId": null,
+      "rawEventName": null,
+      "mediaIdentity": null,
+      "name": "response",
+      "currentAuthoritativeGeneration": 101,
+      "action": "RESOLVE_REQUEST"
+    },
+    {
+      "atParentMicros": 365960630360,
+      "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+      "generationId": 101,
+      "requestId": null,
+      "rawEventId": 6,
+      "rawEventName": "start-file",
+      "mediaIdentity": 1,
+      "name": "start-file",
+      "currentAuthoritativeGeneration": 101,
+      "action": "ACCEPT",
+      "value": null
+    },
+    {
+      "atParentMicros": 365960645643,
+      "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+      "generationId": 101,
+      "requestId": null,
+      "rawEventId": 8,
+      "rawEventName": "file-loaded",
+      "mediaIdentity": 1,
+      "name": "file-loaded",
+      "currentAuthoritativeGeneration": 101,
+      "action": "ACCEPT",
+      "value": null
+    },
+    {
+      "atParentMicros": 365960645652,
+      "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+      "generationId": 101,
+      "requestId": null,
+      "rawEventId": 22,
+      "rawEventName": "property-change",
+      "mediaIdentity": 1,
+      "name": "time-pos",
+      "currentAuthoritativeGeneration": 101,
+      "action": "ACCEPT",
+      "value": 0
+    },
+    {
+      "atParentMicros": 365960645656,
+      "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+      "generationId": 101,
+      "requestId": null,
+      "rawEventId": 22,
+      "rawEventName": "property-change",
+      "mediaIdentity": 1,
+      "name": "duration",
+      "currentAuthoritativeGeneration": 101,
+      "action": "ACCEPT",
+      "value": 2
+    },
+    {
+      "atParentMicros": 365960645658,
+      "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+      "generationId": 101,
+      "requestId": null,
+      "rawEventId": 22,
+      "rawEventName": "property-change",
+      "mediaIdentity": 1,
+      "name": "pause",
+      "currentAuthoritativeGeneration": 101,
+      "action": "ACCEPT",
+      "value": false
+    },
+    {
+      "atParentMicros": 365960645764,
+      "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+      "generationId": 101,
+      "requestId": null,
+      "rawEventId": 22,
+      "rawEventName": "property-change",
+      "mediaIdentity": 1,
+      "name": "core-idle",
+      "currentAuthoritativeGeneration": 101,
+      "action": "ACCEPT",
+      "value": false
+    },
+    {
+      "atParentMicros": 365960645770,
+      "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+      "generationId": 101,
+      "requestId": null,
+      "rawEventId": 22,
+      "rawEventName": "property-change",
+      "mediaIdentity": 1,
+      "name": "path",
+      "currentAuthoritativeGeneration": 101,
+      "action": "ACCEPT",
+      "value": "E:\\ETE-helper-native-pipe\\.work\\helper-native-pipe-final4\\media\\A.wav"
+    },
+    {
+      "atParentMicros": 365960659430,
+      "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+      "generationId": 101,
+      "requestId": null,
+      "rawEventId": 22,
+      "rawEventName": "property-change",
+      "mediaIdentity": 1,
+      "name": "time-pos",
+      "currentAuthoritativeGeneration": 101,
+      "action": "ACCEPT",
+      "value": 0.027248
+    }
+  ]
+}

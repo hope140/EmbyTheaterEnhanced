@@ -1,0 +1,34 @@
+{
+  "status": "PASS",
+  "parentPid": 32120,
+  "helperPid": 11384,
+  "helperInstanceId": "8a8dbff2-2e98-497f-bafd-25e27bfd1f0d",
+  "readyFrame": {
+    "protocolVersion": 1,
+    "type": "lifecycle",
+    "helperInstanceId": "8a8dbff2-2e98-497f-bafd-25e27bfd1f0d",
+    "scope": "helper",
+    "name": "ready",
+    "monotonicMicros": 365967907997,
+    "detail": {
+      "protocolVersion": 1,
+      "mpvClientApiVersion": 131077,
+      "queueLimits": {
+        "maxPendingFrames": 128,
+        "maxPendingBytes": 262144,
+        "maxFrameBytes": 65536,
+        "maxReceiveBuffer": 131072,
+        "writtenFrames": 0,
+        "writtenBytes": 0,
+        "coalescedReplaced": 0,
+        "coalescedDropped": 0,
+        "peakFrames": 0,
+        "peakBytes": 0
+      }
+    }
+  },
+  "helperExitedAfterParentDeath": true,
+  "residualHelperProcess": 0,
+  "parentStdout": "",
+  "parentStderr": ""
+}

@@ -1,0 +1,1092 @@
+{
+  "status": "PASS",
+  "passed": 20,
+  "total": 20,
+  "iterations": [
+    {
+      "iteration": 1,
+      "status": "PASS",
+      "loadGeneration": 204,
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "GENERATION_RETIRED",
+        "error": "stop"
+      },
+      "timeline": [
+        {
+          "atParentMicros": 365961996222,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 203,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-retired",
+          "currentAuthoritativeGeneration": null,
+          "action": "RETIRE_GENERATION",
+          "reason": "superseded"
+        },
+        {
+          "atParentMicros": 365961996224,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 204,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-begin",
+          "currentAuthoritativeGeneration": 204,
+          "action": "BEGIN_GENERATION",
+          "label": "stop-0-A"
+        },
+        {
+          "atParentMicros": 365961996328,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 204,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-retired",
+          "currentAuthoritativeGeneration": null,
+          "action": "RETIRE_GENERATION",
+          "reason": "stop"
+        },
+        {
+          "atParentMicros": 365962011834,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 205,
+          "requestId": 105,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "response",
+          "currentAuthoritativeGeneration": null,
+          "action": "RESOLVE_REQUEST"
+        },
+        {
+          "atParentMicros": 365962011964,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 203,
+          "requestId": null,
+          "rawEventId": 7,
+          "rawEventName": "end-file",
+          "mediaIdentity": 43,
+          "name": "end-file",
+          "currentAuthoritativeGeneration": null,
+          "action": "DROP_STALE_GENERATION",
+          "value": {
+            "reason": 2,
+            "error": 0
+          }
+        },
+        {
+          "atParentMicros": 365962011965,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": null,
+          "requestId": null,
+          "rawEventId": 22,
+          "rawEventName": "property-change",
+          "mediaIdentity": null,
+          "name": "unattributed-native-event",
+          "currentAuthoritativeGeneration": null,
+          "action": "DROP_UNATTRIBUTED",
+          "reason": "observer-generation-has-no-unique-open-media",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365962011976,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": null,
+          "requestId": null,
+          "rawEventId": 22,
+          "rawEventName": "property-change",
+          "mediaIdentity": null,
+          "name": "unattributed-native-event",
+          "currentAuthoritativeGeneration": null,
+          "action": "DROP_UNATTRIBUTED",
+          "reason": "observer-generation-has-no-unique-open-media",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365962011976,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": null,
+          "requestId": null,
+          "rawEventId": 22,
+          "rawEventName": "property-change",
+          "mediaIdentity": null,
+          "name": "unattributed-native-event",
+          "currentAuthoritativeGeneration": null,
+          "action": "DROP_UNATTRIBUTED",
+          "reason": "observer-generation-has-no-unique-open-media",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365962011977,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": null,
+          "requestId": null,
+          "rawEventId": 22,
+          "rawEventName": "property-change",
+          "mediaIdentity": null,
+          "name": "unattributed-native-event",
+          "currentAuthoritativeGeneration": null,
+          "action": "DROP_UNATTRIBUTED",
+          "reason": "observer-generation-has-no-unique-open-media",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "iteration": 2,
+      "status": "PASS",
+      "loadGeneration": 206,
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "GENERATION_RETIRED",
+        "error": "stop"
+      },
+      "timeline": [
+        {
+          "atParentMicros": 365962043413,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 206,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-begin",
+          "currentAuthoritativeGeneration": 206,
+          "action": "BEGIN_GENERATION",
+          "label": "stop-1-A"
+        },
+        {
+          "atParentMicros": 365962043578,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 206,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-retired",
+          "currentAuthoritativeGeneration": null,
+          "action": "RETIRE_GENERATION",
+          "reason": "stop"
+        },
+        {
+          "atParentMicros": 365962089780,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 207,
+          "requestId": 107,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "response",
+          "currentAuthoritativeGeneration": null,
+          "action": "RESOLVE_REQUEST"
+        }
+      ]
+    },
+    {
+      "iteration": 3,
+      "status": "PASS",
+      "loadGeneration": 208,
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "GENERATION_RETIRED",
+        "error": "stop"
+      },
+      "timeline": [
+        {
+          "atParentMicros": 365962121150,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 208,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-begin",
+          "currentAuthoritativeGeneration": 208,
+          "action": "BEGIN_GENERATION",
+          "label": "stop-2-A"
+        },
+        {
+          "atParentMicros": 365962121432,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 208,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-retired",
+          "currentAuthoritativeGeneration": null,
+          "action": "RETIRE_GENERATION",
+          "reason": "stop"
+        },
+        {
+          "atParentMicros": 365962167432,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 209,
+          "requestId": 109,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "response",
+          "currentAuthoritativeGeneration": null,
+          "action": "RESOLVE_REQUEST"
+        }
+      ]
+    },
+    {
+      "iteration": 4,
+      "status": "PASS",
+      "loadGeneration": 210,
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "GENERATION_RETIRED",
+        "error": "stop"
+      },
+      "timeline": [
+        {
+          "atParentMicros": 365962197664,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 210,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-begin",
+          "currentAuthoritativeGeneration": 210,
+          "action": "BEGIN_GENERATION",
+          "label": "stop-3-A"
+        },
+        {
+          "atParentMicros": 365962197765,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 210,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-retired",
+          "currentAuthoritativeGeneration": null,
+          "action": "RETIRE_GENERATION",
+          "reason": "stop"
+        },
+        {
+          "atParentMicros": 365962245158,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 211,
+          "requestId": 111,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "response",
+          "currentAuthoritativeGeneration": null,
+          "action": "RESOLVE_REQUEST"
+        }
+      ]
+    },
+    {
+      "iteration": 5,
+      "status": "PASS",
+      "loadGeneration": 212,
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "GENERATION_RETIRED",
+        "error": "stop"
+      },
+      "timeline": [
+        {
+          "atParentMicros": 365962277089,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 212,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-begin",
+          "currentAuthoritativeGeneration": 212,
+          "action": "BEGIN_GENERATION",
+          "label": "stop-4-A"
+        },
+        {
+          "atParentMicros": 365962277362,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 212,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-retired",
+          "currentAuthoritativeGeneration": null,
+          "action": "RETIRE_GENERATION",
+          "reason": "stop"
+        },
+        {
+          "atParentMicros": 365962324247,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 213,
+          "requestId": 113,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "response",
+          "currentAuthoritativeGeneration": null,
+          "action": "RESOLVE_REQUEST"
+        }
+      ]
+    },
+    {
+      "iteration": 6,
+      "status": "PASS",
+      "loadGeneration": 214,
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "GENERATION_RETIRED",
+        "error": "stop"
+      },
+      "timeline": [
+        {
+          "atParentMicros": 365962355513,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 214,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-begin",
+          "currentAuthoritativeGeneration": 214,
+          "action": "BEGIN_GENERATION",
+          "label": "stop-5-A"
+        },
+        {
+          "atParentMicros": 365962355600,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 214,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-retired",
+          "currentAuthoritativeGeneration": null,
+          "action": "RETIRE_GENERATION",
+          "reason": "stop"
+        },
+        {
+          "atParentMicros": 365962403497,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 215,
+          "requestId": 115,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "response",
+          "currentAuthoritativeGeneration": null,
+          "action": "RESOLVE_REQUEST"
+        }
+      ]
+    },
+    {
+      "iteration": 7,
+      "status": "PASS",
+      "loadGeneration": 216,
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "GENERATION_RETIRED",
+        "error": "stop"
+      },
+      "timeline": [
+        {
+          "atParentMicros": 365962433868,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 216,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-begin",
+          "currentAuthoritativeGeneration": 216,
+          "action": "BEGIN_GENERATION",
+          "label": "stop-6-A"
+        },
+        {
+          "atParentMicros": 365962434154,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 216,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-retired",
+          "currentAuthoritativeGeneration": null,
+          "action": "RETIRE_GENERATION",
+          "reason": "stop"
+        },
+        {
+          "atParentMicros": 365962464868,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 217,
+          "requestId": 117,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "response",
+          "currentAuthoritativeGeneration": null,
+          "action": "RESOLVE_REQUEST"
+        }
+      ]
+    },
+    {
+      "iteration": 8,
+      "status": "PASS",
+      "loadGeneration": 218,
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "GENERATION_RETIRED",
+        "error": "stop"
+      },
+      "timeline": [
+        {
+          "atParentMicros": 365962495569,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 218,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-begin",
+          "currentAuthoritativeGeneration": 218,
+          "action": "BEGIN_GENERATION",
+          "label": "stop-7-A"
+        },
+        {
+          "atParentMicros": 365962496022,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 218,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-retired",
+          "currentAuthoritativeGeneration": null,
+          "action": "RETIRE_GENERATION",
+          "reason": "stop"
+        },
+        {
+          "atParentMicros": 365962526088,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 219,
+          "requestId": 119,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "response",
+          "currentAuthoritativeGeneration": null,
+          "action": "RESOLVE_REQUEST"
+        }
+      ]
+    },
+    {
+      "iteration": 9,
+      "status": "PASS",
+      "loadGeneration": 220,
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "GENERATION_RETIRED",
+        "error": "stop"
+      },
+      "timeline": [
+        {
+          "atParentMicros": 365962556500,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 220,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-begin",
+          "currentAuthoritativeGeneration": 220,
+          "action": "BEGIN_GENERATION",
+          "label": "stop-8-A"
+        },
+        {
+          "atParentMicros": 365962556648,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 220,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-retired",
+          "currentAuthoritativeGeneration": null,
+          "action": "RETIRE_GENERATION",
+          "reason": "stop"
+        },
+        {
+          "atParentMicros": 365962603754,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 221,
+          "requestId": 121,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "response",
+          "currentAuthoritativeGeneration": null,
+          "action": "RESOLVE_REQUEST"
+        }
+      ]
+    },
+    {
+      "iteration": 10,
+      "status": "PASS",
+      "loadGeneration": 222,
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "GENERATION_RETIRED",
+        "error": "stop"
+      },
+      "timeline": [
+        {
+          "atParentMicros": 365962635416,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 222,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-begin",
+          "currentAuthoritativeGeneration": 222,
+          "action": "BEGIN_GENERATION",
+          "label": "stop-9-A"
+        },
+        {
+          "atParentMicros": 365962635654,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 222,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-retired",
+          "currentAuthoritativeGeneration": null,
+          "action": "RETIRE_GENERATION",
+          "reason": "stop"
+        },
+        {
+          "atParentMicros": 365962681451,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 223,
+          "requestId": 123,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "response",
+          "currentAuthoritativeGeneration": null,
+          "action": "RESOLVE_REQUEST"
+        }
+      ]
+    },
+    {
+      "iteration": 11,
+      "status": "PASS",
+      "loadGeneration": 224,
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "GENERATION_RETIRED",
+        "error": "stop"
+      },
+      "timeline": [
+        {
+          "atParentMicros": 365962711859,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 224,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-begin",
+          "currentAuthoritativeGeneration": 224,
+          "action": "BEGIN_GENERATION",
+          "label": "stop-10-A"
+        },
+        {
+          "atParentMicros": 365962712076,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 224,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-retired",
+          "currentAuthoritativeGeneration": null,
+          "action": "RETIRE_GENERATION",
+          "reason": "stop"
+        },
+        {
+          "atParentMicros": 365962759488,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 225,
+          "requestId": 125,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "response",
+          "currentAuthoritativeGeneration": null,
+          "action": "RESOLVE_REQUEST"
+        }
+      ]
+    },
+    {
+      "iteration": 12,
+      "status": "PASS",
+      "loadGeneration": 226,
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "GENERATION_RETIRED",
+        "error": "stop"
+      },
+      "timeline": [
+        {
+          "atParentMicros": 365962790200,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 226,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-begin",
+          "currentAuthoritativeGeneration": 226,
+          "action": "BEGIN_GENERATION",
+          "label": "stop-11-A"
+        },
+        {
+          "atParentMicros": 365962790494,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 226,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-retired",
+          "currentAuthoritativeGeneration": null,
+          "action": "RETIRE_GENERATION",
+          "reason": "stop"
+        },
+        {
+          "atParentMicros": 365962836925,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 227,
+          "requestId": 127,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "response",
+          "currentAuthoritativeGeneration": null,
+          "action": "RESOLVE_REQUEST"
+        }
+      ]
+    },
+    {
+      "iteration": 13,
+      "status": "PASS",
+      "loadGeneration": 228,
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "GENERATION_RETIRED",
+        "error": "stop"
+      },
+      "timeline": [
+        {
+          "atParentMicros": 365962867016,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 228,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-begin",
+          "currentAuthoritativeGeneration": 228,
+          "action": "BEGIN_GENERATION",
+          "label": "stop-12-A"
+        },
+        {
+          "atParentMicros": 365962867250,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 228,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-retired",
+          "currentAuthoritativeGeneration": null,
+          "action": "RETIRE_GENERATION",
+          "reason": "stop"
+        },
+        {
+          "atParentMicros": 365962913830,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 229,
+          "requestId": 129,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "response",
+          "currentAuthoritativeGeneration": null,
+          "action": "RESOLVE_REQUEST"
+        }
+      ]
+    },
+    {
+      "iteration": 14,
+      "status": "PASS",
+      "loadGeneration": 230,
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "GENERATION_RETIRED",
+        "error": "stop"
+      },
+      "timeline": [
+        {
+          "atParentMicros": 365962944728,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 230,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-begin",
+          "currentAuthoritativeGeneration": 230,
+          "action": "BEGIN_GENERATION",
+          "label": "stop-13-A"
+        },
+        {
+          "atParentMicros": 365962944903,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 230,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-retired",
+          "currentAuthoritativeGeneration": null,
+          "action": "RETIRE_GENERATION",
+          "reason": "stop"
+        },
+        {
+          "atParentMicros": 365962991005,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 231,
+          "requestId": 131,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "response",
+          "currentAuthoritativeGeneration": null,
+          "action": "RESOLVE_REQUEST"
+        }
+      ]
+    },
+    {
+      "iteration": 15,
+      "status": "PASS",
+      "loadGeneration": 232,
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "GENERATION_RETIRED",
+        "error": "stop"
+      },
+      "timeline": [
+        {
+          "atParentMicros": 365963022095,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 232,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-begin",
+          "currentAuthoritativeGeneration": 232,
+          "action": "BEGIN_GENERATION",
+          "label": "stop-14-A"
+        },
+        {
+          "atParentMicros": 365963022270,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 232,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-retired",
+          "currentAuthoritativeGeneration": null,
+          "action": "RETIRE_GENERATION",
+          "reason": "stop"
+        },
+        {
+          "atParentMicros": 365963068027,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 233,
+          "requestId": 133,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "response",
+          "currentAuthoritativeGeneration": null,
+          "action": "RESOLVE_REQUEST"
+        }
+      ]
+    },
+    {
+      "iteration": 16,
+      "status": "PASS",
+      "loadGeneration": 234,
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "GENERATION_RETIRED",
+        "error": "stop"
+      },
+      "timeline": [
+        {
+          "atParentMicros": 365963099716,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 234,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-begin",
+          "currentAuthoritativeGeneration": 234,
+          "action": "BEGIN_GENERATION",
+          "label": "stop-15-A"
+        },
+        {
+          "atParentMicros": 365963100051,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 234,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-retired",
+          "currentAuthoritativeGeneration": null,
+          "action": "RETIRE_GENERATION",
+          "reason": "stop"
+        },
+        {
+          "atParentMicros": 365963145844,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 235,
+          "requestId": 135,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "response",
+          "currentAuthoritativeGeneration": null,
+          "action": "RESOLVE_REQUEST"
+        }
+      ]
+    },
+    {
+      "iteration": 17,
+      "status": "PASS",
+      "loadGeneration": 236,
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "GENERATION_RETIRED",
+        "error": "stop"
+      },
+      "timeline": [
+        {
+          "atParentMicros": 365963176932,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 236,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-begin",
+          "currentAuthoritativeGeneration": 236,
+          "action": "BEGIN_GENERATION",
+          "label": "stop-16-A"
+        },
+        {
+          "atParentMicros": 365963177176,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 236,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-retired",
+          "currentAuthoritativeGeneration": null,
+          "action": "RETIRE_GENERATION",
+          "reason": "stop"
+        },
+        {
+          "atParentMicros": 365963223733,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 237,
+          "requestId": 137,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "response",
+          "currentAuthoritativeGeneration": null,
+          "action": "RESOLVE_REQUEST"
+        }
+      ]
+    },
+    {
+      "iteration": 18,
+      "status": "PASS",
+      "loadGeneration": 238,
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "GENERATION_RETIRED",
+        "error": "stop"
+      },
+      "timeline": [
+        {
+          "atParentMicros": 365963254604,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 238,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-begin",
+          "currentAuthoritativeGeneration": 238,
+          "action": "BEGIN_GENERATION",
+          "label": "stop-17-A"
+        },
+        {
+          "atParentMicros": 365963254883,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 238,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-retired",
+          "currentAuthoritativeGeneration": null,
+          "action": "RETIRE_GENERATION",
+          "reason": "stop"
+        },
+        {
+          "atParentMicros": 365963300992,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 239,
+          "requestId": 139,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "response",
+          "currentAuthoritativeGeneration": null,
+          "action": "RESOLVE_REQUEST"
+        }
+      ]
+    },
+    {
+      "iteration": 19,
+      "status": "PASS",
+      "loadGeneration": 240,
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "GENERATION_RETIRED",
+        "error": "stop"
+      },
+      "timeline": [
+        {
+          "atParentMicros": 365963331772,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 240,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-begin",
+          "currentAuthoritativeGeneration": 240,
+          "action": "BEGIN_GENERATION",
+          "label": "stop-18-A"
+        },
+        {
+          "atParentMicros": 365963331873,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 240,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-retired",
+          "currentAuthoritativeGeneration": null,
+          "action": "RETIRE_GENERATION",
+          "reason": "stop"
+        },
+        {
+          "atParentMicros": 365963377936,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 241,
+          "requestId": 141,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "response",
+          "currentAuthoritativeGeneration": null,
+          "action": "RESOLVE_REQUEST"
+        }
+      ]
+    },
+    {
+      "iteration": 20,
+      "status": "PASS",
+      "loadGeneration": 242,
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "GENERATION_RETIRED",
+        "error": "stop"
+      },
+      "timeline": [
+        {
+          "atParentMicros": 365963408450,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 242,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-begin",
+          "currentAuthoritativeGeneration": 242,
+          "action": "BEGIN_GENERATION",
+          "label": "stop-19-A"
+        },
+        {
+          "atParentMicros": 365963408587,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 242,
+          "requestId": null,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "generation-retired",
+          "currentAuthoritativeGeneration": null,
+          "action": "RETIRE_GENERATION",
+          "reason": "stop"
+        },
+        {
+          "atParentMicros": 365963439514,
+          "helperInstanceId": "239ee29f-3704-4765-935f-b2825b67c41d",
+          "generationId": 243,
+          "requestId": 143,
+          "rawEventId": null,
+          "rawEventName": null,
+          "mediaIdentity": null,
+          "name": "response",
+          "currentAuthoritativeGeneration": null,
+          "action": "RESOLVE_REQUEST"
+        }
+      ]
+    }
+  ]
+}

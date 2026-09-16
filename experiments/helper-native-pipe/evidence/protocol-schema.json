@@ -1,0 +1,25 @@
+{
+  "protocolVersion": 1,
+  "framing": "uint32 little-endian length + strict UTF-8 JSON",
+  "limits": {
+    "maxFrameBytes": 65536,
+    "maxReceiveBuffer": 131072,
+    "maxInboundFrames": 128,
+    "maxInboundBytes": 262144,
+    "maxPendingFrames": 128,
+    "maxPendingBytes": 262144
+  },
+  "classes": [
+    "COMMAND",
+    "REQUEST",
+    "RESPONSE",
+    "EVENT",
+    "LIFECYCLE",
+    "ERROR"
+  ],
+  "requiredIdentities": [
+    "helperInstanceId",
+    "generationId for media scope",
+    "requestId for response-bearing request"
+  ]
+}

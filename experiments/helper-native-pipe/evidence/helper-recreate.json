@@ -1,0 +1,192 @@
+{
+  "status": "PASS",
+  "helperInstanceId": "af3a48f2-56d8-4f00-bffe-a6e0fd539ca9",
+  "helperPid": 29284,
+  "generationId": 270,
+  "reply": {
+    "commandAccepted": true,
+    "mediaIdentity": 1
+  },
+  "snapshot": {
+    "helperInstanceId": "af3a48f2-56d8-4f00-bffe-a6e0fd539ca9",
+    "helperPid": 29284,
+    "currentGenerationId": 270,
+    "currentLabel": "recreated-C",
+    "state": {
+      "status": "playing",
+      "path": "E:\\ETE-helper-native-pipe\\.work\\helper-native-pipe-final4\\media\\C.wav",
+      "playing": true,
+      "fileLoaded": true
+    },
+    "timeline": [
+      {
+        "atParentMicros": 365965307637,
+        "helperInstanceId": "af3a48f2-56d8-4f00-bffe-a6e0fd539ca9",
+        "generationId": null,
+        "requestId": null,
+        "rawEventId": null,
+        "rawEventName": null,
+        "mediaIdentity": null,
+        "name": "ready",
+        "currentAuthoritativeGeneration": null,
+        "action": "ACCEPT_HELPER_GLOBAL",
+        "reason": null,
+        "detail": {
+          "protocolVersion": 1,
+          "mpvClientApiVersion": 131077,
+          "queueLimits": {
+            "maxPendingFrames": 128,
+            "maxPendingBytes": 262144,
+            "maxFrameBytes": 65536,
+            "maxReceiveBuffer": 131072,
+            "writtenFrames": 0,
+            "writtenBytes": 0,
+            "coalescedReplaced": 0,
+            "coalescedDropped": 0,
+            "peakFrames": 0,
+            "peakBytes": 0
+          }
+        }
+      },
+      {
+        "atParentMicros": 365965320071,
+        "helperInstanceId": "af3a48f2-56d8-4f00-bffe-a6e0fd539ca9",
+        "generationId": 270,
+        "requestId": null,
+        "rawEventId": null,
+        "rawEventName": null,
+        "mediaIdentity": null,
+        "name": "generation-begin",
+        "currentAuthoritativeGeneration": 270,
+        "action": "BEGIN_GENERATION",
+        "label": "recreated-C"
+      },
+      {
+        "atParentMicros": 365965335434,
+        "helperInstanceId": "af3a48f2-56d8-4f00-bffe-a6e0fd539ca9",
+        "generationId": 270,
+        "requestId": 1,
+        "rawEventId": null,
+        "rawEventName": null,
+        "mediaIdentity": null,
+        "name": "response",
+        "currentAuthoritativeGeneration": 270,
+        "action": "RESOLVE_REQUEST"
+      },
+      {
+        "atParentMicros": 365965335448,
+        "helperInstanceId": "af3a48f2-56d8-4f00-bffe-a6e0fd539ca9",
+        "generationId": 270,
+        "requestId": null,
+        "rawEventId": 6,
+        "rawEventName": "start-file",
+        "mediaIdentity": 1,
+        "name": "start-file",
+        "currentAuthoritativeGeneration": 270,
+        "action": "ACCEPT",
+        "value": null
+      },
+      {
+        "atParentMicros": 365965335450,
+        "helperInstanceId": "af3a48f2-56d8-4f00-bffe-a6e0fd539ca9",
+        "generationId": 270,
+        "requestId": null,
+        "rawEventId": 8,
+        "rawEventName": "file-loaded",
+        "mediaIdentity": 1,
+        "name": "file-loaded",
+        "currentAuthoritativeGeneration": 270,
+        "action": "ACCEPT",
+        "value": null
+      },
+      {
+        "atParentMicros": 365965335451,
+        "helperInstanceId": "af3a48f2-56d8-4f00-bffe-a6e0fd539ca9",
+        "generationId": 270,
+        "requestId": null,
+        "rawEventId": 22,
+        "rawEventName": "property-change",
+        "mediaIdentity": 1,
+        "name": "time-pos",
+        "currentAuthoritativeGeneration": 270,
+        "action": "ACCEPT",
+        "value": 0.001636
+      },
+      {
+        "atParentMicros": 365965335452,
+        "helperInstanceId": "af3a48f2-56d8-4f00-bffe-a6e0fd539ca9",
+        "generationId": 270,
+        "requestId": null,
+        "rawEventId": 22,
+        "rawEventName": "property-change",
+        "mediaIdentity": 1,
+        "name": "duration",
+        "currentAuthoritativeGeneration": 270,
+        "action": "ACCEPT",
+        "value": 2
+      },
+      {
+        "atParentMicros": 365965335452,
+        "helperInstanceId": "af3a48f2-56d8-4f00-bffe-a6e0fd539ca9",
+        "generationId": 270,
+        "requestId": null,
+        "rawEventId": 22,
+        "rawEventName": "property-change",
+        "mediaIdentity": 1,
+        "name": "pause",
+        "currentAuthoritativeGeneration": 270,
+        "action": "ACCEPT",
+        "value": false
+      },
+      {
+        "atParentMicros": 365965335453,
+        "helperInstanceId": "af3a48f2-56d8-4f00-bffe-a6e0fd539ca9",
+        "generationId": 270,
+        "requestId": null,
+        "rawEventId": 22,
+        "rawEventName": "property-change",
+        "mediaIdentity": 1,
+        "name": "core-idle",
+        "currentAuthoritativeGeneration": 270,
+        "action": "ACCEPT",
+        "value": false
+      },
+      {
+        "atParentMicros": 365965335454,
+        "helperInstanceId": "af3a48f2-56d8-4f00-bffe-a6e0fd539ca9",
+        "generationId": 270,
+        "requestId": null,
+        "rawEventId": 22,
+        "rawEventName": "property-change",
+        "mediaIdentity": 1,
+        "name": "path",
+        "currentAuthoritativeGeneration": 270,
+        "action": "ACCEPT",
+        "value": "E:\\ETE-helper-native-pipe\\.work\\helper-native-pipe-final4\\media\\C.wav"
+      }
+    ],
+    "requestHistory": [
+      {
+        "requestId": 1,
+        "generationId": 270,
+        "method": "load",
+        "state": "RESOLVED",
+        "detail": {
+          "commandAccepted": true,
+          "mediaIdentity": 1
+        },
+        "terminalTransitions": 1
+      }
+    ],
+    "pendingRequestCount": 0,
+    "closeOrdering": [],
+    "stderrObservedBytes": 0,
+    "stderrRetainedBytes": 0,
+    "protocolFailure": null,
+    "exited": false
+  },
+  "exit": {
+    "code": 0,
+    "signal": null
+  }
+}

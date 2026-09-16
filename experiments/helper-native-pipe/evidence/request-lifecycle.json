@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "absoluteTimeout": {
+    "status": "rejected",
+    "state": "TIMED_OUT",
+    "error": "absolute-deadline"
+  },
+  "cancellation": {
+    "status": "rejected",
+    "state": "CANCELLED",
+    "error": "test-cancel"
+  },
+  "timeoutHistory": [
+    {
+      "requestId": 146,
+      "generationId": 245,
+      "method": "pending",
+      "state": "TIMED_OUT",
+      "detail": "absolute-deadline",
+      "terminalTransitions": 1
+    }
+  ],
+  "cancellationHistory": [
+    {
+      "requestId": 147,
+      "generationId": 245,
+      "method": "pending",
+      "state": "CANCELLED",
+      "detail": "test-cancel",
+      "terminalTransitions": 1
+    }
+  ]
+}

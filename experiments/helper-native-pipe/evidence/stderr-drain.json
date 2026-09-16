@@ -1,0 +1,7 @@
+{
+  "status": "PASS",
+  "emittedBytes": 1048576,
+  "observedBytes": 1048576,
+  "retainedBytes": 57344,
+  "retentionLimit": 65536
+}

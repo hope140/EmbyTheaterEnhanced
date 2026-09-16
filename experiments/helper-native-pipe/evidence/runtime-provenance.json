@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "platform": "win32",
+  "architecture": "x64",
+  "nodeVersion": "v24.18.1",
+  "electronVersion": null,
+  "helper": {
+    "path": "E:\\ETE-helper-native-pipe\\.work\\helper-native-pipe-build\\helper-native-pipe.exe",
+    "size": 3267259,
+    "sha256": "ec280679175b2aaf1414c3d66f47736ff2ea3a394546942a116ade9c686f8903"
+  },
+  "libmpv": {
+    "path": "E:\\Emby Theater Enhanced\\.work\\patch\\payload\\libmpv\\mpv-1.dll",
+    "size": 119725568,
+    "sha256": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c",
+    "version": "v0.41.0-920-gdd5d17d32",
+    "clientApi": "2.5"
+  },
+  "build": {
+    "schemaVersion": 1,
+    "architecture": "Windows x64",
+    "compilerPath": "C:\\msys64\\ucrt64\\bin\\g++.exe",
+    "compilerVersion": "g++.exe (Rev5, Built by MSYS2 project) 16.1.0",
+    "flags": [
+      "-std=c++17",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-Wno-cast-function-type",
+      "-static",
+      "-static-libgcc",
+      "-static-libstdc++"
+    ],
+    "source": {
+      "path": "experiments/helper-native-pipe/native-helper.cpp",
+      "sha256": "2907ce59964580009022746d3e3652087d1ba0d06ad230aa3938fc14a6ab59cf"
+    },
+    "clientHeader": {
+      "path": "E:\\Emby Theater Enhanced\\.work\\bridge-modernization-phase2\\.work\\native-inputs\\mpv\\client.h",
+      "sha256": "1acf99ee77c8c2a6f1d1993bd81bbc8a91d27fb5924e80171670e6139a4bd353"
+    },
+    "libmpv": {
+      "path": "E:\\Emby Theater Enhanced\\.work\\patch\\payload\\libmpv\\mpv-1.dll",
+      "sha256": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c",
+      "fileVersion": "v0.41.0-920-gdd5d17d32"
+    },
+    "helper": {
+      "path": ".\\.work\\helper-native-pipe-build\\helper-native-pipe.exe",
+      "sha256": "ec280679175b2aaf1414c3d66f47736ff2ea3a394546942a116ade9c686f8903",
+      "size": 3267259
+    },
+    "buildCommand": "g++ -std=c++17 -O2 -Wall -Wextra -Werror -Wno-cast-function-type -static -static-libgcc -static-libstdc++ -I<InputRoot> native-helper.cpp -o helper-native-pipe.exe"
+  },
+  "media": [
+    {
+      "name": "A.wav",
+      "path": "E:\\ETE-helper-native-pipe\\.work\\helper-native-pipe-final4\\media\\A.wav",
+      "size": 192044,
+      "sha256": "668081a4332d9ae2e3e4ecaf6067e2fac05b8199f5b880a607fd95bc5878332f",
+      "frequencyHz": 440,
+      "sampleRate": 48000,
+      "durationSeconds": 2,
+      "channels": 1,
+      "bitsPerSample": 16
+    },
+    {
+      "name": "B.wav",
+      "path": "E:\\ETE-helper-native-pipe\\.work\\helper-native-pipe-final4\\media\\B.wav",
+      "size": 192044,
+      "sha256": "d380f5394b6fbc64b7248deed444ace280d86d0b70c9002650ab5334cbd05965",
+      "frequencyHz": 660,
+      "sampleRate": 48000,
+      "durationSeconds": 2,
+      "channels": 1,
+      "bitsPerSample": 16
+    },
+    {
+      "name": "C.wav",
+      "path": "E:\\ETE-helper-native-pipe\\.work\\helper-native-pipe-final4\\media\\C.wav",
+      "size": 192044,
+      "sha256": "ccf90db7ce8230237429cc4c09b803fdc1030c9baeb51af3761958c6cd78a0d8",
+      "frequencyHz": 880,
+      "sampleRate": 48000,
+      "durationSeconds": 2,
+      "channels": 1,
+      "bitsPerSample": 16
+    }
+  ]
+}

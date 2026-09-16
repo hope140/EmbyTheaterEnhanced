@@ -1,0 +1,838 @@
+{
+  "status": "PASS",
+  "partialFrame": {
+    "status": "PASS",
+    "stats": {
+      "maxPendingFrames": 128,
+      "maxPendingBytes": 262144,
+      "maxFrameBytes": 65536,
+      "maxReceiveBuffer": 131072,
+      "writtenFrames": 1,
+      "writtenBytes": 444,
+      "coalescedReplaced": 0,
+      "coalescedDropped": 0,
+      "peakFrames": 1,
+      "peakBytes": 444
+    }
+  },
+  "concatenatedFrames": {
+    "status": "PASS",
+    "stats": {
+      "maxPendingFrames": 128,
+      "maxPendingBytes": 262144,
+      "maxFrameBytes": 65536,
+      "maxReceiveBuffer": 131072,
+      "writtenFrames": 1,
+      "writtenBytes": 444,
+      "coalescedReplaced": 0,
+      "coalescedDropped": 0,
+      "peakFrames": 1,
+      "peakBytes": 444
+    }
+  },
+  "failures": {
+    "zeroLength": {
+      "status": "PASS",
+      "exit": {
+        "code": 21,
+        "signal": null
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "ordering": [
+        {
+          "atParentMicros": 365966201101,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966201171,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966201352,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966201360,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966202240,
+          "name": "process-exit",
+          "detail": {
+            "code": 21,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365966202248,
+          "name": "process-exit-terminal",
+          "detail": "21:"
+        },
+        {
+          "atParentMicros": 365966202262,
+          "name": "process-close",
+          "detail": {
+            "code": 21,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365966208853,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    "oversizedLength": {
+      "status": "PASS",
+      "exit": {
+        "code": 21,
+        "signal": null
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "ordering": [
+        {
+          "atParentMicros": 365966311205,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966311337,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966311435,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966311442,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966312422,
+          "name": "process-exit",
+          "detail": {
+            "code": 21,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365966312425,
+          "name": "process-exit-terminal",
+          "detail": "21:"
+        },
+        {
+          "atParentMicros": 365966312433,
+          "name": "process-close",
+          "detail": {
+            "code": 21,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365966317307,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    "invalidUtf8": {
+      "status": "PASS",
+      "exit": {
+        "code": 21,
+        "signal": null
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "ordering": [
+        {
+          "atParentMicros": 365966430423,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966430528,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966430625,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966430632,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966431236,
+          "name": "process-exit",
+          "detail": {
+            "code": 21,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365966431240,
+          "name": "process-exit-terminal",
+          "detail": "21:"
+        },
+        {
+          "atParentMicros": 365966431249,
+          "name": "process-close",
+          "detail": {
+            "code": 21,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365966436853,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    "malformedJson": {
+      "status": "PASS",
+      "exit": {
+        "code": 21,
+        "signal": null
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "ordering": [
+        {
+          "atParentMicros": 365966539614,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966539666,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966539800,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966539806,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966540348,
+          "name": "process-exit",
+          "detail": {
+            "code": 21,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365966540351,
+          "name": "process-exit-terminal",
+          "detail": "21:"
+        },
+        {
+          "atParentMicros": 365966540357,
+          "name": "process-close",
+          "detail": {
+            "code": 21,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365966544816,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    "missingProtocolVersion": {
+      "status": "PASS",
+      "exit": {
+        "code": 20,
+        "signal": null
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "ordering": [
+        {
+          "atParentMicros": 365966661905,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966662032,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966662046,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966662066,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966662734,
+          "name": "process-exit",
+          "detail": {
+            "code": 20,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365966662737,
+          "name": "process-exit-terminal",
+          "detail": "20:"
+        },
+        {
+          "atParentMicros": 365966662742,
+          "name": "process-close",
+          "detail": {
+            "code": 20,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365966666147,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    "missingHelperInstanceId": {
+      "status": "PASS",
+      "exit": {
+        "code": 20,
+        "signal": null
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "ordering": [
+        {
+          "atParentMicros": 365966788837,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966788973,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966789100,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966789110,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966789826,
+          "name": "process-exit",
+          "detail": {
+            "code": 20,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365966789829,
+          "name": "process-exit-terminal",
+          "detail": "20:"
+        },
+        {
+          "atParentMicros": 365966789884,
+          "name": "process-close",
+          "detail": {
+            "code": 20,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365966795856,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    "missingGenerationId": {
+      "status": "PASS",
+      "exit": {
+        "code": 20,
+        "signal": null
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "ordering": [
+        {
+          "atParentMicros": 365966910954,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966911069,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966911147,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966911153,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365966911604,
+          "name": "process-exit",
+          "detail": {
+            "code": 20,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365966911606,
+          "name": "process-exit-terminal",
+          "detail": "20:"
+        },
+        {
+          "atParentMicros": 365966911616,
+          "name": "process-close",
+          "detail": {
+            "code": 20,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365966915963,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    "missingRequestId": {
+      "status": "PASS",
+      "exit": {
+        "code": 20,
+        "signal": null
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "ordering": [
+        {
+          "atParentMicros": 365967038503,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365967038810,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365967039056,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365967039074,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365967040007,
+          "name": "process-exit",
+          "detail": {
+            "code": 20,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365967040010,
+          "name": "process-exit-terminal",
+          "detail": "20:"
+        },
+        {
+          "atParentMicros": 365967040027,
+          "name": "process-close",
+          "detail": {
+            "code": 20,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365967046109,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    "zeroGenerationId": {
+      "status": "PASS",
+      "exit": {
+        "code": 20,
+        "signal": null
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "ordering": [
+        {
+          "atParentMicros": 365967160131,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365967160324,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365967160495,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365967160507,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365967161792,
+          "name": "process-exit",
+          "detail": {
+            "code": 20,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365967161801,
+          "name": "process-exit-terminal",
+          "detail": "20:"
+        },
+        {
+          "atParentMicros": 365967161818,
+          "name": "process-close",
+          "detail": {
+            "code": 20,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365967170133,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    "zeroRequestId": {
+      "status": "PASS",
+      "exit": {
+        "code": 20,
+        "signal": null
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "ordering": [
+        {
+          "atParentMicros": 365967284664,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365967284971,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365967285206,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365967285221,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365967286866,
+          "name": "process-exit",
+          "detail": {
+            "code": 20,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365967286876,
+          "name": "process-exit-terminal",
+          "detail": "20:"
+        },
+        {
+          "atParentMicros": 365967286897,
+          "name": "process-close",
+          "detail": {
+            "code": 20,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365967298894,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    "unknownMessageType": {
+      "status": "PASS",
+      "exit": {
+        "code": 20,
+        "signal": null
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "ordering": [
+        {
+          "atParentMicros": 365967423631,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365967423820,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365967423975,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365967423987,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365967425260,
+          "name": "process-exit",
+          "detail": {
+            "code": 20,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365967425266,
+          "name": "process-exit-terminal",
+          "detail": "20:"
+        },
+        {
+          "atParentMicros": 365967425284,
+          "name": "process-close",
+          "detail": {
+            "code": 20,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365967432251,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    "malformedHelperResponse": {
+      "status": "PASS",
+      "exit": {
+        "code": null,
+        "signal": "SIGTERM"
+      },
+      "protocolFailure": "unsupported-protocol-version",
+      "decoderFailed": true,
+      "concatenatedValidEventAccepted": false,
+      "outcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "protocol:unsupported-protocol-version"
+      },
+      "ordering": [
+        {
+          "atParentMicros": 365967466733,
+          "name": "protocol-failure",
+          "detail": "unsupported-protocol-version"
+        },
+        {
+          "atParentMicros": 365967468219,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365967468296,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365967468311,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365967468343,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365967470209,
+          "name": "process-exit",
+          "detail": {
+            "code": null,
+            "signal": "SIGTERM"
+          }
+        },
+        {
+          "atParentMicros": 365967470212,
+          "name": "process-exit-terminal",
+          "detail": "null:SIGTERM"
+        },
+        {
+          "atParentMicros": 365967470220,
+          "name": "process-close",
+          "detail": {
+            "code": null,
+            "signal": "SIGTERM"
+          }
+        },
+        {
+          "atParentMicros": 365967474770,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    "inboundQueueLimit": {
+      "status": "PASS",
+      "exit": {
+        "code": 21,
+        "signal": null
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "blockerOutcome": {
+        "status": "resolved",
+        "value": {
+          "blocked": true
+        }
+      },
+      "framesSent": 160,
+      "maxInboundFrames": 128,
+      "maxInboundBytes": 262144,
+      "ordering": [
+        {
+          "atParentMicros": 365967830287,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365967830530,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365967830556,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365967830612,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365967831320,
+          "name": "process-exit",
+          "detail": {
+            "code": 21,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365967831326,
+          "name": "process-exit-terminal",
+          "detail": "21:"
+        },
+        {
+          "atParentMicros": 365967831338,
+          "name": "process-close",
+          "detail": {
+            "code": 21,
+            "signal": null
+          }
+        }
+      ]
+    },
+    "spawnFailure": {
+      "status": "PASS",
+      "error": "helper-start-failed:spawn E:\\ETE-helper-native-pipe\\.work\\helper-native-pipe-build\\helper-native-pipe.exe.missing ENOENT",
+      "exit": {
+        "code": null,
+        "signal": null,
+        "error": "spawn E:\\ETE-helper-native-pipe\\.work\\helper-native-pipe-build\\helper-native-pipe.exe.missing ENOENT"
+      },
+      "exited": true,
+      "transportTerminated": true
+    }
+  }
+}

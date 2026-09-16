@@ -1,0 +1,1987 @@
+{
+  "status": "PASS",
+  "passed": 20,
+  "total": 20,
+  "iterations": [
+    {
+      "iteration": 1,
+      "status": "PASS",
+      "helperInstanceId": "c694776c-5cc9-49e7-bfd4-d29f95ea9b36",
+      "helperPid": 55448,
+      "exit": {
+        "code": 3221225477,
+        "signal": null
+      },
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "crashOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "requestHistory": [
+        {
+          "requestId": 1,
+          "generationId": 250,
+          "method": "load",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 2,
+          "generationId": 250,
+          "method": "pending",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 3,
+          "generationId": 250,
+          "method": "crash",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        }
+      ],
+      "closeOrdering": [
+        {
+          "atParentMicros": 365964386216,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964386361,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964386481,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964386489,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964388136,
+          "name": "process-exit",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964388142,
+          "name": "process-exit-terminal",
+          "detail": "3221225477:"
+        },
+        {
+          "atParentMicros": 365964388155,
+          "name": "process-close",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964394181,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "iteration": 2,
+      "status": "PASS",
+      "helperInstanceId": "a28b2b64-2dff-48d4-87f6-638717007867",
+      "helperPid": 37252,
+      "exit": {
+        "code": 3221225477,
+        "signal": null
+      },
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "crashOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "requestHistory": [
+        {
+          "requestId": 1,
+          "generationId": 251,
+          "method": "load",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 2,
+          "generationId": 251,
+          "method": "pending",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 3,
+          "generationId": 251,
+          "method": "crash",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        }
+      ],
+      "closeOrdering": [
+        {
+          "atParentMicros": 365964436910,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964437010,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964437227,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964437234,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964438931,
+          "name": "process-exit",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964438937,
+          "name": "process-exit-terminal",
+          "detail": "3221225477:"
+        },
+        {
+          "atParentMicros": 365964438952,
+          "name": "process-close",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964444396,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "iteration": 3,
+      "status": "PASS",
+      "helperInstanceId": "176ada1f-ac55-4d70-b7a6-c9b26767b3f7",
+      "helperPid": 54676,
+      "exit": {
+        "code": 3221225477,
+        "signal": null
+      },
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "crashOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "requestHistory": [
+        {
+          "requestId": 1,
+          "generationId": 252,
+          "method": "load",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 2,
+          "generationId": 252,
+          "method": "pending",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 3,
+          "generationId": 252,
+          "method": "crash",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        }
+      ],
+      "closeOrdering": [
+        {
+          "atParentMicros": 365964481782,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964481897,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964482033,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964482040,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964483699,
+          "name": "process-exit",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964483705,
+          "name": "process-exit-terminal",
+          "detail": "3221225477:"
+        },
+        {
+          "atParentMicros": 365964483719,
+          "name": "process-close",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964488500,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "iteration": 4,
+      "status": "PASS",
+      "helperInstanceId": "8247bbc3-38ab-48c0-95b5-24f45c2ba7eb",
+      "helperPid": 24572,
+      "exit": {
+        "code": 3221225477,
+        "signal": null
+      },
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "crashOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "requestHistory": [
+        {
+          "requestId": 1,
+          "generationId": 253,
+          "method": "load",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 2,
+          "generationId": 253,
+          "method": "pending",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 3,
+          "generationId": 253,
+          "method": "crash",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        }
+      ],
+      "closeOrdering": [
+        {
+          "atParentMicros": 365964528236,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964528331,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964528525,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964528532,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964530139,
+          "name": "process-exit",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964530145,
+          "name": "process-exit-terminal",
+          "detail": "3221225477:"
+        },
+        {
+          "atParentMicros": 365964530167,
+          "name": "process-close",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964535633,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "iteration": 5,
+      "status": "PASS",
+      "helperInstanceId": "f5e5ba16-60d4-4723-838a-f5d962ca97e6",
+      "helperPid": 17060,
+      "exit": {
+        "code": 3221225477,
+        "signal": null
+      },
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "crashOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "requestHistory": [
+        {
+          "requestId": 1,
+          "generationId": 254,
+          "method": "load",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 2,
+          "generationId": 254,
+          "method": "pending",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 3,
+          "generationId": 254,
+          "method": "crash",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        }
+      ],
+      "closeOrdering": [
+        {
+          "atParentMicros": 365964575558,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964575602,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964575739,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964575745,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964577481,
+          "name": "process-exit",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964577488,
+          "name": "process-exit-terminal",
+          "detail": "3221225477:"
+        },
+        {
+          "atParentMicros": 365964577500,
+          "name": "process-close",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964582697,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "iteration": 6,
+      "status": "PASS",
+      "helperInstanceId": "00338316-87c6-456a-a939-6c50eb475c1f",
+      "helperPid": 36684,
+      "exit": {
+        "code": 3221225477,
+        "signal": null
+      },
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "crashOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "requestHistory": [
+        {
+          "requestId": 1,
+          "generationId": 255,
+          "method": "load",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 2,
+          "generationId": 255,
+          "method": "pending",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 3,
+          "generationId": 255,
+          "method": "crash",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        }
+      ],
+      "closeOrdering": [
+        {
+          "atParentMicros": 365964624008,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964624052,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964624184,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964624190,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964625858,
+          "name": "process-exit",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964625863,
+          "name": "process-exit-terminal",
+          "detail": "3221225477:"
+        },
+        {
+          "atParentMicros": 365964625875,
+          "name": "process-close",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964630934,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "iteration": 7,
+      "status": "PASS",
+      "helperInstanceId": "4dd2f56f-a215-42ae-82ae-2e713aeed4e5",
+      "helperPid": 54152,
+      "exit": {
+        "code": 3221225477,
+        "signal": null
+      },
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "crashOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "requestHistory": [
+        {
+          "requestId": 1,
+          "generationId": 256,
+          "method": "load",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 2,
+          "generationId": 256,
+          "method": "pending",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 3,
+          "generationId": 256,
+          "method": "crash",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        }
+      ],
+      "closeOrdering": [
+        {
+          "atParentMicros": 365964668917,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964669080,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964669182,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964669188,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964670825,
+          "name": "process-exit",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964670833,
+          "name": "process-exit-terminal",
+          "detail": "3221225477:"
+        },
+        {
+          "atParentMicros": 365964670846,
+          "name": "process-close",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964675413,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "iteration": 8,
+      "status": "PASS",
+      "helperInstanceId": "4d69e244-e8ca-4f55-907f-f059c096edad",
+      "helperPid": 46580,
+      "exit": {
+        "code": 3221225477,
+        "signal": null
+      },
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "crashOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "requestHistory": [
+        {
+          "requestId": 1,
+          "generationId": 257,
+          "method": "load",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 2,
+          "generationId": 257,
+          "method": "pending",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 3,
+          "generationId": 257,
+          "method": "crash",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        }
+      ],
+      "closeOrdering": [
+        {
+          "atParentMicros": 365964714504,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964714620,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964714767,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964714774,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964716425,
+          "name": "process-exit",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964716431,
+          "name": "process-exit-terminal",
+          "detail": "3221225477:"
+        },
+        {
+          "atParentMicros": 365964716447,
+          "name": "process-close",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964721081,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "iteration": 9,
+      "status": "PASS",
+      "helperInstanceId": "607b1e5d-64dc-45a0-99ea-d9cc75dddd4c",
+      "helperPid": 25948,
+      "exit": {
+        "code": 3221225477,
+        "signal": null
+      },
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "crashOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "requestHistory": [
+        {
+          "requestId": 1,
+          "generationId": 258,
+          "method": "load",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 2,
+          "generationId": 258,
+          "method": "pending",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 3,
+          "generationId": 258,
+          "method": "crash",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        }
+      ],
+      "closeOrdering": [
+        {
+          "atParentMicros": 365964761342,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964761391,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964761528,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964761535,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964763276,
+          "name": "process-exit",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964763283,
+          "name": "process-exit-terminal",
+          "detail": "3221225477:"
+        },
+        {
+          "atParentMicros": 365964763300,
+          "name": "process-close",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964768486,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "iteration": 10,
+      "status": "PASS",
+      "helperInstanceId": "1d8a4191-3a41-4002-b024-b3d204f780cb",
+      "helperPid": 43092,
+      "exit": {
+        "code": 3221225477,
+        "signal": null
+      },
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "crashOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "requestHistory": [
+        {
+          "requestId": 1,
+          "generationId": 259,
+          "method": "load",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 2,
+          "generationId": 259,
+          "method": "pending",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 3,
+          "generationId": 259,
+          "method": "crash",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        }
+      ],
+      "closeOrdering": [
+        {
+          "atParentMicros": 365964808685,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964808729,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964808862,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964808867,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964810578,
+          "name": "process-exit",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964810582,
+          "name": "process-exit-terminal",
+          "detail": "3221225477:"
+        },
+        {
+          "atParentMicros": 365964810593,
+          "name": "process-close",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964815102,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "iteration": 11,
+      "status": "PASS",
+      "helperInstanceId": "ce4c74c4-73bd-4d43-9568-c78db6b569e3",
+      "helperPid": 11688,
+      "exit": {
+        "code": 3221225477,
+        "signal": null
+      },
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "crashOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "requestHistory": [
+        {
+          "requestId": 1,
+          "generationId": 260,
+          "method": "load",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 2,
+          "generationId": 260,
+          "method": "pending",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 3,
+          "generationId": 260,
+          "method": "crash",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        }
+      ],
+      "closeOrdering": [
+        {
+          "atParentMicros": 365964854845,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964854895,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964855035,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964855041,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964856761,
+          "name": "process-exit",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964856767,
+          "name": "process-exit-terminal",
+          "detail": "3221225477:"
+        },
+        {
+          "atParentMicros": 365964856777,
+          "name": "process-close",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964861441,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "iteration": 12,
+      "status": "PASS",
+      "helperInstanceId": "79bc0ce9-e5e8-40a5-8d2b-44e12baf45dd",
+      "helperPid": 20060,
+      "exit": {
+        "code": 3221225477,
+        "signal": null
+      },
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "crashOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "requestHistory": [
+        {
+          "requestId": 1,
+          "generationId": 261,
+          "method": "load",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 2,
+          "generationId": 261,
+          "method": "pending",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 3,
+          "generationId": 261,
+          "method": "crash",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        }
+      ],
+      "closeOrdering": [
+        {
+          "atParentMicros": 365964903461,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964903577,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964903666,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964903673,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964905418,
+          "name": "process-exit",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964905425,
+          "name": "process-exit-terminal",
+          "detail": "3221225477:"
+        },
+        {
+          "atParentMicros": 365964905434,
+          "name": "process-close",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964909893,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "iteration": 13,
+      "status": "PASS",
+      "helperInstanceId": "0819f7b8-3d55-44de-92db-a9eda54cbea8",
+      "helperPid": 53876,
+      "exit": {
+        "code": 3221225477,
+        "signal": null
+      },
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "crashOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "requestHistory": [
+        {
+          "requestId": 1,
+          "generationId": 262,
+          "method": "load",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 2,
+          "generationId": 262,
+          "method": "pending",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 3,
+          "generationId": 262,
+          "method": "crash",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        }
+      ],
+      "closeOrdering": [
+        {
+          "atParentMicros": 365964948764,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964948858,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964948939,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964948944,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964951084,
+          "name": "process-exit",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964951096,
+          "name": "process-exit-terminal",
+          "detail": "3221225477:"
+        },
+        {
+          "atParentMicros": 365964951105,
+          "name": "process-close",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964955720,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "iteration": 14,
+      "status": "PASS",
+      "helperInstanceId": "8a148242-1284-4cf3-bab7-4cb84c75ce03",
+      "helperPid": 52856,
+      "exit": {
+        "code": 3221225477,
+        "signal": null
+      },
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "crashOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "requestHistory": [
+        {
+          "requestId": 1,
+          "generationId": 263,
+          "method": "load",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 2,
+          "generationId": 263,
+          "method": "pending",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 3,
+          "generationId": 263,
+          "method": "crash",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        }
+      ],
+      "closeOrdering": [
+        {
+          "atParentMicros": 365964995000,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964995049,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964995191,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964995198,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365964996985,
+          "name": "process-exit",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365964996991,
+          "name": "process-exit-terminal",
+          "detail": "3221225477:"
+        },
+        {
+          "atParentMicros": 365964997001,
+          "name": "process-close",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365965001748,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "iteration": 15,
+      "status": "PASS",
+      "helperInstanceId": "b376bd05-7255-4e31-bde1-7694d94e295c",
+      "helperPid": 39360,
+      "exit": {
+        "code": 3221225477,
+        "signal": null
+      },
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "crashOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "requestHistory": [
+        {
+          "requestId": 1,
+          "generationId": 264,
+          "method": "load",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 2,
+          "generationId": 264,
+          "method": "pending",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 3,
+          "generationId": 264,
+          "method": "crash",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        }
+      ],
+      "closeOrdering": [
+        {
+          "atParentMicros": 365965041722,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365965041813,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365965041829,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365965041940,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365965043699,
+          "name": "process-exit",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365965043705,
+          "name": "process-exit-terminal",
+          "detail": "3221225477:"
+        },
+        {
+          "atParentMicros": 365965043714,
+          "name": "process-close",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365965048914,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "iteration": 16,
+      "status": "PASS",
+      "helperInstanceId": "47511332-d16e-43d2-9cb5-4532d9b0110a",
+      "helperPid": 25768,
+      "exit": {
+        "code": 3221225477,
+        "signal": null
+      },
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "crashOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "requestHistory": [
+        {
+          "requestId": 1,
+          "generationId": 265,
+          "method": "load",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 2,
+          "generationId": 265,
+          "method": "pending",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 3,
+          "generationId": 265,
+          "method": "crash",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        }
+      ],
+      "closeOrdering": [
+        {
+          "atParentMicros": 365965087704,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365965087811,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365965087885,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365965087891,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365965089614,
+          "name": "process-exit",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365965089619,
+          "name": "process-exit-terminal",
+          "detail": "3221225477:"
+        },
+        {
+          "atParentMicros": 365965089627,
+          "name": "process-close",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365965095002,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "iteration": 17,
+      "status": "PASS",
+      "helperInstanceId": "10f705f0-b076-4e6c-8c84-b91460ff9510",
+      "helperPid": 50220,
+      "exit": {
+        "code": 3221225477,
+        "signal": null
+      },
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "crashOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "requestHistory": [
+        {
+          "requestId": 1,
+          "generationId": 266,
+          "method": "load",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 2,
+          "generationId": 266,
+          "method": "pending",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 3,
+          "generationId": 266,
+          "method": "crash",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        }
+      ],
+      "closeOrdering": [
+        {
+          "atParentMicros": 365965133923,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365965134030,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365965134105,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365965134111,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365965135885,
+          "name": "process-exit",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365965135891,
+          "name": "process-exit-terminal",
+          "detail": "3221225477:"
+        },
+        {
+          "atParentMicros": 365965135900,
+          "name": "process-close",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365965140920,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "iteration": 18,
+      "status": "PASS",
+      "helperInstanceId": "e8a1ae5b-cb15-4a61-afbb-a9d35f2a54df",
+      "helperPid": 56044,
+      "exit": {
+        "code": 3221225477,
+        "signal": null
+      },
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "crashOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "requestHistory": [
+        {
+          "requestId": 1,
+          "generationId": 267,
+          "method": "load",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 2,
+          "generationId": 267,
+          "method": "pending",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 3,
+          "generationId": 267,
+          "method": "crash",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        }
+      ],
+      "closeOrdering": [
+        {
+          "atParentMicros": 365965183663,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365965183761,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365965183837,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365965183843,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365965185558,
+          "name": "process-exit",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365965185563,
+          "name": "process-exit-terminal",
+          "detail": "3221225477:"
+        },
+        {
+          "atParentMicros": 365965185571,
+          "name": "process-close",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365965189950,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "iteration": 19,
+      "status": "PASS",
+      "helperInstanceId": "bac10486-c2e6-4a24-8312-f0402a7e46cf",
+      "helperPid": 53412,
+      "exit": {
+        "code": 3221225477,
+        "signal": null
+      },
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "crashOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "requestHistory": [
+        {
+          "requestId": 1,
+          "generationId": 268,
+          "method": "load",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 2,
+          "generationId": 268,
+          "method": "pending",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 3,
+          "generationId": 268,
+          "method": "crash",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        }
+      ],
+      "closeOrdering": [
+        {
+          "atParentMicros": 365965230662,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365965230794,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365965230809,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365965230840,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365965232608,
+          "name": "process-exit",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365965232615,
+          "name": "process-exit-terminal",
+          "detail": "3221225477:"
+        },
+        {
+          "atParentMicros": 365965232624,
+          "name": "process-close",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365965237230,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    },
+    {
+      "iteration": 20,
+      "status": "PASS",
+      "helperInstanceId": "a8288d18-3a9c-4703-ba39-ad1008e40a3c",
+      "helperPid": 26672,
+      "exit": {
+        "code": 3221225477,
+        "signal": null
+      },
+      "loadOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "pendingOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "crashOutcome": {
+        "status": "rejected",
+        "state": "HELPER_DIED",
+        "error": "transport:stdout-end"
+      },
+      "requestHistory": [
+        {
+          "requestId": 1,
+          "generationId": 269,
+          "method": "load",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 2,
+          "generationId": 269,
+          "method": "pending",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        },
+        {
+          "requestId": 3,
+          "generationId": 269,
+          "method": "crash",
+          "state": "HELPER_DIED",
+          "detail": "transport:stdout-end",
+          "terminalTransitions": 1
+        }
+      ],
+      "closeOrdering": [
+        {
+          "atParentMicros": 365965275547,
+          "name": "stdout-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365965275655,
+          "name": "stderr-end",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365965275730,
+          "name": "stderr-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365965275735,
+          "name": "stdout-close",
+          "detail": null
+        },
+        {
+          "atParentMicros": 365965277403,
+          "name": "process-exit",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365965277409,
+          "name": "process-exit-terminal",
+          "detail": "3221225477:"
+        },
+        {
+          "atParentMicros": 365965277417,
+          "name": "process-close",
+          "detail": {
+            "code": 3221225477,
+            "signal": null
+          }
+        },
+        {
+          "atParentMicros": 365965281906,
+          "name": "stdin-close",
+          "detail": null
+        }
+      ]
+    }
+  ]
+}

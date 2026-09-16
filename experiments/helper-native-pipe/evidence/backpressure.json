@@ -1,0 +1,36 @@
+{
+  "status": "PASS",
+  "stormResult": {
+    "submitted": 20000,
+    "queue": {
+      "maxPendingFrames": 128,
+      "maxPendingBytes": 262144,
+      "maxFrameBytes": 65536,
+      "maxReceiveBuffer": 131072,
+      "writtenFrames": 794,
+      "writtenBytes": 230051,
+      "coalescedReplaced": 19722,
+      "coalescedDropped": 0,
+      "peakFrames": 8,
+      "peakBytes": 2312
+    }
+  },
+  "queueStats": {
+    "maxPendingFrames": 128,
+    "maxPendingBytes": 262144,
+    "maxFrameBytes": 65536,
+    "maxReceiveBuffer": 131072,
+    "writtenFrames": 799,
+    "writtenBytes": 231504,
+    "coalescedReplaced": 19723,
+    "coalescedDropped": 0,
+    "peakFrames": 8,
+    "peakBytes": 2312
+  },
+  "finalState": {
+    "status": "playing",
+    "path": "E:\\ETE-helper-native-pipe\\.work\\helper-native-pipe-final4\\media\\C.wav",
+    "playing": true,
+    "fileLoaded": true
+  }
+}
