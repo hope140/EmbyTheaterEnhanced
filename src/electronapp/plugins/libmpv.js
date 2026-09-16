@@ -64,6 +64,8 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         return {isStrm: isStrmValue, route: routeForResult(result)};
     }
 
+    var NATIVE_FALLBACK_TOAST_TEXT = '增强播放源不可用，已回退 Emby 原生播放';
+
     function getFileLocalLoadOptions(result) {
         var userAgent;
 
@@ -182,7 +184,8 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 controller: new AbortController(),
                 corePlayingListener: null,
                 abortListener: null,
-                corePlayingLogged: false
+                corePlayingLogged: false,
+                nativeFallbackToastRequested: false
             };
             activePlayRequest = request;
             if (enhancedRouteState) enhancedRouteState.begin(request);
@@ -197,6 +200,36 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
         function assertCurrentPlayRequest(request) {
             if (!isCurrentPlayRequest(request)) throw supersededError();
+        }
+
+        function notifyNativeFallbackToast(request, isStrmRequest, result, route) {
+            var loaderSettled = false;
+            var pending;
+
+            if (!isStrmRequest || !result || route !== 'native' || result.reason !== 'native_fallback' ||
+                !isCurrentPlayRequest(request) || request.nativeFallbackToastRequested) return;
+
+            request.nativeFallbackToastRequested = true;
+            try {
+                pending = require(['toast'], function (toast) {
+                    if (loaderSettled) return;
+                    loaderSettled = true;
+                    if (!isCurrentPlayRequest(request) || typeof toast !== 'function') return;
+                    try {
+                        var toastResult = toast(NATIVE_FALLBACK_TOAST_TEXT);
+                        if (toastResult && typeof toastResult.catch === 'function') {
+                            toastResult.catch(function () {});
+                        }
+                    } catch (_) { /* Native notification is fail-open. */ }
+                }, function () {
+                    loaderSettled = true;
+                });
+                if (pending && typeof pending.catch === 'function') {
+                    pending.catch(function () {
+                        loaderSettled = true;
+                    });
+                }
+            } catch (_) { /* Native notification is fail-open. */ }
         }
 
         function waitForCorePlaying(request) {
@@ -849,6 +882,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                     fallback: resolverResult && resolverResult.fallback === true
                 });
             }
+            notifyNativeFallbackToast(request, isStrmRequest, resolverResult, resolverObservation.route);
             emitClientDiagnostic('info', 'playback', 'resolver-complete', Object.assign(requestDiagnosticDetails(request), {
                 isStrm: isStrmRequest,
                 route: resolverObservation.route,

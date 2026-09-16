@@ -10,6 +10,16 @@ Model Tier：2。Reason：真实 Windows telemetry 指向 CD2 download stage 的
 
 新增 fake-clock/controlled-timer 回归覆盖 320ms Direct 成功、Direct timeout → Same-Origin 320ms 成功、超过 500ms 仍 timeout，以及 Resolver 向每个 CD2 stage 传递同一 `1200ms` deadline。验证：CD2/Resolver targeted `76/76`，全量 `npm test` `140/140`。未生成 installer candidate，未执行真实客户端播放。
 
+## 2026-09-16 — STRM native fallback Toast
+
+Model Tier：2。Reason：通知触发点必须与 libmpv 当前 playback request、Resolver 最终 route/reason、stop/destroy 和 supersede 生命周期一致；实现只复用现有 Emby Web runtime，不改变播放 source、Stats、Session 或 PlaybackManager ownership。Escalated：no。
+
+审计 prepared/Carnival Web runtime：`src/electronapp/www/modules/toast/toast.js` 是现有原生 AMD Toast 模块，`common/input/api.js` 的 `DisplayMessage` 已通过 `require(["toast"], ...)` 使用它。当前模块接受字符串/选项对象，但不读取 `timeoutMs`；其原生动画/回收默认约 3.3 秒，因此沿用默认时长，不增加 HTML overlay、CSS、动画或通知框架。
+
+`libmpv.playInternal` 在最终 `resolver-result` 已确定后，仅当当前 request 已确认 STRM 且结果为 `route=native`、`reason=native_fallback` 时异步请求原生 Toast。每个 request 有独立幂等标记；加载回调再次检查 current request，新的 Play/NextTrack、stop 或 destroy 会使旧回调失效。Toast module 缺失、API 不存在、throw 或 reject 均 fail-open，不影响原生 `loadfile`、Session、上报和 playback error；现有 Stats contract 未改。
+
+新增 Toast/playback lifecycle targeted `4/4`，覆盖 DirectUrl/CD2 HTTP/Mount/普通 Native、resolver_disabled/no_matching_rule/transcode_skip/invalid_context、最终 native fallback、supersede、stop/destroy、重复 loader callback 和 fail-open。全量 `npm test` `144/144` 通过；未生成 installer candidate，未执行真实客户端播放。
+
 ## 2026-09-16 — Stats 未尝试阶段展示语义
 
 本轮只修正 `playback-route-stats.js` 的用户态文本：空 CD2 reason 与 `not_attempted` 统一显示“未使用”，保留 timeout“超时”、miss/not_found“未命中”及 DirectUrl/CD2 HTTP“命中”。新增 Mount-first → Mount hit → CD2 未使用回归；Resolver/CD2/Mount 行为与 timeout/budget 未改。targeted `4/4`、全量 `npm test` `136/136`、JS syntax 与 `git diff --check` 通过。

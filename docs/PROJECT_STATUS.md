@@ -6,6 +6,14 @@
 
 本轮只修改 CD2 budget 常量、persistent runtime default 和受控时钟测试，不改变 Resolver precedence、STRM identity recovery、Mapping、Mount 判定、PlaybackManager ownership、Session/PlaySessionId、WebSocket、DeviceId、WatchTogether、mpv 或 Electron。CD2/Resolver targeted `76/76`，全量 `npm test` `140/140`；未生成 candidate，真实 Windows playback 尚待用新 budget 重新取证。
 
+## 2026-09-16 — STRM native fallback Toast
+
+当前 prepared Web runtime 已确认使用原生 AMD `toast` 模块；既有 `common/input/api.js` 的 `DisplayMessage` 通过同一模块显示短消息。模块自身未实现 `timeoutMs`，原生动画/回收默认约 3.3 秒，本轮复用默认行为，不引入自定义 DOM、CSS 或动画。
+
+Toast 只在当前播放确认 STRM，且最终 Resolver result 派生为 `route=native`、`reason=native_fallback` 时触发。DirectUrl、CD2 HTTP、Mount、普通非 STRM Native、resolver_disabled、no_matching_rule、transcode_skip、invalid_context 及任何中间阶段失败后命中后续增强路径均不触发。request 级幂等、current request 检查和 stop/destroy/supersede 保护已实现；module/API 异常 fail-open，原生播放与既有 Stats/Session contract 不受影响。
+
+Toast/playback lifecycle targeted `4/4`、全量 `npm test` `144/144`、相关 JS syntax 与 `git diff --check` 通过。未生成 candidate，真实 Windows Toast 视觉验收仍待手工确认。
+
 ## 2026-09-16 — Stats 未尝试阶段展示语义
 
 修正 `playback-route-stats` 的用户态映射：Mount-first 直接命中时 CD2 显示“未使用”，`not_attempted` 不再透传；timeout 仍显示“超时”，miss/not_found 仍显示“未命中”。仅调整 Stats 展示语义，不改变 Resolver、CD2、Mount 或 timeout/budget。targeted `4/4`、全量 `npm test` `136/136`、JS syntax 与 `git diff --check` 通过。
