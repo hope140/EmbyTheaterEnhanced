@@ -2,6 +2,13 @@
 
 Phase 2 spike 补充（2026-09-16，研究证据，非生产集成）：
 
+- 当前 mpv 0.41 API 的 media attribution 不能用单一机制覆盖全部 event。START_FILE/END_FILE 应使用 `playlist_entry_id`；property/core-idle 应使用 observer `reply_userdata`；FILE_LOADED 没有 direct identity，只能在唯一 open mapping 时接受，否则 fail closed。
+- `mpv_command_async` reply 只说明 command completion，不能证明 file loaded 或 playing。load request token 与 native playlist entry 的关联必须等 START_FILE identity 出现后建立。
+- 不把 event 贴 current generation 的可行替代是：只允许一个 unbound load candidate，START_FILE 原子绑定 candidate 与 playlist id；其余 load 排队。此序列化只负责 identity 建立，不以 sleep/drain window 作为正确性条件。
+- generation safety 不具有追溯性。A 在仍为 current 时已提交给 libmpv，后来到达的 B 无法证明 A 从未开始 load；可证明的硬边界是 retire A 后，A 不再提交、成为 current 或修改新状态。resolver 的 late A 必须在 native submission 前由 generation check 拦截。
+- generation attribution 与 authority check 是两层。native helper 先证明 event 属于哪个 generation，parent 再检查该 generation 当前是否有权修改 state；Stop/Next/recreate 都不能重新激活 retired owner。
+- private inherited pipe EOF 可作为 parent-death cleanup boundary，但必须由 supervisor 实测 bounded exit 和 residual=0；不能只假设 Windows 会自动清理 child。
+- property storm 的正确 backpressure 需要按 helper/generation/property coalesce；response/error/lifecycle boundary 保持 critical。若 critical frame 超出有界预算，应 fail closed，不能回退到无限 queue。
 - helper crash isolation 与 message ownership 是两项独立保证。新建 JS Helper object 能清理本地 pending，却不能替代 wire-level `helperInstanceId`；同一 helper 内的 Play A/B 也必须用 `generationId` 归因 native event。
 - response-bearing request 必须用 request id、absolute monotonic deadline 和 terminal registry。timeout/cancel/helper-death/generation-retire/destroy 之后的 response 只能 DROP，不能因为 late native completion 再次 resolve。
 - helper-global ready/stderr/crash 与 media-generation event 要分 scope。前者仍受 helper identity 约束，但不能被 generation retirement 错误丢弃；后者缺 generation 时必须 fail closed。

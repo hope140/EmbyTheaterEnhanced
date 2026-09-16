@@ -1,5 +1,19 @@
 # 开发日志
 
+## 2026-09-16 — Phase 2B native event attribution / framed-pipe integration
+
+- Model Tier: 2；Model: GPT-5.6 Sol High；Reason：真实 libmpv event identity、跨进程 request/generation lifecycle、pipe EOF/close ordering、native crash 与 backpressure 属于高风险异步边界；Escalated：no。bounded worker 只执行 local header/API evidence audit 和 parent-death/media helper 支持，主线程完成 attribution contract、native implementation、真实运行与最终 review。
+- 从上一阶段 contract head `c5dcc0f` 创建独立 worktree `E:\ETE-helper-native-pipe` 与 branch `spike/helper-native-pipe-integration`；原工作树用户未跟踪 `experiments/win32-mixed-dpi/` 未读取、修改、stage 或提交。
+- 复用现有 `mpv-1.dll` `v0.41.0-920-gdd5d17d32` / client API 2.5；SHA256 `965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c`。本地 pinned header 证明 start/end 的 `playlist_entry_id`、async command/observer `reply_userdata` 与 FILE_LOADED 缺失 direct identity。
+- 新增 research-only C++ helper 与 Node parent controller。uint32le framed strict UTF-8 JSON，64 KiB frame、128 KiB receive buffer；helper/generation/request identity strict schema；load candidate 在 START_FILE 前串行绑定，FILE_LOADED ambiguity fail closed，property/core-idle 使用 per-generation observer token。没有把 event 标成 current generation。
+- 自动生成 A/B/C 2 秒 PCM WAV。single/sequential/next-like PASS；rapid AB、rapid ABC、Stop 与 access-violation crash 各 20/20 PASS。最终 1061 timeline actions 中 accepted stale=0，52 stale generation events dropped，4 ambiguous-after-cleanup events fail closed；blocked main-thread queued A/B/C 中 A/B 在 native submit 前淘汰、queued old START_FILE=0。timeout/cancel/crash/retire/pipe close 全部 exactly-once terminal。
+- partial/concatenated/zero/oversized/invalid UTF-8/malformed JSON/missing identity/unknown type、unknown request、normal exit、read/write close、partial-frame crash、helper recreate 与 parent death 全部 PASS。parent death residual helper=0。
+- 独立 review 后补齐 helper-origin steady-state schema corruption、stream terminal immediate cleanup、正整数 identity、cross-recreate monotonic generation、decoded inbound queue 上限，以及 media/quarantine/observer map 回收和总量 cap；复跑全部真实 gate PASS。
+- slow parent + 20,000 property events + 1 MiB stderr + concurrent requests 下，writer queue peak=8 frames/2,312 bytes，coalesced=19,723，protocol 无 deadlock/corruption/starvation；stderr 全量 drain 且 retention 有界。main-thread blocker 下 inbound queue 超限以 exit 21 fail closed。malformed helper response 后拼接的 valid event 未被接受，spawn error 和 transport-terminal 后 request/event 也 fail closed。
+- 结论：Phase 2B gate PASS，B 为 PRODUCTION ARCHITECTURE CANDIDATE，不是 production ready。production code、PlaybackManager、Session、Resolver、WebSocket、Electron runtime、package/installer 均未修改。
+
+完整结论：`docs/HELPER-NATIVE-PIPE-INTEGRATION.md`。机器证据：`experiments/helper-native-pipe/evidence/`。
+
 ## 2026-09-16 — Helper IPC lifecycle / generation safety spike
 
 - Model Tier: 2；Model: GPT-5.6 Sol High；Reason：helper process lifecycle、request correlation、generation attribution、timeout/cancel 与 destroy/recreate 涉及跨进程异步竞态；Escalated：no。现有 contract 证据盘点与独立 experiment review 委派给 bounded Luna worker，架构、实现与验收由主线程保留。

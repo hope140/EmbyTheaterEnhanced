@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-09-16 — Phase 2B native event attribution / framed-pipe gate
+
+基于 `c5dcc0f` 在独立 worktree/branch `spike/helper-native-pipe-integration` 完成真实 Windows native helper、真实 bundled libmpv 与 private inherited stdin/stdout pipe 验证。协议 version 1 使用 uint32 little-endian length + strict UTF-8 JSON，保留 `helperInstanceId + generationId + requestId` 最小 identity；stderr 独立持续 drain，native writer queue 有界并对高频 property coalesce。
+
+实际 mpv header/runtime 证明 `START_FILE` 与 `END_FILE` 带 `playlist_entry_id`，property event 可用 observer `reply_userdata` 归属 generation；`FILE_LOADED` 没有 direct identity，因此只在恰有一个 open mapped playlist entry 时接受，其他情况 fail closed。最终 timeline 1061 条，accepted stale=0、`DROP_STALE_GENERATION`=52、`DROP_UNATTRIBUTED`=4；rapid A→B、A→B→C、Stop during load、access-violation crash 均 20/20 PASS，确定性 queued A/B/C supersession 仅 C 进入 START_FILE。parent death 后 helper 因 pipe EOF 有界退出，residual=0。20,000 property burst 下 output queue 峰值 8 frames/2,312 bytes、coalesce 19,723 次；decoded inbound queue overflow 也 fail closed；1 MiB stderr 全部 drain。
+
+Gate 结论为 **PASS**，B architecture 升为 **PRODUCTION ARCHITECTURE CANDIDATE**，不是 production ready。下一步仅建议 Electron 18 first 的 production bridge adapter review；本轮未修改 `src/**`、PlaybackManager、Session、Resolver、WebSocket、版本、依赖、runtime 或 installer，也未进行 Emby/UI/mixed-DPI 验收。完整结论见 `docs/HELPER-NATIVE-PIPE-INTEGRATION.md`。
+
 ## 2026-09-16 — Helper IPC lifecycle / generation safety spike
 
 基于 `add2c32` 创建独立分支 `spike/helper-ipc-lifecycle-contract`，保留 Phase 2 bridge 与 helper composition research，不带入后续 mixed-DPI 提交。新增纯 JS research model、fake helper、controlled scheduler、length-prefixed framing decoder、27 项 deterministic fault injection 与机器可读 evidence；没有导入 production player，也没有运行 GUI、真实 Emby、真实媒体或真实 libmpv。
