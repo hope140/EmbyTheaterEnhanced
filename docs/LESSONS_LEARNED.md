@@ -2,6 +2,13 @@
 
 Phase 2 spike 补充（2026-09-16，研究证据，非生产集成）：
 
+- helper crash isolation 与 message ownership 是两项独立保证。新建 JS Helper object 能清理本地 pending，却不能替代 wire-level `helperInstanceId`；同一 helper 内的 Play A/B 也必须用 `generationId` 归因 native event。
+- response-bearing request 必须用 request id、absolute monotonic deadline 和 terminal registry。timeout/cancel/helper-death/generation-retire/destroy 之后的 response 只能 DROP，不能因为 late native completion 再次 resolve。
+- helper-global ready/stderr/crash 与 media-generation event 要分 scope。前者仍受 helper identity 约束，但不能被 generation retirement 错误丢弃；后者缺 generation 时必须 fail closed。
+- command submission、native API submission 与 operation observation 不可混为一个 acknowledgement。保持 low-latency command 不要求把所有 set/seek 变成 blocking RPC；playback success 仍由 current-generation state event 决定。
+- newline JSON 能处理简单 partial/concatenated read，不代表 framing 完整。production transport 必须有显式 length、单 frame/总 buffer 上限、schema/identity validation 和 malformed connection fail-closed policy。
+- event/stderr storm 的 backpressure 不能只靠 evidence array 截断。需要 bounded queue/diagnostic retention、可替换 property coalescing、response/lifecycle/control priority 与独立 stderr drain；本轮只完成 model-level 有界验证。
+
 - composition gate 必须把 VISUAL PASS、TELEMETRY PASS 与 CAPTURE LIMITATION 分开。最终 desktop BitBlt run-11 的生成式 SDR frame + HTML OSD 才是窗口状态的视觉证据；早期遮挡或 PrintWindow 黑屏只能说明 capture limitation。
 - 同 DPI 的 geometry、monitor transition 和 input 通过，不能推导 mixed-DPI 正确。两台真实显示器均为 scaleFactor 1.5 / native DPI 144 时，REAL MIXED-DPI 与 DPI 变化后的 input alignment 必须保持 BLOCKED；API 模拟不能升级为 PASS。
 - parent-owned transparent overlay BrowserWindow 可以在本轮 helper-owned child HWND 上取得 bounded composition/input 证据，但这不等于现有 Emby OSD、全量 input forwarding 或生产 bridge adapter 已完成；仍需架构批准与真实 mixed-DPI 覆盖。

@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-09-16 — Helper IPC lifecycle / generation safety spike
+
+基于 `add2c32` 创建独立分支 `spike/helper-ipc-lifecycle-contract`，保留 Phase 2 bridge 与 helper composition research，不带入后续 mixed-DPI 提交。新增纯 JS research model、fake helper、controlled scheduler、length-prefixed framing decoder、27 项 deterministic fault injection 与机器可读 evidence；没有导入 production player，也没有运行 GUI、真实 Emby、真实媒体或真实 libmpv。
+
+结论为 **YES WITH CONDITIONS**。最小 wire identity 是 `helperInstanceId + generationId + requestId`；独占 transport 与 helper-per-recreate identity 前提下不需要 wire-level `playerInstanceId`，controller identity 保留为 adapter-local token。absolute deadline、cancel、generation retirement、helper crash、helper recreate、helper-id reuse rejection、transport write failure、late response/event/application callback、A→B→C、NextTrack、Stop、destroy/recreate、strict framing/receive buffer/helper-death wiring 与 bounded storm 全部通过；必测 matrix 精确覆盖，36/36 cases 与 INV-01..INV-12 为 PASS。
+
+研究 contract 保持 existing command/set submission-only semantics，`play()` 仍由 current-generation playback observation 完成；identity 不暴露给 PlaybackManager/Session。production framing/serialization、native event generation attribution、real pipe backpressure、parent-death cleanup、真实 libmpv ordering 与完整 Emby integration 仍未建立。本轮未修改 `src/**`、PlaybackManager、Session、Resolver、WebSocket、版本、依赖、runtime 或安装器。
+
 ## 2026-09-16 — Phase 2A helper composition/input/DPI gate
 
 最终 run-11 证据已完成并分别复核机器状态与截图，Gate 为 **CONDITIONAL PASS**，B 继续保持 **RESEARCH DIRECTION**，尚未成为生产架构。helper-owned D3D11 video 与 parent-owned transparent HTML overlay 在最终 desktop BitBlt captures 中实际合成；`playing-overlay-visible`、`overlay-visible-again`、`resized`、`maximized`、`restore-after-minimize`、`fullscreen`、`fullscreen-exit`、`monitor-0`、`monitor-1`、`secondary-fullscreen`、`after-crash-reload` 均显示生成式 SDR test frame 与 HTML OSD，`overlay-hidden` 显示实际视频且无 OSD。button/slider/mousemove/hover/click-through、Space/Left/Right/Enter/Esc、focus、Alt-Tab、resize、maximize/restore、minimize/restore、fullscreen enter/exit、same-DPI monitor transition 和 helper lifecycle 均通过。

@@ -1,5 +1,16 @@
 # 开发日志
 
+## 2026-09-16 — Helper IPC lifecycle / generation safety spike
+
+- Model Tier: 2；Model: GPT-5.6 Sol High；Reason：helper process lifecycle、request correlation、generation attribution、timeout/cancel 与 destroy/recreate 涉及跨进程异步竞态；Escalated：no。现有 contract 证据盘点与独立 experiment review 委派给 bounded Luna worker，架构、实现与验收由主线程保留。
+- 初始 `main@73eac9f`，工作区存在用户未跟踪 `experiments/win32-mixed-dpi/`。确认 `924198b -> 45eae50 -> f9477d5 -> add2c32` 的研究祖先后，从 `add2c32` 创建 `spike/helper-ipc-lifecycle-contract`；未读取、修改、stage 或提交 mixed-DPI 文件。
+- 审计确认 production `getProperty` 无 request id/timeout/reject，command/set Promise 为 submission-only，native property/core-playing event 无 helper/generation identity；prototype 只有本地 pending map/timeout/Helper object replacement，没有 wire-level helper/generation attribution。
+- 新增 research-only `experiments/helper-ipc-contract/`。最小 identity 为 helper/generation/request；controller identity 仅用于本地 application token。request 采用单一 absolute deadline 与 exactly-once terminal state，Play/NextTrack/Stop/destroy/helper crash/recreate 都形成明确 retirement boundary。
+- 受控 scheduler 无 wall-clock sleep。fake helper 覆盖 delay/reorder/duplicate/drop/malformed/crash/restart/stale/wrong identity。独立 review 后补齐 helper-id reuse rejection、transport write failure、同步 response state ordering、真实 load/playing side-effect sink、strict UTF-8/schema framing、receive-buffer exhaustion、framing failure→helper death、matrix 缺项 fail-closed 与更强 bounded storm。最终必测 matrix 精确覆盖，36/36 cases、INV-01..INV-12 均 PASS。
+- 研究 framing 为 uint32be length-prefixed UTF-8 JSON；serialization 未冻结。private inherited pipe、无 listener/公开 endpoint/shell/filesystem RPC 的安全边界保持。未修改 production code、依赖、版本、runtime、installer、PlaybackManager、Resolver、Session 或 WebSocket。
+
+完整 contract：`docs/HELPER-IPC-LIFECYCLE-CONTRACT.md`。机器证据：`experiments/helper-ipc-contract/evidence/`。
+
 ## 2026-09-16 — Phase 2A helper composition/input/DPI gate
 
 - Model Tier: 2；Model: GPT-5.6 Sol High；Reason：composition、input、DPI 与 helper lifecycle 的跨层验证；Escalated：no。
