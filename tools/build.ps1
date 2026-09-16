@@ -85,7 +85,6 @@ finally { $payloadSetAlgorithm.Dispose() }
 $report = @{
     schemaVersion=2
     sourceCommit=$sourceCommit.ToLowerInvariant()
-    runtimeName=$OutputName
     version=$version
     baseline=$manifest.baseline
     sourceManifestSha256=(Get-FileHash -LiteralPath (Join-Path $root 'vendor/runtime-manifest.json')).Hash.ToLowerInvariant()

@@ -18,7 +18,6 @@ if ($provenanceExit -ne 0 -or $null -eq $provenance -or $provenance.status -ne '
 $build = Get-Content -LiteralPath (Join-Path $runtime 'build-manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 if ($build.schemaVersion -ne 2) { throw 'Unsupported build manifest schema.' }
 if ($build.sourceCommit -ne $sourceCommit.ToLowerInvariant()) { throw 'Build manifest source commit mismatch.' }
-if ($build.runtimeName -ne $RuntimeName) { throw 'Build manifest runtime name mismatch.' }
 if ($build.sourceManifestSha256 -ne (Get-FileHash -LiteralPath (Join-Path $root 'vendor/runtime-manifest.json') -Algorithm SHA256).Hash.ToLowerInvariant()) { throw 'Build manifest vendor source mismatch.' }
 if ($build.packageLockSha256 -ne (Get-FileHash -LiteralPath (Join-Path $root 'package-lock.json') -Algorithm SHA256).Hash.ToLowerInvariant()) { throw 'Build manifest package lock mismatch.' }
 $listedPaths = @($build.files | ForEach-Object { [string]$_.path })
