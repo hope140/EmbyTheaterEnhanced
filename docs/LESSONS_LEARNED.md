@@ -2,6 +2,10 @@
 
 Phase 2 spike 补充（2026-09-16，研究证据，非生产集成）：
 
+- composition gate 必须把 VISUAL PASS、TELEMETRY PASS 与 CAPTURE LIMITATION 分开。最终 desktop BitBlt run-11 的生成式 SDR frame + HTML OSD 才是窗口状态的视觉证据；早期遮挡或 PrintWindow 黑屏只能说明 capture limitation。
+- 同 DPI 的 geometry、monitor transition 和 input 通过，不能推导 mixed-DPI 正确。两台真实显示器均为 scaleFactor 1.5 / native DPI 144 时，REAL MIXED-DPI 与 DPI 变化后的 input alignment 必须保持 BLOCKED；API 模拟不能升级为 PASS。
+- parent-owned transparent overlay BrowserWindow 可以在本轮 helper-owned child HWND 上取得 bounded composition/input 证据，但这不等于现有 Emby OSD、全量 input forwarding 或生产 bridge adapter 已完成；仍需架构批准与真实 mixed-DPI 覆盖。
+- 短时 button/slider round-trip 与 CPU 采样只能作为观察项。若没有 sustained、4K/HDR、功耗和压力数据，不应据此作性能或架构速度结论；本轮没有结构性 compositor blocker，不应因此引入 DirectComposition。
 - mpv render API 的 OpenGL 成功不能推导 gpu-next/D3D11 等价。实际 A 为 d3d11va-copy，B 为 gpu-next/d3d11/d3d11va；硬解设置值与实际 hwdec-current 必须分别确认。
 - native child HWND 的视频嵌入、HTML OSD 合成、默认 GPU UI 的截图能力是不同证据。A 软件 UI 下出画面，默认 GPU UI 的 PrintWindow 缺视频仍须保留 PARTIAL；B 出画面但 native child 遮挡 DOM overlay。
 - 在 Electron main 同步等待同进程 child HWND 创建可能阻塞父窗口消息泵；原型 create/destroy 改异步后通过。跨进程 helper 必须显式处理 DPI awareness；只确认尺寸变大不足以证明像素映射正确。

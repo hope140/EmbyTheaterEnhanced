@@ -1,5 +1,14 @@
 # 开发日志
 
+## 2026-09-16 — Phase 2A helper composition/input/DPI gate
+
+- Model Tier: 2；Model: GPT-5.6 Sol High；Reason：composition、input、DPI 与 helper lifecycle 的跨层验证；Escalated：no。
+- 基于最终 run-11 machine-readable evidence 与独立截图复核，Gate 为 **CONDITIONAL PASS**；B 仍为 **RESEARCH DIRECTION**，未获架构批准。runner exit=0、`timedOut=false`、自然结束。
+- 采用 helper-owned `WS_CHILD` video、parent-owned transparent overlay `BrowserWindow`。playing/visible again/resized/maximized/restore-after-minimize/fullscreen enter-exit/monitor 0/monitor 1/secondary fullscreen/after-crash-reload 均实际显示生成式 SDR frame 与 HTML OSD；overlay-hidden 显示实际视频且无 OSD。button、slider、mousemove、hover、click-through、Space/Left/Right/Enter/Esc、focus、Alt-Tab、resize、window lifecycle 通过。
+- B telemetry 保持 `gpu-next`、`gpu-api=d3d11`、`gpu-context=d3d11`、`hwdec-current=d3d11va`。sandbox/contextIsolation/nodeIntegration security baseline 通过。helper 故意 `0xC0000005` 后 main/renderer/overlay 存活，helper recreate/video reload 通过。
+- 两台真实显示器都为 Electron `scaleFactor=1.5`、native DPI `144`，故 single-DPI 与 same-DPI monitor transition PASS；REAL MIXED-DPI、INPUT ALIGNMENT AFTER DPI CHANGE BLOCKED，API 模拟不计 PASS。button `46.26ms`、slider `21.79ms` 仅为短样本，CPU 有噪声，不下性能结论。
+- 早期遮挡/PrintWindow 黑屏记录为 CAPTURE LIMITATION；最终 desktop BitBlt run-11 已取得全部请求状态。无结构性 compositor blocker，不做 DirectComposition。未改 PlaybackManager、Resolver、Session、WebSocket、UI、依赖、版本或生产 runtime；详情见 `docs/HELPER-COMPOSITION-GATE.md`。
+
 ## 2026-09-16 — Bridge modernization ADR and two-prototype spike
 
 - Model Tier: 3; Model: GPT-6 Astra; Reason: 用户明确指定 High/Standard，用最小 Windows 原型比较 native bridge、渲染和 crash isolation 的重大架构问题；Escalated: no。两个 bounded worker 仅执行 contract extraction、官方资料研究及独立验证，架构决定由主线程保留。

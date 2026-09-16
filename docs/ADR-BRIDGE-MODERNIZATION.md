@@ -3,8 +3,9 @@
 Date: 2026-09-16. Status: **research recommendation, pending architecture approval**.
 Base main / `v0.1.1`: `73eac9fa64c43804e9c5c53690ed087b2c5bb077`.
 
-**RECOMMENDED ARCHITECTURE = B (isolated native helper), conditional on a composition gate.**
-**CONFIDENCE = MEDIUM.** This recommends the next research direction, not production adoption.
+**RECOMMENDED ARCHITECTURE = B (isolated native helper), conditional on the completed composition/input gate.**
+**GATE = CONDITIONAL PASS. CONFIDENCE = MEDIUM-HIGH for the exercised same-DPI scope.**
+This recommends the next research direction, not production adoption.
 No candidate has established complete equivalence with the existing player/UI contract.
 
 ## Context and current legacy architecture
@@ -100,6 +101,27 @@ composition while libmpv hardware decode remains enabled.
 
 ## Evidence and minimum viable equivalence
 
+The follow-up [helper composition and input gate](HELPER-COMPOSITION-GATE.md)
+completed the bounded Phase 2A experiment for B. Final run-11 desktop BitBlt
+captures were separately opened and reviewed. `playing-overlay-visible`,
+`overlay-visible-again`, `resized`, `maximized`, `restore-after-minimize`,
+`fullscreen`, `fullscreen-exit`, `monitor-0`, `monitor-1`,
+`secondary-fullscreen`, and `after-crash-reload` each showed the generated SDR
+video frame with the expected HTML OSD; `overlay-hidden` showed the actual video
+with no OSD. The run's status fields and the visual review are intentionally
+kept as separate evidence classes.
+
+The gate passed composition, overlay input, video click-through, focus/keyboard,
+window transitions and helper crash/recreate in the two-display environment.
+Both displays were `scaleFactor=1.5` / native DPI `144`, so single-DPI and
+same-DPI monitor transition passed while real mixed-DPI and input alignment after
+an actual DPI change remain **BLOCKED**. This is a coverage boundary, not an
+observed mixed-DPI failure. Early obscured/PrintWindow-black captures are
+capture limitations; the final desktop BitBlt run obtained the requested states.
+The run kept B's `gpu-next`, `gpu-api=d3d11`, `gpu-context=d3d11`,
+`hwdec-current=d3d11va` settings. There is no structural compositor blocker in
+the exercised arrangement, and this gate does not justify DirectComposition.
+
 Read [A software-UI evidence][ea], [A default-UI evidence][ead], [B evidence][eb]
 and [native build hashes][build]. Each record separates action telemetry from
 visual review. All ten final A-software/B-default playing, resized, restored,
@@ -111,18 +133,18 @@ owned-window captures are committed; all other capture hashes are recorded.
 |---|---|---|
 | Build / Electron load / libmpv initialize | PASS | PASS |
 | Render context | PASS, OpenGL | N/A, native VO owns rendering |
-| Video surface | PASS with software Chromium UI; default GPU UI PARTIAL | PASS with default GPU UI |
+| Video surface | PASS with software Chromium UI; default GPU UI PARTIAL | PASS with default GPU UI and parent-owned HTML overlay in Phase 2A gate |
 | Load / core playing | PASS | PASS |
 | Pause / unpause / seek / stop | PASS | PASS |
 | time-pos / pause / duration events to JS | PASS | PASS |
-| Resize / fullscreen enter and exit | PASS visually in software-UI run; default-UI visual PARTIAL | PASS geometry + actual video captures |
-| Minimize / restore | PASS under same A limitation | PASS |
+| Resize / fullscreen enter and exit | PASS visually in software-UI run; default-UI visual PARTIAL | PASS geometry + actual video/OSD captures in same-DPI gate |
+| Minimize / restore | PASS under same A limitation | PASS, including post-minimize visual capture |
 | Destroy / recreate bridge | PASS | PASS, including reload after native failure |
 | App exit | PASS after explicit native teardown, root exit 0 | PASS, helpers normally exit 0 |
 | Native crash isolation | NOT TESTED; main-process blast radius by design | PASS, deliberate access violation `0xC0000005`, main/renderer survived |
 | Forced helper termination / detection / recreation | N/A | PASS, separate forced-kill and native-exception cases |
 | Hardware decode | PASS, d3d11va-copy | PASS, d3d11va with D3D11 GPU surfaces |
-| Existing HTML overlay compatibility | FAIL in child-HWND visual diagnostic | FAIL, child HWND covers DOM overlay |
+| Existing HTML overlay compatibility | FAIL in child-HWND visual diagnostic | Phase 2A overlay composition PASS for the tested HTML overlay window; full product OSD equivalence NOT ESTABLISHED |
 | Full product equivalence | NOT ESTABLISHED | NOT ESTABLISHED |
 
 After runs, an independent Win32_Process snapshot found zero matching experiment
@@ -198,12 +220,17 @@ is inferred from five control queries.
 ## Rendering, composition, config and HDR implications
 
 Both chosen surfaces are native HWNDs. They are not DOM children; CSS z-index
-does not order them with Chromium pixels. The deliberately red HTML probe is
-covered in the actual video capture. HTML next to video works; HTML OSD over
-video has **not** been preserved. Subtitles/mpv OSD can be composited by mpv
-inside its own surface, but subtitle settings/rendering were not tested here.
-Do not replace existing Emby HTML OSD with native controls without a separate
-approved design. Win32 child clipping/input rules explain the observed limitation
+does not order them with Chromium pixels. The original same-window red HTML
+probe remained covered by the native child HWND. Phase 2A instead used a
+separate parent-owned transparent overlay window; it appeared over the actual
+helper video, and hiding its OSD pixels revealed the video without the OSD.
+This establishes composition feasibility for the tested overlay topology. It
+does not establish full existing Emby HTML OSD
+equivalence, subtitle timing/rendering, or the production control surface.
+Subtitles/mpv OSD can be composited by mpv inside its own surface, but subtitle
+settings/rendering were not tested here. Do not replace existing Emby HTML OSD
+with native controls without a separate approved design. Win32 child
+clipping/input rules still apply to other native-window arrangements
 ([Microsoft window features][windows]).
 
 Both cores still expose mpv config/property APIs. This probe deliberately uses
@@ -238,8 +265,8 @@ sharedTexture][texture], [Electron18 module list][e18]).
 | Minimize/restore | Real window APIs + restored video timecodes; minimized GPU power not measured |
 | Fullscreen | BrowserWindow enter/exit, child resize and actual video; not exclusive-mode HDR acceptance |
 | Borderless fullscreen | Electron fullscreen observed without decorations; custom borderless product chrome remains untested |
-| DPI / multi-monitor | 144 DPI passed after fix; mixed awareness and monitor transitions NOT TESTED; SetParent/CreateWindow cross-process behavior needs care [dpi] |
-| Focus / mouse / keyboard | Child receives native input; mpv keyboard defaults disabled, existing DOM handlers do not automatically receive it [windows]; interactive forwarding NOT TESTED |
+| DPI / multi-monitor | Single-DPI 144 and same-DPI monitor transition passed in Phase 2A; real mixed-DPI and input alignment after DPI change are BLOCKED because no different-DPI display was available; SetParent/CreateWindow cross-process behavior still needs care [dpi] |
+| Focus / mouse / keyboard | Phase 2A overlay button/slider/mouse/hover/click-through, focus, Space/Left/Right/Enter/Escape and Alt-Tab passed; full production input forwarding and mpv keyboard policy remain untested [windows] |
 | Always-on-top / decorations | Parent owns chrome/z-order; no free-floating video window; always-on-top interaction NOT TESTED |
 | Screen changes / sleep-resume | Device loss, WGL/D3D context/swapchain recreation NOT TESTED |
 | Main death | B helper EOF is a useful path, but parent-crash/kill-on-close Job Object semantics NOT TESTED |
@@ -282,12 +309,13 @@ contract ([Electron native modules][native]). Native build outputs remain local.
 
 ## Decision, confidence and rejected/deferred alternatives
 
-**Choose B for the next bounded feasibility step.** It proved hardware-backed
-gpu-next/D3D11 playback on the frozen runtime and contained a real native exception.
-Its small measured control IPC cost provides no reason to sacrifice crash isolation.
-Confidence is MEDIUM because HWND/HTML composition and input remain unsolved,
-HDR and mixed DPI are untested, and no full player adapter or Emby regression ran.
-This is not approval to replace Pepper now.
+**Keep B as the research direction after a conditional Phase 2A pass.** It
+proved hardware-backed gpu-next/D3D11 playback on the frozen runtime, composed
+the tested HTML overlay, exercised input/window transitions, and contained a
+real native exception. Its small measured control IPC cost provides no reason
+to sacrifice crash isolation. Confidence is MEDIUM-HIGH for the exercised
+same-DPI gate, but mixed-DPI, HDR, device loss, the full player adapter and
+Emby regression remain open. This is not approval to replace Pepper now.
 
 - Defer A WGL as the primary route: different VO/config family, copy-back decode,
   main-process fault domain and unresolved default-GPU capture/composition.
@@ -300,17 +328,20 @@ This is not approval to replace Pepper now.
   relaxation as prerequisites absent a separately approved decision.
 - Defer full settings, subtitles UI, HDR implementation, installer and updater.
 
-The stop condition is met: both minimal prototypes were built and exercised;
-their surface/control/lifecycle facts and composition blocker are clear enough
-to choose the next experiment. Expanding either into production would hide the
-remaining composition decision rather than answer it.
+The Phase 2A stop condition is met for the bounded same-DPI experiment: the
+helper composition/input/crash facts are clear enough to choose the next
+research step. The real mixed-DPI and input-after-DPI-change coverage gap is
+still explicit. Expanding B into production would require closing that gap and
+approving the adapter contract rather than treating this gate as integration.
 
 ## Migration phases and open questions
 
-1. **Phase 2A — helper composition/input feasibility gate on Electron18.** Preserve
-   existing HTML OSD behavior; compare a narrowly defined owned-window composition
-   mechanism or validated texture path. Require actual overlay/click/focus, resize,
-   fullscreen and 100/150/200% mixed-DPI evidence. If this fails, reopen the decision.
+1. **Phase 2A — helper composition/input feasibility gate on Electron18.** The
+   same-DPI portion is conditionally passed by the run-11 evidence. Before
+   architecture approval, close the real mixed-DPI and input-after-DPI-change
+   coverage gap with hardware displays at different scale factors, while keeping
+   visual and telemetry evidence classes separate. If that coverage fails,
+   reopen the decision.
 2. **Phase 2B — isolated production-quality bridge module and adapter**, only after
    approval: full typed contract, bounded async commands, request/instance epochs,
    native crash/parent-death cleanup, Unicode paths and reproducible native closure.

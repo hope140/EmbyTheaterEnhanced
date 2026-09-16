@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-09-16 — Phase 2A helper composition/input/DPI gate
+
+最终 run-11 证据已完成并分别复核机器状态与截图，Gate 为 **CONDITIONAL PASS**，B 继续保持 **RESEARCH DIRECTION**，尚未成为生产架构。helper-owned D3D11 video 与 parent-owned transparent HTML overlay 在最终 desktop BitBlt captures 中实际合成；`playing-overlay-visible`、`overlay-visible-again`、`resized`、`maximized`、`restore-after-minimize`、`fullscreen`、`fullscreen-exit`、`monitor-0`、`monitor-1`、`secondary-fullscreen`、`after-crash-reload` 均显示生成式 SDR test frame 与 HTML OSD，`overlay-hidden` 显示实际视频且无 OSD。button/slider/mousemove/hover/click-through、Space/Left/Right/Enter/Esc、focus、Alt-Tab、resize、maximize/restore、minimize/restore、fullscreen enter/exit、same-DPI monitor transition 和 helper lifecycle 均通过。
+
+Telemetry 保持 B 的 `current-vo=gpu-next`、`gpu-api=d3d11`、`gpu-context=d3d11`、`hwdec-current=d3d11va`；security sandbox/contextIsolation/nodeIntegration baseline 通过。故意的 helper access violation `0xC0000005` 后 main/renderer/overlay 存活，helper recreate 与 video reload 通过。两真实显示器均为 Electron `scaleFactor=1.5`、native DPI `144`，因此 single-DPI 与 same-DPI monitor transition PASS；REAL MIXED-DPI 及 INPUT ALIGNMENT AFTER DPI CHANGE 为 BLOCKED，不能把 API 模拟算 PASS。短样本仅观察到 button `46.26ms`、slider `21.79ms`，CPU 有噪声，不下性能结论。
+
+早期被遮挡/PrintWindow 黑屏属于 **CAPTURE LIMITATION**；最终 run-11 desktop BitBlt 已取得全部请求状态。无结构性 compositor blocker，不做 DirectComposition。产品 PlaybackManager、Resolver、Session、WebSocket、UI、依赖、版本、正式 runtime、安装器和服务器均未改；完整分层证据见 [helper composition gate](HELPER-COMPOSITION-GATE.md)。
+
 ## 2026-09-16 — Phase 2 bridge modernization spike
 
 基于正式 `73eac9f` / `v0.1.1` 的独立分支完成 [bridge contract](BRIDGE_CONTRACT.md) 与 [研究 ADR](ADR-BRIDGE-MODERNIZATION.md)。两个 Windows x64 原型均实际编译并在 Electron 18.3.15 加载、控制播放和销毁重建。B helper 保留 `gpu-next/d3d11/d3d11va`，实际窗口画面、resize、最小化恢复、全屏进出和 `0xC0000005` native crash 隔离/重建通过。A 使用 OpenGL render API 和 `d3d11va-copy`，软件 Chromium UI 合成下画面通过；默认 GPU UI 下 PrintWindow 未取得视频，保持 PARTIAL。

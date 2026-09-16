@@ -2,7 +2,9 @@
 
 ## 待批准的 Phase 2 研究建议
 
-[Bridge modernization ADR](ADR-BRIDGE-MODERNIZATION.md) 建议后续优先验证 **isolated native helper（B），置信度 MEDIUM**。该建议尚未成为正式生产架构：helper 的 D3D11 硬解、控制和 native crash 隔离已取得 Windows 原型证据，但 HTML OSD 合成与输入必须先过独立 gate。正式客户端继续使用已发布 Pepper/libmpv 基线，不据此修改 ARCHITECTURE 或升级 Electron。
+[Phase 2A helper composition gate](HELPER-COMPOSITION-GATE.md) 的最终 run-11 结果为 **CONDITIONAL PASS**。在冻结 Electron 18.3.15 上，B 的 helper-owned D3D11 video、parent-owned transparent HTML overlay、控制输入、窗口生命周期和 helper crash/recreate 均取得同 DPI 的真实视觉或 telemetry 证据。两台实际显示器都是 `scaleFactor=1.5` / native DPI `144`，所以 REAL MIXED-DPI 和 INPUT ALIGNMENT AFTER DPI CHANGE 仍为 BLOCKED；不能用 API 模拟填补该 gate。B 仍只是 **RESEARCH DIRECTION**，等待架构批准，不得据此接入正式播放链。早期遮挡/PrintWindow 黑屏只记为 capture limitation，最终 desktop BitBlt run 已取得请求状态。性能只作短样本观察，不形成性能结论；不做 DirectComposition。
+
+[Bridge modernization ADR](ADR-BRIDGE-MODERNIZATION.md) 继续建议后续优先研究 **isolated native helper（B），置信度 MEDIUM-HIGH（限已测试的同 DPI gate）**。该建议尚未成为正式生产架构：helper 的 D3D11 硬解、HTML overlay 合成、控制和 native crash 隔离已有 bounded Windows 证据，但真实 mixed-DPI 与 DPI 变化后的输入对齐仍待硬件覆盖。正式客户端继续使用已发布 Pepper/libmpv 基线，不据此修改 ARCHITECTURE 或升级 Electron。
 
 以下按本轮任务范围建立，未来产品功能需要用户确认后再进入实现。
 
