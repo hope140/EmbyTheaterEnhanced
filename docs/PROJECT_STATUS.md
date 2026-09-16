@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-09-16 — Phase 2 bridge modernization spike
+
+基于正式 `73eac9f` / `v0.1.1` 的独立分支完成 [bridge contract](BRIDGE_CONTRACT.md) 与 [研究 ADR](ADR-BRIDGE-MODERNIZATION.md)。两个 Windows x64 原型均实际编译并在 Electron 18.3.15 加载、控制播放和销毁重建。B helper 保留 `gpu-next/d3d11/d3d11va`，实际窗口画面、resize、最小化恢复、全屏进出和 `0xC0000005` native crash 隔离/重建通过。A 使用 OpenGL render API 和 `d3d11va-copy`，软件 Chromium UI 合成下画面通过；默认 GPU UI 下 PrintWindow 未取得视频，保持 PARTIAL。
+
+研究建议为 **B / MEDIUM，待架构批准**。两个 child HWND 原型均未解决既有 HTML OSD 合成；下一步先做 composition/input feasibility gate，不立即接入 Emby。证据仅为真实 Windows 上的隔离合成媒体原型，不代表 REAL Emby/Session/WebSocket 验收。生产播放代码、UI、依赖、版本、正式 provenance 和打包流程均未修改；native 输出仅在 ignored 实验目录。修改前后现有测试均 152/152 通过。完整矩阵和未覆盖项见 ADR。
+
 ## 2026-09-16 — Phase 1 tracked source Git-blob binding
 
 修复远程审核发现的最后一个 source binding blocker：`build.ps1` 不再从 working tree 物理 `src/electronapp` 路径复制普通 tracked 文件，而是从固定 `sourceCommit` 的 Git tree 枚举 regular blob，并以原始 bytes 写入 runtime。dirty/staged index、CRLF/LF checkout policy 与 binary 工作文件变化不会影响输出；prepared preload、Web overlay、PlaybackManager/package overlay contract 未改变。

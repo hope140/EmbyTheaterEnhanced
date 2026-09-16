@@ -1,5 +1,12 @@
 # 已确认经验
 
+Phase 2 spike 补充（2026-09-16，研究证据，非生产集成）：
+
+- mpv render API 的 OpenGL 成功不能推导 gpu-next/D3D11 等价。实际 A 为 d3d11va-copy，B 为 gpu-next/d3d11/d3d11va；硬解设置值与实际 hwdec-current 必须分别确认。
+- native child HWND 的视频嵌入、HTML OSD 合成、默认 GPU UI 的截图能力是不同证据。A 软件 UI 下出画面，默认 GPU UI 的 PrintWindow 缺视频仍须保留 PARTIAL；B 出画面但 native child 遮挡 DOM overlay。
+- 在 Electron main 同步等待同进程 child HWND 创建可能阻塞父窗口消息泵；原型 create/destroy 改异步后通过。跨进程 helper 必须显式处理 DPI awareness；只确认尺寸变大不足以证明像素映射正确。
+- 本轮 helper 实际 access violation 被限制在 helper，Electron 检测并重建成功。它证明进程级隔离，不证明安全沙箱或 GPU driver reset 隔离；root exit=0 也不单独证明无残留，需另核验 owned process 范围。
+
 1. 本地 SFX 可直接解包为 1009 个文件，未发现加密条目；无须逆向安装器。
 2. `electronapp/package.json` 声明 Electron ^9.4.0，但本地 `x64/electron/electron.exe` 文件版本是 18.3.15。运行时版本需要实测，不可从开发依赖推断。
 3. 原 `libmpv.js` 在播放时根据 appSettings 设置 hwdec、vo、demuxer-max-bytes 等；mpv.conf 中对应设置可能随后被覆盖。

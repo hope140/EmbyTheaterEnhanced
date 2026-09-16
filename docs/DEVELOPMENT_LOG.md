@@ -1,5 +1,15 @@
 # 开发日志
 
+## 2026-09-16 — Bridge modernization ADR and two-prototype spike
+
+- Model Tier: 3; Model: GPT-6 Astra; Reason: 用户明确指定 High/Standard，用最小 Windows 原型比较 native bridge、渲染和 crash isolation 的重大架构问题；Escalated: no。两个 bounded worker 仅执行 contract extraction、官方资料研究及独立验证，架构决定由主线程保留。
+- `git fetch origin --tags` 后确认 origin/main 与 v0.1.1 commit 均为 `73eac9fa64c43804e9c5c53690ed087b2c5bb077`，原工作区 clean；创建独立 worktree/分支 `spike/bridge-modernization-phase2`。
+- 提取真实 command/property/event/lifecycle/payload contract，明确 ready/property_change、core-idle 合成 core-playing、submission-only Promise、pending/stale/int64 等既有限制。
+- 原型 A：Node-API 8、WGL/mpv render API、d3d11va-copy；原型 B：private pipe/native helper/child HWND、gpu-next/d3d11/d3d11va。Windows x64、冻结 Electron18、生成 H.264 640x360 SDR，配置/音频隔离。没有生产链路接入。
+- B 默认 Chromium GPU UI 下画面、控制、窗口行为和 helper forced kill/native exception/recreate 通过。A 软件 UI 合成画面通过，默认 GPU UI 的截图视频缺失保持 PARTIAL；两者 HTML overlay 合成不满足现有 UI contract。建议 B/MEDIUM，仅为后续研究方向。
+- 保留 A 同步创建阻塞、截图工具不适用、B DPI virtualization 的中间失败。A 异步生命周期及 B DPI 修正均复测；实际 owned-window 图像与状态证据分开判定，未把时间推进当成画面。
+- 修改前/后原工作区 `npm test` 152/152；实验 JS/CJS、PowerShell parser 与 diff 检查通过。最终正常退出，独立进程快照匹配实验 helper/harness/profile residual=0。没有 REAL Emby、安装或发布验收。完整输入与二进制 hash、性能口径和限制在实验 evidence 与 ADR 中。
+
 ## 2026-09-16 — Bind tracked runtime sources to Git blobs
 
 Model Tier：1。Model：GPT-5 Codex（current session）。Reason：远程审核已明确 blocker、允许文件、输入输出与验收标准；修改限定为 build source acquisition、runtime provenance 和回归测试。Escalated：no。

@@ -1,0 +1,230 @@
+{
+  "screenshots": [
+    {
+      "sha256": "55bd393efb6feed06060c9e6a4b9c07eb76299cb7f58399a820f4a92fa3478ce",
+      "name": "fullscreen-exit.png"
+    },
+    {
+      "sha256": "10fd21882a653295a5f161d239779329d15d2b8fadbb585d9a53d0e5b5f70e5d",
+      "name": "fullscreen.png"
+    },
+    {
+      "sha256": "de04761b11089960ac9b8817f1bfead7e3fc7a6a01f9660e16390ed9a85e3b35",
+      "name": "playing.png"
+    },
+    {
+      "sha256": "d34867e4ab0fce984de37dd8052e65c916e65cca5f548ec494588159abad8c8b",
+      "name": "resized.png"
+    },
+    {
+      "sha256": "df428941d7dc7fd8c3111186719833955e81012f131b9af51dfaf7c82e1aceb7",
+      "name": "restored.png"
+    }
+  ],
+  "electron": "18.3.15",
+  "runner": {
+    "mode": "A",
+    "exitCode": 0,
+    "signal": null,
+    "timedOut": false,
+    "naturalExit": true
+  },
+  "mode": "A",
+  "visual": "PASS: owned HWND screenshots reviewed for playing/resize/restore/fullscreen/exit",
+  "napi": "8",
+  "eventSummary": [
+    {
+      "count": 2,
+      "property": null,
+      "event": 6
+    },
+    {
+      "count": 2,
+      "property": null,
+      "event": 8
+    },
+    {
+      "count": 2,
+      "property": null,
+      "event": 11
+    },
+    {
+      "count": 4,
+      "property": null,
+      "event": 17
+    },
+    {
+      "count": 1,
+      "property": null,
+      "event": 20
+    },
+    {
+      "count": 3,
+      "property": null,
+      "event": 21
+    },
+    {
+      "count": 6,
+      "property": "core-idle",
+      "event": 22
+    },
+    {
+      "count": 2,
+      "property": "duration",
+      "event": 22
+    },
+    {
+      "count": 3,
+      "property": "eof-reached",
+      "event": 22
+    },
+    {
+      "count": 4,
+      "property": "pause",
+      "event": 22
+    },
+    {
+      "count": 119,
+      "property": "time-pos",
+      "event": 22
+    }
+  ],
+  "residualSnapshot": {
+    "scope": "exact experiment helper executable and Electron harness/profile command lines",
+    "matchingProcesses": 0
+  },
+  "observations": {
+    "initializeMs": [
+      149.35,
+      30.54
+    ],
+    "loadToAdvancingMs": 320.86,
+    "playingScreenshot": {
+      "width": 1350,
+      "height": 930
+    },
+    "surface": {
+      "width": 1328,
+      "height": 754,
+      "frames": 26,
+      "child": true,
+      "dpi": 144
+    },
+    "mpv-version": "mpv v0.41.0-920-gdd5d17d32",
+    "current-vo": "libmpv",
+    "gpu-api": "",
+    "gpu-context": "",
+    "hwdec": "d3d11va-copy",
+    "hwdec-current": "d3d11va-copy",
+    "video-codec": "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10",
+    "video-params": "{\"pixelformat\":\"nv12\",\"average-bpp\":12,\"w\":640,\"h\":360,\"dw\":640,\"dh\":360,\"crop-x\":0,\"crop-y\":0,\"crop-w\":640,\"crop-h\":360,\"aspect\":1.777778,\"aspect-name\":\"16:9\",\"par\":1.000000,\"sar\":1.777778,\"sar-name\":\"16:9\",\"colormatrix\":\"bt.709\",\"colorlevels\":\"limited\",\"primaries\":\"bt.709\",\"gamma\":\"bt.1886\",\"sig-peak\":0.000000,\"light\":\"display\",\"chroma-location\":\"mpeg2/4/h264\",\"stereo-in\":\"mono\",\"rotate\":0,\"alpha\":\"none\"}",
+    "duration": "30.000000",
+    "d3d11-output-mode": "auto",
+    "propertyRoundTripMs": [
+      0.012,
+      0.006,
+      0.008,
+      0.007,
+      0.006
+    ],
+    "seekMs": 0.33,
+    "resizedSurface": {
+      "width": 1553,
+      "height": 904,
+      "frames": 48,
+      "child": true,
+      "dpi": 144
+    },
+    "resizedScreenshot": {
+      "width": 1575,
+      "height": 1080
+    },
+    "restoredScreenshot": {
+      "width": 1575,
+      "height": 1080
+    },
+    "fullscreenScreenshot": {
+      "width": 3840,
+      "height": 2160
+    },
+    "fullscreenSurface": {
+      "width": 3840,
+      "height": 2040,
+      "frames": 185,
+      "child": true,
+      "dpi": 144
+    },
+    "fullscreen-exitScreenshot": {
+      "width": 1575,
+      "height": 1080
+    },
+    "cpu": "NOT MEASURED: no steady-state interval; helper/addon scopes differ",
+    "willQuit": true,
+    "chromiumSoftwareUi": true
+  },
+  "checks": {
+    "INITIALIZE": {
+      "status": "PASS",
+      "detail": true
+    },
+    "LOAD": {
+      "status": "PASS",
+      "detail": true
+    },
+    "CORE_PLAYING": {
+      "status": "PASS",
+      "detail": true
+    },
+    "PAUSE": {
+      "status": "PASS",
+      "detail": true
+    },
+    "SEEK": {
+      "status": "PASS",
+      "detail": true
+    },
+    "UNPAUSE": {
+      "status": "PASS",
+      "detail": true
+    },
+    "RESIZE_GEOMETRY": {
+      "status": "PASS",
+      "detail": true
+    },
+    "MINIMIZE_RESTORE": {
+      "status": "PASS",
+      "detail": true
+    },
+    "FULLSCREEN_ENTER_EXIT": {
+      "status": "PASS",
+      "detail": true
+    },
+    "PROPERTY_EVENTS": {
+      "status": "PASS",
+      "detail": true
+    },
+    "STOP": {
+      "status": "PASS",
+      "detail": true
+    },
+    "DESTROY": {
+      "status": "PASS",
+      "detail": true
+    },
+    "RECREATE": {
+      "status": "PASS",
+      "detail": true
+    },
+    "FINAL_DESTROY": {
+      "status": "PASS",
+      "detail": true
+    }
+  },
+  "media": {
+    "generated": true,
+    "codec": "H.264",
+    "resolution": "640x360",
+    "class": "SDR BT.709"
+  },
+  "node": "16.13.2"
+}

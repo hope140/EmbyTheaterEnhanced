@@ -1,5 +1,9 @@
 # 长期决策
 
+## 待批准的 Phase 2 研究建议
+
+[Bridge modernization ADR](ADR-BRIDGE-MODERNIZATION.md) 建议后续优先验证 **isolated native helper（B），置信度 MEDIUM**。该建议尚未成为正式生产架构：helper 的 D3D11 硬解、控制和 native crash 隔离已取得 Windows 原型证据，但 HTML OSD 合成与输入必须先过独立 gate。正式客户端继续使用已发布 Pepper/libmpv 基线，不据此修改 ARCHITECTURE 或升级 Electron。
+
 以下按本轮任务范围建立，未来产品功能需要用户确认后再进入实现。
 
 | 决策 | 原因与落实 |

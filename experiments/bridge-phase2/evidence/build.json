@@ -1,0 +1,66 @@
+{
+  "flags": [
+    "-std=c++17",
+    "-O2",
+    "-Wall",
+    "-Wextra",
+    "-static",
+    "-static-libgcc",
+    "-static-libstdc++",
+    "-lopengl32",
+    "-lgdi32",
+    "-luser32"
+  ],
+  "files": [
+    {
+      "sha256": "b8f4773c3c2db12ebe5a1e1b42414884f58673279400615f95daa93a431f0109",
+      "name": "native.cpp"
+    },
+    {
+      "sha256": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c",
+      "name": "mpv-1.dll"
+    },
+    {
+      "sha256": "32e76a1fc510fcffe913dd3ce6af66b1061d53ef1c136cd13fb3cba3f6449fd2",
+      "name": "electron.exe"
+    },
+    {
+      "sha256": "9414ee6518d0cf874a23ece5731e2e3c4e6a9f42ebb46ab93cf453f63a72e918",
+      "name": "bridge-helper.exe"
+    },
+    {
+      "sha256": "4b4a9aedbd7f15f5e1bf41accc9841697b8f7d75ddbb3e7ddef2a643c2677d1c",
+      "name": "bridge-addon.node"
+    },
+    {
+      "sha256": "1acf99ee77c8c2a6f1d1993bd81bbc8a91d27fb5924e80171670e6139a4bd353",
+      "name": "client.h"
+    },
+    {
+      "sha256": "192691941602052f00df0587f126246c48785a1cf21de68d22a92ea1908d1c55",
+      "name": "render.h"
+    },
+    {
+      "sha256": "48662c0ed9872a14dd9e1684105c97f69f94a0414709c254c5d372adc41d2e69",
+      "name": "render_gl.h"
+    },
+    {
+      "sha256": "d47a6f979387d00f603cf1193eeb4d4e3164307123a33891590fe6601fed95b4",
+      "name": "js_native_api.h"
+    },
+    {
+      "sha256": "481da8eb25ead26259eae4ee7cfc24ccdfd9dde07b9a356928a0699e2b256861",
+      "name": "js_native_api_types.h"
+    },
+    {
+      "sha256": "24bdd7597c72fde524440f41b40dd4be7d151c40d3565cf555ca0208db3d95f7",
+      "name": "node_api.h"
+    },
+    {
+      "sha256": "69297f804fd2680e6339ab661391ae07755cda1473a28934003aa432e0060793",
+      "name": "node_api_types.h"
+    }
+  ],
+  "architecture": "Windows x64",
+  "compiler": "g++.exe (Rev5, Built by MSYS2 project) 16.1.0"
+}
