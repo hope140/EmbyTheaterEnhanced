@@ -1,5 +1,72 @@
 # Clean-room reproducibility
 
+## 2026-09-16 — Tracked source Git-blob binding follow-up
+
+远程审核发现 Phase 1 的普通 source copy 虽以 `git ls-files` 限定文件集合，但随后仍从 working tree 物理路径 `Copy-Item`。因此 dirty tracked bytes 可进入 runtime，而 provenance 仍记录 HEAD；相同 commit 在不同 `core.autocrlf` policy 下也可能得到不同文本 bytes。
+
+fix commit `5a2bafc1dfa5d65f8821a3ef47371c08fe162cad` 将普通 tracked source contract 收紧为：
+
+```text
+sourceCommit tree entry
+→ regular Git blob object
+→ git cat-file 原始 bytes
+→ runtime destination
+```
+
+`copy-tracked-product-sources.cjs` 使用 NUL-safe `git ls-tree -r -z --full-tree`，只接受 `100644/100755 blob`，再以 Buffer 读取并写入每个 blob；不读取物理 `src/electronapp` 文件，不进行文本 decode/re-encode。prepared preload、三项 Web overlay、PlaybackManager 与 package metadata 继续使用既有独立 contract。
+
+`runtime-provenance.json` 的每个普通 source entry 现在记录 `sourceCommit`、`gitMode`、`gitBlobObjectId`、blob SHA256、runtime SHA256 和 `relation=git-blob-copy`；`validatedProductScope.sourceSelection=git-commit-blobs`，并记录 source acquisition generator identity。validator 重新从同一 commit 读取 blob，要求 runtime SHA256 与 blob SHA256 完全一致。
+
+验证包括：
+
+- synthetic dirty tracked text/binary worktree：runtime 完全忽略 dirty bytes，使用 committed blob；PASS。
+- synthetic LF 与 CRLF worktree 表示：两个 runtime SHA256 相同；PASS。
+- 实际仓库 dirty `splash.html` build：worktree SHA256 为 `5B7DE252…`，HEAD blob/runtime SHA256 同为 `A6831259…`；package verify PASS。
+- normal 与新 fresh detached worktree：双方 `npm test 152/152`、build 2,130 manifest files、package verify PASS；实际各 2,131 files，`missing=0`、`extra=0`、`mismatch=0`。
+
+本 follow-up 只修改 tracked product source acquisition 与对应 runtime provenance/test，不改变 product source、prepared/Web/runtime overlay、Electron、bridge、Resolver、UI 或播放行为。
+
+## 2026-09-16 — Phase 1 reproducible build contract
+
+基线为 `origin/main@2c668eed87379eafec2e1a25f6b46f6b1dbf5ec6`，分支为 `chore/reproducible-build-phase1`。已验证实现 revision 为 `5019a754ecd75d2a64767e19996d6ded7ad6c3fd`。
+
+根因不是 vendor archive hash 缺失，而是 `build.ps1` 在复制 Carnival 后递归复制整个物理 `src/electronapp`。开发机 ignored Web snapshot 有 792 个文件，其中 `app.js`、`apiclient.js`、`toast.css` 三项相对 Carnival 有差异；fresh worktree 没有这些文件。`apiclient.js` 和 `toast.css` 的综合补丁 payload 虽已在 manifest 中，却没有被 build 显式使用；`app.js` 在 ignored overlay 存在时删除 registration，在 clean fallback 时由 generator 写成 `false`，形成两个字节输出。另有两个测试直接或优先读取 ignored Web snapshot。Windows Git checkout 的 LF/CRLF 过滤还会使 generator 的工作文件 hash 随 worktree 状态变化。
+
+新 contract：
+
+1. `build.ps1` 只复制 `git ls-files src/electronapp` 返回的产品源码；ignored `src/electronapp/www`、package metadata、language fallback 和其他本机残留不进入 overlay。
+2. `src/electronapp/preload.js` 继续由 tracked `prepare-preload.cjs` 从固定 Carnival base 生成并显式复制。
+3. `prepare-web-overlays.cjs` 在写入前一次性预检三项 Web contract，任一输入不匹配即停止且不留下部分输出。
+4. tracked generator SHA256 来自当前 commit 的 canonical Git blob；工作文件除 CRLF/LF 外与 HEAD 不同会失败。
+5. `prepare.ps1 -ArchiveRoot <dir>` 允许 fresh worktree 直接使用已声明且 hash 固定的两个外部 archive，不需要从开发工作区手工复制 overlay 或 vendor 解包目录。
+
+| Runtime path | Source → transform → output | Base SHA256 | Output SHA256 |
+|---|---|---|---|
+| `electronapp/www/modules/emby-apiclient/apiclient.js` | Carnival base → manifest-locked patch payload replacement | `f3516c72784e5bc8782abbce021f22a7f939034e5b8b70639672ae682e18acc0` | `a4a901640abe6bc25188c1cf27fb53125b4f65ef2a797def033dc55165b080ae` |
+| `electronapp/www/modules/toast/toast.css` | Carnival base → manifest-locked patch payload replacement | `e4e8efcdfbe4841fd05b6cfe6b2a94393474899f3977416077d99b4f8cad0e39` | `654aeb05c1b89ca625cc6bd9145f1966a780c0e80fe1197f619800c5f1894743` |
+| `electronapp/www/app.js` | Carnival base → tracked canonical registration removal | `3ef3102567458359a02e2fe8f79a8700cfe9c223347abe5ab6ecb8bd93be89d2` | `a5a3cddcf279496ee3792ee0e29f7cd347f969c5eb3876c284cc990df9755f08` |
+
+provenance 分三层：
+
+- `source-provenance.json` 解释 source/input/transform/output，记录 archive/manifest、Web base/final tree、Electron 18.3.15、Pepper bridge、libmpv 与 33-package production dependency closure。
+- `runtime-provenance.json` 解释 Git tracked source、prepared preload、PlaybackManager/package overlay 到 runtime 的关系，并绑定 source provenance。
+- `build-manifest.json` schema 2 枚举最终 payload，绑定 source commit、vendor manifest、package-lock、两份 provenance 和 canonical payload-set digest。
+
+验证在正常开发 worktree 与第二个 fresh detached worktree 上分别执行 `npm ci --ignore-scripts`、prepare、`npm test`、build、source/runtime provenance 与 package verify。两边均为 `npm test 150/150`、build manifest 2,130 files、package verify PASS。加上 `build-manifest.json` 后，实际 runtime 各 2,131 files；逐路径 SHA256 为：
+
+```text
+missing = 0
+extra = 0
+mismatch = 0
+payloadSetSha256 = b5578003078484399930d0b1d613680d0c91178395406307b6028bb79eba4c96
+```
+
+本阶段没有改变 Toast 视觉、Toast 触发、PlaybackManager、Resolver、CD2/Mount、Session/PlaySessionId、WebSocket、DeviceId、WatchTogether、mpv、libmpv、Pepper bridge、Electron、preload security architecture、installer 产品行为或自动更新。没有编译 installer，也不宣称 installer container byte-for-byte deterministic。Electron、Pepper bridge、libmpv 和完整 Web snapshot 仍是 manifest 锁定但外部提供的二进制/third-party 输入；公开再分发仍受既有来源与许可核验边界约束。
+
+## 2026-09-15 — Historical clean-room snapshot
+
+以下内容记录旧 revision 的 preload/readiness clean-room 工作。其 `src/electronapp/www/** = SAFE` 判断和 77/77、2,116 files 数字已被上面的 Phase 1 审计与当前验证取代，不应作为当前 build contract。
+
 日期：2026-09-15（UTC+8）
 
 基线：`origin/main` / `main@56b2227324811b525cd73caed61e3399cd2875e5`

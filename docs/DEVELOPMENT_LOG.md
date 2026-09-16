@@ -1,5 +1,27 @@
 # 开发日志
 
+## 2026-09-16 — Bind tracked runtime sources to Git blobs
+
+Model Tier：1。Model：GPT-5 Codex（current session）。Reason：远程审核已明确 blocker、允许文件、输入输出与验收标准；修改限定为 build source acquisition、runtime provenance 和回归测试。Escalated：no。
+
+旧 Phase 1 build 用 `git ls-files` 限定 path 集，但 `Copy-Item` 仍读取工作树 bytes；runtime provenance 同样 hash 工作树文件。因此 dirty tracked source 或不同 `core.autocrlf` checkout 可以在 `sourceCommit` 不变时改变 runtime。新增 `copy-tracked-product-sources.cjs`，从一次解析的 `sourceCommit` 以 `git ls-tree -r -z --full-tree` 枚举 regular `100644/100755 blob`，用 `git cat-file blob` 读取 Buffer 并写入 runtime。binary 不 decode，路径与 object type fail closed。
+
+runtime provenance 的普通 source relation 改为 `git-blob-copy`，记录 commit/mode/object ID/blob SHA256/runtime SHA256；scope 标记 `git-commit-blobs` 并绑定 acquisition generator。prepared preload、Web overlay、PlaybackManager/package overlay、source provenance 与 build manifest 分层保持不变。
+
+验证：新增 dirty tracked 与 LF/CRLF 两项回归，全量 `npm test 152/152`；实际 dirty `splash.html` build 中 worktree hash 与 HEAD blob 不同，runtime/provenance 仍等于 HEAD blob，package verify PASS。normal 与全新 detached worktree 均 build/provenance/package verify PASS，实际 2,131 files 对比 `missing=0`、`extra=0`、`mismatch=0`。没有修改产品代码、Electron、Pepper bridge、Resolver、UI、Session、WebSocket 或播放链。
+
+## 2026-09-16 — Phase 1 reproducible build cleanup
+
+Model Tier：2。Model：GPT-5 Codex（current session）。Reason：任务跨 build assembly、ignored Web snapshot、prepared source、provenance、dependency closure、package verify 和双 worktree 字节比对，但明确冻结产品播放、Session 与 Electron/bridge/libmpv 行为。Escalated：no。
+
+基线核验为 `origin/main=2c668eed87379eafec2e1a25f6b46f6b1dbf5ec6`，在独立分支 `chore/reproducible-build-phase1` 与隔离 worktree 执行。完整审计确认 `build.ps1` 的递归 source copy 会吸收 ignored physical snapshot；开发机与 Carnival 差异集中在 prepared preload、`app.js`、`apiclient.js`、`toast.css`。preload 已有 generator contract；后三项分别存在未显式复制 patch payload或 app 双输出。测试还发现 `playerstats.js` 直接读取 ignored snapshot，DeviceId chain test 优先读取 ignored Web。
+
+实现将 source copy 限定为 Git tracked `src/electronapp`，preload 单独生成复制；新增 fail-fast `prepare-web-overlays.cjs`，把两份 manifest-locked client payload 与 app canonical transform 固化为唯一输出。`prepare.ps1 -ArchiveRoot` 允许 clean worktree 直接消费经 hash 核验的外部 archive。双 worktree 首次对比发现 Windows LF/CRLF 会改变 generator worktree SHA，随后增加 canonical Git blob identity 与 HEAD 内容 guard；输出目录名也从 final payload identity 中移除。
+
+provenance 拆分为 source、runtime 与 final payload 三层。source 层记录 archive/baseline、Web tree/overlay、Electron 18.3.15、Pepper bridge、libmpv 和 33-package dependency closure；runtime 层记录 67 个 Git tracked product source、prepared preload、PlaybackManager/package overlay；build manifest schema 2 记录 2,130 个 payload 条目、两份 provenance binding 与 payload-set digest。package verify 现在拒绝 duplicate/invalid path，做 expected/actual 双向集合、逐文件 hash 与 binding/digest 校验。
+
+验证：正常与 fresh detached worktree 均 `npm test 150/150`、build PASS、source provenance PASS、runtime provenance PASS、package verify PASS。两边实际 2,131 files 逐路径 SHA256：`missing=0`、`extra=0`、`mismatch=0`；payload-set SHA256 均为 `b5578003078484399930d0b1d613680d0c91178395406307b6028bb79eba4c96`。JS/CJS syntax 81 files PASS，PowerShell syntax PASS，`git diff --check` PASS。未编译 installer、未运行真实客户端或安装流程；installer container 确定性、third-party source build 与公开再分发许可仍不在本次通过范围。
+
 ## 2026-09-16 — CD2 budget and Native fallback Toast REAL acceptance
 
 Model Tier：1。Reason：本轮仅收录用户完成的 Windows candidate REAL acceptance，不修改产品代码、测试或配置。Escalated：no。

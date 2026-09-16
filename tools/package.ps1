@@ -5,21 +5,47 @@ if ($RuntimeName -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$') { throw 'Invalid runt
 $runtime = Join-Path (Join-Path $root 'dist') $RuntimeName
 $sourceCommit = ([string]((& git -C $root rev-parse HEAD 2>$null) | Select-Object -First 1)).Trim()
 if ($sourceCommit -notmatch '^[0-9a-fA-F]{40}$') { throw 'Unable to resolve source git commit.' }
+$sourceProvenanceText = (& node (Join-Path $root 'tools/source-provenance.cjs') validate $root $runtime $sourceCommit 2>$null | Out-String)
+$sourceProvenanceExit = $LASTEXITCODE
+$sourceProvenance = $null
+try { $sourceProvenance = $sourceProvenanceText | ConvertFrom-Json } catch { }
+if ($sourceProvenanceExit -ne 0 -or $null -eq $sourceProvenance -or $sourceProvenance.status -ne 'passed') { throw 'Source provenance validation failed before packaging.' }
 $provenanceText = (& node (Join-Path $root 'tools/runtime-provenance.cjs') validate $root $runtime $sourceCommit 2>$null | Out-String)
 $provenanceExit = $LASTEXITCODE
 $provenance = $null
 try { $provenance = $provenanceText | ConvertFrom-Json } catch { }
 if ($provenanceExit -ne 0 -or $null -eq $provenance -or $provenance.status -ne 'passed') { throw 'Runtime provenance validation failed before packaging.' }
 $build = Get-Content -LiteralPath (Join-Path $runtime 'build-manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-$expectedPaths = @($build.files | ForEach-Object { $_.path }) + @('build-manifest.json')
-$actualFiles = @(Get-ChildItem -LiteralPath $runtime -Recurse -File)
-if ($actualFiles.Count -ne $expectedPaths.Count) { throw 'Unexpected runtime files; rebuild before packaging.' }
-foreach ($actual in $actualFiles) {
-    $relative = $actual.FullName.Substring($runtime.Length + 1).Replace('\','/')
-    if ($relative -notin $expectedPaths) { throw "Unexpected runtime file: $relative" }
+if ($build.schemaVersion -ne 2) { throw 'Unsupported build manifest schema.' }
+if ($build.sourceCommit -ne $sourceCommit.ToLowerInvariant()) { throw 'Build manifest source commit mismatch.' }
+if ($build.sourceManifestSha256 -ne (Get-FileHash -LiteralPath (Join-Path $root 'vendor/runtime-manifest.json') -Algorithm SHA256).Hash.ToLowerInvariant()) { throw 'Build manifest vendor source mismatch.' }
+if ($build.packageLockSha256 -ne (Get-FileHash -LiteralPath (Join-Path $root 'package-lock.json') -Algorithm SHA256).Hash.ToLowerInvariant()) { throw 'Build manifest package lock mismatch.' }
+$listedPaths = @($build.files | ForEach-Object { [string]$_.path })
+if ($listedPaths.Count -ne @($listedPaths | Sort-Object -Unique).Count) { throw 'Duplicate path in build manifest.' }
+foreach ($listedPath in $listedPaths) {
+    if (-not $listedPath -or $listedPath.Contains('\') -or $listedPath.StartsWith('/') -or $listedPath -match '^[A-Za-z]:' -or @($listedPath.Split('/')) -contains '..' -or @($listedPath.Split('/')) -contains '.') {
+        throw "Invalid path in build manifest: $listedPath"
+    }
+    if ($listedPath -eq 'build-manifest.json') { throw 'Build manifest cannot list itself.' }
 }
+$expectedPaths = @($listedPaths + @('build-manifest.json') | Sort-Object)
+$actualFiles = @(Get-ChildItem -LiteralPath $runtime -Recurse -File)
+$actualPaths = @($actualFiles | ForEach-Object { $_.FullName.Substring($runtime.Length + 1).Replace('\','/') } | Sort-Object)
+$pathDifference = @(Compare-Object -ReferenceObject $expectedPaths -DifferenceObject $actualPaths)
+if ($pathDifference.Count -ne 0) { throw 'Runtime payload path set differs from build manifest.' }
 foreach ($file in $build.files) {
-    if ((Get-FileHash -LiteralPath (Join-Path $runtime $file.path) -Algorithm SHA256).Hash -ne $file.sha256) { throw "Runtime changed since build: $($file.path)" }
+    $payloadFile = Join-Path $runtime $file.path
+    if (-not (Test-Path -LiteralPath $payloadFile -PathType Leaf)) { throw "Runtime file missing: $($file.path)" }
+    if ((Get-FileHash -LiteralPath $payloadFile -Algorithm SHA256).Hash.ToLowerInvariant() -ne $file.sha256) { throw "Runtime changed since build: $($file.path)" }
+}
+$payloadSetText = (($build.files | ForEach-Object { $_.path + [char]0 + $_.sha256 + "`n" }) -join '')
+$payloadSetAlgorithm = [Security.Cryptography.SHA256]::Create()
+try { $payloadSetSha256 = ([BitConverter]::ToString($payloadSetAlgorithm.ComputeHash([Text.Encoding]::UTF8.GetBytes($payloadSetText)))).Replace('-','').ToLowerInvariant() }
+finally { $payloadSetAlgorithm.Dispose() }
+if ($build.payload.fileCount -ne $build.files.Count -or $build.payload.payloadSetSha256 -ne $payloadSetSha256) { throw 'Build manifest payload digest mismatch.' }
+foreach ($binding in @($build.provenance.source, $build.provenance.runtime)) {
+    if (-not $binding.path -or -not $binding.sha256) { throw 'Build manifest provenance binding missing.' }
+    if ((Get-FileHash -LiteralPath (Join-Path $runtime $binding.path) -Algorithm SHA256).Hash.ToLowerInvariant() -ne $binding.sha256) { throw "Build manifest provenance hash mismatch: $($binding.path)" }
 }
 if ($VerifyOnly) { Write-Output "Runtime payload verified: $($build.files.Count) files"; return }
 if (-not $Compiler) {

@@ -27,10 +27,14 @@ foreach ($group in @(@{ Root='vendor/carnival'; Files=$manifest.files }, @{ Root
 if ($LASTEXITCODE -ne 0) { throw 'Prepared preload generation failed.' }
 New-Item -ItemType Directory -Path $destination -Force | Out-Null
 Get-ChildItem -LiteralPath (Join-Path $root 'vendor/carnival') | Copy-Item -Destination $destination -Recurse
-Get-ChildItem -LiteralPath (Join-Path $root 'src/electronapp') | Copy-Item -Destination (Join-Path $destination 'electronapp') -Recurse -Force
-# Disable only the Electron External Player registration in either source or vendor app.js.
-& node (Join-Path $root 'tools/patch-external-player-registration.cjs') (Join-Path $destination 'electronapp/www/app.js')
-if ($LASTEXITCODE -ne 0) { throw 'External Player registration patch failed.' }
+# Ordinary tracked product sources come from the committed Git blobs, never from checkout bytes.
+& node (Join-Path $root 'tools/copy-tracked-product-sources.cjs') $root $sourceCommit $destination
+if ($LASTEXITCODE -ne 0) { throw 'Tracked product source materialization failed.' }
+# preload.js is an ignored prepared artifact with a tracked generator contract.
+Copy-Item -LiteralPath (Join-Path $root 'src/electronapp/preload.js') -Destination (Join-Path $destination 'electronapp/preload.js') -Force
+# The frozen Web snapshot has exactly three authoritative overlays. Never copy ignored src/electronapp/www state.
+& node (Join-Path $root 'tools/prepare-web-overlays.cjs') $root $destination
+if ($LASTEXITCODE -ne 0) { throw 'Web overlay preparation failed.' }
 # The legacy External Player frontend is intentionally absent from Enhanced runtime.
 # Keep vendor/carnival read-only; exclude the copied path from this fresh output.
 $externalPlayerPath = Join-Path $destination 'electronapp/www/modules/externalplayer'
@@ -58,11 +62,31 @@ $configText = [IO.File]::ReadAllText($configPath)
 $configText = $configText.Replace('<add key="ProgramDataPath" value=""/>', '<add key="ProgramDataPath" value="%ApplicationData%\EmbyTheaterEnhanced"/>')
 if (-not $configText.Contains('%ApplicationData%\EmbyTheaterEnhanced')) { throw 'ProgramDataPath anchor mismatch.' }
 [IO.File]::WriteAllText($configPath, $configText, $utf8)
+& node (Join-Path $root 'tools/source-provenance.cjs') write $root $destination $sourceCommit
+if ($LASTEXITCODE -ne 0) { throw 'Source provenance generation failed.' }
 & node (Join-Path $root 'tools/runtime-provenance.cjs') write $root $destination $sourceCommit
 if ($LASTEXITCODE -ne 0) { throw 'Runtime provenance generation failed.' }
 $files = @(Get-ChildItem -LiteralPath $destination -Recurse -File | Sort-Object FullName | ForEach-Object {
     @{ path=$_.FullName.Substring($destination.Length + 1).Replace('\','/'); sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
 })
-$report = @{ version=$version; baseline=$manifest.baseline; sourceManifestSha256=(Get-FileHash -LiteralPath (Join-Path $root 'vendor/runtime-manifest.json')).Hash.ToLowerInvariant(); files=$files }
+$payloadSetText = (($files | ForEach-Object { $_.path + [char]0 + $_.sha256 + "`n" }) -join '')
+$payloadSetBytes = [Text.Encoding]::UTF8.GetBytes($payloadSetText)
+$payloadSetAlgorithm = [Security.Cryptography.SHA256]::Create()
+try { $payloadSetSha256 = ([BitConverter]::ToString($payloadSetAlgorithm.ComputeHash($payloadSetBytes))).Replace('-','').ToLowerInvariant() }
+finally { $payloadSetAlgorithm.Dispose() }
+$report = @{
+    schemaVersion=2
+    sourceCommit=$sourceCommit.ToLowerInvariant()
+    version=$version
+    baseline=$manifest.baseline
+    sourceManifestSha256=(Get-FileHash -LiteralPath (Join-Path $root 'vendor/runtime-manifest.json')).Hash.ToLowerInvariant()
+    packageLockSha256=(Get-FileHash -LiteralPath (Join-Path $root 'package-lock.json')).Hash.ToLowerInvariant()
+    provenance=@{
+        source=@{ path='source-provenance.json'; sha256=(Get-FileHash -LiteralPath (Join-Path $destination 'source-provenance.json')).Hash.ToLowerInvariant() }
+        runtime=@{ path='runtime-provenance.json'; sha256=(Get-FileHash -LiteralPath (Join-Path $destination 'runtime-provenance.json')).Hash.ToLowerInvariant() }
+    }
+    payload=@{ fileCount=$files.Count; payloadSetSha256=$payloadSetSha256 }
+    files=$files
+}
 [IO.File]::WriteAllText((Join-Path $destination 'build-manifest.json'), ($report | ConvertTo-Json -Depth 10) + "`n", $utf8)
 Write-Output "Build complete: dist/$OutputName ($($files.Count) files)"

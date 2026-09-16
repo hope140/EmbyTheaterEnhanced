@@ -91,18 +91,10 @@ test('HTTP and WebSocket identity chains consume the same appStartInfo device id
     const appHost = fs.readFileSync(path.join(repoRoot, 'src/electronapp/apphost.js'), 'utf8');
     assert.match(appHost, /deviceId:\s*function\s*\(\)\s*\{[\s\S]*?return appStartInfo\.deviceId;/);
 
-    const webRoot = path.join(repoRoot, 'src/electronapp/www');
     const vendorRoot = path.join(repoRoot, 'vendor/carnival/electronapp/www');
-    const readRuntimeFile = relative => {
-        for (const root of [webRoot, vendorRoot]) {
-            const file = path.join(root, relative);
-            if (fs.existsSync(file)) return fs.readFileSync(file, 'utf8');
-        }
-        throw new Error('Prepared runtime input is required for identity-chain test: ' + relative);
-    };
-    const app = readRuntimeFile('app.js');
-    const connectionManager = readRuntimeFile('modules/emby-apiclient/connectionmanager.js');
-    const apiClient = readRuntimeFile('modules/emby-apiclient/apiclient.js');
+    const app = fs.readFileSync(path.join(vendorRoot, 'app.js'), 'utf8');
+    const connectionManager = fs.readFileSync(path.join(vendorRoot, 'modules/emby-apiclient/connectionmanager.js'), 'utf8');
+    const apiClient = fs.readFileSync(path.join(repoRoot, 'vendor/patch/payload/client/apiclient.js'), 'utf8');
     assert.match(app, /apphost\.deviceId\(\)/);
     assert.match(connectionManager, /deviceId:\s*this\.deviceId\(\)/);
     assert.match(apiClient, /deviceId="\.concat\(this\.deviceId\(\)\)/);

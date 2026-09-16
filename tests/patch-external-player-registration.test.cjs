@@ -26,6 +26,17 @@ test('patches an active Electron External Player registration', () => {
         assert.doesNotMatch(fs.readFileSync(file, 'utf8'), /modules\/externalplayer\/plugin/);
     });
 });
+
+test('removes a standalone registration line as the canonical byte transform', () => {
+    const content = 'return (\n' +
+        '  responses.electron && list.push("modules/externalplayer/plugin"),\n' +
+        '  list.push("confirm")\n' +
+        ');\n';
+    withFixture(content, file => {
+        patchFile(file);
+        assert.equal(fs.readFileSync(file, 'utf8'), 'return (\n  list.push("confirm")\n);\n');
+    });
+});
 test('already-clean app.js is an idempotent no-op', () => {
     const content = 'return responses.electron && list.push("modules/youtubeplayer/plugin");\n';
     withFixture(content, file => {
