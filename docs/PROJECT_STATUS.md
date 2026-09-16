@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-09-16 — CD2 download budget relaxed
+
+真实 Windows telemetry 已证明旧 `300ms` `GetDownloadUrlPath` deadline 偏紧：成功样本约 `133ms`，另一真实样本约 `302ms` 因旧 deadline 超时；同一次播放随后 Mount 与 `core-playing` 通过。当前 contract 已将 STRM Resolver overall budget 从 `750ms` 调整为 `1200ms`，Direct 与 Same-Origin download 均为 `500ms`，Direct 为 Same-Origin 保留 `500ms`；CONNECT/readiness `200ms`、Find `350ms` 保持不变。Resolver 传入的 absolute deadline 仍是 CD2 service 的硬上限。
+
+本轮只修改 CD2 budget 常量、persistent runtime default 和受控时钟测试，不改变 Resolver precedence、STRM identity recovery、Mapping、Mount 判定、PlaybackManager ownership、Session/PlaySessionId、WebSocket、DeviceId、WatchTogether、mpv 或 Electron。CD2/Resolver targeted `76/76`，全量 `npm test` `140/140`；未生成 candidate，真实 Windows playback 尚待用新 budget 重新取证。
+
 ## 2026-09-16 — Stats 未尝试阶段展示语义
 
 修正 `playback-route-stats` 的用户态映射：Mount-first 直接命中时 CD2 显示“未使用”，`not_attempted` 不再透传；timeout 仍显示“超时”，miss/not_found 仍显示“未命中”。仅调整 Stats 展示语义，不改变 Resolver、CD2、Mount 或 timeout/budget。targeted `4/4`、全量 `npm test` `136/136`、JS syntax 与 `git diff --check` 通过。

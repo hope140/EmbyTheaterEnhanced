@@ -1,5 +1,15 @@
 # 开发日志
 
+## 2026-09-16 — CD2 download budget relaxation
+
+Model Tier：2。Reason：真实 Windows telemetry 指向 CD2 download stage 的 deadline 长尾，且 Resolver/main service 必须共享同一个 absolute deadline contract；不改变 resolver precedence、source identity、PlaybackManager ownership、Session、WebSocket 或播放器生命周期。Escalated：no。
+
+基于正式 `main@1dd9bb20e19c3cf86ce62bef7aac33aaa89f1885` 创建 `fix/cd2-budget-native-fallback-toast`。真实成功样本显示 `client-ready≈6ms`、`FindFileByPath≈8ms`、`GetDownloadUrlPath≈133ms`；另一真实样本的 download 约 `302ms` 在旧 `300ms` deadline 下超时，随后 Mount 与 `core-playing` 仍通过。由此确认旧 download budget 偏紧，readiness 不是根因。
+
+本 commit 将 Resolver overall budget 从 `750ms` 调整为 `1200ms`；main CD2 service 的 Direct 与 Same-Origin `GetDownloadUrlPath` 均从 `300ms` 调整为 `500ms`，Direct 仍为 Same-Origin 保留 `500ms`，CONNECT/readiness `200ms` 与 Find `350ms` 保持不变。所有阶段继续受 shared absolute deadline 限制，未取消硬上限；persistent config runtime default 同步为 `1200ms`。
+
+新增 fake-clock/controlled-timer 回归覆盖 320ms Direct 成功、Direct timeout → Same-Origin 320ms 成功、超过 500ms 仍 timeout，以及 Resolver 向每个 CD2 stage 传递同一 `1200ms` deadline。验证：CD2/Resolver targeted `76/76`，全量 `npm test` `140/140`。未生成 installer candidate，未执行真实客户端播放。
+
 ## 2026-09-16 — Stats 未尝试阶段展示语义
 
 本轮只修正 `playback-route-stats.js` 的用户态文本：空 CD2 reason 与 `not_attempted` 统一显示“未使用”，保留 timeout“超时”、miss/not_found“未命中”及 DirectUrl/CD2 HTTP“命中”。新增 Mount-first → Mount hit → CD2 未使用回归；Resolver/CD2/Mount 行为与 timeout/budget 未改。targeted `4/4`、全量 `npm test` `136/136`、JS syntax 与 `git diff --check` 通过。

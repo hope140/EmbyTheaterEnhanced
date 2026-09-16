@@ -54,7 +54,7 @@ DirectUrl 只有同时满足以下条件才可返回：
 
 ## Budget、Abort 与 stale response
 
-DirectUrl、一次 bounded reacquire 与 same-origin fallback 共用现有 750ms absolute resolver budget。Find 结果在本次 request 内复用；不得给每条 fallback 路径重新分配完整 750ms。DirectUrl RPC 使用有限的子预算，并为 same-origin 保留可执行窗口。
+DirectUrl、一次 bounded reacquire 与 same-origin fallback 共用 `1200ms` absolute resolver budget。Find 结果在本次 request 内复用；不得给每条 fallback 路径重新分配完整 `1200ms`。CONNECT/readiness 最多 `200ms`，Find 最多 `350ms`，Direct 与 same-origin download 各最多 `500ms`，DirectUrl 为 same-origin 保留最多 `500ms`；每个 mode 仍受 Resolver 传入的 absolute deadline 限制。
 
 PlaybackManager request id、libmpv generation、AbortController、main IPC request id、gRPC cancel 与 deadline 继续组成同一个 correctness boundary。每个 await 后与最终 `loadfile` 前都必须检查 generation。Abort/Stop/NextTrack 取消 active call 并丢弃 late response；Abort 不进入 fallback，普通 transport reject/timeout 则优先 same-origin。
 

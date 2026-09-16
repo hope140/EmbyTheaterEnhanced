@@ -9,7 +9,7 @@
 }(this, function (mountResolver, cd2Resolver, pathRules) {
     'use strict';
 
-    var DEFAULT_TOTAL_BUDGET_MS = 750;
+    var DEFAULT_TOTAL_BUDGET_MS = 1200;
     var DEFAULT_ORDER = ['direct-url', 'cd2-http', 'mount', 'native'];
     var MOUNT_FIRST_ORDER = ['mount', 'direct-url', 'cd2-http', 'native'];
 
