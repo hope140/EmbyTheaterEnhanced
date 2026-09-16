@@ -1,5 +1,17 @@
 # 项目状态
 
+## 2026-09-16 — Final repository cleanup and deferred issue consolidation
+
+完成主工作树、mixed-DPI 残留与 remote/review ref 审计。`origin/HEAD` 保持 `origin/main`；历史 refs 仅在 ancestry 或内容等价证明后清理。`docs/subagent-policy@2cc7448` 只包含 agent/worker workflow，`AGENTS.md` 与 `docs/AI_MODEL_POLICY.md` 已与 main/consolidation 逐 blob 一致，列为 DELETE_SAFE；`fix/product-session-identity@8eb5062` 的正式 app identity 改动仍未进入 main，保留为 **KEEP_FOR_PRE_ADAPTER_REVIEW**，本轮不 merge。
+
+主工作树之前的两项文档修改已迁移到本 consolidation 记录；mixed-DPI 额外 EXE 是可重建 build artifact，空日志没有独有 evidence，已安全移除。没有修改 `src/**`、依赖、runtime 或 installer。
+
+## CD2 Cold Directory Discovery Recovery
+
+状态为 **POST-BRIDGE / DEFERRED / CORRECTNESS RECOVERY**。真实观察是：有效 STRM target 初次可能得到 CD2 `FindFile = not_found`，直到对应 CloudDrive2 父目录先被浏览或枚举；手动浏览到 exact directory/file 后，同一 ETE playback 可成功通过 CD2 DirectUrl 解析。该现象归类为 CD2 path visibility / cold directory discovery false-negative，不是 DirectUrl timeout、libmpv failure、Session failure 或 media decoding issue。
+
+建议的未来恢复方向是 `FindFile(target)` definitive `not_found` 后执行 deterministic path hydration，找到 nearest known ancestor，仅枚举 target path segments，再对 `FindFile` 重试一次；命中继续正常 DirectUrl/same-origin flow，未命中继续现有 Mount/Native fallback。不得 recursive scan、full-tree refresh 或固定 parent-level heuristic；仅 definitive `not_found` 触发 hydration，timeout/transport/auth errors 不触发，并保持 absolute resolver budget、Abort/generation safety、single retry、fail-open 及 PlaybackManager/Session 不变。
+
 ## 2026-09-16 — Phase 2B native event attribution / framed-pipe gate
 
 基于 `c5dcc0f` 在独立 worktree/branch `spike/helper-native-pipe-integration` 完成真实 Windows native helper、真实 bundled libmpv 与 private inherited stdin/stdout pipe 验证。协议 version 1 使用 uint32 little-endian length + strict UTF-8 JSON，保留 `helperInstanceId + generationId + requestId` 最小 identity；stderr 独立持续 drain，native writer queue 有界并对高频 property coalesce。

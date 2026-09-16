@@ -19,9 +19,16 @@
 
 ## Post-Bridge
 
+- [ ] **CD2 Cold Directory Discovery Recovery**（POST-BRIDGE / DEFERRED / CORRECTNESS RECOVERY）
+  - 真实观察：有效 STRM target 初次可能得到 CD2 `FindFile = not_found`，直到先手动浏览或枚举对应 CloudDrive2 父目录；浏览到 exact directory/file 后，同一 ETE playback 可成功通过 CD2 DirectUrl 解析。
+  - 归因：CD2 path visibility / cold directory discovery false-negative，不是 DirectUrl timeout、libmpv failure、Session failure 或 media decoding issue。
+  - 后续方向：`FindFile(target)` definitive `not_found` → deterministic path hydration → find nearest known ancestor → 仅枚举 target path segments → 仅重试一次 `FindFile`；命中继续正常 DirectUrl/same-origin flow，未命中继续现有 Mount/Native fallback。
+  - 硬约束：no recursive scan、no full-tree refresh、no fixed parent-level heuristic；仅 definitive `not_found` 触发 hydration；timeout/transport/auth errors 不触发；遵守 absolute resolver budget、Abort/generation safety、single retry、fail-open；不修改 PlaybackManager/Session。
+
 - [ ] **Next Episode Prefetch**（POST-BRIDGE / DEFERRED）
   - 在固定 playback-progress threshold 后 best-effort 预热 STRM/CD2 下一集。
   - 真正 NextTrack 仍走正常 PlaybackManager → Resolver → fresh DirectUrl，不复用 Session/PlaySessionId 或长期缓存 URL。
   - 先调查 CloudDrive2 是否有针对真实云文件的 prefetch/read-ahead API；失败不得影响当前播放。
+  - Future next-episode warmup may reuse CD2 path hydration first; Phase 1 may warm only metadata/path visibility before considering media-byte prefetch。
 
 第一轮按当前用户确认口径关闭。后续 Mount、CD2 和自动映射需另行确认范围，尚未进入实现。

@@ -1,5 +1,11 @@
 # 开发日志
 
+## 2026-09-16 — Final repository cleanup and CD2 cold-directory recovery
+
+- 完成主工作树与 remote/review ref 审计；`origin/HEAD` 保持 `origin/main`。16 条历史 remote refs 已逐项取得 ancestry/content preservation proof 后清理，`docs/subagent-policy@2cc7448` 的两个文档 blob 已由 main/consolidation 完整覆盖，`fix/product-session-identity@8eb5062` 保留供 Production Bridge Adapter 前置 review。
+- 主工作树原有的两项文档修改已迁移到 consolidation；mixed-DPI EXE 确认为可由已提交 source/build script 重建的 artifact，两个额外日志为空，均未包含独有 evidence。未修改 production code、依赖、runtime 或 installer。
+- 记录 CD2 Cold Directory Discovery Recovery：冷目录下有效 STRM target 可能出现 `FindFile = not_found`，先浏览/枚举对应目录后同一播放可通过 CD2 DirectUrl；未来只允许 definitive not_found 触发确定性路径 hydration，并对 target path segments 的 `FindFile` 做一次 retry，失败继续 Mount/Native，整体为 POST-BRIDGE / DEFERRED / CORRECTNESS RECOVERY。
+
 ## 2026-09-16 — Phase 2B documentation consolidation
 
 - Consolidated the Phase 2B native helper evidence: B is a **PRODUCTION ARCHITECTURE CANDIDATE**, not production ready; the next gate is Production Bridge Adapter — Electron 18 First.
