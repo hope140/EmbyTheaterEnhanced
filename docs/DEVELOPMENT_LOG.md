@@ -8,7 +8,7 @@ Model Tier：2。Reason：导出关联涉及跨 run 事件边界，Stats 状态�
 
 审计 prepared `playerstats.js` 证实 `player.getStats().categories` 无过滤加入面板，只有 audio/video type 会替换标题；因此 `libmpv.getStats()` 追加显式命名的 `enhanced` category，不修改 Emby Web UI。新增 instance-local `playback-route-stats`，只保存 request/route/isStrm/reason/sourceKind/ruleId/CD2 结果等安全枚举，绝不保存 source、路径、URL、token 或 headers。新播放先清空，resolver 仅在 current request 校验后提交，stop/destroy 同样清空；普通非 STRM 显示 Emby 原生与 STRM 否。Media/Video/Audio 顺序和值保持不变。
 
-验证：diagnostics + route Stats targeted `20/20`，consumer contract test、JavaScript syntax 与 `git diff --check` 通过。`tests/pipeline-browser.js` 同步扩展为在实际 libmpv player 上读取 Stats category，供隔离 runtime pipeline 验证。未构建 candidate、未运行真实 Emby 播放，CD2 timeout/budget 未改变。
+验证：diagnostics + route Stats targeted `20/20`，全量 `npm test` `136/136`，consumer contract test、JavaScript syntax 与 `git diff --check` 通过。`tests/pipeline-browser.js` 同步扩展为在实际 libmpv player 上读取 Stats category；从本提交构建的 2,129 文件隔离 runtime 已串行通过 DirectUrl、CD2 HTTP、CD2 miss → Mount、native fallback 四条 pipeline，均保持 source identity、控制与 19 条模拟报告。未构建 candidate、未运行真实 Emby 播放，CD2 timeout/budget 未改变。
 
 ## 2026-09-16 — CD2 REAL PLAYBACK TIMEOUT audit and timing
 

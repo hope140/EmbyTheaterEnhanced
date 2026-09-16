@@ -4,7 +4,7 @@
 
 修复 Diagnostics Export 的跨 app run request-id 串联：Summary 现在以最新 `route-selected` 向前最近的 `app/start` 为边界，只关联该 run 内相同 request 的 CD2、Mount、native fallback 与 playback event；无边界时保守为 `UNKNOWN`，不会把旧 run 的 Mount HIT 显示到新的 DirectUrl 播放。回归覆盖重复 `play-1-1`、同 run Direct → Same-Origin → Mount、以及同 run 多播放请求。
 
-原生 Emby Stats consumer 审计确认它会无过滤保留自定义 category，只有 audio/video 会改写标题。因此 libmpv 追加第四个 `Emby Theater Enhanced` 分类，显示当前播放的安全 resolver 结果，不改 Web UI、Toast、CSS 或设置页面。状态在新 request、stop/destroy 清除，旧 request 的晚到结果不能覆盖新项；Media/Video/Audio categories 保持原样。Node targeted `20/20`、相关 syntax 与 `git diff --check` 通过；未改 CD2 timeout/budget，未生成 candidate，真实 Windows Stats 显示仍待手工验收。
+原生 Emby Stats consumer 审计确认它会无过滤保留自定义 category，只有 audio/video 会改写标题。因此 libmpv 追加第四个 `Emby Theater Enhanced` 分类，显示当前播放的安全 resolver 结果，不改 Web UI、Toast、CSS 或设置页面。状态在新 request、stop/destroy 清除，旧 request 的晚到结果不能覆盖新项；Media/Video/Audio categories 保持原样。Node targeted `20/20`、全量 `npm test` `136/136`、相关 syntax 与 `git diff --check` 通过；从本提交构建的隔离 runtime 已实际通过 DirectUrl、CD2 HTTP、CD2 miss → Mount、native fallback pipeline Stats 验证。未改 CD2 timeout/budget，未生成 candidate，真实 Windows Stats 显示仍待手工验收。
 
 ## 2026-09-16 — CD2 REAL PLAYBACK TIMEOUT audit
 
