@@ -1,5 +1,31 @@
 # Clean-room reproducibility
 
+## 2026-09-16 — Tracked source Git-blob binding follow-up
+
+远程审核发现 Phase 1 的普通 source copy 虽以 `git ls-files` 限定文件集合，但随后仍从 working tree 物理路径 `Copy-Item`。因此 dirty tracked bytes 可进入 runtime，而 provenance 仍记录 HEAD；相同 commit 在不同 `core.autocrlf` policy 下也可能得到不同文本 bytes。
+
+fix commit `5a2bafc1dfa5d65f8821a3ef47371c08fe162cad` 将普通 tracked source contract 收紧为：
+
+```text
+sourceCommit tree entry
+→ regular Git blob object
+→ git cat-file 原始 bytes
+→ runtime destination
+```
+
+`copy-tracked-product-sources.cjs` 使用 NUL-safe `git ls-tree -r -z --full-tree`，只接受 `100644/100755 blob`，再以 Buffer 读取并写入每个 blob；不读取物理 `src/electronapp` 文件，不进行文本 decode/re-encode。prepared preload、三项 Web overlay、PlaybackManager 与 package metadata 继续使用既有独立 contract。
+
+`runtime-provenance.json` 的每个普通 source entry 现在记录 `sourceCommit`、`gitMode`、`gitBlobObjectId`、blob SHA256、runtime SHA256 和 `relation=git-blob-copy`；`validatedProductScope.sourceSelection=git-commit-blobs`，并记录 source acquisition generator identity。validator 重新从同一 commit 读取 blob，要求 runtime SHA256 与 blob SHA256 完全一致。
+
+验证包括：
+
+- synthetic dirty tracked text/binary worktree：runtime 完全忽略 dirty bytes，使用 committed blob；PASS。
+- synthetic LF 与 CRLF worktree 表示：两个 runtime SHA256 相同；PASS。
+- 实际仓库 dirty `splash.html` build：worktree SHA256 为 `5B7DE252…`，HEAD blob/runtime SHA256 同为 `A6831259…`；package verify PASS。
+- normal 与新 fresh detached worktree：双方 `npm test 152/152`、build 2,130 manifest files、package verify PASS；实际各 2,131 files，`missing=0`、`extra=0`、`mismatch=0`。
+
+本 follow-up 只修改 tracked product source acquisition 与对应 runtime provenance/test，不改变 product source、prepared/Web/runtime overlay、Electron、bridge、Resolver、UI 或播放行为。
+
 ## 2026-09-16 — Phase 1 reproducible build contract
 
 基线为 `origin/main@2c668eed87379eafec2e1a25f6b46f6b1dbf5ec6`，分支为 `chore/reproducible-build-phase1`。已验证实现 revision 为 `5019a754ecd75d2a64767e19996d6ded7ad6c3fd`。

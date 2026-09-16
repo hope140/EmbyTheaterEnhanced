@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-09-16 — Phase 1 tracked source Git-blob binding
+
+修复远程审核发现的最后一个 source binding blocker：`build.ps1` 不再从 working tree 物理 `src/electronapp` 路径复制普通 tracked 文件，而是从固定 `sourceCommit` 的 Git tree 枚举 regular blob，并以原始 bytes 写入 runtime。dirty/staged index、CRLF/LF checkout policy 与 binary 工作文件变化不会影响输出；prepared preload、Web overlay、PlaybackManager/package overlay contract 未改变。
+
+runtime provenance 对 67 个普通产品文件记录 commit、Git mode、blob object ID、blob SHA256 与 runtime SHA256，并强制 `git-blob-copy` 等值。synthetic dirty/binary/LF-CRLF 回归、实际 dirty `splash.html` build 均通过。fix commit `5a2bafc1dfa5d65f8821a3ef47371c08fe162cad` 的 normal 与新 fresh detached worktree 均 `npm test 152/152`、build/provenance/package verify PASS；实际各 2,131 files，逐路径 `missing=0`、`extra=0`、`mismatch=0`。未修改任何 `src/electronapp` 产品内容。
+
 ## 2026-09-16 — Phase 1 reproducible build cleanup
 
 基于 `origin/main@2c668eed87379eafec2e1a25f6b46f6b1dbf5ec6` 完成 Web overlay 与 runtime provenance 清理。build 不再递归吸收 ignored `src/electronapp` 状态，只复制 Git tracked 产品源码；`apiclient.js`、`toast.css` 和 `app.js` 现在各有唯一的 fixed base → payload/transform → exact output contract，base/input/generator/output hash 不匹配会 fail-fast。测试中对 ignored Web snapshot 的读取也改为明确 vendor/patch source。

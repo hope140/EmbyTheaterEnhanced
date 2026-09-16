@@ -63,3 +63,4 @@
 61. ignored snapshot 有 vendor fallback 不代表 build 可复现；只要 build 递归复制物理 source 目录，本机残留就仍是隐式输入。source copy 应以 Git tracked path 集合为准，prepared/vendor overlay 单独建模。
 62. Windows worktree 的 LF/CRLF filter 会让同一 tracked generator 的物理文件 SHA 不同。正式 provenance 应使用当前 commit 的 canonical Git blob identity，同时验证工作文件除换行外没有偏离 HEAD。
 63. source provenance、runtime relation 和 final payload manifest 回答不同问题。前者解释 input/transform/output，中间层验证 repo-owned 与 prepared artifact，后者只枚举最终 file set；把三者混成一份 manifest 会留下 coverage 与递归 hash 歧义。
+64. `git ls-files` 只限制 path 集合，不绑定 file bytes；随后从 worktree `Copy-Item` 仍会吸收 dirty 与 checkout filter 结果。固定 commit 的 runtime 必须从 commit tree 取 blob object，并按原始 bytes materialize，同时在 provenance 中记录 commit/mode/object ID/hash。

@@ -1,5 +1,15 @@
 # 开发日志
 
+## 2026-09-16 — Bind tracked runtime sources to Git blobs
+
+Model Tier：1。Model：GPT-5 Codex（current session）。Reason：远程审核已明确 blocker、允许文件、输入输出与验收标准；修改限定为 build source acquisition、runtime provenance 和回归测试。Escalated：no。
+
+旧 Phase 1 build 用 `git ls-files` 限定 path 集，但 `Copy-Item` 仍读取工作树 bytes；runtime provenance 同样 hash 工作树文件。因此 dirty tracked source 或不同 `core.autocrlf` checkout 可以在 `sourceCommit` 不变时改变 runtime。新增 `copy-tracked-product-sources.cjs`，从一次解析的 `sourceCommit` 以 `git ls-tree -r -z --full-tree` 枚举 regular `100644/100755 blob`，用 `git cat-file blob` 读取 Buffer 并写入 runtime。binary 不 decode，路径与 object type fail closed。
+
+runtime provenance 的普通 source relation 改为 `git-blob-copy`，记录 commit/mode/object ID/blob SHA256/runtime SHA256；scope 标记 `git-commit-blobs` 并绑定 acquisition generator。prepared preload、Web overlay、PlaybackManager/package overlay、source provenance 与 build manifest 分层保持不变。
+
+验证：新增 dirty tracked 与 LF/CRLF 两项回归，全量 `npm test 152/152`；实际 dirty `splash.html` build 中 worktree hash 与 HEAD blob 不同，runtime/provenance 仍等于 HEAD blob，package verify PASS。normal 与全新 detached worktree 均 build/provenance/package verify PASS，实际 2,131 files 对比 `missing=0`、`extra=0`、`mismatch=0`。没有修改产品代码、Electron、Pepper bridge、Resolver、UI、Session、WebSocket 或播放链。
+
 ## 2026-09-16 — Phase 1 reproducible build cleanup
 
 Model Tier：2。Model：GPT-5 Codex（current session）。Reason：任务跨 build assembly、ignored Web snapshot、prepared source、provenance、dependency closure、package verify 和双 worktree 字节比对，但明确冻结产品播放、Session 与 Electron/bridge/libmpv 行为。Escalated：no。

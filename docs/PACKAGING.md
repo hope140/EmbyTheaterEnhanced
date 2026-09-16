@@ -25,7 +25,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/build.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/package.ps1
 ```
 
-clean worktree 可以用 `tools/prepare.ps1 -ArchiveRoot <包含两个原始归档的目录>`，由脚本直接核对并解包已声明的外部输入，不手工复制 archive 或 overlay。prepare 核对两个输入归档的 SHA256，解包到 vendor。build 核对 manifest 中每个 vendor 文件 → 复制 Carnival runtime → 只复制 Git tracked 的 `src/electronapp` → 生成 prepared preload 与三份受控 Web overlay → 复制 production dependencies → 应用 PlaybackManager overlay → 替换指定 libmpv → 写 Enhanced package 元数据、独立 ProgramDataPath、provenance 与 final payload manifest。mpv.conf、shader、字体不写入个人目录。
+clean worktree 可以用 `tools/prepare.ps1 -ArchiveRoot <包含两个原始归档的目录>`，由脚本直接核对并解包已声明的外部输入，不手工复制 archive 或 overlay。prepare 核对两个输入归档的 SHA256，解包到 vendor。build 核对 manifest 中每个 vendor 文件 → 复制 Carnival runtime → 从固定 `sourceCommit` 的 Git tree 枚举普通 `src/electronapp` blob 并按原始 bytes 写入 → 生成 prepared preload 与三份受控 Web overlay → 复制 production dependencies → 应用 PlaybackManager overlay → 替换指定 libmpv → 写 Enhanced package 元数据、独立 ProgramDataPath、provenance 与 final payload manifest。mpv.conf、shader、字体不写入个人目录。
+
+普通产品源码由 `copy-tracked-product-sources.cjs` 执行 `git ls-tree -r -z --full-tree <sourceCommit>` 和 `git cat-file blob <objectId>`。只接受 regular `100644/100755 blob`，binary 与文本都直接写 Buffer，不做 decode、re-encode 或换行转换。dirty/staged index 和 checkout bytes 不进入 runtime；prepared preload、Web overlay、PlaybackManager 和 package metadata 继续走各自独立 contract。
 
 Web overlay 的唯一来源如下：
 
@@ -46,6 +48,8 @@ package verify 先验证两层 provenance，再对 build manifest 做路径规�
 ## 可重复性
 
 Phase 1 在 `5019a754ecd75d2a64767e19996d6ded7ad6c3fd` 上使用正常开发 worktree 与第二个 fresh detached worktree，分别从同一组 manifest 锁定 archive 执行 prepare/test/build/provenance/package verify。两边 `npm test` 均为 150/150，build manifest 各列 2,130 个文件；加上 manifest 自身，实际 runtime 各 2,131 个文件。逐路径 SHA256 比较为 `missing=0`、`extra=0`、`mismatch=0`，canonical payload-set SHA256 均为 `b5578003078484399930d0b1d613680d0c91178395406307b6028bb79eba4c96`。
+
+tracked-source follow-up `5a2bafc1dfa5d65f8821a3ef47371c08fe162cad` 将上述普通 source acquisition 从工作树 physical bytes 收紧为 commit blob bytes。实际 dirty-worktree build 中，`splash.html` 工作树 hash 与 HEAD blob 不同，但 runtime/provenance 仍等于 HEAD blob；normal 与新 fresh worktree 再次得到 2,131 files、`missing=0`、`extra=0`、`mismatch=0`，测试增至 152/152。
 
 该结论只覆盖 runtime payload。Inno installer container 可能包含时间戳等非确定字段，本阶段没有要求或宣称 setup.exe byte-for-byte 相同，也没有从源码重建 Electron、Pepper bridge 或 libmpv。
 
