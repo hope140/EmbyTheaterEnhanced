@@ -1,17 +1,17 @@
 'use strict';
 
 const crypto = require('crypto');
+const childProcess = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const preloadPreparation = require('./prepare-preload.cjs');
+const sourceProvenance = require('./source-provenance.cjs');
 
 const OVERLAY_RUNTIME_PATH = 'electronapp/www/modules/common/playback/playbackmanager.js';
 const OVERLAY_GENERATOR_PATH = 'tools/patch-playbackmanager.cjs';
 const PACKAGE_RUNTIME_PATH = 'electronapp/package.json';
 const PACKAGE_GENERATOR_PATH = 'tools/build.ps1';
-const APP_RUNTIME_PATH = 'electronapp/www/app.js';
-const APP_SOURCE_PATH = 'src/electronapp/www/app.js';
-const APP_GENERATOR_PATH = 'tools/patch-external-player-registration.cjs';
+const SOURCE_PROVENANCE_PATH = 'source-provenance.json';
 const PREPARED_SOURCE_PATHS = Object.freeze([preloadPreparation.PREPARED_PRELOAD_PATH]);
 const PREPARED_ARTIFACT_CONTRACT = Object.freeze([{
     preparedPath: preloadPreparation.PREPARED_PRELOAD_PATH,
@@ -20,13 +20,10 @@ const PREPARED_ARTIFACT_CONTRACT = Object.freeze([{
     generatorPath: 'tools/prepare-preload.cjs',
     category: 'prepared-workspace-artifact'
 }]);
-const EXCLUDED_SOURCE_PREFIXES = Object.freeze([
-    'src/electronapp/www/modules/externalplayer/'
-]);
+const EXCLUDED_SOURCE_PREFIXES = Object.freeze([]);
 const RUNTIME_OVERLAY_CONTRACT = Object.freeze([
-    {runtimePath: APP_RUNTIME_PATH, sourcePath: APP_SOURCE_PATH, generatorPath: APP_GENERATOR_PATH},
-    {runtimePath: OVERLAY_RUNTIME_PATH, sourcePath: 'src/electronapp/www/modules/common/playback/playbackmanager.js', generatorPath: OVERLAY_GENERATOR_PATH},
-    {runtimePath: PACKAGE_RUNTIME_PATH, sourcePath: 'src/electronapp/package.json', generatorPath: PACKAGE_GENERATOR_PATH}
+    {runtimePath: OVERLAY_RUNTIME_PATH, sourcePath: 'vendor/carnival/electronapp/www/modules/common/playback/playbackmanager.js', generatorPath: OVERLAY_GENERATOR_PATH},
+    {runtimePath: PACKAGE_RUNTIME_PATH, sourcePath: 'vendor/carnival/electronapp/package.json', generatorPath: PACKAGE_GENERATOR_PATH}
 ]);
 const OVERLAY_GENERATORS = new Map(RUNTIME_OVERLAY_CONTRACT.map(entry => [entry.runtimePath, entry.generatorPath]));
 
@@ -67,6 +64,14 @@ function isPreparedSourcePath(sourcePath) {
     return PREPARED_SOURCE_PATHS.indexOf(sourcePath) >= 0;
 }
 
+function trackedProductSourcePaths(root) {
+    const result = childProcess.spawnSync('git', ['-C', root, 'ls-files', '-z', '--', 'src/electronapp'], {
+        encoding: 'utf8'
+    });
+    if (result.error || result.status !== 0) throw new Error('Unable to enumerate tracked product sources.');
+    return result.stdout.split('\0').filter(Boolean).sort((a, b) => a.localeCompare(b));
+}
+
 function sameStringArray(actual, expected) {
     return Array.isArray(actual) && actual.length === expected.length &&
         actual.every((value, index) => value === expected[index]);
@@ -90,11 +95,11 @@ function buildOverlayEntries(root, runtime) {
 }
 
 function sourceEntries(root) {
-    const sourceRoot = path.join(root, 'src', 'electronapp');
-    const entries = walkFiles(sourceRoot).map(file => {
-        const relative = slash(path.relative(sourceRoot, file));
-        const sourcePath = 'src/electronapp/' + relative;
+    const entries = trackedProductSourcePaths(root).map(sourcePath => {
         if (isExcludedSourcePath(sourcePath) || isPreparedSourcePath(sourcePath)) return null;
+        const sourceFile = path.join(root, sourcePath);
+        if (!exists(sourceFile)) throw new Error('Tracked product source missing: ' + sourcePath);
+        const relative = sourcePath.substring('src/electronapp/'.length);
         return {
             sourcePath,
             runtimePath: 'electronapp/' + relative,
@@ -109,6 +114,15 @@ function sourceEntries(root) {
         }
     }
     return entries.sort((a, b) => a.sourcePath.localeCompare(b.sourcePath));
+}
+
+function sourceProvenanceIdentity(root, runtime, sourceCommit) {
+    const result = sourceProvenance.validateManifest(root, runtime, sourceCommit);
+    if (result.status !== 'passed') {
+        throw new Error('Source provenance validation failed: ' + (result.errors || []).join(','));
+    }
+    const file = path.join(runtime, SOURCE_PROVENANCE_PATH);
+    return {path: SOURCE_PROVENANCE_PATH, sha256: hashFile(file), status: result.status};
 }
 
 function buildPreparedArtifactEntries(root, runtime) {
@@ -166,6 +180,7 @@ function writeManifest(root, runtime, sourceCommit) {
     const entries = sourceEntries(root);
     const buildOverlays = buildOverlayEntries(root, runtime);
     const preparedArtifacts = buildPreparedArtifactEntries(root, runtime);
+    const sourceProvenanceEntry = sourceProvenanceIdentity(root, runtime, sourceCommit);
     const files = entries.map(entry => {
         const sourceFile = path.join(root, entry.sourcePath);
         const runtimeFile = path.join(runtime, entry.runtimePath);
@@ -180,14 +195,16 @@ function writeManifest(root, runtime, sourceCommit) {
     const manifest = {
         schemaVersion: 1,
         sourceCommit: sourceCommit.toLowerCase(),
+        sourceProvenance: sourceProvenanceEntry,
         baselineIdentity: baselineIdentity(root),
         validatedProductScope: {
             sourceRoot: 'src/electronapp',
             runtimeRoot: 'electronapp',
-            includesIgnoredSourceFiles: true,
+            includesIgnoredSourceFiles: false,
+            sourceSelection: 'git-tracked',
             excludedSourcePrefixes: [...EXCLUDED_SOURCE_PREFIXES],
             preparedSourcePaths: [...PREPARED_SOURCE_PATHS],
-            description: 'All non-excluded repo-owned src/electronapp files; prepared workspace artifacts and package metadata/PlaybackManager are recorded separately',
+            description: 'All Git-tracked repo-owned src/electronapp files; ignored prepared artifacts and vendor-derived transformations are recorded separately',
             fileCount: files.length,
             files
         },
@@ -207,6 +224,7 @@ function failedValidation(runtime, sourceCommit, errors, files, manifest) {
         runtimeName: path.basename(runtime),
         manifest: 'runtime-provenance.json',
         baselineIdentity: manifest && manifest.baselineIdentity || null,
+        sourceProvenance: manifest && manifest.sourceProvenance || null,
         buildOverlays: manifest && Array.isArray(manifest.buildOverlays) ? manifest.buildOverlays : [],
         validatedProductScope: manifest && manifest.validatedProductScope
             ? {
@@ -293,6 +311,14 @@ function validateManifest(root, runtime, sourceCommit) {
     }
     if (manifest.schemaVersion !== 1) errors.push('unsupported-provenance-schema');
     if (manifest.sourceCommit !== String(sourceCommit || '').toLowerCase()) errors.push('source-commit-mismatch');
+    try {
+        const expectedSourceProvenance = sourceProvenanceIdentity(root, runtime, sourceCommit);
+        if (!manifest.sourceProvenance || manifest.sourceProvenance.path !== expectedSourceProvenance.path ||
+            manifest.sourceProvenance.sha256 !== expectedSourceProvenance.sha256 ||
+            manifest.sourceProvenance.status !== 'passed') errors.push('source-provenance-mismatch');
+    } catch (_) {
+        errors.push('source-provenance-invalid');
+    }
     if (!manifest.baselineIdentity || manifest.baselineIdentity.manifestPath !== 'vendor/runtime-manifest.json') errors.push('baseline-identity-missing');
     else {
         const baselinePath = path.join(root, manifest.baselineIdentity.manifestPath);
@@ -300,7 +326,8 @@ function validateManifest(root, runtime, sourceCommit) {
         else if (hashFile(baselinePath) !== manifest.baselineIdentity.sha256) errors.push('baseline-manifest-changed');
     }
     const scope = manifest.validatedProductScope;
-    if (!scope || scope.sourceRoot !== 'src/electronapp' || scope.runtimeRoot !== 'electronapp' || scope.includesIgnoredSourceFiles !== true || !Array.isArray(scope.files)) {
+    if (!scope || scope.sourceRoot !== 'src/electronapp' || scope.runtimeRoot !== 'electronapp' ||
+        scope.includesIgnoredSourceFiles !== false || scope.sourceSelection !== 'git-tracked' || !Array.isArray(scope.files)) {
         return failedValidation(runtime, sourceCommit, errors.concat('validated-product-scope-missing'), [], manifest);
     }
     if (!sameStringArray(scope.excludedSourcePrefixes, EXCLUDED_SOURCE_PREFIXES)) {
@@ -380,6 +407,7 @@ function validateManifest(root, runtime, sourceCommit) {
             sourceRoot: scope.sourceRoot,
             runtimeRoot: scope.runtimeRoot,
             includesIgnoredSourceFiles: scope.includesIgnoredSourceFiles === true,
+            sourceSelection: scope.sourceSelection,
             excludedSourcePrefixes: Array.isArray(scope.excludedSourcePrefixes) ? scope.excludedSourcePrefixes : [],
             preparedSourcePaths: Array.isArray(scope.preparedSourcePaths) ? scope.preparedSourcePaths : [],
             fileCount: scope.fileCount,

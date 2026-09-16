@@ -60,7 +60,7 @@ test('libmpv appends one Enhanced category without replacing Media, Video, or Au
 });
 
 test('prepared Emby Stats consumer passes a custom category through to its renderer', () => {
-    const consumer = fs.readFileSync(path.join(__dirname, '../src/electronapp/www/modules/playerstats/playerstats.js'), 'utf8');
+    const consumer = fs.readFileSync(path.join(__dirname, '../vendor/carnival/electronapp/www/modules/playerstats/playerstats.js'), 'utf8');
     assert.match(consumer, /var playerStats = responses\[0\]\.categories \|\| \[\]/);
     assert.match(consumer, /"audio" === category\.type/);
     assert.match(consumer, /"video" === category\.type/);

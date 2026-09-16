@@ -3,150 +3,163 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const childProcess = require('node:child_process');
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const preloadPreparation = require('../tools/prepare-preload.cjs');
+const webPreparation = require('../tools/prepare-web-overlays.cjs');
+const sourceProvenance = require('../tools/source-provenance.cjs');
 
 const repoRoot = path.resolve(__dirname, '..');
 const tool = path.join(repoRoot, 'tools', 'runtime-provenance.cjs');
 const sourceCommit = '0123456789abcdef0123456789abcdef01234567';
 
+function hash(value) {
+    return crypto.createHash('sha256').update(value).digest('hex');
+}
+
 function writeFile(file, content) {
     fs.mkdirSync(path.dirname(file), {recursive: true});
-    fs.writeFileSync(file, content, 'utf8');
+    fs.writeFileSync(file, content);
+}
+
+function copyRepoFile(root, relativePath) {
+    const target = path.join(root, relativePath);
+    fs.mkdirSync(path.dirname(target), {recursive: true});
+    fs.copyFileSync(path.join(repoRoot, relativePath), target);
+}
+
+function addManifestFile(files, root, relativePath, content) {
+    writeFile(path.join(root, 'vendor', 'carnival', relativePath), content);
+    files.push({path: relativePath.replaceAll('\\', '/'), sha256: hash(Buffer.from(content))});
 }
 
 function createFixture(root) {
+    const files = [];
+    const patchFiles = [];
     const vendorPreload = "const { ipcRenderer } = require('electron');\r\nwindow.ipc = ipcRenderer;\r\nconst fs = require('fs');\r\nwindow.fs = fs;\r\nconst os = require('os');\r\nwindow.dirName = os.tmpdir();\r\nwindow.appdata = process.env.APPDATA;\r\n";
+    addManifestFile(files, root, 'electronapp/preload.js', vendorPreload);
+    addManifestFile(files, root, 'x64/electron/electron.exe', 'electron-fixture\n');
+    addManifestFile(files, root, 'x64/electron/version', '18.3.15\n');
+    addManifestFile(files, root, 'electronapp/libmpv/x64/mpv-win32-x64.node', 'bridge-fixture\n');
+    addManifestFile(files, root, 'electronapp/libmpv/x64/mpv-1.dll', 'base-libmpv-fixture\n');
+    addManifestFile(files, root, 'electronapp/www/modules/common/playback/playbackmanager.js', 'const playback = true;\n');
+    addManifestFile(files, root, 'electronapp/package.json', '{"name":"fixture"}\n');
+
+    for (const contract of webPreparation.WEB_OVERLAY_CONTRACT) {
+        copyRepoFile(root, contract.basePath);
+        const vendorPath = contract.basePath.replace('vendor/carnival/', '');
+        if (!files.some(entry => entry.path === vendorPath)) {
+            files.push({path: vendorPath, sha256: hash(fs.readFileSync(path.join(root, contract.basePath)))});
+        }
+        if (contract.inputPath) {
+            copyRepoFile(root, contract.inputPath);
+            patchFiles.push({
+                path: contract.inputPath.replace('vendor/patch/', ''),
+                sha256: hash(fs.readFileSync(path.join(root, contract.inputPath)))
+            });
+        }
+    }
+
+    const patchLibmpv = Buffer.from('patched-libmpv-fixture\n');
+    writeFile(path.join(root, 'vendor', 'patch', 'payload', 'libmpv', 'mpv-1.dll'), patchLibmpv);
+    patchFiles.push({path: 'payload/libmpv/mpv-1.dll', sha256: hash(patchLibmpv)});
     writeFile(path.join(root, 'vendor', 'runtime-manifest.json'), JSON.stringify({
         baseline: 'provenance-test-fixture',
-        files: [],
-        patchFiles: []
+        archives: [{pattern: 'base.exe', sha256: '0'.repeat(64)}],
+        files,
+        patchFiles
     }));
-    writeFile(path.join(root, 'vendor', 'carnival', 'electronapp', 'preload.js'), vendorPreload);
+    writeFile(path.join(root, 'package-lock.json'), JSON.stringify({lockfileVersion: 3, packages: {}}));
+
+    for (const relativePath of [
+        'tools/prepare-preload.cjs',
+        'tools/prepare-web-overlays.cjs',
+        'tools/patch-external-player-registration.cjs',
+        'tools/copy-runtime-dependencies.cjs'
+    ]) copyRepoFile(root, relativePath);
+    writeFile(path.join(root, 'tools', 'patch-playbackmanager.cjs'), 'generator: playbackmanager\n');
+    writeFile(path.join(root, 'tools', 'build.ps1'), 'generator: package-metadata\n');
+
     writeFile(path.join(root, 'src', 'electronapp', 'some-normal-file.js'), 'module.exports = "normal";\n');
     writeFile(path.join(root, 'src', 'electronapp', 'preload.js'), preloadPreparation.buildPreparedPreload(vendorPreload));
-    writeFile(path.join(root, 'src', 'electronapp', 'www', 'app.js'), 'const app = "clean";\n');
-    writeFile(path.join(root, 'src', 'electronapp', 'www', 'modules', 'common', 'playback', 'playbackmanager.js'), 'const playback = true;\n');
-    writeFile(path.join(root, 'src', 'electronapp', 'package.json'), '{"name":"fixture"}\n');
-    writeFile(path.join(root, 'tools', 'Start-Enhanced.ps1'), 'param()\n');
-    writeFile(path.join(root, 'tools', 'Start-Enhanced.cmd'), '@echo off\r\n');
-    writeFile(path.join(root, 'tools', 'patch-external-player-registration.cjs'), 'generator: external-player-registration\n');
-    writeFile(path.join(root, 'tools', 'patch-playbackmanager.cjs'), 'generator: playbackmanager\n');
-    writeFile(path.join(root, 'tools', 'prepare-preload.cjs'), fs.readFileSync(
-        path.join(repoRoot, 'tools', 'prepare-preload.cjs'), 'utf8'
-    ));
-    writeFile(path.join(root, 'tools', 'build.ps1'), 'generator: package-metadata\n');
+    const init = childProcess.spawnSync('git', ['init', root], {encoding: 'utf8'});
+    assert.equal(init.status, 0, init.stderr);
+    const add = childProcess.spawnSync('git', ['-C', root, 'add', 'src/electronapp/some-normal-file.js'], {encoding: 'utf8'});
+    assert.equal(add.status, 0, add.stderr);
 }
 
 function createRuntime(root, name) {
     const runtime = path.join(root, name);
     writeFile(path.join(runtime, 'electronapp', 'some-normal-file.js'), 'module.exports = "normal";\n');
-    writeFile(path.join(runtime, 'electronapp', 'preload.js'), fs.readFileSync(
-        path.join(root, 'src', 'electronapp', 'preload.js'), 'utf8'
-    ));
-    writeFile(path.join(runtime, 'electronapp', 'www', 'app.js'), 'const app = "patched";\n');
+    writeFile(path.join(runtime, 'electronapp', 'preload.js'), fs.readFileSync(path.join(root, 'src', 'electronapp', 'preload.js')));
     writeFile(path.join(runtime, 'electronapp', 'www', 'modules', 'common', 'playback', 'playbackmanager.js'), 'const playback = true;\n');
     writeFile(path.join(runtime, 'electronapp', 'package.json'), '{"name":"runtime"}\n');
-    writeFile(path.join(runtime, 'Start-Enhanced.ps1'), 'param()\n');
-    writeFile(path.join(runtime, 'Start-Enhanced.cmd'), '@echo off\r\n');
+    for (const relativePath of [
+        'x64/electron/electron.exe',
+        'x64/electron/version',
+        'electronapp/libmpv/x64/mpv-win32-x64.node'
+    ]) writeFile(path.join(runtime, relativePath), fs.readFileSync(path.join(root, 'vendor', 'carnival', relativePath)));
+    writeFile(path.join(runtime, 'electronapp/libmpv/x64/mpv-1.dll'),
+        fs.readFileSync(path.join(root, 'vendor/patch/payload/libmpv/mpv-1.dll')));
+    webPreparation.apply(root, runtime);
+    sourceProvenance.writeManifest(root, runtime, sourceCommit);
     return runtime;
 }
 
 function runProvenance(command, root, runtime) {
     const result = runProvenanceRaw(command, root, runtime);
     assert.equal(result.error, undefined, result.error && result.error.message);
+    assert.notEqual(result.stdout, '', result.stderr);
     return {exitCode: result.status, report: JSON.parse(result.stdout)};
 }
 
 function runProvenanceRaw(command, root, runtime) {
-    return childProcess.spawnSync(process.execPath, [tool, command, root, runtime, sourceCommit], {
-        encoding: 'utf8'
-    });
+    return childProcess.spawnSync(process.execPath, [tool, command, root, runtime, sourceCommit], {encoding: 'utf8'});
 }
 
-test('runtime provenance excludes the exact legacy subtree without weakening normal coverage', () => {
+test('runtime provenance selects only Git-tracked product sources', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-provenance-'));
     try {
         createFixture(root);
-        const legacySentinel = path.join(root, 'src', 'electronapp', 'www', 'modules', 'externalplayer', '__sentinel.js');
-        writeFile(legacySentinel, 'module.exports = "legacy";\n');
-
-        const runtimeWithLegacySource = createRuntime(root, 'runtime-with-legacy-source');
-        const writtenWithLegacySource = runProvenance('write', root, runtimeWithLegacySource);
-        assert.equal(writtenWithLegacySource.exitCode, 0);
-        const manifestWithLegacySource = JSON.parse(fs.readFileSync(
-            path.join(runtimeWithLegacySource, 'runtime-provenance.json'), 'utf8'
-        ));
-        const scopeWithLegacySource = manifestWithLegacySource.validatedProductScope;
-        assert.equal(scopeWithLegacySource.files.some(entry => entry.sourcePath === 'tools/Start-Enhanced.ps1'), false);
-        assert.equal(scopeWithLegacySource.files.some(entry => entry.sourcePath === 'tools/Start-Enhanced.cmd'), false);
-        assert.deepEqual(scopeWithLegacySource.excludedSourcePrefixes, [
-            'src/electronapp/www/modules/externalplayer/'
+        writeFile(path.join(root, 'src', 'electronapp', 'www', '__ignored-sentinel.js'), 'ignored\n');
+        const runtime = createRuntime(root, 'runtime');
+        assert.equal(runProvenance('write', root, runtime).exitCode, 0);
+        const manifest = JSON.parse(fs.readFileSync(path.join(runtime, 'runtime-provenance.json'), 'utf8'));
+        assert.equal(manifest.validatedProductScope.includesIgnoredSourceFiles, false);
+        assert.equal(manifest.validatedProductScope.sourceSelection, 'git-tracked');
+        assert.deepEqual(manifest.validatedProductScope.files.map(entry => entry.sourcePath), [
+            'src/electronapp/some-normal-file.js'
         ]);
-        assert.equal(scopeWithLegacySource.files.some(entry => entry.sourcePath ===
-            'src/electronapp/www/modules/externalplayer/__sentinel.js'), false);
-        assert.equal(runProvenance('validate', root, runtimeWithLegacySource).exitCode, 0);
+        assert.equal(runProvenance('validate', root, runtime).exitCode, 0);
 
-        fs.rmSync(path.dirname(legacySentinel), {recursive: true, force: true});
-        const runtimeWithoutLegacySource = createRuntime(root, 'runtime-without-legacy-source');
-        const writtenWithoutLegacySource = runProvenance('write', root, runtimeWithoutLegacySource);
-        assert.equal(writtenWithoutLegacySource.exitCode, 0);
-        const manifestWithoutLegacySource = JSON.parse(fs.readFileSync(
-            path.join(runtimeWithoutLegacySource, 'runtime-provenance.json'), 'utf8'
-        ));
-        assert.deepEqual(
-            manifestWithoutLegacySource.validatedProductScope.files.map(entry => entry.sourcePath),
-            scopeWithLegacySource.files.map(entry => entry.sourcePath)
-        );
-        assert.equal(runProvenance('validate', root, runtimeWithoutLegacySource).exitCode, 0);
-
-        fs.rmSync(path.join(runtimeWithoutLegacySource, 'electronapp', 'some-normal-file.js'));
-        const normalMismatch = runProvenance('validate', root, runtimeWithoutLegacySource);
-        assert.equal(normalMismatch.exitCode, 1);
-        assert.equal(normalMismatch.report.status, 'failed');
-        assert.equal(normalMismatch.report.errors.includes(
-            'runtime-file-missing:electronapp/some-normal-file.js'
-        ), true);
+        fs.rmSync(path.join(runtime, 'electronapp', 'some-normal-file.js'));
+        const missing = runProvenance('validate', root, runtime);
+        assert.equal(missing.exitCode, 1);
+        assert.equal(missing.report.errors.includes('runtime-file-missing:electronapp/some-normal-file.js'), true);
     } finally {
         fs.rmSync(root, {recursive: true, force: true});
     }
 });
 
-test('runtime provenance rejects a prewrite runtime preload mismatch and preserves vendor fallback overlay', () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-provenance-fallback-'));
+test('runtime provenance rejects prepared and source-provenance tampering', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-provenance-tamper-'));
     try {
         createFixture(root);
-        fs.rmSync(path.join(root, 'src', 'electronapp', 'www', 'app.js'));
-
         const prewriteRuntime = createRuntime(root, 'runtime-prewrite-tamper');
-        const preparedPath = path.join(root, 'src', 'electronapp', 'preload.js');
-        const runtimePreloadPath = path.join(prewriteRuntime, 'electronapp', 'preload.js');
-        assert.equal(fs.readFileSync(preparedPath, 'utf8'), fs.readFileSync(runtimePreloadPath, 'utf8'));
-        fs.appendFileSync(runtimePreloadPath, '\r\n// runtime tamper before provenance write\r\n', 'utf8');
+        fs.appendFileSync(path.join(prewriteRuntime, 'electronapp', 'preload.js'), '\n// tampered\n', 'utf8');
         const prewriteTamper = runProvenanceRaw('write', root, prewriteRuntime);
         assert.equal(prewriteTamper.status, 1);
-        assert.match(prewriteTamper.stderr, /Prepared artifact runtime mismatch: src\/electronapp\/preload\.js -> electronapp\/preload\.js/);
+        assert.match(prewriteTamper.stderr, /Prepared artifact runtime mismatch/);
         assert.equal(fs.existsSync(path.join(prewriteRuntime, 'runtime-provenance.json')), false);
 
-        const runtime = createRuntime(root, 'runtime-vendor-fallback');
-        const written = runProvenance('write', root, runtime);
-        assert.equal(written.exitCode, 0);
-        const manifest = JSON.parse(fs.readFileSync(path.join(runtime, 'runtime-provenance.json'), 'utf8'));
-        const appOverlay = manifest.buildOverlays.find(entry => entry.runtimePath === 'electronapp/www/app.js');
-        assert.equal(appOverlay.sourcePresent, false);
-        assert.equal(appOverlay.sourceSha256, null);
-        const prepared = manifest.preparedArtifacts.find(entry => entry.preparedPath === 'src/electronapp/preload.js');
-        assert.equal(prepared.category, 'prepared-workspace-artifact');
-        assert.equal(prepared.expectedPreparedSha256, prepared.preparedSha256);
-        assert.equal(prepared.preparedSha256, prepared.runtimeSha256);
-        assert.equal(runProvenance('validate', root, runtime).exitCode, 0);
-
-        writeFile(path.join(root, 'src', 'electronapp', 'preload.js'), 'tampered\n');
+        const runtime = createRuntime(root, 'runtime-source-provenance');
+        assert.equal(runProvenance('write', root, runtime).exitCode, 0);
+        fs.appendFileSync(path.join(runtime, 'source-provenance.json'), '\n', 'utf8');
         const tampered = runProvenance('validate', root, runtime);
         assert.equal(tampered.exitCode, 1);
-        assert.equal(tampered.report.errors.includes('prepared-artifact-input-missing'), true);
+        assert.equal(tampered.report.errors.includes('source-provenance-mismatch'), true);
     } finally {
         fs.rmSync(root, {recursive: true, force: true});
     }
