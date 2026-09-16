@@ -1,14 +1,45 @@
-define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter', 'appSettings', 'userSettings', 'require', 'connectionManager', '../resolvers/strm-resolver.js', '../resolvers/strm-config-client.js'], function (globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, require, connectionManager, strmResolver, strmConfigClient) {
+define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter', 'appSettings', 'userSettings', 'require', 'connectionManager', '../resolvers/strm-resolver.js', '../resolvers/strm-config-client.js', '../resolvers/strm-identity-recovery.js', '../enhanced/playback-route-stats.js'], function (globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, require, connectionManager, strmResolver, strmConfigClient, strmIdentityRecovery, playbackRouteStats) {
     'use strict';
 
     function getTextTrackUrl(subtitleStream, serverId) {
         return playbackManager.getSubtitleUrl(subtitleStream, serverId);
     }
 
-    function logStrmResolverResult(result) {
+    function emitClientDiagnostic(level, category, event, details) {
+        try {
+            if (typeof window === 'undefined' || !window.ipc || typeof window.ipc.send !== 'function') return;
+            var pending = window.ipc.send('enhanced-diagnostics-log', {
+                schemaVersion: 1,
+                level: level || 'info',
+                category: category,
+                event: event,
+                details: details || {}
+            });
+            if (pending && typeof pending.catch === 'function') pending.catch(function () {});
+        } catch (_) { /* Observability is fail-open. */ }
+    }
+
+    function requestDiagnosticDetails(request) {
+        return {
+            requestId: request && request.requestId,
+            playRequestId: request && request.playbackRequestId ? request.playbackRequestId : null
+        };
+    }
+
+    function routeForResult(result) {
+        if (strmResolver && typeof strmResolver.routeForResult === 'function') return strmResolver.routeForResult(result);
+        if (result && result.sourceKind === 'direct-url') return 'direct-url';
+        if (result && result.type === 'url' && result.sourceKind === 'cd2-url') return 'cd2-http';
+        if (result && result.type === 'local' && result.reason === 'mount_hit') return 'mount';
+        if (result && result.type === 'native') return 'native';
+        return 'unknown';
+    }
+
+    function logStrmResolverResult(result, request, detected) {
         var type = result && result.type ? result.type : 'native';
         var reason = result && result.reason ? result.reason : 'native_fallback';
-        var isStrm = result && result.isStrm === true ? 'yes' : 'no';
+        var isStrmValue = detected === true || result && result.isStrm === true;
+        var isStrm = isStrmValue ? 'yes' : 'no';
         var localExists = result && result.localExists === true ? 'yes' : 'no';
         var fallback = type === 'native' ? 'yes' : 'no';
         var cd2Reason = result && result.cd2Reason ? result.cd2Reason : (type === 'url' ? 'cd2_hit' : 'not_attempted');
@@ -16,6 +47,21 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         var directReason = result && result.directReason ? result.directReason : (sourceKind === 'direct-url' ? 'direct_url_hit' : 'not_attempted');
 
         console.log('STRM resolver: invoked isStrm=' + isStrm + ' type=' + type + ' reason=' + reason + ' cd2=' + cd2Reason + ' localExists=' + localExists + ' fallback=' + fallback + ' sourceKind=' + sourceKind + ' direct=' + directReason);
+        if (isStrmValue) {
+            var details = requestDiagnosticDetails(request);
+            details.isStrm = true;
+            details.ruleId = result && result.ruleId;
+            details.type = type;
+            details.reason = reason;
+            details.sourceKind = sourceKind;
+            details.cd2Reason = cd2Reason;
+            details.directReason = directReason;
+            details.localExists = result && result.localExists === true;
+            details.fallback = type === 'native';
+            details.route = routeForResult(result);
+            emitClientDiagnostic('info', 'resolver', 'route-selected', details);
+        }
+        return {isStrm: isStrmValue, route: routeForResult(result)};
     }
 
     function getFileLocalLoadOptions(result) {
@@ -83,6 +129,9 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         var playGeneration = 0;
         var highestPlaybackRequestId = 0;
         var activePlayRequest;
+        var enhancedRouteState = playbackRouteStats && typeof playbackRouteStats.create === 'function'
+            ? playbackRouteStats.create()
+            : null;
 
         function supersededError() {
             var error = new Error('Playback request was superseded');
@@ -110,6 +159,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
         function invalidatePlayRequest() {
             playGeneration++;
+            if (enhancedRouteState) enhancedRouteState.clear();
             if (activePlayRequest) {
                 var previous = activePlayRequest;
                 activePlayRequest = null;
@@ -131,9 +181,11 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 requestId: 'play-' + (playbackRequestId || 'local') + '-' + playGeneration,
                 controller: new AbortController(),
                 corePlayingListener: null,
-                abortListener: null
+                abortListener: null,
+                corePlayingLogged: false
             };
             activePlayRequest = request;
+            if (enhancedRouteState) enhancedRouteState.begin(request);
             return request;
         }
 
@@ -202,6 +254,19 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 category: 'Playback',
                 thumbImage: '',
                 icon: 'folder_open',
+                settingsTheme: true,
+                adjustHeaderForEmbeddedScroll: true
+            });
+
+            routes.push({
+                path: 'mpvplayer/diagnostics.html',
+                transition: 'slide',
+                controller: pluginManager.mapPath(self, 'mpvplayer/diagnostics.js'),
+                type: 'settings',
+                title: '诊断与日志',
+                category: 'Playback',
+                thumbImage: '',
+                icon: 'description',
                 settingsTheme: true,
                 adjustHeaderForEmbeddedScroll: true
             });
@@ -610,6 +675,13 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         self.play = function (options) {
             var request = beginPlayRequest(options);
             if (!request) return Promise.reject(supersededError());
+            emitClientDiagnostic('info', 'playback', 'play-request', Object.assign(requestDiagnosticDetails(request), {
+                mediaType: options && options.mediaType,
+                playMethod: options && options.playMethod
+            }));
+            if (options && options.command === 'nextTrack') {
+                emitClientDiagnostic('info', 'playback', 'next', requestDiagnosticDetails(request));
+            }
             return playForRequest(options, request);
         };
 
@@ -643,6 +715,13 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 if (window.enhancedDiagnostics) window.enhancedDiagnostics(libmpv, 'playing');
             } catch (error) {
                 cleanupCorePlaying(request);
+                if (!error || !error.playbackSuperseded) {
+                    emitClientDiagnostic('error', 'playback', 'playback-error', Object.assign(requestDiagnosticDetails(request), {
+                        stage: 'play',
+                        name: error && error.name,
+                        message: error && error.message
+                    }));
+                }
                 throw error;
             }
         }
@@ -657,33 +736,76 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             var resolverResult;
             var resolverConfig = null;
             var fileLocalLoadOptions;
+            var isStrmRequest = false;
+            var identityObservation = {
+                strmIdentitySource: 'none',
+                metadataRecoveryAttempted: false,
+                metadataRecoverySucceeded: false,
+                recoveredPathEndsWithStrm: false
+            };
+            var resolverContext = {
+                item: item,
+                mediaSource: mediaSource,
+                sidecarPath: item && item.Path,
+                sourcePath: mediaSource && mediaSource.Path,
+                nativeSource: nativeSource,
+                playMethod: options.playMethod,
+                streamInfo: options
+            };
 
             try {
-                if (strmResolver && typeof strmResolver.isStrm === 'function' && strmResolver.isStrm({
-                    item: item,
-                    mediaSource: mediaSource,
-                    sidecarPath: item && item.Path,
-                    sourcePath: mediaSource && mediaSource.Path,
-                    nativeSource: nativeSource,
-                    playMethod: options.playMethod,
-                    streamInfo: options
-                }) && strmConfigClient && typeof strmConfigClient.get === 'function') {
+                if (strmIdentityRecovery && typeof strmIdentityRecovery.recover === 'function') {
+                    var identityRecovery = await strmIdentityRecovery.recover({
+                        item: item,
+                        connectionManager: connectionManager,
+                        signal: request.controller.signal
+                    });
+                    assertCurrentPlayRequest(request);
+                    identityObservation = {
+                        strmIdentitySource: identityRecovery.strmIdentitySource || 'none',
+                        metadataRecoveryAttempted: identityRecovery.metadataRecoveryAttempted === true,
+                        metadataRecoverySucceeded: identityRecovery.metadataRecoverySucceeded === true,
+                        recoveredPathEndsWithStrm: identityRecovery.recoveredPathEndsWithStrm === true
+                    };
+                    if (identityRecovery.recoveredPath) resolverContext.sidecarPath = identityRecovery.recoveredPath;
+                }
+            } catch (err) {
+                if (err && (err.name === 'AbortError' || err.playbackSuperseded)) throw supersededError();
+                identityObservation = {
+                    strmIdentitySource: 'none',
+                    metadataRecoveryAttempted: false,
+                    metadataRecoverySucceeded: false,
+                    recoveredPathEndsWithStrm: false
+                };
+            }
+
+            try {
+                emitClientDiagnostic('info', 'resolver', 'context-observed', Object.assign(
+                    requestDiagnosticDetails(request),
+                    identityObservation,
+                    strmResolver && typeof strmResolver.describeContext === 'function'
+                        ? strmResolver.describeContext(resolverContext)
+                        : {}
+                ));
+            } catch (_) { /* Context diagnostics are optional and fail-open. */ }
+
+            try {
+                isStrmRequest = !!(strmResolver && typeof strmResolver.isStrm === 'function' && strmResolver.isStrm(resolverContext));
+                if (isStrmRequest && strmConfigClient && typeof strmConfigClient.get === 'function') {
                     resolverConfig = await strmConfigClient.get();
                     assertCurrentPlayRequest(request);
                 }
-                resolverResult = await strmResolver.resolveAsync({
-                    item: item,
-                    mediaSource: mediaSource,
-                    sidecarPath: item && item.Path,
-                    sourcePath: mediaSource && mediaSource.Path,
-                    nativeSource: nativeSource,
-                    playMethod: options.playMethod,
-                    streamInfo: options
-                }, {
+                resolverResult = await strmResolver.resolveAsync(resolverContext, {
                     fs: typeof window !== 'undefined' ? window.fs : null,
                     requestId: request.requestId,
                     signal: request.controller.signal,
-                    config: resolverConfig
+                    config: resolverConfig,
+                    onDiagnostic: function (record) {
+                        emitClientDiagnostic(record && record.level, record && record.category, record && record.event, record && record.details);
+                    },
+                    pathHash: typeof window !== 'undefined' && typeof window.__eteDiagnosticHash === 'function'
+                        ? window.__eteDiagnosticHash
+                        : null
                 });
             } catch (err) {
                 if (err && (err.name === 'AbortError' || err.playbackSuperseded)) throw supersededError();
@@ -691,7 +813,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                     type: 'native',
                     source: nativeSource,
                     reason: 'native_fallback',
-                    isStrm: false,
+                    isStrm: isStrmRequest,
                     localExists: false,
                     fallback: true
                 };
@@ -702,7 +824,38 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 url = resolverResult.source;
             }
             fileLocalLoadOptions = getFileLocalLoadOptions(resolverResult);
-            logStrmResolverResult(resolverResult);
+            if (resolverResult && resolverResult.reason === 'invalid_context') {
+                try {
+                    emitClientDiagnostic('warn', 'resolver', 'invalid-context', Object.assign(
+                        requestDiagnosticDetails(request),
+                        strmResolver && typeof strmResolver.diagnoseContext === 'function'
+                            ? strmResolver.diagnoseContext(resolverContext)
+                            : {missingFields: [], isStrmDetected: false, playMethod: null, mediaSourceContainer: null}
+                    ));
+                } catch (_) { /* Context diagnostics are optional and fail-open. */ }
+            }
+            var resolverObservation = logStrmResolverResult(resolverResult, request, isStrmRequest);
+            if (enhancedRouteState) {
+                enhancedRouteState.commit(request, {
+                    requestId: request.requestId,
+                    isStrm: isStrmRequest || resolverResult && resolverResult.isStrm === true,
+                    route: resolverObservation.route,
+                    reason: resolverResult && resolverResult.reason,
+                    sourceKind: resolverResult && resolverResult.sourceKind,
+                    ruleId: resolverResult && resolverResult.ruleId,
+                    cd2Reason: resolverResult && resolverResult.cd2Reason,
+                    directReason: resolverResult && resolverResult.directReason,
+                    localExists: resolverResult && resolverResult.localExists === true,
+                    fallback: resolverResult && resolverResult.fallback === true
+                });
+            }
+            emitClientDiagnostic('info', 'playback', 'resolver-complete', Object.assign(requestDiagnosticDetails(request), {
+                isStrm: isStrmRequest,
+                route: resolverObservation.route,
+                reason: resolverResult && resolverResult.reason,
+                fallback: resolverResult && resolverResult.type === 'native',
+                sourceKind: resolverResult && resolverResult.sourceKind
+            }));
 
             assertCurrentPlayRequest(request);
             currentSrc = url;
@@ -813,6 +966,11 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
             await setProperty(Object.assign(playerOptions, audioDelay(), interlace(), createClosedCaptionTrack(mediaSource, isVideo), getMpvAudioOptions(mediaType)))
             assertCurrentPlayRequest(request);
+            emitClientDiagnostic('info', 'playback', 'loadfile-requested', Object.assign(requestDiagnosticDetails(request), {
+                route: resolverObservation.route,
+                sourceKind: resolverResult && resolverResult.sourceKind,
+                directUserAgentApplied: fileLocalLoadOptions.length > 0
+            }));
             await sendCommand(fileLocalLoadOptions.length
                 ? ['loadfile', url, 'replace', '-1'].concat(fileLocalLoadOptions)
                 : ['loadfile', url])
@@ -854,8 +1012,10 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         self.currentTime = function (val) {
 
             if (val != null) {
+                var request = activePlayRequest;
                 sendCommand(['seek', `${Math.floor(val / 1000)}`, 'absolute', 'exact']).then(function () {
 
+                    emitClientDiagnostic('info', 'playback', 'seek', requestDiagnosticDetails(request));
                     events.trigger(self, 'seek');
                 });
                 return;
@@ -865,8 +1025,10 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         };
 
         function seekRelative(offsetMs) {
+            var request = activePlayRequest;
             sendCommand(['seek', `${Math.floor(offsetMs / 1000)}`, 'relative']).then(function () {
 
+                emitClientDiagnostic('info', 'playback', 'seek', requestDiagnosticDetails(request));
                 events.trigger(self, 'seek');
             });
         }
@@ -891,6 +1053,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         };
 
         self.stop = async function (destroyPlayer) {
+            var request = activePlayRequest;
             invalidatePlayRequest();
             if (destroyPlayer) {
                 await destroyInternal()
@@ -898,6 +1061,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 appSettings.set('mpv-volume', playerState.volume);
                 await sendCommand('stop')
             }
+            emitClientDiagnostic('info', 'playback', 'stop', requestDiagnosticDetails(request));
             self._onStopped(true)
         };
 
@@ -970,6 +1134,8 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 for (var i = 0, length = responses.length; i < length; i++) {
                     categories.push(responses[i]);
                 }
+                var enhancedCategory = enhancedRouteState && enhancedRouteState.category();
+                if (enhancedCategory) categories.push(enhancedCategory);
 
                 return {
                     categories: categories
@@ -1093,6 +1259,9 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
         self._onError = function () {
 
+            emitClientDiagnostic('error', 'playback', 'playback-error', Object.assign(requestDiagnosticDetails(activePlayRequest), {
+                stage: 'player-event'
+            }));
             events.trigger(self, 'error');
         };
 
@@ -1101,8 +1270,10 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             playerState.isPaused = paused;
 
             if (paused) {
+                emitClientDiagnostic('info', 'playback', 'pause', requestDiagnosticDetails(activePlayRequest));
                 events.trigger(self, 'pause');
             } else {
+                emitClientDiagnostic('info', 'playback', 'resume', requestDiagnosticDetails(activePlayRequest));
                 events.trigger(self, 'unpause');
             }
         };
@@ -1119,12 +1290,17 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
         self._onStopped = function (stopped) {
             if (stopped) {
+                if (activePlayRequest) emitClientDiagnostic('info', 'playback', 'stop', requestDiagnosticDetails(activePlayRequest));
                 events.trigger(self, 'stopped');
             }
         };
 
         self._onCoreIdleUpdate = function (idle) {
             if (!idle) {
+                if (activePlayRequest && !activePlayRequest.corePlayingLogged) {
+                    activePlayRequest.corePlayingLogged = true;
+                    emitClientDiagnostic('info', 'playback', 'core-playing', requestDiagnosticDetails(activePlayRequest));
+                }
                 dispatchEvent(new Event('core-playing'))
             }
         }

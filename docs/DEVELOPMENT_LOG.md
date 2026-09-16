@@ -1,5 +1,63 @@
 # 开发日志
 
+## 2026-09-16 — Stats 未尝试阶段展示语义
+
+本轮只修正 `playback-route-stats.js` 的用户态文本：空 CD2 reason 与 `not_attempted` 统一显示“未使用”，保留 timeout“超时”、miss/not_found“未命中”及 DirectUrl/CD2 HTTP“命中”。新增 Mount-first → Mount hit → CD2 未使用回归；Resolver/CD2/Mount 行为与 timeout/budget 未改。targeted `4/4`、全量 `npm test` `136/136`、JS syntax 与 `git diff --check` 通过。
+
+## 2026-09-16 — Diagnostics run correlation and native Stats source
+
+Model Tier：2。Reason：导出关联涉及跨 run 事件边界，Stats 状态必须与 libmpv request generation、supersede、stop/destroy 生命周期严格一致；未改变 PlaybackManager、Session、WebSocket、resolver source selection 或 timeout。Escalated：no。
+
+`diagnostics.buildDiagnosticReport()` 现在从最新 `resolver/route-selected` 反向定位最近 `app/start`，并以该 app run 的数组边界加 request id 关联 CD2、Mount、core-playing 与 playback error。不存在 run boundary 时不回退到全量同 request id 查询，保守显示 `UNKNOWN`。新增重复 request id 跨 run、同 run Direct → Same-Origin → Mount、同 run 多 request 三个回归。
+
+审计 prepared `playerstats.js` 证实 `player.getStats().categories` 无过滤加入面板，只有 audio/video type 会替换标题；因此 `libmpv.getStats()` 追加显式命名的 `enhanced` category，不修改 Emby Web UI。新增 instance-local `playback-route-stats`，只保存 request/route/isStrm/reason/sourceKind/ruleId/CD2 结果等安全枚举，绝不保存 source、路径、URL、token 或 headers。新播放先清空，resolver 仅在 current request 校验后提交，stop/destroy 同样清空；普通非 STRM 显示 Emby 原生与 STRM 否。Media/Video/Audio 顺序和值保持不变。
+
+验证：diagnostics + route Stats targeted `20/20`，全量 `npm test` `136/136`，consumer contract test、JavaScript syntax 与 `git diff --check` 通过。`tests/pipeline-browser.js` 同步扩展为在实际 libmpv player 上读取 Stats category；从本提交构建的 2,129 文件隔离 runtime 已串行通过 DirectUrl、CD2 HTTP、CD2 miss → Mount、native fallback 四条 pipeline，均保持 source identity、控制与 19 条模拟报告。未构建 candidate、未运行真实 Emby 播放，CD2 timeout/budget 未改变。
+
+## 2026-09-16 — CD2 REAL PLAYBACK TIMEOUT audit and timing
+
+Model Tier：2。Reason：真实 STRM 播放已验证 identity recovery、resolver participation、Mount route 与 core-playing；本轮只定位 CD2 gRPC lifecycle/deadline，不改变 PlaybackManager、Session、WebSocket、Mount 或 timeout 数值。Escalated：no。
+
+审计确认 `DEFAULT_TOTAL_BUDGET_MS=750` 仍不变。persistent resolver 在 renderer 创建一次 750ms absolute deadline；main service 对每个 mode 取不超过该 deadline 的上限，`waitForReady` 最多 200ms，`FindFileByPath` 为从该 mode 开始计的 350ms absolute deadline，`GetDownloadUrlPath` 最多 300ms；DirectUrl 另为 same-origin 预留最多 200ms。现有约 319ms / 312ms 仅是整次 CD2 mode 的 aggregate elapsed，不能仅凭旧日志判定具体 RPC；它们更接近 300ms download budget 加调度开销，但也可能是 readiness 消耗后的 Find deadline，必须以新阶段事件确认。
+
+main process 继续持有单一 lazy transport/gRPC client；创建 service 时仅预载 transport，首次播放仍可能在 `waitForReady` 发生连接冷启动。Direct 的下载阶段 miss 会保存 mode session，随后 same-origin 复用同一 client/channel 与 Find result；若 Direct 在 readiness 或 Find 阶段失败，same-origin 仍会重新执行 readiness/Find，但不会新建 client/channel。设置页“测试映射”的 `mapped` 只做纯 prefix replacement；“测试连接”创建并关闭临时 service，执行 1.5s ready 加 500ms `FindFileByPath('/')`，两者都不证明实际媒体下载链。
+
+新增 CD2-only timing 事件 `resolve-start`、`client-ready`、`find-file-start/end`、`download-url-start/end`、`resolve-hit/miss`。新增阶段事件仅记录 mode 和 elapsedMs，不记录 Path、URL、token 或 RPC 参数。persistent config 线路在 CD2 direct/same-origin miss 后由 Mount 命中时，现在保留最近一次 `cd2Reason` 作为 route diagnostics metadata；route/source selection 保持不变。
+
+验证：CD2/STRM targeted `72/72`，全量 `npm test` `129/129`，相关 JavaScript syntax 与 `git diff --check` 通过。未构建、打包、生成 candidate 或执行新的真实客户端播放；下一次真实日志应使用阶段事件判定卡在 readiness、Find 还是 download 后，再决定是否需要产品层 budget 调整。
+
+## 2026-09-16 — Client Diagnostics v1
+
+Model Tier：2。Reason：任务跨 main-process logger/IPC、renderer/libmpv resolver 观测、CD2/Mount 事件和设置页，但明确禁止改变播放、Session、WebSocket 与 fallback contract。Escalated：no。
+
+从最新 `origin/main@aad4a0ddfd489cf0a9e3bf1f9b7af147d9376f38` 创建 `feat/client-diagnostics-log`。新增 `enhanced/diagnostics.js` 的统一 structured JSONL logger、2 MiB/3 层轮转、递归 sanitizer、路径/主机/设备哈希、畸形行容错和 TXT report builder；新增可信 `diagnostics-ipc.js` 处理状态、Electron save dialog 导出、打开目录和二次确认后的精确日志清空。日志根目录沿用 ETE bootstrap profile，正常运行路径为 `%APPDATA%\EmbyTheaterEnhanced\logs`。
+
+`main.js` 记录 app start/shutdown、版本/provenance/mpv 配置摘要，并把 CD2 service 接入 fail-open observability callback。`strm-resolver.js` 增加纯 route mapping；`libmpv.js` 记录 play request、resolver complete、route-selected、loadfile-requested、core-playing、pause/resume、seek、stop、error 及可自然获得的 next；CD2 记录 bounded resolve start/hit/miss/error/cancelled，Mount 记录 candidate count、reason、localExists 与 mappedPathHash。未修改 resolver precedence、source selection、timeout、Session、WebSocket、DeviceId、reporting、NextTrack 或既有 vendor Web UI。
+
+新增设置页 `mpvplayer/diagnostics.html/js/css`，只显示安全的简化目录说明；生成式 preload 只增加 path hash helper，不携带 token。更新 `docs/CLIENT_DIAGNOSTICS.md`、DECISIONS 与 libmpv runtime 说明。测试覆盖 Authorization/Bearer、X-Emby-Token、api key、Cookie、password、URL query、Windows/UNC/POSIX path、circular/undefined/null/huge Error、目录/追加/轮转失败、malformed JSONL、四 route、CD2 telemetry 和 trusted IPC。
+
+验证：本轮 targeted diagnostics/preload `15/15`，全量 `npm test` `123/123`；相关 JavaScript syntax 与 `git diff --check` 已通过。真实 Windows route 播放、TXT 导出、AI 判读、Session/remote observability 保持 `MANUAL ACCEPTANCE REQUIRED` 或 `DEFERRED OBSERVABILITY`，不以 synthetic 证据替代。
+
+## 2026-09-16 — Resolver runtime context diagnostics
+
+在现有 `feat/client-diagnostics-log` 上继续增加一次最小 context 观测，不修 Resolver。`libmpv.playInternal` 在 `strmResolver.isStrm/resolveAsync` 前记录 `resolver/context-observed`，包括字段存在性、类型、扩展名、STRM 后缀、Container、协议、播放方法、媒体类型和 direct/transcode URL 存在性；若结果仍为 `invalid_context`，追加 `resolver/invalid-context` 与确定的 `missingFields`。路径和 URL 不进入该事件，原 sanitizer 和日志架构保持不变。
+
+新增 `strm-resolver.js` 纯诊断 helper `describeContext/diagnoseContext`，覆盖完整 context、缺 item.Path、缺 MediaSource.Path、缺 native source、Container=strm、`.strm` 和 DirectStream；回归同时断言 Resolver 原返回值不变。真实 DirectStream 的 item/media source/Container 是否被 Emby 改写，需从新 candidate 的 context event 取证，不根据猜测修改产品逻辑。
+
+## 2026-09-16 — STRM identity recovery from Emby metadata
+
+真实取证显示 DirectStream 进入 `libmpv.playInternal` 时 `item.Path` 缺失，而 `MediaSource.Path` 已是实际 `.mkv`、Container 为 `mkv`。本轮只修复 STRM identity 输入：当 item/server identity 充分时，调用当前 runtime 已有的 `connectionManager.getApiClient(serverId)` 与 `apiClient.getItem(userId, itemId, {Fields:'Path'}, signal)`，每次播放最多一次并受当前 AbortSignal 与 750ms recovery timeout 约束。
+
+返回 `.strm` Path 才补 `resolverContext.sidecarPath`，`sourcePath` 和 `nativeSource` 不变；普通 metadata `.mkv` 不会被识别为 STRM，也没有引入 `DirectStream + file + mkv` heuristic。失败、无 ApiClient、超时和 superseded 均 fail-open，late metadata 结果不能污染新 request。context event 记录 `strmIdentitySource`、`metadataRecoveryAttempted`、`metadataRecoverySucceeded` 和 `recoveredPathEndsWithStrm`，不记录原始 Path/URL。
+
+## 2026-09-16 — Client Diagnostics IPC wiring follow-up
+
+复核 `911c19e` 后发现 structured client event 与旧 mpv snapshot 共用 `enhanced-diagnostics`，main handler 会把 resolver/playback 事件转换为 `mpv/snapshot`。本次在现有分支继续修复，没有新建分支、PR 或 merge：`diagnostics-ipc.js` 新增 trusted `CHANNELS.LOG = enhanced-diagnostics-log` listener，直接交给 logger 并吞掉 Promise rejection；unregister 使用 `removeListener`。旧 `enhanced-diagnostics` snapshot handler 保持不变，`libmpv.js` structured event 改发新 channel。
+
+同时将 Mount `resolve-start` 调整为 `info`，`routeForResult` 收紧为 `type=local && reason=mount_hit`；CD2 wrapper 的 unexpected exception telemetry 使用明确 `status=error`/`reason=unexpected_exception`，不改变原有 miss、timeout 或 fallback 返回值。
+
+新增 wiring regression：renderer structured `resolver/route-selected(route=cd2-http)` → IPC listener → JSONL → `exportReport`，确认持久化仍是 resolver event、导出为 `Last STRM Route: CD2 HTTP`，不会变成 `mpv/snapshot`；同时确认旧 snapshot sanitizer 通路和 listener 卸载边界。验证：targeted diagnostics/preload `12/12`，全量 `npm test` `120/120`，相关 JS syntax 与 `git diff --check` 通过。构建、provenance、package 和 candidate installer 将绑定本次修复后的最终 HEAD。
+
 ## 2026-09-15 — Stable Enhanced DeviceId
 
 Model Tier：2。Reason：真实服务器 A/B 已证明 OLD 的 hostname DeviceId 对应服务器状态不可远控，而仅换用独立 DeviceId 后同一 OLD runtime 可远控；本轮只实现持久化 DeviceId，不改 capability、ApiClient、WebSocket 或播放链。Escalated：no。

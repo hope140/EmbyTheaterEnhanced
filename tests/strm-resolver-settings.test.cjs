@@ -371,6 +371,26 @@ test('configured resolver falls back to Native after every stage misses', async 
     assert.deepEqual(modes, ['direct', 'same-origin']);
 });
 
+test('persistent CD2 misses retain the latest reason when Mount wins', async () => {
+    const modes = [];
+    const result = await strmResolver.resolveAsync(playbackContext('/media/115/Movies/Dune.mkv'), {
+        fs: {existsSync: value => value === 'X:\\115\\Movies\\Dune.mkv'},
+        requestId: 'mount-cd2-reason-test',
+        config: baseConfig(),
+        cd2Transport: {
+            resolve: async request => {
+                modes.push(request.mode);
+                return {status: 'miss', reason: request.mode === 'direct' ? 'direct_timeout' : 'timeout'};
+            }
+        }
+    });
+
+    assert.equal(result.type, 'local');
+    assert.equal(result.reason, 'mount_hit');
+    assert.equal(result.cd2Reason, 'timeout');
+    assert.deepEqual(modes, ['direct', 'same-origin']);
+});
+
 test('configured resolver propagates Abort and does not enter Mount fallback', async () => {
     const controller = new AbortController();
     let cancelled = false;

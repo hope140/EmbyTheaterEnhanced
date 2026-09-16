@@ -41,6 +41,123 @@
         };
     }
 
+    function readField(object, name) {
+        try {
+            return object && object[name];
+        } catch (err) {
+            return undefined;
+        }
+    }
+
+    function typeName(value) {
+        return value === null ? 'null' : typeof value;
+    }
+
+    function hasText(value) {
+        return typeof value === 'string' && value.length > 0;
+    }
+
+    function safeText(value) {
+        return typeof value === 'string' ? value.slice(0, 128) : null;
+    }
+
+    function extensionOf(value) {
+        var source;
+        var lastSlash;
+        var baseName;
+        var dot;
+
+        if (!hasText(value)) return null;
+        source = value.split(/[?#]/)[0];
+        lastSlash = Math.max(source.lastIndexOf('/'), source.lastIndexOf('\\'));
+        baseName = source.substring(lastSlash + 1);
+        dot = baseName.lastIndexOf('.');
+        return dot > 0 ? baseName.substring(dot).toLowerCase() : null;
+    }
+
+    function protocolOf(value) {
+        var parsed;
+
+        if (!hasText(value) || !/^https?:\/\//i.test(value)) return null;
+        try {
+            parsed = new URL(value);
+            return parsed.protocol.slice(0, -1).toLowerCase();
+        } catch (err) {
+            return null;
+        }
+    }
+
+    function normalizeProtocol(value) {
+        var text = safeText(value);
+        if (!text) return null;
+        text = text.toLowerCase();
+        return text.charAt(text.length - 1) === ':' ? text.slice(0, -1) : text;
+    }
+
+    function hasAnyText(objects, names) {
+        var objectIndex;
+        var nameIndex;
+
+        for (objectIndex = 0; objectIndex < objects.length; objectIndex++) {
+            for (nameIndex = 0; nameIndex < names.length; nameIndex++) {
+                if (hasText(readField(objects[objectIndex], names[nameIndex]))) return true;
+            }
+        }
+        return false;
+    }
+
+    function describeContext(options) {
+        var context = normalizeContext(options || {});
+        var item = context.item;
+        var mediaSource = context.mediaSource;
+        var streamInfo = context.streamInfo || {};
+        var itemPath = context.sidecarPath;
+        var mediaSourcePath = context.sourcePath;
+        var nativeSource = context.nativeSource;
+        var container = readField(mediaSource, 'Container');
+        var mediaSourceProtocol = normalizeProtocol(readField(mediaSource, 'Protocol')) || protocolOf(mediaSourcePath);
+
+        return {
+            itemPresent: !!item,
+            mediaSourcePresent: !!mediaSource,
+            itemPathPresent: hasText(itemPath),
+            itemPathType: typeName(itemPath),
+            itemPathEndsWithStrm: hasText(itemPath) && /\.strm$/i.test(itemPath),
+            itemPathExtension: extensionOf(itemPath),
+            mediaSourcePathPresent: hasText(mediaSourcePath),
+            mediaSourcePathType: typeName(mediaSourcePath),
+            mediaSourcePathExtension: extensionOf(mediaSourcePath),
+            mediaSourceContainer: safeText(container),
+            nativeSourcePresent: hasText(nativeSource),
+            nativeSourceType: typeName(nativeSource),
+            playMethod: safeText(context.playMethod),
+            itemMediaType: safeText(readField(item, 'MediaType')),
+            itemType: safeText(readField(item, 'Type')),
+            mediaSourceProtocol: mediaSourceProtocol,
+            mediaSourceType: safeText(readField(mediaSource, 'Type')),
+            directStreamUrlPresent: hasAnyText([streamInfo, mediaSource], ['directStreamUrl', 'DirectStreamUrl']),
+            transcodingUrlPresent: hasAnyText([streamInfo, mediaSource], ['transcodingUrl', 'TranscodingUrl'])
+        };
+    }
+
+    function diagnoseContext(options) {
+        var context = normalizeContext(options || {});
+        var missingFields = [];
+
+        if (!context.item) missingFields.push('item');
+        if (!context.mediaSource) missingFields.push('mediaSource');
+        if (!hasText(context.sidecarPath)) missingFields.push('sidecarPath');
+        if (!hasText(context.sourcePath)) missingFields.push('sourcePath');
+        if (!hasText(context.nativeSource)) missingFields.push('nativeSource');
+
+        return {
+            missingFields: missingFields,
+            isStrmDetected: isStrm(context),
+            playMethod: safeText(context.playMethod),
+            mediaSourceContainer: safeText(readField(context.mediaSource, 'Container'))
+        };
+    }
+
     function isStrm(options) {
         try {
             var context = options && options.item !== undefined
@@ -139,6 +256,16 @@
         return DEFAULT_ORDER.slice();
     }
 
+    function routeForResult(result) {
+        var sourceKind = result && result.sourceKind;
+        var type = result && result.type;
+        if (sourceKind === 'direct-url') return 'direct-url';
+        if (type === 'url' && sourceKind === 'cd2-url') return 'cd2-http';
+        if (type === 'local' && result.reason === 'mount_hit') return 'mount';
+        if (type === 'native') return 'native';
+        return 'unknown';
+    }
+
     function persistentNativeResult(context, reason, rule, cd2Reason) {
         var result = nativeResult(context.nativeSource, reason, true);
         if (rule && rule.id) result.ruleId = rule.id;
@@ -209,6 +336,7 @@
                         if (result && result.type === 'local') {
                             result.isStrm = true;
                             result.ruleId = rule.id;
+                            if (cd2Reason) result.cd2Reason = cd2Reason;
                             return result;
                         }
                         continue;
@@ -270,8 +398,11 @@
 
     return {
         isStrm: isStrm,
+        describeContext: describeContext,
+        diagnoseContext: diagnoseContext,
         selectRule: selectRule,
         orderForRule: orderForRule,
+        routeForResult: routeForResult,
         resolve: resolve,
         resolveAsync: resolveAsync,
         resolveStrm: resolve

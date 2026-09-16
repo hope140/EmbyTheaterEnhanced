@@ -1,5 +1,39 @@
 # 项目状态
 
+## 2026-09-16 — Stats 未尝试阶段展示语义
+
+修正 `playback-route-stats` 的用户态映射：Mount-first 直接命中时 CD2 显示“未使用”，`not_attempted` 不再透传；timeout 仍显示“超时”，miss/not_found 仍显示“未命中”。仅调整 Stats 展示语义，不改变 Resolver、CD2、Mount 或 timeout/budget。targeted `4/4`、全量 `npm test` `136/136`、JS syntax 与 `git diff --check` 通过。
+
+## 2026-09-16 — Diagnostics run correlation and native Stats source
+
+修复 Diagnostics Export 的跨 app run request-id 串联：Summary 现在以最新 `route-selected` 向前最近的 `app/start` 为边界，只关联该 run 内相同 request 的 CD2、Mount、native fallback 与 playback event；无边界时保守为 `UNKNOWN`，不会把旧 run 的 Mount HIT 显示到新的 DirectUrl 播放。回归覆盖重复 `play-1-1`、同 run Direct → Same-Origin → Mount、以及同 run 多播放请求。
+
+原生 Emby Stats consumer 审计确认它会无过滤保留自定义 category，只有 audio/video 会改写标题。因此 libmpv 追加第四个 `Emby Theater Enhanced` 分类，显示当前播放的安全 resolver 结果，不改 Web UI、Toast、CSS 或设置页面。状态在新 request、stop/destroy 清除，旧 request 的晚到结果不能覆盖新项；Media/Video/Audio categories 保持原样。Node targeted `20/20`、全量 `npm test` `136/136`、相关 syntax 与 `git diff --check` 通过；从本提交构建的隔离 runtime 已实际通过 DirectUrl、CD2 HTTP、CD2 miss → Mount、native fallback pipeline Stats 验证。未改 CD2 timeout/budget，未生成 candidate，真实 Windows Stats 显示仍待手工验收。
+
+## 2026-09-16 — CD2 REAL PLAYBACK TIMEOUT audit
+
+真实验收已确认 STRM identity recovery、resolver participation、Mount route 和 `core-playing` 均为 `REAL PASS`。本轮审计未调整 `DEFAULT_TOTAL_BUDGET_MS=750` 或 200ms readiness / 350ms Find / 300ms download 上限。约 319ms 与 312ms 旧日志是 CD2 mode 的 aggregate elapsed，当前不能证明具体卡在 `waitForReady`、`FindFileByPath`、`GetDownloadUrlPath` 或 total deadline；最可能但未证实的方向是 300ms download deadline 加少量调度开销。新的 CD2 阶段 timing 将在下一次真实播放区分 client-ready、Find 和 download。
+
+main service 已复用同一 transport/gRPC client/channel；Direct 到达 download miss 后 same-origin 会复用 Find result，Direct 若在 readiness/Find 失败则 same-origin 重新进行这些阶段但不新建 channel。设置页 `mapped` 只验证纯 sourcePrefix → cloudPrefix 替换，不能代表 gRPC/文件/下载 resolve 成功；连接测试使用临时 service 的 1.5s readiness + 500ms 根目录 probe，也不覆盖实际媒体路径与下载。
+
+本轮新增安全 CD2 timing（无 Path/URL/token）并修正 persistent CD2 miss → Mount hit 的 `cd2Reason` 保留；不改变 resolver precedence、source selection、Mount、PlaybackManager、Session、WebSocket、DeviceId、WatchTogether、Electron 或 mpv。自动验证：targeted `72/72`、`npm test` `129/129`、相关 JS syntax 与 `git diff --check` 均通过。未生成 candidate，新的真实 Windows CD2 playback timing 仍待用户验收。
+
+## 2026-09-16 — Client Diagnostics v1
+
+基于 `origin/main@aad4a0ddfd489cf0a9e3bf1f9b7af147d9376f38` 创建分支 `feat/client-diagnostics-log`。本轮新增客户端诊断日志、统一脱敏、轮转、导出 IPC、设置页入口，以及 resolver/CD2/Mount/libmpv 的低风险结构化事件；产品版本保持 `0.1.1`。日志只替换可观测性，不改变 Resolver precedence、DirectUrl、CD2 timeout/budget、Mount 判定、PlaybackManager、Session、WebSocket、DeviceId、播放上报、NextTrack 或 WatchTogether。
+
+日志位置为 `%APPDATA%\EmbyTheaterEnhanced\logs\ete-client.jsonl`，UTF-8 JSONL 追加写入，约 2 MiB 后保留 `.1`、`.2`、`.3`。所有落盘记录统一经过 sanitizer；凭据、认证 query、完整 URL、完整媒体路径、Local Storage/Cookie database 和 `mpv.conf` 原文不落盘，路径与设备/会话标识只保留 16 位哈希。日志和导出失败 fail-open，不传播到播放链。
+
+设置页“诊断与日志”提供状态、导出 TXT、打开日志目录和二次确认清空。导出报告按轮转文件到当前文件顺序合并，并生成最近 route、CD2、Mount、Native fallback、core-playing 和 playback 摘要；不确定值写 `UNKNOWN`。当前自动回归为 `npm test 123/123`，其中本轮 diagnostics/preload targeted 为 `15/15`；构建、provenance、package 和候选安装包结果以本分支最终验证记录为准。
+
+真实 Windows 客户端各 route 播放、真实导出 TXT、AI 可判定性和 Session/remote 状态事件仍需人工验收；旧 upstream Web UI、`apiclient.js`、`connectionmanager.js`、PlaybackManager vendor snapshot 与 WebSocket 生命周期相关观测本轮保持 deferred。详细 contract 见 [CLIENT_DIAGNOSTICS](CLIENT_DIAGNOSTICS.md)。
+
+## 2026-09-16 — STRM identity recovery
+
+真实客户端取证确认：`item` 和 `mediaSource` 存在，但 `item.Path` 缺失；`MediaSource.Path` 已是实际 `.mkv`，Container 为 `mkv`，播放方式为 `DirectStream`。因此本轮没有采用 `DirectStream + file + mkv` 启发式，而是在 `item.Path` 缺失且 `item.Id`/`item.ServerId` 充分时，复用现有 `connectionManager` 与 `apiClient.getItem(userId, itemId, {Fields:'Path'}, signal)` 做一次有界 recovery。
+
+仅当 metadata 返回的 Path 以 `.strm` 结尾时才补入 resolver `sidecarPath`；`MediaSource.Path` 继续作为 source identity，普通 `.mkv`、请求失败、超时和 superseded request 均保持 Native 行为。context diagnostics 新增 `strmIdentitySource`、`metadataRecoveryAttempted`、`metadataRecoverySucceeded` 与 `recoveredPathEndsWithStrm`。
+
 ## 2026-09-15 — Stable Enhanced DeviceId implementation
 
 分支 `fix/stable-enhanced-device-id` 基于 `origin/main@780aaed8ddc5bde42654e56e7635379f29f9e485`，未基于 `fix/product-session-identity`。本轮只将正式 ETE 的 DeviceId 从 `os.hostname()` 改为 ETE 自有 config 目录中持久化的随机 UUID；DeviceName 继续使用 hostname。缺失/损坏 identity 文件会原子重建，升级保留，clean profile 生成新值；不迁移旧 hostname DeviceId，不修改服务器 Device/Session、token、capability、WebSocket 或播放链。`app.setName/productName` 不在本分支范围。

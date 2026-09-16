@@ -11,6 +11,8 @@ Resolver 运行在现有 `PlaybackManager → libmpv` 播放链内，只决定 E
 
 普通媒体直接返回 native source，不进入本地路径推导。
 
+当 `Item.Path` 缺失时，`libmpv.playInternal` 只在 `item.Id` 与 `item.ServerId` 同时存在的情况下，通过现有 `connectionManager` 找到 ApiClient，并调用 `getItem(userId, itemId, {Fields:'Path'}, signal)` 做一次有界 metadata recovery。返回的 Path 以 `.strm` 结尾时才作为 `sidecarPath`；返回普通媒体 Path、请求失败、超时或 request superseded 都保持 native 行为。`DirectStream + file + mkv` 本身不是 STRM 证据。
+
 ## Context
 
 Resolver 使用三个严格分离的路径字段。
@@ -22,6 +24,8 @@ Resolver 使用三个严格分离的路径字段。
 | `nativeSource` | `options.url` | PlaybackManager 已决定的最终原生播放 source |
 
 `item`、`mediaSource`、`playMethod` 和完整 `streamInfo` 只作为现有播放上下文传入。Resolver 不修改这些对象。
+
+若发生 recovery，`sidecarPath` 的来源在 diagnostics 中标记为 `metadata-recovery`；原始 `sourcePath` 仍来自 `MediaSource.Path`，不会改回 `.strm`。
 
 ## Resolver contract
 
@@ -46,7 +50,7 @@ Resolver 使用三个严格分离的路径字段。
 2. main process 以 persistent schema version 1 配置为 authoritative source；首次启动且没有持久化配置时才读取 `ETE_CD2_ENABLED`、`ETE_CD2_ORIGIN`、`ETE_CD2_TOKEN`、`ETE_CD2_LOCAL_PREFIX` 与 `ETE_CD2_CLOUD_PREFIX` 做 AUTO bootstrap。`ETE_CD2_ENABLED` 只迁移为 `cd2.enabled`，bootstrap 时 top-level `config.enabled` 保持 `true`；因此 legacy `0` 只关闭 CD2 service，STRM resolver 仍可继续 Mount → Native。token 不进入 renderer、诊断或日志。
 3. 每条命中规则独立执行 source prefix → POSIX cloud prefix mapping，并保留 source/mount/cloud 三种路径语义；drive/UNC 大小写不敏感，absolute POSIX 大小写敏感，均严格检查路径边界并拒绝 `..`。absolute POSIX `MediaSource.Path` 带 allowlisted 媒体后缀时是确定性 CD2 candidate；在 Windows client 上它不会进入 `existsSync` Mount 检查，只能由 CD2 命中，否则继续下一 stage。
 4. 先调用 `GetDownloadUrlPath(... get_direct_url=true)`；只有安全 HTTP(S) DirectUrl、空 additionalHeaders、受限可打印 ASCII User-Agent 与有效 expiry 才可直连。任意 additionalHeaders、控制字符、逗号/反斜杠 UA、无效/近过期 URL 均优先 same-origin。
-5. `direct-url` 与 `cd2-http` 通过同一 main service 的窄 mode 区分；DirectUrl miss/unsupported/transport failure 后按当前规则的下一 stage 取得同源 URL。连续 CD2 stages 复用 Find 结果并共享 750ms absolute budget。Abort/superseded 不进入 fallback。
+5. `direct-url` 与 `cd2-http` 通过同一 main service 的窄 mode 区分；DirectUrl miss/unsupported/transport failure 后按当前规则的下一 stage 取得同源 URL。连续 CD2 stages 复用 Find 结果并共享 750ms absolute budget。若 CD2 miss 后 Mount 命中，Mount route 的诊断 metadata 保留最近一次 `cd2Reason`；不改变 route 或 source。Abort/superseded 不进入 fallback。
 
 ## Mount rules
 
@@ -67,14 +71,14 @@ Mount 规则命中时，会将 candidate 按 `sourcePrefix → mountPrefix` 做�
 
 ## Fallback and playback safety
 
-- 非 STRM、缺少 `item`/`mediaSource`/任一三个路径字段、未知播放方式和任何 Resolver 异常都保留 `nativeSource`。
+- 非 STRM、缺少 `item`/`mediaSource`/任一三个路径字段、未知播放方式和任何 Resolver 异常都保留 `nativeSource`。metadata recovery 的 ApiClient 缺失、identity 缺失、失败和超时同样 fail-open。
 - `Transcode` 始终保留 `nativeSource`。
 - `DirectPlay` 和 `DirectStream` 只有在确定性本地文件命中时才替换 source。
 - renderer Resolver 只通过窄 IPC 请求 main-process CD2 service，不自行 seek，也不改变 resume offset、音轨、字幕、`MediaSourceId` 或 `PlaySessionId`。
 - `libmpv.playInternal` 仅使用结果的 `source` 调用原有 `loadfile`；原始 `options` 继续用于字幕、音轨、上报和 Session 控制。
 - PlaybackManager request id 与 libmpv generation 使新 Play/NextTrack/Stop/destroy 立即淘汰旧请求；旧 RPC、旧 `core-playing` listener 和旧 error recovery 不得影响新播放。
 
-诊断只记录 `isStrm`、结果类型、reason、local exists 和 fallback，不记录完整媒体路径、URL、凭据、媒体名称或 Item 标识。当前 reason 包括 `mount_hit`、`mount_missing`、`mapping_miss`、`transport_error`、`not_strm`、`transcode_skip`、`invalid_context`、`parse_failed` 和 `native_fallback`。
+诊断只记录 `isStrm`、结果类型、reason、local exists 和 fallback；context event 另记录 identity source、字段存在性、类型、扩展名和 recovery 事实，不记录完整媒体路径、URL、凭据、媒体名称或 Item 标识。当前 reason 包括 `mount_hit`、`mount_missing`、`mapping_miss`、`transport_error`、`not_strm`、`transcode_skip`、`invalid_context`、`parse_failed` 和 `native_fallback`。
 
 ## Known limitations
 

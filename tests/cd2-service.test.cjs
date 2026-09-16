@@ -22,7 +22,10 @@ function fakeTransport(handlers) {
     const client = {
         close() { calls.push({method: 'close'}); },
         waitForReady(deadline, callback) {
-            calls.push({method: 'waitForReady', deadline});
+            const call = {method: 'waitForReady', deadline};
+            const handler = handlers && handlers.waitForReady;
+            calls.push(call);
+            if (handler) return handler(call, callback);
             callback(null);
         }
     };
@@ -46,6 +49,17 @@ function serviceWith(handlers, config) {
         service: cd2.createService({config: config || readyConfig(), transportFactory: () => transport}),
         transport
     };
+}
+
+function fastTimers(callback, delay) {
+    if (delay >= 1000) return {kind: 'timeout', handle: setTimeout(callback, delay)};
+    return {kind: 'immediate', handle: setImmediate(callback)};
+}
+
+function clearFastTimer(timer) {
+    if (!timer) return;
+    if (timer.kind === 'timeout') clearTimeout(timer.handle);
+    else clearImmediate(timer.handle);
 }
 
 test('CD2 configuration stays disabled or reports missing token and mapping', async () => {
@@ -108,6 +122,180 @@ test('successful DirectUrl lookup keeps the same-origin response available for f
     assert.equal(transport.calls[1].request.path, '/cloud/media/Show/E01.mkv');
     assert.deepEqual(transport.calls[2].request, {path: '/cloud/media/Show/E01.mkv', preview: false, lazy_read: false, get_direct_url: true});
     assert.ok(transport.calls.filter(call => call.options).every(call => call.options.deadline instanceof Date));
+});
+
+test('cold DirectUrl resolve emits safe timing for every completed CD2 phase', async () => {
+    const events = [];
+    const transport = fakeTransport({
+        GetDownloadUrlPath: (_, callback) => callback(null, {
+            directUrl: 'https://cdn.example.test/direct-file',
+            expiresIn: '60'
+        })
+    });
+    let transportFactoryCalls = 0;
+    const service = cd2.createService({
+        config: readyConfig(),
+        transportFactory: () => {
+            transportFactoryCalls++;
+            return transport;
+        },
+        onDiagnostic: event => events.push(event)
+    });
+
+    try {
+        const response = await service.resolve({
+            requestId: 'timing-direct-cold',
+            mode: 'direct',
+            candidates: ['X:\\Media\\private-file.mkv']
+        });
+        const timing = events.filter(event => event.category === 'cd2').map(event => event.event);
+
+        assert.equal(response.status, 'hit');
+        assert.equal(response.sourceKind, 'direct-url');
+        assert.equal(transportFactoryCalls, 1);
+        assert.deepEqual(timing, [
+            'resolve-start', 'client-ready', 'find-file-start', 'find-file-end',
+            'download-url-start', 'download-url-end', 'resolve-hit'
+        ]);
+        for (const event of events) {
+            assert.equal(Number.isSafeInteger(event.details.elapsedMs), true);
+            assert.doesNotMatch(JSON.stringify(event), /private-file|cdn\.example\.test|token/i);
+        }
+    } finally {
+        service.close();
+    }
+});
+
+test('same-origin retry emits download timing while reusing the ready client and found file', async () => {
+    const events = [];
+    const transport = fakeTransport({
+        GetDownloadUrlPath: (call, callback) => callback(null, call.request.get_direct_url
+            ? {directUrl: 'not a URL'}
+            : {downloadUrlPath: '/fallback/file'})
+    });
+    let transportFactoryCalls = 0;
+    const service = cd2.createService({
+        config: readyConfig(),
+        transportFactory: () => {
+            transportFactoryCalls++;
+            return transport;
+        },
+        onDiagnostic: event => events.push(event)
+    });
+
+    try {
+        const request = {requestId: 'timing-same-origin', candidates: ['X:\\Media\\private-file.mkv']};
+        const direct = await service.resolve(Object.assign({mode: 'direct'}, request));
+        const sameOrigin = await service.resolve(Object.assign({mode: 'same-origin'}, request));
+        const sameOriginTiming = events.filter(event => event.category === 'cd2' && event.details.mode === 'same-origin')
+            .map(event => event.event);
+
+        assert.equal(direct.reason, 'invalid_direct_url');
+        assert.equal(sameOrigin.status, 'hit');
+        assert.equal(sameOrigin.sourceKind, 'cd2-url');
+        assert.equal(transportFactoryCalls, 1);
+        assert.deepEqual(transport.calls.map(call => call.method), [
+            'waitForReady', 'FindFileByPath', 'GetDownloadUrlPath', 'GetDownloadUrlPath'
+        ]);
+        assert.deepEqual(sameOriginTiming, [
+            'resolve-start', 'download-url-start', 'download-url-end', 'resolve-hit'
+        ]);
+    } finally {
+        service.close();
+    }
+});
+
+test('waitForReady timeout emits a CD2 miss before file lookup', async () => {
+    const events = [];
+    const transport = fakeTransport({
+        waitForReady: () => {}
+    });
+    const service = cd2.createService({
+        config: readyConfig(),
+        transportFactory: () => transport,
+        onDiagnostic: event => events.push(event),
+        setTimeout: fastTimers,
+        clearTimeout: clearFastTimer
+    });
+
+    try {
+        const response = await service.resolve({
+            requestId: 'timing-ready-timeout',
+            mode: 'direct',
+            candidates: ['X:\\Media\\x.mkv']
+        });
+
+        assert.equal(response.reason, 'timeout');
+        assert.deepEqual(events.map(event => event.event), ['resolve-start', 'resolve-miss']);
+        assert.equal(transport.calls.some(call => call.method === 'FindFileByPath'), false);
+    } finally {
+        service.close();
+    }
+});
+
+test('FindFileByPath timeout records its completed phase and stays fail-open', async () => {
+    const events = [];
+    const transport = fakeTransport({
+        FindFileByPath: () => {}
+    });
+    const service = cd2.createService({
+        config: readyConfig(),
+        transportFactory: () => transport,
+        onDiagnostic: event => events.push(event),
+        setTimeout: fastTimers,
+        clearTimeout: clearFastTimer
+    });
+
+    try {
+        const response = await service.resolve({
+            requestId: 'timing-find-timeout',
+            mode: 'direct',
+            candidates: ['X:\\Media\\x.mkv']
+        });
+
+        assert.equal(response.reason, 'timeout');
+        assert.deepEqual(events.map(event => event.event), [
+            'resolve-start', 'client-ready', 'find-file-start', 'find-file-end', 'resolve-miss'
+        ]);
+        assert.equal(transport.calls.some(call => call.method === 'GetDownloadUrlPath'), false);
+    } finally {
+        service.close();
+    }
+});
+
+test('GetDownloadUrlPath timeouts preserve DirectUrl and same-origin phase telemetry', async () => {
+    const events = [];
+    const transport = fakeTransport({
+        GetDownloadUrlPath: () => {}
+    });
+    const service = cd2.createService({
+        config: readyConfig(),
+        transportFactory: () => transport,
+        onDiagnostic: event => events.push(event),
+        setTimeout: fastTimers,
+        clearTimeout: clearFastTimer
+    });
+
+    try {
+        const request = {requestId: 'timing-download-timeout', candidates: ['X:\\Media\\x.mkv']};
+        const direct = await service.resolve(Object.assign({mode: 'direct'}, request));
+        const sameOrigin = await service.resolve(Object.assign({mode: 'same-origin'}, request));
+        const directTiming = events.filter(event => event.details.mode === 'direct').map(event => event.event);
+        const sameOriginTiming = events.filter(event => event.details.mode === 'same-origin').map(event => event.event);
+
+        assert.equal(direct.reason, 'timeout');
+        assert.equal(sameOrigin.reason, 'timeout');
+        assert.deepEqual(directTiming, [
+            'resolve-start', 'client-ready', 'find-file-start', 'find-file-end',
+            'download-url-start', 'download-url-end', 'resolve-miss'
+        ]);
+        assert.deepEqual(sameOriginTiming, [
+            'resolve-start', 'download-url-start', 'download-url-end', 'resolve-miss'
+        ]);
+        assert.equal(transport.calls.filter(call => call.method === 'FindFileByPath').length, 1);
+    } finally {
+        service.close();
+    }
 });
 
 test('RPC failures, missing files, directories and malformed file responses fail closed', async () => {
