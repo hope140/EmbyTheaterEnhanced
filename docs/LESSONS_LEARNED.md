@@ -60,3 +60,6 @@
 58. ignored required source 不能靠开发机残留维持：如果 `src/electronapp/preload.js` 是 vendor-derived 加项目诊断的 prepared artifact，应由 tracked generator 在 prepare/build 中生成，并由 test、runtime provenance 共用同一 contract；缺失时测试必须失败而不是 skip。
 59. readiness 证据必须分层：embed raw `ready`、产品 diagnostics callback、sticky/current state、core-playing、视频 PositionTicks、Session NowPlaying 和已接受 report 各自记录；direct marker 缺失但完整播放事实存在时归为 class B observer-only-miss，不能写成 Pepper initialization failure，也不能 silent PASS。
 60. run-scoped readiness state 需要 runId、时间边界和 bridge identity；旧 run 的 ready event 即使晚到也不能污染新 run。loadfile 或产品函数调用不可观测时保留 unavailable/observation wording，不用 manager resolved 替代未取得的信号。
+61. ignored snapshot 有 vendor fallback 不代表 build 可复现；只要 build 递归复制物理 source 目录，本机残留就仍是隐式输入。source copy 应以 Git tracked path 集合为准，prepared/vendor overlay 单独建模。
+62. Windows worktree 的 LF/CRLF filter 会让同一 tracked generator 的物理文件 SHA 不同。正式 provenance 应使用当前 commit 的 canonical Git blob identity，同时验证工作文件除换行外没有偏离 HEAD。
+63. source provenance、runtime relation 和 final payload manifest 回答不同问题。前者解释 input/transform/output，中间层验证 repo-owned 与 prepared artifact，后者只枚举最终 file set；把三者混成一份 manifest 会留下 coverage 与递归 hash 歧义。

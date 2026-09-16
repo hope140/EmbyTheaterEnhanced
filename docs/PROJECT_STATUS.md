@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-09-16 — Phase 1 reproducible build cleanup
+
+基于 `origin/main@2c668eed87379eafec2e1a25f6b46f6b1dbf5ec6` 完成 Web overlay 与 runtime provenance 清理。build 不再递归吸收 ignored `src/electronapp` 状态，只复制 Git tracked 产品源码；`apiclient.js`、`toast.css` 和 `app.js` 现在各有唯一的 fixed base → payload/transform → exact output contract，base/input/generator/output hash 不匹配会 fail-fast。测试中对 ignored Web snapshot 的读取也改为明确 vendor/patch source。
+
+新增独立 `source-provenance.json`，记录 archive/baseline、Web base/final tree、Electron、Pepper bridge、libmpv 与 production dependency closure；`runtime-provenance.json` 绑定 tracked/prepared/overlay relation；`build-manifest.json` schema 2 只负责 final payload，增加 source/provenance/package-lock binding、规范路径、双向 file-set 与 canonical payload digest。Windows LF/CRLF 不再改变 generator identity，真实 generator 内容偏离 HEAD 仍会停止构建。
+
+正常与 fresh detached worktree 在实现 revision `5019a754ecd75d2a64767e19996d6ded7ad6c3fd` 上均完成 prepare、`npm test 150/150`、build、source/runtime provenance 和 package verify。两边 build manifest 各 2,130 files，实际 runtime 各 2,131 files，逐路径 SHA256 为 `missing=0`、`extra=0`、`mismatch=0`。未编译 installer，未执行真实 Emby 播放；产品播放、Session、WebSocket、Toast、UI、Electron、bridge 与 libmpv 行为未修改。
+
 ## 2026-09-16 — CD2 budget and Native fallback Toast REAL acceptance
 
 已验收实现 `9c9ec3871699d26157a4e29a52bf9198c8e03748` 的 Windows candidate REAL acceptance 通过。Candidate 为 `EmbyTheaterEnhanced-0.1.1-cd2-toast-candidate-9c9ec38-setup.exe`，大小 `125,182,889` bytes，SHA256 为 `3c2c136610d2d2cb8e53f8636db7af3a4e5dc0f7333254b5fb6408150e2c6d69`；Build、Provenance、Package verify、Installer verify 均通过，`missing=0`、`extra=0`、`mismatch=0`。

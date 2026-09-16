@@ -25,15 +25,29 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/build.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/package.ps1
 ```
 
-prepare 核对两个输入归档的 SHA256，解包到 vendor。build 核对 manifest 中每个 vendor 文件 → 复制原目录 → 用 src/electronapp 覆盖应用层 → 替换指定 libmpv → 写 Enhanced package 元数据、独立 ProgramDataPath、启动入口与 build-manifest。mpv.conf、shader、字体不写入个人目录。
+clean worktree 可以用 `tools/prepare.ps1 -ArchiveRoot <包含两个原始归档的目录>`，由脚本直接核对并解包已声明的外部输入，不手工复制 archive 或 overlay。prepare 核对两个输入归档的 SHA256，解包到 vendor。build 核对 manifest 中每个 vendor 文件 → 复制 Carnival runtime → 只复制 Git tracked 的 `src/electronapp` → 生成 prepared preload 与三份受控 Web overlay → 复制 production dependencies → 应用 PlaybackManager overlay → 替换指定 libmpv → 写 Enhanced package 元数据、独立 ProgramDataPath、provenance 与 final payload manifest。mpv.conf、shader、字体不写入个人目录。
+
+Web overlay 的唯一来源如下：
+
+- `apiclient.js`：固定 Carnival base + manifest 锁定的 `vendor/patch/payload/client/apiclient.js` replacement。
+- `toast.css`：固定 Carnival base + manifest 锁定的 `vendor/patch/payload/client/toast.css` replacement。
+- `app.js`：固定 Carnival base + tracked canonical External Player registration transform。
+
+`prepare-web-overlays.cjs` 在写任何输出前先校验全部 base、payload 和 generator；任一 hash 不匹配则 fail-fast，不留下部分 Web overlay。tracked generator identity 使用当前 commit 的 canonical Git blob SHA256，并拒绝除 CRLF/LF checkout 差异之外的工作文件偏移。
 
 CD2 阶段在源码覆盖后执行两项确定性步骤：`copy-runtime-dependencies.cjs` 从根 lockfile 复制 production closure 到输出 `electronapp/node_modules` 并拒绝 native addon；`patch-playbackmanager.cjs` 对未公开的 frozen Web snapshot 应用锚点唯一的 request-generation overlay，锚点数量不符即停止构建。runtime 不依赖开发机 `electronapp/node_modules` 的偶然内容，不执行 native rebuild 或 node-gyp。
 
 保留实际布局 `Emby.Theater.exe`、`electronapp/libmpv/x64`、`x64/electron`。任务书中的 runtime/libmpv/plugins 分拆仅是示意；现有宿主和 Pepper 注册依赖相对路径，首期迁移目录会增加无关风险。
 
-package 校验 build-manifest 中的全部载荷及额外文件，调用 Inno 编译到 `dist/EmbyTheaterEnhanced-0.1.1-win-x64-setup.exe`。当前 runtime 为 `dist/EmbyTheaterEnhanced-0.1.1-final-win-x64`，传 `-RuntimeName` 选择。安装目标独立于 Carnival，安装器保留稳定 AppId；显式可选桌面快捷方式，开始菜单入口使用 Start-Enhanced.ps1。卸载不删除个人 mpv 配置和 Enhanced 用户数据。
+`source-provenance.json` 记录 base/runtime version、archive/manifest、Web base 与 final tree、每个 Web overlay 的 base/input/generator/output SHA256、Electron、Pepper bridge、libmpv 以及 package-lock 驱动的 production dependency closure。`runtime-provenance.json` 绑定 source provenance，并覆盖 Git tracked 产品源码、prepared preload、PlaybackManager 与 package metadata overlay。`build-manifest.json` schema 2 绑定 source commit、两份 provenance、vendor manifest、package-lock 和 canonical payload-set digest；它不把自己列入 payload，避免递归 hash。
+
+package verify 先验证两层 provenance，再对 build manifest 做路径规范、重复路径、双向 file-set、逐文件 SHA256、provenance binding 和 payload-set digest 检查，然后才允许 Inno 编译到 `dist/EmbyTheaterEnhanced-0.1.1-win-x64-setup.exe`。传 `-RuntimeName` 选择 runtime。安装目标独立于 Carnival，安装器保留稳定 AppId；桌面、开始菜单和安装完成入口直接启动 `{app}\Emby.Theater.exe`。卸载不删除个人 mpv 配置和 Enhanced 用户数据。
 
 ## 可重复性
+
+Phase 1 在 `5019a754ecd75d2a64767e19996d6ded7ad6c3fd` 上使用正常开发 worktree 与第二个 fresh detached worktree，分别从同一组 manifest 锁定 archive 执行 prepare/test/build/provenance/package verify。两边 `npm test` 均为 150/150，build manifest 各列 2,130 个文件；加上 manifest 自身，实际 runtime 各 2,131 个文件。逐路径 SHA256 比较为 `missing=0`、`extra=0`、`mismatch=0`，canonical payload-set SHA256 均为 `b5578003078484399930d0b1d613680d0c91178395406307b6028bb79eba4c96`。
+
+该结论只覆盖 runtime payload。Inno installer container 可能包含时间戳等非确定字段，本阶段没有要求或宣称 setup.exe byte-for-byte 相同，也没有从源码重建 Electron、Pepper bridge 或 libmpv。
 
 第一轮两次分别构建到不同输出目录，1013 个文件（含 build-manifest）SHA256 全部相同。CD2 merge review 的 final/repeat runtime 各有 2156 个 manifest 载荷，逐文件 SHA256 0 差异；连同 `build-manifest.json` 实际为 2157 文件。这里的可重复是 runtime 载荷一致，未声称 setup.exe 位级确定性或 native binary 源码重建。
 
@@ -45,7 +59,7 @@ build 拒绝覆盖已有目录；重复构建使用 `-OutputName`。package 同�
 
 ## 启动与配置
 
-Portable 用 `Start-Enhanced.cmd`；安装后的快捷方式调用同一 PS 启动器。首次启动仅在 `%APPDATA%\EmbyTheaterEnhanced` 下创建缺失的 system.xml 和 CEC cancel 标记，保留基线的自动更新关闭设置，避免 legacy host 发起驱动安装。原 Windows host 接着启动 Electron。直接运行 Emby.Theater.exe 可能绕过这一步初始化，首选包装入口。
+Portable 与安装后的快捷方式都直接启动 `Emby.Theater.exe`。Electron main process bootstrap 只在 `%APPDATA%\EmbyTheaterEnhanced` 下创建缺失的 system.xml、CEC cancel 标记和必要目录，保留基线的自动更新关闭设置，不覆盖用户文件，也不启动外部 wrapper 或驱动安装流程。
 
 第一轮已运行 frozen Electron 加载输出目录 main.js；另用 `tools/test-host.ps1` 在唯一测试副本中将 ProgramDataPath 指向测试目录，实际启动 Emby.Theater.exe，10 秒后原 host 存活、4 个 Electron 子进程存在、诊断日志已生成。测试只停止该副本内的进程。此测试证明原 Windows host 可启动输出应用，不能替代完整 installer/升级验收。
 
