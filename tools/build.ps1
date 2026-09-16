@@ -27,17 +27,9 @@ foreach ($group in @(@{ Root='vendor/carnival'; Files=$manifest.files }, @{ Root
 if ($LASTEXITCODE -ne 0) { throw 'Prepared preload generation failed.' }
 New-Item -ItemType Directory -Path $destination -Force | Out-Null
 Get-ChildItem -LiteralPath (Join-Path $root 'vendor/carnival') | Copy-Item -Destination $destination -Recurse
-$trackedSources = @(& git -C $root ls-files -- 'src/electronapp')
-if ($LASTEXITCODE -ne 0 -or $trackedSources.Count -eq 0) { throw 'Unable to enumerate tracked product sources.' }
-foreach ($repoPath in $trackedSources) {
-    if (-not $repoPath.StartsWith('src/electronapp/')) { throw "Unexpected tracked product source: $repoPath" }
-    $source = Join-Path $root $repoPath
-    if (-not (Test-Path -LiteralPath $source -PathType Leaf)) { throw "Tracked product source missing: $repoPath" }
-    $relative = $repoPath.Substring('src/electronapp/'.Length)
-    $target = Join-Path (Join-Path $destination 'electronapp') $relative
-    New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force | Out-Null
-    Copy-Item -LiteralPath $source -Destination $target -Force
-}
+# Ordinary tracked product sources come from the committed Git blobs, never from checkout bytes.
+& node (Join-Path $root 'tools/copy-tracked-product-sources.cjs') $root $sourceCommit $destination
+if ($LASTEXITCODE -ne 0) { throw 'Tracked product source materialization failed.' }
 # preload.js is an ignored prepared artifact with a tracked generator contract.
 Copy-Item -LiteralPath (Join-Path $root 'src/electronapp/preload.js') -Destination (Join-Path $destination 'electronapp/preload.js') -Force
 # The frozen Web snapshot has exactly three authoritative overlays. Never copy ignored src/electronapp/www state.

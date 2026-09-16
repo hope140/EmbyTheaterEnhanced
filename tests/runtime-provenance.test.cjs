@@ -7,13 +7,13 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const trackedProductSources = require('../tools/copy-tracked-product-sources.cjs');
 const preloadPreparation = require('../tools/prepare-preload.cjs');
 const webPreparation = require('../tools/prepare-web-overlays.cjs');
 const sourceProvenance = require('../tools/source-provenance.cjs');
 
 const repoRoot = path.resolve(__dirname, '..');
 const tool = path.join(repoRoot, 'tools', 'runtime-provenance.cjs');
-const sourceCommit = '0123456789abcdef0123456789abcdef01234567';
 
 function hash(value) {
     return crypto.createHash('sha256').update(value).digest('hex');
@@ -78,6 +78,7 @@ function createFixture(root) {
         'tools/prepare-web-overlays.cjs',
         'tools/patch-external-player-registration.cjs',
         'tools/copy-runtime-dependencies.cjs',
+        'tools/copy-tracked-product-sources.cjs',
         'tools/tracked-file-hash.cjs'
     ]) copyRepoFile(root, relativePath);
     writeFile(path.join(root, 'tools', 'patch-playbackmanager.cjs'), 'generator: playbackmanager\n');
@@ -97,7 +98,8 @@ function createFixture(root) {
 
 function createRuntime(root, name) {
     const runtime = path.join(root, name);
-    writeFile(path.join(runtime, 'electronapp', 'some-normal-file.js'), 'module.exports = "normal";\n');
+    const sourceCommit = childProcess.spawnSync('git', ['-C', root, 'rev-parse', 'HEAD'], {encoding: 'utf8'}).stdout.trim();
+    trackedProductSources.materializeTrackedProductSources(root, sourceCommit, runtime);
     writeFile(path.join(runtime, 'electronapp', 'preload.js'), fs.readFileSync(path.join(root, 'src', 'electronapp', 'preload.js')));
     writeFile(path.join(runtime, 'electronapp', 'www', 'modules', 'common', 'playback', 'playbackmanager.js'), 'const playback = true;\n');
     writeFile(path.join(runtime, 'electronapp', 'package.json'), '{"name":"runtime"}\n');
@@ -121,22 +123,36 @@ function runProvenance(command, root, runtime) {
 }
 
 function runProvenanceRaw(command, root, runtime) {
+    const sourceCommit = childProcess.spawnSync('git', ['-C', root, 'rev-parse', 'HEAD'], {encoding: 'utf8'}).stdout.trim();
     return childProcess.spawnSync(process.execPath, [tool, command, root, runtime, sourceCommit], {encoding: 'utf8'});
 }
 
-test('runtime provenance selects only Git-tracked product sources', () => {
+test('runtime provenance binds tracked product sources to committed Git blobs', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-provenance-'));
     try {
         createFixture(root);
         writeFile(path.join(root, 'src', 'electronapp', 'www', '__ignored-sentinel.js'), 'ignored\n');
+        writeFile(path.join(root, 'src', 'electronapp', 'some-normal-file.js'), 'module.exports = "dirty";\r\n');
         const runtime = createRuntime(root, 'runtime');
         assert.equal(runProvenance('write', root, runtime).exitCode, 0);
         const manifest = JSON.parse(fs.readFileSync(path.join(runtime, 'runtime-provenance.json'), 'utf8'));
         assert.equal(manifest.validatedProductScope.includesIgnoredSourceFiles, false);
-        assert.equal(manifest.validatedProductScope.sourceSelection, 'git-tracked');
+        assert.equal(manifest.validatedProductScope.sourceSelection, 'git-commit-blobs');
+        assert.equal(manifest.validatedProductScope.sourceCommit,
+            childProcess.spawnSync('git', ['-C', root, 'rev-parse', 'HEAD'], {encoding: 'utf8'}).stdout.trim());
+        assert.equal(manifest.validatedProductScope.sourceAcquisition.generatorPath,
+            'tools/copy-tracked-product-sources.cjs');
         assert.deepEqual(manifest.validatedProductScope.files.map(entry => entry.sourcePath), [
             'src/electronapp/some-normal-file.js'
         ]);
+        const sourceEntry = manifest.validatedProductScope.files[0];
+        assert.equal(sourceEntry.relation, 'git-blob-copy');
+        assert.match(sourceEntry.gitBlobObjectId, /^[0-9a-f]{40}$/);
+        assert.equal(sourceEntry.sourceSha256, sourceEntry.runtimeSha256);
+        assert.equal(fs.readFileSync(path.join(runtime, 'electronapp', 'some-normal-file.js'), 'utf8'),
+            'module.exports = "normal";\n');
+        assert.equal(fs.readFileSync(path.join(root, 'src', 'electronapp', 'some-normal-file.js'), 'utf8'),
+            'module.exports = "dirty";\r\n');
         assert.equal(runProvenance('validate', root, runtime).exitCode, 0);
 
         fs.rmSync(path.join(runtime, 'electronapp', 'some-normal-file.js'));

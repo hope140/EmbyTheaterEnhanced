@@ -1,9 +1,9 @@
 'use strict';
 
 const crypto = require('crypto');
-const childProcess = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const trackedProductSources = require('./copy-tracked-product-sources.cjs');
 const preloadPreparation = require('./prepare-preload.cjs');
 const sourceProvenance = require('./source-provenance.cjs');
 const trackedFileHash = require('./tracked-file-hash.cjs');
@@ -12,6 +12,7 @@ const OVERLAY_RUNTIME_PATH = 'electronapp/www/modules/common/playback/playbackma
 const OVERLAY_GENERATOR_PATH = 'tools/patch-playbackmanager.cjs';
 const PACKAGE_RUNTIME_PATH = 'electronapp/package.json';
 const PACKAGE_GENERATOR_PATH = 'tools/build.ps1';
+const TRACKED_SOURCE_GENERATOR_PATH = 'tools/copy-tracked-product-sources.cjs';
 const SOURCE_PROVENANCE_PATH = 'source-provenance.json';
 const PREPARED_SOURCE_PATHS = Object.freeze([preloadPreparation.PREPARED_PRELOAD_PATH]);
 const PREPARED_ARTIFACT_CONTRACT = Object.freeze([{
@@ -26,7 +27,6 @@ const RUNTIME_OVERLAY_CONTRACT = Object.freeze([
     {runtimePath: OVERLAY_RUNTIME_PATH, sourcePath: 'vendor/carnival/electronapp/www/modules/common/playback/playbackmanager.js', generatorPath: OVERLAY_GENERATOR_PATH},
     {runtimePath: PACKAGE_RUNTIME_PATH, sourcePath: 'vendor/carnival/electronapp/package.json', generatorPath: PACKAGE_GENERATOR_PATH}
 ]);
-const OVERLAY_GENERATORS = new Map(RUNTIME_OVERLAY_CONTRACT.map(entry => [entry.runtimePath, entry.generatorPath]));
 
 function usage() {
     throw new Error('Usage: runtime-provenance.cjs <write|validate> <root> <runtime> <sourceCommit>');
@@ -40,37 +40,12 @@ function exists(file) {
     try { return fs.statSync(file).isFile(); } catch (_) { return false; }
 }
 
-function walkFiles(root) {
-    if (!fs.existsSync(root)) return [];
-    const result = [];
-    const pending = [root];
-    while (pending.length) {
-        const current = pending.pop();
-        for (const entry of fs.readdirSync(current, {withFileTypes: true}).sort((a, b) => b.name.localeCompare(a.name))) {
-            const file = path.join(current, entry.name);
-            if (entry.isDirectory()) pending.push(file);
-            else if (entry.isFile()) result.push(file);
-        }
-    }
-    return result.sort((a, b) => a.localeCompare(b));
-}
-
-function slash(value) { return value.split(path.sep).join('/'); }
-
 function isExcludedSourcePath(sourcePath) {
     return EXCLUDED_SOURCE_PREFIXES.some(prefix => sourcePath.startsWith(prefix));
 }
 
 function isPreparedSourcePath(sourcePath) {
     return PREPARED_SOURCE_PATHS.indexOf(sourcePath) >= 0;
-}
-
-function trackedProductSourcePaths(root) {
-    const result = childProcess.spawnSync('git', ['-C', root, 'ls-files', '-z', '--', 'src/electronapp'], {
-        encoding: 'utf8'
-    });
-    if (result.error || result.status !== 0) throw new Error('Unable to enumerate tracked product sources.');
-    return result.stdout.split('\0').filter(Boolean).sort((a, b) => a.localeCompare(b));
 }
 
 function sameStringArray(actual, expected) {
@@ -95,26 +70,24 @@ function buildOverlayEntries(root, runtime) {
     });
 }
 
-function sourceEntries(root) {
-    const entries = trackedProductSourcePaths(root).map(sourcePath => {
-        if (isExcludedSourcePath(sourcePath) || isPreparedSourcePath(sourcePath)) return null;
-        const sourceFile = path.join(root, sourcePath);
-        if (!exists(sourceFile)) throw new Error('Tracked product source missing: ' + sourcePath);
-        const relative = sourcePath.substring('src/electronapp/'.length);
-        return {
-            sourcePath,
-            runtimePath: 'electronapp/' + relative,
-            relation: 'copied'
-        };
+function sourceEntries(root, sourceCommit) {
+    return trackedProductSources.listTrackedProductSources(root, sourceCommit).map(source => {
+        if (isExcludedSourcePath(source.sourcePath) || isPreparedSourcePath(source.sourcePath)) return null;
+        const value = trackedProductSources.readBlob(root, source.gitBlobObjectId);
+        return Object.assign({}, source, {
+            sourceCommit: sourceCommit.toLowerCase(),
+            sourceSha256: trackedProductSources.sha256(value),
+            relation: 'git-blob-copy'
+        });
     }).filter(Boolean);
-    for (const entry of entries) {
-        const generatorPath = OVERLAY_GENERATORS.get(entry.runtimePath);
-        if (generatorPath) {
-            entry.relation = 'overlay';
-            entry.overlay = {generatorPath};
-        }
-    }
-    return entries.sort((a, b) => a.sourcePath.localeCompare(b.sourcePath));
+}
+
+function sourceAcquisitionIdentity(root) {
+    return {
+        generatorPath: TRACKED_SOURCE_GENERATOR_PATH,
+        generatorSha256: trackedFileHash.hashTrackedTextFile(root, TRACKED_SOURCE_GENERATOR_PATH),
+        relation: 'HEAD git blob bytes -> runtime'
+    };
 }
 
 function sourceProvenanceIdentity(root, runtime, sourceCommit) {
@@ -178,19 +151,19 @@ function baselineIdentity(root) {
 
 function writeManifest(root, runtime, sourceCommit) {
     if (!/^[0-9a-fA-F]{40}$/.test(sourceCommit || '')) throw new Error('sourceCommit must be a 40-character git commit.');
-    const entries = sourceEntries(root);
+    const entries = sourceEntries(root, sourceCommit);
     const buildOverlays = buildOverlayEntries(root, runtime);
     const preparedArtifacts = buildPreparedArtifactEntries(root, runtime);
     const sourceProvenanceEntry = sourceProvenanceIdentity(root, runtime, sourceCommit);
     const files = entries.map(entry => {
-        const sourceFile = path.join(root, entry.sourcePath);
         const runtimeFile = path.join(runtime, entry.runtimePath);
-        if (!exists(sourceFile) || !exists(runtimeFile)) throw new Error('Provenance input missing: ' + entry.sourcePath);
+        if (!exists(runtimeFile)) throw new Error('Provenance runtime file missing: ' + entry.runtimePath);
         const value = Object.assign({}, entry, {
-            sourceSha256: hashFile(sourceFile),
             runtimeSha256: hashFile(runtimeFile)
         });
-        if (value.overlay) value.overlay.generatorSha256 = trackedFileHash.hashTrackedTextFile(root, value.overlay.generatorPath);
+        if (value.sourceSha256 !== value.runtimeSha256) {
+            throw new Error('Git blob runtime mismatch: ' + value.sourcePath + ' -> ' + value.runtimePath);
+        }
         return value;
     });
     const manifest = {
@@ -202,10 +175,12 @@ function writeManifest(root, runtime, sourceCommit) {
             sourceRoot: 'src/electronapp',
             runtimeRoot: 'electronapp',
             includesIgnoredSourceFiles: false,
-            sourceSelection: 'git-tracked',
+            sourceSelection: 'git-commit-blobs',
+            sourceCommit: sourceCommit.toLowerCase(),
+            sourceAcquisition: sourceAcquisitionIdentity(root),
             excludedSourcePrefixes: [...EXCLUDED_SOURCE_PREFIXES],
             preparedSourcePaths: [...PREPARED_SOURCE_PATHS],
-            description: 'All Git-tracked repo-owned src/electronapp files; ignored prepared artifacts and vendor-derived transformations are recorded separately',
+            description: 'All regular src/electronapp blobs from sourceCommit; checkout bytes are ignored and prepared/vendor transformations are recorded separately',
             fileCount: files.length,
             files
         },
@@ -231,6 +206,9 @@ function failedValidation(runtime, sourceCommit, errors, files, manifest) {
             ? {
                 sourceRoot: manifest.validatedProductScope.sourceRoot,
                 runtimeRoot: manifest.validatedProductScope.runtimeRoot,
+                sourceSelection: manifest.validatedProductScope.sourceSelection,
+                sourceCommit: manifest.validatedProductScope.sourceCommit,
+                sourceAcquisition: manifest.validatedProductScope.sourceAcquisition || null,
                 excludedSourcePrefixes: Array.isArray(manifest.validatedProductScope.excludedSourcePrefixes)
                     ? manifest.validatedProductScope.excludedSourcePrefixes : [],
                 preparedSourcePaths: Array.isArray(manifest.validatedProductScope.preparedSourcePaths)
@@ -328,8 +306,16 @@ function validateManifest(root, runtime, sourceCommit) {
     }
     const scope = manifest.validatedProductScope;
     if (!scope || scope.sourceRoot !== 'src/electronapp' || scope.runtimeRoot !== 'electronapp' ||
-        scope.includesIgnoredSourceFiles !== false || scope.sourceSelection !== 'git-tracked' || !Array.isArray(scope.files)) {
+        scope.includesIgnoredSourceFiles !== false || scope.sourceSelection !== 'git-commit-blobs' ||
+        scope.sourceCommit !== String(sourceCommit || '').toLowerCase() || !Array.isArray(scope.files)) {
         return failedValidation(runtime, sourceCommit, errors.concat('validated-product-scope-missing'), [], manifest);
+    }
+    const expectedSourceAcquisition = sourceAcquisitionIdentity(root);
+    if (!scope.sourceAcquisition ||
+        scope.sourceAcquisition.generatorPath !== expectedSourceAcquisition.generatorPath ||
+        scope.sourceAcquisition.generatorSha256 !== expectedSourceAcquisition.generatorSha256 ||
+        scope.sourceAcquisition.relation !== expectedSourceAcquisition.relation) {
+        errors.push('source-acquisition-contract-mismatch');
     }
     if (!sameStringArray(scope.excludedSourcePrefixes, EXCLUDED_SOURCE_PREFIXES)) {
         errors.push('source-exclusion-contract-mismatch');
@@ -339,7 +325,7 @@ function validateManifest(root, runtime, sourceCommit) {
     }
     const buildOverlays = validateBuildOverlays(root, runtime, manifest, errors);
     const preparedArtifacts = validatePreparedArtifacts(root, runtime, manifest, errors);
-    const expected = sourceEntries(root);
+    const expected = sourceEntries(root, sourceCommit);
     const bySource = new Map(scope.files.map(entry => [entry.sourcePath, entry]));
     const expectedSources = new Set(expected.map(entry => entry.sourcePath));
     for (const entry of expected) if (!bySource.has(entry.sourcePath)) errors.push('manifest-file-missing:' + entry.sourcePath);
@@ -350,51 +336,41 @@ function validateManifest(root, runtime, sourceCommit) {
     for (const expectedEntry of expected) {
         const entry = bySource.get(expectedEntry.sourcePath);
         if (!entry) continue;
-        const sourceFile = path.join(root, entry.sourcePath);
         const runtimeFile = path.join(runtime, entry.runtimePath);
-        const sourceExists = exists(sourceFile);
         const runtimeExists = exists(runtimeFile);
-        const sourceSha256 = sourceExists ? hashFile(sourceFile) : null;
+        const sourceSha256 = expectedEntry.sourceSha256;
         const runtimeSha256 = runtimeExists ? hashFile(runtimeFile) : null;
         const sourceMatch = sourceSha256 === entry.sourceSha256;
         const runtimeMatch = runtimeSha256 === entry.runtimeSha256;
-        const expectedOverlay = expectedEntry.overlay || null;
-        const actualOverlay = entry.overlay || null;
-        const overlayMatch = expectedOverlay
-            ? !!actualOverlay && actualOverlay.generatorPath === expectedOverlay.generatorPath
-            : !actualOverlay;
+        const gitBlobIdentityMatch = entry.sourceCommit === expectedEntry.sourceCommit &&
+            entry.gitMode === expectedEntry.gitMode &&
+            entry.gitBlobObjectId === expectedEntry.gitBlobObjectId;
         const relationMatch = entry.relation === expectedEntry.relation &&
-            entry.runtimePath === expectedEntry.runtimePath && overlayMatch;
-        const copiedMatch = entry.relation === 'overlay' || sourceSha256 === runtimeSha256;
+            entry.runtimePath === expectedEntry.runtimePath && gitBlobIdentityMatch;
+        const copiedMatch = sourceSha256 === runtimeSha256;
         const check = {
             sourcePath: entry.sourcePath,
             runtimePath: entry.runtimePath,
             relation: entry.relation,
+            sourceCommit: entry.sourceCommit,
+            gitMode: entry.gitMode,
+            gitBlobObjectId: entry.gitBlobObjectId,
             sourceSha256,
             runtimeSha256,
             manifestSourceSha256: entry.sourceSha256,
             manifestRuntimeSha256: entry.runtimeSha256,
             relationMatch,
+            gitBlobIdentityMatch,
             sourceMatch,
             runtimeMatch,
-            valid: sourceExists && runtimeExists && relationMatch && sourceMatch && runtimeMatch && copiedMatch
+            valid: runtimeExists && relationMatch && sourceMatch && runtimeMatch && copiedMatch
         };
-        if (expectedOverlay || actualOverlay) {
-            const generatorPath = actualOverlay && actualOverlay.generatorPath;
-            const generatorFile = generatorPath ? path.join(root, generatorPath) : '';
-            check.generatorMatch = !!expectedOverlay && !!actualOverlay &&
-                generatorPath === expectedOverlay.generatorPath &&
-                entry.relation === 'overlay' && exists(generatorFile) &&
-                trackedFileHash.hashTrackedTextFile(root, generatorPath) === actualOverlay.generatorSha256;
-            check.valid = check.valid && check.generatorMatch;
-            if (!check.generatorMatch) errors.push('overlay-generator-mismatch:' + (generatorPath || entry.sourcePath));
-        }
         if (!relationMatch) errors.push('manifest-relation-mismatch:' + entry.sourcePath);
-        if (!sourceExists) errors.push('source-file-missing:' + entry.sourcePath);
+        if (!gitBlobIdentityMatch) errors.push('git-blob-identity-mismatch:' + entry.sourcePath);
         if (!runtimeExists) errors.push('runtime-file-missing:' + entry.runtimePath);
-        if (sourceExists && !sourceMatch) errors.push('source-hash-mismatch:' + entry.sourcePath);
+        if (!sourceMatch) errors.push('source-hash-mismatch:' + entry.sourcePath);
         if (runtimeExists && !runtimeMatch) errors.push('runtime-hash-mismatch:' + entry.runtimePath);
-        if (entry.relation !== 'overlay' && sourceExists && runtimeExists && sourceSha256 !== runtimeSha256) errors.push('copy-hash-mismatch:' + entry.sourcePath);
+        if (runtimeExists && sourceSha256 !== runtimeSha256) errors.push('git-blob-copy-hash-mismatch:' + entry.sourcePath);
         checks.push(check);
     }
     return {
@@ -409,6 +385,8 @@ function validateManifest(root, runtime, sourceCommit) {
             runtimeRoot: scope.runtimeRoot,
             includesIgnoredSourceFiles: scope.includesIgnoredSourceFiles === true,
             sourceSelection: scope.sourceSelection,
+            sourceCommit: scope.sourceCommit,
+            sourceAcquisition: scope.sourceAcquisition,
             excludedSourcePrefixes: Array.isArray(scope.excludedSourcePrefixes) ? scope.excludedSourcePrefixes : [],
             preparedSourcePaths: Array.isArray(scope.preparedSourcePaths) ? scope.preparedSourcePaths : [],
             fileCount: scope.fileCount,
