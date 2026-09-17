@@ -6,7 +6,7 @@ Model Tier：2。Model：GPT-5.6 Sol High。Reason：虽然只改 harness，但�
 
 两次相同 focused diagnosis 结果不同：non-overlap run 中 Play #1 在 927.0ms fulfilled，Play #2 到 1015.8ms 才进入；Play #1 gen131 后续被正常 retire，旧 gen131 END_FILE 在 gen132 current 时 controller drop-stale。overlap run 中 Play #2 于 489.5ms 进入，Play #1 于 491.9ms 正确 reject PlaybackSuperseded，且 Play #1 尚无 native generation。两个 run 均无旧 callback 影响 current state；因此 root cause 为 fixed-delay TIMING，`oldCoreListenerIgnored` 命名与 observation 不符，aef373a diagnostics fix 无直接因果。
 
-harness observer 现在透明包装 application window 的 core listener add/remove 与 endpoint begin/retire generation。Play #1 gate 要求 listener + native generation + pending；assertion 关联 Play #1/2 requestId、old generation retirement、PlaybackSuperseded。old-listener assertion 要求 removed、takeover 后 callback count=0、Play #2 fulfilled。Stop case 使用 pre-generation listener+pending gate。focused official runtime 连续三次 `first/second/old/stop/late=true`；unit `3/3`，全量 `npm test 195/195`。未修改 production、NextTrack、Stop barrier、REAL profile 或 Pepper。
+harness observer 现在透明包装 application window 的 core listener add/remove、endpoint begin/retire generation 与 fake CD2 resolve/cancel IPC。Play #1 gate 要求 listener + native generation + pending；assertion 关联 Play #1/2 requestId、old generation retirement、PlaybackSuperseded。old-listener assertion 要求 removed、takeover 后 callback count=0、Play #2 fulfilled。Stop case 等待 exact request 的 CD2 resolve in-flight，再触发 stop 并观察 matching cancel。focused official runtime 连续三次 `first/second/old/stop/late=true`、cancel=1、active=0；unit `4/4`，全量 `npm test 196/196`。未修改 production、NextTrack、Stop barrier、REAL profile 或 Pepper。
 
 ## 2026-09-17 — Ready diagnostics generation ownership fix
 

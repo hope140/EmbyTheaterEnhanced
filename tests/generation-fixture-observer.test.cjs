@@ -104,3 +104,29 @@ test('listener gate can stop a pending request before generation or load', async
     assert.equal(entry.promiseError.playbackSuperseded, true);
     observer.restore();
 });
+
+test('CD2 gate observes an in-flight resolver and its matching cancel without changing transport promises', async () => {
+    const target = eventTarget();
+    let release;
+    const transport = new Promise(resolve => { release = resolve; });
+    target.ipc = {
+        invoke() { return transport; },
+        send() { }
+    };
+    const observer = observerModule.create({target,timeoutMs:3000});
+    observer.registerFixture('fixtureStop#1-play',9003);
+    const returned = target.ipc.invoke('enhanced-cd2-resolve',{requestId:'play-9003-7'});
+    assert.strictEqual(returned, transport, 'observer must preserve the exact transport Promise');
+    const gate = await observer.waitForCd2PendingGate('fixtureStop#1-play');
+    assert.equal(gate.pending, true);
+    assert.equal(gate.requestId, 'play-9003-7');
+    observer.cancelUnusedGates('fixtureStop#1-play');
+    target.ipc.send('enhanced-cd2-cancel',{requestId:'play-9003-7'});
+    release({status:'cancelled'});
+    await transport;
+    const entry = observer.snapshot().fixtures[0];
+    assert.equal(entry.cd2ResolveEntered, true);
+    assert.equal(entry.cd2PendingAtGate, true);
+    assert.equal(entry.cd2CancelSent, true);
+    observer.restore();
+});

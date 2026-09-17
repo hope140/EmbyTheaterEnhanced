@@ -27,7 +27,7 @@ node --test tests/generation-fixture-observer.test.cjs
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/test-runtime.ps1 -RuntimeName <verified-runtime> -TestPipeline -TestCd2
 ```
 
-observer unit 覆盖 listener+native-generation+pending overlap gate、settle-before-gate rejection 与 pre-generation Stop listener gate。formal fixture 关联 Play #1/2 requestId、generation retirement、PlaybackSuperseded、listener remove/callback-after-takeover 和 current-generation completion；不使用固定 sleep 推断 overlap。Stop-barrier candidate 不属于该测试修复。
+observer unit 覆盖 listener+native-generation+pending overlap gate、settle-before-gate rejection、pre-generation listener gate，以及不改变 transport Promise 的 fake CD2 in-flight/cancel gate。formal fixture 关联 Play #1/2 requestId、generation retirement、PlaybackSuperseded、listener remove/callback-after-takeover、current-generation completion 与 Stop matching cancel；不使用固定 sleep 推断 overlap。Stop-barrier candidate 不属于该测试修复。
 
 ## Native ready diagnostics generation boundary
 

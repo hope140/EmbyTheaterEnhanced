@@ -23,8 +23,50 @@
         var bridge = null;
         var originalBegin = null;
         var originalRetire = null;
+        var ipc = target.ipc;
+        var originalInvoke = ipc && typeof ipc.invoke === 'function' ? ipc.invoke : null;
+        var originalSend = ipc && typeof ipc.send === 'function' ? ipc.send : null;
         var currentGeneration = null;
         var currentLabel = null;
+
+        function fixtureForRequestId(requestId) {
+            var match = /^play-(\d+)-/.exec(String(requestId || ''));
+            return match ? entryForPlaybackId(Number(match[1])) : null;
+        }
+
+        if (originalInvoke) {
+            ipc.invoke = function (channel, request) {
+                var result = originalInvoke.apply(this, arguments);
+                if (channel !== 'enhanced-cd2-resolve') return result;
+                var entry = fixtureForRequestId(request && request.requestId);
+                if (!entry) return result;
+                entry.cd2ResolveEntered = true;
+                entry.cd2ResolveEnteredAt = now();
+                entry.cd2RequestId = request.requestId;
+                entry.cd2PendingAtGate = !!result && typeof result.then === 'function';
+                if (!entry.cd2GateSettled && entry.cd2PendingAtGate) {
+                    entry.cd2GateSettled = true;
+                    clearTimer(entry.cd2Timer);
+                    entry.resolveCd2Gate({fixtureId:entry.fixtureId,requestId:entry.cd2RequestId,pending:true});
+                }
+                if (result && typeof result.then === 'function') {
+                    Promise.resolve(result).then(function () { entry.cd2Settlement='fulfilled';entry.cd2SettledAt=now(); }, function () { entry.cd2Settlement='rejected';entry.cd2SettledAt=now(); });
+                } else {
+                    entry.cd2Settlement='non-thenable';
+                    entry.cd2SettledAt=now();
+                }
+                return result;
+            };
+        }
+        if (originalSend) {
+            ipc.send = function (channel, request) {
+                if (channel === 'enhanced-cd2-cancel') {
+                    var entry = fixtureForRequestId(request && request.requestId);
+                    if (entry) { entry.cd2CancelSent=true;entry.cd2CancelAt=now(); }
+                }
+                return originalSend.apply(this, arguments);
+            };
+        }
 
         function entryForPlaybackId(playbackRequestId) {
             return fixtures.find(function (entry) { return entry.playbackRequestId === Number(playbackRequestId); });
@@ -141,10 +183,12 @@
                 pendingAtGate: false,
                 gateSettled: false,
                 listenerGateSettled: false,
+                cd2GateSettled: false,
                 takeoverAt: null
             };
             entry.gate = new Promise(function (resolve, reject) { entry.resolveGate = resolve; entry.rejectGate = reject; });
             entry.listenerGate = new Promise(function (resolve, reject) { entry.resolveListenerGate = resolve; entry.rejectListenerGate = reject; });
+            entry.cd2Gate = new Promise(function (resolve, reject) { entry.resolveCd2Gate = resolve; entry.rejectCd2Gate = reject; });
             entry.timer = setTimer(function () {
                 if (entry.gateSettled) return;
                 entry.gateSettled = true;
@@ -154,6 +198,11 @@
                 if (entry.listenerGateSettled) return;
                 entry.listenerGateSettled = true;
                 entry.rejectListenerGate(new Error('fixture-listener-gate-timeout'));
+            }, timeoutMs);
+            entry.cd2Timer = setTimer(function () {
+                if (entry.cd2GateSettled) return;
+                entry.cd2GateSettled = true;
+                entry.rejectCd2Gate(new Error('fixture-cd2-gate-timeout'));
             }, timeoutMs);
             fixtures.push(entry);
             return entry;
@@ -177,6 +226,28 @@
             entry.gateSettled = true;
             clearTimer(entry.timer);
             entry.resolveGate({fixtureId:entry.fixtureId,cancelled:true});
+        }
+
+        function waitForCd2PendingGate(fixtureId) {
+            var entry = fixtures.find(function (candidate) { return candidate.fixtureId === fixtureId; });
+            if (!entry) return Promise.reject(new Error('fixture-not-registered'));
+            return entry.cd2Gate;
+        }
+
+        function cancelUnusedGates(fixtureId) {
+            var entry = fixtures.find(function (candidate) { return candidate.fixtureId === fixtureId; });
+            if (!entry) return;
+            cancelOverlapGate(fixtureId);
+            if (!entry.listenerGateSettled) {
+                entry.listenerGateSettled=true;
+                clearTimer(entry.listenerTimer);
+                entry.resolveListenerGate({fixtureId:entry.fixtureId,cancelled:true});
+            }
+            if (!entry.cd2GateSettled) {
+                entry.cd2GateSettled=true;
+                clearTimer(entry.cd2Timer);
+                entry.resolveCd2Gate({fixtureId:entry.fixtureId,cancelled:true});
+            }
         }
 
         function markPromiseSettled(fixtureId, settlement, error) {
@@ -215,6 +286,9 @@
                         callbackCountAfterTakeover:entry.callbackCountAfterTakeover,promiseSettled:entry.promiseSettled,
                         promiseSettlement:entry.promiseSettlement,promiseError:entry.promiseError,pendingAtGate:entry.pendingAtGate,
                         gateAt:entry.gateAt||null,takeoverAt:entry.takeoverAt||null
+                        ,cd2RequestId:entry.cd2RequestId||null,cd2ResolveEntered:!!entry.cd2ResolveEntered,
+                        cd2PendingAtGate:!!entry.cd2PendingAtGate,cd2Settlement:entry.cd2Settlement||null,
+                        cd2CancelSent:!!entry.cd2CancelSent
                     };
                 }),
                 retirements: retirements.map(function (entry) { return Object.assign({}, entry); }),
@@ -223,13 +297,16 @@
         }
 
         function restore() {
+            fixtures.forEach(function (entry) { cancelUnusedGates(entry.fixtureId); });
             target.addEventListener = originalAdd;
             target.removeEventListener = originalRemove;
             if (bridge && originalBegin) bridge.beginGeneration = originalBegin;
             if (bridge && originalRetire) bridge.retireGeneration = originalRetire;
+            if (ipc && originalInvoke) ipc.invoke = originalInvoke;
+            if (ipc && originalSend) ipc.send = originalSend;
         }
 
-        return {attachBridge:attachBridge,registerFixture:registerFixture,waitForOverlapGate:waitForOverlapGate,waitForListenerGate:waitForListenerGate,cancelOverlapGate:cancelOverlapGate,markPromiseSettled:markPromiseSettled,markTakeover:markTakeover,snapshot:snapshot,restore:restore};
+        return {attachBridge:attachBridge,registerFixture:registerFixture,waitForOverlapGate:waitForOverlapGate,waitForListenerGate:waitForListenerGate,waitForCd2PendingGate:waitForCd2PendingGate,cancelOverlapGate:cancelOverlapGate,cancelUnusedGates:cancelUnusedGates,markPromiseSettled:markPromiseSettled,markTakeover:markTakeover,snapshot:snapshot,restore:restore};
     }
 
     return {create:create};

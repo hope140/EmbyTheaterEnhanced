@@ -223,8 +223,8 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
         generationObserver.registerFixture('fixtureStop#1-play',9003);
         const stoppedPending = embedded.play(directOptions('stop', 9003));
         stoppedPending.then(function(){generationObserver.markPromiseSettled('fixtureStop#1-play','fulfilled');},function(error){generationObserver.markPromiseSettled('fixtureStop#1-play','rejected',error);});
-        await generationObserver.waitForListenerGate('fixtureStop#1-play');
-        generationObserver.cancelOverlapGate('fixtureStop#1-play');
+        await generationObserver.waitForCd2PendingGate('fixtureStop#1-play');
+        generationObserver.cancelUnusedGates('fixtureStop#1-play');
         await embedded.stop();
         const stopped = await Promise.allSettled([stoppedPending]);
         await sleep(220);

@@ -4,7 +4,7 @@
 
 - `sleep(N)` 不能证明两个异步 Play overlap；timer 恢复可能晚于第一轮 core-playing/Promise settle。只有 listener 已注册、native generation 已建立且 Promise pending 才是可被下一 Play supersede 的确定 gate。
 - Promise rejected、generation retired、listener ignored 与 stale event dropped 是不同事实。已 fulfilled Promise 不会因后续 retire 追溯 reject；旧 listener assertion 应观察 remove/callback-after-takeover，controller ownership应观察 stale drop。
-- Stop-before-load case 应在 core listener 已注册且 Promise pending、但 beginGeneration/load 前触发 stop，才能稳定验证 late load prevention；复用 full overlap gate 会等到 source 已加载，反而破坏原测试语义。
+- Stop-before-load case 应等待 exact fake CD2 resolve 已进入且 Promise pending，再触发 stop 并观察 matching cancel；复用 full native-generation overlap gate 会等到 source 已加载，反而破坏 late-load prevention 语义。
 
 ## 2026-09-17 — Optional diagnostics and generation ownership
 
