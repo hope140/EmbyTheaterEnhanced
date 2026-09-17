@@ -5,7 +5,7 @@ window.eteAcceptance = (function () {
     const received = [];
     const reports = [];
     let authorizedPlayback = false;
-    const GATES = { apiClientMs: 20000, playbackManagerMs: 20000, eventsMs: 5000, embedMs: 15000, pepperReadyMs: 30000, managerMs: 20000, resolverMs: 20000, pollMs: 100 };
+    const GATES = { apiClientMs: 20000, playbackManagerMs: 20000, eventsMs: 5000, bridgeMs: 15000, bridgeReadyMs: 30000, managerMs: 20000, resolverMs: 20000, pollMs: 100 };
 
     function wait(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
     function itemSourceKind(source) {
@@ -52,12 +52,12 @@ window.eteAcceptance = (function () {
         if (!window.eteReadinessEvidence || typeof window.eteReadinessEvidence.classify !== 'function') {
             return { classification: 'D', reason: 'readiness-classifier-unavailable', playbackSucceeded: false,
                 authoritativeReadinessConfirmed: false, observerOnlyMiss: false, alternateEvidence: false,
-                pepperReadiness: { status: 'unavailable', evidence: [], rawPepperReadyObserved: false, normalizedObservation: 'missing' }, evidence: [] };
+                bridgeReadiness: { status: 'unavailable', evidence: [], rawBridgeReadyObserved: false, normalizedObservation: 'missing' }, evidence: [] };
         }
         return window.eteReadinessEvidence.classify({
             runnerFailed: false,
             observerAvailable: state.version === 1,
-            rawPepperReadyObserved: state.pepperReadyRawEventSeen === true || state.nativeBootstrapReadySeen === true,
+            rawBridgeReadyObserved: state.bridgeReadySignalSeen === true || state.bridgeBootstrapReadySeen === true,
             directReadyObserved: state.diagnosticsReadyObserved === true,
             stickyReadyObserved: state.stickyReadinessObserved === true,
             managerPlayResolved: managerResolved === true,
@@ -217,24 +217,6 @@ window.eteAcceptance = (function () {
             if (items.length < 2) return { ok: false, reason: 'not-enough-strm-samples', scanned: result.Items.length };
             return { ok: true, scanned: result.Items.length, samples: items.map(item => { const source = (item.MediaSources || [])[0] || {}; return { id: item.Id, name: item.Name, series: item.SeriesName, type: item.Type, strm: true, itemPathKind: itemSourceKind(item.Path), itemPathPrefixMatch: localPrefixMatches(item.Path, window.__eteExpectedCd2LocalPrefix), sourceCount: item.MediaSources && item.MediaSources.length, sourcePathKind: itemSourceKind(source.Path), sourcePathPrefixMatch: localPrefixMatches(source.Path, window.__eteExpectedCd2LocalPrefix), container: String(source.Container || '').toLowerCase() || 'missing' }; }) };
         },
-        async directSmoke() {
-            const mediaSource = (items[0].MediaSources || [])[0] || {};
-            if (typeof mediaSource.Path !== 'string' || !mediaSource.Path) return { ok: false, reason: 'missing-source-path' };
-            const resolved = await window.ipc.invoke('enhanced-cd2-resolve', { requestId: 'live-direct-smoke', candidates: [mediaSource.Path] });
-            if (!resolved || resolved.status !== 'hit') return { ok: false, reason: resolved && resolved.reason || 'resolve-miss' };
-            const bridge = document.createElement('embed'); bridge.type = 'application/x-mpvjs'; bridge.style.width = '64px'; bridge.style.height = '64px';
-            const ready = new Promise(resolve => { const timer = setTimeout(() => resolve(false), 8000); function receive(event) { if (event.data && event.data.type === 'ready') { clearTimeout(timer); bridge.removeEventListener('message', receive); resolve(true); } } bridge.addEventListener('message', receive); });
-            document.body.appendChild(bridge);
-            if (!await ready) { bridge.remove(); return { ok: false, reason: 'bridge-not-ready' }; }
-            const state = { pathAccepted: false, fileFormat: null, coreIdleFalse: false, firstTime: null, maxTime: 0, timeAdvanced: false };
-            function receive(event) { const message = event.data || {}; if (message.type !== 'property_change' || !message.data) return; const name = message.data.name, value = message.data.value; if (name === 'path' && value === resolved.source) state.pathAccepted = true; else if (state.pathAccepted && name === 'file-format' && typeof value === 'string' && /^[A-Za-z0-9_.-]{1,40}$/.test(value)) state.fileFormat = value; else if (state.pathAccepted && name === 'core-idle' && value === false) state.coreIdleFalse = true; else if (state.pathAccepted && name === 'time-pos' && typeof value === 'number') { if (state.firstTime === null) state.firstTime = value; state.maxTime = Math.max(state.maxTime, value); state.timeAdvanced = state.maxTime - state.firstTime > 0.1; } }
-            bridge.addEventListener('message', receive); ['path', 'file-format', 'core-idle', 'time-pos'].forEach(name => bridge.postMessage({ type: 'observe_property', data: name }));
-            const userAgent = resolved.requestOptions && resolved.requestOptions.userAgent;
-            bridge.postMessage({ type: 'command', data: resolved.sourceKind === 'direct-url' && typeof userAgent === 'string' ? ['loadfile', resolved.source, 'replace', '-1', 'user-agent=' + userAgent] : ['loadfile', resolved.source] });
-            for (let i = 0; i < 300 && !state.timeAdvanced; i++) { await wait(100); if (state.pathAccepted && i % 10 === 0) ['file-format', 'core-idle', 'time-pos'].forEach(name => bridge.postMessage({ type: 'get_property_async', data: name })); }
-            bridge.postMessage({ type: 'command', data: ['stop'] }); bridge.removeEventListener('message', receive); bridge.remove();
-            return { ok: (resolved.sourceKind === 'direct-url' || resolved.sourceKind === 'cd2-url') && state.pathAccepted && !!state.fileFormat && state.coreIdleFalse && state.timeAdvanced, reason: state.timeAdvanced ? 'none' : 'playback-not-advancing', sourceKind: resolved.sourceKind || 'unknown', userAgentPresent: typeof userAgent === 'string' && userAgent.length > 0, expiresInPresent: resolved.expiresAt !== undefined, pathAccepted: state.pathAccepted, fileFormatPresent: !!state.fileFormat, coreIdleFalse: state.coreIdleFalse, timeAdvanced: state.timeAdvanced };
-        },
         async play() {
             const first = items[0]; authorizedPlayback = true; beginPlaybackRun(); mark('play-called');
             let started;
@@ -243,7 +225,7 @@ window.eteAcceptance = (function () {
                 return gateFailure('manager-play-rejected', 'runtime-readiness-failure', 'manager-play-resolved', { errorType: error.name || 'Error', readinessAssessment: assessment });
             }
             const settled = started.then(value => { mark('manager-play-resolved'); return { state: 'resolved', value }; }, error => { return { state: 'rejected', errorType: error && error.name || 'Error' }; });
-            if (!await until(() => (stageSeen('embed-created') || stageSeen('native-bridge-created')) ? readiness() : null, GATES.embedMs)) {
+            if (!await until(() => stageSeen('native-bridge-created') ? readiness() : null, GATES.bridgeMs)) {
                 const assessment = assessPlaybackReadiness(false, false, null, false);
                 return gateFailure('playback-endpoint-not-created', 'runtime-readiness-failure', 'playback-endpoint-created', { readinessAssessment: assessment });
             }

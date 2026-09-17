@@ -27,6 +27,10 @@ foreach ($group in @(@{ Root='vendor/carnival'; Files=$manifest.files }, @{ Root
 if ($LASTEXITCODE -ne 0) { throw 'Prepared preload generation failed.' }
 New-Item -ItemType Directory -Path $destination -Force | Out-Null
 Get-ChildItem -LiteralPath (Join-Path $root 'vendor/carnival') | Copy-Item -Destination $destination -Recurse
+# The immutable Carnival copy contains the retired bridge input for historical
+# provenance only. It must never enter an Enhanced runtime.
+& node (Join-Path $root 'tools/runtime-exclusions.cjs') remove $destination
+if ($LASTEXITCODE -ne 0) { throw 'Retired runtime exclusion failed.' }
 # Ordinary tracked product sources come from the committed Git blobs, never from checkout bytes.
 & node (Join-Path $root 'tools/copy-tracked-product-sources.cjs') $root $sourceCommit $destination
 if ($LASTEXITCODE -ne 0) { throw 'Tracked product source materialization failed.' }

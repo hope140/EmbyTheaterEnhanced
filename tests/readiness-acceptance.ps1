@@ -384,7 +384,7 @@ function New-StartInfo {
         $info.EnvironmentVariables['ETE_ACCEPT_RUNTIME_NAME'] = $RuntimeName
         $info.EnvironmentVariables['ETE_ACCEPT_SOURCE_COMMIT'] = $sourceCommit
         $info.EnvironmentVariables['ETE_ACCEPT_RUNTIME_VALIDATED'] = '1'
-        foreach ($name in @('ETE_ACCEPT_METHODS', 'ETE_ACCEPT_INSPECT_ONLY', 'ETE_ACCEPT_SELECT_ONLY', 'ETE_ACCEPT_DIRECT_SMOKE', 'ETE_ACCEPT_VISUAL', 'ETE_ACCEPT_PROFILE_INSPECT', 'ETE_ACCEPT_MANUAL_LOGIN')) {
+        foreach ($name in @('ETE_ACCEPT_METHODS', 'ETE_ACCEPT_INSPECT_ONLY', 'ETE_ACCEPT_SELECT_ONLY', 'ETE_ACCEPT_VISUAL', 'ETE_ACCEPT_PROFILE_INSPECT', 'ETE_ACCEPT_MANUAL_LOGIN')) {
             $info.EnvironmentVariables.Remove($name)
         }
         if ($Methods) { $info.EnvironmentVariables['ETE_ACCEPT_METHODS'] = $Methods }
@@ -514,7 +514,7 @@ try {
                 currentStage = [string]$acceptanceReport.currentStage
                 readinessResult = if ($null -ne $acceptanceReport.readiness) { [string]$acceptanceReport.readiness.result } else { $null }
                 acceptanceClass = if ($null -ne $acceptanceReport.readiness) { [string]$acceptanceReport.readiness.acceptanceClass } else { $null }
-                rawPepperReady = if ($null -ne $acceptanceReport.readiness -and $null -ne $acceptanceReport.readiness.pepperReadiness) { [bool]$acceptanceReport.readiness.pepperReadiness.rawEventObserved } else { $false }
+                rawBridgeReady = if ($null -ne $acceptanceReport.readiness -and $null -ne $acceptanceReport.readiness.bridgeReadiness) { [bool]$acceptanceReport.readiness.bridgeReadiness.rawEventObserved } else { $false }
                 authoritativeReadinessConfirmed = if ($null -ne $acceptanceReport.readiness) { [bool]$acceptanceReport.readiness.authoritativeReadinessConfirmed } else { $false }
                 observerOnlyMiss = if ($null -ne $acceptanceReport.readiness) { [bool]$acceptanceReport.readiness.observerOnlyMiss } else { $false }
                 playbackSucceeded = if ($null -ne $playResult) { [bool]$playResult.readinessAssessment.playbackSucceeded } else { $false }

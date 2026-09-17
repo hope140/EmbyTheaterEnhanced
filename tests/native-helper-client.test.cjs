@@ -48,12 +48,10 @@ test('renderer endpoint maps the legacy logical API without exposing raw transpo
   await endpoint.destroy();
 });
 
-test('explicit pepper mode returns no native endpoint', async function () {
+test('legacy bridge metadata is rejected deterministically', async function () {
   const ipc = new FakeIpc();
   ipc.invoke = function () { return Promise.resolve({status: 'ok', mode: 'pepper'}); };
-  const created = await clientModule.create({ipc});
-  assert.equal(created.mode, 'pepper');
-  assert.equal(created.endpoint, null);
+  await assert.rejects(clientModule.create({ipc}), /legacy-mode-removed/);
 });
 
 test('optional legacy property lookup failure is unavailable, not a fatal bridge error', async function () {

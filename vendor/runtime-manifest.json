@@ -27,11 +27,11 @@
     },
     {
       "path": "electronapp/libmpv/x64/mpv-win32-x64.node",
-      "role": "Chromium Pepper bridge to libmpv (not a normal Node require addon)",
-      "source": "Carnival archive",
+      "role": "Retired Chromium bridge input; excluded from Enhanced runtime",
+      "source": "Carnival archive; historical input only",
       "version": "unknown",
       "sourceAvailable": "Exact build unknown",
-      "plannedReplacement": false,
+      "plannedReplacement": true,
       "sha256": "d6fab2116db00dc9d9ba6cca2c430f1ace0f42484cdf0a20088e3c27e27a1289"
     },
     {
@@ -43,6 +43,9 @@
       "plannedReplacement": false,
       "sha256": "32e76a1fc510fcffe913dd3ce6af66b1061d53ef1c136cd13fb3cba3f6449fd2"
     }
+  ],
+  "runtimeExclusions": [
+    "electronapp/libmpv/x64/mpv-win32-x64.node"
   ],
   "libmpv": {
     "source": "Combined patch source note / shinchiro/mpv-winbuild-cmake",

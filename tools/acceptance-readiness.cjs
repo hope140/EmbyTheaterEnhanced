@@ -1,9 +1,9 @@
 'use strict';
 
-const stages = ['play-called', 'embed-created', 'native-bridge-created', 'pepper-ready', 'manager-play-resolved', 'resolver-result', 'loadfile'];
-const lifecycleStages = ['app-load', 'observer-installed', 'play-called', 'createMediaElement-called', 'embed-created', 'native-bridge-created', 'embed-attached', 'native-bootstrap-ready', 'pepper-ready', 'core-playing', 'video-progress', 'manager-play-resolved', 'playing'];
+const stages = ['play-called', 'surface-created', 'native-bridge-created', 'bridge-ready', 'manager-play-resolved', 'resolver-result', 'loadfile'];
+const lifecycleStages = ['app-load', 'observer-installed', 'play-called', 'createMediaElement-called', 'surface-created', 'native-bridge-created', 'surface-attached', 'native-bootstrap-ready', 'bridge-ready', 'core-playing', 'video-progress', 'manager-play-resolved', 'playing'];
 const allStages = new Set(stages.concat(lifecycleStages));
-const failureClasses = ['api-client-unavailable', 'playback-manager-unavailable', 'events-unavailable', 'embed-create-timeout', 'pepper-ready-timeout', 'manager-play-completion-timeout', 'resolver-result-timeout', 'runtime-readiness-failure'];
+const failureClasses = ['api-client-unavailable', 'playback-manager-unavailable', 'events-unavailable', 'surface-create-timeout', 'bridge-ready-timeout', 'manager-play-completion-timeout', 'resolver-result-timeout', 'runtime-readiness-failure'];
 const readinessStatuses = ['observed-ready', 'inferred-ready-from-authoritative-state', 'not-ready', 'observer-missing', 'unavailable'];
 
 function safe(value, limit) {
@@ -15,7 +15,7 @@ function finiteOrNull(value) {
     return value === null || value === undefined || value === '' || !Number.isFinite(Number(value)) ? null : Math.round(Number(value));
 }
 
-function sanitizePepperReadiness(value) {
+function sanitizeBridgeReadiness(value) {
     if (!value || typeof value !== 'object') return null;
     const status = readinessStatuses.includes(value.status) ? value.status : 'unavailable';
     const evidence = Array.isArray(value.evidence) ? value.evidence.slice(0, 16).map(row => ({
@@ -26,7 +26,7 @@ function sanitizePepperReadiness(value) {
     return {
         status,
         evidence,
-        rawEventObserved: value.rawEventObserved === true || value.rawPepperReadyObserved === true,
+        rawEventObserved: value.rawEventObserved === true || value.rawBridgeReadyObserved === true,
         normalizedObservation: safe(value.normalizedObservation, 64) || 'missing'
     };
 }
@@ -44,7 +44,7 @@ function sanitizeAssessment(value) {
         authoritativeReadinessConfirmed: value.authoritativeReadinessConfirmed === true,
         observerOnlyMiss: value.observerOnlyMiss === true,
         alternateEvidence: value.alternateEvidence === true,
-        pepperReadiness: sanitizePepperReadiness(value.pepperReadiness),
+        bridgeReadiness: sanitizeBridgeReadiness(value.bridgeReadiness),
         evidence: Array.isArray(value.evidence) ? value.evidence.slice(0, 16).map(row => ({
             kind: safe(row && row.kind, 48) || 'unknown',
             source: safe(row && row.source, 96) || 'unknown',
@@ -79,20 +79,20 @@ function createRecorder() {
                 type: safe(row && row.type, 32) || 'unknown',
                 command: row && row.command ? safe(row.command, 32) : null
             })) : [],
-            nativeBootstrapReadySeen: state.nativeBootstrapReadySeen === true,
+            bridgeBootstrapReadySeen: state.bridgeBootstrapReadySeen === true,
             diagnosticsHookInstalled: state.diagnosticsHookInstalled === true,
             diagnosticsReadySeen: state.diagnosticsReadySeen === true,
             diagnosticsReadyObserved: state.diagnosticsReadyObserved === true,
             diagnosticsReadySource: state.diagnosticsReadySource ? safe(state.diagnosticsReadySource, 48) : null,
             diagnosticsPlayingSeen: state.diagnosticsPlayingSeen === true,
-            pepperAuthoritativeReady: state.pepperAuthoritativeReady === true,
-            pepperReadyRawEventSeen: state.pepperReadyRawEventSeen === true,
-            pepperReadyRawEventMs: finiteOrNull(state.pepperReadyRawEventMs),
+            bridgeAuthoritativeReady: state.bridgeAuthoritativeReady === true,
+            bridgeReadySignalSeen: state.bridgeReadySignalSeen === true,
+            bridgeReadySignalMs: finiteOrNull(state.bridgeReadySignalMs),
             stickyReadinessSupported: state.stickyReadinessSupported === true,
             stickyReadinessObserved: state.stickyReadinessObserved === true,
             stickyReadinessRunId: state.stickyReadinessRunId ? safe(state.stickyReadinessRunId, 64) : null,
             stickyReadinessAt: finiteOrNull(state.stickyReadinessAt),
-            pepperReadiness: sanitizePepperReadiness(state.pepperReadiness),
+            bridgeReadiness: sanitizeBridgeReadiness(state.bridgeReadiness),
             corePlayingSeen: state.corePlayingSeen === true,
             corePlayingMs: finiteOrNull(state.corePlayingMs),
             videoProgressSeen: state.videoProgressSeen === true,
@@ -103,16 +103,16 @@ function createRecorder() {
             loadfileSeen: state.loadfileSeen === true,
             loadfileObservation: state.loadfileObservation === 'available' ? 'available' : 'unavailable',
             lastError: state.lastError ? safe(state.lastError, 80) : null,
-            embedCount: Number.isFinite(Number(state.embedCount)) ? Math.max(0, Math.round(Number(state.embedCount))) : 0,
-            connectedEmbedCount: Number.isFinite(Number(state.connectedEmbedCount)) ? Math.max(0, Math.round(Number(state.connectedEmbedCount))) : 0,
-            embedConnected: state.embedConnected === true,
-            embedRecreated: state.embedRecreated === true,
-            multipleEmbedsObserved: state.multipleEmbedsObserved === true,
-            embedCreatedObservationMs: finiteOrNull(state.embedCreatedObservationMs),
-            embedAttachedMs: finiteOrNull(state.embedAttachedMs),
-            embedLifecycle: Array.isArray(state.embedLifecycle) ? state.embedLifecycle.slice(0, 64).map(row => ({
+            surfaceCount: Number.isFinite(Number(state.surfaceCount)) ? Math.max(0, Math.round(Number(state.surfaceCount))) : 0,
+            connectedSurfaceCount: Number.isFinite(Number(state.connectedSurfaceCount)) ? Math.max(0, Math.round(Number(state.connectedSurfaceCount))) : 0,
+            surfaceConnected: state.surfaceConnected === true,
+            surfaceRecreated: state.surfaceRecreated === true,
+            multipleSurfacesObserved: state.multipleSurfacesObserved === true,
+            surfaceCreatedObservationMs: finiteOrNull(state.surfaceCreatedObservationMs),
+            surfaceAttachedMs: finiteOrNull(state.surfaceAttachedMs),
+            surfaceLifecycle: Array.isArray(state.surfaceLifecycle) ? state.surfaceLifecycle.slice(0, 64).map(row => ({
                 event: safe(row && row.event, 32) || 'unknown',
-                embedIndex: finiteOrNull(row && row.embedIndex),
+                surfaceIndex: finiteOrNull(row && row.surfaceIndex),
                 connected: row && row.connected === true,
                 currentCount: finiteOrNull(row && row.currentCount),
                 elapsedMs: finiteOrNull(row && row.elapsedMs),
@@ -155,24 +155,24 @@ function createRecorder() {
             lifecycle,
             playChain,
             timing: {
-                playToEmbedMs: difference(report, 'play-called', 'embed-created'),
+                playToSurfaceMs: difference(report, 'play-called', 'surface-created'),
                 playToNativeBridgeMs: difference(report, 'play-called', 'native-bridge-created'),
-                playToEmbedAttachedMs: difference(report, 'play-called', 'embed-attached'),
-                embedToBootstrapMs: difference(report, 'embed-created', 'native-bootstrap-ready'),
+                playToSurfaceAttachedMs: difference(report, 'play-called', 'surface-attached'),
+                surfaceToBootstrapMs: difference(report, 'surface-created', 'native-bootstrap-ready'),
                 nativeBridgeToBootstrapMs: difference(report, 'native-bridge-created', 'native-bootstrap-ready'),
-                embedAttachedToBootstrapMs: difference(report, 'embed-attached', 'native-bootstrap-ready'),
-                bootstrapToPepperReadyMs: difference(report, 'native-bootstrap-ready', 'pepper-ready'),
-                embedToPepperReadyMs: difference(report, 'embed-created', 'pepper-ready'),
-                pepperReadyToManagerResolvedMs: difference(report, 'pepper-ready', 'manager-play-resolved'),
-                pepperReadyToPlayingMs: difference(report, 'pepper-ready', 'playing')
+                surfaceAttachedToBootstrapMs: difference(report, 'surface-attached', 'native-bootstrap-ready'),
+                bootstrapToBridgeReadyMs: difference(report, 'native-bootstrap-ready', 'bridge-ready'),
+                surfaceToBridgeReadyMs: difference(report, 'surface-created', 'bridge-ready'),
+                bridgeReadyToManagerResolvedMs: difference(report, 'bridge-ready', 'manager-play-resolved'),
+                bridgeReadyToPlayingMs: difference(report, 'bridge-ready', 'playing')
             },
-            embed: report.readinessState ? {
-                count: report.readinessState.embedCount,
-                connectedCount: report.readinessState.connectedEmbedCount,
-                connected: report.readinessState.embedConnected,
-                recreated: report.readinessState.embedRecreated,
-                multipleObserved: report.readinessState.multipleEmbedsObserved,
-                lifecycle: report.readinessState.embedLifecycle
+            surface: report.readinessState ? {
+                count: report.readinessState.surfaceCount,
+                connectedCount: report.readinessState.connectedSurfaceCount,
+                connected: report.readinessState.surfaceConnected,
+                recreated: report.readinessState.surfaceRecreated,
+                multipleObserved: report.readinessState.multipleSurfacesObserved,
+                lifecycle: report.readinessState.surfaceLifecycle
             } : null,
             result: assessment ? 'class-' + assessment.classification.toLowerCase() : classification || (timeline.filter(row => row.status !== 'unavailable').every(row => row.status === 'seen') ? 'success' : 'incomplete'),
             acceptanceClass: assessment ? assessment.classification : null,
@@ -180,7 +180,7 @@ function createRecorder() {
             authoritativeReadinessConfirmed: assessment ? assessment.authoritativeReadinessConfirmed : false,
             observerOnlyMiss: assessment ? assessment.observerOnlyMiss : false,
             alternateReadinessEvidence: assessment ? assessment.alternateEvidence : false,
-            pepperReadiness: assessment && assessment.pepperReadiness ? assessment.pepperReadiness : report.readinessState && report.readinessState.pepperReadiness || null,
+            bridgeReadiness: assessment && assessment.bridgeReadiness ? assessment.bridgeReadiness : report.readinessState && report.readinessState.bridgeReadiness || null,
             failureClassification: classification,
             failureStage: failure ? safe(failure.stage || failure.reason, 48) : null,
             failureReason: failure ? safe(failure.reason, 80) : null,

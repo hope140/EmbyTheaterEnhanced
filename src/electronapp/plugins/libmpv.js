@@ -663,22 +663,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                                 createdEndpoint = bridge && bridge.endpoint;
                                 throw supersededError();
                             }
-                            if (bridge.mode === 'pepper') {
-                                var embed = document.createElement('embed');
-                                embed.type = 'application/x-mpvjs';
-                                embed.classList.add('mpv-videoPlayer');
-                                embed.addEventListener('message', message);
-                                embed.style.opacity = 0;
-                                createdEndpoint = embed;
-                                libmpv = embed;
-                                addEventListener('ready', function () {
-                                    if (creationEpoch !== mediaElementEpoch) return fail(supersededError());
-                                    if (window.enhancedDiagnostics) window.enhancedDiagnostics(libmpv, 'ready');
-                                    observeProperty(['pause', 'time-pos', 'duration', 'volume', 'mute', 'eof-reached', 'demuxer-cache-state', 'demuxer-cache-time', 'estimated-vf-fps', 'sub-delay', 'speed', 'core-idle']).then(resolve, fail);
-                                }, {once: true});
-                                dlg.insertBefore(embed, dlg.firstChild);
-                                return;
-                            }
+                            if (!bridge || bridge.mode !== 'native-helper' || !bridge.endpoint) throw new Error('native-helper-required');
                             dlg.classList.add('mpv-videoPlayerContainer-native');
                             createdEndpoint = bridge.endpoint;
                             libmpv = bridge.endpoint;

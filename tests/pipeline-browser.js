@@ -201,7 +201,7 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
             if (stage === 'ready') generationObserver.attachBridge(bridge);
             return originalEnhancedDiagnostics.apply(this, arguments);
         };
-        const currentReadinessBridge = window.__etePepperReadiness && (window.__etePepperReadiness.playingBridge || window.__etePepperReadiness.readyBridge);
+        const currentReadinessBridge = window.__eteBridgeReadiness && (window.__eteBridgeReadiness.playingBridge || window.__eteBridgeReadiness.readyBridge);
         if (currentReadinessBridge) generationObserver.attachBridge(currentReadinessBridge);
         const sidecarBase = mountSidecar || 'X:\\Media\\fixture.y4m.strm';
         const directOptions = (name, requestId) => ({

@@ -15,7 +15,7 @@
     function classify(input) {
         const value = input || {};
         const runnerFailed = observed(value.runnerFailed);
-        const rawPepperReady = observed(value.rawPepperReadyObserved);
+        const rawBridgeReady = observed(value.rawBridgeReadyObserved);
         const directReady = observed(value.directReadyObserved);
         const stickyReady = observed(value.stickyReadyObserved);
         const managerResolved = observed(value.managerPlayResolved);
@@ -28,9 +28,9 @@
         const playbackSucceeded = managerResolved && corePlaying && videoProgress && sessionNowPlaying && progressReportAccepted;
         const rows = [];
 
-        if (rawPepperReady) rows.push(evidence('pepper-ready-raw-event', 'embed message type ready'));
-        if (directReady) rows.push(evidence('pepper-ready', 'acceptance-observer-wrapper'));
-        if (stickyReady) rows.push(evidence('pepper-ready', 'prepared-preload-sticky-state'));
+        if (rawBridgeReady) rows.push(evidence('bridge-ready-signal', 'native-helper-ready event'));
+        if (directReady) rows.push(evidence('bridge-ready', 'acceptance-observer-wrapper'));
+        if (stickyReady) rows.push(evidence('bridge-ready', 'prepared-preload-sticky-state'));
         if (managerResolved) rows.push(evidence('manager-play-resolved', 'PlaybackManager.play Promise'));
         if (corePlayingObserved) rows.push(evidence('core-playing', 'window core-playing event'));
         if (corePlayingInferred) rows.push(evidence('core-playing', 'manager-resolved plus video progress inference'));
@@ -48,7 +48,7 @@
         } else if (playbackSucceeded && directReady) {
             classification = 'A';
             status = 'observed-ready';
-            reason = 'pepper-ready-observed-and-playback-succeeded';
+            reason = 'bridge-ready-observed-and-playback-succeeded';
         } else if (playbackSucceeded) {
             classification = 'B';
             status = 'inferred-ready-from-authoritative-state';
@@ -73,12 +73,12 @@
             authoritativeReadinessConfirmed: directReady || stickyReady || playbackSucceeded,
             observerOnlyMiss: classification === 'B' && !stickyReady,
             alternateEvidence: classification === 'B',
-            pepperReadiness: {
+            bridgeReadiness: {
                 status: status,
                 evidence: rows.filter(function (row) {
-                    return row.kind === 'pepper-ready' || row.kind === 'pepper-ready-raw-event';
+                    return row.kind === 'bridge-ready' || row.kind === 'bridge-ready-signal';
                 }),
-                rawPepperReadyObserved: rawPepperReady,
+                rawBridgeReadyObserved: rawBridgeReady,
                 normalizedObservation: directReady ? 'direct-product-diagnostics' : stickyReady ? 'sticky-authoritative-state' : playbackSucceeded ? 'authoritative-alternate-playback-evidence' : 'missing'
             },
             evidence: rows

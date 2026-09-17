@@ -5,6 +5,8 @@ if ($RuntimeName -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$') { throw 'Invalid runt
 $runtime = Join-Path (Join-Path $root 'dist') $RuntimeName
 $sourceCommit = ([string]((& git -C $root rev-parse HEAD 2>$null) | Select-Object -First 1)).Trim()
 if ($sourceCommit -notmatch '^[0-9a-fA-F]{40}$') { throw 'Unable to resolve source git commit.' }
+& node (Join-Path $root 'tools/runtime-exclusions.cjs') verify $runtime
+if ($LASTEXITCODE -ne 0) { throw 'Retired runtime artifact is present.' }
 $sourceProvenanceText = (& node (Join-Path $root 'tools/source-provenance.cjs') validate $root $runtime $sourceCommit 2>$null | Out-String)
 $sourceProvenanceExit = $LASTEXITCODE
 $sourceProvenance = $null

@@ -13,7 +13,7 @@ test('prepared preload is deterministic, sticky and based only on vendor input',
     const prepared = preparation.buildPreparedPreload(vendorPreload);
     assert.match(prepared, /window\.ipc = ipcRenderer/);
     assert.match(prepared, new RegExp(preparation.PREPARED_PRELOAD_MARKER));
-    assert.match(prepared, /window\.__etePepperReadiness/);
+    assert.match(prepared, /window\.__eteBridgeReadiness/);
     assert.match(prepared, /window\.__eteDiagnosticHash/);
     assert.match(prepared, /function beginRun/);
     assert.match(prepared, /diagnostics\.collect/);

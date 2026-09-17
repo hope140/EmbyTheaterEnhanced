@@ -247,32 +247,10 @@ app.on('browser-window-created', (_, win) => {
                                 const source = {Id:'fixture-source', Path:${fixture}, Container:'y4m', MediaStreams:[], RunTimeTicks:50000000};
                                 await p.play({item:item, mediaSource:source, url:${fixture}, mediaType:'Video', fullscreen:false, playMethod:'DirectPlay'});
                                 await new Promise(r=>setTimeout(r,900));
-                                const advanced = p.currentTime() > 0;
-                                const bridge = document.querySelector('embed[type="application/x-mpvjs"]');
-                                function read(name) {
-                                    return new Promise((resolve,reject) => {
-                                        const timer = setTimeout(()=> { bridge.removeEventListener('message', receive); reject(Error('Property timeout: '+name)); }, 1500);
-                                        function receive(event) {
-                                            if(event.data.type !== 'property_change' || event.data.data.name !== name) return;
-                                            clearTimeout(timer); bridge.removeEventListener('message', receive); resolve(event.data.data.value);
-                                        }
-                                        bridge.addEventListener('message', receive);
-                                        bridge.postMessage({type:'get_property_async',data:name});
-                                    });
-                                }
-                                const config = {scale:await read('scale'), font:await read('sub-font')};
-                                const cache = [];
-                                for (const mib of [900,2048,3072,4096,8192]) {
-                                    bridge.postMessage({type:'set_property',data:{name:'demuxer-max-bytes',value:mib+'MiB'}});
-                                    const raw = await read('demuxer-max-bytes');
-                                    bridge.postMessage({type:'command',data:['expand-properties','set','user-data/ete-test-cache','$'+'{=demuxer-max-bytes}']});
-                                    const precise = await read('user-data/ete-test-cache');
-                                    cache.push({mib:mib,raw:raw,precise:precise});
-                                }
-                                bridge.postMessage({type:'set_property',data:{name:'demuxer-max-bytes',value:'3072MiB'}});
-                                window.__eteProbe = {config:config,cache:cache};
-                                window.__eteFixtureFrameReady = true;
-                                p.pause();
+                                 const advanced = p.currentTime() > 0;
+                                 const stats = await p.getStats();
+                                 const statsOk = !!(stats && Array.isArray(stats.categories) && stats.categories.length > 0);
+                                 p.pause();
                                 await new Promise(r=>setTimeout(r,200));
                                 const paused = p.paused();
                                 p.currentTime(2000);
@@ -285,16 +263,11 @@ app.on('browser-window-created', (_, win) => {
                                 require(['events'], function(events) { events.on(p, 'stopped', function() { stopped = true; }); });
                                 await new Promise(r=>setTimeout(r,100));
                                 await p.stop();
-                                resolve({advanced:advanced, paused:paused, sought:sought, resumed:resumed, stopped:stopped});
+                                 resolve({advanced:advanced, statsOk:statsOk, paused:paused, sought:sought, resumed:resumed, stopped:stopped});
                             } catch(e) { reject(e); }
                         });
-                    })`, 'ete-local-media-fixture.js'));
-                    state.playback = playback;
-                    state.probe = await win.webContents.executeJavaScript(withSourceUrl('window.__eteProbe', 'ete-local-probe-read.js'));
-                    if (state.probe.config.scale !== 'bilinear' || state.probe.config.font !== 'ETE-CONFIG-PROBE' ||
-                        !state.probe.cache.every(row => typeof row.precise === 'string' && Number(row.precise) === row.mib*1048576 && row.raw === ((row.mib*1048576)|0))) {
-                        return finish({ok:false, error:'Configuration or cache probe mismatch', state});
-                    }
+                     })`, 'ete-local-media-fixture.js'));
+                     state.playback = playback;
                     if (!Object.values(playback).every(Boolean)) return finish({ok:false, versions:process.versions, state});
                 }
                 finish({ok:state.ready && state.players.some(p=>p.id==='libmpvmediaplayer') && !state.players.some(p=>p.id==='externalplayer'), versions:process.versions, state});

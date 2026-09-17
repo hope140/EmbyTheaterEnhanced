@@ -103,7 +103,7 @@ app.on('browser-window-created',(_,created)=>{
                 mark('flow-injected');
                 trace('flow-injected');
                 const override=String(process.env.ETE_ACCEPT_METHODS||'').split(',').map(name=>name.trim()).filter(name=>/^[A-Za-z]+$/.test(name));
-                const methods=override.length?override:process.env.ETE_ACCEPT_INSPECT_ONLY?['inspect']:process.env.ETE_ACCEPT_SELECT_ONLY?['inspect','select']:process.env.ETE_ACCEPT_DIRECT_SMOKE?['inspect','select','directSmoke']:process.env.ETE_ACCEPT_VISUAL?['inspect','select','play','visual','stop']:['inspect','select','play','pause','seek','resume','next','stop'];
+                const methods=override.length?override:process.env.ETE_ACCEPT_INSPECT_ONLY?['inspect']:process.env.ETE_ACCEPT_SELECT_ONLY?['inspect','select']:process.env.ETE_ACCEPT_VISUAL?['inspect','select','play','visual','stop']:['inspect','select','play','pause','seek','resume','next','stop'];
                 for(const method of methods){
                     if(end.state()!=='OPEN')return;
                     report.currentStage=method;save();

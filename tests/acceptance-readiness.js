@@ -5,26 +5,23 @@
     var installedAt = Date.now();
     var marks = Object.create(null);
     var timeline = [];
-    var messages = [];
-    var embed = null;
-    var knownEmbeds = [];
-    var embedLifecycle = [];
-    var embedObserver = null;
-    var embedCreatedObservationMs = null;
-    var embedAttachedMs = null;
-    var embedRecreated = false;
-    var multipleEmbedsObserved = false;
-    var originalPostMessage = null;
-    var postMessageWrapper = null;
+    var surface = null;
+    var knownSurfaces = [];
+    var surfaceLifecycle = [];
+    var surfaceObserver = null;
+    var surfaceCreatedObservationMs = null;
+    var surfaceAttachedMs = null;
+    var surfaceRecreated = false;
+    var multipleSurfacesObserved = false;
     var originalDiagnostics = null;
     var diagnosticsWrapper = null;
     var originalConsoleLog = null;
     var consoleWrapper = null;
     var pollTimer = null;
     var lastError = null;
-    var nativeBootstrapReadySeen = false;
-    var pepperReadyRawEventSeen = false;
-    var pepperReadyRawEventMs = null;
+    var bridgeBootstrapReadySeen = false;
+    var bridgeReadySignalSeen = false;
+    var bridgeReadySignalMs = null;
     var diagnosticsReadySeen = false;
     var diagnosticsReadyObserved = false;
     var diagnosticsReadySource = null;
@@ -43,6 +40,7 @@
     var nativeHelperReadyListener = null;
     var currentRunId = null;
     var currentRunStartedAt = t0;
+
     function elapsed() { return Date.now() - t0; }
     function finite(value) { return typeof value === 'number' && isFinite(value); }
     function mark(stage, elapsedMs, status) {
@@ -51,7 +49,7 @@
         marks[name] = true;
         timeline.push({ stage: name, elapsedMs: Math.round(typeof elapsedMs === 'number' ? elapsedMs : elapsed()), status: status || 'seen' });
     }
-    function recordCorePlaying(source) {
+    function recordCorePlaying() {
         if (corePlayingSeen) return;
         corePlayingSeen = true;
         corePlayingMs = elapsed();
@@ -69,11 +67,11 @@
     }
     function stickyState() {
         var state;
-        try { state = window.__etePepperReadiness; } catch (error) { return null; }
+        try { state = window.__eteBridgeReadiness; } catch (error) { return null; }
         if (!state || typeof state !== 'object') return null;
         if (typeof state.snapshot === 'function') {
             stickyReadinessSupported = true;
-            try { return state.snapshot(embed); } catch (error) { lastError = 'sticky-readiness-query-failed'; return null; }
+            try { return state.snapshot(); } catch (error) { lastError = 'sticky-readiness-query-failed'; return null; }
         }
         return null;
     }
@@ -93,7 +91,7 @@
         if (!diagnosticsReadySeen) {
             diagnosticsReadySeen = true;
             diagnosticsReadySource = 'sticky-state';
-            mark('pepper-ready', Math.max(0, stickyReadinessAt - t0));
+            mark('bridge-ready', Math.max(0, stickyReadinessAt - t0));
         }
     }
     function recordDiagnostics(stage, source) {
@@ -102,7 +100,7 @@
             diagnosticsReadySeen = true;
             if (source === 'observer-wrapper') diagnosticsReadyObserved = true;
             diagnosticsReadySource = source || diagnosticsReadySource || 'unknown';
-            mark('pepper-ready');
+            mark('bridge-ready');
         }
         if (name === 'playing') {
             diagnosticsPlayingSeen = true;
@@ -113,21 +111,21 @@
         currentRunId = String(runId || ('run-' + Date.now()));
         currentRunStartedAt = Date.now();
         try {
-            var state = window.__etePepperReadiness;
+            var state = window.__eteBridgeReadiness;
             if (state && typeof state.beginRun === 'function') {
                 stickyReadinessSupported = true;
                 state.beginRun(currentRunId, currentRunStartedAt);
             }
         } catch (error) { lastError = 'sticky-readiness-reset-failed'; }
-        ['play-called', 'embed-created', 'native-bridge-created', 'embed-attached', 'native-bootstrap-ready', 'pepper-ready', 'manager-play-resolved', 'resolver-result', 'loadfile', 'core-playing', 'video-progress', 'playing'].forEach(function (stage) {
+        ['play-called', 'surface-created', 'native-bridge-created', 'surface-attached', 'native-bootstrap-ready', 'bridge-ready', 'manager-play-resolved', 'resolver-result', 'loadfile', 'core-playing', 'video-progress', 'playing'].forEach(function (stage) {
             delete marks[stage];
         });
         timeline = timeline.filter(function (row) {
-            return ['play-called', 'embed-created', 'native-bridge-created', 'embed-attached', 'native-bootstrap-ready', 'pepper-ready', 'manager-play-resolved', 'resolver-result', 'loadfile', 'core-playing', 'video-progress', 'playing'].indexOf(row.stage) < 0;
+            return ['play-called', 'surface-created', 'native-bridge-created', 'surface-attached', 'native-bootstrap-ready', 'bridge-ready', 'manager-play-resolved', 'resolver-result', 'loadfile', 'core-playing', 'video-progress', 'playing'].indexOf(row.stage) < 0;
         });
-        nativeBootstrapReadySeen = false;
-        pepperReadyRawEventSeen = false;
-        pepperReadyRawEventMs = null;
+        bridgeBootstrapReadySeen = false;
+        bridgeReadySignalSeen = false;
+        bridgeReadySignalMs = null;
         diagnosticsReadySeen = false;
         diagnosticsReadyObserved = false;
         diagnosticsReadySource = null;
@@ -143,20 +141,20 @@
         lastVideoPosition = null;
         return currentRunId;
     }
-    function embedNodes() {
+    function surfaceNodes() {
         try {
-            if (document.querySelectorAll) return Array.prototype.slice.call(document.querySelectorAll('embed[type="application/x-mpvjs"]'));
-        } catch (error) { lastError = 'embed-query-failed'; }
+            if (document.querySelectorAll) return Array.prototype.slice.call(document.querySelectorAll('.mpv-videoPlayerContainer-native'));
+        } catch (error) { lastError = 'surface-query-failed'; }
         try {
-            var found = findEmbed();
+            var found = findSurface();
             return found ? [found] : [];
         } catch (error) { return []; }
     }
-    function isEmbedNode(node) {
+    function isSurfaceNode(node) {
         if (!node || node.nodeType !== 1) return false;
         try {
-            if (typeof node.matches === 'function') return node.matches('embed[type="application/x-mpvjs"]');
-            return String(node.tagName || '').toLowerCase() === 'embed' && node.type === 'application/x-mpvjs';
+            if (typeof node.matches === 'function') return node.matches('.mpv-videoPlayerContainer-native');
+            return !!(node.classList && typeof node.classList.contains === 'function' && node.classList.contains('mpv-videoPlayerContainer-native'));
         } catch (error) { return false; }
     }
     function nodeIsConnected(node) {
@@ -165,130 +163,97 @@
             return !!(document.documentElement && document.documentElement.contains && document.documentElement.contains(node));
         } catch (error) { return false; }
     }
-    function currentEmbedCount() { return embedNodes().length; }
+    function currentSurfaceCount() { return surfaceNodes().length; }
     function lifecycleRecord(node) {
-        for (var i = 0; i < knownEmbeds.length; i++) {
-            if (knownEmbeds[i].node === node) return knownEmbeds[i];
+        for (var i = 0; i < knownSurfaces.length; i++) {
+            if (knownSurfaces[i].node === node) return knownSurfaces[i];
         }
-        var record = { node: node, connected: null, disconnected: false, index: knownEmbeds.length + 1 };
-        knownEmbeds.push(record);
+        var record = { node: node, connected: null, disconnected: false, index: knownSurfaces.length + 1 };
+        knownSurfaces.push(record);
         return record;
     }
-    function rememberEmbedLifecycle(node, source, forceState) {
-        if (!isEmbedNode(node)) return;
+    function rememberSurfaceLifecycle(node, source, forceState) {
+        if (!isSurfaceNode(node)) return;
         var record = lifecycleRecord(node);
         var connected = forceState === 'disconnected' ? false : nodeIsConnected(node);
-        var count = currentEmbedCount();
+        var count = currentSurfaceCount();
         var first = record.connected === null;
         if (first) {
-            for (var previous = 0; previous < knownEmbeds.length; previous++) {
-                if (knownEmbeds[previous] !== record && knownEmbeds[previous].disconnected) embedRecreated = true;
+            for (var previous = 0; previous < knownSurfaces.length; previous++) {
+                if (knownSurfaces[previous] !== record && knownSurfaces[previous].disconnected) surfaceRecreated = true;
             }
-            embedCreatedObservationMs = embedCreatedObservationMs === null ? elapsed() : embedCreatedObservationMs;
-            mark('embed-created', embedCreatedObservationMs);
-            embedLifecycle.push({ event: 'created-observed', embedIndex: record.index, connected: connected, currentCount: count, elapsedMs: embedCreatedObservationMs, source: source });
+            surfaceCreatedObservationMs = surfaceCreatedObservationMs === null ? elapsed() : surfaceCreatedObservationMs;
+            mark('surface-created', surfaceCreatedObservationMs);
+            surfaceLifecycle.push({ event: 'created-observed', surfaceIndex: record.index, connected: connected, currentCount: count, elapsedMs: surfaceCreatedObservationMs, source: source });
         }
         if (connected && record.connected !== true) {
-            if (record.disconnected) embedRecreated = true;
+            if (record.disconnected) surfaceRecreated = true;
             record.connected = true;
-            embedAttachedMs = embedAttachedMs === null ? elapsed() : embedAttachedMs;
-            mark('embed-attached', embedAttachedMs);
-            embedLifecycle.push({ event: 'connected', embedIndex: record.index, connected: true, currentCount: count, elapsedMs: embedAttachedMs, source: source });
+            surfaceAttachedMs = surfaceAttachedMs === null ? elapsed() : surfaceAttachedMs;
+            mark('surface-attached', surfaceAttachedMs);
+            surfaceLifecycle.push({ event: 'connected', surfaceIndex: record.index, connected: true, currentCount: count, elapsedMs: surfaceAttachedMs, source: source });
         } else if (!connected && record.connected === true) {
             record.connected = false;
             record.disconnected = true;
-            embedLifecycle.push({ event: 'disconnected', embedIndex: record.index, connected: false, currentCount: count, elapsedMs: elapsed(), source: source });
+            surfaceLifecycle.push({ event: 'disconnected', surfaceIndex: record.index, connected: false, currentCount: count, elapsedMs: elapsed(), source: source });
         }
-        if (count > 1 || knownEmbeds.length > 1) multipleEmbedsObserved = true;
-        if (embedLifecycle.length > 64) embedLifecycle.shift();
+        if (count > 1 || knownSurfaces.length > 1) multipleSurfacesObserved = true;
+        if (surfaceLifecycle.length > 64) surfaceLifecycle.shift();
     }
-    function collectEmbedNodes(node, output) {
+    function collectSurfaceNodes(node, output) {
         if (!node) return;
-        if (isEmbedNode(node)) output.push(node);
+        if (isSurfaceNode(node)) output.push(node);
         try {
             if (node.querySelectorAll) {
-                var nested = node.querySelectorAll('embed[type="application/x-mpvjs"]');
+                var nested = node.querySelectorAll('.mpv-videoPlayerContainer-native');
                 for (var i = 0; i < nested.length; i++) output.push(nested[i]);
             }
-        } catch (error) { lastError = 'embed-query-failed'; }
+        } catch (error) { lastError = 'surface-query-failed'; }
     }
     function processMutationRecords(records) {
         var added = [], removed = [];
         for (var i = 0; i < records.length; i++) {
             var row = records[i] || {};
-            collectEmbedNodes(row.addedNodes && row.addedNodes[0], added);
-            collectEmbedNodes(row.removedNodes && row.removedNodes[0], removed);
-            if (row.addedNodes) for (var a = 1; a < row.addedNodes.length; a++) collectEmbedNodes(row.addedNodes[a], added);
-            if (row.removedNodes) for (var r = 1; r < row.removedNodes.length; r++) collectEmbedNodes(row.removedNodes[r], removed);
+            collectSurfaceNodes(row.addedNodes && row.addedNodes[0], added);
+            collectSurfaceNodes(row.removedNodes && row.removedNodes[0], removed);
+            if (row.addedNodes) for (var a = 1; a < row.addedNodes.length; a++) collectSurfaceNodes(row.addedNodes[a], added);
+            if (row.removedNodes) for (var r = 1; r < row.removedNodes.length; r++) collectSurfaceNodes(row.removedNodes[r], removed);
         }
-        for (var j = 0; j < added.length; j++) rememberEmbedLifecycle(added[j], 'mutation-observer');
-        for (var k = 0; k < removed.length; k++) rememberEmbedLifecycle(removed[k], 'mutation-observer', 'disconnected');
-        scanEmbedState();
+        for (var j = 0; j < added.length; j++) rememberSurfaceLifecycle(added[j], 'mutation-observer');
+        for (var k = 0; k < removed.length; k++) rememberSurfaceLifecycle(removed[k], 'mutation-observer', 'disconnected');
+        if (added.length) surface = added[added.length - 1];
+        scanSurfaceState();
     }
-    function scanEmbedState() {
-        var current = embedNodes();
-        for (var i = 0; i < current.length; i++) rememberEmbedLifecycle(current[i], 'poll');
-        for (var j = 0; j < knownEmbeds.length; j++) {
-            if (knownEmbeds[j].connected && current.indexOf(knownEmbeds[j].node) < 0) rememberEmbedLifecycle(knownEmbeds[j].node, 'poll', 'disconnected');
+    function scanSurfaceState() {
+        var current = surfaceNodes();
+        for (var i = 0; i < current.length; i++) rememberSurfaceLifecycle(current[i], 'poll');
+        for (var j = 0; j < knownSurfaces.length; j++) {
+            if (knownSurfaces[j].connected && current.indexOf(knownSurfaces[j].node) < 0) rememberSurfaceLifecycle(knownSurfaces[j].node, 'poll', 'disconnected');
         }
     }
-    function installEmbedObserver() {
-        if (typeof MutationObserver !== 'function') { lastError = 'embed-observer-unavailable'; return; }
+    function installSurfaceObserver() {
+        if (typeof MutationObserver !== 'function') { lastError = 'surface-observer-unavailable'; return; }
         try {
-            embedObserver = new MutationObserver(processMutationRecords);
-            embedObserver.observe(document.documentElement || document, { childList: true, subtree: true });
-        } catch (error) { embedObserver = null; lastError = 'embed-observer-failed'; }
+            surfaceObserver = new MutationObserver(processMutationRecords);
+            surfaceObserver.observe(document.documentElement || document, { childList: true, subtree: true });
+        } catch (error) { surfaceObserver = null; lastError = 'surface-observer-failed'; }
     }
-    function rememberMessage(direction, message) {
-        var type = message && typeof message.type === 'string' ? message.type : 'unknown';
-        var data = message && message.data;
-        var command = Array.isArray(data) && typeof data[0] === 'string' ? data[0].toLowerCase() : null;
-        if (type === 'ready') {
-            nativeBootstrapReadySeen = true;
-            pepperReadyRawEventSeen = true;
-            pepperReadyRawEventMs = elapsed();
-            mark('native-bootstrap-ready');
-        }
-        if (type === 'property_change' && data && typeof data.name === 'string') {
-            if (data.name === 'core-idle' && data.value === false) recordCorePlaying('embed-property');
-            if (data.name === 'time-pos') recordVideoPosition(data.value);
-        }
-        if (command === 'loadfile') mark('loadfile');
-        if (messages.length < 32) messages.push({ direction: direction, type: type.slice(0, 32), command: command && command.slice(0, 32) });
-    }
-    function onEmbedMessage(event) { try { rememberMessage('in', event && event.data); } catch (error) { lastError = 'embed-message-error'; } }
-    function onCorePlaying() { recordCorePlaying('window-event'); }
     function onNativeHelperReady() {
-        nativeBootstrapReadySeen = true;
+        bridgeBootstrapReadySeen = true;
+        bridgeReadySignalSeen = true;
+        bridgeReadySignalMs = elapsed();
         mark('native-bridge-created');
         mark('native-bootstrap-ready');
     }
-    function findEmbed() {
-        try { return document.querySelector('embed[type="application/x-mpvjs"]'); } catch (error) { return null; }
+    function findSurface() {
+        try { return document.querySelector('.mpv-videoPlayerContainer-native'); } catch (error) { return null; }
     }
-    function attachEmbed() {
-        var found = findEmbed();
-        scanEmbedState();
-        if (!found || found === embed) return;
-        if (embed) {
-            try { embed.removeEventListener('message', onEmbedMessage); } catch (error) { }
-            if (embed.postMessage === postMessageWrapper) { try { embed.postMessage = originalPostMessage; } catch (error) { } }
-        }
-        embed = found;
-        mark('embed-created');
-        try { embed.addEventListener('message', onEmbedMessage); } catch (error) { lastError = 'embed-hook-failed'; }
-        try {
-            originalPostMessage = embed.postMessage;
-            if (typeof originalPostMessage === 'function' && !originalPostMessage.__eteReadinessHook) {
-                postMessageWrapper = function (message) {
-                    try { rememberMessage('out', message); } catch (error) { lastError = 'embed-message-error'; }
-                    return originalPostMessage.apply(this, arguments);
-                };
-                postMessageWrapper.__eteReadinessHook = true;
-                embed.postMessage = postMessageWrapper;
-            }
-        } catch (error) { lastError = 'embed-command-hook-failed'; }
-        syncStickyReadiness();
+    function attachSurface() {
+        var found = findSurface();
+        scanSurfaceState();
+        if (!found || found === surface) return;
+        surface = found;
+        rememberSurfaceLifecycle(found, 'poll');
     }
     function installDiagnosticsHook() {
         var current = window.enhancedDiagnostics;
@@ -319,13 +284,13 @@
             console.log = consoleWrapper;
         } catch (error) { lastError = 'console-hook-failed'; }
     }
-    function poll() { try { installDiagnosticsHook(); installResolverHook(); attachEmbed(); syncStickyReadiness(); } catch (error) { lastError = 'observer-poll-failed'; } }
+    function poll() { try { installDiagnosticsHook(); installResolverHook(); attachSurface(); syncStickyReadiness(); } catch (error) { lastError = 'observer-poll-failed'; } }
     function install() {
         mark('observer-installed', installedAt - t0);
-        installEmbedObserver();
+        installSurfaceObserver();
         try {
             if (typeof window.addEventListener === 'function') {
-                corePlayingListener = onCorePlaying;
+                corePlayingListener = recordCorePlaying;
                 window.addEventListener('core-playing', corePlayingListener);
                 nativeHelperReadyListener = onNativeHelperReady;
                 window.addEventListener('native-helper-ready', nativeHelperReadyListener);
@@ -336,50 +301,46 @@
         pollTimer = setInterval(poll, 50);
     }
     function snapshot() {
-        scanEmbedState();
+        scanSurfaceState();
         syncStickyReadiness();
-        var pepperReadinessStatus = diagnosticsReadyObserved ? 'observed-ready' : stickyReadinessObserved ? 'inferred-ready-from-authoritative-state' : stickyReadinessSupported ? 'not-ready' : 'observer-missing';
-        var pepperReadinessEvidence = [];
-        if (pepperReadyRawEventSeen) pepperReadinessEvidence.push({ kind: 'pepper-ready-raw-event', source: 'embed message type ready' });
-        if (diagnosticsReadyObserved) pepperReadinessEvidence.push({ kind: 'pepper-ready', source: 'acceptance observer wrapper' });
-        if (stickyReadinessObserved) pepperReadinessEvidence.push({ kind: 'pepper-ready', source: 'prepared preload sticky state' });
+        var bridgeReadinessStatus = diagnosticsReadyObserved ? 'observed-ready' : stickyReadinessObserved ? 'inferred-ready-from-authoritative-state' : stickyReadinessSupported ? 'not-ready' : 'observer-missing';
+        var bridgeReadinessEvidence = [];
+        if (bridgeReadySignalSeen) bridgeReadinessEvidence.push({ kind: 'bridge-ready-signal', source: 'native-helper-ready event' });
+        if (diagnosticsReadyObserved) bridgeReadinessEvidence.push({ kind: 'bridge-ready', source: 'acceptance observer wrapper' });
+        if (stickyReadinessObserved) bridgeReadinessEvidence.push({ kind: 'bridge-ready', source: 'prepared preload sticky state' });
         return {
             version: 1, installedAt: installedAt, installElapsedMs: installedAt - t0, elapsedMs: elapsed(),
             timeline: timeline.map(function (row) { return { stage: row.stage, elapsedMs: row.elapsedMs, status: row.status }; }),
-            messageSummary: messages.slice(), nativeBootstrapReadySeen: nativeBootstrapReadySeen,
-            pepperReadyRawEventSeen: pepperReadyRawEventSeen, pepperReadyRawEventMs: pepperReadyRawEventMs,
+            messageSummary: [], bridgeBootstrapReadySeen: bridgeBootstrapReadySeen,
+            bridgeReadySignalSeen: bridgeReadySignalSeen, bridgeReadySignalMs: bridgeReadySignalMs,
             diagnosticsHookInstalled: !!diagnosticsWrapper, diagnosticsReadySeen: diagnosticsReadySeen,
             diagnosticsReadyObserved: diagnosticsReadyObserved, diagnosticsReadySource: diagnosticsReadySource,
-            diagnosticsPlayingSeen: diagnosticsPlayingSeen, pepperAuthoritativeReady: diagnosticsReadySeen,
+            diagnosticsPlayingSeen: diagnosticsPlayingSeen, bridgeAuthoritativeReady: diagnosticsReadySeen,
             stickyReadinessSupported: stickyReadinessSupported, stickyReadinessObserved: stickyReadinessObserved,
             stickyReadinessRunId: stickyReadinessRunId, stickyReadinessAt: stickyReadinessAt,
-            pepperReadiness: { status: pepperReadinessStatus, evidence: pepperReadinessEvidence,
-                rawEventObserved: pepperReadyRawEventSeen, normalizedObservation: diagnosticsReadyObserved ? 'direct-product-diagnostics' : stickyReadinessObserved ? 'sticky-authoritative-state' : 'missing' },
+            bridgeReadiness: { status: bridgeReadinessStatus, evidence: bridgeReadinessEvidence,
+                rawEventObserved: bridgeReadySignalSeen, normalizedObservation: diagnosticsReadyObserved ? 'direct-product-diagnostics' : stickyReadinessObserved ? 'sticky-authoritative-state' : 'missing' },
             corePlayingSeen: corePlayingSeen, corePlayingMs: corePlayingMs,
             videoProgressSeen: videoProgressSeen, firstVideoProgressMs: firstVideoProgressMs,
             firstVideoPosition: firstVideoPosition, lastVideoPosition: lastVideoPosition,
-            resolverResultSeen: !!marks['resolver-result'], loadfileSeen: !!marks.loadfile,
-            loadfileObservation: marks.loadfile ? 'available' : 'unavailable', lastError: lastError,
-            embedCount: knownEmbeds.length, connectedEmbedCount: currentEmbedCount(),
-            embedConnected: !!embed && nodeIsConnected(embed), embedRecreated: embedRecreated,
-            multipleEmbedsObserved: multipleEmbedsObserved, embedCreatedObservationMs: embedCreatedObservationMs,
-            embedAttachedMs: embedAttachedMs, embedLifecycle: embedLifecycle.map(function (row) {
-                return { event: row.event, embedIndex: row.embedIndex, connected: row.connected,
+            resolverResultSeen: !!marks['resolver-result'], loadfileSeen: false,
+            loadfileObservation: 'unavailable', lastError: lastError,
+            surfaceCount: knownSurfaces.length, connectedSurfaceCount: currentSurfaceCount(),
+            surfaceConnected: !!surface && nodeIsConnected(surface), surfaceRecreated: surfaceRecreated,
+            multipleSurfacesObserved: multipleSurfacesObserved, surfaceCreatedObservationMs: surfaceCreatedObservationMs,
+            surfaceAttachedMs: surfaceAttachedMs, surfaceLifecycle: surfaceLifecycle.map(function (row) {
+                return { event: row.event, surfaceIndex: row.surfaceIndex, connected: row.connected,
                     currentCount: row.currentCount, elapsedMs: row.elapsedMs, source: row.source };
             })
         };
     }
     function cleanup() {
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-        if (embedObserver) { try { embedObserver.disconnect(); } catch (error) { } embedObserver = null; }
+        if (surfaceObserver) { try { surfaceObserver.disconnect(); } catch (error) { } surfaceObserver = null; }
         if (corePlayingListener && typeof window.removeEventListener === 'function') { try { window.removeEventListener('core-playing', corePlayingListener); } catch (error) { } corePlayingListener = null; }
         if (nativeHelperReadyListener && typeof window.removeEventListener === 'function') { try { window.removeEventListener('native-helper-ready', nativeHelperReadyListener); } catch (error) { } nativeHelperReadyListener = null; }
         if (console.log === consoleWrapper && originalConsoleLog) { try { console.log = originalConsoleLog; } catch (error) { } }
         if (window.enhancedDiagnostics === diagnosticsWrapper && originalDiagnostics) { try { window.enhancedDiagnostics = originalDiagnostics; } catch (error) { } }
-        if (embed) {
-            try { embed.removeEventListener('message', onEmbedMessage); } catch (error) { }
-            if (embed.postMessage === postMessageWrapper && originalPostMessage) { try { embed.postMessage = originalPostMessage; } catch (error) { } }
-        }
     }
     var api = { version: 1, mark: mark, beginRun: beginRun, snapshot: snapshot, cleanup: cleanup, observer: { install: install } };
     window.__eteReadiness = api;

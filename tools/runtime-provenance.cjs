@@ -7,6 +7,7 @@ const trackedProductSources = require('./copy-tracked-product-sources.cjs');
 const preloadPreparation = require('./prepare-preload.cjs');
 const sourceProvenance = require('./source-provenance.cjs');
 const trackedFileHash = require('./tracked-file-hash.cjs');
+const runtimeExclusions = require('./runtime-exclusions.cjs');
 
 const OVERLAY_RUNTIME_PATH = 'electronapp/www/modules/common/playback/playbackmanager.js';
 const OVERLAY_GENERATOR_PATH = 'tools/patch-playbackmanager.cjs';
@@ -145,13 +146,24 @@ function baselineIdentity(root) {
         baseline: manifest.baseline || 'unknown',
         vendorFileCount: Array.isArray(manifest.files) ? manifest.files.length : null,
         vendorPatchFileCount: Array.isArray(manifest.patchFiles) ? manifest.patchFiles.length : null,
+        runtimeExclusions: Array.isArray(manifest.runtimeExclusions) ? manifest.runtimeExclusions.slice() : [],
         coverage: 'vendor files are identified by the external runtime manifest, not by sourceCommit'
+    };
+}
+
+function runtimeExclusionIdentity(root) {
+    return {
+        generatorPath: 'tools/runtime-exclusions.cjs',
+        generatorSha256: trackedFileHash.hashTrackedTextFile(root, 'tools/runtime-exclusions.cjs'),
+        paths: [...runtimeExclusions.RETIRED_RUNTIME_PATHS]
     };
 }
 
 function writeManifest(root, runtime, sourceCommit) {
     if (!/^[0-9a-fA-F]{40}$/.test(sourceCommit || '')) throw new Error('sourceCommit must be a 40-character git commit.');
     const entries = sourceEntries(root, sourceCommit);
+    const exclusionResult = runtimeExclusions.verify(runtime);
+    if (exclusionResult.status !== 'passed') throw new Error('Retired runtime artifact present: ' + exclusionResult.presentPaths.join(','));
     const buildOverlays = buildOverlayEntries(root, runtime);
     const preparedArtifacts = buildPreparedArtifactEntries(root, runtime);
     const sourceProvenanceEntry = sourceProvenanceIdentity(root, runtime, sourceCommit);
@@ -171,6 +183,7 @@ function writeManifest(root, runtime, sourceCommit) {
         sourceCommit: sourceCommit.toLowerCase(),
         sourceProvenance: sourceProvenanceEntry,
         baselineIdentity: baselineIdentity(root),
+        runtimeExclusions: runtimeExclusionIdentity(root),
         validatedProductScope: {
             sourceRoot: 'src/electronapp',
             runtimeRoot: 'electronapp',
@@ -201,6 +214,7 @@ function failedValidation(runtime, sourceCommit, errors, files, manifest) {
         manifest: 'runtime-provenance.json',
         baselineIdentity: manifest && manifest.baselineIdentity || null,
         sourceProvenance: manifest && manifest.sourceProvenance || null,
+        runtimeExclusions: manifest && manifest.runtimeExclusions || null,
         buildOverlays: manifest && Array.isArray(manifest.buildOverlays) ? manifest.buildOverlays : [],
         validatedProductScope: manifest && manifest.validatedProductScope
             ? {
@@ -304,6 +318,15 @@ function validateManifest(root, runtime, sourceCommit) {
         if (!exists(baselinePath)) errors.push('baseline-manifest-missing');
         else if (hashFile(baselinePath) !== manifest.baselineIdentity.sha256) errors.push('baseline-manifest-changed');
     }
+    const expectedRuntimeExclusions = runtimeExclusionIdentity(root);
+    const actualRuntimeExclusions = manifest.runtimeExclusions;
+    if (!actualRuntimeExclusions || actualRuntimeExclusions.generatorPath !== expectedRuntimeExclusions.generatorPath ||
+        actualRuntimeExclusions.generatorSha256 !== expectedRuntimeExclusions.generatorSha256 ||
+        !sameStringArray(actualRuntimeExclusions.paths, expectedRuntimeExclusions.paths)) {
+        errors.push('runtime-exclusion-contract-mismatch');
+    }
+    const exclusionResult = runtimeExclusions.verify(runtime);
+    if (exclusionResult.status !== 'passed') errors.push('retired-runtime-artifact-present');
     const scope = manifest.validatedProductScope;
     if (!scope || scope.sourceRoot !== 'src/electronapp' || scope.runtimeRoot !== 'electronapp' ||
         scope.includesIgnoredSourceFiles !== false || scope.sourceSelection !== 'git-commit-blobs' ||
@@ -380,6 +403,7 @@ function validateManifest(root, runtime, sourceCommit) {
         runtimeName: path.basename(runtime),
         manifest: 'runtime-provenance.json',
         baselineIdentity: manifest.baselineIdentity,
+        runtimeExclusions: manifest.runtimeExclusions,
         validatedProductScope: {
             sourceRoot: scope.sourceRoot,
             runtimeRoot: scope.runtimeRoot,

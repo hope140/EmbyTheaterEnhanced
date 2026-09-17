@@ -33,7 +33,7 @@ function makeNativeDiagnosticBridge(optionalResult) {
     };
     return bridge;
 }
-test('real embed replies are scoped to the bridge and ignore unrelated properties', async () => {
+test('real bridge replies are scoped and ignore unrelated properties', async () => {
     const listeners = new Set();
     const bridge = {
         addEventListener(name,callback) { assert.equal(name,'message'); listeners.add(callback); },

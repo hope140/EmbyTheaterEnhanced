@@ -54,8 +54,6 @@ function makeDom() {
         }
     };
     let dialog = null;
-    let embed = null;
-
     const document = {
         body,
         documentElement: {animate() {}},
@@ -63,10 +61,6 @@ function makeDom() {
             return selector === '.mpv-videoPlayerContainer' ? dialog : null;
         },
         createElement(name) {
-            if (name === 'embed') {
-                embed = makeEmbed();
-                return embed;
-            }
             const node = {
                 classList: makeClassList(),
                 style: {},
@@ -77,7 +71,6 @@ function makeDom() {
                     child.parentNode = this;
                     child.isConnected = true;
                     this.children.unshift(child);
-                    if (child === embed) embed.emit({type: 'ready'});
                 },
                 removeChild(child) {
                     this.children = this.children.filter(item => item !== child);
@@ -89,32 +82,30 @@ function makeDom() {
             return node;
         }
     };
+    return {document, body};
+}
 
-    function makeEmbed() {
-        const target = makeEventTarget();
-        const posted = [];
-        return Object.assign(target, {
-            nodeType: 1,
-            tagName: 'EMBED',
-            type: '',
-            classList: makeClassList(),
-            style: {},
-            parentNode: null,
-            isConnected: false,
-            posted,
-            emit(message) {
-                this.dispatchEvent({type: 'message', data: message});
-            },
-            postMessage(message) {
-                posted.push(message);
-                if (message && message.type === 'command' && message.data && message.data[0] === 'loadfile') {
-                    this.emit({type: 'property_change', data: {name: 'core-idle', value: false}});
-                }
+function makeNativeEndpoint() {
+    const target = makeEventTarget();
+    const commands = [];
+    let generationId = 0;
+    return Object.assign(target, {
+        style: {},
+        commands,
+        beginGeneration() { return Promise.resolve({generationId: ++generationId}); },
+        retireGeneration() {},
+        observeProperties() { return Promise.resolve({status: 'ok'}); },
+        setProperties() { return Promise.resolve({status: 'accepted'}); },
+        getProperty(name) { return Promise.resolve(name === 'core-idle' ? false : null); },
+        sendCommand(data) {
+            commands.push(data);
+            if (Array.isArray(data) && data[0] === 'loadfile') {
+                setImmediate(() => target.dispatchEvent({type: 'message', data: {type: 'property_change', data: {name: 'core-idle', value: false}}}));
             }
-        });
-    }
-
-    return {document, body, getEmbed: () => embed};
+            return Promise.resolve({status: 'accepted'});
+        },
+        destroy() { return Promise.resolve(); }
+    });
 }
 
 function routeForResult(result) {
@@ -211,6 +202,7 @@ function loadPlayer(options) {
         routeForResult,
         resolveAsync() { return Promise.resolve(result); }
     };
+    const endpoint = makeNativeEndpoint();
     const dependencies = [
         {translate() { return ''; }},
         {getSubtitleUrl() { return ''; }},
@@ -225,12 +217,12 @@ function loadPlayer(options) {
         undefined,
         undefined,
         undefined,
-        {create() { return Promise.resolve({mode: 'pepper', endpoint: null}); }}
+        {create() { return Promise.resolve({mode: 'native-helper', endpoint}); }}
     ];
     const Player = moduleFactory(...dependencies);
     const player = {};
     Player.call(player);
-    return {player, dom, requireCalls, toastCallbacks, toastCalls, toast};
+    return {player, dom, endpoint, requireCalls, toastCallbacks, toastCalls, toast};
 }
 
 async function playAndFlush(player, options) {
@@ -258,7 +250,7 @@ test('native fallback Toast only triggers for a final STRM native_fallback resul
         const loaded = loadPlayer({resolverResult, isStrm});
         await playAndFlush(loaded.player, makeOptions());
         assert.equal(loaded.toastCalls.length, 0, name);
-        assert.equal(loaded.dom.getEmbed().posted.some(message => message.type === 'command' && message.data[0] === 'loadfile'), true, name);
+        assert.equal(loaded.endpoint.commands.some(message => message[0] === 'loadfile'), true, name);
         await loaded.player.stop(true);
     }
 
@@ -348,7 +340,7 @@ test('Toast load, missing API, throw and reject are fail-open for Native playbac
     for (const settings of cases) {
         const loaded = loadPlayer(settings);
         await playAndFlush(loaded.player, makeOptions());
-        assert.equal(loaded.dom.getEmbed().posted.some(message => message.type === 'command' && message.data[0] === 'loadfile'), true, settings.name);
+        assert.equal(loaded.endpoint.commands.some(message => message[0] === 'loadfile'), true, settings.name);
         await loaded.player.stop(true);
     }
 });

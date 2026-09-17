@@ -152,10 +152,9 @@
     function create(options) {
         var ipc = options && options.ipc;
         return invoke(ipc, 'create', {}).then(function (metadata) {
-            return metadata.mode === 'pepper' ? {mode: 'pepper', endpoint: null} : {
-                mode: 'native-helper',
-                endpoint: new Endpoint(ipc, metadata)
-            };
+            if (metadata.mode === 'pepper') throw new Error('legacy-mode-removed');
+            if (metadata.mode !== 'native-helper') throw new Error('native-helper-mode-invalid');
+            return {mode: 'native-helper', endpoint: new Endpoint(ipc, metadata)};
         });
     }
 

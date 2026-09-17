@@ -805,9 +805,7 @@
     function setCommandLineSwitches() {
 
         var isLinux = require('is-linux');
-        var path = require('path')
         app.commandLine.appendSwitch("ignore-gpu-blacklist");
-        app.commandLine.appendSwitch("register-pepper-plugins", getPluginEntry(path.join(__dirname, 'libmpv', process.arch)));
         app.commandLine.appendSwitch('no-sandbox');
         app.commandLine.appendSwitch('disable-features', 'OutOfBlinkCors')
         app.commandLine.appendSwitch('disable-site-isolation-trials')
@@ -824,40 +822,6 @@
             //app.commandLine.appendSwitch('high-dpi-support', 'true');
             //app.commandLine.appendSwitch('force-device-scale-factor', '1');
         }
-    }
-
-    function getPluginEntry(pluginDir, pluginName = `mpv-${process.platform}-${process.arch}.node`) {
-        var path = require('path')
-        const fullPluginPath = path.join(pluginDir, pluginName);
-        let pluginPath = ""
-        if (containsNonASCII(fullPluginPath)) {
-            // Try relative path to workaround ASCII-only path restriction.
-            if (process.platform === "linux") {
-                pluginPath = path.relative(process.cwd(), fullPluginPath);
-                if (path.dirname(pluginPath) === ".") {
-                    pluginPath = `.${path.sep}${pluginPath}`;
-                }
-            } else if (process.platform === "win32") {
-                process.chdir(pluginDir)
-                pluginPath = path.relative(process.cwd(), fullPluginPath);
-            }
-        } else {
-            pluginPath = fullPluginPath
-        }
-
-        if (containsNonASCII(pluginPath)) {
-            throw new Error("Non-ASCII plugin path is not supported");
-        }
-        return `${pluginPath};application/x-mpvjs`;
-    }
-
-    function containsNonASCII(str) {
-        for (let i = 0; i < str.length; i++) {
-            if (str.charCodeAt(i) > 255) {
-                return true;
-            }
-        }
-        return false;
     }
 
     function getWindowStateDataPath() {
@@ -972,7 +936,7 @@
         getWebContents: getWebContents,
         logger: enhancedLog,
         runtimeRoot: path.resolve(__dirname, '..'),
-        mode: process.env.ETE_MPV_BRIDGE_MODE === 'pepper' ? 'pepper' : 'native-helper'
+        mode: nativeHelperServiceModule.resolveMode(process.env.ETE_MPV_BRIDGE_MODE)
     });
     unregisterNativeHelperIpc = nativeHelperServiceModule.register({
         ipcMain: ipcMain,

@@ -3,7 +3,14 @@
 const assert = require('node:assert/strict');
 const {EventEmitter} = require('node:events');
 const test = require('node:test');
-const {createService, decimalWindowHandle, validateCommand} = require('../src/electronapp/native-helper/service');
+const {createService, decimalWindowHandle, resolveMode, validateCommand} = require('../src/electronapp/native-helper/service');
+
+test('native-helper is the only accepted production mode', function () {
+  assert.equal(resolveMode(undefined), 'native-helper');
+  assert.equal(resolveMode('native-helper'), 'native-helper');
+  assert.throws(() => resolveMode('pepper'), /legacy-mode-removed/);
+  assert.throws(() => resolveMode('unknown'), /unsupported-bridge-mode/);
+});
 
 test('command allowlist preserves supported playback shapes', function () {
   assert.deepEqual(validateCommand('stop'), ['stop']);

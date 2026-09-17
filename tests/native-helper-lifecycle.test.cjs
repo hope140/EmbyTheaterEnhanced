@@ -33,10 +33,6 @@ function makeEventTarget() {
     };
 }
 
-function makeClassList() {
-    return {add() {}, remove() {}};
-}
-
 function makeDom() {
     const body = {
         children: [],
@@ -53,19 +49,14 @@ function makeDom() {
         }
     };
     let dialog = null;
-    let embed = null;
     const document = {
         body,
         querySelector(selector) {
             return selector === '.mpv-videoPlayerContainer' && dialog && dialog.parentNode ? dialog : null;
         },
-        createElement(name) {
-            if (name === 'embed') {
-                embed = makeEmbed();
-                return embed;
-            }
+        createElement() {
             const node = {
-                classList: makeClassList(),
+                classList: {add() {}, remove() {}},
                 style: {},
                 children: [],
                 parentNode: null,
@@ -74,7 +65,6 @@ function makeDom() {
                     child.parentNode = this;
                     child.isConnected = true;
                     this.children.unshift(child);
-                    if (child === embed) embed.emit({type: 'ready'});
                 },
                 removeChild(child) {
                     this.children = this.children.filter(item => item !== child);
@@ -86,43 +76,41 @@ function makeDom() {
             return node;
         }
     };
-
-    function makeEmbed() {
-        const target = makeEventTarget();
-        const posted = [];
-        const value = Object.assign(target, {
-            nodeType: 1,
-            tagName: 'EMBED',
-            type: '',
-            classList: makeClassList(),
-            style: {},
-            parentNode: null,
-            isConnected: false,
-            posted,
-            readyEmitted: false,
-            emit(message) {
-                if (message.type === 'ready') this.readyEmitted = true;
-                this.dispatchEvent({type: 'message', data: message});
-            },
-            postMessage(message) {
-                posted.push(message);
-                if (message && message.type === 'command' && message.data && message.data[0] === 'loadfile') {
-                    this.emit({type: 'property_change', data: {name: 'core-idle', value: false}});
-                }
-            }
-        });
-        return value;
-    }
-
-    return {document, body, getDialog: () => dialog, getEmbed: () => embed};
+    return {document, body};
 }
 
-function loadPlayer(dom, windowTarget, nativeClient) {
+function makeNativeEndpoint() {
+    const target = makeEventTarget();
+    let destroyed = 0;
+    const endpoint = Object.assign(target, {
+        style: {},
+        beginGeneration() { return Promise.resolve({generationId: 1}); },
+        retireGeneration() {},
+        observeProperties() { return Promise.resolve({status: 'ok'}); },
+        setProperties() { return Promise.resolve({status: 'accepted'}); },
+        getProperty() { return Promise.resolve(null); },
+        sendCommand(data) {
+            if (Array.isArray(data) && data[0] === 'loadfile') {
+                setImmediate(() => endpoint.dispatchEvent({type: 'message', data: {type: 'property_change', data: {name: 'core-idle', value: false}}}));
+            }
+            return Promise.resolve({status: 'accepted'});
+        },
+        destroy() { destroyed++; return Promise.resolve(); },
+        destroyedCount() { return destroyed; }
+    });
+    return endpoint;
+}
+
+function loadPlayer(nativeClient) {
     let moduleFactory;
     const amdRequire = function (_dependencies, callback) {
         if (typeof callback === 'function') callback();
         return Promise.resolve();
     };
+    const windowTarget = makeEventTarget();
+    windowTarget.platform = 'win32';
+    windowTarget.enhancedDiagnostics = function () {};
+    const dom = makeDom();
     const context = {
         window: windowTarget,
         addEventListener: windowTarget.addEventListener.bind(windowTarget),
@@ -150,7 +138,7 @@ function loadPlayer(dom, windowTarget, nativeClient) {
         JSON,
         setTimeout,
         clearTimeout,
-        console: {log() { }},
+        console: {log() {}},
         define(_dependencies, factory) { moduleFactory = factory; }
     };
     vm.createContext(context);
@@ -165,70 +153,13 @@ function loadPlayer(dom, windowTarget, nativeClient) {
     const userSettings = {getSubtitleAppearanceSettings() { return {}; }};
     const connectionManager = {};
     const strmResolver = {
-        resolveAsync(info) {
-            return Promise.resolve({type: 'native', source: info.nativeSource, reason: 'native_fallback'});
-        }
+        resolveAsync(info) { return Promise.resolve({type: 'native', source: info.nativeSource, reason: 'native_fallback'}); }
     };
-    const nativeHelperClient = nativeClient || {create() { return Promise.resolve({mode: 'pepper', endpoint: null}); }};
-    const Player = moduleFactory(globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, amdRequire, connectionManager, strmResolver, undefined, undefined, undefined, nativeHelperClient);
+    const Player = moduleFactory(globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings,
+        amdRequire, connectionManager, strmResolver, undefined, undefined, undefined, nativeClient);
     const player = {};
     Player.call(player);
-    return {player, context};
-}
-
-test('Pepper ready emitted synchronously during embed attach is captured once', async () => {
-    const windowTarget = makeEventTarget();
-    let readyDiagnostics = 0;
-    windowTarget.enhancedDiagnostics = (_bridge, stage) => {
-        if (stage === 'ready') readyDiagnostics++;
-    };
-    windowTarget.platform = 'win32';
-    const dom = makeDom();
-    const {player} = loadPlayer(dom, windowTarget);
-    const mediaSource = {MediaStreams: [], RunTimeTicks: 5000000000};
-    const options = {
-        url: 'fixture://immediate-ready',
-        item: {MediaType: 'Video', Type: 'Movie', Path: 'fixture.strm'},
-        mediaSource,
-        mediaType: 'Video',
-        playMethod: 'DirectPlay',
-        playerStartPositionTicks: 0,
-        fullscreen: false
-    };
-
-    const play = player.play(options);
-    const result = await Promise.race([
-        play.then(() => 'resolved'),
-        new Promise(resolve => setTimeout(() => resolve('timeout'), 250))
-    ]);
-    assert.equal(result, 'resolved', 'play must not wait forever when ready is emitted during attach');
-    assert.equal(readyDiagnostics, 1, 'authoritative ready callback must run once');
-    assert.equal(dom.getEmbed().readyEmitted, true);
-    const readyRegistrations = windowTarget.registrations.filter(row => row.name === 'ready');
-    assert.equal(readyRegistrations.length, 1, 'ready listener must be registered once');
-    await player.stop(true);
-});
-
-function makeNativeEndpoint() {
-    const target = makeEventTarget();
-    let destroyed = 0;
-    const endpoint = Object.assign(target, {
-        style: {},
-        beginGeneration() { return Promise.resolve({generationId: 1}); },
-        retireGeneration() {},
-        observeProperties() { return Promise.resolve({status: 'ok'}); },
-        setProperties() { return Promise.resolve({status: 'accepted'}); },
-        getProperty() { return Promise.resolve(null); },
-        sendCommand(data) {
-            if (Array.isArray(data) && data[0] === 'loadfile') {
-                setImmediate(() => endpoint.dispatchEvent({type: 'message', data: {type: 'property_change', data: {name: 'core-idle', value: false}}}));
-            }
-            return Promise.resolve({status: 'accepted'});
-        },
-        destroy() { destroyed++; return Promise.resolve(); },
-        destroyedCount() { return destroyed; }
-    });
-    return endpoint;
+    return {player, dom, windowTarget};
 }
 
 function playOptions(id) {
@@ -242,12 +173,14 @@ function playOptions(id) {
 }
 
 test('concurrent first plays share one native helper creation', async () => {
-    const windowTarget = makeEventTarget(); windowTarget.platform = 'win32'; windowTarget.enhancedDiagnostics = function () {};
-    const dom = makeDom();
     const endpoint = makeNativeEndpoint();
-    let createCalls = 0, release;
-    const nativeClient = {create() { createCalls++; return new Promise(resolve => { release = () => resolve({mode: 'native-helper', endpoint}); }); }};
-    const {player} = loadPlayer(dom, windowTarget, nativeClient);
+    let createCalls = 0;
+    let release;
+    const nativeClient = {create() {
+        createCalls++;
+        return new Promise(resolve => { release = () => resolve({mode: 'native-helper', endpoint}); });
+    }};
+    const {player} = loadPlayer(nativeClient);
     const first = player.play(playOptions(1));
     for (let index = 0; index < 10 && createCalls === 0; index++) await new Promise(resolve => setImmediate(resolve));
     assert.equal(createCalls, 1);
@@ -262,15 +195,13 @@ test('concurrent first plays share one native helper creation', async () => {
 });
 
 test('failed native helper creation removes stale DOM and can retry', async () => {
-    const windowTarget = makeEventTarget(); windowTarget.platform = 'win32'; windowTarget.enhancedDiagnostics = function () {};
-    const dom = makeDom();
     const endpoint = makeNativeEndpoint();
     let createCalls = 0;
     const nativeClient = {create() {
         createCalls++;
         return createCalls === 1 ? Promise.reject(new Error('handshake-failed')) : Promise.resolve({mode: 'native-helper', endpoint});
     }};
-    const {player} = loadPlayer(dom, windowTarget, nativeClient);
+    const {player, dom} = loadPlayer(nativeClient);
     await assert.rejects(player.play(playOptions(1)), /handshake-failed/);
     assert.equal(dom.body.children.length, 0);
     await player.play(playOptions(2));

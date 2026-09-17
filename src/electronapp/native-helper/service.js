@@ -40,6 +40,12 @@ const GET_PROPERTIES = new Set([
 ]);
 const COMMANDS = new Set(['loadfile', 'seek', 'cycle', 'stop', 'sub-add', 'expand-properties']);
 
+function resolveMode(value) {
+  if (value == null || value === '' || value === 'native-helper') return 'native-helper';
+  if (value === 'pepper') throw new Error('legacy-mode-removed');
+  throw new Error('unsupported-bridge-mode');
+}
+
 function decimalWindowHandle(window) {
   const handle = window.getNativeWindowHandle();
   if (!Buffer.isBuffer(handle) || (handle.length !== 4 && handle.length !== 8)) throw new Error('unsupported-native-window-handle');
@@ -90,7 +96,7 @@ function createService(options) {
   const runtimeRoot = path.resolve(settings.runtimeRoot || path.join(__dirname, '..', '..'));
   const helperPath = path.join(runtimeRoot, 'electronapp', 'native-helper', 'ete-mpv-helper.exe');
   const libmpvPath = path.join(runtimeRoot, 'electronapp', 'libmpv', 'x64', 'mpv-1.dll');
-  const mode = settings.mode === 'pepper' ? 'pepper' : 'native-helper';
+  const mode = resolveMode(settings.mode);
   let client = null;
   let startingClient = null;
   let startPromise = null;
@@ -178,7 +184,6 @@ function createService(options) {
 
   async function ensureClient() {
     if (destroyed) throw new Error('native-helper-service-destroyed');
-    if (mode === 'pepper') return null;
     if (client && !client.transportTerminated && !client.exited) return client;
     if (startPromise) return startPromise;
     const host = ensureSurfaceWindow();
@@ -244,13 +249,11 @@ function createService(options) {
   async function call(operation, request, endpointId) {
     const payload = request && typeof request === 'object' ? request : {};
     if (operation === 'create') {
-      if (mode === 'pepper') return {status: 'ok', mode: 'pepper'};
       if (!activeEndpointId) activeEndpointId = crypto.randomUUID();
       const active = await ensureClient();
       return {status: 'ok', mode, endpointId: activeEndpointId, protocolVersion: PROTOCOL_VERSION, helperVersion: active.handshake.helperVersion, libmpvVersion: active.handshake.libmpvVersion};
     }
     if (operation === 'status') return status();
-    if (mode === 'pepper') throw new Error('native-helper-disabled');
     requireEndpoint(endpointId);
     if (operation === 'destroy') {
       await destroyClient('renderer-destroy');
@@ -335,7 +338,7 @@ function createService(options) {
   }
 
   function notify(operation, request, endpointId) {
-    if (mode === 'pepper' || destroyed) return;
+    if (destroyed) return;
     if (!activeEndpointId || endpointId !== activeEndpointId) return;
     if (operation === 'retire-generation' && client && request && request.generationId === client.currentGenerationId) {
       client.retireGeneration(request.reason || 'retired');
@@ -428,5 +431,6 @@ module.exports = {
   createService,
   decimalWindowHandle,
   register,
+  resolveMode,
   validateCommand
 };
