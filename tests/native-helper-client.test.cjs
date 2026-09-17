@@ -44,3 +44,20 @@ test('explicit pepper mode returns no native endpoint', async function () {
   assert.equal(created.mode, 'pepper');
   assert.equal(created.endpoint, null);
 });
+
+test('optional legacy property lookup failure is unavailable, not a fatal bridge error', async function () {
+  const ipc = new FakeIpc();
+  const originalInvoke = ipc.invoke.bind(ipc);
+  ipc.invoke = function (channel, request) {
+    if (request.operation === 'get-property') return Promise.resolve({status: 'error', reason: 'property-unavailable'});
+    return originalInvoke(channel, request);
+  };
+  const created = await clientModule.create({ipc});
+  const messages = [];
+  created.endpoint.addEventListener('message', event => messages.push(event.data));
+  created.endpoint.postMessage({type: 'get_property_async', data: 'unsupported-property'});
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(messages.some(message => message.type === 'property_change' && message.data.name === 'unsupported-property' && message.data.value === null));
+  assert.equal(messages.some(message => message.type === 'bridge_error'), false);
+  await created.endpoint.destroy();
+});

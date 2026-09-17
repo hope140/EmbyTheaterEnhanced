@@ -101,7 +101,10 @@
             else if (message.type === 'get_property_async') {
                 pending = self.getProperty(message.data).then(function (value) {
                     emit({type: 'property_change', data: {name: message.data, value: value}});
+                }, function () {
+                    emit({type: 'property_change', data: {name: message.data, value: null}});
                 });
+                return;
             }
             if (pending && typeof pending.catch === 'function') {
                 pending.catch(function (error) { emit({type: 'bridge_error', data: {reason: error && error.message || 'bridge-call-failed'}}); });
