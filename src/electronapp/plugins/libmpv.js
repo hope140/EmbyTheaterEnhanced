@@ -1693,6 +1693,15 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             })
         }
 
+        function getOptionalStatsProperty(name) {
+            return getProperty(name).catch(function (error) {
+                if (error && error.message === 'property-unavailable') {
+                    return null;
+                }
+                throw error;
+            });
+        }
+
         function observeProperty(props) {
             if (libmpv && typeof libmpv.observeProperties === 'function') {
                 return libmpv.observeProperties(props);
@@ -1742,7 +1751,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             ];
 
             var promises = properties.map(function (p) {
-                return getProperty(p.property);
+                return getOptionalStatsProperty(p.property);
             });
 
             return Promise.all(promises).then(function (responses) {
@@ -1839,7 +1848,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             ];
 
             var promises = properties.map(function (p) {
-                return getProperty(p.property);
+                return getOptionalStatsProperty(p.property);
             });
 
             return Promise.all(promises).then(function (responses) {
@@ -1942,7 +1951,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             ];
 
             var promises = properties.map(function (p) {
-                return getProperty(p.property);
+                return getOptionalStatsProperty(p.property);
             });
 
             return Promise.all(promises).then(function (responses) {

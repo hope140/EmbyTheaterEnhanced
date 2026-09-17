@@ -8,6 +8,8 @@
 
 Native helper 将 transport/protocol failure 与 libmpv operation failure 分开。前者继续终止 helper；后者在 request 已通过 allowlist、schema 与 current-generation ownership 后，以 typed generation event 返回并保持 helper、transport 与 generation，不升级为 lifecycle failure。
 
+`player.getStats()` 是展示型 telemetry 边界。Media、Video 与 Audio category 内的 property 都按现有 null/省略/零值展示 contract 作为 optional stats 读取；仅精确的 `property-unavailable` 降级为 `null`，其余 transport、protocol、helper、generation 与未知错误继续 reject。该规则不改变通用 `getProperty()` 或 helper property response 语义。
+
 基线为提供的 Carnival 3.0（应用声明 3.0.20-3.0）叠加综合补丁。保留 Windows .NET 启动壳、Electron、离线 Web UI 与内嵌 libmpv 的现有目录关系。
 
 普通视频：Emby → PlaybackManager → 原生 MediaSource → libmpv 插件 → Pepper bridge → mpv-1.dll。Session、PlaySession、进度和远控仍由 Emby Web 生命周期负责。

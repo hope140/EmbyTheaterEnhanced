@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-09-17 — Optional getStats property compatibility follow-up
+
+基于 clean `feat/native-helper-bridge@b17e6578ecd8ee6be71821e07380e1f87cd0f308` 的一次 hidden formal pipeline 诊断，精确确认 generation 131 的 `player.getStats()` 首个 aggregate rejection 为 `chapter` / `property-unavailable`，调用链为 `getMediaStats()` → per-category `Promise.all()` → top-level `getStats()`；同一批 Stats 请求还观察到部分 video/audio telemetry property unavailable。媒体请求已经发生且 core-playing 已成立，因此该失败属于 optional Stats consumer ownership，不是 helper wire、播放状态或 Session failure。
+
+`libmpv.js` 现在只在 Media/Video/Audio Stats property 读取边界把精确 `property-unavailable` 映射为 `null`，随后复用既有字段省略、空对象与零值展示逻辑；其他错误继续 reject，direct/global `getProperty()`、helper protocol、generation、PlaybackManager、Session、Resolver、CD2 与 source selection 均未改变。新增真实 AMD module/Player 回归覆盖 A/C 可用字段、B=`chapter` unavailable、structured map/array/number/boolean/INT64 string 保留，以及 `transport-closed` 仍 reject。targeted `2/2`、全量 `npm test 177/177`、JavaScript syntax 与 `git diff --check` PASS；正式 source-commit build、provenance、package、pipeline 与 REAL Emby 在 follow-up commit 成为 HEAD 后执行，本段不预先声称其结果。
+
 ## 2026-09-17 — Native helper nonfatal operation failure follow-up
 
 基于 `feat/native-helper-bridge@a22426aafaafc9cd20b7c64f504f1857750ed83f` 修正 helper 的错误所有权：格式、identity、schema 与 protocol invariant 失败继续 fail closed；已经通过 main-process allowlist/schema/generation 校验的 `set-property` 或同步 `command` 被 libmpv 拒绝时，改为发送 generation-scoped `operation-error`，不再抛入 `protocol-error → exit 20`。controller 严格校验 typed error，只接受 current generation，保留最多 64 条脱敏 operation history；stale generation 仍按原规则丢弃。`get-property`、load/stop 的既有非致命 request error 保持不变。

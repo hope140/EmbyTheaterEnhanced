@@ -1,5 +1,15 @@
 # 开发日志
 
+## 2026-09-17 — Optional getStats property compatibility follow-up
+
+Model Tier：2。Model：GPT-5.6 Sol High。Reason：虽然 production 修改集中在 Stats consumer，但诊断和验收必须区分 helper request correlation、generation ownership、optional telemetry 与 required playback/transport failure。Escalated：no。
+
+开始时核验独立 worktree `E:\ETE-native-helper-bridge` 为 clean，分支、HEAD 与 remote 均为 `feat/native-helper-bridge@b17e6578ecd8ee6be71821e07380e1f87cd0f308`。复用该 HEAD 的正式 runtime，在 test-only runtime 副本中增加 128 条固定上限、仅含 property/error/requestId/generationId 的隐私安全 correlation；一次 hidden pipeline 即确认 generation 131、request 64 的 `chapter` 是 `getMediaStats()` 首个 `property-unavailable`，并停止诊断。证据未记录 URL、token、Authorization、command arguments 或媒体路径。
+
+根因为 Media/Video/Audio Stats 已在渲染阶段把 null 作为字段缺失或默认值处理，但三个 per-category `Promise.all(getProperty)` 会在 native direct property rejection 时提前失败。修复新增 Stats 专用 `getOptionalStatsProperty()`，只把精确 `property-unavailable` 转为 `null`；transport/protocol/helper/generation 与未知错误继续 reject。未修改全局 `getProperty()`、native helper、PlaybackManager、Session、Resolver、CD2、MediaSource/PlaySession/Device/Product identity、NextTrack、remote control、Electron 或 Pepper。
+
+验证：真实 AMD module/Player targeted `2/2`，覆盖 A/C available、B=`chapter` unavailable 后 aggregate resolve，map/array/number/boolean/INT64 string 保留，以及 `transport-closed` 不被吞掉；全量 `npm test 177/177`、相关 JavaScript syntax 与 `git diff --check` PASS。正式 source-commit build、三层 provenance、package verify、同一 hidden pipeline 与 REAL Emby 必须在本 follow-up commit 成为真实 HEAD 后执行。
+
 ## 2026-09-17 — Native helper nonfatal operation failure follow-up
 
 Model Tier：2。Model：GPT-5.6 Sol High。Reason：修改点集中，但必须同时保持 native helper protocol-fatal 边界、generation ownership、transport lifecycle 与 upper submission semantics。Escalated：no。

@@ -20,6 +20,14 @@ npm test
 
 上述 synthetic/native gate 不替代正式 source-commit build、installer、REAL Emby playback、Session/reporting、remote control、NextTrack、10+ minute、HDR 或 mixed-DPI acceptance。
 
+## Optional playback Stats targeted checks
+
+```powershell
+node --test tests/libmpv-stats.test.cjs
+```
+
+该测试加载真实 AMD `libmpv.js`/Player，确认一个 optional property 的精确 `property-unavailable` 只使对应 Stats field 缺失，其余 category 与 structured number/boolean/string/map/array/INT64 string 继续返回；非 `property-unavailable` 错误仍使 `getStats()` reject。它不改变或替代 direct/global `getProperty()`、helper transport/protocol/generation tests。
+
 ## 当前自动检查
 
 ```powershell

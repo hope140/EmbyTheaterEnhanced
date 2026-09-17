@@ -1,5 +1,11 @@
 # 已确认经验
 
+## 2026-09-17 — Optional Stats property ownership
+
+- `player.getStats()` 的展示字段可能随媒体类型和 libmpv runtime state 不可用；已有 null/省略/default 渲染并不能保护前置 `Promise.all(getProperty)` rejection。optional compatibility 必须在 Stats per-field aggregation 层处理。
+- 只允许精确 `property-unavailable` 降级为 null。transport close、helper crash、protocol error、stale generation 与其他未知错误仍必须保持可观察 rejection；不能把 controller 或全局 `getProperty()` 放宽。
+- 并发 Stats 请求需要同时记录 property、requestId 与 generationId 才能归因；一次有界、隐私安全的 runtime 副本 instrumentation 足以确认首个 aggregate failure，无需在 production 日志记录媒体 source 或敏感路径。
+
 ## 2026-09-17 — Native HWND composition and reproducible helper build
 
 - helper child HWND 必须在专用 video host 内置于 `HWND_TOP`；置底会被该 host 的 Chromium surface 覆盖。HTML OSD 不能依靠同一窗口 CSS z-index，应由独立 transparent BrowserWindow 保持在 video host 上方。
