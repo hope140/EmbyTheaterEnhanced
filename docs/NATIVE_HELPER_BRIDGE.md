@@ -32,6 +32,7 @@ Renderer endpoint 保留 DOM-like `addEventListener/removeEventListener/postMess
 
 - `sendCommand` 仍是 submission-oriented；IPC accepted、libmpv command accepted、media lifecycle 和 `core-playing` 不混用。
 - `setProperty` 按原有 key 顺序提交 scalar value；`wid`、`fullscreen`、`vo` 与 `gpu-api` 由 adapter/surface 固定处理，避免破坏 native child HWND 与 `gpu-next/d3d11`。
+- 已授权且 schema 合法的同步 command/set-property 被 libmpv 拒绝时，helper 发送 typed nonfatal `operation-error`；它不等于 helper lifecycle failure，不使当前 generation 失效，也不触发 transport close、helper recreate 或 unrelated request rejection。
 - `getProperty` 使用 `requestId`、绝对 monotonic deadline、transport close/crash rejection 与 exactly-once terminal state；MPV node map/array/scalar 保持结构化值。
 - 12 个现有 observed properties 保持原名与单位；只有当前 generation 的有效 `core-idle=false` 能合成 `core-playing`。
 - scalar `'stop'`、seek、cycle pause、external `sub-add`、diagnostic `expand-properties` 和 file-local `user-agent=` load option 均有明确 allowlist。
@@ -42,6 +43,8 @@ Renderer endpoint 保留 DOM-like `addEventListener/removeEventListener/postMess
 Protocol version 为 `1`。每个 frame 是 `uint32 little-endian payloadLength` 加 UTF-8 JSON。单 frame、receive buffer、decoded inbound queue、native writer frames/bytes 与 parent writer frames/bytes 均有界；invalid UTF-8、malformed JSON、zero/oversized frame、unsupported version/type/identity 与 queue overflow fail closed。
 
 每次 renderer endpoint 分配 adapter-local `endpointId`，每次 helper spawn 分配不可复用的 `helperInstanceId`；每次 logical media 分配单调 `generationId`；所有 response-bearing request 分配 `requestId`。endpoint/generation token 随受限 IPC call 传递，旧 endpoint 的 retire/destroy/command 不能作用于 replacement。这些 identity 只属于 bridge，不替代或暴露为 Emby identity。
+
+`operation-error` 复用 generation event envelope，固定 `fatal=false`，只包含 operation、可选 property、libmpv error code/string；不回传 command arguments 或媒体/鉴权数据。controller 对其 scope、operation、负 error code、message 长度与 fatality 做 schema 校验，只接受 current generation，并保留最多 64 条 operation history。malformed frame/JSON/UTF-8、unsupported version、identity/schema/authorization/invariant failure 仍属于 protocol-fatal。
 
 handshake 必须在 ready 前确认 protocol、helper version、libmpv runtime version/client API、capabilities、queue limits 与 native surface。当前固定 libmpv 为 `mpv v0.41.0-920-gdd5d17d32`，SHA256 `965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c`，client API `2.5`。
 
@@ -69,6 +72,6 @@ MSYS2 UCRT64 GCC 16.1.0 使用 C++17、static libgcc/libstdc++ 与 `--no-insert-
 
 ## 当前验证边界
 
-已完成：Node/fake protocol 与 renderer adapter；真实 Electron 18.3.15、真实 production-source helper、真实 libmpv/private pipes/native HWND；`gpu-next/d3d11/d3d11va`；结构化 property；OSD visual/input；resize/maximize/restore/fullscreen/minimize；20 轮 A→B、A→B→C、Stop during load、crash/recreate；parent-death cleanup；framing/backpressure/stderr/pipe-close；DirectUrl file-local UA isolation；603.2 秒连续播放与有界 memory telemetry。
+已完成：Node/fake protocol 与 renderer adapter；真实 Electron 18.3.15、真实 production-source helper、真实 libmpv/private pipes/native HWND；`gpu-next/d3d11/d3d11va`；结构化 property；OSD visual/input；resize/maximize/restore/fullscreen/minimize；20 轮 A→B、A→B→C、Stop during load、crash/recreate；parent-death cleanup；framing/backpressure/stderr/pipe-close；DirectUrl file-local UA isolation；603.2 秒连续播放与有界 memory telemetry；test-only operation rejection 下的 same-helper/generation/transport nonfatal regression 与 protocol-fatal negative regression。
 
 未完成：source-commit runtime build/package verify、installer build/run、REAL Emby ordinary/STRM/CD2、REAL Session/WebSocket/reporting/remote control/NextTrack、HDR 与真实 mixed-DPI。未完成项不得升级为 `READY FOR PEPPER RETIREMENT REVIEW`。

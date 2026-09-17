@@ -387,6 +387,9 @@ class Helper {
     std::thread surfaceThread;
     std::atomic<bool> closing{false};
     std::atomic<int> surfaceState{0};
+#ifdef ETE_HELPER_TESTING
+    std::string rejectNextOperation;
+#endif
 
     static LRESULT CALLBACK surfaceWindowProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) {
         if (message == WM_NCHITTEST) return HTTRANSPARENT;
@@ -557,6 +560,15 @@ class Helper {
     }
     void emitError(uint64_t generation, uint64_t request, const std::string& code) {
         writer.enqueue(base("error") + ",\"generationId\":" + std::to_string(generation) + ",\"requestId\":" + std::to_string(request) + ",\"code\":" + quote(code) + '}', true);
+    }
+    void emitOperationError(uint64_t generation, const std::string& operation, const std::string& property, int errorCode) {
+        const char* description = p_mpv_error_string(errorCode);
+        std::string payload = base("event") + ",\"scope\":\"generation\",\"generationId\":" + std::to_string(generation) +
+            ",\"name\":\"operation-error\",\"operation\":" + quote(operation);
+        if (!property.empty()) payload += ",\"property\":" + quote(property);
+        payload += ",\"errorCode\":" + std::to_string(errorCode) + ",\"error\":" +
+            quote(description ? description : "mpv-operation-failed") + ",\"fatal\":false}";
+        writer.enqueue(std::move(payload), true);
     }
     void emitGlobal(const std::string& name, const std::string& detailJson = "null") {
         writer.enqueue(base("lifecycle") + ",\"scope\":\"helper\",\"name\":" + quote(name) + ",\"monotonicMicros\":" + std::to_string(monotonicMicros()) + ",\"detail\":" + detailJson + '}', true);
@@ -804,7 +816,13 @@ public:
         if (method == "command") {
             if (type != "command") throw std::runtime_error("command-requires-command");
             auto args = stringArray(message.at("params").at("args"), "args");
-            if (commandSync(args) < 0) throw std::runtime_error("command-failed");
+            int result;
+#ifdef ETE_HELPER_TESTING
+            if (rejectNextOperation == "command") { rejectNextOperation.clear(); result = MPV_ERROR_COMMAND; }
+            else
+#endif
+            result = commandSync(args);
+            if (result < 0) emitOperationError(generation, "command", "", result);
             return;
         }
         if (method == "set-property") {
@@ -813,7 +831,13 @@ public:
             std::string name = params.text("name");
             if (name.empty() || name.size() > 128) throw std::runtime_error("invalid-property-name");
             std::string value = scalarText(params.at("value"));
-            if (p_mpv_set_property_string(mpv, name.c_str(), value.c_str()) < 0) throw std::runtime_error("set-property-failed");
+            int result;
+#ifdef ETE_HELPER_TESTING
+            if (rejectNextOperation == "set-property") { rejectNextOperation.clear(); result = MPV_ERROR_PROPERTY_ERROR; }
+            else
+#endif
+            result = p_mpv_set_property_string(mpv, name.c_str(), value.c_str());
+            if (result < 0) emitOperationError(generation, "set-property", name, result);
             return;
         }
         if (method == "get-property") {
@@ -830,6 +854,13 @@ public:
             emitResponse(generation, request, "{\"value\":" + valueJson + '}' ); return;
         }
 #ifdef ETE_HELPER_TESTING
+        if (method == "reject-next-operation") {
+            if (type != "request") throw std::runtime_error("reject-next-operation-requires-request");
+            std::string operation = message.at("params").text("operation");
+            if (operation != "set-property" && operation != "command") throw std::runtime_error("invalid-rejected-operation");
+            rejectNextOperation = operation;
+            emitResponse(generation, request, "{\"armed\":true}"); return;
+        }
         if (method == "pending") return;
         if (method == "stderr-storm") {
             if (type != "request") throw std::runtime_error("stderr-storm-requires-request");

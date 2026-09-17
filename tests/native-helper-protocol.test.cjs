@@ -35,6 +35,18 @@ test('incoming schema rejects missing identities and unsupported versions', func
   assert.throws(() => validateIncoming({protocolVersion: 1, type: 'lifecycle', scope: 'helper', name: 'ready'}), error => error.code === 'missing-helper-instance-id');
 });
 
+test('typed operation failures are generation-scoped, nonfatal and privacy-safe', function () {
+  const message = {protocolVersion: 1, type: 'event', scope: 'generation', helperInstanceId: 'h1', generationId: 1,
+    name: 'operation-error', operation: 'set-property', property: 'sub-back-color', errorCode: -10,
+    error: 'error setting option', fatal: false};
+  assert.doesNotThrow(() => validateIncoming(message));
+  const commandMessage = {...message, operation: 'command'};
+  delete commandMessage.property;
+  assert.doesNotThrow(() => validateIncoming(commandMessage));
+  assert.throws(() => validateIncoming({...message, fatal: true}), error => error.code === 'invalid-operation-error-fatality');
+  assert.throws(() => validateIncoming({...message, property: undefined}), error => error.code === 'invalid-operation-error-property');
+});
+
 test('controller preserves request, generation and helper lifecycle', async function () {
   const accepted = [];
   const client = new NativeHelperClient({
@@ -52,6 +64,21 @@ test('controller preserves request, generation and helper lifecycle', async func
   assert.equal(client.state.playing, true);
   assert.ok(accepted.some(message => message.name === 'core-idle' && message.generationId === generation));
   assert.deepEqual(await client.getProperty('video-out-params'), {nested: [1, true, 'ok']});
+  const beforeFailure = client.snapshot();
+  client.setProperty('sub-back-color', '0/0/0/1');
+  await client.waitFor(() => client.operationErrors.length === 1, 1000, 'operation-error');
+  const afterFailure = client.snapshot();
+  assert.equal(afterFailure.helperPid, beforeFailure.helperPid);
+  assert.equal(afterFailure.helperInstanceId, beforeFailure.helperInstanceId);
+  assert.equal(afterFailure.currentGenerationId, generation);
+  assert.equal(afterFailure.operationErrors[0].property, 'sub-back-color');
+  assert.equal(afterFailure.operationErrors[0].fatal, false);
+  assert.equal(client.transportTerminated, false);
+  assert.equal(client.exited, false);
+  assert.deepEqual(await client.getProperty('video-out-params'), {nested: [1, true, 'ok']});
+  for (let index = 0; index < 70; index++) client.setProperty('sub-back-color', '0/0/0/1');
+  await client.waitFor(() => accepted.filter(message => message.name === 'operation-error').length === 71, 1000, 'bounded-operation-errors');
+  assert.equal(client.operationErrors.length, 64);
   client.retireGeneration('superseded');
   assert.equal(client.currentGenerationId, null);
   await client.kill();

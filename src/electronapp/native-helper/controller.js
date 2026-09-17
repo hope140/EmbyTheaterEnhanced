@@ -81,6 +81,16 @@ function validateIncoming(message) {
     if (!['helper', 'generation'].includes(message.scope)) throw new ProtocolFailure('invalid-event-scope');
     if (message.scope === 'generation' && (!Number.isSafeInteger(message.generationId) || message.generationId <= 0)) throw new ProtocolFailure('missing-generation-id');
     if (typeof message.name !== 'string' || !message.name) throw new ProtocolFailure('missing-event-name');
+    if (message.name === 'operation-error') {
+      if (message.scope !== 'generation') throw new ProtocolFailure('invalid-operation-error-scope');
+      if (!['set-property', 'command'].includes(message.operation)) throw new ProtocolFailure('invalid-operation-error-operation');
+      if (!Number.isSafeInteger(message.errorCode) || message.errorCode >= 0) throw new ProtocolFailure('invalid-operation-error-code');
+      if (typeof message.error !== 'string' || !message.error || message.error.length > 256) throw new ProtocolFailure('invalid-operation-error-message');
+      if (message.fatal !== false) throw new ProtocolFailure('invalid-operation-error-fatality');
+      if (message.operation === 'set-property' &&
+          (typeof message.property !== 'string' || !message.property || message.property.length > 128)) throw new ProtocolFailure('invalid-operation-error-property');
+      if (message.operation === 'command' && Object.hasOwn(message, 'property')) throw new ProtocolFailure('unexpected-operation-error-property');
+    }
   }
   if (message.type === 'lifecycle') {
     if (message.scope !== 'helper') throw new ProtocolFailure('invalid-lifecycle-scope');
@@ -116,6 +126,7 @@ class NativeHelperClient {
     this.state = { status: 'idle', path: null, playing: false, fileLoaded: false };
     this.timeline = [];
     this.requestHistory = [];
+    this.operationErrors = [];
     this.closeOrdering = [];
     this.stderrChunks = [];
     this.stderrRetainedBytes = 0;
@@ -279,6 +290,21 @@ class NativeHelperClient {
     if (message.type === 'event') {
       if (message.generationId !== this.currentGenerationId) {
         this.timeline.push({ ...base, action: 'DROP_STALE_GENERATION', value: message.value });
+        return;
+      }
+      if (message.name === 'operation-error') {
+        const operationError = {
+          generationId: message.generationId,
+          operation: message.operation,
+          property: message.property || null,
+          errorCode: message.errorCode,
+          error: message.error,
+          fatal: false
+        };
+        this.operationErrors.push(operationError);
+        if (this.operationErrors.length > 64) this.operationErrors.shift();
+        this.timeline.push({ ...base, action: 'ACCEPT_OPERATION_ERROR', operation: message.operation, property: message.property || null, errorCode: message.errorCode });
+        try { this.onEvent(message); } catch (_) { /* consumer errors cannot corrupt transport state */ }
         return;
       }
       this.timeline.push({ ...base, action: 'ACCEPT', value: message.value });
@@ -474,6 +500,7 @@ class NativeHelperClient {
       state: { ...this.state },
       timeline: this.timeline.map(item => ({ ...item })),
       requestHistory: this.requestHistory.map(item => ({ ...item })),
+      operationErrors: this.operationErrors.map(item => ({ ...item })),
       pendingRequestCount: this.pending.size,
       closeOrdering: this.closeOrdering.map(item => ({ ...item })),
       stderrObservedBytes: this.stderrObservedBytes,

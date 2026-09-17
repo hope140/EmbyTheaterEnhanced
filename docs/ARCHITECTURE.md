@@ -6,6 +6,8 @@
 
 此层只消费 Resolver 的最终 `native/local/url` source。PlaybackManager、Item、MediaSource、MediaSourceId、PlaySessionId、Session、WebSocket、progress、remote control 与 NextTrack 仍由既有链拥有。Pepper 注册在本阶段保留，仅能显式选择，helper failure 不自动回退。
 
+Native helper 将 transport/protocol failure 与 libmpv operation failure 分开。前者继续终止 helper；后者在 request 已通过 allowlist、schema 与 current-generation ownership 后，以 typed generation event 返回并保持 helper、transport 与 generation，不升级为 lifecycle failure。
+
 基线为提供的 Carnival 3.0（应用声明 3.0.20-3.0）叠加综合补丁。保留 Windows .NET 启动壳、Electron、离线 Web UI 与内嵌 libmpv 的现有目录关系。
 
 普通视频：Emby → PlaybackManager → 原生 MediaSource → libmpv 插件 → Pepper bridge → mpv-1.dll。Session、PlaySession、进度和远控仍由 Emby Web 生命周期负责。

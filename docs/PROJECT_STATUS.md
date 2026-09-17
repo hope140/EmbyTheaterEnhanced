@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-09-17 — Native helper nonfatal operation failure follow-up
+
+基于 `feat/native-helper-bridge@a22426aafaafc9cd20b7c64f504f1857750ed83f` 修正 helper 的错误所有权：格式、identity、schema 与 protocol invariant 失败继续 fail closed；已经通过 main-process allowlist/schema/generation 校验的 `set-property` 或同步 `command` 被 libmpv 拒绝时，改为发送 generation-scoped `operation-error`，不再抛入 `protocol-error → exit 20`。controller 严格校验 typed error，只接受 current generation，保留最多 64 条脱敏 operation history；stale generation 仍按原规则丢弃。`get-property`、load/stop 的既有非致命 request error 保持不变。
+
+test-only fault injection 以合法 `sub-back-color=0/0/0/1` 和 `cycle pause` 触发 libmpv operation rejection，隐藏 Electron 18.3.15 smoke 已证明同一 helper PID、helperInstanceId 与 generation 保持，stdin/stdout transport 与 protocol ready 保持，随后 `get-property mpv-version` 成功，`stdout-end` 未出现；独立 unsupported protocol version 仍产生 `protocol-error` 并以 exit code 20 终止。focused protocol tests `7/7`、全量 `npm test 175/175`、C++17 `-Werror` testing build 与 `git diff --check` PASS。正式 source-commit build、三层 provenance、package verify、hidden pipeline 与 REAL Emby 只能在实现成为真实 HEAD 后执行，不由 checkout/testing helper 结果替代。
+
 ## 2026-09-17 — Production Native Helper Bridge implementation candidate
 
 在 `feat/native-helper-bridge`、base `a16cdc72d9e8bc60284c759a126a3d77c33fa001` 上完成 Electron 18 first 的 production native-helper bridge 源码实现。新增 x64 C++ helper、little-endian framed private pipe、helper/generation/request identity、handshake、structured MPV node、native event attribution、bounded writer/stderr、main-process supervisor、独立 video host 与 renderer logical adapter。默认 bridge mode 为 native-helper；Pepper 只保留显式 `ETE_MPV_BRIDGE_MODE=pepper` 路径，不做自动 fallback。PlaybackManager、Session/PlaySessionId、MediaSourceId、WebSocket、report、Resolver、CD2/Mount、Electron/Chromium/Node 与 installer architecture 均未修改。

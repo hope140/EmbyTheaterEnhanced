@@ -1,5 +1,15 @@
 # 开发日志
 
+## 2026-09-17 — Native helper nonfatal operation failure follow-up
+
+Model Tier：2。Model：GPT-5.6 Sol High。Reason：修改点集中，但必须同时保持 native helper protocol-fatal 边界、generation ownership、transport lifecycle 与 upper submission semantics。Escalated：no。
+
+开始时核验独立 worktree `E:\ETE-native-helper-bridge` 为 clean，`HEAD` 与 `origin/feat/native-helper-bridge` 均为 `a22426aafaafc9cd20b7c64f504f1857750ed83f`；原始调用链为 `mpv_set_property_string` 或同步 `mpv_command` 返回负值后抛异常，主循环把所有异常统一转换为 `protocol-error` 并 exit 20。审计确认 `mpv_get_property`、load 与 stop 已使用非致命 response error；`mpv_observe_property` 不属于本次指定调用集合，未扩大修改。
+
+helper 新增 generation-scoped `operation-error` event，只包含 operation、allowlisted property 名、libmpv error code/string 与 `fatal=false`，不含 command arguments、URL、header 或 token。controller 对 schema/fatality/error bounds 做 fail-closed 校验，只接受 current generation，并在 64 条有界 history 中记录；operation failure 不进入 request mass rejection、helper recreate、surface teardown 或 generation retirement。submission-oriented `setProperty`/`sendCommand`、PlaybackManager、Session、Resolver、CD2、libmpv playback semantics、Electron 与 Pepper 均未修改。
+
+验证：focused protocol `7/7`；`npm test 175/175`；dirty-source testing helper 使用固定 GCC/flags 与 `-Werror` 编译通过。隐藏 Electron fault-injection smoke 对真实 bundled libmpv 验证 set-property 与 command rejection 均为 typed nonfatal，同 PID/helperInstanceId/generation、transport open、protocol ready、后续 property request成功、`stdout-end=false`；独立 unsupported protocol version 仍观察到 `protocol-error`、exit 20。正式 source-commit build 与后续 pipeline 必须等获授权 commit 成为 HEAD 后重新执行，本段不预先声称其结果。
+
 ## 2026-09-17 — Production Native Helper Bridge implementation candidate
 
 Model Tier：2。Model：GPT-5.6 Sol High。Reason：native helper、framed IPC、libmpv event attribution、Electron main/renderer、native HWND composition、crash/recreate 与 Git-blob build provenance 跨多个层级，同时必须冻结 PlaybackManager/Session/Resolver。Escalated：no。

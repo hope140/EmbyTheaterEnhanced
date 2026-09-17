@@ -33,6 +33,9 @@ process.stdin.on('data', function (chunk) {
     if (message.method === 'get-property') {
       frame({type: 'response', generationId: message.generationId, requestId: message.requestId, result: {value: {nested: [1, true, 'ok']}}});
     }
+    if (message.method === 'set-property' && message.params && message.params.name === 'sub-back-color') {
+      frame({type: 'event', scope: 'generation', generationId: message.generationId, name: 'operation-error', operation: 'set-property', property: 'sub-back-color', errorCode: -10, error: 'error setting option', fatal: false});
+    }
     if (message.method === 'load') {
       frame({type: 'response', generationId: message.generationId, requestId: message.requestId, result: {commandAccepted: true, mediaIdentity: 7}});
       frame({type: 'event', scope: 'generation', generationId: message.generationId, name: 'start-file', value: null});

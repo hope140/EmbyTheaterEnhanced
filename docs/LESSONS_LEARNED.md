@@ -8,6 +8,7 @@
 - MinGW PE 默认插入 link timestamp；仅固定 source/flags/compiler 仍不足以 byte-reproduce helper。加入 `-Wl,--no-insert-timestamp` 后两次输出 SHA256 相同。
 - 新 BrowserWindow 会改变 `window-all-closed` 条件。video host 必须绑定 main `closed` 并关闭 owned helper/host，否则主窗口关闭后应用可能残留。
 - `core-idle` observer 初始可以先回报 `true`；测试 core-playing 必须等待同 generation 的有效 `false`，不能只等待 property name。
+- libmpv API 返回负值只说明该次 operation 被拒绝，不能由统一 exception handler 自动升级成 protocol corruption。submission-oriented command 需要独立、typed、generation-scoped、privacy-safe 的 operation diagnostic；真正 schema/identity/version 错误仍单独 fail closed。
 
 1. 本地 SFX 可直接解包为 1009 个文件，未发现加密条目；无须逆向安装器。
 2. `electronapp/package.json` 声明 Electron ^9.4.0，但本地 `x64/electron/electron.exe` 文件版本是 18.3.15。运行时版本需要实测，不可从开发依赖推断。
