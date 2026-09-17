@@ -1,5 +1,244 @@
 # 开发日志
 
+## 2026-09-17 — v0.2.0 Release Gate revalidation
+
+Model Tier：2。Model：current Codex session。Reason：版本 authoritative source、source/native/runtime provenance、installer payload 与 installed Native Helper lifecycle 跨构建和验收层复核；没有改变 playback architecture。Escalated：no。
+
+版本 commit 为 `569c8dfbcd18725bf41a323c49cdfa4d38c8fa6b`，只更新 `package.json` 与 `package-lock.json` 的 `0.1.1 → 0.2.0` authoritative 字段。`npm test` `201/201`、`git diff --check`、source/native/runtime provenance、package verify、formal ordinary、formal STRM/CD2、formal DirectUrl 均 PASS。runtime `EmbyTheaterEnhanced-0.2.0-release-569c8df` 与 installer 均从该 commit 生成；installer 大小 `125637307` bytes，SHA256 为 `BD192CF1CBA793C2C0C46472F4466EBA0AF2211CA988E4EBC50984827B41A6EE`，解包逐文件结果为 `missing=0`、`extra=0`、`mismatch=0`。
+
+实际安装后的 0.2.0 lifecycle 完成 `launch/play/pause/seek/resume/normal NextTrack/stop/exit`。Native Helper、Session NowPlaying、12/12 reports accepted 和清理 residual 均通过；`generation-required=0`、unexpected `bridge_error=0`、helper crash `0`、Electron crash `0`。当前 profile 没有 CD2 mapping，日志观察到 `route=native` / `no_matching_rule`，因此严格记录：
+
+```text
+INSTALLED REAL CORE LIFECYCLE = PASS
+INSTALLED REAL CD2 ROUTE = NOT COVERED
+
+COMPENSATING CD2 EVIDENCE:
+- historical REAL CD2 = PASS
+- final-head Formal CD2 = PASS
+- final-head DirectUrl pipeline = PASS
+- installed Native Helper REAL lifecycle = PASS
+```
+
+本轮未修改 `src/` playback code、真实 CD2 profile、服务器配置或 deferred 项。当前只完成 release-candidate gate revalidation；后续按授权流程执行 feature push、PR、review、merge 后 main rebuild、tag 与 GitHub Release。
+
+## 2026-09-17 — Phase 2B Pepper retirement complete
+
+Model Tier：2。Model：current Codex session。Reason：bridge 入口、Electron startup、runtime exclusion、provenance/package、readiness semantics 与 REAL smoke 的跨模块收口；不改变 PlaybackManager、Session、Resolver、CD2 或 remote server semantics。Escalated：no。
+
+基于 `feat/native-helper-bridge@a5acd97f3c07ff980c7dab65752addda96386af0` 完成 retirement boundary，并以 `7e130c4cadc4b0399f61b8eb945a33e76c1163a3` 提交第一组实现。删除 PPAPI registration、旧 `application/x-mpvjs` renderer path、Pepper-only direct probes、旧 `.node` runtime copy；Native Helper service/client 现在是唯一 production bridge，显式旧 mode 确定性返回 `legacy-mode-removed`。
+
+验证：`npm test = 201/201 PASS`；source/native/runtime provenance、runtime exclusion、package verify PASS；retirement runtime payload `2135` entries / `2136` actual files，旧 `mpv-win32-x64.node` absent，Native Helper 与 `mpv-1.dll` present。Formal local media、CD2 hit、DirectUrl/UA isolation pipeline 与独立 Native Helper Electron smoke PASS。CD2 miss pipeline 的 playback/control/report PASS，但既有 rapid NextTrack `selected=false` limitation 保持 deferred。
+
+最小 REAL smoke 使用同一 product runtime，`inspect/select/play/pause/seek/resume/next/stop` PASS；readiness class A、Native Helper bridge-ready observed、Session/report 与 remote controls PASS、runner completed、cleanup verified-clean、owned residual 0。当前正式结论为 `REAL EMBY CLIENT ACCEPTANCE = PASS`、`NATIVE HELPER PRODUCTION ACCEPTANCE = COMPLETE`、`PEPPER RETIREMENT = COMPLETE`。ReferenceError follow-up、concurrent Remote NextTrack limitation、Stop-barrier candidate 与 Electron upgrade 均保持 deferred。
+
+## 2026-09-17 — Phase 2 REAL Emby acceptance complete; concurrent remote limitation non-blocking
+
+Model Tier：1。Model：current Codex session。Reason：现有 REAL evidence 已闭合，剩余工作仅为重新分类已完成的 fast-concurrent diagnostic、同步 acceptance-only gate/docs 并提交；production playback chain、Resolver、Native Helper、PlaybackManager、Session 与 Pepper 全部冻结。Escalated：no。
+
+在 `feat/native-helper-bridge@50f578e1eb251336d15ba116b558c1ac341d7f05` 上完成 Phase 2 acceptance gate 收口。Formal ordinary PASS；真实库完整 inventory 为 ordinary `0`、STRM `7665`，因此 `REAL ordinary media = N/A — ENVIRONMENTALLY UNAVAILABLE`，并以 Formal ordinary 与 REAL STRM native-fallback 作为 compensating evidence。REAL STRM native-fallback、REAL CD2、Remote Control、正常单次 NextTrack、Session/report lifecycle、Seek backward、getStats、LibraryOptions-aware Resume、non-zero start position 与 Resume position 均保持 PASS。
+
+fast-concurrent focused diagnostic 使用两个完全相同参数的 isolated REAL STRM/native-helper run。两次均为：
+
+```text
+HTTP NextTrack #1/#2 = fulfilled
+WebSocket NextTrack delivery = 0/2
+ApiClient NextTrack = 0
+InputManager next = 0
+PlaybackManager.nextTrack() = 0
+generation-required = 0
+unexpected bridge_error = 0
+unhandled rejection = 0
+helper crash = 0
+Electron crash = 0
+```
+
+两条 HTTP command 到达时 current item 均为 A、queue index 为 `0`、queue length 为 `3`、next candidate 为 B；两条 command 均未进入客户端 WebSocket/ApiClient/InputManager/PlaybackManager。A 只在 bounded wait 结束后的 cleanup 中停止，B/C 未 selected、未 play、未创建 generation。socket 已 open 且 handler 已安装，普通单次 NextTrack 的 WebSocket delivery 另有 PASS evidence，因此分类为 `SERVER_REMOTE_COMMAND_SEMANTICS`，不分类为一般 WebSocket、InputManager、PlaybackManager、Native Helper 或 production NextTrack bug。两次只有启动绝对时间不同，结构性结果一致，`TIMING RACE = NOT CONFIRMED`。
+
+所以当前 gate 改为：
+
+```text
+CONCURRENT REMOTE NEXTTRACK = NON-BLOCKING / OUTSIDE ESTABLISHED CLIENT CONTRACT
+REAL EMBY CLIENT ACCEPTANCE = PASS
+NATIVE HELPER PRODUCTION ACCEPTANCE = COMPLETE
+PEPPER RETIREMENT = AUTHORIZED
+```
+
+`A→B→C` 的立即并发语义不作为客户端 production contract；本记录只定位服务器是否向该客户端 WebSocket 交付 command 的边界，不声称服务器内部一定 coalesce/discard。两个 focused run 各观察到 `2` 个 renderer `ReferenceError` events，message/stack 尚未采集；没有 unhandled rejection、`bridge_error`、helper/Electron crash 或播放副作用，记录为 `REFERENCEERROR = NON-BLOCKING FOLLOW-UP`，本轮不诊断、不修复。
+
+本轮仅修改 acceptance harness/docs，production files modified `0`。验证：`npm test=197/197`、`node --check tests/live-acceptance-browser.js=PASS`、`git diff --check=PASS`。Stop-barrier candidate 保持 `7BF1F8E53D8BA63717A9CFB44F0D53E46EAE1600E34C4D8F100D3B0153333931`。脱敏 focused evidence：`.work/fast-next-fallback-529315abd95c4d02abca7c7e38274401/run1/output/diagnosis.json`、`run2/output/diagnosis.json`。
+
+## 2026-09-17 — LibraryOptions policy confirmed; Resume PASS; fastNext blocker
+
+Model Tier：2。Model：current Codex session。Reason：本轮把真实 Emby `LibraryOptions` 与 Resume eligibility 解耦于 Native Helper bridge，并在 policy 合规位置完成 second Play，再验证快速连续 NextTrack；未修改 production code。Escalated：no。
+
+对真实测试 item 的 `Library/VirtualFolders/Query` 只读结果：匹配一个 `movies` virtual folder，当前 profile 非管理员但该 endpoint 返回了 `LibraryOptions`。实际 policy 为 `MinResumePct=3`、`MaxResumePct=90`、`MinResumeDurationSeconds=120`。item `RunTimeTicks=56915310000`、duration `5691.531s`；原 Stop `302390000` ticks 对应 `0.531298%`，因此明确为 `NOT_ELIGIBLE`，根因是 acceptance test position below server resume threshold，不是 server/reporting failure。`System/Configuration` 仍不提供这三个字段，本轮以匹配 virtual folder 的 LibraryOptions 为 authoritative read-only source。
+
+将 acceptance harness 的 target position 按 policy 动态计算为 `5%`，target `2845765500` ticks。真实 Remote Seek 到 `2840000000` ticks，local/server 均到达，新的 Progress report accepted；随后 Stop report accepted，server metadata bounded polling 第一轮即返回 `2840000000` ticks、PlayedPercentage `4.989870%`、Played=false、Unplayed=true、LastPlayedDate valid/present。second Play 通过 PlaybackManager/application contract 启动，currentPlayer=`libmpvmediaplayer`、core-playing、Session NowPlaying、start/progress reports 均通过，actual start `2840000000` ticks，saved/actual difference `0` ticks。该项记为 `REAL NONZERO START POSITION=PASS` 与 `REAL RESUME POSITION=PASS`。
+
+随后执行至少三个真实 item 的 fastNext：A core-playing 后立即并发发送两个 `NextTrack`，两个 HTTP promise 均 fulfilled，`unhandledRejectionCount=0`；fast queue 自身完成 CD2 direct-url、Native Helper 与 core-playing，但在 bounded 45 秒内 A 没有被观察为 stopped/retired，B/C 都没有成为 current，C Session/report 也没有出现。当前首个独立 blocker 为 `FAST NEXTTRACK / REMOTE COMMAND SEMANTICS`，属于 `OTHER`，本轮没有继续重发或修改 production，也没有足够证据直接确认 production bug。`generation-required=0`、unexpected `bridge_error=0`、helper/Electron crash=0。
+
+本轮无 production `src/` 修改、无新 commit；当前 harness/docs 仍未提交。`npm test=197/197`、JS syntax、`git diff --check` 通过。无 Pepper 使用，临时 profile/mapping 已清理，residual=0。脱敏 evidence：`.work/real-resume-policy-libraryoptions-e3fb5865a80e4d7d8a27a72daa8a9cc5.json`、`.work/live-acceptance-cd2-policyknown-b368825795ad40aab0073ecf3f9fc6b6`。
+
+## 2026-09-17 — Resume policy unavailable to current profile
+
+Model Tier：2。Model：current Codex session。Reason：本轮只读核对真实 item 的 duration、virtual folder identity、Emby server resume policy 与 `302390000` ticks eligibility；没有修改服务器或 production code。Escalated：no。
+
+对当前测试 item 的脱敏读取结果：`RunTimeTicks=56915310000`，duration `5691.531s`，itemId hash `af7137c6a8570078`；sidecar/source identity descriptor 与既有 correlation 一致。`Library/VirtualFolders` 只读 endpoint 返回 `200`，匹配一个 virtual folder，collection type 为 `movies`；当前用户 `IsAdministrator=false`，top-parent name 不可用，item/parent identity 仅保留 hash。
+
+尝试读取 `System/Configuration`：HTTP response 为 `200`，但 response 不包含 `MinResumePct`、`MaxResumePct`、`MinResumeDurationSeconds` 三个字段。受限于当前非管理员 profile，记录为 `policy unavailable to current credentials`；已检查本机已知 Emby server config roots，没有可用的现成 `system.xml` admin evidence。没有猜测阈值、没有修改服务器配置。
+
+Stop position `302390000` ticks 相对该 item duration 的计算值为 `playedPct=0.531298%`。由于三项 policy 均 unknown，当前结论为：
+
+```text
+CURRENT 30s STOP = POLICY UNKNOWN
+```
+
+无法安全判断 `MinResumePct`、`MinResumeDurationSeconds` 或 `MaxResumePct` eligibility，也不能选择一个“明确符合 policy”的 target position。因此没有执行 Remote Seek、再次 Stop、second Play 或 fast consecutive NextTrack。本轮首个 blocker 为 `POLICY UNKNOWN / CURRENT CREDENTIALS`，不分类为 production reporting bug。
+
+脱敏 evidence：`.work/real-resume-policy-0d35749f49274f39b0af7f6f5c3922d1.json`。当前 HEAD 仍为 `50f578e`，无新 commit；production `src/` 无改动，临时 profile 已清理，Electron/helper residual 为 `0`。
+
+## 2026-09-17 — Bounded resume polling stopped at Emby server/report semantics
+
+Model Tier：2。Model：current Codex session。Reason：本轮需要把 Stop report payload、HTTP response、WebSocket Session、同一 item 的 MediaSourceId/PlaySessionId 和 Emby metadata 的 bounded eventual-update 结果做关联；未修改 production code。Escalated：no。
+
+在已有 CD2/native-helper real acceptance 基础上，仅修改 acceptance harness 的 `resumeCycle` 诊断：移除固定 1 秒最终判定，改为 `500ms` interval、`10000ms` max wait 的 server metadata polling；每轮记录 elapsed、`PlaybackPositionTicks`、`PlayedPercentage`、`Played`、`Unplayed`、`LastPlayedDate`。`npm test=197/197`、JS syntax 与 `git diff --check` 通过。
+
+实际 bounded timeline 共 `13` 次读取，elapsed 为约 `97ms, 699ms, 1300ms, 1905ms, 2614ms, 3219ms, 3821ms, 4424ms, 5211ms, 6215ms, 7211ms, 8214ms, 9207ms`；全部 `PlaybackPositionTicks=0`、`PlayedPercentage=null`、`Played=false`、`Unplayed=true`，`LastPlayedDate` 保持 present。10 秒窗口内没有出现非零保存位置，未继续第二次 Play。
+
+Stop report correlation：Stop report present、HTTP response resolved/accepted、WebSocket delivered；`PositionTicks=302390000`，same item=`true`，MediaSourceId present 且与该 item 的 start report 相同，PlaySessionId present 且与该 item 的 start report 相同。`media page returned=true`，但刷新同一 item 的 server `UserData.PlaybackPositionTicks` 仍为 `0`。因此已排除固定 1 秒等待过短这一初步 harness 假设，当前第一个独立 blocker 分类为 `EMBY SERVER / REPORT SEMANTICS`；本轮没有证据确认 production reporting bug，也没有修改报告链。
+
+由于 Resume authoritative assertion 未完成，按要求没有继续 `fast consecutive NextTrack`。当前 `REAL Resume position=FAIL/NOT VERIFIED`，`REAL fast consecutive NextTrack=NOT RUN`；已有 REAL CD2、STRM fallback、Remote Control、Session/report、Seek backward、getStats 证据保持有效。当前无 production `src/` 修改、无新 commit、无 Pepper 使用；`REAL EMBY ACCEPTANCE=FAIL`。
+
+脱敏 evidence：`.work/live-acceptance-cd2-final-2e907f7a259146d1a1c610f09481a734`。临时 mapping/profile 已清理，Electron/helper residual 均为 `0`。
+
+## 2026-09-17 — Multi-sample source/cloud correlation and REAL CD2 acceptance
+
+Model Tier：2。Model：current Codex session。Reason：本轮需要把真实 Emby 的多样本 Item.Path、MediaSource.Path、Emby Download 行为、ETLP 实际 parser/CD2 输入、Enhanced rule selection 与真实 gRPC/CD2 playback 关联起来；未修改 production resolver。Escalated：no。
+
+在 `feat/native-helper-bridge@50f578e1eb251336d15ba116b558c1ac341d7f05` 的 `EmbyTheaterEnhanced-0.1.1-native-helper-cd2diag-50f578e` runtime 上，从真实登录态副本只读取 Movie/Episode inventory：`7665/7665`，ordinary `0`、STRM `7665`。选取 `12` 个不同 sidecar/source directory 的 STRM。sidecar common structure 为 POSIX、root class `media`、normalized descriptor hash `2c5750edd20c7ebc`、length `15`、3 segments；每个样本的 sidecar relative suffix 为 2 segments。`MediaSource.Path` common structure 为 POSIX、root class `other`、descriptor hash `bacd208bc305dcbf`、length `37`、5 segments；每个 source path 为 7 segments，source relative suffix 为 2 segments。
+
+当前 ETLP adapter 的 `[src]` root 与 sidecar 结构一致，但不匹配 actual `MediaSource.Path`。ETLP `path_map` target 在每个完整 `MediaSource.Path` 中出现在同一 segment offset `2`；截断到该 target 的 derived source prefix 在 `12/12` 样本中稳定，descriptor hash `017f7afde5e39ad7`、length `32`、4 segments；configured cloud target descriptor hash `5bd333fa2336f6d2`、length `12`、2 segments。所有样本的 sidecar/source relative stem correspondence 为 `12/12`，Enhanced `mountResolver` candidate 为 sourcePath-only `12/12`，source→cloud prefix replacement 为 `12/12`。这是从实际 path segment 关系推出的唯一 mapping，未尝试多个 prefix。
+
+ETLP 实际输入链路由源码确认：`playbackData.MediaSources[].Path -> source_path`，`mainEpInfo.Path -> file_path`，`strm_local_media_path(file_path, source_path)` 得到确定性媒体路径，再经 `[src]/[dst]` 转换为 `strm_cd2_local_path`，最后 `maybe_register_strm_cd2_url(strm_cd2_local_path, fallback_url=stream_url)` 进入 CD2。Enhanced rule selection 的 authoritative input 仍是 `MediaSource.Path/sourcePath`。对 Emby `Items/{id}/Download` 只发起 `Range: bytes=0-4095`，12/12 返回 `206` 视频字节而非 `.strm` 文本；因此 pointer content 没有直接暴露，但 metadata/source identity 与 ETLP parser 的 source_path contract 一致，未把视频响应误记成 STRM 文本。
+
+使用 derived source prefix → configured cloud target 的临时 acceptance config adapter 后，rule-selection probe 为 `12/12` selected `legacy-cd2`，stub transport invocation `24`，随后 actual runtime config probe 的 real same-origin CD2 请求为 `status=hit、reason=cd2_hit、sourceKind=cd2-url`。完整 REAL CD2 flow 从头执行成功：两次真实 playback resolver 均为 `legacy-cd2 -> direct_url_hit -> direct-url`，两次均完成 CD2 `FindFile` 与 `GetDownloadUrlPath`；resolver route hit、Native Helper、core-playing、Session NowPlaying、Pause、Resume、Seek forward、NextTrack、Stop、HTTP/WebSocket remote command 与 playback reports 均通过。`Stop` 后 NowPlaying 清空，运行结束后 Electron/helper residual 为 `0`。本轮没有持久化 acceptance mapping 到真实 profile，原 profile 未被覆盖或清理。
+
+为补剩余 coverage，acceptance harness 当前工作副本新增 `seekBackward`、`getStats`、`resumeCycle`、`fastNext` 验证入口并将选择数扩展为 3；`npm test` 仍为 `197/197`，JS syntax 与 `git diff --check` 通过。`seekBackward=PASS`，`getStats=PASS`，返回 4 categories：`media/video/audio/enhanced`，stat counts `1/17/5/6`。`resumeCycle` 在 `Stop -> media page` 后停止：Stop command server accepted、WebSocket delivered，Stop report accepted 且 position 为 `302800000` ticks，但 1 秒后重新读取同一 item 的 `UserData.PlaybackPositionTicks` 为 `0`，所以没有继续再 Play；该首个独立 blocker 分类为 `HARNESS`，具体是 acceptance 对 Emby metadata eventual update 的等待假设，是否存在更晚 server update 本轮未继续验证。`fastNext` 未在该 blocker 后执行。
+
+脱敏 evidence：`.work/real-multisample-correlation-19669e680df849fdb606907ac9a70a2a.json`、`.work/real-rule-selection-probe-3908f945593d4d63876ba50fc32771d7.json`、`.work/real-cd2-runtime-config-probe-c55cd9c1410643cba3c051b01e882a6f.json`、`.work/live-acceptance-cd2-full-3f8c2c91c88644459db122d89a501061`、`.work/live-acceptance-cd2-remaining-3ef6c50206ca4a9ca61bd0465be9d251`。本轮无 production `src/` 修改；最近 commit 仍为 `50f578e`，新增 harness 与文档保持未提交。无 Pepper 使用、未开始 Pepper retirement；`REAL ORDINARY MEDIA = N/A — ENVIRONMENTALLY UNAVAILABLE`，因此当前 gate 保持 `REAL EMBY ACCEPTANCE = FAIL`。
+
+## 2026-09-17 — Ordinary N/A and pure no_matching_rule correlation
+
+Model Tier：2。Model：current Codex session。Reason：本轮只读 correlation 需要同时核对真实 Emby item/source identity、ETLP schema conversion、Enhanced v1 rule、POSIX path normalization 和 `selectRule` code path；没有实现修复。Escalated：no。
+
+上一轮 harness fix 已单独提交为 `50f578e1eb251336d15ba116b558c1ac341d7f05`。普通媒体按用户要求改为 N/A：完整 Movie/Episode inventory `7665/7665`，ordinary `0`、STRM `7665`，source path 全为 POSIX。记录 `REAL ORDINARY MEDIA = N/A — ENVIRONMENTALLY UNAVAILABLE`，compensating evidence 为 Formal ordinary pipeline PASS 与 REAL STRM native-fallback lifecycle PASS；不修改 Emby media library。
+
+使用上一轮成功播放样本执行无副作用 correlation，itemId hash `af7137c6a8570078`。sidecar 为 POSIX/media，normalized hash `f8cee147db9ba93f`、length 97；`MediaSource.Path` 为 POSIX/other，normalized hash `6ef7215e5d4de93a`、length 118。由于 source path 可被 `normalizeMappingPrefix()` 识别为 absolute POSIX，`strm-resolver.js` 的 `selectRule()` 使用 `values=[sourcePath]`，不再使用 sidecar fallback。sidecar 对 rule source root `prefixMatches=true`，actual source 对同一 root `prefixMatches=false`。
+
+Enhanced config 由当前 production `bootstrapLegacy` 按上一轮实际 acceptance adapter 输入生成：schema v1、resolver/CD2/DirectUrl enabled，唯一 rule `ruleIndex=0, ruleId=legacy-cd2, enabled=true`，regex absent。ETLP `[src]` root 与 Enhanced source root 的 normalized hash/length 一致，ETLP `path_map` target 与 Enhanced target root 一致，source/target 方向正确；actual source 的 POSIX root class 为 `other`，不匹配 configured source root 的 `media` class，rule failure 为 `posix-prefix-or-boundary-mismatch`。
+
+精确生产 code path 为 `selectRule() => null`，随后 `resolve()` / `resolveAsync()` 返回 `type=native`、`reason=no_matching_rule`；correlation 明确 `cd2TransportInvoked=false`。独立 `/media`、`/mnt`、`/volume` POSIX rule probes 均 selected=true，因此没有确认 production resolver 对这些 POSIX class 的 gap。分类为 `ACCEPTANCE CONFIG ADAPTER`，附带环境配置与实际 source root 不匹配；未修改 production、未调用 CD2、未尝试多个 prefix、未处理 cold-directory。
+
+脱敏 evidence 为 `.work/real-rule-correlation-50f578e.json`。本轮在第一个独立 `ACCEPTANCE CONFIG ADAPTER` blocker 处停止；REAL CD2 未取得 route hit，`REAL EMBY ACCEPTANCE = FAIL`。
+
+## 2026-09-17 — Application-window ownership fix and REAL acceptance follow-up
+
+Model Tier：2。Model：current Codex session。Reason：ownership implementation 本身是边界清楚的 Tier 1 harness 修复，但后续真实验收跨 application renderer、Native Helper auxiliary surface、Emby Session/WebSocket、CD2 和真实媒体库存，需要保持证据层分离。Escalated：no。
+
+在 `feat/native-helper-bridge@49b1fc3668c98487fb044e73a1da698a8b67d822` 上只修改 `tools/acceptance-electron.cjs`，复用 `tools/runtime-window-ownership.cjs` 的 canonical packaged `electronapp/www/index.html` identity。`browser-window-created` 不再覆盖 `win`；只有 `did-finish-load` 分类为 application 的窗口才能绑定 owner、执行 epoch/flow injection 和后续 `evaluate`。`data:`、其他 `file:`、`http:`、`https:` 窗口只被记录为 auxiliary。
+
+新增 acceptance-harness regression 与既有 fake ownership cases 合计 `7/7`，其中验证 application renderer 的 fake `window.eteAcceptance` 可用、auxiliary data window 出现后 owner 不变、auxiliary probe/injection count 为 0。acceptance readiness/terminal self-tests `3/3`，全量 `npm test` `197/197`，JavaScript syntax 和 `git diff --check` 通过；`src/`、Native Helper、libmpv、PlaybackManager、Session、Resolver、generation、Pepper 均未修改。
+
+按当前 HEAD 重新构建 runtime `EmbyTheaterEnhanced-0.1.1-native-helper-real-49b1fc3-ownerfix`，SOURCE/NATIVE/RUNTIME provenance 与 package verify 通过，payload 2136 files，helper non-testing。标准 persistent-profile REAL run 的 trace 明确记录 application document owner，随后 Native Helper `data:` auxiliary window，owner 未改变。真实 STRM native fallback 的 inspect/select/play/pause/seek/resume/next/stop 全部通过；helper handshake、core-playing、Session NowPlaying、server accepted、WebSocket delivered 和 10 条 playback reports 通过，Stop 后 NowPlayingItem 清空，target residual=0。resolver 为 `native/no_matching_rule`、CD2 `not_attempted`，故只记 `REAL STRM Native fallback PASS`。
+
+为完成 CD2 目标，使用原 persistent 登录态的隔离副本和已存在的本地 CD2 输入运行标准 flow；副本复制初次因嵌套目录造成 `api-client-unavailable`，该 setup error 已停止并清理，未当成产品 blocker。正确复制后 strict inspect 通过，但真实样本仍为 `no_matching_rule` / `cd2 not_attempted`，没有把 fallback 记作 CD2 hit。随后对 `Movie,Episode` 做完整只读分页：`TotalRecordCount=7665`，fetched `7665`，ordinary `0`，STRM `7665`，source path 全为 POSIX。当前没有真实非 STRM 媒体，故第一个新的独立 blocker 为 `MEDIA/ENVIRONMENT`，本轮停止继续探测。
+
+脱敏 evidence：`.work/live-acceptance-2525dec8174f42b9a43483e70458b0ff`、`.work/live-acceptance-cd2-34de10d328804431b2ebea57c8521ec9`、`.work/real-ordinary-scan-20260917.json`。临时 CD2 profile 已删除并验证原 persistent profile 未新增 `strm-resolver.json`；target runtime owned process residual=0。stop-barrier candidate hash 仍为 `7BF1F8E53D8BA63717A9CFB44F0D53E46EAE1600E34C4D8F100D3B0153333931`。本轮无 production file change、无新 commit、无 Pepper 使用，`REAL EMBY ACCEPTANCE = FAIL`。
+
+## 2026-09-17 — Native Helper REAL Emby acceptance stopped at harness blocker
+
+Model Tier：2。Model：current Codex session。Reason：真实验收跨 Electron main/renderer、Native Helper、libmpv、PlaybackManager、Emby Session/WebSocket 与报告链；本轮只做证据采集，不改变 production contract。Escalated：no。
+
+先在独立 `E:\ETE-native-helper-bridge` worktree 核验 `feat/native-helper-bridge@49b1fc3668c98487fb044e73a1da698a8b67d822`，worktree 初始 clean。正式构建 `EmbyTheaterEnhanced-0.1.1-native-helper-real-49b1fc3` 从 HEAD Git blob 生成，SOURCE/NATIVE/RUNTIME provenance 和 package verify 均通过，runtime payload 2136 files，native helper 为 non-testing build。未设置 `ETE_MPV_BRIDGE_MODE=pepper`，实际观察到 `native-helper/helper-ready` 和 helper executable；没有自动 Pepper recovery。
+
+使用现有 persistent profile 的 strict inspect 为 `loggedIn=true`，client identity `Emby Theater Enhanced`，非管理员；inspect 阶段 own Session 可见，但 `websocketOpen=false`、`SupportsRemoteControl=false`，故 HTTP/WS Session identity 与 remote control 尚未通过。首次选择到的真实样本是 STRM Movie，`inspect/select/play` 均通过；当前 profile 这次没有匹配 CD2 rule，resolver 日志为 `route=native`、`reason=no_matching_rule`、`cd2Reason=not_attempted`。应用日志观察到 `helper-ready`、native loadfile request、`core-playing`、current player、own Session NowPlaying 以及 2 条已接受的 start/progress report。run window 内 `generation-required=0`、`bridge_error=0`、helper-terminal/crash=0、生产 error event=0。
+
+进入下一步 `pause` 时，`acceptance-trace.txt` 依次记录 application document 完成、play 后第二次 `browser-window-created`（Native Helper video surface）和 `method-start=pause`；随后 `acceptance-operation-failed`，renderer 报告 `Script failed to execute`。源码审计确认 `tools/acceptance-electron.cjs:67-70` 的全局监听器无条件执行 `win=created`，因此辅助 `data:` surface 覆盖 application renderer；后续 `evaluate()` 对辅助窗口调用 `window.eteAcceptance.pause()` 失败。该首个独立 blocker 归类为 `test/acceptance harness`，没有证据支持 production/native helper/CD2/Emby server failure。按任务边界未重试、未修改 harness/production、未继续 ordinary、STRM/CD2、getStats、remote control、NextTrack 或 Resume/Stop。
+
+完整脱敏 evidence 位于忽略目录 `.work/live-acceptance-a2a9cf79f6cb4846a1726ee9597a5593`；当时主 Electron PID 8428、helper PID 9356，收尾后 target runtime owned process residual=0。`.work/stop-barrier-candidate.patch` hash 仍为 `7BF1F8E53D8BA63717A9CFB44F0D53E46EAE1600E34C4D8F100D3B0153333931`。本轮无 production file change、无新 commit、无 Pepper 使用，`REAL EMBY ACCEPTANCE = FAIL`。
+
+## 2026-09-17 — Deterministic generation fixture
+
+Model Tier：2。Model：GPT-5.6 Sol High。Reason：虽然只改 harness，但必须准确区分 renderer request generation、native generation、listener cleanup 与 controller stale filtering，禁止因 fixture timing 误判 production regression。Escalated：no。
+
+两次相同 focused diagnosis 结果不同：non-overlap run 中 Play #1 在 927.0ms fulfilled，Play #2 到 1015.8ms 才进入；Play #1 gen131 后续被正常 retire，旧 gen131 END_FILE 在 gen132 current 时 controller drop-stale。overlap run 中 Play #2 于 489.5ms 进入，Play #1 于 491.9ms 正确 reject PlaybackSuperseded，且 Play #1 尚无 native generation。两个 run 均无旧 callback 影响 current state；因此 root cause 为 fixed-delay TIMING，`oldCoreListenerIgnored` 命名与 observation 不符，aef373a diagnostics fix 无直接因果。
+
+harness observer 现在透明包装 application window 的 core listener add/remove、endpoint begin/retire generation 与 fake CD2 resolve/cancel IPC。Play #1 gate 要求 listener + native generation + pending；assertion 关联 Play #1/2 requestId、old generation retirement、PlaybackSuperseded。old-listener assertion 要求 removed、takeover 后 callback count=0、Play #2 fulfilled。Stop case 等待 exact request 的 CD2 resolve in-flight，再触发 stop 并观察 matching cancel。focused official runtime 连续三次 `first/second/old/stop/late=true`、cancel=1、active=0；unit `4/4`，全量 `npm test 196/196`。未修改 production、NextTrack、Stop barrier、REAL profile 或 Pepper。
+
+## 2026-09-17 — Ready diagnostics generation ownership fix
+
+Model Tier：2。Model：GPT-5.6 Sol High。Reason：修复点虽窄，但必须同时保持 optional diagnostics fail-open、native generation isolation、direct/global getProperty 与 required helper/protocol fatal 边界，并验证 delayed STRM/CD2 authoritative core-playing。Escalated：no。
+
+两次 bounded diagnosis 已证明 remoteStop#1、managerStop#1、playerStop#1 与 destroy#1 在新 STRM Play 前约 789ms 全部 settle；真正独立 owner 是 ready diagnostics 在 generation=null 时发送 diagnostic set_property/expand，产生 `generation-required` bridge_error。新 generation 163 随后虽建立并提交 load，但早先错误已使 embedded.play reject，PlaybackManager onPlaybackError 的 destroy 才 retire generation。Stop barrier candidate 以 SHA256 `7BF1F8E53D8BA63717A9CFB44F0D53E46EAE1600E34C4D8F100D3B0153333931` 保存在 ignored `.work`，本提交不包含它。
+
+实现只修改 renderer client 与 diagnostics consumer：native endpoint 无 generation 时不提交 optional cache mutation；有 generation 时 exact set/expand/read 共用捕获 generation，并在每个 await 后复核；generation-required/stale/retired 返回 unavailable，其他错误仍 reject。真实 libmpv.js + real native client deterministic regression 用 delayed resolver 保证 diagnostics 先于 beginGeneration，随后 fake CD2 HTTP hit、current-generation load 与 core-idle=false 通过，manager ownership 保持。targeted `19/19`、全量 `npm test 192/192`、syntax 与 diff check PASS；未修改 helper C++、controller/service、PlaybackManager、Session、Resolver、CD2 或 Pepper。
+
+## 2026-09-17 — Formal runtime harness BrowserWindow ownership fix
+
+Model Tier：1。Model：GPT-5.6 Sol High。Reason：根因与允许文件已经明确，修改只涉及 runtime test harness ownership、error evidence、fixture stage marker、纯 fake-window regression 和文档；production renderer、native helper、PlaybackManager、Session、Resolver、CD2、Electron runtime 与 Pepper 全部冻结。Escalated：no。
+
+根因为 `tools/smoke-electron.cjs` 的全局 `browser-window-created` handler 把每个新窗口写入 `testWindow`，随后对 native-helper 合法创建的 sandboxed `data:` surface 注入 bare AMD `require(['pluginManager'])`。新增纯 helper 以 exact packaged index file identity 分类 application/auxiliary；只在 application `did-finish-load` 后启动一次 harness，owner 存活时拒绝覆盖，destroy 后才允许 replacement。分类 evidence 不保存完整 URL/query；hidden harness 对所有窗口显式保持 `alwaysOnTop=false`。renderer error evidence 增加 bounded name/message/stack/sourceURL/line/column、window class 与 pipeline stage，重要 executeJavaScript 均带 sourceURL。
+
+验证：ownership targeted `6/6`，product-identity + ownership `10/10`，全量 `npm test 183/183`，JS syntax 与 `git diff --check` PASS。既有 `3f62efa` runtime 的提交前 hidden integration 证明 application owner/probe/pipeline 各 1、auxiliary 1、auxiliary injection 0，原 `require is not defined` 未复现；ordinary/STRM 两轮全部字段通过。最终 assertion 因独立 NextTrack `selected=false` 而失败，其余 NextTrack facts 为 true；按 stop boundary 未在本轮修改 fixture expectation 或 production NextTrack semantics。
+
+## 2026-09-17 — Optional getStats property compatibility follow-up
+
+Model Tier：2。Model：GPT-5.6 Sol High。Reason：虽然 production 修改集中在 Stats consumer，但诊断和验收必须区分 helper request correlation、generation ownership、optional telemetry 与 required playback/transport failure。Escalated：no。
+
+开始时核验独立 worktree `E:\ETE-native-helper-bridge` 为 clean，分支、HEAD 与 remote 均为 `feat/native-helper-bridge@b17e6578ecd8ee6be71821e07380e1f87cd0f308`。复用该 HEAD 的正式 runtime，在 test-only runtime 副本中增加 128 条固定上限、仅含 property/error/requestId/generationId 的隐私安全 correlation；一次 hidden pipeline 即确认 generation 131、request 64 的 `chapter` 是 `getMediaStats()` 首个 `property-unavailable`，并停止诊断。证据未记录 URL、token、Authorization、command arguments 或媒体路径。
+
+根因为 Media/Video/Audio Stats 已在渲染阶段把 null 作为字段缺失或默认值处理，但三个 per-category `Promise.all(getProperty)` 会在 native direct property rejection 时提前失败。修复新增 Stats 专用 `getOptionalStatsProperty()`，只把精确 `property-unavailable` 转为 `null`；transport/protocol/helper/generation 与未知错误继续 reject。未修改全局 `getProperty()`、native helper、PlaybackManager、Session、Resolver、CD2、MediaSource/PlaySession/Device/Product identity、NextTrack、remote control、Electron 或 Pepper。
+
+验证：真实 AMD module/Player targeted `2/2`，覆盖 A/C available、B=`chapter` unavailable 后 aggregate resolve，map/array/number/boolean/INT64 string 保留，以及 `transport-closed` 不被吞掉；全量 `npm test 177/177`、相关 JavaScript syntax 与 `git diff --check` PASS。正式 source-commit build、三层 provenance、package verify、同一 hidden pipeline 与 REAL Emby 必须在本 follow-up commit 成为真实 HEAD 后执行。
+
+## 2026-09-17 — Native helper nonfatal operation failure follow-up
+
+Model Tier：2。Model：GPT-5.6 Sol High。Reason：修改点集中，但必须同时保持 native helper protocol-fatal 边界、generation ownership、transport lifecycle 与 upper submission semantics。Escalated：no。
+
+开始时核验独立 worktree `E:\ETE-native-helper-bridge` 为 clean，`HEAD` 与 `origin/feat/native-helper-bridge` 均为 `a22426aafaafc9cd20b7c64f504f1857750ed83f`；原始调用链为 `mpv_set_property_string` 或同步 `mpv_command` 返回负值后抛异常，主循环把所有异常统一转换为 `protocol-error` 并 exit 20。审计确认 `mpv_get_property`、load 与 stop 已使用非致命 response error；`mpv_observe_property` 不属于本次指定调用集合，未扩大修改。
+
+helper 新增 generation-scoped `operation-error` event，只包含 operation、allowlisted property 名、libmpv error code/string 与 `fatal=false`，不含 command arguments、URL、header 或 token。controller 对 schema/fatality/error bounds 做 fail-closed 校验，只接受 current generation，并在 64 条有界 history 中记录；operation failure 不进入 request mass rejection、helper recreate、surface teardown 或 generation retirement。submission-oriented `setProperty`/`sendCommand`、PlaybackManager、Session、Resolver、CD2、libmpv playback semantics、Electron 与 Pepper 均未修改。
+
+验证：focused protocol `7/7`；`npm test 175/175`；dirty-source testing helper 使用固定 GCC/flags 与 `-Werror` 编译通过。隐藏 Electron fault-injection smoke 对真实 bundled libmpv 验证 set-property 与 command rejection 均为 typed nonfatal，同 PID/helperInstanceId/generation、transport open、protocol ready、后续 property request成功、`stdout-end=false`；独立 unsupported protocol version 仍观察到 `protocol-error`、exit 20。正式 source-commit build 与后续 pipeline 必须等获授权 commit 成为 HEAD 后重新执行，本段不预先声称其结果。
+
+## 2026-09-17 — Production Native Helper Bridge implementation candidate
+
+Model Tier：2。Model：GPT-5.6 Sol High。Reason：native helper、framed IPC、libmpv event attribution、Electron main/renderer、native HWND composition、crash/recreate 与 Git-blob build provenance 跨多个层级，同时必须冻结 PlaybackManager/Session/Resolver。Escalated：no。
+
+开始时逐项核验 `origin/main=73eac9fa64c43804e9c5c53690ed087b2c5bb077`、`origin/fix/product-session-identity-v2=a16cdc72d9e8bc60284c759a126a3d77c33fa001`、`origin/spike/helper-native-pipe-integration=ff668aefd745023e0bd730df0b57d685d59d6dcb` 与 consolidation `4ff38123c2f1c3b058b68f66ca8ebb74db539f54`。新 worktree `E:\ETE-native-helper-bridge` 与分支 `feat/native-helper-bridge` 从 `a16cdc7` 创建；research worktree 只读，未 merge/cherry-pick research commit 或复制 experiment binary。
+
+Phase A 静态审计确认 upper contract 可以由 adapter 保持，不需要修改 PlaybackManager、Session 或 Resolver。生产实现新增 `native/mpv-helper/ete-mpv-helper.cpp`，将研究阶段的 native attribution 与 Windows child HWND/gpu-next/D3D11 surface 合并；增加 MPV node map/array/scalar serialization、dynamic observation、UTF-8 framed JSON、bounded input/output、private inherited pipes、handshake 与 test-only fault hooks。Renderer endpoint 保持 postMessage/message logical shape；main service使用严格 command/property allowlist、固定 runtime paths、无 shell/public endpoint/TCP/localhost，并在 helper failure 时 fail closed。
+
+实测中首先发现 child HWND 使用 `HWND_BOTTOM` 会被 video host 的 Chromium surface 覆盖；改为 helper child `HWND_TOP`，再由独立 transparent main BrowserWindow置顶，production build 的 screen capture 显示实际 H.264 test frame 与 HTML OSD 同时可见。另修复 smoke data URL 未编码 `#` 导致 CSS/OSD 被 fragment 截断的问题；失败 capture 保留为本地 ignored evidence，未误报通过。surface service 随 main move/resize/maximize/restore/fullscreen/minimize/close 管理 video host，main 关闭会销毁 helper，避免额外 BrowserWindow 阻止 `window-all-closed`。
+
+验证：`npm test 173/173`；Node/PowerShell syntax PASS。生产源码 helper 两次带 `--no-insert-timestamp` 编译 SHA256 相同；checkout build hash为 `29ef57275443c49d7685c57518b91eca0152c20ed25fda21dd42c7a554c4cb2f`，但不是正式 source-commit artifact。真实 Electron 18 smoke 得到 Electron 18.3.15 / Chromium 100.0.4896.160 / Node 16.13.2、helper handshake 1.0.0、libmpv `mpv v0.41.0-920-gdd5d17d32` / API 2.5；`gpu-next`、D3D11、d3d11va、native HWND、structured video params、Pause/Unpause/Seek/Stop PASS，load-to-playing 单次约 475ms，仅作本机 telemetry。
+
+竞态与 lifecycle：rapid A→B 20/20、A→B→C 20/20、Stop during load 20/20、helper access-violation + recreate 20/20，accepted stale events 0；pending request 在 crash 时 exactly-once `HELPER_DIED`。强制终止 exact Electron parent 后 helper 5 秒内 pipe EOF 退出，residual 0。pressure test 提交 20,000 property updates，coalesced 19,718，native output peak 3 frames/869 bytes；1 MiB stderr 全量读取、retained 4 KiB；partial frame PASS，zero/oversized/invalid UTF-8/malformed JSON/unsupported version、malformed helper output 和 pipe close 均 fail closed。DirectUrl file-local UA A/B/C 分别观测 `ETE-A/1.0`、`ETE-B/1.0`、`libmpv`。最终 production-source helper 的 10+ minute run 到达 `time-pos=603.2s`，helper PID/transport稳定、stale=0；21 个 working-set sample 峰值 107,806,720 bytes，首尾增长 794,624 bytes。
+
+代码复核后又关闭了普通 load failure 丢失 H1 引用、旧 renderer endpoint 操作 replacement、destroy-during-handshake、required capability 未校验、optional subtitle metadata、HWND cross-thread access、structured INT64 精度、quarantine bytes/depth 与 compiler/linker provenance 等问题。真实缺失媒体产生一次 `load-failed`，service 保持同一 helper ready，随后有效媒体恢复且 recreateCount=0；stale endpoint 的 retire/destroy 被拒绝。第二轮 review 发现首次 create 的 DOM/promise race 与 delayed subtitle rejection；现已用单一 `mediaElementPromise`、creation epoch、失败 cleanup/retry 和 optional rejection handling 修复，新增并发首次 Play、handshake failure retry 与 native readiness observer 回归。
+
+构建新增 pinned official `client.h` prepare、Git-blob source materializer、native helper compiler/staging 与 `native-helper-provenance.json` validation；installer 继续递归包含 runtime，无需 architecture 改动。一次性 `.work` Git fixture 暴露并修正了 PowerShell include argument 被错误拼成单个参数的问题；修正后从 fixture commit Git blob 连续构建两次，provenance 均 PASS，helper SHA256 均为 `29ef57275443c49d7685c57518b91eca0152c20ed25fda21dd42c7a554c4cb2f`。build contract 还会拒绝 manifest/build/materializer/validator/contract/tracked-hash generator 与 HEAD 不一致。当前没有 commit/push 授权，因此真实分支 build 仍无法把未提交实现作为合法 `sourceCommit` 输入；未执行正式 full runtime/package/installer 或 REAL Emby。Model/automation evidence 不替代这些 gate。
+
+## 2026-09-17 — Production application identity parity
+
+Model Tier：2。Model：GPT-5.6 Sol High。Reason：修改虽小，但必须核对正式 Electron startup、acceptance harness、`loadStartInfo`、BrowserWindow、ConnectionManager 与既有 persistent DeviceId 的初始化边界。Escalated：no。
+
+先核验 `origin/main=73eac9fa64c43804e9c5c53690ed087b2c5bb077`，并在独立 worktree 的 `fix/product-session-identity-v2` 上审计旧 reference `8eb50624c03acbf42229bac1bfebd07041f7ed6f`。当前 base 的正式 `main.js` 没有设置 application name，`loadStartInfo()` 却使用 `app.name`；acceptance 则自行使用 `metadata.productName || metadata.name`，因此旧 production gap 仍存在。旧测试中的 hostname DeviceId 断言已不适用于当前 main 的 persistent UUID baseline，未原样复刻。
+
+新增小型 `product-identity.js`，集中实现 runtime `productName || name` 与 `app.setName()`；正式 startup 和 acceptance 均调用该 helper，不再保留两套 fallback。正式调用位于 bootstrap、persistent DeviceId、`loadStartInfo()` 与 `BrowserWindow` 之前，之后仍由 `loadStartInfo.name = app.name` 进入既有 apphost/ConnectionManager client identity 链。DeviceId 继续从 Enhanced config 的 `device-identity.json` 读取或生成，`deviceName` 继续使用 hostname。
+
+验证：product identity 专项 `4/4`；修改的 JS/CJS `node --check` 全部通过。安装锁定依赖后全量 `npm test` 为 `144/152`；8 项失败均为 `ENOENT` 或显式 missing-base，源于 clean worktree 不含 `vendor/carnival/electronapp/www` 与 prepared `src/electronapp/preload.js`，归类为 `ENVIRONMENT_INPUT_MISSING`，真实代码失败为 0。缺少这些 private/ignored input 且不存在当前分支 runtime，因此未运行 build 或 Electron smoke，也未用代码规避测试。本轮未修改 PlaybackManager、Session/PlaySessionId、MediaSourceId、WebSocket、reports、Resolver、CD2、libmpv、Electron、依赖或安装器，未开始 Bridge Adapter。
+
 ## 2026-09-16 — Bind tracked runtime sources to Git blobs
 
 Model Tier：1。Model：GPT-5 Codex（current session）。Reason：远程审核已明确 blocker、允许文件、输入输出与验收标准；修改限定为 build source acquisition、runtime provenance 和回归测试。Escalated：no。

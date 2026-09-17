@@ -5,11 +5,12 @@ const fs = require('fs');
 const path = require('path');
 const webOverlays = require('./prepare-web-overlays.cjs');
 const trackedFileHash = require('./tracked-file-hash.cjs');
+const nativeHelperProvenance = require('./native-helper-provenance.cjs');
+const runtimeExclusions = require('./runtime-exclusions.cjs');
 
 const MANIFEST_NAME = 'source-provenance.json';
 const ELECTRON_PATH = 'x64/electron/electron.exe';
 const ELECTRON_VERSION_PATH = 'x64/electron/version';
-const BRIDGE_PATH = 'electronapp/libmpv/x64/mpv-win32-x64.node';
 const LIBMPV_RUNTIME_PATH = 'electronapp/libmpv/x64/mpv-1.dll';
 const LIBMPV_PATCH_PATH = 'payload/libmpv/mpv-1.dll';
 
@@ -73,6 +74,21 @@ function checkedRuntimeIdentity(root, runtime, manifestEntryValue, runtimePath, 
     return {role, inputPath, inputSha256, runtimePath, sha256: actual};
 }
 
+function checkedRetiredRuntimeInput(root, manifestEntryValue, runtimePath) {
+    const inputPath = slash(path.join('vendor/carnival', manifestEntryValue.path));
+    const inputSha256 = hashFile(path.join(root, inputPath), 'Retired runtime input');
+    const manifestSha256 = String(manifestEntryValue.sha256).toUpperCase();
+    if (inputSha256 !== manifestSha256) throw new Error('Retired runtime input hash mismatch: ' + inputPath);
+    return {
+        runtimePath,
+        inputPath,
+        inputSha256,
+        manifestSha256,
+        excluded: true,
+        reason: 'retired-runtime-input-not-copied'
+    };
+}
+
 function productionDependencyClosure(root, runtime) {
     const lockPath = path.join(root, 'package-lock.json');
     const lock = JSON.parse(readFile(lockPath, 'package-lock.json').toString('utf8'));
@@ -116,13 +132,11 @@ function buildManifest(rootArg, runtimeArg, sourceCommit) {
     const vendorManifest = JSON.parse(readFile(vendorManifestPath, 'Vendor manifest').toString('utf8'));
     const electronEntry = manifestEntry(vendorManifest, 'files', ELECTRON_PATH);
     const electronVersionEntry = manifestEntry(vendorManifest, 'files', ELECTRON_VERSION_PATH);
-    const bridgeEntry = manifestEntry(vendorManifest, 'files', BRIDGE_PATH);
     const baseLibmpvEntry = manifestEntry(vendorManifest, 'files', LIBMPV_RUNTIME_PATH);
     const patchLibmpvEntry = manifestEntry(vendorManifest, 'patchFiles', LIBMPV_PATCH_PATH);
     const electron = checkedRuntimeIdentity(root, runtime, electronEntry, ELECTRON_PATH, 'electron-runtime', 'vendor/carnival');
     const electronVersion = checkedRuntimeIdentity(root, runtime, electronVersionEntry, ELECTRON_VERSION_PATH, 'electron-version', 'vendor/carnival');
     electronVersion.version = readFile(path.join(runtime, ELECTRON_VERSION_PATH), 'Electron version').toString('utf8').trim();
-    const bridge = checkedRuntimeIdentity(root, runtime, bridgeEntry, BRIDGE_PATH, 'pepper-bridge', 'vendor/carnival');
     const libmpv = checkedRuntimeIdentity(root, runtime, patchLibmpvEntry, LIBMPV_RUNTIME_PATH, 'libmpv', 'vendor/patch');
     const baseLibmpvInput = hashFile(path.join(root, 'vendor', 'carnival', baseLibmpvEntry.path), 'libmpv base input');
     if (baseLibmpvInput !== String(baseLibmpvEntry.sha256).toUpperCase()) {
@@ -135,7 +149,14 @@ function buildManifest(rootArg, runtimeArg, sourceCommit) {
     const baseWebRoot = path.join(root, 'vendor', 'carnival', 'electronapp', 'www');
     const runtimeWebRoot = path.join(runtime, 'electronapp', 'www');
     const overlayReport = webOverlays.inspect(root, runtime);
-    return {
+    const retiredRuntimeInputs = runtimeExclusions.RETIRED_RUNTIME_PATHS.map(runtimePath =>
+        checkedRetiredRuntimeInput(root, manifestEntry(vendorManifest, 'files', runtimePath), runtimePath));
+    let nativeHelper = null;
+    if (fs.existsSync(path.join(root, 'vendor', 'native-helper-manifest.json'))) {
+        nativeHelper = nativeHelperProvenance.validate(root, runtime, sourceCommit);
+        if (nativeHelper.status !== 'passed') throw new Error('Native helper provenance validation failed: ' + nativeHelper.errors.join(','));
+    }
+    const result = {
         schemaVersion: 1,
         sourceCommit: sourceCommit.toLowerCase(),
         purpose: 'Source and transform provenance; final payload enumeration is build-manifest.json',
@@ -148,7 +169,13 @@ function buildManifest(rootArg, runtimeArg, sourceCommit) {
                 sha256: String(entry.sha256 || '').toUpperCase()
             }))
         },
-        runtimeIdentities: {electron, electronVersion, bridge, libmpv},
+        runtimeIdentities: {electron, electronVersion, libmpv},
+        runtimeExclusions: {
+            generatorPath: 'tools/runtime-exclusions.cjs',
+            generatorSha256: trackedFileHash.hashTrackedTextFile(root, 'tools/runtime-exclusions.cjs'),
+            paths: [...runtimeExclusions.RETIRED_RUNTIME_PATHS],
+            inputs: retiredRuntimeInputs
+        },
         webSnapshot: {
             basePath: 'vendor/carnival/electronapp/www',
             baseTree: treeIdentity(baseWebRoot, walkFiles(baseWebRoot)),
@@ -158,6 +185,8 @@ function buildManifest(rootArg, runtimeArg, sourceCommit) {
         },
         productionDependencyClosure: productionDependencyClosure(root, runtime)
     };
+    if (nativeHelper) result.nativeHelper = nativeHelper.record;
+    return result;
 }
 
 function writeManifest(root, runtime, sourceCommit) {

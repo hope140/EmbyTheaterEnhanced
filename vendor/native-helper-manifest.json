@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "protocolVersion": 1,
+  "sourcePath": "native/mpv-helper/ete-mpv-helper.cpp",
+  "runtimePath": "electronapp/native-helper/ete-mpv-helper.exe",
+  "provenancePath": "native-helper-provenance.json",
+  "clientHeader": {
+    "source": "https://raw.githubusercontent.com/mpv-player/mpv/dd5d17d32/include/mpv/client.h",
+    "commit": "dd5d17d32",
+    "path": "vendor/native-helper-inputs/mpv/client.h",
+    "sha256": "1acf99ee77c8c2a6f1d1993bd81bbc8a91d27fb5924e80171670e6139a4bd353"
+  },
+  "libmpv": {
+    "runtimePath": "electronapp/libmpv/x64/mpv-1.dll",
+    "sha256": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c",
+    "version": "v0.41.0-920-gdd5d17d32",
+    "clientApi": "2.5"
+  },
+  "compiler": {
+    "command": "g++.exe",
+    "family": "MSYS2 UCRT64 GCC",
+    "architecture": "x64",
+    "version": "g++.exe (Rev5, Built by MSYS2 project) 16.1.0",
+    "sha256": "798a6eb495b30cf771dc759b5508d269ecb0dddac739719e8b30fe0ac0744b69",
+    "flags": [
+      "-std=c++17",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-Wno-cast-function-type",
+      "-static",
+      "-static-libgcc",
+      "-static-libstdc++",
+      "-municode",
+      "-Wl,--no-insert-timestamp"
+    ],
+    "linkerFlags": ["-luser32"]
+  }
+}

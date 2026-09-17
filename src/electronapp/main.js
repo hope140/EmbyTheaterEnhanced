@@ -6,6 +6,9 @@
     var BrowserView = electron.BrowserView;  // Module to create native browser window.
     var powerSaveBlocker = electron.powerSaveBlocker
     var nativeImage = electron.nativeImage;
+    var productIdentity = require('./product-identity');
+    var productMetadata = require('./package.json');
+    productIdentity.setAppName(app, productMetadata);
     var path = require('path');
     var appBootstrap = require('./enhanced/bootstrap');
     var deviceIdentity = require('./device-identity');
@@ -101,6 +104,8 @@
     var unregisterCd2Ipc = function () {};
     var unregisterStrmConfigIpc = function () {};
     var unregisterDiagnosticsIpc = function () {};
+    var unregisterNativeHelperIpc = function () { return Promise.resolve(); };
+    var nativeHelperService;
 
     function onWindowMoved() {
 
@@ -800,9 +805,7 @@
     function setCommandLineSwitches() {
 
         var isLinux = require('is-linux');
-        var path = require('path')
         app.commandLine.appendSwitch("ignore-gpu-blacklist");
-        app.commandLine.appendSwitch("register-pepper-plugins", getPluginEntry(path.join(__dirname, 'libmpv', process.arch)));
         app.commandLine.appendSwitch('no-sandbox');
         app.commandLine.appendSwitch('disable-features', 'OutOfBlinkCors')
         app.commandLine.appendSwitch('disable-site-isolation-trials')
@@ -819,40 +822,6 @@
             //app.commandLine.appendSwitch('high-dpi-support', 'true');
             //app.commandLine.appendSwitch('force-device-scale-factor', '1');
         }
-    }
-
-    function getPluginEntry(pluginDir, pluginName = `mpv-${process.platform}-${process.arch}.node`) {
-        var path = require('path')
-        const fullPluginPath = path.join(pluginDir, pluginName);
-        let pluginPath = ""
-        if (containsNonASCII(fullPluginPath)) {
-            // Try relative path to workaround ASCII-only path restriction.
-            if (process.platform === "linux") {
-                pluginPath = path.relative(process.cwd(), fullPluginPath);
-                if (path.dirname(pluginPath) === ".") {
-                    pluginPath = `.${path.sep}${pluginPath}`;
-                }
-            } else if (process.platform === "win32") {
-                process.chdir(pluginDir)
-                pluginPath = path.relative(process.cwd(), fullPluginPath);
-            }
-        } else {
-            pluginPath = fullPluginPath
-        }
-
-        if (containsNonASCII(pluginPath)) {
-            throw new Error("Non-ASCII plugin path is not supported");
-        }
-        return `${pluginPath};application/x-mpvjs`;
-    }
-
-    function containsNonASCII(str) {
-        for (let i = 0; i < str.length; i++) {
-            if (str.charCodeAt(i) > 255) {
-                return true;
-            }
-        }
-        return false;
     }
 
     function getWindowStateDataPath() {
@@ -924,6 +893,7 @@
 
     var strmConfigStoreModule = require('./enhanced/strm-config-store');
     var cd2ServiceModule = require('./enhanced/cd2-service');
+    var nativeHelperServiceModule = require('./native-helper/service');
     strmConfigStore = strmConfigStoreModule.createStore({
         rootDir: require('path').join(app.getPath('userData'), 'config'),
         environment: Object.assign({}, process.env)
@@ -948,19 +918,42 @@
         logger: enhancedLog,
         getWebContents: getWebContents,
         getBrowserWindow: function () { return mainWindow; },
-        getAppInfo: function () { return Object.assign({}, diagnosticsAppInfo); },
+        getAppInfo: function () {
+            return Object.assign({}, diagnosticsAppInfo, {
+                nativeHelper: nativeHelperService && typeof nativeHelperService.status === 'function' ? nativeHelperService.status() : null
+            });
+        },
+        getNativeHelperStatus: function () {
+            return nativeHelperService && typeof nativeHelperService.status === 'function' ? nativeHelperService.status() : null;
+        },
         app: app,
         dialog: electron.dialog,
         shell: electron.shell
     });
-    ['ETE_CD2_ENABLED', 'ETE_CD2_ORIGIN', 'ETE_CD2_TOKEN', 'ETE_CD2_LOCAL_PREFIX', 'ETE_CD2_CLOUD_PREFIX', 'ETE_CD2_DIRECT_URL', 'ETE_CD2_SOURCE_PREFIX', 'ETE_CD2_MOUNT_PREFIX'].forEach(function (name) {
+    nativeHelperService = nativeHelperServiceModule.createService({
+        electron: electron,
+        getMainWindow: function () { return mainWindow; },
+        getWebContents: getWebContents,
+        logger: enhancedLog,
+        runtimeRoot: path.resolve(__dirname, '..'),
+        mode: nativeHelperServiceModule.resolveMode(process.env.ETE_MPV_BRIDGE_MODE)
+    });
+    unregisterNativeHelperIpc = nativeHelperServiceModule.register({
+        ipcMain: ipcMain,
+        service: nativeHelperService,
+        getWebContents: getWebContents
+    });
+    ['ETE_CD2_ENABLED', 'ETE_CD2_ORIGIN', 'ETE_CD2_TOKEN', 'ETE_CD2_LOCAL_PREFIX', 'ETE_CD2_CLOUD_PREFIX', 'ETE_CD2_DIRECT_URL', 'ETE_CD2_SOURCE_PREFIX', 'ETE_CD2_MOUNT_PREFIX', 'ETE_MPV_BRIDGE_MODE'].forEach(function (name) {
         delete process.env[name];
     });
-    app.once('before-quit', function () {
+    app.once('before-quit', function (event) {
+        event.preventDefault();
         enhancedLog({category: 'app', event: 'shutdown', details: {reason: 'before-quit'}});
         unregisterDiagnosticsIpc();
         unregisterStrmConfigIpc();
         unregisterCd2Ipc();
+        var nativeShutdown = unregisterNativeHelperIpc();
+        Promise.resolve(nativeShutdown).catch(function () {}).then(function () { app.quit(); });
     });
     ipcMain.on('enhanced-diagnostics', function (event, snapshot) {
         if (event.sender === getWebContents()) {

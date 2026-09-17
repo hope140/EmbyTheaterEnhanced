@@ -9,7 +9,7 @@
 | README、知识库、Git/Tag、日志、`.gitignore`、简单测试、构建/安装脚本 | Luna |
 | 明确设计后的功能编码、Mount Resolver 最小实现、CD2 基础 API/Mapping | Luna Max |
 | Mount 复杂回归、CD2 Range/Header/异步兼容、PlaybackManager、Session/WebSocket | Sol |
-| libmpv 生命周期、Electron/PPAPI bridge | Sol High |
+| libmpv 生命周期、Electron/Native Helper bridge | Sol High |
 | Electron 大版本升级、跨多层难复现播放故障 | Sol → GPT-6 |
 
 ## 升级与降级

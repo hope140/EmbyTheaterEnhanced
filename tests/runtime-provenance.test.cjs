@@ -68,6 +68,7 @@ function createFixture(root) {
     writeFile(path.join(root, 'vendor', 'runtime-manifest.json'), JSON.stringify({
         baseline: 'provenance-test-fixture',
         archives: [{pattern: 'base.exe', sha256: '0'.repeat(64)}],
+        runtimeExclusions: ['electronapp/libmpv/x64/mpv-win32-x64.node'],
         files,
         patchFiles
     }));
@@ -79,7 +80,8 @@ function createFixture(root) {
         'tools/patch-external-player-registration.cjs',
         'tools/copy-runtime-dependencies.cjs',
         'tools/copy-tracked-product-sources.cjs',
-        'tools/tracked-file-hash.cjs'
+        'tools/tracked-file-hash.cjs',
+        'tools/runtime-exclusions.cjs'
     ]) copyRepoFile(root, relativePath);
     writeFile(path.join(root, 'tools', 'patch-playbackmanager.cjs'), 'generator: playbackmanager\n');
     writeFile(path.join(root, 'tools', 'build.ps1'), 'generator: package-metadata\n');
@@ -103,11 +105,9 @@ function createRuntime(root, name) {
     writeFile(path.join(runtime, 'electronapp', 'preload.js'), fs.readFileSync(path.join(root, 'src', 'electronapp', 'preload.js')));
     writeFile(path.join(runtime, 'electronapp', 'www', 'modules', 'common', 'playback', 'playbackmanager.js'), 'const playback = true;\n');
     writeFile(path.join(runtime, 'electronapp', 'package.json'), '{"name":"runtime"}\n');
-    for (const relativePath of [
-        'x64/electron/electron.exe',
-        'x64/electron/version',
-        'electronapp/libmpv/x64/mpv-win32-x64.node'
-    ]) writeFile(path.join(runtime, relativePath), fs.readFileSync(path.join(root, 'vendor', 'carnival', relativePath)));
+    for (const relativePath of ['x64/electron/electron.exe', 'x64/electron/version']) {
+        writeFile(path.join(runtime, relativePath), fs.readFileSync(path.join(root, 'vendor', 'carnival', relativePath)));
+    }
     writeFile(path.join(runtime, 'electronapp/libmpv/x64/mpv-1.dll'),
         fs.readFileSync(path.join(root, 'vendor/patch/payload/libmpv/mpv-1.dll')));
     webPreparation.apply(root, runtime);

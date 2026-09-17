@@ -5,6 +5,7 @@
 /vendor/carnival/
 /vendor/patch/
 /vendor/official-reference/
+/vendor/native-helper-inputs/
 /src/electronapp/www/
 # Generated from vendor/carnival by tools/prepare-preload.cjs; never hand-copy.
 /src/electronapp/preload.js

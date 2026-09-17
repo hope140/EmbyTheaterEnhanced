@@ -1,5 +1,7 @@
 # CloudDrive2 DirectUrl contract
 
+> 本文中的 Pepper bridge wording 属于 historical DirectUrl capability evidence。当前 production playback endpoint 已切换为 Native Helper；DirectUrl 的 source、UA 与 fallback contract 保持不变。
+
 本文件冻结 PR #4 的 DirectUrl 安全边界。实现继续遵守 `Resolver changes source only`：PlaybackManager、Item、MediaSource、PlaySessionId、Session、WebSocket、报告与现有 libmpv ownership 均保持不变。
 
 ## 能力结论

@@ -7,15 +7,19 @@ const path = require('path');
 const readiness = require('./acceptance-readiness.cjs');
 const readinessEvidenceSource=fs.readFileSync(path.join(__dirname,'readiness-evidence.cjs'),'utf8');
 const {createTerminalWriter} = require('./acceptance-terminal-guard.cjs');
+const {createWindowOwnership} = require('./runtime-window-ownership.cjs');
 const runtime=process.env.ETE_ACCEPT_RUNTIME;
 const output=process.env.ETE_ACCEPT_OUTPUT;
 if(!runtime || !output) throw Error('Live acceptance parameters required');
+const expectedApplicationPath=path.join(runtime,'electronapp','www','index.html');
+const windowOwnership=createWindowOwnership({expectedApplicationPath});
 const profileInspect=process.env.ETE_ACCEPT_PROFILE_INSPECT==='1';
 const manualLogin=process.env.ETE_ACCEPT_MANUAL_LOGIN==='1';
 const profileInspectSource=fs.readFileSync(path.join(__dirname,'acceptance-profile-inspect.js'),'utf8');
 const expectedCd2LocalPrefix=process.env.ETE_ACCEPT_CD2_LOCAL_PREFIX || process.env.ETE_CD2_LOCAL_PREFIX || '';
 const metadata=JSON.parse(fs.readFileSync(path.join(runtime,'electronapp/package.json'),'utf8'));
-app.setName(metadata.productName || metadata.name);
+const productIdentity=require(path.join(runtime,'electronapp/product-identity.js'));
+productIdentity.setAppName(app,metadata);
 app.getVersion=()=>metadata.version;
 fs.mkdirSync(output,{recursive:true});
 let win;
@@ -47,6 +51,7 @@ const end=createTerminalWriter({report,save,exit:code=>app.exit(code),beforeWrit
         const state=await evaluate('window.__eteReadiness ? window.__eteReadiness.snapshot() : null');
         report.readinessState=recorder.sanitizeState(state);
     }catch(_){ }
+    report.windowOwnership=windowOwnership.snapshot();
     if(win) await evaluate('window.eteAcceptance ? window.eteAcceptance.cleanup() : Promise.resolve()').catch(()=>{});
     if(terminal.mark)mark(terminal.mark);
     mark('acceptance-end');
@@ -65,22 +70,21 @@ if(!manualLogin)setTimeout(()=>{
 },profileInspect?30000:240000);
 app.on('browser-window-created',(_,created)=>{
     trace('browser-window-created');
-    win=created;
-    mark('window-created');
     // Publish the acceptance epoch in the renderer before any application code
     // runs; the product preload stays untouched.
     created.webContents.on('did-start-loading',()=>{
+        if(windowOwnership.classifyWindow(created).role!=='application')return;
         created.webContents.executeJavaScript('window.__eteEpoch='+JSON.stringify(epoch)+';void 0;').catch(()=>{});
     });
     created.webContents.on('console-message',(_,level,message)=>recordResolverMessage(message));
     if(manualLogin)return;
     created.webContents.on('did-finish-load',()=>{
-        // The initial about:blank load must not start the flow; only the
-        // application document does.
-        let url='';
-        try{url=String(created.webContents.getURL()||'');}catch(_){}
-        trace('did-finish-load url='+(/index\.html/i.test(url)?'app-document':'other'));
-        if(!/index\.html/i.test(url))return;
+        const ownership=windowOwnership.handleLoaded(created);
+        trace('did-finish-load role='+ownership.role+' url-class='+ownership.classification.urlClass+' reason='+ownership.classification.reason);
+        if(ownership.role!=='application')return;
+        win=windowOwnership.getApplicationWindow();
+        mark('window-created');
+        if(!ownership.shouldStartProbe)return;
         if(busy)return;busy=true;
         (async()=>{
             try{
@@ -99,7 +103,7 @@ app.on('browser-window-created',(_,created)=>{
                 mark('flow-injected');
                 trace('flow-injected');
                 const override=String(process.env.ETE_ACCEPT_METHODS||'').split(',').map(name=>name.trim()).filter(name=>/^[A-Za-z]+$/.test(name));
-                const methods=override.length?override:process.env.ETE_ACCEPT_INSPECT_ONLY?['inspect']:process.env.ETE_ACCEPT_SELECT_ONLY?['inspect','select']:process.env.ETE_ACCEPT_DIRECT_SMOKE?['inspect','select','directSmoke']:process.env.ETE_ACCEPT_VISUAL?['inspect','select','play','visual','stop']:['inspect','select','play','pause','seek','resume','next','stop'];
+                const methods=override.length?override:process.env.ETE_ACCEPT_INSPECT_ONLY?['inspect']:process.env.ETE_ACCEPT_SELECT_ONLY?['inspect','select']:process.env.ETE_ACCEPT_VISUAL?['inspect','select','play','visual','stop']:['inspect','select','play','pause','seek','resume','next','stop'];
                 for(const method of methods){
                     if(end.state()!=='OPEN')return;
                     report.currentStage=method;save();

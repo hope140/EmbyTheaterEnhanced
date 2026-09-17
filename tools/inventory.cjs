@@ -38,9 +38,10 @@ const manifest = {
     ],
     components: [
         { path: 'Emby.Theater.exe', role: 'Windows host', source: 'Carnival archive; official Windows 3.0.20 source used for structural reference', version: '3.0.20 (file metadata to verify)', sourceAvailable: 'Reference only; exact Carnival build unknown', plannedReplacement: false },
-        { path: 'electronapp/libmpv/x64/mpv-win32-x64.node', role: 'Chromium Pepper bridge to libmpv (not a normal Node require addon)', source: 'Carnival archive', version: 'unknown', sourceAvailable: 'Exact build unknown', plannedReplacement: false },
+        { path: 'electronapp/libmpv/x64/mpv-win32-x64.node', role: 'Retired Chromium bridge input; excluded from Enhanced runtime', source: 'Carnival archive; historical input only', version: 'unknown', sourceAvailable: 'Exact build unknown', plannedReplacement: true },
         { path: 'x64/electron/electron.exe', role: 'Frozen Electron runtime', source: 'Carnival archive', version: '18.3.15 (executed)', sourceAvailable: 'Electron upstream; exact bundled build not reproduced', plannedReplacement: false }
     ].map(c => Object.assign(c, { sha256: files.find(f => f.path === c.path).sha256 })),
+    runtimeExclusions: ['electronapp/libmpv/x64/mpv-win32-x64.node'],
     libmpv: { source: 'Combined patch source note / shinchiro/mpv-winbuild-cmake', release: '20260809', buildDate: '2026-08-09 (source note; runtime property separately probed)', asset: 'mpv-dev-x86_64-20260809-git-dd5d17d328.7z', url: 'https://github.com/shinchiro/mpv-winbuild-cmake/releases/tag/20260809', path: 'payload/libmpv/mpv-1.dll', sha256: hash(path.join(patch, 'payload/libmpv/mpv-1.dll')), clientApi: '2.5 (DLL export executed)', sourceAvailable: 'Upstream source; exact build not reproduced', plannedReplacement: 'Managed independently; no automatic upgrades' },
     files,
     patchFiles: walk(patch).map(file => ({ path: file, sha256: hash(path.join(patch, file)) }))

@@ -1,5 +1,39 @@
 # 已确认经验
 
+## 2026-09-17 — Deterministic generation fixture evidence
+
+- `sleep(N)` 不能证明两个异步 Play overlap；timer 恢复可能晚于第一轮 core-playing/Promise settle。只有 listener 已注册、native generation 已建立且 Promise pending 才是可被下一 Play supersede 的确定 gate。
+- Promise rejected、generation retired、listener ignored 与 stale event dropped 是不同事实。已 fulfilled Promise 不会因后续 retire 追溯 reject；旧 listener assertion 应观察 remove/callback-after-takeover，controller ownership应观察 stale drop。
+- Stop-before-load case 应等待 exact fake CD2 resolve 已进入且 Promise pending，再触发 stop 并观察 matching cancel；复用 full native-generation overlap gate 会等到 source 已加载，反而破坏 late-load prevention 语义。
+
+## 2026-09-17 — Optional diagnostics and generation ownership
+
+- endpoint ready 不等于 playback generation ready。ready diagnostics 若经过异步 property collect，可能在 resolver 等待期间先于 beginGeneration 完成；随后 generic set/command 会合法触发 generation-required，但不能把这个 optional snapshot failure 提升为 playback fatal。
+- generation-dependent diagnostic mutation 必须保留 isolation：无 generation 时 skip/unavailable；有 generation 时捕获同一 generation，并在每个 await 后复核。不能把任意 set/command 改成 generation-independent，也不能全局吞掉 stale、transport 或 protocol 错误。
+- formal manager.play resolve 不能替代 authoritative core-idle=false。deterministic regression 应同时验证 pre-generation diagnostics、delayed resolver、beginGeneration、load/current generation、core-playing 与 player ownership。
+
+## 2026-09-17 — Formal harness BrowserWindow ownership
+
+- `browser-window-created` 是窗口发现事件，不是 application identity。native-helper surface、overlay 或未来辅助窗口都可能晚于 main 创建；用 first/last/count 或每次覆盖变量会把 application probe 注入错误 renderer。
+- formal harness 应先以 exact packaged file document 选 owner，再把 AMD loader 状态作为 assertion。application owner 存活时保持 stable binding，auxiliary 只记录 bounded URL class，绝不注入 pluginManager/pipeline。
+- `webContents.executeJavaScript()` 跨 Electron IPC 可能只返回退化 error message。重要注入应带 sourceURL，并在 application renderer 内保留 bounded error/unhandled-rejection、source/line/column 与 pipeline stage evidence。
+
+## 2026-09-17 — Optional Stats property ownership
+
+- `player.getStats()` 的展示字段可能随媒体类型和 libmpv runtime state 不可用；已有 null/省略/default 渲染并不能保护前置 `Promise.all(getProperty)` rejection。optional compatibility 必须在 Stats per-field aggregation 层处理。
+- 只允许精确 `property-unavailable` 降级为 null。transport close、helper crash、protocol error、stale generation 与其他未知错误仍必须保持可观察 rejection；不能把 controller 或全局 `getProperty()` 放宽。
+- 并发 Stats 请求需要同时记录 property、requestId 与 generationId 才能归因；一次有界、隐私安全的 runtime 副本 instrumentation 足以确认首个 aggregate failure，无需在 production 日志记录媒体 source 或敏感路径。
+
+## 2026-09-17 — Native HWND composition and reproducible helper build
+
+- helper child HWND 必须在专用 video host 内置于 `HWND_TOP`；置底会被该 host 的 Chromium surface 覆盖。HTML OSD 不能依靠同一窗口 CSS z-index，应由独立 transparent BrowserWindow 保持在 video host 上方。
+- telemetry 中 `core-idle=false`、gpu-next 或 surface attached 不能代替视觉证据。最终 production source build 同时保留 native property evidence 与实际 screen capture 人工检查。
+- data URL 内未编码的 `#` 会被解释为 fragment，使测试 CSS/DOM 截断；UI smoke 必须 encode payload，否则可能把测试夹具缺失误判为 composition failure。
+- MinGW PE 默认插入 link timestamp；仅固定 source/flags/compiler 仍不足以 byte-reproduce helper。加入 `-Wl,--no-insert-timestamp` 后两次输出 SHA256 相同。
+- 新 BrowserWindow 会改变 `window-all-closed` 条件。video host 必须绑定 main `closed` 并关闭 owned helper/host，否则主窗口关闭后应用可能残留。
+- `core-idle` observer 初始可以先回报 `true`；测试 core-playing 必须等待同 generation 的有效 `false`，不能只等待 property name。
+- libmpv API 返回负值只说明该次 operation 被拒绝，不能由统一 exception handler 自动升级成 protocol corruption。submission-oriented command 需要独立、typed、generation-scoped、privacy-safe 的 operation diagnostic；真正 schema/identity/version 错误仍单独 fail closed。
+
 1. 本地 SFX 可直接解包为 1009 个文件，未发现加密条目；无须逆向安装器。
 2. `electronapp/package.json` 声明 Electron ^9.4.0，但本地 `x64/electron/electron.exe` 文件版本是 18.3.15。运行时版本需要实测，不可从开发依赖推断。
 3. 原 `libmpv.js` 在播放时根据 appSettings 设置 hwdec、vo、demuxer-max-bytes 等；mpv.conf 中对应设置可能随后被覆盖。

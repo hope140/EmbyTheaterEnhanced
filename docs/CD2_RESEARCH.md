@@ -1,5 +1,7 @@
 # CloudDrive2 Resolver 调研与 V1 设计
 
+> 本文为历史 research；其中 Pepper bridge 只指当时冻结 runtime 的观测边界。当前 production endpoint 为 Native Helper，CD2 Resolver source-only contract 未改变。
+
 更新时间：2026-09-13（UTC+8）
 
 本轮目标是调研并设计下一阶段 CloudDrive2 Resolver。**本轮没有修改 Enhanced 产品源码，没有接入 CD2 播放，没有执行真实 refresh，也没有修改本机 CloudDrive2 配置。**

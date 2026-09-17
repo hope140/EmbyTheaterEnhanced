@@ -1,5 +1,11 @@
 # 长期决策
 
+## 2026-09-17 — Electron 18 production bridge 使用 isolated native helper
+
+当前 `feat/native-helper-bridge` 采用 architecture B。Electron main 通过 private inherited pipes 启动固定 runtime resource 中的 x64 helper；helper 独占 libmpv core 与 native child HWND，视频保持 `gpu-next/d3d11/d3d11va`，现有 transparent BrowserWindow 继续拥有 Emby HTML UI、OSD 与输入。Native Helper 是唯一 production bridge；Pepper/PPAPI 已退休，旧 mode 只返回 `legacy-mode-removed`，不作为 fallback。
+
+Bridge 内部使用 `helperInstanceId + generationId + requestId`；START/END 由 `playlist_entry_id` 归属，property 由 observer reply userdata 归属，FILE_LOADED 只在一个 unique open mapped media 时接受。PlaybackManager、Session、Resolver 与 Emby identity 不理解这些 bridge identity。REAL Emby/Session/remote acceptance 已完成，retirement boundary 已关闭；当前不升级 Electron。
+
 以下按本轮任务范围建立，未来产品功能需要用户确认后再进入实现。
 
 | 决策 | 原因与落实 |

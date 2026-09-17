@@ -3,15 +3,47 @@
 const { app } = require('electron');
 const fs = require('fs');
 const path = require('path');
+const {createWindowOwnership} = require('./runtime-window-ownership.cjs');
 const runtime = process.env.ETE_TEST_RUNTIME;
 const evidence = process.env.ETE_TEST_EVIDENCE;
 const testCd2Origin = process.env.ETE_CD2_ORIGIN || '';
 if (!runtime || !evidence) throw Error('ETE_TEST_RUNTIME and ETE_TEST_EVIDENCE are required');
+const expectedApplicationPath = path.join(runtime, 'electronapp', 'www', 'index.html');
+const windowOwnership = createWindowOwnership({expectedApplicationPath});
 app.setName('emby-theater-enhanced-smoke');
 let fixtureUrl;
 const mediaRequests = [];
 const resolverEvents = [];
 let fakeCd2Stats;
+let applicationPipelineInjectionCount = 0;
+let auxiliaryPipelineInjectionCount = 0;
+function withSourceUrl(source, name) {
+    return source + '\n//# sourceURL=' + name;
+}
+function safeStack(value) {
+    return typeof value === 'string' ? value
+        .replace(/file:\/\/\/[A-Za-z]:\/[^\r\n]*?\/electronapp\//gi, 'electronapp/')
+        .replace(/[A-Za-z]:\\[^\r\n)]*/g, '[PATH]')
+        .replace(/([?&](?:token|api_key|apikey|authorization|cookie)=)[^&#\s)]*/gi, '$1[REDACTED]')
+        .slice(0, 12000) : null;
+}
+function errorEvidence(error, windowClassification) {
+    const stack = safeStack(error && error.stack);
+    const frame = stack && stack.match(/(?:at\s+[^\r\n]*?\()?([^\s()]+\.js):(\d+):(\d+)\)?/);
+    return {
+        name: error && error.name || null,
+        message: error && error.message || String(error),
+        stack,
+        filename: frame ? frame[1] : null,
+        line: frame ? Number(frame[2]) : null,
+        column: frame ? Number(frame[3]) : null,
+        windowClassification: windowClassification || null
+    };
+}
+async function readRendererErrorEvidence(window) {
+    if (!window || window.isDestroyed()) return null;
+    return window.webContents.executeJavaScript(withSourceUrl('window.__eteSmokeErrorEvidence || null', 'ete-smoke-error-evidence.js')).catch(() => null);
+}
 if (process.env.ETE_TEST_PIPELINE) {
     const media = fs.readFileSync(process.env.ETE_TEST_MEDIA);
     const server = require('http').createServer((request,response) => {
@@ -47,7 +79,6 @@ if (process.env.ETE_TEST_PIPELINE) {
     });
 }
 let completed = false;
-let testWindow;
 function finish(result) {
     if (completed) return;
     completed = true;
@@ -68,6 +99,8 @@ function finish(result) {
         if (!Object.values(result.directHeaderIsolation).every(Boolean)) result.ok = false;
     }
     result.resolverEvents = resolverEvents;
+    result.windowOwnership = windowOwnership.snapshot();
+    result.harnessInjection = {applicationPipelineInjectionCount, auxiliaryPipelineInjectionCount};
     if (fakeCd2Stats) {
         result.cd2Fake = {
             resolveCount: fakeCd2Stats.resolveCount,
@@ -80,12 +113,13 @@ function finish(result) {
     app.exit(result.ok ? 0 : 1);
 }
 setTimeout(async () => {
-    const trace = testWindow ? await testWindow.webContents.executeJavaScript('window.__pipelineTrace || []').catch(()=>[]) : [];
+    const applicationWindow = windowOwnership.getApplicationWindow();
+    const trace = applicationWindow ? await applicationWindow.webContents.executeJavaScript(withSourceUrl('window.__pipelineTrace || []', 'ete-timeout-trace.js')).catch(()=>[]) : [];
     let sourceState = null;
-    if (testWindow) {
+    if (applicationWindow) {
         const expectedOrigin = testCd2Origin;
         const expectedOriginLiteral = JSON.stringify(expectedOrigin);
-        sourceState = await testWindow.webContents.executeJavaScript(`new Promise(function(resolve) {
+        sourceState = await applicationWindow.webContents.executeJavaScript(withSourceUrl(`new Promise(function(resolve) {
             require(['pluginManager'], function(pm) {
                 var player = pm.ofType('mediaplayer').find(function(p) { return p.id === 'libmpvmediaplayer'; });
                 var source = player && player.currentSrc && player.currentSrc();
@@ -93,33 +127,103 @@ setTimeout(async () => {
                 try { if (${expectedOriginLiteral} && new URL(source).origin === new URL(${expectedOriginLiteral}).origin) kind = 'cd2'; } catch (_) {}
                 resolve({kind:kind, present:typeof source === 'string' && source.length > 0});
             });
-        })`).catch(()=>null);
+        })`, 'ete-timeout-inspection.js')).catch(()=>null);
     }
     finish({ok:false, error:'UI smoke timeout', trace, sourceState, mediaRequests});
 }, process.env.ETE_TEST_CD2_EXPECT === 'real' ? 45000 : 25000);
 app.on('browser-window-created', (_, win) => {
-    testWindow = win;
     win.webContents.on('console-message', (_, level, message) => {
         if (typeof message === 'string' && message.indexOf('STRM resolver:') === 0) resolverEvents.push(message);
     });
-    if (!process.env.ETE_TEST_VISIBLE) win.on('show', () => win.hide());
-    win.webContents.on('did-fail-load', (_, code, description) => finish({ok:false, code, description}));
+    try { win.setAlwaysOnTop(false); } catch (_) { }
+    if (!process.env.ETE_TEST_VISIBLE) {
+        try { win.hide(); } catch (_) { }
+        win.on('show', () => win.hide());
+    }
+    win.webContents.on('did-fail-load', (_, code, description) => {
+        const classification = windowOwnership.classifyWindow(win);
+        if (classification.role === 'application' || windowOwnership.getApplicationWindow() === win) {
+            finish({ok:false, code, description, windowClassification: classification});
+        }
+    });
     win.webContents.on('did-finish-load', () => {
+        const ownership = windowOwnership.handleLoaded(win);
+        if (ownership.role !== 'application' || !ownership.shouldStartProbe) return;
         setTimeout(async () => {
             try {
-                const state = await win.webContents.executeJavaScript(`new Promise(function(resolve) {
+                const state = await win.webContents.executeJavaScript(withSourceUrl(String.raw`(function () {
+                    window.__eteSmokeErrorEvidence = window.__eteSmokeErrorEvidence || {errors:[], unhandledRejections:[], pipelineStage:'startup-probe'};
+                    if (!window.__eteSmokeErrorEvidence.listenersInstalled) {
+                        window.__eteSmokeErrorEvidence.listenersInstalled = true;
+                        function safeSource(value) {
+                            var text = typeof value === 'string' ? value.split(/[?#]/)[0] : '';
+                            var marker = text.toLowerCase().lastIndexOf('/electronapp/');
+                            if (marker >= 0) return text.slice(marker + 1);
+                            return text.replace(/^.*[\\/]/, '');
+                        }
+                        function safeStack(value) {
+                            return typeof value === 'string' ? value
+                                .replace(/file:\/\/\/[A-Za-z]:\/[^\r\n]*?\/electronapp\//gi, 'electronapp/')
+                                .replace(/[A-Za-z]:\\[^\r\n)]*/g, '[PATH]')
+                                .replace(/([?&](?:token|api_key|apikey|authorization|cookie)=)[^&#\s)]*/gi, '$1[REDACTED]')
+                                .slice(0,12000) : null;
+                        }
+                        function safeError(error) {
+                            return {
+                                name:error && error.name || null,
+                                message:error && error.message || String(error),
+                                stack:safeStack(error && error.stack)
+                            };
+                        }
+                        window.addEventListener('error', function (event) {
+                            if (window.__eteSmokeErrorEvidence.errors.length >= 32) return;
+                            window.__eteSmokeErrorEvidence.errors.push({
+                                name:event && event.error && event.error.name || null,
+                                message:event && event.message || null,
+                                stack:safeStack(event && event.error && event.error.stack),
+                                filename:safeSource(event && event.filename),
+                                line:event && event.lineno || null,
+                                column:event && event.colno || null,
+                                pipelineStage:window.__eteSmokeErrorEvidence.pipelineStage
+                            });
+                        });
+                        window.addEventListener('unhandledrejection', function (event) {
+                            if (window.__eteSmokeErrorEvidence.unhandledRejections.length >= 32) return;
+                            var record = safeError(event && event.reason);
+                            record.pipelineStage = window.__eteSmokeErrorEvidence.pipelineStage;
+                            window.__eteSmokeErrorEvidence.unhandledRejections.push(record);
+                        });
+                    }
+                    return new Promise(function(resolve, reject) {
+                        var amd = {
+                            require:typeof window.require,
+                            requirejs:typeof window.requirejs,
+                            define:typeof window.define,
+                            defineAmd:!!(window.define && window.define.amd)
+                        };
+                        if (amd.require !== 'function' || amd.requirejs !== 'function' || amd.define !== 'function' || !amd.defineAmd) {
+                            var error = new Error('application-amd-unavailable');
+                            error.amd = amd;
+                            reject(error);
+                            return;
+                        }
                     require(['pluginManager'], function(pm) {
                         resolve({ title: document.title, ready: !!(window.Emby && window.Emby.App),
                             textLength: document.body.innerText.length,
-                            players: pm.ofType('mediaplayer').map(function(p) {return {id:p.id, name:p.name};}) });
+                            players: pm.ofType('mediaplayer').map(function(p) {return {id:p.id, name:p.name};}), amd:amd });
                     });
-                })`);
+                    });
+                })()`, 'ete-smoke-startup-probe.js'));
                 const screenshot = await win.webContents.capturePage();
                 state.screenshotAvailable = !screenshot.isEmpty();
                 if (!screenshot.isEmpty()) fs.writeFileSync(path.join(evidence, 'startup.png'), screenshot.toPNG());
                 if (process.env.ETE_TEST_PIPELINE) {
+                    applicationPipelineInjectionCount++;
+                    const generationObserverSource = fs.readFileSync(path.join(__dirname,'../tests/generation-fixture-observer.js'),'utf8');
+                    state.generationObserverLoaded = await win.webContents.executeJavaScript(withSourceUrl(generationObserverSource + '\n!!globalThis.eteGenerationFixtureObserver', 'ete-generation-fixture-observer.js'));
+                    if (!state.generationObserverLoaded) throw new Error('generation-fixture-observer-unavailable');
                     const source = fs.readFileSync(path.join(__dirname,'../tests/pipeline-browser.js'),'utf8');
-                    state.pipeline = await win.webContents.executeJavaScript(source + '\nrunPipelineFixture(' + JSON.stringify(fixtureUrl) + ', ' + JSON.stringify(process.env.ETE_TEST_MOUNT_SIDECAR || null) + ', ' + JSON.stringify(process.env.ETE_TEST_CD2_EXPECT || process.env.ETE_TEST_CD2_MODE || null) + ', ' + JSON.stringify(testCd2Origin || null) + ', ' + JSON.stringify(process.env.ETE_TEST_STOP_BEFORE_PLAYER === '1') + ')');
+                    state.pipeline = await win.webContents.executeJavaScript(withSourceUrl(source + '\nrunPipelineFixture(' + JSON.stringify(fixtureUrl) + ', ' + JSON.stringify(process.env.ETE_TEST_MOUNT_SIDECAR || null) + ', ' + JSON.stringify(process.env.ETE_TEST_CD2_EXPECT || process.env.ETE_TEST_CD2_MODE || null) + ', ' + JSON.stringify(testCd2Origin || null) + ', ' + JSON.stringify(process.env.ETE_TEST_STOP_BEFORE_PLAYER === '1') + ')', 'ete-pipeline-fixture.js'));
                     if (process.env.ETE_TEST_STOP_BEFORE_PLAYER === '1') {
                         if (!state.pipeline.stopBeforePlayer || !Object.values(state.pipeline.stopBeforePlayer).every(Boolean)) {
                             return finish({ok:false,error:'Stop-before-player assertion failed',state});
@@ -133,7 +237,7 @@ app.on('browser-window-created', (_, win) => {
                     }
                 } else if (process.env.ETE_TEST_MEDIA) {
                     const fixture = JSON.stringify(process.env.ETE_TEST_MEDIA);
-                    const playback = await win.webContents.executeJavaScript(`new Promise(function(resolve, reject) {
+                    const playback = await win.webContents.executeJavaScript(withSourceUrl(`new Promise(function(resolve, reject) {
                         require(['pluginManager'], async function(pm) {
                             try {
                                 const registered = pm.ofType('mediaplayer').find(p => p.id === 'libmpvmediaplayer');
@@ -143,32 +247,10 @@ app.on('browser-window-created', (_, win) => {
                                 const source = {Id:'fixture-source', Path:${fixture}, Container:'y4m', MediaStreams:[], RunTimeTicks:50000000};
                                 await p.play({item:item, mediaSource:source, url:${fixture}, mediaType:'Video', fullscreen:false, playMethod:'DirectPlay'});
                                 await new Promise(r=>setTimeout(r,900));
-                                const advanced = p.currentTime() > 0;
-                                const bridge = document.querySelector('embed[type="application/x-mpvjs"]');
-                                function read(name) {
-                                    return new Promise((resolve,reject) => {
-                                        const timer = setTimeout(()=> { bridge.removeEventListener('message', receive); reject(Error('Property timeout: '+name)); }, 1500);
-                                        function receive(event) {
-                                            if(event.data.type !== 'property_change' || event.data.data.name !== name) return;
-                                            clearTimeout(timer); bridge.removeEventListener('message', receive); resolve(event.data.data.value);
-                                        }
-                                        bridge.addEventListener('message', receive);
-                                        bridge.postMessage({type:'get_property_async',data:name});
-                                    });
-                                }
-                                const config = {scale:await read('scale'), font:await read('sub-font')};
-                                const cache = [];
-                                for (const mib of [900,2048,3072,4096,8192]) {
-                                    bridge.postMessage({type:'set_property',data:{name:'demuxer-max-bytes',value:mib+'MiB'}});
-                                    const raw = await read('demuxer-max-bytes');
-                                    bridge.postMessage({type:'command',data:['expand-properties','set','user-data/ete-test-cache','$'+'{=demuxer-max-bytes}']});
-                                    const precise = await read('user-data/ete-test-cache');
-                                    cache.push({mib:mib,raw:raw,precise:precise});
-                                }
-                                bridge.postMessage({type:'set_property',data:{name:'demuxer-max-bytes',value:'3072MiB'}});
-                                window.__eteProbe = {config:config,cache:cache};
-                                window.__eteFixtureFrameReady = true;
-                                p.pause();
+                                 const advanced = p.currentTime() > 0;
+                                 const stats = await p.getStats();
+                                 const statsOk = !!(stats && Array.isArray(stats.categories) && stats.categories.length > 0);
+                                 p.pause();
                                 await new Promise(r=>setTimeout(r,200));
                                 const paused = p.paused();
                                 p.currentTime(2000);
@@ -181,20 +263,18 @@ app.on('browser-window-created', (_, win) => {
                                 require(['events'], function(events) { events.on(p, 'stopped', function() { stopped = true; }); });
                                 await new Promise(r=>setTimeout(r,100));
                                 await p.stop();
-                                resolve({advanced:advanced, paused:paused, sought:sought, resumed:resumed, stopped:stopped});
-                            } catch(e) { reject(String(e)); }
+                                 resolve({advanced:advanced, statsOk:statsOk, paused:paused, sought:sought, resumed:resumed, stopped:stopped});
+                            } catch(e) { reject(e); }
                         });
-                    })`);
-                    state.playback = playback;
-                    state.probe = await win.webContents.executeJavaScript('window.__eteProbe');
-                    if (state.probe.config.scale !== 'bilinear' || state.probe.config.font !== 'ETE-CONFIG-PROBE' ||
-                        !state.probe.cache.every(row => typeof row.precise === 'string' && Number(row.precise) === row.mib*1048576 && row.raw === ((row.mib*1048576)|0))) {
-                        return finish({ok:false, error:'Configuration or cache probe mismatch', state});
-                    }
+                     })`, 'ete-local-media-fixture.js'));
+                     state.playback = playback;
                     if (!Object.values(playback).every(Boolean)) return finish({ok:false, versions:process.versions, state});
                 }
                 finish({ok:state.ready && state.players.some(p=>p.id==='libmpvmediaplayer') && !state.players.some(p=>p.id==='externalplayer'), versions:process.versions, state});
-            } catch(error) { finish({ok:false, error:String(error)}); }
+            } catch(error) {
+                const rendererErrorEvidence = await readRendererErrorEvidence(win);
+                finish({ok:false, error:errorEvidence(error, ownership.classification), rendererErrorEvidence});
+            }
         }, 6500);
     });
 });
