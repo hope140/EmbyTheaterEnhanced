@@ -1,5 +1,17 @@
 # 项目状态
 
+## 2026-09-18 — CD2 route timeline observer ready
+
+在保留上一轮已提交 Issue Snapshot 的 `codex/diagnostics-tooling` worktree 上新增只读 `tools/observe-cd2-cold-warm.ps1` 及 focused selftest/Node wrapper。没有修改 `src/**`、Resolver、CD2 service、PlaybackManager、Native Helper、Session、WebSocket、installer、缓存、客户端配置或播放行为；没有调用 CD2、retry、cache warm、Mount 或 fallback。
+
+Observer 读取已有 `ete-client.jsonl(.1/.2/.3)`，按 requestId 关联 `app/start`、`play-request`、`resolver/context-observed`、`resolver/route-selected`、CD2 阶段、Mount 阶段、`resolver-complete`、`loadfile-requested` 和 `core-playing`。它选择一条 DirectUrl route 和一条 Mount route，输出 `ETE-CD2-Observer-YYYYMMDD-HHMMSS.json`，保存 rule/媒体安全 hash、startup first/subsequent classification、完整有界 timeline、FindFile/GetDownloadUrl evidence、fallback reason、Mount selected reason 和 comparison。
+
+`startupClassification` 只输出 `FIRST_CD2_OBSERVATION` 或 `SUBSEQUENT_CD2_OBSERVATION`，用于描述同一 app run 内 CD2 观测顺序；它不输出 directory cold/warm 结论。`directoryColdWarm` 固定为 `UNAVAILABLE`，因为当前日志没有 parent-directory identity、enumerate、hydration 或 cache evidence。它不主动预热、不改变顺序、不 retry。当前日志没有 resolver initialization、strategy 或 order event 时保持 `UNAVAILABLE`；same-media 只有已有 identity evidence 能证明时才标记 `PASS`。报告复用 `tools/diagnostics-common.ps1`，保存前通过 redaction Gate。
+
+验证：PowerShell 5.1 parser PASS；`tests/cd2-cold-warm-observer-selftest.ps1` PASS；`node --test tests/cd2-cold-warm-observer.test.cjs` PASS；synthetic direct-url + mount fixture 的 same-rule、same-media、startup first/subsequent classification、`directoryColdWarm=UNAVAILABLE`、FindFile、GetDownloadUrl、URL generated、Mount fallback、malformed JSONL、invalid UTF-8 和 raw secret scan 均通过；waiting exit 3 与 redaction refusal exit 2 均通过。当前 observer 变更未提交，等待主线程 review。
+
+默认实际日志目录的只读 `-Once` smoke 读取 1 个日志文件，发现 5 个 DirectUrl route candidate、0 个 Mount route candidate，生成 redaction-passed 的 `WAITING_FOR_DIRECT_URL_AND_MOUNT` 报告并返回 exit 3；这说明当前现场没有可供比较的 Mount 样本，不构成真实 CD2/Mount 播放验收。
+
 ## 2026-09-17 — Issue Snapshot tooling in progress
 
 Collector 第一阶段已在 checkpoint `a3f6276a09a7dbdf03263c9e393671b35efcbebf` 收口，未 push、未创建 PR、未 merge。当前未提交 diff 只包含 Issue Snapshot 入口、共享诊断脱敏层、focused self-test、Node wrapper 和本段文档更新；没有修改 `src/**`、PlaybackManager、Native Helper、Resolver、CD2、Session、WebSocket、fullscreen production logic、installer 或客户端配置。

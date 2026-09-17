@@ -1,5 +1,21 @@
 # 开发日志
 
+## 2026-09-18 — CD2 route timeline observer
+
+Model Tier：2。Model：current Codex session。Reason：只读 observer 需要按 requestId 合并 app、Playback、Resolver、CD2、Mount 时间线，并区分首次 CD2 evidence 与同 app run 后续 evidence；没有修改 production resolver、CD2 transport 或 fallback。Escalated：no。
+
+Issue Snapshot 已先以独立 commit `eb90fdb8934cf612bd2f39c3e9f071e2469b0d53` 收口；本轮 observer 继续使用同一分支和共享脱敏层，未把两个阶段堆进同一提交。
+
+新增 `tools/observe-cd2-cold-warm.ps1`、`tests/cd2-cold-warm-observer-selftest.ps1` 和 `tests/cd2-cold-warm-observer.test.cjs`。Observer 只读取四个 ETE client JSONL 轮转文件，可用 live bounded polling 或 `-Once` 离线解析；不调用 CD2/Resolver/Mount，不 retry，不 warm cache，不修改 fallback order，不启动播放器。
+
+样本选择要求一条现有 `route=direct-url` 和一条现有 `route=mount`。每条样本按 requestId 关联 `play-request`、`resolver/context-observed`、`route-selected`、CD2 `resolve-start/client-ready/find-file/download-url/resolve-terminal`、Mount、`resolver-complete`、`loadfile-requested` 和 `core-playing`。报告只保存 safe request/rule/media hashes、allowlisted labels、timestamps、elapsed 和 evidence；DirectUrl 只记录 URL generated evidence/sourceKind，不保存 URL。`startupClassification` 只输出 `FIRST_CD2_OBSERVATION` 或 `SUBSEQUENT_CD2_OBSERVATION`，描述样本 CD2 resolve-start 前同 app run 是否已有更早 CD2 resolve/client-ready；`directoryColdWarm` 固定为 `UNAVAILABLE`。这不是目录 hydration 或缓存预热证明。
+
+当前 production log schema 没有 `resolver-initialized`、strategy、order 或 directory hydration event，observer 保持 `UNAVAILABLE`，不读取配置猜测，也不把没有 CD2 event 写成 CD2 未尝试。same-media 只有现有 ItemId、MediaSourceId 或 source identity 能建立 safe hash 时才标记 `PASS`。输出文件经过共享 redaction contract 的两次 Gate，失败则删除报告；exit 2 仅用于 redaction/privacy refusal，等待/证据不足返回 exit 3。
+
+focused synthetic evidence：同一 rule/media 的 DirectUrl hit 被标为 `FIRST_CD2_OBSERVATION`，随后 FindFile `not_found` → Mount `mount_hit` 被标为 `SUBSEQUENT_CD2_OBSERVATION`；两个样本的 `directoryColdWarm` 均为 `UNAVAILABLE`。FindFile、GetDownloadUrl、URL generated、fallback reason、Mount selected reason、malformed JSONL、invalid UTF-8、same-rule/same-media 和 raw secret=0 均通过。waiting 报告返回 exit 3，unsafe output refusal 返回 exit 2。当前仍未取得真实 Emby CD2 样本，不把 synthetic observer evidence 写成真实播放验收。
+
+默认实际日志目录只读 `-Once` smoke：读取 1 个日志文件，发现 5 个 DirectUrl route candidate、0 个 Mount route candidate，生成 redaction-passed 的 `WAITING_FOR_DIRECT_URL_AND_MOUNT` 报告并以 exit 3 结束。Observer 正确等待缺失的第二类样本，没有执行任何 CD2、Mount、retry、cache warm 或 production action；真实同媒体 DirectUrl/Mount 对比仍待用户在问题现场前启动 observer 后产生两类 route evidence。
+
 ## 2026-09-17 — Issue Snapshot
 
 Model Tier：2。Model：current Codex session。Reason：只读诊断入口跨 Collector、JSONL observer、进程树、Windows crash metadata 和共享 redaction contract，但不改变 PlaybackManager、Session、Resolver、CD2、Native Helper 或安装器。Escalated：no。

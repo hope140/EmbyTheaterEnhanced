@@ -180,3 +180,39 @@ Snapshot 只使用当前已有的 client JSONL、可读的 ETE 进程树、已�
 Snapshot 与 Collector 共同使用 `tools/diagnostics-common.ps1` 的随机包内 HMAC ID hash、path/URL summary、bounded safe JSON 和最终 redaction scan。若 Snapshot 文件的最终 Gate 发现 raw token、Authorization/Bearer、带敏感 query 的 URL、absolute media path 或敏感 ID，则删除该 Snapshot、停止调用 Collector，并返回失败；播放链不受影响。Collector 自身仍只有在目录二次 Gate 通过后才生成 ZIP。
 
 Snapshot 本身目标低于 2 秒；完整 Collector 仍按原有边界执行，目标低于 10 秒。生成结果会在命令行报告 Snapshot、Bundle、ZIP、correlation linkage 和 redaction 状态。
+
+## CD2 route timeline observer
+
+需要观察一次 CD2 DirectUrl 命中和一次 Mount fallback 时，可在播放前启动只读 observer：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass `
+  -File .\tools\observe-cd2-cold-warm.ps1
+```
+
+默认最多观察 5 分钟，每 250 ms 重新读取四个已有 ETE client JSONL 轮转文件。它只等待日志变化，不调用 CD2、Resolver、Mount、播放、retry、cache warm 或任何 IPC。已有日志也可以离线分析：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass `
+  -File .\tools\observe-cd2-cold-warm.ps1 `
+  -Once -LogRoot 'C:\path\to\logs' -OutputRoot 'C:\path\to\evidence'
+```
+
+成功输出：
+
+```text
+ETE-CD2-Observer-YYYYMMDD-HHMMSS.json
+```
+
+`startupClassification=FIRST_CD2_OBSERVATION` 表示该样本的 `cd2/resolve-start` 之前，在同一个 `app/start` run 内没有更早的 CD2 `resolve-start` 或 `client-ready` 证据；`startupClassification=SUBSEQUENT_CD2_OBSERVATION` 表示已有更早证据。它只描述启动后的观测顺序，不代表目录 cold、目录 warm、目录 hydrated 或目录 cached，也不代表 CD2 命中。`directoryColdWarm` 在当前版本固定为 `UNAVAILABLE`，除非未来已有日志提供 parent directory identity、directory enumerate、hydration 或 cache evidence。报告同时保存 `appStartTime`、`firstPlaybackTime`、每个样本的 request/rule/media safe hash、分类依据和 resolver initialization state。
+
+每个样本包含：
+
+- Resolver：rule matched、safe rule hash、strategy、order、selected route、route reason 和 fallback reason。
+- CD2：`resolve-start`、`client-ready`、FindFile start/end、FindFile result、GetDownloadUrl start/end、URL generated evidence、terminal reason 和 elapsed。
+- Mount：resolve start/hit/miss、selected reason、Mount fallback evidence。
+- Timeline：按现有 event timestamp 重建 play request、resolver context、CD2、Mount、resolver complete、loadfile request 和 core-playing 的有界时间线。
+
+当前 v0.2.0 client log 没有单独的 `resolver-initialized`、strategy、order 或 directory hydration event 时，报告明确保留 `UNAVAILABLE`，不从当前配置、规则名称、最终 route 或前一个媒体样本反推。只有 ItemId、MediaSourceId 或 source identity 已存在于现有记录时，same-media 才能标记为 `PASS`；否则保持 `UNAVAILABLE`。报告自身使用与 Collector/Snapshot 相同的共享 redaction contract，并在保存前执行二次 Gate。
+
+退出码固定为：`0` 表示已捕获一条 DirectUrl route 和一条 Mount route 的有效报告；`2` 只表示 privacy/redaction safety failure；`3` 表示 evidence 不足或仍在等待两类可比较 route。`WAITING_FOR_DIRECT_URL_AND_MOUNT` 属于 exit 3，不复用 exit 2。
