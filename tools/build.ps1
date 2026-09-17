@@ -47,6 +47,10 @@ if ($LASTEXITCODE -ne 0) { throw 'Runtime dependency copy failed.' }
 & node (Join-Path $root 'tools/patch-playbackmanager.cjs') (Join-Path $destination 'electronapp/www/modules/common/playback/playbackmanager.js')
 if ($LASTEXITCODE -ne 0) { throw 'PlaybackManager overlay failed.' }
 Copy-Item -LiteralPath (Join-Path $root 'vendor/patch/payload/libmpv/mpv-1.dll') -Destination (Join-Path $destination 'electronapp/libmpv/x64/mpv-1.dll') -Force
+& (Join-Path $root 'tools/build-native-helper.ps1') -SourceCommit $sourceCommit -RuntimeRoot $destination
+if ($LASTEXITCODE -ne 0) { throw 'Native helper build failed.' }
+& node (Join-Path $root 'tools/native-helper-provenance.cjs') $root $destination $sourceCommit
+if ($LASTEXITCODE -ne 0) { throw 'Native helper provenance validation failed.' }
 # Settings remain at the user's existing values; the optional legacy mpv preset is not applied.
 $version = (Get-Content -LiteralPath (Join-Path $root 'package.json') -Raw | ConvertFrom-Json).version
 $packagePath = Join-Path $destination 'electronapp/package.json'

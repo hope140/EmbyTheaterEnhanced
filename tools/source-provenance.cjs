@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const webOverlays = require('./prepare-web-overlays.cjs');
 const trackedFileHash = require('./tracked-file-hash.cjs');
+const nativeHelperProvenance = require('./native-helper-provenance.cjs');
 
 const MANIFEST_NAME = 'source-provenance.json';
 const ELECTRON_PATH = 'x64/electron/electron.exe';
@@ -135,7 +136,12 @@ function buildManifest(rootArg, runtimeArg, sourceCommit) {
     const baseWebRoot = path.join(root, 'vendor', 'carnival', 'electronapp', 'www');
     const runtimeWebRoot = path.join(runtime, 'electronapp', 'www');
     const overlayReport = webOverlays.inspect(root, runtime);
-    return {
+    let nativeHelper = null;
+    if (fs.existsSync(path.join(root, 'vendor', 'native-helper-manifest.json'))) {
+        nativeHelper = nativeHelperProvenance.validate(root, runtime, sourceCommit);
+        if (nativeHelper.status !== 'passed') throw new Error('Native helper provenance validation failed: ' + nativeHelper.errors.join(','));
+    }
+    const result = {
         schemaVersion: 1,
         sourceCommit: sourceCommit.toLowerCase(),
         purpose: 'Source and transform provenance; final payload enumeration is build-manifest.json',
@@ -158,6 +164,8 @@ function buildManifest(rootArg, runtimeArg, sourceCommit) {
         },
         productionDependencyClosure: productionDependencyClosure(root, runtime)
     };
+    if (nativeHelper) result.nativeHelper = nativeHelper.record;
+    return result;
 }
 
 function writeManifest(root, runtime, sourceCommit) {
