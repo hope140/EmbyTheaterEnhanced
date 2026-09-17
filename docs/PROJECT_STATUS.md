@@ -1,6 +1,27 @@
 # 项目状态
 
-## 2026-09-17 — Phase 2 Native Helper acceptance gate closed
+## 2026-09-17 — Phase 2B Pepper retirement complete
+
+基于 `feat/native-helper-bridge@7e130c4cadc4b0399f61b8eb945a33e76c1163a3` 完成 Pepper / PPAPI bridge retirement。当前正式状态：
+
+```text
+REAL EMBY CLIENT ACCEPTANCE = PASS
+NATIVE HELPER PRODUCTION ACCEPTANCE = COMPLETE
+PEPPER RETIREMENT = COMPLETE
+NATIVE HELPER = SOLE PRODUCTION BRIDGE
+```
+
+本轮 production/runtime 结果：
+
+- Electron startup 不再调用 `register-pepper-plugins`，`libmpv.js` 不再创建 `application/x-mpvjs`，正常路径只创建 Native Helper endpoint；`ETE_MPV_BRIDGE_MODE=pepper` fail closed 为 `legacy-mode-removed`，helper failure 不自动切换旧 bridge。
+- 归档中的 `electronapp/libmpv/x64/mpv-win32-x64.node` 只作为历史 provenance input 保留。新 runtime `EmbyTheaterEnhanced-0.1.1-pepper-retired-20260917-7e130c4` 的 payload 为 `2135` entries、连同 `build-manifest.json` 实际 `2136` files；旧 `.node` 不存在，Native Helper 与 `mpv-1.dll` 存在。
+- Source/NATIVE/RUNTIME provenance 和 `tools/package.ps1 -VerifyOnly` 均 PASS。独立 Native Helper Electron smoke 的 handshake、private pipe、surface attach、generation accepted stale events `0`、Pause/Unpause/Seek 均 PASS。
+- Formal local media pipeline PASS；CD2 fake hit pipeline PASS；DirectUrl fake pipeline PASS，UA isolation 三项均为 true；CD2 miss pipeline 的播放、控制和报告通过，但保留既有 rapid NextTrack `selected=false` limitation，不在本轮处理。
+- 最小 REAL smoke 使用同一 product runtime，`inspect/select/play/pause/seek/resume/next/stop` 全部 PASS；readiness `class A`、bridge-ready observed、Session/report、Remote Pause/Unpause/Seek/NextTrack/Stop 通过，runner `completed`、cleanup `verified-clean`、owned residual `0`。本次 run 未观察到 renderer/bridge error 或 crash。
+
+本轮没有修改 PlaybackManager、Session/PlaySessionId、Resolver、CD2、Remote NextTrack server semantics、renderer ReferenceError follow-up、Stop-barrier candidate 或 Electron version。Stop-barrier candidate SHA256 继续为 `7BF1F8E53D8BA63717A9CFB44F0D53E46EAE1600E34C4D8F100D3B0153333931`，保持未应用、未删除。
+
+## [PRE-RETIREMENT BASELINE] 2026-09-17 — Phase 2 Native Helper acceptance gate closed
 
 当前 HEAD 为 `50f578e1eb251336d15ba116b558c1ac341d7f05`。Phase 2 已完成正式 gate 收口：
 

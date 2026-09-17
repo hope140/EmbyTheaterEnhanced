@@ -1,5 +1,15 @@
 # 开发日志
 
+## 2026-09-17 — Phase 2B Pepper retirement complete
+
+Model Tier：2。Model：current Codex session。Reason：bridge 入口、Electron startup、runtime exclusion、provenance/package、readiness semantics 与 REAL smoke 的跨模块收口；不改变 PlaybackManager、Session、Resolver、CD2 或 remote server semantics。Escalated：no。
+
+基于 `feat/native-helper-bridge@a5acd97f3c07ff980c7dab65752addda96386af0` 完成 retirement boundary，并以 `7e130c4cadc4b0399f61b8eb945a33e76c1163a3` 提交第一组实现。删除 PPAPI registration、旧 `application/x-mpvjs` renderer path、Pepper-only direct probes、旧 `.node` runtime copy；Native Helper service/client 现在是唯一 production bridge，显式旧 mode 确定性返回 `legacy-mode-removed`。
+
+验证：`npm test = 201/201 PASS`；source/native/runtime provenance、runtime exclusion、package verify PASS；retirement runtime payload `2135` entries / `2136` actual files，旧 `mpv-win32-x64.node` absent，Native Helper 与 `mpv-1.dll` present。Formal local media、CD2 hit、DirectUrl/UA isolation pipeline 与独立 Native Helper Electron smoke PASS。CD2 miss pipeline 的 playback/control/report PASS，但既有 rapid NextTrack `selected=false` limitation 保持 deferred。
+
+最小 REAL smoke 使用同一 product runtime，`inspect/select/play/pause/seek/resume/next/stop` PASS；readiness class A、Native Helper bridge-ready observed、Session/report 与 remote controls PASS、runner completed、cleanup verified-clean、owned residual 0。当前正式结论为 `REAL EMBY CLIENT ACCEPTANCE = PASS`、`NATIVE HELPER PRODUCTION ACCEPTANCE = COMPLETE`、`PEPPER RETIREMENT = COMPLETE`。ReferenceError follow-up、concurrent Remote NextTrack limitation、Stop-barrier candidate 与 Electron upgrade 均保持 deferred。
+
 ## 2026-09-17 — Phase 2 REAL Emby acceptance complete; concurrent remote limitation non-blocking
 
 Model Tier：1。Model：current Codex session。Reason：现有 REAL evidence 已闭合，剩余工作仅为重新分类已完成的 fast-concurrent diagnostic、同步 acceptance-only gate/docs 并提交；production playback chain、Resolver、Native Helper、PlaybackManager、Session 与 Pepper 全部冻结。Escalated：no。

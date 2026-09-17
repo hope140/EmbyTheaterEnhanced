@@ -1,5 +1,32 @@
 # 测试与验收
 
+## Phase 2B Pepper retirement（当前）
+
+当前生产桥接结论为：`Pepper / PPAPI bridge = RETIRED`，`Native Helper = ONLY production bridge`。以下命令和结果属于 retirement 当前证据；本文后面的 2026-09-14 Pepper readiness 段落只保留为 historical archaeology，不再定义当前 runtime contract。
+
+静态与单元回归：
+
+```powershell
+npm test
+node tests/acceptance-readiness-selftest.cjs
+```
+
+当前代码提交 `7e130c4` 的 `npm test` 为 `201/201 PASS`。retirement regression 覆盖默认 `native-helper`、旧 mode 的确定性 `legacy-mode-removed`、PPAPI registration/old `<embed>` entrypoint 缺失、runtime exclusion 和 bridge-neutral readiness。
+
+正式 runtime 验证使用唯一输出目录 `EmbyTheaterEnhanced-0.1.1-pepper-retired-20260917-7e130c4`：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/build.ps1 -OutputName EmbyTheaterEnhanced-0.1.1-pepper-retired-20260917-7e130c4
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/package.ps1 -RuntimeName EmbyTheaterEnhanced-0.1.1-pepper-retired-20260917-7e130c4 -VerifyOnly
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/test-runtime.ps1 -RuntimeName EmbyTheaterEnhanced-0.1.1-pepper-retired-20260917-7e130c4 -TestMedia
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/test-runtime.ps1 -RuntimeName EmbyTheaterEnhanced-0.1.1-pepper-retired-20260917-7e130c4 -TestPipeline -TestCd2
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/test-runtime.ps1 -RuntimeName EmbyTheaterEnhanced-0.1.1-pepper-retired-20260917-7e130c4 -TestPipeline -TestCd2Direct
+```
+
+结果为 source/native/runtime provenance PASS、package verify PASS、payload `2135` entries（含 `build-manifest.json` 实际 `2136` files）；`electronapp/libmpv/x64/mpv-win32-x64.node` 不存在，`electronapp/native-helper/ete-mpv-helper.exe` 与 `electronapp/libmpv/x64/mpv-1.dll` 存在。普通 local media pipeline、CD2 hit pipeline、DirectUrl pipeline、Pause/Seek/Resume/Stop、getStats、generation、Session/report fixture 均 PASS。CD2 miss pipeline 的播放与控制通过，但保留既有 rapid NextTrack `selected=false` limitation，不纳入本轮修复。
+
+独立 Native Helper Electron smoke 使用同一 runtime 通过：handshake、private pipe、native surface attach、`gpu-next/d3d11`、Pause/Unpause/Seek、generation accepted stale events `0`。REAL 最小 regression smoke 使用同一 product runtime，`inspect/select/play/pause/seek/resume/next/stop` 全部 PASS，readiness `class A`，bridge-ready observed，Session/report 与 WebSocket controls 通过，runner `completed`、`verified-clean`、owned residual `0`。
+
 ## Native helper bridge
 
 纯 Node contract：
@@ -96,7 +123,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/pid-reuse-descendant-s
 powershell -NoProfile -ExecutionPolicy Bypass -File tests/readiness-acceptance.ps1 -Synthetic -SyntheticCimUnavailable -SyntheticResult cim-unavailable -RunPrefix synthetic-cim-unavailable
 ```
 
-observer 只记录安装时间、raw embed ready、`enhancedDiagnostics` wrapper/direct callback、prepared preload sticky state、mpv embed、bridge message summary、core-playing/video-progress、resolver console marker 与可观察到的 loadfile。native bootstrap ready 不替代 authoritative Pepper-ready；模块解析和 `play-called`、`embed-created`、manager/playback alternate evidence、`resolver-result` gate 由 `tests/live-acceptance-browser.js` 解释。`pepperReadiness.status` 明确区分 `observed-ready`、`inferred-ready-from-authoritative-state`、`not-ready`、`observer-missing`、`unavailable`，A/B/C/D 和 stale-run synthetic 均通过。outgoing loadfile 继续如实记录为 unavailable，不降低 readiness 标准。
+当前 observer 记录安装时间、Native Helper ready signal、`enhancedDiagnostics` wrapper/direct callback、prepared preload sticky state、native surface lifecycle、core-playing/video-progress、resolver console marker 与可观察到的 loadfile。bootstrap signal 不替代 authoritative `bridge-ready`；模块解析和 `play-called`、`surface-created`、manager/playback alternate evidence、`resolver-result` gate 由 `tests/live-acceptance-browser.js` 解释。`bridgeReadiness.status` 明确区分 `observed-ready`、`inferred-ready-from-authoritative-state`、`not-ready`、`observer-missing`、`unavailable`，A/B/C/D 和 stale-run synthetic 均通过。outgoing loadfile 继续如实记录为 unavailable，不降低 readiness 标准。
 
 Clean-room 与 readiness 详细命令、source-of-truth、ignored input 分类和真实矩阵见 `docs/CLEANROOM_REPRODUCIBILITY.md`、`docs/READINESS_OBSERVABILITY.md`。
 
@@ -116,15 +143,15 @@ runner terminal lifecycle：以 `acceptance.json` 的 `completed=true` + termina
 
 follow-up 的静态 provenance/lifecycle 检查：full manifest 覆盖 `src/electronapp` 的 818 个文件与 2 个 Start wrapper，共 820 个 scope entries；`package.json` 与 PlaybackManager 的构建改写分别记录为明确 overlay，sourceCommit、validatedProductScope、baselineIdentity 分开保存，vendor baseline、node_modules production closure、Electron runtime binaries 与 native mpv 不纳入该 scope。`provenance3-20260914` positive validation、绑定旧 sourceCommit 的 `provenance2-20260914` partial-stale negative validation、terminal race、`inspectProfile` integration race、losing-writer、CIM unavailable、synthetic success/failure/timeout 与 PID mismatch 均通过；没有新增真实 acceptance。
 
-## CloudDrive2 PR #4 DirectUrl
+## [HISTORICAL] CloudDrive2 PR #4 DirectUrl
 
 安全门探针：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/test-libmpv-file-local-ua.ps1 -RuntimeName EmbyTheaterEnhanced-0.1.1-cd2-direct-url-c
+旧 `tools/test-libmpv-file-local-ua.ps1` 已随 Pepper retirement 删除；当前 file-local UA contract 由 `tools/native-helper-file-local-ua-smoke.cjs` 覆盖。
 ```
 
-该探针在 exact frozen Electron 18.3.15 / mpv 0.41 / Pepper bridge 上连续加载 UA-A、UA-B 与无 file-local option 的 same-origin C。三段均实际识别 Y4M 并推进；本地 HTTP 只观察到各自期望 UA，C 未携带 A/B，证明 `loadfile <url> replace -1 user-agent=<value>` 没有跨 source 泄漏。
+该段是 historical Pepper probe 记录；当前 Native Helper smoke 继续验证 UA-A、UA-B 与无 file-local option 的 same-origin C 无跨 source 泄漏。
 
 fake DirectUrl 产品链使用 `-Visible -TestPipeline -TestCd2Direct`。既有有效运行覆盖 DirectUrl source、required UA、普通媒体 same-origin/no-leak、Pause/Seek/Resume/NextTrack/Stop、generation/cancel 与 19 条模拟报告。本轮按当前源码重建的 runtime 已进入 resolver 并观察 DirectUrl 请求、UA 匹配和 no-leak，但在切换第二个 fixture source 时 UI smoke timeout；不把该次整体记为全链通过，项目继续把每次有效与失败 evidence 分开保留。
 
@@ -243,7 +270,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/accept-live.ps1 -Autho
 
 2026-09-13 用户授权任意库内样本，说明全库 STRM，并将 WatchTogether 验收口径确认为后台控制正常。真实测试已通过，详见 LIVE_ACCEPTANCE.md。普通文件无库内样本，不伪装成已做实服验证；双客户端同步精度未单独测试。
 
-## 2026-09-14 Pepper readiness diagnosis
+## [HISTORICAL] 2026-09-14 Pepper readiness diagnosis
 
 当前 main 的验证 runtime 为 `EmbyTheaterEnhanced-0.1.1-readiness-diagnosis-e9e2ad2`，由 HEAD `e9e2ad221ed5059574f830e9ffd9ef0dd5c8a22c` 构建，启动前 full provenance 校验通过（820/820 scope entries）。三次 timing run 使用同一 runtime 和同一 commit：
 
@@ -253,12 +280,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/readiness-acceptance.p
 
 将 `RunPrefix` 改为 `readiness-B`、`readiness-C`，其余参数不变。三次均 provenance=passed、acceptance=success、runner=completed、cleanup=verified-clean、residual=0。observer 额外记录 embed creation observation、attached/disconnected、unique count、recreation/duplicate 以及 lifecycle timing；不修改产品 instrumentation。核心结论是 `play→embed=4535–5996ms`、`embed→authoritative ready=2–3ms`，所以当前只能确认主要抖动在 embed 前置层，不能确认其单一根因。loadfile outgoing 仍为 `unavailable` observability gap，不作为 gate。完整脱敏结果见 `docs/PEPPER_READINESS_DIAGNOSIS.md`。
 
-## 2026-09-14 Pepper ready listener race follow-up
+## [HISTORICAL] 2026-09-14 Pepper ready listener race follow-up
 
 在 `fix/pepper-ready-listener-race@731dc2a` 上执行：
 
 ```powershell
-node --test tests/pepper-ready-listener-race.test.cjs
+node --test tests/native-helper-lifecycle.test.cjs
 ```
 
-该行为测试让 fake Pepper 在 embed attach 的同步调用内发出 ready，验证 ready 被捕获且 callback 只执行一次。旧顺序会超时，修复后 PASS。全量 `npm test` 为 57/57。按本分支 HEAD 构建的 runtime provenance 通过（820/820），唯一真实 acceptance 的主链和 exact-root cleanup 通过；timing `play→embed=4724ms`、`embed→Pepper ready=22ms` 仅用于回归，不作为性能结论。历史 readiness root cause 仍未确认。
+该段只保留旧 listener race 的历史背景；当前回归使用 `native-helper-lifecycle.test.cjs`，不再创建旧 Pepper endpoint。历史 readiness root cause 不代表当前 production bridge。

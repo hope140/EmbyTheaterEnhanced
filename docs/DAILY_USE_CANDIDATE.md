@@ -93,7 +93,7 @@
 - [ ] 安装候选包到独立目录
 - [ ] 启动并退出一次
 - [ ] 完成 5 次 cold-ish launch
-- [ ] 无 white screen，无 unrecovered Pepper failure
+- [ ] 无 white screen，无 unrecovered bridge failure
 - [ ] 退出后无非预期残留 Electron/player process
 
 ### STRM settings

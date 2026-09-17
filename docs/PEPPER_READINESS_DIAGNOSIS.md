@@ -1,4 +1,6 @@
-# Pepper/libmpv readiness 抖动诊断
+# [HISTORICAL] Pepper/libmpv readiness 抖动诊断
+
+> 本文记录 Phase 1/旧 bridge 的历史诊断，不描述当前 production entrypoint。Phase 2B 已完成 `Pepper / PPAPI bridge = RETIRED`；当前 readiness 使用 `bridge-ready` 与 Native Helper surface 语义，详见 [NATIVE_HELPER_BRIDGE](NATIVE_HELPER_BRIDGE.md) 与 [TESTING](TESTING.md)。
 
 日期：2026-09-14（UTC+8）。本轮基线为 `main@e9e2ad221ed5059574f830e9ffd9ef0dd5c8a22c`，产品源码保持冻结。验证 runtime 为 `EmbyTheaterEnhanced-0.1.1-readiness-diagnosis-e9e2ad2`，启动前 full provenance 校验通过，覆盖 820 个产品 scope entries，未使用旧 runtime。
 

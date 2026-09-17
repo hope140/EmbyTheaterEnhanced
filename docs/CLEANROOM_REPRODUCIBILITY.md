@@ -1,5 +1,7 @@
 # Clean-room reproducibility
 
+> 当前补充：Phase 2B 已将 Pepper bridge 标记为 retired。历史 provenance 仍可记录 archive input，但正式 runtime provenance/package contract 只把 Native Helper 与 `mpv-1.dll` 作为生产 bridge payload，并显式记录旧 `.node` exclusion。
+
 ## 2026-09-16 — Tracked source Git-blob binding follow-up
 
 远程审核发现 Phase 1 的普通 source copy 虽以 `git ls-files` 限定文件集合，但随后仍从 working tree 物理路径 `Copy-Item`。因此 dirty tracked bytes 可进入 runtime，而 provenance 仍记录 HEAD；相同 commit 在不同 `core.autocrlf` policy 下也可能得到不同文本 bytes。

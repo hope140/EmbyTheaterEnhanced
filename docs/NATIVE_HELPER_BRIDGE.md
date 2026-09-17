@@ -1,12 +1,12 @@
 # Production Native Helper Bridge
 
-状态：`feat/native-helper-bridge` 的 production implementation 与正式 source-commit runtime build/provenance/package verify 已通过；REAL Emby Native Helper client acceptance 已完成，ordinary media 按完整 inventory 记录为环境 N/A，真实 STRM fallback、CD2、Remote Control、正常 NextTrack、Session/report、getStats、LibraryOptions-aware Resume 与 non-zero start position 均已通过。立即并发重复 Remote NextTrack 已定位为服务器 WebSocket 交付前语义限制，记录为 non-blocking，不构成 Native Helper 或 PlaybackManager production blocker。本文描述当前实现 contract，不把 research branch 的历史 PASS 当作本分支证据。
+状态：`feat/native-helper-bridge` 的 production implementation、Pepper retirement、正式 source-commit runtime build/provenance/package verify 已通过；`Pepper / PPAPI bridge = RETIRED`，`Native Helper = ONLY production bridge`。REAL Emby Native Helper client acceptance 已完成，ordinary media 按完整 inventory 记录为环境 N/A，真实 STRM fallback、CD2、Remote Control、正常 NextTrack、Session/report、getStats、LibraryOptions-aware Resume 与 non-zero start position 均已通过。立即并发重复 Remote NextTrack 已定位为服务器 WebSocket 交付前语义限制，记录为 non-blocking，不构成 Native Helper 或 PlaybackManager production blocker。本文描述当前实现 contract，不把 research branch 的历史 PASS 当作本分支证据。
 
 ## 固定边界
 
-Native Helper 只替代 Pepper/PPAPI mpv endpoint。PlaybackManager 继续拥有 Item、MediaSource、MediaSourceId、PlaySessionId、Session、WebSocket、播放上报、远控与 NextTrack；Resolver 继续只替换最终 source。当前实现没有修改 PlaybackManager、Session、Resolver、Electron、Chromium、Node 或 installer architecture。
+Native Helper 是唯一 production mpv endpoint。PlaybackManager 继续拥有 Item、MediaSource、MediaSourceId、PlaySessionId、Session、WebSocket、播放上报、远控与 NextTrack；Resolver 继续只替换最终 source。当前实现没有修改 PlaybackManager、Session、Resolver、Electron、Chromium、Node 或 installer architecture。
 
-默认模式为 `native-helper`。临时 rollback/A-B 仅通过启动前显式设置 `ETE_MPV_BRIDGE_MODE=pepper` 选择；环境值在 main-process service 初始化后删除。helper 失败不会自动切换 Pepper。
+默认且唯一 production 模式为 `native-helper`。`ETE_MPV_BRIDGE_MODE=pepper` 不再选择旧 bridge，启动时确定性返回 `legacy-mode-removed`；其它未知 mode 返回 `unsupported-bridge-mode`。helper 失败 fail closed，不自动切换旧 bridge。
 
 ## 运行拓扑
 
@@ -58,20 +58,20 @@ handshake 必须在 ready 前确认 protocol、helper version、libmpv runtime v
 
 ## Crash 与关闭
 
-helper crash/EOF/protocol failure 会原子终止该 helper 的全部 pending request；late response 只记录/drop。下一次合法 Play 可创建 H2，且 H2 identity 与 H1 不同；当前播放停止/报错，不自动 fallback Pepper。Electron parent 被强制终止时，继承 pipe EOF 使 helper 自行退出；当前 production implementation 不需要额外 Job Object。
+helper crash/EOF/protocol failure 会原子终止该 helper 的全部 pending request；late response 只记录/drop。下一次合法 Play 可创建 H2，且 H2 identity 与 H1 不同；当前播放停止/报错，不重新启用旧 bridge。Electron parent 被强制终止时，继承 pipe EOF 使 helper 自行退出；当前 production implementation 不需要额外 Job Object。
 
 stderr 持续 drain，只保留有界 tail。Native writer 将 response/error/lifecycle 作为 critical frame，高频 property 按 helper/generation/property key coalesce；critical budget exhaustion fail closed。Parent writer 在 Node stream backpressure 时使用 128 frames / 256 KiB 上限。
 
 ## Build 与 provenance
 
-`tools/prepare-native-helper-inputs.ps1` 从 mpv 官方固定 commit `dd5d17d32` 获取 `include/mpv/client.h` 并核对 SHA256 `1acf99ee77c8c2a6f1d1993bd81bbc8a91d27fb5924e80171670e6139a4bd353`。`tools/build-native-helper.ps1` 只从 `sourceCommit` 的 Git blob materialize `native/mpv-helper/ete-mpv-helper.cpp`，不读取 dirty checkout bytes或 research binary。
+`tools/prepare-native-helper-inputs.ps1` 从 mpv 官方固定 commit `dd5d17d32` 获取 `include/mpv/client.h` 并核对 SHA256 `1acf99ee77c8c2a6f1d1993bd81bbc8a91d27fb5924e80171670e6139a4bd353`。`tools/build-native-helper.ps1` 只从 `sourceCommit` 的 Git blob materialize `native/mpv-helper/ete-mpv-helper.cpp`，不读取 dirty checkout bytes或 research binary。`tools/runtime-exclusions.cjs` 将归档中的旧 bridge input 排除出 Enhanced runtime。
 
 MSYS2 UCRT64 GCC 16.1.0 使用 C++17、static libgcc/libstdc++ 与 `--no-insert-timestamp`。helper 输出到 `electronapp/native-helper/ete-mpv-helper.exe`；`native-helper-provenance.json` 记录 source blob/hash、header、compiler hash/version/flags、libmpv、protocol 与 helper hash/size。`source-provenance.json` 再绑定该 record，最终 build manifest 与 installer 的递归 runtime payload自然包含 helper，不需要重设计安装器。
 
-正式 source-commit runtime `EmbyTheaterEnhanced-0.1.1-native-helper-cd2diag-50f578e` 已从 `50f578e1eb251336d15ba116b558c1ac341d7f05` 构建，native helper provenance、source/runtime provenance 与 package verify 均通过，payload 为 2136 files，helper 为 non-testing build。该 runtime 与本轮真实 acceptance 使用的 runtime 一致。
+本轮 retirement runtime `EmbyTheaterEnhanced-0.1.1-pepper-retired-20260917-7e130c4` 已从 retirement code commit 构建，native helper/source/runtime provenance 与 package verify 均通过；payload 为 2135 entries、连同 `build-manifest.json` 实际 2136 files，helper 为 non-testing build，旧 `mpv-win32-x64.node` 不在 runtime。REAL smoke 使用同一 product runtime 完成。
 
 ## 当前验证边界
 
 已完成：Node/fake protocol 与 renderer adapter；真实 Electron 18.3.15、真实 production-source helper、真实 libmpv/private pipes/native HWND；`gpu-next/d3d11/d3d11va`；结构化 property；OSD visual/input；resize/maximize/restore/fullscreen/minimize；20 轮 A→B、A→B→C、Stop during load、crash/recreate；parent-death cleanup；framing/backpressure/stderr/pipe-close；DirectUrl file-local UA isolation；603.2 秒连续播放与有界 memory telemetry；test-only operation rejection 下的 same-helper/generation/transport nonfatal regression 与 protocol-fatal negative regression；acceptance application-window ownership regression `7/7`；真实 STRM native fallback 的完整控制链与报告；真实 CD2 hit；LibraryOptions-aware non-zero start/Resume position bridge acceptance；正常单次 Remote NextTrack。立即并发重复 Remote NextTrack 的两个 HTTP 请求均 fulfilled，但 WebSocket delivery 为 `0/2`，因此按 `SERVER_REMOTE_COMMAND_SEMANTICS` 记录为 non-blocking limitation。
 
-未完成：installer build/run、HDR 与真实 mixed-DPI；这些是独立 deferred coverage，不阻止当前 Phase 2 gate。ordinary media 已明确为 `N/A — ENVIRONMENTALLY UNAVAILABLE`。立即并发重复 Remote NextTrack 记录为 `CONCURRENT REMOTE NEXTTRACK = NON-BLOCKING / OUTSIDE ESTABLISHED CLIENT CONTRACT`，不写成 Native Helper PASS，也不确认 production bug。focused run 的每次 `2` 个 renderer `ReferenceError` 记录为 `NON-BLOCKING FOLLOW-UP`，待后续单独补充 message/stack evidence。当前可以给出 `REAL EMBY CLIENT ACCEPTANCE = PASS` 与 `NATIVE HELPER PRODUCTION ACCEPTANCE = COMPLETE`，并授权 Pepper retirement，但不在本轮开始执行。
+未完成：installer install/run、HDR 与真实 mixed-DPI；这些是独立 deferred coverage，不阻止当前 Phase 2 gate。ordinary media 已明确为 `N/A — ENVIRONMENTALLY UNAVAILABLE`。立即并发重复 Remote NextTrack 记录为 `CONCURRENT REMOTE NEXTTRACK = NON-BLOCKING / OUTSIDE ESTABLISHED CLIENT CONTRACT`，不确认 production bug。focused run 的每次 `2` 个 renderer `ReferenceError` 记录为 `NON-BLOCKING FOLLOW-UP`，待后续单独补充 message/stack evidence。当前可以给出 `REAL EMBY CLIENT ACCEPTANCE = PASS`、`NATIVE HELPER PRODUCTION ACCEPTANCE = COMPLETE` 与 `PEPPER RETIREMENT = COMPLETE`。

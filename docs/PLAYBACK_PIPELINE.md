@@ -9,7 +9,7 @@
 3. 同文件约 1003–1121 行读取 PlaybackInfo.MediaSources，优先选可直接播放版本，其次 DirectStream/Transcode；必要时打开 LiveStream。服务器返回的 PlaySessionId 沿上下文传递。
 4. `createStreamInfo`（约 1195 行）形成最终 url。DirectPlay 取 MediaSource.Path，DirectStream 取服务器流 URL，Transcode 取 TranscodingUrl；同时保留 item、mediaSource、playSessionId、playMethod 与起始 offset。
 5. 初次播放约 1149 行执行 `player.play(streamInfo)`，成功后 `onPlaybackStarted`；换流走 `setSrcIntoPlayer`（约 513 行），仍保留旧会话结束与进度逻辑。
-6. `plugins/libmpv.js` 的 `self.play` → `createMediaElement` 创建 `<embed type="application/x-mpvjs">`，收到 ready 后 `playInternal(options)` 读取 options.url 和 options.mediaSource。
+6. `plugins/libmpv.js` 的 `self.play` → `createMediaElement` 创建 native video surface 并启动 Native Helper endpoint；bridge-ready 后 `playInternal(options)` 读取 options.url 和 options.mediaSource。
 7. build overlay 在 PlaybackManager 每次播放入口生成单调 request id，并在异步阶段与 `player.play()` 前拒绝已被新请求淘汰的旧请求；完整 Web snapshot 仍不进入公开仓库。
 8. `libmpv.self.play` 同步建立 generation/AbortController，`playInternal` 将 `Item.Path`、`MediaSource.Path` 和原始 `options.url` 分别作为 `sidecarPath`、`sourcePath` 和 `nativeSource`；若 `Item.Path` 缺失且 `item.Id`/`item.ServerId` 存在，只通过现有 ApiClient 的 `getItem(..., {Fields:'Path'}, signal)` 做一次有界 identity recovery，成功得到 `.strm` 才补 `sidecarPath`，然后调用 STRM Source Resolver。
 9. Resolver 先把确定性媒体候选经窄 IPC 交给 main-process CD2 service；CD2 miss 再同步尝试 Mount，最终回 native。Resolver 不修改原始 `options` 或播放上下文。

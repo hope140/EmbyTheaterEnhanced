@@ -28,7 +28,7 @@ E 类不表示加密或不可编辑。`www` 中 JS/HTML/CSS 可维护，但参�
 | Emby.Theater.exe | 文件版本 3.0.20.0；有官方 Windows host 参考源码，未证明 Carnival EXE 是该源码编译所得 | 保留 vendor，暂不重建 |
 | electronapp | main/preload/插件、平台适配为明文；相对目录加载路径已查明 | `src/electronapp` 维护 |
 | electronapp/www | 离线 Web 应用，包含明显定制与综合补丁 | 可编辑，精确官方 Web 来源待查 |
-| mpv-win32-x64.node | 233984 bytes；`main.js` 经 register-pepper-plugins 注册 `application/x-mpvjs` | Pepper/PPAPI bridge，不能当作普通 Node addon 直接 require |
+| mpv-win32-x64.node | 233984 bytes；旧 Carnival archive input，retirement 后由 `tools/runtime-exclusions.cjs` 排除 | Historical Pepper/PPAPI bridge input；不进入 Enhanced runtime，也不作为 Node addon |
 | mpv-1.dll | 原 Carnival 99861006 bytes；Enhanced 使用综合补丁 119725568 bytes | 独立 libmpv 版本管理 |
 | x64/electron | 实测 Electron 18.3.15 / Chromium 100.0.4896.160 / Node 16.13.2 | 冻结 vendor runtime |
 

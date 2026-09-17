@@ -1,5 +1,7 @@
 # Legacy Audit
 
+> 本文件主体是 2026-09-14 的 historical audit。其 Pepper/PPAPI KEEP/DEFER 结论已被 Phase 2B retirement supersede：当前 Native Helper 是唯一 production bridge，旧 Pepper input 只保留在 archive provenance，fresh runtime 不包含该 binary。
+
 审计日期：2026-09-14（UTC+8）
 审计基线：`main@65d97da975ea1ffc3505c099094086c33667931e`
 执行分支：`cleanup/external-player-process-chain`
@@ -16,7 +18,7 @@
 | `electronapphost://shellstart`、`shellclose` | `shell.exec/close` 生成的 protocol URL；`main.js` 的 command cases | 只进入旧 `startProcess/closeProcess` dispatch | 同一 host protocol 仍承载 openurl、窗口状态、sleep/shutdown、audio/video lock、loaded、CEC 等 active commands | 无当前 entry | **REMOVED** |
 | `processes`、`startProcess`、`closeProcess`、`execFile` callback chain | `main.js` 的 process map/helper | 只被 `shellstart/shellclose` cases 调用 | Anime4K 使用独立的 `child_process.exec('notepad.exe …')`；CEC/refresh-rate 使用各自的 process path | 无当前 caller | **REMOVED** |
 
-明确保留：`shell.openUrl`、generic `window.ipc` bridge、CD2/diagnostics IPC、CEC、Pepper/libmpv、PlaybackManager、Session/remote control、resolver 和 native fallback。`src/electronapp/www/modules/shell.js` 的浏览器 fallback 仍是独立的 `openUrl`/unsupported-exec implementation，不等于 Electron custom shell 的外置进程 contract；本轮未改动它。
+明确保留：`shell.openUrl`、generic `window.ipc` bridge、CD2/diagnostics IPC、CEC、Native Helper/libmpv、PlaybackManager、Session/remote control、resolver 和 native fallback。`src/electronapp/www/modules/shell.js` 的浏览器 fallback 仍是独立的 `openUrl`/unsupported-exec implementation，不等于 Electron custom shell 的外置进程 contract；本轮未改动它。
 
 vendor/carnival 中的旧 main/shell/plugin 文本仍作为只读来源保留，fresh Enhanced runtime 不复制 External Player frontend，维护产品代码和新 runtime 中上述 active process chain 为 0。settings/autoplay、PlaybackManager external-player guards、shared locale/CSS、`external/` 和 vendor helper 仍留在后续范围。
 
@@ -30,7 +32,7 @@ vendor/carnival 中的旧 main/shell/plugin 文本仍作为只读来源保留，
 - `mpvPosEvent`、`mpv-socket` named pipe、`mpvPos` 回传及其 main-process producer 已在 Batch 2 删除；旧 vendor 文本只读保留，维护产品代码和 fresh runtime 不再有 active reference。
 - `src/electronapp/shell.js` 仍保留 shared `openUrl`。`canExec`、`exec`、`close`、close-event helpers、`shellstart` / `shellclose` 以及 `startProcess` / `closeProcess` process chain 已确认只有旧 External Player consumer，现已删除。
 - CEC 不是死代码。Electron 启动时动态加载 `plugins/cec.js`，插件构造时请求 `electroncec://start`，main process 会加载 `cec/cec.js` 并连接输入事件。CEC 应 KEEP；driver installer、重复二进制别名和普通启动时的可执行文件参数仍需额外证据。
-- Pepper/PPAPI、内嵌 libmpv、Electron 18、PlaybackManager、Session/PlaySession、remoteplayer、resolver、CD2、Mount、DirectUrl、preload diagnostics、readiness harness 和 runtime provenance 均属于 KEEP 或 DEFER，不能按“历史代码”删除。
+- **Historical superseded**：当时的 Pepper/PPAPI KEEP/DEFER 结论只适用于本审计基线；Phase 2B 已退休 Pepper/PPAPI。内嵌 libmpv、Electron 18、PlaybackManager、Session/PlaySession、remoteplayer、resolver、CD2、Mount、DirectUrl、preload diagnostics、readiness harness 和 runtime provenance 仍按当前 contract 保留。
 - `tools/build.ps1` 仍校验并复制全部 1009 个 Carnival 文件，但 Batch 1 已加入纯 External Player frontend exclusion；`installer/EmbyTheaterEnhanced.iss` 继续递归复制最终 runtime。其它 helper、CEC、external/ 和 main-process 残余仍未清理。
 
 结论：**Batch 1 frontend/plugin layer REMOVED；Batch 2 External Player process-control chain REMOVED**。本轮保留 generic IPC、shared `shell.openUrl`、播放/Session/remote control、CEC 和 Anime4K helper；settings/autoplay/PlaybackManager residue 仍未处理。
@@ -72,7 +74,7 @@ Durable repository/product behavior：`runtime-provenance.cjs` 与 `build.ps1` �
 | 区域 | 当前证据 | 结论 |
 |---|---|---|
 | PlaybackManager、Item、MediaSource、PlaySession、进度、队列和远控生命周期 | `docs/ARCHITECTURE.md`、`docs/PLAYBACK_PIPELINE.md`；当前 PlaybackManager 仍处理普通媒体、STRM、换集和上报 | KEEP。删除外置分支时也必须保留身份链和 native fallback |
-| 内嵌 libmpv、Pepper bridge、`libmpv.js` | `src/electronapp/main.js:837-883` 注册 Pepper；`src/electronapp/plugins/libmpv.js` 通过 PlaybackManager 播放并接入 resolver | KEEP。它是当前正式视频路径，也是未来 Player Adapter / Runtime Modernization 的边界 |
+| 内嵌 libmpv、Native Helper、`libmpv.js` | 当前 Native Helper 通过 PlaybackManager 播放并接入 resolver；旧 Pepper registration 仅为 historical baseline | KEEP。Native Helper 是当前正式视频路径，也是未来 Player Adapter / Runtime Modernization 的边界 |
 | `src/electronapp/preload.js` 的通用 IPC 暴露 | `preload.js:1-14` 暴露 `window.ipc`、`window.fs` 和 diagnostics；`resolvers/cd2-resolver.js` 使用 `window.ipc.invoke/send` 进行 CD2 | KEEP。Batch 2 只删除 dead channel，generic `window.ipc` 继续保留 |
 | CD2、DirectUrl、Mount、STRM resolver | `src/electronapp/resolvers/*`、`src/electronapp/enhanced/*`；当前文档记录了 fallback、generation、mapping 和 header 隔离 | KEEP。属于当前 Foundation，不能与 External Player 一起清理 |
 | Session / `remoteplayer` / WebSocket / input API / reports | `www/modules/sessionplayer.js`、`www/modules/common/input/api.js` 以及 `docs/SESSION_CONTROL.md`；现有真实控制证据通过 | KEEP。remoteplayer 是 Emby Session 控制，不是旧 mpv named pipe |
@@ -82,7 +84,7 @@ Durable repository/product behavior：`runtime-provenance.cjs` 与 `build.ps1` �
 | 构建 provenance、readiness harness、诊断和测试工具 | `tools/runtime-provenance.cjs`、`tests/readiness-acceptance.ps1`、`src/electronapp/enhanced/diagnostics.js` | KEEP。它们是验证边界和回归证据，不是产品死代码 |
 | vendor manifest、原始归档和相对目录布局 | `vendor/README.md`、`docs/PACKAGING.md`；构建依赖完整 manifest 和相对路径 | KEEP as read-only input。清理应在生成 runtime / packaging 层表达 |
 
-明确保留清单：`PlaybackManager`、embedded libmpv、Pepper bridge、Session / PlaySession / reports、`remoteplayer`、resolver、CD2、DirectUrl、Mount、preload diagnostics、readiness harness、runtime provenance、`electronapphost`、shared `shell.openUrl`。
+明确保留清单：`PlaybackManager`、embedded libmpv、Native Helper、Session / PlaySession / reports、`remoteplayer`、resolver、CD2、DirectUrl、Mount、preload diagnostics、readiness harness、runtime provenance、`electronapphost`、shared `shell.openUrl`。旧 Pepper/PPAPI entry 不在当前保留清单中。
 
 ## REMOVED
 
@@ -153,7 +155,7 @@ Durable repository/product behavior：`runtime-provenance.cjs` 与 `build.ps1` �
 
 ### D-01 — Pepper / PPAPI / Electron 18 / Player Adapter 边界
 
-- `src/electronapp/main.js:837-883` 注册 Pepper plugin，`plugins/libmpv.js` 依赖 `application/x-mpvjs`，`preload.js` 与 frozen Electron 18.3.15 共同组成当前播放入口。
+- **Historical baseline only**: old `src/electronapp/main.js` registered the Pepper plugin and `plugins/libmpv.js` depended on `application/x-mpvjs`; Phase 2B retired that path. Current production entry is Native Helper, and the old archive binary is excluded by the runtime-exclusion contract.
 - 当前实际运行环境是 Electron 18.3.15 / Chromium 100 / Node 16.13.2；`src/electronapp/package.json` 的 Electron `^9.4.0` 只是历史开发依赖声明，不能据此升级或删除 runtime。
 - 未来处理边界应是 Player Adapter、Pepper bridge 和 runtime modernization；本轮不能把任何 PPAPI、libmpv 或 Electron compatibility 文件标 DELETE CANDIDATE。
 

@@ -1,5 +1,9 @@
 # 构建与打包
 
+## Phase 2B bridge payload boundary
+
+`Pepper / PPAPI bridge` 已退休。`vendor/carnival/electronapp/libmpv/x64/mpv-win32-x64.node` 仍作为 immutable archive inventory input 供 provenance 对照，但 `tools/runtime-exclusions.cjs` 在 vendor copy 后立即将它从 Enhanced runtime 移除；`tools/package.ps1 -VerifyOnly` 和 runtime provenance 会再次 fail closed 检查该路径不存在。正式 runtime 只包含 `electronapp/native-helper/ete-mpv-helper.exe` 与受锁定 hash 的 `electronapp/libmpv/x64/mpv-1.dll`。
+
 ## Native helper payload
 
 Production bridge 增加 `electronapp/native-helper/ete-mpv-helper.exe` 与根 `native-helper-provenance.json`。先运行 `tools/prepare-native-helper-inputs.ps1` 获取并核对固定 mpv `client.h`；`tools/build.ps1` 在替换锁定 libmpv 后调用 `tools/build-native-helper.ps1`。helper source 只能来自 `sourceCommit` 的 Git blob，compiler/header/libmpv/source/helper/contract hash 均写入 provenance；dirty checkout 与 research binary 不参与。
@@ -45,9 +49,9 @@ Web overlay 的唯一来源如下：
 
 CD2 阶段在源码覆盖后执行两项确定性步骤：`copy-runtime-dependencies.cjs` 从根 lockfile 复制 production closure 到输出 `electronapp/node_modules` 并拒绝 native addon；`patch-playbackmanager.cjs` 对未公开的 frozen Web snapshot 应用锚点唯一的 request-generation overlay，锚点数量不符即停止构建。runtime 不依赖开发机 `electronapp/node_modules` 的偶然内容，不执行 native rebuild 或 node-gyp。
 
-保留实际布局 `Emby.Theater.exe`、`electronapp/libmpv/x64`、`x64/electron`。任务书中的 runtime/libmpv/plugins 分拆仅是示意；现有宿主和 Pepper 注册依赖相对路径，首期迁移目录会增加无关风险。
+保留实际布局 `Emby.Theater.exe`、`electronapp/libmpv/x64`、`electronapp/native-helper`、`x64/electron`。任务书中的 runtime/libmpv/plugins 分拆仅是示意；Native Helper 通过固定相对路径启动，旧 Pepper plugin registration 已不存在。
 
-`source-provenance.json` 记录 base/runtime version、archive/manifest、Web base 与 final tree、每个 Web overlay 的 base/input/generator/output SHA256、Electron、Pepper bridge、libmpv 以及 package-lock 驱动的 production dependency closure。`runtime-provenance.json` 绑定 source provenance，并覆盖 Git tracked 产品源码、prepared preload、PlaybackManager 与 package metadata overlay。`build-manifest.json` schema 2 绑定 source commit、两份 provenance、vendor manifest、package-lock 和 canonical payload-set digest；它不把自己列入 payload，避免递归 hash。
+`source-provenance.json` 记录 base/runtime version、archive/manifest、Web base 与 final tree、每个 Web overlay 的 base/input/generator/output SHA256、Electron、Native Helper、retired bridge input exclusion、libmpv 以及 package-lock 驱动的 production dependency closure。`runtime-provenance.json` 绑定 source provenance，并覆盖 Git tracked 产品源码、prepared preload、PlaybackManager、package metadata overlay 与 runtime exclusion contract。`build-manifest.json` schema 2 绑定 source commit、两份 provenance、vendor manifest、package-lock 和 canonical payload-set digest；它不把自己列入 payload，避免递归 hash。
 
 package verify 先验证两层 provenance，再对 build manifest 做路径规范、重复路径、双向 file-set、逐文件 SHA256、provenance binding 和 payload-set digest 检查，然后才允许 Inno 编译到 `dist/EmbyTheaterEnhanced-0.1.1-win-x64-setup.exe`。传 `-RuntimeName` 选择 runtime。安装目标独立于 Carnival，安装器保留稳定 AppId；桌面、开始菜单和安装完成入口直接启动 `{app}\Emby.Theater.exe`。卸载不删除个人 mpv 配置和 Enhanced 用户数据。
 

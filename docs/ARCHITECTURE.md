@@ -1,10 +1,12 @@
 # 架构
 
+当前生产 bridge 状态：`Pepper / PPAPI bridge = RETIRED`，`Native Helper = ONLY production bridge`。旧 Carnival Pepper binary 只作为 immutable archive provenance input 保留，正式 runtime、installer payload 和正常启动链均不包含它。
+
 ## Production Native Helper Bridge candidate
 
-`feat/native-helper-bridge` 把 `libmpv.js` 以下的 Pepper endpoint 替换为 renderer logical adapter、Electron main supervisor、private inherited framed pipes 与独立 Windows helper。helper-owned child HWND 输出到 main-process video host；原 transparent BrowserWindow 独立置于其上，因此现有 Emby UI/OSD/input ownership 不变。完整 identity、event attribution、crash、surface 与 build contract 见 [NATIVE_HELPER_BRIDGE](NATIVE_HELPER_BRIDGE.md)。
+`feat/native-helper-bridge` 使用 renderer logical adapter、Electron main supervisor、private inherited framed pipes 与独立 Windows helper 作为唯一 production mpv bridge。helper-owned child HWND 输出到 main-process video host；原 transparent BrowserWindow 独立置于其上，因此现有 Emby UI/OSD/input ownership 不变。完整 identity、event attribution、crash、surface 与 build contract 见 [NATIVE_HELPER_BRIDGE](NATIVE_HELPER_BRIDGE.md)。
 
-此层只消费 Resolver 的最终 `native/local/url` source。PlaybackManager、Item、MediaSource、MediaSourceId、PlaySessionId、Session、WebSocket、progress、remote control 与 NextTrack 仍由既有链拥有。Pepper 注册在本阶段保留，仅能显式选择，helper failure 不自动回退。
+此层只消费 Resolver 的最终 `native/local/url` source。PlaybackManager、Item、MediaSource、MediaSourceId、PlaySessionId、Session、WebSocket、progress、remote control 与 NextTrack 仍由既有链拥有。启动时不注册 PPAPI plugin；Native Helper failure fail closed，不切换旧 bridge。
 
 Native helper 将 transport/protocol failure 与 libmpv operation failure 分开。前者继续终止 helper；后者在 request 已通过 allowlist、schema 与 current-generation ownership 后，以 typed generation event 返回并保持 helper、transport 与 generation，不升级为 lifecycle failure。
 
@@ -18,7 +20,7 @@ Generation fixture 不再用固定 sleep 猜测 A/B overlap。harness observer �
 
 基线为提供的 Carnival 3.0（应用声明 3.0.20-3.0）叠加综合补丁。保留 Windows .NET 启动壳、Electron、离线 Web UI 与内嵌 libmpv 的现有目录关系。
 
-普通视频：Emby → PlaybackManager → 原生 MediaSource → libmpv 插件 → Pepper bridge → mpv-1.dll。Session、PlaySession、进度和远控仍由 Emby Web 生命周期负责。
+普通视频：Emby → PlaybackManager → 原生 MediaSource → libmpv 插件 → Native Helper → mpv-1.dll。Session、PlaySession、进度和远控仍由 Emby Web 生命周期负责。
 
 STRM 增强：在 `libmpv.js` 的 `playInternal(options)` 中，若 `Item.Path` 缺失但 item/server identity 充分，则通过现有 `connectionManager.getApiClient(serverId).getItem(userId, itemId, {Fields:'Path'}, signal)` 做一次有界 metadata recovery；只有返回的原始 Path 以 `.strm` 结尾时才恢复 STRM sidecar identity。`sourcePath=MediaSource.Path` 和 `nativeSource=options.url` 保持不变；普通媒体不因 `DirectStream + file + mkv` 被识别为 STRM。随后仅在确定的 STRM context 内按 DirectUrl/CD2 HTTP/Mount/Native 顺序解析。Resolver 位于 `libmpv.js` 的 `playInternal(options)`，只替换最终交给 `loadfile` 的 source。`sidecarPath`、`sourcePath`、`nativeSource` 三者不可互换；PlaybackManager、Item、MediaSource、PlaySession、WebSocket 和远控生命周期保持原链路。Transcode 永远使用 native source。
 
@@ -30,7 +32,7 @@ STRM resolver settings 由 `enhanced/strm-config-store.js` 持久化 schema vers
 
 异步播放使用 PlaybackManager request id 与 libmpv monotonic generation 双层保护。新 Play、terminal `PlaybackManager.stop()`、NextTrack、libmpv Stop 和 destroy 会使旧请求失效；新 Play 内部为换项执行的 previous-player stop 不额外失效新请求。active unary call 会被取消，每个异步阶段、`currentSrc` 修改和最终 `loadfile` 前均检查 generation。连接准备最多 200ms，Find 最多 350ms，download URL 最多 300ms，并共享 750ms absolute budget。任何非 Abort transport reject、timeout、RPC、mapping 或 response validation 失败都继续 Mount → native；Abort 和 superseded 向上终止，late response 不能加载旧 source 或触发旧 PlaybackManager error recovery。
 
-`vendor/` 保留已校验的输入说明与文件清单，解包 runtime 不进版本控制；`src/electronapp/` 是可维护应用层；`tools/` 负责本地构建与验证；`installer/` 只负责安装。普通 tracked `src/electronapp` 文件由固定 `sourceCommit` 的 Git tree 枚举，并以原始 blob bytes 写入 runtime；working tree、index、CRLF/LF checkout policy 和 ignored `src/electronapp/www` 都不是这层输入。`apiclient.js`、`toast.css` 由 manifest 锁定的综合补丁 payload 生成，`app.js` 由固定 Carnival base 执行 tracked canonical transform；三者都校验 base/input/generator/output SHA256。`src/electronapp/preload.js` 由 `tools/prepare-preload.cjs` 从 Carnival preload 生成，是 ignored prepared workspace artifact，不是普通 Git blob source。`source-provenance.json` 记录 vendor/archive、Web、Electron、Pepper bridge、libmpv 和 production dependency closure，`runtime-provenance.json` 记录 commit blob/prepared/overlay 到 runtime 的关系，`build-manifest.json` 只枚举最终 payload；三层语义不得互换。该构建治理不改变 Pepper 创建、播放、停止或 Session 生命周期。
+`vendor/` 保留已校验的输入说明与文件清单，解包 runtime 不进版本控制；`src/electronapp/` 是可维护应用层；`tools/` 负责本地构建与验证；`installer/` 只负责安装。普通 tracked `src/electronapp` 文件由固定 `sourceCommit` 的 Git tree 枚举，并以原始 blob bytes 写入 runtime；working tree、index、CRLF/LF checkout policy 和 ignored `src/electronapp/www` 都不是这层输入。`apiclient.js`、`toast.css` 由 manifest 锁定的综合补丁 payload 生成，`app.js` 由固定 Carnival base 执行 tracked canonical transform；三者都校验 base/input/generator/output SHA256。`src/electronapp/preload.js` 由 `tools/prepare-preload.cjs` 从 Carnival preload 生成，是 ignored prepared workspace artifact，不是普通 Git blob source。`source-provenance.json` 记录 vendor/archive、Web、Electron、Native Helper、retired bridge input exclusion、libmpv 和 production dependency closure，`runtime-provenance.json` 记录 commit blob/prepared/overlay/exclusion 到 runtime 的关系，`build-manifest.json` 只枚举最终 payload；三层语义不得互换。旧 archive input 不代表 production dependency，也不进入正式 runtime。
 
 正式安装入口直接启动 `{app}\Emby.Theater.exe`。Electron main process 在创建窗口前执行幂等 bootstrap，按 `{runtime}\config\system.xml` 作为 seed，只补齐 Enhanced profile 的 `config`、`cec-driver`、缺失 `system.xml` 和 `cancel`，不覆盖用户文件、不改变 `ProgramDataPath`，也不启动外部进程。
 

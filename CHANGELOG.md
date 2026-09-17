@@ -1,5 +1,12 @@
 # 变更记录
 
+## 0.1.1 Phase 2B Pepper retirement — 2026-09-17
+
+- Pepper / PPAPI bridge retired；Native Helper is now the sole production mpv bridge.
+- Removed PPAPI registration, old `<embed>` bridge creation, Pepper-only direct probes and retired `.node` runtime payload. Explicit `ETE_MPV_BRIDGE_MODE=pepper` fails with `legacy-mode-removed`.
+- Runtime exclusion and provenance records retain the old Carnival binary only as historical input; formal payload excludes it.
+- `npm test` 201/201；source/native/runtime provenance、package verify 与 Native Helper/REAL smoke evidence passed. Concurrent Remote NextTrack and renderer ReferenceError remain deferred non-blocking follow-ups.
+
 ## 0.1.1 CloudDrive2 DirectUrl 候选 — 2026-09-14
 
 - 新增 capability-based DirectUrl acquisition；不安全或不可用时严格回到 CD2 same-origin HTTP → Mount → Native。
