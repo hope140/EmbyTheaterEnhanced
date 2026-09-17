@@ -1,6 +1,6 @@
 # Production Native Helper Bridge
 
-状态：`feat/native-helper-bridge` 的 production implementation 与正式 source-commit runtime build/provenance/package verify 已通过；REAL Emby 已取得 Native Helper 下的真实 STRM fallback、控制链与 ownership evidence，但 ordinary media 不存在于当前全库，真实 CD2 route 未命中，因此完整 REAL acceptance 仍未完成。本文描述当前实现 contract，不把 research branch 的历史 PASS 当作本分支证据。
+状态：`feat/native-helper-bridge` 的 production implementation 与正式 source-commit runtime build/provenance/package verify 已通过；REAL Emby Native Helper client acceptance 已完成，ordinary media 按完整 inventory 记录为环境 N/A，真实 STRM fallback、CD2、Remote Control、正常 NextTrack、Session/report、getStats、LibraryOptions-aware Resume 与 non-zero start position 均已通过。立即并发重复 Remote NextTrack 已定位为服务器 WebSocket 交付前语义限制，记录为 non-blocking，不构成 Native Helper 或 PlaybackManager production blocker。本文描述当前实现 contract，不把 research branch 的历史 PASS 当作本分支证据。
 
 ## 固定边界
 
@@ -68,10 +68,10 @@ stderr 持续 drain，只保留有界 tail。Native writer 将 response/error/li
 
 MSYS2 UCRT64 GCC 16.1.0 使用 C++17、static libgcc/libstdc++ 与 `--no-insert-timestamp`。helper 输出到 `electronapp/native-helper/ete-mpv-helper.exe`；`native-helper-provenance.json` 记录 source blob/hash、header、compiler hash/version/flags、libmpv、protocol 与 helper hash/size。`source-provenance.json` 再绑定该 record，最终 build manifest 与 installer 的递归 runtime payload自然包含 helper，不需要重设计安装器。
 
-正式 source-commit runtime `EmbyTheaterEnhanced-0.1.1-native-helper-real-49b1fc3-ownerfix` 已从 `49b1fc3668c98487fb044e73a1da698a8b67d822` 构建，native helper provenance、source/runtime provenance 与 package verify 均通过，payload 为 2136 files，helper 为 non-testing build。该 runtime 与本轮真实 acceptance 使用的 runtime 一致。
+正式 source-commit runtime `EmbyTheaterEnhanced-0.1.1-native-helper-cd2diag-50f578e` 已从 `50f578e1eb251336d15ba116b558c1ac341d7f05` 构建，native helper provenance、source/runtime provenance 与 package verify 均通过，payload 为 2136 files，helper 为 non-testing build。该 runtime 与本轮真实 acceptance 使用的 runtime 一致。
 
 ## 当前验证边界
 
-已完成：Node/fake protocol 与 renderer adapter；真实 Electron 18.3.15、真实 production-source helper、真实 libmpv/private pipes/native HWND；`gpu-next/d3d11/d3d11va`；结构化 property；OSD visual/input；resize/maximize/restore/fullscreen/minimize；20 轮 A→B、A→B→C、Stop during load、crash/recreate；parent-death cleanup；framing/backpressure/stderr/pipe-close；DirectUrl file-local UA isolation；603.2 秒连续播放与有界 memory telemetry；test-only operation rejection 下的 same-helper/generation/transport nonfatal regression 与 protocol-fatal negative regression；acceptance application-window ownership regression `7/7`；真实 STRM native fallback 的完整控制链与报告。
+已完成：Node/fake protocol 与 renderer adapter；真实 Electron 18.3.15、真实 production-source helper、真实 libmpv/private pipes/native HWND；`gpu-next/d3d11/d3d11va`；结构化 property；OSD visual/input；resize/maximize/restore/fullscreen/minimize；20 轮 A→B、A→B→C、Stop during load、crash/recreate；parent-death cleanup；framing/backpressure/stderr/pipe-close；DirectUrl file-local UA isolation；603.2 秒连续播放与有界 memory telemetry；test-only operation rejection 下的 same-helper/generation/transport nonfatal regression 与 protocol-fatal negative regression；acceptance application-window ownership regression `7/7`；真实 STRM native fallback 的完整控制链与报告；真实 CD2 hit；LibraryOptions-aware non-zero start/Resume position bridge acceptance；正常单次 Remote NextTrack。立即并发重复 Remote NextTrack 的两个 HTTP 请求均 fulfilled，但 WebSocket delivery 为 `0/2`，因此按 `SERVER_REMOTE_COMMAND_SEMANTICS` 记录为 non-blocking limitation。
 
-未完成：installer build/run、REAL Emby ordinary media、真实 CD2 hit/range、独立 getStats 与 Stop→再 Play Resume position、HDR 与真实 mixed-DPI。当前真实媒体库只返回 STRM，完整 REAL acceptance 因 `MEDIA/ENVIRONMENT` blocker 保持未完成；未完成项不得升级为 `READY FOR PEPPER RETIREMENT REVIEW`。
+未完成：installer build/run、HDR 与真实 mixed-DPI；这些是独立 deferred coverage，不阻止当前 Phase 2 gate。ordinary media 已明确为 `N/A — ENVIRONMENTALLY UNAVAILABLE`。立即并发重复 Remote NextTrack 记录为 `CONCURRENT REMOTE NEXTTRACK = NON-BLOCKING / OUTSIDE ESTABLISHED CLIENT CONTRACT`，不写成 Native Helper PASS，也不确认 production bug。focused run 的每次 `2` 个 renderer `ReferenceError` 记录为 `NON-BLOCKING FOLLOW-UP`，待后续单独补充 message/stack evidence。当前可以给出 `REAL EMBY CLIENT ACCEPTANCE = PASS` 与 `NATIVE HELPER PRODUCTION ACCEPTANCE = COMPLETE`，并授权 Pepper retirement，但不在本轮开始执行。

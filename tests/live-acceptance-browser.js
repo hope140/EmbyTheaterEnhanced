@@ -213,7 +213,7 @@ window.eteAcceptance = (function () {
         },
         async select() {
             const result = await api.getItems(api.getCurrentUserId(), { Recursive: true, IncludeItemTypes: 'Movie,Episode', Limit: 16, Fields: 'Path,MediaSources', SortBy: 'DateCreated', SortOrder: 'Descending', Filters: 'IsUnplayed' });
-            items = result.Items.filter(item => typeof item.Path === 'string' && item.Path.toLowerCase().endsWith('.strm') && item.RunTimeTicks > 1200000000).slice(0, 2);
+            items = result.Items.filter(item => typeof item.Path === 'string' && item.Path.toLowerCase().endsWith('.strm') && item.RunTimeTicks > 1200000000).slice(0, 3);
             if (items.length < 2) return { ok: false, reason: 'not-enough-strm-samples', scanned: result.Items.length };
             return { ok: true, scanned: result.Items.length, samples: items.map(item => { const source = (item.MediaSources || [])[0] || {}; return { id: item.Id, name: item.Name, series: item.SeriesName, type: item.Type, strm: true, itemPathKind: itemSourceKind(item.Path), itemPathPrefixMatch: localPrefixMatches(item.Path, window.__eteExpectedCd2LocalPrefix), sourceCount: item.MediaSources && item.MediaSources.length, sourcePathKind: itemSourceKind(source.Path), sourcePathPrefixMatch: localPrefixMatches(source.Path, window.__eteExpectedCd2LocalPrefix), container: String(source.Container || '').toLowerCase() || 'missing' }; }) };
         },
@@ -280,7 +280,300 @@ window.eteAcceptance = (function () {
         async pause() { const command = await control('Pause'); if (!command.ok) return command; const paused = await until(() => playerState() && playerState().paused); const server = await until(async () => { const state = await ownSession(); return state && state.PlayState.IsPaused ? state : null; }); return { ok: !!paused && !!server, command, local: playerState(), server: sanitizedSession(server) }; },
         async visual() { await wait(20000); return { ok: !!(playerState() && playerState().item), local: playerState() }; },
         async seek() { const command = await control('Seek', { SeekPositionTicks: 600000000 }); if (!command.ok) return command; const sought = await until(() => { const state = playerState(); return state && Math.abs(state.ticks - 600000000) < 40000000; }); const server = await until(async () => { const state = await ownSession(); return state && Math.abs(state.PlayState.PositionTicks - 600000000) < 50000000 ? state : null; }); return { ok: !!sought && !!server, command, local: playerState(), server: sanitizedSession(server) }; },
+        async seekBackward() { const command = await control('Seek', { SeekPositionTicks: 300000000 }); if (!command.ok) return command; const sought = await until(() => { const state = playerState(); return state && Math.abs(state.ticks - 300000000) < 40000000; }); const server = await until(async () => { const state = await ownSession(); return state && Math.abs(state.PlayState.PositionTicks - 300000000) < 50000000 ? state : null; }); return { ok: !!sought && !!server, command, local: playerState(), server: sanitizedSession(server), direction: 'backward' }; },
         async resume() { const command = await control('Unpause'); if (!command.ok) return command; const resumed = await until(() => { const state = playerState(); return state && !state.paused && state.ticks > 620000000; }); return { ok: !!resumed, command, local: playerState() }; },
+        async getStats() {
+            const player = manager && manager._currentPlayer;
+            if (!player || typeof player.getStats !== 'function') return { ok: false, reason: 'current-player-stats-unavailable', currentPlayer: !!player };
+            try {
+                const value = await player.getStats();
+                const categories = Array.isArray(value && value.categories) ? value.categories : [];
+                return {
+                    ok: categories.length > 0,
+                    categoryCount: categories.length,
+                    categoryTypes: categories.map(category => category && category.type || 'unknown'),
+                    categoryStatCounts: categories.map(category => Array.isArray(category && category.stats) ? category.stats.length : 0),
+                    currentPlayer: player.id || null,
+                    state: playerState()
+                };
+            } catch (error) {
+                return { ok: false, reason: 'get-stats-failed', errorType: error && error.name || 'Error', currentPlayer: !!player };
+            }
+        },
+        async resumeCycle() {
+            const first = items && items[0];
+            if (!first) return { ok: false, reason: 'resume-sample-unavailable' };
+            const firstSource = (first.MediaSources || [])[0] || {};
+            const runTimeTicks = Number(first.RunTimeTicks || firstSource.RunTimeTicks || 0);
+            let resumePolicy = null;
+            try {
+                if (typeof api.getVirtualFolders === 'function') {
+                    const virtualFoldersResult = await api.getVirtualFolders();
+                    const virtualFolders = virtualFoldersResult && Array.isArray(virtualFoldersResult.Items) ? virtualFoldersResult.Items : [];
+                    const matchingFolder = virtualFolders.find(folder => {
+                        const locations = Array.isArray(folder && folder.Locations) ? folder.Locations : [];
+                        const itemPath = typeof first.Path === 'string' ? first.Path : '';
+                        return locations.some(location => typeof location === 'string' && (itemPath === location || itemPath.startsWith(location.replace(/[\\/]+$/, '') + '/') || itemPath.startsWith(location.replace(/[\\/]+$/, '') + '\\')));
+                    });
+                    const options = matchingFolder && matchingFolder.LibraryOptions;
+                    if (options) {
+                        const minResumePct = Number(options.MinResumePct);
+                        const maxResumePct = Number(options.MaxResumePct);
+                        const minResumeDurationSeconds = Number(options.MinResumeDurationSeconds);
+                        if (Number.isFinite(minResumePct) && Number.isFinite(maxResumePct) && Number.isFinite(minResumeDurationSeconds)) {
+                            resumePolicy = { minResumePct, maxResumePct, minResumeDurationSeconds, source: 'LibraryOptions' };
+                        }
+                    }
+                }
+            } catch (error) {
+                resumePolicy = null;
+            }
+            if (!resumePolicy || !runTimeTicks) return { ok: false, reason: 'resume-policy-unavailable-for-target' };
+            const targetPct = Math.min(resumePolicy.minResumePct + 2, resumePolicy.maxResumePct - 10);
+            const durationSeconds = runTimeTicks / 10000000;
+            if (!(targetPct > resumePolicy.minResumePct && targetPct < resumePolicy.maxResumePct) || durationSeconds < resumePolicy.minResumeDurationSeconds) {
+                return { ok: false, reason: 'resume-policy-no-safe-target', resumePolicy, durationSeconds, targetPct };
+            }
+            const targetTicks = Math.round(runTimeTicks * targetPct / 100);
+            const targetReportOffset = reports.length;
+            const targetSeekCommand = await control('Seek', { SeekPositionTicks: targetTicks });
+            if (!targetSeekCommand.ok) return { ok: false, reason: 'resume-target-seek-failed', targetSeekCommand, resumePolicy, targetPct, targetTicks };
+            const targetLocal = await until(() => {
+                const state = playerState();
+                return state && state.item === first.Id && Math.abs(Number(state.ticks || 0) - targetTicks) <= 80000000 ? state : null;
+            }, 30000);
+            const targetServer = await until(async () => {
+                const state = await ownSession();
+                return state && state.NowPlayingItem && state.NowPlayingItem.Id === first.Id && Math.abs(Number(state.PlayState.PositionTicks || 0) - targetTicks) <= 100000000 ? state : null;
+            }, 30000);
+            const targetProgressReportAccepted = await until(() => reports.slice(targetReportOffset).some(row => row && row.item === first.Id && row.method === 'reportPlaybackProgress' && row.accepted === true && Math.abs(Number(row.ticks || 0) - targetTicks) <= 120000000), 10000, GATES.pollMs);
+            if (!targetLocal || !targetServer || !targetProgressReportAccepted) {
+                return {
+                    ok: false,
+                    reason: 'resume-target-position-not-confirmed',
+                    resumePolicy,
+                    durationSeconds,
+                    targetPct,
+                    targetTicks,
+                    targetLocal,
+                    targetServer: sanitizedSession(targetServer),
+                    targetProgressReportAccepted: !!targetProgressReportAccepted,
+                    targetSeekCommand
+                };
+            }
+            const stopCommand = await control('Stop');
+            if (!stopCommand.ok) return { ok: false, reason: 'resume-cycle-stop-failed', stopCommand };
+            const stopped = await until(() => !(playerState() && playerState().item));
+            const stoppedServer = await until(async () => { const state = await ownSession(); return state && !state.NowPlayingItem ? state : null; });
+            if (!stopped || !stoppedServer) return { ok: false, reason: 'resume-cycle-stop-not-observed', stopCommand, stopped, stoppedServer: sanitizedSession(stoppedServer), resumePolicy, targetPct, targetTicks };
+            let router = null;
+            try {
+                const loader = typeof window.require === 'function' ? window.require : (typeof require === 'function' ? require : null);
+                router = await new Promise((resolve, reject) => {
+                    if (!loader) return reject(new Error('app-router-unavailable'));
+                    try {
+                        const request = loader(['appRouter'], value => resolve(value && value.default ? value.default : value), reject);
+                        if (request && typeof request.then === 'function') request.then(value => resolve(value && value.default ? value.default : value), reject);
+                    } catch (error) { reject(error); }
+                });
+                if (!router || typeof router.showItem !== 'function') throw new Error('app-router-unavailable');
+                await Promise.resolve(router.showItem(first));
+            } catch (error) {
+                return { ok: false, reason: 'media-page-return-failed', errorType: error && error.name || 'Error', stopCommand };
+            }
+            const metadataTimeline = [];
+            const metadataPollStartedAt = Date.now();
+            const metadataDeadline = metadataPollStartedAt + 10000;
+            const stopReport = reports.slice().reverse().find(row => row && row.method === 'reportPlaybackStopped' && row.item === first.Id) || null;
+            let refreshed = null;
+            let metadataReadError = null;
+            let metadataUpdated = false;
+            while (Date.now() <= metadataDeadline) {
+                let candidate = null;
+                try {
+                    candidate = await api.getItem(api.getCurrentUserId(), first.Id, { Fields: 'Path,MediaSources,UserData,RunTimeTicks' });
+                } catch (error) {
+                    metadataReadError = error && error.name || 'Error';
+                }
+                const userData = candidate && candidate.UserData || {};
+                const playbackPositionTicks = Number(userData.PlaybackPositionTicks || 0);
+                const playedPercentage = Number.isFinite(Number(userData.PlayedPercentage)) ? Number(userData.PlayedPercentage) : null;
+                const lastPlayedDate = typeof userData.LastPlayedDate === 'string' && userData.LastPlayedDate
+                    ? userData.LastPlayedDate
+                    : candidate && typeof candidate.LastPlayedDate === 'string' && candidate.LastPlayedDate
+                        ? candidate.LastPlayedDate : null;
+                metadataTimeline.push({
+                    elapsed: Date.now() - metadataPollStartedAt,
+                    PlaybackPositionTicks: playbackPositionTicks,
+                    PlayedPercentage: playedPercentage,
+                    Played: userData.Played === true,
+                    Unplayed: userData.Unplayed === true || userData.Played === false,
+                    LastPlayedDate: lastPlayedDate
+                });
+                if (candidate) refreshed = candidate;
+                if (candidate && playbackPositionTicks > 0) {
+                    metadataUpdated = true;
+                    break;
+                }
+                if (Date.now() >= metadataDeadline) break;
+                await wait(Math.min(500, Math.max(1, metadataDeadline - Date.now())));
+            }
+            const serverResumeTicks = Number(refreshed && refreshed.UserData && refreshed.UserData.PlaybackPositionTicks || 0);
+            const stopReportCorrelation = {
+                present: !!stopReport,
+                accepted: !!(stopReport && stopReport.accepted === true),
+                PositionTicks: Number(stopReport && stopReport.ticks || 0),
+                sameItem: !!(stopReport && stopReport.item === first.Id),
+                MediaSourceIdPresent: !!(stopReport && stopReport.source),
+                PlaySessionIdPresent: !!(stopReport && stopReport.playSession)
+            };
+            if (!refreshed || !metadataUpdated || !serverResumeTicks) {
+                return {
+                    ok: false,
+                    reason: 'server-resume-position-not-updated',
+                    mediaPageReturned: !!router,
+                    metadataUpdated: false,
+                    metadataPollIntervalMs: 500,
+                    metadataPollMaxWaitMs: 10000,
+                    metadataTimeline,
+                    metadataReadError,
+                    serverResumeTicks,
+                    stopReport: stopReportCorrelation,
+                    resumePolicy,
+                    durationSeconds,
+                    targetPct,
+                    targetTicks,
+                    targetLocal,
+                    targetServer: sanitizedSession(targetServer),
+                    targetProgressReportAccepted: !!targetProgressReportAccepted,
+                    targetSeekCommand,
+                    stopCommand
+                };
+            }
+            const reportOffset = reports.length;
+            beginPlaybackRun();
+            mark('play-called');
+            let started;
+            try { started = Promise.resolve(manager.play({ items: [refreshed], fullscreen: true })); } catch (error) {
+                return { ok: false, reason: 'resume-play-rejected', errorType: error && error.name || 'Error', serverResumeTicks, metadataTimeline, stopReport: stopReportCorrelation, stopCommand };
+            }
+            const settled = started.then(() => true, () => false);
+            const corePlaying = waitForStage('core-playing', 30000);
+            const resumed = await until(() => {
+                const state = playerState();
+                if (!state || state.item !== refreshed.Id || state.paused || state.ticks < 50000000) return null;
+                return state;
+            }, 30000);
+            const managerResolved = await settled;
+            const corePlayingReached = !!(await corePlaying);
+            const observedTicks = resumed && Number(resumed.ticks || 0) || 0;
+            const deltaTicks = observedTicks - serverResumeTicks;
+            const withinResumeWindow = !!resumed && Math.abs(deltaTicks) <= 120000000;
+            const server = await until(async () => { const state = await ownSession(); return state && state.NowPlayingItem && state.NowPlayingItem.Id === refreshed.Id ? state : null; });
+            const resumeReports = reports.slice(reportOffset).filter(row => row && row.item === refreshed.Id);
+            const reportStartAccepted = resumeReports.some(row => row.method === 'reportPlaybackStart' && row.accepted === true);
+            const reportProgressAccepted = resumeReports.some(row => row.method === 'reportPlaybackProgress' && row.accepted === true);
+            return {
+                ok: managerResolved && !!resumed && corePlayingReached && withinResumeWindow && !!server && reportStartAccepted && reportProgressAccepted,
+                    mediaPageReturned: !!router,
+                    stopCommand,
+                    stopObserved: true,
+                    resumePolicy,
+                    durationSeconds,
+                    targetPct,
+                    targetTicks,
+                    targetLocal,
+                    targetServer: sanitizedSession(targetServer),
+                    targetProgressReportAccepted: !!targetProgressReportAccepted,
+                    targetSeekCommand,
+                    metadataUpdated: true,
+                metadataPollIntervalMs: 500,
+                metadataPollMaxWaitMs: 10000,
+                metadataTimeline,
+                metadataFinal: metadataTimeline[metadataTimeline.length - 1] || null,
+                stopReport: stopReportCorrelation,
+                serverResumeTicks,
+                observedTicks,
+                deltaTicks,
+                withinResumeWindow,
+                managerResolved,
+                corePlayingReached,
+                currentPlayerAvailable: !!(resumed && resumed.player),
+                sessionCurrentItem: !!server,
+                reportStartAccepted,
+                reportProgressAccepted,
+                local: resumed,
+                server: sanitizedSession(server)
+            };
+        },
+        async fastNext() {
+            if (!items || items.length < 3) return { ok: false, reason: 'not-enough-fast-next-samples', sampleCount: items ? items.length : 0 };
+            const stopCommand = await control('Stop');
+            if (!stopCommand.ok) return { ok: false, reason: 'fast-next-stop-failed', stopCommand };
+            const stopped = await until(() => !(playerState() && playerState().item));
+            if (!stopped) return { ok: false, reason: 'fast-next-stop-not-observed', stopCommand };
+            const reportOffset = reports.length;
+            beginPlaybackRun();
+            mark('play-called');
+            let started;
+            try { started = Promise.resolve(manager.play({ items: items.slice(0, 3), fullscreen: true, startPositionTicks: 0 })); } catch (error) {
+                return { ok: false, reason: 'fast-next-play-rejected', errorType: error && error.name || 'Error', stopCommand };
+            }
+            const corePlaying = waitForStage('core-playing', 30000);
+            const first = await until(() => { const state = playerState(); return state && state.item === items[0].Id && state.ticks > 10000000 ? state : null; }, 30000);
+            if (!first) return { ok: false, reason: 'fast-next-first-item-not-started', stopCommand };
+            let unhandledRejectionCount = 0;
+            const onUnhandledRejection = () => { unhandledRejectionCount++; };
+            window.addEventListener('unhandledrejection', onUnhandledRejection);
+            // Dispatch both commands immediately.  Promise.allSettled keeps
+            // each HTTP result observed without inventing a timing sleep.
+            const commands = await Promise.allSettled([
+                api.sendPlayStateCommand(sessionId, 'NextTrack'),
+                api.sendPlayStateCommand(sessionId, 'NextTrack')
+            ]);
+            const transitioned = await until(async () => {
+                const state = playerState();
+                if (!state || state.item !== items[2].Id || state.ticks <= 10000000) return null;
+                const server = await ownSession();
+                return server && server.NowPlayingItem && server.NowPlayingItem.Id === items[2].Id
+                    ? {state, server} : null;
+            }, 45000);
+            const corePlayingReached = !!(await corePlaying);
+            window.removeEventListener('unhandledrejection', onUnhandledRejection);
+            const managerResolved = await started.then(() => true, () => false);
+            const fastReports = reports.slice(reportOffset);
+            const priorStopped = fastReports.some(row => row && row.item === items[0].Id && row.method === 'reportPlaybackStopped' && row.accepted === true);
+            const newestStarted = fastReports.some(row => row && row.item === items[2].Id && row.method === 'reportPlaybackStart' && row.accepted === true);
+            const newestProgressed = fastReports.some(row => row && row.item === items[2].Id && row.method === 'reportPlaybackProgress' && row.accepted === true);
+            const finalState = transitioned && transitioned.state;
+            const concurrentRemoteContractNonBlocking = commands.every(value => value.status === 'fulfilled') && !transitioned && unhandledRejectionCount === 0;
+            const lifecyclePassed = managerResolved && commands.every(value => value.status === 'fulfilled') && !!transitioned && corePlayingReached && priorStopped && newestStarted && newestProgressed && unhandledRejectionCount === 0;
+            return {
+                ok: concurrentRemoteContractNonBlocking || lifecyclePassed,
+                acceptanceStatus: concurrentRemoteContractNonBlocking ? 'non-blocking' : lifecyclePassed ? 'pass' : 'failed',
+                nonBlocking: concurrentRemoteContractNonBlocking,
+                reason: concurrentRemoteContractNonBlocking ? 'concurrent-remote-nexttrack-outside-established-client-contract' : null,
+                failureClassification: concurrentRemoteContractNonBlocking ? 'SERVER_REMOTE_COMMAND_SEMANTICS' : null,
+                concurrentRemoteNextTrackContract: concurrentRemoteContractNonBlocking ? 'not-established' : 'observed',
+                rapidCommandCount: 2,
+                commandResults: commands.map(value => value.status),
+                priorItemStopped: priorStopped,
+                intermediateItemNotFinal: !!finalState && finalState.item !== items[1].Id,
+                newItemStarted: !!transitioned,
+                finalItemIsSecond: false,
+                finalItemIsThird: !!transitioned && finalState.item === items[2].Id,
+                currentPlayerAvailable: !!(finalState && finalState.player),
+                corePlayingReached,
+                sessionCurrentItem: !!transitioned,
+                newestStartReportAccepted: newestStarted,
+                newestProgressReportAccepted: newestProgressed,
+                unhandledRejectionCount,
+                managerResolved,
+                local: finalState,
+                server: transitioned && sanitizedSession(transitioned.server),
+                stopCommand
+            };
+        },
         async next() { const command = await control('NextTrack'); if (!command.ok) return command; const next = await until(() => { const state = playerState(); return state && state.item === items[1].Id && state.ticks > 10000000 ? state : null; }, 45000); const server = await until(async () => { const state = await ownSession(); return state && state.NowPlayingItem && state.NowPlayingItem.Id === items[1].Id ? state : null; }); return { ok: !!next && !!server, command, local: next, server: sanitizedSession(server) }; },
         async stop() { const command = await control('Stop'); if (!command.ok) return command; const stopped = await until(() => !(playerState() && playerState().item)); const server = await until(async () => { const state = await ownSession(); return state && !state.NowPlayingItem ? state : null; }); const acceptedStops = reports.filter(row => row.method === 'reportPlaybackStopped' && row.accepted); const startedItems = new Set(reports.filter(row => row.method === 'reportPlaybackStart' && row.accepted).map(row => row.item)); return { ok: !!stopped && !!server && startedItems.size > 0 && [...startedItems].every(item => acceptedStops.some(row => row.item === item)), command, nowPlayingCleared: !!server && !server.NowPlayingItem, stopReportAccepted: acceptedStops.length > 0, server: sanitizedSession(server), reports }; },
         async cleanup() { if (authorizedPlayback && manager && manager._currentPlayer) await manager.stop().catch(() => { }); }

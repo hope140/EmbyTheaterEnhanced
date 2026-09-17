@@ -1,5 +1,107 @@
 # 项目状态
 
+## 2026-09-17 — Phase 2 Native Helper acceptance gate closed
+
+当前 HEAD 为 `50f578e1eb251336d15ba116b558c1ac341d7f05`。Phase 2 已完成正式 gate 收口：
+
+```text
+Formal ordinary = PASS
+REAL ordinary = N/A — ENVIRONMENTALLY UNAVAILABLE
+REAL STRM native-fallback = PASS
+REAL CD2 = PASS
+REAL Remote Control = PASS
+REAL normal NextTrack = PASS
+REAL Session/report lifecycle = PASS
+REAL Seek backward = PASS
+REAL getStats = PASS
+REAL Resume policy = PASS
+REAL non-zero start position = PASS
+REAL Resume position = PASS
+generation-required = 0
+unexpected bridge_error = 0
+unhandled rejection = 0
+helper crash = 0
+Electron crash = 0
+residual process = 0
+```
+
+因此正式状态为：
+
+```text
+REAL EMBY CLIENT ACCEPTANCE = PASS
+NATIVE HELPER PRODUCTION ACCEPTANCE = COMPLETE
+PEPPER RETIREMENT = AUTHORIZED
+```
+
+本状态只授予 Pepper retirement authorization，不执行 Pepper 删除、迁移或 retirement。
+
+### Concurrent duplicate Remote NextTrack limitation
+
+两个立即并发的真实 `NextTrack` 在 HTTP 层均 fulfilled，但该 focused correlation 观察到对应 WebSocket `Playstate/NextTrack` delivery 为 `0/2`；`ApiClient`、`InputManager` 与 `PlaybackManager.nextTrack()` 均为 `0`。因此 A→B→C 并发语义没有进入客户端，不能作为 Native Helper 或 PlaybackManager production contract 的失败判定。
+
+当前 gate 记录为：
+
+```text
+CONCURRENT REMOTE NEXTTRACK = NON-BLOCKING / OUTSIDE ESTABLISHED CLIENT CONTRACT
+root cause = SERVER_REMOTE_COMMAND_SEMANTICS
+```
+
+该结论只把失效边界定位到 WebSocket 之前，不声称 Emby Server 内部一定执行了 coalesce 或 discard。普通单次 Remote NextTrack 的 A→B 仍已通过。脱敏 focused evidence 保存在 `.work/fast-next-fallback-529315abd95c4d02abca7c7e38274401/run1/output/diagnosis.json` 与 `run2/output/diagnosis.json`。
+
+每次 focused run 另观察到 `2` 个 renderer `ReferenceError` events，当前只保留 error type，未采集 message/stack；没有伴随 unhandled rejection、`bridge_error`、helper crash、Electron crash 或可观察播放副作用。该项记录为：
+
+```text
+REFERENCEERROR = NON-BLOCKING FOLLOW-UP
+```
+
+不在本轮诊断或修复。
+
+## 2026-09-17 — Resume PASS; fastNext remains blocked
+
+匹配 virtual folder 的 `LibraryOptions` 已读到真实 policy：`MinResumePct=3`、`MaxResumePct=90`、`MinResumeDurationSeconds=120`。测试 item duration `5691.531s`，原始 `302390000` ticks Stop position 对应 `0.531298%`，明确低于 `MinResumePct`，所以原始 Resume 失败属于 `ACCEPTANCE TEST POSITION BELOW SERVER RESUME THRESHOLD`。
+
+按 policy 动态选择 5% target 后，Remote Seek、Progress report、Stop report、server metadata saved position、PlaybackManager second Play、Native Helper/core-playing、Session 和 start/progress reports 全部通过；saved position 与 actual second Play start position 都为 `2840000000` ticks，difference `0`。因此 `REAL NONZERO START POSITION=PASS`、`REAL RESUME POSITION=PASS`。
+
+随后 fastNext 对三个真实 item 立即并发发送两个 NextTrack；HTTP promise fulfilled、queue CD2/Native Helper/core-playing 通过，但 45 秒内 A 未 retired、B/C 未成为 current，C Session/report 未出现。当前第一个 blocker 为 `FAST NEXTTRACK / REMOTE COMMAND SEMANTICS`，分类 `OTHER`，不确认 production bug，不继续重发。REAL gate 保持 FAIL，无 production `src/` 修改，无新 commit。
+
+## 2026-09-17 — Resume eligibility policy is unknown
+
+真实测试 item `RunTimeTicks=56915310000`，`302390000` ticks Stop position 对应 `0.531298%`。`Library/VirtualFolders` 只读查询成功并匹配 `movies` virtual folder；当前 profile 非管理员。
+
+`System/Configuration` HTTP 200 response 没有 `MinResumePct`、`MaxResumePct`、`MinResumeDurationSeconds`，本机也没有现成 server admin config evidence。当前结果为 `policy unavailable to current credentials`，所以 `CURRENT 30s STOP = POLICY UNKNOWN`。不猜阈值、不修改服务器配置。
+
+由于无法证明 eligibility，本轮没有继续 target seek、second Play 或 fast consecutive NextTrack。当前首个 blocker 是 `POLICY UNKNOWN / CURRENT CREDENTIALS`，不是已确认的 production reporting bug；REAL gate 保持 FAIL，无 production `src/` 修改、无新 commit。
+
+## 2026-09-17 — Resume bounded polling complete; server/report blocker remains
+
+`resumeCycle` 已从固定 1 秒单次读取改为 `500ms` interval、`10s` bounded polling。实际 13 次 metadata read 全部为 `PlaybackPositionTicks=0`、`PlayedPercentage=null`、`Played=false`、`Unplayed=true`，`LastPlayedDate` present；bounded window 内没有保存位置更新。
+
+Stop report 已 accepted，`PositionTicks=302390000`；payload 与同一播放 lifecycle 的 ItemId、MediaSourceId、PlaySessionId 一致，HTTP response resolved、WebSocket delivered，media page returned。刷新 item 后 server `UserData.PlaybackPositionTicks` 仍为 `0`。因此本轮不再把问题归为“1 秒 harness timing”，当前分类为 `EMBY SERVER / REPORT SEMANTICS`，production reporting bug 未确认。
+
+由于 Resume authoritative assertion 未完成，`fast consecutive NextTrack` 未运行。当前已有 REAL CD2、STRM native-fallback、Remote Control、Session/report、Seek backward、getStats 保持 PASS；`REAL Resume position=NOT VERIFIED`、`REAL fast consecutive NextTrack=NOT RUN`，REAL gate 保持 FAIL。无 production `src/` 修改，无新 commit。
+
+## 2026-09-17 — Unique real mapping observed; CD2 PASS; remaining harness blocker
+
+当前 HEAD 为 `50f578e1eb251336d15ba116b558c1ac341d7f05`。多样本只读 correlation 覆盖真实 Emby Movie/Episode `7665/7665`，ordinary `0`、STRM `7665`；ordinary acceptance 明确为 `N/A — ENVIRONMENTALLY UNAVAILABLE`，补偿证据为 Formal ordinary PASS 与 REAL STRM native-fallback lifecycle PASS。
+
+从 12 个跨目录真实 STRM 推出唯一 source→cloud mapping：sidecar common 为 POSIX/media，source common 为 POSIX/other；ETLP cloud target 在 `12/12` source path 的 segment offset `2` 出现，derived source prefix 在 `12/12` 稳定，sourcePath-only candidate 与 sidecar/source relative stem 也均为 `12/12`。未修改 production resolver，没有用 sidecar fallback 伪造 CD2 hit，也没有通过试多个 prefix 猜测。
+
+当前 acceptance adapter 只在本轮临时 profile/process environment 中使用该 derived source prefix 与已有 cloud target；真实 config probe 的 same-origin CD2 hit 通过。真实完整 flow 两次获得 `legacy-cd2 -> direct_url_hit -> direct-url`，CD2 `FindFile`、`GetDownloadUrlPath`、Native Helper/core-playing、Session/report、Pause/Resume/Seek/NextTrack/Stop、HTTP/WebSocket controls 均通过；`generation-required=0`、unexpected `bridge_error=0`，结束 residual 为 `0`。无 production `src/` 修改。
+
+剩余首个独立 blocker 来自 acceptance harness 的 resume coverage：Stop report 已接受且位置 `302800000` ticks，返回 media page 后读取 `UserData.PlaybackPositionTicks` 仍为 `0`，因此本轮未继续再 Play，也未运行 fast consecutive NextTrack。分类为 `HARNESS`，具体为 server metadata eventual update 的等待假设；是否有更晚更新尚未验证。当前 REAL CD2 已 PASS，但完整 REAL gate 仍保持 `FAIL`。
+
+## 2026-09-17 — REAL ordinary N/A and no_matching_rule correlation
+
+已将当前真实 ordinary acceptance 按环境事实收口为 `N/A — ENVIRONMENTALLY UNAVAILABLE`，不创建或修改 Emby 媒体库。只读分页覆盖 Movie/Episode `7665/7665` 条记录，`ordinary=0`、`STRM=7665`、source path kind 全为 POSIX。补偿证据为 Formal ordinary pipeline PASS，以及 REAL Native Helper STRM native-fallback lifecycle PASS；ordinary N/A 不再作为 production blocker。
+
+在 harness fix commit `50f578e1eb251336d15ba116b558c1ac341d7f05` 的 current runtime 上，对上一轮成功播放的真实 STRM 进行纯本地 rule-evaluation correlation，未调用 CD2、未播放、未写 profile。脱敏结果：itemId hash `af7137c6a8570078`；sidecar path 为 POSIX、root class `media`、normalized hash `f8cee147db9ba93f`、length 97、5 segments；`MediaSource.Path/sourcePath` 为 POSIX、root class `other`、normalized hash `6ef7215e5d4de93a`、length 118、7 segments。
+
+当前 matcher input 明确为 `sourcePath`，策略为 `sourcePath-exclusive`；sidecar 对同一 source-root 的 `prefixMatches=true`，实际 source 对该 source-root 的 `prefixMatches=false`。Enhanced v1 config 为 enabled、CD2 enabled、DirectUrl enabled、1 条 rule：`ruleIndex=0`、`ruleId=legacy-cd2`、enabled=true、source root/target root 均为 POSIX、regex 不存在。该 rule 的 source root 与 ETLP `[src]` root 的 normalized hash/length 一致，target root 与 ETLP `path_map` target 一致，方向没有反转；但 actual `MediaSource.Path` 不匹配该 source root，失败条件为 `posix-prefix-or-boundary-mismatch`。
+
+`strmResolver.selectRule()` 返回 null，`resolve/resolveAsync` 随后产生 `type=native`、`reason=no_matching_rule`，精确路径为 `selectRule=null -> no_matching_rule`；`cd2TransportInvoked=false`。当前 `path-rules` 对 `/media`、`/mnt`、`/volume` 的独立 POSIX rule probe 均 selected=true，说明当前 production resolver 支持这些 POSIX path class；本样本的 source root 属于其他 POSIX root，问题是 acceptance/config adapter 没有把 actual Emby source root 与已存在 cloud target 建立可证实的 mapping。分类为 `ACCEPTANCE CONFIG ADAPTER`，附带 `ENVIRONMENT` 配置不匹配，不确认 production resolver gap。
+
+本轮不通过不断尝试 prefix 修复，也不调用 Find/DirectUrl/Range/cache/cold-directory。REAL CD2 仍未取得 route hit；无 production files 修改。完整脱敏 correlation evidence 保存在 `.work/real-rule-correlation-50f578e.json`；当前 `REAL EMBY ACCEPTANCE = FAIL`，并停在第一个独立 `ACCEPTANCE CONFIG ADAPTER` blocker。
+
 ## 2026-09-17 — REAL acceptance after application-window ownership fix
 
 基于 `feat/native-helper-bridge@49b1fc3668c98487fb044e73a1da698a8b67d822`，仅修正 acceptance harness 的 application-window ownership，并新增回归。`tests/runtime-window-ownership.test.cjs` targeted `7/7`、acceptance readiness/terminal self-tests `3/3`、全量 `npm test` `197/197`、JS syntax 与 `git diff --check` 均通过；`src/` production code 未修改。
