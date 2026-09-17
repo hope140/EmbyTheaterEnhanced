@@ -10,6 +10,8 @@ Native helper 将 transport/protocol failure 与 libmpv operation failure 分开
 
 `player.getStats()` 是展示型 telemetry 边界。Media、Video 与 Audio category 内的 property 都按现有 null/省略/零值展示 contract 作为 optional stats 读取；仅精确的 `property-unavailable` 降级为 `null`，其余 transport、protocol、helper、generation 与未知错误继续 reject。该规则不改变通用 `getProperty()` 或 helper property response 语义。
 
+Native endpoint 的 ready-stage 精确 cache snapshot 是 optional diagnostic mutation，不属于 generation-independent read。renderer client 仅暴露无参数窄方法：无 active generation 时返回 unavailable，不提交 set/command；存在 generation 时捕获同一 generation，依次执行 exact diagnostic set、expand 与 read，并在每个 await 后复核 ownership。generation 缺失、stale 或调用中退休只使该 snapshot unavailable；其他 transport/protocol 错误仍 reject。普通 getProperty、任意 command/set、helper fatal 与 generation retirement contract 不变。
+
 正式 runtime harness 不以 BrowserWindow 创建顺序或数量判断 application ownership。它只把 exact packaged `electronapp/www/index.html` 的 `file:` document 绑定为唯一 application renderer，绑定存活期间不会被后续窗口覆盖；native-helper `data:` surface 和未来辅助窗口只做脱敏分类，不接收 AMD、pluginManager 或 pipeline 注入。AMD 状态是选定 application 后的 assertion，不是 window identity。
 
 基线为提供的 Carnival 3.0（应用声明 3.0.20-3.0）叠加综合补丁。保留 Windows .NET 启动壳、Electron、离线 Web UI 与内嵌 libmpv 的现有目录关系。

@@ -8,6 +8,7 @@
     var CALL_CHANNEL = 'enhanced-native-helper-call';
     var NOTIFY_CHANNEL = 'enhanced-native-helper-notify';
     var EVENT_CHANNEL = 'enhanced-native-helper-event';
+    var DIAGNOSTIC_CACHE_PROPERTY = 'user-data/emby-theater-enhanced/diagnostics/cache-bytes';
 
     function invoke(ipc, operation, payload, endpointId) {
         if (!ipc || typeof ipc.invoke !== 'function') return Promise.reject(new Error('native-helper-ipc-unavailable'));
@@ -89,6 +90,33 @@
         };
         this.getProperty = function (name) {
             return call('get-property', {name: name, generationId: currentGenerationId}).then(function (result) { return result.value; });
+        };
+        this.getOptionalDiagnosticCacheBytes = function () {
+            var generationId = currentGenerationId;
+            var unavailable = {status: 'unavailable', reason: 'generation-unavailable'};
+            if (generationId == null) return Promise.resolve(unavailable);
+            return call('set-properties', {
+                entries: [{name: DIAGNOSTIC_CACHE_PROPERTY, value: ''}],
+                generationId: generationId
+            }).then(function () {
+                if (currentGenerationId !== generationId) return unavailable;
+                return call('command', {
+                    data: ['expand-properties', 'set', DIAGNOSTIC_CACHE_PROPERTY, '${=demuxer-max-bytes}'],
+                    generationId: generationId
+                });
+            }).then(function (result) {
+                if (result === unavailable || currentGenerationId !== generationId) return unavailable;
+                return call('get-property', {name: DIAGNOSTIC_CACHE_PROPERTY, generationId: generationId});
+            }).then(function (result) {
+                if (result === unavailable || currentGenerationId !== generationId) return unavailable;
+                return {status: 'ok', value: result.value};
+            }).catch(function (error) {
+                var reason = error && error.message;
+                if (currentGenerationId !== generationId || reason === 'generation-required' || reason === 'stale-generation') {
+                    return {status: 'unavailable', reason: 'generation-unavailable'};
+                }
+                throw error;
+            });
         };
         this.postMessage = function (message) {
             var pending;

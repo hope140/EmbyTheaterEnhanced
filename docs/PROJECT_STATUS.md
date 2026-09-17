@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-09-17 — Ready diagnostics generation ownership fix
+
+基于 `feat/native-helper-bridge@667009e995ff8a6bf08805abf176a745ce9fab86` 修复 production startup-order race：fresh native endpoint ready 后，optional diagnostics collect 可能在 STRM/CD2 resolver 等待期间先完成，并以 generic postMessage 提交 cache snapshot 的 set_property/expand command；此时 generation 尚未建立，两个 `generation-required` 被 client 提升为 playback-fatal bridge_error，随后 PlaybackManager error cleanup 清空 player。根因与旧 remote Stop 无关；`.work/stop-barrier-candidate.patch` 保留且未应用。
+
+renderer native endpoint 现提供 exact、无参数、generation-aware 的 optional cache snapshot：generation=null 时直接 unavailable；有效时用捕获的同一 generation 执行 set/expand/read，每个异步阶段后复核 generation；stale/retired 只降级 snapshot。diagnostics 对 native endpoint 使用该窄方法，legacy/Pepper fallback 保持原 mutation/read contract。direct/global getProperty、通用 postMessage、required command/set、helper protocol/crash、generation retirement、PlaybackManager、Session、Resolver 与 Pepper 均未放宽。targeted `19/19`、全量 `npm test 192/192`、JS syntax 与 `git diff --check` PASS；正式 source-commit build/provenance/pipeline 需在本修复成为 HEAD 后执行。
+
 ## 2026-09-17 — Formal runtime harness BrowserWindow ownership fix
 
 基于 `feat/native-helper-bridge@3f62efada515a4cc5d2c297ff5997b6b4d467b3c` 修复 formal harness 的 window ownership：`tools/smoke-electron.cjs` 不再把每个 `browser-window-created` 覆盖为测试窗口，而是在 `did-finish-load` 后以 exact packaged `file:` `electronapp/www/index.html` 选择唯一 application renderer；存活 owner 不会被后创建的 native-helper `data:` surface 或另一个 application-shaped window 覆盖，只有 owner destroyed 后才允许新的有效 application 绑定。AMD assertion、pluginManager probe、pipeline injection 与 application state capture 只对 owner 执行；所有重要 injected script 增加 sourceURL，错误 evidence 只保留 bounded name/message/stack/source/line/column、window class 与 pipeline stage。

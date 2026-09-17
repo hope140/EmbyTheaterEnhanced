@@ -1,5 +1,11 @@
 # 已确认经验
 
+## 2026-09-17 — Optional diagnostics and generation ownership
+
+- endpoint ready 不等于 playback generation ready。ready diagnostics 若经过异步 property collect，可能在 resolver 等待期间先于 beginGeneration 完成；随后 generic set/command 会合法触发 generation-required，但不能把这个 optional snapshot failure 提升为 playback fatal。
+- generation-dependent diagnostic mutation 必须保留 isolation：无 generation 时 skip/unavailable；有 generation 时捕获同一 generation，并在每个 await 后复核。不能把任意 set/command 改成 generation-independent，也不能全局吞掉 stale、transport 或 protocol 错误。
+- formal manager.play resolve 不能替代 authoritative core-idle=false。deterministic regression 应同时验证 pre-generation diagnostics、delayed resolver、beginGeneration、load/current generation、core-playing 与 player ownership。
+
 ## 2026-09-17 — Formal harness BrowserWindow ownership
 
 - `browser-window-created` 是窗口发现事件，不是 application identity。native-helper surface、overlay 或未来辅助窗口都可能晚于 main 创建；用 first/last/count 或每次覆盖变量会把 application probe 注入错误 renderer。

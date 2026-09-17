@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-09-17 — Ready diagnostics generation ownership fix
+
+Model Tier：2。Model：GPT-5.6 Sol High。Reason：修复点虽窄，但必须同时保持 optional diagnostics fail-open、native generation isolation、direct/global getProperty 与 required helper/protocol fatal 边界，并验证 delayed STRM/CD2 authoritative core-playing。Escalated：no。
+
+两次 bounded diagnosis 已证明 remoteStop#1、managerStop#1、playerStop#1 与 destroy#1 在新 STRM Play 前约 789ms 全部 settle；真正独立 owner 是 ready diagnostics 在 generation=null 时发送 diagnostic set_property/expand，产生 `generation-required` bridge_error。新 generation 163 随后虽建立并提交 load，但早先错误已使 embedded.play reject，PlaybackManager onPlaybackError 的 destroy 才 retire generation。Stop barrier candidate 以 SHA256 `7BF1F8E53D8BA63717A9CFB44F0D53E46EAE1600E34C4D8F100D3B0153333931` 保存在 ignored `.work`，本提交不包含它。
+
+实现只修改 renderer client 与 diagnostics consumer：native endpoint 无 generation 时不提交 optional cache mutation；有 generation 时 exact set/expand/read 共用捕获 generation，并在每个 await 后复核；generation-required/stale/retired 返回 unavailable，其他错误仍 reject。真实 libmpv.js + real native client deterministic regression 用 delayed resolver 保证 diagnostics 先于 beginGeneration，随后 fake CD2 HTTP hit、current-generation load 与 core-idle=false 通过，manager ownership 保持。targeted `19/19`、全量 `npm test 192/192`、syntax 与 diff check PASS；未修改 helper C++、controller/service、PlaybackManager、Session、Resolver、CD2 或 Pepper。
+
 ## 2026-09-17 — Formal runtime harness BrowserWindow ownership fix
 
 Model Tier：1。Model：GPT-5.6 Sol High。Reason：根因与允许文件已经明确，修改只涉及 runtime test harness ownership、error evidence、fixture stage marker、纯 fake-window regression 和文档；production renderer、native helper、PlaybackManager、Session、Resolver、CD2、Electron runtime 与 Pepper 全部冻结。Escalated：no。

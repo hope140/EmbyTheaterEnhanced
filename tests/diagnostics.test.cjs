@@ -9,6 +9,30 @@ class Target {
     removeEventListener(name) { this.listeners.delete(name); }
     reply(name, detail) { if (this.listeners.has(name)) this.listeners.get(name)({ detail }); }
 }
+
+function makeNativeDiagnosticBridge(optionalResult) {
+    const listeners = new Set();
+    const calls = [];
+    const bridge = {
+        calls,
+        optionalCalls: 0,
+        addEventListener(name, callback) { assert.equal(name, 'message'); listeners.add(callback); },
+        removeEventListener(name, callback) { assert.equal(name, 'message'); listeners.delete(callback); },
+        postMessage(message) {
+            calls.push(message);
+            if (message.type !== 'get_property_async') return;
+            const value = message.data === 'demuxer-max-bytes' ? 2147483648 : 'available';
+            for (const listener of [...listeners]) {
+                listener({data: {type: 'property_change', data: {name: message.data, value}}});
+            }
+        },
+        getOptionalDiagnosticCacheBytes() {
+            bridge.optionalCalls++;
+            return Promise.resolve(optionalResult);
+        }
+    };
+    return bridge;
+}
 test('real embed replies are scoped to the bridge and ignore unrelated properties', async () => {
     const listeners = new Set();
     const bridge = {
@@ -66,6 +90,47 @@ test('unsupported precise cache transport is not reported as a valid zero or neg
     const result = await diagnostics.collect(bridge, target, 'ready', 15);
     assert.equal(result.properties['demuxer-max-bytes'].status, 'unavailable');
     assert.equal(result.properties['demuxer-max-bytes'].value, undefined);
+});
+
+test('ready diagnostics use the generation-aware optional cache method and skip mutation before generation', async () => {
+    const target = new Target();
+    const bridge = makeNativeDiagnosticBridge({status: 'unavailable', reason: 'generation-unavailable'});
+    const result = await diagnostics.collect(bridge, target, 'ready', 20);
+
+    assert.equal(bridge.optionalCalls, 1);
+    assert.equal(bridge.calls.some(message => message.type === 'set_property'), false);
+    assert.equal(bridge.calls.some(message => message.type === 'command'), false);
+    assert.equal(result.properties['demuxer-max-bytes'].status, 'unavailable');
+    assert.equal(target.listeners.size, 0);
+});
+
+test('generation-aware optional cache diagnostics preserve a precise current-generation value', async () => {
+    const target = new Target();
+    const bridge = makeNativeDiagnosticBridge({status: 'ok', value: '4294967296'});
+    const result = await diagnostics.collect(bridge, target, 'playing', 20);
+
+    assert.equal(bridge.optionalCalls, 1);
+    assert.equal(bridge.calls.some(message => message.type === 'set_property'), false);
+    assert.equal(bridge.calls.some(message => message.type === 'command'), false);
+    assert.equal(result.properties['demuxer-max-bytes'].value, 4294967296);
+    assert.equal(result.properties['demuxer-max-bytes'].transport, 'mpv-text');
+    assert.equal(target.listeners.size, 0);
+});
+
+test('optional generation diagnostics fail open when the narrow method rejects transport errors', async () => {
+    const target = new Target();
+    const bridge = makeNativeDiagnosticBridge(null);
+    bridge.getOptionalDiagnosticCacheBytes = async function () {
+        bridge.optionalCalls++;
+        throw new Error('transport-unavailable');
+    };
+    const result = await diagnostics.collect(bridge, target, 'ready', 20);
+
+    assert.equal(bridge.optionalCalls, 1);
+    assert.equal(result.properties['demuxer-max-bytes'].status, 'error');
+    assert.equal(bridge.calls.some(message => message.type === 'set_property'), false);
+    assert.equal(bridge.calls.some(message => message.type === 'command'), false);
+    assert.equal(target.listeners.size, 0);
 });
 test('synchronous and asynchronous replies, nulls and throwing bridge remain bounded', async () => {
     const target = new Target();

@@ -20,6 +20,14 @@ npm test
 
 上述 synthetic/native gate 不替代正式 source-commit build、installer、REAL Emby playback、Session/reporting、remote control、NextTrack、10+ minute、HDR 或 mixed-DPI acceptance。
 
+## Native ready diagnostics generation boundary
+
+```powershell
+node --test tests/native-helper-client.test.cjs tests/diagnostics.test.cjs tests/native-helper-diagnostics-playback.test.cjs
+```
+
+测试覆盖 generation=null skip、current-generation exact set/expand/read、stale/retire between awaits、non-generation error reject、legacy fallback，以及真实 libmpv Player + native client 的 delayed STRM/CD2 flow。integration case 要求 ready diagnostics 在 beginGeneration 前完成且无 mutation/bridge_error，随后 generation、fake CD2 HTTP load、current-generation core-idle=false 与 player ownership 全部通过。该规则不替代 protocol/helper crash、generation retirement 和 full runtime pipeline gate。
+
 ## Runtime BrowserWindow ownership
 
 ```powershell

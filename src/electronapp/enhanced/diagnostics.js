@@ -355,11 +355,16 @@ async function collectSnapshot(bridge, target, stage, timeoutMs) {
     const raw = snapshot.properties['demuxer-max-bytes'];
     try {
         if (bridge) {
-            bridge.postMessage({type: 'set_property', data: {name: cacheSnapshotKey, value: ''}});
-            bridge.postMessage({type: 'command', data: [
-                'expand-properties', 'set', cacheSnapshotKey, '${=demuxer-max-bytes}'
-            ]});
-            const precise = await readProperty(bridge, target, cacheSnapshotKey, timeoutMs || 1500);
+            let precise;
+            if (typeof bridge.getOptionalDiagnosticCacheBytes === 'function') {
+                precise = await bridge.getOptionalDiagnosticCacheBytes();
+            } else {
+                bridge.postMessage({type: 'set_property', data: {name: cacheSnapshotKey, value: ''}});
+                bridge.postMessage({type: 'command', data: [
+                    'expand-properties', 'set', cacheSnapshotKey, '${=demuxer-max-bytes}'
+                ]});
+                precise = await readProperty(bridge, target, cacheSnapshotKey, timeoutMs || 1500);
+            }
             if (precise.status === 'ok' && typeof precise.value === 'string' && /^\d+$/.test(precise.value) && Number.isSafeInteger(Number(precise.value))) {
                 snapshot.properties['demuxer-max-bytes'] = {
                     status: 'ok',
