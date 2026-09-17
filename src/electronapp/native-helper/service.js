@@ -3,11 +3,14 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const childProcess = require('node:child_process');
 const {NativeHelperClient, PROTOCOL_VERSION} = require('./controller');
 
 const CALL_CHANNEL = 'enhanced-native-helper-call';
 const NOTIFY_CHANNEL = 'enhanced-native-helper-notify';
 const EVENT_CHANNEL = 'enhanced-native-helper-event';
+const WINDOW_PLACEMENT_MODE = '--place-window-behind';
+const WINDOW_PLACEMENT_TIMEOUT_MS = 2000;
 const EXPECTED_LIBMPV_VERSION = 'mpv v0.41.0-920-gdd5d17d32';
 const EXPECTED_LIBMPV_SHA256 = '965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c';
 
@@ -93,6 +96,7 @@ function createService(options) {
   const getMainWindow = settings.getMainWindow;
   const getWebContents = settings.getWebContents;
   const logger = typeof settings.logger === 'function' ? settings.logger : function () {};
+  const execFile = typeof settings.execFile === 'function' ? settings.execFile : childProcess.execFile;
   const runtimeRoot = path.resolve(settings.runtimeRoot || path.join(__dirname, '..', '..'));
   const helperPath = path.join(runtimeRoot, 'electronapp', 'native-helper', 'ete-mpv-helper.exe');
   const libmpvPath = path.join(runtimeRoot, 'electronapp', 'libmpv', 'x64', 'mpv-1.dll');
@@ -107,6 +111,11 @@ function createService(options) {
   let everStarted = false;
   let destroyed = false;
   let activeEndpointId = null;
+  let surfaceEpoch = 0;
+  let placementRevision = 0;
+  let placementInFlight = null;
+  let placementPending = null;
+  let placementChild = null;
   const observed = new Set();
   const fixedSettingLogged = new Set();
   const boundWindowEvents = [];
@@ -133,19 +142,104 @@ function createService(options) {
     boundWindowEvents.push({main, name, listener});
   }
 
+  function safePlacementFailure(error) {
+    if (!error) return null;
+    const code = error.code;
+    return {
+      code: typeof code === 'number' ? code : typeof code === 'string' && /^[A-Z0-9_-]{1,64}$/i.test(code) ? code : 'unknown',
+      killed: error.killed === true,
+      signal: typeof error.signal === 'string' && /^[A-Z0-9_-]{1,32}$/i.test(error.signal) ? error.signal : null
+    };
+  }
+
+  function requestIsCurrent(request) {
+    if (!request || destroyed || placementRevision !== request.revision || surfaceEpoch !== request.surfaceEpoch ||
+        surfaceWindow !== request.surface || request.surface.isDestroyed()) return false;
+    const main = getMainWindow();
+    if (!main || main !== request.main || main.isDestroyed()) return false;
+    try {
+      return decimalWindowHandle(request.surface) === request.surfaceHandle &&
+        decimalWindowHandle(main) === request.mainHandle;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function hideSurfaceAfterStalePlacement(request) {
+    if (!request || surfaceWindow !== request.surface || request.surface.isDestroyed()) return;
+    const main = getMainWindow();
+    if (!surfaceWanted || !main || main.isDestroyed() || !main.isVisible() || main.isMinimized()) {
+      try { request.surface.hide(); } catch (_) { }
+    }
+  }
+
+  function runPendingPlacement() {
+    if (placementInFlight || !placementPending || destroyed) return;
+    const request = placementPending;
+    placementPending = null;
+    placementInFlight = request;
+    const finish = function (error) {
+      if (placementInFlight !== request) return;
+      placementInFlight = null;
+      placementChild = null;
+      if (!requestIsCurrent(request)) {
+        hideSurfaceAfterStalePlacement(request);
+        log('surface-z-order-stale', {reason: request.reason});
+      } else if (error) {
+        log('surface-z-order-warning', {reason: request.reason, failure: safePlacementFailure(error)});
+      } else {
+        log('surface-z-order', {reason: request.reason, applied: true});
+      }
+      if (placementPending && !destroyed) runPendingPlacement();
+    };
+    try {
+      placementChild = execFile(helperPath, [WINDOW_PLACEMENT_MODE, request.surfaceHandle, request.mainHandle], {
+        encoding: 'utf8',
+        timeout: WINDOW_PLACEMENT_TIMEOUT_MS,
+        windowsHide: true
+      }, finish);
+    } catch (error) {
+      finish(error);
+    }
+  }
+
+  function placeSurfaceBehindMain(main, reason) {
+    const surface = surfaceWindow;
+    if (!surface || surface.isDestroyed() || !main || main.isDestroyed()) return;
+    const revision = ++placementRevision;
+    let surfaceHandle;
+    let mainHandle;
+    try {
+      surfaceHandle = decimalWindowHandle(surface);
+      mainHandle = decimalWindowHandle(main);
+    } catch (error) {
+      log('surface-z-order-warning', {reason, failure: {code: 'invalid-window-handle', killed: false, signal: null}});
+      return;
+    }
+    placementPending = {reason, revision, surface, surfaceEpoch, surfaceHandle, main, mainHandle};
+    runPendingPlacement();
+  }
+
+  function invalidateSurfacePlacement() {
+    ++placementRevision;
+    placementPending = null;
+    const child = placementChild;
+    if (child && typeof child.kill === 'function') {
+      try { child.kill(); } catch (_) { }
+    }
+  }
+
   function syncSurface(reason) {
     const main = getMainWindow();
     if (!surfaceWindow || surfaceWindow.isDestroyed() || !main || main.isDestroyed()) return;
     if (!surfaceWanted || !main.isVisible() || main.isMinimized()) {
+      invalidateSurfacePlacement();
       surfaceWindow.hide();
       return;
     }
     surfaceWindow.setBounds(main.getBounds(), false);
     if (!surfaceWindow.isVisible()) surfaceWindow.showInactive();
-    if (typeof surfaceWindow.moveTop === 'function') surfaceWindow.moveTop();
-    if (typeof main.moveTop === 'function') main.moveTop();
-    main.setAlwaysOnTop(true);
-    main.setAlwaysOnTop(false);
+    placeSurfaceBehindMain(main, reason);
     log('surface-sync', {reason, visible: true});
   }
 
@@ -154,7 +248,7 @@ function createService(options) {
     if (!BrowserWindow) throw new Error('browser-window-unavailable');
     const main = getMainWindow();
     if (!main || main.isDestroyed()) throw new Error('main-window-unavailable');
-    surfaceWindow = new BrowserWindow({
+    const ownedSurface = new BrowserWindow({
       x: main.getBounds().x,
       y: main.getBounds().y,
       width: main.getBounds().width,
@@ -167,15 +261,22 @@ function createService(options) {
       focusable: false,
       webPreferences: {nodeIntegration: false, contextIsolation: true, sandbox: true}
     });
+    surfaceWindow = ownedSurface;
+    ++surfaceEpoch;
     surfaceWindow.setMenu(null);
     surfaceWindow.loadURL('data:text/html,<meta charset="utf-8"><style>html,body{margin:0;background:#000;overflow:hidden}</style>');
-    surfaceWindow.on('closed', function () { surfaceWindow = null; });
+    surfaceWindow.on('closed', function () {
+      if (surfaceWindow !== ownedSurface) return;
+      invalidateSurfacePlacement();
+      surfaceWindow = null;
+      ++surfaceEpoch;
+    });
     if (!boundWindowEvents.length) {
       ['move', 'resize', 'maximize', 'unmaximize', 'restore', 'enter-full-screen', 'leave-full-screen', 'show', 'focus'].forEach(function (name) {
         bindMainWindowEvent(name, function () { syncSurface(name); });
       });
       ['minimize', 'hide'].forEach(function (name) {
-        bindMainWindowEvent(name, function () { if (surfaceWindow && !surfaceWindow.isDestroyed()) surfaceWindow.hide(); });
+        bindMainWindowEvent(name, function () { syncSurface(name); });
       });
       bindMainWindowEvent('closed', function () { destroy().catch(function () {}); });
     }
@@ -365,6 +466,7 @@ function createService(options) {
     if (destroyed) return;
     destroyed = true;
     activeEndpointId = null;
+    invalidateSurfacePlacement();
     if (startingClient) {
       try { await startingClient.kill(); } catch (_) { }
     }
