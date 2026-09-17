@@ -243,9 +243,9 @@ window.eteAcceptance = (function () {
                 return gateFailure('manager-play-rejected', 'runtime-readiness-failure', 'manager-play-resolved', { errorType: error.name || 'Error', readinessAssessment: assessment });
             }
             const settled = started.then(value => { mark('manager-play-resolved'); return { state: 'resolved', value }; }, error => { return { state: 'rejected', errorType: error && error.name || 'Error' }; });
-            if (!await waitForStage('embed-created', GATES.embedMs)) {
+            if (!await until(() => (stageSeen('embed-created') || stageSeen('native-bridge-created')) ? readiness() : null, GATES.embedMs)) {
                 const assessment = assessPlaybackReadiness(false, false, null, false);
-                return gateFailure('embed-not-created', 'runtime-readiness-failure', 'embed-created', { readinessAssessment: assessment });
+                return gateFailure('playback-endpoint-not-created', 'runtime-readiness-failure', 'playback-endpoint-created', { readinessAssessment: assessment });
             }
             const managerResult = await Promise.race([settled, wait(GATES.managerMs).then(() => ({ state: 'timeout' }))]);
             if (managerResult.state === 'timeout') {

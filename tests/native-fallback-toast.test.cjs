@@ -224,7 +224,8 @@ function loadPlayer(options) {
         strmResolver,
         undefined,
         undefined,
-        undefined
+        undefined,
+        {create() { return Promise.resolve({mode: 'pepper', endpoint: null}); }}
     ];
     const Player = moduleFactory(...dependencies);
     const player = {};

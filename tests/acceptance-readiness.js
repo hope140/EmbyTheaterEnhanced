@@ -40,6 +40,7 @@
     var firstVideoPosition = null;
     var lastVideoPosition = null;
     var corePlayingListener = null;
+    var nativeHelperReadyListener = null;
     var currentRunId = null;
     var currentRunStartedAt = t0;
     function elapsed() { return Date.now() - t0; }
@@ -118,11 +119,11 @@
                 state.beginRun(currentRunId, currentRunStartedAt);
             }
         } catch (error) { lastError = 'sticky-readiness-reset-failed'; }
-        ['play-called', 'embed-created', 'embed-attached', 'native-bootstrap-ready', 'pepper-ready', 'manager-play-resolved', 'resolver-result', 'loadfile', 'core-playing', 'video-progress', 'playing'].forEach(function (stage) {
+        ['play-called', 'embed-created', 'native-bridge-created', 'embed-attached', 'native-bootstrap-ready', 'pepper-ready', 'manager-play-resolved', 'resolver-result', 'loadfile', 'core-playing', 'video-progress', 'playing'].forEach(function (stage) {
             delete marks[stage];
         });
         timeline = timeline.filter(function (row) {
-            return ['play-called', 'embed-created', 'embed-attached', 'native-bootstrap-ready', 'pepper-ready', 'manager-play-resolved', 'resolver-result', 'loadfile', 'core-playing', 'video-progress', 'playing'].indexOf(row.stage) < 0;
+            return ['play-called', 'embed-created', 'native-bridge-created', 'embed-attached', 'native-bootstrap-ready', 'pepper-ready', 'manager-play-resolved', 'resolver-result', 'loadfile', 'core-playing', 'video-progress', 'playing'].indexOf(row.stage) < 0;
         });
         nativeBootstrapReadySeen = false;
         pepperReadyRawEventSeen = false;
@@ -257,6 +258,11 @@
     }
     function onEmbedMessage(event) { try { rememberMessage('in', event && event.data); } catch (error) { lastError = 'embed-message-error'; } }
     function onCorePlaying() { recordCorePlaying('window-event'); }
+    function onNativeHelperReady() {
+        nativeBootstrapReadySeen = true;
+        mark('native-bridge-created');
+        mark('native-bootstrap-ready');
+    }
     function findEmbed() {
         try { return document.querySelector('embed[type="application/x-mpvjs"]'); } catch (error) { return null; }
     }
@@ -321,6 +327,8 @@
             if (typeof window.addEventListener === 'function') {
                 corePlayingListener = onCorePlaying;
                 window.addEventListener('core-playing', corePlayingListener);
+                nativeHelperReadyListener = onNativeHelperReady;
+                window.addEventListener('native-helper-ready', nativeHelperReadyListener);
             }
         } catch (error) { lastError = 'core-playing-observer-failed'; }
         installResolverHook();
@@ -365,6 +373,7 @@
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
         if (embedObserver) { try { embedObserver.disconnect(); } catch (error) { } embedObserver = null; }
         if (corePlayingListener && typeof window.removeEventListener === 'function') { try { window.removeEventListener('core-playing', corePlayingListener); } catch (error) { } corePlayingListener = null; }
+        if (nativeHelperReadyListener && typeof window.removeEventListener === 'function') { try { window.removeEventListener('native-helper-ready', nativeHelperReadyListener); } catch (error) { } nativeHelperReadyListener = null; }
         if (console.log === consoleWrapper && originalConsoleLog) { try { console.log = originalConsoleLog; } catch (error) { } }
         if (window.enhancedDiagnostics === diagnosticsWrapper && originalDiagnostics) { try { window.enhancedDiagnostics = originalDiagnostics; } catch (error) { } }
         if (embed) {

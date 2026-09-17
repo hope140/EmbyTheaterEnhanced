@@ -57,7 +57,7 @@ function makeDom() {
     const document = {
         body,
         querySelector(selector) {
-            return selector === '.mpv-videoPlayerContainer' ? dialog : null;
+            return selector === '.mpv-videoPlayerContainer' && dialog && dialog.parentNode ? dialog : null;
         },
         createElement(name) {
             if (name === 'embed') {
@@ -117,7 +117,7 @@ function makeDom() {
     return {document, body, getDialog: () => dialog, getEmbed: () => embed};
 }
 
-function loadPlayer(dom, windowTarget) {
+function loadPlayer(dom, windowTarget, nativeClient) {
     let moduleFactory;
     const amdRequire = function (_dependencies, callback) {
         if (typeof callback === 'function') callback();
@@ -169,7 +169,8 @@ function loadPlayer(dom, windowTarget) {
             return Promise.resolve({type: 'native', source: info.nativeSource, reason: 'native_fallback'});
         }
     };
-    const Player = moduleFactory(globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, amdRequire, connectionManager, strmResolver);
+    const nativeHelperClient = nativeClient || {create() { return Promise.resolve({mode: 'pepper', endpoint: null}); }};
+    const Player = moduleFactory(globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, amdRequire, connectionManager, strmResolver, undefined, undefined, undefined, nativeHelperClient);
     const player = {};
     Player.call(player);
     return {player, context};
@@ -205,5 +206,74 @@ test('Pepper ready emitted synchronously during embed attach is captured once', 
     assert.equal(dom.getEmbed().readyEmitted, true);
     const readyRegistrations = windowTarget.registrations.filter(row => row.name === 'ready');
     assert.equal(readyRegistrations.length, 1, 'ready listener must be registered once');
+    await player.stop(true);
+});
+
+function makeNativeEndpoint() {
+    const target = makeEventTarget();
+    let destroyed = 0;
+    const endpoint = Object.assign(target, {
+        style: {},
+        beginGeneration() { return Promise.resolve({generationId: 1}); },
+        retireGeneration() {},
+        observeProperties() { return Promise.resolve({status: 'ok'}); },
+        setProperties() { return Promise.resolve({status: 'accepted'}); },
+        getProperty() { return Promise.resolve(null); },
+        sendCommand(data) {
+            if (Array.isArray(data) && data[0] === 'loadfile') {
+                setImmediate(() => endpoint.dispatchEvent({type: 'message', data: {type: 'property_change', data: {name: 'core-idle', value: false}}}));
+            }
+            return Promise.resolve({status: 'accepted'});
+        },
+        destroy() { destroyed++; return Promise.resolve(); },
+        destroyedCount() { return destroyed; }
+    });
+    return endpoint;
+}
+
+function playOptions(id) {
+    return {
+        _etePlayRequestId: id,
+        url: 'fixture://native-' + id,
+        item: {MediaType: 'Video', Type: 'Movie', Path: 'fixture.strm'},
+        mediaSource: {MediaStreams: [], RunTimeTicks: 5000000000},
+        mediaType: 'Video', playMethod: 'DirectPlay', playerStartPositionTicks: 0, fullscreen: false
+    };
+}
+
+test('concurrent first plays share one native helper creation', async () => {
+    const windowTarget = makeEventTarget(); windowTarget.platform = 'win32'; windowTarget.enhancedDiagnostics = function () {};
+    const dom = makeDom();
+    const endpoint = makeNativeEndpoint();
+    let createCalls = 0, release;
+    const nativeClient = {create() { createCalls++; return new Promise(resolve => { release = () => resolve({mode: 'native-helper', endpoint}); }); }};
+    const {player} = loadPlayer(dom, windowTarget, nativeClient);
+    const first = player.play(playOptions(1));
+    for (let index = 0; index < 10 && createCalls === 0; index++) await new Promise(resolve => setImmediate(resolve));
+    assert.equal(createCalls, 1);
+    const second = player.play(playOptions(2));
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(createCalls, 1);
+    release();
+    await assert.rejects(first, error => error && error.playbackSuperseded === true);
+    await second;
+    assert.equal(createCalls, 1);
+    await player.stop(true);
+});
+
+test('failed native helper creation removes stale DOM and can retry', async () => {
+    const windowTarget = makeEventTarget(); windowTarget.platform = 'win32'; windowTarget.enhancedDiagnostics = function () {};
+    const dom = makeDom();
+    const endpoint = makeNativeEndpoint();
+    let createCalls = 0;
+    const nativeClient = {create() {
+        createCalls++;
+        return createCalls === 1 ? Promise.reject(new Error('handshake-failed')) : Promise.resolve({mode: 'native-helper', endpoint});
+    }};
+    const {player} = loadPlayer(dom, windowTarget, nativeClient);
+    await assert.rejects(player.play(playOptions(1)), /handshake-failed/);
+    assert.equal(dom.body.children.length, 0);
+    await player.play(playOptions(2));
+    assert.equal(createCalls, 2);
     await player.stop(true);
 });

@@ -21,7 +21,13 @@ function makeEmbed() {
 }
 
 function makeContext(embed, diagnostics) {
-    const window = { __eteEpoch: Date.now(), enhancedDiagnostics: diagnostics };
+    const listeners = Object.create(null);
+    const window = {
+        __eteEpoch: Date.now(), enhancedDiagnostics: diagnostics,
+        addEventListener(name, listener) { (listeners[name] || (listeners[name] = [])).push(listener); },
+        removeEventListener(name, listener) { if (listeners[name]) listeners[name] = listeners[name].filter(item => item !== listener); },
+        dispatchEvent(event) { for (const listener of (listeners[event.type] || []).slice()) listener(event); }
+    };
     const document = {
         current: null,
         documentElement: { contains(node) { return document.current === node; } },
@@ -98,6 +104,15 @@ async function main() {
     missingContext.mutationObserver().emit([{ addedNodes: [], removedNodes: [missingEmbed] }]);
     assert(missingContext.window.__eteReadiness.snapshot().embedLifecycle.some(row => row.event === 'disconnected'));
     missingContext.window.__eteReadiness.cleanup();
+
+    const nativeContext = makeContext(null, function () { });
+    vm.runInContext(source, nativeContext.context);
+    nativeContext.window.dispatchEvent({type: 'native-helper-ready'});
+    const native = nativeContext.window.__eteReadiness.snapshot();
+    assert.strictEqual(native.nativeBootstrapReadySeen, true);
+    assert(native.timeline.some(row => row.stage === 'native-bridge-created'));
+    assert(native.timeline.some(row => row.stage === 'native-bootstrap-ready'));
+    nativeContext.window.__eteReadiness.cleanup();
     console.log('acceptance readiness self-test: PASS');
 }
 

@@ -1,7 +1,7 @@
 'use strict';
 
-const stages = ['play-called', 'embed-created', 'pepper-ready', 'manager-play-resolved', 'resolver-result', 'loadfile'];
-const lifecycleStages = ['app-load', 'observer-installed', 'play-called', 'createMediaElement-called', 'embed-created', 'embed-attached', 'native-bootstrap-ready', 'pepper-ready', 'core-playing', 'video-progress', 'manager-play-resolved', 'playing'];
+const stages = ['play-called', 'embed-created', 'native-bridge-created', 'pepper-ready', 'manager-play-resolved', 'resolver-result', 'loadfile'];
+const lifecycleStages = ['app-load', 'observer-installed', 'play-called', 'createMediaElement-called', 'embed-created', 'native-bridge-created', 'embed-attached', 'native-bootstrap-ready', 'pepper-ready', 'core-playing', 'video-progress', 'manager-play-resolved', 'playing'];
 const allStages = new Set(stages.concat(lifecycleStages));
 const failureClasses = ['api-client-unavailable', 'playback-manager-unavailable', 'events-unavailable', 'embed-create-timeout', 'pepper-ready-timeout', 'manager-play-completion-timeout', 'resolver-result-timeout', 'runtime-readiness-failure'];
 const readinessStatuses = ['observed-ready', 'inferred-ready-from-authoritative-state', 'not-ready', 'observer-missing', 'unavailable'];
@@ -156,8 +156,10 @@ function createRecorder() {
             playChain,
             timing: {
                 playToEmbedMs: difference(report, 'play-called', 'embed-created'),
+                playToNativeBridgeMs: difference(report, 'play-called', 'native-bridge-created'),
                 playToEmbedAttachedMs: difference(report, 'play-called', 'embed-attached'),
                 embedToBootstrapMs: difference(report, 'embed-created', 'native-bootstrap-ready'),
+                nativeBridgeToBootstrapMs: difference(report, 'native-bridge-created', 'native-bootstrap-ready'),
                 embedAttachedToBootstrapMs: difference(report, 'embed-attached', 'native-bootstrap-ready'),
                 bootstrapToPepperReadyMs: difference(report, 'native-bootstrap-ready', 'pepper-ready'),
                 embedToPepperReadyMs: difference(report, 'embed-created', 'pepper-ready'),
