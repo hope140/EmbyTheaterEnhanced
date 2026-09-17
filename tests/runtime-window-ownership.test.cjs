@@ -2,6 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const path = require('node:path');
 const {pathToFileURL} = require('node:url');
 
@@ -11,8 +12,9 @@ const {
 } = require('../tools/runtime-window-ownership.cjs');
 
 const expectedApplicationPath = path.resolve(__dirname, '..', 'electronapp/www/index.html');
+const acceptanceHarnessSource = fs.readFileSync(path.resolve(__dirname, '..', 'tools/acceptance-electron.cjs'), 'utf8');
 
-function fakeWindow(rawUrl) {
+function fakeWindow(rawUrl, acceptanceAvailable = false) {
     let destroyed = false;
     const calls = [];
     return {
@@ -22,7 +24,7 @@ function fakeWindow(rawUrl) {
             },
             executeJavaScript(source) {
                 calls.push(source);
-                return Promise.resolve();
+                return Promise.resolve(acceptanceAvailable ? {eteAcceptance: true} : undefined);
             }
         },
         isDestroyed() {
@@ -157,4 +159,40 @@ test('records only bounded classification evidence for missing or invalid URLs',
     ]);
     assert.equal(JSON.stringify(snapshot).includes('private-token'), false);
     assert.equal(JSON.stringify(snapshot).includes('not a URL'), false);
+});
+
+test('acceptance evaluate stays on the application owner when a Native Helper data window appears', async () => {
+    assert.match(acceptanceHarnessSource, /createWindowOwnership/);
+    assert.match(acceptanceHarnessSource, /expectedApplicationPath=path\.join\(runtime,'electronapp','www','index\.html'\)/);
+    assert.match(acceptanceHarnessSource, /windowOwnership\.handleLoaded\(created\)/);
+    assert.match(acceptanceHarnessSource, /if\(ownership\.role!==['"]application['"]\)return/);
+    assert.match(acceptanceHarnessSource, /win=windowOwnership\.getApplicationWindow\(\)/);
+    assert.doesNotMatch(acceptanceHarnessSource, /\bwin\s*=\s*created\s*;/);
+
+    const ownership = createWindowOwnership({expectedApplicationPath});
+    const applicationWindow = fakeWindow(applicationUrl(), true);
+    const auxiliaryWindow = fakeWindow('data:text/html,<video data-secret="private-token">', false);
+    let applicationOwner = null;
+
+    function handleLoaded(candidate) {
+        const decision = ownership.handleLoaded(candidate);
+        if (decision.role === 'application') applicationOwner = ownership.getApplicationWindow();
+        return decision;
+    }
+
+    const applicationDecision = handleLoaded(applicationWindow);
+    assert.equal(applicationDecision.role, 'application');
+    assert.equal(applicationOwner, applicationWindow);
+
+    const applicationResult = await applicationOwner.webContents.executeJavaScript('window.eteAcceptance ? "available" : "missing"');
+    assert.deepEqual(applicationResult, {eteAcceptance: true});
+
+    const auxiliaryDecision = handleLoaded(auxiliaryWindow);
+    assert.equal(auxiliaryDecision.role, 'auxiliary');
+    assert.equal(applicationOwner, applicationWindow);
+    assert.equal(ownership.getApplicationWindow(), applicationWindow);
+    assert.equal(auxiliaryWindow.probeCalls.length, 0);
+    assert.equal(applicationWindow.probeCalls.length, 1);
+    assert.equal(ownership.snapshot().auxiliaryWindowCount, 1);
+    assert.equal(JSON.stringify(ownership.snapshot()).includes('private-token'), false);
 });

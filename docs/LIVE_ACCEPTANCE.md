@@ -1,5 +1,63 @@
 # 第一轮真实运行验收
 
+## 2026-09-17 — Application-window ownership fix and REAL acceptance follow-up
+
+本轮绑定 `feat/native-helper-bridge@49b1fc3668c98487fb044e73a1da698a8b67d822`，只修改 acceptance harness ownership，不修改 Native Helper、libmpv、PlaybackManager、Session、Resolver、generation 或 Pepper。ownership targeted regression `7/7`、acceptance readiness/terminal self-tests `3/3`、全量 `npm test` `197/197` 通过。重新构建的 runtime `EmbyTheaterEnhanced-0.1.1-native-helper-real-49b1fc3-ownerfix` 的四层 provenance/package 校验通过。
+
+修复后的标准真实 flow 观察到 application owner 1、auxiliary `data:` window 1、application probe 1；后续 `evaluate` 保持在 application renderer。真实 STRM fallback 流程结果如下：
+
+| 检查 | 本次结果 |
+|---|---|
+| Login / API / own Session | `loggedIn=true`，非管理员，own Session visible |
+| App identity | `Emby Theater Enhanced`，same client/version |
+| Native Helper | helper handshake、native-helper route 与 core-playing 通过 |
+| Play | 通过，current player 与 Session NowPlaying 均观察到 |
+| Pause / Resume / Seek | 通过；server accepted，WebSocket delivered，播放器状态正确 |
+| NextTrack | 通过；旧项停止、新项启动，服务端当前项更新 |
+| Stop | 通过；Stop report accepted，NowPlayingItem 清空 |
+| Reports | 10 条真实 start/progress/stopped reports 全部 accepted |
+| generation-required / bridge_error | `0 / 0` |
+| helper/Electron crash | `0 / 0` observed |
+| target runtime residual | `0` |
+
+该真实 flow 的 resolver 结果为 `route=native`、`reason=no_matching_rule`、`cd2Reason=not_attempted`，因此记为 `REAL STRM Native fallback = PASS`，不记为 CD2 acceptance。inspect 的早期 `websocketOpen=false` / `SupportsRemoteControl=false` snapshot 没有阻止后续实际 WebSocket controls；控制阶段的 server accepted 和 WebSocket delivered 均为 true。
+
+随后使用登录态 profile 副本和现有本地 CD2 输入执行隔离 run，原 persistent profile 未修改。该 run 完成标准 flow，但真实样本仍为 `no_matching_rule` / `cd2 not_attempted`，未取得 CD2 DirectUrl 或 same-origin hit、range playback、CD2 active-request cleanup 证据。临时副本已删除，credential material 未保留。
+
+为寻找 ordinary 样本执行了只读分页扫描：Emby `Movie,Episode` `TotalRecordCount=7665`，实际取回 `7665`；`ordinaryCount=0`、`strmCount=7665`，全部 source path 为 POSIX。因当前真实媒体库没有非 STRM 样本，本轮第一个新的独立 blocker 为 `MEDIA/ENVIRONMENT`，按规则停止，没有继续猜 mapping 或执行额外播放。
+
+本轮 ordinary、getStats、CD2 HIT/range、独立 Stop→再 Play Resume position 尚未覆盖；上一段 STRM fallback 的控制链证据保持有效。脱敏 evidence 保存在 `.work/live-acceptance-2525dec8174f42b9a43483e70458b0ff`、`.work/live-acceptance-cd2-34de10d328804431b2ebea57c8521ec9` 和 `.work/real-ordinary-scan-20260917.json`。
+
+当前结论：
+
+```text
+REAL EMBY ACCEPTANCE = FAIL
+```
+
+本轮未使用 Pepper、未修改 production files、未提交/推送/合并，也未开始 Pepper retirement。
+
+## 2026-09-17 — Native Helper REAL acceptance run
+
+本次 run 绑定正式 source commit `49b1fc3668c98487fb044e73a1da698a8b67d822` 与 runtime `EmbyTheaterEnhanced-0.1.1-native-helper-real-49b1fc3`。四层 provenance/package 校验通过，实际运行模式为 `native-helper`；没有设置 Pepper fallback，也没有自动 Pepper recovery。
+
+现有 persistent profile 只读检查为 `loggedIn=true`，client identity 为 `Emby Theater Enhanced`，非管理员。真实 application renderer 成功完成 inspect/select/play；helper handshake、resolver context、native route/load、core-playing、客户端 current player、HTTP Session NowPlaying 和已接受的 start/progress reports 均观察到。`DeviceId` 只保留在本地脱敏日志中，原始 DeviceId、SessionId、server URL、token 和媒体标识不进入文档。
+
+本次选择的是 STRM Movie。profile 当前未命中 CD2 mapping，日志明确为 `route=native`、`reason=no_matching_rule`、`cd2Reason=not_attempted`，因此没有把这次播放记为 STRM/CD2 acceptance。进入 `pause` 时，Native Helper 合法创建的辅助 `data:` video surface 触发第二次 `browser-window-created`；现有 acceptance harness 在 `tools/acceptance-electron.cjs` 中把 application `win` 覆盖为该辅助 renderer，`window.eteAcceptance.pause()` 随后执行失败。该结果归类为 `test/acceptance harness` blocker，按规则停止后续动作。
+
+| 检查 | 本次结果 |
+|---|---|
+| 登录/API/Session | `loggedIn=true`、own Session visible；inspect 时 WebSocket/SupportsRemoteControl 为 false，完整 identity 对照未完成 |
+| inspect / select / play | 通过；core-playing、current player、NowPlaying 与 start/progress report observed |
+| Pause / Resume / Seek / Stop | 未完成；在 Pause harness invocation 失败前停止 |
+| getStats | 未覆盖 |
+| STRM/CD2 | 未覆盖；本次 route 为 native、CD2 not_attempted |
+| Remote Control / NextTrack | 未覆盖 |
+| generation-required / bridge_error | 0 / 0 |
+| helper / Electron crash | 0 / 0；helper-terminal 0 |
+| residual | owned Electron/helper 0 |
+
+完整脱敏 evidence 保留在忽略目录 `.work/live-acceptance-a2a9cf79f6cb4846a1726ee9597a5593`。本次结论为 `REAL EMBY ACCEPTANCE = FAIL`；不升级为 Native Helper production acceptance complete，也不授权或开始 Pepper retirement。
+
 日期：2026-09-13（UTC+8）；产品版本：0.1.1。
 
 用户已自行登录，账号非管理员。用户允许使用库内任意影视，并说明全库均为 STRM；WatchTogether 本轮以后台控制正常为验收标准，不要求额外双客户端测试。

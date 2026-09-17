@@ -1,5 +1,31 @@
 # 开发日志
 
+## 2026-09-17 — Application-window ownership fix and REAL acceptance follow-up
+
+Model Tier：2。Model：current Codex session。Reason：ownership implementation 本身是边界清楚的 Tier 1 harness 修复，但后续真实验收跨 application renderer、Native Helper auxiliary surface、Emby Session/WebSocket、CD2 和真实媒体库存，需要保持证据层分离。Escalated：no。
+
+在 `feat/native-helper-bridge@49b1fc3668c98487fb044e73a1da698a8b67d822` 上只修改 `tools/acceptance-electron.cjs`，复用 `tools/runtime-window-ownership.cjs` 的 canonical packaged `electronapp/www/index.html` identity。`browser-window-created` 不再覆盖 `win`；只有 `did-finish-load` 分类为 application 的窗口才能绑定 owner、执行 epoch/flow injection 和后续 `evaluate`。`data:`、其他 `file:`、`http:`、`https:` 窗口只被记录为 auxiliary。
+
+新增 acceptance-harness regression 与既有 fake ownership cases 合计 `7/7`，其中验证 application renderer 的 fake `window.eteAcceptance` 可用、auxiliary data window 出现后 owner 不变、auxiliary probe/injection count 为 0。acceptance readiness/terminal self-tests `3/3`，全量 `npm test` `197/197`，JavaScript syntax 和 `git diff --check` 通过；`src/`、Native Helper、libmpv、PlaybackManager、Session、Resolver、generation、Pepper 均未修改。
+
+按当前 HEAD 重新构建 runtime `EmbyTheaterEnhanced-0.1.1-native-helper-real-49b1fc3-ownerfix`，SOURCE/NATIVE/RUNTIME provenance 与 package verify 通过，payload 2136 files，helper non-testing。标准 persistent-profile REAL run 的 trace 明确记录 application document owner，随后 Native Helper `data:` auxiliary window，owner 未改变。真实 STRM native fallback 的 inspect/select/play/pause/seek/resume/next/stop 全部通过；helper handshake、core-playing、Session NowPlaying、server accepted、WebSocket delivered 和 10 条 playback reports 通过，Stop 后 NowPlayingItem 清空，target residual=0。resolver 为 `native/no_matching_rule`、CD2 `not_attempted`，故只记 `REAL STRM Native fallback PASS`。
+
+为完成 CD2 目标，使用原 persistent 登录态的隔离副本和已存在的本地 CD2 输入运行标准 flow；副本复制初次因嵌套目录造成 `api-client-unavailable`，该 setup error 已停止并清理，未当成产品 blocker。正确复制后 strict inspect 通过，但真实样本仍为 `no_matching_rule` / `cd2 not_attempted`，没有把 fallback 记作 CD2 hit。随后对 `Movie,Episode` 做完整只读分页：`TotalRecordCount=7665`，fetched `7665`，ordinary `0`，STRM `7665`，source path 全为 POSIX。当前没有真实非 STRM 媒体，故第一个新的独立 blocker 为 `MEDIA/ENVIRONMENT`，本轮停止继续探测。
+
+脱敏 evidence：`.work/live-acceptance-2525dec8174f42b9a43483e70458b0ff`、`.work/live-acceptance-cd2-34de10d328804431b2ebea57c8521ec9`、`.work/real-ordinary-scan-20260917.json`。临时 CD2 profile 已删除并验证原 persistent profile 未新增 `strm-resolver.json`；target runtime owned process residual=0。stop-barrier candidate hash 仍为 `7BF1F8E53D8BA63717A9CFB44F0D53E46EAE1600E34C4D8F100D3B0153333931`。本轮无 production file change、无新 commit、无 Pepper 使用，`REAL EMBY ACCEPTANCE = FAIL`。
+
+## 2026-09-17 — Native Helper REAL Emby acceptance stopped at harness blocker
+
+Model Tier：2。Model：current Codex session。Reason：真实验收跨 Electron main/renderer、Native Helper、libmpv、PlaybackManager、Emby Session/WebSocket 与报告链；本轮只做证据采集，不改变 production contract。Escalated：no。
+
+先在独立 `E:\ETE-native-helper-bridge` worktree 核验 `feat/native-helper-bridge@49b1fc3668c98487fb044e73a1da698a8b67d822`，worktree 初始 clean。正式构建 `EmbyTheaterEnhanced-0.1.1-native-helper-real-49b1fc3` 从 HEAD Git blob 生成，SOURCE/NATIVE/RUNTIME provenance 和 package verify 均通过，runtime payload 2136 files，native helper 为 non-testing build。未设置 `ETE_MPV_BRIDGE_MODE=pepper`，实际观察到 `native-helper/helper-ready` 和 helper executable；没有自动 Pepper recovery。
+
+使用现有 persistent profile 的 strict inspect 为 `loggedIn=true`，client identity `Emby Theater Enhanced`，非管理员；inspect 阶段 own Session 可见，但 `websocketOpen=false`、`SupportsRemoteControl=false`，故 HTTP/WS Session identity 与 remote control 尚未通过。首次选择到的真实样本是 STRM Movie，`inspect/select/play` 均通过；当前 profile 这次没有匹配 CD2 rule，resolver 日志为 `route=native`、`reason=no_matching_rule`、`cd2Reason=not_attempted`。应用日志观察到 `helper-ready`、native loadfile request、`core-playing`、current player、own Session NowPlaying 以及 2 条已接受的 start/progress report。run window 内 `generation-required=0`、`bridge_error=0`、helper-terminal/crash=0、生产 error event=0。
+
+进入下一步 `pause` 时，`acceptance-trace.txt` 依次记录 application document 完成、play 后第二次 `browser-window-created`（Native Helper video surface）和 `method-start=pause`；随后 `acceptance-operation-failed`，renderer 报告 `Script failed to execute`。源码审计确认 `tools/acceptance-electron.cjs:67-70` 的全局监听器无条件执行 `win=created`，因此辅助 `data:` surface 覆盖 application renderer；后续 `evaluate()` 对辅助窗口调用 `window.eteAcceptance.pause()` 失败。该首个独立 blocker 归类为 `test/acceptance harness`，没有证据支持 production/native helper/CD2/Emby server failure。按任务边界未重试、未修改 harness/production、未继续 ordinary、STRM/CD2、getStats、remote control、NextTrack 或 Resume/Stop。
+
+完整脱敏 evidence 位于忽略目录 `.work/live-acceptance-a2a9cf79f6cb4846a1726ee9597a5593`；当时主 Electron PID 8428、helper PID 9356，收尾后 target runtime owned process residual=0。`.work/stop-barrier-candidate.patch` hash 仍为 `7BF1F8E53D8BA63717A9CFB44F0D53E46EAE1600E34C4D8F100D3B0153333931`。本轮无 production file change、无新 commit、无 Pepper 使用，`REAL EMBY ACCEPTANCE = FAIL`。
+
 ## 2026-09-17 — Deterministic generation fixture
 
 Model Tier：2。Model：GPT-5.6 Sol High。Reason：虽然只改 harness，但必须准确区分 renderer request generation、native generation、listener cleanup 与 controller stale filtering，禁止因 fixture timing 误判 production regression。Escalated：no。

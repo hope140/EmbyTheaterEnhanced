@@ -1,5 +1,29 @@
 # 项目状态
 
+## 2026-09-17 — REAL acceptance after application-window ownership fix
+
+基于 `feat/native-helper-bridge@49b1fc3668c98487fb044e73a1da698a8b67d822`，仅修正 acceptance harness 的 application-window ownership，并新增回归。`tests/runtime-window-ownership.test.cjs` targeted `7/7`、acceptance readiness/terminal self-tests `3/3`、全量 `npm test` `197/197`、JS syntax 与 `git diff --check` 均通过；`src/` production code 未修改。
+
+从当前 HEAD 重新生成 runtime `EmbyTheaterEnhanced-0.1.1-native-helper-real-49b1fc3-ownerfix`，SOURCE/NATIVE/RUNTIME provenance 与 package verify 均通过，payload 2136 files，helper 为 production non-testing build。修复后的真实 acceptance evidence 显示 application owner 1、auxiliary `data:` window 1、application probe 1，auxiliary 没有覆盖 owner 或接收 acceptance flow injection。
+
+使用现有 persistent Emby 登录态执行标准真实 STRM fallback flow，`inspect/select/play/pause/seek/resume/next/stop` 全部通过；Native Helper handshake、resolver native fallback、core-playing、current player、own Session NowPlaying、真实 WebSocket 命令送达和 10 条播放报告均观察到，Stop 后 NowPlayingItem 清空，target runtime residual 为 0。inspect 的早期 snapshot 仍显示 `websocketOpen=false` / `SupportsRemoteControl=false`，但实际控制步骤的 server accepted 与 WebSocket delivered 均为 true，不能把早期 snapshot 当成当前 regression。当前 flow route 为 `native/no_matching_rule`、CD2 `not_attempted`，因此这是 REAL STRM Native fallback PASS，不是 CD2 PASS。
+
+为验证 CD2，使用原 persistent profile 的登录态副本和现有本地 CD2 配置做了隔离 run；副本只用于本轮，原 profile 未写入。标准 flow 完成，但真实样本仍返回 `route=native`、`reason=no_matching_rule`、`cd2Reason=not_attempted`，所以 REAL CD2 route 未通过/未完成命中证据。随后只读分页扫描 Emby 的全部 `7665` 个 Movie/Episode，实际取回 `7665`，`ordinaryCount=0`、`strmCount=7665`、source path 全为 POSIX；因此 ordinary acceptance 的第一个独立 blocker 为 `MEDIA/ENVIRONMENT`，没有可用的真实非 STRM 媒体，按规则停止后续探测。
+
+本轮 ordinary media、getStats、CD2 HIT/range、独立 Stop→再 Play Resume position 尚未宣称通过；已有 STRM fallback 的 Pause/Resume/Seek/NextTrack/Stop 与 Session/report evidence 保持单独记录。完整脱敏 evidence 位于 `.work/live-acceptance-2525dec8174f42b9a43483e70458b0ff`、`.work/live-acceptance-cd2-34de10d328804431b2ebea57c8521ec9` 和 `.work/real-ordinary-scan-20260917.json`；临时 CD2 profile 已删除，原 persistent profile 保持存在且未新增 resolver config。
+
+本轮 harness 修改文件为 `tools/acceptance-electron.cjs` 与 `tests/runtime-window-ownership.test.cjs`；无 production files 修改、无新 commit、无 Pepper 使用、未开始 Pepper retirement。`.work/stop-barrier-candidate.patch` SHA256 仍为 `7BF1F8E53D8BA63717A9CFB44F0D53E46EAE1600E34C4D8F100D3B0153333931`。由于 ordinary 样本缺失且 CD2 尚未命中，当前仍为 `REAL EMBY ACCEPTANCE = FAIL`。
+
+## 2026-09-17 — Native Helper REAL Emby acceptance blocked by acceptance harness
+
+基于 `feat/native-helper-bridge@49b1fc3668c98487fb044e73a1da698a8b67d822` 重新生成正式 Native Helper runtime `EmbyTheaterEnhanced-0.1.1-native-helper-real-49b1fc3`。`SOURCE PROVENANCE`、`NATIVE PROVENANCE`、`RUNTIME PROVENANCE` 与 `PACKAGE VERIFY` 均通过，payload 为 2136 个文件，helper 为 production non-testing build。当前真实运行模式为 `native-helper`，未设置 Pepper mode，也没有自动 Pepper recovery。
+
+使用现有 persistent Emby profile 的只读检查为 `exists=true, loggedIn=true`，client identity 为 `Emby Theater Enhanced`，非管理员。目标 runtime 的 Electron 主进程与 helper 均实际启动；helper `helper-ready`、libmpv handshake、resolver context/route、native `loadfile`、core-playing 和服务端 NowPlaying/进度均在本次 run 观察到。DeviceId 仅以本地脱敏 hash 记录，原始 DeviceId、SessionId、server URL、token 和媒体标识未写入仓库；inspect 阶段的 WebSocket/SupportsRemoteControl 当时为 false，完整 HTTP/WS identity 对照未完成。
+
+首次真实播放选择到 STRM Movie，当前 profile 本次 route 为 `native` / `no_matching_rule`，CD2 为 `not_attempted`。`inspect`、`select`、`play` 通过并观察到当前 player、Session NowPlaying、core-playing 和 2 条已接受的 start/progress report；在进入 `pause` 时，`tools/acceptance-electron.cjs` 收到第二次 `browser-window-created`，由 Native Helper 创建的 `data:` video surface 覆盖了 application window 的 `win` 引用，随后对辅助 renderer 执行 `window.eteAcceptance.pause()` 失败。该 blocker 归类为 `test/acceptance harness`，不是本次已观察到的 production/helper/media/CD2/server failure。按验收边界停在此处，ordinary media、STRM/CD2 HIT、getStats、remote control、NextTrack、Resume/Stop 生命周期均未宣称通过。
+
+本次完整脱敏 evidence 保存在忽略目录 `.work/live-acceptance-a2a9cf79f6cb4846a1726ee9597a5593`；目标 runtime Electron 主 PID 为 8428、helper PID 为 9356，收尾后 owned Electron/helper residual 均为 0。当前 `REAL EMBY ACCEPTANCE = FAIL`。本轮未修改 production files、未使用 Pepper、未提交/推送/合并/发布，`.work/stop-barrier-candidate.patch` SHA256 仍为 `7BF1F8E53D8BA63717A9CFB44F0D53E46EAE1600E34C4D8F100D3B0153333931`。
+
 ## 2026-09-17 — Deterministic generation fixture
 
 基于 `feat/native-helper-bridge@aef373a81aeb88244f219e83e805a148a33e6ef1` 仅修 formal fixture。诊断以两个相同 focused run 证明原 `sleep(250)` 不保证 overlap：一次 Play #1 已 fulfilled 后 Play #2 才进入，另一次 Play #2 在 Play #1 pending 时正确触发 PlaybackSuperseded。原 `oldCoreListenerIgnored` 也只是 `rapid[0].status==='rejected'`，未观察 listener 或 stale event；production generation、event ownership 与 controller stale drop 均通过，无 production bug。
