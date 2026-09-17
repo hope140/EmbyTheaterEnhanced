@@ -227,6 +227,27 @@ test('surface placement failure is warning-only and does not affect playback ser
   await service.destroy();
 });
 
+test('surface placement timeout warns once, releases in-flight state, and runs latest pending request', async function () {
+  const ClientClass = makeClientClass();
+  const {main, service, logs, placementExecutor} = makeService(ClientClass);
+  await showSurface(service);
+  main.emit('resize');
+  main.emit('move');
+  const timeout = Object.assign(new Error('timed out'), {code: null, killed: true, signal: 'SIGTERM'});
+  placementExecutor.complete(0, timeout);
+  assert.equal(placementExecutor.calls.length, 2);
+  placementExecutor.complete(1);
+  const warnings = logs.filter(record => record.event === 'surface-z-order-warning');
+  assert.equal(warnings.length, 1);
+  assert.equal(warnings[0].details.reason, 'renderer-visibility');
+  assert.equal(warnings[0].details.stale, true);
+  assert.deepEqual(warnings[0].details.failure, {code: 'unknown', killed: true, signal: 'SIGTERM'});
+  assert.equal(logs.some(record => record.event === 'surface-z-order' && record.details.reason === 'move'), true);
+  assert.equal(service.status().state, 'ready');
+  assert.equal(main.sent.some(args => args[1] && args[1].type === 'bridge_error'), false);
+  await service.destroy();
+});
+
 test('destroy during surface placement kills the operation and ignores its callback', async function () {
   const ClientClass = makeClientClass();
   const {service, logs, placementExecutor} = makeService(ClientClass);

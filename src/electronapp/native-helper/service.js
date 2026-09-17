@@ -182,11 +182,13 @@ function createService(options) {
       if (placementInFlight !== request) return;
       placementInFlight = null;
       placementChild = null;
-      if (!requestIsCurrent(request)) {
+      const current = requestIsCurrent(request);
+      if (error && !request.cancelled) {
+        if (!current) hideSurfaceAfterStalePlacement(request);
+        log('surface-z-order-warning', {reason: request.reason, stale: !current, failure: safePlacementFailure(error)});
+      } else if (!current) {
         hideSurfaceAfterStalePlacement(request);
         log('surface-z-order-stale', {reason: request.reason});
-      } else if (error) {
-        log('surface-z-order-warning', {reason: request.reason, failure: safePlacementFailure(error)});
       } else {
         log('surface-z-order', {reason: request.reason, applied: true});
       }
@@ -216,13 +218,14 @@ function createService(options) {
       log('surface-z-order-warning', {reason, failure: {code: 'invalid-window-handle', killed: false, signal: null}});
       return;
     }
-    placementPending = {reason, revision, surface, surfaceEpoch, surfaceHandle, main, mainHandle};
+    placementPending = {reason, revision, surface, surfaceEpoch, surfaceHandle, main, mainHandle, cancelled: false};
     runPendingPlacement();
   }
 
   function invalidateSurfacePlacement() {
     ++placementRevision;
     placementPending = null;
+    if (placementInFlight) placementInFlight.cancelled = true;
     const child = placementChild;
     if (child && typeof child.kill === 'function') {
       try { child.kill(); } catch (_) { }
