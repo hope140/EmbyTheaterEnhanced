@@ -570,6 +570,7 @@ function buildDiagnosticReport(input, appInfo, exportTime) {
     const read = Array.isArray(input) ? {records: input, malformedLines: 0} : (input || {records: [], malformedLines: 0});
     const records = Array.isArray(read.records) ? read.records.map(sanitizeRecord) : [];
     const info = appInfo || {};
+    const nativeHelper = info.nativeHelper && typeof info.nativeHelper === 'object' ? info.nativeHelper : {};
     const run = latestRouteRunRecords(records);
     const routeRecord = run.routeRecord;
     const runRecords = run.records;
@@ -617,6 +618,13 @@ function buildDiagnosticReport(input, appInfo, exportTime) {
         'Node: ' + sanitizeText(info.node || 'UNKNOWN'),
         'Export Time: ' + exportIso,
         'DeviceId Hash: ' + sanitizeText(info.deviceIdHash || 'UNKNOWN'),
+        'Bridge Mode: ' + sanitizeText(nativeHelper.mode || 'UNKNOWN'),
+        'Protocol Version: ' + sanitizeText(nativeHelper.protocolVersion == null ? 'UNKNOWN' : nativeHelper.protocolVersion),
+        'Helper Version: ' + sanitizeText(nativeHelper.helperVersion || 'UNKNOWN'),
+        'Helper Instance State: ' + sanitizeText(nativeHelper.state || 'UNKNOWN'),
+        'libmpv Version: ' + sanitizeText(nativeHelper.libmpvVersion || 'UNKNOWN'),
+        'Helper Crash Count: ' + sanitizeText(nativeHelper.crashCount == null ? 'UNKNOWN' : nativeHelper.crashCount),
+        'Helper Recreate Count: ' + sanitizeText(nativeHelper.recreateCount == null ? 'UNKNOWN' : nativeHelper.recreateCount),
         '',
         '==================================================',
         'Resolver Summary',

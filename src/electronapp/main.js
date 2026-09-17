@@ -104,6 +104,8 @@
     var unregisterCd2Ipc = function () {};
     var unregisterStrmConfigIpc = function () {};
     var unregisterDiagnosticsIpc = function () {};
+    var unregisterNativeHelperIpc = function () { return Promise.resolve(); };
+    var nativeHelperService;
 
     function onWindowMoved() {
 
@@ -927,6 +929,7 @@
 
     var strmConfigStoreModule = require('./enhanced/strm-config-store');
     var cd2ServiceModule = require('./enhanced/cd2-service');
+    var nativeHelperServiceModule = require('./native-helper/service');
     strmConfigStore = strmConfigStoreModule.createStore({
         rootDir: require('path').join(app.getPath('userData'), 'config'),
         environment: Object.assign({}, process.env)
@@ -951,19 +954,42 @@
         logger: enhancedLog,
         getWebContents: getWebContents,
         getBrowserWindow: function () { return mainWindow; },
-        getAppInfo: function () { return Object.assign({}, diagnosticsAppInfo); },
+        getAppInfo: function () {
+            return Object.assign({}, diagnosticsAppInfo, {
+                nativeHelper: nativeHelperService && typeof nativeHelperService.status === 'function' ? nativeHelperService.status() : null
+            });
+        },
+        getNativeHelperStatus: function () {
+            return nativeHelperService && typeof nativeHelperService.status === 'function' ? nativeHelperService.status() : null;
+        },
         app: app,
         dialog: electron.dialog,
         shell: electron.shell
     });
-    ['ETE_CD2_ENABLED', 'ETE_CD2_ORIGIN', 'ETE_CD2_TOKEN', 'ETE_CD2_LOCAL_PREFIX', 'ETE_CD2_CLOUD_PREFIX', 'ETE_CD2_DIRECT_URL', 'ETE_CD2_SOURCE_PREFIX', 'ETE_CD2_MOUNT_PREFIX'].forEach(function (name) {
+    nativeHelperService = nativeHelperServiceModule.createService({
+        electron: electron,
+        getMainWindow: function () { return mainWindow; },
+        getWebContents: getWebContents,
+        logger: enhancedLog,
+        runtimeRoot: path.resolve(__dirname, '..'),
+        mode: process.env.ETE_MPV_BRIDGE_MODE === 'pepper' ? 'pepper' : 'native-helper'
+    });
+    unregisterNativeHelperIpc = nativeHelperServiceModule.register({
+        ipcMain: ipcMain,
+        service: nativeHelperService,
+        getWebContents: getWebContents
+    });
+    ['ETE_CD2_ENABLED', 'ETE_CD2_ORIGIN', 'ETE_CD2_TOKEN', 'ETE_CD2_LOCAL_PREFIX', 'ETE_CD2_CLOUD_PREFIX', 'ETE_CD2_DIRECT_URL', 'ETE_CD2_SOURCE_PREFIX', 'ETE_CD2_MOUNT_PREFIX', 'ETE_MPV_BRIDGE_MODE'].forEach(function (name) {
         delete process.env[name];
     });
-    app.once('before-quit', function () {
+    app.once('before-quit', function (event) {
+        event.preventDefault();
         enhancedLog({category: 'app', event: 'shutdown', details: {reason: 'before-quit'}});
         unregisterDiagnosticsIpc();
         unregisterStrmConfigIpc();
         unregisterCd2Ipc();
+        var nativeShutdown = unregisterNativeHelperIpc();
+        Promise.resolve(nativeShutdown).catch(function () {}).then(function () { app.quit(); });
     });
     ipcMain.on('enhanced-diagnostics', function (event, snapshot) {
         if (event.sender === getWebContents()) {

@@ -15,6 +15,10 @@
     padding: 0 !important;
 }
 
+.mpv-videoPlayerContainer-native {
+    pointer-events: none;
+}
+
 .mpv-videoPlayerContainer-withBackdrop {
     background-repeat: no-repeat;
     background-position: center center;

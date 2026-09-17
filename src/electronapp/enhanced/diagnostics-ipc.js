@@ -61,7 +61,9 @@ function register(options) {
 
     registerHandler(CHANNELS.GET_STATUS, async function () {
         if (!logger || typeof logger.status !== 'function') return {status: 'error', reason: 'diagnostics_unavailable'};
-        return Object.assign({status: 'ok'}, await logger.status());
+        return Object.assign({status: 'ok'}, await logger.status(), {
+            nativeHelper: typeof settings.getNativeHelperStatus === 'function' ? settings.getNativeHelperStatus() : null
+        });
     });
 
     registerHandler(CHANNELS.EXPORT, async function () {

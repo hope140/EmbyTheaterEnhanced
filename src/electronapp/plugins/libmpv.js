@@ -1,4 +1,4 @@
-define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter', 'appSettings', 'userSettings', 'require', 'connectionManager', '../resolvers/strm-resolver.js', '../resolvers/strm-config-client.js', '../resolvers/strm-identity-recovery.js', '../enhanced/playback-route-stats.js'], function (globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, require, connectionManager, strmResolver, strmConfigClient, strmIdentityRecovery, playbackRouteStats) {
+define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter', 'appSettings', 'userSettings', 'require', 'connectionManager', '../resolvers/strm-resolver.js', '../resolvers/strm-config-client.js', '../resolvers/strm-identity-recovery.js', '../enhanced/playback-route-stats.js', '../native-helper/client.js'], function (globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, require, connectionManager, strmResolver, strmConfigClient, strmIdentityRecovery, playbackRouteStats, nativeHelperClient) {
     'use strict';
 
     function getTextTrackUrl(subtitleStream, serverId) {
@@ -123,6 +123,8 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
         var videoDialog;
         var libmpv;
+        var mediaElementPromise;
+        var mediaElementEpoch = 0;
         var currentAspectRatio = 'auto';
 
         var orgRefreshRate;
@@ -157,6 +159,10 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 request.controller.signal.removeEventListener('abort', request.abortListener);
                 request.abortListener = null;
             }
+            if (request.bridgeErrorListener) {
+                removeEventListener('native-helper-error', request.bridgeErrorListener);
+                request.bridgeErrorListener = null;
+            }
         }
 
         function invalidatePlayRequest() {
@@ -167,6 +173,9 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 activePlayRequest = null;
                 previous.controller.abort();
                 cleanupCorePlaying(previous);
+            }
+            if (libmpv && typeof libmpv.retireGeneration === 'function') {
+                libmpv.retireGeneration('upper-play-invalidated');
             }
         }
 
@@ -184,6 +193,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 controller: new AbortController(),
                 corePlayingListener: null,
                 abortListener: null,
+                bridgeErrorListener: null,
                 corePlayingLogged: false,
                 nativeFallbackToastRequested: false
             };
@@ -243,7 +253,14 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                     cleanupCorePlaying(request);
                     reject(supersededError());
                 };
+                request.bridgeErrorListener = function (event) {
+                    var error = new Error(event && event.detail && event.detail.reason || 'Native helper terminated');
+                    error.name = 'NativeHelperError';
+                    cleanupCorePlaying(request);
+                    reject(error);
+                };
                 addEventListener('core-playing', request.corePlayingListener);
+                addEventListener('native-helper-error', request.bridgeErrorListener);
                 request.controller.signal.addEventListener('abort', request.abortListener, {once: true});
             });
         }
@@ -601,16 +618,32 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         }
 
         function createMediaElement(options) {
-
-            return new Promise(function (resolve, reject) {
-
+            if (libmpv) return Promise.resolve();
+            if (mediaElementPromise) return mediaElementPromise;
+            var creationEpoch = ++mediaElementEpoch;
+            var pending = new Promise(function (resolve, reject) {
                 var dlg = document.querySelector('.mpv-videoPlayerContainer');
-
+                var createdEndpoint = null;
+                function fail(error) {
+                    if (createdEndpoint && typeof createdEndpoint.destroy === 'function') {
+                        try {
+                            var destroyed = createdEndpoint.destroy();
+                            if (destroyed && typeof destroyed.catch === 'function') destroyed.catch(function () {});
+                        } catch (_) { }
+                    }
+                    if (libmpv === createdEndpoint) libmpv = null;
+                    if (videoDialog === dlg) videoDialog = null;
+                    if (dlg && dlg.parentNode) dlg.parentNode.removeChild(dlg);
+                    reject(error);
+                }
+                if (dlg && !libmpv) {
+                    if (dlg.parentNode) dlg.parentNode.removeChild(dlg);
+                    if (videoDialog === dlg) videoDialog = null;
+                    dlg = null;
+                }
                 if (!dlg) {
-
                     require(['css!./libmpv'], function () {
-
-                        var dlg = document.createElement('div');
+                        dlg = document.createElement('div');
 
                         dlg.classList.add('mpv-videoPlayerContainer');
 
@@ -625,29 +658,50 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
                         document.body.insertBefore(dlg, document.body.firstChild);
                         videoDialog = dlg;
-
-                        var embed = document.createElement('embed');
-                        embed.type = 'application/x-mpvjs';
-                        embed.classList.add('mpv-videoPlayer');
-                        embed.addEventListener('message', message);
-                        embed.style.opacity = 0;
-                        libmpv = embed;
-
-                        addEventListener('ready', async () => {
-                            if (window.enhancedDiagnostics) window.enhancedDiagnostics(libmpv, 'ready');
-                            await observeProperty(['pause', 'time-pos', 'duration', 'volume', 'mute', 'eof-reached', 'demuxer-cache-state', 'demuxer-cache-time', 'estimated-vf-fps', 'sub-delay', 'speed', 'core-idle'])
-                            resolve();
-                        }, { once: true })
-
-                        dlg.insertBefore(embed, dlg.firstChild);
-
-                    });
-
+                        nativeHelperClient.create({ipc: window.ipc}).then(function (bridge) {
+                            if (creationEpoch !== mediaElementEpoch) {
+                                createdEndpoint = bridge && bridge.endpoint;
+                                throw supersededError();
+                            }
+                            if (bridge.mode === 'pepper') {
+                                var embed = document.createElement('embed');
+                                embed.type = 'application/x-mpvjs';
+                                embed.classList.add('mpv-videoPlayer');
+                                embed.addEventListener('message', message);
+                                embed.style.opacity = 0;
+                                createdEndpoint = embed;
+                                libmpv = embed;
+                                addEventListener('ready', function () {
+                                    if (creationEpoch !== mediaElementEpoch) return fail(supersededError());
+                                    if (window.enhancedDiagnostics) window.enhancedDiagnostics(libmpv, 'ready');
+                                    observeProperty(['pause', 'time-pos', 'duration', 'volume', 'mute', 'eof-reached', 'demuxer-cache-state', 'demuxer-cache-time', 'estimated-vf-fps', 'sub-delay', 'speed', 'core-idle']).then(resolve, fail);
+                                }, {once: true});
+                                dlg.insertBefore(embed, dlg.firstChild);
+                                return;
+                            }
+                            dlg.classList.add('mpv-videoPlayerContainer-native');
+                            createdEndpoint = bridge.endpoint;
+                            libmpv = bridge.endpoint;
+                            libmpv.addEventListener('message', message);
+                            libmpv.style.opacity = 0;
+                            return observeProperty(['pause', 'time-pos', 'duration', 'volume', 'mute', 'eof-reached', 'demuxer-cache-state', 'demuxer-cache-time', 'estimated-vf-fps', 'sub-delay', 'speed', 'core-idle']).then(function () {
+                                dispatchEvent(new Event('native-helper-ready'));
+                                if (window.enhancedDiagnostics) window.enhancedDiagnostics(libmpv, 'ready');
+                                resolve();
+                            });
+                        }).catch(fail);
+                    }, fail);
                 } else {
-
                     resolve();
                 }
             });
+            mediaElementPromise = pending;
+            pending.then(function () {
+                if (mediaElementPromise === pending) mediaElementPromise = null;
+            }, function () {
+                if (mediaElementPromise === pending) mediaElementPromise = null;
+            });
+            return pending;
         }
 
         function toTicks(val) {
@@ -655,6 +709,12 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         }
 
         function message(recv) {
+            if (recv.data.type == 'bridge_error') {
+                var reason = recv.data.data && recv.data.data.reason || 'native-helper-terminated';
+                dispatchEvent(new CustomEvent('native-helper-error', {detail: {reason: reason}}));
+                self._onError({name: 'NativeHelperError', message: reason});
+                return;
+            }
             if (recv.data.type == 'ready') {
                 dispatchEvent(new Event(recv.data.type))
             }
@@ -997,7 +1057,10 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 playerOptions["sub-color"] = subtitleAppearanceSettings.textColor
             }
 
-
+            if (libmpv && typeof libmpv.beginGeneration === 'function') {
+                await libmpv.beginGeneration(request.requestId);
+                assertCurrentPlayRequest(request);
+            }
             await setProperty(Object.assign(playerOptions, audioDelay(), interlace(), createClosedCaptionTrack(mediaSource, isVideo), getMpvAudioOptions(mediaType)))
             assertCurrentPlayRequest(request);
             emitClientDiagnostic('info', 'playback', 'loadfile-requested', Object.assign(requestDiagnosticDetails(request), {
@@ -1016,7 +1079,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             }
 
             var subtitleIndexToSet = mediaSource.DefaultSubtitleStreamIndex == null ? -1 : mediaSource.DefaultSubtitleStreamIndex;
-            await setSubtitleStream(subtitleIndexToSet)
+            await setSubtitleStream(subtitleIndexToSet, request)
             assertCurrentPlayRequest(request);
             await setProperty({
                 start: `${Math.floor(startPositionTicks / 10000000)}`,
@@ -1344,6 +1407,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         }
 
         self._onEstimatedVfFpsChanged = async function (fps) {
+            var ownerRequest = activePlayRequest;
             if (appSettings.get('mpv-displaysync') === 'true' && refreshRates && fps) {
                 if ((window.innerWidth == screen.width) && (screen.height == window.innerHeight)) {
                     var calc = calcRefreshRate(refreshRates, fps)
@@ -1357,11 +1421,11 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                         }
                     }
                     var newRate = pos[0] ? pos[0] : calc[0]
-                    if (newRate && newRate != curRefreshRate) {
+                    if (newRate && newRate != curRefreshRate && isCurrentPlayRequest(ownerRequest)) {
                         self.pause()
                         curRefreshRate = await setRefreshRate(newRate)
                         await new Promise(r => setTimeout(r, 3000));
-                        self.unpause()
+                        if (isCurrentPlayRequest(ownerRequest)) self.unpause()
                     }
                 }
             }
@@ -1397,9 +1461,11 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             return playerState.playbackRate;
         };
 
-        function destroyInternal() {
+        async function destroyInternal() {
 
             invalidatePlayRequest();
+            mediaElementEpoch++;
+            mediaElementPromise = null;
 
             embyRouter.setTransparency('none');
 
@@ -1412,9 +1478,12 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             var dlg = videoDialog;
             if (dlg) {
                 videoDialog = null;
-                dlg.parentNode.removeChild(dlg);
+                if (dlg.parentNode) dlg.parentNode.removeChild(dlg);
             }
             if (libmpv) {
+                if (typeof libmpv.destroy === 'function') {
+                    try { await libmpv.destroy(); } catch (_) { }
+                }
                 libmpv = null
             }
 
@@ -1535,7 +1604,8 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             })
         }
 
-        function setSubtitleStream(index) {
+        function setSubtitleStream(index, ownerRequest) {
+            ownerRequest = ownerRequest || activePlayRequest;
             setProperty({ "sub-delay": 0 })
             if (index === null || index < 0) {
                 return setProperty({ "sid": "no" });
@@ -1551,10 +1621,17 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                             if (stream.DeliveryMethod == 'External') {
                               const promise = new Promise((resolve, reject) => {
                                 setTimeout(() => { resolve() }, 700);
-                              });
-                              promise.then(() => {
-                                sendCommand(["sub-add", stream.DeliveryUrl, "cached", stream.DisplayTitle, stream.Language]);
-                              });
+                               });
+                               promise.then(() => {
+                                 if (isCurrentPlayRequest(ownerRequest)) {
+                                     var pendingSubtitle = sendCommand(["sub-add", stream.DeliveryUrl, "cached", stream.DisplayTitle || "", stream.Language || ""]);
+                                     if (pendingSubtitle && typeof pendingSubtitle.catch === 'function') {
+                                         pendingSubtitle.catch(function () {
+                                             emitClientDiagnostic('warn', 'playback', 'subtitle-command-failed', requestDiagnosticDetails(ownerRequest));
+                                         });
+                                     }
+                                 }
+                               });
                             }
                             return enableInternalSubtitleStream(stream, subIndex);
                         }
@@ -1602,6 +1679,9 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         }
 
         function getProperty(data) {
+            if (libmpv && typeof libmpv.getProperty === 'function') {
+                return libmpv.getProperty(data);
+            }
             return new Promise((resolve, reject) => {
                 var type = 'get_property_async';
                 if (libmpv) {
@@ -1614,6 +1694,9 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         }
 
         function observeProperty(props) {
+            if (libmpv && typeof libmpv.observeProperties === 'function') {
+                return libmpv.observeProperties(props);
+            }
             var type = 'observe_property';
             for (var data of props) {
                 if (libmpv) {
@@ -1624,6 +1707,9 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         }
 
         function setProperty(props) {
+            if (libmpv && typeof libmpv.setProperties === 'function') {
+                return libmpv.setProperties(props);
+            }
             var type = 'set_property';
             for (var prop of Object.keys(props)) {
                 var data = { name: prop, value: props[prop] }
@@ -1635,6 +1721,9 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         }
 
         function sendCommand(data) {
+            if (libmpv && typeof libmpv.sendCommand === 'function') {
+                return libmpv.sendCommand(data);
+            }
             var type = 'command';
             if (libmpv) {
                 libmpv.postMessage({ type, data })
