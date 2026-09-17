@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-09-17 — Deterministic generation fixture
+
+基于 `feat/native-helper-bridge@aef373a81aeb88244f219e83e805a148a33e6ef1` 仅修 formal fixture。诊断以两个相同 focused run 证明原 `sleep(250)` 不保证 overlap：一次 Play #1 已 fulfilled 后 Play #2 才进入，另一次 Play #2 在 Play #1 pending 时正确触发 PlaybackSuperseded。原 `oldCoreListenerIgnored` 也只是 `rapid[0].status==='rejected'`，未观察 listener 或 stale event；production generation、event ownership 与 controller stale drop 均通过，无 production bug。
+
+新增 browser/Node 共用 generation observer：Play #1 的 listener 注册、native generation 建立与 pending Promise 构成 overlap gate；Play #2 takeover 必须 retire exact old generation，Play #1 reject PlaybackSuperseded；old listener 必须 remove 且 takeover 后 callback 增量为 0，Play #2 current generation fulfilled。Stop subcase 使用 listener+pending gate，在 beginGeneration/load 前 stop。focused runtime 连续三次五项均 PASS、active CD2=0；observer unit `3/3`、全量 `npm test 195/195`、syntax/diff check PASS。production files 未修改；Stop barrier patch 保留未应用。正式 source-commit build/pipeline 需在本 harness commit 成为 HEAD 后执行。
+
 ## 2026-09-17 — Ready diagnostics generation ownership fix
 
 基于 `feat/native-helper-bridge@667009e995ff8a6bf08805abf176a745ce9fab86` 修复 production startup-order race：fresh native endpoint ready 后，optional diagnostics collect 可能在 STRM/CD2 resolver 等待期间先完成，并以 generic postMessage 提交 cache snapshot 的 set_property/expand command；此时 generation 尚未建立，两个 `generation-required` 被 client 提升为 playback-fatal bridge_error，随后 PlaybackManager error cleanup 清空 player。根因与旧 remote Stop 无关；`.work/stop-barrier-candidate.patch` 保留且未应用。

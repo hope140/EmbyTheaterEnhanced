@@ -20,6 +20,15 @@ npm test
 
 上述 synthetic/native gate 不替代正式 source-commit build、installer、REAL Emby playback、Session/reporting、remote control、NextTrack、10+ minute、HDR 或 mixed-DPI acceptance。
 
+## Deterministic generation fixture
+
+```powershell
+node --test tests/generation-fixture-observer.test.cjs
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/test-runtime.ps1 -RuntimeName <verified-runtime> -TestPipeline -TestCd2
+```
+
+observer unit 覆盖 listener+native-generation+pending overlap gate、settle-before-gate rejection 与 pre-generation Stop listener gate。formal fixture 关联 Play #1/2 requestId、generation retirement、PlaybackSuperseded、listener remove/callback-after-takeover 和 current-generation completion；不使用固定 sleep 推断 overlap。Stop-barrier candidate 不属于该测试修复。
+
 ## Native ready diagnostics generation boundary
 
 ```powershell

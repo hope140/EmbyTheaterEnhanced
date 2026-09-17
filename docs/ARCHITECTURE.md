@@ -14,6 +14,8 @@ Native endpoint 的 ready-stage 精确 cache snapshot 是 optional diagnostic mu
 
 正式 runtime harness 不以 BrowserWindow 创建顺序或数量判断 application ownership。它只把 exact packaged `electronapp/www/index.html` 的 `file:` document 绑定为唯一 application renderer，绑定存活期间不会被后续窗口覆盖；native-helper `data:` surface 和未来辅助窗口只做脱敏分类，不接收 AMD、pluginManager 或 pipeline 注入。AMD 状态是选定 application 后的 assertion，不是 window identity。
 
+Generation fixture 不再用固定 sleep 猜测 A/B overlap。harness observer 只有在 Play A 的 core-playing listener 已注册、native generation 已创建且 Promise 仍 pending 时才放行 Play B；它关联 requestId/generationId、retire 与 listener removal。旧 listener assertion 检查 takeover 后 callback 不再增加，而不是复用 Promise rejected。Stop subcase 在 listener 已注册且 Promise pending、但 generation/load 尚未开始时触发 stop，以确定性验证 late load 被阻止。
+
 基线为提供的 Carnival 3.0（应用声明 3.0.20-3.0）叠加综合补丁。保留 Windows .NET 启动壳、Electron、离线 Web UI 与内嵌 libmpv 的现有目录关系。
 
 普通视频：Emby → PlaybackManager → 原生 MediaSource → libmpv 插件 → Pepper bridge → mpv-1.dll。Session、PlaySession、进度和远控仍由 Emby Web 生命周期负责。

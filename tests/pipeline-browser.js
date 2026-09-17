@@ -195,31 +195,55 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
     let generation = null;
     if (cd2AsyncHit) {
         markStage('generation-tests');
+        const generationObserver = eteGenerationFixtureObserver.create({target:window,timeoutMs:3000,now:function(){return performance.now();}});
+        const originalEnhancedDiagnostics = window.enhancedDiagnostics;
+        window.enhancedDiagnostics = function (bridge, stage) {
+            if (stage === 'ready') generationObserver.attachBridge(bridge);
+            return originalEnhancedDiagnostics.apply(this, arguments);
+        };
+        const currentReadinessBridge = window.__etePepperReadiness && (window.__etePepperReadiness.playingBridge || window.__etePepperReadiness.readyBridge);
+        if (currentReadinessBridge) generationObserver.attachBridge(currentReadinessBridge);
         const sidecarBase = mountSidecar || 'X:\\Media\\fixture.y4m.strm';
         const directOptions = (name, requestId) => ({
             item:{Id:'generation-'+name,ServerId:'fixture-server',Name:'Generation '+name,MediaType:'Video',Type:'Movie',Path:sidecarBase.replace(/[^\\/]+$/,name+'.y4m.strm')},
             mediaSource:{Id:'generation-source-'+name,Path:fixture,Container:'strm',MediaStreams:[],RunTimeTicks:50000000},
             url:fixture,mediaType:'Video',fullscreen:false,playMethod:'DirectPlay',_etePlayRequestId:requestId
         });
+        generationObserver.registerFixture('fixturePlay#1',9001);
         const first = embedded.play(directOptions('a', 9001));
-        await sleep(250);
+        first.then(function(){generationObserver.markPromiseSettled('fixturePlay#1','fulfilled');},function(error){generationObserver.markPromiseSettled('fixturePlay#1','rejected',error);});
+        const firstGate = await generationObserver.waitForOverlapGate('fixturePlay#1');
+        generationObserver.registerFixture('fixturePlay#2',9002);
+        generationObserver.markTakeover('fixturePlay#1','fixturePlay#2');
         const second = embedded.play(directOptions('b', 9002));
+        second.then(function(){generationObserver.markPromiseSettled('fixturePlay#2','fulfilled');},function(error){generationObserver.markPromiseSettled('fixturePlay#2','rejected',error);});
         const rapid = await Promise.allSettled([first, second]);
         const newestSource = embedded.currentSrc();
         const beforeStop = newestSource;
+        generationObserver.registerFixture('fixtureStop#1-play',9003);
         const stoppedPending = embedded.play(directOptions('stop', 9003));
-        await sleep(150);
+        stoppedPending.then(function(){generationObserver.markPromiseSettled('fixtureStop#1-play','fulfilled');},function(error){generationObserver.markPromiseSettled('fixtureStop#1-play','rejected',error);});
+        await generationObserver.waitForListenerGate('fixtureStop#1-play');
+        generationObserver.cancelOverlapGate('fixtureStop#1-play');
         await embedded.stop();
         const stopped = await Promise.allSettled([stoppedPending]);
         await sleep(220);
+        const observerSnapshot = generationObserver.snapshot();
+        const firstObservation = observerSnapshot.fixtures.find(value=>value.fixtureId==='fixturePlay#1');
+        const secondObservation = observerSnapshot.fixtures.find(value=>value.fixtureId==='fixturePlay#2');
+        const takeover = observerSnapshot.takeovers.find(value=>value.oldFixtureId==='fixturePlay#1' && value.newFixtureId==='fixturePlay#2');
+        const firstRetirement = observerSnapshot.retirements.find(value=>value.generationId===firstObservation.nativeGenerationId && value.reason==='upper-play-invalidated');
         generation = {
-            firstSuperseded:rapid[0].status==='rejected' && rapid[0].reason && rapid[0].reason.playbackSuperseded===true,
+            firstSuperseded:firstGate.pending===true && takeover && takeover.activeRequestBefore===firstObservation.requestId && !!firstRetirement && rapid[0].status==='rejected' && rapid[0].reason && rapid[0].reason.playbackSuperseded===true,
             secondPlayed:rapid[1].status==='fulfilled' && newestSource.indexOf('play-9002-')>=0,
-            oldCoreListenerIgnored:rapid[0].status==='rejected',
+            oldCoreListenerIgnored:firstObservation.listenerRemoved===true && firstObservation.callbackCountAfterTakeover===0 && secondObservation.promiseSettlement==='fulfilled',
             stopSuperseded:stopped[0].status==='rejected' && stopped[0].reason && stopped[0].reason.playbackSuperseded===true,
             stopPreventedLateLoad:embedded.currentSrc()===beforeStop,
-            noUnhandledRejection:!trace.some(value=>value.indexOf('rejection:')===0)
+            noUnhandledRejection:!trace.some(value=>value.indexOf('rejection:')===0),
+            observer:observerSnapshot
         };
+        generationObserver.restore();
+        window.enhancedDiagnostics = originalEnhancedDiagnostics;
     }
     markStage('pipeline-complete');
     return {stopBeforePlayer,results,next,generation,records,calls,stages};

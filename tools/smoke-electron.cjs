@@ -219,6 +219,9 @@ app.on('browser-window-created', (_, win) => {
                 if (!screenshot.isEmpty()) fs.writeFileSync(path.join(evidence, 'startup.png'), screenshot.toPNG());
                 if (process.env.ETE_TEST_PIPELINE) {
                     applicationPipelineInjectionCount++;
+                    const generationObserverSource = fs.readFileSync(path.join(__dirname,'../tests/generation-fixture-observer.js'),'utf8');
+                    state.generationObserverLoaded = await win.webContents.executeJavaScript(withSourceUrl(generationObserverSource + '\n!!globalThis.eteGenerationFixtureObserver', 'ete-generation-fixture-observer.js'));
+                    if (!state.generationObserverLoaded) throw new Error('generation-fixture-observer-unavailable');
                     const source = fs.readFileSync(path.join(__dirname,'../tests/pipeline-browser.js'),'utf8');
                     state.pipeline = await win.webContents.executeJavaScript(withSourceUrl(source + '\nrunPipelineFixture(' + JSON.stringify(fixtureUrl) + ', ' + JSON.stringify(process.env.ETE_TEST_MOUNT_SIDECAR || null) + ', ' + JSON.stringify(process.env.ETE_TEST_CD2_EXPECT || process.env.ETE_TEST_CD2_MODE || null) + ', ' + JSON.stringify(testCd2Origin || null) + ', ' + JSON.stringify(process.env.ETE_TEST_STOP_BEFORE_PLAYER === '1') + ')', 'ete-pipeline-fixture.js'));
                     if (process.env.ETE_TEST_STOP_BEFORE_PLAYER === '1') {

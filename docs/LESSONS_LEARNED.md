@@ -1,5 +1,11 @@
 # 已确认经验
 
+## 2026-09-17 — Deterministic generation fixture evidence
+
+- `sleep(N)` 不能证明两个异步 Play overlap；timer 恢复可能晚于第一轮 core-playing/Promise settle。只有 listener 已注册、native generation 已建立且 Promise pending 才是可被下一 Play supersede 的确定 gate。
+- Promise rejected、generation retired、listener ignored 与 stale event dropped 是不同事实。已 fulfilled Promise 不会因后续 retire 追溯 reject；旧 listener assertion 应观察 remove/callback-after-takeover，controller ownership应观察 stale drop。
+- Stop-before-load case 应在 core listener 已注册且 Promise pending、但 beginGeneration/load 前触发 stop，才能稳定验证 late load prevention；复用 full overlap gate 会等到 source 已加载，反而破坏原测试语义。
+
 ## 2026-09-17 — Optional diagnostics and generation ownership
 
 - endpoint ready 不等于 playback generation ready。ready diagnostics 若经过异步 property collect，可能在 resolver 等待期间先于 beginGeneration 完成；随后 generic set/command 会合法触发 generation-required，但不能把这个 optional snapshot failure 提升为 playback fatal。
