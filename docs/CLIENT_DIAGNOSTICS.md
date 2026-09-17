@@ -114,3 +114,42 @@ EmbyTheaterEnhanced-Diagnostics-YYYYMMDD-HHmmss.txt
 诊断 IPC 只接受当前 BrowserWindow 的可信 sender。导出失败、打开目录失败、清空失败只反馈给设置页，不会使客户端崩溃，也不会改变播放 fallback。
 
 本轮覆盖 resolver、CD2、Mount 和 libmpv playback 的低风险事件。由于禁止侵入旧 upstream Web UI、`apiclient.js`、`connectionmanager.js`、PlaybackManager vendor snapshot 和 WebSocket 生命周期，Session capability、NowPlaying、WebSocket 状态与真实双客户端事件保持 `DEFERRED OBSERVABILITY`。真实 Windows 客户端播放各 route、导出 TXT 和交给 AI 的验收仍需要人工执行。
+
+## 一键脱敏诊断包
+
+v0.2.0 之后的观察工具分支提供独立只读 collector：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/collect-diagnostics.ps1
+```
+
+默认在当前目录生成：
+
+```text
+ETE-Diagnostics-YYYYMMDD-HHMMSS\
+ETE-Diagnostics-YYYYMMDD-HHMMSS.zip
+```
+
+默认时间范围为最近 20 分钟。已知问题时间时可收窄到前后各 5 分钟：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/collect-diagnostics.ps1 `
+  -ProblemTime '2026-09-17T21:30:00+08:00'
+```
+
+可用参数包括 `-OutputRoot`、`-LookbackMinutes`、`-ProblemWindowMinutes`、`-MaxLogLines` 和 `-NoZip`。`-LogRoot`、`-InstallRoot` 与 `-CaptureTime` 主要用于隔离验证或非标准安装路径；正常安装不需要指定。
+
+目录内容固定为：
+
+- `product.json`：版本、source commit、runtime provenance presence、bridge/runtime version 与 Windows version。
+- `processes.json`：ETE host、owned Electron、Native Helper PID/count 和 residual status；不读取或输出 command line。
+- `playback.json`：最近 play/route/reason/source kind/resolver/core-playing/generation 的已有日志证据。
+- `cd2.json`：最近 rule、Find、download、DirectUrl、reason、elapsed 的已有日志证据。
+- `session.json`：Session/WebSocket/report 证据；v0.2.0 没有对应 client event 时明确为 `UNAVAILABLE`。
+- `errors.json`：有界 client error 与 Windows crash event metadata，不保存 Windows event message 正文。
+- `logs/client.jsonl`：仅四个 ETE client log 轮转文件中位于时间窗口内的有界、再次脱敏记录。
+- `manifest.json`：tool/capture/app/source/time range、文件 hash、collection warnings 与 redaction Gate。
+
+collector 不扫描磁盘、媒体库、115 或 CD2 目录，不读取用户配置正文，也不主动触发目录 enumerate、cache warm、retry 或播放。路径摘要只包含 kind、root class、segment count、extension 和 hash；URL 摘要只包含 scheme、host hash、path class 与 query presence。ID 使用每包随机 key 的 HMAC-SHA256 短哈希，key 不写入包，因此只保证同包事件关联。
+
+ZIP 只有在整目录二次扫描通过且 `manifest.json` 中 `redactionPassed=true` 时才生成。若 Gate 失败，脚本退出并拒绝生成 ZIP；不得发送该目录，先保留本机现场并检查 `redactionWarnings`。

@@ -1,5 +1,17 @@
 # 项目状态
 
+## 2026-09-17 — Sanitized Diagnostic Bundle Collector ready
+
+基于正式 `v0.2.0` / `origin/main@dbe2f0fe8891e4fbd91a8dedcbb94eac82c66472` 创建独立 `codex/diagnostics-tooling` worktree，只新增只读诊断收集脚本、测试和文档；没有修改 `src/**`、runtime、installer、PlaybackManager、Native Helper、Resolver、CD2、Session、WebSocket、缓存、Electron 或已发布安装。
+
+`tools/collect-diagnostics.ps1` 默认收集最近 20 分钟，也支持问题时间点前后各 5 分钟。输入仅限四个精确 ETE client log 轮转文件、已知 runtime metadata、ETE-owned process tree 和有界 Windows crash event；不读取进程命令行、媒体库、CD2 目录、用户配置正文或整盘文件。输出包含 `product.json`、`processes.json`、`playback.json`、`cd2.json`、`session.json`、`errors.json`、有界 `logs/client.jsonl` 和 `manifest.json`，默认生成同名 ZIP。
+
+每次采集生成不落盘的随机 HMAC-SHA256 key；Device/Session/PlaySession/MediaSource/Item/User/Request/helper/path/host 标识在包内使用稳定 16 位短哈希。路径只保留 kind、root class、segment count、extension 和 hash；URL 只保留 scheme、host hash、path class 和 query-present。整包在 ZIP 前执行独立模式扫描，只有 `manifest.redactionPassed=true` 才允许压缩。
+
+合成安全 Gate 覆盖 fake token、server URL、username、Windows/UNC/POSIX path、相对媒体文件名、pickcode、全部要求的 ID、URL query、重复 ID、空/缺失日志、轮转日志、问题时间窗、500 行日志、tail 上限、manifest file hash、malformed JSONL 和 invalid UTF-8；Windows drive、UNC 与 POSIX 的 kind/root/segment/extension 另有精确断言。目录与 ZIP 均为 `0 raw fixture secrets`；测试还在 bundle 创建后注入 raw URL，确认 manifest 转为 `redactionPassed=false`、进程返回 2 且 ZIP 不生成。targeted black-box test PASS。最终用本机当前 v0.2.0 profile 做一次只读真实 collector smoke，约 `2.8s` 完成，识别 app version `0.2.0` 与 source commit `dbe2f0f...`，8 个 payload 文件、ZIP 和最终 redaction Gate 均 PASS；临时诊断目录已在核验后删除。v0.2.0 client log 尚无 Session/WebSocket/report observer 时，collector 明确输出 `UNAVAILABLE` 和 collection warning，不把缺失观测推断为状态。
+
+当前状态：`DIAGNOSTIC BUNDLE = READY`。Issue Snapshot、CD2 cold/warm observer、renderer ReferenceError observer 和 installer residual audit 尚未开始；`OBSERVATION TOOLING` 仍未完成。
+
 ## 2026-09-17 — v0.2.0 Release Gate revalidation
 
 基于 `feat/native-helper-bridge@569c8dfbcd18725bf41a323c49cdfa4d38c8fa6b` 完成版本与 candidate gate 复核。authoritative 版本来源仅更新 `package.json` 与 `package-lock.json` 的对应字段；没有修改 playback code，也没有修改真实 profile 或制造 CD2 mapping。

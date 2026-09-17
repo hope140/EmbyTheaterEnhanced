@@ -1,5 +1,19 @@
 # 开发日志
 
+## 2026-09-17 — Sanitized Diagnostic Bundle Collector
+
+Model Tier：1。Model：current Codex session。Reason：边界明确的只读 PowerShell tooling、递归脱敏、manifest/ZIP Gate 和合成安全测试；无 Playback/Session lifecycle 或产品架构修改。Escalated：no。
+
+从正式 `v0.2.0` merge commit `dbe2f0fe8891e4fbd91a8dedcbb94eac82c66472` 创建隔离 worktree `E:\ETE-diagnostics-tooling` 与分支 `codex/diagnostics-tooling`。本轮只实现第一项 `SANITIZED DIAGNOSTIC BUNDLE COLLECTOR`；没有开始 Issue Snapshot、CD2 observer、ReferenceError observer 或 installer residual audit，也没有修改已发布 v0.2.0、真实 profile、安装器或任何 `src/**` 产品行为。
+
+新增 `tools/collect-diagnostics.ps1`。默认窗口是采集时刻前 20 分钟；`-ProblemTime` 使用该时间点前后各 `-ProblemWindowMinutes`（默认 5）分钟。脚本只读取 `ete-client.jsonl(.1/.2/.3)`、已知 runtime metadata、ETE-owned process tree 和最多 100 条指定 Windows Application crash event。每个包使用未持久化随机 key 的 HMAC-SHA256 16 位短哈希；结构化递归 sanitizer 会删除 credential/username/pickcode/command-line/environment 字段，并将 ID、路径和 URL 转为 allowlisted summaries。采集结果分文件写入后重新扫描整包；任何 raw URL、Bearer、secret assignment、absolute path、sensitive key 或 raw sensitive-ID key 都会令 `redactionPassed=false` 并在压缩前退出。
+
+新增 PowerShell black-box self-test 与 Node test wrapper。fixture 将 480 条有界日志、malformed JSON、invalid UTF-8 和两条含敏感信息的有效事件写入精确 client log，同时在同目录放置带 secret 的 decoy 文件，证明 collector 不会扩大读取范围。测试覆盖 fake token、带 userinfo/query 的 server URL、username、Windows/UNC/POSIX media path、相对 media filename、115 pickcode、DeviceId、SessionId、PlaySessionId、MediaSourceId、ItemId、重复 ID 稳定哈希、空/缺失日志、`.1` 轮转与问题时间窗、manifest 文件 hash、`-MaxLogLines 25`、`-NoZip` 与默认 ZIP 二次扫描。另有并发安全测试在 bundle 目录创建后注入 raw URL，已验证 `redactionPassed=false`、exit 2 且无 ZIP。
+
+验证结果：PowerShell 5.1 parser PASS；`node --test tests/diagnostics-collector.test.cjs` PASS；`powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/diagnostics-collector-selftest.ps1` PASS。当前 fixture 的目录与 ZIP 均未包含任一 raw secret。独立审查发现 Windows/UNC separator normalization 与全局同名 helper 归属两项问题；现已修为单反斜杠 normalization，以及只将 ETE-owned helper 纳入 PID/count，unowned helper 只记录无 PID 的 count/status，并补齐 Windows drive、UNC、POSIX 路径精确断言。最终用当前本机 v0.2.0 profile 执行只读真实 collector smoke，约 `2806ms` 完成；manifest 为 `appVersion=0.2.0`、`sourceCommit=dbe2f0f...`、`filesIncluded=8`、`redactionPassed=true`，ZIP 存在；Session/WebSocket observer 与 Windows event access 分别以安全 warning 记录，临时目录核验后已删除。
+
+全量 `npm test` 尝试为 `189/198 PASS`。其中 8 项失败是该 fresh worktree 缺少 private/ignored Carnival Web input 与 prepared `src/electronapp/preload.js`；另 1 项为既有 real grpc-js connection-refusal reason assertion，单独复跑仍为 `26/27`。本轮新增 collector test 在全量中通过，未用代码规避或弱化这些无关失败。尚未发生真实日常故障现场，因此只声明 tooling READY，不声明已取得真实问题诊断证据。
+
 ## 2026-09-17 — v0.2.0 Release Gate revalidation
 
 Model Tier：2。Model：current Codex session。Reason：版本 authoritative source、source/native/runtime provenance、installer payload 与 installed Native Helper lifecycle 跨构建和验收层复核；没有改变 playback architecture。Escalated：no。
