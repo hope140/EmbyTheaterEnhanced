@@ -1,5 +1,25 @@
 # 测试与验收
 
+## Native helper bridge
+
+纯 Node contract：
+
+```powershell
+node --test tests/native-helper-protocol.test.cjs tests/native-helper-client.test.cjs tests/native-helper-service.test.cjs
+npm test
+```
+
+真实 native/Electron 测试使用 production source 编译的 helper、锁定 Electron 18.3.15、锁定 libmpv 与生成媒体。入口包括：
+
+- `tools/native-helper-electron-smoke.cjs`：handshake、native HWND、structured property、gpu-next/D3D11/d3d11va、Pause/Unpause/Seek/Stop 与视觉 capture。
+- `tools/native-helper-service-smoke.cjs`：main service 的 resize/maximize/restore/fullscreen/minimize、OSD mouse/focus。
+- `tools/native-helper-race-smoke.cjs`：A→B、A→B→C、Stop during load、crash/recreate 各 20 iterations。
+- `tools/native-helper-transport-smoke.cjs`：framing、backpressure、stderr、malformed input/output 与 pipe close。
+- `tests/native-helper-parent-death.ps1`：exact Electron parent termination 与 helper EOF cleanup。
+- `tools/native-helper-file-local-ua-smoke.cjs`：A UA→B UA→same-origin default，无跨媒体泄漏。
+
+上述 synthetic/native gate 不替代正式 source-commit build、installer、REAL Emby playback、Session/reporting、remote control、NextTrack、10+ minute、HDR 或 mixed-DPI acceptance。
+
 ## 当前自动检查
 
 ```powershell

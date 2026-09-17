@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-09-17 — Production Native Helper Bridge implementation candidate
+
+在 `feat/native-helper-bridge`、base `a16cdc72d9e8bc60284c759a126a3d77c33fa001` 上完成 Electron 18 first 的 production native-helper bridge 源码实现。新增 x64 C++ helper、little-endian framed private pipe、helper/generation/request identity、handshake、structured MPV node、native event attribution、bounded writer/stderr、main-process supervisor、独立 video host 与 renderer logical adapter。默认 bridge mode 为 native-helper；Pepper 只保留显式 `ETE_MPV_BRIDGE_MODE=pepper` 路径，不做自动 fallback。PlaybackManager、Session/PlaySessionId、MediaSourceId、WebSocket、report、Resolver、CD2/Mount、Electron/Chromium/Node 与 installer architecture 均未修改。
+
+当前自动验证：`npm test 173/173`；相关 JS/PowerShell syntax 通过；真实 Electron 18.3.15 + production source helper + bundled libmpv smoke PASS，实际 `current-vo=gpu-next`、D3D11、`hwdec-current=d3d11va`、native surface attach、Pause/Resume/Seek/Stop 与 structured properties PASS；独立 capture 已人工确认视频与 HTML OSD 同时可见。surface 的 resize/maximize/restore/fullscreen/minimize、OSD mouse/focus PASS。rapid A→B、A→B→C、Stop during load、helper crash/recreate 各 20/20，accepted stale event 为 0。Parent 强制终止后 helper 在 5 秒内退出，residual 0。20,000 property burst、1 MiB stderr、partial/invalid/oversized/malformed frames、unsupported version 与 pipe-close fail-closed PASS。普通 load error 保留 H1 并在同一 helper 恢复播放，recreateCount=0；旧 endpoint 不能 retire/destroy replacement；并发首次 Play 共享同一 helper creation，handshake 失败会清理 stale DOM 后允许重试。file-local UA 为 A=`ETE-A/1.0`、B=`ETE-B/1.0`、C=`libmpv`，无跨媒体泄漏。最终 production-source helper 连续播放到 `603.2s`，PID/transport稳定、stale=0，21 次采样 working set 峰值约 102.8 MiB，首尾增长约 0.76 MiB。
+
+当前仍是 **IMPLEMENTATION PASS / REAL ACCEPTANCE PENDING**。一次性 Git fixture 已证明 native helper 的 source-commit build/provenance 与双构建 byte identity，但真实分支 build 只接受当前 HEAD 的 Git blob；本轮尚未获得 commit/push 授权，因此正式 full runtime、package verify 和 installer 尚未执行。REAL Emby ordinary/STRM/CD2、Session/reporting、remote control、NextTrack 与 HDR 也未执行。`origin/main` 保持 `73eac9f`，没有 commit、push、PR 或 merge。完整 contract 见 [NATIVE_HELPER_BRIDGE](NATIVE_HELPER_BRIDGE.md)。
+
 ## 2026-09-17 — Production application identity parity
 
 基于 `origin/main@73eac9fa64c43804e9c5c53690ed087b2c5bb077` 独立修复正式 Electron 与 acceptance 的 application identity 漂移。正式启动与 acceptance 现在共同调用 `product-identity.js`，唯一语义为 runtime `package.productName || package.name`；正式启动在 bootstrap、persistent DeviceId、`loadStartInfo()` 与 `BrowserWindow` 创建前完成 `app.setName()`。当前构建 metadata 对应有效 identity 为 `Emby Theater Enhanced`。

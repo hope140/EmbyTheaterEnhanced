@@ -1,5 +1,11 @@
 # 构建与打包
 
+## Native helper payload
+
+Production bridge 增加 `electronapp/native-helper/ete-mpv-helper.exe` 与根 `native-helper-provenance.json`。先运行 `tools/prepare-native-helper-inputs.ps1` 获取并核对固定 mpv `client.h`；`tools/build.ps1` 在替换锁定 libmpv 后调用 `tools/build-native-helper.ps1`。helper source 只能来自 `sourceCommit` 的 Git blob，compiler/header/libmpv/source/helper/contract hash 均写入 provenance；dirty checkout 与 research binary 不参与。
+
+Inno `[Files]` 已递归复制整个 runtime，因此不增加独立 helper 安装/注册动作。helper 只由 Electron main 以固定相对路径启动，不作为服务、计划任务或公共 IPC endpoint。正式 package verify 仍必须在获授权 commit 上重新执行。
+
 ## 公开基线限制
 
 `v0.1.1-baseline` 是用于源码治理和审计的公开基线，并非独立可构建的发行源码包。公开仓库刻意不包含完整离线 Web snapshot、冻结 Electron/runtime、native binary、Carnival 输入或综合补丁输入；本地构建仍需要这些已锁定但未公开的输入。缺少这些内容时，`prepare.ps1` 或 `build.ps1` 不能完成是预期行为，不应视为公开仓库缺陷。

@@ -1,0 +1,74 @@
+# Production Native Helper Bridge
+
+状态：`feat/native-helper-bridge` 的 production implementation 已完成源码实现与分层验证；正式 source-commit build、installer 和 REAL Emby acceptance 仍待提交授权后执行。本文描述当前实现 contract，不把 research branch 的历史 PASS 当作本分支证据。
+
+## 固定边界
+
+Native Helper 只替代 Pepper/PPAPI mpv endpoint。PlaybackManager 继续拥有 Item、MediaSource、MediaSourceId、PlaySessionId、Session、WebSocket、播放上报、远控与 NextTrack；Resolver 继续只替换最终 source。当前实现没有修改 PlaybackManager、Session、Resolver、Electron、Chromium、Node 或 installer architecture。
+
+默认模式为 `native-helper`。临时 rollback/A-B 仅通过启动前显式设置 `ETE_MPV_BRIDGE_MODE=pepper` 选择；环境值在 main-process service 初始化后删除。helper 失败不会自动切换 Pepper。
+
+## 运行拓扑
+
+```text
+Emby Web / libmpv.js
+  -> restricted Electron IPC adapter
+Electron main native-helper service
+  -> private inherited stdin/stdout pipes
+ete-mpv-helper.exe
+  -> bundled mpv-1.dll
+  -> gpu-next / d3d11 / d3d11va
+  -> helper-owned WS_CHILD HWND
+
+independent transparent main BrowserWindow
+  -> existing Emby HTML UI / OSD / input above video host
+```
+
+Electron main 创建一个无边框、无 taskbar、不可聚焦的 video host BrowserWindow。helper 的 child HWND 只附着到该固定 host；现有 main BrowserWindow 保持 UI、OSD、键鼠与焦点 owner。video host 跟随 main 的 move、resize、maximize、restore、fullscreen、minimize 与 show/focus，并在 main 关闭时销毁 helper 和 host。真实 mixed-DPI 仍是既有 deferred coverage，不在本任务修复。
+
+## Upper bridge contract
+
+Renderer endpoint 保留 DOM-like `addEventListener/removeEventListener/postMessage`，并提供内部 typed helpers。现有上层语义映射如下：
+
+- `sendCommand` 仍是 submission-oriented；IPC accepted、libmpv command accepted、media lifecycle 和 `core-playing` 不混用。
+- `setProperty` 按原有 key 顺序提交 scalar value；`wid`、`fullscreen`、`vo` 与 `gpu-api` 由 adapter/surface 固定处理，避免破坏 native child HWND 与 `gpu-next/d3d11`。
+- `getProperty` 使用 `requestId`、绝对 monotonic deadline、transport close/crash rejection 与 exactly-once terminal state；MPV node map/array/scalar 保持结构化值。
+- 12 个现有 observed properties 保持原名与单位；只有当前 generation 的有效 `core-idle=false` 能合成 `core-playing`。
+- scalar `'stop'`、seek、cycle pause、external `sub-add`、diagnostic `expand-properties` 和 file-local `user-agent=` load option 均有明确 allowlist。
+- delayed external subtitle 与 display-sync pause/resume 额外绑定当前 upper Play request，supersede 后不会操作新媒体。
+
+## Wire protocol
+
+Protocol version 为 `1`。每个 frame 是 `uint32 little-endian payloadLength` 加 UTF-8 JSON。单 frame、receive buffer、decoded inbound queue、native writer frames/bytes 与 parent writer frames/bytes 均有界；invalid UTF-8、malformed JSON、zero/oversized frame、unsupported version/type/identity 与 queue overflow fail closed。
+
+每次 renderer endpoint 分配 adapter-local `endpointId`，每次 helper spawn 分配不可复用的 `helperInstanceId`；每次 logical media 分配单调 `generationId`；所有 response-bearing request 分配 `requestId`。endpoint/generation token 随受限 IPC call 传递，旧 endpoint 的 retire/destroy/command 不能作用于 replacement。这些 identity 只属于 bridge，不替代或暴露为 Emby identity。
+
+handshake 必须在 ready 前确认 protocol、helper version、libmpv runtime version/client API、capabilities、queue limits 与 native surface。当前固定 libmpv 为 `mpv v0.41.0-920-gdd5d17d32`，SHA256 `965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c`，client API `2.5`。
+
+## Native event attribution
+
+- serialized unbound load 通过 `START_FILE.playlist_entry_id` 绑定 generation。
+- `END_FILE.playlist_entry_id` 直接查同一映射；旧 generation event 在 parent authority boundary 丢弃。
+- generation-sensitive properties 使用 `mpv_observe_property.reply_userdata` token。
+- `FILE_LOADED` 只有 native state 中恰有一个 unique open mapped media identity 时才接受；否则 quarantine/drop，不猜 current generation。
+- B 成为 authoritative 后，A 的 event、response、error recovery 与 `core-idle=false` 均不能改变 B。已经在 A authoritative 时提交给 libmpv 的 load 不被错误描述为“从未发生”。
+
+## Crash 与关闭
+
+helper crash/EOF/protocol failure 会原子终止该 helper 的全部 pending request；late response 只记录/drop。下一次合法 Play 可创建 H2，且 H2 identity 与 H1 不同；当前播放停止/报错，不自动 fallback Pepper。Electron parent 被强制终止时，继承 pipe EOF 使 helper 自行退出；当前 production implementation 不需要额外 Job Object。
+
+stderr 持续 drain，只保留有界 tail。Native writer 将 response/error/lifecycle 作为 critical frame，高频 property 按 helper/generation/property key coalesce；critical budget exhaustion fail closed。Parent writer 在 Node stream backpressure 时使用 128 frames / 256 KiB 上限。
+
+## Build 与 provenance
+
+`tools/prepare-native-helper-inputs.ps1` 从 mpv 官方固定 commit `dd5d17d32` 获取 `include/mpv/client.h` 并核对 SHA256 `1acf99ee77c8c2a6f1d1993bd81bbc8a91d27fb5924e80171670e6139a4bd353`。`tools/build-native-helper.ps1` 只从 `sourceCommit` 的 Git blob materialize `native/mpv-helper/ete-mpv-helper.cpp`，不读取 dirty checkout bytes或 research binary。
+
+MSYS2 UCRT64 GCC 16.1.0 使用 C++17、static libgcc/libstdc++ 与 `--no-insert-timestamp`。helper 输出到 `electronapp/native-helper/ete-mpv-helper.exe`；`native-helper-provenance.json` 记录 source blob/hash、header、compiler hash/version/flags、libmpv、protocol 与 helper hash/size。`source-provenance.json` 再绑定该 record，最终 build manifest 与 installer 的递归 runtime payload自然包含 helper，不需要重设计安装器。
+
+当前未提交工作树的两次 production compilation 已达到 byte-identical；正式 source-commit build 必须等实现进入获授权的 commit 后重新执行，不能用 checkout build 替代。
+
+## 当前验证边界
+
+已完成：Node/fake protocol 与 renderer adapter；真实 Electron 18.3.15、真实 production-source helper、真实 libmpv/private pipes/native HWND；`gpu-next/d3d11/d3d11va`；结构化 property；OSD visual/input；resize/maximize/restore/fullscreen/minimize；20 轮 A→B、A→B→C、Stop during load、crash/recreate；parent-death cleanup；framing/backpressure/stderr/pipe-close；DirectUrl file-local UA isolation；603.2 秒连续播放与有界 memory telemetry。
+
+未完成：source-commit runtime build/package verify、installer build/run、REAL Emby ordinary/STRM/CD2、REAL Session/WebSocket/reporting/remote control/NextTrack、HDR 与真实 mixed-DPI。未完成项不得升级为 `READY FOR PEPPER RETIREMENT REVIEW`。

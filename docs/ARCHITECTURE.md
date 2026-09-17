@@ -1,5 +1,11 @@
 # 架构
 
+## Production Native Helper Bridge candidate
+
+`feat/native-helper-bridge` 把 `libmpv.js` 以下的 Pepper endpoint 替换为 renderer logical adapter、Electron main supervisor、private inherited framed pipes 与独立 Windows helper。helper-owned child HWND 输出到 main-process video host；原 transparent BrowserWindow 独立置于其上，因此现有 Emby UI/OSD/input ownership 不变。完整 identity、event attribution、crash、surface 与 build contract 见 [NATIVE_HELPER_BRIDGE](NATIVE_HELPER_BRIDGE.md)。
+
+此层只消费 Resolver 的最终 `native/local/url` source。PlaybackManager、Item、MediaSource、MediaSourceId、PlaySessionId、Session、WebSocket、progress、remote control 与 NextTrack 仍由既有链拥有。Pepper 注册在本阶段保留，仅能显式选择，helper failure 不自动回退。
+
 基线为提供的 Carnival 3.0（应用声明 3.0.20-3.0）叠加综合补丁。保留 Windows .NET 启动壳、Electron、离线 Web UI 与内嵌 libmpv 的现有目录关系。
 
 普通视频：Emby → PlaybackManager → 原生 MediaSource → libmpv 插件 → Pepper bridge → mpv-1.dll。Session、PlaySession、进度和远控仍由 Emby Web 生命周期负责。

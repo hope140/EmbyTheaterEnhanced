@@ -1,5 +1,14 @@
 # 已确认经验
 
+## 2026-09-17 — Native HWND composition and reproducible helper build
+
+- helper child HWND 必须在专用 video host 内置于 `HWND_TOP`；置底会被该 host 的 Chromium surface 覆盖。HTML OSD 不能依靠同一窗口 CSS z-index，应由独立 transparent BrowserWindow 保持在 video host 上方。
+- telemetry 中 `core-idle=false`、gpu-next 或 surface attached 不能代替视觉证据。最终 production source build 同时保留 native property evidence 与实际 screen capture 人工检查。
+- data URL 内未编码的 `#` 会被解释为 fragment，使测试 CSS/DOM 截断；UI smoke 必须 encode payload，否则可能把测试夹具缺失误判为 composition failure。
+- MinGW PE 默认插入 link timestamp；仅固定 source/flags/compiler 仍不足以 byte-reproduce helper。加入 `-Wl,--no-insert-timestamp` 后两次输出 SHA256 相同。
+- 新 BrowserWindow 会改变 `window-all-closed` 条件。video host 必须绑定 main `closed` 并关闭 owned helper/host，否则主窗口关闭后应用可能残留。
+- `core-idle` observer 初始可以先回报 `true`；测试 core-playing 必须等待同 generation 的有效 `false`，不能只等待 property name。
+
 1. 本地 SFX 可直接解包为 1009 个文件，未发现加密条目；无须逆向安装器。
 2. `electronapp/package.json` 声明 Electron ^9.4.0，但本地 `x64/electron/electron.exe` 文件版本是 18.3.15。运行时版本需要实测，不可从开发依赖推断。
 3. 原 `libmpv.js` 在播放时根据 appSettings 设置 hwdec、vo、demuxer-max-bytes 等；mpv.conf 中对应设置可能随后被覆盖。

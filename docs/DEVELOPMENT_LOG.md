@@ -1,5 +1,23 @@
 # 开发日志
 
+## 2026-09-17 — Production Native Helper Bridge implementation candidate
+
+Model Tier：2。Model：GPT-5.6 Sol High。Reason：native helper、framed IPC、libmpv event attribution、Electron main/renderer、native HWND composition、crash/recreate 与 Git-blob build provenance 跨多个层级，同时必须冻结 PlaybackManager/Session/Resolver。Escalated：no。
+
+开始时逐项核验 `origin/main=73eac9fa64c43804e9c5c53690ed087b2c5bb077`、`origin/fix/product-session-identity-v2=a16cdc72d9e8bc60284c759a126a3d77c33fa001`、`origin/spike/helper-native-pipe-integration=ff668aefd745023e0bd730df0b57d685d59d6dcb` 与 consolidation `4ff38123c2f1c3b058b68f66ca8ebb74db539f54`。新 worktree `E:\ETE-native-helper-bridge` 与分支 `feat/native-helper-bridge` 从 `a16cdc7` 创建；research worktree 只读，未 merge/cherry-pick research commit 或复制 experiment binary。
+
+Phase A 静态审计确认 upper contract 可以由 adapter 保持，不需要修改 PlaybackManager、Session 或 Resolver。生产实现新增 `native/mpv-helper/ete-mpv-helper.cpp`，将研究阶段的 native attribution 与 Windows child HWND/gpu-next/D3D11 surface 合并；增加 MPV node map/array/scalar serialization、dynamic observation、UTF-8 framed JSON、bounded input/output、private inherited pipes、handshake 与 test-only fault hooks。Renderer endpoint 保持 postMessage/message logical shape；main service使用严格 command/property allowlist、固定 runtime paths、无 shell/public endpoint/TCP/localhost，并在 helper failure 时 fail closed。
+
+实测中首先发现 child HWND 使用 `HWND_BOTTOM` 会被 video host 的 Chromium surface 覆盖；改为 helper child `HWND_TOP`，再由独立 transparent main BrowserWindow置顶，production build 的 screen capture 显示实际 H.264 test frame 与 HTML OSD 同时可见。另修复 smoke data URL 未编码 `#` 导致 CSS/OSD 被 fragment 截断的问题；失败 capture 保留为本地 ignored evidence，未误报通过。surface service 随 main move/resize/maximize/restore/fullscreen/minimize/close 管理 video host，main 关闭会销毁 helper，避免额外 BrowserWindow 阻止 `window-all-closed`。
+
+验证：`npm test 173/173`；Node/PowerShell syntax PASS。生产源码 helper 两次带 `--no-insert-timestamp` 编译 SHA256 相同；checkout build hash为 `29ef57275443c49d7685c57518b91eca0152c20ed25fda21dd42c7a554c4cb2f`，但不是正式 source-commit artifact。真实 Electron 18 smoke 得到 Electron 18.3.15 / Chromium 100.0.4896.160 / Node 16.13.2、helper handshake 1.0.0、libmpv `mpv v0.41.0-920-gdd5d17d32` / API 2.5；`gpu-next`、D3D11、d3d11va、native HWND、structured video params、Pause/Unpause/Seek/Stop PASS，load-to-playing 单次约 475ms，仅作本机 telemetry。
+
+竞态与 lifecycle：rapid A→B 20/20、A→B→C 20/20、Stop during load 20/20、helper access-violation + recreate 20/20，accepted stale events 0；pending request 在 crash 时 exactly-once `HELPER_DIED`。强制终止 exact Electron parent 后 helper 5 秒内 pipe EOF 退出，residual 0。pressure test 提交 20,000 property updates，coalesced 19,718，native output peak 3 frames/869 bytes；1 MiB stderr 全量读取、retained 4 KiB；partial frame PASS，zero/oversized/invalid UTF-8/malformed JSON/unsupported version、malformed helper output 和 pipe close 均 fail closed。DirectUrl file-local UA A/B/C 分别观测 `ETE-A/1.0`、`ETE-B/1.0`、`libmpv`。最终 production-source helper 的 10+ minute run 到达 `time-pos=603.2s`，helper PID/transport稳定、stale=0；21 个 working-set sample 峰值 107,806,720 bytes，首尾增长 794,624 bytes。
+
+代码复核后又关闭了普通 load failure 丢失 H1 引用、旧 renderer endpoint 操作 replacement、destroy-during-handshake、required capability 未校验、optional subtitle metadata、HWND cross-thread access、structured INT64 精度、quarantine bytes/depth 与 compiler/linker provenance 等问题。真实缺失媒体产生一次 `load-failed`，service 保持同一 helper ready，随后有效媒体恢复且 recreateCount=0；stale endpoint 的 retire/destroy 被拒绝。第二轮 review 发现首次 create 的 DOM/promise race 与 delayed subtitle rejection；现已用单一 `mediaElementPromise`、creation epoch、失败 cleanup/retry 和 optional rejection handling 修复，新增并发首次 Play、handshake failure retry 与 native readiness observer 回归。
+
+构建新增 pinned official `client.h` prepare、Git-blob source materializer、native helper compiler/staging 与 `native-helper-provenance.json` validation；installer 继续递归包含 runtime，无需 architecture 改动。一次性 `.work` Git fixture 暴露并修正了 PowerShell include argument 被错误拼成单个参数的问题；修正后从 fixture commit Git blob 连续构建两次，provenance 均 PASS，helper SHA256 均为 `29ef57275443c49d7685c57518b91eca0152c20ed25fda21dd42c7a554c4cb2f`。build contract 还会拒绝 manifest/build/materializer/validator/contract/tracked-hash generator 与 HEAD 不一致。当前没有 commit/push 授权，因此真实分支 build 仍无法把未提交实现作为合法 `sourceCommit` 输入；未执行正式 full runtime/package/installer 或 REAL Emby。Model/automation evidence 不替代这些 gate。
+
 ## 2026-09-17 — Production application identity parity
 
 Model Tier：2。Model：GPT-5.6 Sol High。Reason：修改虽小，但必须核对正式 Electron startup、acceptance harness、`loadStartInfo`、BrowserWindow、ConnectionManager 与既有 persistent DeviceId 的初始化边界。Escalated：no。
