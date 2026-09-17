@@ -1,5 +1,26 @@
 # 项目状态
 
+## 2026-09-17 — v0.2.0 Release Gate revalidation
+
+基于 `feat/native-helper-bridge@569c8dfbcd18725bf41a323c49cdfa4d38c8fa6b` 完成版本与 candidate gate 复核。authoritative 版本来源仅更新 `package.json` 与 `package-lock.json` 的对应字段；没有修改 playback code，也没有修改真实 profile 或制造 CD2 mapping。
+
+`npm test` 为 `201/201 PASS`，`git diff --check`、source/native/runtime provenance、package verify、formal ordinary、formal STRM/CD2 和 formal DirectUrl 均 PASS。新 runtime `EmbyTheaterEnhanced-0.2.0-release-569c8df` 绑定该 source commit，payload 为 `2135` entries；`ete-mpv-helper.exe` 与 `mpv-1.dll` 存在，`mpv-win32-x64.node` 与 Pepper/PPAPI runtime artifact 不存在。installer 为 `dist/EmbyTheaterEnhanced-0.2.0-win-x64-setup.exe`，大小 `125637307` bytes，SHA256 `BD192CF1CBA793C2C0C46472F4466EBA0AF2211CA988E4EBC50984827B41A6EE`；Inno archive integrity 通过，解包 `{app}` 与 runtime 逐文件 `2136/2136`，`missing=0`、`extra=0`、`mismatch=0`。
+
+安装后的 `0.2.0` 程序实际完成 `launch → play → pause → seek → resume → normal NextTrack → stop → exit`。安装 payload 与 source commit 对齐；Native Helper observed、Session NowPlaying 和 `12/12` reports accepted，`generation-required=0`、unexpected `bridge_error=0`、helper crash `0`、Electron crash `0`、owned residual `0`，Stop 后 NowPlaying 清空。当前 profile 没有可用 CD2 mapping，安装后日志为 `route=native`、`reason=no_matching_rule`，CD2 未调用。
+
+```text
+INSTALLED REAL CORE LIFECYCLE = PASS
+INSTALLED REAL CD2 ROUTE = NOT COVERED
+
+COMPENSATING CD2 EVIDENCE:
+- historical REAL CD2 = PASS
+- final-head Formal CD2 = PASS
+- final-head DirectUrl pipeline = PASS
+- installed Native Helper REAL lifecycle = PASS
+```
+
+当前状态：`RELEASE GATE = OPEN`，feature branch 的 push/PR/review/merge 后 main rebuild、tag 与 GitHub Release 仍按发布流程执行。Concurrent Remote NextTrack server semantics、renderer ReferenceError follow-up、CD2 cold-directory、mixed-DPI、HDR、Electron upgrade、Stop-barrier candidate 等保持 deferred。
+
 ## 2026-09-17 — Phase 2B Pepper retirement complete
 
 基于 `feat/native-helper-bridge@7e130c4cadc4b0399f61b8eb945a33e76c1163a3` 完成 Pepper / PPAPI bridge retirement。当前正式状态：

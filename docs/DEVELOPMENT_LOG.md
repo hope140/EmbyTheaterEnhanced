@@ -1,5 +1,26 @@
 # 开发日志
 
+## 2026-09-17 — v0.2.0 Release Gate revalidation
+
+Model Tier：2。Model：current Codex session。Reason：版本 authoritative source、source/native/runtime provenance、installer payload 与 installed Native Helper lifecycle 跨构建和验收层复核；没有改变 playback architecture。Escalated：no。
+
+版本 commit 为 `569c8dfbcd18725bf41a323c49cdfa4d38c8fa6b`，只更新 `package.json` 与 `package-lock.json` 的 `0.1.1 → 0.2.0` authoritative 字段。`npm test` `201/201`、`git diff --check`、source/native/runtime provenance、package verify、formal ordinary、formal STRM/CD2、formal DirectUrl 均 PASS。runtime `EmbyTheaterEnhanced-0.2.0-release-569c8df` 与 installer 均从该 commit 生成；installer 大小 `125637307` bytes，SHA256 为 `BD192CF1CBA793C2C0C46472F4466EBA0AF2211CA988E4EBC50984827B41A6EE`，解包逐文件结果为 `missing=0`、`extra=0`、`mismatch=0`。
+
+实际安装后的 0.2.0 lifecycle 完成 `launch/play/pause/seek/resume/normal NextTrack/stop/exit`。Native Helper、Session NowPlaying、12/12 reports accepted 和清理 residual 均通过；`generation-required=0`、unexpected `bridge_error=0`、helper crash `0`、Electron crash `0`。当前 profile 没有 CD2 mapping，日志观察到 `route=native` / `no_matching_rule`，因此严格记录：
+
+```text
+INSTALLED REAL CORE LIFECYCLE = PASS
+INSTALLED REAL CD2 ROUTE = NOT COVERED
+
+COMPENSATING CD2 EVIDENCE:
+- historical REAL CD2 = PASS
+- final-head Formal CD2 = PASS
+- final-head DirectUrl pipeline = PASS
+- installed Native Helper REAL lifecycle = PASS
+```
+
+本轮未修改 `src/` playback code、真实 CD2 profile、服务器配置或 deferred 项。当前只完成 release-candidate gate revalidation；后续按授权流程执行 feature push、PR、review、merge 后 main rebuild、tag 与 GitHub Release。
+
 ## 2026-09-17 — Phase 2B Pepper retirement complete
 
 Model Tier：2。Model：current Codex session。Reason：bridge 入口、Electron startup、runtime exclusion、provenance/package、readiness semantics 与 REAL smoke 的跨模块收口；不改变 PlaybackManager、Session、Resolver、CD2 或 remote server semantics。Escalated：no。
