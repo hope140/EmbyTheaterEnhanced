@@ -3,6 +3,12 @@
 // API responses and delivery are in memory, not a real Emby server/session.
 async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, stopBeforePlayerOnly) {
     const trace = window.__pipelineTrace = [];
+    const stages = [];
+    function markStage(name) {
+        stages.push(name);
+        trace.push('stage ' + name);
+        if (window.__eteSmokeErrorEvidence) window.__eteSmokeErrorEvidence.pipelineStage = name;
+    }
     const cd2AsyncHit = cd2Mode === 'hit' || cd2Mode === 'direct';
     window.addEventListener('unhandledrejection', event=>trace.push('rejection: '+String(event.reason)));
     const deps = await new Promise((resolve,reject) => require([
@@ -10,6 +16,7 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
         'modules/emby-apiclient/apiclient','modules/common/input/api','embyRouter'
     ], (...args)=>resolve(args), reject));
     const [manager, connections, events, plugins, ApiClientModule] = deps;
+    markStage('modules-loaded');
     // No authenticated navigation exists in this fixture. Keep the real playback
     // context fullscreen (and reportable), while replacing only OSD navigation.
     deps[6].showVideoOsd = () => Promise.resolve();
@@ -87,16 +94,19 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
             playerPlayNotCalled:embeddedPlayCount===playCallsBeforePending,
             noPlayingReport:!records.some(record=>record.body.ItemId===pendingItem.Id && record.endpoint.endsWith('/Playing'))
         };
-        return {stopBeforePlayer,results:[],next:null,generation:null,records,calls};
+        return {stopBeforePlayer,results:[],next:null,generation:null,records,calls,stages};
     }
     const results = [];
     for (const kind of (cd2Mode === 'direct' ? ['strm','video'] : ['video','strm'])) {
+        const stagePrefix = kind === 'video' ? 'ordinary' : 'strm';
+        markStage(stagePrefix + '-play');
         trace.push('starting '+kind);
         activeItem = {Id:'fixture-'+kind,ServerId:'fixture-server',Name:'Synthetic '+kind,
             MediaType:'Video',Type:'Movie',Path:kind==='strm'?(mountSidecar || 'fixture-sidecar.strm'):fixture,
             RunTimeTicks:50000000,UserData:{},MediaStreams:[]};
         items.set(activeItem.Id,activeItem);
         await manager.play({items:[activeItem],fullscreen:true,startPositionTicks:0});
+        markStage(stagePrefix + '-core-playing');
         trace.push('playing '+kind);
         await sleep(600);
         const player = manager._currentPlayer;
@@ -109,6 +119,7 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
             : null;
         const sourceUsed = embedded.currentSrc();
         const playerStats = await player.getStats();
+        markStage(stagePrefix + '-getstats');
         const enhancedCategory = (playerStats.categories || []).find(category => category && category.type === 'enhanced');
         const enhancedValues = Object.fromEntries((enhancedCategory && enhancedCategory.stats || []).map(stat => [stat.label, stat.value]));
         const expectedRouteSource = kind === 'strm' && cd2Mode === 'direct'
@@ -119,6 +130,7 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
             ? '本地挂载'
             : 'Emby 原生';
         send('Stop'); await sleep(250);
+        markStage(stagePrefix + '-stop');
         const itemRecords=records.filter(r=>r.body.ItemId===activeItem.Id);
         const start=itemRecords.find(r=>r.endpoint.endsWith('/Playing'));
         const progress=itemRecords.filter(r=>r.endpoint.endsWith('/Progress'));
@@ -156,10 +168,13 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
         RunTimeTicks:50000000,UserData:{},MediaStreams:[]}));
     queue.forEach(item=>items.set(item.Id,item));
     activeItem=queue[0];
+    markStage('queue-play');
     await manager.play({items:queue,fullscreen:true,startPositionTicks:0});
     const sourceBeforeNext = embedded.currentSrc();
+    markStage('nexttrack-1');
     const nextOne = manager.nextTrack();
     await sleep(cd2AsyncHit?150:25);
+    markStage('nexttrack-2');
     const nextTwo = manager.nextTrack();
     const nextSettled = await Promise.allSettled([nextOne,nextTwo]);
     for(let i=0;i<30 && !(records.some(r=>r.endpoint.endsWith('/Playing') && r.body.ItemId===queue[1].Id));i++) await sleep(100);
@@ -179,6 +194,7 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
     send('Stop'); await sleep(200);
     let generation = null;
     if (cd2AsyncHit) {
+        markStage('generation-tests');
         const sidecarBase = mountSidecar || 'X:\\Media\\fixture.y4m.strm';
         const directOptions = (name, requestId) => ({
             item:{Id:'generation-'+name,ServerId:'fixture-server',Name:'Generation '+name,MediaType:'Video',Type:'Movie',Path:sidecarBase.replace(/[^\\/]+$/,name+'.y4m.strm')},
@@ -205,5 +221,6 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
             noUnhandledRejection:!trace.some(value=>value.indexOf('rejection:')===0)
         };
     }
-    return {stopBeforePlayer,results,next,generation,records,calls};
+    markStage('pipeline-complete');
+    return {stopBeforePlayer,results,next,generation,records,calls,stages};
 }

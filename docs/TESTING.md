@@ -20,6 +20,15 @@ npm test
 
 上述 synthetic/native gate 不替代正式 source-commit build、installer、REAL Emby playback、Session/reporting、remote control、NextTrack、10+ minute、HDR 或 mixed-DPI acceptance。
 
+## Runtime BrowserWindow ownership
+
+```powershell
+node --test tests/runtime-window-ownership.test.cjs
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/test-runtime.ps1 -RuntimeName <verified-runtime> -TestPipeline
+```
+
+ownership test 用 fake BrowserWindow 覆盖 exact packaged index identity、query/hash、file-other/data/http auxiliary、stable binding、destroy 后 replacement、application-only probe 与脱敏 classification。runtime report 的 `windowOwnership` 与 `harnessInjection` 必须显示 application owner/probe 1，允许 auxiliary 大于等于 0，但 auxiliary pipeline injection 必须为 0。Native helper surface 的创建与安全配置保持 production 原行为。
+
 ## Optional playback Stats targeted checks
 
 ```powershell

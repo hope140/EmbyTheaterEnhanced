@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-09-17 — Formal runtime harness BrowserWindow ownership fix
+
+基于 `feat/native-helper-bridge@3f62efada515a4cc5d2c297ff5997b6b4d467b3c` 修复 formal harness 的 window ownership：`tools/smoke-electron.cjs` 不再把每个 `browser-window-created` 覆盖为测试窗口，而是在 `did-finish-load` 后以 exact packaged `file:` `electronapp/www/index.html` 选择唯一 application renderer；存活 owner 不会被后创建的 native-helper `data:` surface 或另一个 application-shaped window 覆盖，只有 owner destroyed 后才允许新的有效 application 绑定。AMD assertion、pluginManager probe、pipeline injection 与 application state capture 只对 owner 执行；所有重要 injected script 增加 sourceURL，错误 evidence 只保留 bounded name/message/stack/source/line/column、window class 与 pipeline stage。
+
+纯 fake-window ownership regression `6/6` 与全量 `npm test 183/183` PASS。提交前用既有 `3f62efa` runtime 的 hidden integration 验证 application owner 1、auxiliary 1、application pipeline injection 1、auxiliary injection 0；ordinary 与 STRM 的 play/core-playing/getStats/stop 及 22 条 report fixture 均通过。该 run 随后暴露独立的既有 NextTrack fixture assertion：`selected=false`，但 `priorStopped/nextStarted/rapidNextSettled/rapidNewestLoaded=true`。本 harness ownership 任务不修改或内联修复该问题；新 HEAD 的正式 build/provenance/pipeline 仍按 gate 单独执行。
+
 ## 2026-09-17 — Optional getStats property compatibility follow-up
 
 基于 clean `feat/native-helper-bridge@b17e6578ecd8ee6be71821e07380e1f87cd0f308` 的一次 hidden formal pipeline 诊断，精确确认 generation 131 的 `player.getStats()` 首个 aggregate rejection 为 `chapter` / `property-unavailable`，调用链为 `getMediaStats()` → per-category `Promise.all()` → top-level `getStats()`；同一批 Stats 请求还观察到部分 video/audio telemetry property unavailable。媒体请求已经发生且 core-playing 已成立，因此该失败属于 optional Stats consumer ownership，不是 helper wire、播放状态或 Session failure。

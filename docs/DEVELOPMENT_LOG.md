@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-09-17 — Formal runtime harness BrowserWindow ownership fix
+
+Model Tier：1。Model：GPT-5.6 Sol High。Reason：根因与允许文件已经明确，修改只涉及 runtime test harness ownership、error evidence、fixture stage marker、纯 fake-window regression 和文档；production renderer、native helper、PlaybackManager、Session、Resolver、CD2、Electron runtime 与 Pepper 全部冻结。Escalated：no。
+
+根因为 `tools/smoke-electron.cjs` 的全局 `browser-window-created` handler 把每个新窗口写入 `testWindow`，随后对 native-helper 合法创建的 sandboxed `data:` surface 注入 bare AMD `require(['pluginManager'])`。新增纯 helper 以 exact packaged index file identity 分类 application/auxiliary；只在 application `did-finish-load` 后启动一次 harness，owner 存活时拒绝覆盖，destroy 后才允许 replacement。分类 evidence 不保存完整 URL/query；hidden harness 对所有窗口显式保持 `alwaysOnTop=false`。renderer error evidence 增加 bounded name/message/stack/sourceURL/line/column、window class 与 pipeline stage，重要 executeJavaScript 均带 sourceURL。
+
+验证：ownership targeted `6/6`，product-identity + ownership `10/10`，全量 `npm test 183/183`，JS syntax 与 `git diff --check` PASS。既有 `3f62efa` runtime 的提交前 hidden integration 证明 application owner/probe/pipeline 各 1、auxiliary 1、auxiliary injection 0，原 `require is not defined` 未复现；ordinary/STRM 两轮全部字段通过。最终 assertion 因独立 NextTrack `selected=false` 而失败，其余 NextTrack facts 为 true；按 stop boundary 未在本轮修改 fixture expectation 或 production NextTrack semantics。
+
 ## 2026-09-17 — Optional getStats property compatibility follow-up
 
 Model Tier：2。Model：GPT-5.6 Sol High。Reason：虽然 production 修改集中在 Stats consumer，但诊断和验收必须区分 helper request correlation、generation ownership、optional telemetry 与 required playback/transport failure。Escalated：no。

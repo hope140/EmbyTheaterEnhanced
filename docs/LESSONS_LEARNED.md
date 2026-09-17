@@ -1,5 +1,11 @@
 # 已确认经验
 
+## 2026-09-17 — Formal harness BrowserWindow ownership
+
+- `browser-window-created` 是窗口发现事件，不是 application identity。native-helper surface、overlay 或未来辅助窗口都可能晚于 main 创建；用 first/last/count 或每次覆盖变量会把 application probe 注入错误 renderer。
+- formal harness 应先以 exact packaged file document 选 owner，再把 AMD loader 状态作为 assertion。application owner 存活时保持 stable binding，auxiliary 只记录 bounded URL class，绝不注入 pluginManager/pipeline。
+- `webContents.executeJavaScript()` 跨 Electron IPC 可能只返回退化 error message。重要注入应带 sourceURL，并在 application renderer 内保留 bounded error/unhandled-rejection、source/line/column 与 pipeline stage evidence。
+
 ## 2026-09-17 — Optional Stats property ownership
 
 - `player.getStats()` 的展示字段可能随媒体类型和 libmpv runtime state 不可用；已有 null/省略/default 渲染并不能保护前置 `Promise.all(getProperty)` rejection。optional compatibility 必须在 Stats per-field aggregation 层处理。
