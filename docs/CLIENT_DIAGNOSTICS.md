@@ -153,3 +153,30 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/collect-diagnostic
 collector 不扫描磁盘、媒体库、115 或 CD2 目录，不读取用户配置正文，也不主动触发目录 enumerate、cache warm、retry 或播放。路径摘要只包含 kind、root class、segment count、extension 和 hash；URL 摘要只包含 scheme、host hash、path class 与 query presence。ID 使用每包随机 key 的 HMAC-SHA256 短哈希，key 不写入包，因此只保证同包事件关联。
 
 ZIP 只有在整目录二次扫描通过且 `manifest.json` 中 `redactionPassed=true` 时才生成。若 Gate 失败，脚本退出并拒绝生成 ZIP；不得发送该目录，先保留本机现场并检查 `redactionWarnings`。
+
+## 一键问题快照
+
+问题发生后的第一时间运行：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass `
+  -File .\tools\report-playback-issue.ps1
+```
+
+工具会显示 Startup、Playback Failure、Seek、Pause / Resume、NextTrack、CD2 / DirectUrl、Mount fallback、Remote Control、Fullscreen / UI、Crash / Exit 和 Other 共 11 个选项，然后只询问一句可留空的简短描述。它不会要求输入服务器地址、Token、媒体路径、ItemId、SessionId 或 CD2 path。
+
+一次运行先生成：
+
+```text
+ETE-Issue-YYYYMMDD-HHMMSS.json
+```
+
+随后立即以同一个 `capturedAt` 调用 `collect-diagnostics.ps1 -ProblemTime <capturedAt> -ProblemWindowMinutes 5`，生成完整诊断目录和 ZIP。Snapshot 与 `manifest.json` 共享随机、每次问题新建的 `issueCorrelationId`；该 ID 不由 DeviceId、SessionId、ItemId、MediaSourceId、媒体路径或设备信息派生。
+
+Snapshot 只使用当前已有的 client JSONL、可读的 ETE 进程树、已存在的 runtime metadata 和有界 Windows Application crash metadata。它记录 product、process、playback、resolver、CD2、Session 和 error 的当前证据。没有证据的 Session、NowPlaying、WebSocket 和 report 字段写为 `UNAVAILABLE`；缺日志、invalid UTF-8、畸形 JSONL、无法读取 Windows Event 或程序未运行只形成 warning，不改变播放行为。
+
+`fullscreen-ui` 会保留已有 app window state、Native Helper 进程存在性、currentPlayer、route、corePlaying 和最近 native-helper event。`cd2-or-mount` 会保留 route、rule hash、reason、sourceKind、CD2 attempt、FindFile、DirectUrl、Mount hit 和 elapsed evidence，用于区分没有观测到 CD2、CD2 miss、transport failure 和 DirectUrl failure；脚本不会新增 production observer，也不会重新发起播放、CD2、Mount 或 retry。
+
+Snapshot 与 Collector 共同使用 `tools/diagnostics-common.ps1` 的随机包内 HMAC ID hash、path/URL summary、bounded safe JSON 和最终 redaction scan。若 Snapshot 文件的最终 Gate 发现 raw token、Authorization/Bearer、带敏感 query 的 URL、absolute media path 或敏感 ID，则删除该 Snapshot、停止调用 Collector，并返回失败；播放链不受影响。Collector 自身仍只有在目录二次 Gate 通过后才生成 ZIP。
+
+Snapshot 本身目标低于 2 秒；完整 Collector 仍按原有边界执行，目标低于 10 秒。生成结果会在命令行报告 Snapshot、Bundle、ZIP、correlation linkage 和 redaction 状态。

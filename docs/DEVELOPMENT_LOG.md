@@ -1,5 +1,19 @@
 # 开发日志
 
+## 2026-09-17 — Issue Snapshot
+
+Model Tier：2。Model：current Codex session。Reason：只读诊断入口跨 Collector、JSONL observer、进程树、Windows crash metadata 和共享 redaction contract，但不改变 PlaybackManager、Session、Resolver、CD2、Native Helper 或安装器。Escalated：no。
+
+Collector 已先以 `a3f6276a09a7dbdf03263c9e393671b35efcbebf` 创建唯一 checkpoint，未 push、未 PR、未 merge。随后在同一 worktree 开始 Issue Snapshot，当前 Snapshot 变更保持未提交，等待主线程 review。
+
+新增 `tools/report-playback-issue.ps1`。正常运行显示 11 个问题类型，只询问一条可留空 note；先冻结轻量 `ETE-Issue-YYYYMMDD-HHMMSS.json`，再调用现有 Collector，转发相同 `capturedAt` 为 `ProblemTime`，并传递每次随机生成的 `issueCorrelationId`。读取范围限制为已有 ETE JSONL 轮转日志、进程树、runtime metadata 和有界 Windows Application crash metadata；不读取 command line、配置正文、媒体库、CD2 目录或凭据，也不触发 playback、resolver、CD2、Mount、retry 或新的 production observer。
+
+新增 `tools/diagnostics-common.ps1`，由 Collector 和 Snapshot 共用随机 HMAC ID hash、path/URL summary、safe JSON serialization 和 redaction scan。Snapshot 的 Session、NowPlaying、WebSocket、report、CD2 阶段和 process evidence 只使用已观察值；无证据写 `UNAVAILABLE`，缺日志、invalid UTF-8、malformed JSONL、Windows Event 不可读和程序未运行只生成 warning。Snapshot 的最终 redaction gate 失败时不调用 Collector，Collector 仍保留目录二次 Gate 和 ZIP fail-closed 行为。
+
+新增 `tests/report-playback-issue-selftest.ps1` 与 `tests/report-playback-issue.test.cjs`。合成 fixture 覆盖全部 issue type、Other note/空 note、Fullscreen 与 CD2/Mount 现场、Session evidence、helper/error evidence、correlation linkage、ProblemTime forwarding、Collector success/warning、missing logs、program-not-running、malformed JSONL、invalid UTF-8、shared redaction refusal，以及 fake token/server URL/media path/DeviceId/SessionId/ItemId/pickcode 的 Snapshot/bundle/ZIP raw leak 断言。
+
+验证结果：PowerShell 5.1 parser PASS；`node --test tests/diagnostics-collector.test.cjs` PASS；`node --test tests/report-playback-issue.test.cjs` PASS；Collector 与 Snapshot PowerShell selftest PASS；`git diff --check`、untracked whitespace 和 allowed scope audit PASS。最终 normal-command smoke 选择 `11 / Other` 并留空 note，生成 Issue JSON、Bundle 目录和 ZIP，`snapshotElapsedMs=351`、`bundleElapsedMs=1206`、`collectorElapsedMs=1018`、`correlationMatches=true`、`redactionPassed=true`；issue 与 manifest 的 correlation ID 相同。无 production files modified，playback behavior modified：NO。没有运行 full `npm test`，保留既有 private/ignored Carnival input 边界，没有安装或伪造输入。Snapshot 变更仍未提交，等待主线程 review。
+
 ## 2026-09-17 — Sanitized Diagnostic Bundle Collector
 
 Model Tier：1。Model：current Codex session。Reason：边界明确的只读 PowerShell tooling、递归脱敏、manifest/ZIP Gate 和合成安全测试；无 Playback/Session lifecycle 或产品架构修改。Escalated：no。

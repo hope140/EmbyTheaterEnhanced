@@ -1,5 +1,17 @@
 # 项目状态
 
+## 2026-09-17 — Issue Snapshot tooling in progress
+
+Collector 第一阶段已在 checkpoint `a3f6276a09a7dbdf03263c9e393671b35efcbebf` 收口，未 push、未创建 PR、未 merge。当前未提交 diff 只包含 Issue Snapshot 入口、共享诊断脱敏层、focused self-test、Node wrapper 和本段文档更新；没有修改 `src/**`、PlaybackManager、Native Helper、Resolver、CD2、Session、WebSocket、fullscreen production logic、installer 或客户端配置。
+
+`tools/report-playback-issue.ps1` 默认显示 11 种 issue type，只接受可留空的一句 note。它先冻结 `ETE-Issue-YYYYMMDD-HHMMSS.json`，再把同一 `capturedAt` 和随机 `issueCorrelationId` 传给 Collector 的 `ProblemTime` / manifest。Snapshot 保存已有日志和进程证据中的 product、process、playback、resolver、CD2、Session、error 与 evidence availability；缺失证据保持 `UNAVAILABLE`，不猜测 Session、NowPlaying、WebSocket、report 或 CD2 阶段。
+
+`tools/diagnostics-common.ps1` 是 Collector 与 Snapshot 共用的 redaction contract，包含随机 HMAC ID hash、path/URL summary、safe JSON serialization 和 final redaction scan。Snapshot redaction fail 时会删除不安全输出、停止调用 Collector，并以失败退出；只读诊断失败不会进入播放行为。正常 Collector warning 仍允许生成 bundle，Collector ZIP 仍受原有二次 redaction Gate 约束。
+
+Snapshot focused fixture 已覆盖每种 issue type、Other note/空 note、共享脱敏、correlation linkage、ProblemTime、Collector success/warning、redaction refusal、缺日志、程序未运行、malformed JSONL、invalid UTF-8 以及 fake token/server URL/media path/DeviceId/SessionId/ItemId/pickcode。最终 PowerShell 5.1 parser、Collector/Snapshot focused Node tests、两个 PowerShell selftest、只读 normal-command smoke 和 diff scope review 均通过；fixture 的 Snapshot、bundle 和 ZIP raw secret 均为 0。
+
+最终 normal-command smoke 选择 `11 / Other` 并留空 note，生成 Issue JSON、Bundle 目录和 ZIP；`snapshotElapsedMs=351`、`bundleElapsedMs=1206`、`correlationMatches=true`、`redactionPassed=true`。当前状态：`DIAGNOSTIC BUNDLE = READY`；`ISSUE SNAPSHOT = READY`；本轮不开始 CD2 observer、renderer ReferenceError observer、installer residual audit 或任何 production playback fix。
+
 ## 2026-09-17 — Sanitized Diagnostic Bundle Collector ready
 
 基于正式 `v0.2.0` / `origin/main@dbe2f0fe8891e4fbd91a8dedcbb94eac82c66472` 创建独立 `codex/diagnostics-tooling` worktree，只新增只读诊断收集脚本、测试和文档；没有修改 `src/**`、runtime、installer、PlaybackManager、Native Helper、Resolver、CD2、Session、WebSocket、缓存、Electron 或已发布安装。
