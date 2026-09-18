@@ -80,6 +80,29 @@ function New-Fixture {
     return [pscustomobject]@{ LogRoot=$logRoot; InstallRoot=$installRoot; Capture=$capture; Raw=$raw }
 }
 
+function New-CollectorFixture {
+    param([string]$Root, [int]$ExitCode)
+    $path = Join-Path $Root ('collector-fixture-' + $ExitCode + '.ps1')
+    $content = @"
+[CmdletBinding()]
+param(
+    [string]`$OutputRoot,
+    [string]`$LogRoot,
+    [string]`$InstallRoot,
+    [string]`$CaptureTime,
+    [string]`$ProblemTime,
+    [string]`$ProblemWindowMinutes,
+    [string]`$IssueCorrelationId,
+    [switch]`$NoZip,
+    [switch]`$SkipWindowsEvents
+)
+[ordered]@{ status = 'FIXTURE_FAILURE'; redactionPassed = `$false; elapsedMs = 0 } | ConvertTo-Json -Compress
+exit $ExitCode
+"@
+    [IO.File]::WriteAllText($path, $content, (New-Object Text.UTF8Encoding($false)))
+    return $path
+}
+
 function Invoke-Reporter {
     param(
         [string]$ScriptPath,
@@ -122,6 +145,49 @@ function Invoke-Reporter {
     $bundlePath = if ($result.bundle) { Join-Path $OutputRoot ([string]$result.bundle) } else { $null }
     $manifest = if ($bundlePath) { Get-Content -LiteralPath (Join-Path $bundlePath 'manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json } else { $null }
     return [pscustomobject]@{ Result=$result; IssuePath=$issuePath; Issue=$issue; BundlePath=$bundlePath; Manifest=$manifest; ZipPath=if ($result.zip) { Join-Path $OutputRoot ([string]$result.zip) } else { $null } }
+}
+
+function Invoke-ReporterRaw {
+    param(
+        [string]$ScriptPath,
+        [string]$OutputRoot,
+        [string]$TargetLogRoot,
+        [string]$TargetInstallRoot,
+        [DateTimeOffset]$Capture,
+        [string]$Type,
+        [AllowEmptyString()][string]$Note,
+        [string]$CollectorPath
+    )
+    $arguments = @(
+        '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $ScriptPath,
+        '-OutputRoot', $OutputRoot,
+        '-LogRoot', $TargetLogRoot,
+        '-InstallRoot', $TargetInstallRoot,
+        '-IssueType', $Type,
+        '-CaptureTime', $Capture.ToString('o'),
+        '-MaxLogLines', '256',
+        '-SkipWindowsEvents',
+        '-NoZip'
+    )
+    if ([string]::IsNullOrEmpty($Note)) { $arguments += '-EmptyUserNote' } else { $arguments += @('-UserNote', $Note) }
+    if ($CollectorPath) { $arguments += @('-TestCollectorPath', $CollectorPath) }
+    $ps51 = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
+    $previousErrorAction = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        $output = @(& $ps51 @arguments 2>&1)
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousErrorAction
+    }
+    $result = $null
+    foreach ($line in @($output | Select-Object -Last 8)) {
+        try {
+            $candidate = ConvertFrom-Json -InputObject ([string]$line) -ErrorAction Stop
+            if ($candidate.bundleStatus) { $result = $candidate }
+        } catch { }
+    }
+    return [pscustomobject]@{ ExitCode=$exitCode; Output=$output; Result=$result }
 }
 
 function Get-TextFromFiles {
@@ -237,6 +303,22 @@ try {
     Assert-True ($warningRun.Result.bundleStatus -eq 'READY') 'Missing-log warning did not still generate a bundle.'
     Assert-True (@($warningRun.Issue.collectionWarnings) -contains 'client_log_not_found') 'Snapshot missing-log warning is absent.'
     Assert-True ($warningRun.Issue.sessionState.ownSession -eq 'UNAVAILABLE') 'Missing Session evidence was guessed.'
+
+    $redactionCollector = New-CollectorFixture -Root $workspace -ExitCode 2
+    $redactionRoot = Join-Path $workspace 'collector-redaction-refusal-output'
+    $redactionRun = Invoke-ReporterRaw -ScriptPath $reporter -OutputRoot $redactionRoot -TargetLogRoot $fixture.LogRoot -TargetInstallRoot $fixture.InstallRoot -Capture $fixture.Capture.AddMinutes(4) -Type 'other' -Note '' -CollectorPath $redactionCollector
+    Assert-True ($redactionRun.ExitCode -eq 2) "Collector redaction refusal must propagate exit 2, not $($redactionRun.ExitCode). Output: $($redactionRun.Output -join "`n")"
+    Assert-True ($null -ne $redactionRun.Result) 'Collector redaction refusal did not produce reporter result JSON.'
+    Assert-True ($redactionRun.Result.bundleStatus -eq 'REDACTION_REFUSED') 'Collector redaction refusal was not classified as REDACTION_REFUSED.'
+    Assert-True (@(Get-ChildItem -LiteralPath $redactionRoot -Filter '*.zip' -File -Recurse -ErrorAction SilentlyContinue).Count -eq 0) 'Collector redaction refusal unexpectedly retained a ZIP.'
+
+    $generationCollector = New-CollectorFixture -Root $workspace -ExitCode 1
+    $generationRoot = Join-Path $workspace 'collector-generation-failure-output'
+    $generationRun = Invoke-ReporterRaw -ScriptPath $reporter -OutputRoot $generationRoot -TargetLogRoot $fixture.LogRoot -TargetInstallRoot $fixture.InstallRoot -Capture $fixture.Capture.AddMinutes(5) -Type 'other' -Note '' -CollectorPath $generationCollector
+    Assert-True ($generationRun.ExitCode -eq 3) "Ordinary Collector generation failure must propagate exit 3, not $($generationRun.ExitCode). Output: $($generationRun.Output -join "`n")"
+    Assert-True ($null -ne $generationRun.Result) 'Collector generation failure did not produce reporter result JSON.'
+    Assert-True ($generationRun.Result.bundleStatus -eq 'NOT_GENERATED') 'Collector generation failure was not classified as NOT_GENERATED.'
+    Assert-True (@(Get-ChildItem -LiteralPath $generationRoot -Filter '*.zip' -File -Recurse -ErrorAction SilentlyContinue).Count -eq 0) 'Collector generation failure unexpectedly retained a ZIP.'
 
     $unsafeFile = Join-Path $workspace 'unsafe-snapshot.json'
     [IO.File]::WriteAllText($unsafeFile, 'https://unsafe.invalid/media?token=unsafe-token', (New-Object Text.UTF8Encoding($false)))

@@ -8,6 +8,7 @@ param(
     [AllowEmptyString()][string]$UserNote,
     [DateTimeOffset]$CaptureTime,
     [switch]$EmptyUserNote,
+    [string]$TestCollectorPath,
     [switch]$NoZip,
     [switch]$SkipWindowsEvents
 )
@@ -556,14 +557,18 @@ function Invoke-CollectorForIssue {
         $line = $recentLines[$lineIndex]
         try {
             $candidate = ConvertFrom-Json -InputObject ([string]$line) -ErrorAction Stop
-            if ($candidate.status) { $result = $candidate; break }
+            if (Get-FieldValue $candidate 'status') { $result = $candidate; break }
         } catch { }
     }
-    $bundleName = if ($result -and $result.bundle) { Split-Path -Leaf ([string]$result.bundle) } else { $null }
-    $zipName = if ($result -and $result.zip) { Split-Path -Leaf ([string]$result.zip) } else { $null }
-    if ($exitCode -ne 0 -or $null -eq $result -or $result.redactionPassed -ne $true) {
+    $bundleValue = Get-FieldValue $result 'bundle'
+    $zipValue = Get-FieldValue $result 'zip'
+    $redactionValue = Get-FieldValue $result 'redactionPassed'
+    $elapsedValue = Get-FieldValue $result 'elapsedMs'
+    $bundleName = if ($bundleValue) { Split-Path -Leaf ([string]$bundleValue) } else { $null }
+    $zipName = if ($zipValue) { Split-Path -Leaf ([string]$zipValue) } else { $null }
+    if ($exitCode -ne 0 -or $null -eq $result -or $redactionValue -ne $true) {
         Add-SnapshotWarning ('collector_failed_exit_{0}' -f $exitCode)
-        return [ordered]@{ status = if ($exitCode -eq 2) { 'REDACTION_REFUSED' } else { 'NOT_GENERATED' }; exitCode = $exitCode; elapsedMs = $watch.ElapsedMilliseconds; collectorElapsedMs = if ($result -and $result.elapsedMs) { [int64]$result.elapsedMs } else { $null }; correlationMatches = $false; redactionPassed = $false; bundleName = $bundleName; zipName = $zipName }
+        return [ordered]@{ status = if ($exitCode -eq 2) { 'REDACTION_REFUSED' } else { 'NOT_GENERATED' }; exitCode = $exitCode; elapsedMs = $watch.ElapsedMilliseconds; collectorElapsedMs = if ($elapsedValue) { [int64]$elapsedValue } else { $null }; correlationMatches = $false; redactionPassed = $false; bundleName = $bundleName; zipName = $zipName }
     }
     $manifestPath = Join-Path (Join-Path $TargetOutputRoot $bundleName) 'manifest.json'
     $manifest = $null
@@ -649,7 +654,7 @@ if (@($snapshotFailures).Count -gt 0) {
     exit 2
 }
 
-$collectorPath = Join-Path $PSScriptRoot 'collect-diagnostics.ps1'
+$collectorPath = if ($TestCollectorPath) { [IO.Path]::GetFullPath($TestCollectorPath) } else { Join-Path $PSScriptRoot 'collect-diagnostics.ps1' }
 $collector = Invoke-CollectorForIssue -CollectorPath $collectorPath -TargetOutputRoot $safeOutputRoot -TargetLogRoot $LogRoot -TargetInstallRoot $InstallRoot -CapturedAt $capturedAt -CorrelationId $correlationId
 $snapshotResult = [ordered]@{
     status = 'READY'
@@ -666,4 +671,5 @@ $snapshotResult = [ordered]@{
     warnings = @($script:Warnings)
 }
 $snapshotResult | ConvertTo-Json -Compress
-if ($collector.status -eq 'NOT_GENERATED' -or $collector.status -eq 'REDACTION_REFUSED') { exit 3 }
+if ($collector.status -eq 'REDACTION_REFUSED') { exit 2 }
+if ($collector.status -eq 'NOT_GENERATED') { exit 3 }

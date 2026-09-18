@@ -179,6 +179,8 @@ Snapshot 只使用当前已有的 client JSONL、可读的 ETE 进程树、已�
 
 Snapshot 与 Collector 共同使用 `tools/diagnostics-common.ps1` 的随机包内 HMAC ID hash、path/URL summary、bounded safe JSON 和最终 redaction scan。若 Snapshot 文件的最终 Gate 发现 raw token、Authorization/Bearer、带敏感 query 的 URL、absolute media path 或敏感 ID，则删除该 Snapshot、停止调用 Collector，并返回失败；播放链不受影响。Collector 自身仍只有在目录二次 Gate 通过后才生成 ZIP。
 
+问题快照入口的退出码保持分流：Snapshot 自身或 Collector redaction/privacy refusal 返回 `2`；普通 Collector generation failure 返回 `3`；Collector 成功且 Snapshot 已生成返回 `0`。
+
 Snapshot 本身目标低于 2 秒；完整 Collector 仍按原有边界执行，目标低于 10 秒。生成结果会在命令行报告 Snapshot、Bundle、ZIP、correlation linkage 和 redaction 状态。
 
 ## CD2 route timeline observer
