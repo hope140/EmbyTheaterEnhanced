@@ -1,10 +1,13 @@
 'use strict';
 
+const fs = require('fs');
 const path = require('path');
 
 const runtime = path.resolve(process.argv[2] || '');
 if (!process.argv[2]) throw new Error('Runtime path is required.');
 const electronapp = path.join(runtime, 'electronapp');
+const sourceProvenance = JSON.parse(fs.readFileSync(path.join(runtime, 'source-provenance.json'), 'utf8'));
+const expectedVersions = sourceProvenance.runtimeIdentities.electron.processVersions;
 const grpc = require(path.join(electronapp, 'node_modules', '@grpc', 'grpc-js'));
 const protoLoader = require(path.join(electronapp, 'node_modules', '@grpc', 'proto-loader'));
 const serviceModule = require(path.join(electronapp, 'enhanced', 'cd2-service'));
@@ -52,11 +55,17 @@ server.bindAsync('127.0.0.1:0', grpc.ServerCredentials.createInsecure(), async (
         const result = response.status === 'hit' && response.type === 'url' && response.sourceKind === 'direct-url' &&
             response.requestOptions && response.requestOptions.userAgent === 'ETE-Runtime-Smoke/1.0' && metadataAccepted &&
             requestShapeAccepted && nativeAddons.length === 0 &&
-            process.versions.node === '16.13.2' && process.versions.electron === '18.3.15';
+            process.versions.node === expectedVersions.node &&
+            process.versions.electron === expectedVersions.electron &&
+            process.versions.chrome === expectedVersions.chrome &&
+            process.versions.v8 === expectedVersions.v8;
         console.log(JSON.stringify({
             ok: result,
             node: process.versions.node,
             electron: process.versions.electron,
+            chromium: process.versions.chrome,
+            v8: process.versions.v8,
+            expectedVersions,
             grpcJs: require(path.join(electronapp, 'node_modules', '@grpc', 'grpc-js', 'package.json')).version,
             protoLoader: require(path.join(electronapp, 'node_modules', '@grpc', 'proto-loader', 'package.json')).version,
             metadataAccepted,
