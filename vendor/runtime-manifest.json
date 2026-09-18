@@ -36,11 +36,11 @@
     },
     {
       "path": "x64/electron/electron.exe",
-      "role": "Frozen Electron runtime",
-      "source": "Carnival archive",
+      "role": "Historical frozen Electron runtime input; excluded from Enhanced production runtime",
+      "source": "Carnival archive; historical baseline only",
       "version": "18.3.15 (executed)",
       "sourceAvailable": "Electron upstream; exact bundled build not reproduced",
-      "plannedReplacement": false,
+      "plannedReplacement": true,
       "sha256": "32e76a1fc510fcffe913dd3ce6af66b1061d53ef1c136cd13fb3cba3f6449fd2"
     }
   ],
