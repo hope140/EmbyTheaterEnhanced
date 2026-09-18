@@ -4,6 +4,9 @@
 #ifndef RuntimeDir
   #error RuntimeDir must be supplied by tools/package.ps1
 #endif
+#ifndef OutputBaseFilename
+  #define OutputBaseFilename "EmbyTheaterEnhanced-" + AppVersion + "-win-x64-setup"
+#endif
 
 [Setup]
 AppId={{868314CE-1253-46A3-A4EA-55CDE71BCF0A}
@@ -15,7 +18,7 @@ DefaultGroupName=Emby Theater Enhanced
 UninstallDisplayIcon={app}\electronapp\icon.ico
 SetupIconFile={#RuntimeDir}\electronapp\icon.ico
 OutputDir={#OutputDir}
-OutputBaseFilename=EmbyTheaterEnhanced-{#AppVersion}-win-x64-setup
+OutputBaseFilename={#OutputBaseFilename}
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=admin
