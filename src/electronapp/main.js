@@ -3,6 +3,16 @@
     var electron = require('electron');
     var app = electron.app;  // Module to control application life.
     var BrowserWindow = electron.BrowserWindow;  // Module to create native browser window.
+    electron.protocol.registerSchemesAsPrivileged([
+        'electronapphost',
+        'electronfs',
+        'electronserverdiscovery',
+        'electronwakeonlan',
+        'electronrefreshrate',
+        'electroncec'
+    ].map(function (scheme) {
+        return { scheme: scheme, privileges: { standard: true, supportFetchAPI: true, corsEnabled: true } };
+    }));
     var powerSaveBlocker = electron.powerSaveBlocker
     var nativeImage = electron.nativeImage;
     var productIdentity = require('./product-identity');

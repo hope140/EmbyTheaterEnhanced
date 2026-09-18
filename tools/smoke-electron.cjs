@@ -14,6 +14,8 @@ app.setName('emby-theater-enhanced-smoke');
 let fixtureUrl;
 const mediaRequests = [];
 const resolverEvents = [];
+const nativeHelperEvents = [];
+const diagnosticEvents = [];
 let fakeCd2Stats;
 let applicationPipelineInjectionCount = 0;
 let auxiliaryPipelineInjectionCount = 0;
@@ -99,6 +101,8 @@ function finish(result) {
         if (!Object.values(result.directHeaderIsolation).every(Boolean)) result.ok = false;
     }
     result.resolverEvents = resolverEvents;
+    result.nativeHelperEvents = nativeHelperEvents;
+    result.diagnosticEvents = diagnosticEvents;
     result.windowOwnership = windowOwnership.snapshot();
     result.harnessInjection = {applicationPipelineInjectionCount, auxiliaryPipelineInjectionCount};
     if (fakeCd2Stats) {
@@ -214,9 +218,14 @@ app.on('browser-window-created', (_, win) => {
                     });
                     });
                 })()`, 'ete-smoke-startup-probe.js'));
-                const screenshot = await win.webContents.capturePage();
-                state.screenshotAvailable = !screenshot.isEmpty();
-                if (!screenshot.isEmpty()) fs.writeFileSync(path.join(evidence, 'startup.png'), screenshot.toPNG());
+                state.screenshotAvailable = false;
+                state.screenshotStatus = 'NOT_RUN_HIDDEN';
+                if (process.env.ETE_TEST_VISIBLE) {
+                    const screenshot = await win.webContents.capturePage();
+                    state.screenshotAvailable = !screenshot.isEmpty();
+                    state.screenshotStatus = screenshot.isEmpty() ? 'EMPTY' : 'CAPTURED';
+                    if (!screenshot.isEmpty()) fs.writeFileSync(path.join(evidence, 'startup.png'), screenshot.toPNG());
+                }
                 if (process.env.ETE_TEST_PIPELINE) {
                     applicationPipelineInjectionCount++;
                     const generationObserverSource = fs.readFileSync(path.join(__dirname,'../tests/generation-fixture-observer.js'),'utf8');
@@ -273,7 +282,8 @@ app.on('browser-window-created', (_, win) => {
                 finish({ok:state.ready && state.players.some(p=>p.id==='libmpvmediaplayer') && !state.players.some(p=>p.id==='externalplayer'), versions:process.versions, state});
             } catch(error) {
                 const rendererErrorEvidence = await readRendererErrorEvidence(win);
-                finish({ok:false, error:errorEvidence(error, ownership.classification), rendererErrorEvidence});
+                const pipelineTrace = await win.webContents.executeJavaScript(withSourceUrl('window.__pipelineTrace || []', 'ete-failure-trace.js')).catch(() => []);
+                finish({ok:false, error:errorEvidence(error, ownership.classification), rendererErrorEvidence, pipelineTrace});
             }
         }, 6500);
     });
@@ -320,4 +330,44 @@ if (process.env.ETE_TEST_CD2_MODE) {
         };
     };
 }
+const nativeHelperServiceModule = require(path.join(runtime, 'electronapp/native-helper/service.js'));
+const createNativeHelperService = nativeHelperServiceModule.createService;
+nativeHelperServiceModule.createService = function (options) {
+    const originalLogger = options && options.logger;
+    return createNativeHelperService(Object.assign({}, options, {
+        logger(record) {
+            const details = record && record.details || {};
+            if (nativeHelperEvents.length < 128) nativeHelperEvents.push({
+                event: record && record.event || null,
+                reason: details.reason || null,
+                visible: typeof details.visible === 'boolean' ? details.visible : null,
+                applied: typeof details.applied === 'boolean' ? details.applied : null,
+                property: details.property || null,
+                protocolVersion: details.protocolVersion || null,
+                helperVersion: details.helperVersion || null,
+                libmpvVersion: details.libmpvVersion || null,
+                failureCode: details.failure && details.failure.code || null
+            });
+            if (typeof originalLogger === 'function') originalLogger(record);
+        }
+    }));
+};
+const diagnosticsModule = require(path.join(runtime, 'electronapp/enhanced/diagnostics.js'));
+const createDiagnosticsLogger = diagnosticsModule.createLogger;
+diagnosticsModule.createLogger = function () {
+    const logger = createDiagnosticsLogger.apply(this, arguments);
+    return function (record) {
+        const details = record && record.details || {};
+        if (diagnosticEvents.length < 128) diagnosticEvents.push({
+            category: record && record.category || null,
+            event: record && record.event || null,
+            stage: details.stage || null,
+            name: details.name || null,
+            reason: details.reason || null,
+            route: details.route || null,
+            sourceKind: details.sourceKind || null
+        });
+        return logger(record);
+    };
+};
 require(path.join(runtime, 'electronapp/main.js'));
