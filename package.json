@@ -1,6 +1,6 @@
 {
   "name": "emby-theater-enhanced-tooling",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "Local build tooling; does not replace the frozen Electron runtime",
   "scripts": {
