@@ -69,7 +69,11 @@ class FakeWindow extends EventEmitter {
     FakeWindow.instances.push(this);
   }
   getBounds() { return Object.assign({}, this.bounds); }
-  setBounds(value) { this.bounds = Object.assign({}, value); }
+  setBounds(value, animate) {
+    this.bounds = Object.assign({}, value);
+    if (!this.setBoundsCalls) this.setBoundsCalls = [];
+    this.setBoundsCalls.push({value: Object.assign({}, value), animate});
+  }
   getNativeWindowHandle() { const value = Buffer.alloc(8); value.writeBigUInt64LE(this.handle); return value; }
   isDestroyed() { return this.destroyed; }
   isVisible() { return this.visible; }
@@ -195,12 +199,75 @@ test('surface placement passes exact HWNDs without moveTop or always-on-top puls
   await service.destroy();
 });
 
-test('surface placement keeps one operation in flight and latest pending reason wins', async function () {
+test('renderer visibility places a hidden surface once and does not re-place an already visible surface', async function () {
+  const ClientClass = makeClientClass();
+  const {service, placementExecutor} = makeService(ClientClass);
+  const {created, begun} = await showSurface(service);
+  const surface = FakeWindow.instances[1];
+  assert.equal(placementExecutor.calls.length, 1);
+  placementExecutor.complete(0);
+  const initialBounds = surface.setBoundsCalls.length;
+  await service.call('set-visible', {visible: true, generationId: begun.generationId}, created.endpointId);
+  assert.equal(surface.setBoundsCalls.length, initialBounds + 1);
+  assert.equal(surface.setBoundsCalls.at(-1).animate, false);
+  assert.equal(placementExecutor.calls.length, 1);
+  await service.destroy();
+});
+
+test('renderer visibility false invalidates and hides without scheduling another placement', async function () {
+  const ClientClass = makeClientClass();
+  const {service, placementExecutor} = makeService(ClientClass);
+  const {created, begun} = await showSurface(service);
+  const surface = FakeWindow.instances[1];
+  await service.call('set-visible', {visible: false, generationId: begun.generationId}, created.endpointId);
+  assert.equal(surface.visible, false);
+  assert.equal(placementExecutor.calls[0].killed, true);
+  placementExecutor.complete(0, Object.assign(new Error('killed'), {code: 'ABORT_ERR', killed: true, signal: 'SIGTERM'}));
+  assert.equal(placementExecutor.calls.length, 1);
+  await service.destroy();
+});
+
+test('move burst updates bounds only and starts no placement child', async function () {
+  const ClientClass = makeClientClass();
+  const {main, service, placementExecutor} = makeService(ClientClass);
+  await showSurface(service);
+  const surface = FakeWindow.instances[1];
+  placementExecutor.complete(0);
+  const initialBounds = surface.setBoundsCalls.length;
+  for (let index = 0; index < 12; index++) {
+    main.bounds = {x: index, y: index + 1, width: 800, height: 450};
+    main.emit('move');
+  }
+  assert.equal(surface.setBoundsCalls.length, initialBounds + 12);
+  assert.equal(surface.setBoundsCalls.slice(initialBounds).every(call => call.animate === false), true);
+  assert.deepEqual(surface.bounds, main.bounds);
+  assert.equal(placementExecutor.calls.length, 1);
+  await service.destroy();
+});
+
+test('resize burst updates bounds only and starts no placement child', async function () {
+  const ClientClass = makeClientClass();
+  const {main, service, placementExecutor} = makeService(ClientClass);
+  await showSurface(service);
+  const surface = FakeWindow.instances[1];
+  placementExecutor.complete(0);
+  const initialBounds = surface.setBoundsCalls.length;
+  for (let index = 0; index < 12; index++) {
+    main.bounds = {x: 10, y: 10, width: 800 + index, height: 450 + index};
+    main.emit('resize');
+  }
+  assert.equal(surface.setBoundsCalls.length, initialBounds + 12);
+  assert.equal(surface.setBoundsCalls.slice(initialBounds).every(call => call.animate === false), true);
+  assert.deepEqual(surface.bounds, main.bounds);
+  assert.equal(placementExecutor.calls.length, 1);
+  await service.destroy();
+});
+
+test('approved lifecycle events reassert placement with one operation in flight and latest pending reason wins', async function () {
   const ClientClass = makeClientClass();
   const {main, service, logs, placementExecutor} = makeService(ClientClass);
   await showSurface(service);
-  main.emit('resize');
-  main.emit('move');
+  main.emit('focus');
   main.emit('enter-full-screen');
   assert.equal(placementExecutor.calls.length, 1);
   placementExecutor.complete(0);
@@ -209,7 +276,26 @@ test('surface placement keeps one operation in flight and latest pending reason 
   assert.equal(placementExecutor.calls.length, 2);
   assert.equal(logs.some(record => record.event === 'surface-z-order-stale' && record.details.reason === 'renderer-visibility'), true);
   assert.equal(logs.some(record => record.event === 'surface-z-order' && record.details.reason === 'enter-full-screen'), true);
-  assert.equal(logs.some(record => record.event === 'surface-z-order' && ['resize', 'move'].includes(record.details.reason)), false);
+  assert.equal(logs.some(record => record.event === 'surface-z-order' && record.details.reason === 'focus'), false);
+  await service.destroy();
+});
+
+test('each approved lifecycle event reasserts placement after bounds sync', async function () {
+  const ClientClass = makeClientClass();
+  const {main, service, placementExecutor} = makeService(ClientClass);
+  await showSurface(service);
+  const surface = FakeWindow.instances[1];
+  placementExecutor.complete(0);
+  const lifecycleEvents = ['focus', 'show', 'restore', 'maximize', 'unmaximize', 'enter-full-screen', 'leave-full-screen'];
+  for (const eventName of lifecycleEvents) {
+    const beforeBounds = surface.setBoundsCalls.length;
+    const beforePlacements = placementExecutor.calls.length;
+    main.emit(eventName);
+    assert.equal(surface.setBoundsCalls.length, beforeBounds + 1, eventName);
+    assert.equal(surface.setBoundsCalls.at(-1).animate, false, eventName);
+    assert.equal(placementExecutor.calls.length, beforePlacements + 1, eventName);
+    placementExecutor.complete(beforePlacements);
+  }
   await service.destroy();
 });
 
@@ -231,8 +317,8 @@ test('surface placement timeout warns once, releases in-flight state, and runs l
   const ClientClass = makeClientClass();
   const {main, service, logs, placementExecutor} = makeService(ClientClass);
   await showSurface(service);
-  main.emit('resize');
-  main.emit('move');
+  main.emit('focus');
+  main.emit('enter-full-screen');
   const timeout = Object.assign(new Error('timed out'), {code: null, killed: true, signal: 'SIGTERM'});
   placementExecutor.complete(0, timeout);
   assert.equal(placementExecutor.calls.length, 2);
@@ -242,7 +328,7 @@ test('surface placement timeout warns once, releases in-flight state, and runs l
   assert.equal(warnings[0].details.reason, 'renderer-visibility');
   assert.equal(warnings[0].details.stale, true);
   assert.deepEqual(warnings[0].details.failure, {code: 'unknown', killed: true, signal: 'SIGTERM'});
-  assert.equal(logs.some(record => record.event === 'surface-z-order' && record.details.reason === 'move'), true);
+  assert.equal(logs.some(record => record.event === 'surface-z-order' && record.details.reason === 'enter-full-screen'), true);
   assert.equal(service.status().state, 'ready');
   assert.equal(main.sent.some(args => args[1] && args[1].type === 'bridge_error'), false);
   await service.destroy();

@@ -232,7 +232,13 @@ function createService(options) {
     }
   }
 
-  function syncSurface(reason) {
+  function syncSurfaceBounds() {
+    const main = getMainWindow();
+    if (!surfaceWindow || surfaceWindow.isDestroyed() || !main || main.isDestroyed()) return;
+    surfaceWindow.setBounds(main.getBounds(), false);
+  }
+
+  function syncSurfaceVisibility(reason) {
     const main = getMainWindow();
     if (!surfaceWindow || surfaceWindow.isDestroyed() || !main || main.isDestroyed()) return;
     if (!surfaceWanted || !main.isVisible() || main.isMinimized()) {
@@ -240,7 +246,23 @@ function createService(options) {
       surfaceWindow.hide();
       return;
     }
-    surfaceWindow.setBounds(main.getBounds(), false);
+    syncSurfaceBounds();
+    if (!surfaceWindow.isVisible()) {
+      surfaceWindow.showInactive();
+      placeSurfaceBehindMain(main, reason);
+    }
+    log('surface-sync', {reason, visible: true});
+  }
+
+  function syncSurfaceLifecycle(reason) {
+    const main = getMainWindow();
+    if (!surfaceWindow || surfaceWindow.isDestroyed() || !main || main.isDestroyed()) return;
+    if (!surfaceWanted || !main.isVisible() || main.isMinimized()) {
+      invalidateSurfacePlacement();
+      surfaceWindow.hide();
+      return;
+    }
+    syncSurfaceBounds();
     if (!surfaceWindow.isVisible()) surfaceWindow.showInactive();
     placeSurfaceBehindMain(main, reason);
     log('surface-sync', {reason, visible: true});
@@ -275,11 +297,14 @@ function createService(options) {
       ++surfaceEpoch;
     });
     if (!boundWindowEvents.length) {
-      ['move', 'resize', 'maximize', 'unmaximize', 'restore', 'enter-full-screen', 'leave-full-screen', 'show', 'focus'].forEach(function (name) {
-        bindMainWindowEvent(name, function () { syncSurface(name); });
+      ['move', 'resize'].forEach(function (name) {
+        bindMainWindowEvent(name, function () { syncSurfaceBounds(); });
+      });
+      ['maximize', 'unmaximize', 'restore', 'enter-full-screen', 'leave-full-screen', 'show', 'focus'].forEach(function (name) {
+        bindMainWindowEvent(name, function () { syncSurfaceLifecycle(name); });
       });
       ['minimize', 'hide'].forEach(function (name) {
-        bindMainWindowEvent(name, function () { syncSurface(name); });
+        bindMainWindowEvent(name, function () { syncSurfaceVisibility(name); });
       });
       bindMainWindowEvent('closed', function () { destroy().catch(function () {}); });
     }
@@ -303,7 +328,7 @@ function createService(options) {
           if (client !== owned) return;
           if (message.name === 'end-file' && message.value && message.value.reason === 4) {
             surfaceWanted = false;
-            syncSurface('media-error');
+            syncSurfaceVisibility('media-error');
             sendEvent({type: 'bridge_error', reason: 'load-failed'});
             log('load-failed', {reason: 'mpv-end-file-error'});
             return;
@@ -315,7 +340,7 @@ function createService(options) {
           if (client !== owned) return;
           crashCount += terminal.name === 'process-exit-terminal' || terminal.name === 'stdout-end' ? 1 : 0;
           surfaceWanted = false;
-          syncSurface('helper-terminal');
+          syncSurfaceVisibility('helper-terminal');
           sendEvent({type: 'bridge_error', reason: terminal.name});
           log('helper-terminal', {reason: terminal.name});
           client = null;
@@ -414,7 +439,7 @@ function createService(options) {
         load.promise.catch(function (error) {
           if (client !== active || !error || error.state === 'GENERATION_RETIRED') return;
           surfaceWanted = false;
-          syncSurface('load-failed');
+          syncSurfaceVisibility('load-failed');
           sendEvent({type: 'bridge_error', reason: 'load-failed'});
           log('load-failed', {reason: String(error.message || 'load-failed').slice(0, 128)});
         });
@@ -422,7 +447,7 @@ function createService(options) {
       }
       if (args[0] === 'stop') {
         surfaceWanted = false;
-        syncSurface('stop');
+        syncSurfaceVisibility('stop');
         active.stop().catch(function () {});
         return {status: 'accepted'};
       }
@@ -432,7 +457,7 @@ function createService(options) {
     if (operation === 'set-visible') {
       requireGeneration(active, payload);
       surfaceWanted = payload.visible === true;
-      syncSurface('renderer-visibility');
+      syncSurfaceVisibility('renderer-visibility');
       return {status: 'ok'};
     }
     if (operation === 'surface-status') {
@@ -450,13 +475,13 @@ function createService(options) {
     if (operation === 'set-visible') {
       if (!client || !request || request.generationId !== client.currentGenerationId) return;
       surfaceWanted = request && request.visible === true;
-      syncSurface('renderer-notify-visibility');
+      syncSurfaceVisibility('renderer-notify-visibility');
     }
   }
 
   async function destroyClient(reason) {
     surfaceWanted = false;
-    syncSurface(reason);
+    syncSurfaceVisibility(reason);
     const owned = client;
     client = null;
     if (owned) {
