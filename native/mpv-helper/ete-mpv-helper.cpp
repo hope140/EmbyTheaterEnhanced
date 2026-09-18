@@ -44,6 +44,9 @@ constexpr size_t MAX_INBOUND_BYTES = 256 * 1024;
 constexpr size_t MAX_QUARANTINED_BYTES = 256 * 1024;
 constexpr size_t MAX_PROPERTY_JSON_BYTES = 48 * 1024;
 constexpr const char* HELPER_VERSION = "1.0.0";
+constexpr DWORD ETE_DWMWA_WINDOW_CORNER_PREFERENCE = 33;
+constexpr DWORD ETE_DWMWCP_DEFAULT = 0;
+constexpr DWORD ETE_DWMWCP_DONOTROUND = 1;
 
 std::string wideToUtf8(const std::wstring& value) {
     if (value.empty()) return {};
@@ -69,7 +72,20 @@ bool parseWindowHandle(const wchar_t* text, HWND& window) {
     return true;
 }
 
-int placeWindowBehind(const wchar_t* surfaceText, const wchar_t* mainText) {
+void applySurfaceCornerPreference(HWND surface, const wchar_t* cornerMode) {
+    DWORD preference = 0;
+    if (cornerMode && std::wcscmp(cornerMode, L"square") == 0) preference = ETE_DWMWCP_DONOTROUND;
+    else if (cornerMode && std::wcscmp(cornerMode, L"default") == 0) preference = ETE_DWMWCP_DEFAULT;
+    else return;
+    HMODULE dwmapi = LoadLibraryW(L"dwmapi.dll");
+    if (!dwmapi) return;
+    using DwmSetWindowAttributeFn = HRESULT (WINAPI *)(HWND, DWORD, LPCVOID, DWORD);
+    auto setWindowAttribute = reinterpret_cast<DwmSetWindowAttributeFn>(GetProcAddress(dwmapi, "DwmSetWindowAttribute"));
+    if (setWindowAttribute) setWindowAttribute(surface, ETE_DWMWA_WINDOW_CORNER_PREFERENCE, &preference, sizeof(preference));
+    FreeLibrary(dwmapi);
+}
+
+int placeWindowBehind(const wchar_t* surfaceText, const wchar_t* mainText, const wchar_t* cornerMode) {
     HWND surface = nullptr;
     HWND mainWindow = nullptr;
     if (!parseWindowHandle(surfaceText, surface) || !parseWindowHandle(mainText, mainWindow) || surface == mainWindow) return 30;
@@ -82,6 +98,7 @@ int placeWindowBehind(const wchar_t* surfaceText, const wchar_t* mainText) {
     if (GetWindow(surface, GW_OWNER) || GetWindow(mainWindow, GW_OWNER)) return 33;
     LONG_PTR surfaceStyle = GetWindowLongPtrW(surface, GWL_EXSTYLE);
     if ((surfaceStyle & WS_EX_NOACTIVATE) == 0) return 34;
+    applySurfaceCornerPreference(surface, cornerMode);
     if (!SetWindowPos(surface, mainWindow, 0, 0, 0, 0,
             SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_SHOWWINDOW)) return 35;
     return 0;
@@ -975,7 +992,7 @@ public:
 int wmain(int argc, wchar_t** argv) {
     SetErrorMode(SEM_NOGPFAULTERRORBOX | SEM_FAILCRITICALERRORS);
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-    if (argc == 4 && std::wcscmp(argv[1], L"--place-window-behind") == 0) return placeWindowBehind(argv[2], argv[3]);
+    if (argc == 5 && std::wcscmp(argv[1], L"--place-window-behind") == 0) return placeWindowBehind(argv[2], argv[3], argv[4]);
     if (argc != 4) return 2;
     HANDLE input = GetStdHandle(STD_INPUT_HANDLE), output = GetStdHandle(STD_OUTPUT_HANDLE);
     if (!input || input == INVALID_HANDLE_VALUE || !output || output == INVALID_HANDLE_VALUE) return 3;
