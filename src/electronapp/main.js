@@ -3,7 +3,6 @@
     var electron = require('electron');
     var app = electron.app;  // Module to control application life.
     var BrowserWindow = electron.BrowserWindow;  // Module to create native browser window.
-    var BrowserView = electron.BrowserView;  // Module to create native browser window.
     var powerSaveBlocker = electron.powerSaveBlocker
     var nativeImage = electron.nativeImage;
     var productIdentity = require('./product-identity');
@@ -1094,10 +1093,10 @@
 
             getWebContents().on('dom-ready', setStartInfo);
 
-            getWebContents().on('new-window', (event, url, frameName, disposition, options, additionalFeatures, referrer, postBody) => {
-                event.preventDefault()
-                electron.shell.openExternal(url);
-            })
+            getWebContents().setWindowOpenHandler(function (details) {
+                electron.shell.openExternal(details.url);
+                return { action: 'deny' };
+            });
 
             var url = getAppUrl();
 
