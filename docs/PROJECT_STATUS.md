@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-09-19 — Electron 44.4.2 background candidate implementation
+
+基于 PR #15 merge commit `fdb32282810d05ed6e588d0c2dc6bc0582957405` 创建独立 `codex/electron-44-upgrade`。已建立 official Electron 44.4.2 Stable Windows x64 的 exact archive/executable/full-tree contract；Carnival Electron 18.3.15 保留为 historical baseline 并从 production runtime 排除。build、source/runtime provenance、package verify 和 process-version probe 已在 preflight runtime 通过。
+
+实际兼容问题只有两类：已移除的 `webContents new-window` 改为 `setWindowOpenHandler`；Electron 44 下六个既有 internal XHR scheme 需要最小 `standard + supportFetchAPI + corsEnabled` 注册。未启用 `secure`、`bypassCSP`、Service Worker、`nodeIntegration=true`、新的 `contextIsolation=false` 或新的 `sandbox=false`。BrowserView 仅为未使用 import，已删除，不做 WebContentsView/Native surface 重构。
+
+preflight Formal STRM/CD2 与 DirectUrl/UA isolation PASS；ordinary 与 CD2 miss 的全部播放、控制、Stats、Session/report assertion 通过，仅保留 Electron 18 baseline 同样存在的 rapid NextTrack `selected=false` limitation，因此为 `BASELINE-MATCHED LIMITATION / NO NEW REGRESSION`。Native Helper/ownership/z-order/placement focused `46/46 PASS`，parent-death PASS、residual 0。最终 candidate runtime/installer 尚需从最终 docs commit 重建和逐文件验证；真实前台、真实 Emby/CD2、fullscreen、mixed-DPI 与安装均未运行。详细 contract 见 [ELECTRON_44_UPGRADE](ELECTRON_44_UPGRADE.md)。
+
 ## 2026-09-18 — CD2 route timeline observer ready
 
 在保留上一轮已提交 Issue Snapshot 的 `codex/diagnostics-tooling` worktree 上新增只读 `tools/observe-cd2-cold-warm.ps1` 及 focused selftest/Node wrapper。没有修改 `src/**`、Resolver、CD2 service、PlaybackManager、Native Helper、Session、WebSocket、installer、缓存、客户端配置或播放行为；没有调用 CD2、retry、cache warm、Mount 或 fallback。

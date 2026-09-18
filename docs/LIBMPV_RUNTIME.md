@@ -1,5 +1,7 @@
 # libmpv 与 Electron 运行环境
 
+Electron 44 candidate 的 background process/runtime evidence：Electron `44.4.2`、Chromium `152.0.7977.130`、Node `24.21.0`、V8 `15.2.124.28-electron.0`。libmpv 仍为 `mpv v0.41.0-920-gdd5d17d32`、client API `2.5`，Native Helper/private pipe/HWND contract 不变。下方 Electron 18.3.15 表是 Carnival historical baseline，不是 candidate production runtime provenance。
+
 2026-09-12 在本地构建输出上实际执行得到：
 
 | 项目 | 结果 | 证据级别 |

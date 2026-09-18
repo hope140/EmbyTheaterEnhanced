@@ -1,5 +1,17 @@
 # 开发日志
 
+## 2026-09-19 — Electron 44.4.2 background upgrade candidate
+
+Model Tier：2。Model：GPT-5.6 Sol High。Reason：任务跨 official Electron runtime input、build/provenance、main-process protocol compatibility、BrowserWindow/HWND、Native Helper、formal playback gates 与 installer，但保持 PlaybackManager、Session、Resolver、CD2 与 helper protocol 不变。Escalated：no。
+
+PR #15 先在 prepared `codex/diagnostics-tooling@2016dd6d0c1eabd7cd2c23a983557b77f8e908f8` 上完成 `npm test 217/217`、parser/selftests/focused tests、scope/diff/merge-tree Gate，随后用 first-parent `75cd2b957ca690417fc85833c0f6bbf8835a6449`、second-parent `2016dd6...` 的 merge commit `fdb32282810d05ed6e588d0c2dc6bc0582957405` 普通推送到 main。GitHub API 确认 PR #15 merged=true，origin/main 等于该 merge commit。
+
+Electron 输入固定为 official Stable `electron-v44.4.2-win32-x64.zip`，archive SHA256 `6AAE435B6CD5C0EEDF9FD38824BAE4045FFDAECD029F0B8C8328BAC3F5B71F03`、`electron.exe` SHA256 `0446040F3C63EB75D5B1E1663D5EF27F07730A82DF3E4FA47FF77C1A33CEF07C`、73-file tree `F9F14E4FE641B68296CF6D17357B4037A514C87ED8C83E91395DE11D924C9030`。实际 process versions 为 Electron 44.4.2 / Chromium 152.0.7977.130 / Node 24.21.0 / V8 15.2.124.28-electron.0。prepare 对 archive、prepared tree 与 executable fail closed；build 完整替换 `x64/electron`，source/runtime provenance 区分 historical Electron 18 与 production Electron 44。
+
+兼容审计确认 unused BrowserView 可删除且不做 WebContentsView 重构；removed `new-window` 改为 `setWindowOpenHandler`。第一次 hidden formal smoke 暴露 hidden capture surface unavailable，harness 改为 background 不截图。第二个 failure 通过 bounded trace 定位为 `electronrefreshrate://` XHR `ProgressEvent`，发生在 Native Helper 创建前。isolated protocol probe 证明只有 `standard + supportFetchAPI + corsEnabled` 可恢复 200；修复仅注册六个已有 XHR scheme，不增加 secure/bypassCSP/Service Worker，也不改变 handler 语义。
+
+preflight evidence：`npm test 225/225`；package/source/native/runtime/Electron provenance PASS；Formal STRM/CD2 hit PASS；Formal DirectUrl 与 UA isolation PASS；ordinary/CD2 miss 的播放、暂停、seek、恢复、stop、Stats、Session/report 全部通过，唯一 rapid NextTrack `selected=false` 与 Electron 18 baseline 完全一致，其余四项 true，因此为 baseline-matched limitation。Native Helper/ownership/z-order/placement `46/46`、parent-death PASS、residual 0。最终 candidate、installer、final-head 全量复测和 installer 解包 comparison 在本 docs commit 后执行；无安装、真实 profile、真实服务器、前台播放或 fullscreen。
+
 ## 2026-09-18 — CD2 route timeline observer
 
 Model Tier：2。Model：current Codex session。Reason：只读 observer 需要按 requestId 合并 app、Playback、Resolver、CD2、Mount 时间线，并区分首次 CD2 evidence 与同 app run 后续 evidence；没有修改 production resolver、CD2 transport 或 fallback。Escalated：no。

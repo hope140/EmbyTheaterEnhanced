@@ -1,5 +1,14 @@
 # 已确认经验
 
+## 2026-09-19 — Electron 44 runtime and internal protocol compatibility
+
+- Electron binary replacement must replace and verify the entire `x64/electron` tree. Overwriting only `electron.exe` cannot exclude stale DLL, locale or resource files from the historical runtime.
+- Official archive SHA256, extracted canonical tree, `electron.exe`, process versions and final runtime tree are separate identities; provenance must bind all of them while keeping Carnival Electron 18 as historical evidence.
+- Electron 44 hidden `webContents.capturePage()` can reject because no display surface exists. Background formal gates should not require a screenshot; visible visual gates remain separate.
+- Existing non-special custom schemes used by renderer XHR fail before playback on Electron 44 unless registered before ready with `standard + supportFetchAPI + corsEnabled`. Apply this only to the exact existing XHR schemes and do not add `secure`, `bypassCSP` or Service Worker privileges.
+- A swallowed renderer `ProgressEvent` can appear later as `player cannot be null`. Bounded pipeline-stage, helper lifecycle and allowlisted diagnostic events localize the first failure without changing PlaybackManager or playback semantics.
+- A formal `ok=false` can still be baseline-matched rather than a new regression. Compare the complete assertion vector on the same machine and keep the historical rapid NextTrack limitation explicit instead of changing product logic to make the harness green.
+
 ## 2026-09-17 — Deterministic generation fixture evidence
 
 - `sleep(N)` 不能证明两个异步 Play overlap；timer 恢复可能晚于第一轮 core-playing/Promise settle。只有 listener 已注册、native generation 已建立且 Promise pending 才是可被下一 Play supersede 的确定 gate。

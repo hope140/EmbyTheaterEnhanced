@@ -1,5 +1,7 @@
 # 架构
 
+Electron candidate production runtime is the pinned official Electron 44.4.2 Stable Windows x64 tree. `tools/build.ps1` removes the copied Carnival `x64/electron` directory before copying the validated official tree; source/runtime provenance bind the exact archive, full 73-file tree and `electron.exe`. Carnival Electron 18.3.15 remains a separate historical baseline input and is never relabeled as the production runtime. Compatibility changes are limited to the removed window-open API and the six existing internal XHR schemes; BrowserWindow/HWND ownership, Native Helper IPC and playback/session contracts remain unchanged. See [ELECTRON_44_UPGRADE](ELECTRON_44_UPGRADE.md).
+
 当前生产 bridge 状态：`Pepper / PPAPI bridge = RETIRED`，`Native Helper = ONLY production bridge`。旧 Carnival Pepper binary 只作为 immutable archive provenance input 保留，正式 runtime、installer payload 和正常启动链均不包含它。
 
 ## Production Native Helper Bridge candidate

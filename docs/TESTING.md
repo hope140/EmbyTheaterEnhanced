@@ -1,5 +1,21 @@
 # 测试与验收
 
+## Electron 44.4.2 background candidate
+
+Every formal runtime command first validates the exact official Electron tree and then launches the candidate `electron.exe` with `ELECTRON_RUN_AS_NODE=1` to compare Electron/Chromium/Node/V8 with `source-provenance.json`. Only after this passes does the hidden BrowserWindow smoke start.
+
+```powershell
+npm test
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/package.ps1 -RuntimeName <electron44-runtime> -VerifyOnly
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/test-runtime.ps1 -RuntimeName <electron44-runtime>
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/test-runtime.ps1 -RuntimeName <electron44-runtime> -TestPipeline
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/test-runtime.ps1 -RuntimeName <electron44-runtime> -TestPipeline -TestCd2
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/test-runtime.ps1 -RuntimeName <electron44-runtime> -TestPipeline -TestCd2Direct
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/test-runtime.ps1 -RuntimeName <electron44-runtime> -TestPipeline -TestCd2Miss
+```
+
+Hidden smoke never captures the screen. Visible capture remains a separate foreground/visual acceptance. Formal ordinary and CD2 miss retain the known Electron 18 baseline rapid NextTrack `selected=false` result while all four adjacent NextTrack assertions and all playback/control/report assertions pass; record this as baseline-matched rather than changing product behavior. Exact Electron 44 contract and preflight evidence are in [ELECTRON_44_UPGRADE](ELECTRON_44_UPGRADE.md).
+
 ## Phase 2B Pepper retirement（当前）
 
 当前生产桥接结论为：`Pepper / PPAPI bridge = RETIRED`，`Native Helper = ONLY production bridge`。以下命令和结果属于 retirement 当前证据；本文后面的 2026-09-14 Pepper readiness 段落只保留为 historical archaeology，不再定义当前 runtime contract。
@@ -36,7 +52,7 @@ node --test tests/native-helper-protocol.test.cjs tests/native-helper-client.tes
 npm test
 ```
 
-真实 native/Electron 测试使用 production source 编译的 helper、锁定 Electron 18.3.15、锁定 libmpv 与生成媒体。入口包括：
+真实 native/Electron 测试使用 production source 编译的 helper、当前 candidate 锁定 Electron 44.4.2、锁定 libmpv 与生成媒体。Electron 18.3.15 的既有结果保留为 historical baseline。入口包括：
 
 - `tools/native-helper-electron-smoke.cjs`：handshake、native HWND、structured property、gpu-next/D3D11/d3d11va、Pause/Unpause/Seek/Stop 与视觉 capture。
 - `tools/native-helper-service-smoke.cjs`：main service 的 resize/maximize/restore/fullscreen/minimize、OSD mouse/focus。

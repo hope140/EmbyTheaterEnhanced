@@ -1,5 +1,9 @@
 # 构建与打包
 
+## Pinned Electron 44 runtime input
+
+Enhanced production runtime uses the official Electron 44.4.2 Stable Windows x64 archive described by `vendor/electron-runtime-manifest.json`. The archive, complete extracted tree, `electron.exe`, version file and final `x64/electron` tree are independently checked. Carnival Electron 18.3.15 remains in the immutable Carnival inventory as historical evidence; build removes the copied directory before materializing the official tree. Missing archive, wrong hash, changed/missing/extra extracted file or stale production tree fails closed.
+
 ## Phase 2B bridge payload boundary
 
 `Pepper / PPAPI bridge` 已退休。`vendor/carnival/electronapp/libmpv/x64/mpv-win32-x64.node` 仍作为 immutable archive inventory input 供 provenance 对照，但 `tools/runtime-exclusions.cjs` 在 vendor copy 后立即将它从 Enhanced runtime 移除；`tools/package.ps1 -VerifyOnly` 和 runtime provenance 会再次 fail closed 检查该路径不存在。正式 runtime 只包含 `electronapp/native-helper/ete-mpv-helper.exe` 与受锁定 hash 的 `electronapp/libmpv/x64/mpv-1.dll`。
@@ -35,7 +39,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/build.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/package.ps1
 ```
 
-clean worktree 可以用 `tools/prepare.ps1 -ArchiveRoot <包含两个原始归档的目录>`，由脚本直接核对并解包已声明的外部输入，不手工复制 archive 或 overlay。prepare 核对两个输入归档的 SHA256，解包到 vendor。build 核对 manifest 中每个 vendor 文件 → 复制 Carnival runtime → 从固定 `sourceCommit` 的 Git tree 枚举普通 `src/electronapp` blob 并按原始 bytes 写入 → 生成 prepared preload 与三份受控 Web overlay → 复制 production dependencies → 应用 PlaybackManager overlay → 替换指定 libmpv → 写 Enhanced package 元数据、独立 ProgramDataPath、provenance 与 final payload manifest。mpv.conf、shader、字体不写入个人目录。
+clean worktree 可以用 `tools/prepare.ps1 -ArchiveRoot <包含 Carnival、综合补丁与 Electron 44.4.2 三个原始归档的目录>`，由脚本直接核对并解包已声明的外部输入，不手工复制 archive 或 overlay。prepare 核对 Carnival/patch archive 与 official Electron archive 的 SHA256，并验证 Electron 73-file canonical tree。build 核对 manifest 中每个 vendor 文件 → 复制 Carnival runtime → 删除 copied Carnival `x64/electron` → materialize pinned Electron 44 tree → 从固定 `sourceCommit` 的 Git tree 枚举普通 `src/electronapp` blob 并按原始 bytes 写入 → 生成 prepared preload 与三份受控 Web overlay → 复制 production dependencies → 应用 PlaybackManager overlay → 替换指定 libmpv → 写 Enhanced package 元数据、独立 ProgramDataPath、provenance 与 final payload manifest。mpv.conf、shader、字体不写入个人目录。
 
 普通产品源码由 `copy-tracked-product-sources.cjs` 执行 `git ls-tree -r -z --full-tree <sourceCommit>` 和 `git cat-file blob <objectId>`。只接受 regular `100644/100755 blob`，binary 与文本都直接写 Buffer，不做 decode、re-encode 或换行转换。dirty/staged index 和 checkout bytes 不进入 runtime；prepared preload、Web overlay、PlaybackManager 和 package metadata 继续走各自独立 contract。
 
@@ -53,7 +57,7 @@ CD2 阶段在源码覆盖后执行两项确定性步骤：`copy-runtime-dependen
 
 `source-provenance.json` 记录 base/runtime version、archive/manifest、Web base 与 final tree、每个 Web overlay 的 base/input/generator/output SHA256、Electron、Native Helper、retired bridge input exclusion、libmpv 以及 package-lock 驱动的 production dependency closure。`runtime-provenance.json` 绑定 source provenance，并覆盖 Git tracked 产品源码、prepared preload、PlaybackManager、package metadata overlay 与 runtime exclusion contract。`build-manifest.json` schema 2 绑定 source commit、两份 provenance、vendor manifest、package-lock 和 canonical payload-set digest；它不把自己列入 payload，避免递归 hash。
 
-package verify 先验证两层 provenance，再对 build manifest 做路径规范、重复路径、双向 file-set、逐文件 SHA256、provenance binding 和 payload-set digest 检查，然后才允许 Inno 编译到 `dist/EmbyTheaterEnhanced-0.1.1-win-x64-setup.exe`。传 `-RuntimeName` 选择 runtime。安装目标独立于 Carnival，安装器保留稳定 AppId；桌面、开始菜单和安装完成入口直接启动 `{app}\Emby.Theater.exe`。卸载不删除个人 mpv 配置和 Enhanced 用户数据。
+package verify 先验证两层 provenance，再对 build manifest 做路径规范、重复路径、双向 file-set、逐文件 SHA256、provenance binding 和 payload-set digest 检查，然后才允许 Inno 编译。传 `-RuntimeName` 选择 runtime；`-OutputBaseFilename` 只控制 candidate installer 文件名，不改变 AppVersion、AppId、payload 或安装入口。安装目标独立于 Carnival，桌面、开始菜单和安装完成入口直接启动 `{app}\Emby.Theater.exe`。卸载不删除个人 mpv 配置和 Enhanced 用户数据。
 
 ## 可重复性
 
