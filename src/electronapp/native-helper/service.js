@@ -11,8 +11,6 @@ const NOTIFY_CHANNEL = 'enhanced-native-helper-notify';
 const EVENT_CHANNEL = 'enhanced-native-helper-event';
 const WINDOW_PLACEMENT_MODE = '--place-window-behind';
 const WINDOW_PLACEMENT_TIMEOUT_MS = 2000;
-const SURFACE_CORNER_DEFAULT = 'default';
-const SURFACE_CORNER_SQUARE = 'square';
 const EXPECTED_LIBMPV_VERSION = 'mpv v0.41.0-920-gdd5d17d32';
 const EXPECTED_LIBMPV_SHA256 = '965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c';
 
@@ -192,12 +190,12 @@ function createService(options) {
         hideSurfaceAfterStalePlacement(request);
         log('surface-z-order-stale', {reason: request.reason});
       } else {
-        log('surface-z-order', {reason: request.reason, cornerMode: request.cornerMode, applied: true});
+        log('surface-z-order', {reason: request.reason, applied: true});
       }
       if (placementPending && !destroyed) runPendingPlacement();
     };
     try {
-      placementChild = execFile(helperPath, [WINDOW_PLACEMENT_MODE, request.surfaceHandle, request.mainHandle, request.cornerMode], {
+      placementChild = execFile(helperPath, [WINDOW_PLACEMENT_MODE, request.surfaceHandle, request.mainHandle], {
         encoding: 'utf8',
         timeout: WINDOW_PLACEMENT_TIMEOUT_MS,
         windowsHide: true
@@ -213,7 +211,6 @@ function createService(options) {
     const revision = ++placementRevision;
     let surfaceHandle;
     let mainHandle;
-    let cornerMode = SURFACE_CORNER_DEFAULT;
     try {
       surfaceHandle = decimalWindowHandle(surface);
       mainHandle = decimalWindowHandle(main);
@@ -221,10 +218,7 @@ function createService(options) {
       log('surface-z-order-warning', {reason, failure: {code: 'invalid-window-handle', killed: false, signal: null}});
       return;
     }
-    try {
-      if (main.isFullScreen()) cornerMode = SURFACE_CORNER_SQUARE;
-    } catch (_) { }
-    placementPending = {reason, revision, surface, surfaceEpoch, surfaceHandle, main, mainHandle, cornerMode, cancelled: false};
+    placementPending = {reason, revision, surface, surfaceEpoch, surfaceHandle, main, mainHandle, cancelled: false};
     runPendingPlacement();
   }
 

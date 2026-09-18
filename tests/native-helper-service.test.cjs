@@ -41,21 +41,11 @@ test('native window handle stays an exact decimal string', function () {
 
 test('native placement CLI exits before media transport and uses non-activating relative z-order', function () {
   const source = fs.readFileSync(path.join(__dirname, '..', 'native', 'mpv-helper', 'ete-mpv-helper.cpp'), 'utf8');
-  const cornerFunction = source.slice(source.indexOf('void applySurfaceCornerPreference('), source.indexOf('int placeWindowBehind('));
   const placementFunction = source.slice(source.indexOf('int placeWindowBehind('), source.indexOf('uint64_t monotonicMicros()'));
   const placementDispatch = source.indexOf('std::wcscmp(argv[1], L"--place-window-behind")');
   const transportInitialization = source.indexOf('HANDLE input = GetStdHandle');
   assert.ok(placementDispatch > 0 && placementDispatch < transportInitialization);
-  assert.match(cornerFunction, /LoadLibraryW\(L"dwmapi\.dll"\)/);
-  assert.match(cornerFunction, /GetProcAddress\(dwmapi, "DwmSetWindowAttribute"\)/);
-  assert.match(cornerFunction, /ETE_DWMWCP_DONOTROUND/);
-  assert.match(cornerFunction, /ETE_DWMWCP_DEFAULT/);
-  assert.match(cornerFunction, /setWindowAttribute\(surface,/);
-  assert.doesNotMatch(cornerFunction, /setWindowAttribute\(mainWindow,/);
-  assert.match(placementFunction, /applySurfaceCornerPreference\(surface, cornerMode\)/);
   assert.match(placementFunction, /SetWindowPos\(surface, mainWindow/);
-  assert.match(placementFunction, /applySurfaceCornerPreference\(surface, cornerMode\);\s*if \(!SetWindowPos/);
-  assert.ok(placementFunction.indexOf('applySurfaceCornerPreference(surface, cornerMode)') < placementFunction.indexOf('SetWindowPos(surface, mainWindow'));
   for (const flag of ['SWP_NOMOVE', 'SWP_NOSIZE', 'SWP_NOACTIVATE', 'SWP_NOOWNERZORDER', 'SWP_SHOWWINDOW']) {
     assert.match(placementFunction, new RegExp(flag));
   }
@@ -69,7 +59,6 @@ class FakeWindow extends EventEmitter {
     super();
     this.options = options || {};
     this.destroyed = false; this.visible = false; this.minimized = false;
-    this.fullscreen = false;
     this.bounds = {x: 10, y: 10, width: 800, height: 450};
     this.handle = ++nextWindowHandle;
     this.moveTopCalls = 0;
@@ -89,7 +78,6 @@ class FakeWindow extends EventEmitter {
   isDestroyed() { return this.destroyed; }
   isVisible() { return this.visible; }
   isMinimized() { return this.minimized; }
-  isFullScreen() { return this.fullscreen; }
   setMenu() {}
   loadURL() { return Promise.resolve(); }
   showInactive() { this.visible = true; }
@@ -189,14 +177,14 @@ async function showSurface(service) {
   return {created, begun};
 }
 
-test('windowed first show requests default corners and passes exact HWNDs without z-order pulses', async function () {
+test('surface placement passes exact HWNDs without moveTop or always-on-top pulses', async function () {
   const ClientClass = makeClientClass();
   const {main, service, logs, placementExecutor} = makeService(ClientClass);
   await showSurface(service);
   const surface = FakeWindow.instances[1];
   assert.equal(placementExecutor.calls.length, 1);
   assert.match(placementExecutor.calls[0].file, /electronapp[\\/]native-helper[\\/]ete-mpv-helper\.exe$/);
-  assert.deepEqual(placementExecutor.calls[0].args, ['--place-window-behind', surface.handle.toString(), main.handle.toString(), 'default']);
+  assert.deepEqual(placementExecutor.calls[0].args, ['--place-window-behind', surface.handle.toString(), main.handle.toString()]);
   assert.deepEqual(placementExecutor.calls[0].options, {encoding: 'utf8', timeout: 2000, windowsHide: true});
   assert.equal(surface.moveTopCalls, 0);
   assert.equal(main.moveTopCalls, 0);
@@ -208,7 +196,6 @@ test('windowed first show requests default corners and passes exact HWNDs withou
   assert.equal(surface.options.skipTaskbar, true);
   placementExecutor.complete(0);
   assert.equal(logs.some(record => record.event === 'surface-z-order' && record.details.applied === true), true);
-  assert.equal(logs.find(record => record.event === 'surface-z-order').details.cornerMode, 'default');
   await service.destroy();
 });
 
@@ -281,12 +268,10 @@ test('approved lifecycle events reassert placement with one operation in flight 
   const {main, service, logs, placementExecutor} = makeService(ClientClass);
   await showSurface(service);
   main.emit('focus');
-  main.fullscreen = true;
   main.emit('enter-full-screen');
   assert.equal(placementExecutor.calls.length, 1);
   placementExecutor.complete(0);
   assert.equal(placementExecutor.calls.length, 2);
-  assert.equal(placementExecutor.calls[1].args.at(-1), 'square');
   placementExecutor.complete(1);
   assert.equal(placementExecutor.calls.length, 2);
   assert.equal(logs.some(record => record.event === 'surface-z-order-stale' && record.details.reason === 'renderer-visibility'), true);
@@ -303,33 +288,14 @@ test('each approved lifecycle event reasserts placement after bounds sync', asyn
   placementExecutor.complete(0);
   const lifecycleEvents = ['focus', 'show', 'restore', 'maximize', 'unmaximize', 'enter-full-screen', 'leave-full-screen'];
   for (const eventName of lifecycleEvents) {
-    if (eventName === 'enter-full-screen') main.fullscreen = true;
-    if (eventName === 'leave-full-screen') main.fullscreen = false;
     const beforeBounds = surface.setBoundsCalls.length;
     const beforePlacements = placementExecutor.calls.length;
     main.emit(eventName);
     assert.equal(surface.setBoundsCalls.length, beforeBounds + 1, eventName);
     assert.equal(surface.setBoundsCalls.at(-1).animate, false, eventName);
     assert.equal(placementExecutor.calls.length, beforePlacements + 1, eventName);
-    assert.equal(placementExecutor.calls.at(-1).args.at(-1), main.fullscreen ? 'square' : 'default', eventName);
     placementExecutor.complete(beforePlacements);
   }
-  await service.destroy();
-});
-
-test('corner mode follows current fullscreen state instead of lifecycle reason text', async function () {
-  const ClientClass = makeClientClass();
-  const {main, service, placementExecutor} = makeService(ClientClass);
-  await showSurface(service);
-  placementExecutor.complete(0);
-  main.fullscreen = false;
-  main.emit('enter-full-screen');
-  assert.equal(placementExecutor.calls[1].args.at(-1), 'default');
-  placementExecutor.complete(1);
-  main.fullscreen = true;
-  main.emit('leave-full-screen');
-  assert.equal(placementExecutor.calls[2].args.at(-1), 'square');
-  placementExecutor.complete(2);
   await service.destroy();
 });
 
@@ -401,7 +367,7 @@ test('minimize invalidates an in-flight show and restore schedules one fresh pla
   await service.destroy();
 });
 
-test('surface recreate while windowed requests default corners and stale callback cannot mutate the replacement', async function () {
+test('surface recreate supersedes the old HWND and stale callback cannot mutate the replacement', async function () {
   const ClientClass = makeClientClass();
   const {main, service, logs, placementExecutor} = makeService(ClientClass);
   const {created} = await showSurface(service);
@@ -415,30 +381,11 @@ test('surface recreate while windowed requests default corners and stale callbac
   assert.equal(placementExecutor.calls.length, 1);
   placementExecutor.complete(0, Object.assign(new Error('old operation'), {code: 'ABORT_ERR', killed: true, signal: 'SIGTERM'}));
   assert.equal(placementExecutor.calls.length, 2);
-  assert.deepEqual(placementExecutor.calls[1].args, ['--place-window-behind', secondSurface.handle.toString(), main.handle.toString(), 'default']);
+  assert.deepEqual(placementExecutor.calls[1].args, ['--place-window-behind', secondSurface.handle.toString(), main.handle.toString()]);
   placementExecutor.complete(1);
   assert.equal(logs.some(record => record.event === 'surface-z-order-stale'), true);
   assert.equal(logs.filter(record => record.event === 'surface-z-order').length, 1);
   assert.equal(logs.find(record => record.event === 'surface-z-order').details.reason, 'renderer-visibility');
-  await service.destroy();
-});
-
-test('surface recreate while fullscreen requests square corners from current main state', async function () {
-  const ClientClass = makeClientClass();
-  const {main, service, placementExecutor} = makeService(ClientClass);
-  const {created} = await showSurface(service);
-  placementExecutor.complete(0);
-  main.fullscreen = true;
-  main.emit('enter-full-screen');
-  placementExecutor.complete(1);
-  const firstSurface = FakeWindow.instances[1];
-  firstSurface.destroy();
-  ClientClass.clients[0].crash();
-  const replacementGeneration = await service.call('begin-generation', {label: 'replacement'}, created.endpointId);
-  await service.call('set-visible', {visible: true, generationId: replacementGeneration.generationId}, created.endpointId);
-  const secondSurface = FakeWindow.instances[2];
-  assert.deepEqual(placementExecutor.calls[2].args, ['--place-window-behind', secondSurface.handle.toString(), main.handle.toString(), 'square']);
-  placementExecutor.complete(2);
   await service.destroy();
 });
 
