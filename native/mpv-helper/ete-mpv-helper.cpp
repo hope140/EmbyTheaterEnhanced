@@ -10,11 +10,13 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cwchar>
 #include <cstring>
 #include <deque>
 #include <iomanip>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <mutex>
 #include <set>
@@ -51,6 +53,38 @@ std::string wideToUtf8(const std::wstring& value) {
     if (WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, value.data(), static_cast<int>(value.size()), result.data(), bytes, nullptr, nullptr) != bytes)
         throw std::runtime_error("wide-to-utf8-failed");
     return result;
+}
+
+bool parseWindowHandle(const wchar_t* text, HWND& window) {
+    if (!text || !*text) return false;
+    uintptr_t value = 0;
+    for (const wchar_t* cursor = text; *cursor; ++cursor) {
+        if (*cursor < L'0' || *cursor > L'9') return false;
+        uintptr_t digit = static_cast<uintptr_t>(*cursor - L'0');
+        if (value > (std::numeric_limits<uintptr_t>::max() - digit) / 10) return false;
+        value = value * 10 + digit;
+    }
+    if (!value) return false;
+    window = reinterpret_cast<HWND>(value);
+    return true;
+}
+
+int placeWindowBehind(const wchar_t* surfaceText, const wchar_t* mainText) {
+    HWND surface = nullptr;
+    HWND mainWindow = nullptr;
+    if (!parseWindowHandle(surfaceText, surface) || !parseWindowHandle(mainText, mainWindow) || surface == mainWindow) return 30;
+    if (!IsWindow(surface) || !IsWindow(mainWindow)) return 31;
+    DWORD surfaceProcess = 0;
+    DWORD mainProcess = 0;
+    GetWindowThreadProcessId(surface, &surfaceProcess);
+    GetWindowThreadProcessId(mainWindow, &mainProcess);
+    if (!surfaceProcess || surfaceProcess != mainProcess) return 32;
+    if (GetWindow(surface, GW_OWNER) || GetWindow(mainWindow, GW_OWNER)) return 33;
+    LONG_PTR surfaceStyle = GetWindowLongPtrW(surface, GWL_EXSTYLE);
+    if ((surfaceStyle & WS_EX_NOACTIVATE) == 0) return 34;
+    if (!SetWindowPos(surface, mainWindow, 0, 0, 0, 0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_SHOWWINDOW)) return 35;
+    return 0;
 }
 
 uint64_t monotonicMicros() {
@@ -941,6 +975,7 @@ public:
 int wmain(int argc, wchar_t** argv) {
     SetErrorMode(SEM_NOGPFAULTERRORBOX | SEM_FAILCRITICALERRORS);
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+    if (argc == 4 && std::wcscmp(argv[1], L"--place-window-behind") == 0) return placeWindowBehind(argv[2], argv[3]);
     if (argc != 4) return 2;
     HANDLE input = GetStdHandle(STD_INPUT_HANDLE), output = GetStdHandle(STD_OUTPUT_HANDLE);
     if (!input || input == INVALID_HANDLE_VALUE || !output || output == INVALID_HANDLE_VALUE) return 3;
