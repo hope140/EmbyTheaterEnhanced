@@ -6,7 +6,9 @@
 
 实际兼容问题只有两类：已移除的 `webContents new-window` 改为 `setWindowOpenHandler`；Electron 44 下六个既有 internal XHR scheme 需要最小 `standard + supportFetchAPI + corsEnabled` 注册。未启用 `secure`、`bypassCSP`、Service Worker、`nodeIntegration=true`、新的 `contextIsolation=false` 或新的 `sandbox=false`。BrowserView 仅为未使用 import，已删除，不做 WebContentsView/Native surface 重构。
 
-preflight Formal STRM/CD2 与 DirectUrl/UA isolation PASS；ordinary 与 CD2 miss 的全部播放、控制、Stats、Session/report assertion 通过，仅保留 Electron 18 baseline 同样存在的 rapid NextTrack `selected=false` limitation，因此为 `BASELINE-MATCHED LIMITATION / NO NEW REGRESSION`。Native Helper/ownership/z-order/placement focused `46/46 PASS`，parent-death PASS、residual 0。最终 candidate runtime/installer 尚需从最终 docs commit 重建和逐文件验证；真实前台、真实 Emby/CD2、fullscreen、mixed-DPI 与安装均未运行。详细 contract 见 [ELECTRON_44_UPGRADE](ELECTRON_44_UPGRADE.md)。
+preflight Formal STRM/CD2 与 DirectUrl/UA isolation PASS；ordinary 与 CD2 miss 的全部播放、控制、Stats、Session/report assertion 通过，仅保留 Electron 18 baseline 同样存在的 rapid NextTrack `selected=false` limitation，因此为 `BASELINE-MATCHED LIMITATION / NO NEW REGRESSION`。Native Helper/ownership/z-order/placement focused `46/46 PASS`，parent-death PASS、residual 0。详细 contract 见 [ELECTRON_44_UPGRADE](ELECTRON_44_UPGRADE.md)。
+
+final artifact source commit 为 `9168d08f96e121e9852880503fd01af2bf26691d`。`npm test 228/228 PASS`；candidate runtime `EmbyTheaterEnhanced-electron44-9168d08-candidate` 的 2135-entry manifest、2136 actual files、source/Electron/Native Helper/runtime provenance 与 package verify PASS；background startup、Formal STRM/CD2、Formal DirectUrl/UA isolation PASS。candidate installer `EmbyTheaterEnhanced-electron44-win-x64-candidate-setup.exe` 为 175563881 bytes，SHA256 `BE338187DD56BE346B832B18793FDE87AE9957EF8AD9A3B72795EA51C22BF957`；innounp integrity PASS，解包 `{app}` 与 runtime 均为 2136 files，`missing=0`、`extra=0`、`mismatch=0`。final docs-only result commit 不改变该 artifact 的产品 bytes/provenance。candidate 未安装，v0.2.1 安装、真实 profile、服务器、真实 CD2 mapping、前台播放、fullscreen、Alt-Tab、mixed-DPI 和 Release 均未触碰。
 
 ## 2026-09-18 — CD2 route timeline observer ready
 

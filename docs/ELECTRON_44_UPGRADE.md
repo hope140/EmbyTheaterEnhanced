@@ -60,4 +60,22 @@ The custom-scheme failure was reproduced before the fix: `electronrefreshrate://
 - Electron 44 parent-death contract: PASS, helper exited and residual count was zero.
 - Real Emby playback, real server/CD2, manual fullscreen, Alt-Tab, minimize/restore, mixed-DPI and installation: NOT RUN in the background phase.
 
-The final candidate runtime and installer must be regenerated from the final documentation commit, package-verified, compared file-for-file after installer extraction, and left uninstalled for user foreground acceptance.
+## Final background artifacts
+
+Artifact source commit: `9168d08f96e121e9852880503fd01af2bf26691d`.
+
+- Runtime: `dist/EmbyTheaterEnhanced-electron44-9168d08-candidate`
+- Build manifest: 2135 payload entries; 2136 files including the manifest
+- Full test suite: `228/228 PASS`
+- Source, Electron, Native Helper and runtime provenance: PASS
+- Package verify: PASS
+- Hidden startup smoke: PASS with screenshot status `NOT_RUN_HIDDEN`
+- Formal STRM/CD2: PASS
+- Formal DirectUrl and UA isolation: PASS
+- Formal ordinary and CD2 miss: baseline-matched rapid NextTrack limitation only; no new regression
+- Installer: `dist/EmbyTheaterEnhanced-electron44-win-x64-candidate-setup.exe`
+- Installer size / SHA256: `175563881` bytes / `BE338187DD56BE346B832B18793FDE87AE9957EF8AD9A3B72795EA51C22BF957`
+- Installer integrity: PASS
+- Extracted `{app}` comparison: 2136 vs 2136 files, missing 0, extra 0, mismatch 0
+
+The final result record is a docs-only follow-up and does not change the artifact source commit or product bytes. The candidate remains uninstalled. Foreground playback, fullscreen, Alt-Tab, minimize/restore, mixed-DPI, real profile/server/CD2 mapping and release publication remain for user acceptance or later authorization.
