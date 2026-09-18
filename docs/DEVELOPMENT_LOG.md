@@ -1,5 +1,49 @@
 # 开发日志
 
+## 2026-09-18 — CD2 route timeline observer
+
+Model Tier：2。Model：current Codex session。Reason：只读 observer 需要按 requestId 合并 app、Playback、Resolver、CD2、Mount 时间线，并区分首次 CD2 evidence 与同 app run 后续 evidence；没有修改 production resolver、CD2 transport 或 fallback。Escalated：no。
+
+Issue Snapshot 已先以独立 commit `eb90fdb8934cf612bd2f39c3e9f071e2469b0d53` 收口；本轮 observer 继续使用同一分支和共享脱敏层，未把两个阶段堆进同一提交。
+
+新增 `tools/observe-cd2-cold-warm.ps1`、`tests/cd2-cold-warm-observer-selftest.ps1` 和 `tests/cd2-cold-warm-observer.test.cjs`。Observer 只读取四个 ETE client JSONL 轮转文件，可用 live bounded polling 或 `-Once` 离线解析；不调用 CD2/Resolver/Mount，不 retry，不 warm cache，不修改 fallback order，不启动播放器。
+
+样本选择要求一条现有 `route=direct-url` 和一条现有 `route=mount`。每条样本按 requestId 关联 `play-request`、`resolver/context-observed`、`route-selected`、CD2 `resolve-start/client-ready/find-file/download-url/resolve-terminal`、Mount、`resolver-complete`、`loadfile-requested` 和 `core-playing`。报告只保存 safe request/rule/media hashes、allowlisted labels、timestamps、elapsed 和 evidence；DirectUrl 只记录 URL generated evidence/sourceKind，不保存 URL。`startupClassification` 只输出 `FIRST_CD2_OBSERVATION` 或 `SUBSEQUENT_CD2_OBSERVATION`，描述样本 CD2 resolve-start 前同 app run 是否已有更早 CD2 resolve/client-ready；`directoryColdWarm` 固定为 `UNAVAILABLE`。这不是目录 hydration 或缓存预热证明。
+
+当前 production log schema 没有 `resolver-initialized`、strategy、order 或 directory hydration event，observer 保持 `UNAVAILABLE`，不读取配置猜测，也不把没有 CD2 event 写成 CD2 未尝试。same-media 只有现有 ItemId、MediaSourceId 或 source identity 能建立 safe hash 时才标记 `PASS`。输出文件经过共享 redaction contract 的两次 Gate，失败则删除报告；exit 2 仅用于 redaction/privacy refusal，等待/证据不足返回 exit 3。
+
+focused synthetic evidence：同一 rule/media 的 DirectUrl hit 被标为 `FIRST_CD2_OBSERVATION`，随后 FindFile `not_found` → Mount `mount_hit` 被标为 `SUBSEQUENT_CD2_OBSERVATION`；两个样本的 `directoryColdWarm` 均为 `UNAVAILABLE`。FindFile、GetDownloadUrl、URL generated、fallback reason、Mount selected reason、malformed JSONL、invalid UTF-8、same-rule/same-media 和 raw secret=0 均通过。waiting 报告返回 exit 3，unsafe output refusal 返回 exit 2。当前仍未取得真实 Emby CD2 样本，不把 synthetic observer evidence 写成真实播放验收。
+
+默认实际日志目录只读 `-Once` smoke：读取 1 个日志文件，发现 5 个 DirectUrl route candidate、0 个 Mount route candidate，生成 redaction-passed 的 `WAITING_FOR_DIRECT_URL_AND_MOUNT` 报告并以 exit 3 结束。Observer 正确等待缺失的第二类样本，没有执行任何 CD2、Mount、retry、cache warm 或 production action；真实同媒体 DirectUrl/Mount 对比仍待用户在问题现场前启动 observer 后产生两类 route evidence。
+
+## 2026-09-17 — Issue Snapshot
+
+Model Tier：2。Model：current Codex session。Reason：只读诊断入口跨 Collector、JSONL observer、进程树、Windows crash metadata 和共享 redaction contract，但不改变 PlaybackManager、Session、Resolver、CD2、Native Helper 或安装器。Escalated：no。
+
+Collector 已先以 `a3f6276a09a7dbdf03263c9e393671b35efcbebf` 创建唯一 checkpoint，未 push、未 PR、未 merge。随后在同一 worktree 开始 Issue Snapshot，当前 Snapshot 变更保持未提交，等待主线程 review。
+
+新增 `tools/report-playback-issue.ps1`。正常运行显示 11 个问题类型，只询问一条可留空 note；先冻结轻量 `ETE-Issue-YYYYMMDD-HHMMSS.json`，再调用现有 Collector，转发相同 `capturedAt` 为 `ProblemTime`，并传递每次随机生成的 `issueCorrelationId`。读取范围限制为已有 ETE JSONL 轮转日志、进程树、runtime metadata 和有界 Windows Application crash metadata；不读取 command line、配置正文、媒体库、CD2 目录或凭据，也不触发 playback、resolver、CD2、Mount、retry 或新的 production observer。
+
+新增 `tools/diagnostics-common.ps1`，由 Collector 和 Snapshot 共用随机 HMAC ID hash、path/URL summary、safe JSON serialization 和 redaction scan。Snapshot 的 Session、NowPlaying、WebSocket、report、CD2 阶段和 process evidence 只使用已观察值；无证据写 `UNAVAILABLE`，缺日志、invalid UTF-8、malformed JSONL、Windows Event 不可读和程序未运行只生成 warning。Snapshot 的最终 redaction gate 失败时不调用 Collector，Collector 仍保留目录二次 Gate 和 ZIP fail-closed 行为。
+
+新增 `tests/report-playback-issue-selftest.ps1` 与 `tests/report-playback-issue.test.cjs`。合成 fixture 覆盖全部 issue type、Other note/空 note、Fullscreen 与 CD2/Mount 现场、Session evidence、helper/error evidence、correlation linkage、ProblemTime forwarding、Collector success/warning、missing logs、program-not-running、malformed JSONL、invalid UTF-8、shared redaction refusal，以及 fake token/server URL/media path/DeviceId/SessionId/ItemId/pickcode 的 Snapshot/bundle/ZIP raw leak 断言。
+
+验证结果：PowerShell 5.1 parser PASS；`node --test tests/diagnostics-collector.test.cjs` PASS；`node --test tests/report-playback-issue.test.cjs` PASS；Collector 与 Snapshot PowerShell selftest PASS；`git diff --check`、untracked whitespace 和 allowed scope audit PASS。最终 normal-command smoke 选择 `11 / Other` 并留空 note，生成 Issue JSON、Bundle 目录和 ZIP，`snapshotElapsedMs=351`、`bundleElapsedMs=1206`、`collectorElapsedMs=1018`、`correlationMatches=true`、`redactionPassed=true`；issue 与 manifest 的 correlation ID 相同。无 production files modified，playback behavior modified：NO。没有运行 full `npm test`，保留既有 private/ignored Carnival input 边界，没有安装或伪造输入。Snapshot 变更仍未提交，等待主线程 review。
+
+## 2026-09-17 — Sanitized Diagnostic Bundle Collector
+
+Model Tier：1。Model：current Codex session。Reason：边界明确的只读 PowerShell tooling、递归脱敏、manifest/ZIP Gate 和合成安全测试；无 Playback/Session lifecycle 或产品架构修改。Escalated：no。
+
+从正式 `v0.2.0` merge commit `dbe2f0fe8891e4fbd91a8dedcbb94eac82c66472` 创建隔离 worktree `E:\ETE-diagnostics-tooling` 与分支 `codex/diagnostics-tooling`。本轮只实现第一项 `SANITIZED DIAGNOSTIC BUNDLE COLLECTOR`；没有开始 Issue Snapshot、CD2 observer、ReferenceError observer 或 installer residual audit，也没有修改已发布 v0.2.0、真实 profile、安装器或任何 `src/**` 产品行为。
+
+新增 `tools/collect-diagnostics.ps1`。默认窗口是采集时刻前 20 分钟；`-ProblemTime` 使用该时间点前后各 `-ProblemWindowMinutes`（默认 5）分钟。脚本只读取 `ete-client.jsonl(.1/.2/.3)`、已知 runtime metadata、ETE-owned process tree 和最多 100 条指定 Windows Application crash event。每个包使用未持久化随机 key 的 HMAC-SHA256 16 位短哈希；结构化递归 sanitizer 会删除 credential/username/pickcode/command-line/environment 字段，并将 ID、路径和 URL 转为 allowlisted summaries。采集结果分文件写入后重新扫描整包；任何 raw URL、Bearer、secret assignment、absolute path、sensitive key 或 raw sensitive-ID key 都会令 `redactionPassed=false` 并在压缩前退出。
+
+新增 PowerShell black-box self-test 与 Node test wrapper。fixture 将 480 条有界日志、malformed JSON、invalid UTF-8 和两条含敏感信息的有效事件写入精确 client log，同时在同目录放置带 secret 的 decoy 文件，证明 collector 不会扩大读取范围。测试覆盖 fake token、带 userinfo/query 的 server URL、username、Windows/UNC/POSIX media path、相对 media filename、115 pickcode、DeviceId、SessionId、PlaySessionId、MediaSourceId、ItemId、重复 ID 稳定哈希、空/缺失日志、`.1` 轮转与问题时间窗、manifest 文件 hash、`-MaxLogLines 25`、`-NoZip` 与默认 ZIP 二次扫描。另有并发安全测试在 bundle 目录创建后注入 raw URL，已验证 `redactionPassed=false`、exit 2 且无 ZIP。
+
+验证结果：PowerShell 5.1 parser PASS；`node --test tests/diagnostics-collector.test.cjs` PASS；`powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/diagnostics-collector-selftest.ps1` PASS。当前 fixture 的目录与 ZIP 均未包含任一 raw secret。独立审查发现 Windows/UNC separator normalization 与全局同名 helper 归属两项问题；现已修为单反斜杠 normalization，以及只将 ETE-owned helper 纳入 PID/count，unowned helper 只记录无 PID 的 count/status，并补齐 Windows drive、UNC、POSIX 路径精确断言。最终用当前本机 v0.2.0 profile 执行只读真实 collector smoke，约 `2806ms` 完成；manifest 为 `appVersion=0.2.0`、`sourceCommit=dbe2f0f...`、`filesIncluded=8`、`redactionPassed=true`，ZIP 存在；Session/WebSocket observer 与 Windows event access 分别以安全 warning 记录，临时目录核验后已删除。
+
+全量 `npm test` 尝试为 `189/198 PASS`。其中 8 项失败是该 fresh worktree 缺少 private/ignored Carnival Web input 与 prepared `src/electronapp/preload.js`；另 1 项为既有 real grpc-js connection-refusal reason assertion，单独复跑仍为 `26/27`。本轮新增 collector test 在全量中通过，未用代码规避或弱化这些无关失败。尚未发生真实日常故障现场，因此只声明 tooling READY，不声明已取得真实问题诊断证据。
+
 ## 2026-09-17 — v0.2.0 Release Gate revalidation
 
 Model Tier：2。Model：current Codex session。Reason：版本 authoritative source、source/native/runtime provenance、installer payload 与 installed Native Helper lifecycle 跨构建和验收层复核；没有改变 playback architecture。Escalated：no。

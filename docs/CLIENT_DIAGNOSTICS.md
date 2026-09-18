@@ -114,3 +114,107 @@ EmbyTheaterEnhanced-Diagnostics-YYYYMMDD-HHmmss.txt
 诊断 IPC 只接受当前 BrowserWindow 的可信 sender。导出失败、打开目录失败、清空失败只反馈给设置页，不会使客户端崩溃，也不会改变播放 fallback。
 
 本轮覆盖 resolver、CD2、Mount 和 libmpv playback 的低风险事件。由于禁止侵入旧 upstream Web UI、`apiclient.js`、`connectionmanager.js`、PlaybackManager vendor snapshot 和 WebSocket 生命周期，Session capability、NowPlaying、WebSocket 状态与真实双客户端事件保持 `DEFERRED OBSERVABILITY`。真实 Windows 客户端播放各 route、导出 TXT 和交给 AI 的验收仍需要人工执行。
+
+## 一键脱敏诊断包
+
+v0.2.0 之后的观察工具分支提供独立只读 collector：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/collect-diagnostics.ps1
+```
+
+默认在当前目录生成：
+
+```text
+ETE-Diagnostics-YYYYMMDD-HHMMSS\
+ETE-Diagnostics-YYYYMMDD-HHMMSS.zip
+```
+
+默认时间范围为最近 20 分钟。已知问题时间时可收窄到前后各 5 分钟：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/collect-diagnostics.ps1 `
+  -ProblemTime '2026-09-17T21:30:00+08:00'
+```
+
+可用参数包括 `-OutputRoot`、`-LookbackMinutes`、`-ProblemWindowMinutes`、`-MaxLogLines` 和 `-NoZip`。`-LogRoot`、`-InstallRoot` 与 `-CaptureTime` 主要用于隔离验证或非标准安装路径；正常安装不需要指定。
+
+目录内容固定为：
+
+- `product.json`：版本、source commit、runtime provenance presence、bridge/runtime version 与 Windows version。
+- `processes.json`：ETE host、owned Electron、Native Helper PID/count 和 residual status；不读取或输出 command line。
+- `playback.json`：最近 play/route/reason/source kind/resolver/core-playing/generation 的已有日志证据。
+- `cd2.json`：最近 rule、Find、download、DirectUrl、reason、elapsed 的已有日志证据。
+- `session.json`：Session/WebSocket/report 证据；v0.2.0 没有对应 client event 时明确为 `UNAVAILABLE`。
+- `errors.json`：有界 client error 与 Windows crash event metadata，不保存 Windows event message 正文。
+- `logs/client.jsonl`：仅四个 ETE client log 轮转文件中位于时间窗口内的有界、再次脱敏记录。
+- `manifest.json`：tool/capture/app/source/time range、文件 hash、collection warnings 与 redaction Gate。
+
+collector 不扫描磁盘、媒体库、115 或 CD2 目录，不读取用户配置正文，也不主动触发目录 enumerate、cache warm、retry 或播放。路径摘要只包含 kind、root class、segment count、extension 和 hash；URL 摘要只包含 scheme、host hash、path class 与 query presence。ID 使用每包随机 key 的 HMAC-SHA256 短哈希，key 不写入包，因此只保证同包事件关联。
+
+ZIP 只有在整目录二次扫描通过且 `manifest.json` 中 `redactionPassed=true` 时才生成。若 Gate 失败，脚本退出并拒绝生成 ZIP；不得发送该目录，先保留本机现场并检查 `redactionWarnings`。
+
+## 一键问题快照
+
+问题发生后的第一时间运行：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass `
+  -File .\tools\report-playback-issue.ps1
+```
+
+工具会显示 Startup、Playback Failure、Seek、Pause / Resume、NextTrack、CD2 / DirectUrl、Mount fallback、Remote Control、Fullscreen / UI、Crash / Exit 和 Other 共 11 个选项，然后只询问一句可留空的简短描述。它不会要求输入服务器地址、Token、媒体路径、ItemId、SessionId 或 CD2 path。
+
+一次运行先生成：
+
+```text
+ETE-Issue-YYYYMMDD-HHMMSS.json
+```
+
+随后立即以同一个 `capturedAt` 调用 `collect-diagnostics.ps1 -ProblemTime <capturedAt> -ProblemWindowMinutes 5`，生成完整诊断目录和 ZIP。Snapshot 与 `manifest.json` 共享随机、每次问题新建的 `issueCorrelationId`；该 ID 不由 DeviceId、SessionId、ItemId、MediaSourceId、媒体路径或设备信息派生。
+
+Snapshot 只使用当前已有的 client JSONL、可读的 ETE 进程树、已存在的 runtime metadata 和有界 Windows Application crash metadata。它记录 product、process、playback、resolver、CD2、Session 和 error 的当前证据。没有证据的 Session、NowPlaying、WebSocket 和 report 字段写为 `UNAVAILABLE`；缺日志、invalid UTF-8、畸形 JSONL、无法读取 Windows Event 或程序未运行只形成 warning，不改变播放行为。
+
+`fullscreen-ui` 会保留已有 app window state、Native Helper 进程存在性、currentPlayer、route、corePlaying 和最近 native-helper event。`cd2-or-mount` 会保留 route、rule hash、reason、sourceKind、CD2 attempt、FindFile、DirectUrl、Mount hit 和 elapsed evidence，用于区分没有观测到 CD2、CD2 miss、transport failure 和 DirectUrl failure；脚本不会新增 production observer，也不会重新发起播放、CD2、Mount 或 retry。
+
+Snapshot 与 Collector 共同使用 `tools/diagnostics-common.ps1` 的随机包内 HMAC ID hash、path/URL summary、bounded safe JSON 和最终 redaction scan。若 Snapshot 文件的最终 Gate 发现 raw token、Authorization/Bearer、带敏感 query 的 URL、absolute media path 或敏感 ID，则删除该 Snapshot、停止调用 Collector，并返回失败；播放链不受影响。Collector 自身仍只有在目录二次 Gate 通过后才生成 ZIP。
+
+问题快照入口的退出码保持分流：Snapshot 自身或 Collector redaction/privacy refusal 返回 `2`；普通 Collector generation failure 返回 `3`；Collector 成功且 Snapshot 已生成返回 `0`。
+
+Snapshot 本身目标低于 2 秒；完整 Collector 仍按原有边界执行，目标低于 10 秒。生成结果会在命令行报告 Snapshot、Bundle、ZIP、correlation linkage 和 redaction 状态。
+
+## CD2 route timeline observer
+
+需要观察一次 CD2 DirectUrl 命中和一次 Mount fallback 时，可在播放前启动只读 observer：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass `
+  -File .\tools\observe-cd2-cold-warm.ps1
+```
+
+默认最多观察 5 分钟，每 250 ms 重新读取四个已有 ETE client JSONL 轮转文件。它只等待日志变化，不调用 CD2、Resolver、Mount、播放、retry、cache warm 或任何 IPC。已有日志也可以离线分析：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass `
+  -File .\tools\observe-cd2-cold-warm.ps1 `
+  -Once -LogRoot 'C:\path\to\logs' -OutputRoot 'C:\path\to\evidence'
+```
+
+成功输出：
+
+```text
+ETE-CD2-Observer-YYYYMMDD-HHMMSS.json
+```
+
+`startupClassification=FIRST_CD2_OBSERVATION` 表示该样本的 `cd2/resolve-start` 之前，在同一个 `app/start` run 内没有更早的 CD2 `resolve-start` 或 `client-ready` 证据；`startupClassification=SUBSEQUENT_CD2_OBSERVATION` 表示已有更早证据。它只描述启动后的观测顺序，不代表目录 cold、目录 warm、目录 hydrated 或目录 cached，也不代表 CD2 命中。`directoryColdWarm` 在当前版本固定为 `UNAVAILABLE`，除非未来已有日志提供 parent directory identity、directory enumerate、hydration 或 cache evidence。报告同时保存 `appStartTime`、`firstPlaybackTime`、每个样本的 request/rule/media safe hash、分类依据和 resolver initialization state。
+
+每个样本包含：
+
+- Resolver：rule matched、safe rule hash、strategy、order、selected route、route reason 和 fallback reason。
+- CD2：`resolve-start`、`client-ready`、FindFile start/end、FindFile result、GetDownloadUrl start/end、URL generated evidence、terminal reason 和 elapsed。
+- Mount：resolve start/hit/miss、selected reason、Mount fallback evidence。
+- Timeline：按现有 event timestamp 重建 play request、resolver context、CD2、Mount、resolver complete、loadfile request 和 core-playing 的有界时间线。
+
+当前 v0.2.0 client log 没有单独的 `resolver-initialized`、strategy、order 或 directory hydration event 时，报告明确保留 `UNAVAILABLE`，不从当前配置、规则名称、最终 route 或前一个媒体样本反推。只有 ItemId、MediaSourceId 或 source identity 已存在于现有记录时，same-media 才能标记为 `PASS`；否则保持 `UNAVAILABLE`。报告自身使用与 Collector/Snapshot 相同的共享 redaction contract，并在保存前执行二次 Gate。
+
+退出码固定为：`0` 表示已捕获一条 DirectUrl route 和一条 Mount route 的有效报告；`2` 只表示 privacy/redaction safety failure；`3` 表示 evidence 不足或仍在等待两类可比较 route。`WAITING_FOR_DIRECT_URL_AND_MOUNT` 属于 exit 3，不复用 exit 2。
