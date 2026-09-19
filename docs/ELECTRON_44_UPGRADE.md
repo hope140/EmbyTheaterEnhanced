@@ -6,6 +6,19 @@ The upgrade branch is based on `origin/main@fdb32282810d05ed6e588d0c2dc6bc058295
 
 This upgrade changes the Electron runtime and the minimum main-process compatibility surface only. `Emby.Theater.exe`, PlaybackManager, Item/MediaSource identity, PlaySession/Session/WebSocket/reporting, Resolver order, CD2 semantics, Mount fallback, Native Helper framed IPC, libmpv and user profile formats remain unchanged.
 
+## Foreground regression follow-up
+
+Real foreground acceptance found two independent Electron 44 regressions. The apphost command parser received standard-scheme commands as lowercase authority tokens with a trailing slash, for example `windowstate-maximized/`, while the legacy switch expected `windowstate-Maximized`. Commit `8be3b6b8fdce9295f73acd7aa6b6507eb5d6c27c` canonicalizes only the command token, preserves raw URL/query bytes for `openurl`, rejects unknown commands, and adds synthetic coverage. A real Electron 44 probe confirmed `windowstate-maximized/ -> BrowserWindow.setFullScreen(true)` and display-sized bounds.
+
+The video presentation regression remains blocked. In both A and B, mpv `time-pos`, PositionTicks, audio, `core-playing`, `gpu-next`, D3D11VA and zero-drop statistics advanced normally while six desktop video-region captures from T0 through T+10s had one repeated SHA256. The diagnostic-only B arm requested and observed `disable-backgrounding-occluded-windows`, but its visible-frame hashes remained frozen after Seek, one small resize and one opaque-window occlusion/uncover cycle. Therefore:
+
+```text
+OCCLUSION HYPOTHESIS = REJECTED
+VIDEO FIX = BLOCKED / NEEDS DEEPER COMPOSITION WORK
+```
+
+The switch is not a production change and is not committed. No redraw timer, repeated `SetWindowPos`, surface ownership change, WebContentsView migration, renderer security downgrade, Resolver/CD2/Mount/Session change, Native Helper protocol change or libmpv architecture change was made. PR #17 remains open and must not be merged until a separate video composition solution and renewed foreground acceptance exist.
+
 ## Pinned runtime input
 
 | Field | Value |

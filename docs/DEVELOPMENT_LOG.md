@@ -1,5 +1,15 @@
 # 开发日志
 
+## 2026-09-19 — Electron 44 foreground regression attribution and bounded fix
+
+Model Tier：2。Model：current Codex session。Reason：真实 foreground A/B 跨 Electron standard scheme、BrowserWindow fullscreen、透明 overlay、Native Helper child HWND、desktop/DWM frame capture 与同 profile playback；保持 PlaybackManager、Resolver、CD2、Mount、Session/report、Native Helper protocol 和 libmpv architecture 不变。Escalated：no。
+
+Fullscreen 根因是 `standard:true` scheme 把 `electronapphost://windowstate-Maximized` 规范化为 main-side `windowstate-maximized/`，旧 case-sensitive switch 未命中但仍返回 XHR 200。新增纯 helper 只 lower-case 并 trim command token 尾 `/`，raw URL/query/openurl target 不变，unknown command 静默 no-op；新增 mixed-case/lowercase/trailing slash/openurl/unknown synthetic tests，并同步旧 source-contract assertion。独立 commit 为 `8be3b6b8fdce9295f73acd7aa6b6507eb5d6c27c`。focused `15/15`、非沙箱完整 `npm test 233/233`、JS syntax 与 diff check 通过。real Electron 44 probe 确认 `setFullScreen(true)` 到达、窗口从约 `1290x722` 进入 `2560x1440`，OSD 变为“退出全屏”。
+
+视频 A/B 仅修改 ignored diagnostic runner。A 不追加开关；B 在正式 main load 和 app ready 前执行 `app.commandLine.appendSwitch('disable-backgrounding-occluded-windows')`，并确认 `hasSwitch=true`。两个 arm 的 safe media hash 都为 `2768c958dda7746c`，固定窗口 `x=182,y=0,1288x720`；每个 arm 播放至少 10 秒，T0/T+2/T+4/T+6/T+8/T+10 的桌面视频区域分别保持单一重复 hash。Seek、一次 32x18 resize、一次 opaque occluder show/hide 后仍没有连续帧变化。两个 arm 的 inspect/select/play/seek/stop、time-pos、PositionTicks、audio、core-playing 均正常，Electron/helper residual 为 0。
+
+因此 switch 功能无效，未进入 idle/playing/GPU/minimized 资源代价阶段，也未进入生产实现、formal pipeline 重跑或新 candidate/installer 构建。没有添加 redraw timer、循环 SetWindowPos、time-pos redraw、surface ownership 改动或安全降级。当前首个 blocker 为 `VIDEO FIX = BLOCKED / NEEDS DEEPER COMPOSITION WORK`；PR #17 保持 OPEN/HOLD/NOT MERGED。
+
 ## 2026-09-19 — Electron 44.4.2 background upgrade candidate
 
 Model Tier：2。Model：GPT-5.6 Sol High。Reason：任务跨 official Electron runtime input、build/provenance、main-process protocol compatibility、BrowserWindow/HWND、Native Helper、formal playback gates 与 installer，但保持 PlaybackManager、Session、Resolver、CD2 与 helper protocol 不变。Escalated：no。

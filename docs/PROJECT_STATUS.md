@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-09-19 — Electron 44 foreground regression fix and occlusion A/B
+
+Fullscreen parser 已以独立 commit `8be3b6b8fdce9295f73acd7aa6b6507eb5d6c27c` 修复。实现只 canonicalize `electronapphost` command token 的尾 `/` 与大小写；raw URL、raw query 和 `openurl` target 保持原样，unknown command fail closed。synthetic focused `15/15`、非沙箱完整 `npm test 233/233`、real Electron 44 protocol probe 均通过；真实 probe 观察到 main 收到 `windowstate-maximized/` 后调用 `BrowserWindow.setFullScreen(true)`，窗口进入显示器大小的 `2560x1440`，OSD 显示“退出全屏”。
+
+视频冻结的 diagnostic-only A/B 使用同一旧 candidate runtime、同一 profile、同一媒体 hash `2768c958dda7746c`、同一窗口位置/尺寸和同一动作。A 不带 switch；B 在 app ready 前追加并确认 `disable-backgrounding-occluded-windows`。两组 T0/T+2/T+4/T+6/T+8/T+10 的视频区域 PNG SHA256 均各自完全不变；Seek 后 3 秒、单次 32x18 resize 后 2 秒、单次 opaque-window occlusion/uncover 后 2 秒仍不变化。两组 mpv time-pos、PositionTicks、audio 与 core-playing 正常推进，Play/Seek/Stop 均通过。
+
+结论为 `OCCLUSION HYPOTHESIS = REJECTED`，`VIDEO FIX = BLOCKED / NEEDS DEEPER COMPOSITION WORK`。occlusion switch 未写入 production、未提交，没有进入性能代价与生产候选阶段。旧 candidate 未覆盖；未生成新 runtime/installer；PR #17 保持 OPEN/HOLD/NOT MERGED。
+
 ## 2026-09-19 — Electron 44.4.2 background candidate implementation
 
 基于 PR #15 merge commit `fdb32282810d05ed6e588d0c2dc6bc0582957405` 创建独立 `codex/electron-44-upgrade`。已建立 official Electron 44.4.2 Stable Windows x64 的 exact archive/executable/full-tree contract；Carnival Electron 18.3.15 保留为 historical baseline 并从 production runtime 排除。build、source/runtime provenance、package verify 和 process-version probe 已在 preflight runtime 通过。
