@@ -31,6 +31,18 @@ Get-ChildItem -LiteralPath (Join-Path $root 'vendor/carnival') | Copy-Item -Dest
 # provenance only. It must never enter an Enhanced runtime.
 & node (Join-Path $root 'tools/runtime-exclusions.cjs') remove $destination
 if ($LASTEXITCODE -ne 0) { throw 'Retired runtime exclusion failed.' }
+# Carnival Electron remains a historical baseline input. Production uses the
+# exact full tree extracted from the pinned official Electron archive.
+$electronManifest = Get-Content -LiteralPath (Join-Path $root 'vendor/electron-runtime-manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+$electronInputTool = Join-Path $root 'tools/electron-runtime-input.cjs'
+& node $electronInputTool validate-prepared $root
+if ($LASTEXITCODE -ne 0) { throw 'Prepared Electron runtime validation failed.' }
+$electronTarget = Join-Path $destination ([string]$electronManifest.runtime.runtimePath)
+$electronSource = Join-Path $root ([string]$electronManifest.runtime.preparedPath)
+if (Test-Path -LiteralPath $electronTarget) { Remove-Item -LiteralPath $electronTarget -Recurse -Force }
+Copy-Item -LiteralPath $electronSource -Destination $electronTarget -Recurse
+& node $electronInputTool validate-runtime $root $destination
+if ($LASTEXITCODE -ne 0) { throw 'Production Electron runtime replacement validation failed.' }
 # Ordinary tracked product sources come from the committed Git blobs, never from checkout bytes.
 & node (Join-Path $root 'tools/copy-tracked-product-sources.cjs') $root $sourceCommit $destination
 if ($LASTEXITCODE -ne 0) { throw 'Tracked product source materialization failed.' }

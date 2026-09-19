@@ -1,5 +1,29 @@
 # 开发日志
 
+## 2026-09-19 — Electron 44 foreground regression attribution and bounded fix
+
+Model Tier：2。Model：current Codex session。Reason：真实 foreground A/B 跨 Electron standard scheme、BrowserWindow fullscreen、透明 overlay、Native Helper child HWND、desktop/DWM frame capture 与同 profile playback；保持 PlaybackManager、Resolver、CD2、Mount、Session/report、Native Helper protocol 和 libmpv architecture 不变。Escalated：no。
+
+Fullscreen 根因是 `standard:true` scheme 把 `electronapphost://windowstate-Maximized` 规范化为 main-side `windowstate-maximized/`，旧 case-sensitive switch 未命中但仍返回 XHR 200。新增纯 helper 只 lower-case 并 trim command token 尾 `/`，raw URL/query/openurl target 不变，unknown command 静默 no-op；新增 mixed-case/lowercase/trailing slash/openurl/unknown synthetic tests，并同步旧 source-contract assertion。独立 commit 为 `8be3b6b8fdce9295f73acd7aa6b6507eb5d6c27c`。focused `15/15`、非沙箱完整 `npm test 233/233`、JS syntax 与 diff check 通过。real Electron 44 probe 确认 `setFullScreen(true)` 到达、窗口从约 `1290x722` 进入 `2560x1440`，OSD 变为“退出全屏”。
+
+视频 A/B 仅修改 ignored diagnostic runner。A 不追加开关；B 在正式 main load 和 app ready 前执行 `app.commandLine.appendSwitch('disable-backgrounding-occluded-windows')`，并确认 `hasSwitch=true`。两个 arm 的 safe media hash 都为 `2768c958dda7746c`，固定窗口 `x=182,y=0,1288x720`；每个 arm 播放至少 10 秒，T0/T+2/T+4/T+6/T+8/T+10 的桌面视频区域分别保持单一重复 hash。Seek、一次 32x18 resize、一次 opaque occluder show/hide 后仍没有连续帧变化。两个 arm 的 inspect/select/play/seek/stop、time-pos、PositionTicks、audio、core-playing 均正常，Electron/helper residual 为 0。
+
+因此 switch 功能无效，未进入 idle/playing/GPU/minimized 资源代价阶段，也未进入生产实现、formal pipeline 重跑或新 candidate/installer 构建。没有添加 redraw timer、循环 SetWindowPos、time-pos redraw、surface ownership 改动或安全降级。当前首个 blocker 为 `VIDEO FIX = BLOCKED / NEEDS DEEPER COMPOSITION WORK`；PR #17 保持 OPEN/HOLD/NOT MERGED。
+
+## 2026-09-19 — Electron 44.4.2 background upgrade candidate
+
+Model Tier：2。Model：GPT-5.6 Sol High。Reason：任务跨 official Electron runtime input、build/provenance、main-process protocol compatibility、BrowserWindow/HWND、Native Helper、formal playback gates 与 installer，但保持 PlaybackManager、Session、Resolver、CD2 与 helper protocol 不变。Escalated：no。
+
+PR #15 先在 prepared `codex/diagnostics-tooling@2016dd6d0c1eabd7cd2c23a983557b77f8e908f8` 上完成 `npm test 217/217`、parser/selftests/focused tests、scope/diff/merge-tree Gate，随后用 first-parent `75cd2b957ca690417fc85833c0f6bbf8835a6449`、second-parent `2016dd6...` 的 merge commit `fdb32282810d05ed6e588d0c2dc6bc0582957405` 普通推送到 main。GitHub API 确认 PR #15 merged=true，origin/main 等于该 merge commit。
+
+Electron 输入固定为 official Stable `electron-v44.4.2-win32-x64.zip`，archive SHA256 `6AAE435B6CD5C0EEDF9FD38824BAE4045FFDAECD029F0B8C8328BAC3F5B71F03`、`electron.exe` SHA256 `0446040F3C63EB75D5B1E1663D5EF27F07730A82DF3E4FA47FF77C1A33CEF07C`、73-file tree `F9F14E4FE641B68296CF6D17357B4037A514C87ED8C83E91395DE11D924C9030`。实际 process versions 为 Electron 44.4.2 / Chromium 152.0.7977.130 / Node 24.21.0 / V8 15.2.124.28-electron.0。prepare 对 archive、prepared tree 与 executable fail closed；build 完整替换 `x64/electron`，source/runtime provenance 区分 historical Electron 18 与 production Electron 44。
+
+兼容审计确认 unused BrowserView 可删除且不做 WebContentsView 重构；removed `new-window` 改为 `setWindowOpenHandler`。第一次 hidden formal smoke 暴露 hidden capture surface unavailable，harness 改为 background 不截图。第二个 failure 通过 bounded trace 定位为 `electronrefreshrate://` XHR `ProgressEvent`，发生在 Native Helper 创建前。isolated protocol probe 证明只有 `standard + supportFetchAPI + corsEnabled` 可恢复 200；修复仅注册六个已有 XHR scheme，不增加 secure/bypassCSP/Service Worker，也不改变 handler 语义。
+
+preflight evidence：`npm test 225/225`；package/source/native/runtime/Electron provenance PASS；Formal STRM/CD2 hit PASS；Formal DirectUrl 与 UA isolation PASS；ordinary/CD2 miss 的播放、暂停、seek、恢复、stop、Stats、Session/report 全部通过，唯一 rapid NextTrack `selected=false` 与 Electron 18 baseline 完全一致，其余四项 true，因此为 baseline-matched limitation。Native Helper/ownership/z-order/placement `46/46`、parent-death PASS、residual 0。
+
+final artifact source commit `9168d08f96e121e9852880503fd01af2bf26691d`：`npm test 228/228 PASS`；runtime `EmbyTheaterEnhanced-electron44-9168d08-candidate` build/package/source/Electron/native/runtime provenance PASS；2135 manifest entries / 2136 actual files；Electron 44.4.2 / Chromium 152.0.7977.130 / Node 24.21.0 / V8 15.2.124.28-electron.0；background startup、Formal CD2、Formal DirectUrl/UA isolation PASS；ordinary/CD2 miss 保持 baseline-matched limitation。final parent-death PASS、residual 0。installer `EmbyTheaterEnhanced-electron44-win-x64-candidate-setup.exe` 大小 175563881 bytes、SHA256 `BE338187DD56BE346B832B18793FDE87AE9957EF8AD9A3B72795EA51C22BF957`；archive integrity PASS；解包 `{app}` 对 runtime `missing=0`、`extra=0`、`mismatch=0`。本 final result 仅新增 docs-only 记录，不重写 artifact source provenance；未安装、未前台播放、未 fullscreen、未改真实 profile/服务器/CD2 mapping、未 tag/release/merge Electron PR。
+
 ## 2026-09-18 — CD2 route timeline observer
 
 Model Tier：2。Model：current Codex session。Reason：只读 observer 需要按 requestId 合并 app、Playback、Resolver、CD2、Mount 时间线，并区分首次 CD2 evidence 与同 app run 后续 evidence；没有修改 production resolver、CD2 transport 或 fallback。Escalated：no。

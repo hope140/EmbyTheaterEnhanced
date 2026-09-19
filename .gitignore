@@ -4,6 +4,7 @@
 /node_modules/
 /vendor/carnival/
 /vendor/patch/
+/vendor/electron/
 /vendor/official-reference/
 /vendor/native-helper-inputs/
 /src/electronapp/www/

@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "channel": "Stable",
+  "version": "44.4.2",
+  "platform": "win32",
+  "arch": "x64",
+  "releaseUrl": "https://github.com/electron/electron/releases/tag/v44.4.2",
+  "publishedAt": "2026-09-18T01:08:36Z",
+  "archive": {
+    "name": "electron-v44.4.2-win32-x64.zip",
+    "sourceUrl": "https://github.com/electron/electron/releases/download/v44.4.2/electron-v44.4.2-win32-x64.zip",
+    "shasumsUrl": "https://github.com/electron/electron/releases/download/v44.4.2/SHASUMS256.txt",
+    "sha256": "6aae435b6cd5c0eedf9fd38824bae4045ffdaecd029f0b8c8328bac3f5b71f03",
+    "size": 158218669
+  },
+  "runtime": {
+    "preparedPath": "vendor/electron/44.4.2/win32-x64",
+    "runtimePath": "x64/electron",
+    "electronPath": "electron.exe",
+    "electronExeSha256": "0446040f3c63eb75d5b1e1663d5ef27f07730a82df3e4fa47ff77c1a33cef07c",
+    "versionPath": "version",
+    "fileCount": 73,
+    "treeSha256": "f9f14e4fe641b68296cf6d17357b4037a514c87ed8c83e91395de11d924c9030",
+    "processVersions": {
+      "electron": "44.4.2",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0",
+      "v8": "15.2.124.28-electron.0"
+    }
+  }
+}

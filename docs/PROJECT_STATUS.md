@@ -1,5 +1,23 @@
 # 项目状态
 
+## 2026-09-19 — Electron 44 foreground regression fix and occlusion A/B
+
+Fullscreen parser 已以独立 commit `8be3b6b8fdce9295f73acd7aa6b6507eb5d6c27c` 修复。实现只 canonicalize `electronapphost` command token 的尾 `/` 与大小写；raw URL、raw query 和 `openurl` target 保持原样，unknown command fail closed。synthetic focused `15/15`、非沙箱完整 `npm test 233/233`、real Electron 44 protocol probe 均通过；真实 probe 观察到 main 收到 `windowstate-maximized/` 后调用 `BrowserWindow.setFullScreen(true)`，窗口进入显示器大小的 `2560x1440`，OSD 显示“退出全屏”。
+
+视频冻结的 diagnostic-only A/B 使用同一旧 candidate runtime、同一 profile、同一媒体 hash `2768c958dda7746c`、同一窗口位置/尺寸和同一动作。A 不带 switch；B 在 app ready 前追加并确认 `disable-backgrounding-occluded-windows`。两组 T0/T+2/T+4/T+6/T+8/T+10 的视频区域 PNG SHA256 均各自完全不变；Seek 后 3 秒、单次 32x18 resize 后 2 秒、单次 opaque-window occlusion/uncover 后 2 秒仍不变化。两组 mpv time-pos、PositionTicks、audio 与 core-playing 正常推进，Play/Seek/Stop 均通过。
+
+结论为 `OCCLUSION HYPOTHESIS = REJECTED`，`VIDEO FIX = BLOCKED / NEEDS DEEPER COMPOSITION WORK`。occlusion switch 未写入 production、未提交，没有进入性能代价与生产候选阶段。旧 candidate 未覆盖；未生成新 runtime/installer；PR #17 保持 OPEN/HOLD/NOT MERGED。
+
+## 2026-09-19 — Electron 44.4.2 background candidate implementation
+
+基于 PR #15 merge commit `fdb32282810d05ed6e588d0c2dc6bc0582957405` 创建独立 `codex/electron-44-upgrade`。已建立 official Electron 44.4.2 Stable Windows x64 的 exact archive/executable/full-tree contract；Carnival Electron 18.3.15 保留为 historical baseline 并从 production runtime 排除。build、source/runtime provenance、package verify 和 process-version probe 已在 preflight runtime 通过。
+
+实际兼容问题只有两类：已移除的 `webContents new-window` 改为 `setWindowOpenHandler`；Electron 44 下六个既有 internal XHR scheme 需要最小 `standard + supportFetchAPI + corsEnabled` 注册。未启用 `secure`、`bypassCSP`、Service Worker、`nodeIntegration=true`、新的 `contextIsolation=false` 或新的 `sandbox=false`。BrowserView 仅为未使用 import，已删除，不做 WebContentsView/Native surface 重构。
+
+preflight Formal STRM/CD2 与 DirectUrl/UA isolation PASS；ordinary 与 CD2 miss 的全部播放、控制、Stats、Session/report assertion 通过，仅保留 Electron 18 baseline 同样存在的 rapid NextTrack `selected=false` limitation，因此为 `BASELINE-MATCHED LIMITATION / NO NEW REGRESSION`。Native Helper/ownership/z-order/placement focused `46/46 PASS`，parent-death PASS、residual 0。详细 contract 见 [ELECTRON_44_UPGRADE](ELECTRON_44_UPGRADE.md)。
+
+final artifact source commit 为 `9168d08f96e121e9852880503fd01af2bf26691d`。`npm test 228/228 PASS`；candidate runtime `EmbyTheaterEnhanced-electron44-9168d08-candidate` 的 2135-entry manifest、2136 actual files、source/Electron/Native Helper/runtime provenance 与 package verify PASS；background startup、Formal STRM/CD2、Formal DirectUrl/UA isolation PASS。candidate installer `EmbyTheaterEnhanced-electron44-win-x64-candidate-setup.exe` 为 175563881 bytes，SHA256 `BE338187DD56BE346B832B18793FDE87AE9957EF8AD9A3B72795EA51C22BF957`；innounp integrity PASS，解包 `{app}` 与 runtime 均为 2136 files，`missing=0`、`extra=0`、`mismatch=0`。final docs-only result commit 不改变该 artifact 的产品 bytes/provenance。candidate 未安装，v0.2.1 安装、真实 profile、服务器、真实 CD2 mapping、前台播放、fullscreen、Alt-Tab、mixed-DPI 和 Release 均未触碰。
+
 ## 2026-09-18 — CD2 route timeline observer ready
 
 在保留上一轮已提交 Issue Snapshot 的 `codex/diagnostics-tooling` worktree 上新增只读 `tools/observe-cd2-cold-warm.ps1` 及 focused selftest/Node wrapper。没有修改 `src/**`、Resolver、CD2 service、PlaybackManager、Native Helper、Session、WebSocket、installer、缓存、客户端配置或播放行为；没有调用 CD2、retry、cache warm、Mount 或 fallback。

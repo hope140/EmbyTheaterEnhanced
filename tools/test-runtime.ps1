@@ -7,6 +7,24 @@ if (($TestCd2 -or $TestCd2Direct -or $TestCd2Miss) -and -not $TestPipeline) { th
 $runtime = Join-Path (Join-Path $root 'dist') $RuntimeName
 $evidence = Join-Path $root ('.work/runtime-test-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path (Join-Path $evidence 'profile'),(Join-Path $evidence 'appdata') -Force | Out-Null
+& node (Join-Path $PSScriptRoot 'electron-runtime-input.cjs') validate-runtime $root $runtime
+if ($LASTEXITCODE -ne 0) { throw 'Pinned Electron runtime validation failed before smoke.' }
+$versionInfo = New-Object Diagnostics.ProcessStartInfo
+$versionInfo.FileName = Join-Path $runtime 'x64/electron/electron.exe'
+$versionInfo.Arguments = '"' + (Join-Path $PSScriptRoot 'electron-version-probe.cjs') + '" "' + $runtime + '"'
+$versionInfo.WorkingDirectory = $runtime
+$versionInfo.UseShellExecute = $false
+$versionInfo.CreateNoWindow = $true
+$versionInfo.WindowStyle = [Diagnostics.ProcessWindowStyle]::Hidden
+$versionInfo.RedirectStandardOutput = $true
+$versionInfo.RedirectStandardError = $true
+$versionInfo.EnvironmentVariables['ELECTRON_RUN_AS_NODE'] = '1'
+$versionProcess = [Diagnostics.Process]::Start($versionInfo)
+$versionOutput = $versionProcess.StandardOutput.ReadToEnd()
+$versionError = $versionProcess.StandardError.ReadToEnd()
+$versionProcess.WaitForExit()
+if ($versionProcess.ExitCode -ne 0) { throw ('Electron version probe failed: ' + $versionError) }
+[IO.File]::WriteAllText((Join-Path $evidence 'electron-version.json'), $versionOutput, (New-Object Text.UTF8Encoding($false)))
 $info = New-Object Diagnostics.ProcessStartInfo
 $info.FileName = Join-Path $runtime 'x64/electron/electron.exe'
 $info.Arguments = '"' + (Join-Path $PSScriptRoot 'smoke-electron.cjs') + '" "' + (Join-Path $evidence 'profile') + '"'

@@ -8,6 +8,7 @@ const preloadPreparation = require('./prepare-preload.cjs');
 const sourceProvenance = require('./source-provenance.cjs');
 const trackedFileHash = require('./tracked-file-hash.cjs');
 const runtimeExclusions = require('./runtime-exclusions.cjs');
+const electronRuntimeInput = require('./electron-runtime-input.cjs');
 
 const OVERLAY_RUNTIME_PATH = 'electronapp/www/modules/common/playback/playbackmanager.js';
 const OVERLAY_GENERATOR_PATH = 'tools/patch-playbackmanager.cjs';
@@ -159,6 +160,24 @@ function runtimeExclusionIdentity(root) {
     };
 }
 
+function electronRuntimeIdentity(root, runtime) {
+    const manifest = electronRuntimeInput.readManifest(root);
+    const validated = electronRuntimeInput.validateRuntime(root, runtime);
+    return {
+        manifestPath: electronRuntimeInput.MANIFEST_PATH,
+        manifestSha256: hashFile(path.join(root, electronRuntimeInput.MANIFEST_PATH)),
+        validatorPath: 'tools/electron-runtime-input.cjs',
+        validatorSha256: trackedFileHash.hashTrackedTextFile(root, 'tools/electron-runtime-input.cjs'),
+        version: validated.version,
+        runtimePath: manifest.runtime.runtimePath,
+        electronExeSha256: validated.electronExeSha256.toUpperCase(),
+        runtimeTree: {
+            fileCount: validated.runtimeTree.fileCount,
+            sha256: validated.runtimeTree.sha256.toUpperCase()
+        }
+    };
+}
+
 function writeManifest(root, runtime, sourceCommit) {
     if (!/^[0-9a-fA-F]{40}$/.test(sourceCommit || '')) throw new Error('sourceCommit must be a 40-character git commit.');
     const entries = sourceEntries(root, sourceCommit);
@@ -183,6 +202,7 @@ function writeManifest(root, runtime, sourceCommit) {
         sourceCommit: sourceCommit.toLowerCase(),
         sourceProvenance: sourceProvenanceEntry,
         baselineIdentity: baselineIdentity(root),
+        electronRuntime: electronRuntimeIdentity(root, runtime),
         runtimeExclusions: runtimeExclusionIdentity(root),
         validatedProductScope: {
             sourceRoot: 'src/electronapp',
@@ -214,6 +234,7 @@ function failedValidation(runtime, sourceCommit, errors, files, manifest) {
         manifest: 'runtime-provenance.json',
         baselineIdentity: manifest && manifest.baselineIdentity || null,
         sourceProvenance: manifest && manifest.sourceProvenance || null,
+        electronRuntime: manifest && manifest.electronRuntime || null,
         runtimeExclusions: manifest && manifest.runtimeExclusions || null,
         buildOverlays: manifest && Array.isArray(manifest.buildOverlays) ? manifest.buildOverlays : [],
         validatedProductScope: manifest && manifest.validatedProductScope
@@ -317,6 +338,14 @@ function validateManifest(root, runtime, sourceCommit) {
         const baselinePath = path.join(root, manifest.baselineIdentity.manifestPath);
         if (!exists(baselinePath)) errors.push('baseline-manifest-missing');
         else if (hashFile(baselinePath) !== manifest.baselineIdentity.sha256) errors.push('baseline-manifest-changed');
+    }
+    try {
+        const expectedElectronRuntime = electronRuntimeIdentity(root, runtime);
+        if (!manifest.electronRuntime || JSON.stringify(manifest.electronRuntime) !== JSON.stringify(expectedElectronRuntime)) {
+            errors.push('electron-runtime-identity-mismatch');
+        }
+    } catch (_) {
+        errors.push('electron-runtime-invalid');
     }
     const expectedRuntimeExclusions = runtimeExclusionIdentity(root);
     const actualRuntimeExclusions = manifest.runtimeExclusions;

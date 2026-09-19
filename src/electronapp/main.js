@@ -3,10 +3,20 @@
     var electron = require('electron');
     var app = electron.app;  // Module to control application life.
     var BrowserWindow = electron.BrowserWindow;  // Module to create native browser window.
-    var BrowserView = electron.BrowserView;  // Module to create native browser window.
+    electron.protocol.registerSchemesAsPrivileged([
+        'electronapphost',
+        'electronfs',
+        'electronserverdiscovery',
+        'electronwakeonlan',
+        'electronrefreshrate',
+        'electroncec'
+    ].map(function (scheme) {
+        return { scheme: scheme, privileges: { standard: true, supportFetchAPI: true, corsEnabled: true } };
+    }));
     var powerSaveBlocker = electron.powerSaveBlocker
     var nativeImage = electron.nativeImage;
     var productIdentity = require('./product-identity');
+    var appHostCommand = require('./apphost-command');
     var productMetadata = require('./package.json');
     productIdentity.setAppName(app, productMetadata);
     var path = require('path');
@@ -245,25 +255,27 @@
 
         protocol.registerStringProtocol(customProtocol, function (request, callback) {
 
-            // Add 3 to account for ://
-            var url = request.url.substr(customProtocol.length + 3);
-            var parts = url.split('?');
-            var command = parts[0];
+            var parsedRequest = appHostCommand.parse(request.url, customProtocol);
+            var command = parsedRequest.command;
+            if (!appHostCommand.isKnown(command)) {
+                callback("");
+                return;
+            }
 
             switch (command) {
 
-                case 'windowstate-Normal':
+                case 'windowstate-normal':
 
                     setWindowState('Normal');
 
                     break;
-                case 'windowstate-Maximized':
+                case 'windowstate-maximized':
                     setWindowState('Maximized');
                     break;
-                case 'windowstate-Fullscreen':
+                case 'windowstate-fullscreen':
                     setWindowState('Fullscreen');
                     break;
-                case 'windowstate-Minimized':
+                case 'windowstate-minimized':
                     setWindowState('Minimized');
                     break;
                 case 'exit':
@@ -279,7 +291,7 @@
                     restartSystem();
                     break;
                 case 'openurl':
-                    electron.shell.openExternal(url.substring(url.indexOf('url=') + 4));
+                    electron.shell.openExternal(appHostCommand.getOpenUrlTarget(parsedRequest));
                     break;
                 case 'video-on':
                     sleepLock = powerSaveBlocker.start('prevent-display-sleep')
@@ -1094,10 +1106,10 @@
 
             getWebContents().on('dom-ready', setStartInfo);
 
-            getWebContents().on('new-window', (event, url, frameName, disposition, options, additionalFeatures, referrer, postBody) => {
-                event.preventDefault()
-                electron.shell.openExternal(url);
-            })
+            getWebContents().setWindowOpenHandler(function (details) {
+                electron.shell.openExternal(details.url);
+                return { action: 'deny' };
+            });
 
             var url = getAppUrl();
 

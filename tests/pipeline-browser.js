@@ -21,9 +21,25 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
     // context fullscreen (and reportable), while replacing only OSD navigation.
     deps[6].showVideoOsd = () => Promise.resolve();
     const embedded = plugins.ofType('mediaplayer').find(p=>p.id==='libmpvmediaplayer');
+    events.on(embedded, 'stopped', function () { trace.push('embedded-event stopped'); });
+    events.on(embedded, 'error', function (_event, error) { trace.push('embedded-event error ' + String(error && error.name || 'unknown')); });
+    window.addEventListener('native-helper-ready', function () { trace.push('window-event native-helper-ready'); });
+    window.addEventListener('native-helper-error', function (event) { trace.push('window-event native-helper-error ' + String(event && event.detail && event.detail.reason || 'unknown')); });
+    window.addEventListener('core-playing', function () { trace.push('window-event core-playing'); });
     const originalPlay = embedded.play;
     let embeddedPlayCount = 0;
-    embedded.play = function(options) { embeddedPlayCount++; trace.push('embedded.play source-match='+String(options.url===fixture)+' method='+options.playMethod); return originalPlay.call(this,options); };
+    embedded.play = function(options) {
+        embeddedPlayCount++;
+        trace.push('embedded.play source-match='+String(options.url===fixture)+' method='+options.playMethod);
+        return Promise.resolve(originalPlay.call(this,options)).catch(function (error) {
+            var message = String(error && error.message || error || 'unknown')
+                .replace(/https?:\/\/[^\s)]+/gi, '[URL]')
+                .replace(/[A-Za-z]:\\[^\r\n)]*/g, '[PATH]')
+                .slice(0, 256);
+            trace.push('embedded.play rejected name=' + String(error && error.name || 'unknown') + ' message=' + message);
+            throw error;
+        });
+    };
     trace.push('modules loaded');
     const ApiClient = ApiClientModule.default || ApiClientModule;
     const api = new ApiClient(window.localStorage, null, 'http://127.0.0.1:1', 'Enhanced fixture', '0.1.0', 'Fixture', 'fixture-device', 1);

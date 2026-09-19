@@ -1,5 +1,9 @@
 # 长期决策
 
+## 2026-09-19 — Pin official Electron 44.4.2 as candidate runtime
+
+Electron 44.4.2 Stable Windows x64 is a separate official, hash-pinned production input. Carnival Electron 18.3.15 remains historical baseline evidence and is excluded from candidate runtime. The upgrade preserves BrowserWindow/native HWND ownership and fixes only proven API/protocol compatibility gaps; no WebContentsView migration, security downgrade, PlaybackManager/Session rewrite or Native Helper protocol redesign is authorized.
+
 ## 2026-09-17 — Electron 18 production bridge 使用 isolated native helper
 
 当前 `feat/native-helper-bridge` 采用 architecture B。Electron main 通过 private inherited pipes 启动固定 runtime resource 中的 x64 helper；helper 独占 libmpv core 与 native child HWND，视频保持 `gpu-next/d3d11/d3d11va`，现有 transparent BrowserWindow 继续拥有 Emby HTML UI、OSD 与输入。Native Helper 是唯一 production bridge；Pepper/PPAPI 已退休，旧 mode 只返回 `legacy-mode-removed`，不作为 fallback。
@@ -19,7 +23,7 @@ Bridge 内部使用 `helperInstanceId + generationId + requestId`；START/END �
 | Native Always Fallback | 后续增强失败时返回本次原生 source |
 | Resolver Changes Source Only | 不重建身份、不绕过 PlaybackManager、不另起播放会话 |
 | Preserve Emby Session | 进度、WebSocket、远控、队列及 EmbyWatchTogether 是必要验收条件 |
-| Electron Frozen For Now | 使用实际随包 18.3.15，不依据 package.json 安装新 Electron |
+| Electron Runtime Is Exact and External | Candidate 使用 official Electron 44.4.2 Windows x64 exact archive/tree；Carnival 18.3.15 只作 historical baseline，不依据 package.json、latest、beta 或 nightly 漂移 |
 | CD2 Does Not Require Server Plugin | 后续 CD2 是客户端增强路径，服务器插件只作参考 |
 | CD2 V1 Uses Same-origin HTTP | main-process grpc-js 只请求 `get_direct_url=false`；CD2 成功后只替换 libmpv source，失败继续 Mount → Native；DirectUrl 留到独立 PR |
 | CD2 DirectUrl Is Capability-gated | PR #4 只在 URL、expiry、空 additionalHeaders 与受限 User-Agent 全部安全时使用 DirectUrl；UA 仅通过 mpv file-local loadfile option，任何不安全能力都回到 same-origin → Mount → Native |

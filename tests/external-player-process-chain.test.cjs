@@ -38,7 +38,8 @@ test('dead process channels and helpers are absent while active IPC stays wired'
 
 test('Electron host keeps openurl dispatch and active host commands', () => {
     assert.match(mainSource, /case 'openurl':[\s\S]{0,220}electron\.shell\.openExternal/);
-    for (const command of ['windowstate-Normal', 'sleep', 'shutdown', 'video-on', 'video-off', 'audio-on', 'audio-off', 'loaded']) {
+    for (const command of ['windowstate-normal', 'windowstate-maximized', 'windowstate-fullscreen',
+        'windowstate-minimized', 'sleep', 'shutdown', 'video-on', 'video-off', 'audio-on', 'audio-off', 'loaded']) {
         assert.match(mainSource, new RegExp("case '" + command + "'"));
     }
 });

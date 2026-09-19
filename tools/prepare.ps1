@@ -21,4 +21,6 @@ if (-not (Test-Path -LiteralPath (Join-Path $root 'vendor/patch'))) {
 }
 & node (Join-Path $PSScriptRoot 'prepare-preload.cjs') $root
 if ($LASTEXITCODE -ne 0) { throw 'Prepared preload generation failed.' }
+& (Join-Path $PSScriptRoot 'prepare-electron-runtime.ps1') -ArchiveRoot $archiveBase
+if ($LASTEXITCODE -ne 0) { throw 'Pinned Electron runtime preparation failed.' }
 Write-Output 'Vendor inputs and prepared workspace artifacts are ready. build.ps1 checks every input before building.'

@@ -1,4 +1,9 @@
-param([string]$RuntimeName = 'EmbyTheaterEnhanced-win-x64', [string]$Compiler = '', [switch]$VerifyOnly)
+param(
+    [string]$RuntimeName = 'EmbyTheaterEnhanced-win-x64',
+    [string]$Compiler = '',
+    [string]$OutputBaseFilename = '',
+    [switch]$VerifyOnly
+)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 if ($RuntimeName -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$') { throw 'Invalid runtime name.' }
@@ -56,8 +61,10 @@ if (-not $Compiler) {
     else { $command = Get-Command ISCC.exe -ErrorAction SilentlyContinue; if ($command) { $Compiler = $command.Source } }
 }
 if (-not $Compiler -or -not (Test-Path -LiteralPath $Compiler)) { throw 'Inno Setup 6 compiler missing. Provide -Compiler path/to/ISCC.exe; no software is installed automatically.' }
-$output = Join-Path $root "dist/EmbyTheaterEnhanced-$($build.version)-win-x64-setup.exe"
+if (-not $OutputBaseFilename) { $OutputBaseFilename = "EmbyTheaterEnhanced-$($build.version)-win-x64-setup" }
+if ($OutputBaseFilename -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$') { throw 'Invalid installer output base filename.' }
+$output = Join-Path $root ("dist/" + $OutputBaseFilename + '.exe')
 if (Test-Path -LiteralPath $output) { throw 'Installer already exists; preserve it before packaging again.' }
-& $Compiler '/Q' "/DAppVersion=$($build.version)" "/DRuntimeDir=$runtime" "/DOutputDir=$(Join-Path $root 'dist')" (Join-Path $root 'installer/EmbyTheaterEnhanced.iss')
+& $Compiler '/Q' "/DAppVersion=$($build.version)" "/DRuntimeDir=$runtime" "/DOutputDir=$(Join-Path $root 'dist')" "/DOutputBaseFilename=$OutputBaseFilename" (Join-Path $root 'installer/EmbyTheaterEnhanced.iss')
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $output)) { throw 'Installer compilation failed.' }
 Get-FileHash -LiteralPath $output -Algorithm SHA256
