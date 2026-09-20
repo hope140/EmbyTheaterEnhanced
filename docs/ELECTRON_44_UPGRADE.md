@@ -6,18 +6,41 @@ The upgrade branch is based on `origin/main@fdb32282810d05ed6e588d0c2dc6bc058295
 
 This upgrade changes the Electron runtime and the minimum main-process compatibility surface only. `Emby.Theater.exe`, PlaybackManager, Item/MediaSource identity, PlaySession/Session/WebSocket/reporting, Resolver order, CD2 semantics, Mount fallback, Native Helper framed IPC, libmpv and user profile formats remain unchanged.
 
-## Foreground regression follow-up
+## Post-freeze-fix closure boundary
 
-Real foreground acceptance found two independent Electron 44 regressions. The apphost command parser received standard-scheme commands as lowercase authority tokens with a trailing slash, for example `windowstate-maximized/`, while the legacy switch expected `windowstate-Maximized`. Commit `8be3b6b8fdce9295f73acd7aa6b6507eb5d6c27c` canonicalizes only the command token, preserves raw URL/query bytes for `openurl`, rejects unknown commands, and adds synthetic coverage. A real Electron 44 probe confirmed `windowstate-maximized/ -> BrowserWindow.setFullScreen(true)` and display-sized bounds.
-
-The video presentation regression remains blocked. In both A and B, mpv `time-pos`, PositionTicks, audio, `core-playing`, `gpu-next`, D3D11VA and zero-drop statistics advanced normally while six desktop video-region captures from T0 through T+10s had one repeated SHA256. The diagnostic-only B arm requested and observed `disable-backgrounding-occluded-windows`, but its visible-frame hashes remained frozen after Seek, one small resize and one opaque-window occlusion/uncover cycle. Therefore:
+`8be3b6b8fdce9295f73acd7aa6b6507eb5d6c27c` is the production fix for the Electron 44 startup command failure and the resulting native video presentation freeze. Electron 44 standard custom-scheme canonicalization changed renderer command URLs such as `electronapphost://loaded/` and `electronapphost://windowstate-Maximized/`; the old parser was case- and trailing-slash-sensitive. `loaded/` therefore failed to execute the existing loaded chain:
 
 ```text
-OCCLUSION HYPOTHESIS = REJECTED
-VIDEO FIX = BLOCKED / NEEDS DEEPER COMPOSITION WORK
+setWindowState(windowStateOnLoad)
+mainWindow.focus()
+hasAppLoaded = true
+onLoaded()
 ```
 
-The switch is not a production change and is not committed. No redraw timer, repeated `SetWindowPos`, surface ownership change, WebContentsView migration, renderer security downgrade, Resolver/CD2/Mount/Session change, Native Helper protocol change or libmpv architecture change was made. PR #17 remains open and must not be merged until a separate video composition solution and renewed foreground acceptance exist.
+The canonical parser restores the existing apphost command contract. This record does not claim that any individual statement in the loaded chain is independently sufficient for the freeze. The release boundary is:
+
+```text
+VIDEO FREEZE ROOT BOUNDARY =
+APPHOST STARTUP COMMAND CANONICALIZATION
+
+MICRO-MECHANISM =
+NOT FURTHER ISOLATED / NOT REQUIRED FOR RELEASE
+```
+
+The source/entrypoint matrix proves that the freeze tracks source revision, not the Host entrypoint:
+
+| Source revision | Host entrypoint | Direct entrypoint |
+|---|---|---|
+| `9168d08` | FREEZE 5/5 | FREEZE 5/5 |
+| `725d4c2` | PASS 5/5 | PASS 5/5 |
+
+Electron, Host, Native Helper and mpv identities were the same across the matrix. No separate video workaround is part of this fix. DirectComposition/DWM/activation hypotheses remain closed; no redraw timer, Chromium flag, focus workaround, `SetWindowPos` workaround, surface ownership redesign, Native Helper redesign, libmpv change or Resolver/CD2/Mount change was introduced.
+
+## Foreground regression follow-up
+
+The original foreground probe established that Electron 44 delivered the standard-scheme command token with a trailing slash and normalized case. The confirmed fix canonicalizes only that command token, preserves raw URL/query bytes for `openurl`, rejects unknown commands, and adds synthetic coverage. A real Electron 44 probe confirmed the normalized window-state command reached the existing BrowserWindow dispatch.
+
+The previous occlusion A/B remains historical diagnostic evidence only. It does not define the production root boundary and does not authorize a composition workaround. PR #17 remains open and must not be merged until the current required installed freeze gate and foreground acceptance are independently completed.
 
 ## Pinned runtime input
 
@@ -91,4 +114,22 @@ Artifact source commit: `9168d08f96e121e9852880503fd01af2bf26691d`.
 - Installer integrity: PASS
 - Extracted `{app}` comparison: 2136 vs 2136 files, missing 0, extra 0, mismatch 0
 
-The final result record is a docs-only follow-up and does not change the artifact source commit or product bytes. The candidate remains uninstalled. Foreground playback, fullscreen, Alt-Tab, minimize/restore, mixed-DPI, real profile/server/CD2 mapping and release publication remain for user acceptance or later authorization.
+The final result record is a docs-only follow-up and does not change the historical artifact source commit or product bytes. That historical 9168 candidate remained uninstalled at this checkpoint; the later 725d post-freeze-fix candidate installation and its incomplete foreground gate are recorded below.
+
+## Post-freeze-fix candidate verification
+
+The final candidate was rebuilt from exact source commit `725d4c2284596b8ced749a3c8590180a1e6ed1a9` as `EmbyTheaterEnhanced-electron44-725d4c2-final-candidate`. The matching installer is `EmbyTheaterEnhanced-electron44-725d4c2-final-candidate-setup.exe`, 175580523 bytes, SHA256 `AAB19E605E26CE83C73610D1F5844C95EE872268BDBCD7752556E7610D3928A5`.
+
+The candidate runtime and installer checks passed: Electron `44.4.2`, Chromium `152.0.7977.130`, source/Electron/Native Helper/runtime provenance, package verify, runtime exclusion, Native Helper `ete-mpv-helper.exe`, `mpv-1.dll`, no `mpv-win32-x64.node`, no Pepper/PPAPI payload, and installer integrity. The extracted `{app}` and runtime each contained 2137 files with `missing=0`, `extra=0`, `mismatch=0`.
+
+Automated gates on this head were `npm test = 233/233 PASS`; Collector, Issue Snapshot, CD2 observer and redaction self-tests passed; focused apphost/Electron/Native Helper/window ownership tests were `55/55 PASS`; Native Helper handshake/service/race/UA isolation and parent-death passed with residual `0`. The transport stress smoke returned `transport:stdout-end` on both the old Electron 44 comparison runtime and the Electron 18 historical runtime as well as this candidate, so it is retained as a harness/environment evidence gap rather than a 725d source regression.
+
+Formal ordinary and CD2 miss preserved the known baseline rapid NextTrack `selected=false` limitation while `priorStopped`, `nextStarted`, `rapidNextSettled`, `rapidNewestLoaded` and all playback/control/report assertions passed. Formal STRM/CD2 and DirectUrl passed; DirectUrl file-local User-Agent isolation reported `allDirectUserAgentsMatched=true` and `noDirectUserAgentLeak=true`.
+
+The candidate was installed through the formal `C:\Program Files\Emby Theater Enhanced\Emby.Theater.exe` installation. Installed payload verification passed with `missing=0` and `mismatch=0`; the existing profile and persistent device identity remained present. The user completed the installed human-assisted foreground acceptance and confirmed continuously advancing video, audible audio, OSD, Settings, Pause/Resume, Seek, Fullscreen enter/leave/OSD/controls, Alt-Tab, Minimize/Restore, Resize, Stop and normal exit. Video freeze was not observed; seek black frame and stop/exit black frame were not observed. Machine playback log evidence remained `UNAVAILABLE` and is explicitly non-blocking under the human-assisted acceptance contract. Machine crash and residual checks were clean.
+
+```text
+VIDEO FREEZE = NOT REPRODUCED AFTER FIX
+PR #17 = OPEN / READY TO MERGE
+ELECTRON 44 FINAL ACCEPTANCE = PASS — HUMAN-ASSISTED FOREGROUND ACCEPTANCE
+```

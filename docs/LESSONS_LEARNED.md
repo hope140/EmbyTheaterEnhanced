@@ -1,5 +1,13 @@
 # 已确认经验
 
+## 2026-09-21 — Electron 44 freeze root boundary and acceptance evidence
+
+- Electron 44 standard custom-scheme canonicalization can change an existing apphost command URL into a lowercase command token with a trailing slash. The parser must canonicalize the command token while preserving raw `openurl` URL/query bytes and rejecting unknown commands.
+- `electronapphost://loaded/` failing the existing loaded chain is the confirmed release root boundary for the Electron 44 video freeze. Do not claim that one statement inside `setWindowState` / `focus` / `hasAppLoaded` / `onLoaded` is independently sufficient when the loaded chain was not isolated at that granularity.
+- A 2×2 matrix with identical Electron/Host/Native Helper/mpv identities can distinguish source-revision regressions from Host-entrypoint effects. Here 9168 froze through both entrypoints and 725d passed through both, so no DirectComposition/DWM/activation workaround belongs in the product fix.
+- Hidden smoke, mpv telemetry, core-playing, helper readiness and native screenshots from an isolated helper smoke do not satisfy a visible real-media freeze gate. If agent UI automation cannot bind a unique foreground window but the user directly confirms the visible real-media result, record `HUMAN-ASSISTED PASS` and `machine playback log evidence = UNAVAILABLE`; keep crash/residual checks separate and do not fabricate missing playback logs.
+- A transport stress `stdout-end` reproduced on Electron 18, the prior Electron 44 candidate and the new Electron 44 candidate is a cross-version harness/environment evidence gap, not sufficient evidence of a source-revision regression. Preserve the failure and its comparison scope; do not redesign Native Helper to force the stress harness green.
+
 ## 2026-09-19 — Electron 44 runtime and internal protocol compatibility
 
 - Electron binary replacement must replace and verify the entire `x64/electron` tree. Overwriting only `electron.exe` cannot exclude stale DLL, locale or resource files from the historical runtime.

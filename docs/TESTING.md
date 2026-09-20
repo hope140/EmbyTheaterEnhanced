@@ -1,5 +1,15 @@
 # 测试与验收
 
+## Electron 44 post-freeze-fix final candidate
+
+当前 final candidate 固定为 source commit `725d4c2284596b8ced749a3c8590180a1e6ed1a9`，runtime `EmbyTheaterEnhanced-electron44-725d4c2-final-candidate`，installer `EmbyTheaterEnhanced-electron44-725d4c2-final-candidate-setup.exe`。production freeze root boundary 为 `APPHOST STARTUP COMMAND CANONICALIZATION`；不得添加 video workaround，也不得把 loaded chain 的单一 statement 写成独立充分原因。
+
+自动化门禁：`npm test = 233/233 PASS`；Collector、Issue Snapshot、CD2 observer、redaction self-tests PASS；focused apphost/Electron/Native Helper/window ownership `55/55 PASS`；Native Helper handshake/service/race/UA isolation/parent-death PASS，residual `0`。transport stress 的 `transport:stdout-end` 在 Electron 18、旧 Electron 44 candidate 和当前 candidate 均复现，单独记为跨版本 harness/environment evidence gap。
+
+formal ordinary 和 CD2 miss 必须保留 rapid NextTrack `selected=false` 的 Electron 18 baseline limitation；只有 `priorStopped`、`nextStarted`、`rapidNextSettled`、`rapidNewestLoaded` 及其它 playback/control/report assertions 同时通过时，才记为 `BASELINE-MATCHED LIMITATION / NO NEW REGRESSION`。Formal STRM/CD2、Formal DirectUrl 和 UA isolation 均已通过。
+
+新 installer 已安装到正式 `Emby.Theater.exe` 目录并完成 payload/profile 保留性核对。用户完成 HUMAN-ASSISTED FOREGROUND ACCEPTANCE，确认 video continuously advancing、audio、OSD、Settings、Pause/Resume、Seek、Fullscreen、Alt-Tab、Minimize/Restore、Resize、Stop、Normal Exit PASS；freeze、seek black frame、stop/exit black frame 未观察到。installed playback machine-log evidence 为 `UNAVAILABLE`，按当前口径不是 blocker；machine crash/residual 仍必须单独检查。不得把缺失日志伪造为 playback PASS，也不得用 hidden smoke 代替用户视觉确认。
+
 ## Electron 44.4.2 background candidate
 
 Every formal runtime command first validates the exact official Electron tree and then launches the candidate `electron.exe` with `ELECTRON_RUN_AS_NODE=1` to compare Electron/Chromium/Node/V8 with `source-provenance.json`. Only after this passes does the hidden BrowserWindow smoke start.

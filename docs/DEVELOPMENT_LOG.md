@@ -1,5 +1,19 @@
 # 开发日志
 
+## 2026-09-21 — Electron 44 Final Candidate post-freeze-fix closure
+
+Model Tier：2。Model：current Codex session。Reason：需要在 exact source revision 上复核 Electron 44 startup fix、自动化/正式 pipeline、Native Helper/installer provenance、安装后 profile 边界与真实前台验收；没有改变 PlaybackManager、Session、Resolver、CD2、Native Helper、libmpv 或视频合成架构。Escalated：no。
+
+确认 fix commit `8be3b6b8fdce9295f73acd7aa6b6507eb5d6c27c` 为 production fix。Electron 44 standard custom-scheme canonicalization 改变了 `electronapphost://loaded/`、`electronapphost://windowstate-Maximized/` 等 renderer command URL 的 command token；旧 parser 对大小写/尾 `/` 敏感，`loaded/` 因此没有执行既有 loaded chain。正式 root boundary 固定为 `APPHOST STARTUP COMMAND CANONICALIZATION`；loaded chain 内哪一条 statement 单独足以恢复视频 presentation 没有进一步隔离，也不作为 release 必要结论。2×2 source/entrypoint matrix 为 HOST+9168 FREEZE 5/5、DIRECT+9168 FREEZE 5/5、HOST+725d PASS 5/5、DIRECT+725d PASS 5/5，四组 Electron/Host/Native Helper/mpv identities 相同。没有加入视频 workaround，也没有重开 DirectComposition/DWM/activation 调查。
+
+从 exact HEAD `725d4c2284596b8ced749a3c8590180a1e6ed1a9` 生成 runtime `EmbyTheaterEnhanced-electron44-725d4c2-final-candidate` 和 installer `EmbyTheaterEnhanced-electron44-725d4c2-final-candidate-setup.exe`。runtime `2137` files；Electron `44.4.2`、Chromium `152.0.7977.130`；source/Electron/Native Helper/runtime provenance、package verify、runtime exclusions、`mpv-win32-x64.node` absent、Pepper/PPAPI absent、helper/mpv present 均 PASS。installer SHA256 为 `AAB19E605E26CE83C73610D1F5844C95EE872268BDBCD7752556E7610D3928A5`；Inno integrity PASS，解包 `{app}` 对 runtime 为 `2137/2137`，`missing=0`、`extra=0`、`mismatch=0`。
+
+验证：`npm test 233/233 PASS`；Collector、Issue Snapshot、CD2 observer、redaction self-tests PASS；focused apphost/Electron/Native Helper/window ownership 为 `55/55 PASS`；Native Helper handshake、service geometry/OSD/input、20× race/crash-recreate、file-local UA isolation、parent-death PASS，parent-death residual `0`。Formal STRM/CD2 PASS；Formal DirectUrl PASS，`allDirectUserAgentsMatched=true`、`noDirectUserAgentLeak=true`；Formal ordinary 与 CD2 miss 的播放、控制、Stats、Session/report assertion 均 PASS，唯一 `selected=false` 为既有 rapid NextTrack baseline limitation，四个邻近 assertion 均 true。transport stress 返回 `transport:stdout-end`，在旧 Electron 44 和 Electron 18 对照上也复现，保留为跨版本 harness/environment evidence gap，不改 Native Helper。
+
+新 installer 已安装到正式目录 `C:\Program Files\Emby Theater Enhanced`；安装后 payload 校验 `missing=0`、`mismatch=0`，profile 与 persistent device identity 保留。用户完成 HUMAN-ASSISTED FOREGROUND ACCEPTANCE，确认 video continuously advancing、audio、OSD、Settings、Pause/Resume、Seek、Fullscreen enter/leave/OSD/controls、Alt-Tab、Minimize/Restore、Resize、Stop、Normal Exit 全部 PASS；video freeze、seek black frame、stop/exit black frame 均未观察到。installed playback machine-log evidence 保持 `UNAVAILABLE`，按本轮验收口径不是 blocker；crash/residual 机器侧检查为 0。没有把缺失日志伪造为 playback PASS，也没有使用 hidden harness 替代用户视觉确认。
+
+终态：`VIDEO FREEZE = NOT REPRODUCED AFTER FIX`；`PR #17 = OPEN / READY TO MERGE`；没有 merge、version bump、tag、Release。`ELECTRON 44 FINAL ACCEPTANCE = PASS — HUMAN-ASSISTED FOREGROUND ACCEPTANCE`，等待主线程复核后再执行 merge。
+
 ## 2026-09-19 — Electron 44 foreground regression attribution and bounded fix
 
 Model Tier：2。Model：current Codex session。Reason：真实 foreground A/B 跨 Electron standard scheme、BrowserWindow fullscreen、透明 overlay、Native Helper child HWND、desktop/DWM frame capture 与同 profile playback；保持 PlaybackManager、Resolver、CD2、Mount、Session/report、Native Helper protocol 和 libmpv architecture 不变。Escalated：no。

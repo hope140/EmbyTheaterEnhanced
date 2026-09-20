@@ -1,12 +1,31 @@
 # 项目状态
 
+## 2026-09-21 — Electron 44 post-freeze-fix closure
+
+确认生产修复为 `8be3b6b8fdce9295f73acd7aa6b6507eb5d6c27c`。Electron 44 standard custom-scheme canonicalization 改变了 renderer command URL 的 command token 形态，例如 `electronapphost://loaded/` 与 `electronapphost://windowstate-Maximized/`；旧 parser 对大小写和尾 `/` 敏感，导致 `loaded/` 没有执行既有 `setWindowState(windowStateOnLoad)`、`mainWindow.focus()`、`hasAppLoaded = true`、`onLoaded()` chain。正式根边界固定为：
+
+```text
+VIDEO FREEZE ROOT BOUNDARY = APPHOST STARTUP COMMAND CANONICALIZATION
+MICRO-MECHANISM = NOT FURTHER ISOLATED / NOT REQUIRED FOR RELEASE
+```
+
+2×2 matrix 为 `HOST + 9168 = FREEZE 5/5`、`DIRECT + 9168 = FREEZE 5/5`、`HOST + 725d = PASS 5/5`、`DIRECT + 725d = PASS 5/5`；Electron / Host / Native Helper / mpv identities 相同，因此结论是 freeze tracks source revision, not Host entrypoint。没有新增视频 workaround，也没有重开 DirectComposition/DWM/activation 假设。
+
+从 exact HEAD `725d4c2284596b8ced749a3c8590180a1e6ed1a9` 重建 `EmbyTheaterEnhanced-electron44-725d4c2-final-candidate`，匹配 installer `EmbyTheaterEnhanced-electron44-725d4c2-final-candidate-setup.exe`，大小 `175580523` bytes，SHA256 `AAB19E605E26CE83C73610D1F5844C95EE872268BDBCD7752556E7610D3928A5`。Electron `44.4.2`、Chromium `152.0.7977.130`、source/Electron/Native Helper/runtime provenance、package verify、retired bridge exclusion、`mpv-win32-x64.node` absent、Pepper/PPAPI absent、`ete-mpv-helper.exe`/`mpv-1.dll` present 均 PASS；installer 解包 `{app}` 与 runtime 均为 2137 files，`missing=0`、`extra=0`、`mismatch=0`。
+
+自动化结果：`npm test = 233/233 PASS`；Collector、Issue Snapshot、CD2 observer、privacy/redaction self-test PASS；apphost/Electron/Native Helper/window ownership focused `55/55 PASS`；Native Helper handshake/service/race/UA isolation、parent-death PASS，residual `0`。transport stress smoke 的 `transport:stdout-end` 在本 candidate、旧 Electron 44 comparison runtime 和 Electron 18 historical runtime 均复现，记录为跨版本 harness/environment evidence gap，不归因于 `725d/8be3b6b` source regression。Formal ordinary 与 CD2 miss 保留既有 rapid NextTrack `selected=false` baseline limitation，其余播放、控制、Stats、Session/report assertion PASS；Formal STRM/CD2、Formal DirectUrl、DirectUrl User-Agent isolation PASS。
+
+新 candidate 已通过正式 installer 安装到 `C:\Program Files\Emby Theater Enhanced`，安装后的 payload `missing=0`、`mismatch=0`，现有 profile 与 persistent device identity 保留。用户随后完成 HUMAN-ASSISTED FOREGROUND ACCEPTANCE，确认 video continuously advancing、audio、OSD、Settings、Pause/Resume、Seek、Fullscreen enter/leave/OSD/controls、Alt-Tab、Minimize/Restore、Resize、Stop、Normal Exit 均 PASS；video freeze、seek black frame、stop/exit black frame 均未观察到。installed playback machine-log evidence 保持 `UNAVAILABLE`，按本轮口径不是 blocker；crash/residual 检查为 0。
+
+当前决策：`PR #17 = OPEN / READY TO MERGE`；不 merge、不 bump version、不 tag、不 Release。`ELECTRON 44 FINAL ACCEPTANCE = PASS — HUMAN-ASSISTED FOREGROUND ACCEPTANCE`；`VIDEO FREEZE = NOT REPRODUCED AFTER FIX`。等待主线程复核后再决定是否 merge。
+
 ## 2026-09-19 — Electron 44 foreground regression fix and occlusion A/B
 
 Fullscreen parser 已以独立 commit `8be3b6b8fdce9295f73acd7aa6b6507eb5d6c27c` 修复。实现只 canonicalize `electronapphost` command token 的尾 `/` 与大小写；raw URL、raw query 和 `openurl` target 保持原样，unknown command fail closed。synthetic focused `15/15`、非沙箱完整 `npm test 233/233`、real Electron 44 protocol probe 均通过；真实 probe 观察到 main 收到 `windowstate-maximized/` 后调用 `BrowserWindow.setFullScreen(true)`，窗口进入显示器大小的 `2560x1440`，OSD 显示“退出全屏”。
 
 视频冻结的 diagnostic-only A/B 使用同一旧 candidate runtime、同一 profile、同一媒体 hash `2768c958dda7746c`、同一窗口位置/尺寸和同一动作。A 不带 switch；B 在 app ready 前追加并确认 `disable-backgrounding-occluded-windows`。两组 T0/T+2/T+4/T+6/T+8/T+10 的视频区域 PNG SHA256 均各自完全不变；Seek 后 3 秒、单次 32x18 resize 后 2 秒、单次 opaque-window occlusion/uncover 后 2 秒仍不变化。两组 mpv time-pos、PositionTicks、audio 与 core-playing 正常推进，Play/Seek/Stop 均通过。
 
-结论为 `OCCLUSION HYPOTHESIS = REJECTED`，`VIDEO FIX = BLOCKED / NEEDS DEEPER COMPOSITION WORK`。occlusion switch 未写入 production、未提交，没有进入性能代价与生产候选阶段。旧 candidate 未覆盖；未生成新 runtime/installer；PR #17 保持 OPEN/HOLD/NOT MERGED。
+当日结论为 `OCCLUSION HYPOTHESIS = REJECTED`，`VIDEO FIX = BLOCKED / NEEDS DEEPER COMPOSITION WORK`；这是在 `8be3b6b` 之前的 historical diagnostic status。该 occlusion switch 未写入 production、未提交，也没有进入性能代价与生产候选阶段。2026-09-21 的 post-freeze-fix closure 已将 production root boundary 固定为 apphost startup command canonicalization；旧 A/B 只保留为历史证据。
 
 ## 2026-09-19 — Electron 44.4.2 background candidate implementation
 
