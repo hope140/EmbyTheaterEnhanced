@@ -7,10 +7,11 @@ const webOverlays = require('./prepare-web-overlays.cjs');
 const trackedFileHash = require('./tracked-file-hash.cjs');
 const nativeHelperProvenance = require('./native-helper-provenance.cjs');
 const runtimeExclusions = require('./runtime-exclusions.cjs');
+const electronRuntimeInput = require('./electron-runtime-input.cjs');
 
 const MANIFEST_NAME = 'source-provenance.json';
-const ELECTRON_PATH = 'x64/electron/electron.exe';
-const ELECTRON_VERSION_PATH = 'x64/electron/version';
+const HISTORICAL_ELECTRON_PATH = 'x64/electron/electron.exe';
+const HISTORICAL_ELECTRON_VERSION_PATH = 'x64/electron/version';
 const LIBMPV_RUNTIME_PATH = 'electronapp/libmpv/x64/mpv-1.dll';
 const LIBMPV_PATCH_PATH = 'payload/libmpv/mpv-1.dll';
 
@@ -89,6 +90,72 @@ function checkedRetiredRuntimeInput(root, manifestEntryValue, runtimePath) {
     };
 }
 
+function historicalElectronInput(root, vendorManifest) {
+    const executableEntry = manifestEntry(vendorManifest, 'files', HISTORICAL_ELECTRON_PATH);
+    const versionEntry = manifestEntry(vendorManifest, 'files', HISTORICAL_ELECTRON_VERSION_PATH);
+    const executablePath = path.join(root, 'vendor', 'carnival', executableEntry.path);
+    const versionPath = path.join(root, 'vendor', 'carnival', versionEntry.path);
+    const executableSha256 = hashFile(executablePath, 'Historical Carnival Electron executable');
+    const versionSha256 = hashFile(versionPath, 'Historical Carnival Electron version');
+    if (executableSha256 !== String(executableEntry.sha256).toUpperCase() ||
+        versionSha256 !== String(versionEntry.sha256).toUpperCase()) {
+        throw new Error('Historical Carnival Electron input mismatch.');
+    }
+    const historicalRoot = path.join(root, 'vendor', 'carnival', 'x64', 'electron');
+    return {
+        role: 'historical-carnival-electron-baseline',
+        version: readFile(versionPath, 'Historical Carnival Electron version').toString('utf8').trim(),
+        inputPath: 'vendor/carnival/x64/electron',
+        executablePath: 'vendor/carnival/' + HISTORICAL_ELECTRON_PATH,
+        executableSha256,
+        versionPath: 'vendor/carnival/' + HISTORICAL_ELECTRON_VERSION_PATH,
+        versionSha256,
+        inputTree: treeIdentity(historicalRoot, walkFiles(historicalRoot)),
+        excludedFromProduction: true,
+        reason: 'replaced-by-pinned-official-electron-runtime'
+    };
+}
+
+function productionElectronIdentity(root, runtime) {
+    const manifest = electronRuntimeInput.readManifest(root);
+    const prepared = electronRuntimeInput.validatePrepared(root);
+    const production = electronRuntimeInput.validateRuntime(root, runtime);
+    if (prepared.runtimeTree.fileCount !== production.runtimeTree.fileCount ||
+        prepared.runtimeTree.sha256 !== production.runtimeTree.sha256 ||
+        prepared.electronExeSha256 !== production.electronExeSha256) {
+        throw new Error('Prepared and production Electron runtime identity mismatch.');
+    }
+    return {
+        role: 'electron-runtime',
+        source: 'official-electron-release',
+        channel: manifest.channel,
+        version: manifest.version,
+        platform: manifest.platform,
+        arch: manifest.arch,
+        releaseUrl: manifest.releaseUrl,
+        manifestPath: electronRuntimeInput.MANIFEST_PATH,
+        manifestSha256: hashFile(path.join(root, electronRuntimeInput.MANIFEST_PATH), 'Electron runtime manifest'),
+        validatorPath: 'tools/electron-runtime-input.cjs',
+        validatorSha256: trackedFileHash.hashTrackedTextFile(root, 'tools/electron-runtime-input.cjs'),
+        archive: {
+            name: manifest.archive.name,
+            sourceUrl: manifest.archive.sourceUrl,
+            shasumsUrl: manifest.archive.shasumsUrl,
+            sha256: String(manifest.archive.sha256).toUpperCase(),
+            size: manifest.archive.size
+        },
+        inputPath: manifest.runtime.preparedPath,
+        runtimePath: manifest.runtime.runtimePath,
+        electronExeSha256: production.electronExeSha256.toUpperCase(),
+        runtimeTree: {
+            fileCount: production.runtimeTree.fileCount,
+            sha256: production.runtimeTree.sha256.toUpperCase()
+        },
+        processVersions: manifest.runtime.processVersions,
+        relation: 'official archive -> validated prepared tree -> exact production runtime tree'
+    };
+}
+
 function productionDependencyClosure(root, runtime) {
     const lockPath = path.join(root, 'package-lock.json');
     const lock = JSON.parse(readFile(lockPath, 'package-lock.json').toString('utf8'));
@@ -130,13 +197,10 @@ function buildManifest(rootArg, runtimeArg, sourceCommit) {
     const runtime = path.resolve(runtimeArg);
     const vendorManifestPath = path.join(root, 'vendor', 'runtime-manifest.json');
     const vendorManifest = JSON.parse(readFile(vendorManifestPath, 'Vendor manifest').toString('utf8'));
-    const electronEntry = manifestEntry(vendorManifest, 'files', ELECTRON_PATH);
-    const electronVersionEntry = manifestEntry(vendorManifest, 'files', ELECTRON_VERSION_PATH);
     const baseLibmpvEntry = manifestEntry(vendorManifest, 'files', LIBMPV_RUNTIME_PATH);
     const patchLibmpvEntry = manifestEntry(vendorManifest, 'patchFiles', LIBMPV_PATCH_PATH);
-    const electron = checkedRuntimeIdentity(root, runtime, electronEntry, ELECTRON_PATH, 'electron-runtime', 'vendor/carnival');
-    const electronVersion = checkedRuntimeIdentity(root, runtime, electronVersionEntry, ELECTRON_VERSION_PATH, 'electron-version', 'vendor/carnival');
-    electronVersion.version = readFile(path.join(runtime, ELECTRON_VERSION_PATH), 'Electron version').toString('utf8').trim();
+    const electron = productionElectronIdentity(root, runtime);
+    const historicalElectron = historicalElectronInput(root, vendorManifest);
     const libmpv = checkedRuntimeIdentity(root, runtime, patchLibmpvEntry, LIBMPV_RUNTIME_PATH, 'libmpv', 'vendor/patch');
     const baseLibmpvInput = hashFile(path.join(root, 'vendor', 'carnival', baseLibmpvEntry.path), 'libmpv base input');
     if (baseLibmpvInput !== String(baseLibmpvEntry.sha256).toUpperCase()) {
@@ -169,7 +233,8 @@ function buildManifest(rootArg, runtimeArg, sourceCommit) {
                 sha256: String(entry.sha256 || '').toUpperCase()
             }))
         },
-        runtimeIdentities: {electron, electronVersion, libmpv},
+        runtimeIdentities: {electron, libmpv},
+        historicalInputs: {carnivalElectron: historicalElectron},
         runtimeExclusions: {
             generatorPath: 'tools/runtime-exclusions.cjs',
             generatorSha256: trackedFileHash.hashTrackedTextFile(root, 'tools/runtime-exclusions.cjs'),

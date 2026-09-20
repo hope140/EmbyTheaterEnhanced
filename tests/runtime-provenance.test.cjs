@@ -11,6 +11,7 @@ const trackedProductSources = require('../tools/copy-tracked-product-sources.cjs
 const preloadPreparation = require('../tools/prepare-preload.cjs');
 const webPreparation = require('../tools/prepare-web-overlays.cjs');
 const sourceProvenance = require('../tools/source-provenance.cjs');
+const electronRuntimeInput = require('../tools/electron-runtime-input.cjs');
 
 const repoRoot = path.resolve(__dirname, '..');
 const tool = path.join(repoRoot, 'tools', 'runtime-provenance.cjs');
@@ -72,6 +73,42 @@ function createFixture(root) {
         files,
         patchFiles
     }));
+    const officialElectron = path.join(root, 'vendor', 'electron', '44.4.2', 'win32-x64');
+    writeFile(path.join(officialElectron, 'electron.exe'), 'official-electron-44-fixture\n');
+    writeFile(path.join(officialElectron, 'version'), '44.4.2\n');
+    writeFile(path.join(officialElectron, 'locales', 'en-US.pak'), 'official-electron-locale-fixture\n');
+    const officialIdentity = electronRuntimeInput.treeIdentity(officialElectron);
+    writeFile(path.join(root, 'vendor', 'electron-runtime-manifest.json'), JSON.stringify({
+        schemaVersion: 1,
+        channel: 'Stable',
+        version: '44.4.2',
+        platform: 'win32',
+        arch: 'x64',
+        releaseUrl: 'https://github.com/electron/electron/releases/tag/v44.4.2',
+        publishedAt: '2026-09-18T01:08:36Z',
+        archive: {
+            name: 'electron-v44.4.2-win32-x64.zip',
+            sourceUrl: 'https://github.com/electron/electron/releases/download/v44.4.2/electron-v44.4.2-win32-x64.zip',
+            shasumsUrl: 'https://github.com/electron/electron/releases/download/v44.4.2/SHASUMS256.txt',
+            sha256: '1'.repeat(64),
+            size: 123
+        },
+        runtime: {
+            preparedPath: 'vendor/electron/44.4.2/win32-x64',
+            runtimePath: 'x64/electron',
+            electronPath: 'electron.exe',
+            electronExeSha256: hash(fs.readFileSync(path.join(officialElectron, 'electron.exe'))),
+            versionPath: 'version',
+            fileCount: officialIdentity.fileCount,
+            treeSha256: officialIdentity.sha256,
+            processVersions: {
+                electron: '44.4.2',
+                chrome: '152.0.7977.130',
+                node: '24.21.0',
+                v8: '15.2.124.28-electron.0'
+            }
+        }
+    }));
     writeFile(path.join(root, 'package-lock.json'), JSON.stringify({lockfileVersion: 3, packages: {}}));
 
     for (const relativePath of [
@@ -80,6 +117,7 @@ function createFixture(root) {
         'tools/patch-external-player-registration.cjs',
         'tools/copy-runtime-dependencies.cjs',
         'tools/copy-tracked-product-sources.cjs',
+        'tools/electron-runtime-input.cjs',
         'tools/tracked-file-hash.cjs',
         'tools/runtime-exclusions.cjs'
     ]) copyRepoFile(root, relativePath);
@@ -105,9 +143,8 @@ function createRuntime(root, name) {
     writeFile(path.join(runtime, 'electronapp', 'preload.js'), fs.readFileSync(path.join(root, 'src', 'electronapp', 'preload.js')));
     writeFile(path.join(runtime, 'electronapp', 'www', 'modules', 'common', 'playback', 'playbackmanager.js'), 'const playback = true;\n');
     writeFile(path.join(runtime, 'electronapp', 'package.json'), '{"name":"runtime"}\n');
-    for (const relativePath of ['x64/electron/electron.exe', 'x64/electron/version']) {
-        writeFile(path.join(runtime, relativePath), fs.readFileSync(path.join(root, 'vendor', 'carnival', relativePath)));
-    }
+    fs.cpSync(path.join(root, 'vendor', 'electron', '44.4.2', 'win32-x64'),
+        path.join(runtime, 'x64', 'electron'), {recursive: true});
     writeFile(path.join(runtime, 'electronapp/libmpv/x64/mpv-1.dll'),
         fs.readFileSync(path.join(root, 'vendor/patch/payload/libmpv/mpv-1.dll')));
     webPreparation.apply(root, runtime);
@@ -181,6 +218,13 @@ test('runtime provenance rejects prepared and source-provenance tampering', () =
         const tampered = runProvenance('validate', root, runtime);
         assert.equal(tampered.exitCode, 1);
         assert.equal(tampered.report.errors.includes('source-provenance-mismatch'), true);
+
+        const electronRuntime = createRuntime(root, 'runtime-electron-tamper');
+        assert.equal(runProvenance('write', root, electronRuntime).exitCode, 0);
+        fs.appendFileSync(path.join(electronRuntime, 'x64', 'electron', 'electron.exe'), 'tampered');
+        const electronTampered = runProvenance('validate', root, electronRuntime);
+        assert.equal(electronTampered.exitCode, 1);
+        assert.equal(electronTampered.report.errors.includes('electron-runtime-invalid'), true);
     } finally {
         fs.rmSync(root, {recursive: true, force: true});
     }

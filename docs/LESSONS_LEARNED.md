@@ -1,5 +1,22 @@
 # 已确认经验
 
+## 2026-09-21 — Electron 44 freeze root boundary and acceptance evidence
+
+- Electron 44 standard custom-scheme canonicalization can change an existing apphost command URL into a lowercase command token with a trailing slash. The parser must canonicalize the command token while preserving raw `openurl` URL/query bytes and rejecting unknown commands.
+- `electronapphost://loaded/` failing the existing loaded chain is the confirmed release root boundary for the Electron 44 video freeze. Do not claim that one statement inside `setWindowState` / `focus` / `hasAppLoaded` / `onLoaded` is independently sufficient when the loaded chain was not isolated at that granularity.
+- A 2×2 matrix with identical Electron/Host/Native Helper/mpv identities can distinguish source-revision regressions from Host-entrypoint effects. Here 9168 froze through both entrypoints and 725d passed through both, so no DirectComposition/DWM/activation workaround belongs in the product fix.
+- Hidden smoke, mpv telemetry, core-playing, helper readiness and native screenshots from an isolated helper smoke do not satisfy a visible real-media freeze gate. If agent UI automation cannot bind a unique foreground window but the user directly confirms the visible real-media result, record `HUMAN-ASSISTED PASS` and `machine playback log evidence = UNAVAILABLE`; keep crash/residual checks separate and do not fabricate missing playback logs.
+- A transport stress `stdout-end` reproduced on Electron 18, the prior Electron 44 candidate and the new Electron 44 candidate is a cross-version harness/environment evidence gap, not sufficient evidence of a source-revision regression. Preserve the failure and its comparison scope; do not redesign Native Helper to force the stress harness green.
+
+## 2026-09-19 — Electron 44 runtime and internal protocol compatibility
+
+- Electron binary replacement must replace and verify the entire `x64/electron` tree. Overwriting only `electron.exe` cannot exclude stale DLL, locale or resource files from the historical runtime.
+- Official archive SHA256, extracted canonical tree, `electron.exe`, process versions and final runtime tree are separate identities; provenance must bind all of them while keeping Carnival Electron 18 as historical evidence.
+- Electron 44 hidden `webContents.capturePage()` can reject because no display surface exists. Background formal gates should not require a screenshot; visible visual gates remain separate.
+- Existing non-special custom schemes used by renderer XHR fail before playback on Electron 44 unless registered before ready with `standard + supportFetchAPI + corsEnabled`. Apply this only to the exact existing XHR schemes and do not add `secure`, `bypassCSP` or Service Worker privileges.
+- A swallowed renderer `ProgressEvent` can appear later as `player cannot be null`. Bounded pipeline-stage, helper lifecycle and allowlisted diagnostic events localize the first failure without changing PlaybackManager or playback semantics.
+- A formal `ok=false` can still be baseline-matched rather than a new regression. Compare the complete assertion vector on the same machine and keep the historical rapid NextTrack limitation explicit instead of changing product logic to make the harness green.
+
 ## 2026-09-17 — Deterministic generation fixture evidence
 
 - `sleep(N)` 不能证明两个异步 Play overlap；timer 恢复可能晚于第一轮 core-playing/Promise settle。只有 listener 已注册、native generation 已建立且 Promise pending 才是可被下一 Play supersede 的确定 gate。

@@ -26,7 +26,8 @@ STRM 智能解析现在提供正式 Playback 设置页、main-process 持久化�
 
 ```powershell
 npm ci --ignore-scripts
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/prepare.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/prepare.ps1 -ArchiveRoot 'path\to\pinned-archives'
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/prepare-native-helper-inputs.ps1
 npm test
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/build.ps1 -OutputName EmbyTheaterEnhanced-new-win-x64
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/test-runtime.ps1 -RuntimeName EmbyTheaterEnhanced-new-win-x64 -Visible -TestMedia
@@ -34,7 +35,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/test-runtime.ps1 -Runt
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/package.ps1 -RuntimeName EmbyTheaterEnhanced-new-win-x64 -Compiler 'path/to/ISCC.exe'
 ```
 
-已有输出不会被覆盖；重复构建用 `-OutputName EmbyTheaterEnhanced-next-win-x64`。构建只使用本地已校验 vendor，不联网下载或升级 Electron。初次复现需要两个原始归档；哈希见 `vendor/runtime-manifest.json`。
+已有输出不会被覆盖；重复构建用 `-OutputName EmbyTheaterEnhanced-next-win-x64`。构建只使用本地已校验 vendor，不自动下载或漂移 Electron。当前 candidate 初次复现需要 Carnival、综合补丁与 official Electron 44.4.2 三个原始归档；哈希分别见 `vendor/runtime-manifest.json` 和 `vendor/electron-runtime-manifest.json`。Electron upgrade contract 见 [ELECTRON_44_UPGRADE](docs/ELECTRON_44_UPGRADE.md)。
 
 `src/electronapp` 是维护入口；`vendor` 记录来源和文件哈希；`tools` 负责构建、测试；`docs` 记录已确认结论与待验收内容。根 `package.json` 同时锁定开发工具和需要复制进 frozen Electron 的纯 JavaScript runtime 依赖；`tools/build.ps1` 只复制 lockfile 中的 production closure，并拒绝 native addon。
 
