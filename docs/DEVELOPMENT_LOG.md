@@ -1,5 +1,25 @@
 # 开发日志
 
+## 2026-09-22 — STRM Smart Path Mapping Phase 1 engine and safety model
+
+从 exact `origin/main@9a034e8d627f71abbded01a1fba612d9282c9911` 建立独立 `codex/strm-smart-path-mapping` worktree；没有带入 `codex/v0.2.3-settings-ux`。先审计 current main 的 `rules[]` schema、三种 path identity、metadata recovery、path rules、CD2 proto/client、Mount/DirectUrl 输入、Resolver route 和 diagnostics redaction。当前仓库没有 `pathMappings` 字段；source identity 继续由 absolute `MediaSource.Path` 独占，非 absolute/HTTP source 才允许 `Item.Path` fallback。
+
+新增 `src/electronapp/resolvers/smart-path-mapping.js`：pure deterministic engine 严格分类 Windows drive/UNC/POSIX，逐 segment 计算 longest suffix，保留 mapping anchor，输出 `MATCHED/AMBIGUOUS/NO_MATCH/UNSAFE` 与 `HIGH/MEDIUM/LOW`。HIGH 阈值固定为 filename + 至少三个连续父目录且 candidate 唯一；MEDIUM 为 filename + 两个父目录；更短 suffix 不输出 suggestion。relative、traversal、empty segment、root/incomplete、非 POSIX cloud candidate fail closed。matching manual mapping 阻止 suggestion，conflict 为 UNSAFE。
+
+`strmResolver.previewSmartPathMapping()` 只在显式调用时执行，并通过 fail-open sink 发出 `resolver/smart-path-mapping-candidate`。event 只含 status、confidence、matched suffix count、candidate count 和 reason。`resolve()`、`resolveAsync()`、`libmpv.playInternal()`、PlaybackManager、Session、MediaSourceId、PlaySessionId、DeviceId、reporting、WebSocket、remote control、Native Helper、DirectUrl semantics、window/surface 与 Electron runtime 均未修改。
+
+CD2 current capability：exact `FindFileByPath`、regular-file fields、`GetDownloadUrlPath`、same-origin URL 和受限 DirectUrl 为 AVAILABLE；MountPoint、root listing、directory enumeration、stable file/provider ID、name/suffix search 和 caller-provided cloud candidates 为 NOT AVAILABLE。没有扩展 proto、枚举目录、hydration、retry 或 cold-directory materialization。pure evaluator 可消费外部已知 pair；当前 API 不足以完成 CD2-aware automatic discovery。
+
+Model Tier: Tier 2
+
+Model: GPT-5.6 Sol High
+
+Reason: cross-module Resolver/CD2/diagnostics architecture audit with a frozen production route contract
+
+Escalated: No
+
+验证使用准备脚本校验三份既有 archive、生成 pinned preload，并准备 exact Electron 44.4.2 73-file tree与固定 hash 的 mpv client header。`npm test = 251/251 PASS`；focused Smart Mapping + Resolver/settings `63/63 PASS`；CD2/DirectUrl `33/33 PASS`；diagnostics/collector/observer `28/28 PASS`；`git diff --check` PASS。background build `dist/EmbyTheaterEnhanced-smart-path-phase1-ae86a3c` 绑定产品提交 `ae86a3c3b9404e38d5127c05ecfa046f72efc2bb`，payload `2137` files，source/native/runtime provenance 与 package `-VerifyOnly` PASS，Smart Mapping runtime entry 存在。foreground/native UI/真实 Emby/真实 CD2/安装均未运行。
+
 ## 2026-09-21 — Electron 44 Final Candidate post-freeze-fix closure
 
 Model Tier：2。Model：current Codex session。Reason：需要在 exact source revision 上复核 Electron 44 startup fix、自动化/正式 pipeline、Native Helper/installer provenance、安装后 profile 边界与真实前台验收；没有改变 PlaybackManager、Session、Resolver、CD2、Native Helper、libmpv 或视频合成架构。Escalated：no。

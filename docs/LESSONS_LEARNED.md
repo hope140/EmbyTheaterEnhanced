@@ -1,5 +1,13 @@
 # 已确认经验
 
+## 2026-09-22 — Smart path mapping evidence boundary
+
+- longest suffix 不能直接把全部 matched directories 从 prefix 剥掉；保留最靠近 root 的 matched directory 作为 anchor，才能从 `D:\Media\Movies\A\B\movie.mkv` 与 `/115/Movies/A/B/movie.mkv` 得到稳定的 `D:\Media\Movies → /115/Movies`。
+- path comparison 必须先分类再逐 segment 执行。Windows drive/UNC 的大小写不敏感不能扩散到 POSIX；UNC 的 server/share 是 root boundary，重复 separator、device namespace、relative/traversal 和 incomplete path 应在评分前拒绝。
+- `HIGH` 只描述 pair 内的 suffix evidence，不证明 candidate 来源可信、CD2 目录可见、provider identity 相同或 production route 可自动启用。当前最小 CD2 proto 没有 mount/root/listing/stable ID；exact lookup 不能反向变成 discovery。
+- dry-run diagnostic 应只输出 status/confidence/count/reason。现有 path hash 会 lower-case absolute path，不能作为 POSIX case-sensitive inference evidence，也不能替代 raw pair 的 main-process validation。
+- matching manual rule 是 authority。Phase 1 suggestion 不应进入 `resolveAsync()`；Phase 2 最早的安全 activation boundary 是用户确认后的 main-process validation，再进入既有 `normalizeRule()` / `applyDiscovery()` 并重启生效。
+
 ## 2026-09-21 — Electron 44 freeze root boundary and acceptance evidence
 
 - Electron 44 standard custom-scheme canonicalization can change an existing apphost command URL into a lowercase command token with a trailing slash. The parser must canonicalize the command token while preserving raw `openurl` URL/query bytes and rejecting unknown commands.

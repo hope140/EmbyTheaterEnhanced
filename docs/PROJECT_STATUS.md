@@ -1,5 +1,15 @@
 # 项目状态
 
+## 2026-09-22 — STRM Smart Path Mapping Phase 1
+
+基于 `origin/main@9a034e8d627f71abbded01a1fba612d9282c9911` 创建独立 `codex/strm-smart-path-mapping` worktree。新增 pure deterministic `smart-path-mapping.js` 与 `strmResolver.previewSmartPathMapping()` dry-run hook；production `libmpv.playInternal()`、`resolve()` 和 `resolveAsync()` 不调用推导结果，正式 DirectUrl → CD2 HTTP → Mount → Native route 未改变。
+
+引擎严格区分 Windows drive、UNC 与 POSIX；Windows/UNC segment comparison 大小写不敏感，POSIX 大小写敏感。它从 filename 向上计算 longest continuous suffix，保留最靠近 root 的 matched directory 作为 prefix anchor。filename + 3 个父目录以上且 unique 为 HIGH，filename + 2 个父目录为 MEDIUM；filename-only、单父目录、同分 candidate、relative/traversal、empty segment、root/incomplete path 都不会形成可应用 suggestion。matching manual mapping 永远阻止 smart suggestion，conflict fail closed。
+
+当前固定 CD2 proto 只有 `FindFileByPath` 和 `GetDownloadUrlPath`。exact path lookup、regular-file metadata 与 download URL 可用；MountPoint、root listing、directory enumeration、stable ID、suffix/name search 和 caller-provided cloud candidates 均不可用。因此 Phase 1 evaluator 可验证外部已知 pair，但当前 CD2 API 不足以自行发现 production candidate。建议可信 pair 仍 `USER CONFIRM FIRST`；CD2-aware Phase 2 automatic discovery 为 `INSUFFICIENT DATA`。详细能力矩阵、confidence/safety 和 Phase 2 边界见 [STRM_SMART_PATH_MAPPING](STRM_SMART_PATH_MAPPING.md)。
+
+验证：`npm test 251/251 PASS`；focused Smart Mapping + Resolver/settings `63/63 PASS`；CD2/DirectUrl `33/33 PASS`；diagnostics `28/28 PASS`；`git diff --check` PASS。background runtime 绑定产品提交 `ae86a3c3b9404e38d5127c05ecfa046f72efc2bb`，payload `2137` files，source/native/runtime provenance 与 package verify PASS。未启动 Electron、未执行 foreground/native UI、真实 Emby/CD2、安装、版本 bump、tag、Release 或 deployment。
+
 ## 2026-09-21 — Electron 44 post-freeze-fix closure
 
 确认生产修复为 `8be3b6b8fdce9295f73acd7aa6b6507eb5d6c27c`。Electron 44 standard custom-scheme canonicalization 改变了 renderer command URL 的 command token 形态，例如 `electronapphost://loaded/` 与 `electronapphost://windowstate-Maximized/`；旧 parser 对大小写和尾 `/` 敏感，导致 `loaded/` 没有执行既有 `setWindowState(windowStateOnLoad)`、`mainWindow.focus()`、`hasAppLoaded = true`、`onLoaded()` chain。正式根边界固定为：

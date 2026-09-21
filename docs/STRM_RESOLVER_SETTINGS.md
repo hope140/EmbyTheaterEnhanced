@@ -77,7 +77,7 @@ Windows drive 和 UNC 比较大小写不敏感，POSIX 比较大小写敏感。�
 | `mount-first` | `Mount → DirectUrl → CD2 HTTP → Native` |
 | `custom` | 使用规则自身的 `order` |
 
-`DirectUrl` 与 `CD2 HTTP` 共享一个 main-process service。renderer 通过窄请求模式区分 `direct` 和 `same-origin`，不会复制两套 gRPC service。一次规则解析的 CD2 stages 共享 750ms absolute deadline；`FindFileByPath` 结果在 direct/same-origin 连续尝试间复用。DirectUrl 继续沿用已验证的 file-local User-Agent、expiry safety、additional headers fail-closed 和 Native fallback。
+`DirectUrl` 与 `CD2 HTTP` 共享一个 main-process service。renderer 通过窄请求模式区分 `direct` 和 `same-origin`，不会复制两套 gRPC service。一次规则解析的 CD2 stages 共享 1200ms absolute deadline；`FindFileByPath` 结果在 direct/same-origin 连续尝试间复用。DirectUrl 继续沿用已验证的 file-local User-Agent、expiry safety、additional headers fail-closed 和 Native fallback。
 
 以下输入仍保持原有行为：
 
