@@ -425,3 +425,111 @@ test('preview emits only bounded diagnostic details and remains fail-open for ob
     }));
     await new Promise(resolve => setImmediate(resolve));
 });
+
+test('mount inference derives anchored Windows drive prefixes without changing cloud inference', () => {
+    const cloud = smartPathMapping.inferSmartPathMapping({
+        sourcePath: 'X:\\115\\A\\B\\f.mkv',
+        candidateCloudPaths: ['/CloudNAS/115/A/B/f.mkv']
+    });
+    const mount = smartPathMapping.inferSmartMountMapping({
+        sourcePath: 'X:\\115\\A\\B\\f.mkv',
+        sourcePrefix: cloud.suggestion.localPrefix,
+        candidateMountPaths: ['Z:\\115\\A\\B\\f.mkv']
+    });
+
+    assert.equal(cloud.status, 'MATCHED');
+    assert.equal(cloud.confidence, 'HIGH');
+    assert.deepEqual(cloud.suggestion, {localPrefix: 'X:\\115', cloudPrefix: '/CloudNAS/115'});
+    assert.equal(mount.status, 'MATCHED');
+    assert.equal(mount.confidence, 'HIGH');
+    assert.deepEqual(mount.suggestion, {sourcePrefix: 'X:\\115', mountPrefix: 'Z:\\115'});
+});
+
+test('mount inference supports the approved Windows, UNC, and POSIX path-kind matrix', () => {
+    const cases = [
+        ['X:\\115\\A\\B\\f.mkv', 'Z:\\115\\A\\B\\f.mkv', 'X:\\115', 'Z:\\115'],
+        ['X:\\115\\A\\B\\f.mkv', '\\\\nas\\share\\115\\A\\B\\f.mkv', 'X:\\115', '\\\\nas\\share\\115'],
+        ['\\\\source\\share\\115\\A\\B\\f.mkv', 'Z:\\115\\A\\B\\f.mkv', '\\\\source\\share\\115', 'Z:\\115'],
+        ['\\\\source\\share\\115\\A\\B\\f.mkv', '\\\\target\\media\\115\\A\\B\\f.mkv', '\\\\source\\share\\115', '\\\\target\\media\\115'],
+        ['/srv/115/A/B/f.mkv', '/mnt/115/A/B/f.mkv', '/srv/115', '/mnt/115']
+    ];
+
+    for (const [sourcePath, mountPath, sourcePrefix, mountPrefix] of cases) {
+        const result = smartPathMapping.inferSmartMountMapping({
+            sourcePath,
+            candidateMountPaths: [mountPath]
+        });
+        assert.equal(result.status, 'MATCHED', sourcePath + ' -> ' + mountPath);
+        assert.equal(result.confidence, 'HIGH');
+        assert.deepEqual(result.suggestion, {sourcePrefix, mountPrefix});
+    }
+});
+
+test('mount inference preserves source case semantics and rejects unsupported kind combinations', () => {
+    const windows = smartPathMapping.inferSmartMountMapping({
+        sourcePath: 'x:\\115\\A\\B\\F.MKV',
+        candidateMountPaths: ['z:\\115\\a\\b\\f.mkv']
+    });
+    const posixMismatch = smartPathMapping.inferSmartMountMapping({
+        sourcePath: '/srv/Media/A/B/f.mkv',
+        candidateMountPaths: ['/mnt/media/a/b/F.mkv']
+    });
+    const unsupported = smartPathMapping.inferSmartMountMapping({
+        sourcePath: '/srv/media/A/B/f.mkv',
+        candidateMountPaths: ['Z:\\media\\A\\B\\f.mkv']
+    });
+
+    assert.equal(windows.status, 'MATCHED');
+    assert.equal(windows.confidence, 'HIGH');
+    assert.equal(posixMismatch.status, 'NO_MATCH');
+    assert.equal(unsupported.status, 'UNSAFE');
+    assert.equal(unsupported.evidence.reason, 'invalid_mount_candidate');
+});
+
+test('mount inference keeps safety, short suffix, ambiguity, traversal, and semantic dedupe gates', () => {
+    const short = smartPathMapping.inferSmartMountMapping({
+        sourcePath: 'X:\\Media\\A\\f.mkv',
+        candidateMountPaths: ['Z:\\Mount\\A\\f.mkv']
+    });
+    const ambiguous = smartPathMapping.inferSmartMountMapping({
+        sourcePath: 'X:\\Media\\A\\B\\f.mkv',
+        candidateMountPaths: ['Z:\\One\\A\\B\\f.mkv', '\\\\nas\\two\\A\\B\\f.mkv']
+    });
+    const traversal = smartPathMapping.inferSmartMountMapping({
+        sourcePath: 'X:\\Media\\A\\B\\f.mkv',
+        candidateMountPaths: ['Z:\\Mount\\..\\B\\f.mkv']
+    });
+    const deduped = smartPathMapping.inferSmartMountMapping({
+        sourcePath: 'X:\\Media\\A\\B\\f.mkv',
+        candidateMountPaths: ['Z:\\Mount\\A\\B\\f.mkv', 'z:\\mount\\a\\b\\F.MKV']
+    });
+
+    assert.equal(short.status, 'NO_MATCH');
+    assert.equal(short.confidence, 'LOW');
+    assert.equal(ambiguous.status, 'AMBIGUOUS');
+    assert.equal(traversal.status, 'UNSAFE');
+    assert.equal(deduped.status, 'MATCHED');
+    assert.equal(deduped.evidence.validCandidateCount, 1);
+});
+
+test('mount inference binds mountPrefix to the cloud suggestion sourcePrefix', () => {
+    const sourcePath = 'X:\\Media\\Movies\\A\\B\\m.mkv';
+    const cloud = smartPathMapping.inferSmartPathMapping({
+        sourcePath,
+        candidateCloudPaths: ['/Cloud/Movies/A/B/m.mkv']
+    });
+    const mount = smartPathMapping.inferSmartMountMapping({
+        sourcePath,
+        sourcePrefix: cloud.suggestion.localPrefix,
+        candidateMountPaths: ['Z:\\Mounted\\Cloud\\Movies\\A\\B\\m.mkv']
+    });
+
+    assert.deepEqual(cloud.suggestion, {
+        localPrefix: 'X:\\Media\\Movies',
+        cloudPrefix: '/Cloud/Movies'
+    });
+    assert.deepEqual(mount.suggestion, {
+        sourcePrefix: 'X:\\Media\\Movies',
+        mountPrefix: 'Z:\\Mounted\\Cloud\\Movies'
+    });
+});

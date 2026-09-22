@@ -234,6 +234,26 @@ test('DISABLED rule suppresses the same automatic mapping until explicitly resto
     assert.equal(result.rules[0].enabled, true);
 });
 
+test('explicit Save can stage AUTO disable and DISABLED restore without separate mutation IPC', () => {
+    const root = temporaryRoot('ete-strm-explicit-rule-state-');
+    const store = configStore.createStore({rootDir: root, environment: {}});
+    let config = store.applyDiscovery([baseRule({originState: 'AUTO'})]);
+    const disabledDraft = JSON.parse(JSON.stringify(config));
+    disabledDraft.rules[0].originState = 'DISABLED';
+    disabledDraft.rules[0].enabled = false;
+
+    config = store.save(disabledDraft);
+    assert.equal(config.rules[0].originState, 'DISABLED');
+    assert.equal(config.rules[0].enabled, false);
+
+    const restoredDraft = JSON.parse(JSON.stringify(config));
+    restoredDraft.rules[0].originState = 'AUTO';
+    restoredDraft.rules[0].enabled = true;
+    config = store.save(restoredDraft);
+    assert.equal(config.rules[0].originState, 'AUTO');
+    assert.equal(config.rules[0].enabled, true);
+});
+
 test('longest prefix matching selects the most specific enabled rule', () => {
     const config = baseConfig(null, {
         rules: [
