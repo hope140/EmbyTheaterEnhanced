@@ -37,11 +37,11 @@
 
     function classifyCollision(preview, rules) {
         var conflict = false;
-        if (!isObject(preview) || typeof preview.localPrefix !== 'string' || typeof preview.cloudPrefix !== 'string') {
+        if (!isObject(preview) || typeof preview.sourcePrefix !== 'string' || typeof preview.cloudPrefix !== 'string') {
             return COLLISION.NONE;
         }
         (Array.isArray(rules) ? rules : []).forEach(function (rule) {
-            if (!rule || !equivalentSourcePrefix(preview.localPrefix, rule.sourcePrefix)) return;
+            if (!rule || !equivalentSourcePrefix(preview.sourcePrefix, rule.sourcePrefix)) return;
             if (equivalentCloudPrefix(preview.cloudPrefix, rule.cloudPrefix)) {
                 conflict = COLLISION.DUPLICATE;
             } else if (conflict !== COLLISION.DUPLICATE) {
@@ -53,7 +53,7 @@
 
     function isHighMatch(preview) {
         return !!preview && preview.status === 'MATCHED' && preview.confidence === 'HIGH' &&
-            typeof preview.localPrefix === 'string' && !!preview.localPrefix &&
+            typeof preview.sourcePrefix === 'string' && !!preview.sourcePrefix &&
             typeof preview.cloudPrefix === 'string' && !!preview.cloudPrefix;
     }
 
@@ -70,8 +70,8 @@
         if (!isHighMatch(preview) || typeof id !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(id)) return null;
         return {
             id: id,
-            sourcePrefix: preview.localPrefix,
-            mountPrefix: '',
+            sourcePrefix: preview.sourcePrefix,
+            mountPrefix: typeof preview.mountPrefix === 'string' ? preview.mountPrefix : '',
             cloudPrefix: preview.cloudPrefix,
             storageType: 'cloud-mount',
             strategy: 'cloud-first',

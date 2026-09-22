@@ -111,8 +111,10 @@ function register(options) {
 
     function previewMapping(request) {
         if (!request || typeof request !== 'object' || Array.isArray(request) ||
-            typeof request.localPath !== 'string' || typeof request.cloudPath !== 'string' ||
-            request.localPath.length > 32768 || request.cloudPath.length > 32768) {
+            typeof request.sourcePath !== 'string' || typeof request.cloudPath !== 'string' ||
+            (request.mountPath !== undefined && typeof request.mountPath !== 'string') ||
+            request.sourcePath.length > 32768 || request.cloudPath.length > 32768 ||
+            (request.mountPath && request.mountPath.length > 32768)) {
             return {
                 status: 'UNSAFE',
                 confidence: 'LOW',
@@ -121,14 +123,14 @@ function register(options) {
                 reason: 'invalid_request'
             };
         }
-        const result = smartPathMapping.inferSmartPathMapping({
-            localPath: request && request.localPath,
-            candidateCloudPaths: [request && request.cloudPath]
+        const cloudResult = smartPathMapping.inferSmartPathMapping({
+            sourcePath: request.sourcePath,
+            candidateCloudPaths: [request.cloudPath]
         });
-        const evidence = result && result.evidence || {};
+        const evidence = cloudResult && cloudResult.evidence || {};
         const response = {
-            status: result.status,
-            confidence: result.confidence,
+            status: cloudResult.status,
+            confidence: cloudResult.confidence,
             matchedSuffixSegments: Number.isSafeInteger(evidence.matchedSuffixSegments)
                 ? evidence.matchedSuffixSegments
                 : 0,
@@ -137,9 +139,41 @@ function register(options) {
                 : 0,
             reason: typeof evidence.reason === 'string' ? evidence.reason : 'invalid_result'
         };
-        if (result.suggestion) {
-            response.localPrefix = result.suggestion.localPrefix;
-            response.cloudPrefix = result.suggestion.cloudPrefix;
+        if (cloudResult.suggestion) {
+            response.sourcePrefix = cloudResult.suggestion.localPrefix;
+            response.cloudPrefix = cloudResult.suggestion.cloudPrefix;
+        }
+
+        response.mountProvided = !!request.mountPath;
+        response.mountPrefix = '';
+        response.mountStatus = request.mountPath ? 'NO_MATCH' : 'NOT_PROVIDED';
+        response.mountConfidence = 'LOW';
+        response.mountMatchedSuffixSegments = 0;
+        response.mountMatchedParentSegments = 0;
+        response.mountReason = request.mountPath ? 'cloud_mapping_not_high' : 'not_provided';
+
+        if (request.mountPath && cloudResult.status === 'MATCHED' && cloudResult.confidence === 'HIGH' &&
+            cloudResult.suggestion) {
+            const mountResult = smartPathMapping.inferSmartMountMapping({
+                sourcePath: request.sourcePath,
+                sourcePrefix: cloudResult.suggestion.localPrefix,
+                candidateMountPaths: [request.mountPath]
+            });
+            const mountEvidence = mountResult && mountResult.evidence || {};
+            response.mountStatus = mountResult.status;
+            response.mountConfidence = mountResult.confidence;
+            response.mountMatchedSuffixSegments = Number.isSafeInteger(mountEvidence.matchedSuffixSegments)
+                ? mountEvidence.matchedSuffixSegments
+                : 0;
+            response.mountMatchedParentSegments = Number.isSafeInteger(mountEvidence.matchedParentSegments)
+                ? mountEvidence.matchedParentSegments
+                : 0;
+            response.mountReason = typeof mountEvidence.reason === 'string'
+                ? mountEvidence.reason
+                : 'invalid_result';
+            if (mountResult.status === 'MATCHED' && mountResult.confidence === 'HIGH' && mountResult.suggestion) {
+                response.mountPrefix = mountResult.suggestion.mountPrefix;
+            }
         }
         return response;
     }

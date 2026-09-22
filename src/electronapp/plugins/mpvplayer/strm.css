@@ -263,7 +263,7 @@
     overflow-wrap: anywhere;
 }
 
-.smartLocalPrefix,
+.smartSourcePrefix,
 .smartCloudPrefix {
     font-family: Consolas, "Courier New", monospace;
 }

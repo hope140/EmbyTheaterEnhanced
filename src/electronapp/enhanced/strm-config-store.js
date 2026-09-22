@@ -330,7 +330,13 @@ function createStore(options) {
                 return rule;
             }
             if (old.originState === 'DISABLED') {
+                if (rule.originState === 'AUTO' && rule.enabled !== false) {
+                    return Object.assign(rule, {originState: 'AUTO', enabled: true});
+                }
                 return clone(old);
+            }
+            if (old.originState === 'AUTO' && rule.originState === 'DISABLED') {
+                return Object.assign(rule, {originState: 'DISABLED', enabled: false});
             }
             if (old.originState === 'AUTO' && !ruleFieldsEqual(old, rule)) {
                 rule.originState = 'USER';

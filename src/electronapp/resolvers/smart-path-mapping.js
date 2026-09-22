@@ -172,7 +172,11 @@
         return segments.length ? '/' + segments.join('/') : '/';
     }
 
-    function normalizedCloudCandidates(values) {
+    function candidateKey(path) {
+        return path.kind === 'posix' ? path.normalized : path.normalized.toLowerCase();
+    }
+
+    function normalizedCandidates(values, allowed) {
         var seen = Object.create(null);
         var candidates = [];
         var invalidReason = null;
@@ -180,12 +184,14 @@
         if (!Array.isArray(values)) return {candidates: [], invalidReason: 'invalid_candidates', inputCount: 0};
         values.forEach(function (value, index) {
             var parsed = parsePath(value, false);
-            if (!parsed.path || parsed.path.kind !== 'posix') {
-                if (!invalidReason) invalidReason = parsed.reason || 'invalid_cloud_candidate';
+            var key;
+            if (!parsed.path || !allowed(parsed.path)) {
+                if (!invalidReason) invalidReason = parsed.reason || 'invalid_candidate';
                 return;
             }
-            if (!seen[parsed.path.normalized]) {
-                seen[parsed.path.normalized] = true;
+            key = candidateKey(parsed.path);
+            if (!seen[key]) {
+                seen[key] = true;
                 candidates.push({path: parsed.path, index: index});
             }
         });
@@ -305,56 +311,47 @@
         return makeResult(conflict ? STATUS.UNSAFE : STATUS.NO_MATCH, CONFIDENCE.LOW, null, evidence);
     }
 
-    function inferSmartPathMapping(options) {
-        var settings = options || {};
-        var local = parsePath(settings.localPath, false);
-        var requestedSemantics = settings.pathSemantics || 'auto';
-        var candidateInfo;
+    function equivalentPrefixPaths(left, leftSegments, right, rightSegments) {
+        var index;
+        if (!sameRoot(left, right) || leftSegments.length !== rightSegments.length) return false;
+        for (index = 0; index < leftSegments.length; index++) {
+            if (!segmentEquals(leftSegments[index], rightSegments[index], left.kind)) return false;
+        }
+        return true;
+    }
+
+    function inferPrefixMappingCore(sourcePath, candidateInfo, invalidCandidateReason) {
         var evidence;
-        var manualResult;
         var scored;
         var bestScore;
         var best;
         var matched;
-        var localPrefixLength;
-        var cloudPrefixLength;
-        var localPrefix;
-        var cloudPrefix;
+        var sourcePrefixLength;
+        var targetPrefixLength;
+        var sourceSegments;
+        var targetSegments;
+        var sourcePrefix;
+        var targetPrefix;
         var confidence;
 
-        if (!local.path) {
-            return makeResult(STATUS.UNSAFE, CONFIDENCE.LOW, null,
-                baseEvidence(null, Array.isArray(settings.candidateCloudPaths) ? settings.candidateCloudPaths.length : 0,
-                    local.reason || 'invalid_local_path'));
-        }
-        if (['auto', 'windows-drive', 'unc', 'posix'].indexOf(requestedSemantics) < 0 ||
-            (requestedSemantics !== 'auto' && requestedSemantics !== local.path.kind)) {
-            return makeResult(STATUS.UNSAFE, CONFIDENCE.LOW, null,
-                baseEvidence(local.path, Array.isArray(settings.candidateCloudPaths) ? settings.candidateCloudPaths.length : 0,
-                    'path_semantics_mismatch'));
-        }
-
-        candidateInfo = normalizedCloudCandidates(settings.candidateCloudPaths || []);
-        manualResult = manualAuthority(local.path, settings.manualMappings, candidateInfo.candidates, candidateInfo.inputCount);
-        if (manualResult) return manualResult;
         if (candidateInfo.invalidReason) {
-            evidence = baseEvidence(local.path, candidateInfo.inputCount, 'invalid_cloud_candidate');
+            evidence = baseEvidence(sourcePath, candidateInfo.inputCount, invalidCandidateReason);
             evidence.validCandidateCount = candidateInfo.candidates.length;
             return makeResult(STATUS.UNSAFE, CONFIDENCE.LOW, null, evidence);
         }
         if (!candidateInfo.candidates.length) {
             return makeResult(STATUS.NO_MATCH, CONFIDENCE.LOW, null,
-                baseEvidence(local.path, candidateInfo.inputCount, 'no_candidates'));
+                baseEvidence(sourcePath, candidateInfo.inputCount, 'no_candidates'));
         }
 
         scored = candidateInfo.candidates.map(function (candidate) {
-            return {candidate: candidate, evidence: suffixEvidence(local.path, candidate.path)};
+            return {candidate: candidate, evidence: suffixEvidence(sourcePath, candidate.path)};
         });
         bestScore = scored.reduce(function (score, value) {
             return Math.max(score, value.evidence.matchedSuffixSegments);
         }, 0);
         best = scored.filter(function (value) { return value.evidence.matchedSuffixSegments === bestScore; });
-        evidence = baseEvidence(local.path, candidateInfo.inputCount, 'no_common_suffix');
+        evidence = baseEvidence(sourcePath, candidateInfo.inputCount, 'no_common_suffix');
         evidence.validCandidateCount = candidateInfo.candidates.length;
 
         if (bestScore === 0) return makeResult(STATUS.NO_MATCH, CONFIDENCE.LOW, null, evidence);
@@ -376,15 +373,17 @@
             return makeResult(STATUS.NO_MATCH, CONFIDENCE.LOW, null, evidence);
         }
 
-        localPrefixLength = local.path.segments.length - bestScore + 1;
-        cloudPrefixLength = best[0].candidate.path.segments.length - bestScore + 1;
-        if (localPrefixLength < 1 || cloudPrefixLength < 1) {
+        sourcePrefixLength = sourcePath.segments.length - bestScore + 1;
+        targetPrefixLength = best[0].candidate.path.segments.length - bestScore + 1;
+        if (sourcePrefixLength < 1 || targetPrefixLength < 1) {
             evidence.reason = 'root_boundary_ambiguous';
             return makeResult(STATUS.UNSAFE, CONFIDENCE.LOW, null, evidence);
         }
-        localPrefix = buildPath(local.path, local.path.segments.slice(0, localPrefixLength));
-        cloudPrefix = buildPath(best[0].candidate.path, best[0].candidate.path.segments.slice(0, cloudPrefixLength));
-        if (local.path.kind === 'posix' && localPrefix === cloudPrefix) {
+        sourceSegments = sourcePath.segments.slice(0, sourcePrefixLength);
+        targetSegments = best[0].candidate.path.segments.slice(0, targetPrefixLength);
+        sourcePrefix = buildPath(sourcePath, sourceSegments);
+        targetPrefix = buildPath(best[0].candidate.path, targetSegments);
+        if (equivalentPrefixPaths(sourcePath, sourceSegments, best[0].candidate.path, targetSegments)) {
             evidence.reason = 'identical_mapping';
             return makeResult(STATUS.NO_MATCH, CONFIDENCE.LOW, null, evidence);
         }
@@ -392,9 +391,109 @@
         confidence = matched.matchedParentSegments >= 3 ? CONFIDENCE.HIGH : CONFIDENCE.MEDIUM;
         evidence.reason = confidence === CONFIDENCE.HIGH ? 'unique_long_suffix' : 'unique_supported_suffix';
         return makeResult(STATUS.MATCHED, confidence, {
-            localPrefix: localPrefix,
-            cloudPrefix: cloudPrefix
+            sourcePrefix: sourcePrefix,
+            targetPrefix: targetPrefix
         }, evidence);
+    }
+
+    function sourceValidation(source, requestedSemantics, candidateCount) {
+        if (!source.path) {
+            return makeResult(STATUS.UNSAFE, CONFIDENCE.LOW, null,
+                baseEvidence(null, candidateCount, source.reason || 'invalid_source_path'));
+        }
+        if (['auto', 'windows-drive', 'unc', 'posix'].indexOf(requestedSemantics) < 0 ||
+            (requestedSemantics !== 'auto' && requestedSemantics !== source.path.kind)) {
+            return makeResult(STATUS.UNSAFE, CONFIDENCE.LOW, null,
+                baseEvidence(source.path, candidateCount, 'path_semantics_mismatch'));
+        }
+        return null;
+    }
+
+    function anchoredMountPrefix(sourcePath, sourcePrefixValue, mountPath) {
+        var sourcePrefix = parsePath(sourcePrefixValue, true);
+        var suffix;
+        var mountPrefixSegments;
+        var offset;
+        var index;
+        if (!sourcePrefix.path || !prefixMatches(sourcePath, sourcePrefix.path)) return null;
+        suffix = sourcePath.segments.slice(sourcePrefix.path.segments.length);
+        if (!suffix.length || mountPath.segments.length <= suffix.length) return null;
+        offset = mountPath.segments.length - suffix.length;
+        for (index = 0; index < suffix.length; index++) {
+            if (!segmentEquals(suffix[index], mountPath.segments[offset + index], sourcePath.kind)) return null;
+        }
+        mountPrefixSegments = mountPath.segments.slice(0, offset);
+        if (!mountPrefixSegments.length) return null;
+        return {
+            sourcePrefix: buildPath(sourcePrefix.path, sourcePrefix.path.segments),
+            mountPrefix: buildPath(mountPath, mountPrefixSegments)
+        };
+    }
+
+    function inferSmartPathMapping(options) {
+        var settings = options || {};
+        var sourceValue = settings.sourcePath !== undefined ? settings.sourcePath : settings.localPath;
+        var source = parsePath(sourceValue, false);
+        var requestedSemantics = settings.pathSemantics || 'auto';
+        var candidateValues = settings.candidateCloudPaths || [];
+        var invalidSource = sourceValidation(source, requestedSemantics,
+            Array.isArray(candidateValues) ? candidateValues.length : 0);
+        var candidateInfo;
+        var manualResult;
+        var result;
+
+        if (invalidSource) return invalidSource;
+        candidateInfo = normalizedCandidates(candidateValues, function (candidate) {
+            return candidate.kind === 'posix';
+        });
+        manualResult = manualAuthority(source.path, settings.manualMappings, candidateInfo.candidates, candidateInfo.inputCount);
+        if (manualResult) return manualResult;
+        result = inferPrefixMappingCore(source.path, candidateInfo, 'invalid_cloud_candidate');
+        if (result.suggestion) {
+            result.suggestion = {
+                localPrefix: result.suggestion.sourcePrefix,
+                cloudPrefix: result.suggestion.targetPrefix
+            };
+        }
+        return result;
+    }
+
+    function inferSmartMountMapping(options) {
+        var settings = options || {};
+        var source = parsePath(settings.sourcePath, false);
+        var requestedSemantics = settings.pathSemantics || 'auto';
+        var candidateValues = settings.candidateMountPaths || [];
+        var invalidSource = sourceValidation(source, requestedSemantics,
+            Array.isArray(candidateValues) ? candidateValues.length : 0);
+        var candidateInfo;
+        var result;
+
+        if (invalidSource) return invalidSource;
+        candidateInfo = normalizedCandidates(candidateValues, function (candidate) {
+            if (source.path.kind === 'posix') return candidate.kind === 'posix';
+            return candidate.kind === 'windows-drive' || candidate.kind === 'unc';
+        });
+        result = inferPrefixMappingCore(source.path, candidateInfo, 'invalid_mount_candidate');
+        if (result.suggestion) {
+            if (settings.sourcePrefix !== undefined) {
+                var anchored = candidateInfo.candidates.length === 1
+                    ? anchoredMountPrefix(source.path, settings.sourcePrefix, candidateInfo.candidates[0].path)
+                    : null;
+                if (!anchored) {
+                    result = makeResult(STATUS.UNSAFE, CONFIDENCE.LOW, null, Object.assign({}, result.evidence, {
+                        reason: 'mount_suffix_mismatch'
+                    }));
+                } else {
+                    result.suggestion = anchored;
+                }
+            } else {
+                result.suggestion = {
+                    sourcePrefix: result.suggestion.sourcePrefix,
+                    mountPrefix: result.suggestion.targetPrefix
+                };
+            }
+        }
+        return result;
     }
 
     function diagnosticRecord(result) {
@@ -418,6 +517,7 @@
         CONFIDENCE: CONFIDENCE,
         STATUS: STATUS,
         diagnosticRecord: diagnosticRecord,
+        inferSmartMountMapping: inferSmartMountMapping,
         inferSmartPathMapping: inferSmartPathMapping
     };
 }));
