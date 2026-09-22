@@ -4,6 +4,7 @@ const fs = require('fs');
 
 const cd2Service = require('./cd2-service');
 const pathRules = require('../resolvers/path-rules');
+const smartPathMapping = require('../resolvers/smart-path-mapping');
 
 const CHANNELS = Object.freeze({
     GET: 'enhanced-strm-config-get',
@@ -12,6 +13,7 @@ const CHANNELS = Object.freeze({
     CLEAR_TOKEN: 'enhanced-strm-token-clear',
     TEST_CONNECTION: 'enhanced-strm-cd2-test-connection',
     TEST_RULE: 'enhanced-strm-rule-test',
+    PREVIEW_MAPPING: 'enhanced-strm-smart-mapping-preview',
     RESTORE_AUTO: 'enhanced-strm-rule-restore-auto',
     DISABLE_RULE: 'enhanced-strm-rule-disable'
 });
@@ -107,6 +109,41 @@ function register(options) {
         };
     }
 
+    function previewMapping(request) {
+        if (!request || typeof request !== 'object' || Array.isArray(request) ||
+            typeof request.localPath !== 'string' || typeof request.cloudPath !== 'string' ||
+            request.localPath.length > 32768 || request.cloudPath.length > 32768) {
+            return {
+                status: 'UNSAFE',
+                confidence: 'LOW',
+                matchedSuffixSegments: 0,
+                matchedParentSegments: 0,
+                reason: 'invalid_request'
+            };
+        }
+        const result = smartPathMapping.inferSmartPathMapping({
+            localPath: request && request.localPath,
+            candidateCloudPaths: [request && request.cloudPath]
+        });
+        const evidence = result && result.evidence || {};
+        const response = {
+            status: result.status,
+            confidence: result.confidence,
+            matchedSuffixSegments: Number.isSafeInteger(evidence.matchedSuffixSegments)
+                ? evidence.matchedSuffixSegments
+                : 0,
+            matchedParentSegments: Number.isSafeInteger(evidence.matchedParentSegments)
+                ? evidence.matchedParentSegments
+                : 0,
+            reason: typeof evidence.reason === 'string' ? evidence.reason : 'invalid_result'
+        };
+        if (result.suggestion) {
+            response.localPrefix = result.suggestion.localPrefix;
+            response.cloudPrefix = result.suggestion.cloudPrefix;
+        }
+        return response;
+    }
+
     registerHandler(CHANNELS.GET, function () {
         return store.getPublicConfig();
     });
@@ -127,6 +164,7 @@ function register(options) {
     });
     registerHandler(CHANNELS.TEST_CONNECTION, testConnection);
     registerHandler(CHANNELS.TEST_RULE, testRule);
+    registerHandler(CHANNELS.PREVIEW_MAPPING, previewMapping);
     registerHandler(CHANNELS.RESTORE_AUTO, function (request) {
         try {
             return {status: 'saved', requiresRestart: true, config: store.restoreAutoRule(request && request.ruleId)};

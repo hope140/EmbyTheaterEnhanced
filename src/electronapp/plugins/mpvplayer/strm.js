@@ -1,4 +1,4 @@
-define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'emby-button', 'emby-scroller', 'css!./strm'], function (loading, BaseView) {
+define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'emby-button', 'emby-scroller', '../../resolvers/strm-mapping-assistant.js', 'css!./strm'], function (loading, BaseView, _select, _checkbox, _input, _button, _scroller, mappingAssistant) {
     'use strict';
 
     var CHANNELS = {
@@ -8,6 +8,8 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         clearToken: 'enhanced-strm-token-clear',
         testConnection: 'enhanced-strm-cd2-test-connection',
         testRule: 'enhanced-strm-rule-test',
+        previewMapping: 'enhanced-strm-smart-mapping-preview',
+        diagnostics: 'enhanced-diagnostics-log',
         restoreAuto: 'enhanced-strm-rule-restore-auto',
         disableRule: 'enhanced-strm-rule-disable'
     };
@@ -47,6 +49,14 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         return window.ipc.invoke(channel, payload);
     }
 
+    function sendDiagnostic(record) {
+        try {
+            if (!window.ipc || typeof window.ipc.send !== 'function') return;
+            var pending = window.ipc.send(CHANNELS.diagnostics, record);
+            if (pending && typeof pending.catch === 'function') pending.catch(function () {});
+        } catch (_) { /* Settings diagnostics are fail-open. */ }
+    }
+
     function statusText(response) {
         if (!response) return '配置服务不可用，请重启应用后重试。';
         if (response.reason === 'untrusted_sender') return '配置服务拒绝了当前页面。';
@@ -64,6 +74,81 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
     function setStatus(node, text, isError) {
         node.textContent = text || '';
         node.setAttribute('role', isError ? 'alert' : 'status');
+    }
+
+    function confidenceText(value) {
+        if (value === 'HIGH') return '高';
+        if (value === 'MEDIUM') return '中';
+        return '低';
+    }
+
+    function reasonText(value) {
+        return {
+            unique_long_suffix: '连续目录结构唯一匹配',
+            unique_supported_suffix: '目录结构匹配，但证据未达到高置信度',
+            multiple_equal_candidates: '存在多个同等匹配候选',
+            filename_only: '仅文件名相同',
+            suffix_too_short: '连续目录层级不足',
+            no_common_suffix: '未找到可用的共同目录结构',
+            no_candidates: '未提供云端路径',
+            identical_mapping: '两侧前缀相同，无需新增映射',
+            invalid_cloud_candidate: '云端路径不是安全的绝对 POSIX 文件路径',
+            path_semantics_mismatch: '路径类型与声明不一致',
+            relative_path: '路径必须是绝对路径',
+            path_traversal: '路径包含不安全的目录跳转',
+            empty_segment: '路径包含空目录段',
+            empty_path: '路径不能为空',
+            surrounding_whitespace: '路径首尾包含空白字符',
+            control_character: '路径包含控制字符',
+            mixed_separator: 'POSIX 路径包含反斜杠',
+            invalid_unc_root: 'UNC 路径缺少有效的服务器或共享边界',
+            root_only: '路径不能只有根目录',
+            incomplete_path: '路径不完整',
+            root_boundary_ambiguous: '无法安全区分路径根边界',
+            invalid_request: '请输入有效的本地路径和云端路径'
+        }[value] || '路径证据不足，无法生成安全建议';
+    }
+
+    function assistantStatus(preview, evaluation) {
+        if (evaluation.collision === mappingAssistant.COLLISION.DUPLICATE) return '该规则已存在。';
+        if (evaluation.collision === mappingAssistant.COLLISION.CONFLICT) return '现有规则与建议冲突，请先检查当前路径规则。';
+        if (preview.status === 'MATCHED' && preview.confidence === 'HIGH') return '已生成高置信度建议。确认后只会加入当前草稿。';
+        if (preview.status === 'MATCHED' && preview.confidence === 'MEDIUM') return '匹配证据不足，建议提供目录层级更多的样本。';
+        if (preview.status === 'AMBIGUOUS') return '存在歧义，无法确定唯一映射。';
+        if (preview.status === 'UNSAFE') return '路径未通过安全检查：' + reasonText(preview.reason) + '。';
+        return reasonText(preview.reason) + '。';
+    }
+
+    function resetAssistantPreview(view) {
+        var preview = view.querySelector('.ete-strm-assistant-preview');
+        var suggestion = view.querySelector('.ete-strm-assistant-suggestion');
+        var addButton = view.querySelector('.btnAddSuggestedRule');
+        preview.hidden = true;
+        suggestion.hidden = true;
+        addButton.disabled = true;
+        setStatus(view.querySelector('.smartMappingState'), '', false);
+    }
+
+    function renderAssistantPreview(view, preview, rules) {
+        var container = view.querySelector('.ete-strm-assistant-preview');
+        var suggestion = view.querySelector('.ete-strm-assistant-suggestion');
+        var addButton = view.querySelector('.btnAddSuggestedRule');
+        var evaluation = mappingAssistant.evaluatePreview(preview, rules);
+        var hasSuggestion = preview && typeof preview.localPrefix === 'string' && typeof preview.cloudPrefix === 'string';
+
+        container.hidden = false;
+        suggestion.hidden = !hasSuggestion;
+        addButton.disabled = !evaluation.canAdd;
+        if (hasSuggestion) {
+            view.querySelector('.smartLocalPrefix').textContent = preview.localPrefix;
+            view.querySelector('.smartCloudPrefix').textContent = preview.cloudPrefix;
+            view.querySelector('.smartMatchedBasis').textContent = preview.matchedParentSegments + ' 个连续父目录 + 文件名';
+            view.querySelector('.smartConfidence').textContent = confidenceText(preview.confidence);
+            view.querySelector('.smartReason').textContent = reasonText(preview.reason);
+        }
+        setStatus(view.querySelector('.smartMappingState'), assistantStatus(preview, evaluation),
+            preview.status === 'UNSAFE' || preview.status === 'AMBIGUOUS' || evaluation.collision === mappingAssistant.COLLISION.CONFLICT);
+        return evaluation;
     }
 
     function ruleStateLabel(state) {
@@ -162,7 +247,8 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         var actions = element('div', 'ete-strm-rule-actions');
         var testButton = element('button', null, '测试映射');
         var restoreButton = element('button', null, '恢复自动配置');
-        var disableButton = element('button', null, rule.originState === 'DISABLED' ? '保持抑制' : '禁用/删除');
+        var isDraftRule = /^new-rule-/.test(rule.id || '');
+        var disableButton = element('button', null, isDraftRule ? '移除草稿' : (rule.originState === 'DISABLED' ? '保持抑制' : '禁用/删除'));
         var result = element('span', 'ete-strm-rule-test secondaryText');
 
         card.dataset.ruleId = rule.id;
@@ -256,9 +342,24 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         return next;
     }
 
-    function newRule() {
+    function uniqueRuleId(rules, prefix) {
+        var base = (prefix || 'new-rule-') + Date.now().toString(36);
+        var id = base;
+        var suffix = 1;
+        var used = Object.create(null);
+        (Array.isArray(rules) ? rules : []).forEach(function (rule) {
+            if (rule && rule.id) used[rule.id] = true;
+        });
+        while (used[id]) {
+            id = base + '-' + suffix;
+            suffix++;
+        }
+        return id;
+    }
+
+    function newRule(rules) {
         return {
-            id: 'new-rule-' + Date.now().toString(36),
+            id: uniqueRuleId(rules, 'new-rule-'),
             sourcePrefix: '',
             mountPrefix: '',
             cloudPrefix: '',
@@ -275,16 +376,18 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         this.view = view;
         this.config = null;
         this.loadingConfig = null;
+        this.assistantPreview = null;
         view.querySelector('form').addEventListener('submit', function (event) {
             event.preventDefault();
             this.saveSettings();
         }.bind(this));
         view.querySelector('.btnAddRule').addEventListener('click', function () {
             if (!this.config) return;
-            this.config.rules.push(newRule());
+            this.config = collectConfig(view, this.config);
+            this.config.rules.push(newRule(this.config.rules));
             renderConfig(view, this.config);
-            var first = view.querySelector('.rule-sourcePrefix');
-            if (first) first.focus();
+            var inputs = view.querySelectorAll('.rule-sourcePrefix');
+            if (inputs.length) inputs[inputs.length - 1].focus();
         }.bind(this));
         view.addEventListener('change', function (event) {
             if (event.target.classList.contains('rule-strategy') || event.target.classList.contains('rule-order-stage')) {
@@ -302,6 +405,14 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         view.querySelector('.btnSetToken').addEventListener('click', function () { this.setToken(); }.bind(this));
         view.querySelector('.btnClearToken').addEventListener('click', function () { this.clearToken(); }.bind(this));
         view.querySelector('.btnTestConnection').addEventListener('click', function () { this.testConnection(); }.bind(this));
+        view.querySelector('.btnAnalyzeMapping').addEventListener('click', function () { this.analyzeMapping(); }.bind(this));
+        view.querySelector('.btnAddSuggestedRule').addEventListener('click', function () { this.acceptSuggestedRule(); }.bind(this));
+        Array.prototype.forEach.call(view.querySelectorAll('.txtSmartLocalPath, .txtSmartCloudPath'), function (input) {
+            input.addEventListener('input', function () {
+                this.assistantPreview = null;
+                resetAssistantPreview(view);
+            }.bind(this));
+        }.bind(this));
     }
 
     Object.assign(SettingsView.prototype, BaseView.prototype);
@@ -315,6 +426,8 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             }
             this.config = clone(config);
             renderConfig(view, this.config);
+            this.assistantPreview = null;
+            resetAssistantPreview(view);
             setStatus(view.querySelector('.saveState'), '', false);
             loading.hide();
             return config;
@@ -388,6 +501,49 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         }.bind(this));
     };
 
+    SettingsView.prototype.analyzeMapping = function () {
+        var view = this.view;
+        var button = view.querySelector('.btnAnalyzeMapping');
+        var localPath = view.querySelector('.txtSmartLocalPath').value;
+        var cloudPath = view.querySelector('.txtSmartCloudPath').value;
+        button.disabled = true;
+        resetAssistantPreview(view);
+        setStatus(view.querySelector('.smartMappingState'), '正在分析…', false);
+        return request(CHANNELS.previewMapping, {localPath: localPath, cloudPath: cloudPath}).then(function (response) {
+            if (!response || ['MATCHED', 'AMBIGUOUS', 'NO_MATCH', 'UNSAFE'].indexOf(response.status) < 0) {
+                this.assistantPreview = null;
+                setStatus(view.querySelector('.smartMappingState'), statusText(response), true);
+                return;
+            }
+            this.assistantPreview = response;
+            renderAssistantPreview(view, response, this.config ? collectConfig(view, this.config).rules : []);
+            sendDiagnostic(mappingAssistant.diagnosticRecord('smart-path-mapping-preview', response));
+        }.bind(this)).catch(function () {
+            this.assistantPreview = null;
+            setStatus(view.querySelector('.smartMappingState'), '映射分析失败，请检查配置服务。', true);
+        }.bind(this)).then(function () {
+            button.disabled = false;
+        });
+    };
+
+    SettingsView.prototype.acceptSuggestedRule = function () {
+        if (!this.config || !this.assistantPreview) return;
+        var view = this.view;
+        var next = collectConfig(view, this.config);
+        var id = uniqueRuleId(next.rules, 'new-rule-smart-');
+        var result = mappingAssistant.addDraftRule(next.rules, this.assistantPreview, id);
+        if (result.status !== 'added') {
+            renderAssistantPreview(view, this.assistantPreview, next.rules);
+            return;
+        }
+        next.rules = result.rules;
+        this.config = next;
+        renderConfig(view, this.config);
+        renderAssistantPreview(view, this.assistantPreview, this.config.rules);
+        setStatus(view.querySelector('.smartMappingState'), '建议已加入路径规则草稿，请检查后点击“保存设置”。', false);
+        sendDiagnostic(mappingAssistant.diagnosticRecord('smart-path-mapping-accepted', this.assistantPreview));
+    };
+
     SettingsView.prototype.testConnection = function () {
         var state = this.view.querySelector('.connectionState');
         state.textContent = '正在连接…';
@@ -440,6 +596,13 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
     };
 
     SettingsView.prototype.disableRule = function (ruleId) {
+        if (/^new-rule-/.test(ruleId || '')) {
+            this.config = collectConfig(this.view, this.config);
+            this.config.rules = mappingAssistant.removeDraftRule(this.config.rules, ruleId);
+            renderConfig(this.view, this.config);
+            setStatus(this.view.querySelector('.saveState'), '未保存的规则草稿已移除。', false);
+            return;
+        }
         if (!window.confirm('禁用这条路径规则？系统不会在自动发现时重新创建相同映射。')) return;
         request(CHANNELS.disableRule, {ruleId: ruleId}).then(function (response) {
             if (!response || response.status !== 'saved') {
@@ -461,7 +624,6 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
     };
 
     SettingsView.prototype.onPause = function () {
-        if (this.config) this.saveSettings();
         BaseView.prototype.onPause.apply(this, arguments);
     };
 

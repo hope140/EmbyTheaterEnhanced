@@ -60,6 +60,40 @@
                     <button type="button" is="emby-button" class="button-submit btnAddRule">添加路径规则</button>
                 </div>
                 <div class="rulesList"></div>
+
+                <div class="ete-strm-assistant" aria-labelledby="ete-smart-mapping-title">
+                    <div class="ete-strm-assistant-heading">
+                        <h3 id="ete-smart-mapping-title">智能映射助手</h3>
+                        <p class="fieldDescription">提供一个本地路径和与其对应的云端路径，客户端会根据共同目录结构推导可复用的路径规则。系统不会自动保存，需确认后加入路径规则。</p>
+                    </div>
+                    <div class="ete-strm-assistant-grid">
+                        <div class="inputContainer">
+                            <label for="ete-smart-local-path">本地路径</label>
+                            <input is="emby-input" type="text" id="ete-smart-local-path" class="txtSmartLocalPath" autocomplete="off" />
+                        </div>
+                        <div class="inputContainer">
+                            <label for="ete-smart-cloud-path">云端路径</label>
+                            <input is="emby-input" type="text" id="ete-smart-cloud-path" class="txtSmartCloudPath" autocomplete="off" />
+                        </div>
+                    </div>
+                    <div class="ete-strm-assistant-actions">
+                        <button type="button" is="emby-button" class="btnAnalyzeMapping">分析映射</button>
+                        <span class="smartMappingState secondaryText" role="status" aria-live="polite"></span>
+                    </div>
+                    <div class="ete-strm-assistant-preview" hidden>
+                        <div class="ete-strm-assistant-suggestion" hidden>
+                            <h4>建议规则</h4>
+                            <dl>
+                                <div><dt>本地前缀</dt><dd class="smartLocalPrefix"></dd></div>
+                                <div><dt>云端前缀</dt><dd class="smartCloudPrefix"></dd></div>
+                                <div><dt>匹配依据</dt><dd class="smartMatchedBasis"></dd></div>
+                                <div><dt>置信度</dt><dd class="smartConfidence"></dd></div>
+                                <div><dt>原因</dt><dd class="smartReason"></dd></div>
+                            </dl>
+                            <button type="button" is="emby-button" class="button-submit btnAddSuggestedRule" disabled>加入路径规则</button>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <div class="ete-strm-form-actions">
