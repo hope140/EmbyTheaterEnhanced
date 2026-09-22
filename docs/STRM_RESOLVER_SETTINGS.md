@@ -149,8 +149,16 @@ enhanced-strm-rule-disable
 
 所有 handler 都校验当前 `BrowserWindow.webContents`。连接测试只返回 `ok`、`auth_failed`、`connection_failed` 或 `incomplete` 等安全枚举；规则测试只返回映射状态和挂载存在性，不启动播放。
 
+## Smart Mapping assistant
+
+路径规则区下方提供“智能映射助手”。用户手工输入一条 local path 与对应 cloud path，点击“分析映射”后由 main-process `enhanced-strm-smart-mapping-preview` 调用 Phase 1 pure engine。它不调用 CD2、Resolver 或 filesystem，不读取 Token，不保存 config，也不自动发现 cloud path。
+
+页面只允许 `MATCHED/HIGH` suggestion 加入 draft。`MEDIUM` 仅展示并提示提供更深目录样本；`NO_MATCH`、`AMBIGUOUS`、`UNSAFE` 禁止加入。与当前 draft 中 equivalent source prefix + same cloud prefix 重复时提示已存在；equivalent source prefix 指向不同 cloud prefix 时提示冲突。manual rule 不会被覆盖。
+
+确认后的 suggestion 复用现有 version 1 rule editor，创建普通 `USER` rule；用户仍可修改、移除，并必须点击“保存设置”才调用原 `SAVE → store.save() → normalizeRule()` 流程。页面离开不自动保存，`applyDiscovery()` 不参与本流程，schema 仍只有 `rules[]`。
+
 ## Verification boundary
 
 本分支已用 Node unit/targeted tests 覆盖 config store、secret redaction、IPC trust boundary、legacy bootstrap、rule validation、path semantics、longest prefix、AUTO/USER/DISABLED、strategy order、mount replacement、CD2 direct/same-origin、Native fallback 和 Abort。
 
-当前 synthetic frozen runtime 已覆盖 persistent config bootstrap 后的 DirectUrl/CD2 fake pipeline、CD2 miss fallback、PlaybackManager/Session/controls/reporting/cleanup。真实 settings page 手工 native-window automation 和真实服务器 cloud-first/mount-first playback 不在本轮可宣称范围内。
+当前 synthetic frozen runtime 已覆盖 persistent config bootstrap 后的 DirectUrl/CD2 fake pipeline、CD2 miss fallback、PlaybackManager/Session/controls/reporting/cleanup。Phase 2 已覆盖 preview IPC、draft state、duplicate/conflict、explicit Save 和静态 UI/accessibility contract；真实 settings page 的前台视觉与键盘验收、native-window automation 和真实服务器 cloud-first/mount-first playback 不在本轮可宣称范围内。

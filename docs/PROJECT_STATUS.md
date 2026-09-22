@@ -1,5 +1,15 @@
 # 项目状态
 
+## 2026-09-22 — STRM Smart Path Mapping Phase 2
+
+在独立 `codex/strm-smart-path-mapping` 分支继续复用 Phase 1 engine，实现 user-confirmed mapping assistant。STRM Settings 的路径规则区新增两个显式输入、preview、confidence/evidence 展示和“加入路径规则”；没有扫描按钮，也不宣称 CD2 可自动发现 cloud path。
+
+main-process `enhanced-strm-smart-mapping-preview` 只调用 pure inference；不调用 CD2、Resolver、Mount、Native，不读取或写入 config。只有 `MATCHED/HIGH` 且当前 draft 没有 duplicate/conflict 时可以加入；MEDIUM 只展示。确认创建普通 `USER` rule draft，schema 继续只有 `rules[]`。assistant 不调用 `applyDiscovery()`；原有 Save 才持久化并要求重启。为满足显式确认边界，Settings 离页自动保存已移除；新建/assistant draft 可以本地编辑或移除。
+
+诊断事件 `smart-path-mapping-preview` 与 `smart-path-mapping-accepted` 只保留 status/confidence/matched count/reason 白名单。自动化结果：`npm test 260/260 PASS`；Smart Mapping + assistant + settings + Resolver focused `72/72 PASS`；assistant/config `31/31 PASS`；diagnostics `35/35 PASS`；UI/static `9/9 PASS`；JS syntax 与 `git diff --check` PASS。没有修改 PlaybackManager、Session、MediaSourceId、PlaySessionId、route order、DirectUrl、Mount/Native fallback、Native Helper、libmpv、Electron/window 或 settings UX 分支。前台视觉/键盘、真实 Emby/CD2 和安装均未执行；状态为 `READY FOR USER VISUAL ACCEPTANCE`。
+
+最终 exact-HEAD background runtime 为 `2138` files；pinned Electron 44.4.2 73-file input、source provenance、Electron provenance、Native Helper provenance、runtime provenance 与 package verify 全部 PASS。该 runtime 未启动，也未安装。
+
 ## 2026-09-22 — STRM Smart Path Mapping Phase 1
 
 基于 `origin/main@9a034e8d627f71abbded01a1fba612d9282c9911` 创建独立 `codex/strm-smart-path-mapping` worktree。新增 pure deterministic `smart-path-mapping.js` 与 `strmResolver.previewSmartPathMapping()` dry-run hook；production `libmpv.playInternal()`、`resolve()` 和 `resolveAsync()` 不调用推导结果，正式 DirectUrl → CD2 HTTP → Mount → Native route 未改变。

@@ -1,5 +1,14 @@
 # 已确认经验
 
+## 2026-09-22 — User-confirmed mapping draft boundary
+
+- Settings 当前真实 draft 分散在 `this.config` 与 DOM inputs；任何会重绘 rules 的 Add/assistant action 都必须先 `collectConfig()`，否则会丢失用户尚未保存的编辑。
+- user-confirmed suggestion 应转换为现有 `USER` rule draft，并继续走原 `SAVE → store.save() → normalizeRule()`；调用 `applyDiscovery()` 会混入 AUTO/tombstone 语义，也会违反“确认后仍需 Save”的边界。
+- “确认加入 draft”不等于 durable acceptance。离页自动 Save 会把 preview confirmation 偷换成持久化授权，因此显式 Save contract 必须同时移除 `onPause()` mutation。
+- duplicate/conflict 判断只比较 equivalent source prefix 本身；Windows drive/UNC 大小写不敏感，POSIX 大小写敏感。parent/child prefix 是 longest-prefix contract 的合法关系，不能误报冲突。
+- preview response 可以向 trusted renderer 返回 canonical prefix 供用户查看，但 diagnostics 必须重新投影到固定 scalar 白名单；不能把完整 result、raw inputs 或 rule body交给 logger。
+- 局部 Settings 助手应沿用现有表单结构，使用可见 label、inline status/alert、disabled action 和 44px 操作目标；无需重做页面或导入另一 settings branch。
+
 ## 2026-09-22 — Smart path mapping evidence boundary
 
 - longest suffix 不能直接把全部 matched directories 从 prefix 剥掉；保留最靠近 root 的 matched directory 作为 anchor，才能从 `D:\Media\Movies\A\B\movie.mkv` 与 `/115/Movies/A/B/movie.mkv` 得到稳定的 `D:\Media\Movies → /115/Movies`。

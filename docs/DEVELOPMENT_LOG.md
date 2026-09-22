@@ -1,5 +1,23 @@
 # 开发日志
 
+## 2026-09-22 — STRM Smart Path Mapping Phase 2 user-confirmed assistant
+
+继续 `codex/strm-smart-path-mapping`，基线保持 `origin/main@9a034e8d627f71abbded01a1fba612d9282c9911`，没有导入 `codex/v0.2.3-settings-ux`。先审计 current Settings：`this.config + DOM inputs` 组成 draft，显式 submit 通过 `enhanced-strm-config-save → store.save()` 持久化，service 仍需重启；`applyDiscovery()` 不属于页面 Save。审计同时发现 Add 重绘会丢未保存 DOM 编辑、new draft 无本地 remove、`onPause()` 会隐式 Save。本轮只在该 Settings draft boundary 内修正这些行为。
+
+新增 `strm-mapping-assistant.js` pure helper，复用 `path-rules` 判断 duplicate/conflict，并只允许 `MATCHED/HIGH` 创建一个普通 `USER` rule draft。Settings 页面在路径规则下方加入紧凑助手，保留可见 label、inline feedback、disabled state、responsive grid 与 44px action target。输入原样发送给 trusted config IPC；main handler只调用 Phase 1 `inferSmartPathMapping()`，返回最小 preview，不访问 store/CD2/Resolver。HIGH confirmation 先 collect 当前 DOM draft，再加入现有 rule editor；MEDIUM 只展示；duplicate/conflict 阻断。离页不再自动保存，用户必须点击原 Save。
+
+preview/accepted diagnostics 经现有 structured-log channel发送固定 scalar allowlist，不含 local/cloud path、canonical prefix、URL、Token 或 credential。accepted 只表示加入 draft，不表示已保存。没有新增配置字段，未调用 `applyDiscovery()`，也未修改 PlaybackManager、Session/identity、route order、DirectUrl、Mount/Native、Native Helper、libmpv、Electron/window。
+
+Model Tier: Tier 2
+
+Model: GPT-5.6 Sol High
+
+Reason: cross-layer Settings draft, trusted IPC, path safety and diagnostics boundary while preserving production routing
+
+Escalated: No
+
+自动验证：assistant/config `31/31 PASS`；Phase 1 + assistant + settings + Resolver focused `72/72 PASS`；diagnostics `35/35 PASS`；UI/static `9/9 PASS`；`npm test 260/260 PASS`；JS syntax 与 `git diff --check` PASS。`ui-ux-pro-max` 的局部 form guidance 用于 visible labels、inline submit feedback、disabled confirmation 与 44px target，没有生成或持久化新 design system。最终 exact-HEAD background runtime 为 `2138` files，pinned Electron/source/native/runtime provenance 与 package verify 全部 PASS。foreground/native UI、真实 Emby/CD2、安装均未执行。
+
 ## 2026-09-22 — STRM Smart Path Mapping Phase 1 engine and safety model
 
 从 exact `origin/main@9a034e8d627f71abbded01a1fba612d9282c9911` 建立独立 `codex/strm-smart-path-mapping` worktree；没有带入 `codex/v0.2.3-settings-ux`。先审计 current main 的 `rules[]` schema、三种 path identity、metadata recovery、path rules、CD2 proto/client、Mount/DirectUrl 输入、Resolver route 和 diagnostics redaction。当前仓库没有 `pathMappings` 字段；source identity 继续由 absolute `MediaSource.Path` 独占，非 absolute/HTTP source 才允许 `Item.Path` fallback。

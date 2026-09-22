@@ -1,4 +1,4 @@
-# STRM Smart Path Mapping Phase 1
+# STRM Smart Path Mapping
 
 本阶段只提供确定性的路径推导与只读 preview。它不写入 schema version 1 配置，不调用 `applyDiscovery()`，不改变 `selectRule()`、`resolve()`、`resolveAsync()` 或最终 `loadfile` source。生产播放顺序继续由已有规则决定：
 
@@ -150,7 +150,38 @@ reason
 
 不包含 local path、cloud path、suggested prefixes、URL、token、headers 或媒体名。production `libmpv.playInternal()` 不调用该 preview，`resolveAsync()` 也不读取 inference result。
 
-## Phase 2 boundary
+## Phase 2 user-confirmed mapping assistant
+
+Phase 2 在现有 STRM Settings 的“路径规则”区域加入紧凑的“智能映射助手”。用户必须显式输入一个本地媒体路径和与其对应的绝对 POSIX cloud path，再点击“分析映射”。页面不会扫描目录、调用 CD2、读取媒体库或自动发现候选。
+
+renderer 通过 trusted settings IPC `enhanced-strm-smart-mapping-preview` 把两条原始输入交给 main process。handler 只调用 Phase 1 `inferSmartPathMapping()`，不读取或写入 config，不调用 Resolver/CD2/Mount/Native，不返回完整 engine internal state。响应固定为 status、confidence、matched suffix/parent counts、reason，以及存在时的 canonical `localPrefix/cloudPrefix`。
+
+页面只有在 `MATCHED/HIGH` 且当前 draft 没有 duplicate/conflict 时启用“加入路径规则”。`MEDIUM` 可以展示 suggestion，但按钮保持 disabled；`NO_MATCH`、`AMBIGUOUS`、`UNSAFE` 不提供可加入规则。Windows drive/UNC prefix equivalence 继续大小写不敏感，POSIX 与 cloud prefix 大小写敏感。
+
+确认只把 suggestion 转成一个普通 version 1 `USER` rule：
+
+```text
+localPrefix → sourcePrefix
+cloudPrefix → cloudPrefix
+mountPrefix → empty
+strategy → cloud-first
+order → DirectUrl / CD2 HTTP / Mount / Native
+```
+
+该 rule 只进入页面现有 `rules[]` draft/editor。用户可以继续编辑或移除，只有点击原有“保存设置”后才通过 `enhanced-strm-config-save → store.save() → normalizeRule()` 持久化并要求重启。页面离开时不再隐式保存，assistant 不调用 `applyDiscovery()`，也没有 `smartMappings[]`、`autoMappings[]` 或 `learnedMappings[]`。
+
+duplicate 表示 equivalent `sourcePrefix` 与相同 `cloudPrefix` 已存在；conflict 表示 equivalent `sourcePrefix` 指向不同 cloud target。两者都不会加入第二条 draft，也不会覆盖或合并 manual rule。parent/child prefix 仍属于合法 longest-prefix 关系。
+
+diagnostics 使用现有 trusted structured-log channel，只发送白名单 scalar：
+
+```text
+smart-path-mapping-preview: status, confidence, matchedSuffixSegments, reason
+smart-path-mapping-accepted: confidence, matchedSuffixSegments
+```
+
+事件不包含 raw input、canonical prefix、URL、Token、credential 或 rule body。`accepted` 只表示用户把 HIGH suggestion 加入本地 draft，不表示已保存、已重启或 production route 已启用。
+
+## Production activation boundary
 
 ### A. Is the current CD2 API sufficient?
 
@@ -170,7 +201,7 @@ reason
 
 ### E. Safest Phase 2 integration point
 
-最安全的 activation point 是 main-process `strmConfigStore.applyDiscovery()` 之前的显式确认/校验 adapter。确认后的 suggestion 转换为现有 version 1 `rules[]`，再次经过 `normalizeRule()`，只允许更新 AUTO、尊重 USER 与 DISABLED tombstone，并要求重启后由现有 service snapshot 生效。不要在 `libmpv.playInternal()`、`selectRule()` 或 `resolveAsync()` 内即时应用推导结果。
+当前 user-confirmed assistant 的安全接入点是现有 Settings `rules[]` draft：确认后的 suggestion 先成为普通 `USER` rule，随后只由用户显式 Save 进入 `store.save()` / `normalizeRule()`，并要求重启后由现有 service snapshot 生效。`applyDiscovery()` 保留给未来有独立数据来源和 AUTO contract 的 discovery，不参与本助手。不要在 `libmpv.playInternal()`、`selectRule()` 或 `resolveAsync()` 内即时应用推导结果。
 
 ### F. Recommendation
 
@@ -178,4 +209,4 @@ reason
 
 ## Explicit non-goals
 
-本阶段不实现 ancestor enumeration、cold-directory materialization、FindFile retry、hydration、cache warming、provider-specific search、settings UI、config migration、hot reload 或任何 route outcome change。
+本阶段不实现 ancestor enumeration、cold-directory materialization、FindFile retry、hydration、cache warming、provider-specific search、config migration、hot reload 或任何 route outcome change。
