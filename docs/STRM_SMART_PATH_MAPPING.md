@@ -20,6 +20,16 @@ DirectUrl → CD2 HTTP → Mount → Native
 
 `sourcePath` 是可识别的绝对 Windows drive、UNC 或 POSIX 路径时，只使用它做最长前缀匹配；只有 source 不是绝对路径或是 HTTP(S) 时才允许 sidecar fallback。`MediaSource.Path` 与 `Item.Path` 不参加同一个 longest-prefix competition。
 
+正式规则中的三个 prefix 含义固定如下：
+
+| field | UI name | definition | consumer |
+| --- | --- | --- | --- |
+| `sourcePrefix` | STRM 源路径 | STRM / Emby `MediaSource.Path` 中记录的原始媒体路径前缀；不保证当前电脑可访问 | rule selection |
+| `cloudPrefix` | CloudDrive2 路径 | 同一媒体在 CloudDrive2 中的绝对 POSIX 逻辑路径前缀 | DirectUrl / CD2 HTTP |
+| `mountPrefix` | 本地挂载路径 | 当前客户端可通过 filesystem 访问的可选挂载前缀 | Mount fallback |
+
+例如 `X:\115` 可以只是 STRM 中保留的历史 drive identity；只有 `mountPrefix=Z:\115` 才声明当前客户端实际挂载位置。三者不可互换。
+
 ## CD2 capability audit
 
 当前 ETE 固定、校验 hash 的最小 CloudDrive2 proto 只声明：
@@ -152,9 +162,11 @@ reason
 
 ## Phase 2 user-confirmed mapping assistant
 
-Phase 2 在现有 STRM Settings 的“路径规则”区域加入紧凑的“智能映射助手”。用户必须显式输入一个本地媒体路径和与其对应的绝对 POSIX cloud path，再点击“分析映射”。页面不会扫描目录、调用 CD2、读取媒体库或自动发现候选。
+Phase 2.1 将助手输入明确为三个同一文件的完整路径：`STRM 源文件路径`、`CloudDrive2 文件路径` 与可选 `本地挂载文件路径`。source 是 STRM / Emby 中记录的路径，不是当前电脑挂载位置。页面不会扫描目录、调用 CD2、读取媒体库或自动发现候选。
 
-renderer 通过 trusted settings IPC `enhanced-strm-smart-mapping-preview` 把两条原始输入交给 main process。handler 只调用 Phase 1 `inferSmartPathMapping()`，不读取或写入 config，不调用 Resolver/CD2/Mount/Native，不返回完整 engine internal state。响应固定为 status、confidence、matched suffix/parent counts、reason，以及存在时的 canonical `localPrefix/cloudPrefix`。
+renderer 通过 trusted settings IPC `enhanced-strm-smart-mapping-preview` 把三条原始输入交给 main process。handler 用 Phase 1 `inferSmartPathMapping()` 推导 source → CloudDrive2；提供 mount sample 时，再用同一 parser/suffix core 的 `inferSmartMountMapping()` 做独立安全判定。它不读写 config，不调用 Resolver/CD2/Mount/Native。assistant response 对外使用 canonical `sourcePrefix/cloudPrefix/mountPrefix` 名称；Phase 1 的 `localPath/localPrefix` alias 仅为既有 pure API 兼容保留。
+
+Mount inference 支持 Windows drive → Windows drive/UNC、UNC → Windows drive/UNC、POSIX → POSIX。它先以 cloud HIGH suggestion 固定 `sourcePrefix` 与相对 suffix，再从 mount full path 的末尾严格逐 segment 验证并剥离该 suffix，避免两个独立 longest-suffix 选出不同 anchor。仍禁止 substring、contains 与无边界 replace。
 
 页面只有在 `MATCHED/HIGH` 且当前 draft 没有 duplicate/conflict 时启用“加入路径规则”。`MEDIUM` 可以展示 suggestion，但按钮保持 disabled；`NO_MATCH`、`AMBIGUOUS`、`UNSAFE` 不提供可加入规则。Windows drive/UNC prefix equivalence 继续大小写不敏感，POSIX 与 cloud prefix 大小写敏感。
 
@@ -163,12 +175,14 @@ renderer 通过 trusted settings IPC `enhanced-strm-smart-mapping-preview` 把�
 ```text
 localPrefix → sourcePrefix
 cloudPrefix → cloudPrefix
-mountPrefix → empty
+mountPrefix → mount HIGH 时使用 canonical prefix，否则 empty
 strategy → cloud-first
 order → DirectUrl / CD2 HTTP / Mount / Native
 ```
 
-该 rule 只进入页面现有 `rules[]` draft/editor。用户可以继续编辑或移除，只有点击原有“保存设置”后才通过 `enhanced-strm-config-save → store.save() → normalizeRule()` 持久化并要求重启。页面离开时不再隐式保存，assistant 不调用 `applyDiscovery()`，也没有 `smartMappings[]`、`autoMappings[]` 或 `learnedMappings[]`。
+Cloud suggestion 只有 `MATCHED/HIGH` 才允许加入。mount 未填写时保持空；mount 未达 HIGH 时不阻断 cloud rule，preview 明确提示挂载映射未加入。该 rule 只进入页面现有 `rules[]` draft/editor。用户可以继续编辑或移除，只有点击原有“保存设置”后才通过 `enhanced-strm-config-save → store.save() → normalizeRule()` 持久化并要求重启。页面离开时不再隐式保存，普通规则的删除、AUTO disable/restore 也先进入 draft；assistant 不调用 `applyDiscovery()`，也没有第二套 schema。
+
+Phase 2.1 不迁移、不猜测、也不自动修正既有 persisted rules。已有错误规则只能由用户在 editor 中删除或修改并显式保存。
 
 duplicate 表示 equivalent `sourcePrefix` 与相同 `cloudPrefix` 已存在；conflict 表示 equivalent `sourcePrefix` 指向不同 cloud target。两者都不会加入第二条 draft，也不会覆盖或合并 manual rule。parent/child prefix 仍属于合法 longest-prefix 关系。
 

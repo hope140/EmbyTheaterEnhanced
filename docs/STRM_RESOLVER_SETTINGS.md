@@ -51,7 +51,7 @@ Electron main process 在应用 `userData` 下维护：
 }
 ```
 
-`sourcePrefix`、`mountPrefix` 和 `cloudPrefix` 是三个不同的 identity。`mountPrefix`、`cloudPrefix` 可以为空，允许保存只具备部分确定事实的规则；`sourcePrefix` 必须是绝对 Windows/UNC/POSIX 路径。规则校验拒绝相对路径、`.`、`..`、重复 id、重复自定义 stage 和缺少 `native` 的自定义顺序。
+`sourcePrefix`、`mountPrefix` 和 `cloudPrefix` 是三个不同的 identity。`sourcePrefix` 是 STRM / Emby `MediaSource.Path` 中记录的原始媒体路径前缀，不代表当前电脑已挂载；`cloudPrefix` 是 CloudDrive2 的绝对 POSIX 逻辑路径前缀；`mountPrefix` 是当前客户端实际可访问、供 Mount fallback 使用的可选路径。`mountPrefix`、`cloudPrefix` 可以为空；`sourcePrefix` 必须是绝对 Windows/UNC/POSIX 路径。规则校验拒绝相对路径、`.`、`..`、重复 id、重复自定义 stage 和缺少 `native` 的自定义顺序。
 
 `storageType` 当前为 `local-nas` 或 `cloud-mount`。`strategy` 当前为 `cloud-first`、`mount-first` 或 `custom`。`order` 始终是四个 stage 的完整数组，便于未来扩展完整排序；当前 UI 对自定义顺序使用四个可键盘操作的顺位选择框。
 
@@ -151,11 +151,11 @@ enhanced-strm-rule-disable
 
 ## Smart Mapping assistant
 
-路径规则区下方提供“智能映射助手”。用户手工输入一条 local path 与对应 cloud path，点击“分析映射”后由 main-process `enhanced-strm-smart-mapping-preview` 调用 Phase 1 pure engine。它不调用 CD2、Resolver 或 filesystem，不读取 Token，不保存 config，也不自动发现 cloud path。
+路径规则区下方提供“智能映射助手”。用户输入同一媒体的 `STRM 源文件路径`、`CloudDrive2 文件路径` 和可选 `本地挂载文件路径`。STRM source 是 `MediaSource.Path` identity，不是当前电脑挂载位置。分析由 main-process `enhanced-strm-smart-mapping-preview` 调用 pure engine；不调用 CD2、Resolver 或 filesystem，不读取 Token，不保存 config，也不自动发现路径。
 
 页面只允许 `MATCHED/HIGH` suggestion 加入 draft。`MEDIUM` 仅展示并提示提供更深目录样本；`NO_MATCH`、`AMBIGUOUS`、`UNSAFE` 禁止加入。与当前 draft 中 equivalent source prefix + same cloud prefix 重复时提示已存在；equivalent source prefix 指向不同 cloud prefix 时提示冲突。manual rule 不会被覆盖。
 
-确认后的 suggestion 复用现有 version 1 rule editor，创建普通 `USER` rule；用户仍可修改、移除，并必须点击“保存设置”才调用原 `SAVE → store.save() → normalizeRule()` 流程。页面离开不自动保存，`applyDiscovery()` 不参与本流程，schema 仍只有 `rules[]`。
+CloudDrive2 mapping 只有 HIGH 才能加入。可选 mount sample 通过独立 HIGH gate 时写入 `mountPrefix`；mount 证据不足时仍允许加入 cloud rule，但 `mountPrefix` 保持空并显示 warning。确认后的 suggestion 复用现有 version 1 rule editor，创建普通 `USER` rule；用户仍可修改、移除，并必须点击“保存设置”才调用原 `SAVE → store.save() → normalizeRule()` 流程。页面离开不自动保存；普通规则删除和 AUTO disable/restore 同样先留在 draft。`applyDiscovery()` 不参与本流程，schema 仍只有 `rules[]`，也不自动迁移既有规则。
 
 ## Verification boundary
 

@@ -1,5 +1,25 @@
 # 开发日志
 
+## 2026-09-22 — STRM Smart Path Mapping Phase 2.1 path semantics fix
+
+继续 `codex/strm-smart-path-mapping`，从 final Phase 2 `c5f937faffc223952fef7c9cac8113f7b6104a12` 开始。用户实测确认“本地路径”被自然理解为当前电脑挂载路径，因此本轮把产品 contract 固定为三种 identity：`sourcePrefix=STRM/Emby MediaSource.Path`、`cloudPrefix=CloudDrive2 logical path`、`mountPrefix=current client filesystem mount`。规则卡、助手 labels、helper text 与 preview 全部使用该语义；未导入 settings UX 分支。
+
+审计 Phase 1 发现 parser/suffix core 已支持 Windows drive、UNC、POSIX，只有 cloud wrapper 强制 target POSIX。小范围提取 `inferPrefixMappingCore()` 并新增 `inferSmartMountMapping()`：Windows drive/UNC 可以互为 source/target，POSIX 只对 POSIX；Windows/UNC case-insensitive，POSIX case-sensitive；relative/traversal/root/share/empty/incomplete 与 ambiguity gates 保持。既有 `inferSmartPathMapping()` 的 `localPath/localPrefix` API 保持兼容，assistant IPC 对外改用明确的 `sourcePath/sourcePrefix`。
+
+组合 preview 先执行 source→cloud；只有 Cloud `MATCHED/HIGH` 才评估 optional mount。mount inference 以 cloud suggestion 的 sourcePrefix 固定相对 suffix，再从 mount full path末尾验证并剥离。Mount HIGH 写入 mountPrefix；mount 缺失或非 HIGH 时 cloud rule仍可加入但 mountPrefix为空并显示 warning；Cloud 非 HIGH 禁止加入。没有调用 CD2、filesystem、Resolver 或 playback route。
+
+同时完成 EXPLICIT SAVE 一致性修正：SettingsView 以内存 draft IDs区分未保存规则，避免已保存 `new-rule-*` 被误删；Add/assistant 先 capture DOM draft；USER remove、AUTO disable/restore只修改 draft，store.save 增加受控 AUTO↔DISABLED transition；onPause仍不保存。没有自动迁移或修改现有 persisted rules。
+
+Model Tier: Tier 2
+
+Model: GPT-5.6 Sol High
+
+Reason: path identity semantics, shared inference core and explicit-save state transitions without playback changes
+
+Escalated: No
+
+自动验证：既有 Phase 1 pure contract保持；新增 mount path-kind/case/root/suffix/ambiguity/traversal/anchor 与组合 preview测试；focused Smart Mapping `23/23 PASS`；assistant + settings `33/33 PASS`；含 Resolver focused `79/79 PASS`；UI/static `10/10 PASS`；`npm test 267/267 PASS`；JS syntax 与 `git diff --check` PASS。`ui-ux-pro-max` 用于 visible labels、persistent helper text、aria-describedby、inline warning 和明确 disabled state。最终 exact-HEAD background runtime 为 `2138` files，pinned Electron 44.4.2、source、Native Helper、runtime provenance 与 package verify 全部 PASS。foreground/native UI、真实 Emby/CD2、安装均未执行。
+
 ## 2026-09-22 — STRM Smart Path Mapping Phase 2 user-confirmed assistant
 
 继续 `codex/strm-smart-path-mapping`，基线保持 `origin/main@9a034e8d627f71abbded01a1fba612d9282c9911`，没有导入 `codex/v0.2.3-settings-ux`。先审计 current Settings：`this.config + DOM inputs` 组成 draft，显式 submit 通过 `enhanced-strm-config-save → store.save()` 持久化，service 仍需重启；`applyDiscovery()` 不属于页面 Save。审计同时发现 Add 重绘会丢未保存 DOM 编辑、new draft 无本地 remove、`onPause()` 会隐式 Save。本轮只在该 Settings draft boundary 内修正这些行为。

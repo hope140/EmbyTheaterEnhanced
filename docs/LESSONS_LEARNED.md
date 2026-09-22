@@ -1,5 +1,14 @@
 # 已确认经验
 
+## 2026-09-22 — STRM source, cloud and mount identities
+
+- `sourcePrefix` 的“source”指 STRM / Emby 中记录的 `MediaSource.Path`，可能是历史盘符或服务器路径；只有 `mountPrefix` 才表示当前客户端 filesystem 可访问位置。把前者叫“本地路径”会稳定诱导用户填错字段。
+- source→cloud 与 source→mount 可以共享 strict parser、segment suffix 和 confidence core，但 target policy 不同：cloud 只接受 absolute POSIX；mount 接受 Windows drive/UNC 互映与 POSIX→POSIX。不能只放宽 cloud candidate 类型。
+- optional mount 不能独立决定 rule sourcePrefix。先用 cloud HIGH 固定 sourcePrefix 与 relative suffix，再从 mount full path 末尾验证该 suffix，才能避免两个 longest-suffix 选择不同 anchor 后生成错误 mountPrefix。
+- Cloud HIGH 是 rule admission gate；mount 非 HIGH 只丢弃 mountPrefix，不能阻止已经安全的 cloud mapping。UI 必须同时展示两个 confidence，避免把 mount warning 误读为整体失败。
+- 草稿身份不能从 `new-rule-*` ID 推断，因为 store 会保留该 ID。draft identity 必须由 SettingsView 内存态维护，并在 load/Save success 后清空。
+- EXPLICIT SAVE 必须覆盖 rule 删除、AUTO disable/restore；保留独立 mutation IPC 作为兼容能力，不代表 Settings UI 可以绕过底部 Save。
+
 ## 2026-09-22 — User-confirmed mapping draft boundary
 
 - Settings 当前真实 draft 分散在 `this.config` 与 DOM inputs；任何会重绘 rules 的 Add/assistant action 都必须先 `collectConfig()`，否则会丢失用户尚未保存的编辑。

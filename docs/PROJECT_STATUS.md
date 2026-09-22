@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-09-22 — STRM Smart Path Mapping Phase 2.1 path semantics fix
+
+修正 Phase 2 中“本地路径/云端路径”的产品语义歧义。正式 UI 与帮助文本现在明确区分：STRM 源文件路径是 STRM / Emby `MediaSource.Path` 中记录的原始路径；CloudDrive2 文件路径是同一文件的逻辑路径；本地挂载文件路径是当前客户端实际可访问、供 Mount fallback 使用的可选路径。正式 rule card 同样显示 `STRM 源路径 / CloudDrive2 路径 / 本地挂载路径`，空 mount 明确为“未配置”。
+
+Phase 1 core 小范围泛化出 `inferSmartMountMapping()`，保留既有 cloud API 与 18 项 contract。mount 支持 Windows→Windows/UNC、UNC→Windows/UNC、POSIX→POSIX；以 cloud HIGH 得到的 sourcePrefix 固定 relative suffix 后再验证 mount full path。Cloud HIGH + Mount HIGH 生成三字段 rule；mount 缺失或非 HIGH 时仍可生成 cloud rule，mountPrefix 留空并提示原因；Cloud 非 HIGH 整体禁止加入。
+
+所有 rule action 继续遵守 EXPLICIT SAVE：普通新增、assistant、删除、AUTO disable/restore 都只改 draft；修复了持久化 `new-rule-*` 被误判为未保存草稿的问题。没有迁移或猜测现有 persisted rules。自动验证当前为 `npm test 267/267 PASS`；focused Smart Mapping `23/23 PASS`；assistant + settings `33/33 PASS`；含 Resolver focused `79/79 PASS`；UI/static `10/10 PASS`；JS syntax 与 `git diff --check` PASS。最终 exact-HEAD background runtime 为 `2138` files，pinned Electron 44.4.2、source、Native Helper、runtime provenance 与 package verify 全部 PASS；foreground/native UI、真实 Emby/CD2、安装均未执行。
+
 ## 2026-09-22 — STRM Smart Path Mapping Phase 2
 
 在独立 `codex/strm-smart-path-mapping` 分支继续复用 Phase 1 engine，实现 user-confirmed mapping assistant。STRM Settings 的路径规则区新增两个显式输入、preview、confidence/evidence 展示和“加入路径规则”；没有扫描按钮，也不宣称 CD2 可自动发现 cloud path。
