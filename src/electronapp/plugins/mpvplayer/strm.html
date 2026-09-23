@@ -64,9 +64,12 @@
                 <div class="ete-strm-assistant" aria-labelledby="ete-smart-mapping-title">
                     <div class="ete-strm-assistant-heading">
                         <h3 id="ete-smart-mapping-title">智能映射助手</h3>
-                        <p class="fieldDescription">提供 STRM 中记录的媒体路径、同一文件在 CloudDrive2 中的逻辑路径，以及可选的当前电脑挂载路径。客户端会根据共同目录结构推导现有路径规则；系统不会自动保存。</p>
+                        <p class="fieldDescription">每组填写同一文件在 STRM、CloudDrive2 和可选本地挂载中的完整路径。先检查现有规则；推导新规则时需要不同目录下的对应文件。分析不会保存设置。</p>
                     </div>
-                    <div class="ete-strm-assistant-grid">
+                    <div class="smartSamples">
+                      <fieldset class="smartSample ete-strm-assistant-sample" data-sample-id="sample-1">
+                        <legend>样本 1</legend>
+                        <div class="ete-strm-assistant-grid">
                         <div class="inputContainer">
                             <label for="ete-smart-source-path">STRM 源文件路径</label>
                             <input is="emby-input" type="text" id="ete-smart-source-path" class="txtSmartSourcePath" autocomplete="off" aria-describedby="ete-smart-source-help" />
@@ -82,19 +85,27 @@
                             <input is="emby-input" type="text" id="ete-smart-mount-path" class="txtSmartMountPath" autocomplete="off" aria-describedby="ete-smart-mount-help" />
                             <div id="ete-smart-mount-help" class="fieldDescription">如果当前电脑还挂载了同一媒体目录，可填写该文件实际可访问的本地路径，用于 Mount fallback。例如 Z:\115\电影\Alien\Alien.mkv</div>
                         </div>
+                        </div>
+                      </fieldset>
                     </div>
                     <div class="ete-strm-assistant-actions">
                         <button type="button" is="emby-button" class="btnAnalyzeMapping">分析映射</button>
+                        <button type="button" is="emby-button" class="btnAddSample">添加第二组样本</button>
                         <span class="smartMappingState secondaryText" role="status" aria-live="polite"></span>
                     </div>
                     <div class="ete-strm-assistant-preview" role="region" aria-labelledby="ete-smart-preview-title" hidden>
+                        <h4 id="ete-smart-preview-title">分析结果</h4>
+                        <p class="smartCoverage"></p>
+                        <p class="smartCoveredRules"></p>
+                        <p>文件对应关系：<span class="smartFileMatch"></span></p>
+                        <p>映射边界：<span class="smartBoundary"></span></p>
                         <div class="ete-strm-assistant-suggestion" hidden>
-                            <h4 id="ete-smart-preview-title">建议路径规则</h4>
+                            <h4>建议路径规则</h4>
                             <dl>
                                 <div><dt>STRM 源路径</dt><dd class="smartSourcePrefix"></dd></div>
                                 <div><dt>CloudDrive2 路径</dt><dd class="smartCloudPrefix"></dd></div>
                                 <div><dt>本地挂载路径</dt><dd class="smartMountPrefix"></dd></div>
-                                <div><dt>CloudDrive2 匹配置信度</dt><dd class="smartCloudConfidence"></dd></div>
+                                <div><dt>文件匹配置信度</dt><dd class="smartCloudConfidence"></dd></div>
                                 <div><dt>本地挂载匹配置信度</dt><dd class="smartMountConfidence"></dd></div>
                                 <div><dt>匹配依据</dt><dd class="smartMatchedBasis"></dd></div>
                                 <div><dt>原因</dt><dd class="smartReason"></dd></div>

@@ -202,6 +202,22 @@
     max-width: 760px;
 }
 
+.ete-strm-assistant-sample {
+    border: 1px solid var(--theme-primary-color-alpha, rgba(0, 164, 220, .25));
+    border-radius: 4px;
+    margin: 12px 0;
+    padding: 16px;
+}
+
+.ete-strm-assistant-sample legend {
+    font-weight: 600;
+    padding: 0 6px;
+}
+
+.ete-strm-assistant-sample .btnRemoveSample {
+    margin-top: 8px;
+}
+
 .ete-strm-assistant-grid {
     display: grid;
     gap: 0 20px;

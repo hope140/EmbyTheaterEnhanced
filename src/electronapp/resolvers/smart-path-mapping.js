@@ -518,6 +518,7 @@
         STATUS: STATUS,
         diagnosticRecord: diagnosticRecord,
         inferSmartMountMapping: inferSmartMountMapping,
-        inferSmartPathMapping: inferSmartPathMapping
+        inferSmartPathMapping: inferSmartPathMapping,
+        parsePathForInference: parsePath
     };
 }));

@@ -62,6 +62,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         if (response.reason === 'untrusted_sender') return '配置服务拒绝了当前页面。';
         if (response.reason === 'invalid_config') return '保存失败：请检查路径和地址格式。';
         if (response.reason === 'invalid_token') return 'Token 无效，请输入不含控制字符的值。';
+        if (response.reason === 'invalid_request') return '请检查各组 STRM 源文件路径、CloudDrive2 文件路径和可选挂载路径。';
         return '操作未完成，请检查配置后重试。';
     }
 
@@ -82,45 +83,72 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         return '低';
     }
 
-    function reasonText(value) {
-        return {
-            unique_long_suffix: '连续目录结构唯一匹配',
-            unique_supported_suffix: '目录结构匹配，但证据未达到高置信度',
-            multiple_equal_candidates: '存在多个同等匹配候选',
-            filename_only: '仅文件名相同',
-            suffix_too_short: '连续目录层级不足',
-            no_common_suffix: '未找到可用的共同目录结构',
-            no_candidates: '未提供对应文件路径',
-            identical_mapping: '两侧前缀相同，无需新增映射',
-            invalid_cloud_candidate: 'CloudDrive2 文件路径不是安全的绝对 POSIX 路径',
-            invalid_mount_candidate: '本地挂载文件路径不是安全的绝对路径',
-            mount_suffix_mismatch: '本地挂载文件与 STRM 源文件的相对目录不一致',
-            cloud_mapping_not_high: 'CloudDrive2 映射未达到高置信度',
-            not_provided: '未提供本地挂载文件路径',
-            path_semantics_mismatch: '路径类型与声明不一致',
-            relative_path: '路径必须是绝对路径',
-            path_traversal: '路径包含不安全的目录跳转',
-            empty_segment: '路径包含空目录段',
-            empty_path: '路径不能为空',
-            surrounding_whitespace: '路径首尾包含空白字符',
-            control_character: '路径包含控制字符',
-            mixed_separator: 'POSIX 路径包含反斜杠',
-            invalid_unc_root: 'UNC 路径缺少有效的服务器或共享边界',
-            root_only: '路径不能只有根目录',
-            incomplete_path: '路径不完整',
-            root_boundary_ambiguous: '无法安全区分路径根边界',
-            invalid_request: '请输入有效的 STRM 源文件路径和 CloudDrive2 文件路径'
-        }[value] || '路径证据不足，无法生成安全建议';
+    function createAssistantSample(index) {
+        var sample = element('fieldset', 'smartSample ete-strm-assistant-sample');
+        var grid = element('div', 'ete-strm-assistant-grid');
+        sample.dataset.sampleId = 'sample-' + index;
+        sample.appendChild(element('legend', null, '样本 ' + index));
+        [
+            ['source', 'STRM 源文件路径', '填写 STRM / Emby 中记录的原始媒体文件路径。'],
+            ['cloud', 'CloudDrive2 文件路径', '填写同一个文件在 CloudDrive2 中的完整逻辑路径。'],
+            ['mount', '本地挂载文件路径（可选）', '当前电脑实际可访问的路径，用于 Mount fallback。']
+        ].forEach(function (field) {
+            var wrapper = element('div', 'inputContainer');
+            var id = 'ete-smart-' + field[0] + '-path-' + index;
+            var input = element('input', 'txtSmart' + field[0].charAt(0).toUpperCase() + field[0].slice(1) + 'Path');
+            var label = element('label', null, field[1]);
+            var help = element('div', 'fieldDescription', field[2]);
+            label.htmlFor = id;
+            input.id = id;
+            input.type = 'text';
+            input.setAttribute('is', 'emby-input');
+            input.setAttribute('autocomplete', 'off');
+            input.setAttribute('aria-describedby', id + '-help');
+            help.id = id + '-help';
+            wrapper.appendChild(label);
+            wrapper.appendChild(input);
+            wrapper.appendChild(help);
+            grid.appendChild(wrapper);
+        });
+        sample.appendChild(grid);
+        var remove = element('button', 'btnRemoveSample', '移除此组样本');
+        remove.type = 'button';
+        remove.setAttribute('is', 'emby-button');
+        sample.appendChild(remove);
+        return sample;
+    }
+
+    function collectSamples(view) {
+        return Array.prototype.map.call(view.querySelectorAll('.smartSample'), function (sample) {
+            return {
+                sourcePath: sample.querySelector('.txtSmartSourcePath').value,
+                cloudPath: sample.querySelector('.txtSmartCloudPath').value,
+                mountPath: sample.querySelector('.txtSmartMountPath').value
+            };
+        });
     }
 
     function assistantStatus(preview, evaluation) {
         if (evaluation.collision === mappingAssistant.COLLISION.DUPLICATE) return '该规则已存在。';
         if (evaluation.collision === mappingAssistant.COLLISION.CONFLICT) return '现有规则与建议冲突，请先检查当前路径规则。';
-        if (preview.status === 'MATCHED' && preview.confidence === 'HIGH') return '已生成高置信度建议。确认后只会加入当前草稿。';
-        if (preview.status === 'MATCHED' && preview.confidence === 'MEDIUM') return '匹配证据不足，建议提供目录层级更多的样本。';
-        if (preview.status === 'AMBIGUOUS') return '存在歧义，无法确定唯一映射。';
-        if (preview.status === 'UNSAFE') return '路径未通过安全检查：' + reasonText(preview.reason) + '。';
-        return reasonText(preview.reason) + '。';
+        if (preview.coverage.status === 'FULLY_COVERED') return '当前样本已被现有路径规则完整覆盖，无需新增规则。';
+        if (preview.coverage.status === 'CLOUD_COVERED') return preview.coverage.mountStatus === 'MOUNT_NOT_CONFIGURED'
+            ? '已有规则覆盖 CloudDrive2；本地挂载映射尚未配置。'
+            : preview.coverage.mountStatus === 'MOUNT_INVALID'
+                ? '已有规则覆盖 CloudDrive2；提供的本地挂载文件路径未通过安全检查。'
+            : 'CloudDrive2 映射已由现有规则覆盖，无需新增规则。';
+        if (preview.coverage.status === 'CONFLICT') return '当前样本与现有路径规则冲突，请检查命中的规则。';
+        if (preview.fileMatch.status === 'UNSAFE') return '路径未通过安全检查。';
+        if (preview.boundary.reason === 'file_match_insufficient') return '文件对应关系证据不足，请核对各组路径是否指向同一文件。';
+        if (preview.fileMatch.confidence === 'HIGH' && preview.boundary.status === 'INSUFFICIENT_EVIDENCE') {
+            return '这些路径高度可能对应同一个文件，但仅凭当前样本无法可靠确定可复用路径边界。请再提供一个不同目录下的对应文件。';
+        }
+        if (preview.boundary.status === 'MATCHED' && preview.boundary.confidence === 'HIGH') {
+            return preview.mount && preview.mount.status !== 'MATCHED' && preview.mount.reason !== 'mount_samples_required'
+                ? '新规则边界已由多组样本验证；本地挂载映射证据不足，建议规则将不包含挂载路径。'
+                : '新规则边界已由多组不同目录的样本验证，可加入路径规则草稿。';
+        }
+        return '映射边界证据不足，请提供不同目录下的对应文件。';
     }
 
     function resetAssistantPreview(view) {
@@ -138,28 +166,42 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         var suggestion = view.querySelector('.ete-strm-assistant-suggestion');
         var addButton = view.querySelector('.btnAddSuggestedRule');
         var evaluation = mappingAssistant.evaluatePreview(preview, rules);
-        var hasSuggestion = preview && typeof preview.sourcePrefix === 'string' && typeof preview.cloudPrefix === 'string';
+        var proposed = preview && preview.suggestion;
+        var hasSuggestion = proposed && typeof proposed.sourcePrefix === 'string' && typeof proposed.cloudPrefix === 'string';
 
         container.hidden = false;
         suggestion.hidden = !hasSuggestion;
         addButton.disabled = !evaluation.canAdd;
+        var coverage = preview.coverage || {};
+        var fileMatch = preview.fileMatch || {};
+        var boundary = preview.boundary || {};
+        view.querySelector('.smartCoverage').textContent = coverage.status === 'FULLY_COVERED' ? '现有规则：完整覆盖'
+            : coverage.status === 'CLOUD_COVERED' ? '现有规则：CloudDrive2 已覆盖'
+                : coverage.status === 'CONFLICT' ? '现有规则：冲突' : '现有规则：未覆盖';
+        var matchedRules = (rules || []).filter(function (rule) {
+            return coverage.ruleIds && coverage.ruleIds.indexOf(rule.id) >= 0;
+        });
+        view.querySelector('.smartCoveredRules').textContent = matchedRules.map(function (rule) {
+            return '命中规则：' + rule.sourcePrefix + ' → ' + (rule.cloudPrefix || '未配置');
+        }).join('；');
+        view.querySelector('.smartFileMatch').textContent = fileMatch.status === 'MATCHED'
+            ? confidenceText(fileMatch.confidence) : '未匹配';
+        view.querySelector('.smartBoundary').textContent = boundary.status === 'MATCHED'
+            ? confidenceText(boundary.confidence) : '证据不足';
         if (hasSuggestion) {
-            view.querySelector('.smartSourcePrefix').textContent = preview.sourcePrefix;
-            view.querySelector('.smartCloudPrefix').textContent = preview.cloudPrefix;
-            view.querySelector('.smartMountPrefix').textContent = preview.mountPrefix || '未配置';
-            view.querySelector('.smartMatchedBasis').textContent = '文件名 + ' + preview.matchedParentSegments + ' 个连续父目录';
-            view.querySelector('.smartCloudConfidence').textContent = confidenceText(preview.confidence);
-            view.querySelector('.smartMountConfidence').textContent = preview.mountProvided
-                ? confidenceText(preview.mountConfidence)
-                : '未提供';
-            view.querySelector('.smartReason').textContent = reasonText(preview.reason);
+            view.querySelector('.smartSourcePrefix').textContent = proposed.sourcePrefix;
+            view.querySelector('.smartCloudPrefix').textContent = proposed.cloudPrefix;
+            view.querySelector('.smartMountPrefix').textContent = proposed.mountPrefix || '未配置';
+            view.querySelector('.smartMatchedBasis').textContent = '多组样本在不同目录分叉，相对路径一致';
+            view.querySelector('.smartCloudConfidence').textContent = confidenceText(fileMatch.confidence);
+            view.querySelector('.smartMountConfidence').textContent = preview.mount && preview.mount.status === 'MATCHED'
+                ? confidenceText(preview.mount.confidence)
+                : preview.mount && preview.mount.reason === 'mount_samples_required' ? '未提供' : '证据不足';
+            view.querySelector('.smartReason').textContent = '多组目录分叉证据支持当前边界';
         }
-        var status = assistantStatus(preview, evaluation);
-        if (evaluation.canAdd && preview.mountProvided && !preview.mountPrefix) {
-            status += ' CloudDrive2 映射可信；本地挂载路径证据不足，未加入挂载映射。';
-        }
-        setStatus(view.querySelector('.smartMappingState'), status,
-            preview.status === 'UNSAFE' || preview.status === 'AMBIGUOUS' || evaluation.collision === mappingAssistant.COLLISION.CONFLICT);
+        setStatus(view.querySelector('.smartMappingState'), assistantStatus(preview, evaluation),
+            coverage.status === 'CONFLICT' || fileMatch.status === 'UNSAFE' ||
+            evaluation.collision === mappingAssistant.COLLISION.CONFLICT);
         return evaluation;
     }
 
@@ -411,6 +453,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         this.assistantPreview = null;
         this.draftRuleIds = Object.create(null);
         this.mappingRequestSequence = 0;
+        this.nextSampleId = 2;
         view.querySelector('form').addEventListener('submit', function (event) {
             event.preventDefault();
             this.saveSettings();
@@ -422,6 +465,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             this.config.rules.push(rule);
             this.draftRuleIds[rule.id] = true;
             renderConfig(view, this.config, this.draftRuleIds);
+            this.invalidateAssistant();
             var inputs = view.querySelectorAll('.rule-sourcePrefix');
             if (inputs.length) inputs[inputs.length - 1].focus();
         }.bind(this));
@@ -429,7 +473,8 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             if (event.target.classList.contains('rule-strategy') || event.target.classList.contains('rule-order-stage')) {
                 updateOrderPreview(event.target.closest('.ete-strm-rule-card'));
             }
-        });
+            if (event.target.closest('.ete-strm-rule-card')) this.invalidateAssistant();
+        }.bind(this));
         view.addEventListener('click', function (event) {
             var card = event.target.closest('.ete-strm-rule-card');
             var ruleId = card && card.dataset.ruleId;
@@ -443,17 +488,36 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         view.querySelector('.btnTestConnection').addEventListener('click', function () { this.testConnection(); }.bind(this));
         view.querySelector('.btnAnalyzeMapping').addEventListener('click', function () { this.analyzeMapping(); }.bind(this));
         view.querySelector('.btnAddSuggestedRule').addEventListener('click', function () { this.acceptSuggestedRule(); }.bind(this));
-        Array.prototype.forEach.call(view.querySelectorAll('.txtSmartSourcePath, .txtSmartCloudPath, .txtSmartMountPath'), function (input) {
-            input.addEventListener('input', function () {
-                this.mappingRequestSequence++;
-                this.assistantPreview = null;
-                resetAssistantPreview(view);
-                view.querySelector('.btnAnalyzeMapping').disabled = false;
-            }.bind(this));
+        view.querySelector('.btnAddSample').addEventListener('click', function () {
+            var list = view.querySelector('.smartSamples');
+            if (list.querySelectorAll('.smartSample').length >= 8) return;
+            list.appendChild(createAssistantSample(this.nextSampleId++));
+            view.querySelector('.btnAddSample').textContent = '添加样本';
+            view.querySelector('.btnAddSample').disabled = list.querySelectorAll('.smartSample').length >= 8;
+            this.invalidateAssistant();
+        }.bind(this));
+        view.addEventListener('click', function (event) {
+            if (!event.target.classList.contains('btnRemoveSample')) return;
+            var sample = event.target.closest('.smartSample');
+            if (sample) sample.remove();
+            view.querySelector('.btnAddSample').disabled = false;
+            this.invalidateAssistant();
+        }.bind(this));
+        view.addEventListener('input', function (event) {
+            if (event.target.closest('.smartSample') || event.target.closest('.ete-strm-rule-card')) {
+                this.invalidateAssistant();
+            }
         }.bind(this));
     }
 
     Object.assign(SettingsView.prototype, BaseView.prototype);
+
+    SettingsView.prototype.invalidateAssistant = function () {
+        this.mappingRequestSequence++;
+        this.assistantPreview = null;
+        resetAssistantPreview(this.view);
+        this.view.querySelector('.btnAnalyzeMapping').disabled = false;
+    };
 
     SettingsView.prototype.loadSettings = function () {
         var view = this.view;
@@ -465,8 +529,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             this.config = clone(config);
             this.draftRuleIds = Object.create(null);
             renderConfig(view, this.config, this.draftRuleIds);
-            this.assistantPreview = null;
-            resetAssistantPreview(view);
+            this.invalidateAssistant();
             setStatus(view.querySelector('.saveState'), '', false);
             loading.hide();
             return config;
@@ -492,6 +555,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             this.config = clone(response.config);
             this.draftRuleIds = Object.create(null);
             renderConfig(view, this.config, this.draftRuleIds);
+            this.invalidateAssistant();
             setStatus(view.querySelector('.saveState'), response.requiresRestart ? '已保存，重启应用后播放链生效。' : '设置已保存。', false);
         }.bind(this)).catch(function () {
             setStatus(view.querySelector('.saveState'), '保存失败，请检查配置服务。', true);
@@ -544,27 +608,22 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
     SettingsView.prototype.analyzeMapping = function () {
         var view = this.view;
         var button = view.querySelector('.btnAnalyzeMapping');
-        var sourcePath = view.querySelector('.txtSmartSourcePath').value;
-        var cloudPath = view.querySelector('.txtSmartCloudPath').value;
-        var mountPath = view.querySelector('.txtSmartMountPath').value;
+        var samples = collectSamples(view);
+        var rules = this.config ? collectConfig(view, this.config).rules : [];
         var requestSequence = ++this.mappingRequestSequence;
         button.disabled = true;
         resetAssistantPreview(view);
         setStatus(view.querySelector('.smartMappingState'), '正在分析…', false);
-        return request(CHANNELS.previewMapping, {
-            sourcePath: sourcePath,
-            cloudPath: cloudPath,
-            mountPath: mountPath
-        }).then(function (response) {
+        return request(CHANNELS.previewMapping, {samples: samples, rules: rules}).then(function (response) {
             if (requestSequence !== this.mappingRequestSequence) return;
-            if (!response || ['MATCHED', 'AMBIGUOUS', 'NO_MATCH', 'UNSAFE'].indexOf(response.status) < 0) {
+            if (!response || response.status !== 'ok' || !response.preview) {
                 this.assistantPreview = null;
                 setStatus(view.querySelector('.smartMappingState'), statusText(response), true);
                 return;
             }
-            this.assistantPreview = response;
-            renderAssistantPreview(view, response, this.config ? collectConfig(view, this.config).rules : []);
-            sendDiagnostic(mappingAssistant.diagnosticRecord('smart-path-mapping-preview', response));
+            this.assistantPreview = response.preview;
+            renderAssistantPreview(view, response.preview, rules);
+            sendDiagnostic(mappingAssistant.diagnosticRecord('smart-path-mapping-preview', response.preview));
         }.bind(this)).catch(function () {
             if (requestSequence !== this.mappingRequestSequence) return;
             this.assistantPreview = null;
@@ -647,6 +706,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         rule.originState = 'AUTO';
         rule.enabled = true;
         renderConfig(this.view, this.config, this.draftRuleIds);
+        this.invalidateAssistant();
         setStatus(this.view.querySelector('.saveState'), '已在草稿中恢复自动配置，请点击“保存设置”。', false);
     };
 
@@ -658,12 +718,14 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             this.config.rules = mappingAssistant.removeDraftRule(this.config.rules, ruleId);
             delete this.draftRuleIds[ruleId];
             renderConfig(this.view, this.config, this.draftRuleIds);
+            this.invalidateAssistant();
             setStatus(this.view.querySelector('.saveState'), '规则已从草稿移除，请点击“保存设置”。', false);
             return;
         }
         rule.originState = 'DISABLED';
         rule.enabled = false;
         renderConfig(this.view, this.config, this.draftRuleIds);
+        this.invalidateAssistant();
         setStatus(this.view.querySelector('.saveState'), '规则已在草稿中禁用，请点击“保存设置”。', false);
     };
 

@@ -37,12 +37,13 @@
 
     function classifyCollision(preview, rules) {
         var conflict = false;
-        if (!isObject(preview) || typeof preview.sourcePrefix !== 'string' || typeof preview.cloudPrefix !== 'string') {
+        var suggestion = preview && preview.suggestion ? preview.suggestion : preview;
+        if (!isObject(suggestion) || typeof suggestion.sourcePrefix !== 'string' || typeof suggestion.cloudPrefix !== 'string') {
             return COLLISION.NONE;
         }
         (Array.isArray(rules) ? rules : []).forEach(function (rule) {
-            if (!rule || !equivalentSourcePrefix(preview.sourcePrefix, rule.sourcePrefix)) return;
-            if (equivalentCloudPrefix(preview.cloudPrefix, rule.cloudPrefix)) {
+            if (!rule || !equivalentSourcePrefix(suggestion.sourcePrefix, rule.sourcePrefix)) return;
+            if (equivalentCloudPrefix(suggestion.cloudPrefix, rule.cloudPrefix)) {
                 conflict = COLLISION.DUPLICATE;
             } else if (conflict !== COLLISION.DUPLICATE) {
                 conflict = COLLISION.CONFLICT;
@@ -52,9 +53,13 @@
     }
 
     function isHighMatch(preview) {
-        return !!preview && preview.status === 'MATCHED' && preview.confidence === 'HIGH' &&
-            typeof preview.sourcePrefix === 'string' && !!preview.sourcePrefix &&
-            typeof preview.cloudPrefix === 'string' && !!preview.cloudPrefix;
+        var suggestion = preview && preview.suggestion;
+        return !!preview && preview.coverage && preview.coverage.status === 'NOT_COVERED' &&
+            preview.fileMatch && preview.fileMatch.status === 'MATCHED' &&
+            preview.fileMatch.confidence === 'HIGH' && preview.boundary &&
+            preview.boundary.status === 'MATCHED' && preview.boundary.confidence === 'HIGH' &&
+            suggestion && typeof suggestion.sourcePrefix === 'string' && !!suggestion.sourcePrefix &&
+            typeof suggestion.cloudPrefix === 'string' && !!suggestion.cloudPrefix;
     }
 
     function evaluatePreview(preview, rules) {
@@ -68,11 +73,12 @@
 
     function createDraftRule(preview, id) {
         if (!isHighMatch(preview) || typeof id !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(id)) return null;
+        var suggestion = preview.suggestion;
         return {
             id: id,
-            sourcePrefix: preview.sourcePrefix,
-            mountPrefix: typeof preview.mountPrefix === 'string' ? preview.mountPrefix : '',
-            cloudPrefix: preview.cloudPrefix,
+            sourcePrefix: suggestion.sourcePrefix,
+            mountPrefix: typeof suggestion.mountPrefix === 'string' ? suggestion.mountPrefix : '',
+            cloudPrefix: suggestion.cloudPrefix,
             storageType: 'cloud-mount',
             strategy: 'cloud-first',
             order: ['direct-url', 'cd2-http', 'mount', 'native'],
@@ -108,6 +114,9 @@
 
     function diagnosticRecord(event, preview) {
         var value = isObject(preview) ? preview : {};
+        var fileMatch = isObject(value.fileMatch) ? value.fileMatch : {};
+        var boundary = isObject(value.boundary) ? value.boundary : {};
+        var coverage = isObject(value.coverage) ? value.coverage : {};
         if (event === 'smart-path-mapping-accepted') {
             return {
                 schemaVersion: 1,
@@ -115,25 +124,25 @@
                 category: 'resolver',
                 event: event,
                 details: {
-                    confidence: value.confidence || 'LOW',
-                    matchedSuffixSegments: Number.isSafeInteger(value.matchedSuffixSegments)
-                        ? value.matchedSuffixSegments
-                        : 0
+                    boundaryConfidence: boundary.confidence || 'LOW',
+                    matchedSuffixSegments: Number.isSafeInteger(fileMatch.matchedSuffixSegments)
+                        ? fileMatch.matchedSuffixSegments : 0
                 }
             };
         }
         return {
             schemaVersion: 1,
-            level: value.status === 'MATCHED' ? 'info' : 'warn',
+            level: boundary.status === 'MATCHED' || coverage.status === 'FULLY_COVERED' ? 'info' : 'warn',
             category: 'resolver',
             event: 'smart-path-mapping-preview',
             details: {
-                status: value.status || 'UNSAFE',
-                confidence: value.confidence || 'LOW',
-                matchedSuffixSegments: Number.isSafeInteger(value.matchedSuffixSegments)
-                    ? value.matchedSuffixSegments
-                    : 0,
-                reason: typeof value.reason === 'string' ? value.reason : 'invalid_result'
+                coverageStatus: coverage.status || 'NOT_COVERED',
+                fileMatchConfidence: fileMatch.confidence || 'LOW',
+                boundaryStatus: boundary.status || 'UNRESOLVED',
+                boundaryConfidence: boundary.confidence || 'LOW',
+                matchedSuffixSegments: Number.isSafeInteger(fileMatch.matchedSuffixSegments)
+                    ? fileMatch.matchedSuffixSegments : 0,
+                reason: typeof boundary.reason === 'string' ? boundary.reason : 'invalid_result'
             }
         };
     }
