@@ -35,303 +35,216 @@ function sourceSection(source, start, end) {
     return source.slice(startIndex, endIndex);
 }
 
-function preview(status, confidence, overrides) {
-    return Object.assign({
-        status,
-        confidence,
-        matchedSuffixSegments: confidence === 'HIGH' ? 4 : 3,
-        matchedParentSegments: confidence === 'HIGH' ? 3 : 2,
-        reason: confidence === 'HIGH' ? 'unique_long_suffix' : 'unique_supported_suffix',
-        sourcePrefix: 'D:\\Media\\Movies',
-        cloudPrefix: '/115/Movies',
-        mountProvided: false,
-        mountPrefix: '',
-        mountStatus: 'NOT_PROVIDED',
-        mountConfidence: 'LOW',
-        mountMatchedSuffixSegments: 0,
-        mountMatchedParentSegments: 0,
-        mountReason: 'not_provided'
-    }, overrides || {});
+function sample(season, episode, mountRoot = '') {
+    const value = {
+        sourcePath: `D:\\Library\\Anime\\Show\\${season}\\${episode}.mkv`,
+        cloudPath: `/cloud/Anime/Show/${season}/${episode}.mkv`
+    };
+    if (mountRoot) value.mountPath = `${mountRoot}\\Show\\${season}\\${episode}.mkv`;
+    return value;
 }
 
-test('preview IPC returns exact HIGH, MEDIUM, NO_MATCH, UNSAFE, invalid, and untrusted responses', async () => {
-    const root = temporaryRoot('ete-strm-mapping-preview-');
-    const store = configStore.createStore({
-        rootDir: root,
-        environment: {
-            ETE_CD2_ENABLED: '1',
-            ETE_CD2_ORIGIN: 'http://127.0.0.1:19798',
-            ETE_CD2_TOKEN: 'fixture-secret-token',
-            ETE_CD2_SOURCE_PREFIX: 'D:\\Existing',
-            ETE_CD2_CLOUD_PREFIX: '/existing'
-        }
-    });
-    const calls = {save: 0, applyDiscovery: 0, cd2: 0};
-    const guardedStore = Object.assign({}, store, {
-        save() {
-            calls.save++;
-            throw new Error('preview must not save');
-        },
-        applyDiscovery() {
-            calls.applyDiscovery++;
-            throw new Error('preview must not apply discovery');
-        }
-    });
-    const handlers = {};
-    const ipcMain = {
-        handle(name, handler) { handlers[name] = handler; },
-        removeHandler(name) { delete handlers[name]; }
-    };
-    const trusted = {};
-    const paths = store.getConfigPaths();
-    const beforePublic = store.getPublicConfig();
-    const beforeConfig = fs.readFileSync(paths.configPath);
-    const beforeSecrets = fs.readFileSync(paths.secretsPath);
-    const unregister = configIpc.register({
-        ipcMain,
-        store: guardedStore,
-        getWebContents: () => trusted,
-        createTestService() {
-            calls.cd2++;
-            throw new Error('preview must not create a CD2 service');
-        }
-    });
-    const invoke = request => handlers[configIpc.CHANNELS.PREVIEW_MAPPING]({sender: trusted}, request);
+function branchSamples(mountRoot = '') {
+    return [
+        sample('Season 1', 'Episode 01', mountRoot),
+        sample('Season 2', 'Episode 01', mountRoot)
+    ];
+}
 
-    try {
-        assert.deepEqual(await invoke({
-            sourcePath: 'D:\\Media\\Movies\\A\\B\\movie.mkv',
-            cloudPath: '/115/Movies/A/B/movie.mkv'
-        }), {
+function rule(overrides = {}) {
+    return Object.assign({
+        id: 'existing',
+        sourcePrefix: 'D:\\Library\\Anime\\Show',
+        cloudPrefix: '/cloud/Anime/Show',
+        mountPrefix: null,
+        storageType: 'cloud-mount',
+        strategy: 'cloud-first',
+        order: ['direct-url', 'cd2-http', 'mount', 'native'],
+        originState: 'USER',
+        enabled: true
+    }, overrides);
+}
+
+function preview(overrides = {}) {
+    return Object.assign({
+        coverage: {
+            status: 'NOT_COVERED',
+            mountStatus: 'UNAVAILABLE',
+            ruleIds: [],
+            reason: 'no_matching_rule'
+        },
+        fileMatch: {
             status: 'MATCHED',
             confidence: 'HIGH',
-            matchedSuffixSegments: 4,
-            matchedParentSegments: 3,
-            reason: 'unique_long_suffix',
-            sourcePrefix: 'D:\\Media\\Movies',
-            cloudPrefix: '/115/Movies',
-            mountProvided: false,
-            mountPrefix: '',
-            mountStatus: 'NOT_PROVIDED',
-            mountConfidence: 'LOW',
-            mountMatchedSuffixSegments: 0,
-            mountMatchedParentSegments: 0,
-            mountReason: 'not_provided'
-        });
-
-        assert.deepEqual(await invoke({
-            sourcePath: 'D:\\Media\\A\\B\\movie.mkv',
-            cloudPath: '/115/A/B/movie.mkv'
-        }), {
+            matchedSuffixSegments: 4
+        },
+        boundary: {
             status: 'MATCHED',
-            confidence: 'MEDIUM',
-            matchedSuffixSegments: 3,
-            matchedParentSegments: 2,
-            reason: 'unique_supported_suffix',
-            sourcePrefix: 'D:\\Media\\A',
-            cloudPrefix: '/115/A',
-            mountProvided: false,
-            mountPrefix: '',
-            mountStatus: 'NOT_PROVIDED',
-            mountConfidence: 'LOW',
-            mountMatchedSuffixSegments: 0,
-            mountMatchedParentSegments: 0,
-            mountReason: 'not_provided'
-        });
+            confidence: 'HIGH',
+            reason: 'independent_branch_consensus',
+            suggestion: null
+        },
+        mount: {
+            status: 'MATCHED',
+            confidence: 'HIGH',
+            reason: 'mount_relative_suffix_consensus',
+            mountPrefix: 'Z:\\Mounted\\Anime\\Show'
+        },
+        suggestion: {
+            sourcePrefix: 'D:\\Library\\Anime\\Show',
+            cloudPrefix: '/cloud/Anime/Show',
+            mountPrefix: 'Z:\\Mounted\\Anime\\Show'
+        }
+    }, overrides);
+}
 
-        assert.deepEqual(await invoke({
-            sourcePath: 'D:\\Media\\A\\movie.mkv',
-            cloudPath: '/115/A/movie.mkv'
-        }), {
-            status: 'NO_MATCH',
-            confidence: 'LOW',
-            matchedSuffixSegments: 2,
-            matchedParentSegments: 1,
-            reason: 'suffix_too_short',
-            mountProvided: false,
-            mountPrefix: '',
-            mountStatus: 'NOT_PROVIDED',
-            mountConfidence: 'LOW',
-            mountMatchedSuffixSegments: 0,
-            mountMatchedParentSegments: 0,
-            mountReason: 'not_provided'
-        });
-
-        assert.deepEqual(await invoke({
-            sourcePath: 'D:\\Media\\A\\B\\movie.mkv',
-            cloudPath: 'X:\\Cloud\\A\\B\\movie.mkv'
-        }), {
-            status: 'UNSAFE',
-            confidence: 'LOW',
-            matchedSuffixSegments: 0,
-            matchedParentSegments: 0,
-            reason: 'invalid_cloud_candidate',
-            mountProvided: false,
-            mountPrefix: '',
-            mountStatus: 'NOT_PROVIDED',
-            mountConfidence: 'LOW',
-            mountMatchedSuffixSegments: 0,
-            mountMatchedParentSegments: 0,
-            mountReason: 'not_provided'
-        });
-
-        assert.deepEqual(await invoke({sourcePath: 'D:\\Media\\movie.mkv'}), {
-            status: 'UNSAFE',
-            confidence: 'LOW',
-            matchedSuffixSegments: 0,
-            matchedParentSegments: 0,
-            reason: 'invalid_request'
-        });
-
-        assert.deepEqual(await handlers[configIpc.CHANNELS.PREVIEW_MAPPING]({sender: {}}, {
-            sourcePath: 'D:\\Media\\Movies\\A\\B\\movie.mkv',
-            cloudPath: '/115/Movies/A/B/movie.mkv'
-        }), {
-            status: 'error',
-            reason: 'untrusted_sender'
-        });
-
-        assert.deepEqual(store.getPublicConfig(), beforePublic);
-        assert.deepEqual(fs.readFileSync(paths.configPath), beforeConfig);
-        assert.deepEqual(fs.readFileSync(paths.secretsPath), beforeSecrets);
-        assert.deepEqual(calls, {save: 0, applyDiscovery: 0, cd2: 0});
-    } finally {
-        unregister();
-        fs.rmSync(root, {recursive: true, force: true});
-    }
-});
-
-test('preview IPC response field sets are exact and never expose store secrets', async () => {
+function registerPreviewIpc(options = {}) {
     const handlers = {};
     const trusted = {};
-    const store = {
-        getPublicConfig() { return {version: 1, enabled: true, cd2: {tokenConfigured: true}, rules: []}; },
-        getRule() { return null; }
-    };
-    const unregister = configIpc.register({
+    const root = temporaryRoot('ete-strm-assistant-ipc-');
+    const store = options.store || configStore.createStore({rootDir: root, environment: {}});
+    const unregister = configIpc.register(Object.assign({
         ipcMain: {
             handle(name, handler) { handlers[name] = handler; },
             removeHandler(name) { delete handlers[name]; }
         },
         store,
         getWebContents: () => trusted
+    }, options));
+    return {
+        root,
+        store,
+        trusted,
+        handlers,
+        invoke(request) {
+            return handlers[configIpc.CHANNELS.PREVIEW_MAPPING]({sender: trusted}, request);
+        },
+        invokeUntrusted(request) {
+            return handlers[configIpc.CHANNELS.PREVIEW_MAPPING]({sender: {}}, request);
+        },
+        unregister() {
+            unregister();
+            fs.rmSync(root, {recursive: true, force: true});
+        }
+    };
+}
+
+test('preview IPC accepts multi-sample input and returns the new bounded response shape', async () => {
+    const context = registerPreviewIpc();
+    try {
+        const response = await context.invoke({
+            samples: branchSamples('Z:\\Mounted\\Anime'),
+            rules: []
+        });
+
+        assert.equal(response.status, 'ok');
+        assert.deepEqual(Object.keys(response.preview).sort(), [
+            'boundary', 'coverage', 'fileMatch', 'mount', 'suggestion'
+        ]);
+        assert.equal(response.preview.coverage.status, 'NOT_COVERED');
+        assert.equal(response.preview.fileMatch.confidence, 'HIGH');
+        assert.equal(response.preview.boundary.status, 'MATCHED');
+        assert.equal(response.preview.boundary.confidence, 'HIGH');
+        assert.equal(response.preview.mount.status, 'MATCHED');
+        assert.deepEqual(response.preview.suggestion, {
+            sourcePrefix: 'D:\\Library\\Anime\\Show',
+            cloudPrefix: '/cloud/Anime/Show',
+            mountPrefix: 'Z:\\Mounted\\Anime\\Show'
+        });
+    } finally {
+        context.unregister();
+    }
+});
+
+test('preview IPC rejects the old flat request, malformed samples, and untrusted senders', async () => {
+    const context = registerPreviewIpc();
+    try {
+        assert.deepEqual(await context.invoke({
+            sourcePath: 'D:\\Library\\Anime\\Show\\Season 1\\Episode 01.mkv',
+            cloudPath: '/cloud/Anime/Show/Season 1/Episode 01.mkv'
+        }), {status: 'error', reason: 'invalid_request'});
+        assert.deepEqual(await context.invoke({samples: [{sourcePath: 'relative', cloudPath: '/cloud/file.mkv'}]}), {
+            status: 'ok',
+            preview: {
+                coverage: {status: 'CONFLICT', mountStatus: 'UNSAFE', ruleIds: [], reason: 'invalid_sample'},
+                fileMatch: {status: 'UNSAFE', confidence: 'LOW', matchedSuffixSegments: 0},
+                boundary: {status: 'UNRESOLVED', confidence: 'LOW', reason: 'invalid_sample'},
+                suggestion: null,
+                mount: {status: 'UNRESOLVED', confidence: 'LOW', reason: 'invalid_sample'}
+            }
+        });
+        assert.deepEqual(await context.invokeUntrusted({samples: branchSamples(), rules: []}), {
+            status: 'error', reason: 'untrusted_sender'
+        });
+    } finally {
+        context.unregister();
+    }
+});
+
+test('preview IPC is read-only and accepts only bounded draft rules', async () => {
+    const calls = {save: 0, applyDiscovery: 0, cd2: 0};
+    const root = temporaryRoot('ete-strm-assistant-readonly-');
+    const baseStore = configStore.createStore({rootDir: root, environment: {}});
+    const store = Object.assign({}, baseStore, {
+        save() { calls.save++; throw new Error('preview must not save'); },
+        applyDiscovery() { calls.applyDiscovery++; throw new Error('preview must not apply discovery'); }
+    });
+    const context = registerPreviewIpc({
+        store,
+        createTestService() {
+            calls.cd2++;
+            throw new Error('preview must not create CD2 service');
+        }
     });
     try {
-        const matched = await handlers[configIpc.CHANNELS.PREVIEW_MAPPING]({sender: trusted}, {
-            sourcePath: 'D:\\Media\\Movies\\A\\B\\movie.mkv',
-            cloudPath: '/115/Movies/A/B/movie.mkv',
+        const paths = baseStore.getConfigPaths();
+        const beforePublic = baseStore.getPublicConfig();
+        const beforeConfig = fs.existsSync(paths.configPath) ? fs.readFileSync(paths.configPath) : null;
+        const beforeSecrets = fs.existsSync(paths.secretsPath) ? fs.readFileSync(paths.secretsPath) : null;
+        const response = await context.invoke({
+            samples: branchSamples(),
+            rules: [rule()],
             token: 'must-not-echo'
         });
-        const noMatch = await handlers[configIpc.CHANNELS.PREVIEW_MAPPING]({sender: trusted}, {
-            sourcePath: 'D:\\Media\\A\\movie.mkv',
-            cloudPath: '/115/A/movie.mkv'
-        });
 
-        assert.deepEqual(Object.keys(matched).sort(), [
-            'cloudPrefix',
-            'confidence',
-            'matchedParentSegments',
-            'matchedSuffixSegments',
-            'mountConfidence',
-            'mountMatchedParentSegments',
-            'mountMatchedSuffixSegments',
-            'mountPrefix',
-            'mountProvided',
-            'mountReason',
-            'mountStatus',
-            'reason',
-            'sourcePrefix',
-            'status'
-        ]);
-        assert.deepEqual(Object.keys(noMatch).sort(), [
-            'confidence',
-            'matchedParentSegments',
-            'matchedSuffixSegments',
-            'mountConfidence',
-            'mountMatchedParentSegments',
-            'mountMatchedSuffixSegments',
-            'mountPrefix',
-            'mountProvided',
-            'mountReason',
-            'mountStatus',
-            'reason',
-            'status'
-        ]);
-        assert.doesNotMatch(JSON.stringify([matched, noMatch]), /must-not-echo|tokenConfigured/);
+        assert.equal(response.status, 'ok');
+        assert.equal(calls.save, 0);
+        assert.equal(calls.applyDiscovery, 0);
+        assert.equal(calls.cd2, 0);
+        assert.deepEqual(baseStore.getPublicConfig(), beforePublic);
+        assert.equal(fs.existsSync(paths.configPath), beforeConfig !== null);
+        assert.equal(fs.existsSync(paths.secretsPath), beforeSecrets !== null);
+        assert.doesNotMatch(JSON.stringify(response), /must-not-echo|token|secret|url/i);
+        assert.deepEqual(await context.invoke({samples: branchSamples(), rules: 'not-an-array'}), {
+            status: 'error', reason: 'invalid_request'
+        });
     } finally {
-        unregister();
+        context.unregister();
+        fs.rmSync(root, {recursive: true, force: true});
     }
 });
 
-test('preview combines CloudDrive2 HIGH with optional mount inference without weakening the cloud rule', async () => {
-    const handlers = {};
-    const trusted = {};
-    const unregister = configIpc.register({
-        ipcMain: {
-            handle(name, handler) { handlers[name] = handler; },
-            removeHandler(name) { delete handlers[name]; }
-        },
-        store: {getRule() { return null; }},
-        getWebContents: () => trusted
+test('only an uncovered multi-sample HIGH boundary can be added', () => {
+    const high = preview();
+    const singleSample = preview({
+        boundary: {status: 'INSUFFICIENT_EVIDENCE', confidence: 'LOW', reason: 'second_sample_required'},
+        suggestion: null
     });
-    const invoke = request => handlers[configIpc.CHANNELS.PREVIEW_MAPPING]({sender: trusted}, request);
-    try {
-        const sourcePath = 'X:\\115\\电影\\Alien\\Alien.mkv';
-        const cloudPath = '/CloudNAS/CloudDrive/115open/115/电影/Alien/Alien.mkv';
-        const withMount = await invoke({
-            sourcePath,
-            cloudPath,
-            mountPath: 'Z:\\115\\电影\\Alien\\Alien.mkv'
-        });
-        const withoutMount = await invoke({sourcePath, cloudPath, mountPath: ''});
-        const weakMount = await invoke({
-            sourcePath,
-            cloudPath,
-            mountPath: 'Z:\\Other\\Alien\\Alien.mkv'
-        });
-
-        assert.equal(withMount.status, 'MATCHED');
-        assert.equal(withMount.confidence, 'HIGH');
-        assert.equal(withMount.sourcePrefix, 'X:\\115');
-        assert.equal(withMount.cloudPrefix, '/CloudNAS/CloudDrive/115open/115');
-        assert.equal(withMount.mountStatus, 'MATCHED');
-        assert.equal(withMount.mountConfidence, 'HIGH');
-        assert.equal(withMount.mountPrefix, 'Z:\\115');
-        const mountedDraft = mappingAssistant.addDraftRule([], withMount, 'new-rule-smart-mounted');
-        assert.equal(mountedDraft.status, 'added');
-        assert.equal(mountedDraft.addedRule.sourcePrefix, 'X:\\115');
-        assert.equal(mountedDraft.addedRule.cloudPrefix, '/CloudNAS/CloudDrive/115open/115');
-        assert.equal(mountedDraft.addedRule.mountPrefix, 'Z:\\115');
-        assert.equal(configStore.normalizeRule(mountedDraft.addedRule).mountPrefix, 'Z:\\115');
-
-        assert.equal(withoutMount.status, 'MATCHED');
-        assert.equal(withoutMount.confidence, 'HIGH');
-        assert.equal(withoutMount.mountProvided, false);
-        assert.equal(withoutMount.mountPrefix, '');
-
-        assert.equal(weakMount.status, 'MATCHED');
-        assert.equal(weakMount.confidence, 'HIGH');
-        assert.equal(weakMount.sourcePrefix, 'X:\\115');
-        assert.equal(weakMount.cloudPrefix, '/CloudNAS/CloudDrive/115open/115');
-        assert.notEqual(weakMount.mountConfidence, 'HIGH');
-        assert.equal(weakMount.mountPrefix, '');
-        assert.equal(mappingAssistant.evaluatePreview(weakMount, []).canAdd, true);
-    } finally {
-        unregister();
-    }
-});
-
-test('only a collision-free HIGH preview can be added', () => {
-    const high = preview('MATCHED', 'HIGH');
-    const medium = preview('MATCHED', 'MEDIUM');
-    const low = preview('NO_MATCH', 'LOW', {sourcePrefix: undefined, cloudPrefix: undefined});
-    const unsafe = preview('UNSAFE', 'LOW', {sourcePrefix: undefined, cloudPrefix: undefined});
+    const existing = preview({
+        coverage: {status: 'FULLY_COVERED', mountStatus: 'MATCHED', ruleIds: ['existing'], reason: 'existing_cloud_coverage'},
+        suggestion: null
+    });
+    const medium = preview({
+        fileMatch: {status: 'MATCHED', confidence: 'MEDIUM', matchedSuffixSegments: 3},
+        boundary: {status: 'UNRESOLVED', confidence: 'LOW', reason: 'file_match_insufficient'},
+        suggestion: null
+    });
 
     assert.deepEqual(mappingAssistant.evaluatePreview(high, []), {
         canAdd: true,
         collision: mappingAssistant.COLLISION.NONE
     });
-    for (const value of [medium, low, unsafe]) {
+    for (const value of [singleSample, existing, medium]) {
         assert.deepEqual(mappingAssistant.evaluatePreview(value, []), {
             canAdd: false,
             collision: mappingAssistant.COLLISION.NONE
@@ -339,76 +252,62 @@ test('only a collision-free HIGH preview can be added', () => {
     }
 });
 
-test('Windows drive and UNC equivalents are duplicates while a different cloud target conflicts', () => {
-    const windowsPreview = preview('MATCHED', 'HIGH', {
-        sourcePrefix: 'd:/MEDIA/Movies',
-        cloudPrefix: '/115/Movies'
-    });
-    const windowsRule = {
-        sourcePrefix: 'D:\\media\\movies',
-        cloudPrefix: '/115/Movies'
-    };
-    const uncPreview = preview('MATCHED', 'HIGH', {
-        sourcePrefix: '\\\\NAS-One\\Share\\Movies',
-        cloudPrefix: '/115/Movies'
-    });
-    const uncRule = {
-        sourcePrefix: '//nas-one/share/movies',
-        cloudPrefix: '/115/Movies'
-    };
-
-    assert.equal(mappingAssistant.classifyCollision(windowsPreview, [windowsRule]), 'DUPLICATE');
-    assert.equal(mappingAssistant.classifyCollision(uncPreview, [uncRule]), 'DUPLICATE');
-    assert.deepEqual(mappingAssistant.evaluatePreview(windowsPreview, [{
-        sourcePrefix: 'D:\\Media\\Movies',
-        cloudPrefix: '/different/Movies'
-    }]), {
-        canAdd: false,
-        collision: 'CONFLICT'
-    });
+test('Windows fileMatch can be HIGH while a POSIX cloud case mismatch blocks Boundary HIGH', async () => {
+    const context = registerPreviewIpc();
+    try {
+        const first = sample('Season 1', 'Episode 01');
+        const second = sample('Season 2', 'Episode 01');
+        first.cloudPath = '/cloud/Anime/Show/season 1/Episode 01.mkv';
+        second.cloudPath = '/cloud/Anime/Show/season 2/Episode 01.mkv';
+        const response = await context.invoke({
+            samples: [first, second],
+            rules: []
+        });
+        assert.equal(response.status, 'ok');
+        assert.equal(response.preview.fileMatch.confidence, 'HIGH');
+        assert.notEqual(response.preview.boundary.confidence, 'HIGH');
+        assert.equal(response.preview.boundary.status, 'UNRESOLVED');
+        assert.equal(response.preview.boundary.reason, 'relative_suffix_mismatch');
+        assert.equal(response.preview.suggestion, null);
+    } finally {
+        context.unregister();
+    }
 });
 
-test('accepting one eligible suggestion creates exactly one USER draft without mutating existing rules', () => {
-    const existing = [{
-        id: 'existing',
-        sourcePrefix: 'D:\\Other',
-        mountPrefix: '',
-        cloudPrefix: '/other',
-        storageType: 'cloud-mount',
-        strategy: 'cloud-first',
-        order: ['direct-url', 'cd2-http', 'mount', 'native'],
-        originState: 'USER',
-        enabled: true
-    }];
+test('accepting a multi-sample HIGH preview creates one USER draft without mutating input rules', () => {
+    const existing = [rule({id: 'unrelated', sourcePrefix: 'D:\\Other', cloudPrefix: '/other'})];
     const before = structuredClone(existing);
-    const result = mappingAssistant.addDraftRule(
-        existing,
-        preview('MATCHED', 'HIGH'),
-        'new-rule-smart-fixture'
-    );
+    const result = mappingAssistant.addDraftRule(existing, preview(), 'new-rule-smart-fixture');
 
     assert.equal(result.status, 'added');
     assert.deepEqual(existing, before);
-    assert.equal(result.rules.length, 2);
     assert.deepEqual(result.addedRule, {
         id: 'new-rule-smart-fixture',
-        sourcePrefix: 'D:\\Media\\Movies',
-        mountPrefix: '',
-        cloudPrefix: '/115/Movies',
+        sourcePrefix: 'D:\\Library\\Anime\\Show',
+        mountPrefix: 'Z:\\Mounted\\Anime\\Show',
+        cloudPrefix: '/cloud/Anime/Show',
         storageType: 'cloud-mount',
         strategy: 'cloud-first',
         order: ['direct-url', 'cd2-http', 'mount', 'native'],
         originState: 'USER',
         enabled: true
     });
-    assert.deepEqual(result.rules[1], result.addedRule);
-
-    assert.equal(mappingAssistant.addDraftRule(result.rules, preview('MATCHED', 'HIGH'), 'another-id').status, 'duplicate');
-    assert.equal(mappingAssistant.addDraftRule(result.rules, preview('MATCHED', 'MEDIUM'), 'medium-id').status, 'ineligible');
+    assert.equal(mappingAssistant.addDraftRule(result.rules, preview(), 'another-id').status, 'duplicate');
 });
 
-test('an accepted draft reaches disk only through the existing explicit Save handler', async () => {
-    const root = temporaryRoot('ete-strm-mapping-save-');
+test('existing FULL/CLOUD/CONFLICT coverage never becomes addable', () => {
+    const full = preview({coverage: {status: 'FULLY_COVERED', mountStatus: 'MATCHED', ruleIds: ['full'], reason: 'existing_cloud_coverage'}, suggestion: null});
+    const cloud = preview({coverage: {status: 'CLOUD_COVERED', mountStatus: 'MOUNT_NOT_CONFIGURED', ruleIds: ['cloud'], reason: 'existing_cloud_coverage'}, suggestion: null});
+    const conflict = preview({coverage: {status: 'CONFLICT', mountStatus: 'CONFLICT', ruleIds: ['conflict'], reason: 'existing_mount_conflict'}, suggestion: null});
+
+    for (const value of [full, cloud, conflict]) {
+        assert.equal(mappingAssistant.isHighMatch(value), false);
+        assert.equal(mappingAssistant.addDraftRule([], value, 'blocked').status, 'ineligible');
+    }
+});
+
+test('explicit Save is the only persistence boundary for an accepted schema v1 draft', async () => {
+    const root = temporaryRoot('ete-strm-assistant-save-');
     const store = configStore.createStore({rootDir: root, environment: {}});
     const handlers = {};
     const trusted = {};
@@ -421,76 +320,35 @@ test('an accepted draft reaches disk only through the existing explicit Save han
         getWebContents: () => trusted
     });
     try {
-        const paths = store.getConfigPaths();
-        const beforePublic = store.getPublicConfig();
-        const beforeExists = fs.existsSync(paths.configPath);
-        const draft = mappingAssistant.addDraftRule(
-            beforePublic.rules,
-            preview('MATCHED', 'HIGH'),
-            'new-rule-smart-explicit-save'
-        );
-
+        const before = store.getPublicConfig();
+        const draft = mappingAssistant.addDraftRule(before.rules, preview(), 'new-rule-smart-save');
         assert.equal(draft.status, 'added');
-        assert.deepEqual(store.getPublicConfig(), beforePublic);
-        assert.equal(fs.existsSync(paths.configPath), beforeExists);
+        assert.deepEqual(store.getPublicConfig(), before);
 
-        const next = structuredClone(beforePublic);
-        next.rules = draft.rules;
-        const response = await handlers[configIpc.CHANNELS.SAVE]({sender: trusted}, {config: next});
-
+        const response = await handlers[configIpc.CHANNELS.SAVE]({sender: trusted}, {
+            config: Object.assign({}, before, {rules: draft.rules})
+        });
         assert.equal(response.status, 'saved');
         assert.equal(response.requiresRestart, true);
-        assert.equal(response.config.rules.length, 1);
-        assert.equal(response.config.rules[0].originState, 'USER');
-        assert.equal(response.config.rules[0].sourcePrefix, 'D:\\Media\\Movies');
-        assert.equal(response.config.rules[0].cloudPrefix, '/115/Movies');
-        assert.equal(response.config.rules[0].mountPrefix, null);
         assert.deepEqual(Object.keys(response.config).sort(), ['cd2', 'enabled', 'rules', 'version']);
-        assert.equal(response.config.smartMappings, undefined);
-        assert.equal(response.config.autoMappings, undefined);
-        assert.equal(response.config.learnedMappings, undefined);
-        assert.equal(fs.existsSync(paths.configPath), true);
+        assert.equal(response.config.version, 1);
+        assert.equal(response.config.rules[0].originState, 'USER');
+        assert.equal(response.config.rules[0].sourcePrefix, 'D:\\Library\\Anime\\Show');
+        assert.equal(response.config.rules[0].cloudPrefix, '/cloud/Anime/Show');
+        assert.equal(response.config.rules[0].mountPrefix, 'Z:\\Mounted\\Anime\\Show');
     } finally {
         unregister();
         fs.rmSync(root, {recursive: true, force: true});
     }
 });
 
-test('draft editing and removal stay local to copied arrays and objects', () => {
-    const originalRules = [{id: 'existing', sourcePrefix: 'D:\\Existing', cloudPrefix: '/existing'}];
-    const sourcePreview = preview('MATCHED', 'HIGH');
-    const firstDraft = mappingAssistant.createDraftRule(sourcePreview, 'new-rule-smart-edit');
-    const secondDraft = mappingAssistant.createDraftRule(sourcePreview, 'new-rule-smart-edit-2');
-    const working = originalRules.concat(firstDraft);
-
-    firstDraft.mountPrefix = 'X:\\Mounted';
-    firstDraft.strategy = 'mount-first';
-    firstDraft.order = ['mount', 'direct-url', 'cd2-http', 'native'];
-
-    assert.deepEqual(originalRules, [{id: 'existing', sourcePrefix: 'D:\\Existing', cloudPrefix: '/existing'}]);
-    assert.equal(sourcePreview.mountPrefix, '');
-    assert.equal(secondDraft.mountPrefix, '');
-    assert.equal(secondDraft.strategy, 'cloud-first');
-
-    const removed = mappingAssistant.removeDraftRule(working, 'new-rule-smart-edit');
-    assert.notEqual(removed, working);
-    assert.deepEqual(removed, originalRules);
-    assert.equal(working.length, 2);
-    assert.equal(working[1].mountPrefix, 'X:\\Mounted');
-});
-
-test('preview and accepted diagnostics use exact allowlists and omit raw path, URL, and token values', () => {
-    const raw = {
-        status: 'MATCHED',
-        confidence: 'HIGH',
-        matchedSuffixSegments: 4,
-        matchedParentSegments: 3,
-        reason: 'unique_long_suffix',
-        sourcePrefix: 'D:\\Private\\Movies',
-        cloudPrefix: '/115/Private/Movies',
-        url: 'https://example.test/file?token=raw-secret',
-        token: 'raw-secret'
-    };
+test('preview and accepted diagnostics use exact scalar allowlists only', () => {
+    const raw = Object.assign(preview(), {
+        sourcePath: 'D:\\Private\\Anime\\Show\\Season 1\\Episode 01.mkv',
+        cloudPath: '/cloud/Private/Anime/Show/Season 1/Episode 01.mkv',
+        token: 'raw-secret',
+        url: 'https://example.test/file?token=raw-secret'
+    });
     const previewRecord = mappingAssistant.diagnosticRecord('smart-path-mapping-preview', raw);
     const acceptedRecord = mappingAssistant.diagnosticRecord('smart-path-mapping-accepted', raw);
 
@@ -500,10 +358,12 @@ test('preview and accepted diagnostics use exact allowlists and omit raw path, U
         category: 'resolver',
         event: 'smart-path-mapping-preview',
         details: {
-            status: 'MATCHED',
-            confidence: 'HIGH',
+            coverageStatus: 'NOT_COVERED',
+            fileMatchConfidence: 'HIGH',
+            boundaryStatus: 'MATCHED',
+            boundaryConfidence: 'HIGH',
             matchedSuffixSegments: 4,
-            reason: 'unique_long_suffix'
+            reason: 'independent_branch_consensus'
         }
     });
     assert.deepEqual(acceptedRecord, {
@@ -512,40 +372,27 @@ test('preview and accepted diagnostics use exact allowlists and omit raw path, U
         category: 'resolver',
         event: 'smart-path-mapping-accepted',
         details: {
-            confidence: 'HIGH',
+            boundaryConfidence: 'HIGH',
             matchedSuffixSegments: 4
         }
     });
     assert.doesNotMatch(JSON.stringify([previewRecord, acceptedRecord]),
-        /D:\\\\Private|\/115\/Private|example\.test|raw-secret|sourcePrefix|cloudPrefix|mountPrefix|token|url/);
+        /Private|example\.test|raw-secret|sourcePath|cloudPath|sourcePrefix|cloudPrefix|mountPrefix|token|url/);
 });
 
-test('settings UI statically wires preview, draft-only acceptance, diagnostics, and explicit save', () => {
-    assert.match(settingsHtml, /class="ete-strm-assistant"/);
-    assert.match(settingsHtml, />STRM 源文件路径<\/label>/);
-    assert.match(settingsHtml, />CloudDrive2 文件路径<\/label>/);
-    assert.match(settingsHtml, />本地挂载文件路径（可选）<\/label>/);
-    assert.match(settingsHtml, /class="txtSmartSourcePath"/);
-    assert.match(settingsHtml, /class="txtSmartCloudPath"/);
-    assert.match(settingsHtml, /class="txtSmartMountPath"/);
-    assert.match(settingsHtml, /aria-describedby="ete-smart-source-help"/);
-    assert.match(settingsHtml, /aria-describedby="ete-smart-cloud-help"/);
-    assert.match(settingsHtml, /aria-describedby="ete-smart-mount-help"/);
-    assert.doesNotMatch(settingsHtml, />本地路径<\/label>|>云端路径<\/label>|本地前缀|云端前缀/);
+test('settings UI wires multi-sample preview, draft rules, stale sequence guards, and explicit Save', () => {
+    assert.match(settingsHtml, /class="smartSamples"/);
+    assert.match(settingsHtml, /class="smartSample/);
+    assert.match(settingsHtml, /class="btnAddSample"/);
     assert.match(settingsHtml, /class="btnAnalyzeMapping"/);
     assert.match(settingsHtml, /class="[^"\n]*btnAddSuggestedRule[^"\n]*"[^>]*disabled/);
     assert.match(settingsHtml, /type="submit"[^>]*class="[^"\n]*btnSave/);
-
     assert.match(settingsSource, /previewMapping:\s*'enhanced-strm-smart-mapping-preview'/);
-    assert.match(settingsSource, /diagnostics:\s*'enhanced-diagnostics-log'/);
-    assert.match(settingsSource, /sourcePath:\s*sourcePath/);
-    assert.match(settingsSource, /cloudPath:\s*cloudPath/);
-    assert.match(settingsSource, /mountPath:\s*mountPath/);
-    assert.match(settingsSource, /'STRM 源路径'/);
-    assert.match(settingsSource, /'本地挂载路径'/);
+    assert.match(settingsSource, /collectSamples\(view\)/);
+    assert.match(settingsSource, /samples:\s*samples/);
+    assert.match(settingsSource, /rules:\s*rules/);
     assert.match(settingsSource, /requestSequence\s*!==\s*this\.mappingRequestSequence/);
-    assert.match(settingsSource, /this\.draftRuleIds\[rule\.id\]\s*=\s*true/);
-    assert.doesNotMatch(settingsSource, /\/\^new-rule-\/\.test/);
+    assert.match(settingsSource, /this\.draftRuleIds\[result\.addedRule\.id\]\s*=\s*true/);
     assert.match(settingsSource, /\.textContent\s*=/);
     assert.doesNotMatch(settingsSource, /\.innerHTML\s*=/);
 
@@ -572,7 +419,7 @@ test('settings UI statically wires preview, draft-only acceptance, diagnostics, 
         'return SettingsView;'
     );
     assert.doesNotMatch(pauseSource, /CHANNELS\.save|saveSettings\s*\(|request\s*\(/);
-
-    assert.match(configIpcSource, /SAVE:\s*'enhanced-strm-config-save'/);
+    assert.match(configIpcSource, /samples/);
+    assert.match(configIpcSource, /rules/);
     assert.match(configIpcSource, /PREVIEW_MAPPING:\s*'enhanced-strm-smart-mapping-preview'/);
 });
