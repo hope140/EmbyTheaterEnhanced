@@ -116,7 +116,7 @@ suggestion      D:\Media\Movies → /115/Movies
 
 这避免把有业务意义的共同目录名从两侧 prefix 中同时剥掉。候选输入顺序不影响 unique-longest 结果；两个不同候选具有相同最长 suffix 时返回 `AMBIGUOUS`，不会按数组顺序选 winner。完全相同的候选只去重，不制造 ambiguity。
 
-## Confidence and safety model
+## Phase 1 file pair evidence
 
 | evidence | result |
 | --- | --- |
@@ -129,7 +129,7 @@ suggestion      D:\Media\Movies → /115/Movies
 | relative、traversal、empty segment、incomplete/非 POSIX cloud candidate | `UNSAFE / LOW` |
 | 推导后两侧 prefix 相同 | `NO_MATCH / LOW` |
 
-`HIGH` 只说明输入 pair 对 prefix relation 提供了强 segment evidence，不说明 cloud candidate 的来源可信、CD2 当前可见、目录已 hydration、provider identity 相同或生产 route 可以自动启用。
+这里的 `HIGH` 只说明两个完整路径的文件名和连续父目录高度吻合，是文件对应关系证据。一个样本可以对应多个同样有效的 prefix cut；它不能证明可复用映射边界。Phase 2.2 的用户助手另用多样本决定 `boundary.confidence`。
 
 ## Manual mapping authority
 
@@ -160,7 +160,9 @@ reason
 
 不包含 local path、cloud path、suggested prefixes、URL、token、headers 或媒体名。production `libmpv.playInternal()` 不调用该 preview，`resolveAsync()` 也不读取 inference result。
 
-## Phase 2 user-confirmed mapping assistant
+## Phase 2 and 2.1 historical assistant contract
+
+以下记录最初单样本助手的实现经过；当前可加入规则的条件以 Phase 2.2 为准。
 
 Phase 2.1 将助手输入明确为三个同一文件的完整路径：`STRM 源文件路径`、`CloudDrive2 文件路径` 与可选 `本地挂载文件路径`。source 是 STRM / Emby 中记录的路径，不是当前电脑挂载位置。页面不会扫描目录、调用 CD2、读取媒体库或自动发现候选。
 
@@ -168,7 +170,7 @@ renderer 通过 trusted settings IPC `enhanced-strm-smart-mapping-preview` 把�
 
 Mount inference 支持 Windows drive → Windows drive/UNC、UNC → Windows drive/UNC、POSIX → POSIX。它先以 cloud HIGH suggestion 固定 `sourcePrefix` 与相对 suffix，再从 mount full path 的末尾严格逐 segment 验证并剥离该 suffix，避免两个独立 longest-suffix 选出不同 anchor。仍禁止 substring、contains 与无边界 replace。
 
-页面只有在 `MATCHED/HIGH` 且当前 draft 没有 duplicate/conflict 时启用“加入路径规则”。`MEDIUM` 可以展示 suggestion，但按钮保持 disabled；`NO_MATCH`、`AMBIGUOUS`、`UNSAFE` 不提供可加入规则。Windows drive/UNC prefix equivalence 继续大小写不敏感，POSIX 与 cloud prefix 大小写敏感。
+Phase 2.1 曾仅凭单组 `MATCHED/HIGH` suffix 启用“加入路径规则”。真实样本证明该 HIGH 只适用于文件对应关系，因此 Phase 2.2 已撤销单样本新规则入口。Windows drive/UNC 比较大小写不敏感，POSIX 与 cloud prefix 大小写敏感。
 
 确认只把 suggestion 转成一个普通 version 1 `USER` rule：
 
@@ -180,7 +182,7 @@ strategy → cloud-first
 order → DirectUrl / CD2 HTTP / Mount / Native
 ```
 
-Cloud suggestion 只有 `MATCHED/HIGH` 才允许加入。mount 未填写时保持空；mount 未达 HIGH 时不阻断 cloud rule，preview 明确提示挂载映射未加入。该 rule 只进入页面现有 `rules[]` draft/editor。用户可以继续编辑或移除，只有点击原有“保存设置”后才通过 `enhanced-strm-config-save → store.save() → normalizeRule()` 持久化并要求重启。页面离开时不再隐式保存，普通规则的删除、AUTO disable/restore 也先进入 draft；assistant 不调用 `applyDiscovery()`，也没有第二套 schema。
+确认后的 rule 只进入页面现有 `rules[]` draft/editor。用户可以继续编辑或移除，只有点击原有“保存设置”后才通过 `enhanced-strm-config-save → store.save() → normalizeRule()` 持久化并要求重启。页面离开时不隐式保存，普通规则的删除、AUTO disable/restore 也先进入 draft；assistant 不调用 `applyDiscovery()`，也没有第二套 schema。
 
 Phase 2.1 不迁移、不猜测、也不自动修正既有 persisted rules。已有错误规则只能由用户在 editor 中删除或修改并显式保存。
 
@@ -189,11 +191,25 @@ duplicate 表示 equivalent `sourcePrefix` 与相同 `cloudPrefix` 已存在；c
 diagnostics 使用现有 trusted structured-log channel，只发送白名单 scalar：
 
 ```text
-smart-path-mapping-preview: status, confidence, matchedSuffixSegments, reason
-smart-path-mapping-accepted: confidence, matchedSuffixSegments
+smart-path-mapping-preview: coverageStatus, fileMatchConfidence, boundaryStatus, boundaryConfidence, matchedSuffixSegments, reason
+smart-path-mapping-accepted: boundaryConfidence, matchedSuffixSegments
 ```
 
 事件不包含 raw input、canonical prefix、URL、Token、credential 或 rule body。`accepted` 只表示用户把 HIGH suggestion 加入本地 draft，不表示已保存、已重启或 production route 已启用。
+
+## Phase 2.2 boundary model
+
+当前助手最多接收 8 组用户手工提供的对应文件。每组包含 STRM source、CloudDrive2 absolute POSIX path 和可选 mount path。main-process trusted preview IPC 只调用 `smart-mapping-boundary.js` 纯函数；响应分为 `coverage`、`fileMatch`、`boundary`、`mount` 与可选 `suggestion`。诊断只记录固定枚举和计数，不含任何路径或规则正文。
+
+判定顺序固定：
+
+1. 对每组 source 按正式 sourcePrefix 的路径种类、目录边界、大小写和最长前缀规则选择当前页面的 eligible `rules[]`。用既有 `replacePrefix` 形成 cloud/mount 预期路径，再按目标路径语义做 canonical 精确比较。所有样本被已有规则解释时返回 `FULLY_COVERED` 或 `CLOUD_COVERED`，显示命中的规则，不生成新建议。已选规则与样本矛盾、部分样本落入不同覆盖状态，或 DISABLED tombstone 抑制同一边界时返回 `CONFLICT`。
+2. `matchFilePair()` 只评估同一文件的 suffix evidence。文件名和至少三个连续父目录一致可得 `fileMatch=MATCHED/HIGH`，与新规则边界无关。
+3. 一组样本即使 fileMatch HIGH，`boundary=INSUFFICIENT_EVIDENCE/LOW`。用户需补充另一组不同目录的同源文件。
+4. `inferMappingBoundaryFromSamples()` 在至少两组独立目录样本上，分别求 source/cloud 的最深安全公共父目录。该最深公共父目录是唯一的最大特异候选；要求两侧在其下都有不同第一层目录分叉、不是 root-only，且每组完整相对 suffix 精确一致。CloudDrive2 始终按 POSIX 大小写验证。全部成立才返回 `boundary=MATCHED/HIGH`。
+5. `inferMountBoundaryFromSamples()` 使用已确定的同一 sourcePrefix，从每组 source 得到 relative suffix，并逐段验证 mount 完整路径。所有 mount 样本支持同一非 root mountPrefix 时才给 `mount=MATCHED/HIGH`；缺失、不安全或不一致的 mount 样本只使建议的 `mountPrefix` 保持空，不提升也不降低 cloud boundary。当前 Windows 客户端允许 POSIX STRM source → Windows drive/UNC Mount target；正式 `replacePrefix()` 支持这种跨目标路径类型的映射。Windows drive/UNC source → POSIX Mount target 在当前客户端不生成 HIGH。
+
+真实问题回归：既有 `sourcePrefix=/CloudNAS/CloudDrive/115open/115`、`cloudPrefix=/115open/115`、`mountPrefix=X:\115` 已精确解释 `/番剧/A/file.mkv` 样本。preview 为 `FULLY_COVERED`，不会再生成更宽的 `/CloudNAS/CloudDrive/115open → /115open` 规则。没有现有规则时，只有两组跨 `番剧/电影` 分叉的样本才能把 boundary 升为 HIGH。同目录仅换文件名不是独立目录证据。
 
 ## Production activation boundary
 
@@ -207,11 +223,11 @@ smart-path-mapping-accepted: confidence, matchedSuffixSegments
 
 ### C. When can confidence be HIGH?
 
-输入必须全部通过严格 path parsing；没有 matching manual mapping；只有一个 longest candidate；filename 与至少三个连续父目录 segment 匹配；prefix 可区分；没有 traversal、relative、empty segment、incomplete candidate 或 root/share ambiguity。
+文件对应关系 HIGH：每组 filename 与至少三个连续父目录 segment 匹配。映射边界 HIGH：至少两组不同目录的样本、source/cloud 最深非 root 公共父目录各自唯一、两侧都有目录分叉、所有相对 suffix 精确一致、没有已覆盖或冲突的现有规则；单组样本不能达到边界 HIGH。
 
 ### D. When is user confirmation required?
 
-所有 suggestion 在正式写入前都应由用户确认。`MEDIUM`、任何多候选、不同 root kind、来源无法证明、manual conflict 或候选不完整尤其不能自动启用。`AMBIGUOUS`、`NO_MATCH` 和 `UNSAFE` 不应提供可应用 mapping。
+只有 boundary HIGH 的 suggestion 才能由用户加入页面草稿；用户仍需显式点击 Save。文件匹配 HIGH 但 boundary 不足时只展示证据。`CONFLICT`、`UNRESOLVED`、`UNSAFE` 不产生可加入规则。
 
 ### E. Safest Phase 2 integration point
 

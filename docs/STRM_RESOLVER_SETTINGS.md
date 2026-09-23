@@ -153,9 +153,9 @@ enhanced-strm-rule-disable
 
 路径规则区下方提供“智能映射助手”。用户输入同一媒体的 `STRM 源文件路径`、`CloudDrive2 文件路径` 和可选 `本地挂载文件路径`。STRM source 是 `MediaSource.Path` identity，不是当前电脑挂载位置。分析由 main-process `enhanced-strm-smart-mapping-preview` 调用 pure engine；不调用 CD2、Resolver 或 filesystem，不读取 Token，不保存 config，也不自动发现路径。
 
-页面只允许 `MATCHED/HIGH` suggestion 加入 draft。`MEDIUM` 仅展示并提示提供更深目录样本；`NO_MATCH`、`AMBIGUOUS`、`UNSAFE` 禁止加入。与当前 draft 中 equivalent source prefix + same cloud prefix 重复时提示已存在；equivalent source prefix 指向不同 cloud prefix 时提示冲突。manual rule 不会被覆盖。
+页面先检查当前 `rules[]` 是否已经按正式最长前缀规则精确解释全部样本。已覆盖或冲突时显示命中规则，不推导新规则。单组样本即使 `fileMatch=HIGH`，`boundary` 仍为证据不足；用户可添加另一组不同目录下的同源文件。只有至少两组独立目录样本的 source/cloud 最深非 root 公共父目录及每组相对 suffix 一致，`boundary=MATCHED/HIGH`，才允许加入 draft。当前 draft 中 duplicate/conflict 继续阻断加入，manual rule 不会被覆盖。
 
-CloudDrive2 mapping 只有 HIGH 才能加入。可选 mount sample 通过独立 HIGH gate 时写入 `mountPrefix`；mount 证据不足时仍允许加入 cloud rule，但 `mountPrefix` 保持空并显示 warning。确认后的 suggestion 复用现有 version 1 rule editor，创建普通 `USER` rule；用户仍可修改、移除，并必须点击“保存设置”才调用原 `SAVE → store.save() → normalizeRule()` 流程。页面离开不自动保存；普通规则删除和 AUTO disable/restore 同样先留在 draft。`applyDiscovery()` 不参与本流程，schema 仍只有 `rules[]`，也不自动迁移既有规则。
+Mount 使用同一 sourcePrefix 和多组 relative suffix；Mount 证据不足时仍允许已证明的 cloud boundary 形成 cloud-only rule，但 `mountPrefix` 保持空并显示 warning。确认后的 suggestion 复用现有 version 1 rule editor，创建普通 `USER` rule；用户仍可修改、移除，并必须点击“保存设置”才调用原 `SAVE → store.save() → normalizeRule()` 流程。页面离开不自动保存；普通规则删除和 AUTO disable/restore 同样先留在 draft。`applyDiscovery()` 不参与本流程，schema 仍只有 `rules[]`，也不自动迁移既有规则。
 
 ## Verification boundary
 

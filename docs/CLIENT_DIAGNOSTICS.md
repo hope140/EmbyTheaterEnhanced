@@ -49,7 +49,7 @@ IPC 也保持两条明确边界：`enhanced-diagnostics` 只接收旧的 mpv pro
 
 CD2 resolve 事件只记录 request id、rule id、mode、candidate 数量、reason、耗时、timeout/cancelled 状态和安全的 `sourceKind`。阶段 timing 事件只记录 `mode` 与从该次 CD2 resolve 开始计算的 `elapsedMs`；不记录 Path、URL、token 或 RPC 参数。Mount 事件只记录 request id、rule id、candidate 数量、reason、`localExists` 与 `mappedPathHash`。
 
-Smart Mapping preview 只记录 `status`、`confidence`、`matchedSuffixSegments` 和 `reason`；用户把 HIGH suggestion 加入页面 draft 时，accepted 事件只记录 `confidence` 和 `matchedSuffixSegments`。两类事件都不记录 raw local/cloud path、canonical prefix、URL、Token 或完整 rule；accepted 也不代表 config 已保存或 production route 已改变。
+Smart Mapping preview 只记录 `coverageStatus`、`fileMatchConfidence`、`boundaryStatus`、`boundaryConfidence`、`matchedSuffixSegments` 和安全 `reason` 枚举；用户把 Boundary HIGH suggestion 加入页面 draft 时，accepted 事件只记录 `boundaryConfidence` 和 `matchedSuffixSegments`。两类事件都不记录 raw STRM/cloud/mount path、canonical prefix、URL、Token 或完整 rule；accepted 也不代表 config 已保存或 production route 已改变。
 
 ## Resolver route meanings
 

@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-09-23 — STRM Smart Path Mapping Phase 2.2 boundary model
+
+用户实际样本揭示单组 suffix HIGH 只支持文件对应关系，不能确定可复用 prefix 切点。本分支新增 pure `smart-mapping-boundary.js`，preview 顺序为现有 `rules[]` coverage、fileMatch、multi-sample boundary、optional mount。真实 P1/P2/P3 形态：已有 `/CloudNAS/CloudDrive/115open/115 → /115open/115 → X:\115` 规则对 `/番剧/A/file.mkv` 样本返回 `FULLY_COVERED`、显示已有规则且不生成 suggestion。
+
+单组样本 fileMatch 可以 HIGH，boundary 固定不足；多组样本必须跨不同目录分叉，source/cloud 最深非 root 公共父目录各自唯一，每组相对 suffix 按目标路径语义一致，才能得到 boundary HIGH。同目录仅换文件名不够。Mount 使用同一 sourcePrefix 验证多组路径；Mount 证据不足不会改变已证明的 cloud boundary。现有手工规则按正式最长前缀优先，cloud/mount conflict 与 DISABLED tombstone 均阻止新规则。设置页最多 8 组样本，保留 schema v1 `rules[]` 和显式 Save；生产播放链未修改。
+
+Focused Smart Mapping/coverage/Settings/Resolver/diagnostics `123/123 PASS`，`npm test 285/285 PASS`，JS syntax 与 `git diff --check` PASS。后台 runtime `2139` files，pinned Electron 44.4.2、source、Native Helper、runtime provenance 与 package `-VerifyOnly` 均 PASS；最终文档提交后会从最终 HEAD 再构建并核对 source commit。前台 UI、真实 Emby/CD2、安装均未执行。
+
 ## 2026-09-22 — STRM Smart Path Mapping Phase 2.1 path semantics fix
 
 修正 Phase 2 中“本地路径/云端路径”的产品语义歧义。正式 UI 与帮助文本现在明确区分：STRM 源文件路径是 STRM / Emby `MediaSource.Path` 中记录的原始路径；CloudDrive2 文件路径是同一文件的逻辑路径；本地挂载文件路径是当前客户端实际可访问、供 Mount fallback 使用的可选路径。正式 rule card 同样显示 `STRM 源路径 / CloudDrive2 路径 / 本地挂载路径`，空 mount 明确为“未配置”。

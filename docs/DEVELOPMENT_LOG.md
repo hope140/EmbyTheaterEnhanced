@@ -1,5 +1,21 @@
 # 开发日志
 
+## 2026-09-23 — STRM Smart Path Mapping Phase 2.2 boundary model fix
+
+基于 `codex/strm-smart-path-mapping@e9b698d935163b1e5a98fa0b0b2de384c49ca870` 复核真实 P1/P2/P3 样本，确认 Phase 2.1 将单组文件 suffix HIGH 错当为映射边界 HIGH。新增独立 pure `smart-mapping-boundary.js`：先按正式 longest-prefix 与 source/cloud/mount path semantics 检查当前 `rules[]`，返回 `FULLY_COVERED`、`CLOUD_COVERED`、`NOT_COVERED` 或 `CONFLICT`；再分别返回 `fileMatch` 和 `boundary`。现有规则完整覆盖时不产生 suggestion。
+
+新规则至少需要两组不同目录样本。source/cloud 分别求最深安全公共父目录，拒绝 root-only、同目录换文件名、相对 suffix 不一致、POSIX cloud case mismatch 与 disabled tombstone；只有每组 fileMatch HIGH 且 boundary 跨目录稳定时才允许加入一个普通 `USER` rule draft。Mount 使用同一 sourcePrefix 验证多组相对路径，不能另选 source anchor。Settings UI 可添加有界样本，旧 async response 在样本或规则变化后被丢弃。preview IPC 只读，不调用 CD2、Resolver、config save；生产播放链未变。
+
+Model Tier: Tier 2
+
+Model: GPT-6 (host-assigned after model switch; requested GPT-5.6 Sol High)
+
+Reason: cross-layer mapping boundary, trusted preview IPC and manual-rule authority without playback changes
+
+Escalated: No deliberate escalation
+
+Focused Smart Mapping/coverage/Settings/Resolver/diagnostics `123/123 PASS`；`npm test 285/285 PASS`；JS syntax 与 `git diff --check` PASS。后台 runtime `2139` files，pinned Electron 44.4.2、source、Native Helper、runtime provenance 与 package `-VerifyOnly` PASS；最终文档提交后从最终 HEAD 再构建并核对 source commit。foreground/native UI、真实 Emby/CD2 和安装均未执行。
+
 ## 2026-09-22 — STRM Smart Path Mapping Phase 2.1 path semantics fix
 
 继续 `codex/strm-smart-path-mapping`，从 final Phase 2 `c5f937faffc223952fef7c9cac8113f7b6104a12` 开始。用户实测确认“本地路径”被自然理解为当前电脑挂载路径，因此本轮把产品 contract 固定为三种 identity：`sourcePrefix=STRM/Emby MediaSource.Path`、`cloudPrefix=CloudDrive2 logical path`、`mountPrefix=current client filesystem mount`。规则卡、助手 labels、helper text 与 preview 全部使用该语义；未导入 settings UX 分支。

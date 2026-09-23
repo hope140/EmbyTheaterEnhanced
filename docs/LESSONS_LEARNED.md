@@ -1,5 +1,14 @@
 # 已确认经验
 
+## 2026-09-23 — File match and mapping boundary are different evidence
+
+- 单组完整路径的 filename 与多层父目录吻合，只能提高“是否对应同一文件”的可信度；将共同 suffix 的第一个目录保留在 prefix 中是候选算法，不是可复用边界证明。旧 Phase 1 pure API 保留作观察证据，Settings admission 另由多样本边界模型决定。
+- 手工规则 coverage 必须先于新规则推导。用正式 sourcePrefix 最长前缀选中规则后，按 source 相对路径分别映射至 cloud/mount 并在目标 path kind 下精确比较；否则同一样本会被建议一条更宽、与现有规则重叠的规则。
+- 多样本边界取 source/cloud 各自最深非 root 公共父目录，并要求两侧在其下出现目录分叉，且每组相对路径一致。同目录两个文件不能升级边界可信度。CloudDrive2 相对路径必须按 POSIX 大小写校验，即使 source 为 Windows。
+- Mount 边界使用 cloud 已确认的同一个 sourcePrefix。可选 Mount 输入不足或不安全时，只拒绝 Mount prefix；已证明的 cloud prefix 仍可进入用户确认草稿。
+- `MediaSource.Path` 可以是 POSIX，而当前 Windows 客户端的 Mount 是 drive/UNC。path kind 不必相同；应按 source 提取 relative suffix，再按 mount target 的大小写语义核对，并以现有 `replacePrefix()` 验证完整输出。不能把历史 POSIX→POSIX 的纯推导限制直接套在真实 POSIX→Windows Mount 上。
+- 批量 preview 在任何样本、规则草稿、增删样本变化后使旧结果失效。诊断只保留 coverage/file/boundary 枚举和计数，不能把输入路径、规则或 suggestion 放入日志。
+
 ## 2026-09-22 — STRM source, cloud and mount identities
 
 - `sourcePrefix` 的“source”指 STRM / Emby 中记录的 `MediaSource.Path`，可能是历史盘符或服务器路径；只有 `mountPrefix` 才表示当前客户端 filesystem 可访问位置。把前者叫“本地路径”会稳定诱导用户填错字段。
