@@ -1,5 +1,21 @@
 # 开发日志
 
+## 2026-09-23 — STRM Rules CloudDrive2 connection status desync fix
+
+在 `codex/strm-smart-path-mapping@ce92f6c6b8f05545ca6379212e5d0b4787186023` 上审计设置页。顶部“测试连接”来自 main 的 `createTestService().testConnection()`，会执行有界 readiness 与 `FindFileByPath('/')` 探针；规则卡 `TEST_RULE` 只检查保存规则的 Mount 路径与 source→cloud 前缀映射格式。renderer 原来把 `mapped` 固定显示为“未连接服务”，没有传播连接测试结果。
+
+修复后 main 设置 IPC 统一保存带 revision 的 `unknown/checking/connected/failed` 快照。连接测试成功/失败、重试、乱序返回、配置或 Token 变更都按同一快照处理；规则卡的格式检查和连接状态分开。页面只读获取快照，连接测试完成后刷新所有可见规则卡。未修改生产 CD2 service、Resolver、DirectUrl、Mount、Native、PlaybackManager、Session 或 Electron/window。
+
+Model Tier: Tier 2
+
+Model: GPT-6 (current host)
+
+Reason: trusted main-process IPC and asynchronous status ordering across settings UI
+
+Escalated: No deliberate escalation
+
+验证：STRM Settings/connection UI/client diagnostics/CD2 focused `77/77 PASS`；`git diff --check`、修改 JS syntax PASS。首次 `npm test 295/296` 时，既有 `report-playback-issue` 自测的“程序未运行”前提与仍在运行的旧测试 runtime 冲突；用户正常退出该 runtime 后，全量复测 `npm test 296/296 PASS`。未改诊断工具；前台 Settings UI 与真实 CD2 服务未由本任务执行。
+
 ## 2026-09-23 — STRM Smart Path Mapping Phase 2.2 boundary model fix
 
 基于 `codex/strm-smart-path-mapping@e9b698d935163b1e5a98fa0b0b2de384c49ca870` 复核真实 P1/P2/P3 样本，确认 Phase 2.1 将单组文件 suffix HIGH 错当为映射边界 HIGH。新增独立 pure `smart-mapping-boundary.js`：先按正式 longest-prefix 与 source/cloud/mount path semantics 检查当前 `rules[]`，返回 `FULLY_COVERED`、`CLOUD_COVERED`、`NOT_COVERED` 或 `CONFLICT`；再分别返回 `fileMatch` 和 `boundary`。现有规则完整覆盖时不产生 suggestion。

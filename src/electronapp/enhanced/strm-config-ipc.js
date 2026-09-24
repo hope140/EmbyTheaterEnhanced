@@ -12,6 +12,7 @@ const CHANNELS = Object.freeze({
     SET_TOKEN: 'enhanced-strm-token-set',
     CLEAR_TOKEN: 'enhanced-strm-token-clear',
     TEST_CONNECTION: 'enhanced-strm-cd2-test-connection',
+    GET_CONNECTION_STATUS: 'enhanced-strm-cd2-connection-status',
     TEST_RULE: 'enhanced-strm-rule-test',
     PREVIEW_MAPPING: 'enhanced-strm-smart-mapping-preview',
     RESTORE_AUTO: 'enhanced-strm-rule-restore-auto',
@@ -33,6 +34,17 @@ function register(options) {
     const fileSystem = settings.fs || fs;
     const createTestService = settings.createTestService;
     const handlers = [];
+    let connectionStatus = 'unknown';
+    let connectionRevision = 0;
+
+    function connectionSnapshot() {
+        return {connectionStatus: connectionStatus, connectionRevision: connectionRevision};
+    }
+
+    function invalidateConnectionStatus() {
+        connectionRevision++;
+        connectionStatus = 'unknown';
+    }
 
     function isTrusted(event) {
         const expected = typeof getWebContents === 'function' ? getWebContents() : null;
@@ -56,25 +68,41 @@ function register(options) {
             ? request.config
             : request;
         try {
-            return {status: 'saved', requiresRestart: true, config: store.save(config)};
+            const saved = store.save(config);
+            invalidateConnectionStatus();
+            return Object.assign({status: 'saved', requiresRestart: true, config: saved}, connectionSnapshot());
         } catch (error) {
             return {status: 'error', reason: errorReason(error)};
         }
     }
 
     async function testConnection() {
+        const attemptRevision = ++connectionRevision;
+        connectionStatus = 'checking';
         let service;
+        let response;
         try {
             service = typeof createTestService === 'function' ? createTestService() : settings.service;
             if (!service || typeof service.testConnection !== 'function') {
-                return {status: 'incomplete', reason: 'service_unavailable'};
+                response = {status: 'incomplete', reason: 'service_unavailable'};
+            } else {
+                response = await service.testConnection();
             }
-            return await service.testConnection();
         } catch (_) {
-            return {status: 'connection_failed', reason: 'connection_failed'};
+            response = {status: 'connection_failed', reason: 'connection_failed'};
         } finally {
-            if (service && service !== settings.service && typeof service.close === 'function') service.close();
+            try {
+                if (service && service !== settings.service && typeof service.close === 'function') service.close();
+            } catch (_) { /* Connection status must still settle. */ }
         }
+        if (!response || !['ok', 'auth_failed', 'connection_failed', 'incomplete'].includes(response.status)) {
+            response = {status: 'connection_failed', reason: 'connection_failed'};
+        }
+        if (attemptRevision !== connectionRevision) {
+            return Object.assign({status: 'stale', reason: 'superseded'}, connectionSnapshot());
+        }
+        connectionStatus = response && response.status === 'ok' ? 'connected' : 'failed';
+        return Object.assign({}, response, connectionSnapshot());
     }
 
     function testRule(request) {
@@ -82,7 +110,7 @@ function register(options) {
         let mountStatus = 'not_configured';
         let cloudStatus = 'not_configured';
 
-        if (!rule) return {status: 'error', reason: 'rule_not_found'};
+        if (!rule) return Object.assign({status: 'error', reason: 'rule_not_found'}, connectionSnapshot());
         if (rule.mountPrefix) {
             if (process.platform === 'win32' && pathRules.isPosixPath(rule.mountPrefix)) {
                 mountStatus = 'unsupported_path';
@@ -101,12 +129,12 @@ function register(options) {
                 : 'invalid';
         }
 
-        return {
+        return Object.assign({
             status: mountStatus === 'missing' || mountStatus === 'unavailable' ? 'warning' : 'ok',
             ruleId: rule.id,
             mount: mountStatus,
             cloud: cloudStatus
-        };
+        }, connectionSnapshot());
     }
 
     function previewMapping(request) {
@@ -145,17 +173,22 @@ function register(options) {
     registerHandler(CHANNELS.GET, function () {
         return store.getPublicConfig();
     });
+    registerHandler(CHANNELS.GET_CONNECTION_STATUS, connectionSnapshot);
     registerHandler(CHANNELS.SAVE, saveRequest);
     registerHandler(CHANNELS.SET_TOKEN, function (request) {
         try {
-            return {status: 'saved', requiresRestart: true, config: store.setToken(request && request.token)};
+            const saved = store.setToken(request && request.token);
+            invalidateConnectionStatus();
+            return Object.assign({status: 'saved', requiresRestart: true, config: saved}, connectionSnapshot());
         } catch (error) {
             return {status: 'error', reason: errorReason(error)};
         }
     });
     registerHandler(CHANNELS.CLEAR_TOKEN, function () {
         try {
-            return {status: 'saved', requiresRestart: true, config: store.clearToken()};
+            const saved = store.clearToken();
+            invalidateConnectionStatus();
+            return Object.assign({status: 'saved', requiresRestart: true, config: saved}, connectionSnapshot());
         } catch (_) {
             return {status: 'error', reason: 'invalid_config'};
         }

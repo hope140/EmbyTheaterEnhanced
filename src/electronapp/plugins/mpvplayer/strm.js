@@ -7,6 +7,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         setToken: 'enhanced-strm-token-set',
         clearToken: 'enhanced-strm-token-clear',
         testConnection: 'enhanced-strm-cd2-test-connection',
+        getConnectionStatus: 'enhanced-strm-cd2-connection-status',
         testRule: 'enhanced-strm-rule-test',
         previewMapping: 'enhanced-strm-smart-mapping-preview',
         diagnostics: 'enhanced-diagnostics-log',
@@ -75,6 +76,13 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
     function setStatus(node, text, isError) {
         node.textContent = text || '';
         node.setAttribute('role', isError ? 'alert' : 'status');
+    }
+
+    function connectionText(status) {
+        if (status === 'connected') return '已连接';
+        if (status === 'failed') return '连接失败';
+        if (status === 'checking') return '正在测试连接';
+        return '尚未测试';
     }
 
     function confidenceText(value) {
@@ -298,7 +306,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         }
     }
 
-    function renderRule(rule, isDraftRule) {
+    function renderRule(rule, isDraftRule, connectionStatus) {
         var card = element('article', 'ete-strm-rule-card');
         var heading = element('div', 'ete-strm-rule-heading');
         var title = element('span', 'ete-strm-rule-title', rule.sourcePrefix || '新建路径规则');
@@ -312,6 +320,8 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         var restoreButton = element('button', null, '恢复自动配置');
         var disableButton = element('button', null, isDraftRule ? '移除草稿' : (rule.originState === 'DISABLED' ? '保持抑制' : '禁用/删除'));
         var result = element('span', 'ete-strm-rule-test secondaryText');
+        var connection = element('span', 'ete-strm-rule-connection secondaryText',
+            'CloudDrive2 最近测试：' + connectionText(connectionStatus));
         result.setAttribute('role', 'status');
         result.setAttribute('aria-live', 'polite');
 
@@ -355,6 +365,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         if (rule.originState !== 'AUTO') actions.appendChild(restoreButton);
         actions.appendChild(disableButton);
         actions.appendChild(result);
+        actions.appendChild(connection);
         card.appendChild(actions);
         updateOrderPreview(card);
 
@@ -367,7 +378,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         return card;
     }
 
-    function renderConfig(view, config, draftRuleIds) {
+    function renderConfig(view, config, draftRuleIds, connectionStatus) {
         var list = view.querySelector('.rulesList');
         view.querySelector('.chkEnabled').checked = config.enabled === true;
         view.querySelector('.chkCd2Enabled').checked = config.cd2.enabled === true;
@@ -380,7 +391,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             list.appendChild(element('div', 'ete-strm-empty secondaryText', '尚未配置路径规则。添加一条规则后，STRM 将按最长前缀匹配。'));
         } else {
             config.rules.forEach(function (rule) {
-                list.appendChild(renderRule(rule, !!(draftRuleIds && draftRuleIds[rule.id])));
+                list.appendChild(renderRule(rule, !!(draftRuleIds && draftRuleIds[rule.id]), connectionStatus));
             });
         }
     }
@@ -454,6 +465,9 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         this.draftRuleIds = Object.create(null);
         this.mappingRequestSequence = 0;
         this.nextSampleId = 2;
+        this.connectionStatus = 'unknown';
+        this.connectionRevision = -1;
+        this.connectionRequestSequence = 0;
         view.querySelector('form').addEventListener('submit', function (event) {
             event.preventDefault();
             this.saveSettings();
@@ -464,7 +478,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             var rule = newRule(this.config.rules);
             this.config.rules.push(rule);
             this.draftRuleIds[rule.id] = true;
-            renderConfig(view, this.config, this.draftRuleIds);
+            renderConfig(view, this.config, this.draftRuleIds, this.connectionStatus);
             this.invalidateAssistant();
             var inputs = view.querySelectorAll('.rule-sourcePrefix');
             if (inputs.length) inputs[inputs.length - 1].focus();
@@ -512,6 +526,39 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
 
     Object.assign(SettingsView.prototype, BaseView.prototype);
 
+    SettingsView.prototype.refreshRuleConnectionCards = function () {
+        var label = 'CloudDrive2 最近测试：' + connectionText(this.connectionStatus);
+        Array.prototype.forEach.call(this.view.querySelectorAll('.ete-strm-rule-connection'), function (node) {
+            node.textContent = label;
+        });
+    };
+
+    SettingsView.prototype.applyConnectionSnapshot = function (response) {
+        if (!response || !Number.isSafeInteger(response.connectionRevision) ||
+            response.connectionRevision < this.connectionRevision ||
+            ['unknown', 'checking', 'connected', 'failed'].indexOf(response.connectionStatus) < 0) return false;
+        this.connectionRevision = response.connectionRevision;
+        this.connectionStatus = response.connectionStatus;
+        var state = this.view.querySelector('.connectionState');
+        setStatus(state, 'CloudDrive2 最近测试：' + connectionText(this.connectionStatus), this.connectionStatus === 'failed');
+        this.refreshRuleConnectionCards();
+        return true;
+    };
+
+    SettingsView.prototype.refreshConnectionStatus = function () {
+        var requestSequence = ++this.connectionRequestSequence;
+        return request(CHANNELS.getConnectionStatus).then(function (snapshot) {
+            if (requestSequence !== this.connectionRequestSequence) return;
+            this.applyConnectionSnapshot(snapshot);
+        }.bind(this)).catch(function () {
+            if (requestSequence !== this.connectionRequestSequence) return;
+            this.connectionStatus = 'unknown';
+            this.connectionRevision = -1;
+            setStatus(this.view.querySelector('.connectionState'), 'CloudDrive2 最近测试：状态不可用', true);
+            this.refreshRuleConnectionCards();
+        }.bind(this));
+    };
+
     SettingsView.prototype.invalidateAssistant = function () {
         this.mappingRequestSequence++;
         this.assistantPreview = null;
@@ -528,8 +575,9 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             }
             this.config = clone(config);
             this.draftRuleIds = Object.create(null);
-            renderConfig(view, this.config, this.draftRuleIds);
+            renderConfig(view, this.config, this.draftRuleIds, this.connectionStatus);
             this.invalidateAssistant();
+            this.refreshConnectionStatus();
             setStatus(view.querySelector('.saveState'), '', false);
             loading.hide();
             return config;
@@ -554,8 +602,11 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             }
             this.config = clone(response.config);
             this.draftRuleIds = Object.create(null);
-            renderConfig(view, this.config, this.draftRuleIds);
+            renderConfig(view, this.config, this.draftRuleIds, this.connectionStatus);
             this.invalidateAssistant();
+            this.connectionRequestSequence++;
+            this.applyConnectionSnapshot(response);
+            view.querySelector('.btnTestConnection').disabled = false;
             setStatus(view.querySelector('.saveState'), response.requiresRestart ? '已保存，重启应用后播放链生效。' : '设置已保存。', false);
         }.bind(this)).catch(function () {
             setStatus(view.querySelector('.saveState'), '保存失败，请检查配置服务。', true);
@@ -582,6 +633,9 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             this.config = clone(response.config);
             input.value = '';
             view.querySelector('.tokenState').textContent = '已配置 ········';
+            this.connectionRequestSequence++;
+            this.applyConnectionSnapshot(response);
+            view.querySelector('.btnTestConnection').disabled = false;
             setStatus(view.querySelector('.saveState'), 'Token 已保存，重启应用后播放链生效。', false);
         }.bind(this)).catch(function () {
             setStatus(view.querySelector('.saveState'), 'Token 保存失败。', true);
@@ -599,6 +653,9 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             }
             this.config = clone(response.config);
             this.view.querySelector('.tokenState').textContent = '未配置';
+            this.connectionRequestSequence++;
+            this.applyConnectionSnapshot(response);
+            this.view.querySelector('.btnTestConnection').disabled = false;
             setStatus(this.view.querySelector('.saveState'), 'Token 已清除，重启应用后播放链生效。', false);
         }.bind(this)).catch(function () {
             setStatus(this.view.querySelector('.saveState'), 'Token 清除失败。', true);
@@ -646,7 +703,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         next.rules = result.rules;
         this.config = next;
         this.draftRuleIds[result.addedRule.id] = true;
-        renderConfig(view, this.config, this.draftRuleIds);
+        renderConfig(view, this.config, this.draftRuleIds, this.connectionStatus);
         renderAssistantPreview(view, this.assistantPreview, this.config.rules);
         setStatus(view.querySelector('.smartMappingState'), '建议已加入路径规则草稿，请检查后点击“保存设置”。', false);
         sendDiagnostic(mappingAssistant.diagnosticRecord('smart-path-mapping-accepted', this.assistantPreview));
@@ -654,26 +711,31 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
 
     SettingsView.prototype.testConnection = function () {
         var state = this.view.querySelector('.connectionState');
-        state.textContent = '正在连接…';
-        request(CHANNELS.testConnection).then(function (response) {
-            var message = {
-                ok: '连接正常',
-                auth_failed: '认证失败',
-                connection_failed: '连接失败',
-                incomplete: '配置不完整'
-            }[response && response.status] || '连接失败';
-            state.textContent = message;
-            state.setAttribute('role', response && response.status === 'ok' ? 'status' : 'alert');
-        }).catch(function () {
-            state.textContent = '连接失败';
-            state.setAttribute('role', 'alert');
-        });
+        var button = this.view.querySelector('.btnTestConnection');
+        var requestSequence = ++this.connectionRequestSequence;
+        button.disabled = true;
+        setStatus(state, 'CloudDrive2 最近测试：正在测试连接…', false);
+        return request(CHANNELS.testConnection).then(function (response) {
+            if (requestSequence !== this.connectionRequestSequence) return;
+            if (!this.applyConnectionSnapshot(response)) {
+                setStatus(state, 'CloudDrive2 最近测试：状态不可用，请重试。', true);
+            }
+        }.bind(this)).catch(function () {
+            if (requestSequence !== this.connectionRequestSequence) return;
+            this.connectionStatus = 'unknown';
+            this.connectionRevision = -1;
+            setStatus(state, 'CloudDrive2 最近测试：状态不可用，请重试。', true);
+            this.refreshRuleConnectionCards();
+        }.bind(this)).then(function () {
+            if (requestSequence === this.connectionRequestSequence) button.disabled = false;
+        }.bind(this));
     };
 
     SettingsView.prototype.testRule = function (ruleId, card) {
         var state = card.querySelector('.ete-strm-rule-test');
         state.textContent = '正在检查…';
-        request(CHANNELS.testRule, {ruleId: ruleId}).then(function (response) {
+        return request(CHANNELS.testRule, {ruleId: ruleId}).then(function (response) {
+            this.applyConnectionSnapshot(response);
             if (!response || response.status === 'error') {
                 state.textContent = statusText(response);
                 state.setAttribute('role', 'alert');
@@ -688,12 +750,12 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             }[response.mount] || '本地挂载：状态未知';
             var cloud = {
                 not_configured: 'CloudDrive2：未配置，播放时跳过',
-                mapped: 'CloudDrive2：前缀映射格式有效，未连接服务',
+                mapped: 'CloudDrive2：前缀映射格式有效',
                 invalid: 'CloudDrive2：前缀映射无效'
             }[response.cloud] || 'CloudDrive2：状态未知';
             state.textContent = mount + '；' + cloud;
             state.setAttribute('role', response.status === 'ok' ? 'status' : 'alert');
-        }).catch(function () {
+        }.bind(this)).catch(function () {
             state.textContent = '规则检查失败';
             state.setAttribute('role', 'alert');
         });
@@ -705,7 +767,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         if (!rule) return;
         rule.originState = 'AUTO';
         rule.enabled = true;
-        renderConfig(this.view, this.config, this.draftRuleIds);
+        renderConfig(this.view, this.config, this.draftRuleIds, this.connectionStatus);
         this.invalidateAssistant();
         setStatus(this.view.querySelector('.saveState'), '已在草稿中恢复自动配置，请点击“保存设置”。', false);
     };
@@ -717,14 +779,14 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         if (this.draftRuleIds[ruleId] || rule.originState === 'USER') {
             this.config.rules = mappingAssistant.removeDraftRule(this.config.rules, ruleId);
             delete this.draftRuleIds[ruleId];
-            renderConfig(this.view, this.config, this.draftRuleIds);
+            renderConfig(this.view, this.config, this.draftRuleIds, this.connectionStatus);
             this.invalidateAssistant();
             setStatus(this.view.querySelector('.saveState'), '规则已从草稿移除，请点击“保存设置”。', false);
             return;
         }
         rule.originState = 'DISABLED';
         rule.enabled = false;
-        renderConfig(this.view, this.config, this.draftRuleIds);
+        renderConfig(this.view, this.config, this.draftRuleIds, this.connectionStatus);
         this.invalidateAssistant();
         setStatus(this.view.querySelector('.saveState'), '规则已在草稿中禁用，请点击“保存设置”。', false);
     };

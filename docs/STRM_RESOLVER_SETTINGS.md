@@ -142,12 +142,15 @@ enhanced-strm-config-save
 enhanced-strm-token-set
 enhanced-strm-token-clear
 enhanced-strm-cd2-test-connection
+enhanced-strm-cd2-connection-status
 enhanced-strm-rule-test
 enhanced-strm-rule-restore-auto
 enhanced-strm-rule-disable
 ```
 
 所有 handler 都校验当前 `BrowserWindow.webContents`。连接测试只返回 `ok`、`auth_failed`、`connection_failed` 或 `incomplete` 等安全枚举；规则测试只返回映射状态和挂载存在性，不启动播放。
+
+连接状态是 main-process 当前设置会话的单一快照，包含 `connectionStatus` 与单调 `connectionRevision`。测试连接的现有 CD2 探针从 `checking` 更新到 `connected` 或 `failed`；旧的并发结果不能覆盖新测试。页面加载读取快照；成功或失败后顶部和所有规则卡立即从同一结果刷新。配置、Token 保存或清除会将旧测试状态标为 `unknown`。规则卡中的“前缀映射格式有效”仅由本地规则替换验证产生，旁边独立显示最近一次连接测试状态，不把格式有效写成服务连接成功。
 
 ## Smart Mapping assistant
 

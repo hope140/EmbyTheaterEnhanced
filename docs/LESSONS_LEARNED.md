@@ -1,5 +1,11 @@
 # 已确认经验
 
+## 2026-09-23 — Connection status and mapping format are separate facts
+
+- `TEST_CONNECTION` 的 CD2 探针结果与 `TEST_RULE` 的纯 prefix replacement 结果来源不同；把 `mapped` 固定写成“未连接服务”会与稍后的成功连接测试冲突。连接状态应由同一 main-process 会话快照提供，映射格式仍作为独立字段。
+- 连接测试可能重叠，配置或 Token 也可能在探针未完成时改变。用单调 revision 拒绝旧结果，并在保存后使上次测试状态失效；renderer 的晚到状态读取同样不得覆盖较新快照。
+- 多张规则卡共享一个连接事实。一次测试返回后应直接更新当前页面所有卡片；顶部 live region 播报状态即可，避免每张卡都重复触发屏幕阅读器提示。
+
 ## 2026-09-23 — File match and mapping boundary are different evidence
 
 - 单组完整路径的 filename 与多层父目录吻合，只能提高“是否对应同一文件”的可信度；将共同 suffix 的第一个目录保留在 prefix 中是候选算法，不是可复用边界证明。旧 Phase 1 pure API 保留作观察证据，Settings admission 另由多样本边界模型决定。

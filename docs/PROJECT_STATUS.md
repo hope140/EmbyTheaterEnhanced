@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-09-23 — STRM Rules CloudDrive2 connection status sync
+
+审计确认“测试连接”读取 main-process CD2 `testConnection()` 的只读连通性/认证探针；规则卡的“检查已保存规则”只在 main 执行 source/cloud prefix replacement 格式检查。旧页面把 `mapped` 固定渲染为“前缀映射格式有效，未连接服务”，且没有消费连接测试结果，造成测试成功后卡片仍显示旧文案。
+
+`strm-config-ipc.js` 现持有一个带 revision 的 `unknown/checking/connected/failed` 连接快照，测试连接、状态读取和规则检查共用它。新测试开始或配置/Token 成功变更时 revision 递增；晚到的旧结果被忽略。设置页顶部与所有规则卡在连接测试完成时立即刷新；格式检查继续单独展示。未修改 CD2/Resolver/DirectUrl/Mount/Native 播放行为，未将路径格式有效视为连接成功。
+
+验证：STRM Settings/connection UI/client diagnostics/CD2 focused `77/77 PASS`；`git diff --check` 和修改 JS 语法检查 PASS。首次 `npm test 295/296` 时，既有 `report-playback-issue` 自测要求客户端未运行，但旧测试 runtime 仍在运行；用户正常退出后，完整复测 `npm test 296/296 PASS`。真实设置页与真实 CD2 连通性未由本任务执行。
+
 ## 2026-09-23 — STRM Smart Path Mapping Phase 2.2 boundary model
 
 用户实际样本揭示单组 suffix HIGH 只支持文件对应关系，不能确定可复用 prefix 切点。本分支新增 pure `smart-mapping-boundary.js`，preview 顺序为现有 `rules[]` coverage、fileMatch、multi-sample boundary、optional mount。真实 P1/P2/P3 形态：已有 `/CloudNAS/CloudDrive/115open/115 → /115open/115 → X:\115` 规则对 `/番剧/A/file.mkv` 样本返回 `FULLY_COVERED`、显示已有规则且不生成 suggestion。
