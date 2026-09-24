@@ -1,5 +1,19 @@
 # 开发日志
 
+## 2026-09-24 — STRM Settings UI consolidation
+
+Model Tier: Tier 1
+
+Model: GPT-6 Luna High（页面实现 worker；主线程复核与验收）
+
+Reason: 目标限定在 STRM 页面视觉与展示层，已知控件、事件与状态契约；无 Playback/Session 影响，无跨模块行为设计。
+
+Escalated: No
+
+从指定 `46e995ef83fca7f7a882e3dc633bdcc2d2d521c7` 创建独立 worktree 和 `codex/strm-ui-consolidation`。没有使用旧 Settings 分支或其他 worktree 的代码改动。页面整理为四段，统一深色 input/select、Emby checkbox 排版、四级按钮、状态行和卡片层级；规则检查按挂载/CloudDrive2 最近测试/路径格式分别展示，助手样本和预览使用同一视觉样式。`strm.js` 仅增加展示 class、状态行与文字/颜色标记，保留功能选择器及原有请求、Save/Token、sample limit 与预览动作。未修改 resolver、inference、IPC、持久化 schema 或播放链。
+
+补充 `tests/strm-ui-consolidation.test.cjs`，将旧静态按钮断言改为 class 包含匹配，并扩充规则状态 race fixture 与状态分离回归。focused `69/69 PASS`；全量 `npm test 322/322 PASS`；JS syntax、`git diff --check` PASS。准备阶段核对固定归档和 Electron 44.4.2 tree，复用经哈希核对的 Native Helper 头文件。代码提交 `ae0e6504f6389f261cea484fcb3e77f299c801a9` 的独立 runtime 生成 `2139` 文件，Electron/Native Helper/source/runtime provenance 与 package `-VerifyOnly` PASS。最终提交需要再次按 exact HEAD 生成 review runtime，身份以本任务最终报告为准。未启动 runtime，未进行 Computer Use、窗口操作、安装、真实 Emby/CD2 或前台视觉验收。
+
 ## 2026-09-24 — PR #18 Token 与 Settings draft 隔离修复
 
 Model Tier: Tier 3

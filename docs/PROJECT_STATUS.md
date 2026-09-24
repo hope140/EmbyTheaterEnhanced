@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-09-24 — STRM Settings UI consolidation
+
+基于 `main@46e995ef83fca7f7a882e3dc633bdcc2d2d521c7` 在独立 `codex/strm-ui-consolidation` worktree 完成 STRM 设置页视觉整理。页面按基础设置、CloudDrive2、路径规则、智能映射助手分区；使用约 1080px 内容宽度、统一深色表单控件、Primary/Secondary/Text/Danger 操作层级、规则来源 badge、分开的挂载/连接/路径格式状态行，以及同风格的样本和预览卡。窄屏单列和长路径换行已加入 CSS。功能控件 id/class 与事件入口保留；JS 只调整 UI render、状态文字和视觉标记。Smart Mapping 推导、规则 schema、Token/Save 状态机、CD2 IPC/连接生命周期、Resolver 与播放链没有改动。
+
+自动验证：STRM UI/Settings focused `69/69 PASS`，`npm test 322/322 PASS`，JS 语法和 `git diff --check` PASS。已从代码提交 `ae0e6504f6389f261cea484fcb3e77f299c801a9` 构建独立 `2139` 文件 runtime：固定 Electron 44.4.2 的 73 文件输入、Native Helper 编译与 provenance、source/runtime provenance、`package.ps1 -VerifyOnly` 均 PASS。最终提交对应的 runtime 身份在任务最终报告中单独核对。前台设置页视觉、真实 Emby/CD2 和安装验收均未执行；交付状态为 `READY FOR USER VISUAL REVIEW`。
+
 ## 2026-09-24 — Smart Path Mapping milestone closure
 
 PR #18（`feat: add smart STRM path mapping assistant`）已通过 merge commit `121305b5fa74fa5bf9e8b76caabf280468ddb11b` 合入 `main`，合并的功能 head 为 `ade6620e80ce19da26d6a7bebc53368dffe3f8a5`。Implementation = `COMPLETE`；既有 User Functional Acceptance = `PASS`；Final Remote Re-Review = `PASS`；合并前 `npm test 319/319 PASS`，功能 head 的 exact-HEAD build/provenance 已验证通过。本条未执行新的 runtime、安装或真实客户端验收；未创建版本、tag 或 Release，正式发布基线仍为 `v0.2.2`。

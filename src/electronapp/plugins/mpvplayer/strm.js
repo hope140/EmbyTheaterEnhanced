@@ -90,7 +90,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
     }
 
     function createAssistantSample(index) {
-        var sample = element('fieldset', 'smartSample ete-strm-assistant-sample');
+        var sample = element('fieldset', 'smartSample ete-strm-assistant-sample ete-strm-card');
         var grid = element('div', 'ete-strm-assistant-grid');
         sample.dataset.sampleId = 'sample-' + index;
         sample.appendChild(element('legend', null, '样本 ' + index));
@@ -99,7 +99,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             ['cloud', 'CloudDrive2 文件路径', '填写同一个文件在 CloudDrive2 中的完整逻辑路径。'],
             ['mount', '本地挂载文件路径（可选）', '当前电脑实际可访问的路径，用于 Mount fallback。']
         ].forEach(function (field) {
-            var wrapper = element('div', 'inputContainer');
+            var wrapper = element('div', 'inputContainer ete-strm-field');
             var id = 'ete-smart-' + field[0] + '-path-' + index;
             var input = element('input', 'txtSmart' + field[0].charAt(0).toUpperCase() + field[0].slice(1) + 'Path');
             var label = element('label', null, field[1]);
@@ -117,7 +117,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             grid.appendChild(wrapper);
         });
         sample.appendChild(grid);
-        var remove = element('button', 'btnRemoveSample', '移除此组样本');
+        var remove = element('button', 'ete-strm-btn ete-strm-btn--text btnRemoveSample', '移除此组样本');
         remove.type = 'button';
         remove.setAttribute('is', 'emby-button');
         sample.appendChild(remove);
@@ -181,19 +181,27 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         var coverage = preview.coverage || {};
         var fileMatch = preview.fileMatch || {};
         var boundary = preview.boundary || {};
-        view.querySelector('.smartCoverage').textContent = coverage.status === 'FULLY_COVERED' ? '现有规则：完整覆盖'
+        var coverageNode = view.querySelector('.smartCoverage');
+        coverageNode.textContent = coverage.status === 'FULLY_COVERED' ? '现有规则：完整覆盖'
             : coverage.status === 'CLOUD_COVERED' ? '现有规则：CloudDrive2 已覆盖'
                 : coverage.status === 'CONFLICT' ? '现有规则：冲突' : '现有规则：未覆盖';
+        coverageNode.setAttribute('data-status', coverage.status === 'CONFLICT' ? 'bad'
+            : coverage.status === 'FULLY_COVERED' || coverage.status === 'CLOUD_COVERED' ? 'pass' : 'neutral');
         var matchedRules = (rules || []).filter(function (rule) {
             return coverage.ruleIds && coverage.ruleIds.indexOf(rule.id) >= 0;
         });
         view.querySelector('.smartCoveredRules').textContent = matchedRules.map(function (rule) {
             return '命中规则：' + rule.sourcePrefix + ' → ' + (rule.cloudPrefix || '未配置');
         }).join('；');
-        view.querySelector('.smartFileMatch').textContent = fileMatch.status === 'MATCHED'
+        var fileMatchNode = view.querySelector('.smartFileMatch');
+        fileMatchNode.textContent = fileMatch.status === 'MATCHED'
             ? confidenceText(fileMatch.confidence) : '未匹配';
-        view.querySelector('.smartBoundary').textContent = boundary.status === 'MATCHED'
+        fileMatchNode.setAttribute('data-status', fileMatch.status === 'UNSAFE' ? 'bad'
+            : fileMatch.confidence === 'HIGH' ? 'pass' : 'neutral');
+        var boundaryNode = view.querySelector('.smartBoundary');
+        boundaryNode.textContent = boundary.status === 'MATCHED'
             ? confidenceText(boundary.confidence) : '证据不足';
+        boundaryNode.setAttribute('data-status', boundary.confidence === 'HIGH' && boundary.status === 'MATCHED' ? 'pass' : 'neutral');
         if (hasSuggestion) {
             view.querySelector('.smartSourcePrefix').textContent = proposed.sourcePrefix;
             view.querySelector('.smartCloudPrefix').textContent = proposed.cloudPrefix;
@@ -211,18 +219,12 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         return evaluation;
     }
 
-    function ruleStateLabel(state) {
-        if (state === 'USER') return '用户配置';
-        if (state === 'DISABLED') return '已抑制';
-        return '自动建议';
-    }
-
     function storageLabel(value) {
         return value === 'local-nas' ? 'NAS / 本地存储' : '云盘挂载';
     }
 
     function createLabeledInput(ruleId, field, label, value, options) {
-        var wrapper = element('div', 'inputContainer');
+        var wrapper = element('div', 'inputContainer ete-strm-field');
         var inputId = 'ete-rule-' + ruleId + '-' + field;
         var labelNode = element('label', 'ete-strm-field-label', label);
         var input = element('input');
@@ -248,7 +250,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
     }
 
     function createLabeledSelect(ruleId, field, label, values, selected, labels) {
-        var wrapper = element('div', 'selectContainer');
+        var wrapper = element('div', 'selectContainer ete-strm-field');
         var selectId = 'ete-rule-' + ruleId + '-' + field;
         var labelNode = element('label', 'ete-strm-field-label', label);
         var select = element('select');
@@ -285,6 +287,13 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         return wrapper;
     }
 
+    function createRuleStatusRow(label, valueClass, valueText) {
+        var row = element('div', 'ete-strm-status-row ete-strm-rule-status-row');
+        row.appendChild(element('span', 'ete-strm-status-label', label));
+        row.appendChild(element('span', 'ete-strm-status-value ' + valueClass, valueText));
+        return row;
+    }
+
     function updateOrderPreview(card) {
         var strategy = card.querySelector('.rule-strategy').value;
         var order = strategyOrder(strategy, Array.prototype.map.call(card.querySelectorAll('.rule-order-stage'), function (select) {
@@ -305,10 +314,11 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
     }
 
     function renderRule(rule, isDraftRule, connectionStatus) {
-        var card = element('article', 'ete-strm-rule-card');
+        var card = element('article', 'ete-strm-rule-card ete-strm-card');
         var heading = element('div', 'ete-strm-rule-heading');
         var title = element('span', 'ete-strm-rule-title', rule.sourcePrefix || '新建路径规则');
-        var state = element('span', 'ete-strm-rule-state', isDraftRule ? '未保存草稿' : ruleStateLabel(rule.originState));
+        var origin = element('span', 'ete-strm-rule-origin', '规则来源 · ' + (rule.originState === 'AUTO' ? '自动建议' : rule.originState === 'DISABLED' ? '已抑制' : '用户配置'));
+        var state = element('span', 'ete-strm-rule-state', '未保存草稿');
         var grid = element('div', 'ete-strm-rule-grid');
         var order = element('div', 'ete-strm-order');
         var orderLabel = element('span', 'ete-strm-order-label', '实际顺序');
@@ -317,15 +327,15 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         var testButton = element('button', null, isDraftRule ? '请先保存规则' : '检查已保存规则');
         var restoreButton = element('button', null, '恢复自动配置');
         var disableButton = element('button', null, isDraftRule ? '移除草稿' : (rule.originState === 'DISABLED' ? '保持抑制' : '禁用/删除'));
-        var result = element('span', 'ete-strm-rule-test secondaryText');
-        var connection = element('span', 'ete-strm-rule-connection secondaryText',
+        var statusGrid = element('div', 'ete-strm-rule-status-grid');
+        var mountState = createRuleStatusRow('本地挂载', 'ete-strm-rule-mount', '尚未检查');
+        var connection = createRuleStatusRow('CloudDrive2', 'ete-strm-rule-connection',
             'CloudDrive2 最近测试：' + connectionText(connectionStatus));
-        result.setAttribute('role', 'status');
-        result.setAttribute('aria-live', 'polite');
-
+        var formatState = createRuleStatusRow('路径规则', 'ete-strm-rule-format', '尚未检查');
         card.dataset.ruleId = rule.id;
         heading.appendChild(title);
-        heading.appendChild(state);
+        heading.appendChild(origin);
+        if (isDraftRule) heading.appendChild(state);
         card.appendChild(heading);
         grid.appendChild(createLabeledInput(rule.id, 'sourcePrefix', 'STRM 源路径', rule.sourcePrefix, {
             description: 'STRM / Emby MediaSource.Path 中记录的路径，不要求当前电脑可以访问。'
@@ -347,6 +357,14 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             custom: '自定义顺序'
         }));
         card.appendChild(grid);
+        statusGrid.appendChild(mountState);
+        statusGrid.appendChild(connection);
+        var resultRow = createRuleStatusRow('检查状态', 'ete-strm-rule-test', '尚未检查');
+        resultRow.querySelector('.ete-strm-rule-test').setAttribute('role', 'status');
+        resultRow.querySelector('.ete-strm-rule-test').setAttribute('aria-live', 'polite');
+        statusGrid.appendChild(resultRow);
+        statusGrid.appendChild(formatState);
+        card.appendChild(statusGrid);
         order.appendChild(orderLabel);
         order.appendChild(orderValue);
         if (rule.strategy === 'custom') order.appendChild(createOrderEditor(rule.id, rule.order));
@@ -355,15 +373,15 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         testButton.type = 'button';
         restoreButton.type = 'button';
         disableButton.type = 'button';
-        testButton.className = 'btnTestRule';
+        testButton.className = 'ete-strm-btn ete-strm-btn--secondary btnTestRule';
         testButton.disabled = isDraftRule;
-        restoreButton.className = 'btnRestoreAuto';
-        disableButton.className = 'btnDisableRule';
+        restoreButton.className = 'ete-strm-btn ete-strm-btn--text btnRestoreAuto';
+        disableButton.className = (isDraftRule || rule.originState === 'USER'
+            ? 'ete-strm-btn ete-strm-btn--danger btnDisableRule'
+            : 'ete-strm-btn ete-strm-btn--text btnDisableRule');
         actions.appendChild(testButton);
         if (rule.originState !== 'AUTO') actions.appendChild(restoreButton);
         actions.appendChild(disableButton);
-        actions.appendChild(result);
-        actions.appendChild(connection);
         card.appendChild(actions);
         updateOrderPreview(card);
 
@@ -528,8 +546,10 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
 
     SettingsView.prototype.refreshRuleConnectionCards = function () {
         var label = 'CloudDrive2 最近测试：' + connectionText(this.connectionStatus);
+        var tone = this.connectionStatus === 'connected' ? 'pass' : this.connectionStatus === 'failed' ? 'bad' : 'neutral';
         Array.prototype.forEach.call(this.view.querySelectorAll('.ete-strm-rule-connection'), function (node) {
             node.textContent = label;
+            node.setAttribute('data-status', tone);
         });
     };
 
@@ -544,6 +564,8 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         this.connectionStatus = response.connectionStatus;
         var state = this.view.querySelector('.connectionState');
         setStatus(state, 'CloudDrive2 最近测试：' + connectionText(this.connectionStatus), this.connectionStatus === 'failed');
+        state.setAttribute('data-status', this.connectionStatus === 'connected' ? 'pass'
+            : this.connectionStatus === 'failed' ? 'bad' : 'neutral');
         this.refreshRuleConnectionCards();
         return true;
     };
@@ -558,6 +580,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             this.connectionStatus = 'unknown';
             this.connectionRevision = -1;
             setStatus(this.view.querySelector('.connectionState'), 'CloudDrive2 最近测试：状态不可用', true);
+            this.view.querySelector('.connectionState').setAttribute('data-status', 'bad');
             this.refreshRuleConnectionCards();
         }.bind(this));
     };
@@ -771,16 +794,19 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         var requestSequence = ++this.connectionRequestSequence;
         button.disabled = true;
         setStatus(state, 'CloudDrive2 最近测试：正在测试连接…', false);
+        state.setAttribute('data-status', 'neutral');
         return request(CHANNELS.testConnection).then(function (response) {
             if (requestSequence !== this.connectionRequestSequence) return;
             if (!this.applyConnectionSnapshot(response)) {
                 setStatus(state, 'CloudDrive2 最近测试：状态不可用，请重试。', true);
+                state.setAttribute('data-status', 'bad');
             }
         }.bind(this)).catch(function () {
             if (requestSequence !== this.connectionRequestSequence) return;
             this.connectionStatus = 'unknown';
             this.connectionRevision = -1;
             setStatus(state, 'CloudDrive2 最近测试：状态不可用，请重试。', true);
+            state.setAttribute('data-status', 'bad');
             this.refreshRuleConnectionCards();
         }.bind(this)).then(function () {
             if (requestSequence === this.connectionRequestSequence) button.disabled = false;
@@ -789,29 +815,48 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
 
     SettingsView.prototype.testRule = function (ruleId, card) {
         var state = card.querySelector('.ete-strm-rule-test');
+        var mountNode = card.querySelector('.ete-strm-rule-mount');
+        var formatNode = card.querySelector('.ete-strm-rule-format');
         state.textContent = '正在检查…';
+        mountNode.textContent = '正在检查';
+        formatNode.textContent = '正在检查';
+        mountNode.setAttribute('data-status', 'neutral');
+        formatNode.setAttribute('data-status', 'neutral');
         return request(CHANNELS.testRule, {ruleId: ruleId}).then(function (response) {
             this.applyConnectionSnapshot(response);
-            if (!response || response.status === 'error') {
+            if (!response || ['ok', 'warning'].indexOf(response.status) < 0) {
+                mountNode.textContent = '状态未更新';
+                formatNode.textContent = '状态未更新';
                 state.textContent = statusText(response);
                 state.setAttribute('role', 'alert');
                 return;
             }
             var mount = {
-                not_configured: '本地挂载：未配置，播放时跳过',
-                ok: '本地挂载：目录存在',
-                missing: '本地挂载：目录不存在',
-                unavailable: '本地挂载：无法检查目录',
-                unsupported_path: '本地挂载：当前平台不支持该路径类型'
-            }[response.mount] || '本地挂载：状态未知';
+                not_configured: '未配置',
+                ok: '可访问',
+                missing: '不可访问',
+                unavailable: '无法检查',
+                unsupported_path: '当前平台不支持'
+            }[response.mount] || '状态未知';
             var cloud = {
-                not_configured: 'CloudDrive2：未配置，播放时跳过',
-                mapped: 'CloudDrive2：前缀映射格式有效',
-                invalid: 'CloudDrive2：前缀映射无效'
-            }[response.cloud] || 'CloudDrive2：状态未知';
-            state.textContent = mount + '；' + cloud;
-            state.setAttribute('role', response.status === 'ok' ? 'status' : 'alert');
+                not_configured: '未配置',
+                mapped: '格式有效',
+                invalid: '格式无效'
+            }[response.cloud] || '状态未知';
+            mountNode.textContent = mount;
+            formatNode.textContent = cloud;
+            mountNode.setAttribute('data-status', response.mount === 'ok' ? 'pass'
+                : response.mount === 'missing' || response.mount === 'unavailable' ? 'bad' : 'neutral');
+            formatNode.setAttribute('data-status', response.cloud === 'mapped' ? 'pass'
+                : response.cloud === 'invalid' ? 'bad' : 'neutral');
+            mountNode.setAttribute('role', response.mount === 'missing' || response.mount === 'unavailable' ? 'alert' : 'status');
+            formatNode.setAttribute('role', response.cloud === 'invalid' ? 'alert' : 'status');
+            state.textContent = response.status === 'ok' ? '检查完成'
+                : response.status === 'warning' ? '检查完成，挂载状态需注意' : statusText(response);
+            state.setAttribute('role', response.status === 'error' ? 'alert' : 'status');
         }.bind(this)).catch(function () {
+            mountNode.textContent = '状态未更新';
+            formatNode.textContent = '状态未更新';
             state.textContent = '规则检查失败';
             state.setAttribute('role', 'alert');
         });
