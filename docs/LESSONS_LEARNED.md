@@ -1,5 +1,46 @@
 # 已确认经验
 
+## 2026-09-23 — Connection status and mapping format are separate facts
+
+- `TEST_CONNECTION` 的 CD2 探针结果与 `TEST_RULE` 的纯 prefix replacement 结果来源不同；把 `mapped` 固定写成“未连接服务”会与稍后的成功连接测试冲突。连接状态应由同一 main-process 会话快照提供，映射格式仍作为独立字段。
+- 连接测试可能重叠，配置或 Token 也可能在探针未完成时改变。用单调 revision 拒绝旧结果，并在保存后使上次测试状态失效；renderer 的晚到状态读取同样不得覆盖较新快照。
+- 多张规则卡共享一个连接事实。一次测试返回后应直接更新当前页面所有卡片；顶部 live region 播报状态即可，避免每张卡都重复触发屏幕阅读器提示。
+
+## 2026-09-23 — File match and mapping boundary are different evidence
+
+- 单组完整路径的 filename 与多层父目录吻合，只能提高“是否对应同一文件”的可信度；将共同 suffix 的第一个目录保留在 prefix 中是候选算法，不是可复用边界证明。旧 Phase 1 pure API 保留作观察证据，Settings admission 另由多样本边界模型决定。
+- 手工规则 coverage 必须先于新规则推导。用正式 sourcePrefix 最长前缀选中规则后，按 source 相对路径分别映射至 cloud/mount 并在目标 path kind 下精确比较；否则同一样本会被建议一条更宽、与现有规则重叠的规则。
+- 多样本边界取 source/cloud 各自最深非 root 公共父目录，并要求两侧在其下出现目录分叉，且每组相对路径一致。同目录两个文件不能升级边界可信度。CloudDrive2 相对路径必须按 POSIX 大小写校验，即使 source 为 Windows。
+- Mount 边界使用 cloud 已确认的同一个 sourcePrefix。可选 Mount 输入不足或不安全时，只拒绝 Mount prefix；已证明的 cloud prefix 仍可进入用户确认草稿。
+- `MediaSource.Path` 可以是 POSIX，而当前 Windows 客户端的 Mount 是 drive/UNC。path kind 不必相同；应按 source 提取 relative suffix，再按 mount target 的大小写语义核对，并以现有 `replacePrefix()` 验证完整输出。不能把历史 POSIX→POSIX 的纯推导限制直接套在真实 POSIX→Windows Mount 上。
+- 批量 preview 在任何样本、规则草稿、增删样本变化后使旧结果失效。诊断只保留 coverage/file/boundary 枚举和计数，不能把输入路径、规则或 suggestion 放入日志。
+
+## 2026-09-22 — STRM source, cloud and mount identities
+
+- `sourcePrefix` 的“source”指 STRM / Emby 中记录的 `MediaSource.Path`，可能是历史盘符或服务器路径；只有 `mountPrefix` 才表示当前客户端 filesystem 可访问位置。把前者叫“本地路径”会稳定诱导用户填错字段。
+- source→cloud 与 source→mount 可以共享 strict parser、segment suffix 和 confidence core，但 target policy 不同：cloud 只接受 absolute POSIX；mount 接受 Windows drive/UNC 互映与 POSIX→POSIX。不能只放宽 cloud candidate 类型。
+- optional mount 不能独立决定 rule sourcePrefix。先用 cloud HIGH 固定 sourcePrefix 与 relative suffix，再从 mount full path 末尾验证该 suffix，才能避免两个 longest-suffix 选择不同 anchor 后生成错误 mountPrefix。
+- Cloud HIGH 是 rule admission gate；mount 非 HIGH 只丢弃 mountPrefix，不能阻止已经安全的 cloud mapping。UI 必须同时展示两个 confidence，避免把 mount warning 误读为整体失败。
+- 草稿身份不能从 `new-rule-*` ID 推断，因为 store 会保留该 ID。draft identity 必须由 SettingsView 内存态维护，并在 load/Save success 后清空。
+- EXPLICIT SAVE 必须覆盖 rule 删除、AUTO disable/restore；保留独立 mutation IPC 作为兼容能力，不代表 Settings UI 可以绕过底部 Save。
+
+## 2026-09-22 — User-confirmed mapping draft boundary
+
+- Settings 当前真实 draft 分散在 `this.config` 与 DOM inputs；任何会重绘 rules 的 Add/assistant action 都必须先 `collectConfig()`，否则会丢失用户尚未保存的编辑。
+- user-confirmed suggestion 应转换为现有 `USER` rule draft，并继续走原 `SAVE → store.save() → normalizeRule()`；调用 `applyDiscovery()` 会混入 AUTO/tombstone 语义，也会违反“确认后仍需 Save”的边界。
+- “确认加入 draft”不等于 durable acceptance。离页自动 Save 会把 preview confirmation 偷换成持久化授权，因此显式 Save contract 必须同时移除 `onPause()` mutation。
+- duplicate/conflict 判断只比较 equivalent source prefix 本身；Windows drive/UNC 大小写不敏感，POSIX 大小写敏感。parent/child prefix 是 longest-prefix contract 的合法关系，不能误报冲突。
+- preview response 可以向 trusted renderer 返回 canonical prefix 供用户查看，但 diagnostics 必须重新投影到固定 scalar 白名单；不能把完整 result、raw inputs 或 rule body交给 logger。
+- 局部 Settings 助手应沿用现有表单结构，使用可见 label、inline status/alert、disabled action 和 44px 操作目标；无需重做页面或导入另一 settings branch。
+
+## 2026-09-22 — Smart path mapping evidence boundary
+
+- longest suffix 不能直接把全部 matched directories 从 prefix 剥掉；保留最靠近 root 的 matched directory 作为 anchor，才能从 `D:\Media\Movies\A\B\movie.mkv` 与 `/115/Movies/A/B/movie.mkv` 得到稳定的 `D:\Media\Movies → /115/Movies`。
+- path comparison 必须先分类再逐 segment 执行。Windows drive/UNC 的大小写不敏感不能扩散到 POSIX；UNC 的 server/share 是 root boundary，重复 separator、device namespace、relative/traversal 和 incomplete path 应在评分前拒绝。
+- `HIGH` 只描述 pair 内的 suffix evidence，不证明 candidate 来源可信、CD2 目录可见、provider identity 相同或 production route 可自动启用。当前最小 CD2 proto 没有 mount/root/listing/stable ID；exact lookup 不能反向变成 discovery。
+- Phase 1 dry-run diagnostic 应只输出 `candidateStatus/suffixConfidence`、计数与 reason enum；这些不是可复用边界置信度。现有 path hash 会 lower-case absolute path，不能作为 POSIX case-sensitive inference evidence，也不能替代 raw pair 的 main-process validation。
+- matching manual rule 是 authority。Phase 1 suggestion 不应进入 `resolveAsync()`；当前助手只有多样本边界证据通过、用户确认加入 draft 并显式 Save 后，才由既有 `normalizeRule()` 持久化，重启后生效。`applyDiscovery()` 是独立的 AUTO 规则路径，助手不调用。
+
 ## 2026-09-21 — Electron 44 freeze root boundary and acceptance evidence
 
 - Electron 44 standard custom-scheme canonicalization can change an existing apphost command URL into a lowercase command token with a trailing slash. The parser must canonicalize the command token while preserving raw `openurl` URL/query bytes and rejecting unknown commands.

@@ -1,5 +1,122 @@
 # 开发日志
 
+## 2026-09-24 — PR #18 Token 与 Settings draft 隔离修复
+
+Model Tier: Tier 3
+Model: GPT-6 Sol High
+Reason: 修复跨 renderer Settings draft 与 main-process Token IPC 的异步状态覆盖问题，并核对 CD2 connection snapshot 生命周期。
+Escalated: Yes（用户指定）
+
+PR #18 远端复审在 head `b126ff110f133a6707f59d18619ab673c6c40d1d` 发现：`setToken()` / `clearToken()` 成功后用 IPC 返回的 persisted config 整体替换 `this.config`，可能覆盖未保存的规则与普通设置 draft。修复已应用：成功回包只更新 `this.config.cd2.tokenConfigured` 和 Token 显示状态，并保留原有 connection snapshot 失效/应用流程。Token 仍独立立即持久化；普通 Settings 与规则仍只由显式 Save 持久化。
+
+验证：Settings state-machine targeted `12/12 PASS`；focused STRM/Settings/CD2/Smart Mapping/diagnostics `185/185 PASS`；`npm test 313/313 PASS`；修改的 JS/CJS 语法检查与 `git diff --check` PASS。exact-HEAD runtime/build provenance 由本轮最终提交的验收结果单独确认；不将历史 `2baf221` provenance 作为本轮证据。Final PR Audit = `REMEDIATION APPLIED / RE-REVIEW PENDING`；PR / Merge = `PENDING`。
+
+## 2026-09-24 — STRM Smart Path Mapping final PR audit
+
+审计 `9a034e8d627f71abbded01a1fba612d9282c9911..844b7e130539645199124b6e636b860eab23c8ad` 的 Phase 1、2、2.1、2.2 与 CD2 status sync。远端 `main` 仍为基线提交；前一轮 status sync 已由独立 `844b7e1` 提交。Smart Mapping 的文件对应关系与多样本边界置信度分开；真实 P1/P2/P3、最长前缀、Windows/UNC/POSIX、Mount 共用 source anchor 与 Resolver rule selection 的回归均通过。production resolver 的 `resolve`/`resolveAsync` 和 route order 无变更。
+
+审计修复仅涉及设置状态与观察边界：Save 请求期间锁定当前表单控件并去重，失败保留草稿；config/Token 只有原子文件写成功后才更新内存；迟到的同 revision `checking` 不覆盖连接测试终态；旧的直接写入 restore/disable IPC 不再注册；补齐旧 preview 完成时的 `this` 绑定；Phase 1 dry-run diagnostic 明确标为 `candidateStatus/suffixConfidence`，避免被误读为 boundary confidence。页面说明连接测试使用已保存的地址与 Token；Token 仍由独立的明确设置/清除操作持久化。修正 Phase 2 历史文案，不改变 boundary 算法、正式规则 schema、CD2 service、Resolver route 或播放器链。
+
+Model Tier: Tier 2
+
+Model: GPT-6 Sol High (requested)
+
+Reason: trusted settings IPC、Save/preview async race、existing coverage 与 Resolver 路径语义核对
+
+Escalated: No
+
+验证：`npm test 308/308 PASS`；focused Smart Mapping/Boundary/coverage/STRM config/UI/Resolver `120/120 PASS`、CD2 `33/33 PASS`、diagnostics `28/28 PASS`。后台/静态检查不代表再次执行真实 Emby/CD2 播放验收；用户此前的功能验收保持独立证据。
+
+## 2026-09-23 — STRM Rules CloudDrive2 connection status desync fix
+
+在 `codex/strm-smart-path-mapping@ce92f6c6b8f05545ca6379212e5d0b4787186023` 上审计设置页。顶部“测试连接”来自 main 的 `createTestService().testConnection()`，会执行有界 readiness 与 `FindFileByPath('/')` 探针；规则卡 `TEST_RULE` 只检查保存规则的 Mount 路径与 source→cloud 前缀映射格式。renderer 原来把 `mapped` 固定显示为“未连接服务”，没有传播连接测试结果。
+
+修复后 main 设置 IPC 统一保存带 revision 的 `unknown/checking/connected/failed` 快照。连接测试成功/失败、重试、乱序返回、配置或 Token 变更都按同一快照处理；规则卡的格式检查和连接状态分开。页面只读获取快照，连接测试完成后刷新所有可见规则卡。未修改生产 CD2 service、Resolver、DirectUrl、Mount、Native、PlaybackManager、Session 或 Electron/window。
+
+Model Tier: Tier 2
+
+Model: GPT-6 (current host)
+
+Reason: trusted main-process IPC and asynchronous status ordering across settings UI
+
+Escalated: No deliberate escalation
+
+验证：STRM Settings/connection UI/client diagnostics/CD2 focused `77/77 PASS`；`git diff --check`、修改 JS syntax PASS。首次 `npm test 295/296` 时，既有 `report-playback-issue` 自测的“程序未运行”前提与仍在运行的旧测试 runtime 冲突；用户正常退出该 runtime 后，全量复测 `npm test 296/296 PASS`。未改诊断工具；前台 Settings UI 与真实 CD2 服务未由本任务执行。
+
+## 2026-09-23 — STRM Smart Path Mapping Phase 2.2 boundary model fix
+
+基于 `codex/strm-smart-path-mapping@e9b698d935163b1e5a98fa0b0b2de384c49ca870` 复核真实 P1/P2/P3 样本，确认 Phase 2.1 将单组文件 suffix HIGH 错当为映射边界 HIGH。新增独立 pure `smart-mapping-boundary.js`：先按正式 longest-prefix 与 source/cloud/mount path semantics 检查当前 `rules[]`，返回 `FULLY_COVERED`、`CLOUD_COVERED`、`NOT_COVERED` 或 `CONFLICT`；再分别返回 `fileMatch` 和 `boundary`。现有规则完整覆盖时不产生 suggestion。
+
+新规则至少需要两组不同目录样本。source/cloud 分别求最深安全公共父目录，拒绝 root-only、同目录换文件名、相对 suffix 不一致、POSIX cloud case mismatch 与 disabled tombstone；只有每组 fileMatch HIGH 且 boundary 跨目录稳定时才允许加入一个普通 `USER` rule draft。Mount 使用同一 sourcePrefix 验证多组相对路径，不能另选 source anchor。Settings UI 可添加有界样本，旧 async response 在样本或规则变化后被丢弃。preview IPC 只读，不调用 CD2、Resolver、config save；生产播放链未变。
+
+Model Tier: Tier 2
+
+Model: GPT-6 (host-assigned after model switch; requested GPT-5.6 Sol High)
+
+Reason: cross-layer mapping boundary, trusted preview IPC and manual-rule authority without playback changes
+
+Escalated: No deliberate escalation
+
+Focused Smart Mapping/coverage/Settings/Resolver/diagnostics `123/123 PASS`；`npm test 285/285 PASS`；JS syntax 与 `git diff --check` PASS。后台 runtime `2139` files，pinned Electron 44.4.2、source、Native Helper、runtime provenance 与 package `-VerifyOnly` PASS；最终文档提交后从最终 HEAD 再构建并核对 source commit。foreground/native UI、真实 Emby/CD2 和安装均未执行。
+
+## 2026-09-22 — STRM Smart Path Mapping Phase 2.1 path semantics fix
+
+继续 `codex/strm-smart-path-mapping`，从 final Phase 2 `c5f937faffc223952fef7c9cac8113f7b6104a12` 开始。用户实测确认“本地路径”被自然理解为当前电脑挂载路径，因此本轮把产品 contract 固定为三种 identity：`sourcePrefix=STRM/Emby MediaSource.Path`、`cloudPrefix=CloudDrive2 logical path`、`mountPrefix=current client filesystem mount`。规则卡、助手 labels、helper text 与 preview 全部使用该语义；未导入 settings UX 分支。
+
+审计 Phase 1 发现 parser/suffix core 已支持 Windows drive、UNC、POSIX，只有 cloud wrapper 强制 target POSIX。小范围提取 `inferPrefixMappingCore()` 并新增 `inferSmartMountMapping()`：Windows drive/UNC 可以互为 source/target，POSIX 只对 POSIX；Windows/UNC case-insensitive，POSIX case-sensitive；relative/traversal/root/share/empty/incomplete 与 ambiguity gates 保持。既有 `inferSmartPathMapping()` 的 `localPath/localPrefix` API 保持兼容，assistant IPC 对外改用明确的 `sourcePath/sourcePrefix`。
+
+组合 preview 先执行 source→cloud；只有 Cloud `MATCHED/HIGH` 才评估 optional mount。mount inference 以 cloud suggestion 的 sourcePrefix 固定相对 suffix，再从 mount full path末尾验证并剥离。Mount HIGH 写入 mountPrefix；mount 缺失或非 HIGH 时 cloud rule仍可加入但 mountPrefix为空并显示 warning；Cloud 非 HIGH 禁止加入。没有调用 CD2、filesystem、Resolver 或 playback route。
+
+同时完成 EXPLICIT SAVE 一致性修正：SettingsView 以内存 draft IDs区分未保存规则，避免已保存 `new-rule-*` 被误删；Add/assistant 先 capture DOM draft；USER remove、AUTO disable/restore只修改 draft，store.save 增加受控 AUTO↔DISABLED transition；onPause仍不保存。没有自动迁移或修改现有 persisted rules。
+
+Model Tier: Tier 2
+
+Model: GPT-5.6 Sol High
+
+Reason: path identity semantics, shared inference core and explicit-save state transitions without playback changes
+
+Escalated: No
+
+自动验证：既有 Phase 1 pure contract保持；新增 mount path-kind/case/root/suffix/ambiguity/traversal/anchor 与组合 preview测试；focused Smart Mapping `23/23 PASS`；assistant + settings `33/33 PASS`；含 Resolver focused `79/79 PASS`；UI/static `10/10 PASS`；`npm test 267/267 PASS`；JS syntax 与 `git diff --check` PASS。`ui-ux-pro-max` 用于 visible labels、persistent helper text、aria-describedby、inline warning 和明确 disabled state。最终 exact-HEAD background runtime 为 `2138` files，pinned Electron 44.4.2、source、Native Helper、runtime provenance 与 package verify 全部 PASS。foreground/native UI、真实 Emby/CD2、安装均未执行。
+
+## 2026-09-22 — STRM Smart Path Mapping Phase 2 user-confirmed assistant
+
+继续 `codex/strm-smart-path-mapping`，基线保持 `origin/main@9a034e8d627f71abbded01a1fba612d9282c9911`，没有导入 `codex/v0.2.3-settings-ux`。先审计 current Settings：`this.config + DOM inputs` 组成 draft，显式 submit 通过 `enhanced-strm-config-save → store.save()` 持久化，service 仍需重启；`applyDiscovery()` 不属于页面 Save。审计同时发现 Add 重绘会丢未保存 DOM 编辑、new draft 无本地 remove、`onPause()` 会隐式 Save。本轮只在该 Settings draft boundary 内修正这些行为。
+
+新增 `strm-mapping-assistant.js` pure helper，复用 `path-rules` 判断 duplicate/conflict，并只允许 `MATCHED/HIGH` 创建一个普通 `USER` rule draft。Settings 页面在路径规则下方加入紧凑助手，保留可见 label、inline feedback、disabled state、responsive grid 与 44px action target。输入原样发送给 trusted config IPC；main handler只调用 Phase 1 `inferSmartPathMapping()`，返回最小 preview，不访问 store/CD2/Resolver。HIGH confirmation 先 collect 当前 DOM draft，再加入现有 rule editor；MEDIUM 只展示；duplicate/conflict 阻断。离页不再自动保存，用户必须点击原 Save。
+
+preview/accepted diagnostics 经现有 structured-log channel发送固定 scalar allowlist，不含 local/cloud path、canonical prefix、URL、Token 或 credential。accepted 只表示加入 draft，不表示已保存。没有新增配置字段，未调用 `applyDiscovery()`，也未修改 PlaybackManager、Session/identity、route order、DirectUrl、Mount/Native、Native Helper、libmpv、Electron/window。
+
+Model Tier: Tier 2
+
+Model: GPT-5.6 Sol High
+
+Reason: cross-layer Settings draft, trusted IPC, path safety and diagnostics boundary while preserving production routing
+
+Escalated: No
+
+自动验证：assistant/config `31/31 PASS`；Phase 1 + assistant + settings + Resolver focused `72/72 PASS`；diagnostics `35/35 PASS`；UI/static `9/9 PASS`；`npm test 260/260 PASS`；JS syntax 与 `git diff --check` PASS。`ui-ux-pro-max` 的局部 form guidance 用于 visible labels、inline submit feedback、disabled confirmation 与 44px target，没有生成或持久化新 design system。最终 exact-HEAD background runtime 为 `2138` files，pinned Electron/source/native/runtime provenance 与 package verify 全部 PASS。foreground/native UI、真实 Emby/CD2、安装均未执行。
+
+## 2026-09-22 — STRM Smart Path Mapping Phase 1 engine and safety model
+
+从 exact `origin/main@9a034e8d627f71abbded01a1fba612d9282c9911` 建立独立 `codex/strm-smart-path-mapping` worktree；没有带入 `codex/v0.2.3-settings-ux`。先审计 current main 的 `rules[]` schema、三种 path identity、metadata recovery、path rules、CD2 proto/client、Mount/DirectUrl 输入、Resolver route 和 diagnostics redaction。当前仓库没有 `pathMappings` 字段；source identity 继续由 absolute `MediaSource.Path` 独占，非 absolute/HTTP source 才允许 `Item.Path` fallback。
+
+新增 `src/electronapp/resolvers/smart-path-mapping.js`：pure deterministic engine 严格分类 Windows drive/UNC/POSIX，逐 segment 计算 longest suffix，保留 mapping anchor，输出 `MATCHED/AMBIGUOUS/NO_MATCH/UNSAFE` 与 `HIGH/MEDIUM/LOW`。HIGH 阈值固定为 filename + 至少三个连续父目录且 candidate 唯一；MEDIUM 为 filename + 两个父目录；更短 suffix 不输出 suggestion。relative、traversal、empty segment、root/incomplete、非 POSIX cloud candidate fail closed。matching manual mapping 阻止 suggestion，conflict 为 UNSAFE。
+
+`strmResolver.previewSmartPathMapping()` 只在显式调用时执行，并通过 fail-open sink 发出 `resolver/smart-path-mapping-candidate`。event 只含 status、confidence、matched suffix count、candidate count 和 reason。`resolve()`、`resolveAsync()`、`libmpv.playInternal()`、PlaybackManager、Session、MediaSourceId、PlaySessionId、DeviceId、reporting、WebSocket、remote control、Native Helper、DirectUrl semantics、window/surface 与 Electron runtime 均未修改。
+
+CD2 current capability：exact `FindFileByPath`、regular-file fields、`GetDownloadUrlPath`、same-origin URL 和受限 DirectUrl 为 AVAILABLE；MountPoint、root listing、directory enumeration、stable file/provider ID、name/suffix search 和 caller-provided cloud candidates 为 NOT AVAILABLE。没有扩展 proto、枚举目录、hydration、retry 或 cold-directory materialization。pure evaluator 可消费外部已知 pair；当前 API 不足以完成 CD2-aware automatic discovery。
+
+Model Tier: Tier 2
+
+Model: GPT-5.6 Sol High
+
+Reason: cross-module Resolver/CD2/diagnostics architecture audit with a frozen production route contract
+
+Escalated: No
+
+验证使用准备脚本校验三份既有 archive、生成 pinned preload，并准备 exact Electron 44.4.2 73-file tree与固定 hash 的 mpv client header。`npm test = 251/251 PASS`；focused Smart Mapping + Resolver/settings `63/63 PASS`；CD2/DirectUrl `33/33 PASS`；diagnostics/collector/observer `28/28 PASS`；`git diff --check` PASS。background build `dist/EmbyTheaterEnhanced-smart-path-phase1-ae86a3c` 绑定产品提交 `ae86a3c3b9404e38d5127c05ecfa046f72efc2bb`，payload `2137` files，source/native/runtime provenance 与 package `-VerifyOnly` PASS，Smart Mapping runtime entry 存在。foreground/native UI/真实 Emby/真实 CD2/安装均未运行。
+
 ## 2026-09-21 — Electron 44 Final Candidate post-freeze-fix closure
 
 Model Tier：2。Model：current Codex session。Reason：需要在 exact source revision 上复核 Electron 44 startup fix、自动化/正式 pipeline、Native Helper/installer provenance、安装后 profile 边界与真实前台验收；没有改变 PlaybackManager、Session、Resolver、CD2、Native Helper、libmpv 或视频合成架构。Escalated：no。

@@ -1,5 +1,61 @@
 # 项目状态
 
+## 2026-09-24 — PR #18 Token / Settings draft remediation
+
+PR #18 当前远端审查发现 Token 设置/清除成功后以旧 persisted config 整体替换 renderer `this.config`，会丢失尚未保存的规则及普通设置 draft。修复已应用为只从 Token IPC 回包提取 `cd2.tokenConfigured`，并继续更新既有 connection snapshot 生命周期；不触发 config reload，不改变 Token 独立立即持久化语义或普通设置显式 Save 语义。
+
+当前状态：Implementation = `COMPLETE`；User Functional Acceptance = `PASS`（既有用户验收记录）；Final PR Audit = `REMEDIATION APPLIED / RE-REVIEW PENDING`；PR / Merge = `PENDING`。本轮 Settings state-machine targeted `12/12 PASS`、focused `185/185 PASS`、`npm test 313/313 PASS`，修改的 JS/CJS 语法与 `git diff --check` PASS。exact-HEAD build/provenance 由最终提交的验收结果单独确认；本轮不记录 READY TO MERGE。
+
+## 2026-09-24 — STRM Smart Path Mapping PR audit candidate
+
+Phase 1–2.2 与 CD2 status sync 已完成 `base..HEAD` 静态/测试审计；远端 `main` 未偏离 v0.2.2 基线。现有规则优先、文件对应置信度与多样本边界置信度分离、Mount 共用 source anchor、schema v1 `rules[]` 和显式 Save 的行为保持。审计修复 Save、preview 与连接状态的迟到响应，移除已不用的直接写入规则 IPC，并确保 config/Token 写失败不改变内存快照。Token 设置/清除继续作为独立的用户明确操作，不属于普通配置和规则草稿。未修改 Smart Mapping boundary 算法或正式播放 route。
+
+验证：`npm test 308/308 PASS`；focused Smart Mapping/Boundary/coverage/STRM config/UI/Resolver `120/120 PASS`、CD2 `33/33 PASS`、diagnostics `28/28 PASS`。新 runtime 只在本轮最终 HEAD 提交后构建；此处不把既有 `844b7e1` runtime 当作审计最终产物。
+
+## 2026-09-23 — STRM Rules CloudDrive2 connection status sync
+
+审计确认“测试连接”读取 main-process CD2 `testConnection()` 的只读连通性/认证探针；规则卡的“检查已保存规则”只在 main 执行 source/cloud prefix replacement 格式检查。旧页面把 `mapped` 固定渲染为“前缀映射格式有效，未连接服务”，且没有消费连接测试结果，造成测试成功后卡片仍显示旧文案。
+
+`strm-config-ipc.js` 现持有一个带 revision 的 `unknown/checking/connected/failed` 连接快照，测试连接、状态读取和规则检查共用它。新测试开始或配置/Token 成功变更时 revision 递增；晚到的旧结果被忽略。设置页顶部与所有规则卡在连接测试完成时立即刷新；格式检查继续单独展示。未修改 CD2/Resolver/DirectUrl/Mount/Native 播放行为，未将路径格式有效视为连接成功。
+
+验证：STRM Settings/connection UI/client diagnostics/CD2 focused `77/77 PASS`；`git diff --check` 和修改 JS 语法检查 PASS。首次 `npm test 295/296` 时，既有 `report-playback-issue` 自测要求客户端未运行，但旧测试 runtime 仍在运行；用户正常退出后，完整复测 `npm test 296/296 PASS`。真实设置页与真实 CD2 连通性未由本任务执行。
+
+## 2026-09-23 — STRM Smart Path Mapping Phase 2.2 boundary model
+
+用户实际样本揭示单组 suffix HIGH 只支持文件对应关系，不能确定可复用 prefix 切点。本分支新增 pure `smart-mapping-boundary.js`，preview 顺序为现有 `rules[]` coverage、fileMatch、multi-sample boundary、optional mount。真实 P1/P2/P3 形态：已有 `/CloudNAS/CloudDrive/115open/115 → /115open/115 → X:\115` 规则对 `/番剧/A/file.mkv` 样本返回 `FULLY_COVERED`、显示已有规则且不生成 suggestion。
+
+单组样本 fileMatch 可以 HIGH，boundary 固定不足；多组样本必须跨不同目录分叉，source/cloud 最深非 root 公共父目录各自唯一，每组相对 suffix 按目标路径语义一致，才能得到 boundary HIGH。同目录仅换文件名不够。Mount 使用同一 sourcePrefix 验证多组路径；Mount 证据不足不会改变已证明的 cloud boundary。现有手工规则按正式最长前缀优先，cloud/mount conflict 与 DISABLED tombstone 均阻止新规则。设置页最多 8 组样本，保留 schema v1 `rules[]` 和显式 Save；生产播放链未修改。
+
+Focused Smart Mapping/coverage/Settings/Resolver/diagnostics `123/123 PASS`，`npm test 285/285 PASS`，JS syntax 与 `git diff --check` PASS。后台 runtime `2139` files，pinned Electron 44.4.2、source、Native Helper、runtime provenance 与 package `-VerifyOnly` 均 PASS；最终文档提交后会从最终 HEAD 再构建并核对 source commit。前台 UI、真实 Emby/CD2、安装均未执行。
+
+## 2026-09-22 — STRM Smart Path Mapping Phase 2.1 path semantics fix
+
+修正 Phase 2 中“本地路径/云端路径”的产品语义歧义。正式 UI 与帮助文本现在明确区分：STRM 源文件路径是 STRM / Emby `MediaSource.Path` 中记录的原始路径；CloudDrive2 文件路径是同一文件的逻辑路径；本地挂载文件路径是当前客户端实际可访问、供 Mount fallback 使用的可选路径。正式 rule card 同样显示 `STRM 源路径 / CloudDrive2 路径 / 本地挂载路径`，空 mount 明确为“未配置”。
+
+Phase 1 core 小范围泛化出 `inferSmartMountMapping()`，保留既有 cloud API 与 18 项 contract。mount 支持 Windows→Windows/UNC、UNC→Windows/UNC、POSIX→POSIX；以 cloud HIGH 得到的 sourcePrefix 固定 relative suffix 后再验证 mount full path。Cloud HIGH + Mount HIGH 生成三字段 rule；mount 缺失或非 HIGH 时仍可生成 cloud rule，mountPrefix 留空并提示原因；Cloud 非 HIGH 整体禁止加入。
+
+所有 rule action 继续遵守 EXPLICIT SAVE：普通新增、assistant、删除、AUTO disable/restore 都只改 draft；修复了持久化 `new-rule-*` 被误判为未保存草稿的问题。没有迁移或猜测现有 persisted rules。自动验证当前为 `npm test 267/267 PASS`；focused Smart Mapping `23/23 PASS`；assistant + settings `33/33 PASS`；含 Resolver focused `79/79 PASS`；UI/static `10/10 PASS`；JS syntax 与 `git diff --check` PASS。最终 exact-HEAD background runtime 为 `2138` files，pinned Electron 44.4.2、source、Native Helper、runtime provenance 与 package verify 全部 PASS；foreground/native UI、真实 Emby/CD2、安装均未执行。
+
+## 2026-09-22 — STRM Smart Path Mapping Phase 2
+
+在独立 `codex/strm-smart-path-mapping` 分支继续复用 Phase 1 engine，实现 user-confirmed mapping assistant。STRM Settings 的路径规则区新增两个显式输入、preview、confidence/evidence 展示和“加入路径规则”；没有扫描按钮，也不宣称 CD2 可自动发现 cloud path。
+
+main-process `enhanced-strm-smart-mapping-preview` 只调用 pure inference；不调用 CD2、Resolver、Mount、Native，不读取或写入 config。只有 `MATCHED/HIGH` 且当前 draft 没有 duplicate/conflict 时可以加入；MEDIUM 只展示。确认创建普通 `USER` rule draft，schema 继续只有 `rules[]`。assistant 不调用 `applyDiscovery()`；原有 Save 才持久化并要求重启。为满足显式确认边界，Settings 离页自动保存已移除；新建/assistant draft 可以本地编辑或移除。
+
+诊断事件 `smart-path-mapping-preview` 与 `smart-path-mapping-accepted` 只保留 status/confidence/matched count/reason 白名单。自动化结果：`npm test 260/260 PASS`；Smart Mapping + assistant + settings + Resolver focused `72/72 PASS`；assistant/config `31/31 PASS`；diagnostics `35/35 PASS`；UI/static `9/9 PASS`；JS syntax 与 `git diff --check` PASS。没有修改 PlaybackManager、Session、MediaSourceId、PlaySessionId、route order、DirectUrl、Mount/Native fallback、Native Helper、libmpv、Electron/window 或 settings UX 分支。前台视觉/键盘、真实 Emby/CD2 和安装均未执行；状态为 `READY FOR USER VISUAL ACCEPTANCE`。
+
+最终 exact-HEAD background runtime 为 `2138` files；pinned Electron 44.4.2 73-file input、source provenance、Electron provenance、Native Helper provenance、runtime provenance 与 package verify 全部 PASS。该 runtime 未启动，也未安装。
+
+## 2026-09-22 — STRM Smart Path Mapping Phase 1
+
+基于 `origin/main@9a034e8d627f71abbded01a1fba612d9282c9911` 创建独立 `codex/strm-smart-path-mapping` worktree。新增 pure deterministic `smart-path-mapping.js` 与 `strmResolver.previewSmartPathMapping()` dry-run hook；production `libmpv.playInternal()`、`resolve()` 和 `resolveAsync()` 不调用推导结果，正式 DirectUrl → CD2 HTTP → Mount → Native route 未改变。
+
+引擎严格区分 Windows drive、UNC 与 POSIX；Windows/UNC segment comparison 大小写不敏感，POSIX 大小写敏感。它从 filename 向上计算 longest continuous suffix，保留最靠近 root 的 matched directory 作为 prefix anchor。filename + 3 个父目录以上且 unique 为 HIGH，filename + 2 个父目录为 MEDIUM；filename-only、单父目录、同分 candidate、relative/traversal、empty segment、root/incomplete path 都不会形成可应用 suggestion。matching manual mapping 永远阻止 smart suggestion，conflict fail closed。
+
+当前固定 CD2 proto 只有 `FindFileByPath` 和 `GetDownloadUrlPath`。exact path lookup、regular-file metadata 与 download URL 可用；MountPoint、root listing、directory enumeration、stable ID、suffix/name search 和 caller-provided cloud candidates 均不可用。因此 Phase 1 evaluator 可验证外部已知 pair，但当前 CD2 API 不足以自行发现 production candidate。建议可信 pair 仍 `USER CONFIRM FIRST`；CD2-aware Phase 2 automatic discovery 为 `INSUFFICIENT DATA`。详细能力矩阵、confidence/safety 和 Phase 2 边界见 [STRM_SMART_PATH_MAPPING](STRM_SMART_PATH_MAPPING.md)。
+
+验证：`npm test 251/251 PASS`；focused Smart Mapping + Resolver/settings `63/63 PASS`；CD2/DirectUrl `33/33 PASS`；diagnostics `28/28 PASS`；`git diff --check` PASS。background runtime 绑定产品提交 `ae86a3c3b9404e38d5127c05ecfa046f72efc2bb`，payload `2137` files，source/native/runtime provenance 与 package verify PASS。未启动 Electron、未执行 foreground/native UI、真实 Emby/CD2、安装、版本 bump、tag、Release 或 deployment。
+
 ## 2026-09-21 — Electron 44 post-freeze-fix closure
 
 确认生产修复为 `8be3b6b8fdce9295f73acd7aa6b6507eb5d6c27c`。Electron 44 standard custom-scheme canonicalization 改变了 renderer command URL 的 command token 形态，例如 `electronapphost://loaded/` 与 `electronapphost://windowstate-Maximized/`；旧 parser 对大小写和尾 `/` 敏感，导致 `loaded/` 没有执行既有 `setWindowState(windowStateOnLoad)`、`mainWindow.focus()`、`hasAppLoaded = true`、`onLoaded()` chain。正式根边界固定为：

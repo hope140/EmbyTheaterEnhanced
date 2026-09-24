@@ -1,12 +1,12 @@
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['./mount-resolver.js', './cd2-resolver.js', './path-rules.js'], factory);
+        define(['./mount-resolver.js', './cd2-resolver.js', './path-rules.js', './smart-path-mapping.js'], factory);
     } else if (typeof module === 'object' && module.exports) {
-        module.exports = factory(require('./mount-resolver'), require('./cd2-resolver'), require('./path-rules'));
+        module.exports = factory(require('./mount-resolver'), require('./cd2-resolver'), require('./path-rules'), require('./smart-path-mapping'));
     } else {
-        root.strmResolver = factory(root.mountResolver, root.cd2Resolver, root.strmPathRules);
+        root.strmResolver = factory(root.mountResolver, root.cd2Resolver, root.strmPathRules, root.smartPathMapping);
     }
-}(this, function (mountResolver, cd2Resolver, pathRules) {
+}(this, function (mountResolver, cd2Resolver, pathRules, smartPathMapping) {
     'use strict';
 
     var DEFAULT_TOTAL_BUDGET_MS = 1200;
@@ -266,6 +266,18 @@
         return 'unknown';
     }
 
+    function previewSmartPathMapping(options, dependencies) {
+        var result = smartPathMapping.inferSmartPathMapping(options || {});
+        var diagnostic = smartPathMapping.diagnosticRecord(result);
+        try {
+            if (dependencies && typeof dependencies.onDiagnostic === 'function') {
+                var pending = dependencies.onDiagnostic(diagnostic);
+                if (pending && typeof pending.catch === 'function') pending.catch(function () {});
+            }
+        } catch (_) { /* Dry-run observability is fail-open. */ }
+        return result;
+    }
+
     function persistentNativeResult(context, reason, rule, cd2Reason) {
         var result = nativeResult(context.nativeSource, reason, true);
         if (rule && rule.id) result.ruleId = rule.id;
@@ -402,6 +414,7 @@
         diagnoseContext: diagnoseContext,
         selectRule: selectRule,
         orderForRule: orderForRule,
+        previewSmartPathMapping: previewSmartPathMapping,
         routeForResult: routeForResult,
         resolve: resolve,
         resolveAsync: resolveAsync,

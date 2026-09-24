@@ -51,7 +51,7 @@ Electron main process 在应用 `userData` 下维护：
 }
 ```
 
-`sourcePrefix`、`mountPrefix` 和 `cloudPrefix` 是三个不同的 identity。`mountPrefix`、`cloudPrefix` 可以为空，允许保存只具备部分确定事实的规则；`sourcePrefix` 必须是绝对 Windows/UNC/POSIX 路径。规则校验拒绝相对路径、`.`、`..`、重复 id、重复自定义 stage 和缺少 `native` 的自定义顺序。
+`sourcePrefix`、`mountPrefix` 和 `cloudPrefix` 是三个不同的 identity。`sourcePrefix` 是 STRM / Emby `MediaSource.Path` 中记录的原始媒体路径前缀，不代表当前电脑已挂载；`cloudPrefix` 是 CloudDrive2 的绝对 POSIX 逻辑路径前缀；`mountPrefix` 是当前客户端实际可访问、供 Mount fallback 使用的可选路径。`mountPrefix`、`cloudPrefix` 可以为空；`sourcePrefix` 必须是绝对 Windows/UNC/POSIX 路径。规则校验拒绝相对路径、`.`、`..`、重复 id、重复自定义 stage 和缺少 `native` 的自定义顺序。
 
 `storageType` 当前为 `local-nas` 或 `cloud-mount`。`strategy` 当前为 `cloud-first`、`mount-first` 或 `custom`。`order` 始终是四个 stage 的完整数组，便于未来扩展完整排序；当前 UI 对自定义顺序使用四个可键盘操作的顺位选择框。
 
@@ -77,7 +77,7 @@ Windows drive 和 UNC 比较大小写不敏感，POSIX 比较大小写敏感。�
 | `mount-first` | `Mount → DirectUrl → CD2 HTTP → Native` |
 | `custom` | 使用规则自身的 `order` |
 
-`DirectUrl` 与 `CD2 HTTP` 共享一个 main-process service。renderer 通过窄请求模式区分 `direct` 和 `same-origin`，不会复制两套 gRPC service。一次规则解析的 CD2 stages 共享 750ms absolute deadline；`FindFileByPath` 结果在 direct/same-origin 连续尝试间复用。DirectUrl 继续沿用已验证的 file-local User-Agent、expiry safety、additional headers fail-closed 和 Native fallback。
+`DirectUrl` 与 `CD2 HTTP` 共享一个 main-process service。renderer 通过窄请求模式区分 `direct` 和 `same-origin`，不会复制两套 gRPC service。一次规则解析的 CD2 stages 共享 1200ms absolute deadline；`FindFileByPath` 结果在 direct/same-origin 连续尝试间复用。DirectUrl 继续沿用已验证的 file-local User-Agent、expiry safety、additional headers fail-closed 和 Native fallback。
 
 以下输入仍保持原有行为：
 
@@ -142,15 +142,25 @@ enhanced-strm-config-save
 enhanced-strm-token-set
 enhanced-strm-token-clear
 enhanced-strm-cd2-test-connection
+enhanced-strm-cd2-connection-status
 enhanced-strm-rule-test
-enhanced-strm-rule-restore-auto
-enhanced-strm-rule-disable
+enhanced-strm-smart-mapping-preview
 ```
 
 所有 handler 都校验当前 `BrowserWindow.webContents`。连接测试只返回 `ok`、`auth_failed`、`connection_failed` 或 `incomplete` 等安全枚举；规则测试只返回映射状态和挂载存在性，不启动播放。
+
+连接状态是 main-process 当前设置会话的单一快照，包含 `connectionStatus` 与单调 `connectionRevision`。测试连接的现有 CD2 探针从 `checking` 更新到 `connected` 或 `failed`；旧的并发结果及同 revision 的迟到 `checking` 快照不能覆盖终态。页面加载读取快照；成功或失败后顶部和所有规则卡立即从同一结果刷新。配置、Token 保存或清除会将旧测试状态标为 `unknown`。规则卡中的“前缀映射格式有效”仅由本地规则替换验证产生，旁边独立显示最近一次连接测试状态，不把格式有效写成服务连接成功。连接测试使用已保存的地址与 Token；地址草稿需先显式保存，Token 则由独立的设置/清除动作保存。
+
+## Smart Mapping assistant
+
+路径规则区下方提供“智能映射助手”。用户输入同一媒体的 `STRM 源文件路径`、`CloudDrive2 文件路径` 和可选 `本地挂载文件路径`。STRM source 是 `MediaSource.Path` identity，不是当前电脑挂载位置。分析由 main-process `enhanced-strm-smart-mapping-preview` 调用 pure engine；不调用 CD2、Resolver 或 filesystem，不读取 Token，不保存 config，也不自动发现路径。
+
+页面先检查当前 `rules[]` 是否已经按正式最长前缀规则精确解释全部样本。已覆盖或冲突时显示命中规则，不推导新规则。单组样本即使 `fileMatch=HIGH`，`boundary` 仍为证据不足；用户可添加另一组不同目录下的同源文件。只有至少两组独立目录样本的 source/cloud 最深非 root 公共父目录及每组相对 suffix 一致，`boundary=MATCHED/HIGH`，才允许加入 draft。当前 draft 中 duplicate/conflict 继续阻断加入，manual rule 不会被覆盖。
+
+Mount 使用同一 sourcePrefix 和多组 relative suffix；Mount 证据不足时仍允许已证明的 cloud boundary 形成 cloud-only rule，但 `mountPrefix` 保持空并显示 warning。确认后的 suggestion 复用现有 version 1 rule editor，创建普通 `USER` rule；用户仍可修改、移除，并必须点击“保存设置”才调用原 `SAVE → store.save() → normalizeRule()` 流程。页面离开不自动保存；普通规则删除和 AUTO disable/restore 同样先留在 draft。`applyDiscovery()` 不参与本流程，schema 仍只有 `rules[]`，也不自动迁移既有规则。
 
 ## Verification boundary
 
 本分支已用 Node unit/targeted tests 覆盖 config store、secret redaction、IPC trust boundary、legacy bootstrap、rule validation、path semantics、longest prefix、AUTO/USER/DISABLED、strategy order、mount replacement、CD2 direct/same-origin、Native fallback 和 Abort。
 
-当前 synthetic frozen runtime 已覆盖 persistent config bootstrap 后的 DirectUrl/CD2 fake pipeline、CD2 miss fallback、PlaybackManager/Session/controls/reporting/cleanup。真实 settings page 手工 native-window automation 和真实服务器 cloud-first/mount-first playback 不在本轮可宣称范围内。
+当前 synthetic frozen runtime 已覆盖 persistent config bootstrap 后的 DirectUrl/CD2 fake pipeline、CD2 miss fallback、PlaybackManager/Session/controls/reporting/cleanup。Phase 2 已覆盖 preview IPC、draft state、duplicate/conflict、explicit Save 和静态 UI/accessibility contract；真实 settings page 的前台视觉与键盘验收、native-window automation 和真实服务器 cloud-first/mount-first playback 不在本轮可宣称范围内。

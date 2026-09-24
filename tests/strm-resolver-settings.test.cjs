@@ -57,6 +57,75 @@ function playbackContext(sourcePath) {
     };
 }
 
+function deferred() {
+    let resolve;
+    let reject;
+    const promise = new Promise((resolvePromise, rejectPromise) => {
+        resolve = resolvePromise;
+        reject = rejectPromise;
+    });
+    return {promise, resolve, reject};
+}
+
+function createConfigIpcHarness(serviceFactory, options) {
+    const settings = options || {};
+    const root = temporaryRoot('ete-strm-connection-status-');
+    const store = configStore.createStore({rootDir: root, environment: {}});
+    const handlers = {};
+    const ipcMain = {
+        handle(name, handler) { handlers[name] = handler; },
+        removeHandler(name) { delete handlers[name]; }
+    };
+    const trusted = {};
+    const unregister = configIpc.register({
+        ipcMain,
+        store,
+        fs: settings.fs,
+        getWebContents: () => trusted,
+        createTestService: serviceFactory
+    });
+    return {root, store, handlers, trusted, unregister};
+}
+
+function invoke(harness, channel, payload, sender) {
+    return harness.handlers[channel]({sender: sender || harness.trusted}, payload);
+}
+
+test('preview IPC enforces the eight-sample limit at the trusted boundary', async () => {
+    const harness = createConfigIpcHarness(() => {
+        throw new Error('preview must not create a CD2 service');
+    });
+    const samples = Array.from({length: 9}, (_, index) => ({
+        sourcePath: '/source/Anime/Show/Season ' + (index + 1) + '/episode.mkv',
+        cloudPath: '/cloud/Anime/Show/Season ' + (index + 1) + '/episode.mkv'
+    }));
+    try {
+        const accepted = await invoke(harness, configIpc.CHANNELS.PREVIEW_MAPPING, {
+            samples: samples.slice(0, 8), rules: []
+        });
+        assert.equal(accepted.status, 'ok');
+        const rejected = await invoke(harness, configIpc.CHANNELS.PREVIEW_MAPPING, {
+            samples, rules: []
+        });
+        assert.deepEqual(rejected, {status: 'error', reason: 'invalid_request'});
+    } finally {
+        harness.unregister();
+    }
+});
+
+test('legacy rule mutation IPC is absent while explicit Save remains registered', () => {
+    const harness = createConfigIpcHarness(() => {
+        throw new Error('registration must not create a CD2 service');
+    });
+    try {
+        assert.equal(harness.handlers['enhanced-strm-rule-restore-auto'], undefined);
+        assert.equal(harness.handlers['enhanced-strm-rule-disable'], undefined);
+        assert.equal(typeof harness.handlers[configIpc.CHANNELS.SAVE], 'function');
+    } finally {
+        harness.unregister();
+    }
+});
+
 test('settings route and renderer avoid appSettings/localStorage for resolver configuration', () => {
     assert.match(libmpvSource, /path: 'mpvplayer\/strm\.html'/);
     assert.match(libmpvSource, /controller: pluginManager\.mapPath\(self, 'mpvplayer\/strm\.js'\)/);
@@ -102,6 +171,62 @@ test('persistent config stores rules and token separately without returning toke
     const restarted = configStore.createStore({rootDir: root, environment: {ETE_CD2_TOKEN: 'other-value'}});
     assert.equal(restarted.getPublicConfig().cd2.tokenConfigured, true);
     assert.deepEqual(restarted.getPublicConfig().rules, store.getPublicConfig().rules);
+});
+
+test('failed atomic writes preserve the public and runtime config snapshots', () => {
+    const root = temporaryRoot('ete-strm-failed-save-');
+    let failRename = false;
+    const fileSystem = Object.assign({}, fs, {
+        renameSync(source, destination) {
+            if (failRename) throw new Error('synthetic_write_failure');
+            return fs.renameSync(source, destination);
+        }
+    });
+    const store = configStore.createStore({rootDir: root, environment: {}, fs: fileSystem});
+    const initial = store.getPublicConfig();
+    initial.rules = [baseRule()];
+    store.save(initial);
+    const beforePublic = store.getPublicConfig();
+    const beforeRuntime = store.getRuntimeConfig();
+    const beforeFile = fs.readFileSync(store.getConfigPaths().configPath);
+    const changed = store.getPublicConfig();
+    changed.rules[0].cloudPrefix = '/different-cloud';
+    failRename = true;
+
+    assert.throws(() => store.save(changed), /synthetic_write_failure/);
+    assert.deepEqual(store.getPublicConfig(), beforePublic);
+    assert.deepEqual(store.getRuntimeConfig(), beforeRuntime);
+    assert.deepEqual(fs.readFileSync(store.getConfigPaths().configPath), beforeFile);
+});
+
+test('failed token writes preserve tokenConfigured and the active runtime token', () => {
+    const root = temporaryRoot('ete-strm-failed-token-');
+    let failRename = true;
+    const fileSystem = Object.assign({}, fs, {
+        renameSync(source, destination) {
+            if (failRename) throw new Error('synthetic_write_failure');
+            return fs.renameSync(source, destination);
+        }
+    });
+    const store = configStore.createStore({rootDir: root, environment: {}, fs: fileSystem});
+    const secretsPath = store.getConfigPaths().secretsPath;
+
+    assert.throws(() => store.setToken('synthetic-token-a'), /synthetic_write_failure/);
+    assert.equal(store.getPublicConfig().cd2.tokenConfigured, false);
+    assert.equal(store.getRuntimeConfig().token, '');
+    assert.equal(fs.existsSync(secretsPath), false);
+
+    failRename = false;
+    store.setToken('synthetic-token-b');
+    const beforePublic = store.getPublicConfig();
+    const beforeRuntime = store.getRuntimeConfig();
+    const beforeFile = fs.readFileSync(secretsPath);
+    failRename = true;
+
+    assert.throws(() => store.clearToken(), /synthetic_write_failure/);
+    assert.deepEqual(store.getPublicConfig(), beforePublic);
+    assert.deepEqual(store.getRuntimeConfig(), beforeRuntime);
+    assert.deepEqual(fs.readFileSync(secretsPath), beforeFile);
 });
 
 test('legacy environment bootstraps one AUTO rule once and persistent config wins on restart', () => {
@@ -232,6 +357,26 @@ test('DISABLED rule suppresses the same automatic mapping until explicitly resto
     result = store.restoreAutoRule('rule-main');
     assert.equal(result.rules[0].originState, 'AUTO');
     assert.equal(result.rules[0].enabled, true);
+});
+
+test('explicit Save can stage AUTO disable and DISABLED restore without separate mutation IPC', () => {
+    const root = temporaryRoot('ete-strm-explicit-rule-state-');
+    const store = configStore.createStore({rootDir: root, environment: {}});
+    let config = store.applyDiscovery([baseRule({originState: 'AUTO'})]);
+    const disabledDraft = JSON.parse(JSON.stringify(config));
+    disabledDraft.rules[0].originState = 'DISABLED';
+    disabledDraft.rules[0].enabled = false;
+
+    config = store.save(disabledDraft);
+    assert.equal(config.rules[0].originState, 'DISABLED');
+    assert.equal(config.rules[0].enabled, false);
+
+    const restoredDraft = JSON.parse(JSON.stringify(config));
+    restoredDraft.rules[0].originState = 'AUTO';
+    restoredDraft.rules[0].enabled = true;
+    config = store.save(restoredDraft);
+    assert.equal(config.rules[0].originState, 'AUTO');
+    assert.equal(config.rules[0].enabled, true);
 });
 
 test('longest prefix matching selects the most specific enabled rule', () => {
@@ -563,8 +708,215 @@ test('config IPC trusts only the active renderer and never returns a secret', as
     assert.doesNotMatch(JSON.stringify(publicConfig), /ipc-secret-value/);
     assert.deepEqual(await handlers[configIpc.CHANNELS.TEST_CONNECTION]({sender: trusted}), {
         status: 'ok',
-        reason: 'connected'
+        reason: 'connected',
+        connectionStatus: 'connected',
+        connectionRevision: 2
     });
     unregister();
     assert.equal(handlers[configIpc.CHANNELS.GET], undefined);
+});
+
+test('connection status transitions from checking to failed and exposes a read-only snapshot', async () => {
+    const pending = deferred();
+    let created = 0;
+    const harness = createConfigIpcHarness(() => {
+        created++;
+        return {testConnection: () => pending.promise, close() {}};
+    });
+
+    assert.deepEqual(await invoke(harness, configIpc.CHANNELS.GET_CONNECTION_STATUS), {
+        connectionStatus: 'unknown',
+        connectionRevision: 0
+    });
+
+    const request = invoke(harness, configIpc.CHANNELS.TEST_CONNECTION);
+    assert.deepEqual(await invoke(harness, configIpc.CHANNELS.GET_CONNECTION_STATUS), {
+        connectionStatus: 'checking',
+        connectionRevision: 1
+    });
+
+    pending.resolve({status: 'connection_failed', reason: 'connection_failed'});
+    assert.deepEqual(await request, {
+        status: 'connection_failed',
+        reason: 'connection_failed',
+        connectionStatus: 'failed',
+        connectionRevision: 1
+    });
+    assert.deepEqual(await invoke(harness, configIpc.CHANNELS.GET_CONNECTION_STATUS), {
+        connectionStatus: 'failed',
+        connectionRevision: 1
+    });
+    assert.equal(created, 1);
+    harness.unregister();
+});
+
+test('successful connection test transitions to connected and keeps the same revision', async () => {
+    const harness = createConfigIpcHarness(() => ({
+        async testConnection() { return {status: 'ok', reason: 'connected'}; },
+        close() {}
+    }));
+
+    const response = await invoke(harness, configIpc.CHANNELS.TEST_CONNECTION);
+    assert.equal(response.status, 'ok');
+    assert.equal(response.connectionStatus, 'connected');
+    assert.equal(response.connectionRevision, 1);
+    assert.deepEqual(await invoke(harness, configIpc.CHANNELS.GET_CONNECTION_STATUS), {
+        connectionStatus: 'connected',
+        connectionRevision: 1
+    });
+    harness.unregister();
+});
+
+test('a reconnect failure replaces a previous connected snapshot', async () => {
+    const services = [
+        {testConnection: async () => ({status: 'ok', reason: 'connected'}), close() {}},
+        {testConnection: async () => ({status: 'auth_failed', reason: 'auth_failed'}), close() {}}
+    ];
+    const harness = createConfigIpcHarness(() => services.shift());
+
+    const first = await invoke(harness, configIpc.CHANNELS.TEST_CONNECTION);
+    assert.deepEqual({status: first.status, connectionStatus: first.connectionStatus}, {
+        status: 'ok',
+        connectionStatus: 'connected'
+    });
+    const second = await invoke(harness, configIpc.CHANNELS.TEST_CONNECTION);
+    assert.deepEqual({status: second.status, connectionStatus: second.connectionStatus}, {
+        status: 'auth_failed',
+        connectionStatus: 'failed'
+    });
+    assert.equal(second.connectionRevision, first.connectionRevision + 1);
+    harness.unregister();
+});
+
+test('out-of-order connection results cannot overwrite the newer attempt', async () => {
+    const older = deferred();
+    const newer = deferred();
+    const services = [
+        {testConnection: () => older.promise, close() {}},
+        {testConnection: () => newer.promise, close() {}}
+    ];
+    const harness = createConfigIpcHarness(() => services.shift());
+
+    const oldRequest = invoke(harness, configIpc.CHANNELS.TEST_CONNECTION);
+    const newRequest = invoke(harness, configIpc.CHANNELS.TEST_CONNECTION);
+    assert.deepEqual(await invoke(harness, configIpc.CHANNELS.GET_CONNECTION_STATUS), {
+        connectionStatus: 'checking',
+        connectionRevision: 2
+    });
+
+    older.resolve({status: 'ok', reason: 'connected'});
+    const oldResponse = await oldRequest;
+    assert.equal(oldResponse.connectionRevision, 2);
+    assert.equal(oldResponse.connectionStatus, 'checking');
+    assert.deepEqual(await invoke(harness, configIpc.CHANNELS.GET_CONNECTION_STATUS), {
+        connectionStatus: 'checking',
+        connectionRevision: 2
+    });
+
+    newer.resolve({status: 'connection_failed', reason: 'connection_failed'});
+    const newResponse = await newRequest;
+    assert.equal(newResponse.connectionStatus, 'failed');
+    assert.equal(newResponse.connectionRevision, 2);
+    assert.deepEqual(await invoke(harness, configIpc.CHANNELS.GET_CONNECTION_STATUS), {
+        connectionStatus: 'failed',
+        connectionRevision: 2
+    });
+    harness.unregister();
+});
+
+test('rule checks keep path-format results separate and attach the same connection snapshot', async () => {
+    const harness = createConfigIpcHarness(() => ({
+        async testConnection() { return {status: 'ok', reason: 'connected'}; },
+        close() {}
+    }));
+    const publicConfig = harness.store.getPublicConfig();
+    publicConfig.rules = [baseRule({mountPrefix: null})];
+    harness.store.save(publicConfig);
+
+    const before = await invoke(harness, configIpc.CHANNELS.TEST_RULE, {ruleId: 'rule-main'});
+    assert.deepEqual({status: before.status, mount: before.mount, cloud: before.cloud}, {
+        status: 'ok',
+        mount: 'not_configured',
+        cloud: 'mapped'
+    });
+    assert.deepEqual({connectionStatus: before.connectionStatus, connectionRevision: before.connectionRevision}, {
+        connectionStatus: 'unknown',
+        connectionRevision: 0
+    });
+
+    await invoke(harness, configIpc.CHANNELS.TEST_CONNECTION);
+    const after = await invoke(harness, configIpc.CHANNELS.TEST_RULE, {ruleId: 'rule-main'});
+    assert.deepEqual({status: after.status, mount: after.mount, cloud: after.cloud}, {
+        status: 'ok',
+        mount: 'not_configured',
+        cloud: 'mapped'
+    });
+    assert.deepEqual({connectionStatus: after.connectionStatus, connectionRevision: after.connectionRevision}, {
+        connectionStatus: 'connected',
+        connectionRevision: 1
+    });
+    harness.unregister();
+});
+
+test('successful config and token mutations clear connection status and advance revision', async () => {
+    const harness = createConfigIpcHarness(() => ({
+        async testConnection() { return {status: 'ok', reason: 'connected'}; },
+        close() {}
+    }));
+    await invoke(harness, configIpc.CHANNELS.TEST_CONNECTION);
+    let snapshot = await invoke(harness, configIpc.CHANNELS.GET_CONNECTION_STATUS);
+    assert.equal(snapshot.connectionStatus, 'connected');
+
+    const config = harness.store.getPublicConfig();
+    const saved = await invoke(harness, configIpc.CHANNELS.SAVE, {config});
+    assert.equal(saved.status, 'saved');
+    assert.equal(saved.connectionStatus, 'unknown');
+    assert.ok(saved.connectionRevision > snapshot.connectionRevision);
+    snapshot = saved;
+
+    const token = await invoke(harness, configIpc.CHANNELS.SET_TOKEN, {token: 'new-test-token'});
+    assert.equal(token.status, 'saved');
+    assert.equal(token.connectionStatus, 'unknown');
+    assert.ok(token.connectionRevision > snapshot.connectionRevision);
+    snapshot = token;
+
+    const cleared = await invoke(harness, configIpc.CHANNELS.CLEAR_TOKEN);
+    assert.equal(cleared.status, 'saved');
+    assert.equal(cleared.connectionStatus, 'unknown');
+    assert.ok(cleared.connectionRevision > snapshot.connectionRevision);
+    harness.unregister();
+});
+
+test('connection status IPC rejects an untrusted renderer without changing state', async () => {
+    let created = 0;
+    const harness = createConfigIpcHarness(() => {
+        created++;
+        return {async testConnection() { return {status: 'ok'}; }, close() {}};
+    });
+    const untrusted = {};
+    const rejectedStatus = await invoke(harness, configIpc.CHANNELS.GET_CONNECTION_STATUS, undefined, untrusted);
+    const rejectedTest = await invoke(harness, configIpc.CHANNELS.TEST_CONNECTION, undefined, untrusted);
+    assert.deepEqual(rejectedStatus, {status: 'error', reason: 'untrusted_sender'});
+    assert.deepEqual(rejectedTest, {status: 'error', reason: 'untrusted_sender'});
+    assert.equal(created, 0);
+    assert.deepEqual(await invoke(harness, configIpc.CHANNELS.GET_CONNECTION_STATUS), {
+        connectionStatus: 'unknown',
+        connectionRevision: 0
+    });
+    harness.unregister();
+});
+
+test('renderer connection result refreshes every rule card and uses connection-only wording', () => {
+    const testConnectionStart = settingsSource.indexOf('SettingsView.prototype.testConnection');
+    const testRuleStart = settingsSource.indexOf('SettingsView.prototype.testRule');
+    assert.ok(testConnectionStart >= 0 && testRuleStart > testConnectionStart);
+    const testConnectionSource = settingsSource.slice(testConnectionStart, testRuleStart);
+
+    assert.match(settingsSource, /getConnectionStatus:\s*['"]enhanced-strm-cd2-connection-status['"]/);
+    assert.match(settingsSource, /function\s+connectionText\s*\(/);
+    assert.match(settingsSource, /connectionStatus/);
+    assert.match(testConnectionSource, /applyConnectionSnapshot\s*\(/);
+    assert.match(settingsSource, /refreshRuleConnectionCards\s*\(/);
+    assert.doesNotMatch(settingsSource, /未连接服务/);
+    assert.doesNotMatch(settingsSource, /前缀映射格式有效[^。\n]*连接/);
 });

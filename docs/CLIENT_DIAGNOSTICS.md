@@ -39,7 +39,7 @@ ete-client.jsonl.3
 当前主要类别如下：
 
 - `app`：`start`、自然可观测的 `shutdown`，以及版本、平台、架构和安全摘要。
-- `resolver`：`context-observed`、必要时的 `invalid-context`，以及每次 STRM resolve 的 `route-selected`。
+- `resolver`：`context-observed`、必要时的 `invalid-context`、每次 STRM resolve 的 `route-selected`，以及设置页的 `smart-path-mapping-preview` / `smart-path-mapping-accepted`。
 - `cd2`：`resolve-start`、`client-ready`、`find-file-start`、`find-file-end`、`download-url-start`、`download-url-end`、`resolve-hit`、`resolve-miss`、`resolve-error`、`resolve-cancelled`。
 - `mount`：`resolve-start`、`resolve-hit`、`resolve-miss`。
 - `playback`：`play-request`、`resolver-complete`、`loadfile-requested`、`core-playing`、`pause`、`resume`、`seek`、`next`、`stop`、`playback-error`。
@@ -48,6 +48,8 @@ ete-client.jsonl.3
 IPC 也保持两条明确边界：`enhanced-diagnostics` 只接收旧的 mpv property snapshot，`enhanced-diagnostics-log` 只接收 structured client event。两条通道都只接受当前 BrowserWindow 的 trusted sender；logger 自身继续负责最终 sanitizer 和 fail-open。
 
 CD2 resolve 事件只记录 request id、rule id、mode、candidate 数量、reason、耗时、timeout/cancelled 状态和安全的 `sourceKind`。阶段 timing 事件只记录 `mode` 与从该次 CD2 resolve 开始计算的 `elapsedMs`；不记录 Path、URL、token 或 RPC 参数。Mount 事件只记录 request id、rule id、candidate 数量、reason、`localExists` 与 `mappedPathHash`。
+
+Smart Mapping preview 只记录 `coverageStatus`、`fileMatchConfidence`、`boundaryStatus`、`boundaryConfidence`、`matchedSuffixSegments` 和安全 `reason` 枚举；用户把 Boundary HIGH suggestion 加入页面 draft 时，accepted 事件只记录 `boundaryConfidence` 和 `matchedSuffixSegments`。两类事件都不记录 raw STRM/cloud/mount path、canonical prefix、URL、Token 或完整 rule；accepted 也不代表 config 已保存或 production route 已改变。
 
 ## Resolver route meanings
 

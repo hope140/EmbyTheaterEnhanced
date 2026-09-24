@@ -186,6 +186,104 @@
     min-height: 24px;
 }
 
+.ete-strm-assistant {
+    border-top: 1px solid var(--theme-primary-color-alpha, rgba(0, 164, 220, .25));
+    margin-top: 24px;
+    padding-top: 20px;
+}
+
+.ete-strm-assistant-heading h3,
+.ete-strm-assistant-suggestion h4 {
+    margin: 0 0 6px;
+}
+
+.ete-strm-assistant-heading p {
+    margin: 0 0 16px;
+    max-width: 760px;
+}
+
+.ete-strm-assistant-sample {
+    border: 1px solid var(--theme-primary-color-alpha, rgba(0, 164, 220, .25));
+    border-radius: 4px;
+    margin: 12px 0;
+    padding: 16px;
+}
+
+.ete-strm-assistant-sample legend {
+    font-weight: 600;
+    padding: 0 6px;
+}
+
+.ete-strm-assistant-sample .btnRemoveSample {
+    margin-top: 8px;
+}
+
+.ete-strm-assistant-grid {
+    display: grid;
+    gap: 0 20px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ete-strm-assistant-grid .inputContainer {
+    min-width: 0;
+}
+
+.ete-strm-assistant-grid input {
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.ete-strm-assistant-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.ete-strm-assistant-actions button,
+.ete-strm-assistant-suggestion button {
+    min-height: 44px;
+}
+
+.smartMappingState {
+    min-height: 24px;
+}
+
+.ete-strm-assistant-preview {
+    background: rgba(0, 164, 220, .08);
+    background: color-mix(in srgb, var(--theme-primary-color, #00a4dc) 8%, transparent);
+    border-radius: 4px;
+    margin-top: 16px;
+    padding: 16px;
+}
+
+.ete-strm-assistant-suggestion dl {
+    display: grid;
+    gap: 10px 20px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 12px 0 16px;
+}
+
+.ete-strm-assistant-suggestion dl > div {
+    min-width: 0;
+}
+
+.ete-strm-assistant-suggestion dt {
+    color: var(--theme-secondary-text-color, rgba(255, 255, 255, .7));
+    font-size: .86em;
+    margin-bottom: 3px;
+}
+
+.ete-strm-assistant-suggestion dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.smartSourcePrefix,
+.smartCloudPrefix {
+    font-family: Consolas, "Courier New", monospace;
+}
+
 .ete-strm-settings button {
     cursor: pointer;
     min-height: 40px;
@@ -221,7 +319,9 @@
     }
 
     .ete-strm-rule-grid,
-    .ete-strm-custom-order {
+    .ete-strm-custom-order,
+    .ete-strm-assistant-grid,
+    .ete-strm-assistant-suggestion dl {
         grid-template-columns: 1fr;
     }
 }
