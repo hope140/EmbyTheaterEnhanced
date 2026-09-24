@@ -81,6 +81,7 @@ function makeTransitionHarness(item, options) {
     const client = {
         getImageUrl(itemId, params) {
             imageRequests.push({itemId, params});
+            if (options && options.throwOnBackdrop && params.type === 'Backdrop') throw new Error('backdrop image unavailable');
             if (options && options.throwOnPrimary && params.type === 'Primary') throw new Error('primary image unavailable');
             return `image://${itemId}/${params.type.toLowerCase()}${params.index == null ? '' : `/${params.index}`}?tag=${params.tag}`;
         }
@@ -154,6 +155,27 @@ function assertBlackFallbackStyle() {
         'overlay retains the black fallback background when no image is present');
 }
 
+function cssRule(selector) {
+    const css = fs.readFileSync(path.join(__dirname, '../src/electronapp/plugins/libmpv.css'), 'utf8');
+    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const match = css.match(new RegExp(`${escaped}\\s*\\{([^}]*)\\}`, 's'));
+    assert.ok(match, `CSS rule exists for ${selector}`);
+    return match[1];
+}
+
+test('overlay artwork fills the video area with centered cover cropping', function () {
+    const containerRule = cssRule('.mpv-nextTrackTransition');
+    const artworkRule = cssRule('.mpv-nextTrackTransition-artwork');
+    assert.match(containerRule, /position:\s*absolute\s*;/);
+    assert.match(containerRule, /inset:\s*0\s*;/);
+    assert.match(containerRule, /overflow:\s*hidden\s*;/);
+    assert.match(artworkRule, /width:\s*100%\s*;/);
+    assert.match(artworkRule, /height:\s*100%\s*;/);
+    assert.match(artworkRule, /object-fit:\s*cover\s*;/);
+    assert.match(artworkRule, /object-position:\s*center\s*;/);
+    assert.doesNotMatch(artworkRule, /max-width|max-height|object-fit:\s*contain/i);
+});
+
 test('uses the next Item Primary image tag and keeps the overlay visible until matching playbackReady', async function () {
     const item = {Id: 'episode-primary', MediaType: 'Video', ImageTags: {Primary: 'primary-tag'}};
     const harness = makeTransitionHarness(item, {deferNextTrack: true, simulateStop: true});
@@ -197,21 +219,36 @@ test('uses the next Item Primary image tag and keeps the overlay visible until m
     assert.deepEqual(await pending, {requestId: 1});
 });
 
-test('uses Backdrop when Primary URL is unavailable and keeps pure black when all artwork fails', function () {
-    const fallbackItem = {
-        Id: 'episode-backdrop',
+test('prefers Backdrop, falls back to Primary when Backdrop URL generation or loading fails', function () {
+    const item = {
+        Id: 'episode-artwork-priority',
         MediaType: 'Video',
         ImageTags: {Primary: 'primary-tag'},
         BackdropImageTags: ['backdrop-tag']
     };
-    const harness = makeTransitionHarness(fallbackItem, {throwOnPrimary: true});
-    harness.transition.show(fallbackItem);
-    const image = overlay(harness).querySelector('img');
-    assert.equal(image.src, 'image://episode-backdrop/backdrop/0?tag=backdrop-tag');
-    assert.deepEqual(harness.imageRequests.map(row => row.params.type), ['Primary', 'Backdrop']);
+    const preferred = makeTransitionHarness(item);
+    preferred.transition.show(item);
+    assert.equal(overlay(preferred).querySelector('img').src,
+        'image://episode-artwork-priority/backdrop/0?tag=backdrop-tag');
+    assert.deepEqual(preferred.imageRequests.map(row => row.params.type), ['Backdrop', 'Primary'],
+        'Backdrop is requested before Primary when both image tags exist');
 
+    const generationFallback = makeTransitionHarness(item, {throwOnBackdrop: true});
+    generationFallback.transition.show(item);
+    assert.equal(overlay(generationFallback).querySelector('img').src,
+        'image://episode-artwork-priority/primary?tag=primary-tag');
+    assert.deepEqual(generationFallback.imageRequests.map(row => row.params.type), ['Backdrop', 'Primary'],
+        'Primary is selected when Backdrop URL generation fails');
+
+    const loadFallback = makeTransitionHarness(item);
+    loadFallback.transition.show(item);
+    const image = overlay(loadFallback).querySelector('img');
     image.onerror();
-    assert.equal(overlay(harness).querySelector('img'), null, 'failed artwork is removed and black overlay remains');
+    assert.equal(image.src, 'image://episode-artwork-priority/primary?tag=primary-tag',
+        'Primary is attempted when the Backdrop image fails to load');
+    image.onerror();
+    assert.equal(overlay(loadFallback).querySelector('img'), null,
+        'failed Backdrop and Primary are removed while the black overlay remains');
     assertBlackFallbackStyle();
 
     const noArtworkItem = {Id: 'episode-no-art', MediaType: 'Video'};

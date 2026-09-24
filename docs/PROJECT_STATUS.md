@@ -2,9 +2,9 @@
 
 ## 2026-09-24 — NextTrack transition artwork candidate
 
-针对 NextTrack 期间透明播放区域短暂露出桌面的用户观察，当前 `codex/nexttrack-transition-overlay` candidate 增加 renderer 内视觉过渡层。实现复用 PlaybackManager 已选中的队列 Item 和现有 `ApiClient.getImageUrl()`：Primary image 优先、首个 Backdrop image 次之、不可用时为纯黑。NextTrack 入口先同步显示覆盖层，再同步调用原 `nextTrack()`；paint gate 位于 `libmpv.stop(false)` 隐藏 surface 之前。匹配当前播放请求的 `core-playing` 且视频容器恢复可见后，覆盖层等待一次 paint 再淡出。原播放顺序与 source、Resolver、Session、Native Helper contract 未改。
+针对 NextTrack 期间透明播放区域短暂露出桌面的用户观察，当前 `codex/nexttrack-transition-overlay` candidate 增加 renderer 内视觉过渡层。实现复用 PlaybackManager 已选中的队列 Item 和现有 `ApiClient.getImageUrl()`：首个 Backdrop image 优先、Primary poster 次之、不可用时为纯黑。比例修复使 overlay 填满视频容器，图片采用 100% 宽高和居中 `object-fit:cover`，横版图覆盖 16:9 区域，竖版 poster 裁切填满区域。NextTrack 入口先同步显示覆盖层，再同步调用原 `nextTrack()`；paint gate 位于 `libmpv.stop(false)` 隐藏 surface 之前。匹配当前播放请求的 `core-playing` 且视频容器恢复可见后，覆盖层等待一次 paint 再淡出。原播放顺序与 source、Resolver、Session、Native Helper contract 未改。
 
-状态：Implementation = `CODED / AUTO VERIFIED`；focused playback/window `42/42 PASS`，`npm test 324/324 PASS`，相关 JS syntax 与 `git diff --check` PASS。exact-commit build/provenance 与 package VerifyOnly 将在本地提交后执行，结果见本任务最终报告；Foreground visual review = `PENDING USER REVIEW`。本条不宣称白屏体验已验收，也不把自动化或隐藏 runtime 作为视觉证据。
+状态：比例修复 = `CODED / AUTO VERIFIED`；修复后 focused playback/window `43/43 PASS`、`npm test 325/325 PASS`、相关 JS syntax 与 `git diff --check` PASS。Foreground visual review = `PENDING USER REVIEW`。本条不宣称封面比例已通过新的前台视觉验收，也不把自动化或隐藏 runtime 作为视觉证据。
 
 ## 2026-09-24 — Smart Path Mapping milestone closure
 

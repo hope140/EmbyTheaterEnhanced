@@ -2,7 +2,7 @@
 
 ## NextTrack transition artwork candidate
 
-此 candidate 的 focused Node contract 覆盖 Primary/Backdrop 与黑色 fallback、`libmpv.stop(false)` 隐藏 surface 前的 overlay paint gate、当前 request 的 `core-playing` fade、连续调用时 stale transition ownership 和失败清理。wrapper 同步调用原 `nextTrack()`，维持 PlaybackManager request id 与 Stop supersession 顺序。Focused playback/window `42/42 PASS`，`npm test 324/324 PASS`，相关 JS syntax 与 `git diff --check` PASS。exact-commit build/source/runtime provenance 和 package VerifyOnly 在本地提交后单独执行；结果见任务最终报告。
+此 candidate 的 focused Node contract 覆盖 Backdrop 优先、Primary poster fallback、纯黑 fallback、`libmpv.stop(false)` 隐藏 surface 前的 overlay paint gate、当前 request 的 `core-playing` fade、连续调用时 stale transition ownership 和失败清理。比例修复测试断言 overlay 填满区域、图片 100% 宽高及 `object-fit:cover`/居中裁切，并验证图片加载失败仍保持黑底。修复后 focused playback/window `43/43 PASS`，`npm test 325/325 PASS`，相关 JS syntax 与 `git diff --check` PASS。
 
 前台客户端未由自动流程启动。只有用户实际检查 NextTrack 时覆盖层是否及时盖住透明播放区、下一集首帧是否出现后淡出，才能记录 foreground visual acceptance；隐藏 runtime、DOM/unit test 与 provenance 均不替代该层证据。
 

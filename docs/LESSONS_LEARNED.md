@@ -3,7 +3,7 @@
 ## 2026-09-24 — Transparent playback gap needs an in-window visual owner
 
 - 用户报告的 NextTrack 空白发生在透明播放窗口内：播放 surface 隐藏后，桌面可从视频区域显露。视觉过渡层应由现有 renderer 在 surface teardown 前同步持有，并限制在播放容器内，不能改变 main window、Native Helper 或 Session ownership。
-- 队列管理器在换项时已持有选中 Item；复用该 Item 的现有 image URL builder 可以显示 Primary/Backdrop，而不再请求下一集元数据。图片缺失或失败应立即落到黑底，不能阻塞播放请求。
+- 队列管理器在换项时已持有选中 Item；复用该 Item 的现有 image URL builder 可以显示 Backdrop 优先、Primary poster fallback 的封面，而不再请求下一集元数据。过渡图必须在视频容器内用 100% 宽高和 `object-fit:cover` 填满，竖版 poster 允许居中裁切；图片缺失或失败应立即落到黑底，不能阻塞播放请求。
 - 需要保证 teardown 前看到 overlay 时，应在现有 surface hide 边界用 renderer paint 协调，而不是延迟或包裹 manager 的整个 NextTrack 调用；这样可保留既有 request id 与 Stop supersession 顺序。不能用固定 sleep 猜测时长。`core-playing` 是当前可用的 ready proxy；可见 surface 之后仍需单独做真实前台视觉检查，不能等同于已观测到首个呈现帧。
 - 快速切换时以当前播放请求的 request id/revision 控制 visual owner，让迟到的旧 ready/settle/failure 不清理新覆盖层；实际播放顺序仍交由原 PlaybackManager 链处理。
 

@@ -23,12 +23,12 @@
 
             var primary = item.ImageTags && item.ImageTags.Primary || item.PrimaryImageTag;
             var backdrop = item.BackdropImageTags && item.BackdropImageTags[0];
-            if (primary) {
-                try { urls.push(client.getImageUrl(item.PrimaryImageItemId || item.Id, {type: 'Primary', tag: primary})); }
-                catch (_) { /* Artwork is optional. */ }
-            }
             if (backdrop) {
                 try { urls.push(client.getImageUrl(item.Id, {type: 'Backdrop', index: 0, tag: backdrop})); }
+                catch (_) { /* Artwork is optional. */ }
+            }
+            if (primary) {
+                try { urls.push(client.getImageUrl(item.PrimaryImageItemId || item.Id, {type: 'Primary', tag: primary})); }
                 catch (_) { /* Artwork is optional. */ }
             }
             return urls.filter(function (url) { return typeof url === 'string' && !!url; });

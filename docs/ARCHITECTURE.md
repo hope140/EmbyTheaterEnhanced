@@ -52,7 +52,7 @@ Phase 2.2 把 Phase 1 的单组 suffix HIGH 限定为 `fileMatch`，它不再授
 
 ## NextTrack transition artwork candidate
 
-NextTrack 点击仍进入既有 `PlaybackManager.nextTrack()` 与播放请求链。libmpv renderer 包装本地 managed-queue 的调用，从 `getNextItemInfo()` 复用已经选中的下一集 Item，不另发 item/image 请求；Primary image 与首个 Backdrop image URL 使用现有 `ApiClient.getImageUrl()`，缺失或加载失败时覆盖层为纯黑。外部/self-managed player 不进入该视觉层。
+NextTrack 点击仍进入既有 `PlaybackManager.nextTrack()` 与播放请求链。libmpv renderer 包装本地 managed-queue 的调用，从 `getNextItemInfo()` 复用已经选中的下一集 Item，不另发 item/image 请求；首个 Backdrop image 优先，Primary poster 为 fallback，均使用现有 `ApiClient.getImageUrl()`。覆盖层绝对定位填满视频容器，图片以 `width/height:100%`、`object-fit:cover` 和居中裁切填满；缺少图片或加载失败时显示纯黑。外部/self-managed player 不进入该视觉层。比例样式和来源优先级不改变播放请求、时序或 source selection。
 
 覆盖层只存在于既有 `.mpv-videoPlayerContainer`，在其 teardown 前同步插入，并设为不接收指针事件。NextTrack wrapper 显示 overlay 后同步调用原 `PlaybackManager.nextTrack()`，保持 manager request id 与 Stop supersession 顺序。可见 renderer 的 paint gate 位于 `libmpv.stop(false)` 隐藏 surface 之前；文档隐藏时跳过 gate，避免后台调用被动画帧挂起。播放请求由 `_etePlayRequestSequence` 关联；匹配请求 `core-playing` 后先恢复已有视频容器可见性，再等一个 renderer paint 并淡出。transition revision/request id 令旧的 ready、failure 与 settle 回调不能清除当前覆盖层。失败路径清除覆盖层并恢复容器先前 opacity；图片始终是可选内容。
 
