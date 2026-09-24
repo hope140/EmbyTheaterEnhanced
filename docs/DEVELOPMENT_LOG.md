@@ -1,5 +1,16 @@
 # 开发日志
 
+## 2026-09-24 — PR #18 Token 与 Settings draft 隔离修复
+
+Model Tier: Tier 3
+Model: GPT-6 Sol High
+Reason: 修复跨 renderer Settings draft 与 main-process Token IPC 的异步状态覆盖问题，并核对 CD2 connection snapshot 生命周期。
+Escalated: Yes（用户指定）
+
+PR #18 远端复审在 head `b126ff110f133a6707f59d18619ab673c6c40d1d` 发现：`setToken()` / `clearToken()` 成功后用 IPC 返回的 persisted config 整体替换 `this.config`，可能覆盖未保存的规则与普通设置 draft。修复已应用：成功回包只更新 `this.config.cd2.tokenConfigured` 和 Token 显示状态，并保留原有 connection snapshot 失效/应用流程。Token 仍独立立即持久化；普通 Settings 与规则仍只由显式 Save 持久化。
+
+验证：Settings state-machine targeted `12/12 PASS`；focused STRM/Settings/CD2/Smart Mapping/diagnostics `185/185 PASS`；`npm test 313/313 PASS`；修改的 JS/CJS 语法检查与 `git diff --check` PASS。exact-HEAD runtime/build provenance 由本轮最终提交的验收结果单独确认；不将历史 `2baf221` provenance 作为本轮证据。Final PR Audit = `REMEDIATION APPLIED / RE-REVIEW PENDING`；PR / Merge = `PENDING`。
+
 ## 2026-09-24 — STRM Smart Path Mapping final PR audit
 
 审计 `9a034e8d627f71abbded01a1fba612d9282c9911..844b7e130539645199124b6e636b860eab23c8ad` 的 Phase 1、2、2.1、2.2 与 CD2 status sync。远端 `main` 仍为基线提交；前一轮 status sync 已由独立 `844b7e1` 提交。Smart Mapping 的文件对应关系与多样本边界置信度分开；真实 P1/P2/P3、最长前缀、Windows/UNC/POSIX、Mount 共用 source anchor 与 Resolver rule selection 的回归均通过。production resolver 的 `resolve`/`resolveAsync` 和 route order 无变更。

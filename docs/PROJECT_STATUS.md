@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-09-24 — PR #18 Token / Settings draft remediation
+
+PR #18 当前远端审查发现 Token 设置/清除成功后以旧 persisted config 整体替换 renderer `this.config`，会丢失尚未保存的规则及普通设置 draft。修复已应用为只从 Token IPC 回包提取 `cd2.tokenConfigured`，并继续更新既有 connection snapshot 生命周期；不触发 config reload，不改变 Token 独立立即持久化语义或普通设置显式 Save 语义。
+
+当前状态：Implementation = `COMPLETE`；User Functional Acceptance = `PASS`（既有用户验收记录）；Final PR Audit = `REMEDIATION APPLIED / RE-REVIEW PENDING`；PR / Merge = `PENDING`。本轮 Settings state-machine targeted `12/12 PASS`、focused `185/185 PASS`、`npm test 313/313 PASS`，修改的 JS/CJS 语法与 `git diff --check` PASS。exact-HEAD build/provenance 由最终提交的验收结果单独确认；本轮不记录 READY TO MERGE。
+
 ## 2026-09-24 — STRM Smart Path Mapping PR audit candidate
 
 Phase 1–2.2 与 CD2 status sync 已完成 `base..HEAD` 静态/测试审计；远端 `main` 未偏离 v0.2.2 基线。现有规则优先、文件对应置信度与多样本边界置信度分离、Mount 共用 source anchor、schema v1 `rules[]` 和显式 Save 的行为保持。审计修复 Save、preview 与连接状态的迟到响应，移除已不用的直接写入规则 IPC，并确保 config/Token 写失败不改变内存快照。Token 设置/清除继续作为独立的用户明确操作，不属于普通配置和规则草稿。未修改 Smart Mapping boundary 算法或正式播放 route。
