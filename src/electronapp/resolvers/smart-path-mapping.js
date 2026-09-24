@@ -504,8 +504,8 @@
             category: 'resolver',
             event: 'smart-path-mapping-candidate',
             details: {
-                status: value.status || STATUS.UNSAFE,
-                confidence: value.confidence || CONFIDENCE.LOW,
+                candidateStatus: value.status || STATUS.UNSAFE,
+                suffixConfidence: value.confidence || CONFIDENCE.LOW,
                 matchedSuffixSegments: Number.isSafeInteger(evidence.matchedSuffixSegments) ? evidence.matchedSuffixSegments : 0,
                 candidateCount: Number.isSafeInteger(evidence.candidateCount) ? evidence.candidateCount : 0,
                 reason: typeof evidence.reason === 'string' ? evidence.reason : 'invalid_result'

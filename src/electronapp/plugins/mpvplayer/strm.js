@@ -10,9 +10,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         getConnectionStatus: 'enhanced-strm-cd2-connection-status',
         testRule: 'enhanced-strm-rule-test',
         previewMapping: 'enhanced-strm-smart-mapping-preview',
-        diagnostics: 'enhanced-diagnostics-log',
-        restoreAuto: 'enhanced-strm-rule-restore-auto',
-        disableRule: 'enhanced-strm-rule-disable'
+        diagnostics: 'enhanced-diagnostics-log'
     };
     var STAGES = ['direct-url', 'cd2-http', 'mount', 'native'];
     var STAGE_LABELS = {
@@ -468,6 +466,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         this.connectionStatus = 'unknown';
         this.connectionRevision = -1;
         this.connectionRequestSequence = 0;
+        this.saveInFlight = null;
         view.querySelector('form').addEventListener('submit', function (event) {
             event.preventDefault();
             this.saveSettings();
@@ -537,6 +536,9 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         if (!response || !Number.isSafeInteger(response.connectionRevision) ||
             response.connectionRevision < this.connectionRevision ||
             ['unknown', 'checking', 'connected', 'failed'].indexOf(response.connectionStatus) < 0) return false;
+        if (response.connectionRevision === this.connectionRevision &&
+            (this.connectionStatus === 'connected' || this.connectionStatus === 'failed') &&
+            (response.connectionStatus === 'unknown' || response.connectionStatus === 'checking')) return false;
         this.connectionRevision = response.connectionRevision;
         this.connectionStatus = response.connectionStatus;
         var state = this.view.querySelector('.connectionState');
@@ -590,12 +592,18 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
 
     SettingsView.prototype.saveSettings = function () {
         if (!this.config) return Promise.resolve();
+        if (this.saveInFlight) return this.saveInFlight;
         var view = this.view;
         var next = collectConfig(view, this.config);
-        var button = view.querySelector('.btnSave');
-        button.disabled = true;
+        var saved = false;
+        var controls = Array.prototype.map.call(view.querySelectorAll('input, select, button, textarea'), function (node) {
+            return {node: node, disabled: node.disabled};
+        });
+        controls.forEach(function (entry) { entry.node.disabled = true; });
         setStatus(view.querySelector('.saveState'), '正在保存…', false);
-        return request(CHANNELS.save, {config: next}).then(function (response) {
+        this.saveInFlight = Promise.resolve().then(function () {
+            return request(CHANNELS.save, {config: next});
+        }).then(function (response) {
             if (!response || response.status !== 'saved') {
                 setStatus(view.querySelector('.saveState'), statusText(response), true);
                 return;
@@ -603,16 +611,19 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             this.config = clone(response.config);
             this.draftRuleIds = Object.create(null);
             renderConfig(view, this.config, this.draftRuleIds, this.connectionStatus);
-            this.invalidateAssistant();
+            saved = true;
             this.connectionRequestSequence++;
             this.applyConnectionSnapshot(response);
             view.querySelector('.btnTestConnection').disabled = false;
             setStatus(view.querySelector('.saveState'), response.requiresRestart ? '已保存，重启应用后播放链生效。' : '设置已保存。', false);
         }.bind(this)).catch(function () {
             setStatus(view.querySelector('.saveState'), '保存失败，请检查配置服务。', true);
-        }).then(function () {
-            button.disabled = false;
-        });
+        }).finally(function () {
+            controls.forEach(function (entry) { entry.node.disabled = entry.disabled; });
+            if (saved) this.invalidateAssistant();
+            this.saveInFlight = null;
+        }.bind(this));
+        return this.saveInFlight;
     };
 
     SettingsView.prototype.setToken = function () {
@@ -687,7 +698,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             setStatus(view.querySelector('.smartMappingState'), '映射分析失败，请检查配置服务。', true);
         }.bind(this)).then(function () {
             if (requestSequence === this.mappingRequestSequence) button.disabled = false;
-        });
+        }.bind(this));
     };
 
     SettingsView.prototype.acceptSuggestedRule = function () {

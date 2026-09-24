@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-09-24 — STRM Smart Path Mapping PR audit candidate
+
+Phase 1–2.2 与 CD2 status sync 已完成 `base..HEAD` 静态/测试审计；远端 `main` 未偏离 v0.2.2 基线。现有规则优先、文件对应置信度与多样本边界置信度分离、Mount 共用 source anchor、schema v1 `rules[]` 和显式 Save 的行为保持。审计修复 Save、preview 与连接状态的迟到响应，移除已不用的直接写入规则 IPC，并确保 config/Token 写失败不改变内存快照。Token 设置/清除继续作为独立的用户明确操作，不属于普通配置和规则草稿。未修改 Smart Mapping boundary 算法或正式播放 route。
+
+验证：`npm test 308/308 PASS`；focused Smart Mapping/Boundary/coverage/STRM config/UI/Resolver `120/120 PASS`、CD2 `33/33 PASS`、diagnostics `28/28 PASS`。新 runtime 只在本轮最终 HEAD 提交后构建；此处不把既有 `844b7e1` runtime 当作审计最终产物。
+
 ## 2026-09-23 — STRM Rules CloudDrive2 connection status sync
 
 审计确认“测试连接”读取 main-process CD2 `testConnection()` 的只读连通性/认证探针；规则卡的“检查已保存规则”只在 main 执行 source/cloud prefix replacement 格式检查。旧页面把 `mapped` 固定渲染为“前缀映射格式有效，未连接服务”，且没有消费连接测试结果，造成测试成功后卡片仍显示旧文案。

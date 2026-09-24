@@ -91,6 +91,41 @@ function invoke(harness, channel, payload, sender) {
     return harness.handlers[channel]({sender: sender || harness.trusted}, payload);
 }
 
+test('preview IPC enforces the eight-sample limit at the trusted boundary', async () => {
+    const harness = createConfigIpcHarness(() => {
+        throw new Error('preview must not create a CD2 service');
+    });
+    const samples = Array.from({length: 9}, (_, index) => ({
+        sourcePath: '/source/Anime/Show/Season ' + (index + 1) + '/episode.mkv',
+        cloudPath: '/cloud/Anime/Show/Season ' + (index + 1) + '/episode.mkv'
+    }));
+    try {
+        const accepted = await invoke(harness, configIpc.CHANNELS.PREVIEW_MAPPING, {
+            samples: samples.slice(0, 8), rules: []
+        });
+        assert.equal(accepted.status, 'ok');
+        const rejected = await invoke(harness, configIpc.CHANNELS.PREVIEW_MAPPING, {
+            samples, rules: []
+        });
+        assert.deepEqual(rejected, {status: 'error', reason: 'invalid_request'});
+    } finally {
+        harness.unregister();
+    }
+});
+
+test('legacy rule mutation IPC is absent while explicit Save remains registered', () => {
+    const harness = createConfigIpcHarness(() => {
+        throw new Error('registration must not create a CD2 service');
+    });
+    try {
+        assert.equal(harness.handlers['enhanced-strm-rule-restore-auto'], undefined);
+        assert.equal(harness.handlers['enhanced-strm-rule-disable'], undefined);
+        assert.equal(typeof harness.handlers[configIpc.CHANNELS.SAVE], 'function');
+    } finally {
+        harness.unregister();
+    }
+});
+
 test('settings route and renderer avoid appSettings/localStorage for resolver configuration', () => {
     assert.match(libmpvSource, /path: 'mpvplayer\/strm\.html'/);
     assert.match(libmpvSource, /controller: pluginManager\.mapPath\(self, 'mpvplayer\/strm\.js'\)/);
@@ -136,6 +171,62 @@ test('persistent config stores rules and token separately without returning toke
     const restarted = configStore.createStore({rootDir: root, environment: {ETE_CD2_TOKEN: 'other-value'}});
     assert.equal(restarted.getPublicConfig().cd2.tokenConfigured, true);
     assert.deepEqual(restarted.getPublicConfig().rules, store.getPublicConfig().rules);
+});
+
+test('failed atomic writes preserve the public and runtime config snapshots', () => {
+    const root = temporaryRoot('ete-strm-failed-save-');
+    let failRename = false;
+    const fileSystem = Object.assign({}, fs, {
+        renameSync(source, destination) {
+            if (failRename) throw new Error('synthetic_write_failure');
+            return fs.renameSync(source, destination);
+        }
+    });
+    const store = configStore.createStore({rootDir: root, environment: {}, fs: fileSystem});
+    const initial = store.getPublicConfig();
+    initial.rules = [baseRule()];
+    store.save(initial);
+    const beforePublic = store.getPublicConfig();
+    const beforeRuntime = store.getRuntimeConfig();
+    const beforeFile = fs.readFileSync(store.getConfigPaths().configPath);
+    const changed = store.getPublicConfig();
+    changed.rules[0].cloudPrefix = '/different-cloud';
+    failRename = true;
+
+    assert.throws(() => store.save(changed), /synthetic_write_failure/);
+    assert.deepEqual(store.getPublicConfig(), beforePublic);
+    assert.deepEqual(store.getRuntimeConfig(), beforeRuntime);
+    assert.deepEqual(fs.readFileSync(store.getConfigPaths().configPath), beforeFile);
+});
+
+test('failed token writes preserve tokenConfigured and the active runtime token', () => {
+    const root = temporaryRoot('ete-strm-failed-token-');
+    let failRename = true;
+    const fileSystem = Object.assign({}, fs, {
+        renameSync(source, destination) {
+            if (failRename) throw new Error('synthetic_write_failure');
+            return fs.renameSync(source, destination);
+        }
+    });
+    const store = configStore.createStore({rootDir: root, environment: {}, fs: fileSystem});
+    const secretsPath = store.getConfigPaths().secretsPath;
+
+    assert.throws(() => store.setToken('synthetic-token-a'), /synthetic_write_failure/);
+    assert.equal(store.getPublicConfig().cd2.tokenConfigured, false);
+    assert.equal(store.getRuntimeConfig().token, '');
+    assert.equal(fs.existsSync(secretsPath), false);
+
+    failRename = false;
+    store.setToken('synthetic-token-b');
+    const beforePublic = store.getPublicConfig();
+    const beforeRuntime = store.getRuntimeConfig();
+    const beforeFile = fs.readFileSync(secretsPath);
+    failRename = true;
+
+    assert.throws(() => store.clearToken(), /synthetic_write_failure/);
+    assert.deepEqual(store.getPublicConfig(), beforePublic);
+    assert.deepEqual(store.getRuntimeConfig(), beforeRuntime);
+    assert.deepEqual(fs.readFileSync(secretsPath), beforeFile);
 });
 
 test('legacy environment bootstraps one AUTO rule once and persistent config wins on restart', () => {

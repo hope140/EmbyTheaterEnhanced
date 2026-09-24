@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 
 const boundary = require('../src/electronapp/resolvers/smart-mapping-boundary');
 const pathRules = require('../src/electronapp/resolvers/path-rules');
+const strmResolver = require('../src/electronapp/resolvers/strm-resolver');
 
 function sample(sourcePath, cloudPath, mountPath) {
     const value = {sourcePath, cloudPath};
@@ -84,6 +85,53 @@ test('reported 115open rule covers the same source, cloud and mount file before 
     assert.equal(result.fileMatch.confidence, 'HIGH');
     assert.equal(result.boundary.confidence, 'LOW');
     assert.equal(result.suggestion, null);
+});
+
+test('existing coverage selects the same longest source rule as the production Resolver', () => {
+    const cases = [
+        {
+            source: 'd:\\MEDIA\\Series\\A\\file.mkv',
+            rules: [rule('D:\\Media', '/cloud', null, 'parent'),
+                rule('D:\\Media\\Series', '/cloud/Series', null, 'longest')],
+            expected: 'longest'
+        },
+        {
+            source: '\\\\NAS\\Share\\Series\\A\\file.mkv',
+            rules: [rule('\\\\nas\\share\\Series', '/cloud/Series', null, 'unc')],
+            expected: 'unc'
+        },
+        {
+            source: '/srv/Media/Series/A/file.mkv',
+            rules: [rule('/srv/Media', '/cloud', null, 'posix')],
+            expected: 'posix'
+        },
+        {
+            source: '/srv/media/Series/A/file.mkv',
+            rules: [rule('/srv/Media', '/cloud', null, 'wrong-case')],
+            expected: null
+        },
+        {
+            source: 'D:\\MediaExtra\\Series\\A\\file.mkv',
+            rules: [rule('D:\\Media', '/cloud', null, 'boundary')],
+            expected: null
+        },
+        {
+            source: '\\\\nas\\OtherShare\\Series\\A\\file.mkv',
+            rules: [rule('\\\\nas\\share', '/cloud', null, 'wrong-share')],
+            expected: null
+        }
+    ];
+    for (const entry of cases) {
+        const selected = strmResolver.selectRule({sourcePath: entry.source, sidecarPath: 'Z:\\unrelated.mkv.strm'},
+            {version: 1, rules: entry.rules});
+        const cloud = selected
+            ? pathRules.replacePrefix(entry.source, selected.sourcePrefix, selected.cloudPrefix)
+            : '/cloud/Series/A/file.mkv';
+        const coverage = boundary.checkExistingRuleCoverage([sample(entry.source, cloud)], entry.rules);
+        assert.equal(selected && selected.id, entry.expected, entry.source);
+        assert.equal(coverage.status, selected ? 'CLOUD_COVERED' : 'NOT_COVERED', entry.source);
+        assert.deepEqual(coverage.ruleIds, selected ? [selected.id] : [], entry.source);
+    }
 });
 
 test('uncovered two-branch samples reach an exact HIGH cloud boundary', () => {

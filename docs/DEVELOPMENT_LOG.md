@@ -1,5 +1,21 @@
 # 开发日志
 
+## 2026-09-24 — STRM Smart Path Mapping final PR audit
+
+审计 `9a034e8d627f71abbded01a1fba612d9282c9911..844b7e130539645199124b6e636b860eab23c8ad` 的 Phase 1、2、2.1、2.2 与 CD2 status sync。远端 `main` 仍为基线提交；前一轮 status sync 已由独立 `844b7e1` 提交。Smart Mapping 的文件对应关系与多样本边界置信度分开；真实 P1/P2/P3、最长前缀、Windows/UNC/POSIX、Mount 共用 source anchor 与 Resolver rule selection 的回归均通过。production resolver 的 `resolve`/`resolveAsync` 和 route order 无变更。
+
+审计修复仅涉及设置状态与观察边界：Save 请求期间锁定当前表单控件并去重，失败保留草稿；config/Token 只有原子文件写成功后才更新内存；迟到的同 revision `checking` 不覆盖连接测试终态；旧的直接写入 restore/disable IPC 不再注册；补齐旧 preview 完成时的 `this` 绑定；Phase 1 dry-run diagnostic 明确标为 `candidateStatus/suffixConfidence`，避免被误读为 boundary confidence。页面说明连接测试使用已保存的地址与 Token；Token 仍由独立的明确设置/清除操作持久化。修正 Phase 2 历史文案，不改变 boundary 算法、正式规则 schema、CD2 service、Resolver route 或播放器链。
+
+Model Tier: Tier 2
+
+Model: GPT-6 Sol High (requested)
+
+Reason: trusted settings IPC、Save/preview async race、existing coverage 与 Resolver 路径语义核对
+
+Escalated: No
+
+验证：`npm test 308/308 PASS`；focused Smart Mapping/Boundary/coverage/STRM config/UI/Resolver `120/120 PASS`、CD2 `33/33 PASS`、diagnostics `28/28 PASS`。后台/静态检查不代表再次执行真实 Emby/CD2 播放验收；用户此前的功能验收保持独立证据。
+
 ## 2026-09-23 — STRM Rules CloudDrive2 connection status desync fix
 
 在 `codex/strm-smart-path-mapping@ce92f6c6b8f05545ca6379212e5d0b4787186023` 上审计设置页。顶部“测试连接”来自 main 的 `createTestService().testConnection()`，会执行有界 readiness 与 `FindFileByPath('/')` 探针；规则卡 `TEST_RULE` 只检查保存规则的 Mount 路径与 source→cloud 前缀映射格式。renderer 原来把 `mapped` 固定显示为“未连接服务”，没有传播连接测试结果。

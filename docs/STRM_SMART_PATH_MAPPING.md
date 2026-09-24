@@ -151,8 +151,8 @@ resolver / smart-path-mapping-candidate
 diagnostic details 只包含：
 
 ```text
-status
-confidence
+candidateStatus
+suffixConfidence
 matchedSuffixSegments
 candidateCount
 reason

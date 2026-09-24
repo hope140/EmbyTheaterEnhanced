@@ -352,20 +352,21 @@ function createStore(options) {
             }
         });
 
+        writeJsonAtomic(configPath, persistedConfig(normalized), fileSystem);
         config = normalized;
-        writeJsonAtomic(configPath, persistedConfig(config), fileSystem);
         return publicConfig();
     }
 
     function setToken(value) {
-        token = validateToken(value);
-        writeJsonAtomic(secretsPath, {version: SCHEMA_VERSION, cd2Token: token}, fileSystem);
+        const nextToken = validateToken(value);
+        writeJsonAtomic(secretsPath, {version: SCHEMA_VERSION, cd2Token: nextToken}, fileSystem);
+        token = nextToken;
         return publicConfig();
     }
 
     function clearToken() {
-        token = '';
         writeJsonAtomic(secretsPath, {version: SCHEMA_VERSION}, fileSystem);
+        token = '';
         return publicConfig();
     }
 

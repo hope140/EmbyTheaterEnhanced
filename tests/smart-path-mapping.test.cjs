@@ -403,14 +403,14 @@ test('preview emits only bounded diagnostic details and remains fail-open for ob
     assert.equal(records.length, 1);
     assert.deepEqual(Object.keys(records[0].details).sort(), [
         'candidateCount',
-        'confidence',
+        'candidateStatus',
         'matchedSuffixSegments',
         'reason',
-        'status'
+        'suffixConfidence'
     ]);
     assert.deepEqual(records[0].details, {
-        status: 'MATCHED',
-        confidence: 'HIGH',
+        candidateStatus: 'MATCHED',
+        suffixConfidence: 'HIGH',
         matchedSuffixSegments: 4,
         candidateCount: 1,
         reason: 'unique_long_suffix'

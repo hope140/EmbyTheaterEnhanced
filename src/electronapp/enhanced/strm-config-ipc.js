@@ -14,9 +14,7 @@ const CHANNELS = Object.freeze({
     TEST_CONNECTION: 'enhanced-strm-cd2-test-connection',
     GET_CONNECTION_STATUS: 'enhanced-strm-cd2-connection-status',
     TEST_RULE: 'enhanced-strm-rule-test',
-    PREVIEW_MAPPING: 'enhanced-strm-smart-mapping-preview',
-    RESTORE_AUTO: 'enhanced-strm-rule-restore-auto',
-    DISABLE_RULE: 'enhanced-strm-rule-disable'
+    PREVIEW_MAPPING: 'enhanced-strm-smart-mapping-preview'
 });
 
 function errorReason(error) {
@@ -196,21 +194,6 @@ function register(options) {
     registerHandler(CHANNELS.TEST_CONNECTION, testConnection);
     registerHandler(CHANNELS.TEST_RULE, testRule);
     registerHandler(CHANNELS.PREVIEW_MAPPING, previewMapping);
-    registerHandler(CHANNELS.RESTORE_AUTO, function (request) {
-        try {
-            return {status: 'saved', requiresRestart: true, config: store.restoreAutoRule(request && request.ruleId)};
-        } catch (error) {
-            return {status: 'error', reason: errorReason(error)};
-        }
-    });
-    registerHandler(CHANNELS.DISABLE_RULE, function (request) {
-        try {
-            return {status: 'saved', requiresRestart: true, config: store.disableRule(request && request.ruleId)};
-        } catch (error) {
-            return {status: 'error', reason: errorReason(error)};
-        }
-    });
-
     return function unregister() {
         if (typeof ipcMain.removeHandler === 'function') {
             handlers.forEach(function (channel) { ipcMain.removeHandler(channel); });

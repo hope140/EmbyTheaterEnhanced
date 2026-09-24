@@ -381,6 +381,7 @@ test('preview and accepted diagnostics use exact scalar allowlists only', () => 
 });
 
 test('settings UI wires multi-sample preview, draft rules, stale sequence guards, and explicit Save', () => {
+    assert.match(settingsHtml, /连接测试使用已保存的地址与 Token/);
     assert.match(settingsHtml, /class="smartSamples"/);
     assert.match(settingsHtml, /class="smartSample/);
     assert.match(settingsHtml, /class="btnAddSample"/);
