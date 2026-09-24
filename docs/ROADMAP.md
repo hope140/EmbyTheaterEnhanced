@@ -4,32 +4,31 @@
 
 ## Current Production Baseline
 
-- `origin/main@9a034e8d627f71abbded01a1fba612d9282c9911`，对应 `v0.2.2` 正式发布基线。
+- `v0.2.2` 正式发布基线对应提交 `9a034e8d627f71abbded01a1fba612d9282c9911`；当前 `main` 已包含 PR #18 的合并提交 `121305b5fa74fa5bf9e8b76caabf280468ddb11b`，尚未发布新版本。
 - Native Helper + libmpv、Pepper / PPAPI 退役、Electron 44.4.2、apphost 启动命令兼容修复、Windows runtime / package provenance、STRM / CloudDrive2 / DirectUrl 基础路由和诊断包均已进入历史完成项；细节由既有专项文档维护。
-- Smart Path Mapping 子项按当前用户提供的功能分支验收状态记录；尚未合并或发布，不属于上述 production baseline。
+- Smart Path Mapping 已合入 `main`，尚未进入 `v0.2.2` 正式发布基线。
 
-## NOW
+## COMPLETED
 
-### Smart Path Mapping Finalization
+### Smart Path Mapping
 
 **状态：**
 
-- Implementation = `COMPLETE`（功能分支）
+- Implementation = `COMPLETE`
 - User Functional Acceptance = `PASS`
-- Previous HIGH = `CLOSED`
-- Remaining MEDIUM（Token response ordering）= `REMEDIATION APPLIED / RE-REVIEW PENDING`
-- Final PR Review = `RE-REVIEW PENDING`
-- PR / Merge = `PENDING`
+- Final Remote Review = `PASS`
+- PR #18 = `MERGED`
+- Merge commit = `121305b5fa74fa5bf9e8b76caabf280468ddb11b`
 
 已完成的子项包括 inference engine、semantics 修正、多样本 Mapping Boundary、Existing Rule Coverage、Mount inference、显式 Save draft 和 CloudDrive2 connection status sync。
 
-历史审计记录：此前对 `2baf221af3d580c3d84b27e491106e79ae44aa16` 的审计曾记录 BLOCKER/HIGH 均为 `NONE`、`npm test 308/308 PASS` 和 build/provenance `PASS`。后续针对 PR #18 的复审发现 Token 回包会覆盖未保存的 Settings draft；该 HIGH 已修复并关闭。之后的远端复审发现较早 Token 操作的迟到回包仍可能覆盖较新状态；该 MEDIUM 已应用本地修复，等待远端重新审查。历史结论不代表当前最终审查状态。
+最终远端复审在 head `ade6620e80ce19da26d6a7bebc53368dffe3f8a5` 通过，BLOCKER/HIGH/MEDIUM/LOW 均为 `NONE`。PR #18 使用 merge commit 合入 `main`；正式发布仍为 `v0.2.2`。
 
-本轮 Settings targeted `18/18 PASS`、focused STRM/Settings/CD2/Smart Mapping/diagnostics `191/191 PASS`、`npm test 319/319 PASS`；修改的 JS/CJS 语法检查与 `git diff --check` PASS。exact-HEAD build/provenance 由最终提交的验收结果单独确认。后续顺序：远端重新审查 → PR / Merge。当前不标记为 `READY TO MERGE`，也不代表已经合并、发布或进入 production baseline。
+合并前验收：Settings targeted `18/18 PASS`、focused STRM/Settings/CD2/Smart Mapping/diagnostics `191/191 PASS`、`npm test 319/319 PASS`；产品提交的 source、Electron 44.4.2、Native Helper、runtime provenance 与 package `-VerifyOnly` 均通过。合并后未执行新版本发布或真实客户端复测。
 
-**边界：** STRM 设置页 UI Consolidation 单列于 NEXT，不进入 Smart Mapping 功能 PR；现有 `rules[]`、Resolver 和播放身份链保持原约定。
+**边界：** STRM 设置页 UI Consolidation 作为后续独立任务；现有 `rules[]`、Resolver 和播放身份链保持原约定。
 
-## NEXT / P1
+## NOW
 
 ### 1. NextTrack 切集瞬时白屏
 
@@ -39,9 +38,11 @@
 
 **不要误修：** 在确认窗口与播放面之前，不添加黑色遮罩、定时重绘、focus hack 或 `SetWindowPos` workaround；也不把它归入 Seek / Stop 黑帧或 rapid NextTrack 夹具限制。
 
+## NEXT / P1
+
 ### 2. STRM UI Consolidation
 
-**状态：** 待 Smart Mapping 功能 PR 结束后单独处理。现有页面由旧 STRM UI、Smart Mapping UI 和后加的 status UI 组成，视觉层级尚未统一。
+**状态：** 后续独立任务，尚未开始。现有页面由旧 STRM UI、Smart Mapping UI 和后加的 status UI 组成，视觉层级尚未统一。
 
 **目标：** 统一 input、select、toggle、button hierarchy、rule card、assistant sample card、preview card、status indicator、spacing、typography 与 responsive layout。
 

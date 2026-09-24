@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-09-24 — Smart Path Mapping milestone closure
+
+PR #18（`feat: add smart STRM path mapping assistant`）已通过 merge commit `121305b5fa74fa5bf9e8b76caabf280468ddb11b` 合入 `main`，合并的功能 head 为 `ade6620e80ce19da26d6a7bebc53368dffe3f8a5`。Implementation = `COMPLETE`；既有 User Functional Acceptance = `PASS`；Final Remote Re-Review = `PASS`；合并前 `npm test 319/319 PASS`，功能 head 的 exact-HEAD build/provenance 已验证通过。本条未执行新的 runtime、安装或真实客户端验收；未创建版本、tag 或 Release，正式发布基线仍为 `v0.2.2`。
+
 ## 2026-09-24 — PR #18 Token / Settings draft remediation
 
 PR #18 当前远端审查发现 Token 设置/清除成功后以旧 persisted config 整体替换 renderer `this.config`，会丢失尚未保存的规则及普通设置 draft。修复已应用为只从 Token IPC 回包提取 `cd2.tokenConfigured`，并继续更新既有 connection snapshot 生命周期；不触发 config reload，不改变 Token 独立立即持久化语义或普通设置显式 Save 语义。

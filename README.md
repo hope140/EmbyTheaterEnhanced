@@ -1,6 +1,6 @@
 # Emby Theater Enhanced
 
-基于 Carnival 3.0 与综合补丁的 Windows Emby 客户端维护工程。当前正式发布基线为 `v0.2.2`（`main@9a034e8`）。
+基于 Carnival 3.0 与综合补丁的 Windows Emby 客户端维护工程。当前正式发布基线为 `v0.2.2`；Smart Path Mapping 已通过 PR #18 合入 `main`，尚未发布新版本。
 
 Emby Theater Enhanced is an unofficial community-maintained project. It is not affiliated with or endorsed by Emby.
 
@@ -8,7 +8,7 @@ Emby Theater Enhanced 是非官方社区维护项目，与 Emby 不存在隶属�
 
 ## 开发计划
 
-进度与优先级见 [Development Roadmap](docs/ROADMAP.md)，可复现问题与观察项见 [Known Issues](docs/KNOWN_ISSUES.md)。Smart Path Mapping 实现已完成，用户功能验收为 PASS；Token 与 Settings draft 状态修复已应用，Final PR Audit 等待远端重新审查，PR / Merge 仍待完成。
+进度与优先级见 [Development Roadmap](docs/ROADMAP.md)，可复现问题与观察项见 [Known Issues](docs/KNOWN_ISSUES.md)。Smart Path Mapping 已完成用户功能验收和最终远端复审，并通过 PR #18 合入 `main`。
 
 ### 核心架构
 
@@ -22,10 +22,10 @@ Emby Theater Enhanced 是非官方社区维护项目，与 Emby 不存在隶属�
 
 - [x] STRM 原始路径识别、CloudDrive2 路径解析与 DirectUrl capability
 - [x] CD2 HTTP → Mount → Native fallback；手动 `rules[]` 与最长前缀匹配
-- [x] Smart Path Mapping inference engine、多样本 Mapping Boundary 推导、Existing Rule Coverage 检测与 Mount 路径推导（功能分支）
-- [x] Smart Mapping 显式 Save draft 语义、CloudDrive2 连接状态同步（功能分支）
-- [ ] Smart Path Mapping Final PR Audit (remediation applied; remote re-review pending)
-- [ ] Smart Path Mapping PR / Merge
+- [x] Smart Path Mapping inference engine、多样本 Mapping Boundary 推导、Existing Rule Coverage 检测与 Mount 路径推导
+- [x] Smart Mapping 显式 Save draft 语义、CloudDrive2 连接状态同步
+- [x] Smart Path Mapping Final PR Audit
+- [x] Smart Path Mapping PR / Merge
 - [ ] STRM 设置页 UI Consolidation
 - [ ] Next Episode / DirectUrl / CD2 Pre-warm
 - [ ] CD2 Path Hydration（等待真实 `not_found` 样本）
