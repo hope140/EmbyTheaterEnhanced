@@ -641,9 +641,11 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
                 setStatus(view.querySelector('.saveState'), statusText(response), true);
                 return;
             }
-            this.config = clone(response.config);
+            if (this.config && this.config.cd2) {
+                this.config.cd2.tokenConfigured = response.config.cd2.tokenConfigured === true;
+            }
             input.value = '';
-            view.querySelector('.tokenState').textContent = '已配置 ········';
+            view.querySelector('.tokenState').textContent = response.config.cd2.tokenConfigured === true ? '已配置 ········' : '未配置';
             this.connectionRequestSequence++;
             this.applyConnectionSnapshot(response);
             view.querySelector('.btnTestConnection').disabled = false;
@@ -662,8 +664,10 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
                 setStatus(this.view.querySelector('.saveState'), statusText(response), true);
                 return;
             }
-            this.config = clone(response.config);
-            this.view.querySelector('.tokenState').textContent = '未配置';
+            if (this.config && this.config.cd2) {
+                this.config.cd2.tokenConfigured = response.config.cd2.tokenConfigured === true;
+            }
+            this.view.querySelector('.tokenState').textContent = response.config.cd2.tokenConfigured === true ? '已配置 ········' : '未配置';
             this.connectionRequestSequence++;
             this.applyConnectionSnapshot(response);
             this.view.querySelector('.btnTestConnection').disabled = false;

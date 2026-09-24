@@ -28,17 +28,146 @@ function statusNode() {
     };
 }
 
+class FakeNode {
+    constructor(tagName) {
+        this.tagName = tagName;
+        this.children = [];
+        this.dataset = {};
+        this.attributes = Object.create(null);
+        this.textContent = '';
+        this.value = '';
+        this.checked = false;
+        this.disabled = false;
+        this.hidden = false;
+        this.className = '';
+        this.classList = {
+            add: name => { if (!this.className.split(/\s+/).includes(name)) this.className = (this.className + ' ' + name).trim(); },
+            remove: name => { this.className = this.className.split(/\s+/).filter(value => value !== name).join(' '); },
+            contains: name => this.className.split(/\s+/).includes(name)
+        };
+    }
+    appendChild(node) { this.children.push(node); node.parentNode = this; return node; }
+    removeChild(node) { this.children.splice(this.children.indexOf(node), 1); node.parentNode = null; return node; }
+    get firstChild() { return this.children[0] || null; }
+    setAttribute(name, value) { this.attributes[name] = value; }
+    addEventListener() {}
+    focus() {}
+    querySelector(selector) { return this.querySelectorAll(selector)[0] || null; }
+    querySelectorAll(selector) {
+        const classes = selector.split(',').map(value => value.trim().replace(/^\./, ''));
+        const found = [];
+        const visit = node => node.children.forEach(child => {
+            if (classes.some(name => child.classList && child.classList.contains(name))) found.push(child);
+            visit(child);
+        });
+        visit(this);
+        return found;
+    }
+    closest(selector) {
+        const name = selector.replace(/^\./, '');
+        for (let node = this; node; node = node.parentNode) {
+            if (node.classList && node.classList.contains(name)) return node;
+        }
+        return null;
+    }
+}
+
 function loadView(invoke) {
     let View;
     function BaseView() {}
     vm.runInNewContext(source, {
         define(_dependencies, factory) {
-            View = factory({}, BaseView, null, null, null, null, null, {});
+            View = factory({}, BaseView, null, null, null, null, null, {
+                removeDraftRule(rules, id) { return rules.filter(rule => rule.id !== id); }
+            });
         },
-        document: {createElement(tagName) { return {tagName, textContent: ''}; }},
-        window: {ipc: {invoke}}
+        document: {createElement(tagName) { return new FakeNode(tagName); }},
+        window: {ipc: {invoke}, confirm() { return true; }}
     }, {filename: 'strm.js'});
     return View;
+}
+
+function tokenDraftPage(invoke, config) {
+    const View = loadView(invoke);
+    const nodes = {
+        'form': new FakeNode('form'),
+        '.chkEnabled': new FakeNode('input'),
+        '.chkCd2Enabled': new FakeNode('input'),
+        '.chkDirectUrlEnabled': new FakeNode('input'),
+        '.txtCd2Origin': new FakeNode('input'),
+        '.txtCd2Token': new FakeNode('input'),
+        '.tokenState': statusNode(),
+        '.btnSave': new FakeNode('button'),
+        '.saveState': statusNode(),
+        '.rulesList': new FakeNode('div'),
+        '.btnTestConnection': new FakeNode('button'),
+        '.connectionState': statusNode(),
+        '.ete-strm-assistant-preview': new FakeNode('div'),
+        '.ete-strm-assistant-suggestion': new FakeNode('div'),
+        '.btnAddSuggestedRule': new FakeNode('button'),
+        '.btnAnalyzeMapping': new FakeNode('button'),
+        '.smartMappingState': statusNode()
+    };
+    const controls = Object.values(nodes).filter(node => node && 'disabled' in node);
+    const view = {
+        querySelector(selector) {
+            if (!nodes[selector]) throw new Error('unexpected selector: ' + selector);
+            return nodes[selector];
+        },
+        querySelectorAll(selector) {
+            if (selector === '.ete-strm-rule-card') return nodes['.rulesList'].children.filter(node => node.classList.contains('ete-strm-rule-card'));
+            if (selector === '.ete-strm-rule-connection') return nodes['.rulesList'].querySelectorAll(selector);
+            if (selector === 'input, select, button, textarea') return controls;
+            return nodes['.rulesList'].querySelectorAll(selector);
+        },
+        addEventListener() {}
+    };
+    const page = Object.create(View.prototype);
+    page.view = view;
+    page.config = structuredClone(config);
+    page.draftRuleIds = Object.create(null);
+    page.mappingRequestSequence = 0;
+    page.assistantPreview = null;
+    page.connectionStatus = 'connected';
+    page.connectionRevision = 7;
+    page.connectionRequestSequence = 1;
+    page.saveInFlight = null;
+    return {page, nodes, view};
+}
+
+function basicConfig(rules = []) {
+    return {version: 1, enabled: true,
+        cd2: {enabled: true, origin: 'https://persisted.example', directUrlEnabled: true, tokenConfigured: true}, rules};
+}
+
+function autoRule(id, originState = 'AUTO', enabled = true) {
+    return {id, sourcePrefix: 'X:\\Media', mountPrefix: '', cloudPrefix: '/Cloud/Media',
+        storageType: 'cloud-mount', strategy: 'cloud-first',
+        order: ['direct-url', 'cd2-http', 'mount', 'native'], originState, enabled};
+}
+
+function fakeRuleCard(rule) {
+    const card = new FakeNode('article');
+    card.className = 'ete-strm-rule-card';
+    card.dataset.ruleId = rule.id;
+    const input = (field, value) => { const node = new FakeNode('input'); node.className = 'rule-' + field; node.value = value || ''; card.appendChild(node); return node; };
+    input('sourcePrefix', rule.sourcePrefix);
+    input('cloudPrefix', rule.cloudPrefix);
+    input('mountPrefix', rule.mountPrefix);
+    const storage = new FakeNode('select'); storage.className = 'rule-storageType'; storage.value = rule.storageType; card.appendChild(storage);
+    const strategy = new FakeNode('select'); strategy.className = 'rule-strategy'; strategy.value = rule.strategy; card.appendChild(strategy);
+    const order = new FakeNode('span'); order.className = 'ete-strm-order-value'; card.appendChild(order);
+    return card;
+}
+
+function installDraftRules(nodes, rules) {
+    const list = nodes['.rulesList'];
+    list.children = rules.map(fakeRuleCard);
+    list.children.forEach(node => { node.parentNode = list; });
+}
+
+function editRule(card, values) {
+    Object.keys(values).forEach(field => { card.querySelector('.rule-' + field).value = values[field]; });
 }
 
 function savePage(invoke) {
@@ -314,4 +443,176 @@ test('an older preview cannot enable Analyze while a newer preview remains pendi
     await second;
     assert.equal(analyzeButton.disabled, false);
     assert.equal(addButton.disabled, true);
+});
+
+function tokenSavedResponse(config, tokenConfigured, status = 'unknown', revision = 8) {
+    const snapshot = structuredClone(config);
+    snapshot.cd2.tokenConfigured = tokenConfigured;
+    return {status: 'saved', config: snapshot, connectionStatus: status, connectionRevision: revision};
+}
+
+test('AUTO disable draft survives immediate Token persistence and is posted by Save', async () => {
+    const persisted = basicConfig([autoRule('auto-one')]);
+    persisted.cd2.tokenConfigured = false;
+    let savePayload;
+    const {page, nodes} = tokenDraftPage((channel, payload) => {
+        if (channel === 'enhanced-strm-token-set') return Promise.resolve(tokenSavedResponse(persisted, true));
+        if (channel === 'enhanced-strm-config-save') {
+            savePayload = payload.config;
+            return Promise.resolve({status: 'saved', config: payload.config, connectionStatus: 'unknown', connectionRevision: 9});
+        }
+        throw new Error('unexpected IPC: ' + channel);
+    }, persisted);
+    installDraftRules(nodes, persisted.rules);
+    page.disableRule('auto-one');
+    nodes['.txtCd2Token'].value = 'replacement-token';
+    page.setToken();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(page.config.rules[0].originState, 'DISABLED');
+    assert.equal(page.config.rules[0].enabled, false);
+    assert.equal(page.config.cd2.tokenConfigured, true);
+    assert.match(nodes['.tokenState'].textContent, /已配置/);
+    await page.saveSettings();
+    assert.equal(savePayload.rules[0].originState, 'DISABLED');
+    assert.equal(savePayload.rules[0].enabled, false);
+});
+
+test('AUTO restore draft survives immediate Token clearing and is posted by Save', async () => {
+    const persisted = basicConfig([autoRule('auto-one', 'DISABLED', false)]);
+    let savePayload;
+    const {page, nodes} = tokenDraftPage((channel, payload) => {
+        if (channel === 'enhanced-strm-token-clear') return Promise.resolve(tokenSavedResponse(persisted, false));
+        if (channel === 'enhanced-strm-config-save') {
+            savePayload = payload.config;
+            return Promise.resolve({status: 'saved', config: payload.config, connectionStatus: 'unknown', connectionRevision: 9});
+        }
+        throw new Error('unexpected IPC: ' + channel);
+    }, persisted);
+    installDraftRules(nodes, persisted.rules);
+    page.restoreAuto('auto-one');
+    page.clearToken();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(page.config.rules[0].originState, 'AUTO');
+    assert.equal(page.config.rules[0].enabled, true);
+    assert.equal(page.config.cd2.tokenConfigured, false);
+    assert.equal(nodes['.tokenState'].textContent, '未配置');
+    await page.saveSettings();
+    assert.equal(savePayload.rules[0].originState, 'AUTO');
+    assert.equal(savePayload.rules[0].enabled, true);
+});
+
+test('new USER rule and ordinary settings draft survive Token set and Save', async () => {
+    const persisted = basicConfig([]);
+    persisted.cd2.tokenConfigured = false;
+    let savePayload;
+    const {page, nodes} = tokenDraftPage((channel, payload) => {
+        if (channel === 'enhanced-strm-token-set') return Promise.resolve(tokenSavedResponse(persisted, true));
+        if (channel === 'enhanced-strm-config-save') {
+            savePayload = payload.config;
+            return Promise.resolve({status: 'saved', config: payload.config, connectionStatus: 'unknown', connectionRevision: 9});
+        }
+        throw new Error('unexpected IPC: ' + channel);
+    }, persisted);
+    nodes['.chkEnabled'].checked = false;
+    nodes['.chkCd2Enabled'].checked = false;
+    nodes['.txtCd2Origin'].value = 'https://draft.example';
+    const added = autoRule('new-user', 'USER', true);
+    added.sourcePrefix = 'X:\\Draft';
+    page.config.rules.push(added);
+    page.draftRuleIds[added.id] = true;
+    installDraftRules(nodes, page.config.rules);
+    nodes['.txtCd2Token'].value = 'new-token';
+    page.setToken();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(page.config.rules.length, 1);
+    await page.saveSettings();
+    assert.equal(savePayload.enabled, false);
+    assert.equal(savePayload.cd2.enabled, false);
+    assert.equal(savePayload.cd2.origin, 'https://draft.example');
+    assert.equal(savePayload.rules[0].sourcePrefix, 'X:\\Draft');
+    assert.equal(savePayload.rules[0].originState, 'USER');
+});
+
+test('edited USER rule survives Token clearing and draft deletion does not resurrect', async () => {
+    const persisted = basicConfig([autoRule('user-one', 'USER', true)]);
+    let savePayload;
+    const {page, nodes} = tokenDraftPage((channel, payload) => {
+        if (channel === 'enhanced-strm-token-clear') return Promise.resolve(tokenSavedResponse(persisted, false));
+        if (channel === 'enhanced-strm-config-save') {
+            savePayload = payload.config;
+            return Promise.resolve({status: 'saved', config: payload.config, connectionStatus: 'unknown', connectionRevision: 9});
+        }
+        throw new Error('unexpected IPC: ' + channel);
+    }, persisted);
+    installDraftRules(nodes, persisted.rules);
+    editRule(nodes['.rulesList'].children[0], {sourcePrefix: 'X:\\Edited', cloudPrefix: '/Cloud/Edited', mountPrefix: 'M:\\Edited'});
+    page.clearToken();
+    await new Promise(resolve => setImmediate(resolve));
+    await page.saveSettings();
+    assert.deepEqual([savePayload.rules[0].sourcePrefix, savePayload.rules[0].cloudPrefix, savePayload.rules[0].mountPrefix],
+        ['X:\\Edited', '/Cloud/Edited', 'M:\\Edited']);
+
+    const deleteHarness = tokenDraftPage((channel, payload) => {
+        if (channel === 'enhanced-strm-token-set') return Promise.resolve(tokenSavedResponse(persisted, true));
+        if (channel === 'enhanced-strm-config-save') {
+            savePayload = payload.config;
+            return Promise.resolve({status: 'saved', config: payload.config, connectionStatus: 'unknown', connectionRevision: 9});
+        }
+        throw new Error('unexpected IPC: ' + channel);
+    }, persisted);
+    deleteHarness.page.draftRuleIds['user-one'] = true;
+    installDraftRules(deleteHarness.nodes, persisted.rules);
+    deleteHarness.page.disableRule('user-one');
+    deleteHarness.nodes['.txtCd2Token'].value = 'new-token';
+    deleteHarness.page.setToken();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(deleteHarness.page.config.rules.length, 0);
+    await deleteHarness.page.saveSettings();
+    assert.equal(savePayload.rules.length, 0);
+});
+
+test('failed and late Token responses preserve current draft, and success invalidates CD2 snapshot', async () => {
+    const persisted = basicConfig([autoRule('auto-one')]);
+    const pending = deferred();
+    let savePayload;
+    const {page, nodes} = tokenDraftPage((channel, payload) => {
+        if (channel === 'enhanced-strm-token-set') return pending.promise;
+        if (channel === 'enhanced-strm-config-save') {
+            savePayload = payload.config;
+            return Promise.resolve({status: 'saved', config: payload.config, connectionStatus: 'unknown', connectionRevision: 9});
+        }
+        throw new Error('unexpected IPC: ' + channel);
+    }, persisted);
+    installDraftRules(nodes, persisted.rules);
+    nodes['.txtCd2Token'].value = 'pending-token';
+    page.setToken();
+    page.disableRule('auto-one');
+    nodes['.chkEnabled'].checked = false;
+    nodes['.txtCd2Origin'].value = 'https://late-edit.example';
+    pending.resolve(tokenSavedResponse(persisted, true, 'unknown', 8));
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(page.config.rules[0].originState, 'DISABLED');
+    assert.equal(page.config.rules[0].enabled, false);
+    assert.equal(page.connectionStatus, 'unknown');
+    assert.equal(page.connectionRevision, 8);
+    assert.equal(page.connectionRequestSequence, 2, 'Token success must invalidate an older CD2 request');
+    await page.saveSettings();
+    assert.equal(savePayload.enabled, false);
+    assert.equal(savePayload.cd2.origin, 'https://late-edit.example');
+    assert.equal(savePayload.rules[0].originState, 'DISABLED');
+
+    const failed = deferred();
+    const failureHarness = tokenDraftPage(channel => {
+        if (channel === 'enhanced-strm-token-set') return failed.promise;
+        throw new Error('unexpected IPC: ' + channel);
+    }, persisted);
+    installDraftRules(failureHarness.nodes, persisted.rules);
+    failureHarness.page.disableRule('auto-one');
+    failureHarness.nodes['.txtCd2Origin'].value = 'https://still-draft.example';
+    failureHarness.nodes['.txtCd2Token'].value = 'bad-token';
+    failureHarness.page.setToken();
+    failed.reject(new Error('write failed'));
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(failureHarness.page.config.rules[0].originState, 'DISABLED');
+    assert.equal(failureHarness.nodes['.txtCd2Origin'].value, 'https://still-draft.example');
 });
