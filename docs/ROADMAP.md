@@ -12,11 +12,18 @@
 
 ### Smart Path Mapping Finalization
 
-**状态：** 功能分支 implementation complete，用户功能验收通过；Final PR Audit 正在独立进行，合并待完成。
+**状态：**
+
+- Implementation = `COMPLETE`（功能分支）
+- User Functional Acceptance = `PASS`
+- Final PR Audit = `PASS`
+- PR / Merge = `PENDING`
 
 已完成的子项包括 inference engine、semantics 修正、多样本 Mapping Boundary、Existing Rule Coverage、Mount inference、显式 Save draft 和 CloudDrive2 connection status sync。
 
-剩余顺序：Final PR Audit → 修复 blocker / high findings → 全部相关测试通过 → final provenance → PR → Review → Merge。Audit 的结果以独立审计结论为准，不能预先记为通过。
+Final audit HEAD = `2baf221af3d580c3d84b27e491106e79ae44aa16`；BLOCKER = `NONE`，HIGH = `NONE`；`npm test` = `308/308 PASS`；build、source、Electron、Native Helper、runtime provenance = `PASS`。
+
+剩余顺序：PR → Review → Merge。审计通过只说明当前功能分支已达到 `READY FOR PR`，不代表已经合并、发布或进入 production baseline。
 
 **边界：** STRM 设置页 UI Consolidation 单列于 NEXT，不进入 Smart Mapping 功能 PR；现有 `rules[]`、Resolver 和播放身份链保持原约定。
 

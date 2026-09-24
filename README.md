@@ -8,7 +8,7 @@ Emby Theater Enhanced 是非官方社区维护项目，与 Emby 不存在隶属�
 
 ## 开发计划
 
-进度与优先级见 [Development Roadmap](docs/ROADMAP.md)，可复现问题与观察项见 [Known Issues](docs/KNOWN_ISSUES.md)。Smart Path Mapping 的已完成子项位于功能分支，已通过用户功能验收；Final PR Audit 和合并仍待完成。
+进度与优先级见 [Development Roadmap](docs/ROADMAP.md)，可复现问题与观察项见 [Known Issues](docs/KNOWN_ISSUES.md)。Smart Path Mapping 的已完成子项位于功能分支，已通过用户功能验收和 Final PR Audit；PR / Merge 仍待完成。
 
 ### 核心架构
 
@@ -24,7 +24,7 @@ Emby Theater Enhanced 是非官方社区维护项目，与 Emby 不存在隶属�
 - [x] CD2 HTTP → Mount → Native fallback；手动 `rules[]` 与最长前缀匹配
 - [x] Smart Path Mapping inference engine、多样本 Mapping Boundary 推导、Existing Rule Coverage 检测与 Mount 路径推导（功能分支）
 - [x] Smart Mapping 显式 Save draft 语义、CloudDrive2 连接状态同步（功能分支）
-- [ ] Smart Path Mapping Final PR Audit
+- [x] Smart Path Mapping Final PR Audit
 - [ ] Smart Path Mapping PR / Merge
 - [ ] STRM 设置页 UI Consolidation
 - [ ] Next Episode / DirectUrl / CD2 Pre-warm
