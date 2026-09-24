@@ -1,5 +1,10 @@
 # 已确认经验
 
+## 2026-09-24 — Dynamically created Emby controls need creation-time `is`
+
+- `emby-input`、`emby-select`、`emby-button` 扩展原生标签。静态 HTML 的 `is` 由 parser 在创建时处理；动态控件在 `document.createElement(tag)` 之后补 `is` 属性不会把普通元素变为 Emby customized built-in。动态控件应使用 `document.createElement(tag, {is: name})`。
+- 页面静态控件与动态规则卡可在同一 runtime 中呈现两套外观；只检查 HTML class 和 CSS 存在不足以发现此问题。回归测试应观察生成控件的创建选项，并保留真实视觉复核为独立 gate。
+
 ## 2026-09-24 — Settings visual review is a separate gate
 
 - 上一轮 STRM UI 的静态测试、provenance 与构建通过，但用户实际查看后判定视觉 FAIL；这些后台证据不能替代三个页面切换时的字体、控件、卡片和按钮可读性验收。

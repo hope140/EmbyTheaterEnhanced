@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-09-24 — STRM 动态规则控件原生外观修复
+
+用户实际查看 v3 runtime 后确认其余区域满意，但路径规则卡中的输入框、下拉框仍呈浏览器默认白色小控件。根因是规则卡及后续助手样本用 `document.createElement(tag)` 创建普通控件，随后才设置 `is="emby-*"`；Emby 的 input/select/button 是 customized built-in，必须在创建时传入 `{is: 'emby-*'}` 才会获得其组件实现与样式。仅调整 `mpvplayer/strm.js` 的动态控件创建，并加入会识别旧创建方式的生成控件测试。静态 STRM、诊断与 About 的布局和样式未改；Smart Mapping、规则 schema、Token/Save、CD2 状态、Resolver 与播放链未改。
+
+本轮 targeted STRM/Settings `78/78 PASS`，`npm test 331/331 PASS`，JS syntax 与 `git diff --check` PASS。用户视觉复核仍待独立 runtime 再确认。
+
 ## 2026-09-24 — Unified Settings Visual System v2 candidate
 
 用户对上一版 STRM runtime 的实际视觉检查结果为 `FAIL`。本轮在 `codex/strm-ui-consolidation` 上重建带 `.ete-settings-page` 命名空间的共享视觉层：字体、间距、卡片、表单控件、四级按钮及状态色由 `mpvplayer/enhanced-settings.css` 的 token 统一；STRM、诊断与 About 只保留各自布局样式。STRM 采用区块标题/说明/内容卡与纵向地址、Token、开关、状态行；规则路径占整行，助手样本纵向排列。诊断页移除原生 `raised/button-submit`；About 页面按用户追加确认纳入本分支，四项维护 IPC 来自旧分支的独立 contract，未导入旧版整套 Settings 设计。

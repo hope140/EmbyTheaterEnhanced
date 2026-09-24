@@ -28,8 +28,8 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         return JSON.parse(JSON.stringify(value));
     }
 
-    function element(tag, className, text) {
-        var node = document.createElement(tag);
+    function element(tag, className, text, customName) {
+        var node = customName ? document.createElement(tag, {is: customName}) : document.createElement(tag);
         if (className) node.className = className;
         if (text !== undefined) node.textContent = text;
         return node;
@@ -101,13 +101,12 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         ].forEach(function (field) {
             var wrapper = element('div', 'inputContainer ete-settings-field ete-strm-field');
             var id = 'ete-smart-' + field[0] + '-path-' + index;
-            var input = element('input', 'txtSmart' + field[0].charAt(0).toUpperCase() + field[0].slice(1) + 'Path');
+            var input = element('input', 'txtSmart' + field[0].charAt(0).toUpperCase() + field[0].slice(1) + 'Path', undefined, 'emby-input');
             var label = element('label', null, field[1]);
             var help = element('div', 'fieldDescription', field[2]);
             label.htmlFor = id;
             input.id = id;
             input.type = 'text';
-            input.setAttribute('is', 'emby-input');
             input.setAttribute('autocomplete', 'off');
             input.setAttribute('aria-describedby', id + '-help');
             help.id = id + '-help';
@@ -117,9 +116,8 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             grid.appendChild(wrapper);
         });
         sample.appendChild(grid);
-        var remove = element('button', 'button-link ete-settings-button ete-settings-button--text btnRemoveSample', '移除此组样本');
+        var remove = element('button', 'button-link ete-settings-button ete-settings-button--text btnRemoveSample', '移除此组样本', 'emby-button');
         remove.type = 'button';
-        remove.setAttribute('is', 'emby-button');
         sample.appendChild(remove);
         return sample;
     }
@@ -227,7 +225,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         var wrapper = element('div', 'inputContainer ete-settings-field ete-strm-field');
         var inputId = 'ete-rule-' + ruleId + '-' + field;
         var labelNode = element('label', 'ete-strm-field-label', label);
-        var input = element('input');
+        var input = element('input', null, undefined, 'emby-input');
         var description;
         options = options || {};
         if (field === 'sourcePrefix' || field === 'cloudPrefix' || field === 'mountPrefix') {
@@ -238,7 +236,6 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         input.className = 'rule-' + field;
         input.value = value || '';
         if (options.placeholder) input.placeholder = options.placeholder;
-        input.setAttribute('is', 'emby-input');
         input.setAttribute('aria-label', label);
         labelNode.htmlFor = inputId;
         wrapper.appendChild(labelNode);
@@ -256,10 +253,9 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         var wrapper = element('div', 'selectContainer ete-settings-field ete-strm-field');
         var selectId = 'ete-rule-' + ruleId + '-' + field;
         var labelNode = element('label', 'ete-strm-field-label', label);
-        var select = element('select');
+        var select = element('select', null, undefined, 'emby-select');
         select.id = selectId;
         select.className = 'rule-' + field;
-        select.setAttribute('is', 'emby-select');
         select.setAttribute('aria-label', label);
         labelNode.htmlFor = selectId;
         values.forEach(function (value) {
@@ -276,8 +272,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         order = strategyOrder('custom', order);
         for (var index = 0; index < STAGES.length; index++) {
             var label = element('label', null, '第 ' + (index + 1) + ' 顺位');
-            var select = element('select', 'rule-order-stage');
-            select.setAttribute('is', 'emby-select');
+            var select = element('select', 'rule-order-stage', undefined, 'emby-select');
             select.setAttribute('aria-label', '自定义顺序第 ' + (index + 1) + ' 顺位');
             select.dataset.index = String(index);
             STAGES.forEach(function (stage) {
@@ -327,9 +322,9 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         var orderLabel = element('span', 'ete-strm-order-label', '实际顺序');
         var orderValue = element('span', 'ete-strm-order-value');
         var actions = element('div', 'ete-settings-actions ete-strm-rule-actions');
-        var testButton = element('button', null, isDraftRule ? '请先保存规则' : '检查已保存规则');
-        var restoreButton = element('button', null, '恢复自动配置');
-        var disableButton = element('button', null, isDraftRule ? '移除草稿' : (rule.originState === 'DISABLED' ? '保持抑制' : '禁用/删除'));
+        var testButton = element('button', null, isDraftRule ? '请先保存规则' : '检查已保存规则', 'emby-button');
+        var restoreButton = element('button', null, '恢复自动配置', 'emby-button');
+        var disableButton = element('button', null, isDraftRule ? '移除草稿' : (rule.originState === 'DISABLED' ? '保持抑制' : '禁用/删除'), 'emby-button');
         var statusGrid = element('div', 'ete-strm-rule-status-grid');
         var mountState = createRuleStatusRow('本地挂载', 'ete-strm-rule-mount', '尚未检查');
         var connection = createRuleStatusRow('CloudDrive2', 'ete-strm-rule-connection',

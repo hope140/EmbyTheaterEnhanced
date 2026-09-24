@@ -1,5 +1,17 @@
 # 开发日志
 
+## 2026-09-24 — STRM 规则卡动态 Emby 控件修复
+
+Model Tier: Tier 1
+
+Model: GPT-6 Sol High（当前 host）
+
+Reason: 用户截图定位到规则卡动态 input/select/button 外观与静态表单不一致；问题限定在 renderer 元素创建，播放与状态契约无影响。
+
+Escalated: No
+
+核对 `emby-input`、`emby-select`、`emby-button` 均以 `customElements.define(..., {extends: ...})` 注册；规则卡此前先创建普通 DOM 元素，再设置 `is` 属性，未触发 customized built-in 构造。改为通过 `document.createElement(tag, {is: customName})` 创建。覆盖路径输入、规则 select、自定义解析顺序、规则操作按钮和动态助手样本；不修改字段值、绑定、样本上限、Save/Token 或任何 IPC/Resolver。新增 VM fake DOM 测试核对每个生成的 input/select/button 在创建时得到对应 `is` 选项；旧写法会在此测试失败。Targeted `78/78 PASS`、`npm test 331/331 PASS`、JS syntax 与 `git diff --check` PASS。真实客户端视觉结果待用户复核。
+
 ## 2026-09-24 — Settings Visual System correction v2
 
 Model Tier: Tier 2

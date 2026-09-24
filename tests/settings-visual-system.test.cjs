@@ -240,7 +240,7 @@ test('About route and all three settings pages use Emby native page and control 
     const strm = readPluginFile('strm.html');
     assert.match(strm, /<input\b[^>]*is="emby-input"/);
     assert.match(strm, /<input\b[^>]*is="emby-checkbox"/);
-    assert.match(readPluginFile('strm.js'), /select\.setAttribute\('is', 'emby-select'\)/);
+    assert.match(readPluginFile('strm.js'), /document\.createElement\(tag, \{is: customName\}\)/);
     const about = readPluginFile('about.html');
     assert.match(about, /<details\b[^>]*class="[^"]*ete-about-advanced[^"]*"[\s\S]*?<\/details>/);
     for (const label of ['Electron', 'Chromium', 'Native Helper', 'libmpv', 'Source Commit']) {
