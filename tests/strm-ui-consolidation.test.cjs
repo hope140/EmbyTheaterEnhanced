@@ -41,23 +41,22 @@ test('STRM form keeps its functional controls and explicit save wiring', () => {
     }
 });
 
-test('STRM labels and component styles stay coherent across static and rendered content', () => {
+test('STRM labels, Emby controls, and scoped layout styles stay coherent', () => {
     for (const label of [
         'STRM 源路径', 'CloudDrive2 路径', '本地挂载路径',
         'STRM 源文件路径', 'CloudDrive2 文件路径', '本地挂载文件路径（可选）'
     ]) {
         assert.ok(html.includes(label) || js.includes(label), `missing ${label}`);
     }
-    for (const variant of ['primary', 'secondary', 'text', 'danger']) {
-        assert.match(sharedCss, new RegExp('\\.ete-settings-button--' + variant + '\\b'));
-        assert.ok(html.includes('ete-settings-button--' + variant) || js.includes('ete-settings-button--' + variant),
-            `unused ${variant} button variant`);
-    }
     assert.match(html, /ete-settings-page strm-settings-page/);
     assert.match(js, /css!\.\/enhanced-settings/);
-    assert.match(sharedCss, /\.ete-settings-page :is\(input\[type="text"\]/);
-    assert.match(sharedCss, /input\[type="password"\], select\)/);
-    assert.match(sharedCss, /color-scheme:\s*dark/);
+    assert.match(html, /<input\b[^>]*is="emby-input"/);
+    assert.match(html, /<input\b[^>]*is="emby-checkbox"/);
+    assert.match(html, /class="raised button-submit ete-settings-button ete-settings-button--primary btnSave"/);
+    assert.match(js, /select\.setAttribute\('is', 'emby-select'\)/);
+    assert.match(js, /remove\.setAttribute\('is', 'emby-button'\)/);
+    assert.match(css, /\.strm-settings-page\s*>\s*form\.auto-center\s*\{[^}]*max-width:\s*100%;[^}]*width:\s*100%;/s,
+        'STRM form overrides Emby auto-center width limits within the shared page width');
     assert.match(css, /\.ete-strm-status-row\b/);
     assert.match(html, /<section class="[^"]*ete-strm-assistant"/);
     for (const label of ['本地挂载', 'CloudDrive2', '路径规则']) {
@@ -66,12 +65,11 @@ test('STRM labels and component styles stay coherent across static and rendered 
     assert.match(js, /\.ete-strm-rule-connection/);
     assert.match(js, /\.ete-strm-rule-format/);
     assert.match(js, /\.ete-strm-rule-mount/);
-    assert.match(sharedCss, /\[data-status="pass"\]/);
-    assert.match(sharedCss, /\[data-status="bad"\]/);
-    assert.match(sharedCss, /@media\s*\(max-width:\s*\d+px\)/);
+    assert.match(css, /@media\s*\(max-width:\s*\d+px\)/);
+    assert.match(sharedCss, /\.ete-settings-page\s*\{[^}]*max-width:\s*1240px;[^}]*width:\s*100%;/s);
+    assert.match(sharedCss, /border:\s*1px solid var\(--line-background/);
+    assert.doesNotMatch(sharedCss, /--ete-settings-[\w-]+\s*:|color-scheme\s*:\s*dark/i);
     assert.match(css, /overflow-wrap:\s*anywhere|word-break:\s*break-word/);
     assert.match(sharedCss, /:focus-visible/);
-    assert.doesNotMatch(html, /\bbutton-submit\b|\braised\b/);
-    assert.doesNotMatch(js, /\bbutton-submit\b|\braised\b/);
     assert.doesNotMatch(js, /\.innerHTML\s*=/);
 });

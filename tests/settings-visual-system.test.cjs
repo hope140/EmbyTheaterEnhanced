@@ -24,27 +24,6 @@ function fakeIpcMain() {
     };
 }
 
-function parseHexColor(value) {
-    const match = String(value || '').trim().match(/^#([\da-f]{3}|[\da-f]{6})$/i);
-    assert.ok(match, 'expected a static hex color token, got: ' + value);
-    const digits = match[1].length === 3
-        ? match[1].split('').map(function (digit) { return digit + digit; }).join('')
-        : match[1];
-    return [0, 2, 4].map(function (offset) { return parseInt(digits.slice(offset, offset + 2), 16) / 255; });
-}
-
-function relativeLuminance(color) {
-    const channels = parseHexColor(color).map(function (channel) {
-        return channel <= 0.04045 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
-    });
-    return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
-}
-
-function contrastRatio(foreground, background) {
-    const values = [relativeLuminance(foreground), relativeLuminance(background)].sort(function (a, b) { return b - a; });
-    return (values[0] + 0.05) / (values[1] + 0.05);
-}
-
 function splitSelectorList(selector) {
     const parts = [];
     let start = 0;
@@ -200,7 +179,7 @@ test('About loads environment on entry and checks updates only after a user clic
                     if (channel === 'enhanced-maintenance-info') {
                         return Promise.resolve({
                             status: 'ok',
-                            info: {appVersion: '0.2.3', electron: '44.4.2', chromium: '152', node: '24', nativeHelper: 'ready', libmpv: 'UNKNOWN', sourceCommit: 'abc', windows: 'Windows', displayDpi: 'NOT AVAILABLE'}
+                            info: {appVersion: '0.2.3', electron: '44.4.2', chromium: '152', node: '24', nativeHelper: 'helper 0.2.1', libmpv: 'UNKNOWN', sourceCommit: 'abc', windows: 'Windows', displayDpi: 'NOT AVAILABLE'}
                         });
                     }
                     if (channel === 'enhanced-maintenance-check-update') {
@@ -217,6 +196,12 @@ test('About loads environment on entry and checks updates only after a user clic
     await controller.loadInfo();
     assert.deepEqual(invoked, ['enhanced-maintenance-info']);
     assert.equal(view.querySelector('.aboutAppVersion').textContent, '0.2.3');
+    for (const [selector, value] of [
+        ['.aboutElectron', '44.4.2'], ['.aboutChromium', '152'], ['.aboutNativeHelper', 'helper 0.2.1'],
+        ['.aboutLibmpv', 'UNKNOWN'], ['.aboutSourceCommit', 'abc'], ['.aboutNode', '24'], ['.aboutWindows', 'Windows']
+    ]) {
+        assert.equal(view.querySelector(selector).textContent, value);
+    }
     assert.deepEqual(loadingCalls, ['show', 'hide']);
 
     const updateButton = view.querySelector('.btnCheckUpdates');
@@ -235,7 +220,7 @@ test('main registers maintenance IPC for the current renderer and unregisters it
     assert.match(main, /app\.once\('before-quit'[\s\S]*?unregisterMaintenanceIpc\(\);/);
 });
 
-test('About route and all three settings pages depend on the shared stylesheet', () => {
+test('About route and all three settings pages use Emby native page and control styles', () => {
     const routes = fs.readFileSync(path.join(pluginRoot, '..', 'libmpv.js'), 'utf8');
     assert.match(routes, /path:\s*'mpvplayer\/about\.html'[\s\S]{0,400}title:\s*'关于 Enhanced'/);
 
@@ -244,11 +229,25 @@ test('About route and all three settings pages depend on the shared stylesheet',
         const controller = readPluginFile(page + '.js');
         assert.match(controller, /css!\.\/enhanced-settings(?:['"]|\s*,)/, page + ' controller should load shared settings CSS');
         assert.match(html, /class="(?:[^"]*\s)?ete-settings-page(?:\s|")/, page + ' page root namespace');
-        for (const component of ['ete-settings-header', 'ete-settings-section', 'ete-settings-card', 'ete-settings-actions', 'ete-settings-button']) {
-            assert.match(html, new RegExp('class="(?:[^"]*\\s)?' + component + '(?:\\s|")'), page + ' uses ' + component);
+        assert.match(html, /<section\b[^>]*class="[^"]*\bverticalSection\b/, page + ' sections inherit Emby verticalSection spacing');
+        assert.match(html, /<h2\b[^>]*class="[^"]*\bsectionTitle\b/, page + ' section headings inherit Emby sectionTitle styling');
+        assert.match(html, /<button\b[^>]*is="emby-button"/, page + ' buttons use Emby button elements');
+        for (const control of ['raised', 'button-submit', 'button-link']) {
+            assert.match(html, new RegExp('class="[^"]*\\b' + control + '\\b'), page + ' preserves Emby ' + control + ' hierarchy');
         }
-        assert.doesNotMatch(html, /\braised\b|\bbutton-submit\b/i, page + ' keeps native raised/button-submit styling out');
     }
+
+    const strm = readPluginFile('strm.html');
+    assert.match(strm, /<input\b[^>]*is="emby-input"/);
+    assert.match(strm, /<input\b[^>]*is="emby-checkbox"/);
+    assert.match(readPluginFile('strm.js'), /select\.setAttribute\('is', 'emby-select'\)/);
+    const about = readPluginFile('about.html');
+    assert.match(about, /<details\b[^>]*class="[^"]*ete-about-advanced[^"]*"[\s\S]*?<\/details>/);
+    for (const label of ['Electron', 'Chromium', 'Native Helper', 'libmpv', 'Source Commit']) {
+        assert.match(about, new RegExp('<span>' + label + '</span>'), 'About advanced details include ' + label);
+    }
+    assert.match(about, /<code class="aboutAppVersion">/);
+    assert.match(about, /class="raised button-submit ete-settings-button ete-settings-button--primary btnCheckUpdates"/);
 });
 
 test('functional STRM control classes remain available in the page or its generated controls', () => {
@@ -267,7 +266,7 @@ test('functional STRM control classes remain available in the page or its genera
     }
 });
 
-test('shared CSS stays under the page namespace and semantic color pairs meet text contrast', () => {
+test('shared CSS stays scoped and adjusts layout, light boundaries, and the theme-derived primary fill', () => {
     const css = readPluginFile('enhanced-settings.css');
     const selectorBlocks = Array.from(css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{/g), function (match) { return match[1].trim(); })
         .filter(function (selector) { return selector && !selector.startsWith('@'); });
@@ -294,30 +293,16 @@ test('shared CSS stays under the page namespace and semantic color pairs meet te
         }
     }
 
-    const tokenBlock = css.match(/\.ete-settings-page\s*\{([^}]*)\}/);
-    assert.ok(tokenBlock, 'page root defines local visual tokens');
-    const tokens = Object.fromEntries(Array.from(tokenBlock[1].matchAll(/(--ete-settings-[\w-]+)\s*:\s*(#[\da-f]{3,6})\s*;/gi), function (match) {
-        return [match[1], match[2]];
-    }));
-    const pairs = [
-        ['--ete-settings-text', '--ete-settings-surface'],
-        ['--ete-settings-text', '--ete-settings-subcard'],
-        ['--ete-settings-text', '--ete-settings-control'],
-        ['--ete-settings-muted', '--ete-settings-surface'],
-        ['--ete-settings-muted', '--ete-settings-subcard'],
-        ['--ete-settings-muted', '--ete-settings-control'],
-        ['--ete-settings-primary', '#ffffff'],
-        ['--ete-settings-primary-hover', '#ffffff'],
-        ['--ete-settings-danger', '--ete-settings-danger-surface'],
-        ['--ete-settings-success', '--ete-settings-surface'],
-        ['--ete-settings-warning', '--ete-settings-surface']
-    ];
-    for (const [foregroundToken, backgroundToken] of pairs) {
-        const foreground = foregroundToken.startsWith('--') ? tokens[foregroundToken] : foregroundToken;
-        const background = backgroundToken.startsWith('--') ? tokens[backgroundToken] : backgroundToken;
-        assert.ok(foreground, 'missing color token ' + foregroundToken);
-        assert.ok(background, 'missing color token ' + backgroundToken);
-        const ratio = contrastRatio(foreground, background);
-        assert.ok(ratio >= 4.5, foregroundToken + ' against ' + backgroundToken + ' has contrast ' + ratio.toFixed(2) + ':1');
-    }
+    assert.match(css, /\.ete-settings-page\s*\{[^}]*max-width:\s*1240px;[^}]*width:\s*100%;/s,
+        'shared root gives pages a bounded, responsive content width');
+    assert.match(css, /\.ete-settings-page \.ete-settings-section\s*\{[^}]*margin:\s*0 0 2em;/s,
+        'shared section spacing stays scoped to settings pages');
+    assert.match(css, /border:\s*1px solid var\(--line-background/,
+        'shared surfaces use Emby light-boundary color');
+    assert.doesNotMatch(css, /--ete-settings-[\w-]+\s*:|color-scheme\s*:\s*dark/i,
+        'shared CSS does not define a separate palette or dark control scheme');
+    assert.match(css, /\.ete-settings-page \.ete-settings-button--primary\s*\{[^}]*background:\s*hsl\(var\(--theme-primary-color-hue\),\s*var\(--theme-primary-color-saturation\),\s*calc\(var\(--theme-primary-color-lightness\)\s*-\s*16%\)\)/s,
+        'primary action fill darkens the Emby theme HSL color');
+    assert.match(css, /\.ete-settings-page \.ete-settings-button--primary:hover[^{}]*\{[^}]*background:\s*hsl\(var\(--theme-primary-color-hue\)/s,
+        'primary hover state continues to derive from the Emby theme');
 });

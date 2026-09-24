@@ -6,9 +6,9 @@
                 <p>为 STRM 媒体设置 CloudDrive2 与本地挂载路径，并决定可用来源的尝试顺序。</p>
             </header>
 
-            <section class="ete-settings-section ete-strm-enabled-section" aria-labelledby="ete-strm-basic-title">
+            <section class="ete-settings-section verticalSection ete-strm-enabled-section" aria-labelledby="ete-strm-basic-title">
                 <div class="ete-settings-section-header">
-                    <div><h2 id="ete-strm-basic-title">基础设置</h2><p>选择是否对 STRM 文件应用下方路径规则。</p></div>
+                    <div><h2 id="ete-strm-basic-title" class="sectionTitle">基础设置</h2></div>
                 </div>
                 <div class="ete-settings-card">
                     <div class="checkboxContainer checkboxContainer-withDescription ete-strm-toggle-row">
@@ -21,9 +21,9 @@
                 </div>
             </section>
 
-            <section class="ete-settings-section ete-strm-cd2-section" aria-labelledby="ete-strm-cd2-title">
+            <section class="ete-settings-section verticalSection ete-strm-cd2-section" aria-labelledby="ete-strm-cd2-title">
                 <div class="ete-settings-section-header">
-                    <div><h2 id="ete-strm-cd2-title">CloudDrive2</h2><p>配置连接信息并查看最近一次连接测试结果。</p></div>
+                    <div><h2 id="ete-strm-cd2-title" class="sectionTitle">CloudDrive2</h2></div>
                 </div>
                 <div class="ete-settings-card ete-strm-cd2-card">
                 <div class="inputContainer ete-settings-field ete-strm-field">
@@ -35,8 +35,8 @@
                     <div class="ete-strm-token-heading"><label for="ete-cd2-token">Token</label><span class="tokenState ete-strm-status-value" aria-live="polite">未配置</span></div>
                     <input is="emby-input" type="password" id="ete-cd2-token" class="txtCd2Token" autocomplete="new-password" aria-label="CloudDrive2 Token" />
                     <div class="ete-settings-actions ete-strm-token-actions">
-                        <button type="button" is="emby-button" class="ete-settings-button ete-settings-button--secondary btnSetToken">设置新 Token</button>
-                        <button type="button" is="emby-button" class="ete-settings-button ete-settings-button--text btnClearToken">清除 Token</button>
+                        <button type="button" is="emby-button" class="raised ete-settings-button ete-settings-button--secondary btnSetToken">设置新 Token</button>
+                        <button type="button" is="emby-button" class="button-link ete-settings-button ete-settings-button--text btnClearToken">清除 Token</button>
                     </div>
                 </div>
                 <div class="checkboxContainer checkboxContainer-withDescription ete-strm-toggle-row">
@@ -44,7 +44,7 @@
                         <input type="checkbox" is="emby-checkbox" class="chkCd2Enabled" />
                         <span>启用 CloudDrive2</span>
                     </label>
-                    <div class="fieldDescription checkboxFieldDescription">Token 只保存在 Electron main process，页面不会读取已保存的 Token。</div>
+                    <div class="fieldDescription checkboxFieldDescription">Token 仅保存在本机；已保存的 Token 不会在此显示。</div>
                 </div>
                 <div class="checkboxContainer checkboxContainer-withDescription ete-strm-toggle-row">
                     <label>
@@ -59,32 +59,32 @@
                         <span class="connectionState ete-strm-status-value" role="status" aria-live="polite">CloudDrive2 最近测试：尚未测试</span>
                     </div>
                     <div class="ete-settings-actions ete-strm-actions">
-                        <button type="button" is="emby-button" class="ete-settings-button ete-settings-button--secondary btnTestConnection">测试连接</button>
+                        <button type="button" is="emby-button" class="raised ete-settings-button ete-settings-button--secondary btnTestConnection">测试连接</button>
                     </div>
                 </div>
                 <div class="fieldDescription">连接测试使用已保存的地址与 Token；修改地址后请先点击“保存设置”。</div>
                 </div>
             </section>
 
-            <section class="ete-settings-section ete-strm-rules-section" aria-labelledby="ete-rules-title">
+            <section class="ete-settings-section verticalSection ete-strm-rules-section" aria-labelledby="ete-rules-title">
                 <div class="ete-settings-section-header ete-strm-section-heading">
                     <div>
-                        <h2 id="ete-rules-title">路径规则</h2>
+                        <h2 id="ete-rules-title" class="sectionTitle">路径规则</h2>
                         <p>按 STRM 源路径的最长前缀匹配；在每条规则中设置 CloudDrive2 与本地挂载路径。</p>
                     </div>
                 </div>
                 <div class="ete-settings-card">
                     <div class="ete-settings-actions ete-strm-rule-toolbar">
-                        <button type="button" is="emby-button" class="ete-settings-button ete-settings-button--secondary btnAddRule">添加路径规则</button>
+                        <button type="button" is="emby-button" class="raised ete-settings-button ete-settings-button--secondary btnAddRule">添加路径规则</button>
                     </div>
                     <div class="rulesList"></div>
                 </div>
             </section>
 
-            <section class="ete-settings-section ete-strm-assistant" aria-labelledby="ete-smart-mapping-title">
+            <section class="ete-settings-section verticalSection ete-strm-assistant" aria-labelledby="ete-smart-mapping-title">
                 <div class="ete-settings-section-header ete-strm-assistant-heading">
                     <div>
-                        <h2 id="ete-smart-mapping-title">智能映射助手</h2>
+                        <h2 id="ete-smart-mapping-title" class="sectionTitle">智能映射助手</h2>
                         <p>填写同一文件在不同位置的路径，分析后可将建议加入规则草稿。</p>
                     </div>
                 </div>
@@ -112,8 +112,8 @@
                       </fieldset>
                     </div>
                     <div class="ete-settings-actions ete-strm-assistant-actions">
-                        <button type="button" is="emby-button" class="ete-settings-button ete-settings-button--secondary btnAnalyzeMapping">分析映射</button>
-                        <button type="button" is="emby-button" class="ete-settings-button ete-settings-button--secondary btnAddSample">添加样本</button>
+                        <button type="button" is="emby-button" class="raised ete-settings-button ete-settings-button--secondary btnAnalyzeMapping">分析映射</button>
+                        <button type="button" is="emby-button" class="raised ete-settings-button ete-settings-button--secondary btnAddSample">添加样本</button>
                         <span class="smartMappingState ete-settings-status" role="status" aria-live="polite"></span>
                     </div>
                     <div class="ete-strm-assistant-preview ete-settings-subcard" role="region" aria-labelledby="ete-smart-preview-title" hidden>
@@ -133,14 +133,14 @@
                                 <div><dt>匹配依据</dt><dd class="smartMatchedBasis"></dd></div>
                                 <div><dt>原因</dt><dd class="smartReason"></dd></div>
                             </dl>
-                            <button type="button" is="emby-button" class="ete-settings-button ete-settings-button--secondary btnAddSuggestedRule" disabled>加入路径规则</button>
+                            <button type="button" is="emby-button" class="raised ete-settings-button ete-settings-button--secondary btnAddSuggestedRule" disabled>加入路径规则</button>
                         </div>
                     </div>
                 </div>
             </section>
 
             <div class="ete-settings-actions ete-strm-form-actions">
-                <button type="submit" is="emby-button" class="ete-settings-button ete-settings-button--primary btnSave">保存设置</button>
+                <button type="submit" is="emby-button" class="raised button-submit ete-settings-button ete-settings-button--primary btnSave">保存设置</button>
                 <span class="saveState ete-settings-status" role="status" aria-live="polite"></span>
             </div>
         </form>

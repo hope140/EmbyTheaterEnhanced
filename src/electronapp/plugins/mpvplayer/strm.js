@@ -117,7 +117,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             grid.appendChild(wrapper);
         });
         sample.appendChild(grid);
-        var remove = element('button', 'ete-settings-button ete-settings-button--text btnRemoveSample', '移除此组样本');
+        var remove = element('button', 'button-link ete-settings-button ete-settings-button--text btnRemoveSample', '移除此组样本');
         remove.type = 'button';
         remove.setAttribute('is', 'emby-button');
         sample.appendChild(remove);
@@ -376,12 +376,12 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         testButton.type = 'button';
         restoreButton.type = 'button';
         disableButton.type = 'button';
-        testButton.className = 'ete-settings-button ete-settings-button--secondary btnTestRule';
+        testButton.className = 'raised ete-settings-button ete-settings-button--secondary btnTestRule';
         testButton.disabled = isDraftRule;
-        restoreButton.className = 'ete-settings-button ete-settings-button--text btnRestoreAuto';
+        restoreButton.className = 'button-link ete-settings-button ete-settings-button--text btnRestoreAuto';
         disableButton.className = (isDraftRule || rule.originState === 'USER'
-            ? 'ete-settings-button ete-settings-button--danger btnDisableRule'
-            : 'ete-settings-button ete-settings-button--text btnDisableRule');
+            ? 'button-link ete-settings-button ete-settings-button--danger btnDisableRule'
+            : 'button-link ete-settings-button ete-settings-button--text btnDisableRule');
         actions.appendChild(testButton);
         if (rule.originState !== 'AUTO') actions.appendChild(restoreButton);
         actions.appendChild(disableButton);

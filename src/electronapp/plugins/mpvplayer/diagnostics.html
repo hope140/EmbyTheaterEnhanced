@@ -5,9 +5,9 @@
             <p>查看日志状态、导出诊断报告或打开日志目录。</p>
         </header>
 
-        <section class="ete-settings-section ete-diagnostics-panel" aria-labelledby="ete-diagnostics-status-title">
+        <section class="ete-settings-section verticalSection ete-diagnostics-panel" aria-labelledby="ete-diagnostics-status-title">
             <div class="ete-settings-section-header">
-                <div><h2 id="ete-diagnostics-status-title">状态</h2><p>日志记录与存储位置。</p></div>
+                <div><h2 id="ete-diagnostics-status-title" class="sectionTitle">状态</h2></div>
             </div>
             <div class="ete-settings-card">
                 <div class="ete-settings-info-row ete-diagnostics-row"><span>诊断日志</span><strong class="diagnosticsEnabled">已启用</strong></div>
@@ -17,15 +17,15 @@
             </div>
         </section>
 
-        <section class="ete-settings-section ete-diagnostics-panel" aria-labelledby="ete-diagnostics-actions-title">
+        <section class="ete-settings-section verticalSection ete-diagnostics-panel" aria-labelledby="ete-diagnostics-actions-title">
             <div class="ete-settings-section-header">
-                <div><h2 id="ete-diagnostics-actions-title">操作</h2><p>按需导出、查看或清理诊断日志。</p></div>
+                <div><h2 id="ete-diagnostics-actions-title" class="sectionTitle">操作</h2></div>
             </div>
             <div class="ete-settings-card">
                 <div class="ete-settings-actions ete-diagnostics-actions">
-                    <button type="button" is="emby-button" class="ete-settings-button ete-settings-button--primary btnExportDiagnostics">导出诊断日志</button>
-                    <button type="button" is="emby-button" class="ete-settings-button ete-settings-button--secondary btnOpenDiagnostics">打开日志目录</button>
-                    <button type="button" is="emby-button" class="ete-settings-button ete-settings-button--danger btnClearDiagnostics">清空日志</button>
+                    <button type="button" is="emby-button" class="raised button-submit ete-settings-button ete-settings-button--primary btnExportDiagnostics">导出诊断日志</button>
+                    <button type="button" is="emby-button" class="raised ete-settings-button ete-settings-button--secondary btnOpenDiagnostics">打开日志目录</button>
+                    <button type="button" is="emby-button" class="button-link ete-settings-button ete-settings-button--danger btnClearDiagnostics">清空日志</button>
                 </div>
                 <div class="ete-settings-status diagnosticsState secondaryText" role="status" aria-live="polite"></div>
             </div>

@@ -1,92 +1,69 @@
-/* STRM layout only. Shared Settings colors, type, cards and controls live in enhanced-settings.css. */
-.strm-settings-page > form.auto-center {
-    margin: 0;
-    min-width: 0;
-    width: 100%;
-}
+/* STRM keeps Emby's form controls; these rules only arrange its extra fields. */
+.strm-settings-page > form.auto-center { margin-inline: auto; max-width: 100%; min-width: 0; width: 100%; }
+.strm-settings-page .ete-strm-cd2-card { display: grid; gap: 1em; }
+.strm-settings-page .ete-strm-cd2-card .inputContainer { margin-bottom: 0; }
 
-.strm-settings-page .ete-strm-cd2-card { display: grid; gap: 20px; }
 .strm-settings-page .ete-strm-token-heading {
     align-items: baseline;
     display: flex;
     flex-wrap: wrap;
-    gap: 6px 18px;
+    gap: .5em 1em;
     justify-content: space-between;
-    margin-bottom: 7px;
+    margin-bottom: .2em;
 }
-.strm-settings-page .ete-strm-token-heading label {
-    font-size: var(--ete-settings-label-size);
-    font-weight: 600;
-}
-.strm-settings-page .ete-strm-token-actions { margin-top: 10px; }
+.strm-settings-page .ete-strm-token-actions { margin-top: .55em; }
 .strm-settings-page .ete-strm-token-row { min-width: 0; }
-.strm-settings-page .ete-strm-toggle-row {
-    border-top: 1px solid var(--ete-settings-line);
-    margin: 0;
-    padding-top: 16px;
-}
-.strm-settings-page .ete-strm-toggle-row > label {
-    align-items: center;
-    display: inline-flex;
-    gap: 9px;
-    min-height: 32px;
-}
-.strm-settings-page .ete-strm-toggle-row .checkboxFieldDescription { margin: 4px 0 0 30px; }
-.strm-settings-page .ete-strm-enabled-section .ete-strm-toggle-row { border-top: 0; padding-top: 0; }
+.strm-settings-page .ete-strm-toggle-row { margin: .2em 0 .8em; }
+.strm-settings-page .ete-strm-enabled-section .ete-strm-toggle-row { margin-bottom: 0; }
 
 .strm-settings-page .ete-strm-connection-block {
-    border-top: 1px solid var(--ete-settings-line);
-    display: grid;
-    gap: 12px;
-    padding-top: 18px;
+    border-top: 1px solid var(--line-background, rgba(255, 255, 255, .14));
+    padding-top: .9em;
 }
 .strm-settings-page .ete-strm-status-row {
     align-items: baseline;
     display: grid;
-    gap: 8px 18px;
-    grid-template-columns: 130px minmax(0, 1fr);
+    gap: .4em 1em;
+    grid-template-columns: 8em minmax(0, 1fr);
     min-width: 0;
 }
-.strm-settings-page .ete-strm-status-label {
-    color: var(--ete-settings-muted);
-    font-size: var(--ete-settings-help-size);
+.strm-settings-page .ete-strm-status-label,
+.strm-settings-page .ete-strm-status-value:not([data-status]) {
+    color: var(--theme-secondary-text-color, rgba(255, 255, 255, .72));
 }
 .strm-settings-page .ete-strm-status-value { min-width: 0; overflow-wrap: anywhere; }
-.strm-settings-page .ete-strm-status-value:not([data-status]) { color: var(--ete-settings-muted); }
-.strm-settings-page .ete-strm-rule-toolbar { justify-content: flex-end; margin-bottom: 16px; }
-.strm-settings-page .rulesList { min-width: 0; }
+.strm-settings-page .ete-strm-actions { margin-top: .65em; }
+.strm-settings-page .ete-strm-rule-toolbar { margin-bottom: .9em; }
 
-.strm-settings-page .ete-strm-rule-card { margin: 0 0 16px; }
-.strm-settings-page .ete-strm-rule-card:last-child { margin-bottom: 0; }
-.strm-settings-page .ete-strm-rule-card.is-disabled { background: #1d252b; }
+.strm-settings-page .rulesList { min-width: 0; }
+.strm-settings-page .ete-strm-rule-card { margin: 0 0 1em; }
 .strm-settings-page .ete-strm-rule-heading {
     align-items: center;
     display: flex;
     flex-wrap: wrap;
-    gap: 8px 12px;
-    margin-bottom: 18px;
+    gap: .4em .8em;
+    margin-bottom: 1em;
     min-width: 0;
 }
 .strm-settings-page .ete-strm-rule-title {
-    font-size: 1.03rem;
-    font-weight: 650;
+    font-weight: 600;
     min-width: 0;
     overflow-wrap: anywhere;
 }
 .strm-settings-page .ete-strm-rule-origin,
 .strm-settings-page .ete-strm-rule-state {
-    border: 1px solid var(--ete-settings-line-strong);
-    border-radius: var(--ete-settings-radius);
-    color: var(--ete-settings-muted);
-    font-size: .8rem;
-    padding: 3px 8px;
+    border: 1px solid var(--line-background, rgba(255, 255, 255, .14));
+    border-radius: .3em;
+    color: var(--theme-secondary-text-color, rgba(255, 255, 255, .72));
+    font-size: .85em;
+    padding: .15em .5em;
     white-space: nowrap;
 }
 .strm-settings-page .ete-strm-rule-origin { margin-left: auto; }
-
+.strm-settings-page .ete-strm-rule-card.is-disabled { opacity: .8; }
 .strm-settings-page .ete-strm-rule-grid {
     display: grid;
-    gap: var(--ete-settings-row-gap);
+    gap: .3em 1em;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     min-width: 0;
 }
@@ -94,110 +71,66 @@
 .strm-settings-page .ete-strm-rule-grid .inputContainer,
 .strm-settings-page .ete-strm-rule-grid .selectContainer { min-width: 0; }
 
-.strm-settings-page .ete-strm-order {
-    border-top: 1px solid var(--ete-settings-line);
-    margin-top: 20px;
-    padding-top: 16px;
-}
+.strm-settings-page .ete-strm-order { margin: .4em 0 1em; }
 .strm-settings-page .ete-strm-order-label {
-    color: var(--ete-settings-muted);
+    color: var(--theme-secondary-text-color, rgba(255, 255, 255, .72));
     display: block;
-    font-size: var(--ete-settings-help-size);
-    margin-bottom: 4px;
+    margin-bottom: .2em;
 }
-.strm-settings-page .ete-strm-order-value {
-    font-family: Consolas, "Courier New", monospace;
-    overflow-wrap: anywhere;
-}
+.strm-settings-page .ete-strm-order-value { font-family: Consolas, "Courier New", monospace; overflow-wrap: anywhere; }
 .strm-settings-page .ete-strm-custom-order {
     display: grid;
-    gap: 12px;
+    gap: .75em;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    margin-top: 14px;
+    margin-top: .75em;
 }
 .strm-settings-page .ete-strm-custom-order label { min-width: 0; }
-.strm-settings-page .ete-strm-custom-order select { margin-top: 6px; }
-.strm-settings-page .ete-strm-custom-order.hide { display: none; }
+.strm-settings-page .ete-strm-custom-order select { margin-top: .3em; }
 
 .strm-settings-page .ete-strm-rule-status-grid {
-    border-top: 1px solid var(--ete-settings-line);
+    border-top: 1px solid var(--line-background, rgba(255, 255, 255, .14));
     display: grid;
-    gap: 10px;
-    margin-top: 18px;
-    padding-top: 18px;
+    gap: .45em;
+    padding-top: .8em;
 }
-.strm-settings-page .ete-strm-rule-status-grid .ete-strm-status-row {
-    grid-template-columns: 130px minmax(0, 1fr);
-}
-.strm-settings-page .ete-strm-rule-actions {
-    border-top: 1px solid var(--ete-settings-line);
-    justify-content: flex-end;
-    margin-top: 18px;
-    padding-top: 18px;
-}
+.strm-settings-page .ete-strm-rule-actions { justify-content: flex-end; margin-top: .9em; }
 .strm-settings-page .ete-strm-empty {
-    border: 1px dashed var(--ete-settings-line-strong);
-    border-radius: var(--ete-settings-radius);
-    color: var(--ete-settings-muted);
-    padding: 24px;
-    text-align: center;
+    color: var(--theme-secondary-text-color, rgba(255, 255, 255, .72));
+    padding: .8em 0;
 }
 
-.strm-settings-page .ete-strm-assistant-sample { margin: 0 0 16px; }
-.strm-settings-page .ete-strm-assistant-sample legend {
-    color: var(--ete-settings-text);
-    font-weight: 650;
-    padding: 0 8px;
-}
-.strm-settings-page .ete-strm-assistant-grid {
-    display: grid;
-    gap: 18px;
-    grid-template-columns: minmax(0, 1fr);
-}
-.strm-settings-page .ete-strm-assistant-sample .btnRemoveSample { margin-top: 12px; }
-.strm-settings-page .ete-strm-assistant-actions { margin-top: 18px; }
+.strm-settings-page .ete-strm-assistant-sample { margin: 0 0 .85em; }
+.strm-settings-page .ete-strm-assistant-sample legend { font-weight: 600; padding: 0 .4em; }
+.strm-settings-page .ete-strm-assistant-grid { display: grid; grid-template-columns: minmax(0, 1fr); }
+.strm-settings-page .ete-strm-assistant-grid .inputContainer { min-width: 0; }
+.strm-settings-page .ete-strm-assistant-sample .btnRemoveSample { margin-top: .2em; }
+.strm-settings-page .ete-strm-assistant-actions { margin-top: .9em; }
 .strm-settings-page .smartMappingState { flex-basis: 100%; }
-.strm-settings-page .ete-strm-assistant-preview { margin-top: 20px; }
-.strm-settings-page .ete-strm-assistant-preview h4 {
-    font-size: 1.08rem;
-    margin: 0 0 16px;
-}
-.strm-settings-page .ete-strm-assistant-preview p { margin: 8px 0; overflow-wrap: anywhere; }
-.strm-settings-page .smartFileMatch,
-.strm-settings-page .smartBoundary,
-.strm-settings-page .smartCoverage { font-weight: 650; }
+.strm-settings-page .ete-strm-assistant-preview { margin-top: 1em; }
+.strm-settings-page .ete-strm-assistant-preview h4 { margin: 0 0 .65em; }
+.strm-settings-page .ete-strm-assistant-preview p { margin: .45em 0; overflow-wrap: anywhere; }
 .strm-settings-page .ete-strm-assistant-suggestion {
-    border-top: 1px solid var(--ete-settings-line);
-    margin-top: 18px;
-    padding-top: 18px;
+    border-top: 1px solid var(--line-background, rgba(255, 255, 255, .14));
+    margin-top: .9em;
+    padding-top: .9em;
 }
-.strm-settings-page .ete-strm-assistant-suggestion h4 { margin-bottom: 12px; }
 .strm-settings-page .ete-strm-assistant-suggestion dl {
     display: grid;
-    gap: 16px 24px;
+    gap: .7em 1.5em;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    margin: 0 0 18px;
-}
-.strm-settings-page .ete-strm-assistant-suggestion dt {
-    color: var(--ete-settings-muted);
-    font-size: var(--ete-settings-help-size);
-    margin-bottom: 4px;
+    margin: .65em 0 1em;
 }
 .strm-settings-page .ete-strm-assistant-suggestion dd { margin: 0; overflow-wrap: anywhere; }
 .strm-settings-page .smartSourcePrefix,
 .strm-settings-page .smartCloudPrefix,
 .strm-settings-page .smartMountPrefix { font-family: Consolas, "Courier New", monospace; }
-.strm-settings-page .ete-strm-form-actions {
-    border-top: 1px solid var(--ete-settings-line);
-    padding-top: 22px;
-}
+.strm-settings-page .ete-strm-form-actions { padding: .3em 0 1.5em; }
 
 @media (max-width: 760px) {
     .strm-settings-page .ete-strm-rule-grid,
     .strm-settings-page .ete-strm-custom-order,
     .strm-settings-page .ete-strm-assistant-suggestion dl { grid-template-columns: minmax(0, 1fr); }
-    .strm-settings-page .ete-strm-status-row,
-    .strm-settings-page .ete-strm-rule-status-grid .ete-strm-status-row { grid-template-columns: minmax(0, 1fr); }
+    .strm-settings-page .ete-strm-status-row { grid-template-columns: minmax(0, 1fr); }
     .strm-settings-page .ete-strm-rule-origin { margin-left: 0; }
     .strm-settings-page .ete-strm-rule-actions { justify-content: flex-start; }
 }
