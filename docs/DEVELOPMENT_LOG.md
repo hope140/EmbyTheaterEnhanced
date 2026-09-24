@@ -1,5 +1,21 @@
 # 开发日志
 
+## 2026-09-24 — Settings Visual System correction v2
+
+Model Tier: Tier 2
+
+Model: GPT-6 Sol High（用户指定；Luna worker 分别承担只读审计、局部页面适配和测试）
+
+Reason: 用户实际确认 STRM v1 视觉 FAIL；本轮跨 STRM、诊断、About 三页建立共享样式，并按用户追加确认选择性接入 About maintenance IPC。既有播放与设置状态边界保持冻结。
+
+Escalated: No（模型由用户指定；About/IPC 范围由用户在本轮明确确认）
+
+先审计当前路由和历史分支：当前分支原有 STRM 与诊断路由，没有 About；诊断的浅色按钮问题早于 `3faf888`，而 STRM 独立按钮/卡片体系由该提交引入。旧 Settings 分支只提供 About 维护操作的源码参考，没有 cherry-pick 其完整设计或覆盖 Smart Mapping。新增共享 `enhanced-settings.css`，所有选择器限定在 `.ete-settings-page`；页面 CSS 分别限定在 `strm-settings-page`、`diagnostics-settings-page`、`about-settings-page`。共享 token 统一标题、标签、帮助文案、section/card/row 间距、控件尺寸与按钮高度；Primary 白字深蓝背景的静态对比比约 5.9:1，hover 约 5.1:1。三个页面移除新页面对原生 `raised/button-submit` 的依赖。
+
+STRM 只重排 HTML 与展示 class：单列 CloudDrive2 字段与助手样本、整行路径输入、独立状态行；原有控件 class/id、事件绑定、Save/Token 和 preview/规则行为保持。诊断页沿用原有 IPC/事件，只改显示。用户另行确认 About 页面及维护 IPC 纳入本分支，因此选择性加入 `maintenance.js`、`maintenance-ipc.js`、main 注册/注销和 About route；更新请求仍仅由点击触发，8 秒超时/256 KiB 上限，剪贴板仅格式化白名单字段，外链限制到项目 Releases。Helper 未 ready 不展示预期 libmpv 版本为实测值。
+
+自动化：STRM/Settings/诊断 focused `103/103 PASS`，`npm test 330/330 PASS`，修改 JS syntax、`git diff --check`、三页 HTML 标签平衡 PASS。代码提交 `f3a17ca1bbe3016d33749e98d110282fc798b2f2` 的独立 runtime 生成 `2145` 文件，source/Electron 44.4.2/Native Helper/runtime provenance 和 package `-VerifyOnly` PASS；文档收尾后的 exact HEAD 将再生成 `strm-ui-review2`。本轮没有启动 runtime、Computer Use、前台窗口操作、安装或真实 Emby/CD2 验收；用户视觉复核仍是独立 gate。
+
 ## 2026-09-24 — STRM Settings UI consolidation
 
 Model Tier: Tier 1

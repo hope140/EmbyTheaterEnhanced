@@ -1,0 +1,48 @@
+<div is="emby-scroller" class="view flex flex-direction-column scrollFrameY flex-grow" data-mousewheel="true" data-horizontal="false" data-forcescrollbar="true" data-centerfocus="card" data-bindheader="true">
+    <div class="scrollSlider flex-grow flex-direction-column padded-left padded-left-page padded-right padded-top-page padded-bottom-page settingsContainer ete-settings-page about-settings-page ete-about-settings">
+        <header class="ete-settings-header" aria-labelledby="ete-about-title">
+            <h1 id="ete-about-title">关于 Emby Theater Enhanced</h1>
+            <p>查看当前客户端版本、运行环境和更新信息。</p>
+            <div class="about-kicker">Emby Theater Enhanced <span class="aboutHeaderVersion">UNKNOWN</span></div>
+        </header>
+
+        <section class="ete-settings-section" aria-labelledby="ete-about-version-title">
+            <div class="ete-settings-section-header"><div><h2 id="ete-about-version-title">版本信息</h2></div></div>
+            <div class="ete-settings-card">
+                <div class="ete-settings-info-row"><span>Emby Theater Enhanced</span><code class="aboutAppVersion">UNKNOWN</code></div>
+                <div class="ete-settings-info-row"><span>Electron</span><code class="aboutElectron">UNKNOWN</code></div>
+                <div class="ete-settings-info-row"><span>Chromium</span><code class="aboutChromium">UNKNOWN</code></div>
+                <div class="ete-settings-info-row"><span>Native Helper</span><code class="aboutNativeHelper">UNKNOWN</code></div>
+                <div class="ete-settings-info-row"><span>libmpv</span><code class="aboutLibmpv">UNKNOWN</code></div>
+                <div class="ete-settings-info-row"><span>Source Commit</span><code class="aboutSourceCommit">UNKNOWN</code></div>
+            </div>
+        </section>
+
+        <section class="ete-settings-section" aria-labelledby="ete-about-maintenance-title">
+            <div class="ete-settings-section-header"><div><h2 id="ete-about-maintenance-title">维护</h2><p>更新检查仅在你主动点击时执行，不会自动下载或安装。</p></div></div>
+            <div class="ete-settings-card about-maintenance-card">
+                <div class="ete-settings-actions">
+                    <button type="button" is="emby-button" class="ete-settings-button ete-settings-button--primary btnCheckUpdates">检查更新</button>
+                    <button type="button" is="emby-button" class="ete-settings-button ete-settings-button--secondary btnCopyEnvironment">复制环境信息</button>
+                    <button type="button" is="emby-button" class="ete-settings-button ete-settings-button--text btnOpenReleases">GitHub / Releases</button>
+                </div>
+                <div class="ete-settings-status aboutUpdateState" role="status" aria-live="polite"></div>
+                <div class="ete-settings-subcard about-update ete-about-update" hidden>
+                    <div class="ete-settings-info-row"><span>当前版本</span><code class="aboutCurrentVersion">UNKNOWN</code></div>
+                    <div class="ete-settings-info-row"><span>最新版本</span><code class="aboutLatestVersion">UNKNOWN</code></div>
+                    <a class="ete-settings-button ete-settings-button--text aboutReleaseLink" href="#" rel="noreferrer">查看 Release / 下载页面</a>
+                </div>
+                <div class="ete-settings-status aboutCopyState" role="status" aria-live="polite"></div>
+            </div>
+        </section>
+
+        <section class="ete-settings-section" aria-labelledby="ete-about-platform-title">
+            <div class="ete-settings-section-header"><div><h2 id="ete-about-platform-title">运行环境</h2></div></div>
+            <div class="ete-settings-card">
+                <div class="ete-settings-info-row"><span>Node</span><code class="aboutNode">UNKNOWN</code></div>
+                <div class="ete-settings-info-row"><span>Windows</span><code class="aboutWindows">UNKNOWN</code></div>
+                <div class="ete-settings-info-row"><span>显示缩放</span><code class="aboutDisplayDpi">NOT AVAILABLE</code></div>
+            </div>
+        </section>
+    </div>
+</div>

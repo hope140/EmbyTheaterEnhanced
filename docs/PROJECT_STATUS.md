@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-09-24 — Unified Settings Visual System v2 candidate
+
+用户对上一版 STRM runtime 的实际视觉检查结果为 `FAIL`。本轮在 `codex/strm-ui-consolidation` 上重建带 `.ete-settings-page` 命名空间的共享视觉层：字体、间距、卡片、表单控件、四级按钮及状态色由 `mpvplayer/enhanced-settings.css` 的 token 统一；STRM、诊断与 About 只保留各自布局样式。STRM 采用区块标题/说明/内容卡与纵向地址、Token、开关、状态行；规则路径占整行，助手样本纵向排列。诊断页移除原生 `raised/button-submit`；About 页面按用户追加确认纳入本分支，四项维护 IPC 来自旧分支的独立 contract，未导入旧版整套 Settings 设计。
+
+现有 STRM 推导、Resolver、规则 schema、Token/Save 状态机、CD2 状态生命周期、诊断 IPC 与播放链没有行为变化。新增 About route 提供版本/环境信息、白名单环境复制、用户点击后的有界更新查询及受限 Releases 外链。Helper 未 ready 时 libmpv 显示 `UNKNOWN`；显示缩放按主显示器 `scaleFactor` 表达。共享 CSS 与页面 CSS 均限定在各自根类，无裸 `button/input/select` 规则。
+
+验证：STRM/Settings/诊断 focused `103/103 PASS`；全量 `npm test 330/330 PASS`；修改的 JS 语法、`git diff --check` 和三页 HTML 标签平衡 PASS。代码提交 `f3a17ca1bbe3016d33749e98d110282fc798b2f2` 的独立 runtime 为 `2145` 文件，固定 Electron 44.4.2、Native Helper、source/runtime provenance 与 package `-VerifyOnly` 均 PASS。最终提交的 `strm-ui-review2` runtime 身份在任务最终报告中再核对。前台三页切换与实际视觉结果仍待用户复核，当前只记录自动化验证状态。
+
 ## 2026-09-24 — STRM Settings UI consolidation
 
 基于 `main@46e995ef83fca7f7a882e3dc633bdcc2d2d521c7` 在独立 `codex/strm-ui-consolidation` worktree 完成 STRM 设置页视觉整理。页面按基础设置、CloudDrive2、路径规则、智能映射助手分区；使用约 1080px 内容宽度、统一深色表单控件、Primary/Secondary/Text/Danger 操作层级、规则来源 badge、分开的挂载/连接/路径格式状态行，以及同风格的样本和预览卡。窄屏单列和长路径换行已加入 CSS。功能控件 id/class 与事件入口保留；JS 只调整 UI render、状态文字和视觉标记。Smart Mapping 推导、规则 schema、Token/Save 状态机、CD2 IPC/连接生命周期、Resolver 与播放链没有改动。

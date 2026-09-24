@@ -1,5 +1,11 @@
 # 已确认经验
 
+## 2026-09-24 — Settings visual review is a separate gate
+
+- 上一轮 STRM UI 的静态测试、provenance 与构建通过，但用户实际查看后判定视觉 FAIL；这些后台证据不能替代三个页面切换时的字体、控件、卡片和按钮可读性验收。
+- 诊断页同属后续新增页面，不能把它的原生按钮和卡片样式视为成熟设计规范。共享 Settings 视觉层应在带命名空间的根类下定义 token 与组件，各页只保留布局特例；Emby 原生 `raised/button-submit` 不应用作新增页面的按钮基线。
+- Native Helper 未 ready 时其 status 可包含预期 libmpv 版本；About 只有在 ready 后才将其显示为已确认版本。主显示器 `scaleFactor` 应标为显示缩放，不应称为 DPI。
+
 ## 2026-09-23 — Connection status and mapping format are separate facts
 
 - `TEST_CONNECTION` 的 CD2 探针结果与 `TEST_RULE` 的纯 prefix replacement 结果来源不同；把 `mapped` 固定写成“未连接服务”会与稍后的成功连接测试冲突。连接状态应由同一 main-process 会话快照提供，映射格式仍作为独立字段。

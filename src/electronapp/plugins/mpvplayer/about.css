@@ -1,0 +1,17 @@
+.about-settings-page .about-kicker {
+    margin-top: 12px;
+}
+
+.about-settings-page .about-maintenance-card > .ete-settings-status {
+    margin-top: 12px;
+}
+
+.about-settings-page .about-update {
+    margin-top: 14px;
+    padding: 12px 18px;
+}
+
+.about-settings-page .about-update .ete-settings-button {
+    margin-top: 8px;
+    padding-inline: 0;
+}

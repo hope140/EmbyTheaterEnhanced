@@ -1,47 +1,52 @@
 <div is="emby-scroller" class="view flex flex-direction-column scrollFrameY flex-grow" data-mousewheel="true" data-horizontal="false" data-forcescrollbar="true" data-centerfocus="card" data-bindheader="true">
-    <div class="scrollSlider flex-grow flex-direction-column padded-left padded-left-page padded-right padded-top-page padded-bottom-page settingsContainer ete-strm-settings">
+    <div class="scrollSlider flex-grow flex-direction-column padded-left padded-left-page padded-right padded-top-page padded-bottom-page settingsContainer ete-settings-page strm-settings-page ete-strm-settings">
         <form class="auto-center" novalidate>
-            <section class="ete-strm-hero ete-strm-section" aria-labelledby="ete-strm-title">
-                <div>
-                    <h1 id="ete-strm-title">STRM 智能解析</h1>
-                    <p>按 STRM 中记录的媒体源路径选择 CloudDrive2、本地挂载或原生播放的尝试顺序。</p>
+            <header class="ete-settings-header" aria-labelledby="ete-strm-title">
+                <h1 id="ete-strm-title">STRM 智能解析</h1>
+                <p>为 STRM 媒体设置 CloudDrive2 与本地挂载路径，并决定可用来源的尝试顺序。</p>
+            </header>
+
+            <section class="ete-settings-section ete-strm-enabled-section" aria-labelledby="ete-strm-basic-title">
+                <div class="ete-settings-section-header">
+                    <div><h2 id="ete-strm-basic-title">基础设置</h2><p>选择是否对 STRM 文件应用下方路径规则。</p></div>
                 </div>
-                <span class="ete-strm-hero-mark" aria-hidden="true">STRM</span>
+                <div class="ete-settings-card">
+                    <div class="checkboxContainer checkboxContainer-withDescription ete-strm-toggle-row">
+                        <label>
+                            <input type="checkbox" is="emby-checkbox" class="chkEnabled" />
+                            <span>启用智能解析</span>
+                        </label>
+                        <div class="fieldDescription checkboxFieldDescription">启用后，播放时会按路径规则选择可用来源。</div>
+                    </div>
+                </div>
             </section>
 
-            <section class="ete-strm-panel ete-strm-section ete-strm-enabled-section" aria-labelledby="ete-strm-basic-title">
-                <h2 id="ete-strm-basic-title">基础设置</h2>
-                <div class="checkboxContainer checkboxContainer-withDescription ete-strm-enabled-row">
-                    <label>
-                        <input type="checkbox" is="emby-checkbox" class="chkEnabled" />
-                        <span>启用智能解析</span>
-                    </label>
-                    <div class="fieldDescription checkboxFieldDescription">启用后，STRM 播放会按下方路径规则选择可用来源，并保留原有播放与远控流程。</div>
+            <section class="ete-settings-section ete-strm-cd2-section" aria-labelledby="ete-strm-cd2-title">
+                <div class="ete-settings-section-header">
+                    <div><h2 id="ete-strm-cd2-title">CloudDrive2</h2><p>配置连接信息并查看最近一次连接测试结果。</p></div>
                 </div>
-            </section>
-
-            <fieldset class="ete-strm-panel ete-strm-fieldset ete-strm-section ete-strm-cd2-section">
-                <legend>CloudDrive2</legend>
-                <div class="inputContainer ete-strm-field">
+                <div class="ete-settings-card ete-strm-cd2-card">
+                <div class="inputContainer ete-settings-field ete-strm-field">
                     <label for="ete-cd2-origin">地址</label>
                     <input is="emby-input" type="url" id="ete-cd2-origin" class="txtCd2Origin" autocomplete="url" />
                     <div class="fieldDescription">使用本机 CloudDrive2 gRPC 服务地址，例如 http://127.0.0.1:19798。</div>
                 </div>
-                <div class="ete-strm-token-row">
-                    <span class="ete-strm-label">Token</span>
-                    <span class="tokenState ete-strm-status-value" aria-live="polite">未配置</span>
-                    <input is="emby-input" type="password" class="txtCd2Token" autocomplete="new-password" aria-label="CloudDrive2 Token" />
-                    <button type="button" is="emby-button" class="ete-strm-btn ete-strm-btn--secondary btnSetToken">设置新 Token</button>
-                    <button type="button" is="emby-button" class="ete-strm-btn ete-strm-btn--text btnClearToken">清除 Token</button>
+                <div class="ete-settings-field ete-strm-token-row">
+                    <div class="ete-strm-token-heading"><label for="ete-cd2-token">Token</label><span class="tokenState ete-strm-status-value" aria-live="polite">未配置</span></div>
+                    <input is="emby-input" type="password" id="ete-cd2-token" class="txtCd2Token" autocomplete="new-password" aria-label="CloudDrive2 Token" />
+                    <div class="ete-settings-actions ete-strm-token-actions">
+                        <button type="button" is="emby-button" class="ete-settings-button ete-settings-button--secondary btnSetToken">设置新 Token</button>
+                        <button type="button" is="emby-button" class="ete-settings-button ete-settings-button--text btnClearToken">清除 Token</button>
+                    </div>
                 </div>
-                <div class="checkboxContainer checkboxContainer-withDescription">
+                <div class="checkboxContainer checkboxContainer-withDescription ete-strm-toggle-row">
                     <label>
                         <input type="checkbox" is="emby-checkbox" class="chkCd2Enabled" />
                         <span>启用 CloudDrive2</span>
                     </label>
                     <div class="fieldDescription checkboxFieldDescription">Token 只保存在 Electron main process，页面不会读取已保存的 Token。</div>
                 </div>
-                <div class="checkboxContainer checkboxContainer-withDescription">
+                <div class="checkboxContainer checkboxContainer-withDescription ete-strm-toggle-row">
                     <label>
                         <input type="checkbox" is="emby-checkbox" class="chkDirectUrlEnabled" />
                         <span>启用 DirectUrl capability</span>
@@ -50,47 +55,55 @@
                 </div>
                 <div class="ete-strm-connection-block">
                     <div class="ete-strm-status-row">
-                        <span class="ete-strm-status-label">连接</span>
+                        <span class="ete-strm-status-label">连接状态</span>
                         <span class="connectionState ete-strm-status-value" role="status" aria-live="polite">CloudDrive2 最近测试：尚未测试</span>
                     </div>
-                    <div class="ete-strm-actions">
-                        <button type="button" is="emby-button" class="ete-strm-btn ete-strm-btn--secondary btnTestConnection">测试连接</button>
+                    <div class="ete-settings-actions ete-strm-actions">
+                        <button type="button" is="emby-button" class="ete-settings-button ete-settings-button--secondary btnTestConnection">测试连接</button>
                     </div>
                 </div>
                 <div class="fieldDescription">连接测试使用已保存的地址与 Token；修改地址后请先点击“保存设置”。</div>
-            </fieldset>
-
-            <section class="ete-strm-panel ete-strm-section" aria-labelledby="ete-rules-title">
-                <div class="ete-strm-section-heading">
-                    <div>
-                        <h2 id="ete-rules-title">路径规则</h2>
-                        <p class="fieldDescription">按 STRM / Emby MediaSource.Path 的最长前缀匹配；Windows drive/UNC 不区分大小写，POSIX 路径区分大小写。</p>
-                    </div>
-                    <button type="button" is="emby-button" class="ete-strm-btn ete-strm-btn--secondary btnAddRule">添加路径规则</button>
                 </div>
-                <div class="rulesList"></div>
             </section>
 
-            <section class="ete-strm-panel ete-strm-section ete-strm-assistant" aria-labelledby="ete-smart-mapping-title">
-                    <div class="ete-strm-assistant-heading">
-                        <h2 id="ete-smart-mapping-title">智能映射助手</h2>
-                        <p class="fieldDescription">每组填写同一文件在 STRM、CloudDrive2 和可选本地挂载中的完整路径。先检查现有规则；推导新规则时需要不同目录下的对应文件。分析不会保存设置。</p>
+            <section class="ete-settings-section ete-strm-rules-section" aria-labelledby="ete-rules-title">
+                <div class="ete-settings-section-header ete-strm-section-heading">
+                    <div>
+                        <h2 id="ete-rules-title">路径规则</h2>
+                        <p>按 STRM 源路径的最长前缀匹配；在每条规则中设置 CloudDrive2 与本地挂载路径。</p>
                     </div>
+                </div>
+                <div class="ete-settings-card">
+                    <div class="ete-settings-actions ete-strm-rule-toolbar">
+                        <button type="button" is="emby-button" class="ete-settings-button ete-settings-button--secondary btnAddRule">添加路径规则</button>
+                    </div>
+                    <div class="rulesList"></div>
+                </div>
+            </section>
+
+            <section class="ete-settings-section ete-strm-assistant" aria-labelledby="ete-smart-mapping-title">
+                <div class="ete-settings-section-header ete-strm-assistant-heading">
+                    <div>
+                        <h2 id="ete-smart-mapping-title">智能映射助手</h2>
+                        <p>填写同一文件在不同位置的路径，分析后可将建议加入规则草稿。</p>
+                    </div>
+                </div>
+                <div class="ete-settings-card">
                     <div class="smartSamples">
-                      <fieldset class="smartSample ete-strm-assistant-sample ete-strm-card" data-sample-id="sample-1">
+                      <fieldset class="smartSample ete-strm-assistant-sample ete-settings-subcard" data-sample-id="sample-1">
                         <legend>样本 1</legend>
                         <div class="ete-strm-assistant-grid">
-                        <div class="inputContainer ete-strm-field">
+                        <div class="inputContainer ete-settings-field ete-strm-field">
                             <label for="ete-smart-source-path">STRM 源文件路径</label>
                             <input is="emby-input" type="text" id="ete-smart-source-path" class="txtSmartSourcePath" autocomplete="off" aria-describedby="ete-smart-source-help" />
                             <div id="ete-smart-source-help" class="fieldDescription">填写 STRM / Emby 中记录的原始媒体文件路径。这不是当前电脑的本地挂载路径。例如 X:\115\电影\Alien\Alien.mkv</div>
                         </div>
-                        <div class="inputContainer ete-strm-field">
+                        <div class="inputContainer ete-settings-field ete-strm-field">
                             <label for="ete-smart-cloud-path">CloudDrive2 文件路径</label>
                             <input is="emby-input" type="text" id="ete-smart-cloud-path" class="txtSmartCloudPath" autocomplete="off" aria-describedby="ete-smart-cloud-help" />
                             <div id="ete-smart-cloud-help" class="fieldDescription">填写同一个文件在 CloudDrive2 中的完整逻辑路径。例如 /CloudNAS/CloudDrive/115open/115/电影/Alien/Alien.mkv</div>
                         </div>
-                        <div class="inputContainer ete-strm-field">
+                        <div class="inputContainer ete-settings-field ete-strm-field">
                             <label for="ete-smart-mount-path">本地挂载文件路径（可选）</label>
                             <input is="emby-input" type="text" id="ete-smart-mount-path" class="txtSmartMountPath" autocomplete="off" aria-describedby="ete-smart-mount-help" />
                             <div id="ete-smart-mount-help" class="fieldDescription">如果当前电脑还挂载了同一媒体目录，可填写该文件实际可访问的本地路径，用于 Mount fallback。例如 Z:\115\电影\Alien\Alien.mkv</div>
@@ -98,12 +111,12 @@
                         </div>
                       </fieldset>
                     </div>
-                    <div class="ete-strm-assistant-actions">
-                        <button type="button" is="emby-button" class="ete-strm-btn ete-strm-btn--secondary btnAnalyzeMapping">分析映射</button>
-                        <button type="button" is="emby-button" class="ete-strm-btn ete-strm-btn--secondary btnAddSample">添加样本</button>
-                        <span class="smartMappingState secondaryText" role="status" aria-live="polite"></span>
+                    <div class="ete-settings-actions ete-strm-assistant-actions">
+                        <button type="button" is="emby-button" class="ete-settings-button ete-settings-button--secondary btnAnalyzeMapping">分析映射</button>
+                        <button type="button" is="emby-button" class="ete-settings-button ete-settings-button--secondary btnAddSample">添加样本</button>
+                        <span class="smartMappingState ete-settings-status" role="status" aria-live="polite"></span>
                     </div>
-                    <div class="ete-strm-assistant-preview ete-strm-card" role="region" aria-labelledby="ete-smart-preview-title" hidden>
+                    <div class="ete-strm-assistant-preview ete-settings-subcard" role="region" aria-labelledby="ete-smart-preview-title" hidden>
                         <h4 id="ete-smart-preview-title">分析结果</h4>
                         <p class="smartCoverage"></p>
                         <p class="smartCoveredRules"></p>
@@ -120,14 +133,15 @@
                                 <div><dt>匹配依据</dt><dd class="smartMatchedBasis"></dd></div>
                                 <div><dt>原因</dt><dd class="smartReason"></dd></div>
                             </dl>
-                            <button type="button" is="emby-button" class="ete-strm-btn ete-strm-btn--secondary btnAddSuggestedRule" disabled>加入路径规则</button>
+                            <button type="button" is="emby-button" class="ete-settings-button ete-settings-button--secondary btnAddSuggestedRule" disabled>加入路径规则</button>
                         </div>
                     </div>
+                </div>
             </section>
 
-            <div class="ete-strm-form-actions">
-                <button type="submit" is="emby-button" class="ete-strm-btn ete-strm-btn--primary btnSave">保存设置</button>
-                <span class="saveState secondaryText" role="status" aria-live="polite"></span>
+            <div class="ete-settings-actions ete-strm-form-actions">
+                <button type="submit" is="emby-button" class="ete-settings-button ete-settings-button--primary btnSave">保存设置</button>
+                <span class="saveState ete-settings-status" role="status" aria-live="polite"></span>
             </div>
         </form>
     </div>

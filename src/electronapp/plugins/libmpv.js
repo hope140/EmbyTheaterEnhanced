@@ -321,6 +321,19 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 adjustHeaderForEmbeddedScroll: true
             });
 
+            routes.push({
+                path: 'mpvplayer/about.html',
+                transition: 'slide',
+                controller: pluginManager.mapPath(self, 'mpvplayer/about.js'),
+                type: 'settings',
+                title: '关于 Enhanced',
+                category: 'General',
+                thumbImage: '',
+                icon: 'info',
+                settingsTheme: true,
+                adjustHeaderForEmbeddedScroll: true
+            });
+
             return routes;
         };
 

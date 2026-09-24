@@ -8,6 +8,7 @@ const path = require('node:path');
 const pageRoot = path.join(__dirname, '../src/electronapp/plugins/mpvplayer');
 const html = fs.readFileSync(path.join(pageRoot, 'strm.html'), 'utf8');
 const css = fs.readFileSync(path.join(pageRoot, 'strm.css'), 'utf8');
+const sharedCss = fs.readFileSync(path.join(pageRoot, 'enhanced-settings.css'), 'utf8');
 const js = fs.readFileSync(path.join(pageRoot, 'strm.js'), 'utf8');
 
 function controlClass(name) {
@@ -48,13 +49,15 @@ test('STRM labels and component styles stay coherent across static and rendered 
         assert.ok(html.includes(label) || js.includes(label), `missing ${label}`);
     }
     for (const variant of ['primary', 'secondary', 'text', 'danger']) {
-        assert.match(css, new RegExp('\\.ete-strm-btn--' + variant + '\\b'));
-        assert.ok(html.includes('ete-strm-btn--' + variant) || js.includes('ete-strm-btn--' + variant),
+        assert.match(sharedCss, new RegExp('\\.ete-settings-button--' + variant + '\\b'));
+        assert.ok(html.includes('ete-settings-button--' + variant) || js.includes('ete-settings-button--' + variant),
             `unused ${variant} button variant`);
     }
-    assert.match(css, /\.ete-strm-settings\s+(?:input|:is\(input)/);
-    assert.match(css, /\.ete-strm-settings\s+(?:select|:is\(select)/);
-    assert.match(css, /(?:color-scheme:\s*dark|background(?:-color)?:\s*var\(--ete-strm-)/);
+    assert.match(html, /ete-settings-page strm-settings-page/);
+    assert.match(js, /css!\.\/enhanced-settings/);
+    assert.match(sharedCss, /\.ete-settings-page :is\(input\[type="text"\]/);
+    assert.match(sharedCss, /input\[type="password"\], select\)/);
+    assert.match(sharedCss, /color-scheme:\s*dark/);
     assert.match(css, /\.ete-strm-status-row\b/);
     assert.match(html, /<section class="[^"]*ete-strm-assistant"/);
     for (const label of ['本地挂载', 'CloudDrive2', '路径规则']) {
@@ -63,11 +66,11 @@ test('STRM labels and component styles stay coherent across static and rendered 
     assert.match(js, /\.ete-strm-rule-connection/);
     assert.match(js, /\.ete-strm-rule-format/);
     assert.match(js, /\.ete-strm-rule-mount/);
-    assert.match(css, /\.ete-strm-status-value\[data-status="pass"\]/);
-    assert.match(css, /\.ete-strm-status-value\[data-status="bad"\]/);
-    assert.match(css, /@media\s*\(max-width:\s*\d+px\)/);
+    assert.match(sharedCss, /\[data-status="pass"\]/);
+    assert.match(sharedCss, /\[data-status="bad"\]/);
+    assert.match(sharedCss, /@media\s*\(max-width:\s*\d+px\)/);
     assert.match(css, /overflow-wrap:\s*anywhere|word-break:\s*break-word/);
-    assert.match(css, /\.ete-strm-settings (?:button|input|select):focus-visible/);
+    assert.match(sharedCss, /:focus-visible/);
     assert.doesNotMatch(html, /\bbutton-submit\b|\braised\b/);
     assert.doesNotMatch(js, /\bbutton-submit\b|\braised\b/);
     assert.doesNotMatch(js, /\.innerHTML\s*=/);

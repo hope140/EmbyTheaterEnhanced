@@ -1,4 +1,4 @@
-define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'emby-button', 'emby-scroller', '../../resolvers/strm-mapping-assistant.js', 'css!./strm'], function (loading, BaseView, _select, _checkbox, _input, _button, _scroller, mappingAssistant) {
+define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'emby-button', 'emby-scroller', '../../resolvers/strm-mapping-assistant.js', 'css!./enhanced-settings', 'css!./strm'], function (loading, BaseView, _select, _checkbox, _input, _button, _scroller, mappingAssistant) {
     'use strict';
 
     var CHANNELS = {
@@ -90,7 +90,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
     }
 
     function createAssistantSample(index) {
-        var sample = element('fieldset', 'smartSample ete-strm-assistant-sample ete-strm-card');
+        var sample = element('fieldset', 'smartSample ete-strm-assistant-sample ete-settings-subcard');
         var grid = element('div', 'ete-strm-assistant-grid');
         sample.dataset.sampleId = 'sample-' + index;
         sample.appendChild(element('legend', null, '样本 ' + index));
@@ -99,7 +99,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             ['cloud', 'CloudDrive2 文件路径', '填写同一个文件在 CloudDrive2 中的完整逻辑路径。'],
             ['mount', '本地挂载文件路径（可选）', '当前电脑实际可访问的路径，用于 Mount fallback。']
         ].forEach(function (field) {
-            var wrapper = element('div', 'inputContainer ete-strm-field');
+            var wrapper = element('div', 'inputContainer ete-settings-field ete-strm-field');
             var id = 'ete-smart-' + field[0] + '-path-' + index;
             var input = element('input', 'txtSmart' + field[0].charAt(0).toUpperCase() + field[0].slice(1) + 'Path');
             var label = element('label', null, field[1]);
@@ -117,7 +117,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             grid.appendChild(wrapper);
         });
         sample.appendChild(grid);
-        var remove = element('button', 'ete-strm-btn ete-strm-btn--text btnRemoveSample', '移除此组样本');
+        var remove = element('button', 'ete-settings-button ete-settings-button--text btnRemoveSample', '移除此组样本');
         remove.type = 'button';
         remove.setAttribute('is', 'emby-button');
         sample.appendChild(remove);
@@ -224,12 +224,15 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
     }
 
     function createLabeledInput(ruleId, field, label, value, options) {
-        var wrapper = element('div', 'inputContainer ete-strm-field');
+        var wrapper = element('div', 'inputContainer ete-settings-field ete-strm-field');
         var inputId = 'ete-rule-' + ruleId + '-' + field;
         var labelNode = element('label', 'ete-strm-field-label', label);
         var input = element('input');
         var description;
         options = options || {};
+        if (field === 'sourcePrefix' || field === 'cloudPrefix' || field === 'mountPrefix') {
+            wrapper.classList.add('ete-strm-rule-path-field');
+        }
         input.id = inputId;
         input.type = 'text';
         input.className = 'rule-' + field;
@@ -250,7 +253,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
     }
 
     function createLabeledSelect(ruleId, field, label, values, selected, labels) {
-        var wrapper = element('div', 'selectContainer ete-strm-field');
+        var wrapper = element('div', 'selectContainer ete-settings-field ete-strm-field');
         var selectId = 'ete-rule-' + ruleId + '-' + field;
         var labelNode = element('label', 'ete-strm-field-label', label);
         var select = element('select');
@@ -314,7 +317,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
     }
 
     function renderRule(rule, isDraftRule, connectionStatus) {
-        var card = element('article', 'ete-strm-rule-card ete-strm-card');
+        var card = element('article', 'ete-strm-rule-card ete-settings-subcard');
         var heading = element('div', 'ete-strm-rule-heading');
         var title = element('span', 'ete-strm-rule-title', rule.sourcePrefix || '新建路径规则');
         var origin = element('span', 'ete-strm-rule-origin', '规则来源 · ' + (rule.originState === 'AUTO' ? '自动建议' : rule.originState === 'DISABLED' ? '已抑制' : '用户配置'));
@@ -323,7 +326,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         var order = element('div', 'ete-strm-order');
         var orderLabel = element('span', 'ete-strm-order-label', '实际顺序');
         var orderValue = element('span', 'ete-strm-order-value');
-        var actions = element('div', 'ete-strm-rule-actions');
+        var actions = element('div', 'ete-settings-actions ete-strm-rule-actions');
         var testButton = element('button', null, isDraftRule ? '请先保存规则' : '检查已保存规则');
         var restoreButton = element('button', null, '恢复自动配置');
         var disableButton = element('button', null, isDraftRule ? '移除草稿' : (rule.originState === 'DISABLED' ? '保持抑制' : '禁用/删除'));
@@ -373,12 +376,12 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         testButton.type = 'button';
         restoreButton.type = 'button';
         disableButton.type = 'button';
-        testButton.className = 'ete-strm-btn ete-strm-btn--secondary btnTestRule';
+        testButton.className = 'ete-settings-button ete-settings-button--secondary btnTestRule';
         testButton.disabled = isDraftRule;
-        restoreButton.className = 'ete-strm-btn ete-strm-btn--text btnRestoreAuto';
+        restoreButton.className = 'ete-settings-button ete-settings-button--text btnRestoreAuto';
         disableButton.className = (isDraftRule || rule.originState === 'USER'
-            ? 'ete-strm-btn ete-strm-btn--danger btnDisableRule'
-            : 'ete-strm-btn ete-strm-btn--text btnDisableRule');
+            ? 'ete-settings-button ete-settings-button--danger btnDisableRule'
+            : 'ete-settings-button ete-settings-button--text btnDisableRule');
         actions.appendChild(testButton);
         if (rule.originState !== 'AUTO') actions.appendChild(restoreButton);
         actions.appendChild(disableButton);
