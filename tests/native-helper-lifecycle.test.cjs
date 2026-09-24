@@ -156,7 +156,8 @@ function loadPlayer(nativeClient) {
         resolveAsync(info) { return Promise.resolve({type: 'native', source: info.nativeSource, reason: 'native_fallback'}); }
     };
     const Player = moduleFactory(globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings,
-        amdRequire, connectionManager, strmResolver, undefined, undefined, undefined, nativeClient);
+        amdRequire, connectionManager, strmResolver, undefined, undefined, undefined,
+        require('../src/electronapp/enhanced/nexttrack-transition'), nativeClient);
     const player = {};
     Player.call(player);
     return {player, dom, windowTarget};

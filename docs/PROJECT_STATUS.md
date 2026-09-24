@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-09-24 — NextTrack transition artwork candidate
+
+针对 NextTrack 期间透明播放区域短暂露出桌面的用户观察，当前 `codex/nexttrack-transition-overlay` candidate 增加 renderer 内视觉过渡层。实现复用 PlaybackManager 已选中的队列 Item 和现有 `ApiClient.getImageUrl()`：Primary image 优先、首个 Backdrop image 次之、不可用时为纯黑。NextTrack 入口先同步显示覆盖层，再同步调用原 `nextTrack()`；paint gate 位于 `libmpv.stop(false)` 隐藏 surface 之前。匹配当前播放请求的 `core-playing` 且视频容器恢复可见后，覆盖层等待一次 paint 再淡出。原播放顺序与 source、Resolver、Session、Native Helper contract 未改。
+
+状态：Implementation = `CODED / AUTO VERIFIED`；focused playback/window `42/42 PASS`，`npm test 324/324 PASS`，相关 JS syntax 与 `git diff --check` PASS。exact-commit build/provenance 与 package VerifyOnly 将在本地提交后执行，结果见本任务最终报告；Foreground visual review = `PENDING USER REVIEW`。本条不宣称白屏体验已验收，也不把自动化或隐藏 runtime 作为视觉证据。
+
 ## 2026-09-24 — Smart Path Mapping milestone closure
 
 PR #18（`feat: add smart STRM path mapping assistant`）已通过 merge commit `121305b5fa74fa5bf9e8b76caabf280468ddb11b` 合入 `main`，合并的功能 head 为 `ade6620e80ce19da26d6a7bebc53368dffe3f8a5`。Implementation = `COMPLETE`；既有 User Functional Acceptance = `PASS`；Final Remote Re-Review = `PASS`；合并前 `npm test 319/319 PASS`，功能 head 的 exact-HEAD build/provenance 已验证通过。本条未执行新的 runtime、安装或真实客户端验收；未创建版本、tag 或 Release，正式发布基线仍为 `v0.2.2`。

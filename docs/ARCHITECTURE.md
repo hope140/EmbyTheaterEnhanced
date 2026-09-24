@@ -49,3 +49,11 @@ Phase 2.2 把 Phase 1 的单组 suffix HIGH 限定为 `fileMatch`，它不再授
 正式安装入口直接启动 `{app}\Emby.Theater.exe`。Electron main process 在创建窗口前执行幂等 bootstrap，按 `{runtime}\config\system.xml` 作为 seed，只补齐 Enhanced profile 的 `config`、`cec-driver`、缺失 `system.xml` 和 `cancel`，不覆盖用户文件、不改变 `ProgramDataPath`，也不启动外部进程。
 
 正式 ETE 的 Device identity 在 main process 启动时从 bootstrap 返回的 ETE `config` 目录读取或创建 `device-identity.json`。文件只保存 version 和随机 UUID；缺失或损坏时安全重建，升级沿用已有值，clean profile 生成新值。`deviceName` 继续使用 `os.hostname()`，`deviceId` 不再使用 hostname，也不依赖 app name、版本、服务器、用户或 token。`loadStartInfo` 将同一个持久化 DeviceId 交给 apphost、ConnectionManager、HTTP ApiClient、WebSocket 和播放报告；旧 hostname DeviceId 不迁移、不自动删除服务器 Device/Session。
+
+## NextTrack transition artwork candidate
+
+NextTrack 点击仍进入既有 `PlaybackManager.nextTrack()` 与播放请求链。libmpv renderer 包装本地 managed-queue 的调用，从 `getNextItemInfo()` 复用已经选中的下一集 Item，不另发 item/image 请求；Primary image 与首个 Backdrop image URL 使用现有 `ApiClient.getImageUrl()`，缺失或加载失败时覆盖层为纯黑。外部/self-managed player 不进入该视觉层。
+
+覆盖层只存在于既有 `.mpv-videoPlayerContainer`，在其 teardown 前同步插入，并设为不接收指针事件。NextTrack wrapper 显示 overlay 后同步调用原 `PlaybackManager.nextTrack()`，保持 manager request id 与 Stop supersession 顺序。可见 renderer 的 paint gate 位于 `libmpv.stop(false)` 隐藏 surface 之前；文档隐藏时跳过 gate，避免后台调用被动画帧挂起。播放请求由 `_etePlayRequestSequence` 关联；匹配请求 `core-playing` 后先恢复已有视频容器可见性，再等一个 renderer paint 并淡出。transition revision/request id 令旧的 ready、failure 与 settle 回调不能清除当前覆盖层。失败路径清除覆盖层并恢复容器先前 opacity；图片始终是可选内容。
+
+这是覆盖白色/桌面暴露间隙的 renderer 视觉状态，不替代 native surface 的首帧证据。Actual presented frame 与用户可见 NextTrack 验收仍须单独确认；本 candidate 的自动测试、runtime provenance 和 package gate 状态见 [TESTING](TESTING.md) 与 [NEXTTRACK_TRANSITION_OVERLAY](NEXTTRACK_TRANSITION_OVERLAY.md)。

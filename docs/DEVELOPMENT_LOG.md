@@ -1,5 +1,16 @@
 # 开发日志
 
+## 2026-09-24 — NextTrack transition artwork
+
+Model Tier: Tier 3
+Model: GPT-6 Sol High
+Reason: 用户指定；需在透明播放窗口与 libmpv 的 NextTrack/core-playing 生命周期间增加视觉层，同时保留现有播放链 contract。
+Escalated: Yes（用户指定）
+
+用户观察到 NextTrack 切换时视频区域会露出桌面，UI 仍可见。新增 renderer-only transition overlay，沿用同步队列中已经选中的下一集 Item，通过现有 `ApiClient.getImageUrl()` 依次使用 Primary、首个 Backdrop；图片缺失或加载失败时显示纯黑。NextTrack wrapper 同步显示覆盖层后立即同步调用原 `nextTrack()`，不改变 PlaybackManager request id 与 Stop supersession 顺序；paint gate 移到 `libmpv.stop(false)` 中、现有 surface 隐藏之前，不使用固定延时。当前 `_etePlayRequestSequence` 关联的 `core-playing` 处理使视频容器可见后，再等一帧并淡出。revision token 与 request id 限制迟到的旧 transition 清理/淡出新覆盖层；播放失败或调用提前结束时清理视觉层。覆盖层位于现有 `.mpv-videoPlayerContainer` 内且不接收指针事件。没有新增 image API，也没有改 Resolver、Session、source 选择或 Native Helper。
+
+验证：focused playback/window `42/42 PASS`，`npm test 324/324 PASS`，相关 JS syntax 与 `git diff --check` PASS。exact-commit build/provenance 与 package VerifyOnly 将在本地提交后执行，结果见任务最终报告。前台客户端未自动启动；需要用户视觉复核实际 NextTrack 过渡与首帧衔接后才能确认体验修复。
+
 ## 2026-09-24 — PR #18 Token 与 Settings draft 隔离修复
 
 Model Tier: Tier 3

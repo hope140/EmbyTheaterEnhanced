@@ -31,6 +31,40 @@
     z-index: 1000;
 }
 
+.mpv-nextTrackTransition {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5vh 5vw;
+    box-sizing: border-box;
+    overflow: hidden;
+    background: #000;
+    opacity: 1;
+    pointer-events: none;
+    transition: opacity .18s ease-out;
+}
+
+.mpv-nextTrackTransition-fading {
+    opacity: 0;
+}
+
+.mpv-nextTrackTransition-noArtwork {
+    background: #000;
+}
+
+.mpv-nextTrackTransition-artwork {
+    display: block;
+    max-width: 80vw;
+    max-height: 68vh;
+    object-fit: contain;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mpv-nextTrackTransition { transition: none; }
+}
+
 .osdVolumeDisplayIcon:not([class*="-middle"]) {
     display: none
 }

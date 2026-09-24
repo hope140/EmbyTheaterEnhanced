@@ -180,6 +180,7 @@ function loadPlayer(options) {
         undefined,
         undefined,
         undefined,
+        require('../src/electronapp/enhanced/nexttrack-transition'),
         {create() { return Promise.resolve({mode: 'native-helper', endpoint: native.endpoint}); }}
     ];
     const Player = moduleFactory(...dependencies);

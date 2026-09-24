@@ -1,5 +1,11 @@
 # 测试与验收
 
+## NextTrack transition artwork candidate
+
+此 candidate 的 focused Node contract 覆盖 Primary/Backdrop 与黑色 fallback、`libmpv.stop(false)` 隐藏 surface 前的 overlay paint gate、当前 request 的 `core-playing` fade、连续调用时 stale transition ownership 和失败清理。wrapper 同步调用原 `nextTrack()`，维持 PlaybackManager request id 与 Stop supersession 顺序。Focused playback/window `42/42 PASS`，`npm test 324/324 PASS`，相关 JS syntax 与 `git diff --check` PASS。exact-commit build/source/runtime provenance 和 package VerifyOnly 在本地提交后单独执行；结果见任务最终报告。
+
+前台客户端未由自动流程启动。只有用户实际检查 NextTrack 时覆盖层是否及时盖住透明播放区、下一集首帧是否出现后淡出，才能记录 foreground visual acceptance；隐藏 runtime、DOM/unit test 与 provenance 均不替代该层证据。
+
 ## Electron 44 post-freeze-fix final candidate
 
 当前 final candidate 固定为 source commit `725d4c2284596b8ced749a3c8590180a1e6ed1a9`，runtime `EmbyTheaterEnhanced-electron44-725d4c2-final-candidate`，installer `EmbyTheaterEnhanced-electron44-725d4c2-final-candidate-setup.exe`。production freeze root boundary 为 `APPHOST STARTUP COMMAND CANONICALIZATION`；不得添加 video workaround，也不得把 loaded chain 的单一 statement 写成独立充分原因。
