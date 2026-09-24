@@ -466,6 +466,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         this.connectionStatus = 'unknown';
         this.connectionRevision = -1;
         this.connectionRequestSequence = 0;
+        this.tokenOperationSequence = 0;
         this.saveInFlight = null;
         view.querySelector('form').addEventListener('submit', function (event) {
             event.preventDefault();
@@ -626,6 +627,28 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         return this.saveInFlight;
     };
 
+    SettingsView.prototype.reconcileTokenFailure = function (operationId, connectionSequenceAtStart) {
+        return Promise.allSettled([
+            Promise.resolve().then(function () { return request(CHANNELS.get); }),
+            Promise.resolve().then(function () { return request(CHANNELS.getConnectionStatus); })
+        ]).then(function (results) {
+            if (operationId !== this.tokenOperationSequence) return;
+            var config = results[0].status === 'fulfilled' ? results[0].value : null;
+            if (config && config.cd2 && typeof config.cd2.tokenConfigured === 'boolean') {
+                if (this.config && this.config.cd2) this.config.cd2.tokenConfigured = config.cd2.tokenConfigured;
+                this.view.querySelector('.tokenState').textContent = config.cd2.tokenConfigured ? '已配置 ········' : '未配置';
+            }
+            var snapshot = results[1].status === 'fulfilled' ? results[1].value : null;
+            if (snapshot && Number.isSafeInteger(snapshot.connectionRevision) &&
+                snapshot.connectionRevision > this.connectionRevision &&
+                this.connectionRequestSequence === connectionSequenceAtStart) {
+                this.connectionRequestSequence++;
+                this.view.querySelector('.btnTestConnection').disabled = false;
+            }
+            if (snapshot) this.applyConnectionSnapshot(snapshot);
+        }.bind(this)).catch(function () {});
+    };
+
     SettingsView.prototype.setToken = function () {
         var view = this.view;
         var input = view.querySelector('.txtCd2Token');
@@ -635,45 +658,63 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             input.focus();
             return;
         }
+        var operationId = ++this.tokenOperationSequence;
+        var connectionSequenceAtStart = this.connectionRequestSequence;
         input.disabled = true;
         request(CHANNELS.setToken, {token: value}).then(function (response) {
+            if (operationId !== this.tokenOperationSequence) return;
             if (!response || response.status !== 'saved') {
                 setStatus(view.querySelector('.saveState'), statusText(response), true);
-                return;
+                return this.reconcileTokenFailure(operationId, connectionSequenceAtStart);
             }
             if (this.config && this.config.cd2) {
                 this.config.cd2.tokenConfigured = response.config.cd2.tokenConfigured === true;
             }
             input.value = '';
             view.querySelector('.tokenState').textContent = response.config.cd2.tokenConfigured === true ? '已配置 ········' : '未配置';
-            this.connectionRequestSequence++;
+            if (this.connectionRequestSequence === connectionSequenceAtStart) {
+                this.connectionRequestSequence++;
+                view.querySelector('.btnTestConnection').disabled = false;
+            }
             this.applyConnectionSnapshot(response);
-            view.querySelector('.btnTestConnection').disabled = false;
             setStatus(view.querySelector('.saveState'), 'Token 已保存，重启应用后播放链生效。', false);
         }.bind(this)).catch(function () {
+            if (operationId !== this.tokenOperationSequence) return;
             setStatus(view.querySelector('.saveState'), 'Token 保存失败。', true);
-        }).then(function () {
-            input.disabled = false;
-        });
+            return this.reconcileTokenFailure(operationId, connectionSequenceAtStart);
+        }.bind(this)).then(function () {
+            if (operationId === this.tokenOperationSequence) input.disabled = false;
+        }.bind(this));
     };
 
     SettingsView.prototype.clearToken = function () {
         if (!window.confirm('清除 CloudDrive2 Token？')) return;
+        var operationId = ++this.tokenOperationSequence;
+        var connectionSequenceAtStart = this.connectionRequestSequence;
+        var input = this.view.querySelector('.txtCd2Token');
+        input.disabled = true;
         request(CHANNELS.clearToken).then(function (response) {
+            if (operationId !== this.tokenOperationSequence) return;
             if (!response || response.status !== 'saved') {
                 setStatus(this.view.querySelector('.saveState'), statusText(response), true);
-                return;
+                return this.reconcileTokenFailure(operationId, connectionSequenceAtStart);
             }
             if (this.config && this.config.cd2) {
                 this.config.cd2.tokenConfigured = response.config.cd2.tokenConfigured === true;
             }
             this.view.querySelector('.tokenState').textContent = response.config.cd2.tokenConfigured === true ? '已配置 ········' : '未配置';
-            this.connectionRequestSequence++;
+            if (this.connectionRequestSequence === connectionSequenceAtStart) {
+                this.connectionRequestSequence++;
+                this.view.querySelector('.btnTestConnection').disabled = false;
+            }
             this.applyConnectionSnapshot(response);
-            this.view.querySelector('.btnTestConnection').disabled = false;
             setStatus(this.view.querySelector('.saveState'), 'Token 已清除，重启应用后播放链生效。', false);
         }.bind(this)).catch(function () {
+            if (operationId !== this.tokenOperationSequence) return;
             setStatus(this.view.querySelector('.saveState'), 'Token 清除失败。', true);
+            return this.reconcileTokenFailure(operationId, connectionSequenceAtStart);
+        }.bind(this)).then(function () {
+            if (operationId === this.tokenOperationSequence) input.disabled = false;
         }.bind(this));
     };
 

@@ -131,6 +131,7 @@ function tokenDraftPage(invoke, config) {
     page.connectionStatus = 'connected';
     page.connectionRevision = 7;
     page.connectionRequestSequence = 1;
+    page.tokenOperationSequence = 0;
     page.saveInFlight = null;
     return {page, nodes, view};
 }
@@ -615,4 +616,245 @@ test('failed and late Token responses preserve current draft, and success invali
     await new Promise(resolve => setImmediate(resolve));
     assert.equal(failureHarness.page.config.rules[0].originState, 'DISABLED');
     assert.equal(failureHarness.nodes['.txtCd2Origin'].value, 'https://still-draft.example');
+});
+
+test('set then clear reverse completion leaves the latest Token state and sequence authoritative', async () => {
+    const persisted = basicConfig([]);
+    const set = deferred();
+    const clear = deferred();
+    const {page, nodes} = tokenDraftPage(channel => {
+        if (channel === 'enhanced-strm-token-set') return set.promise;
+        if (channel === 'enhanced-strm-token-clear') return clear.promise;
+        throw new Error('unexpected IPC: ' + channel);
+    }, persisted);
+
+    nodes['.txtCd2Token'].value = 'token-A';
+    page.setToken();
+    page.clearToken();
+
+    clear.resolve(tokenSavedResponse(persisted, false, 'unknown', 8));
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(page.config.cd2.tokenConfigured, false);
+    assert.equal(nodes['.tokenState'].textContent, '未配置');
+    assert.equal(nodes['.txtCd2Token'].disabled, false, 'latest clear completion releases the input lock');
+    const afterCurrentResponse = {
+        sequence: page.connectionRequestSequence,
+        status: page.connectionStatus,
+        revision: page.connectionRevision,
+        connectionText: nodes['.connectionState'].textContent,
+        saveText: nodes['.saveState'].textContent,
+        tokenText: nodes['.tokenState'].textContent,
+        inputValue: nodes['.txtCd2Token'].value
+    };
+
+    set.resolve(tokenSavedResponse(persisted, true, 'connected', 9));
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual({
+        sequence: page.connectionRequestSequence,
+        status: page.connectionStatus,
+        revision: page.connectionRevision,
+        connectionText: nodes['.connectionState'].textContent,
+        saveText: nodes['.saveState'].textContent,
+        tokenText: nodes['.tokenState'].textContent,
+        inputValue: nodes['.txtCd2Token'].value
+    }, afterCurrentResponse, 'stale set success must be a renderer-state no-op');
+    assert.equal(page.config.cd2.tokenConfigured, false);
+});
+
+test('clear then set reverse completion leaves the latest Token state authoritative', async () => {
+    const persisted = basicConfig([]);
+    const clear = deferred();
+    const set = deferred();
+    const {page, nodes} = tokenDraftPage(channel => {
+        if (channel === 'enhanced-strm-token-clear') return clear.promise;
+        if (channel === 'enhanced-strm-token-set') return set.promise;
+        throw new Error('unexpected IPC: ' + channel);
+    }, persisted);
+
+    page.clearToken();
+    nodes['.txtCd2Token'].value = 'token-B';
+    page.setToken();
+    set.resolve(tokenSavedResponse(persisted, true, 'unknown', 8));
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(page.config.cd2.tokenConfigured, true);
+    assert.match(nodes['.tokenState'].textContent, /已配置/);
+    assert.equal(nodes['.txtCd2Token'].disabled, false, 'latest set completion releases the input lock');
+    const tokenText = nodes['.tokenState'].textContent;
+    const saveText = nodes['.saveState'].textContent;
+    const sequence = page.connectionRequestSequence;
+
+    clear.resolve(tokenSavedResponse(persisted, false, 'failed', 9));
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(page.config.cd2.tokenConfigured, true);
+    assert.equal(nodes['.tokenState'].textContent, tokenText);
+    assert.equal(nodes['.saveState'].textContent, saveText);
+    assert.equal(page.connectionStatus, 'unknown');
+    assert.equal(page.connectionRevision, 8);
+    assert.equal(page.connectionRequestSequence, sequence);
+});
+
+test('a Token test started after the latest Token intent remains applicable after a stale response', async () => {
+    const persisted = basicConfig([]);
+    const oldSet = deferred();
+    const currentClear = deferred();
+    const connectionTest = deferred();
+    const {page, nodes} = tokenDraftPage(channel => {
+        if (channel === 'enhanced-strm-token-set') return oldSet.promise;
+        if (channel === 'enhanced-strm-token-clear') return currentClear.promise;
+        if (channel === 'enhanced-strm-cd2-test-connection') return connectionTest.promise;
+        throw new Error('unexpected IPC: ' + channel);
+    }, persisted);
+
+    nodes['.txtCd2Token'].value = 'token-A';
+    page.setToken();
+    page.clearToken();
+    const testPromise = page.testConnection();
+    const testSequence = page.connectionRequestSequence;
+
+    currentClear.resolve(tokenSavedResponse(persisted, false, 'unknown', 8));
+    await new Promise(resolve => setImmediate(resolve));
+    connectionTest.resolve({status: 'ok', connectionStatus: 'connected', connectionRevision: 9});
+    await testPromise;
+    assert.equal(page.connectionStatus, 'connected');
+    assert.equal(page.connectionRevision, 9);
+    assert.match(nodes['.connectionState'].textContent, /已连接/);
+    const completedConnection = {
+        sequence: page.connectionRequestSequence,
+        status: page.connectionStatus,
+        revision: page.connectionRevision,
+        text: nodes['.connectionState'].textContent
+    };
+
+    oldSet.resolve(tokenSavedResponse(persisted, true, 'failed', 10));
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual({
+        sequence: page.connectionRequestSequence,
+        status: page.connectionStatus,
+        revision: page.connectionRevision,
+        text: nodes['.connectionState'].textContent
+    }, completedConnection, 'stale Token completion cannot invalidate or replace the completed test');
+    assert.equal(page.connectionRequestSequence, testSequence);
+    assert.equal(page.config.cd2.tokenConfigured, false);
+});
+
+test('three overlapping Token operations apply only the final user operation', async () => {
+    const persisted = basicConfig([]);
+    const firstSet = deferred();
+    const middleClear = deferred();
+    const finalSet = deferred();
+    const setResponses = [firstSet, finalSet];
+    const {page, nodes} = tokenDraftPage(channel => {
+        if (channel === 'enhanced-strm-token-set') return setResponses.shift().promise;
+        if (channel === 'enhanced-strm-token-clear') return middleClear.promise;
+        throw new Error('unexpected IPC: ' + channel);
+    }, persisted);
+
+    nodes['.txtCd2Token'].value = 'first-token';
+    page.setToken();
+    page.clearToken();
+    nodes['.txtCd2Token'].value = 'final-token';
+    page.setToken();
+
+    finalSet.resolve(tokenSavedResponse(persisted, true, 'unknown', 8));
+    await new Promise(resolve => setImmediate(resolve));
+    const finalState = {
+        token: page.config.cd2.tokenConfigured,
+        tokenText: nodes['.tokenState'].textContent,
+        saveText: nodes['.saveState'].textContent,
+        sequence: page.connectionRequestSequence
+    };
+    assert.equal(finalState.token, true);
+    assert.match(finalState.tokenText, /已配置/);
+    assert.equal(nodes['.txtCd2Token'].disabled, false);
+
+    middleClear.resolve(tokenSavedResponse(persisted, false, 'failed', 9));
+    await new Promise(resolve => setImmediate(resolve));
+    firstSet.resolve(tokenSavedResponse(persisted, true, 'connected', 10));
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual({
+        token: page.config.cd2.tokenConfigured,
+        tokenText: nodes['.tokenState'].textContent,
+        saveText: nodes['.saveState'].textContent,
+        sequence: page.connectionRequestSequence
+    }, finalState);
+    assert.equal(page.connectionStatus, 'unknown');
+    assert.equal(page.connectionRevision, 8);
+    assert.equal(nodes['.txtCd2Token'].value, '', 'stale set completion cannot clear or replace later input');
+});
+
+test('a stale Token failure cannot replace a newer success or alter connection state', async () => {
+    const persisted = basicConfig([]);
+    const oldSet = deferred();
+    const currentClear = deferred();
+    const {page, nodes} = tokenDraftPage(channel => {
+        if (channel === 'enhanced-strm-token-set') return oldSet.promise;
+        if (channel === 'enhanced-strm-token-clear') return currentClear.promise;
+        throw new Error('unexpected IPC: ' + channel);
+    }, persisted);
+
+    nodes['.txtCd2Token'].value = 'bad-old-token';
+    page.setToken();
+    page.clearToken();
+    currentClear.resolve(tokenSavedResponse(persisted, false, 'connected', 8));
+    await new Promise(resolve => setImmediate(resolve));
+    const current = {
+        token: page.config.cd2.tokenConfigured,
+        tokenText: nodes['.tokenState'].textContent,
+        saveText: nodes['.saveState'].textContent,
+        connectionStatus: page.connectionStatus,
+        connectionRevision: page.connectionRevision,
+        connectionText: nodes['.connectionState'].textContent,
+        sequence: page.connectionRequestSequence,
+        inputDisabled: nodes['.txtCd2Token'].disabled
+    };
+
+    oldSet.reject(new Error('old write failed'));
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual({
+        token: page.config.cd2.tokenConfigured,
+        tokenText: nodes['.tokenState'].textContent,
+        saveText: nodes['.saveState'].textContent,
+        connectionStatus: page.connectionStatus,
+        connectionRevision: page.connectionRevision,
+        connectionText: nodes['.connectionState'].textContent,
+        sequence: page.connectionRequestSequence,
+        inputDisabled: nodes['.txtCd2Token'].disabled
+    }, current, 'stale failure must not change success text, input lock, or connection state');
+    assert.equal(nodes['.txtCd2Token'].disabled, false);
+});
+
+test('a failed latest Token operation reconciles an earlier successful write without accepting its late reply', async () => {
+    const persisted = basicConfig([]);
+    persisted.cd2.tokenConfigured = false;
+    const oldSet = deferred();
+    const currentClear = deferred();
+    const {page, nodes} = tokenDraftPage(channel => {
+        if (channel === 'enhanced-strm-token-set') return oldSet.promise;
+        if (channel === 'enhanced-strm-token-clear') return currentClear.promise;
+        if (channel === 'enhanced-strm-config-get') return Promise.resolve({
+            ...persisted, cd2: {...persisted.cd2, tokenConfigured: true}
+        });
+        if (channel === 'enhanced-strm-cd2-connection-status') {
+            return Promise.resolve({connectionStatus: 'unknown', connectionRevision: 8});
+        }
+        throw new Error('unexpected IPC: ' + channel);
+    }, persisted);
+
+    nodes['.txtCd2Token'].value = 'first-token';
+    page.setToken();
+    page.clearToken();
+    currentClear.resolve({status: 'error', reason: 'invalid_config'});
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(page.config.cd2.tokenConfigured, true, 'the successful earlier write is now persisted');
+    assert.match(nodes['.tokenState'].textContent, /已配置/);
+    assert.equal(page.connectionStatus, 'unknown');
+    assert.equal(page.connectionRevision, 8);
+    assert.equal(nodes['.txtCd2Token'].disabled, false);
+    const currentText = nodes['.saveState'].textContent;
+
+    oldSet.resolve(tokenSavedResponse(persisted, true, 'unknown', 8));
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(page.config.cd2.tokenConfigured, true);
+    assert.equal(nodes['.saveState'].textContent, currentText);
+    assert.equal(page.connectionRevision, 8);
 });
