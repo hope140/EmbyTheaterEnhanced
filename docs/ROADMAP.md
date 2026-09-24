@@ -16,14 +16,16 @@
 
 - Implementation = `COMPLETE`（功能分支）
 - User Functional Acceptance = `PASS`
-- Final PR Audit = `REMEDIATION APPLIED / RE-REVIEW PENDING`
+- Previous HIGH = `CLOSED`
+- Remaining MEDIUM（Token response ordering）= `REMEDIATION APPLIED / RE-REVIEW PENDING`
+- Final PR Review = `RE-REVIEW PENDING`
 - PR / Merge = `PENDING`
 
 已完成的子项包括 inference engine、semantics 修正、多样本 Mapping Boundary、Existing Rule Coverage、Mount inference、显式 Save draft 和 CloudDrive2 connection status sync。
 
-历史审计记录：此前对 `2baf221af3d580c3d84b27e491106e79ae44aa16` 的审计曾记录 BLOCKER/HIGH 均为 `NONE`、`npm test 308/308 PASS` 和 build/provenance `PASS`。后续针对 PR #18 当前 head `b126ff110f133a6707f59d18619ab673c6c40d1d` 的远端复审发现 Token 成功回包会覆盖未保存的 Settings draft；本轮已应用修复，尚待测试、构建/provenance 验证及远端重新审查，因此旧结论不代表当前审计状态。
+历史审计记录：此前对 `2baf221af3d580c3d84b27e491106e79ae44aa16` 的审计曾记录 BLOCKER/HIGH 均为 `NONE`、`npm test 308/308 PASS` 和 build/provenance `PASS`。后续针对 PR #18 的复审发现 Token 回包会覆盖未保存的 Settings draft；该 HIGH 已修复并关闭。之后的远端复审发现较早 Token 操作的迟到回包仍可能覆盖较新状态；该 MEDIUM 已应用本地修复，等待远端重新审查。历史结论不代表当前最终审查状态。
 
-本轮 Settings targeted `12/12 PASS`、focused `185/185 PASS`、`npm test 313/313 PASS`；exact-HEAD build/provenance 由最终提交的验收结果单独确认。后续顺序：远端重新审查 → PR / Merge。当前不标记为 `READY TO MERGE`，也不代表已经合并、发布或进入 production baseline。
+本轮 Settings targeted `18/18 PASS`、focused STRM/Settings/CD2/Smart Mapping/diagnostics `191/191 PASS`、`npm test 319/319 PASS`；修改的 JS/CJS 语法检查与 `git diff --check` PASS。exact-HEAD build/provenance 由最终提交的验收结果单独确认。后续顺序：远端重新审查 → PR / Merge。当前不标记为 `READY TO MERGE`，也不代表已经合并、发布或进入 production baseline。
 
 **边界：** STRM 设置页 UI Consolidation 单列于 NEXT，不进入 Smart Mapping 功能 PR；现有 `rules[]`、Resolver 和播放身份链保持原约定。
 
