@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-10-06 — Settings maintenance request and release boundary audit
+
+Model Tier：Tier 2（主线程 IPC / 外链边界审核），明确 helper 修复由 Tier 1 worker 执行。Model：当前 Codex 主线程、Luna worker、GPT-6 Sol High 独立复核。Reason：保持维护入口既有 contract，对有确定失败证据的纯 helper 做小范围修复。Escalated：no。
+
+用户授权独立工作树、本地提交和隔离测试。以 `f58d806` 为基线，新增 localhost 滴流、错误响应连接关闭、同步异常 timer 清理、规范化 Release 路径和大整数 prerelease 回归。此前滴流可越过 60ms 测试预算、dot-segment 可离开项目 Releases 路径、相邻大整数被比较为相等。修复后使用统一整体 deadline、规范化后的 URL 白名单、数字字符串比较；保持已有 schema、普通控件与播放链。
+
+新增 maintenance tests 与 Settings visual suite `14/14 PASS`；此前包含状态 / mapping / resolver 的定向 `83/83 PASS`。完整测试初次和串行复核均为 336/337，同一 diagnostics collector 自测失败；无空格路径的干净基线单项通过。捕获子进程启动错误后确认 Start-Process 拆开了未引用的 -File 路径，原调用 exit=-196608 且无 output，正确引用后 exit=0 并生成 bundle。仅修复自测参数引用，不修改生产 collector、断言或 timeout；单项通过后最终 `npm test 337/337 PASS`。独立 Tier 2 只读审核未发现新核心正确性问题；按最终提交构建的 gate 另随交付报告记录。没有访问真实 Emby / CD2，公网 release 查询在自动测试中使用 fixture。
+
 ## 2026-09-24 — STRM 规则卡动态 Emby 控件修复
 
 Model Tier: Tier 1

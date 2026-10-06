@@ -1,5 +1,12 @@
 # 已确认经验
 
+## 2026-10-06 — Maintenance request budgets and normalized URLs
+
+- socket timeout 衡量空闲，不代表整个请求期限。点击驱动的更新查询需要从发起时计时，并在成功、失败和同步异常终结时清理计时器；错误响应也应及时结束网络资源。
+- 外链白名单应检查 URL 规范化后的主机与路径；原始字符串前缀无法阻止 dot-segment / 反斜杠规范化越出目标目录。
+- 数字 prerelease 标识可能超过 JavaScript 安全整数；使用数字字符串的长度与字典序比较，避免不同版本被折叠为相等。
+- `Start-Process -ArgumentList` 会连接参数而不自动保留含空格路径的引用。观察不到测试 bundle 时应先检查子进程真实启动结果；本次同签名由路径拆分造成，不能仅按断言文字判为 timing flake，也不能放松隐私 gate。
+
 ## 2026-09-24 — Dynamically created Emby controls need creation-time `is`
 
 - `emby-input`、`emby-select`、`emby-button` 扩展原生标签。静态 HTML 的 `is` 由 parser 在创建时处理；动态控件在 `document.createElement(tag)` 之后补 `is` 属性不会把普通元素变为 Emby customized built-in。动态控件应使用 `document.createElement(tag, {is: name})`。

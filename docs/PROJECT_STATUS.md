@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-06 — Settings maintenance 无人值守审计修复
+
+从候选 `f58d806` 在独立本地分支审查。已修复手动更新查询只限制 socket 空闲而未限制整体请求期限、Release URL 未按规范化路径检查白名单、超出安全整数的数字 prerelease 比较三个问题。非成功 HTTP 响应及时关闭连接；同步请求异常清理 deadline。改动集中于 `enhanced/maintenance.js` 和新增回归，不改变 Settings 草稿 / Token / Smart Mapping / 播放契约。
+
+新增失败回归转为通过；新 maintenance 与既有 Settings visual suite 合计 `14/14 PASS`，此前 Settings 状态等相关定向 `83/83 PASS`，最终完整 `npm test 337/337 PASS`，独立 Tier 2 复核未发现新引入核心正确性问题。全量验证曾被 diagnostics 自测的未引用进程参数阻塞：含空格的工作树路径被拆开，正确引用后通过；只改测试启动，不改 collector 或脱敏断言。runtime 与 fake pipeline 结果按最终提交另行记录；真实三页视觉和实际入口验收仍待完成。
+
 ## 2026-09-24 — STRM 动态规则控件原生外观修复
 
 用户实际查看 v3 runtime 后确认其余区域满意，但路径规则卡中的输入框、下拉框仍呈浏览器默认白色小控件。根因是规则卡及后续助手样本用 `document.createElement(tag)` 创建普通控件，随后才设置 `is="emby-*"`；Emby 的 input/select/button 是 customized built-in，必须在创建时传入 `{is: 'emby-*'}` 才会获得其组件实现与样式。仅调整 `mpvplayer/strm.js` 的动态控件创建，并加入会识别旧创建方式的生成控件测试。静态 STRM、诊断与 About 的布局和样式未改；Smart Mapping、规则 schema、Token/Save、CD2 状态、Resolver 与播放链未改。

@@ -32,8 +32,10 @@ function comparePrerelease(left, right) {
         const aNumeric = /^\d+$/.test(a);
         const bNumeric = /^\d+$/.test(b);
         if (aNumeric && bNumeric) {
-            const numericResult = Number(a) - Number(b);
-            if (numericResult !== 0) return numericResult < 0 ? -1 : 1;
+            const normalizedA = a.replace(/^0+/, '') || '0';
+            const normalizedB = b.replace(/^0+/, '') || '0';
+            if (normalizedA.length !== normalizedB.length) return normalizedA.length < normalizedB.length ? -1 : 1;
+            if (normalizedA !== normalizedB) return normalizedA < normalizedB ? -1 : 1;
         } else if (aNumeric !== bNumeric) {
             return aNumeric ? -1 : 1;
         } else if (a !== b) {
@@ -70,10 +72,21 @@ function safeValue(value, fallback) {
 }
 
 function safeReleaseUrl(value) {
-    if (typeof value === 'string' && /^https:\/\/github\.com\/hope140\/EmbyTheaterEnhanced\/releases(?:\/|$)/i.test(value.trim())) {
-        return value.trim();
+    if (typeof value !== 'string') return RELEASES_URL;
+    let target;
+    try {
+        target = new URL(value.trim());
+    } catch (_) {
+        return RELEASES_URL;
     }
-    return RELEASES_URL;
+    const releasePath = '/hope140/EmbyTheaterEnhanced/releases';
+    const normalizedPathname = target.pathname.toLowerCase();
+    const normalizedReleasePath = releasePath.toLowerCase();
+    if (target.protocol !== 'https:' || target.hostname !== 'github.com' || target.username || target.password || target.port ||
+        (normalizedPathname !== normalizedReleasePath && !normalizedPathname.startsWith(normalizedReleasePath + '/'))) {
+        return RELEASES_URL;
+    }
+    return target.href;
 }
 
 function requestLatestJson(url, options) {
@@ -85,48 +98,72 @@ function requestLatestJson(url, options) {
 
     return new Promise(function (resolve, reject) {
         let settled = false;
+        let request = null;
+        let deadlineTimer = null;
         function finish(error, value) {
             if (settled) return;
             settled = true;
+            if (deadlineTimer !== null) {
+                clearTimeout(deadlineTimer);
+                deadlineTimer = null;
+            }
             if (error) reject(error);
             else resolve(value);
         }
 
-        const request = transport.get(target, {
-            headers: {
-                Accept: 'application/vnd.github+json',
-                'User-Agent': userAgent
-            }
-        }, function (response) {
-            const statusCode = Number(response.statusCode) || 0;
-            if (statusCode < 200 || statusCode >= 300) {
-                response.resume();
-                finish(new Error('release-http-' + statusCode));
-                return;
-            }
-            let totalBytes = 0;
-            const chunks = [];
-            response.setEncoding('utf8');
-            response.on('data', function (chunk) {
-                totalBytes += Buffer.byteLength(chunk, 'utf8');
-                if (totalBytes > MAX_RELEASE_RESPONSE_BYTES) {
-                    request.destroy(new Error('release-response-too-large'));
+        function rejectAndDestroy(error) {
+            finish(error);
+            if (request && !request.destroyed) request.destroy(error);
+        }
+
+        deadlineTimer = setTimeout(function () {
+            rejectAndDestroy(new Error('release-request-timeout'));
+        }, timeoutMs);
+
+        try {
+            request = transport.get(target, {
+                headers: {
+                    Accept: 'application/vnd.github+json',
+                    'User-Agent': userAgent
+                }
+            }, function (response) {
+                if (settled) {
+                    response.destroy();
                     return;
                 }
-                chunks.push(chunk);
-            });
-            response.on('error', function (error) { finish(error); });
-            response.on('end', function () {
-                if (settled) return;
-                try {
-                    finish(null, JSON.parse(chunks.join('')));
-                } catch (_) {
-                    finish(new Error('release-response-invalid-json'));
+                const statusCode = Number(response.statusCode) || 0;
+                if (statusCode < 200 || statusCode >= 300) {
+                    rejectAndDestroy(new Error('release-http-' + statusCode));
+                    return;
                 }
+                let totalBytes = 0;
+                const chunks = [];
+                response.setEncoding('utf8');
+                response.on('data', function (chunk) {
+                    totalBytes += Buffer.byteLength(chunk, 'utf8');
+                    if (totalBytes > MAX_RELEASE_RESPONSE_BYTES) {
+                        rejectAndDestroy(new Error('release-response-too-large'));
+                        return;
+                    }
+                    chunks.push(chunk);
+                });
+                response.on('error', function (error) { finish(error); });
+                response.on('end', function () {
+                    if (settled) return;
+                    try {
+                        finish(null, JSON.parse(chunks.join('')));
+                    } catch (_) {
+                        finish(new Error('release-response-invalid-json'));
+                    }
+                });
             });
-        });
-        request.setTimeout(timeoutMs, function () { request.destroy(new Error('release-request-timeout')); });
-        request.on('error', function (error) { finish(error); });
+            request.on('error', function (error) { finish(error); });
+            request.setTimeout(timeoutMs, function () {
+                rejectAndDestroy(new Error('release-request-timeout'));
+            });
+        } catch (error) {
+            rejectAndDestroy(error);
+        }
     });
 }
 
