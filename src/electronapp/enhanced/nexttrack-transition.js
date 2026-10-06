@@ -13,6 +13,7 @@
         var revision = 0;
         var active = null;
         var state = 'IDLE';
+        var paintWaiters = new Set();
 
         function imageUrls(item) {
             var urls = [];
@@ -36,10 +37,14 @@
 
         function clear(token) {
             if (!active || active.token !== token) return;
-            if (active.element.parentNode) active.element.parentNode.removeChild(active.element);
-            active.container.style.opacity = active.previousOpacity;
+            var previous = active;
             active = null;
             state = 'IDLE';
+            if (previous.cleanupFade) previous.cleanupFade();
+            if (previous.element.parentNode) previous.element.parentNode.removeChild(previous.element);
+            previous.container.style.opacity = previous.previousOpacity;
+            // A retired visual task must not keep Stop waiting for a future frame.
+            Array.from(paintWaiters).forEach(function (finish) { finish(); });
         }
 
         function show(item) {
@@ -87,20 +92,33 @@
             if (!win || typeof win.requestAnimationFrame !== 'function' || doc.visibilityState === 'hidden') {
                 return Promise.resolve();
             }
-            return new Promise(function (resolve) {
+            return new Promise(function (resolve, reject) {
                 var finished = false;
-                function done() {
+                var frameId = null;
+                function done(error) {
                     if (finished) return;
                     finished = true;
                     doc.removeEventListener('visibilitychange', onVisibility);
-                    resolve();
+                    paintWaiters.delete(done);
+                    if (frameId != null && typeof win.cancelAnimationFrame === 'function') {
+                        win.cancelAnimationFrame(frameId);
+                    }
+                    if (error) reject(error);
+                    else resolve();
                 }
                 function onVisibility() {
                     if (doc.visibilityState === 'hidden') done();
                 }
-                doc.addEventListener('visibilitychange', onVisibility);
-                // The first callback precedes paint; the second runs after one completed frame.
-                win.requestAnimationFrame(function () { win.requestAnimationFrame(done); });
+                paintWaiters.add(done);
+                try {
+                    doc.addEventListener('visibilitychange', onVisibility);
+                    // The first callback precedes paint; the second runs after one completed frame.
+                    frameId = win.requestAnimationFrame(function () {
+                        if (finished) return;
+                        try { frameId = win.requestAnimationFrame(function () { done(); }); }
+                        catch (error) { done(error); }
+                    });
+                } catch (error) { done(error); }
             });
         }
 
@@ -133,18 +151,30 @@
             Promise.resolve(painted).then(function () {
                 if (!active || active.token !== token || state !== 'PLAYBACK_READY') return;
                 var element = active.element;
-                if (win && typeof win.matchMedia === 'function' && win.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                if (doc.visibilityState === 'hidden' ||
+                    (win && typeof win.matchMedia === 'function' && win.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
                     clear(token);
                     return;
                 }
                 function onTransitionEnd(event) {
                     if (event.target !== element || event.propertyName !== 'opacity') return;
-                    element.removeEventListener('transitionend', onTransitionEnd);
                     clear(token);
                 }
+                active.cleanupFade = function () {
+                    element.removeEventListener('transitionend', onTransitionEnd);
+                    element.removeEventListener('transitioncancel', onTransitionEnd);
+                };
                 element.addEventListener('transitionend', onTransitionEnd);
+                element.addEventListener('transitioncancel', onTransitionEnd);
                 element.classList.add('mpv-nextTrackTransition-fading');
                 state = 'HIDE_TRANSITION';
+                // Hidden/non-rendered elements may never start a CSS transition or emit its end event.
+                if (typeof element.getAnimations === 'function') {
+                    var animations = element.getAnimations();
+                    if (!animations.length) clear(token);
+                    else Promise.all(animations.map(function (animation) { return animation.finished; }))
+                        .then(function () { clear(token); }, function () { clear(token); });
+                }
             }).catch(function () { clear(token); });
         }
 

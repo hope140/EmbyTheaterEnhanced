@@ -1,5 +1,12 @@
 # 已确认经验
 
+## 2026-10-06 — Visual task cancellation owns its waits
+
+- 清除过渡 DOM 时，同时释放它拥有的 paint promise、visibility listener 与待执行帧。即使真实播放调用方有 generation guard，已取消视觉任务也不应继续等待渲染帧。
+- CSS transition 的终结不能只依赖 transitionend；取消、没有实际 animation、隐藏文档应有可归属的清理。所有异步清理仍需核对当前 token。
+- never-shown BrowserWindow 可能报告 visible 却延迟 CSS 动画完成；隔离探针应区分未显示、显示后和真实客户端的证据，不由隐藏渲染行为推导播放修复。
+- diagnostics 自测找不到 bundle 时要先检查子进程是否真正启动。Start-Process 会将未引用的含空格 -File 路径拆开；本次修参数引用即可保持原隐私 gate 通过，不应调长等待或减弱断言。
+
 ## 2026-09-24 — Transparent playback gap needs an in-window visual owner
 
 - 用户报告的 NextTrack 空白发生在透明播放窗口内：播放 surface 隐藏后，桌面可从视频区域显露。视觉过渡层应由现有 renderer 在 surface teardown 前同步持有，并限制在播放容器内，不能改变 main window、Native Helper 或 Session ownership。

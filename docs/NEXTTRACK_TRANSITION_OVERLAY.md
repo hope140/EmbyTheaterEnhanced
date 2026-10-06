@@ -16,6 +16,14 @@ Artwork source order is the Item's first `BackdropImageTags` entry, then `ImageT
 
 An unrelated newer Play or terminal Stop removes the overlay. A rejected or early-settled NextTrack restores the prior visual state. On normal completion, the existing media/session/control path continues unchanged. No source, mapping, auth, helper process, window ownership or mpv timing policy is changed.
 
+## 2026-10-06 cleanup audit
+
+Visual paint waits are now owned and cancellable. Clearing the current transition releases its pending paint promises, visibility listeners and queued animation frames. Errors scheduling either animation frame reject after cleanup so the existing `stop(false)` caller can continue its fail-open path. A newer transition still retains its token protection; no PlaybackManager or libmpv generation logic is changed.
+
+Fade cleanup handles both `transitionend` and `transitioncancel`. Where available, the renderer animation list also supplies a completion promise, and an element with no active animation is cleared immediately. Hidden documents and reduced-motion rendering skip the fade. These paths retain token checks and introduce no polling or delay timers.
+
+The isolated Electron probe passed visible fade cleanup. A never-shown BrowserWindow can report `document.visibilityState=visible` while its CSS animation completion remains suspended; the tested hidden window cleaned up after reveal. This is recorded as a hidden-rendering limitation, not proof of a visible presentation defect or permission for a window/focus workaround.
+
 ## Verification boundary
 
 Node tests cover artwork selection, black fallback, pre-teardown show order, current-request readiness, fast switch ownership and failure cleanup. After the artwork-ratio fix, focused playback/window tests passed 43/43 and `npm test` passed 325/325; relevant JS syntax and `git diff --check` passed. Runtime provenance and user-visible NextTrack review are separate gates; neither is claimed by these static and unit results.

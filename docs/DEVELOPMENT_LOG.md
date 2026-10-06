@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-10-06 — NextTrack transition cleanup audit
+
+Model Tier：Tier 2。Model：当前 Codex 主线程；GPT-6 Sol High 独立只读复核；Luna worker 补充确定性回归。Reason：视觉绘制等待跨入现有 stop(false) 边界，需要保留请求 token 与 libmpv generation guard。Escalated：no。
+
+用户授权独立工作树、范围内本地提交和隔离可见测试。审计以 `8f3d9a9` 为基线，确定性复现取消时 paint waiter 未释放、requestAnimationFrame 抛错后 listener 残留和无实际 CSS 动画时待清理状态。实现集中管理 paint waiter 的释放；fade 同时消费 transitioncancel / 动画完成信号，保留旧 token 不能清新 overlay 的规则。没有改变 source、媒体选择、播放身份或核心生命周期架构。
+
+修复后 NextTrack targeted `18/18 PASS`，最终完整 `npm test 337/337 PASS`，JS syntax 和 diff 检查通过，Tier 2 只读审核通过。首次全量唯一失败来自 diagnostics 自测子进程参数未引用，含空格路径被拆开；对照未引用/正确引用启动取得确定证据后，只修测试启动并保留原脱敏断言及 timeout。Electron 隔离可见 renderer 的淡出完成后为 IDLE / overlay absent；never-shown 窗口的动画在 reveal 前可能仍挂起，reveal 后清理，不把隐藏探针当成真实前台验收。最终提交 runtime 与模拟播放结果由本轮交付报告分层记录。
+
 ## 2026-09-24 — NextTrack artwork ratio correction
 
 用户视觉验收发现过渡封面像原比例小图置入视频区域，产生不自然留白。图片来源调整为首个 Backdrop 优先、Primary poster fallback；overlay 容器使用 `position:absolute; inset:0; overflow:hidden`，图片设为 100% 宽高、`object-fit:cover`、居中定位，因此横版 Backdrop 覆盖视频区域，竖版 Poster 会裁切填满。无图或加载失败继续保持黑底。

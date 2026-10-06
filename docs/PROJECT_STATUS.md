@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-06 — NextTrack 无人值守审计修复
+
+从候选 `8f3d9a9` 在独立本地分支继续审核。已修复视觉任务取消后 paint promise / visibility listener / animation frame 残留，以及帧调度异常和 CSS 过渡取消 / 缺少实际动画时的清理。范围仅为 `enhanced/nexttrack-transition.js` 与回归测试；PlaybackManager、libmpv、Session、Resolver、Native Helper 和封面比例保持原有实现。
+
+新增审计回归由失败用例转为通过，合计 NextTrack focused `18/18 PASS`，最终完整 `npm test 337/337 PASS`；独立 Tier 2 复核未发现新引入核心正确性问题。原 diagnostics 自测在含空格 worktree 中因 Start-Process 参数引用缺失而未启动 collector；仅修复测试参数后全量通过，脱敏断言不变。实际 Electron 可见 renderer 淡出清理通过；未显示窗口的 CSS 动画可能直到 reveal 才完成，保留为隐藏渲染限制。正式 runtime / fake pipeline 的结果按最终源码提交另行记录；真实客户端视觉验收仍待完成。
+
 ## 2026-09-24 — NextTrack transition artwork candidate
 
 针对 NextTrack 期间透明播放区域短暂露出桌面的用户观察，当前 `codex/nexttrack-transition-overlay` candidate 增加 renderer 内视觉过渡层。实现复用 PlaybackManager 已选中的队列 Item 和现有 `ApiClient.getImageUrl()`：首个 Backdrop image 优先、Primary poster 次之、不可用时为纯黑。比例修复使 overlay 填满视频容器，图片采用 100% 宽高和居中 `object-fit:cover`，横版图覆盖 16:9 区域，竖版 poster 裁切填满区域。NextTrack 入口先同步显示覆盖层，再同步调用原 `nextTrack()`；paint gate 位于 `libmpv.stop(false)` 隐藏 surface 之前。匹配当前播放请求的 `core-playing` 且视频容器恢复可见后，覆盖层等待一次 paint 再淡出。原播放顺序与 source、Resolver、Session、Native Helper contract 未改。
