@@ -266,7 +266,9 @@ try {
         '-MaxLogLines', '25',
         '-SkipWindowsEvents'
     )
-    $gateProcess = Start-Process -FilePath 'powershell.exe' -ArgumentList $gateArguments -WindowStyle Hidden -PassThru
+    # Start-Process joins ArgumentList without quoting, including the -File path.
+    $quotedGateArguments = ($gateArguments | ForEach-Object { '"' + $_.Replace('"', '\"') + '"' }) -join ' '
+    $gateProcess = Start-Process -FilePath 'powershell.exe' -ArgumentList $quotedGateArguments -WindowStyle Hidden -PassThru
     $gateBundle = $null
     $gateDeadline = [DateTime]::UtcNow.AddSeconds(10)
     while (-not $gateBundle -and -not $gateProcess.HasExited -and [DateTime]::UtcNow -lt $gateDeadline) {
