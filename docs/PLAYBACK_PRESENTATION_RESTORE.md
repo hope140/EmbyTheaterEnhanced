@@ -4,7 +4,7 @@
 
 ## 当前阶段
 
-`BASELINE COMPARISON IN PROGRESS`。尚未修改生产源码；先取得旧版的合成画面。已有未通过的 NextTrack 用户验收保持有效，不由自动化逻辑 PASS 替代。
+`NATIVE FRAME CAPABILITY PROBE IN PROGRESS`。历史画面对照已完成，当前只新增 Testing 支路；默认生产 Helper 编译字节与此前相同。已有未通过的 NextTrack 用户验收保持有效，不由自动化逻辑 PASS 替代。
 
 | 对照 | 来源提交 | 本地历史构建名 |
 |---|---|---|
@@ -66,7 +66,14 @@ rVFC 全屏采样的新增诊断显示 document.visibilityState=hidden、focus/g
 
 ## 待完成
 
-- 旧 Pepper、Helper/E18、Helper/E44 的窗口与全屏对照。
+- [x] 旧 Pepper、Helper/E18、Helper/E44 的窗口与全屏对照。
+- [ ] 原生内存暂存帧的能力验证：实际截图、Stop 后保持、显式撤下、耗时与清理。
 - 依据最早出现的差异设计局部修复，审核临时 stop 与终止 stop、快速切集、失败和取消边界。
 - 新源码的单元/集成检查、正式构建与来源验证、同条件可见对照。
 - 有真实媒体证据后才关闭用户视觉失败；发布/安装仍独立。
+
+## Testing 支路的原生能力入口
+
+`ETE_HELPER_TESTING` 内新增 `test-frame-hold/status/release`，不向 renderer service IPC 开放。hold 仅允许未退休且唯一打开媒体属于请求 generation，使用 libmpv `screenshot-raw window bgr0`，64 MiB/8192 尺寸上限、正 stride 验证并私有复制；负 stride 本阶段返回 unavailable。数据不出 native、不落盘，回包仅尺寸、耗时、均色、哈希、holdId 与 painted 状态。release 精确匹配 holdId；Stop 本身照旧，能力 probe 用显式 release 验证持帧。
+
+测试专用 sibling child 属于既有 video host，由 surfaceThread 管理、绘制和销毁；paint ACK 最多等待 250ms，失败撤回新 hold。`painted` 只表示 WM_PAINT 完成，尚没有新视频帧的呈现 ACK或自动撤下策略。纯编译验证默认/Testing 均通过；默认 SHA256 为 `6f4d9c1459149c5a6325ebfc8dfe874b2d565c85fb9049053ce88ab47f6fef34`，与旧 production Helper 字节一致。实际窗口效果和截图耗时仍待独立 probe，不能据编译完成宣称还原。

@@ -18,6 +18,9 @@
 #include <iostream>
 #include <limits>
 #include <map>
+#ifdef ETE_HELPER_TESTING
+#include <memory>
+#endif
 #include <mutex>
 #include <set>
 #include <sstream>
@@ -423,12 +426,97 @@ class Helper {
     std::atomic<int> surfaceState{0};
 #ifdef ETE_HELPER_TESTING
     std::string rejectNextOperation;
+    decltype(&mpv_command_ret) p_test_mpv_command_ret = nullptr;
+    static constexpr size_t MAX_HELD_FRAME_BYTES = 64 * 1024 * 1024;
+    static constexpr UINT WM_TEST_FRAME_SHOW = WM_APP + 41;
+    static constexpr UINT WM_TEST_FRAME_HIDE = WM_APP + 42;
+    struct HeldFrame {
+        uint64_t holdId = 0;
+        uint64_t generationId = 0;
+        int width = 0;
+        int height = 0;
+        std::vector<uint8_t> pixels;
+        uint64_t hash = 0;
+        uint8_t meanR = 0, meanG = 0, meanB = 0;
+        uint64_t captureMicros = 0;
+    };
+    std::mutex frameMutex;
+    std::shared_ptr<HeldFrame> heldFrame;
+    std::atomic<HWND> frameWindow{nullptr};
+    std::mutex framePaintMutex;
+    std::condition_variable framePaintCondition;
+    uint64_t nextHoldId = 1;
+    uint64_t lastPaintId = 0, lastHideId = 0;
+    bool lastPaintSucceeded = false;
 #endif
 
     static LRESULT CALLBACK surfaceWindowProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) {
         if (message == WM_NCHITTEST) return HTTRANSPARENT;
         return DefWindowProcW(window, message, wparam, lparam);
     }
+#ifdef ETE_HELPER_TESTING
+    static LRESULT CALLBACK frameWindowProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) {
+        if (message == WM_NCCREATE) {
+            auto* created = reinterpret_cast<CREATESTRUCTW*>(lparam);
+            SetWindowLongPtrW(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(created->lpCreateParams));
+            return TRUE;
+        }
+        auto* self = reinterpret_cast<Helper*>(GetWindowLongPtrW(window, GWLP_USERDATA));
+        if (message == WM_NCHITTEST) return HTTRANSPARENT;
+        if (self && message == WM_TEST_FRAME_SHOW) {
+            std::shared_ptr<HeldFrame> frame;
+            { std::lock_guard<std::mutex> lock(self->frameMutex); frame = self->heldFrame; }
+            if (!frame || frame->holdId != static_cast<uint64_t>(wparam)) return 0;
+            RECT bounds{};
+            if (GetClientRect(self->parent, &bounds)) {
+                SetWindowPos(window, HWND_TOP, 0, 0, std::max<LONG>(1, bounds.right - bounds.left),
+                    std::max<LONG>(1, bounds.bottom - bounds.top), SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_SHOWWINDOW);
+                InvalidateRect(window, nullptr, FALSE);
+                UpdateWindow(window);
+            }
+            return 0;
+        }
+        if (self && message == WM_TEST_FRAME_HIDE) {
+            bool newerHold = false;
+            { std::lock_guard<std::mutex> lock(self->frameMutex);
+              newerHold = self->heldFrame && self->heldFrame->holdId > static_cast<uint64_t>(wparam); }
+            if (!newerHold) ShowWindow(window, SW_HIDE);
+            { std::lock_guard<std::mutex> lock(self->framePaintMutex); self->lastHideId = static_cast<uint64_t>(wparam); }
+            self->framePaintCondition.notify_all();
+            return 0;
+        }
+        if (self && message == WM_PAINT) {
+            PAINTSTRUCT paint{};
+            HDC context = BeginPaint(window, &paint);
+            std::shared_ptr<HeldFrame> frame;
+            { std::lock_guard<std::mutex> lock(self->frameMutex); frame = self->heldFrame; }
+            bool painted = false;
+            if (context && frame && !frame->pixels.empty()) {
+                RECT bounds{};
+                if (GetClientRect(window, &bounds)) {
+                    BITMAPINFO bitmap{};
+                    bitmap.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+                    bitmap.bmiHeader.biWidth = frame->width;
+                    bitmap.bmiHeader.biHeight = -frame->height;
+                    bitmap.bmiHeader.biPlanes = 1;
+                    bitmap.bmiHeader.biBitCount = 32;
+                    bitmap.bmiHeader.biCompression = BI_RGB;
+                    int scanlines = StretchDIBits(context, 0, 0, bounds.right, bounds.bottom,
+                        0, 0, frame->width, frame->height, frame->pixels.data(), &bitmap, DIB_RGB_COLORS, SRCCOPY);
+                    painted = scanlines > 0;
+                }
+            }
+            EndPaint(window, &paint);
+            if (frame) {
+                { std::lock_guard<std::mutex> lock(self->framePaintMutex);
+                  self->lastPaintId = frame->holdId; self->lastPaintSucceeded = painted; }
+                self->framePaintCondition.notify_all();
+            }
+            return 0;
+        }
+        return DefWindowProcW(window, message, wparam, lparam);
+    }
+#endif
 
     void surfaceLoop() {
         SetThreadDpiAwarenessContext(GetWindowDpiAwarenessContext(parent));
@@ -443,6 +531,17 @@ class Helper {
             0, 0, 1, 1, parent, nullptr, windowClass.hInstance, nullptr);
         if (!createdWindow) { surfaceState = -1; return; }
         surfaceWindow.store(createdWindow, std::memory_order_release);
+#ifdef ETE_HELPER_TESTING
+        WNDCLASSW frameClass{};
+        frameClass.lpfnWndProc = frameWindowProc;
+        frameClass.hInstance = GetModuleHandleW(nullptr);
+        frameClass.lpszClassName = L"ETEFrameHoldProbeSurface";
+        RegisterClassW(&frameClass);
+        HWND createdFrameWindow = CreateWindowExW(WS_EX_NOACTIVATE, frameClass.lpszClassName, L"",
+            WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN, 0, 0, 1, 1,
+            parent, nullptr, frameClass.hInstance, this);
+        if (createdFrameWindow) frameWindow.store(createdFrameWindow, std::memory_order_release);
+#endif
         surfaceState.store(1, std::memory_order_release);
         int oldWidth = 0, oldHeight = 0;
         while (!closing && IsWindow(parent)) {
@@ -458,6 +557,13 @@ class Helper {
                 if (width != oldWidth || height != oldHeight) {
                     SetWindowPos(createdWindow, HWND_TOP, 0, 0, width, height,
                         SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+#ifdef ETE_HELPER_TESTING
+                    if (createdFrameWindow && IsWindowVisible(createdFrameWindow)) {
+                        SetWindowPos(createdFrameWindow, HWND_TOP, 0, 0, width, height,
+                            SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+                        InvalidateRect(createdFrameWindow, nullptr, FALSE);
+                    }
+#endif
                     oldWidth = width;
                     oldHeight = height;
                 }
@@ -465,6 +571,10 @@ class Helper {
             Sleep(8);
         }
         if (!IsWindow(parent)) requestedExit = true;
+#ifdef ETE_HELPER_TESTING
+        if (createdFrameWindow && IsWindow(createdFrameWindow)) DestroyWindow(createdFrameWindow);
+        frameWindow.store(nullptr, std::memory_order_release);
+#endif
         if (IsWindow(createdWindow)) DestroyWindow(createdWindow);
         surfaceWindow.store(nullptr, std::memory_order_release);
     }
@@ -583,6 +693,98 @@ class Helper {
         DeleteDC(memory);
         ReleaseDC(nullptr, screen);
         return copied;
+    }
+
+    std::string frameUnavailable(const char* reason) const {
+        return "{\"ready\":false,\"status\":\"unavailable\",\"reason\":" + quote(reason) + '}';
+    }
+    std::shared_ptr<HeldFrame> captureHeldFrame(uint64_t generation, std::string& reason) {
+        if (!p_test_mpv_command_ret) { reason = "mpv-command-ret-unavailable"; return {}; }
+        const char* args[] = {"screenshot-raw", "window", "bgr0", nullptr};
+        mpv_node result{};
+        uint64_t started = monotonicMicros();
+        int commandResult = p_test_mpv_command_ret(mpv, args, &result);
+        if (commandResult < 0) { reason = "screenshot-unavailable"; return {}; }
+        std::shared_ptr<HeldFrame> frame;
+        try {
+            const mpv_node *width = nullptr, *height = nullptr, *stride = nullptr, *format = nullptr, *data = nullptr;
+            if (result.format != MPV_FORMAT_NODE_MAP || !result.u.list || result.u.list->num < 5 ||
+                result.u.list->num > 32 || !result.u.list->keys || !result.u.list->values) {
+                reason = "screenshot-map-invalid";
+            } else {
+                for (int index = 0; index < result.u.list->num; ++index) {
+                    const char* key = result.u.list->keys[index];
+                    if (!key) { reason = "screenshot-map-invalid"; break; }
+                    const mpv_node* value = &result.u.list->values[index];
+                    if (std::strcmp(key, "w") == 0) width = value;
+                    else if (std::strcmp(key, "h") == 0) height = value;
+                    else if (std::strcmp(key, "stride") == 0) stride = value;
+                    else if (std::strcmp(key, "format") == 0) format = value;
+                    else if (std::strcmp(key, "data") == 0) data = value;
+                }
+            }
+            if (reason.empty() && (!width || !height || !stride || !format || !data ||
+                width->format != MPV_FORMAT_INT64 || height->format != MPV_FORMAT_INT64 ||
+                stride->format != MPV_FORMAT_INT64 || format->format != MPV_FORMAT_STRING ||
+                !format->u.string || std::strcmp(format->u.string, "bgr0") != 0 ||
+                data->format != MPV_FORMAT_BYTE_ARRAY || !data->u.ba || !data->u.ba->data)) {
+                reason = "screenshot-format-invalid";
+            }
+            if (reason.empty() && (width->u.int64 <= 0 || height->u.int64 <= 0 ||
+                width->u.int64 > 8192 || height->u.int64 > 8192)) reason = "screenshot-size-invalid";
+            if (reason.empty() && stride->u.int64 < 0) reason = "negative-stride-unsupported";
+            if (reason.empty()) {
+                uint64_t w = static_cast<uint64_t>(width->u.int64), h = static_cast<uint64_t>(height->u.int64);
+                uint64_t rowBytes = w * 4, sourceStride = static_cast<uint64_t>(stride->u.int64);
+                if (sourceStride < rowBytes || sourceStride > MAX_HELD_FRAME_BYTES ||
+                    sourceStride * h > MAX_HELD_FRAME_BYTES || rowBytes * h > MAX_HELD_FRAME_BYTES ||
+                    data->u.ba->size > MAX_HELD_FRAME_BYTES ||
+                    data->u.ba->size < (h - 1) * sourceStride + rowBytes) {
+                    reason = "screenshot-bytes-invalid";
+                } else {
+                    frame = std::make_shared<HeldFrame>();
+                    frame->generationId = generation;
+                    frame->width = static_cast<int>(w); frame->height = static_cast<int>(h);
+                    frame->pixels.resize(static_cast<size_t>(rowBytes * h));
+                    const auto* source = static_cast<const uint8_t*>(data->u.ba->data);
+                    for (size_t row = 0; row < static_cast<size_t>(h); ++row) {
+                        std::memcpy(frame->pixels.data() + row * static_cast<size_t>(rowBytes),
+                            source + row * static_cast<size_t>(sourceStride), static_cast<size_t>(rowBytes));
+                    }
+                    uint64_t sumR = 0, sumG = 0, sumB = 0, hash = 1469598103934665603ULL;
+                    for (size_t index = 0; index < frame->pixels.size(); index += 4) {
+                        uint8_t b = frame->pixels[index], g = frame->pixels[index + 1], r = frame->pixels[index + 2];
+                        sumR += r; sumG += g; sumB += b;
+                        hash = (hash ^ b) * 1099511628211ULL;
+                        hash = (hash ^ g) * 1099511628211ULL;
+                        hash = (hash ^ r) * 1099511628211ULL;
+                    }
+                    uint64_t pixels = w * h;
+                    frame->meanR = static_cast<uint8_t>(sumR / pixels);
+                    frame->meanG = static_cast<uint8_t>(sumG / pixels);
+                    frame->meanB = static_cast<uint8_t>(sumB / pixels);
+                    frame->hash = hash;
+                    frame->captureMicros = monotonicMicros() - started;
+                }
+            }
+        } catch (...) {
+            frame.reset(); reason = "screenshot-copy-failed";
+        }
+        p_mpv_free_node_contents(&result);
+        return frame;
+    }
+    std::string heldFrameStatus() {
+        std::shared_ptr<HeldFrame> frame;
+        { std::lock_guard<std::mutex> lock(frameMutex); frame = heldFrame; }
+        bool painted = false;
+        if (frame) {
+            std::lock_guard<std::mutex> lock(framePaintMutex);
+            painted = lastPaintId == frame->holdId && lastPaintSucceeded;
+        }
+        return "{\"active\":" + std::string(frame ? "true" : "false") +
+            ",\"bytes\":" + std::to_string(frame ? frame->pixels.size() : 0) +
+            ",\"holdId\":" + (frame ? std::to_string(frame->holdId) : "null") +
+            ",\"painted\":" + (painted ? "true" : "false") + '}';
     }
 #endif
 
@@ -781,6 +983,9 @@ public:
 #define LOAD(name) p_##name = reinterpret_cast<decltype(p_##name)>(GetProcAddress(library, #name)); if (!p_##name) throw std::runtime_error("missing-export:" #name);
         MPV_FUNCTIONS(LOAD)
 #undef LOAD
+#ifdef ETE_HELPER_TESTING
+        p_test_mpv_command_ret = reinterpret_cast<decltype(p_test_mpv_command_ret)>(GetProcAddress(library, "mpv_command_ret"));
+#endif
         mpv = p_mpv_create(); if (!mpv) throw std::runtime_error("mpv-create-failed");
         auto option = [&](const char* name, const char* value) { if (p_mpv_set_option_string(mpv, name, value) < 0) throw std::runtime_error(std::string("option-failed:") + name); };
         option("terminal", "no"); option("idle", "yes"); option("input-default-bindings", "no");
@@ -808,6 +1013,9 @@ public:
         if (mpv) { p_mpv_terminate_destroy(mpv); mpv = nullptr; }
         closing = true;
         if (surfaceThread.joinable()) surfaceThread.join();
+#ifdef ETE_HELPER_TESTING
+        { std::lock_guard<std::mutex> lock(frameMutex); heldFrame.reset(); }
+#endif
         if (library) FreeLibrary(library);
     }
     void process(const Json& message) {
@@ -888,6 +1096,92 @@ public:
             emitResponse(generation, request, "{\"value\":" + valueJson + '}' ); return;
         }
 #ifdef ETE_HELPER_TESTING
+        if (method == "test-frame-hold") {
+            if (type != "request") throw std::runtime_error("test-frame-hold-requires-request");
+            int64_t media = uniqueOpenMedia();
+            auto owner = generationToMedia.find(generation);
+            if (generation <= retiredThroughGeneration || media < 0 || owner == generationToMedia.end() || owner->second != media) {
+                emitResponse(generation, request, frameUnavailable("stale-or-unmapped-generation")); return;
+            }
+            HWND window = frameWindow.load(std::memory_order_acquire);
+            if (!window || !IsWindow(window)) { emitResponse(generation, request, frameUnavailable("frame-window-unavailable")); return; }
+            {
+                std::lock_guard<std::mutex> lock(frameMutex);
+                if (heldFrame && heldFrame->generationId > generation) {
+                    emitResponse(generation, request, frameUnavailable("stale-hold-generation")); return;
+                }
+            }
+            std::string reason;
+            auto frame = captureHeldFrame(generation, reason);
+            if (!frame) { emitResponse(generation, request, frameUnavailable(reason.empty() ? "screenshot-unavailable" : reason.c_str())); return; }
+            if (nextHoldId == std::numeric_limits<uint64_t>::max()) {
+                emitResponse(generation, request, frameUnavailable("hold-id-exhausted")); return;
+            }
+            frame->holdId = nextHoldId++;
+            std::shared_ptr<HeldFrame> previous;
+            {
+                std::lock_guard<std::mutex> lock(frameMutex);
+                previous = heldFrame;
+                heldFrame = frame;
+            }
+            if (!PostMessageW(window, WM_TEST_FRAME_SHOW, static_cast<WPARAM>(frame->holdId), 0)) {
+                { std::lock_guard<std::mutex> lock(frameMutex); if (heldFrame == frame) heldFrame = previous; }
+                emitResponse(generation, request, frameUnavailable("frame-paint-dispatch-failed")); return;
+            }
+            bool painted = false;
+            {
+                std::unique_lock<std::mutex> lock(framePaintMutex);
+                painted = framePaintCondition.wait_for(lock, std::chrono::milliseconds(250), [&] { return lastPaintId >= frame->holdId; }) &&
+                    lastPaintId == frame->holdId && lastPaintSucceeded;
+            }
+            if (!painted) {
+                { std::lock_guard<std::mutex> lock(frameMutex); if (heldFrame == frame) heldFrame = previous; }
+                PostMessageW(window, WM_TEST_FRAME_HIDE, static_cast<WPARAM>(frame->holdId), 0);
+                if (previous) PostMessageW(window, WM_TEST_FRAME_SHOW, static_cast<WPARAM>(previous->holdId), 0);
+                emitResponse(generation, request, frameUnavailable("paint-timeout-or-failed")); return;
+            }
+            std::ostringstream hash; hash << std::hex << std::setw(16) << std::setfill('0') << frame->hash;
+            std::string result = std::string("{\"ready\":true,\"status\":\"held\"") +
+                ",\"holdId\":" + std::to_string(frame->holdId) +
+                ",\"w\":" + std::to_string(frame->width) + ",\"h\":" + std::to_string(frame->height) +
+                ",\"bytes\":" + std::to_string(frame->pixels.size()) +
+                ",\"captureMs\":" + std::to_string(frame->captureMicros / 1000) +
+                ",\"meanRGB\":{\"r\":" + std::to_string(frame->meanR) + ",\"g\":" + std::to_string(frame->meanG) +
+                ",\"b\":" + std::to_string(frame->meanB) + "},\"hash\":" + quote(hash.str()) +
+                ",\"painted\":true}";
+            emitResponse(generation, request, result); return;
+        }
+        if (method == "test-frame-status") {
+            if (type != "request") throw std::runtime_error("test-frame-status-requires-request");
+            emitResponse(generation, request, heldFrameStatus()); return;
+        }
+        if (method == "test-frame-release") {
+            if (type != "request") throw std::runtime_error("test-frame-release-requires-request");
+            if (!message.has("params") || !message.at("params").has("holdId")) {
+                emitResponse(generation, request, frameUnavailable("hold-id-required")); return;
+            }
+            int64_t supplied = 0;
+            try { supplied = message.at("params").integer("holdId"); }
+            catch (...) { emitResponse(generation, request, frameUnavailable("hold-id-invalid")); return; }
+            if (supplied <= 0) { emitResponse(generation, request, frameUnavailable("hold-id-invalid")); return; }
+            uint64_t holdId = static_cast<uint64_t>(supplied);
+            {
+                std::lock_guard<std::mutex> lock(frameMutex);
+                if (!heldFrame || heldFrame->holdId != holdId) {
+                    emitResponse(generation, request, frameUnavailable("hold-id-mismatch")); return;
+                }
+                heldFrame.reset();
+            }
+            HWND window = frameWindow.load(std::memory_order_acquire);
+            bool hidden = window && PostMessageW(window, WM_TEST_FRAME_HIDE, static_cast<WPARAM>(holdId), 0);
+            if (hidden) {
+                std::unique_lock<std::mutex> lock(framePaintMutex);
+                hidden = framePaintCondition.wait_for(lock, std::chrono::milliseconds(250), [&] { return lastHideId >= holdId; });
+            }
+            emitResponse(generation, request, "{\"released\":" + std::string(hidden ? "true" : "false") +
+                ",\"active\":false,\"bytes\":0,\"holdId\":" + std::to_string(holdId) +
+                (hidden ? "" : ",\"reason\":\"frame-hide-timeout-or-failed\"") + '}'); return;
+        }
         if (method == "reject-next-operation") {
             if (type != "request") throw std::runtime_error("reject-next-operation-requires-request");
             std::string operation = message.at("params").text("operation");

@@ -1,5 +1,11 @@
 # 开发日志
 
+## 2026-10-07 — Native 私有帧暂存能力 probe
+
+Model Tier：Tier 2。Model：主线程定义 contract，Sol High 在唯一 CPP 文件实现 Testing-only 支路，Luna 准备独立 harness。Reason：只保留 carrier 的实验不足，需验证 GPU 输出停止后的内存暂存；不先改播放/Session 时序。Escalated：no。
+
+新增 private `test-frame-hold/status/release`，严格 generation/media/holdId 归属，截图仅 native memory，独立 child 由原 surfaceThread 管理。默认与Testing按固定编译器/头文件/flags编译均通过；默认产物与现有生产Helper SHA完全相同。原stop/load/generation流程未变。尚无runtime能力结果或自动揭开契约；下一步从提交HEAD正式生成Testing helper后执行合成像素probe。
+
 ## 2026-10-07 — 呈现还原目标 / 历史基线工具
 
 Model Tier：Tier 2。Model：当前主线程；Sol High 只读时序复核，Luna inventory / 明确测试工具实现。Task Risk：中高（后续将涉及呈现时序）；Task Uncertainty：高（旧版实际画面尚需对照）；Cross-module Scope：renderer / main surface / 测试；Playback/Session Impact：当前为 test-only，后续保持既有所有权。Escalated：no。
