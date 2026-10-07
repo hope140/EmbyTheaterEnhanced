@@ -2,6 +2,8 @@
 
 2026-10-07（UTC+8），用户授权自行完成“还原表现”。目标保持 Electron 44，按升级前实际播放行为还原前后切集；窗口与全屏分别验收。原有队列、Session、Resolver、媒体身份和个人配置不变。现有 Settings 候选与本工作树分开，原工作区已有文档不覆盖。
 
+本文所有 `dist/`、`.work/` 与源码相对路径均以 managed worktree `ete-night-nexttrack` 的项目根目录为基准；原工作区文档副本供集中阅读。
+
 ## 当前阶段
 
 `LOCAL CANDIDATE READY / WINDOWED SYNTHETIC VERIFIED / FULLSCREEN INCONCLUSIVE / USER ACCEPTANCE PENDING`。当前交付 runtime 为 `dist/presentation-restore-6473ecb/`，源码 `6473ecb046b0621ca79282e0c0ed250e3848f2c5`，包含旧 token Stop 与较新 epoch retirement 的最终修正。Electron 44.4.2、原队列/Session/Resolver 保持；前后切集在 native 内存中保留旧画面，由新 generation 的一次性截图/合成栅栏撤下。没有把 `core-playing` 当成已显示新帧。
