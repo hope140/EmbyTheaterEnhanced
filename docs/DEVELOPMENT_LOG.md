@@ -1,5 +1,15 @@
 # 开发日志
 
+## 2026-10-08 — Native presentation lifecycle 边界复测与生产候选状态
+
+Model Tier：Tier 2。Model：主线程定义生命周期 contract；Sol High 实现窄范围 CPP Testing/生产支路；Luna 补定向 controller tests。Reason：自动 reveal 涉及 main/renderer/native 的 epoch、generation 与 hold 所有权，必须分别验证实验支路边界和生产 API 暴露。Escalated：no。
+
+已授权的 retired-control 窗口 probe 两向各采 76 帧，最大间隔 53/61ms，black/purple/mixed 均为 0；真实 Stop 11ms，进程与采集资源清理完整。记录位于 `.work/native-frame-retired-auto-window-f3d65a92d92d4699966de0eb909af25e`。该结果是 Testing-only 控制准备窗口证据，不是产品呈现验收。
+
+旧 Testing CPP `269bdcc` 的 boundary run 曾有 case 1–4 PASS、case 5 FAIL：missing-media 已 end-file，但 auto lease 仍为 armed 且旧 hold 保留 4,677,120 bytes。case 4 T HTTP 连接被 MPV 主动关闭，`lateBodyDelivered=false`，因此当轮没有实际迟到 body 对新 generation 的测试。后续 Testing CPP `a2cf6af`，正式 Testing SHA256 `de43f1301f208106fd18291bef0690c2cb20f388dd7f7d4b737c99679ca15378`，在 `.work/native-frame-boundaries-fixed-window-b997f8307ce9428ab6812c1d6c4e8376` 的六项 boundary run 均 PASS；case 5 现观察 autoState=unavailable、active=false、bytes=0；case 6 检查 production API 的响应字段仅含 `ready/status/holdId/painted`，并实测按 control generation 取消不会影响新 hold，cancel-before-delayed-prepare 不会复活 hold。未在默认 Helper 上实跑 test alias 拒绝。T HTTP 连接仍主动取消，迟到 body 行为继续标为未验证。两轮结果都保留，旧失败不被新通过覆盖成从未发生。
+
+生产候选正在接入 native prepare/arm/release 与 fail-open 清理。Next/Previous 保持原 manager 的同步入口、request sequence 与 retire-before-await；main/renderer epoch/token/hold 所有权保护新旧 generation，旧 load 失败隔离，图像只驻留 native。Legacy `create()` DOM overlay 仅保留历史测试，`libmpv.js` 激活 native controller。Native controller contract tests `11/11 PASS`；阶段性 `npm test 395/395 PASS` 未包括之后追加的 lifecycle tests。正式 runtime `presentation-restore-5ddeea8` build/provenance 与窗口对照通过，全屏对照因采样间隔不足保持 `INCONCLUSIVE`；随后修复的 epoch/Stop 补丁尚未重建。当前源码与最终用户视觉验收仍未完成，状态 `IN PROGRESS / NOT ACCEPTED`。
+
 ## 2026-10-08 — Native 持帧实际能力取证
 
 正式 Testing build 从 `97fb2d4` 生成并验证输入/编译器/输出来源。独立 harness 的入口/显示/采集上下文问题收口后，确认 `screenshot-raw window` 可取得当前视频红帧（1440x812，65ms），但 GDI child 的 WM_PAINT ACK 之后，真实 Stop 导致合成 ROI 持续黑色。此结果未达到原生保持画面要求，生产 Helper 不变；下一步仅补子窗口状态定位，不用 painted 回包冒充显示成功。所有实际 probe 使用合成媒体和隔离配置，失败后清理完成。

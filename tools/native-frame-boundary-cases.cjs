@@ -387,8 +387,10 @@ async function runBoundaryCases(ctx) {
             });
             throw error;
         }
+        const revealedColor = await ctx.waitForColor('black', 'boundary-failure-reveals-empty-video');
         return {generationC,failureGeneration,holdId:hold3.holdId,arm,missingLoadState:loadResult.state,
-            failureObserved,observation:{autoState:status.autoState,active:status.active,bytes:status.bytes},contractMet:true};
+            failureObserved,observation:{autoState:status.autoState,active:status.active,bytes:status.bytes},
+            revealedColor,contractMet:true};
     });
 
     await runCase(ctx, 'preparation-cancellation-is-exact-and-production-response-is-minimal', async () => {
@@ -415,6 +417,25 @@ async function runBoundaryCases(ctx) {
             {sourceGenerationId:sourceGeneration}, tombstone, 2500));
         return {sourceGeneration,firstControl,secondControl,firstHold:first.holdId,secondHold:second.holdId,
             minimalProductResponse:true,afterOldCancel,ownPreparationCleared:true,cancelledBeforePrepare};
+    });
+
+    await runCase(ctx, 'stalled-target-deadline-releases-only-its-held-frame', async () => {
+        const source = client.beginGeneration('boundary-deadline-source', ['core-idle','time-pos','pause']);
+        await ctx.loadInGeneration(source, args.mediaAPath);
+        await ctx.waitForColor('red', 'boundary-deadline-source-red');
+        const held = ctx.validateHoldResponse(await request(ctx, 'test-frame-hold', {}, source, 2500));
+        await ctx.stage(client.stop(), 5000, 'boundary-deadline-stop');
+        const target = client.beginGeneration('boundary-target-without-loaded-media', ['core-idle','time-pos','pause']);
+        assertArmed(await request(ctx, 'test-frame-arm-next', {holdId:held.holdId}, target), target, held.holdId);
+        const started = Date.now();
+        const expired = await waitForState(ctx, target, status => status.autoState === 'unavailable', 16500, 'auto-deadline');
+        const elapsedMs = Date.now() - started;
+        if (expired.autoState !== 'unavailable' || expired.autoReason !== 'deadline-expired' || expired.active ||
+            expired.bytes !== 0 || elapsedMs < 14000 || expired.autoHoldId !== held.holdId || expired.targetGen !== target) {
+            fail('boundary-auto-deadline-contract-failed');
+        }
+        const revealedColor = await ctx.waitForColor('black', 'boundary-deadline-reveals-empty-video');
+        return {source,target,holdId:held.holdId,elapsedMs,reason:expired.autoReason,bytes:expired.bytes,revealedColor};
     });
 
     return {completed:true,caseCount:ctx.result.boundaries.length};

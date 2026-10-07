@@ -4,14 +4,28 @@
 
 ## 当前阶段
 
-`NATIVE FRAME CAPABILITY PROBE IN PROGRESS`。历史画面对照已完成，当前只新增 Testing 支路；默认生产 Helper 编译字节与此前相同。已有未通过的 NextTrack 用户验收保持有效，不由自动化逻辑 PASS 替代。
+`PRODUCTION CANDIDATE IN PROGRESS / NOT ACCEPTED`。正式 runtime `presentation-restore-5ddeea8` 已 build/provenance 通过并做过窗口/全屏合成 ROI 对照；之后又修复两个 generation/Stop 边界，当前源码尚未重建。该 runtime 不是最终候选。用户对 `88f56b7` 的黑屏/上一集透明失败仍保持有效，不由能力探针或单元测试 PASS 替代。
+
+## 2026-10-08 当前进度
+
+隔离的 retired-control 窗口 probe 在两向准备窗口均采到 76 帧，最大间隔 53/61ms，black/purple/mixed 均为 0；真实 Stop 为 11ms，清理完整。证据位于 `.work/native-frame-retired-auto-window-f3d65a92d92d4699966de0eb909af25e`。这是停止前控制准备窗口的像素基线，不等于产品切集已恢复。
+
+旧 Testing runtime `269bdcc` 的 native boundary probe 中，case 1–4 通过；T 的本地 HTTP gate 连接被 MPV 主动取消，因此 `lateBodyDelivered=false`，该次运行没有验证迟到 body 到达后对 C 的影响。case 5 在失败文件已触发 end-file 后仍观察到 auto lease `armed` 且 held frame 保留 `4,677,120` bytes，历史失败证据保留于 `.work/native-frame-boundaries-window-8709a44aaec24a11bbc8eda4c3e42b20`。
+
+后续 Testing-only CPP `a2cf6af`，SHA256 `de43f1301f208106fd18291bef0690c2cb20f388dd7f7d4b737c99679ca15378`，六项窗口边界实跑通过，证据位于 `.work/native-frame-boundaries-fixed-window-b997f8307ce9428ab6812c1d6c4e8376`。缺失媒体 end-file 后 auto state 为 `unavailable`、active=false、bytes=0；production API 响应字段检查仅见 `ready/status/holdId/painted`，并验证 control-generation 取消不会影响新 hold、cancel-before-delayed-prepare 不会复活 hold。未在默认 Helper 上实跑 test alias 拒绝。T HTTP 请求仍被 MPV 主动取消，迟到 body 分支未实测；这项结果只说明取消分支下新 generation 保持独立。
+
+生产接入正在实现窄范围的 presentation prepare/arm/release：Next/Previous 保持原 manager 同步调用与 retire-before-await；main/renderer 通过 epoch、presentation token 与 hold 所有权隔离旧请求；图片只留在 native；旧 load 失败隔离并采用 fail-open 清理。Native controller contract 定向测试 `11/11 PASS`；当阶段全量测试为 `395/395 PASS`，后续追加的 lifecycle 测试尚未包含在该数字中。当前 production runtime 尚未完整构建或进行可见像素验收。
+
+正式 runtime `presentation-restore-5ddeea8`（source commit prefix `5ddeea8`，ordinary Helper SHA256 prefix `28054c`）build 与 provenance 通过。窗口实际 manager Next/Previous 各 83 帧，最大间隔 30/27ms，black/purple/mixed 均为 0；当前队列选择正确，DOM overlay 未插入，cleanup 7 个 owned process exit、residual 0。证据 `.work/transition-compare-native-presentation-window-0f98061e6d35476c98df8d2179b823f1`。全屏各 55 帧，最大间隔 165/164ms，样本颜色只有目标新视频，但采样间隔不足以排除短闪，仍为 `INCONCLUSIVE`；cleanup 8 个退出、residual 0，证据 `.work/transition-compare-native-presentation-fullscreen-200d5d422f8941019a0382a0c5d43d11`。
+
+runtime 构建后复核又修复旧 token 在 Stop 到 C 时应 no-op，以及高 epoch retire 漏退 in-flight begin。上述修正尚未进入新的正式构建，所以不能把 `5ddeea8` 称为最终候选。正式窗口结果是当前代码修正前的合成媒体证据，不替代更新后 runtime 验收或真实用户视觉通过。
 
 | 对照 | 来源提交 | 本地历史构建名 |
 |---|---|---|
 | Pepper / Electron 18 | `73eac9fa64c43804e9c5c53690ed087b2c5bb077` | `EmbyTheaterEnhanced-0.1.1-release-73eac9f` |
 | Native Helper / Electron 18 | `569c8dfbcd18725bf41a323c49cdfa4d38c8fa6b` | `EmbyTheaterEnhanced-0.2.0-release-569c8df` |
 | Native Helper / Electron 44 | `725d4c2284596b8ced749a3c8590180a1e6ed1a9` | `EmbyTheaterEnhanced-electron44-725d4c2-final-candidate` |
-| 当前切集过渡候选 | `456df8e756b1203f69ca8d40434196a719761f03` | `track-visual-diagnostic` |
+| 历史切集观察工具输入 | `456df8e756b1203f69ca8d40434196a719761f03` | `track-visual-diagnostic` |
 
 对照使用一致的合成 A/B 视频与 localhost 图像，不登录真实服务器。版本间 source/Helper 有其它差异，因此历史矩阵先定位阶段，不能单独证明 Electron 因果；需要时再缩小为同源码的单变量对照。旧 runtime 只读，工具通过独立入口注入。
 
@@ -67,9 +81,10 @@ rVFC 全屏采样的新增诊断显示 document.visibilityState=hidden、focus/g
 ## 待完成
 
 - [x] 旧 Pepper、Helper/E18、Helper/E44 的窗口与全屏对照。
-- [ ] 原生内存暂存帧的能力验证：实际截图、Stop 后保持、显式撤下、耗时与清理。
-- 依据最早出现的差异设计局部修复，审核临时 stop 与终止 stop、快速切集、失败和取消边界。
-- 新源码的单元/集成检查、正式构建与来源验证、同条件可见对照。
+- [x] Testing-only 原生持帧截图、真实 Stop、显式释放与窗口/全屏合成颜色能力检查；全屏连续流长间隔仍为 `INCONCLUSIVE`。
+- [x] Testing-only 六项生命周期边界在 `a2cf6af` 通过；保留 `269bdcc` case 5 失败记录，T HTTP 取消分支未证明迟到 body 行为。
+- [ ] 完成生产接入，审核临时 stop 与终止 stop、快速 Next/Previous 混合和旧请求隔离。
+- 对 runtime 后新增的 token/epoch 修正运行单元/集成检查、正式构建与来源验证，并重跑同条件窗口/全屏对照。
 - 有真实媒体证据后才关闭用户视觉失败；发布/安装仍独立。
 
 ## Testing 支路的原生能力入口
@@ -94,21 +109,23 @@ CPP 能力入口已本地提交 `97fb2d4`，正式 `build-native-helper.ps1 -Tes
 
 全屏3840x2160下截图94/96ms、每帧33,177,600 bytes。静止持帧时采集流可能不发送重复帧，因此仅在已知静态阶段增加一次精确display/ROI的新截图，前后窗口/显示器边界不变；内存红色PNG校准识别RGBA/BGRA通道，不假定平台格式，不保存图像。静态点分别确认为旧红/旧绿，显式释放后fresh stream确认新绿/新红。连续流因静止长间隔仍标INCONCLUSIVE，不以静态点否认瞬时黑帧。
 
-### 自动衔接候选（Testing-only，待运行）
+### 自动衔接候选（Testing-only 基线）
 
 新增 `test-frame-arm-next` 绑定已activate、尚未load的新generation和已有holdId。新文件完成媒体映射/FILE_LOADED后，只消费一次PLAYBACK_RESTART，异步请求mpv窗口图；成功解析新帧后，UI消息以generation/holdId授权前后复核，执行一次DwmFlush后尝试撤下旧frame。新图像只生成metadata后释放，未跨IPC传图。取消/替换/退休撤销旧授权；初始恢复播放的seek不被误当作禁止项，已消费后的seek不会重新触发。
 
-该路径没有固定200ms延迟，但PLAYBACK_RESTART、截图成功、DwmFlush都不称为present ACK；没有媒体ID的restart事件仍存在极端归属限制，必须由已知fixture与独立屏幕边界实测判定。`--auto-release` harness明确区分此候选与旧的手动能力步骤。默认Helper字节仍与生产相同，不是正式修复。
+该路径没有固定200ms延迟，但PLAYBACK_RESTART、截图成功、DwmFlush都不称为present ACK；没有媒体ID的restart事件仍存在极端归属限制，必须由已知fixture与独立屏幕边界实测判定。`--auto-release` harness明确区分此候选与旧的手动能力步骤。`269bdcc` 是 Testing-only 能力基线，不是正式修复或当前 production runtime。
 
 ### 自动候选的基础矩阵
 
 `269bdcc` 正式 Testing build 已运行：窗口 Y4M、全屏 Y4M，以及窗口 H.264 720p/24fps+AAC → H.265 1080p/60fps+AAC 两方向均得到严格匹配的 generation/holdId、有效的新帧 metadata、自动释放后bytes=0和正确的新视频颜色。全程没有固定200ms或手动release。
 
-跨编码窗口样本77/76帧，最大间隔55/72ms，只有旧/新视频色，黑/紫/mixed均0。原始Y4M窗口Next因128ms采样间隔仍INCONCLUSIVE，Previous满足间隔门槛；全屏持续持帧阶段长间隔仍保留INCONCLUSIVE，静态点与释放后新视频已分别确认。三轮清理均完成。这是进入生命周期边界检查的依据，尚未接入产品。
+跨编码窗口样本77/76帧，最大间隔55/72ms，只有旧/新视频色，黑/紫/mixed均0。原始Y4M窗口Next因128ms采样间隔仍INCONCLUSIVE，Previous满足间隔门槛；全屏持续持帧阶段长间隔仍保留INCONCLUSIVE，静态点与释放后新视频已分别确认。三轮清理均完成。这是进入生命周期边界检查的依据；生产接入另行实施并仍待验证。
 
-## 接入前的候选 contract
+## 生产接入 contract（实施中）
 
-以下是满足用户还原目标所需的实现边界，尚待边界试验及主线程最终复核，不代表代码已经落地。
+边界补充：`.work/native-frame-boundaries-deadline-d9071c21a62d4a35ace237d13c7079c8` 在同一 `a2cf6af` Testing helper 上完成七项检查。缺失媒体和 15 秒未加载目标均已清除持帧，并通过 fresh screen ROI 确认撤下后为空视频黑色；deadline 实测 15028ms，资源清理完整。该失败恢复中的黑色不是正常切集短黑。main 收口旧 token Stop 的 no-op（包括 C 已激活的情况）和较新 renderer epoch 对尚未回包 begin 的退休权限；相关 service 行为测试 26/26 通过。
+
+以下是当前生产接入遵循的已确认边界。Testing-only 六项边界已有实际运行结果；production candidate 和专属 lifecycle tests 仍在实现中，不代表整体代码已完成。
 
 - 继续使用原manager的同步Next/Previous调用与请求sequence；视觉controller不再操作海报DOM，而是拥有native presentation token。原来的临时stop与真正destroy区分不变。
 - `invalidatePlayRequest` 仍同步执行在任何视觉等待之前。准备旧帧属于限定于已有视频窗口的presentation控制操作，不能恢复旧媒体generation，也不能发起旧source播放/查询服务器。
@@ -116,4 +133,4 @@ CPP 能力入口已本地提交 `97fb2d4`，正式 `build-native-helper.ps1 -Tes
 - native准备时优先复用已经显示的暂存帧，保证快速跳过中间条目时不会把未显示的中间视频抓出来展示；没有暂存帧时，当前窗口媒体映射必须匹配main指定的源generation。像素始终留在native。
 - 当前token确实取得hold后，临时stop保留surface并执行原mpv stop；其它stop、destroy、退出和helper失败沿终止清理流程。新generation必须在load之前绑定自动揭开；迟到的旧failure/capture不能改变新generation的surface。
 - 截图、绘制、自动揭开失败必须fail-open释放视觉遮挡，不能把旧画面永远盖在已经播放的新视频上。当前prototype保留旧帧供诊断的策略不得原样进入产品。
-- pre-playbackInfo/Resolver失败、快速混合前后切、Stop-before-player、用户Stop与正常退出必须有定向验证。版本升级/发布/安装仍独立。
+- Testing-only 六项生命周期边界 `a2cf6af` 均通过，包含缺失媒体失败清理与 production API alias 检查；T HTTP 请求被取消，迟到 body 行为仍未验证。生产侧 pre-playbackInfo/Resolver 失败、快速混合前后切、Stop-before-player、用户Stop与正常退出仍需定向测试。版本升级/发布/安装仍独立。

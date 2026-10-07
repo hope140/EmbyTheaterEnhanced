@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-08 — NextTrack 原生呈现候选进行中
+
+旧版恢复目标的 retired-control 窗口 probe 两向各 76 帧、最大间隔 53/61ms，black/purple/mixed 均为 0；真实 Stop 11ms，资源清理完整。旧 Testing runtime `269bdcc` 的 case 1–4 通过，T 的 loopback HTTP 请求被 MPV 主动取消 (`lateBodyDelivered=false`)，case 5 曾在 load failure 后遗留 armed lease/hold，历史失败保留。后续 Testing build `a2cf6af` / SHA256 `de43f1301f208106fd18291bef0690c2cb20f388dd7f7d4b737c99679ca15378` 的六项边界均通过；missing-media end-file 后已观察 `autoState=unavailable`、active=false、bytes=0，另验证 control-generation cancellation 与 delayed prepare 不影响或复活新 hold。HTTP 连接仍被 MPV 主动取消，未验证迟到 body 到达后的行为。完整证据见 [播放呈现还原记录](PLAYBACK_PRESENTATION_RESTORE.md)。
+
+生产侧实现 native presentation prepare/arm/release 与 fail-open 清理。正式 runtime `presentation-restore-5ddeea8`（source commit prefix `5ddeea8`，ordinary Helper SHA256 prefix `28054c`）build/provenance 通过。该 runtime 窗口 Next/Previous 各 83 帧、最大间隔 30/27ms、black/purple/mixed 均为 0、manager 选择正确、overlay 未插入，cleanup 7 exits/residual 0；全屏各 55 帧、最大间隔 165/164ms，颜色样本只有目标视频但采样间隔不足，保留 `INCONCLUSIVE`，cleanup 8 exits/residual 0。随后修复的旧 token Stop-to-C no-op 与高 epoch retire/in-flight begin 边界尚未重建和复测，因此 `5ddeea8` 不是最终候选。Native controller contract `11/11 PASS`；`395/395 PASS` 是阶段性全量结果，不含后续追加 lifecycle tests。当前整体仍 `NOT ACCEPTED`，用户真实视觉验收未完成。
+
 ## 2026-10-07 — 播放呈现还原目标开始
 
 用户授权以升级前表现为标准自主修复，保留新版 Electron。见 [播放呈现还原](PLAYBACK_PRESENTATION_RESTORE.md)。当前已确认三套旧 runtime 来源，并重新取得当前候选有效的窗口合成画面；开始将测试工具适配到历史 Pepper / Helper 与全屏模式。生产行为尚未更改，真实视觉失败仍未关闭。

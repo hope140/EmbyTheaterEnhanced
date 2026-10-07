@@ -261,9 +261,20 @@ test('newer preparation owns the surface when an older preparation resolves or c
   assert.equal((await a).ready, false);
   await h.service.call('cancel-presentation', {token: 1}, h.created.endpointId);
   assert.equal(h.surface.visible, true);
+  let actualStops = 0;
+  const stop = h.active.stop.bind(h.active);
+  h.active.stop = function () { actualStops++; return stop(); };
+  assert.equal((await h.service.call('command', {data: 'stop', generationId: null, presentationToken: 1}, h.created.endpointId)).stale, true);
+  assert.equal(actualStops, 0, 'an old temporary stop must not clear C or issue a new mpv stop');
+  assert.equal(h.surface.visible, true);
   await h.service.call('command', {data: 'stop', generationId: null, presentationToken: 2}, h.created.endpointId);
+  assert.equal(actualStops, 1);
   assert.equal(h.surface.visible, true);
   assert.equal(h.requests.some(row => row.method === 'presentation-release' && row.params.holdId === 1), false);
+  const next = await h.service.call('begin-generation', {label: 'C', presentationToken: 2}, h.created.endpointId);
+  assert.equal((await h.service.call('command', {data: 'stop', generationId: null, presentationToken: 1}, h.created.endpointId)).stale, true);
+  assert.equal(actualStops, 1);
+  assert.equal(h.active.currentGenerationId, next.generationId);
   await h.service.destroy();
 });
 
@@ -279,7 +290,8 @@ test('retirement during native arm invalidates the pending begin and stale rende
   };
   const b = h.service.call('begin-generation', {label: 'B', presentationToken: 1, requestEpoch: 2}, h.created.endpointId);
   await Promise.resolve();
-  h.retire(null, 3);
+  h.retire(h.begun.generationId, 3);
+  assert.equal(h.active.currentGenerationId, null, 'new epoch retires main begin before its ID has reached renderer');
   const c = await h.service.call('begin-generation', {label: 'C', requestEpoch: 4}, h.created.endpointId);
   arm.resolve({armed: true});
   await assert.rejects(b, /generation-superseded/);

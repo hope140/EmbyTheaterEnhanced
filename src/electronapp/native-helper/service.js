@@ -560,8 +560,14 @@ function createService(options) {
       return {status: 'ok', value: await active.getProperty(name, 2000)};
     }
     if (operation === 'command') {
-      requireGeneration(active, payload);
       const args = validateCommand(payload.data);
+      if (args[0] === 'stop' && payload.presentationToken != null) {
+        if (!validToken(payload.presentationToken)) throw new Error('presentation-token-invalid');
+        if (!ownsPresentation(presentation) || presentation.token !== payload.presentationToken) {
+          return {status: 'accepted', stale: true};
+        }
+      }
+      requireGeneration(active, payload);
       if (args[0] === 'loadfile') {
         const load = active.load(args);
         load.promise.catch(function (error) {
@@ -609,7 +615,8 @@ function createService(options) {
     if (operation === 'retire-generation' && request) {
       acceptRendererEpoch(request);
       ++generationEpoch;
-      if (client && (request.generationId === null || request.generationId === client.currentGenerationId)) {
+      // A newer endpoint epoch also cancels a begin whose ID has not returned to the renderer yet.
+      if (client && (validToken(request.requestEpoch) || request.generationId === null || request.generationId === client.currentGenerationId)) {
         client.retireGeneration(request.reason || 'retired');
       }
     }
