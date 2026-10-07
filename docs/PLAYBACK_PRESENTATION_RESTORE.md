@@ -85,3 +85,5 @@ CPP 能力入口已本地提交 `97fb2d4`，正式 `build-native-helper.ps1 -Tes
 正常 `client.stop()` 用时 14ms并完成原始 Stop request，但合成屏幕 ROI 随后为 fresh 纯黑（帧龄 16ms）；2 秒中采到红 5 帧、黑 71 帧。观测器稳定且 visible，排除了“静态持帧没有新采集帧”的假失败。该记录为明确的能力失败，正在增加已知父/子窗口的无 HWND 状态以核查层级/可见性/尺寸，尚未采用任何产品改动。测试后 reader/handler/helper/host 均清理完成。
 
 此前独立 harness 的 Electron 入口识别、窗口 startup show 与 data URL 采集上下文问题已分别修正；不把这些启动失败归入 native 持帧效果。当前 harness 使用隔离 file 文档、显式可见启动，并在失败时保留部分采样与 safe 状态，仍仅处理合成媒体。
+
+进一步查询确认 hold 前、Stop 后立即及 300ms 后，host/frame/video 都存在且可见，父级一致，frame sibling 位于 video 之上，client 尺寸均为1440x812；副本为红而合成图仍为纯黑。下一项单变量 Testing 实验仅把测试 child 设为 layered 并使用不透明 alpha 的绘制重定向，保持视频 child、host、Stop、窗口次序与GDI像素不变。依据为微软 [Window Features](https://learn.microsoft.com/en-us/windows/win32/winmsg/window-features) 的 child layered 支持说明；该 API 文档不是本组合的成功证据。默认编译字节仍与生产相同，等待同条件实际像素结果。

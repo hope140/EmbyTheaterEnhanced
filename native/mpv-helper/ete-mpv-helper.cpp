@@ -443,6 +443,7 @@ class Helper {
     std::mutex frameMutex;
     std::shared_ptr<HeldFrame> heldFrame;
     std::atomic<HWND> frameWindow{nullptr};
+    std::atomic<bool> frameLayeredReady{false};
     std::mutex framePaintMutex;
     std::condition_variable framePaintCondition;
     uint64_t nextHoldId = 1;
@@ -537,10 +538,18 @@ class Helper {
         frameClass.hInstance = GetModuleHandleW(nullptr);
         frameClass.lpszClassName = L"ETEFrameHoldProbeSurface";
         RegisterClassW(&frameClass);
-        HWND createdFrameWindow = CreateWindowExW(WS_EX_NOACTIVATE, frameClass.lpszClassName, L"",
+        HWND createdFrameWindow = CreateWindowExW(WS_EX_NOACTIVATE | WS_EX_LAYERED, frameClass.lpszClassName, L"",
             WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN, 0, 0, 1, 1,
             parent, nullptr, frameClass.hInstance, this);
-        if (createdFrameWindow) frameWindow.store(createdFrameWindow, std::memory_order_release);
+        if (createdFrameWindow) {
+            if (SetLayeredWindowAttributes(createdFrameWindow, 0, 255, LWA_ALPHA)) {
+                frameLayeredReady.store(true, std::memory_order_release);
+                frameWindow.store(createdFrameWindow, std::memory_order_release);
+            } else {
+                DestroyWindow(createdFrameWindow);
+                createdFrameWindow = nullptr;
+            }
+        }
 #endif
         surfaceState.store(1, std::memory_order_release);
         int oldWidth = 0, oldHeight = 0;
@@ -574,6 +583,7 @@ class Helper {
 #ifdef ETE_HELPER_TESTING
         if (createdFrameWindow && IsWindow(createdFrameWindow)) DestroyWindow(createdFrameWindow);
         frameWindow.store(nullptr, std::memory_order_release);
+        frameLayeredReady.store(false, std::memory_order_release);
 #endif
         if (IsWindow(createdWindow)) DestroyWindow(createdWindow);
         surfaceWindow.store(nullptr, std::memory_order_release);
@@ -820,6 +830,7 @@ class Helper {
             ",\"hostExists\":" + boolean(hostExists) +
             ",\"hostVisible\":" + boolean(hostExists && IsWindowVisible(parent)) +
             ",\"frameExists\":" + boolean(frameExists) +
+            ",\"frameLayeredReady\":" + boolean(frameLayeredReady.load(std::memory_order_acquire)) +
             ",\"frameVisible\":" + boolean(frameExists && IsWindowVisible(frameSurface)) +
             ",\"frameParentMatches\":" + boolean(frameParentMatches) +
             ",\"videoExists\":" + boolean(videoExists) +
@@ -1143,6 +1154,9 @@ public:
 #ifdef ETE_HELPER_TESTING
         if (method == "test-frame-hold") {
             if (type != "request") throw std::runtime_error("test-frame-hold-requires-request");
+            if (!frameLayeredReady.load(std::memory_order_acquire)) {
+                emitResponse(generation, request, frameUnavailable("frame-layered-unavailable")); return;
+            }
             int64_t media = uniqueOpenMedia();
             auto owner = generationToMedia.find(generation);
             if (generation <= retiredThroughGeneration || media < 0 || owner == generationToMedia.end() || owner->second != media) {

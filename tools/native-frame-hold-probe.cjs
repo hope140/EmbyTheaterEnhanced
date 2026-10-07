@@ -89,7 +89,7 @@ function validateHeldStatus(response, holdId) {
         fail('frame-hold-status-mismatch');
     }
     const result = {active: true, holdId: response.holdId, bytes: response.bytes, painted: true};
-    for (const name of ['lastPaintSucceeded','hostExists','hostVisible','frameExists','frameVisible',
+    for (const name of ['lastPaintSucceeded','frameLayeredReady','hostExists','hostVisible','frameExists','frameVisible',
         'frameParentMatches','videoExists','videoVisible','videoParentMatches','frameAboveVideo','siblingOrderKnown']) {
         if (typeof response[name] === 'boolean') result[name] = response[name];
     }
