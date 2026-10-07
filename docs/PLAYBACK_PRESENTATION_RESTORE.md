@@ -87,3 +87,15 @@ CPP 能力入口已本地提交 `97fb2d4`，正式 `build-native-helper.ps1 -Tes
 此前独立 harness 的 Electron 入口识别、窗口 startup show 与 data URL 采集上下文问题已分别修正；不把这些启动失败归入 native 持帧效果。当前 harness 使用隔离 file 文档、显式可见启动，并在失败时保留部分采样与 safe 状态，仍仅处理合成媒体。
 
 进一步查询确认 hold 前、Stop 后立即及 300ms 后，host/frame/video 都存在且可见，父级一致，frame sibling 位于 video 之上，client 尺寸均为1440x812；副本为红而合成图仍为纯黑。下一项单变量 Testing 实验仅把测试 child 设为 layered 并使用不透明 alpha 的绘制重定向，保持视频 child、host、Stop、窗口次序与GDI像素不变。依据为微软 [Window Features](https://learn.microsoft.com/en-us/windows/win32/winmsg/window-features) 的 child layered 支持说明；该 API 文档不是本组合的成功证据。默认编译字节仍与生产相同，等待同条件实际像素结果。
+
+### Layered 子窗口的实测结果
+
+`8c33096` 的正式 Testing build，窗口模式完成两方向能力检查：Stop仍为真实命令，旧画面持续显示，显式释放后为新视频；Next/Previous各80帧，最大间隔43/42ms，黑/紫/mixed均0。截图64/43ms，持帧在native内存、释放后bytes=0，所有进程/stream清理完成。
+
+全屏3840x2160下截图94/96ms、每帧33,177,600 bytes。静止持帧时采集流可能不发送重复帧，因此仅在已知静态阶段增加一次精确display/ROI的新截图，前后窗口/显示器边界不变；内存红色PNG校准识别RGBA/BGRA通道，不假定平台格式，不保存图像。静态点分别确认为旧红/旧绿，显式释放后fresh stream确认新绿/新红。连续流因静止长间隔仍标INCONCLUSIVE，不以静态点否认瞬时黑帧。
+
+### 自动衔接候选（Testing-only，待运行）
+
+新增 `test-frame-arm-next` 绑定已activate、尚未load的新generation和已有holdId。新文件完成媒体映射/FILE_LOADED后，只消费一次PLAYBACK_RESTART，异步请求mpv窗口图；成功解析新帧后，UI消息以generation/holdId授权前后复核，执行一次DwmFlush后尝试撤下旧frame。新图像只生成metadata后释放，未跨IPC传图。取消/替换/退休撤销旧授权；初始恢复播放的seek不被误当作禁止项，已消费后的seek不会重新触发。
+
+该路径没有固定200ms延迟，但PLAYBACK_RESTART、截图成功、DwmFlush都不称为present ACK；没有媒体ID的restart事件仍存在极端归属限制，必须由已知fixture与独立屏幕边界实测判定。`--auto-release` harness明确区分此候选与旧的手动能力步骤。默认Helper字节仍与生产相同，不是正式修复。

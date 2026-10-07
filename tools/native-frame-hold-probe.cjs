@@ -4,6 +4,7 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const {NativeHelperClient} = require('../src/electronapp/native-helper/controller');
+const {classifyMeanColor} = require('./transition-stream-capture.cjs');
 
 const EXPECTED_LIBMPV_VERSION = 'mpv v0.41.0-920-gdd5d17d32';
 const TOTAL_PROBE_MS = 40000;
@@ -20,9 +21,13 @@ function fail(code) {
 function parseArguments(argv) {
     const args = Array.isArray(argv) ? argv.slice() : [];
     let fullscreen = false;
-    if (args[args.length - 1] === '--fullscreen') {
-        fullscreen = true;
-        args.pop();
+    let autoRelease = false;
+    if (args.length < 5 || args.length > 7) fail('usage');
+    const flags = args.splice(5);
+    for (const flag of flags) {
+        if (flag === '--fullscreen' && !fullscreen) fullscreen = true;
+        else if (flag === '--auto-release' && !autoRelease) autoRelease = true;
+        else fail('usage');
     }
     if (args.length !== 5 || args.some(value => typeof value !== 'string' || !value || value.startsWith('--'))) {
         fail('usage');
@@ -37,7 +42,7 @@ function parseArguments(argv) {
     if (!fs.existsSync(path.dirname(outputPath)) || !fs.statSync(path.dirname(outputPath)).isDirectory()) {
         fail('output-parent-missing');
     }
-    return {helperPath, libmpvPath, mediaAPath, mediaBPath, outputPath, fullscreen};
+    return {helperPath, libmpvPath, mediaAPath, mediaBPath, outputPath, fullscreen, autoRelease};
 }
 
 async function hashFile(filePath) {
@@ -114,6 +119,55 @@ function validateReleasedStatus(response, holdId) {
     return {active: false, bytes: 0, holdId: null, releasedHoldId: holdId};
 }
 
+function safeAutoReason(value) {
+    return typeof value === 'string' && /^[a-z][a-z0-9-]{0,79}$/.test(value) ? value : null;
+}
+
+function validateAutoArmResponse(response, targetGen, holdId) {
+    if (!response || response.armed !== true || response.autoState !== 'armed' ||
+        response.targetGen !== targetGen || response.holdId !== holdId) fail('auto-arm-response-mismatch');
+    return {armed:true, autoState:'armed', targetGen, holdId};
+}
+
+function validateAutoStatus(response) {
+    const states = ['idle','armed','capture-pending','release-pending','released','unavailable','cancelled'];
+    const fences = ['not-attempted','success','failed','unavailable'];
+    if (!response || !states.includes(response.autoState) || !fences.includes(response.fence) ||
+        !(response.targetGen === null || Number.isSafeInteger(response.targetGen)) ||
+        !(response.autoHoldId === null || Number.isSafeInteger(response.autoHoldId)) ||
+        safeAutoReason(response.autoReason) === null || !Number.isSafeInteger(response.bytes) || response.bytes < 0 ||
+        !(response.holdId === null || Number.isSafeInteger(response.holdId)) || typeof response.active !== 'boolean') {
+        fail('auto-status-metadata-invalid');
+    }
+    let captureMetadata = null;
+    if (response.captureMetadata !== null) {
+        const metadata = response.captureMetadata;
+        if (!metadata || !Number.isInteger(metadata.w) || metadata.w < 1 || !Number.isInteger(metadata.h) || metadata.h < 1 ||
+            !Number.isSafeInteger(metadata.bytes) || metadata.bytes < 1 || !Number.isFinite(metadata.captureMs) || metadata.captureMs < 0 ||
+            !metadata.meanRGB || !['r','g','b'].every(channel => Number.isFinite(metadata.meanRGB[channel]) &&
+                metadata.meanRGB[channel] >= 0 && metadata.meanRGB[channel] <= 255) ||
+            typeof metadata.hash !== 'string' || !/^[a-f0-9]{16}$/i.test(metadata.hash)) fail('auto-capture-metadata-invalid');
+        captureMetadata = {width:metadata.w,height:metadata.h,bytes:metadata.bytes,captureMs:metadata.captureMs,
+            meanRGB:{r:metadata.meanRGB.r,g:metadata.meanRGB.g,b:metadata.meanRGB.b},hash:metadata.hash};
+    }
+    return {
+        active:response.active, bytes:response.bytes, holdId:response.holdId,
+        autoState:response.autoState, targetGen:response.targetGen, autoHoldId:response.autoHoldId,
+        fence:response.fence, autoReason:response.autoReason, captureMetadata
+    };
+}
+
+function validateAutoReleasedStatus(response, targetGen, holdId, expectedColor) {
+    const status = validateAutoStatus(response);
+    if (status.active !== false || status.bytes !== 0 || status.holdId !== null || status.autoState !== 'released' ||
+        status.targetGen !== targetGen || status.autoHoldId !== holdId || status.fence !== 'success' ||
+        !status.captureMetadata) fail('auto-release-contract-mismatch');
+    const metrics = {meanRGB:status.captureMetadata.meanRGB,blackFraction:0};
+    const colorClass = classifyMeanColor(metrics);
+    if (colorClass !== expectedColor) fail('auto-release-capture-color-mismatch');
+    return {...status, captureColorClass:colorClass};
+}
+
 function safeErrorCode(error) {
     const value = String(error && (error.code || error.message) || 'probe-failed');
     if (/^(?:timeout:)?[a-z0-9][a-z0-9._:-]{0,95}$/i.test(value)) return value;
@@ -126,8 +180,41 @@ function rectEquals(a, b) {
     return !!a && !!b && a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 }
 
+function calibrateBitmapLayout(bitmap) {
+    if (!bitmap || bitmap.length !== 4 || bitmap[1] !== 0 || bitmap[3] !== 255) fail('bitmap-layout-calibration-invalid');
+    if (bitmap[0] === 255 && bitmap[2] === 0) return 'rgba';
+    if (bitmap[0] === 0 && bitmap[2] === 255) return 'bgra';
+    fail('bitmap-layout-calibration-unknown');
+}
+
+function summarizeRoiBitmap(bitmap, width, height, channelLayout) {
+    if (!Buffer.isBuffer(bitmap) || !Number.isInteger(width) || width < 1 || !Number.isInteger(height) || height < 1 ||
+        bitmap.length !== width * height * 4 || !['rgba', 'bgra'].includes(channelLayout)) fail('static-bitmap-invalid');
+    const redOffset = channelLayout === 'rgba' ? 0 : 2;
+    const blueOffset = channelLayout === 'rgba' ? 2 : 0;
+    let red = 0, green = 0, blue = 0, black = 0, hash = 2166136261;
+    const count = width * height;
+    for (let pixel = 0; pixel < count; pixel++) {
+        const index = pixel * 4;
+        const r = bitmap[index + redOffset], g = bitmap[index + 1], b = bitmap[index + blueOffset];
+        red += r; green += g; blue += b;
+        if (0.2126 * r + 0.7152 * g + 0.0722 * b < 24) black++;
+        hash = Math.imul(hash ^ r, 16777619);
+        hash = Math.imul(hash ^ g, 16777619);
+        hash = Math.imul(hash ^ b, 16777619);
+    }
+    const metrics = {
+        hash: (hash >>> 0).toString(16).padStart(8, '0'),
+        meanRGB: {r: Math.round(red / count), g: Math.round(green / count), b: Math.round(blue / count)},
+        meanLuma: Math.round((0.2126 * red + 0.7152 * green + 0.0722 * blue) / count),
+        blackFraction: Math.round(1000 * black / count) / 1000
+    };
+    metrics.colorClass = classifyMeanColor(metrics);
+    return metrics;
+}
+
 async function runProbe(args, electron) {
-    const {app, BrowserWindow, desktopCapturer, screen} = electron;
+    const {app, BrowserWindow, desktopCapturer, screen, nativeImage} = electron;
     const outputPath = args.outputPath;
     app.setName('ete-native-frame-hold-probe');
     const mpvHome = path.join(outputPath, 'mpv');
@@ -137,6 +224,7 @@ async function runProbe(args, electron) {
         status: 'running',
         evidenceClass: 'experimental-capability-only',
         productAcceptance: false,
+        releaseMechanism: args.autoRelease ? 'native-event-capture-fence-candidate' : 'test-frame-release',
         fullscreen: {requested: args.fullscreen, enteredEvent: false, boundsMatched: false, apiIsFullScreen: null},
         inputs: {},
         transitions: [],
@@ -146,6 +234,7 @@ async function runProbe(args, electron) {
     let host = null;
     let client = null;
     let screenCapture = null;
+    let bitmapChannelLayout = null;
     let deadlineAt = Date.now() + TOTAL_PROBE_MS;
     const events = [];
     const startAt = Date.now();
@@ -176,6 +265,67 @@ async function runProbe(args, electron) {
         const script = 'window.__eteTransitionScreenStream && window.__eteTransitionScreenStream.currentColor()';
         return stage(host.webContents.executeJavaScript(script), 750, 'screen-color-read');
     }
+    async function calibrateScreenBitmapLayout() {
+        const dataUrl = await stage(host.webContents.executeJavaScript(
+            '(() => { const c = document.createElement("canvas"); c.width = 1; c.height = 1; const x = c.getContext("2d"); x.fillStyle = "#ff0000"; x.fillRect(0,0,1,1); return c.toDataURL("image/png"); })()'),
+        1000, 'bitmap-layout-calibration-canvas');
+        const image = nativeImage.createFromDataURL(dataUrl);
+        if (!image || image.isEmpty() || image.getSize().width !== 1 || image.getSize().height !== 1) fail('bitmap-layout-calibration-image-invalid');
+        const pixel = image.toBitmap();
+        try { return calibrateBitmapLayout(pixel); }
+        finally { pixel.fill(0); }
+    }
+    function windowDisplaySnapshot() {
+        if (!host || host.isDestroyed() || !host.isVisible() || !host.isFocused() || host.isMinimized()) return null;
+        const bounds = host.getBounds();
+        const display = screen.getDisplayMatching(bounds);
+        if (!display || !display.bounds || !rectEquals(bounds, host.getBounds())) return null;
+        return {bounds, displayId:String(display.id), displayBounds:display.bounds, scaleFactor:display.scaleFactor};
+    }
+    async function captureHeldStaticColor(expectedClass, action) {
+        const captureStartedAt = Date.now();
+        const before = windowDisplaySnapshot();
+        if (!before) fail('static-point-host-not-stable-before-capture');
+        const display = screen.getAllDisplays().find(item => String(item.id) === before.displayId);
+        if (!display || !rectEquals(display.bounds, before.displayBounds)) fail('static-point-display-changed-before-capture');
+        const thumbnailSize = {
+            width:Math.max(1, Math.round(display.bounds.width * (display.scaleFactor || 1))),
+            height:Math.max(1, Math.round(display.bounds.height * (display.scaleFactor || 1)))
+        };
+        const sources = await stage(desktopCapturer.getSources({
+            types:['screen'], thumbnailSize, fetchWindowIcons:false
+        }), 2500, 'static-point-desktop-capture');
+        const source = Array.isArray(sources) && sources.find(item => String(item.display_id) === before.displayId);
+        if (!source || !source.thumbnail || source.thumbnail.isEmpty()) fail('static-point-exact-display-source-unavailable');
+        const after = windowDisplaySnapshot();
+        if (!after || !rectEquals(before.bounds, after.bounds) || before.displayId !== after.displayId ||
+            !rectEquals(before.displayBounds, after.displayBounds) || before.scaleFactor !== after.scaleFactor) {
+            fail('static-point-host-or-display-changed-during-capture');
+        }
+        const size = source.thumbnail.getSize();
+        if (!size || size.width < 1 || size.height < 1) fail('static-point-thumbnail-invalid');
+        const factorX = size.width / display.bounds.width;
+        const factorY = size.height / display.bounds.height;
+        const roi = {
+            x:Math.round((before.bounds.x - display.bounds.x + before.bounds.width * 0.2) * factorX),
+            y:Math.round((before.bounds.y - display.bounds.y + before.bounds.height * 0.15) * factorY),
+            width:Math.round(before.bounds.width * 0.6 * factorX),
+            height:Math.round(before.bounds.height * 0.55 * factorY)
+        };
+        if (roi.x < 0 || roi.y < 0 || roi.width < 1 || roi.height < 1 ||
+            roi.x + roi.width > size.width || roi.y + roi.height > size.height) fail('static-point-roi-out-of-thumbnail');
+        const bitmap = source.thumbnail.crop(roi).resize({width:96,height:54}).toBitmap();
+        let metrics;
+        try { metrics = summarizeRoiBitmap(bitmap, 96, 54, bitmapChannelLayout); }
+        finally { bitmap.fill(0); }
+        if (metrics.colorClass !== expectedClass) fail('static-point-color-mismatch-' + action);
+        return {
+            kind:'desktop-thumbnail-static-point', colorClass:metrics.colorClass, meanRGB:metrics.meanRGB,
+            meanLuma:metrics.meanLuma, blackFraction:metrics.blackFraction, hash:metrics.hash,
+            captureMs:Date.now() - captureStartedAt, roi:{width:96,height:54}, displayMatched:true,
+            hostVisibleFocusedStable:true, expectedColorClass:expectedClass
+        };
+    }
     async function waitForColor(expectedClass, label) {
         let color = null;
         try {
@@ -195,14 +345,41 @@ async function runProbe(args, electron) {
         return waitFor(() => events.some(event => event.generationId === generationId &&
             event.name === 'core-idle' && event.value === false), 6000, label);
     }
-    async function loadMedia(label, mediaPath) {
+    async function loadMedia(label, mediaPath, beforeLoad) {
         const generationId = client.beginGeneration(label, ['core-idle', 'time-pos', 'pause']);
         client.setProperty('volume', 0);
         client.setProperty('pause', false);
+        if (beforeLoad) await beforeLoad(generationId);
         const load = client.load(['loadfile', mediaPath]);
         await stage(load.promise, 5000, 'load-request');
         await waitForCorePlaying(generationId, 'core-playing');
         return generationId;
+    }
+    async function waitForAutoRelease(targetGen, holdId, expectedColor, progress, armedAt) {
+        const deadline = Date.now() + 5000;
+        while (Date.now() < deadline) {
+            const remaining = Math.max(1, deadline - Date.now());
+            const raw = await stage(client.request('test-frame-status', {}, {
+                generationId:targetGen, mediaScoped:false, timeoutMs:Math.min(1000, remaining)
+            }), Math.min(1200, remaining), 'auto-release-status');
+            const status = validateAutoStatus(raw);
+            progress.autoStatusLast = status;
+            if (status.autoState === 'unavailable' || status.autoState === 'cancelled') {
+                progress.autoReason = status.autoReason;
+                fail(status.autoState === 'unavailable' ? 'auto-release-unavailable' : 'auto-release-cancelled');
+            }
+            if (status.autoState === 'released') {
+                const released = validateAutoReleasedStatus(raw, targetGen, holdId, expectedColor);
+                progress.autoReason = released.autoReason;
+                progress.autoElapsedMs = Date.now() - armedAt;
+                progress.autoReleaseStatus = released;
+                return released;
+            }
+            if (!['armed','capture-pending','release-pending'].includes(status.autoState) ||
+                status.targetGen !== targetGen || status.autoHoldId !== holdId) fail('auto-release-state-mismatch');
+            await delay(Math.min(100, Math.max(0, deadline - Date.now())));
+        }
+        fail('auto-release-timeout');
     }
     async function holdStopSwapRelease(action, fromName, fromPath, fromColor, toName, toPath, toColor) {
         const progress = {action,from:fromName,to:toName,phase:'old-video-precondition'};
@@ -241,21 +418,42 @@ async function runProbe(args, electron) {
         progress.holdStatusAfterStop = validateHeldStatus(await stage(client.request('test-frame-status', {}, {
             mediaScoped:false,timeoutMs:2000}), 2500, 'frame-status-after-stop'), hold.holdId);
         await delay(300);
+        const heldColor = await captureHeldStaticColor(fromColor, action);
+        progress.holdStaticPoint = heldColor;
         progress.holdStatusAfterDelay = validateHeldStatus(await stage(client.request('test-frame-status', {}, {
             mediaScoped:false,timeoutMs:2000}), 2500, 'frame-status-after-delay'), hold.holdId);
 
-        const heldColor = await waitForColor(fromColor, action + '-held-screen-color');
-
-        const nextGeneration = await loadMedia('probe-' + action + '-' + toName, toPath);
-        await delay(200); // Experiment control point only; never evidence of a production first-frame boundary.
-        const releaseResponse = await stage(client.request('test-frame-release', {holdId: hold.holdId}, {
-            generationId: nextGeneration, mediaScoped: false, timeoutMs: 3000
-        }), 3500, 'frame-release-request');
-        const released = validateReleaseResponse(releaseResponse, hold.holdId);
-        const statusAfterRelease = validateReleasedStatus(await stage(client.request('test-frame-status', {}, {
-            generationId: nextGeneration, mediaScoped: false, timeoutMs: 2000
-        }), 2500, 'frame-status-after-release'), hold.holdId);
+        let autoArmedAt = null;
+        const nextGeneration = await loadMedia('probe-' + action + '-' + toName, toPath, args.autoRelease ? async targetGen => {
+            const armResponse = await stage(client.request('test-frame-arm-next', {holdId:hold.holdId}, {
+                generationId:targetGen, mediaScoped:false, timeoutMs:2000
+            }), 2500, 'auto-arm-request');
+            progress.autoArmAttempt = {armed:armResponse && armResponse.armed === true,
+                reason:safeAutoReason(armResponse && armResponse.reason)};
+            progress.autoArmAttempt = validateAutoArmResponse(armResponse, targetGen, hold.holdId);
+            autoArmedAt = Date.now();
+            progress.releaseMechanism = 'native-event-capture-fence-candidate';
+        } : null);
+        let released;
+        let statusAfterRelease;
+        if (args.autoRelease) {
+            progress.autoReleaseStatus = await waitForAutoRelease(nextGeneration, hold.holdId, toColor, progress, autoArmedAt);
+        } else {
+            await delay(200); // Experiment control point only; never evidence of a production first-frame boundary.
+            const releaseResponse = await stage(client.request('test-frame-release', {holdId: hold.holdId}, {
+                generationId: nextGeneration, mediaScoped: false, timeoutMs: 3000
+            }), 3500, 'frame-release-request');
+            released = validateReleaseResponse(releaseResponse, hold.holdId);
+            statusAfterRelease = validateReleasedStatus(await stage(client.request('test-frame-status', {}, {
+                generationId: nextGeneration, mediaScoped: false, timeoutMs: 2000
+            }), 2500, 'frame-status-after-release'), hold.holdId);
+        }
         const newColor = await waitForColor(toColor, action + '-new-video-color');
+        if (args.autoRelease) {
+            statusAfterRelease = validateReleasedStatus(await stage(client.request('test-frame-status', {}, {
+                generationId: nextGeneration, mediaScoped: false, timeoutMs: 2000
+            }), 2500, 'frame-status-after-auto-release'), hold.holdId);
+        }
         await delay(Math.max(0, actionStartedAt + 2100 - Date.now()));
 
         return Object.assign(progress, {
@@ -266,8 +464,11 @@ async function runProbe(args, electron) {
             holdStatusBeforeStop: statusBeforeStop,
             realStop: {completed: true, state: 'stopped', requestState: stopRequest.state,
                 elapsedMs: stopElapsedMs, responseType: typeof stopResponse},
-            heldScreenColor: heldColor,
-            release: released,
+            heldStaticPoint: heldColor,
+            release: args.autoRelease ? {
+                mode:'native-event-capture-fence-candidate', status:progress.autoReleaseStatus,
+                elapsedMs:progress.autoElapsedMs
+            } : released,
             releaseStatus: statusAfterRelease,
             newVideoColor: newColor
         });
@@ -331,6 +532,8 @@ async function runProbe(args, electron) {
         const screenReady = await stage(screenCapture.prepare(host), 8000, 'screen-capture-prepare');
         result.screenPreparation = screenReady;
         if (!screenReady || screenReady.ready !== true) fail('screen-capture-not-ready');
+        bitmapChannelLayout = await calibrateScreenBitmapLayout();
+        result.screenCaptureBitmapLayout = bitmapChannelLayout;
 
         const nativeHelperService = require('../src/electronapp/native-helper/service');
         const clientEvents = events;
@@ -444,5 +647,11 @@ module.exports = {
     validateHeldStatus,
     validateReleaseResponse,
     validateReleasedStatus,
+    safeAutoReason,
+    validateAutoArmResponse,
+    validateAutoStatus,
+    validateAutoReleasedStatus,
+    calibrateBitmapLayout,
+    summarizeRoiBitmap,
     safeErrorCode
 };

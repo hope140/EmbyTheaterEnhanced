@@ -6,6 +6,8 @@
 
 新增独立 native-frame-hold-probe harness，以真实 client.stop、严格屏幕颜色和有界显式 release 测能力，结果固定 experimental-capability-only。测试支路状态回包补父/子窗口存在、可见、尺寸和相对 sibling 顺序，未改绘制或窗口策略。默认/Testing编译通过且默认binary继续byte-identical；probe输入与response校验5/5 PASS。新增状态用于区分真实黑色的来源，尚不决定修复。
 
+Layered测试child使窗口模式持帧/显式释放能力通过，两方向各80帧，无采样黑/紫/mixed；全屏以独立静态点确认持帧，运动阶段保持fresh stream门槛，连续流长间隔仍INCONCLUSIVE。随后实现Testing-only一次性新generation异步截图/自动撤帧候选，修正状态与UI线程的快照一致性、取消终态覆盖，并保留初始resume seek；默认编译字节仍相同。harness定向8/8 PASS；自动候选尚待实际运行，不当成已恢复产品表现。
+
 ## 2026-10-07 — Native 私有帧暂存能力 probe
 
 Model Tier：Tier 2。Model：主线程定义 contract，Sol High 在唯一 CPP 文件实现 Testing-only 支路，Luna 准备独立 harness。Reason：只保留 carrier 的实验不足，需验证 GPU 输出停止后的内存暂存；不先改播放/Session 时序。Escalated：no。
