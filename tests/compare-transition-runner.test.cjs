@@ -65,6 +65,81 @@ test('runner binds runtime identity before creating evidence and requires safe p
     assert.ok(runnerSource.indexOf('New-Item -ItemType Directory -Path $profileRoot') < runnerSource.indexOf('$startCandidate.Start()'));
 });
 
+test('optional fixture inputs are paired, absolute local files and become env-only media sources', function () {
+    assert.match(runnerSource, /\[string\]\$MediaAPath/);
+    assert.match(runnerSource, /\[string\]\$MediaBPath/);
+    assert.match(runnerSource, /function Get-MediaInputIdentity/);
+    assert.match(runnerSource, /function Resolve-MediaFixturePair/);
+    assert.match(runnerSource, /fixture-paths-must-be-paired/);
+    assert.match(runnerSource, /fixture-paths-must-differ/);
+    assert.match(runnerSource, /fixture-directory-reparse-point-rejected/);
+    assert.match(runnerSource, /fixture-file-reparse-point-rejected/);
+    assert.match(runnerSource, /fixture-path-must-be-local-drive-path/);
+    assert.match(runnerSource, /ETE_TEST_MEDIA_A.*\$mediaAFile/);
+    assert.match(runnerSource, /ETE_TEST_MEDIA_B.*\$mediaBFile/);
+    assert.match(runnerSource, /ETE_TEST_MEDIA.*\$mediaAFile/);
+    assert.match(runnerSource, /Assert-MediaFixtureUnchanged \$fixture 'fixture-input-changed-before-run'/);
+    assert.match(runnerSource, /Assert-MediaFixtureUnchanged \$fixture 'fixture-input-changed-during-run'/);
+    assert.match(runnerSource, /Sha256 = \(Get-FileSha256 \$fullPath\)/);
+    assert.match(runnerSource, /Size = \[int64\]\$item\.Length/);
+    assert.match(runnerSource, /if \(\$fixtureInputs\.Count -eq 2\)/);
+    assert.match(runnerSource, /make-transition-fixtures\.cjs/);
+    assert.ok(runnerSource.indexOf('Resolve-MediaFixturePair $MediaAPath $MediaBPath') < runnerSource.indexOf('New-Item -ItemType Directory -Path $profileRoot'));
+
+    const summarySource = runnerSource.slice(runnerSource.indexOf('function New-CompactSummary'), runnerSource.indexOf('# Complete all read-only identity'));
+    assert.match(summarySource, /fixtureInput = @\(\$Identity\.FixtureInputs\)/);
+    assert.doesNotMatch(summarySource, /FullPath/);
+});
+
+test('fixture input identity validator accepts drive-absolute files and rejects URL, relative, directory, and repeated inputs', function (t) {
+    if (process.platform !== 'win32') return t.skip('Fixture path grammar is Windows-specific.');
+    const command = [
+        '$tokens=$null;$errors=$null;',
+        '$ast=[System.Management.Automation.Language.Parser]::ParseFile(', psLiteral(runnerPath), ',[ref]$tokens,[ref]$errors);',
+        'if($errors.Count){exit 2};',
+        'function Get-FileHash { param([string]$LiteralPath,[string]$Algorithm); $provider=[Security.Cryptography.SHA256]::Create(); try { $bytes=[IO.File]::ReadAllBytes($LiteralPath); $hash=[BitConverter]::ToString($provider.ComputeHash($bytes)).Replace("-",""); [pscustomobject]@{Hash=$hash} } finally { $provider.Dispose() } };',
+        'foreach($name in @("Get-FileSha256","Get-MediaInputIdentity","Resolve-MediaFixturePair","Assert-MediaFixtureUnchanged")) {',
+        '$fn=$ast.Find({param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name},$true);',
+        'if(-not $fn){exit 3};Invoke-Expression $fn.Extent.Text};',
+        '$root=Join-Path $env:TEMP ("ete-fixture-validation-"+[guid]::NewGuid().ToString("N"));[IO.Directory]::CreateDirectory($root)|Out-Null;',
+        '$a=Join-Path $root "media-a.mp4";$b=Join-Path $root "media-b.mp4";',
+        '[IO.File]::WriteAllText($a,"media-a",[Text.Encoding]::ASCII);[IO.File]::WriteAllText($b,"media-b",[Text.Encoding]::ASCII);',
+        'try {',
+        '$pair=@(Resolve-MediaFixturePair $a $b);$defaultCount=@(Resolve-MediaFixturePair $null $null).Count;$sameRejected=$false;$relativeRejected=$false;$urlRejected=$false;$directoryRejected=$false;$unpairedRejected=$false;$slashAccepted=$false;$unchangedAccepted=$false;$changedRejected=$false;',
+        'try { Resolve-MediaFixturePair $a $a|Out-Null } catch { $sameRejected=$_.Exception.Message -eq "fixture-paths-must-differ" };',
+        'try { Get-MediaInputIdentity "relative.mp4" "mediaA"|Out-Null } catch { $relativeRejected=$true };',
+        'try { Get-MediaInputIdentity "https://example.invalid/media.mp4" "mediaA"|Out-Null } catch { $urlRejected=$true };',
+        'try { Get-MediaInputIdentity $root "mediaA"|Out-Null } catch { $directoryRejected=$true };',
+        'try { Resolve-MediaFixturePair $a $null|Out-Null } catch { $unpairedRejected=$_.Exception.Message -eq "fixture-paths-must-be-paired" };',
+        '$blankRejected=$false;try { Resolve-MediaFixturePair " " " "|Out-Null } catch { $blankRejected=$true };',
+        '$slashPath=$a.Replace("\\","/");$slashAccepted=(Get-MediaInputIdentity $slashPath "mediaA").Basename -eq "media-a.mp4";',
+        'Assert-MediaFixtureUnchanged $pair[0] "fixture-input-changed";$unchangedAccepted=$true;[IO.File]::AppendAllText($a,"!");',
+        'try { Assert-MediaFixtureUnchanged $pair[0] "fixture-input-changed-during-run" } catch { $changedRejected=$_.Exception.Message -eq "fixture-input-changed-during-run" };',
+        '[pscustomobject]@{pairCount=$pair.Count;basenames=@($pair|ForEach-Object {$_.Basename});sizes=@($pair|ForEach-Object {$_.Size});hashes=@($pair|ForEach-Object {$_.Sha256});',
+        'defaultCount=$defaultCount;unchangedAccepted=$unchangedAccepted;changedRejected=$changedRejected;sameRejected=$sameRejected;relativeRejected=$relativeRejected;',
+        'urlRejected=$urlRejected;directoryRejected=$directoryRejected;unpairedRejected=$unpairedRejected;blankRejected=$blankRejected;slashAccepted=$slashAccepted} | ConvertTo-Json -Compress',
+        '} finally { Remove-Item -LiteralPath $a,$b -Force -ErrorAction SilentlyContinue; Remove-Item -LiteralPath $root -Force -ErrorAction SilentlyContinue }'
+    ].join('');
+    const result = invokePowerShell(command);
+    assert.equal(result.error, undefined, result.error && result.error.message);
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const actual = JSON.parse(result.stdout.trim().split(/\r?\n/).slice(-1)[0]);
+    assert.equal(actual.pairCount, 2);
+    assert.deepEqual(actual.basenames, ['media-a.mp4','media-b.mp4']);
+    assert.deepEqual(actual.sizes, [7,7]);
+    assert.ok(actual.hashes.every(hash => /^[A-F0-9]{64}$/.test(hash)));
+    assert.equal(actual.defaultCount, 0);
+    assert.equal(actual.unchangedAccepted, true);
+    assert.equal(actual.changedRejected, true);
+    assert.equal(actual.sameRejected, true);
+    assert.equal(actual.relativeRejected, true);
+    assert.equal(actual.urlRejected, true);
+    assert.equal(actual.directoryRejected, true);
+    assert.equal(actual.unpairedRejected, true);
+    assert.equal(actual.blankRejected, true);
+    assert.equal(actual.slashAccepted, true, 'drive-rooted forward slash paths are accepted');
+});
+
 test('runner uses isolated local-only inputs and does not copy or overwrite the historical runtime', function () {
     assert.match(runnerSource, /ETE_TEST_TRANSITION_TIMELINE/);
     assert.match(runnerSource, /ETE_TEST_TRANSITION_COMPARE/);

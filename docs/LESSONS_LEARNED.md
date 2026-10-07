@@ -1,5 +1,13 @@
 # 已确认经验
 
+## 2026-10-08 — Native presentation ownership and visible evidence
+
+- 先用相同 libmpv 的 Pepper/E18、Helper/E18、Helper/E44 做可见对照，才能判断回归从哪一层开始。本轮 Helper/E18 已有切集空档，不能单独归因 Electron 44；仅保留 carrier 会把空档变成黑色。
+- WM_PAINT 成功和窗口 visible 不足以证明 GPU 合成屏幕显示了暂存帧。初次普通 GDI child 实测仍黑；独立 layered child 需用最终屏幕 ROI 单独验证。`core-playing`、截图成功及 DwmFlush 也不称作 first-present ACK。
+- 媒体 retirement 必须先于视觉等待。视觉准备使用独立 control generation，token/holdId/endpoint/helper 共同约束取消；拿不到超时回包的 holdId 时，还要能按 preparation generation 清理。较新 renderer epoch 可以撤销尚未返回 ID 的 begin；旧 token Stop 应在 generation 校验前作为过时操作忽略，不能清掉 C。
+- 生命周期 fake manager 必须保留真实 manager 的 stop sequence invalidation 与 post-await stale 检查。绕过 manager 直接调用 player.stop，再让 fake manager 发出新 play，不等价于用户点击停止，不应据此改写稳定播放链。
+- 全屏持帧期间 screen stream 可少发重复画面。本轮缺口端点同色同 hash，仍不足以排除缺口内短闪；保留 INCONCLUSIVE，不复制旧样本补齐时间，也不降低 100ms 门槛。
+
 ## 2026-10-06 — Visual task cancellation owns its waits
 
 - 清除过渡 DOM 时，同时释放它拥有的 paint promise、visibility listener 与待执行帧。即使真实播放调用方有 generation guard，已取消视觉任务也不应继续等待渲染帧。

@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-08 — 播放呈现还原本地候选交付
+
+当前产品源码与交付runtime绑定 `6473ecb046b0621ca79282e0c0ed250e3848f2c5`，路径 `dist/presentation-restore-6473ecb/`。保留Electron 44和原播放/Session/Resolver，前后切集改由native暂存旧帧并一次性揭开新视频，包含快速切换的token/epoch/Stop隔离及失败清理。最终全量 `npm test 401/401 PASS`，build、source/runtime/native provenance和2140文件package校验通过。
+
+完整候选 H.264 720p/24fps+AAC ↔ H.265 1080p/60fps+AAC：窗口81/81帧、max59/44ms，黑/海报/mixed均0；全屏66/48帧、max164/163ms，观察颜色均旧/新视频但短闪分类仍INCONCLUSIVE。原生七项边界通过，含失败与15秒超时的实际清帧；最终两次运行各7个owned进程退出、残留0。状态为 `LOCAL CANDIDATE READY / WINDOWED SYNTHETIC VERIFIED / USER ACCEPTANCE PENDING`，不等于全屏或实服最终验收。详细结果和剩余验收见 [播放呈现还原记录](PLAYBACK_PRESENTATION_RESTORE.md)。没有合并Settings候选、修改真实配置或发布。
+
 ## 2026-10-08 — NextTrack 原生呈现候选进行中
 
 旧版恢复目标的 retired-control 窗口 probe 两向各 76 帧、最大间隔 53/61ms，black/purple/mixed 均为 0；真实 Stop 11ms，资源清理完整。旧 Testing runtime `269bdcc` 的 case 1–4 通过，T 的 loopback HTTP 请求被 MPV 主动取消 (`lateBodyDelivered=false`)，case 5 曾在 load failure 后遗留 armed lease/hold，历史失败保留。后续 Testing build `a2cf6af` / SHA256 `de43f1301f208106fd18291bef0690c2cb20f388dd7f7d4b737c99679ca15378` 的六项边界均通过；missing-media end-file 后已观察 `autoState=unavailable`、active=false、bytes=0，另验证 control-generation cancellation 与 delayed prepare 不影响或复活新 hold。HTTP 连接仍被 MPV 主动取消，未验证迟到 body 到达后的行为。完整证据见 [播放呈现还原记录](PLAYBACK_PRESENTATION_RESTORE.md)。

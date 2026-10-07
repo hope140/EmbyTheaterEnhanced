@@ -50,10 +50,10 @@ Phase 2.2 把 Phase 1 的单组 suffix HIGH 限定为 `fileMatch`，它不再授
 
 正式 ETE 的 Device identity 在 main process 启动时从 bootstrap 返回的 ETE `config` 目录读取或创建 `device-identity.json`。文件只保存 version 和随机 UUID；缺失或损坏时安全重建，升级沿用已有值，clean profile 生成新值。`deviceName` 继续使用 `os.hostname()`，`deviceId` 不再使用 hostname，也不依赖 app name、版本、服务器、用户或 token。`loadStartInfo` 将同一个持久化 DeviceId 交给 apphost、ConnectionManager、HTTP ApiClient、WebSocket 和播放报告；旧 hostname DeviceId 不迁移、不自动删除服务器 Device/Session。
 
-## NextTrack native presentation candidate (implementation in progress)
+## Next/Previous native presentation
 
 当前候选 contract 由 native presentation hold 管理旧视频帧，图片不进入 renderer DOM。`PlaybackManager.nextTrack()` 与 `previousTrack()` 继续通过原同步入口选择媒体、分配 request sequence 并触发 retire；presentation 工作不得插入 manager 调用前的 await，也不得替换 Item、MediaSource、PlaySession、Session 或 WebSocket 所有权。外部/self-managed player 不进入该候选。
 
 Renderer controller 必须为每个 Next/Previous 请求绑定独立 presentation token，`beforeTeardown` 固定使用建立时捕获的 record。Main/helper 将它与当前 playback epoch、endpoint/helper instance、generation 和 holdId 绑定。新 record 完成 acquire 前保留旧 hold；只有当前 record 成功后才释放其 superseded holds。旧 prepare、load 失败或 late completion 只能释放其自有 token，不能撤下新视频或清理另一个 generation 的 hold。临时 NextTrack stop 可以保留当前 presentation；用户 Stop、destroy、退出和 stale/failed request 走明确清理。自动 reveal 由 native one-shot generation/capture fence 处理；renderer 的 `playbackReady` 只交接 token，不手动撤下旧帧。失败路径 fail-open，不能留下永久遮挡。
 
-原 `create()` DOM overlay 实现仍保留给历史测试，但 `libmpv.js` 当前激活的是 `createNative()`；不能把历史 artwork overlay 行为描述为当前播放路径。正式 runtime `presentation-restore-5ddeea8` 的 build/provenance 通过；窗口样本 Next/Previous 各 83 帧、最大间隔 30/27ms、black/purple/mixed 0，manager 选择正确且 DOM overlay 未插入；全屏 55/55 帧、间隔 165/164ms，颜色样本为目标视频但不足以排除短闪，保持 `INCONCLUSIVE`。构建后又修复旧 token Stop-to-C no-op 和高 epoch retire/in-flight begin，尚未重建，因此该 runtime 不是最终候选。Testing-only 六项 lifecycle case `a2cf6af` 通过，missing-media end-file 后 lease 为 unavailable/inactive/0 bytes；T HTTP 被 MPV 主动取消，迟到 body 对 C 的影响仍未实测。当前仍 `IN PROGRESS / NOT ACCEPTED`，且没有更新后 production build 或用户视觉验收。
+原 `create()` DOM overlay 实现仅保留给历史测试，`libmpv.js` 激活 `createNative()`。Native提供窄范围的prepare/arm/release与按control generation取消；像素不离开native，复用不可变缓冲区。自动衔接采用15秒异常超时清理，正常揭开没有固定显示延迟；旧token Stop先识别为过时操作，较新endpoint epoch可取消尚未回包的begin。已进入6473ecb本地候选，完整窗口合成媒体对照通过、全屏短闪仍INCONCLUSIVE，真实用户验收未关闭；详细分层证据见 [PLAYBACK_PRESENTATION_RESTORE](PLAYBACK_PRESENTATION_RESTORE.md)。

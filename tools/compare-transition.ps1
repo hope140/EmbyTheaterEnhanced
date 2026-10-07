@@ -11,7 +11,9 @@ param(
     [switch]$Fullscreen,
     [switch]$RetainSurfaceStopProbe,
     [ValidateRange(0, 500)]
-    [int]$ArtworkDelayMs = 0
+    [int]$ArtworkDelayMs = 0,
+    [string]$MediaAPath,
+    [string]$MediaBPath
 )
 
 $ErrorActionPreference = 'Stop'
@@ -47,6 +49,55 @@ $cleanup = [ordered]@{ status = 'not-started'; ownedCount = 0; terminated = 0; a
 function Get-FileSha256([string]$Path) {
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { throw 'runtime-file-missing' }
     return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToUpperInvariant()
+}
+
+function Get-MediaInputIdentity([string]$Path, [string]$Role) {
+    if ([string]::IsNullOrWhiteSpace($Path) -or -not [IO.Path]::IsPathRooted($Path) -or
+        $Path -match '^[A-Za-z][A-Za-z0-9+.-]*://') { throw 'fixture-path-must-be-absolute-local-file' }
+    if ($Path -notmatch '^[A-Za-z]:[\\/]') { throw 'fixture-path-must-be-local-drive-path' }
+    $fullPath = [IO.Path]::GetFullPath($Path)
+    if (-not (Test-Path -LiteralPath $fullPath -PathType Leaf)) { throw 'fixture-file-missing' }
+    $item = Get-Item -LiteralPath $fullPath -Force
+    if ($item.PSIsContainer) { throw 'fixture-path-is-not-file' }
+    if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw 'fixture-file-reparse-point-rejected' }
+
+    $directoryPath = [IO.Path]::GetDirectoryName($fullPath)
+    while ($directoryPath) {
+        $directory = Get-Item -LiteralPath $directoryPath -Force
+        if (-not $directory.PSIsContainer) { throw 'fixture-parent-is-not-directory' }
+        if (($directory.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw 'fixture-directory-reparse-point-rejected' }
+        $parent = [IO.Directory]::GetParent($directoryPath)
+        if (-not $parent -or $parent.FullName -ieq $directoryPath) { break }
+        $directoryPath = $parent.FullName
+    }
+
+    return [pscustomobject]@{
+        Role = $Role
+        FullPath = $fullPath
+        Basename = [IO.Path]::GetFileName($fullPath)
+        Size = [int64]$item.Length
+        Sha256 = (Get-FileSha256 $fullPath)
+    }
+}
+
+function Resolve-MediaFixturePair([object]$PathA, [object]$PathB) {
+    $hasA = $null -ne $PathA
+    $hasB = $null -ne $PathB
+    if ($hasA -ne $hasB) { throw 'fixture-paths-must-be-paired' }
+    if (-not $hasA) { return @() }
+    $mediaA = Get-MediaInputIdentity $PathA 'mediaA'
+    $mediaB = Get-MediaInputIdentity $PathB 'mediaB'
+    if ($mediaA.FullPath.Equals($mediaB.FullPath, [StringComparison]::OrdinalIgnoreCase)) {
+        throw 'fixture-paths-must-differ'
+    }
+    return @($mediaA, $mediaB)
+}
+
+function Assert-MediaFixtureUnchanged($Fixture, [string]$FailureCode) {
+    try { $current = Get-MediaInputIdentity ([string]$Fixture.FullPath) ([string]$Fixture.Role) }
+    catch { throw $FailureCode }
+    if ($current.FullPath -cne [string]$Fixture.FullPath -or $current.Size -ne [int64]$Fixture.Size -or
+        $current.Sha256 -ine [string]$Fixture.Sha256) { throw $FailureCode }
 }
 
 function Get-HarnessSha256([string]$Root, [string[]]$RelativePaths) {
@@ -440,6 +491,7 @@ function New-CompactSummary($Identity, $Smoke, $ProcessExitCode, $TimedOut, $Cle
             electronExeSha256 = $Identity.ElectronSha256; mpvDllPath = $Identity.MpvRuntimePath; mpvDllSha256 = $Identity.MpvSha256
             bridgePath = $Identity.BridgeRuntimePath; bridgeSha256 = $Identity.BridgeSha256
             runnerSha256 = $Identity.RunnerSha256; harnessFiles = @($Identity.HarnessFiles)
+            fixtureInput = @($Identity.FixtureInputs)
         }
         overlayInstalled = $Identity.OverlayInstalled
         smoke = [ordered]@{
@@ -463,6 +515,13 @@ function New-CompactSummary($Identity, $Smoke, $ProcessExitCode, $TimedOut, $Cle
 }
 
 # Complete all read-only identity and byte checks before creating evidence or starting Electron.
+$fixtureInputs = @()
+try { $fixtureInputs = @(Resolve-MediaFixturePair $MediaAPath $MediaBPath) }
+catch {
+    $safeReason = if ($_.Exception.Message -match '^[a-z0-9-]{1,80}$') { $_.Exception.Message } else { 'fixture-input-invalid' }
+    [ordered]@{status = 'blocked'; label = $Label; reason = $safeReason; evidence = $null} | ConvertTo-Json -Compress -Depth 8 | Write-Output
+    exit 1
+}
 $identity = $null
 try { $identity = Assert-RuntimeReady }
 catch {
@@ -471,6 +530,18 @@ catch {
     exit 1
 }
 $runtimePath = $identity.RuntimeRoot
+$fixtureManifest = @()
+foreach ($fixture in $fixtureInputs) {
+    $fixtureManifest += [pscustomobject]@{
+        role = [string]$fixture.Role
+        basename = [string]$fixture.Basename
+        size = [int64]$fixture.Size
+        sha256 = [string]$fixture.Sha256
+        unchangedAfterRun = $false
+    }
+}
+$identity | Add-Member -MemberType NoteProperty -Name FixtureInputs -Value $fixtureManifest -Force
+$identity | Add-Member -MemberType NoteProperty -Name FixtureInputsUnchangedAfterRun -Value $false -Force
 try {
     $runnerShaAtStart = Get-FileSha256 $MyInvocation.MyCommand.Path
     $harnessHashesAtStart = @(Get-HarnessSha256 $repoRoot $harnessRelativePaths)
@@ -505,9 +576,16 @@ try {
     $mpvConfig = "scale=bilinear`nsub-font=ETE-CONFIG-PROBE`nvo=gpu-next`ngpu-context=d3d11`nhwdec=no`ndemuxer-max-bytes=3072MiB`n"
     [IO.File]::WriteAllText((Join-Path $mpvHome 'mpv.conf'), $mpvConfig, [Text.Encoding]::ASCII)
 
-    $fixtureOutput = @(& node (Join-Path $repoRoot 'tools/make-transition-fixtures.cjs') $evidenceRoot 2>&1)
-    if ($LASTEXITCODE -ne 0 -or -not (Test-Path (Join-Path $evidenceRoot 'transition-a.y4m')) -or
-        -not (Test-Path (Join-Path $evidenceRoot 'transition-b.y4m'))) { throw 'fixture-generation-failed' }
+    if ($fixtureInputs.Count -eq 2) {
+        $mediaAFile = [string]$fixtureInputs[0].FullPath
+        $mediaBFile = [string]$fixtureInputs[1].FullPath
+    } else {
+        $fixtureOutput = @(& node (Join-Path $repoRoot 'tools/make-transition-fixtures.cjs') $evidenceRoot 2>&1)
+        if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath (Join-Path $evidenceRoot 'transition-a.y4m') -PathType Leaf) -or
+            -not (Test-Path -LiteralPath (Join-Path $evidenceRoot 'transition-b.y4m') -PathType Leaf)) { throw 'fixture-generation-failed' }
+        $mediaAFile = Join-Path $evidenceRoot 'transition-a.y4m'
+        $mediaBFile = Join-Path $evidenceRoot 'transition-b.y4m'
+    }
 
     $electronPath = Join-Path $runtimePath 'x64/electron/electron.exe'
     $smokePath = Join-Path $repoRoot 'tools/smoke-electron.cjs'
@@ -537,9 +615,9 @@ try {
 
     $envVars['ETE_TEST_RUNTIME'] = $runtimePath
     $envVars['ETE_TEST_EVIDENCE'] = $evidenceRoot
-    $envVars['ETE_TEST_MEDIA'] = Join-Path $evidenceRoot 'transition-a.y4m'
-    $envVars['ETE_TEST_MEDIA_A'] = Join-Path $evidenceRoot 'transition-a.y4m'
-    $envVars['ETE_TEST_MEDIA_B'] = Join-Path $evidenceRoot 'transition-b.y4m'
+    $envVars['ETE_TEST_MEDIA'] = $mediaAFile
+    $envVars['ETE_TEST_MEDIA_A'] = $mediaAFile
+    $envVars['ETE_TEST_MEDIA_B'] = $mediaBFile
     $envVars['ETE_TEST_VISIBLE'] = '1'
     $envVars['ETE_TEST_PIPELINE'] = '1'
     $envVars['ETE_TEST_TRANSITION_TIMELINE'] = '1'
@@ -556,6 +634,7 @@ try {
 
     $startCandidate = New-Object Diagnostics.Process
     $startCandidate.StartInfo = $startInfo
+    foreach ($fixture in $fixtureInputs) { Assert-MediaFixtureUnchanged $fixture 'fixture-input-changed-before-run' }
     if (-not $startCandidate.Start()) { throw 'smoke-process-start-failed' }
     $rootProcess = $startCandidate
     $rootProcessId = [int]$rootProcess.Id
@@ -610,6 +689,17 @@ try {
         }
     }
 }
+
+$fixtureInputsUnchangedAfterRun = $true
+foreach ($fixture in $fixtureInputs) {
+    try { Assert-MediaFixtureUnchanged $fixture 'fixture-input-changed-during-run' }
+    catch {
+        $fixtureInputsUnchangedAfterRun = $false
+        if (-not $failureCode) { $failureCode = 'fixture-input-changed-during-run' }
+    }
+}
+foreach ($fixtureRecord in $fixtureManifest) { $fixtureRecord.unchangedAfterRun = $fixtureInputsUnchangedAfterRun }
+$identity.FixtureInputsUnchangedAfterRun = $fixtureInputsUnchangedAfterRun
 
 try {
     $harnessHashesAfter = @(Get-HarnessSha256 $repoRoot $harnessRelativePaths)

@@ -1,5 +1,15 @@
 # 开发日志
 
+## 2026-10-08 — 还原候选6473ecb自动化交付
+
+Model Tier：Tier 2。Model：主线程设计与集成；Sol High 原生实现与核心复核；Luna 定向测试、文档与fixture输入工具。Reason：原生持帧、retirement与异步视觉所有权跨层协作，保留已有播放链。Escalated：no。
+
+两次正式构建取commit blobs：5ddeea8用于初次完整窗口/全屏对照，6473ecb纳入旧token Stop no-op与较新epoch撤销in-flight begin的最终修正。最终build/provenance及package VerifyOnly通过，2140文件，默认Helper SHA256为28054c75551177f1109859d4f8793d45a4c731aba1e43ddab9bb2f1c5dc030dc。没有改vendor输入、编译器flags、Electron、mpv或依赖；GDI/DWM从System32可选加载。
+
+最终全量401/401通过；第一次最终全量400/401仅失败于新增fixture工具的单参校验，修正null/空串区分后全量重跑通过，没有削弱产品测试。新增player生命周期覆盖准备中Stop、B→C和prepare失败；fake manager按真实patch保留sequence cancellation，未据缺失该contract的fake首轮失败改生产代码。原生七项实跑覆盖缺失媒体清帧和15秒未加载目标的fail-open，deadline15028ms，失败撤帧后fresh ROI确认为黑色停止视频。
+
+6473ecb完整窗口codec对照81/81帧、max59/44ms、旧/新颜色之外均0；全屏66/48帧、max164/163ms，旧/新颜色之外均0但保持INCONCLUSIVE。两轮各7个owned进程退出、残留0、身份冲突0，fixture和harness运行前后哈希不变。真实媒体/全屏短闪、HDR/多显示器与顶部细条仍待独立验收。所有证据位置见 [还原记录](PLAYBACK_PRESENTATION_RESTORE.md)；本轮没有推送、PR、发布、安装或真实服务器写入。
+
 ## 2026-10-08 — Native presentation lifecycle 边界复测与生产候选状态
 
 Model Tier：Tier 2。Model：主线程定义生命周期 contract；Sol High 实现窄范围 CPP Testing/生产支路；Luna 补定向 controller tests。Reason：自动 reveal 涉及 main/renderer/native 的 epoch、generation 与 hold 所有权，必须分别验证实验支路边界和生产 API 暴露。Escalated：no。
