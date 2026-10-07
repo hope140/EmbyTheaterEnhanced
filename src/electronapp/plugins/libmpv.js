@@ -136,11 +136,8 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         var enhancedRouteState = playbackRouteStats && typeof playbackRouteStats.create === 'function'
             ? playbackRouteStats.create()
             : null;
-        var nextTransition = nextTrackTransition.create({
-            document: document,
-            window: window,
-            connectionManager: connectionManager,
-            getContainer: function () { return videoDialog; }
+        var nextTransition = nextTrackTransition.createNative({
+            getEndpoint: function () { return libmpv; }
         });
         nextTrackTransition.install(playbackManager, self, nextTransition);
 
@@ -793,7 +790,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 if (libmpv && options.mediaType === 'Video') {
                     libmpv.style.opacity = 1;
                 }
-                if (videoDialog && !nextTransition.isActive() && appSettings.get('mpv-vo') && appSettings.get('mpv-vo') !== 'libmpv' && window.platform === 'win32') {
+                if (videoDialog && appSettings.get('mpv-vo') && appSettings.get('mpv-vo') !== 'libmpv' && window.platform === 'win32') {
                     videoDialog.style.opacity = 0;
                 }
                 await showOsd(options);
@@ -1053,7 +1050,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             }
 
             if (libmpv && typeof libmpv.beginGeneration === 'function') {
-                await libmpv.beginGeneration(request.requestId);
+                await libmpv.beginGeneration(request.requestId, nextTransition.loadingToken(request.playbackRequestId));
                 assertCurrentPlayRequest(request);
             }
             await setProperty(Object.assign(playerOptions, audioDelay(), interlace(), createClosedCaptionTrack(mediaSource, isVideo), getMpvAudioOptions(mediaType)))
@@ -1146,11 +1143,12 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
         self.stop = async function (destroyPlayer) {
             var request = activePlayRequest;
+            var presentationToken = null;
             if (destroyPlayer) nextTransition.cancel();
             invalidatePlayRequest();
             if (!destroyPlayer && nextTransition.isActive()) {
                 var generationAtStop = playGeneration;
-                try { await nextTransition.beforeTeardown(); }
+                try { presentationToken = await nextTransition.beforeTeardown(); }
                 catch (_) { /* Visual preparation cannot block playback stop. */ }
                 if (generationAtStop !== playGeneration) return;
             }
@@ -1158,7 +1156,11 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 await destroyInternal()
             } else {
                 appSettings.set('mpv-volume', playerState.volume);
-                await sendCommand('stop')
+                if (presentationToken && libmpv && typeof libmpv.stopForPresentation === 'function') {
+                    await libmpv.stopForPresentation(presentationToken);
+                } else {
+                    await sendCommand('stop');
+                }
             }
             emitClientDiagnostic('info', 'playback', 'stop', requestDiagnosticDetails(request));
             self._onStopped(true)

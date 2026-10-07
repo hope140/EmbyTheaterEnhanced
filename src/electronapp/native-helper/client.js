@@ -25,8 +25,15 @@
         var visible = false;
         var endpointId = metadata.endpointId;
         var currentGenerationId = null;
+        var generationEpoch = 0;
         if (typeof endpointId !== 'string' || !endpointId) throw new Error('native-helper-endpoint-id-missing');
         function call(operation, payload) { return invoke(ipc, operation, payload, endpointId); }
+        function validPresentationToken(token) { return Number.isSafeInteger(token) && token > 0; }
+        function presentationCall(operation, token, payload) {
+            if (destroyed) return Promise.reject(new Error('native-helper-destroyed'));
+            if (!validPresentationToken(token)) return Promise.reject(new Error('invalid-presentation-token'));
+            return call(operation, Object.assign({}, payload || {}, {token: token}));
+        }
         this.mode = metadata.mode;
         this.protocolVersion = metadata.protocolVersion;
         this.helperVersion = metadata.helperVersion;
@@ -67,16 +74,40 @@
             var index = listeners.indexOf(listener);
             if (index >= 0) listeners.splice(index, 1);
         };
-        this.beginGeneration = function (label) {
-            return call('begin-generation', {label: label}).then(function (result) {
+        this.beginGeneration = function (label, presentationToken) {
+            if (destroyed) return Promise.reject(new Error('native-helper-destroyed'));
+            if (presentationToken != null && !validPresentationToken(presentationToken)) {
+                return Promise.reject(new Error('invalid-presentation-token'));
+            }
+            var requestEpoch = ++generationEpoch;
+            var request = {label: label, requestEpoch: requestEpoch};
+            if (presentationToken != null) request.presentationToken = presentationToken;
+            return call('begin-generation', request).then(function (result) {
+                if (destroyed || generationEpoch !== requestEpoch) throw new Error('generation-superseded');
                 currentGenerationId = result.generationId;
                 return result;
             });
         };
         this.retireGeneration = function (reason) {
-            if (destroyed || !ipc || typeof ipc.send !== 'function') return;
-            ipc.send(NOTIFY_CHANNEL, {operation: 'retire-generation', payload: {reason: reason || 'retired', generationId: currentGenerationId}, endpointId: endpointId});
+            if (destroyed) return;
+            var requestEpoch = ++generationEpoch;
+            var generationId = currentGenerationId;
             currentGenerationId = null;
+            if (!ipc || typeof ipc.send !== 'function') return;
+            ipc.send(NOTIFY_CHANNEL, {operation: 'retire-generation', payload: {
+                reason: reason || 'retired', generationId: generationId, requestEpoch: requestEpoch
+            }, endpointId: endpointId});
+        };
+        this.preparePresentation = function (token) {
+            return presentationCall('prepare-presentation', token);
+        };
+        this.cancelPresentation = function (token) {
+            return presentationCall('cancel-presentation', token);
+        };
+        this.stopForPresentation = function (token) {
+            if (destroyed) return Promise.reject(new Error('native-helper-destroyed'));
+            if (!validPresentationToken(token)) return Promise.reject(new Error('invalid-presentation-token'));
+            return call('command', {data: 'stop', generationId: currentGenerationId, presentationToken: token});
         };
         this.observeProperties = function (properties) {
             return call('observe', {properties: properties});
@@ -141,6 +172,7 @@
         this.destroy = function () {
             if (destroyed) return Promise.resolve();
             destroyed = true;
+            generationEpoch++;
             visible = false;
             try { ipc.removeListener(EVENT_CHANNEL, self._onIpcEvent); } catch (_) { }
             listeners = [];

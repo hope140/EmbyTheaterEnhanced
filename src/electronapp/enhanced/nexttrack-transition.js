@@ -199,6 +199,92 @@
             currentState: currentState};
     }
 
+    function createNative(options) {
+        var revision = 0;
+        var active = null;
+        var records = new Map();
+
+        function release(record) {
+            if (!record || record.released) return;
+            record.released = true;
+            records.delete(record.token);
+            if (record.endpoint && typeof record.endpoint.cancelPresentation === 'function') {
+                try { Promise.resolve(record.endpoint.cancelPresentation(record.token)).catch(function () {}); }
+                catch (_) { /* A closing endpoint must not interrupt manager cleanup. */ }
+            }
+        }
+        function releaseSuperseded(owner) {
+            Array.from(records.values()).forEach(function (record) {
+                if (record !== owner && record.token < owner.token) release(record);
+            });
+        }
+        function clear(token) {
+            var record = records.get(token);
+            if (!record) return;
+            // Keep the displayed image until the newer request has acquired its own hold.
+            if (active && active !== record) return;
+            if (active === record) active = null;
+            release(record);
+            releaseSuperseded(record);
+        }
+        function show() {
+            var endpoint = options.getEndpoint();
+            if (!endpoint || typeof endpoint.preparePresentation !== 'function') return null;
+            active = {token: ++revision, endpoint: endpoint, requestId: null, pending: null, ready: false, released: false};
+            records.set(active.token, active);
+            return active.token;
+        }
+        function beforeTeardown() {
+            var record = active;
+            if (!record) return Promise.resolve(null);
+            if (!record.pending) {
+                record.pending = Promise.resolve().then(function () {
+                    if (record.released) return null;
+                    return record.endpoint.preparePresentation(record.token);
+                }).then(function (result) {
+                    record.ready = !record.released && result && result.ready === true;
+                    if (active === record) releaseSuperseded(record);
+                    // Bind the caller's Stop to this record, never to a newer active token.
+                    return record.ready ? record.token : null;
+                }, function () {
+                    if (active === record) clear(record.token);
+                    return null;
+                });
+            }
+            return record.pending;
+        }
+        function markLoading(token, requestId) {
+            if (!active || active.token !== token) return;
+            if (!Number.isSafeInteger(requestId) || requestId <= 0) { clear(token); return; }
+            active.requestId = requestId;
+        }
+        function playbackStarted(requestId) {
+            if (active && active.requestId != null && requestId > active.requestId) clear(active.token);
+        }
+        function playbackReady(requestId) {
+            if (!active || active.requestId !== requestId) return;
+            var record = active;
+            active = null;
+            records.delete(record.token);
+            releaseSuperseded(record);
+            // Native owns the one-shot reveal. core-playing does not prove presentation.
+        }
+        function playbackFailed(requestId) {
+            if (active && active.requestId === requestId) clear(active.token);
+        }
+        function cancel() {
+            active = null;
+            Array.from(records.values()).forEach(release);
+        }
+        function loadingToken(requestId) {
+            return active && active.requestId === requestId && active.ready ? active.token : null;
+        }
+        return {show: show, beforeTeardown: beforeTeardown, markLoading: markLoading,
+            playbackStarted: playbackStarted, playbackReady: playbackReady, playbackFailed: playbackFailed,
+            settled: clear, fail: clear, cancel: cancel, loadingToken: loadingToken,
+            isActive: function () { return !!active; }, currentState: function () { return active ? 'LOADING_NEXT' : 'IDLE'; }};
+    }
+
     function install(manager, player, transition) {
         if (!manager || typeof manager.nextTrack !== 'function') return;
         var binding = bindings.get(manager);
@@ -254,5 +340,5 @@
         bindings.set(manager, binding);
     }
 
-    return {create: create, install: install};
+    return {create: create, createNative: createNative, install: install};
 }));

@@ -111,6 +111,12 @@ function createService(options) {
   let everStarted = false;
   let destroyed = false;
   let activeEndpointId = null;
+  let generationEpoch = 0;
+  let rendererEpoch = 0;
+  let presentationEpoch = 0;
+  let presentationTokenHighWater = 0;
+  let presentation = null;
+  let lastVisibleMedia = null;
   let surfaceEpoch = 0;
   let placementRevision = 0;
   let placementInFlight = null;
@@ -122,6 +128,82 @@ function createService(options) {
 
   function log(event, details) {
     try { logger({category: 'native-helper', event, details: details || {}}); } catch (_) { }
+  }
+
+  function validToken(value) { return Number.isSafeInteger(value) && value > 0; }
+
+  function acceptRendererEpoch(payload) {
+    // Older local callers omit this field; renderer Endpoints always send it.
+    if (payload.requestEpoch == null) return;
+    if (!validToken(payload.requestEpoch) || payload.requestEpoch <= rendererEpoch) throw new Error('generation-superseded');
+    rendererEpoch = payload.requestEpoch;
+  }
+
+  function releaseHold(record, holdId) {
+    if (!record || !validToken(holdId) || record.client !== client || record.client.exited || record.client.transportTerminated) return;
+    try {
+      record.client.request('presentation-release', {holdId}, {
+        generationId: record.client.allocateGenerationId(), mediaScoped: false, timeoutMs: 1500
+      }).catch(function () {});
+    } catch (_) { /* Helper termination already removes its native child. */ }
+  }
+
+  function cancelPreparation(record) {
+    if (!record || !validToken(record.controlGenerationId) || record.client !== client || record.client.exited || record.client.transportTerminated) return;
+    try {
+      record.client.request('presentation-cancel-preparation', {preparationGenerationId: record.controlGenerationId}, {
+        generationId: record.client.allocateGenerationId(), mediaScoped: false, timeoutMs: 1500
+      }).catch(function () {});
+    } catch (_) { /* A timed-out prepare is cancelled on the same ordered transport. */ }
+  }
+
+  function clearPresentation(record) {
+    if (!record || presentation !== record) return;
+    presentation = null;
+    ++presentationEpoch;
+    cancelPreparation(record);
+    releaseHold(record, record.holdId);
+  }
+
+  function ownsPresentation(record) {
+    return !!record && presentation === record && record.epoch === presentationEpoch &&
+      record.client === client && record.endpointId === activeEndpointId && !destroyed;
+  }
+
+  async function preparePresentation(active, endpointId, token) {
+    if (!validToken(token)) throw new Error('presentation-token-invalid');
+    if (token <= presentationTokenHighWater) return {status: 'ok', ready: false};
+    presentationTokenHighWater = token;
+    const main = getMainWindow();
+    if (active.currentGenerationId !== null || !lastVisibleMedia || lastVisibleMedia.client !== active ||
+        !surfaceWanted || !surfaceWindow || surfaceWindow.isDestroyed() || !surfaceWindow.isVisible() ||
+        !main || main.isDestroyed() || !main.isVisible() || main.isMinimized()) {
+      clearPresentation(presentation);
+      return {status: 'ok', ready: false};
+    }
+    const previous = presentation;
+    const record = {token, client: active, endpointId, epoch: ++presentationEpoch, holdId: null,
+      controlGenerationId: active.allocateGenerationId(), targetGeneration: null};
+    presentation = record;
+    let result;
+    try {
+      result = await active.request('presentation-prepare', {sourceGenerationId: lastVisibleMedia.generationId}, {
+        generationId: record.controlGenerationId, mediaScoped: false, timeoutMs: 2500
+      });
+    } catch (_) { result = null; }
+    if (!ownsPresentation(record)) {
+      cancelPreparation(record);
+      if (result && validToken(result.holdId)) releaseHold(record, result.holdId);
+      return {status: 'ok', ready: false};
+    }
+    if (!result || result.ready !== true || result.painted !== true || !validToken(result.holdId)) {
+      clearPresentation(record);
+      if (previous) { cancelPreparation(previous); releaseHold(previous, previous.holdId); }
+      return {status: 'ok', ready: false};
+    }
+    record.holdId = result.holdId;
+    if (previous) { cancelPreparation(previous); releaseHold(previous, previous.holdId); }
+    return {status: 'ok', ready: true};
   }
 
   function trusted(event) {
@@ -327,6 +409,8 @@ function createService(options) {
         onEvent: function (message) {
           if (client !== owned) return;
           if (message.name === 'end-file' && message.value && message.value.reason === 4) {
+            if (message.generationId !== owned.currentGenerationId) return;
+            clearPresentation(presentation);
             surfaceWanted = false;
             syncSurfaceVisibility('media-error');
             sendEvent({type: 'bridge_error', reason: 'load-failed'});
@@ -339,6 +423,9 @@ function createService(options) {
         onTerminal: function (terminal) {
           if (client !== owned) return;
           crashCount += terminal.name === 'process-exit-terminal' || terminal.name === 'stdout-end' ? 1 : 0;
+          clearPresentation(presentation);
+          lastVisibleMedia = null;
+          ++generationEpoch;
           surfaceWanted = false;
           syncSurfaceVisibility('helper-terminal');
           sendEvent({type: 'bridge_error', reason: terminal.name});
@@ -378,7 +465,11 @@ function createService(options) {
   async function call(operation, request, endpointId) {
     const payload = request && typeof request === 'object' ? request : {};
     if (operation === 'create') {
-      if (!activeEndpointId) activeEndpointId = crypto.randomUUID();
+      if (!activeEndpointId) {
+        activeEndpointId = crypto.randomUUID();
+        rendererEpoch = 0;
+        presentationTokenHighWater = 0;
+      }
       const active = await ensureClient();
       return {status: 'ok', mode, endpointId: activeEndpointId, protocolVersion: PROTOCOL_VERSION, helperVersion: active.handshake.helperVersion, libmpvVersion: active.handshake.libmpvVersion};
     }
@@ -389,11 +480,48 @@ function createService(options) {
       activeEndpointId = null;
       return {status: 'ok'};
     }
+    let beginEpoch;
+    if (operation === 'begin-generation') {
+      acceptRendererEpoch(payload);
+      beginEpoch = ++generationEpoch;
+    }
     const active = operation === 'begin-generation' ? await ensureClient() : client;
     if (!active || active.transportTerminated || active.exited) throw new Error('native-helper-unavailable');
     if (operation === 'begin-generation') {
+      requireEndpoint(endpointId);
+      if (beginEpoch !== generationEpoch || active !== client) throw new Error('generation-superseded');
       const label = typeof payload.label === 'string' ? payload.label.slice(0, 128) : 'play';
-      return {status: 'ok', generationId: active.beginGeneration(label, [...observed])};
+      const generationId = active.beginGeneration(label, [...observed]);
+      const record = presentation;
+      if (ownsPresentation(record) && record.token === payload.presentationToken && validToken(record.holdId)) {
+        record.targetGeneration = generationId;
+        let result;
+        try {
+          result = await active.request('presentation-arm', {holdId: record.holdId}, {
+            generationId, mediaScoped: false, timeoutMs: 2000
+          });
+        } catch (_) { result = null; }
+        if (ownsPresentation(record) && (!result || result.ready !== true || result.status !== 'armed' ||
+            result.holdId !== record.holdId)) clearPresentation(record);
+      } else {
+        clearPresentation(record);
+      }
+      if (beginEpoch !== generationEpoch || active !== client || endpointId !== activeEndpointId ||
+          active.currentGenerationId !== generationId) throw new Error('generation-superseded');
+      return {status: 'ok', generationId};
+    }
+    if (operation === 'prepare-presentation') return preparePresentation(active, endpointId, payload.token);
+    if (operation === 'cancel-presentation') {
+      if (!validToken(payload.token)) throw new Error('presentation-token-invalid');
+      const record = presentation;
+      if (ownsPresentation(record) && record.token === payload.token) {
+        clearPresentation(record);
+        if (active.currentGenerationId === null) {
+          surfaceWanted = false;
+          syncSurfaceVisibility('presentation-cancelled');
+        }
+      }
+      return {status: 'ok'};
     }
     if (operation === 'observe') {
       if (!Array.isArray(payload.properties) || payload.properties.some(name => !OBSERVED_PROPERTIES.has(name))) throw new Error('observed-property-not-allowed');
@@ -437,7 +565,9 @@ function createService(options) {
       if (args[0] === 'loadfile') {
         const load = active.load(args);
         load.promise.catch(function (error) {
-          if (client !== active || !error || error.state === 'GENERATION_RETIRED') return;
+          if (client !== active || endpointId !== activeEndpointId || load.generationId !== active.currentGenerationId ||
+              !error || error.state === 'GENERATION_RETIRED') return;
+          clearPresentation(presentation);
           surfaceWanted = false;
           syncSurfaceVisibility('load-failed');
           sendEvent({type: 'bridge_error', reason: 'load-failed'});
@@ -446,8 +576,13 @@ function createService(options) {
         return {status: 'accepted'};
       }
       if (args[0] === 'stop') {
-        surfaceWanted = false;
-        syncSurfaceVisibility('stop');
+        const retain = ownsPresentation(presentation) && presentation.token === payload.presentationToken &&
+          validToken(presentation.holdId) && active.currentGenerationId === null;
+        if (!retain) {
+          clearPresentation(presentation);
+          surfaceWanted = false;
+          syncSurfaceVisibility('stop');
+        }
         active.stop().catch(function () {});
         return {status: 'accepted'};
       }
@@ -456,7 +591,9 @@ function createService(options) {
     }
     if (operation === 'set-visible') {
       requireGeneration(active, payload);
+      if (active.currentGenerationId === null) return {status: 'ok'};
       surfaceWanted = payload.visible === true;
+      if (surfaceWanted) lastVisibleMedia = {client: active, generationId: active.currentGenerationId};
       syncSurfaceVisibility('renderer-visibility');
       return {status: 'ok'};
     }
@@ -469,17 +606,25 @@ function createService(options) {
   function notify(operation, request, endpointId) {
     if (destroyed) return;
     if (!activeEndpointId || endpointId !== activeEndpointId) return;
-    if (operation === 'retire-generation' && client && request && request.generationId === client.currentGenerationId) {
-      client.retireGeneration(request.reason || 'retired');
+    if (operation === 'retire-generation' && request) {
+      acceptRendererEpoch(request);
+      ++generationEpoch;
+      if (client && (request.generationId === null || request.generationId === client.currentGenerationId)) {
+        client.retireGeneration(request.reason || 'retired');
+      }
     }
     if (operation === 'set-visible') {
-      if (!client || !request || request.generationId !== client.currentGenerationId) return;
+      if (!client || !request || client.currentGenerationId === null || request.generationId !== client.currentGenerationId) return;
       surfaceWanted = request && request.visible === true;
+      if (surfaceWanted) lastVisibleMedia = {client, generationId: client.currentGenerationId};
       syncSurfaceVisibility('renderer-notify-visibility');
     }
   }
 
   async function destroyClient(reason) {
+    ++generationEpoch;
+    clearPresentation(presentation);
+    lastVisibleMedia = null;
     surfaceWanted = false;
     syncSurfaceVisibility(reason);
     const owned = client;

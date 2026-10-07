@@ -108,6 +108,7 @@ function makeClientClass(options) {
       return new Promise((resolve, reject) => { this.resolveStart = resolve; this.rejectStart = reject; });
     }
     beginGeneration() { this.currentGenerationId = ++nextGeneration; return this.currentGenerationId; }
+    allocateGenerationId() { return ++nextGeneration; }
     retireGeneration() { this.currentGenerationId = null; }
     command() {}
     setProperty() {}
@@ -176,6 +177,131 @@ async function showSurface(service) {
   await service.call('set-visible', {visible: true, generationId: begun.generationId}, created.endpointId);
   return {created, begun};
 }
+
+function deferred() {
+  let resolve, reject;
+  const promise = new Promise((yes, no) => { resolve = yes; reject = no; });
+  return {promise, resolve, reject};
+}
+
+async function presentationHarness() {
+  const ClientClass = makeClientClass();
+  const context = makeService(ClientClass);
+  const {created, begun} = await showSurface(context.service);
+  const active = ClientClass.clients[0];
+  const requests = [];
+  let nextHold = 0;
+  active.request = function (method, params, options) {
+    requests.push({method, params, options});
+    if (method === 'presentation-prepare') return Promise.resolve({ready: true, painted: true, holdId: ++nextHold});
+    if (method === 'presentation-arm') return Promise.resolve({ready: true, status: 'armed', holdId: params.holdId});
+    return Promise.resolve({released: true});
+  };
+  function retire(generationId, requestEpoch) {
+    context.service.notify('retire-generation', {generationId, requestEpoch, reason: 'fixture'}, created.endpointId);
+  }
+  return {...context, created, begun, active, requests, retire, surface: FakeWindow.instances[1]};
+}
+
+test('native presentation retires media before preparation and preserves only a matching temporary Stop', async () => {
+  const h = await presentationHarness();
+  assert.deepEqual(await h.service.call('prepare-presentation', {token: 1}, h.created.endpointId), {status: 'ok', ready: false});
+  h.retire(h.begun.generationId, 1);
+  assert.equal((await h.service.call('prepare-presentation', {token: 2}, h.created.endpointId)).ready, true);
+  const prepare = h.requests.find(row => row.method === 'presentation-prepare');
+  assert.equal(prepare.params.sourceGenerationId, h.begun.generationId);
+  assert.equal(prepare.options.mediaScoped, false);
+  assert.ok(prepare.options.generationId > h.begun.generationId);
+  h.service.notify('set-visible', {visible: false, generationId: null}, h.created.endpointId);
+  assert.equal(h.surface.visible, true, 'retired opacity notifications cannot hide a held frame');
+  await h.service.call('command', {data: 'stop', generationId: null, presentationToken: 2}, h.created.endpointId);
+  assert.equal(h.surface.visible, true);
+  const b = await h.service.call('begin-generation', {label: 'B', presentationToken: 2, requestEpoch: 2}, h.created.endpointId);
+  assert.equal(h.requests.find(row => row.method === 'presentation-arm').options.generationId, b.generationId);
+  await h.service.call('command', {data: 'stop', generationId: b.generationId}, h.created.endpointId);
+  assert.equal(h.surface.visible, false);
+  assert.ok(h.requests.some(row => row.method === 'presentation-cancel-preparation'));
+  assert.ok(h.requests.some(row => row.method === 'presentation-release' && row.params.holdId === 1));
+  await h.service.destroy();
+});
+
+test('cancelled pending preparation cleans its exact control generation and late hold', async () => {
+  const h = await presentationHarness();
+  h.retire(h.begun.generationId, 1);
+  const pending = deferred();
+  const original = h.active.request;
+  h.active.request = function (method, params, options) {
+    if (method === 'presentation-prepare') { h.requests.push({method, params, options}); return pending.promise; }
+    return original(method, params, options);
+  };
+  const preparing = h.service.call('prepare-presentation', {token: 1}, h.created.endpointId);
+  await h.service.call('cancel-presentation', {token: 1}, h.created.endpointId);
+  const control = h.requests.find(row => row.method === 'presentation-prepare').options.generationId;
+  assert.ok(h.requests.some(row => row.method === 'presentation-cancel-preparation' && row.params.preparationGenerationId === control));
+  pending.resolve({ready: true, painted: true, holdId: 42});
+  assert.equal((await preparing).ready, false);
+  assert.ok(h.requests.some(row => row.method === 'presentation-release' && row.params.holdId === 42));
+  assert.equal(h.surface.visible, false);
+  await h.service.destroy();
+});
+
+test('newer preparation owns the surface when an older preparation resolves or cancels late', async () => {
+  const h = await presentationHarness();
+  h.retire(h.begun.generationId, 1);
+  const old = deferred();
+  const original = h.active.request;
+  let prepares = 0;
+  h.active.request = function (method, params, options) {
+    if (method === 'presentation-prepare' && ++prepares === 1) return old.promise;
+    return original(method, params, options);
+  };
+  const a = h.service.call('prepare-presentation', {token: 1}, h.created.endpointId);
+  assert.equal((await h.service.call('prepare-presentation', {token: 2}, h.created.endpointId)).ready, true);
+  old.resolve({ready: true, painted: true, holdId: 100});
+  assert.equal((await a).ready, false);
+  await h.service.call('cancel-presentation', {token: 1}, h.created.endpointId);
+  assert.equal(h.surface.visible, true);
+  await h.service.call('command', {data: 'stop', generationId: null, presentationToken: 2}, h.created.endpointId);
+  assert.equal(h.surface.visible, true);
+  assert.equal(h.requests.some(row => row.method === 'presentation-release' && row.params.holdId === 1), false);
+  await h.service.destroy();
+});
+
+test('retirement during native arm invalidates the pending begin and stale renderer epochs cannot retire C', async () => {
+  const h = await presentationHarness();
+  h.retire(h.begun.generationId, 1);
+  await h.service.call('prepare-presentation', {token: 1}, h.created.endpointId);
+  const arm = deferred();
+  const original = h.active.request;
+  h.active.request = function (method, params, options) {
+    if (method === 'presentation-arm') return arm.promise;
+    return original(method, params, options);
+  };
+  const b = h.service.call('begin-generation', {label: 'B', presentationToken: 1, requestEpoch: 2}, h.created.endpointId);
+  await Promise.resolve();
+  h.retire(null, 3);
+  const c = await h.service.call('begin-generation', {label: 'C', requestEpoch: 4}, h.created.endpointId);
+  arm.resolve({armed: true});
+  await assert.rejects(b, /generation-superseded/);
+  assert.throws(() => h.retire(null, 2), /generation-superseded/);
+  assert.equal(h.active.currentGenerationId, c.generationId);
+  await assert.rejects(h.service.call('begin-generation', {label: 'stale', requestEpoch: 3}, h.created.endpointId), /generation-superseded/);
+  await h.service.destroy();
+});
+
+test('same-helper stale load failure cannot hide or report an error against a newer generation', async () => {
+  const h = await presentationHarness();
+  const load = deferred();
+  h.active.load = () => ({generationId: h.begun.generationId, promise: load.promise});
+  await h.service.call('command', {data: ['loadfile', 'fixture-A'], generationId: h.begun.generationId}, h.created.endpointId);
+  const next = await h.service.call('begin-generation', {label: 'C'}, h.created.endpointId);
+  await h.service.call('set-visible', {visible: true, generationId: next.generationId}, h.created.endpointId);
+  load.reject(Object.assign(new Error('old failure'), {state: 'FAILED'}));
+  await Promise.resolve();
+  assert.equal(h.surface.visible, true);
+  assert.equal(h.main.sent.some(row => row[1].type === 'bridge_error'), false);
+  await h.service.destroy();
+});
 
 test('surface placement passes exact HWNDs without moveTop or always-on-top pulses', async function () {
   const ClientClass = makeClientClass();
