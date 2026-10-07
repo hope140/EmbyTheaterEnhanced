@@ -1,20 +1,30 @@
 'use strict';
 // Run with the frozen Electron, not the development Node. No server login is used.
-const { app } = require('electron');
+const { app, desktopCapturer, screen, ipcMain } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const {createWindowOwnership} = require('./runtime-window-ownership.cjs');
+const {createTransitionStreamCapture} = require('./transition-stream-capture.cjs');
 const runtime = process.env.ETE_TEST_RUNTIME;
 const evidence = process.env.ETE_TEST_EVIDENCE;
 const testCd2Origin = process.env.ETE_CD2_ORIGIN || '';
+const transitionTimelineMode = process.env.ETE_TEST_TRANSITION_TIMELINE === '1';
 if (!runtime || !evidence) throw Error('ETE_TEST_RUNTIME and ETE_TEST_EVIDENCE are required');
 const expectedApplicationPath = path.join(runtime, 'electronapp', 'www', 'index.html');
 const windowOwnership = createWindowOwnership({expectedApplicationPath});
 app.setName('emby-theater-enhanced-smoke');
 let fixtureUrl;
+let mediaAUrl;
+let mediaBUrl;
+let posterBaseUrl;
+let fixtureServer;
+let transitionCapture;
+let transitionActionListener;
 const mediaRequests = [];
 const resolverEvents = [];
 const nativeHelperEvents = [];
+const nativeTimelineEvents = [];
+const transitionServiceEvents = [];
 const diagnosticEvents = [];
 let fakeCd2Stats;
 let applicationPipelineInjectionCount = 0;
@@ -46,10 +56,32 @@ async function readRendererErrorEvidence(window) {
     if (!window || window.isDestroyed()) return null;
     return window.webContents.executeJavaScript(withSourceUrl('window.__eteSmokeErrorEvidence || null', 'ete-smoke-error-evidence.js')).catch(() => null);
 }
-if (process.env.ETE_TEST_PIPELINE) {
-    const media = fs.readFileSync(process.env.ETE_TEST_MEDIA);
-    const server = require('http').createServer((request,response) => {
+if (process.env.ETE_TEST_PIPELINE || transitionTimelineMode) {
+    if (transitionTimelineMode && (!process.env.ETE_TEST_MEDIA_B ||
+        !(process.env.ETE_TEST_MEDIA_A || process.env.ETE_TEST_MEDIA))) {
+        throw new Error('ETE_TEST_MEDIA_A (or ETE_TEST_MEDIA) and ETE_TEST_MEDIA_B are required');
+    }
+    const media = fs.readFileSync(transitionTimelineMode
+        ? (process.env.ETE_TEST_MEDIA_A || process.env.ETE_TEST_MEDIA)
+        : process.env.ETE_TEST_MEDIA);
+    const mediaB = transitionTimelineMode ? fs.readFileSync(process.env.ETE_TEST_MEDIA_B) : null;
+    const artworkDelayValue = transitionTimelineMode && process.env.ETE_TEST_ARTWORK_DELAY_MS !== undefined
+        ? Number(process.env.ETE_TEST_ARTWORK_DELAY_MS) : 100;
+    if (transitionTimelineMode && (!Number.isInteger(artworkDelayValue) || artworkDelayValue < 0 || artworkDelayValue > 500)) {
+        throw new Error('ETE_TEST_ARTWORK_DELAY_MS must be an integer from 0 to 500');
+    }
+    fixtureServer = require('http').createServer((request,response) => {
         const parsedRequest = new URL(request.url, 'http://127.0.0.1');
+        if (transitionTimelineMode && parsedRequest.pathname === '/poster.svg') {
+            const poster = '<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540"><rect width="960" height="540" fill="#d42eff"/></svg>';
+            const sendPoster = () => {
+                if (response.destroyed) return;
+                response.writeHead(200, {'Content-Type': 'image/svg+xml', 'Cache-Control': 'no-store'});
+                response.end(poster);
+            };
+            setTimeout(sendPoster, artworkDelayValue);
+            return;
+        }
         const directRequestId = process.env.ETE_TEST_CD2_MODE === 'direct'
             ? parsedRequest.searchParams.get('cd2')
             : null;
@@ -66,24 +98,42 @@ if (process.env.ETE_TEST_PIPELINE) {
         });
         if (parsedRequest.pathname !== '/fixture.y4m') { response.writeHead(404); return response.end(); }
         if ((expectedDirectUa && !directUaMatch) || directUaLeaked) { response.writeHead(403); return response.end(); }
+        const selectedMedia = transitionTimelineMode && parsedRequest.searchParams.get('variant') === 'B' ? mediaB : media;
         const match = /^bytes=(\d+)-(\d*)$/.exec(request.headers.range || '');
         const start = match ? Number(match[1]) : 0;
-        const end = match && match[2] ? Math.min(Number(match[2]),media.length-1) : media.length-1;
-        if (start > end || start >= media.length) { response.writeHead(416); return response.end(); }
+        const end = match && match[2] ? Math.min(Number(match[2]),selectedMedia.length-1) : selectedMedia.length-1;
+        if (start > end || start >= selectedMedia.length) { response.writeHead(416); return response.end(); }
         const headers = {'Content-Type':'application/octet-stream','Accept-Ranges':'bytes','Content-Length':end-start+1};
-        if(match) headers['Content-Range'] = 'bytes '+start+'-'+end+'/'+media.length;
+        if(match) headers['Content-Range'] = 'bytes '+start+'-'+end+'/'+selectedMedia.length;
         response.writeHead(match?206:200,headers);
-        response.end(media.subarray(start,end+1));
+        response.end(selectedMedia.subarray(start,end+1));
     });
-    server.listen(0,'127.0.0.1',()=> {
-        fixtureUrl='http://127.0.0.1:'+server.address().port+'/fixture.y4m';
-        fs.writeFileSync(path.join(evidence,'fixture.strm'),fixtureUrl+'\n');
+    fixtureServer.listen(0,'127.0.0.1',()=> {
+        fixtureUrl='http://127.0.0.1:'+fixtureServer.address().port+'/fixture.y4m';
+        if (transitionTimelineMode) {
+            mediaAUrl = fixtureUrl + '?variant=A';
+            mediaBUrl = fixtureUrl + '?variant=B';
+            posterBaseUrl = 'http://127.0.0.1:' + fixtureServer.address().port + '/poster.svg';
+        } else {
+            fs.writeFileSync(path.join(evidence,'fixture.strm'),fixtureUrl+'\n');
+        }
     });
 }
+if (transitionTimelineMode) {
+    transitionCapture = createTransitionStreamCapture({
+        desktopCapturer,
+        screen,
+        getApplicationWindow: () => windowOwnership.getApplicationWindow(),
+        evidence
+    });
+    transitionActionListener = (event, action) => {
+        const owner = windowOwnership.getApplicationWindow();
+        if (owner && !owner.isDestroyed() && event.sender === owner.webContents) transitionCapture.start(action);
+    };
+    ipcMain.on('ete-test-transition-timeline-action', transitionActionListener);
+}
 let completed = false;
-function finish(result) {
-    if (completed) return;
-    completed = true;
+function writeResultAndExit(result) {
     result.cd2EnvironmentCleared = ['ETE_CD2_ENABLED','ETE_CD2_ORIGIN','ETE_CD2_TOKEN','ETE_CD2_LOCAL_PREFIX','ETE_CD2_CLOUD_PREFIX','ETE_CD2_DIRECT_URL','ETE_CD2_SOURCE_PREFIX','ETE_CD2_MOUNT_PREFIX']
         .every(name => process.env[name] === undefined);
     if (!result.cd2EnvironmentCleared) result.ok = false;
@@ -102,6 +152,10 @@ function finish(result) {
     }
     result.resolverEvents = resolverEvents;
     result.nativeHelperEvents = nativeHelperEvents;
+    if (transitionTimelineMode) {
+        result.transitionServiceEvents = transitionServiceEvents;
+        result.nativeTimelineEvents = nativeTimelineEvents;
+    }
     result.diagnosticEvents = diagnosticEvents;
     result.windowOwnership = windowOwnership.snapshot();
     result.harnessInjection = {applicationPipelineInjectionCount, auxiliaryPipelineInjectionCount};
@@ -114,7 +168,46 @@ function finish(result) {
         };
     }
     fs.writeFileSync(path.join(evidence, 'electron-smoke.json'), JSON.stringify(result, null, 2));
+    if (transitionActionListener) {
+        ipcMain.removeListener('ete-test-transition-timeline-action', transitionActionListener);
+        transitionActionListener = null;
+    }
+    if (transitionTimelineMode && fixtureServer) {
+        try { fixtureServer.closeAllConnections(); } catch (_) { }
+        try { fixtureServer.close(); } catch (_) { }
+    }
     app.exit(result.ok ? 0 : 1);
+}
+function finish(result) {
+    if (completed) return;
+    completed = true;
+    if (!transitionTimelineMode) return writeResultAndExit(result);
+    transitionCapture.waitForResults().then(async pixel => {
+        result.pixel = pixel;
+        const prerequisites = result.state && result.state.pipeline && result.state.pipeline.pixelPrerequisite;
+        const initialReady = !!prerequisites && !!prerequisites.initialA &&
+            prerequisites.initialA.status === 'COLOR_OBSERVED';
+        const previousReady = !!prerequisites && !!prerequisites.beforePrevious &&
+            prerequisites.beforePrevious.status === 'COLOR_OBSERVED';
+        if (!initialReady || !previousReady) {
+            result.pixel.classification = 'INCONCLUSIVE';
+            result.pixel.reason = 'pixel-prerequisite-unavailable';
+            (result.pixel.captures || []).forEach(capture => {
+                if (capture.action === 'next' && !initialReady || capture.action === 'previous' && !previousReady) {
+                    capture.classification = 'INCONCLUSIVE';
+                    capture.reason = 'pixel-prerequisite-unavailable';
+                }
+            });
+        }
+        try { result.pixel.cleanup = await transitionCapture.stop(); }
+        catch (_) { result.pixel.cleanup = {rendererStopped: false, handlerRestored: false}; }
+        writeResultAndExit(result);
+    }, async () => {
+        result.pixel = {classification: 'INCONCLUSIVE', reason: 'capture-summary-failed', captures: []};
+        try { result.pixel.cleanup = await transitionCapture.stop(); }
+        catch (_) { result.pixel.cleanup = {rendererStopped: false, handlerRestored: false}; }
+        writeResultAndExit(result);
+    });
 }
 setTimeout(async () => {
     const applicationWindow = windowOwnership.getApplicationWindow();
@@ -136,10 +229,12 @@ setTimeout(async () => {
     finish({ok:false, error:'UI smoke timeout', trace, sourceState, mediaRequests});
 }, process.env.ETE_TEST_CD2_EXPECT === 'real' ? 45000 : 25000);
 app.on('browser-window-created', (_, win) => {
-    win.webContents.on('console-message', (_, level, message) => {
+    win.webContents.on('console-message', (event, level, message) => {
         if (typeof message === 'string' && message.indexOf('STRM resolver:') === 0) resolverEvents.push(message);
     });
-    try { win.setAlwaysOnTop(false); } catch (_) { }
+    if (!transitionTimelineMode) {
+        try { win.setAlwaysOnTop(false); } catch (_) { }
+    }
     if (!process.env.ETE_TEST_VISIBLE) {
         try { win.hide(); } catch (_) { }
         win.on('show', () => win.hide());
@@ -220,13 +315,37 @@ app.on('browser-window-created', (_, win) => {
                 })()`, 'ete-smoke-startup-probe.js'));
                 state.screenshotAvailable = false;
                 state.screenshotStatus = 'NOT_RUN_HIDDEN';
-                if (process.env.ETE_TEST_VISIBLE) {
+                if (process.env.ETE_TEST_VISIBLE && !transitionTimelineMode) {
                     const screenshot = await win.webContents.capturePage();
                     state.screenshotAvailable = !screenshot.isEmpty();
                     state.screenshotStatus = screenshot.isEmpty() ? 'EMPTY' : 'CAPTURED';
                     if (!screenshot.isEmpty()) fs.writeFileSync(path.join(evidence, 'startup.png'), screenshot.toPNG());
                 }
-                if (process.env.ETE_TEST_PIPELINE) {
+                if (transitionTimelineMode) {
+                    applicationPipelineInjectionCount++;
+                    state.transitionWindowMode = win.isFullScreen() ? 'fullscreen' : 'windowed';
+                    if (state.transitionWindowMode !== 'windowed') {
+                        return finish({ok:false,error:'Windowed transition requires a non-fullscreen application window',state});
+                    }
+                    state.streamCapturePreparation = await transitionCapture.prepare(win);
+                    const timelineSource = fs.readFileSync(path.join(__dirname,'../tests/transition-timeline-browser.js'),'utf8');
+                    const pipelineSource = fs.readFileSync(path.join(__dirname,'../tests/pipeline-browser.js'),'utf8');
+                    const timelineOptions = {mediaAUrl, mediaBUrl, posterBaseUrl};
+                    state.pipeline = await win.webContents.executeJavaScript(withSourceUrl(
+                        timelineSource + '\n' + pipelineSource + '\nrunPipelineFixture(' +
+                        JSON.stringify(mediaAUrl) + ', null, null, null, false, ' + JSON.stringify(timelineOptions) + ')',
+                        'ete-windowed-transition-fixture.js'));
+                    const checks = state.pipeline && state.pipeline.logicalChecks;
+                    const requiredChecks = ['nextItemB', 'previousItemA', 'nextOverlay', 'previousOverlay',
+                        'nextArtworkLoaded', 'previousArtworkLoaded', 'nextCorePlaying', 'previousCorePlaying'];
+                    if (state.pipeline && state.pipeline.status === 'failed') {
+                        return finish({ok:false,error:'Windowed transition observation fixture incomplete',state});
+                    }
+                    if (!state.pipeline || state.pipeline.kind !== 'windowed-transition-timeline' ||
+                        !checks || requiredChecks.some(name => checks[name] !== true)) {
+                        return finish({ok:false,error:'Windowed transition logical assertion failed',state});
+                    }
+                } else if (process.env.ETE_TEST_PIPELINE) {
                     applicationPipelineInjectionCount++;
                     const generationObserverSource = fs.readFileSync(path.join(__dirname,'../tests/generation-fixture-observer.js'),'utf8');
                     state.generationObserverLoaded = await win.webContents.executeJavaScript(withSourceUrl(generationObserverSource + '\n!!globalThis.eteGenerationFixtureObserver', 'ete-generation-fixture-observer.js'));
@@ -332,11 +451,17 @@ if (process.env.ETE_TEST_CD2_MODE) {
 }
 const nativeHelperServiceModule = require(path.join(runtime, 'electronapp/native-helper/service.js'));
 const createNativeHelperService = nativeHelperServiceModule.createService;
+const TimelineClientBase = transitionTimelineMode
+    ? require(path.join(runtime, 'electronapp/native-helper/controller.js')).NativeHelperClient : null;
 nativeHelperServiceModule.createService = function (options) {
     const originalLogger = options && options.logger;
-    return createNativeHelperService(Object.assign({}, options, {
+    const serviceOptions = Object.assign({}, options, {
         logger(record) {
             const details = record && record.details || {};
+            if (transitionTimelineMode && record && record.event === 'surface-sync' && transitionServiceEvents.length < 128) {
+                transitionServiceEvents.push({atMs: Date.now(), event: 'surface-sync',
+                    reason: details.reason || null, visible: details.visible === true});
+            }
             if (nativeHelperEvents.length < 128) nativeHelperEvents.push({
                 event: record && record.event || null,
                 reason: details.reason || null,
@@ -350,7 +475,68 @@ nativeHelperServiceModule.createService = function (options) {
             });
             if (typeof originalLogger === 'function') originalLogger(record);
         }
-    }));
+    });
+    if (transitionTimelineMode) {
+        const BaseClient = options && options.NativeHelperClient || TimelineClientBase;
+        serviceOptions.NativeHelperClient = class TimelineNativeHelperClient extends BaseClient {
+            constructor(clientOptions) {
+                const originalOnEvent = clientOptions.onEvent;
+                super(Object.assign({}, clientOptions, {
+                    onEvent(message) {
+                        const name = message && message.name;
+                        if (nativeTimelineEvents.length < 128 &&
+                            ['start-file', 'file-loaded', 'end-file', 'core-idle'].includes(name)) {
+                            const entry = {
+                                atMs: Date.now(),
+                                name,
+                                generationId: Number.isSafeInteger(message.generationId) ? message.generationId : null,
+                                mediaIdentity: Number.isSafeInteger(message.mediaIdentity) ? message.mediaIdentity : null
+                            };
+                            if (name === 'core-idle' && typeof message.value === 'boolean') entry.coreIdle = message.value;
+                            if (name === 'end-file' && message.value &&
+                                Number.isSafeInteger(message.value.reason)) entry.endReason = message.value.reason;
+                            nativeTimelineEvents.push(entry);
+                        }
+                        return originalOnEvent.call(this, message);
+                    }
+                }));
+            }
+        };
+    }
+    const service = createNativeHelperService(serviceOptions);
+    if (!transitionTimelineMode) return service;
+    const originalCall = service.call;
+    const originalNotify = service.notify;
+    function recordVisibility(event, operation, visible) {
+        if (transitionServiceEvents.length >= 128) return;
+        transitionServiceEvents.push({atMs: Date.now(), event, operation, visible,
+            surfaceVisible: service.status().surfaceVisible});
+    }
+    service.call = async function (operation, payload, endpointId) {
+        const command = payload && payload.data;
+        const tracked = operation === 'set-visible' ||
+            (operation === 'command' && (command === 'stop' || Array.isArray(command) && command[0] === 'stop'));
+        const visible = operation === 'set-visible' ? payload && payload.visible === true : false;
+        if (tracked) recordVisibility('main-call-start', operation, visible);
+        try {
+            const result = await originalCall.call(service, operation, payload, endpointId);
+            if (tracked) recordVisibility('main-call-complete', operation, visible);
+            return result;
+        } catch (error) {
+            if (tracked) recordVisibility('main-call-error', operation, visible);
+            throw error;
+        }
+    };
+    service.notify = function (operation, payload, endpointId) {
+        const tracked = operation === 'set-visible';
+        if (tracked) recordVisibility('main-notify-start', operation, payload && payload.visible === true);
+        try {
+            return originalNotify.call(service, operation, payload, endpointId);
+        } finally {
+            if (tracked) recordVisibility('main-notify-complete', operation, payload && payload.visible === true);
+        }
+    };
+    return service;
 };
 const diagnosticsModule = require(path.join(runtime, 'electronapp/enhanced/diagnostics.js'));
 const createDiagnosticsLogger = diagnosticsModule.createLogger;

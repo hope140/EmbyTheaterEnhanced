@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-10-07 — Windowed transition timeline tooling
+
+Model Tier：Tier 2。主线程限定观测范围；Sol High 实现工具与屏幕流，Luna 实现假服务 fixture / 边界测试。Reason：前一轮自动化未覆盖海报加载和窗口模式实际合成，必须先补证据而不是凭 core-playing 改呈现链。
+
+仅修改测试与工具：新增独立 timeline 模式、两种动态 Y4M 生成器、localhost 海报、像素与事件分层记录。console 桥未取得动作后改用受信 sender 的 test-only IPC；低频 thumbnail 采样间隔约 350–380ms，不再作为短闪主方法，改用提前准备的连续流。0/150ms 两组记录到首段黑色采样；其旧视频前置条件有限，追加严格条件的 probe 未完成，明确保留 INCONCLUSIVE，未放松门槛或改产品。生产源码仍为 `456df8e`。
+
+生成器与实际输入逐字节一致；采样颜色、窗口 / focus / display 限制、handler 恢复、动作白名单、时间窗及失焦丢帧 7/7 PASS。原默认 CD2 pipeline 回归 PASS。完整测试首次仅旧 visible-screenshot 文本断言不匹配；按新 timeline 仅流统计、默认 visible 仍截图的合同更新这一断言后，全量 347/347 PASS。运行记录均为隔离测试，不访问真实 Emby/CD2 或正式 profile。工具提交不改变 `src/`，不能当作已修复视觉失败。
+
 ## 2026-10-07 — PreviousTrack transition entry follow-up
 
 Model Tier：Tier 2。Model：当前 Codex 主线程；Sol High 只读调用链评审、Luna 确定性测试。Reason：响应真实视觉验收失败，限定修复 renderer 前后切集入口，不扩大 native 呈现契约。Escalated：no。

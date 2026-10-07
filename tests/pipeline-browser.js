@@ -1,7 +1,7 @@
 // Executed only by the local integration harness in an isolated Electron profile.
 // Real PlaybackManager + ApiClient report serializers + message dispatcher;
 // API responses and delivery are in memory, not a real Emby server/session.
-async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, stopBeforePlayerOnly) {
+async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, stopBeforePlayerOnly, timelineOptions) {
     const trace = window.__pipelineTrace = [];
     const stages = [];
     function markStage(name) {
@@ -63,7 +63,7 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
         calls.push('PlaybackInfo');
         const selected = items.get(id) || activeItem;
         const response = {PlaySessionId:'play-'+selected.Id,MediaSources:[{
-            Id:'source-'+selected.Id,Path:fixture,Protocol:'Http',IsRemote:false,Container:'y4m',
+            Id:'source-'+selected.Id,Path:selected.fixtureUrl || fixture,Protocol:'Http',IsRemote:false,Container:'y4m',
             MediaStreams:[],RunTimeTicks:50000000,SupportsDirectPlay:true,
             SupportsDirectStream:true,SupportsTranscoding:false,RequiredHttpHeaders:[]
         }]};
@@ -89,6 +89,21 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
     events.trigger(connections, 'apiclientcreated', [api]);
     const sleep = ms => new Promise(r=>setTimeout(r,ms));
     const send = (command, extra) => events.trigger(api, 'message', [{MessageType:'Playstate',Data:Object.assign({Command:command},extra)}]);
+    if (timelineOptions) {
+        if (typeof window.runTransitionTimelineFixture !== 'function') {
+            throw new Error('transition-timeline-browser-fixture-unavailable');
+        }
+        return window.runTransitionTimelineFixture({
+            manager:manager,
+            embedded:embedded,
+            api:api,
+            items:items,
+            records:records,
+            events:events,
+            fixture:fixture,
+            options:timelineOptions
+        });
+    }
     let stopBeforePlayer = null;
     if (stopBeforePlayerOnly) {
         const pendingItem = {Id:'fixture-stop-before-player',ServerId:'fixture-server',Name:'Pending stop',

@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-07 — 窗口模式短闪的独立观察夹具
+
+用户确认黑屏很快消失，仅测窗口模式。新增带海报、不同动态媒体、renderer/main/native 事件与合成 ROI 连续流的 test-only 模式；默认 pipeline 保持。初步两组连续流捕获了海报前的黑色采样，海报后短黑未稳定复现；追加稳定旧画面前置条件的单次 probe 未取得前置证据，保持 INCONCLUSIVE。没有据此调整生产显示策略，详情见 [窗口过渡观察](TRANSITION_WINDOWED_TIMELINE.md)。
+
+诊断输入 runtime 绑定 `456df8e`，build / provenance / VerifyOnly 通过。最终 Node 全量 347/347 PASS，采样字段 / 资源约束专项 7/7 PASS，默认 CD2 pipeline 回归 PASS。真实 GUI 中已验证过的流停止 / handler 重置成功，运行后进程残留为 0。此前“没有新 runtime”的记录属于上一轮入口修正；本轮生成的是诊断输入，不是已解决两段黑屏的正式候选。
+
 ## 2026-10-07 — 人工视觉失败与 PreviousTrack 入口修正
 
 用户反馈 `88f56b7` 下一集为“黑屏 → 海报 → 黑屏 → 视频”，上一集仍透明，当前整体为 `USER VISUAL FAIL / BLACK INTERVALS UNRESOLVED`。确认上一集未进入过渡 wrapper 后，在同一 renderer 模块增加对称 previousTrack 接入；按现有 manager 的 playlist index - 1 取项，原调用 / request sequence / stop(false) generation guard 保留。
