@@ -1,5 +1,12 @@
 # 开发日志
 
+## 2026-10-07 — PreviousTrack transition entry follow-up
+
+Model Tier：Tier 2。Model：当前 Codex 主线程；Sol High 只读调用链评审、Luna 确定性测试。Reason：响应真实视觉验收失败，限定修复 renderer 前后切集入口，不扩大 native 呈现契约。Escalated：no。
+
+Settings 候选由用户确认通过；NextTrack `88f56b7` 被确认视觉失败。查证 Video OSD 的 previousTrack 调用不会进入仅包装 nextTrack 的模块；把同一 token / request 包装逻辑复用于两个入口，previous Item 与原 manager 的索引选择完全一致。新增回归对旧提交复现失败，对当前工作区 3/3 PASS；整体 340/340 PASS，语法和 diff 检查通过。
+
+首黑的 artwork load/decode 与尾黑的 core-playing / native show / presented-frame 边界仍需真实时序证据。没有使用固定 sleep 或让图片等待拖延媒体推进，没有新增 helper 首帧接口；当前只收口确定的 previous 入口遗漏。旧 runtime 保留，不将这次源码修正误记为整体视觉 PASS。
 ## 2026-10-06 — NextTrack transition cleanup audit
 
 Model Tier：Tier 2。Model：当前 Codex 主线程；GPT-6 Sol High 独立只读复核；Luna worker 补充确定性回归。Reason：视觉绘制等待跨入现有 stop(false) 边界，需要保留请求 token 与 libmpv generation guard。Escalated：no。

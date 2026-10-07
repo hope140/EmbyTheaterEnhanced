@@ -4,6 +4,12 @@
 
 The user-observed NextTrack gap exposes the desktop through the transparent main BrowserWindow after the playback surface hides. This change keeps the existing PlaybackManager, Resolver, Session, Native Helper and mpv source-selection flow. It adds one visual layer inside the existing main-renderer `.mpv-videoPlayerContainer`, below the Emby OSD controls and with `pointer-events:none`.
 
+## 2026-10-07 user acceptance follow-up
+
+The user rejected candidate `88f56b7` visually: NextTrack showed black, then artwork, then black, then video; PreviousTrack still exposed transparency. PreviousTrack was not wrapped at all. The renderer adapter now also wraps `previousTrack()`, selecting exactly `manager.getCurrentPlaylistIndex(player) - 1` from the existing queue and invoking the original method synchronously with its receiver and arguments intact. Start-of-queue, non-Video and other-player paths retain their original behavior, and mixed Next/Previous requests retain transition token ownership.
+
+The two black intervals remain unverified at the presentation layer. Artwork loads asynchronously and can leave the black fallback visible; the fade still uses `core-playing` plus renderer paint, not a native first-presented-frame signal. This follow-up does not add artwork waits, prefetching, fixed delays, visibility protocol changes or a first-frame claim. The previous-entry correction is independently tested; it is not a declaration that overall visual acceptance has passed.
+
 ## Source and lifecycle contract
 
 The Video OSD next button calls `PlaybackManager.nextTrack(currentPlayer)` (`vendor/carnival/electronapp/www/videoosd/videoosd.js:2093-2096`). In the local managed queue, `getNextItemInfo()` synchronously returns the next Item before `playInternal`; the existing public `nextItem()` performs an asynchronous `getItem` request. The overlay uses the same queue Item already selected by PlaybackManager and does not add an API request. An external/self-managed player still follows its original `nextTrack()` path without this overlay.

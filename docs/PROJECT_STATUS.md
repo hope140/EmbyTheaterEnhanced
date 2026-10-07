@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-07 — 人工视觉失败与 PreviousTrack 入口修正
+
+用户反馈 `88f56b7` 下一集为“黑屏 → 海报 → 黑屏 → 视频”，上一集仍透明，当前整体为 `USER VISUAL FAIL / BLACK INTERVALS UNRESOLVED`。确认上一集未进入过渡 wrapper 后，在同一 renderer 模块增加对称 previousTrack 接入；按现有 manager 的 playlist index - 1 取项，原调用 / request sequence / stop(false) generation guard 保留。
+
+新增三项回归验证准确选项、首项 / 非 Video / 其它播放器绕过、快速 next→previous 时旧回包保护；修改前基线存在失败，修改后 3/3 PASS，完整 `npm test 340/340 PASS`。两段黑屏目前只有用户现象与代码边界证据，没有首帧呈现证据，不记录修复完成；本轮未生成替代旧 candidate 的新 runtime。
+
 ## 2026-10-06 — NextTrack 无人值守审计修复
 
 从候选 `8f3d9a9` 在独立本地分支继续审核。已修复视觉任务取消后 paint promise / visibility listener / animation frame 残留，以及帧调度异常和 CSS 过渡取消 / 缺少实际动画时的清理。范围仅为 `enhanced/nexttrack-transition.js` 与回归测试；PlaybackManager、libmpv、Session、Resolver、Native Helper 和封面比例保持原有实现。

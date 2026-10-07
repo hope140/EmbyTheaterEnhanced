@@ -208,40 +208,49 @@
             return;
         }
         binding = {player: player, transition: transition};
-        var original = manager.nextTrack;
-        manager.nextTrack = function () {
-            var receiver = this;
-            var args = arguments;
-            var current = arguments[0] || manager.getCurrentPlayer();
-            var queue = manager._playQueueManager;
-            if (current !== binding.player || !queue || typeof queue.getNextItemInfo !== 'function') {
-                return original.apply(receiver, args);
-            }
-            var next;
-            try { next = queue.getNextItemInfo(); }
-            catch (_) { return original.apply(receiver, args); }
-            if (!next || !next.item || next.item.MediaType !== 'Video') {
-                return original.apply(receiver, args);
-            }
-            var visual = binding.transition;
-            var token;
-            try { token = visual.show(next.item); } catch (_) { token = null; }
-            if (token == null) return original.apply(receiver, args);
-            var before = Number(manager._etePlayRequestSequence) || 0;
-            var result;
-            try { result = original.apply(receiver, args); }
-            catch (error) { visual.fail(token); throw error; }
-            var requestId = Number(manager._etePlayRequestSequence) || 0;
-            if (requestId > before) visual.markLoading(token, requestId);
-            else visual.fail(token);
-            return Promise.resolve(result).then(function (result) {
+        function wrap(method, selectItem) {
+            var original = manager[method];
+            if (typeof original !== 'function') return;
+            manager[method] = function () {
+                var receiver = this;
+                var args = arguments;
+                var current = arguments[0] || manager.getCurrentPlayer();
+                var queue = manager._playQueueManager;
+                if (current !== binding.player || !queue) return original.apply(receiver, args);
+                var item;
+                try { item = selectItem(current, queue); }
+                catch (_) { return original.apply(receiver, args); }
+                if (!item || item.MediaType !== 'Video') return original.apply(receiver, args);
+                var visual = binding.transition;
+                var token;
+                try { token = visual.show(item); } catch (_) { token = null; }
+                if (token == null) return original.apply(receiver, args);
+                var before = Number(manager._etePlayRequestSequence) || 0;
+                var result;
+                try { result = original.apply(receiver, args); }
+                catch (error) { visual.fail(token); throw error; }
+                var requestId = Number(manager._etePlayRequestSequence) || 0;
+                if (requestId > before) visual.markLoading(token, requestId);
+                else visual.fail(token);
+                return Promise.resolve(result).then(function (result) {
                     visual.settled(token);
                     return result;
                 }, function (error) {
                     visual.fail(token);
                     throw error;
                 });
-        };
+            };
+        }
+        wrap('nextTrack', function (_current, queue) {
+            var next = typeof queue.getNextItemInfo === 'function' && queue.getNextItemInfo();
+            return next && next.item;
+        });
+        wrap('previousTrack', function (current, queue) {
+            if (typeof manager.getCurrentPlaylistIndex !== 'function' || typeof queue.getPlaylist !== 'function') return null;
+            // Match the existing manager's previous-item selection without changing its queue.
+            var index = manager.getCurrentPlaylistIndex(current) - 1;
+            return index >= 0 ? queue.getPlaylist()[index] : null;
+        });
         bindings.set(manager, binding);
     }
 
