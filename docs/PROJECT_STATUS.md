@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-07 — 播放呈现还原目标开始
+
+用户授权以升级前表现为标准自主修复，保留新版 Electron。见 [播放呈现还原](PLAYBACK_PRESENTATION_RESTORE.md)。当前已确认三套旧 runtime 来源，并重新取得当前候选有效的窗口合成画面；开始将测试工具适配到历史 Pepper / Helper 与全屏模式。生产行为尚未更改，真实视觉失败仍未关闭。
+
+历史窗口/全屏对照已完成：旧 Pepper 的相同 gpu-next 输出是旧画面衔接新画面；Helper 在 Electron 18 时已出现中间内容，Electron 44 同样存在。只抑制 stop 隐藏的测试实验将中间内容转成黑色，未达到还原目标，未用于产品。采样改为直接读取 MediaStreamTrackProcessor，解决透明 renderer 的绘制回调暂停；完整工具测试 362/362 PASS。下一步进入保留已呈现视频帧的能力验证。
+
 ## 2026-10-07 — 窗口模式短闪的独立观察夹具
 
 用户确认黑屏很快消失，仅测窗口模式。新增带海报、不同动态媒体、renderer/main/native 事件与合成 ROI 连续流的 test-only 模式；默认 pipeline 保持。初步两组连续流捕获了海报前的黑色采样，海报后短黑未稳定复现；追加稳定旧画面前置条件的单次 probe 未取得前置证据，保持 INCONCLUSIVE。没有据此调整生产显示策略，详情见 [窗口过渡观察](TRANSITION_WINDOWED_TIMELINE.md)。

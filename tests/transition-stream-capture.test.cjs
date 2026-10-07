@@ -20,6 +20,7 @@ function makeFixture(options = {}) {
             if (options.throwOnHandler && handler) throw new Error('handler registration failed');
         }
     };
+    if (options.noHandler) delete session.setDisplayMediaRequestHandler;
     const window = {
         webContents: {
             session,
@@ -63,6 +64,7 @@ function makeFixture(options = {}) {
     const capture = createTransitionStreamCapture({
         desktopCapturer,
         screen,
+        legacyDesktopCapture:options.legacyDesktopCapture === true,
         getApplicationWindow() { return window; }
     });
     return {
@@ -118,6 +120,22 @@ test('failed renderer preparation resets the installed display-media handler', a
     assert.equal(typeof fixture.handlerCalls[0].handler, 'function');
     assert.equal(fixture.handlerCalls[1].handler, null);
     assert.deepEqual(stopResult, {rendererStopped: true, handlerRestored: true});
+});
+
+test('historical capture requires explicit selection and the exact matching desktop source id', async function () {
+    const source = {id:'screen:exact:0',display_id:'7'};
+    const normal = makeFixture({noHandler:true,sources:[source]});
+    assert.deepEqual(await normal.capture.prepare(normal.window), {ready:false,reason:'display-media-handler-unavailable'});
+    const legacy = makeFixture({noHandler:true,legacyDesktopCapture:true,sources:[source]});
+    try {
+        assert.equal((await legacy.capture.prepare(legacy.window)).ready, true);
+        assert.match(legacy.scriptCalls[0], /"legacySourceId":"screen:exact:0"/);
+        assert.equal(legacy.handlerCalls.length, 0);
+    } finally {
+        assert.deepEqual(await legacy.capture.stop(), {rendererStopped:true,handlerRestored:true});
+    }
+    const absent = makeFixture({noHandler:true,legacyDesktopCapture:true,sources:[{display_id:'7'}]});
+    assert.deepEqual(await absent.capture.prepare(absent.window), {ready:false,reason:'matching-screen-source-unavailable'});
 });
 
 test('start accepts one next and one previous action and rejects unknown or repeated actions', async function () {

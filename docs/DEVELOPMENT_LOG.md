@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-10-07 — 呈现还原目标 / 历史基线工具
+
+Model Tier：Tier 2。Model：当前主线程；Sol High 只读时序复核，Luna inventory / 明确测试工具实现。Task Risk：中高（后续将涉及呈现时序）；Task Uncertainty：高（旧版实际画面尚需对照）；Cross-module Scope：renderer / main surface / 测试；Playback/Session Impact：当前为 test-only，后续保持既有所有权。Escalated：no。
+
+先核对旧 Pepper、Helper/E18、Helper/E44 runtime 与同一 mpv DLL；启动显式用户授权的隔离可见合成测试。当前候选严格红/绿前置已通过一轮，未采到黑色但保留采样间隔限制。历史比较独立于正式 E44 runtime validator，测试工具允许显式旧 runtime、区分有无 overlay、增加全屏观察以及前置像素不足时的 `OBSERVATION_BLOCKED`；没有实现图片预加载，也没有改产品显示策略。
+
+窗口与全屏历史矩阵已取得有效画面；三套全屏 runtime 均确认 gpu-next。原 rVFC 在全屏 document.hidden 时停止提供新样本，因此测试工具改为有界帧流 reader，并减少采集分辨率、保持间隔门槛和新鲜颜色前置。runner 修正 PS5.1 async callback/CIM 创建时间表示，保留 PID 复用拒绝，新增 harness hashes；全量 362/362 PASS。单变量仅抑制 surface.hide 的实验将 mixed 空档转为黑色，明确判定不足，不进入产品；错误实验 hook 首次初始化失败由外层 50s 清理完成，修正测试注入路径后取得有效实验，历史失败证据保留。
+
 ## 2026-10-07 — Windowed transition timeline tooling
 
 Model Tier：Tier 2。主线程限定观测范围；Sol High 实现工具与屏幕流，Luna 实现假服务 fixture / 边界测试。Reason：前一轮自动化未覆盖海报加载和窗口模式实际合成，必须先补证据而不是凭 core-playing 改呈现链。

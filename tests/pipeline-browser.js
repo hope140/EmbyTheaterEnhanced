@@ -64,7 +64,7 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
         const selected = items.get(id) || activeItem;
         const response = {PlaySessionId:'play-'+selected.Id,MediaSources:[{
             Id:'source-'+selected.Id,Path:selected.fixtureUrl || fixture,Protocol:'Http',IsRemote:false,Container:'y4m',
-            MediaStreams:[],RunTimeTicks:50000000,SupportsDirectPlay:true,
+            MediaStreams:[],RunTimeTicks:timelineOptions ? 300000000 : 50000000,SupportsDirectPlay:true,
             SupportsDirectStream:true,SupportsTranscoding:false,RequiredHttpHeaders:[]
         }]};
         if (id === pendingPlaybackId) {

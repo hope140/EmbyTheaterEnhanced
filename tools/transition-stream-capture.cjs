@@ -35,13 +35,9 @@ function classifyMeanColor(metrics) {
 async function rendererStreamCapture(config, colorClass) {
     const actionMs = 2000;
     const maxFrames = 120;
-    const video = document.createElement('video');
-    video.muted = true;
-    video.autoplay = true;
-    video.playsInline = true;
-    video.style.cssText = 'position:fixed;left:-10000px;top:-10000px;width:1px;height:1px;opacity:0;pointer-events:none';
-    document.documentElement.appendChild(video);
     let stream = null;
+    let frameReader = null;
+    let initialFrame = null;
     let accessExpired = false;
     let accessTimer;
 
@@ -80,18 +76,24 @@ async function rendererStreamCapture(config, colorClass) {
 
     function stopStream() {
         if (controller) controller.running = false;
-        try { video.pause(); } catch (_) { }
+        if (frameReader) frameReader.cancel().catch(() => {});
+        if (initialFrame) { initialFrame.close(); initialFrame = null; }
         if (stream) stream.getTracks().forEach(track => track.stop());
-        video.srcObject = null;
-        if (video.parentNode) video.parentNode.removeChild(video);
     }
 
     let controller = null;
     try {
-        if (!navigator.mediaDevices || typeof navigator.mediaDevices.getDisplayMedia !== 'function') {
+        if (!navigator.mediaDevices || (config.legacySourceId
+            ? typeof navigator.mediaDevices.getUserMedia !== 'function'
+            : typeof navigator.mediaDevices.getDisplayMedia !== 'function')) {
             throw new Error('display-media-unavailable');
         }
-        const pending = navigator.mediaDevices.getDisplayMedia({audio: false, video: {frameRate: 60}});
+        const pending = config.legacySourceId
+            ? navigator.mediaDevices.getUserMedia({audio:false, video:{mandatory:{
+                chromeMediaSource:'desktop', chromeMediaSourceId:config.legacySourceId,
+                maxFrameRate:60,maxWidth:1280,maxHeight:720}}})
+            : navigator.mediaDevices.getDisplayMedia({audio: false, video: {
+                frameRate:{ideal:60,max:60},width:{ideal:1280,max:1280},height:{ideal:720,max:720}}});
         pending.then(lateStream => {
             if (accessExpired) lateStream.getTracks().forEach(track => track.stop());
         }, () => {});
@@ -105,20 +107,19 @@ async function rendererStreamCapture(config, colorClass) {
             })
         ]);
         clearTimeout(accessTimer);
-        video.srcObject = stream;
-        await bounded(
-            new Promise((resolve, reject) => {
-                if (video.readyState >= 1) return resolve();
-                video.addEventListener('loadedmetadata', resolve, {once: true});
-                video.addEventListener('error', () => reject(new Error('video-metadata-error')), {once: true});
-            }),
-            2000, 'video-metadata-deadline');
-        await bounded(video.play(), 2000, 'video-play-deadline');
-        if (!video.videoWidth || !video.videoHeight || typeof video.requestVideoFrameCallback !== 'function') {
-            throw new Error('video-frame-callback-unavailable');
+        if (typeof MediaStreamTrackProcessor !== 'function') {
+            throw new Error('track-processor-unavailable');
         }
-        const scaleX = video.videoWidth / config.display.width;
-        const scaleY = video.videoHeight / config.display.height;
+        const processor = new MediaStreamTrackProcessor({track:stream.getVideoTracks()[0], maxBufferSize:1});
+        frameReader = processor.readable.getReader();
+        const firstRead = frameReader.read();
+        firstRead.then(packet => { if (accessExpired && packet.value) packet.value.close(); }, () => {});
+        const firstPacket = await bounded(firstRead, 2000, 'first-capture-frame-deadline');
+        if (firstPacket.done || !firstPacket.value) throw new Error('screen-stream-ended');
+        initialFrame = firstPacket.value;
+        const videoSize = {width:initialFrame.displayWidth, height:initialFrame.displayHeight};
+        const scaleX = videoSize.width / config.display.width;
+        const scaleY = videoSize.height / config.display.height;
         const source = {
             x: Math.round((config.window.x - config.display.x + config.window.width * 0.2) * scaleX),
             y: Math.round((config.window.y - config.display.y + config.window.height * 0.15) * scaleY),
@@ -126,7 +127,7 @@ async function rendererStreamCapture(config, colorClass) {
             height: Math.round(config.window.height * 0.55 * scaleY)
         };
         if (source.x < 0 || source.y < 0 || source.width < 1 || source.height < 1 ||
-            source.x + source.width > video.videoWidth || source.y + source.height > video.videoHeight) {
+            source.x + source.width > videoSize.width || source.y + source.height > videoSize.height) {
             throw new Error('video-roi-outside-stream');
         }
         const canvas = document.createElement('canvas');
@@ -149,11 +150,8 @@ async function rendererStreamCapture(config, colorClass) {
             controller.lastFrame = null;
             stopStream();
         }
-        let firstFrame;
-        const firstFrameReady = new Promise(resolve => { firstFrame = resolve; });
-        function onFrame() {
+        function onFrame(frame) {
             if (!controller.running) return;
-            firstFrame();
             const atMs = Date.now();
             if (controller.actions.previous && atMs > controller.actions.previous.endedAtMs) {
                 stopStream();
@@ -165,7 +163,11 @@ async function rendererStreamCapture(config, colorClass) {
             }
             const action = controller.active;
             try {
-                context.drawImage(video, source.x, source.y, source.width, source.height,
+                if (frame.displayWidth !== videoSize.width || frame.displayHeight !== videoSize.height) {
+                    invalidateCapture('screen-stream-size-changed');
+                    return;
+                }
+                context.drawImage(frame, source.x, source.y, source.width, source.height,
                     0, 0, canvas.width, canvas.height);
                 const metrics = frameMetrics(context.getImageData(0, 0, canvas.width, canvas.height).data);
                 controller.lastFrame = {atMs, ...metrics};
@@ -177,15 +179,38 @@ async function rendererStreamCapture(config, colorClass) {
                 invalidateCapture('canvas-roi-read-failed');
                 return;
             }
-            if (controller.running) video.requestVideoFrameCallback(onFrame);
         }
-        video.requestVideoFrameCallback(onFrame);
-        await bounded(firstFrameReady, 2000, 'first-capture-frame-deadline');
+        // Consume capture frames independently of the application's paint cycle.
+        // A native video window can leave the transparent renderer hidden while
+        // the composed desktop video remains visible.
+        async function pumpFrames() {
+            const reader = frameReader;
+            let frame = initialFrame;
+            initialFrame = null;
+            try {
+                while (frame) {
+                    try { onFrame(frame); } finally { frame.close(); frame = null; }
+                    if (!controller.running) break;
+                    const packet = await reader.read();
+                    if (packet.done) { if (controller.running) invalidateCapture('screen-stream-ended'); break; }
+                    frame = packet.value;
+                }
+            } catch (_) {
+                if (controller.running) invalidateCapture('screen-stream-read-failed');
+            } finally {
+                if (frame) frame.close();
+                reader.releaseLock();
+                if (frameReader === reader) frameReader = null;
+            }
+        }
+        pumpFrames();
         if (!controller.running) throw new Error('renderer-focus-or-bounds-changed');
         window.__eteTransitionScreenStream = {
             start(action, startedAtMs) {
-                if (!controller.running || (action !== 'next' && action !== 'previous') ||
-                    controller.actions[action]) return {ready: false};
+                if (!controller.running || (action !== 'next' && action !== 'previous')) return {ready: false};
+                const existing = controller.actions[action];
+                if (existing) return existing.startedAtMs === startedAtMs
+                    ? {ready:true,armedAtMs:existing.armedAtMs} : {ready:false};
                 const entry = {startedAtMs, endedAtMs: startedAtMs + actionMs, armedAtMs: Date.now(), frames: []};
                 controller.actions[action] = entry;
                 controller.active = entry;
@@ -193,13 +218,20 @@ async function rendererStreamCapture(config, colorClass) {
             },
             results() {
                 return {failure: controller.failure, actions: controller.actions,
-                    videoSize: {width: video.videoWidth, height: video.videoHeight}};
+                    videoSize};
             },
             currentColor() {
                 const last = controller.lastFrame;
                 if (!controller.running || !rendererStable() || !last || Date.now() - last.atMs > 150) return null;
                 return {atMs: last.atMs, colorClass: last.colorClass, hash: last.hash,
                     meanRGB: last.meanRGB, meanLuma: last.meanLuma};
+            },
+            diagnostic() {
+                const last = controller.lastFrame;
+                return {running:controller.running, failure:controller.failure,
+                    visibility:document.visibilityState, stable:rendererStable(),
+                    lastFrameAgeMs:last ? Math.max(0, Date.now() - last.atMs) : null,
+                    lastColor:last ? last.colorClass : null};
             },
             invalidate() {
                 invalidateCapture('main-window-invalidated');
@@ -211,14 +243,13 @@ async function rendererStreamCapture(config, colorClass) {
                 return true;
             }
         };
-        return {ready: true, videoSize: {width: video.videoWidth, height: video.videoHeight}};
+        return {ready: true, videoSize, frameSource:'MediaStreamTrackProcessor'};
     } catch (error) {
         accessExpired = true;
         clearTimeout(accessTimer);
         stopStream();
         const known = new Set(['display-media-unavailable', 'display-media-deadline',
-            'video-metadata-error', 'video-metadata-deadline', 'video-play-deadline',
-            'video-frame-callback-unavailable', 'video-roi-outside-stream',
+            'track-processor-unavailable', 'screen-stream-ended', 'video-roi-outside-stream',
             'canvas-unavailable', 'first-capture-frame-deadline',
             'renderer-focus-or-bounds-changed']);
         return {ready: false, reason: error && known.has(error.message)
@@ -293,10 +324,15 @@ function createTransitionStreamCapture(options) {
             return preparation = {ready: false, reason: 'matching-screen-source-unavailable'};
         }
         session = window.webContents && window.webContents.session;
-        if (!session || typeof session.setDisplayMediaRequestHandler !== 'function') {
+        const legacyCapture = options.legacyDesktopCapture === true;
+        if (legacyCapture && typeof source.id !== 'string') {
+            return preparation = {ready:false, reason:'matching-screen-source-unavailable'};
+        }
+        if (!legacyCapture && (!session || typeof session.setDisplayMediaRequestHandler !== 'function')) {
             return preparation = {ready: false, reason: 'display-media-handler-unavailable'};
         }
         try {
+            if (!legacyCapture) {
             session.setDisplayMediaRequestHandler((request, callback) => {
                 const owner = getApplicationWindow();
                 if (owner !== window || window.isDestroyed() || !request.videoRequested || request.audioRequested ||
@@ -307,13 +343,15 @@ function createTransitionStreamCapture(options) {
                 callback({video: source});
             }, {useSystemPicker: false});
             handlerInstalled = true;
+            }
         } catch (_) {
             return preparation = {ready: false, reason: 'display-media-handler-rejected'};
         }
         try {
             preparation = await withDeadline(window.webContents.executeJavaScript(
                 '(' + rendererStreamCapture.toString() + ')(' + JSON.stringify({
-                    display: display.bounds, window: bounds
+                    display: display.bounds, window: bounds,
+                    legacySourceId:legacyCapture ? source.id : null
                 }) + ',' + classifyMeanColor.toString() + ')', true), 7500, 'screen-stream-prepare-deadline');
         } catch (_) {
             preparation = {ready: false, reason: 'screen-stream-prepare-failed'};
@@ -341,9 +379,12 @@ function createTransitionStreamCapture(options) {
         return preparation;
     }
 
-    function start(action) {
+    function start(action, rendererStartedAtMs) {
         if ((action !== 'next' && action !== 'previous') || observations.has(action)) return false;
-        const startedAtMs = Date.now();
+        const now = Date.now();
+        if (rendererStartedAtMs !== undefined && (!Number.isFinite(rendererStartedAtMs) ||
+            rendererStartedAtMs > now + 10 || now - rendererStartedAtMs > 100)) return false;
+        const startedAtMs = rendererStartedAtMs === undefined ? now : rendererStartedAtMs;
         const entry = {action, startedAtMs, endedAtMs: startedAtMs + ACTION_MS,
             invalidReason: globalInvalidReason || (preparation.ready ? windowProblem() : preparation.reason),
             armedAtMs: null, monitor: null, armPromise: null};
@@ -424,7 +465,7 @@ function createTransitionStreamCapture(options) {
                 ? 'INCONCLUSIVE' : captures.some(item => item.classification === 'OBSERVED_BLACK_INTERVAL')
                     ? 'OBSERVED_BLACK_INTERVAL' : 'OBSERVED_VIDEO_TRANSITION',
             reason: captures.length === 2 ? null : 'missing-track-action',
-            captureMode: 'continuous-screen-stream',
+            captureMode: 'continuous-screen-track-processor',
             preparation: preparation.ready ? {ready: true} : preparation,
             captures
         };
@@ -454,4 +495,4 @@ function createTransitionStreamCapture(options) {
     return {prepare, start, waitForResults, stop};
 }
 
-module.exports = {createTransitionStreamCapture, classifyMeanColor};
+module.exports = {createTransitionStreamCapture, classifyMeanColor, rendererStreamCapture};

@@ -2,7 +2,7 @@
     'use strict';
 
     var MAX_TIMELINE_EVENTS = 80;
-    var FIXTURE_DEADLINE_MS = 14500;
+    var FIXTURE_DEADLINE_MS = 22000;
 
     function currentItemKey(manager, timelineKeyById) {
         try {
@@ -64,6 +64,8 @@
                     }
                 }
                 if (Date.now() >= stageDeadline) {
+                    var streamState = rootWindow.__eteTransitionScreenStream;
+                    if (streamState && typeof streamState.diagnostic === 'function') result.diagnostic = streamState.diagnostic();
                     record('pixel-prerequisite-inconclusive', stage === 'initialA' ? 'A' : 'B', {
                         stage: stage, expectedColor: expectedColor, observedColor: result.observedColor, sampleAtMs: result.atMs
                     });
@@ -203,7 +205,7 @@
                 Path: url,
                 ImageTags: {Primary: 'timeline-primary-' + key},
                 BackdropImageTags: ['timeline-backdrop-' + key],
-                RunTimeTicks: 50000000,
+                RunTimeTicks: 300000000,
                 UserData: {},
                 MediaStreams: []
             };
@@ -227,11 +229,11 @@
             actionStates[kind] = slot;
             record('action-start', target, {kind: kind});
             if (!root.ipc || typeof root.ipc.send !== 'function') throw new Error('timeline-test-ipc-unavailable');
-            root.ipc.send('ete-test-transition-timeline-action', kind);
-            await withDeadline(new Promise(function (resolve) {
-                if (typeof root.requestAnimationFrame === 'function') root.requestAnimationFrame(function () { resolve(); });
-                else setTimeout(resolve, 16);
-            }), Math.min(500, remainingMs()), kind + '-capture-start');
+            var capture = root.__eteTransitionScreenStream;
+            if (capture && typeof capture.start === 'function' && !capture.start(kind, slot.startedAtMs).ready) {
+                throw new Error('timeline-capture-arm-failed');
+            }
+            root.ipc.send('ete-test-transition-timeline-action', kind, slot.startedAtMs);
 
             var operation = kind === 'next' ? manager.nextTrack() : manager.previousTrack();
             await withDeadline(operation, Math.min(3500, remainingMs()), kind + '-playback');
@@ -331,16 +333,26 @@
                 initialItem = itemA;
 
                 record('initial-play-start', 'A');
-                await withDeadline(manager.play({items: [itemA, itemB], fullscreen: false, startPositionTicks: 0}), Math.min(3500, remainingMs()), 'initial-play');
+                await withDeadline(manager.play({items: [itemA, itemB], fullscreen: settings.fullscreen === true, startPositionTicks: 0}), Math.min(8000, remainingMs()), 'initial-play');
                 initialItemKey = currentItemKey(manager, timelineKeyById);
                 record('initial-play-settled', initialItemKey, {selected: initialItemKey === 'A'});
                 if (initialItemKey !== 'A') throw new Error('timeline-initial-item-not-selected');
                 await waitUntil(function () { return timeline.some(function (entry) { return entry.event === 'core-playing' && entry.item === 'A'; }); }, Math.min(500, remainingMs()), 'initial-core-playing');
                 addPositionSample('A');
+                if (embedded && typeof embedded.getStats === 'function') {
+                    try {
+                        var stats = await withDeadline(embedded.getStats(), Math.min(1000, remainingMs()), 'video-output-observer');
+                        var video = (stats.categories || []).filter(function (category) { return category.type === 'video'; })[0];
+                        var output = video && (video.stats || []).filter(function (entry) { return entry.label === '视频渲染:'; })[0];
+                        record('video-output-observed', 'A', {value:output && /^(gpu-next|gpu|libmpv|direct3d|opengl|d3d11)$/.test(output.value) ? output.value : 'UNAVAILABLE'});
+                    } catch (_) { record('video-output-observed', 'A', {value:'UNAVAILABLE'}); }
+                }
                 pixelPrerequisite.initialA = await waitForPixelColor(root, 'initialA', 'red', remainingMs, record);
+                if (pixelPrerequisite.initialA.status !== 'COLOR_OBSERVED') throw new Error('timeline-pixel-prerequisite');
 
                 var nextSlot = await invokeAction('next', 'B');
                 pixelPrerequisite.beforePrevious = await waitForPixelColor(root, 'beforePrevious', 'green', remainingMs, record);
+                if (pixelPrerequisite.beforePrevious.status !== 'COLOR_OBSERVED') throw new Error('timeline-pixel-prerequisite');
                 var previousSlot = await invokeAction('previous', 'A');
                 result = {
                     kind: 'windowed-transition-timeline',
@@ -368,11 +380,13 @@
             } catch (error) {
                 completedStatus = 'failed';
                 var failureMessage = error && typeof error.message === 'string' ? error.message : '';
+                if (failureMessage === 'timeline-pixel-prerequisite') completedStatus = 'observation-blocked';
                 var safeFailure = /^timeline-[a-z-]+(?::[a-z-]+)?$/.test(failureMessage)
                     ? failureMessage : 'timeline-fixture-error';
                 record('fixture-failed', currentItemKey(manager, timelineKeyById), {reason: safeFailure});
                 var nextFailure = actionStates.next || {};
                 var previousFailure = actionStates.previous || {};
+                var notRun = completedStatus === 'observation-blocked' ? 'NOT_RUN' : false;
                 result = {
                     kind: 'windowed-transition-timeline',
                     status: completedStatus,
@@ -380,14 +394,14 @@
                     timeline: timeline,
                     actions: actions,
                     logicalChecks: {
-                        nextItemB: nextFailure.currentItem === 'B',
-                        previousItemA: previousFailure.currentItem === 'A',
-                        nextOverlay: !!nextFailure.overlayInserted,
-                        previousOverlay: !!previousFailure.overlayInserted,
-                        nextArtworkLoaded: nextFailure.imageStatus === 'loaded',
-                        previousArtworkLoaded: previousFailure.imageStatus === 'loaded',
-                        nextCorePlaying: !!nextFailure.corePlaying,
-                        previousCorePlaying: !!previousFailure.corePlaying,
+                        nextItemB: actionStates.next ? nextFailure.currentItem === 'B' : notRun,
+                        previousItemA: actionStates.previous ? previousFailure.currentItem === 'A' : notRun,
+                        nextOverlay: actionStates.next ? !!nextFailure.overlayInserted : notRun,
+                        previousOverlay: actionStates.previous ? !!previousFailure.overlayInserted : notRun,
+                        nextArtworkLoaded: actionStates.next ? nextFailure.imageStatus === 'loaded' : notRun,
+                        previousArtworkLoaded: actionStates.previous ? previousFailure.imageStatus === 'loaded' : notRun,
+                        nextCorePlaying: actionStates.next ? !!nextFailure.corePlaying : notRun,
+                        previousCorePlaying: actionStates.previous ? !!previousFailure.corePlaying : notRun,
                         durationMs: Date.now() - startedAt
                     },
                     artwork: {

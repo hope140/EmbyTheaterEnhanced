@@ -9,6 +9,10 @@ const runtime = process.env.ETE_TEST_RUNTIME;
 const evidence = process.env.ETE_TEST_EVIDENCE;
 const testCd2Origin = process.env.ETE_CD2_ORIGIN || '';
 const transitionTimelineMode = process.env.ETE_TEST_TRANSITION_TIMELINE === '1';
+const transitionComparison = transitionTimelineMode && process.env.ETE_TEST_TRANSITION_COMPARE === '1';
+const transitionFullscreen = transitionTimelineMode && process.env.ETE_TEST_TRANSITION_FULLSCREEN === '1';
+const retainSurfaceStopProbe = transitionComparison && process.env.ETE_TEST_TRANSITION_RETAIN_SURFACE === '1';
+const hasNativeHelper = fs.existsSync(path.join(runtime || '', 'electronapp/native-helper/service.js'));
 if (!runtime || !evidence) throw Error('ETE_TEST_RUNTIME and ETE_TEST_EVIDENCE are required');
 const expectedApplicationPath = path.join(runtime, 'electronapp', 'www', 'index.html');
 const windowOwnership = createWindowOwnership({expectedApplicationPath});
@@ -124,11 +128,12 @@ if (transitionTimelineMode) {
         desktopCapturer,
         screen,
         getApplicationWindow: () => windowOwnership.getApplicationWindow(),
+        legacyDesktopCapture: transitionComparison && process.versions.electron.startsWith('18.'),
         evidence
     });
-    transitionActionListener = (event, action) => {
+    transitionActionListener = (event, action, startedAtMs) => {
         const owner = windowOwnership.getApplicationWindow();
-        if (owner && !owner.isDestroyed() && event.sender === owner.webContents) transitionCapture.start(action);
+        if (owner && !owner.isDestroyed() && event.sender === owner.webContents) transitionCapture.start(action, startedAtMs);
     };
     ipcMain.on('ete-test-transition-timeline-action', transitionActionListener);
 }
@@ -155,6 +160,7 @@ function writeResultAndExit(result) {
     if (transitionTimelineMode) {
         result.transitionServiceEvents = transitionServiceEvents;
         result.nativeTimelineEvents = nativeTimelineEvents;
+        result.experimentalPresentation = retainSurfaceStopProbe;
     }
     result.diagnosticEvents = diagnosticEvents;
     result.windowOwnership = windowOwnership.snapshot();
@@ -323,21 +329,52 @@ app.on('browser-window-created', (_, win) => {
                 }
                 if (transitionTimelineMode) {
                     applicationPipelineInjectionCount++;
-                    state.transitionWindowMode = win.isFullScreen() ? 'fullscreen' : 'windowed';
-                    if (state.transitionWindowMode !== 'windowed') {
-                        return finish({ok:false,error:'Windowed transition requires a non-fullscreen application window',state});
+                    if (transitionFullscreen) {
+                        await new Promise(resolve => {
+                            const timer = setTimeout(done, 2500);
+                            function done() { clearTimeout(timer); win.removeListener('enter-full-screen', entered); resolve(); }
+                            function entered() { state.fullscreenEnteredEvent = true; done(); }
+                            win.once('enter-full-screen', entered);
+                            win.setFullScreen(true);
+                            if (win.isFullScreen()) done();
+                        });
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                    const requestedBounds = win.getBounds();
+                    const displayBounds = screen.getDisplayMatching(requestedBounds).bounds;
+                    state.rendererWindowState = await win.webContents.executeJavaScript('document.windowState || null');
+                    state.fullscreenEvidence = {api:win.isFullScreen(), enteredEvent:state.fullscreenEnteredEvent === true,
+                        renderer:state.rendererWindowState === 'Fullscreen',
+                        displayBoundsMatch:['x','y','width','height'].every(key => requestedBounds[key] === displayBounds[key])};
+                    // Some transparent Windows runtimes emit enter-full-screen and cover
+                    // the display while isFullScreen() remains false. Record all signals.
+                    const fullscreenObserved = state.fullscreenEvidence.api ||
+                        (state.fullscreenEvidence.enteredEvent && state.fullscreenEvidence.renderer && state.fullscreenEvidence.displayBoundsMatch);
+                    state.transitionWindowMode = fullscreenObserved ? 'fullscreen' : 'windowed';
+                    if (fullscreenObserved !== transitionFullscreen) {
+                        state.transitionWindowState = {visible:win.isVisible(),focused:win.isFocused(),
+                            fullscreenable:win.isFullScreenable(),maximized:win.isMaximized(),bounds:win.getBounds()};
+                        return finish({ok:false,error:'Transition window mode did not match the requested mode',state});
                     }
                     state.streamCapturePreparation = await transitionCapture.prepare(win);
+                    if (!state.streamCapturePreparation.ready) {
+                        return finish({ok:false,error:'Transition observation unavailable',observationStatus:'OBSERVATION_BLOCKED',state});
+                    }
                     const timelineSource = fs.readFileSync(path.join(__dirname,'../tests/transition-timeline-browser.js'),'utf8');
                     const pipelineSource = fs.readFileSync(path.join(__dirname,'../tests/pipeline-browser.js'),'utf8');
-                    const timelineOptions = {mediaAUrl, mediaBUrl, posterBaseUrl};
+                    const timelineOptions = {mediaAUrl, mediaBUrl, posterBaseUrl, fullscreen:transitionFullscreen};
                     state.pipeline = await win.webContents.executeJavaScript(withSourceUrl(
                         timelineSource + '\n' + pipelineSource + '\nrunPipelineFixture(' +
                         JSON.stringify(mediaAUrl) + ', null, null, null, false, ' + JSON.stringify(timelineOptions) + ')',
                         'ete-windowed-transition-fixture.js'));
                     const checks = state.pipeline && state.pipeline.logicalChecks;
-                    const requiredChecks = ['nextItemB', 'previousItemA', 'nextOverlay', 'previousOverlay',
-                        'nextArtworkLoaded', 'previousArtworkLoaded', 'nextCorePlaying', 'previousCorePlaying'];
+                    const requiredChecks = ['nextItemB', 'previousItemA', 'nextCorePlaying', 'previousCorePlaying'];
+                    if (!transitionComparison) requiredChecks.push('nextOverlay', 'previousOverlay', 'nextArtworkLoaded', 'previousArtworkLoaded');
+                    state.transitionComparison = transitionComparison;
+                    state.bridgeKind = hasNativeHelper ? 'native-helper' : 'pepper';
+                    if (state.pipeline && state.pipeline.status === 'observation-blocked') {
+                        return finish({ok:false,error:'Transition pixel prerequisite unavailable',observationStatus:'OBSERVATION_BLOCKED',state});
+                    }
                     if (state.pipeline && state.pipeline.status === 'failed') {
                         return finish({ok:false,error:'Windowed transition observation fixture incomplete',state});
                     }
@@ -449,11 +486,13 @@ if (process.env.ETE_TEST_CD2_MODE) {
         };
     };
 }
+if (hasNativeHelper) {
 const nativeHelperServiceModule = require(path.join(runtime, 'electronapp/native-helper/service.js'));
 const createNativeHelperService = nativeHelperServiceModule.createService;
 const TimelineClientBase = transitionTimelineMode
     ? require(path.join(runtime, 'electronapp/native-helper/controller.js')).NativeHelperClient : null;
 nativeHelperServiceModule.createService = function (options) {
+    let suppressStopHide = false;
     const originalLogger = options && options.logger;
     const serviceOptions = Object.assign({}, options, {
         logger(record) {
@@ -476,6 +515,19 @@ nativeHelperServiceModule.createService = function (options) {
             if (typeof originalLogger === 'function') originalLogger(record);
         }
     });
+    if (retainSurfaceStopProbe) {
+        const BaseWindow = options.electron.BrowserWindow;
+        const RetainedStopProbeWindow = class extends BaseWindow {
+            hide() {
+                if (suppressStopHide) {
+                    if (transitionServiceEvents.length < 128) transitionServiceEvents.push({atMs:Date.now(),event:'test-stop-hide-suppressed'});
+                    return;
+                }
+                return super.hide();
+            }
+        };
+        serviceOptions.electron = Object.assign({}, options.electron, {BrowserWindow:RetainedStopProbeWindow});
+    }
     if (transitionTimelineMode) {
         const BaseClient = options && options.NativeHelperClient || TimelineClientBase;
         serviceOptions.NativeHelperClient = class TimelineNativeHelperClient extends BaseClient {
@@ -518,6 +570,9 @@ nativeHelperServiceModule.createService = function (options) {
             (operation === 'command' && (command === 'stop' || Array.isArray(command) && command[0] === 'stop'));
         const visible = operation === 'set-visible' ? payload && payload.visible === true : false;
         if (tracked) recordVisibility('main-call-start', operation, visible);
+        const stopProbe = retainSurfaceStopProbe && operation === 'command' &&
+            (command === 'stop' || Array.isArray(command) && command[0] === 'stop');
+        if (stopProbe) suppressStopHide = true;
         try {
             const result = await originalCall.call(service, operation, payload, endpointId);
             if (tracked) recordVisibility('main-call-complete', operation, visible);
@@ -525,6 +580,8 @@ nativeHelperServiceModule.createService = function (options) {
         } catch (error) {
             if (tracked) recordVisibility('main-call-error', operation, visible);
             throw error;
+        } finally {
+            if (stopProbe) suppressStopHide = false;
         }
     };
     service.notify = function (operation, payload, endpointId) {
@@ -538,6 +595,9 @@ nativeHelperServiceModule.createService = function (options) {
     };
     return service;
 };
+} else if (!transitionComparison) {
+    throw new Error('Native Helper is required outside the historical comparison fixture');
+}
 const diagnosticsModule = require(path.join(runtime, 'electronapp/enhanced/diagnostics.js'));
 const createDiagnosticsLogger = diagnosticsModule.createLogger;
 diagnosticsModule.createLogger = function () {
@@ -556,4 +616,7 @@ diagnosticsModule.createLogger = function () {
         return logger(record);
     };
 };
+if (transitionComparison) {
+    process.once('uncaughtException', error => finish({ok:false,error:errorEvidence(error, 'main')}));
+}
 require(path.join(runtime, 'electronapp/main.js'));
