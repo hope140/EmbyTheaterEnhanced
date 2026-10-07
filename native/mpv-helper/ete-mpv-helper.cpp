@@ -764,6 +764,51 @@ class Helper {
     std::string frameUnavailable(const char* reason) const {
         return "{\"ready\":false,\"status\":\"unavailable\",\"reason\":" + quote(reason) + '}';
     }
+    void publishHeldFrame(uint64_t generation, uint64_t request, std::shared_ptr<HeldFrame> frame,
+                          bool includeReused, bool reused) {
+        if (nextHoldId == std::numeric_limits<uint64_t>::max()) {
+            emitResponse(generation, request, frameUnavailable("hold-id-exhausted")); return;
+        }
+        HWND window = frameWindow.load(std::memory_order_acquire);
+        if (!window || !IsWindow(window)) {
+            emitResponse(generation, request, frameUnavailable("frame-window-unavailable")); return;
+        }
+        frame->holdId = nextHoldId++;
+        std::shared_ptr<HeldFrame> previous;
+        {
+            std::lock_guard<std::mutex> lock(frameMutex);
+            previous = heldFrame;
+            heldFrame = frame;
+        }
+        if (previous && autoHoldId == previous->holdId) cancelAutoLease();
+        if (!PostMessageW(window, WM_TEST_FRAME_SHOW, static_cast<WPARAM>(frame->holdId), 0)) {
+            { std::lock_guard<std::mutex> lock(frameMutex); if (heldFrame == frame) heldFrame = previous; }
+            emitResponse(generation, request, frameUnavailable("frame-paint-dispatch-failed")); return;
+        }
+        bool painted = false;
+        {
+            std::unique_lock<std::mutex> lock(framePaintMutex);
+            painted = framePaintCondition.wait_for(lock, std::chrono::milliseconds(250), [&] { return lastPaintId >= frame->holdId; }) &&
+                lastPaintId == frame->holdId && lastPaintSucceeded;
+        }
+        if (!painted) {
+            { std::lock_guard<std::mutex> lock(frameMutex); if (heldFrame == frame) heldFrame = previous; }
+            PostMessageW(window, WM_TEST_FRAME_HIDE, static_cast<WPARAM>(frame->holdId), 0);
+            if (previous) PostMessageW(window, WM_TEST_FRAME_SHOW, static_cast<WPARAM>(previous->holdId), 0);
+            emitResponse(generation, request, frameUnavailable("paint-timeout-or-failed")); return;
+        }
+        std::ostringstream hash; hash << std::hex << std::setw(16) << std::setfill('0') << frame->hash;
+        std::string result = std::string("{\"ready\":true,\"status\":\"held\"") +
+            ",\"holdId\":" + std::to_string(frame->holdId) +
+            ",\"w\":" + std::to_string(frame->width) + ",\"h\":" + std::to_string(frame->height) +
+            ",\"bytes\":" + std::to_string(frame->pixels.size()) +
+            ",\"captureMs\":" + std::to_string(frame->captureMicros / 1000) +
+            ",\"meanRGB\":{\"r\":" + std::to_string(frame->meanR) + ",\"g\":" + std::to_string(frame->meanG) +
+            ",\"b\":" + std::to_string(frame->meanB) + "},\"hash\":" + quote(hash.str()) +
+            (includeReused ? std::string(",\"reused\":") + (reused ? "true" : "false") : "") +
+            ",\"painted\":true}";
+        emitResponse(generation, request, result);
+    }
     std::shared_ptr<HeldFrame> frameFromScreenshotNode(const mpv_node& result, uint64_t generation,
                                                        uint64_t started, std::string& reason) {
         std::shared_ptr<HeldFrame> frame;
@@ -1410,43 +1455,60 @@ public:
             std::string reason;
             auto frame = captureHeldFrame(generation, reason);
             if (!frame) { emitResponse(generation, request, frameUnavailable(reason.empty() ? "screenshot-unavailable" : reason.c_str())); return; }
-            if (nextHoldId == std::numeric_limits<uint64_t>::max()) {
-                emitResponse(generation, request, frameUnavailable("hold-id-exhausted")); return;
+            publishHeldFrame(generation, request, std::move(frame), false, false); return;
+        }
+        if (method == "test-frame-prepare-retired") {
+            if (type != "request") throw std::runtime_error("test-frame-prepare-retired-requires-request");
+            if (!message.has("params") || !message.at("params").has("sourceGenerationId")) {
+                emitResponse(generation, request, frameUnavailable("source-generation-required")); return;
             }
-            frame->holdId = nextHoldId++;
-            std::shared_ptr<HeldFrame> previous;
+            int64_t supplied = 0;
+            try { supplied = message.at("params").integer("sourceGenerationId"); }
+            catch (...) { emitResponse(generation, request, frameUnavailable("source-generation-invalid")); return; }
+            if (supplied <= 0 || static_cast<uint64_t>(supplied) > retiredThroughGeneration) {
+                emitResponse(generation, request, frameUnavailable("source-generation-not-retired")); return;
+            }
+            if (generation <= retiredThroughGeneration || latestActivatedGeneration > retiredThroughGeneration ||
+                generationToMedia.find(generation) != generationToMedia.end()) {
+                emitResponse(generation, request, frameUnavailable("control-generation-not-idle")); return;
+            }
+            if (!frameLayeredReady.load(std::memory_order_acquire)) {
+                emitResponse(generation, request, frameUnavailable("frame-layered-unavailable")); return;
+            }
+            HWND window = frameWindow.load(std::memory_order_acquire);
+            if (!window || !IsWindow(window)) {
+                emitResponse(generation, request, frameUnavailable("frame-window-unavailable")); return;
+            }
+            cancelAutoLease();
+            std::shared_ptr<HeldFrame> frame;
+            std::shared_ptr<HeldFrame> visibleFrame;
             {
                 std::lock_guard<std::mutex> lock(frameMutex);
-                previous = heldFrame;
-                heldFrame = frame;
+                std::shared_ptr<HeldFrame> current = heldFrame;
+                if (current && IsWindowVisible(window) && parent && IsWindowVisible(parent)) {
+                    std::lock_guard<std::mutex> paintLock(framePaintMutex);
+                    if (lastPaintId == current->holdId && lastPaintSucceeded) visibleFrame = current;
+                }
             }
-            if (previous && autoHoldId == previous->holdId) cancelAutoLease();
-            if (!PostMessageW(window, WM_TEST_FRAME_SHOW, static_cast<WPARAM>(frame->holdId), 0)) {
-                { std::lock_guard<std::mutex> lock(frameMutex); if (heldFrame == frame) heldFrame = previous; }
-                emitResponse(generation, request, frameUnavailable("frame-paint-dispatch-failed")); return;
+            if (visibleFrame) {
+                try { frame = std::make_shared<HeldFrame>(*visibleFrame); }
+                catch (...) { emitResponse(generation, request, frameUnavailable("frame-copy-failed")); return; }
             }
-            bool painted = false;
-            {
-                std::unique_lock<std::mutex> lock(framePaintMutex);
-                painted = framePaintCondition.wait_for(lock, std::chrono::milliseconds(250), [&] { return lastPaintId >= frame->holdId; }) &&
-                    lastPaintId == frame->holdId && lastPaintSucceeded;
+            bool reused = static_cast<bool>(frame);
+            if (!frame) {
+                uint64_t source = static_cast<uint64_t>(supplied);
+                int64_t media = uniqueOpenMedia();
+                auto owner = generationToMedia.find(source);
+                auto reverse = mediaToGeneration.find(media);
+                if (media < 0 || owner == generationToMedia.end() || owner->second != media ||
+                    reverse == mediaToGeneration.end() || reverse->second != source) {
+                    emitResponse(generation, request, frameUnavailable("retired-source-unmapped")); return;
+                }
+                std::string reason;
+                frame = captureHeldFrame(source, reason);
+                if (!frame) { emitResponse(generation, request, frameUnavailable(reason.empty() ? "screenshot-unavailable" : reason.c_str())); return; }
             }
-            if (!painted) {
-                { std::lock_guard<std::mutex> lock(frameMutex); if (heldFrame == frame) heldFrame = previous; }
-                PostMessageW(window, WM_TEST_FRAME_HIDE, static_cast<WPARAM>(frame->holdId), 0);
-                if (previous) PostMessageW(window, WM_TEST_FRAME_SHOW, static_cast<WPARAM>(previous->holdId), 0);
-                emitResponse(generation, request, frameUnavailable("paint-timeout-or-failed")); return;
-            }
-            std::ostringstream hash; hash << std::hex << std::setw(16) << std::setfill('0') << frame->hash;
-            std::string result = std::string("{\"ready\":true,\"status\":\"held\"") +
-                ",\"holdId\":" + std::to_string(frame->holdId) +
-                ",\"w\":" + std::to_string(frame->width) + ",\"h\":" + std::to_string(frame->height) +
-                ",\"bytes\":" + std::to_string(frame->pixels.size()) +
-                ",\"captureMs\":" + std::to_string(frame->captureMicros / 1000) +
-                ",\"meanRGB\":{\"r\":" + std::to_string(frame->meanR) + ",\"g\":" + std::to_string(frame->meanG) +
-                ",\"b\":" + std::to_string(frame->meanB) + "},\"hash\":" + quote(hash.str()) +
-                ",\"painted\":true}";
-            emitResponse(generation, request, result); return;
+            publishHeldFrame(generation, request, std::move(frame), true, reused); return;
         }
         if (method == "test-frame-arm-next") {
             if (type != "request") throw std::runtime_error("test-frame-arm-next-requires-request");

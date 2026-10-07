@@ -99,3 +99,21 @@ CPP 能力入口已本地提交 `97fb2d4`，正式 `build-native-helper.ps1 -Tes
 新增 `test-frame-arm-next` 绑定已activate、尚未load的新generation和已有holdId。新文件完成媒体映射/FILE_LOADED后，只消费一次PLAYBACK_RESTART，异步请求mpv窗口图；成功解析新帧后，UI消息以generation/holdId授权前后复核，执行一次DwmFlush后尝试撤下旧frame。新图像只生成metadata后释放，未跨IPC传图。取消/替换/退休撤销旧授权；初始恢复播放的seek不被误当作禁止项，已消费后的seek不会重新触发。
 
 该路径没有固定200ms延迟，但PLAYBACK_RESTART、截图成功、DwmFlush都不称为present ACK；没有媒体ID的restart事件仍存在极端归属限制，必须由已知fixture与独立屏幕边界实测判定。`--auto-release` harness明确区分此候选与旧的手动能力步骤。默认Helper字节仍与生产相同，不是正式修复。
+
+### 自动候选的基础矩阵
+
+`269bdcc` 正式 Testing build 已运行：窗口 Y4M、全屏 Y4M，以及窗口 H.264 720p/24fps+AAC → H.265 1080p/60fps+AAC 两方向均得到严格匹配的 generation/holdId、有效的新帧 metadata、自动释放后bytes=0和正确的新视频颜色。全程没有固定200ms或手动release。
+
+跨编码窗口样本77/76帧，最大间隔55/72ms，只有旧/新视频色，黑/紫/mixed均0。原始Y4M窗口Next因128ms采样间隔仍INCONCLUSIVE，Previous满足间隔门槛；全屏持续持帧阶段长间隔仍保留INCONCLUSIVE，静态点与释放后新视频已分别确认。三轮清理均完成。这是进入生命周期边界检查的依据，尚未接入产品。
+
+## 接入前的候选 contract
+
+以下是满足用户还原目标所需的实现边界，尚待边界试验及主线程最终复核，不代表代码已经落地。
+
+- 继续使用原manager的同步Next/Previous调用与请求sequence；视觉controller不再操作海报DOM，而是拥有native presentation token。原来的临时stop与真正destroy区分不变。
+- `invalidatePlayRequest` 仍同步执行在任何视觉等待之前。准备旧帧属于限定于已有视频窗口的presentation控制操作，不能恢复旧媒体generation，也不能发起旧source播放/查询服务器。
+- main持有最后请求显示的generation、endpoint/helper实例、presentation epoch/token和holdId。只允许当前显示的本地视频场景准备；过时响应只可清理自己持有的hold，不能隐藏新视频或其它helper的同号hold。
+- native准备时优先复用已经显示的暂存帧，保证快速跳过中间条目时不会把未显示的中间视频抓出来展示；没有暂存帧时，当前窗口媒体映射必须匹配main指定的源generation。像素始终留在native。
+- 当前token确实取得hold后，临时stop保留surface并执行原mpv stop；其它stop、destroy、退出和helper失败沿终止清理流程。新generation必须在load之前绑定自动揭开；迟到的旧failure/capture不能改变新generation的surface。
+- 截图、绘制、自动揭开失败必须fail-open释放视觉遮挡，不能把旧画面永远盖在已经播放的新视频上。当前prototype保留旧帧供诊断的策略不得原样进入产品。
+- pre-playbackInfo/Resolver失败、快速混合前后切、Stop-before-player、用户Stop与正常退出必须有定向验证。版本升级/发布/安装仍独立。
