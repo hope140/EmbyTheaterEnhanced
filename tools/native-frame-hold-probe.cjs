@@ -22,13 +22,16 @@ function parseArguments(argv) {
     const args = Array.isArray(argv) ? argv.slice() : [];
     let fullscreen = false;
     let autoRelease = false;
-    if (args.length < 5 || args.length > 7) fail('usage');
+    let boundaries = false;
+    if (args.length < 5 || args.length > 8) fail('usage');
     const flags = args.splice(5);
     for (const flag of flags) {
         if (flag === '--fullscreen' && !fullscreen) fullscreen = true;
         else if (flag === '--auto-release' && !autoRelease) autoRelease = true;
+        else if (flag === '--boundaries' && !boundaries) boundaries = true;
         else fail('usage');
     }
+    if (autoRelease && boundaries) fail('usage');
     if (args.length !== 5 || args.some(value => typeof value !== 'string' || !value || value.startsWith('--'))) {
         fail('usage');
     }
@@ -42,7 +45,7 @@ function parseArguments(argv) {
     if (!fs.existsSync(path.dirname(outputPath)) || !fs.statSync(path.dirname(outputPath)).isDirectory()) {
         fail('output-parent-missing');
     }
-    return {helperPath, libmpvPath, mediaAPath, mediaBPath, outputPath, fullscreen, autoRelease};
+    return {helperPath, libmpvPath, mediaAPath, mediaBPath, outputPath, fullscreen, autoRelease, boundaries};
 }
 
 async function hashFile(filePath) {
@@ -136,7 +139,8 @@ function validateAutoStatus(response) {
         !(response.targetGen === null || Number.isSafeInteger(response.targetGen)) ||
         !(response.autoHoldId === null || Number.isSafeInteger(response.autoHoldId)) ||
         safeAutoReason(response.autoReason) === null || !Number.isSafeInteger(response.bytes) || response.bytes < 0 ||
-        !(response.holdId === null || Number.isSafeInteger(response.holdId)) || typeof response.active !== 'boolean') {
+        !(response.holdId === null || Number.isSafeInteger(response.holdId)) || typeof response.active !== 'boolean' ||
+        typeof response.painted !== 'boolean') {
         fail('auto-status-metadata-invalid');
     }
     let captureMetadata = null;
@@ -151,7 +155,7 @@ function validateAutoStatus(response) {
             meanRGB:{r:metadata.meanRGB.r,g:metadata.meanRGB.g,b:metadata.meanRGB.b},hash:metadata.hash};
     }
     return {
-        active:response.active, bytes:response.bytes, holdId:response.holdId,
+        active:response.active, bytes:response.bytes, holdId:response.holdId, painted:response.painted,
         autoState:response.autoState, targetGen:response.targetGen, autoHoldId:response.autoHoldId,
         fence:response.fence, autoReason:response.autoReason, captureMetadata
     };
@@ -224,7 +228,7 @@ async function runProbe(args, electron) {
         status: 'running',
         evidenceClass: 'experimental-capability-only',
         productAcceptance: false,
-        releaseMechanism: args.autoRelease ? 'native-event-capture-fence-candidate' : 'test-frame-release',
+        releaseMechanism: args.autoRelease || args.boundaries ? 'native-event-capture-fence-candidate' : 'test-frame-release',
         fullscreen: {requested: args.fullscreen, enteredEvent: false, boundsMatched: false, apiIsFullScreen: null},
         inputs: {},
         transitions: [],
@@ -239,7 +243,7 @@ async function runProbe(args, electron) {
     const events = [];
     const startAt = Date.now();
     const eventsSeen = message => {
-        if (!message || !['core-idle', 'pause'].includes(message.name)) return;
+        if (!message || !['core-idle','pause','time-pos','start-file','file-loaded','end-file'].includes(message.name)) return;
         events.push({atMs: Date.now() - startAt, name: message.name, generationId: message.generationId, value: message.value});
         if (events.length > 128) events.shift();
     };
@@ -355,6 +359,15 @@ async function runProbe(args, electron) {
         await waitForCorePlaying(generationId, 'core-playing');
         return generationId;
     }
+    async function loadInGeneration(generationId, mediaPath) {
+        if (client.currentGenerationId !== generationId) fail('boundary-current-generation-mismatch');
+        client.setProperty('volume', 0);
+        client.setProperty('pause', false);
+        const load = client.load(['loadfile', mediaPath]);
+        await stage(load.promise, 5000, 'boundary-load-request');
+        await waitForCorePlaying(generationId, 'boundary-core-playing');
+        return generationId;
+    }
     async function waitForAutoRelease(targetGen, holdId, expectedColor, progress, armedAt) {
         const deadline = Date.now() + 5000;
         while (Date.now() < deadline) {
@@ -392,8 +405,13 @@ async function runProbe(args, electron) {
 
         const holdStartedAt = Date.now();
         const generationId = client.currentGenerationId;
-        const holdResponse = await stage(client.request('test-frame-hold', {}, {
-            generationId, mediaScoped: false, timeoutMs: 3000
+        // Match the product ordering: retire media authority before awaiting visual work.
+        if (args.autoRelease) client.retireGeneration('visual-probe-retire-before-prepare');
+        const preparationGeneration = args.autoRelease ? client.allocateGenerationId() : generationId;
+        progress.preparationMode = args.autoRelease ? 'retired-source-control' : 'active-source-capability';
+        const holdResponse = await stage(client.request(args.autoRelease ? 'test-frame-prepare-retired' : 'test-frame-hold',
+            args.autoRelease ? {sourceGenerationId:generationId} : {}, {
+            generationId:preparationGeneration, mediaScoped: false, timeoutMs: 3000
         }), 3500, 'frame-hold-request');
         const holdRequestRoundTripMs = Date.now() - holdStartedAt;
         result.lastFrameAttempt = {ready:holdResponse && holdResponse.ready === true,
@@ -546,14 +564,25 @@ async function runProbe(args, electron) {
         });
         result.cleanup.helperKilled = false;
         requireBudget(10000, 'helper-start');
+        if (args.boundaries) require('./native-frame-boundary-cases.cjs').configureLoopbackProxyBypass(process.env);
         await stage(client.start(), 10500, 'helper-start');
         await loadMedia('probe-initial-A', args.mediaAPath);
         const initialA = await waitForColor('red', 'initial-A-red-precondition');
         result.initialFrame = {media: path.basename(args.mediaAPath), color: initialA};
 
-        await holdStopSwapRelease('next', 'A', args.mediaAPath, 'red', 'B', args.mediaBPath, 'green');
-        await holdStopSwapRelease('previous', 'B', args.mediaBPath, 'green', 'A', args.mediaAPath, 'red');
-        result.screenCapture = await stage(screenCapture.waitForResults(), 5000, 'screen-capture-results');
+        if (args.boundaries) {
+            const {runBoundaryCases} = require('./native-frame-boundary-cases.cjs');
+            await runBoundaryCases({
+                args,result,client,events,
+                stage,delay,waitFor,waitForColor,waitForCorePlaying,loadInGeneration,
+                validateHoldResponse,validateAutoStatus,validateAutoReleasedStatus
+            });
+            result.screenCapture = {status:'prepared-no-transition-actions',reason:'boundary-cases-use-staged-color-observations'};
+        } else {
+            await holdStopSwapRelease('next', 'A', args.mediaAPath, 'red', 'B', args.mediaBPath, 'green');
+            await holdStopSwapRelease('previous', 'B', args.mediaBPath, 'green', 'A', args.mediaAPath, 'red');
+            result.screenCapture = await stage(screenCapture.waitForResults(), 5000, 'screen-capture-results');
+        }
         result.helper = {
             protocolVersion: client.handshake && client.handshake.protocolVersion,
             helperVersion: client.handshake && client.handshake.helperVersion,

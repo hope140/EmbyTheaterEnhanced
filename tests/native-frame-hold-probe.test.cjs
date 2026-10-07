@@ -37,6 +37,10 @@ test('CLI accepts four existing inputs, a new output directory, and optional ful
         const both = probe.parseArguments([...inputs, output, '--auto-release', '--fullscreen']);
         assert.equal(both.fullscreen, true);
         assert.equal(both.autoRelease, true);
+        const boundaries = probe.parseArguments([...inputs, output, '--fullscreen', '--boundaries']);
+        assert.equal(boundaries.fullscreen, true);
+        assert.equal(boundaries.boundaries, true);
+        assert.equal(boundaries.autoRelease, false);
         assert.equal(fs.existsSync(output), false, 'argument validation does not create output');
     });
 });
@@ -55,6 +59,8 @@ test('CLI refuses missing inputs, same synthetic media, unknown flags, and exist
         assert.throws(() => probe.parseArguments([...inputs, path.join(root, 'new'), '--fullscreen', '--unexpected']), /usage/);
         assert.throws(() => probe.parseArguments([...inputs, path.join(root, 'new'), '--auto-release', '--auto-release']), /usage/);
         assert.throws(() => probe.parseArguments([...inputs, path.join(root, 'new'), '--fullscreen', '--fullscreen']), /usage/);
+        assert.throws(() => probe.parseArguments([...inputs, path.join(root, 'new'), '--auto-release', '--boundaries']), /usage/);
+        assert.throws(() => probe.parseArguments([...inputs, path.join(root, 'new'), '--boundaries', '--boundaries']), /usage/);
         assert.throws(() => probe.parseArguments([...inputs, path.join(root, 'missing-parent', 'new')]), /output-parent-missing/);
     });
 });
@@ -113,11 +119,11 @@ test('automatic release validators require the exact target generation, hold, ev
         /auto-arm-response-mismatch/);
 
     const released = {
-        active:false,bytes:0,holdId:null,autoState:'released',targetGen:12,autoHoldId:7,fence:'success',autoReason:'none',
+        active:false,bytes:0,holdId:null,painted:false,autoState:'released',targetGen:12,autoHoldId:7,fence:'success',autoReason:'none',
         captureMetadata:{w:960,h:540,bytes:2073600,captureMs:18,meanRGB:{r:244,g:25,b:41},hash:'0123456789abcdef'}
     };
     assert.deepEqual(probe.validateAutoReleasedStatus(released, 12, 7, 'red'), {
-        active:false,bytes:0,holdId:null,autoState:'released',targetGen:12,autoHoldId:7,fence:'success',autoReason:'none',
+        active:false,bytes:0,holdId:null,painted:false,autoState:'released',targetGen:12,autoHoldId:7,fence:'success',autoReason:'none',
         captureMetadata:{width:960,height:540,bytes:2073600,captureMs:18,meanRGB:{r:244,g:25,b:41},hash:'0123456789abcdef'},
         captureColorClass:'red'
     });
@@ -140,8 +146,11 @@ test('held static point uses one exact-display desktop thumbnail after the 300ms
     assert.match(probeSource, /bitmapChannelLayout = await calibrateScreenBitmapLayout\(\);\s+result\.screenCaptureBitmapLayout = bitmapChannelLayout/);
     assert.match(probeSource, /test-frame-arm-next/);
     assert.match(probeSource, /beforeLoad\(generationId\)/);
+    assert.match(probeSource, /if \(args\.boundaries\) \{/);
+    assert.match(probeSource, /if \(autoRelease && boundaries\) fail\('usage'\)/);
+    assert.match(probeSource, /if \(args\.boundaries\) require\('\.\/native-frame-boundary-cases\.cjs'\)\.configureLoopbackProxyBypass\(process\.env\);\s+await stage\(client\.start\(\)/);
     assert.match(probeSource, /if \(args\.autoRelease\) \{\s+progress\.autoReleaseStatus = await waitForAutoRelease/);
-    assert.match(probeSource, /releaseMechanism: args\.autoRelease \? 'native-event-capture-fence-candidate'/);
+    assert.match(probeSource, /releaseMechanism: args\.autoRelease \|\| args\.boundaries \? 'native-event-capture-fence-candidate'/);
 });
 
 test('probe has one opaque host window and always stops capture, kills helper, and destroys host', function () {
