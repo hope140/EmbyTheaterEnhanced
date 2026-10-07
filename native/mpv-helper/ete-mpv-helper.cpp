@@ -777,14 +777,59 @@ class Helper {
         std::shared_ptr<HeldFrame> frame;
         { std::lock_guard<std::mutex> lock(frameMutex); frame = heldFrame; }
         bool painted = false;
-        if (frame) {
+        bool paintSucceeded = false;
+        {
             std::lock_guard<std::mutex> lock(framePaintMutex);
-            painted = lastPaintId == frame->holdId && lastPaintSucceeded;
+            paintSucceeded = lastPaintSucceeded;
+            painted = frame && lastPaintId == frame->holdId && lastPaintSucceeded;
         }
+        HWND video = surfaceWindow.load(std::memory_order_acquire);
+        HWND frameSurface = frameWindow.load(std::memory_order_acquire);
+        bool hostExists = parent && IsWindow(parent);
+        bool videoExists = video && IsWindow(video);
+        bool frameExists = frameSurface && IsWindow(frameSurface);
+        bool videoParentMatches = hostExists && videoExists && GetParent(video) == parent;
+        bool frameParentMatches = hostExists && frameExists && GetParent(frameSurface) == parent;
+        auto clientSize = [](HWND window, bool exists) {
+            RECT bounds{};
+            if (!exists || !GetClientRect(window, &bounds)) return std::pair<LONG, LONG>{0, 0};
+            return std::pair<LONG, LONG>{bounds.right - bounds.left, bounds.bottom - bounds.top};
+        };
+        auto hostSize = clientSize(parent, hostExists);
+        auto videoSize = clientSize(video, videoExists);
+        auto frameSize = clientSize(frameSurface, frameExists);
+        bool frameAboveVideo = false;
+        bool siblingOrderKnown = false;
+        if (videoParentMatches && frameParentMatches) {
+            HWND sibling = GetWindow(video, GW_HWNDPREV);
+            for (int count = 0; count < 64 && sibling; ++count) {
+                if (sibling == frameSurface) { frameAboveVideo = true; siblingOrderKnown = true; break; }
+                sibling = GetWindow(sibling, GW_HWNDPREV);
+            }
+            if (!sibling) siblingOrderKnown = true;
+        }
+        auto boolean = [](bool value) { return value ? "true" : "false"; };
+        auto sizeJson = [](const std::pair<LONG, LONG>& size) {
+            return "{\"w\":" + std::to_string(size.first) + ",\"h\":" + std::to_string(size.second) + '}';
+        };
         return "{\"active\":" + std::string(frame ? "true" : "false") +
             ",\"bytes\":" + std::to_string(frame ? frame->pixels.size() : 0) +
             ",\"holdId\":" + (frame ? std::to_string(frame->holdId) : "null") +
-            ",\"painted\":" + (painted ? "true" : "false") + '}';
+            ",\"painted\":" + boolean(painted) +
+            ",\"lastPaintSucceeded\":" + boolean(paintSucceeded) +
+            ",\"hostExists\":" + boolean(hostExists) +
+            ",\"hostVisible\":" + boolean(hostExists && IsWindowVisible(parent)) +
+            ",\"frameExists\":" + boolean(frameExists) +
+            ",\"frameVisible\":" + boolean(frameExists && IsWindowVisible(frameSurface)) +
+            ",\"frameParentMatches\":" + boolean(frameParentMatches) +
+            ",\"videoExists\":" + boolean(videoExists) +
+            ",\"videoVisible\":" + boolean(videoExists && IsWindowVisible(video)) +
+            ",\"videoParentMatches\":" + boolean(videoParentMatches) +
+            ",\"frameAboveVideo\":" + boolean(frameAboveVideo) +
+            ",\"siblingOrderKnown\":" + boolean(siblingOrderKnown) +
+            ",\"hostClientSize\":" + sizeJson(hostSize) +
+            ",\"frameClientSize\":" + sizeJson(frameSize) +
+            ",\"videoClientSize\":" + sizeJson(videoSize) + '}';
     }
 #endif
 

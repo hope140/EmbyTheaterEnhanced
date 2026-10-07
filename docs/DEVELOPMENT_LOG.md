@@ -1,5 +1,11 @@
 # 开发日志
 
+## 2026-10-08 — Native 持帧实际能力取证
+
+正式 Testing build 从 `97fb2d4` 生成并验证输入/编译器/输出来源。独立 harness 的入口/显示/采集上下文问题收口后，确认 `screenshot-raw window` 可取得当前视频红帧（1440x812，65ms），但 GDI child 的 WM_PAINT ACK 之后，真实 Stop 导致合成 ROI 持续黑色。此结果未达到原生保持画面要求，生产 Helper 不变；下一步仅补子窗口状态定位，不用 painted 回包冒充显示成功。所有实际 probe 使用合成媒体和隔离配置，失败后清理完成。
+
+新增独立 native-frame-hold-probe harness，以真实 client.stop、严格屏幕颜色和有界显式 release 测能力，结果固定 experimental-capability-only。测试支路状态回包补父/子窗口存在、可见、尺寸和相对 sibling 顺序，未改绘制或窗口策略。默认/Testing编译通过且默认binary继续byte-identical；probe输入与response校验5/5 PASS。新增状态用于区分真实黑色的来源，尚不决定修复。
+
 ## 2026-10-07 — Native 私有帧暂存能力 probe
 
 Model Tier：Tier 2。Model：主线程定义 contract，Sol High 在唯一 CPP 文件实现 Testing-only 支路，Luna 准备独立 harness。Reason：只保留 carrier 的实验不足，需验证 GPU 输出停止后的内存暂存；不先改播放/Session 时序。Escalated：no。

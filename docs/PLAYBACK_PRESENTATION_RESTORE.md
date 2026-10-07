@@ -77,3 +77,11 @@ rVFC 全屏采样的新增诊断显示 document.visibilityState=hidden、focus/g
 `ETE_HELPER_TESTING` 内新增 `test-frame-hold/status/release`，不向 renderer service IPC 开放。hold 仅允许未退休且唯一打开媒体属于请求 generation，使用 libmpv `screenshot-raw window bgr0`，64 MiB/8192 尺寸上限、正 stride 验证并私有复制；负 stride 本阶段返回 unavailable。数据不出 native、不落盘，回包仅尺寸、耗时、均色、哈希、holdId 与 painted 状态。release 精确匹配 holdId；Stop 本身照旧，能力 probe 用显式 release 验证持帧。
 
 测试专用 sibling child 属于既有 video host，由 surfaceThread 管理、绘制和销毁；paint ACK 最多等待 250ms，失败撤回新 hold。`painted` 只表示 WM_PAINT 完成，尚没有新视频帧的呈现 ACK或自动撤下策略。纯编译验证默认/Testing 均通过；默认 SHA256 为 `6f4d9c1459149c5a6325ebfc8dfe874b2d565c85fb9049053ce88ab47f6fef34`，与旧 production Helper 字节一致。实际窗口效果和截图耗时仍待独立 probe，不能据编译完成宣称还原。
+
+### 2026-10-08 — 首次实际原生能力结果
+
+CPP 能力入口已本地提交 `97fb2d4`，正式 `build-native-helper.ps1 -Testing` 绑定该 HEAD，Testing binary SHA256 为 `5336830532c1aa183a385d1638f221609aaba10ba2bbe3824ca573cca23367be`。独立 harness 在真实 Chromium/MPV 上完成初始红视频前置与截图：1440x812、4,677,120 bytes、capture 65ms、请求往返 74ms，snapshot 均色为红，WM_PAINT 回包成功。
+
+正常 `client.stop()` 用时 14ms并完成原始 Stop request，但合成屏幕 ROI 随后为 fresh 纯黑（帧龄 16ms）；2 秒中采到红 5 帧、黑 71 帧。观测器稳定且 visible，排除了“静态持帧没有新采集帧”的假失败。该记录为明确的能力失败，正在增加已知父/子窗口的无 HWND 状态以核查层级/可见性/尺寸，尚未采用任何产品改动。测试后 reader/handler/helper/host 均清理完成。
+
+此前独立 harness 的 Electron 入口识别、窗口 startup show 与 data URL 采集上下文问题已分别修正；不把这些启动失败归入 native 持帧效果。当前 harness 使用隔离 file 文档、显式可见启动，并在失败时保留部分采样与 safe 状态，仍仅处理合成媒体。
