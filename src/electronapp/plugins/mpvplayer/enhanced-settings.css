@@ -1,7 +1,7 @@
 /* Enhanced settings follow Emby's native page, section, form and button styles. */
 .ete-settings-page {
     box-sizing: border-box;
-    margin-inline: auto;
+    margin-inline: 0;
     max-width: 1240px;
     min-width: 0;
     width: 100%;

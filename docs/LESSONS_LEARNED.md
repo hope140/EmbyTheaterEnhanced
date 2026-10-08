@@ -1,5 +1,11 @@
 # 已确认经验
 
+## 2026-10-08 — 自定义控件类型与基础样式必须分别核对
+
+- createElement(tag,{is:customName})只证明构造类型；紧接着整体赋className仍会删除constructor添加的Emby按钮基础类和TV/backdrop环境类。业务类应追加，测试同时核对实例、基础类、选择器及禁用状态。
+- EmbyButton、EmbyInput和EmbySelect的初始化时序不同。Button constructor设置hasInit后connected不会补class；Input依赖parentNode；Select的base与constructor环境类分开处理。Fake应镜像实际时序，不能把Input基础类丢失当成本次根因。
+- 复用原生设置组件还需复用其外层布局逻辑；在auto-center外另加定宽居中容器会绕过full drawer下的原生左对齐。UI验证应比较同层原生页的内容起点，并检查动态控件与窄屏。
+
 ## 2026-10-08 — 发布版本字段必须收口
 
 - 功能属于0.2.3计划不代表产物已经是0.2.3。对外版本交付应核对root package、lockfile、runtime application package、About真实IPC/页面文本、构建清单与安装器PE版本，再核对GitHub标签和文件名。

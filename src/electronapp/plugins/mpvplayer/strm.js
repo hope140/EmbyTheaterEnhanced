@@ -28,9 +28,14 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         return JSON.parse(JSON.stringify(value));
     }
 
+    function addClasses(node, className) {
+        // Customized controls may already own theme and focus classes from their constructor.
+        className.split(/\s+/).filter(Boolean).forEach(function (name) { node.classList.add(name); });
+    }
+
     function element(tag, className, text, customName) {
         var node = customName ? document.createElement(tag, {is: customName}) : document.createElement(tag);
-        if (className) node.className = className;
+        if (className) addClasses(node, className);
         if (text !== undefined) node.textContent = text;
         return node;
     }
@@ -233,7 +238,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         }
         input.id = inputId;
         input.type = 'text';
-        input.className = 'rule-' + field;
+        input.classList.add('rule-' + field);
         input.value = value || '';
         if (options.placeholder) input.placeholder = options.placeholder;
         input.setAttribute('aria-label', label);
@@ -255,7 +260,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         var labelNode = element('label', 'ete-strm-field-label', label);
         var select = element('select', null, undefined, 'emby-select');
         select.id = selectId;
-        select.className = 'rule-' + field;
+        select.classList.add('rule-' + field);
         select.setAttribute('aria-label', label);
         labelNode.htmlFor = selectId;
         values.forEach(function (value) {
@@ -371,10 +376,10 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         testButton.type = 'button';
         restoreButton.type = 'button';
         disableButton.type = 'button';
-        testButton.className = 'raised ete-settings-button ete-settings-button--secondary btnTestRule';
+        addClasses(testButton, 'raised ete-settings-button ete-settings-button--secondary btnTestRule');
         testButton.disabled = isDraftRule;
-        restoreButton.className = 'button-link ete-settings-button ete-settings-button--text btnRestoreAuto';
-        disableButton.className = (isDraftRule || rule.originState === 'USER'
+        addClasses(restoreButton, 'button-link ete-settings-button ete-settings-button--text btnRestoreAuto');
+        addClasses(disableButton, isDraftRule || rule.originState === 'USER'
             ? 'button-link ete-settings-button ete-settings-button--danger btnDisableRule'
             : 'button-link ete-settings-button ete-settings-button--text btnDisableRule');
         actions.appendChild(testButton);

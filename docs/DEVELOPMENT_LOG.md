@@ -1,5 +1,21 @@
 # 开发日志
 
+## 2026-10-09 — 设置页修正包执行开始
+
+Model Tier：Tier 1（明确UI修正与构建），主线程审查与页面验收，Luna补准备输入/安装器审计及隔离导航验证工具。Escalated：no。用户接受上一轮建议，授权本地收尾和.exe测试包交付。现场确认v0.2.4标签未使用、v0.2.3仍为f7505cd测试包，远端main仍46e995e。root package/lockfile版本统一0.2.4，依赖与核心播放字节保持。现有工作树已有UI改动保留；后续源提交、构建和各层验收分别记录，不复用旧PASS冒充新版本。
+
+## 2026-10-08 — 设置页对齐与动态Emby按钮样式
+
+Model Tier：Tier 1。Model：主线程限定范围及UI核对，Luna做原生页只读对照和行为回归。Reason：三个设置页的布局与确定的constructor class覆盖；Task Risk：低；Cross-module Scope：共享设置CSS和STRM renderer；Playback/Session Impact：无；Escalated：no。
+
+核对GitHub v0.2.3发布source为f7505cd，统一候选ba76ac0的对应产品字节一致。官方同层音频/视频设置沿用settingsContainer/form.auto-center，full drawer CSS会把表单margin归零；增强页外层另外margin-inline:auto造成居中。EmbyButton constructor先加emby-button并设置hasInit，STRM后续className整体赋值清掉基础类，connectedCallback不会再补回；EmbySelect可能丢constructor环境类，EmbyInput的基础类在connected后初始化，不能混称三者均未升级。
+
+修正限定三个产品文件：外层和STRM form margin-inline=0，rule actions flex-start；element/input/select/三个rule按钮追加业务class。保留原生控件、功能选择器、显式Save及危险动作语义。行为fake按真实button/input/select不同初始化时序重现失败，修正后设置相关36/36通过。没有新调色体系、业务逻辑或播放器修改。
+
+工具 `tools/settings-style-preview.cjs` 使用Electron offscreen、已发布包里的真实Emby构造器和CSS，禁止HTTP/WS、独立userData、45秒上限，运行后销毁测试窗口。证据 `.work/settings-style-preview-8a3a28c4ff6b4729983299d8baebf7e7/report.json` 六项检查通过：before内容x477/native x256，after三页x256；三种宽度无横向溢出；按钮instance及emby-button保留。已实际查看按钮、About、诊断和窄屏STRM截图。首轮预览漏载Material Icons字体，第二轮补齐真实字体后重跑；没有改产品图标。预览是组件/布局夹具，非完整运行验收。参考[Electron离屏渲染](https://www.electronjs.org/docs/latest/tutorial/offscreen-rendering)；离屏软件栅格化仅在测试工具中使用。
+
+当前为本地未提交修正；未改发布标签、版本字段、已安装客户端或0.2.3安装包。正式构建与完整导航验收在后续打包阶段执行。
+
 ## 2026-10-08 — 0.2.3测试版版本收口
 
 发布完成：22:22（UTC+8）创建`v0.2.3` Pre-release，Release ID406895582，两个附件uploaded且大小/digest匹配；tag object7143e5d精确指向f7505cd。大文件上传期间保持草稿，未提前公布不完整Release。旧cc603ba页已提示改用v0.2.3，旧tag/资产不变；main和Latest均保持原正式基线。

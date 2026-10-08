@@ -1,5 +1,5 @@
 /* STRM keeps Emby's form controls; these rules only arrange its extra fields. */
-.strm-settings-page > form.auto-center { margin-inline: auto; max-width: 100%; min-width: 0; width: 100%; }
+.strm-settings-page > form.auto-center { margin-inline: 0; max-width: 100%; min-width: 0; width: 100%; }
 .strm-settings-page .ete-strm-cd2-card { display: grid; gap: 1em; }
 .strm-settings-page .ete-strm-cd2-card .inputContainer { margin-bottom: 0; }
 
@@ -93,7 +93,7 @@
     gap: .45em;
     padding-top: .8em;
 }
-.strm-settings-page .ete-strm-rule-actions { justify-content: flex-end; margin-top: .9em; }
+.strm-settings-page .ete-strm-rule-actions { justify-content: flex-start; margin-top: .9em; }
 .strm-settings-page .ete-strm-empty {
     color: var(--theme-secondary-text-color, rgba(255, 255, 255, .72));
     padding: .8em 0;
@@ -132,5 +132,4 @@
     .strm-settings-page .ete-strm-assistant-suggestion dl { grid-template-columns: minmax(0, 1fr); }
     .strm-settings-page .ete-strm-status-row { grid-template-columns: minmax(0, 1fr); }
     .strm-settings-page .ete-strm-rule-origin { margin-left: 0; }
-    .strm-settings-page .ete-strm-rule-actions { justify-content: flex-start; }
 }

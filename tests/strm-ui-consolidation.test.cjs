@@ -74,7 +74,17 @@ test('STRM labels, Emby controls, and scoped layout styles stay coherent', () =>
     assert.doesNotMatch(js, /\.innerHTML\s*=/);
 });
 
-test('generated rule and assistant controls are born as Emby customized elements', () => {
+test('generated rule and assistant controls preserve Emby classes, hooks, and state', () => {
+    const constructorClasses = {
+        'emby-button': ['emby-button','emby-button-focusscale','emby-button-tv'],
+        'emby-input': [],
+        'emby-select': ['emby-select-backdropfilter','emby-select-focusscale','emby-select-tv']
+    };
+    const connectedClasses = {
+        'emby-button': [],
+        'emby-input': ['emby-input'],
+        'emby-select': ['emby-select']
+    };
     class FakeNode {
         constructor(tagName, customName) {
             this.tagName = tagName;
@@ -82,20 +92,38 @@ test('generated rule and assistant controls are born as Emby customized elements
             this.children = [];
             this.dataset = {};
             this.attributes = {};
-            this.className = '';
+            this._classNames = new Set();
+            Object.defineProperty(this, 'className', {
+                get: () => Array.from(this._classNames).join(' '),
+                set: value => { this._classNames = new Set(String(value || '').split(/\s+/).filter(Boolean)); }
+            });
             this.classList = {
-                add: name => { this.className = (this.className + ' ' + name).trim(); },
-                remove: name => { this.className = this.className.split(/\s+/).filter(value => value !== name).join(' '); }
+                add: (...names) => names.forEach(name => this._classNames.add(name)),
+                remove: (...names) => names.forEach(name => this._classNames.delete(name)),
+                contains: name => this._classNames.has(name)
             };
+            this.disabled = false;
+            this.value = '';
+            this.hasInit = customName === 'emby-button';
+            if (customName) (constructorClasses[customName] || []).forEach(name => this.classList.add(name));
         }
-        appendChild(child) { this.children.push(child); return child; }
+        connectedCallback() {
+            // Button initialization is constructor-guarded. Inputs require a parent to initialize,
+            // while selects add their base class during connection after their constructor setup.
+            if (this.customName === 'emby-button' && this.hasInit) return;
+            if (this.customName === 'emby-input' && !this.parentNode) return;
+            (connectedClasses[this.customName] || []).forEach(name => this.classList.add(name));
+        }
+        appendChild(child) { this.children.push(child); child.parentNode = this; child.connectedCallback(); return child; }
         setAttribute(name, value) { this.attributes[name] = value; }
         querySelector(selector) { return this.querySelectorAll(selector)[0] || null; }
         querySelectorAll(selector) {
             const found = [];
-            const className = selector.replace(/^\./, '');
+            const selectors = selector.split(',').map(value => value.trim());
             const visit = node => node.children.forEach(child => {
-                if (child.className.split(/\s+/).includes(className)) found.push(child);
+                const matches = selectors.some(value => value.charAt(0) === '.'
+                    ? child.classList.contains(value.slice(1)) : child.tagName === value.toLowerCase());
+                if (matches) found.push(child);
                 visit(child);
             });
             visit(this);
@@ -114,11 +142,17 @@ test('generated rule and assistant controls are born as Emby customized elements
         document: {createElement(tagName, options) { return new FakeNode(tagName, options && options.is); }}
     }, {filename: 'strm.js'});
 
-    const rule = View.__renderRule({
-        id: 'rule-1', sourcePrefix: 'X:\\Media', cloudPrefix: '/Media', mountPrefix: '',
-        storageType: 'cloud-mount', strategy: 'cloud-first', originState: 'USER',
-        order: ['direct-url', 'cd2-http', 'mount', 'native']
-    }, false, 'unknown');
+    function renderRule(id, originState, isDraftRule) {
+        return View.__renderRule({
+            id, sourcePrefix: 'X:\\Media', cloudPrefix: '/Media', mountPrefix: '',
+            storageType: 'cloud-mount', strategy: 'cloud-first', originState,
+            order: ['direct-url', 'cd2-http', 'mount', 'native']
+        }, isDraftRule, 'unknown');
+    }
+    const savedUser = renderRule('rule-user', 'USER', false);
+    const savedAuto = renderRule('rule-auto', 'AUTO', false);
+    const savedDisabled = renderRule('rule-disabled', 'DISABLED', false);
+    const draft = renderRule('rule-draft', 'USER', true);
     const sample = View.__createAssistantSample(2);
     function controls(root) {
         const found = [];
@@ -129,12 +163,65 @@ test('generated rule and assistant controls are born as Emby customized elements
         visit(root);
         return found;
     }
-    const ruleControls = controls(rule);
     const sampleControls = controls(sample);
-    assert.equal(ruleControls.length, 8);
     assert.equal(sampleControls.length, 4);
-    for (const control of ruleControls.concat(sampleControls)) {
-        assert.equal(control.customName, 'emby-' + control.tagName,
-            control.tagName + ' must be created with its is option, before attributes are set');
+
+    function assertInitialized(control, label) {
+        const expectedClasses = constructorClasses[control.customName];
+        assert.ok(expectedClasses, label + ' is constructed as an Emby custom element');
+        for (const className of expectedClasses) {
+            assert.equal(control.classList.contains(className), true,
+                label + ' preserves Emby constructor class ' + className);
+        }
+        for (const className of connectedClasses[control.customName]) {
+            assert.equal(control.classList.contains(className), true,
+                label + ' preserves Emby connected class ' + className);
+        }
     }
+    function button(root, hook) {
+        return controls(root).find(control => control.tagName === 'button' && control.classList.contains(hook));
+    }
+    function assertRuleClasses(root, label) {
+        const dynamicControls = controls(root);
+        assert.ok(dynamicControls.length > 0, label + ' renders dynamic controls');
+        dynamicControls.forEach(control => {
+            assert.equal(control.customName, 'emby-' + control.tagName,
+                label + ' constructs ' + control.tagName + ' with its is option');
+            assertInitialized(control, label + ' ' + control.tagName);
+        });
+        assert.ok(dynamicControls.some(control => control.tagName === 'input' && control.classList.contains('rule-sourcePrefix')),
+            label + ' retains input selector hooks');
+        assert.ok(dynamicControls.some(control => control.tagName === 'select' && control.classList.contains('rule-strategy')),
+            label + ' retains select selector hooks');
+    }
+
+    for (const [root, label] of [[savedUser,'saved USER'],[savedAuto,'saved AUTO'],[savedDisabled,'saved DISABLED'],[draft,'draft']]) {
+        assertRuleClasses(root, label);
+        assert.ok(button(root, 'btnTestRule'), label + ' keeps the test action hook');
+        assert.ok(button(root, 'btnDisableRule'), label + ' keeps the disable action hook');
+    }
+    assert.ok(button(savedUser, 'btnRestoreAuto'), 'saved USER keeps restore action');
+    assert.equal(button(savedAuto, 'btnRestoreAuto'), undefined, 'saved AUTO hides its restore action');
+    assert.ok(button(savedDisabled, 'btnRestoreAuto'), 'saved DISABLED keeps restore action');
+    assert.ok(button(draft, 'btnRestoreAuto'), 'draft keeps restore action');
+
+    assert.equal(button(savedUser, 'btnTestRule').disabled, false);
+    assert.equal(button(draft, 'btnTestRule').disabled, true);
+    assert.equal(button(savedDisabled, 'btnDisableRule').disabled, true);
+    assert.equal(button(savedDisabled, 'btnRestoreAuto').disabled, false);
+    assert.ok(button(savedUser, 'btnDisableRule').classList.contains('ete-settings-button--danger'),
+        'user-owned destructive action retains danger styling');
+    assert.ok(button(savedAuto, 'btnDisableRule').classList.contains('ete-settings-button--text'),
+        'automatic rule action retains its non-danger styling');
+    assert.ok(button(draft, 'btnDisableRule').classList.contains('ete-settings-button--danger'),
+        'draft removal retains danger semantics');
+
+    sampleControls.forEach(control => assertInitialized(control, 'assistant sample ' + control.tagName));
+    const sampleInputs = sampleControls.filter(control => control.tagName === 'input');
+    assert.equal(sampleInputs.length, 3);
+    assert.ok(sampleInputs.every(control => control.type === 'text' && control.attributes.autocomplete === 'off'),
+        'assistant sample inputs retain their text-entry behavior');
+    const removeSample = button(sample, 'btnRemoveSample');
+    assert.ok(removeSample, 'assistant sample remove action keeps its delegated hook');
+    assert.equal(removeSample.disabled, false);
 });
