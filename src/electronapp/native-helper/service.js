@@ -361,6 +361,11 @@ function createService(options) {
       width: main.getBounds().width,
       height: main.getBounds().height,
       frame: false,
+      // This carrier follows main bounds; it has no user-owned resize frame.
+      // WS_THICKFRAME paints a top border even underneath the transparent UI.
+      thickFrame: false,
+      resizable: false,
+      movable: false,
       transparent: false,
       backgroundColor: '#000000',
       show: false,

@@ -332,6 +332,9 @@ test('surface placement passes exact HWNDs without moveTop or always-on-top puls
   assert.equal(surface.options.parent, undefined);
   assert.equal(surface.options.focusable, false);
   assert.equal(surface.options.skipTaskbar, true);
+  assert.equal(surface.options.thickFrame, false);
+  assert.equal(surface.options.resizable, false);
+  assert.equal(surface.options.movable, false);
   placementExecutor.complete(0);
   assert.equal(logs.some(record => record.event === 'surface-z-order' && record.details.applied === true), true);
   await service.destroy();

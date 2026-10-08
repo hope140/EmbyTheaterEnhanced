@@ -124,10 +124,12 @@
 
     var currentWindowState = 'Normal';
     var restoreWindowState;
+    var fullscreenActive = false;
+    var fullscreenTransition = false;
+    var normalWindowInteraction;
 
     function setWindowState(state) {
 
-        restoreWindowState = null;
         var previousState = currentWindowState;
 
         if (state == 'Maximized') {
@@ -145,7 +147,13 @@
                 mainWindow.restore();
             }
 
-            mainWindow.setFullScreen(true);
+            // On Windows transparent windows use Electron's bounds-only fullscreen
+            // path. Re-entering it overwrites Electron's saved normal bounds.
+            if (!fullscreenActive) {
+                fullscreenTransition = true;
+                try { mainWindow.setFullScreen(true); }
+                finally { fullscreenTransition = false; }
+            }
 
         } else {
 
@@ -153,8 +161,10 @@
                 mainWindow.restore();
             }
 
-            else if (previousState == "Fullscreen") {
-                mainWindow.setFullScreen(false);
+            if (fullscreenActive) {
+                fullscreenTransition = true;
+                try { mainWindow.setFullScreen(false); }
+                finally { fullscreenTransition = false; }
             }
 
             else if (previousState == "Maximized") {
@@ -170,6 +180,7 @@
     }
 
     function onMinimize() {
+        if (currentWindowState != 'Minimized') restoreWindowState = currentWindowState;
         onWindowStateChanged('Minimized');
     }
 
@@ -177,7 +188,12 @@
 
         var restoreState = restoreWindowState;
         restoreWindowState = null;
-        if (restoreState && restoreState != 'Normal' && restoreState != 'Minimized') {
+        if (fullscreenActive) {
+            // Minimize does not leave Electron's transparent fullscreen path.
+            // Calling setFullScreen(true) again would save the display as normal.
+            onWindowStateChanged('Fullscreen');
+            onWindowGeometryChanged();
+        } else if (restoreState && restoreState != 'Normal' && restoreState != 'Minimized') {
             setWindowState(restoreState);
         } else {
             onWindowStateChanged('Normal');
@@ -189,7 +205,15 @@
     }
 
     function onEnterFullscreen() {
-        previousBounds = mainWindow.getBounds()
+        if (!fullscreenActive) {
+            previousBounds = mainWindow.getBounds();
+            if (process.platform == 'win32') {
+                normalWindowInteraction = {resizable: mainWindow.isResizable(), movable: mainWindow.isMovable()};
+                mainWindow.setResizable(false);
+                mainWindow.setMovable(false);
+            }
+        }
+        fullscreenActive = true;
         onWindowStateChanged('Fullscreen');
 
         if (initialShowEventsComplete) {
@@ -198,7 +222,25 @@
     }
 
     function onLeaveFullscreen() {
+        fullscreenActive = false;
+        if (normalWindowInteraction) {
+            mainWindow.setResizable(normalWindowInteraction.resizable);
+            mainWindow.setMovable(normalWindowInteraction.movable);
+            normalWindowInteraction = null;
+        }
         onWindowStateChanged('Normal');
+    }
+
+    function onWindowGeometryChanged() {
+        if (process.platform != 'win32' || !fullscreenActive || fullscreenTransition || mainWindow.isMinimized()) return;
+        var bounds = mainWindow.getBounds();
+        var displayBounds = electron.screen.getDisplayMatching(bounds).bounds;
+        // The native fullscreen API is false on this pinned transparent path.
+        // If an external bounds change escapes the interaction lock, exit through
+        // the normal transition so the renderer cannot retain stale fullscreen.
+        if (['x', 'y', 'width', 'height'].some(function (key) { return Math.abs(bounds[key] - displayBounds[key]) > 1; })) {
+            setWindowState('Normal');
+        }
     }
 
     function onUnMaximize() {
@@ -1127,6 +1169,8 @@
             mainWindow.loadURL(`file://${__dirname}/www/index.html?autostart=false`);
             mainWindow.setMenu(null);
             mainWindow.on('move', onWindowMoved);
+            mainWindow.on('move', onWindowGeometryChanged);
+            mainWindow.on('resize', onWindowGeometryChanged);
             mainWindow.on('app-command', onAppCommand);
             mainWindow.on("close", onWindowClose);
             mainWindow.on("minimize", onMinimize);
