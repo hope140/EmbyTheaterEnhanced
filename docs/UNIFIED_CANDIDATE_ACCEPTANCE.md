@@ -2,7 +2,7 @@
 
 2026-10-08（UTC+8）。本文相对路径属于 managed worktree `ete-unified-candidate-20261008`。
 
-当前状态：`LOCAL TEST CANDIDATE READY / CORE SYNTHETIC REGRESSION VERIFIED / LIMITATIONS RECORDED`。用户先以实体 Esc 中止桌面操作，探针已清理；随后明确授权继续，在新的 profile/窗口中补齐下述回归。Settings、连续切集与停止均已取得同一源码候选的新证据；全屏跨编码 Previous 的连续采样仍为 INCONCLUSIVE，不将全部像素矩阵记为 PASS。
+当前状态：`GITHUB TEST PRERELEASE PUBLISHED / CORE SYNTHETIC REGRESSION VERIFIED / LIMITATIONS RECORDED`。用户先以实体 Esc 中止桌面操作，探针已清理；随后明确授权继续，在新的 profile/窗口中补齐下述回归，并另行确认GitHub预发布。Settings、连续切集与停止均已取得同一源码候选的新证据；全屏跨编码 Previous 的连续采样仍为 INCONCLUSIVE，不将全部像素矩阵记为 PASS。
 
 ## 交付身份
 
@@ -15,7 +15,13 @@
 - Electron：44.4.2，官方完整 runtime tree 73 files。
 - production Helper SHA256：`28054c75551177f1109859d4f8793d45a4c731aba1e43ddab9bb2f1c5dc030dc`，与播放/全屏基线相同。
 
-本地测试 ZIP：`dist/EmbyTheaterEnhanced-unified-test-cc603ba-win-x64.zip`，240,289,348 bytes，SHA256 `eb5934d3da9a891cd40f5dab94a7cd4d206bd0f4d28b0fd469cbff7a9ef19647`。解压后唯一启动入口为 `unified-candidate/Emby.Theater.exe`。压缩包重新打开并逐项核对2146个payload加build manifest，共2147个文件，missing/extra/hash mismatch均0；见 `.work/final-zip-audit.json`。没有系统安装或对外发布。
+测试 ZIP：`dist/EmbyTheaterEnhanced-unified-test-cc603ba-win-x64.zip`，240,289,348 bytes，SHA256 `eb5934d3da9a891cd40f5dab94a7cd4d206bd0f4d28b0fd469cbff7a9ef19647`。解压后唯一启动入口为 `unified-candidate/Emby.Theater.exe`。压缩包重新打开并逐项核对2146个payload加build manifest，共2147个文件，missing/extra/hash mismatch均0；见 `.work/final-zip-audit.json`。没有系统安装。
+
+## GitHub预发布（2026-10-08）
+
+用户确认后，于20:18（UTC+8）发布 [test-20261008-cc603ba](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/test-20261008-cc603ba)。Release ID为406794578，`draft=false`、`prerelease=true`，未设为Latest。annotated tag `455cd068cb3f426f972afa221462d50fa42dec9b`精确指向产品源码`cc603ba`；仅推送独立候选分支与该标签。main保持`46e995e`，Latest仍为正式版`v0.2.2`。
+
+附件恰为ZIP与119-byte校验文件，GitHub API回读均为uploaded；ZIP服务器SHA256与上文一致，校验文件服务器SHA256为`d73eef35c71772a08657242cd0321fee89fbb88a93ef381041fde4da2335af1a`，均匹配本地字节。发布后本机到release-assets域的TLS/EOF/timeout导致独立下载校验文件未完成；该项记为UNAVAILABLE，与已通过的上传状态、服务端digest、GitHub API标签指向校验分开。没有修改系统代理或关闭证书验证。证据见 `.work/github-prerelease-published.json` 与 `.work/github-public-download-check.json`。
 
 远端只读核对：main 为 `46e995e`，beta ref 未返回；latest Release 为 `v0.2.2`，tag dereference 为 `9a034e8`，open PR 为空。此处是本轮核对时状态。
 

@@ -1,12 +1,18 @@
 # 项目状态
 
+## 2026-10-08 — 统一候选GitHub预发布
+
+用户确认后已发布 [test-20261008-cc603ba](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/test-20261008-cc603ba)，Pre-release且非Latest；附件为已验证的240,289,348-byte ZIP与SHA256文件。annotated tag精确指向产品源码`cc603ba59fc527e50dda5b32f849af7b50702e2f`。GitHub端两个asset均uploaded，大小/digest匹配本地；本机Release CDN独立下载回读受TLS/EOF影响未完成，明确保持UNAVAILABLE。
+
+独立候选分支已推送，main保持`46e995e`，正式Latest仍为`v0.2.2`。没有新增PR或合并主线，产品/版本和测试包字节保持原样。全屏Previous采样及真实环境范围限制随Release说明保留；完整记录见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。
+
 ## 2026-10-08 — 统一候选本地测试包交付
 
 独立分支 `codex/unified-candidate-20261008` 从全屏文档 HEAD `6be48ed`（产品 `1e86e51`，已包含切集 `6473ecb`）合入 Settings `21ef9a4`。两侧共同祖先及现场远端 main 均为 `46e995e`。main 的维护 IPC 与窗口状态、libmpv 的 About route 与原生持帧自动合并；三份追加型历史文档保留两侧记录。原工作树及未提交资料未改动。
 
 集成 sourceCommit 为 `cc603ba59fc527e50dda5b32f849af7b50702e2f`，入口 `dist/unified-candidate/Emby.Theater.exe`。430/430全量测试、正式build/source/runtime/native provenance、2146文件payload通过。用户重新授权后，以新隔离profile补齐Settings保存/离页不保存/落盘重载、诊断/About、10次窗口/全屏切集、快速Next→Stop及terminal Stop。窗口跨编码两向画面采样通过；全屏Previous最大采样间隔107ms，仍保留极短闪烁INCONCLUSIVE。状态为 `LOCAL TEST CANDIDATE READY / LIMITATIONS RECORDED`，真实Emby/CD2/HDR/多屏/安装验收独立。
 
-本地ZIP `dist/EmbyTheaterEnhanced-unified-test-cc603ba-win-x64.zip` 已逐项重读2147个文件校验，未对外发布。详细证据、历史中止与基线匹配的旧快速夹具失败见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。版本字段保持0.2.2；后续文档HEAD不是该runtime的sourceCommit。
+本地ZIP `dist/EmbyTheaterEnhanced-unified-test-cc603ba-win-x64.zip` 已逐项重读2147个文件校验，之后另经用户确认完成上述GitHub预发布。详细证据、历史中止与基线匹配的旧快速夹具失败见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。版本字段保持0.2.2；后续文档HEAD不是该runtime的sourceCommit。
 
 ## 2026-10-08 — 全屏顶部细条用户验收通过
 

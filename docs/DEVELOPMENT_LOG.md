@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-10-08 — 统一候选GitHub预发布
+
+Model Tier：Tier 1发布操作与证据核对。Model：当前Codex主线程、GPT-6 Luna High只读说明复核。Reason：现有包/提交/标签/验收范围均已固定，用户明确确认GitHub发布。Escalated：no。
+
+复核远端无同名标签/候选分支，创建annotated `test-20261008-cc603ba`指向产品`cc603ba`，原子推送独立候选分支与tag；创建Pre-release，上传原ZIP与校验文件，`latest=false`。Release于20:18（UTC+8）发布，ID406794578。GitHub API回读draft/prerelease、两个asset大小和SHA256、tag peeled target与main均符合预期；正式Latest仍v0.2.2。
+
+发布后Git HTTPS与Release CDN下载出现间歇TLS/EOF；只做有界只读诊断和每命令显式本地代理，未改系统/节点/证书验证。Git读回经显式代理成功，API标签/main/asset校验通过；独立下载校验文件仍UNAVAILABLE，未虚报下载复核成功。记录见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。本轮仅同步发布文档，未重建或改写包。
+
 ## 2026-10-08 — 统一候选恢复验收与本地ZIP
 
 Model Tier：Tier 2共享逻辑/探针定位，Tier 1 payload与归档审计。Model：当前Codex主线程、GPT-5.6 Sol High、GPT-6 Luna High。Reason：早期Settings探针连续两轮未定位模块就绪/Promise问题，升级测试工具诊断；产品架构与源码不变。Escalated：yes（仅探针诊断）。

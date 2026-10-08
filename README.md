@@ -8,7 +8,7 @@ Emby Theater Enhanced 是非官方社区维护项目，与 Emby 不存在隶属�
 
 ## 开发计划
 
-2026-10-08本地统一候选为`cc603ba`，包含Settings、原生持帧切集和全屏窗口修复。测试入口、ZIP、来源及真实执行的回归/限制见 [统一候选验收](docs/UNIFIED_CANDIDATE_ACCEPTANCE.md)。该候选尚未对外发布。
+2026-10-08统一候选`cc603ba`已作为 [GitHub预发布测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/test-20261008-cc603ba) 提供ZIP与校验文件，包含Settings、原生持帧切集和全屏窗口修复。测试入口、来源及真实执行的回归/限制见 [统一候选验收](docs/UNIFIED_CANDIDATE_ACCEPTANCE.md)。正式Latest仍为v0.2.2。
 
 进度与优先级见 [Development Roadmap](docs/ROADMAP.md)，可复现问题与观察项见 [Known Issues](docs/KNOWN_ISSUES.md)。Smart Path Mapping 已完成用户功能验收和最终远端复审，并通过 PR #18 合入 `main`。
 

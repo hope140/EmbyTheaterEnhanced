@@ -32,7 +32,7 @@
 
 ### 统一候选本地测试包
 
-`cc603ba` 已整合Settings `21ef9a4`与播放/全屏`1e86e51`，430项测试、正式来源/payload、核心隔离回归及本地ZIP验证完成。全屏跨编码Previous的短闪采样保持INCONCLUSIVE，真实Emby/CD2、HDR、多屏和安装独立。当前交付和证据以 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md) 为准；PR/主线/版本发布待独立授权。
+`cc603ba` 已整合Settings `21ef9a4`与播放/全屏`1e86e51`，430项测试、正式来源/payload、核心隔离回归及ZIP验证完成，并经用户确认发布 [test-20261008-cc603ba](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/test-20261008-cc603ba) Pre-release。全屏跨编码Previous的短闪采样保持INCONCLUSIVE，真实Emby/CD2、HDR、多屏和安装独立。当前交付和证据以 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md) 为准；PR/主线/正式版本发布待独立授权。
 
 ### 全屏窗口候选验收
 
