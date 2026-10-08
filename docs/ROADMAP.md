@@ -30,6 +30,10 @@
 
 ## NOW
 
+### 0.2.3测试版版本收口
+
+`f7505cd`已将统一候选的应用、About、安装器及构建记录版本落实为0.2.3，并发布 [v0.2.3 Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.3)。新包430项测试和来源/payload/安装器校验通过；相对cc603ba只有版本与来源元数据变化。发布证据见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)，既有全屏短闪和真实环境边界不变，正式Latest保持v0.2.2。
+
 ### 统一候选本地测试包
 
 预发布默认交付已补齐为项目原有Inno安装包：与已验证runtime逐文件匹配，保留原安装目录/应用身份/快捷方式；同页ZIP作为备用下载。真实安装生命周期仍独立。

@@ -2,6 +2,22 @@
 
 2026-10-08（UTC+8）。本文相对路径属于 managed worktree `ete-unified-candidate-20261008`。
 
+## 0.2.3版本收口
+
+当前对外交付版本已统一为0.2.3，源码提交`f7505cda40c7f64e31714fbbe40eaa532926c46c`，分支`codex/release-v0.2.3-test-20261008`。安装包`dist/EmbyTheaterEnhanced-0.2.3-win-x64-setup.exe`，175,622,861 bytes，SHA256 `217f36f065fafe122f06265d703d76018bf51588409a0966fada1bd3c797f314`。已发布 [v0.2.3 Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.3)，默认下载为 [0.2.3安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.3/EmbyTheaterEnhanced-0.2.3-win-x64-setup.exe)。下面cc603ba段落保留旧版本候选的原始归属。
+
+- root package/lock三个版本字段、构建清单、打包application package、实际About接口/页面文本、安装器FileVersion/ProductVersion均为0.2.3。
+- 新提交全量测试430/430通过；正式build/source/runtime/native provenance、2146 payload校验、Inno完整性及解包2147文件逐项比对通过。
+- 新runtime与cc603ba旧runtime各2147文件，只有`electronapp/package.json`与四份build/source/runtime/native来源JSON变化。所有产品JS/C++、Electron、Helper、libmpv和安装器脚本保持同一字节；没有重做已通过的完整可见播放矩阵。
+- 新runtime通过隔离后台Settings/diagnostics/About controller+IPC检查，About为0.2.3且sourceCommit精确匹配；本轮未新增页面截图或系统安装验收。
+- 证据：`.work/v023-unit.log`、`.work/v023-build.log`、`.work/v023-package-verify.log`、`.work/v023-installer-compile.log`、`.work/v023-innounp-test.log`、`.work/v023-final-audit.json`、`.work/v023-settings-final/unified-settings-probe.json`。
+
+旧`test-20261008-cc603ba`的tag和包继续绑定原cc603ba/0.2.2，页面顶部已标明由v0.2.3替代，不移动旧标签或改写已发布资产。0.2.3仍是测试预发布，正式Latest保持v0.2.2；全屏Previous INCONCLUSIVE与真实环境未覆盖范围继续保留。
+
+GitHub发布于2026-10-08 22:22（UTC+8），Release ID406895582，draft=false/prerelease=true；annotated tag object为`7143e5dc633de0af6e82e07285ccae992513be29`，精确指向f7505cd。两个附件均uploaded，安装包大小/digest与上文匹配；110-byte校验文件的SHA256为`6d0533aff895800d515e3c267e2756e7bf3f743a4ff80517692bf4af6668dc6e`。独立分支已推送，main仍46e995e，Latest仍v0.2.2。大文件上传期间Release保持草稿，完成后才发布。发布回读见 `.work/v023-published.json`。
+
+## 首次统一候选记录（cc603ba）
+
 当前状态：`GITHUB TEST PRERELEASE PUBLISHED / CORE SYNTHETIC REGRESSION VERIFIED / LIMITATIONS RECORDED`。用户先以实体 Esc 中止桌面操作，探针已清理；随后明确授权继续，在新的 profile/窗口中补齐下述回归，并另行确认GitHub预发布。Settings、连续切集与停止均已取得同一源码候选的新证据；全屏跨编码 Previous 的连续采样仍为 INCONCLUSIVE，不将全部像素矩阵记为 PASS。
 
 ## 交付身份

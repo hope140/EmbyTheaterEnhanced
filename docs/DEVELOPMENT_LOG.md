@@ -2,6 +2,10 @@
 
 ## 2026-10-08 — 0.2.3测试版版本收口
 
+发布完成：22:22（UTC+8）创建`v0.2.3` Pre-release，Release ID406895582，两个附件uploaded且大小/digest匹配；tag object7143e5d精确指向f7505cd。大文件上传期间保持草稿，未提前公布不完整Release。旧cc603ba页已提示改用v0.2.3，旧tag/资产不变；main和Latest均保持原正式基线。
+
+验证完成：新版本sourceCommit `f7505cda40c7f64e31714fbbe40eaa532926c46c`，npm test430/430通过；正式runtime与installer完成，About实际IPC/页面文本和setup PE版本均0.2.3。runtime2147文件对旧候选只有预期5个元数据文件变化，解包installer的2147文件与runtime全哈希一致。安装包175,622,861 bytes，SHA256 `217f36f065fafe122f06265d703d76018bf51588409a0966fada1bd3c797f314`。后台probe没有实际截图，未运行安装器；既有可见回归作为同一产品字节的历史证据保留。
+
 Model Tier：Tier 1。Model：当前Codex主线程与GPT-6 Luna High验证worker。Reason：已验收统一候选的版本元数据、正式重建、安装器及发布标识同步；Playback/Session Impact：none。Escalated：no。
 
 用户指出当前功能应为0.2.3后，从完整统一候选文档HEAD建立`codex/release-v0.2.3-test-20261008`，将root package与lockfile的三个版本字段由0.2.2改为0.2.3。依赖、产品代码与安装器脚本保持不变。新runtime/installer必须绑定本次版本提交，并逐文件对照cc603ba候选；旧`test-20261008-cc603ba`保留原tag/资产，不重新指向新源码。计划发布`v0.2.3` Pre-release并保持正式Latest v0.2.2；验证与发布结果另记。

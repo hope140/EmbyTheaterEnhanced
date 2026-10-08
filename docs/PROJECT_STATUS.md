@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-08 — 0.2.3测试安装包已发布
+
+产品版本字段已由0.2.2修正为0.2.3，sourceCommit `f7505cda40c7f64e31714fbbe40eaa532926c46c`；新安装包为`dist/EmbyTheaterEnhanced-0.2.3-win-x64-setup.exe`。430/430测试、正式重建、来源、payload和安装器2147文件核对通过，实际About和安装器版本资源均为0.2.3。新旧runtime仅5个版本/来源元数据文件不同，产品代码及播放器二进制未变。
+
+GitHub [v0.2.3 Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.3) 已发布安装包与校验文件，两个asset的大小及服务端digest匹配本地，tag精确指向f7505cd。旧cc603ba测试页已增加替代提示并保留原tag/资产；正式Latest仍v0.2.2，main仍46e995e，详见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。
+
 ## 2026-10-08 — 预发布安装包已补齐
 
 已按既有交付方式提供 [Windows x64安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/test-20261008-cc603ba/EmbyTheaterEnhanced-unified-test-cc603ba-win-x64-setup.exe) 及SHA256文件，并设为原Pre-release说明的默认下载。安装包由精确`cc603ba`打包工作树中的原Inno脚本生成，使用同一已验证runtime；175,594,443 bytes，SHA256为`1412dc7e87e1f353c1985cec15c7c0882a4ac65a48c032700ab991500be4f6df`。

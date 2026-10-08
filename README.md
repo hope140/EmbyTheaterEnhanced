@@ -1,6 +1,6 @@
 # Emby Theater Enhanced
 
-基于 Carnival 3.0 与综合补丁的 Windows Emby 客户端维护工程。当前正式发布基线为 `v0.2.2`；Smart Path Mapping 已通过 PR #18 合入 `main`，尚未发布新版本。
+基于 Carnival 3.0 与综合补丁的 Windows Emby 客户端维护工程。当前正式发布基线为 `v0.2.2`；Smart Path Mapping 已通过 PR #18 合入 `main`，统一候选已完成0.2.3测试版版本收口。
 
 Emby Theater Enhanced is an unofficial community-maintained project. It is not affiliated with or endorsed by Emby.
 
@@ -8,7 +8,7 @@ Emby Theater Enhanced 是非官方社区维护项目，与 Emby 不存在隶属�
 
 ## 开发计划
 
-2026-10-08统一候选`cc603ba`已作为 [GitHub预发布测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/test-20261008-cc603ba) 提供Windows x64安装包与校验文件，包含Settings、原生持帧切集和全屏窗口修复；ZIP保留为备用下载。测试入口、来源及真实执行的回归/限制见 [统一候选验收](docs/UNIFIED_CANDIDATE_ACCEPTANCE.md)。正式Latest仍为v0.2.2。
+2026-10-08，Settings、原生持帧切集和全屏窗口修复已发布为 [v0.2.3测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.3)，sourceCommit为`f7505cd`；下载 [Windows x64安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.3/EmbyTheaterEnhanced-0.2.3-win-x64-setup.exe)。新包的应用/About/安装器版本均为0.2.3；旧`cc603ba`为历史候选。当前发布状态、测试入口与验收限制见 [统一候选验收](docs/UNIFIED_CANDIDATE_ACCEPTANCE.md)。正式Latest仍为v0.2.2。
 
 进度与优先级见 [Development Roadmap](docs/ROADMAP.md)，可复现问题与观察项见 [Known Issues](docs/KNOWN_ISSUES.md)。Smart Path Mapping 已完成用户功能验收和最终远端复审，并通过 PR #18 合入 `main`。
 
