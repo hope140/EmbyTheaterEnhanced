@@ -8,6 +8,7 @@
 
 - 分支：`codex/unified-candidate-20261008`。
 - 产品 sourceCommit：`cc603ba59fc527e50dda5b32f849af7b50702e2f`。
+- 默认下载：[Windows x64安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/test-20261008-cc603ba/EmbyTheaterEnhanced-unified-test-cc603ba-win-x64-setup.exe)，安装后通过项目既有快捷方式启动。
 - 本地入口：`dist/unified-candidate/Emby.Theater.exe`。
 - 本地两父 merge：Fullscreen 文档 HEAD `6be48ed`（产品 `1e86e51`，包含 `6473ecb`）与 Settings `21ef9a4`。
 - 版本字段继续为 `0.2.2`，该 sourceCommit 标识本地集成候选。
@@ -21,7 +22,15 @@
 
 用户确认后，于20:18（UTC+8）发布 [test-20261008-cc603ba](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/test-20261008-cc603ba)。Release ID为406794578，`draft=false`、`prerelease=true`，未设为Latest。annotated tag `455cd068cb3f426f972afa221462d50fa42dec9b`精确指向产品源码`cc603ba`；仅推送独立候选分支与该标签。main保持`46e995e`，Latest仍为正式版`v0.2.2`。
 
-附件恰为ZIP与119-byte校验文件，GitHub API回读均为uploaded；ZIP服务器SHA256与上文一致，校验文件服务器SHA256为`d73eef35c71772a08657242cd0321fee89fbb88a93ef381041fde4da2335af1a`，均匹配本地字节。发布后本机到release-assets域的TLS/EOF/timeout导致独立下载校验文件未完成；该项记为UNAVAILABLE，与已通过的上传状态、服务端digest、GitHub API标签指向校验分开。没有修改系统代理或关闭证书验证。证据见 `.work/github-prerelease-published.json` 与 `.work/github-public-download-check.json`。
+首次发布附件为ZIP与119-byte校验文件，GitHub API回读均为uploaded；ZIP服务器SHA256与上文一致，校验文件服务器SHA256为`d73eef35c71772a08657242cd0321fee89fbb88a93ef381041fde4da2335af1a`，均匹配本地字节。发布后本机到release-assets域的TLS/EOF/timeout导致独立下载校验文件未完成；该项记为UNAVAILABLE，与已通过的上传状态、服务端digest、GitHub API标签指向校验分开。没有修改系统代理或关闭证书验证。证据见 `.work/github-prerelease-published.json` 与 `.work/github-public-download-check.json`。
+
+### 安装包交付补齐
+
+用户指出既有版本使用安装包交付后，恢复项目原有Inno Setup交付方式，并将安装包设为Release说明的默认下载。独立detached打包工作树精确锁定`cc603ba`，正式准备vendor/native输入后复用已验证runtime，原`tools/package.ps1`与`.iss`均未修改。
+
+安装包 `EmbyTheaterEnhanced-unified-test-cc603ba-win-x64-setup.exe`：175,594,443 bytes，SHA256 `1412dc7e87e1f353c1985cec15c7c0882a4ac65a48c032700ab991500be4f6df`。原有AppId、默认安装目录、快捷方式和应用版本0.2.2保持。`package -VerifyOnly`、安装器命名定向测试、Inno编译、innounp完整性/解包均通过；解包`{app}`与runtime均2147文件，missing/extra/mismatch全0。主线程额外复核入口、config、main/libmpv、Helper、Electron、mpv和manifest字节一致。证据在 `.work/installer-cc603ba-audit/`。
+
+安装包与125-byte校验文件已补至同一Pre-release，GitHub asset均uploaded，大小/digest匹配本地；校验文件SHA256为`0b99b3dd0f157df4b5d78018d89f5580fd3ab93a7f26f4368a27ad5cf0beb8e4`。当前4个附件为安装包/ZIP及各自校验文件，ZIP保留为备用。发布仍非Latest，源码tag与main不变。没有运行安装器或安装生命周期测试；安装前应退出正在运行的客户端。GitHub上传证据见 `.work/installer-github-upload.json`。
 
 远端只读核对：main 为 `46e995e`，beta ref 未返回；latest Release 为 `v0.2.2`，tag dereference 为 `9a034e8`，open PR 为空。此处是本轮核对时状态。
 

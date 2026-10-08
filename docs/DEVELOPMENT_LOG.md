@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-10-08 — 恢复安装包交付方式
+
+Model Tier：Tier 1。Model：当前Codex主线程、GPT-6 Luna High打包worker。Reason：固定sourceCommit和runtime的原有Inno打包、解包对账及附件交付；Playback/Session Impact：none。Escalated：no。
+
+前一轮将本地runtime ZIP直接作为主要发布资产，没有沿用项目既有安装包形式。用户指出后，在独立detached `cc603ba`工作树正式准备输入、复制已验证runtime并调用原`tools/package.ps1 -OutputBaseFilename`生成测试安装包，未修改构建/安装器或产品。VerifyOnly、命名测试1/1、编译、innounp完整性与2147文件逐项核对通过，原AppId/安装目录/快捷方式保留。没有执行setup或真实安装测试。
+
+安装包与校验文件已上传同一`test-20261008-cc603ba`，发布说明改为优先安装器，ZIP作为备用保留。安装包SHA256 `1412dc7e87e1f353c1985cec15c7c0882a4ac65a48c032700ab991500be4f6df`，GitHub asset digest/size匹配；Latest仍v0.2.2。当前证据见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。
+
 ## 2026-10-08 — 统一候选GitHub预发布
 
 Model Tier：Tier 1发布操作与证据核对。Model：当前Codex主线程、GPT-6 Luna High只读说明复核。Reason：现有包/提交/标签/验收范围均已固定，用户明确确认GitHub发布。Escalated：no。

@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-08 — 预发布安装包已补齐
+
+已按既有交付方式提供 [Windows x64安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/test-20261008-cc603ba/EmbyTheaterEnhanced-unified-test-cc603ba-win-x64-setup.exe) 及SHA256文件，并设为原Pre-release说明的默认下载。安装包由精确`cc603ba`打包工作树中的原Inno脚本生成，使用同一已验证runtime；175,594,443 bytes，SHA256为`1412dc7e87e1f353c1985cec15c7c0882a4ac65a48c032700ab991500be4f6df`。
+
+完整性测试、解包2147文件与原runtime路径/哈希比较全部通过；GitHub端大小与digest匹配。ZIP作为备用附件保留。没有运行系统安装或改变产品源码/版本/主线，完整证据见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。
+
 ## 2026-10-08 — 统一候选GitHub预发布
 
 用户确认后已发布 [test-20261008-cc603ba](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/test-20261008-cc603ba)，Pre-release且非Latest；附件为已验证的240,289,348-byte ZIP与SHA256文件。annotated tag精确指向产品源码`cc603ba59fc527e50dda5b32f849af7b50702e2f`。GitHub端两个asset均uploaded，大小/digest匹配本地；本机Release CDN独立下载回读受TLS/EOF影响未完成，明确保持UNAVAILABLE。
