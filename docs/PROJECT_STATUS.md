@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-08 — 统一候选集成进行中
+
+独立分支 `codex/unified-candidate-20261008` 从全屏文档 HEAD `6be48ed`（产品 `1e86e51`，已包含切集 `6473ecb`）合入 Settings `21ef9a4`。两侧共同祖先及现场远端 main 均为 `46e995e`。main 的维护 IPC 与窗口状态、libmpv 的 About route 与原生持帧自动合并；三份追加型历史文档保留两侧记录。原工作树及未提交资料未改动。
+
+本轮已授权本地集成、必要提交、独立构建和隔离可见合成回归。当前为验证进行中，旧候选测试数字和用户反馈保持各自范围；统一候选测试、来源/payload、设置与播放/窗口矩阵以本轮后续结果为准。
+
 ## 2026-10-08 — 全屏顶部细条用户验收通过
 
 用户在本会话交付候选后反馈：“我手动验证了，现在没有那个条了”。顶部细条记为 `HUMAN-ASSISTED VISUAL PASS / USER_REPORTED_RESOLVED`，范围限于用户本次所测场景。当前本地产品候选为 `1e86e512e3293e5c9fb43b3803995af50b802762`，独立分支 `codex/fullscreen-state-20261008`，入口 `dist/fullscreen-state-final/Emby.Theater.exe`。此处相对路径以 managed worktree `ete-fullscreen-state-20261008` 为基准；下方旧播放候选的路径仍属于原播放工作树。
@@ -49,6 +55,31 @@
 针对 NextTrack 期间透明播放区域短暂露出桌面的用户观察，当前 `codex/nexttrack-transition-overlay` candidate 增加 renderer 内视觉过渡层。实现复用 PlaybackManager 已选中的队列 Item 和现有 `ApiClient.getImageUrl()`：首个 Backdrop image 优先、Primary poster 次之、不可用时为纯黑。比例修复使 overlay 填满视频容器，图片采用 100% 宽高和居中 `object-fit:cover`，横版图覆盖 16:9 区域，竖版 poster 裁切填满区域。NextTrack 入口先同步显示覆盖层，再同步调用原 `nextTrack()`；paint gate 位于 `libmpv.stop(false)` 隐藏 surface 之前。匹配当前播放请求的 `core-playing` 且视频容器恢复可见后，覆盖层等待一次 paint 再淡出。原播放顺序与 source、Resolver、Session、Native Helper contract 未改。
 
 状态：比例修复 = `CODED / AUTO VERIFIED`；修复后 focused playback/window `43/43 PASS`、`npm test 325/325 PASS`、相关 JS syntax 与 `git diff --check` PASS。Foreground visual review = `PENDING USER REVIEW`。本条不宣称封面比例已通过新的前台视觉验收，也不把自动化或隐藏 runtime 作为视觉证据。
+## 2026-10-06 — Settings maintenance 无人值守审计修复
+
+从候选 `f58d806` 在独立本地分支审查。已修复手动更新查询只限制 socket 空闲而未限制整体请求期限、Release URL 未按规范化路径检查白名单、超出安全整数的数字 prerelease 比较三个问题。非成功 HTTP 响应及时关闭连接；同步请求异常清理 deadline。改动集中于 `enhanced/maintenance.js` 和新增回归，不改变 Settings 草稿 / Token / Smart Mapping / 播放契约。
+
+新增失败回归转为通过；新 maintenance 与既有 Settings visual suite 合计 `14/14 PASS`，此前 Settings 状态等相关定向 `83/83 PASS`，最终完整 `npm test 337/337 PASS`，独立 Tier 2 复核未发现新引入核心正确性问题。全量验证曾被 diagnostics 自测的未引用进程参数阻塞：含空格的工作树路径被拆开，正确引用后通过；只改测试启动，不改 collector 或脱敏断言。runtime 与 fake pipeline 结果按最终提交另行记录；真实三页视觉和实际入口验收仍待完成。
+
+## 2026-09-24 — STRM 动态规则控件原生外观修复
+
+用户实际查看 v3 runtime 后确认其余区域满意，但路径规则卡中的输入框、下拉框仍呈浏览器默认白色小控件。根因是规则卡及后续助手样本用 `document.createElement(tag)` 创建普通控件，随后才设置 `is="emby-*"`；Emby 的 input/select/button 是 customized built-in，必须在创建时传入 `{is: 'emby-*'}` 才会获得其组件实现与样式。仅调整 `mpvplayer/strm.js` 的动态控件创建，并加入会识别旧创建方式的生成控件测试。静态 STRM、诊断与 About 的布局和样式未改；Smart Mapping、规则 schema、Token/Save、CD2 状态、Resolver 与播放链未改。
+
+本轮 targeted STRM/Settings `78/78 PASS`，`npm test 331/331 PASS`，JS syntax 与 `git diff --check` PASS。用户视觉复核仍待独立 runtime 再确认。
+
+## 2026-09-24 — Unified Settings Visual System v2 candidate
+
+用户对上一版 STRM runtime 的实际视觉检查结果为 `FAIL`。本轮在 `codex/strm-ui-consolidation` 上重建带 `.ete-settings-page` 命名空间的共享视觉层：字体、间距、卡片、表单控件、四级按钮及状态色由 `mpvplayer/enhanced-settings.css` 的 token 统一；STRM、诊断与 About 只保留各自布局样式。STRM 采用区块标题/说明/内容卡与纵向地址、Token、开关、状态行；规则路径占整行，助手样本纵向排列。诊断页移除原生 `raised/button-submit`；About 页面按用户追加确认纳入本分支，四项维护 IPC 来自旧分支的独立 contract，未导入旧版整套 Settings 设计。
+
+现有 STRM 推导、Resolver、规则 schema、Token/Save 状态机、CD2 状态生命周期、诊断 IPC 与播放链没有行为变化。新增 About route 提供版本/环境信息、白名单环境复制、用户点击后的有界更新查询及受限 Releases 外链。Helper 未 ready 时 libmpv 显示 `UNKNOWN`；显示缩放按主显示器 `scaleFactor` 表达。共享 CSS 与页面 CSS 均限定在各自根类，无裸 `button/input/select` 规则。
+
+验证：STRM/Settings/诊断 focused `103/103 PASS`；全量 `npm test 330/330 PASS`；修改的 JS 语法、`git diff --check` 和三页 HTML 标签平衡 PASS。代码提交 `f3a17ca1bbe3016d33749e98d110282fc798b2f2` 的独立 runtime 为 `2145` 文件，固定 Electron 44.4.2、Native Helper、source/runtime provenance 与 package `-VerifyOnly` 均 PASS。最终提交的 `strm-ui-review2` runtime 身份在任务最终报告中再核对。前台三页切换与实际视觉结果仍待用户复核，当前只记录自动化验证状态。
+
+## 2026-09-24 — STRM Settings UI consolidation
+
+基于 `main@46e995ef83fca7f7a882e3dc633bdcc2d2d521c7` 在独立 `codex/strm-ui-consolidation` worktree 完成 STRM 设置页视觉整理。页面按基础设置、CloudDrive2、路径规则、智能映射助手分区；使用约 1080px 内容宽度、统一深色表单控件、Primary/Secondary/Text/Danger 操作层级、规则来源 badge、分开的挂载/连接/路径格式状态行，以及同风格的样本和预览卡。窄屏单列和长路径换行已加入 CSS。功能控件 id/class 与事件入口保留；JS 只调整 UI render、状态文字和视觉标记。Smart Mapping 推导、规则 schema、Token/Save 状态机、CD2 IPC/连接生命周期、Resolver 与播放链没有改动。
+
+自动验证：STRM UI/Settings focused `69/69 PASS`，`npm test 322/322 PASS`，JS 语法和 `git diff --check` PASS。已从代码提交 `ae0e6504f6389f261cea484fcb3e77f299c801a9` 构建独立 `2139` 文件 runtime：固定 Electron 44.4.2 的 73 文件输入、Native Helper 编译与 provenance、source/runtime provenance、`package.ps1 -VerifyOnly` 均 PASS。最终提交对应的 runtime 身份在任务最终报告中单独核对。前台设置页视觉、真实 Emby/CD2 和安装验收均未执行；交付状态为 `READY FOR USER VISUAL REVIEW`。
 
 ## 2026-09-24 — Smart Path Mapping milestone closure
 

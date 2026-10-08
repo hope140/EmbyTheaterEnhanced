@@ -32,6 +32,8 @@ STRM 增强：在 `libmpv.js` 的 `playInternal(options)` 中，若 `Item.Path` 
 
 STRM resolver settings 由 `enhanced/strm-config-store.js` 持久化 schema version 1 配置和 main-process-only secret 文件；`enhanced/strm-config-ipc.js` 只向当前 BrowserWindow 返回脱敏配置。`libmpv.getRoutes()` 注册 `mpvplayer/strm.html`，页面保存规则后提示重启生效。规则使用最长前缀匹配，支持 `cloud-first`、`mount-first` 和可校验的 `custom` order；AUTO discovery 只能更新 AUTO，USER 与 DISABLED tombstone 受到保护。
 
+新增 Settings 页面 STRM、诊断与 About 共同加载 `mpvplayer/enhanced-settings.css`。共享规则只在 `.ete-settings-page` 根下定义字体、间距、卡片、控件、按钮与状态 token；`strm-settings-page`、`diagnostics-settings-page`、`about-settings-page` 的 CSS 只负责各自布局，不能影响普通 Emby 设置页。About route 通过现有 `libmpv.getRoutes()` 注册。`enhanced/maintenance-ipc.js` 只接受当前应用 `webContents`，提供版本/环境信息、剪贴板白名单复制、用户点击后有界查询最新 Release、受限 Releases 外链四项维护操作；数据整理在 `enhanced/maintenance.js`，不进入播放或 Resolver 链。libmpv 只在 Native Helper ready 时展示为已确认版本，显示缩放来自主显示器 `scaleFactor`。
+
 设置页的 CloudDrive2 连接状态由 `strm-config-ipc.js` 的当前 main-process 会话统一持有。`TEST_CONNECTION` 使用现有只读 `testConnection()` 探针更新 `unknown/checking/connected/failed` 与单调 revision；`GET_CONNECTION_STATUS` 和规则测试只返回同一快照。规则测试的 `mapped` 仅证明 prefix replacement 格式有效，与连通性分开。配置或 Token 成功保存后状态失效为 `unknown`。renderer 只展示带 revision 的快照，测试结果会立即刷新页面上所有规则卡；这不改变 CD2 service 或播放 route。
 
 播放器只通过 `loadfile <url> replace -1 user-agent=<value>` 传入已验证的 file-local User-Agent；不修改全局 `user-agent` 或 `http-header-fields`。`additionalHeaders` 当前不进入播放器。完整 contract 见 `CD2_DIRECT_URL.md`。

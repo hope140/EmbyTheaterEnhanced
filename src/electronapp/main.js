@@ -23,6 +23,7 @@
     var appBootstrap = require('./enhanced/bootstrap');
     var deviceIdentity = require('./device-identity');
     var enhancedDiagnostics = require('./enhanced/diagnostics');
+    var maintenanceIpc = require('./enhanced/maintenance-ipc');
 
     var appBootstrapState = appBootstrap.bootstrap({
         appDataPath: app.getPath('appData'),
@@ -114,8 +115,38 @@
     var unregisterCd2Ipc = function () {};
     var unregisterStrmConfigIpc = function () {};
     var unregisterDiagnosticsIpc = function () {};
+    var unregisterMaintenanceIpc = function () {};
     var unregisterNativeHelperIpc = function () { return Promise.resolve(); };
     var nativeHelperService;
+
+    function getCurrentEnhancedAppInfo() {
+        return Object.assign({}, diagnosticsAppInfo, {
+            nativeHelper: nativeHelperService && typeof nativeHelperService.status === 'function' ? nativeHelperService.status() : null
+        });
+    }
+
+    function getPlatformInfo() {
+        var version = 'UNKNOWN';
+        try {
+            if (process.platform === 'win32') {
+                version = typeof process.getSystemVersion === 'function' ? process.getSystemVersion() : require('os').release();
+            }
+        } catch (_) { }
+        return {windows: process.platform === 'win32' ? 'Windows ' + version : process.platform};
+    }
+
+    function getDisplayInfo() {
+        try {
+            var screen = electron.screen;
+            if (!screen || typeof screen.getPrimaryDisplay !== 'function') return {};
+            var display = screen.getPrimaryDisplay();
+            var scaleFactor = Number(display && display.scaleFactor);
+            if (!Number.isFinite(scaleFactor) || scaleFactor <= 0) return {};
+            return {summary: Math.round(scaleFactor * 100) + '%'};
+        } catch (_) {
+            return {};
+        }
+    }
 
     function onWindowMoved() {
 
@@ -975,16 +1006,21 @@
         logger: enhancedLog,
         getWebContents: getWebContents,
         getBrowserWindow: function () { return mainWindow; },
-        getAppInfo: function () {
-            return Object.assign({}, diagnosticsAppInfo, {
-                nativeHelper: nativeHelperService && typeof nativeHelperService.status === 'function' ? nativeHelperService.status() : null
-            });
-        },
+        getAppInfo: getCurrentEnhancedAppInfo,
         getNativeHelperStatus: function () {
             return nativeHelperService && typeof nativeHelperService.status === 'function' ? nativeHelperService.status() : null;
         },
         app: app,
         dialog: electron.dialog,
+        shell: electron.shell
+    });
+    unregisterMaintenanceIpc = maintenanceIpc.register({
+        ipcMain: ipcMain,
+        getWebContents: getWebContents,
+        getAppInfo: getCurrentEnhancedAppInfo,
+        getPlatformInfo: getPlatformInfo,
+        getDisplayInfo: getDisplayInfo,
+        clipboard: electron.clipboard,
         shell: electron.shell
     });
     nativeHelperService = nativeHelperServiceModule.createService({
@@ -1007,6 +1043,7 @@
         event.preventDefault();
         enhancedLog({category: 'app', event: 'shutdown', details: {reason: 'before-quit'}});
         unregisterDiagnosticsIpc();
+        unregisterMaintenanceIpc();
         unregisterStrmConfigIpc();
         unregisterCd2Ipc();
         var nativeShutdown = unregisterNativeHelperIpc();

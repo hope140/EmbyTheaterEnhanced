@@ -29,6 +29,23 @@
 - 队列管理器在换项时已持有选中 Item；复用该 Item 的现有 image URL builder 可以显示 Backdrop 优先、Primary poster fallback 的封面，而不再请求下一集元数据。过渡图必须在视频容器内用 100% 宽高和 `object-fit:cover` 填满，竖版 poster 允许居中裁切；图片缺失或失败应立即落到黑底，不能阻塞播放请求。
 - 需要保证 teardown 前看到 overlay 时，应在现有 surface hide 边界用 renderer paint 协调，而不是延迟或包裹 manager 的整个 NextTrack 调用；这样可保留既有 request id 与 Stop supersession 顺序。不能用固定 sleep 猜测时长。`core-playing` 是当前可用的 ready proxy；可见 surface 之后仍需单独做真实前台视觉检查，不能等同于已观测到首个呈现帧。
 - 快速切换时以当前播放请求的 request id/revision 控制 visual owner，让迟到的旧 ready/settle/failure 不清理新覆盖层；实际播放顺序仍交由原 PlaybackManager 链处理。
+## 2026-10-06 — Maintenance request budgets and normalized URLs
+
+- socket timeout 衡量空闲，不代表整个请求期限。点击驱动的更新查询需要从发起时计时，并在成功、失败和同步异常终结时清理计时器；错误响应也应及时结束网络资源。
+- 外链白名单应检查 URL 规范化后的主机与路径；原始字符串前缀无法阻止 dot-segment / 反斜杠规范化越出目标目录。
+- 数字 prerelease 标识可能超过 JavaScript 安全整数；使用数字字符串的长度与字典序比较，避免不同版本被折叠为相等。
+- `Start-Process -ArgumentList` 会连接参数而不自动保留含空格路径的引用。观察不到测试 bundle 时应先检查子进程真实启动结果；本次同签名由路径拆分造成，不能仅按断言文字判为 timing flake，也不能放松隐私 gate。
+
+## 2026-09-24 — Dynamically created Emby controls need creation-time `is`
+
+- `emby-input`、`emby-select`、`emby-button` 扩展原生标签。静态 HTML 的 `is` 由 parser 在创建时处理；动态控件在 `document.createElement(tag)` 之后补 `is` 属性不会把普通元素变为 Emby customized built-in。动态控件应使用 `document.createElement(tag, {is: name})`。
+- 页面静态控件与动态规则卡可在同一 runtime 中呈现两套外观；只检查 HTML class 和 CSS 存在不足以发现此问题。回归测试应观察生成控件的创建选项，并保留真实视觉复核为独立 gate。
+
+## 2026-09-24 — Settings visual review is a separate gate
+
+- 上一轮 STRM UI 的静态测试、provenance 与构建通过，但用户实际查看后判定视觉 FAIL；这些后台证据不能替代三个页面切换时的字体、控件、卡片和按钮可读性验收。
+- 诊断页同属后续新增页面，不能把它的原生按钮和卡片样式视为成熟设计规范。共享 Settings 视觉层应在带命名空间的根类下定义 token 与组件，各页只保留布局特例；Emby 原生 `raised/button-submit` 不应用作新增页面的按钮基线。
+- Native Helper 未 ready 时其 status 可包含预期 libmpv 版本；About 只有在 ready 后才将其显示为已确认版本。主显示器 `scaleFactor` 应标为显示缩放，不应称为 DPI。
 
 ## 2026-09-23 — Connection status and mapping format are separate facts
 

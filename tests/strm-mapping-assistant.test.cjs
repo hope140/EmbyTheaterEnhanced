@@ -384,8 +384,8 @@ test('settings UI wires multi-sample preview, draft rules, stale sequence guards
     assert.match(settingsHtml, /连接测试使用已保存的地址与 Token/);
     assert.match(settingsHtml, /class="smartSamples"/);
     assert.match(settingsHtml, /class="smartSample/);
-    assert.match(settingsHtml, /class="btnAddSample"/);
-    assert.match(settingsHtml, /class="btnAnalyzeMapping"/);
+    assert.match(settingsHtml, /class="[^"\n]*\bbtnAddSample\b[^"\n]*"/);
+    assert.match(settingsHtml, /class="[^"\n]*\bbtnAnalyzeMapping\b[^"\n]*"/);
     assert.match(settingsHtml, /class="[^"\n]*btnAddSuggestedRule[^"\n]*"[^>]*disabled/);
     assert.match(settingsHtml, /type="submit"[^>]*class="[^"\n]*btnSave/);
     assert.match(settingsSource, /previewMapping:\s*'enhanced-strm-smart-mapping-preview'/);

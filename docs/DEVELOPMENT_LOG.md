@@ -1,5 +1,11 @@
 # 开发日志
 
+## 2026-10-08 — 统一候选集成
+
+Model Tier：Tier 2 核心集成审核，Tier 1 输入准备与测试。Model：当前 Codex 主线程、GPT-5.6 Sol High 只读差异审核、GPT-6 Luna High 测试 worker。Reason：共享 main/libmpv 与窗口/播放生命周期交汇，需要确认合并保留既有 ownership。Escalated：no。Task Risk：medium；Task Uncertainty：medium；Cross-module Scope：Settings/main/libmpv/window；Playback/Session Impact：保留已验证实现，不重设接口。
+
+从全屏文档 HEAD `6be48ed` 建立本会话独立工作树及 `codex/unified-candidate-20261008`，以普通两父本地 merge 接入 Settings `21ef9a4`。自动合并所有产品源码，手动处理三份追加型文档冲突并保留双方历史。产品差异相对 `1e86e51` 仅为 Settings 已有候选内容。测试和正式构建结果另记；未推送或发布。
+
 ## 2026-10-08 — 全屏窗口局部修复及顶部细条用户反馈
 
 Model Tier：修复与核心复核Tier 2，测试/文档Tier 1。Model：当前主线程负责窗口决策，GPT-5.6 Sol High只读核心复核，GPT-6 Luna High执行明确的测试与输入审计。Reason：透明main窗口、renderer状态与video carrier联动；不修改播放生命周期。Escalated：no。
@@ -93,6 +99,55 @@ Escalated: Yes（用户指定）
 用户观察到 NextTrack 切换时视频区域会露出桌面，UI 仍可见。初版新增 renderer-only transition overlay，沿用同步队列中已经选中的下一集 Item，通过现有 `ApiClient.getImageUrl()` 使用 artwork；本条初版图片来源与比例行为已由上方 2026-09-24 比例修复记录更新。NextTrack wrapper 同步显示覆盖层后立即同步调用原 `nextTrack()`，不改变 PlaybackManager request id 与 Stop supersession 顺序；paint gate 移到 `libmpv.stop(false)` 中、现有 surface 隐藏之前，不使用固定延时。当前 `_etePlayRequestSequence` 关联的 `core-playing` 处理使视频容器可见后，再等一帧并淡出。revision token 与 request id 限制迟到的旧 transition 清理/淡出新覆盖层；播放失败或调用提前结束时清理视觉层。覆盖层位于现有 `.mpv-videoPlayerContainer` 内且不接收指针事件。没有新增 image API，也没有改 Resolver、Session、source 选择或 Native Helper。
 
 验证：focused playback/window `42/42 PASS`，`npm test 324/324 PASS`，相关 JS syntax 与 `git diff --check` PASS。exact-commit build/provenance 与 package VerifyOnly 将在本地提交后执行，结果见任务最终报告。前台客户端未自动启动；需要用户视觉复核实际 NextTrack 过渡与首帧衔接后才能确认体验修复。
+## 2026-10-06 — Settings maintenance request and release boundary audit
+
+Model Tier：Tier 2（主线程 IPC / 外链边界审核），明确 helper 修复由 Tier 1 worker 执行。Model：当前 Codex 主线程、Luna worker、GPT-6 Sol High 独立复核。Reason：保持维护入口既有 contract，对有确定失败证据的纯 helper 做小范围修复。Escalated：no。
+
+用户授权独立工作树、本地提交和隔离测试。以 `f58d806` 为基线，新增 localhost 滴流、错误响应连接关闭、同步异常 timer 清理、规范化 Release 路径和大整数 prerelease 回归。此前滴流可越过 60ms 测试预算、dot-segment 可离开项目 Releases 路径、相邻大整数被比较为相等。修复后使用统一整体 deadline、规范化后的 URL 白名单、数字字符串比较；保持已有 schema、普通控件与播放链。
+
+新增 maintenance tests 与 Settings visual suite `14/14 PASS`；此前包含状态 / mapping / resolver 的定向 `83/83 PASS`。完整测试初次和串行复核均为 336/337，同一 diagnostics collector 自测失败；无空格路径的干净基线单项通过。捕获子进程启动错误后确认 Start-Process 拆开了未引用的 -File 路径，原调用 exit=-196608 且无 output，正确引用后 exit=0 并生成 bundle。仅修复自测参数引用，不修改生产 collector、断言或 timeout；单项通过后最终 `npm test 337/337 PASS`。独立 Tier 2 只读审核未发现新核心正确性问题；按最终提交构建的 gate 另随交付报告记录。没有访问真实 Emby / CD2，公网 release 查询在自动测试中使用 fixture。
+
+## 2026-09-24 — STRM 规则卡动态 Emby 控件修复
+
+Model Tier: Tier 1
+
+Model: GPT-6 Sol High（当前 host）
+
+Reason: 用户截图定位到规则卡动态 input/select/button 外观与静态表单不一致；问题限定在 renderer 元素创建，播放与状态契约无影响。
+
+Escalated: No
+
+核对 `emby-input`、`emby-select`、`emby-button` 均以 `customElements.define(..., {extends: ...})` 注册；规则卡此前先创建普通 DOM 元素，再设置 `is` 属性，未触发 customized built-in 构造。改为通过 `document.createElement(tag, {is: customName})` 创建。覆盖路径输入、规则 select、自定义解析顺序、规则操作按钮和动态助手样本；不修改字段值、绑定、样本上限、Save/Token 或任何 IPC/Resolver。新增 VM fake DOM 测试核对每个生成的 input/select/button 在创建时得到对应 `is` 选项；旧写法会在此测试失败。Targeted `78/78 PASS`、`npm test 331/331 PASS`、JS syntax 与 `git diff --check` PASS。真实客户端视觉结果待用户复核。
+
+## 2026-09-24 — Settings Visual System correction v2
+
+Model Tier: Tier 2
+
+Model: GPT-6 Sol High（用户指定；Luna worker 分别承担只读审计、局部页面适配和测试）
+
+Reason: 用户实际确认 STRM v1 视觉 FAIL；本轮跨 STRM、诊断、About 三页建立共享样式，并按用户追加确认选择性接入 About maintenance IPC。既有播放与设置状态边界保持冻结。
+
+Escalated: No（模型由用户指定；About/IPC 范围由用户在本轮明确确认）
+
+先审计当前路由和历史分支：当前分支原有 STRM 与诊断路由，没有 About；诊断的浅色按钮问题早于 `3faf888`，而 STRM 独立按钮/卡片体系由该提交引入。旧 Settings 分支只提供 About 维护操作的源码参考，没有 cherry-pick 其完整设计或覆盖 Smart Mapping。新增共享 `enhanced-settings.css`，所有选择器限定在 `.ete-settings-page`；页面 CSS 分别限定在 `strm-settings-page`、`diagnostics-settings-page`、`about-settings-page`。共享 token 统一标题、标签、帮助文案、section/card/row 间距、控件尺寸与按钮高度；Primary 白字深蓝背景的静态对比比约 5.9:1，hover 约 5.1:1。三个页面移除新页面对原生 `raised/button-submit` 的依赖。
+
+STRM 只重排 HTML 与展示 class：单列 CloudDrive2 字段与助手样本、整行路径输入、独立状态行；原有控件 class/id、事件绑定、Save/Token 和 preview/规则行为保持。诊断页沿用原有 IPC/事件，只改显示。用户另行确认 About 页面及维护 IPC 纳入本分支，因此选择性加入 `maintenance.js`、`maintenance-ipc.js`、main 注册/注销和 About route；更新请求仍仅由点击触发，8 秒超时/256 KiB 上限，剪贴板仅格式化白名单字段，外链限制到项目 Releases。Helper 未 ready 不展示预期 libmpv 版本为实测值。
+
+自动化：STRM/Settings/诊断 focused `103/103 PASS`，`npm test 330/330 PASS`，修改 JS syntax、`git diff --check`、三页 HTML 标签平衡 PASS。代码提交 `f3a17ca1bbe3016d33749e98d110282fc798b2f2` 的独立 runtime 生成 `2145` 文件，source/Electron 44.4.2/Native Helper/runtime provenance 和 package `-VerifyOnly` PASS；文档收尾后的 exact HEAD 将再生成 `strm-ui-review2`。本轮没有启动 runtime、Computer Use、前台窗口操作、安装或真实 Emby/CD2 验收；用户视觉复核仍是独立 gate。
+
+## 2026-09-24 — STRM Settings UI consolidation
+
+Model Tier: Tier 1
+
+Model: GPT-6 Luna High（页面实现 worker；主线程复核与验收）
+
+Reason: 目标限定在 STRM 页面视觉与展示层，已知控件、事件与状态契约；无 Playback/Session 影响，无跨模块行为设计。
+
+Escalated: No
+
+从指定 `46e995ef83fca7f7a882e3dc633bdcc2d2d521c7` 创建独立 worktree 和 `codex/strm-ui-consolidation`。没有使用旧 Settings 分支或其他 worktree 的代码改动。页面整理为四段，统一深色 input/select、Emby checkbox 排版、四级按钮、状态行和卡片层级；规则检查按挂载/CloudDrive2 最近测试/路径格式分别展示，助手样本和预览使用同一视觉样式。`strm.js` 仅增加展示 class、状态行与文字/颜色标记，保留功能选择器及原有请求、Save/Token、sample limit 与预览动作。未修改 resolver、inference、IPC、持久化 schema 或播放链。
+
+补充 `tests/strm-ui-consolidation.test.cjs`，将旧静态按钮断言改为 class 包含匹配，并扩充规则状态 race fixture 与状态分离回归。focused `69/69 PASS`；全量 `npm test 322/322 PASS`；JS syntax、`git diff --check` PASS。准备阶段核对固定归档和 Electron 44.4.2 tree，复用经哈希核对的 Native Helper 头文件。代码提交 `ae0e6504f6389f261cea484fcb3e77f299c801a9` 的独立 runtime 生成 `2139` 文件，Electron/Native Helper/source/runtime provenance 与 package `-VerifyOnly` PASS。最终提交需要再次按 exact HEAD 生成 review runtime，身份以本任务最终报告为准。未启动 runtime，未进行 Computer Use、窗口操作、安装、真实 Emby/CD2 或前台视觉验收。
 
 ## 2026-09-24 — PR #18 Token 与 Settings draft 隔离修复
 

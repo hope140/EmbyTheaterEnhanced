@@ -1,333 +1,136 @@
-.ete-strm-settings {
-    max-width: 1080px;
-}
+/* STRM keeps Emby's form controls; these rules only arrange its extra fields. */
+.strm-settings-page > form.auto-center { margin-inline: auto; max-width: 100%; min-width: 0; width: 100%; }
+.strm-settings-page .ete-strm-cd2-card { display: grid; gap: 1em; }
+.strm-settings-page .ete-strm-cd2-card .inputContainer { margin-bottom: 0; }
 
-.ete-strm-settings h1,
-.ete-strm-settings h2 {
-    margin-top: 0;
-}
-
-.ete-strm-hero {
-    align-items: center;
-    background: rgba(0, 164, 220, .12);
-    background: color-mix(in srgb, var(--theme-primary-color, #00a4dc) 12%, transparent);
-    border-left: 4px solid var(--theme-primary-color, #00a4dc);
-    border-radius: 4px;
+.strm-settings-page .ete-strm-token-heading {
+    align-items: baseline;
     display: flex;
-    gap: 24px;
+    flex-wrap: wrap;
+    gap: .5em 1em;
     justify-content: space-between;
-    margin: 0 0 24px;
-    padding: 20px 24px;
+    margin-bottom: .2em;
 }
+.strm-settings-page .ete-strm-token-actions { margin-top: .55em; }
+.strm-settings-page .ete-strm-token-row { min-width: 0; }
+.strm-settings-page .ete-strm-toggle-row { margin: .2em 0 .8em; }
+.strm-settings-page .ete-strm-enabled-section .ete-strm-toggle-row { margin-bottom: 0; }
 
-.ete-strm-hero p {
-    margin: 8px 0 0;
+.strm-settings-page .ete-strm-connection-block {
+    border-top: 1px solid var(--line-background, rgba(255, 255, 255, .14));
+    padding-top: .9em;
 }
-
-.ete-strm-hero-mark {
-    color: var(--theme-primary-color, #00a4dc);
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: .16em;
-    white-space: nowrap;
+.strm-settings-page .ete-strm-status-row {
+    align-items: baseline;
+    display: grid;
+    gap: .4em 1em;
+    grid-template-columns: 8em minmax(0, 1fr);
+    min-width: 0;
 }
-
-.ete-strm-panel {
-    border-radius: 4px;
-    margin-bottom: 24px;
+.strm-settings-page .ete-strm-status-label,
+.strm-settings-page .ete-strm-status-value:not([data-status]) {
+    color: var(--theme-secondary-text-color, rgba(255, 255, 255, .72));
 }
+.strm-settings-page .ete-strm-status-value { min-width: 0; overflow-wrap: anywhere; }
+.strm-settings-page .ete-strm-actions { margin-top: .65em; }
+.strm-settings-page .ete-strm-rule-toolbar { margin-bottom: .9em; }
 
-.ete-strm-fieldset {
-    border: 1px solid var(--theme-primary-color-alpha, rgba(0, 164, 220, .28));
-    padding: 20px 24px 8px;
-}
-
-.ete-strm-fieldset legend {
-    color: var(--theme-primary-color, #00a4dc);
-    font-size: 1.1em;
-    font-weight: 600;
-    padding: 0 8px;
-}
-
-.ete-strm-settings input[type="url"],
-.ete-strm-settings input[type="password"],
-.ete-strm-settings input[type="text"] {
-    max-width: 100%;
-}
-
-.ete-strm-token-row,
-.ete-strm-actions,
-.ete-strm-form-actions,
-.ete-strm-section-heading,
-.ete-strm-rule-heading,
-.ete-strm-rule-actions {
+.strm-settings-page .rulesList { min-width: 0; }
+.strm-settings-page .ete-strm-rule-card { margin: 0 0 1em; }
+.strm-settings-page .ete-strm-rule-heading {
     align-items: center;
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
-}
-
-.ete-strm-token-row {
-    margin: 8px 0 20px;
-}
-
-.ete-strm-token-row .txtCd2Token {
-    flex: 1 1 220px;
-    min-width: 180px;
-}
-
-.ete-strm-label,
-.ete-strm-field-label {
-    display: block;
-    font-weight: 600;
-}
-
-.ete-strm-section-heading {
-    justify-content: space-between;
-    margin-bottom: 16px;
-}
-
-.ete-strm-section-heading h2 {
-    margin-bottom: 6px;
-}
-
-.ete-strm-rule-card {
-    border: 1px solid var(--theme-primary-color-alpha, rgba(0, 164, 220, .25));
-    border-radius: 4px;
-    margin: 16px 0;
-    padding: 20px 24px;
-    transition: opacity 160ms ease, border-color 160ms ease;
-}
-
-.ete-strm-rule-card.is-disabled {
-    border-color: var(--theme-secondary-text-color, rgba(128, 128, 128, .45));
-    opacity: .7;
-}
-
-.ete-strm-rule-heading {
-    justify-content: space-between;
-    margin-bottom: 16px;
-}
-
-.ete-strm-rule-title {
-    font-size: 1.05em;
-    font-weight: 600;
-    overflow-wrap: anywhere;
-}
-
-.ete-strm-rule-state {
-    border: 1px solid currentColor;
-    border-radius: 999px;
-    font-size: .82em;
-    padding: 3px 9px;
-    white-space: nowrap;
-}
-
-.ete-strm-rule-grid {
-    display: grid;
-    gap: 0 20px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.ete-strm-rule-grid .inputContainer,
-.ete-strm-rule-grid .selectContainer {
+    gap: .4em .8em;
+    margin-bottom: 1em;
     min-width: 0;
 }
-
-.ete-strm-rule-grid input,
-.ete-strm-rule-grid select {
-    box-sizing: border-box;
-    max-width: 100%;
-    width: 100%;
-}
-
-.ete-strm-order {
-    background: rgba(0, 164, 220, .08);
-    background: color-mix(in srgb, var(--theme-primary-color, #00a4dc) 8%, transparent);
-    border-radius: 3px;
-    margin: 4px 0 16px;
-    padding: 12px 16px;
-}
-
-.ete-strm-order-label {
-    display: block;
-    font-size: .9em;
+.strm-settings-page .ete-strm-rule-title {
     font-weight: 600;
-    margin-bottom: 4px;
-}
-
-.ete-strm-order-value {
-    font-family: Consolas, "Courier New", monospace;
+    min-width: 0;
     overflow-wrap: anywhere;
 }
-
-.ete-strm-custom-order {
+.strm-settings-page .ete-strm-rule-origin,
+.strm-settings-page .ete-strm-rule-state {
+    border: 1px solid var(--line-background, rgba(255, 255, 255, .14));
+    border-radius: .3em;
+    color: var(--theme-secondary-text-color, rgba(255, 255, 255, .72));
+    font-size: .85em;
+    padding: .15em .5em;
+    white-space: nowrap;
+}
+.strm-settings-page .ete-strm-rule-origin { margin-left: auto; }
+.strm-settings-page .ete-strm-rule-card.is-disabled { opacity: .8; }
+.strm-settings-page .ete-strm-rule-grid {
     display: grid;
-    gap: 8px;
+    gap: .3em 1em;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-width: 0;
+}
+.strm-settings-page .ete-strm-rule-path-field { grid-column: 1 / -1; }
+.strm-settings-page .ete-strm-rule-grid .inputContainer,
+.strm-settings-page .ete-strm-rule-grid .selectContainer { min-width: 0; }
+
+.strm-settings-page .ete-strm-order { margin: .4em 0 1em; }
+.strm-settings-page .ete-strm-order-label {
+    color: var(--theme-secondary-text-color, rgba(255, 255, 255, .72));
+    display: block;
+    margin-bottom: .2em;
+}
+.strm-settings-page .ete-strm-order-value { font-family: Consolas, "Courier New", monospace; overflow-wrap: anywhere; }
+.strm-settings-page .ete-strm-custom-order {
+    display: grid;
+    gap: .75em;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    margin-top: 12px;
+    margin-top: .75em;
 }
+.strm-settings-page .ete-strm-custom-order label { min-width: 0; }
+.strm-settings-page .ete-strm-custom-order select { margin-top: .3em; }
 
-.ete-strm-custom-order label {
-    font-size: .86em;
-}
-
-.ete-strm-custom-order select {
-    margin-top: 4px;
-    width: 100%;
-}
-
-.ete-strm-rule-actions {
-    justify-content: flex-end;
-}
-
-.ete-strm-rule-test {
-    flex-basis: 100%;
-    min-height: 24px;
-}
-
-.ete-strm-assistant {
-    border-top: 1px solid var(--theme-primary-color-alpha, rgba(0, 164, 220, .25));
-    margin-top: 24px;
-    padding-top: 20px;
-}
-
-.ete-strm-assistant-heading h3,
-.ete-strm-assistant-suggestion h4 {
-    margin: 0 0 6px;
-}
-
-.ete-strm-assistant-heading p {
-    margin: 0 0 16px;
-    max-width: 760px;
-}
-
-.ete-strm-assistant-sample {
-    border: 1px solid var(--theme-primary-color-alpha, rgba(0, 164, 220, .25));
-    border-radius: 4px;
-    margin: 12px 0;
-    padding: 16px;
-}
-
-.ete-strm-assistant-sample legend {
-    font-weight: 600;
-    padding: 0 6px;
-}
-
-.ete-strm-assistant-sample .btnRemoveSample {
-    margin-top: 8px;
-}
-
-.ete-strm-assistant-grid {
+.strm-settings-page .ete-strm-rule-status-grid {
+    border-top: 1px solid var(--line-background, rgba(255, 255, 255, .14));
     display: grid;
-    gap: 0 20px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .45em;
+    padding-top: .8em;
+}
+.strm-settings-page .ete-strm-rule-actions { justify-content: flex-end; margin-top: .9em; }
+.strm-settings-page .ete-strm-empty {
+    color: var(--theme-secondary-text-color, rgba(255, 255, 255, .72));
+    padding: .8em 0;
 }
 
-.ete-strm-assistant-grid .inputContainer {
-    min-width: 0;
+.strm-settings-page .ete-strm-assistant-sample { margin: 0 0 .85em; }
+.strm-settings-page .ete-strm-assistant-sample legend { font-weight: 600; padding: 0 .4em; }
+.strm-settings-page .ete-strm-assistant-grid { display: grid; grid-template-columns: minmax(0, 1fr); }
+.strm-settings-page .ete-strm-assistant-grid .inputContainer { min-width: 0; }
+.strm-settings-page .ete-strm-assistant-sample .btnRemoveSample { margin-top: .2em; }
+.strm-settings-page .ete-strm-assistant-actions { margin-top: .9em; }
+.strm-settings-page .smartMappingState { flex-basis: 100%; }
+.strm-settings-page .ete-strm-assistant-preview { margin-top: 1em; }
+.strm-settings-page .ete-strm-assistant-preview h4 { margin: 0 0 .65em; }
+.strm-settings-page .ete-strm-assistant-preview p { margin: .45em 0; overflow-wrap: anywhere; }
+.strm-settings-page .ete-strm-assistant-suggestion {
+    border-top: 1px solid var(--line-background, rgba(255, 255, 255, .14));
+    margin-top: .9em;
+    padding-top: .9em;
 }
-
-.ete-strm-assistant-grid input {
-    box-sizing: border-box;
-    width: 100%;
-}
-
-.ete-strm-assistant-actions {
-    align-items: center;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-}
-
-.ete-strm-assistant-actions button,
-.ete-strm-assistant-suggestion button {
-    min-height: 44px;
-}
-
-.smartMappingState {
-    min-height: 24px;
-}
-
-.ete-strm-assistant-preview {
-    background: rgba(0, 164, 220, .08);
-    background: color-mix(in srgb, var(--theme-primary-color, #00a4dc) 8%, transparent);
-    border-radius: 4px;
-    margin-top: 16px;
-    padding: 16px;
-}
-
-.ete-strm-assistant-suggestion dl {
+.strm-settings-page .ete-strm-assistant-suggestion dl {
     display: grid;
-    gap: 10px 20px;
+    gap: .7em 1.5em;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    margin: 12px 0 16px;
+    margin: .65em 0 1em;
 }
+.strm-settings-page .ete-strm-assistant-suggestion dd { margin: 0; overflow-wrap: anywhere; }
+.strm-settings-page .smartSourcePrefix,
+.strm-settings-page .smartCloudPrefix,
+.strm-settings-page .smartMountPrefix { font-family: Consolas, "Courier New", monospace; }
+.strm-settings-page .ete-strm-form-actions { padding: .3em 0 1.5em; }
 
-.ete-strm-assistant-suggestion dl > div {
-    min-width: 0;
-}
-
-.ete-strm-assistant-suggestion dt {
-    color: var(--theme-secondary-text-color, rgba(255, 255, 255, .7));
-    font-size: .86em;
-    margin-bottom: 3px;
-}
-
-.ete-strm-assistant-suggestion dd {
-    margin: 0;
-    overflow-wrap: anywhere;
-}
-
-.smartSourcePrefix,
-.smartCloudPrefix {
-    font-family: Consolas, "Courier New", monospace;
-}
-
-.ete-strm-settings button {
-    cursor: pointer;
-    min-height: 40px;
-}
-
-.ete-strm-settings button:focus-visible,
-.ete-strm-settings input:focus-visible,
-.ete-strm-settings select:focus-visible {
-    outline: 2px solid var(--theme-primary-color, #00a4dc);
-    outline-offset: 2px;
-}
-
-.ete-strm-settings [role="alert"] {
-    color: var(--theme-error-color, #d9534f);
-}
-
-.ete-strm-empty {
-    border: 1px dashed var(--theme-secondary-text-color, rgba(128, 128, 128, .5));
-    padding: 20px;
-    text-align: center;
-}
-
-@media (max-width: 700px) {
-    .ete-strm-hero {
-        align-items: flex-start;
-        padding: 16px;
-    }
-
-    .ete-strm-fieldset,
-    .ete-strm-rule-card {
-        padding-left: 16px;
-        padding-right: 16px;
-    }
-
-    .ete-strm-rule-grid,
-    .ete-strm-custom-order,
-    .ete-strm-assistant-grid,
-    .ete-strm-assistant-suggestion dl {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .ete-strm-rule-card {
-        transition: none;
-    }
+@media (max-width: 760px) {
+    .strm-settings-page .ete-strm-rule-grid,
+    .strm-settings-page .ete-strm-custom-order,
+    .strm-settings-page .ete-strm-assistant-suggestion dl { grid-template-columns: minmax(0, 1fr); }
+    .strm-settings-page .ete-strm-status-row { grid-template-columns: minmax(0, 1fr); }
+    .strm-settings-page .ete-strm-rule-origin { margin-left: 0; }
+    .strm-settings-page .ete-strm-rule-actions { justify-content: flex-start; }
 }

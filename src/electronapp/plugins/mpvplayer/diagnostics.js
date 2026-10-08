@@ -1,4 +1,4 @@
-define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!./diagnostics'], function (loading, BaseView) {
+define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!./enhanced-settings', 'css!./diagnostics'], function (loading, BaseView) {
     'use strict';
 
     var CHANNELS = {

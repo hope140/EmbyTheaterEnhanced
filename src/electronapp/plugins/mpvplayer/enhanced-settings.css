@@ -1,0 +1,126 @@
+/* Enhanced settings follow Emby's native page, section, form and button styles. */
+.ete-settings-page {
+    box-sizing: border-box;
+    margin-inline: auto;
+    max-width: 1240px;
+    min-width: 0;
+    width: 100%;
+}
+
+.ete-settings-page [hidden] { display: none !important; }
+
+.ete-settings-page .ete-settings-header {
+    margin: 0 0 1.5em;
+    min-width: 0;
+}
+.ete-settings-page .ete-settings-header h1 {
+    font-size: 1.55em;
+    font-weight: 600;
+    margin: 0 0 .35em;
+}
+.ete-settings-page .ete-settings-header p {
+    color: var(--theme-secondary-text-color, rgba(255, 255, 255, .72));
+    line-height: 1.45;
+    margin: 0;
+    max-width: 78ch;
+}
+
+.ete-settings-page .ete-settings-section {
+    margin: 0 0 2em;
+    min-width: 0;
+}
+.ete-settings-page .ete-settings-section-header { margin: 0 0 .85em; }
+.ete-settings-page .ete-settings-section-header h2 { margin: 0; }
+.ete-settings-page .ete-settings-section-header p {
+    color: var(--theme-secondary-text-color, rgba(255, 255, 255, .72));
+    line-height: 1.45;
+    margin: .35em 0 0;
+    max-width: 82ch;
+    overflow-wrap: anywhere;
+}
+
+/* The wrapper keeps existing DOM hooks, while Emby owns the page surface. */
+.ete-settings-page .ete-settings-card {
+    background: transparent;
+    border: 0;
+    min-width: 0;
+    padding: 0;
+}
+.ete-settings-page .ete-settings-subcard {
+    background: transparent;
+    border: 1px solid var(--line-background, rgba(255, 255, 255, .16));
+    border-radius: .3em;
+    min-width: 0;
+    padding: .85em 1em;
+}
+
+.ete-settings-page .ete-settings-field { min-width: 0; }
+.ete-settings-page .ete-settings-field > label,
+.ete-settings-page .ete-settings-field-label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: .2em;
+}
+.ete-settings-page .fieldDescription,
+.ete-settings-page .ete-settings-help { overflow-wrap: anywhere; }
+.ete-settings-page :is(input[type="text"], input[type="url"], input[type="password"], select) {
+    max-width: 100%;
+    min-width: 0;
+}
+
+.ete-settings-page .ete-settings-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .65em;
+    min-width: 0;
+}
+.ete-settings-page .ete-settings-button { margin: 0; min-height: 2.5em; }
+
+/* Keep Emby's accent and raised button shape; darken only the primary fill for readable white text. */
+.ete-settings-page .ete-settings-button--primary {
+    background: hsl(var(--theme-primary-color-hue), var(--theme-primary-color-saturation), calc(var(--theme-primary-color-lightness) - 16%));
+    color: #fff;
+}
+.ete-settings-page .ete-settings-button--primary:hover:not(:disabled) {
+    background: hsl(var(--theme-primary-color-hue), var(--theme-primary-color-saturation), calc(var(--theme-primary-color-lightness) - 14%));
+    color: #fff;
+}
+.ete-settings-page .ete-settings-button--danger {
+    color: var(--theme-error-color, #e48f8f);
+}
+.ete-settings-page .ete-settings-button:disabled { opacity: .7; }
+.ete-settings-page :is(button, input, select, a):focus-visible {
+    outline: 2px solid var(--theme-accent-text-color, currentColor) !important;
+    outline-offset: 2px;
+}
+
+.ete-settings-page .ete-settings-status {
+    color: var(--theme-secondary-text-color, rgba(255, 255, 255, .72));
+    min-height: 1.4em;
+    overflow-wrap: anywhere;
+}
+.ete-settings-page [role="alert"] { color: var(--theme-error-color, #e48f8f); }
+
+.ete-settings-page .ete-settings-info-row {
+    align-items: baseline;
+    border-bottom: 1px solid var(--line-background, rgba(255, 255, 255, .16));
+    display: grid;
+    gap: .5em 1.5em;
+    grid-template-columns: minmax(150px, .35fr) minmax(0, 1fr);
+    min-width: 0;
+    padding: .65em 0;
+}
+.ete-settings-page .ete-settings-info-row:last-child { border-bottom: 0; }
+.ete-settings-page .ete-settings-info-row > :first-child {
+    color: var(--theme-secondary-text-color, rgba(255, 255, 255, .72));
+}
+.ete-settings-page .ete-settings-info-row > :last-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.ete-settings-page .ete-settings-info-row code { font-family: Consolas, "Courier New", monospace; }
+
+@media (max-width: 760px) {
+    .ete-settings-page .ete-settings-info-row { grid-template-columns: minmax(0, 1fr); }
+}
