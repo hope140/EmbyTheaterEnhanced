@@ -36,6 +36,24 @@ async function snapshot(label) {
 }
 function renderer(source) { return main.webContents.executeJavaScript(source); }
 function state(value) { return renderer(`new Promise(r=>require(['apphost'],h=>{h.setWindowState(${JSON.stringify(value)});r(true)}))`); }
+async function sampleVideo(label) {
+    const samples=[];
+    for(let i=0;i<6;i++) {
+        const b=main.getBounds(), d=screen.getDisplayMatching(b), scale=d.scaleFactor;
+        if (!main.isFocused() || main.isMinimized() || b.x<d.bounds.x || b.y<d.bounds.y || b.x+b.width>d.bounds.x+d.bounds.width || b.y+b.height>d.bounds.y+d.bounds.height) throw Error('video-observer-window-unavailable');
+        const sources=await desktopCapturer.getSources({types:['screen'],thumbnailSize:{width:Math.round(d.bounds.width*scale),height:Math.round(d.bounds.height*scale)}});
+        const source=sources.find(s=>s.display_id===String(d.id));
+        if (!source || source.thumbnail.isEmpty() || !main.isFocused()) throw Error('video-observer-capture-unavailable');
+        const roi=source.thumbnail.crop({x:Math.round((b.x-d.bounds.x+b.width*.15)*scale),y:Math.round((b.y-d.bounds.y+b.height*.55)*scale),width:Math.round(b.width*.7*scale),height:Math.round(b.height*.3*scale)}).resize({width:96,height:54});
+        const data=roi.toBitmap(),sum=[0,0,0];
+        for(let j=0;j<data.length;j+=4) for(let c=0;c<3;c++) sum[c]+=data[j+c];
+        samples.push({at:Date.now(),hash:require('crypto').createHash('sha256').update(data).digest('hex'),bgr:sum.map(n=>Math.round(n/(data.length/4)))});
+        await new Promise(r=>setTimeout(r,180));
+    }
+    const result={label,samples,uniqueHashes:new Set(samples.map(s=>s.hash)).size};
+    fs.writeFileSync(path.join(evidence,label+'-video.json'),JSON.stringify(result,null,2));
+    return result;
+}
 async function topCapture(label) {
     const d = screen.getDisplayMatching(main.getBounds());
     if (!['x','y','width','height'].every(k=>main.getBounds()[k]===d.bounds[k]) || !main.isVisible() || main.isMinimized()) throw Error('capture-requires-full-display');
@@ -80,6 +98,27 @@ async function command(c) {
             p.pause();resolve(true);
         }catch(e){reject(e)}}))`); break;
     case 'stop': await renderer('window.__fullscreenProbePlayer && window.__fullscreenProbePlayer.stop()'); break;
+    case 'motion-cycle':
+        await renderer('window.__fullscreenProbePlayer.unpause()');
+        await sampleVideo(label+'-initial');
+        await state('Fullscreen');
+        await new Promise(r=>setTimeout(r,400));
+        await snapshot(label+'-fullscreen');
+        await sampleVideo(label+'-fullscreen');
+        await state('Normal');
+        await new Promise(r=>setTimeout(r,400));
+        await snapshot(label+'-normal');
+        await sampleVideo(label+'-normal');
+        await state('Fullscreen');
+        await new Promise(r=>setTimeout(r,400));
+        await state('Minimized');
+        await new Promise(r=>setTimeout(r,400));
+        main.restore();
+        await new Promise(r=>setTimeout(r,400));
+        await snapshot(label+'-restored');
+        await sampleVideo(label+'-restored');
+        await renderer('window.__fullscreenProbePlayer.pause()');
+        break;
     case 'quit':
         await renderer('window.__fullscreenProbePlayer && window.__fullscreenProbePlayer.stop()').catch(()=>{});
         await snapshot(label); main.close(); return;

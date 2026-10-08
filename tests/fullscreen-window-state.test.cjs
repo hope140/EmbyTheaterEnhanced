@@ -14,12 +14,19 @@ const end = mainSource.indexOf(endMarker, start);
 assert.notEqual(start, -1, 'main.js window state section start must exist');
 assert.notEqual(end, -1, 'main.js window state section end must exist');
 const windowStateSource = mainSource.slice(start, end);
+const closeStartMarker = '    function onWindowClose() {';
+const closeEndMarker = '    function parseCommandLine() {';
+const closeStart = mainSource.indexOf(closeStartMarker);
+const closeEnd = mainSource.indexOf(closeEndMarker, closeStart);
+assert.notEqual(closeStart, -1, 'main.js onWindowClose function start must exist');
+assert.notEqual(closeEnd, -1, 'main.js parseCommandLine function boundary must exist');
+const windowCloseSource = mainSource.slice(closeStart, closeEnd);
 
 function copyBounds(bounds) {
     return {x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height};
 }
 
-function createHarness(platform = 'win32', initialInteraction = {resizable: true, movable: true}) {
+function createHarness(platform = 'win32', initialInteraction = {resizable: true, movable: true}, options = {}) {
     const normalBounds = {x: 140, y: 90, width: 960, height: 640};
     const displayBounds = {x: 0, y: 0, width: 1920, height: 1080};
     const events = [];
@@ -31,6 +38,7 @@ function createHarness(platform = 'win32', initialInteraction = {resizable: true
     let movable = initialInteraction.movable;
     let fullScreenCalls = [];
     let focusCalls = 0;
+    let deferredRestoreCallback = null;
     const callbacks = Object.create(null);
     const context = {
         electron: {
@@ -75,7 +83,8 @@ function createHarness(platform = 'win32', initialInteraction = {resizable: true
         },
         restore() {
             minimized = false;
-            callbacks.restore();
+            if (options.deferredRestore) deferredRestoreCallback = callbacks.restore;
+            else callbacks.restore();
         },
         unmaximize() { events.push(['unmaximize']); },
         focus() { focusCalls++; },
@@ -101,6 +110,12 @@ function createHarness(platform = 'win32', initialInteraction = {resizable: true
         focusCalls: () => focusCalls,
         systemMinimize: () => callbacks.minimize(),
         systemRestore: () => callbacks.restore(),
+        flushRestore() {
+            assert.equal(typeof deferredRestoreCallback, 'function', 'a deferred restore event should be pending');
+            const callback = deferredRestoreCallback;
+            deferredRestoreCallback = null;
+            callback();
+        },
         externalBoundsChange: next => { bounds = copyBounds(next); }
     };
 }
@@ -109,6 +124,35 @@ function assertState(harness, expected) {
     assert(harness.sentJavascript.some(script => script.includes('document.windowState="' + expected + '";')),
         'renderer should receive state ' + expected);
     assert.equal(harness.context.currentWindowState, expected);
+}
+
+function runWindowClose({state, isFullscreen, bounds, previousBounds}) {
+    const writes = [];
+    let shortcutUnregisters = 0;
+    let cecKills = 0;
+    const context = {
+        hasAppLoaded: true,
+        currentWindowState: state,
+        fullscreenActive: isFullscreen,
+        previousBounds: copyBounds(previousBounds),
+        mainWindow: {getBounds: () => copyBounds(bounds)},
+        getWindowStateDataPath: () => 'windowstate.json',
+        require(name) {
+            assert.equal(name, 'fs');
+            return {writeFileSync: (filePath, data) => writes.push({filePath, data})};
+        },
+        electron: {globalShortcut: {unregisterAll: () => { shortcutUnregisters++; }}},
+        cecProcess: {kill: () => { cecKills++; }}
+    };
+    vm.runInNewContext(windowCloseSource, context, {filename: 'main.js#onWindowClose'});
+    context.onWindowClose();
+    assert.equal(writes.length, 1, 'loaded app should persist one window state record');
+    return {
+        saved: JSON.parse(writes[0].data),
+        filePath: writes[0].filePath,
+        shortcutUnregisters,
+        cecKills
+    };
 }
 
 test('Windows fullscreen locks interaction once and restores the original bounds and interaction', () => {
@@ -190,6 +234,20 @@ test('System minimize followed by Normal exits fullscreen', () => {
     assertState(h, 'Normal');
 });
 
+test('Delayed restore after explicit Normal does not re-enter fullscreen', () => {
+    const h = createHarness('win32', {resizable: true, movable: true}, {deferredRestore: true});
+    h.context.setWindowState('Fullscreen');
+    h.context.setWindowState('Minimized');
+    h.context.setWindowState('Normal');
+    h.flushRestore();
+
+    assert.deepEqual(h.fullScreenCalls(), [true, false]);
+    assert.equal(h.context.fullscreenActive, false);
+    assert.deepEqual(h.bounds(), h.normalBounds);
+    assert.deepEqual(h.interaction(), {resizable: true, movable: true});
+    assertState(h, 'Normal');
+});
+
 test('External geometry mismatch exits fullscreen through the normal transition', () => {
     const h = createHarness();
     h.context.setWindowState('Fullscreen');
@@ -229,4 +287,35 @@ test('Non-Windows fullscreen does not apply the Windows interaction lock', () =>
     assert.deepEqual(h.interaction(), {resizable: true, movable: true});
     assert.deepEqual(h.bounds(), h.normalBounds);
     assertState(h, 'Normal');
+});
+
+test('Closing minimized fullscreen saves the original normal bounds and Minimized state', () => {
+    const normalBounds = {x: 140, y: 90, width: 960, height: 640};
+    const displayBounds = {x: 0, y: 0, width: 1920, height: 1080};
+    const result = runWindowClose({
+        state: 'Minimized',
+        isFullscreen: true,
+        bounds: displayBounds,
+        previousBounds: normalBounds
+    });
+
+    assert.deepEqual(result.saved, {...normalBounds, state: 'Minimized'});
+    assert.equal(result.filePath, 'windowstate.json');
+    assert.equal(result.shortcutUnregisters, 1);
+    assert.equal(result.cecKills, 1);
+});
+
+test('Closing a normal window saves its latest resized bounds', () => {
+    const resizedBounds = {x: 72, y: 54, width: 1180, height: 760};
+    const result = runWindowClose({
+        state: 'Normal',
+        isFullscreen: false,
+        bounds: resizedBounds,
+        previousBounds: {x: 140, y: 90, width: 960, height: 640}
+    });
+
+    assert.deepEqual(result.saved, {...resizedBounds, state: 'Normal'});
+    assert.equal(result.filePath, 'windowstate.json');
+    assert.equal(result.shortcutUnregisters, 1);
+    assert.equal(result.cecKills, 1);
 });

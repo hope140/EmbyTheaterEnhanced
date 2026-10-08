@@ -157,6 +157,9 @@
 
         } else {
 
+            // Explicit Normal supersedes the state saved for a later OS restore.
+            // A delayed restore event must not re-enter fullscreen after this exit.
+            restoreWindowState = null;
             if (previousState == "Minimized") {
                 mainWindow.restore();
             }
@@ -897,7 +900,7 @@
 
         if (hasAppLoaded) {
             var data = previousBounds
-            if (currentWindowState !== "Fullscreen") {
+            if (!fullscreenActive) {
                 data = mainWindow.getBounds();
             }
             data.state = currentWindowState;
