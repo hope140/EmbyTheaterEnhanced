@@ -100,7 +100,7 @@ async function render(root, page, width, label) {
                 rect:rect(node),disabled:node.disabled};
         });
         const root = shell.querySelector('.settingsContainer');
-        const content = shell.querySelector('h1,form');
+        const content = shell.querySelector('.ete-settings-header,form');
         const actions = shell.querySelector('.ete-strm-rule-actions');
         return {root:rect(root),content:rect(content),paddingLeft:getComputedStyle(root).paddingLeft,
             contentX:content.getBoundingClientRect().x,overflow:document.documentElement.scrollWidth>innerWidth,
