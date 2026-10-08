@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-10-08 — 全屏顶部细条用户验收通过
+
+用户在本会话交付候选后反馈：“我手动验证了，现在没有那个条了”。顶部细条记为 `HUMAN-ASSISTED VISUAL PASS / USER_REPORTED_RESOLVED`，范围限于用户本次所测场景。当前本地产品候选为 `1e86e512e3293e5c9fb43b3803995af50b802762`，独立分支 `codex/fullscreen-state-20261008`，入口 `dist/fullscreen-state-final/Emby.Theater.exe`。此处相对路径以 managed worktree `ete-fullscreen-state-20261008` 为基准；下方旧播放候选的路径仍属于原播放工作树。
+
+最终源码 `npm test 412/412 PASS`、正式build、provenance与2140文件package VerifyOnly通过。产品仅修改 main窗口状态与video carrier窗口配置；原生持帧、前后切集、Session/Resolver与Electron44保持。全屏边缘拖动后状态脱节已在旧候选实测复现，carrier窗口框与顶部浅线的归属已通过合成窄区对照定位。
+
+阶段候选 `a8aa114` 的可见边缘拖动、恢复原尺寸、普通窗口缩放与最小化恢复通过；最终候选可见probe在Computer Use被用户Esc停止时中断，播放中进出全屏、最终切集/Stop及完整窗口交互复测仍未完成。此次用户反馈单独关闭顶部细条视觉项。前后切集按此前用户反馈保留 `USER_REPORTED_RESOLVED / MONITORING`，不继续主动改动。详见 [全屏窗口修复与验收](FULLSCREEN_WINDOW_STATE.md)。
+
 ## 2026-10-08 — 播放呈现还原本地候选交付
 
 当前产品源码与交付runtime绑定 `6473ecb046b0621ca79282e0c0ed250e3848f2c5`，路径 `dist/presentation-restore-6473ecb/`。保留Electron 44和原播放/Session/Resolver，前后切集改由native暂存旧帧并一次性揭开新视频，包含快速切换的token/epoch/Stop隔离及失败清理。最终全量 `npm test 401/401 PASS`，build、source/runtime/native provenance和2140文件package校验通过。

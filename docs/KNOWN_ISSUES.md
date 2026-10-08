@@ -2,17 +2,34 @@
 
 本页记录尚需诊断的问题与观察项。`OBSERVED` 表示已见现象，`SUSPECTED` 表示待验证解释，只有证据闭合后才使用 `CONFIRMED`。开发优先级见 [Development Roadmap](ROADMAP.md)。
 
-## Reproducible
+## 2026-10-08 当前候选验收
+
+### 全屏顶部细条
+
+- 状态：`HUMAN-ASSISTED VISUAL PASS / USER_REPORTED_RESOLVED`。
+- 用户在本会话候选交付后手动验证并明确反馈“现在没有那个条了”；对应本会话交付候选为 `1e86e51`，入口 `dist/fullscreen-state-final/Emby.Theater.exe`。
+- 本机合成对照中，video carrier原生窗口框产生顶部两行灰色像素；carrier配置调整后恢复为视频色，renderer对应像素不变。用户视觉反馈与该证据分别保留。
+- 范围：顶部细条已在本次用户所测场景消失；全屏窗口交互、最小化恢复、播放中进出全屏和最终切集/Stop仍按各自证据记录，见 [验收记录](FULLSCREEN_WINDOW_STATE.md)。
+
+### 全屏缩放后状态脱节
+
+- 状态：`FIXED IN LOCAL CANDIDATE / FINAL INTERACTION ACCEPTANCE PENDING`。
+- 旧候选实测拖动后bounds由2560x1440变为y=170、2560x1270，只出现resize/move，renderer仍为Fullscreen。
+- `1e86e51` 增加全屏交互锁、原窗口状态恢复与几何失配退出；11项窗口状态回归通过。`a8aa114`有阶段可见交互通过证据，最终复测因用户停止Computer Use未完成。
+
+## Observe
 
 ### NextTrack 切集时视频区域瞬时白屏
 
-- 状态：`REPRODUCIBLE / USER-VISIBLE / NON-FATAL / SELF-RECOVERING`；按当前用户观察，播放中点击下一集的复现率为 100%。
+- 状态：`USER_REPORTED_RESOLVED / MONITORING`。2026-10-08用户已反馈当前还原候选上一集/下一集问题基本解决；以下白屏描述为历史现象。
 - 复现：播放过程中点击下一集。
 - `OBSERVED`：视频区域变为全白，Emby UI / OSD 仍存在；等待后下一集自行正常播放，无需重试。
 - 用户影响：切集过渡有明显视觉缺陷，播放可自动恢复。
 - 当前证据：用户的真实播放观察；尚未定位暴露白色背景的具体 window / surface。
-- 下一步：沿 previous video teardown、播放面生命周期、next source resolve、helper / `loadfile`、first frame 取证，先确认白色背景来源。
+- 下一步：保持已验证呈现实现并观察；出现新的具体样本时再定位。全屏窗口修复未改变该实现。
 - 区别：不是 Seek 或 Stop / Exit 的 transient black frame，也不是 rapid NextTrack `selected=false` 的既有夹具限制。
+
+## Deferred
 
 ### 播放开始后 Fullscreen 圆角出现
 

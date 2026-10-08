@@ -30,11 +30,15 @@
 
 ## NOW
 
+### 全屏窗口候选验收
+
+`1e86e51`本地候选已完成局部修复、412/412单测与2140文件build/package验证。顶部细条在2026-10-08经用户手动验证消失，状态为 `HUMAN-ASSISTED VISUAL PASS`。最终完整窗口交互、播放中进出全屏和切集/Stop复测在Computer Use被用户停止后仍未完成；按专项 [验收记录](FULLSCREEN_WINDOW_STATE.md) 继续保留边界。
+
 ### 1. NextTrack 切集瞬时白屏
 
-**状态：** `REPRODUCIBLE / USER-VISIBLE / NON-FATAL / SELF-RECOVERING`。按当前用户观察，播放中点击下一集时 100% 出现：视频区域全白，Emby UI / OSD 仍在，等待后下一集自行正常播放。
+**状态：** `USER_REPORTED_RESOLVED / MONITORING`。2026-10-08用户反馈还原候选前后切集问题基本解决；当前保持该呈现实现，历史白屏描述见Known Issues。
 
-**前置条件与下一步：** 先做根因诊断，沿 `NextTrack → previous video teardown → playback surface lifecycle → next source resolve → helper/loadfile → first video frame` 记录有界时序和窗口身份，确认究竟哪个 window / surface 暴露白色背景。
+**前置条件与下一步：** 新样本出现后再按媒体、模式和操作时序复核；当前全屏局部修复不重做切集呈现。
 
 **不要误修：** 在确认窗口与播放面之前，不添加黑色遮罩、定时重绘、focus hack 或 `SetWindowPos` workaround；也不把它归入 Seek / Stop 黑帧或 rapid NextTrack 夹具限制。
 

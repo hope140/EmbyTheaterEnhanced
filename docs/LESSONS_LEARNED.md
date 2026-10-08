@@ -1,5 +1,13 @@
 # 已确认经验
 
+## 2026-10-08 — Transparent fullscreen与carrier边框
+
+- 固定Electron44.4.2 Windows透明窗口会发enter-full-screen并铺满display，但isFullScreen仍可false；事件发生在bounds变化之前。全屏判断与普通尺寸保存需遵循该实际顺序，重复setFullScreen(true)会覆盖其restore bounds。
+- 用户resize可以只触发resize/move而没有leave-full-screen。先同步采集main/renderer/display/surface，再在全屏活动期限制交互并保留正常窗口能力；不能用全局禁用resize替代。
+- 顶部细条需分别看合成像素、renderer像素和carrier几何。本次renderer无对应灰线，carrier-only配置实验消除了合成图顶部灰色两行；该证据不自动覆盖其它细条来源或圆角问题。
+- restore fake必须覆盖延迟事件；显式Normal要撤销旧restore intent。最小化后的状态字符串不是全屏活动状态，退出保存bounds也要区分两者。
+- 用户对顶部细条的手动通过只关闭该视觉项。阶段候选的可见交互、最终源码自动化、被用户中断的最终桌面测试分别记录。
+
 ## 2026-10-08 — Native presentation ownership and visible evidence
 
 - 先用相同 libmpv 的 Pepper/E18、Helper/E18、Helper/E44 做可见对照，才能判断回归从哪一层开始。本轮 Helper/E18 已有切集空档，不能单独归因 Electron 44；仅保留 carrier 会把空档变成黑色。

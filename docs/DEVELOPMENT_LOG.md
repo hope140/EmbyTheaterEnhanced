@@ -1,5 +1,17 @@
 # 开发日志
 
+## 2026-10-08 — 全屏窗口局部修复及顶部细条用户反馈
+
+Model Tier：修复与核心复核Tier 2，测试/文档Tier 1。Model：当前主线程负责窗口决策，GPT-5.6 Sol High只读核心复核，GPT-6 Luna High执行明确的测试与输入审计。Reason：透明main窗口、renderer状态与video carrier联动；不修改播放生命周期。Escalated：no。
+
+从 `94d216b`（产品同 `6473ecb`）建立独立分支 `codex/fullscreen-state-20261008`，原两个工作树及未提交记录保留。Computer Use在独立profile/合成媒体上复现全屏边缘缩放与renderer状态脱节。固定E44源码确认透明窗口使用先通知后setBounds的全屏路径；`isFullScreen=false`不能单独作为退出依据。窄区对照定位video carrier窗口框产生顶部灰色细条。
+
+本地提交 `a8aa114` 限制全屏时main交互并恢复原属性、避免重复进入覆盖normal bounds、在几何失配时退出；carrier使用thickFrame/resizable/movable=false并沿用原bounds同步。核心复核发现迟到restore重新进入全屏，以及全屏最小化关闭保存display bounds两项边界，`1e86e51`已修正并补回归。延迟restore负例移除修正后仅新case失败，观察调用序列[true,false,true]，修正后[true,false]。
+
+最终 `1e86e51` 全量412/412、窗口/service定向37/37、build/provenance、2140文件package VerifyOnly与diff检查通过。产品diff仅main.js和native-helper/service.js；native CPP、原持帧/切集、apphost canonicalization、Session/Resolver未改。`a8aa114`可见交互通过为阶段证据；最终probe在用户Esc停止Computer Use时中断，不记为完整最终交互或播放回归通过。
+
+用户随后手动验证并反馈“现在没有那个条了”，顶部细条升级为 `HUMAN-ASSISTED VISUAL PASS / USER_REPORTED_RESOLVED`。本次跟进只更新文档，未重启桌面测试或改变产品候选。准确入口、证据目录及未完成项见 [全屏窗口修复与验收](FULLSCREEN_WINDOW_STATE.md)。
+
 ## 2026-10-08 — 还原候选6473ecb自动化交付
 
 Model Tier：Tier 2。Model：主线程设计与集成；Sol High 原生实现与核心复核；Luna 定向测试、文档与fixture输入工具。Reason：原生持帧、retirement与异步视觉所有权跨层协作，保留已有播放链。Escalated：no。

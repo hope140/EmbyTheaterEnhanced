@@ -4,6 +4,8 @@ Electron candidate production runtime is the pinned official Electron 44.4.2 Sta
 
 当前生产 bridge 状态：`Pepper / PPAPI bridge = RETIRED`，`Native Helper = ONLY production bridge`。旧 Carnival Pepper binary 只作为 immutable archive provenance input 保留，正式 runtime、installer payload 和正常启动链均不包含它。
 
+本地全屏候选 `1e86e51` 保留透明main与独立video carrier的既有归属。Windows透明全屏使用main进程的enter/leave状态、最小化状态和显示器geometry共同维护；进入时保存normal bounds及resizable/movable，退出时恢复，重复请求和OS restore不会重置normal bounds。显式Normal清除待恢复状态，关闭时按fullscreenActive决定保存normal bounds。只有全屏活动期锁定main交互，普通窗口可缩放；carrier持续由main bounds驱动，使用thickFrame/resizable/movable=false。IPC、native持帧与Session生命周期不变，详见 [全屏窗口记录](FULLSCREEN_WINDOW_STATE.md)。
+
 ## Production Native Helper Bridge candidate
 
 `feat/native-helper-bridge` 使用 renderer logical adapter、Electron main supervisor、private inherited framed pipes 与独立 Windows helper 作为唯一 production mpv bridge。helper-owned child HWND 输出到 main-process video host；原 transparent BrowserWindow 独立置于其上，因此现有 Emby UI/OSD/input ownership 不变。完整 identity、event attribution、crash、surface 与 build contract 见 [NATIVE_HELPER_BRIDGE](NATIVE_HELPER_BRIDGE.md)。
