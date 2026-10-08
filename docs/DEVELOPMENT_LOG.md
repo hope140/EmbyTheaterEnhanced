@@ -1,5 +1,11 @@
 # 开发日志
 
+## 2026-10-08 — 0.2.3测试版版本收口
+
+Model Tier：Tier 1。Model：当前Codex主线程与GPT-6 Luna High验证worker。Reason：已验收统一候选的版本元数据、正式重建、安装器及发布标识同步；Playback/Session Impact：none。Escalated：no。
+
+用户指出当前功能应为0.2.3后，从完整统一候选文档HEAD建立`codex/release-v0.2.3-test-20261008`，将root package与lockfile的三个版本字段由0.2.2改为0.2.3。依赖、产品代码与安装器脚本保持不变。新runtime/installer必须绑定本次版本提交，并逐文件对照cc603ba候选；旧`test-20261008-cc603ba`保留原tag/资产，不重新指向新源码。计划发布`v0.2.3` Pre-release并保持正式Latest v0.2.2；验证与发布结果另记。
+
 ## 2026-10-08 — 恢复安装包交付方式
 
 Model Tier：Tier 1。Model：当前Codex主线程、GPT-6 Luna High打包worker。Reason：固定sourceCommit和runtime的原有Inno打包、解包对账及附件交付；Playback/Session Impact：none。Escalated：no。
