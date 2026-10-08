@@ -1,6 +1,16 @@
 # 开发日志
 
+## 2026-10-08 — 统一候选恢复验收与本地ZIP
+
+Model Tier：Tier 2共享逻辑/探针定位，Tier 1 payload与归档审计。Model：当前Codex主线程、GPT-5.6 Sol High、GPT-6 Luna High。Reason：早期Settings探针连续两轮未定位模块就绪/Promise问题，升级测试工具诊断；产品架构与源码不变。Escalated：yes（仅探针诊断）。
+
+用户完成工作后明确允许继续；新profile补齐实际Settings controller/IPC与可见切集矩阵。探针修正限于appready gate、Alameda Promise、customized element类型断言、clone-safe返回与测试页面呈现。最终430项全量测试沿用同一cc603ba源码的已执行结果；payload在测试后再次验证。10次切换的选源/Session/颜色样本、快速停止和终止Stop通过；H.264/H.265窗口两向78/78帧、max49/52ms无异常颜色；全屏Next77帧/max43ms通过，Previous73帧/max107ms保持INCONCLUSIVE。完整结果见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。
+
+归档现有已验证runtime为本地测试ZIP，重新逐项读取2147个条目，缺失/额外/哈希不符均0；ZIP SHA256为`eb5934d3da9a891cd40f5dab94a7cd4d206bd0f4d28b0fd469cbff7a9ef19647`。未重建、改版本或变更产品；本轮文档收尾提交与runtime sourceCommit cc603ba分开。
+
 ## 2026-10-08 — 统一候选集成
+
+首次中止时状态：本地两父merge `cc603ba`已构建，430/430全量测试、来源与2146文件payload通过；隐藏Settings controller未通过，manager矩阵因用户实体Esc停止Computer Use而中止。仅清理本任务已核验身份的进程，未继续UI，中止记录当时暂留工作树。随后用户明确授权继续，恢复结果见本页最新条目及 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。
 
 Model Tier：Tier 2 核心集成审核，Tier 1 输入准备与测试。Model：当前 Codex 主线程、GPT-5.6 Sol High 只读差异审核、GPT-6 Luna High 测试 worker。Reason：共享 main/libmpv 与窗口/播放生命周期交汇，需要确认合并保留既有 ownership。Escalated：no。Task Risk：medium；Task Uncertainty：medium；Cross-module Scope：Settings/main/libmpv/window；Playback/Session Impact：保留已验证实现，不重设接口。
 

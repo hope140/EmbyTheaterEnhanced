@@ -1,5 +1,7 @@
 # 播放呈现还原
 
+2026-10-08统一候选更新：`cc603ba`保留本文`6473ecb`原生持帧实现，并包含全屏修复与Settings。新隔离回归完成10次窗口/全屏切换、快速Next→Stop和终止Stop；H.264/H.265窗口两向各78帧、max49/52ms，所采无异常颜色；全屏Next77帧/max43ms通过，Previous73帧/max107ms保持INCONCLUSIVE。当前测试包及新证据统一见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)，下文旧路径与历史结论保留原归属。
+
 2026-10-07（UTC+8），用户授权自行完成“还原表现”。目标保持 Electron 44，按升级前实际播放行为还原前后切集；窗口与全屏分别验收。原有队列、Session、Resolver、媒体身份和个人配置不变。现有 Settings 候选与本工作树分开，原工作区已有文档不覆盖。
 
 本文所有 `dist/`、`.work/` 与源码相对路径均以 managed worktree `ete-night-nexttrack` 的项目根目录为基准；原工作区文档副本供集中阅读。

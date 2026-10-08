@@ -1,5 +1,7 @@
 # Known Issues
 
+2026-10-08统一候选更新：`cc603ba`已补齐核心Settings、窗口、连续切集与Stop隔离回归并交付本地ZIP。全屏跨编码Previous为73帧/max107ms，所采无黑/紫/mixed但仍INCONCLUSIVE；窗口跨编码两向通过。旧rapid NextTrack夹具selected=false已与`1e86e51`同条件匹配，未修改断言。当前证据和专项未覆盖范围见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。
+
 本页记录尚需诊断的问题与观察项。`OBSERVED` 表示已见现象，`SUSPECTED` 表示待验证解释，只有证据闭合后才使用 `CONFIRMED`。开发优先级见 [Development Roadmap](ROADMAP.md)。
 
 ## 2026-10-08 当前候选验收
@@ -13,7 +15,7 @@
 
 ### 全屏缩放后状态脱节
 
-- 状态：`FIXED IN LOCAL CANDIDATE / FINAL INTERACTION ACCEPTANCE PENDING`。
+- 状态：`FIXED IN LOCAL CANDIDATE / UNIFIED SYNTHETIC INTERACTION VERIFIED`。
 - 旧候选实测拖动后bounds由2560x1440变为y=170、2560x1270，只出现resize/move，renderer仍为Fullscreen。
 - `1e86e51` 增加全屏交互锁、原窗口状态恢复与几何失配退出；11项窗口状态回归通过。`a8aa114`有阶段可见交互通过证据，最终复测因用户停止Computer Use未完成。
 

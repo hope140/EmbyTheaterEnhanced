@@ -8,6 +8,8 @@ Emby Theater Enhanced 是非官方社区维护项目，与 Emby 不存在隶属�
 
 ## 开发计划
 
+2026-10-08本地统一候选为`cc603ba`，包含Settings、原生持帧切集和全屏窗口修复。测试入口、ZIP、来源及真实执行的回归/限制见 [统一候选验收](docs/UNIFIED_CANDIDATE_ACCEPTANCE.md)。该候选尚未对外发布。
+
 进度与优先级见 [Development Roadmap](docs/ROADMAP.md)，可复现问题与观察项见 [Known Issues](docs/KNOWN_ISSUES.md)。Smart Path Mapping 已完成用户功能验收和最终远端复审，并通过 PR #18 合入 `main`。
 
 ### 核心架构
@@ -26,7 +28,7 @@ Emby Theater Enhanced 是非官方社区维护项目，与 Emby 不存在隶属�
 - [x] Smart Mapping 显式 Save draft 语义、CloudDrive2 连接状态同步
 - [x] Smart Path Mapping Final PR Audit
 - [x] Smart Path Mapping PR / Merge
-- [ ] STRM 设置页 UI Consolidation
+- [x] STRM 设置页 UI Consolidation（用户验收并进入本地统一候选）
 - [ ] Next Episode / DirectUrl / CD2 Pre-warm
 - [ ] CD2 Path Hydration（等待真实 `not_found` 样本）
 
@@ -34,7 +36,7 @@ Emby Theater Enhanced 是非官方社区维护项目，与 Emby 不存在隶属�
 
 - [x] 播放 / Pause / Seek / Stop 基础链路与 Fullscreen 基础控制
 - [x] `v0.2.2` 视频冻结根边界修复
-- [ ] NextTrack 切集瞬时白屏根因分析
+- [x] NextTrack 原生持帧还原（本地统一候选；全屏短闪与真实媒体继续观察）
 - [ ] Fullscreen 播放后圆角状态同步
 - [ ] Mixed-DPI / 多显示器缩放适配
 

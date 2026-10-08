@@ -30,9 +30,13 @@
 
 ## NOW
 
+### 统一候选本地测试包
+
+`cc603ba` 已整合Settings `21ef9a4`与播放/全屏`1e86e51`，430项测试、正式来源/payload、核心隔离回归及本地ZIP验证完成。全屏跨编码Previous的短闪采样保持INCONCLUSIVE，真实Emby/CD2、HDR、多屏和安装独立。当前交付和证据以 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md) 为准；PR/主线/版本发布待独立授权。
+
 ### 全屏窗口候选验收
 
-`1e86e51`本地候选已完成局部修复、412/412单测与2140文件build/package验证。顶部细条在2026-10-08经用户手动验证消失，状态为 `HUMAN-ASSISTED VISUAL PASS`。最终完整窗口交互、播放中进出全屏和切集/Stop复测在Computer Use被用户停止后仍未完成；按专项 [验收记录](FULLSCREEN_WINDOW_STATE.md) 继续保留边界。
+`1e86e51`顶部细条已由用户手动确认消失；完整窗口与播放交互随后在统一候选`cc603ba`的新隔离窗口中补齐，详见上述统一记录。原412/412和2140文件结果保留历史归属。
 
 ### 1. NextTrack 切集瞬时白屏
 
@@ -46,7 +50,7 @@
 
 ### 2. STRM UI Consolidation
 
-**状态：** 后续独立任务，尚未开始。现有页面由旧 STRM UI、Smart Mapping UI 和后加的 status UI 组成，视觉层级尚未统一。
+**状态：** Settings `21ef9a4` 已获用户验收，且进入统一候选`cc603ba`；实际controller保存/离页不保存/落盘重载与动态Emby控件回归通过。主线合入与新版本发布尚未执行。
 
 **目标：** 统一 input、select、toggle、button hierarchy、rule card、assistant sample card、preview card、status indicator、spacing、typography 与 responsive layout。
 

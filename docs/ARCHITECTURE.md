@@ -1,5 +1,7 @@
 # 架构
 
+统一本地候选 `cc603ba` 以全屏/播放 `1e86e51` 合入 Settings `21ef9a4`。main的维护IPC只复用当前应用webContents与诊断快照，按原before-quit收口注销；libmpv新增About route，native持帧、窗口normal bounds、Session/Resolver身份链保持两侧既有实现。验证与来源见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。
+
 Electron candidate production runtime is the pinned official Electron 44.4.2 Stable Windows x64 tree. `tools/build.ps1` removes the copied Carnival `x64/electron` directory before copying the validated official tree; source/runtime provenance bind the exact archive, full 73-file tree and `electron.exe`. Carnival Electron 18.3.15 remains a separate historical baseline input and is never relabeled as the production runtime. Compatibility changes are limited to the removed window-open API and the six existing internal XHR schemes; BrowserWindow/HWND ownership, Native Helper IPC and playback/session contracts remain unchanged. See [ELECTRON_44_UPGRADE](ELECTRON_44_UPGRADE.md).
 
 当前生产 bridge 状态：`Pepper / PPAPI bridge = RETIRED`，`Native Helper = ONLY production bridge`。旧 Carnival Pepper binary 只作为 immutable archive provenance input 保留，正式 runtime、installer payload 和正常启动链均不包含它。
@@ -32,7 +34,7 @@ STRM 增强：在 `libmpv.js` 的 `playInternal(options)` 中，若 `Item.Path` 
 
 STRM resolver settings 由 `enhanced/strm-config-store.js` 持久化 schema version 1 配置和 main-process-only secret 文件；`enhanced/strm-config-ipc.js` 只向当前 BrowserWindow 返回脱敏配置。`libmpv.getRoutes()` 注册 `mpvplayer/strm.html`，页面保存规则后提示重启生效。规则使用最长前缀匹配，支持 `cloud-first`、`mount-first` 和可校验的 `custom` order；AUTO discovery 只能更新 AUTO，USER 与 DISABLED tombstone 受到保护。
 
-新增 Settings 页面 STRM、诊断与 About 共同加载 `mpvplayer/enhanced-settings.css`。共享规则只在 `.ete-settings-page` 根下定义字体、间距、卡片、控件、按钮与状态 token；`strm-settings-page`、`diagnostics-settings-page`、`about-settings-page` 的 CSS 只负责各自布局，不能影响普通 Emby 设置页。About route 通过现有 `libmpv.getRoutes()` 注册。`enhanced/maintenance-ipc.js` 只接受当前应用 `webContents`，提供版本/环境信息、剪贴板白名单复制、用户点击后有界查询最新 Release、受限 Releases 外链四项维护操作；数据整理在 `enhanced/maintenance.js`，不进入播放或 Resolver 链。libmpv 只在 Native Helper ready 时展示为已确认版本，显示缩放来自主显示器 `scaleFactor`。
+Settings 的 STRM、诊断与 About 沿用 Emby 原生主题、verticalSection、sectionTitle与控件，共同加载 `mpvplayer/enhanced-settings.css`。共享规则限制在 `.ete-settings-page` 根下，负责宽度、间距和按钮层级；三个页面的 CSS 只负责各自布局。动态input/select在创建时传入 `{is: 'emby-*'}`，About高级运行信息默认折叠。About route 通过现有 `libmpv.getRoutes()` 注册。`enhanced/maintenance-ipc.js` 只接受当前应用 `webContents`，提供版本/环境信息、剪贴板白名单复制、用户点击后有界查询最新 Release、受限 Releases 外链四项维护操作；数据整理在 `enhanced/maintenance.js`，不进入播放或 Resolver 链。libmpv 只在 Native Helper ready 时展示为已确认版本，显示缩放来自主显示器 `scaleFactor`。
 
 设置页的 CloudDrive2 连接状态由 `strm-config-ipc.js` 的当前 main-process 会话统一持有。`TEST_CONNECTION` 使用现有只读 `testConnection()` 探针更新 `unknown/checking/connected/failed` 与单调 revision；`GET_CONNECTION_STATUS` 和规则测试只返回同一快照。规则测试的 `mapped` 仅证明 prefix replacement 格式有效，与连通性分开。配置或 Token 成功保存后状态失效为 `unknown`。renderer 只展示带 revision 的快照，测试结果会立即刷新页面上所有规则卡；这不改变 CD2 service 或播放 route。
 

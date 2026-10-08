@@ -1,5 +1,13 @@
 # 已确认经验
 
+## 2026-10-08 — 统一候选与探针证据
+
+- 集成后必须绑定同一sourceCommit重测，两个支线的历史PASS数量不能相加；Settings-only blob与播放/native基线blob可分别审计保留范围。
+- 正式应用模块只在产品appready后请求。Alameda返回Promise，应显式接住reject；过早请求裸模块名可能污染loader，不能靠更长sleep或重复注册plugin修补。
+- Chromium customized built-in用构造器实例验证；创建时的is选项不保证反射为内容属性。测试的DOM断言失败需先区分控件真实类型与CSS selector假设。
+- executeJavaScript跨进程返回须可结构化复制；注入后返回函数会导致探针失败。无登录夹具的启动页遮挡也不能自动归为播放器故障。
+- 稀疏颜色/帧hash证明所采时刻呈现正确视频，不能排除切换中的短闪；107ms仍超过原100ms门槛，必须保留INCONCLUSIVE。
+
 ## 2026-10-08 — Transparent fullscreen与carrier边框
 
 - 固定Electron44.4.2 Windows透明窗口会发enter-full-screen并铺满display，但isFullScreen仍可false；事件发生在bounds变化之前。全屏判断与普通尺寸保存需遵循该实际顺序，重复setFullScreen(true)会覆盖其restore bounds。

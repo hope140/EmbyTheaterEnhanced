@@ -1,10 +1,12 @@
 # 项目状态
 
-## 2026-10-08 — 统一候选集成进行中
+## 2026-10-08 — 统一候选本地测试包交付
 
 独立分支 `codex/unified-candidate-20261008` 从全屏文档 HEAD `6be48ed`（产品 `1e86e51`，已包含切集 `6473ecb`）合入 Settings `21ef9a4`。两侧共同祖先及现场远端 main 均为 `46e995e`。main 的维护 IPC 与窗口状态、libmpv 的 About route 与原生持帧自动合并；三份追加型历史文档保留两侧记录。原工作树及未提交资料未改动。
 
-本轮已授权本地集成、必要提交、独立构建和隔离可见合成回归。当前为验证进行中，旧候选测试数字和用户反馈保持各自范围；统一候选测试、来源/payload、设置与播放/窗口矩阵以本轮后续结果为准。
+集成 sourceCommit 为 `cc603ba59fc527e50dda5b32f849af7b50702e2f`，入口 `dist/unified-candidate/Emby.Theater.exe`。430/430全量测试、正式build/source/runtime/native provenance、2146文件payload通过。用户重新授权后，以新隔离profile补齐Settings保存/离页不保存/落盘重载、诊断/About、10次窗口/全屏切集、快速Next→Stop及terminal Stop。窗口跨编码两向画面采样通过；全屏Previous最大采样间隔107ms，仍保留极短闪烁INCONCLUSIVE。状态为 `LOCAL TEST CANDIDATE READY / LIMITATIONS RECORDED`，真实Emby/CD2/HDR/多屏/安装验收独立。
+
+本地ZIP `dist/EmbyTheaterEnhanced-unified-test-cc603ba-win-x64.zip` 已逐项重读2147个文件校验，未对外发布。详细证据、历史中止与基线匹配的旧快速夹具失败见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。版本字段保持0.2.2；后续文档HEAD不是该runtime的sourceCommit。
 
 ## 2026-10-08 — 全屏顶部细条用户验收通过
 
