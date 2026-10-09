@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-09 — 清理已替代的cc603ba候选Release
+
+按用户要求删除 `test-20261008-cc603ba` Release（ID406794578）及其4个附件，保留原源码tag（object `455cd068`）用于追溯。删除后GitHub列表共6个Release，回读确认其余版本的正文、标记、发布日期和附件完全保持，正式Latest仍v0.2.2，当前测试入口仍v0.2.4。此条为后续清理结果，下面发布时的历史保留统计维持原记录。
+
 ## 2026-10-09 08:30 UTC+8 — v0.2.4 Pre-release 发布完成
 
 `v0.2.4` 已作为 GitHub Pre-release 发布，Release ID `407374861`，sourceCommit `03a2e3b9ea7f1cf786b034b0a1882b10de79a39c`。安装包与 `.sha256` 校验文件两个资产均已上传；安装包 175,597,797 bytes，GitHub API digest、release 页面与本地 SHA256 均为 `4ea589368f2db40ce09ce4e46f4fe937a2d34a240582d871a8f3f5ae627e4b64`。下载的校验文件与本地校验文件哈希一致，文件内列出的安装包SHA256也匹配；本轮未完整重新下载 EXE。发布回读和历史维护校验均 PASS。

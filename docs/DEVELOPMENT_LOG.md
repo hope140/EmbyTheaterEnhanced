@@ -1,5 +1,9 @@
 # 开发日志
 
+## 2026-10-09 — 删除历史候选下载页
+
+Model Tier：Tier 1。Model：主线程与Luna入口复核。Reason：用户要求清理已由新版本替代的cc603ba候选；Playback/Session Impact：无；Escalated：no。核对Release ID406794578和4个附件后，删除该Release并保留源码tag。前后快照验证其余6个Release及附件完全保持，正式Latest仍v0.2.2。证据见 `.work/release-0.2.4-20261009/candidate-removal-verification.json`；当前下载入口继续指向v0.2.4，产品和安装包字节未变。
+
 ## 2026-10-09 08:30 UTC+8 — v0.2.4 Pre-release 发布完成
 
 Model Tier：Tier 1。Model：主线程与 Luna 复核。Reason：整理已经用户验收的 0.2.4 本地测试包发布记录、下载入口和历史 Release 导航。Playback/Session Impact：无。Escalated：no。
