@@ -4,7 +4,7 @@
 
 ## Current Production Baseline
 
-- `v0.2.2` 正式 Latest 对应提交 `9a034e8d627f71abbded01a1fba612d9282c9911`；2026-10-09 只读核验远端 `main=46e995e`，已包含 PR #18。最新测试版 `v0.2.4` 的产品 sourceCommit 为 `03a2e3b`，完整候选文档 HEAD 为 `ebcb655a`，尚未整合到 main。
+- `v0.2.2` 正式 Latest 对应提交 `9a034e8d627f71abbded01a1fba612d9282c9911`；2026-10-09 核验远端 `main=46e995e`，已包含 PR #18。最新测试版 `v0.2.5` 的产品 sourceCommit 为 `3ab10c94d75659c0a421b729aac3147afa680751`，从完整发布分支交付，尚未整合到 main；见 [发布与验收记录](RELEASE_025.md)。
 - Native Helper + libmpv、Pepper / PPAPI 退役、Electron 44.4.2、apphost 启动命令兼容修复、Windows runtime / package provenance、STRM / CloudDrive2 / DirectUrl 基础路由和诊断包均已进入历史完成项；细节由既有专项文档维护。
 - Smart Path Mapping 已合入 `main`，尚未进入 `v0.2.2` 正式发布基线。
 
@@ -32,17 +32,17 @@
 
 ### 构建复核与安装器重复性
 
-1a05f88本地候选已完成writer输出边界修正、535/535全量及独立runtime/原始installer字节重复验证，见 [构建复核交付](BUILD_REVIEW.md)。安装器不再保存构建源文件mtime，载荷内容和产品代码保持。后续保留对应源码材料补齐、主线整合与发布的独立决定；本轮不重开预热或播放呈现实现。
+1a05f88本地候选已完成writer输出边界修正及重复验证，见 [构建复核交付](BUILD_REVIEW.md)。后续 v0.2.5/3ab10c9 重新通过535/535全量、17/17writer及两份独立runtime/原始installer字节比较，并作为测试版发布。对应源码材料补齐与主线整合保持独立事项；本轮继续既定播放实现。
 
 ### 构建输入与对应来源清单
 
-清单审计和后续本地构建修正已完成，见 [审计报告](BUILD_INPUT_AUDIT.md) 与 [候选交付](BUILD_HARDENING.md)。固定输入下同提交两个独立runtime输出的2136文件字节一致；两份installer解包均一致，但容器字节不同。公开仓库完整构建、全部第三方对应源码和容器字节重复性继续作为独立材料/工程项。
+清单审计和后续构建修正已完成，见 [审计报告](BUILD_INPUT_AUDIT.md) 与 [候选交付](BUILD_HARDENING.md)。3b158f6的安装器容器差异属于历史结果，后续1a05f88和本次v0.2.5各自取得固定输入下的runtime与原始installer字节一致证据。公开仓库完整构建及全部第三方对应源码仍未完成。
 
 已实施 [构建输入绑定与依赖打包修正](BUILD_HARDENING.md)：提交元数据gate、精确npm目录、通知随包与完整本地GCC/Inno树锁。固定公开源码材料补齐了mpv header和8项辅助binary的精确公开身份；Host/离线Web/libmpv完整对应源码和第三方构建配方仍是后续材料工作。新候选的实际构建、重复性和安装器证据单列，不触发组件替换或发布变更。
 
 ### P2 阶段观测与能力核对
 
-离线工具和合成样本报告已本地完成，见 [P2阶段观测](P2_TIMING_AND_CAPABILITY_REVIEW.md)。P0/P1保持已完成本地交付，产品基线仍为fb10f92。后续构建输入清单已独立完成，材料缺口见上项；缺少真实服务样本不触发预热或Hydration实现。
+离线工具和合成样本报告已本地完成，见 [P2阶段观测](P2_TIMING_AND_CAPABILITY_REVIEW.md)。P2历史合成证据的输入sourceCommit为fb10f92；后续工程现已随v0.2.5测试版交付。构建输入清单已独立完成，材料缺口见上项；缺少真实服务样本不触发预热或Hydration实现。
 
 ### P0 基线与主线整合审查
 

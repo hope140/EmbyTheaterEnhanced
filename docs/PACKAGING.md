@@ -2,6 +2,8 @@
 
 当前本地构建采用 [提交输入 contract](BUILD_HARDENING.md)、[精确 Node 目录](NODE_DEPENDENCY_BOUNDARY.md) 和 [完整本地工具链锁](BUILD_TOOLCHAINS.md)。新 build manifest 为 schema 3；历史 schema 2 审计按其原有语义读取。准确候选与分层实测结果在构建修正记录中单列。
 
+当前 v0.2.5 测试版的准确源码、两次独立构建、安装器原始字节及解包验证见 [发布记录](RELEASE_025.md)。Inno Files 使用 notimestamp；该结果仅针对所列固定源码与材料，不把下文早期容器不一致记录升级为通过。
+
 ## Pinned Electron 44 runtime input
 
 Enhanced production runtime uses the official Electron 44.4.2 Stable Windows x64 archive described by `vendor/electron-runtime-manifest.json`. The archive, complete extracted tree, `electron.exe`, version file and final `x64/electron` tree are independently checked. Carnival Electron 18.3.15 remains in the immutable Carnival inventory as historical evidence; build removes the copied directory before materializing the official tree. Missing archive, wrong hash, changed/missing/extra extracted file or stale production tree fails closed.
@@ -56,7 +58,7 @@ Web overlay 的唯一来源如下：
 
 `prepare-web-overlays.cjs` 在写任何输出前先校验全部 base、payload 和 generator；任一 hash 不匹配则 fail-fast，不留下部分 Web overlay。tracked generator identity 使用当前 commit 的 canonical Git blob SHA256，并拒绝除 CRLF/LF checkout 差异之外的工作文件偏移。
 
-CD2 阶段在源码覆盖后执行两项步骤：`copy-runtime-dependencies.cjs` 从根 lockfile 选择production目录并复制到输出 `electronapp/node_modules`，拒绝其中的native addon；`patch-playbackmanager.cjs` 对未公开的 frozen Web snapshot 应用锚点唯一的 request-generation overlay，锚点数量不符即停止构建。依赖复制实际读取本机安装目录，并保留目标中的Carnival旧文件；provenance记录结果hash，不在复制前验证npm tarball。构建不执行native rebuild或node-gyp。
+CD2 阶段在源码覆盖后执行两项步骤：`copy-runtime-dependencies.cjs` 从根 lockfile 选择production目录并复制到输出 `electronapp/node_modules`，拒绝其中的native addon；`patch-playbackmanager.cjs` 对未公开的 frozen Web snapshot 应用锚点唯一的 request-generation overlay，锚点数量不符即停止构建。当前正式build每次执行独立npm ci并由npm验证锁定tarball integrity，再完整替换33个选择包根，逐文件校验新输入；七个明确保留的Carnival包另与归档核对。旧覆盖复制的long残留已在构建加固中消除。构建不执行native rebuild或node-gyp。
 
 保留实际布局 `Emby.Theater.exe`、`electronapp/libmpv/x64`、`electronapp/native-helper`、`x64/electron`。任务书中的 runtime/libmpv/plugins 分拆仅是示意；Native Helper 通过固定相对路径启动，旧 Pepper plugin registration 已不存在。
 

@@ -1,5 +1,15 @@
 # 开发日志
 
+## 2026-10-09 — v0.2.5 测试版构建、发布与证据收口
+
+- Model Tier: Tier 2 release coordination / Tier 1 workers；Model: current Codex primary session / GPT-5.6 Luna High；Reason: exact source, binary, tag and publication identity review with bounded preparation, testing and read-only audit delegated；Escalated: no。
+- 产品提交3ab10c94d75659c0a421b729aac3147afa680751从完整5af8443继续，只有package/lock版本、随包来源索引版本及收口文档变化。root确认src/native/tools/installer/vendor相对审核基线保持。
+- 固定三个归档、Electron73文件、GCC6990文件、Inno118文件和解包器5文件；两次fresh npm与正式build，各2136文件路径/hash一致。全量535/535、writer17/17均0失败/跳过；34项输入、33+7包/1171文件与4份通知通过，审计CONSISTENT。
+- 两个原始installer均175631770 bytes、SHA256 76d7766cc824bf65f585cd89f0e68841628b2063381aa85392513ed1653d0d65。A完整性、全新解包2136/2136、PE0.2.5通过；B为字节相同对照。receipt精确绑定runtime manifest、compiler与source，发布前隐私扫描通过。
+- 隔离首次queue-play超时，第二次完成流程但next.selected=false/cancelCount=1；读回历史3b158f6原始失败向量一致，未放松断言。完整runner记NOT_PASS，普通/STRM控制/报告及generation/Stop断言、123条诊断、About/source/隔离与残留0分别记录。离线合成分析COMPLETE；运行后再次package VerifyOnly通过。
+- 准确annotated tag v0.2.5与发布分支原子推送；创建Release 407543805，prerelease=true、latest=false，上传EXE/sha256/provenance三个资产。后续文档HEAD不替换产品sourceCommit；下载与远端核验见 [发布记录](RELEASE_025.md) 和 [结构化证据](evidence/release-v0.2.5-20261009.json)。
+- 发布回读：全部asset uploaded/size/digest与本地匹配，两个companion完整下载匹配，公开首1MiB匹配；完整EXE回下载因限速/中断和最后240秒有界续传未完成（171530320/175631770 bytes），该层明确INCOMPLETE。旧6个Release、9个资产、30个远端refs保持，Latest仍v0.2.2；没有留下后台下载进程。
+
 ## 2026-10-09 — v0.2.5 测试版收口开始
 
 - Model Tier: Tier 2 coordination / Tier 1 bounded worker; Model: current Codex primary session / GPT-5.6 Luna High; Reason: release integration and exact source-to-artifact identity, with fixed-scope read-only version audit delegated; Escalated: no model escalation requested.

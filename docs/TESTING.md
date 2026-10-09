@@ -1,5 +1,11 @@
 # 测试与验收
 
+## 2026-10-09 v0.2.5 / 3ab10c9
+
+新sourceCommit重新执行`npm test`，535/535通过；writer定向17/17，均0失败/跳过。两个独立runtime各2136文件全路径/hash一致，两份原始安装器175631770 bytes且同SHA256；A完整性与解包2136/2136通过，B为同字节对照。34项提交输入、四层来源、精确33+7包/1171文件与4份通知通过；版本gate、PE和真实About IPC均为0.2.5/sourceCommit匹配。运行后再次package VerifyOnly通过。
+
+隐藏假服务首轮在queue-play达到25秒超时。新profile复验完成pipeline，但完整runner因next.selected=false和fake CD2 cancelCount=1仍NOT_PASS；与读回3b158f6历史原始失败的向量/计数一致。普通/STRM控制和身份/Session报告、generation接管与Stop防迟到加载断言通过，123条诊断及12项请求关联、两类安全Renderer位置、raw canary排除分别PASS。appData/userData在bootstrap前固定并读回，两次残留均0。离线合成分析COMPLETE；这些结果不等价于真实服务、系统安装或屏幕首帧。完整证据与发布资产见 [0.2.5发布记录](RELEASE_025.md)。
+
 ## 2026-10-09 构建复核候选1a05f88
 
 最终`node --test --test-concurrency=1 tests/*.test.cjs`为535/535 PASS、0失败、0跳过；writer定向17/17，审核前构建定向50/50。两次独立build及package、输入与各层provenance、精确依赖目录均通过。runtime各2136文件路径/hash相同，两个原始安装器也完全同SHA；A完整性及解包2136/2136通过，B通过字节一致性关联该证据。原source文件mtime保留，使用Inno官方notimestamp控制容器元数据；没有后处理EXE。本轮不运行客户端或系统安装，详见 [构建复核](BUILD_REVIEW.md)。

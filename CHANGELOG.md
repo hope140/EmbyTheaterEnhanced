@@ -1,5 +1,12 @@
 # 变更记录
 
+## 0.2.5 测试版 — 2026-10-09
+
+- 增加有限、脱敏的播放请求与原生事件关联、持帧/surface观察和Renderer包内错误位置采集；诊断旁路不改变播放身份链。
+- 源码仓库增加单日志离线阶段分析工具，未知、缺失或冲突端点保持不可用。
+- 构建绑定准确提交输入与固定工具链，精确生成生产依赖目录，补齐随包通知与来源索引，加强输出链接/覆盖边界；固定输入下两份runtime与原始installer字节一致。
+- 继承v0.2.4设置页一致性及此前持帧切集、全屏修复。535/535全量和17/17writer通过；隐藏runtime完整runner保留已记录的超时/快速Next夹具限制。准确产物与各层验证见 [0.2.5发布记录](docs/RELEASE_025.md)。
+
 ## 0.1.1 Phase 2B Pepper retirement — 2026-09-17
 
 - Pepper / PPAPI bridge retired；Native Helper is now the sole production mpv bridge.

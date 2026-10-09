@@ -1,6 +1,6 @@
 # Known Issues
 
-2026-10-09 当前工程状态：v0.2.4/03a2e3b 为最新测试版，正式 Latest 为 v0.2.2，main=46e995e。本地 P0/P1 诊断候选见 [交付记录](P0_P1_DELIVERY.md)；诊断能力的增加不自动关闭历史 Renderer ReferenceError 的业务根因。
+2026-10-09 当前工程状态：v0.2.5/3ab10c9 为最新测试版，正式 Latest 为 v0.2.2，main=46e995e。准确身份与验证见 [0.2.5 发布记录](RELEASE_025.md)。本次隐藏运行首轮 queue-play 超时；复验完整流程仍因 next.selected=false 和 fake CD2 cancelCount=1 失败，与读回的 3b158f6 原始失败断言一致。完整 runner 保持 NOT_PASS，123 条产品诊断验证单独 PASS。诊断能力的增加不自动关闭历史 Renderer ReferenceError 的业务根因。
 
 ## 2026-10-09 — 设置页一致性修正通过用户验收
 

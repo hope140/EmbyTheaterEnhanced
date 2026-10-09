@@ -1,5 +1,15 @@
 # 项目状态
 
+## 2026-10-09 — v0.2.5 Pre-release 已发布
+
+GitHub [v0.2.5](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.5) 已发布，Release ID `407543805`。产品 sourceCommit / tag 解引用均为 `3ab10c94d75659c0a421b729aac3147afa680751`。安装包 `EmbyTheaterEnhanced-0.2.5-test-win-x64-setup.exe` 为175,631,770 bytes，SHA256 `76d7766cc824bf65f585cd89f0e68841628b2063381aa85392513ed1653d0d65`；另提供同名 `.sha256` 和 `.provenance.json`。正式 Latest 保持 v0.2.2，发布来自完整分支，main 仍为46e995e。
+
+本次新提交全量535/535、writer17/17均0失败/跳过；两份runtime各2136文件一致，两份原始installer同SHA；主安装器完整性与2136文件解包全匹配，PE及真实About IPC均为0.2.5并绑定准确sourceCommit。与1a05f88仅8个版本/来源文件不同，应用与播放器二进制字节保持。
+
+隐藏假服务测试首轮queue-play达到25秒超时，复验完成流程但runner仍NOT_PASS：next.selected=false、fake CD2 cancelCount=1，读回3b158f6原始失败记录后断言向量与计数一致。普通/STRM控制、身份/Session报告、generation与Stop防迟到加载均通过；123条诊断、12项关联、两类安全Renderer位置和脱敏另记PASS。appData/userData前置隔离及读回通过、残留0。未改断言或重复跑到通过；真实服务、安装、可见首帧、HDR/多屏保持未验收。发布回读与完整证据见 [0.2.5发布记录](RELEASE_025.md)。
+
+远端三个asset状态/大小/digest与本地匹配，两个companion完整下载一致，tag解引用正确。完整EXE回下载因限速、接收中断与有界时限未完成，未记完整客户端SHA通过。6个旧Release、9个旧asset和30个已有远端refs全部保持，最终文档HEAD只记录发布结果。
+
 ## 2026-10-09 — v0.2.5 测试版发布收口
 
 按用户明确发布授权，从完整 `5af8443` 建立独立 `codex/release-v0.2.5-test-20261009`。远端核对最高测试版为 v0.2.4，正式 Latest 为 v0.2.2，无开放 PR；v0.2.5 尚不存在。根 package 与 lockfile 统一为 0.2.5，随包来源索引对应新版本，已知材料缺口保持准确表述。现有产品源码、依赖版本与工具链保持。

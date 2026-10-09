@@ -1,6 +1,6 @@
 # Emby Theater Enhanced
 
-基于 Carnival 3.0 与综合补丁的 Windows Emby 客户端维护工程。当前正式版为 `v0.2.2`，最新测试版 `v0.2.4` 已发布为 Pre-release；Smart Path Mapping 已通过 PR #18 合入 `main`。
+基于 Carnival 3.0 与综合补丁的 Windows Emby 客户端维护工程。当前正式版为 `v0.2.2`，最新测试版 `v0.2.5` 已发布为 Pre-release；Smart Path Mapping 已通过 PR #18 合入 `main`。
 
 Emby Theater Enhanced is an unofficial community-maintained project. It is not affiliated with or endorsed by Emby.
 
@@ -10,15 +10,15 @@ Emby Theater Enhanced 是非官方社区维护项目，与 Emby 不存在隶属�
 
 | 渠道 | 版本 | 入口 |
 |---|---|---|
-| 最新测试版 · Pre-release | `v0.2.4` | [发布说明](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.4) · [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.4/EmbyTheaterEnhanced-0.2.4-test-win-x64-setup.exe) · [SHA-256 文件](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.4/EmbyTheaterEnhanced-0.2.4-test-win-x64-setup.exe.sha256) |
+| 最新测试版 · Pre-release | `v0.2.5` | [发布说明](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.5) · [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.5/EmbyTheaterEnhanced-0.2.5-test-win-x64-setup.exe) · [SHA-256 文件](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.5/EmbyTheaterEnhanced-0.2.5-test-win-x64-setup.exe.sha256) |
 | 当前正式版 · Latest | `v0.2.2` | [发布说明](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.2) · [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.2/EmbyTheaterEnhanced-0.2.2-win-x64-setup.exe) |
-| 历史版本 | `v0.2.3` 及更早版本 | [全部历史版本](https://github.com/hope140/EmbyTheaterEnhanced/releases) |
+| 历史版本 | `v0.2.4` 及更早版本 | [全部历史版本](https://github.com/hope140/EmbyTheaterEnhanced/releases) |
 
 ## 开发计划
 
-2026-10-09，设置页一致性修正已通过本轮用户验收并发布为最新测试版 [v0.2.4 Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.4)；正式 Latest 仍为 [v0.2.2](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.2)。v0.2.4 继承 v0.2.3 的功能和修复，统一增强设置页与 Emby 原生设置的对齐、动态控件样式及导航标题。完整产物信息与验收范围见[0.2.4验收记录](docs/SETTINGS_UI_024_ACCEPTANCE.md)。
+2026-10-09，最新测试版 [v0.2.5 Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.5) 以完整发布分支交付，正式 Latest 仍为 [v0.2.2](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.2)。本次增加脱敏播放诊断、源码中的离线分析工具，以及构建输入、依赖目录、工具链和安装器重复性加固；继承 v0.2.4 设置页一致性、此前持帧切集与全屏修复。版本、准确源码、SHA256、发布回读与隐藏运行限制见 [0.2.5 发布记录](docs/RELEASE_025.md)。此前设置页用户验收仍归属[0.2.4验收记录](docs/SETTINGS_UI_024_ACCEPTANCE.md)。
 
-P0 主线整合准备与 P1 最小诊断已完成[本地交付](docs/P0_P1_DELIVERY.md)，新增诊断遵循[诊断 contract](docs/P1_DIAGNOSTICS_CONTRACT.md)。P2 已交付[离线阶段观测工具与能力结论](docs/P2_TIMING_AND_CAPABILITY_REVIEW.md)，产品基线保持P1候选。[构建输入、来源与可再构建范围审计](docs/BUILD_INPUT_AUDIT.md)已整理固定输入、实际payload和对应源码材料缺口；当前本地构建依赖外部固定输入，公开仓库本身尚不能完整构建全部组件。进度与优先级见 [Development Roadmap](docs/ROADMAP.md)，可复现问题与观察项见 [Known Issues](docs/KNOWN_ISSUES.md)。Smart Path Mapping 已完成用户功能验收和最终远端复审，并通过 PR #18 合入 `main`。
+P0/P1 的历史证据见[本地交付](docs/P0_P1_DELIVERY.md)，本次随 v0.2.5 交付的诊断继续遵循[诊断 contract](docs/P1_DIAGNOSTICS_CONTRACT.md)。P2 已交付[离线阶段观测工具与能力结论](docs/P2_TIMING_AND_CAPABILITY_REVIEW.md)。[构建输入、来源与可再构建范围审计](docs/BUILD_INPUT_AUDIT.md)已整理固定输入、实际payload和对应源码材料缺口；当前本地构建依赖外部固定输入，公开仓库本身尚不能完整构建全部组件。进度与优先级见 [Development Roadmap](docs/ROADMAP.md)，可复现问题与观察项见 [Known Issues](docs/KNOWN_ISSUES.md)。Smart Path Mapping 已完成用户功能验收和最终远端复审，并通过 PR #18 合入 `main`。
 
 ### 核心架构
 
@@ -50,7 +50,7 @@ P0 主线整合准备与 P1 最小诊断已完成[本地交付](docs/P0_P1_DELIV
 ### 诊断与维护
 
 - [x] 诊断包导出、播放 / 路由诊断信息与敏感信息脱敏
-- [x] 最小播放诊断与 Renderer 错误位置采集（P1 本地候选，证据见交付记录）
+- [x] 最小播放诊断与 Renderer 错误位置采集（随 v0.2.5 测试版交付，证据见发布记录）
 - [ ] Installer install / upgrade / uninstall / reinstall 残留审计
 
 ### 观察项
