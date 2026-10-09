@@ -33,7 +33,8 @@ RestartApplications=no
 Name: "desktopicon"; Description: "Create a desktop shortcut"; Flags: unchecked
 
 [Files]
-Source: "{#RuntimeDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Source mtimes vary between equivalent builds and are not part of payload identity.
+Source: "{#RuntimeDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs notimestamp
 
 [Icons]
 Name: "{group}\Emby Theater Enhanced"; Filename: "{app}\Emby.Theater.exe"; WorkingDir: "{app}"; IconFilename: "{app}\electronapp\icon.ico"
