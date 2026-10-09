@@ -149,16 +149,18 @@ function inspectFileSet(inputsRoot, relativeRoot, expected) {
 }
 function archiveRecord(archiveRoot, name, expectedHash, expectedSize) {
     const archiveName = rel(name);
+    const hasExpectedSize = expectedSize !== null && expectedSize !== undefined;
+    const reportedExpectedSize = hasExpectedSize ? expectedSize : null;
     if (archiveName.includes('/')) throw new Error(SAFE_ERROR);
-    if (!safeRoot(archiveRoot)) return {path: archiveName, status: 'MISSING', expectedHash: expectedHash || null, observedHash: null, expectedSize: expectedSize || null, observedSize: null};
+    if (!safeRoot(archiveRoot)) return {path: archiveName, status: 'MISSING', expectedHash: expectedHash || null, observedHash: null, expectedSize: reportedExpectedSize, observedSize: null};
     const checked = checkPath(archiveRoot, archiveName);
-    if (!checked.exists || !fs.lstatSync(checked.path).isFile()) return {path: archiveName, status: 'MISSING', expectedHash: expectedHash || null, observedHash: null, expectedSize: expectedSize || null, observedSize: null};
+    if (!checked.exists || !fs.lstatSync(checked.path).isFile()) return {path: archiveName, status: 'MISSING', expectedHash: expectedHash || null, observedHash: null, expectedSize: reportedExpectedSize, observedSize: null};
     const bytes = fs.readFileSync(checked.path);
     const observedHash = sha256(bytes);
     const observedSize = bytes.length;
-    const status = expectedHash && expectedSize ? (observedHash === expectedHash.toLowerCase() && observedSize === expectedSize ? 'PASS' : 'MISMATCH')
+    const status = expectedHash && hasExpectedSize ? (observedHash === expectedHash.toLowerCase() && observedSize === expectedSize ? 'PASS' : 'MISMATCH')
         : expectedHash ? (observedHash === expectedHash.toLowerCase() ? 'PASS' : 'MISMATCH') : 'OBSERVED';
-    return {path: archiveName, status, expectedHash: expectedHash || null, observedHash, expectedSize: expectedSize || null, observedSize};
+    return {path: archiveName, status, expectedHash: expectedHash || null, observedHash, expectedSize: reportedExpectedSize, observedSize};
 }
 function packageLockAudit(inputsRoot, lock) {
     const packages = lock && lock.packages;
@@ -383,7 +385,7 @@ function run(argv = process.argv.slice(2)) {
     if (!Array.isArray(runtimeManifest.archives) || runtimeManifest.archives.some(item => !item || !HASH.test(item.sha256 || '') || !rel(item.pattern) || item.pattern.includes('/'))) throw new Error(SAFE_ERROR);
     for (const pathValue of runtimeManifest.runtimeExclusions || []) rel(pathValue);
     if (!electronManifest || typeof electronManifest.version !== 'string' || !/^[a-z0-9.+_-]+$/i.test(electronManifest.version) ||
-        !electronManifest.archive || !HASH.test(electronManifest.archive.sha256 || '') || !Number.isSafeInteger(electronManifest.archive.size) ||
+        !electronManifest.archive || !HASH.test(electronManifest.archive.sha256 || '') || !Number.isSafeInteger(electronManifest.archive.size) || electronManifest.archive.size <= 0 ||
         !HASH.test(electronManifest.runtime.treeSha256 || '') || !HASH.test(electronManifest.runtime.electronExeSha256 || '') ||
         !Number.isSafeInteger(electronManifest.runtime.fileCount)) throw new Error(SAFE_ERROR);
     rel(electronManifest.runtime.preparedPath);

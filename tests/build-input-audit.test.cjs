@@ -115,6 +115,31 @@ test('vendor hashes and unexpected files are counted without exposing extra name
     assert.equal(JSON.stringify(report).includes('private-extra-canary'), false);
 });
 
+test('Electron archive size must be a positive safe integer', t => {
+    for (const size of [0, -1, undefined]) {
+        const fixture = setup(t);
+        if (size === undefined) delete fixture.electronManifest.archive.size;
+        else fixture.electronManifest.archive.size = size;
+        json(fixture.repo, 'vendor/electron-runtime-manifest.json', fixture.electronManifest);
+        assert.throws(() => run(args(fixture)), {message: 'Audit failed; inputs or arguments are invalid.'});
+    }
+});
+
+test('Electron archive size mismatch is recorded without suppressing inventory output', t => {
+    const fixture = setup(t);
+    fixture.electronManifest.archive.size++;
+    json(fixture.repo, 'vendor/electron-runtime-manifest.json', fixture.electronManifest);
+    const output = path.join(fixture.base, 'report.json');
+    const report = run(args(fixture, output));
+    assert.equal(report.archives.electron.status, 'MISMATCH');
+    assert.equal(report.archives.electron.expectedSize, fixture.electronManifest.archive.size);
+    assert.equal(report.archives.electron.observedSize, Buffer.byteLength('electron archive'));
+    assert.equal(report.archives.carnival.every(item => item.expectedSize === null), true);
+    assert.equal(report.status, 'OBSERVED');
+    assert.equal(report.assessment, 'MISMATCH');
+    assert.equal(fs.existsSync(output), true);
+});
+
 test('runtime payload tampering fails exact payload checks', t => {
     const fixture = setup(t);
     write(fixture.runtime, 'app.exe', 'tampered');
