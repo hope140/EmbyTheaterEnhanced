@@ -2,9 +2,9 @@
 
 ## 当前范围（2026-10-09）
 
-当前生产组件为Electron44.4.2完整树、源码构建的Native Helper和固定libmpv。本页下方双worktree数字属于各自标明的历史revision，不能直接证明当前完整payload或安装器字节可复现。当前输入、来源和材料缺口见 [构建输入审计](BUILD_INPUT_AUDIT.md)。P1已有实际build及安装器payload回比，本轮只读复核既有产物；没有重新执行当前双worktree构建。
+当前生产组件为Electron44.4.2完整树、源码构建的Native Helper和固定libmpv。后续构建修正提交3b158f6在同一独立工作树的两个全新输出中，分别fresh npm安装、源码编译Helper并组装runtime，各2136文件路径/hash完全一致；两个installer各自解包也与对应runtime一致，但容器原始字节不同。该结果是同提交、同固定输入与宿主环境的两次独立输出证据，不是两个新OS环境或全部第三方源码重建。见 [完整交付](BUILD_HARDENING.md)。本页下方双worktree数字仍属于各自标明的历史revision。
 
-当前fresh-worktree准备顺序见 [PACKAGING](PACKAGING.md)：除npm与Carnival/补丁/Electron三个固定归档外，还要运行`prepare-native-helper-inputs.ps1`取得固定header，并准备匹配manifest的GCC及其完整本机环境。普通`prepare.ps1`不准备header，manifest也尚未锁定完整工具链闭包。纯公开仓库、固定输入组装、全部组件源码重建和installer字节重复性是不同命题。
+当前fresh-worktree准备顺序见 [PACKAGING](PACKAGING.md)：除npm与Carnival/补丁/Electron三个固定归档外，还要运行`prepare-native-helper-inputs.ps1`取得固定header，并按 [工具链锁](BUILD_TOOLCHAINS.md) 准备项目本地完整GCC前缀和Inno材料。普通`prepare.ps1`不准备header。原始MSYS2源码/包材料、Windows宿主与部分第三方来源仍未完全闭合。纯公开仓库、固定输入组装、全部组件源码重建和installer字节重复性是不同命题。
 
 > 当前补充：Phase 2B 已将 Pepper bridge 标记为 retired。历史 provenance 仍可记录 archive input，但正式 runtime provenance/package contract 只把 Native Helper 与 `mpv-1.dll` 作为生产 bridge payload，并显式记录旧 `.node` exclusion。
 

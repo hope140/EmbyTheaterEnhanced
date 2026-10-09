@@ -1,5 +1,14 @@
 # 已确认经验
 
+## 2026-10-09 — 构建输入contract的实际收口
+
+- build与package同时读取同一工作文件，不能单独证明该文件属于sourceCommit；限定输入需对HEAD blob验证，普通source则直接从blob生成。
+- checkout换行可在比较时canonical化，provenance仍应记录Git原始blob hash；更换hash语义需明确schema，旧审计不能静默升级成新保证。
+- 精确包复制需同时校验selected新文件集合与retained归档集合；包根name/version和lock integrity不能取代实际文件hash。
+- 保护新输出需要校验目录祖先的junction/reparse边界；单个文件不是链接不足以证明整个路径在仓库内。
+- ISCC的help或PE版本字段可能没有准确版本值；本次用固定签名归档到完整解包树及ISCC字节的关系核对6.7.3身份。
+- 固定公开源码ZIP可补齐header或辅助binary的精确来源，但不自动建立Host或libmpv的完整重建和对应源码关系。
+
 ## 2026-10-09 — 构建身份与材料边界
 
 - Git排除的输入仍可能进入installer；通知说明要分别描述Git跟踪范围和真实payload。

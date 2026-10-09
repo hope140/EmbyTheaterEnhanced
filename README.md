@@ -65,6 +65,8 @@ P0 主线整合准备与 P1 最小诊断已完成[本地交付](docs/P0_P1_DELIV
 
 - [ ] Electron Forge 迁移评估
 - [x] 构建输入与对应来源清单审计（本地材料与P1候选）
+- [x] [本地构建输入绑定、依赖目录与通知交付contract](docs/BUILD_HARDENING.md)
+- [x] 同提交两次独立runtime构建（2136文件字节一致；installer容器差异单列）
 - [ ] 对应源码、通知交付与完整工具链材料补齐
 
 ## 项目文档

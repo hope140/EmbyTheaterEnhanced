@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-10-09 — 构建输入绑定与独立候选
+
+独立分支 `codex/build-hardening-20261009` 从审计基线 `49f643a` 继续。产品提交 `3b158f69e974802ef92a3d8c7ef6815139498d1f` 完成提交输入gate、schema 3 provenance、精确Node依赖、通知随包和完整本地GCC/Inno树固定；版本仍为0.2.4，`src/`、native C++、原vendor清单与依赖版本均未改动。
+
+最终提交529/529全量通过，两个独立runtime各2136文件全路径/hash一致；两份安装器完整性与解包2136/2136逐项比较通过，容器原始字节不同。隐藏fake CD2/合成媒体首轮double-Next selected断言失败，一次有界复验完整PASS；两次结果均保留，最终111条产品诊断合法、隔离读回通过、残留0。准确候选、重复性、P1差异和材料缺口见 [构建修正交付](BUILD_HARDENING.md)。
+
+固定上游源码材料已补充：mpv header与固定源码一致；Windows Host参考ZIP中8项辅助二进制与Carnival字节相同。完整对应源码与重建关系保持各自边界。原P1及已发布v0.2.4身份不变，当前为本地工程交付。
+
 ## 2026-10-09 — 构建输入、来源与可再构建范围
 
 从1abf554建立独立`codex/build-input-audit-20261009`，完成 [来源/材料矩阵](BUILD_INPUT_AUDIT.md)、只读导出器、14项新增测试和通知/构建文档修正。新工具与既有Git blob/Electron测试19/19，语法与diff通过；P1四层来源重验、三个归档、1009/51 vendor文件、73文件Electron和2149项payload核对通过。

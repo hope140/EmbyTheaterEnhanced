@@ -58,7 +58,7 @@ Phase 2.2 把 Phase 1 的单组 suffix HIGH 限定为 `fileMatch`，它不再授
 
 正式 ETE 的 Device identity 在 main process 启动时从 bootstrap 返回的 ETE `config` 目录读取或创建 `device-identity.json`。文件只保存 version 和随机 UUID；缺失或损坏时安全重建，升级沿用已有值，clean profile 生成新值。`deviceName` 继续使用 `os.hostname()`，`deviceId` 不再使用 hostname，也不依赖 app name、版本、服务器、用户或 token。`loadStartInfo` 将同一个持久化 DeviceId 交给 apphost、ConnectionManager、HTTP ApiClient、WebSocket 和播放报告；旧 hostname DeviceId 不迁移、不自动删除服务器 Device/Session。
 
-构建证据补充：上述production dependency closure指lockfile选择，不覆盖Carnival继承的全部node_modules文件；copy是覆盖而非清空，P1存在long的20个旧文件。package/lock等构建元数据、完整GCC工具链及Inno身份也未全部绑定到sourceCommit。精确可再构建边界见 [BUILD_INPUT_AUDIT](BUILD_INPUT_AUDIT.md)，不改变生产架构。
+构建证据补充：新构建以限定输入gate将package/lock、vendor metadata、实际生成规则和通知绑定到sourceCommit，schema 3记录inputs/source/runtime关系。33个npm选择包从新安装目录精确生成；七个Carnival包身份另按原manifest保留。完整本地GCC/Inno目录由补充锁固定，config保留base/generator/output关系。历史P1的long残留和输入边界仍见 [BUILD_INPUT_AUDIT](BUILD_INPUT_AUDIT.md)，新contract见 [BUILD_HARDENING](BUILD_HARDENING.md)；生产播放架构不变。
 
 ## Next/Previous native presentation
 

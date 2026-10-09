@@ -1,5 +1,17 @@
 # 开发日志
 
+## 2026-10-09 — 构建输入绑定与依赖打包修正
+
+Model Tier: Tier 2 integration/review，固定规格工具与测试按Tier 1拆分；Model: 当前主线程GPT-6系列，worker GPT-5.6 Sol High；Reason: 主线程负责跨build/package/provenance contract，worker完成审计边界、依赖目录、完整工具树与负向测试；Escalated: no，未改变产品架构。Task Risk=medium，Task Uncertainty=medium（外部材料来源），Cross-module Scope=build/package/provenance/tests/docs，Playback/Session Impact=none。
+
+核实源会话用户授权后，从49f643a建立独立工作树；原主目录、P1与审计交付树均保持。分别提交审计size修复7c8270b、完整工具树锁a51831b、精确依赖生成83b75b8和提交输入/通知绑定3b158f6。限定输入有dirty/staged偏移即拒绝，无关文档允许dirty；普通产品源仍物化Git blobs。
+
+主线程实际复核worker diff，补正保留依赖的manifest来源、canonical metadata hash、caller sourceCommit、祖先junction、独占sidecar写入以及审计schema 2/3兼容。临时npm树和失败输出保留为可核查证据。首轮全量因新工作树未生成ignored preload而有1项加载失败，使用既有generator补齐后专项5/5通过；随后全量524/524通过，最终产品提交再次全量529/529通过。实际build入口4个dirty输入全部在创建输出前拒绝。
+
+同一3b158f6在两个新目录分别fresh npm安装与正式build；各2136文件路径/hash完全相同，helper仍与P1为同一28054c哈希。与P1差异严格为新增6份notice/provenance、删除20个long旧文件、更新4份来源manifest；产品代码和其它二进制/配置完全相同。Inno两次编译都通过完整性与解包回比，但容器原始SHA不同，未修改、过滤或归一化字节。
+
+隐藏runtime首轮double-Next选项断言失败，报告实际依次播放B、C，其它核心与隔离检查通过；构建/测试完成后新profile复验完整PASS。保留两轮原证据，没有改播放链或弱化断言。最终111条合法日志、关联10、两类安全Renderer位置各1、raw canary缺失，6个子进程退出、残留0；原用户日志未读写，真实首帧/实服/系统安装未执行。完整结果见 [BUILD_HARDENING](BUILD_HARDENING.md)。
+
 ## 2026-10-09 — 构建输入与对应来源审计
 
 Model Tier: Tier 2 evidence review，确定性工具/测试/清单为Tier 1；Model: 当前主线程GPT-6系列，worker GPT-6 Luna High与GPT-5.6 Sol Medium；Reason: 主线程负责来源/材料证据语义与最终diff，worker执行清单、文档核对和固定contract工具；Escalated: no，沿用主线程模型，无新增架构或法律决策。Task Risk=medium，Task Uncertainty=medium-high（外部来源材料），Cross-module Scope=tools/tests/docs与构建来源审计，Playback/Session Impact=none。
