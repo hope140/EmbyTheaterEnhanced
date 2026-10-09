@@ -1,5 +1,9 @@
 # 开发日志
 
+## 2026-10-09 — 用户确认0.2.4设置页修正可用
+
+Model Tier：Tier 1，验收记录整理；Playback/Session Impact：无。用户在获得0.2.4 runtime测试入口后明确反馈“可以了，我测过了”，记录本轮设置页修正整体验收通过，未推断系统安装、真实CD2/HDR或其它未说明的测试。产品源03a2e3b与现有.exe/SHA保持，文档diff与源码范围检查通过；没有重跑或重复宣称新自动化PASS。
+
 ## 2026-10-09 — 0.2.4本地安装包交付
 
 Model Tier：产品UI/构建为Tier 1；测试harness启动路由竞态经Tier 2只读源码定位后收口。Model：主线程、Luna输入/工具与Sol High事件归属复核。Reason：完整应用导航与旧fragment测试不同，必须绑定实际ViewManager事件；未改播放器/路由生产逻辑。Escalated：测试工具有，产品实现无。

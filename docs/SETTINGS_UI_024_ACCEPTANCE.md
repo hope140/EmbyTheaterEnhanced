@@ -1,6 +1,10 @@
 # 0.2.4 设置页一致性修正测试包
 
-日期：2026-10-09（UTC+8）。路径均相对于 managed worktree `ete-settings-native-alignment`。交付状态：`LOCAL INSTALLER READY / ISOLATED FULL-APP SETTINGS VERIFIED`，未上传GitHub、合并主线或执行系统安装。
+日期：2026-10-09（UTC+8）。路径均相对于 managed worktree `ete-settings-native-alignment`。交付状态：`USER ACCEPTANCE PASS / LOCAL INSTALLER READY`，尚未上传GitHub或合并主线。
+
+## 用户验收
+
+用户使用本会话提供的0.2.4 runtime入口后反馈：“可以了，我测过了”。据此记录本轮设置页左对齐、控件样式和标题收尾的整体验收通过，关闭该UI问题并保留观察；不补写未逐项报告的操作、窗口模式、安装过程或其它媒体环境。程序仍为下面的03a2e3b候选，未因这次反馈改代码、重建或更换安装包。
 
 ## 最终产物
 

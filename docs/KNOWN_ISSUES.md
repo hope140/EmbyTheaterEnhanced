@@ -1,5 +1,9 @@
 # Known Issues
 
+## 2026-10-09 — 设置页一致性修正通过用户验收
+
+0.2.4/03a2e3b的三页左对齐、动态原生控件样式与重复标题修正，用户测试后明确反馈“可以了，我测过了”，记为 `USER ACCEPTANCE PASS / CLOSED WITH MONITORING`。本次只关闭此UI问题，未扩展到系统安装或其它专项；见[0.2.4验收记录](SETTINGS_UI_024_ACCEPTANCE.md)。
+
 2026-10-08统一候选更新：`cc603ba`已补齐核心Settings、窗口、连续切集与Stop隔离回归并交付本地ZIP。全屏跨编码Previous为73帧/max107ms，所采无黑/紫/mixed但仍INCONCLUSIVE；窗口跨编码两向通过。旧rapid NextTrack夹具selected=false已与`1e86e51`同条件匹配，未修改断言。当前证据和专项未覆盖范围见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。
 
 本页记录尚需诊断的问题与观察项。`OBSERVED` 表示已见现象，`SUSPECTED` 表示待验证解释，只有证据闭合后才使用 `CONFIRMED`。开发优先级见 [Development Roadmap](ROADMAP.md)。
