@@ -1,5 +1,9 @@
 # 测试与验收
 
+## 2026-10-09 P2 离线阶段统计
+
+`node --test tests/playback-timing.test.cjs tests/p1-runtime-diagnostics.test.cjs`：24/24 PASS。新增工具只读显式输入，不启动runtime或读取默认profile；覆盖严格输入上限、UTF-8、重复/缺失/过期归属、Stop/retire、时钟回退、零值、限流、跨启动歧义、字段投影和输出防覆盖。Node语法与diff检查通过。现存P1合成日志110条已用最终工具分析，交付报告与复算结果一致，详见 [P2阶段观测](P2_TIMING_AND_CAPABILITY_REVIEW.md)。本轮没有产品改动，不重建或重复运行P1播放/安装器验收。
+
 ## 2026-10-09 P0/P1 本地诊断候选
 
 当前产品 sourceCommit `fb10f920a39112ff72b0f82715da8345702f634b`，版本 0.2.4。该提交串行全量 `node --test --test-concurrency=1 tests/*.test.cjs` 为 455/455 PASS，后续 runtime validator 专项 8/8；正式构建/provenance、假 CD2/合成媒体 pipeline、真实 JSONL 安全调用位置、整包扫描和安装器 2150/2150 文件比对通过。各层准确证据与首轮隔离偏差见 [P0/P1 交付](P0_P1_DELIVERY.md)。下方较早 candidate 文本保留原证据归属，不作为当前待办。

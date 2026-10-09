@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-09 — P2 离线阶段观测交付
+
+从P0/P1的7bee8db建立独立codex/p2-performance-20261009，新增只读单文件阶段分析工具与16项回归，连同既有P1日志工具共24/24通过。分析已隔离合成日志110条、8次请求，5次有play→core-playing端点；缺失/歧义/时钟回退保持UNAVAILABLE。fake CD2含固定400ms延迟且无内部分段日志，不用于真实性能或预热收益结论。
+
+预热经复杂度核对后按用户偏好结束本轮研究；Hydration仍等待真实not_found前后样本。产品源码、P1 runtime/安装包及版本保持fb10f92，本轮只变更工具/测试/文档，未启动客户端或访问profile/真实服务。报告见 [P2阶段观测](P2_TIMING_AND_CAPABILITY_REVIEW.md)。
+
 ## 2026-10-09 — P0/P1 隔离本地工程
 
 从完整候选 ebcb655a 建立 `codex/p0-p1-diagnostics-20261009`，P0 状态/主线审查准备与 P1 有限诊断已完成可审阅本地交付。产品 sourceCommit=fb10f92，版本 0.2.4；全量 455/455、后续工具专项 8/8、正式来源与 2149 文件 payload、隔离 fake CD2/合成媒体 pipeline、两类 Renderer 安全位置、整包脱敏和安装器解包 2150/2150 均通过。现有主目录资料保留，main/发布状态未改变。

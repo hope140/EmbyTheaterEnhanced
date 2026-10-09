@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-10-09 — P2 离线计时与能力核对
+
+Model Tier: Tier 1；Model: 当前主线程 GPT-6 系列，worker GPT-6 Luna High；Reason: 离线工具、测试和静态能力审计，产品与Playback/Session不变；Escalated: no。Task Risk=low，Task Uncertainty=bounded，Cross-module Scope=tools/tests/docs，Playback/Session Impact=none。
+
+复核P0/P1交付后从7bee8db创建独立分支。工具基于显式指定JSONL，按sourceCommit/request/native归属分析，输入/字段/输出/统计有界。16项新增加8项既有工具回归24/24、Node语法检查通过。独立review指出空行限额、0ms量化/钳制、完整性表述、终止后迟到端点及多启动writer归属问题，均作保守处理并补回归；单文件多启动直接拒绝分析。
+
+统计由Node解析原始ISO字符串保留毫秒。只读审计中一次PowerShell日期转换得到的0/1000ms结果已撤回，不进入交付。最终110条、8请求、5条完整core-playing链见 [P2报告](P2_TIMING_AND_CAPABILITY_REVIEW.md)。源码确认fake CD2的400ms人为延迟，不能据此判断实服瓶颈。预热涉及跨请求复用/过期/取消与媒体预读，按用户偏好结束该研究；Hydration证据条件保持。没有改产品、安装包、用户日志或远端。
+
 ## 2026-10-09 — P0/P1 基线与有限诊断
 
 Model Tier: Tier 2 risk management；Model: 当前主线程 GPT-6 系列，worker GPT-6 Luna High；Reason: 诊断关联、IPC 与核心最终审查由主线程负责，固定规格的审计、测试、版本 gate 委派；Escalated: no，沿用当前会话模型，不新增架构升级。Task Risk=medium，Task Uncertainty=medium，Cross-module Scope=controller/service/preload/diagnostics/tools，Playback/Session Impact=observation only。
