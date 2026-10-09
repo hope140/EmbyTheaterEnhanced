@@ -30,7 +30,7 @@ Inno `[Files]` 已递归复制整个 runtime，因此不增加独立 helper 安�
 
 - Windows PowerShell 5.1 执行所有 ps1，脚本内容保持 ASCII；读取含中文的 JSON 显式 UTF8。
 - 本地开发 Node + 固定 `node-unrar-js 2.0.2`，根 package-lock.json 锁定。
-- CloudDrive2 runtime 固定 `@grpc/grpc-js` 1.14.4 与 `@grpc/proto-loader` 0.8.1；每次从新 npm ci 输入精确替换锁定的33个production package，拒绝`.node` addon。七个Carnival包身份另按manifest保留；最终为1171文件。P1的long旧文件问题保留为历史记录。
+- CloudDrive2 runtime 固定 `@grpc/grpc-js` 1.14.6 与 `@grpc/proto-loader` 0.8.1；每次从新 npm ci 输入精确替换锁定的33个production package，拒绝`.node` addon。七个Carnival包身份另按manifest保留；最终为1171文件。P1的long旧文件问题保留为历史记录。
 - Inno Setup 6.7.3。官方安装 EXE Authenticode 验证有效，签名者 Pyrsys B.V.；只用项目内 innounp 解包，没有安装或修改系统 PATH。
 - Python 仅用于可选 DLL 身份 probe，无 pip 新依赖。
 

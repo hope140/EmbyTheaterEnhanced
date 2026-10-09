@@ -41,10 +41,10 @@ when importing or changing identifiable upstream files.
 
 ## CloudDrive2 resolver runtime dependencies
 
-- `@grpc/grpc-js` 1.14.4 and `@grpc/proto-loader` 0.8.1 are exact runtime
+- `@grpc/grpc-js` 1.14.6 and `@grpc/proto-loader` 0.8.1 are exact runtime
   dependencies, locked with a 33-package dependency selection in
-  `package-lock.json`. Their Apache-2.0 license files are present in the audited
-  P1 runtime. Package notices are copied with the package directories.
+  `package-lock.json`. Their Apache-2.0 license files are present in the selected
+  package directories. Package notices are copied with the package directories.
   The selected package directories are generated exactly from a fresh locked
   npm installation. Seven explicitly retained Carnival package roots remain
   separately identified; they are not part of the 33-package npm selection.
