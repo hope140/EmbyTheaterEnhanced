@@ -8,6 +8,10 @@ Model Tier: Tier 2 risk management；Model: 当前主线程 GPT-6 系列，worke
 
 P1 contract 先固化再实现；新增记录使用固定枚举、安全包内脚本位置、容量与频率上限和 fail-open 处理。构建输入准备和基线 430/430 PASS，初轮定向 66/66 PASS。最终证据和交付见 [P0/P1 记录](P0_P1_DELIVERY.md)。
 
+最终产品 sourceCommit fb10f92 的全量 455/455、build/provenance/payload 与安装器 2150/2150 比对通过；后续工具专项 8/8。独立 GPT-5.6 Sol High Tier 2 核心复核找到 pendingDrops 写失败丢计数 P2，主线程修复并通过三类失败回归，复核后无未解决明确问题。
+
+runtime 两类 ErrorEvent/PromiseRejectionEvent 经真实 preload/main/logger 路径投影到 JSONL，fake CD2 与播放 generation/Stop fixture 通过；整包 redactionPassed=true。首轮 APPDATA-only 隔离偏差造成既有日志追加合成记录，原样保留；随后显式 app.setPath 并以带版本元数据的测试 package 运行，临时 profile、About/source identity 与既有日志不变均核验。所有候选进程结束，真实服务/系统安装/远端写入未执行。
+
 ## 2026-10-09 — 删除历史候选下载页
 
 Model Tier：Tier 1。Model：主线程与Luna入口复核。Reason：用户要求清理已由新版本替代的cc603ba候选；Playback/Session Impact：无；Escalated：no。核对Release ID406794578和4个附件后，删除该Release并保留源码tag。前后快照验证其余6个Release及附件完全保持，正式Latest仍v0.2.2。证据见 `.work/release-0.2.4-20261009/candidate-removal-verification.json`；当前下载入口继续指向v0.2.4，产品和安装包字节未变。

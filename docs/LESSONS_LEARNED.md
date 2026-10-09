@@ -5,6 +5,8 @@
 - 任意异常消息和 stack 可能夹带 URL、账号或凭据。Renderer observer 先投影为固定错误类别及经文件边界验证的包内位置，未知内容保持 UNAVAILABLE；不能只截断 raw stack 后寄希望于通用正则。
 - Generation 日志必须保留事件自身的 helper/generation 与 DROP disposition；旧事件不借用当前请求标签。关联淘汰、限频和写入积压可能造成缺失证据，日志缺失不等于事件未发生。
 - 诊断旁路需要同时覆盖同步 throw、异步 rejection、积压容量和真实 IPC 重投影。版本 provenance 与版本字段一致性是两种不同检查，应在 package gate 同时执行。
+- Electron Windows 的 app.getPath('appData') 不能仅靠子进程 APPDATA 环境变量隔离。测试必须在产品 bootstrap 前显式 app.setPath 并读回路径；只指定 userData 仍不足以隔离 logger 和 DeviceId。先前误写测试日志不得清理掩盖，应保留偏差并用哈希证明修正后的运行没有继续写入。
+- 直接以 cjs 作为 Electron 入口时 app.getVersion 可能是 Electron 自身版本；版本验收 harness 应提供来自 runtime 的 package metadata，并通过真实 maintenance IPC 核对。
 
 ## 2026-10-09 — 设置页应通过完整导航验证
 

@@ -1,5 +1,15 @@
 # 测试与验收
 
+## 2026-10-09 P0/P1 本地诊断候选
+
+当前产品 sourceCommit `fb10f920a39112ff72b0f82715da8345702f634b`，版本 0.2.4。该提交串行全量 `node --test --test-concurrency=1 tests/*.test.cjs` 为 455/455 PASS，后续 runtime validator 专项 8/8；正式构建/provenance、假 CD2/合成媒体 pipeline、真实 JSONL 安全调用位置、整包扫描和安装器 2150/2150 文件比对通过。各层准确证据与首轮隔离偏差见 [P0/P1 交付](P0_P1_DELIVERY.md)。下方较早 candidate 文本保留原证据归属，不作为当前待办。
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/test-p1-diagnostics.ps1 -RuntimeName ETE-0.2.4-p1-fb10f92-win-x64
+```
+
+该入口在启动前校验 source/runtime/native/Electron tree，显式绑定临时 appData/userData、使用 runtime 版本元数据和假服务，再通过产品 preload/main/logger 验证两类标准浏览器错误事件。原始消息/stack 不进入产品日志；不可用位置保留 UNAVAILABLE。隐藏运行的 native file-loaded/core-playing 不证明首帧，持帧 arm/clear 的单元证据不冒充可见窗口验收。首轮 APPDATA-only 日志追加偏差已记录，修正后核对现有日志 hash/length 不变。
+
 ## NextTrack transition artwork candidate
 
 此 candidate 的 focused Node contract 覆盖 Backdrop 优先、Primary poster fallback、纯黑 fallback、`libmpv.stop(false)` 隐藏 surface 前的 overlay paint gate、当前 request 的 `core-playing` fade、连续调用时 stale transition ownership 和失败清理。比例修复测试断言 overlay 填满区域、图片 100% 宽高及 `object-fit:cover`/居中裁切，并验证图片加载失败仍保持黑底。修复后 focused playback/window `43/43 PASS`，`npm test 325/325 PASS`，相关 JS syntax 与 `git diff --check` PASS。
