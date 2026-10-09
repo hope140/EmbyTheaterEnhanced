@@ -2,6 +2,10 @@
 
 ## 2026-10-09 — 0.2.6 本地包与正常关闭验收
 
+- 初版8700039全量621/621，runtime2136文件、23个EXE/DLL与68eb024一致；installer175618895 bytes/SHA256 48c178ee901d1d83c32bb0c5718754601912ae2fd63400a3c8029157cd8072de。最终直接退出miss400 PASS，hit0播放断言PASS但outer120s退出FAIL；证据原样保留，余组按计划停止。线程快照在deadline后为OWNER_UNAVAILABLE，不猜根因。
+- 强化正常关闭idle PASS；playing自然exit0/残留0但native completion缺失，定位service destroyed提前返回，before-quit未等closed首次清理。产品仅service.js缓存完整destroy Promise。独立GPT-5.6 Sol High复核未发现P1/P2；同一31例修改前28 PASS/3 FAIL、修改后31/31，完整pipeline正常关闭工具专项34/34。worker最初提出的失败后surface cleanup已纠正为原错误短路，精确前后日志另存。
+- 后续从新提交重建唯一runtime/installer。固定三场景正常关闭及miss400/hit0/hit400/hit800/direct400完整pipeline，后者经window.close收尾，原pipelinePassed、Next/generation/精确取消、五对Session门槛保持。原app.exit失败仍UNKNOWN，不额外重复该路径。结果绑定新product sourceCommit和实际harness hashes。
+
 - Model Tier: Tier 2主线程 + Tier 1明确范围worker；Model: 当前主线程GPT-6系列，审计与测试worker GPT-5.6 Luna High；Reason: 正常退出与会话状态验收需主线程固定contract，worker只做资料/打包审计、工具review及测试；Escalated: no。Task Risk=medium，Task Uncertainty=medium，Cross-module Scope=harness/build/docs，Playback/Session Impact=existing product unchanged。
 - 起点99cb850，新分支codex/local-package-026-20261009；本轮有明确本地提交/版本整理/正式打包授权。主目录及旧工作树/产物只读保留。
 - 新增正常窗口关闭观察与独立结果核验，保持原Promise/异常和产品入口；fixture资源到will-quit清理。hidden harness在show/focus调用前阻止前台操作。68eb024上三个预检均自然exit0、清理顺序通过、残留0；各自原始目录保留。正常关闭不关闭历史app.exit UNKNOWN。

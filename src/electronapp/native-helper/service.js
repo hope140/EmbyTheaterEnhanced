@@ -111,6 +111,7 @@ function createService(options) {
   let recreateCount = 0;
   let everStarted = false;
   let destroyed = false;
+  let destroyPromise = null;
   let activeEndpointId = null;
   let generationEpoch = 0;
   let rendererEpoch = 0;
@@ -675,23 +676,28 @@ function createService(options) {
     }
   }
 
-  async function destroy() {
-    if (destroyed) return;
+  function destroy() {
+    if (destroyPromise) return destroyPromise;
     destroyed = true;
     activeEndpointId = null;
-    invalidateSurfacePlacement();
-    if (startingClient) {
-      try { await startingClient.kill(); } catch (_) { }
-    }
-    if (startPromise) {
-      try { await startPromise; } catch (_) { }
-    }
-    await destroyClient('service-destroy');
-    for (const binding of boundWindowEvents.splice(0)) {
-      try { binding.main.removeListener(binding.name, binding.listener); } catch (_) { }
-    }
-    if (surfaceWindow && !surfaceWindow.isDestroyed()) surfaceWindow.destroy();
-    surfaceWindow = null;
+    // Window closed and before-quit can overlap. Publish the shared completion
+    // before cleanup starts so every caller waits for the owned native child.
+    destroyPromise = Promise.resolve().then(async function () {
+      invalidateSurfacePlacement();
+      if (startingClient) {
+        try { await startingClient.kill(); } catch (_) { }
+      }
+      if (startPromise) {
+        try { await startPromise; } catch (_) { }
+      }
+      await destroyClient('service-destroy');
+      for (const binding of boundWindowEvents.splice(0)) {
+        try { binding.main.removeListener(binding.name, binding.listener); } catch (_) { }
+      }
+      if (surfaceWindow && !surfaceWindow.isDestroyed()) surfaceWindow.destroy();
+      surfaceWindow = null;
+    });
+    return destroyPromise;
   }
 
   function status() {

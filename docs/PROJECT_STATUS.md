@@ -2,7 +2,9 @@
 
 ## 2026-10-09 — 0.2.6 本地可安装候选构建中
 
-从准确99cb850建立独立工作树，保持已复核播放实现。正常产品窗口关闭的三个预检（idle、playing、stopped）在只读68eb024 runtime均通过：真实before-quit/will-quit及五类IPC清理已观察，OS自然exit0、零候选残留。历史app.exit停滞仍UNKNOWN，不将预检替代最终0.2.6验收。
+初版8700039正式runtime/安装器已生成并保留。最终hit0播放断言成功但app.exit后OS超时，完整runner FAIL；因此该UNKNOWN也发生在本次0.2.6，不能只归属旧d480eb8。正常关闭强化检查另发现playing时main closed已启动destroy，而before-quit重复destroy提前返回、没有等native child退出。最小修复缓存完整destroy Promise，同一31例修改前28 PASS/3 FAIL、修改后31/31；原错误短路和播放链不改。新产物必须重建，初版不覆盖。后续固定最终五组完整pipeline通过产品窗口关闭收尾，另做idle/playing/stopped三场景；原pipeline/Next/generation/取消/五对Session断言全部保留。
+
+从准确99cb850建立独立工作树，保持已复核播放实现。正常关闭三个初始预检在只读68eb024 runtime均通过原门槛：before-quit/will-quit及五类IPC清理已观察，OS自然exit0、零残留；当时未核对native child实际清理Promise完成，不将预检替代强化验收。app.exit停滞仍UNKNOWN。
 
 本次版本0.2.6，整合05a08e9第三方材料报告与必要通知，原0.2.4证据身份不改。固定工具链已核对；后续从本次已提交输入正式build/package，运行五组播放与三组正常关闭，校验安装器解包。计划、来源和边界见 [0.2.6本地包](LOCAL_PACKAGE_026.md)。
 

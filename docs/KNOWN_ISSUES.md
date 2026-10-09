@@ -1,5 +1,11 @@
 # Known Issues
 
+## 2026-10-09 — 正常关闭等待首次Native清理
+
+- 初版0.2.6/8700039的playing关闭：window closed在7109ms进入native-client-shutdown，before-quit重复destroy在7134ms完成返回，will-quit/quit先于native completion；OS exit0和残留0仍不代表清理已被等待。强化验收FAIL保留。
+- 最小修复让destroy同步拒绝新请求，并向所有调用者返回同一个完整Promise，原失败短路保留。同一31例修改前28/3、修改后31/31。最终新来源runtime尚需三场景关闭和完整五组pipeline复验，见 [本地包记录](LOCAL_PACKAGE_026.md)。
+- app.exit停滞也在初版0.2.6/8700039 hit0复现：12193ms落盘、12209ms返回app.exit，OS到120s未退出；精确归属强清理后0残留。此问题与已证实正常关闭的重复destroy竞态是两项证据，根因仍UNKNOWN，不宣称此局部修复解决app.exit。
+
 0.2.6本地可安装候选从99cb850继续，产品播放实现保持68eb024。新增正常窗口关闭预检在idle/playing/stopped均自然退出、零残留；最终新来源runtime还将验证window-all-closed及实际native child退出。该证据不关闭下方历史app.exit异常，详情见 [本地包记录](LOCAL_PACKAGE_026.md)。
 
 2026-10-09 当前本地候选为0.2.5/68eb024，继承d480eb8的请求快照/pending报告修复，并补齐Stop收尾归属。全量608/608，新五组隐藏runtime完整PASS；旧d480eb8退出超时在本轮对照再次复现，根因UNKNOWN。详见 [Stop 与退出报告](STOP_OWNERSHIP_EXIT_EVIDENCE.md)。已发布3ab10c9和此前d480eb8的失败/通过样本各自保留，本地候选不改写已发布产物。

@@ -36,7 +36,8 @@ NativeHelperClient.kill原Promise完成和exited状态，任何内部child.kill�
 
 远端只读核对最高测试版为 v0.2.5，Latest stable 为 v0.2.2，main 为
 `46e995ef83fca7f7a882e3dc633bdcc2d2d521c7`；beta ref 不存在。本候选为0.2.6。
-保留原请求快照、pending Stop报告与 Stop owner补丁；本轮未改产品播放代码。
+保留原请求快照、pending Stop报告与 Stop owner补丁；产品仅修复正常关闭的
+重复destroy等待归属，见下方后续计划。
 
 必要第三方通知与材料审计从 `05a08e9113ae1485256a505c64d7aba7d9edd67b`
 按文件整合；原审计的0.2.4 / `1a05f88`身份及 JSON 保持。四份随包通知重新
@@ -49,4 +50,23 @@ NativeHelperClient.kill原Promise完成和exited状态，任何内部child.kill�
 层次。此任务不执行现用客户端安装/升级/卸载，不操作真实服务器，也不发布
 GitHub。真实 Emby/CD2、真实远控、可见首帧/连续性、HDR/多屏仍另列未验收。
 
-实际结果与最终产物身份在构建及验收后补充。
+## 失败证据与后续有界计划
+
+初版8700039完整构建与安装器保留。直接退出矩阵miss400通过，hit0在12193ms
+落盘成功、12209ms返回app.exit后，OS根进程到120秒仍存在；强清理后0残留，
+完整runner FAIL。此UNKNOWN也发生在本次0.2.6，不能只归于旧d480eb8。
+
+随后强化正常关闭idle通过；playing虽然自然exit0/残留0，但native-client-
+shutdown-start之后没有完成记录，native-unregister却提前返回。产品service
+destroy把“已开始”误作完成，使before-quit没有等待closed发起的首次清理。
+新增缓存完整Promise，同步封住admission，异步原清理只执行一次，拒绝和原
+错误短路保持。独立Sol High复核无P1/P2；相同31例修改前28/3、修改后31/31。
+
+从新提交重建新命名runtime与installer，初版不覆盖。固定执行idle、playing、
+stopped各一次，再执行miss400、hit0、hit400、hit800、direct400完整pipeline
+各一次，后者走正常窗口关闭终态。原pipelinePassed、Next、generation、精确
+取消与五对Session断言全部保留并独立重算。验证真实native completion和
+unregister completion早于will-quit、自然OS exit0、无强制清理及零残留。
+该计划不重跑直接app.exit，也不声称修复其未知根因。
+
+最终实测结果与产物身份在下方补充。

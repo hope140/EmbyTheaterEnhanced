@@ -17,6 +17,7 @@ const observerModules = [
 ];
 const controllerRelative = 'native-helper/controller.js';
 const verify = require(path.join(__dirname, '..', 'tools', 'verify-normal-close.cjs')).verify;
+const {NEXT_CHECKS, PLAYER_CHECKS, buildPipelineSessionChecks} = require('./pipeline-result.cjs');
 
 class FakeEmitter {
     constructor() {
@@ -485,4 +486,25 @@ test('verify rejects forced native child exit and incomplete native client exit 
     const incompleteResult = verify(incomplete);
     assert.equal(incompleteResult.status, 'FAIL');
     assert.ok(incompleteResult.failures.includes('native-actual-exit'));
+});
+
+test('normal product close after a full pipeline preserves Next and every session assertion', () => {
+    const fixture = validVerificationFixture('stopped');
+    fixture.scenario = 'pipeline';
+    const pipeline = fixture.smoke.state.pipeline;
+    pipeline.normalClose = {scenario:'pipeline',cd2Mode:'miss',preconditionsPassed:true,hidden:true,currentItemId:null};
+    const groups = {ordinary:['fixture-video'],strm:['fixture-strm'],queue:['fixture-next-a','fixture-next-b','fixture-next-c']};
+    pipeline.records = Object.values(groups).flat().flatMap(id => ['/Playing','/Stopped'].map(suffix => ({
+        endpoint:'/Sessions/Playing'+suffix,body:{ItemId:id,PlaySessionId:'play-'+id,MediaSourceId:'source-'+id}
+    })));
+    pipeline.sessionChecks = buildPipelineSessionChecks(pipeline.records,groups);
+    pipeline.next = Object.fromEntries(NEXT_CHECKS.map(name=>[name,true]));
+    pipeline.results = ['video','strm'].map(kind=>({kind,playerId:'libmpvmediaplayer',...Object.fromEntries(PLAYER_CHECKS.map(name=>[name,true]))}));
+    pipeline.generation = null;
+    assert.equal(verify(fixture).status,'PASS');
+    pipeline.next[NEXT_CHECKS[0]] = false;
+    assert.ok(verify(fixture).failures.includes('complete-playback-pipeline'));
+    pipeline.next[NEXT_CHECKS[0]] = true;
+    pipeline.records.pop();
+    assert.ok(verify(fixture).failures.includes('complete-playback-pipeline'), 'cached green session checks cannot hide a missing Stop');
 });

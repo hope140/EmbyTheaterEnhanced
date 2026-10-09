@@ -5,7 +5,7 @@ const {EventEmitter} = require('node:events');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
-const {createService, decimalWindowHandle, resolveMode, validateCommand} = require('../src/electronapp/native-helper/service');
+const {CALL_CHANNEL, createService, decimalWindowHandle, NOTIFY_CHANNEL, register, resolveMode, validateCommand} = require('../src/electronapp/native-helper/service');
 
 test('native-helper is the only accepted production mode', function () {
   assert.equal(resolveMode(undefined), 'native-helper');
@@ -189,6 +189,27 @@ function makeService(ClientClass, options) {
   return {main, service, logs, placementExecutor};
 }
 
+function makeIpcMain() {
+  const handlers = new Map();
+  const listeners = new Map();
+  return {
+    handlers,
+    listeners,
+    handle(name, listener) { handlers.set(name, listener); },
+    on(name, listener) {
+      const values = listeners.get(name) || [];
+      values.push(listener);
+      listeners.set(name, values);
+    },
+    removeHandler(name) { handlers.delete(name); },
+    removeListener(name, listener) {
+      const values = listeners.get(name) || [];
+      listeners.set(name, values.filter(value => value !== listener));
+    },
+    listenerCount(name) { return (listeners.get(name) || []).length; }
+  };
+}
+
 async function showSurface(service) {
   const created = await service.call('create');
   const begun = await service.call('begin-generation', {label: 'visible'}, created.endpointId);
@@ -201,6 +222,99 @@ function deferred() {
   const promise = new Promise((yes, no) => { resolve = yes; reject = no; });
   return {promise, resolve, reject};
 }
+
+test('destroy shares one pending Promise, rejects new create work, and cleans the surface once', async function () {
+  const ClientClass = makeClientClass();
+  const {service} = makeService(ClientClass);
+  await service.call('create');
+  const active = ClientClass.clients[0];
+  const kill = deferred();
+  let killCalls = 0;
+  active.kill = function () { killCalls += 1; return kill.promise; };
+  const surface = FakeWindow.instances[1];
+  let surfaceDestroyCalls = 0;
+  const originalSurfaceDestroy = surface.destroy.bind(surface);
+  surface.destroy = function () { surfaceDestroyCalls += 1; return originalSurfaceDestroy(); };
+
+  const first = service.destroy();
+  const second = service.destroy();
+  assert.strictEqual(first, second, 'concurrent destroy calls must share one Promise');
+  await Promise.resolve();
+  assert.equal(killCalls, 1, 'native kill must start once');
+  await assert.rejects(service.call('create'), /native-helper-service-destroyed/);
+  const beforeKill = await Promise.race([
+    first.then(() => true, () => true),
+    new Promise(resolve => setImmediate(() => resolve(false)))
+  ]);
+  assert.equal(beforeKill, false, 'destroy must remain pending until native kill completes');
+
+  kill.resolve({code: 0});
+  await first;
+  assert.equal(surfaceDestroyCalls, 1, 'surface cleanup must run once');
+  assert.strictEqual(service.destroy(), first, 'completed destroy must retain the same Promise');
+  assert.equal(killCalls, 1);
+  await assert.rejects(service.call('create'), /native-helper-service-destroyed/);
+});
+
+test('closed-triggered destroy gates register unregister on the first native kill', async function () {
+  const ClientClass = makeClientClass();
+  const {main, service} = makeService(ClientClass);
+  await service.call('create');
+  const active = ClientClass.clients[0];
+  const kill = deferred();
+  let killCalls = 0;
+  active.kill = function () { killCalls += 1; return kill.promise; };
+  const surface = FakeWindow.instances[1];
+  let surfaceDestroyCalls = 0;
+  const originalSurfaceDestroy = surface.destroy.bind(surface);
+  surface.destroy = function () { surfaceDestroyCalls += 1; return originalSurfaceDestroy(); };
+  const ipcMain = makeIpcMain();
+  const unregister = register({ipcMain, service, getWebContents: () => main.webContents});
+  assert.equal(ipcMain.handlers.has(CALL_CHANNEL), true);
+  assert.equal(ipcMain.listenerCount(NOTIFY_CHANNEL), 1);
+
+  main.emit('closed');
+  await new Promise(resolve => setImmediate(resolve));
+  const unregisterPromise = unregister();
+  const beforeKill = await Promise.race([
+    unregisterPromise.then(() => true, () => true),
+    new Promise(resolve => setImmediate(() => resolve(false)))
+  ]);
+  assert.equal(beforeKill, false, 'unregister must wait for the close-triggered native kill');
+  assert.equal(killCalls, 1);
+
+  kill.resolve({code: 0});
+  await unregisterPromise;
+  assert.equal(surfaceDestroyCalls, 1);
+  assert.equal(ipcMain.handlers.size, 0);
+  assert.equal(ipcMain.listenerCount(NOTIFY_CHANNEL), 0);
+});
+
+test('destroy failure is the same Error for concurrent and later callers without retrying cleanup', async function () {
+  const ClientClass = makeClientClass();
+  const {service} = makeService(ClientClass);
+  await service.call('create');
+  const active = ClientClass.clients[0];
+  const failure = new Error('native-kill-failed');
+  let killCalls = 0;
+  active.kill = function () { killCalls += 1; return Promise.reject(failure); };
+  const surface = FakeWindow.instances[1];
+  let surfaceDestroyCalls = 0;
+  const originalSurfaceDestroy = surface.destroy.bind(surface);
+  surface.destroy = function () { surfaceDestroyCalls += 1; return originalSurfaceDestroy(); };
+
+  const first = service.destroy();
+  const second = service.destroy();
+  first.catch(() => {});
+  second.catch(() => {});
+  assert.strictEqual(first, second);
+  await assert.rejects(first, error => error === failure);
+  await assert.rejects(second, error => error === failure);
+  assert.strictEqual(service.destroy(), first, 'later destroy must preserve the failed shared Promise');
+  await assert.rejects(service.destroy(), error => error === failure);
+  assert.equal(killCalls, 1);
+  assert.equal(surfaceDestroyCalls, 0, 'native failure preserves the existing cleanup short circuit');
+});
 
 async function presentationHarness() {
   const ClientClass = makeClientClass();

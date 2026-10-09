@@ -491,7 +491,12 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
     }
     markStage('pipeline-complete');
     const sessionChecks = buildPipelineSessionChecks(records, sessionGroups);
-    return {stopBeforePlayer,results,next,generation,records,calls,stages,observations,gateEvidence,conditions:sync.snapshot(),sessionChecks};
+    const normalClose = fixtureOptions && fixtureOptions.productCloseAfterPipeline ? {
+        scenario:'pipeline',cd2Mode,hidden:document.hidden,
+        currentItemId:manager.currentItem() && manager.currentItem().Id || null,
+        preconditionsPassed:document.hidden && !manager.currentItem()
+    } : null;
+    return {stopBeforePlayer,results,next,generation,records,calls,stages,observations,gateEvidence,conditions:sync.snapshot(),sessionChecks,normalClose};
     } finally {
         observedEvents.forEach(name => events.off(embedded, name, notify));
         sync.dispose();

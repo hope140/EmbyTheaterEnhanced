@@ -1,5 +1,12 @@
 # 已确认经验
 
+## 2026-10-09 — 正常关闭的清理Promise必须共享
+
+- destroyed标记表示已开始销毁，不能用于向后续调用返回一个已完成结果。window closed与before-quit可能相邻触发，后者必须等待首次owned child清理的完整Promise。
+- 自然OS退出、零残留、IPC unregister完成与native child退出Promise完成是不同证据。新增实际child完成观察后，初版正常关闭从表面PASS变为可复现的等待归属FAIL；不能降低门槛。
+- 清理结果缓存同时保留拒绝。测试不能顺手要求失败后继续surface cleanup，除非另有批准contract；本次保留原错误短路。
+- full pipeline经正常窗口关闭验收时保留全部原播放与Session断言；当前候选app.exit失败证据另列，不能描述为只发生在历史版本。
+
 ## 2026-10-09 — Stop 归属与退出观察
 
 - Stop Promise 的完成回调不能凭最新 request id 决定是否收尾旧 Session。捕获的 streamInfo 拥有一次清理与报告；新请求的身份只决定后续播放是否继续。

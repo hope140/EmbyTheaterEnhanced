@@ -5,7 +5,7 @@ const path = require('node:path');
 function verify({scenario, smoke, runner, marker, stages, exitStages}) {
     const failures = [];
     const check = (value, code) => { if (!value) failures.push(code); };
-    check(['idle','playing','stopped'].includes(scenario), 'scenario');
+    check(['idle','playing','stopped','pipeline'].includes(scenario), 'scenario');
     const state = smoke && smoke.state && smoke.state.pipeline;
     const close = state && state.normalClose;
     check(smoke && smoke.ok === true && close && close.scenario === scenario && close.preconditionsPassed === true && close.hidden === true, 'scenario-preconditions');
@@ -13,8 +13,14 @@ function verify({scenario, smoke, runner, marker, stages, exitStages}) {
     const starts = records.filter(row => row.endpoint.endsWith('/Playing'));
     const stops = records.filter(row => row.endpoint.endsWith('/Stopped'));
     const complete = row => row.body.ItemId === 'fixture-close' && row.body.PlaySessionId === 'play-fixture-close' && row.body.MediaSourceId === 'source-fixture-close';
-    check(starts.every(complete) && stops.every(complete) && starts.length === (scenario === 'idle' ? 0 : 1) && stops.length === (scenario === 'stopped' ? 1 : 0), 'session-preconditions');
-    check(close && close.embeddedPlayCount === (scenario === 'idle' ? 0 : 1) && close.currentItemId === (scenario === 'playing' ? 'fixture-close' : null), 'player-preconditions');
+    if (scenario === 'pipeline') {
+        check(close && ['hit','miss','direct'].includes(close.cd2Mode) &&
+            require('../tests/pipeline-result.cjs').pipelinePassed(state,close.cd2Mode,smoke.cd2Fake), 'complete-playback-pipeline');
+        check(close && close.currentItemId === null, 'player-preconditions');
+    } else {
+        check(starts.every(complete) && stops.every(complete) && starts.length === (scenario === 'idle' ? 0 : 1) && stops.length === (scenario === 'stopped' ? 1 : 0), 'session-preconditions');
+        check(close && close.embeddedPlayCount === (scenario === 'idle' ? 0 : 1) && close.currentItemId === (scenario === 'playing' ? 'fixture-close' : null), 'player-preconditions');
+    }
     check(runner && runner.exitMode === 'NATURAL' && runner.exitCode === 0 && runner.timedOut === false && runner.cleanupAttempted === false && runner.candidateResidual === 0 && runner.outputCapture === 'COMPLETE', 'os-natural-exit');
     check(runner && runner.childExitObservations.every(row => row.gone === true && row.observation === 'GONE_WITHOUT_OUTER_CLEANUP'), 'observed-children-exited');
     check(marker && ['appDataIsolated','userDataIsolated','aboutVersionMatched','aboutSourceCommitMatched','applicationDocumentMatched','applicationWindowInjected'].every(key => marker[key] === true) && marker.auxiliaryWindowInjected === false, 'isolation-and-identity');
