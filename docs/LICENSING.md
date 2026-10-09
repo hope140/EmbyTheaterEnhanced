@@ -1,5 +1,7 @@
 # 许可与公开范围
 
+本轮构建修正候选将根 `LICENSE`、`THIRD_PARTY_NOTICES.md`、本页与 [来源材料索引](SOURCE_MATERIALS.md) 按 sourceCommit 的 Git blob 字节放入 runtime，并在安装器打包前验证。下文 P1 缺少根通知的记录属于历史产物；通知随包不代表未知第三方材料已补齐。
+
 ## 结论
 
 本仓库维护层采用 **GPL-2.0-only**，完整文本见根目录 `LICENSE`。

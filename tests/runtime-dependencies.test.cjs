@@ -7,6 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 const contract = require('../tools/runtime-dependency-contract.cjs');
+const tool = path.resolve(__dirname, '..', 'tools', 'copy-runtime-dependencies.cjs');
 
 const INTEGRITY = 'sha512-YWJjZA==';
 
@@ -320,6 +321,31 @@ test('validate binds provenance to the caller expected source commit and committ
         fs.appendFileSync(manifest, ' ');
         assert.throws(() => contract.inspectRuntime(
             fixture.root, fixture.runtime, fixture.sourceCommit), /differs from HEAD/);
+    } finally {
+        cleanup(fixture);
+    }
+});
+
+test('CLI owner, copy, and commit-bound validate commands form one build contract', () => {
+    const fixture = makeFixture();
+    try {
+        const owner = childProcess.spawnSync(process.execPath, [tool, 'create-owner', fixture.root, fixture.runtime, fixture.sourceCommit], {encoding: 'utf8'});
+        assert.equal(owner.status, 0, owner.stderr);
+        const token = owner.stdout.trim();
+        assert.match(token, /^[0-9a-f]{64}$/);
+        fs.cpSync(fixture.vendorProject, path.join(fixture.runtime, 'electronapp'), {recursive: true});
+        const copy = childProcess.spawnSync(process.execPath,
+            [tool, 'copy', fixture.root, fixture.runtime, fixture.source, token], {encoding: 'utf8'});
+        assert.equal(copy.status, 0, copy.stderr);
+        assert.equal(JSON.parse(copy.stdout).packageCount, 2);
+        const validate = childProcess.spawnSync(process.execPath,
+            [tool, 'validate', fixture.root, fixture.runtime, fixture.sourceCommit], {encoding: 'utf8'});
+        assert.equal(validate.status, 0, validate.stderr);
+        assert.equal(JSON.parse(validate.stdout).valid, true);
+        const wrongCommit = childProcess.spawnSync(process.execPath,
+            [tool, 'validate', fixture.root, fixture.runtime, '0'.repeat(40)], {encoding: 'utf8'});
+        assert.equal(wrongCommit.status, 1);
+        assert.match(wrongCommit.stderr, /source commit mismatch/);
     } finally {
         cleanup(fixture);
     }

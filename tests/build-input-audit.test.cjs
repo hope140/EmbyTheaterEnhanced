@@ -18,6 +18,11 @@ function write(root, relative, value) {
     return file;
 }
 function json(root, relative, value) { return write(root, relative, JSON.stringify(value, null, 2) + '\n'); }
+function git(root, gitArgs, encoding = 'utf8') {
+    const result = spawnSync('git', ['-C', root, ...gitArgs], {encoding});
+    assert.equal(result.status, 0, result.stderr || result.error && result.error.message);
+    return encoding === null ? result.stdout : result.stdout.trim();
+}
 function temp(t) {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'private-path-canary-'));
     t.after(() => fs.rmSync(root, {recursive: true, force: true}));
@@ -57,6 +62,13 @@ function setup(t) {
     json(repo, 'vendor/electron-runtime-manifest.json', electronManifest);
     json(repo, 'vendor/native-helper-manifest.json', nativeManifest);
     json(repo, 'package-lock.json', lock);
+    git(repo, ['init', '-q']);
+    git(repo, ['config', 'user.name', 'Build Input Audit Test']);
+    git(repo, ['config', 'user.email', 'build-input-audit@example.invalid']);
+    git(repo, ['config', 'core.autocrlf', 'false']);
+    git(repo, ['add', 'vendor/runtime-manifest.json', 'vendor/electron-runtime-manifest.json', 'vendor/native-helper-manifest.json', 'package-lock.json']);
+    git(repo, ['commit', '-q', '-m', 'fixture authority']);
+    const sourceCommit = git(repo, ['rev-parse', 'HEAD']);
 
     write(inputs, 'vendor/carnival/baseline.bin', carnivalBytes);
     write(inputs, 'vendor/patch/patch.bin', patchBytes);
@@ -86,11 +98,32 @@ function setup(t) {
     write(archives, 'carnival.exe', 'archive-carnival');
     write(archives, 'patch.zip', 'archive-patch');
     write(archives, 'electron.zip', 'electron archive');
-    return {base, repo, inputs, runtime, archives, runtimeManifest, electronManifest, nativeManifest, lock};
+    return {base, repo, inputs, runtime, archives, runtimeManifest, electronManifest, nativeManifest, lock, sourceCommit};
 }
 function args(fixture, output = path.join(fixture.base, 'report.json')) {
     return ['--repo-root', fixture.repo, '--inputs-root', fixture.inputs, '--archive-root', fixture.archives,
         '--runtime', fixture.runtime, '--output', output];
+}
+function upgradeToSchema3(fixture) {
+    const inputProvenance = Buffer.from('build input provenance');
+    write(fixture.runtime, 'build-input-provenance.json', inputProvenance);
+    const manifestPath = path.join(fixture.runtime, 'build-manifest.json');
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    manifest.schemaVersion = 3;
+    manifest.sourceCommit = fixture.sourceCommit;
+    manifest.sourceManifestSha256 = sha(git(fixture.repo, ['show', 'HEAD:vendor/runtime-manifest.json'], null));
+    manifest.packageLockSha256 = sha(git(fixture.repo, ['show', 'HEAD:package-lock.json'], null));
+    manifest.files.push({path: 'build-input-provenance.json', sha256: sha(inputProvenance)});
+    manifest.files.sort((left, right) => left.path.localeCompare(right.path));
+    manifest.provenance = {
+        inputs: {path: 'build-input-provenance.json', sha256: sha(inputProvenance)},
+        source: manifest.provenance.source,
+        runtime: manifest.provenance.runtime
+    };
+    manifest.payload.fileCount = manifest.files.length;
+    manifest.payload.payloadSetSha256 = sha(Buffer.from(manifest.files.map(item => item.path + '\0' + item.sha256 + '\n').join('')));
+    json(fixture.runtime, 'build-manifest.json', manifest);
+    return manifest;
 }
 
 test('missing vendor category is recorded while other categories continue', t => {
@@ -138,6 +171,79 @@ test('Electron archive size mismatch is recorded without suppressing inventory o
     assert.equal(report.status, 'OBSERVED');
     assert.equal(report.assessment, 'MISMATCH');
     assert.equal(fs.existsSync(output), true);
+});
+
+test('schema 2 keeps raw metadata hashes while schema 3 accepts canonical CRLF checkout text', t => {
+    const historical = setup(t);
+    for (const relative of ['vendor/runtime-manifest.json', 'package-lock.json']) {
+        const file = path.join(historical.repo, ...relative.split('/'));
+        fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(/\r?\n/g, '\r\n'));
+    }
+    const historicalReport = run(args(historical));
+    assert.equal(historicalReport.runtime.status, 'MISMATCH');
+    assert.equal(historicalReport.runtime.provenanceBindings.metadataHashSemantics, 'RAW_WORKTREE_BYTES');
+
+    const current = setup(t);
+    upgradeToSchema3(current);
+    for (const relative of ['vendor/runtime-manifest.json', 'package-lock.json']) {
+        const file = path.join(current.repo, ...relative.split('/'));
+        fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(/\r?\n/g, '\r\n'));
+    }
+    const currentReport = run(args(current));
+    assert.equal(currentReport.runtime.status, 'PASS');
+    assert.equal(currentReport.runtime.provenanceBindings.status, 'PASS');
+    assert.equal(currentReport.runtime.provenanceBindings.metadataHashSemantics, 'HEAD_GIT_BLOB_WITH_CANONICAL_CRLF_WORKTREE_MATCH');
+    assert.deepEqual(currentReport.runtime.provenanceBindings.records.map(item => item.path),
+        ['build-input-provenance.json', 'source-provenance.json', 'runtime-provenance.json']);
+});
+
+test('schema 3 requires the exact input, source and runtime provenance bindings', t => {
+    for (const mutate of [
+        manifest => { delete manifest.provenance.inputs; },
+        manifest => { manifest.provenance.inputs.path = 'source-provenance.json'; },
+        manifest => { manifest.provenance.extra = {...manifest.provenance.inputs}; }
+    ]) {
+        const fixture = setup(t);
+        const manifest = upgradeToSchema3(fixture);
+        mutate(manifest);
+        json(fixture.runtime, 'build-manifest.json', manifest);
+        assert.throws(() => run(args(fixture)), {message: 'Audit failed; inputs or arguments are invalid.'});
+    }
+});
+
+test('schema 3 records an input provenance hash mismatch without suppressing inventory output', t => {
+    const fixture = setup(t);
+    const manifest = upgradeToSchema3(fixture);
+    manifest.provenance.inputs.sha256 = sha('tampered binding');
+    json(fixture.runtime, 'build-manifest.json', manifest);
+    const report = run(args(fixture));
+    assert.equal(report.status, 'OBSERVED');
+    assert.equal(report.runtime.status, 'MISMATCH');
+    assert.equal(report.runtime.provenanceBindings.status, 'MISMATCH');
+    assert.equal(report.runtime.provenanceBindings.records[0].path, 'build-input-provenance.json');
+    assert.equal(report.runtime.provenanceBindings.records[0].status, 'MISMATCH');
+    assert.equal(report.assessment, 'MISMATCH');
+});
+
+test('schema 3 reports dirty or unavailable canonical metadata authority', t => {
+    const dirty = setup(t);
+    upgradeToSchema3(dirty);
+    fs.appendFileSync(path.join(dirty.repo, 'package-lock.json'), ' ');
+    const dirtyReport = run(args(dirty));
+    assert.equal(dirtyReport.status, 'OBSERVED');
+    assert.equal(dirtyReport.runtime.status, 'MISMATCH');
+    assert.equal(dirtyReport.runtime.provenanceBindings.packageLockSha256.status, 'MISMATCH');
+    assert.equal(dirtyReport.assessment, 'MISMATCH');
+
+    const unavailable = setup(t);
+    upgradeToSchema3(unavailable);
+    fs.renameSync(path.join(unavailable.repo, '.git'), path.join(unavailable.base, 'authority-git-unavailable'));
+    const unavailableReport = run(args(unavailable));
+    assert.equal(unavailableReport.status, 'OBSERVED');
+    assert.equal(unavailableReport.runtime.status, 'MISSING');
+    assert.equal(unavailableReport.runtime.provenanceBindings.status, 'MISSING');
+    assert.equal(unavailableReport.runtime.provenanceBindings.sourceManifestSha256.status, 'UNAVAILABLE');
+    assert.equal(unavailableReport.assessment, 'INCOMPLETE');
 });
 
 test('runtime payload tampering fails exact payload checks', t => {

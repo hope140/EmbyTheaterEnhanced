@@ -134,7 +134,7 @@ function productionElectronIdentity(root, runtime) {
         arch: manifest.arch,
         releaseUrl: manifest.releaseUrl,
         manifestPath: electronRuntimeInput.MANIFEST_PATH,
-        manifestSha256: hashFile(path.join(root, electronRuntimeInput.MANIFEST_PATH), 'Electron runtime manifest'),
+        manifestSha256: trackedFileHash.hashTrackedTextFile(root, electronRuntimeInput.MANIFEST_PATH),
         validatorPath: 'tools/electron-runtime-input.cjs',
         validatorSha256: trackedFileHash.hashTrackedTextFile(root, 'tools/electron-runtime-input.cjs'),
         archive: {
@@ -182,7 +182,7 @@ function productionDependencyClosure(root, runtime) {
     return {
         selection: 'package-lock packages under node_modules with dev !== true',
         packageLockPath: 'package-lock.json',
-        packageLockSha256: hashFile(lockPath, 'package-lock.json'),
+        packageLockSha256: trackedFileHash.hashTrackedTextFile(root, 'package-lock.json'),
         generatorPath: 'tools/copy-runtime-dependencies.cjs',
         generatorSha256: trackedFileHash.hashTrackedTextFile(root, 'tools/copy-runtime-dependencies.cjs'),
         packageCount: packages.length,
@@ -226,7 +226,7 @@ function buildManifest(rootArg, runtimeArg, sourceCommit) {
         purpose: 'Source and transform provenance; final payload enumeration is build-manifest.json',
         baseline: {
             manifestPath: 'vendor/runtime-manifest.json',
-            manifestSha256: hashFile(vendorManifestPath, 'Vendor manifest'),
+            manifestSha256: trackedFileHash.hashTrackedTextFile(root, 'vendor/runtime-manifest.json'),
             version: vendorManifest.baseline || 'unknown',
             archives: (vendorManifest.archives || []).map(entry => ({
                 pattern: entry.pattern,

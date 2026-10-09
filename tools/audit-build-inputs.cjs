@@ -1,10 +1,12 @@
 'use strict';
 
 const crypto = require('node:crypto');
+const cp = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const electronInput = require('./electron-runtime-input.cjs');
 const runtimeExclusions = require('./runtime-exclusions.cjs');
+const {hashTrackedTextFile} = require('./tracked-file-hash.cjs');
 
 const MANIFESTS = Object.freeze([
     'vendor/runtime-manifest.json',
@@ -113,6 +115,25 @@ function hashIfFile(root, relative) {
     const checked = checkPath(root, relative);
     if (!checked.exists || !fs.lstatSync(checked.path).isFile()) return null;
     return sha256(fs.readFileSync(checked.path));
+}
+function canonicalMetadataCheck(root, relative, expectedHash, sourceCommit) {
+    const result = cp.spawnSync('git', ['-C', root, 'rev-parse', 'HEAD'], {
+        encoding: 'utf8', maxBuffer: 1024 * 1024, windowsHide: true
+    });
+    const observedSourceCommit = !result.error && result.status === 0 && /^[a-f0-9]{40}$/i.test(result.stdout.trim())
+        ? result.stdout.trim().toLowerCase() : null;
+    const base = {path: relative, expectedHash: expectedHash.toLowerCase(), observedHash: null,
+        expectedSourceCommit: sourceCommit.toLowerCase(), observedSourceCommit};
+    if (!observedSourceCommit) return {...base, status: 'UNAVAILABLE'};
+    if (observedSourceCommit !== sourceCommit.toLowerCase()) return {...base, status: 'MISMATCH'};
+    try {
+        const observedHash = hashTrackedTextFile(root, relative).toLowerCase();
+        return {...base, observedHash, status: observedHash === expectedHash.toLowerCase() ? 'PASS' : 'MISMATCH'};
+    } catch (error) {
+        const message = String(error && error.message || '');
+        return {...base, status: message.startsWith('Tracked generator differs from HEAD:') ? 'MISMATCH' :
+            message.startsWith('Tracked generator missing:') ? 'MISSING' : 'UNAVAILABLE'};
+    }
 }
 function packageMetadataRoot(relative) {
     const parts = relative.split('/');
@@ -277,14 +298,20 @@ function runtimeAudit(root, runtimeArg, loaded) {
     if (!manifestFile.exists) return {status: 'MISSING', expectedCount: 0, actualCount: 0, missingCount: 0, extraCount: 0, mismatchCount: 0};
     const runtimeManifestFile = readJson(runtimeRoot, manifestRelative);
     const manifest = runtimeManifestFile.value;
-    if (!manifest || manifest.schemaVersion !== 2 || !Array.isArray(manifest.files) || !manifest.payload || !HASH.test(manifest.payload.payloadSetSha256 || '') ||
+    if (!manifest || ![2, 3].includes(manifest.schemaVersion) || !Array.isArray(manifest.files) || !manifest.payload || !HASH.test(manifest.payload.payloadSetSha256 || '') ||
         !Number.isSafeInteger(manifest.payload.fileCount) || !/^[a-f0-9]{40}$/i.test(manifest.sourceCommit || '') ||
         typeof manifest.version !== 'string' || !/^[a-z0-9.+_-]+$/i.test(manifest.version) ||
         !HASH.test(manifest.sourceManifestSha256 || '') || !HASH.test(manifest.packageLockSha256 || '')) throw new Error(SAFE_ERROR);
     const expectedSet = validateEntries(manifest.files);
     if (expectedSet.has(manifestRelative.toLowerCase())) throw new Error(SAFE_ERROR);
     const provenance = manifest.provenance || {};
-    for (const [key, expectedPath] of [['source', 'source-provenance.json'], ['runtime', 'runtime-provenance.json']]) {
+    const provenanceDefinitions = manifest.schemaVersion === 3
+        ? [['inputs', 'build-input-provenance.json'], ['source', 'source-provenance.json'], ['runtime', 'runtime-provenance.json']]
+        : [['source', 'source-provenance.json'], ['runtime', 'runtime-provenance.json']];
+    if (manifest.schemaVersion === 3 && JSON.stringify(Object.keys(provenance).sort()) !== JSON.stringify(['inputs', 'runtime', 'source'])) {
+        throw new Error(SAFE_ERROR);
+    }
+    for (const [key, expectedPath] of provenanceDefinitions) {
         const record = provenance[key] || {};
         if (record.path !== expectedPath || !HASH.test(record.sha256 || '') || !expectedSet.has(expectedPath.toLowerCase())) throw new Error(SAFE_ERROR);
     }
@@ -301,9 +328,14 @@ function runtimeAudit(root, runtimeArg, loaded) {
     });
     for (const item of actualSet) if (!expectedSet.has(item.toLowerCase())) extraCount++;
     const payloadSetSha256 = sha256(Buffer.from(manifest.files.map(item => item.path + '\0' + item.sha256 + '\n').join(''), 'utf8'));
-    const sourceManifestHash = hashIfFile(root, MANIFESTS[0]);
-    const lockHash = hashIfFile(root, MANIFESTS[3]);
-    const provenanceChecks = ['source', 'runtime'].map(key => {
+    const metadataChecks = manifest.schemaVersion === 3
+        ? [canonicalMetadataCheck(root, MANIFESTS[0], manifest.sourceManifestSha256, manifest.sourceCommit),
+            canonicalMetadataCheck(root, MANIFESTS[3], manifest.packageLockSha256, manifest.sourceCommit)]
+        : [{path: MANIFESTS[0], expectedHash: manifest.sourceManifestSha256, observedHash: hashIfFile(root, MANIFESTS[0])},
+            {path: MANIFESTS[3], expectedHash: manifest.packageLockSha256, observedHash: hashIfFile(root, MANIFESTS[3])}];
+    const sourceManifestHash = metadataChecks[0].observedHash;
+    const lockHash = metadataChecks[1].observedHash;
+    const provenanceChecks = provenanceDefinitions.map(([key]) => {
         const record = provenance[key] || {};
         const recordPath = rel(record.path);
         if (!HASH.test(record.sha256 || '')) throw new Error(SAFE_ERROR);
@@ -311,9 +343,13 @@ function runtimeAudit(root, runtimeArg, loaded) {
         return {path: recordPath, expectedHash: record.sha256 || null, observedHash,
             status: !observedHash ? 'MISSING' : observedHash === String(record.sha256 || '').toLowerCase() ? 'PASS' : 'MISMATCH'};
     });
-    const bindingMismatch = sourceManifestHash !== manifest.sourceManifestSha256 || lockHash !== manifest.packageLockSha256 ||
-        provenanceChecks.some(item => item.status === 'MISMATCH');
-    const bindingMissing = !sourceManifestHash || !lockHash || provenanceChecks.some(item => item.status === 'MISSING');
+    const bindingMismatch = manifest.schemaVersion === 3
+        ? metadataChecks.some(item => item.status === 'MISMATCH') || provenanceChecks.some(item => item.status === 'MISMATCH')
+        : sourceManifestHash !== manifest.sourceManifestSha256 || lockHash !== manifest.packageLockSha256 ||
+            provenanceChecks.some(item => item.status === 'MISMATCH');
+    const bindingMissing = manifest.schemaVersion === 3
+        ? metadataChecks.some(item => item.status === 'MISSING' || item.status === 'UNAVAILABLE') || provenanceChecks.some(item => item.status === 'MISSING')
+        : !sourceManifestHash || !lockHash || provenanceChecks.some(item => item.status === 'MISSING');
     const bindingStatus = bindingMismatch ? 'MISMATCH' : bindingMissing ? 'MISSING' : 'PASS';
     const listedPresent = manifest.files.filter(item => actualSet.has(item.path) && hashIfFile(runtimeRoot, item.path) !== null).map(item => item.path);
     const binaryFiles = listedPresent.filter(item => /\.(?:exe|dll|node)$/i.test(item)).map(item => ({path: item, sha256: hashIfFile(runtimeRoot, item)}));
@@ -349,7 +385,11 @@ function runtimeAudit(root, runtimeArg, loaded) {
         expectedCount: manifest.files.length, actualCount: listedActual.length, missingCount, extraCount, mismatchCount,
         failures: files.filter(item => item.status !== 'PASS'),
         payloadSetSha256: {expected: manifest.payload.payloadSetSha256.toLowerCase(), observed: payloadSetSha256, status: payloadSetSha256 === manifest.payload.payloadSetSha256.toLowerCase() ? 'PASS' : 'MISMATCH'},
-        provenanceBindings: {status: bindingStatus, sourceManifestSha256: {expected: manifest.sourceManifestSha256 || null, observed: sourceManifestHash}, packageLockSha256: {expected: manifest.packageLockSha256 || null, observed: lockHash}, records: provenanceChecks},
+        provenanceBindings: {status: bindingStatus,
+            metadataHashSemantics: manifest.schemaVersion === 3 ? 'HEAD_GIT_BLOB_WITH_CANONICAL_CRLF_WORKTREE_MATCH' : 'RAW_WORKTREE_BYTES',
+            sourceManifestSha256: {expected: manifest.sourceManifestSha256 || null, observed: sourceManifestHash, status: metadataChecks[0].status || null},
+            packageLockSha256: {expected: manifest.packageLockSha256 || null, observed: lockHash, status: metadataChecks[1].status || null},
+            records: provenanceChecks},
         binaries: binaryFiles, licenseNoticePaths: licenseFiles, runtimePackages, retiredPaths: retired
     };
 }

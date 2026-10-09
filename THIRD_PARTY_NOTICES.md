@@ -4,7 +4,8 @@ This file records the maintained source boundary and known components of the
 Windows runtime. Git exclusions do not describe installer contents. Binary
 releases already exist; this inventory does not certify their redistribution
 terms or completeness of corresponding-source materials. See the dated
-input and material audit in `docs/BUILD_INPUT_AUDIT.md`.
+source-material index in `docs/SOURCE_MATERIALS.md`. The repository also keeps
+the dated P1 input audit in `docs/BUILD_INPUT_AUDIT.md`.
 
 ## Upstream Emby Theater code
 
@@ -25,8 +26,9 @@ when importing or changing identifiable upstream files.
   executables and generated installers are not tracked in Git.
 - Native Helper is compiled from `native/mpv-helper/ete-mpv-helper.cpp` with
   the header and compiler identity in `vendor/native-helper-manifest.json`.
-  That manifest pins `g++.exe`, not the complete compiler/linker/static-library
-  tree. Corresponding toolchain materials remain an audit item.
+  That original manifest pins the driver and flags. The supplemental tracked
+  build-toolchain lock fixes the local compiler distribution tree; upstream
+  source-package and full toolchain reconstruction materials remain separate.
 
 ## CloudDrive2 resolver runtime dependencies
 
@@ -34,9 +36,9 @@ when importing or changing identifiable upstream files.
   dependencies, locked with a 33-package dependency selection in
   `package-lock.json`. Their Apache-2.0 license files are present in the audited
   P1 runtime. Package notices are copied with the package directories.
-  This selection is not the entire runtime `node_modules` inventory: Carnival
-  packages remain, including 20 old `long` files alongside the selected 5.3.2
-  package. The audit records those bytes separately from lockfile metadata.
+  The selected package directories are generated exactly from a fresh locked
+  npm installation. Seven explicitly retained Carnival package roots remain
+  separately identified; they are not part of the 33-package npm selection.
 - `src/electronapp/enhanced/proto/clouddrive-v1.proto` is a minimal
   wire-compatible subset of CloudDrive2 API schema 1.0.13. Its field numbers
   were taken from the Apache-2.0 `hope140/embyToLocalPlayer` beta snapshot
@@ -59,8 +61,9 @@ supporting binaries, offline Web/assets and patched libmpv are not fully
 established. A libmpv filename, header license or version string does not
 establish the DLL's build configuration or complete license composition.
 
-The audited P1 runtime does not include this root notice file or the root project
-`LICENSE`. Root project notices and complete component/source material delivery
-remain open items; updating this file does not change any existing installer or
-Release. `docs/BUILD_INPUT_AUDIT.md` lists confirmed files, missing materials and
-unknown relationships without inferring legal conclusions from hashes.
+This candidate includes the root project `LICENSE`, this notice,
+`docs/LICENSING.md` and `docs/SOURCE_MATERIALS.md`, copied from the recorded
+sourceCommit. Their presence and exact bytes are checked before packaging.
+The earlier P1 runtime omitted the root notices; it and existing Releases are
+unchanged. Complete third-party corresponding-source and notice materials
+remain open where the accompanying source index marks them unknown or missing.

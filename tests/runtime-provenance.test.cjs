@@ -130,7 +130,7 @@ function createFixture(root) {
     assert.equal(init.status, 0, init.stderr);
     childProcess.spawnSync('git', ['-C', root, 'config', 'user.name', 'ETE Test'], {encoding: 'utf8'});
     childProcess.spawnSync('git', ['-C', root, 'config', 'user.email', 'ete-test@example.invalid'], {encoding: 'utf8'});
-    const add = childProcess.spawnSync('git', ['-C', root, 'add', 'src/electronapp/some-normal-file.js', 'tools'], {encoding: 'utf8'});
+    const add = childProcess.spawnSync('git', ['-C', root, 'add', 'src/electronapp/some-normal-file.js', 'tools', 'package-lock.json', 'vendor/runtime-manifest.json', 'vendor/electron-runtime-manifest.json'], {encoding: 'utf8'});
     assert.equal(add.status, 0, add.stderr);
     const commit = childProcess.spawnSync('git', ['-C', root, 'commit', '-m', 'fixture'], {encoding: 'utf8'});
     assert.equal(commit.status, 0, commit.stderr);

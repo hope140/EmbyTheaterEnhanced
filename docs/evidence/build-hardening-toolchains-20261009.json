@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "observedDate": "2026-10-09",
+  "scope": "Local build-tool identities and fresh extraction/relocation observations; no global installation, product run or license conclusion",
+  "authority": {
+    "toolchainManifest": {
+      "path": "vendor/toolchain-manifest.json",
+      "gitBlobObjectId": "b39ba168381a255f6126e0ed2d771b9e3ef632c1",
+      "canonicalTextSha256": "e5bc53955f6a4380fc337d889a73be5cd6b0bfbe4459a601213a76f8dac30bfc"
+    },
+    "nativeHelperManifest": {
+      "path": "vendor/native-helper-manifest.json",
+      "gitBlobObjectId": "b9b17fa674b4109b36be805968cc1a3a8c016fe5",
+      "canonicalTextSha256": "ff23f2eafa26e5f327fb70878569aceab22c568d317eb155c5b6a053107ac895"
+    }
+  },
+  "inno": {
+    "version": "6.7.3",
+    "archive": {
+      "url": "https://github.com/jrsoftware/issrc/releases/download/is-6_7_3/innosetup-6.7.3.exe",
+      "relativePath": ".work/toolchain/innosetup-6.7.3.exe",
+      "size": 10592232,
+      "sha256": "9c73c3bae7ed48d44112a0f48e66742c00090bdb5bef71d9d3c056c66e97b732",
+      "authenticodeStatus": "Valid",
+      "authenticodeSigner": "Pyrsys B.V."
+    },
+    "unpackerArchive": {
+      "url": "https://raw.githubusercontent.com/jrathlev/InnoUnpacker-Windows-GUI/master/innounp-2/bin/innounp-267.zip",
+      "relativePath": ".work/toolchain/innounp.zip",
+      "size": 572593,
+      "sha256": "ac1d98bba6588072ade06163781938df274f444bec7318069668608d1e5faae8"
+    },
+    "unpacker": {
+      "relativeRoot": ".work/toolchain/innounp",
+      "executable": "innounp.exe",
+      "version": "2.67.11",
+      "executableSize": 1742336,
+      "executableSha256": "1c8453c198dd3fe7947f3705e59d2294ddce3dfa9f96a737e94449b119f44181",
+      "treeFileCount": 5,
+      "treeBytes": 1782207,
+      "treeSha256": "f179e8ef4189195758b0620e7a3bfa6f5305f96f7cb5a79b587e5aa582ca6081"
+    },
+    "freshExtraction": {
+      "method": "Pinned innounp -x into a new project-local work directory; installer executable was not run",
+      "fullExtractedEntries": 123,
+      "compilerRoot": ".work/toolchain/inno/{app}",
+      "compilerFiles": 118,
+      "compilerBytes": 28932279,
+      "compilerTreeSha256": "b463554775c237560cb13ca5759098b963764256744f638ad2706ab0b8cba0dd",
+      "previousCompilerEntries": 118,
+      "entryAndHashDifferences": 0,
+      "compilerExecutable": "ISCC.exe",
+      "compilerExecutableSize": 1456272,
+      "compilerExecutableSha256": "0a8757031b33777e4c9cbffee40f11a5062b36d25cbe144c1db73b6102b80ad7"
+    }
+  },
+  "native": {
+    "family": "MSYS2 UCRT64 GCC",
+    "architecture": "x64",
+    "compilerRoot": ".work/toolchain/msys2/ucrt64",
+    "compilerExecutable": "bin/g++.exe",
+    "compilerVersion": "g++.exe (Rev5, Built by MSYS2 project) 16.1.0",
+    "compilerSha256": "798a6eb495b30cf771dc759b5508d269ecb0dddac739719e8b30fe0ac0744b69",
+    "treeFileCount": 6990,
+    "treeBytes": 553090415,
+    "treeSha256": "5215ec9725ad0ef660064944eef6aba5106bd09044a0f70a6e37c4252815fab3",
+    "relocation": {
+      "versionMatch": true,
+      "treeIdentityMatch": true,
+      "programsInsideCompilerRoot": [
+        "lib/gcc/x86_64-w64-mingw32/16.1.0/cc1plus.exe",
+        "lib/gcc/x86_64-w64-mingw32/16.1.0/collect2.exe",
+        "x86_64-w64-mingw32/bin/as.exe",
+        "x86_64-w64-mingw32/bin/ld.exe"
+      ],
+      "headersResolvedInsideCompilerRoot": true,
+      "librariesResolvedInsideCompilerRoot": true,
+      "existingExternalSearchPaths": 0,
+      "nonexistentCompileTimeFallbacksObserved": 2
+    },
+    "rejectedEnvironmentOverrides": [
+      "CC",
+      "CXX",
+      "CPATH",
+      "C_INCLUDE_PATH",
+      "CPLUS_INCLUDE_PATH",
+      "OBJC_INCLUDE_PATH",
+      "COMPILER_PATH",
+      "LIBRARY_PATH",
+      "GCC_EXEC_PREFIX",
+      "GCC_COMPARE_DEBUG",
+      "DEPENDENCIES_OUTPUT",
+      "SUNPRO_DEPENDENCIES",
+      "MSYSTEM",
+      "MINGW_PREFIX",
+      "MSYS2_PATH_TYPE",
+      "CHERE_INVOKING"
+    ],
+    "observedPackages": [
+      "mingw-w64-ucrt-x86_64-binutils=2.46-4",
+      "mingw-w64-ucrt-x86_64-crt=14.0.0.r92.g818fa6510-1",
+      "mingw-w64-ucrt-x86_64-gcc=16.1.0-5",
+      "mingw-w64-ucrt-x86_64-gcc-libs=16.1.0-5",
+      "mingw-w64-ucrt-x86_64-gettext-runtime=1.0-1",
+      "mingw-w64-ucrt-x86_64-gmp=6.3.0-2",
+      "mingw-w64-ucrt-x86_64-headers=14.0.0.r92.g818fa6510-1",
+      "mingw-w64-ucrt-x86_64-isl=0.27-1",
+      "mingw-w64-ucrt-x86_64-libiconv=1.19-1",
+      "mingw-w64-ucrt-x86_64-libwinpthread=14.0.0.r92.g818fa6510-1",
+      "mingw-w64-ucrt-x86_64-mpc=1.4.1-1",
+      "mingw-w64-ucrt-x86_64-mpfr=4.2.2-3",
+      "mingw-w64-ucrt-x86_64-tzdata=2026b-1",
+      "mingw-w64-ucrt-x86_64-windows-default-manifest=6.4-4",
+      "mingw-w64-ucrt-x86_64-winpthreads=14.0.0.r92.g818fa6510-1",
+      "mingw-w64-ucrt-x86_64-zlib=1.3.2-2",
+      "mingw-w64-ucrt-x86_64-zstd=1.5.7-2"
+    ]
+  }
+}
