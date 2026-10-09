@@ -20,7 +20,7 @@
 
 ## 验证
 
-| 层级 | 实際结果 | 证据 |
+| 层级 | 实际结果 | 证据 |
 |---|---|---|
 | 最终全量单测 | 430/430 PASS | `.work/ui-validation-20261009/full-unit-final.log` |
 | 设置/维护/草稿竞态定向 | 36/36 PASS | `.work/ui-validation-20261009/focused-header-cleanup.log` |
