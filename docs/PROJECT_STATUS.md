@@ -6,7 +6,7 @@
 
 本轮完整单测日志为631/631，0失败/取消/跳过。产品、测试、工具等六棵Git tree和34项构建输入与355f4e6相同；原runtime2136文件、原安装器及八组运行的69份artifact重新回读hash通过。16份原harness输入精确匹配历史hash；新checkout其中6份仅CRLF/LF变化，物理与canonical身份分别记录。原runtime继续归属355f4e6，本轮没有构建或启动客户端。
 
-当前审查未发现产品整合阻断，仅修正文档阶段、CHANGELOG与验收入口遗漏。v0.2.6 tag/Release/三个资产和Latest v0.2.2保持；本轮目标为可审阅PR，main合并仍由后续明确操作决定。早期直接app.exit UNKNOWN、真实服务/远控/可见呈现/系统安装/HDR/多屏边界保持。以下为按发生阶段保留的历史记录。
+当前审查未发现产品整合阻断，仅修正文档阶段、CHANGELOG与验收入口遗漏。[PR #20](https://github.com/hope140/EmbyTheaterEnhanced/pull/20) 已创建并附加，OPEN / 非Draft，创建回读MERGEABLE / CLEAN；无check runs/statuses/workflow，不能记CI通过。原36项refs、8个Release及15个附件保持，Latest仍v0.2.2。技术合并条件满足，main合并仍由后续明确操作决定。早期直接app.exit UNKNOWN、真实服务/远控/可见呈现/系统安装/HDR/多屏边界保持。以下为按发生阶段保留的历史记录。
 
 ## 2026-10-09 — v0.2.6 Pre-release 已发布并完整回读
 

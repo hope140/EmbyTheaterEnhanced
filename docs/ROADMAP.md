@@ -68,7 +68,7 @@ v0.2.6已包含每请求options快照、pending报告抑制、捕获stream的Sto
 
 ### v0.2.6 主线整合审查
 
-独立分支 `codex/integrate-v0.2.6-main-20261009` 面向main提交完整发布成果，当前目标是可审阅PR与合并判定。最终状态、Git关系、新执行单测和原355f4e6产物的复用证明见 [主线整合报告](MAIN_INTEGRATION_026.md)。
+独立分支 `codex/integrate-v0.2.6-main-20261009` 已创建 [PR #20](https://github.com/hope140/EmbyTheaterEnhanced/pull/20)，整合审查和验证完成，当前等待人工review与合并决定。main尚未合并；完整单测631/631，当前未发现整合阻断，远端无已配置checks。Git关系、新执行单测和原355f4e6产物的复用证明见 [主线整合报告](MAIN_INTEGRATION_026.md)。
 
 ### 1. NextTrack 切集瞬时白屏
 

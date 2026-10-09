@@ -1807,5 +1807,43 @@
     },
     "prTemplate": "NONE_IN_TRACKED_REPOSITORY",
     "workflowCount": 0
+  },
+  "pullRequest": {
+    "number": 20,
+    "url": "https://github.com/hope140/EmbyTheaterEnhanced/pull/20",
+    "state": "OPEN",
+    "draft": false,
+    "base": "main",
+    "baseCommit": "46e995ef83fca7f7a882e3dc633bdcc2d2d521c7",
+    "headAtCreation": "a06401724abb54294f2d645a96bc1a28840df36e",
+    "mergeableAtCreation": "MERGEABLE",
+    "mergeStateAtCreation": "CLEAN",
+    "reviewDecision": "NONE",
+    "checkRuns": 0,
+    "commitStatuses": 0,
+    "combinedStatus": "pending",
+    "ciConclusion": "NO_CHECKS_CONFIGURED_NOT_CI_PASS",
+    "changedFiles": 174
+  },
+  "remotePreservation": {
+    "previousRefCount": 36,
+    "changedPreviousRefs": [],
+    "addedRefs": [
+      {
+        "ref": "refs/heads/codex/integrate-v0.2.6-main-20261009",
+        "sha": "a06401724abb54294f2d645a96bc1a28840df36e"
+      }
+    ],
+    "releaseCount": 8,
+    "assetCount": 15,
+    "allReleasesAndAssetsUnchanged": true,
+    "latest": "v0.2.2"
+  },
+  "integrationDecision": {
+    "status": "READY_FOR_REVIEW_NO_CONFIRMED_INTEGRATION_BLOCKER",
+    "mergeExecuted": false,
+    "productCodeChangesThisTask": 0,
+    "releaseMutationExecuted": false,
+    "finalDocumentationOnly": true
   }
 }

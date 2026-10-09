@@ -9,6 +9,7 @@
 - 一个review worker在旧发布树做了两次局部测试启动，均无工具输出后以Ctrl-C中断，exit1且确认测试进程已退出；这两次未产生测试结论，不计入PASS，也不覆盖整合树完整运行终态。
 - Node24.18.1/npm11.17.0；正式prepare遇Windows长路径复制失败，保留失败现场后使用本轮临时PowerShell驱动缩短路径，同一脚本与固定归档校验通过。npm audit退出1：原main同版本grpc-js1.14.4命中High/Low服务端advisory；核对官方触发条件与生产client-only调用，未发现触发入口，作为非阻断依赖维护项披露，未执行依赖升级。
 - 原runtime仍绑定产品355f4e6；因产品和构建输入未变，不重建、不运行客户端、不改发布身份。GitHub无workflow，checks状态单独回读，不能用MERGEABLE/CLEAN代替验证。目标为独立分支PR和合并判定，不自动merge；真实验收缺口及直接app.exit UNKNOWN保留。
+- 用户再次确认继续后，先读回该head无PR，再通过gh创建 [PR #20](https://github.com/hope140/EmbyTheaterEnhanced/pull/20) 并attach。初始head a064017、base main46e995e、OPEN/非Draft、174文件、MERGEABLE/CLEAN；check runs/statuses均0，空集合combined pending不当作CI通过。对照原快照36项refs、8个Release与15附件均保持，只新增本次分支。本收尾提交只同步PR与判定，没有新增产品/构建输入变更或重跑相同测试。
 
 ## 2026-10-09 — v0.2.6 原产物公开测试发布
 

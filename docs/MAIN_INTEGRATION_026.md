@@ -62,6 +62,10 @@
 
 现场回读v0.2.6仍是Release `407934479`、Pre-release，target_commitish为355f4e6；annotated tag object为`ea4841bf7ed51471facc5b715a058e3de9b19241`，解引用355f4e6。三个资产ID、大小与digest保持，正式Latest仍v0.2.2。完整公开下载核验沿用 [原发布证据](RELEASE_026.md)，本轮没有再次下载或修改Release。
 
-PR：**待完整单测与提交收口后创建**。GitHub workflow列表为0；没有checks不能写成CI绿色。最终可合并判断同时依据源码审查、完整单测、输入/产物/历史证据关系和最新base状态，不能只依据GitHub的MERGEABLE/CLEAN。
+PR：**[PR #20](https://github.com/hope140/EmbyTheaterEnhanced/pull/20) 已创建，OPEN / 非Draft**，base为main46e995e。创建时head为a064017，GitHub返回MERGEABLE / CLEAN；本次收尾提交只同步PR状态。check runs=0、commit statuses=0，combined status为pending（空集合），仓库workflow=0，故CI结论是“没有已配置的检查”，不能写成CI绿色。
+
+最终判定：**具备进入main的技术合并条件，当前未发现整合阻断，等待人工review与合并决定**。依据是完整源码审查、整合树631/631全量、同源输入/产物/历史证据核对及main仍无独有提交。npm audit既有服务端依赖提示按上方适用性分析单列，不概括为全部检查通过。
+
+PR创建后对照推送前快照，原36项远端refs全部保持，唯一新增ref为本次整合分支；8个Release的身份/正文/标志/发布日期及15个附件的ID/名称/大小/digest/状态均相同，Latest仍v0.2.2。PR已经附加到当前工作会话，结构化回读见本页机器证据。
 
 本轮到可审阅PR为止，main未自动合并。早期8700039与d480eb8的直接`app.exit` OS退出超时仍UNKNOWN，最终355f4e6未复跑该直接退出路径。真实Emby/CD2、真实远控、可见首帧/连续性、HDR/多屏与系统安装/升级/卸载仍没有本次验收。About高级信息UNKNOWN留待下一轮。
