@@ -1,5 +1,7 @@
 # Carnival 基线审计
 
+本页保留2026-09-12的原始归档比对。当前生产已使用Electron44.4.2和Native Helper；下表Electron18属于Carnival历史输入。当前固定输入、最终payload、来源与再构建缺口见 [BUILD_INPUT_AUDIT](BUILD_INPUT_AUDIT.md)。
+
 审计日期 2026-09-12（UTC+8）。输入为用户本地提供的两个原件，原件未修改。Carnival SFX 可直接解包，1234 条目、1009 文件，无加密条目。
 
 | 输入 | SHA256 |

@@ -1,5 +1,12 @@
 # 已确认经验
 
+## 2026-10-09 — 构建身份与材料边界
+
+- Git排除的输入仍可能进入installer；通知说明要分别描述Git跟踪范围和真实payload。
+- lockfile选择的33包不是完整node_modules文件集合；覆盖复制会保留Carnival旧文件。fresh npm逐文件比较发现long额外20文件，最终payload有hash不能替代源包对应性核对。
+- 单个g++.exe hash不覆盖cc1plus/linker/静态库/系统头文件；历史双build不能自动证明当前完整runtime或installer字节可复现。
+- SHA256、版本字符串、明文源码和参考上游仓库各自是不同证据；来源缺口应列出所缺archive/source/config/toolchain材料，不据此猜测组件许可或自动更换组件。
+
 ## 2026-10-09 — 离线阶段计时的证据边界
 
 - JSONL的logger接收墙钟、原生内部单调时钟、写盘时间和可见首帧是不同边界；跨IPC日志差只能保留其观测语义，合成服务固定延迟不能当成实服瓶颈。

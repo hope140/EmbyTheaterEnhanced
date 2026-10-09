@@ -58,6 +58,8 @@ Phase 2.2 把 Phase 1 的单组 suffix HIGH 限定为 `fileMatch`，它不再授
 
 正式 ETE 的 Device identity 在 main process 启动时从 bootstrap 返回的 ETE `config` 目录读取或创建 `device-identity.json`。文件只保存 version 和随机 UUID；缺失或损坏时安全重建，升级沿用已有值，clean profile 生成新值。`deviceName` 继续使用 `os.hostname()`，`deviceId` 不再使用 hostname，也不依赖 app name、版本、服务器、用户或 token。`loadStartInfo` 将同一个持久化 DeviceId 交给 apphost、ConnectionManager、HTTP ApiClient、WebSocket 和播放报告；旧 hostname DeviceId 不迁移、不自动删除服务器 Device/Session。
 
+构建证据补充：上述production dependency closure指lockfile选择，不覆盖Carnival继承的全部node_modules文件；copy是覆盖而非清空，P1存在long的20个旧文件。package/lock等构建元数据、完整GCC工具链及Inno身份也未全部绑定到sourceCommit。精确可再构建边界见 [BUILD_INPUT_AUDIT](BUILD_INPUT_AUDIT.md)，不改变生产架构。
+
 ## Next/Previous native presentation
 
 当前候选 contract 由 native presentation hold 管理旧视频帧，图片不进入 renderer DOM。`PlaybackManager.nextTrack()` 与 `previousTrack()` 继续通过原同步入口选择媒体、分配 request sequence 并触发 retire；presentation 工作不得插入 manager 调用前的 await，也不得替换 Item、MediaSource、PlaySession、Session 或 WebSocket 所有权。外部/self-managed player 不进入该候选。

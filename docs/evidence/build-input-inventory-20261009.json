@@ -1,0 +1,1101 @@
+{
+  "schemaVersion": 1,
+  "status": "OBSERVED",
+  "authority": [
+    {
+      "path": "vendor/runtime-manifest.json",
+      "sha256": "3f918912d8ff86384f5374fc1f4ce538ed6afae140835ad57d411bb8e9a7e73f"
+    },
+    {
+      "path": "vendor/electron-runtime-manifest.json",
+      "sha256": "132db493452bac5015f6a391b16844d30ffdb8a589e5ce67ad1824860a8eec8e"
+    },
+    {
+      "path": "vendor/native-helper-manifest.json",
+      "sha256": "d66b8587127957cb70ea9fa244eb3abec385476893e9420d214e3b39a5b538f6"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "f1fbaad4b3e9805e107e537bf5da1b6e1cf40319a802f9259a05e569610fc5df"
+    }
+  ],
+  "archives": {
+    "carnival": [
+      {
+        "path": "Emby for Windows_3.0.20_v3.0(Carnival).exe",
+        "status": "PASS",
+        "expectedHash": "9d53fe71b42a530e9941f97ad712bd6724dbb0e7aa0e7de73a4bf9614b28b001",
+        "observedHash": "9d53fe71b42a530e9941f97ad712bd6724dbb0e7aa0e7de73a4bf9614b28b001",
+        "expectedSize": null,
+        "observedSize": 124638617
+      },
+      {
+        "path": "Emby Theater 3.0.20 综合补丁包（最终版-含新版libmpv）.zip",
+        "status": "PASS",
+        "expectedHash": "2316cd37733b4abf5475dcb9f36d050e2e83c52807ea3b40b9b97d8a80263b43",
+        "observedHash": "2316cd37733b4abf5475dcb9f36d050e2e83c52807ea3b40b9b97d8a80263b43",
+        "expectedSize": null,
+        "observedSize": 65295337
+      }
+    ],
+    "electron": {
+      "path": "electron-v44.4.2-win32-x64.zip",
+      "status": "PASS",
+      "expectedHash": "6aae435b6cd5c0eedf9fd38824bae4045ffdaecd029f0b8c8328bac3f5b71f03",
+      "observedHash": "6aae435b6cd5c0eedf9fd38824bae4045ffdaecd029f0b8c8328bac3f5b71f03",
+      "expectedSize": 158218669,
+      "observedSize": 158218669
+    }
+  },
+  "fileSets": {
+    "carnival": {
+      "status": "PASS",
+      "expectedCount": 1009,
+      "actualCount": 1009,
+      "missingCount": 0,
+      "extraCount": 0,
+      "mismatchCount": 0,
+      "failures": []
+    },
+    "patch": {
+      "status": "PASS",
+      "expectedCount": 51,
+      "actualCount": 51,
+      "missingCount": 0,
+      "extraCount": 0,
+      "mismatchCount": 0,
+      "failures": []
+    }
+  },
+  "electronPrepared": {
+    "status": "PASS",
+    "path": "vendor/electron/44.4.2/win32-x64",
+    "version": "44.4.2",
+    "expectedVersion": "44.4.2",
+    "fileCount": 73,
+    "expectedFileCount": 73,
+    "treeSha256": "f9f14e4fe641b68296cf6d17357b4037a514c87ed8c83e91395de11d924c9030",
+    "expectedTreeSha256": "f9f14e4fe641b68296cf6d17357b4037a514c87ed8c83e91395de11d924c9030",
+    "electronExeSha256": "0446040f3c63eb75d5b1e1663d5ef27f07730a82df3e4fa47ff77c1a33cef07c",
+    "expectedElectronExeSha256": "0446040f3c63eb75d5b1e1663d5ef27f07730a82df3e4fa47ff77c1a33cef07c"
+  },
+  "nativeHeader": {
+    "path": "vendor/native-helper-inputs/mpv/client.h",
+    "expectedHash": "1acf99ee77c8c2a6f1d1993bd81bbc8a91d27fb5924e80171670e6139a4bd353",
+    "observedHash": "1acf99ee77c8c2a6f1d1993bd81bbc8a91d27fb5924e80171670e6139a4bd353",
+    "status": "PASS"
+  },
+  "packageLock": {
+    "selectedProductionCount": 33,
+    "missingCount": 0,
+    "mismatchCount": 0,
+    "packages": [
+      {
+        "path": "node_modules/@grpc/grpc-js",
+        "version": "1.14.4",
+        "integrity": "sha512-k9Dj3DV/itK9D06Y8f190Qgop7/Ui+D0njFV3LHMPwPT75DpXLQohE9Wmz0QElrJnzsjB7KPWiKJbOl7IPDArQ==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "1.14.4",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/@grpc/proto-loader",
+        "version": "0.8.1",
+        "integrity": "sha512-wtF6h+DY6M3YaDBPAmvuuA6jV8Sif9MjtOI5euKFWRgCDl5PeDpPsHR9u2l6St5ceY8AZgoNDww5+HvEsXFsGg==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "0.8.1",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/@js-sdsl/ordered-map",
+        "version": "4.4.2",
+        "integrity": "sha512-iUKgm52T8HOE/makSxjqoWhe95ZJA1/G1sYsGev2JDKUSS14KAgg1LHb+Ba+IPow0xflbnSkOsZcO08C7w1gYw==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "4.4.2",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/@protobufjs/aspromise",
+        "version": "1.1.2",
+        "integrity": "sha512-j+gKExEuLmKwvz3OgROXtrJ2UG2x8Ch2YZUxahh+s1F2HZ+wAceUNLkvy6zKCPVRkU++ZWQrdxsUeQXmcg4uoQ==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "1.1.2",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/@protobufjs/base64",
+        "version": "1.1.2",
+        "integrity": "sha512-AZkcAA5vnN/v4PDqKyMR5lx7hZttPDgClv83E//FMNhR2TMcLUhfRUBHCmSl0oi9zMgDDqRUJkSxO3wm85+XLg==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "1.1.2",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/@protobufjs/codegen",
+        "version": "2.0.5",
+        "integrity": "sha512-zgXFLzW3Ap33e6d0Wlj4MGIm6Ce8O89n/apUaGNB/jx+hw+ruWEp7EwGUshdLKVRCxZW12fp9r40E1mQrf/34g==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "2.0.5",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/@protobufjs/eventemitter",
+        "version": "1.1.1",
+        "integrity": "sha512-vW1GmwMZNnL+gMRaovlh9yZX74kc+TTU3FObkkurpMaRtBfLP3ldjS9KQWlwZgraRE0+dheEEoAxdzcJQ8eXZg==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "1.1.1",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/@protobufjs/fetch",
+        "version": "1.1.1",
+        "integrity": "sha512-GpptLrs57adMSuHi3VNj0mAF8dwh36LMaYF6XyJ6JMWlVsc+t42tm1HSEDmOs3A8fC9yyeisgLhsTVQokOZ0zw==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "1.1.1",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/@protobufjs/float",
+        "version": "1.0.2",
+        "integrity": "sha512-Ddb+kVXlXst9d+R9PfTIxh1EdNkgoRe5tOX6t01f1lYWOvJnSPDBlG241QLzcyPdoNTsblLUdujGSE4RzrTZGQ==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "1.0.2",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/@protobufjs/path",
+        "version": "1.1.2",
+        "integrity": "sha512-6JOcJ5Tm08dOHAbdR3GrvP+yUUfkjG5ePsHYczMFLq3ZmMkAD98cDgcT2iA1lJ9NVwFd4tH/iSSoe44YWkltEA==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "1.1.2",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/@protobufjs/pool",
+        "version": "1.1.0",
+        "integrity": "sha512-0kELaGSIDBKvcgS4zkjz1PeddatrjYcmMWOlAuAPwAeccUrPHdUqo/J6LiymHHEiJT5NrF1UVwxY14f+fy4WQw==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "1.1.0",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/@protobufjs/utf8",
+        "version": "1.1.2",
+        "integrity": "sha512-b1UQwcEZ4yCnMCD8DAL1VlbvBJE9/IX4FTIp7BG1xYpf29SLazLSrqUkj4w7Y5y7cCVP6E5tcqqcI0xemPkHug==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "1.1.2",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/@types/node",
+        "version": "22.20.2",
+        "integrity": "sha512-xlvWf4Vs9n1PEVYwP1n4vvG07M6y8WgvJ2t0vbrWTmijsIHp1cS+uJ2kMIRdY3nHZK0nCYKrPeD171+SzF4/zw==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "22.20.2",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/ansi-regex",
+        "version": "5.0.1",
+        "integrity": "sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "5.0.1",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/ansi-styles",
+        "version": "4.3.0",
+        "integrity": "sha512-zbB9rCJAT1rbjiVDb2hqKFHNYLxgtk8NURxZ3IZwD3F6NtxbXZQCnnSi1Lkx+IDohdPlFp222wVALIheZJQSEg==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "4.3.0",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/cliui",
+        "version": "8.0.1",
+        "integrity": "sha512-BSeNnyus75C4//NQ9gQt1/csTXyo/8Sb+afLAkzAptFuMsod9HFokGNudZpi/oQV73hnVK+sR+5PVRMd+Dr7YQ==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "8.0.1",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/color-convert",
+        "version": "2.0.1",
+        "integrity": "sha512-RRECPsj7iu/xb5oKYcsFHSppFNnsj/52OVTRKb4zP5onXwVF3zVmmToNcOfGC+CRDpfK/U584fMg38ZHCaElKQ==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "2.0.1",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/color-name",
+        "version": "1.1.4",
+        "integrity": "sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "1.1.4",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/emoji-regex",
+        "version": "8.0.0",
+        "integrity": "sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "8.0.0",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/escalade",
+        "version": "3.2.0",
+        "integrity": "sha512-WUj2qlxaQtO4g6Pq5c29GTcWGDyd8itL8zTlipgECz3JesAiiOKotd8JU6otB3PACgG6xkJUyVhboMS+bje/jA==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "3.2.0",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/get-caller-file",
+        "version": "2.0.5",
+        "integrity": "sha512-DyFP3BM/3YHTQOCUL/w0OZHR0lpKeGrxotcHWcqNEdnltqFwXVfhEBQ94eIo34AfQpo0rGki4cyIiftY06h2Fg==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "2.0.5",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/is-fullwidth-code-point",
+        "version": "3.0.0",
+        "integrity": "sha512-zymm5+u+sCsSWyD9qNaejV3DFvhCKclKdizYaJUuHA83RLjb7nSuGnddCHGv0hk+KY7BMAlsWeK4Ueg6EV6XQg==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "3.0.0",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/lodash.camelcase",
+        "version": "4.3.0",
+        "integrity": "sha512-TwuEnCnxbc3rAvhf/LbG7tJUDzhqXyFnv3dtzLOPgCG/hODL7WFnsbwktkD7yUV0RrreP/l1PALq/YSg6VvjlA==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "4.3.0",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/long",
+        "version": "5.3.2",
+        "integrity": "sha512-mNAgZ1GmyNhD7AuqnTG3/VQ26o760+ZYBPKjPvugO8+nLbYfX6TVpJPseBvopbdY+qpZ/lKUnmEc1LeZYS3QAA==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "5.3.2",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/protobufjs",
+        "version": "7.6.6",
+        "integrity": "sha512-dYDWdjSl5RNb7SgPxGQcRU+GtvP7s2fpkrY0r432PcOIaZ0/rBcxEZnQN67iJhFuQiVw754JDoPruPCNdGsbjg==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "7.6.6",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/require-directory",
+        "version": "2.1.1",
+        "integrity": "sha512-fGxEI7+wsG9xrvdjsrlmL22OMTTiHRwAMroiEeMgq8gzoLC/PQr7RsRDSTLUg/bZAZtF+TVIkHc6/4RIKrui+Q==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "2.1.1",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/string-width",
+        "version": "4.2.3",
+        "integrity": "sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "4.2.3",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/strip-ansi",
+        "version": "6.0.1",
+        "integrity": "sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "6.0.1",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/undici-types",
+        "version": "6.21.0",
+        "integrity": "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "6.21.0",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/wrap-ansi",
+        "version": "7.0.0",
+        "integrity": "sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "7.0.0",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/y18n",
+        "version": "5.0.8",
+        "integrity": "sha512-0pfFzegeDWJHJIAmTLRP2DwHjdF5s7jo9tuztdQxAhINCdvS+3nGINqPd00AphqJR/0LhANUS6/+7SCb98YOfA==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "5.0.8",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/yargs",
+        "version": "17.7.3",
+        "integrity": "sha512-GZtjxm/J/4TSxuL3FNYjCmLktBTnIw/rVmKSIyKeYAZpmJB2ig9VauCC5xsa82GNKVKDAqpOn3KVzNt0zmrU0g==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "17.7.3",
+        "status": "PASS"
+      },
+      {
+        "path": "node_modules/yargs-parser",
+        "version": "21.1.1",
+        "integrity": "sha512-tVpsJW7DdjecAiFpbIB1e3qxIQsE6NoPc5/eTdrbbIC4h0LVsWhnoa3g+m2HclBIujHzsxZ4VJVA+GUuc2/LBw==",
+        "packageJsonExists": true,
+        "packageJsonVersion": "21.1.1",
+        "status": "PASS"
+      }
+    ]
+  },
+  "packageComparison": {
+    "status": "MISMATCH",
+    "packageCount": 33,
+    "missingPackageCount": 0,
+    "missingCount": 0,
+    "extraCount": 20,
+    "mismatchCount": 0,
+    "packages": [
+      {
+        "path": "electronapp/node_modules/@grpc/grpc-js",
+        "status": "PASS",
+        "sourceFileCount": 681,
+        "runtimeFileCount": 681,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/@grpc/proto-loader",
+        "status": "PASS",
+        "sourceFileCount": 11,
+        "runtimeFileCount": 11,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/@js-sdsl/ordered-map",
+        "status": "PASS",
+        "sourceFileCount": 14,
+        "runtimeFileCount": 14,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/@protobufjs/aspromise",
+        "status": "PASS",
+        "sourceFileCount": 6,
+        "runtimeFileCount": 6,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/@protobufjs/base64",
+        "status": "PASS",
+        "sourceFileCount": 6,
+        "runtimeFileCount": 6,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/@protobufjs/codegen",
+        "status": "PASS",
+        "sourceFileCount": 6,
+        "runtimeFileCount": 6,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/@protobufjs/eventemitter",
+        "status": "PASS",
+        "sourceFileCount": 7,
+        "runtimeFileCount": 7,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/@protobufjs/fetch",
+        "status": "PASS",
+        "sourceFileCount": 9,
+        "runtimeFileCount": 9,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/@protobufjs/float",
+        "status": "PASS",
+        "sourceFileCount": 8,
+        "runtimeFileCount": 8,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/@protobufjs/path",
+        "status": "PASS",
+        "sourceFileCount": 6,
+        "runtimeFileCount": 6,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/@protobufjs/pool",
+        "status": "PASS",
+        "sourceFileCount": 7,
+        "runtimeFileCount": 7,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/@protobufjs/utf8",
+        "status": "PASS",
+        "sourceFileCount": 9,
+        "runtimeFileCount": 9,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/@types/node",
+        "status": "PASS",
+        "sourceFileCount": 74,
+        "runtimeFileCount": 74,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/ansi-regex",
+        "status": "PASS",
+        "sourceFileCount": 5,
+        "runtimeFileCount": 5,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/ansi-styles",
+        "status": "PASS",
+        "sourceFileCount": 5,
+        "runtimeFileCount": 5,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/cliui",
+        "status": "PASS",
+        "sourceFileCount": 9,
+        "runtimeFileCount": 9,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/color-convert",
+        "status": "PASS",
+        "sourceFileCount": 7,
+        "runtimeFileCount": 7,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/color-name",
+        "status": "PASS",
+        "sourceFileCount": 4,
+        "runtimeFileCount": 4,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/emoji-regex",
+        "status": "PASS",
+        "sourceFileCount": 8,
+        "runtimeFileCount": 8,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/escalade",
+        "status": "PASS",
+        "sourceFileCount": 11,
+        "runtimeFileCount": 11,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/get-caller-file",
+        "status": "PASS",
+        "sourceFileCount": 6,
+        "runtimeFileCount": 6,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/is-fullwidth-code-point",
+        "status": "PASS",
+        "sourceFileCount": 5,
+        "runtimeFileCount": 5,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/lodash.camelcase",
+        "status": "PASS",
+        "sourceFileCount": 4,
+        "runtimeFileCount": 4,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/long",
+        "status": "MISMATCH",
+        "sourceFileCount": 10,
+        "runtimeFileCount": 30,
+        "missingCount": 0,
+        "extraCount": 20,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/protobufjs",
+        "status": "PASS",
+        "sourceFileCount": 79,
+        "runtimeFileCount": 79,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/require-directory",
+        "status": "PASS",
+        "sourceFileCount": 7,
+        "runtimeFileCount": 7,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/string-width",
+        "status": "PASS",
+        "sourceFileCount": 5,
+        "runtimeFileCount": 5,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/strip-ansi",
+        "status": "PASS",
+        "sourceFileCount": 5,
+        "runtimeFileCount": 5,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/undici-types",
+        "status": "PASS",
+        "sourceFileCount": 41,
+        "runtimeFileCount": 41,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/wrap-ansi",
+        "status": "PASS",
+        "sourceFileCount": 4,
+        "runtimeFileCount": 4,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/y18n",
+        "status": "PASS",
+        "sourceFileCount": 9,
+        "runtimeFileCount": 9,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/yargs",
+        "status": "PASS",
+        "sourceFileCount": 63,
+        "runtimeFileCount": 63,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      },
+      {
+        "path": "electronapp/node_modules/yargs-parser",
+        "status": "PASS",
+        "sourceFileCount": 11,
+        "runtimeFileCount": 11,
+        "missingCount": 0,
+        "extraCount": 0,
+        "mismatchCount": 0
+      }
+    ]
+  },
+  "runtime": {
+    "status": "PASS",
+    "manifestPath": "build-manifest.json",
+    "manifestSha256": "d4afcaa62c5ddd10fb9a6b73e0dd547cf220cfee910c6906e3a9e2e1d04c3a7f",
+    "sourceCommit": "fb10f920a39112ff72b0f82715da8345702f634b",
+    "version": "0.2.4",
+    "fileCount": 2149,
+    "actualPayloadFileCount": 2149,
+    "expectedCount": 2149,
+    "actualCount": 2149,
+    "missingCount": 0,
+    "extraCount": 0,
+    "mismatchCount": 0,
+    "failures": [],
+    "payloadSetSha256": {
+      "expected": "1af9fe752a70cbea38629ccaf28d91ce4e45c424ed07ee414fc1cb7250d5e207",
+      "observed": "1af9fe752a70cbea38629ccaf28d91ce4e45c424ed07ee414fc1cb7250d5e207",
+      "status": "PASS"
+    },
+    "provenanceBindings": {
+      "status": "PASS",
+      "sourceManifestSha256": {
+        "expected": "3f918912d8ff86384f5374fc1f4ce538ed6afae140835ad57d411bb8e9a7e73f",
+        "observed": "3f918912d8ff86384f5374fc1f4ce538ed6afae140835ad57d411bb8e9a7e73f"
+      },
+      "packageLockSha256": {
+        "expected": "f1fbaad4b3e9805e107e537bf5da1b6e1cf40319a802f9259a05e569610fc5df",
+        "observed": "f1fbaad4b3e9805e107e537bf5da1b6e1cf40319a802f9259a05e569610fc5df"
+      },
+      "records": [
+        {
+          "path": "source-provenance.json",
+          "expectedHash": "d18742828725cbd7a670fb4280b63108a4ca64781c0241da9b1c9c598fe2b7d2",
+          "observedHash": "d18742828725cbd7a670fb4280b63108a4ca64781c0241da9b1c9c598fe2b7d2",
+          "status": "PASS"
+        },
+        {
+          "path": "runtime-provenance.json",
+          "expectedHash": "14f1912ecb5a22385cb5e164dd7af4bf024dc66a04bc44f9afe89caddefc924b",
+          "observedHash": "14f1912ecb5a22385cb5e164dd7af4bf024dc66a04bc44f9afe89caddefc924b",
+          "status": "PASS"
+        }
+      ]
+    },
+    "binaries": [
+      {
+        "path": "cec/cec.dll",
+        "sha256": "6e2932ab53f4d05d5f815499786a48c3ccb8a60c527aa2f34e4abbf14dc66d04"
+      },
+      {
+        "path": "cec/cec.x64.dll",
+        "sha256": "6e2932ab53f4d05d5f815499786a48c3ccb8a60c527aa2f34e4abbf14dc66d04"
+      },
+      {
+        "path": "cec/cec-client.exe",
+        "sha256": "42f601278f82c37d0cc26460d4ac80e62f6cec5b84b2efb0ee8ed75c1cbc4519"
+      },
+      {
+        "path": "cec/cec-client.x64.exe",
+        "sha256": "42f601278f82c37d0cc26460d4ac80e62f6cec5b84b2efb0ee8ed75c1cbc4519"
+      },
+      {
+        "path": "cec/p8-usbcec-driver-installer.exe",
+        "sha256": "6e4d5a091720cf5ad727896bbf3766e5529468e24849183439506130bde3546a"
+      },
+      {
+        "path": "electronapp/libmpv/x64/mpv-1.dll",
+        "sha256": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c"
+      },
+      {
+        "path": "electronapp/libmpv/x64/RefreshRate.exe",
+        "sha256": "c3ac38b3345d804afc4ba97f34f059d0c4294ac5f55f62a25948ee62975eaa81"
+      },
+      {
+        "path": "electronapp/native-helper/ete-mpv-helper.exe",
+        "sha256": "28054c75551177f1109859d4f8793d45a4c731aba1e43ddab9bb2f1c5dc030dc"
+      },
+      {
+        "path": "Emby.Theater.exe",
+        "sha256": "11abf75c8f77ddb0078e7dd62a2eaae60dba244c113bc7893a7e56bc6527163e"
+      },
+      {
+        "path": "MediaBrowser.Common.dll",
+        "sha256": "8fc955a5215e862f5bde882cedbe2be52e6a242d89d03406844993595d72657f"
+      },
+      {
+        "path": "MediaBrowser.Model.dll",
+        "sha256": "f2eeca1c65e56e96340dc84ff91de6e4cc25bb2e510706748606f05c1e39ebaf"
+      },
+      {
+        "path": "ServiceStack.Text.dll",
+        "sha256": "2cc4fc93be82d4818dc81beb9f5cd0e4f995c77e1725c129e4918e8aeaeb39c1"
+      },
+      {
+        "path": "SharpCompress.dll",
+        "sha256": "3c34138417974ce215e5d1b5bdbb7abd578ce77420073ea9de3f46ccebe42b55"
+      },
+      {
+        "path": "SimpleInjector.dll",
+        "sha256": "6a8e55d1f114fb579f4b92169af71dc197d86dd13a79199a4f047dc4b22bf0bc"
+      },
+      {
+        "path": "SocketHttpListener.dll",
+        "sha256": "7d1e347f1cb6ff10b011547665bcf13bb734306e8977e572021161f52a43f852"
+      },
+      {
+        "path": "System.Configuration.dll",
+        "sha256": "3dba0c61e075728780723d7e517f6276674e29f6e9d5942c0b95a240f1e8f1bf"
+      },
+      {
+        "path": "x64/electron/d3dcompiler_47.dll",
+        "sha256": "a05f99734f7c4822fefc12b367af21fd0976ed6608752fb1e1e80b6ece7ecbbb"
+      },
+      {
+        "path": "x64/electron/dxcompiler.dll",
+        "sha256": "50107537790259639a223455a6e77bf08371407ad9b8b6e8cd7135ec69b8f70e"
+      },
+      {
+        "path": "x64/electron/dxil.dll",
+        "sha256": "77e039c905030a641e53658a008b74e90635a5ea9b6b79eabd0f2003bdfca59a"
+      },
+      {
+        "path": "x64/electron/electron.exe",
+        "sha256": "0446040f3c63eb75d5b1e1663d5ef27f07730a82df3e4fa47ff77c1a33cef07c"
+      },
+      {
+        "path": "x64/electron/ffmpeg.dll",
+        "sha256": "8dcba81eb8c59fb3d38441423d518fba8067b69682767df524af5c79f261dbea"
+      },
+      {
+        "path": "x64/electron/vk_swiftshader.dll",
+        "sha256": "c025005e861623088bfc980bd978261548610564235d6f8c818ca76287c2e35f"
+      },
+      {
+        "path": "x64/electron/vulkan-1.dll",
+        "sha256": "7611034fc1bc24fa103b4c6bf923974cdec46fa506952d6f82cfef836db99fd1"
+      }
+    ],
+    "licenseNoticePaths": [
+      "electronapp/node_modules/@grpc/grpc-js/LICENSE",
+      "electronapp/node_modules/@grpc/grpc-js/proto/protoc-gen-validate/LICENSE",
+      "electronapp/node_modules/@grpc/grpc-js/proto/xds/LICENSE",
+      "electronapp/node_modules/@grpc/proto-loader/LICENSE",
+      "electronapp/node_modules/@js-sdsl/ordered-map/LICENSE",
+      "electronapp/node_modules/@protobufjs/aspromise/LICENSE",
+      "electronapp/node_modules/@protobufjs/base64/LICENSE",
+      "electronapp/node_modules/@protobufjs/codegen/LICENSE",
+      "electronapp/node_modules/@protobufjs/eventemitter/LICENSE",
+      "electronapp/node_modules/@protobufjs/fetch/LICENSE",
+      "electronapp/node_modules/@protobufjs/float/LICENSE",
+      "electronapp/node_modules/@protobufjs/path/LICENSE",
+      "electronapp/node_modules/@protobufjs/pool/LICENSE",
+      "electronapp/node_modules/@protobufjs/utf8/LICENSE",
+      "electronapp/node_modules/@types/node/LICENSE",
+      "electronapp/node_modules/ansi-regex/license",
+      "electronapp/node_modules/ansi-styles/license",
+      "electronapp/node_modules/cliui/LICENSE.txt",
+      "electronapp/node_modules/color-convert/LICENSE",
+      "electronapp/node_modules/color-name/LICENSE",
+      "electronapp/node_modules/detect-rpi/LICENSE",
+      "electronapp/node_modules/emoji-regex/LICENSE-MIT.txt",
+      "electronapp/node_modules/escalade/license",
+      "electronapp/node_modules/get-caller-file/LICENSE.md",
+      "electronapp/node_modules/is-fullwidth-code-point/license",
+      "electronapp/node_modules/is-linux/license",
+      "electronapp/node_modules/is-osx/license",
+      "electronapp/node_modules/is-windows/LICENSE",
+      "electronapp/node_modules/lodash.camelcase/LICENSE",
+      "electronapp/node_modules/long/LICENSE",
+      "electronapp/node_modules/power-off/license",
+      "electronapp/node_modules/protobufjs/google/LICENSE",
+      "electronapp/node_modules/protobufjs/LICENSE",
+      "electronapp/node_modules/require-directory/LICENSE",
+      "electronapp/node_modules/sleep-mode/license",
+      "electronapp/node_modules/sleep-mode/node_modules/is-windows/LICENSE",
+      "electronapp/node_modules/string-width/license",
+      "electronapp/node_modules/strip-ansi/license",
+      "electronapp/node_modules/undici-types/LICENSE",
+      "electronapp/node_modules/wrap-ansi/license",
+      "electronapp/node_modules/y18n/LICENSE",
+      "electronapp/node_modules/yargs/LICENSE",
+      "electronapp/node_modules/yargs-parser/LICENSE.txt",
+      "x64/electron/LICENSE",
+      "x64/electron/LICENSES.chromium.html"
+    ],
+    "runtimePackages": [
+      {
+        "path": "electronapp/node_modules/@grpc/grpc-js",
+        "name": "@grpc/grpc-js",
+        "version": "1.14.4",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/@grpc/proto-loader",
+        "name": "@grpc/proto-loader",
+        "version": "0.8.1",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/@js-sdsl/ordered-map",
+        "name": "@js-sdsl/ordered-map",
+        "version": "4.4.2",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/@protobufjs/aspromise",
+        "name": "@protobufjs/aspromise",
+        "version": "1.1.2",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/@protobufjs/base64",
+        "name": "@protobufjs/base64",
+        "version": "1.1.2",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/@protobufjs/codegen",
+        "name": "@protobufjs/codegen",
+        "version": "2.0.5",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/@protobufjs/eventemitter",
+        "name": "@protobufjs/eventemitter",
+        "version": "1.1.1",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/@protobufjs/fetch",
+        "name": "@protobufjs/fetch",
+        "version": "1.1.1",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/@protobufjs/float",
+        "name": "@protobufjs/float",
+        "version": "1.0.2",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/@protobufjs/path",
+        "name": "@protobufjs/path",
+        "version": "1.1.2",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/@protobufjs/pool",
+        "name": "@protobufjs/pool",
+        "version": "1.1.0",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/@protobufjs/utf8",
+        "name": "@protobufjs/utf8",
+        "version": "1.1.2",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/@types/node",
+        "name": "@types/node",
+        "version": "22.20.2",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/ansi-regex",
+        "name": "ansi-regex",
+        "version": "5.0.1",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/ansi-styles",
+        "name": "ansi-styles",
+        "version": "4.3.0",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/cliui",
+        "name": "cliui",
+        "version": "8.0.1",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/color-convert",
+        "name": "color-convert",
+        "version": "2.0.1",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/color-name",
+        "name": "color-name",
+        "version": "1.1.4",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/detect-rpi",
+        "name": "detect-rpi",
+        "version": "1.4.0",
+        "selection": "archive-baseline-or-unclassified"
+      },
+      {
+        "path": "electronapp/node_modules/emoji-regex",
+        "name": "emoji-regex",
+        "version": "8.0.0",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/escalade",
+        "name": "escalade",
+        "version": "3.2.0",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/get-caller-file",
+        "name": "get-caller-file",
+        "version": "2.0.5",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/is-fullwidth-code-point",
+        "name": "is-fullwidth-code-point",
+        "version": "3.0.0",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/is-linux",
+        "name": "is-linux",
+        "version": "1.0.1",
+        "selection": "archive-baseline-or-unclassified"
+      },
+      {
+        "path": "electronapp/node_modules/is-osx",
+        "name": "is-osx",
+        "version": "1.0.2",
+        "selection": "archive-baseline-or-unclassified"
+      },
+      {
+        "path": "electronapp/node_modules/is-windows",
+        "name": "is-windows",
+        "version": "1.0.2",
+        "selection": "archive-baseline-or-unclassified"
+      },
+      {
+        "path": "electronapp/node_modules/lodash.camelcase",
+        "name": "lodash.camelcase",
+        "version": "4.3.0",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/long",
+        "name": "long",
+        "version": "5.3.2",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/power-off",
+        "name": "power-off",
+        "version": "1.1.2",
+        "selection": "archive-baseline-or-unclassified"
+      },
+      {
+        "path": "electronapp/node_modules/protobufjs",
+        "name": "protobufjs",
+        "version": "7.6.6",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/require-directory",
+        "name": "require-directory",
+        "version": "2.1.1",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/sleep-mode/node_modules/is-windows",
+        "name": "is-windows",
+        "version": "0.1.1",
+        "selection": "archive-baseline-or-unclassified"
+      },
+      {
+        "path": "electronapp/node_modules/sleep-mode",
+        "name": "sleep-mode",
+        "version": "1.1.0",
+        "selection": "archive-baseline-or-unclassified"
+      },
+      {
+        "path": "electronapp/node_modules/string-width",
+        "name": "string-width",
+        "version": "4.2.3",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/strip-ansi",
+        "name": "strip-ansi",
+        "version": "6.0.1",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/undici-types",
+        "name": "undici-types",
+        "version": "6.21.0",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/wrap-ansi",
+        "name": "wrap-ansi",
+        "version": "7.0.0",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/y18n",
+        "name": "y18n",
+        "version": "5.0.8",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/yargs",
+        "name": "yargs",
+        "version": "17.7.3",
+        "selection": "lockfile-production"
+      },
+      {
+        "path": "electronapp/node_modules/yargs-parser",
+        "name": "yargs-parser",
+        "version": "21.1.1",
+        "selection": "lockfile-production"
+      }
+    ],
+    "retiredPaths": [
+      {
+        "path": "electronapp/libmpv/x64/mpv-win32-x64.node",
+        "status": "ABSENT"
+      }
+    ]
+  },
+  "assessment": "MISMATCH"
+}

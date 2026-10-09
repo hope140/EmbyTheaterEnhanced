@@ -1,5 +1,17 @@
 # 开发日志
 
+## 2026-10-09 — 构建输入与对应来源审计
+
+Model Tier: Tier 2 evidence review，确定性工具/测试/清单为Tier 1；Model: 当前主线程GPT-6系列，worker GPT-6 Luna High与GPT-5.6 Sol Medium；Reason: 主线程负责来源/材料证据语义与最终diff，worker执行清单、文档核对和固定contract工具；Escalated: no，沿用主线程模型，无新增架构或法律决策。Task Risk=medium，Task Uncertainty=medium-high（外部来源材料），Cross-module Scope=tools/tests/docs与构建来源审计，Playback/Session Impact=none。
+
+起点1abf554，独立本地分支codex/build-input-audit-20261009；原主目录未提交资料和P1交付保留。读取现有manifest及prepare/build/package/provenance链，新增导出器只观察本地材料、显式输出到新文件，缺失继续且保持INCOMPLETE。主线程review补齐链接祖先、异常版本投影、未知文件名隐藏、退役目录、文件大小写/通知命名和缺文件计数回归；最终14项加既有5项共19/19通过，Node syntax与diff通过。
+
+P1源fb10f92四层validator通过；3归档、1009/51 vendor文件、Electron73文件、2149项payload核对通过。fresh npm ci34包，其中33个生产包1142文件匹配P1，但long路径有20个Carnival3.2.0残留；另外7个Carnival包根共29唯一文件，全node_modules1191文件。记录完整GCC闭包未锁定、Inno gate未消费toolchain manifest、元数据未全绑定sourceCommit等局限，未扩大为生产构建变更。
+
+官方来源只读核实Electron44发布identity；libmpv所称旧Release/API/tag现不可取得，补丁声明含asset hash，但原archive/独立发布记录/完整build依赖仍缺。修正早期Git公开边界被误用作installer内容的文档，完整矩阵见 [BUILD_INPUT_AUDIT](BUILD_INPUT_AUDIT.md)。本轮只进行范围内本地提交，没有重建/启动/安装/远端写入；不宣称法律认证、公开源码完整构建或字节复现。
+
+工具/测试独立提交`0b44a81`；文档和三份脱敏JSON观察另行提交。提交前扫描19个变更文件、29个新增/修改本地链接，敏感路径/凭据模式命中0、链接缺失0、JSON解析通过。原产品/构建链scope diff为空。
+
 ## 2026-10-09 — P2 离线计时与能力核对
 
 Model Tier: Tier 1；Model: 当前主线程 GPT-6 系列，worker GPT-6 Luna High；Reason: 离线工具、测试和静态能力审计，产品与Playback/Session不变；Escalated: no。Task Risk=low，Task Uncertainty=bounded，Cross-module Scope=tools/tests/docs，Playback/Session Impact=none。

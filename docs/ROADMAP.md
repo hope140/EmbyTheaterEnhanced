@@ -30,9 +30,15 @@
 
 ## NOW
 
+### 构建输入与对应来源清单
+
+清单审计已本地完成，见 [审计报告](BUILD_INPUT_AUDIT.md)。固定归档、Electron全树、Native Helper、源码变换、Node闭包与最终payload分别核对；本机固定输入构建有P1证据，公开仓库完整构建与当前字节可复现仍未证明。
+
+已确认需要后续材料的重点是Host/离线Web/辅助二进制/libmpv的精确来源与对应源码、实际payload的通知交付、完整GCC/Inno环境，以及Node归档继承内容（long额外20文件）。下一步先收集材料与固定输入边界，再决定小范围构建gate修改；不由本次审计自动触发组件替换或发布变更。
+
 ### P2 阶段观测与能力核对
 
-离线工具和合成样本报告已本地完成，见 [P2阶段观测](P2_TIMING_AND_CAPABILITY_REVIEW.md)。P0/P1保持已完成本地交付，产品基线仍为fb10f92。后续可以独立审计构建输入、对应来源与可再构建范围；缺少真实服务样本不触发预热或Hydration实现。
+离线工具和合成样本报告已本地完成，见 [P2阶段观测](P2_TIMING_AND_CAPABILITY_REVIEW.md)。P0/P1保持已完成本地交付，产品基线仍为fb10f92。后续构建输入清单已独立完成，材料缺口见上项；缺少真实服务样本不触发预热或Hydration实现。
 
 ### P0 基线与主线整合审查
 
@@ -98,7 +104,7 @@
 ## DEFERRED / DECISION
 
 - Electron Forge migration evaluation：按现有安装与构建契约另行评估，不与播放问题混修。
-- vendor binary / source rebuild / license closure：按来源、再构建能力与许可义务独立决策，见 [许可文档](LICENSING.md)。
+- 对应源码 / 通知交付 / 完整工具链材料：清单审计完成，缺口与补齐顺序见 [构建输入审计](BUILD_INPUT_AUDIT.md)，许可状态见 [许可文档](LICENSING.md)。
 
 ## Frozen Artifact
 

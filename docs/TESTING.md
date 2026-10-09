@@ -1,5 +1,11 @@
 # 测试与验收
 
+## 2026-10-09 构建输入审计
+
+`node --test tests/build-input-audit.test.cjs tests/tracked-product-sources.test.cjs tests/electron-runtime-input.test.cjs`：19/19 PASS。新工具14项覆盖missing/mismatch分层、路径/链接边界、异常元数据脱敏、额外文件名隐藏、输出独占、退役目录、大小写与通知命名；Node syntax与diff检查通过。
+
+只读复核P1 fb10f92的source/runtime/native-helper/Electron validators通过，机器导出核对3归档、1009/51 vendor文件、73文件Electron及2149项payload通过。fresh npm闭包1142文件均匹配，P1另有20个Carnival long旧路径；完整node_modules40包根。未准备vendor的独立工作树报告INCOMPLETE，缺失材料不当作PASS。详见 [构建输入审计](BUILD_INPUT_AUDIT.md) 和 [机器清单](evidence/build-input-inventory-20261009.json)。本轮不重建runtime或安装器，不把历史播放/安装证据当作本轮实测。
+
 ## 2026-10-09 P2 离线阶段统计
 
 `node --test tests/playback-timing.test.cjs tests/p1-runtime-diagnostics.test.cjs`：24/24 PASS。新增工具只读显式输入，不启动runtime或读取默认profile；覆盖严格输入上限、UTF-8、重复/缺失/过期归属、Stop/retire、时钟回退、零值、限流、跨启动歧义、字段投影和输出防覆盖。Node语法与diff检查通过。现存P1合成日志110条已用最终工具分析，交付报告与复算结果一致，详见 [P2阶段观测](P2_TIMING_AND_CAPABILITY_REVIEW.md)。本轮没有产品改动，不重建或重复运行P1播放/安装器验收。

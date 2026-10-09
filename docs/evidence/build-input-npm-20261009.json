@@ -1,0 +1,274 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Observation after isolated npm ci --ignore-scripts --no-audit --no-fund; not a replacement lockfile",
+  "sourceCommit": "fb10f920a39112ff72b0f82715da8345702f634b",
+  "packageLockSha256": "f1fbaad4b3e9805e107e537bf5da1b6e1cf40319a802f9259a05e569610fc5df",
+  "packageCount": 33,
+  "fileCount": 1142,
+  "packages": [
+    {
+      "path": "node_modules/@grpc/grpc-js",
+      "version": "1.14.4",
+      "fileCount": 681,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/@grpc/proto-loader",
+      "version": "0.8.1",
+      "fileCount": 11,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/@js-sdsl/ordered-map",
+      "version": "4.4.2",
+      "fileCount": 14,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/@protobufjs/aspromise",
+      "version": "1.1.2",
+      "fileCount": 6,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/@protobufjs/base64",
+      "version": "1.1.2",
+      "fileCount": 6,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/@protobufjs/codegen",
+      "version": "2.0.5",
+      "fileCount": 6,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/@protobufjs/eventemitter",
+      "version": "1.1.1",
+      "fileCount": 7,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/@protobufjs/fetch",
+      "version": "1.1.1",
+      "fileCount": 9,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/@protobufjs/float",
+      "version": "1.0.2",
+      "fileCount": 8,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/@protobufjs/path",
+      "version": "1.1.2",
+      "fileCount": 6,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/@protobufjs/pool",
+      "version": "1.1.0",
+      "fileCount": 7,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/@protobufjs/utf8",
+      "version": "1.1.2",
+      "fileCount": 9,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/@types/node",
+      "version": "22.20.2",
+      "fileCount": 74,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/ansi-regex",
+      "version": "5.0.1",
+      "fileCount": 5,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/ansi-styles",
+      "version": "4.3.0",
+      "fileCount": 5,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/cliui",
+      "version": "8.0.1",
+      "fileCount": 9,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/color-convert",
+      "version": "2.0.1",
+      "fileCount": 7,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/color-name",
+      "version": "1.1.4",
+      "fileCount": 4,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/emoji-regex",
+      "version": "8.0.0",
+      "fileCount": 8,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/escalade",
+      "version": "3.2.0",
+      "fileCount": 11,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/get-caller-file",
+      "version": "2.0.5",
+      "fileCount": 6,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/is-fullwidth-code-point",
+      "version": "3.0.0",
+      "fileCount": 5,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/lodash.camelcase",
+      "version": "4.3.0",
+      "fileCount": 4,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/long",
+      "version": "5.3.2",
+      "fileCount": 10,
+      "missing": 0,
+      "extra": 20,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/protobufjs",
+      "version": "7.6.6",
+      "fileCount": 79,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/require-directory",
+      "version": "2.1.1",
+      "fileCount": 7,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/string-width",
+      "version": "4.2.3",
+      "fileCount": 5,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/strip-ansi",
+      "version": "6.0.1",
+      "fileCount": 5,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/undici-types",
+      "version": "6.21.0",
+      "fileCount": 41,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/wrap-ansi",
+      "version": "7.0.0",
+      "fileCount": 4,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/y18n",
+      "version": "5.0.8",
+      "fileCount": 9,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/yargs",
+      "version": "17.7.3",
+      "fileCount": 63,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    },
+    {
+      "path": "node_modules/yargs-parser",
+      "version": "21.1.1",
+      "fileCount": 11,
+      "missing": 0,
+      "extra": 0,
+      "mismatch": 0
+    }
+  ]
+}

@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-10-09 — 构建输入、来源与可再构建范围
+
+从1abf554建立独立`codex/build-input-audit-20261009`，完成 [来源/材料矩阵](BUILD_INPUT_AUDIT.md)、只读导出器、14项新增测试和通知/构建文档修正。新工具与既有Git blob/Electron测试19/19，语法与diff通过；P1四层来源重验、三个归档、1009/51 vendor文件、73文件Electron和2149项payload核对通过。
+
+fresh npm33包1142文件与P1对应文件完全匹配，但long目录保留20个Carnival旧文件；最终node_modules共40包根，不是33包。当前可确认本机固定输入组装与P1的helper源构建；公开仓库完整构建、完整工具链和当前runtime/installer字节复现仍未证明。已区分Git排除与发行payload，列出Host/Web/辅助二进制/libmpv的对应源码、通知交付和工具链材料缺口。
+
+产品源码、版本0.2.4、P1 runtime/安装器及原vendor保持；本轮没有启动客户端或访问用户profile。当前远端只读核验main46e995e、Latest v0.2.2、v0.2.4 Pre-release；P1产品fb10f92与已发布03a2e3b继续分开。后续补材料与构建gate按报告优先级独立决定。
+
 ## 2026-10-09 — P2 离线阶段观测交付
 
 从P0/P1的7bee8db建立独立codex/p2-performance-20261009，新增只读单文件阶段分析工具与16项回归，连同既有P1日志工具共24/24通过。分析已隔离合成日志110条、8次请求，5次有play→core-playing端点；缺失/歧义/时钟回退保持UNAVAILABLE。fake CD2含固定400ms延迟且无内部分段日志，不用于真实性能或预热收益结论。

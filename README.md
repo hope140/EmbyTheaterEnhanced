@@ -18,7 +18,7 @@ Emby Theater Enhanced 是非官方社区维护项目，与 Emby 不存在隶属�
 
 2026-10-09，设置页一致性修正已通过本轮用户验收并发布为最新测试版 [v0.2.4 Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.4)；正式 Latest 仍为 [v0.2.2](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.2)。v0.2.4 继承 v0.2.3 的功能和修复，统一增强设置页与 Emby 原生设置的对齐、动态控件样式及导航标题。完整产物信息与验收范围见[0.2.4验收记录](docs/SETTINGS_UI_024_ACCEPTANCE.md)。
 
-P0 主线整合准备与 P1 最小诊断已完成[本地交付](docs/P0_P1_DELIVERY.md)，新增诊断遵循[诊断 contract](docs/P1_DIAGNOSTICS_CONTRACT.md)。P2 已交付[离线阶段观测工具与能力结论](docs/P2_TIMING_AND_CAPABILITY_REVIEW.md)，产品基线保持P1候选。进度与优先级见 [Development Roadmap](docs/ROADMAP.md)，可复现问题与观察项见 [Known Issues](docs/KNOWN_ISSUES.md)。Smart Path Mapping 已完成用户功能验收和最终远端复审，并通过 PR #18 合入 `main`。
+P0 主线整合准备与 P1 最小诊断已完成[本地交付](docs/P0_P1_DELIVERY.md)，新增诊断遵循[诊断 contract](docs/P1_DIAGNOSTICS_CONTRACT.md)。P2 已交付[离线阶段观测工具与能力结论](docs/P2_TIMING_AND_CAPABILITY_REVIEW.md)，产品基线保持P1候选。[构建输入、来源与可再构建范围审计](docs/BUILD_INPUT_AUDIT.md)已整理固定输入、实际payload和对应源码材料缺口；当前本地构建依赖外部固定输入，公开仓库本身尚不能完整构建全部组件。进度与优先级见 [Development Roadmap](docs/ROADMAP.md)，可复现问题与观察项见 [Known Issues](docs/KNOWN_ISSUES.md)。Smart Path Mapping 已完成用户功能验收和最终远端复审，并通过 PR #18 合入 `main`。
 
 ### 核心架构
 
@@ -64,7 +64,8 @@ P0 主线整合准备与 P1 最小诊断已完成[本地交付](docs/P0_P1_DELIV
 ### 暂缓 / 决策项
 
 - [ ] Electron Forge 迁移评估
-- [ ] vendor binary / source rebuild / license closure
+- [x] 构建输入与对应来源清单审计（本地材料与P1候选）
+- [ ] 对应源码、通知交付与完整工具链材料补齐
 
 ## 项目文档
 
