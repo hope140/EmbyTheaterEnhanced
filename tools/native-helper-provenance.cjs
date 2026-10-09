@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const {materialize} = require('./materialize-native-helper-source.cjs');
 const nativeHelperContract = require('./native-helper-contract.cjs');
+const toolchains = require('./build-toolchains.cjs');
 
 function hashFile(file) { return crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex'); }
 function exists(file) { try { return fs.statSync(file).isFile(); } catch (_) { return false; } }
@@ -39,6 +40,8 @@ function validate(rootArg, runtimeArg, sourceCommit) {
   try { expectedContract = nativeHelperContract.inspect(root); }
   catch (_) { errors.push('native-helper-build-contract-not-committed'); }
   if (!expectedContract || JSON.stringify(record.contract) !== JSON.stringify(expectedContract)) errors.push('native-helper-build-contract-mismatch');
+  try { toolchains.validateRecorded(root, record.toolchain, 'native'); }
+  catch (_) { errors.push('native-helper-toolchain-mismatch'); }
   const expectedFlags = (manifest.compiler.flags || []).concat(manifest.compiler.linkerFlags || []);
   if (!record.compiler || record.compiler.sha256 !== manifest.compiler.sha256 || record.compiler.version !== manifest.compiler.version ||
       JSON.stringify(record.compiler.flags) !== JSON.stringify(expectedFlags)) errors.push('native-helper-compiler-mismatch');
