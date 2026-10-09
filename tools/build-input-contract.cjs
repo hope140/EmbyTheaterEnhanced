@@ -3,7 +3,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const cp = require('node:child_process');
-const {readBlob, sha256} = require('./copy-tracked-product-sources.cjs');
 const {hashTrackedTextFile} = require('./tracked-file-hash.cjs');
 
 // Only consumed metadata, generators, validators and delivered notices belong
@@ -65,14 +64,9 @@ function inspect(rootArg, sourceCommit) {
 }
 
 function materializeNotices(root, runtime, contract) {
-    for (const relativePath of NOTICE_PATHS) {
-        const entry = contract.files.find(item => item.path === relativePath);
-        const bytes = readBlob(root, entry.gitBlobObjectId);
-        if (sha256(bytes).toLowerCase() !== entry.sha256) throw new Error('Notice blob identity mismatch.');
-        const output = path.join(runtime, relativePath);
-        fs.mkdirSync(path.dirname(output), {recursive: true});
-        fs.writeFileSync(output, bytes);
-    }
+    // Keep the existing public entry point while centralizing destination
+    // preflight and safe creation with the build-input provenance writer.
+    return require('./build-input-provenance.cjs').materializeNotices(root, runtime, contract);
 }
 
 if (require.main === module) {

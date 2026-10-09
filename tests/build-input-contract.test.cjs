@@ -164,6 +164,129 @@ test('provenance write and validate bind inputs, transformed config and notices'
     assert.throws(() => provenance.run('validate', fixture.repo, fixture.runtime, fixture.sourceCommit), /provenance mismatch/);
 });
 
+test('write preflight rejects linked config, notice and provenance targets without changing outside canaries', t => {
+    for (const relative of [CONFIG_PATH, 'LICENSE', provenance.NAME]) {
+        const fixture = setup(t);
+        const outside = path.join(fixture.base, 'outside-canary.bin');
+        const canary = relative === CONFIG_PATH ? fixture.configBase : Buffer.from('outside-original');
+        if (relative !== CONFIG_PATH) write(fixture.runtime, CONFIG_PATH, fixture.configBase);
+        fs.writeFileSync(outside, canary);
+        const target = path.join(fixture.runtime, ...relative.split('/'));
+        fs.mkdirSync(path.dirname(target), {recursive: true});
+        try { fs.linkSync(outside, target); }
+        catch (error) {
+            if (['EPERM', 'EACCES', 'ENOTSUP', 'EOPNOTSUPP', 'EMLINK'].includes(error.code)) {
+                t.skip('This filesystem does not permit hardlink fixtures.'); return;
+            }
+            throw error;
+        }
+        assert.throws(() => provenance.run('write', fixture.repo, fixture.runtime, fixture.sourceCommit));
+        assert.deepEqual(fs.readFileSync(outside), canary);
+        assert.deepEqual(fs.readFileSync(path.join(fixture.runtime, CONFIG_PATH)), fixture.configBase);
+        assert.equal(fs.existsSync(path.join(fixture.runtime, 'THIRD_PARTY_NOTICES.md')), false);
+    }
+});
+
+test('write preflight rejects file symlinks without changing outside canaries', t => {
+    for (const relative of [CONFIG_PATH, 'LICENSE', provenance.NAME]) {
+        const fixture = setup(t);
+        const outside = path.join(fixture.base, 'outside-canary.bin');
+        const canary = relative === CONFIG_PATH ? fixture.configBase : Buffer.from('outside-original');
+        if (relative !== CONFIG_PATH) write(fixture.runtime, CONFIG_PATH, fixture.configBase);
+        fs.writeFileSync(outside, canary);
+        const target = path.join(fixture.runtime, ...relative.split('/'));
+        fs.mkdirSync(path.dirname(target), {recursive: true});
+        try { fs.symlinkSync(outside, target, 'file'); }
+        catch (error) {
+            if (['EPERM', 'EACCES', 'ENOTSUP', 'EOPNOTSUPP'].includes(error.code)) {
+                t.skip('This Windows environment does not permit file symlink fixtures.'); return;
+            }
+            throw error;
+        }
+        assert.throws(() => provenance.run('write', fixture.repo, fixture.runtime, fixture.sourceCommit));
+        assert.deepEqual(fs.readFileSync(outside), canary);
+        assert.deepEqual(fs.readFileSync(path.join(fixture.runtime, CONFIG_PATH)), fixture.configBase);
+        assert.equal(fs.existsSync(path.join(fixture.runtime, 'THIRD_PARTY_NOTICES.md')), false);
+    }
+});
+
+test('runtime root and docs junctions are rejected before any output write', t => {
+    const runtimeFixture = setup(t);
+    const outsideRuntime = path.join(runtimeFixture.base, 'outside-runtime');
+    fs.mkdirSync(outsideRuntime);
+    fs.rmdirSync(runtimeFixture.runtime);
+    try { fs.symlinkSync(outsideRuntime, runtimeFixture.runtime, 'junction'); }
+    catch (error) { t.skip('This Windows environment does not permit junction fixtures.'); return; }
+    const outsideCanary = path.join(outsideRuntime, 'canary.txt');
+    fs.writeFileSync(outsideCanary, 'runtime-root-canary');
+    assert.throws(() => provenance.run('write', runtimeFixture.repo, runtimeFixture.runtime, runtimeFixture.sourceCommit));
+    assert.equal(fs.readFileSync(outsideCanary, 'utf8'), 'runtime-root-canary');
+    assert.deepEqual(fs.readdirSync(outsideRuntime), ['canary.txt']);
+
+    const docsFixture = setup(t);
+    const outsideDocs = path.join(docsFixture.base, 'outside-docs');
+    fs.mkdirSync(outsideDocs);
+    fs.writeFileSync(path.join(outsideDocs, 'canary.txt'), 'docs-junction-canary');
+    write(docsFixture.runtime, CONFIG_PATH, docsFixture.configBase);
+    try { fs.symlinkSync(outsideDocs, path.join(docsFixture.runtime, 'docs'), 'junction'); }
+    catch (error) { t.skip('This Windows environment does not permit docs junction fixtures.'); return; }
+    assert.throws(() => provenance.run('write', docsFixture.repo, docsFixture.runtime, docsFixture.sourceCommit));
+    assert.equal(fs.readFileSync(path.join(outsideDocs, 'canary.txt'), 'utf8'), 'docs-junction-canary');
+    assert.deepEqual(fs.readFileSync(path.join(docsFixture.runtime, CONFIG_PATH)), docsFixture.configBase);
+    assert.equal(fs.existsSync(path.join(docsFixture.runtime, 'LICENSE')), false);
+});
+
+test('completed runtime and late notice targets fail before config or earlier notices change', t => {
+    for (const marker of ['build-manifest.json', provenance.NAME]) {
+        const fixture = setup(t);
+        write(fixture.runtime, CONFIG_PATH, fixture.configBase);
+        write(fixture.runtime, marker, 'completed');
+        assert.throws(() => provenance.run('write', fixture.repo, fixture.runtime, fixture.sourceCommit), /Completed runtime outputs/);
+        assert.deepEqual(fs.readFileSync(path.join(fixture.runtime, CONFIG_PATH)), fixture.configBase);
+        assert.equal(fs.existsSync(path.join(fixture.runtime, 'LICENSE')), false);
+    }
+
+    const fixture = setup(t);
+    write(fixture.runtime, CONFIG_PATH, fixture.configBase);
+    const late = Buffer.from('existing late notice');
+    write(fixture.runtime, 'docs/SOURCE_MATERIALS.md', late);
+    assert.throws(() => provenance.run('write', fixture.repo, fixture.runtime, fixture.sourceCommit), /Notice output already exists/);
+    assert.deepEqual(fs.readFileSync(path.join(fixture.runtime, CONFIG_PATH)), fixture.configBase);
+    assert.equal(fs.existsSync(path.join(fixture.runtime, 'LICENSE')), false);
+    assert.equal(fs.existsSync(path.join(fixture.runtime, 'THIRD_PARTY_NOTICES.md')), false);
+    assert.deepEqual(fs.readFileSync(path.join(fixture.runtime, 'docs/SOURCE_MATERIALS.md')), late);
+
+    const direct = setup(t);
+    const inputs = contract.inspect(direct.repo, direct.sourceCommit);
+    write(direct.runtime, 'docs/SOURCE_MATERIALS.md', late);
+    assert.throws(() => contract.materializeNotices(direct.repo, direct.runtime, inputs), /Notice output already exists/);
+    assert.equal(fs.existsSync(path.join(direct.runtime, 'LICENSE')), false);
+    assert.deepEqual(fs.readFileSync(path.join(direct.runtime, 'docs/SOURCE_MATERIALS.md')), late);
+});
+
+test('write refuses a non-base config and leaves it and all notices untouched', t => {
+    const fixture = setup(t);
+    const existing = Buffer.from('user-owned config bytes');
+    write(fixture.runtime, CONFIG_PATH, existing);
+    assert.throws(() => provenance.run('write', fixture.repo, fixture.runtime, fixture.sourceCommit), /verified Carnival base/);
+    assert.deepEqual(fs.readFileSync(path.join(fixture.runtime, CONFIG_PATH)), existing);
+    assert.equal(fs.existsSync(path.join(fixture.runtime, 'LICENSE')), false);
+    assert.equal(fs.existsSync(path.join(fixture.runtime, 'THIRD_PARTY_NOTICES.md')), false);
+});
+
+test('normal write atomically transforms the base config and copies raw notice blobs', t => {
+    const fixture = setup(t);
+    write(fixture.runtime, CONFIG_PATH, fixture.configBase);
+    const result = provenance.run('write', fixture.repo, fixture.runtime, fixture.sourceCommit);
+    assert.equal(result.status, 'passed');
+    assert.deepEqual(fs.readFileSync(path.join(fixture.runtime, CONFIG_PATH)), provenance.configOutput(fixture.configBase));
+    const expectedNotice = readBlob(fixture.repo, contract.inspect(fixture.repo, fixture.sourceCommit).files.find(item => item.path === 'LICENSE').gitBlobObjectId);
+    assert.deepEqual(fs.readFileSync(path.join(fixture.runtime, 'LICENSE')), expectedNotice);
+    assert.equal(fs.existsSync(path.join(fixture.runtime, provenance.NAME)), true);
+    assert.equal(fs.readdirSync(fixture.runtime).some(name => name.startsWith('.ete-config-') && name.endsWith('.tmp')), false);
+    assert.deepEqual(provenance.run('validate', fixture.repo, fixture.runtime, fixture.sourceCommit), result);
+});
+
 test('config base, generated output and generator tampering are rejected', t => {
     const baseFixture = setup(t);
     write(baseFixture.repo, 'vendor/carnival/' + CONFIG_PATH, Buffer.concat([baseFixture.configBase, Buffer.from('tampered')]));
