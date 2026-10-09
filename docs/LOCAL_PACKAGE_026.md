@@ -1,5 +1,37 @@
 # 0.2.6 本地测试包
 
+最终状态：**本地可安装测试包交付完成**。产品sourceCommit为
+`355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f`，runtime为
+`dist/ETE-0.2.6-local-355f4e6-win-x64`，交付目录为
+`dist/delivery-0.2.6-355f4e6/`。后续文档HEAD不替代产品身份。
+
+安装器 `EmbyTheaterEnhanced-0.2.6-test-355f4e6-win-x64-setup.exe`，
+175621807 bytes，SHA256
+`bc878b4e929016071b8d7a41f9b281ad3118e62e8a1e469b0a5c9858718b1532`。
+安装前退出已有客户端；Inno不自动关闭它，安装需要管理员确认。未做代码签名。
+
+全量631/631；最后同一来源8组全部PASS、自然exit0、无强制清理和残留。
+五组完整pipeline各有普通/STRM/queue A-B-C共5对Started/Stopped，原Next、
+generation、精确取消与DirectUrl UA隔离均保留并由原始records复算。
+安装器完整性、2136文件解包逐项一致、运行后payload检查及交付hash读回通过。
+结构化来源/工具hash/运行索引与保留失败见
+[local-package-026-20261009.json](evidence/local-package-026-20261009.json)。
+
+| 最终场景 | 完整runner | 耗时 | 候选残留 |
+|---|---|---:|---:|
+| idle关闭 | PASS / natural exit0 | 7552ms | 0 |
+| playing关闭 | PASS / natural exit0 | 8189ms | 0 |
+| stopped关闭 | PASS / natural exit0 | 8054ms | 0 |
+| miss400完整pipeline | PASS / normal close | 10323ms | 0 |
+| hit0完整pipeline | PASS / normal close | 12699ms | 0 |
+| hit400完整pipeline | PASS / normal close | 13416ms | 0 |
+| hit800完整pipeline | PASS / normal close | 16328ms | 0 |
+| direct400完整pipeline | PASS / normal close | 14403ms | 0 |
+
+当前正常关闭通过不消除初版8700039及旧d480eb8的app.exit UNKNOWN。系统实际
+安装/升级/卸载、真实Emby/CD2/远控、可见首帧/连续性、HDR/多屏未执行。
+本轮没有推送/合并/tag/Release，原候选和失败记录保持。以下为过程与固定计划。
+
 日期：2026-10-09（UTC+8）。从准确 `99cb8506c98793182b060a0acd523d7937dd2c32`
 建立独立 `codex/local-package-026-20261009`。本轮目标是可安装的 Windows x64
 本地测试包。必要本地提交、版本整理、正式构建与安装器验证均在当前授权内。

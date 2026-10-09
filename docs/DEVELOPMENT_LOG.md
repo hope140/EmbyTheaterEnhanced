@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-10-09 — 0.2.6 最终包验证与交付
+
+- 最终产品提交355f4e6，独立Tier2核心审查无P1/P2；full suite631/631，0fail/cancelled/skipped。service聚焦35/35，关闭工具36/36；前后失败与多实例拒绝测试日志保留。
+- 从该提交正式build完整runtime，固定GCC/Electron44.4.2/native/dependency/build-input及版本门禁通过。相对68eb024共11文件变化，其中产品仅native-helper/service.js；全部23个EXE/DLL同hash。
+- 最终8组串行执行均PASS：idle7552ms、playing8189ms、stopped8054ms、miss400 10323ms、hit0 12699ms、hit400 13416ms、hit800 16328ms、direct400 14403ms。每轮自然exit0、无outer/native强杀、残留0；存在native实例时按clientId逐一核对will-quit前完成。5组完整pipeline各5对Session，保留Next/generation/精确取消/UA隔离，工具hash和product source分开绑定。
+- 完整Inno安装器175621807 bytes、PE0.2.6、SHA256 bc878b4e929016071b8d7a41f9b281ad3118e62e8a1e469b0a5c9858718b1532；innounp完整性通过，2136/2136解包文件同hash，post-package VerifyOnly通过。交付7文件独占创建并读回hash，未夹带profile/log/fixture/凭据。
+- 最终目录dist/delivery-0.2.6-355f4e6；产品进程残留0。文档提交只记录结果，不替换355f4e6产物身份。原8700039直接退出FAIL、7b3a2dc正常关闭FAIL、ac865c4工具时序假设偏差以及后续PASS均保留；app.exit根因UNKNOWN。系统安装/实服/远控/可见呈现/HDR/多屏未执行，远端无写入。
+
 ## 2026-10-09 — 0.2.6 本地包与正常关闭验收
 
 - ac865c4完整8组通过后，按父会话独立review补齐A/B多pending拒绝边界：current+snapshot同一次allSettled，全部结束后按current优先/快照顺序传播原Error，原surface短路不变。精确35例before34 PASS/1 FAIL、after35/35。Stop-before-close verifier假设偏差另记原FAIL，按clientId配对接受已经完成的stopped实例；最终工具专项36/36，原pipeline/generation/Session门槛不动。

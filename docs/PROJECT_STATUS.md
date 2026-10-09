@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-10-09 — 0.2.6 本地可安装测试包交付完成
+
+最终产品sourceCommit为 `355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f`，版本0.2.6。交付目录 `dist/delivery-0.2.6-355f4e6/`，含setup.exe、同名SHA256/provenance、SHA256SUMS、中文使用说明、验证报告和结构化证据。安装器175621807 bytes，SHA256 `bc878b4e929016071b8d7a41f9b281ad3118e62e8a1e469b0a5c9858718b1532`。
+
+全量631/631、0失败/跳过。最终runtime三场景正常关闭及五组完整pipeline均PASS、自然exit0、无强清理、残留0；每组pipeline五对完整Session独立复算，Next/generation/精确取消和DirectUrl隔离保持。安装器完整性及2136文件解包逐项一致，运行后payload校验和交付文件重新读回通过。23个EXE/DLL与68eb024同hash；产品JS仅native service的关闭等待归属变化。
+
+正常产品关闭路径本轮完成隔离验收；初版8700039及旧d480eb8的直接app.exit退出超时仍UNKNOWN，原失败与工具门槛纠正记录单列。真实服务/远控、可见首帧/连续性、HDR/多屏、系统安装/升级/卸载未执行。未推送、合并或发布。最终报告见 [0.2.6本地包](LOCAL_PACKAGE_026.md) 与 [结构化证据](evidence/local-package-026-20261009.json)；下文保留前序阶段记录。
+
 ## 2026-10-09 — 0.2.6 本地可安装候选构建中
 
 ac865c4八组正常关闭/完整pipeline均PASS，原证据保留；随后按父会话精确复核补齐多pending实例中一个拒绝时仍等待其余实例settled的错误边界，35例修改前34/1、修改后35/35。Stop后先退出native再关窗是正常顺序，verifier已按clientId配对纠正，工具36/36。正在固定新最终source重建，不沿用ac865c4产物标签或验收身份。

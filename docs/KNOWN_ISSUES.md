@@ -1,5 +1,7 @@
 # Known Issues
 
+最终本地0.2.6/355f4e6安装包已交付。正常窗口关闭的重复destroy等待、renderer先行退出join与多实例拒绝早退已修复，631/631及最终8组隔离运行通过；本轮正常关闭项记 `FIXED / ISOLATED RUNTIME VERIFIED`。直接app.exit超时在8700039与旧d480eb8发生过，根因继续UNKNOWN，最终未复跑该路径；正常关闭通过不消除该观察项。系统安装、真实服务/远控、可见首帧/连续性、HDR/多屏仍未验收。见 [最终报告](LOCAL_PACKAGE_026.md)。下文保留前序证据与具体边界。
+
 ## 2026-10-09 — 正常关闭等待首次Native清理
 
 - ac865c4三场景及五组完整pipeline通过，但静态/fake多实例拒绝检查发现Promise.all可能在一个pending失败时早退。最终改为current和pending一起allSettled，再按current优先/快照顺序传播原始错误，surface失败短路保持。35例前34/1、后35/35；最终source runtime待下方最终交付证据关闭正常路径项目，app.exit UNKNOWN继续分列。
