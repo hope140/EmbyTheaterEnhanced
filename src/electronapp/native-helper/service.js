@@ -5,6 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 const childProcess = require('node:child_process');
 const {NativeHelperClient, PROTOCOL_VERSION} = require('./controller');
+const {createNativeDiagnostics} = require('../enhanced/native-diagnostics');
 
 const CALL_CHANNEL = 'enhanced-native-helper-call';
 const NOTIFY_CHANNEL = 'enhanced-native-helper-notify';
@@ -125,6 +126,20 @@ function createService(options) {
   const observed = new Set();
   const fixedSettingLogged = new Set();
   const boundWindowEvents = [];
+  const diagnostic = createNativeDiagnostics(logger);
+  const helperRuns = new WeakMap();
+  let helperRunSequence = 0;
+
+  function observe(name, disposition, record, reason) {
+    try {
+      const owner = record && record.client || client;
+      const generationId = record ? record.targetGeneration || record.sourceGenerationId :
+        owner && owner.currentGenerationId || lastVisibleMedia && lastVisibleMedia.client === owner && lastVisibleMedia.generationId;
+      diagnostic({name, disposition, reason, helperRun: owner && helperRuns.get(owner), generationId,
+        currentGenerationId: owner && owner.currentGenerationId, transitionId: record && record.token,
+        sourceGenerationId: record && record.sourceGenerationId});
+    } catch (_) { /* Observation has no ownership or playback authority. */ }
+  }
 
   function log(event, details) {
     try { logger({category: 'native-helper', event, details: details || {}}); } catch (_) { }
@@ -159,6 +174,7 @@ function createService(options) {
 
   function clearPresentation(record) {
     if (!record || presentation !== record) return;
+    observe('presentation-clear', 'cleared', record);
     presentation = null;
     ++presentationEpoch;
     cancelPreparation(record);
@@ -179,12 +195,14 @@ function createService(options) {
         !surfaceWanted || !surfaceWindow || surfaceWindow.isDestroyed() || !surfaceWindow.isVisible() ||
         !main || main.isDestroyed() || !main.isVisible() || main.isMinimized()) {
       clearPresentation(presentation);
+      observe('presentation-prepare', 'unavailable');
       return {status: 'ok', ready: false};
     }
     const previous = presentation;
     const record = {token, client: active, endpointId, epoch: ++presentationEpoch, holdId: null,
-      controlGenerationId: active.allocateGenerationId(), targetGeneration: null};
+      controlGenerationId: active.allocateGenerationId(), targetGeneration: null, sourceGenerationId: lastVisibleMedia.generationId};
     presentation = record;
+    observe('presentation-prepare', 'requested', record);
     let result;
     try {
       result = await active.request('presentation-prepare', {sourceGenerationId: lastVisibleMedia.generationId}, {
@@ -192,16 +210,19 @@ function createService(options) {
       });
     } catch (_) { result = null; }
     if (!ownsPresentation(record)) {
+      observe('presentation-prepare', 'stale', record);
       cancelPreparation(record);
       if (result && validToken(result.holdId)) releaseHold(record, result.holdId);
       return {status: 'ok', ready: false};
     }
     if (!result || result.ready !== true || result.painted !== true || !validToken(result.holdId)) {
+      observe('presentation-prepare', 'unavailable', record);
       clearPresentation(record);
       if (previous) { cancelPreparation(previous); releaseHold(previous, previous.holdId); }
       return {status: 'ok', ready: false};
     }
     record.holdId = result.holdId;
+    observe('presentation-prepare', 'ready', record);
     if (previous) { cancelPreparation(previous); releaseHold(previous, previous.holdId); }
     return {status: 'ok', ready: true};
   }
@@ -326,6 +347,7 @@ function createService(options) {
     if (!surfaceWanted || !main.isVisible() || main.isMinimized()) {
       invalidateSurfacePlacement();
       surfaceWindow.hide();
+      observe('surface-hidden', 'hidden', null, reason);
       return;
     }
     syncSurfaceBounds();
@@ -342,6 +364,7 @@ function createService(options) {
     if (!surfaceWanted || !main.isVisible() || main.isMinimized()) {
       invalidateSurfacePlacement();
       surfaceWindow.hide();
+      observe('surface-hidden', 'hidden', null, reason);
       return;
     }
     syncSurfaceBounds();
@@ -406,11 +429,13 @@ function createService(options) {
     if (!fileSystem.existsSync(helperPath) || !fileSystem.existsSync(libmpvPath)) throw new Error('native-helper-runtime-missing');
     startPromise = (async function () {
       let owned;
+      const helperRun = ++helperRunSequence;
       owned = new ClientClass({
         helperPath,
         libmpvPath,
         parentWindowHandle: decimalWindowHandle(host),
         expectedLibmpvVersion: EXPECTED_LIBMPV_VERSION,
+        onDiagnostic: function (record) { diagnostic(Object.assign({}, record, {helperRun})); },
         onEvent: function (message) {
           if (client !== owned) return;
           if (message.name === 'end-file' && message.value && message.value.reason === 4) {
@@ -439,6 +464,7 @@ function createService(options) {
           owned.kill().catch(function () {});
         }
       });
+      helperRuns.set(owned, helperRun);
       startingClient = owned;
       try {
         await owned.start();
@@ -506,6 +532,8 @@ function createService(options) {
             generationId, mediaScoped: false, timeoutMs: 2000
           });
         } catch (_) { result = null; }
+        observe('presentation-arm', !ownsPresentation(record) ? 'stale' :
+          result && result.ready === true && result.status === 'armed' && result.holdId === record.holdId ? 'ready' : 'unavailable', record);
         if (ownsPresentation(record) && (!result || result.ready !== true || result.status !== 'armed' ||
             result.holdId !== record.holdId)) clearPresentation(record);
       } else {

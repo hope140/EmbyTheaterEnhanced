@@ -107,14 +107,32 @@ function makeClientClass(options) {
       if (!settings.deferredStart) return Promise.resolve(this);
       return new Promise((resolve, reject) => { this.resolveStart = resolve; this.rejectStart = reject; });
     }
-    beginGeneration() { this.currentGenerationId = ++nextGeneration; return this.currentGenerationId; }
+    beginGeneration(label) {
+      this.currentGenerationId = ++nextGeneration;
+      if (typeof this.options.onDiagnostic === 'function') {
+        this.options.onDiagnostic({name: 'generation-begin', generationId: this.currentGenerationId,
+          disposition: 'BEGIN_GENERATION', currentGenerationId: this.currentGenerationId, label});
+      }
+      return this.currentGenerationId;
+    }
     allocateGenerationId() { return ++nextGeneration; }
-    retireGeneration() { this.currentGenerationId = null; }
+    retireGeneration(reason) {
+      const generationId = this.currentGenerationId;
+      if (generationId === null) return;
+      this.currentGenerationId = null;
+      if (typeof this.options.onDiagnostic === 'function') {
+        this.options.onDiagnostic({name: 'generation-retired', generationId, disposition: 'RETIRE_GENERATION',
+          currentGenerationId: null, reason});
+      }
+    }
     command() {}
     setProperty() {}
     submitCommand() {}
     getProperty() { return Promise.resolve(false); }
-    request() { return Promise.resolve({attached: true, width: 800, height: 450}); }
+    request(method, params, requestOptions) {
+      if (typeof settings.requestHandler === 'function') return settings.requestHandler(method, params, requestOptions, this);
+      return Promise.resolve({attached: true, width: 800, height: 450});
+    }
     load() {
       const promise = settings.loadFails ? Promise.reject(Object.assign(new Error('media-load-failed'), {state: 'FAILED'})) : Promise.resolve({commandAccepted: true});
       promise.catch(() => {});
@@ -165,7 +183,7 @@ function makeService(ClientClass, options) {
     getMainWindow: () => main,
     getWebContents: () => main.webContents,
     execFile: placementExecutor,
-    logger: record => logs.push(record),
+    logger: typeof settings.logger === 'function' ? settings.logger : record => logs.push(record),
     runtimeRoot: 'C:\\fixture-runtime'
   });
   return {main, service, logs, placementExecutor};
@@ -585,3 +603,81 @@ test('stale work after a crash cannot recreate or mutate the next helper', async
   assert.equal(ClientClass.clients[1].currentGenerationId, replacement.generationId);
   await service.destroy();
 });
+
+for (const observerFailure of ['throw', 'reject']) {
+  test(`native-helper diagnostics associate presentation lifecycle and fail open when logger ${observerFailure}s`, async function () {
+    const diagnosticEvents = new Set(['generation-begin', 'generation-retired', 'presentation-prepare',
+      'presentation-arm', 'presentation-clear', 'surface-hidden']);
+    const records = [];
+    const logger = record => {
+      if (!diagnosticEvents.has(record && record.event)) return;
+      records.push(record);
+      if (observerFailure === 'throw') throw new Error('diagnostic-logger-failure');
+      return Promise.reject(new Error('diagnostic-logger-rejection'));
+    };
+    const ClientClass = makeClientClass({
+      requestHandler(method, params) {
+        if (method === 'presentation-prepare') return Promise.resolve({ready: true, painted: true, holdId: 701});
+        if (method === 'presentation-arm') return Promise.resolve({ready: true, status: 'armed', holdId: params.holdId});
+        return Promise.resolve({attached: true, width: 800, height: 450});
+      }
+    });
+    const {main, service} = makeService(ClientClass, {logger});
+
+    const created = await service.call('create');
+    const generationA = await service.call('begin-generation', {label: 'play-41-1', requestEpoch: 1}, created.endpointId);
+    await service.call('set-visible', {visible: true, generationId: generationA.generationId}, created.endpointId);
+    service.notify('retire-generation', {
+      generationId: generationA.generationId, requestEpoch: 2, reason: 'superseded'
+    }, created.endpointId);
+
+    const prepared = await service.call('prepare-presentation', {token: 1}, created.endpointId);
+    assert.deepEqual(prepared, {status: 'ok', ready: true});
+    const generationB = await service.call('begin-generation', {
+      label: 'play-42-2', requestEpoch: 3, presentationToken: 1
+    }, created.endpointId);
+    await service.call('cancel-presentation', {token: 1}, created.endpointId);
+
+    main.minimized = true;
+    main.emit('minimize');
+    await Promise.resolve();
+
+    const byEvent = name => records.filter(record => record.event === name).map(record => record.details);
+    assert.deepEqual(byEvent('generation-begin').map(details => details.requestId), ['play-41-1', 'play-42-2']);
+    assert.equal(byEvent('generation-retired')[0].requestId, 'play-41-1');
+    assert.equal(byEvent('generation-retired')[0].reason, 'superseded');
+
+    const prepareReady = byEvent('presentation-prepare').find(details => details.disposition === 'ready');
+    assert.deepEqual({helperRun: prepareReady.helperRun, generationId: prepareReady.generationId,
+      sourceGenerationId: prepareReady.sourceGenerationId, transitionId: prepareReady.transitionId,
+      disposition: prepareReady.disposition, association: prepareReady.association}, {
+      helperRun: 1, generationId: generationA.generationId, sourceGenerationId: generationA.generationId,
+      transitionId: 1, disposition: 'ready', association: 'available'
+    });
+    const armReady = byEvent('presentation-arm')[0];
+    assert.deepEqual({helperRun: armReady.helperRun, generationId: armReady.generationId,
+      currentGenerationId: armReady.currentGenerationId, sourceGenerationId: armReady.sourceGenerationId,
+      transitionId: armReady.transitionId, requestId: armReady.requestId, disposition: armReady.disposition}, {
+      helperRun: 1, generationId: generationB.generationId, currentGenerationId: generationB.generationId,
+      sourceGenerationId: generationA.generationId, transitionId: 1, requestId: 'play-42-2', disposition: 'ready'
+    });
+    const cleared = byEvent('presentation-clear')[0];
+    assert.equal(cleared.transitionId, 1);
+    assert.equal(cleared.generationId, generationB.generationId);
+    assert.equal(cleared.requestId, 'play-42-2');
+    assert.equal(cleared.disposition, 'cleared');
+    const hidden = byEvent('surface-hidden')[0];
+    assert.deepEqual({helperRun: hidden.helperRun, generationId: hidden.generationId,
+      requestId: hidden.requestId, visible: hidden.visible, reason: hidden.reason,
+      disposition: hidden.disposition}, {
+      helperRun: 1, generationId: generationB.generationId, requestId: 'play-42-2',
+      visible: false, reason: 'minimize', disposition: 'hidden'
+    });
+    assert.ok(records.length <= 120);
+    assert.equal(JSON.stringify(records).includes('token'), false);
+    assert.equal(JSON.stringify(records).includes('C:\\private'), false);
+    assert.equal(service.status().state, 'ready');
+    assert.equal(service.status().surfaceVisible, false);
+    await service.destroy();
+  });
+}

@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const diagnostics = require('./diagnostics');
+const rendererErrors = require('./renderer-errors');
 
 const CHANNELS = Object.freeze({
     LOG: 'enhanced-diagnostics-log',
@@ -23,6 +24,7 @@ function register(options) {
     const fileSystem = settings.fs || fs;
     const registered = [];
     const listeners = [];
+    const receiveRendererError = rendererErrors.createReceiver(logger, {appRoot: settings.appRoot});
 
     function isTrusted(event) {
         const expected = typeof getWebContents === 'function' ? getWebContents() : null;
@@ -54,6 +56,11 @@ function register(options) {
     registerListener(CHANNELS.LOG, function (event, record) {
         if (!isTrusted(event) || typeof logger !== 'function') return;
         try {
+            if (record && record.category === 'renderer') {
+                if (event.senderFrame && event.sender.mainFrame && event.senderFrame !== event.sender.mainFrame) return;
+                receiveRendererError(record);
+                return;
+            }
             const pending = logger(record);
             if (pending && typeof pending.catch === 'function') pending.catch(function () {});
         } catch (_) { /* Structured logging is fail-open. */ }
