@@ -201,6 +201,7 @@ function writeResultAndExit(result) {
     exitObservation.record('result-persist-begin');
     fs.writeFileSync(path.join(evidence, 'electron-smoke.json'), JSON.stringify(result, null, 2));
     exitObservation.record('result-persisted');
+    if (process.env.ETE_TEST_NORMAL_CLOSE) return normalCloseObservation.close(result);
     if (transitionActionListener) {
         ipcMain.removeListener('ete-test-transition-timeline-action', transitionActionListener);
         transitionActionListener = null;
@@ -446,7 +447,10 @@ app.on('browser-window-created', (_, win) => {
                     const source = fs.readFileSync(path.join(__dirname,'../tests/pipeline-browser.js'),'utf8');
                     const fixtureSeconds = process.env.ETE_TEST_FIXTURE_SECONDS === undefined ? 5 : Number(process.env.ETE_TEST_FIXTURE_SECONDS);
                     if (!Number.isInteger(fixtureSeconds) || fixtureSeconds < 3 || fixtureSeconds > 120) throw new Error('fixture-duration-invalid');
-                    state.pipeline = await win.webContents.executeJavaScript(withSourceUrl(source + '\nrunPipelineFixture(' + JSON.stringify(fixtureUrl) + ', ' + JSON.stringify(process.env.ETE_TEST_MOUNT_SIDECAR || null) + ', ' + JSON.stringify(process.env.ETE_TEST_CD2_EXPECT || process.env.ETE_TEST_CD2_MODE || null) + ', ' + JSON.stringify(testCd2Origin || null) + ', ' + JSON.stringify(process.env.ETE_TEST_STOP_BEFORE_PLAYER === '1') + ', null, ' + JSON.stringify({seconds:fixtureSeconds}) + ')', 'ete-pipeline-fixture.js'));
+                    state.pipeline = await win.webContents.executeJavaScript(withSourceUrl(source + '\nrunPipelineFixture(' + JSON.stringify(fixtureUrl) + ', ' + JSON.stringify(process.env.ETE_TEST_MOUNT_SIDECAR || null) + ', ' + JSON.stringify(process.env.ETE_TEST_CD2_EXPECT || process.env.ETE_TEST_CD2_MODE || null) + ', ' + JSON.stringify(testCd2Origin || null) + ', ' + JSON.stringify(process.env.ETE_TEST_STOP_BEFORE_PLAYER === '1') + ', null, ' + JSON.stringify({seconds:fixtureSeconds, normalClose:process.env.ETE_TEST_NORMAL_CLOSE || null}) + ')', 'ete-pipeline-fixture.js'));
+                    if (process.env.ETE_TEST_NORMAL_CLOSE) {
+                        return finish({ok:state.ready && state.pipeline.normalClose.preconditionsPassed === true, versions:process.versions, state});
+                    }
                     if (process.env.ETE_TEST_STOP_BEFORE_PLAYER === '1') {
                         if (!state.pipeline.stopBeforePlayer || !Object.values(state.pipeline.stopBeforePlayer).every(Boolean)) {
                             return finish({ok:false,error:'Stop-before-player assertion failed',state});
@@ -646,4 +650,8 @@ diagnosticsModule.createLogger = function () {
 if (transitionComparison) {
     process.once('uncaughtException', error => finish({ok:false,error:errorEvidence(error, 'main')}));
 }
+const normalCloseObservation = process.env.ETE_TEST_NORMAL_CLOSE
+    ? require('./normal-close-observation.cjs').install({app, runtime, evidence,
+        getWindow: () => windowOwnership.getApplicationWindow(), getServer: () => fixtureServer})
+    : null;
 require(path.join(runtime, 'electronapp/main.js'));

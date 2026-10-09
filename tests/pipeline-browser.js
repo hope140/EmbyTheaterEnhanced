@@ -280,6 +280,31 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
         await done;
     };
     try {
+    if (fixtureOptions && fixtureOptions.normalClose) {
+        const scenario = fixtureOptions.normalClose;
+        if (!['idle','playing','stopped'].includes(scenario)) throw new Error('normal-close-scenario-invalid');
+        if (scenario !== 'idle') {
+            markStage('ordinary-play');
+            activeItem = {Id:'fixture-close',ServerId:'fixture-server',Name:'Synthetic close',
+                MediaType:'Video',Type:'Movie',Path:fixture,RunTimeTicks:durationTicks,UserData:{},MediaStreams:[]};
+            items.set(activeItem.Id,activeItem);
+            await manager.play({items:[activeItem],fullscreen:true,startPositionTicks:0});
+            markStage('ordinary-core-playing');
+            await sync.wait('playing-report', () => reported(activeItem.Id, '/Playing'));
+            if (scenario === 'stopped') { await stopCurrent(activeItem.Id); markStage('ordinary-stop'); }
+        }
+        const started = records.filter(r => r.endpoint.endsWith('/Playing'));
+        const stopped = records.filter(r => r.endpoint.endsWith('/Stopped'));
+        const complete = row => row.body.ItemId === 'fixture-close' && row.body.PlaySessionId === 'play-fixture-close' && row.body.MediaSourceId === 'source-fixture-close';
+        const current = manager.currentItem();
+        const preconditionsPassed = document.hidden && (scenario === 'idle'
+            ? !current && started.length === 0 && stopped.length === 0
+            : scenario === 'playing'
+            ? current && current.Id === 'fixture-close' && started.length === 1 && started.every(complete) && stopped.length === 0 && embeddedPlayCount === 1
+            : !current && started.length === 1 && stopped.length === 1 && started.every(complete) && stopped.every(complete) && embeddedPlayCount === 1);
+        return {normalClose:{scenario,preconditionsPassed:!!preconditionsPassed,hidden:document.hidden,
+            currentItemId:current && current.Id || null,embeddedPlayCount},records,stages,observations};
+    }
     for (const kind of (cd2Mode === 'direct' ? ['strm','video'] : ['video','strm'])) {
         const stagePrefix = kind === 'video' ? 'ordinary' : 'strm';
         markStage(stagePrefix + '-play');

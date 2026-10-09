@@ -67,6 +67,11 @@ function writeInjectionMarker(result) {
 function installBeforeSmoke() {
     app.on('browser-window-created', (_event, window) => {
         if (!window || !window.webContents || typeof window.webContents.on !== 'function') return;
+        // Intercept before main.js reaches show(): hide-after-show can still
+        // activate the real desktop. Hidden acceptance never owns foreground.
+        window.show = function () {};
+        window.showInactive = function () {};
+        window.focus = function () {};
         window.webContents.on('did-finish-load', async () => {
             if (!isApplicationDocument(window) || injectedWindows.has(window)) return;
             injectedWindows.add(window);

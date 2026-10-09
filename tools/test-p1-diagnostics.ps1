@@ -2,7 +2,8 @@ param(
     [Parameter(Mandatory=$true)][string]$RuntimeName,
     [string]$ProductRoot = '',
     [ValidateSet('hit','direct','miss')][string]$Cd2Mode = 'hit',
-    [ValidateRange(0,1000)][int]$Cd2DelayMs = 400
+    [ValidateRange(0,1000)][int]$Cd2DelayMs = 400,
+    [ValidateSet('idle','playing','stopped')][string]$NormalClose = ''
 )
 $ErrorActionPreference = 'Stop'
 $Cd2Mode = $Cd2Mode.ToLowerInvariant()
@@ -61,6 +62,8 @@ $harnessFilePaths = @(
     'tools/runtime-window-ownership.cjs',
     'tools/transition-stream-capture.cjs',
     'tools/exit-observation.cjs',
+    'tools/normal-close-observation.cjs',
+    'tools/verify-normal-close.cjs',
     'tests/pipeline-browser.js',
     'tests/generation-fixture-observer.js',
     'tests/fake-cd2-fixture.cjs',
@@ -85,7 +88,7 @@ $identity = [ordered]@{
     runtimeProvenanceSha256=$runtimeProvenanceSha256
     harnessHead=$harnessHead
     harnessFiles=$harnessFiles
-    settings=[ordered]@{cd2Mode=$Cd2Mode; cd2DelayMs=$Cd2DelayMs; fixtureSeconds=$fixtureSeconds}
+    settings=[ordered]@{cd2Mode=$Cd2Mode; cd2DelayMs=$Cd2DelayMs; fixtureSeconds=$fixtureSeconds; normalClose=$NormalClose}
 }
 [IO.File]::WriteAllText((Join-Path $evidence 'harness-identity.json'),($identity | ConvertTo-Json -Depth 8) + [Environment]::NewLine,$utf8)
 # Launch a package, so app.getVersion() follows runtime metadata rather than
@@ -124,6 +127,7 @@ $envValues = @{
     ETE_TEST_EXIT_TRACE='1'
 }
 foreach ($entry in $envValues.GetEnumerator()) { $info.EnvironmentVariables[$entry.Key]=[string]$entry.Value }
+if ($NormalClose) { $info.EnvironmentVariables['ETE_TEST_NORMAL_CLOSE']=$NormalClose }
 foreach ($name in @('ELECTRON_RUN_AS_NODE','HTTP_PROXY','HTTPS_PROXY','ALL_PROXY','http_proxy','https_proxy','all_proxy')) { $info.EnvironmentVariables.Remove($name) }
 $runnerClock = [Diagnostics.Stopwatch]::StartNew()
 $lifecycle = New-Object 'System.Collections.Generic.List[object]'
@@ -204,5 +208,9 @@ $evidence | Set-Content -LiteralPath (Join-Path $root '.work/p1-latest-evidence.
 $summary | ConvertTo-Json -Depth 8
 Write-Output ('Evidence: ' + $evidence.Substring($root.Length + 1))
 if (-not $exited -or $outputCapture.status -ne 'COMPLETE' -or $null -eq $exitCode -or $exitCode -ne 0 -or $remaining.Count) { throw 'P1 isolated runtime did not pass.' }
-& node (Join-Path $root 'tools/verify-p1-diagnostics.cjs') $runtime $evidence
+if ($NormalClose) {
+    & node (Join-Path $root 'tools/verify-normal-close.cjs') $runtime $evidence $NormalClose
+} else {
+    & node (Join-Path $root 'tools/verify-p1-diagnostics.cjs') $runtime $evidence
+}
 if ($LASTEXITCODE -ne 0) { throw 'P1 product diagnostic records did not pass.' }
