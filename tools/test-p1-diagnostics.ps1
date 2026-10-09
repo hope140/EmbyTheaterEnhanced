@@ -1,10 +1,35 @@
 param(
     [Parameter(Mandatory=$true)][string]$RuntimeName,
     [string]$ProductRoot = '',
-    [ValidateSet('hit','direct')][string]$Cd2Mode = 'hit',
+    [ValidateSet('hit','direct','miss')][string]$Cd2Mode = 'hit',
     [ValidateRange(0,1000)][int]$Cd2DelayMs = 400
 )
 $ErrorActionPreference = 'Stop'
+$Cd2Mode = $Cd2Mode.ToLowerInvariant()
+function Read-RunnerOutput {
+    param(
+        [Parameter(Mandatory=$true)][System.Threading.Tasks.Task]$StdoutTask,
+        [Parameter(Mandatory=$true)][System.Threading.Tasks.Task]$StderrTask,
+        [ValidateRange(1,180000)][int]$TimeoutMs = 5000
+    )
+    $tasks = [System.Threading.Tasks.Task[]]@($StdoutTask,$StderrTask)
+    try { [void][System.Threading.Tasks.Task]::WaitAll($tasks,$TimeoutMs) }
+    catch { }
+    $stdoutComplete = $StdoutTask.Status -eq [System.Threading.Tasks.TaskStatus]::RanToCompletion
+    $stderrComplete = $StderrTask.Status -eq [System.Threading.Tasks.TaskStatus]::RanToCompletion
+    $stdoutText = 'UNAVAILABLE'
+    $stderrText = 'UNAVAILABLE'
+    if ($stdoutComplete) {
+        try { $stdoutText = [string]$StdoutTask.Result }
+        catch { $stdoutComplete = $false; $stdoutText = 'UNAVAILABLE' }
+    }
+    if ($stderrComplete) {
+        try { $stderrText = [string]$StderrTask.Result }
+        catch { $stderrComplete = $false; $stderrText = 'UNAVAILABLE' }
+    }
+    $status = if ($stdoutComplete -and $stderrComplete) { 'COMPLETE' } else { 'UNAVAILABLE' }
+    return [ordered]@{status=$status; stdout=$stdoutText; stderr=$stderrText}
+}
 if ($RuntimeName -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$') { throw 'Invalid runtime name.' }
 $root = (Resolve-Path -LiteralPath (Split-Path -Parent $PSScriptRoot)).Path
 if ([string]::IsNullOrWhiteSpace($ProductRoot)) { $ProductRoot = $root }
@@ -117,14 +142,17 @@ if (-not $exited) {
     if ($current -and $current.StartTime.ToUniversalTime() -eq $ownedStarted) { & taskkill.exe /PID $process.Id /T /F | Out-Null }
     $process.WaitForExit(5000) | Out-Null
 }
-[IO.File]::WriteAllText((Join-Path $evidence 'stdout.log'),$stdout.GetAwaiter().GetResult())
-[IO.File]::WriteAllText((Join-Path $evidence 'stderr.log'),$stderr.GetAwaiter().GetResult())
+$outputCapture = Read-RunnerOutput -StdoutTask $stdout -StderrTask $stderr
+[IO.File]::WriteAllText((Join-Path $evidence 'stdout.log'),$outputCapture.stdout)
+[IO.File]::WriteAllText((Join-Path $evidence 'stderr.log'),$outputCapture.stderr)
+$exitCode = $null
+try { if ($process.HasExited) { $exitCode = $process.ExitCode } } catch { $exitCode = $null }
 $remaining = @(Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($runtime + '\',[StringComparison]::OrdinalIgnoreCase) })
-$summary = [ordered]@{ rootPid=$process.Id; timedOut=(-not $exited); exitCode=$process.ExitCode; observedDescendants=$owned.Count; candidateResidual=$remaining.Count; realServiceAccess=$false }
+$summary = [ordered]@{ rootPid=$process.Id; timedOut=(-not $exited); exitCode=$exitCode; outputCapture=$outputCapture.status; observedDescendants=$owned.Count; candidateResidual=$remaining.Count; realServiceAccess=$false }
 $summary | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $evidence 'runner-result.json') -Encoding UTF8
 $evidence | Set-Content -LiteralPath (Join-Path $root '.work/p1-latest-evidence.txt') -Encoding UTF8
 $summary | ConvertTo-Json
 Write-Output ('Evidence: ' + $evidence.Substring($root.Length + 1))
-if (-not $exited -or $process.ExitCode -ne 0 -or $remaining.Count) { throw 'P1 isolated runtime did not pass.' }
+if (-not $exited -or $outputCapture.status -ne 'COMPLETE' -or $null -eq $exitCode -or $exitCode -ne 0 -or $remaining.Count) { throw 'P1 isolated runtime did not pass.' }
 & node (Join-Path $root 'tools/verify-p1-diagnostics.cjs') $runtime $evidence
 if ($LASTEXITCODE -ne 0) { throw 'P1 product diagnostic records did not pass.' }

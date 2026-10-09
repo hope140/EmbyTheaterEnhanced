@@ -1,15 +1,21 @@
 // Executed only by the local integration harness in an isolated Electron profile.
 // Real PlaybackManager + ApiClient report serializers + message dispatcher;
 // API responses and delivery are in memory, not a real Emby server/session.
-async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, stopBeforePlayerOnly, timelineOptions) {
+async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, stopBeforePlayerOnly, timelineOptions, fixtureOptions) {
     const trace = window.__pipelineTrace = [];
     const stages = [];
+    const observations = window.__pipelineObservations = {stages: [], waits: []};
     function markStage(name) {
         stages.push(name);
+        observations.stages.push({name, atMs: performance.now(), hidden: document.hidden});
         trace.push('stage ' + name);
+        if (!timelineOptions && cd2Mode !== 'real') window.ipc.send('ete-test-pipeline-stage', name);
         if (window.__eteSmokeErrorEvidence) window.__eteSmokeErrorEvidence.pipelineStage = name;
     }
     const cd2AsyncHit = cd2Mode === 'hit' || cd2Mode === 'direct';
+    const durationTicks = timelineOptions ? 300000000 : ((fixtureOptions && fixtureOptions.seconds) || 5) * 10000000;
+    const fixtureControl = command => window.ipc.invoke('ete-test-cd2-fixture-control', command);
+    const gateEvidence = {};
     window.addEventListener('unhandledrejection', event=>trace.push('rejection: '+String(event.reason)));
     const deps = await new Promise((resolve,reject) => require([
         'playbackManager','connectionManager','events','pluginManager',
@@ -49,6 +55,8 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
     let activeItem;
     let pendingPlaybackId;
     let releasePendingPlayback;
+    let holdPlaybackOnce = false;
+    let sync;
     api.serverInfo = () => ({Id:'fixture-server'});
     api.serverId = () => 'fixture-server';
     api.getCurrentUserId = () => 'fixture-user';
@@ -64,11 +72,15 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
         const selected = items.get(id) || activeItem;
         const response = {PlaySessionId:'play-'+selected.Id,MediaSources:[{
             Id:'source-'+selected.Id,Path:selected.fixtureUrl || fixture,Protocol:'Http',IsRemote:false,Container:'y4m',
-            MediaStreams:[],RunTimeTicks:timelineOptions ? 300000000 : 50000000,SupportsDirectPlay:true,
+            MediaStreams:[],RunTimeTicks:durationTicks,SupportsDirectPlay:true,
             SupportsDirectStream:true,SupportsTranscoding:false,RequiredHttpHeaders:[]
         }]};
         if (id === pendingPlaybackId) {
-            return new Promise(resolve => { releasePendingPlayback = () => resolve(response); });
+            if (holdPlaybackOnce) pendingPlaybackId = null;
+            return new Promise(resolve => {
+                releasePendingPlayback = () => resolve(response);
+                if (sync) sync.notify();
+            });
         }
         return Promise.resolve(response);
     };
@@ -78,6 +90,7 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
         trace.push('ajax: '+new URL(request.url).pathname);
         if (request.url.includes('/Sessions/Playing')) {
             records.push({endpoint:new URL(request.url).pathname,body:JSON.parse(request.data)});
+            if (sync) sync.notify();
             return Promise.resolve();
         }
         return Promise.reject(Error('Unexpected fixture API request: '+new URL(request.url).pathname));
@@ -87,7 +100,14 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
     connections.currentApiClient = () => api;
     connections.getApiClients = () => [api];
     events.trigger(connections, 'apiclientcreated', [api]);
-    const sleep = ms => new Promise(r=>setTimeout(r,ms));
+    const sleep = ms => new Promise(resolve => {
+        const started = performance.now();
+        const stage = stages[stages.length - 1];
+        setTimeout(() => {
+            if (observations.waits.length < 128) observations.waits.push({stage, requestedMs: ms, elapsedMs: performance.now() - started});
+            resolve();
+        }, ms);
+    });
     const send = (command, extra) => events.trigger(api, 'message', [{MessageType:'Playstate',Data:Object.assign({Command:command},extra)}]);
     if (timelineOptions) {
         if (typeof window.runTransitionTimelineFixture !== 'function') {
@@ -128,23 +148,46 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
         return {stopBeforePlayer,results:[],next:null,generation:null,records,calls,stages};
     }
     const results = [];
+    sync = etePipelineCondition.create({timeoutMs:7000, now:()=>performance.now()});
+    const eventCounts = {seek:0,timeupdate:0};
+    const notify = event => {
+        if (Object.hasOwn(eventCounts, event.type)) eventCounts[event.type]++;
+        sync.notify(); queueMicrotask(() => sync.notify());
+    };
+    const observedEvents = ['pause','unpause','seek','timeupdate','stopped','playing'];
+    observedEvents.forEach(name => events.on(embedded, name, notify));
+    const reported = (itemId, suffix, predicate) => records.some(r => r.body.ItemId === itemId && r.endpoint.endsWith(suffix) && (!predicate || predicate(r.body)));
+    const stopCurrent = async itemId => {
+        const done = sync.wait('stopped-report', () => reported(itemId, '/Stopped') && !manager.currentItem());
+        send('Stop');
+        await done;
+    };
+    try {
     for (const kind of (cd2Mode === 'direct' ? ['strm','video'] : ['video','strm'])) {
         const stagePrefix = kind === 'video' ? 'ordinary' : 'strm';
         markStage(stagePrefix + '-play');
         trace.push('starting '+kind);
         activeItem = {Id:'fixture-'+kind,ServerId:'fixture-server',Name:'Synthetic '+kind,
             MediaType:'Video',Type:'Movie',Path:kind==='strm'?(mountSidecar || 'fixture-sidecar.strm'):fixture,
-            RunTimeTicks:50000000,UserData:{},MediaStreams:[]};
+            RunTimeTicks:durationTicks,UserData:{},MediaStreams:[]};
         items.set(activeItem.Id,activeItem);
         await manager.play({items:[activeItem],fullscreen:true,startPositionTicks:0});
         markStage(stagePrefix + '-core-playing');
         trace.push('playing '+kind);
-        await sleep(600);
+        await sync.wait('playing-report', () => reported(activeItem.Id, '/Playing'));
         const player = manager._currentPlayer;
         const state = manager.getPlayerState();
-        send('Pause'); await sleep(150); const paused=player.paused();
-        send('Seek',{SeekPositionTicks:20000000}); await sleep(200); const sought=player.currentTime()>=1800;
-        send('Unpause'); await sleep(200); const resumed=!player.paused();
+        const pauseDone = sync.wait('pause-report', () => player.paused() && reported(activeItem.Id, '/Progress', body => body.IsPaused === true));
+        send('Pause'); await pauseDone; const paused=player.paused();
+        const seekTargetMs = Math.abs(player.currentTime()-2000) < 1000 ? 4000 : 2000;
+        const seekEventsBefore = {...eventCounts};
+        const seekRecordsFrom = records.length;
+        const nearSeekTarget = value => Math.abs(value-seekTargetMs) <= 500;
+        const seekDone = sync.wait('seek-position', () => eventCounts.seek > seekEventsBefore.seek && eventCounts.timeupdate > seekEventsBefore.timeupdate && nearSeekTarget(player.currentTime()));
+        send('Seek',{SeekPositionTicks:seekTargetMs*10000}); await seekDone;
+        const sought=nearSeekTarget(player.currentTime());
+        const resumeDone = sync.wait('resume-report', () => !player.paused() && records.slice(seekRecordsFrom).some(r => r.body.ItemId===activeItem.Id && r.endpoint.endsWith('/Progress') && r.body.IsPaused === false && nearSeekTarget(r.body.PositionTicks/10000)));
+        send('Unpause'); await resumeDone; const resumed=!player.paused();
         const expectedMount = typeof mountSidecar === 'string' && /\.strm$/i.test(mountSidecar)
             ? mountSidecar.slice(0, -5)
             : null;
@@ -160,7 +203,7 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
             : kind === 'strm' && mountSidecar
             ? '本地挂载'
             : 'Emby 原生';
-        send('Stop'); await sleep(250);
+        await stopCurrent(activeItem.Id);
         markStage(stagePrefix + '-stop');
         const itemRecords=records.filter(r=>r.body.ItemId===activeItem.Id);
         const start=itemRecords.find(r=>r.endpoint.endsWith('/Playing'));
@@ -187,7 +230,7 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
             sessionPreserved:!!start && !!stop && itemRecords.every(r=>r.body.PlaySessionId==='play-'+activeItem.Id && r.body.MediaSourceId==='source-'+activeItem.Id),
             hasStart:!!start,hasProgress:progress.length>0,hasStop:!!stop,
             pauseReported:progress.some(r=>r.body.IsPaused===true),
-            seekReported:progress.some(r=>r.body.PositionTicks>=18000000),
+            seekReported:records.slice(seekRecordsFrom).some(r=>r.body.ItemId===activeItem.Id && r.endpoint.endsWith('/Progress') && nearSeekTarget(r.body.PositionTicks/10000)),
             enhancedCategoryPresent:!!enhancedCategory,
             enhancedStatsMatch:enhancedValues['播放源:']===expectedRouteSource &&
                 enhancedValues['STRM:']===(kind==='strm' ? '是' : '否') &&
@@ -196,19 +239,30 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
     const queueSidecar = mountSidecar || 'X:\\Media\\queue.y4m.strm';
     const queue = ['a','b','c'].map(suffix=>({Id:'fixture-next-'+suffix,ServerId:'fixture-server',Name:'Queue '+suffix,MediaType:'Video',Type:'Movie',
         Path:cd2AsyncHit?queueSidecar.replace(/[^\\/]+$/, 'queue-'+suffix+'.y4m.strm'):fixture,
-        RunTimeTicks:50000000,UserData:{},MediaStreams:[]}));
+        fixtureUrl:fixture+'?queue='+suffix,
+        RunTimeTicks:durationTicks,UserData:{},MediaStreams:[]}));
     queue.forEach(item=>items.set(item.Id,item));
     activeItem=queue[0];
     markStage('queue-play');
     await manager.play({items:queue,fullscreen:true,startPositionTicks:0});
     const sourceBeforeNext = embedded.currentSrc();
     markStage('nexttrack-1');
+    let rapidArm;
+    if (cd2AsyncHit) rapidArm = (await fixtureControl({action:'arm-next',label:'rapid-next'})).armId;
+    else { pendingPlaybackId = queue[1].Id; releasePendingPlayback = null; holdPlaybackOnce = true; }
+    let firstSettled = false;
     const nextOne = manager.nextTrack();
-    await sleep(cd2AsyncHit?150:25);
+    nextOne.then(() => {firstSettled=true;}, () => {firstSettled=true;});
+    if (cd2AsyncHit) gateEvidence.rapidPending = await fixtureControl({action:'wait-pending',armId:rapidArm});
+    else await sync.wait('next-playback-info-pending', () => !!releasePendingPlayback);
+    const overlapEstablished = !firstSettled && manager._playQueueManager.getCurrentPlaylistIndex() === 0;
     markStage('nexttrack-2');
     const nextTwo = manager.nextTrack();
+    let playsBeforeStaleRelease;
+    if (cd2AsyncHit) gateEvidence.rapidCancelled = await fixtureControl({action:'wait-cancelled',armId:rapidArm});
+    else { await nextTwo; playsBeforeStaleRelease = embeddedPlayCount; releasePendingPlayback(); }
     const nextSettled = await Promise.allSettled([nextOne,nextTwo]);
-    for(let i=0;i<30 && !(records.some(r=>r.endpoint.endsWith('/Playing') && r.body.ItemId===queue[1].Id));i++) await sleep(100);
+    await sync.wait('next-playing-report', () => reported(queue[1].Id, '/Playing'));
     const sourceAfterNext = embedded.currentSrc();
     function requestNumber(source) {
         try {
@@ -218,11 +272,21 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
         } catch (_) { return 0; }
     }
     const next={selected:manager.currentItem().Id===queue[1].Id,
+        overlapEstablished,
+        staleMetadataIgnored:cd2AsyncHit || embeddedPlayCount === playsBeforeStaleRelease,
+        exactPendingCancelled:!cd2AsyncHit || (gateEvidence.rapidPending.pending === true && gateEvidence.rapidCancelled.cancelled === true && gateEvidence.rapidPending.requestId === gateEvidence.rapidCancelled.requestId),
         priorStopped:records.some(r=>r.endpoint.endsWith('/Stopped') && r.body.ItemId===queue[0].Id),
         nextStarted:records.some(r=>r.endpoint.endsWith('/Playing') && r.body.PlaySessionId==='play-'+queue[1].Id),
         rapidNextSettled:nextSettled.every(value=>value.status==='fulfilled'),
-        rapidNewestLoaded:cd2AsyncHit ? requestNumber(sourceAfterNext)>requestNumber(sourceBeforeNext) : true};
-    send('Stop'); await sleep(200);
+        rapidNewestLoaded:cd2AsyncHit ? requestNumber(sourceAfterNext)>requestNumber(sourceBeforeNext) && !sourceAfterNext.endsWith('?cd2='+gateEvidence.rapidPending.requestId) : true};
+    markStage('nexttrack-serial');
+    await manager.nextTrack();
+    await sync.wait('serial-next-playing-report', () => reported(queue[2].Id, '/Playing'));
+    next.serialSelected = manager.currentItem().Id === queue[2].Id;
+    next.serialPriorStopped = reported(queue[1].Id, '/Stopped');
+    next.serialSourceLoaded = cd2AsyncHit ? requestNumber(embedded.currentSrc()) > requestNumber(sourceAfterNext) : embedded.currentSrc() === queue[2].fixtureUrl;
+    await stopCurrent(queue[2].Id);
+    next.serialSessionPreserved = reported(queue[2].Id, '/Playing') && reported(queue[2].Id, '/Stopped') && records.filter(r => r.body.ItemId === queue[2].Id).every(r => r.body.PlaySessionId === 'play-'+queue[2].Id && r.body.MediaSourceId === 'source-'+queue[2].Id);
     let generation = null;
     if (cd2AsyncHit) {
         markStage('generation-tests');
@@ -237,7 +301,7 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
         const sidecarBase = mountSidecar || 'X:\\Media\\fixture.y4m.strm';
         const directOptions = (name, requestId) => ({
             item:{Id:'generation-'+name,ServerId:'fixture-server',Name:'Generation '+name,MediaType:'Video',Type:'Movie',Path:sidecarBase.replace(/[^\\/]+$/,name+'.y4m.strm')},
-            mediaSource:{Id:'generation-source-'+name,Path:fixture,Container:'strm',MediaStreams:[],RunTimeTicks:50000000},
+            mediaSource:{Id:'generation-source-'+name,Path:fixture,Container:'strm',MediaStreams:[],RunTimeTicks:durationTicks},
             url:fixture,mediaType:'Video',fullscreen:false,playMethod:'DirectPlay',_etePlayRequestId:requestId
         });
         generationObserver.registerFixture('fixturePlay#1',9001);
@@ -252,16 +316,20 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
         const newestSource = embedded.currentSrc();
         const beforeStop = newestSource;
         generationObserver.registerFixture('fixtureStop#1-play',9003);
+        const stopArm = (await fixtureControl({action:'arm-next',label:'stop-before-load'})).armId;
         const stoppedPending = embedded.play(directOptions('stop', 9003));
         stoppedPending.then(function(){generationObserver.markPromiseSettled('fixtureStop#1-play','fulfilled');},function(error){generationObserver.markPromiseSettled('fixtureStop#1-play','rejected',error);});
         await generationObserver.waitForCd2PendingGate('fixtureStop#1-play');
+        gateEvidence.stopPending = await fixtureControl({action:'wait-pending',armId:stopArm});
         generationObserver.cancelUnusedGates('fixtureStop#1-play');
         await embedded.stop();
+        gateEvidence.stopCancelled = await fixtureControl({action:'wait-cancelled',armId:stopArm});
         const stopped = await Promise.allSettled([stoppedPending]);
         await sleep(220);
         const observerSnapshot = generationObserver.snapshot();
         const firstObservation = observerSnapshot.fixtures.find(value=>value.fixtureId==='fixturePlay#1');
         const secondObservation = observerSnapshot.fixtures.find(value=>value.fixtureId==='fixturePlay#2');
+        const stopObservation = observerSnapshot.fixtures.find(value=>value.fixtureId==='fixtureStop#1-play');
         const takeover = observerSnapshot.takeovers.find(value=>value.oldFixtureId==='fixturePlay#1' && value.newFixtureId==='fixturePlay#2');
         const firstRetirement = observerSnapshot.retirements.find(value=>value.generationId===firstObservation.nativeGenerationId && value.reason==='upper-play-invalidated');
         generation = {
@@ -270,6 +338,7 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
             oldCoreListenerIgnored:firstObservation.listenerRemoved===true && firstObservation.callbackCountAfterTakeover===0 && secondObservation.promiseSettlement==='fulfilled',
             stopSuperseded:stopped[0].status==='rejected' && stopped[0].reason && stopped[0].reason.playbackSuperseded===true,
             stopPreventedLateLoad:embedded.currentSrc()===beforeStop,
+            exactStopPendingCancelled:gateEvidence.stopPending.pending === true && gateEvidence.stopCancelled.cancelled === true && gateEvidence.stopPending.requestId === gateEvidence.stopCancelled.requestId && gateEvidence.stopPending.requestId === stopObservation.cd2RequestId && stopObservation.cd2PendingAtGate === true && stopObservation.cd2CancelSent === true,
             noUnhandledRejection:!trace.some(value=>value.indexOf('rejection:')===0),
             observer:observerSnapshot
         };
@@ -277,5 +346,9 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
         window.enhancedDiagnostics = originalEnhancedDiagnostics;
     }
     markStage('pipeline-complete');
-    return {stopBeforePlayer,results,next,generation,records,calls,stages};
+    return {stopBeforePlayer,results,next,generation,records,calls,stages,observations,gateEvidence,conditions:sync.snapshot()};
+    } finally {
+        observedEvents.forEach(name => events.off(embedded, name, notify));
+        sync.dispose();
+    }
 }

@@ -19,5 +19,5 @@ if (!output || fs.existsSync(output)) {
 } else {
     const frame = Buffer.concat([Buffer.from('FRAME\n'), Buffer.alloc(64 * 64, 100), Buffer.alloc(64 * 64 / 4, 90), Buffer.alloc(64 * 64 / 4, 180)]);
     const header = Buffer.from('YUV4MPEG2 W64 H64 F30:1 Ip A1:1 C420jpeg\n');
-    fs.writeFileSync(output, Buffer.concat([header, ...Array(seconds * 30).fill(frame)]));
+    fs.writeFileSync(output, Buffer.concat([header, ...Array(seconds * 30).fill(frame)]), {flag:'wx'});
 }

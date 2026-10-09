@@ -30,7 +30,34 @@ const nativeHelperEvents = [];
 const nativeTimelineEvents = [];
 const transitionServiceEvents = [];
 const diagnosticEvents = [];
-let fakeCd2Stats;
+let fakeCd2;
+let pipelineDeadline;
+const boundedPipeline = !!process.env.ETE_TEST_PIPELINE && !transitionTimelineMode && process.env.ETE_TEST_CD2_EXPECT !== 'real';
+const fixtureControlChannel = 'ete-test-cd2-fixture-control';
+const fixtureStageChannel = 'ete-test-pipeline-stage';
+function ownsFixtureSender(event) {
+    const owner = windowOwnership.getApplicationWindow();
+    return !!owner && !owner.isDestroyed() && event.sender === owner.webContents;
+}
+function ensureFakeCd2() {
+    if (!fakeCd2) fakeCd2 = require('../tests/fake-cd2-fixture.cjs').createFakeCd2Fixture({
+        mode: process.env.ETE_TEST_CD2_MODE,
+        delayMs: process.env.ETE_TEST_CD2_DELAY_MS === undefined ? 400 : Number(process.env.ETE_TEST_CD2_DELAY_MS),
+        getSource: () => fixtureUrl
+    });
+    return fakeCd2;
+}
+if (boundedPipeline) {
+    ipcMain.handle(fixtureControlChannel, (event, command) => {
+        if (!ownsFixtureSender(event) || !process.env.ETE_TEST_CD2_MODE) throw new Error('fixture-control-owner-required');
+        return ensureFakeCd2().control(command);
+    });
+    ipcMain.on(fixtureStageChannel, (event, stage) => {
+        if (!ownsFixtureSender(event)) return;
+        try { pipelineDeadline.enter(stage); }
+        catch (_) { finish({ok:false, error:'fixture-stage-invalid'}); }
+    });
+}
 let applicationPipelineInjectionCount = 0;
 let auxiliaryPipelineInjectionCount = 0;
 function withSourceUrl(source, name) {
@@ -138,6 +165,7 @@ if (transitionTimelineMode) {
     ipcMain.on('ete-test-transition-timeline-action', transitionActionListener);
 }
 let completed = false;
+let timeoutFailure = null;
 function writeResultAndExit(result) {
     result.cd2EnvironmentCleared = ['ETE_CD2_ENABLED','ETE_CD2_ORIGIN','ETE_CD2_TOKEN','ETE_CD2_LOCAL_PREFIX','ETE_CD2_CLOUD_PREFIX','ETE_CD2_DIRECT_URL','ETE_CD2_SOURCE_PREFIX','ETE_CD2_MOUNT_PREFIX']
         .every(name => process.env[name] === undefined);
@@ -165,14 +193,8 @@ function writeResultAndExit(result) {
     result.diagnosticEvents = diagnosticEvents;
     result.windowOwnership = windowOwnership.snapshot();
     result.harnessInjection = {applicationPipelineInjectionCount, auxiliaryPipelineInjectionCount};
-    if (fakeCd2Stats) {
-        result.cd2Fake = {
-            resolveCount: fakeCd2Stats.resolveCount,
-            cancelCount: fakeCd2Stats.cancelCount,
-            completedCount: fakeCd2Stats.completedCount,
-            activeCount: fakeCd2Stats.active.size
-        };
-    }
+    if (fakeCd2 && !result.cd2Fake) result.cd2Fake = fakeCd2.snapshot();
+    if (pipelineDeadline) result.pipelineDeadline = pipelineDeadline.snapshot();
     fs.writeFileSync(path.join(evidence, 'electron-smoke.json'), JSON.stringify(result, null, 2));
     if (transitionActionListener) {
         ipcMain.removeListener('ete-test-transition-timeline-action', transitionActionListener);
@@ -186,7 +208,11 @@ function writeResultAndExit(result) {
 }
 function finish(result) {
     if (completed) return;
+    if (timeoutFailure) result = {...result, ok:false, error:'UI smoke timeout', deadline:timeoutFailure};
     completed = true;
+    if (fakeCd2) result.cd2Fake = fakeCd2.snapshot();
+    if (pipelineDeadline) pipelineDeadline.dispose();
+    if (fakeCd2) fakeCd2.dispose();
     if (!transitionTimelineMode) return writeResultAndExit(result);
     transitionCapture.waitForResults().then(async pixel => {
         result.pixel = pixel;
@@ -215,9 +241,16 @@ function finish(result) {
         writeResultAndExit(result);
     });
 }
-setTimeout(async () => {
+async function inspectTimeout(deadline) {
+    if (completed) return;
+    // Latch the failure before asynchronous evidence collection. A late renderer
+    // success during that collection cannot turn an expired run into a PASS.
+    timeoutFailure = deadline || {kind:'legacy-total'};
+    // A stalled renderer must not prevent the main-process watchdog exiting.
+    const inspection = async () => {
     const applicationWindow = windowOwnership.getApplicationWindow();
     const trace = applicationWindow ? await applicationWindow.webContents.executeJavaScript(withSourceUrl('window.__pipelineTrace || []', 'ete-timeout-trace.js')).catch(()=>[]) : [];
+    const pipelineObservations = applicationWindow ? await applicationWindow.webContents.executeJavaScript('window.__pipelineObservations || null').catch(()=>null) : null;
     let sourceState = null;
     if (applicationWindow) {
         const expectedOrigin = testCd2Origin;
@@ -232,8 +265,20 @@ setTimeout(async () => {
             });
         })`, 'ete-timeout-inspection.js')).catch(()=>null);
     }
-    finish({ok:false, error:'UI smoke timeout', trace, sourceState, mediaRequests});
-}, process.env.ETE_TEST_CD2_EXPECT === 'real' ? 45000 : 25000);
+    return {trace, sourceState, pipelineObservations};
+    };
+    let timer;
+    const detail = await Promise.race([inspection().catch(() => ({rendererInspection:'UNAVAILABLE'})), new Promise(resolve => {
+        timer = setTimeout(() => resolve({rendererInspection:'UNAVAILABLE'}), 750);
+    })]);
+    clearTimeout(timer);
+    finish({ok:false, error:'UI smoke timeout', deadline, mediaRequests, ...detail});
+}
+if (boundedPipeline) {
+    pipelineDeadline = require('../tests/pipeline-deadline.cjs').createPipelineDeadline({onTimeout: inspectTimeout});
+} else {
+    setTimeout(() => inspectTimeout(null), process.env.ETE_TEST_CD2_EXPECT === 'real' ? 45000 : 25000);
+}
 app.on('browser-window-created', (_, win) => {
     win.webContents.on('console-message', (event, level, message) => {
         if (typeof message === 'string' && message.indexOf('STRM resolver:') === 0) resolverEvents.push(message);
@@ -384,20 +429,23 @@ app.on('browser-window-created', (_, win) => {
                     }
                 } else if (process.env.ETE_TEST_PIPELINE) {
                     applicationPipelineInjectionCount++;
+                    if (pipelineDeadline) pipelineDeadline.enter('modules-loading');
+                    const conditionSource = fs.readFileSync(path.join(__dirname,'../tests/pipeline-condition.js'),'utf8');
+                    await win.webContents.executeJavaScript(withSourceUrl(conditionSource, 'ete-pipeline-condition.js'));
                     const generationObserverSource = fs.readFileSync(path.join(__dirname,'../tests/generation-fixture-observer.js'),'utf8');
                     state.generationObserverLoaded = await win.webContents.executeJavaScript(withSourceUrl(generationObserverSource + '\n!!globalThis.eteGenerationFixtureObserver', 'ete-generation-fixture-observer.js'));
                     if (!state.generationObserverLoaded) throw new Error('generation-fixture-observer-unavailable');
                     const source = fs.readFileSync(path.join(__dirname,'../tests/pipeline-browser.js'),'utf8');
-                    state.pipeline = await win.webContents.executeJavaScript(withSourceUrl(source + '\nrunPipelineFixture(' + JSON.stringify(fixtureUrl) + ', ' + JSON.stringify(process.env.ETE_TEST_MOUNT_SIDECAR || null) + ', ' + JSON.stringify(process.env.ETE_TEST_CD2_EXPECT || process.env.ETE_TEST_CD2_MODE || null) + ', ' + JSON.stringify(testCd2Origin || null) + ', ' + JSON.stringify(process.env.ETE_TEST_STOP_BEFORE_PLAYER === '1') + ')', 'ete-pipeline-fixture.js'));
+                    const fixtureSeconds = process.env.ETE_TEST_FIXTURE_SECONDS === undefined ? 5 : Number(process.env.ETE_TEST_FIXTURE_SECONDS);
+                    if (!Number.isInteger(fixtureSeconds) || fixtureSeconds < 3 || fixtureSeconds > 120) throw new Error('fixture-duration-invalid');
+                    state.pipeline = await win.webContents.executeJavaScript(withSourceUrl(source + '\nrunPipelineFixture(' + JSON.stringify(fixtureUrl) + ', ' + JSON.stringify(process.env.ETE_TEST_MOUNT_SIDECAR || null) + ', ' + JSON.stringify(process.env.ETE_TEST_CD2_EXPECT || process.env.ETE_TEST_CD2_MODE || null) + ', ' + JSON.stringify(testCd2Origin || null) + ', ' + JSON.stringify(process.env.ETE_TEST_STOP_BEFORE_PLAYER === '1') + ', null, ' + JSON.stringify({seconds:fixtureSeconds}) + ')', 'ete-pipeline-fixture.js'));
                     if (process.env.ETE_TEST_STOP_BEFORE_PLAYER === '1') {
                         if (!state.pipeline.stopBeforePlayer || !Object.values(state.pipeline.stopBeforePlayer).every(Boolean)) {
                             return finish({ok:false,error:'Stop-before-player assertion failed',state});
                         }
                         return finish({ok:true,versions:process.versions,state});
                     }
-                    if (!Object.values(state.pipeline.next).every(Boolean) || !state.pipeline.results.every(result => result.playerId==='libmpvmediaplayer' && Object.entries(result).filter(([k])=>!['kind','playerId'].includes(k)).every(([,v])=>v===true)) ||
-                        (state.pipeline.generation && !Object.values(state.pipeline.generation).every(Boolean)) ||
-                        ((process.env.ETE_TEST_CD2_MODE === 'hit' || process.env.ETE_TEST_CD2_MODE === 'direct') && fakeCd2Stats.cancelCount < 2)) {
+                    if (!require('../tests/pipeline-result.cjs').pipelinePassed(state.pipeline, process.env.ETE_TEST_CD2_MODE, fakeCd2 && fakeCd2.snapshot())) {
                         return finish({ok:false,error:'Playback pipeline assertion failed',state});
                     }
                 } else if (process.env.ETE_TEST_MEDIA) {
@@ -446,43 +494,14 @@ app.on('browser-window-created', (_, win) => {
 });
 
 if (process.env.ETE_TEST_CD2_MODE) {
-    fakeCd2Stats = {resolveCount: 0, cancelCount: 0, completedCount: 0, active: new Map()};
     const serviceModule = require(path.join(runtime, 'electronapp/enhanced/cd2-service.js'));
+    // Bootstrap may create the service before the loopback server starts listening.
+    // Resolve/control happens later; preserve that lazy source boundary.
     serviceModule.createService = function () {
         return {
-            resolve(request) {
-                fakeCd2Stats.resolveCount++;
-                return new Promise(resolve => {
-                    const timer = setTimeout(() => {
-                        fakeCd2Stats.active.delete(request.requestId);
-                        fakeCd2Stats.completedCount++;
-                        if (process.env.ETE_TEST_CD2_MODE === 'hit') {
-                            resolve({status:'hit',type:'url',source:fixtureUrl+'?cd2='+encodeURIComponent(request.requestId)});
-                        } else if (process.env.ETE_TEST_CD2_MODE === 'direct') {
-                            resolve({
-                                status:'hit',type:'url',sourceKind:'direct-url',reason:'direct_hit',
-                                source:fixtureUrl+'?cd2='+encodeURIComponent(request.requestId),
-                                requestOptions:{userAgent:'ETE-Direct-'+request.requestId}
-                            });
-                        } else {
-                            resolve({status:'miss',reason:'unavailable'});
-                        }
-                    }, 400);
-                    fakeCd2Stats.active.set(request.requestId, {timer, resolve});
-                });
-            },
-            cancel(requestId) {
-                const entry = fakeCd2Stats.active.get(requestId);
-                if (!entry) return false;
-                fakeCd2Stats.cancelCount++;
-                clearTimeout(entry.timer);
-                fakeCd2Stats.active.delete(requestId);
-                entry.resolve({status:'cancelled',reason:'cancelled'});
-                return true;
-            },
-            close() {
-                for (const requestId of Array.from(fakeCd2Stats.active.keys())) this.cancel(requestId);
-            }
+            resolve: request => ensureFakeCd2().service.resolve(request),
+            cancel: requestId => fakeCd2 ? fakeCd2.service.cancel(requestId) : false,
+            close: () => { if (fakeCd2) fakeCd2.service.close(); }
         };
     };
 }
