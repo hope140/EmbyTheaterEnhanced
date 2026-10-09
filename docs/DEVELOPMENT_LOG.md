@@ -1,5 +1,12 @@
 # 开发日志
 
+## 2026-10-09 — 0.2.6 本地包与正常关闭验收
+
+- Model Tier: Tier 2主线程 + Tier 1明确范围worker；Model: 当前主线程GPT-6系列，审计与测试worker GPT-5.6 Luna High；Reason: 正常退出与会话状态验收需主线程固定contract，worker只做资料/打包审计、工具review及测试；Escalated: no。Task Risk=medium，Task Uncertainty=medium，Cross-module Scope=harness/build/docs，Playback/Session Impact=existing product unchanged。
+- 起点99cb850，新分支codex/local-package-026-20261009；本轮有明确本地提交/版本整理/正式打包授权。主目录及旧工作树/产物只读保留。
+- 新增正常窗口关闭观察与独立结果核验，保持原Promise/异常和产品入口；fixture资源到will-quit清理。hidden harness在show/focus调用前阻止前台操作。68eb024上三个预检均自然exit0、清理顺序通过、残留0；各自原始目录保留。正常关闭不关闭历史app.exit UNKNOWN。
+- 整合05a08e9中独立资料和通知，保留0.2.4/1a05f88证据绑定；现行状态/日志不被旧分支覆盖。版本统一0.2.6，准备从提交生成正式runtime与安装器；结果稍后独立记录。
+
 ## 2026-10-09 — Stop 收尾归属与有界退出证据
 
 - Model Tier: Tier 2 core / Tier 1 workers；Model: 当前主线程 GPT-6 系列，输入/回归/取证测试 worker GPT-5.6 Luna High，独立核心审查 GPT-5.6 Sol High；Reason: Task Risk=high，Task Uncertainty=medium，Cross-module Scope=PlaybackManager/真实 libmpv stopped 事件边界，Playback/Session Impact=direct；Escalated: no。主线程设计与最终验收，worker 只执行固定范围任务。

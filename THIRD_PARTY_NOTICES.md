@@ -7,6 +7,13 @@ terms or completeness of corresponding-source materials. See the dated
 source-material index in `docs/SOURCE_MATERIALS.md`. The repository also keeps
 the dated P1 input audit in `docs/BUILD_INPUT_AUDIT.md`.
 
+The separate 2026-10-09 materials branch records new evidence in
+`docs/THIRD_PARTY_MATERIALS_AUDIT.md`. It does not change an existing payload:
+new research archives and notice references are not automatically shipped.
+The original libmpv dev archive has now been obtained and its DLL is byte
+identical to the packaged DLL. Exact build inputs and complete notices remain
+open; archive identity is not a complete-source or license-mode determination.
+
 ## Upstream Emby Theater code
 
 Maintained Electron application code is compared with the public MediaBrowser
@@ -29,6 +36,8 @@ when importing or changing identifiable upstream files.
   That original manifest pins the driver and flags. The supplemental tracked
   build-toolchain lock fixes the local compiler distribution tree; upstream
   source-package and full toolchain reconstruction materials remain separate.
+  The supplement preserves 17 original MSYS2 packages and signatures that
+  match the locked 6,990-file prefix, plus fixed Inno/InnoUnp source references.
 
 ## CloudDrive2 resolver runtime dependencies
 
@@ -47,6 +56,21 @@ when importing or changing identifiable upstream files.
 
 ## Runtime components and material gaps
 
+Three Carnival managed DLLs now match exact official NuGet entries:
+MediaBrowser.Common 3.3.10, ServiceStack.Text 4.5.14 and SimpleInjector 4.0.11.
+Their exact source/build relations remain separate. The fixed ServiceStack.Text
+v4.5.14 source [license.txt](https://github.com/ServiceStack/ServiceStack.Text/blob/e5819a8de75a8bae64ddc7a64008613067893e32/license.txt)
+contains AGPL-3.0, a FOSS License Exception and commercial licensing text;
+this notice records that source reference without selecting a licensing route
+for the binary. The NuGet package itself has no standalone license text.
+
+All seven inherited Carnival Node package tarballs have been collected from
+the npm registry and their published integrity values verified. Each retained
+package's license text is present in the audited runtime and matches the
+original after newline normalization. Package metadata, one missing README
+and the inherited power-off source change remain explicitly documented;
+the retained directories are not described as untouched registry archives.
+
 The Windows payload includes the complete official Electron 44.4.2 tree,
 Carnival Windows host and supporting binaries, offline Web baseline and assets,
 controlled overlays, the pinned libmpv DLL, and the source-built Native Helper.
@@ -61,9 +85,11 @@ supporting binaries, offline Web/assets and patched libmpv are not fully
 established. A libmpv filename, header license or version string does not
 establish the DLL's build configuration or complete license composition.
 
-This candidate includes the root project `LICENSE`, this notice,
-`docs/LICENSING.md` and `docs/SOURCE_MATERIALS.md`, copied from the recorded
-sourceCommit. Their presence and exact bytes are checked before packaging.
+The audited 1a05f88357a08f5d7c99a7e5de28de20aad0dc79 runtime includes the root
+project `LICENSE`, `THIRD_PARTY_NOTICES.md`, `docs/LICENSING.md` and
+`docs/SOURCE_MATERIALS.md` in the exact versions copied from that sourceCommit.
+Their presence and exact bytes were checked before packaging. The updated
+notice in this materials branch is a later revision and has not been repackaged.
 The earlier P1 runtime omitted the root notices; it and existing Releases are
 unchanged. Complete third-party corresponding-source and notice materials
 remain open where the accompanying source index marks them unknown or missing.

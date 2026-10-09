@@ -1,5 +1,13 @@
 # 固定的本地构建工具材料
 
+2026-10-09独立材料分支补充了17个MSYS2原包及签名，包内6,990文件与下方
+固定前缀全部相同；本地发行keyring下17份签名均验证通过。12个PKGBUILD
+与包内build metadata hash相同，保存了相应目录54个配方/patch文件。
+Inno6.7.3源码和固定发布digest、InnoUnp固定commit的原ZIP/源码/分组件
+通知也已收集。详细身份、验证与未收齐的source tarballs/构建关系见
+[材料审计](THIRD_PARTY_MATERIALS_AUDIT.md)。下文“原包/签名尚未收齐”
+保留为前一轮的历史材料状态；本轮没有改变工具锁或构建gate。
+
 `tools/build-toolchains.lock.json` 补充展开目录身份。它引用既有
 `vendor/toolchain-manifest.json` 和 `vendor/native-helper-manifest.json`
 的 Git blob/canonical hash，保持这些原清单中的归档、编译器版本、

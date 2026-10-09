@@ -1,5 +1,7 @@
 # Known Issues
 
+0.2.6本地可安装候选从99cb850继续，产品播放实现保持68eb024。新增正常窗口关闭预检在idle/playing/stopped均自然退出、零残留；最终新来源runtime还将验证window-all-closed及实际native child退出。该证据不关闭下方历史app.exit异常，详情见 [本地包记录](LOCAL_PACKAGE_026.md)。
+
 2026-10-09 当前本地候选为0.2.5/68eb024，继承d480eb8的请求快照/pending报告修复，并补齐Stop收尾归属。全量608/608，新五组隐藏runtime完整PASS；旧d480eb8退出超时在本轮对照再次复现，根因UNKNOWN。详见 [Stop 与退出报告](STOP_OWNERSHIP_EXIT_EVIDENCE.md)。已发布3ab10c9和此前d480eb8的失败/通过样本各自保留，本地候选不改写已发布产物。
 
 ## 2026-10-09 — replacement Stop 并发归属

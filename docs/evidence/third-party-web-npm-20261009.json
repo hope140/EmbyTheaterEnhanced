@@ -1,0 +1,638 @@
+{
+  "purpose": "Read-only audit of the seven inherited Carnival npm packages and offline Web/assets. No project files changed.",
+  "baseline": {
+    "branch": "codex/build-hardening-20261009",
+    "commit": "da672d2",
+    "sourceMaterialsDoc": "docs/SOURCE_MATERIALS.md",
+    "runtimeManifest": "vendor/runtime-manifest.json",
+    "dependencyCopyTool": "tools/copy-runtime-dependencies.cjs",
+    "dependencyContract": "tools/runtime-dependency-contract.cjs"
+  },
+  "packages": [
+    {
+      "name": "detect-rpi",
+      "version": "1.4.0",
+      "vendorPath": "vendor/carnival/electronapp/node_modules/detect-rpi",
+      "registryMetadata": {
+        "url": "https://registry.npmjs.org/detect-rpi/1.4.0",
+        "httpStatus": 200,
+        "officialVersion": "1.4.0",
+        "license": "MIT",
+        "repository": {
+          "url": "git+https://github.com/fourcube/detect-rpi.git",
+          "type": "git"
+        },
+        "gitHead": "73955fc34c2145377ced08f7b75a41d9bde2a3d0"
+      },
+      "registryGitHeadValidation": {
+        "name": "detect-rpi",
+        "version": "1.4.0",
+        "repository": "https://github.com/fourcube/detect-rpi",
+        "gitHead": "73955fc34c2145377ced08f7b75a41d9bde2a3d0",
+        "status": 200,
+        "returnedSha": "73955fc34c2145377ced08f7b75a41d9bde2a3d0",
+        "commitMessage": "1.4.0"
+      },
+      "tarball": {
+        "url": "https://registry.npmjs.org/detect-rpi/-/detect-rpi-1.4.0.tgz",
+        "file": "detect-rpi-1.4.0.tgz",
+        "archivePathPreflight": "PASS: all paths canonical under package/, only regular files/directories, no links/special files",
+        "archiveFileCount": 4,
+        "computedSha512SRI": "sha512-EeAj8C7zCdjzNqJCYEVmKcBvu9DmxJncCOkwvAfa7J4I0ZLRywZ1jSeeqI2Kvx/2Gn2OOa1lSXSigZ4wy4M6Tg==",
+        "registrySha512SRI": "sha512-EeAj8C7zCdjzNqJCYEVmKcBvu9DmxJncCOkwvAfa7J4I0ZLRywZ1jSeeqI2Kvx/2Gn2OOa1lSXSigZ4wy4M6Tg==",
+        "sriMatches": true,
+        "computedSha1": "f2fe3da65793d608d62f99b8404734721b7c77bb",
+        "registrySha1": "f2fe3da65793d608d62f99b8404734721b7c77bb",
+        "sha1Matches": true
+      },
+      "localIdentity": {
+        "name": "detect-rpi",
+        "version": "1.4.0",
+        "matches": true,
+        "storedResolvedMatchesTarball": true,
+        "storedLegacyIntegrityMatchesCurrentRegistry": true,
+        "licenseFiles": [
+          "LICENSE"
+        ],
+        "declaredLicense": "MIT"
+      },
+      "localVsRegistryTarball": {
+        "localFileCount": 4,
+        "missing": [],
+        "extra": [],
+        "rawChangedFiles": [
+          "LICENSE",
+          "README.md",
+          "index.js",
+          "package.json"
+        ],
+        "sameAfterNewlineNormalization": [
+          "LICENSE",
+          "README.md",
+          "index.js"
+        ],
+        "contentDifferentAfterNewlineNormalization": [
+          "package.json"
+        ]
+      },
+      "fixedElectronReference": {
+        "pathEntriesCompared": 4,
+        "byteIdenticalCount": 0,
+        "differentCount": 4,
+        "absentCount": 0
+      }
+    },
+    {
+      "name": "is-linux",
+      "version": "1.0.1",
+      "vendorPath": "vendor/carnival/electronapp/node_modules/is-linux",
+      "registryMetadata": {
+        "url": "https://registry.npmjs.org/is-linux/1.0.1",
+        "httpStatus": 200,
+        "officialVersion": "1.0.1",
+        "license": "MIT",
+        "repository": {
+          "url": "git+https://github.com/skippednote/is-linux.git",
+          "type": "git"
+        },
+        "gitHead": null
+      },
+      "registryGitHeadValidation": {
+        "name": "is-linux",
+        "version": "1.0.1",
+        "repository": "git+https://github.com/skippednote/is-linux.git",
+        "gitHead": null,
+        "status": "NOT_PUBLISHED_IN_REGISTRY_METADATA"
+      },
+      "tarball": {
+        "url": "https://registry.npmjs.org/is-linux/-/is-linux-1.0.1.tgz",
+        "file": "is-linux-1.0.1.tgz",
+        "archivePathPreflight": "PASS: all paths canonical under package/, only regular files/directories, no links/special files",
+        "archiveFileCount": 4,
+        "computedSha512SRI": "sha512-bioUc4LR+UazgQPvJ6XuGvPBtlBL2NZT0uST7sBFeT45MYX0pTUBKgpPYtSZxRsbVxjCQlG7fUzFPwqlb3a+xQ==",
+        "registrySha512SRI": "sha512-bioUc4LR+UazgQPvJ6XuGvPBtlBL2NZT0uST7sBFeT45MYX0pTUBKgpPYtSZxRsbVxjCQlG7fUzFPwqlb3a+xQ==",
+        "sriMatches": true,
+        "computedSha1": "5a2657de43ec0a72cd66d15ba9eeefc62f587d82",
+        "registrySha1": "5a2657de43ec0a72cd66d15ba9eeefc62f587d82",
+        "sha1Matches": true
+      },
+      "localIdentity": {
+        "name": "is-linux",
+        "version": "1.0.1",
+        "matches": true,
+        "storedResolvedMatchesTarball": true,
+        "storedLegacyIntegrityMatchesCurrentRegistry": false,
+        "licenseFiles": [
+          "license"
+        ],
+        "declaredLicense": "MIT"
+      },
+      "localVsRegistryTarball": {
+        "localFileCount": 4,
+        "missing": [],
+        "extra": [],
+        "rawChangedFiles": [
+          "index.js",
+          "license",
+          "package.json",
+          "readme.md"
+        ],
+        "sameAfterNewlineNormalization": [
+          "index.js",
+          "license",
+          "readme.md"
+        ],
+        "contentDifferentAfterNewlineNormalization": [
+          "package.json"
+        ]
+      },
+      "fixedElectronReference": {
+        "pathEntriesCompared": 4,
+        "byteIdenticalCount": 0,
+        "differentCount": 4,
+        "absentCount": 0
+      }
+    },
+    {
+      "name": "is-osx",
+      "version": "1.0.2",
+      "vendorPath": "vendor/carnival/electronapp/node_modules/is-osx",
+      "registryMetadata": {
+        "url": "https://registry.npmjs.org/is-osx/1.0.2",
+        "httpStatus": 200,
+        "officialVersion": "1.0.2",
+        "license": "MIT",
+        "repository": {
+          "url": "git+https://github.com/skippednote/is-osx.git",
+          "type": "git"
+        },
+        "gitHead": null
+      },
+      "registryGitHeadValidation": {
+        "name": "is-osx",
+        "version": "1.0.2",
+        "repository": "git+https://github.com/skippednote/is-osx.git",
+        "gitHead": null,
+        "status": "NOT_PUBLISHED_IN_REGISTRY_METADATA"
+      },
+      "tarball": {
+        "url": "https://registry.npmjs.org/is-osx/-/is-osx-1.0.2.tgz",
+        "file": "is-osx-1.0.2.tgz",
+        "archivePathPreflight": "PASS: all paths canonical under package/, only regular files/directories, no links/special files",
+        "archiveFileCount": 4,
+        "computedSha512SRI": "sha512-l8H+36GGcvSv9VI+BjmxKuYDuKtInzR/FrHl0aEWIkf5XdxP+v5gmpj3H5y1mB1nY3kSy9Rrv5zUIhrm2Eq3+A==",
+        "registrySha512SRI": "sha512-l8H+36GGcvSv9VI+BjmxKuYDuKtInzR/FrHl0aEWIkf5XdxP+v5gmpj3H5y1mB1nY3kSy9Rrv5zUIhrm2Eq3+A==",
+        "sriMatches": true,
+        "computedSha1": "da799f73afc52d34e60857f497e138d9389fff44",
+        "registrySha1": "da799f73afc52d34e60857f497e138d9389fff44",
+        "sha1Matches": true
+      },
+      "localIdentity": {
+        "name": "is-osx",
+        "version": "1.0.2",
+        "matches": true,
+        "storedResolvedMatchesTarball": true,
+        "storedLegacyIntegrityMatchesCurrentRegistry": false,
+        "licenseFiles": [
+          "license"
+        ],
+        "declaredLicense": "MIT"
+      },
+      "localVsRegistryTarball": {
+        "localFileCount": 4,
+        "missing": [],
+        "extra": [],
+        "rawChangedFiles": [
+          "index.js",
+          "license",
+          "package.json",
+          "readme.md"
+        ],
+        "sameAfterNewlineNormalization": [
+          "index.js",
+          "license",
+          "readme.md"
+        ],
+        "contentDifferentAfterNewlineNormalization": [
+          "package.json"
+        ]
+      },
+      "fixedElectronReference": {
+        "pathEntriesCompared": 4,
+        "byteIdenticalCount": 0,
+        "differentCount": 4,
+        "absentCount": 0
+      }
+    },
+    {
+      "name": "is-windows",
+      "version": "1.0.2",
+      "vendorPath": "vendor/carnival/electronapp/node_modules/is-windows",
+      "registryMetadata": {
+        "url": "https://registry.npmjs.org/is-windows/1.0.2",
+        "httpStatus": 200,
+        "officialVersion": "1.0.2",
+        "license": "MIT",
+        "repository": {
+          "url": "git+https://github.com/jonschlinkert/is-windows.git",
+          "type": "git"
+        },
+        "gitHead": "4dcfff4ed9e36ad761a1a24d3899c832382d7254"
+      },
+      "registryGitHeadValidation": {
+        "name": "is-windows",
+        "version": "1.0.2",
+        "repository": "https://github.com/jonschlinkert/is-windows",
+        "gitHead": "4dcfff4ed9e36ad761a1a24d3899c832382d7254",
+        "status": 200,
+        "returnedSha": "4dcfff4ed9e36ad761a1a24d3899c832382d7254",
+        "commitMessage": "1.0.2"
+      },
+      "tarball": {
+        "url": "https://registry.npmjs.org/is-windows/-/is-windows-1.0.2.tgz",
+        "file": "is-windows-1.0.2.tgz",
+        "archivePathPreflight": "PASS: all paths canonical under package/, only regular files/directories, no links/special files",
+        "archiveFileCount": 4,
+        "computedSha512SRI": "sha512-eXK1UInq2bPmjyX6e3VHIzMLobc4J94i4AWn+Hpq3OU5KkrRC96OAcR3PRJ/pGu6m8TRnBHP9dkXQVsT/COVIA==",
+        "registrySha512SRI": "sha512-eXK1UInq2bPmjyX6e3VHIzMLobc4J94i4AWn+Hpq3OU5KkrRC96OAcR3PRJ/pGu6m8TRnBHP9dkXQVsT/COVIA==",
+        "sriMatches": true,
+        "computedSha1": "d1850eb9791ecd18e6182ce12a30f396634bb19d",
+        "registrySha1": "d1850eb9791ecd18e6182ce12a30f396634bb19d",
+        "sha1Matches": true
+      },
+      "localIdentity": {
+        "name": "is-windows",
+        "version": "1.0.2",
+        "matches": true,
+        "storedResolvedMatchesTarball": true,
+        "storedLegacyIntegrityMatchesCurrentRegistry": true,
+        "licenseFiles": [
+          "LICENSE"
+        ],
+        "declaredLicense": "MIT"
+      },
+      "localVsRegistryTarball": {
+        "localFileCount": 3,
+        "missing": [
+          "README.md"
+        ],
+        "extra": [],
+        "rawChangedFiles": [
+          "LICENSE",
+          "index.js",
+          "package.json"
+        ],
+        "sameAfterNewlineNormalization": [
+          "LICENSE",
+          "index.js"
+        ],
+        "contentDifferentAfterNewlineNormalization": [
+          "package.json"
+        ]
+      },
+      "fixedElectronReference": {
+        "pathEntriesCompared": 3,
+        "byteIdenticalCount": 0,
+        "differentCount": 3,
+        "absentCount": 0
+      }
+    },
+    {
+      "name": "power-off",
+      "version": "1.1.2",
+      "vendorPath": "vendor/carnival/electronapp/node_modules/power-off",
+      "registryMetadata": {
+        "url": "https://registry.npmjs.org/power-off/1.1.2",
+        "httpStatus": 200,
+        "officialVersion": "1.1.2",
+        "license": "MIT",
+        "repository": {
+          "url": "git+https://github.com/hemanth/power-off.git",
+          "type": "git"
+        },
+        "gitHead": "3799a8c69d54ae6256f551b125b40c48db10a52d"
+      },
+      "registryGitHeadValidation": {
+        "name": "power-off",
+        "version": "1.1.2",
+        "repository": "https://github.com/hemanth/power-off",
+        "gitHead": "3799a8c69d54ae6256f551b125b40c48db10a52d",
+        "status": 200,
+        "returnedSha": "3799a8c69d54ae6256f551b125b40c48db10a52d",
+        "commitMessage": "1.1.2"
+      },
+      "tarball": {
+        "url": "https://registry.npmjs.org/power-off/-/power-off-1.1.2.tgz",
+        "file": "power-off-1.1.2.tgz",
+        "archivePathPreflight": "PASS: all paths canonical under package/, only regular files/directories, no links/special files",
+        "archiveFileCount": 5,
+        "computedSha512SRI": "sha512-ljNPYM5wzswhUaHjrgX4oYX3usDAN7IKumELAwqFB0XQbl9SVvqcIsDnbd8vX1dZeh6ShVYAXlazmjsSHih2MQ==",
+        "registrySha512SRI": "sha512-ljNPYM5wzswhUaHjrgX4oYX3usDAN7IKumELAwqFB0XQbl9SVvqcIsDnbd8vX1dZeh6ShVYAXlazmjsSHih2MQ==",
+        "sriMatches": true,
+        "computedSha1": "71e30a8a9c66b26c21556d1db6efcad2234a32ab",
+        "registrySha1": "71e30a8a9c66b26c21556d1db6efcad2234a32ab",
+        "sha1Matches": true
+      },
+      "localIdentity": {
+        "name": "power-off",
+        "version": "1.1.2",
+        "matches": true,
+        "storedResolvedMatchesTarball": true,
+        "storedLegacyIntegrityMatchesCurrentRegistry": false,
+        "licenseFiles": [
+          "license"
+        ],
+        "declaredLicense": "MIT"
+      },
+      "localVsRegistryTarball": {
+        "localFileCount": 5,
+        "missing": [],
+        "extra": [],
+        "rawChangedFiles": [
+          "cli.js",
+          "index.js",
+          "license",
+          "package.json",
+          "readme.md"
+        ],
+        "sameAfterNewlineNormalization": [
+          "cli.js",
+          "license",
+          "readme.md"
+        ],
+        "contentDifferentAfterNewlineNormalization": [
+          "index.js",
+          "package.json"
+        ]
+      },
+      "fixedElectronReference": {
+        "pathEntriesCompared": 5,
+        "byteIdenticalCount": 0,
+        "differentCount": 5,
+        "absentCount": 0
+      }
+    },
+    {
+      "name": "sleep-mode",
+      "version": "1.1.0",
+      "vendorPath": "vendor/carnival/electronapp/node_modules/sleep-mode",
+      "registryMetadata": {
+        "url": "https://registry.npmjs.org/sleep-mode/1.1.0",
+        "httpStatus": 200,
+        "officialVersion": "1.1.0",
+        "license": "MIT",
+        "repository": {
+          "url": "git+https://github.com/hemanth/sleep-mode.git",
+          "type": "git"
+        },
+        "gitHead": "bc90f900d84948b5fef6916af1428c69a6736985"
+      },
+      "registryGitHeadValidation": {
+        "name": "sleep-mode",
+        "version": "1.1.0",
+        "repository": "https://github.com/hemanth/sleep-mode",
+        "gitHead": "bc90f900d84948b5fef6916af1428c69a6736985",
+        "status": 200,
+        "returnedSha": "bc90f900d84948b5fef6916af1428c69a6736985",
+        "commitMessage": "1.1.0"
+      },
+      "tarball": {
+        "url": "https://registry.npmjs.org/sleep-mode/-/sleep-mode-1.1.0.tgz",
+        "file": "sleep-mode-1.1.0.tgz",
+        "archivePathPreflight": "PASS: all paths canonical under package/, only regular files/directories, no links/special files",
+        "archiveFileCount": 5,
+        "computedSha512SRI": "sha512-7nCRYoLpXqhn9ukZQlzNvdc0OPFctVTYNzPzztg98EaXCSRcfS1Zbm5Ed4mk3VutoZVRu58bkmDAeSNoiCAu3w==",
+        "registrySha512SRI": "sha512-7nCRYoLpXqhn9ukZQlzNvdc0OPFctVTYNzPzztg98EaXCSRcfS1Zbm5Ed4mk3VutoZVRu58bkmDAeSNoiCAu3w==",
+        "sriMatches": true,
+        "computedSha1": "5c039e548143da8779f85594aa50072ae6c3e0ea",
+        "registrySha1": "5c039e548143da8779f85594aa50072ae6c3e0ea",
+        "sha1Matches": true
+      },
+      "localIdentity": {
+        "name": "sleep-mode",
+        "version": "1.1.0",
+        "matches": true,
+        "storedResolvedMatchesTarball": true,
+        "storedLegacyIntegrityMatchesCurrentRegistry": false,
+        "licenseFiles": [
+          "license"
+        ],
+        "declaredLicense": "MIT"
+      },
+      "localVsRegistryTarball": {
+        "localFileCount": 5,
+        "missing": [],
+        "extra": [],
+        "rawChangedFiles": [
+          "cli.js",
+          "index.js",
+          "license",
+          "package.json",
+          "readme.md"
+        ],
+        "sameAfterNewlineNormalization": [
+          "cli.js",
+          "index.js",
+          "license",
+          "readme.md"
+        ],
+        "contentDifferentAfterNewlineNormalization": [
+          "package.json"
+        ]
+      },
+      "fixedElectronReference": {
+        "pathEntriesCompared": 5,
+        "byteIdenticalCount": 0,
+        "differentCount": 5,
+        "absentCount": 0
+      }
+    },
+    {
+      "name": "is-windows",
+      "version": "0.1.1",
+      "vendorPath": "vendor/carnival/electronapp/node_modules/sleep-mode/node_modules/is-windows",
+      "registryMetadata": {
+        "url": "https://registry.npmjs.org/is-windows/0.1.1",
+        "httpStatus": 200,
+        "officialVersion": "0.1.1",
+        "license": "MIT",
+        "repository": {
+          "url": "git+https://github.com/jonschlinkert/is-windows.git",
+          "type": "git"
+        },
+        "gitHead": "b3799aec243e4b6102f74d694c7b484b5ea867e0"
+      },
+      "registryGitHeadValidation": {
+        "name": "is-windows",
+        "version": "0.1.1",
+        "repository": "https://github.com/jonschlinkert/is-windows",
+        "gitHead": "b3799aec243e4b6102f74d694c7b484b5ea867e0",
+        "status": 200,
+        "returnedSha": "b3799aec243e4b6102f74d694c7b484b5ea867e0",
+        "commitMessage": "run `update`"
+      },
+      "tarball": {
+        "url": "https://registry.npmjs.org/is-windows/-/is-windows-0.1.1.tgz",
+        "file": "is-windows-0.1.1.tgz",
+        "archivePathPreflight": "PASS: all paths canonical under package/, only regular files/directories, no links/special files",
+        "archiveFileCount": 4,
+        "computedSha512SRI": "sha512-3wf9CiLayWrH2O5E99jdTwVZyZwVckl+Gz4CkAtjssBPkawQBoPWDEyAHmwZnODQxqYduCBrlGfKQfvE/Mxh+A==",
+        "registrySha512SRI": "sha512-3wf9CiLayWrH2O5E99jdTwVZyZwVckl+Gz4CkAtjssBPkawQBoPWDEyAHmwZnODQxqYduCBrlGfKQfvE/Mxh+A==",
+        "sriMatches": true,
+        "computedSha1": "be310715431cfabccc54ab3951210fa0b6d01abe",
+        "registrySha1": "be310715431cfabccc54ab3951210fa0b6d01abe",
+        "sha1Matches": true
+      },
+      "localIdentity": {
+        "name": "is-windows",
+        "version": "0.1.1",
+        "matches": true,
+        "storedResolvedMatchesTarball": true,
+        "storedLegacyIntegrityMatchesCurrentRegistry": false,
+        "licenseFiles": [
+          "LICENSE"
+        ],
+        "declaredLicense": "MIT"
+      },
+      "localVsRegistryTarball": {
+        "localFileCount": 4,
+        "missing": [],
+        "extra": [],
+        "rawChangedFiles": [
+          "LICENSE",
+          "README.md",
+          "index.js",
+          "package.json"
+        ],
+        "sameAfterNewlineNormalization": [
+          "LICENSE",
+          "README.md",
+          "index.js"
+        ],
+        "contentDifferentAfterNewlineNormalization": [
+          "package.json"
+        ]
+      },
+      "fixedElectronReference": {
+        "pathEntriesCompared": 4,
+        "byteIdenticalCount": 0,
+        "differentCount": 4,
+        "absentCount": 0
+      }
+    }
+  ],
+  "fixedOfficialReference": {
+    "repository": "https://github.com/MediaBrowser/Emby.Theater.Electron",
+    "commit": "db0f4c814ee1e7d9b5f50010065c5cb64a20357e",
+    "treeApi": "https://api.github.com/repos/MediaBrowser/Emby.Theater.Electron/git/trees/db0f4c814ee1e7d9b5f50010065c5cb64a20357e?recursive=1",
+    "httpStatus": 200,
+    "treeEntries": 142,
+    "truncated": false,
+    "webNamedPaths": 0,
+    "localCarnivalPackageFilesCompared": 29,
+    "byteIdenticalFiles": 0,
+    "differentFiles": 29,
+    "absentPaths": 0,
+    "comparisonFile": "official_reference_comparison.json"
+  },
+  "webAssets": {
+    "root": "vendor/carnival/electronapp/www",
+    "actualFileCount": 761,
+    "runtimeManifestFileCount": 761,
+    "manifestCountMatches": true,
+    "extensionCounts": {
+      ".css": 82,
+      ".gif": 1,
+      ".html": 96,
+      ".ico": 1,
+      ".jpg": 1,
+      ".js": 401,
+      ".json": 135,
+      ".mem": 1,
+      ".mp3": 2,
+      ".png": 16,
+      ".txt": 1,
+      ".wasm": 1,
+      ".woff": 1,
+      ".woff2": 22
+    },
+    "licenseNamedFiles": [],
+    "packageOrBowerMetadataFiles": [],
+    "fonts": {
+      "count": 23,
+      "extensions": {
+        "woff": 1,
+        "woff2": 22
+      },
+      "familiesVisibleInCss": [
+        "Roboto",
+        "Material Icons"
+      ],
+      "exactFontVersionOrSourceRevision": "not identified in inspected tree"
+    },
+    "images": {
+      "count": 19,
+      "extensions": {
+        ".gif": 1,
+        ".ico": 1,
+        ".jpg": 1,
+        ".png": 16
+      },
+      "per-file identities": "vendor/runtime-manifest.json lists exact frozen file size and SHA-256"
+    },
+    "licenseVersionClues": "No license-named files or bower/package/component descriptors in www; scanned text yielded no useful copyright/SPDX/license/version header. Fonts CSS identifies family and file names only; app version calls resolve the host/server runtime version, not Web source revision. HLS minified bundle has a sourceMappingURL marker, but no corresponding source map identified in the bounded inventory.",
+    "inventoryFile": "web_asset_inventory.json"
+  },
+  "materialsNeededForExactWebSource": [
+    "identify the exact upstream Web repository and tag/commit or original source archive, with independent archive SHA-256",
+    "obtain the matching original Web tree or source package plus its build instructions and dependency/version lock",
+    "map every Carnival/combined-patch Web overlay to source path, generator/input, and output hash, including controlled app.js/apiclient.js/toast.css transforms",
+    "obtain original asset provenance and applicable license/notice for the 23 fonts and 19 images, including exact font family/version/weights and source URLs",
+    "provide a bounded per-file comparison against that pinned source and a complete notice set for the shipped Web payload"
+  ],
+  "limitations": [
+    "npm registry facts identify the official release tarball for each package version, but several local package.json legacy integrity fields disagree with current registry SRI",
+    "the seven local package directories retain the matching names and versions, but raw file hashes do not establish complete archive identity; one package has a code difference and one local README is missing",
+    "GitHub fixed reference commit/tree provides an official path-level comparison for Node package paths but is not a Web asset snapshot",
+    "no legal conclusion or license compliance determination made"
+  ],
+  "evidenceFiles": [
+    ".work/source-materials/web-npm/registry-fetch.json",
+    ".work/source-materials/web-npm/package_comparison.json",
+    ".work/source-materials/web-npm/normalized_file_comparison.json",
+    ".work/source-materials/web-npm/local_package_identity.json",
+    ".work/source-materials/web-npm/githead_validation.json",
+    ".work/source-materials/web-npm/official_reference_comparison.json",
+    ".work/source-materials/web-npm/web_asset_inventory.json",
+    ".work/source-materials/web-npm/fetch_registry.ps1",
+    ".work/source-materials/web-npm/compare_archives.py",
+    ".work/source-materials/web-npm/compare_normalized.py",
+    ".work/source-materials/web-npm/audit_local_package_identity.py",
+    ".work/source-materials/web-npm/compare_official_reference.ps1",
+    ".work/source-materials/web-npm/validate_githeads.ps1",
+    ".work/source-materials/web-npm/inventory_web_assets.py"
+  ],
+  "keyFindings": [
+    "All seven canonical versions are present in local package.json and match the seven RETAINED_PACKAGES entries in tools/runtime-dependency-contract.cjs.",
+    "Every official npm metadata request returned HTTP 200. Each tarball was downloaded from the registry URL in its own metadata, preflighted before reading payload bytes, and independently matched both registry SHA-512 SRI and SHA-1.",
+    "Every package declares MIT in registry metadata and has a corresponding retained LICENSE/license file. This records package notices, not a redistribution/legal determination.",
+    "Five of seven local legacy package.json _integrity fields differ from current registry metadata, although all seven _resolved URLs match the published tarball URL.",
+    "Against npm tarballs after newline normalization, package payload files otherwise match except power-off@1.1.2/index.js and the missing local is-windows@1.0.2/README.md. In power-off, Carnival calls cb(err, stdout, stderr), while the registry tarball calls cb(err, stout, stderr); every local package.json also differs because it carries legacy installation metadata.",
+    "The fixed official Electron reference tree at db0f4c814ee1e7d9b5f50010065c5cb64a20357e returned HTTP 200 with 142 entries and no Web-named asset paths. All 29 local retained-package files have corresponding paths in that tree, and all 29 Git blob SHA-1 values differ.",
+    "Offline Web has 761 files and exact path-count agreement with vendor/runtime-manifest.json. It includes 23 font files and 19 image files, but no license-named files or package/bower/component metadata; filenames/CSS expose family names (Roboto, Material Icons) without exact version or source revision."
+  ],
+  "packageCountSummary": {
+    "canonicalPackages": 7,
+    "localIdentityMatches": 7,
+    "registryMetadataHttp200": 7,
+    "registryTarballSha512Verified": 7,
+    "registryTarballSha1Verified": 7,
+    "localLegacyIntegrityMatchesCurrentRegistry": 2,
+    "localLegacyIntegrityMismatches": 5,
+    "allRetainedLocalPackageFilesByteIdenticalToCurrentRegistry": false,
+    "fixedReferenceTreeFileHashesMatching": 0
+  },
+  "materialRoot": ".work/source-materials/web-npm",
+  "observedDate": "2026-10-09",
+  "schemaVersion": 1
+}

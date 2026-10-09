@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "observedDate": "2026-10-09",
+  "scope": "Read-only public source and archive metadata check for the patched libmpv input; no binary or upstream script execution",
+  "inputIdentity": {
+    "packagedDllSha256": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c",
+    "mpvCommit": "dd5d17d3285a095a0f712fa9d116e22a076492de",
+    "providerDeclaredArchive": "mpv-dev-x86_64-20260809-git-dd5d17d328.7z",
+    "providerDeclaredArchiveSha256": "c6aebf40bb722efe79090bfeb61e68625f0837770347e5a8b610aef78900cf12"
+  },
+  "queries": [
+    {
+      "url": "https://github.com/shinchiro/mpv-winbuild-cmake/releases/tag/20260809",
+      "status": 404,
+      "evidence": "Direct release page fetch returned 404 Not Found."
+    },
+    {
+      "url": "https://api.github.com/repos/shinchiro/mpv-winbuild-cmake/releases/tags/20260809",
+      "status": 404,
+      "evidence": "GitHub API fetch returned status code 404."
+    },
+    {
+      "url": "https://api.github.com/repos/shinchiro/mpv-winbuild-cmake/git/ref/tags/20260809",
+      "status": 404,
+      "evidence": "GitHub API tag-ref fetch returned status code 404."
+    },
+    {
+      "url": "https://sourceforge.net/projects/mpv-player-windows/files/libmpv/",
+      "status": 200,
+      "evidence": "Fetched actual HTML. The listing records mpv-dev-x86_64-20260809-git-dd5d17d328.7z at 2026-08-09 00:28:46 UTC, listed as 31.2 MB. The adjacent x86_64-v3 file is a different artifact."
+    },
+    {
+      "url": "https://sourceforge.net/projects/mpv-player-windows/files/libmpv/mpv-dev-x86_64-20260809-git-dd5d17d328.7z/download",
+      "status": 200,
+      "evidence": "Fetched download information page. It displays SHA-256 c6aebf40bb722efe79090bfeb61e68625f0837770347e5a8b610aef78900cf12, matching the provider declaration. The page says the download will start shortly."
+    },
+    {
+      "url": "https://downloads.sourceforge.net/project/mpv-player-windows/libmpv/mpv-dev-x86_64-20260809-git-dd5d17d328.7z",
+      "status": "download_completed",
+      "httpStatus": "not_returned_by_Invoke-WebRequest_OutFile",
+      "evidence": "Using the exact SourceForge mirror URL extracted from the saved download-page HTML, one Invoke-WebRequest -OutFile attempt completed and saved 31173907 bytes. The returned response object was not available to read the final HTTP status."
+    },
+    {
+      "url": "https://github.com/shinchiro/mpv-winbuild-cmake/actions/runs?created=2026-08-09",
+      "status": 404,
+      "evidence": "Direct GitHub Actions runs page fetch for the release date returned 404; no workflow run identity was recovered."
+    }
+  ],
+  "fixedFacts": [
+    "An independently hosted SourceForge file record exists for the exact x86_64 development archive name, with date, size and a published checksum matching the provider's declaration.",
+    "The downloaded archive SHA-256 was independently computed as c6aebf40bb722efe79090bfeb61e68625f0837770347e5a8b610aef78900cf12, matching both the provider declaration and SourceForge's displayed checksum.",
+    "The mpv source revision named by the archive suffix is dd5d17d3285a095a0f712fa9d116e22a076492de; this identifies an upstream source revision, not the full linked build inputs.",
+    "The archive contains eight entries: two directories and six files, totaling 119916200 uncompressed bytes. 7-Zip listing found no absolute or parent-traversal paths, duplicate normalized paths, or link metadata."
+  ],
+  "archiveInspection": {
+    "localArchive": ".work/source-materials/mpv/mpv-dev-x86_64-20260809-git-dd5d17d328.7z",
+    "localArchiveBytes": 31173907,
+    "localArchiveSha256": "c6aebf40bb722efe79090bfeb61e68625f0837770347e5a8b610aef78900cf12",
+    "sevenZipVersion": "26.02 (x64)",
+    "entryCount": 8,
+    "directoryCount": 2,
+    "fileCount": 6,
+    "uncompressedBytes": 119916200,
+    "preflightLimits": {
+      "maxEntries": 100000,
+      "maxUncompressedBytes": 2147483648,
+      "maxSingleFileBytes": 536870912,
+      "maxExpansionRatio": 200
+    },
+    "preflight": {
+      "passed": true,
+      "suspiciousPathsOrLinks": 0,
+      "duplicatePathsCaseInsensitive": 0,
+      "extractionDirectory": ".work/source-materials/mpv/unpacked",
+      "extractionExitCode": 0
+    },
+    "members": [
+      {
+        "path": "include",
+        "kind": "directory",
+        "size": 0
+      },
+      {
+        "path": "include\\mpv",
+        "kind": "directory",
+        "size": 0
+      },
+      {
+        "path": "include\\mpv\\client.h",
+        "kind": "file",
+        "size": 86136,
+        "sha256": "1acf99ee77c8c2a6f1d1993bd81bbc8a91d27fb5924e80171670e6139a4bd353"
+      },
+      {
+        "path": "include\\mpv\\render.h",
+        "kind": "file",
+        "size": 34271,
+        "sha256": "192691941602052f00df0587f126246c48785a1cf21de68d22a92ea1908d1c55"
+      },
+      {
+        "path": "include\\mpv\\render_gl.h",
+        "kind": "file",
+        "size": 7328,
+        "sha256": "48662c0ed9872a14dd9e1684105c97f69f94a0414709c254c5d372adc41d2e69"
+      },
+      {
+        "path": "include\\mpv\\stream_cb.h",
+        "kind": "file",
+        "size": 9589,
+        "sha256": "188e58b6d14383e15a5dffdc4ecebbdfbf2e412b9c099ff21b571f747a8ce32d"
+      },
+      {
+        "path": "libmpv.dll.a",
+        "kind": "file",
+        "size": 53308
+      },
+      {
+        "path": "libmpv-2.dll",
+        "kind": "file",
+        "size": 119725568,
+        "sha256": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c"
+      }
+    ],
+    "licenseAndBuildMaterials": {
+      "licenseOrNoticeFiles": [],
+      "buildScriptsOrConfigurationFiles": [],
+      "headerNotices": "All four API headers carry ISC-style copyright/permission text. client.h says the client API is ISC; mpv core is default GPLv2+ unless built with -Dgpl=false, which makes it LGPLv2+.",
+      "buildLicenseConfiguration": "Not present in this archive; the actual -Dgpl setting and complete binary notices are unknown."
+    }
+  },
+  "binaryInspection": {
+    "execution": "none",
+    "archiveDllName": "libmpv-2.dll",
+    "archiveDllSha256MatchesPackagedMpV1Dll": true,
+    "archiveDllSha256": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c",
+    "manifestVersion": "v0.41.0-920-gdd5d17d32",
+    "fileVersionResource": "v0.41.0-920-gdd5d17d32",
+    "ffmpegVersionStringsObserved": [
+      "N-125998-g2a20737f6"
+    ],
+    "ffmpegSourceCommitReference": {
+      "abbreviation": "2a20737f6",
+      "fullCommit": "2a20737f662fd3f3f5999e873b9e7c90b5efc375",
+      "url": "https://github.com/FFmpeg/FFmpeg/commit/2a20737f662fd3f3f5999e873b9e7c90b5efc375",
+      "relation": "Embedded version-string reference only; it does not prove the full linked dependency composition or exact build configuration."
+    }
+  },
+  "ffmpegSourceSnapshot": {
+    "repository": "https://github.com/FFmpeg/FFmpeg.git",
+    "commit": "2a20737f662fd3f3f5999e873b9e7c90b5efc375",
+    "commitPage": "https://github.com/FFmpeg/FFmpeg/commit/2a20737f662fd3f3f5999e873b9e7c90b5efc375",
+    "commitResolvedBy": "GitHub commit page and depth-1 Git fetch; FETCH_HEAD resolved to the exact full commit",
+    "zipPath": ".work/source-materials/mpv/FFmpeg-2a20737f662fd3f3f5999e873b9e7c90b5efc375.zip",
+    "zipCreation": "Generated with git archive from the fixed commit because the codeload HTTP request could not complete in this environment; this is a fixed local source snapshot, not GitHub's codeload ZIP.",
+    "codeloadUrl": "https://codeload.github.com/FFmpeg/FFmpeg/zip/2a20737f662fd3f3f5999e873b9e7c90b5efc375",
+    "codeloadAttempt": "Invoke-WebRequest failed before receiving a response (HttpRequestException); the pinned commit was then fetched over Git using the OpenSSL TLS backend.",
+    "zipBytes": 24109874,
+    "zipSha256": "83682c0c78048afdf1362c5da7c2680ab70796112e9344c7d09fdb848804956f",
+    "zipValidation": "7-Zip test passed; 10515 files, 129 directories, 93440624 uncompressed bytes.",
+    "noticePaths": [
+      "COPYING.GPLv2",
+      "COPYING.GPLv3",
+      "COPYING.LGPLv2.1",
+      "COPYING.LGPLv3",
+      "CREDITS",
+      "LICENSE.md"
+    ],
+    "buildDescriptionPaths": [
+      "configure",
+      "Makefile",
+      "README.md"
+    ],
+    "relation": "REFERENCE to the FFmpeg version string embedded in the DLL. The snapshot does not prove the complete linked FFmpeg tree, enabled components, or build options of the DLL."
+  },
+  "relationship": {
+    "sourceforgeArchiveRecord": "Archive bytes independently downloaded and hashed; the local SHA-256 matches SourceForge's displayed checksum and the provider declaration.",
+    "mpvCommitToArchive": "REFERENCE association by archive filename; no build attestation or complete dependency/build closure observed.",
+    "archiveDllToPackagedDll": "EXACT byte identity established by matching SHA-256: archive member libmpv-2.dll equals the packaged mpv-1.dll hash; filename rename is consistent with byte-preserving repackaging.",
+    "mpvCommitToPackagedDll": "The archive DLL carries the version v0.41.0-920-gdd5d17d32 and its bytes exactly match the packaged DLL; this ties the DLL to the stated mpv revision label but does not prove deterministic reconstruction from source.",
+    "ffmpegCommitToBinary": "The fixed FFmpeg source snapshot is the exact commit named by the embedded version string; this remains a source reference, not proof of the complete linked FFmpeg source or options."
+  },
+  "notFoundOrNotVerified": [
+    "The GitHub release page and API release/tag endpoints for 20260809 returned 404 at observation time.",
+    "The exact shinchiro/mpv-winbuild-cmake source commit and workflow run for the archive were not established.",
+    "The winbuild recipe, dependency source revisions and patches, build configuration, complete toolchain identity, DLL post-processing steps and complete corresponding notices remain unknown.",
+    "The pinned FFmpeg source snapshot is preserved, but the linked FFmpeg source tree and build configuration are not proven solely by the DLL's version string."
+  ],
+  "minimumProviderRequest": [
+    "Provide the exact winbuild repository commit and workflow run/build log that produced that archive.",
+    "Provide every resolved dependency repository and revision, patches, build options/configuration, and toolchain versions for the archive.",
+    "Provide the build-time license switch and complete notices/source-material references for all linked components, including FFmpeg and other dependencies."
+  ]
+}

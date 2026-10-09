@@ -1,0 +1,305 @@
+{
+  "schemaVersion": 1,
+  "observedDate": "2026-10-09",
+  "scope": "Read-only official source/package identity research; no binary, script, package code, or service executed.",
+  "hostArchive": {
+    "commit": "708fadc068cbf66ced6aece4a32f3e12bb2c4e13",
+    "url": "https://codeload.github.com/MediaBrowser/emby-theater-windows/zip/708fadc068cbf66ced6aece4a32f3e12bb2c4e13",
+    "sha256": "7dc15a294137c0a40553282289f4590b7cf75a8f9169dafbe5d08d2fe3a1a884",
+    "bytes": 198671303,
+    "exactVendorBinaryMappings": 8,
+    "mappingSource": "Pinned build-hardening-source-materials-20261009.json; Host ZIP exact identity is not source/build closure."
+  },
+  "hostSource": {
+    "hostOutputType": "WinExe",
+    "hostTargetFramework": "v4.6.2",
+    "refreshRateTargetFramework": "v4.6.1",
+    "refreshRateAssemblyVersion": "1.0.0.0",
+    "refreshRateRuntimeSha256": "c3ac38b3345d804afc4ba97f34f059d0c4294ac5f55f62a25948ee62975eaa81",
+    "refreshRateZipEntry": "Emby.Theater/electronapp/libmpv/x64/RefreshRate.exe",
+    "refreshRateSources": [
+      "Emby.Theater.RefreshRate/Program.cs",
+      "Emby.Theater.RefreshRate/Properties/AssemblyInfo.cs",
+      "Emby.Theater.RefreshRate/Emby.Theater.RefreshRate.csproj"
+    ],
+    "hostRuntimeSha256": "11abf75c8f77ddb0078e7dd62a2eaae60dba244c113bc7893a7e56bc6527163e",
+    "hostBinaryInZip": false,
+    "hostLicensePath": "LICENSE.md at pinned commit; GPL-2.0 text",
+    "refreshRateAssessment": "Pinned public source and byte-identical binary entry are known; deterministic rebuild/toolchain/PDB relation is not established."
+  },
+  "nugetPackages": [
+    {
+      "id": "MediaBrowser.Common",
+      "version": "3.3.10",
+      "url": "https://api.nuget.org/v3-flatcontainer/mediabrowser.common/3.3.10/mediabrowser.common.3.3.10.nupkg",
+      "sha256": "4d9bd3ed99e9b2b6cd22622018af5667246d8b866041f540afdb973b30d30d0b",
+      "bytes": 177439,
+      "registrationCatalog": "https://api.nuget.org/v3/catalog0/data/2018.11.04.21.37.35/mediabrowser.common.3.3.10.json",
+      "projectUrl": "https://github.com/MediaBrowser/Emby",
+      "nuspecLicenseUrl": null,
+      "notice": "Package contains no LICENSE/COPYING/NOTICE file and nuspec has no licenseUrl/expression. Host source root LICENSE.md is GPL-2.0.",
+      "entryChecks": [
+        {
+          "path": "lib/netstandard1.3/MediaBrowser.Common.dll",
+          "runtimeSha256": "8fc955a5215e862f5bde882cedbe2be52e6a242d89d03406844993595d72657f",
+          "packageEntrySha256": "8fc955a5215e862f5bde882cedbe2be52e6a242d89d03406844993595d72657f",
+          "match": true
+        },
+        {
+          "path": "lib/netstandard1.3/MediaBrowser.Model.dll",
+          "runtimeSha256": "f2eeca1c65e56e96340dc84ff91de6e4cc25bb2e510706748606f05c1e39ebaf",
+          "packageEntrySha256": "db22f8ea6cb6afdfab184f80d8b85a10d8a9f148ff4cae167db87ce9cd245153",
+          "match": false
+        }
+      ],
+      "files": [
+        "mediabrowser.common.3.3.10.nupkg",
+        "mediabrowser.common.3.3.10.nuspec.xml",
+        "mediabrowser.common.3.3.10.registration.json"
+      ]
+    },
+    {
+      "id": "ServiceStack.Text",
+      "version": "4.5.14",
+      "url": "https://api.nuget.org/v3-flatcontainer/servicestack.text/4.5.14/servicestack.text.4.5.14.nupkg",
+      "sha256": "7fd29722344036768ab3c7e1be3c70382f93e57ce2b5be0cf3d918b66b85eb5e",
+      "bytes": 560785,
+      "registrationCatalog": "https://api.nuget.org/v3/catalog0/data/2018.10.15.10.47.33/servicestack.text.4.5.14.json",
+      "projectUrl": "https://github.com/ServiceStack/ServiceStack.Text",
+      "nuspecLicenseUrl": "https://servicestack.net/terms",
+      "requireLicenseAcceptance": true,
+      "notice": "No license text in package. Current general terms URL is not version-specific; metadata does not bind a source commit.",
+      "entryChecks": [
+        {
+          "path": "lib/net45/ServiceStack.Text.dll",
+          "runtimeSha256": "2cc4fc93be82d4818dc81beb9f5cd0e4f995c77e1725c129e4918e8aeaeb39c1",
+          "packageEntrySha256": "2cc4fc93be82d4818dc81beb9f5cd0e4f995c77e1725c129e4918e8aeaeb39c1",
+          "match": true
+        }
+      ],
+      "files": [
+        "servicestack.text.4.5.14.nupkg",
+        "servicestack.text.4.5.14.nuspec.xml",
+        "servicestack.text.4.5.14.registration.json"
+      ]
+    },
+    {
+      "id": "SimpleInjector",
+      "version": "4.0.11",
+      "url": "https://api.nuget.org/v3-flatcontainer/simpleinjector/4.0.11/simpleinjector.4.0.11.nupkg",
+      "sha256": "a177ec830e2350e460667b8e61b7a27d09da94181775d51bdcb2c9295a749c10",
+      "bytes": 707553,
+      "registrationCatalog": "https://api.nuget.org/v3/catalog0/data/2019.01.04.23.37.42/simpleinjector.4.0.11.json",
+      "projectUrl": "https://simpleinjector.org/",
+      "nuspecLicenseUrl": "https://simpleinjector.org/license",
+      "notice": "NuGet nuspec licenseUrl points to simpleinjector.org/license. The official NuGet v4.0.11 page exposes that mutable link; an exact 4.0.11 source tag was not found. The MIT text saved here comes from official tag v4.0.0 only and is reference evidence.",
+      "entryChecks": [
+        {
+          "path": "lib/net45/SimpleInjector.dll",
+          "runtimeSha256": "6a8e55d1f114fb579f4b92169af71dc197d86dd13a79199a4f047dc4b22bf0bc",
+          "packageEntrySha256": "6a8e55d1f114fb579f4b92169af71dc197d86dd13a79199a4f047dc4b22bf0bc",
+          "match": true
+        }
+      ],
+      "files": [
+        "simpleinjector.4.0.11.nupkg",
+        "simpleinjector.4.0.11.nuspec.xml",
+        "simpleinjector.4.0.11.registration.json"
+      ]
+    }
+  ],
+  "additionalCandidates": [
+    {
+      "component": "SharpCompress.dll",
+      "runtimeVersion": "0.10.3.0",
+      "runtimeSha256": "3c34138417974ce215e5d1b5bdbb7abd578ce77420073ea9de3f46ccebe42b55",
+      "nugetVersion": "0.10.3",
+      "packageUrl": "https://api.nuget.org/v3-flatcontainer/sharpcompress/0.10.3/sharpcompress.0.10.3.nupkg",
+      "packageSha256": "7c5ea29a27b38a93d9fafa124b630d2201876f02301288c522d609bb83cb8eb5",
+      "packageDllHashes": {
+        "net40": "4a0933c13f7f36d2d95986efdc92fa013a78534b61e535423739bf33057acc3e",
+        "netcore45": "8d27007eb0517c8a17021550892ba7a0e9275d3db77dacf56f61da02800c7418",
+        "portable": "ed1edf31d3c3a212f20064a9cd4d9a0b623ca967a92e6ee2495792f44327bc11"
+      },
+      "anyPackageDllMatches": false,
+      "sourceTag": "0.10.3",
+      "sourceCommit": "84704e5ce26297226e1601a272a9b516401afc67",
+      "sourceZipUrl": "https://codeload.github.com/adamhathcock/sharpcompress/zip/84704e5ce26297226e1601a272a9b516401afc67",
+      "sourceZipSha256": "af6b25d2439c6242e52f5a1cc5d83c690dfeae7beffa0fa2597af9b3bef8c231",
+      "sourceZipBytes": 7034132,
+      "packageProjectUrl": "https://github.com/adamhathcock/sharpcompress",
+      "packageLicenseUrl": "http://sharpcompress.codeplex.com/license",
+      "noticePath": "No root license at exact 0.10.3 tag; legacy CodePlex license URL in nuspec; exact applicable text unresolved",
+      "officialSource": {
+        "repository": "https://github.com/adamhathcock/SharpCompress",
+        "tag": "0.10.3",
+        "commit": "84704e5ce26297226e1601a272a9b516401afc67",
+        "zipUrl": "https://codeload.github.com/adamhathcock/sharpcompress/zip/84704e5ce26297226e1601a272a9b516401afc67",
+        "zipSha256": "af6b25d2439c6242e52f5a1cc5d83c690dfeae7beffa0fa2597af9b3bef8c231",
+        "zipBytes": 7034132,
+        "licenseAtTag": "No root license file observed in exact tag tree; old NuGet nuspec uses legacy CodePlex license URL",
+        "repoStatus": "Original adamhathcock repository remains accessible. LANCommander page explicitly marks itself forked from adamhathcock/sharpcompress; no owner transfer or official redirect found."
+      },
+      "priorZipClassification": "The previously saved LANCommander source ZIP was downloaded from a third-party fork URL. Its tag shares the exact upstream commit SHA. Entry comparison against canonical upstream ZIP: 427 entries each, 0 missing, 0 extra, 0 content mismatches.",
+      "thirdPartyReferenceSourceZipUrl": "https://codeload.github.com/LANCommander/SharpCompress/zip/84704e5ce26297226e1601a272a9b516401afc67",
+      "thirdPartyReferenceSourceZipSha256": "d9aef8910904ef173e4ef48a017ef6e0347ee45d9939c83c4bb84030545d4a20"
+    },
+    {
+      "component": "SocketHttpListener.dll",
+      "runtimeVersion": "3.2.32.4",
+      "runtimeSha256": "7d1e347f1cb6ff10b011547665bcf13bb734306e8977e572021161f52a43f852",
+      "nugetPackageCandidate": "SocketHttpListener 1.0.50",
+      "packageUrl": "https://api.nuget.org/v3-flatcontainer/sockethttplistener/1.0.50/sockethttplistener.1.0.50.nupkg",
+      "packageSha256": "e9f6e93636e38e5b95a68b727e4f04901bb41f4d7598733c9134761d6c0ed9f9",
+      "packageDllPath": "lib/net45/SocketHttpListener.dll",
+      "packageDllSha256": "475e631e2a610a77173f886aeb5673ca643c321ce8ec1fad5f58f773e3179d35",
+      "match": false,
+      "sourceRepo": "https://github.com/MediaBrowser/SocketHttpListener",
+      "repoCurrentLicense": "MIT",
+      "matchingSourceTag": "not identified",
+      "packageNuspecHasLicenseUrl": false,
+      "files": [
+        "sockethttplistener.1.0.50.nupkg",
+        "sockethttplistener.1.0.50.nuspec.xml"
+      ]
+    }
+  ],
+  "cec": {
+    "sourceTag": "libcec-3.0.0",
+    "sourceCommit": "3dcc821c86576c94ac3b5b73fd764cc16dfe05b1",
+    "commitApi": "https://api.github.com/repos/Pulse-Eight/libcec/commits/3dcc821c86576c94ac3b5b73fd764cc16dfe05b1",
+    "sourceZipUrl": "https://codeload.github.com/Pulse-Eight/libcec/zip/refs/tags/libcec-3.0.0",
+    "sourceZipSha256": "fe28f2d0f0c9301a1877c194c0da53bf90888c2fe2b6c5aef3d6e52a02dd5eef",
+    "sourceZipBytes": 1294924,
+    "cmakeVersion": "3.0.0",
+    "noticePath": "COPYING",
+    "license": "GPL-2.0-or-later; source states commercial license alternative",
+    "submodule": {
+      "path": "src/platform",
+      "commit": "e237d8b3ab180ad85e3a944b275b297dd5cfa478",
+      "sourceZipUrl": "https://codeload.github.com/Pulse-Eight/platform/zip/e237d8b3ab180ad85e3a944b275b297dd5cfa478",
+      "sourceZipSha256": "9549e33d5d924b61a9bc5e8cdec81d354a783ef0c54444a9d8cdfd49796bbb94",
+      "sourceZipBytes": 102182,
+      "noticeFile": "no top-level LICENSE/COPYING found"
+    },
+    "binaryEvidence": {
+      "cecDllProductVersion": "3.0.0.0",
+      "cecDllSha256": "6e2932ab53f4d05d5f815499786a48c3ccb8a60c527aa2f34e4abbf14dc66d04",
+      "cecClientSha256": "42f601278f82c37d0cc26460d4ac80e62f6cec5b84b2efb0ee8ed75c1cbc4519",
+      "usbCecDriverInstallerSha256": "6e4d5a091720cf5ad727896bbf3766e5529468e24849183439506130bde3546a"
+    },
+    "assessment": "Binary version metadata aligns with source version; exact source/build/toolchain and driver-installer relationship remain unproven.",
+    "files": [
+      "libcec-libcec-3.0.0-source.zip",
+      "pulse-eight-platform-e237d8b-source.zip",
+      "libcec-3.0.0-commit.json",
+      "pulse-eight-platform-commit.json"
+    ]
+  },
+  "systemConfiguration": {
+    "runtimeSha256": "3dba0c61e075728780723d7e517f6276674e29f6e9d5942c0b95a240f1e8f1bf",
+    "fileVersion": "4.0.30319.18020",
+    "projectReference": "Host csproj points to external .NET Framework v4.5 reference assemblies path",
+    "nugetPackage": "none in packages.config",
+    "officialDeveloperPackGuide": "https://learn.microsoft.com/en-us/dotnet/framework/install/guide-for-developers",
+    "exactDeveloperPackAndBuildRecord": "not present; exact pack/source binary relation unknown"
+  },
+  "remainingBuildRelationGaps": [
+    "Emby.Theater.exe is absent from pinned Host ZIP; no deterministic build/PDB/toolchain evidence ties runtime SHA to source commit.",
+    "MediaBrowser.Model runtime DLL differs from package entry; exact package/source revision unresolved.",
+    "NuGet binary hash matches prove package-entry identity only, not source commit, build recipe/compiler/toolchain, or a complete notice set.",
+    "ServiceStack.Text 4.5.14 terms URL is version-unspecific and the archive contains no notice text.",
+    "SocketHttpListener package candidate mismatch; exact source tag/rebuild linkage unresolved.",
+    "CEC source and pinned submodule source found; Windows build recipe/options/toolchain, modifications, submodule notice and driver-installer source/release relation unresolved.",
+    "System.Configuration.dll has no NuGet package; exact Microsoft targeting-pack build input/hash missing.",
+    "RefreshRate source and exact archive binary are known, deterministic rebuild evidence missing.",
+    "SharpCompress 0.10.3 canonical upstream tag and source archive are now confirmed; no exact package DLL hash match or deterministic build relation is established.",
+    "ServiceStack.Text v4.5.14 source license is collected as a version-specific reference; actual binary build/license choice remains unestablished.",
+    "SimpleInjector v4.0.0 license is a nearby-version reference, not exact source provenance for 4.0.11."
+  ],
+  "followupVerification": {
+    "sharpCompress": {
+      "officialRepository": "https://github.com/adamhathcock/SharpCompress",
+      "tag": "0.10.3",
+      "commit": "84704e5ce26297226e1601a272a9b516401afc67",
+      "officialZip": "sharpcompress-official-adamhathcock-0.10.3-source.zip",
+      "officialZipSha256": "af6b25d2439c6242e52f5a1cc5d83c690dfeae7beffa0fa2597af9b3bef8c231",
+      "forkRepository": "https://github.com/LANCommander/SharpCompress",
+      "forkEvidence": "GitHub page identifies LANCommander repo as forked from adamhathcock/sharpcompress.",
+      "sameCommitTreeComparison": {
+        "entriesEach": 427,
+        "missing": 0,
+        "extra": 0,
+        "contentMismatches": 0,
+        "identical": true
+      },
+      "assessment": "No official maintainer migration or redirect found. The canonical upstream is adamhathcock; the old LANCommander URL is a third-party fork reference. Package DLL still does not match runtime bytes."
+    },
+    "serviceStackText": {
+      "packageVersion": "4.5.14",
+      "exactNuGetDllMatch": true,
+      "officialTag": "v4.5.14",
+      "commit": "e5819a8de75a8bae64ddc7a64008613067893e32",
+      "sourceZip": "servicestack-text-official-v4.5.14-source.zip",
+      "sourceZipUrl": "https://codeload.github.com/ServiceStack/ServiceStack.Text/zip/e5819a8de75a8bae64ddc7a64008613067893e32",
+      "sourceZipSha256": "97ed2dfa327dc5d2827c373205df551d5fdb595b0ac6e7f925d0c1f118364dd9",
+      "sourceZipBytes": 6376149,
+      "licenseFileUrl": "https://github.com/ServiceStack/ServiceStack.Text/blob/e5819a8de75a8bae64ddc7a64008613067893e32/license.txt",
+      "licenseGitBlobSha": "228199f61cae44c85a07e2faa29c2fca89792fc0",
+      "licenseSavedFile": "servicestack-text-v4.5.14-license.txt",
+      "licenseSavedSha256": "b3b85e98776c6f99a5354363a45b8f5284fef916765a34cbadc6ca5612e149ec",
+      "licenseSummary": "AGPL-3.0 plus repository FOSS License Exception; text also states commercial licensing is offered.",
+      "packageNuspecLicenseUrl": "https://servicestack.net/terms",
+      "caveat": "Exact tag/license is source evidence only; no source-build record connects it to runtime DLL."
+    },
+    "simpleInjector": {
+      "packageVersion": "4.0.11",
+      "exactNuGetDllMatch": true,
+      "galleryUrl": "https://www.nuget.org/packages/SimpleInjector/4.0.11",
+      "galleryShows": "Exact version and License Info URL; updated 2017-09-20.",
+      "packageNuspecLicenseUrl": "https://simpleinjector.org/license",
+      "testedTagCandidates": [
+        {
+          "ref": "refs/tags/v4.0.11",
+          "result": "404"
+        },
+        {
+          "ref": "refs/tags/4.0.11",
+          "result": "404"
+        },
+        {
+          "ref": "refs/tags/v4.0.10",
+          "result": "404"
+        }
+      ],
+      "exact411Tag": "not found in first 100 tags; second page empty",
+      "referenceTag": "v4.0.0",
+      "referenceCommit": "bedf78dee685d76b324087cfbf4a89a768c6dbcc",
+      "referenceLicensePath": "licence.txt",
+      "referenceLicenseGitBlobSha": "e655407c9446cdadb74972113e96027127a3f807",
+      "referenceLicenseSavedFile": "simpleinjector-v4.0.0-reference-licence.txt",
+      "referenceLicenseSavedSha256": "07fef33021c361180a450dc662a0b43f8efc1e2c11ef81a46d7e36a735a9d10d",
+      "referenceLicenseSummary": "MIT license text from official v4.0.0 source tree; reference only, not exact 4.0.11 source provenance."
+    },
+    "archivePathPreflight": {
+      "method": "Read central directory and paths only; no extraction",
+      "archiveCount": 10,
+      "unsafePaths": 0,
+      "duplicateNormalizedPaths": 0,
+      "allPass": true,
+      "allEntriesReadWithoutExtraction": true,
+      "archives": [
+        "libcec-libcec-3.0.0-source.zip",
+        "pulse-eight-platform-e237d8b-source.zip",
+        "sharpcompress-0.10.3-source.zip",
+        "sharpcompress-official-adamhathcock-0.10.3-source.zip",
+        "servicestack-text-official-v4.5.14-source.zip",
+        "mediabrowser.common.3.3.10.nupkg",
+        "servicestack.text.4.5.14.nupkg",
+        "simpleinjector.4.0.11.nupkg",
+        "sharpcompress.0.10.3.nupkg",
+        "sockethttplistener.1.0.50.nupkg"
+      ]
+    }
+  }
+}

@@ -1,5 +1,15 @@
 # 许可与公开范围
 
+2026-10-09后续本地[材料审计](THIRD_PARTY_MATERIALS_AUDIT.md)已取得libmpv原
+dev archive及公开校验记录，证实其DLL与打包DLL字节一致，并补齐三项NuGet
+binary对应、继承npm原包/随包许可对照、参考源码及工具链原包材料。
+ServiceStack.Text v4.5.14固定源码的[许可文本](https://github.com/ServiceStack/ServiceStack.Text/blob/e5819a8de75a8bae64ddc7a64008613067893e32/license.txt)
+包含AGPL-3.0、FOSS License Exception和商业许可说明；这是准确版本的源码
+材料，不能用项目GPL-2.0-only或当前通用terms页面代替，也不据此断言实际
+DLL的构建许可选择或给出兼容性结论。完整构建来源、未识别资产和部分组件
+通知仍有缺口，具体见[最小索取清单](THIRD_PARTY_MATERIALS_REQUEST.md)。
+新增研究材料尚未进入任何既有安装包；本轮不作法律合规认证。
+
 本轮构建修正候选将根 `LICENSE`、`THIRD_PARTY_NOTICES.md`、本页与 [来源材料索引](SOURCE_MATERIALS.md) 按 sourceCommit 的 Git blob 字节放入 runtime，并在安装器打包前验证。下文 P1 缺少根通知的记录属于历史产物；通知随包不代表未知第三方材料已补齐。
 
 ## 结论

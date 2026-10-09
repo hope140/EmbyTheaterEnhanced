@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-09 — 0.2.6 本地可安装候选构建中
+
+从准确99cb850建立独立工作树，保持已复核播放实现。正常产品窗口关闭的三个预检（idle、playing、stopped）在只读68eb024 runtime均通过：真实before-quit/will-quit及五类IPC清理已观察，OS自然exit0、零候选残留。历史app.exit停滞仍UNKNOWN，不将预检替代最终0.2.6验收。
+
+本次版本0.2.6，整合05a08e9第三方材料报告与必要通知，原0.2.4证据身份不改。固定工具链已核对；后续从本次已提交输入正式build/package，运行五组播放与三组正常关闭，校验安装器解包。计划、来源和边界见 [0.2.6本地包](LOCAL_PACKAGE_026.md)。
+
 ## 2026-10-09 — Stop 归属候选完成，退出停滞边界已取证
 
 本地分支 `codex/stop-ownership-20261009` 从准确 60acba5 继续；产品 sourceCommit 为 `68eb0249f8392480154513f3df267204a0f0eb74`，版本保持 0.2.5。修复同一旧 stream 的并发 Stop 回调、无标签 stopped 事件与重复报告归属，保留最新 Native presentation preparation 和 terminal queue/player 收尾。相同回归修改前 8/16、修改后 16/16；全量 608/608，独立核心复核通过。
