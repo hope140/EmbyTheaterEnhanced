@@ -7,6 +7,16 @@ $evidence = Join-Path $root ('.work/p1-runtime-' + [guid]::NewGuid().ToString('N
 $profile = Join-Path $evidence 'profile'
 $harness = Join-Path $evidence 'harness'
 New-Item -ItemType Directory -Force -Path $profile,$harness,(Join-Path $evidence 'appdata/mpv'),(Join-Path $evidence 'localappdata') | Out-Null
+$sourceCommit = (Get-Content -LiteralPath (Join-Path $runtime 'runtime-provenance.json') -Raw | ConvertFrom-Json).sourceCommit
+if ($sourceCommit -notmatch '^[0-9a-f]{40}$') { throw 'Runtime source commit is unavailable.' }
+& node (Join-Path $root 'tools/source-provenance.cjs') validate $root $runtime $sourceCommit > (Join-Path $evidence 'source-provenance.log')
+if ($LASTEXITCODE -ne 0) { throw 'Source provenance failed before runtime launch.' }
+& node (Join-Path $root 'tools/runtime-provenance.cjs') validate $root $runtime $sourceCommit > (Join-Path $evidence 'runtime-provenance.log')
+if ($LASTEXITCODE -ne 0) { throw 'Runtime provenance failed before runtime launch.' }
+& node (Join-Path $root 'tools/native-helper-provenance.cjs') $root $runtime $sourceCommit > (Join-Path $evidence 'native-provenance.log')
+if ($LASTEXITCODE -ne 0) { throw 'Native provenance failed before runtime launch.' }
+& node (Join-Path $root 'tools/electron-runtime-input.cjs') validate-runtime $root $runtime > (Join-Path $evidence 'electron-provenance.log')
+if ($LASTEXITCODE -ne 0) { throw 'Electron runtime tree failed before launch.' }
 # Launch a package, so app.getVersion() follows runtime metadata rather than
 # Electron's own version when a standalone .cjs entry is used.
 $metadata = Get-Content -LiteralPath (Join-Path $runtime 'electronapp/package.json') -Raw | ConvertFrom-Json
