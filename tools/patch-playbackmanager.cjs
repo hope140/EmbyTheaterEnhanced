@@ -21,9 +21,11 @@ replaceOnce(
     '      return !playOptions || !playOptions._etePlayRequestId || playOptions._etePlayRequestId === self._etePlayRequestSequence;\n' +
     '    }\n' +
     '    function playInternal(item, playOptions, onPlaybackStartedFn) {\n' +
-    '      playOptions = playOptions || {};\n' +
+    '      // Queue items reuse options; each async request must retain its own identity.\n' +
+    '      playOptions = Object.assign({}, playOptions);\n' +
     '      self._etePlayRequestSequence = (self._etePlayRequestSequence || 0) + 1;\n' +
     '      playOptions._etePlayRequestId = self._etePlayRequestSequence;\n' +
+    '      item.playOptions = playOptions;\n' +
     '      return "disc" === item.Container'
 );
 
@@ -114,6 +116,41 @@ replaceOnce(
     '                  if (err && err.playbackSuperseded) return;\n' +
     '                  _loading.default.hide(), self.stop(player);\n' +
     '                }'
+);
+
+replaceOnce(
+    'pending playback marker',
+    '    function onPlaybackRequested(player, streamInfo) {\n      setCurrentPlayerInternal(player);',
+    '    function onPlaybackRequested(player, streamInfo) {\n' +
+    '      // This provisional item has no started playback session to stop-report.\n' +
+    '      streamInfo._etePendingPlayback = true;\n' +
+    '      setCurrentPlayerInternal(player);'
+);
+
+replaceOnce(
+    'started playback marker',
+    '      ((playerData.streamInfo = streamInfo).playbackStartTimeTicks = 1e4 * Date.now()),',
+    '      streamInfo._etePendingPlayback = false;\n' +
+    '      ((playerData.streamInfo = streamInfo).playbackStartTimeTicks = 1e4 * Date.now()),'
+);
+
+replaceOnce(
+    'replacement stop ownership snapshot',
+    '              var state = self.getPlayerState(activePlayer);',
+    '              var state = self.getPlayerState(activePlayer),\n' +
+    '                pendingPlayback = !!(getPlayerData(activePlayer).streamInfo || {})._etePendingPlayback;'
+);
+
+replaceOnce(
+    'replacement pending stop report',
+    '                  enableLocalPlaylistManagement(activePlayer) && state.NowPlayingItem)',
+    '                  enableLocalPlaylistManagement(activePlayer) && !pendingPlayback && state.NowPlayingItem)'
+);
+
+replaceOnce(
+    'terminal pending stop report',
+    '            streamInfo &&\n              streamInfo.item.Id &&',
+    '            streamInfo &&\n              !streamInfo._etePendingPlayback &&\n              streamInfo.item.Id &&'
 );
 
 replaceOnce(

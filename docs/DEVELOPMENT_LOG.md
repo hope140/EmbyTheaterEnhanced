@@ -1,5 +1,11 @@
 # 开发日志
 
+## 2026-10-09 — PlaybackManager 请求与 pending 会话局部修复
+
+- Model Tier: Tier 2 core design/review + Tier 1 bounded workers；Model: 当前主线程 GPT-6 系列，测试/harness/input worker GPT-5.6 Luna High/Max，独立核心复核 GPT-5.6 Sol High；Reason: 请求快照和 Session 报告归属涉及异步生命周期，主线程固定 contract 后委派测试与输入核对；Escalated: no。Task Risk=medium，Task Uncertainty=medium，Cross-module Scope=PlaybackManager overlay/tests/docs，Playback/Session Impact=local identity and pending report ownership。
+- 从准确 af688c8 建立独立 `codex/playback-session-20261009`，主目录未提交资料保持。产品仍0.2.5，固定3ab10c9产物只读作对照；后续构建使用唯一候选名称和新的sourceCommit。
+- 新harness在冻结产品的miss400对照复现旧metadata额外play、pending空身份Stopped和重复Started，正常结束且残留0。独立请求快照、显式临时pending状态和两处报告守卫的contract见 [修复记录](PLAYBACK_REQUEST_SESSION_FIX.md)。最终验证将在构建/矩阵完成后补记。
+
 ## 2026-10-09 — runner 等待条件与失败证据收口
 
 - Model Tier: Tier 2 analysis/review + Tier 1 bounded workers；Model: 当前主线程GPT-6系列，worker GPT-6 Luna High；Reason: 主线程核对跨PlaybackManager/renderer/main异步归属，明确contract后委派fake service、deadline、condition、runner工具与测试；独立复核负责假PASS/超时退出边界；Escalated: no。Task Risk=medium，Task Uncertainty=medium，Cross-module Scope=tools/tests/docs，Playback/Session Impact=observed, product unchanged。

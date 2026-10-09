@@ -1,5 +1,7 @@
 # 架构
 
+PlaybackManager 的每次 `playInternal` 在分配 request ID 前复制 options，并把队列 item 指向该次快照。后续 Next 只给新快照分配 ID，旧异步闭包保持旧身份；现有各阶段 current-request 守卫、terminal Stop 失效和 streamInfo 向 libmpv 的 ID 传播继续生效。`onPlaybackRequested` 设置的临时 streamInfo 显式标为 pending，替换和 terminal Stop 仍做原有清理、事件与队列操作，只抑制该临时对象的 Stopped 报告；`onPlaybackStarted` 进入真实会话后清除此标记。不能用 `started === false` 通用过滤 Stopped，因为已开始会话的 changeStream 失败也会产生该值，仍需要原有错误收尾报告。验证范围见 [请求与会话修复](PLAYBACK_REQUEST_SESSION_FIX.md)。
+
 构建输出写入在操作前统一检查runtime物理路径、全部目标和完成标记，拒绝目标链接、重复通知和已有完整产物；config只接受已验证的base并原子替换，通知和provenance独占创建。安装器使用固定Inno的notimestamp省略构建源mtime，保留文件内容与既有安装选项。当前重复构建与精确范围见 [BUILD_REVIEW](BUILD_REVIEW.md)。
 
 P1 最小诊断复用 enhanced logger 和 trusted diagnostics IPC。controller 只在已有 generation/native 文件事件决策点旁路报告 disposition；service 增补持帧和 surface-hidden 的有限观察。main 侧最多保留 64 个内部请求关联，每分钟 120 条，新增 recorder 最多 32 个 pending writes。Renderer preload error/rejection listener 只发送固定类别和实际包内 JS 相对位置，main 再投影、去重和限频（20/min）；未知消息、任意 stack、函数名和包外位置不进入日志。完整隐私、限额、失败隔离与证据边界见 [P1_DIAGNOSTICS_CONTRACT](P1_DIAGNOSTICS_CONTRACT.md)。

@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-09 — 请求与会话局部修复候选验证中
+
+从准确af688c8建立独立 `codex/playback-session-20261009`，为每次请求保留独立身份，并区分pending清理和真实会话Stopped报告。新harness在固定3ab10c9产品上重新检出两项缺陷；新候选仍须通过针对性回归、全量、来源检查和五组隐藏矩阵，当前不记完成。版本保持0.2.5，详细contract和证据见 [修复记录](PLAYBACK_REQUEST_SESSION_FIX.md)。
+
 ## 2026-10-09 — 隐藏 runner 修正，产品矩阵仍有明确失败
 
 在独立 `codex/runner-determinism-20261009` 完成工具/测试修正：明确 pending/cancel 请求门槛、重叠与顺序 Next 分开、事件/报告条件等待、遵守既有 Stop cooldown、分阶段与总期限、超时失败锁定及有界输出收集。固定产品仍为 v0.2.5 / `3ab10c9`，没有改产品源码、构建覆盖器或 runtime。
