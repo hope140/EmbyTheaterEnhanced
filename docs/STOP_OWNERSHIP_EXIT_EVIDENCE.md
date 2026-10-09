@@ -24,4 +24,8 @@ child 证据是固定时点的已观察进程，覆盖标为 `FIXED_2S_SNAPSHOT_
 
 ## 验收状态
 
-进行中。正式测试、构建、来源绑定、六次观测及独立核心复核完成后补记实际结果。真实 Emby/CD2、真实远控、可见首帧、安装与正常产品窗口关闭另列，不由隐藏假服务结果替代。
+同一份最终 16 项真实 PlaybackManager VM 回归：修改前 8 PASS / 8 FAIL，修改后 16/16 PASS。测试同时覆盖 stopped-before-resolve、burst stale admission、pending B 双 Stop、Stop 拒绝与监听恢复、terminal pending → Next、重复 terminal 拒绝传播，以及真实 transition 模块的 token 1/2 准备与最新 B 使用 token 2。原顺序/乱序 fake probe 和最初 5 项失败日志保留；新实现从物理 Stop admission 阻止乱序，不再让 B 在旧物理 Stop 未完成时开始。
+
+完整 `npm test` 为 608/608，0 fail / cancelled / skipped，耗时 187,065ms。独立 GPT-5.6 Sol High 对产品覆盖器和最终测试进行复核，当前范围无未解决阻断项。source-level nonlocal/self-managed 分支保持原始 IIFE；没有这些播放器的额外运行时验收。
+
+正式构建、来源绑定和六次退出观测待下阶段补记。真实 Emby/CD2、真实远控、可见首帧、安装与正常产品窗口关闭另列，不由隐藏假服务结果替代。

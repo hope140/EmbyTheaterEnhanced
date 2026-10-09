@@ -405,6 +405,453 @@ function reportsFor(calls, method) {
         }));
 }
 
+function installDeferredReplacementStops(fixture, {emitStoppedBeforeResolve = false} = {}) {
+    const originalStop = fixture.player.stop;
+    const pendingStops = [];
+    fixture.player.stop = function (...args) {
+        if (args[0] !== false) return originalStop.apply(this, args);
+        const pending = deferred();
+        fixture.calls.stop.push(args);
+        const stop = {args, pending};
+        pendingStops.push(stop);
+        stop.emitStoppedBeforeResolve = () => {
+            if (emitStoppedBeforeResolve) fixture.events.trigger(fixture.player, 'stopped');
+        };
+        return pending.promise;
+    };
+    return pendingStops;
+}
+
+async function startQueueItem(fixture, items, sessionId) {
+    fixture.queue.items = items;
+    fixture.queueControl.nextItem = queue => {
+        const index = queue.currentIndex + 1;
+        return items[index] ? {item: items[index], index} : null;
+    };
+    const request = fixture.manager.nextTrack();
+    await waitFor(() => fixture.calls.metadata.length === 1, items[0].Id + ' metadata request did not start');
+    fixture.resolveMetadata(0, sessionId);
+    await request;
+    await settle();
+    assert.equal(fixture.queue.currentIndex, 0, items[0].Id + ' starts at queue index 0');
+}
+
+async function runSerializedDoubleNextStop(emitStoppedBeforeResolve) {
+    const fixture = makeFixture();
+    const items = [makeItem('A'), makeItem('B')];
+    await startQueueItem(fixture, items, 'session-A');
+    const pendingStops = installDeferredReplacementStops(fixture, {emitStoppedBeforeResolve});
+    const nextSelections = [];
+    fixture.queueControl.nextItem = queue => {
+        const index = queue.currentIndex + 1;
+        const item = items[index];
+        if (item) nextSelections.push({item, index});
+        return item ? {item, index} : null;
+    };
+
+    const oldestRequest = fixture.manager.nextTrack().catch(error => error);
+    await waitFor(() => pendingStops.length === 1, 'oldest replacement stop did not start');
+    const newestRequest = fixture.manager.nextTrack().catch(error => error);
+    await settle();
+    assert.equal(pendingStops.length, 1,
+        'the second physical replacement stop waits for the first stop promise');
+    assert.deepEqual(nextSelections.map(selection => ({item: selection.item.Id, index: selection.index})), [
+        {item: 'B', index: 1},
+        {item: 'B', index: 1}
+    ], 'double Next selects the same B at index 1 while A remains current');
+
+    const resolveStop = async stop => {
+        stop.emitStoppedBeforeResolve();
+        stop.pending.resolve();
+        await settle();
+    };
+    await resolveStop(pendingStops[0]);
+    await waitFor(() => pendingStops.length === 2, 'newest replacement stop did not start after oldest resolved');
+    assert.equal(fixture.calls.metadata.length, 1,
+        'newest B waits for both admitted physical stops before metadata');
+    await resolveStop(pendingStops[1]);
+    await waitFor(() => fixture.calls.metadata.length === 2, 'newest B metadata request did not start');
+    fixture.resolveMetadata(1, 'session-B-new');
+    await Promise.all([oldestRequest, newestRequest]);
+    await settle();
+
+    assert.equal(fixture.calls.play.length, 2,
+        'A and the newest B are the only player.play calls after obsolete metadata resolves');
+    assert.equal(fixture.queue.currentIndex, 1, 'newest B owns queue index 1');
+    assert.equal(fixture.player.streamInfo.item.Id, 'B', 'old stop completion does not clear final B streamInfo');
+    assert.equal(fixture.player.streamInfo.playSessionId, 'session-B-new',
+        'final B retains the newest PlaySessionId');
+    assert.equal(fixture.player.streamInfo.mediaSource.Id, 'media-B',
+        'final B retains its MediaSource identity');
+    assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), [
+        {itemId: 'A', playSessionId: 'session-A', mediaSourceId: 'media-A'}
+    ], 'overlapping stale replacements stop-report started A exactly once');
+
+    await fixture.manager.stop();
+    await settle();
+    assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), [
+        {itemId: 'A', playSessionId: 'session-A', mediaSourceId: 'media-A'},
+        {itemId: 'B', playSessionId: 'session-B-new', mediaSourceId: 'media-B'}
+    ], 'terminal B contributes exactly one matching stop report');
+    assert.deepEqual(fixture.calls.playbackStops.map(info => info.state.NowPlayingItem.Id), ['A', 'B'],
+        'each owned stream preserves one replacement or terminal stop event');
+}
+
+test('serialized replacement stops preserve A and newest B after both physical stops drain', async () => {
+    // Exercise both the ordinary completion path and libmpv's stopped-before-resolve ordering.
+    await runSerializedDoubleNextStop(false);
+    await runSerializedDoubleNextStop(true);
+});
+
+test('serialized replacement stops do not admit stale middle requests', async () => {
+    const fixture = makeFixture();
+    const items = [makeItem('A'), makeItem('B')];
+    await startQueueItem(fixture, items, 'session-A');
+    const pendingStops = installDeferredReplacementStops(fixture);
+    fixture.queueControl.nextItem = queue => ({item: items[queue.currentIndex + 1], index: queue.currentIndex + 1});
+    const requests = [fixture.manager.nextTrack().catch(error => error)];
+    await waitFor(() => pendingStops.length === 1, 'burst first replacement stop did not start');
+    requests.push(
+        fixture.manager.nextTrack().catch(error => error),
+        fixture.manager.nextTrack().catch(error => error)
+    );
+    await settle();
+    assert.equal(pendingStops.length, 1, 'burst middle request does not start a second physical stop');
+    pendingStops[0].pending.resolve();
+    await waitFor(() => pendingStops.length === 2, 'burst newest replacement stop did not start after active stop');
+    assert.equal(fixture.calls.metadata.length, 1, 'burst newest request waits for both admitted physical stops');
+    pendingStops[1].pending.resolve();
+    await waitFor(() => fixture.calls.metadata.length === 2, 'burst newest B metadata did not start');
+    fixture.resolveMetadata(1, 'session-B-newest');
+    await Promise.all(requests);
+    await settle();
+    assert.equal(pendingStops.length, 2, 'only active and newest burst requests own physical stops');
+    assert.equal(fixture.calls.play.length, 2, 'burst produces only A and newest B player.play calls');
+    assert.equal(fixture.player.streamInfo.playSessionId, 'session-B-newest',
+        'newest burst request retains its session identity');
+    assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), [
+        {itemId: 'A', playSessionId: 'session-A', mediaSourceId: 'media-A'}
+    ], 'burst stale requests do not duplicate A stopped report');
+});
+
+test('serialized stop captured while B is pending keeps B unreported and retains final C', async () => {
+    const fixture = makeFixture();
+    const items = [makeItem('A'), makeItem('B'), makeItem('C')];
+    await startQueueItem(fixture, items, 'session-A');
+
+    let nextCall = 0;
+    fixture.queueControl.nextItem = () => {
+        const index = nextCall++ === 0 ? 1 : 2;
+        return {item: items[index], index};
+    };
+    const pendingStops = installDeferredReplacementStops(fixture);
+    const originalPlay = fixture.player.play;
+    const pendingBPlay = deferred();
+    fixture.player.play = function (streamInfo) {
+        if (streamInfo.item.Id === 'B') {
+            fixture.calls.play.push(streamInfo);
+            return pendingBPlay.promise;
+        }
+        return originalPlay.call(this, streamInfo);
+    };
+
+    const bRequest = fixture.manager.nextTrack().catch(error => error);
+    await waitFor(() => pendingStops.length === 1, 'A to B replacement stop did not start');
+    pendingStops[0].pending.resolve();
+    await waitFor(() => fixture.calls.metadata.length === 2, 'B metadata request did not start');
+    fixture.resolveMetadata(1, 'session-B');
+    await waitFor(() => fixture.calls.play.length === 2, 'B pending player.play did not capture streamInfo');
+
+    const cRequest = fixture.manager.nextTrack().catch(error => error);
+    await waitFor(() => pendingStops.length === 2, 'pending B to C replacement stop did not start');
+    const newestC = fixture.manager.nextTrack().catch(error => error);
+    await settle();
+    assert.equal(pendingStops.length, 2, 'second pending B stop waits behind the active stop');
+    pendingStops[1].pending.resolve();
+    await waitFor(() => pendingStops.length === 3, 'newest pending B stop did not start');
+    assert.equal(fixture.calls.metadata.length, 2, 'C metadata waits for both pending B stops');
+    pendingStops[2].pending.resolve();
+    await waitFor(() => fixture.calls.metadata.length === 3, 'newest C metadata request did not start');
+    fixture.resolveMetadata(2, 'session-C');
+    await Promise.all([cRequest, newestC]);
+    await settle();
+    pendingBPlay.reject({playbackSuperseded: true});
+    await bRequest;
+    await settle();
+
+    assert.equal(fixture.calls.stop.length, 3, 'A to B and both pending B to C replacement stops were invoked');
+    assert.deepEqual(fixture.calls.stop.map(args => args[0]), [false, false, false],
+        'replacement player.stop calls remain observable with serialized ownership');
+    assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), [
+        {itemId: 'A', playSessionId: 'session-A', mediaSourceId: 'media-A'}
+    ], 'pending B captured by overlapping stops never generates a stopped report');
+    assert.deepEqual(fixture.calls.playbackStops.map(info => info.state.NowPlayingItem.Id), ['A', 'B'],
+        'A and pending B each keep one cleanup event for their owned stream');
+    assert.equal(fixture.calls.metadata.length, 3, 'pending B rejection does not start extra metadata');
+    assert.equal(fixture.calls.play.length, 3, 'only A, pending B, and final C reach player.play');
+    assert.equal(fixture.queue.currentIndex, 2, 'final C owns queue index 2');
+    assert.equal(fixture.player.streamInfo.item.Id, 'C', 'old pending-B stop completion does not clear final C');
+    assert.equal(fixture.player.streamInfo.playSessionId, 'session-C', 'final C retains PlaySessionId');
+    assert.equal(fixture.player.streamInfo.mediaSource.Id, 'media-C', 'final C retains MediaSource identity');
+
+    await fixture.manager.stop();
+    await settle();
+    assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), [
+        {itemId: 'A', playSessionId: 'session-A', mediaSourceId: 'media-A'},
+        {itemId: 'C', playSessionId: 'session-C', mediaSourceId: 'media-C'}
+    ], 'terminal C adds exactly one matching stop report after pending B cleanup');
+    assert.deepEqual(fixture.calls.playbackStops.map(info => info.state.NowPlayingItem.Id), ['A', 'B', 'C'],
+        'terminal C preserves the owned cleanup event sequence');
+});
+
+test('old replacement stop rejection releases the owner and lets newest B proceed', async () => {
+    const fixture = makeFixture();
+    const items = [makeItem('A'), makeItem('B')];
+    await startQueueItem(fixture, items, 'session-A');
+    fixture.queueControl.nextItem = queue => ({item: items[1], index: 1});
+    const pendingStops = installDeferredReplacementStops(fixture);
+    const oldRequest = fixture.manager.nextTrack().catch(error => error);
+    await waitFor(() => pendingStops.length === 1, 'old replacement stop did not start');
+    const newestRequest = fixture.manager.nextTrack().catch(error => error);
+    await settle();
+    assert.equal(pendingStops.length, 1, 'newest request waits behind old physical stop');
+    pendingStops[0].pending.reject(new Error('old replacement stop failed'));
+    await waitFor(() => pendingStops.length === 2, 'newest replacement stop did not start after old rejection');
+    pendingStops[1].pending.resolve();
+    await waitFor(() => fixture.calls.metadata.length === 2, 'newest B metadata did not start after old rejection');
+    fixture.resolveMetadata(1, 'session-B-newest');
+    await Promise.all([oldRequest, newestRequest]);
+    await settle();
+
+    assert.equal(fixture.calls.play.length, 2, 'old stop rejection does not block newest B player.play');
+    assert.equal(fixture.player.streamInfo.playSessionId, 'session-B-newest',
+        'newest B retains identity after old stop rejection');
+    assert.equal(fixture.calls.playbackCancelled.length, 0, 'stale old stop rejection is not a playback cancellation');
+    assert.equal(fixture.calls.alerts.length, 0, 'stale old stop rejection shows no playback dialog');
+    assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), [
+        {itemId: 'A', playSessionId: 'session-A', mediaSourceId: 'media-A'}
+    ], 'old stop rejection still cleans up started A once');
+});
+
+test('newest replacement stop rejection fails latest request without stale B play', async () => {
+    const fixture = makeFixture();
+    const items = [makeItem('A'), makeItem('B')];
+    await startQueueItem(fixture, items, 'session-A');
+    fixture.queueControl.nextItem = queue => ({item: items[1], index: 1});
+    const pendingStops = installDeferredReplacementStops(fixture);
+    const oldRequest = fixture.manager.nextTrack().catch(error => error);
+    await waitFor(() => pendingStops.length === 1, 'old replacement stop did not start');
+    const newestRequest = fixture.manager.nextTrack().catch(error => error);
+    pendingStops[0].pending.resolve();
+    await waitFor(() => pendingStops.length === 2, 'newest replacement stop did not start');
+    pendingStops[1].pending.reject(new Error('newest replacement stop failed'));
+    const outcomes = await Promise.all([oldRequest, newestRequest]);
+    await settle();
+
+    assert.equal(fixture.calls.metadata.length, 1, 'newest stop rejection starts no stale B metadata');
+    assert.equal(fixture.calls.play.length, 1, 'newest stop rejection starts no stale B player.play');
+    assert.equal(fixture.calls.playbackCancelled.length, 1, 'latest stop rejection fails the latest request');
+    assert.equal(fixture.calls.alerts.length, 1, 'latest stop rejection shows the latest playback failure');
+    assert.ok(outcomes.every(outcome => outcome instanceof Error || outcome === undefined),
+        'replacement outcomes settle after newest stop rejection');
+    assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), [
+        {itemId: 'A', playSessionId: 'session-A', mediaSourceId: 'media-A'}
+    ], 'successful first stop cleans up A once despite newest rejection');
+});
+
+test('all replacement stops rejecting retain A until a real stopped event and restore the listener', async () => {
+    const fixture = makeFixture();
+    await startQueueItem(fixture, [makeItem('A'), makeItem('B')], 'session-A');
+    const streamA = fixture.player.streamInfo;
+    const pendingStops = installDeferredReplacementStops(fixture);
+    const first = fixture.manager.nextTrack().catch(error => error);
+    await waitFor(() => pendingStops.length === 1);
+    const second = fixture.manager.nextTrack().catch(error => error);
+    pendingStops[0].pending.reject(new Error('first stop rejected'));
+    await waitFor(() => pendingStops.length === 2);
+    pendingStops[1].pending.reject(new Error('second stop rejected'));
+    await Promise.all([first, second]);
+    assert.equal(fixture.player.streamInfo, streamA, 'no successful Stop can claim the current stream');
+    assert.equal(fixture.player._eteReplacementStop, undefined, 'rejected stop owner is released');
+    assert.equal(fixture.calls.metadata.length, 1);
+    assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), []);
+    fixture.events.trigger(fixture.player, 'stopped');
+    await settle();
+    assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), [
+        {itemId: 'A', playSessionId: 'session-A', mediaSourceId: 'media-A'}
+    ], 'restored listener performs the real A stop exactly once');
+});
+
+test('terminal Stop drains pending replacement before queued Next and preserves B identity', async () => {
+    const fixture = makeFixture();
+    const items = [makeItem('A'), makeItem('B')];
+    await startQueueItem(fixture, items, 'session-A');
+    fixture.queueControl.nextItem = queue => ({item: items[1], index: 1});
+
+    const originalStop = fixture.player.stop;
+    const replacementStops = [];
+    let terminalCalls = 0;
+    const terminalPending = deferred();
+    fixture.player.stop = function (...args) {
+        if (args[0] === false) {
+            const pending = deferred();
+            fixture.calls.stop.push(args);
+            replacementStops.push({pending, args});
+            return pending.promise;
+        }
+        if (args[0] === true) {
+            terminalCalls++;
+            fixture.calls.stop.push(args);
+            return terminalPending.promise.then(() => {
+                fixture.events.trigger(fixture.player, 'stopped');
+            });
+        }
+        return originalStop.apply(this, args);
+    };
+
+    const oldRequest = fixture.manager.nextTrack().catch(error => error);
+    await waitFor(() => replacementStops.length === 1, 'old replacement stop did not start');
+    const terminalRequest = fixture.manager.stop();
+    await settle();
+    assert.equal(terminalCalls, 0, 'terminal Stop waits behind the outstanding replacement stop');
+    const newestRequest = fixture.manager.nextTrack().catch(error => error);
+    await settle();
+    assert.equal(replacementStops.length, 1,
+        'Next arriving during terminal drain does not enqueue a second replacement stop');
+
+    replacementStops[0].pending.resolve();
+    await waitFor(() => terminalCalls === 1, 'terminal stop did not start after replacement drain');
+    const physicalPendingNext = fixture.manager.nextTrack().catch(error => error);
+    await settle();
+    assert.equal(fixture.calls.metadata.length, 1, 'Next during physical terminal Stop cannot enter metadata');
+    assert.equal(replacementStops.length, 1, 'Next during physical terminal Stop adds no replacement teardown');
+    terminalPending.resolve();
+    await waitFor(() => fixture.calls.metadata.length === 2, 'queued B metadata did not start after terminal drain');
+    fixture.resolveMetadata(1, 'session-B');
+    await Promise.all([oldRequest, newestRequest, physicalPendingNext, terminalRequest]);
+    await settle();
+
+    assert.equal(fixture.player.streamInfo.item.Id, 'B', 'queued B survives terminal drain');
+    assert.equal(fixture.player.streamInfo.playSessionId, 'session-B', 'queued B retains PlaySessionId');
+    assert.equal(fixture.player.streamInfo.mediaSource.Id, 'media-B', 'queued B retains MediaSource identity');
+    assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), [
+        {itemId: 'A', playSessionId: 'session-A', mediaSourceId: 'media-A'}
+    ], 'terminal drain reports A exactly once before queued B starts');
+    assert.deepEqual(fixture.calls.playbackStops.map(info => info.state.NowPlayingItem.Id), ['A'],
+        'terminal drain preserves one A cleanup event');
+    assert.deepEqual(fixture.calls.stop.map(args => args[0]), [false, true],
+        'replacement stop and terminal stop are invoked without a second replacement stop');
+
+    await fixture.manager.stop();
+    await settle();
+    assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), [
+        {itemId: 'A', playSessionId: 'session-A', mediaSourceId: 'media-A'},
+        {itemId: 'B', playSessionId: 'session-B', mediaSourceId: 'media-B'}
+    ], 'later terminal Stop reports the queued B pair exactly once');
+});
+
+test('duplicate terminal Stop rejection releases the owner and queued Next does not play stale B', async () => {
+    const fixture = makeFixture();
+    const items = [makeItem('A'), makeItem('B')];
+    await startQueueItem(fixture, items, 'session-A');
+    fixture.queueControl.nextItem = queue => ({item: items[1], index: 1});
+    const originalStop = fixture.player.stop;
+    const replacementStops = [];
+    let terminalPending;
+    let terminalCalls = 0;
+    fixture.player.stop = function (...args) {
+        if (args[0] === false) {
+            const pending = deferred();
+            fixture.calls.stop.push(args);
+            replacementStops.push(pending);
+            return pending.promise;
+        }
+        if (args[0] === true) {
+            fixture.calls.stop.push(args);
+            terminalCalls++;
+            terminalPending = deferred();
+            return terminalPending.promise;
+        }
+        return originalStop.apply(this, args);
+    };
+
+    const replacement = fixture.manager.nextTrack().catch(error => error);
+    await waitFor(() => replacementStops.length === 1, 'replacement stop did not start');
+    const terminalOne = fixture.manager.stop().catch(error => error);
+    const terminalTwo = fixture.manager.stop().catch(error => error);
+    const queuedNext = fixture.manager.nextTrack().catch(error => error);
+    await settle();
+    assert.equal(terminalCalls, 0, 'terminal Stop calls wait behind replacement stop');
+    replacementStops[0].resolve();
+    await waitFor(() => terminalCalls === 1, 'terminal physical stop did not start');
+    assert.ok(terminalPending, 'terminal physical stop created a deferred promise');
+    const terminalError = new Error('terminal stop failed');
+    terminalPending.reject(terminalError);
+    const outcomes = await Promise.all([replacement, terminalOne, terminalTwo, queuedNext]);
+    await settle();
+
+    assert.equal(fixture.calls.stop.filter(args => args[0] === true).length, 1,
+        'duplicate terminal Stop calls share one physical terminal stop');
+    assert.equal(fixture.calls.metadata.length, 1, 'queued Next after terminal failure starts no B metadata');
+    assert.equal(fixture.calls.play.length, 1, 'queued Next after terminal failure starts no B player.play');
+    assert.equal(fixture.calls.playbackCancelled.length, 1, 'queued latest Next reports its terminal failure once');
+    assert.equal(fixture.calls.alerts.length, 1, 'queued latest Next shows its terminal failure once');
+    assert.equal(outcomes[1], terminalError, 'first terminal caller receives the physical rejection');
+    assert.equal(outcomes[2], terminalError, 'duplicate terminal caller receives the same physical rejection');
+    assert.equal(fixture.player._eteReplacementStop, undefined, 'failed owner is released');
+});
+
+test('native transition prepares both tokens and newest loading token remains usable', async () => {
+    const transitionModule = require(path.join(repoRoot, 'src', 'electronapp', 'enhanced', 'nexttrack-transition.js'));
+    const fixture = makeFixture();
+    await startQueueItem(fixture, [makeItem('A'), makeItem('B')], 'session-A');
+    const preparations = new Map();
+    const preparedTokens = [];
+    const endpoint = {
+        preparePresentation(token) {
+            const pending = deferred();
+            preparations.set(token, pending);
+            preparedTokens.push(token);
+            return pending.promise;
+        },
+        cancelPresentation() {}
+    };
+    const transition = transitionModule.createNative({getEndpoint: () => endpoint});
+    const loadingTokens = [];
+    const originalStop = fixture.player.stop;
+    fixture.player.stop = function (...args) {
+        if (args[0]) return originalStop.apply(this, args);
+        fixture.calls.stop.push(args);
+        return transition.beforeTeardown().then(() => {
+            fixture.events.trigger(fixture.player, 'stopped');
+        });
+    };
+    const originalPlay = fixture.player.play;
+    fixture.player.play = function (streamInfo) {
+        transition.playbackStarted(streamInfo._etePlayRequestId);
+        loadingTokens.push(transition.loadingToken(streamInfo._etePlayRequestId));
+        return originalPlay.call(this, streamInfo);
+    };
+    transitionModule.install(fixture.manager, fixture.player, transition);
+
+    const first = fixture.manager.nextTrack();
+    await waitFor(() => preparedTokens.length === 1, 'native token 1 was not prepared');
+    const second = fixture.manager.nextTrack();
+    await settle();
+    assert.deepEqual(preparedTokens, [1], 'new token preparation waits for active Stop');
+    preparations.get(1).resolve({ready: true});
+    await waitFor(() => preparedTokens.length === 2, 'native token 2 was not prepared');
+    assert.equal(fixture.calls.metadata.length, 1, 'B is gated until latest native preparation and Stop finish');
+    preparations.get(2).resolve({ready: true});
+    await waitFor(() => fixture.calls.metadata.length === 2, 'newest B metadata did not begin');
+    fixture.resolveMetadata(1, 'session-B');
+    await Promise.all([first, second]);
+
+    assert.deepEqual(preparedTokens, [1, 2], 'native preparation runs once for each transition token');
+    assert.deepEqual(loadingTokens, [2], 'only newest B plays and receives the usable token 2');
+    assert.equal(fixture.player.streamInfo.playSessionId, 'session-B');
+});
+
 test('shared next item options ignore a stale success after the newer response starts', async () => {
     const fixture = makeFixture();
     const {sharedOptions, itemB, firstOutcome, secondOutcome} = await startSharedItemRequests(fixture);

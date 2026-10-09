@@ -1,5 +1,13 @@
 # 已确认经验
 
+## 2026-10-09 — Stop 归属与退出观察
+
+- Stop Promise 的完成回调不能凭最新 request id 决定是否收尾旧 Session。捕获的 streamInfo 拥有一次清理与报告；新请求的身份只决定后续播放是否继续。
+- libmpv 在 Stop Promise resolve 前发出无标签 stopped 事件。只给 then 加 identity guard 仍可能漏掉迟到事件；同一旧流的物理 Stop 排空前不能重新绑定当前流的 stopped listener。
+- 盲目共享第一次 Stop 会跳过后续 Native presentation token 的 beforeTeardown。局部串行保留 active + 最新有效 Stop，并让过期 queued 请求在实际执行前退出；测试应联用真实 PlaybackManager 与真实 transition 模块。
+- terminal joiner 必须共享包含 operation rejection 的完整 Promise。只等待已 catch 的清理 tail 会把失败伪装成成功，使新请求继续。
+- Windows CIM CreationDate 的精度为微秒，Get-Process.StartTime 可有 100ns 尾数。子进程观察需按已证实精度比较，identity mismatch 保持 UNKNOWN；root 强制清理仍使用同一 API 取得的精确 StartTime。
+
 ## 2026-10-09 — 请求快照与pending报告归属
 
 - 单调request ID放在复用options上仍可失效：后续请求会改写旧闭包读到的值。每次请求应在分配ID前建立独立快照，同时保留队列item到当前streamInfo的ID传播；回归同时观察旧成功、旧失败和真实player调用次数。

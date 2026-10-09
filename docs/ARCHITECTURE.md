@@ -1,5 +1,7 @@
 # 架构
 
+本地 playlist-managed player 的 replacement Stop 使用 player + 捕获 streamInfo 的局部收尾记录。已开始的物理 Stop 顺序完成，尚未执行的过期请求跳过；最新请求仍执行自己的 Stop/presentation preparation。记录排空前保持原 stopped listener 解绑，防止无 session 标签的迟到 stopped 事件作用于新流。清理/事件/报告按捕获流领取一次，不由 request id 早退代替；当前 streamInfo 只在对象身份相等时清空。terminal Stop 同步失效请求并加入现存记录，重复 Stop 与后来的 Next 共用包含拒绝结果的 terminal Promise；排空后调用既有 onPlaybackStopped 完成 queue 与 player removal。remote/self-managed player 保留原路径。详见 [Stop 归属与退出证据](STOP_OWNERSHIP_EXIT_EVIDENCE.md)。
+
 PlaybackManager 的每次 `playInternal` 在分配 request ID 前复制 options，并把队列 item 指向该次快照。后续 Next 只给新快照分配 ID，旧异步闭包保持旧身份；现有各阶段 current-request 守卫、terminal Stop 失效和 streamInfo 向 libmpv 的 ID 传播继续生效。`onPlaybackRequested` 设置的临时 streamInfo 显式标为 pending，替换和 terminal Stop 仍做原有清理、事件与队列操作，只抑制该临时对象的 Stopped 报告；`onPlaybackStarted` 进入真实会话后清除此标记。不能用 `started === false` 通用过滤 Stopped，因为已开始会话的 changeStream 失败也会产生该值，仍需要原有错误收尾报告。验证范围见 [请求与会话修复](PLAYBACK_REQUEST_SESSION_FIX.md)。
 
 构建输出写入在操作前统一检查runtime物理路径、全部目标和完成标记，拒绝目标链接、重复通知和已有完整产物；config只接受已验证的base并原子替换，通知和provenance独占创建。安装器使用固定Inno的notimestamp省略构建源mtime，保留文件内容与既有安装选项。当前重复构建与精确范围见 [BUILD_REVIEW](BUILD_REVIEW.md)。
