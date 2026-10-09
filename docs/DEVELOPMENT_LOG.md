@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-10-09 — P0/P1 基线与有限诊断
+
+Model Tier: Tier 2 risk management；Model: 当前主线程 GPT-6 系列，worker GPT-6 Luna High；Reason: 诊断关联、IPC 与核心最终审查由主线程负责，固定规格的审计、测试、版本 gate 委派；Escalated: no，沿用当前会话模型，不新增架构升级。Task Risk=medium，Task Uncertainty=medium，Cross-module Scope=controller/service/preload/diagnostics/tools，Playback/Session Impact=observation only。
+
+现场核验 main=46e995e、v0.2.4 产品=03a2e3b、完整文档候选=ebcb655a。从完整候选创建隔离本地分支，审查 71 文件集成差异和 shared main/libmpv/native 生命周期，统一当前文档清单。既有 Settings、切集与顶部条用户反馈保留，107ms Previous 与 rapid selected=false 证据不变。
+
+P1 contract 先固化再实现；新增记录使用固定枚举、安全包内脚本位置、容量与频率上限和 fail-open 处理。构建输入准备和基线 430/430 PASS，初轮定向 66/66 PASS。最终证据和交付见 [P0/P1 记录](P0_P1_DELIVERY.md)。
+
 ## 2026-10-09 — 删除历史候选下载页
 
 Model Tier：Tier 1。Model：主线程与Luna入口复核。Reason：用户要求清理已由新版本替代的cc603ba候选；Playback/Session Impact：无；Escalated：no。核对Release ID406794578和4个附件后，删除该Release并保留源码tag。前后快照验证其余6个Release及附件完全保持，正式Latest仍v0.2.2。证据见 `.work/release-0.2.4-20261009/candidate-removal-verification.json`；当前下载入口继续指向v0.2.4，产品和安装包字节未变。

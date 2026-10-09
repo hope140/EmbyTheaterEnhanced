@@ -4,7 +4,7 @@
 
 ## Current Production Baseline
 
-- `v0.2.2` 正式发布基线对应提交 `9a034e8d627f71abbded01a1fba612d9282c9911`；当前 `main` 已包含 PR #18 的合并提交 `121305b5fa74fa5bf9e8b76caabf280468ddb11b`，尚未发布新版本。
+- `v0.2.2` 正式 Latest 对应提交 `9a034e8d627f71abbded01a1fba612d9282c9911`；2026-10-09 只读核验远端 `main=46e995e`，已包含 PR #18。最新测试版 `v0.2.4` 的产品 sourceCommit 为 `03a2e3b`，完整候选文档 HEAD 为 `ebcb655a`，尚未整合到 main。
 - Native Helper + libmpv、Pepper / PPAPI 退役、Electron 44.4.2、apphost 启动命令兼容修复、Windows runtime / package provenance、STRM / CloudDrive2 / DirectUrl 基础路由和诊断包均已进入历史完成项；细节由既有专项文档维护。
 - Smart Path Mapping 已合入 `main`，尚未进入 `v0.2.2` 正式发布基线。
 
@@ -26,23 +26,19 @@
 
 合并前验收：Settings targeted `18/18 PASS`、focused STRM/Settings/CD2/Smart Mapping/diagnostics `191/191 PASS`、`npm test 319/319 PASS`；产品提交的 source、Electron 44.4.2、Native Helper、runtime provenance 与 package `-VerifyOnly` 均通过。合并后未执行新版本发布或真实客户端复测。
 
-**边界：** STRM 设置页 UI Consolidation 作为后续独立任务；现有 `rules[]`、Resolver 和播放身份链保持原约定。
+**边界：** 后续 STRM 设置页整理已经随 v0.2.4 完成并通过用户验收；现有 `rules[]`、Resolver 和播放身份链保持原约定。
 
 ## NOW
 
-### 0.2.3测试版版本收口
+### P0 基线与主线整合审查
 
-`f7505cd`已将统一候选的应用、About、安装器及构建记录版本落实为0.2.3，并发布 [v0.2.3 Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.3)。新包430项测试和来源/payload/安装器校验通过；相对cc603ba只有版本与来源元数据变化。发布证据见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)，既有全屏短闪和真实环境边界不变，正式Latest保持v0.2.2。
+基于完整 v0.2.4 候选整理当前状态与真实差异，见 [P0/P1 本地交付](P0_P1_DELIVERY.md)。Settings 用户验收通过；顶部细条用户确认消失；统一候选已补齐窗口交互、10 次 Next/Previous 与 Stop 回归。历史 430/430 和安装器 2147 文件结果见 [0.2.4 验收](SETTINGS_UI_024_ACCEPTANCE.md) 与 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)，不替代本轮验证。
 
-### 统一候选本地测试包
+旧 `test-20261008-cc603ba` Release 已删除，原 tag 与验收文档保留。main 整合、PR 与后续发布单独决定。
 
-预发布默认交付已补齐为项目原有Inno安装包：与已验证runtime逐文件匹配，保留原安装目录/应用身份/快捷方式；同页ZIP作为备用下载。真实安装生命周期仍独立。
+### P1 最小播放诊断与 Renderer 错误定位
 
-`cc603ba` 已整合Settings `21ef9a4`与播放/全屏`1e86e51`，430项测试、正式来源/payload、核心隔离回归及ZIP验证完成，并经用户确认发布 [test-20261008-cc603ba](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/test-20261008-cc603ba) Pre-release。全屏跨编码Previous的短闪采样保持INCONCLUSIVE，真实Emby/CD2、HDR、多屏和安装独立。当前交付和证据以 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md) 为准；PR/主线/正式版本发布待独立授权。
-
-### 全屏窗口候选验收
-
-`1e86e51`顶部细条已由用户手动确认消失；完整窗口与播放交互随后在统一候选`cc603ba`的新隔离窗口中补齐，详见上述统一记录。原412/412和2140文件结果保留历史归属。
+补齐现有 JSONL 的 native 文件事件、generation/request 关联、持帧及 surface 隐藏观察，采集有限脱敏 Renderer 错误位置，并检查交付版本一致性。范围、限额、不可用语义和验证要求见 [诊断 contract](P1_DIAGNOSTICS_CONTRACT.md)；实际完成状态见 [本地交付](P0_P1_DELIVERY.md)。
 
 ### 1. NextTrack 切集瞬时白屏
 
@@ -52,21 +48,9 @@
 
 **不要误修：** 在确认窗口与播放面之前，不添加黑色遮罩、定时重绘、focus hack 或 `SetWindowPos` workaround；也不把它归入 Seek / Stop 黑帧或 rapid NextTrack 夹具限制。
 
-## NEXT / P1
+## 可选后续研究
 
-### 2. STRM UI Consolidation
-
-**状态：** Settings `21ef9a4` 已获用户验收，且进入统一候选`cc603ba`；实际controller保存/离页不保存/落盘重载与动态Emby控件回归通过。主线合入与新版本发布尚未执行。
-
-**目标：** 统一 input、select、toggle、button hierarchy、rule card、assistant sample card、preview card、status indicator、spacing、typography 与 responsive layout。
-
-**边界：** 只整理设置页体验，不改变 Smart Mapping algorithm 或 Resolver。
-
-### 3. Next Episode / DirectUrl / CD2 Pre-warm
-
-**状态：** 历史明确 backlog，尚未实现。
-
-**方向：** 在 post-bridge 阶段，以固定播放进度阈值启动有界准备；从 STRM 找到真实 CD2 target，为下一次 NextTrack 获取 fresh DirectUrl。失败时 fail-open，不能复用旧 Session / PlaySession。实现前需先固定触发、取消、身份和过期边界，并独立验收。
+Next Episode / DirectUrl / CD2 Pre-warm 保留为可选候选。用户说明复杂时可不做，本轮不投入方案或实现，不作为 P0/P1 交付条件。
 
 ## P2
 
@@ -83,14 +67,6 @@
 **状态：** `EVIDENCE-GATED`，等待真实 `not_found` 样本。先取得 CD2 路径可见性前后对照，区分目录未物化与 timeout / transport / 鉴权问题；再决定是否设计有界恢复。
 
 **不要误修：** 不预先实现 ancestor enumeration、cold directory materialization 或 retry loop。既有 Mount / Native fallback 保持有效。
-
-### Diagnostics Observability
-
-**状态：** 计划补足 `helper-ready`、`loadfile`、`core-playing`、`stop` 的有界可观测 marker。目标是定位播放阶段与证据缺口，不改变 playback behavior，不用推断 marker 冒充真实事件。
-
-### Renderer ReferenceError Observer
-
-**状态：** 历史真实 run 有非阻断事件，但缺 message / stack。先加脱敏、有界 observer，取得定位证据后再判断修复范围。
 
 ### Installer Residual Audit
 

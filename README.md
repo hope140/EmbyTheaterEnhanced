@@ -18,7 +18,7 @@ Emby Theater Enhanced 是非官方社区维护项目，与 Emby 不存在隶属�
 
 2026-10-09，设置页一致性修正已通过本轮用户验收并发布为最新测试版 [v0.2.4 Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.4)；正式 Latest 仍为 [v0.2.2](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.2)。v0.2.4 继承 v0.2.3 的功能和修复，统一增强设置页与 Emby 原生设置的对齐、动态控件样式及导航标题。完整产物信息与验收范围见[0.2.4验收记录](docs/SETTINGS_UI_024_ACCEPTANCE.md)。
 
-进度与优先级见 [Development Roadmap](docs/ROADMAP.md)，可复现问题与观察项见 [Known Issues](docs/KNOWN_ISSUES.md)。Smart Path Mapping 已完成用户功能验收和最终远端复审，并通过 PR #18 合入 `main`。
+当前本地工程阶段为 P0 主线整合准备与 P1 最小诊断，见[本地交付](docs/P0_P1_DELIVERY.md)和[诊断 contract](docs/P1_DIAGNOSTICS_CONTRACT.md)。进度与优先级见 [Development Roadmap](docs/ROADMAP.md)，可复现问题与观察项见 [Known Issues](docs/KNOWN_ISSUES.md)。Smart Path Mapping 已完成用户功能验收和最终远端复审，并通过 PR #18 合入 `main`。
 
 ### 核心架构
 
@@ -37,7 +37,6 @@ Emby Theater Enhanced 是非官方社区维护项目，与 Emby 不存在隶属�
 - [x] Smart Path Mapping Final PR Audit
 - [x] Smart Path Mapping PR / Merge
 - [x] STRM 设置页一致性修正（用户验收通过，已随 v0.2.4 测试版发布）
-- [ ] Next Episode / DirectUrl / CD2 Pre-warm
 - [ ] CD2 Path Hydration（等待真实 `not_found` 样本）
 
 ### 播放体验
@@ -51,8 +50,7 @@ Emby Theater Enhanced 是非官方社区维护项目，与 Emby 不存在隶属�
 ### 诊断与维护
 
 - [x] 诊断包导出、播放 / 路由诊断信息与敏感信息脱敏
-- [ ] `helper-ready` / `loadfile` / `core-playing` / `stop` 可观测 marker
-- [ ] Renderer `ReferenceError` observer
+- [x] 最小播放诊断与 Renderer 错误位置采集（P1 本地候选，证据见交付记录）
 - [ ] Installer install / upgrade / uninstall / reinstall 残留审计
 
 ### 观察项

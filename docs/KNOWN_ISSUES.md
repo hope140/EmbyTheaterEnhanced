@@ -1,10 +1,12 @@
 # Known Issues
 
+2026-10-09 当前工程状态：v0.2.4/03a2e3b 为最新测试版，正式 Latest 为 v0.2.2，main=46e995e。本地 P0/P1 诊断候选见 [交付记录](P0_P1_DELIVERY.md)；诊断能力的增加不自动关闭历史 Renderer ReferenceError 的业务根因。
+
 ## 2026-10-09 — 设置页一致性修正通过用户验收
 
 0.2.4/03a2e3b的三页左对齐、动态原生控件样式与重复标题修正，用户测试后明确反馈“可以了，我测过了”，记为 `USER ACCEPTANCE PASS / CLOSED WITH MONITORING`。本次只关闭此UI问题，未扩展到系统安装或其它专项；见[0.2.4验收记录](SETTINGS_UI_024_ACCEPTANCE.md)。
 
-2026-10-08统一候选更新：`cc603ba`已补齐核心Settings、窗口、连续切集与Stop隔离回归并交付本地ZIP。全屏跨编码Previous为73帧/max107ms，所采无黑/紫/mixed但仍INCONCLUSIVE；窗口跨编码两向通过。旧rapid NextTrack夹具selected=false已与`1e86e51`同条件匹配，未修改断言。当前证据和专项未覆盖范围见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。
+2026-10-08统一候选历史证据：`cc603ba`已补齐核心Settings、窗口、连续切集与Stop隔离回归；后续已由v0.2.4替代，其旧Release已删除，原tag与证据保留。全屏跨编码Previous为73帧/max107ms，所采无黑/紫/mixed但仍INCONCLUSIVE；窗口跨编码两向通过。旧rapid NextTrack夹具selected=false已与`1e86e51`同条件匹配，未修改断言。证据和专项未覆盖范围见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。
 
 本页记录尚需诊断的问题与观察项。`OBSERVED` 表示已见现象，`SUSPECTED` 表示待验证解释，只有证据闭合后才使用 `CONFIRMED`。开发优先级见 [Development Roadmap](ROADMAP.md)。
 
@@ -21,7 +23,7 @@
 
 - 状态：`FIXED IN LOCAL CANDIDATE / UNIFIED SYNTHETIC INTERACTION VERIFIED`。
 - 旧候选实测拖动后bounds由2560x1440变为y=170、2560x1270，只出现resize/move，renderer仍为Fullscreen。
-- `1e86e51` 增加全屏交互锁、原窗口状态恢复与几何失配退出；11项窗口状态回归通过。`a8aa114`有阶段可见交互通过证据，最终复测因用户停止Computer Use未完成。
+- `1e86e51` 增加全屏交互锁、原窗口状态恢复与几何失配退出；11项窗口状态回归通过。早期最终复测曾中断，后续统一候选已补齐边缘拖动、恢复尺寸、普通缩放、重复全屏、最小化恢复、关闭保存与播放切换，见[统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。
 
 ## Observe
 
@@ -84,7 +86,7 @@
 - 状态：`OBSERVE / NON-BLOCKING FOLLOW-UP`。
 - `OBSERVED`：历史 focused real run 记录到 renderer `ReferenceError` event；未伴随 unhandled rejection、bridge / helper / Electron crash 或播放副作用，message / stack 缺失。
 - 用户影响：现有证据未显示直接播放影响；缺少定位信息。
-- 下一步：增加有界、脱敏的 message / stack observer，再按新证据分流。
+- 当前工程：P1 本地候选已增加有限错误类别和包内调用位置 observer，详见[诊断 contract](P1_DIAGNOSTICS_CONTRACT.md)。下一步在新样本出现时按脱敏位置定位；任意消息和原始 stack 不保存。
 - 区别：不将无堆栈事件直接归因于 NextTrack 白屏。
 
 ### Concurrent Remote NextTrack
