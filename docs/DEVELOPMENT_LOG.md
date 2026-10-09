@@ -1,5 +1,12 @@
 # 开发日志
 
+## 2026-10-09 — v0.2.5 测试版收口开始
+
+- Model Tier: Tier 2 coordination / Tier 1 bounded worker; Model: current Codex primary session / GPT-5.6 Luna High; Reason: release integration and exact source-to-artifact identity, with fixed-scope read-only version audit delegated; Escalated: no model escalation requested.
+- Task Risk: medium (authorized public test release); Task Uncertainty: low after live refs / Release inspection; Cross-module Scope: version metadata, build and documentation; Playback/Session Impact: none intended, existing source frozen.
+- 用户当前授权版本收口、必要提交/推送、准确 tag、GitHub Pre-release 和安装包上传。独立分支从完整 5af8443 继续，v0.2.5 无冲突，Latest v0.2.2 保持。
+- package / lock 三处版本升级为 0.2.5，来源索引随包版本同步。构建前先提交；新产物绑定实际 sourceCommit。验证与远端回读待后续记录，不沿用旧候选 SHA256。
+
 ## 2026-10-09 — 写入边界修正与安装器确定性
 
 Model Tier: Tier 2 risk management；Model: 当前主线程GPT-6系列，worker GPT-6 Luna High；Reason: 复核跨文件build/provenance写入边界及容器重复性，固定规格局部修复委派后由主线程检查真实diff；Escalated: no。Playback/Session Impact=none，Cross-module Scope=tools/installer/tests/docs。

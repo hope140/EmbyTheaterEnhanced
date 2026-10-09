@@ -1,6 +1,6 @@
 # Runtime source and notice materials
 
-This index accompanies the local 0.2.4 build-hardening candidate. Its bytes,
+This index accompanies the 0.2.5 test release. Its bytes,
 the project LICENSE, THIRD_PARTY_NOTICES.md and LICENSING.md are copied from
 the candidate sourceCommit. build-input-provenance.json identifies those
 blobs; source-provenance.json identifies the external runtime inputs.
