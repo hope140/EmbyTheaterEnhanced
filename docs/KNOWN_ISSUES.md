@@ -2,6 +2,8 @@
 
 ## 2026-10-09 — 正常关闭等待首次Native清理
 
+- ac865c4三场景及五组完整pipeline通过，但静态/fake多实例拒绝检查发现Promise.all可能在一个pending失败时早退。最终改为current和pending一起allSettled，再按current优先/快照顺序传播原始错误，surface失败短路保持。35例前34/1、后35/35；最终source runtime待下方最终交付证据关闭正常路径项目，app.exit UNKNOWN继续分列。
+
 - 7b3a2dc的真实playing关闭证明只共享service destroy仍不足：renderer endpoint先发起destroyClient并清空client，owned kill仍pending。单次caller观察为destroy-client；现新增pending client清理集合与destroy时快照等待。同一最终33例准确7b3a2dc对照31 PASS/2 FAIL，新源码33/33。最终新来源正常关闭/完整矩阵待实测后记录，不能把前述表面自然exit记为强化通过。
 
 - 初版0.2.6/8700039的playing关闭：window closed在7109ms进入native-client-shutdown，before-quit重复destroy在7134ms完成返回，will-quit/quit先于native completion；OS exit0和残留0仍不代表清理已被等待。强化验收FAIL保留。

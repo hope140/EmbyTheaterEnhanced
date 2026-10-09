@@ -94,3 +94,16 @@ app.exit实验，不由最终正常关闭PASS消除该UNKNOWN。
 按该身份逐对核对，不依赖第一条事件。额外回归验证旧client提前完成不影响
 当前client判断，而错配或缺少当前client完成必须失败。调用栈只在内存中转成
 固定caller枚举，输出不包含raw stack或私人路径。
+
+### 最终错误路径收口
+
+ac865c4正常关闭三场景与五组完整pipeline已全部PASS并原身份保存。该轮Stop
+后关闭首次曾被verifier误判：同clientId=1在7246ms已经exited=true，7249ms
+才请求关窗；修正为playing要求关闭后完成，stopped/pipeline允许关闭前已
+完整退出，但所有实例仍须身份配对、will-quit前排空且无强杀。工具专项36/36。
+
+父会话独立复核另要求补齐多实例拒绝边界：A/B均pending时A失败不得越过仍
+在退出的B。current与捕获的pending统一allSettled后再传播原错误，surface
+错误短路不变。最终同一35例修改前34 PASS/1 FAIL，修改后35/35；B为current
+的邻近用例也保留。该错误路径补丁纳入新的最终提交，必须重建和执行同一
+八组矩阵，ac865c4的PASS不替代最终来源证据。

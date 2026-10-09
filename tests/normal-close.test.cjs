@@ -520,3 +520,12 @@ test('native shutdown requires the completion of the same client, not an earlier
     fixture.stages = fixture.stages.filter(row=>!(row.stage==='native-client-shutdown-complete' && row.clientId===1));
     assert.ok(verify(fixture).failures.includes('native-actual-exit'));
 });
+
+test('stopped pipeline may finish native cleanup before window close; playing still requires live close cleanup', () => {
+    for (const scenario of ['stopped','playing']) {
+        const fixture = validVerificationFixture(scenario);
+        const shutdown = fixture.stages.filter(row=>row.stage.startsWith('native-client-shutdown-'));
+        fixture.stages = [...shutdown,...fixture.stages.filter(row=>!row.stage.startsWith('native-client-shutdown-'))];
+        assert.equal(verify(fixture).status,scenario==='stopped'?'PASS':'FAIL');
+    }
+});

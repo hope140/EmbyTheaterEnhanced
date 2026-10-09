@@ -2,6 +2,8 @@
 
 ## 2026-10-09 — 0.2.6 本地包与正常关闭验收
 
+- ac865c4完整8组通过后，按父会话独立review补齐A/B多pending拒绝边界：current+snapshot同一次allSettled，全部结束后按current优先/快照顺序传播原Error，原surface短路不变。精确35例before34 PASS/1 FAIL、after35/35。Stop-before-close verifier假设偏差另记原FAIL，按clientId配对接受已经完成的stopped实例；最终工具专项36/36，原pipeline/generation/Session门槛不动。
+
 - 7b3a2dc重建后idle通过，playing仍native-actual-exit FAIL；新增单次caller白名单观测确认为destroy-client，未保留raw stack。定位renderer endpoint清空client后旧kill仍pending，完整service destroy必须join。新增pending集合和同步snapshot，只作用于destroyClient等待归属，不更改onTerminal/controller/协议。最终同一33例通过Git blob preload对照7b3a2dc为31 PASS/2 FAIL，当前33/33；原fixture已settled rejection与pending contract偏差的32/33日志保留并说明。最终仍从新提交正式重建，不原地patch runtime。
 
 - 初版8700039全量621/621，runtime2136文件、23个EXE/DLL与68eb024一致；installer175618895 bytes/SHA256 48c178ee901d1d83c32bb0c5718754601912ae2fd63400a3c8029157cd8072de。最终直接退出miss400 PASS，hit0播放断言PASS但outer120s退出FAIL；证据原样保留，余组按计划停止。线程快照在deadline后为OWNER_UNAVAILABLE，不猜根因。

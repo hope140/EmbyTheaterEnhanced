@@ -4,6 +4,8 @@ Native Helper service 的完整 destroy 使用单一缓存 Promise。首次调�
 
 renderer endpoint destroy可先清空client指针再等待其owned child退出。service使用pending集合跟踪这些destroyClient完成结果；完整destroy在同步封住admission后捕获尚未完成的集合，并在解绑surface前等待。空client指针不等于旧child已经退出。此修复限于已观察到的renderer destroy先行路径，不重写terminal callback或controller退出策略。
 
+current退出和捕获的pending退出进入同一次allSettled；一个实例失败不能使before-quit越过其它尚未完成的退出。全部settled后优先传播current错误，再按pending快照顺序传播原始错误；任一失败仍在surface清理前短路，不新增重试或强杀。
+
 本地 playlist-managed player 的 replacement Stop 使用 player + 捕获 streamInfo 的局部收尾记录。已开始的物理 Stop 顺序完成，尚未执行的过期请求跳过；最新请求仍执行自己的 Stop/presentation preparation。记录排空前保持原 stopped listener 解绑，防止无 session 标签的迟到 stopped 事件作用于新流。清理/事件/报告按捕获流领取一次，不由 request id 早退代替；当前 streamInfo 只在对象身份相等时清空。terminal Stop 同步失效请求并加入现存记录，重复 Stop 与后来的 Next 共用包含拒绝结果的 terminal Promise；排空后调用既有 onPlaybackStopped 完成 queue 与 player removal。remote/self-managed player 保留原路径。详见 [Stop 归属与退出证据](STOP_OWNERSHIP_EXIT_EVIDENCE.md)。
 
 PlaybackManager 的每次 `playInternal` 在分配 request ID 前复制 options，并把队列 item 指向该次快照。后续 Next 只给新快照分配 ID，旧异步闭包保持旧身份；现有各阶段 current-request 守卫、terminal Stop 失效和 streamInfo 向 libmpv 的 ID 传播继续生效。`onPlaybackRequested` 设置的临时 streamInfo 显式标为 pending，替换和 terminal Stop 仍做原有清理、事件与队列操作，只抑制该临时对象的 Stopped 报告；`onPlaybackStarted` 进入真实会话后清除此标记。不能用 `started === false` 通用过滤 Stopped，因为已开始会话的 changeStream 失败也会产生该值，仍需要原有错误收尾报告。验证范围见 [请求与会话修复](PLAYBACK_REQUEST_SESSION_FIX.md)。

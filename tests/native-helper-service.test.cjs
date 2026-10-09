@@ -393,6 +393,104 @@ test('renderer destroy kill failure is shared with full service destroy and pres
   assert.equal(surfaceDestroyCalls, 0, 'renderer kill failure preserves the existing cleanup short circuit');
 });
 
+test('full destroy waits for a second renderer-owned client after the first client rejects', async function () {
+  const ClientClass = makeClientClass();
+  const {service} = makeService(ClientClass);
+  const createdA = await service.call('create');
+  const clientA = ClientClass.clients[0];
+  const killA = deferred();
+  const errorA = new Error('client-a-kill-failed');
+  let killCallsA = 0;
+  clientA.kill = function () { killCallsA += 1; return killA.promise; };
+  const surface = FakeWindow.instances[1];
+  let surfaceDestroyCalls = 0;
+  const originalSurfaceDestroy = surface.destroy.bind(surface);
+  surface.destroy = function () { surfaceDestroyCalls += 1; return originalSurfaceDestroy(); };
+
+  const rendererDestroyA = service.call('destroy', {}, createdA.endpointId);
+  rendererDestroyA.catch(() => {});
+  await Promise.resolve();
+  assert.equal(killCallsA, 1);
+
+  const createdB = await service.call('create');
+  assert.equal(createdB.endpointId, createdA.endpointId, 'A and B must share the renderer endpoint');
+  const clientB = ClientClass.clients[1];
+  assert.equal(ClientClass.clients.length, 2);
+  assert.notStrictEqual(clientB, clientA, 'B must be a distinct owned FakeClient instance');
+  const killB = deferred();
+  let killCallsB = 0;
+  clientB.kill = function () { killCallsB += 1; return killB.promise; };
+  const rendererDestroyB = service.call('destroy', {}, createdB.endpointId);
+  rendererDestroyB.catch(() => {});
+  await Promise.resolve();
+  assert.equal(killCallsB, 1);
+
+  const fullDestroy = service.destroy();
+  fullDestroy.catch(() => {});
+  killA.reject(errorA);
+  const settledAfterA = await Promise.race([
+    fullDestroy.then(() => true, () => true),
+    new Promise(resolve => setImmediate(() => resolve(false)))
+  ]);
+  assert.equal(settledAfterA, false, 'A failure must not make full destroy reject before B settles');
+
+  killB.resolve({code: 0});
+  await assert.rejects(rendererDestroyA, error => error === errorA);
+  await rendererDestroyB;
+  await assert.rejects(fullDestroy, error => error === errorA);
+  assert.equal(killCallsA, 1);
+  assert.equal(killCallsB, 1);
+  assert.equal(surfaceDestroyCalls, 0, 'the first owned-client error preserves the surface short circuit');
+});
+
+test('full destroy waits for the current second client after a prior renderer destroy rejects', async function () {
+  const ClientClass = makeClientClass();
+  const {service} = makeService(ClientClass);
+  const createdA = await service.call('create');
+  const clientA = ClientClass.clients[0];
+  const killA = deferred();
+  const errorA = new Error('prior-client-kill-failed');
+  let killCallsA = 0;
+  clientA.kill = function () { killCallsA += 1; return killA.promise; };
+  const surface = FakeWindow.instances[1];
+  let surfaceDestroyCalls = 0;
+  const originalSurfaceDestroy = surface.destroy.bind(surface);
+  surface.destroy = function () { surfaceDestroyCalls += 1; return originalSurfaceDestroy(); };
+
+  const rendererDestroyA = service.call('destroy', {}, createdA.endpointId);
+  rendererDestroyA.catch(() => {});
+  await Promise.resolve();
+  assert.equal(killCallsA, 1);
+
+  const createdB = await service.call('create');
+  assert.equal(createdB.endpointId, createdA.endpointId);
+  const clientB = ClientClass.clients[1];
+  assert.equal(ClientClass.clients.length, 2);
+  assert.notStrictEqual(clientB, clientA, 'B must be a distinct current FakeClient instance');
+  const killB = deferred();
+  let killCallsB = 0;
+  clientB.kill = function () { killCallsB += 1; return killB.promise; };
+  assert.equal(service.status().state, 'ready', 'B must remain the current active client');
+
+  const fullDestroy = service.destroy();
+  fullDestroy.catch(() => {});
+  await Promise.resolve();
+  assert.equal(killCallsB, 1, 'full destroy must kill current B once');
+  killA.reject(errorA);
+  const settledAfterA = await Promise.race([
+    fullDestroy.then(() => true, () => true),
+    new Promise(resolve => setImmediate(() => resolve(false)))
+  ]);
+  assert.equal(settledAfterA, false, 'A failure must not make full destroy reject before current B settles');
+
+  killB.resolve({code: 0});
+  await assert.rejects(rendererDestroyA, error => error === errorA);
+  await assert.rejects(fullDestroy, error => error === errorA);
+  assert.equal(killCallsA, 1);
+  assert.equal(killCallsB, 1);
+  assert.equal(surfaceDestroyCalls, 0, 'the first owned-client error preserves the surface short circuit');
+});
+
 async function presentationHarness() {
   const ClientClass = makeClientClass();
   const context = makeService(ClientClass);

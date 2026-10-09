@@ -45,7 +45,7 @@ function verify({scenario, smoke, runner, marker, stages, exitStages}) {
             new Set(ends.map(row=>row.clientId)).size === ends.length &&
             pairs.every(({start,end})=>Number.isSafeInteger(start.clientId) && start.clientId>0 && end &&
                 end.exited === true && end.position>start.position && end.position<index('will-quit')) &&
-            pairs.some(({end})=>end && end.position>index('application-close-requested')), 'native-actual-exit');
+            (scenario !== 'playing' || pairs.some(({end})=>end && end.position>index('application-close-requested'))), 'native-actual-exit');
     }
     check(!exitStages.some(row => row.stage === 'app-exit-requested'), 'direct-exit-forbidden');
     check(exitStages.some(row => row.stage === 'before-quit-observed') && exitStages.some(row => row.stage === 'will-quit-observed'), 'product-quit-path');

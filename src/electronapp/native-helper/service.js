@@ -696,8 +696,10 @@ function createService(options) {
       if (startPromise) {
         try { await startPromise; } catch (_) { }
       }
-      await destroyClient('service-destroy');
-      await Promise.all(pendingDestructions);
+      // One failed child must not let before-quit outrun other owned exits.
+      const outcomes = await Promise.allSettled([destroyClient('service-destroy'), ...pendingDestructions]);
+      const failure = outcomes.find(outcome => outcome.status === 'rejected');
+      if (failure) throw failure.reason;
       for (const binding of boundWindowEvents.splice(0)) {
         try { binding.main.removeListener(binding.name, binding.listener); } catch (_) { }
       }

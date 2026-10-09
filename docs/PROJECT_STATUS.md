@@ -2,6 +2,8 @@
 
 ## 2026-10-09 — 0.2.6 本地可安装候选构建中
 
+ac865c4八组正常关闭/完整pipeline均PASS，原证据保留；随后按父会话精确复核补齐多pending实例中一个拒绝时仍等待其余实例settled的错误边界，35例修改前34/1、修改后35/35。Stop后先退出native再关窗是正常顺序，verifier已按clientId配对纠正，工具36/36。正在固定新最终source重建，不沿用ac865c4产物标签或验收身份。
+
 进一步实测7b3a2dc共享destroy后，renderer destroy先清空client但owned kill仍pending，正常playing关闭依然缺native completion。一次固定caller观察确认为destroy-client。现补齐完整service destroy对已在进行的renderer client清理的等待，最终33例修改前31/2、修改后33/33；7b3a2dc失败runtime保持，最终需以新提交重建再验收。
 
 初版8700039正式runtime/安装器已生成并保留。最终hit0播放断言成功但app.exit后OS超时，完整runner FAIL；因此该UNKNOWN也发生在本次0.2.6，不能只归属旧d480eb8。正常关闭强化检查另发现playing时main closed已启动destroy，而before-quit重复destroy提前返回、没有等native child退出。最小修复缓存完整destroy Promise，同一31例修改前28 PASS/3 FAIL、修改后31/31；原错误短路和播放链不改。新产物必须重建，初版不覆盖。后续固定最终五组完整pipeline通过产品窗口关闭收尾，另做idle/playing/stopped三场景；原pipeline/Next/generation/取消/五对Session断言全部保留。
