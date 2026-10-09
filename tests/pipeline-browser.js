@@ -157,8 +157,15 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
     const observedEvents = ['pause','unpause','seek','timeupdate','stopped','playing'];
     observedEvents.forEach(name => events.on(embedded, name, notify));
     const reported = (itemId, suffix, predicate) => records.some(r => r.body.ItemId === itemId && r.endpoint.endsWith(suffix) && (!predicate || predicate(r.body)));
+    let lastRemoteStopAt = 0;
     const stopCurrent = async itemId => {
+        // The frozen inputmanager intentionally drops Stop commands within 1 s
+        // of the previous Stop, even across different items. Respect that input
+        // contract; completion still requires the actual report and cleared item.
+        const stopCooldownMs = Math.min(1100, 1001 - (Date.now()-lastRemoteStopAt));
+        if (stopCooldownMs > 0) await sleep(stopCooldownMs);
         const done = sync.wait('stopped-report', () => reported(itemId, '/Stopped') && !manager.currentItem());
+        lastRemoteStopAt = Date.now();
         send('Stop');
         await done;
     };
