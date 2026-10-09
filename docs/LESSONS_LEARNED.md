@@ -2,6 +2,9 @@
 
 ## 2026-10-09 — 正常关闭的清理Promise必须共享
 
+- 仅缓存service destroy不足以覆盖renderer endpoint先行销毁。client=null只表示已解绑；它拥有的退出Promise须被pending集合保留，并由随后完整destroy在admission封口后捕获等待。
+- pending join的拒绝测试必须先建立snapshot再reject。已经settled并从集合删除的失败属于另一个contract，不能为满足错误fixture而扩大产品的历史失败保留语义。
+
 - destroyed标记表示已开始销毁，不能用于向后续调用返回一个已完成结果。window closed与before-quit可能相邻触发，后者必须等待首次owned child清理的完整Promise。
 - 自然OS退出、零残留、IPC unregister完成与native child退出Promise完成是不同证据。新增实际child完成观察后，初版正常关闭从表面PASS变为可复现的等待归属FAIL；不能降低门槛。
 - 清理结果缓存同时保留拒绝。测试不能顺手要求失败后继续surface cleanup，除非另有批准contract；本次保留原错误短路。

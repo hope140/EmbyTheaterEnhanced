@@ -70,3 +70,27 @@ unregister completion早于will-quit、自然OS exit0、无强制清理及零残
 该计划不重跑直接app.exit，也不声称修复其未知根因。
 
 最终实测结果与产物身份在下方补充。
+
+### renderer destroy先行的后续定位
+
+7b3a2dc全量625/625及正式runtime保留；idle通过，playing仍缺native completion，
+这一轮完整FAIL未覆盖。随后仅一次调用分类观测记录caller=destroy-client，
+排除了terminal callback作为本次先行kill来源。renderer endpoint的destroyClient
+已经把client清空，完整service destroy仍需等待那次尚未完成的kill。
+
+补充pendingClientDestructions集合；完整destroy同步封住admission后捕获集合，
+在解绑surface前等待。原kill错误短路、controller策略和renderer endpoint语义
+不变。最终同一33例以准确7b3a2dc Git blob作对照，修改前31 PASS/2 FAIL，
+修改后33/33。最初测试误把已经settled的失败纳入pending contract，原32/33
+日志保留，修正为先snapshot再deferred reject后重新做精确前后验证。
+
+再次从新提交构建，使用新runtime名；最终仍严格限制为三场景关闭加五组完整
+pipeline各一次。此前8700039、7b3a2dc及caller诊断的失败独立保留，不重复
+app.exit实验，不由最终正常关闭PASS消除该UNKNOWN。
+
+三份失败运行各只有一次helper-ready、一次关闭请求后的kill-start且零完成记录，
+没有取到关闭前另一个client记录的情形。最终observer用WeakMap给client分配
+仅本轮有效的序号，并给retire/start/complete/force事件绑定同一序号；verifier
+按该身份逐对核对，不依赖第一条事件。额外回归验证旧client提前完成不影响
+当前client判断，而错配或缺少当前client完成必须失败。调用栈只在内存中转成
+固定caller枚举，输出不包含raw stack或私人路径。

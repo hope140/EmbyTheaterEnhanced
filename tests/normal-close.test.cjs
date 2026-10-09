@@ -309,8 +309,8 @@ function validVerificationFixture(scenario = 'playing') {
         {stage: name + '-unregister-start'}, {stage: name + '-unregister-complete'}
     ]);
     const nativeShutdownStages = scenario === 'idle' ? [] : [
-        {stage: 'native-client-shutdown-start'},
-        {stage: 'native-client-shutdown-complete', exited: true}
+        {stage: 'native-client-shutdown-start', clientId:1},
+        {stage: 'native-client-shutdown-complete', clientId:1, exited: true}
     ];
     const stages = [
         {stage: 'application-close-requested'},
@@ -468,8 +468,8 @@ test('verify requires helper-ready for active playback and real native exit when
     idleReadyWithExit.stages.splice(
         idleReadyWithExit.stages.findIndex(row => row.stage === 'will-quit'),
         0,
-        {stage: 'native-client-shutdown-start'},
-        {stage: 'native-client-shutdown-complete', exited: true}
+        {stage: 'native-client-shutdown-start', clientId:1},
+        {stage: 'native-client-shutdown-complete', clientId:1, exited: true}
     );
     assert.equal(verify(idleReadyWithExit).status, 'PASS');
 });
@@ -507,4 +507,16 @@ test('normal product close after a full pipeline preserves Next and every sessio
     pipeline.next[NEXT_CHECKS[0]] = true;
     pipeline.records.pop();
     assert.ok(verify(fixture).failures.includes('complete-playback-pipeline'), 'cached green session checks cannot hide a missing Stop');
+});
+
+test('native shutdown requires the completion of the same client, not an earlier instance', () => {
+    const fixture = validVerificationFixture('playing');
+    fixture.stages.find(row=>row.stage==='native-client-shutdown-complete').clientId = 2;
+    assert.ok(verify(fixture).failures.includes('native-actual-exit'));
+    fixture.stages.find(row=>row.stage==='native-client-shutdown-complete').clientId = 1;
+    fixture.stages.unshift({stage:'native-client-shutdown-start',clientId:2},
+        {stage:'native-client-shutdown-complete',clientId:2,exited:true});
+    assert.equal(verify(fixture).status,'PASS','an earlier completed client must not change the closing client pairing');
+    fixture.stages = fixture.stages.filter(row=>!(row.stage==='native-client-shutdown-complete' && row.clientId===1));
+    assert.ok(verify(fixture).failures.includes('native-actual-exit'));
 });

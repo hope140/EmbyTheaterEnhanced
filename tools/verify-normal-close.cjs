@@ -36,10 +36,16 @@ function verify({scenario, smoke, runner, marker, stages, exitStages}) {
     check(!(smoke.nativeHelperEvents || []).some(row => ['helper-terminal','load-failed'].includes(row.event) || row.failureCode), 'native-preclose-failure');
     check(scenario === 'idle' || helperReady, 'native-helper-ready');
     if (helperReady) {
-        check(index('native-client-shutdown-start') > index('application-close-requested') &&
-            index('native-client-shutdown-complete') > index('native-client-shutdown-start') &&
-            index('native-client-shutdown-complete') < index('will-quit') &&
-            stages.filter(row => row.stage === 'native-client-shutdown-complete').every(row => row.exited === true), 'native-actual-exit');
+        const numbered = stages.map((row, position)=>({...row,position}));
+        const starts = numbered.filter(row=>row.stage === 'native-client-shutdown-start');
+        const ends = numbered.filter(row=>row.stage === 'native-client-shutdown-complete');
+        const pairs = starts.map(start=>({start,end:ends.find(end=>end.clientId===start.clientId)}));
+        check(starts.length > 0 && starts.length === ends.length &&
+            new Set(starts.map(row=>row.clientId)).size === starts.length &&
+            new Set(ends.map(row=>row.clientId)).size === ends.length &&
+            pairs.every(({start,end})=>Number.isSafeInteger(start.clientId) && start.clientId>0 && end &&
+                end.exited === true && end.position>start.position && end.position<index('will-quit')) &&
+            pairs.some(({end})=>end && end.position>index('application-close-requested')), 'native-actual-exit');
     }
     check(!exitStages.some(row => row.stage === 'app-exit-requested'), 'direct-exit-forbidden');
     check(exitStages.some(row => row.stage === 'before-quit-observed') && exitStages.some(row => row.stage === 'will-quit-observed'), 'product-quit-path');

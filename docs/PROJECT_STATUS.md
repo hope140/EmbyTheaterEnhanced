@@ -2,6 +2,8 @@
 
 ## 2026-10-09 — 0.2.6 本地可安装候选构建中
 
+进一步实测7b3a2dc共享destroy后，renderer destroy先清空client但owned kill仍pending，正常playing关闭依然缺native completion。一次固定caller观察确认为destroy-client。现补齐完整service destroy对已在进行的renderer client清理的等待，最终33例修改前31/2、修改后33/33；7b3a2dc失败runtime保持，最终需以新提交重建再验收。
+
 初版8700039正式runtime/安装器已生成并保留。最终hit0播放断言成功但app.exit后OS超时，完整runner FAIL；因此该UNKNOWN也发生在本次0.2.6，不能只归属旧d480eb8。正常关闭强化检查另发现playing时main closed已启动destroy，而before-quit重复destroy提前返回、没有等native child退出。最小修复缓存完整destroy Promise，同一31例修改前28 PASS/3 FAIL、修改后31/31；原错误短路和播放链不改。新产物必须重建，初版不覆盖。后续固定最终五组完整pipeline通过产品窗口关闭收尾，另做idle/playing/stopped三场景；原pipeline/Next/generation/取消/五对Session断言全部保留。
 
 从准确99cb850建立独立工作树，保持已复核播放实现。正常关闭三个初始预检在只读68eb024 runtime均通过原门槛：before-quit/will-quit及五类IPC清理已观察，OS自然exit0、零残留；当时未核对native child实际清理Promise完成，不将预检替代强化验收。app.exit停滞仍UNKNOWN。

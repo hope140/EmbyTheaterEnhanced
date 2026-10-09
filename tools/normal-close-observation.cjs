@@ -42,20 +42,36 @@ function install({app, runtime, evidence, getWindow, getServer}) {
     }
     const Client = require(path.join(runtime, 'electronapp/native-helper/controller.js')).NativeHelperClient;
     const originalKill = Client.prototype.kill;
+    const clientIds = new WeakMap();
+    let nextClientId = 0;
+    function identify(client) {
+        if (!clientIds.has(client)) clientIds.set(client, ++nextClientId);
+        return clientIds.get(client);
+    }
+    const originalRetire = Client.prototype.retireGeneration;
+    Client.prototype.retireGeneration = function (reason) {
+        if (reason === 'renderer-destroy' || reason === 'service-destroy') record('native-retire-' + reason, {clientId:identify(this)});
+        return originalRetire.apply(this, arguments);
+    };
     const observedChildren = new WeakSet();
     Client.prototype.kill = function () {
-        record('native-client-shutdown-start');
+        const clientId = identify(this);
+        // Only a fixed caller classification is retained, never raw stack/path.
+        const stack = String(new Error().stack || '');
+        const caller = stack.includes('destroyClient') ? 'destroy-client' :
+            stack.includes('onTerminal') ? 'terminal-callback' : 'other';
+        record('native-client-shutdown-start', {clientId, caller});
         if (this.child && !observedChildren.has(this.child)) {
             observedChildren.add(this.child);
             const childKill = this.child.kill;
             this.child.kill = function () {
-                record('native-child-force-kill');
+                record('native-child-force-kill', {clientId});
                 return childKill.apply(this, arguments);
             };
         }
         const value = originalKill.apply(this, arguments);
-        value.then(() => record('native-client-shutdown-complete', {exited:this.exited === true}),
-            () => record('native-client-shutdown-failed'));
+        value.then(() => record('native-client-shutdown-complete', {clientId,exited:this.exited === true}),
+            () => record('native-client-shutdown-failed', {clientId}));
         return value;
     };
     app.on('window-all-closed', () => record('window-all-closed'));

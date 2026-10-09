@@ -112,6 +112,7 @@ function createService(options) {
   let everStarted = false;
   let destroyed = false;
   let destroyPromise = null;
+  const pendingClientDestructions = new Set();
   let activeEndpointId = null;
   let generationEpoch = 0;
   let rendererEpoch = 0;
@@ -672,7 +673,10 @@ function createService(options) {
     client = null;
     if (owned) {
       owned.retireGeneration(reason);
-      await owned.kill();
+      const completion = owned.kill();
+      pendingClientDestructions.add(completion);
+      try { await completion; }
+      finally { pendingClientDestructions.delete(completion); }
     }
   }
 
@@ -680,6 +684,8 @@ function createService(options) {
     if (destroyPromise) return destroyPromise;
     destroyed = true;
     activeEndpointId = null;
+    // Renderer unload may already have detached client while its kill is pending.
+    const pendingDestructions = Array.from(pendingClientDestructions);
     // Window closed and before-quit can overlap. Publish the shared completion
     // before cleanup starts so every caller waits for the owned native child.
     destroyPromise = Promise.resolve().then(async function () {
@@ -691,6 +697,7 @@ function createService(options) {
         try { await startPromise; } catch (_) { }
       }
       await destroyClient('service-destroy');
+      await Promise.all(pendingDestructions);
       for (const binding of boundWindowEvents.splice(0)) {
         try { binding.main.removeListener(binding.name, binding.listener); } catch (_) { }
       }

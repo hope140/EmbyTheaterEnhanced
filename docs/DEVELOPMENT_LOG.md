@@ -2,6 +2,8 @@
 
 ## 2026-10-09 — 0.2.6 本地包与正常关闭验收
 
+- 7b3a2dc重建后idle通过，playing仍native-actual-exit FAIL；新增单次caller白名单观测确认为destroy-client，未保留raw stack。定位renderer endpoint清空client后旧kill仍pending，完整service destroy必须join。新增pending集合和同步snapshot，只作用于destroyClient等待归属，不更改onTerminal/controller/协议。最终同一33例通过Git blob preload对照7b3a2dc为31 PASS/2 FAIL，当前33/33；原fixture已settled rejection与pending contract偏差的32/33日志保留并说明。最终仍从新提交正式重建，不原地patch runtime。
+
 - 初版8700039全量621/621，runtime2136文件、23个EXE/DLL与68eb024一致；installer175618895 bytes/SHA256 48c178ee901d1d83c32bb0c5718754601912ae2fd63400a3c8029157cd8072de。最终直接退出miss400 PASS，hit0播放断言PASS但outer120s退出FAIL；证据原样保留，余组按计划停止。线程快照在deadline后为OWNER_UNAVAILABLE，不猜根因。
 - 强化正常关闭idle PASS；playing自然exit0/残留0但native completion缺失，定位service destroyed提前返回，before-quit未等closed首次清理。产品仅service.js缓存完整destroy Promise。独立GPT-5.6 Sol High复核未发现P1/P2；同一31例修改前28 PASS/3 FAIL、修改后31/31，完整pipeline正常关闭工具专项34/34。worker最初提出的失败后surface cleanup已纠正为原错误短路，精确前后日志另存。
 - 后续从新提交重建唯一runtime/installer。固定三场景正常关闭及miss400/hit0/hit400/hit800/direct400完整pipeline，后者经window.close收尾，原pipelinePassed、Next/generation/精确取消、五对Session门槛保持。原app.exit失败仍UNKNOWN，不额外重复该路径。结果绑定新product sourceCommit和实际harness hashes。

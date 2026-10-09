@@ -316,6 +316,83 @@ test('destroy failure is the same Error for concurrent and later callers without
   assert.equal(surfaceDestroyCalls, 0, 'native failure preserves the existing cleanup short circuit');
 });
 
+test('renderer destroy shares its in-flight native kill with full service destroy and unregister', async function () {
+  const ClientClass = makeClientClass();
+  const {main, service} = makeService(ClientClass);
+  const created = await service.call('create');
+  const active = ClientClass.clients[0];
+  const kill = deferred();
+  let killCalls = 0;
+  active.kill = function () { killCalls += 1; return kill.promise; };
+  const surface = FakeWindow.instances[1];
+  let surfaceDestroyCalls = 0;
+  const originalSurfaceDestroy = surface.destroy.bind(surface);
+  surface.destroy = function () { surfaceDestroyCalls += 1; return originalSurfaceDestroy(); };
+  const ipcMain = makeIpcMain();
+  const unregister = register({ipcMain, service, getWebContents: () => main.webContents});
+
+  const rendererDestroy = service.call('destroy', {}, created.endpointId);
+  rendererDestroy.catch(() => {});
+  await Promise.resolve();
+  assert.equal(killCalls, 1, 'renderer destroy must start the only native kill');
+  assert.equal(service.status().state, 'stopped', 'renderer destroy detaches the client before kill completion');
+
+  const fullDestroy = service.destroy();
+  const unregisterPromise = unregister();
+  const closedDestroy = new Promise(resolve => {
+    main.emit('closed');
+    setImmediate(resolve);
+  });
+  const settledBeforeKill = await Promise.race([
+    Promise.all([rendererDestroy, fullDestroy, unregisterPromise]).then(() => true, () => true),
+    new Promise(resolve => setImmediate(() => resolve(false)))
+  ]);
+  await closedDestroy;
+  assert.equal(settledBeforeKill, false, 'all destroy entry points must wait for the renderer kill');
+  for (const [name, promise] of [['full destroy', fullDestroy], ['unregister', unregisterPromise]]) {
+    const settled = await Promise.race([
+      promise.then(() => true, () => true),
+      new Promise(resolve => setImmediate(() => resolve(false)))
+    ]);
+    assert.equal(settled, false, name + ' must remain pending until the renderer kill completes');
+  }
+  assert.equal(killCalls, 1, 'closed and unregister must not retry native kill');
+
+  kill.resolve({code: 0});
+  assert.deepEqual(await rendererDestroy, {status: 'ok'});
+  await fullDestroy;
+  await unregisterPromise;
+  assert.equal(killCalls, 1);
+  assert.equal(surfaceDestroyCalls, 1);
+});
+
+test('renderer destroy kill failure is shared with full service destroy and preserves the cleanup short circuit', async function () {
+  const ClientClass = makeClientClass();
+  const {service} = makeService(ClientClass);
+  const created = await service.call('create');
+  const active = ClientClass.clients[0];
+  const failure = new Error('renderer-native-kill-failed');
+  let killCalls = 0;
+  const kill = deferred();
+  active.kill = function () { killCalls += 1; return kill.promise; };
+  const surface = FakeWindow.instances[1];
+  let surfaceDestroyCalls = 0;
+  const originalSurfaceDestroy = surface.destroy.bind(surface);
+  surface.destroy = function () { surfaceDestroyCalls += 1; return originalSurfaceDestroy(); };
+
+  const rendererDestroy = service.call('destroy', {}, created.endpointId);
+  rendererDestroy.catch(() => {});
+  await Promise.resolve();
+  const fullDestroy = service.destroy();
+  kill.reject(failure);
+  fullDestroy.catch(() => {});
+  await assert.rejects(rendererDestroy, error => error === failure);
+  await assert.rejects(fullDestroy, error => error === failure);
+  await assert.rejects(service.destroy(), error => error === failure);
+  assert.equal(killCalls, 1, 'a renderer kill failure must not trigger a retry');
+  assert.equal(surfaceDestroyCalls, 0, 'renderer kill failure preserves the existing cleanup short circuit');
+});
+
 async function presentationHarness() {
   const ClientClass = makeClientClass();
   const context = makeService(ClientClass);

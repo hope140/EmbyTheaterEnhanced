@@ -2,6 +2,8 @@
 
 ## 2026-10-09 — 正常关闭等待首次Native清理
 
+- 7b3a2dc的真实playing关闭证明只共享service destroy仍不足：renderer endpoint先发起destroyClient并清空client，owned kill仍pending。单次caller观察为destroy-client；现新增pending client清理集合与destroy时快照等待。同一最终33例准确7b3a2dc对照31 PASS/2 FAIL，新源码33/33。最终新来源正常关闭/完整矩阵待实测后记录，不能把前述表面自然exit记为强化通过。
+
 - 初版0.2.6/8700039的playing关闭：window closed在7109ms进入native-client-shutdown，before-quit重复destroy在7134ms完成返回，will-quit/quit先于native completion；OS exit0和残留0仍不代表清理已被等待。强化验收FAIL保留。
 - 最小修复让destroy同步拒绝新请求，并向所有调用者返回同一个完整Promise，原失败短路保留。同一31例修改前28/3、修改后31/31。最终新来源runtime尚需三场景关闭和完整五组pipeline复验，见 [本地包记录](LOCAL_PACKAGE_026.md)。
 - app.exit停滞也在初版0.2.6/8700039 hit0复现：12193ms落盘、12209ms返回app.exit，OS到120s未退出；精确归属强清理后0残留。此问题与已证实正常关闭的重复destroy竞态是两项证据，根因仍UNKNOWN，不宣称此局部修复解决app.exit。
