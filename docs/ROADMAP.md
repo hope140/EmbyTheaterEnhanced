@@ -86,7 +86,7 @@ v0.2.6已包含每请求options快照、pending报告抑制、捕获stream的Sto
 
 ### About 高级运行信息
 
-grpc-js补丁与About版本来源/刷新维护正在独立本地分支执行，版本维持0.2.6；验收结果见 MAINTENANCE_GRPC_ABOUT.md。
+grpc-js补丁与About版本来源/刷新维护已在独立本地分支完成，版本维持0.2.6；验收结果见 MAINTENANCE_GRPC_ABOUT.md。
 
 ### Fullscreen Dynamic Corner Policy
 

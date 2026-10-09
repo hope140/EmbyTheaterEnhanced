@@ -25,8 +25,21 @@ NOT AVAILABLE。About每次恢复重新读取；复制操作返回与剪贴板�
 并更新当前页面；请求代际保护防止迟到响应覆盖较新快照。sender验证与renderer
 权限不变，播放、Session、Resolver及UA路由代码保持。
 
-CD2/预算/Resolver/依赖定向69/69通过。About、源码提取及全量最终计数、
-新sourceCommit与runtime来源、串行隔离回归将在交付后补充。
+CD2/预算/Resolver/依赖定向69/69通过，About/源码版本提取15/15，全量638/638。
+语法、文档链接、diff及公开文本检查通过。最终产品sourceCommit为
+7ec6aceb2c97185fa8fd9a128b8737f02c0c3b19；后续文档HEAD不替代产品身份。
+Native/Electron/source/runtime provenance及package VerifyOnly通过。
+新runtime为 dist/ETE-0.2.6-maintenance-7ec6ace-win-x64，payload 2136文件，
+包含build manifest的完整runtime为2137文件；依赖combined 1171文件。
+实际维护IPC读回Helper 1.0.0、libmpv v0.41.0-920-gdd5d17d32。
+八组idle/playing/stopped/miss400/hit0/hit400/hit800/direct400串行隔离通过，
+全部自然exit0、无强清理、残留0，About初始运行版本保持NOT AVAILABLE；ready后的版本投影有单测覆盖，
+本轮未取ready后实际IPC快照。
+安装候选为 dist/EmbyTheaterEnhanced-0.2.6-maintenance-7ec6ace-win-x64-setup.exe，
+175664480 bytes，SHA256
+5ba18620dc3cf2717a6a0c1c384aca10e73b6a9247ccd954cf79c881f0d590b6。
+Inno完整性与2137文件解包比较通过，missing/extra/mismatch全部0。
+准确来源、runner/日志/产物hash见 [结构化证据](evidence/maintenance-grpc-about-20261009.json)。
 初次全量执行在测试更新前载入旧About期望，629/631，两项旧contract断言失败；
 原日志保留，最终回归使用更新后的真实contract。
 

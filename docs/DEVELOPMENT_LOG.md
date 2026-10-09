@@ -4,7 +4,7 @@
 
 - Model Tier: Tier 2；Model: GPT-6.1 Sol Medium主线程 / GPT-6 Luna High测试与只读审查worker；Reason: Task Risk=medium，Task Uncertainty=medium（可信版本来源），Cross-module Scope=固定依赖/构建/维护IPC，Playback/Session Impact=none；Escalated: no。
 - 实时核验main bc50d181后独立worktree；依赖仅1.14.4到1.14.6，About使用来源和二进制绑定、动态刷新与复制同一快照。
-- 定向69/69、audit退出0；全量与正式构建验收进行中。旧About期望两项失败保留，未改播放链。详见 [维护记录](MAINTENANCE_GRPC_ABOUT.md)。
+- 定向69/69、audit退出0；全量638/638、正式build/四层provenance/package通过，八组隐藏runtime自然exit0/残留0，安装器完整性和2137文件逐项比较通过。旧About期望两项失败保留（初次全量载入旧测试），未改播放链。详见 [维护记录](MAINTENANCE_GRPC_ABOUT.md)。
 
 ## 2026-10-09 — PR #20 主线合并回读
 

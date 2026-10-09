@@ -1,5 +1,11 @@
 # 已确认经验
 
+## 2026-10-09 — 包内版本与运行版本来源
+
+- 包内Helper版本应从sourceCommit的源码声明提取，和二进制/源码hash一起生成provenance；libmpv使用固定清单。About读取时核对manifest对provenance自身hash及实际二进制，不为版本查询启动播放器。
+- 包内身份与当前运行状态分别展示，未ready的握手版本不可用。复制返回生成剪贴板文本的同一个白名单快照，页面恢复刷新；成功、失败与loading收尾都需要请求代际保护。
+- 固定依赖补丁后生成新sourceCommit/runtime身份；隐藏fake CD2通过不扩大为真实服务或可见播放验收。
+
 ## 2026-10-09 — 正常关闭的清理Promise必须共享
 
 - 仅缓存service destroy不足以覆盖renderer endpoint先行销毁。client=null只表示已解绑；它拥有的退出Promise须被pending集合保留，并由随后完整destroy在admission封口后捕获等待。

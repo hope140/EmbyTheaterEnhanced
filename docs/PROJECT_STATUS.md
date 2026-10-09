@@ -1,8 +1,8 @@
 # 项目状态
 
-## 2026-10-09 — grpc-js与About维护已实现，最终验收进行中
+## 2026-10-09 — grpc-js与About本地维护交付完成
 
-从main bc50d181建立独立维护分支，grpc-js精确更新1.14.6，About按构建来源显示包内版本及独立运行状态。定向69项与npm audit通过，正在准备最终单测和新来源构建。详见 [维护记录](MAINTENANCE_GRPC_ABOUT.md)。
+从main bc50d181建立独立维护分支，grpc-js精确更新1.14.6，About按构建来源显示包内版本及独立运行状态。定向69项、About/metadata15项、全量638/638与npm audit退出0通过；产品sourceCommit 7ec6ace，新runtime和本地安装候选完成。八组串行隔离回归自然退出、残留0；2137文件解包比较全部一致。详见 [维护记录](MAINTENANCE_GRPC_ABOUT.md)。
 
 ## 2026-10-09 — PR #20 已合并到 main
 
