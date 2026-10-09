@@ -1,5 +1,11 @@
 # 已确认经验
 
+## 2026-10-09 — 设置页应通过完整导航验证
+
+- fragment挂载看不到原生导航标题，可能遗漏重复页标题；同层原生设置页与增强页应在实际主题/侧栏/路由中对比内容起点、动态控件和焦点。
+- Carnival设置菜单实际由itemsContainer/itemAction驱动，不能假设一定是a[href]。appready不等于初次startup导航结束；appRouter.show共享resolveOnNextShow，完整导航证据应绑定viewshow自身的route/view并核对点击前源菜单。
+- 某些vendor格式化脚本为UTF16，读取时须尊重BOM；用UTF8字符串搜索不到内容不能认定代码不存在。
+
 ## 2026-10-08 — 自定义控件类型与基础样式必须分别核对
 
 - createElement(tag,{is:customName})只证明构造类型；紧接着整体赋className仍会删除constructor添加的Emby按钮基础类和TV/backdrop环境类。业务类应追加，测试同时核对实例、基础类、选择器及禁用状态。

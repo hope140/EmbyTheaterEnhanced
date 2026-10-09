@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-10-09 — 0.2.4本地安装包交付
+
+Model Tier：产品UI/构建为Tier 1；测试harness启动路由竞态经Tier 2只读源码定位后收口。Model：主线程、Luna输入/工具与Sol High事件归属复核。Reason：完整应用导航与旧fragment测试不同，必须绑定实际ViewManager事件；未改播放器/路由生产逻辑。Escalated：测试工具有，产品实现无。
+
+35a69c6提交原三文件修正与0.2.4元数据，430/430和正式构建通过。完整页面暴露重复内容H1，03a2e3b移除三个重复标题、保留原生导航标题与说明的可访问名称；最终再次430/430通过。最终runtime源/来源验证PASS。初版probe两项菜单假设与首屏导航竞态失败均保留，最终以实际itemsContainer菜单点击+匹配的viewshow完成5次页面导航，保存/未保存离页/重载和纯本地规则检查真实IPC通过。已读取实际诊断/About/动态动作截图；当前应用主题与布局对齐，动作聚焦样式正确。
+
+最终exe为175,597,797 bytes，SHA256 4ea589368f2db40ce09ce4e46f4fe937a2d34a240582d871a8f3f5ae627e4b64，FileVersion/ProductVersion及实际About均0.2.4。Inno test通过，解包{app}2147文件与runtime完全匹配。对旧0.2.3逐文件比较只有11个预期文件不同；未修改任何播放/全屏/native/Resolver代码或二进制。完整记录见 [SETTINGS_UI_024_ACCEPTANCE](SETTINGS_UI_024_ACCEPTANCE.md)。只执行本地提交、构建、隔离测试和打包，没有远端写入、系统安装或真实服务操作。
+
 ## 2026-10-09 — 设置页修正包执行开始
 
 Model Tier：Tier 1（明确UI修正与构建），主线程审查与页面验收，Luna补准备输入/安装器审计及隔离导航验证工具。Escalated：no。用户接受上一轮建议，授权本地收尾和.exe测试包交付。现场确认v0.2.4标签未使用、v0.2.3仍为f7505cd测试包，远端main仍46e995e。root package/lockfile版本统一0.2.4，依赖与核心播放字节保持。现有工作树已有UI改动保留；后续源提交、构建和各层验收分别记录，不复用旧PASS冒充新版本。
