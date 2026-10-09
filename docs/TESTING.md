@@ -1,5 +1,63 @@
 # 测试与验收
 
+## 2026-10-09 v0.2.6主线整合
+
+整合树从完整发布HEAD4b24919建立；本轮重新执行 `node --test --test-concurrency=1 tests/*.test.cjs`，完整日志631/631、0失败/取消/跳过，约238.7秒。准确环境、退出码、日志hash与其它静态检查见 [主线整合报告](MAIN_INTEGRATION_026.md) 和 [机器证据](evidence/main-integration-026-20261009.json)。下文保留各早期候选的测试阶段，不能将历史FAIL或UNKNOWN静默改为当前PASS。
+
+原355f4e6的产品/工具/测试Git tree及34项构建输入与整合树相同；本轮只读核对原runtime2136文件、安装器以及八组运行69份原始artifact。三场景正常关闭与五组完整pipeline均是该准确产品的历史运行，本轮没有重启客户端或生成新sourceCommit产物。16份旧harness精确匹配原hash；新checkout6份CRLF/LF差异另记，不冒充相同物理输入的新运行。
+
+完整产品验收和直接app.exit UNKNOWN见 [本地包报告](LOCAL_PACKAGE_026.md)，公开身份见 [发布记录](RELEASE_026.md)。真实Emby/CD2/远控、可见首帧/连续性、HDR/多屏与系统安装生命周期仍未取得本次证据。
+
+## 2026-10-09 Stop 归属与退出分层取证
+
+当前本地产品sourceCommit为`68eb0249f8392480154513f3df267204a0f0eb74`，版本0.2.5。最终PlaybackManager VM同一16例在修改前8PASS/8FAIL、修复后16/16；全量608/608，0失败/取消/跳过。VM执行真实vendor overlay，并联用真实Native transition模块验证token准备、旧Stop排空、terminal overlap/reject、pending及三身份配对；无法据此声明可见画面或实服通过。
+
+正式构建、package VerifyOnly、版本及source/runtime/native/Electron来源验证通过。运行前后各2136文件（含manifest自身）完整匹配；对d480eb8仅PlaybackManager与6份来源/清单记录改变，23二进制一致。新runtime五组miss400、hit0/400/800、direct400完整PASS，均自然exit0/残留0，普通/STRM/A-B-C每轮5对完整Started/Stopped，pending/重复/未配对为0，迟到metadata不额外play。DirectUrl专属UA匹配且普通请求无泄漏。
+
+固定旧d480eb8 hit0对照播放断言PASS但OS退出FAIL：约11.7秒app.exit与Node/Electron退出回调已经返回，120秒归属核对后强清理，残留0。六次运行的14份harness输入完全同hash、隔离与真实About读回通过；退出根因UNKNOWN，正常产品before-quit链没有被本harness执行。完整矩阵、输入哈希和复算说明见 [报告](STOP_OWNERSHIP_EXIT_EVIDENCE.md) / [JSON](evidence/stop-ownership-exit-20261009.json)。
+
+## 2026-10-09 固定 v0.2.5 的新隐藏 runner
+
+工具全量580/580及后续Stop间隔专项3/3通过，0失败/跳过。同一3ab10c9产品与相同13份harness输入分别验证hit 0/400/800ms、DirectUrl 400ms、miss 400ms；前四组PASS，miss因迟到PlaybackInfo再次调用player而FAIL，整体仍FAIL。保留该断言，后续产品修复必须重跑此失败例。
+
+每轮runner结果、诊断结果、来源/隔离证据分开：五轮均退出且残留0，诊断127/128/128/128/111条分别通过；miss的日志通过不覆盖runner失败。五轮pending Stop均存在空session/缺MediaSource身份，不能泛称所有队列报告完整。详细预算、失败历史、命令和证据见 [隐藏runner记录](RUNNER_DETERMINISM.md)。这些运行不等价于真实Emby/CD2、真实远控、安装或可见首帧验收。
+
+## 2026-10-09 v0.2.5 / 3ab10c9
+
+新sourceCommit重新执行`npm test`，535/535通过；writer定向17/17，均0失败/跳过。两个独立runtime各2136文件全路径/hash一致，两份原始安装器175631770 bytes且同SHA256；A完整性与解包2136/2136通过，B为同字节对照。34项提交输入、四层来源、精确33+7包/1171文件与4份通知通过；版本gate、PE和真实About IPC均为0.2.5/sourceCommit匹配。运行后再次package VerifyOnly通过。
+
+隐藏假服务首轮在queue-play达到25秒超时。新profile复验完成pipeline，但完整runner因next.selected=false和fake CD2 cancelCount=1仍NOT_PASS；与读回3b158f6历史原始失败的向量/计数一致。普通/STRM控制和身份/Session报告、generation接管与Stop防迟到加载断言通过，123条诊断及12项请求关联、两类安全Renderer位置、raw canary排除分别PASS。appData/userData在bootstrap前固定并读回，两次残留均0。离线合成分析COMPLETE；这些结果不等价于真实服务、系统安装或屏幕首帧。完整证据与发布资产见 [0.2.5发布记录](RELEASE_025.md)。
+
+## 2026-10-09 构建复核候选1a05f88
+
+最终`node --test --test-concurrency=1 tests/*.test.cjs`为535/535 PASS、0失败、0跳过；writer定向17/17，审核前构建定向50/50。两次独立build及package、输入与各层provenance、精确依赖目录均通过。runtime各2136文件路径/hash相同，两个原始安装器也完全同SHA；A完整性及解包2136/2136通过，B通过字节一致性关联该证据。原source文件mtime保留，使用Inno官方notimestamp控制容器元数据；没有后处理EXE。本轮不运行客户端或系统安装，详见 [构建复核](BUILD_REVIEW.md)。
+
+## 2026-10-09 构建输入审计
+
+`node --test tests/build-input-audit.test.cjs tests/tracked-product-sources.test.cjs tests/electron-runtime-input.test.cjs`：19/19 PASS。新工具14项覆盖missing/mismatch分层、路径/链接边界、异常元数据脱敏、额外文件名隐藏、输出独占、退役目录、大小写与通知命名；Node syntax与diff检查通过。
+
+只读复核P1 fb10f92的source/runtime/native-helper/Electron validators通过，机器导出核对3归档、1009/51 vendor文件、73文件Electron及2149项payload通过。fresh npm闭包1142文件均匹配，P1另有20个Carnival long旧路径；完整node_modules40包根。未准备vendor的独立工作树报告INCOMPLETE，缺失材料不当作PASS。详见 [构建输入审计](BUILD_INPUT_AUDIT.md) 和 [机器清单](evidence/build-input-inventory-20261009.json)。本轮不重建runtime或安装器，不把历史播放/安装证据当作本轮实测。
+
+## 2026-10-09 P2 离线阶段统计
+
+`node --test tests/playback-timing.test.cjs tests/p1-runtime-diagnostics.test.cjs`：24/24 PASS。新增工具只读显式输入，不启动runtime或读取默认profile；覆盖严格输入上限、UTF-8、重复/缺失/过期归属、Stop/retire、时钟回退、零值、限流、跨启动歧义、字段投影和输出防覆盖。Node语法与diff检查通过。现存P1合成日志110条已用最终工具分析，交付报告与复算结果一致，详见 [P2阶段观测](P2_TIMING_AND_CAPABILITY_REVIEW.md)。本轮没有产品改动，不重建或重复运行P1播放/安装器验收。
+
+## 2026-10-09 P0/P1 本地诊断候选
+
+当前产品 sourceCommit `fb10f920a39112ff72b0f82715da8345702f634b`，版本 0.2.4。该提交串行全量 `node --test --test-concurrency=1 tests/*.test.cjs` 为 455/455 PASS，后续 runtime validator 专项 8/8；正式构建/provenance、假 CD2/合成媒体 pipeline、真实 JSONL 安全调用位置、整包扫描和安装器 2150/2150 文件比对通过。各层准确证据与首轮隔离偏差见 [P0/P1 交付](P0_P1_DELIVERY.md)。下方较早 candidate 文本保留原证据归属，不作为当前待办。
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/test-p1-diagnostics.ps1 -RuntimeName ETE-0.2.4-p1-fb10f92-win-x64
+```
+
+该入口在启动前校验 source/runtime/native/Electron tree，显式绑定临时 appData/userData、使用 runtime 版本元数据和假服务，再通过产品 preload/main/logger 验证两类标准浏览器错误事件。原始消息/stack 不进入产品日志；不可用位置保留 UNAVAILABLE。隐藏运行的 native file-loaded/core-playing 不证明首帧，持帧 arm/clear 的单元证据不冒充可见窗口验收。首轮 APPDATA-only 日志追加偏差已记录，修正后核对现有日志 hash/length 不变。
+
+## NextTrack transition artwork candidate
+
+此 candidate 的 focused Node contract 覆盖 Backdrop 优先、Primary poster fallback、纯黑 fallback、`libmpv.stop(false)` 隐藏 surface 前的 overlay paint gate、当前 request 的 `core-playing` fade、连续调用时 stale transition ownership 和失败清理。比例修复测试断言 overlay 填满区域、图片 100% 宽高及 `object-fit:cover`/居中裁切，并验证图片加载失败仍保持黑底。修复后 focused playback/window `43/43 PASS`，`npm test 325/325 PASS`，相关 JS syntax 与 `git diff --check` PASS。
+
+前台客户端未由自动流程启动。只有用户实际检查 NextTrack 时覆盖层是否及时盖住透明播放区、下一集首帧是否出现后淡出，才能记录 foreground visual acceptance；隐藏 runtime、DOM/unit test 与 provenance 均不替代该层证据。
+
 ## Electron 44 post-freeze-fix final candidate
 
 当前 final candidate 固定为 source commit `725d4c2284596b8ced749a3c8590180a1e6ed1a9`，runtime `EmbyTheaterEnhanced-electron44-725d4c2-final-candidate`，installer `EmbyTheaterEnhanced-electron44-725d4c2-final-candidate-setup.exe`。production freeze root boundary 为 `APPHOST STARTUP COMMAND CANONICALIZATION`；不得添加 video workaround，也不得把 loaded chain 的单一 statement 写成独立充分原因。

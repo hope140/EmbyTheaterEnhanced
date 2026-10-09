@@ -1,5 +1,11 @@
 # 构建与打包
 
+当前本地构建采用 [提交输入 contract](BUILD_HARDENING.md)、[精确 Node 目录](NODE_DEPENDENCY_BOUNDARY.md) 和 [完整本地工具链锁](BUILD_TOOLCHAINS.md)。新 build manifest 为 schema 3；历史 schema 2 审计按其原有语义读取。准确候选与分层实测结果在构建修正记录中单列。
+
+当前测试版v0.2.6 / 355f4e6的正式构建、安装器与2136文件解包验证见 [本地交付](LOCAL_PACKAGE_026.md)，公开下载与身份见 [发布记录](RELEASE_026.md)。主线整合只复用经逐文件与输入核对的原产物，不将其改标为整合文档HEAD，见 [整合报告](MAIN_INTEGRATION_026.md)。
+
+v0.2.5的两次独立构建、安装器原始字节一致及解包验证保留在 [历史发布记录](RELEASE_025.md)。Inno Files 使用 notimestamp；该结果仅针对所列固定源码与材料，不把下文早期容器不一致记录升级为通过。
+
 ## Pinned Electron 44 runtime input
 
 Enhanced production runtime uses the official Electron 44.4.2 Stable Windows x64 archive described by `vendor/electron-runtime-manifest.json`. The archive, complete extracted tree, `electron.exe`, version file and final `x64/electron` tree are independently checked. Carnival Electron 18.3.15 remains in the immutable Carnival inventory as historical evidence; build removes the copied directory before materializing the official tree. Missing archive, wrong hash, changed/missing/extra extracted file or stale production tree fails closed.
@@ -14,27 +20,30 @@ Production bridge 增加 `electronapp/native-helper/ete-mpv-helper.exe` 与根 `
 
 Inno `[Files]` 已递归复制整个 runtime，因此不增加独立 helper 安装/注册动作。helper 只由 Electron main 以固定相对路径启动，不作为服务、计划任务或公共 IPC endpoint。正式 package verify 仍必须在获授权 commit 上重新执行。
 
-## 公开基线限制
+## 公开仓库与构建输入边界
 
-`v0.1.1-baseline` 是用于源码治理和审计的公开基线，并非独立可构建的发行源码包。公开仓库刻意不包含完整离线 Web snapshot、冻结 Electron/runtime、native binary、Carnival 输入或综合补丁输入；本地构建仍需要这些已锁定但未公开的输入。缺少这些内容时，`prepare.ps1` 或 `build.ps1` 不能完成是预期行为，不应视为公开仓库缺陷。
+`v0.1.1-baseline` 是用于源码治理和审计的历史起点。当前公开仓库不跟踪完整离线Web、Electron归档、预编译二进制、Carnival或综合补丁输入，本地构建依赖这些外部材料。Electron归档和mpv header有固定公开链接；Carnival、补丁、离线Web和精确libmpv来源材料仍有独立获取缺口。缺少输入时prepare/build不能完成，不应把该仓库描述为完整、独立可构建的发行源码包。
 
-在逐项确认来源、再分发许可和 GPL 对应源码义务前，不发布 setup.exe 或其他二进制产物。
+项目此后已经发布Windows安装包。Git不跟踪输入本体与安装器实际包含哪些文件是不同边界；当前来源、通知和对应源码材料缺口见 [构建输入审计](BUILD_INPUT_AUDIT.md)，不能从既有发布事实推定材料已闭合。
 
 ## 已实际使用的工具
 
 - Windows PowerShell 5.1 执行所有 ps1，脚本内容保持 ASCII；读取含中文的 JSON 显式 UTF8。
 - 本地开发 Node + 固定 `node-unrar-js 2.0.2`，根 package-lock.json 锁定。
-- CloudDrive2 runtime 固定 `@grpc/grpc-js` 1.14.4 与 `@grpc/proto-loader` 0.8.1；构建只复制 lockfile 的 production dependency closure，当前为 33 个纯 JavaScript package、0 个 `.node` addon。
+- CloudDrive2 runtime 固定 `@grpc/grpc-js` 1.14.4 与 `@grpc/proto-loader` 0.8.1；每次从新 npm ci 输入精确替换锁定的33个production package，拒绝`.node` addon。七个Carnival包身份另按manifest保留；最终为1171文件。P1的long旧文件问题保留为历史记录。
 - Inno Setup 6.7.3。官方安装 EXE Authenticode 验证有效，签名者 Pyrsys B.V.；只用项目内 innounp 解包，没有安装或修改系统 PATH。
 - Python 仅用于可选 DLL 身份 probe，无 pip 新依赖。
 
-工具来源及哈希见 `vendor/toolchain-manifest.json`。构建不自动下载工具；`package.ps1 -Compiler` 支持用户已安装或自行准备的 ISCC.exe。
+Inno/InnoUnp/node-unrar来源及哈希见 `vendor/toolchain-manifest.json`；Native Helper的header、g++.exe身份与flags见 `vendor/native-helper-manifest.json`。补充锁 `tools/build-toolchains.lock.json` 固定完整UCRT64前缀与Inno/解包器树并引用原清单。构建不自动下载这些工具；compiler必须位于已验证的项目本地固定目录，任意外部或同版本不同字节的ISCC不能通过。
 
 ## 两阶段
+
+前置条件是三个固定归档，以及 [工具链文档](BUILD_TOOLCHAINS.md) 中准备到项目本地的完整固定工具目录；只安装当前最新GCC不能保证匹配。`prepare-native-helper-inputs.ps1`会下载固定header并核对hash，普通`prepare.ps1`不执行这一步。下列命令描述准备顺序，不代表仅克隆仓库便拥有全部输入。
 
 ```powershell
 npm ci --ignore-scripts
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/prepare.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/prepare-native-helper-inputs.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/build.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/package.ps1
 ```
@@ -51,11 +60,11 @@ Web overlay 的唯一来源如下：
 
 `prepare-web-overlays.cjs` 在写任何输出前先校验全部 base、payload 和 generator；任一 hash 不匹配则 fail-fast，不留下部分 Web overlay。tracked generator identity 使用当前 commit 的 canonical Git blob SHA256，并拒绝除 CRLF/LF checkout 差异之外的工作文件偏移。
 
-CD2 阶段在源码覆盖后执行两项确定性步骤：`copy-runtime-dependencies.cjs` 从根 lockfile 复制 production closure 到输出 `electronapp/node_modules` 并拒绝 native addon；`patch-playbackmanager.cjs` 对未公开的 frozen Web snapshot 应用锚点唯一的 request-generation overlay，锚点数量不符即停止构建。runtime 不依赖开发机 `electronapp/node_modules` 的偶然内容，不执行 native rebuild 或 node-gyp。
+CD2 阶段在源码覆盖后执行两项步骤：`copy-runtime-dependencies.cjs` 从根 lockfile 选择production目录并复制到输出 `electronapp/node_modules`，拒绝其中的native addon；`patch-playbackmanager.cjs` 对未公开的 frozen Web snapshot 应用锚点唯一的 request-generation overlay，锚点数量不符即停止构建。当前正式build每次执行独立npm ci并由npm验证锁定tarball integrity，再完整替换33个选择包根，逐文件校验新输入；七个明确保留的Carnival包另与归档核对。旧覆盖复制的long残留已在构建加固中消除。构建不执行native rebuild或node-gyp。
 
 保留实际布局 `Emby.Theater.exe`、`electronapp/libmpv/x64`、`electronapp/native-helper`、`x64/electron`。任务书中的 runtime/libmpv/plugins 分拆仅是示意；Native Helper 通过固定相对路径启动，旧 Pepper plugin registration 已不存在。
 
-`source-provenance.json` 记录 base/runtime version、archive/manifest、Web base 与 final tree、每个 Web overlay 的 base/input/generator/output SHA256、Electron、Native Helper、retired bridge input exclusion、libmpv 以及 package-lock 驱动的 production dependency closure。`runtime-provenance.json` 绑定 source provenance，并覆盖 Git tracked 产品源码、prepared preload、PlaybackManager、package metadata overlay 与 runtime exclusion contract。`build-manifest.json` schema 2 绑定 source commit、两份 provenance、vendor manifest、package-lock 和 canonical payload-set digest；它不把自己列入 payload，避免递归 hash。
+`source-provenance.json` 记录 base/runtime version、archive/manifest、Web base 与 final tree、每个 Web overlay 的 base/input/generator/output SHA256、Electron、Native Helper、retired bridge input exclusion、libmpv 以及 package-lock 驱动的 production dependency closure。`runtime-provenance.json` 绑定 source provenance，并覆盖 Git tracked 产品源码、prepared preload、PlaybackManager、package metadata overlay 与 runtime exclusion contract。`build-manifest.json` schema 3 绑定 source commit、inputs/source/runtime 三份 provenance、vendor manifest与package-lock的Git blob hash和canonical payload-set digest；它不把自己列入payload，避免递归hash。`runtime-dependencies.json`另记录新npm输入和完整目录关系，根许可与来源索引以提交字节随包。
 
 package verify 先验证两层 provenance，再对 build manifest 做路径规范、重复路径、双向 file-set、逐文件 SHA256、provenance binding 和 payload-set digest 检查，然后才允许 Inno 编译。传 `-RuntimeName` 选择 runtime；`-OutputBaseFilename` 只控制 candidate installer 文件名，不改变 AppVersion、AppId、payload 或安装入口。安装目标独立于 Carnival，桌面、开始菜单和安装完成入口直接启动 `{app}\Emby.Theater.exe`。卸载不删除个人 mpv 配置和 Enhanced 用户数据。
 
@@ -71,7 +80,7 @@ tracked-source follow-up `5a2bafc1dfa5d65f8821a3ef47371c08fe162cad` 将上述普
 
 PR #2 merge review 的隔离 installer 候选已编译并用 innounp 解包，2157 个 `{app}` 文件与 final runtime 逐文件哈希一致，grpc-js、proto 存在且 production dependency closure 中没有 native addon。本轮没有运行安装器或执行系统安装。
 
-build 拒绝覆盖已有目录；重复构建使用 `-OutputName`。package 同样拒绝覆盖已有 setup。旧产物应由用户保留或在明确范围内处理，脚本不执行递归删除。
+build 拒绝覆盖已有目录；重复构建使用 `-OutputName`。package 同样拒绝覆盖已有 setup，校验文件和installer provenance也独占创建。脚本只在本次拥有的新输出内替换已核验的包目录及旧Electron等指定输入；旧产物与失败现场保留，不自动清理。
 
 0.1.1 安装包已用 innounp 解包，build-manifest 中 1012 个载荷文件哈希全部一致。随后在用户授权独立目录实际安装 0.1.0、覆盖升级 0.1.1，每次均验证全部载荷与安装记录；快捷方式实际启动成功，卸载后目录、安装记录、桌面/开始菜单快捷方式均移除。保留 Enhanced profile 与个人 mpv 配置。当前提权环境未覆盖 UAC 提示交互或 Program Files ACL。
 

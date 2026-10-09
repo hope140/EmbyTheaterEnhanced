@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Read-only local toolchain observation; not an authoritative lock or complete closure",
+  "authority": [
+    {
+      "path": "vendor/toolchain-manifest.json",
+      "sha256": "832e672676438d4d69c301bcf8619293d4811cd3f3b5bc48b0f6e5eb2d861b0b"
+    },
+    {
+      "path": "vendor/native-helper-manifest.json",
+      "sha256": "d66b8587127957cb70ea9fa244eb3abec385476893e9420d214e3b39a5b538f6"
+    }
+  ],
+  "compiler": {
+    "file": "g++.exe",
+    "version": "g++.exe (Rev5, Built by MSYS2 project) 16.1.0",
+    "sha256": "798a6eb495b30cf771dc759b5508d269ecb0dddac739719e8b30fe0ac0744b69",
+    "manifestMatch": true
+  },
+  "resolvedSamples": [
+    {
+      "role": "cc1plus",
+      "file": "cc1plus.exe",
+      "sha256": "48e3d09daa1cb23b89a5a6fa9e1928851b4d32ec048541fefad340b8054db9f9"
+    },
+    {
+      "role": "collect2",
+      "file": "collect2.exe",
+      "sha256": "6866c5856ef27b45356ffdb8cd26c4617055d8ab3263ce3a8b39fde954fd523d"
+    },
+    {
+      "role": "as",
+      "file": "as.exe",
+      "sha256": "c7ca4e94db506a78eb499f28c6aa98ae70a09165d45922f4c7bfa5f6d60904b2"
+    },
+    {
+      "role": "ld",
+      "file": "ld.exe",
+      "sha256": "a05da6de92dc402881a85863904b2690e34d1f0547a38463b93d3769752d16dd"
+    },
+    {
+      "role": "libstdc++.a",
+      "file": "libstdc++.a",
+      "sha256": "c102f8f56dc8212a9f65192368e0175707c8197916dd516ea1c358a437fa2e5e"
+    },
+    {
+      "role": "libgcc.a",
+      "file": "libgcc.a",
+      "sha256": "eb04a265ea5eaf7cfa72ac075a5508744c69f2d36a4bbd51bcaa065a09b54cf9"
+    },
+    {
+      "role": "libmingw32.a",
+      "file": "libmingw32.a",
+      "sha256": "0b847da96a1f96e4d05f28c97d08cdf3b6af562084023867e1c079f661c45e21"
+    },
+    {
+      "role": "libuser32.a",
+      "file": "libuser32.a",
+      "sha256": "1b9c02268ae4e888ce22c7727ec07b894ccf660610eac084349228ea6357e031"
+    },
+    {
+      "role": "crt2.o",
+      "file": "crt2.o",
+      "sha256": "9b8159b174f310e3310de9fa8c26bbfa788862bca74fbf72f4f0754e4e31aa4c"
+    }
+  ],
+  "fullToolchainClosure": "NOT_VERIFIED",
+  "installerTools": [
+    {
+      "file": "innosetup-6.7.3.exe",
+      "sha256": "9c73c3bae7ed48d44112a0f48e66742c00090bdb5bef71d9d3c056c66e97b732",
+      "manifestMatch": true
+    },
+    {
+      "file": "innounp.zip",
+      "sha256": "ac1d98bba6588072ade06163781938df274f444bec7318069668608d1e5faae8",
+      "manifestMatch": true
+    },
+    {
+      "file": "ISCC.exe",
+      "sha256": "0a8757031b33777e4c9cbffee40f11a5062b36d25cbe144c1db73b6102b80ad7",
+      "role": "observed executable; not pinned by package gate"
+    },
+    {
+      "file": "innounp.exe",
+      "sha256": "1c8453c198dd3fe7947f3705e59d2294ddce3dfa9f96a737e94449b119f44181",
+      "role": "observed verifier executable"
+    }
+  ]
+}

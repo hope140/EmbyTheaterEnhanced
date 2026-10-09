@@ -1,5 +1,11 @@
 # Clean-room reproducibility
 
+## 当前范围（2026-10-09）
+
+当前生产组件为Electron44.4.2完整树、源码构建的Native Helper和固定libmpv。后续构建修正提交3b158f6在同一独立工作树的两个全新输出中，分别fresh npm安装、源码编译Helper并组装runtime，各2136文件路径/hash完全一致；两个installer各自解包也与对应runtime一致，但容器原始字节不同。该结果是同提交、同固定输入与宿主环境的两次独立输出证据，不是两个新OS环境或全部第三方源码重建。见 [完整交付](BUILD_HARDENING.md)。本页下方双worktree数字仍属于各自标明的历史revision。
+
+当前fresh-worktree准备顺序见 [PACKAGING](PACKAGING.md)：除npm与Carnival/补丁/Electron三个固定归档外，还要运行`prepare-native-helper-inputs.ps1`取得固定header，并按 [工具链锁](BUILD_TOOLCHAINS.md) 准备项目本地完整GCC前缀和Inno材料。普通`prepare.ps1`不准备header。原始MSYS2源码/包材料、Windows宿主与部分第三方来源仍未完全闭合。纯公开仓库、固定输入组装、全部组件源码重建和installer字节重复性是不同命题。
+
 > 当前补充：Phase 2B 已将 Pepper bridge 标记为 retired。历史 provenance 仍可记录 archive input，但正式 runtime provenance/package contract 只把 Native Helper 与 `mpv-1.dll` 作为生产 bridge payload，并显式记录旧 `.node` exclusion。
 
 ## 2026-09-16 — Tracked source Git-blob binding follow-up
@@ -148,7 +154,7 @@ fresh worktree 没有该文件，因此在测试体开始前以 `ENOENT` 失败�
 
 扫描 `tests/`、`src/electronapp/`、`tools/prepare.ps1`、`tools/build.ps1`、vendor manifest 和 runtime provenance 后，没有发现第二个“测试/构建依赖 ignored 本地文件但没有 tracked 来源”的 BLOCKING 案例。
 
-## 标准 clean-room contract
+## 该历史 revision 的 clean-room contract
 
 在 worktree 根目录准备两个允许的 archive 后，命令顺序为：
 

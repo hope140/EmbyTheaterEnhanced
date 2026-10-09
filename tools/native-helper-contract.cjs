@@ -9,6 +9,8 @@ const CONTRACT_PATHS = Object.freeze([
   'tools/materialize-native-helper-source.cjs',
   'tools/native-helper-provenance.cjs',
   'tools/native-helper-contract.cjs',
+  'tools/build-toolchains.cjs',
+  'tools/build-toolchains.lock.json',
   'tools/tracked-file-hash.cjs'
 ]);
 

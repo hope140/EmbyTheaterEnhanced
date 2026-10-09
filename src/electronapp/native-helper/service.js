@@ -5,6 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 const childProcess = require('node:child_process');
 const {NativeHelperClient, PROTOCOL_VERSION} = require('./controller');
+const {createNativeDiagnostics} = require('../enhanced/native-diagnostics');
 
 const CALL_CHANNEL = 'enhanced-native-helper-call';
 const NOTIFY_CHANNEL = 'enhanced-native-helper-notify';
@@ -110,7 +111,15 @@ function createService(options) {
   let recreateCount = 0;
   let everStarted = false;
   let destroyed = false;
+  let destroyPromise = null;
+  const pendingClientDestructions = new Set();
   let activeEndpointId = null;
+  let generationEpoch = 0;
+  let rendererEpoch = 0;
+  let presentationEpoch = 0;
+  let presentationTokenHighWater = 0;
+  let presentation = null;
+  let lastVisibleMedia = null;
   let surfaceEpoch = 0;
   let placementRevision = 0;
   let placementInFlight = null;
@@ -119,9 +128,105 @@ function createService(options) {
   const observed = new Set();
   const fixedSettingLogged = new Set();
   const boundWindowEvents = [];
+  const diagnostic = createNativeDiagnostics(logger);
+  const helperRuns = new WeakMap();
+  let helperRunSequence = 0;
+
+  function observe(name, disposition, record, reason) {
+    try {
+      const owner = record && record.client || client;
+      const generationId = record ? record.targetGeneration || record.sourceGenerationId :
+        owner && owner.currentGenerationId || lastVisibleMedia && lastVisibleMedia.client === owner && lastVisibleMedia.generationId;
+      diagnostic({name, disposition, reason, helperRun: owner && helperRuns.get(owner), generationId,
+        currentGenerationId: owner && owner.currentGenerationId, transitionId: record && record.token,
+        sourceGenerationId: record && record.sourceGenerationId});
+    } catch (_) { /* Observation has no ownership or playback authority. */ }
+  }
 
   function log(event, details) {
     try { logger({category: 'native-helper', event, details: details || {}}); } catch (_) { }
+  }
+
+  function validToken(value) { return Number.isSafeInteger(value) && value > 0; }
+
+  function acceptRendererEpoch(payload) {
+    // Older local callers omit this field; renderer Endpoints always send it.
+    if (payload.requestEpoch == null) return;
+    if (!validToken(payload.requestEpoch) || payload.requestEpoch <= rendererEpoch) throw new Error('generation-superseded');
+    rendererEpoch = payload.requestEpoch;
+  }
+
+  function releaseHold(record, holdId) {
+    if (!record || !validToken(holdId) || record.client !== client || record.client.exited || record.client.transportTerminated) return;
+    try {
+      record.client.request('presentation-release', {holdId}, {
+        generationId: record.client.allocateGenerationId(), mediaScoped: false, timeoutMs: 1500
+      }).catch(function () {});
+    } catch (_) { /* Helper termination already removes its native child. */ }
+  }
+
+  function cancelPreparation(record) {
+    if (!record || !validToken(record.controlGenerationId) || record.client !== client || record.client.exited || record.client.transportTerminated) return;
+    try {
+      record.client.request('presentation-cancel-preparation', {preparationGenerationId: record.controlGenerationId}, {
+        generationId: record.client.allocateGenerationId(), mediaScoped: false, timeoutMs: 1500
+      }).catch(function () {});
+    } catch (_) { /* A timed-out prepare is cancelled on the same ordered transport. */ }
+  }
+
+  function clearPresentation(record) {
+    if (!record || presentation !== record) return;
+    observe('presentation-clear', 'cleared', record);
+    presentation = null;
+    ++presentationEpoch;
+    cancelPreparation(record);
+    releaseHold(record, record.holdId);
+  }
+
+  function ownsPresentation(record) {
+    return !!record && presentation === record && record.epoch === presentationEpoch &&
+      record.client === client && record.endpointId === activeEndpointId && !destroyed;
+  }
+
+  async function preparePresentation(active, endpointId, token) {
+    if (!validToken(token)) throw new Error('presentation-token-invalid');
+    if (token <= presentationTokenHighWater) return {status: 'ok', ready: false};
+    presentationTokenHighWater = token;
+    const main = getMainWindow();
+    if (active.currentGenerationId !== null || !lastVisibleMedia || lastVisibleMedia.client !== active ||
+        !surfaceWanted || !surfaceWindow || surfaceWindow.isDestroyed() || !surfaceWindow.isVisible() ||
+        !main || main.isDestroyed() || !main.isVisible() || main.isMinimized()) {
+      clearPresentation(presentation);
+      observe('presentation-prepare', 'unavailable');
+      return {status: 'ok', ready: false};
+    }
+    const previous = presentation;
+    const record = {token, client: active, endpointId, epoch: ++presentationEpoch, holdId: null,
+      controlGenerationId: active.allocateGenerationId(), targetGeneration: null, sourceGenerationId: lastVisibleMedia.generationId};
+    presentation = record;
+    observe('presentation-prepare', 'requested', record);
+    let result;
+    try {
+      result = await active.request('presentation-prepare', {sourceGenerationId: lastVisibleMedia.generationId}, {
+        generationId: record.controlGenerationId, mediaScoped: false, timeoutMs: 2500
+      });
+    } catch (_) { result = null; }
+    if (!ownsPresentation(record)) {
+      observe('presentation-prepare', 'stale', record);
+      cancelPreparation(record);
+      if (result && validToken(result.holdId)) releaseHold(record, result.holdId);
+      return {status: 'ok', ready: false};
+    }
+    if (!result || result.ready !== true || result.painted !== true || !validToken(result.holdId)) {
+      observe('presentation-prepare', 'unavailable', record);
+      clearPresentation(record);
+      if (previous) { cancelPreparation(previous); releaseHold(previous, previous.holdId); }
+      return {status: 'ok', ready: false};
+    }
+    record.holdId = result.holdId;
+    observe('presentation-prepare', 'ready', record);
+    if (previous) { cancelPreparation(previous); releaseHold(previous, previous.holdId); }
+    return {status: 'ok', ready: true};
   }
 
   function trusted(event) {
@@ -244,6 +349,7 @@ function createService(options) {
     if (!surfaceWanted || !main.isVisible() || main.isMinimized()) {
       invalidateSurfacePlacement();
       surfaceWindow.hide();
+      observe('surface-hidden', 'hidden', null, reason);
       return;
     }
     syncSurfaceBounds();
@@ -260,6 +366,7 @@ function createService(options) {
     if (!surfaceWanted || !main.isVisible() || main.isMinimized()) {
       invalidateSurfacePlacement();
       surfaceWindow.hide();
+      observe('surface-hidden', 'hidden', null, reason);
       return;
     }
     syncSurfaceBounds();
@@ -279,6 +386,11 @@ function createService(options) {
       width: main.getBounds().width,
       height: main.getBounds().height,
       frame: false,
+      // This carrier follows main bounds; it has no user-owned resize frame.
+      // WS_THICKFRAME paints a top border even underneath the transparent UI.
+      thickFrame: false,
+      resizable: false,
+      movable: false,
       transparent: false,
       backgroundColor: '#000000',
       show: false,
@@ -319,14 +431,18 @@ function createService(options) {
     if (!fileSystem.existsSync(helperPath) || !fileSystem.existsSync(libmpvPath)) throw new Error('native-helper-runtime-missing');
     startPromise = (async function () {
       let owned;
+      const helperRun = ++helperRunSequence;
       owned = new ClientClass({
         helperPath,
         libmpvPath,
         parentWindowHandle: decimalWindowHandle(host),
         expectedLibmpvVersion: EXPECTED_LIBMPV_VERSION,
+        onDiagnostic: function (record) { diagnostic(Object.assign({}, record, {helperRun})); },
         onEvent: function (message) {
           if (client !== owned) return;
           if (message.name === 'end-file' && message.value && message.value.reason === 4) {
+            if (message.generationId !== owned.currentGenerationId) return;
+            clearPresentation(presentation);
             surfaceWanted = false;
             syncSurfaceVisibility('media-error');
             sendEvent({type: 'bridge_error', reason: 'load-failed'});
@@ -339,6 +455,9 @@ function createService(options) {
         onTerminal: function (terminal) {
           if (client !== owned) return;
           crashCount += terminal.name === 'process-exit-terminal' || terminal.name === 'stdout-end' ? 1 : 0;
+          clearPresentation(presentation);
+          lastVisibleMedia = null;
+          ++generationEpoch;
           surfaceWanted = false;
           syncSurfaceVisibility('helper-terminal');
           sendEvent({type: 'bridge_error', reason: terminal.name});
@@ -347,6 +466,7 @@ function createService(options) {
           owned.kill().catch(function () {});
         }
       });
+      helperRuns.set(owned, helperRun);
       startingClient = owned;
       try {
         await owned.start();
@@ -378,7 +498,11 @@ function createService(options) {
   async function call(operation, request, endpointId) {
     const payload = request && typeof request === 'object' ? request : {};
     if (operation === 'create') {
-      if (!activeEndpointId) activeEndpointId = crypto.randomUUID();
+      if (!activeEndpointId) {
+        activeEndpointId = crypto.randomUUID();
+        rendererEpoch = 0;
+        presentationTokenHighWater = 0;
+      }
       const active = await ensureClient();
       return {status: 'ok', mode, endpointId: activeEndpointId, protocolVersion: PROTOCOL_VERSION, helperVersion: active.handshake.helperVersion, libmpvVersion: active.handshake.libmpvVersion};
     }
@@ -389,11 +513,50 @@ function createService(options) {
       activeEndpointId = null;
       return {status: 'ok'};
     }
+    let beginEpoch;
+    if (operation === 'begin-generation') {
+      acceptRendererEpoch(payload);
+      beginEpoch = ++generationEpoch;
+    }
     const active = operation === 'begin-generation' ? await ensureClient() : client;
     if (!active || active.transportTerminated || active.exited) throw new Error('native-helper-unavailable');
     if (operation === 'begin-generation') {
+      requireEndpoint(endpointId);
+      if (beginEpoch !== generationEpoch || active !== client) throw new Error('generation-superseded');
       const label = typeof payload.label === 'string' ? payload.label.slice(0, 128) : 'play';
-      return {status: 'ok', generationId: active.beginGeneration(label, [...observed])};
+      const generationId = active.beginGeneration(label, [...observed]);
+      const record = presentation;
+      if (ownsPresentation(record) && record.token === payload.presentationToken && validToken(record.holdId)) {
+        record.targetGeneration = generationId;
+        let result;
+        try {
+          result = await active.request('presentation-arm', {holdId: record.holdId}, {
+            generationId, mediaScoped: false, timeoutMs: 2000
+          });
+        } catch (_) { result = null; }
+        observe('presentation-arm', !ownsPresentation(record) ? 'stale' :
+          result && result.ready === true && result.status === 'armed' && result.holdId === record.holdId ? 'ready' : 'unavailable', record);
+        if (ownsPresentation(record) && (!result || result.ready !== true || result.status !== 'armed' ||
+            result.holdId !== record.holdId)) clearPresentation(record);
+      } else {
+        clearPresentation(record);
+      }
+      if (beginEpoch !== generationEpoch || active !== client || endpointId !== activeEndpointId ||
+          active.currentGenerationId !== generationId) throw new Error('generation-superseded');
+      return {status: 'ok', generationId};
+    }
+    if (operation === 'prepare-presentation') return preparePresentation(active, endpointId, payload.token);
+    if (operation === 'cancel-presentation') {
+      if (!validToken(payload.token)) throw new Error('presentation-token-invalid');
+      const record = presentation;
+      if (ownsPresentation(record) && record.token === payload.token) {
+        clearPresentation(record);
+        if (active.currentGenerationId === null) {
+          surfaceWanted = false;
+          syncSurfaceVisibility('presentation-cancelled');
+        }
+      }
+      return {status: 'ok'};
     }
     if (operation === 'observe') {
       if (!Array.isArray(payload.properties) || payload.properties.some(name => !OBSERVED_PROPERTIES.has(name))) throw new Error('observed-property-not-allowed');
@@ -432,12 +595,20 @@ function createService(options) {
       return {status: 'ok', value: await active.getProperty(name, 2000)};
     }
     if (operation === 'command') {
-      requireGeneration(active, payload);
       const args = validateCommand(payload.data);
+      if (args[0] === 'stop' && payload.presentationToken != null) {
+        if (!validToken(payload.presentationToken)) throw new Error('presentation-token-invalid');
+        if (!ownsPresentation(presentation) || presentation.token !== payload.presentationToken) {
+          return {status: 'accepted', stale: true};
+        }
+      }
+      requireGeneration(active, payload);
       if (args[0] === 'loadfile') {
         const load = active.load(args);
         load.promise.catch(function (error) {
-          if (client !== active || !error || error.state === 'GENERATION_RETIRED') return;
+          if (client !== active || endpointId !== activeEndpointId || load.generationId !== active.currentGenerationId ||
+              !error || error.state === 'GENERATION_RETIRED') return;
+          clearPresentation(presentation);
           surfaceWanted = false;
           syncSurfaceVisibility('load-failed');
           sendEvent({type: 'bridge_error', reason: 'load-failed'});
@@ -446,8 +617,13 @@ function createService(options) {
         return {status: 'accepted'};
       }
       if (args[0] === 'stop') {
-        surfaceWanted = false;
-        syncSurfaceVisibility('stop');
+        const retain = ownsPresentation(presentation) && presentation.token === payload.presentationToken &&
+          validToken(presentation.holdId) && active.currentGenerationId === null;
+        if (!retain) {
+          clearPresentation(presentation);
+          surfaceWanted = false;
+          syncSurfaceVisibility('stop');
+        }
         active.stop().catch(function () {});
         return {status: 'accepted'};
       }
@@ -456,7 +632,9 @@ function createService(options) {
     }
     if (operation === 'set-visible') {
       requireGeneration(active, payload);
+      if (active.currentGenerationId === null) return {status: 'ok'};
       surfaceWanted = payload.visible === true;
+      if (surfaceWanted) lastVisibleMedia = {client: active, generationId: active.currentGenerationId};
       syncSurfaceVisibility('renderer-visibility');
       return {status: 'ok'};
     }
@@ -469,44 +647,66 @@ function createService(options) {
   function notify(operation, request, endpointId) {
     if (destroyed) return;
     if (!activeEndpointId || endpointId !== activeEndpointId) return;
-    if (operation === 'retire-generation' && client && request && request.generationId === client.currentGenerationId) {
-      client.retireGeneration(request.reason || 'retired');
+    if (operation === 'retire-generation' && request) {
+      acceptRendererEpoch(request);
+      ++generationEpoch;
+      // A newer endpoint epoch also cancels a begin whose ID has not returned to the renderer yet.
+      if (client && (validToken(request.requestEpoch) || request.generationId === null || request.generationId === client.currentGenerationId)) {
+        client.retireGeneration(request.reason || 'retired');
+      }
     }
     if (operation === 'set-visible') {
-      if (!client || !request || request.generationId !== client.currentGenerationId) return;
+      if (!client || !request || client.currentGenerationId === null || request.generationId !== client.currentGenerationId) return;
       surfaceWanted = request && request.visible === true;
+      if (surfaceWanted) lastVisibleMedia = {client, generationId: client.currentGenerationId};
       syncSurfaceVisibility('renderer-notify-visibility');
     }
   }
 
   async function destroyClient(reason) {
+    ++generationEpoch;
+    clearPresentation(presentation);
+    lastVisibleMedia = null;
     surfaceWanted = false;
     syncSurfaceVisibility(reason);
     const owned = client;
     client = null;
     if (owned) {
       owned.retireGeneration(reason);
-      await owned.kill();
+      const completion = owned.kill();
+      pendingClientDestructions.add(completion);
+      try { await completion; }
+      finally { pendingClientDestructions.delete(completion); }
     }
   }
 
-  async function destroy() {
-    if (destroyed) return;
+  function destroy() {
+    if (destroyPromise) return destroyPromise;
     destroyed = true;
     activeEndpointId = null;
-    invalidateSurfacePlacement();
-    if (startingClient) {
-      try { await startingClient.kill(); } catch (_) { }
-    }
-    if (startPromise) {
-      try { await startPromise; } catch (_) { }
-    }
-    await destroyClient('service-destroy');
-    for (const binding of boundWindowEvents.splice(0)) {
-      try { binding.main.removeListener(binding.name, binding.listener); } catch (_) { }
-    }
-    if (surfaceWindow && !surfaceWindow.isDestroyed()) surfaceWindow.destroy();
-    surfaceWindow = null;
+    // Renderer unload may already have detached client while its kill is pending.
+    const pendingDestructions = Array.from(pendingClientDestructions);
+    // Window closed and before-quit can overlap. Publish the shared completion
+    // before cleanup starts so every caller waits for the owned native child.
+    destroyPromise = Promise.resolve().then(async function () {
+      invalidateSurfacePlacement();
+      if (startingClient) {
+        try { await startingClient.kill(); } catch (_) { }
+      }
+      if (startPromise) {
+        try { await startPromise; } catch (_) { }
+      }
+      // One failed child must not let before-quit outrun other owned exits.
+      const outcomes = await Promise.allSettled([destroyClient('service-destroy'), ...pendingDestructions]);
+      const failure = outcomes.find(outcome => outcome.status === 'rejected');
+      if (failure) throw failure.reason;
+      for (const binding of boundWindowEvents.splice(0)) {
+        try { binding.main.removeListener(binding.name, binding.listener); } catch (_) { }
+      }
+      if (surfaceWindow && !surfaceWindow.isDestroyed()) surfaceWindow.destroy();
+      surfaceWindow = null;
+    });
+    return destroyPromise;
   }
 
   function status() {

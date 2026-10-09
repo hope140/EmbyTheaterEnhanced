@@ -1,4 +1,4 @@
-define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter', 'appSettings', 'userSettings', 'require', 'connectionManager', '../resolvers/strm-resolver.js', '../resolvers/strm-config-client.js', '../resolvers/strm-identity-recovery.js', '../enhanced/playback-route-stats.js', '../native-helper/client.js'], function (globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, require, connectionManager, strmResolver, strmConfigClient, strmIdentityRecovery, playbackRouteStats, nativeHelperClient) {
+define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter', 'appSettings', 'userSettings', 'require', 'connectionManager', '../resolvers/strm-resolver.js', '../resolvers/strm-config-client.js', '../resolvers/strm-identity-recovery.js', '../enhanced/playback-route-stats.js', '../enhanced/nexttrack-transition.js', '../native-helper/client.js'], function (globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, require, connectionManager, strmResolver, strmConfigClient, strmIdentityRecovery, playbackRouteStats, nextTrackTransition, nativeHelperClient) {
     'use strict';
 
     function getTextTrackUrl(subtitleStream, serverId) {
@@ -136,6 +136,10 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         var enhancedRouteState = playbackRouteStats && typeof playbackRouteStats.create === 'function'
             ? playbackRouteStats.create()
             : null;
+        var nextTransition = nextTrackTransition.createNative({
+            getEndpoint: function () { return libmpv; }
+        });
+        nextTrackTransition.install(playbackManager, self, nextTransition);
 
         function supersededError() {
             var error = new Error('Playback request was superseded');
@@ -317,6 +321,19 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 category: 'Playback',
                 thumbImage: '',
                 icon: 'description',
+                settingsTheme: true,
+                adjustHeaderForEmbeddedScroll: true
+            });
+
+            routes.push({
+                path: 'mpvplayer/about.html',
+                transition: 'slide',
+                controller: pluginManager.mapPath(self, 'mpvplayer/about.js'),
+                type: 'settings',
+                title: '关于 Enhanced',
+                category: 'General',
+                thumbImage: '',
+                icon: 'info',
                 settingsTheme: true,
                 adjustHeaderForEmbeddedScroll: true
             });
@@ -753,6 +770,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         self.play = function (options) {
             var request = beginPlayRequest(options);
             if (!request) return Promise.reject(supersededError());
+            nextTransition.playbackStarted(request.playbackRequestId);
             emitClientDiagnostic('info', 'playback', 'play-request', Object.assign(requestDiagnosticDetails(request), {
                 mediaType: options && options.mediaType,
                 playMethod: options && options.playMethod
@@ -790,9 +808,11 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 }
                 await showOsd(options);
                 assertCurrentPlayRequest(request);
+                nextTransition.playbackReady(request.playbackRequestId);
                 if (window.enhancedDiagnostics) window.enhancedDiagnostics(libmpv, 'playing');
             } catch (error) {
                 cleanupCorePlaying(request);
+                nextTransition.playbackFailed(request.playbackRequestId);
                 if (!error || !error.playbackSuperseded) {
                     emitClientDiagnostic('error', 'playback', 'playback-error', Object.assign(requestDiagnosticDetails(request), {
                         stage: 'play',
@@ -1043,7 +1063,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             }
 
             if (libmpv && typeof libmpv.beginGeneration === 'function') {
-                await libmpv.beginGeneration(request.requestId);
+                await libmpv.beginGeneration(request.requestId, nextTransition.loadingToken(request.playbackRequestId));
                 assertCurrentPlayRequest(request);
             }
             await setProperty(Object.assign(playerOptions, audioDelay(), interlace(), createClosedCaptionTrack(mediaSource, isVideo), getMpvAudioOptions(mediaType)))
@@ -1136,19 +1156,31 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
         self.stop = async function (destroyPlayer) {
             var request = activePlayRequest;
+            var presentationToken = null;
+            if (destroyPlayer) nextTransition.cancel();
             invalidatePlayRequest();
+            if (!destroyPlayer && nextTransition.isActive()) {
+                var generationAtStop = playGeneration;
+                try { presentationToken = await nextTransition.beforeTeardown(); }
+                catch (_) { /* Visual preparation cannot block playback stop. */ }
+                if (generationAtStop !== playGeneration) return;
+            }
             if (destroyPlayer) {
                 await destroyInternal()
             } else {
                 appSettings.set('mpv-volume', playerState.volume);
-                await sendCommand('stop')
+                if (presentationToken && libmpv && typeof libmpv.stopForPresentation === 'function') {
+                    await libmpv.stopForPresentation(presentationToken);
+                } else {
+                    await sendCommand('stop');
+                }
             }
             emitClientDiagnostic('info', 'playback', 'stop', requestDiagnosticDetails(request));
             self._onStopped(true)
         };
 
         self.destroy = function () {
-
+            nextTransition.cancel();
             return destroyInternal()
         };
 

@@ -1,0 +1,214 @@
+{
+  "scope": "Read-only inspection of the delivered build-review runtime and official npm tarball license/code entries. No source or runtime files changed; no package code executed.",
+  "deliveredRuntime": {
+    "relativePath": "dist/ETE-0.2.4-build-review-1a05f88-a-win-x64",
+    "exists": true,
+    "topLevelItems": [
+      "cec",
+      "cec-driver",
+      "config",
+      "docs",
+      "electronapp",
+      "external",
+      "x64",
+      "注意事项.txt",
+      "build-input-provenance.json",
+      "build-manifest.json",
+      "Emby.ConfigureAndUninstall.bat",
+      "Emby.Dialog.bat",
+      "Emby.Theater.exe",
+      "Emby.Theater.exe.config",
+      "Emby.Theater.pdb",
+      "LICENSE",
+      "MediaBrowser.Common.dll",
+      "MediaBrowser.Model.dll",
+      "native-helper-provenance.json",
+      "runtime-dependencies.json",
+      "runtime-provenance.json",
+      "ServiceStack.Text.dll",
+      "ServiceStack.Text.xml",
+      "SharpCompress.dll",
+      "SimpleInjector.dll",
+      "SimpleInjector.xml",
+      "SocketHttpListener.dll",
+      "source-provenance.json",
+      "System.Configuration.dll",
+      "System.Configuration.xml",
+      "THIRD_PARTY_NOTICES.md"
+    ],
+    "noticeFiles": [
+      {
+        "path": "LICENSE",
+        "size": 14873,
+        "sha256": "2bdb13b91b9440dcfdf51b2f72e04e566c92eb50d48350ada10b30a1d37c3c05",
+        "buildManifestSha256": "2bdb13b91b9440dcfdf51b2f72e04e566c92eb50d48350ada10b30a1d37c3c05",
+        "matchesBuildManifest": true
+      },
+      {
+        "path": "THIRD_PARTY_NOTICES.md",
+        "size": 4036,
+        "sha256": "8392a1235c50944fd60e8c9b15a9dd65044920f2dc268acc97f1c0a04bdc84f3",
+        "buildManifestSha256": "8392a1235c50944fd60e8c9b15a9dd65044920f2dc268acc97f1c0a04bdc84f3",
+        "matchesBuildManifest": true
+      },
+      {
+        "path": "docs/LICENSING.md",
+        "size": 3609,
+        "sha256": "becbb635e00522b2bd6d2fb8ce17fadbc6b4002dd2bfcb7ba2eb78b362611ec7",
+        "buildManifestSha256": "becbb635e00522b2bd6d2fb8ce17fadbc6b4002dd2bfcb7ba2eb78b362611ec7",
+        "matchesBuildManifest": true
+      },
+      {
+        "path": "docs/SOURCE_MATERIALS.md",
+        "size": 5015,
+        "sha256": "972ea4f3929f24666c02281f61e545d7ae75c454685765964206493c5a85aaa6",
+        "buildManifestSha256": "972ea4f3929f24666c02281f61e545d7ae75c454685765964206493c5a85aaa6",
+        "matchesBuildManifest": true
+      }
+    ],
+    "noticeFilesCount": 4,
+    "noticeFilesMatchBuildManifest": true,
+    "materialWorktreeBranch": "codex/build-review-20261009",
+    "materialWorktreeHead": "5af84432967dd0d93dd45ab02fd518afc2d2e3b6",
+    "sourceCommit": "1a05f88357a08f5d7c99a7e5de28de20aad0dc79",
+    "buildManifestSha256": "bfde25c98dc7bce2c5303aca93501c69e0d4b4d4a48b26f3c0f8c9be1c673e72",
+    "locationMeaning": "relativePath is relative to the identified build-review material worktree, not this materials checkout"
+  },
+  "npmTarballLicenseComparisons": [
+    {
+      "name": "detect-rpi",
+      "version": "1.4.0",
+      "payloadPath": "electronapp/node_modules/detect-rpi/LICENSE",
+      "archivePath": "package/LICENSE",
+      "license": "MIT",
+      "payloadSize": 1058,
+      "payloadSha256": "84f17b9d90932c99e3e8bd565580c6671b4d6f3fc91263b6afaafd6874f21f50",
+      "tarballLicenseSize": 1052,
+      "tarballLicenseSha256": "0a6f27a39b3cc3e049dfb0c9b42e5f162d1e3a485b8a50e27d7feb61c5a5fbaa",
+      "rawBytesEqual": false,
+      "equalAfterNewlineNormalization": true,
+      "runtimeDependencyManifestSha256": "84f17b9d90932c99e3e8bd565580c6671b4d6f3fc91263b6afaafd6874f21f50",
+      "matchesRuntimeDependencyManifest": true
+    },
+    {
+      "name": "is-linux",
+      "version": "1.0.1",
+      "payloadPath": "electronapp/node_modules/is-linux/license",
+      "archivePath": "package/license",
+      "license": "MIT",
+      "payloadSize": 1132,
+      "payloadSha256": "5e3fba3a85435d4d1612eb6226e7d502c52fdb7580dffa2e46891fa7a00d847d",
+      "tarballLicenseSize": 1111,
+      "tarballLicenseSha256": "44d381d6dd50ec1a0bdce18a1fc0d64526f7070e062e3169be0db40f63f5fdf7",
+      "rawBytesEqual": false,
+      "equalAfterNewlineNormalization": true,
+      "runtimeDependencyManifestSha256": "5e3fba3a85435d4d1612eb6226e7d502c52fdb7580dffa2e46891fa7a00d847d",
+      "matchesRuntimeDependencyManifest": true
+    },
+    {
+      "name": "is-osx",
+      "version": "1.0.2",
+      "payloadPath": "electronapp/node_modules/is-osx/license",
+      "archivePath": "package/license",
+      "license": "MIT",
+      "payloadSize": 1132,
+      "payloadSha256": "5e3fba3a85435d4d1612eb6226e7d502c52fdb7580dffa2e46891fa7a00d847d",
+      "tarballLicenseSize": 1111,
+      "tarballLicenseSha256": "44d381d6dd50ec1a0bdce18a1fc0d64526f7070e062e3169be0db40f63f5fdf7",
+      "rawBytesEqual": false,
+      "equalAfterNewlineNormalization": true,
+      "runtimeDependencyManifestSha256": "5e3fba3a85435d4d1612eb6226e7d502c52fdb7580dffa2e46891fa7a00d847d",
+      "matchesRuntimeDependencyManifest": true
+    },
+    {
+      "name": "is-windows",
+      "version": "1.0.2",
+      "payloadPath": "electronapp/node_modules/is-windows/LICENSE",
+      "archivePath": "package/LICENSE",
+      "license": "MIT",
+      "payloadSize": 1109,
+      "payloadSha256": "125be8338d6dc0e6da9d2cfbf0e2355e2090f0ddb9e09d43d7c16092b028bbca",
+      "tarballLicenseSize": 1088,
+      "tarballLicenseSha256": "6b8eac57398e657431675649c722902adbbd3058e3af382f6bc4fd1c05325df6",
+      "rawBytesEqual": false,
+      "equalAfterNewlineNormalization": true,
+      "runtimeDependencyManifestSha256": "125be8338d6dc0e6da9d2cfbf0e2355e2090f0ddb9e09d43d7c16092b028bbca",
+      "matchesRuntimeDependencyManifest": true
+    },
+    {
+      "name": "power-off",
+      "version": "1.1.2",
+      "payloadPath": "electronapp/node_modules/power-off/license",
+      "archivePath": "package/license",
+      "license": "MIT",
+      "payloadSize": 1130,
+      "payloadSha256": "27e2b1effad56afb98dcd16f4a539cd229da291c86fb40bd6352751f34069cd2",
+      "tarballLicenseSize": 1109,
+      "tarballLicenseSha256": "a630036221455fa3ec4224a919c00da89fc5442118d36549ed1cc06d1a31b0d1",
+      "rawBytesEqual": false,
+      "equalAfterNewlineNormalization": true,
+      "runtimeDependencyManifestSha256": "27e2b1effad56afb98dcd16f4a539cd229da291c86fb40bd6352751f34069cd2",
+      "matchesRuntimeDependencyManifest": true
+    },
+    {
+      "name": "sleep-mode",
+      "version": "1.1.0",
+      "payloadPath": "electronapp/node_modules/sleep-mode/license",
+      "archivePath": "package/license",
+      "license": "MIT",
+      "payloadSize": 1130,
+      "payloadSha256": "27e2b1effad56afb98dcd16f4a539cd229da291c86fb40bd6352751f34069cd2",
+      "tarballLicenseSize": 1109,
+      "tarballLicenseSha256": "a630036221455fa3ec4224a919c00da89fc5442118d36549ed1cc06d1a31b0d1",
+      "rawBytesEqual": false,
+      "equalAfterNewlineNormalization": true,
+      "runtimeDependencyManifestSha256": "27e2b1effad56afb98dcd16f4a539cd229da291c86fb40bd6352751f34069cd2",
+      "matchesRuntimeDependencyManifest": true
+    },
+    {
+      "name": "is-windows",
+      "version": "0.1.1",
+      "payloadPath": "electronapp/node_modules/sleep-mode/node_modules/is-windows/LICENSE",
+      "archivePath": "package/LICENSE",
+      "license": "MIT",
+      "payloadSize": 1104,
+      "payloadSha256": "022cda75198d62af2554a7fd1813c7b2a77fd25352ed491db0e56dfaf0ff2c59",
+      "tarballLicenseSize": 1083,
+      "tarballLicenseSha256": "0798f37cff4a3f438c071316e41f94ffe110116a313ab0fc4f8caa07218f1f0f",
+      "rawBytesEqual": false,
+      "equalAfterNewlineNormalization": true,
+      "runtimeDependencyManifestSha256": "022cda75198d62af2554a7fd1813c7b2a77fd25352ed491db0e56dfaf0ff2c59",
+      "matchesRuntimeDependencyManifest": true
+    }
+  ],
+  "archivePreflight": {
+    "archivesInspected": 7,
+    "status": "PASS: all member paths canonical under package/, only regular files/directories; no links/special entries; license payloads read without extraction"
+  },
+  "powerOffCodeComparison": {
+    "path": "electronapp/node_modules/power-off/index.js",
+    "payloadSize": 460,
+    "payloadSha256": "3932fb5f8739c5b796e096f19fb83fe3698a8ecf02d2aa6b4669ffeba016005c",
+    "registryTarballUrl": "https://registry.npmjs.org/power-off/-/power-off-1.1.2.tgz",
+    "registryIndexSize": 438,
+    "registryIndexSha256": "c08379994d2bf71e7d8f1357b246e52526ab99e1184f420029d849f276cdf39e",
+    "callbackArgument": {
+      "payload": "stdout",
+      "registryTarball": "stout"
+    },
+    "argumentLocallyDeclared": {
+      "payload": true,
+      "registryTarball": false
+    },
+    "behaviorDifference": "The module starts in strict mode ('use strict'). Carnival passes stdout as the callback's second argument. The registry tarball references the undeclared stout identifier there, so argument evaluation raises ReferenceError before calling cb. Neither file was executed.",
+    "registryTarballSha512SRI": "sha512-ljNPYM5wzswhUaHjrgX4oYX3usDAN7IKumELAwqFB0XQbl9SVvqcIsDnbd8vX1dZeh6ShVYAXlazmjsSHih2MQ==",
+    "declarationEvidence": "payload stdout is a parameter of the cp.exec callback; registry stout has no local declaration"
+  },
+  "interpretation": [
+    "The four delivered notice/license files physically exist in the runtime and their SHA-256 values match build-manifest.json. This is evidence that the notice files are in this payload, not a conclusion that all corresponding-source or licensing obligations are satisfied.",
+    "All seven retained package license texts are present in the runtime and compare equal to their registry tarball license text after newline normalization.",
+    "The delivered power-off implementation includes the stdout identifier correction relative to the current registry tarball; behavior was inspected statically only."
+  ],
+  "schemaVersion": 1,
+  "observedDate": "2026-10-09"
+}

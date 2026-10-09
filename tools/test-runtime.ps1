@@ -76,7 +76,9 @@ $process = [Diagnostics.Process]::Start($info)
 $waitMs = if ($info.EnvironmentVariables['ETE_TEST_CD2_EXPECT'] -eq 'real') { 55000 } else { 35000 }
 if (-not $process.WaitForExit($waitMs)) { $process.Kill(); throw 'Runtime smoke did not exit within its bounded timeout.' }
 $result = Get-Content -LiteralPath (Join-Path $evidence 'electron-smoke.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-if ($result.state -and $result.state.pipeline) {
+if ($result.state -and $result.state.pipeline -and $result.state.pipeline.kind -eq 'windowed-transition-timeline') {
+    [ordered]@{ok=$result.ok;evidenceClass='logical-only';logicalChecks=$result.state.pipeline.logicalChecks;pixelClassification=$result.pixel.classification;pixelCaptures=$result.pixel.captures} | ConvertTo-Json -Depth 6 | Write-Output
+} elseif ($result.state -and $result.state.pipeline) {
     [ordered]@{ok=$result.ok;stopBeforePlayer=$result.state.pipeline.stopBeforePlayer;results=$result.state.pipeline.results;next=$result.state.pipeline.next;directHeaderIsolation=$result.directHeaderIsolation;reportCount=$result.state.pipeline.records.Count} | ConvertTo-Json -Depth 6 | Write-Output
 } else { Write-Output ($result | ConvertTo-Json -Depth 8) }
 Write-Output ('Evidence: ' + $evidence.Substring($root.Length + 1))

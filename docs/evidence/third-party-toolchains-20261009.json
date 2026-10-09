@@ -1,0 +1,2645 @@
+{
+  "schemaVersion": 1,
+  "observedDate": "2026-10-09",
+  "scope": "Source and notice collection only; downloaded code not executed; no source rebuild",
+  "inno": {
+    "releaseId": 329538987,
+    "assets": [
+      {
+        "name": "innosetup-6.7.3.exe",
+        "size": 10592232,
+        "digest": "sha256:9c73c3bae7ed48d44112a0f48e66742c00090bdb5bef71d9d3c056c66e97b732",
+        "browser_download_url": "https://github.com/jrsoftware/issrc/releases/download/is-6_7_3/innosetup-6.7.3.exe"
+      },
+      {
+        "name": "innosetup-6.7.3.exe.issig",
+        "size": 376,
+        "digest": "sha256:18da06b0f8ca6021a42e023ebd02fe10d37a30a43639c08cc8b15363243663a0",
+        "browser_download_url": "https://github.com/jrsoftware/issrc/releases/download/is-6_7_3/innosetup-6.7.3.exe.issig"
+      },
+      {
+        "name": "ISSigTool.exe",
+        "size": 919184,
+        "digest": "sha256:aea490d45665a88c0c832d25647d21c1b87962efedb25668caec05678e0fd7c6",
+        "browser_download_url": "https://github.com/jrsoftware/issrc/releases/download/is-6_7_3/ISSigTool.exe"
+      },
+      {
+        "name": "ISSigTool.exe.issig",
+        "size": 368,
+        "digest": "sha256:894b3e4c085ff64978071b3f61738bb16b33741930264d6fe8b9f2abfab975e2",
+        "browser_download_url": "https://github.com/jrsoftware/issrc/releases/download/is-6_7_3/ISSigTool.exe.issig"
+      },
+      {
+        "name": "whatsnew.htm",
+        "size": 102622,
+        "digest": "sha256:4e98f32f91bfaae8c2934152734fe58f4feb5dd6cc1c2b419dc51ead1a3bbbf5",
+        "browser_download_url": "https://github.com/jrsoftware/issrc/releases/download/is-6_7_3/whatsnew.htm"
+      }
+    ],
+    "immutable": true,
+    "source": {
+      "archive": {
+        "sha256": "76a45c106a59b9133ac0891341d88742b0f1446e223688c0ae4f69db95673d44",
+        "size": 5793045,
+        "file": "issrc-4adf37ed7f3fd2bd11c6836ba056e3de170fbabf.zip"
+      },
+      "inventory": {
+        "extraction": "NOT_PERFORMED",
+        "preflight": "PASS",
+        "selectedFiles": [
+          {
+            "sha256": "3662aa268d19736e22a8e60363845de02322571174c1491dfd0a53ec37d9a006",
+            "size": 1715,
+            "path": "ISHelp/compile.bat"
+          },
+          {
+            "sha256": "7e1dc10bcece5a90c0f1c2dcd204c3ea3c61238b81f6d7e69ff0882f18310822",
+            "size": 438836,
+            "path": "ISHelp/isetup.xml"
+          },
+          {
+            "sha256": "1082c32b3cfbb05f594a5899cbf4a0bc028ddad74141ba47058f696d01a81481",
+            "size": 1365,
+            "path": "Projects/Src/Compression.LZMA1SmallDecompressor/LzmaDecode/compile.bat"
+          },
+          {
+            "sha256": "209a9d1c71610d3325e90d50d0eb67ecf75944c556369a2d323051eca19aaea5",
+            "size": 1319,
+            "path": "Projects/Src/Compression.LZMADecompressor/Lzma2Decode/compile.bat"
+          },
+          {
+            "sha256": "2a348c23041a5863c7b01b6b926d4b0cb4a5090eb944bcda560f304427bd2ce9",
+            "size": 1311,
+            "path": "Projects/Src/Compression.SevenZipDecoder/7zDecode/compile.bat"
+          },
+          {
+            "sha256": "7aee395cf1b159a9f64d74a7664eb823371e980e11361d66bc038ecf6c604078",
+            "size": 16949,
+            "path": "README.md"
+          },
+          {
+            "sha256": "b928b45935b64af80c24a91f042a76a2b3db1b4f7b98aaff4d2aa72adbbb1865",
+            "size": 2234,
+            "path": "compile.bat"
+          },
+          {
+            "sha256": "2e5346868c2a18434489824e11d65c3031620f792fefc415d05f19cd441abf5c",
+            "size": 1521,
+            "path": "license.txt"
+          }
+        ],
+        "entries": 677
+      },
+      "url": "https://codeload.github.com/jrsoftware/issrc/zip/4adf37ed7f3fd2bd11c6836ba056e3de170fbabf"
+    },
+    "publishedAt": "2026-05-26T16:27:57Z",
+    "commit": "4adf37ed7f3fd2bd11c6836ba056e3de170fbabf",
+    "fixedInstallerDigestMatchesManifest": true,
+    "tagObject": "c7af86b4b2fd03371185df2b09a1dca8d472ab70",
+    "releaseUrl": "https://api.github.com/repos/jrsoftware/issrc/releases/tags/is-6_7_3",
+    "reconstruction": "REFERENCE_SOURCE_NOT_REBUILT",
+    "githubTagVerification": {
+      "reason": "valid",
+      "verified": true
+    },
+    "tagUrl": "https://api.github.com/repos/jrsoftware/issrc/git/tags/c7af86b4b2fd03371185df2b09a1dca8d472ab70"
+  },
+  "innounp": {
+    "limitation": "Source includes prebuilt object files; source tree alone does not close all build inputs. Root GUI LICENSE does not describe every innounp component.",
+    "reconstruction": "COLOCATED_SOURCE_NOT_REBUILT",
+    "commitSelectionUrl": "https://api.github.com/repos/jrathlev/InnoUnpacker-Windows-GUI/commits?path=innounp-2/bin/innounp-267.zip&per_page=1",
+    "commit": "07ee3b1a05a26fa27a0efe110fe78dfa72c06c71",
+    "binaryArchive": {
+      "matchesManifest": true,
+      "url": "https://raw.githubusercontent.com/jrathlev/InnoUnpacker-Windows-GUI/07ee3b1a05a26fa27a0efe110fe78dfa72c06c71/innounp-2/bin/innounp-267.zip",
+      "identity": {
+        "sha256": "ac1d98bba6588072ade06163781938df274f444bec7318069668608d1e5faae8",
+        "size": 572593,
+        "file": "innounp-267.zip"
+      }
+    },
+    "source": {
+      "archive": {
+        "sha256": "f82fe1e7754bceb7adc05a11fd078371616b21daffd0550d2cd69d71762f3c04",
+        "size": 4285489,
+        "file": "innounp-source-07ee3b1a05a26fa27a0efe110fe78dfa72c06c71.zip"
+      },
+      "inventory": {
+        "extraction": "NOT_PERFORMED",
+        "preflight": "PASS",
+        "selectedFiles": [
+          {
+            "sha256": "413793d0cc215456b0a045046ec6322892ecf3c63aca30e6cf843015f078316e",
+            "size": 1072,
+            "path": "LICENSE"
+          },
+          {
+            "sha256": "dba0319ccbacbac2da2badf87bf2fd82a598d3fb93856246b9148f17b508d785",
+            "size": 1554,
+            "path": "innounp-2/readme.md"
+          },
+          {
+            "sha256": "2f4b1e53a5ecf50cd21212cde958193237b7a26df793538f19e13b45611edf66",
+            "size": 56,
+            "path": "innounp-2/sources/VersionInfo.inc"
+          },
+          {
+            "sha256": "5b543993f9b043574ed7a63cb4b055d895f218c45ea102eff3f97dfe86a4951d",
+            "size": 685,
+            "path": "innounp-2/sources/bin.bat"
+          },
+          {
+            "sha256": "dba011d51798ec392741c602f5a1ccf6705e4a08946c2855aa4fd417cf5814e3",
+            "size": 1503,
+            "path": "innounp-2/sources/licenses/InnoSetup.txt"
+          },
+          {
+            "sha256": "ac232a05beb4dc5545b4c0bda919673bb74581ca8578b511e12921e51eecf5fa",
+            "size": 1764,
+            "path": "innounp-2/sources/licenses/bzip2.txt"
+          },
+          {
+            "sha256": "204d8eff92f95aac4df6c8122bc1505f468f3a901e5a4cc08940e0ede1938994",
+            "size": 18009,
+            "path": "innounp-2/sources/licenses/gpl.txt"
+          },
+          {
+            "sha256": "ea20d713b1fad2f86f1051a90611858f9dc2642f873e18e467578afe943fc05d",
+            "size": 26444,
+            "path": "innounp-2/sources/licenses/lgpl.txt"
+          },
+          {
+            "sha256": "da256bb9bf3a5ca1fbcf62ee6ddf552ba13559313d12cef375e8ccc5d0d7526c",
+            "size": 21130,
+            "path": "innounp-2/sources/licenses/lzma.txt"
+          },
+          {
+            "sha256": "1d6b70ec33bf0de16c771ad41e326a1d3ee4ffa1087e8e32a6266ae50c648067",
+            "size": 1541,
+            "path": "innounp-2/sources/licenses/zlib.txt"
+          }
+        ],
+        "entries": 528
+      },
+      "url": "https://codeload.github.com/jrathlev/InnoUnpacker-Windows-GUI/zip/07ee3b1a05a26fa27a0efe110fe78dfa72c06c71"
+    }
+  },
+  "msys2": {
+    "schemaVersion": 1,
+    "observedDate": "2026-10-09",
+    "scope": "Read-only package archive/signature to pinned local UCRT64 comparison; no package install or tool rebuild",
+    "keyring": {
+      "file": "msys2.gpg",
+      "size": 54878,
+      "sha256": "79cc43bd8b8a4e8c952340adc0ae93d3ff8e50c40f244321cf58fa014282f4ea",
+      "binarySha256": "76242a1ab8a73958852df76d91e57f2a478b1dd9b108ed580b924ed4c5531816"
+    },
+    "packages": [
+      {
+        "archive": {
+          "file": "mingw-w64-ucrt-x86_64-binutils-2.46-4-any.pkg.tar.zst",
+          "size": 6559081,
+          "sha256": "32ed684d21ba1665ebb4093c71931b90ad445b8a948d32d22122b5855d49019e"
+        },
+        "signature": {
+          "file": "mingw-w64-ucrt-x86_64-binutils-2.46-4-any.pkg.tar.zst.sig",
+          "size": 566,
+          "sha256": "20e746f1129e14fca549f1215da35c6d52975c8d1a08b08418cc6aee09c163cf"
+        },
+        "signatureValidation": {
+          "exitCode": 0,
+          "validSignatures": [
+            "[GNUPG:] VALIDSIG 5F944B027F7FE2091985AA2EFA11531AA0AA7F57 2026-06-11 1781157658 0 4 0 1 10 00 5F944B027F7FE2091985AA2EFA11531AA0AA7F57"
+          ],
+          "trust": "Locally installed MSYS2 distribution keyring; independent root trust and revocation review not performed",
+          "initialAttempt": "UNAVAILABLE: armored keyring was initially passed to gpgv; corrected by local dearmor before final validation"
+        },
+        "preflight": "PASS; in-memory hardlink resolution only; no extraction",
+        "hardlinks": 13,
+        "metadata": {
+          ".PKGINFO": {
+            "sha256": "2f29a9bded4baac8c134ff3e5dff785fc7269d4c7ff5a60c54ac2073fd6fa9e7",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-binutils"
+              ],
+              "pkgbase": [
+                "mingw-w64-binutils"
+              ],
+              "pkgver": [
+                "2.46-4"
+              ],
+              "url": [
+                "https://www.gnu.org/software/binutils/"
+              ],
+              "builddate": [
+                "1781154717"
+              ],
+              "license": [
+                "spdx:GPL-3.0-or-later AND GPL-2.0-or-later AND LGPL-3.0-or-later AND LGPL-2.0-or-later"
+              ]
+            }
+          },
+          ".BUILDINFO": {
+            "sha256": "703c9f79c3f42adfaa9243039b1863975ac8a6bf205b93cdee96e7ad3ffe6b3c",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-binutils"
+              ],
+              "pkgbase": [
+                "mingw-w64-binutils"
+              ],
+              "pkgver": [
+                "2.46-4"
+              ],
+              "pkgarch": [
+                "any"
+              ],
+              "pkgbuild_sha256sum": [
+                "fea24b484400681bc6e1dd00fd42e8ecf25cafdd79c8d51f8a6b37f64c25e300"
+              ],
+              "builddate": [
+                "1781154717"
+              ],
+              "buildtool": [
+                "makepkg"
+              ],
+              "buildtoolver": [
+                "6.1.0"
+              ]
+            }
+          }
+        },
+        "prefixFiles": 192,
+        "matchingPrefixFiles": 192,
+        "mismatches": [],
+        "notices": [
+          {
+            "path": "share/licenses/binutils/COPYING",
+            "sha256": "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c",
+            "size": 18002,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-binutils-2.46-4-any.pkg.tar.zst"
+          },
+          {
+            "path": "share/licenses/binutils/COPYING.LIB",
+            "sha256": "56bdea73b6145ef6ac5259b3da390b981d840c24cb03b8e1cbc678de7ecfa18d",
+            "size": 25291,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-binutils-2.46-4-any.pkg.tar.zst"
+          },
+          {
+            "path": "share/licenses/binutils/COPYING3",
+            "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+            "size": 35147,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-binutils-2.46-4-any.pkg.tar.zst"
+          },
+          {
+            "path": "share/licenses/binutils/COPYING3.LIB",
+            "sha256": "a853c2ffec17057872340eee242ae4d96cbf2b520ae27d903e1b2fef1a5f9d1c",
+            "size": 7639,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-binutils-2.46-4-any.pkg.tar.zst"
+          }
+        ]
+      },
+      {
+        "archive": {
+          "file": "mingw-w64-ucrt-x86_64-crt-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst",
+          "size": 4879145,
+          "sha256": "dc1d67ba5e76acd46d7c9cc8046bd9838c8464bcadcd9a341187e8ee6f92fa4a"
+        },
+        "signature": {
+          "file": "mingw-w64-ucrt-x86_64-crt-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst.sig",
+          "size": 566,
+          "sha256": "da3eae53b59bc10b860bdebcf861a166c1111e858bf17d399052cee87698ee46"
+        },
+        "signatureValidation": {
+          "exitCode": 0,
+          "validSignatures": [
+            "[GNUPG:] VALIDSIG 5F944B027F7FE2091985AA2EFA11531AA0AA7F57 2026-06-10 1781115145 0 4 0 1 10 00 5F944B027F7FE2091985AA2EFA11531AA0AA7F57"
+          ],
+          "trust": "Locally installed MSYS2 distribution keyring; independent root trust and revocation review not performed",
+          "initialAttempt": "UNAVAILABLE: armored keyring was initially passed to gpgv; corrected by local dearmor before final validation"
+        },
+        "preflight": "PASS; in-memory hardlink resolution only; no extraction",
+        "hardlinks": 0,
+        "metadata": {
+          ".PKGINFO": {
+            "sha256": "8e660a7912350c45cf20fd355b9c3201812c881dff1e00eb577dc09b673343b3",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-crt"
+              ],
+              "pkgbase": [
+                "mingw-w64-crt"
+              ],
+              "pkgver": [
+                "14.0.0.r92.g818fa6510-1"
+              ],
+              "url": [
+                "https://www.mingw-w64.org/"
+              ],
+              "builddate": [
+                "1781095864"
+              ],
+              "license": [
+                "spdx:ZPL-2.1"
+              ]
+            }
+          },
+          ".BUILDINFO": {
+            "sha256": "3e13ec6ea41f195cd475f0ea5e2af53e766e9a29ebe168be93ecc399bf17f109",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-crt"
+              ],
+              "pkgbase": [
+                "mingw-w64-crt"
+              ],
+              "pkgver": [
+                "14.0.0.r92.g818fa6510-1"
+              ],
+              "pkgarch": [
+                "any"
+              ],
+              "pkgbuild_sha256sum": [
+                "1184cd3db7d34ea97d3d018fbedbf6538a84f34919134129be059c6b38237fbd"
+              ],
+              "builddate": [
+                "1781095864"
+              ],
+              "buildtool": [
+                "makepkg"
+              ],
+              "buildtoolver": [
+                "6.1.0"
+              ]
+            }
+          }
+        },
+        "prefixFiles": 955,
+        "matchingPrefixFiles": 955,
+        "mismatches": [],
+        "notices": [
+          {
+            "path": "share/licenses/crt/COPYING",
+            "sha256": "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f",
+            "size": 2326,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-crt-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst"
+          },
+          {
+            "path": "share/licenses/crt/COPYING.MinGW-w64-runtime.txt",
+            "sha256": "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f",
+            "size": 12155,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-crt-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst"
+          },
+          {
+            "path": "share/licenses/crt/COPYING.MinGW-w64.txt",
+            "sha256": "f38e6194bd3bfa1b654f118e5acefe0aead437bbe669eee43957ccc65a7127f1",
+            "size": 5905,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-crt-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst"
+          }
+        ]
+      },
+      {
+        "archive": {
+          "file": "mingw-w64-ucrt-x86_64-gcc-16.1.0-5-any.pkg.tar.zst",
+          "size": 47838082,
+          "sha256": "2b5be791133f5fafac2537ad9d1579c9a421b791d7bf57fba6fb54484ec59622"
+        },
+        "signature": {
+          "file": "mingw-w64-ucrt-x86_64-gcc-16.1.0-5-any.pkg.tar.zst.sig",
+          "size": 566,
+          "sha256": "a5bb4c7ed1de89c94efa8f2632d02c50679af9b05e3ca3805ea320e971fb06a2"
+        },
+        "signatureValidation": {
+          "exitCode": 0,
+          "validSignatures": [
+            "[GNUPG:] VALIDSIG 5F944B027F7FE2091985AA2EFA11531AA0AA7F57 2026-05-18 1779081744 0 4 0 1 10 00 5F944B027F7FE2091985AA2EFA11531AA0AA7F57"
+          ],
+          "trust": "Locally installed MSYS2 distribution keyring; independent root trust and revocation review not performed",
+          "initialAttempt": "UNAVAILABLE: armored keyring was initially passed to gpgv; corrected by local dearmor before final validation"
+        },
+        "preflight": "PASS; in-memory hardlink resolution only; no extraction",
+        "hardlinks": 8,
+        "metadata": {
+          ".PKGINFO": {
+            "sha256": "886694e82b2e85c116f214b81131b991fd1d75fec0c0937a35065dcac1a6bfec",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-gcc"
+              ],
+              "pkgbase": [
+                "mingw-w64-gcc"
+              ],
+              "pkgver": [
+                "16.1.0-5"
+              ],
+              "url": [
+                "https://gcc.gnu.org"
+              ],
+              "builddate": [
+                "1779053587"
+              ],
+              "license": [
+                "spdx:GPL-3.0-or-later"
+              ]
+            }
+          },
+          ".BUILDINFO": {
+            "sha256": "cc63ea8484722f1eed9708ee94c4648eedeb6f8df40f059be49af1e720863f32",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-gcc"
+              ],
+              "pkgbase": [
+                "mingw-w64-gcc"
+              ],
+              "pkgver": [
+                "16.1.0-5"
+              ],
+              "pkgarch": [
+                "any"
+              ],
+              "pkgbuild_sha256sum": [
+                "40f248fa589babd9315cc589a76a0c00939355bd68c92287a2dcb7d1acb58f96"
+              ],
+              "builddate": [
+                "1779053587"
+              ],
+              "buildtool": [
+                "makepkg"
+              ],
+              "buildtoolver": [
+                "6.1.0"
+              ]
+            }
+          }
+        },
+        "prefixFiles": 1709,
+        "matchingPrefixFiles": 1709,
+        "mismatches": [],
+        "notices": []
+      },
+      {
+        "archive": {
+          "file": "mingw-w64-ucrt-x86_64-gcc-libs-16.1.0-5-any.pkg.tar.zst",
+          "size": 1152259,
+          "sha256": "4dab54c95756da3e18ca375ae4c7fdeb709fc04bf209eb131c120e27704fb5b3"
+        },
+        "signature": {
+          "file": "mingw-w64-ucrt-x86_64-gcc-libs-16.1.0-5-any.pkg.tar.zst.sig",
+          "size": 566,
+          "sha256": "8c0d41e007f5bbdc4a7cdf892a8e3294f874c5c1cc4fdcd332f9006571cde27c"
+        },
+        "signatureValidation": {
+          "exitCode": 0,
+          "validSignatures": [
+            "[GNUPG:] VALIDSIG 5F944B027F7FE2091985AA2EFA11531AA0AA7F57 2026-05-18 1779081748 0 4 0 1 10 00 5F944B027F7FE2091985AA2EFA11531AA0AA7F57"
+          ],
+          "trust": "Locally installed MSYS2 distribution keyring; independent root trust and revocation review not performed",
+          "initialAttempt": "UNAVAILABLE: armored keyring was initially passed to gpgv; corrected by local dearmor before final validation"
+        },
+        "preflight": "PASS; in-memory hardlink resolution only; no extraction",
+        "hardlinks": 0,
+        "metadata": {
+          ".PKGINFO": {
+            "sha256": "c770b26becdabc9928442d1ebb3f9017c0b3df566c1f84e20204f40a68f5e773",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-gcc-libs"
+              ],
+              "pkgbase": [
+                "mingw-w64-gcc"
+              ],
+              "pkgver": [
+                "16.1.0-5"
+              ],
+              "url": [
+                "https://gcc.gnu.org"
+              ],
+              "builddate": [
+                "1779053587"
+              ],
+              "license": [
+                "spdx:GPL-3.0-or-later WITH GCC-exception-3.1 AND LGPL-2.1-or-later"
+              ]
+            }
+          },
+          ".BUILDINFO": {
+            "sha256": "ef1dc1a59c8c02c4858f6e482a87be8acc4e3df572ae190a8c32039ec5626ca6",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-gcc-libs"
+              ],
+              "pkgbase": [
+                "mingw-w64-gcc"
+              ],
+              "pkgver": [
+                "16.1.0-5"
+              ],
+              "pkgarch": [
+                "any"
+              ],
+              "pkgbuild_sha256sum": [
+                "40f248fa589babd9315cc589a76a0c00939355bd68c92287a2dcb7d1acb58f96"
+              ],
+              "builddate": [
+                "1779053587"
+              ],
+              "buildtool": [
+                "makepkg"
+              ],
+              "buildtoolver": [
+                "6.1.0"
+              ]
+            }
+          }
+        },
+        "prefixFiles": 9,
+        "matchingPrefixFiles": 9,
+        "mismatches": [],
+        "notices": [
+          {
+            "path": "share/licenses/gcc-libs/COPYING.LIB",
+            "sha256": "a9bdde5616ecdd1e980b44f360600ee8783b1f99b8cc83a2beb163a0a390e861",
+            "size": 26527,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-gcc-libs-16.1.0-5-any.pkg.tar.zst"
+          },
+          {
+            "path": "share/licenses/gcc-libs/COPYING.RUNTIME",
+            "sha256": "9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74",
+            "size": 3324,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-gcc-libs-16.1.0-5-any.pkg.tar.zst"
+          },
+          {
+            "path": "share/licenses/gcc-libs/COPYING3",
+            "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+            "size": 35147,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-gcc-libs-16.1.0-5-any.pkg.tar.zst"
+          },
+          {
+            "path": "share/licenses/gcc-libs/README",
+            "sha256": "33400d067fa3e2bd670a0868dcdb60c9486e8f559b675cf9ff1ff55d4e0d06ab",
+            "size": 236,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-gcc-libs-16.1.0-5-any.pkg.tar.zst"
+          }
+        ]
+      },
+      {
+        "archive": {
+          "file": "mingw-w64-ucrt-x86_64-gettext-runtime-1.0-1-any.pkg.tar.zst",
+          "size": 417977,
+          "sha256": "ba693dda4ac375af76ce481ff3a6e7481286546cc7dc6d56c7021dae34084157"
+        },
+        "signature": {
+          "file": "mingw-w64-ucrt-x86_64-gettext-runtime-1.0-1-any.pkg.tar.zst.sig",
+          "size": 566,
+          "sha256": "4754e870d55cacb5e7e3707313b68edb29d2598cc7a1ee399c74715007f38c4d"
+        },
+        "signatureValidation": {
+          "exitCode": 0,
+          "validSignatures": [
+            "[GNUPG:] VALIDSIG 5F944B027F7FE2091985AA2EFA11531AA0AA7F57 2026-02-01 1769940115 0 4 0 1 10 00 5F944B027F7FE2091985AA2EFA11531AA0AA7F57"
+          ],
+          "trust": "Locally installed MSYS2 distribution keyring; independent root trust and revocation review not performed",
+          "initialAttempt": "UNAVAILABLE: armored keyring was initially passed to gpgv; corrected by local dearmor before final validation"
+        },
+        "preflight": "PASS; in-memory hardlink resolution only; no extraction",
+        "hardlinks": 0,
+        "metadata": {
+          ".PKGINFO": {
+            "sha256": "9f764c25d7ef78382dee1c4fe490c684a6afce481da84a44085b11bf90c0f8b4",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-gettext-runtime"
+              ],
+              "pkgbase": [
+                "mingw-w64-gettext"
+              ],
+              "pkgver": [
+                "1.0-1"
+              ],
+              "url": [
+                "https://www.gnu.org/software/gettext/"
+              ],
+              "builddate": [
+                "1769861841"
+              ],
+              "license": [
+                "spdx:GPL-3.0-or-later AND LGPL-2.1-or-later"
+              ]
+            }
+          },
+          ".BUILDINFO": {
+            "sha256": "78e8996e85498fc8fbb6068b4902b8070c42f5943f8b09ee74d579283aa55dcb",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-gettext-runtime"
+              ],
+              "pkgbase": [
+                "mingw-w64-gettext"
+              ],
+              "pkgver": [
+                "1.0-1"
+              ],
+              "pkgarch": [
+                "any"
+              ],
+              "pkgbuild_sha256sum": [
+                "853ef80a50588f29355722a4513f24cf1a5f8de06e0b5ee326580464db539741"
+              ],
+              "builddate": [
+                "1769861841"
+              ],
+              "buildtool": [
+                "makepkg"
+              ],
+              "buildtoolver": [
+                "6.1.0"
+              ]
+            }
+          }
+        },
+        "prefixFiles": 105,
+        "matchingPrefixFiles": 105,
+        "mismatches": [],
+        "notices": [
+          {
+            "path": "share/licenses/gettext-runtime/COPYING",
+            "sha256": "7ef2cdfe58e0c0460657b6598b49af29d4e03c1e41cbaf0e1da1eb8ad74b95d0",
+            "size": 495,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-gettext-runtime-1.0-1-any.pkg.tar.zst"
+          },
+          {
+            "path": "share/licenses/gettext-runtime/intl/COPYING.LIB",
+            "sha256": "20e50fe7aae3e56378ebf0417d9de904f55a0e61e4df315333e632a4d3555d95",
+            "size": 26419,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-gettext-runtime-1.0-1-any.pkg.tar.zst"
+          },
+          {
+            "path": "share/licenses/gettext-runtime/libasprintf/COPYING",
+            "sha256": "03133addae5b99a6148c538300e6d97074453089be1423b741bd081f18e2b298",
+            "size": 65,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-gettext-runtime-1.0-1-any.pkg.tar.zst"
+          },
+          {
+            "path": "share/licenses/gettext-runtime/libasprintf/COPYING.LIB",
+            "sha256": "20e50fe7aae3e56378ebf0417d9de904f55a0e61e4df315333e632a4d3555d95",
+            "size": 26419,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-gettext-runtime-1.0-1-any.pkg.tar.zst"
+          }
+        ]
+      },
+      {
+        "archive": {
+          "file": "mingw-w64-ucrt-x86_64-gmp-6.3.0-2-any.pkg.tar.zst",
+          "size": 592359,
+          "sha256": "e82a75968a556484a50084578238a84eb60fb93e34986fd6695c537975bd39ea"
+        },
+        "signature": {
+          "file": "mingw-w64-ucrt-x86_64-gmp-6.3.0-2-any.pkg.tar.zst.sig",
+          "size": 566,
+          "sha256": "99d2b95269ef099bdc8f3dd0e3db8a9171346e4076bfe0c0c58855d7b97220ff"
+        },
+        "signatureValidation": {
+          "exitCode": 0,
+          "validSignatures": [
+            "[GNUPG:] VALIDSIG 5F944B027F7FE2091985AA2EFA11531AA0AA7F57 2023-09-16 1694872099 0 4 0 1 10 00 5F944B027F7FE2091985AA2EFA11531AA0AA7F57"
+          ],
+          "trust": "Locally installed MSYS2 distribution keyring; independent root trust and revocation review not performed",
+          "initialAttempt": "UNAVAILABLE: armored keyring was initially passed to gpgv; corrected by local dearmor before final validation"
+        },
+        "preflight": "PASS; in-memory hardlink resolution only; no extraction",
+        "hardlinks": 0,
+        "metadata": {
+          ".PKGINFO": {
+            "sha256": "718a5adb829fb97ea376efe87f4321159c877f8872c842631f9e36043cd5092b",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-gmp"
+              ],
+              "pkgbase": [
+                "mingw-w64-gmp"
+              ],
+              "pkgver": [
+                "6.3.0-2"
+              ],
+              "url": [
+                "https://gmplib.org/"
+              ],
+              "builddate": [
+                "1694763698"
+              ],
+              "license": [
+                "LGPL3",
+                "GPL"
+              ]
+            }
+          },
+          ".BUILDINFO": {
+            "sha256": "ac4a5faeb55fa4fb1a6bcb10773b60ab6fe7683f7707f2f05ecc76b9c8d06398",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-gmp"
+              ],
+              "pkgbase": [
+                "mingw-w64-gmp"
+              ],
+              "pkgver": [
+                "6.3.0-2"
+              ],
+              "pkgarch": [
+                "any"
+              ],
+              "pkgbuild_sha256sum": [
+                "b9d3bb2b5b12cb0fc47c4dc17a9a2aa82513236eaefa34c8dfc57dd0d92bc42a"
+              ],
+              "builddate": [
+                "1694763698"
+              ],
+              "buildtool": [
+                "makepkg"
+              ],
+              "buildtoolver": [
+                "6.0.2"
+              ]
+            }
+          }
+        },
+        "prefixFiles": 13,
+        "matchingPrefixFiles": 13,
+        "mismatches": [],
+        "notices": []
+      },
+      {
+        "archive": {
+          "file": "mingw-w64-ucrt-x86_64-headers-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst",
+          "size": 6883217,
+          "sha256": "660a996d685d8238ecd72e02a2c7ff004f49dfee0d3a42ded0146464bdd67f03"
+        },
+        "signature": {
+          "file": "mingw-w64-ucrt-x86_64-headers-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst.sig",
+          "size": 566,
+          "sha256": "f0f0216c16f578313a080766c83099b4b1c212014825d653146603bcf62a96a2"
+        },
+        "signatureValidation": {
+          "exitCode": 0,
+          "validSignatures": [
+            "[GNUPG:] VALIDSIG 5F944B027F7FE2091985AA2EFA11531AA0AA7F57 2026-06-10 1781115147 0 4 0 1 10 00 5F944B027F7FE2091985AA2EFA11531AA0AA7F57"
+          ],
+          "trust": "Locally installed MSYS2 distribution keyring; independent root trust and revocation review not performed",
+          "initialAttempt": "UNAVAILABLE: armored keyring was initially passed to gpgv; corrected by local dearmor before final validation"
+        },
+        "preflight": "PASS; in-memory hardlink resolution only; no extraction",
+        "hardlinks": 0,
+        "metadata": {
+          ".PKGINFO": {
+            "sha256": "5bb3e13611a648cc959dbb26dabd2b09ef939c7cf2efe95cab01c31f6fbe86a2",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-headers"
+              ],
+              "pkgbase": [
+                "mingw-w64-headers"
+              ],
+              "pkgver": [
+                "14.0.0.r92.g818fa6510-1"
+              ],
+              "url": [
+                "https://www.mingw-w64.org/"
+              ],
+              "builddate": [
+                "1781095626"
+              ],
+              "license": [
+                "spdx:ZPL-2.1 AND LGPL-2.1-or-later"
+              ]
+            }
+          },
+          ".BUILDINFO": {
+            "sha256": "c43fecfa18951063f354c3bdadfcdd34295f68e5db90ef20dbe097b7afb7b636",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-headers"
+              ],
+              "pkgbase": [
+                "mingw-w64-headers"
+              ],
+              "pkgver": [
+                "14.0.0.r92.g818fa6510-1"
+              ],
+              "pkgarch": [
+                "any"
+              ],
+              "pkgbuild_sha256sum": [
+                "753c4d21b13eb6c9acf655a8f8e9d7a1442856473ee27c31539521a74b44d738"
+              ],
+              "builddate": [
+                "1781095626"
+              ],
+              "buildtool": [
+                "makepkg"
+              ],
+              "buildtoolver": [
+                "6.1.0"
+              ]
+            }
+          }
+        },
+        "prefixFiles": 2047,
+        "matchingPrefixFiles": 2047,
+        "mismatches": [],
+        "notices": [
+          {
+            "path": "share/licenses/headers/COPYING",
+            "sha256": "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f",
+            "size": 2326,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-headers-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst"
+          },
+          {
+            "path": "share/licenses/headers/COPYING.MinGW-w64-runtime.txt",
+            "sha256": "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f",
+            "size": 12155,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-headers-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst"
+          },
+          {
+            "path": "share/licenses/headers/COPYING.MinGW-w64.txt",
+            "sha256": "f38e6194bd3bfa1b654f118e5acefe0aead437bbe669eee43957ccc65a7127f1",
+            "size": 5905,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-headers-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst"
+          },
+          {
+            "path": "share/licenses/headers/ddk-readme.txt",
+            "sha256": "8d8f9924e4ea5466932000bdb9a4104da1d8ca3e4c979bb8207225522ba63826",
+            "size": 650,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-headers-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst"
+          }
+        ]
+      },
+      {
+        "archive": {
+          "file": "mingw-w64-ucrt-x86_64-isl-0.27-1-any.pkg.tar.zst",
+          "size": 1488361,
+          "sha256": "f23edcbe1206429e6fdb5f1dfc3053cf08c0d5bd1d8135a948a75146d65ce394"
+        },
+        "signature": {
+          "file": "mingw-w64-ucrt-x86_64-isl-0.27-1-any.pkg.tar.zst.sig",
+          "size": 566,
+          "sha256": "5a5dd3bd2a4201712f9237301892afa619880e614b01f2647b8e90fee0c7b57e"
+        },
+        "signatureValidation": {
+          "exitCode": 0,
+          "validSignatures": [
+            "[GNUPG:] VALIDSIG 5F944B027F7FE2091985AA2EFA11531AA0AA7F57 2024-09-05 1725558081 0 4 0 1 10 00 5F944B027F7FE2091985AA2EFA11531AA0AA7F57"
+          ],
+          "trust": "Locally installed MSYS2 distribution keyring; independent root trust and revocation review not performed",
+          "initialAttempt": "UNAVAILABLE: armored keyring was initially passed to gpgv; corrected by local dearmor before final validation"
+        },
+        "preflight": "PASS; in-memory hardlink resolution only; no extraction",
+        "hardlinks": 0,
+        "metadata": {
+          ".PKGINFO": {
+            "sha256": "5b0d427b8b54942776767e60ded24cf486dcf266e77847cde199aff02cfd4e26",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-isl"
+              ],
+              "pkgbase": [
+                "mingw-w64-isl"
+              ],
+              "pkgver": [
+                "0.27-1"
+              ],
+              "url": [
+                "https://libisl.sourceforge.io/"
+              ],
+              "builddate": [
+                "1725545205"
+              ],
+              "license": [
+                "MIT"
+              ]
+            }
+          },
+          ".BUILDINFO": {
+            "sha256": "75a8497386a7aed2bf08b12dd3079beadad82824b91c036667a509e969e9649b",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-isl"
+              ],
+              "pkgbase": [
+                "mingw-w64-isl"
+              ],
+              "pkgver": [
+                "0.27-1"
+              ],
+              "pkgarch": [
+                "any"
+              ],
+              "pkgbuild_sha256sum": [
+                "357e568e64456464d2dc0f61b7b34720cc4f8125e74f6b94667e53ab4bb1b595"
+              ],
+              "builddate": [
+                "1725545205"
+              ],
+              "buildtool": [
+                "makepkg"
+              ],
+              "buildtoolver": [
+                "6.1.0"
+              ]
+            }
+          }
+        },
+        "prefixFiles": 67,
+        "matchingPrefixFiles": 67,
+        "mismatches": [],
+        "notices": []
+      },
+      {
+        "archive": {
+          "file": "mingw-w64-ucrt-x86_64-libiconv-1.19-1-any.pkg.tar.zst",
+          "size": 744750,
+          "sha256": "9a500f38c2b91808741c62fae746b3e9110b33a1ecf5c30fa0c66dbedddf7e16"
+        },
+        "signature": {
+          "file": "mingw-w64-ucrt-x86_64-libiconv-1.19-1-any.pkg.tar.zst.sig",
+          "size": 566,
+          "sha256": "e18abd753c47dbed046cf619f0855c2bc05ae17a7f3eabba8a2e841478a4f6b2"
+        },
+        "signatureValidation": {
+          "exitCode": 0,
+          "validSignatures": [
+            "[GNUPG:] VALIDSIG 5F944B027F7FE2091985AA2EFA11531AA0AA7F57 2026-03-14 1773486547 0 4 0 1 10 00 5F944B027F7FE2091985AA2EFA11531AA0AA7F57"
+          ],
+          "trust": "Locally installed MSYS2 distribution keyring; independent root trust and revocation review not performed",
+          "initialAttempt": "UNAVAILABLE: armored keyring was initially passed to gpgv; corrected by local dearmor before final validation"
+        },
+        "preflight": "PASS; in-memory hardlink resolution only; no extraction",
+        "hardlinks": 0,
+        "metadata": {
+          ".PKGINFO": {
+            "sha256": "64cbb0cd423ab0761c1487666f8b9399b85581820cec21003007ce7583d19da1",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-libiconv"
+              ],
+              "pkgbase": [
+                "mingw-w64-libiconv"
+              ],
+              "pkgver": [
+                "1.19-1"
+              ],
+              "url": [
+                "https://www.gnu.org/software/libiconv/"
+              ],
+              "builddate": [
+                "1773477932"
+              ],
+              "license": [
+                "spdx:LGPL-2.1-or-later",
+                "documentation:spdx:GPL-3.0-or-later"
+              ]
+            }
+          },
+          ".BUILDINFO": {
+            "sha256": "cd8611ec386d9015e4eb9e79af509a613387097399736a676e6df49f650f5ff0",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-libiconv"
+              ],
+              "pkgbase": [
+                "mingw-w64-libiconv"
+              ],
+              "pkgver": [
+                "1.19-1"
+              ],
+              "pkgarch": [
+                "any"
+              ],
+              "pkgbuild_sha256sum": [
+                "9b3212d06910560fb59e017e0b73a29d392a5082d3a47a613e61509bd7dcd475"
+              ],
+              "builddate": [
+                "1773477932"
+              ],
+              "buildtool": [
+                "makepkg"
+              ],
+              "buildtoolver": [
+                "6.1.0"
+              ]
+            }
+          }
+        },
+        "prefixFiles": 24,
+        "matchingPrefixFiles": 24,
+        "mismatches": [],
+        "notices": [
+          {
+            "path": "share/licenses/libiconv/COPYING",
+            "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+            "size": 35147,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-libiconv-1.19-1-any.pkg.tar.zst"
+          },
+          {
+            "path": "share/licenses/libiconv/COPYING.LIB",
+            "sha256": "20e50fe7aae3e56378ebf0417d9de904f55a0e61e4df315333e632a4d3555d95",
+            "size": 26419,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-libiconv-1.19-1-any.pkg.tar.zst"
+          },
+          {
+            "path": "share/licenses/libiconv/README",
+            "sha256": "4ae66e61d1c6593c84c47105b368d579bcee1af566dbb959ec63a0c48425dcf4",
+            "size": 5741,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-libiconv-1.19-1-any.pkg.tar.zst"
+          },
+          {
+            "path": "share/licenses/libiconv/libcharset/COPYING.LIB",
+            "sha256": "20e50fe7aae3e56378ebf0417d9de904f55a0e61e4df315333e632a4d3555d95",
+            "size": 26419,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-libiconv-1.19-1-any.pkg.tar.zst"
+          }
+        ]
+      },
+      {
+        "archive": {
+          "file": "mingw-w64-ucrt-x86_64-libwinpthread-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst",
+          "size": 30415,
+          "sha256": "f5d440cf021014e25098a763ebfd9f4e0339187848efdb194e821cc1fe3ae682"
+        },
+        "signature": {
+          "file": "mingw-w64-ucrt-x86_64-libwinpthread-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst.sig",
+          "size": 566,
+          "sha256": "ab0b5246920577f5cf19131747929b7abba1fd9b7956ac3d6c83940770b26f5c"
+        },
+        "signatureValidation": {
+          "exitCode": 0,
+          "validSignatures": [
+            "[GNUPG:] VALIDSIG 5F944B027F7FE2091985AA2EFA11531AA0AA7F57 2026-06-10 1781115154 0 4 0 1 10 00 5F944B027F7FE2091985AA2EFA11531AA0AA7F57"
+          ],
+          "trust": "Locally installed MSYS2 distribution keyring; independent root trust and revocation review not performed",
+          "initialAttempt": "UNAVAILABLE: armored keyring was initially passed to gpgv; corrected by local dearmor before final validation"
+        },
+        "preflight": "PASS; in-memory hardlink resolution only; no extraction",
+        "hardlinks": 0,
+        "metadata": {
+          ".PKGINFO": {
+            "sha256": "a8fd4f8b4dc7535547f945703f2a177a5702f8b669c6ffbc0161cd959ee06c8b",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-libwinpthread"
+              ],
+              "pkgbase": [
+                "mingw-w64-winpthreads"
+              ],
+              "pkgver": [
+                "14.0.0.r92.g818fa6510-1"
+              ],
+              "url": [
+                "https://www.mingw-w64.org/"
+              ],
+              "builddate": [
+                "1781096338"
+              ],
+              "license": [
+                "spdx:MIT AND BSD-3-Clause-Clear"
+              ]
+            }
+          },
+          ".BUILDINFO": {
+            "sha256": "1c7386b7832c0540a596114046fac4d8cdad09a1538aa7fa6225738825f3aa4a",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-libwinpthread"
+              ],
+              "pkgbase": [
+                "mingw-w64-winpthreads"
+              ],
+              "pkgver": [
+                "14.0.0.r92.g818fa6510-1"
+              ],
+              "pkgarch": [
+                "any"
+              ],
+              "pkgbuild_sha256sum": [
+                "4e4ca85729312e5731f27ce73a06c1406a1308eefe29653a6589b59138a7438b"
+              ],
+              "builddate": [
+                "1781096338"
+              ],
+              "buildtool": [
+                "makepkg"
+              ],
+              "buildtoolver": [
+                "6.1.0"
+              ]
+            }
+          }
+        },
+        "prefixFiles": 2,
+        "matchingPrefixFiles": 2,
+        "mismatches": [],
+        "notices": [
+          {
+            "path": "share/licenses/libwinpthread/COPYING",
+            "sha256": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177",
+            "size": 2883,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-libwinpthread-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst"
+          }
+        ]
+      },
+      {
+        "archive": {
+          "file": "mingw-w64-ucrt-x86_64-mpc-1.4.1-1-any.pkg.tar.zst",
+          "size": 139585,
+          "sha256": "f06556e811c711ce91609484e31d358e4f495811ba29813bf2284a3b236d82ce"
+        },
+        "signature": {
+          "file": "mingw-w64-ucrt-x86_64-mpc-1.4.1-1-any.pkg.tar.zst.sig",
+          "size": 566,
+          "sha256": "c6816cce004dfe57f976a60bdac037a52c7dbf29a4ee0f8085acca13b26cb5a0"
+        },
+        "signatureValidation": {
+          "exitCode": 0,
+          "validSignatures": [
+            "[GNUPG:] VALIDSIG 5F944B027F7FE2091985AA2EFA11531AA0AA7F57 2026-04-18 1776536888 0 4 0 1 10 00 5F944B027F7FE2091985AA2EFA11531AA0AA7F57"
+          ],
+          "trust": "Locally installed MSYS2 distribution keyring; independent root trust and revocation review not performed",
+          "initialAttempt": "UNAVAILABLE: armored keyring was initially passed to gpgv; corrected by local dearmor before final validation"
+        },
+        "preflight": "PASS; in-memory hardlink resolution only; no extraction",
+        "hardlinks": 0,
+        "metadata": {
+          ".PKGINFO": {
+            "sha256": "1f725c9af0f369c1f4a2c2221290bd0bcab38e01f1ff9ad394c0a7d583024de7",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-mpc"
+              ],
+              "pkgbase": [
+                "mingw-w64-mpc"
+              ],
+              "pkgver": [
+                "1.4.1-1"
+              ],
+              "url": [
+                "https://www.multiprecision.org"
+              ],
+              "builddate": [
+                "1776473038"
+              ],
+              "license": [
+                "spdx:LGPL-3.0-or-later"
+              ]
+            }
+          },
+          ".BUILDINFO": {
+            "sha256": "5b61043c24da80874c4a6c1ad31be4fbb353aa86b5d5e8223d2fecc79e454b0d",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-mpc"
+              ],
+              "pkgbase": [
+                "mingw-w64-mpc"
+              ],
+              "pkgver": [
+                "1.4.1-1"
+              ],
+              "pkgarch": [
+                "any"
+              ],
+              "pkgbuild_sha256sum": [
+                "6779f6aea6f6c80219cc0d31fc840f88b074e28296bd315460793d60665c5ff7"
+              ],
+              "builddate": [
+                "1776473038"
+              ],
+              "buildtool": [
+                "makepkg"
+              ],
+              "buildtoolver": [
+                "6.1.0"
+              ]
+            }
+          }
+        },
+        "prefixFiles": 6,
+        "matchingPrefixFiles": 6,
+        "mismatches": [],
+        "notices": []
+      },
+      {
+        "archive": {
+          "file": "mingw-w64-ucrt-x86_64-mpfr-4.2.2-3-any.pkg.tar.zst",
+          "size": 553765,
+          "sha256": "6b70a275d2ec75c70aa50a236c218e6b7ee9a5ab4c6d52cb0b580267b7d200fe"
+        },
+        "signature": {
+          "file": "mingw-w64-ucrt-x86_64-mpfr-4.2.2-3-any.pkg.tar.zst.sig",
+          "size": 566,
+          "sha256": "6eb04885039d85bbf17a932840fc54aca8b871545711347c04309dcc840e11cd"
+        },
+        "signatureValidation": {
+          "exitCode": 0,
+          "validSignatures": [
+            "[GNUPG:] VALIDSIG 5F944B027F7FE2091985AA2EFA11531AA0AA7F57 2026-05-11 1778522460 0 4 0 1 10 00 5F944B027F7FE2091985AA2EFA11531AA0AA7F57"
+          ],
+          "trust": "Locally installed MSYS2 distribution keyring; independent root trust and revocation review not performed",
+          "initialAttempt": "UNAVAILABLE: armored keyring was initially passed to gpgv; corrected by local dearmor before final validation"
+        },
+        "preflight": "PASS; in-memory hardlink resolution only; no extraction",
+        "hardlinks": 0,
+        "metadata": {
+          ".PKGINFO": {
+            "sha256": "8edb102509ae8f47b426ef3c40fd85fa0f49061cbb56b82d92556b847f2a69c9",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-mpfr"
+              ],
+              "pkgbase": [
+                "mingw-w64-mpfr"
+              ],
+              "pkgver": [
+                "4.2.2-3"
+              ],
+              "url": [
+                "https://www.mpfr.org"
+              ],
+              "builddate": [
+                "1778328485"
+              ],
+              "license": [
+                "spdx:LGPL-3.0-or-later"
+              ]
+            }
+          },
+          ".BUILDINFO": {
+            "sha256": "c61cdcbfa964717103e265a49e0fdd6077c41e613fa1564ca134210484138585",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-mpfr"
+              ],
+              "pkgbase": [
+                "mingw-w64-mpfr"
+              ],
+              "pkgver": [
+                "4.2.2-3"
+              ],
+              "pkgarch": [
+                "any"
+              ],
+              "pkgbuild_sha256sum": [
+                "6ffc49a5e6194f63c2514fa789b849a572de8b6b84e0cfa6b085397506308dac"
+              ],
+              "builddate": [
+                "1778328485"
+              ],
+              "buildtool": [
+                "makepkg"
+              ],
+              "buildtoolver": [
+                "6.1.0"
+              ]
+            }
+          }
+        },
+        "prefixFiles": 21,
+        "matchingPrefixFiles": 21,
+        "mismatches": [],
+        "notices": []
+      },
+      {
+        "archive": {
+          "file": "mingw-w64-ucrt-x86_64-tzdata-2026b-1-any.pkg.tar.zst",
+          "size": 226017,
+          "sha256": "fade60c68dc6dbe4afddc9111ee235a0ae90ff398ab7cc1222bfb0791a1c8ce4"
+        },
+        "signature": {
+          "file": "mingw-w64-ucrt-x86_64-tzdata-2026b-1-any.pkg.tar.zst.sig",
+          "size": 566,
+          "sha256": "644cc13f84cb4f3ecb9ae6f789da6ffce08bb81c7015d9e05371a0f3b655d06a"
+        },
+        "signatureValidation": {
+          "exitCode": 0,
+          "validSignatures": [
+            "[GNUPG:] VALIDSIG 5F944B027F7FE2091985AA2EFA11531AA0AA7F57 2026-05-13 1778695828 0 4 0 1 10 00 5F944B027F7FE2091985AA2EFA11531AA0AA7F57"
+          ],
+          "trust": "Locally installed MSYS2 distribution keyring; independent root trust and revocation review not performed",
+          "initialAttempt": "UNAVAILABLE: armored keyring was initially passed to gpgv; corrected by local dearmor before final validation"
+        },
+        "preflight": "PASS; in-memory hardlink resolution only; no extraction",
+        "hardlinks": 772,
+        "metadata": {
+          ".PKGINFO": {
+            "sha256": "940440c65955df247e087a3d2c376f974815557b44341c4f5db3c8bc0148b19b",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-tzdata"
+              ],
+              "pkgbase": [
+                "mingw-w64-tzdata"
+              ],
+              "pkgver": [
+                "2026b-1"
+              ],
+              "url": [
+                "https://www.iana.org/time-zones"
+              ],
+              "builddate": [
+                "1778666334"
+              ],
+              "license": [
+                "custom: public domain"
+              ]
+            }
+          },
+          ".BUILDINFO": {
+            "sha256": "6d1cf7c9c4070f5714d4ee2cfb861dbca88bf5c3709a8c0ca0f123dae72673b0",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-tzdata"
+              ],
+              "pkgbase": [
+                "mingw-w64-tzdata"
+              ],
+              "pkgver": [
+                "2026b-1"
+              ],
+              "pkgarch": [
+                "any"
+              ],
+              "pkgbuild_sha256sum": [
+                "41f117d725c0c7273e85866eaa12140152bbc367fed433eb17b087f88c18a932"
+              ],
+              "builddate": [
+                "1778666334"
+              ],
+              "buildtool": [
+                "makepkg"
+              ],
+              "buildtoolver": [
+                "6.1.0"
+              ]
+            }
+          }
+        },
+        "prefixFiles": 1804,
+        "matchingPrefixFiles": 1804,
+        "mismatches": [],
+        "notices": [
+          {
+            "path": "share/licenses/tzdata/LICENSE",
+            "sha256": "0613408568889f5739e5ae252b722a2659c02002839ad970a63dc5e9174b27cf",
+            "size": 252,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-tzdata-2026b-1-any.pkg.tar.zst"
+          }
+        ]
+      },
+      {
+        "archive": {
+          "file": "mingw-w64-ucrt-x86_64-windows-default-manifest-6.4-4-any.pkg.tar.zst",
+          "size": 3059,
+          "sha256": "6d1c9e2ab75aace04d30fb43974b24d5505bfd7872ca23fea773fc9ae70bd248"
+        },
+        "signature": {
+          "file": "mingw-w64-ucrt-x86_64-windows-default-manifest-6.4-4-any.pkg.tar.zst.sig",
+          "size": 566,
+          "sha256": "8e701ba98ab7b9f72d001c7600bcff07ace72c79d89cc68137cbefc12c6e5dfa"
+        },
+        "signatureValidation": {
+          "exitCode": 0,
+          "validSignatures": [
+            "[GNUPG:] VALIDSIG 5F944B027F7FE2091985AA2EFA11531AA0AA7F57 2022-02-16 1644990846 0 4 0 1 10 00 5F944B027F7FE2091985AA2EFA11531AA0AA7F57"
+          ],
+          "trust": "Locally installed MSYS2 distribution keyring; independent root trust and revocation review not performed",
+          "initialAttempt": "UNAVAILABLE: armored keyring was initially passed to gpgv; corrected by local dearmor before final validation"
+        },
+        "preflight": "PASS; in-memory hardlink resolution only; no extraction",
+        "hardlinks": 0,
+        "metadata": {
+          ".PKGINFO": {
+            "sha256": "7b2cd22f4d5841ab5ec8915f5653d338ac22b0e3b4d39e01e07aa8acf3df759b",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-windows-default-manifest"
+              ],
+              "pkgbase": [
+                "mingw-w64-windows-default-manifest"
+              ],
+              "pkgver": [
+                "6.4-4"
+              ],
+              "url": [
+                "https://cygwin.com/"
+              ],
+              "builddate": [
+                "1644954165"
+              ],
+              "license": [
+                "BSD"
+              ]
+            }
+          },
+          ".BUILDINFO": {
+            "sha256": "b4ca6785f83de8981cbd824a067b38b0d5036540c7af858f355772f907ef2799",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-windows-default-manifest"
+              ],
+              "pkgbase": [
+                "mingw-w64-windows-default-manifest"
+              ],
+              "pkgver": [
+                "6.4-4"
+              ],
+              "pkgarch": [
+                "any"
+              ],
+              "pkgbuild_sha256sum": [
+                "60b9b97d17e6f3ee543ba56fa4690dc8b327d0a24cf33c32a8fffdd831e216b3"
+              ],
+              "builddate": [
+                "1644954165"
+              ],
+              "buildtool": [
+                "makepkg"
+              ],
+              "buildtoolver": [
+                "6.0.1"
+              ]
+            }
+          }
+        },
+        "prefixFiles": 1,
+        "matchingPrefixFiles": 1,
+        "mismatches": [],
+        "notices": []
+      },
+      {
+        "archive": {
+          "file": "mingw-w64-ucrt-x86_64-winpthreads-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst",
+          "size": 43847,
+          "sha256": "5c9b5ee5c7af7af692f244776283c7729a2c648b365b0be62623012efdb11975"
+        },
+        "signature": {
+          "file": "mingw-w64-ucrt-x86_64-winpthreads-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst.sig",
+          "size": 566,
+          "sha256": "cc059fe54ef02cd016408712e2cef09e77c0dcc0ca4c8fa8e8ffb93f1e331895"
+        },
+        "signatureValidation": {
+          "exitCode": 0,
+          "validSignatures": [
+            "[GNUPG:] VALIDSIG 5F944B027F7FE2091985AA2EFA11531AA0AA7F57 2026-06-10 1781115173 0 4 0 1 10 00 5F944B027F7FE2091985AA2EFA11531AA0AA7F57"
+          ],
+          "trust": "Locally installed MSYS2 distribution keyring; independent root trust and revocation review not performed",
+          "initialAttempt": "UNAVAILABLE: armored keyring was initially passed to gpgv; corrected by local dearmor before final validation"
+        },
+        "preflight": "PASS; in-memory hardlink resolution only; no extraction",
+        "hardlinks": 0,
+        "metadata": {
+          ".PKGINFO": {
+            "sha256": "0073d3191abb0a8675ac68666341063ccddf1e43d94400795c4dbb129141bcc4",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-winpthreads"
+              ],
+              "pkgbase": [
+                "mingw-w64-winpthreads"
+              ],
+              "pkgver": [
+                "14.0.0.r92.g818fa6510-1"
+              ],
+              "url": [
+                "https://www.mingw-w64.org/"
+              ],
+              "builddate": [
+                "1781096338"
+              ],
+              "license": [
+                "spdx:MIT AND BSD-3-Clause-Clear"
+              ]
+            }
+          },
+          ".BUILDINFO": {
+            "sha256": "df8df2838b5a9753063cb4722eb3b757e0cb8aa85e6936307f0933f7dbb9dac4",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-winpthreads"
+              ],
+              "pkgbase": [
+                "mingw-w64-winpthreads"
+              ],
+              "pkgver": [
+                "14.0.0.r92.g818fa6510-1"
+              ],
+              "pkgarch": [
+                "any"
+              ],
+              "pkgbuild_sha256sum": [
+                "4e4ca85729312e5731f27ce73a06c1406a1308eefe29653a6589b59138a7438b"
+              ],
+              "builddate": [
+                "1781096338"
+              ],
+              "buildtool": [
+                "makepkg"
+              ],
+              "buildtoolver": [
+                "6.1.0"
+              ]
+            }
+          }
+        },
+        "prefixFiles": 12,
+        "matchingPrefixFiles": 12,
+        "mismatches": [],
+        "notices": [
+          {
+            "path": "share/licenses/winpthreads/COPYING",
+            "sha256": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177",
+            "size": 2883,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-winpthreads-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst"
+          }
+        ]
+      },
+      {
+        "archive": {
+          "file": "mingw-w64-ucrt-x86_64-zlib-1.3.2-2-any.pkg.tar.zst",
+          "size": 111475,
+          "sha256": "841401182976d2f9e17e5c0ebaac51f2a8014140ea53d67625e91c8fb3c85ea0"
+        },
+        "signature": {
+          "file": "mingw-w64-ucrt-x86_64-zlib-1.3.2-2-any.pkg.tar.zst.sig",
+          "size": 566,
+          "sha256": "3c21e4ca62ae9544f37ad41b0910f64d60f4f0c4c4113bc5c9287ce2b6396acb"
+        },
+        "signatureValidation": {
+          "exitCode": 0,
+          "validSignatures": [
+            "[GNUPG:] VALIDSIG 5F944B027F7FE2091985AA2EFA11531AA0AA7F57 2026-03-06 1772805241 0 4 0 1 10 00 5F944B027F7FE2091985AA2EFA11531AA0AA7F57"
+          ],
+          "trust": "Locally installed MSYS2 distribution keyring; independent root trust and revocation review not performed",
+          "initialAttempt": "UNAVAILABLE: armored keyring was initially passed to gpgv; corrected by local dearmor before final validation"
+        },
+        "preflight": "PASS; in-memory hardlink resolution only; no extraction",
+        "hardlinks": 0,
+        "metadata": {
+          ".PKGINFO": {
+            "sha256": "71a298f9b28fcfb13ff3d6ca0becb5bb70bb22acd6893b3f81fe559fea1c5bed",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-zlib"
+              ],
+              "pkgbase": [
+                "mingw-w64-zlib"
+              ],
+              "pkgver": [
+                "1.3.2-2"
+              ],
+              "url": [
+                "https://www.zlib.net/"
+              ],
+              "builddate": [
+                "1772699060"
+              ],
+              "license": [
+                "spdx:Zlib"
+              ]
+            }
+          },
+          ".BUILDINFO": {
+            "sha256": "fdad29bf34766da93b0f880078e5d282202e45ab5e00785b0b1d7e02d3aa1c18",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-zlib"
+              ],
+              "pkgbase": [
+                "mingw-w64-zlib"
+              ],
+              "pkgver": [
+                "1.3.2-2"
+              ],
+              "pkgarch": [
+                "any"
+              ],
+              "pkgbuild_sha256sum": [
+                "8a4a54a964eab7efa313e2faa8267052bc237ef61f8adf82a55cc93f4028db8a"
+              ],
+              "builddate": [
+                "1772699060"
+              ],
+              "buildtool": [
+                "makepkg"
+              ],
+              "buildtoolver": [
+                "6.1.0"
+              ]
+            }
+          }
+        },
+        "prefixFiles": 8,
+        "matchingPrefixFiles": 8,
+        "mismatches": [],
+        "notices": [
+          {
+            "path": "share/licenses/zlib/LICENSE",
+            "sha256": "e32ff4e00d9d94930537635291da39e7e612703334bf6fde8c7f1686fe8a45a2",
+            "size": 1002,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-zlib-1.3.2-2-any.pkg.tar.zst"
+          }
+        ]
+      },
+      {
+        "archive": {
+          "file": "mingw-w64-ucrt-x86_64-zstd-1.5.7-2-any.pkg.tar.zst",
+          "size": 668277,
+          "sha256": "dbdb8427280046a2b41697780aa4c52983b708082b0da4755951dc3bea96ca89"
+        },
+        "signature": {
+          "file": "mingw-w64-ucrt-x86_64-zstd-1.5.7-2-any.pkg.tar.zst.sig",
+          "size": 566,
+          "sha256": "97b4fe48e37ed32bc8a952c01737b6263dceb5a9c2c6f6b3a2def8e22f4e8b35"
+        },
+        "signatureValidation": {
+          "exitCode": 0,
+          "validSignatures": [
+            "[GNUPG:] VALIDSIG 5F944B027F7FE2091985AA2EFA11531AA0AA7F57 2026-05-04 1777874603 0 4 0 1 10 00 5F944B027F7FE2091985AA2EFA11531AA0AA7F57"
+          ],
+          "trust": "Locally installed MSYS2 distribution keyring; independent root trust and revocation review not performed",
+          "initialAttempt": "UNAVAILABLE: armored keyring was initially passed to gpgv; corrected by local dearmor before final validation"
+        },
+        "preflight": "PASS; in-memory hardlink resolution only; no extraction",
+        "hardlinks": 0,
+        "metadata": {
+          ".PKGINFO": {
+            "sha256": "5ccf7351f501ab144aaa79b964862ce09331525119197e6467e25ec7cad01874",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-zstd"
+              ],
+              "pkgbase": [
+                "mingw-w64-zstd"
+              ],
+              "pkgver": [
+                "1.5.7-2"
+              ],
+              "url": [
+                "https://facebook.github.io/zstd/"
+              ],
+              "builddate": [
+                "1777662942"
+              ],
+              "license": [
+                "spdx:BSD-3-Clause OR GPL-2.0-or-later"
+              ]
+            }
+          },
+          ".BUILDINFO": {
+            "sha256": "af0d6ea9dc8918a589851970fd8e038669b541c4446c6749cd9d210ec0343113",
+            "fields": {
+              "pkgname": [
+                "mingw-w64-ucrt-x86_64-zstd"
+              ],
+              "pkgbase": [
+                "mingw-w64-zstd"
+              ],
+              "pkgver": [
+                "1.5.7-2"
+              ],
+              "pkgarch": [
+                "any"
+              ],
+              "pkgbuild_sha256sum": [
+                "ef88e168f729b6e57bdccb8d566a1cbc1b0b1fd4ef86b26cc4c441236e496388"
+              ],
+              "builddate": [
+                "1777662942"
+              ],
+              "buildtool": [
+                "makepkg"
+              ],
+              "buildtoolver": [
+                "6.1.0"
+              ]
+            }
+          }
+        },
+        "prefixFiles": 15,
+        "matchingPrefixFiles": 15,
+        "mismatches": [],
+        "notices": [
+          {
+            "path": "share/licenses/zstd/LICENSE",
+            "sha256": "7055266497633c9025b777c78eb7235af13922117480ed5c674677adc381c9d8",
+            "size": 1549,
+            "state": "MATCH",
+            "package": "mingw-w64-ucrt-x86_64-zstd-1.5.7-2-any.pkg.tar.zst"
+          }
+        ]
+      }
+    ],
+    "comparison": {
+      "packageCount": 17,
+      "packagePrefixFileCount": 6990,
+      "baselineFileCount": 6990,
+      "missingFromBaseline": [],
+      "baselineExtra": [],
+      "changed": []
+    },
+    "limitations": [
+      "Cached package identity and signatures do not provide source archives or all patches.",
+      "Package build metadata is retained locally; portable fields only are included in this report."
+    ],
+    "lockedTreeRevalidation": {
+      "authority": "tools/build-toolchains.lock.json",
+      "fileCount": 6990,
+      "bytes": 553090415,
+      "sha256": "5215ec9725ad0ef660064944eef6aba5106bd09044a0f70a6e37c4252815fab3",
+      "method": "Existing build-toolchains.cjs treeIdentity on the fixed material tree; all package prefix files also compared in memory"
+    }
+  },
+  "msys2Recipes": {
+    "schemaVersion": 1,
+    "observedDate": "2026-10-09",
+    "scope": "PKGBUILD hashes compared with original package BUILDINFO; history queried through GitHub connector after unauthenticated API rate limit; scripts not executed",
+    "recipes": [
+      {
+        "pkgbase": "mingw-w64-binutils",
+        "pkgbuildSha256": "fea24b484400681bc6e1dd00fd42e8ecf25cafdd79c8d51f8a6b37f64c25e300",
+        "historyUrl": "https://api.github.com/repos/msys2/MINGW-packages/commits?path=mingw-w64-binutils&until=2026-06-11T05:11:57Z&per_page=3",
+        "observations": [
+          {
+            "commit": "8b15e837e49ef50382780bb78f1d98ed17e8ff5f",
+            "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/8b15e837e49ef50382780bb78f1d98ed17e8ff5f/mingw-w64-binutils/PKGBUILD",
+            "sha256": "fea24b484400681bc6e1dd00fd42e8ecf25cafdd79c8d51f8a6b37f64c25e300",
+            "matchesBuildMetadata": true
+          }
+        ],
+        "status": "EXACT_PKGBUILD_HASH",
+        "candidates": [
+          {
+            "sha": "8b15e837e49ef50382780bb78f1d98ed17e8ff5f"
+          },
+          {
+            "sha": "9545b6040acd7035ffd3567fec81843b6f87f23f"
+          },
+          {
+            "sha": "3444f9ca9b938f7b09db74ca6207dd335ead5740"
+          }
+        ]
+      },
+      {
+        "pkgbase": "mingw-w64-crt",
+        "pkgbuildSha256": "1184cd3db7d34ea97d3d018fbedbf6538a84f34919134129be059c6b38237fbd",
+        "historyUrl": "https://api.github.com/repos/msys2/MINGW-packages/commits?path=mingw-w64-crt-git&until=2026-06-10T12:51:04Z&per_page=3",
+        "observations": [
+          {
+            "commit": "ee9addbf28c40dfab8ed5b23b94314179a702a98",
+            "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/ee9addbf28c40dfab8ed5b23b94314179a702a98/mingw-w64-crt-git/PKGBUILD",
+            "error": "HTTPError",
+            "status": 404
+          },
+          {
+            "commit": "058f39bf3c487ec7117a10361048dc5ef6cde199",
+            "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/058f39bf3c487ec7117a10361048dc5ef6cde199/mingw-w64-crt-git/PKGBUILD",
+            "sha256": "0d2f5f8e8ae355f935f72373c711ae91d96bb88ae2628f0cb424396640da33c4",
+            "matchesBuildMetadata": false
+          },
+          {
+            "commit": "108ebbd1dbb6b791df3757b3236c54ca2e698cc7",
+            "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/108ebbd1dbb6b791df3757b3236c54ca2e698cc7/mingw-w64-crt-git/PKGBUILD",
+            "sha256": "a1126fc6fd86fd2f459eec685d733e005ab00613855e509e840affaf773790f5",
+            "matchesBuildMetadata": false
+          }
+        ],
+        "status": "UNKNOWN_WITHIN_THREE_COMMITS",
+        "candidates": [
+          {
+            "sha": "ee9addbf28c40dfab8ed5b23b94314179a702a98"
+          },
+          {
+            "sha": "058f39bf3c487ec7117a10361048dc5ef6cde199"
+          },
+          {
+            "sha": "108ebbd1dbb6b791df3757b3236c54ca2e698cc7"
+          }
+        ]
+      },
+      {
+        "pkgbase": "mingw-w64-gcc",
+        "pkgbuildSha256": "40f248fa589babd9315cc589a76a0c00939355bd68c92287a2dcb7d1acb58f96",
+        "historyUrl": "https://api.github.com/repos/msys2/MINGW-packages/commits?path=mingw-w64-gcc&until=2026-05-17T21:33:07Z&per_page=3",
+        "observations": [
+          {
+            "commit": "18aeb95f69dd6bd3c9172a938c9fd35491536410",
+            "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/18aeb95f69dd6bd3c9172a938c9fd35491536410/mingw-w64-gcc/PKGBUILD",
+            "sha256": "40f248fa589babd9315cc589a76a0c00939355bd68c92287a2dcb7d1acb58f96",
+            "matchesBuildMetadata": true
+          }
+        ],
+        "status": "EXACT_PKGBUILD_HASH",
+        "candidates": [
+          {
+            "sha": "18aeb95f69dd6bd3c9172a938c9fd35491536410"
+          },
+          {
+            "sha": "adf1d4da78cbaf5b7fc2714b88d327cde5b4bbee"
+          },
+          {
+            "sha": "8b18bc03928dae9782c2e178726b569d4b45a313"
+          }
+        ]
+      },
+      {
+        "pkgbase": "mingw-w64-gettext",
+        "pkgbuildSha256": "853ef80a50588f29355722a4513f24cf1a5f8de06e0b5ee326580464db539741",
+        "historyUrl": "https://api.github.com/repos/msys2/MINGW-packages/commits?path=mingw-w64-gettext&until=2026-01-31T12:17:21Z&per_page=3",
+        "observations": [
+          {
+            "commit": "efb77424dfbeaaa22d96621274765d7ab5a3344f",
+            "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/efb77424dfbeaaa22d96621274765d7ab5a3344f/mingw-w64-gettext/PKGBUILD",
+            "sha256": "853ef80a50588f29355722a4513f24cf1a5f8de06e0b5ee326580464db539741",
+            "matchesBuildMetadata": true
+          }
+        ],
+        "status": "EXACT_PKGBUILD_HASH",
+        "candidates": [
+          {
+            "sha": "efb77424dfbeaaa22d96621274765d7ab5a3344f"
+          },
+          {
+            "sha": "3756eb5ceba81861751d26161a2ae6d980f715d3"
+          },
+          {
+            "sha": "8ca62b961389049a596bfcb48c31a4a2753cfdc6"
+          }
+        ]
+      },
+      {
+        "pkgbase": "mingw-w64-gmp",
+        "pkgbuildSha256": "b9d3bb2b5b12cb0fc47c4dc17a9a2aa82513236eaefa34c8dfc57dd0d92bc42a",
+        "historyUrl": "https://api.github.com/repos/msys2/MINGW-packages/commits?path=mingw-w64-gmp&until=2023-09-15T07:41:38Z&per_page=3",
+        "observations": [
+          {
+            "commit": "19a497b647dea2939e4fe9cc2ad5818f83b1632f",
+            "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/19a497b647dea2939e4fe9cc2ad5818f83b1632f/mingw-w64-gmp/PKGBUILD",
+            "sha256": "b9d3bb2b5b12cb0fc47c4dc17a9a2aa82513236eaefa34c8dfc57dd0d92bc42a",
+            "matchesBuildMetadata": true
+          }
+        ],
+        "status": "EXACT_PKGBUILD_HASH",
+        "candidates": [
+          {
+            "sha": "19a497b647dea2939e4fe9cc2ad5818f83b1632f"
+          },
+          {
+            "sha": "902f93b70144648a5054e8a01e57ffc9bb9f8e64"
+          },
+          {
+            "sha": "00f2f6c12a969e729c1fc111f5f11e071602677e"
+          }
+        ]
+      },
+      {
+        "pkgbase": "mingw-w64-headers",
+        "pkgbuildSha256": "753c4d21b13eb6c9acf655a8f8e9d7a1442856473ee27c31539521a74b44d738",
+        "historyUrl": "https://api.github.com/repos/msys2/MINGW-packages/commits?path=mingw-w64-headers-git&until=2026-06-10T12:47:06Z&per_page=3",
+        "observations": [
+          {
+            "commit": "ee9addbf28c40dfab8ed5b23b94314179a702a98",
+            "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/ee9addbf28c40dfab8ed5b23b94314179a702a98/mingw-w64-headers-git/PKGBUILD",
+            "error": "HTTPError",
+            "status": 404
+          },
+          {
+            "commit": "058f39bf3c487ec7117a10361048dc5ef6cde199",
+            "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/058f39bf3c487ec7117a10361048dc5ef6cde199/mingw-w64-headers-git/PKGBUILD",
+            "sha256": "d0e527ba7b65b98521ed5d6d7319ac19e33745d3b97208206cca586910c60aa0",
+            "matchesBuildMetadata": false
+          },
+          {
+            "commit": "108ebbd1dbb6b791df3757b3236c54ca2e698cc7",
+            "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/108ebbd1dbb6b791df3757b3236c54ca2e698cc7/mingw-w64-headers-git/PKGBUILD",
+            "sha256": "2236339ccdca45d71262121bc5ae909a83e1f80b6847151079190caa52ab7091",
+            "matchesBuildMetadata": false
+          }
+        ],
+        "status": "UNKNOWN_WITHIN_THREE_COMMITS",
+        "candidates": [
+          {
+            "sha": "ee9addbf28c40dfab8ed5b23b94314179a702a98"
+          },
+          {
+            "sha": "058f39bf3c487ec7117a10361048dc5ef6cde199"
+          },
+          {
+            "sha": "108ebbd1dbb6b791df3757b3236c54ca2e698cc7"
+          }
+        ]
+      },
+      {
+        "pkgbase": "mingw-w64-isl",
+        "pkgbuildSha256": "357e568e64456464d2dc0f61b7b34720cc4f8125e74f6b94667e53ab4bb1b595",
+        "historyUrl": "https://api.github.com/repos/msys2/MINGW-packages/commits?path=mingw-w64-isl&until=2024-09-05T14:06:45Z&per_page=3",
+        "observations": [
+          {
+            "commit": "9570fbfc347162848b40dcccf3df1b5f1256accc",
+            "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/9570fbfc347162848b40dcccf3df1b5f1256accc/mingw-w64-isl/PKGBUILD",
+            "sha256": "357e568e64456464d2dc0f61b7b34720cc4f8125e74f6b94667e53ab4bb1b595",
+            "matchesBuildMetadata": true
+          }
+        ],
+        "status": "EXACT_PKGBUILD_HASH",
+        "candidates": [
+          {
+            "sha": "9570fbfc347162848b40dcccf3df1b5f1256accc"
+          },
+          {
+            "sha": "96f468ec2207c993db6f53430bece1ba2093411b"
+          },
+          {
+            "sha": "e74d36ea9a18aee9763b86fb4ed921f76f7e5309"
+          }
+        ]
+      },
+      {
+        "pkgbase": "mingw-w64-libiconv",
+        "pkgbuildSha256": "9b3212d06910560fb59e017e0b73a29d392a5082d3a47a613e61509bd7dcd475",
+        "historyUrl": "https://api.github.com/repos/msys2/MINGW-packages/commits?path=mingw-w64-libiconv&until=2026-03-14T08:45:32Z&per_page=3",
+        "observations": [
+          {
+            "commit": "045d46aedb9fdbd93b0900b1e20c1a6c73f23072",
+            "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/045d46aedb9fdbd93b0900b1e20c1a6c73f23072/mingw-w64-libiconv/PKGBUILD",
+            "sha256": "9b3212d06910560fb59e017e0b73a29d392a5082d3a47a613e61509bd7dcd475",
+            "matchesBuildMetadata": true
+          }
+        ],
+        "status": "EXACT_PKGBUILD_HASH",
+        "candidates": [
+          {
+            "sha": "045d46aedb9fdbd93b0900b1e20c1a6c73f23072"
+          },
+          {
+            "sha": "34d592ba9f4f1fc1153f09b1398032003c4e45b8"
+          },
+          {
+            "sha": "f89ccd3564cceff9ed46d778c91f278381393c75"
+          }
+        ]
+      },
+      {
+        "pkgbase": "mingw-w64-winpthreads",
+        "pkgbuildSha256": "4e4ca85729312e5731f27ce73a06c1406a1308eefe29653a6589b59138a7438b",
+        "historyUrl": "https://api.github.com/repos/msys2/MINGW-packages/commits?path=mingw-w64-winpthreads-git&until=2026-06-10T12:58:58Z&per_page=3",
+        "observations": [
+          {
+            "commit": "30c26236ac403292bdb8f68ce4348785710ad5b5",
+            "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/30c26236ac403292bdb8f68ce4348785710ad5b5/mingw-w64-winpthreads-git/PKGBUILD",
+            "error": "HTTPError",
+            "status": 404
+          },
+          {
+            "commit": "9830524f0123dabbd1661da66634efb27579cfb5",
+            "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/9830524f0123dabbd1661da66634efb27579cfb5/mingw-w64-winpthreads-git/PKGBUILD",
+            "sha256": "405349dc4855169b7075756dc982586dcf150ea535ec46d9e835a756bb642d2d",
+            "matchesBuildMetadata": false
+          },
+          {
+            "commit": "4b05d56e2e1a750745c303b82e05237845054cab",
+            "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/4b05d56e2e1a750745c303b82e05237845054cab/mingw-w64-winpthreads-git/PKGBUILD",
+            "sha256": "8b0ece90064242050b9c8b25fcfe698e13d0d6ca70f961500a312920a97f985a",
+            "matchesBuildMetadata": false
+          }
+        ],
+        "status": "UNKNOWN_WITHIN_THREE_COMMITS",
+        "candidates": [
+          {
+            "sha": "30c26236ac403292bdb8f68ce4348785710ad5b5"
+          },
+          {
+            "sha": "9830524f0123dabbd1661da66634efb27579cfb5"
+          },
+          {
+            "sha": "4b05d56e2e1a750745c303b82e05237845054cab"
+          }
+        ]
+      },
+      {
+        "pkgbase": "mingw-w64-mpc",
+        "pkgbuildSha256": "6779f6aea6f6c80219cc0d31fc840f88b074e28296bd315460793d60665c5ff7",
+        "historyUrl": "https://api.github.com/repos/msys2/MINGW-packages/commits?path=mingw-w64-mpc&until=2026-04-18T00:43:58Z&per_page=3",
+        "observations": [
+          {
+            "commit": "192b41f75879a0e16ec5418b39b881fe63e8aff0",
+            "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/192b41f75879a0e16ec5418b39b881fe63e8aff0/mingw-w64-mpc/PKGBUILD",
+            "sha256": "6779f6aea6f6c80219cc0d31fc840f88b074e28296bd315460793d60665c5ff7",
+            "matchesBuildMetadata": true
+          }
+        ],
+        "status": "EXACT_PKGBUILD_HASH",
+        "candidates": [
+          {
+            "sha": "192b41f75879a0e16ec5418b39b881fe63e8aff0"
+          },
+          {
+            "sha": "8aa44a2913a1bd34338bc7f2046a61d03af7e275"
+          },
+          {
+            "sha": "190baf443930573c0a27c26a98fb9a6faa6de43b"
+          }
+        ]
+      },
+      {
+        "pkgbase": "mingw-w64-mpfr",
+        "pkgbuildSha256": "6ffc49a5e6194f63c2514fa789b849a572de8b6b84e0cfa6b085397506308dac",
+        "historyUrl": "https://api.github.com/repos/msys2/MINGW-packages/commits?path=mingw-w64-mpfr&until=2026-05-09T12:08:05Z&per_page=3",
+        "observations": [
+          {
+            "commit": "82bcf47d0ae2621e1cd00fb82c8ee5db02b91955",
+            "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/82bcf47d0ae2621e1cd00fb82c8ee5db02b91955/mingw-w64-mpfr/PKGBUILD",
+            "sha256": "6ffc49a5e6194f63c2514fa789b849a572de8b6b84e0cfa6b085397506308dac",
+            "matchesBuildMetadata": true
+          }
+        ],
+        "status": "EXACT_PKGBUILD_HASH",
+        "candidates": [
+          {
+            "sha": "82bcf47d0ae2621e1cd00fb82c8ee5db02b91955"
+          },
+          {
+            "sha": "9718dcbf6028c40ea47d1b8411de4c7c6d10b677"
+          },
+          {
+            "sha": "62308009e77d772a126313626b194e503b0e5135"
+          }
+        ]
+      },
+      {
+        "pkgbase": "mingw-w64-tzdata",
+        "pkgbuildSha256": "41f117d725c0c7273e85866eaa12140152bbc367fed433eb17b087f88c18a932",
+        "historyUrl": "https://api.github.com/repos/msys2/MINGW-packages/commits?path=mingw-w64-tzdata&until=2026-05-13T09:58:54Z&per_page=3",
+        "observations": [
+          {
+            "commit": "63b370cf92d9a6c3327553181b4f90458c2787d9",
+            "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/63b370cf92d9a6c3327553181b4f90458c2787d9/mingw-w64-tzdata/PKGBUILD",
+            "sha256": "41f117d725c0c7273e85866eaa12140152bbc367fed433eb17b087f88c18a932",
+            "matchesBuildMetadata": true
+          }
+        ],
+        "status": "EXACT_PKGBUILD_HASH",
+        "candidates": [
+          {
+            "sha": "63b370cf92d9a6c3327553181b4f90458c2787d9"
+          },
+          {
+            "sha": "e9786d361cd53feb8dd0f1af17b437d42c662998"
+          },
+          {
+            "sha": "5d75dad0c266051dc637d46211d551295978c087"
+          }
+        ]
+      },
+      {
+        "pkgbase": "mingw-w64-windows-default-manifest",
+        "pkgbuildSha256": "60b9b97d17e6f3ee543ba56fa4690dc8b327d0a24cf33c32a8fffdd831e216b3",
+        "historyUrl": "https://api.github.com/repos/msys2/MINGW-packages/commits?path=mingw-w64-windows-default-manifest&until=2022-02-15T19:42:45Z&per_page=3",
+        "observations": [
+          {
+            "commit": "d5cf1c1c9b1a17aa753f2b130d6d3075dee38df4",
+            "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/d5cf1c1c9b1a17aa753f2b130d6d3075dee38df4/mingw-w64-windows-default-manifest/PKGBUILD",
+            "sha256": "60b9b97d17e6f3ee543ba56fa4690dc8b327d0a24cf33c32a8fffdd831e216b3",
+            "matchesBuildMetadata": true
+          }
+        ],
+        "status": "EXACT_PKGBUILD_HASH",
+        "candidates": [
+          {
+            "sha": "d5cf1c1c9b1a17aa753f2b130d6d3075dee38df4"
+          },
+          {
+            "sha": "c556a6c1e4905a71ac4b52889a69d5917f9c5f18"
+          },
+          {
+            "sha": "1338d46f312fe6f2bef6e09693a96d3e8b5cea90"
+          }
+        ]
+      },
+      {
+        "pkgbase": "mingw-w64-zlib",
+        "pkgbuildSha256": "8a4a54a964eab7efa313e2faa8267052bc237ef61f8adf82a55cc93f4028db8a",
+        "historyUrl": "https://api.github.com/repos/msys2/MINGW-packages/commits?path=mingw-w64-zlib&until=2026-03-05T08:24:20Z&per_page=3",
+        "observations": [
+          {
+            "commit": "6430831b570304e48982fce7d65af399b801ceab",
+            "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/6430831b570304e48982fce7d65af399b801ceab/mingw-w64-zlib/PKGBUILD",
+            "sha256": "8a4a54a964eab7efa313e2faa8267052bc237ef61f8adf82a55cc93f4028db8a",
+            "matchesBuildMetadata": true
+          }
+        ],
+        "status": "EXACT_PKGBUILD_HASH",
+        "candidates": [
+          {
+            "sha": "6430831b570304e48982fce7d65af399b801ceab"
+          },
+          {
+            "sha": "572bafc230cf9343b01b7aedbfd078b387ca5ec6"
+          },
+          {
+            "sha": "da72a2529736e7bd16a10f35017ae765af7eb3c8"
+          }
+        ]
+      },
+      {
+        "pkgbase": "mingw-w64-zstd",
+        "pkgbuildSha256": "ef88e168f729b6e57bdccb8d566a1cbc1b0b1fd4ef86b26cc4c441236e496388",
+        "historyUrl": "https://api.github.com/repos/msys2/MINGW-packages/commits?path=mingw-w64-zstd&until=2026-05-01T19:15:42Z&per_page=3",
+        "observations": [
+          {
+            "commit": "72f950d88ac5e5d29e23ded555db81e4b3077ccf",
+            "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/72f950d88ac5e5d29e23ded555db81e4b3077ccf/mingw-w64-zstd/PKGBUILD",
+            "sha256": "ef88e168f729b6e57bdccb8d566a1cbc1b0b1fd4ef86b26cc4c441236e496388",
+            "matchesBuildMetadata": true
+          }
+        ],
+        "status": "EXACT_PKGBUILD_HASH",
+        "candidates": [
+          {
+            "sha": "72f950d88ac5e5d29e23ded555db81e4b3077ccf"
+          },
+          {
+            "sha": "62308009e77d772a126313626b194e503b0e5135"
+          },
+          {
+            "sha": "651add43993e6d21dd5a3b0fc9627eb219549c04"
+          }
+        ]
+      }
+    ]
+  },
+  "msys2RecipeFiles": {
+    "schemaVersion": 1,
+    "observedDate": "2026-10-09",
+    "scope": "Exact Git file identities for 12 package recipe directories; no scripts executed or upstream source tarballs downloaded",
+    "files": [
+      {
+        "path": "mingw-w64-binutils/0002-check-for-unusual-file-harder.patch",
+        "commit": "8b15e837e49ef50382780bb78f1d98ed17e8ff5f",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/8b15e837e49ef50382780bb78f1d98ed17e8ff5f/mingw-w64-binutils/0002-check-for-unusual-file-harder.patch",
+        "size": 2462,
+        "gitBlobSha1": "2369a6fad9945a20d7a478a6573c6688c3847313",
+        "sha256": "2c99345fc575c3a060d6677537f636c6c4154fac0fde508070f3b6296c1060d4"
+      },
+      {
+        "path": "mingw-w64-binutils/0010-bfd-Increase-_bfd_coff_max_nscns-to-65279.patch",
+        "commit": "8b15e837e49ef50382780bb78f1d98ed17e8ff5f",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/8b15e837e49ef50382780bb78f1d98ed17e8ff5f/mingw-w64-binutils/0010-bfd-Increase-_bfd_coff_max_nscns-to-65279.patch",
+        "size": 3300,
+        "gitBlobSha1": "707082247486a66d85e3e177042ed15b14fa3d6b",
+        "sha256": "4e8ac055df61b1b5d6ae29dc87e1154737c2e87c7b244b44866702cabf1a5d18"
+      },
+      {
+        "path": "mingw-w64-binutils/0011-libiberty-Preserve-errno-across-calls-to-libiberty_v.patch",
+        "commit": "8b15e837e49ef50382780bb78f1d98ed17e8ff5f",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/8b15e837e49ef50382780bb78f1d98ed17e8ff5f/mingw-w64-binutils/0011-libiberty-Preserve-errno-across-calls-to-libiberty_v.patch",
+        "size": 2304,
+        "gitBlobSha1": "85cf67cbf25d85f21152b18e6c94de47734e443c",
+        "sha256": "90890cf76f820e61d4eeeef356b0d08ff0c7a90a07691b42a37a1e17abc29cda"
+      },
+      {
+        "path": "mingw-w64-binutils/0500-fix-weak-undef-symbols-after-image-base-change.patch",
+        "commit": "8b15e837e49ef50382780bb78f1d98ed17e8ff5f",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/8b15e837e49ef50382780bb78f1d98ed17e8ff5f/mingw-w64-binutils/0500-fix-weak-undef-symbols-after-image-base-change.patch",
+        "size": 7134,
+        "gitBlobSha1": "0b03383e4b104537a2315ba92cf8aa2f280b76f9",
+        "sha256": "d0cd7344421054fb38339cf8b6622e4e80ecda94750ffb429b702b247a5f28ae"
+      },
+      {
+        "path": "mingw-w64-binutils/2001-ld-option-to-move-default-bases-under-4GB.patch",
+        "commit": "8b15e837e49ef50382780bb78f1d98ed17e8ff5f",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/8b15e837e49ef50382780bb78f1d98ed17e8ff5f/mingw-w64-binutils/2001-ld-option-to-move-default-bases-under-4GB.patch",
+        "size": 5431,
+        "gitBlobSha1": "d73facc08359cc62456b89d756412aaaf4f75639",
+        "sha256": "9945635f4a67712616202f09cbb66cf70df01be168c2c8054c455bb58bf334dd"
+      },
+      {
+        "path": "mingw-w64-binutils/2003-Revert-Restore-old-behaviour-of-windres-so-that-opti.patch",
+        "commit": "8b15e837e49ef50382780bb78f1d98ed17e8ff5f",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/8b15e837e49ef50382780bb78f1d98ed17e8ff5f/mingw-w64-binutils/2003-Revert-Restore-old-behaviour-of-windres-so-that-opti.patch",
+        "size": 2628,
+        "gitBlobSha1": "d40ac4c007efb0cdf1495240064ddb5346093ced",
+        "sha256": "3e3c53b0751a6389cd50dcbd7f78b52aaa55113414da01d3415592af18809702"
+      },
+      {
+        "path": "mingw-w64-binutils/4000-fix-DEBUG_S_INLINEELINES.patch",
+        "commit": "8b15e837e49ef50382780bb78f1d98ed17e8ff5f",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/8b15e837e49ef50382780bb78f1d98ed17e8ff5f/mingw-w64-binutils/4000-fix-DEBUG_S_INLINEELINES.patch",
+        "size": 612,
+        "gitBlobSha1": "6f384353fa2f6629b0607e1cf3dc02a224761934",
+        "sha256": "5ed35a728b956ad49a5e196ae59f681666f2754f0a4903b9280a430d7a312ea8"
+      },
+      {
+        "path": "mingw-w64-binutils/PKGBUILD",
+        "commit": "8b15e837e49ef50382780bb78f1d98ed17e8ff5f",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/8b15e837e49ef50382780bb78f1d98ed17e8ff5f/mingw-w64-binutils/PKGBUILD",
+        "size": 6361,
+        "gitBlobSha1": "7c0ec070d032a13a1befed74a3cc835e99ecc062",
+        "sha256": "fea24b484400681bc6e1dd00fd42e8ecf25cafdd79c8d51f8a6b37f64c25e300"
+      },
+      {
+        "path": "mingw-w64-binutils/libiberty-unlink-handle-windows-nul.patch",
+        "commit": "8b15e837e49ef50382780bb78f1d98ed17e8ff5f",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/8b15e837e49ef50382780bb78f1d98ed17e8ff5f/mingw-w64-binutils/libiberty-unlink-handle-windows-nul.patch",
+        "size": 420,
+        "gitBlobSha1": "a552eb09b766e8456795806fb0344dc197b44450",
+        "sha256": "7ccbd418695733c50966068fa9755a6abb156f53af23701d2bc097c63e9e0030"
+      },
+      {
+        "path": "mingw-w64-binutils/reproducible-import-libraries.patch",
+        "commit": "8b15e837e49ef50382780bb78f1d98ed17e8ff5f",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/8b15e837e49ef50382780bb78f1d98ed17e8ff5f/mingw-w64-binutils/reproducible-import-libraries.patch",
+        "size": 671,
+        "gitBlobSha1": "25de1c163eb45c00475003e634f00b5339de78e9",
+        "sha256": "a094660ec95996c00b598429843b7869037732146442af567ada9f539bd40480"
+      },
+      {
+        "path": "mingw-w64-gcc/0003-Windows-Follow-Posix-dir-exists-semantics-more-close.patch",
+        "commit": "18aeb95f69dd6bd3c9172a938c9fd35491536410",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/18aeb95f69dd6bd3c9172a938c9fd35491536410/mingw-w64-gcc/0003-Windows-Follow-Posix-dir-exists-semantics-more-close.patch",
+        "size": 4138,
+        "gitBlobSha1": "8d5c2dd735e0afa063d0b914db231f70b6ae17f3",
+        "sha256": "3fc35067823f87e48dd3bfd265e7593000dc110fa9ad5f16c81b896765fc897a"
+      },
+      {
+        "path": "mingw-w64-gcc/0007-Build-EXTRA_GNATTOOLS-for-Ada.patch",
+        "commit": "18aeb95f69dd6bd3c9172a938c9fd35491536410",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/18aeb95f69dd6bd3c9172a938c9fd35491536410/mingw-w64-gcc/0007-Build-EXTRA_GNATTOOLS-for-Ada.patch",
+        "size": 1267,
+        "gitBlobSha1": "6450d95972816387a3d67dae0041bdd77ecbbdf1",
+        "sha256": "90d5cb570083f9dea4ac0f0f87e3e8d2230f5052e6f9b946061a20a224a9d195"
+      },
+      {
+        "path": "mingw-w64-gcc/0008-Prettify-linking-no-undefined.patch",
+        "commit": "18aeb95f69dd6bd3c9172a938c9fd35491536410",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/18aeb95f69dd6bd3c9172a938c9fd35491536410/mingw-w64-gcc/0008-Prettify-linking-no-undefined.patch",
+        "size": 1404,
+        "gitBlobSha1": "c35a2eb0dd9a25fd19d6866bea2ea0238d93ae9d",
+        "sha256": "8d2d53ae26b777d90189240494de1b895c5efa1ebdcdfbf5774f29fc742499d9"
+      },
+      {
+        "path": "mingw-w64-gcc/0011-Enable-shared-gnat-implib.patch",
+        "commit": "18aeb95f69dd6bd3c9172a938c9fd35491536410",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/18aeb95f69dd6bd3c9172a938c9fd35491536410/mingw-w64-gcc/0011-Enable-shared-gnat-implib.patch",
+        "size": 1474,
+        "gitBlobSha1": "3a953c8cdb622640f3ff499ad42eaa676dcbc1b6",
+        "sha256": "5ef4148acc4a2b7ed648d4fe75fab5545e84b4b93a12d6ba4e4ea6061dd635fa"
+      },
+      {
+        "path": "mingw-w64-gcc/0012-Handle-spaces-in-path-for-default-manifest.patch",
+        "commit": "18aeb95f69dd6bd3c9172a938c9fd35491536410",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/18aeb95f69dd6bd3c9172a938c9fd35491536410/mingw-w64-gcc/0012-Handle-spaces-in-path-for-default-manifest.patch",
+        "size": 2243,
+        "gitBlobSha1": "adc926b3503811c72949adbe21251a6d5896be00",
+        "sha256": "e98805ead7d78ee2a92f237894c4b2b7ddc1688e1b517d8c04f28d440202e40f"
+      },
+      {
+        "path": "mingw-w64-gcc/0014-gcc-9-branch-clone_function_name_1-Retain-any-stdcall-suffix.patch",
+        "commit": "18aeb95f69dd6bd3c9172a938c9fd35491536410",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/18aeb95f69dd6bd3c9172a938c9fd35491536410/mingw-w64-gcc/0014-gcc-9-branch-clone_function_name_1-Retain-any-stdcall-suffix.patch",
+        "size": 3690,
+        "gitBlobSha1": "cbb82d017a2c5439d4391880be69768c16cf2207",
+        "sha256": "fd9bdecb2bbc4796bbc9f00b708dac42ef9e3464a06d6d27e5475cee117de5be"
+      },
+      {
+        "path": "mingw-w64-gcc/0020-libgomp-Don-t-hard-code-MS-printf-attributes.patch",
+        "commit": "18aeb95f69dd6bd3c9172a938c9fd35491536410",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/18aeb95f69dd6bd3c9172a938c9fd35491536410/mingw-w64-gcc/0020-libgomp-Don-t-hard-code-MS-printf-attributes.patch",
+        "size": 1608,
+        "gitBlobSha1": "08034b2f16b917ddc9699750285d85eaa45dd4ff",
+        "sha256": "ad1f7b5e7afaaec008b7cbd14feea13a10989fa91bda7003af72d457619bb199"
+      },
+      {
+        "path": "mingw-w64-gcc/0022-unset-native-system-header-dir.patch",
+        "commit": "18aeb95f69dd6bd3c9172a938c9fd35491536410",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/18aeb95f69dd6bd3c9172a938c9fd35491536410/mingw-w64-gcc/0022-unset-native-system-header-dir.patch",
+        "size": 860,
+        "gitBlobSha1": "167c693557051c46c1c2ba2ea2a956ba26d646c1",
+        "sha256": "d8b9b979dc1742f63d23dfca92bc05944612bd196a31fb882b8a616baba84383"
+      },
+      {
+        "path": "mingw-w64-gcc/0140-gcc-diagnostic-color.patch",
+        "commit": "18aeb95f69dd6bd3c9172a938c9fd35491536410",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/18aeb95f69dd6bd3c9172a938c9fd35491536410/mingw-w64-gcc/0140-gcc-diagnostic-color.patch",
+        "size": 1275,
+        "gitBlobSha1": "ad9b3a1467a584cd0eab15463153901b373477d4",
+        "sha256": "c94004dab1685a6fa9124de86aae742df4136a2e9ff5d5e1ad87ecdc35fbcef4"
+      },
+      {
+        "path": "mingw-w64-gcc/0200-add-m-no-align-vector-insn-option-for-i386.patch",
+        "commit": "18aeb95f69dd6bd3c9172a938c9fd35491536410",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/18aeb95f69dd6bd3c9172a938c9fd35491536410/mingw-w64-gcc/0200-add-m-no-align-vector-insn-option-for-i386.patch",
+        "size": 7553,
+        "gitBlobSha1": "0cf16938463bc52872fb490733366434cb643c47",
+        "sha256": "1484911163634f30324827619c873a6267b377abba0df8bbedfd128163c53ea4"
+      },
+      {
+        "path": "mingw-w64-gcc/2001-fix-building-rust-on-mingw-w64.patch",
+        "commit": "18aeb95f69dd6bd3c9172a938c9fd35491536410",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/18aeb95f69dd6bd3c9172a938c9fd35491536410/mingw-w64-gcc/2001-fix-building-rust-on-mingw-w64.patch",
+        "size": 343,
+        "gitBlobSha1": "e1330fe8d091b81dac56db5f4adfa602e06bee17",
+        "sha256": "a411f59953553a3d01dd64c79b1acbb91eca092c4cb01bfd26b1c51c3eb798e8"
+      },
+      {
+        "path": "mingw-w64-gcc/3001-fix-codeview-crashes.patch",
+        "commit": "18aeb95f69dd6bd3c9172a938c9fd35491536410",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/18aeb95f69dd6bd3c9172a938c9fd35491536410/mingw-w64-gcc/3001-fix-codeview-crashes.patch",
+        "size": 4097,
+        "gitBlobSha1": "6ac89abd6831a8c0894692f30dd764c319587c9c",
+        "sha256": "f21f9ab731e9cab8fd4ca8c289497f859ef7004e6fa0507877dc2559ac2071c3"
+      },
+      {
+        "path": "mingw-w64-gcc/PKGBUILD",
+        "commit": "18aeb95f69dd6bd3c9172a938c9fd35491536410",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/18aeb95f69dd6bd3c9172a938c9fd35491536410/mingw-w64-gcc/PKGBUILD",
+        "size": 23978,
+        "gitBlobSha1": "1a21b0f60fa05ca5226c52ddf971c5931bd92fbb",
+        "sha256": "40f248fa589babd9315cc589a76a0c00939355bd68c92287a2dcb7d1acb58f96"
+      },
+      {
+        "path": "mingw-w64-gcc/gdbinit",
+        "commit": "18aeb95f69dd6bd3c9172a938c9fd35491536410",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/18aeb95f69dd6bd3c9172a938c9fd35491536410/mingw-w64-gcc/gdbinit",
+        "size": 180,
+        "gitBlobSha1": "5786c603704a661d158ddb4d76c8b97c9d7bdae0",
+        "sha256": "bce81824fc89e5e62cca350de4c17a27e27a18a1a1ad5ca3492aec1fc5af3234"
+      },
+      {
+        "path": "mingw-w64-gettext/0005-Fix-compilation-of-pthread_sigmask.c.patch",
+        "commit": "efb77424dfbeaaa22d96621274765d7ab5a3344f",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/efb77424dfbeaaa22d96621274765d7ab5a3344f/mingw-w64-gettext/0005-Fix-compilation-of-pthread_sigmask.c.patch",
+        "size": 453,
+        "gitBlobSha1": "edc560cbe29b5be42bf4eec232954ebaaf363d05",
+        "sha256": "cbc2f533012d646521afa20f8b256917fce040741ff42cf53fb6dd7123a6670a"
+      },
+      {
+        "path": "mingw-w64-gettext/0021-replace-fsync.patch",
+        "commit": "efb77424dfbeaaa22d96621274765d7ab5a3344f",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/efb77424dfbeaaa22d96621274765d7ab5a3344f/mingw-w64-gettext/0021-replace-fsync.patch",
+        "size": 551,
+        "gitBlobSha1": "0deeee8c2ecf0f88d0db613cbd9a217c0d9e7503",
+        "sha256": "380dbddee2f9e2feee4c1435e8a942b5d11d0125e60c3350ebb10c19b19011aa"
+      },
+      {
+        "path": "mingw-w64-gettext/0022-libasprintf.patch",
+        "commit": "efb77424dfbeaaa22d96621274765d7ab5a3344f",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/efb77424dfbeaaa22d96621274765d7ab5a3344f/mingw-w64-gettext/0022-libasprintf.patch",
+        "size": 983,
+        "gitBlobSha1": "e7e2645e4a339386240a00913a9eda856c8f846f",
+        "sha256": "c354f6a7021069c99b90f1c6d6f6a4ccf40a01e9f6742b866df2b5a7286cb868"
+      },
+      {
+        "path": "mingw-w64-gettext/0024-disable-gnu-format.patch",
+        "commit": "efb77424dfbeaaa22d96621274765d7ab5a3344f",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/efb77424dfbeaaa22d96621274765d7ab5a3344f/mingw-w64-gettext/0024-disable-gnu-format.patch",
+        "size": 704,
+        "gitBlobSha1": "a368819bf3a0a687308adb4583f853deb003a2ee",
+        "sha256": "ce7ccf6dd3a492cab322253cd67310899b546eccc25821c25cbc047a1a984633"
+      },
+      {
+        "path": "mingw-w64-gettext/0030-fix-build-with-mingw-w64-clang.patch",
+        "commit": "efb77424dfbeaaa22d96621274765d7ab5a3344f",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/efb77424dfbeaaa22d96621274765d7ab5a3344f/mingw-w64-gettext/0030-fix-build-with-mingw-w64-clang.patch",
+        "size": 367,
+        "gitBlobSha1": "a8b4527d9b652830858251c7cb2bbceb53aa1727",
+        "sha256": "9b1b4f0c65b3bc1a3103c921a02c203cecf533d145f0bd90023406e760f81749"
+      },
+      {
+        "path": "mingw-w64-gettext/122-Use-LF-as-newline-in-envsubst.patch",
+        "commit": "efb77424dfbeaaa22d96621274765d7ab5a3344f",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/efb77424dfbeaaa22d96621274765d7ab5a3344f/mingw-w64-gettext/122-Use-LF-as-newline-in-envsubst.patch",
+        "size": 863,
+        "gitBlobSha1": "4aa1920e41c0ad7e46a753e59fe2883b085a5d77",
+        "sha256": "ec39103d851262c02c27b7038f3c538e03afaefc6aa050311d62519d192ff38c"
+      },
+      {
+        "path": "mingw-w64-gettext/PKGBUILD",
+        "commit": "efb77424dfbeaaa22d96621274765d7ab5a3344f",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/efb77424dfbeaaa22d96621274765d7ab5a3344f/mingw-w64-gettext/PKGBUILD",
+        "size": 8260,
+        "gitBlobSha1": "26766c5b045097aee6ce2443d5ecbe1407e3e361",
+        "sha256": "853ef80a50588f29355722a4513f24cf1a5f8de06e0b5ee326580464db539741"
+      },
+      {
+        "path": "mingw-w64-gmp/PKGBUILD",
+        "commit": "19a497b647dea2939e4fe9cc2ad5818f83b1632f",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/19a497b647dea2939e4fe9cc2ad5818f83b1632f/mingw-w64-gmp/PKGBUILD",
+        "size": 2288,
+        "gitBlobSha1": "62e372a3e5d38934d5a28eb785f8284c09b9e4b2",
+        "sha256": "b9d3bb2b5b12cb0fc47c4dc17a9a2aa82513236eaefa34c8dfc57dd0d92bc42a"
+      },
+      {
+        "path": "mingw-w64-gmp/do-not-use-dllimport.diff",
+        "commit": "19a497b647dea2939e4fe9cc2ad5818f83b1632f",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/19a497b647dea2939e4fe9cc2ad5818f83b1632f/mingw-w64-gmp/do-not-use-dllimport.diff",
+        "size": 491,
+        "gitBlobSha1": "765a2aa2124b4a595ead640f5486a59b2303ba93",
+        "sha256": "385ab704f82c47f3aecc9141f43c96e7b8de2bf0e654dc457ce0f1a039db2c68"
+      },
+      {
+        "path": "mingw-w64-gmp/gmp-staticlib.diff",
+        "commit": "19a497b647dea2939e4fe9cc2ad5818f83b1632f",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/19a497b647dea2939e4fe9cc2ad5818f83b1632f/mingw-w64-gmp/gmp-staticlib.diff",
+        "size": 900,
+        "gitBlobSha1": "1fa0b88008289b2d30c6f20a7cd0644394edef28",
+        "sha256": "7c3cde2634baa2cb1c31404bbfed2d8d7ba33556971ac842a08f2e87667849ab"
+      },
+      {
+        "path": "mingw-w64-isl/PKGBUILD",
+        "commit": "9570fbfc347162848b40dcccf3df1b5f1256accc",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/9570fbfc347162848b40dcccf3df1b5f1256accc/mingw-w64-isl/PKGBUILD",
+        "size": 1463,
+        "gitBlobSha1": "a0e58c23b052a192cc210104b1a5791e715b5d20",
+        "sha256": "357e568e64456464d2dc0f61b7b34720cc4f8125e74f6b94667e53ab4bb1b595"
+      },
+      {
+        "path": "mingw-w64-isl/isl-0.14.1-no-undefined.patch",
+        "commit": "9570fbfc347162848b40dcccf3df1b5f1256accc",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/9570fbfc347162848b40dcccf3df1b5f1256accc/mingw-w64-isl/isl-0.14.1-no-undefined.patch",
+        "size": 391,
+        "gitBlobSha1": "3da3fbb709313c3f2549fdbe497e4f33b5d23205",
+        "sha256": "83655a7202f0a0dcce1782d4b365252bf1ad12a522b7ad82ab578ee5ec46433b"
+      },
+      {
+        "path": "mingw-w64-libiconv/0002-fix-cr-for-awk-in-configure.all.patch",
+        "commit": "045d46aedb9fdbd93b0900b1e20c1a6c73f23072",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/045d46aedb9fdbd93b0900b1e20c1a6c73f23072/mingw-w64-libiconv/0002-fix-cr-for-awk-in-configure.all.patch",
+        "size": 415,
+        "gitBlobSha1": "61f502685bc32ea1df5cc0b8cac355742da47bee",
+        "sha256": "89d5c0f666e50a0186cfb142ba7b77e8fe1ac4d65bdfd9ae14ae8d2f0045a87c"
+      },
+      {
+        "path": "mingw-w64-libiconv/0003-add-cp65001-as-utf8-alias.patch",
+        "commit": "045d46aedb9fdbd93b0900b1e20c1a6c73f23072",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/045d46aedb9fdbd93b0900b1e20c1a6c73f23072/mingw-w64-libiconv/0003-add-cp65001-as-utf8-alias.patch",
+        "size": 518,
+        "gitBlobSha1": "8090b0f090ee29e668e943cf01f7c508b5783add",
+        "sha256": "cb2b1cca44c9b9bd11c3bd33997c10d22dff263542275324c88f34b59910ef87"
+      },
+      {
+        "path": "mingw-w64-libiconv/PKGBUILD",
+        "commit": "045d46aedb9fdbd93b0900b1e20c1a6c73f23072",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/045d46aedb9fdbd93b0900b1e20c1a6c73f23072/mingw-w64-libiconv/PKGBUILD",
+        "size": 4906,
+        "gitBlobSha1": "c500d8442c5cf562f727407d9933807ba7bb8bc0",
+        "sha256": "9b3212d06910560fb59e017e0b73a29d392a5082d3a47a613e61509bd7dcd475"
+      },
+      {
+        "path": "mingw-w64-libiconv/fix-pointer-buf.patch",
+        "commit": "045d46aedb9fdbd93b0900b1e20c1a6c73f23072",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/045d46aedb9fdbd93b0900b1e20c1a6c73f23072/mingw-w64-libiconv/fix-pointer-buf.patch",
+        "size": 1664,
+        "gitBlobSha1": "914b87bdf0e95e5f7253a0363f45acb39d4a2ee3",
+        "sha256": "6b6e2393840f4dc6067587165777b1a07978f4c05247d7c1010a45ad251bbeeb"
+      },
+      {
+        "path": "mingw-w64-libiconv/iconv.pc",
+        "commit": "045d46aedb9fdbd93b0900b1e20c1a6c73f23072",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/045d46aedb9fdbd93b0900b1e20c1a6c73f23072/mingw-w64-libiconv/iconv.pc",
+        "size": 240,
+        "gitBlobSha1": "d7d0ede1bcff185465dd10fd4bb0cc5db251a963",
+        "sha256": "56e7ec406bf42eb66b1d972f20d229f7a76ba00c38c7b4403bf348875704baae"
+      },
+      {
+        "path": "mingw-w64-mpc/PKGBUILD",
+        "commit": "192b41f75879a0e16ec5418b39b881fe63e8aff0",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/192b41f75879a0e16ec5418b39b881fe63e8aff0/mingw-w64-mpc/PKGBUILD",
+        "size": 1306,
+        "gitBlobSha1": "61f07a1715f12af22c40f57edf36ddd356f03f9d",
+        "sha256": "6779f6aea6f6c80219cc0d31fc840f88b074e28296bd315460793d60665c5ff7"
+      },
+      {
+        "path": "mingw-w64-mpfr/PKGBUILD",
+        "commit": "82bcf47d0ae2621e1cd00fb82c8ee5db02b91955",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/82bcf47d0ae2621e1cd00fb82c8ee5db02b91955/mingw-w64-mpfr/PKGBUILD",
+        "size": 1555,
+        "gitBlobSha1": "0433690338a2c91a4280dd02442761dcbc9041a4",
+        "sha256": "6ffc49a5e6194f63c2514fa789b849a572de8b6b84e0cfa6b085397506308dac"
+      },
+      {
+        "path": "mingw-w64-mpfr/patches.diff",
+        "commit": "82bcf47d0ae2621e1cd00fb82c8ee5db02b91955",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/82bcf47d0ae2621e1cd00fb82c8ee5db02b91955/mingw-w64-mpfr/patches.diff",
+        "size": 80585,
+        "gitBlobSha1": "75304956bec3fe6ef75ceb2ca041003adf54ff57",
+        "sha256": "a9099cee74188d5f522b7b3fca0097196c6dd38126f8f042d233010cbf92e8d0"
+      },
+      {
+        "path": "mingw-w64-tzdata/PKGBUILD",
+        "commit": "63b370cf92d9a6c3327553181b4f90458c2787d9",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/63b370cf92d9a6c3327553181b4f90458c2787d9/mingw-w64-tzdata/PKGBUILD",
+        "size": 2187,
+        "gitBlobSha1": "89b8830e7f412fea2191655903a48e2467d522db",
+        "sha256": "41f117d725c0c7273e85866eaa12140152bbc367fed433eb17b087f88c18a932"
+      },
+      {
+        "path": "mingw-w64-windows-default-manifest/PKGBUILD",
+        "commit": "d5cf1c1c9b1a17aa753f2b130d6d3075dee38df4",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/d5cf1c1c9b1a17aa753f2b130d6d3075dee38df4/mingw-w64-windows-default-manifest/PKGBUILD",
+        "size": 991,
+        "gitBlobSha1": "84a148be6b3e9dc212ce6394f0e4c6087cbc5dca",
+        "sha256": "60b9b97d17e6f3ee543ba56fa4690dc8b327d0a24cf33c32a8fffdd831e216b3"
+      },
+      {
+        "path": "mingw-w64-zlib/01-zlib-1.2.11-1-buildsys.mingw.patch",
+        "commit": "6430831b570304e48982fce7d65af399b801ceab",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/6430831b570304e48982fce7d65af399b801ceab/mingw-w64-zlib/01-zlib-1.2.11-1-buildsys.mingw.patch",
+        "size": 9316,
+        "gitBlobSha1": "ec7c0b8e38c37bf7cb86b73297948499c775f192",
+        "sha256": "b58b353d976d6fdd9a5094e60fa39439d4f14e9bf8be4a8bd475f2cd47f10226"
+      },
+      {
+        "path": "mingw-w64-zlib/03-dont-put-sodir-into-L.mingw.patch",
+        "commit": "6430831b570304e48982fce7d65af399b801ceab",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/6430831b570304e48982fce7d65af399b801ceab/mingw-w64-zlib/03-dont-put-sodir-into-L.mingw.patch",
+        "size": 172,
+        "gitBlobSha1": "0fce7d5844646e21230ad3f4248629127a5dbd30",
+        "sha256": "7287d12db57dcf0f66964c861100bf06ebe1ddcb243e7ee0773fcab1b2935596"
+      },
+      {
+        "path": "mingw-w64-zlib/04-fix-largefile-support.patch",
+        "commit": "6430831b570304e48982fce7d65af399b801ceab",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/6430831b570304e48982fce7d65af399b801ceab/mingw-w64-zlib/04-fix-largefile-support.patch",
+        "size": 756,
+        "gitBlobSha1": "bcfb3f02ec0a3f6e3920127921d6b9d51c08f459",
+        "sha256": "8e1cdf8edfc6ac08b0e660ca42a977942a88fab3ff59c01c87ba96500e2c3e63"
+      },
+      {
+        "path": "mingw-w64-zlib/07-Add-no-undefined-to-link-to-enable-build-shared-vers.patch",
+        "commit": "6430831b570304e48982fce7d65af399b801ceab",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/6430831b570304e48982fce7d65af399b801ceab/mingw-w64-zlib/07-Add-no-undefined-to-link-to-enable-build-shared-vers.patch",
+        "size": 722,
+        "gitBlobSha1": "e2621b1d17ee47c55b68d917734212f334464c61",
+        "sha256": "fb83292f494f649ea7f1835aa4abea61acc593d7f90625741d42cd99cac0e075"
+      },
+      {
+        "path": "mingw-w64-zlib/08-Add-bzip2-library-to-pkg-config-file.patch",
+        "commit": "6430831b570304e48982fce7d65af399b801ceab",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/6430831b570304e48982fce7d65af399b801ceab/mingw-w64-zlib/08-Add-bzip2-library-to-pkg-config-file.patch",
+        "size": 616,
+        "gitBlobSha1": "306254e1442f7e929e833d3edfa695b15015d9a3",
+        "sha256": "0be98a7e660e7c068856f08b9e92d6c73a6b0d88c3e29a9716140b147f7c23c5"
+      },
+      {
+        "path": "mingw-w64-zlib/PKGBUILD",
+        "commit": "6430831b570304e48982fce7d65af399b801ceab",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/6430831b570304e48982fce7d65af399b801ceab/mingw-w64-zlib/PKGBUILD",
+        "size": 4262,
+        "gitBlobSha1": "ca7551cdeb1e21f33941efbf412b145f982d1b35",
+        "sha256": "8a4a54a964eab7efa313e2faa8267052bc237ef61f8adf82a55cc93f4028db8a"
+      },
+      {
+        "path": "mingw-w64-zstd/PKGBUILD",
+        "commit": "72f950d88ac5e5d29e23ded555db81e4b3077ccf",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/72f950d88ac5e5d29e23ded555db81e4b3077ccf/mingw-w64-zstd/PKGBUILD",
+        "size": 2187,
+        "gitBlobSha1": "e13a480f3f871e2068605eeef5e0c56300dac9e7",
+        "sha256": "ef88e168f729b6e57bdccb8d566a1cbc1b0b1fd4ef86b26cc4c441236e496388"
+      },
+      {
+        "path": "mingw-w64-zstd/zstd-1.4.0-fileio-mingw.patch",
+        "commit": "72f950d88ac5e5d29e23ded555db81e4b3077ccf",
+        "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/72f950d88ac5e5d29e23ded555db81e4b3077ccf/mingw-w64-zstd/zstd-1.4.0-fileio-mingw.patch",
+        "size": 1166,
+        "gitBlobSha1": "865d88cd86f2b51980ce627aca070156d9dcb8af",
+        "sha256": "283e584477a8f70c9bea86a500486dd11dfcb59b22690fd94deb44a3f95a6668"
+      }
+    ]
+  }
+}

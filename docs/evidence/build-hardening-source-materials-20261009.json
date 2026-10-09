@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "observedDate": "2026-10-09",
+  "scope": "Bounded inspection of two fixed public reference ZIPs; no binary execution or source/build/license closure claim",
+  "archives": {
+    "mpv": {
+      "commit": "dd5d17d3285a095a0f712fa9d116e22a076492de",
+      "url": "https://codeload.github.com/mpv-player/mpv/zip/dd5d17d3285a095a0f712fa9d116e22a076492de",
+      "size": 8023071,
+      "sha256": "e82426ff14b1c05705f9e16889bba17f28e578b6c5a0b32ed03b0f9ee050c72f",
+      "entries": 1006,
+      "files": 944,
+      "directories": 62,
+      "uncompressedBytes": 15323220,
+      "pinnedHeader": {
+        "entry": "include/mpv/client.h",
+        "size": 86136,
+        "sha256": "1acf99ee77c8c2a6f1d1993bd81bbc8a91d27fb5924e80171670e6139a4bd353",
+        "matchesVendorNativeHelperManifest": true
+      },
+      "rootNotices": [
+        "Copyright",
+        "LICENSE.GPL",
+        "LICENSE.LGPL"
+      ],
+      "subprojectFileCount": 0,
+      "remainingUnknowns": [
+        "The declared mpv-dev-x86_64-20260809-git-dd5d17d328.7z was not available for independent verification.",
+        "The source commit is not an exact-byte build relation to the distributed patched mpv-1.dll.",
+        "The Shinchiro winbuild revision, dependency source revisions, patches, build configuration, toolchain and complete notices remain missing.",
+        "FFmpeg, libplacebo and other linked dependency source trees are not contained in this ZIP."
+      ]
+    },
+    "windowsHost": {
+      "commit": "708fadc068cbf66ced6aece4a32f3e12bb2c4e13",
+      "url": "https://codeload.github.com/MediaBrowser/emby-theater-windows/zip/708fadc068cbf66ced6aece4a32f3e12bb2c4e13",
+      "size": 198671303,
+      "sha256": "7dc15a294137c0a40553282289f4590b7cf75a8f9169dafbe5d08d2fe3a1a884",
+      "entries": 269,
+      "files": 227,
+      "directories": 42,
+      "uncompressedBytes": 477265262,
+      "sourceInventory": {
+        "hostCSharpFiles": 46,
+        "refreshRateCSharpFiles": 2,
+        "projectAndSolutionFiles": 3,
+        "hostOutputType": "WinExe",
+        "hostAssemblyName": "Emby.Theater",
+        "hostTargetFramework": "v4.6.2",
+        "refreshRateOutputType": "Exe",
+        "refreshRateAssemblyName": "RefreshRate",
+        "refreshRateTargetFramework": "v4.6.1",
+        "refreshRateAssemblyVersion": "1.0.0.0",
+        "packageEntries": 0,
+        "offlineWwwEntries": 0,
+        "thirdPartyCecSourceFiles": 0,
+        "thirdPartySharpCompressSourceFiles": 0,
+        "thirdPartySocketHttpListenerSourceFiles": 0
+      },
+      "declaredPackageReferences": [
+        "MediaBrowser.Common=3.3.10",
+        "ServiceStack.Text=4.5.14",
+        "SimpleInjector=4.0.11"
+      ],
+      "exactBinaryMappings": [
+        {
+          "zipEntry": "Emby.Theater/electronapp/libmpv/x64/RefreshRate.exe",
+          "runtimePath": "electronapp/libmpv/x64/RefreshRate.exe",
+          "size": 7168,
+          "sha256": "c3ac38b3345d804afc4ba97f34f059d0c4294ac5f55f62a25948ee62975eaa81"
+        },
+        {
+          "zipEntry": "ThirdParty/SharpCompress/SharpCompress.dll",
+          "runtimePath": "SharpCompress.dll",
+          "size": 420864,
+          "sha256": "3c34138417974ce215e5d1b5bdbb7abd578ce77420073ea9de3f46ccebe42b55"
+        },
+        {
+          "zipEntry": "ThirdParty/emby/SocketHttpListener.dll",
+          "runtimePath": "SocketHttpListener.dll",
+          "size": 115200,
+          "sha256": "7d1e347f1cb6ff10b011547665bcf13bb734306e8977e572021161f52a43f852"
+        },
+        {
+          "zipEntry": "ThirdParty/cec/cec-client.exe",
+          "runtimePath": "cec/cec-client.exe",
+          "size": 89536,
+          "sha256": "42f601278f82c37d0cc26460d4ac80e62f6cec5b84b2efb0ee8ed75c1cbc4519"
+        },
+        {
+          "zipEntry": "ThirdParty/cec/cec-client.x64.exe",
+          "runtimePath": "cec/cec-client.x64.exe",
+          "size": 89536,
+          "sha256": "42f601278f82c37d0cc26460d4ac80e62f6cec5b84b2efb0ee8ed75c1cbc4519"
+        },
+        {
+          "zipEntry": "ThirdParty/cec/cec.dll",
+          "runtimePath": "cec/cec.dll",
+          "size": 325568,
+          "sha256": "6e2932ab53f4d05d5f815499786a48c3ccb8a60c527aa2f34e4abbf14dc66d04"
+        },
+        {
+          "zipEntry": "ThirdParty/cec/cec.x64.dll",
+          "runtimePath": "cec/cec.x64.dll",
+          "size": 325568,
+          "sha256": "6e2932ab53f4d05d5f815499786a48c3ccb8a60c527aa2f34e4abbf14dc66d04"
+        },
+        {
+          "zipEntry": "ThirdParty/cec/p8-usbcec-driver-installer.exe",
+          "runtimePath": "cec/p8-usbcec-driver-installer.exe",
+          "size": 619536,
+          "sha256": "6e4d5a091720cf5ad727896bbf3766e5529468e24849183439506130bde3546a"
+        }
+      ],
+      "exactBinaryComparison": {
+        "compared": 8,
+        "exact": 8,
+        "mismatch": 0,
+        "missing": 0
+      },
+      "absentBinaryNames": [
+        "Emby.Theater.exe",
+        "MediaBrowser.Common.dll",
+        "MediaBrowser.Model.dll",
+        "ServiceStack.Text.dll",
+        "SimpleInjector.dll",
+        "System.Configuration.dll"
+      ],
+      "referenceLibmpv": {
+        "entry": "Emby.Theater/electronapp/libmpv/x64/mpv-1.dll",
+        "size": 79501221,
+        "sha256": "cc4928b44cd6a75d3dada502d98ab2b4763ca847ee90b1364a1289f22278a5fe",
+        "matchesCarnivalBase": false,
+        "matchesPatchedRuntime": false
+      },
+      "remainingUnknowns": [
+        "The public archive contains Host and RefreshRate projects but no Emby.Theater.exe, so the distributed Host executable is not tied to an exact public binary entry or verified rebuild.",
+        "The MediaBrowser.Common, MediaBrowser.Model, ServiceStack.Text, SimpleInjector and System.Configuration binaries are absent; the archive contains no restored packages directory.",
+        "The Host project references System.Configuration through an external machine reference-assembly path, so a complete pinned Host build environment is not present.",
+        "RefreshRate source and the exact distributed binary are colocated, but an independent deterministic rebuild was not performed.",
+        "The eight exact ThirdParty binary mappings establish public byte identity, not corresponding source or deterministic build closure for CEC, SharpCompress or SocketHttpListener.",
+        "The archive contains no offline electronapp/www snapshot.",
+        "The archive's x64 mpv-1.dll matches neither the Carnival base DLL nor the patched runtime DLL."
+      ]
+    }
+  }
+}

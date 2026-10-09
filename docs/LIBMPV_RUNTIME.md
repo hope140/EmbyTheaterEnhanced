@@ -14,7 +14,9 @@ Electron 44 candidate 的 background process/runtime evidence：Electron `44.4.2
 | ffmpeg-version | N-125998-g2a20737f6 | DLL property |
 | libmpv-version / mpv-build-date | null / null | 该次 property 查询未返回值，不据此推断加载失败 |
 
-libmpv 来源随综合补丁内的说明为 [shinchiro 20260809 release](https://github.com/shinchiro/mpv-winbuild-cmake/releases/tag/20260809)，asset `mpv-dev-x86_64-20260809-git-dd5d17d328.7z`。来源说明中的构建日期为 2026-08-09，runtime 未能用 mpv-build-date property 复核。DLL SHA256 为 `965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c`，因 bridge 导入文件名将 libmpv-2.dll 保持为 mpv-1.dll。
+综合补丁内的说明将libmpv标为来自 [shinchiro 20260809 release](https://github.com/shinchiro/mpv-winbuild-cmake/releases/tag/20260809)，asset `mpv-dev-x86_64-20260809-git-dd5d17d328.7z`，原文件名libmpv-2.dll，输入中保留为mpv-1.dll。这是补丁提供的来源声明。2026-10-09只读核查该release API返回404、Git refs未找到该tag，本轮不能重新取得exact asset并独立核对DLL；没有据此推断补丁声明错误。说明中的构建日期2026-08-09也未由mpv-build-date property复核。
+
+本地DLL SHA256确认为 `965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c`，历史版本/API probe见上表。精确构建脚本、依赖revision/patch、构建选项和完整对应源码材料仍未闭合；固定[mpv源码revision](https://github.com/mpv-player/mpv/tree/dd5d17d3285a095a0f712fa9d116e22a076492de)不单独证明整个DLL的来源或许可模式。材料状态和最小补齐步骤见 [构建输入审计](BUILD_INPUT_AUDIT.md)。
 
 ## 最小诊断
 

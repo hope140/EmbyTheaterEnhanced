@@ -18,6 +18,7 @@
 #include <iostream>
 #include <limits>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <set>
 #include <sstream>
@@ -421,12 +422,168 @@ class Helper {
     std::thread surfaceThread;
     std::atomic<bool> closing{false};
     std::atomic<int> surfaceState{0};
+    static constexpr size_t MAX_HELD_FRAME_BYTES = 64 * 1024 * 1024;
+    static constexpr UINT WM_FRAME_SHOW = WM_APP + 41;
+    static constexpr UINT WM_FRAME_HIDE = WM_APP + 42;
+    static constexpr UINT WM_FRAME_AUTO_RELEASE = WM_APP + 43;
+    enum class AutoStage { Idle, Armed, CapturePending, ReleasePending, Released, Unavailable, Cancelled };
+    enum class AutoFence { NotAttempted, Success, Failed, Unavailable };
+    enum class AutoFailure { None, QueueFailed, ReplyFailed, ScreenshotInvalid, UiDispatchFailed, DwmUnavailable, DwmFailed, TargetEndFile, DeadlineExpired };
 #ifdef ETE_HELPER_TESTING
     std::string rejectNextOperation;
 #endif
+    decltype(&mpv_command_ret) p_frame_mpv_command_ret = nullptr;
+    struct HeldFrame {
+        uint64_t holdId = 0;
+        uint64_t generationId = 0;
+        uint64_t preparationGenerationId = 0;
+        int width = 0;
+        int height = 0;
+        std::shared_ptr<const std::vector<uint8_t>> pixels;
+#ifdef ETE_HELPER_TESTING
+        uint64_t hash = 0;
+        uint8_t meanR = 0, meanG = 0, meanB = 0;
+        uint64_t captureMicros = 0;
+#endif
+    };
+#ifdef ETE_HELPER_TESTING
+    struct AutoCaptureMetadata {
+        int width = 0, height = 0;
+        size_t bytes = 0;
+        uint64_t captureMicros = 0, hash = 0;
+        uint8_t meanR = 0, meanG = 0, meanB = 0;
+        bool valid = false;
+    };
+#endif
+    std::mutex frameMutex;
+    std::shared_ptr<HeldFrame> heldFrame;
+    std::atomic<HWND> frameWindow{nullptr};
+    std::atomic<bool> frameLayeredReady{false};
+    std::mutex framePaintMutex;
+    std::condition_variable framePaintCondition;
+    uint64_t nextHoldId = 1;
+    uint64_t lastPaintId = 0, lastHideId = 0;
+    bool lastPaintSucceeded = false;
+    using DwmFlushFn = HRESULT(WINAPI*)();
+    HMODULE dwmLibrary = nullptr;
+    DwmFlushFn p_frame_dwm_flush = nullptr;
+    HMODULE gdiLibrary = nullptr;
+    decltype(&StretchDIBits) p_frame_stretch_dibits = nullptr;
+    uint64_t latestActivatedGeneration = 0;
+    uint64_t cancelledPreparationThroughGeneration = 0;
+    uint64_t autoTargetGeneration = 0, autoHoldId = 0, autoScreenshotReplyId = 0;
+    uint64_t autoDeadlineMicros = 0;
+#ifdef ETE_HELPER_TESTING
+    uint64_t autoScreenshotStartedMicros = 0;
+#endif
+    int64_t autoExpectedMedia = -1;
+    bool autoFileLoaded = false, autoOneShotConsumed = false;
+#ifdef ETE_HELPER_TESTING
+    AutoCaptureMetadata autoCaptureMetadata;
+#endif
+    std::atomic<uint64_t> autoAuthorizedGeneration{0}, autoAuthorizedHoldId{0};
+    std::atomic<AutoStage> autoStage{AutoStage::Idle};
+    std::atomic<AutoFence> autoFence{AutoFence::NotAttempted};
+    std::atomic<AutoFailure> autoFailure{AutoFailure::None};
 
     static LRESULT CALLBACK surfaceWindowProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) {
         if (message == WM_NCHITTEST) return HTTRANSPARENT;
+        return DefWindowProcW(window, message, wparam, lparam);
+    }
+    static LRESULT CALLBACK frameWindowProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) {
+        if (message == WM_NCCREATE) {
+            auto* created = reinterpret_cast<CREATESTRUCTW*>(lparam);
+            SetWindowLongPtrW(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(created->lpCreateParams));
+            return TRUE;
+        }
+        auto* self = reinterpret_cast<Helper*>(GetWindowLongPtrW(window, GWLP_USERDATA));
+        if (message == WM_NCHITTEST) return HTTRANSPARENT;
+        if (self && message == WM_FRAME_SHOW) {
+            std::shared_ptr<HeldFrame> frame;
+            { std::lock_guard<std::mutex> lock(self->frameMutex); frame = self->heldFrame; }
+            if (!frame || frame->holdId != static_cast<uint64_t>(wparam)) return 0;
+            RECT bounds{};
+            if (GetClientRect(self->parent, &bounds)) {
+                SetWindowPos(window, HWND_TOP, 0, 0, std::max<LONG>(1, bounds.right - bounds.left),
+                    std::max<LONG>(1, bounds.bottom - bounds.top), SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_SHOWWINDOW);
+                InvalidateRect(window, nullptr, FALSE);
+                UpdateWindow(window);
+            }
+            return 0;
+        }
+        if (self && message == WM_FRAME_HIDE) {
+            bool newerHold = false;
+            { std::lock_guard<std::mutex> lock(self->frameMutex);
+              newerHold = self->heldFrame && self->heldFrame->holdId > static_cast<uint64_t>(wparam); }
+            if (!newerHold) ShowWindow(window, SW_HIDE);
+            { std::lock_guard<std::mutex> lock(self->framePaintMutex); self->lastHideId = static_cast<uint64_t>(wparam); }
+            self->framePaintCondition.notify_all();
+            return 0;
+        }
+        if (self && message == WM_FRAME_AUTO_RELEASE) {
+            uint64_t holdId = static_cast<uint64_t>(wparam);
+            uint64_t target = static_cast<uint64_t>(lparam);
+            auto authorized = [&] {
+                return self->autoAuthorizedGeneration.load(std::memory_order_acquire) == target &&
+                    self->autoAuthorizedHoldId.load(std::memory_order_acquire) == holdId &&
+                    self->heldFrame && self->heldFrame->holdId == holdId;
+            };
+            {
+                std::lock_guard<std::mutex> lock(self->frameMutex);
+                if (!authorized()) return 0;
+            }
+            HRESULT fenceResult = self->p_frame_dwm_flush ? self->p_frame_dwm_flush() : E_NOTIMPL;
+            {
+                std::lock_guard<std::mutex> lock(self->frameMutex);
+                if (!authorized()) return 0;
+                if (!self->p_frame_dwm_flush || FAILED(fenceResult)) {
+                    self->autoAuthorizedGeneration.store(0, std::memory_order_release);
+                    self->autoAuthorizedHoldId.store(0, std::memory_order_release);
+                    self->autoFence.store(self->p_frame_dwm_flush ? AutoFence::Failed : AutoFence::Unavailable);
+                    self->autoFailure.store(self->p_frame_dwm_flush ? AutoFailure::DwmFailed : AutoFailure::DwmUnavailable);
+                    self->autoStage.store(AutoStage::Unavailable);
+                    self->heldFrame.reset();
+                    PostMessageW(window, WM_FRAME_HIDE, static_cast<WPARAM>(holdId), 0);
+                    return 0;
+                }
+                ShowWindow(window, SW_HIDE);
+                self->heldFrame.reset();
+                self->autoAuthorizedGeneration.store(0, std::memory_order_release);
+                self->autoAuthorizedHoldId.store(0, std::memory_order_release);
+                self->autoFence.store(AutoFence::Success);
+                self->autoStage.store(AutoStage::Released);
+            }
+            return 0;
+        }
+        if (self && message == WM_PAINT) {
+            PAINTSTRUCT paint{};
+            HDC context = BeginPaint(window, &paint);
+            std::shared_ptr<HeldFrame> frame;
+            { std::lock_guard<std::mutex> lock(self->frameMutex); frame = self->heldFrame; }
+            bool painted = false;
+            if (context && frame && frame->pixels && !frame->pixels->empty() && self->p_frame_stretch_dibits) {
+                RECT bounds{};
+                if (GetClientRect(window, &bounds)) {
+                    BITMAPINFO bitmap{};
+                    bitmap.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+                    bitmap.bmiHeader.biWidth = frame->width;
+                    bitmap.bmiHeader.biHeight = -frame->height;
+                    bitmap.bmiHeader.biPlanes = 1;
+                    bitmap.bmiHeader.biBitCount = 32;
+                    bitmap.bmiHeader.biCompression = BI_RGB;
+                    int scanlines = self->p_frame_stretch_dibits(context, 0, 0, bounds.right, bounds.bottom,
+                        0, 0, frame->width, frame->height, frame->pixels->data(), &bitmap, DIB_RGB_COLORS, SRCCOPY);
+                    painted = scanlines > 0;
+                }
+            }
+            EndPaint(window, &paint);
+            if (frame) {
+                { std::lock_guard<std::mutex> lock(self->framePaintMutex);
+                  self->lastPaintId = frame->holdId; self->lastPaintSucceeded = painted; }
+                self->framePaintCondition.notify_all();
+            }
+            return 0;
+        }
         return DefWindowProcW(window, message, wparam, lparam);
     }
 
@@ -443,6 +600,23 @@ class Helper {
             0, 0, 1, 1, parent, nullptr, windowClass.hInstance, nullptr);
         if (!createdWindow) { surfaceState = -1; return; }
         surfaceWindow.store(createdWindow, std::memory_order_release);
+        WNDCLASSW frameClass{};
+        frameClass.lpfnWndProc = frameWindowProc;
+        frameClass.hInstance = GetModuleHandleW(nullptr);
+        frameClass.lpszClassName = L"ETEFramePresentationSurface";
+        RegisterClassW(&frameClass);
+        HWND createdFrameWindow = CreateWindowExW(WS_EX_NOACTIVATE | WS_EX_LAYERED, frameClass.lpszClassName, L"",
+            WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN, 0, 0, 1, 1,
+            parent, nullptr, frameClass.hInstance, this);
+        if (createdFrameWindow) {
+            if (SetLayeredWindowAttributes(createdFrameWindow, 0, 255, LWA_ALPHA)) {
+                frameLayeredReady.store(true, std::memory_order_release);
+                frameWindow.store(createdFrameWindow, std::memory_order_release);
+            } else {
+                DestroyWindow(createdFrameWindow);
+                createdFrameWindow = nullptr;
+            }
+        }
         surfaceState.store(1, std::memory_order_release);
         int oldWidth = 0, oldHeight = 0;
         while (!closing && IsWindow(parent)) {
@@ -458,6 +632,11 @@ class Helper {
                 if (width != oldWidth || height != oldHeight) {
                     SetWindowPos(createdWindow, HWND_TOP, 0, 0, width, height,
                         SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+                    if (createdFrameWindow && IsWindowVisible(createdFrameWindow)) {
+                        SetWindowPos(createdFrameWindow, HWND_TOP, 0, 0, width, height,
+                            SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+                        InvalidateRect(createdFrameWindow, nullptr, FALSE);
+                    }
                     oldWidth = width;
                     oldHeight = height;
                 }
@@ -465,6 +644,9 @@ class Helper {
             Sleep(8);
         }
         if (!IsWindow(parent)) requestedExit = true;
+        if (createdFrameWindow && IsWindow(createdFrameWindow)) DestroyWindow(createdFrameWindow);
+        frameWindow.store(nullptr, std::memory_order_release);
+        frameLayeredReady.store(false, std::memory_order_release);
         if (IsWindow(createdWindow)) DestroyWindow(createdWindow);
         surfaceWindow.store(nullptr, std::memory_order_release);
     }
@@ -586,6 +768,337 @@ class Helper {
     }
 #endif
 
+    std::string frameUnavailable(const char* reason) const {
+        return "{\"ready\":false,\"status\":\"unavailable\",\"reason\":" + quote(reason) + '}';
+    }
+    bool releaseHeldFrame(uint64_t holdId) {
+        {
+            std::lock_guard<std::mutex> lock(frameMutex);
+            if (!heldFrame || heldFrame->holdId != holdId) return false;
+        }
+        if (autoHoldId == holdId) cancelAutoLease();
+        {
+            std::lock_guard<std::mutex> lock(frameMutex);
+            if (!heldFrame || heldFrame->holdId != holdId) return false;
+            heldFrame.reset();
+        }
+        HWND window = frameWindow.load(std::memory_order_acquire);
+        if (window) PostMessageW(window, WM_FRAME_HIDE, static_cast<WPARAM>(holdId), 0);
+        return true;
+    }
+    void failPresentationPrepare(uint64_t generation, uint64_t request, const char* reason, uint64_t priorHoldId) {
+        if (priorHoldId) releaseHeldFrame(priorHoldId);
+        emitResponse(generation, request, frameUnavailable(reason));
+    }
+    void publishHeldFrame(uint64_t generation, uint64_t request, std::shared_ptr<HeldFrame> frame,
+                          bool testingResponse, bool includeReused, bool reused) {
+        if (nextHoldId == std::numeric_limits<uint64_t>::max()) {
+            emitResponse(generation, request, frameUnavailable("hold-id-exhausted")); return;
+        }
+        HWND window = frameWindow.load(std::memory_order_acquire);
+        if (!window || !IsWindow(window)) {
+            emitResponse(generation, request, frameUnavailable("frame-window-unavailable")); return;
+        }
+        frame->holdId = nextHoldId++;
+        std::shared_ptr<HeldFrame> previous;
+        {
+            std::lock_guard<std::mutex> lock(frameMutex);
+            previous = heldFrame;
+            heldFrame = frame;
+        }
+        if (previous && autoHoldId == previous->holdId) cancelAutoLease();
+        if (!PostMessageW(window, WM_FRAME_SHOW, static_cast<WPARAM>(frame->holdId), 0)) {
+            if (testingResponse) {
+                std::lock_guard<std::mutex> lock(frameMutex);
+                if (heldFrame == frame) heldFrame = previous;
+            } else releaseHeldFrame(frame->holdId);
+            emitResponse(generation, request, frameUnavailable("frame-paint-dispatch-failed")); return;
+        }
+        bool painted = false;
+        {
+            std::unique_lock<std::mutex> lock(framePaintMutex);
+            painted = framePaintCondition.wait_for(lock, std::chrono::milliseconds(250), [&] { return lastPaintId >= frame->holdId; }) &&
+                lastPaintId == frame->holdId && lastPaintSucceeded;
+        }
+        if (!painted) {
+            if (testingResponse) {
+                { std::lock_guard<std::mutex> lock(frameMutex); if (heldFrame == frame) heldFrame = previous; }
+                PostMessageW(window, WM_FRAME_HIDE, static_cast<WPARAM>(frame->holdId), 0);
+                if (previous) PostMessageW(window, WM_FRAME_SHOW, static_cast<WPARAM>(previous->holdId), 0);
+            } else releaseHeldFrame(frame->holdId);
+            emitResponse(generation, request, frameUnavailable("paint-timeout-or-failed")); return;
+        }
+#ifdef ETE_HELPER_TESTING
+        if (testingResponse) {
+            std::ostringstream hash; hash << std::hex << std::setw(16) << std::setfill('0') << frame->hash;
+            std::string result = std::string("{\"ready\":true,\"status\":\"held\"") +
+                ",\"holdId\":" + std::to_string(frame->holdId) +
+                ",\"w\":" + std::to_string(frame->width) + ",\"h\":" + std::to_string(frame->height) +
+                ",\"bytes\":" + std::to_string(frame->pixels->size()) +
+                ",\"captureMs\":" + std::to_string(frame->captureMicros / 1000) +
+                ",\"meanRGB\":{\"r\":" + std::to_string(frame->meanR) + ",\"g\":" + std::to_string(frame->meanG) +
+                ",\"b\":" + std::to_string(frame->meanB) + "},\"hash\":" + quote(hash.str()) +
+                (includeReused ? std::string(",\"reused\":") + (reused ? "true" : "false") : "") +
+                ",\"painted\":true}";
+            emitResponse(generation, request, result);
+            return;
+        }
+#else
+        (void)includeReused; (void)reused;
+#endif
+        emitResponse(generation, request, "{\"ready\":true,\"status\":\"held\",\"holdId\":" +
+            std::to_string(frame->holdId) + ",\"painted\":true}");
+    }
+    std::shared_ptr<HeldFrame> frameFromScreenshotNode(const mpv_node& result, uint64_t generation,
+                                                       uint64_t started, std::string& reason) {
+        std::shared_ptr<HeldFrame> frame;
+        try {
+            const mpv_node *width = nullptr, *height = nullptr, *stride = nullptr, *format = nullptr, *data = nullptr;
+            if (result.format != MPV_FORMAT_NODE_MAP || !result.u.list || result.u.list->num < 5 ||
+                result.u.list->num > 32 || !result.u.list->keys || !result.u.list->values) {
+                reason = "screenshot-map-invalid";
+            } else {
+                for (int index = 0; index < result.u.list->num; ++index) {
+                    const char* key = result.u.list->keys[index];
+                    if (!key) { reason = "screenshot-map-invalid"; break; }
+                    const mpv_node* value = &result.u.list->values[index];
+                    if (std::strcmp(key, "w") == 0) width = value;
+                    else if (std::strcmp(key, "h") == 0) height = value;
+                    else if (std::strcmp(key, "stride") == 0) stride = value;
+                    else if (std::strcmp(key, "format") == 0) format = value;
+                    else if (std::strcmp(key, "data") == 0) data = value;
+                }
+            }
+            if (reason.empty() && (!width || !height || !stride || !format || !data ||
+                width->format != MPV_FORMAT_INT64 || height->format != MPV_FORMAT_INT64 ||
+                stride->format != MPV_FORMAT_INT64 || format->format != MPV_FORMAT_STRING ||
+                !format->u.string || std::strcmp(format->u.string, "bgr0") != 0 ||
+                data->format != MPV_FORMAT_BYTE_ARRAY || !data->u.ba || !data->u.ba->data)) {
+                reason = "screenshot-format-invalid";
+            }
+            if (reason.empty() && (width->u.int64 <= 0 || height->u.int64 <= 0 ||
+                width->u.int64 > 8192 || height->u.int64 > 8192)) reason = "screenshot-size-invalid";
+            if (reason.empty() && stride->u.int64 < 0) reason = "negative-stride-unsupported";
+            if (reason.empty()) {
+                uint64_t w = static_cast<uint64_t>(width->u.int64), h = static_cast<uint64_t>(height->u.int64);
+                uint64_t rowBytes = w * 4, sourceStride = static_cast<uint64_t>(stride->u.int64);
+                if (sourceStride < rowBytes || sourceStride > MAX_HELD_FRAME_BYTES ||
+                    sourceStride * h > MAX_HELD_FRAME_BYTES || rowBytes * h > MAX_HELD_FRAME_BYTES ||
+                    data->u.ba->size > MAX_HELD_FRAME_BYTES ||
+                    data->u.ba->size < (h - 1) * sourceStride + rowBytes) {
+                    reason = "screenshot-bytes-invalid";
+                } else {
+                    frame = std::make_shared<HeldFrame>();
+                    frame->generationId = generation;
+                    frame->width = static_cast<int>(w); frame->height = static_cast<int>(h);
+                    auto pixels = std::make_shared<std::vector<uint8_t>>(static_cast<size_t>(rowBytes * h));
+                    const auto* source = static_cast<const uint8_t*>(data->u.ba->data);
+                    for (size_t row = 0; row < static_cast<size_t>(h); ++row) {
+                        std::memcpy(pixels->data() + row * static_cast<size_t>(rowBytes),
+                            source + row * static_cast<size_t>(sourceStride), static_cast<size_t>(rowBytes));
+                    }
+#ifdef ETE_HELPER_TESTING
+                    uint64_t sumR = 0, sumG = 0, sumB = 0, hash = 1469598103934665603ULL;
+                    for (size_t index = 0; index < pixels->size(); index += 4) {
+                        uint8_t b = (*pixels)[index], g = (*pixels)[index + 1], r = (*pixels)[index + 2];
+                        sumR += r; sumG += g; sumB += b;
+                        hash = (hash ^ b) * 1099511628211ULL;
+                        hash = (hash ^ g) * 1099511628211ULL;
+                        hash = (hash ^ r) * 1099511628211ULL;
+                    }
+                    uint64_t pixelCount = w * h;
+                    frame->meanR = static_cast<uint8_t>(sumR / pixelCount);
+                    frame->meanG = static_cast<uint8_t>(sumG / pixelCount);
+                    frame->meanB = static_cast<uint8_t>(sumB / pixelCount);
+                    frame->hash = hash;
+                    frame->captureMicros = monotonicMicros() - started;
+#else
+                    (void)started;
+#endif
+                    frame->pixels = std::move(pixels);
+                }
+            }
+        } catch (...) {
+            frame.reset(); reason = "screenshot-copy-failed";
+        }
+        return frame;
+    }
+    std::shared_ptr<HeldFrame> captureHeldFrame(uint64_t generation, std::string& reason) {
+        if (!p_frame_mpv_command_ret) { reason = "mpv-command-ret-unavailable"; return {}; }
+        const char* args[] = {"screenshot-raw", "window", "bgr0", nullptr};
+        mpv_node result{};
+        uint64_t started = monotonicMicros();
+        int commandResult = p_frame_mpv_command_ret(mpv, args, &result);
+        if (commandResult < 0) { reason = "screenshot-unavailable"; return {}; }
+        auto frame = frameFromScreenshotNode(result, generation, started, reason);
+        p_mpv_free_node_contents(&result);
+        return frame;
+    }
+    static const char* autoStageText(AutoStage value) {
+        switch (value) {
+            case AutoStage::Idle: return "idle";
+            case AutoStage::Armed: return "armed";
+            case AutoStage::CapturePending: return "capture-pending";
+            case AutoStage::ReleasePending: return "release-pending";
+            case AutoStage::Released: return "released";
+            case AutoStage::Unavailable: return "unavailable";
+            case AutoStage::Cancelled: return "cancelled";
+        }
+        return "unavailable";
+    }
+    static const char* autoFenceText(AutoFence value) {
+        switch (value) {
+            case AutoFence::NotAttempted: return "not-attempted";
+            case AutoFence::Success: return "success";
+            case AutoFence::Failed: return "failed";
+            case AutoFence::Unavailable: return "unavailable";
+        }
+        return "unavailable";
+    }
+    static const char* autoFailureText(AutoFailure value) {
+        switch (value) {
+            case AutoFailure::None: return "none";
+            case AutoFailure::QueueFailed: return "screenshot-queue-failed";
+            case AutoFailure::ReplyFailed: return "screenshot-reply-failed";
+            case AutoFailure::ScreenshotInvalid: return "screenshot-invalid";
+            case AutoFailure::UiDispatchFailed: return "ui-dispatch-failed";
+            case AutoFailure::DwmUnavailable: return "dwm-unavailable";
+            case AutoFailure::DwmFailed: return "dwm-failed";
+            case AutoFailure::TargetEndFile: return "target-end-file";
+            case AutoFailure::DeadlineExpired: return "deadline-expired";
+        }
+        return "unknown";
+    }
+    void cancelAutoLease() {
+        {
+            std::lock_guard<std::mutex> lock(frameMutex);
+            AutoStage stage = autoStage.load();
+            if (stage != AutoStage::Armed && stage != AutoStage::CapturePending && stage != AutoStage::ReleasePending) return;
+            autoAuthorizedGeneration.store(0, std::memory_order_release);
+            autoAuthorizedHoldId.store(0, std::memory_order_release);
+            autoStage.store(AutoStage::Cancelled);
+        }
+        autoScreenshotReplyId = 0;
+        autoDeadlineMicros = 0;
+        autoExpectedMedia = -1;
+        autoFileLoaded = false;
+    }
+    void markAutoUnavailable(AutoFailure failure) {
+        uint64_t failedHoldId = 0;
+        {
+            std::lock_guard<std::mutex> lock(frameMutex);
+            AutoStage stage = autoStage.load();
+            if (stage != AutoStage::Armed && stage != AutoStage::CapturePending && stage != AutoStage::ReleasePending) return;
+            failedHoldId = autoHoldId;
+            autoAuthorizedGeneration.store(0, std::memory_order_release);
+            autoAuthorizedHoldId.store(0, std::memory_order_release);
+            autoFailure.store(failure);
+            autoStage.store(AutoStage::Unavailable);
+        }
+        autoScreenshotReplyId = 0;
+        autoDeadlineMicros = 0;
+        releaseHeldFrame(failedHoldId);
+    }
+    bool autoLeaseOwnsTarget() {
+        if (!autoTargetGeneration || autoTargetGeneration != latestActivatedGeneration ||
+            autoTargetGeneration <= retiredThroughGeneration || autoExpectedMedia < 0 || !autoFileLoaded ||
+            uniqueOpenMedia() != autoExpectedMedia) return false;
+        auto mapped = mediaToGeneration.find(autoExpectedMedia);
+        if (mapped == mediaToGeneration.end() || mapped->second != autoTargetGeneration) return false;
+        std::lock_guard<std::mutex> lock(frameMutex);
+        return heldFrame && heldFrame->holdId == autoHoldId;
+    }
+#ifdef ETE_HELPER_TESTING
+    std::string heldFrameStatus() {
+        std::shared_ptr<HeldFrame> frame;
+        AutoStage stageSnapshot;
+        AutoFence fenceSnapshot;
+        AutoFailure failureSnapshot;
+        uint64_t targetSnapshot, autoHoldSnapshot;
+        AutoCaptureMetadata metadataSnapshot;
+        {
+            std::lock_guard<std::mutex> lock(frameMutex);
+            frame = heldFrame;
+            stageSnapshot = autoStage.load();
+            fenceSnapshot = autoFence.load();
+            failureSnapshot = autoFailure.load();
+            targetSnapshot = autoTargetGeneration;
+            autoHoldSnapshot = autoHoldId;
+            metadataSnapshot = autoCaptureMetadata;
+        }
+        bool painted = false;
+        bool paintSucceeded = false;
+        {
+            std::lock_guard<std::mutex> lock(framePaintMutex);
+            paintSucceeded = lastPaintSucceeded;
+            painted = frame && lastPaintId == frame->holdId && lastPaintSucceeded;
+        }
+        HWND video = surfaceWindow.load(std::memory_order_acquire);
+        HWND frameSurface = frameWindow.load(std::memory_order_acquire);
+        bool hostExists = parent && IsWindow(parent);
+        bool videoExists = video && IsWindow(video);
+        bool frameExists = frameSurface && IsWindow(frameSurface);
+        bool videoParentMatches = hostExists && videoExists && GetParent(video) == parent;
+        bool frameParentMatches = hostExists && frameExists && GetParent(frameSurface) == parent;
+        auto clientSize = [](HWND window, bool exists) {
+            RECT bounds{};
+            if (!exists || !GetClientRect(window, &bounds)) return std::pair<LONG, LONG>{0, 0};
+            return std::pair<LONG, LONG>{bounds.right - bounds.left, bounds.bottom - bounds.top};
+        };
+        auto hostSize = clientSize(parent, hostExists);
+        auto videoSize = clientSize(video, videoExists);
+        auto frameSize = clientSize(frameSurface, frameExists);
+        bool frameAboveVideo = false;
+        bool siblingOrderKnown = false;
+        if (videoParentMatches && frameParentMatches) {
+            HWND sibling = GetWindow(video, GW_HWNDPREV);
+            for (int count = 0; count < 64 && sibling; ++count) {
+                if (sibling == frameSurface) { frameAboveVideo = true; siblingOrderKnown = true; break; }
+                sibling = GetWindow(sibling, GW_HWNDPREV);
+            }
+            if (!sibling) siblingOrderKnown = true;
+        }
+        auto boolean = [](bool value) { return value ? "true" : "false"; };
+        auto sizeJson = [](const std::pair<LONG, LONG>& size) {
+            return "{\"w\":" + std::to_string(size.first) + ",\"h\":" + std::to_string(size.second) + '}';
+        };
+        return "{\"active\":" + std::string(frame ? "true" : "false") +
+            ",\"bytes\":" + std::to_string(frame && frame->pixels ? frame->pixels->size() : 0) +
+            ",\"holdId\":" + (frame ? std::to_string(frame->holdId) : "null") +
+            ",\"painted\":" + boolean(painted) +
+            ",\"lastPaintSucceeded\":" + boolean(paintSucceeded) +
+            ",\"hostExists\":" + boolean(hostExists) +
+            ",\"hostVisible\":" + boolean(hostExists && IsWindowVisible(parent)) +
+            ",\"frameExists\":" + boolean(frameExists) +
+            ",\"frameLayeredReady\":" + boolean(frameLayeredReady.load(std::memory_order_acquire)) +
+            ",\"frameVisible\":" + boolean(frameExists && IsWindowVisible(frameSurface)) +
+            ",\"frameParentMatches\":" + boolean(frameParentMatches) +
+            ",\"videoExists\":" + boolean(videoExists) +
+            ",\"videoVisible\":" + boolean(videoExists && IsWindowVisible(video)) +
+            ",\"videoParentMatches\":" + boolean(videoParentMatches) +
+            ",\"frameAboveVideo\":" + boolean(frameAboveVideo) +
+            ",\"siblingOrderKnown\":" + boolean(siblingOrderKnown) +
+            ",\"hostClientSize\":" + sizeJson(hostSize) +
+            ",\"frameClientSize\":" + sizeJson(frameSize) +
+            ",\"videoClientSize\":" + sizeJson(videoSize) +
+            ",\"autoState\":" + quote(autoStageText(stageSnapshot)) +
+            ",\"targetGen\":" + (targetSnapshot ? std::to_string(targetSnapshot) : "null") +
+            ",\"autoHoldId\":" + (autoHoldSnapshot ? std::to_string(autoHoldSnapshot) : "null") +
+            ",\"fence\":" + quote(autoFenceText(fenceSnapshot)) +
+            ",\"autoReason\":" + quote(autoFailureText(failureSnapshot)) +
+            ",\"captureMetadata\":" + (metadataSnapshot.valid ?
+                std::string("{\"w\":") + std::to_string(metadataSnapshot.width) +
+                ",\"h\":" + std::to_string(metadataSnapshot.height) +
+                ",\"bytes\":" + std::to_string(metadataSnapshot.bytes) +
+                ",\"captureMs\":" + std::to_string(metadataSnapshot.captureMicros / 1000) +
+                ",\"meanRGB\":{\"r\":" + std::to_string(metadataSnapshot.meanR) +
+                ",\"g\":" + std::to_string(metadataSnapshot.meanG) +
+                ",\"b\":" + std::to_string(metadataSnapshot.meanB) +
+                "},\"hash\":" + quote([&] { std::ostringstream out; out << std::hex << std::setw(16) << std::setfill('0') << metadataSnapshot.hash; return out.str(); }()) + '}'
+                : "null") + '}';
+    }
+#endif
+
     std::string base(const std::string& type) const {
         return "{\"protocolVersion\":1,\"type\":" + quote(type) + ",\"helperInstanceId\":" + quote(helperId);
     }
@@ -655,6 +1168,8 @@ class Helper {
         if (existing == mediaToGeneration.end() && mediaToGeneration.size() >= MAX_TRACKED_MEDIA) throw std::runtime_error("tracked-media-limit");
         mediaToGeneration[mediaIdentity] = generation;
         generationToMedia[generation] = mediaIdentity;
+        if (autoStage.load() == AutoStage::Armed && autoTargetGeneration == generation &&
+            generation > retiredThroughGeneration) autoExpectedMedia = mediaIdentity;
         observeGeneration(generation);
         auto pending = quarantined.find(mediaIdentity);
         if (pending != quarantined.end()) {
@@ -680,11 +1195,57 @@ class Helper {
     void completeLoad(std::map<uint64_t, LoadCommand>::iterator load) {
         auto command = std::move(load->second);
         loadReplies.erase(load); loadInFlight = false;
+        if (command.commandError < 0 && command.generationId == autoTargetGeneration &&
+            command.generationId == latestActivatedGeneration) markAutoUnavailable(AutoFailure::TargetEndFile);
         if (command.commandError < 0 || command.mediaIdentity < 0) emitError(command.generationId, command.requestId, "load-command-failed-or-unattributed");
         else emitResponse(command.generationId, command.requestId, "{\"commandAccepted\":true,\"mediaIdentity\":" + std::to_string(command.mediaIdentity) + '}');
         submitNextLoad();
     }
     void handleCommandReply(mpv_event* event) {
+        if (autoScreenshotReplyId && event->reply_userdata == autoScreenshotReplyId) {
+            autoScreenshotReplyId = 0;
+            if (autoStage.load() != AutoStage::CapturePending || !autoLeaseOwnsTarget()) {
+                cancelAutoLease(); return;
+            }
+            auto* reply = static_cast<mpv_event_command*>(event->data);
+            if (event->error < 0 || !reply) { markAutoUnavailable(AutoFailure::ReplyFailed); return; }
+            std::string reason;
+            auto frame = frameFromScreenshotNode(reply->result, autoTargetGeneration,
+#ifdef ETE_HELPER_TESTING
+                autoScreenshotStartedMicros, reason);
+#else
+                0, reason);
+#endif
+            if (!frame) { markAutoUnavailable(AutoFailure::ScreenshotInvalid); return; }
+            if (!autoLeaseOwnsTarget()) { cancelAutoLease(); return; }
+#ifdef ETE_HELPER_TESTING
+            autoCaptureMetadata.width = frame->width; autoCaptureMetadata.height = frame->height;
+            autoCaptureMetadata.bytes = frame->pixels->size();
+            autoCaptureMetadata.captureMicros = frame->captureMicros;
+            autoCaptureMetadata.hash = frame->hash;
+            autoCaptureMetadata.meanR = frame->meanR;
+            autoCaptureMetadata.meanG = frame->meanG;
+            autoCaptureMetadata.meanB = frame->meanB;
+            autoCaptureMetadata.valid = true;
+#endif
+            frame.reset();
+            HWND window = frameWindow.load(std::memory_order_acquire);
+            if (!window || !IsWindow(window)) { markAutoUnavailable(AutoFailure::UiDispatchFailed); return; }
+            bool holdMatches = false;
+            {
+                std::lock_guard<std::mutex> lock(frameMutex);
+                holdMatches = heldFrame && heldFrame->holdId == autoHoldId;
+                if (holdMatches) {
+                    autoAuthorizedHoldId.store(autoHoldId, std::memory_order_release);
+                    autoAuthorizedGeneration.store(autoTargetGeneration, std::memory_order_release);
+                }
+            }
+            if (!holdMatches) { cancelAutoLease(); return; }
+            autoStage.store(AutoStage::ReleasePending);
+            if (!PostMessageW(window, WM_FRAME_AUTO_RELEASE, static_cast<WPARAM>(autoHoldId),
+                    static_cast<LPARAM>(autoTargetGeneration))) markAutoUnavailable(AutoFailure::UiDispatchFailed);
+            return;
+        }
         auto load = loadReplies.find(event->reply_userdata);
         if (load != loadReplies.end()) {
             load->second.commandReplied = true; load->second.commandError = event->error;
@@ -718,6 +1279,17 @@ class Helper {
             auto* data = static_cast<mpv_event_end_file*>(event->data); int64_t id = data ? data->playlist_entry_id : -1;
             int reason = data ? int(data->reason) : -1; int error = data ? data->error : event->error;
             routeRecord({int(event->event_id), eventName(event->event_id), id, "end-file", "{\"reason\":" + std::to_string(reason) + ",\"error\":" + std::to_string(error) + '}', event->reply_userdata, monotonicMicros()});
+            if (autoTargetGeneration && autoTargetGeneration == latestActivatedGeneration &&
+                autoTargetGeneration > retiredThroughGeneration &&
+                (autoStage.load() == AutoStage::Armed || autoStage.load() == AutoStage::CapturePending ||
+                 autoStage.load() == AutoStage::ReleasePending)) {
+                auto mappedTarget = id >= 0 ? mediaToGeneration.find(id) : mediaToGeneration.end();
+                if ((id >= 0 && id == autoExpectedMedia) ||
+                    (mappedTarget != mediaToGeneration.end() && mappedTarget->second == autoTargetGeneration) ||
+                    (id < 0 && loadReplies.size() == 1 && loadReplies.begin()->second.generationId == autoTargetGeneration)) {
+                    markAutoUnavailable(AutoFailure::TargetEndFile);
+                }
+            }
             if (id >= 0) {
                 openMedia.erase(id);
                 auto pending = quarantined.find(id);
@@ -734,7 +1306,26 @@ class Helper {
             return;
         }
         if (event->event_id == MPV_EVENT_FILE_LOADED) {
-            routeRecord({int(event->event_id), eventName(event->event_id), uniqueOpenMedia(), "file-loaded", "null", event->reply_userdata, monotonicMicros()}); return;
+            int64_t media = uniqueOpenMedia();
+            if (autoStage.load() == AutoStage::Armed && media >= 0 && media == autoExpectedMedia &&
+                autoTargetGeneration == latestActivatedGeneration && autoTargetGeneration > retiredThroughGeneration) {
+                autoFileLoaded = true;
+            }
+            routeRecord({int(event->event_id), eventName(event->event_id), media, "file-loaded", "null", event->reply_userdata, monotonicMicros()}); return;
+        }
+        if (event->event_id == MPV_EVENT_PLAYBACK_RESTART) {
+            if (autoStage.load() == AutoStage::Armed && !autoOneShotConsumed && autoLeaseOwnsTarget()) {
+                autoOneShotConsumed = true;
+                uint64_t userdata = nextReplyUserdata++;
+                const char* args[] = {"screenshot-raw", "window", "bgr0", nullptr};
+#ifdef ETE_HELPER_TESTING
+                autoScreenshotStartedMicros = monotonicMicros();
+#endif
+                int rc = p_mpv_command_async(mpv, userdata, args);
+                if (rc < 0) markAutoUnavailable(AutoFailure::QueueFailed);
+                else { autoScreenshotReplyId = userdata; autoStage.store(AutoStage::CapturePending); }
+            }
+            return;
         }
         if (event->event_id == MPV_EVENT_PROPERTY_CHANGE) {
             auto* property = static_cast<mpv_event_property*>(event->data); if (!property || !property->name) return;
@@ -781,6 +1372,11 @@ public:
 #define LOAD(name) p_##name = reinterpret_cast<decltype(p_##name)>(GetProcAddress(library, #name)); if (!p_##name) throw std::runtime_error("missing-export:" #name);
         MPV_FUNCTIONS(LOAD)
 #undef LOAD
+        p_frame_mpv_command_ret = reinterpret_cast<decltype(p_frame_mpv_command_ret)>(GetProcAddress(library, "mpv_command_ret"));
+        dwmLibrary = LoadLibraryExW(L"dwmapi.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
+        if (dwmLibrary) p_frame_dwm_flush = reinterpret_cast<DwmFlushFn>(GetProcAddress(dwmLibrary, "DwmFlush"));
+        gdiLibrary = LoadLibraryExW(L"gdi32.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
+        if (gdiLibrary) p_frame_stretch_dibits = reinterpret_cast<decltype(p_frame_stretch_dibits)>(GetProcAddress(gdiLibrary, "StretchDIBits"));
         mpv = p_mpv_create(); if (!mpv) throw std::runtime_error("mpv-create-failed");
         auto option = [&](const char* name, const char* value) { if (p_mpv_set_option_string(mpv, name, value) < 0) throw std::runtime_error(std::string("option-failed:") + name); };
         option("terminal", "no"); option("idle", "yes"); option("input-default-bindings", "no");
@@ -800,6 +1396,8 @@ public:
             if (mpv) { p_mpv_terminate_destroy(mpv); mpv = nullptr; }
             closing = true;
             if (surfaceThread.joinable()) surfaceThread.join();
+            if (dwmLibrary) { FreeLibrary(dwmLibrary); dwmLibrary = nullptr; }
+            if (gdiLibrary) { FreeLibrary(gdiLibrary); gdiLibrary = nullptr; }
             if (library) { FreeLibrary(library); library = nullptr; }
             throw;
         }
@@ -808,6 +1406,9 @@ public:
         if (mpv) { p_mpv_terminate_destroy(mpv); mpv = nullptr; }
         closing = true;
         if (surfaceThread.joinable()) surfaceThread.join();
+        { std::lock_guard<std::mutex> lock(frameMutex); heldFrame.reset(); }
+        if (dwmLibrary) FreeLibrary(dwmLibrary);
+        if (gdiLibrary) FreeLibrary(gdiLibrary);
         if (library) FreeLibrary(library);
     }
     void process(const Json& message) {
@@ -824,6 +1425,8 @@ public:
                     throw std::runtime_error("invalid-observed-property");
                 observedProperties.insert(property.string);
             }
+            if (autoTargetGeneration && autoTargetGeneration != generation) cancelAutoLease();
+            latestActivatedGeneration = generation;
             return;
         }
         if (method == "load") {
@@ -836,6 +1439,7 @@ public:
         if (method == "retire-generation") {
             if (type != "command") throw std::runtime_error("retire-generation-requires-command");
             retiredThroughGeneration = std::max(retiredThroughGeneration, generation);
+            if (autoTargetGeneration && autoTargetGeneration <= retiredThroughGeneration) cancelAutoLease();
             loadQueue.erase(std::remove_if(loadQueue.begin(), loadQueue.end(), [&](const LoadCommand& load) {
                 return load.generationId <= retiredThroughGeneration;
             }), loadQueue.end());
@@ -886,6 +1490,212 @@ public:
             p_mpv_free_node_contents(&value);
             if (valueJson.size() > MAX_PROPERTY_JSON_BYTES) { emitError(generation, request, "property-value-limit"); return; }
             emitResponse(generation, request, "{\"value\":" + valueJson + '}' ); return;
+        }
+#ifdef ETE_HELPER_TESTING
+        if (method == "test-frame-hold") {
+            if (type != "request") throw std::runtime_error("test-frame-hold-requires-request");
+            if (!frameLayeredReady.load(std::memory_order_acquire)) {
+                emitResponse(generation, request, frameUnavailable("frame-layered-unavailable")); return;
+            }
+            if (!p_frame_stretch_dibits) { emitResponse(generation, request, frameUnavailable("frame-painter-unavailable")); return; }
+            int64_t media = uniqueOpenMedia();
+            auto owner = generationToMedia.find(generation);
+            if (generation <= retiredThroughGeneration || media < 0 || owner == generationToMedia.end() || owner->second != media) {
+                emitResponse(generation, request, frameUnavailable("stale-or-unmapped-generation")); return;
+            }
+            HWND window = frameWindow.load(std::memory_order_acquire);
+            if (!window || !IsWindow(window)) { emitResponse(generation, request, frameUnavailable("frame-window-unavailable")); return; }
+            {
+                std::lock_guard<std::mutex> lock(frameMutex);
+                if (heldFrame && heldFrame->generationId > generation) {
+                    emitResponse(generation, request, frameUnavailable("stale-hold-generation")); return;
+                }
+            }
+            std::string reason;
+            auto frame = captureHeldFrame(generation, reason);
+            if (!frame) { emitResponse(generation, request, frameUnavailable(reason.empty() ? "screenshot-unavailable" : reason.c_str())); return; }
+            publishHeldFrame(generation, request, std::move(frame), true, false, false); return;
+        }
+#endif
+        bool testingPrepare = false, testingArm = false, testingRelease = false, testingCancel = false;
+#ifdef ETE_HELPER_TESTING
+        testingPrepare = method == "test-frame-prepare-retired";
+        testingArm = method == "test-frame-arm-next";
+        testingRelease = method == "test-frame-release";
+        testingCancel = method == "test-frame-cancel-preparation";
+#endif
+        if (method == "presentation-prepare" || testingPrepare) {
+            if (type != "request") throw std::runtime_error("presentation-prepare-requires-request");
+            if (!message.has("params") || !message.at("params").has("sourceGenerationId")) {
+                emitResponse(generation, request, frameUnavailable("source-generation-required")); return;
+            }
+            int64_t supplied = 0;
+            try { supplied = message.at("params").integer("sourceGenerationId"); }
+            catch (...) { emitResponse(generation, request, frameUnavailable("source-generation-invalid")); return; }
+            if (supplied <= 0 || static_cast<uint64_t>(supplied) > retiredThroughGeneration) {
+                emitResponse(generation, request, frameUnavailable("source-generation-not-retired")); return;
+            }
+            if (generation <= retiredThroughGeneration || generation <= cancelledPreparationThroughGeneration ||
+                latestActivatedGeneration > retiredThroughGeneration ||
+                generationToMedia.find(generation) != generationToMedia.end()) {
+                emitResponse(generation, request, frameUnavailable("control-generation-not-idle")); return;
+            }
+            uint64_t priorHoldId = 0;
+            { std::lock_guard<std::mutex> lock(frameMutex); if (heldFrame) priorHoldId = heldFrame->holdId; }
+            auto failPrepare = [&](const char* reason) {
+                if (testingPrepare) emitResponse(generation, request, frameUnavailable(reason));
+                else failPresentationPrepare(generation, request, reason, priorHoldId);
+            };
+            if (!frameLayeredReady.load(std::memory_order_acquire)) {
+                failPrepare("frame-layered-unavailable"); return;
+            }
+            if (!p_frame_stretch_dibits) { failPrepare("frame-painter-unavailable"); return; }
+            HWND window = frameWindow.load(std::memory_order_acquire);
+            if (!window || !IsWindow(window)) {
+                failPrepare("frame-window-unavailable"); return;
+            }
+            if (nextHoldId == std::numeric_limits<uint64_t>::max()) {
+                failPrepare("hold-id-exhausted"); return;
+            }
+            cancelAutoLease();
+            std::shared_ptr<HeldFrame> frame;
+            std::shared_ptr<HeldFrame> visibleFrame;
+            {
+                std::lock_guard<std::mutex> lock(frameMutex);
+                std::shared_ptr<HeldFrame> current = heldFrame;
+                if (current && IsWindowVisible(window) && parent && IsWindowVisible(parent)) {
+                    std::lock_guard<std::mutex> paintLock(framePaintMutex);
+                    if (lastPaintId == current->holdId && lastPaintSucceeded) visibleFrame = current;
+                }
+            }
+            if (visibleFrame) {
+                try { frame = std::make_shared<HeldFrame>(*visibleFrame); }
+                catch (...) { failPrepare("frame-copy-failed"); return; }
+            }
+            bool reused = static_cast<bool>(frame);
+            if (!frame) {
+                uint64_t source = static_cast<uint64_t>(supplied);
+                int64_t media = uniqueOpenMedia();
+                auto owner = generationToMedia.find(source);
+                auto reverse = mediaToGeneration.find(media);
+                if (media < 0 || owner == generationToMedia.end() || owner->second != media ||
+                    reverse == mediaToGeneration.end() || reverse->second != source) {
+                    failPrepare("retired-source-unmapped"); return;
+                }
+                std::string reason;
+                frame = captureHeldFrame(source, reason);
+                if (!frame) { failPrepare(reason.empty() ? "screenshot-unavailable" : reason.c_str()); return; }
+            }
+            frame->preparationGenerationId = generation;
+            publishHeldFrame(generation, request, std::move(frame), testingPrepare, testingPrepare, reused); return;
+        }
+        if (method == "presentation-arm" || testingArm) {
+            if (type != "request") throw std::runtime_error("presentation-arm-requires-request");
+            if (!message.has("params") || !message.at("params").has("holdId")) {
+                emitResponse(generation, request, frameUnavailable("hold-id-required")); return;
+            }
+            int64_t supplied = 0;
+            try { supplied = message.at("params").integer("holdId"); }
+            catch (...) { emitResponse(generation, request, frameUnavailable("hold-id-invalid")); return; }
+            if (supplied <= 0) { emitResponse(generation, request, frameUnavailable("hold-id-invalid")); return; }
+            uint64_t holdId = static_cast<uint64_t>(supplied);
+            auto failArm = [&](const char* reason) {
+                if (!testingArm) releaseHeldFrame(holdId);
+                emitResponse(generation, request, frameUnavailable(reason));
+            };
+            bool targetLoadStarted = std::any_of(loadQueue.begin(), loadQueue.end(),
+                [&](const LoadCommand& load) { return load.generationId == generation; });
+            for (const auto& load : loadReplies) {
+                if (load.second.generationId == generation) targetLoadStarted = true;
+            }
+            if (generation <= retiredThroughGeneration || generation != latestActivatedGeneration ||
+                generationToMedia.find(generation) != generationToMedia.end() || targetLoadStarted) {
+                failArm("target-generation-unavailable"); return;
+            }
+            AutoStage stage = autoStage.load();
+            if (autoTargetGeneration == generation && stage != AutoStage::Idle) {
+                failArm("auto-generation-consumed"); return;
+            }
+            if (stage == AutoStage::Armed || stage == AutoStage::CapturePending || stage == AutoStage::ReleasePending) {
+                failArm("auto-lease-already-armed"); return;
+            }
+            {
+                std::lock_guard<std::mutex> lock(frameMutex);
+                if (!heldFrame || heldFrame->holdId != holdId || heldFrame->generationId >= generation) {
+                    emitResponse(generation, request, frameUnavailable("hold-owner-mismatch")); return;
+                }
+            }
+            autoTargetGeneration = generation; autoHoldId = holdId;
+            autoExpectedMedia = -1; autoFileLoaded = false; autoOneShotConsumed = false;
+            autoScreenshotReplyId = 0;
+#ifdef ETE_HELPER_TESTING
+            autoScreenshotStartedMicros = 0; autoCaptureMetadata = {};
+#endif
+            autoDeadlineMicros = monotonicMicros() + 15000000;
+            autoFence.store(AutoFence::NotAttempted); autoFailure.store(AutoFailure::None);
+            autoAuthorizedGeneration.store(0, std::memory_order_release);
+            autoAuthorizedHoldId.store(0, std::memory_order_release);
+            autoStage.store(AutoStage::Armed);
+            if (testingArm) emitResponse(generation, request, "{\"armed\":true,\"autoState\":\"armed\",\"targetGen\":" +
+                std::to_string(generation) + ",\"holdId\":" + std::to_string(holdId) + '}');
+            else emitResponse(generation, request, "{\"ready\":true,\"status\":\"armed\",\"holdId\":" +
+                std::to_string(holdId) + '}');
+            return;
+        }
+#ifdef ETE_HELPER_TESTING
+        if (method == "test-frame-status") {
+            if (type != "request") throw std::runtime_error("test-frame-status-requires-request");
+            emitResponse(generation, request, heldFrameStatus()); return;
+        }
+#endif
+        if (method == "presentation-release" || testingRelease) {
+            if (type != "request") throw std::runtime_error("presentation-release-requires-request");
+            if (!message.has("params") || !message.at("params").has("holdId")) {
+                emitResponse(generation, request, frameUnavailable("hold-id-required")); return;
+            }
+            int64_t supplied = 0;
+            try { supplied = message.at("params").integer("holdId"); }
+            catch (...) { emitResponse(generation, request, frameUnavailable("hold-id-invalid")); return; }
+            if (supplied <= 0) { emitResponse(generation, request, frameUnavailable("hold-id-invalid")); return; }
+            uint64_t holdId = static_cast<uint64_t>(supplied);
+            if (!releaseHeldFrame(holdId)) {
+                emitResponse(generation, request, frameUnavailable("hold-id-mismatch")); return;
+            }
+            HWND window = frameWindow.load(std::memory_order_acquire);
+            bool hidden = window && IsWindow(window);
+            if (hidden) {
+                std::unique_lock<std::mutex> lock(framePaintMutex);
+                hidden = framePaintCondition.wait_for(lock, std::chrono::milliseconds(250), [&] { return lastHideId >= holdId; });
+            }
+            if (testingRelease) emitResponse(generation, request, "{\"released\":" + std::string(hidden ? "true" : "false") +
+                ",\"active\":false,\"bytes\":0,\"holdId\":" + std::to_string(holdId) +
+                (hidden ? "" : ",\"reason\":\"frame-hide-timeout-or-failed\"") + '}');
+            else if (hidden) emitResponse(generation, request, "{\"ready\":true,\"status\":\"released\",\"holdId\":" +
+                std::to_string(holdId) + '}');
+            else emitResponse(generation, request, frameUnavailable("frame-hide-timeout-or-failed"));
+            return;
+        }
+        if (method == "presentation-cancel-preparation" || testingCancel) {
+            if (type != "request") throw std::runtime_error("presentation-cancel-preparation-requires-request");
+            if (!message.has("params") || !message.at("params").has("preparationGenerationId")) {
+                emitResponse(generation, request, frameUnavailable("preparation-generation-required")); return;
+            }
+            int64_t supplied = 0;
+            try { supplied = message.at("params").integer("preparationGenerationId"); }
+            catch (...) { emitResponse(generation, request, frameUnavailable("preparation-generation-invalid")); return; }
+            if (supplied <= 0) { emitResponse(generation, request, frameUnavailable("preparation-generation-invalid")); return; }
+            uint64_t preparation = static_cast<uint64_t>(supplied);
+            cancelledPreparationThroughGeneration = std::max(cancelledPreparationThroughGeneration, preparation);
+            uint64_t ownedHoldId = 0;
+            {
+                std::lock_guard<std::mutex> lock(frameMutex);
+                if (heldFrame && heldFrame->preparationGenerationId == preparation) ownedHoldId = heldFrame->holdId;
+            }
+            bool cancelled = ownedHoldId && releaseHeldFrame(ownedHoldId);
+            if (testingCancel) emitResponse(generation, request, "{\"cancelled\":" + std::string(cancelled ? "true" : "false") +
+                ",\"holdId\":" + (cancelled ? std::to_string(ownedHoldId) : "null") + '}');
+            else emitResponse(generation, request, "{\"ready\":true,\"status\":\"cancelled\"}" );
+            return;
         }
 #ifdef ETE_HELPER_TESTING
         if (method == "reject-next-operation") {
@@ -959,6 +1769,11 @@ public:
     void poll() {
         submitNextLoad();
         for (int index = 0; index < 256; ++index) { mpv_event* event = p_mpv_wait_event(mpv, 0); if (!event || event->event_id == MPV_EVENT_NONE) break; handleEvent(event); }
+        AutoStage stage = autoStage.load();
+        if (autoDeadlineMicros && (stage == AutoStage::Armed || stage == AutoStage::CapturePending ||
+            stage == AutoStage::ReleasePending) && monotonicMicros() >= autoDeadlineMicros) {
+            markAutoUnavailable(AutoFailure::DeadlineExpired);
+        }
         if (loadReplies.size() == 1) {
             auto load = loadReplies.begin();
             if (monotonicMicros() - load->second.submittedAtMicros > 2000000) {

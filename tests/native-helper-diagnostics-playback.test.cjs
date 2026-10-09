@@ -243,6 +243,7 @@ function makeContext(windowTarget, dom, nativeClient, resolver) {
         undefined,
         undefined,
         undefined,
+        require('../src/electronapp/enhanced/nexttrack-transition'),
         nativeClient
     );
     const player = {};

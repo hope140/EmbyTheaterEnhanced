@@ -1,5 +1,19 @@
 # 变更记录
 
+## 0.2.6 测试版 — 2026-10-09
+
+- 每次播放请求建立独立options快照，阻止迟到PlaybackInfo再次play；pending临时状态不发送缺少会话身份的Stopped报告。
+- replacement Stop按捕获stream排空物理停止，只清理/报告一次；terminal overlap保留失败，最新原生持帧token仍准备。
+- 正常关闭共享Native Helper destroy Promise，等待renderer先行退出与全部捕获的清理结果后再传播失败。
+- 完善确定性假CD2/播放矩阵、正常关闭验证及第三方来源材料索引。最终产品355f4e6的631/631、三种正常关闭和五组完整隔离pipeline通过，安装器2136文件解包一致，见 [0.2.6发布记录](docs/RELEASE_026.md)。早期直接app.exit退出超时仍UNKNOWN；真实服务、可见呈现及系统安装验收边界保持。
+
+## 0.2.5 测试版 — 2026-10-09
+
+- 增加有限、脱敏的播放请求与原生事件关联、持帧/surface观察和Renderer包内错误位置采集；诊断旁路不改变播放身份链。
+- 源码仓库增加单日志离线阶段分析工具，未知、缺失或冲突端点保持不可用。
+- 构建绑定准确提交输入与固定工具链，精确生成生产依赖目录，补齐随包通知与来源索引，加强输出链接/覆盖边界；固定输入下两份runtime与原始installer字节一致。
+- 继承v0.2.4设置页一致性及此前持帧切集、全屏修复。535/535全量和17/17writer通过；隐藏runtime完整runner保留已记录的超时/快速Next夹具限制。准确产物与各层验证见 [0.2.5发布记录](docs/RELEASE_025.md)。
+
 ## 0.1.1 Phase 2B Pepper retirement — 2026-09-17
 
 - Pepper / PPAPI bridge retired；Native Helper is now the sole production mpv bridge.

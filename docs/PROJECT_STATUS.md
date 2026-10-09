@@ -1,5 +1,242 @@
 # 项目状态
 
+## 2026-10-09 — v0.2.6 主线整合审查
+
+从完整发布分支4b24919建立独立 `codex/integrate-v0.2.6-main-20261009`。远端main46e995e即merge-base，main独有0、发布分支领先81，开工open PR为0；保留完整历史，无需冲突解决。main到发布树172文件范围及PR合并判定见 [整合报告](MAIN_INTEGRATION_026.md)。
+
+本轮完整单测日志为631/631，0失败/取消/跳过。产品、测试、工具等六棵Git tree和34项构建输入与355f4e6相同；原runtime2136文件、原安装器及八组运行的69份artifact重新回读hash通过。16份原harness输入精确匹配历史hash；新checkout其中6份仅CRLF/LF变化，物理与canonical身份分别记录。原runtime继续归属355f4e6，本轮没有构建或启动客户端。
+
+当前审查未发现产品整合阻断，仅修正文档阶段、CHANGELOG与验收入口遗漏。[PR #20](https://github.com/hope140/EmbyTheaterEnhanced/pull/20) 已创建并附加，OPEN / 非Draft，创建回读MERGEABLE / CLEAN；无check runs/statuses/workflow，不能记CI通过。原36项refs、8个Release及15个附件保持，Latest仍v0.2.2。技术合并条件满足，main合并仍由后续明确操作决定。早期直接app.exit UNKNOWN、真实服务/远控/可见呈现/系统安装/HDR/多屏边界保持。以下为按发生阶段保留的历史记录。
+
+## 2026-10-09 — v0.2.6 Pre-release 已发布并完整回读
+
+用户授权将已验证的本地包按原字节发布。v0.2.6于21:20:19（UTC+8）发布为Pre-release，Release ID407934479，tag精确对应产品 `355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f`。安装包175621807 bytes，SHA256 `bc878b4e929016071b8d7a41f9b281ad3118e62e8a1e469b0a5c9858718b1532`。
+
+EXE、同名SHA256与provenance三个附件均uploaded且服务端digest匹配；三个文件从公开URL完整重新下载后hash也全部匹配。原7个Release、12个附件与33个refs保持；正式Latest仍v0.2.2，main仍46e995e。本轮不改产品或重建包，不扩大系统安装/真实服务/视觉验收。下载和准确分层见 [0.2.6发布记录](RELEASE_026.md)。
+
+## 2026-10-09 — 0.2.6 本地可安装测试包交付完成
+
+最终产品sourceCommit为 `355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f`，版本0.2.6。交付目录 `dist/delivery-0.2.6-355f4e6/`，含setup.exe、同名SHA256/provenance、SHA256SUMS、中文使用说明、验证报告和结构化证据。安装器175621807 bytes，SHA256 `bc878b4e929016071b8d7a41f9b281ad3118e62e8a1e469b0a5c9858718b1532`。
+
+全量631/631、0失败/跳过。最终runtime三场景正常关闭及五组完整pipeline均PASS、自然exit0、无强清理、残留0；每组pipeline五对完整Session独立复算，Next/generation/精确取消和DirectUrl隔离保持。安装器完整性及2136文件解包逐项一致，运行后payload校验和交付文件重新读回通过。23个EXE/DLL与68eb024同hash；产品JS仅native service的关闭等待归属变化。
+
+正常产品关闭路径本轮完成隔离验收；初版8700039及旧d480eb8的直接app.exit退出超时仍UNKNOWN，原失败与工具门槛纠正记录单列。真实服务/远控、可见首帧/连续性、HDR/多屏、系统安装/升级/卸载未执行。本地交付阶段尚未推送、合并或发布，后续发布结果见上方记录。最终报告见 [0.2.6本地包](LOCAL_PACKAGE_026.md) 与 [结构化证据](evidence/local-package-026-20261009.json)；下文保留前序阶段记录。
+
+## 2026-10-09 — 0.2.6 本地可安装候选构建中
+
+ac865c4八组正常关闭/完整pipeline均PASS，原证据保留；随后按父会话精确复核补齐多pending实例中一个拒绝时仍等待其余实例settled的错误边界，35例修改前34/1、修改后35/35。Stop后先退出native再关窗是正常顺序，verifier已按clientId配对纠正，工具36/36。正在固定新最终source重建，不沿用ac865c4产物标签或验收身份。
+
+进一步实测7b3a2dc共享destroy后，renderer destroy先清空client但owned kill仍pending，正常playing关闭依然缺native completion。一次固定caller观察确认为destroy-client。现补齐完整service destroy对已在进行的renderer client清理的等待，最终33例修改前31/2、修改后33/33；7b3a2dc失败runtime保持，最终需以新提交重建再验收。
+
+初版8700039正式runtime/安装器已生成并保留。最终hit0播放断言成功但app.exit后OS超时，完整runner FAIL；因此该UNKNOWN也发生在本次0.2.6，不能只归属旧d480eb8。正常关闭强化检查另发现playing时main closed已启动destroy，而before-quit重复destroy提前返回、没有等native child退出。最小修复缓存完整destroy Promise，同一31例修改前28 PASS/3 FAIL、修改后31/31；原错误短路和播放链不改。新产物必须重建，初版不覆盖。后续固定最终五组完整pipeline通过产品窗口关闭收尾，另做idle/playing/stopped三场景；原pipeline/Next/generation/取消/五对Session断言全部保留。
+
+从准确99cb850建立独立工作树，保持已复核播放实现。正常关闭三个初始预检在只读68eb024 runtime均通过原门槛：before-quit/will-quit及五类IPC清理已观察，OS自然exit0、零残留；当时未核对native child实际清理Promise完成，不将预检替代强化验收。app.exit停滞仍UNKNOWN。
+
+本次版本0.2.6，整合05a08e9第三方材料报告与必要通知，原0.2.4证据身份不改。固定工具链已核对；后续从本次已提交输入正式build/package，运行五组播放与三组正常关闭，校验安装器解包。计划、来源和边界见 [0.2.6本地包](LOCAL_PACKAGE_026.md)。
+
+## 2026-10-09 — Stop 归属候选完成，退出停滞边界已取证
+
+本地分支 `codex/stop-ownership-20261009` 从准确 60acba5 继续；产品 sourceCommit 为 `68eb0249f8392480154513f3df267204a0f0eb74`，版本保持 0.2.5。修复同一旧 stream 的并发 Stop 回调、无标签 stopped 事件与重复报告归属，保留最新 Native presentation preparation 和 terminal queue/player 收尾。相同回归修改前 8/16、修改后 16/16；全量 608/608，独立核心复核通过。
+
+正式 runtime `dist/ETE-0.2.5-stop-owner-68eb024-win-x64` 构建、source/runtime/native/Electron/版本、package 与运行后 2136 文件检查通过；对 d480eb8 仅 PlaybackManager 及六份来源/清单记录变化，23 个二进制全部一致。新候选 miss400、hit0/400/800、direct400 五组完整 PASS，均自然 exit0、残留0；每组普通/STRM/A-B-C共5对完整会话，迟到额外 play、pending/重复/未配对报告为0。
+
+旧 d480eb8 的一次固定 hit0 对照复现退出停滞：11.7秒前后结果落盘、app.exit调用/返回与Node exit/Electron quit回调已完成，OS根进程到120秒仍未退出，精确归属强清理后残留0。原因仍 UNKNOWN，新候选五次自然退出不关闭该问题；正常产品 before-quit 关闭链未验收。六次计划均已执行，没有增加重复运行。完整结果与可复算哈希见 [Stop 与退出报告](STOP_OWNERSHIP_EXIT_EVIDENCE.md) 和 [结构化证据](evidence/stop-ownership-exit-20261009.json)。当前交付为本地可审阅候选。
+
+## 2026-10-09 — 请求与会话局部修复完成，退出异常单独保留
+
+从准确af688c8建立独立 `codex/playback-session-20261009`，产品sourceCommit=d480eb8，版本保持0.2.5。每次请求保留独立身份，pending清理不再生成空身份Stopped，已开始会话和错误收尾保持。基线回归2/7、候选7/7；最终全量593/593、0跳过，来源/版本及2136文件payload检查通过，独立核心复核无明确问题。
+
+五种场景的播放与Session断言均PASS，pending Stop为0、每轮5组完整Started/Stopped。首轮完整runner仍4PASS/1FAIL：hit0成功报告落盘后退出超时，强制收尾残留0，原因UNKNOWN。一次同产品/同harness的独立hit0复验完整PASS、自然exit0、残留0；五种参数均取得通过样本，但原退出失败不覆盖，稳定性继续观察。真实服务/远控、可见首帧、系统安装未执行。完整runtime与各层证据见 [修复记录](PLAYBACK_REQUEST_SESSION_FIX.md)。
+
+## 2026-10-09 — 隐藏 runner 修正，产品矩阵仍有明确失败
+
+在独立 `codex/runner-determinism-20261009` 完成工具/测试修正：明确 pending/cancel 请求门槛、重叠与顺序 Next 分开、事件/报告条件等待、遵守既有 Stop cooldown、分阶段与总期限、超时失败锁定及有界输出收集。固定产品仍为 v0.2.5 / `3ab10c9`，没有改产品源码、构建覆盖器或 runtime。
+
+全量单测580/580，后续Stop专项3/3，均0失败/跳过；隐藏矩阵 hit 0/400/800ms、DirectUrl 400ms四组PASS，miss 400ms因旧PlaybackInfo再次调用播放器FAIL，**整体保持FAIL**。五轮隔离/About/诊断校验分别通过、残留0；运行后2,136文件与固定清单匹配。完整证据见 [runner记录](RUNNER_DETERMINISM.md)。
+
+待处理的两项产品问题已有本地证据：同一队列item复用可变playOptions，使旧请求被新ID重新认作当前请求；pending播放被替换时，Stopped报告缺少PlaySessionId/MediaSourceId。后者新旧成功样本均存在，前者由新增迟到metadata断言检出；真实服务器影响未验证。不得把四组PASS或单测通过写成完整生命周期验收。新旧失败均保留，未推送、合并或发布；真实服务/安装/前台首帧范围不扩大。
+
+## 2026-10-09 — v0.2.5 Pre-release 已发布
+
+GitHub [v0.2.5](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.5) 已发布，Release ID `407543805`。产品 sourceCommit / tag 解引用均为 `3ab10c94d75659c0a421b729aac3147afa680751`。安装包 `EmbyTheaterEnhanced-0.2.5-test-win-x64-setup.exe` 为175,631,770 bytes，SHA256 `76d7766cc824bf65f585cd89f0e68841628b2063381aa85392513ed1653d0d65`；另提供同名 `.sha256` 和 `.provenance.json`。正式 Latest 保持 v0.2.2，发布来自完整分支，main 仍为46e995e。
+
+本次新提交全量535/535、writer17/17均0失败/跳过；两份runtime各2136文件一致，两份原始installer同SHA；主安装器完整性与2136文件解包全匹配，PE及真实About IPC均为0.2.5并绑定准确sourceCommit。与1a05f88仅8个版本/来源文件不同，应用与播放器二进制字节保持。
+
+隐藏假服务测试首轮queue-play达到25秒超时，复验完成流程但runner仍NOT_PASS：next.selected=false、fake CD2 cancelCount=1，读回3b158f6原始失败记录后断言向量与计数一致。普通/STRM控制、身份/Session报告、generation与Stop防迟到加载均通过；123条诊断、12项关联、两类安全Renderer位置和脱敏另记PASS。appData/userData前置隔离及读回通过、残留0。未改断言或重复跑到通过；真实服务、安装、可见首帧、HDR/多屏保持未验收。发布回读与完整证据见 [0.2.5发布记录](RELEASE_025.md)。
+
+远端三个asset状态/大小/digest与本地匹配，两个companion完整下载一致，tag解引用正确。完整EXE回下载因限速、接收中断与有界时限未完成，未记完整客户端SHA通过。6个旧Release、9个旧asset和30个已有远端refs全部保持，最终文档HEAD只记录发布结果。
+
+## 2026-10-09 — v0.2.5 测试版发布收口
+
+按用户明确发布授权，从完整 `5af8443` 建立独立 `codex/release-v0.2.5-test-20261009`。远端核对最高测试版为 v0.2.4，正式 Latest 为 v0.2.2，无开放 PR；v0.2.5 尚不存在。根 package 与 lockfile 统一为 0.2.5，随包来源索引对应新版本，已知材料缺口保持准确表述。现有产品源码、依赖版本与工具链保持。
+
+本轮将从已提交源码重新执行全量测试、两份独立 runtime / installer 构建、来源与 payload 检查、隔离 About / 假服务运行及发布回读。结果完成后补记，旧 0.2.4 候选的 SHA256 和 PASS 不替代本轮验证。主线仅核对范围；当前发布来自完整发布分支，维持 Pre-release。
+
+## 2026-10-09 — 构建复核与安装器字节重复性完成
+
+从da672d2继续独立`codex/build-review-20261009`，修正通知/config/provenance写入的链接越界与旧产物覆盖边界，并使用Inno6.7.3原生notimestamp消除输入mtime对容器身份的影响。产品sourceCommit为1a05f88357a08f5d7c99a7e5de28de20aad0dc79，版本0.2.4。
+
+writer17/17、最终全量535/535均通过且0跳过。独立runtime各2136文件完全一致；正式安装器A/B各175653917 bytes、SHA256均133a74abb36e18dbd21a186c3b330759a9f213e4d0045c5a9fabcf9db4b04258。A完整性和解包2136/2136通过，B为同字节对照。与3b产物只有6份来源/构建记录改变，其余字节保持。未运行真实客户端或安装；交付和精确边界见 [构建复核](BUILD_REVIEW.md)。
+
+## 2026-10-09 — 构建输入绑定与独立候选
+
+独立分支 `codex/build-hardening-20261009` 从审计基线 `49f643a` 继续。产品提交 `3b158f69e974802ef92a3d8c7ef6815139498d1f` 完成提交输入gate、schema 3 provenance、精确Node依赖、通知随包和完整本地GCC/Inno树固定；版本仍为0.2.4，`src/`、native C++、原vendor清单与依赖版本均未改动。
+
+最终提交529/529全量通过，两个独立runtime各2136文件全路径/hash一致；两份安装器完整性与解包2136/2136逐项比较通过，容器原始字节不同。隐藏fake CD2/合成媒体首轮double-Next selected断言失败，一次有界复验完整PASS；两次结果均保留，最终111条产品诊断合法、隔离读回通过、残留0。准确候选、重复性、P1差异和材料缺口见 [构建修正交付](BUILD_HARDENING.md)。
+
+固定上游源码材料已补充：mpv header与固定源码一致；Windows Host参考ZIP中8项辅助二进制与Carnival字节相同。完整对应源码与重建关系保持各自边界。原P1及已发布v0.2.4身份不变，当前为本地工程交付。
+
+## 2026-10-09 — 构建输入、来源与可再构建范围
+
+从1abf554建立独立`codex/build-input-audit-20261009`，完成 [来源/材料矩阵](BUILD_INPUT_AUDIT.md)、只读导出器、14项新增测试和通知/构建文档修正。新工具与既有Git blob/Electron测试19/19，语法与diff通过；P1四层来源重验、三个归档、1009/51 vendor文件、73文件Electron和2149项payload核对通过。
+
+fresh npm33包1142文件与P1对应文件完全匹配，但long目录保留20个Carnival旧文件；最终node_modules共40包根，不是33包。当前可确认本机固定输入组装与P1的helper源构建；公开仓库完整构建、完整工具链和当前runtime/installer字节复现仍未证明。已区分Git排除与发行payload，列出Host/Web/辅助二进制/libmpv的对应源码、通知交付和工具链材料缺口。
+
+产品源码、版本0.2.4、P1 runtime/安装器及原vendor保持；本轮没有启动客户端或访问用户profile。当前远端只读核验main46e995e、Latest v0.2.2、v0.2.4 Pre-release；P1产品fb10f92与已发布03a2e3b继续分开。后续补材料与构建gate按报告优先级独立决定。
+
+## 2026-10-09 — P2 离线阶段观测交付
+
+从P0/P1的7bee8db建立独立codex/p2-performance-20261009，新增只读单文件阶段分析工具与16项回归，连同既有P1日志工具共24/24通过。分析已隔离合成日志110条、8次请求，5次有play→core-playing端点；缺失/歧义/时钟回退保持UNAVAILABLE。fake CD2含固定400ms延迟且无内部分段日志，不用于真实性能或预热收益结论。
+
+预热经复杂度核对后按用户偏好结束本轮研究；Hydration仍等待真实not_found前后样本。产品源码、P1 runtime/安装包及版本保持fb10f92，本轮只变更工具/测试/文档，未启动客户端或访问profile/真实服务。报告见 [P2阶段观测](P2_TIMING_AND_CAPABILITY_REVIEW.md)。
+
+## 2026-10-09 — P0/P1 隔离本地工程
+
+从完整候选 ebcb655a 建立 `codex/p0-p1-diagnostics-20261009`，P0 状态/主线审查准备与 P1 有限诊断已完成可审阅本地交付。产品 sourceCommit=fb10f92，版本 0.2.4；全量 455/455、后续工具专项 8/8、正式来源与 2149 文件 payload、隔离 fake CD2/合成媒体 pipeline、两类 Renderer 安全位置、整包脱敏和安装器解包 2150/2150 均通过。现有主目录资料保留，main/发布状态未改变。
+
+首轮测试只设置 APPDATA，曾向既有客户端日志追加合成记录；该轮不作为隔离通过。测试入口显式固定 appData/userData 后复跑通过，并核对既有日志 hash/length 不变。准确提交、产物、证据及边界见 [P0/P1 交付](P0_P1_DELIVERY.md)，下方按日期保留历史记录。
+
+## 2026-10-09 — 清理已替代的cc603ba候选Release
+
+按用户要求删除 `test-20261008-cc603ba` Release（ID406794578）及其4个附件，保留原源码tag（object `455cd068`）用于追溯。删除后GitHub列表共6个Release，回读确认其余版本的正文、标记、发布日期和附件完全保持，正式Latest仍v0.2.2，当前测试入口仍v0.2.4。此条为后续清理结果，下面发布时的历史保留统计维持原记录。
+
+## 2026-10-09 08:30 UTC+8 — v0.2.4 Pre-release 发布完成
+
+`v0.2.4` 已作为 GitHub Pre-release 发布，Release ID `407374861`，sourceCommit `03a2e3b9ea7f1cf786b034b0a1882b10de79a39c`。安装包与 `.sha256` 校验文件两个资产均已上传；安装包 175,597,797 bytes，GitHub API digest、release 页面与本地 SHA256 均为 `4ea589368f2db40ce09ce4e46f4fe937a2d34a240582d871a8f3f5ae627e4b64`。下载的校验文件与本地校验文件哈希一致，文件内列出的安装包SHA256也匹配；本轮未完整重新下载 EXE。发布回读和历史维护校验均 PASS。
+
+六个既有 Release 仅更新标题、当前版本导航和历史正文展示；原始正文保留，11 个旧资产、日期、draft/prerelease flags 与已有 refs 均未变化。`main` 仍为 `46e995e`，正式 Latest 仍为 `v0.2.2`。设置页用户验收仍为 `PASS`；未据此扩展声称真实安装、CD2 或其它未覆盖场景通过。详细记录见 [0.2.4验收](SETTINGS_UI_024_ACCEPTANCE.md)。
+
+## 2026-10-09 — 0.2.4设置页用户验收通过
+
+用户使用本会话提供的0.2.4测试入口后反馈：“可以了，我测过了”。本轮设置页一致性修正记为 `USER ACCEPTANCE PASS`，对应产品sourceCommit仍为03a2e3b9ea7f1cf786b034b0a1882b10de79a39c，关闭本次UI问题并保留观察。不补写用户未逐项提供的操作、显示模式或安装过程；此前自动化、隔离测试与安装包校验仍保留独立证据。本次仅同步文档，没有改产品、重建、安装或上传GitHub。
+
+## 2026-10-09 — 0.2.4设置页修正安装包可用
+
+最终产品sourceCommit为03a2e3b9ea7f1cf786b034b0a1882b10de79a39c，安装包 `dist/EmbyTheaterEnhanced-0.2.4-test-win-x64-setup.exe`。三页左对齐、动态原生控件类保留、规则操作对齐和重复页标题收尾完成。430/430全量、完整packaged应用真实设置菜单导航/保存/离页/重载/规则检查、About版本与来源、正式构建及Inno完整性/解包2147文件校验均通过。与0.2.3只有6个设置文件及5个版本/来源文件变化，播放/窗口/native字节保持。
+
+本地.exe与SHA256已交付，未上传GitHub或执行系统安装。测试使用隔离profile与合成身份，真实服务范围不扩大；准确产物与分层证据见 [0.2.4验收](SETTINGS_UI_024_ACCEPTANCE.md)。
+
+## 2026-10-09 — 0.2.4设置页修正包收尾
+
+用户接受“设置页一致性修正测试包”的收尾范围，开始在独立分支codex/settings-native-alignment-20261009执行完整页面核对、设置功能回归、正式构建与本地.exe交付。版本字段统一为0.2.4；不加入预热、hydration、窗口/播放重构。前一阶段36项与离屏对照仍是局部证据；本次完整应用和安装器结果完成后另记。
+
+## 2026-10-08 — 增强设置左对齐与原生控件类修正（本地）
+
+用户反馈0.2.3增强设置页整体居中、STRM规则动作的灰色方框/彩色文字与原生Emby风格不一致。以已发布f7505cd产品字节（文档HEAD ba76ac0）建立独立managed worktree `ete-settings-native-alignment`。当前仅修改enhanced-settings.css、strm.css、strm.js：三页沿用原生页面边距并靠左，规则动作统一左对齐；追加业务class，保留自定义控件constructor添加的Emby基础/环境类。
+
+设置/维护/草稿与Token竞态定向36/36 PASS，JS syntax与diff检查通过。真实0.2.3原生控件+CSS的独立离屏夹具重现旧按钮缺emby-button；修正后三页与native audio参考内容起点一致，1920/1280/680无横向溢出，动态按钮均保留实际自定义元素类型和基础类。该夹具使用模拟外层边距与测试数据，不等价于完整应用导航或安装包验收。代码本地未提交，未重新构建/发布安装包；播放、全屏、Resolver/Session未改。
+
+## 2026-10-08 — 0.2.3测试安装包已发布
+
+产品版本字段已由0.2.2修正为0.2.3，sourceCommit `f7505cda40c7f64e31714fbbe40eaa532926c46c`；新安装包为`dist/EmbyTheaterEnhanced-0.2.3-win-x64-setup.exe`。430/430测试、正式重建、来源、payload和安装器2147文件核对通过，实际About和安装器版本资源均为0.2.3。新旧runtime仅5个版本/来源元数据文件不同，产品代码及播放器二进制未变。
+
+GitHub [v0.2.3 Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.3) 已发布安装包与校验文件，两个asset的大小及服务端digest匹配本地，tag精确指向f7505cd。旧cc603ba测试页已增加替代提示并保留原tag/资产；正式Latest仍v0.2.2，main仍46e995e，详见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。
+
+## 2026-10-08 — 预发布安装包已补齐
+
+已按既有交付方式提供 [Windows x64安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/test-20261008-cc603ba/EmbyTheaterEnhanced-unified-test-cc603ba-win-x64-setup.exe) 及SHA256文件，并设为原Pre-release说明的默认下载。安装包由精确`cc603ba`打包工作树中的原Inno脚本生成，使用同一已验证runtime；175,594,443 bytes，SHA256为`1412dc7e87e1f353c1985cec15c7c0882a4ac65a48c032700ab991500be4f6df`。
+
+完整性测试、解包2147文件与原runtime路径/哈希比较全部通过；GitHub端大小与digest匹配。ZIP作为备用附件保留。没有运行系统安装或改变产品源码/版本/主线，完整证据见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。
+
+## 2026-10-08 — 统一候选GitHub预发布
+
+用户确认后已发布 [test-20261008-cc603ba](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/test-20261008-cc603ba)，Pre-release且非Latest；附件为已验证的240,289,348-byte ZIP与SHA256文件。annotated tag精确指向产品源码`cc603ba59fc527e50dda5b32f849af7b50702e2f`。GitHub端两个asset均uploaded，大小/digest匹配本地；本机Release CDN独立下载回读受TLS/EOF影响未完成，明确保持UNAVAILABLE。
+
+独立候选分支已推送，main保持`46e995e`，正式Latest仍为`v0.2.2`。没有新增PR或合并主线，产品/版本和测试包字节保持原样。全屏Previous采样及真实环境范围限制随Release说明保留；完整记录见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。
+
+## 2026-10-08 — 统一候选本地测试包交付
+
+独立分支 `codex/unified-candidate-20261008` 从全屏文档 HEAD `6be48ed`（产品 `1e86e51`，已包含切集 `6473ecb`）合入 Settings `21ef9a4`。两侧共同祖先及现场远端 main 均为 `46e995e`。main 的维护 IPC 与窗口状态、libmpv 的 About route 与原生持帧自动合并；三份追加型历史文档保留两侧记录。原工作树及未提交资料未改动。
+
+集成 sourceCommit 为 `cc603ba59fc527e50dda5b32f849af7b50702e2f`，入口 `dist/unified-candidate/Emby.Theater.exe`。430/430全量测试、正式build/source/runtime/native provenance、2146文件payload通过。用户重新授权后，以新隔离profile补齐Settings保存/离页不保存/落盘重载、诊断/About、10次窗口/全屏切集、快速Next→Stop及terminal Stop。窗口跨编码两向画面采样通过；全屏Previous最大采样间隔107ms，仍保留极短闪烁INCONCLUSIVE。状态为 `LOCAL TEST CANDIDATE READY / LIMITATIONS RECORDED`，真实Emby/CD2/HDR/多屏/安装验收独立。
+
+本地ZIP `dist/EmbyTheaterEnhanced-unified-test-cc603ba-win-x64.zip` 已逐项重读2147个文件校验，之后另经用户确认完成上述GitHub预发布。详细证据、历史中止与基线匹配的旧快速夹具失败见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。版本字段保持0.2.2；后续文档HEAD不是该runtime的sourceCommit。
+
+## 2026-10-08 — 全屏顶部细条用户验收通过
+
+用户在本会话交付候选后反馈：“我手动验证了，现在没有那个条了”。顶部细条记为 `HUMAN-ASSISTED VISUAL PASS / USER_REPORTED_RESOLVED`，范围限于用户本次所测场景。当前本地产品候选为 `1e86e512e3293e5c9fb43b3803995af50b802762`，独立分支 `codex/fullscreen-state-20261008`，入口 `dist/fullscreen-state-final/Emby.Theater.exe`。此处相对路径以 managed worktree `ete-fullscreen-state-20261008` 为基准；下方旧播放候选的路径仍属于原播放工作树。
+
+最终源码 `npm test 412/412 PASS`、正式build、provenance与2140文件package VerifyOnly通过。产品仅修改 main窗口状态与video carrier窗口配置；原生持帧、前后切集、Session/Resolver与Electron44保持。全屏边缘拖动后状态脱节已在旧候选实测复现，carrier窗口框与顶部浅线的归属已通过合成窄区对照定位。
+
+阶段候选 `a8aa114` 的可见边缘拖动、恢复原尺寸、普通窗口缩放与最小化恢复通过；最终候选可见probe在Computer Use被用户Esc停止时中断，播放中进出全屏、最终切集/Stop及完整窗口交互复测仍未完成。此次用户反馈单独关闭顶部细条视觉项。前后切集按此前用户反馈保留 `USER_REPORTED_RESOLVED / MONITORING`，不继续主动改动。详见 [全屏窗口修复与验收](FULLSCREEN_WINDOW_STATE.md)。
+
+## 2026-10-08 — 播放呈现还原本地候选交付
+
+当前产品源码与交付runtime绑定 `6473ecb046b0621ca79282e0c0ed250e3848f2c5`，路径 `dist/presentation-restore-6473ecb/`。保留Electron 44和原播放/Session/Resolver，前后切集改由native暂存旧帧并一次性揭开新视频，包含快速切换的token/epoch/Stop隔离及失败清理。最终全量 `npm test 401/401 PASS`，build、source/runtime/native provenance和2140文件package校验通过。
+
+完整候选 H.264 720p/24fps+AAC ↔ H.265 1080p/60fps+AAC：窗口81/81帧、max59/44ms，黑/海报/mixed均0；全屏66/48帧、max164/163ms，观察颜色均旧/新视频但短闪分类仍INCONCLUSIVE。原生七项边界通过，含失败与15秒超时的实际清帧；最终两次运行各7个owned进程退出、残留0。状态为 `LOCAL CANDIDATE READY / WINDOWED SYNTHETIC VERIFIED / USER ACCEPTANCE PENDING`，不等于全屏或实服最终验收。详细结果和剩余验收见 [播放呈现还原记录](PLAYBACK_PRESENTATION_RESTORE.md)。没有合并Settings候选、修改真实配置或发布。
+
+## 2026-10-08 — NextTrack 原生呈现候选进行中
+
+旧版恢复目标的 retired-control 窗口 probe 两向各 76 帧、最大间隔 53/61ms，black/purple/mixed 均为 0；真实 Stop 11ms，资源清理完整。旧 Testing runtime `269bdcc` 的 case 1–4 通过，T 的 loopback HTTP 请求被 MPV 主动取消 (`lateBodyDelivered=false`)，case 5 曾在 load failure 后遗留 armed lease/hold，历史失败保留。后续 Testing build `a2cf6af` / SHA256 `de43f1301f208106fd18291bef0690c2cb20f388dd7f7d4b737c99679ca15378` 的六项边界均通过；missing-media end-file 后已观察 `autoState=unavailable`、active=false、bytes=0，另验证 control-generation cancellation 与 delayed prepare 不影响或复活新 hold。HTTP 连接仍被 MPV 主动取消，未验证迟到 body 到达后的行为。完整证据见 [播放呈现还原记录](PLAYBACK_PRESENTATION_RESTORE.md)。
+
+生产侧实现 native presentation prepare/arm/release 与 fail-open 清理。正式 runtime `presentation-restore-5ddeea8`（source commit prefix `5ddeea8`，ordinary Helper SHA256 prefix `28054c`）build/provenance 通过。该 runtime 窗口 Next/Previous 各 83 帧、最大间隔 30/27ms、black/purple/mixed 均为 0、manager 选择正确、overlay 未插入，cleanup 7 exits/residual 0；全屏各 55 帧、最大间隔 165/164ms，颜色样本只有目标视频但采样间隔不足，保留 `INCONCLUSIVE`，cleanup 8 exits/residual 0。随后修复的旧 token Stop-to-C no-op 与高 epoch retire/in-flight begin 边界尚未重建和复测，因此 `5ddeea8` 不是最终候选。Native controller contract `11/11 PASS`；`395/395 PASS` 是阶段性全量结果，不含后续追加 lifecycle tests。当前整体仍 `NOT ACCEPTED`，用户真实视觉验收未完成。
+
+## 2026-10-07 — 播放呈现还原目标开始
+
+用户授权以升级前表现为标准自主修复，保留新版 Electron。见 [播放呈现还原](PLAYBACK_PRESENTATION_RESTORE.md)。当前已确认三套旧 runtime 来源，并重新取得当前候选有效的窗口合成画面；开始将测试工具适配到历史 Pepper / Helper 与全屏模式。生产行为尚未更改，真实视觉失败仍未关闭。
+
+历史窗口/全屏对照已完成：旧 Pepper 的相同 gpu-next 输出是旧画面衔接新画面；Helper 在 Electron 18 时已出现中间内容，Electron 44 同样存在。只抑制 stop 隐藏的测试实验将中间内容转成黑色，未达到还原目标，未用于产品。采样改为直接读取 MediaStreamTrackProcessor，解决透明 renderer 的绘制回调暂停；完整工具测试 362/362 PASS。下一步进入保留已呈现视频帧的能力验证。
+
+## 2026-10-07 — 窗口模式短闪的独立观察夹具
+
+用户确认黑屏很快消失，仅测窗口模式。新增带海报、不同动态媒体、renderer/main/native 事件与合成 ROI 连续流的 test-only 模式；默认 pipeline 保持。初步两组连续流捕获了海报前的黑色采样，海报后短黑未稳定复现；追加稳定旧画面前置条件的单次 probe 未取得前置证据，保持 INCONCLUSIVE。没有据此调整生产显示策略，详情见 [窗口过渡观察](TRANSITION_WINDOWED_TIMELINE.md)。
+
+诊断输入 runtime 绑定 `456df8e`，build / provenance / VerifyOnly 通过。最终 Node 全量 347/347 PASS，采样字段 / 资源约束专项 7/7 PASS，默认 CD2 pipeline 回归 PASS。真实 GUI 中已验证过的流停止 / handler 重置成功，运行后进程残留为 0。此前“没有新 runtime”的记录属于上一轮入口修正；本轮生成的是诊断输入，不是已解决两段黑屏的正式候选。
+
+## 2026-10-07 — 人工视觉失败与 PreviousTrack 入口修正
+
+用户反馈 `88f56b7` 下一集为“黑屏 → 海报 → 黑屏 → 视频”，上一集仍透明，当前整体为 `USER VISUAL FAIL / BLACK INTERVALS UNRESOLVED`。确认上一集未进入过渡 wrapper 后，在同一 renderer 模块增加对称 previousTrack 接入；按现有 manager 的 playlist index - 1 取项，原调用 / request sequence / stop(false) generation guard 保留。
+
+新增三项回归验证准确选项、首项 / 非 Video / 其它播放器绕过、快速 next→previous 时旧回包保护；修改前基线存在失败，修改后 3/3 PASS，完整 `npm test 340/340 PASS`。两段黑屏目前只有用户现象与代码边界证据，没有首帧呈现证据，不记录修复完成；本轮未生成替代旧 candidate 的新 runtime。
+
+## 2026-10-06 — NextTrack 无人值守审计修复
+
+从候选 `8f3d9a9` 在独立本地分支继续审核。已修复视觉任务取消后 paint promise / visibility listener / animation frame 残留，以及帧调度异常和 CSS 过渡取消 / 缺少实际动画时的清理。范围仅为 `enhanced/nexttrack-transition.js` 与回归测试；PlaybackManager、libmpv、Session、Resolver、Native Helper 和封面比例保持原有实现。
+
+新增审计回归由失败用例转为通过，合计 NextTrack focused `18/18 PASS`，最终完整 `npm test 337/337 PASS`；独立 Tier 2 复核未发现新引入核心正确性问题。原 diagnostics 自测在含空格 worktree 中因 Start-Process 参数引用缺失而未启动 collector；仅修复测试参数后全量通过，脱敏断言不变。实际 Electron 可见 renderer 淡出清理通过；未显示窗口的 CSS 动画可能直到 reveal 才完成，保留为隐藏渲染限制。正式 runtime / fake pipeline 的结果按最终源码提交另行记录；真实客户端视觉验收仍待完成。
+
+## 2026-09-24 — NextTrack transition artwork candidate
+
+针对 NextTrack 期间透明播放区域短暂露出桌面的用户观察，当前 `codex/nexttrack-transition-overlay` candidate 增加 renderer 内视觉过渡层。实现复用 PlaybackManager 已选中的队列 Item 和现有 `ApiClient.getImageUrl()`：首个 Backdrop image 优先、Primary poster 次之、不可用时为纯黑。比例修复使 overlay 填满视频容器，图片采用 100% 宽高和居中 `object-fit:cover`，横版图覆盖 16:9 区域，竖版 poster 裁切填满区域。NextTrack 入口先同步显示覆盖层，再同步调用原 `nextTrack()`；paint gate 位于 `libmpv.stop(false)` 隐藏 surface 之前。匹配当前播放请求的 `core-playing` 且视频容器恢复可见后，覆盖层等待一次 paint 再淡出。原播放顺序与 source、Resolver、Session、Native Helper contract 未改。
+
+状态：比例修复 = `CODED / AUTO VERIFIED`；修复后 focused playback/window `43/43 PASS`、`npm test 325/325 PASS`、相关 JS syntax 与 `git diff --check` PASS。Foreground visual review = `PENDING USER REVIEW`。本条不宣称封面比例已通过新的前台视觉验收，也不把自动化或隐藏 runtime 作为视觉证据。
+## 2026-10-06 — Settings maintenance 无人值守审计修复
+
+从候选 `f58d806` 在独立本地分支审查。已修复手动更新查询只限制 socket 空闲而未限制整体请求期限、Release URL 未按规范化路径检查白名单、超出安全整数的数字 prerelease 比较三个问题。非成功 HTTP 响应及时关闭连接；同步请求异常清理 deadline。改动集中于 `enhanced/maintenance.js` 和新增回归，不改变 Settings 草稿 / Token / Smart Mapping / 播放契约。
+
+新增失败回归转为通过；新 maintenance 与既有 Settings visual suite 合计 `14/14 PASS`，此前 Settings 状态等相关定向 `83/83 PASS`，最终完整 `npm test 337/337 PASS`，独立 Tier 2 复核未发现新引入核心正确性问题。全量验证曾被 diagnostics 自测的未引用进程参数阻塞：含空格的工作树路径被拆开，正确引用后通过；只改测试启动，不改 collector 或脱敏断言。runtime 与 fake pipeline 结果按最终提交另行记录；真实三页视觉和实际入口验收仍待完成。
+
+## 2026-09-24 — STRM 动态规则控件原生外观修复
+
+用户实际查看 v3 runtime 后确认其余区域满意，但路径规则卡中的输入框、下拉框仍呈浏览器默认白色小控件。根因是规则卡及后续助手样本用 `document.createElement(tag)` 创建普通控件，随后才设置 `is="emby-*"`；Emby 的 input/select/button 是 customized built-in，必须在创建时传入 `{is: 'emby-*'}` 才会获得其组件实现与样式。仅调整 `mpvplayer/strm.js` 的动态控件创建，并加入会识别旧创建方式的生成控件测试。静态 STRM、诊断与 About 的布局和样式未改；Smart Mapping、规则 schema、Token/Save、CD2 状态、Resolver 与播放链未改。
+
+本轮 targeted STRM/Settings `78/78 PASS`，`npm test 331/331 PASS`，JS syntax 与 `git diff --check` PASS。用户视觉复核仍待独立 runtime 再确认。
+
+## 2026-09-24 — Unified Settings Visual System v2 candidate
+
+用户对上一版 STRM runtime 的实际视觉检查结果为 `FAIL`。本轮在 `codex/strm-ui-consolidation` 上重建带 `.ete-settings-page` 命名空间的共享视觉层：字体、间距、卡片、表单控件、四级按钮及状态色由 `mpvplayer/enhanced-settings.css` 的 token 统一；STRM、诊断与 About 只保留各自布局样式。STRM 采用区块标题/说明/内容卡与纵向地址、Token、开关、状态行；规则路径占整行，助手样本纵向排列。诊断页移除原生 `raised/button-submit`；About 页面按用户追加确认纳入本分支，四项维护 IPC 来自旧分支的独立 contract，未导入旧版整套 Settings 设计。
+
+现有 STRM 推导、Resolver、规则 schema、Token/Save 状态机、CD2 状态生命周期、诊断 IPC 与播放链没有行为变化。新增 About route 提供版本/环境信息、白名单环境复制、用户点击后的有界更新查询及受限 Releases 外链。Helper 未 ready 时 libmpv 显示 `UNKNOWN`；显示缩放按主显示器 `scaleFactor` 表达。共享 CSS 与页面 CSS 均限定在各自根类，无裸 `button/input/select` 规则。
+
+验证：STRM/Settings/诊断 focused `103/103 PASS`；全量 `npm test 330/330 PASS`；修改的 JS 语法、`git diff --check` 和三页 HTML 标签平衡 PASS。代码提交 `f3a17ca1bbe3016d33749e98d110282fc798b2f2` 的独立 runtime 为 `2145` 文件，固定 Electron 44.4.2、Native Helper、source/runtime provenance 与 package `-VerifyOnly` 均 PASS。最终提交的 `strm-ui-review2` runtime 身份在任务最终报告中再核对。前台三页切换与实际视觉结果仍待用户复核，当前只记录自动化验证状态。
+
+## 2026-09-24 — STRM Settings UI consolidation
+
+基于 `main@46e995ef83fca7f7a882e3dc633bdcc2d2d521c7` 在独立 `codex/strm-ui-consolidation` worktree 完成 STRM 设置页视觉整理。页面按基础设置、CloudDrive2、路径规则、智能映射助手分区；使用约 1080px 内容宽度、统一深色表单控件、Primary/Secondary/Text/Danger 操作层级、规则来源 badge、分开的挂载/连接/路径格式状态行，以及同风格的样本和预览卡。窄屏单列和长路径换行已加入 CSS。功能控件 id/class 与事件入口保留；JS 只调整 UI render、状态文字和视觉标记。Smart Mapping 推导、规则 schema、Token/Save 状态机、CD2 IPC/连接生命周期、Resolver 与播放链没有改动。
+
+自动验证：STRM UI/Settings focused `69/69 PASS`，`npm test 322/322 PASS`，JS 语法和 `git diff --check` PASS。已从代码提交 `ae0e6504f6389f261cea484fcb3e77f299c801a9` 构建独立 `2139` 文件 runtime：固定 Electron 44.4.2 的 73 文件输入、Native Helper 编译与 provenance、source/runtime provenance、`package.ps1 -VerifyOnly` 均 PASS。最终提交对应的 runtime 身份在任务最终报告中单独核对。前台设置页视觉、真实 Emby/CD2 和安装验收均未执行；交付状态为 `READY FOR USER VISUAL REVIEW`。
+
 ## 2026-09-24 — Smart Path Mapping milestone closure
 
 PR #18（`feat: add smart STRM path mapping assistant`）已通过 merge commit `121305b5fa74fa5bf9e8b76caabf280468ddb11b` 合入 `main`，合并的功能 head 为 `ade6620e80ce19da26d6a7bebc53368dffe3f8a5`。Implementation = `COMPLETE`；既有 User Functional Acceptance = `PASS`；Final Remote Re-Review = `PASS`；合并前 `npm test 319/319 PASS`，功能 head 的 exact-HEAD build/provenance 已验证通过。本条未执行新的 runtime、安装或真实客户端验收；未创建版本、tag 或 Release，正式发布基线仍为 `v0.2.2`。

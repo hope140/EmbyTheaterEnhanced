@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-09",
+  "branch": "codex/build-review-20261009",
+  "reviewedHead": "da672d24d22bb165e5fc99b6c74a09e64941fe75",
+  "sourceCommit": "1a05f88357a08f5d7c99a7e5de28de20aad0dc79",
+  "version": "0.2.4",
+  "review": {
+    "baselineTargetedTests": 50,
+    "writerTargetedTests": 17,
+    "writerBaseline": {
+      "returned": "passed",
+      "outsideOriginalPreserved": false
+    },
+    "writerFixed": {
+      "rejected": true,
+      "outsideOriginalPreserved": true
+    },
+    "newProductBehavior": "unchanged; packaging file timestamp policy changed"
+  },
+  "finalUnitTests": {
+    "passed": 535,
+    "failed": 0,
+    "skipped": 0,
+    "log": ".work/build-review-unit.log"
+  },
+  "runtimeComparison": {
+    "repeat": {
+      "leftCount": 2136,
+      "rightCount": 2136,
+      "missing": [],
+      "extra": [],
+      "changed": [],
+      "mtimeDifferent": 1244
+    },
+    "baseline": {
+      "leftCount": 2136,
+      "rightCount": 2136,
+      "missing": [],
+      "extra": [],
+      "changed": [
+        "build-input-provenance.json",
+        "build-manifest.json",
+        "native-helper-provenance.json",
+        "runtime-dependencies.json",
+        "runtime-provenance.json",
+        "source-provenance.json"
+      ],
+      "mtimeDifferent": 1245
+    }
+  },
+  "installerReproducibility": {
+    "sameSize": true,
+    "sameSha256": true,
+    "postCompileByteModification": false,
+    "installers": [
+      {
+        "path": "dist/EmbyTheaterEnhanced-0.2.4-build-review-1a05f88-a-win-x64-setup.exe",
+        "size": 175653917,
+        "sha256": "133a74abb36e18dbd21a186c3b330759a9f213e4d0045c5a9fabcf9db4b04258",
+        "sourceCommit": "1a05f88357a08f5d7c99a7e5de28de20aad0dc79",
+        "version": "0.2.4",
+        "provenance": "dist/EmbyTheaterEnhanced-0.2.4-build-review-1a05f88-a-win-x64-setup.exe.provenance.json",
+        "checksum": "dist/EmbyTheaterEnhanced-0.2.4-build-review-1a05f88-a-win-x64-setup.exe.sha256"
+      },
+      {
+        "path": "dist/EmbyTheaterEnhanced-0.2.4-build-review-1a05f88-b-win-x64-setup.exe",
+        "size": 175653917,
+        "sha256": "133a74abb36e18dbd21a186c3b330759a9f213e4d0045c5a9fabcf9db4b04258",
+        "sourceCommit": "1a05f88357a08f5d7c99a7e5de28de20aad0dc79",
+        "version": "0.2.4",
+        "provenance": "dist/EmbyTheaterEnhanced-0.2.4-build-review-1a05f88-b-win-x64-setup.exe.provenance.json",
+        "checksum": "dist/EmbyTheaterEnhanced-0.2.4-build-review-1a05f88-b-win-x64-setup.exe.sha256"
+      }
+    ]
+  },
+  "installerIntegrity": {
+    "tested": "a",
+    "status": "PASS",
+    "log": ".work/final-installer-integrity.log",
+    "bEvidence": "BYTE_IDENTICAL_TO_A"
+  },
+  "installerExtraction": {
+    "tested": "a",
+    "fileCount": 2136,
+    "extractedCount": 2136,
+    "missing": [],
+    "extra": [],
+    "changed": []
+  },
+  "processes": {
+    "workspaceExecutableResidual": 0,
+    "clientLaunched": false
+  },
+  "boundaries": {
+    "systemInstallation": "NOT_RUN",
+    "realEmbyCd2": "NOT_RUN",
+    "visibleFrame": "NOT_RUN",
+    "remoteMutation": "NONE",
+    "runtimeBaselineDifference": "six provenance or manifest files; all other bytes unchanged"
+  },
+  "probe": {
+    "baseSourceCommit": "3b158f69e974802ef92a3d8c7ef6815139498d1f",
+    "differentInputMtimeFiles": 1244,
+    "sameInputRepeatedInstallerSha256": "467cf2774be8b89d9ee6a8af98c064c1590e87d403b5225255bd5f8aa740accc",
+    "notimestampDifferentInputsSha256": "9b3599c14af2ba5ed2f682643bec4d2b68e516254e25f8fbfa9114bf9148173e",
+    "notimestampPayloadFiles": 2136
+  }
+}

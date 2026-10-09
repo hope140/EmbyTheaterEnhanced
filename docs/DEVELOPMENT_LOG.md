@@ -1,5 +1,369 @@
 # 开发日志
 
+## 2026-10-09 — 完整v0.2.6发布树主线整合
+
+- Model Tier: Tier 2核心整合审核 / Tier 1范围明确worker；Model: 当前GPT-6系列主线程，GPT-5.6 Luna High只读审查与测试worker；Reason: Task Risk=medium，Task Uncertainty=low（main已是发布树祖先），Cross-module Scope=发布成果跨层审查与文档，Playback/Session Impact=核对现有链、无新增产品修改；Escalated: no。
+- 开工核对真实refs/open PR，从4b24919建立独立托管worktree与 `codex/integrate-v0.2.6-main-20261009`，main46e995e独有0、发布领先81。主目录和全部旧产物保留；保持原提交历史，无squash或全量cherry-pick。
+- 主线程检查请求快照、pending报告、Stop stream归属与presentation准备、Native generation/hold、共享destroy和captured allSettled、IPC sender/脱敏边界；两个只读worker分别检查构建/来源和Settings/诊断，未发现确凿产品阻断。修正当前导航中过时的待发布/待打包表述、TESTING/PACKAGING入口并补CHANGELOG 0.2.6记录。
+- 整合树新运行全量日志631/631、0fail/cancel/skip，约238.7秒。六棵源码/工具/测试/输入树与34项构建输入Git对象相同；原runtime2136文件、EXE和八组69份原始artifact hash相同。16份旧harness匹配当时hash，新checkout6份仅换行不同；旧/新物理hash和canonical关系单列。详细检查及最终PR状态见 [整合报告](MAIN_INTEGRATION_026.md) 与 [证据](evidence/main-integration-026-20261009.json)。
+- 一个review worker在旧发布树做了两次局部测试启动，均无工具输出后以Ctrl-C中断，exit1且确认测试进程已退出；这两次未产生测试结论，不计入PASS，也不覆盖整合树完整运行终态。
+- Node24.18.1/npm11.17.0；正式prepare遇Windows长路径复制失败，保留失败现场后使用本轮临时PowerShell驱动缩短路径，同一脚本与固定归档校验通过。npm audit退出1：原main同版本grpc-js1.14.4命中High/Low服务端advisory；核对官方触发条件与生产client-only调用，未发现触发入口，作为非阻断依赖维护项披露，未执行依赖升级。
+- 原runtime仍绑定产品355f4e6；因产品和构建输入未变，不重建、不运行客户端、不改发布身份。GitHub无workflow，checks状态单独回读，不能用MERGEABLE/CLEAN代替验证。目标为独立分支PR和合并判定，不自动merge；真实验收缺口及直接app.exit UNKNOWN保留。
+- 用户再次确认继续后，先读回该head无PR，再通过gh创建 [PR #20](https://github.com/hope140/EmbyTheaterEnhanced/pull/20) 并attach。初始head a064017、base main46e995e、OPEN/非Draft、174文件、MERGEABLE/CLEAN；check runs/statuses均0，空集合combined pending不当作CI通过。对照原快照36项refs、8个Release与15附件均保持，只新增本次分支。本收尾提交只同步PR与判定，没有新增产品/构建输入变更或重跑相同测试。
+
+## 2026-10-09 — v0.2.6 原产物公开测试发布
+
+- Model Tier: Tier 1 publication tooling/evidence worker，主线程负责准确身份与远端副作用边界；Model: 当前Codex主线程 / GPT-6 Luna High只读worker；Reason: 固定产物发布、Git与证据核验，不涉及新增产品实现；Escalated: no。
+- 用户明确授权发布GitHub。从干净53b488f建立独立 `codex/release-v0.2.6-test-20261009`；独立复核三个资产、证据及新增tracked文本隐私边界。提交身份与已公开v0.2.5一致；没有重写产品历史或重建安装器。
+- annotated v0.2.6精确指向355f4e6，发布分支/tag原子推送；Release407934479先draft上传并核对三个digest，再以prerelease=true/latest=false发布，target_commitish绑定准确SHA。
+- 完整175621807-byte EXE和两个companion从公开URL重新下载，全部hash匹配。保留原7个Release/12个附件/33项refs，main46e995e及Latest v0.2.2保持。具体sha、时间、资产ID和分层见 [发布记录](RELEASE_026.md) 与 [机器证据](evidence/release-v0.2.6-20261009.json)。
+- 发布分支README/状态同步新入口；产品tag不随文档HEAD移动。实际系统安装/升级/卸载、真实Emby/CD2/远控、可见首帧及HDR/多屏仍未新增验收，早期直接app.exit UNKNOWN保留。
+
+## 2026-10-09 — 0.2.6 最终包验证与交付
+
+- 最终产品提交355f4e6，独立Tier2核心审查无P1/P2；full suite631/631，0fail/cancelled/skipped。service聚焦35/35，关闭工具36/36；前后失败与多实例拒绝测试日志保留。
+- 从该提交正式build完整runtime，固定GCC/Electron44.4.2/native/dependency/build-input及版本门禁通过。相对68eb024共11文件变化，其中产品仅native-helper/service.js；全部23个EXE/DLL同hash。
+- 最终8组串行执行均PASS：idle7552ms、playing8189ms、stopped8054ms、miss400 10323ms、hit0 12699ms、hit400 13416ms、hit800 16328ms、direct400 14403ms。每轮自然exit0、无outer/native强杀、残留0；存在native实例时按clientId逐一核对will-quit前完成。5组完整pipeline各5对Session，保留Next/generation/精确取消/UA隔离，工具hash和product source分开绑定。
+- 完整Inno安装器175621807 bytes、PE0.2.6、SHA256 bc878b4e929016071b8d7a41f9b281ad3118e62e8a1e469b0a5c9858718b1532；innounp完整性通过，2136/2136解包文件同hash，post-package VerifyOnly通过。交付7文件独占创建并读回hash，未夹带profile/log/fixture/凭据。
+- 最终目录dist/delivery-0.2.6-355f4e6；产品进程残留0。文档提交只记录结果，不替换355f4e6产物身份。原8700039直接退出FAIL、7b3a2dc正常关闭FAIL、ac865c4工具时序假设偏差以及后续PASS均保留；app.exit根因UNKNOWN。系统安装/实服/远控/可见呈现/HDR/多屏未执行，远端无写入。
+
+## 2026-10-09 — 0.2.6 本地包与正常关闭验收
+
+- ac865c4完整8组通过后，按父会话独立review补齐A/B多pending拒绝边界：current+snapshot同一次allSettled，全部结束后按current优先/快照顺序传播原Error，原surface短路不变。精确35例before34 PASS/1 FAIL、after35/35。Stop-before-close verifier假设偏差另记原FAIL，按clientId配对接受已经完成的stopped实例；最终工具专项36/36，原pipeline/generation/Session门槛不动。
+
+- 7b3a2dc重建后idle通过，playing仍native-actual-exit FAIL；新增单次caller白名单观测确认为destroy-client，未保留raw stack。定位renderer endpoint清空client后旧kill仍pending，完整service destroy必须join。新增pending集合和同步snapshot，只作用于destroyClient等待归属，不更改onTerminal/controller/协议。最终同一33例通过Git blob preload对照7b3a2dc为31 PASS/2 FAIL，当前33/33；原fixture已settled rejection与pending contract偏差的32/33日志保留并说明。最终仍从新提交正式重建，不原地patch runtime。
+
+- 初版8700039全量621/621，runtime2136文件、23个EXE/DLL与68eb024一致；installer175618895 bytes/SHA256 48c178ee901d1d83c32bb0c5718754601912ae2fd63400a3c8029157cd8072de。最终直接退出miss400 PASS，hit0播放断言PASS但outer120s退出FAIL；证据原样保留，余组按计划停止。线程快照在deadline后为OWNER_UNAVAILABLE，不猜根因。
+- 强化正常关闭idle PASS；playing自然exit0/残留0但native completion缺失，定位service destroyed提前返回，before-quit未等closed首次清理。产品仅service.js缓存完整destroy Promise。独立GPT-5.6 Sol High复核未发现P1/P2；同一31例修改前28 PASS/3 FAIL、修改后31/31，完整pipeline正常关闭工具专项34/34。worker最初提出的失败后surface cleanup已纠正为原错误短路，精确前后日志另存。
+- 后续从新提交重建唯一runtime/installer。固定三场景正常关闭及miss400/hit0/hit400/hit800/direct400完整pipeline，后者经window.close收尾，原pipelinePassed、Next/generation/精确取消、五对Session门槛保持。原app.exit失败仍UNKNOWN，不额外重复该路径。结果绑定新product sourceCommit和实际harness hashes。
+
+- Model Tier: Tier 2主线程 + Tier 1明确范围worker；Model: 当前主线程GPT-6系列，审计与测试worker GPT-5.6 Luna High；Reason: 正常退出与会话状态验收需主线程固定contract，worker只做资料/打包审计、工具review及测试；Escalated: no。Task Risk=medium，Task Uncertainty=medium，Cross-module Scope=harness/build/docs，Playback/Session Impact=existing product unchanged。
+- 起点99cb850，新分支codex/local-package-026-20261009；本轮有明确本地提交/版本整理/正式打包授权。主目录及旧工作树/产物只读保留。
+- 新增正常窗口关闭观察与独立结果核验，保持原Promise/异常和产品入口；fixture资源到will-quit清理。hidden harness在show/focus调用前阻止前台操作。68eb024上三个预检均自然exit0、清理顺序通过、残留0；各自原始目录保留。正常关闭不关闭历史app.exit UNKNOWN。
+- 整合05a08e9中独立资料和通知，保留0.2.4/1a05f88证据绑定；现行状态/日志不被旧分支覆盖。版本统一0.2.6，准备从提交生成正式runtime与安装器；结果稍后独立记录。
+
+## 2026-10-09 — Stop 收尾归属与有界退出证据
+
+- Model Tier: Tier 2 core / Tier 1 workers；Model: 当前主线程 GPT-6 系列，输入/回归/取证测试 worker GPT-5.6 Luna High，独立核心审查 GPT-5.6 Sol High；Reason: Task Risk=high，Task Uncertainty=medium，Cross-module Scope=PlaybackManager/真实 libmpv stopped 事件边界，Playback/Session Impact=direct；Escalated: no。主线程设计与最终验收，worker 只执行固定范围任务。
+- 准确基线 60acba5；本地工具提交 db2f61b，产品 sourceCommit 68eb0249f8392480154513f3df267204a0f0eb74。源码维护入口仍为 tools/patch-playbackmanager.cjs，版本 0.2.5；原主目录未提交资料和两份旧产物保留。
+- 同一 captured stream 的物理 Stop 局部串行，过期 queued request 在执行前退出；一次 cleanup/report 与 current-request 分离。terminal joiner 共享完整拒绝结果，最新 Native token 仍经 prepare；nonlocal/self-managed 保留原 IIFE。审查发现的非本地生命周期越界、terminal 后重复 Stop、terminal join 吞错三项在交付前已修正。
+- 最终同一份 VM 测试修改前8 PASS/8 FAIL，修改后16/16；全量608/608、0跳过。主线程补强真实 manager + transition 联合 token、物理 terminal pending Next、准确共享 Error 和全Stop拒绝后的监听恢复，独立复核绑定最终源码及测试哈希。
+- 正式 build / package VerifyOnly / provenance通过，运行前后新旧runtime各2136文件与清单匹配；仅 PlaybackManager + 6份来源记录不同，23二进制一致。ignored 比较器首轮因遗漏内部 hash map 失败，修正工具后复算，失败日志保留；不是 runtime payload 失败。
+- 预定六次隔离运行已全部执行。新五组完整PASS、自然exit0；旧d480eb8 hit0在app.exit返回后仍OS退出超时，精确root PID/StartTime强清理后0残留。JS exit/quit回调不能替代OS退出；原因UNKNOWN，产品退出语义未改。临时线程快照因所属根进程已收尾而UNAVAILABLE，未编造线程归因。
+- 新14份harness输入六轮哈希一致；appData/userData/About/应用renderer归属/隐藏阶段检查通过，五项媒体各一对Started/Stopped，所有pending/重复/未配对指标0。真实服务、远控、首帧/连续性、HDR/多屏、安装与正常窗口关闭保持另列，见 [报告](STOP_OWNERSHIP_EXIT_EVIDENCE.md)。
+
+## 2026-10-09 — PlaybackManager 请求与 pending 会话局部修复
+
+- Model Tier: Tier 2 core design/review + Tier 1 bounded workers；Model: 当前主线程 GPT-6 系列，测试/harness/input worker GPT-5.6 Luna High/Max，独立核心复核 GPT-5.6 Sol High；Reason: 请求快照和 Session 报告归属涉及异步生命周期，主线程固定 contract 后委派测试与输入核对；Escalated: no。Task Risk=medium，Task Uncertainty=medium，Cross-module Scope=PlaybackManager overlay/tests/docs，Playback/Session Impact=local identity and pending report ownership。
+- 从准确 af688c8 建立独立 `codex/playback-session-20261009`，主目录未提交资料保持。产品仍0.2.5，固定3ab10c9产物只读作对照；后续构建使用唯一候选名称和新的sourceCommit。
+- 新harness在冻结产品的miss400对照复现旧metadata额外play、pending空身份Stopped和重复Started，正常结束且残留0。测试提交084c0c8先加完整报告配对硬门槛，产品提交d480eb8只改39行覆盖器和contract文档。独立AMD VM回归基线2/7、候选7/7，主线程复跑通过；完整593/593、0失败/跳过。首次输入缺失570/579的失败记录保留，输入补齐相关50/50通过。
+- 正式候选 `ETE-0.2.5-session-fix-d480eb8-win-x64` 完整构建、来源/版本与package VerifyOnly通过；新旧2136文件各自与清单一致，仅PlaybackManager和6份来源记录改变。Sol High独立核心复核和Luna范围/隐私复核无新增明确问题。
+- 五种场景播放/Session断言全PASS，每轮5对完整会话，pending/重复/未配对报告为0，诊断/About/隔离分别通过。首轮runner为4PASS/1FAIL，hit0在11.924s写入smoke成功后120s未退出，精确PID清理后0残留；原因UNKNOWN且未改退出判定。同参数仅做一次独立复验，保留失败；详见 [修复记录](PLAYBACK_REQUEST_SESSION_FIX.md) 与 [结构化证据](evidence/playback-request-session-20261009.json)。
+- 独立hit0复验11.366s完整PASS，自然exit0、timedOut=false、残留0，127条诊断通过；产品/provenance/13份harness SHA与首轮一致。退出异常未复现但根因未定，首轮矩阵仍FAIL、观察项保留，不归因并行负载。后续提交只补7项VM测试与验收文档，不修改d480eb8产品或runtime。
+
+## 2026-10-09 — runner 等待条件与失败证据收口
+
+- Model Tier: Tier 2 analysis/review + Tier 1 bounded workers；Model: 当前主线程GPT-6系列，worker GPT-6 Luna High；Reason: 主线程核对跨PlaybackManager/renderer/main异步归属，明确contract后委派fake service、deadline、condition、runner工具与测试；独立复核负责假PASS/超时退出边界；Escalated: no。Task Risk=medium，Task Uncertainty=medium，Cross-module Scope=tools/tests/docs，Playback/Session Impact=observed, product unchanged。
+- 从发布文档88c818f建立独立harness树；另取固定3ab10c9的产品根及runtime，ProductRoot四层来源门槛保持。首次仅取证的旧夹具出现PASS，短等待实际约1秒，未用该次PASS抹去发布失败。新fixture把rapid Next与Stop分别绑定main真实pending和成功cancel，并增加B已settled后C的串行case。
+- 独立复核关闭夹具的迟到成功覆盖timeout、renderer检查同步异常、Seek被已有位置满足、非CD2迟到metadata未计数、C source/Stop身份不足和读流无期限等问题。Stop observer取错native ID的整合失败、零延迟触发既有1000ms Stop cooldown的失败均原样保留，修正夹具后按固定矩阵验证；产品输入规则保持。
+- 首全量561/568的7项失败均为新树缺vendor材料；补齐后相关15/15，随后全量580/580，后续Stop新增3/3，均0跳过。最终矩阵4PASS/1FAIL，miss的staleMetadataIgnored=false为真实产品问题，未弱化断言或重跑取绿。
+- 固定产品调用链与只读VM确认共享playOptions被第二Next原地改写，旧metadata守卫误过并再次player.play；五轮另有pending Stop空身份报告，旧成功样本同样存在。产品修复单列，未在本轮改PlaybackManager生成器。详细根因、风险边界、复现命令及原始证据哈希见 [runner记录](RUNNER_DETERMINISM.md) 和 [机器证据](evidence/runner-determinism-20261009.json)。
+- 五轮appData/userData读回、About/source和合法脱敏诊断分别通过，候选残留0；13份执行文件矩阵内SHA一致，运行后runtime 2,136文件核对缺失/额外/不匹配均0。没有重建安装器、推送、合并、发布或系统安装；真实服务器、远控、首帧与HDR/多屏未验证。
+
+## 2026-10-09 — v0.2.5 测试版构建、发布与证据收口
+
+- Model Tier: Tier 2 release coordination / Tier 1 workers；Model: current Codex primary session / GPT-5.6 Luna High；Reason: exact source, binary, tag and publication identity review with bounded preparation, testing and read-only audit delegated；Escalated: no。
+- 产品提交3ab10c94d75659c0a421b729aac3147afa680751从完整5af8443继续，只有package/lock版本、随包来源索引版本及收口文档变化。root确认src/native/tools/installer/vendor相对审核基线保持。
+- 固定三个归档、Electron73文件、GCC6990文件、Inno118文件和解包器5文件；两次fresh npm与正式build，各2136文件路径/hash一致。全量535/535、writer17/17均0失败/跳过；34项输入、33+7包/1171文件与4份通知通过，审计CONSISTENT。
+- 两个原始installer均175631770 bytes、SHA256 76d7766cc824bf65f585cd89f0e68841628b2063381aa85392513ed1653d0d65。A完整性、全新解包2136/2136、PE0.2.5通过；B为字节相同对照。receipt精确绑定runtime manifest、compiler与source，发布前隐私扫描通过。
+- 隔离首次queue-play超时，第二次完成流程但next.selected=false/cancelCount=1；读回历史3b158f6原始失败向量一致，未放松断言。完整runner记NOT_PASS，普通/STRM控制/报告及generation/Stop断言、123条诊断、About/source/隔离与残留0分别记录。离线合成分析COMPLETE；运行后再次package VerifyOnly通过。
+- 准确annotated tag v0.2.5与发布分支原子推送；创建Release 407543805，prerelease=true、latest=false，上传EXE/sha256/provenance三个资产。后续文档HEAD不替换产品sourceCommit；下载与远端核验见 [发布记录](RELEASE_025.md) 和 [结构化证据](evidence/release-v0.2.5-20261009.json)。
+- 发布回读：全部asset uploaded/size/digest与本地匹配，两个companion完整下载匹配，公开首1MiB匹配；完整EXE回下载因限速/中断和最后240秒有界续传未完成（171530320/175631770 bytes），该层明确INCOMPLETE。旧6个Release、9个资产、30个远端refs保持，Latest仍v0.2.2；没有留下后台下载进程。
+
+## 2026-10-09 — v0.2.5 测试版收口开始
+
+- Model Tier: Tier 2 coordination / Tier 1 bounded worker; Model: current Codex primary session / GPT-5.6 Luna High; Reason: release integration and exact source-to-artifact identity, with fixed-scope read-only version audit delegated; Escalated: no model escalation requested.
+- Task Risk: medium (authorized public test release); Task Uncertainty: low after live refs / Release inspection; Cross-module Scope: version metadata, build and documentation; Playback/Session Impact: none intended, existing source frozen.
+- 用户当前授权版本收口、必要提交/推送、准确 tag、GitHub Pre-release 和安装包上传。独立分支从完整 5af8443 继续，v0.2.5 无冲突，Latest v0.2.2 保持。
+- package / lock 三处版本升级为 0.2.5，来源索引随包版本同步。构建前先提交；新产物绑定实际 sourceCommit。验证与远端回读待后续记录，不沿用旧候选 SHA256。
+
+## 2026-10-09 — 写入边界修正与安装器确定性
+
+Model Tier: Tier 2 risk management；Model: 当前主线程GPT-6系列，worker GPT-6 Luna High；Reason: 复核跨文件build/provenance写入边界及容器重复性，固定规格局部修复委派后由主线程检查真实diff；Escalated: no。Playback/Session Impact=none，Cross-module Scope=tools/installer/tests/docs。
+
+50项构建定向复跑通过。独立fixture重现旧writer跟随LICENSE硬链接改写runtime外canary且返回passed，全部在临时目录。worker修复后主线程补审原API委托及测试EEXIST误skip，最终17/17零跳过；再次独立复现为拒绝写入且外部canary保持。修复统一预检物理路径、完成标记、config原字节及全部通知，以独占创建和原子config替换保护目标。
+
+PE初步对照排除COFF时间戳；同一runtime重复编译SHA一致，原A/B有1244文件mtime不同。固定6.7.3官方源码和只改变notimestamp的实验确认该文件时间元数据影响。工程提交14f6d28、1a05f88；最终源535/535，两个runtime和原始installer均逐字节一致，A解包2136/2136通过。没有改输入mtime或生成后的EXE。详细来源、SHA与边界见 [BUILD_REVIEW](BUILD_REVIEW.md)。
+
+## 2026-10-09 — 构建输入绑定与依赖打包修正
+
+Model Tier: Tier 2 integration/review，固定规格工具与测试按Tier 1拆分；Model: 当前主线程GPT-6系列，worker GPT-5.6 Sol High；Reason: 主线程负责跨build/package/provenance contract，worker完成审计边界、依赖目录、完整工具树与负向测试；Escalated: no，未改变产品架构。Task Risk=medium，Task Uncertainty=medium（外部材料来源），Cross-module Scope=build/package/provenance/tests/docs，Playback/Session Impact=none。
+
+核实源会话用户授权后，从49f643a建立独立工作树；原主目录、P1与审计交付树均保持。分别提交审计size修复7c8270b、完整工具树锁a51831b、精确依赖生成83b75b8和提交输入/通知绑定3b158f6。限定输入有dirty/staged偏移即拒绝，无关文档允许dirty；普通产品源仍物化Git blobs。
+
+主线程实际复核worker diff，补正保留依赖的manifest来源、canonical metadata hash、caller sourceCommit、祖先junction、独占sidecar写入以及审计schema 2/3兼容。临时npm树和失败输出保留为可核查证据。首轮全量因新工作树未生成ignored preload而有1项加载失败，使用既有generator补齐后专项5/5通过；随后全量524/524通过，最终产品提交再次全量529/529通过。实际build入口4个dirty输入全部在创建输出前拒绝。
+
+同一3b158f6在两个新目录分别fresh npm安装与正式build；各2136文件路径/hash完全相同，helper仍与P1为同一28054c哈希。与P1差异严格为新增6份notice/provenance、删除20个long旧文件、更新4份来源manifest；产品代码和其它二进制/配置完全相同。Inno两次编译都通过完整性与解包回比，但容器原始SHA不同，未修改、过滤或归一化字节。
+
+隐藏runtime首轮double-Next选项断言失败，报告实际依次播放B、C，其它核心与隔离检查通过；构建/测试完成后新profile复验完整PASS。保留两轮原证据，没有改播放链或弱化断言。最终111条合法日志、关联10、两类安全Renderer位置各1、raw canary缺失，6个子进程退出、残留0；原用户日志未读写，真实首帧/实服/系统安装未执行。完整结果见 [BUILD_HARDENING](BUILD_HARDENING.md)。
+
+## 2026-10-09 — 构建输入与对应来源审计
+
+Model Tier: Tier 2 evidence review，确定性工具/测试/清单为Tier 1；Model: 当前主线程GPT-6系列，worker GPT-6 Luna High与GPT-5.6 Sol Medium；Reason: 主线程负责来源/材料证据语义与最终diff，worker执行清单、文档核对和固定contract工具；Escalated: no，沿用主线程模型，无新增架构或法律决策。Task Risk=medium，Task Uncertainty=medium-high（外部来源材料），Cross-module Scope=tools/tests/docs与构建来源审计，Playback/Session Impact=none。
+
+起点1abf554，独立本地分支codex/build-input-audit-20261009；原主目录未提交资料和P1交付保留。读取现有manifest及prepare/build/package/provenance链，新增导出器只观察本地材料、显式输出到新文件，缺失继续且保持INCOMPLETE。主线程review补齐链接祖先、异常版本投影、未知文件名隐藏、退役目录、文件大小写/通知命名和缺文件计数回归；最终14项加既有5项共19/19通过，Node syntax与diff通过。
+
+P1源fb10f92四层validator通过；3归档、1009/51 vendor文件、Electron73文件、2149项payload核对通过。fresh npm ci34包，其中33个生产包1142文件匹配P1，但long路径有20个Carnival3.2.0残留；另外7个Carnival包根共29唯一文件，全node_modules1191文件。记录完整GCC闭包未锁定、Inno gate未消费toolchain manifest、元数据未全绑定sourceCommit等局限，未扩大为生产构建变更。
+
+官方来源只读核实Electron44发布identity；libmpv所称旧Release/API/tag现不可取得，补丁声明含asset hash，但原archive/独立发布记录/完整build依赖仍缺。修正早期Git公开边界被误用作installer内容的文档，完整矩阵见 [BUILD_INPUT_AUDIT](BUILD_INPUT_AUDIT.md)。本轮只进行范围内本地提交，没有重建/启动/安装/远端写入；不宣称法律认证、公开源码完整构建或字节复现。
+
+工具/测试独立提交`0b44a81`；文档和三份脱敏JSON观察另行提交。提交前扫描19个变更文件、29个新增/修改本地链接，敏感路径/凭据模式命中0、链接缺失0、JSON解析通过。原产品/构建链scope diff为空。
+
+## 2026-10-09 — P2 离线计时与能力核对
+
+Model Tier: Tier 1；Model: 当前主线程 GPT-6 系列，worker GPT-6 Luna High；Reason: 离线工具、测试和静态能力审计，产品与Playback/Session不变；Escalated: no。Task Risk=low，Task Uncertainty=bounded，Cross-module Scope=tools/tests/docs，Playback/Session Impact=none。
+
+复核P0/P1交付后从7bee8db创建独立分支。工具基于显式指定JSONL，按sourceCommit/request/native归属分析，输入/字段/输出/统计有界。16项新增加8项既有工具回归24/24、Node语法检查通过。独立review指出空行限额、0ms量化/钳制、完整性表述、终止后迟到端点及多启动writer归属问题，均作保守处理并补回归；单文件多启动直接拒绝分析。
+
+统计由Node解析原始ISO字符串保留毫秒。只读审计中一次PowerShell日期转换得到的0/1000ms结果已撤回，不进入交付。最终110条、8请求、5条完整core-playing链见 [P2报告](P2_TIMING_AND_CAPABILITY_REVIEW.md)。源码确认fake CD2的400ms人为延迟，不能据此判断实服瓶颈。预热涉及跨请求复用/过期/取消与媒体预读，按用户偏好结束该研究；Hydration证据条件保持。没有改产品、安装包、用户日志或远端。
+
+## 2026-10-09 — P0/P1 基线与有限诊断
+
+Model Tier: Tier 2 risk management；Model: 当前主线程 GPT-6 系列，worker GPT-6 Luna High；Reason: 诊断关联、IPC 与核心最终审查由主线程负责，固定规格的审计、测试、版本 gate 委派；Escalated: no，沿用当前会话模型，不新增架构升级。Task Risk=medium，Task Uncertainty=medium，Cross-module Scope=controller/service/preload/diagnostics/tools，Playback/Session Impact=observation only。
+
+现场核验 main=46e995e、v0.2.4 产品=03a2e3b、完整文档候选=ebcb655a。从完整候选创建隔离本地分支，审查 71 文件集成差异和 shared main/libmpv/native 生命周期，统一当前文档清单。既有 Settings、切集与顶部条用户反馈保留，107ms Previous 与 rapid selected=false 证据不变。
+
+P1 contract 先固化再实现；新增记录使用固定枚举、安全包内脚本位置、容量与频率上限和 fail-open 处理。构建输入准备和基线 430/430 PASS，初轮定向 66/66 PASS。最终证据和交付见 [P0/P1 记录](P0_P1_DELIVERY.md)。
+
+最终产品 sourceCommit fb10f92 的全量 455/455、build/provenance/payload 与安装器 2150/2150 比对通过；后续工具专项 8/8。独立 GPT-5.6 Sol High Tier 2 核心复核找到 pendingDrops 写失败丢计数 P2，主线程修复并通过三类失败回归，复核后无未解决明确问题。
+
+runtime 两类 ErrorEvent/PromiseRejectionEvent 经真实 preload/main/logger 路径投影到 JSONL，fake CD2 与播放 generation/Stop fixture 通过；整包 redactionPassed=true。首轮 APPDATA-only 隔离偏差造成既有日志追加合成记录，原样保留；随后显式 app.setPath 并以带版本元数据的测试 package 运行，临时 profile、About/source identity 与既有日志不变均核验。所有候选进程结束，真实服务/系统安装/远端写入未执行。
+
+## 2026-10-09 — 删除历史候选下载页
+
+Model Tier：Tier 1。Model：主线程与Luna入口复核。Reason：用户要求清理已由新版本替代的cc603ba候选；Playback/Session Impact：无；Escalated：no。核对Release ID406794578和4个附件后，删除该Release并保留源码tag。前后快照验证其余6个Release及附件完全保持，正式Latest仍v0.2.2。证据见 `.work/release-0.2.4-20261009/candidate-removal-verification.json`；当前下载入口继续指向v0.2.4，产品和安装包字节未变。
+
+## 2026-10-09 08:30 UTC+8 — v0.2.4 Pre-release 发布完成
+
+Model Tier：Tier 1。Model：主线程与 Luna 复核。Reason：整理已经用户验收的 0.2.4 本地测试包发布记录、下载入口和历史 Release 导航。Playback/Session Impact：无。Escalated：no。
+
+GitHub `v0.2.4` Pre-release 已发布，Release ID `407374861`，sourceCommit `03a2e3b9ea7f1cf786b034b0a1882b10de79a39c`。安装包与 `.sha256` 校验文件两个资产均为 uploaded；安装包 175,597,797 bytes，API digest 和本地 SHA256 均为 `4ea589368f2db40ce09ce4e46f4fe937a2d34a240582d871a8f3f5ae627e4b64`。校验文件已下载并重算，内容中的安装包哈希与本地文件一致；EXE 本轮没有完整重新下载。Release 验证记录为 `.work/release-0.2.4-20261009/release-verification.json`。
+
+六个既有 Release 的标题、当前版本导航和历史正文展示已更新，原始正文仍保留；11 个旧资产、历史日期、release flags 与既有 refs 均保持不变。`main` 为 `46e995e`，正式 Latest 仍为 `v0.2.2`。设置页用户验收为 `PASS`，但不扩展为真实安装或真实 Emby/CD2 等其它环境验收。完整范围见 [SETTINGS_UI_024_ACCEPTANCE](SETTINGS_UI_024_ACCEPTANCE.md)。
+
+## 2026-10-09 — 用户确认0.2.4设置页修正可用
+
+Model Tier：Tier 1，验收记录整理；Playback/Session Impact：无。用户在获得0.2.4 runtime测试入口后明确反馈“可以了，我测过了”，记录本轮设置页修正整体验收通过，未推断系统安装、真实CD2/HDR或其它未说明的测试。产品源03a2e3b与现有.exe/SHA保持，文档diff与源码范围检查通过；没有重跑或重复宣称新自动化PASS。
+
+## 2026-10-09 — 0.2.4本地安装包交付
+
+Model Tier：产品UI/构建为Tier 1；测试harness启动路由竞态经Tier 2只读源码定位后收口。Model：主线程、Luna输入/工具与Sol High事件归属复核。Reason：完整应用导航与旧fragment测试不同，必须绑定实际ViewManager事件；未改播放器/路由生产逻辑。Escalated：测试工具有，产品实现无。
+
+35a69c6提交原三文件修正与0.2.4元数据，430/430和正式构建通过。完整页面暴露重复内容H1，03a2e3b移除三个重复标题、保留原生导航标题与说明的可访问名称；最终再次430/430通过。最终runtime源/来源验证PASS。初版probe两项菜单假设与首屏导航竞态失败均保留，最终以实际itemsContainer菜单点击+匹配的viewshow完成5次页面导航，保存/未保存离页/重载和纯本地规则检查真实IPC通过。已读取实际诊断/About/动态动作截图；当前应用主题与布局对齐，动作聚焦样式正确。
+
+最终exe为175,597,797 bytes，SHA256 4ea589368f2db40ce09ce4e46f4fe937a2d34a240582d871a8f3f5ae627e4b64，FileVersion/ProductVersion及实际About均0.2.4。Inno test通过，解包{app}2147文件与runtime完全匹配。对旧0.2.3逐文件比较只有11个预期文件不同；未修改任何播放/全屏/native/Resolver代码或二进制。完整记录见 [SETTINGS_UI_024_ACCEPTANCE](SETTINGS_UI_024_ACCEPTANCE.md)。只执行本地提交、构建、隔离测试和打包，没有远端写入、系统安装或真实服务操作。
+
+## 2026-10-09 — 设置页修正包执行开始
+
+Model Tier：Tier 1（明确UI修正与构建），主线程审查与页面验收，Luna补准备输入/安装器审计及隔离导航验证工具。Escalated：no。用户接受上一轮建议，授权本地收尾和.exe测试包交付。现场确认v0.2.4标签未使用、v0.2.3仍为f7505cd测试包，远端main仍46e995e。root package/lockfile版本统一0.2.4，依赖与核心播放字节保持。现有工作树已有UI改动保留；后续源提交、构建和各层验收分别记录，不复用旧PASS冒充新版本。
+
+## 2026-10-08 — 设置页对齐与动态Emby按钮样式
+
+Model Tier：Tier 1。Model：主线程限定范围及UI核对，Luna做原生页只读对照和行为回归。Reason：三个设置页的布局与确定的constructor class覆盖；Task Risk：低；Cross-module Scope：共享设置CSS和STRM renderer；Playback/Session Impact：无；Escalated：no。
+
+核对GitHub v0.2.3发布source为f7505cd，统一候选ba76ac0的对应产品字节一致。官方同层音频/视频设置沿用settingsContainer/form.auto-center，full drawer CSS会把表单margin归零；增强页外层另外margin-inline:auto造成居中。EmbyButton constructor先加emby-button并设置hasInit，STRM后续className整体赋值清掉基础类，connectedCallback不会再补回；EmbySelect可能丢constructor环境类，EmbyInput的基础类在connected后初始化，不能混称三者均未升级。
+
+修正限定三个产品文件：外层和STRM form margin-inline=0，rule actions flex-start；element/input/select/三个rule按钮追加业务class。保留原生控件、功能选择器、显式Save及危险动作语义。行为fake按真实button/input/select不同初始化时序重现失败，修正后设置相关36/36通过。没有新调色体系、业务逻辑或播放器修改。
+
+工具 `tools/settings-style-preview.cjs` 使用Electron offscreen、已发布包里的真实Emby构造器和CSS，禁止HTTP/WS、独立userData、45秒上限，运行后销毁测试窗口。证据 `.work/settings-style-preview-8a3a28c4ff6b4729983299d8baebf7e7/report.json` 六项检查通过：before内容x477/native x256，after三页x256；三种宽度无横向溢出；按钮instance及emby-button保留。已实际查看按钮、About、诊断和窄屏STRM截图。首轮预览漏载Material Icons字体，第二轮补齐真实字体后重跑；没有改产品图标。预览是组件/布局夹具，非完整运行验收。参考[Electron离屏渲染](https://www.electronjs.org/docs/latest/tutorial/offscreen-rendering)；离屏软件栅格化仅在测试工具中使用。
+
+当前为本地未提交修正；未改发布标签、版本字段、已安装客户端或0.2.3安装包。正式构建与完整导航验收在后续打包阶段执行。
+
+## 2026-10-08 — 0.2.3测试版版本收口
+
+发布完成：22:22（UTC+8）创建`v0.2.3` Pre-release，Release ID406895582，两个附件uploaded且大小/digest匹配；tag object7143e5d精确指向f7505cd。大文件上传期间保持草稿，未提前公布不完整Release。旧cc603ba页已提示改用v0.2.3，旧tag/资产不变；main和Latest均保持原正式基线。
+
+验证完成：新版本sourceCommit `f7505cda40c7f64e31714fbbe40eaa532926c46c`，npm test430/430通过；正式runtime与installer完成，About实际IPC/页面文本和setup PE版本均0.2.3。runtime2147文件对旧候选只有预期5个元数据文件变化，解包installer的2147文件与runtime全哈希一致。安装包175,622,861 bytes，SHA256 `217f36f065fafe122f06265d703d76018bf51588409a0966fada1bd3c797f314`。后台probe没有实际截图，未运行安装器；既有可见回归作为同一产品字节的历史证据保留。
+
+Model Tier：Tier 1。Model：当前Codex主线程与GPT-6 Luna High验证worker。Reason：已验收统一候选的版本元数据、正式重建、安装器及发布标识同步；Playback/Session Impact：none。Escalated：no。
+
+用户指出当前功能应为0.2.3后，从完整统一候选文档HEAD建立`codex/release-v0.2.3-test-20261008`，将root package与lockfile的三个版本字段由0.2.2改为0.2.3。依赖、产品代码与安装器脚本保持不变。新runtime/installer必须绑定本次版本提交，并逐文件对照cc603ba候选；旧`test-20261008-cc603ba`保留原tag/资产，不重新指向新源码。计划发布`v0.2.3` Pre-release并保持正式Latest v0.2.2；验证与发布结果另记。
+
+## 2026-10-08 — 恢复安装包交付方式
+
+Model Tier：Tier 1。Model：当前Codex主线程、GPT-6 Luna High打包worker。Reason：固定sourceCommit和runtime的原有Inno打包、解包对账及附件交付；Playback/Session Impact：none。Escalated：no。
+
+前一轮将本地runtime ZIP直接作为主要发布资产，没有沿用项目既有安装包形式。用户指出后，在独立detached `cc603ba`工作树正式准备输入、复制已验证runtime并调用原`tools/package.ps1 -OutputBaseFilename`生成测试安装包，未修改构建/安装器或产品。VerifyOnly、命名测试1/1、编译、innounp完整性与2147文件逐项核对通过，原AppId/安装目录/快捷方式保留。没有执行setup或真实安装测试。
+
+安装包与校验文件已上传同一`test-20261008-cc603ba`，发布说明改为优先安装器，ZIP作为备用保留。安装包SHA256 `1412dc7e87e1f353c1985cec15c7c0882a4ac65a48c032700ab991500be4f6df`，GitHub asset digest/size匹配；Latest仍v0.2.2。当前证据见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。
+
+## 2026-10-08 — 统一候选GitHub预发布
+
+Model Tier：Tier 1发布操作与证据核对。Model：当前Codex主线程、GPT-6 Luna High只读说明复核。Reason：现有包/提交/标签/验收范围均已固定，用户明确确认GitHub发布。Escalated：no。
+
+复核远端无同名标签/候选分支，创建annotated `test-20261008-cc603ba`指向产品`cc603ba`，原子推送独立候选分支与tag；创建Pre-release，上传原ZIP与校验文件，`latest=false`。Release于20:18（UTC+8）发布，ID406794578。GitHub API回读draft/prerelease、两个asset大小和SHA256、tag peeled target与main均符合预期；正式Latest仍v0.2.2。
+
+发布后Git HTTPS与Release CDN下载出现间歇TLS/EOF；只做有界只读诊断和每命令显式本地代理，未改系统/节点/证书验证。Git读回经显式代理成功，API标签/main/asset校验通过；独立下载校验文件仍UNAVAILABLE，未虚报下载复核成功。记录见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。本轮仅同步发布文档，未重建或改写包。
+
+## 2026-10-08 — 统一候选恢复验收与本地ZIP
+
+Model Tier：Tier 2共享逻辑/探针定位，Tier 1 payload与归档审计。Model：当前Codex主线程、GPT-5.6 Sol High、GPT-6 Luna High。Reason：早期Settings探针连续两轮未定位模块就绪/Promise问题，升级测试工具诊断；产品架构与源码不变。Escalated：yes（仅探针诊断）。
+
+用户完成工作后明确允许继续；新profile补齐实际Settings controller/IPC与可见切集矩阵。探针修正限于appready gate、Alameda Promise、customized element类型断言、clone-safe返回与测试页面呈现。最终430项全量测试沿用同一cc603ba源码的已执行结果；payload在测试后再次验证。10次切换的选源/Session/颜色样本、快速停止和终止Stop通过；H.264/H.265窗口两向78/78帧、max49/52ms无异常颜色；全屏Next77帧/max43ms通过，Previous73帧/max107ms保持INCONCLUSIVE。完整结果见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。
+
+归档现有已验证runtime为本地测试ZIP，重新逐项读取2147个条目，缺失/额外/哈希不符均0；ZIP SHA256为`eb5934d3da9a891cd40f5dab94a7cd4d206bd0f4d28b0fd469cbff7a9ef19647`。未重建、改版本或变更产品；本轮文档收尾提交与runtime sourceCommit cc603ba分开。
+
+## 2026-10-08 — 统一候选集成
+
+首次中止时状态：本地两父merge `cc603ba`已构建，430/430全量测试、来源与2146文件payload通过；隐藏Settings controller未通过，manager矩阵因用户实体Esc停止Computer Use而中止。仅清理本任务已核验身份的进程，未继续UI，中止记录当时暂留工作树。随后用户明确授权继续，恢复结果见本页最新条目及 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。
+
+Model Tier：Tier 2 核心集成审核，Tier 1 输入准备与测试。Model：当前 Codex 主线程、GPT-5.6 Sol High 只读差异审核、GPT-6 Luna High 测试 worker。Reason：共享 main/libmpv 与窗口/播放生命周期交汇，需要确认合并保留既有 ownership。Escalated：no。Task Risk：medium；Task Uncertainty：medium；Cross-module Scope：Settings/main/libmpv/window；Playback/Session Impact：保留已验证实现，不重设接口。
+
+从全屏文档 HEAD `6be48ed` 建立本会话独立工作树及 `codex/unified-candidate-20261008`，以普通两父本地 merge 接入 Settings `21ef9a4`。自动合并所有产品源码，手动处理三份追加型文档冲突并保留双方历史。产品差异相对 `1e86e51` 仅为 Settings 已有候选内容。测试和正式构建结果另记；未推送或发布。
+
+## 2026-10-08 — 全屏窗口局部修复及顶部细条用户反馈
+
+Model Tier：修复与核心复核Tier 2，测试/文档Tier 1。Model：当前主线程负责窗口决策，GPT-5.6 Sol High只读核心复核，GPT-6 Luna High执行明确的测试与输入审计。Reason：透明main窗口、renderer状态与video carrier联动；不修改播放生命周期。Escalated：no。
+
+从 `94d216b`（产品同 `6473ecb`）建立独立分支 `codex/fullscreen-state-20261008`，原两个工作树及未提交记录保留。Computer Use在独立profile/合成媒体上复现全屏边缘缩放与renderer状态脱节。固定E44源码确认透明窗口使用先通知后setBounds的全屏路径；`isFullScreen=false`不能单独作为退出依据。窄区对照定位video carrier窗口框产生顶部灰色细条。
+
+本地提交 `a8aa114` 限制全屏时main交互并恢复原属性、避免重复进入覆盖normal bounds、在几何失配时退出；carrier使用thickFrame/resizable/movable=false并沿用原bounds同步。核心复核发现迟到restore重新进入全屏，以及全屏最小化关闭保存display bounds两项边界，`1e86e51`已修正并补回归。延迟restore负例移除修正后仅新case失败，观察调用序列[true,false,true]，修正后[true,false]。
+
+最终 `1e86e51` 全量412/412、窗口/service定向37/37、build/provenance、2140文件package VerifyOnly与diff检查通过。产品diff仅main.js和native-helper/service.js；native CPP、原持帧/切集、apphost canonicalization、Session/Resolver未改。`a8aa114`可见交互通过为阶段证据；最终probe在用户Esc停止Computer Use时中断，不记为完整最终交互或播放回归通过。
+
+用户随后手动验证并反馈“现在没有那个条了”，顶部细条升级为 `HUMAN-ASSISTED VISUAL PASS / USER_REPORTED_RESOLVED`。本次跟进只更新文档，未重启桌面测试或改变产品候选。准确入口、证据目录及未完成项见 [全屏窗口修复与验收](FULLSCREEN_WINDOW_STATE.md)。
+
+## 2026-10-08 — 还原候选6473ecb自动化交付
+
+Model Tier：Tier 2。Model：主线程设计与集成；Sol High 原生实现与核心复核；Luna 定向测试、文档与fixture输入工具。Reason：原生持帧、retirement与异步视觉所有权跨层协作，保留已有播放链。Escalated：no。
+
+两次正式构建取commit blobs：5ddeea8用于初次完整窗口/全屏对照，6473ecb纳入旧token Stop no-op与较新epoch撤销in-flight begin的最终修正。最终build/provenance及package VerifyOnly通过，2140文件，默认Helper SHA256为28054c75551177f1109859d4f8793d45a4c731aba1e43ddab9bb2f1c5dc030dc。没有改vendor输入、编译器flags、Electron、mpv或依赖；GDI/DWM从System32可选加载。
+
+最终全量401/401通过；第一次最终全量400/401仅失败于新增fixture工具的单参校验，修正null/空串区分后全量重跑通过，没有削弱产品测试。新增player生命周期覆盖准备中Stop、B→C和prepare失败；fake manager按真实patch保留sequence cancellation，未据缺失该contract的fake首轮失败改生产代码。原生七项实跑覆盖缺失媒体清帧和15秒未加载目标的fail-open，deadline15028ms，失败撤帧后fresh ROI确认为黑色停止视频。
+
+6473ecb完整窗口codec对照81/81帧、max59/44ms、旧/新颜色之外均0；全屏66/48帧、max164/163ms，旧/新颜色之外均0但保持INCONCLUSIVE。两轮各7个owned进程退出、残留0、身份冲突0，fixture和harness运行前后哈希不变。真实媒体/全屏短闪、HDR/多显示器与顶部细条仍待独立验收。所有证据位置见 [还原记录](PLAYBACK_PRESENTATION_RESTORE.md)；本轮没有推送、PR、发布、安装或真实服务器写入。
+
+## 2026-10-08 — Native presentation lifecycle 边界复测与生产候选状态
+
+Model Tier：Tier 2。Model：主线程定义生命周期 contract；Sol High 实现窄范围 CPP Testing/生产支路；Luna 补定向 controller tests。Reason：自动 reveal 涉及 main/renderer/native 的 epoch、generation 与 hold 所有权，必须分别验证实验支路边界和生产 API 暴露。Escalated：no。
+
+已授权的 retired-control 窗口 probe 两向各采 76 帧，最大间隔 53/61ms，black/purple/mixed 均为 0；真实 Stop 11ms，进程与采集资源清理完整。记录位于 `.work/native-frame-retired-auto-window-f3d65a92d92d4699966de0eb909af25e`。该结果是 Testing-only 控制准备窗口证据，不是产品呈现验收。
+
+旧 Testing CPP `269bdcc` 的 boundary run 曾有 case 1–4 PASS、case 5 FAIL：missing-media 已 end-file，但 auto lease 仍为 armed 且旧 hold 保留 4,677,120 bytes。case 4 T HTTP 连接被 MPV 主动关闭，`lateBodyDelivered=false`，因此当轮没有实际迟到 body 对新 generation 的测试。后续 Testing CPP `a2cf6af`，正式 Testing SHA256 `de43f1301f208106fd18291bef0690c2cb20f388dd7f7d4b737c99679ca15378`，在 `.work/native-frame-boundaries-fixed-window-b997f8307ce9428ab6812c1d6c4e8376` 的六项 boundary run 均 PASS；case 5 现观察 autoState=unavailable、active=false、bytes=0；case 6 检查 production API 的响应字段仅含 `ready/status/holdId/painted`，并实测按 control generation 取消不会影响新 hold，cancel-before-delayed-prepare 不会复活 hold。未在默认 Helper 上实跑 test alias 拒绝。T HTTP 连接仍主动取消，迟到 body 行为继续标为未验证。两轮结果都保留，旧失败不被新通过覆盖成从未发生。
+
+生产候选正在接入 native prepare/arm/release 与 fail-open 清理。Next/Previous 保持原 manager 的同步入口、request sequence 与 retire-before-await；main/renderer epoch/token/hold 所有权保护新旧 generation，旧 load 失败隔离，图像只驻留 native。Legacy `create()` DOM overlay 仅保留历史测试，`libmpv.js` 激活 native controller。Native controller contract tests `11/11 PASS`；阶段性 `npm test 395/395 PASS` 未包括之后追加的 lifecycle tests。正式 runtime `presentation-restore-5ddeea8` build/provenance 与窗口对照通过，全屏对照因采样间隔不足保持 `INCONCLUSIVE`；随后修复的 epoch/Stop 补丁尚未重建。当前源码与最终用户视觉验收仍未完成，状态 `IN PROGRESS / NOT ACCEPTED`。
+
+## 2026-10-08 — Native 持帧实际能力取证
+
+正式 Testing build 从 `97fb2d4` 生成并验证输入/编译器/输出来源。独立 harness 的入口/显示/采集上下文问题收口后，确认 `screenshot-raw window` 可取得当前视频红帧（1440x812，65ms），但 GDI child 的 WM_PAINT ACK 之后，真实 Stop 导致合成 ROI 持续黑色。此结果未达到原生保持画面要求，生产 Helper 不变；下一步仅补子窗口状态定位，不用 painted 回包冒充显示成功。所有实际 probe 使用合成媒体和隔离配置，失败后清理完成。
+
+新增独立 native-frame-hold-probe harness，以真实 client.stop、严格屏幕颜色和有界显式 release 测能力，结果固定 experimental-capability-only。测试支路状态回包补父/子窗口存在、可见、尺寸和相对 sibling 顺序，未改绘制或窗口策略。默认/Testing编译通过且默认binary继续byte-identical；probe输入与response校验5/5 PASS。新增状态用于区分真实黑色的来源，尚不决定修复。
+
+Layered测试child使窗口模式持帧/显式释放能力通过，两方向各80帧，无采样黑/紫/mixed；全屏以独立静态点确认持帧，运动阶段保持fresh stream门槛，连续流长间隔仍INCONCLUSIVE。随后实现Testing-only一次性新generation异步截图/自动撤帧候选，修正状态与UI线程的快照一致性、取消终态覆盖，并保留初始resume seek；默认编译字节仍相同。harness定向8/8 PASS；自动候选尚待实际运行，不当成已恢复产品表现。
+
+## 2026-10-07 — Native 私有帧暂存能力 probe
+
+Model Tier：Tier 2。Model：主线程定义 contract，Sol High 在唯一 CPP 文件实现 Testing-only 支路，Luna 准备独立 harness。Reason：只保留 carrier 的实验不足，需验证 GPU 输出停止后的内存暂存；不先改播放/Session 时序。Escalated：no。
+
+新增 private `test-frame-hold/status/release`，严格 generation/media/holdId 归属，截图仅 native memory，独立 child 由原 surfaceThread 管理。默认与Testing按固定编译器/头文件/flags编译均通过；默认产物与现有生产Helper SHA完全相同。原stop/load/generation流程未变。尚无runtime能力结果或自动揭开契约；下一步从提交HEAD正式生成Testing helper后执行合成像素probe。
+
+## 2026-10-07 — 呈现还原目标 / 历史基线工具
+
+Model Tier：Tier 2。Model：当前主线程；Sol High 只读时序复核，Luna inventory / 明确测试工具实现。Task Risk：中高（后续将涉及呈现时序）；Task Uncertainty：高（旧版实际画面尚需对照）；Cross-module Scope：renderer / main surface / 测试；Playback/Session Impact：当前为 test-only，后续保持既有所有权。Escalated：no。
+
+先核对旧 Pepper、Helper/E18、Helper/E44 runtime 与同一 mpv DLL；启动显式用户授权的隔离可见合成测试。当前候选严格红/绿前置已通过一轮，未采到黑色但保留采样间隔限制。历史比较独立于正式 E44 runtime validator，测试工具允许显式旧 runtime、区分有无 overlay、增加全屏观察以及前置像素不足时的 `OBSERVATION_BLOCKED`；没有实现图片预加载，也没有改产品显示策略。
+
+窗口与全屏历史矩阵已取得有效画面；三套全屏 runtime 均确认 gpu-next。原 rVFC 在全屏 document.hidden 时停止提供新样本，因此测试工具改为有界帧流 reader，并减少采集分辨率、保持间隔门槛和新鲜颜色前置。runner 修正 PS5.1 async callback/CIM 创建时间表示，保留 PID 复用拒绝，新增 harness hashes；全量 362/362 PASS。单变量仅抑制 surface.hide 的实验将 mixed 空档转为黑色，明确判定不足，不进入产品；错误实验 hook 首次初始化失败由外层 50s 清理完成，修正测试注入路径后取得有效实验，历史失败证据保留。
+
+## 2026-10-07 — Windowed transition timeline tooling
+
+Model Tier：Tier 2。主线程限定观测范围；Sol High 实现工具与屏幕流，Luna 实现假服务 fixture / 边界测试。Reason：前一轮自动化未覆盖海报加载和窗口模式实际合成，必须先补证据而不是凭 core-playing 改呈现链。
+
+仅修改测试与工具：新增独立 timeline 模式、两种动态 Y4M 生成器、localhost 海报、像素与事件分层记录。console 桥未取得动作后改用受信 sender 的 test-only IPC；低频 thumbnail 采样间隔约 350–380ms，不再作为短闪主方法，改用提前准备的连续流。0/150ms 两组记录到首段黑色采样；其旧视频前置条件有限，追加严格条件的 probe 未完成，明确保留 INCONCLUSIVE，未放松门槛或改产品。生产源码仍为 `456df8e`。
+
+生成器与实际输入逐字节一致；采样颜色、窗口 / focus / display 限制、handler 恢复、动作白名单、时间窗及失焦丢帧 7/7 PASS。原默认 CD2 pipeline 回归 PASS。完整测试首次仅旧 visible-screenshot 文本断言不匹配；按新 timeline 仅流统计、默认 visible 仍截图的合同更新这一断言后，全量 347/347 PASS。运行记录均为隔离测试，不访问真实 Emby/CD2 或正式 profile。工具提交不改变 `src/`，不能当作已修复视觉失败。
+
+## 2026-10-07 — PreviousTrack transition entry follow-up
+
+Model Tier：Tier 2。Model：当前 Codex 主线程；Sol High 只读调用链评审、Luna 确定性测试。Reason：响应真实视觉验收失败，限定修复 renderer 前后切集入口，不扩大 native 呈现契约。Escalated：no。
+
+Settings 候选由用户确认通过；NextTrack `88f56b7` 被确认视觉失败。查证 Video OSD 的 previousTrack 调用不会进入仅包装 nextTrack 的模块；把同一 token / request 包装逻辑复用于两个入口，previous Item 与原 manager 的索引选择完全一致。新增回归对旧提交复现失败，对当前工作区 3/3 PASS；整体 340/340 PASS，语法和 diff 检查通过。
+
+首黑的 artwork load/decode 与尾黑的 core-playing / native show / presented-frame 边界仍需真实时序证据。没有使用固定 sleep 或让图片等待拖延媒体推进，没有新增 helper 首帧接口；当前只收口确定的 previous 入口遗漏。旧 runtime 保留，不将这次源码修正误记为整体视觉 PASS。
+## 2026-10-06 — NextTrack transition cleanup audit
+
+Model Tier：Tier 2。Model：当前 Codex 主线程；GPT-6 Sol High 独立只读复核；Luna worker 补充确定性回归。Reason：视觉绘制等待跨入现有 stop(false) 边界，需要保留请求 token 与 libmpv generation guard。Escalated：no。
+
+用户授权独立工作树、范围内本地提交和隔离可见测试。审计以 `8f3d9a9` 为基线，确定性复现取消时 paint waiter 未释放、requestAnimationFrame 抛错后 listener 残留和无实际 CSS 动画时待清理状态。实现集中管理 paint waiter 的释放；fade 同时消费 transitioncancel / 动画完成信号，保留旧 token 不能清新 overlay 的规则。没有改变 source、媒体选择、播放身份或核心生命周期架构。
+
+修复后 NextTrack targeted `18/18 PASS`，最终完整 `npm test 337/337 PASS`，JS syntax 和 diff 检查通过，Tier 2 只读审核通过。首次全量唯一失败来自 diagnostics 自测子进程参数未引用，含空格路径被拆开；对照未引用/正确引用启动取得确定证据后，只修测试启动并保留原脱敏断言及 timeout。Electron 隔离可见 renderer 的淡出完成后为 IDLE / overlay absent；never-shown 窗口的动画在 reveal 前可能仍挂起，reveal 后清理，不把隐藏探针当成真实前台验收。最终提交 runtime 与模拟播放结果由本轮交付报告分层记录。
+
+## 2026-09-24 — NextTrack artwork ratio correction
+
+用户视觉验收发现过渡封面像原比例小图置入视频区域，产生不自然留白。图片来源调整为首个 Backdrop 优先、Primary poster fallback；overlay 容器使用 `position:absolute; inset:0; overflow:hidden`，图片设为 100% 宽高、`object-fit:cover`、居中定位，因此横版 Backdrop 覆盖视频区域，竖版 Poster 会裁切填满。无图或加载失败继续保持黑底。
+
+本次只调整封面来源优先级与显示比例，不改变 NextTrack 调用、播放时序或 Resolver、mpv、Native Helper。比例修复后的 focused playback/window `43/43 PASS`，`npm test 325/325 PASS`，相关 JS syntax 与 `git diff --check` PASS。未执行前台视觉验收。
+
+## 2026-09-24 — NextTrack transition artwork
+
+Model Tier: Tier 3
+Model: GPT-6 Sol High
+Reason: 用户指定；需在透明播放窗口与 libmpv 的 NextTrack/core-playing 生命周期间增加视觉层，同时保留现有播放链 contract。
+Escalated: Yes（用户指定）
+
+用户观察到 NextTrack 切换时视频区域会露出桌面，UI 仍可见。初版新增 renderer-only transition overlay，沿用同步队列中已经选中的下一集 Item，通过现有 `ApiClient.getImageUrl()` 使用 artwork；本条初版图片来源与比例行为已由上方 2026-09-24 比例修复记录更新。NextTrack wrapper 同步显示覆盖层后立即同步调用原 `nextTrack()`，不改变 PlaybackManager request id 与 Stop supersession 顺序；paint gate 移到 `libmpv.stop(false)` 中、现有 surface 隐藏之前，不使用固定延时。当前 `_etePlayRequestSequence` 关联的 `core-playing` 处理使视频容器可见后，再等一帧并淡出。revision token 与 request id 限制迟到的旧 transition 清理/淡出新覆盖层；播放失败或调用提前结束时清理视觉层。覆盖层位于现有 `.mpv-videoPlayerContainer` 内且不接收指针事件。没有新增 image API，也没有改 Resolver、Session、source 选择或 Native Helper。
+
+验证：focused playback/window `42/42 PASS`，`npm test 324/324 PASS`，相关 JS syntax 与 `git diff --check` PASS。exact-commit build/provenance 与 package VerifyOnly 将在本地提交后执行，结果见任务最终报告。前台客户端未自动启动；需要用户视觉复核实际 NextTrack 过渡与首帧衔接后才能确认体验修复。
+## 2026-10-06 — Settings maintenance request and release boundary audit
+
+Model Tier：Tier 2（主线程 IPC / 外链边界审核），明确 helper 修复由 Tier 1 worker 执行。Model：当前 Codex 主线程、Luna worker、GPT-6 Sol High 独立复核。Reason：保持维护入口既有 contract，对有确定失败证据的纯 helper 做小范围修复。Escalated：no。
+
+用户授权独立工作树、本地提交和隔离测试。以 `f58d806` 为基线，新增 localhost 滴流、错误响应连接关闭、同步异常 timer 清理、规范化 Release 路径和大整数 prerelease 回归。此前滴流可越过 60ms 测试预算、dot-segment 可离开项目 Releases 路径、相邻大整数被比较为相等。修复后使用统一整体 deadline、规范化后的 URL 白名单、数字字符串比较；保持已有 schema、普通控件与播放链。
+
+新增 maintenance tests 与 Settings visual suite `14/14 PASS`；此前包含状态 / mapping / resolver 的定向 `83/83 PASS`。完整测试初次和串行复核均为 336/337，同一 diagnostics collector 自测失败；无空格路径的干净基线单项通过。捕获子进程启动错误后确认 Start-Process 拆开了未引用的 -File 路径，原调用 exit=-196608 且无 output，正确引用后 exit=0 并生成 bundle。仅修复自测参数引用，不修改生产 collector、断言或 timeout；单项通过后最终 `npm test 337/337 PASS`。独立 Tier 2 只读审核未发现新核心正确性问题；按最终提交构建的 gate 另随交付报告记录。没有访问真实 Emby / CD2，公网 release 查询在自动测试中使用 fixture。
+
+## 2026-09-24 — STRM 规则卡动态 Emby 控件修复
+
+Model Tier: Tier 1
+
+Model: GPT-6 Sol High（当前 host）
+
+Reason: 用户截图定位到规则卡动态 input/select/button 外观与静态表单不一致；问题限定在 renderer 元素创建，播放与状态契约无影响。
+
+Escalated: No
+
+核对 `emby-input`、`emby-select`、`emby-button` 均以 `customElements.define(..., {extends: ...})` 注册；规则卡此前先创建普通 DOM 元素，再设置 `is` 属性，未触发 customized built-in 构造。改为通过 `document.createElement(tag, {is: customName})` 创建。覆盖路径输入、规则 select、自定义解析顺序、规则操作按钮和动态助手样本；不修改字段值、绑定、样本上限、Save/Token 或任何 IPC/Resolver。新增 VM fake DOM 测试核对每个生成的 input/select/button 在创建时得到对应 `is` 选项；旧写法会在此测试失败。Targeted `78/78 PASS`、`npm test 331/331 PASS`、JS syntax 与 `git diff --check` PASS。真实客户端视觉结果待用户复核。
+
+## 2026-09-24 — Settings Visual System correction v2
+
+Model Tier: Tier 2
+
+Model: GPT-6 Sol High（用户指定；Luna worker 分别承担只读审计、局部页面适配和测试）
+
+Reason: 用户实际确认 STRM v1 视觉 FAIL；本轮跨 STRM、诊断、About 三页建立共享样式，并按用户追加确认选择性接入 About maintenance IPC。既有播放与设置状态边界保持冻结。
+
+Escalated: No（模型由用户指定；About/IPC 范围由用户在本轮明确确认）
+
+先审计当前路由和历史分支：当前分支原有 STRM 与诊断路由，没有 About；诊断的浅色按钮问题早于 `3faf888`，而 STRM 独立按钮/卡片体系由该提交引入。旧 Settings 分支只提供 About 维护操作的源码参考，没有 cherry-pick 其完整设计或覆盖 Smart Mapping。新增共享 `enhanced-settings.css`，所有选择器限定在 `.ete-settings-page`；页面 CSS 分别限定在 `strm-settings-page`、`diagnostics-settings-page`、`about-settings-page`。共享 token 统一标题、标签、帮助文案、section/card/row 间距、控件尺寸与按钮高度；Primary 白字深蓝背景的静态对比比约 5.9:1，hover 约 5.1:1。三个页面移除新页面对原生 `raised/button-submit` 的依赖。
+
+STRM 只重排 HTML 与展示 class：单列 CloudDrive2 字段与助手样本、整行路径输入、独立状态行；原有控件 class/id、事件绑定、Save/Token 和 preview/规则行为保持。诊断页沿用原有 IPC/事件，只改显示。用户另行确认 About 页面及维护 IPC 纳入本分支，因此选择性加入 `maintenance.js`、`maintenance-ipc.js`、main 注册/注销和 About route；更新请求仍仅由点击触发，8 秒超时/256 KiB 上限，剪贴板仅格式化白名单字段，外链限制到项目 Releases。Helper 未 ready 不展示预期 libmpv 版本为实测值。
+
+自动化：STRM/Settings/诊断 focused `103/103 PASS`，`npm test 330/330 PASS`，修改 JS syntax、`git diff --check`、三页 HTML 标签平衡 PASS。代码提交 `f3a17ca1bbe3016d33749e98d110282fc798b2f2` 的独立 runtime 生成 `2145` 文件，source/Electron 44.4.2/Native Helper/runtime provenance 和 package `-VerifyOnly` PASS；文档收尾后的 exact HEAD 将再生成 `strm-ui-review2`。本轮没有启动 runtime、Computer Use、前台窗口操作、安装或真实 Emby/CD2 验收；用户视觉复核仍是独立 gate。
+
+## 2026-09-24 — STRM Settings UI consolidation
+
+Model Tier: Tier 1
+
+Model: GPT-6 Luna High（页面实现 worker；主线程复核与验收）
+
+Reason: 目标限定在 STRM 页面视觉与展示层，已知控件、事件与状态契约；无 Playback/Session 影响，无跨模块行为设计。
+
+Escalated: No
+
+从指定 `46e995ef83fca7f7a882e3dc633bdcc2d2d521c7` 创建独立 worktree 和 `codex/strm-ui-consolidation`。没有使用旧 Settings 分支或其他 worktree 的代码改动。页面整理为四段，统一深色 input/select、Emby checkbox 排版、四级按钮、状态行和卡片层级；规则检查按挂载/CloudDrive2 最近测试/路径格式分别展示，助手样本和预览使用同一视觉样式。`strm.js` 仅增加展示 class、状态行与文字/颜色标记，保留功能选择器及原有请求、Save/Token、sample limit 与预览动作。未修改 resolver、inference、IPC、持久化 schema 或播放链。
+
+补充 `tests/strm-ui-consolidation.test.cjs`，将旧静态按钮断言改为 class 包含匹配，并扩充规则状态 race fixture 与状态分离回归。focused `69/69 PASS`；全量 `npm test 322/322 PASS`；JS syntax、`git diff --check` PASS。准备阶段核对固定归档和 Electron 44.4.2 tree，复用经哈希核对的 Native Helper 头文件。代码提交 `ae0e6504f6389f261cea484fcb3e77f299c801a9` 的独立 runtime 生成 `2139` 文件，Electron/Native Helper/source/runtime provenance 与 package `-VerifyOnly` PASS。最终提交需要再次按 exact HEAD 生成 review runtime，身份以本任务最终报告为准。未启动 runtime，未进行 Computer Use、窗口操作、安装、真实 Emby/CD2 或前台视觉验收。
+
 ## 2026-09-24 — PR #18 Token 与 Settings draft 隔离修复
 
 Model Tier: Tier 3

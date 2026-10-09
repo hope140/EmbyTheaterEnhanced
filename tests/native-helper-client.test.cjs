@@ -27,6 +27,12 @@ function operationCalls(ipc, operation) {
   return ipc.calls.filter(call => call.request.operation === operation);
 }
 
+function deferred() {
+  let resolve, reject;
+  const promise = new Promise((res, rej) => { resolve = res; reject = rej; });
+  return {promise, resolve, reject};
+}
+
 test('renderer endpoint maps the legacy logical API without exposing raw transport', async function () {
   const ipc = new FakeIpc();
   const created = await clientModule.create({ipc});
@@ -172,5 +178,98 @@ test('non-generation transport failure rejects optional diagnostic cache without
 
   await assert.rejects(created.endpoint.getOptionalDiagnosticCacheBytes(), /transport-unavailable/);
   assert.equal(messages.some(message => message.type === 'bridge_error'), false);
+  await created.endpoint.destroy();
+});
+
+test('late begin-generation response cannot replace a newer generation', async function () {
+  const begins = new Map();
+  const ipc = new FakeIpc((channel, request) => {
+    if (request.operation !== 'begin-generation') return undefined;
+    const pending = deferred();
+    begins.set(request.payload.label, pending);
+    return pending.promise;
+  });
+  const created = await clientModule.create({ipc});
+  const older = created.endpoint.beginGeneration('B', 101);
+  const newer = created.endpoint.beginGeneration('C', 102);
+  const calls = operationCalls(ipc, 'begin-generation');
+  assert.deepEqual(calls.map(call => call.request.payload), [
+    {label: 'B', requestEpoch: 1, presentationToken: 101},
+    {label: 'C', requestEpoch: 2, presentationToken: 102}
+  ]);
+
+  begins.get('C').resolve({status: 'ok', generationId: 42});
+  assert.equal((await newer).generationId, 42);
+  begins.get('B').resolve({status: 'ok', generationId: 41});
+  await assert.rejects(older, /generation-superseded/);
+
+  await created.endpoint.setProperties({pause: false});
+  assert.equal(operationCalls(ipc, 'set-properties').at(-1).request.payload.generationId, 42,
+    'the older completion does not overwrite the current generation');
+  await created.endpoint.destroy();
+});
+
+test('retire during begin advances request epoch, notifies with null generation, and rejects late begin', async function () {
+  const pendingBegin = deferred();
+  const ipc = new FakeIpc((channel, request) => request.operation === 'begin-generation'
+    ? pendingBegin.promise : undefined);
+  const created = await clientModule.create({ipc});
+  const pending = created.endpoint.beginGeneration('B');
+  created.endpoint.retireGeneration('superseded');
+
+  const retirement = ipc.notifications.at(-1);
+  assert.equal(retirement.request.operation, 'retire-generation');
+  assert.deepEqual(retirement.request.payload, {reason: 'superseded', generationId: null, requestEpoch: 2});
+  assert.deepEqual(operationCalls(ipc, 'begin-generation')[0].request.payload, {label: 'B', requestEpoch: 1});
+  pendingBegin.resolve({status: 'ok', generationId: 41});
+  await assert.rejects(pending, /generation-superseded/);
+
+  const current = await created.endpoint.beginGeneration('C');
+  assert.equal(current.generationId, 41);
+  assert.equal(operationCalls(ipc, 'begin-generation').at(-1).request.payload.requestEpoch, 3);
+  await created.endpoint.destroy();
+});
+
+test('destroy during begin invalidates its pending response', async function () {
+  const pendingBegin = deferred();
+  const ipc = new FakeIpc((channel, request) => request.operation === 'begin-generation'
+    ? pendingBegin.promise : undefined);
+  const created = await clientModule.create({ipc});
+  const pending = created.endpoint.beginGeneration('B');
+  await created.endpoint.destroy();
+  pendingBegin.resolve({status: 'ok', generationId: 41});
+  await assert.rejects(pending, /generation-superseded/);
+  await assert.rejects(created.endpoint.preparePresentation(9), /native-helper-destroyed/);
+  await assert.rejects(created.endpoint.cancelPresentation(9), /native-helper-destroyed/);
+  await assert.rejects(created.endpoint.stopForPresentation(9), /native-helper-destroyed/);
+});
+
+test('presentation operations validate tokens and use their narrow request payloads', async function () {
+  const ipc = new FakeIpc();
+  const created = await clientModule.create({ipc});
+  const generation = await created.endpoint.beginGeneration('presentation', 77);
+  const callsBeforeInvalid = ipc.calls.length;
+
+  for (const token of [0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1, '77']) {
+    await assert.rejects(created.endpoint.preparePresentation(token), /invalid-presentation-token/);
+    await assert.rejects(created.endpoint.cancelPresentation(token), /invalid-presentation-token/);
+    await assert.rejects(created.endpoint.stopForPresentation(token), /invalid-presentation-token/);
+  }
+  await assert.rejects(created.endpoint.beginGeneration('invalid-token', 0), /invalid-presentation-token/);
+  assert.equal(ipc.calls.length, callsBeforeInvalid, 'invalid tokens do not reach main-process IPC');
+
+  await created.endpoint.preparePresentation(77);
+  await created.endpoint.cancelPresentation(77);
+  await created.endpoint.stopForPresentation(77);
+  assert.deepEqual(operationCalls(ipc, 'begin-generation')[0].request.payload,
+    {label: 'presentation', requestEpoch: 1, presentationToken: 77});
+  assert.deepEqual(operationCalls(ipc, 'prepare-presentation')[0].request.payload, {token: 77});
+  assert.deepEqual(operationCalls(ipc, 'cancel-presentation')[0].request.payload, {token: 77});
+  assert.deepEqual(operationCalls(ipc, 'command')[0].request.payload, {
+    data: 'stop', generationId: generation.generationId, presentationToken: 77
+  });
+  await created.endpoint.beginGeneration('normal-null-token', null);
+  assert.deepEqual(operationCalls(ipc, 'begin-generation').at(-1).request.payload,
+    {label: 'normal-null-token', requestEpoch: 2}, 'null means the optional presentation token is omitted');
   await created.endpoint.destroy();
 });

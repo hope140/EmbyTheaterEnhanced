@@ -36,7 +36,8 @@ test('Electron 44 compatibility does not weaken existing renderer isolation sett
 test('hidden formal smoke does not require an unavailable display capture surface', () => {
     const smoke = fs.readFileSync(path.join(repoRoot, 'tools', 'smoke-electron.cjs'), 'utf8');
     assert.match(smoke, /screenshotStatus = 'NOT_RUN_HIDDEN'/);
-    assert.match(smoke, /if \(process\.env\.ETE_TEST_VISIBLE\) \{\s*const screenshot = await win\.webContents\.capturePage\(\)/);
+    // The timeline mode observes composite ROI statistics instead of saving a renderer screenshot.
+    assert.match(smoke, /if \(process\.env\.ETE_TEST_VISIBLE && !transitionTimelineMode\) \{\s*const screenshot = await win\.webContents\.capturePage\(\)/);
 });
 
 test('legacy internal XHR schemes receive only the privileges required by Electron 44', () => {

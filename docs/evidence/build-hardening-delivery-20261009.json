@@ -1,0 +1,534 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-09",
+  "sourceCommit": "3b158f69e974802ef92a3d8c7ef6815139498d1f",
+  "branch": "codex/build-hardening-20261009",
+  "version": "0.2.4",
+  "scope": "Local build engineering; product playback sources, vendor manifests and dependency versions unchanged",
+  "unitTests": {
+    "passed": 529,
+    "total": 529,
+    "failed": 0,
+    "skipped": 0,
+    "log": ".work/build-hardening-unit-committed.log"
+  },
+  "actualBuildEntryNegative": {
+    "status": "PASS",
+    "cases": [
+      {
+        "input": "package.json",
+        "rejectedBeforeOutput": true
+      },
+      {
+        "input": "package-lock.json",
+        "rejectedBeforeOutput": true
+      },
+      {
+        "input": "vendor/runtime-manifest.json",
+        "rejectedBeforeOutput": true
+      },
+      {
+        "input": "tools/prepare-preload.cjs",
+        "rejectedBeforeOutput": true
+      }
+    ]
+  },
+  "build": {
+    "schemaVersion": 3,
+    "trackedInputCount": 34,
+    "noticeCount": 4,
+    "payloadFiles": 2135,
+    "totalFiles": 2136,
+    "payloadSetSha256": "53286a8853f435958cc9e8a6013633a775691449233bdda02d19e322d0876cc1"
+  },
+  "runtimeEntry": "dist/ETE-0.2.4-build-hardening-3b158f6-a-win-x64/Emby.Theater.exe",
+  "runtimeRepeat": {
+    "schemaVersion": 1,
+    "leftFileCount": 2136,
+    "rightFileCount": 2136,
+    "leftTreeSha256": "900106dc1acdc95bf005ef486298b0d83b409af55a7374ccce81c47ef7d432ff",
+    "rightTreeSha256": "900106dc1acdc95bf005ef486298b0d83b409af55a7374ccce81c47ef7d432ff",
+    "equal": true,
+    "added": [],
+    "removed": [],
+    "changed": []
+  },
+  "p1Comparison": {
+    "schemaVersion": 1,
+    "leftFileCount": 2150,
+    "rightFileCount": 2136,
+    "leftTreeSha256": "75c7dfeceaca9becdeef743232980fe552c19540834c892980b7dacd6d706c5f",
+    "rightTreeSha256": "900106dc1acdc95bf005ef486298b0d83b409af55a7374ccce81c47ef7d432ff",
+    "equal": false,
+    "added": [
+      {
+        "path": "build-input-provenance.json",
+        "size": 9046,
+        "sha256": "07b625f57995d398bf59a0fbd487c23d487ce7b1c66223f28a53eb2d831cf7a5"
+      },
+      {
+        "path": "docs/LICENSING.md",
+        "size": 3609,
+        "sha256": "becbb635e00522b2bd6d2fb8ce17fadbc6b4002dd2bfcb7ba2eb78b362611ec7"
+      },
+      {
+        "path": "docs/SOURCE_MATERIALS.md",
+        "size": 5015,
+        "sha256": "972ea4f3929f24666c02281f61e545d7ae75c454685765964206493c5a85aaa6"
+      },
+      {
+        "path": "LICENSE",
+        "size": 14873,
+        "sha256": "2bdb13b91b9440dcfdf51b2f72e04e566c92eb50d48350ada10b30a1d37c3c05"
+      },
+      {
+        "path": "runtime-dependencies.json",
+        "size": 477951,
+        "sha256": "28ce2d3282d90219938c8b4136677f03132179603f6f5d9d4d9efa39e8c98357"
+      },
+      {
+        "path": "THIRD_PARTY_NOTICES.md",
+        "size": 4036,
+        "sha256": "8392a1235c50944fd60e8c9b15a9dd65044920f2dc268acc97f1c0a04bdc84f3"
+      }
+    ],
+    "removed": [
+      {
+        "path": "electronapp/node_modules/long/.npmignore",
+        "size": 37,
+        "sha256": "adb190d863d45db48db80f00f21a112250a840e44860c123b65f37688fc461b2"
+      },
+      {
+        "path": "electronapp/node_modules/long/.travis.yml",
+        "size": 61,
+        "sha256": "f2f9cf08ba38c103363658acf00524f42fda4954660f648495f38b0520c38e16"
+      },
+      {
+        "path": "electronapp/node_modules/long/bower.json",
+        "size": 279,
+        "sha256": "e794b964a33284b26ed780aca7afcfa6fb61bb3fc671fb481c435ee8ed69e2b9"
+      },
+      {
+        "path": "electronapp/node_modules/long/dist/long.js",
+        "size": 39757,
+        "sha256": "9168c134b7bcc7670bd511ce7569ffb364c088bf1602f88fba0792c8dd7289ae"
+      },
+      {
+        "path": "electronapp/node_modules/long/dist/long.min.js",
+        "size": 7764,
+        "sha256": "10939f9b0324e409df0bf66809dd9c213e91021ed7e62b587a499d7d6c77b703"
+      },
+      {
+        "path": "electronapp/node_modules/long/dist/long.min.js.gz",
+        "size": 2752,
+        "sha256": "01bb596afadbe5b74829ee364ffdc8951900273f6c0415829309fc8259614af2"
+      },
+      {
+        "path": "electronapp/node_modules/long/dist/long.min.map",
+        "size": 20530,
+        "sha256": "be3791bd7b036b23de465dc5cdf9ed86c927443b6097f5e2187a46627be3c561"
+      },
+      {
+        "path": "electronapp/node_modules/long/dist/README.md",
+        "size": 721,
+        "sha256": "bee7d039b7f39c69893687bafca885c2d6b630ea31dff2ac0febb8d0424a20c0"
+      },
+      {
+        "path": "electronapp/node_modules/long/doco/INDEX.md",
+        "size": 173,
+        "sha256": "b554ffb3b6ee34f94f0f2f4d0f612c23241db51ebe73ddd93fc56c3aa2d16b4d"
+      },
+      {
+        "path": "electronapp/node_modules/long/doco/Long.md",
+        "size": 15036,
+        "sha256": "85bc7e356bc346f5a7b85584e1f7f471b6a2cae79883baadeb605203f4154df3"
+      },
+      {
+        "path": "electronapp/node_modules/long/donate.png",
+        "size": 1466,
+        "sha256": "34d3a7a31cb0e32e147e6f6bce78b82bf678324306c32da7e204049efd483825"
+      },
+      {
+        "path": "electronapp/node_modules/long/externs/long.js",
+        "size": 7607,
+        "sha256": "667789ca5eefcb3be71ca30956ec8ffebb3db0f267aab3f0deb2770979791af9"
+      },
+      {
+        "path": "electronapp/node_modules/long/jsdoc.json",
+        "size": 238,
+        "sha256": "e43e4bb2f38fa582afa65d71a263f456cbb44bddc0cac0d07439ae4172dc0490"
+      },
+      {
+        "path": "electronapp/node_modules/long/long.png",
+        "size": 1405,
+        "sha256": "48dff235ec03a4993ea897e052662f20cd1af7861f70a02b98d39017a67fff51"
+      },
+      {
+        "path": "electronapp/node_modules/long/scripts/build.js",
+        "size": 924,
+        "sha256": "fdf39acc4c0f45f99a439ad2273b9bff8190b2b25b4d592a84a9c9ddd1fe4e5d"
+      },
+      {
+        "path": "electronapp/node_modules/long/src/bower.json",
+        "size": 289,
+        "sha256": "39f77380d4878e23bae117211e8f779e5e2acddaae1261228f252bd6df18dcb7"
+      },
+      {
+        "path": "electronapp/node_modules/long/src/long.js",
+        "size": 34251,
+        "sha256": "45fe0af6e753e99937164c16703cbeecd162e3e4bf66b6304aa6729e53a60fc4"
+      },
+      {
+        "path": "electronapp/node_modules/long/src/wrap.js",
+        "size": 1332,
+        "sha256": "0c711381d403a6863cb2b525d15b26d6f4ca0732012c4c3257fb8a51b5651343"
+      },
+      {
+        "path": "electronapp/node_modules/long/tests/goog.math.long.js",
+        "size": 25245,
+        "sha256": "b41459b2c4f410c34ba2b1eea52cef039d2804842f1f674d4f9c4aec32c692a4"
+      },
+      {
+        "path": "electronapp/node_modules/long/tests/suite.js",
+        "size": 7750,
+        "sha256": "a24f1b047c4dd8cf328381523c75ac691059df54b6925b23c152617d31b9ae30"
+      }
+    ],
+    "changed": [
+      {
+        "path": "build-manifest.json",
+        "beforeSha256": "d4afcaa62c5ddd10fb9a6b73e0dd547cf220cfee910c6906e3a9e2e1d04c3a7f",
+        "afterSha256": "57c32e1d1a84f833f087d7cc93ac2b9ce6c4ba9c1f0fe4cf74221fd2ef59968f"
+      },
+      {
+        "path": "native-helper-provenance.json",
+        "beforeSha256": "8466c89ff49e1236ad08a721f95e3b19083d8a3af693b25ff0d76b57b8851831",
+        "afterSha256": "0e01c3fac1ba7698d638cf6a5acdcf6acd8627a7b1b266c53164166611cabd24"
+      },
+      {
+        "path": "runtime-provenance.json",
+        "beforeSha256": "14f1912ecb5a22385cb5e164dd7af4bf024dc66a04bc44f9afe89caddefc924b",
+        "afterSha256": "ca39f1c7bccaa7a3844d5455439c095565d4b2048cdbfaed831b31371e7adc97"
+      },
+      {
+        "path": "source-provenance.json",
+        "beforeSha256": "d18742828725cbd7a670fb4280b63108a4ca64781c0241da9b1c9c598fe2b7d2",
+        "afterSha256": "c90518c115573a72145eea231a1523206097e7b07af2459be436d1843e4c6e74"
+      }
+    ]
+  },
+  "dependencies": {
+    "selectedPackages": 33,
+    "selectedFiles": 1142,
+    "selectedTreeSha256": "7852c935d7c03958688046be0b6070164eadf415b69bf832c00a4496e3fea998",
+    "retainedPackages": 7,
+    "retainedFiles": 29,
+    "retainedTreeSha256": "cbb82e43161547cb30509a4320e5b9847c0418580bb0acdcc4111647a55033c3",
+    "combinedFiles": 1171,
+    "combinedTreeSha256": "f5809de4ce337b7d119131d428af303c8ab413dfd53b14899a43500a14c1082a"
+  },
+  "nativeHelper": {
+    "sha256": "28054c75551177f1109859d4f8793d45a4c731aba1e43ddab9bb2f1c5dc030dc",
+    "sourceSha256": "7b7ae54af6ca292a40fc7fd8d315b12bc18599d9cd7cb23361d3671c80e459e4",
+    "toolchain": {
+      "schemaVersion": 1,
+      "status": "passed",
+      "kind": "native",
+      "authority": {
+        "toolchainManifest": {
+          "path": "vendor/toolchain-manifest.json",
+          "gitBlobObjectId": "b39ba168381a255f6126e0ed2d771b9e3ef632c1",
+          "canonicalTextSha256": "e5bc53955f6a4380fc337d889a73be5cd6b0bfbe4459a601213a76f8dac30bfc"
+        },
+        "nativeHelperManifest": {
+          "path": "vendor/native-helper-manifest.json",
+          "gitBlobObjectId": "b9b17fa674b4109b36be805968cc1a3a8c016fe5",
+          "canonicalTextSha256": "ff23f2eafa26e5f327fb70878569aceab22c568d317eb155c5b6a053107ac895"
+        }
+      },
+      "compiler": {
+        "root": ".work/toolchain/msys2/ucrt64",
+        "path": "bin/g++.exe",
+        "sha256": "798a6eb495b30cf771dc759b5508d269ecb0dddac739719e8b30fe0ac0744b69",
+        "version": "g++.exe (Rev5, Built by MSYS2 project) 16.1.0"
+      },
+      "tree": {
+        "fileCount": 6990,
+        "bytes": 553090415,
+        "sha256": "5215ec9725ad0ef660064944eef6aba5106bd09044a0f70a6e37c4252815fab3"
+      }
+    }
+  },
+  "inventory": {
+    "status": "OBSERVED",
+    "assessment": "CONSISTENT",
+    "runtimeStatus": "PASS",
+    "dependencyStatus": "PASS",
+    "dependencyExtra": 0
+  },
+  "installers": [
+    {
+      "file": "dist/EmbyTheaterEnhanced-0.2.4-build-hardening-3b158f6-a-win-x64-setup.exe",
+      "fileName": "EmbyTheaterEnhanced-0.2.4-build-hardening-3b158f6-a-win-x64-setup.exe",
+      "size": 175630156,
+      "sha256": "467cf2774be8b89d9ee6a8af98c064c1590e87d403b5225255bd5f8aa740accc",
+      "version": "0.2.4",
+      "sourceCommit": "3b158f69e974802ef92a3d8c7ef6815139498d1f",
+      "runtimeManifestSha256": "57c32e1d1a84f833f087d7cc93ac2b9ce6c4ba9c1f0fe4cf74221fd2ef59968f"
+    },
+    {
+      "file": "dist/EmbyTheaterEnhanced-0.2.4-build-hardening-3b158f6-b-win-x64-setup.exe",
+      "fileName": "EmbyTheaterEnhanced-0.2.4-build-hardening-3b158f6-b-win-x64-setup.exe",
+      "size": 175630030,
+      "sha256": "b853e5c831c5b16810e9d75b64e29a9818ef048c39f0d3a2183166f39839f16d",
+      "version": "0.2.4",
+      "sourceCommit": "3b158f69e974802ef92a3d8c7ef6815139498d1f",
+      "runtimeManifestSha256": "57c32e1d1a84f833f087d7cc93ac2b9ce6c4ba9c1f0fe4cf74221fd2ef59968f"
+    }
+  ],
+  "installerPayloads": {
+    "a": {
+      "schemaVersion": 1,
+      "leftFileCount": 2136,
+      "rightFileCount": 2136,
+      "leftTreeSha256": "900106dc1acdc95bf005ef486298b0d83b409af55a7374ccce81c47ef7d432ff",
+      "rightTreeSha256": "900106dc1acdc95bf005ef486298b0d83b409af55a7374ccce81c47ef7d432ff",
+      "equal": true,
+      "added": [],
+      "removed": [],
+      "changed": []
+    },
+    "b": {
+      "schemaVersion": 1,
+      "leftFileCount": 2136,
+      "rightFileCount": 2136,
+      "leftTreeSha256": "900106dc1acdc95bf005ef486298b0d83b409af55a7374ccce81c47ef7d432ff",
+      "rightTreeSha256": "900106dc1acdc95bf005ef486298b0d83b409af55a7374ccce81c47ef7d432ff",
+      "equal": true,
+      "added": [],
+      "removed": [],
+      "changed": []
+    }
+  },
+  "installerContainerBytesEqual": false,
+  "runtimeRuns": [
+    {
+      "evidence": ".work/p1-runtime-47aab83d33e34372af550c14be588fdf/",
+      "ok": false,
+      "error": "Playback pipeline assertion failed",
+      "exitCode": 1,
+      "timedOut": false,
+      "observedDescendants": 4,
+      "candidateResidual": 0,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "ordinaryAndStrm": [
+        {
+          "kind": "video",
+          "playerId": "libmpvmediaplayer",
+          "paused": true,
+          "sought": true,
+          "resumed": true,
+          "itemSidecarPreserved": true,
+          "sourcePreserved": true,
+          "mountSourceUsed": true,
+          "mountCandidateExists": true,
+          "sessionPreserved": true,
+          "hasStart": true,
+          "hasProgress": true,
+          "hasStop": true,
+          "pauseReported": true,
+          "seekReported": true,
+          "enhancedCategoryPresent": true,
+          "enhancedStatsMatch": true
+        },
+        {
+          "kind": "strm",
+          "playerId": "libmpvmediaplayer",
+          "paused": true,
+          "sought": true,
+          "resumed": true,
+          "itemSidecarPreserved": true,
+          "sourcePreserved": true,
+          "mountSourceUsed": true,
+          "mountCandidateExists": true,
+          "sessionPreserved": true,
+          "hasStart": true,
+          "hasProgress": true,
+          "hasStop": true,
+          "pauseReported": true,
+          "seekReported": true,
+          "enhancedCategoryPresent": true,
+          "enhancedStatsMatch": true
+        }
+      ],
+      "next": {
+        "selected": false,
+        "priorStopped": true,
+        "nextStarted": true,
+        "rapidNextSettled": true,
+        "rapidNewestLoaded": true
+      },
+      "generation": {
+        "firstSuperseded": true,
+        "secondPlayed": true,
+        "oldCoreListenerIgnored": true,
+        "stopSuperseded": true,
+        "stopPreventedLateLoad": true,
+        "noUnhandledRejection": true
+      },
+      "fakeCd2": {
+        "resolveCount": 7,
+        "cancelCount": 1,
+        "completedCount": 6,
+        "activeCount": 0
+      },
+      "realFirstFrameVerified": false,
+      "realServicesUsed": false
+    },
+    {
+      "evidence": ".work/p1-runtime-e611deabc22642acbeccee28217d2676/",
+      "ok": true,
+      "error": null,
+      "exitCode": 0,
+      "timedOut": false,
+      "observedDescendants": 6,
+      "candidateResidual": 0,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "ordinaryAndStrm": [
+        {
+          "kind": "video",
+          "playerId": "libmpvmediaplayer",
+          "paused": true,
+          "sought": true,
+          "resumed": true,
+          "itemSidecarPreserved": true,
+          "sourcePreserved": true,
+          "mountSourceUsed": true,
+          "mountCandidateExists": true,
+          "sessionPreserved": true,
+          "hasStart": true,
+          "hasProgress": true,
+          "hasStop": true,
+          "pauseReported": true,
+          "seekReported": true,
+          "enhancedCategoryPresent": true,
+          "enhancedStatsMatch": true
+        },
+        {
+          "kind": "strm",
+          "playerId": "libmpvmediaplayer",
+          "paused": true,
+          "sought": true,
+          "resumed": true,
+          "itemSidecarPreserved": true,
+          "sourcePreserved": true,
+          "mountSourceUsed": true,
+          "mountCandidateExists": true,
+          "sessionPreserved": true,
+          "hasStart": true,
+          "hasProgress": true,
+          "hasStop": true,
+          "pauseReported": true,
+          "seekReported": true,
+          "enhancedCategoryPresent": true,
+          "enhancedStatsMatch": true
+        }
+      ],
+      "next": {
+        "selected": true,
+        "priorStopped": true,
+        "nextStarted": true,
+        "rapidNextSettled": true,
+        "rapidNewestLoaded": true
+      },
+      "generation": {
+        "firstSuperseded": true,
+        "secondPlayed": true,
+        "oldCoreListenerIgnored": true,
+        "stopSuperseded": true,
+        "stopPreventedLateLoad": true,
+        "noUnhandledRejection": true
+      },
+      "fakeCd2": {
+        "resolveCount": 7,
+        "cancelCount": 2,
+        "completedCount": 5,
+        "activeCount": 0
+      },
+      "realFirstFrameVerified": false,
+      "realServicesUsed": false,
+      "productDiagnostics": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 111,
+        "validRecords": 111,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 6,
+          "native-helper/generation-retired": 6,
+          "native-helper/start-file": 5,
+          "native-helper/file-loaded": 5,
+          "native-helper/end-file": 1,
+          "native-helper/surface-hidden": 12,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 10,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      }
+    }
+  ],
+  "limitations": [
+    "First hidden pipeline run failed the timing-sensitive double-Next selected assertion; bounded repeat passed. Both outcomes are preserved.",
+    "Installer container bytes differ despite identical extracted payloads; no normalization or byte filtering was used.",
+    "Full corresponding source/build materials for Host, offline Web, patched libmpv dependencies and some auxiliaries remain incomplete.",
+    "System installation, real Emby/CD2, visible first frame and real remote control were not tested."
+  ],
+  "hostObservation": {
+    "powershell": "5.1.26100.9444",
+    "node": "v24.18.1",
+    "npm": "11.17.0",
+    "git": "git version 2.55.0.windows.4",
+    "installerVersions": [
+      {
+        "fileName": "EmbyTheaterEnhanced-0.2.4-build-hardening-3b158f6-a-win-x64-setup.exe",
+        "fileVersion": "0.2.4",
+        "productVersion": "0.2.4"
+      },
+      {
+        "fileName": "EmbyTheaterEnhanced-0.2.4-build-hardening-3b158f6-b-win-x64-setup.exe",
+        "fileVersion": "0.2.4",
+        "productVersion": "0.2.4"
+      }
+    ]
+  }
+}

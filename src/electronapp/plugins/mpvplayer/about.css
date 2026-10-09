@@ -1,0 +1,20 @@
+.about-settings-page .about-maintenance-card > .ete-settings-status {
+    margin-top: .7em;
+}
+
+.about-settings-page .about-update {
+    margin-top: .8em;
+}
+
+.about-settings-page .about-update .ete-settings-button {
+    margin-top: .45em;
+    padding-inline: 0;
+}
+
+.about-settings-page .ete-about-advanced summary {
+    color: var(--theme-accent-text-color, inherit);
+    cursor: pointer;
+    padding: .35em 0;
+}
+
+.about-settings-page .ete-about-advanced-content { margin-top: .4em; }

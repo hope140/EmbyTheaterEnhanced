@@ -1,0 +1,4797 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-09",
+  "timezone": "Asia/Shanghai",
+  "status": "PASS_LOCAL_PACKAGE",
+  "baseCommit": "99cb8506c98793182b060a0acd523d7937dd2c32",
+  "sourceCommit": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+  "version": "0.2.6",
+  "branch": "codex/local-package-026-20261009",
+  "runtime": "dist/ETE-0.2.6-local-355f4e6-win-x64",
+  "runtimeFileCount": 2136,
+  "payload": {
+    "fileCount": 2135,
+    "payloadSetSha256": "19b2156f215afaa7f714d56ded5ab57923949f62f4cf0ee0ee6a7e33a40595d4"
+  },
+  "manifestSha256": "69fb0042c7651a40b2ac4ebfffd149307bd4e292eb5231998dc24c7300786e7c",
+  "installer": {
+    "fileName": "EmbyTheaterEnhanced-0.2.6-test-355f4e6-win-x64-setup.exe",
+    "size": 175621807,
+    "sha256": "bc878b4e929016071b8d7a41f9b281ad3118e62e8a1e469b0a5c9858718b1532",
+    "relativePath": "dist/EmbyTheaterEnhanced-0.2.6-test-355f4e6-win-x64-setup.exe",
+    "pe": {
+      "fileVersion": "0.2.6",
+      "productVersion": "0.2.6",
+      "fileDescription": "Emby Theater Enhanced Setup",
+      "bytes": 175621807,
+      "signature": "NotSigned"
+    },
+    "provenanceSha256": "a2d232f25011a3e2a5bfb65207af24970d5297f6146f7008c15cad4b35c40316"
+  },
+  "tests": {
+    "total": 631,
+    "passed": 631,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "logSha256": "5d67d336d7cc8f1186b5d715178a11ec215e36ab9d7837a6d8d76fc81fddaaad",
+    "destroyRegression": {
+      "before": {
+        "total": 31,
+        "passed": 28,
+        "failed": 3
+      },
+      "after": {
+        "total": 31,
+        "passed": 31,
+        "failed": 0
+      },
+      "beforeSha256": "6b69e17fddb2dd8ab68d84a945c563781ba8bf8e29eb54e520e1ac663a6a8b0d",
+      "afterSha256": "7cc5a08a5653a8a56440bc4a6b6f1f58718d615d4eefb47902d471de95f5c1f6"
+    },
+    "rendererJoinRegression": {
+      "before": {
+        "total": 33,
+        "passed": 31,
+        "failed": 2
+      },
+      "after": {
+        "total": 33,
+        "passed": 33,
+        "failed": 0
+      },
+      "beforeSha256": "fe79b8109a8db1d828c1ca92f3c5162a7dc711ebf21fab1ca62d31ff9630a9ae",
+      "afterSha256": "94b5937f98c9637b9fe1891488740aac28e40941d9a76586f0bc696f7a49faf6"
+    },
+    "allOwnedSettleRegression": {
+      "before": {
+        "total": 35,
+        "passed": 34,
+        "failed": 1
+      },
+      "after": {
+        "total": 35,
+        "passed": 35,
+        "failed": 0
+      },
+      "beforeSha256": "87a965d05f329a45f048280b5d5146673afdf6174db2222f2dbc8452a6220eba",
+      "afterSha256": "70e3a5eaf07da6291116dadbf70aaaeef672e5149a31d308ceddf680b1280877"
+    },
+    "finalVerifierTargeted": {
+      "total": 36,
+      "passed": 36,
+      "failed": 0,
+      "logSha256": "df363f3006913c032101140d916fda21367ed4908b60c66d0df5b9a502728419",
+      "reason": "Verifier correction for completed-before-close stopped/pipeline clients; included in final suite"
+    }
+  },
+  "syntax": {
+    "trackedJsCjs": 192,
+    "newJsCjs": 3,
+    "powershell": 24,
+    "failures": []
+  },
+  "productCodeChangesFromBase": [
+    "src/electronapp/native-helper/service.js: share complete destroy, join pending renderer and current exits before propagating failure"
+  ],
+  "runtimeBaselineComparison": {
+    "schemaVersion": 1,
+    "status": "MISMATCH",
+    "runtimeDir": "ETE-0.2.6-local-355f4e6-win-x64",
+    "otherDir": "ETE-0.2.5-stop-owner-68eb024-win-x64",
+    "manifestHashes": {
+      "runtime": {
+        "path": "build-manifest.json",
+        "bytes": 508219,
+        "sha256": "69fb0042c7651a40b2ac4ebfffd149307bd4e292eb5231998dc24c7300786e7c"
+      },
+      "other": {
+        "path": "build-manifest.json",
+        "bytes": 508219,
+        "sha256": "10054d7de3035d752f2bc73bf348c5ba325b830f90cd8d9e3bc355124879e752"
+      },
+      "equal": false
+    },
+    "fileCounts": {
+      "runtime": 2136,
+      "other": 2136,
+      "equal": 2125,
+      "missing": 0,
+      "extra": 0,
+      "changed": 11
+    },
+    "missing": [],
+    "extra": [],
+    "changed": [
+      {
+        "path": "build-input-provenance.json",
+        "runtimeSha256": "c546512fa04b5648bcf9fb5132a76da395efa769475de42b92623bd6b9e15426",
+        "otherSha256": "9faf01553a77595123c5e8552d34fd10e2aa0ae9e6727a292cffea00bbcb6e69",
+        "runtimeBytes": 9046,
+        "otherBytes": 9046,
+        "binary": false
+      },
+      {
+        "path": "build-manifest.json",
+        "runtimeSha256": "69fb0042c7651a40b2ac4ebfffd149307bd4e292eb5231998dc24c7300786e7c",
+        "otherSha256": "10054d7de3035d752f2bc73bf348c5ba325b830f90cd8d9e3bc355124879e752",
+        "runtimeBytes": 508219,
+        "otherBytes": 508219,
+        "binary": false
+      },
+      {
+        "path": "docs/LICENSING.md",
+        "runtimeSha256": "c26b38e57405447a5e56bbac75efeaae4f4bd5dd0406d8573a79fdf3e04e359c",
+        "otherSha256": "becbb635e00522b2bd6d2fb8ce17fadbc6b4002dd2bfcb7ba2eb78b362611ec7",
+        "runtimeBytes": 4514,
+        "otherBytes": 3609,
+        "binary": false
+      },
+      {
+        "path": "docs/SOURCE_MATERIALS.md",
+        "runtimeSha256": "befae7e7f3d0053de68200c0adc6cf85efc9ae17cc32106d97ce957475b1d1c2",
+        "otherSha256": "92c5d571fc53b7f873ff7e7769e0c636fd6ec77864cde307f5a62b36cf6cdfc7",
+        "runtimeBytes": 7111,
+        "otherBytes": 4996,
+        "binary": false
+      },
+      {
+        "path": "electronapp/native-helper/service.js",
+        "runtimeSha256": "41d7517012bcd639296fff7c324e2097e31bb19b3ee7b7b723697a777c366bc6",
+        "otherSha256": "ae019c59c970c9b3558b1fd52b1ff2d72b49c874229d976defed52859b128098",
+        "runtimeBytes": 34497,
+        "otherBytes": 33551,
+        "binary": false
+      },
+      {
+        "path": "electronapp/package.json",
+        "runtimeSha256": "c6e7f2493088dd670d71a186f0de73c8cbd5982401a250f03ae46a9a4e7a4003",
+        "otherSha256": "6bb443c5879991d6164237a67797e7e43e58762920baac5780bf3e0efee39cb5",
+        "runtimeBytes": 1354,
+        "otherBytes": 1354,
+        "binary": false
+      },
+      {
+        "path": "native-helper-provenance.json",
+        "runtimeSha256": "e79258399e926d7feb75ee2f57d3646aa007e93741cefb4cd82544f39b261594",
+        "otherSha256": "d56f35ca48d4015cfe0be5eb3748700495557b585caccaa3da86a6633f0adf6e",
+        "runtimeBytes": 6817,
+        "otherBytes": 6817,
+        "binary": false
+      },
+      {
+        "path": "runtime-dependencies.json",
+        "runtimeSha256": "e738e8cc008ab534b27ad300558a173a05c6519dcdd052989070de160b02c908",
+        "otherSha256": "c6221be1857439b13ca5ebc0e2a2f09432df6dbf5ad1684a0125134de4965393",
+        "runtimeBytes": 477951,
+        "otherBytes": 477951,
+        "binary": false
+      },
+      {
+        "path": "runtime-provenance.json",
+        "runtimeSha256": "58aa007fb068e01bc3685578482fc748fa92901000e0a6525cad0d21b1327a6b",
+        "otherSha256": "2f240d835f2e0af39ec87acd32d52144b203224e7cb105df2f327727be6469c2",
+        "runtimeBytes": 50292,
+        "otherBytes": 50292,
+        "binary": false
+      },
+      {
+        "path": "source-provenance.json",
+        "runtimeSha256": "54750b38a50ae1baaea2fcaeb40892cf8a26931233394b12398763eb875a3b30",
+        "otherSha256": "83d832be93668ab270bd47c01986d22790389438e34e6fb230594d4e8b56add2",
+        "runtimeBytes": 19101,
+        "otherBytes": 19101,
+        "binary": false
+      },
+      {
+        "path": "THIRD_PARTY_NOTICES.md",
+        "runtimeSha256": "e587666f9e0a97fea43a9f4a3618b27f8748cfd8311fe470886aaa22c46700ad",
+        "otherSha256": "8392a1235c50944fd60e8c9b15a9dd65044920f2dc268acc97f1c0a04bdc84f3",
+        "runtimeBytes": 5851,
+        "otherBytes": 4036,
+        "binary": false
+      }
+    ],
+    "binaryFiles": {
+      "extensions": [
+        ".exe",
+        ".dll"
+      ],
+      "runtime": 23,
+      "other": 23,
+      "equal": 23,
+      "missing": 0,
+      "extra": 0,
+      "changed": 0
+    }
+  },
+  "installerPayload": {
+    "schemaVersion": 1,
+    "status": "PASS",
+    "runtimeDir": "ETE-0.2.6-local-355f4e6-win-x64",
+    "otherDir": "{app}",
+    "manifestHashes": {
+      "runtime": {
+        "path": "build-manifest.json",
+        "bytes": 508219,
+        "sha256": "69fb0042c7651a40b2ac4ebfffd149307bd4e292eb5231998dc24c7300786e7c"
+      },
+      "other": {
+        "path": "build-manifest.json",
+        "bytes": 508219,
+        "sha256": "69fb0042c7651a40b2ac4ebfffd149307bd4e292eb5231998dc24c7300786e7c"
+      },
+      "equal": true
+    },
+    "fileCounts": {
+      "runtime": 2136,
+      "other": 2136,
+      "equal": 2136,
+      "missing": 0,
+      "extra": 0,
+      "changed": 0
+    },
+    "missing": [],
+    "extra": [],
+    "changed": [],
+    "binaryFiles": {
+      "extensions": [
+        ".exe",
+        ".dll"
+      ],
+      "runtime": 23,
+      "other": 23,
+      "equal": 23,
+      "missing": 0,
+      "extra": 0,
+      "changed": 0
+    }
+  },
+  "remoteReadback": [
+    {
+      "draft": false,
+      "prerelease": true,
+      "published_at": "2026-10-09T05:27:06Z",
+      "tag_name": "v0.2.5"
+    },
+    {
+      "draft": false,
+      "prerelease": true,
+      "published_at": "2026-10-09T00:30:27Z",
+      "tag_name": "v0.2.4"
+    },
+    {
+      "draft": false,
+      "prerelease": true,
+      "published_at": "2026-10-08T14:22:29Z",
+      "tag_name": "v0.2.3"
+    },
+    {
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-09-20T17:05:55Z",
+      "tag_name": "v0.2.2"
+    },
+    {
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-09-18T18:13:52Z",
+      "tag_name": "v0.2.1"
+    },
+    {
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-09-17T13:59:18Z",
+      "tag_name": "v0.2.0"
+    },
+    {
+      "draft": false,
+      "prerelease": false,
+      "published_at": "2026-09-16T08:06:27Z",
+      "tag_name": "v0.1.1"
+    }
+  ],
+  "thirdPartyMaterialTransfer": [
+    {
+      "path": "docs/THIRD_PARTY_MATERIALS_AUDIT.md",
+      "equal": true,
+      "sha256": "ad6ceaa7eaee34e30e87adaaf48c23bbfa9d7ca399d6560a69c3fd53cc595354"
+    },
+    {
+      "path": "docs/THIRD_PARTY_MATERIALS_REQUEST.md",
+      "equal": true,
+      "sha256": "9d34963c910acc0feded4e061738e1471768e28388fcb2cf95b19309feb8c780"
+    },
+    {
+      "path": "docs/evidence/third-party-delivered-notices-20261009.json",
+      "equal": true,
+      "sha256": "aff7ac3e44cd070c473154dd812a5d26703aea0300cb2b913f62eea223ed8ed6"
+    },
+    {
+      "path": "docs/evidence/third-party-host-20261009.json",
+      "equal": true,
+      "sha256": "e632160666a1a2e12e86bb0d16429ba639c5aff573c3e7e2cdd3c92b6f1e7bb0"
+    },
+    {
+      "path": "docs/evidence/third-party-materials-files-20261009.json",
+      "equal": true,
+      "sha256": "a4456eb691100f6f8cbefb552871bd4f394084d1e15eecfac2db4e860a1acec6"
+    },
+    {
+      "path": "docs/evidence/third-party-mpv-20261009.json",
+      "equal": true,
+      "sha256": "5231b5337170f80798b071d6335be6e6969bcb8d121bb7fbeab3912d278f7e5f"
+    },
+    {
+      "path": "docs/evidence/third-party-toolchains-20261009.json",
+      "equal": true,
+      "sha256": "546269fb9b8b791f3d2b3f399fc31613c2768fc66a5e8853c28988dfc1521646"
+    },
+    {
+      "path": "docs/evidence/third-party-web-npm-20261009.json",
+      "equal": true,
+      "sha256": "f466716091e1bd852767792e3fa051368bc03916d70c9875d3b4f9091f4f69c7"
+    }
+  ],
+  "runs": [
+    {
+      "name": "close-idle",
+      "evidence": ".work/p1-runtime-83f5bfeca21c49d7830a2d131c764a28",
+      "status": "PASS",
+      "sourceCommit": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+      "harnessHead": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "59caec67518a40a56a3953d9d3ea14c2023d78d6c6c2cc112ccfae8331baf0e2"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "363fe92b3bf20a1ef5c3f644cebd4ad4f90edb81845d62be3c1cd1481f97b4eb"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "2c4cf5d7fe4b6f6cc89a92e31c816c1bcc03be69e56dc6699839e86373451f17"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tools/exit-observation.cjs",
+          "sha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee"
+        },
+        {
+          "path": "tools/normal-close-observation.cjs",
+          "sha256": "900e8e4ca678b5d7c1cedd30c30486327d0cbe86eb4e4c2dfc344de62cec7d53"
+        },
+        {
+          "path": "tools/verify-normal-close.cjs",
+          "sha256": "7d37e910f6a0890639d344e8df4a2ad60ed7c62673676d6bfaec90dc65b9cd23"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "4523b344aede86e931786f53b16238a9f497d87752601c23f531bb1d34ceeb34"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749"
+        }
+      ],
+      "settings": {
+        "cd2Mode": "hit",
+        "cd2DelayMs": 400,
+        "fixtureSeconds": 60,
+        "normalClose": "idle"
+      },
+      "identityMatched": true,
+      "allStageDocumentsHidden": true,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "elapsedMs": 7552,
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "cleanupAttempted": false,
+      "candidateResidual": 0,
+      "observedDescendants": 3,
+      "childObservationCoverage": "FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE",
+      "childExitObservations": [
+        {
+          "pid": 80252,
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "pid": 37972,
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "pid": 25216,
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        }
+      ],
+      "verification": {
+        "schemaVersion": 1,
+        "scenario": "idle",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN"
+      },
+      "stages": [
+        {
+          "sequence": 1,
+          "stage": "application-close-requested",
+          "elapsedMs": 6703,
+          "scenario": "idle"
+        },
+        {
+          "sequence": 2,
+          "stage": "application-window-close",
+          "elapsedMs": 6704
+        },
+        {
+          "sequence": 3,
+          "stage": "application-close-returned",
+          "elapsedMs": 6704
+        },
+        {
+          "sequence": 4,
+          "stage": "application-window-closed",
+          "elapsedMs": 6710
+        },
+        {
+          "sequence": 5,
+          "stage": "window-all-closed",
+          "elapsedMs": 6710
+        },
+        {
+          "sequence": 6,
+          "stage": "before-quit",
+          "elapsedMs": 6710
+        },
+        {
+          "sequence": 7,
+          "stage": "diagnostics-unregister-start",
+          "elapsedMs": 6711
+        },
+        {
+          "sequence": 8,
+          "stage": "diagnostics-unregister-complete",
+          "elapsedMs": 6711
+        },
+        {
+          "sequence": 9,
+          "stage": "maintenance-unregister-start",
+          "elapsedMs": 6711
+        },
+        {
+          "sequence": 10,
+          "stage": "maintenance-unregister-complete",
+          "elapsedMs": 6711
+        },
+        {
+          "sequence": 11,
+          "stage": "strm-config-unregister-start",
+          "elapsedMs": 6711
+        },
+        {
+          "sequence": 12,
+          "stage": "strm-config-unregister-complete",
+          "elapsedMs": 6712
+        },
+        {
+          "sequence": 13,
+          "stage": "cd2-unregister-start",
+          "elapsedMs": 6712
+        },
+        {
+          "sequence": 14,
+          "stage": "cd2-unregister-complete",
+          "elapsedMs": 6712
+        },
+        {
+          "sequence": 15,
+          "stage": "native-unregister-start",
+          "elapsedMs": 6712
+        },
+        {
+          "sequence": 16,
+          "stage": "native-unregister-complete",
+          "elapsedMs": 6713
+        },
+        {
+          "sequence": 17,
+          "stage": "before-quit",
+          "elapsedMs": 6713
+        },
+        {
+          "sequence": 18,
+          "stage": "will-quit",
+          "elapsedMs": 6713
+        },
+        {
+          "sequence": 19,
+          "stage": "fixture-server-close-requested",
+          "elapsedMs": 6714
+        },
+        {
+          "sequence": 20,
+          "stage": "quit",
+          "elapsedMs": 6714,
+          "exitCode": 0
+        }
+      ],
+      "artifactHashes": {
+        "electron-smoke.json": "069df03f1f6bbb3f230bde8cd48ac31f5afc1d6bac1fb4746585ff87f01a0780",
+        "runner-result.json": "f431f90c45cad954cd281d61d0849249914524bae40cab6618fe336c10cd0fdf",
+        "harness-identity.json": "ef7647dbc0686ab033edf076b5e438b2d7c70d47b68947f93f9cc0ad09145fd2",
+        "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+        "exit-observation.jsonl": "72c1ec16672c7a28b529c1dfb8b051eda6761dc28276d689ad13841d80872206",
+        "runner-exit-observation.jsonl": "1d6c4886d436318a953f71ed4b48a56437e935ee3ce9d574ee68f93157493842",
+        "normal-close.jsonl": "bd36ca469b015a53febb018dfd202271338e878999ec500593c19b505bd732f8",
+        "normal-close-result.json": "0171efc0cfa4e0619d2da9be6e5c6fa0ec39f6f014b70dd219efb6d04307ab0c"
+      }
+    },
+    {
+      "name": "close-playing",
+      "evidence": ".work/p1-runtime-921da14432b848a9aed327aed733cbf0",
+      "status": "PASS",
+      "sourceCommit": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+      "harnessHead": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "59caec67518a40a56a3953d9d3ea14c2023d78d6c6c2cc112ccfae8331baf0e2"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "363fe92b3bf20a1ef5c3f644cebd4ad4f90edb81845d62be3c1cd1481f97b4eb"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "2c4cf5d7fe4b6f6cc89a92e31c816c1bcc03be69e56dc6699839e86373451f17"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tools/exit-observation.cjs",
+          "sha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee"
+        },
+        {
+          "path": "tools/normal-close-observation.cjs",
+          "sha256": "900e8e4ca678b5d7c1cedd30c30486327d0cbe86eb4e4c2dfc344de62cec7d53"
+        },
+        {
+          "path": "tools/verify-normal-close.cjs",
+          "sha256": "7d37e910f6a0890639d344e8df4a2ad60ed7c62673676d6bfaec90dc65b9cd23"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "4523b344aede86e931786f53b16238a9f497d87752601c23f531bb1d34ceeb34"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749"
+        }
+      ],
+      "settings": {
+        "cd2Mode": "hit",
+        "cd2DelayMs": 400,
+        "fixtureSeconds": 60,
+        "normalClose": "playing"
+      },
+      "identityMatched": true,
+      "allStageDocumentsHidden": true,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "elapsedMs": 8189,
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "cleanupAttempted": false,
+      "candidateResidual": 0,
+      "observedDescendants": 3,
+      "childObservationCoverage": "FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE",
+      "childExitObservations": [
+        {
+          "pid": 78820,
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "pid": 24836,
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "pid": 10548,
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        }
+      ],
+      "verification": {
+        "schemaVersion": 1,
+        "scenario": "playing",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN"
+      },
+      "stages": [
+        {
+          "sequence": 1,
+          "stage": "application-close-requested",
+          "elapsedMs": 7186,
+          "scenario": "playing"
+        },
+        {
+          "sequence": 2,
+          "stage": "application-window-close",
+          "elapsedMs": 7187
+        },
+        {
+          "sequence": 3,
+          "stage": "application-close-returned",
+          "elapsedMs": 7187
+        },
+        {
+          "sequence": 4,
+          "stage": "native-retire-renderer-destroy",
+          "elapsedMs": 7190,
+          "clientId": 1
+        },
+        {
+          "sequence": 5,
+          "stage": "native-client-shutdown-start",
+          "elapsedMs": 7192,
+          "clientId": 1,
+          "caller": "destroy-client"
+        },
+        {
+          "sequence": 6,
+          "stage": "application-window-closed",
+          "elapsedMs": 7197
+        },
+        {
+          "sequence": 7,
+          "stage": "native-client-shutdown-complete",
+          "elapsedMs": 7343,
+          "clientId": 1,
+          "exited": true
+        },
+        {
+          "sequence": 8,
+          "stage": "window-all-closed",
+          "elapsedMs": 7347
+        },
+        {
+          "sequence": 9,
+          "stage": "before-quit",
+          "elapsedMs": 7348
+        },
+        {
+          "sequence": 10,
+          "stage": "diagnostics-unregister-start",
+          "elapsedMs": 7348
+        },
+        {
+          "sequence": 11,
+          "stage": "diagnostics-unregister-complete",
+          "elapsedMs": 7348
+        },
+        {
+          "sequence": 12,
+          "stage": "maintenance-unregister-start",
+          "elapsedMs": 7348
+        },
+        {
+          "sequence": 13,
+          "stage": "maintenance-unregister-complete",
+          "elapsedMs": 7349
+        },
+        {
+          "sequence": 14,
+          "stage": "strm-config-unregister-start",
+          "elapsedMs": 7349
+        },
+        {
+          "sequence": 15,
+          "stage": "strm-config-unregister-complete",
+          "elapsedMs": 7349
+        },
+        {
+          "sequence": 16,
+          "stage": "cd2-unregister-start",
+          "elapsedMs": 7350
+        },
+        {
+          "sequence": 17,
+          "stage": "cd2-unregister-complete",
+          "elapsedMs": 7350
+        },
+        {
+          "sequence": 18,
+          "stage": "native-unregister-start",
+          "elapsedMs": 7350
+        },
+        {
+          "sequence": 19,
+          "stage": "native-unregister-complete",
+          "elapsedMs": 7351
+        },
+        {
+          "sequence": 20,
+          "stage": "before-quit",
+          "elapsedMs": 7351
+        },
+        {
+          "sequence": 21,
+          "stage": "will-quit",
+          "elapsedMs": 7351
+        },
+        {
+          "sequence": 22,
+          "stage": "fixture-server-close-requested",
+          "elapsedMs": 7352
+        },
+        {
+          "sequence": 23,
+          "stage": "quit",
+          "elapsedMs": 7352,
+          "exitCode": 0
+        }
+      ],
+      "artifactHashes": {
+        "electron-smoke.json": "1aefbcfca3f9fecec32a14eb9f2d9a5b5f17cc4e91c280caac15d1e9f6f58d2e",
+        "runner-result.json": "4516382241e61c8b18d6a8c668e8559a34e985bf9cc60d40019c9923d8b786ac",
+        "harness-identity.json": "f2f35f6a2df885af1a1ebdc7dde090c0ae391151624e8f8fa84551a938943726",
+        "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+        "exit-observation.jsonl": "bbe403bd174677bb8aab73731a6db4ff01cb8202c1d7afe6bca271a4e3ef4e1f",
+        "runner-exit-observation.jsonl": "48572cc49bf6e13482950e8fbce69ecc8148a85cee32768ab0f84f947cf1d516",
+        "normal-close.jsonl": "1a7dbf664038bbf090b5473c17314253940b64ad6a8218b3d3563f07e0b1c508",
+        "normal-close-result.json": "ad6d9cc867bbb703faf2b4f2a7eabe1265b332fabe3402ae7484976055205e1b"
+      }
+    },
+    {
+      "name": "close-stopped",
+      "evidence": ".work/p1-runtime-3ef437361d4646e6b0b4de0f9f936785",
+      "status": "PASS",
+      "sourceCommit": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+      "harnessHead": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "59caec67518a40a56a3953d9d3ea14c2023d78d6c6c2cc112ccfae8331baf0e2"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "363fe92b3bf20a1ef5c3f644cebd4ad4f90edb81845d62be3c1cd1481f97b4eb"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "2c4cf5d7fe4b6f6cc89a92e31c816c1bcc03be69e56dc6699839e86373451f17"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tools/exit-observation.cjs",
+          "sha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee"
+        },
+        {
+          "path": "tools/normal-close-observation.cjs",
+          "sha256": "900e8e4ca678b5d7c1cedd30c30486327d0cbe86eb4e4c2dfc344de62cec7d53"
+        },
+        {
+          "path": "tools/verify-normal-close.cjs",
+          "sha256": "7d37e910f6a0890639d344e8df4a2ad60ed7c62673676d6bfaec90dc65b9cd23"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "4523b344aede86e931786f53b16238a9f497d87752601c23f531bb1d34ceeb34"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749"
+        }
+      ],
+      "settings": {
+        "cd2Mode": "hit",
+        "cd2DelayMs": 400,
+        "fixtureSeconds": 60,
+        "normalClose": "stopped"
+      },
+      "identityMatched": true,
+      "allStageDocumentsHidden": true,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "elapsedMs": 8054,
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "cleanupAttempted": false,
+      "candidateResidual": 0,
+      "observedDescendants": 3,
+      "childObservationCoverage": "FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE",
+      "childExitObservations": [
+        {
+          "pid": 74144,
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "pid": 76816,
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "pid": 51172,
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        }
+      ],
+      "verification": {
+        "schemaVersion": 1,
+        "scenario": "stopped",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN"
+      },
+      "stages": [
+        {
+          "sequence": 1,
+          "stage": "native-retire-renderer-destroy",
+          "elapsedMs": 7115,
+          "clientId": 1
+        },
+        {
+          "sequence": 2,
+          "stage": "native-client-shutdown-start",
+          "elapsedMs": 7115,
+          "clientId": 1,
+          "caller": "destroy-client"
+        },
+        {
+          "sequence": 3,
+          "stage": "native-client-shutdown-complete",
+          "elapsedMs": 7273,
+          "clientId": 1,
+          "exited": true
+        },
+        {
+          "sequence": 4,
+          "stage": "application-close-requested",
+          "elapsedMs": 7276,
+          "scenario": "stopped"
+        },
+        {
+          "sequence": 5,
+          "stage": "application-window-close",
+          "elapsedMs": 7276
+        },
+        {
+          "sequence": 6,
+          "stage": "application-close-returned",
+          "elapsedMs": 7276
+        },
+        {
+          "sequence": 7,
+          "stage": "application-window-closed",
+          "elapsedMs": 7279
+        },
+        {
+          "sequence": 8,
+          "stage": "window-all-closed",
+          "elapsedMs": 7283
+        },
+        {
+          "sequence": 9,
+          "stage": "before-quit",
+          "elapsedMs": 7293
+        },
+        {
+          "sequence": 10,
+          "stage": "diagnostics-unregister-start",
+          "elapsedMs": 7293
+        },
+        {
+          "sequence": 11,
+          "stage": "diagnostics-unregister-complete",
+          "elapsedMs": 7293
+        },
+        {
+          "sequence": 12,
+          "stage": "maintenance-unregister-start",
+          "elapsedMs": 7293
+        },
+        {
+          "sequence": 13,
+          "stage": "maintenance-unregister-complete",
+          "elapsedMs": 7293
+        },
+        {
+          "sequence": 14,
+          "stage": "strm-config-unregister-start",
+          "elapsedMs": 7293
+        },
+        {
+          "sequence": 15,
+          "stage": "strm-config-unregister-complete",
+          "elapsedMs": 7293
+        },
+        {
+          "sequence": 16,
+          "stage": "cd2-unregister-start",
+          "elapsedMs": 7294
+        },
+        {
+          "sequence": 17,
+          "stage": "cd2-unregister-complete",
+          "elapsedMs": 7294
+        },
+        {
+          "sequence": 18,
+          "stage": "native-unregister-start",
+          "elapsedMs": 7294
+        },
+        {
+          "sequence": 19,
+          "stage": "native-unregister-complete",
+          "elapsedMs": 7294
+        },
+        {
+          "sequence": 20,
+          "stage": "before-quit",
+          "elapsedMs": 7295
+        },
+        {
+          "sequence": 21,
+          "stage": "will-quit",
+          "elapsedMs": 7295
+        },
+        {
+          "sequence": 22,
+          "stage": "fixture-server-close-requested",
+          "elapsedMs": 7296
+        },
+        {
+          "sequence": 23,
+          "stage": "quit",
+          "elapsedMs": 7297,
+          "exitCode": 0
+        }
+      ],
+      "artifactHashes": {
+        "electron-smoke.json": "9274366b005e8ec76c11afa619c872a92b1274af227db417037bb11dd4457e13",
+        "runner-result.json": "16b7239f7c95433d43fcff9bb4cad1c63a95edfefbf31e3fb6dd9cdec3c7d554",
+        "harness-identity.json": "69532fc63f60126ddb838fd43cf64552d7b73cf6fafc88b137b5b64fc53baaf5",
+        "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+        "exit-observation.jsonl": "f25018cab83aabf59b883713b3c313e17a55ec35565126fad611e7e7464191f8",
+        "runner-exit-observation.jsonl": "643cd0fd1d107c02dfa68dfdbdcb2654d801adf496777d890ebe12b98e19509d",
+        "normal-close.jsonl": "fba47e6f144f144b687bca2045a13ed828f8a8074a61e462e5be4b3fec59c077",
+        "normal-close-result.json": "30f087e6e619cdf396acfe072e9ee58f37d9d1d9ad0fbac2c3dc93d68572167e"
+      }
+    },
+    {
+      "name": "miss400",
+      "evidence": ".work/p1-runtime-2365199fa9844db7854799d67b07d88a",
+      "status": "PASS",
+      "sourceCommit": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+      "harnessHead": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "59caec67518a40a56a3953d9d3ea14c2023d78d6c6c2cc112ccfae8331baf0e2"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "363fe92b3bf20a1ef5c3f644cebd4ad4f90edb81845d62be3c1cd1481f97b4eb"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "2c4cf5d7fe4b6f6cc89a92e31c816c1bcc03be69e56dc6699839e86373451f17"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tools/exit-observation.cjs",
+          "sha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee"
+        },
+        {
+          "path": "tools/normal-close-observation.cjs",
+          "sha256": "900e8e4ca678b5d7c1cedd30c30486327d0cbe86eb4e4c2dfc344de62cec7d53"
+        },
+        {
+          "path": "tools/verify-normal-close.cjs",
+          "sha256": "7d37e910f6a0890639d344e8df4a2ad60ed7c62673676d6bfaec90dc65b9cd23"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "4523b344aede86e931786f53b16238a9f497d87752601c23f531bb1d34ceeb34"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749"
+        }
+      ],
+      "settings": {
+        "cd2Mode": "miss",
+        "cd2DelayMs": 400,
+        "fixtureSeconds": 60,
+        "normalClose": "pipeline"
+      },
+      "identityMatched": true,
+      "allStageDocumentsHidden": true,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "elapsedMs": 10323,
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "cleanupAttempted": false,
+      "candidateResidual": 0,
+      "observedDescendants": 3,
+      "childObservationCoverage": "FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE",
+      "childExitObservations": [
+        {
+          "pid": 17556,
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "pid": 46180,
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "pid": 19948,
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        }
+      ],
+      "normalClose": {
+        "schemaVersion": 1,
+        "scenario": "pipeline",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN"
+      },
+      "closeStages": [
+        {
+          "sequence": 1,
+          "stage": "native-retire-renderer-destroy",
+          "elapsedMs": 7194,
+          "clientId": 1
+        },
+        {
+          "sequence": 2,
+          "stage": "native-client-shutdown-start",
+          "elapsedMs": 7194,
+          "clientId": 1,
+          "caller": "destroy-client"
+        },
+        {
+          "sequence": 3,
+          "stage": "native-client-shutdown-complete",
+          "elapsedMs": 7324,
+          "clientId": 1,
+          "exited": true
+        },
+        {
+          "sequence": 4,
+          "stage": "native-retire-renderer-destroy",
+          "elapsedMs": 8234,
+          "clientId": 2
+        },
+        {
+          "sequence": 5,
+          "stage": "native-client-shutdown-start",
+          "elapsedMs": 8234,
+          "clientId": 2,
+          "caller": "destroy-client"
+        },
+        {
+          "sequence": 6,
+          "stage": "native-client-shutdown-complete",
+          "elapsedMs": 8364,
+          "clientId": 2,
+          "exited": true
+        },
+        {
+          "sequence": 7,
+          "stage": "native-retire-renderer-destroy",
+          "elapsedMs": 9384,
+          "clientId": 3
+        },
+        {
+          "sequence": 8,
+          "stage": "native-client-shutdown-start",
+          "elapsedMs": 9384,
+          "clientId": 3,
+          "caller": "destroy-client"
+        },
+        {
+          "sequence": 9,
+          "stage": "native-client-shutdown-complete",
+          "elapsedMs": 9505,
+          "clientId": 3,
+          "exited": true
+        },
+        {
+          "sequence": 10,
+          "stage": "application-close-requested",
+          "elapsedMs": 9513,
+          "scenario": "pipeline"
+        },
+        {
+          "sequence": 11,
+          "stage": "application-window-close",
+          "elapsedMs": 9514
+        },
+        {
+          "sequence": 12,
+          "stage": "application-close-returned",
+          "elapsedMs": 9514
+        },
+        {
+          "sequence": 13,
+          "stage": "application-window-closed",
+          "elapsedMs": 9516
+        },
+        {
+          "sequence": 14,
+          "stage": "window-all-closed",
+          "elapsedMs": 9520
+        },
+        {
+          "sequence": 15,
+          "stage": "before-quit",
+          "elapsedMs": 9520
+        },
+        {
+          "sequence": 16,
+          "stage": "diagnostics-unregister-start",
+          "elapsedMs": 9520
+        },
+        {
+          "sequence": 17,
+          "stage": "diagnostics-unregister-complete",
+          "elapsedMs": 9521
+        },
+        {
+          "sequence": 18,
+          "stage": "maintenance-unregister-start",
+          "elapsedMs": 9521
+        },
+        {
+          "sequence": 19,
+          "stage": "maintenance-unregister-complete",
+          "elapsedMs": 9521
+        },
+        {
+          "sequence": 20,
+          "stage": "strm-config-unregister-start",
+          "elapsedMs": 9521
+        },
+        {
+          "sequence": 21,
+          "stage": "strm-config-unregister-complete",
+          "elapsedMs": 9521
+        },
+        {
+          "sequence": 22,
+          "stage": "cd2-unregister-start",
+          "elapsedMs": 9521
+        },
+        {
+          "sequence": 23,
+          "stage": "cd2-unregister-complete",
+          "elapsedMs": 9521
+        },
+        {
+          "sequence": 24,
+          "stage": "native-unregister-start",
+          "elapsedMs": 9521
+        },
+        {
+          "sequence": 25,
+          "stage": "native-unregister-complete",
+          "elapsedMs": 9521
+        },
+        {
+          "sequence": 26,
+          "stage": "before-quit",
+          "elapsedMs": 9522
+        },
+        {
+          "sequence": 27,
+          "stage": "will-quit",
+          "elapsedMs": 9522
+        },
+        {
+          "sequence": 28,
+          "stage": "fixture-server-close-requested",
+          "elapsedMs": 9522
+        },
+        {
+          "sequence": 29,
+          "stage": "quit",
+          "elapsedMs": 9523,
+          "exitCode": 0
+        }
+      ],
+      "sessionChecks": {
+        "requiredItems": {
+          "ordinary": [
+            "fixture-video"
+          ],
+          "strm": [
+            "fixture-strm"
+          ],
+          "queue": [
+            "fixture-next-a",
+            "fixture-next-b",
+            "fixture-next-c"
+          ]
+        },
+        "requiredItemResults": {
+          "ordinary": {
+            "itemIds": [
+              "fixture-video"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-video",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "strm": {
+            "itemIds": [
+              "fixture-strm"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-strm",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "queue": {
+            "itemIds": [
+              "fixture-next-a",
+              "fixture-next-b",
+              "fixture-next-c"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-next-a",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-b",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-c",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          }
+        },
+        "startedCount": 5,
+        "stoppedCount": 5,
+        "pairedCount": 5,
+        "pendingStopped": 0,
+        "unmatchedStopped": 0,
+        "incompleteStarted": 0,
+        "incompleteStopped": 0,
+        "duplicateStarted": 0,
+        "duplicateStopped": 0,
+        "unpairedStarted": 0,
+        "unpairedStopped": 0,
+        "mismatchedStopped": 0,
+        "startedStoppedOneToOne": true,
+        "ordinaryStartedStopped": true,
+        "strmStartedStopped": true,
+        "queueStartedStopped": true,
+        "requiredStartedStopped": true,
+        "passed": true
+      },
+      "next": {
+        "selected": true,
+        "overlapEstablished": true,
+        "staleMetadataIgnored": true,
+        "exactPendingCancelled": true,
+        "priorStopped": true,
+        "nextStarted": true,
+        "rapidNextSettled": true,
+        "rapidNewestLoaded": true,
+        "serialSelected": true,
+        "serialPriorStopped": true,
+        "serialSourceLoaded": true,
+        "serialSessionPreserved": true
+      },
+      "generation": null,
+      "directHeaderIsolation": null,
+      "diagnostics": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 98,
+        "validRecords": 98,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 5,
+          "native-helper/generation-retired": 5,
+          "native-helper/start-file": 5,
+          "native-helper/file-loaded": 5,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 11,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 10,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "artifactHashes": {
+        "electron-smoke.json": "1eb8bc5fff2be3774b999b4f092c9e9b35dae997a30d74e023dcfcf902215d6b",
+        "runner-result.json": "df18370e3643137e2f3f562e4b692eb114537a5e294ec41067ac9b2899f566a9",
+        "harness-identity.json": "9314209c02f4b9209446fe2848cc9a575978ef6d216babab1508431c1597d793",
+        "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+        "exit-observation.jsonl": "d4b9abc54b9a710e10fbae4b4cfec436cb347d1e116e5fa98f0aefb28cc93b7e",
+        "runner-exit-observation.jsonl": "4e08555505c162ba3c58e3ed1bb9c773b2f3ec0844ba1b39f2c606c8f70c5aba",
+        "normal-close.jsonl": "6bf14f1472ee26ceb38940ed9df3c254c2abc4fc59dba2c26252aa0ffe22ac14",
+        "normal-close-result.json": "28b1075b0ef11ca23b5c3b811a9adde81e4182469270a5c6d84d034f1c142ff9",
+        "p1-diagnostics-result.json": "0fc5ce37b3a1b251edd9613d1e8a6d00538b5b7e7d9c1ac533c048347b524de5"
+      }
+    },
+    {
+      "name": "hit0",
+      "evidence": ".work/p1-runtime-35f1d484c555445c835ea3b832f23b95",
+      "status": "PASS",
+      "sourceCommit": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+      "harnessHead": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "59caec67518a40a56a3953d9d3ea14c2023d78d6c6c2cc112ccfae8331baf0e2"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "363fe92b3bf20a1ef5c3f644cebd4ad4f90edb81845d62be3c1cd1481f97b4eb"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "2c4cf5d7fe4b6f6cc89a92e31c816c1bcc03be69e56dc6699839e86373451f17"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tools/exit-observation.cjs",
+          "sha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee"
+        },
+        {
+          "path": "tools/normal-close-observation.cjs",
+          "sha256": "900e8e4ca678b5d7c1cedd30c30486327d0cbe86eb4e4c2dfc344de62cec7d53"
+        },
+        {
+          "path": "tools/verify-normal-close.cjs",
+          "sha256": "7d37e910f6a0890639d344e8df4a2ad60ed7c62673676d6bfaec90dc65b9cd23"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "4523b344aede86e931786f53b16238a9f497d87752601c23f531bb1d34ceeb34"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749"
+        }
+      ],
+      "settings": {
+        "cd2Mode": "hit",
+        "cd2DelayMs": 0,
+        "fixtureSeconds": 60,
+        "normalClose": "pipeline"
+      },
+      "identityMatched": true,
+      "allStageDocumentsHidden": true,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "elapsedMs": 12699,
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "cleanupAttempted": false,
+      "candidateResidual": 0,
+      "observedDescendants": 3,
+      "childObservationCoverage": "FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE",
+      "childExitObservations": [
+        {
+          "pid": 81740,
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "pid": 71060,
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "pid": 74600,
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        }
+      ],
+      "normalClose": {
+        "schemaVersion": 1,
+        "scenario": "pipeline",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN"
+      },
+      "closeStages": [
+        {
+          "sequence": 1,
+          "stage": "native-retire-renderer-destroy",
+          "elapsedMs": 7201,
+          "clientId": 1
+        },
+        {
+          "sequence": 2,
+          "stage": "native-client-shutdown-start",
+          "elapsedMs": 7202,
+          "clientId": 1,
+          "caller": "destroy-client"
+        },
+        {
+          "sequence": 3,
+          "stage": "native-client-shutdown-complete",
+          "elapsedMs": 7335,
+          "clientId": 1,
+          "exited": true
+        },
+        {
+          "sequence": 4,
+          "stage": "native-retire-renderer-destroy",
+          "elapsedMs": 8895,
+          "clientId": 2
+        },
+        {
+          "sequence": 5,
+          "stage": "native-client-shutdown-start",
+          "elapsedMs": 8895,
+          "clientId": 2,
+          "caller": "destroy-client"
+        },
+        {
+          "sequence": 6,
+          "stage": "native-client-shutdown-complete",
+          "elapsedMs": 9032,
+          "clientId": 2,
+          "exited": true
+        },
+        {
+          "sequence": 7,
+          "stage": "native-retire-renderer-destroy",
+          "elapsedMs": 10136,
+          "clientId": 3
+        },
+        {
+          "sequence": 8,
+          "stage": "native-client-shutdown-start",
+          "elapsedMs": 10137,
+          "clientId": 3,
+          "caller": "destroy-client"
+        },
+        {
+          "sequence": 9,
+          "stage": "native-client-shutdown-complete",
+          "elapsedMs": 10249,
+          "clientId": 3,
+          "exited": true
+        },
+        {
+          "sequence": 10,
+          "stage": "native-retire-renderer-destroy",
+          "elapsedMs": 10826,
+          "clientId": 4
+        },
+        {
+          "sequence": 11,
+          "stage": "native-client-shutdown-start",
+          "elapsedMs": 10826,
+          "clientId": 4,
+          "caller": "destroy-client"
+        },
+        {
+          "sequence": 12,
+          "stage": "native-client-shutdown-complete",
+          "elapsedMs": 10940,
+          "clientId": 4,
+          "exited": true
+        },
+        {
+          "sequence": 13,
+          "stage": "application-close-requested",
+          "elapsedMs": 11903,
+          "scenario": "pipeline"
+        },
+        {
+          "sequence": 14,
+          "stage": "application-window-close",
+          "elapsedMs": 11904
+        },
+        {
+          "sequence": 15,
+          "stage": "application-close-returned",
+          "elapsedMs": 11904
+        },
+        {
+          "sequence": 16,
+          "stage": "application-window-closed",
+          "elapsedMs": 11907
+        },
+        {
+          "sequence": 17,
+          "stage": "window-all-closed",
+          "elapsedMs": 11910
+        },
+        {
+          "sequence": 18,
+          "stage": "before-quit",
+          "elapsedMs": 11911
+        },
+        {
+          "sequence": 19,
+          "stage": "diagnostics-unregister-start",
+          "elapsedMs": 11911
+        },
+        {
+          "sequence": 20,
+          "stage": "diagnostics-unregister-complete",
+          "elapsedMs": 11911
+        },
+        {
+          "sequence": 21,
+          "stage": "maintenance-unregister-start",
+          "elapsedMs": 11911
+        },
+        {
+          "sequence": 22,
+          "stage": "maintenance-unregister-complete",
+          "elapsedMs": 11911
+        },
+        {
+          "sequence": 23,
+          "stage": "strm-config-unregister-start",
+          "elapsedMs": 11911
+        },
+        {
+          "sequence": 24,
+          "stage": "strm-config-unregister-complete",
+          "elapsedMs": 11912
+        },
+        {
+          "sequence": 25,
+          "stage": "cd2-unregister-start",
+          "elapsedMs": 11912
+        },
+        {
+          "sequence": 26,
+          "stage": "cd2-unregister-complete",
+          "elapsedMs": 11912
+        },
+        {
+          "sequence": 27,
+          "stage": "native-unregister-start",
+          "elapsedMs": 11912
+        },
+        {
+          "sequence": 28,
+          "stage": "native-unregister-complete",
+          "elapsedMs": 11912
+        },
+        {
+          "sequence": 29,
+          "stage": "before-quit",
+          "elapsedMs": 11912
+        },
+        {
+          "sequence": 30,
+          "stage": "will-quit",
+          "elapsedMs": 11912
+        },
+        {
+          "sequence": 31,
+          "stage": "fixture-server-close-requested",
+          "elapsedMs": 11913
+        },
+        {
+          "sequence": 32,
+          "stage": "quit",
+          "elapsedMs": 11923,
+          "exitCode": 0
+        }
+      ],
+      "sessionChecks": {
+        "requiredItems": {
+          "ordinary": [
+            "fixture-video"
+          ],
+          "strm": [
+            "fixture-strm"
+          ],
+          "queue": [
+            "fixture-next-a",
+            "fixture-next-b",
+            "fixture-next-c"
+          ]
+        },
+        "requiredItemResults": {
+          "ordinary": {
+            "itemIds": [
+              "fixture-video"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-video",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "strm": {
+            "itemIds": [
+              "fixture-strm"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-strm",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "queue": {
+            "itemIds": [
+              "fixture-next-a",
+              "fixture-next-b",
+              "fixture-next-c"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-next-a",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-b",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-c",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          }
+        },
+        "startedCount": 5,
+        "stoppedCount": 5,
+        "pairedCount": 5,
+        "pendingStopped": 0,
+        "unmatchedStopped": 0,
+        "incompleteStarted": 0,
+        "incompleteStopped": 0,
+        "duplicateStarted": 0,
+        "duplicateStopped": 0,
+        "unpairedStarted": 0,
+        "unpairedStopped": 0,
+        "mismatchedStopped": 0,
+        "startedStoppedOneToOne": true,
+        "ordinaryStartedStopped": true,
+        "strmStartedStopped": true,
+        "queueStartedStopped": true,
+        "requiredStartedStopped": true,
+        "passed": true
+      },
+      "next": {
+        "selected": true,
+        "overlapEstablished": true,
+        "staleMetadataIgnored": true,
+        "exactPendingCancelled": true,
+        "priorStopped": true,
+        "nextStarted": true,
+        "rapidNextSettled": true,
+        "rapidNewestLoaded": true,
+        "serialSelected": true,
+        "serialPriorStopped": true,
+        "serialSourceLoaded": true,
+        "serialSessionPreserved": true
+      },
+      "generation": {
+        "firstSuperseded": true,
+        "secondPlayed": true,
+        "oldCoreListenerIgnored": true,
+        "stopSuperseded": true,
+        "stopPreventedLateLoad": true,
+        "exactStopPendingCancelled": true,
+        "noUnhandledRejection": true
+      },
+      "directHeaderIsolation": null,
+      "diagnostics": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 128,
+        "validRecords": 128,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 7,
+          "native-helper/generation-retired": 7,
+          "native-helper/start-file": 6,
+          "native-helper/file-loaded": 6,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 14,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 12,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "artifactHashes": {
+        "electron-smoke.json": "4ee0cb92c69915e5db6219e06a37dbbbecd22df9aa1595aa7a6704fa35381ac2",
+        "runner-result.json": "dcd89e4b3cc29eaa567df99447fa6795945ef42f4beb23ec7f245943ad094103",
+        "harness-identity.json": "90a5fc6f7d7e6c6095e3a717b9014f374e36636a5ed1b279ecf7267654c24781",
+        "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+        "exit-observation.jsonl": "606df5f862f82c023891847b9604b9e30f837a3bfe88a10b556ebf626cab069f",
+        "runner-exit-observation.jsonl": "a6c246ca2f58531f54429a3c35c8a29b3927d085fd203e0a52545770fbef72b4",
+        "normal-close.jsonl": "239d1d8d3efa2e69fc5200e6a7c40b0aa39d9f86e83167a0a0eb703a94943829",
+        "normal-close-result.json": "28b1075b0ef11ca23b5c3b811a9adde81e4182469270a5c6d84d034f1c142ff9",
+        "p1-diagnostics-result.json": "e71976e0cf4968b19f3be8f7492529f8325e3d653e3ecc80ded1f94e82510006"
+      }
+    },
+    {
+      "name": "hit400",
+      "evidence": ".work/p1-runtime-aee66cb491ad4a30a5081123962b6d6b",
+      "status": "PASS",
+      "sourceCommit": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+      "harnessHead": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "59caec67518a40a56a3953d9d3ea14c2023d78d6c6c2cc112ccfae8331baf0e2"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "363fe92b3bf20a1ef5c3f644cebd4ad4f90edb81845d62be3c1cd1481f97b4eb"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "2c4cf5d7fe4b6f6cc89a92e31c816c1bcc03be69e56dc6699839e86373451f17"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tools/exit-observation.cjs",
+          "sha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee"
+        },
+        {
+          "path": "tools/normal-close-observation.cjs",
+          "sha256": "900e8e4ca678b5d7c1cedd30c30486327d0cbe86eb4e4c2dfc344de62cec7d53"
+        },
+        {
+          "path": "tools/verify-normal-close.cjs",
+          "sha256": "7d37e910f6a0890639d344e8df4a2ad60ed7c62673676d6bfaec90dc65b9cd23"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "4523b344aede86e931786f53b16238a9f497d87752601c23f531bb1d34ceeb34"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749"
+        }
+      ],
+      "settings": {
+        "cd2Mode": "hit",
+        "cd2DelayMs": 400,
+        "fixtureSeconds": 60,
+        "normalClose": "pipeline"
+      },
+      "identityMatched": true,
+      "allStageDocumentsHidden": true,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "elapsedMs": 13416,
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "cleanupAttempted": false,
+      "candidateResidual": 0,
+      "observedDescendants": 3,
+      "childObservationCoverage": "FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE",
+      "childExitObservations": [
+        {
+          "pid": 74640,
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "pid": 82600,
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "pid": 79176,
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        }
+      ],
+      "normalClose": {
+        "schemaVersion": 1,
+        "scenario": "pipeline",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN"
+      },
+      "closeStages": [
+        {
+          "sequence": 1,
+          "stage": "native-retire-renderer-destroy",
+          "elapsedMs": 7202,
+          "clientId": 1
+        },
+        {
+          "sequence": 2,
+          "stage": "native-client-shutdown-start",
+          "elapsedMs": 7203,
+          "clientId": 1,
+          "caller": "destroy-client"
+        },
+        {
+          "sequence": 3,
+          "stage": "native-client-shutdown-complete",
+          "elapsedMs": 7339,
+          "clientId": 1,
+          "exited": true
+        },
+        {
+          "sequence": 4,
+          "stage": "native-retire-renderer-destroy",
+          "elapsedMs": 8241,
+          "clientId": 2
+        },
+        {
+          "sequence": 5,
+          "stage": "native-client-shutdown-start",
+          "elapsedMs": 8241,
+          "clientId": 2,
+          "caller": "destroy-client"
+        },
+        {
+          "sequence": 6,
+          "stage": "native-client-shutdown-complete",
+          "elapsedMs": 8383,
+          "clientId": 2,
+          "exited": true
+        },
+        {
+          "sequence": 7,
+          "stage": "native-retire-renderer-destroy",
+          "elapsedMs": 10736,
+          "clientId": 3
+        },
+        {
+          "sequence": 8,
+          "stage": "native-client-shutdown-start",
+          "elapsedMs": 10737,
+          "clientId": 3,
+          "caller": "destroy-client"
+        },
+        {
+          "sequence": 9,
+          "stage": "native-client-shutdown-complete",
+          "elapsedMs": 10868,
+          "clientId": 3,
+          "exited": true
+        },
+        {
+          "sequence": 10,
+          "stage": "native-retire-renderer-destroy",
+          "elapsedMs": 12245,
+          "clientId": 4
+        },
+        {
+          "sequence": 11,
+          "stage": "native-client-shutdown-start",
+          "elapsedMs": 12245,
+          "clientId": 4,
+          "caller": "destroy-client"
+        },
+        {
+          "sequence": 12,
+          "stage": "native-client-shutdown-complete",
+          "elapsedMs": 12355,
+          "clientId": 4,
+          "exited": true
+        },
+        {
+          "sequence": 13,
+          "stage": "application-close-requested",
+          "elapsedMs": 12655,
+          "scenario": "pipeline"
+        },
+        {
+          "sequence": 14,
+          "stage": "application-window-close",
+          "elapsedMs": 12656
+        },
+        {
+          "sequence": 15,
+          "stage": "application-close-returned",
+          "elapsedMs": 12656
+        },
+        {
+          "sequence": 16,
+          "stage": "application-window-closed",
+          "elapsedMs": 12664
+        },
+        {
+          "sequence": 17,
+          "stage": "window-all-closed",
+          "elapsedMs": 12668
+        },
+        {
+          "sequence": 18,
+          "stage": "before-quit",
+          "elapsedMs": 12668
+        },
+        {
+          "sequence": 19,
+          "stage": "diagnostics-unregister-start",
+          "elapsedMs": 12668
+        },
+        {
+          "sequence": 20,
+          "stage": "diagnostics-unregister-complete",
+          "elapsedMs": 12669
+        },
+        {
+          "sequence": 21,
+          "stage": "maintenance-unregister-start",
+          "elapsedMs": 12669
+        },
+        {
+          "sequence": 22,
+          "stage": "maintenance-unregister-complete",
+          "elapsedMs": 12669
+        },
+        {
+          "sequence": 23,
+          "stage": "strm-config-unregister-start",
+          "elapsedMs": 12669
+        },
+        {
+          "sequence": 24,
+          "stage": "strm-config-unregister-complete",
+          "elapsedMs": 12669
+        },
+        {
+          "sequence": 25,
+          "stage": "cd2-unregister-start",
+          "elapsedMs": 12669
+        },
+        {
+          "sequence": 26,
+          "stage": "cd2-unregister-complete",
+          "elapsedMs": 12670
+        },
+        {
+          "sequence": 27,
+          "stage": "native-unregister-start",
+          "elapsedMs": 12670
+        },
+        {
+          "sequence": 28,
+          "stage": "native-unregister-complete",
+          "elapsedMs": 12670
+        },
+        {
+          "sequence": 29,
+          "stage": "before-quit",
+          "elapsedMs": 12670
+        },
+        {
+          "sequence": 30,
+          "stage": "will-quit",
+          "elapsedMs": 12670
+        },
+        {
+          "sequence": 31,
+          "stage": "fixture-server-close-requested",
+          "elapsedMs": 12671
+        },
+        {
+          "sequence": 32,
+          "stage": "quit",
+          "elapsedMs": 12671,
+          "exitCode": 0
+        }
+      ],
+      "sessionChecks": {
+        "requiredItems": {
+          "ordinary": [
+            "fixture-video"
+          ],
+          "strm": [
+            "fixture-strm"
+          ],
+          "queue": [
+            "fixture-next-a",
+            "fixture-next-b",
+            "fixture-next-c"
+          ]
+        },
+        "requiredItemResults": {
+          "ordinary": {
+            "itemIds": [
+              "fixture-video"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-video",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "strm": {
+            "itemIds": [
+              "fixture-strm"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-strm",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "queue": {
+            "itemIds": [
+              "fixture-next-a",
+              "fixture-next-b",
+              "fixture-next-c"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-next-a",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-b",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-c",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          }
+        },
+        "startedCount": 5,
+        "stoppedCount": 5,
+        "pairedCount": 5,
+        "pendingStopped": 0,
+        "unmatchedStopped": 0,
+        "incompleteStarted": 0,
+        "incompleteStopped": 0,
+        "duplicateStarted": 0,
+        "duplicateStopped": 0,
+        "unpairedStarted": 0,
+        "unpairedStopped": 0,
+        "mismatchedStopped": 0,
+        "startedStoppedOneToOne": true,
+        "ordinaryStartedStopped": true,
+        "strmStartedStopped": true,
+        "queueStartedStopped": true,
+        "requiredStartedStopped": true,
+        "passed": true
+      },
+      "next": {
+        "selected": true,
+        "overlapEstablished": true,
+        "staleMetadataIgnored": true,
+        "exactPendingCancelled": true,
+        "priorStopped": true,
+        "nextStarted": true,
+        "rapidNextSettled": true,
+        "rapidNewestLoaded": true,
+        "serialSelected": true,
+        "serialPriorStopped": true,
+        "serialSourceLoaded": true,
+        "serialSessionPreserved": true
+      },
+      "generation": {
+        "firstSuperseded": true,
+        "secondPlayed": true,
+        "oldCoreListenerIgnored": true,
+        "stopSuperseded": true,
+        "stopPreventedLateLoad": true,
+        "exactStopPendingCancelled": true,
+        "noUnhandledRejection": true
+      },
+      "directHeaderIsolation": null,
+      "diagnostics": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 128,
+        "validRecords": 128,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 7,
+          "native-helper/generation-retired": 7,
+          "native-helper/start-file": 6,
+          "native-helper/file-loaded": 6,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 14,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 12,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "artifactHashes": {
+        "electron-smoke.json": "5f275e27e06b811040189aad8a0dc3a4d2e7c8835b122eeb0e92b10625fb7fd9",
+        "runner-result.json": "fb8a5a34f2a89b9ae713edac29b01f9c382bc3e69761f68276bd4af20a38d778",
+        "harness-identity.json": "583280b859e5c711634ffdf7fcca565edf3785ffde194c9682d318126b20ab30",
+        "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+        "exit-observation.jsonl": "5b2ea55a87b7a2f23ae3ae59fc6145b56c8a22ee0190f9e79be43353f7c78b3a",
+        "runner-exit-observation.jsonl": "43e2bc38994c4be648823f4b438f45f9e76764809ba4c7b2311c0c3407d29541",
+        "normal-close.jsonl": "6ad900e852c102a26b0b8b3512380042ecb24733bc6a1121a710f5102bf40c02",
+        "normal-close-result.json": "28b1075b0ef11ca23b5c3b811a9adde81e4182469270a5c6d84d034f1c142ff9",
+        "p1-diagnostics-result.json": "e71976e0cf4968b19f3be8f7492529f8325e3d653e3ecc80ded1f94e82510006"
+      }
+    },
+    {
+      "name": "hit800",
+      "evidence": ".work/p1-runtime-5fa15470e87646b39247da2ccd3c493c",
+      "status": "PASS",
+      "sourceCommit": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+      "harnessHead": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "59caec67518a40a56a3953d9d3ea14c2023d78d6c6c2cc112ccfae8331baf0e2"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "363fe92b3bf20a1ef5c3f644cebd4ad4f90edb81845d62be3c1cd1481f97b4eb"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "2c4cf5d7fe4b6f6cc89a92e31c816c1bcc03be69e56dc6699839e86373451f17"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tools/exit-observation.cjs",
+          "sha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee"
+        },
+        {
+          "path": "tools/normal-close-observation.cjs",
+          "sha256": "900e8e4ca678b5d7c1cedd30c30486327d0cbe86eb4e4c2dfc344de62cec7d53"
+        },
+        {
+          "path": "tools/verify-normal-close.cjs",
+          "sha256": "7d37e910f6a0890639d344e8df4a2ad60ed7c62673676d6bfaec90dc65b9cd23"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "4523b344aede86e931786f53b16238a9f497d87752601c23f531bb1d34ceeb34"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749"
+        }
+      ],
+      "settings": {
+        "cd2Mode": "hit",
+        "cd2DelayMs": 800,
+        "fixtureSeconds": 60,
+        "normalClose": "pipeline"
+      },
+      "identityMatched": true,
+      "allStageDocumentsHidden": true,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "elapsedMs": 16328,
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "cleanupAttempted": false,
+      "candidateResidual": 0,
+      "observedDescendants": 3,
+      "childObservationCoverage": "FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE",
+      "childExitObservations": [
+        {
+          "pid": 70636,
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "pid": 61828,
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "pid": 58632,
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        }
+      ],
+      "normalClose": {
+        "schemaVersion": 1,
+        "scenario": "pipeline",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN"
+      },
+      "closeStages": [
+        {
+          "sequence": 1,
+          "stage": "native-retire-renderer-destroy",
+          "elapsedMs": 7190,
+          "clientId": 1
+        },
+        {
+          "sequence": 2,
+          "stage": "native-client-shutdown-start",
+          "elapsedMs": 7190,
+          "clientId": 1,
+          "caller": "destroy-client"
+        },
+        {
+          "sequence": 3,
+          "stage": "native-client-shutdown-complete",
+          "elapsedMs": 7313,
+          "clientId": 1,
+          "exited": true
+        },
+        {
+          "sequence": 4,
+          "stage": "native-retire-renderer-destroy",
+          "elapsedMs": 8575,
+          "clientId": 2
+        },
+        {
+          "sequence": 5,
+          "stage": "native-client-shutdown-start",
+          "elapsedMs": 8575,
+          "clientId": 2,
+          "caller": "destroy-client"
+        },
+        {
+          "sequence": 6,
+          "stage": "native-client-shutdown-complete",
+          "elapsedMs": 8711,
+          "clientId": 2,
+          "exited": true
+        },
+        {
+          "sequence": 7,
+          "stage": "native-retire-renderer-destroy",
+          "elapsedMs": 12253,
+          "clientId": 3
+        },
+        {
+          "sequence": 8,
+          "stage": "native-client-shutdown-start",
+          "elapsedMs": 12253,
+          "clientId": 3,
+          "caller": "destroy-client"
+        },
+        {
+          "sequence": 9,
+          "stage": "native-client-shutdown-complete",
+          "elapsedMs": 12368,
+          "clientId": 3,
+          "exited": true
+        },
+        {
+          "sequence": 10,
+          "stage": "native-retire-renderer-destroy",
+          "elapsedMs": 14579,
+          "clientId": 4
+        },
+        {
+          "sequence": 11,
+          "stage": "native-client-shutdown-start",
+          "elapsedMs": 14580,
+          "clientId": 4,
+          "caller": "destroy-client"
+        },
+        {
+          "sequence": 12,
+          "stage": "native-client-shutdown-complete",
+          "elapsedMs": 14722,
+          "clientId": 4,
+          "exited": true
+        },
+        {
+          "sequence": 13,
+          "stage": "application-close-requested",
+          "elapsedMs": 15554,
+          "scenario": "pipeline"
+        },
+        {
+          "sequence": 14,
+          "stage": "application-window-close",
+          "elapsedMs": 15555
+        },
+        {
+          "sequence": 15,
+          "stage": "application-close-returned",
+          "elapsedMs": 15555
+        },
+        {
+          "sequence": 16,
+          "stage": "application-window-closed",
+          "elapsedMs": 15558
+        },
+        {
+          "sequence": 17,
+          "stage": "window-all-closed",
+          "elapsedMs": 15562
+        },
+        {
+          "sequence": 18,
+          "stage": "before-quit",
+          "elapsedMs": 15563
+        },
+        {
+          "sequence": 19,
+          "stage": "diagnostics-unregister-start",
+          "elapsedMs": 15563
+        },
+        {
+          "sequence": 20,
+          "stage": "diagnostics-unregister-complete",
+          "elapsedMs": 15563
+        },
+        {
+          "sequence": 21,
+          "stage": "maintenance-unregister-start",
+          "elapsedMs": 15563
+        },
+        {
+          "sequence": 22,
+          "stage": "maintenance-unregister-complete",
+          "elapsedMs": 15563
+        },
+        {
+          "sequence": 23,
+          "stage": "strm-config-unregister-start",
+          "elapsedMs": 15563
+        },
+        {
+          "sequence": 24,
+          "stage": "strm-config-unregister-complete",
+          "elapsedMs": 15564
+        },
+        {
+          "sequence": 25,
+          "stage": "cd2-unregister-start",
+          "elapsedMs": 15564
+        },
+        {
+          "sequence": 26,
+          "stage": "cd2-unregister-complete",
+          "elapsedMs": 15564
+        },
+        {
+          "sequence": 27,
+          "stage": "native-unregister-start",
+          "elapsedMs": 15564
+        },
+        {
+          "sequence": 28,
+          "stage": "native-unregister-complete",
+          "elapsedMs": 15564
+        },
+        {
+          "sequence": 29,
+          "stage": "before-quit",
+          "elapsedMs": 15564
+        },
+        {
+          "sequence": 30,
+          "stage": "will-quit",
+          "elapsedMs": 15565
+        },
+        {
+          "sequence": 31,
+          "stage": "fixture-server-close-requested",
+          "elapsedMs": 15565
+        },
+        {
+          "sequence": 32,
+          "stage": "quit",
+          "elapsedMs": 15565,
+          "exitCode": 0
+        }
+      ],
+      "sessionChecks": {
+        "requiredItems": {
+          "ordinary": [
+            "fixture-video"
+          ],
+          "strm": [
+            "fixture-strm"
+          ],
+          "queue": [
+            "fixture-next-a",
+            "fixture-next-b",
+            "fixture-next-c"
+          ]
+        },
+        "requiredItemResults": {
+          "ordinary": {
+            "itemIds": [
+              "fixture-video"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-video",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "strm": {
+            "itemIds": [
+              "fixture-strm"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-strm",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "queue": {
+            "itemIds": [
+              "fixture-next-a",
+              "fixture-next-b",
+              "fixture-next-c"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-next-a",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-b",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-c",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          }
+        },
+        "startedCount": 5,
+        "stoppedCount": 5,
+        "pairedCount": 5,
+        "pendingStopped": 0,
+        "unmatchedStopped": 0,
+        "incompleteStarted": 0,
+        "incompleteStopped": 0,
+        "duplicateStarted": 0,
+        "duplicateStopped": 0,
+        "unpairedStarted": 0,
+        "unpairedStopped": 0,
+        "mismatchedStopped": 0,
+        "startedStoppedOneToOne": true,
+        "ordinaryStartedStopped": true,
+        "strmStartedStopped": true,
+        "queueStartedStopped": true,
+        "requiredStartedStopped": true,
+        "passed": true
+      },
+      "next": {
+        "selected": true,
+        "overlapEstablished": true,
+        "staleMetadataIgnored": true,
+        "exactPendingCancelled": true,
+        "priorStopped": true,
+        "nextStarted": true,
+        "rapidNextSettled": true,
+        "rapidNewestLoaded": true,
+        "serialSelected": true,
+        "serialPriorStopped": true,
+        "serialSourceLoaded": true,
+        "serialSessionPreserved": true
+      },
+      "generation": {
+        "firstSuperseded": true,
+        "secondPlayed": true,
+        "oldCoreListenerIgnored": true,
+        "stopSuperseded": true,
+        "stopPreventedLateLoad": true,
+        "exactStopPendingCancelled": true,
+        "noUnhandledRejection": true
+      },
+      "directHeaderIsolation": null,
+      "diagnostics": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 128,
+        "validRecords": 128,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 7,
+          "native-helper/generation-retired": 7,
+          "native-helper/start-file": 6,
+          "native-helper/file-loaded": 6,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 14,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 12,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "artifactHashes": {
+        "electron-smoke.json": "edf16e1eb3f60b3c75e5875569394ef123d4754ba924ae7af81eed039df9d42e",
+        "runner-result.json": "39e4ca959fb225a80d158d67b43d873551b4b7825db06be5fc8ea7ca1247f4be",
+        "harness-identity.json": "fe17fbd71454987b1b1bd2c757ef7f098572136d701c63366c47f07387e1bb42",
+        "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+        "exit-observation.jsonl": "c292b215b3e8d1448249473d0b272cd6c26b6f88298d25d14cbef9e142531972",
+        "runner-exit-observation.jsonl": "9ff353287445b999a0f8b5310451bb4afdca4ee360513d02b7c10cfe5c4841bd",
+        "normal-close.jsonl": "e3ca1ad2e5582ca690ce279827dca5eb39bfbdd3ebd35ae22cc0289f2d3bf6f3",
+        "normal-close-result.json": "28b1075b0ef11ca23b5c3b811a9adde81e4182469270a5c6d84d034f1c142ff9",
+        "p1-diagnostics-result.json": "e71976e0cf4968b19f3be8f7492529f8325e3d653e3ecc80ded1f94e82510006"
+      }
+    },
+    {
+      "name": "direct400",
+      "evidence": ".work/p1-runtime-74aac39658db407a8ea66b48a7f94784",
+      "status": "PASS",
+      "sourceCommit": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+      "harnessHead": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "59caec67518a40a56a3953d9d3ea14c2023d78d6c6c2cc112ccfae8331baf0e2"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "363fe92b3bf20a1ef5c3f644cebd4ad4f90edb81845d62be3c1cd1481f97b4eb"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "2c4cf5d7fe4b6f6cc89a92e31c816c1bcc03be69e56dc6699839e86373451f17"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tools/exit-observation.cjs",
+          "sha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee"
+        },
+        {
+          "path": "tools/normal-close-observation.cjs",
+          "sha256": "900e8e4ca678b5d7c1cedd30c30486327d0cbe86eb4e4c2dfc344de62cec7d53"
+        },
+        {
+          "path": "tools/verify-normal-close.cjs",
+          "sha256": "7d37e910f6a0890639d344e8df4a2ad60ed7c62673676d6bfaec90dc65b9cd23"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "4523b344aede86e931786f53b16238a9f497d87752601c23f531bb1d34ceeb34"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749"
+        }
+      ],
+      "settings": {
+        "cd2Mode": "direct",
+        "cd2DelayMs": 400,
+        "fixtureSeconds": 60,
+        "normalClose": "pipeline"
+      },
+      "identityMatched": true,
+      "allStageDocumentsHidden": true,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "elapsedMs": 14403,
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "cleanupAttempted": false,
+      "candidateResidual": 0,
+      "observedDescendants": 3,
+      "childObservationCoverage": "FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE",
+      "childExitObservations": [
+        {
+          "pid": 81744,
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "pid": 46360,
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "pid": 73132,
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        }
+      ],
+      "normalClose": {
+        "schemaVersion": 1,
+        "scenario": "pipeline",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN"
+      },
+      "closeStages": [
+        {
+          "sequence": 1,
+          "stage": "native-retire-renderer-destroy",
+          "elapsedMs": 7628,
+          "clientId": 1
+        },
+        {
+          "sequence": 2,
+          "stage": "native-client-shutdown-start",
+          "elapsedMs": 7629,
+          "clientId": 1,
+          "caller": "destroy-client"
+        },
+        {
+          "sequence": 3,
+          "stage": "native-client-shutdown-complete",
+          "elapsedMs": 7767,
+          "clientId": 1,
+          "exited": true
+        },
+        {
+          "sequence": 4,
+          "stage": "native-retire-renderer-destroy",
+          "elapsedMs": 8635,
+          "clientId": 2
+        },
+        {
+          "sequence": 5,
+          "stage": "native-client-shutdown-start",
+          "elapsedMs": 8635,
+          "clientId": 2,
+          "caller": "destroy-client"
+        },
+        {
+          "sequence": 6,
+          "stage": "native-client-shutdown-complete",
+          "elapsedMs": 8758,
+          "clientId": 2,
+          "exited": true
+        },
+        {
+          "sequence": 7,
+          "stage": "native-retire-renderer-destroy",
+          "elapsedMs": 11123,
+          "clientId": 3
+        },
+        {
+          "sequence": 8,
+          "stage": "native-client-shutdown-start",
+          "elapsedMs": 11123,
+          "clientId": 3,
+          "caller": "destroy-client"
+        },
+        {
+          "sequence": 9,
+          "stage": "native-client-shutdown-complete",
+          "elapsedMs": 11253,
+          "clientId": 3,
+          "exited": true
+        },
+        {
+          "sequence": 10,
+          "stage": "native-retire-renderer-destroy",
+          "elapsedMs": 12627,
+          "clientId": 4
+        },
+        {
+          "sequence": 11,
+          "stage": "native-client-shutdown-start",
+          "elapsedMs": 12627,
+          "clientId": 4,
+          "caller": "destroy-client"
+        },
+        {
+          "sequence": 12,
+          "stage": "native-client-shutdown-complete",
+          "elapsedMs": 12741,
+          "clientId": 4,
+          "exited": true
+        },
+        {
+          "sequence": 13,
+          "stage": "application-close-requested",
+          "elapsedMs": 13642,
+          "scenario": "pipeline"
+        },
+        {
+          "sequence": 14,
+          "stage": "application-window-close",
+          "elapsedMs": 13642
+        },
+        {
+          "sequence": 15,
+          "stage": "application-close-returned",
+          "elapsedMs": 13643
+        },
+        {
+          "sequence": 16,
+          "stage": "application-window-closed",
+          "elapsedMs": 13646
+        },
+        {
+          "sequence": 17,
+          "stage": "window-all-closed",
+          "elapsedMs": 13650
+        },
+        {
+          "sequence": 18,
+          "stage": "before-quit",
+          "elapsedMs": 13650
+        },
+        {
+          "sequence": 19,
+          "stage": "diagnostics-unregister-start",
+          "elapsedMs": 13650
+        },
+        {
+          "sequence": 20,
+          "stage": "diagnostics-unregister-complete",
+          "elapsedMs": 13650
+        },
+        {
+          "sequence": 21,
+          "stage": "maintenance-unregister-start",
+          "elapsedMs": 13651
+        },
+        {
+          "sequence": 22,
+          "stage": "maintenance-unregister-complete",
+          "elapsedMs": 13651
+        },
+        {
+          "sequence": 23,
+          "stage": "strm-config-unregister-start",
+          "elapsedMs": 13651
+        },
+        {
+          "sequence": 24,
+          "stage": "strm-config-unregister-complete",
+          "elapsedMs": 13651
+        },
+        {
+          "sequence": 25,
+          "stage": "cd2-unregister-start",
+          "elapsedMs": 13651
+        },
+        {
+          "sequence": 26,
+          "stage": "cd2-unregister-complete",
+          "elapsedMs": 13651
+        },
+        {
+          "sequence": 27,
+          "stage": "native-unregister-start",
+          "elapsedMs": 13651
+        },
+        {
+          "sequence": 28,
+          "stage": "native-unregister-complete",
+          "elapsedMs": 13651
+        },
+        {
+          "sequence": 29,
+          "stage": "before-quit",
+          "elapsedMs": 13651
+        },
+        {
+          "sequence": 30,
+          "stage": "will-quit",
+          "elapsedMs": 13652
+        },
+        {
+          "sequence": 31,
+          "stage": "fixture-server-close-requested",
+          "elapsedMs": 13652
+        },
+        {
+          "sequence": 32,
+          "stage": "quit",
+          "elapsedMs": 13652,
+          "exitCode": 0
+        }
+      ],
+      "sessionChecks": {
+        "requiredItems": {
+          "ordinary": [
+            "fixture-video"
+          ],
+          "strm": [
+            "fixture-strm"
+          ],
+          "queue": [
+            "fixture-next-a",
+            "fixture-next-b",
+            "fixture-next-c"
+          ]
+        },
+        "requiredItemResults": {
+          "ordinary": {
+            "itemIds": [
+              "fixture-video"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-video",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "strm": {
+            "itemIds": [
+              "fixture-strm"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-strm",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "queue": {
+            "itemIds": [
+              "fixture-next-a",
+              "fixture-next-b",
+              "fixture-next-c"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-next-a",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-b",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-c",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          }
+        },
+        "startedCount": 5,
+        "stoppedCount": 5,
+        "pairedCount": 5,
+        "pendingStopped": 0,
+        "unmatchedStopped": 0,
+        "incompleteStarted": 0,
+        "incompleteStopped": 0,
+        "duplicateStarted": 0,
+        "duplicateStopped": 0,
+        "unpairedStarted": 0,
+        "unpairedStopped": 0,
+        "mismatchedStopped": 0,
+        "startedStoppedOneToOne": true,
+        "ordinaryStartedStopped": true,
+        "strmStartedStopped": true,
+        "queueStartedStopped": true,
+        "requiredStartedStopped": true,
+        "passed": true
+      },
+      "next": {
+        "selected": true,
+        "overlapEstablished": true,
+        "staleMetadataIgnored": true,
+        "exactPendingCancelled": true,
+        "priorStopped": true,
+        "nextStarted": true,
+        "rapidNextSettled": true,
+        "rapidNewestLoaded": true,
+        "serialSelected": true,
+        "serialPriorStopped": true,
+        "serialSourceLoaded": true,
+        "serialSessionPreserved": true
+      },
+      "generation": {
+        "firstSuperseded": true,
+        "secondPlayed": true,
+        "oldCoreListenerIgnored": true,
+        "stopSuperseded": true,
+        "stopPreventedLateLoad": true,
+        "exactStopPendingCancelled": true,
+        "noUnhandledRejection": true
+      },
+      "directHeaderIsolation": {
+        "directRequestsObserved": true,
+        "allDirectUserAgentsMatched": true,
+        "noDirectUserAgentLeak": true
+      },
+      "diagnostics": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 128,
+        "validRecords": 128,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 7,
+          "native-helper/generation-retired": 7,
+          "native-helper/start-file": 6,
+          "native-helper/file-loaded": 6,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 14,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 12,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "artifactHashes": {
+        "electron-smoke.json": "e10fe23753e4364054bb1c3ceeda0e80c969784750e74c70b853692809549a1b",
+        "runner-result.json": "3d6dbe93b33e196fcc2bf15170c83cf0ace48426eed2eabfb489cc1ec8575470",
+        "harness-identity.json": "898388111fbe09284b72e32babab767898df7cec243671588c3fcf53b410d9ce",
+        "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+        "exit-observation.jsonl": "48bc737032d71dd3422e481ca1a50a6761ae22b21e4b76a2def1dc0b6915e04e",
+        "runner-exit-observation.jsonl": "b874016c663ab54ed767ccf75527c8ab702666053dff9701a0248a38e1939702",
+        "normal-close.jsonl": "79acef9a003e54b170c59121982e5de3b3724d0a2da7bac560f03918426652f1",
+        "normal-close-result.json": "28b1075b0ef11ca23b5c3b811a9adde81e4182469270a5c6d84d034f1c142ff9",
+        "p1-diagnostics-result.json": "e71976e0cf4968b19f3be8f7492529f8325e3d653e3ecc80ded1f94e82510006"
+      }
+    }
+  ],
+  "retainedInitialDirectExitResults": [
+    {
+      "name": "miss400",
+      "evidence": ".work/p1-runtime-1f5075e242dd42caa4511b8b22593f7a",
+      "sourceCommit": "8700039739d25e289d15260259ad4de132e4e96b",
+      "runnerExitCode": 0,
+      "playbackPassed": true,
+      "exitMode": "NATURAL",
+      "elapsedMs": 11256,
+      "candidateResidual": 0,
+      "exitStages": [
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 1,
+          "stage": "observer-installed",
+          "elapsedMs": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 2,
+          "stage": "result-persist-begin",
+          "elapsedMs": 10172
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 3,
+          "stage": "result-persisted",
+          "elapsedMs": 10173
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 4,
+          "stage": "harness-cleanup-complete",
+          "elapsedMs": 10173
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 5,
+          "stage": "app-exit-requested",
+          "elapsedMs": 10174,
+          "exitCode": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 6,
+          "stage": "process-exit-observed",
+          "elapsedMs": 10184,
+          "exitCode": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 7,
+          "stage": "quit-observed",
+          "elapsedMs": 10184,
+          "exitCode": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 8,
+          "stage": "app-exit-returned",
+          "elapsedMs": 10185
+        }
+      ],
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "829ba1858b7a6d645a19dfaebcc75a05db3a6248dd25f8008ab4b70f60e94117"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "363fe92b3bf20a1ef5c3f644cebd4ad4f90edb81845d62be3c1cd1481f97b4eb"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "c50f3e943739b07d508217d36ccbea6fa76263b610b4a8551d6c9dd6e295df99"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tools/exit-observation.cjs",
+          "sha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee"
+        },
+        {
+          "path": "tools/normal-close-observation.cjs",
+          "sha256": "465f17210b70a61b7c9abf091daceebf4a29f77f9772db2b85a539d28f2df3d4"
+        },
+        {
+          "path": "tools/verify-normal-close.cjs",
+          "sha256": "3e350ea781106af9fc9a645fb0fe12a8db9614a6f1e29fb5ac725bd3f611dc6e"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "885e9ee7b02a0b11e663b728b74927c756b0124aa35ce6def94d55c26bf69c11"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749"
+        }
+      ],
+      "artifactHashes": {
+        "electron-smoke.json": "a18286740e589f5fe9e10e632d257e9e7a260c69a1a6782fd375b0635987870f",
+        "runner-result.json": "91054deaea91ffaa2a18e62f2489ad8154148f40722b89aed05a3b5326b3c742",
+        "harness-identity.json": "1c6c35a0b118b0e7dedfae5fedd37ce0fcf2bada9c9dd06579a6acd06477c8bd",
+        "exit-observation.jsonl": "0aeef818af52a14ebabb91ec68416ce59302d30ad2e7a26e4828e3110e04bc71"
+      }
+    },
+    {
+      "name": "hit0",
+      "evidence": ".work/p1-runtime-7966a2125a354b98b64ec55cadcdc08d",
+      "sourceCommit": "8700039739d25e289d15260259ad4de132e4e96b",
+      "runnerExitCode": 1,
+      "playbackPassed": true,
+      "exitMode": "FORCED_CLEANUP",
+      "elapsedMs": 121704,
+      "candidateResidual": 0,
+      "exitStages": [
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 1,
+          "stage": "observer-installed",
+          "elapsedMs": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 2,
+          "stage": "result-persist-begin",
+          "elapsedMs": 12192
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 3,
+          "stage": "result-persisted",
+          "elapsedMs": 12193
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 4,
+          "stage": "harness-cleanup-complete",
+          "elapsedMs": 12193
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 5,
+          "stage": "app-exit-requested",
+          "elapsedMs": 12193,
+          "exitCode": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 6,
+          "stage": "process-exit-observed",
+          "elapsedMs": 12208,
+          "exitCode": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 7,
+          "stage": "quit-observed",
+          "elapsedMs": 12209,
+          "exitCode": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 8,
+          "stage": "app-exit-returned",
+          "elapsedMs": 12209
+        }
+      ],
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "829ba1858b7a6d645a19dfaebcc75a05db3a6248dd25f8008ab4b70f60e94117"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "363fe92b3bf20a1ef5c3f644cebd4ad4f90edb81845d62be3c1cd1481f97b4eb"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "c50f3e943739b07d508217d36ccbea6fa76263b610b4a8551d6c9dd6e295df99"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tools/exit-observation.cjs",
+          "sha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee"
+        },
+        {
+          "path": "tools/normal-close-observation.cjs",
+          "sha256": "465f17210b70a61b7c9abf091daceebf4a29f77f9772db2b85a539d28f2df3d4"
+        },
+        {
+          "path": "tools/verify-normal-close.cjs",
+          "sha256": "3e350ea781106af9fc9a645fb0fe12a8db9614a6f1e29fb5ac725bd3f611dc6e"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "885e9ee7b02a0b11e663b728b74927c756b0124aa35ce6def94d55c26bf69c11"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749"
+        }
+      ],
+      "artifactHashes": {
+        "electron-smoke.json": "223e1f76a17b66efc924d924b629e336327d411995a1cbe4d42a2d9536533e52",
+        "runner-result.json": "231ce8236624dab928791118235ed3ee69697aace85b9671287f1c21722051ca",
+        "harness-identity.json": "8b8859ebb5b1bf247c2e89b97e212d8d9f12978655af6eafb637fc2f02f377c5",
+        "exit-observation.jsonl": "15fdd749c5a1487c161cad42f0c56432abc0c728792eece4c7c4c39550b5b500"
+      }
+    }
+  ],
+  "retainedInitialNormalCloseResults": [
+    {
+      "name": "close-idle",
+      "evidence": ".work/p1-runtime-f5fcf1b3db504af1bf378a03803bb866",
+      "runnerExitCode": 0,
+      "result": {
+        "schemaVersion": 1,
+        "scenario": "idle",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN",
+        "sourceCommit": "8700039739d25e289d15260259ad4de132e4e96b"
+      },
+      "stages": [
+        {
+          "sequence": 1,
+          "stage": "application-close-requested",
+          "elapsedMs": 6765,
+          "scenario": "idle"
+        },
+        {
+          "sequence": 2,
+          "stage": "application-window-close",
+          "elapsedMs": 6766
+        },
+        {
+          "sequence": 3,
+          "stage": "application-close-returned",
+          "elapsedMs": 6766
+        },
+        {
+          "sequence": 4,
+          "stage": "application-window-closed",
+          "elapsedMs": 6774
+        },
+        {
+          "sequence": 5,
+          "stage": "window-all-closed",
+          "elapsedMs": 6775
+        },
+        {
+          "sequence": 6,
+          "stage": "before-quit",
+          "elapsedMs": 6775
+        },
+        {
+          "sequence": 7,
+          "stage": "diagnostics-unregister-start",
+          "elapsedMs": 6776
+        },
+        {
+          "sequence": 8,
+          "stage": "diagnostics-unregister-complete",
+          "elapsedMs": 6776
+        },
+        {
+          "sequence": 9,
+          "stage": "maintenance-unregister-start",
+          "elapsedMs": 6776
+        },
+        {
+          "sequence": 10,
+          "stage": "maintenance-unregister-complete",
+          "elapsedMs": 6777
+        },
+        {
+          "sequence": 11,
+          "stage": "strm-config-unregister-start",
+          "elapsedMs": 6777
+        },
+        {
+          "sequence": 12,
+          "stage": "strm-config-unregister-complete",
+          "elapsedMs": 6777
+        },
+        {
+          "sequence": 13,
+          "stage": "cd2-unregister-start",
+          "elapsedMs": 6777
+        },
+        {
+          "sequence": 14,
+          "stage": "cd2-unregister-complete",
+          "elapsedMs": 6777
+        },
+        {
+          "sequence": 15,
+          "stage": "native-unregister-start",
+          "elapsedMs": 6777
+        },
+        {
+          "sequence": 16,
+          "stage": "native-unregister-complete",
+          "elapsedMs": 6778
+        },
+        {
+          "sequence": 17,
+          "stage": "before-quit",
+          "elapsedMs": 6778
+        },
+        {
+          "sequence": 18,
+          "stage": "will-quit",
+          "elapsedMs": 6778
+        },
+        {
+          "sequence": 19,
+          "stage": "fixture-server-close-requested",
+          "elapsedMs": 6778
+        },
+        {
+          "sequence": 20,
+          "stage": "quit",
+          "elapsedMs": 6779,
+          "exitCode": 0
+        }
+      ],
+      "hashes": {
+        "normal-close-result.json": "7e048ca7b15bea1ec351c752c59671e8a5d1942d0c8f6b9bc695586050b186e2",
+        "normal-close.jsonl": "bbdb1929582a083d724e0040ef0ba29a52ff25bcaccddd57e9957c35ba1cfe1c",
+        "runner-result.json": "25f8ca000caf5c063267f632827b6a2112eb1ee0760c634d404bf64efcb28c65",
+        "harness-identity.json": "22a3c230a0b0204ecd8f9e15082062026845efe50981948925ec865b293e3cab"
+      }
+    },
+    {
+      "name": "close-playing",
+      "evidence": ".work/p1-runtime-22df9dd1276141bd9f826c0ceeacad46",
+      "runnerExitCode": 1,
+      "result": {
+        "schemaVersion": 1,
+        "scenario": "playing",
+        "status": "FAIL",
+        "failures": [
+          "native-actual-exit"
+        ],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN",
+        "sourceCommit": "8700039739d25e289d15260259ad4de132e4e96b"
+      },
+      "stages": [
+        {
+          "sequence": 1,
+          "stage": "application-close-requested",
+          "elapsedMs": 7106,
+          "scenario": "playing"
+        },
+        {
+          "sequence": 2,
+          "stage": "application-window-close",
+          "elapsedMs": 7106
+        },
+        {
+          "sequence": 3,
+          "stage": "application-close-returned",
+          "elapsedMs": 7107
+        },
+        {
+          "sequence": 4,
+          "stage": "native-client-shutdown-start",
+          "elapsedMs": 7109
+        },
+        {
+          "sequence": 5,
+          "stage": "application-window-closed",
+          "elapsedMs": 7111
+        },
+        {
+          "sequence": 6,
+          "stage": "window-all-closed",
+          "elapsedMs": 7131
+        },
+        {
+          "sequence": 7,
+          "stage": "before-quit",
+          "elapsedMs": 7131
+        },
+        {
+          "sequence": 8,
+          "stage": "diagnostics-unregister-start",
+          "elapsedMs": 7131
+        },
+        {
+          "sequence": 9,
+          "stage": "diagnostics-unregister-complete",
+          "elapsedMs": 7132
+        },
+        {
+          "sequence": 10,
+          "stage": "maintenance-unregister-start",
+          "elapsedMs": 7132
+        },
+        {
+          "sequence": 11,
+          "stage": "maintenance-unregister-complete",
+          "elapsedMs": 7133
+        },
+        {
+          "sequence": 12,
+          "stage": "strm-config-unregister-start",
+          "elapsedMs": 7133
+        },
+        {
+          "sequence": 13,
+          "stage": "strm-config-unregister-complete",
+          "elapsedMs": 7133
+        },
+        {
+          "sequence": 14,
+          "stage": "cd2-unregister-start",
+          "elapsedMs": 7133
+        },
+        {
+          "sequence": 15,
+          "stage": "cd2-unregister-complete",
+          "elapsedMs": 7134
+        },
+        {
+          "sequence": 16,
+          "stage": "native-unregister-start",
+          "elapsedMs": 7134
+        },
+        {
+          "sequence": 17,
+          "stage": "native-unregister-complete",
+          "elapsedMs": 7134
+        },
+        {
+          "sequence": 18,
+          "stage": "before-quit",
+          "elapsedMs": 7134
+        },
+        {
+          "sequence": 19,
+          "stage": "will-quit",
+          "elapsedMs": 7134
+        },
+        {
+          "sequence": 20,
+          "stage": "fixture-server-close-requested",
+          "elapsedMs": 7135
+        },
+        {
+          "sequence": 21,
+          "stage": "quit",
+          "elapsedMs": 7136,
+          "exitCode": 0
+        }
+      ],
+      "hashes": {
+        "normal-close-result.json": "bd82fb308f05da01a2871bfe56656151cb9ade30f77f7c09d80fcbabc03dcc0b",
+        "normal-close.jsonl": "4b16aebaa222ac70e82d83a6263e122ce544ce2191d7786f52a870ddea19a4a1",
+        "runner-result.json": "906ce32181a2632bc89be2193d079565b572907a8c06ba4e174f94f487943386",
+        "harness-identity.json": "f15fd95152ec93ec3b0f36ff8c17451abed8f3a8fda46dd9eb731b2e3982965d"
+      }
+    }
+  ],
+  "retainedIntermediateNormalCloseResults": [
+    {
+      "name": "close-idle",
+      "evidence": ".work/p1-runtime-078e147d07f740c0aab3da3cf0a60b2b",
+      "runnerExitCode": 0,
+      "result": {
+        "schemaVersion": 1,
+        "scenario": "idle",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN",
+        "sourceCommit": "7b3a2dcc7f1ac5e0beea2e19ab1072f5348039e6"
+      },
+      "stages": [
+        {
+          "sequence": 1,
+          "stage": "application-close-requested",
+          "elapsedMs": 6725,
+          "scenario": "idle"
+        },
+        {
+          "sequence": 2,
+          "stage": "application-window-close",
+          "elapsedMs": 6727
+        },
+        {
+          "sequence": 3,
+          "stage": "application-close-returned",
+          "elapsedMs": 6728
+        },
+        {
+          "sequence": 4,
+          "stage": "application-window-closed",
+          "elapsedMs": 6736
+        },
+        {
+          "sequence": 5,
+          "stage": "window-all-closed",
+          "elapsedMs": 6736
+        },
+        {
+          "sequence": 6,
+          "stage": "before-quit",
+          "elapsedMs": 6737
+        },
+        {
+          "sequence": 7,
+          "stage": "diagnostics-unregister-start",
+          "elapsedMs": 6737
+        },
+        {
+          "sequence": 8,
+          "stage": "diagnostics-unregister-complete",
+          "elapsedMs": 6737
+        },
+        {
+          "sequence": 9,
+          "stage": "maintenance-unregister-start",
+          "elapsedMs": 6737
+        },
+        {
+          "sequence": 10,
+          "stage": "maintenance-unregister-complete",
+          "elapsedMs": 6738
+        },
+        {
+          "sequence": 11,
+          "stage": "strm-config-unregister-start",
+          "elapsedMs": 6738
+        },
+        {
+          "sequence": 12,
+          "stage": "strm-config-unregister-complete",
+          "elapsedMs": 6738
+        },
+        {
+          "sequence": 13,
+          "stage": "cd2-unregister-start",
+          "elapsedMs": 6739
+        },
+        {
+          "sequence": 14,
+          "stage": "cd2-unregister-complete",
+          "elapsedMs": 6739
+        },
+        {
+          "sequence": 15,
+          "stage": "native-unregister-start",
+          "elapsedMs": 6739
+        },
+        {
+          "sequence": 16,
+          "stage": "native-unregister-complete",
+          "elapsedMs": 6740
+        },
+        {
+          "sequence": 17,
+          "stage": "before-quit",
+          "elapsedMs": 6740
+        },
+        {
+          "sequence": 18,
+          "stage": "will-quit",
+          "elapsedMs": 6740
+        },
+        {
+          "sequence": 19,
+          "stage": "fixture-server-close-requested",
+          "elapsedMs": 6741
+        },
+        {
+          "sequence": 20,
+          "stage": "quit",
+          "elapsedMs": 6742,
+          "exitCode": 0
+        }
+      ],
+      "hashes": {
+        "normal-close-result.json": "5d2cfca5491268c00a38d967cd9f16900e62dc706ad90336dbec70af5d2f173c",
+        "normal-close.jsonl": "9d8b7605ba21c321002fd9f124f3020ca01b69c9720b21650b343e71696250a3",
+        "runner-result.json": "bc4cf1ab0aad2b80fe02f37a7782dfafb38027f486ee5a735d9ef69d9fd551e6",
+        "harness-identity.json": "7ca9199d457c5597c78253d00aa5e8c737b686abc0e429cc8e6894a027c93ca5"
+      }
+    },
+    {
+      "name": "close-playing",
+      "evidence": ".work/p1-runtime-d971d9cf313b421aa61413d5bc83541d",
+      "runnerExitCode": 1,
+      "result": {
+        "schemaVersion": 1,
+        "scenario": "playing",
+        "status": "FAIL",
+        "failures": [
+          "native-actual-exit"
+        ],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN",
+        "sourceCommit": "7b3a2dcc7f1ac5e0beea2e19ab1072f5348039e6"
+      },
+      "stages": [
+        {
+          "sequence": 1,
+          "stage": "application-close-requested",
+          "elapsedMs": 7186,
+          "scenario": "playing"
+        },
+        {
+          "sequence": 2,
+          "stage": "application-window-close",
+          "elapsedMs": 7186
+        },
+        {
+          "sequence": 3,
+          "stage": "application-close-returned",
+          "elapsedMs": 7186
+        },
+        {
+          "sequence": 4,
+          "stage": "native-client-shutdown-start",
+          "elapsedMs": 7189
+        },
+        {
+          "sequence": 5,
+          "stage": "application-window-closed",
+          "elapsedMs": 7192
+        },
+        {
+          "sequence": 6,
+          "stage": "window-all-closed",
+          "elapsedMs": 7216
+        },
+        {
+          "sequence": 7,
+          "stage": "before-quit",
+          "elapsedMs": 7217
+        },
+        {
+          "sequence": 8,
+          "stage": "diagnostics-unregister-start",
+          "elapsedMs": 7217
+        },
+        {
+          "sequence": 9,
+          "stage": "diagnostics-unregister-complete",
+          "elapsedMs": 7217
+        },
+        {
+          "sequence": 10,
+          "stage": "maintenance-unregister-start",
+          "elapsedMs": 7218
+        },
+        {
+          "sequence": 11,
+          "stage": "maintenance-unregister-complete",
+          "elapsedMs": 7218
+        },
+        {
+          "sequence": 12,
+          "stage": "strm-config-unregister-start",
+          "elapsedMs": 7218
+        },
+        {
+          "sequence": 13,
+          "stage": "strm-config-unregister-complete",
+          "elapsedMs": 7219
+        },
+        {
+          "sequence": 14,
+          "stage": "cd2-unregister-start",
+          "elapsedMs": 7219
+        },
+        {
+          "sequence": 15,
+          "stage": "cd2-unregister-complete",
+          "elapsedMs": 7219
+        },
+        {
+          "sequence": 16,
+          "stage": "native-unregister-start",
+          "elapsedMs": 7219
+        },
+        {
+          "sequence": 17,
+          "stage": "native-unregister-complete",
+          "elapsedMs": 7220
+        },
+        {
+          "sequence": 18,
+          "stage": "before-quit",
+          "elapsedMs": 7220
+        },
+        {
+          "sequence": 19,
+          "stage": "will-quit",
+          "elapsedMs": 7220
+        },
+        {
+          "sequence": 20,
+          "stage": "fixture-server-close-requested",
+          "elapsedMs": 7221
+        },
+        {
+          "sequence": 21,
+          "stage": "quit",
+          "elapsedMs": 7221,
+          "exitCode": 0
+        }
+      ],
+      "hashes": {
+        "normal-close-result.json": "4120616442f45e6c61df375954a36b7cb3cfa3a765b1b4ee42c50c95d376b102",
+        "normal-close.jsonl": "d12ed240c61bfcb540161cc3bcd5ef947e1ce70d0bbba9b912223966c7b47b13",
+        "runner-result.json": "8067626c9ce4a26e6dd0b1576c5cee804f21b93ff25fcb32b7ab37cdc849abe5",
+        "harness-identity.json": "facefc786745d24575ffa71e11a6e4f70892dc800bf2025782b1790f2f470142"
+      }
+    }
+  ],
+  "retainedPairingVerifierResults": [
+    {
+      "name": "close-idle",
+      "evidence": ".work/p1-runtime-2493558890994d0886a7a8ca2f414184",
+      "runnerExitCode": 0,
+      "result": {
+        "schemaVersion": 1,
+        "scenario": "idle",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN",
+        "sourceCommit": "ac865c4558c97148c6c0b15a82e9f976fa653cad"
+      },
+      "stages": [
+        {
+          "sequence": 1,
+          "stage": "application-close-requested",
+          "elapsedMs": 7011,
+          "scenario": "idle"
+        },
+        {
+          "sequence": 2,
+          "stage": "application-window-close",
+          "elapsedMs": 7012
+        },
+        {
+          "sequence": 3,
+          "stage": "application-close-returned",
+          "elapsedMs": 7012
+        },
+        {
+          "sequence": 4,
+          "stage": "application-window-closed",
+          "elapsedMs": 7018
+        },
+        {
+          "sequence": 5,
+          "stage": "window-all-closed",
+          "elapsedMs": 7018
+        },
+        {
+          "sequence": 6,
+          "stage": "before-quit",
+          "elapsedMs": 7019
+        },
+        {
+          "sequence": 7,
+          "stage": "diagnostics-unregister-start",
+          "elapsedMs": 7019
+        },
+        {
+          "sequence": 8,
+          "stage": "diagnostics-unregister-complete",
+          "elapsedMs": 7019
+        },
+        {
+          "sequence": 9,
+          "stage": "maintenance-unregister-start",
+          "elapsedMs": 7019
+        },
+        {
+          "sequence": 10,
+          "stage": "maintenance-unregister-complete",
+          "elapsedMs": 7029
+        },
+        {
+          "sequence": 11,
+          "stage": "strm-config-unregister-start",
+          "elapsedMs": 7029
+        },
+        {
+          "sequence": 12,
+          "stage": "strm-config-unregister-complete",
+          "elapsedMs": 7029
+        },
+        {
+          "sequence": 13,
+          "stage": "cd2-unregister-start",
+          "elapsedMs": 7029
+        },
+        {
+          "sequence": 14,
+          "stage": "cd2-unregister-complete",
+          "elapsedMs": 7030
+        },
+        {
+          "sequence": 15,
+          "stage": "native-unregister-start",
+          "elapsedMs": 7030
+        },
+        {
+          "sequence": 16,
+          "stage": "native-unregister-complete",
+          "elapsedMs": 7030
+        },
+        {
+          "sequence": 17,
+          "stage": "before-quit",
+          "elapsedMs": 7030
+        },
+        {
+          "sequence": 18,
+          "stage": "will-quit",
+          "elapsedMs": 7030
+        },
+        {
+          "sequence": 19,
+          "stage": "fixture-server-close-requested",
+          "elapsedMs": 7031
+        },
+        {
+          "sequence": 20,
+          "stage": "quit",
+          "elapsedMs": 7031,
+          "exitCode": 0
+        }
+      ],
+      "classification": "PASS",
+      "hashes": {
+        "normal-close-result.json": "783a2c889c7709ce77e04a16c113f605e58df839ca7b6ab6a55438fb75be28e2",
+        "normal-close.jsonl": "99a081c138a093991fd7559f14a4bf045472b4a2b22724bc08ca5196fb169b02",
+        "runner-result.json": "8a1eb70dddbfa6ef222ef5e4b477594e01866909fd9999858aaf7e5fc0030cc0",
+        "harness-identity.json": "5d1fb19c094b7a191da058e5689d371410027c39af8989ba3af0026af5d0ff9d"
+      }
+    },
+    {
+      "name": "close-playing",
+      "evidence": ".work/p1-runtime-2bc5b1d67c9a40f68ae7d8157874dcd5",
+      "runnerExitCode": 0,
+      "result": {
+        "schemaVersion": 1,
+        "scenario": "playing",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN",
+        "sourceCommit": "ac865c4558c97148c6c0b15a82e9f976fa653cad"
+      },
+      "stages": [
+        {
+          "sequence": 1,
+          "stage": "application-close-requested",
+          "elapsedMs": 7241,
+          "scenario": "playing"
+        },
+        {
+          "sequence": 2,
+          "stage": "application-window-close",
+          "elapsedMs": 7241
+        },
+        {
+          "sequence": 3,
+          "stage": "application-close-returned",
+          "elapsedMs": 7242
+        },
+        {
+          "sequence": 4,
+          "stage": "native-retire-renderer-destroy",
+          "elapsedMs": 7245,
+          "clientId": 1
+        },
+        {
+          "sequence": 5,
+          "stage": "native-client-shutdown-start",
+          "elapsedMs": 7245,
+          "clientId": 1,
+          "caller": "destroy-client"
+        },
+        {
+          "sequence": 6,
+          "stage": "application-window-closed",
+          "elapsedMs": 7248
+        },
+        {
+          "sequence": 7,
+          "stage": "native-client-shutdown-complete",
+          "elapsedMs": 7368,
+          "clientId": 1,
+          "exited": true
+        },
+        {
+          "sequence": 8,
+          "stage": "window-all-closed",
+          "elapsedMs": 7372
+        },
+        {
+          "sequence": 9,
+          "stage": "before-quit",
+          "elapsedMs": 7372
+        },
+        {
+          "sequence": 10,
+          "stage": "diagnostics-unregister-start",
+          "elapsedMs": 7372
+        },
+        {
+          "sequence": 11,
+          "stage": "diagnostics-unregister-complete",
+          "elapsedMs": 7373
+        },
+        {
+          "sequence": 12,
+          "stage": "maintenance-unregister-start",
+          "elapsedMs": 7373
+        },
+        {
+          "sequence": 13,
+          "stage": "maintenance-unregister-complete",
+          "elapsedMs": 7373
+        },
+        {
+          "sequence": 14,
+          "stage": "strm-config-unregister-start",
+          "elapsedMs": 7373
+        },
+        {
+          "sequence": 15,
+          "stage": "strm-config-unregister-complete",
+          "elapsedMs": 7373
+        },
+        {
+          "sequence": 16,
+          "stage": "cd2-unregister-start",
+          "elapsedMs": 7373
+        },
+        {
+          "sequence": 17,
+          "stage": "cd2-unregister-complete",
+          "elapsedMs": 7373
+        },
+        {
+          "sequence": 18,
+          "stage": "native-unregister-start",
+          "elapsedMs": 7373
+        },
+        {
+          "sequence": 19,
+          "stage": "native-unregister-complete",
+          "elapsedMs": 7374
+        },
+        {
+          "sequence": 20,
+          "stage": "before-quit",
+          "elapsedMs": 7374
+        },
+        {
+          "sequence": 21,
+          "stage": "will-quit",
+          "elapsedMs": 7374
+        },
+        {
+          "sequence": 22,
+          "stage": "fixture-server-close-requested",
+          "elapsedMs": 7374
+        },
+        {
+          "sequence": 23,
+          "stage": "quit",
+          "elapsedMs": 7375,
+          "exitCode": 0
+        }
+      ],
+      "classification": "PASS",
+      "hashes": {
+        "normal-close-result.json": "4ed47b48363b249404ffbd16a1aac056b43d966f2ce4c33c652ab921816bd998",
+        "normal-close.jsonl": "05053b96e3154f63a51ac0a1fdfdd78f1db974dfbe4a75432fffee4b0abb2f22",
+        "runner-result.json": "1c95a9a875f9303b2b5c4b022b8027d8ec8827a165ba6d516a99f4b839b082cd",
+        "harness-identity.json": "4123d624330fb4a0385cd39d8e7d45b15b69dd4426a4b35dc2a4f555754d61cb"
+      }
+    },
+    {
+      "name": "close-stopped",
+      "evidence": ".work/p1-runtime-5ad3c302a59c4f1993b1d29dbfd24222",
+      "runnerExitCode": 1,
+      "result": {
+        "schemaVersion": 1,
+        "scenario": "stopped",
+        "status": "FAIL",
+        "failures": [
+          "native-actual-exit"
+        ],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN",
+        "sourceCommit": "ac865c4558c97148c6c0b15a82e9f976fa653cad"
+      },
+      "stages": [
+        {
+          "sequence": 1,
+          "stage": "native-retire-renderer-destroy",
+          "elapsedMs": 7135,
+          "clientId": 1
+        },
+        {
+          "sequence": 2,
+          "stage": "native-client-shutdown-start",
+          "elapsedMs": 7136,
+          "clientId": 1,
+          "caller": "destroy-client"
+        },
+        {
+          "sequence": 3,
+          "stage": "native-client-shutdown-complete",
+          "elapsedMs": 7246,
+          "clientId": 1,
+          "exited": true
+        },
+        {
+          "sequence": 4,
+          "stage": "application-close-requested",
+          "elapsedMs": 7249,
+          "scenario": "stopped"
+        },
+        {
+          "sequence": 5,
+          "stage": "application-window-close",
+          "elapsedMs": 7250
+        },
+        {
+          "sequence": 6,
+          "stage": "application-close-returned",
+          "elapsedMs": 7250
+        },
+        {
+          "sequence": 7,
+          "stage": "application-window-closed",
+          "elapsedMs": 7255
+        },
+        {
+          "sequence": 8,
+          "stage": "window-all-closed",
+          "elapsedMs": 7260
+        },
+        {
+          "sequence": 9,
+          "stage": "before-quit",
+          "elapsedMs": 7261
+        },
+        {
+          "sequence": 10,
+          "stage": "diagnostics-unregister-start",
+          "elapsedMs": 7262
+        },
+        {
+          "sequence": 11,
+          "stage": "diagnostics-unregister-complete",
+          "elapsedMs": 7262
+        },
+        {
+          "sequence": 12,
+          "stage": "maintenance-unregister-start",
+          "elapsedMs": 7262
+        },
+        {
+          "sequence": 13,
+          "stage": "maintenance-unregister-complete",
+          "elapsedMs": 7263
+        },
+        {
+          "sequence": 14,
+          "stage": "strm-config-unregister-start",
+          "elapsedMs": 7263
+        },
+        {
+          "sequence": 15,
+          "stage": "strm-config-unregister-complete",
+          "elapsedMs": 7263
+        },
+        {
+          "sequence": 16,
+          "stage": "cd2-unregister-start",
+          "elapsedMs": 7263
+        },
+        {
+          "sequence": 17,
+          "stage": "cd2-unregister-complete",
+          "elapsedMs": 7263
+        },
+        {
+          "sequence": 18,
+          "stage": "native-unregister-start",
+          "elapsedMs": 7263
+        },
+        {
+          "sequence": 19,
+          "stage": "native-unregister-complete",
+          "elapsedMs": 7263
+        },
+        {
+          "sequence": 20,
+          "stage": "before-quit",
+          "elapsedMs": 7264
+        },
+        {
+          "sequence": 21,
+          "stage": "will-quit",
+          "elapsedMs": 7264
+        },
+        {
+          "sequence": 22,
+          "stage": "fixture-server-close-requested",
+          "elapsedMs": 7264
+        },
+        {
+          "sequence": 23,
+          "stage": "quit",
+          "elapsedMs": 7265,
+          "exitCode": 0
+        }
+      ],
+      "classification": "VERIFIER_ERROR_NATIVE_ALREADY_COMPLETED_BEFORE_CLOSE",
+      "hashes": {
+        "normal-close-result.json": "d8b8b1df26843a74f6f5474a3010023ab53f535d887e12168bf07c87ba9a2700",
+        "normal-close.jsonl": "00a7e8fb3aa8976559683da91aaef66790e3ce05c9ec21931fdfe55957345317",
+        "runner-result.json": "621a755082030377c9c88e60849b69ebf098aee960cf74e51909281366f89b67",
+        "harness-identity.json": "0d9ab3651f7eb44d90c1f022318fff99ed6d3ba10c193327fff68d647f77578f"
+      }
+    }
+  ],
+  "callerObservation": {
+    "evidence": ".work/p1-runtime-7e8c49606f8b4bd1876433307cb0ed3a",
+    "caller": "destroy-client",
+    "failure": "native-actual-exit",
+    "counts": [
+      {
+        "evidence": ".work/p1-runtime-22df9dd1276141bd9f826c0ceeacad46",
+        "helperReadyCount": 1,
+        "shutdownStartCount": 1,
+        "shutdownCompleteCount": 0,
+        "beforeCloseShutdownStarts": 0
+      },
+      {
+        "evidence": ".work/p1-runtime-d971d9cf313b421aa61413d5bc83541d",
+        "helperReadyCount": 1,
+        "shutdownStartCount": 1,
+        "shutdownCompleteCount": 0,
+        "beforeCloseShutdownStarts": 0
+      },
+      {
+        "evidence": ".work/p1-runtime-7e8c49606f8b4bd1876433307cb0ed3a",
+        "helperReadyCount": 1,
+        "shutdownStartCount": 1,
+        "shutdownCompleteCount": 0,
+        "beforeCloseShutdownStarts": 0
+      }
+    ]
+  },
+  "historicalAppExit": {
+    "products": [
+      "0.2.5/d480eb8",
+      "0.2.6/8700039"
+    ],
+    "boundary": "AFTER_APP_EXIT_RETURN / OS_EXIT_TIMEOUT",
+    "rootCause": "UNKNOWN",
+    "notClosedByNormalQuitPass": true,
+    "directExitRetestedAfterDestroyFix": false
+  },
+  "excludedAcceptance": [
+    "system install/upgrade/uninstall",
+    "real Emby/CD2",
+    "real remote clients",
+    "visible first frame/continuity",
+    "HDR/multi-display"
+  ],
+  "deliveryScope": "LOCAL_ONLY",
+  "foregroundActions": "NONE",
+  "priorAc865c4NormalPassRuns": [
+    {
+      "evidence": ".work/p1-runtime-2e75daa3e5364105b0e865a6e9829ec2",
+      "name": "close-idle",
+      "log": ".work/local-package/accepted-close-idle.log",
+      "exitCode": 0
+    },
+    {
+      "evidence": ".work/p1-runtime-1d59827efc95489bb2ff6fc74cbc28cd",
+      "name": "close-playing",
+      "log": ".work/local-package/accepted-close-playing.log",
+      "exitCode": 0
+    },
+    {
+      "evidence": ".work/p1-runtime-59b1213575044cb185a7b9d1ba75b206",
+      "name": "close-stopped",
+      "log": ".work/local-package/accepted-close-stopped.log",
+      "exitCode": 0
+    },
+    {
+      "evidence": ".work/p1-runtime-03da465d0c824ea485d0cef50d48fe91",
+      "name": "miss400",
+      "log": ".work/local-package/accepted-miss400.log",
+      "exitCode": 0
+    },
+    {
+      "evidence": ".work/p1-runtime-9efcadd873df4b2c9937f89935779de5",
+      "name": "hit0",
+      "log": ".work/local-package/accepted-hit0.log",
+      "exitCode": 0
+    },
+    {
+      "evidence": ".work/p1-runtime-a3b64754bf7f45aaac363686ea8f27d6",
+      "name": "hit400",
+      "log": ".work/local-package/accepted-hit400.log",
+      "exitCode": 0
+    },
+    {
+      "evidence": ".work/p1-runtime-41e23c78ca774ba2a1b4d1d78f5c7f2c",
+      "name": "hit800",
+      "log": ".work/local-package/accepted-hit800.log",
+      "exitCode": 0
+    },
+    {
+      "evidence": ".work/p1-runtime-764f9e2d0ae24f8082101256626b1360",
+      "name": "direct400",
+      "log": ".work/local-package/accepted-direct400.log",
+      "exitCode": 0
+    }
+  ],
+  "evidenceHashes": {
+    "build-package-final.log": "3196d0f84a1f9d58018b407d940f426cb8d0c6a4030f9f07faa20d200e21e48c",
+    "package-final-before.log": "d0ca4fa544e62f357e567ee02cf7384539bb1451f48925dbd84219cc3c8f70fa",
+    "package-final.log": "12813f5d1f4f4e08ef2546fa93a3e407a8dd1a227cc247a4ab267086fb137234",
+    "package-after.log": "d0ca4fa544e62f357e567ee02cf7384539bb1451f48925dbd84219cc3c8f70fa",
+    "installer-integrity.log": "9d08f2f928190d1a2a3dada47177b058a7dcbb7c9438bfb90c384dc5d569e15e",
+    "installer-extraction.log": "a825628d397c020d89b8ecc8f10102c7b1af044d6757284b180a9856fae640f1",
+    "run-plan.json": "e9cdcdee65fea2cbb4de38420d8223a518c95558a18ec3a1027e2dc3b5c660e5",
+    "normal-path-followup-plan.json": "69a8825058bc6f8c94a6c47029076c90ca0ca91686229d1379af8e82359d8e9d",
+    "shutdown-fix-run-plan.json": "755675c0c92e6022621dbdf365e91846782858e34f6461ce0986f9b0876a52a5",
+    "renderer-destroy-plan.json": "a0516805f0ace0b786688533c9400c4347acd9f72ae49223f097179d59322ac4",
+    "final-verifier-run-plan.json": "040b6c62315bc66dd15af6b9c4938b48490fa1da67f5cda7685299a681d1bed6",
+    "final-core-review.json": "c58e70623ff0a4f120e3a8a4b2bb26a6c6f87726ee6b928354225704cfff41fa",
+    "source-privacy-scan.json": "80c91e5b144d4ce310bc355a8c95efb7816793f68cf0eff3036ebf24197ad200",
+    "verify-payload.cjs": "f01731356e64aff600e6857610e03b10bbb90af638bff5ef857fdc496b56f8dd",
+    "summarize.cjs": "2b92406b1a612d885dbf71c8e377aa39e5a607cce13b681afed66a3680bd3bde"
+  }
+}

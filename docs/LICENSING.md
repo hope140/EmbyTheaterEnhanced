@@ -1,5 +1,17 @@
 # 许可与公开范围
 
+2026-10-09后续本地[材料审计](THIRD_PARTY_MATERIALS_AUDIT.md)已取得libmpv原
+dev archive及公开校验记录，证实其DLL与打包DLL字节一致，并补齐三项NuGet
+binary对应、继承npm原包/随包许可对照、参考源码及工具链原包材料。
+ServiceStack.Text v4.5.14固定源码的[许可文本](https://github.com/ServiceStack/ServiceStack.Text/blob/e5819a8de75a8bae64ddc7a64008613067893e32/license.txt)
+包含AGPL-3.0、FOSS License Exception和商业许可说明；这是准确版本的源码
+材料，不能用项目GPL-2.0-only或当前通用terms页面代替，也不据此断言实际
+DLL的构建许可选择或给出兼容性结论。完整构建来源、未识别资产和部分组件
+通知仍有缺口，具体见[最小索取清单](THIRD_PARTY_MATERIALS_REQUEST.md)。
+新增研究材料尚未进入任何既有安装包；本轮不作法律合规认证。
+
+本轮构建修正候选将根 `LICENSE`、`THIRD_PARTY_NOTICES.md`、本页与 [来源材料索引](SOURCE_MATERIALS.md) 按 sourceCommit 的 Git blob 字节放入 runtime，并在安装器打包前验证。下文 P1 缺少根通知的记录属于历史产物；通知随包不代表未知第三方材料已补齐。
+
 ## 结论
 
 本仓库维护层采用 **GPL-2.0-only**，完整文本见根目录 `LICENSE`。
@@ -8,7 +20,7 @@
 
 `src/electronapp/package.json` 中的 `MIT` 字段与上述官方仓库根许可不一致，不能单独作为整个衍生维护工程的许可依据。
 
-## 本次公开基线包含
+## Git 公开源码范围
 
 - 可审计的维护脚本、测试、安装器、文档和许可文件。
 - 已确认可维护的 Electron 应用层文件；其具体来源判定保留在 `docs/CARNIVAL_BASELINE.md` 与 `vendor/runtime-manifest.json`。
@@ -18,7 +30,7 @@
 
 首次公开前已审计 `vendor/runtime-manifest.json` 中 B 类、且进入公开基线的文本代码文件。每个此类 JavaScript、CSS 或 HTML 文件内均带有 2026-09-12/13 的显著修改声明，并指向根 `LICENSE`。无法在严格 JSON 中安全添加注释的 B 类 `package.json` 与翻译 JSON 已排除，等待其来源和修改记录可单独证明后再公开。审计清单见 `docs/MODIFIED_UPSTREAM_FILES.md`。
 
-## 本次公开基线排除
+## Git 中不包含的材料
 
 - `vendor/carnival/`、`vendor/patch/` 和原始 Carnival SFX、综合补丁 ZIP。
 - `dist/`、`build/`、安装器、原生 DLL/NODE/EXE/PDB 及其他生成二进制。
@@ -26,8 +38,12 @@
 - 原始真实播放证据：其中包含私人媒体库的内部标识；公开文档只保留脱敏结论。
 - 任何凭据、用户 profile、安装测试输出、日志、缓存和本机路径。
 
-来源未知不等于自动获得 GPL 再分发权。未来若要公开新增资产、完整 Web 快照或二进制，必须先核对来源、适用许可、对应源码义务和第三方通知。
+上述是 Git 跟踪边界，不表示安装包不携带这些组件。来源未知不构成已确认的授权；新增分发材料仍需逐项核对来源、适用条件、对应源码和第三方通知。
 
-## 发布前要求
+## 当前分发事实与材料状态
 
-任何未来二进制发布都需要单独的许可审计：确认每个随包组件可再分发、提供 GPL v2 所需的完整对应源码或等效获取方式，并保留相应第三方许可。当前 `v0.1.1-baseline` 只是源代码治理基线，不是二进制 Release。
+`v0.1.1-baseline` 是历史源码治理起点；项目此后已发布 Windows 安装包，2026-10-09只读核验 Latest 为v0.2.2、最新Pre-release为v0.2.4。发布存在这一事实不表示来源、通知或完整对应源码材料已经闭合。
+
+[构建输入审计](BUILD_INPUT_AUDIT.md) 对P1本地候选fb10f92分别记录CONFIRMED、MISSING和UNKNOWN。已确认Electron许可文件和npm可见license文件随包保留；候选完整payload中没有根项目LICENSE/THIRD_PARTY_NOTICES。Host/支撑DLL、CEC/RefreshRate、libmpv及其依赖、离线Web/资产的精确对应源码或完整通知材料仍有缺口。该候选与已发布v0.2.4的03a2e3b不是同一个sourceCommit。
+
+维护层的GPL-2.0-only声明保持；第三方组件不能由该声明统一推定许可。后续需按实际发行文件集合补齐来源、适用许可文本、构建材料、完整对应源码或适用的获取安排，再作专门审查。本页和本轮事实清单不构成法律合规认证，也不改变已发布资产。

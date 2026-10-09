@@ -79,18 +79,48 @@ function makeDom() {
     return {document, body};
 }
 
+function makeDeferred() {
+    let resolve;
+    let reject;
+    const promise = new Promise((resolvePromise, rejectPromise) => {
+        resolve = resolvePromise;
+        reject = rejectPromise;
+    });
+    return {promise, resolve, reject};
+}
+
 function makeNativeEndpoint() {
     const target = makeEventTarget();
     let destroyed = 0;
+    let nextGenerationId = 0;
     const endpoint = Object.assign(target, {
         style: {},
-        beginGeneration() { return Promise.resolve({generationId: 1}); },
-        retireGeneration() {},
+        operations: [],
+        preparePresentation(token) {
+            endpoint.operations.push({type: 'preparePresentation', token});
+            if (endpoint.preparePresentationHandler) return endpoint.preparePresentationHandler(token);
+            return Promise.resolve({ready: true});
+        },
+        cancelPresentation(token) {
+            endpoint.operations.push({type: 'cancelPresentation', token});
+            return Promise.resolve({status: 'ok'});
+        },
+        stopForPresentation(token) {
+            endpoint.operations.push({type: 'stopForPresentation', token});
+            return Promise.resolve({status: 'accepted'});
+        },
+        beginGeneration(label, presentationToken) {
+            endpoint.operations.push({type: 'beginGeneration', label, presentationToken});
+            return Promise.resolve({generationId: ++nextGenerationId});
+        },
+        retireGeneration(reason) { endpoint.operations.push({type: 'retireGeneration', reason}); },
         observeProperties() { return Promise.resolve({status: 'ok'}); },
         setProperties() { return Promise.resolve({status: 'accepted'}); },
         getProperty() { return Promise.resolve(null); },
         sendCommand(data) {
+            endpoint.operations.push({type: 'command', data});
             if (Array.isArray(data) && data[0] === 'loadfile') {
+                endpoint.operations.push({type: 'load', url: data[1]});
                 setImmediate(() => endpoint.dispatchEvent({type: 'message', data: {type: 'property_change', data: {name: 'core-idle', value: false}}}));
             }
             return Promise.resolve({status: 'accepted'});
@@ -101,7 +131,7 @@ function makeNativeEndpoint() {
     return endpoint;
 }
 
-function loadPlayer(nativeClient) {
+function loadPlayer(nativeClient, managerSetup) {
     let moduleFactory;
     const amdRequire = function (_dependencies, callback) {
         if (typeof callback === 'function') callback();
@@ -156,20 +186,71 @@ function loadPlayer(nativeClient) {
         resolveAsync(info) { return Promise.resolve({type: 'native', source: info.nativeSource, reason: 'native_fallback'}); }
     };
     const Player = moduleFactory(globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings,
-        amdRequire, connectionManager, strmResolver, undefined, undefined, undefined, nativeClient);
+        amdRequire, connectionManager, strmResolver, undefined, undefined, undefined,
+        require('../src/electronapp/enhanced/nexttrack-transition'), nativeClient);
     const player = {};
+    if (managerSetup) managerSetup(playbackManager, player);
     Player.call(player);
-    return {player, dom, windowTarget};
+    return {player, dom, windowTarget, playbackManager};
 }
 
 function playOptions(id) {
     return {
         _etePlayRequestId: id,
         url: 'fixture://native-' + id,
-        item: {MediaType: 'Video', Type: 'Movie', Path: 'fixture.strm'},
+        item: {Id: 'item-' + id, MediaType: 'Video', Type: 'Movie', Path: 'fixture.strm'},
         mediaSource: {MediaStreams: [], RunTimeTicks: 5000000000},
         mediaType: 'Video', playMethod: 'DirectPlay', playerStartPositionTicks: 0, fullscreen: false
     };
+}
+
+function transitionManagerSetup(items) {
+    return function (manager, player) {
+        let currentIndex = 0;
+        manager._etePlayRequestSequence = 1;
+        manager.getCurrentPlayer = function () { return player; };
+        manager.getCurrentPlaylistIndex = function () { return currentIndex; };
+        manager._playQueueManager = {
+            getNextItemInfo() { return {item: items[currentIndex + 1]}; },
+            getPlaylist() { return items; }
+        };
+        async function selectAndPlay(index) {
+            currentIndex = index;
+            const requestId = ++manager._etePlayRequestSequence;
+            await player.stop(false);
+            // Mirror PlaybackManager's stale-request check after an awaited stop.
+            if (requestId !== manager._etePlayRequestSequence) return;
+            return player.play(playOptions(requestId));
+        }
+        manager.nextTrack = function (current) {
+            return selectAndPlay(currentIndex + 1);
+        };
+        manager.previousTrack = function (current) {
+            return selectAndPlay(currentIndex - 1);
+        };
+        manager.stop = function () {
+            // Mirrors tools/patch-playbackmanager.cjs terminal-stop invalidation.
+            ++manager._etePlayRequestSequence;
+            return player.stop(true);
+        };
+    };
+}
+
+async function waitFor(predicate, message) {
+    const deadline = Date.now() + 1500;
+    while (Date.now() < deadline) {
+        if (predicate()) return;
+        await new Promise(resolve => setImmediate(resolve));
+    }
+    assert.fail(message || 'timed out waiting for lifecycle operation');
+}
+
+function item(id) {
+    return {Id: 'item-' + id, MediaType: 'Video', Type: 'Movie', Path: id + '.strm'};
+}
+
+function operationIndex(endpoint, type, predicate) {
+    return endpoint.operations.findIndex(row => row.type === type && (!predicate || predicate(row)));
 }
 
 test('concurrent first plays share one native helper creation', async () => {
@@ -206,5 +287,123 @@ test('failed native helper creation removes stale DOM and can retry', async () =
     assert.equal(dom.body.children.length, 0);
     await player.play(playOptions(2));
     assert.equal(createCalls, 2);
+    await player.stop(true);
+});
+
+test('next and previous retire before prepare, then stop and begin with the same presentation token', async () => {
+    const endpoint = makeNativeEndpoint();
+    const preparations = new Map();
+    endpoint.preparePresentationHandler = token => {
+        const pending = makeDeferred();
+        preparations.set(token, pending);
+        return pending.promise;
+    };
+    const nativeClient = {create() { return Promise.resolve({mode: 'native-helper', endpoint}); }};
+    const {player, playbackManager} = loadPlayer(nativeClient, transitionManagerSetup([item('A'), item('B')]));
+    await player.play(playOptions(1));
+
+    const nextStart = endpoint.operations.length;
+    const next = playbackManager.nextTrack(player);
+    await waitFor(() => preparations.size === 1, 'next preparation did not begin');
+    const nextToken = Array.from(preparations.keys())[0];
+    const nextOps = endpoint.operations.slice(nextStart);
+    assert.ok(operationIndex({operations: nextOps}, 'retireGeneration') >= 0, 'retire must be synchronous before prepare');
+    assert.ok(operationIndex({operations: nextOps}, 'retireGeneration') < operationIndex({operations: nextOps}, 'preparePresentation'));
+    assert.equal(operationIndex({operations: nextOps}, 'stopForPresentation'), -1, 'prepare must gate the special stop');
+    assert.equal(operationIndex({operations: nextOps}, 'command', row => row.data === 'stop'), -1, 'prepare must gate ordinary stop too');
+    preparations.get(nextToken).resolve({ready: true});
+    await next;
+    const nextStopIndex = operationIndex(endpoint, 'stopForPresentation', row => row.token === nextToken);
+    const nextBeginIndex = operationIndex(endpoint, 'beginGeneration', row => row.presentationToken === nextToken);
+    assert.ok(nextStopIndex >= 0 && nextBeginIndex > nextStopIndex);
+    assert.match(endpoint.operations[nextBeginIndex].label, /^play-2-/);
+    assert.ok(operationIndex(endpoint, 'load', row => row.url === 'fixture://native-2') >= 0);
+
+    const previousStart = endpoint.operations.length;
+    const previous = playbackManager.previousTrack(player);
+    await waitFor(() => preparations.size === 2, 'previous preparation did not begin');
+    const previousToken = Array.from(preparations.keys())[1];
+    const previousOps = endpoint.operations.slice(previousStart);
+    assert.ok(operationIndex({operations: previousOps}, 'retireGeneration') >= 0);
+    assert.ok(operationIndex({operations: previousOps}, 'retireGeneration') < operationIndex({operations: previousOps}, 'preparePresentation'));
+    assert.equal(operationIndex({operations: previousOps}, 'stopForPresentation'), -1);
+    preparations.get(previousToken).resolve({ready: true});
+    await previous;
+    const previousStopIndex = operationIndex(endpoint, 'stopForPresentation', row => row.token === previousToken);
+    const previousBeginIndex = operationIndex(endpoint, 'beginGeneration', row => row.presentationToken === previousToken);
+    assert.ok(previousStopIndex >= 0 && previousBeginIndex > previousStopIndex);
+    assert.match(endpoint.operations[previousBeginIndex].label, /^play-3-/);
+    assert.ok(operationIndex(endpoint, 'load', row => row.url === 'fixture://native-3') >= 0);
+    await playbackManager.stop(player);
+});
+
+test('terminal stop while prepare is pending prevents a late presentation stop and load', async () => {
+    const endpoint = makeNativeEndpoint();
+    const pending = makeDeferred();
+    endpoint.preparePresentationHandler = () => pending.promise;
+    const nativeClient = {create() { return Promise.resolve({mode: 'native-helper', endpoint}); }};
+    const {player, playbackManager} = loadPlayer(nativeClient, transitionManagerSetup([item('A'), item('B')]));
+    await player.play(playOptions(1));
+    const next = playbackManager.nextTrack(player);
+    await waitFor(() => operationIndex(endpoint, 'preparePresentation') >= 0);
+    await playbackManager.stop(player);
+    assert.equal(endpoint.destroyedCount(), 1);
+    assert.ok(operationIndex(endpoint, 'cancelPresentation') >= 0);
+    const opsAtDestroy = endpoint.operations.length;
+    pending.resolve({ready: true});
+    await next;
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(operationIndex(endpoint, 'stopForPresentation'), -1);
+    assert.equal(operationIndex(endpoint, 'load', row => row.url === 'fixture://native-2'), -1);
+    assert.equal(endpoint.operations.slice(opsAtDestroy).some(row => row.type === 'command' && Array.isArray(row.data) && row.data[0] === 'loadfile'), false);
+});
+
+test('a stale B preparation cannot replace newer C playback', async () => {
+    const endpoint = makeNativeEndpoint();
+    const preparations = new Map();
+    endpoint.preparePresentationHandler = token => {
+        const pending = makeDeferred();
+        preparations.set(token, pending);
+        return pending.promise;
+    };
+    const nativeClient = {create() { return Promise.resolve({mode: 'native-helper', endpoint}); }};
+    const {player, playbackManager} = loadPlayer(nativeClient,
+        transitionManagerSetup([item('A'), item('B'), item('C')]));
+    await player.play(playOptions(1));
+    const playB = playbackManager.nextTrack(player);
+    await waitFor(() => preparations.size === 1, 'B preparation did not begin');
+    const bToken = Array.from(preparations.keys())[0];
+    const playC = playbackManager.nextTrack(player);
+    await waitFor(() => preparations.size === 2, 'C preparation did not begin');
+    const cToken = Array.from(preparations.keys())[1];
+
+    preparations.get(cToken).resolve({ready: true});
+    await playC;
+    preparations.get(bToken).resolve({ready: true});
+    await playB;
+    assert.ok(operationIndex(endpoint, 'stopForPresentation', row => row.token === cToken) >= 0);
+    assert.ok(operationIndex(endpoint, 'beginGeneration', row => row.presentationToken === cToken) >= 0);
+    assert.ok(operationIndex(endpoint, 'load', row => row.url === 'fixture://native-3') >= 0);
+    assert.equal(operationIndex(endpoint, 'load', row => row.url === 'fixture://native-2'), -1);
+    await player.stop(true);
+});
+
+test('prepare rejection fails open through the ordinary stop path', async () => {
+    const endpoint = makeNativeEndpoint();
+    const pending = makeDeferred();
+    endpoint.preparePresentationHandler = () => pending.promise;
+    const nativeClient = {create() { return Promise.resolve({mode: 'native-helper', endpoint}); }};
+    const {player, playbackManager} = loadPlayer(nativeClient, transitionManagerSetup([item('A'), item('B')]));
+    await player.play(playOptions(1));
+    const next = playbackManager.nextTrack(player);
+    await waitFor(() => operationIndex(endpoint, 'preparePresentation') >= 0);
+    pending.reject(new Error('prepare unavailable'));
+    await next;
+    assert.equal(operationIndex(endpoint, 'stopForPresentation'), -1);
+    assert.ok(operationIndex(endpoint, 'command', row => row.data === 'stop') >= 0);
+    const nextBegin = endpoint.operations.find(row => row.type === 'beginGeneration' && /^play-2-/.test(row.label));
+    assert.ok(nextBegin);
+    assert.equal(nextBegin.presentationToken, null);
+    assert.ok(operationIndex(endpoint, 'load', row => row.url === 'fixture://native-2') >= 0);
     await player.stop(true);
 });

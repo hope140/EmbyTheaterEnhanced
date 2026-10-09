@@ -5,7 +5,7 @@ const {EventEmitter} = require('node:events');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
-const {createService, decimalWindowHandle, resolveMode, validateCommand} = require('../src/electronapp/native-helper/service');
+const {CALL_CHANNEL, createService, decimalWindowHandle, NOTIFY_CHANNEL, register, resolveMode, validateCommand} = require('../src/electronapp/native-helper/service');
 
 test('native-helper is the only accepted production mode', function () {
   assert.equal(resolveMode(undefined), 'native-helper');
@@ -107,13 +107,32 @@ function makeClientClass(options) {
       if (!settings.deferredStart) return Promise.resolve(this);
       return new Promise((resolve, reject) => { this.resolveStart = resolve; this.rejectStart = reject; });
     }
-    beginGeneration() { this.currentGenerationId = ++nextGeneration; return this.currentGenerationId; }
-    retireGeneration() { this.currentGenerationId = null; }
+    beginGeneration(label) {
+      this.currentGenerationId = ++nextGeneration;
+      if (typeof this.options.onDiagnostic === 'function') {
+        this.options.onDiagnostic({name: 'generation-begin', generationId: this.currentGenerationId,
+          disposition: 'BEGIN_GENERATION', currentGenerationId: this.currentGenerationId, label});
+      }
+      return this.currentGenerationId;
+    }
+    allocateGenerationId() { return ++nextGeneration; }
+    retireGeneration(reason) {
+      const generationId = this.currentGenerationId;
+      if (generationId === null) return;
+      this.currentGenerationId = null;
+      if (typeof this.options.onDiagnostic === 'function') {
+        this.options.onDiagnostic({name: 'generation-retired', generationId, disposition: 'RETIRE_GENERATION',
+          currentGenerationId: null, reason});
+      }
+    }
     command() {}
     setProperty() {}
     submitCommand() {}
     getProperty() { return Promise.resolve(false); }
-    request() { return Promise.resolve({attached: true, width: 800, height: 450}); }
+    request(method, params, requestOptions) {
+      if (typeof settings.requestHandler === 'function') return settings.requestHandler(method, params, requestOptions, this);
+      return Promise.resolve({attached: true, width: 800, height: 450});
+    }
     load() {
       const promise = settings.loadFails ? Promise.reject(Object.assign(new Error('media-load-failed'), {state: 'FAILED'})) : Promise.resolve({commandAccepted: true});
       promise.catch(() => {});
@@ -164,10 +183,31 @@ function makeService(ClientClass, options) {
     getMainWindow: () => main,
     getWebContents: () => main.webContents,
     execFile: placementExecutor,
-    logger: record => logs.push(record),
+    logger: typeof settings.logger === 'function' ? settings.logger : record => logs.push(record),
     runtimeRoot: 'C:\\fixture-runtime'
   });
   return {main, service, logs, placementExecutor};
+}
+
+function makeIpcMain() {
+  const handlers = new Map();
+  const listeners = new Map();
+  return {
+    handlers,
+    listeners,
+    handle(name, listener) { handlers.set(name, listener); },
+    on(name, listener) {
+      const values = listeners.get(name) || [];
+      values.push(listener);
+      listeners.set(name, values);
+    },
+    removeHandler(name) { handlers.delete(name); },
+    removeListener(name, listener) {
+      const values = listeners.get(name) || [];
+      listeners.set(name, values.filter(value => value !== listener));
+    },
+    listenerCount(name) { return (listeners.get(name) || []).length; }
+  };
 }
 
 async function showSurface(service) {
@@ -176,6 +216,411 @@ async function showSurface(service) {
   await service.call('set-visible', {visible: true, generationId: begun.generationId}, created.endpointId);
   return {created, begun};
 }
+
+function deferred() {
+  let resolve, reject;
+  const promise = new Promise((yes, no) => { resolve = yes; reject = no; });
+  return {promise, resolve, reject};
+}
+
+test('destroy shares one pending Promise, rejects new create work, and cleans the surface once', async function () {
+  const ClientClass = makeClientClass();
+  const {service} = makeService(ClientClass);
+  await service.call('create');
+  const active = ClientClass.clients[0];
+  const kill = deferred();
+  let killCalls = 0;
+  active.kill = function () { killCalls += 1; return kill.promise; };
+  const surface = FakeWindow.instances[1];
+  let surfaceDestroyCalls = 0;
+  const originalSurfaceDestroy = surface.destroy.bind(surface);
+  surface.destroy = function () { surfaceDestroyCalls += 1; return originalSurfaceDestroy(); };
+
+  const first = service.destroy();
+  const second = service.destroy();
+  assert.strictEqual(first, second, 'concurrent destroy calls must share one Promise');
+  await Promise.resolve();
+  assert.equal(killCalls, 1, 'native kill must start once');
+  await assert.rejects(service.call('create'), /native-helper-service-destroyed/);
+  const beforeKill = await Promise.race([
+    first.then(() => true, () => true),
+    new Promise(resolve => setImmediate(() => resolve(false)))
+  ]);
+  assert.equal(beforeKill, false, 'destroy must remain pending until native kill completes');
+
+  kill.resolve({code: 0});
+  await first;
+  assert.equal(surfaceDestroyCalls, 1, 'surface cleanup must run once');
+  assert.strictEqual(service.destroy(), first, 'completed destroy must retain the same Promise');
+  assert.equal(killCalls, 1);
+  await assert.rejects(service.call('create'), /native-helper-service-destroyed/);
+});
+
+test('closed-triggered destroy gates register unregister on the first native kill', async function () {
+  const ClientClass = makeClientClass();
+  const {main, service} = makeService(ClientClass);
+  await service.call('create');
+  const active = ClientClass.clients[0];
+  const kill = deferred();
+  let killCalls = 0;
+  active.kill = function () { killCalls += 1; return kill.promise; };
+  const surface = FakeWindow.instances[1];
+  let surfaceDestroyCalls = 0;
+  const originalSurfaceDestroy = surface.destroy.bind(surface);
+  surface.destroy = function () { surfaceDestroyCalls += 1; return originalSurfaceDestroy(); };
+  const ipcMain = makeIpcMain();
+  const unregister = register({ipcMain, service, getWebContents: () => main.webContents});
+  assert.equal(ipcMain.handlers.has(CALL_CHANNEL), true);
+  assert.equal(ipcMain.listenerCount(NOTIFY_CHANNEL), 1);
+
+  main.emit('closed');
+  await new Promise(resolve => setImmediate(resolve));
+  const unregisterPromise = unregister();
+  const beforeKill = await Promise.race([
+    unregisterPromise.then(() => true, () => true),
+    new Promise(resolve => setImmediate(() => resolve(false)))
+  ]);
+  assert.equal(beforeKill, false, 'unregister must wait for the close-triggered native kill');
+  assert.equal(killCalls, 1);
+
+  kill.resolve({code: 0});
+  await unregisterPromise;
+  assert.equal(surfaceDestroyCalls, 1);
+  assert.equal(ipcMain.handlers.size, 0);
+  assert.equal(ipcMain.listenerCount(NOTIFY_CHANNEL), 0);
+});
+
+test('destroy failure is the same Error for concurrent and later callers without retrying cleanup', async function () {
+  const ClientClass = makeClientClass();
+  const {service} = makeService(ClientClass);
+  await service.call('create');
+  const active = ClientClass.clients[0];
+  const failure = new Error('native-kill-failed');
+  let killCalls = 0;
+  active.kill = function () { killCalls += 1; return Promise.reject(failure); };
+  const surface = FakeWindow.instances[1];
+  let surfaceDestroyCalls = 0;
+  const originalSurfaceDestroy = surface.destroy.bind(surface);
+  surface.destroy = function () { surfaceDestroyCalls += 1; return originalSurfaceDestroy(); };
+
+  const first = service.destroy();
+  const second = service.destroy();
+  first.catch(() => {});
+  second.catch(() => {});
+  assert.strictEqual(first, second);
+  await assert.rejects(first, error => error === failure);
+  await assert.rejects(second, error => error === failure);
+  assert.strictEqual(service.destroy(), first, 'later destroy must preserve the failed shared Promise');
+  await assert.rejects(service.destroy(), error => error === failure);
+  assert.equal(killCalls, 1);
+  assert.equal(surfaceDestroyCalls, 0, 'native failure preserves the existing cleanup short circuit');
+});
+
+test('renderer destroy shares its in-flight native kill with full service destroy and unregister', async function () {
+  const ClientClass = makeClientClass();
+  const {main, service} = makeService(ClientClass);
+  const created = await service.call('create');
+  const active = ClientClass.clients[0];
+  const kill = deferred();
+  let killCalls = 0;
+  active.kill = function () { killCalls += 1; return kill.promise; };
+  const surface = FakeWindow.instances[1];
+  let surfaceDestroyCalls = 0;
+  const originalSurfaceDestroy = surface.destroy.bind(surface);
+  surface.destroy = function () { surfaceDestroyCalls += 1; return originalSurfaceDestroy(); };
+  const ipcMain = makeIpcMain();
+  const unregister = register({ipcMain, service, getWebContents: () => main.webContents});
+
+  const rendererDestroy = service.call('destroy', {}, created.endpointId);
+  rendererDestroy.catch(() => {});
+  await Promise.resolve();
+  assert.equal(killCalls, 1, 'renderer destroy must start the only native kill');
+  assert.equal(service.status().state, 'stopped', 'renderer destroy detaches the client before kill completion');
+
+  const fullDestroy = service.destroy();
+  const unregisterPromise = unregister();
+  const closedDestroy = new Promise(resolve => {
+    main.emit('closed');
+    setImmediate(resolve);
+  });
+  const settledBeforeKill = await Promise.race([
+    Promise.all([rendererDestroy, fullDestroy, unregisterPromise]).then(() => true, () => true),
+    new Promise(resolve => setImmediate(() => resolve(false)))
+  ]);
+  await closedDestroy;
+  assert.equal(settledBeforeKill, false, 'all destroy entry points must wait for the renderer kill');
+  for (const [name, promise] of [['full destroy', fullDestroy], ['unregister', unregisterPromise]]) {
+    const settled = await Promise.race([
+      promise.then(() => true, () => true),
+      new Promise(resolve => setImmediate(() => resolve(false)))
+    ]);
+    assert.equal(settled, false, name + ' must remain pending until the renderer kill completes');
+  }
+  assert.equal(killCalls, 1, 'closed and unregister must not retry native kill');
+
+  kill.resolve({code: 0});
+  assert.deepEqual(await rendererDestroy, {status: 'ok'});
+  await fullDestroy;
+  await unregisterPromise;
+  assert.equal(killCalls, 1);
+  assert.equal(surfaceDestroyCalls, 1);
+});
+
+test('renderer destroy kill failure is shared with full service destroy and preserves the cleanup short circuit', async function () {
+  const ClientClass = makeClientClass();
+  const {service} = makeService(ClientClass);
+  const created = await service.call('create');
+  const active = ClientClass.clients[0];
+  const failure = new Error('renderer-native-kill-failed');
+  let killCalls = 0;
+  const kill = deferred();
+  active.kill = function () { killCalls += 1; return kill.promise; };
+  const surface = FakeWindow.instances[1];
+  let surfaceDestroyCalls = 0;
+  const originalSurfaceDestroy = surface.destroy.bind(surface);
+  surface.destroy = function () { surfaceDestroyCalls += 1; return originalSurfaceDestroy(); };
+
+  const rendererDestroy = service.call('destroy', {}, created.endpointId);
+  rendererDestroy.catch(() => {});
+  await Promise.resolve();
+  const fullDestroy = service.destroy();
+  kill.reject(failure);
+  fullDestroy.catch(() => {});
+  await assert.rejects(rendererDestroy, error => error === failure);
+  await assert.rejects(fullDestroy, error => error === failure);
+  await assert.rejects(service.destroy(), error => error === failure);
+  assert.equal(killCalls, 1, 'a renderer kill failure must not trigger a retry');
+  assert.equal(surfaceDestroyCalls, 0, 'renderer kill failure preserves the existing cleanup short circuit');
+});
+
+test('full destroy waits for a second renderer-owned client after the first client rejects', async function () {
+  const ClientClass = makeClientClass();
+  const {service} = makeService(ClientClass);
+  const createdA = await service.call('create');
+  const clientA = ClientClass.clients[0];
+  const killA = deferred();
+  const errorA = new Error('client-a-kill-failed');
+  let killCallsA = 0;
+  clientA.kill = function () { killCallsA += 1; return killA.promise; };
+  const surface = FakeWindow.instances[1];
+  let surfaceDestroyCalls = 0;
+  const originalSurfaceDestroy = surface.destroy.bind(surface);
+  surface.destroy = function () { surfaceDestroyCalls += 1; return originalSurfaceDestroy(); };
+
+  const rendererDestroyA = service.call('destroy', {}, createdA.endpointId);
+  rendererDestroyA.catch(() => {});
+  await Promise.resolve();
+  assert.equal(killCallsA, 1);
+
+  const createdB = await service.call('create');
+  assert.equal(createdB.endpointId, createdA.endpointId, 'A and B must share the renderer endpoint');
+  const clientB = ClientClass.clients[1];
+  assert.equal(ClientClass.clients.length, 2);
+  assert.notStrictEqual(clientB, clientA, 'B must be a distinct owned FakeClient instance');
+  const killB = deferred();
+  let killCallsB = 0;
+  clientB.kill = function () { killCallsB += 1; return killB.promise; };
+  const rendererDestroyB = service.call('destroy', {}, createdB.endpointId);
+  rendererDestroyB.catch(() => {});
+  await Promise.resolve();
+  assert.equal(killCallsB, 1);
+
+  const fullDestroy = service.destroy();
+  fullDestroy.catch(() => {});
+  killA.reject(errorA);
+  const settledAfterA = await Promise.race([
+    fullDestroy.then(() => true, () => true),
+    new Promise(resolve => setImmediate(() => resolve(false)))
+  ]);
+  assert.equal(settledAfterA, false, 'A failure must not make full destroy reject before B settles');
+
+  killB.resolve({code: 0});
+  await assert.rejects(rendererDestroyA, error => error === errorA);
+  await rendererDestroyB;
+  await assert.rejects(fullDestroy, error => error === errorA);
+  assert.equal(killCallsA, 1);
+  assert.equal(killCallsB, 1);
+  assert.equal(surfaceDestroyCalls, 0, 'the first owned-client error preserves the surface short circuit');
+});
+
+test('full destroy waits for the current second client after a prior renderer destroy rejects', async function () {
+  const ClientClass = makeClientClass();
+  const {service} = makeService(ClientClass);
+  const createdA = await service.call('create');
+  const clientA = ClientClass.clients[0];
+  const killA = deferred();
+  const errorA = new Error('prior-client-kill-failed');
+  let killCallsA = 0;
+  clientA.kill = function () { killCallsA += 1; return killA.promise; };
+  const surface = FakeWindow.instances[1];
+  let surfaceDestroyCalls = 0;
+  const originalSurfaceDestroy = surface.destroy.bind(surface);
+  surface.destroy = function () { surfaceDestroyCalls += 1; return originalSurfaceDestroy(); };
+
+  const rendererDestroyA = service.call('destroy', {}, createdA.endpointId);
+  rendererDestroyA.catch(() => {});
+  await Promise.resolve();
+  assert.equal(killCallsA, 1);
+
+  const createdB = await service.call('create');
+  assert.equal(createdB.endpointId, createdA.endpointId);
+  const clientB = ClientClass.clients[1];
+  assert.equal(ClientClass.clients.length, 2);
+  assert.notStrictEqual(clientB, clientA, 'B must be a distinct current FakeClient instance');
+  const killB = deferred();
+  let killCallsB = 0;
+  clientB.kill = function () { killCallsB += 1; return killB.promise; };
+  assert.equal(service.status().state, 'ready', 'B must remain the current active client');
+
+  const fullDestroy = service.destroy();
+  fullDestroy.catch(() => {});
+  await Promise.resolve();
+  assert.equal(killCallsB, 1, 'full destroy must kill current B once');
+  killA.reject(errorA);
+  const settledAfterA = await Promise.race([
+    fullDestroy.then(() => true, () => true),
+    new Promise(resolve => setImmediate(() => resolve(false)))
+  ]);
+  assert.equal(settledAfterA, false, 'A failure must not make full destroy reject before current B settles');
+
+  killB.resolve({code: 0});
+  await assert.rejects(rendererDestroyA, error => error === errorA);
+  await assert.rejects(fullDestroy, error => error === errorA);
+  assert.equal(killCallsA, 1);
+  assert.equal(killCallsB, 1);
+  assert.equal(surfaceDestroyCalls, 0, 'the first owned-client error preserves the surface short circuit');
+});
+
+async function presentationHarness() {
+  const ClientClass = makeClientClass();
+  const context = makeService(ClientClass);
+  const {created, begun} = await showSurface(context.service);
+  const active = ClientClass.clients[0];
+  const requests = [];
+  let nextHold = 0;
+  active.request = function (method, params, options) {
+    requests.push({method, params, options});
+    if (method === 'presentation-prepare') return Promise.resolve({ready: true, painted: true, holdId: ++nextHold});
+    if (method === 'presentation-arm') return Promise.resolve({ready: true, status: 'armed', holdId: params.holdId});
+    return Promise.resolve({released: true});
+  };
+  function retire(generationId, requestEpoch) {
+    context.service.notify('retire-generation', {generationId, requestEpoch, reason: 'fixture'}, created.endpointId);
+  }
+  return {...context, created, begun, active, requests, retire, surface: FakeWindow.instances[1]};
+}
+
+test('native presentation retires media before preparation and preserves only a matching temporary Stop', async () => {
+  const h = await presentationHarness();
+  assert.deepEqual(await h.service.call('prepare-presentation', {token: 1}, h.created.endpointId), {status: 'ok', ready: false});
+  h.retire(h.begun.generationId, 1);
+  assert.equal((await h.service.call('prepare-presentation', {token: 2}, h.created.endpointId)).ready, true);
+  const prepare = h.requests.find(row => row.method === 'presentation-prepare');
+  assert.equal(prepare.params.sourceGenerationId, h.begun.generationId);
+  assert.equal(prepare.options.mediaScoped, false);
+  assert.ok(prepare.options.generationId > h.begun.generationId);
+  h.service.notify('set-visible', {visible: false, generationId: null}, h.created.endpointId);
+  assert.equal(h.surface.visible, true, 'retired opacity notifications cannot hide a held frame');
+  await h.service.call('command', {data: 'stop', generationId: null, presentationToken: 2}, h.created.endpointId);
+  assert.equal(h.surface.visible, true);
+  const b = await h.service.call('begin-generation', {label: 'B', presentationToken: 2, requestEpoch: 2}, h.created.endpointId);
+  assert.equal(h.requests.find(row => row.method === 'presentation-arm').options.generationId, b.generationId);
+  await h.service.call('command', {data: 'stop', generationId: b.generationId}, h.created.endpointId);
+  assert.equal(h.surface.visible, false);
+  assert.ok(h.requests.some(row => row.method === 'presentation-cancel-preparation'));
+  assert.ok(h.requests.some(row => row.method === 'presentation-release' && row.params.holdId === 1));
+  await h.service.destroy();
+});
+
+test('cancelled pending preparation cleans its exact control generation and late hold', async () => {
+  const h = await presentationHarness();
+  h.retire(h.begun.generationId, 1);
+  const pending = deferred();
+  const original = h.active.request;
+  h.active.request = function (method, params, options) {
+    if (method === 'presentation-prepare') { h.requests.push({method, params, options}); return pending.promise; }
+    return original(method, params, options);
+  };
+  const preparing = h.service.call('prepare-presentation', {token: 1}, h.created.endpointId);
+  await h.service.call('cancel-presentation', {token: 1}, h.created.endpointId);
+  const control = h.requests.find(row => row.method === 'presentation-prepare').options.generationId;
+  assert.ok(h.requests.some(row => row.method === 'presentation-cancel-preparation' && row.params.preparationGenerationId === control));
+  pending.resolve({ready: true, painted: true, holdId: 42});
+  assert.equal((await preparing).ready, false);
+  assert.ok(h.requests.some(row => row.method === 'presentation-release' && row.params.holdId === 42));
+  assert.equal(h.surface.visible, false);
+  await h.service.destroy();
+});
+
+test('newer preparation owns the surface when an older preparation resolves or cancels late', async () => {
+  const h = await presentationHarness();
+  h.retire(h.begun.generationId, 1);
+  const old = deferred();
+  const original = h.active.request;
+  let prepares = 0;
+  h.active.request = function (method, params, options) {
+    if (method === 'presentation-prepare' && ++prepares === 1) return old.promise;
+    return original(method, params, options);
+  };
+  const a = h.service.call('prepare-presentation', {token: 1}, h.created.endpointId);
+  assert.equal((await h.service.call('prepare-presentation', {token: 2}, h.created.endpointId)).ready, true);
+  old.resolve({ready: true, painted: true, holdId: 100});
+  assert.equal((await a).ready, false);
+  await h.service.call('cancel-presentation', {token: 1}, h.created.endpointId);
+  assert.equal(h.surface.visible, true);
+  let actualStops = 0;
+  const stop = h.active.stop.bind(h.active);
+  h.active.stop = function () { actualStops++; return stop(); };
+  assert.equal((await h.service.call('command', {data: 'stop', generationId: null, presentationToken: 1}, h.created.endpointId)).stale, true);
+  assert.equal(actualStops, 0, 'an old temporary stop must not clear C or issue a new mpv stop');
+  assert.equal(h.surface.visible, true);
+  await h.service.call('command', {data: 'stop', generationId: null, presentationToken: 2}, h.created.endpointId);
+  assert.equal(actualStops, 1);
+  assert.equal(h.surface.visible, true);
+  assert.equal(h.requests.some(row => row.method === 'presentation-release' && row.params.holdId === 1), false);
+  const next = await h.service.call('begin-generation', {label: 'C', presentationToken: 2}, h.created.endpointId);
+  assert.equal((await h.service.call('command', {data: 'stop', generationId: null, presentationToken: 1}, h.created.endpointId)).stale, true);
+  assert.equal(actualStops, 1);
+  assert.equal(h.active.currentGenerationId, next.generationId);
+  await h.service.destroy();
+});
+
+test('retirement during native arm invalidates the pending begin and stale renderer epochs cannot retire C', async () => {
+  const h = await presentationHarness();
+  h.retire(h.begun.generationId, 1);
+  await h.service.call('prepare-presentation', {token: 1}, h.created.endpointId);
+  const arm = deferred();
+  const original = h.active.request;
+  h.active.request = function (method, params, options) {
+    if (method === 'presentation-arm') return arm.promise;
+    return original(method, params, options);
+  };
+  const b = h.service.call('begin-generation', {label: 'B', presentationToken: 1, requestEpoch: 2}, h.created.endpointId);
+  await Promise.resolve();
+  h.retire(h.begun.generationId, 3);
+  assert.equal(h.active.currentGenerationId, null, 'new epoch retires main begin before its ID has reached renderer');
+  const c = await h.service.call('begin-generation', {label: 'C', requestEpoch: 4}, h.created.endpointId);
+  arm.resolve({armed: true});
+  await assert.rejects(b, /generation-superseded/);
+  assert.throws(() => h.retire(null, 2), /generation-superseded/);
+  assert.equal(h.active.currentGenerationId, c.generationId);
+  await assert.rejects(h.service.call('begin-generation', {label: 'stale', requestEpoch: 3}, h.created.endpointId), /generation-superseded/);
+  await h.service.destroy();
+});
+
+test('same-helper stale load failure cannot hide or report an error against a newer generation', async () => {
+  const h = await presentationHarness();
+  const load = deferred();
+  h.active.load = () => ({generationId: h.begun.generationId, promise: load.promise});
+  await h.service.call('command', {data: ['loadfile', 'fixture-A'], generationId: h.begun.generationId}, h.created.endpointId);
+  const next = await h.service.call('begin-generation', {label: 'C'}, h.created.endpointId);
+  await h.service.call('set-visible', {visible: true, generationId: next.generationId}, h.created.endpointId);
+  load.reject(Object.assign(new Error('old failure'), {state: 'FAILED'}));
+  await Promise.resolve();
+  assert.equal(h.surface.visible, true);
+  assert.equal(h.main.sent.some(row => row[1].type === 'bridge_error'), false);
+  await h.service.destroy();
+});
 
 test('surface placement passes exact HWNDs without moveTop or always-on-top pulses', async function () {
   const ClientClass = makeClientClass();
@@ -194,6 +639,9 @@ test('surface placement passes exact HWNDs without moveTop or always-on-top puls
   assert.equal(surface.options.parent, undefined);
   assert.equal(surface.options.focusable, false);
   assert.equal(surface.options.skipTaskbar, true);
+  assert.equal(surface.options.thickFrame, false);
+  assert.equal(surface.options.resizable, false);
+  assert.equal(surface.options.movable, false);
   placementExecutor.complete(0);
   assert.equal(logs.some(record => record.event === 'surface-z-order' && record.details.applied === true), true);
   await service.destroy();
@@ -444,3 +892,81 @@ test('stale work after a crash cannot recreate or mutate the next helper', async
   assert.equal(ClientClass.clients[1].currentGenerationId, replacement.generationId);
   await service.destroy();
 });
+
+for (const observerFailure of ['throw', 'reject']) {
+  test(`native-helper diagnostics associate presentation lifecycle and fail open when logger ${observerFailure}s`, async function () {
+    const diagnosticEvents = new Set(['generation-begin', 'generation-retired', 'presentation-prepare',
+      'presentation-arm', 'presentation-clear', 'surface-hidden']);
+    const records = [];
+    const logger = record => {
+      if (!diagnosticEvents.has(record && record.event)) return;
+      records.push(record);
+      if (observerFailure === 'throw') throw new Error('diagnostic-logger-failure');
+      return Promise.reject(new Error('diagnostic-logger-rejection'));
+    };
+    const ClientClass = makeClientClass({
+      requestHandler(method, params) {
+        if (method === 'presentation-prepare') return Promise.resolve({ready: true, painted: true, holdId: 701});
+        if (method === 'presentation-arm') return Promise.resolve({ready: true, status: 'armed', holdId: params.holdId});
+        return Promise.resolve({attached: true, width: 800, height: 450});
+      }
+    });
+    const {main, service} = makeService(ClientClass, {logger});
+
+    const created = await service.call('create');
+    const generationA = await service.call('begin-generation', {label: 'play-41-1', requestEpoch: 1}, created.endpointId);
+    await service.call('set-visible', {visible: true, generationId: generationA.generationId}, created.endpointId);
+    service.notify('retire-generation', {
+      generationId: generationA.generationId, requestEpoch: 2, reason: 'superseded'
+    }, created.endpointId);
+
+    const prepared = await service.call('prepare-presentation', {token: 1}, created.endpointId);
+    assert.deepEqual(prepared, {status: 'ok', ready: true});
+    const generationB = await service.call('begin-generation', {
+      label: 'play-42-2', requestEpoch: 3, presentationToken: 1
+    }, created.endpointId);
+    await service.call('cancel-presentation', {token: 1}, created.endpointId);
+
+    main.minimized = true;
+    main.emit('minimize');
+    await Promise.resolve();
+
+    const byEvent = name => records.filter(record => record.event === name).map(record => record.details);
+    assert.deepEqual(byEvent('generation-begin').map(details => details.requestId), ['play-41-1', 'play-42-2']);
+    assert.equal(byEvent('generation-retired')[0].requestId, 'play-41-1');
+    assert.equal(byEvent('generation-retired')[0].reason, 'superseded');
+
+    const prepareReady = byEvent('presentation-prepare').find(details => details.disposition === 'ready');
+    assert.deepEqual({helperRun: prepareReady.helperRun, generationId: prepareReady.generationId,
+      sourceGenerationId: prepareReady.sourceGenerationId, transitionId: prepareReady.transitionId,
+      disposition: prepareReady.disposition, association: prepareReady.association}, {
+      helperRun: 1, generationId: generationA.generationId, sourceGenerationId: generationA.generationId,
+      transitionId: 1, disposition: 'ready', association: 'available'
+    });
+    const armReady = byEvent('presentation-arm')[0];
+    assert.deepEqual({helperRun: armReady.helperRun, generationId: armReady.generationId,
+      currentGenerationId: armReady.currentGenerationId, sourceGenerationId: armReady.sourceGenerationId,
+      transitionId: armReady.transitionId, requestId: armReady.requestId, disposition: armReady.disposition}, {
+      helperRun: 1, generationId: generationB.generationId, currentGenerationId: generationB.generationId,
+      sourceGenerationId: generationA.generationId, transitionId: 1, requestId: 'play-42-2', disposition: 'ready'
+    });
+    const cleared = byEvent('presentation-clear')[0];
+    assert.equal(cleared.transitionId, 1);
+    assert.equal(cleared.generationId, generationB.generationId);
+    assert.equal(cleared.requestId, 'play-42-2');
+    assert.equal(cleared.disposition, 'cleared');
+    const hidden = byEvent('surface-hidden')[0];
+    assert.deepEqual({helperRun: hidden.helperRun, generationId: hidden.generationId,
+      requestId: hidden.requestId, visible: hidden.visible, reason: hidden.reason,
+      disposition: hidden.disposition}, {
+      helperRun: 1, generationId: generationB.generationId, requestId: 'play-42-2',
+      visible: false, reason: 'minimize', disposition: 'hidden'
+    });
+    assert.ok(records.length <= 120);
+    assert.equal(JSON.stringify(records).includes('token'), false);
+    assert.equal(JSON.stringify(records).includes('C:\\private'), false);
+    assert.equal(service.status().state, 'ready');
+    assert.equal(service.status().surfaceVisible, false);
+    await service.destroy();
+  });
+}

@@ -1,0 +1,546 @@
+{
+  "schemaVersion": 1,
+  "status": "COMPLETE",
+  "completionMeaning": "OFFLINE_ANALYSIS_ONLY",
+  "diagnosticCompleteness": "NOT_VERIFIED",
+  "evidenceKind": "synthetic",
+  "expectedSourceCommit": "fb10f920a39112ff72b0f82715da8345702f634b",
+  "timingBasis": "MAIN_LOG_RECEIPT_WALL_CLOCK",
+  "failures": [],
+  "counts": {
+    "records": 110,
+    "preStartRecords": 0,
+    "ignoredNativeRecords": 1,
+    "skippedSourceRuns": 0
+  },
+  "runs": [
+    {
+      "run": 1,
+      "clockRegression": false,
+      "observedDiagnosticGap": false,
+      "requests": [
+        {
+          "sample": 1,
+          "route": "native",
+          "metrics": {
+            "playToResolverMs": {
+              "status": "OBSERVED",
+              "milliseconds": 168,
+              "reason": null
+            },
+            "resolverToLoadRequestMs": {
+              "status": "OBSERVED",
+              "milliseconds": 2,
+              "reason": null
+            },
+            "loadRequestToCorePlayingMs": {
+              "status": "OBSERVED",
+              "milliseconds": 225,
+              "reason": null
+            },
+            "playToCorePlayingMs": {
+              "status": "OBSERVED",
+              "milliseconds": 395,
+              "reason": null
+            },
+            "loadRequestToFileLoadedMs": {
+              "status": "OBSERVED",
+              "milliseconds": 84,
+              "reason": null
+            },
+            "nativeStartToFileLoadedMs": {
+              "status": "OBSERVED",
+              "milliseconds": 73,
+              "reason": null
+            },
+            "cd2ReportedResolveMs": {
+              "status": "UNAVAILABLE",
+              "milliseconds": null,
+              "reason": "MISSING_MARKER"
+            }
+          }
+        },
+        {
+          "sample": 2,
+          "route": "cd2-http",
+          "metrics": {
+            "playToResolverMs": {
+              "status": "OBSERVED",
+              "milliseconds": 538,
+              "reason": null
+            },
+            "resolverToLoadRequestMs": {
+              "status": "OBSERVED",
+              "milliseconds": 1,
+              "reason": null
+            },
+            "loadRequestToCorePlayingMs": {
+              "status": "OBSERVED",
+              "milliseconds": 224,
+              "reason": null
+            },
+            "playToCorePlayingMs": {
+              "status": "OBSERVED",
+              "milliseconds": 763,
+              "reason": null
+            },
+            "loadRequestToFileLoadedMs": {
+              "status": "OBSERVED",
+              "milliseconds": 85,
+              "reason": null
+            },
+            "nativeStartToFileLoadedMs": {
+              "status": "OBSERVED",
+              "milliseconds": 80,
+              "reason": null
+            },
+            "cd2ReportedResolveMs": {
+              "status": "UNAVAILABLE",
+              "milliseconds": null,
+              "reason": "MISSING_MARKER"
+            }
+          }
+        },
+        {
+          "sample": 3,
+          "route": "cd2-http",
+          "metrics": {
+            "playToResolverMs": {
+              "status": "OBSERVED",
+              "milliseconds": 538,
+              "reason": null
+            },
+            "resolverToLoadRequestMs": {
+              "status": "OBSERVED",
+              "milliseconds": 1,
+              "reason": null
+            },
+            "loadRequestToCorePlayingMs": {
+              "status": "OBSERVED",
+              "milliseconds": 222,
+              "reason": null
+            },
+            "playToCorePlayingMs": {
+              "status": "OBSERVED",
+              "milliseconds": 761,
+              "reason": null
+            },
+            "loadRequestToFileLoadedMs": {
+              "status": "OBSERVED",
+              "milliseconds": 87,
+              "reason": null
+            },
+            "nativeStartToFileLoadedMs": {
+              "status": "OBSERVED",
+              "milliseconds": 80,
+              "reason": null
+            },
+            "cd2ReportedResolveMs": {
+              "status": "UNAVAILABLE",
+              "milliseconds": null,
+              "reason": "MISSING_MARKER"
+            }
+          }
+        },
+        {
+          "sample": 4,
+          "route": "unknown",
+          "metrics": {
+            "playToResolverMs": {
+              "status": "UNAVAILABLE",
+              "milliseconds": null,
+              "reason": "MISSING_MARKER"
+            },
+            "resolverToLoadRequestMs": {
+              "status": "UNAVAILABLE",
+              "milliseconds": null,
+              "reason": "MISSING_MARKER"
+            },
+            "loadRequestToCorePlayingMs": {
+              "status": "UNAVAILABLE",
+              "milliseconds": null,
+              "reason": "MISSING_MARKER"
+            },
+            "playToCorePlayingMs": {
+              "status": "UNAVAILABLE",
+              "milliseconds": null,
+              "reason": "MISSING_MARKER"
+            },
+            "loadRequestToFileLoadedMs": {
+              "status": "UNAVAILABLE",
+              "milliseconds": null,
+              "reason": "MISSING_MARKER"
+            },
+            "nativeStartToFileLoadedMs": {
+              "status": "UNAVAILABLE",
+              "milliseconds": null,
+              "reason": "MISSING_MARKER"
+            },
+            "cd2ReportedResolveMs": {
+              "status": "UNAVAILABLE",
+              "milliseconds": null,
+              "reason": "MISSING_MARKER"
+            }
+          }
+        },
+        {
+          "sample": 5,
+          "route": "cd2-http",
+          "metrics": {
+            "playToResolverMs": {
+              "status": "OBSERVED",
+              "milliseconds": 489,
+              "reason": null
+            },
+            "resolverToLoadRequestMs": {
+              "status": "OBSERVED",
+              "milliseconds": 1,
+              "reason": null
+            },
+            "loadRequestToCorePlayingMs": {
+              "status": "OBSERVED",
+              "milliseconds": 195,
+              "reason": null
+            },
+            "playToCorePlayingMs": {
+              "status": "OBSERVED",
+              "milliseconds": 685,
+              "reason": null
+            },
+            "loadRequestToFileLoadedMs": {
+              "status": "OBSERVED",
+              "milliseconds": 57,
+              "reason": null
+            },
+            "nativeStartToFileLoadedMs": {
+              "status": "OBSERVED",
+              "milliseconds": 52,
+              "reason": null
+            },
+            "cd2ReportedResolveMs": {
+              "status": "UNAVAILABLE",
+              "milliseconds": null,
+              "reason": "MISSING_MARKER"
+            }
+          }
+        },
+        {
+          "sample": 6,
+          "route": "cd2-http",
+          "metrics": {
+            "playToResolverMs": {
+              "status": "OBSERVED",
+              "milliseconds": 527,
+              "reason": null
+            },
+            "resolverToLoadRequestMs": {
+              "status": "UNAVAILABLE",
+              "milliseconds": null,
+              "reason": "MISSING_MARKER"
+            },
+            "loadRequestToCorePlayingMs": {
+              "status": "UNAVAILABLE",
+              "milliseconds": null,
+              "reason": "MISSING_MARKER"
+            },
+            "playToCorePlayingMs": {
+              "status": "UNAVAILABLE",
+              "milliseconds": null,
+              "reason": "MISSING_MARKER"
+            },
+            "loadRequestToFileLoadedMs": {
+              "status": "UNAVAILABLE",
+              "milliseconds": null,
+              "reason": "MISSING_MARKER"
+            },
+            "nativeStartToFileLoadedMs": {
+              "status": "UNAVAILABLE",
+              "milliseconds": null,
+              "reason": "MISSING_MARKER"
+            },
+            "cd2ReportedResolveMs": {
+              "status": "UNAVAILABLE",
+              "milliseconds": null,
+              "reason": "MISSING_MARKER"
+            }
+          }
+        },
+        {
+          "sample": 7,
+          "route": "cd2-http",
+          "metrics": {
+            "playToResolverMs": {
+              "status": "OBSERVED",
+              "milliseconds": 498,
+              "reason": null
+            },
+            "resolverToLoadRequestMs": {
+              "status": "OBSERVED",
+              "milliseconds": 1,
+              "reason": null
+            },
+            "loadRequestToCorePlayingMs": {
+              "status": "OBSERVED",
+              "milliseconds": 221,
+              "reason": null
+            },
+            "playToCorePlayingMs": {
+              "status": "OBSERVED",
+              "milliseconds": 720,
+              "reason": null
+            },
+            "loadRequestToFileLoadedMs": {
+              "status": "OBSERVED",
+              "milliseconds": 83,
+              "reason": null
+            },
+            "nativeStartToFileLoadedMs": {
+              "status": "OBSERVED",
+              "milliseconds": 78,
+              "reason": null
+            },
+            "cd2ReportedResolveMs": {
+              "status": "UNAVAILABLE",
+              "milliseconds": null,
+              "reason": "MISSING_MARKER"
+            }
+          }
+        },
+        {
+          "sample": 8,
+          "route": "unknown",
+          "metrics": {
+            "playToResolverMs": {
+              "status": "UNAVAILABLE",
+              "milliseconds": null,
+              "reason": "MISSING_MARKER"
+            },
+            "resolverToLoadRequestMs": {
+              "status": "UNAVAILABLE",
+              "milliseconds": null,
+              "reason": "MISSING_MARKER"
+            },
+            "loadRequestToCorePlayingMs": {
+              "status": "UNAVAILABLE",
+              "milliseconds": null,
+              "reason": "MISSING_MARKER"
+            },
+            "playToCorePlayingMs": {
+              "status": "UNAVAILABLE",
+              "milliseconds": null,
+              "reason": "MISSING_MARKER"
+            },
+            "loadRequestToFileLoadedMs": {
+              "status": "UNAVAILABLE",
+              "milliseconds": null,
+              "reason": "MISSING_MARKER"
+            },
+            "nativeStartToFileLoadedMs": {
+              "status": "UNAVAILABLE",
+              "milliseconds": null,
+              "reason": "MISSING_MARKER"
+            },
+            "cd2ReportedResolveMs": {
+              "status": "UNAVAILABLE",
+              "milliseconds": null,
+              "reason": "MISSING_MARKER"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "summaryByRoute": {
+    "native": {
+      "playToResolverMs": {
+        "observedCount": 1,
+        "unavailableCount": 0,
+        "minMs": 168,
+        "maxMs": 168,
+        "medianMs": 168,
+        "p95Ms": null
+      },
+      "resolverToLoadRequestMs": {
+        "observedCount": 1,
+        "unavailableCount": 0,
+        "minMs": 2,
+        "maxMs": 2,
+        "medianMs": 2,
+        "p95Ms": null
+      },
+      "loadRequestToCorePlayingMs": {
+        "observedCount": 1,
+        "unavailableCount": 0,
+        "minMs": 225,
+        "maxMs": 225,
+        "medianMs": 225,
+        "p95Ms": null
+      },
+      "playToCorePlayingMs": {
+        "observedCount": 1,
+        "unavailableCount": 0,
+        "minMs": 395,
+        "maxMs": 395,
+        "medianMs": 395,
+        "p95Ms": null
+      },
+      "loadRequestToFileLoadedMs": {
+        "observedCount": 1,
+        "unavailableCount": 0,
+        "minMs": 84,
+        "maxMs": 84,
+        "medianMs": 84,
+        "p95Ms": null
+      },
+      "nativeStartToFileLoadedMs": {
+        "observedCount": 1,
+        "unavailableCount": 0,
+        "minMs": 73,
+        "maxMs": 73,
+        "medianMs": 73,
+        "p95Ms": null
+      },
+      "cd2ReportedResolveMs": {
+        "observedCount": 0,
+        "unavailableCount": 1,
+        "minMs": null,
+        "maxMs": null,
+        "medianMs": null,
+        "p95Ms": null
+      }
+    },
+    "cd2-http": {
+      "playToResolverMs": {
+        "observedCount": 5,
+        "unavailableCount": 0,
+        "minMs": 489,
+        "maxMs": 538,
+        "medianMs": 527,
+        "p95Ms": null
+      },
+      "resolverToLoadRequestMs": {
+        "observedCount": 4,
+        "unavailableCount": 1,
+        "minMs": 1,
+        "maxMs": 1,
+        "medianMs": 1,
+        "p95Ms": null
+      },
+      "loadRequestToCorePlayingMs": {
+        "observedCount": 4,
+        "unavailableCount": 1,
+        "minMs": 195,
+        "maxMs": 224,
+        "medianMs": 221.5,
+        "p95Ms": null
+      },
+      "playToCorePlayingMs": {
+        "observedCount": 4,
+        "unavailableCount": 1,
+        "minMs": 685,
+        "maxMs": 763,
+        "medianMs": 740.5,
+        "p95Ms": null
+      },
+      "loadRequestToFileLoadedMs": {
+        "observedCount": 4,
+        "unavailableCount": 1,
+        "minMs": 57,
+        "maxMs": 87,
+        "medianMs": 84,
+        "p95Ms": null
+      },
+      "nativeStartToFileLoadedMs": {
+        "observedCount": 4,
+        "unavailableCount": 1,
+        "minMs": 52,
+        "maxMs": 80,
+        "medianMs": 79,
+        "p95Ms": null
+      },
+      "cd2ReportedResolveMs": {
+        "observedCount": 0,
+        "unavailableCount": 5,
+        "minMs": null,
+        "maxMs": null,
+        "medianMs": null,
+        "p95Ms": null
+      }
+    },
+    "unknown": {
+      "playToResolverMs": {
+        "observedCount": 0,
+        "unavailableCount": 2,
+        "minMs": null,
+        "maxMs": null,
+        "medianMs": null,
+        "p95Ms": null
+      },
+      "resolverToLoadRequestMs": {
+        "observedCount": 0,
+        "unavailableCount": 2,
+        "minMs": null,
+        "maxMs": null,
+        "medianMs": null,
+        "p95Ms": null
+      },
+      "loadRequestToCorePlayingMs": {
+        "observedCount": 0,
+        "unavailableCount": 2,
+        "minMs": null,
+        "maxMs": null,
+        "medianMs": null,
+        "p95Ms": null
+      },
+      "playToCorePlayingMs": {
+        "observedCount": 0,
+        "unavailableCount": 2,
+        "minMs": null,
+        "maxMs": null,
+        "medianMs": null,
+        "p95Ms": null
+      },
+      "loadRequestToFileLoadedMs": {
+        "observedCount": 0,
+        "unavailableCount": 2,
+        "minMs": null,
+        "maxMs": null,
+        "medianMs": null,
+        "p95Ms": null
+      },
+      "nativeStartToFileLoadedMs": {
+        "observedCount": 0,
+        "unavailableCount": 2,
+        "minMs": null,
+        "maxMs": null,
+        "medianMs": null,
+        "p95Ms": null
+      },
+      "cd2ReportedResolveMs": {
+        "observedCount": 0,
+        "unavailableCount": 2,
+        "minMs": null,
+        "maxMs": null,
+        "medianMs": null,
+        "p95Ms": null
+      }
+    }
+  },
+  "unavailableStages": {
+    "metadataOnly": "NO_SEPARATE_BOUNDARIES",
+    "cd2FindOnly": "PHASE_EVENTS_HAVE_NO_REQUEST_ID",
+    "cd2UrlOnly": "PHASE_EVENTS_HAVE_NO_REQUEST_ID",
+    "firstVisibleFrame": "NO_PRESENTATION_EVIDENCE",
+    "directoryColdWarm": "NO_DIRECTORY_CACHE_EVIDENCE"
+  },
+  "limitations": [
+    "Intervals are log receipt observations, not monotonic producer timings or visible first frames.",
+    "The play marker is libmpv entry, not the user action or complete PlaybackManager startup.",
+    "CD2 reported elapsedMs uses Date.now; clamping by the producer may hide clock changes.",
+    "Missing, duplicated, retired or unassociated markers are not paired by temporal proximity.",
+    "Absence of suppression/drop markers cannot prove complete delivery or successful final flush.",
+    "Timestamps have millisecond resolution; zero differences are not precise zero-duration measurements.",
+    "Synthetic samples do not establish real Emby/CD2 performance or pre-warm benefit.",
+    "No raw identifiers, timestamps, paths or unknown record fields are included."
+  ]
+}

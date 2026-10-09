@@ -22,7 +22,9 @@ function statusNode() {
     return {
         textContent: '',
         role: '',
+        attributes: Object.create(null),
         setAttribute(name, value) {
+            this.attributes[name] = value;
             if (name === 'role') this.role = value;
         }
     };
@@ -243,9 +245,13 @@ function connectionPage(invoke) {
     const cards = Array.from({length: 2}, statusNode);
     const testButton = {disabled: false};
     const testResult = statusNode();
+    const mountStatus = statusNode();
+    const formatStatus = statusNode();
     const ruleCard = {
         querySelector(selector) {
             if (selector === '.ete-strm-rule-test') return testResult;
+            if (selector === '.ete-strm-rule-mount') return mountStatus;
+            if (selector === '.ete-strm-rule-format') return formatStatus;
             throw new Error('unexpected selector: ' + selector);
         }
     };
@@ -265,7 +271,7 @@ function connectionPage(invoke) {
     page.connectionStatus = 'unknown';
     page.connectionRevision = -1;
     page.connectionRequestSequence = 0;
-    return {page, cards, connection, testButton, ruleCard, testResult};
+    return {page, cards, connection, testButton, ruleCard, testResult, mountStatus, formatStatus};
 }
 
 function previewPage(invoke) {
@@ -372,7 +378,7 @@ test('terminal connection status cannot regress to checking at the same revision
 
 test('a delayed rule check cannot replace a completed connection result with checking', async () => {
     const pending = deferred();
-    const {page, cards, connection, ruleCard} = connectionPage(() => pending.promise);
+    const {page, cards, connection, ruleCard, mountStatus, formatStatus} = connectionPage(() => pending.promise);
     const ruleCheck = page.testRule('saved-rule', ruleCard);
     page.applyConnectionSnapshot({connectionStatus: 'connected', connectionRevision: 3});
     pending.resolve({status: 'ok', ruleId: 'saved-rule', mount: 'not_configured', cloud: 'mapped',
@@ -380,6 +386,31 @@ test('a delayed rule check cannot replace a completed connection result with che
     await ruleCheck;
     assert.equal(connection.textContent, 'CloudDrive2 最近测试：已连接');
     assert.ok(cards.every(card => card.textContent === 'CloudDrive2 最近测试：已连接'));
+    assert.equal(mountStatus.textContent, '未配置');
+    assert.equal(formatStatus.textContent, '格式有效');
+});
+
+test('rule status rows keep mount, path format, and connection evidence separate', async () => {
+    const responses = [
+        {status: 'warning', ruleId: 'saved-rule', mount: 'missing', cloud: 'mapped',
+            connectionStatus: 'failed', connectionRevision: 1},
+        {status: 'error', reason: 'invalid_request'}
+    ];
+    const {page, ruleCard, connection, testResult, mountStatus, formatStatus} =
+        connectionPage(async () => responses.shift());
+
+    await page.testRule('saved-rule', ruleCard);
+    assert.equal(mountStatus.textContent, '不可访问');
+    assert.equal(mountStatus.attributes['data-status'], 'bad');
+    assert.equal(formatStatus.textContent, '格式有效');
+    assert.equal(formatStatus.attributes['data-status'], 'pass');
+    assert.equal(connection.textContent, 'CloudDrive2 最近测试：连接失败');
+    assert.equal(testResult.textContent, '检查完成，挂载状态需注意');
+
+    await page.testRule('saved-rule', ruleCard);
+    assert.equal(mountStatus.textContent, '状态未更新');
+    assert.equal(formatStatus.textContent, '状态未更新');
+    assert.equal(testResult.role, 'alert');
 });
 
 test('a late connection test result cannot replace a newer completed attempt', async () => {

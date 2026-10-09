@@ -1,6 +1,7 @@
 param(
     [Parameter(Mandatory=$true)][string]$SourceCommit,
     [Parameter(Mandatory=$true)][string]$RuntimeRoot,
+    [string]$Compiler = '',
     [switch]$Testing
 )
 $ErrorActionPreference = 'Stop'
@@ -29,7 +30,11 @@ $utf8 = New-Object Text.UTF8Encoding($false)
 $materializedJson = & node (Join-Path $root 'tools/materialize-native-helper-source.cjs') $root $SourceCommit $manifest.sourcePath $source
 if ($LASTEXITCODE -ne 0) { throw 'Unable to materialize native helper source from the source commit.' }
 $materialized = $materializedJson | ConvertFrom-Json
-$compiler = (Get-Command $manifest.compiler.command -ErrorAction Stop).Source
+if (-not $Compiler) { $Compiler = Join-Path $root '.work/toolchain/msys2/ucrt64/bin/g++.exe' }
+$compiler = [IO.Path]::GetFullPath($Compiler)
+$toolchainJson = & node (Join-Path $root 'tools/build-toolchains.cjs') native $root $compiler
+if ($LASTEXITCODE -ne 0) { throw 'Complete native compiler toolchain validation failed.' }
+$toolchain = $toolchainJson | ConvertFrom-Json
 $compilerVersion = (& $compiler --version | Select-Object -First 1)
 $compilerSha256 = (Get-FileHash -LiteralPath $compiler -Algorithm SHA256).Hash.ToLowerInvariant()
 if ($compilerVersion -ne $manifest.compiler.version -or $compilerSha256 -ne $manifest.compiler.sha256) { throw 'Native helper compiler identity mismatch.' }
@@ -48,6 +53,7 @@ try {
         source = [ordered]@{ path=$manifest.sourcePath; gitBlobObjectId=$materialized.objectId; sha256=$materialized.sha256; size=[int64]$materialized.size; relation='git-commit-blob' }
         clientHeader = [ordered]@{ source=$manifest.clientHeader.source; sha256=$manifest.clientHeader.sha256 }
         compiler = [ordered]@{ fileName=(Split-Path $compiler -Leaf); sha256=$compilerSha256; version=$compilerVersion; flags=@($flags + $linkerFlags) }
+        toolchain = $toolchain
         libmpv = [ordered]@{ runtimePath=$manifest.libmpv.runtimePath; sha256=$manifest.libmpv.sha256; version=$manifest.libmpv.version; clientApi=$manifest.libmpv.clientApi }
         helper = [ordered]@{ runtimePath=$manifest.runtimePath; sha256=(Get-FileHash -LiteralPath $output -Algorithm SHA256).Hash.ToLowerInvariant(); size=(Get-Item -LiteralPath $output).Length; testing=[bool]$Testing }
         contract = $contract
@@ -55,5 +61,11 @@ try {
     [IO.File]::WriteAllText((Join-Path $RuntimeRoot $manifest.provenancePath), ($record | ConvertTo-Json -Depth 8) + "`n", $utf8)
     $record | ConvertTo-Json -Depth 8
 } finally {
-    if (Test-Path -LiteralPath $work) { Remove-Item -LiteralPath $work -Recurse -Force }
+    if (Test-Path -LiteralPath $work) {
+        $resolvedWork = (Resolve-Path -LiteralPath $work).Path
+        $ownedPrefix = [IO.Path]::GetFullPath((Join-Path $root '.work')) + [IO.Path]::DirectorySeparatorChar
+        if (-not $resolvedWork.StartsWith($ownedPrefix, [StringComparison]::OrdinalIgnoreCase) -or
+            (((Get-Item -LiteralPath $work).Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0)) { throw 'Native build cleanup ownership mismatch.' }
+        Remove-Item -LiteralPath $work -Recurse -Force
+    }
 }

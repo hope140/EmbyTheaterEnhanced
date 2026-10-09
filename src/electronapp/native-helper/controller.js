@@ -137,6 +137,7 @@ class NativeHelperClient {
     this.protocolFailure = null;
     this.handshake = null;
     this.onEvent = typeof options.onEvent === 'function' ? options.onEvent : () => {};
+    this.onDiagnostic = typeof options.onDiagnostic === 'function' ? options.onDiagnostic : () => {};
     this.onTerminal = typeof options.onTerminal === 'function' ? options.onTerminal : () => {};
     this.outboundQueue = [];
     this.outboundBytes = 0;
@@ -248,6 +249,14 @@ class NativeHelperClient {
     for (const message of messages) this.dispatch(message);
   }
 
+  diagnose(name, generationId, disposition, details = {}) {
+    if (!['generation-begin', 'generation-retired', 'start-file', 'file-loaded', 'end-file'].includes(name)) return;
+    try {
+      const pending = this.onDiagnostic({name, generationId, disposition, currentGenerationId: this.currentGenerationId, ...details});
+      if (pending && typeof pending.catch === 'function') pending.catch(() => {});
+    } catch (_) { /* Observers cannot affect generation or event delivery. */ }
+  }
+
   dispatch(message) {
     const base = {
       atParentMicros: monotonicMicros(),
@@ -262,10 +271,12 @@ class NativeHelperClient {
     };
     if (this.transportTerminated || this.exited || this.protocolFailure) {
       this.timeline.push({ ...base, action: 'DROP_TRANSPORT_TERMINAL' });
+      this.diagnose(message.name, message.generationId, 'DROP_TRANSPORT_TERMINAL');
       return;
     }
     if (message.helperInstanceId !== this.helperInstanceId) {
       this.timeline.push({ ...base, action: 'DROP_STALE_HELPER' });
+      this.diagnose(message.name, message.generationId, 'DROP_STALE_HELPER');
       return;
     }
     if (message.type === 'response' || message.type === 'error') {
@@ -284,12 +295,14 @@ class NativeHelperClient {
     if (message.type === 'lifecycle' || message.scope === 'helper') {
       const action = message.name === 'unattributed-native-event' ? 'DROP_UNATTRIBUTED' : 'ACCEPT_HELPER_GLOBAL';
       this.timeline.push({ ...base, action, reason: message.reason || null, detail: message.detail || null });
+      if (message.name === 'unattributed-native-event') this.diagnose(message.rawEventName, null, 'DROP_UNATTRIBUTED');
       if (message.name === 'ready') this.handshake = message.detail || null;
       return;
     }
     if (message.type === 'event') {
       if (message.generationId !== this.currentGenerationId) {
         this.timeline.push({ ...base, action: 'DROP_STALE_GENERATION', value: message.value });
+        this.diagnose(message.name, message.generationId, 'DROP_STALE_GENERATION');
         return;
       }
       if (message.name === 'operation-error') {
@@ -308,6 +321,7 @@ class NativeHelperClient {
         return;
       }
       this.timeline.push({ ...base, action: 'ACCEPT', value: message.value });
+      this.diagnose(message.name, message.generationId, 'ACCEPT', {endReason: message.name === 'end-file' && message.value ? message.value.reason : null});
       if (message.name === 'start-file') this.state.status = 'loading';
       if (message.name === 'file-loaded') { this.state.fileLoaded = true; this.state.status = 'loaded'; }
       if (message.name === 'path') this.state.path = message.value;
@@ -324,6 +338,7 @@ class NativeHelperClient {
     this.currentLabel = label;
     this.state = { status: 'loading', path: null, playing: false, fileLoaded: false };
     this.timeline.push({ atParentMicros: monotonicMicros(), helperInstanceId: this.helperInstanceId, generationId: this.currentGenerationId, requestId: null, rawEventId: null, rawEventName: null, mediaIdentity: null, name: 'generation-begin', currentAuthoritativeGeneration: this.currentGenerationId, action: 'BEGIN_GENERATION', label });
+    this.diagnose('generation-begin', this.currentGenerationId, 'BEGIN_GENERATION', {label});
     this.command('activate-generation', { properties: observedProperties }, this.currentGenerationId);
     return this.currentGenerationId;
   }
@@ -340,6 +355,7 @@ class NativeHelperClient {
     this.timeline.push({ atParentMicros: monotonicMicros(), helperInstanceId: this.helperInstanceId, generationId: retired, requestId: null, rawEventId: null, rawEventName: null, mediaIdentity: null, name: 'generation-retired', currentAuthoritativeGeneration: null, action: 'RETIRE_GENERATION', reason });
     this.currentGenerationId = null;
     this.currentLabel = null;
+    this.diagnose('generation-retired', retired, 'RETIRE_GENERATION', {reason});
   }
 
   request(method, params = {}, options = {}) {

@@ -143,12 +143,12 @@ function baselineIdentity(root) {
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
     return {
         manifestPath: 'vendor/runtime-manifest.json',
-        sha256: hashFile(manifestPath),
+        sha256: trackedFileHash.hashTrackedTextFile(root, 'vendor/runtime-manifest.json'),
         baseline: manifest.baseline || 'unknown',
         vendorFileCount: Array.isArray(manifest.files) ? manifest.files.length : null,
         vendorPatchFileCount: Array.isArray(manifest.patchFiles) ? manifest.patchFiles.length : null,
         runtimeExclusions: Array.isArray(manifest.runtimeExclusions) ? manifest.runtimeExclusions.slice() : [],
-        coverage: 'vendor files are identified by the external runtime manifest, not by sourceCommit'
+        coverage: 'vendor bytes are identified by a manifest bound to sourceCommit; input bodies remain external'
     };
 }
 
@@ -165,7 +165,7 @@ function electronRuntimeIdentity(root, runtime) {
     const validated = electronRuntimeInput.validateRuntime(root, runtime);
     return {
         manifestPath: electronRuntimeInput.MANIFEST_PATH,
-        manifestSha256: hashFile(path.join(root, electronRuntimeInput.MANIFEST_PATH)),
+        manifestSha256: trackedFileHash.hashTrackedTextFile(root, electronRuntimeInput.MANIFEST_PATH),
         validatorPath: 'tools/electron-runtime-input.cjs',
         validatorSha256: trackedFileHash.hashTrackedTextFile(root, 'tools/electron-runtime-input.cjs'),
         version: validated.version,
@@ -337,7 +337,10 @@ function validateManifest(root, runtime, sourceCommit) {
     else {
         const baselinePath = path.join(root, manifest.baselineIdentity.manifestPath);
         if (!exists(baselinePath)) errors.push('baseline-manifest-missing');
-        else if (hashFile(baselinePath) !== manifest.baselineIdentity.sha256) errors.push('baseline-manifest-changed');
+        else {
+            try { if (trackedFileHash.hashTrackedTextFile(root, 'vendor/runtime-manifest.json') !== manifest.baselineIdentity.sha256) errors.push('baseline-manifest-changed'); }
+            catch (_) { errors.push('baseline-manifest-changed'); }
+        }
     }
     try {
         const expectedElectronRuntime = electronRuntimeIdentity(root, runtime);

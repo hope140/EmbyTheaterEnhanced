@@ -1,5 +1,146 @@
 # 已确认经验
 
+## 2026-10-09 — 正常关闭的清理Promise必须共享
+
+- 仅缓存service destroy不足以覆盖renderer endpoint先行销毁。client=null只表示已解绑；它拥有的退出Promise须被pending集合保留，并由随后完整destroy在admission封口后捕获等待。
+- pending join的拒绝测试必须先建立snapshot再reject。已经settled并从集合删除的失败属于另一个contract，不能为满足错误fixture而扩大产品的历史失败保留语义。
+
+- destroyed标记表示已开始销毁，不能用于向后续调用返回一个已完成结果。window closed与before-quit可能相邻触发，后者必须等待首次owned child清理的完整Promise。
+- 自然OS退出、零残留、IPC unregister完成与native child退出Promise完成是不同证据。新增实际child完成观察后，初版正常关闭从表面PASS变为可复现的等待归属FAIL；不能降低门槛。
+- 清理结果缓存同时保留拒绝。测试不能顺手要求失败后继续surface cleanup，除非另有批准contract；本次保留原错误短路。
+- full pipeline经正常窗口关闭验收时保留全部原播放与Session断言；当前候选app.exit失败证据另列，不能描述为只发生在历史版本。
+
+## 2026-10-09 — Stop 归属与退出观察
+
+- Stop Promise 的完成回调不能凭最新 request id 决定是否收尾旧 Session。捕获的 streamInfo 拥有一次清理与报告；新请求的身份只决定后续播放是否继续。
+- libmpv 在 Stop Promise resolve 前发出无标签 stopped 事件。只给 then 加 identity guard 仍可能漏掉迟到事件；同一旧流的物理 Stop 排空前不能重新绑定当前流的 stopped listener。
+- 盲目共享第一次 Stop 会跳过后续 Native presentation token 的 beforeTeardown。局部串行保留 active + 最新有效 Stop，并让过期 queued 请求在实际执行前退出；测试应联用真实 PlaybackManager 与真实 transition 模块。
+- terminal joiner 必须共享包含 operation rejection 的完整 Promise。只等待已 catch 的清理 tail 会把失败伪装成成功，使新请求继续。
+- Windows CIM CreationDate 的精度为微秒，Get-Process.StartTime 可有 100ns 尾数。子进程观察需按已证实精度比较，identity mismatch 保持 UNKNOWN；root 强制清理仍使用同一 API 取得的精确 StartTime。
+
+## 2026-10-09 — 请求快照与pending报告归属
+
+- 单调request ID放在复用options上仍可失效：后续请求会改写旧闭包读到的值。每次请求应在分配ID前建立独立快照，同时保留队列item到当前streamInfo的ID传播；回归同时观察旧成功、旧失败和真实player调用次数。
+- pending清理需要继续执行Stop、状态清空和事件，仅抑制尚未Started临时状态的报告。不能用通用`started=false`判定无会话，因为已有换流失败也会使用这个值；Started/Stopped验收需按ItemId、PlaySessionId、MediaSourceId和先后顺序配对。
+- 完整smoke成功落盘与Electron自然退出是两层证据。本轮hit0的播放断言全过但outer120s退出失败；强制清理后的零残留不能替代自然退出通过，独立复验也不能覆盖原失败或自动证明并行负载就是原因。
+
+## 2026-10-09 — 隐藏回归的请求门槛与失败终态
+
+- 隐藏 renderer 的150ms定时器可能实际约1秒，不能用它证明两个异步请求重叠。应让假服务明确持有指定request，再核对该request的成功cancel；native generation overlap不等于上游CD2仍pending。
+- 减少固定等待后仍要遵守产品输入规则。本产品inputmanager对Stop做全局1000ms去重；夹具满足输入间隔后，仍须等待真实报告与清空状态，不能只把等待时间当成功。
+- 超时应同步锁定失败，再收集有期限的证据。renderer不响应/同步抛错、主进程退出但子进程仍持有stdout管道，都不能使测试无限等待或把迟到成功写为PASS。
+- final item是B不能排除重复加载B。释放旧PlaybackInfo后应核对player调用次数；共享可变options中的generation ID可能被新请求改写，让旧请求守卫误过。本轮四组PASS不能覆盖另一个生命周期阶段的明确FAIL。
+- 产品sourceCommit与工具harness HEAD应分开记录，运行所用文件记录实际hash；新工具结果不能覆盖旧Release失败证据，也不能把缺身份pending Stop报告隐藏在成功汇总里。见 [runner记录](RUNNER_DETERMINISM.md)。
+
+## 2026-10-09 — 输出链接与安装器文件时间
+
+- 只检查输出读回hash不能防止写入沿已有hardlink/symlink改写外部文件。创建通知前应预检所有目的地，config仅接受验证过的base并原子替换；已完成产物和已存在通知应拒绝覆盖。
+- 链接回归不能把EEXIST当成环境不支持；应实际建立fixture并验证外部canary保持，最终记录skip数量。
+- runtime文件字节相同不代表源mtime相同。先固定同一runtime验证容器稳定，再对不同mtime输入做单变量实验；固定Inno6.7.3的notimestamp可控制这项打包元数据，不应修改生成后的EXE来凑SHA。
+
+## 2026-10-09 — 构建输入contract的实际收口
+
+- build与package同时读取同一工作文件，不能单独证明该文件属于sourceCommit；限定输入需对HEAD blob验证，普通source则直接从blob生成。
+- checkout换行可在比较时canonical化，provenance仍应记录Git原始blob hash；更换hash语义需明确schema，旧审计不能静默升级成新保证。
+- 精确包复制需同时校验selected新文件集合与retained归档集合；包根name/version和lock integrity不能取代实际文件hash。
+- 保护新输出需要校验目录祖先的junction/reparse边界；单个文件不是链接不足以证明整个路径在仓库内。
+- ISCC的help或PE版本字段可能没有准确版本值；本次用固定签名归档到完整解包树及ISCC字节的关系核对6.7.3身份。
+- 固定公开源码ZIP可补齐header或辅助binary的精确来源，但不自动建立Host或libmpv的完整重建和对应源码关系。
+
+## 2026-10-09 — 构建身份与材料边界
+
+- Git排除的输入仍可能进入installer；通知说明要分别描述Git跟踪范围和真实payload。
+- lockfile选择的33包不是完整node_modules文件集合；覆盖复制会保留Carnival旧文件。fresh npm逐文件比较发现long额外20文件，最终payload有hash不能替代源包对应性核对。
+- 单个g++.exe hash不覆盖cc1plus/linker/静态库/系统头文件；历史双build不能自动证明当前完整runtime或installer字节可复现。
+- SHA256、版本字符串、明文源码和参考上游仓库各自是不同证据；来源缺口应列出所缺archive/source/config/toolchain材料，不据此猜测组件许可或自动更换组件。
+
+## 2026-10-09 — 离线阶段计时的证据边界
+
+- JSONL的logger接收墙钟、原生内部单调时钟、写盘时间和可见首帧是不同边界；跨IPC日志差只能保留其观测语义，合成服务固定延迟不能当成实服瓶颈。
+- 用原始ISO字符串计算毫秒，避免PowerShell日期隐式转回字符串损失精度。0ms应保留量化/时钟钳制歧义，缺失不能填0。
+- 只有app/start而没有逐条writer身份时，多启动日志可能混入旧进程尾部写入。离线工具应拒绝不确定输入，不能仅按最近start拼接；Stop/retire后的迟到端点也不能算有效区间。
+
+## 2026-10-09 — 有限错误位置与代次观察
+
+- 任意异常消息和 stack 可能夹带 URL、账号或凭据。Renderer observer 先投影为固定错误类别及经文件边界验证的包内位置，未知内容保持 UNAVAILABLE；不能只截断 raw stack 后寄希望于通用正则。
+- Generation 日志必须保留事件自身的 helper/generation 与 DROP disposition；旧事件不借用当前请求标签。关联淘汰、限频和写入积压可能造成缺失证据，日志缺失不等于事件未发生。
+- 诊断旁路需要同时覆盖同步 throw、异步 rejection、积压容量和真实 IPC 重投影。版本 provenance 与版本字段一致性是两种不同检查，应在 package gate 同时执行。
+- Electron Windows 的 app.getPath('appData') 不能仅靠子进程 APPDATA 环境变量隔离。测试必须在产品 bootstrap 前显式 app.setPath 并读回路径；只指定 userData 仍不足以隔离 logger 和 DeviceId。先前误写测试日志不得清理掩盖，应保留偏差并用哈希证明修正后的运行没有继续写入。
+- 直接以 cjs 作为 Electron 入口时 app.getVersion 可能是 Electron 自身版本；版本验收 harness 应提供来自 runtime 的 package metadata，并通过真实 maintenance IPC 核对。
+
+## 2026-10-09 — 设置页应通过完整导航验证
+
+- fragment挂载看不到原生导航标题，可能遗漏重复页标题；同层原生设置页与增强页应在实际主题/侧栏/路由中对比内容起点、动态控件和焦点。
+- Carnival设置菜单实际由itemsContainer/itemAction驱动，不能假设一定是a[href]。appready不等于初次startup导航结束；appRouter.show共享resolveOnNextShow，完整导航证据应绑定viewshow自身的route/view并核对点击前源菜单。
+- 某些vendor格式化脚本为UTF16，读取时须尊重BOM；用UTF8字符串搜索不到内容不能认定代码不存在。
+
+## 2026-10-08 — 自定义控件类型与基础样式必须分别核对
+
+- createElement(tag,{is:customName})只证明构造类型；紧接着整体赋className仍会删除constructor添加的Emby按钮基础类和TV/backdrop环境类。业务类应追加，测试同时核对实例、基础类、选择器及禁用状态。
+- EmbyButton、EmbyInput和EmbySelect的初始化时序不同。Button constructor设置hasInit后connected不会补class；Input依赖parentNode；Select的base与constructor环境类分开处理。Fake应镜像实际时序，不能把Input基础类丢失当成本次根因。
+- 复用原生设置组件还需复用其外层布局逻辑；在auto-center外另加定宽居中容器会绕过full drawer下的原生左对齐。UI验证应比较同层原生页的内容起点，并检查动态控件与窄屏。
+
+## 2026-10-08 — 发布版本字段必须收口
+
+- 功能属于0.2.3计划不代表产物已经是0.2.3。对外版本交付应核对root package、lockfile、runtime application package、About真实IPC/页面文本、构建清单与安装器PE版本，再核对GitHub标签和文件名。
+- 版本更正需从新sourceCommit正式重建；不能只改附件名称、移动旧标签或手改包内文件。与已验证runtime逐文件比较可以证明变化限于预期版本/来源记录，历史播放证据仍注明原候选身份。
+- 已发布的旧候选保留原源码/哈希，使用新版本入口和明确替代说明引导下载，避免不同版本共用一个历史标签。
+
+## 2026-10-08 — 统一候选与探针证据
+
+- 集成后必须绑定同一sourceCommit重测，两个支线的历史PASS数量不能相加；Settings-only blob与播放/native基线blob可分别审计保留范围。
+- 正式应用模块只在产品appready后请求。Alameda返回Promise，应显式接住reject；过早请求裸模块名可能污染loader，不能靠更长sleep或重复注册plugin修补。
+- Chromium customized built-in用构造器实例验证；创建时的is选项不保证反射为内容属性。测试的DOM断言失败需先区分控件真实类型与CSS selector假设。
+- executeJavaScript跨进程返回须可结构化复制；注入后返回函数会导致探针失败。无登录夹具的启动页遮挡也不能自动归为播放器故障。
+- 稀疏颜色/帧hash证明所采时刻呈现正确视频，不能排除切换中的短闪；107ms仍超过原100ms门槛，必须保留INCONCLUSIVE。
+
+## 2026-10-08 — Transparent fullscreen与carrier边框
+
+- 固定Electron44.4.2 Windows透明窗口会发enter-full-screen并铺满display，但isFullScreen仍可false；事件发生在bounds变化之前。全屏判断与普通尺寸保存需遵循该实际顺序，重复setFullScreen(true)会覆盖其restore bounds。
+- 用户resize可以只触发resize/move而没有leave-full-screen。先同步采集main/renderer/display/surface，再在全屏活动期限制交互并保留正常窗口能力；不能用全局禁用resize替代。
+- 顶部细条需分别看合成像素、renderer像素和carrier几何。本次renderer无对应灰线，carrier-only配置实验消除了合成图顶部灰色两行；该证据不自动覆盖其它细条来源或圆角问题。
+- restore fake必须覆盖延迟事件；显式Normal要撤销旧restore intent。最小化后的状态字符串不是全屏活动状态，退出保存bounds也要区分两者。
+- 用户对顶部细条的手动通过只关闭该视觉项。阶段候选的可见交互、最终源码自动化、被用户中断的最终桌面测试分别记录。
+
+## 2026-10-08 — Native presentation ownership and visible evidence
+
+- 先用相同 libmpv 的 Pepper/E18、Helper/E18、Helper/E44 做可见对照，才能判断回归从哪一层开始。本轮 Helper/E18 已有切集空档，不能单独归因 Electron 44；仅保留 carrier 会把空档变成黑色。
+- WM_PAINT 成功和窗口 visible 不足以证明 GPU 合成屏幕显示了暂存帧。初次普通 GDI child 实测仍黑；独立 layered child 需用最终屏幕 ROI 单独验证。`core-playing`、截图成功及 DwmFlush 也不称作 first-present ACK。
+- 媒体 retirement 必须先于视觉等待。视觉准备使用独立 control generation，token/holdId/endpoint/helper 共同约束取消；拿不到超时回包的 holdId 时，还要能按 preparation generation 清理。较新 renderer epoch 可以撤销尚未返回 ID 的 begin；旧 token Stop 应在 generation 校验前作为过时操作忽略，不能清掉 C。
+- 生命周期 fake manager 必须保留真实 manager 的 stop sequence invalidation 与 post-await stale 检查。绕过 manager 直接调用 player.stop，再让 fake manager 发出新 play，不等价于用户点击停止，不应据此改写稳定播放链。
+- 全屏持帧期间 screen stream 可少发重复画面。本轮缺口端点同色同 hash，仍不足以排除缺口内短闪；保留 INCONCLUSIVE，不复制旧样本补齐时间，也不降低 100ms 门槛。
+
+## 2026-10-06 — Visual task cancellation owns its waits
+
+- 清除过渡 DOM 时，同时释放它拥有的 paint promise、visibility listener 与待执行帧。即使真实播放调用方有 generation guard，已取消视觉任务也不应继续等待渲染帧。
+- CSS transition 的终结不能只依赖 transitionend；取消、没有实际 animation、隐藏文档应有可归属的清理。所有异步清理仍需核对当前 token。
+- never-shown BrowserWindow 可能报告 visible 却延迟 CSS 动画完成；隔离探针应区分未显示、显示后和真实客户端的证据，不由隐藏渲染行为推导播放修复。
+- diagnostics 自测找不到 bundle 时要先检查子进程是否真正启动。Start-Process 会将未引用的含空格 -File 路径拆开；本次修参数引用即可保持原隐私 gate 通过，不应调长等待或减弱断言。
+
+## 2026-09-24 — Transparent playback gap needs an in-window visual owner
+
+- 用户报告的 NextTrack 空白发生在透明播放窗口内：播放 surface 隐藏后，桌面可从视频区域显露。视觉过渡层应由现有 renderer 在 surface teardown 前同步持有，并限制在播放容器内，不能改变 main window、Native Helper 或 Session ownership。
+- 队列管理器在换项时已持有选中 Item；复用该 Item 的现有 image URL builder 可以显示 Backdrop 优先、Primary poster fallback 的封面，而不再请求下一集元数据。过渡图必须在视频容器内用 100% 宽高和 `object-fit:cover` 填满，竖版 poster 允许居中裁切；图片缺失或失败应立即落到黑底，不能阻塞播放请求。
+- 需要保证 teardown 前看到 overlay 时，应在现有 surface hide 边界用 renderer paint 协调，而不是延迟或包裹 manager 的整个 NextTrack 调用；这样可保留既有 request id 与 Stop supersession 顺序。不能用固定 sleep 猜测时长。`core-playing` 是当前可用的 ready proxy；可见 surface 之后仍需单独做真实前台视觉检查，不能等同于已观测到首个呈现帧。
+- 快速切换时以当前播放请求的 request id/revision 控制 visual owner，让迟到的旧 ready/settle/failure 不清理新覆盖层；实际播放顺序仍交由原 PlaybackManager 链处理。
+## 2026-10-06 — Maintenance request budgets and normalized URLs
+
+- socket timeout 衡量空闲，不代表整个请求期限。点击驱动的更新查询需要从发起时计时，并在成功、失败和同步异常终结时清理计时器；错误响应也应及时结束网络资源。
+- 外链白名单应检查 URL 规范化后的主机与路径；原始字符串前缀无法阻止 dot-segment / 反斜杠规范化越出目标目录。
+- 数字 prerelease 标识可能超过 JavaScript 安全整数；使用数字字符串的长度与字典序比较，避免不同版本被折叠为相等。
+- `Start-Process -ArgumentList` 会连接参数而不自动保留含空格路径的引用。观察不到测试 bundle 时应先检查子进程真实启动结果；本次同签名由路径拆分造成，不能仅按断言文字判为 timing flake，也不能放松隐私 gate。
+
+## 2026-09-24 — Dynamically created Emby controls need creation-time `is`
+
+- `emby-input`、`emby-select`、`emby-button` 扩展原生标签。静态 HTML 的 `is` 由 parser 在创建时处理；动态控件在 `document.createElement(tag)` 之后补 `is` 属性不会把普通元素变为 Emby customized built-in。动态控件应使用 `document.createElement(tag, {is: name})`。
+- 页面静态控件与动态规则卡可在同一 runtime 中呈现两套外观；只检查 HTML class 和 CSS 存在不足以发现此问题。回归测试应观察生成控件的创建选项，并保留真实视觉复核为独立 gate。
+
+## 2026-09-24 — Settings visual review is a separate gate
+
+- 上一轮 STRM UI 的静态测试、provenance 与构建通过，但用户实际查看后判定视觉 FAIL；这些后台证据不能替代三个页面切换时的字体、控件、卡片和按钮可读性验收。
+- 诊断页同属后续新增页面，不能把它的原生按钮和卡片样式视为成熟设计规范。共享 Settings 视觉层应在带命名空间的根类下定义 token 与组件，各页只保留布局特例；Emby 原生 `raised/button-submit` 不应用作新增页面的按钮基线。
+- Native Helper 未 ready 时其 status 可包含预期 libmpv 版本；About 只有在 ready 后才将其显示为已确认版本。主显示器 `scaleFactor` 应标为显示缩放，不应称为 DPI。
+
 ## 2026-09-23 — Connection status and mapping format are separate facts
 
 - `TEST_CONNECTION` 的 CD2 探针结果与 `TEST_RULE` 的纯 prefix replacement 结果来源不同；把 `mapped` 固定写成“未连接服务”会与稍后的成功连接测试冲突。连接状态应由同一 main-process 会话快照提供，映射格式仍作为独立字段。
