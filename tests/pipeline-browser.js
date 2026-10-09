@@ -1,6 +1,115 @@
 // Executed only by the local integration harness in an isolated Electron profile.
 // Real PlaybackManager + ApiClient report serializers + message dispatcher;
 // API responses and delivery are in memory, not a real Emby server/session.
+function buildPipelineSessionChecks(records, groups) {
+    const sourceGroups = groups && typeof groups === 'object' ? groups : {};
+    const groupNames = ['ordinary', 'strm', 'queue'];
+    const requiredItems = {};
+    groupNames.forEach(name => {
+        requiredItems[name] = Array.isArray(sourceGroups[name]) ? sourceGroups[name].slice() : [];
+    });
+    const parseIdentity = body => {
+        if (!body || typeof body !== 'object') return null;
+        const itemId = body.ItemId;
+        const playSessionId = body.PlaySessionId;
+        const mediaSourceId = body.MediaSourceId;
+        if ([itemId, playSessionId, mediaSourceId].some(value => typeof value !== 'string' || value.length === 0)) return null;
+        return {itemId,playSessionId,mediaSourceId,
+            key:itemId+'\u001f'+playSessionId+'\u001f'+mediaSourceId};
+    };
+    const starts = [];
+    const stops = [];
+    (Array.isArray(records) ? records : []).forEach((record, index) => {
+        const endpoint = record && typeof record.endpoint === 'string' ? record.endpoint : '';
+        const type = endpoint.endsWith('/Playing') ? 'started' : endpoint.endsWith('/Stopped') ? 'stopped' : null;
+        if (!type) return;
+        const value = {index,identity:parseIdentity(record && record.body)};
+        if (type === 'started') starts.push(value);
+        else stops.push(value);
+    });
+    const countDuplicateKeys = values => {
+        const counts = new Map();
+        values.forEach(value => {
+            if (!value.identity) return;
+            counts.set(value.identity.key, (counts.get(value.identity.key) || 0) + 1);
+        });
+        let duplicates = 0;
+        counts.forEach(count => { if (count > 1) duplicates += count - 1; });
+        return duplicates;
+    };
+    const usedStarts = new Set();
+    const pairs = [];
+    let pendingStopped = 0;
+    let unmatchedStopped = 0;
+    let mismatchedStopped = 0;
+    stops.forEach(stop => {
+        const prior = stop.identity
+            ? starts.filter(start => start.identity && start.identity.key === stop.identity.key && start.index < stop.index)
+            : [];
+        if (prior.length === 0) pendingStopped++;
+        const candidate = prior.find(start => !usedStarts.has(start.index));
+        if (!candidate) {
+            unmatchedStopped++;
+            if (stop.identity && starts.some(start => start.identity && start.identity.itemId === stop.identity.itemId)) {
+                mismatchedStopped++;
+            }
+            return;
+        }
+        usedStarts.add(candidate.index);
+        pairs.push({startIndex:candidate.index,stopIndex:stop.index,key:stop.identity.key});
+    });
+    const requiredItemResults = {};
+    const groupChecks = {};
+    groupNames.forEach(name => {
+        const itemIds = requiredItems[name];
+        const validList = itemIds.length > 0 && itemIds.every(value => typeof value === 'string' && value.length > 0) && new Set(itemIds).size === itemIds.length;
+        const items = itemIds.map(itemId => {
+            const itemStarts = starts.filter(value => value.identity && value.identity.itemId === itemId);
+            const itemStops = stops.filter(value => value.identity && value.identity.itemId === itemId);
+            const paired = itemStarts.length === 1 && itemStops.length === 1 &&
+                itemStarts[0].identity.key === itemStops[0].identity.key && itemStarts[0].index < itemStops[0].index;
+            return {itemId,started:itemStarts.length > 0,stopped:itemStops.length > 0,
+                oneToOne:itemStarts.length === 1 && itemStops.length === 1,paired};
+        });
+        const passed = validList && items.length > 0 && items.every(value => value.paired);
+        requiredItemResults[name] = {itemIds:itemIds.slice(),items,passed};
+        groupChecks[name] = passed;
+    });
+    const incompleteStarted = starts.filter(value => !value.identity).length;
+    const incompleteStopped = stops.filter(value => !value.identity).length;
+    const duplicateStarted = countDuplicateKeys(starts);
+    const duplicateStopped = countDuplicateKeys(stops);
+    const unpairedStarted = starts.filter(value => !usedStarts.has(value.index)).length;
+    const unpairedStopped = unmatchedStopped;
+    const startedStoppedOneToOne = incompleteStarted === 0 && incompleteStopped === 0 &&
+        pendingStopped === 0 && unmatchedStopped === 0 && mismatchedStopped === 0 &&
+        duplicateStarted === 0 && duplicateStopped === 0 && unpairedStarted === 0 &&
+        unpairedStopped === 0 && starts.length === stops.length && pairs.length === starts.length;
+    const requiredStartedStopped = groupNames.every(name => groupChecks[name]);
+    return {
+        requiredItems,
+        requiredItemResults,
+        startedCount:starts.length,
+        stoppedCount:stops.length,
+        pairedCount:pairs.length,
+        pendingStopped,
+        unmatchedStopped,
+        incompleteStarted,
+        incompleteStopped,
+        duplicateStarted,
+        duplicateStopped,
+        unpairedStarted,
+        unpairedStopped,
+        mismatchedStopped,
+        startedStoppedOneToOne,
+        ordinaryStartedStopped:groupChecks.ordinary,
+        strmStartedStopped:groupChecks.strm,
+        queueStartedStopped:groupChecks.queue,
+        requiredStartedStopped,
+        passed:startedStoppedOneToOne && requiredStartedStopped
+    };
+}
+
 async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, stopBeforePlayerOnly, timelineOptions, fixtureOptions) {
     const trace = window.__pipelineTrace = [];
     const stages = [];
@@ -148,6 +257,7 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
         return {stopBeforePlayer,results:[],next:null,generation:null,records,calls,stages};
     }
     const results = [];
+    const sessionGroups = {ordinary:[],strm:[],queue:[]};
     sync = etePipelineCondition.create({timeoutMs:7000, now:()=>performance.now()});
     const eventCounts = {seek:0,timeupdate:0};
     const notify = event => {
@@ -178,6 +288,7 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
             MediaType:'Video',Type:'Movie',Path:kind==='strm'?(mountSidecar || 'fixture-sidecar.strm'):fixture,
             RunTimeTicks:durationTicks,UserData:{},MediaStreams:[]};
         items.set(activeItem.Id,activeItem);
+        sessionGroups[kind === 'video' ? 'ordinary' : 'strm'].push(activeItem.Id);
         await manager.play({items:[activeItem],fullscreen:true,startPositionTicks:0});
         markStage(stagePrefix + '-core-playing');
         trace.push('playing '+kind);
@@ -249,6 +360,7 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
         fixtureUrl:fixture+'?queue='+suffix,
         RunTimeTicks:durationTicks,UserData:{},MediaStreams:[]}));
     queue.forEach(item=>items.set(item.Id,item));
+    sessionGroups.queue = queue.map(item => item.Id);
     activeItem=queue[0];
     markStage('queue-play');
     await manager.play({items:queue,fullscreen:true,startPositionTicks:0});
@@ -353,9 +465,14 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
         window.enhancedDiagnostics = originalEnhancedDiagnostics;
     }
     markStage('pipeline-complete');
-    return {stopBeforePlayer,results,next,generation,records,calls,stages,observations,gateEvidence,conditions:sync.snapshot()};
+    const sessionChecks = buildPipelineSessionChecks(records, sessionGroups);
+    return {stopBeforePlayer,results,next,generation,records,calls,stages,observations,gateEvidence,conditions:sync.snapshot(),sessionChecks};
     } finally {
         observedEvents.forEach(name => events.off(embedded, name, notify));
         sync.dispose();
     }
+}
+
+if (typeof module === 'object' && module && module.exports) {
+    module.exports = {buildPipelineSessionChecks};
 }
