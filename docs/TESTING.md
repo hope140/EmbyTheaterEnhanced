@@ -1,5 +1,11 @@
 # 测试与验收
 
+## 2026-10-09 固定 v0.2.5 的新隐藏 runner
+
+工具全量580/580及后续Stop间隔专项3/3通过，0失败/跳过。同一3ab10c9产品与相同13份harness输入分别验证hit 0/400/800ms、DirectUrl 400ms、miss 400ms；前四组PASS，miss因迟到PlaybackInfo再次调用player而FAIL，整体仍FAIL。保留该断言，后续产品修复必须重跑此失败例。
+
+每轮runner结果、诊断结果、来源/隔离证据分开：五轮均退出且残留0，诊断127/128/128/128/111条分别通过；miss的日志通过不覆盖runner失败。五轮pending Stop均存在空session/缺MediaSource身份，不能泛称所有队列报告完整。详细预算、失败历史、命令和证据见 [隐藏runner记录](RUNNER_DETERMINISM.md)。这些运行不等价于真实Emby/CD2、真实远控、安装或可见首帧验收。
+
 ## 2026-10-09 v0.2.5 / 3ab10c9
 
 新sourceCommit重新执行`npm test`，535/535通过；writer定向17/17，均0失败/跳过。两个独立runtime各2136文件全路径/hash一致，两份原始安装器175631770 bytes且同SHA256；A完整性与解包2136/2136通过，B为同字节对照。34项提交输入、四层来源、精确33+7包/1171文件与4份通知通过；版本gate、PE和真实About IPC均为0.2.5/sourceCommit匹配。运行后再次package VerifyOnly通过。

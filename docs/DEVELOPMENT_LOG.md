@@ -1,5 +1,14 @@
 # 开发日志
 
+## 2026-10-09 — runner 等待条件与失败证据收口
+
+- Model Tier: Tier 2 analysis/review + Tier 1 bounded workers；Model: 当前主线程GPT-6系列，worker GPT-6 Luna High；Reason: 主线程核对跨PlaybackManager/renderer/main异步归属，明确contract后委派fake service、deadline、condition、runner工具与测试；独立复核负责假PASS/超时退出边界；Escalated: no。Task Risk=medium，Task Uncertainty=medium，Cross-module Scope=tools/tests/docs，Playback/Session Impact=observed, product unchanged。
+- 从发布文档88c818f建立独立harness树；另取固定3ab10c9的产品根及runtime，ProductRoot四层来源门槛保持。首次仅取证的旧夹具出现PASS，短等待实际约1秒，未用该次PASS抹去发布失败。新fixture把rapid Next与Stop分别绑定main真实pending和成功cancel，并增加B已settled后C的串行case。
+- 独立复核关闭夹具的迟到成功覆盖timeout、renderer检查同步异常、Seek被已有位置满足、非CD2迟到metadata未计数、C source/Stop身份不足和读流无期限等问题。Stop observer取错native ID的整合失败、零延迟触发既有1000ms Stop cooldown的失败均原样保留，修正夹具后按固定矩阵验证；产品输入规则保持。
+- 首全量561/568的7项失败均为新树缺vendor材料；补齐后相关15/15，随后全量580/580，后续Stop新增3/3，均0跳过。最终矩阵4PASS/1FAIL，miss的staleMetadataIgnored=false为真实产品问题，未弱化断言或重跑取绿。
+- 固定产品调用链与只读VM确认共享playOptions被第二Next原地改写，旧metadata守卫误过并再次player.play；五轮另有pending Stop空身份报告，旧成功样本同样存在。产品修复单列，未在本轮改PlaybackManager生成器。详细根因、风险边界、复现命令及原始证据哈希见 [runner记录](RUNNER_DETERMINISM.md) 和 [机器证据](evidence/runner-determinism-20261009.json)。
+- 五轮appData/userData读回、About/source和合法脱敏诊断分别通过，候选残留0；13份执行文件矩阵内SHA一致，运行后runtime 2,136文件核对缺失/额外/不匹配均0。没有重建安装器、推送、合并、发布或系统安装；真实服务器、远控、首帧与HDR/多屏未验证。
+
 ## 2026-10-09 — v0.2.5 测试版构建、发布与证据收口
 
 - Model Tier: Tier 2 release coordination / Tier 1 workers；Model: current Codex primary session / GPT-5.6 Luna High；Reason: exact source, binary, tag and publication identity review with bounded preparation, testing and read-only audit delegated；Escalated: no。

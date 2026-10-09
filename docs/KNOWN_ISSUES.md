@@ -1,6 +1,13 @@
 # Known Issues
 
-2026-10-09 当前工程状态：v0.2.5/3ab10c9 为最新测试版，正式 Latest 为 v0.2.2，main=46e995e。准确身份与验证见 [0.2.5 发布记录](RELEASE_025.md)。本次隐藏运行首轮 queue-play 超时；复验完整流程仍因 next.selected=false 和 fake CD2 cancelCount=1 失败，与读回的 3b158f6 原始失败断言一致。完整 runner 保持 NOT_PASS，123 条产品诊断验证单独 PASS。诊断能力的增加不自动关闭历史 Renderer ReferenceError 的业务根因。
+2026-10-09 当前工程状态：产品仍为已发布的 v0.2.5/3ab10c9。发布时旧 runner 的 timeout / NOT_PASS 保留在 [发布记录](RELEASE_025.md)。新 runner 工具修正后，固定产品的隐藏矩阵为4 PASS / 1 FAIL，整体仍FAIL；全量580/580及后续Stop专项3/3通过。准确证据见 [runner记录](RUNNER_DETERMINISM.md)，诊断通过不自动关闭产品问题。
+
+## 2026-10-09 — 两项待修产品异步身份问题
+
+- **P1，CONFIRMED_LOCAL_BEHAVIOR：旧PlaybackInfo可再次调用播放器。** 同一待切入B的playOptions被两次Next复用，第二请求原地覆盖ID，旧请求守卫误过；miss场景在第二Next完成后释放旧响应，观察到额外embedded.play和重复Playing报告。这是共同PlaybackInfo阶段问题，不限于CD2 miss；hit/direct在更后面的CD2门槛通过不能排除它。
+- **P1，CONFIRMED_LOCAL_BEHAVIOR：pending Stop报告缺少身份。** B尚未Playing即被替换时，Stopped中PlaySessionId=null且MediaSourceId缺失；新矩阵五轮和旧成功样本均存在。真实Emby处理及会话影响仍NOT_VERIFIED，不视为已接受的无害行为。
+- 后续需分别固定不可共享改写的请求身份、定义pending清理与真实播放会话报告的归属，再做受限产品修复与新runtime验证。本轮只修测试工具，保留失败断言，未修改产品或重发安装包。
+
 
 ## 2026-10-09 — 设置页一致性修正通过用户验收
 

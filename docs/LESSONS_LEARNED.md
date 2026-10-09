@@ -1,5 +1,13 @@
 # 已确认经验
 
+## 2026-10-09 — 隐藏回归的请求门槛与失败终态
+
+- 隐藏 renderer 的150ms定时器可能实际约1秒，不能用它证明两个异步请求重叠。应让假服务明确持有指定request，再核对该request的成功cancel；native generation overlap不等于上游CD2仍pending。
+- 减少固定等待后仍要遵守产品输入规则。本产品inputmanager对Stop做全局1000ms去重；夹具满足输入间隔后，仍须等待真实报告与清空状态，不能只把等待时间当成功。
+- 超时应同步锁定失败，再收集有期限的证据。renderer不响应/同步抛错、主进程退出但子进程仍持有stdout管道，都不能使测试无限等待或把迟到成功写为PASS。
+- final item是B不能排除重复加载B。释放旧PlaybackInfo后应核对player调用次数；共享可变options中的generation ID可能被新请求改写，让旧请求守卫误过。本轮四组PASS不能覆盖另一个生命周期阶段的明确FAIL。
+- 产品sourceCommit与工具harness HEAD应分开记录，运行所用文件记录实际hash；新工具结果不能覆盖旧Release失败证据，也不能把缺身份pending Stop报告隐藏在成功汇总里。见 [runner记录](RUNNER_DETERMINISM.md)。
+
 ## 2026-10-09 — 输出链接与安装器文件时间
 
 - 只检查输出读回hash不能防止写入沿已有hardlink/symlink改写外部文件。创建通知前应预检所有目的地，config仅接受验证过的base并原子替换；已完成产物和已存在通知应拒绝覆盖。

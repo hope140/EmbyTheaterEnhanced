@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-10-09 — 隐藏 runner 修正，产品矩阵仍有明确失败
+
+在独立 `codex/runner-determinism-20261009` 完成工具/测试修正：明确 pending/cancel 请求门槛、重叠与顺序 Next 分开、事件/报告条件等待、遵守既有 Stop cooldown、分阶段与总期限、超时失败锁定及有界输出收集。固定产品仍为 v0.2.5 / `3ab10c9`，没有改产品源码、构建覆盖器或 runtime。
+
+全量单测580/580，后续Stop专项3/3，均0失败/跳过；隐藏矩阵 hit 0/400/800ms、DirectUrl 400ms四组PASS，miss 400ms因旧PlaybackInfo再次调用播放器FAIL，**整体保持FAIL**。五轮隔离/About/诊断校验分别通过、残留0；运行后2,136文件与固定清单匹配。完整证据见 [runner记录](RUNNER_DETERMINISM.md)。
+
+待处理的两项产品问题已有本地证据：同一队列item复用可变playOptions，使旧请求被新ID重新认作当前请求；pending播放被替换时，Stopped报告缺少PlaySessionId/MediaSourceId。后者新旧成功样本均存在，前者由新增迟到metadata断言检出；真实服务器影响未验证。不得把四组PASS或单测通过写成完整生命周期验收。新旧失败均保留，未推送、合并或发布；真实服务/安装/前台首帧范围不扩大。
+
 ## 2026-10-09 — v0.2.5 Pre-release 已发布
 
 GitHub [v0.2.5](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.5) 已发布，Release ID `407543805`。产品 sourceCommit / tag 解引用均为 `3ab10c94d75659c0a421b729aac3147afa680751`。安装包 `EmbyTheaterEnhanced-0.2.5-test-win-x64-setup.exe` 为175,631,770 bytes，SHA256 `76d7766cc824bf65f585cd89f0e68841628b2063381aa85392513ed1653d0d65`；另提供同名 `.sha256` 和 `.provenance.json`。正式 Latest 保持 v0.2.2，发布来自完整分支，main 仍为46e995e。

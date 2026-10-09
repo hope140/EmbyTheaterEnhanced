@@ -1,0 +1,736 @@
+{
+  "schemaVersion": 1,
+  "scope": "hidden synthetic pipeline harness only",
+  "productVersion": "0.2.5",
+  "productSourceCommit": "3ab10c94d75659c0a421b729aac3147afa680751",
+  "productCodeChanged": false,
+  "productRuntimeRebuilt": false,
+  "publicationPerformed": false,
+  "postRuntimePayload": {
+    "status": "PASS",
+    "sourceCommit": "3ab10c94d75659c0a421b729aac3147afa680751",
+    "manifestEntries": 2135,
+    "totalFiles": 2136,
+    "missing": 0,
+    "mismatched": 0,
+    "extra": 0,
+    "buildManifestSha256": "a45e7c24f284b2d62d9a76274ffbb3259388515dc247a30507e27d15f69691a5"
+  },
+  "unitTests": {
+    "fullSuite": {
+      "passed": 580,
+      "failed": 0,
+      "skipped": 0,
+      "logSha256": "f8c5bfe98b33787f049c6f7f612083a3183bc350e84edfff9d6ca95d542cb15e"
+    },
+    "subsequentStopCooldown": {
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "logSha256": "ab7e4a24be62b511de04b7c444b4b32dc6f80b89b887f7bd7ae0b8d438d40e53"
+    }
+  },
+  "experiments": [
+    {
+      "evidenceDirectory": ".work/p1-runtime-a7db978f21eb4a5baf4edf7439278f40",
+      "classification": "old harness observation PASS, timing variability remains"
+    },
+    {
+      "evidenceDirectory": ".work/p1-runtime-34d9d88d21ca4efd9bcc19e20ac1ebb3",
+      "classification": "FAIL: harness compared Stop CD2 request with unavailable native generation identity"
+    },
+    {
+      "evidenceDirectory": ".work/p1-runtime-050a82e486ab4aac8e1f390619b22719",
+      "classification": "FAIL: zero delay exposed existing 1000 ms remote Stop cooldown"
+    }
+  ],
+  "harnessFiles": [
+    {
+      "path": "tools/test-p1-diagnostics.ps1",
+      "sha256": "e8a4cbc93d62599542a1fc81dfc96fb60754471ff041990d9a2d4077124bea32"
+    },
+    {
+      "path": "tools/p1-diagnostics-smoke.cjs",
+      "sha256": "8d2f85273fb07df11d6f8becfb16ab30ad8b359f672fa5c7939bc083f012cb50"
+    },
+    {
+      "path": "tools/smoke-electron.cjs",
+      "sha256": "a7710c4514ed84f12b67a0401296d0268595d37df1c643ea5798ad852ecaa17a"
+    },
+    {
+      "path": "tools/make-fixture.cjs",
+      "sha256": "67c43fbed471c951cbf8779336703b18ee773cd46870db6eda0d7b549481aed9"
+    },
+    {
+      "path": "tools/verify-p1-diagnostics.cjs",
+      "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+    },
+    {
+      "path": "tools/runtime-window-ownership.cjs",
+      "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+    },
+    {
+      "path": "tools/transition-stream-capture.cjs",
+      "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+    },
+    {
+      "path": "tests/pipeline-browser.js",
+      "sha256": "d1deef3dbd5170b4ffb59849eaf7976dd3b7ef32cdbe5a310d8453bed4a280af"
+    },
+    {
+      "path": "tests/generation-fixture-observer.js",
+      "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+    },
+    {
+      "path": "tests/fake-cd2-fixture.cjs",
+      "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+    },
+    {
+      "path": "tests/pipeline-deadline.cjs",
+      "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+    },
+    {
+      "path": "tests/pipeline-condition.js",
+      "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+    },
+    {
+      "path": "tests/pipeline-result.cjs",
+      "sha256": "6d7bdcc69ea4a7dc826be9d9655359d0047d54a60b2b2b4b47ecb234d5acb0a8"
+    }
+  ],
+  "cases": [
+    {
+      "case": "hit-0",
+      "evidenceDirectory": ".work/p1-runtime-500499fb4da04f6a9a3a343e006f2ca3",
+      "status": "PASS",
+      "failure": null,
+      "settings": {
+        "cd2Mode": "hit",
+        "cd2DelayMs": 0,
+        "fixtureSeconds": 60
+      },
+      "productSourceCommit": "3ab10c94d75659c0a421b729aac3147afa680751",
+      "harnessHead": "d4a54cab82d15a2f62eb0259f42345636e1543fd",
+      "runtimeProvenanceSha256": "a55dc4b9b4488b2fdeca65629b9c38b8409a74e39d9c3307116296f8dac10718",
+      "elapsedMs": 11443,
+      "watchdogTimedOut": false,
+      "allStageDocumentsHidden": true,
+      "outputCapture": "COMPLETE",
+      "residualProcesses": 0,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "next": {
+        "selected": true,
+        "overlapEstablished": true,
+        "staleMetadataIgnored": true,
+        "exactPendingCancelled": true,
+        "priorStopped": true,
+        "nextStarted": true,
+        "rapidNextSettled": true,
+        "rapidNewestLoaded": true,
+        "serialSelected": true,
+        "serialPriorStopped": true,
+        "serialSourceLoaded": true,
+        "serialSessionPreserved": true
+      },
+      "generation": {
+        "firstSuperseded": true,
+        "secondPlayed": true,
+        "oldCoreListenerIgnored": true,
+        "stopSuperseded": true,
+        "stopPreventedLateLoad": true,
+        "exactStopPendingCancelled": true,
+        "noUnhandledRejection": true
+      },
+      "cd2Counts": {
+        "resolveCount": 8,
+        "cancelCount": 2,
+        "completedCount": 6,
+        "activeCount": 0,
+        "gateWaiterCount": 0
+      },
+      "gateEvidence": {
+        "rapidPending": {
+          "requestId": "play-6-11",
+          "pending": true,
+          "held": true,
+          "armId": "arm-1"
+        },
+        "rapidCancelled": {
+          "requestId": "play-6-11",
+          "cancelled": true,
+          "armId": "arm-1"
+        },
+        "stopPending": {
+          "requestId": "play-9003-21",
+          "pending": true,
+          "held": true,
+          "armId": "arm-2"
+        },
+        "stopCancelled": {
+          "requestId": "play-9003-21",
+          "cancelled": true,
+          "armId": "arm-2"
+        }
+      },
+      "directHeaderIsolation": null,
+      "diagnostics": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 127,
+        "validRecords": 127,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 7,
+          "native-helper/generation-retired": 7,
+          "native-helper/start-file": 6,
+          "native-helper/file-loaded": 6,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 14,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 12,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "pendingStopIdentityObservation": {
+        "status": "OBSERVED",
+        "count": 1,
+        "realServerImpact": "NOT_VERIFIED"
+      },
+      "artifactHashes": {
+        "electron-smoke.json": "7985a0ee95eede3a90dba37575ac8974e217a7a878a05c7749acb05cb042dcd4",
+        "runner-result.json": "52d6c21b2973948561f387acfe3010e98085e60aee4f53e0f513e2704cd1fa38",
+        "harness-identity.json": "2f159beef94c5d2354161a05492fc07524c439a4413c26e3ed80395653bb49fb",
+        "p1-diagnostics-result.json": "ac5e104e22f48dbf86585691c3b9e826ce72661693686b43a43a0add36b280bd",
+        "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f"
+      }
+    },
+    {
+      "case": "hit-400",
+      "evidenceDirectory": ".work/p1-runtime-97e6918385a54151aff5d7cce166d22a",
+      "status": "PASS",
+      "failure": null,
+      "settings": {
+        "cd2Mode": "hit",
+        "cd2DelayMs": 400,
+        "fixtureSeconds": 60
+      },
+      "productSourceCommit": "3ab10c94d75659c0a421b729aac3147afa680751",
+      "harnessHead": "d4a54cab82d15a2f62eb0259f42345636e1543fd",
+      "runtimeProvenanceSha256": "a55dc4b9b4488b2fdeca65629b9c38b8409a74e39d9c3307116296f8dac10718",
+      "elapsedMs": 13236,
+      "watchdogTimedOut": false,
+      "allStageDocumentsHidden": true,
+      "outputCapture": "COMPLETE",
+      "residualProcesses": 0,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "next": {
+        "selected": true,
+        "overlapEstablished": true,
+        "staleMetadataIgnored": true,
+        "exactPendingCancelled": true,
+        "priorStopped": true,
+        "nextStarted": true,
+        "rapidNextSettled": true,
+        "rapidNewestLoaded": true,
+        "serialSelected": true,
+        "serialPriorStopped": true,
+        "serialSourceLoaded": true,
+        "serialSessionPreserved": true
+      },
+      "generation": {
+        "firstSuperseded": true,
+        "secondPlayed": true,
+        "oldCoreListenerIgnored": true,
+        "stopSuperseded": true,
+        "stopPreventedLateLoad": true,
+        "exactStopPendingCancelled": true,
+        "noUnhandledRejection": true
+      },
+      "cd2Counts": {
+        "resolveCount": 8,
+        "cancelCount": 2,
+        "completedCount": 6,
+        "activeCount": 0,
+        "gateWaiterCount": 0
+      },
+      "gateEvidence": {
+        "rapidPending": {
+          "requestId": "play-6-11",
+          "pending": true,
+          "held": true,
+          "armId": "arm-1"
+        },
+        "rapidCancelled": {
+          "requestId": "play-6-11",
+          "cancelled": true,
+          "armId": "arm-1"
+        },
+        "stopPending": {
+          "requestId": "play-9003-21",
+          "pending": true,
+          "held": true,
+          "armId": "arm-2"
+        },
+        "stopCancelled": {
+          "requestId": "play-9003-21",
+          "cancelled": true,
+          "armId": "arm-2"
+        }
+      },
+      "directHeaderIsolation": null,
+      "diagnostics": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 128,
+        "validRecords": 128,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 7,
+          "native-helper/generation-retired": 7,
+          "native-helper/start-file": 6,
+          "native-helper/file-loaded": 6,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 14,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 12,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "pendingStopIdentityObservation": {
+        "status": "OBSERVED",
+        "count": 1,
+        "realServerImpact": "NOT_VERIFIED"
+      },
+      "artifactHashes": {
+        "electron-smoke.json": "5f82529ff86ee9d92c35df5e43113b6e7e320aa48d5bce745492524444ab4c1f",
+        "runner-result.json": "d72b9a1afd9df3930f674180c49d3059a40f0121ccedee62fab1dd48bda82cd6",
+        "harness-identity.json": "b93a836741d7f8f007b1b7e50244b6834bcd0c238705993244786145de2c0fda",
+        "p1-diagnostics-result.json": "e71976e0cf4968b19f3be8f7492529f8325e3d653e3ecc80ded1f94e82510006",
+        "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f"
+      }
+    },
+    {
+      "case": "hit-800",
+      "evidenceDirectory": ".work/p1-runtime-c24758d2c5714b14950f94dda3588393",
+      "status": "PASS",
+      "failure": null,
+      "settings": {
+        "cd2Mode": "hit",
+        "cd2DelayMs": 800,
+        "fixtureSeconds": 60
+      },
+      "productSourceCommit": "3ab10c94d75659c0a421b729aac3147afa680751",
+      "harnessHead": "d4a54cab82d15a2f62eb0259f42345636e1543fd",
+      "runtimeProvenanceSha256": "a55dc4b9b4488b2fdeca65629b9c38b8409a74e39d9c3307116296f8dac10718",
+      "elapsedMs": 15893,
+      "watchdogTimedOut": false,
+      "allStageDocumentsHidden": true,
+      "outputCapture": "COMPLETE",
+      "residualProcesses": 0,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "next": {
+        "selected": true,
+        "overlapEstablished": true,
+        "staleMetadataIgnored": true,
+        "exactPendingCancelled": true,
+        "priorStopped": true,
+        "nextStarted": true,
+        "rapidNextSettled": true,
+        "rapidNewestLoaded": true,
+        "serialSelected": true,
+        "serialPriorStopped": true,
+        "serialSourceLoaded": true,
+        "serialSessionPreserved": true
+      },
+      "generation": {
+        "firstSuperseded": true,
+        "secondPlayed": true,
+        "oldCoreListenerIgnored": true,
+        "stopSuperseded": true,
+        "stopPreventedLateLoad": true,
+        "exactStopPendingCancelled": true,
+        "noUnhandledRejection": true
+      },
+      "cd2Counts": {
+        "resolveCount": 8,
+        "cancelCount": 2,
+        "completedCount": 6,
+        "activeCount": 0,
+        "gateWaiterCount": 0
+      },
+      "gateEvidence": {
+        "rapidPending": {
+          "requestId": "play-6-11",
+          "pending": true,
+          "held": true,
+          "armId": "arm-1"
+        },
+        "rapidCancelled": {
+          "requestId": "play-6-11",
+          "cancelled": true,
+          "armId": "arm-1"
+        },
+        "stopPending": {
+          "requestId": "play-9003-21",
+          "pending": true,
+          "held": true,
+          "armId": "arm-2"
+        },
+        "stopCancelled": {
+          "requestId": "play-9003-21",
+          "cancelled": true,
+          "armId": "arm-2"
+        }
+      },
+      "directHeaderIsolation": null,
+      "diagnostics": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 128,
+        "validRecords": 128,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 7,
+          "native-helper/generation-retired": 7,
+          "native-helper/start-file": 6,
+          "native-helper/file-loaded": 6,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 14,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 12,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "pendingStopIdentityObservation": {
+        "status": "OBSERVED",
+        "count": 1,
+        "realServerImpact": "NOT_VERIFIED"
+      },
+      "artifactHashes": {
+        "electron-smoke.json": "2bdfcb919cd73e7ed564ddd75d96b12c45611e1e254cca2754956627001d3f8a",
+        "runner-result.json": "e421227d4fd34e2964ec3e32ef33f61ce7549c1e9412a141308ad67ad7c0a3bd",
+        "harness-identity.json": "e4f841b6a1afb5dd242b7aaf8ced0c5699ab257e0ed1ff5102954341c5598dbb",
+        "p1-diagnostics-result.json": "e71976e0cf4968b19f3be8f7492529f8325e3d653e3ecc80ded1f94e82510006",
+        "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f"
+      }
+    },
+    {
+      "case": "direct-400",
+      "evidenceDirectory": ".work/p1-runtime-bf7e2808dad942e5a8043a6a9d911acb",
+      "status": "PASS",
+      "failure": null,
+      "settings": {
+        "cd2Mode": "direct",
+        "cd2DelayMs": 400,
+        "fixtureSeconds": 60
+      },
+      "productSourceCommit": "3ab10c94d75659c0a421b729aac3147afa680751",
+      "harnessHead": "d4a54cab82d15a2f62eb0259f42345636e1543fd",
+      "runtimeProvenanceSha256": "a55dc4b9b4488b2fdeca65629b9c38b8409a74e39d9c3307116296f8dac10718",
+      "elapsedMs": 14182,
+      "watchdogTimedOut": false,
+      "allStageDocumentsHidden": true,
+      "outputCapture": "COMPLETE",
+      "residualProcesses": 0,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "next": {
+        "selected": true,
+        "overlapEstablished": true,
+        "staleMetadataIgnored": true,
+        "exactPendingCancelled": true,
+        "priorStopped": true,
+        "nextStarted": true,
+        "rapidNextSettled": true,
+        "rapidNewestLoaded": true,
+        "serialSelected": true,
+        "serialPriorStopped": true,
+        "serialSourceLoaded": true,
+        "serialSessionPreserved": true
+      },
+      "generation": {
+        "firstSuperseded": true,
+        "secondPlayed": true,
+        "oldCoreListenerIgnored": true,
+        "stopSuperseded": true,
+        "stopPreventedLateLoad": true,
+        "exactStopPendingCancelled": true,
+        "noUnhandledRejection": true
+      },
+      "cd2Counts": {
+        "resolveCount": 8,
+        "cancelCount": 2,
+        "completedCount": 6,
+        "activeCount": 0,
+        "gateWaiterCount": 0
+      },
+      "gateEvidence": {
+        "rapidPending": {
+          "requestId": "play-6-11",
+          "pending": true,
+          "held": true,
+          "armId": "arm-1"
+        },
+        "rapidCancelled": {
+          "requestId": "play-6-11",
+          "cancelled": true,
+          "armId": "arm-1"
+        },
+        "stopPending": {
+          "requestId": "play-9003-21",
+          "pending": true,
+          "held": true,
+          "armId": "arm-2"
+        },
+        "stopCancelled": {
+          "requestId": "play-9003-21",
+          "cancelled": true,
+          "armId": "arm-2"
+        }
+      },
+      "directHeaderIsolation": {
+        "directRequestsObserved": true,
+        "allDirectUserAgentsMatched": true,
+        "noDirectUserAgentLeak": true
+      },
+      "diagnostics": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 128,
+        "validRecords": 128,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 7,
+          "native-helper/generation-retired": 7,
+          "native-helper/start-file": 6,
+          "native-helper/file-loaded": 6,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 14,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 12,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "pendingStopIdentityObservation": {
+        "status": "OBSERVED",
+        "count": 1,
+        "realServerImpact": "NOT_VERIFIED"
+      },
+      "artifactHashes": {
+        "electron-smoke.json": "fd01849c18455eade505e0ab7834f87321599e685ff30ef3e1c1702949618d2f",
+        "runner-result.json": "f2659ef2d63eac6b0b9f1fc62d1479a6b3b7a72a57591ddc96c14fcb12b5585a",
+        "harness-identity.json": "21c3926c4ccf139cdbc83c24f2f7c5bf8a10f1cc8104064597719df5ca1bf4d6",
+        "p1-diagnostics-result.json": "e71976e0cf4968b19f3be8f7492529f8325e3d653e3ecc80ded1f94e82510006",
+        "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f"
+      }
+    },
+    {
+      "case": "miss-400",
+      "evidenceDirectory": ".work/p1-runtime-30ba2af2af3241d9b3a17658ff7b7c21",
+      "status": "FAIL",
+      "failure": {
+        "error": "Playback pipeline assertion failed",
+        "failedNextChecks": [
+          "staleMetadataIgnored"
+        ]
+      },
+      "settings": {
+        "cd2Mode": "miss",
+        "cd2DelayMs": 400,
+        "fixtureSeconds": 60
+      },
+      "productSourceCommit": "3ab10c94d75659c0a421b729aac3147afa680751",
+      "harnessHead": "9a7173200fe7d51a9017563f0da2047c3c3157b5",
+      "runtimeProvenanceSha256": "a55dc4b9b4488b2fdeca65629b9c38b8409a74e39d9c3307116296f8dac10718",
+      "elapsedMs": 9943,
+      "watchdogTimedOut": false,
+      "allStageDocumentsHidden": true,
+      "outputCapture": "COMPLETE",
+      "residualProcesses": 0,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "next": {
+        "selected": true,
+        "overlapEstablished": true,
+        "staleMetadataIgnored": false,
+        "exactPendingCancelled": true,
+        "priorStopped": true,
+        "nextStarted": true,
+        "rapidNextSettled": true,
+        "rapidNewestLoaded": true,
+        "serialSelected": true,
+        "serialPriorStopped": true,
+        "serialSourceLoaded": true,
+        "serialSessionPreserved": true
+      },
+      "generation": null,
+      "cd2Counts": {
+        "resolveCount": 1,
+        "cancelCount": 0,
+        "completedCount": 1,
+        "activeCount": 0,
+        "gateWaiterCount": 0
+      },
+      "gateEvidence": {},
+      "directHeaderIsolation": null,
+      "diagnostics": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 111,
+        "validRecords": 111,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 6,
+          "native-helper/generation-retired": 6,
+          "native-helper/start-file": 6,
+          "native-helper/file-loaded": 6,
+          "native-helper/end-file": 3,
+          "native-helper/surface-hidden": 12,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 12,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "pendingStopIdentityObservation": {
+        "status": "OBSERVED",
+        "count": 1,
+        "realServerImpact": "NOT_VERIFIED"
+      },
+      "artifactHashes": {
+        "electron-smoke.json": "19173278d43beee7e1d4aa34e4025bc58dfe06b6e9cd134deab6486d20f08b4a",
+        "runner-result.json": "c55857bd979150403bbd1a28653fe8cd1be4ed7f09855f83922c28b101a7ef69",
+        "harness-identity.json": "146f1c1fc1628cc0c60979ba41c9aab9a6b8706851de79444a343c64cbbd682b",
+        "p1-diagnostics-result.json": "25e325b54af94ea3715b7fd81ac5862d9b046940a1b05faf3a8a6f3c2d0ef91f",
+        "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f"
+      }
+    }
+  ],
+  "matrixStatus": "FAIL",
+  "remainingProductIssues": [
+    {
+      "priority": "P1",
+      "status": "CONFIRMED_LOCAL_BEHAVIOR",
+      "description": "Superseded pending B emits a Stopped report without PlaySessionId or MediaSourceId before B starts.",
+      "realServerImpact": "NOT_VERIFIED"
+    },
+    {
+      "priority": "P1",
+      "status": "CONFIRMED_LOCAL_BEHAVIOR",
+      "description": "Releasing superseded PlaybackInfo after the second Next completes calls embedded.play again in the miss case. The shared PlaybackInfo stage also applies to hit/direct.",
+      "readOnlyVmProbe": {
+        "sameOptionsObject": true,
+        "oldRequestInitialId": 1,
+        "oldRequestIdAfterSecondNext": 2,
+        "secondRequestId": 2,
+        "currentSequence": 2,
+        "oldRequestGuardPasses": true
+      },
+      "realServerImpact": "NOT_VERIFIED"
+    }
+  ],
+  "excludedAcceptance": [
+    "real Emby/CD2",
+    "real remote clients",
+    "visible first frame",
+    "HDR/multi-display",
+    "system install lifecycle"
+  ]
+}
