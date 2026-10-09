@@ -1,5 +1,15 @@
 # 开发日志
 
+## 2026-10-09 — 完整v0.2.6发布树主线整合
+
+- Model Tier: Tier 2核心整合审核 / Tier 1范围明确worker；Model: 当前GPT-6系列主线程，GPT-5.6 Luna High只读审查与测试worker；Reason: Task Risk=medium，Task Uncertainty=low（main已是发布树祖先），Cross-module Scope=发布成果跨层审查与文档，Playback/Session Impact=核对现有链、无新增产品修改；Escalated: no。
+- 开工核对真实refs/open PR，从4b24919建立独立托管worktree与 `codex/integrate-v0.2.6-main-20261009`，main46e995e独有0、发布领先81。主目录和全部旧产物保留；保持原提交历史，无squash或全量cherry-pick。
+- 主线程检查请求快照、pending报告、Stop stream归属与presentation准备、Native generation/hold、共享destroy和captured allSettled、IPC sender/脱敏边界；两个只读worker分别检查构建/来源和Settings/诊断，未发现确凿产品阻断。修正当前导航中过时的待发布/待打包表述、TESTING/PACKAGING入口并补CHANGELOG 0.2.6记录。
+- 整合树新运行全量日志631/631、0fail/cancel/skip，约238.7秒。六棵源码/工具/测试/输入树与34项构建输入Git对象相同；原runtime2136文件、EXE和八组69份原始artifact hash相同。16份旧harness匹配当时hash，新checkout6份仅换行不同；旧/新物理hash和canonical关系单列。详细检查及最终PR状态见 [整合报告](MAIN_INTEGRATION_026.md) 与 [证据](evidence/main-integration-026-20261009.json)。
+- 一个review worker在旧发布树做了两次局部测试启动，均无工具输出后以Ctrl-C中断，exit1且确认测试进程已退出；这两次未产生测试结论，不计入PASS，也不覆盖整合树完整运行终态。
+- Node24.18.1/npm11.17.0；正式prepare遇Windows长路径复制失败，保留失败现场后使用本轮临时PowerShell驱动缩短路径，同一脚本与固定归档校验通过。npm audit退出1：原main同版本grpc-js1.14.4命中High/Low服务端advisory；核对官方触发条件与生产client-only调用，未发现触发入口，作为非阻断依赖维护项披露，未执行依赖升级。
+- 原runtime仍绑定产品355f4e6；因产品和构建输入未变，不重建、不运行客户端、不改发布身份。GitHub无workflow，checks状态单独回读，不能用MERGEABLE/CLEAN代替验证。目标为独立分支PR和合并判定，不自动merge；真实验收缺口及直接app.exit UNKNOWN保留。
+
 ## 2026-10-09 — v0.2.6 原产物公开测试发布
 
 - Model Tier: Tier 1 publication tooling/evidence worker，主线程负责准确身份与远端副作用边界；Model: 当前Codex主线程 / GPT-6 Luna High只读worker；Reason: 固定产物发布、Git与证据核验，不涉及新增产品实现；Escalated: no。

@@ -1,5 +1,13 @@
 # 测试与验收
 
+## 2026-10-09 v0.2.6主线整合
+
+整合树从完整发布HEAD4b24919建立；本轮重新执行 `node --test --test-concurrency=1 tests/*.test.cjs`，完整日志631/631、0失败/取消/跳过，约238.7秒。准确环境、退出码、日志hash与其它静态检查见 [主线整合报告](MAIN_INTEGRATION_026.md) 和 [机器证据](evidence/main-integration-026-20261009.json)。下文保留各早期候选的测试阶段，不能将历史FAIL或UNKNOWN静默改为当前PASS。
+
+原355f4e6的产品/工具/测试Git tree及34项构建输入与整合树相同；本轮只读核对原runtime2136文件、安装器以及八组运行69份原始artifact。三场景正常关闭与五组完整pipeline均是该准确产品的历史运行，本轮没有重启客户端或生成新sourceCommit产物。16份旧harness精确匹配原hash；新checkout6份CRLF/LF差异另记，不冒充相同物理输入的新运行。
+
+完整产品验收和直接app.exit UNKNOWN见 [本地包报告](LOCAL_PACKAGE_026.md)，公开身份见 [发布记录](RELEASE_026.md)。真实Emby/CD2/远控、可见首帧/连续性、HDR/多屏与系统安装生命周期仍未取得本次证据。
+
 ## 2026-10-09 Stop 归属与退出分层取证
 
 当前本地产品sourceCommit为`68eb0249f8392480154513f3df267204a0f0eb74`，版本0.2.5。最终PlaybackManager VM同一16例在修改前8PASS/8FAIL、修复后16/16；全量608/608，0失败/取消/跳过。VM执行真实vendor overlay，并联用真实Native transition模块验证token准备、旧Stop排空、terminal overlap/reject、pending及三身份配对；无法据此声明可见画面或实服通过。

@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-10-09 — v0.2.6 主线整合审查
+
+从完整发布分支4b24919建立独立 `codex/integrate-v0.2.6-main-20261009`。远端main46e995e即merge-base，main独有0、发布分支领先81，开工open PR为0；保留完整历史，无需冲突解决。main到发布树172文件范围及PR合并判定见 [整合报告](MAIN_INTEGRATION_026.md)。
+
+本轮完整单测日志为631/631，0失败/取消/跳过。产品、测试、工具等六棵Git tree和34项构建输入与355f4e6相同；原runtime2136文件、原安装器及八组运行的69份artifact重新回读hash通过。16份原harness输入精确匹配历史hash；新checkout其中6份仅CRLF/LF变化，物理与canonical身份分别记录。原runtime继续归属355f4e6，本轮没有构建或启动客户端。
+
+当前审查未发现产品整合阻断，仅修正文档阶段、CHANGELOG与验收入口遗漏。v0.2.6 tag/Release/三个资产和Latest v0.2.2保持；本轮目标为可审阅PR，main合并仍由后续明确操作决定。早期直接app.exit UNKNOWN、真实服务/远控/可见呈现/系统安装/HDR/多屏边界保持。以下为按发生阶段保留的历史记录。
+
 ## 2026-10-09 — v0.2.6 Pre-release 已发布并完整回读
 
 用户授权将已验证的本地包按原字节发布。v0.2.6于21:20:19（UTC+8）发布为Pre-release，Release ID407934479，tag精确对应产品 `355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f`。安装包175621807 bytes，SHA256 `bc878b4e929016071b8d7a41f9b281ad3118e62e8a1e469b0a5c9858718b1532`。
@@ -12,7 +20,7 @@ EXE、同名SHA256与provenance三个附件均uploaded且服务端digest匹配�
 
 全量631/631、0失败/跳过。最终runtime三场景正常关闭及五组完整pipeline均PASS、自然exit0、无强清理、残留0；每组pipeline五对完整Session独立复算，Next/generation/精确取消和DirectUrl隔离保持。安装器完整性及2136文件解包逐项一致，运行后payload校验和交付文件重新读回通过。23个EXE/DLL与68eb024同hash；产品JS仅native service的关闭等待归属变化。
 
-正常产品关闭路径本轮完成隔离验收；初版8700039及旧d480eb8的直接app.exit退出超时仍UNKNOWN，原失败与工具门槛纠正记录单列。真实服务/远控、可见首帧/连续性、HDR/多屏、系统安装/升级/卸载未执行。未推送、合并或发布。最终报告见 [0.2.6本地包](LOCAL_PACKAGE_026.md) 与 [结构化证据](evidence/local-package-026-20261009.json)；下文保留前序阶段记录。
+正常产品关闭路径本轮完成隔离验收；初版8700039及旧d480eb8的直接app.exit退出超时仍UNKNOWN，原失败与工具门槛纠正记录单列。真实服务/远控、可见首帧/连续性、HDR/多屏、系统安装/升级/卸载未执行。本地交付阶段尚未推送、合并或发布，后续发布结果见上方记录。最终报告见 [0.2.6本地包](LOCAL_PACKAGE_026.md) 与 [结构化证据](evidence/local-package-026-20261009.json)；下文保留前序阶段记录。
 
 ## 2026-10-09 — 0.2.6 本地可安装候选构建中
 

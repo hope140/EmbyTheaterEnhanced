@@ -1,0 +1,1811 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-09",
+  "timezone": "Asia/Shanghai",
+  "status": "PASS_IDENTITY_AND_REUSE",
+  "mainCommit": "46e995ef83fca7f7a882e3dc633bdcc2d2d521c7",
+  "releaseBranchCommit": "4b2491959a756844bf72b923306b0ec7f0a061d7",
+  "productSourceCommit": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+  "mergeBase": "46e995ef83fca7f7a882e3dc633bdcc2d2d521c7",
+  "divergence": {
+    "mainOnly": 0,
+    "releaseOnly": 81
+  },
+  "publishedScope": {
+    "fileCount": 172,
+    "groups": {
+      "documentation": 38,
+      "historicalEvidence": 21,
+      "packaging": 3,
+      "native": 1,
+      "application": 23,
+      "tests": 51,
+      "tooling": 35
+    },
+    "files": [
+      {
+        "path": "CHANGELOG.md",
+        "status": "M",
+        "group": "documentation"
+      },
+      {
+        "path": "README.md",
+        "status": "M",
+        "group": "documentation"
+      },
+      {
+        "path": "THIRD_PARTY_NOTICES.md",
+        "status": "M",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/ARCHITECTURE.md",
+        "status": "M",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/BUILD_HARDENING.md",
+        "status": "A",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/BUILD_INPUT_AUDIT.md",
+        "status": "A",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/BUILD_REVIEW.md",
+        "status": "A",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/BUILD_TOOLCHAINS.md",
+        "status": "A",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/CARNIVAL_BASELINE.md",
+        "status": "M",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/CLEANROOM_REPRODUCIBILITY.md",
+        "status": "M",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/DEVELOPMENT_LOG.md",
+        "status": "M",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/FULLSCREEN_WINDOW_STATE.md",
+        "status": "A",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/KNOWN_ISSUES.md",
+        "status": "M",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/LESSONS_LEARNED.md",
+        "status": "M",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/LIBMPV_RUNTIME.md",
+        "status": "M",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/LICENSING.md",
+        "status": "M",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/LOCAL_PACKAGE_026.md",
+        "status": "A",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/NEXTTRACK_TRANSITION_OVERLAY.md",
+        "status": "A",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/NODE_DEPENDENCY_BOUNDARY.md",
+        "status": "A",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/P0_P1_DELIVERY.md",
+        "status": "A",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/P1_DIAGNOSTICS_CONTRACT.md",
+        "status": "A",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/P2_TIMING_AND_CAPABILITY_REVIEW.md",
+        "status": "A",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/PACKAGING.md",
+        "status": "M",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/PLAYBACK_PRESENTATION_RESTORE.md",
+        "status": "A",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/PLAYBACK_REQUEST_SESSION_FIX.md",
+        "status": "A",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/PROJECT_STATUS.md",
+        "status": "M",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/RELEASE_025.md",
+        "status": "A",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/RELEASE_026.md",
+        "status": "A",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/ROADMAP.md",
+        "status": "M",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/RUNNER_DETERMINISM.md",
+        "status": "A",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/SETTINGS_UI_024_ACCEPTANCE.md",
+        "status": "A",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/SOURCE_MATERIALS.md",
+        "status": "A",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/STOP_OWNERSHIP_EXIT_EVIDENCE.md",
+        "status": "A",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/TESTING.md",
+        "status": "M",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/THIRD_PARTY_MATERIALS_AUDIT.md",
+        "status": "A",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/THIRD_PARTY_MATERIALS_REQUEST.md",
+        "status": "A",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/TRANSITION_WINDOWED_TIMELINE.md",
+        "status": "A",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/UNIFIED_CANDIDATE_ACCEPTANCE.md",
+        "status": "A",
+        "group": "documentation"
+      },
+      {
+        "path": "docs/evidence/build-hardening-delivery-20261009.json",
+        "status": "A",
+        "group": "historicalEvidence"
+      },
+      {
+        "path": "docs/evidence/build-hardening-input-inventory-20261009.json",
+        "status": "A",
+        "group": "historicalEvidence"
+      },
+      {
+        "path": "docs/evidence/build-hardening-source-materials-20261009.json",
+        "status": "A",
+        "group": "historicalEvidence"
+      },
+      {
+        "path": "docs/evidence/build-hardening-toolchains-20261009.json",
+        "status": "A",
+        "group": "historicalEvidence"
+      },
+      {
+        "path": "docs/evidence/build-input-inventory-20261009.json",
+        "status": "A",
+        "group": "historicalEvidence"
+      },
+      {
+        "path": "docs/evidence/build-input-npm-20261009.json",
+        "status": "A",
+        "group": "historicalEvidence"
+      },
+      {
+        "path": "docs/evidence/build-input-toolchain-20261009.json",
+        "status": "A",
+        "group": "historicalEvidence"
+      },
+      {
+        "path": "docs/evidence/build-review-20261009.json",
+        "status": "A",
+        "group": "historicalEvidence"
+      },
+      {
+        "path": "docs/evidence/local-package-026-20261009.json",
+        "status": "A",
+        "group": "historicalEvidence"
+      },
+      {
+        "path": "docs/evidence/p2-synthetic-timing-20261009.json",
+        "status": "A",
+        "group": "historicalEvidence"
+      },
+      {
+        "path": "docs/evidence/playback-request-session-20261009.json",
+        "status": "A",
+        "group": "historicalEvidence"
+      },
+      {
+        "path": "docs/evidence/release-v0.2.5-20261009.json",
+        "status": "A",
+        "group": "historicalEvidence"
+      },
+      {
+        "path": "docs/evidence/release-v0.2.6-20261009.json",
+        "status": "A",
+        "group": "historicalEvidence"
+      },
+      {
+        "path": "docs/evidence/runner-determinism-20261009.json",
+        "status": "A",
+        "group": "historicalEvidence"
+      },
+      {
+        "path": "docs/evidence/stop-ownership-exit-20261009.json",
+        "status": "A",
+        "group": "historicalEvidence"
+      },
+      {
+        "path": "docs/evidence/third-party-delivered-notices-20261009.json",
+        "status": "A",
+        "group": "historicalEvidence"
+      },
+      {
+        "path": "docs/evidence/third-party-host-20261009.json",
+        "status": "A",
+        "group": "historicalEvidence"
+      },
+      {
+        "path": "docs/evidence/third-party-materials-files-20261009.json",
+        "status": "A",
+        "group": "historicalEvidence"
+      },
+      {
+        "path": "docs/evidence/third-party-mpv-20261009.json",
+        "status": "A",
+        "group": "historicalEvidence"
+      },
+      {
+        "path": "docs/evidence/third-party-toolchains-20261009.json",
+        "status": "A",
+        "group": "historicalEvidence"
+      },
+      {
+        "path": "docs/evidence/third-party-web-npm-20261009.json",
+        "status": "A",
+        "group": "historicalEvidence"
+      },
+      {
+        "path": "installer/EmbyTheaterEnhanced.iss",
+        "status": "M",
+        "group": "packaging"
+      },
+      {
+        "path": "native/mpv-helper/ete-mpv-helper.cpp",
+        "status": "M",
+        "group": "native"
+      },
+      {
+        "path": "package-lock.json",
+        "status": "M",
+        "group": "packaging"
+      },
+      {
+        "path": "package.json",
+        "status": "M",
+        "group": "packaging"
+      },
+      {
+        "path": "src/electronapp/enhanced/bounded-diagnostics.js",
+        "status": "A",
+        "group": "application"
+      },
+      {
+        "path": "src/electronapp/enhanced/diagnostics-ipc.js",
+        "status": "M",
+        "group": "application"
+      },
+      {
+        "path": "src/electronapp/enhanced/maintenance-ipc.js",
+        "status": "A",
+        "group": "application"
+      },
+      {
+        "path": "src/electronapp/enhanced/maintenance.js",
+        "status": "A",
+        "group": "application"
+      },
+      {
+        "path": "src/electronapp/enhanced/native-diagnostics.js",
+        "status": "A",
+        "group": "application"
+      },
+      {
+        "path": "src/electronapp/enhanced/nexttrack-transition.js",
+        "status": "A",
+        "group": "application"
+      },
+      {
+        "path": "src/electronapp/enhanced/renderer-errors.js",
+        "status": "A",
+        "group": "application"
+      },
+      {
+        "path": "src/electronapp/main.js",
+        "status": "M",
+        "group": "application"
+      },
+      {
+        "path": "src/electronapp/native-helper/client.js",
+        "status": "M",
+        "group": "application"
+      },
+      {
+        "path": "src/electronapp/native-helper/controller.js",
+        "status": "M",
+        "group": "application"
+      },
+      {
+        "path": "src/electronapp/native-helper/service.js",
+        "status": "M",
+        "group": "application"
+      },
+      {
+        "path": "src/electronapp/plugins/libmpv.css",
+        "status": "M",
+        "group": "application"
+      },
+      {
+        "path": "src/electronapp/plugins/libmpv.js",
+        "status": "M",
+        "group": "application"
+      },
+      {
+        "path": "src/electronapp/plugins/mpvplayer/about.css",
+        "status": "A",
+        "group": "application"
+      },
+      {
+        "path": "src/electronapp/plugins/mpvplayer/about.html",
+        "status": "A",
+        "group": "application"
+      },
+      {
+        "path": "src/electronapp/plugins/mpvplayer/about.js",
+        "status": "A",
+        "group": "application"
+      },
+      {
+        "path": "src/electronapp/plugins/mpvplayer/diagnostics.css",
+        "status": "M",
+        "group": "application"
+      },
+      {
+        "path": "src/electronapp/plugins/mpvplayer/diagnostics.html",
+        "status": "M",
+        "group": "application"
+      },
+      {
+        "path": "src/electronapp/plugins/mpvplayer/diagnostics.js",
+        "status": "M",
+        "group": "application"
+      },
+      {
+        "path": "src/electronapp/plugins/mpvplayer/enhanced-settings.css",
+        "status": "A",
+        "group": "application"
+      },
+      {
+        "path": "src/electronapp/plugins/mpvplayer/strm.css",
+        "status": "M",
+        "group": "application"
+      },
+      {
+        "path": "src/electronapp/plugins/mpvplayer/strm.html",
+        "status": "M",
+        "group": "application"
+      },
+      {
+        "path": "src/electronapp/plugins/mpvplayer/strm.js",
+        "status": "M",
+        "group": "application"
+      },
+      {
+        "path": "tests/bounded-observers.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/build-input-audit.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/build-input-contract.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/build-toolchains.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/compare-transition-runner.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/diagnostics-collector-selftest.ps1",
+        "status": "M",
+        "group": "tests"
+      },
+      {
+        "path": "tests/electron44-compatibility.test.cjs",
+        "status": "M",
+        "group": "tests"
+      },
+      {
+        "path": "tests/exit-observation.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/fake-cd2-fixture.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/fake-cd2-fixture.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/fullscreen-window-state.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/libmpv-stats.test.cjs",
+        "status": "M",
+        "group": "tests"
+      },
+      {
+        "path": "tests/make-fixture.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/native-fallback-toast.test.cjs",
+        "status": "M",
+        "group": "tests"
+      },
+      {
+        "path": "tests/native-frame-boundary-cases.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/native-frame-hold-probe.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/native-helper-client.test.cjs",
+        "status": "M",
+        "group": "tests"
+      },
+      {
+        "path": "tests/native-helper-diagnostics-playback.test.cjs",
+        "status": "M",
+        "group": "tests"
+      },
+      {
+        "path": "tests/native-helper-lifecycle.test.cjs",
+        "status": "M",
+        "group": "tests"
+      },
+      {
+        "path": "tests/native-helper-service.test.cjs",
+        "status": "M",
+        "group": "tests"
+      },
+      {
+        "path": "tests/nexttrack-native-transition.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/nexttrack-transition-audit.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/nexttrack-transition.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/normal-close.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/p1-lifecycle-diagnostics.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/p1-runner-contract.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/p1-runtime-diagnostics.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/pipeline-browser.js",
+        "status": "M",
+        "group": "tests"
+      },
+      {
+        "path": "tests/pipeline-condition.js",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/pipeline-condition.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/pipeline-deadline.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/pipeline-deadline.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/pipeline-result.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/pipeline-result.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/pipeline-stop-cooldown.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/pipeline-timeout.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/playback-timing.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/playbackmanager-request-session.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/product-version.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/runtime-dependencies.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/runtime-provenance.test.cjs",
+        "status": "M",
+        "group": "tests"
+      },
+      {
+        "path": "tests/settings-night-audit.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/settings-visual-system.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/strm-mapping-assistant.test.cjs",
+        "status": "M",
+        "group": "tests"
+      },
+      {
+        "path": "tests/strm-settings-races.test.cjs",
+        "status": "M",
+        "group": "tests"
+      },
+      {
+        "path": "tests/strm-ui-consolidation.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/track-transition-acceptance.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/transition-stream-capture.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/transition-timeline-browser.js",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/transition-timeline-browser.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tests/transition-track-processor.test.cjs",
+        "status": "A",
+        "group": "tests"
+      },
+      {
+        "path": "tools/analyze-playback-timing.cjs",
+        "status": "A",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/audit-build-inputs.cjs",
+        "status": "A",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/build-input-contract.cjs",
+        "status": "A",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/build-input-provenance.cjs",
+        "status": "A",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/build-native-helper.ps1",
+        "status": "M",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/build-toolchains.cjs",
+        "status": "A",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/build-toolchains.lock.json",
+        "status": "A",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/build.ps1",
+        "status": "M",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/compare-transition.ps1",
+        "status": "A",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/copy-runtime-dependencies.cjs",
+        "status": "M",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/exit-observation.cjs",
+        "status": "A",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/fullscreen-probe.cjs",
+        "status": "A",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/make-fixture.cjs",
+        "status": "M",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/make-transition-fixtures.cjs",
+        "status": "A",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/native-frame-boundary-cases.cjs",
+        "status": "A",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/native-frame-hold-probe.cjs",
+        "status": "A",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/native-helper-contract.cjs",
+        "status": "M",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/native-helper-provenance.cjs",
+        "status": "M",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/normal-close-observation.cjs",
+        "status": "A",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/p1-diagnostics-smoke.cjs",
+        "status": "A",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/package.ps1",
+        "status": "M",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/patch-playbackmanager.cjs",
+        "status": "M",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/prepare-preload.cjs",
+        "status": "M",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/runtime-dependency-contract.cjs",
+        "status": "A",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/runtime-provenance.cjs",
+        "status": "M",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/settings-style-preview.cjs",
+        "status": "A",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/smoke-electron.cjs",
+        "status": "M",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/source-provenance.cjs",
+        "status": "M",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/start-fullscreen-probe.ps1",
+        "status": "A",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/test-p1-diagnostics.ps1",
+        "status": "A",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/test-runtime.ps1",
+        "status": "M",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/transition-stream-capture.cjs",
+        "status": "A",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/verify-normal-close.cjs",
+        "status": "A",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/verify-p1-diagnostics.cjs",
+        "status": "A",
+        "group": "tooling"
+      },
+      {
+        "path": "tools/verify-product-version.cjs",
+        "status": "A",
+        "group": "tooling"
+      }
+    ]
+  },
+  "productTrees": [
+    {
+      "path": "src",
+      "productTree": "879c2e42485f2d899d79b0d1e2020648fbd3a4f0",
+      "integrationTree": "879c2e42485f2d899d79b0d1e2020648fbd3a4f0"
+    },
+    {
+      "path": "native",
+      "productTree": "4ccb89d84e1478e19f54bd33856ccca01fb0e1ee",
+      "integrationTree": "4ccb89d84e1478e19f54bd33856ccca01fb0e1ee"
+    },
+    {
+      "path": "tools",
+      "productTree": "86f857bc7620cb8a48b09cf5337c3c7045936054",
+      "integrationTree": "86f857bc7620cb8a48b09cf5337c3c7045936054"
+    },
+    {
+      "path": "tests",
+      "productTree": "0d9208f79673597a3c515ad2727e316e65a35e2c",
+      "integrationTree": "0d9208f79673597a3c515ad2727e316e65a35e2c"
+    },
+    {
+      "path": "installer",
+      "productTree": "e1d4d349f2ef740cb917079afa249efbfa5971f7",
+      "integrationTree": "e1d4d349f2ef740cb917079afa249efbfa5971f7"
+    },
+    {
+      "path": "vendor",
+      "productTree": "a6df37c4be8d135edde66cd3476580b0b08210f5",
+      "integrationTree": "a6df37c4be8d135edde66cd3476580b0b08210f5"
+    }
+  ],
+  "buildInputs": [
+    {
+      "path": "LICENSE",
+      "productBlob": "6cd7f14ff8d0bc728af9dea506c14807c705c3df",
+      "integrationBlob": "6cd7f14ff8d0bc728af9dea506c14807c705c3df"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "productBlob": "4aedb5dc1f6a6701b960a4081e644fa7dc57e82a",
+      "integrationBlob": "4aedb5dc1f6a6701b960a4081e644fa7dc57e82a"
+    },
+    {
+      "path": "docs/LICENSING.md",
+      "productBlob": "5c0ff55989226625dc3af0a632a17d6d63ffcfec",
+      "integrationBlob": "5c0ff55989226625dc3af0a632a17d6d63ffcfec"
+    },
+    {
+      "path": "docs/SOURCE_MATERIALS.md",
+      "productBlob": "06da43b6cf286c357de5602b0f026039a0485871",
+      "integrationBlob": "06da43b6cf286c357de5602b0f026039a0485871"
+    },
+    {
+      "path": "installer/EmbyTheaterEnhanced.iss",
+      "productBlob": "6c8d3d73f3835e95760397fc8506894a4cb8c0ff",
+      "integrationBlob": "6c8d3d73f3835e95760397fc8506894a4cb8c0ff"
+    },
+    {
+      "path": "package-lock.json",
+      "productBlob": "4225e9bc713e1ffbe7a77b1617bb7540ff048c04",
+      "integrationBlob": "4225e9bc713e1ffbe7a77b1617bb7540ff048c04"
+    },
+    {
+      "path": "package.json",
+      "productBlob": "40ae6a1a4f96e5f5f190af5a845d623680d4d46e",
+      "integrationBlob": "40ae6a1a4f96e5f5f190af5a845d623680d4d46e"
+    },
+    {
+      "path": "tools/build-input-contract.cjs",
+      "productBlob": "87b7fb26e1659070d0c12e8253104b1c1d6875d4",
+      "integrationBlob": "87b7fb26e1659070d0c12e8253104b1c1d6875d4"
+    },
+    {
+      "path": "tools/build-input-provenance.cjs",
+      "productBlob": "adfd0ee905f7b210eb4331db2a4ca91d61d97efc",
+      "integrationBlob": "adfd0ee905f7b210eb4331db2a4ca91d61d97efc"
+    },
+    {
+      "path": "tools/build-native-helper.ps1",
+      "productBlob": "ef0c4246e691dff68ba0c845ef036a5fabc7e454",
+      "integrationBlob": "ef0c4246e691dff68ba0c845ef036a5fabc7e454"
+    },
+    {
+      "path": "tools/build-toolchains.cjs",
+      "productBlob": "84d12831aa4a5783dc5c2aca0fe11f9743c1aa69",
+      "integrationBlob": "84d12831aa4a5783dc5c2aca0fe11f9743c1aa69"
+    },
+    {
+      "path": "tools/build-toolchains.lock.json",
+      "productBlob": "0c34707ead36804b223a2c5c4004ede4e067f47f",
+      "integrationBlob": "0c34707ead36804b223a2c5c4004ede4e067f47f"
+    },
+    {
+      "path": "tools/build.ps1",
+      "productBlob": "23fff46da76a367e72a6e12a3c8790b05810385d",
+      "integrationBlob": "23fff46da76a367e72a6e12a3c8790b05810385d"
+    },
+    {
+      "path": "tools/copy-runtime-dependencies.cjs",
+      "productBlob": "762aa5904ed5e3ac2fb290c6614a82e5776ffb96",
+      "integrationBlob": "762aa5904ed5e3ac2fb290c6614a82e5776ffb96"
+    },
+    {
+      "path": "tools/copy-tracked-product-sources.cjs",
+      "productBlob": "6fe298ac1339c12e502e751af78d12a973fadfc9",
+      "integrationBlob": "6fe298ac1339c12e502e751af78d12a973fadfc9"
+    },
+    {
+      "path": "tools/electron-runtime-input.cjs",
+      "productBlob": "a77a9cd0140cc1c5032f4346c2f3df3711638857",
+      "integrationBlob": "a77a9cd0140cc1c5032f4346c2f3df3711638857"
+    },
+    {
+      "path": "tools/materialize-native-helper-source.cjs",
+      "productBlob": "aa884d4e9aef673e55bd7031853908c9516ed2b1",
+      "integrationBlob": "aa884d4e9aef673e55bd7031853908c9516ed2b1"
+    },
+    {
+      "path": "tools/native-helper-contract.cjs",
+      "productBlob": "56a3d27e118993358ddef04839f86c60f2553638",
+      "integrationBlob": "56a3d27e118993358ddef04839f86c60f2553638"
+    },
+    {
+      "path": "tools/native-helper-provenance.cjs",
+      "productBlob": "82bc0fc5675923579395d7f9f17258ffc8df976d",
+      "integrationBlob": "82bc0fc5675923579395d7f9f17258ffc8df976d"
+    },
+    {
+      "path": "tools/package.ps1",
+      "productBlob": "0bd1a6b6173926859d34d4662a7bd8032dc92022",
+      "integrationBlob": "0bd1a6b6173926859d34d4662a7bd8032dc92022"
+    },
+    {
+      "path": "tools/patch-external-player-registration.cjs",
+      "productBlob": "295e6f8935b40b0e8b28440a3dda57f837278036",
+      "integrationBlob": "295e6f8935b40b0e8b28440a3dda57f837278036"
+    },
+    {
+      "path": "tools/patch-playbackmanager.cjs",
+      "productBlob": "efc56b85a7dcf7d883eb0935db8eadf09dc127fa",
+      "integrationBlob": "efc56b85a7dcf7d883eb0935db8eadf09dc127fa"
+    },
+    {
+      "path": "tools/prepare-preload.cjs",
+      "productBlob": "64e669cba2ad2e88af929b211c5b04015aa0c2ea",
+      "integrationBlob": "64e669cba2ad2e88af929b211c5b04015aa0c2ea"
+    },
+    {
+      "path": "tools/prepare-web-overlays.cjs",
+      "productBlob": "39d2637c8a314bc0826962e11032bccc915acf69",
+      "integrationBlob": "39d2637c8a314bc0826962e11032bccc915acf69"
+    },
+    {
+      "path": "tools/runtime-dependency-contract.cjs",
+      "productBlob": "3dac625bafbf9be8e0c44d819554f7df3a84b0e8",
+      "integrationBlob": "3dac625bafbf9be8e0c44d819554f7df3a84b0e8"
+    },
+    {
+      "path": "tools/runtime-exclusions.cjs",
+      "productBlob": "2129f17c41dbd0574f6be8ce6a06ca46a9e5c1ec",
+      "integrationBlob": "2129f17c41dbd0574f6be8ce6a06ca46a9e5c1ec"
+    },
+    {
+      "path": "tools/runtime-provenance.cjs",
+      "productBlob": "d1904a23286675b0284a1daf37719f50d295d209",
+      "integrationBlob": "d1904a23286675b0284a1daf37719f50d295d209"
+    },
+    {
+      "path": "tools/source-provenance.cjs",
+      "productBlob": "b55de396eb956fd4880f4862ee5e1adb733d71c1",
+      "integrationBlob": "b55de396eb956fd4880f4862ee5e1adb733d71c1"
+    },
+    {
+      "path": "tools/tracked-file-hash.cjs",
+      "productBlob": "3a04e2a21cf0c3d03060ff78ff935266d22f6877",
+      "integrationBlob": "3a04e2a21cf0c3d03060ff78ff935266d22f6877"
+    },
+    {
+      "path": "tools/verify-product-version.cjs",
+      "productBlob": "26d3a52f2f4c6287900ba64cc0b6b81b68382ac8",
+      "integrationBlob": "26d3a52f2f4c6287900ba64cc0b6b81b68382ac8"
+    },
+    {
+      "path": "vendor/electron-runtime-manifest.json",
+      "productBlob": "229e88149575a7b53992d1c4d25fcfd48233268c",
+      "integrationBlob": "229e88149575a7b53992d1c4d25fcfd48233268c"
+    },
+    {
+      "path": "vendor/native-helper-manifest.json",
+      "productBlob": "b9b17fa674b4109b36be805968cc1a3a8c016fe5",
+      "integrationBlob": "b9b17fa674b4109b36be805968cc1a3a8c016fe5"
+    },
+    {
+      "path": "vendor/runtime-manifest.json",
+      "productBlob": "9779c44e21b002a3b19fdb1964f4ad90d4dfedd9",
+      "integrationBlob": "9779c44e21b002a3b19fdb1964f4ad90d4dfedd9"
+    },
+    {
+      "path": "vendor/toolchain-manifest.json",
+      "productBlob": "b39ba168381a255f6126e0ed2d771b9e3ef632c1",
+      "integrationBlob": "b39ba168381a255f6126e0ed2d771b9e3ef632c1"
+    }
+  ],
+  "historicalEvidence": {
+    "path": "docs/evidence/local-package-026-20261009.json",
+    "sha256": "10040f38c17a28d437e4afa8362f82d4ef851e761d27649dd06fdf321d3d8b49"
+  },
+  "reusedRuntime": {
+    "sourceCommit": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+    "runtime": "dist/ETE-0.2.6-local-355f4e6-win-x64",
+    "fileCount": 2136,
+    "manifestSha256": "69fb0042c7651a40b2ac4ebfffd149307bd4e292eb5231998dc24c7300786e7c",
+    "payload": {
+      "fileCount": 2135,
+      "payloadSetSha256": "19b2156f215afaa7f714d56ded5ab57923949f62f4cf0ee0ee6a7e33a40595d4"
+    },
+    "missing": [],
+    "extra": [],
+    "mismatched": []
+  },
+  "installer": {
+    "fileName": "EmbyTheaterEnhanced-0.2.6-test-355f4e6-win-x64-setup.exe",
+    "size": 175621807,
+    "sha256": "bc878b4e929016071b8d7a41f9b281ad3118e62e8a1e469b0a5c9858718b1532"
+  },
+  "harnessFiles": [
+    {
+      "path": "tools/test-p1-diagnostics.ps1",
+      "sha256": "59caec67518a40a56a3953d9d3ea14c2023d78d6c6c2cc112ccfae8331baf0e2",
+      "historicalFileSha256": "59caec67518a40a56a3953d9d3ea14c2023d78d6c6c2cc112ccfae8331baf0e2",
+      "integrationFileSha256": "936cbb245c21d4deacb52553780b6feb417f7c06fe531a81532575c8762c9f9d",
+      "canonicalMatchesProductBlob": true,
+      "checkoutRelation": "CRLF_LF_ONLY"
+    },
+    {
+      "path": "tools/p1-diagnostics-smoke.cjs",
+      "sha256": "363fe92b3bf20a1ef5c3f644cebd4ad4f90edb81845d62be3c1cd1481f97b4eb",
+      "historicalFileSha256": "363fe92b3bf20a1ef5c3f644cebd4ad4f90edb81845d62be3c1cd1481f97b4eb",
+      "integrationFileSha256": "5a1ce5549b1f38a24abed6bef94e1418dfb2fb5de321c642f58d1f125ea28491",
+      "canonicalMatchesProductBlob": true,
+      "checkoutRelation": "CRLF_LF_ONLY"
+    },
+    {
+      "path": "tools/smoke-electron.cjs",
+      "sha256": "2c4cf5d7fe4b6f6cc89a92e31c816c1bcc03be69e56dc6699839e86373451f17",
+      "historicalFileSha256": "2c4cf5d7fe4b6f6cc89a92e31c816c1bcc03be69e56dc6699839e86373451f17",
+      "integrationFileSha256": "5702441492518575ef51e946b88676eee117cd53b9c14d43075a6ccaa1837973",
+      "canonicalMatchesProductBlob": true,
+      "checkoutRelation": "CRLF_LF_ONLY"
+    },
+    {
+      "path": "tools/make-fixture.cjs",
+      "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b",
+      "historicalFileSha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b",
+      "integrationFileSha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b",
+      "canonicalMatchesProductBlob": true,
+      "checkoutRelation": "EXACT_BYTES"
+    },
+    {
+      "path": "tools/verify-p1-diagnostics.cjs",
+      "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca",
+      "historicalFileSha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca",
+      "integrationFileSha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca",
+      "canonicalMatchesProductBlob": true,
+      "checkoutRelation": "EXACT_BYTES"
+    },
+    {
+      "path": "tools/runtime-window-ownership.cjs",
+      "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5",
+      "historicalFileSha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5",
+      "integrationFileSha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5",
+      "canonicalMatchesProductBlob": true,
+      "checkoutRelation": "EXACT_BYTES"
+    },
+    {
+      "path": "tools/transition-stream-capture.cjs",
+      "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266",
+      "historicalFileSha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266",
+      "integrationFileSha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266",
+      "canonicalMatchesProductBlob": true,
+      "checkoutRelation": "EXACT_BYTES"
+    },
+    {
+      "path": "tools/exit-observation.cjs",
+      "sha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee",
+      "historicalFileSha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee",
+      "integrationFileSha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee",
+      "canonicalMatchesProductBlob": true,
+      "checkoutRelation": "EXACT_BYTES"
+    },
+    {
+      "path": "tools/normal-close-observation.cjs",
+      "sha256": "900e8e4ca678b5d7c1cedd30c30486327d0cbe86eb4e4c2dfc344de62cec7d53",
+      "historicalFileSha256": "900e8e4ca678b5d7c1cedd30c30486327d0cbe86eb4e4c2dfc344de62cec7d53",
+      "integrationFileSha256": "81385163c8c806e581966fa40aedb0360965341886dc970bd0d6668600cc0562",
+      "canonicalMatchesProductBlob": true,
+      "checkoutRelation": "CRLF_LF_ONLY"
+    },
+    {
+      "path": "tools/verify-normal-close.cjs",
+      "sha256": "7d37e910f6a0890639d344e8df4a2ad60ed7c62673676d6bfaec90dc65b9cd23",
+      "historicalFileSha256": "7d37e910f6a0890639d344e8df4a2ad60ed7c62673676d6bfaec90dc65b9cd23",
+      "integrationFileSha256": "f32e8d32efdd7aa443e62faaa929d6ab9ceb4f0e968365052eab92cce33b6291",
+      "canonicalMatchesProductBlob": true,
+      "checkoutRelation": "CRLF_LF_ONLY"
+    },
+    {
+      "path": "tests/pipeline-browser.js",
+      "sha256": "4523b344aede86e931786f53b16238a9f497d87752601c23f531bb1d34ceeb34",
+      "historicalFileSha256": "4523b344aede86e931786f53b16238a9f497d87752601c23f531bb1d34ceeb34",
+      "integrationFileSha256": "0ade5c67167d6117f991c386e4211e20825806c6a998ea34663606eb19e5d96e",
+      "canonicalMatchesProductBlob": true,
+      "checkoutRelation": "CRLF_LF_ONLY"
+    },
+    {
+      "path": "tests/generation-fixture-observer.js",
+      "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670",
+      "historicalFileSha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670",
+      "integrationFileSha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670",
+      "canonicalMatchesProductBlob": true,
+      "checkoutRelation": "EXACT_BYTES"
+    },
+    {
+      "path": "tests/fake-cd2-fixture.cjs",
+      "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20",
+      "historicalFileSha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20",
+      "integrationFileSha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20",
+      "canonicalMatchesProductBlob": true,
+      "checkoutRelation": "EXACT_BYTES"
+    },
+    {
+      "path": "tests/pipeline-deadline.cjs",
+      "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289",
+      "historicalFileSha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289",
+      "integrationFileSha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289",
+      "canonicalMatchesProductBlob": true,
+      "checkoutRelation": "EXACT_BYTES"
+    },
+    {
+      "path": "tests/pipeline-condition.js",
+      "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf",
+      "historicalFileSha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf",
+      "integrationFileSha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf",
+      "canonicalMatchesProductBlob": true,
+      "checkoutRelation": "EXACT_BYTES"
+    },
+    {
+      "path": "tests/pipeline-result.cjs",
+      "sha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749",
+      "historicalFileSha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749",
+      "integrationFileSha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749",
+      "canonicalMatchesProductBlob": true,
+      "checkoutRelation": "EXACT_BYTES"
+    }
+  ],
+  "reusedRuns": [
+    {
+      "name": "close-idle",
+      "sourceCommit": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+      "status": "PASS",
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "cleanupAttempted": false,
+      "candidateResidual": 0,
+      "verification": {
+        "schemaVersion": 1,
+        "scenario": "idle",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN"
+      },
+      "artifacts": [
+        {
+          "name": "electron-smoke.json",
+          "sha256": "069df03f1f6bbb3f230bde8cd48ac31f5afc1d6bac1fb4746585ff87f01a0780",
+          "matched": true
+        },
+        {
+          "name": "runner-result.json",
+          "sha256": "f431f90c45cad954cd281d61d0849249914524bae40cab6618fe336c10cd0fdf",
+          "matched": true
+        },
+        {
+          "name": "harness-identity.json",
+          "sha256": "ef7647dbc0686ab033edf076b5e438b2d7c70d47b68947f93f9cc0ad09145fd2",
+          "matched": true
+        },
+        {
+          "name": "p1-diagnostics-injection.json",
+          "sha256": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+          "matched": true
+        },
+        {
+          "name": "exit-observation.jsonl",
+          "sha256": "72c1ec16672c7a28b529c1dfb8b051eda6761dc28276d689ad13841d80872206",
+          "matched": true
+        },
+        {
+          "name": "runner-exit-observation.jsonl",
+          "sha256": "1d6c4886d436318a953f71ed4b48a56437e935ee3ce9d574ee68f93157493842",
+          "matched": true
+        },
+        {
+          "name": "normal-close.jsonl",
+          "sha256": "bd36ca469b015a53febb018dfd202271338e878999ec500593c19b505bd732f8",
+          "matched": true
+        },
+        {
+          "name": "normal-close-result.json",
+          "sha256": "0171efc0cfa4e0619d2da9be6e5c6fa0ec39f6f014b70dd219efb6d04307ab0c",
+          "matched": true
+        }
+      ]
+    },
+    {
+      "name": "close-playing",
+      "sourceCommit": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+      "status": "PASS",
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "cleanupAttempted": false,
+      "candidateResidual": 0,
+      "verification": {
+        "schemaVersion": 1,
+        "scenario": "playing",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN"
+      },
+      "artifacts": [
+        {
+          "name": "electron-smoke.json",
+          "sha256": "1aefbcfca3f9fecec32a14eb9f2d9a5b5f17cc4e91c280caac15d1e9f6f58d2e",
+          "matched": true
+        },
+        {
+          "name": "runner-result.json",
+          "sha256": "4516382241e61c8b18d6a8c668e8559a34e985bf9cc60d40019c9923d8b786ac",
+          "matched": true
+        },
+        {
+          "name": "harness-identity.json",
+          "sha256": "f2f35f6a2df885af1a1ebdc7dde090c0ae391151624e8f8fa84551a938943726",
+          "matched": true
+        },
+        {
+          "name": "p1-diagnostics-injection.json",
+          "sha256": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+          "matched": true
+        },
+        {
+          "name": "exit-observation.jsonl",
+          "sha256": "bbe403bd174677bb8aab73731a6db4ff01cb8202c1d7afe6bca271a4e3ef4e1f",
+          "matched": true
+        },
+        {
+          "name": "runner-exit-observation.jsonl",
+          "sha256": "48572cc49bf6e13482950e8fbce69ecc8148a85cee32768ab0f84f947cf1d516",
+          "matched": true
+        },
+        {
+          "name": "normal-close.jsonl",
+          "sha256": "1a7dbf664038bbf090b5473c17314253940b64ad6a8218b3d3563f07e0b1c508",
+          "matched": true
+        },
+        {
+          "name": "normal-close-result.json",
+          "sha256": "ad6d9cc867bbb703faf2b4f2a7eabe1265b332fabe3402ae7484976055205e1b",
+          "matched": true
+        }
+      ]
+    },
+    {
+      "name": "close-stopped",
+      "sourceCommit": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+      "status": "PASS",
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "cleanupAttempted": false,
+      "candidateResidual": 0,
+      "verification": {
+        "schemaVersion": 1,
+        "scenario": "stopped",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN"
+      },
+      "artifacts": [
+        {
+          "name": "electron-smoke.json",
+          "sha256": "9274366b005e8ec76c11afa619c872a92b1274af227db417037bb11dd4457e13",
+          "matched": true
+        },
+        {
+          "name": "runner-result.json",
+          "sha256": "16b7239f7c95433d43fcff9bb4cad1c63a95edfefbf31e3fb6dd9cdec3c7d554",
+          "matched": true
+        },
+        {
+          "name": "harness-identity.json",
+          "sha256": "69532fc63f60126ddb838fd43cf64552d7b73cf6fafc88b137b5b64fc53baaf5",
+          "matched": true
+        },
+        {
+          "name": "p1-diagnostics-injection.json",
+          "sha256": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+          "matched": true
+        },
+        {
+          "name": "exit-observation.jsonl",
+          "sha256": "f25018cab83aabf59b883713b3c313e17a55ec35565126fad611e7e7464191f8",
+          "matched": true
+        },
+        {
+          "name": "runner-exit-observation.jsonl",
+          "sha256": "643cd0fd1d107c02dfa68dfdbdcb2654d801adf496777d890ebe12b98e19509d",
+          "matched": true
+        },
+        {
+          "name": "normal-close.jsonl",
+          "sha256": "fba47e6f144f144b687bca2045a13ed828f8a8074a61e462e5be4b3fec59c077",
+          "matched": true
+        },
+        {
+          "name": "normal-close-result.json",
+          "sha256": "30f087e6e619cdf396acfe072e9ee58f37d9d1d9ad0fbac2c3dc93d68572167e",
+          "matched": true
+        }
+      ]
+    },
+    {
+      "name": "miss400",
+      "sourceCommit": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+      "status": "PASS",
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "cleanupAttempted": false,
+      "candidateResidual": 0,
+      "artifacts": [
+        {
+          "name": "electron-smoke.json",
+          "sha256": "1eb8bc5fff2be3774b999b4f092c9e9b35dae997a30d74e023dcfcf902215d6b",
+          "matched": true
+        },
+        {
+          "name": "runner-result.json",
+          "sha256": "df18370e3643137e2f3f562e4b692eb114537a5e294ec41067ac9b2899f566a9",
+          "matched": true
+        },
+        {
+          "name": "harness-identity.json",
+          "sha256": "9314209c02f4b9209446fe2848cc9a575978ef6d216babab1508431c1597d793",
+          "matched": true
+        },
+        {
+          "name": "p1-diagnostics-injection.json",
+          "sha256": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+          "matched": true
+        },
+        {
+          "name": "exit-observation.jsonl",
+          "sha256": "d4b9abc54b9a710e10fbae4b4cfec436cb347d1e116e5fa98f0aefb28cc93b7e",
+          "matched": true
+        },
+        {
+          "name": "runner-exit-observation.jsonl",
+          "sha256": "4e08555505c162ba3c58e3ed1bb9c773b2f3ec0844ba1b39f2c606c8f70c5aba",
+          "matched": true
+        },
+        {
+          "name": "normal-close.jsonl",
+          "sha256": "6bf14f1472ee26ceb38940ed9df3c254c2abc4fc59dba2c26252aa0ffe22ac14",
+          "matched": true
+        },
+        {
+          "name": "normal-close-result.json",
+          "sha256": "28b1075b0ef11ca23b5c3b811a9adde81e4182469270a5c6d84d034f1c142ff9",
+          "matched": true
+        },
+        {
+          "name": "p1-diagnostics-result.json",
+          "sha256": "0fc5ce37b3a1b251edd9613d1e8a6d00538b5b7e7d9c1ac533c048347b524de5",
+          "matched": true
+        }
+      ]
+    },
+    {
+      "name": "hit0",
+      "sourceCommit": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+      "status": "PASS",
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "cleanupAttempted": false,
+      "candidateResidual": 0,
+      "artifacts": [
+        {
+          "name": "electron-smoke.json",
+          "sha256": "4ee0cb92c69915e5db6219e06a37dbbbecd22df9aa1595aa7a6704fa35381ac2",
+          "matched": true
+        },
+        {
+          "name": "runner-result.json",
+          "sha256": "dcd89e4b3cc29eaa567df99447fa6795945ef42f4beb23ec7f245943ad094103",
+          "matched": true
+        },
+        {
+          "name": "harness-identity.json",
+          "sha256": "90a5fc6f7d7e6c6095e3a717b9014f374e36636a5ed1b279ecf7267654c24781",
+          "matched": true
+        },
+        {
+          "name": "p1-diagnostics-injection.json",
+          "sha256": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+          "matched": true
+        },
+        {
+          "name": "exit-observation.jsonl",
+          "sha256": "606df5f862f82c023891847b9604b9e30f837a3bfe88a10b556ebf626cab069f",
+          "matched": true
+        },
+        {
+          "name": "runner-exit-observation.jsonl",
+          "sha256": "a6c246ca2f58531f54429a3c35c8a29b3927d085fd203e0a52545770fbef72b4",
+          "matched": true
+        },
+        {
+          "name": "normal-close.jsonl",
+          "sha256": "239d1d8d3efa2e69fc5200e6a7c40b0aa39d9f86e83167a0a0eb703a94943829",
+          "matched": true
+        },
+        {
+          "name": "normal-close-result.json",
+          "sha256": "28b1075b0ef11ca23b5c3b811a9adde81e4182469270a5c6d84d034f1c142ff9",
+          "matched": true
+        },
+        {
+          "name": "p1-diagnostics-result.json",
+          "sha256": "e71976e0cf4968b19f3be8f7492529f8325e3d653e3ecc80ded1f94e82510006",
+          "matched": true
+        }
+      ]
+    },
+    {
+      "name": "hit400",
+      "sourceCommit": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+      "status": "PASS",
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "cleanupAttempted": false,
+      "candidateResidual": 0,
+      "artifacts": [
+        {
+          "name": "electron-smoke.json",
+          "sha256": "5f275e27e06b811040189aad8a0dc3a4d2e7c8835b122eeb0e92b10625fb7fd9",
+          "matched": true
+        },
+        {
+          "name": "runner-result.json",
+          "sha256": "fb8a5a34f2a89b9ae713edac29b01f9c382bc3e69761f68276bd4af20a38d778",
+          "matched": true
+        },
+        {
+          "name": "harness-identity.json",
+          "sha256": "583280b859e5c711634ffdf7fcca565edf3785ffde194c9682d318126b20ab30",
+          "matched": true
+        },
+        {
+          "name": "p1-diagnostics-injection.json",
+          "sha256": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+          "matched": true
+        },
+        {
+          "name": "exit-observation.jsonl",
+          "sha256": "5b2ea55a87b7a2f23ae3ae59fc6145b56c8a22ee0190f9e79be43353f7c78b3a",
+          "matched": true
+        },
+        {
+          "name": "runner-exit-observation.jsonl",
+          "sha256": "43e2bc38994c4be648823f4b438f45f9e76764809ba4c7b2311c0c3407d29541",
+          "matched": true
+        },
+        {
+          "name": "normal-close.jsonl",
+          "sha256": "6ad900e852c102a26b0b8b3512380042ecb24733bc6a1121a710f5102bf40c02",
+          "matched": true
+        },
+        {
+          "name": "normal-close-result.json",
+          "sha256": "28b1075b0ef11ca23b5c3b811a9adde81e4182469270a5c6d84d034f1c142ff9",
+          "matched": true
+        },
+        {
+          "name": "p1-diagnostics-result.json",
+          "sha256": "e71976e0cf4968b19f3be8f7492529f8325e3d653e3ecc80ded1f94e82510006",
+          "matched": true
+        }
+      ]
+    },
+    {
+      "name": "hit800",
+      "sourceCommit": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+      "status": "PASS",
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "cleanupAttempted": false,
+      "candidateResidual": 0,
+      "artifacts": [
+        {
+          "name": "electron-smoke.json",
+          "sha256": "edf16e1eb3f60b3c75e5875569394ef123d4754ba924ae7af81eed039df9d42e",
+          "matched": true
+        },
+        {
+          "name": "runner-result.json",
+          "sha256": "39e4ca959fb225a80d158d67b43d873551b4b7825db06be5fc8ea7ca1247f4be",
+          "matched": true
+        },
+        {
+          "name": "harness-identity.json",
+          "sha256": "fe17fbd71454987b1b1bd2c757ef7f098572136d701c63366c47f07387e1bb42",
+          "matched": true
+        },
+        {
+          "name": "p1-diagnostics-injection.json",
+          "sha256": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+          "matched": true
+        },
+        {
+          "name": "exit-observation.jsonl",
+          "sha256": "c292b215b3e8d1448249473d0b272cd6c26b6f88298d25d14cbef9e142531972",
+          "matched": true
+        },
+        {
+          "name": "runner-exit-observation.jsonl",
+          "sha256": "9ff353287445b999a0f8b5310451bb4afdca4ee360513d02b7c10cfe5c4841bd",
+          "matched": true
+        },
+        {
+          "name": "normal-close.jsonl",
+          "sha256": "e3ca1ad2e5582ca690ce279827dca5eb39bfbdd3ebd35ae22cc0289f2d3bf6f3",
+          "matched": true
+        },
+        {
+          "name": "normal-close-result.json",
+          "sha256": "28b1075b0ef11ca23b5c3b811a9adde81e4182469270a5c6d84d034f1c142ff9",
+          "matched": true
+        },
+        {
+          "name": "p1-diagnostics-result.json",
+          "sha256": "e71976e0cf4968b19f3be8f7492529f8325e3d653e3ecc80ded1f94e82510006",
+          "matched": true
+        }
+      ]
+    },
+    {
+      "name": "direct400",
+      "sourceCommit": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+      "status": "PASS",
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "cleanupAttempted": false,
+      "candidateResidual": 0,
+      "artifacts": [
+        {
+          "name": "electron-smoke.json",
+          "sha256": "e10fe23753e4364054bb1c3ceeda0e80c969784750e74c70b853692809549a1b",
+          "matched": true
+        },
+        {
+          "name": "runner-result.json",
+          "sha256": "3d6dbe93b33e196fcc2bf15170c83cf0ace48426eed2eabfb489cc1ec8575470",
+          "matched": true
+        },
+        {
+          "name": "harness-identity.json",
+          "sha256": "898388111fbe09284b72e32babab767898df7cec243671588c3fcf53b410d9ce",
+          "matched": true
+        },
+        {
+          "name": "p1-diagnostics-injection.json",
+          "sha256": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+          "matched": true
+        },
+        {
+          "name": "exit-observation.jsonl",
+          "sha256": "48bc737032d71dd3422e481ca1a50a6761ae22b21e4b76a2def1dc0b6915e04e",
+          "matched": true
+        },
+        {
+          "name": "runner-exit-observation.jsonl",
+          "sha256": "b874016c663ab54ed767ccf75527c8ab702666053dff9701a0248a38e1939702",
+          "matched": true
+        },
+        {
+          "name": "normal-close.jsonl",
+          "sha256": "79acef9a003e54b170c59121982e5de3b3724d0a2da7bac560f03918426652f1",
+          "matched": true
+        },
+        {
+          "name": "normal-close-result.json",
+          "sha256": "28b1075b0ef11ca23b5c3b811a9adde81e4182469270a5c6d84d034f1c142ff9",
+          "matched": true
+        },
+        {
+          "name": "p1-diagnostics-result.json",
+          "sha256": "e71976e0cf4968b19f3be8f7492529f8325e3d653e3ecc80ded1f94e82510006",
+          "matched": true
+        }
+      ]
+    }
+  ],
+  "runtimeExecutionThisTask": "NOT_EXECUTED_PRODUCT_AND_BUILD_INPUT_GIT_BLOBS_UNCHANGED",
+  "initialHarnessComparison": {
+    "result": "RAW_CHECKOUT_HASH_MISMATCH",
+    "fileCount": 6,
+    "resolution": "Old execution files match recorded SHA256 exactly; both worktrees match the same product Git blobs after CRLF-to-LF normalization. No new runtime execution is claimed."
+  },
+  "historicalAppExit": {
+    "products": [
+      "0.2.5/d480eb8",
+      "0.2.6/8700039"
+    ],
+    "boundary": "AFTER_APP_EXIT_RETURN / OS_EXIT_TIMEOUT",
+    "rootCause": "UNKNOWN",
+    "notClosedByNormalQuitPass": true,
+    "directExitRetestedAfterDestroyFix": false
+  },
+  "acceptanceBoundary": [
+    "system install/upgrade/uninstall",
+    "real Emby/CD2",
+    "real remote clients",
+    "visible first frame/continuity",
+    "HDR/multi-display"
+  ],
+  "failures": [],
+  "integrationBranch": "codex/integrate-v0.2.6-main-20261009",
+  "localValidation": {
+    "node": "v24.18.1",
+    "npm": "11.17.0",
+    "suite": {
+      "command": "node --test --test-concurrency=1 tests/*.test.cjs",
+      "exitCode": 0,
+      "tests": 631,
+      "passed": 631,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "durationMs": 238743.242,
+      "log": "test-output/integration-unit.log",
+      "logSha256": "03996ed5efef8375395c902deab2f191eaabf40f621cb5e6b6a0d86f58e69a30"
+    },
+    "syntax": {
+      "command": "node --check each tracked JS/CJS plus prepared preload",
+      "fileCount": 196,
+      "failed": 0,
+      "exitCode": 0
+    },
+    "diffCheck": {
+      "exitCode": 0
+    },
+    "prepare": {
+      "npmCiExitCode": 0,
+      "initialAttempt": "WINDOWS_LONG_PATH_COPY_FAILURE",
+      "recovery": "TEMPORARY_POWERSHELL_FILESYSTEM_DRIVE_SAME_PREPARE_SCRIPT",
+      "finalExitCode": 0,
+      "archiveHashesMatched": true,
+      "carnivalFiles": 1009,
+      "electronFiles": 73,
+      "electronTreeMatched": true
+    }
+  },
+  "dependencyAudit": {
+    "exitCode": 1,
+    "logSha256": "12d4dbac81278a6c1954885396dad80a8b3629881db98cc316c2c08d33efca6d",
+    "counts": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 1,
+      "critical": 0,
+      "total": 1
+    },
+    "package": "@grpc/grpc-js",
+    "version": "1.14.4",
+    "sameVersionOnMain": true,
+    "advisories": [
+      {
+        "id": "GHSA-m9gg-hp2v-232j",
+        "severity": "high",
+        "url": "https://github.com/advisories/GHSA-m9gg-hp2v-232j"
+      },
+      {
+        "id": "GHSA-f596-whhp-79r4",
+        "severity": "low",
+        "url": "https://github.com/advisories/GHSA-f596-whhp-79r4"
+      }
+    ],
+    "applicability": "NO_SERVER_TRIGGER_FOUND_IN_PRODUCTION_CLIENT_ONLY_PATH",
+    "decision": "DISCLOSED_NONBLOCKING_EXISTING_DEPENDENCY_MAINTENANCE",
+    "dependencyUpgrade": false
+  },
+  "review": {
+    "core": "NO_CONFIRMED_INTEGRATION_BLOCKER",
+    "build": "NO_CONFIRMED_INTEGRATION_BLOCKER",
+    "settingsDiagnostics": "NO_CONFIRMED_INTEGRATION_BLOCKER",
+    "interruptedWorkerTests": {
+      "attempts": 2,
+      "location": "prior release checkout",
+      "exitCode": 1,
+      "result": "MANUALLY_INTERRUPTED_NO_TEST_RESULT",
+      "includedInPass": false
+    },
+    "prTemplate": "NONE_IN_TRACKED_REPOSITORY",
+    "workflowCount": 0
+  }
+}

@@ -2,17 +2,13 @@
 
 本页是 Emby Theater Enhanced 未来开发计划的正式来源。问题的复现情况见 [Known Issues](KNOWN_ISSUES.md)，已完成工作的证据见 [项目状态](PROJECT_STATUS.md) 与 [测试记录](TESTING.md)。状态区分 `main` 发布基线、功能分支和待验收工作。
 
-## 当前本地里程碑（2026-10-09）
+## 当前里程碑（2026-10-09）
 
-后续发布里程碑已完成：v0.2.6 / 355f4e6作为Pre-release公开，三个资产上传并完整回下载核验，见 [发布记录](RELEASE_026.md)。发布来自完整发布分支，main仍待整合。接续事项为主线整合审查、实际使用与安装生命周期验收、第三方剩余来源材料；直接app.exit UNKNOWN继续独立观察。以下本地候选段保留其原阶段身份。
+v0.2.6 / 355f4e6的本地交付与Pre-release公开发布均已完成，三个发布资产已完整回下载核验，见 [发布记录](RELEASE_026.md)。产品验收为631/631、三场景正常关闭、五组完整隔离pipeline、安装器完整性及2136文件解包一致；准确来源与边界见 [本地交付](LOCAL_PACKAGE_026.md)。
 
-0.2.6本地可安装测试包已完成，产品sourceCommit=355f4e6；631/631、三场景正常关闭、五组完整pipeline、安装器完整性、2136文件解包一致性及交付读回均通过。交付目录为dist/delivery-0.2.6-355f4e6，使用和边界见 [交付报告](LOCAL_PACKAGE_026.md)。本地目标已完成；主线整合/公开发布、系统安装与真实使用验收仍按各自授权推进。直接app.exit UNKNOWN保留，未自动扩大研究。
+当前主线整合以完整发布分支4b24919为起点，保留全部81个领先提交；审查基线main46e995e没有独有提交。差异、验证、证据复用条件及PR状态统一见 [主线整合报告](MAIN_INTEGRATION_026.md)。发布tag与产品sourceCommit保持355f4e6；整合分支的文档提交不产生新版本或新安装包。
 
-当前执行目标已进入0.2.6本地可安装测试包交付：独立候选整合必要材料、固定版本、正式build/package，完成五组隔离播放与三场景正常关闭、installer完整性和逐文件解包核对。进度见 [0.2.6本地包](LOCAL_PACKAGE_026.md)。本地交付完成后，主线整合、公开发布与真实使用验收仍是单独阶段。
-
-`codex/stop-ownership-20261009` / sourceCommit `68eb024` 已交付0.2.5播放生命周期候选：请求快照、pending报告和Stop归属修复均在同一来源runtime复验，608/608、新五组矩阵/5对身份报告、完整来源与payload通过。退出取证已定位到旧d480eb8的app.exit返回后OS进程仍存活；新五组自然退出，根因继续UNKNOWN，不宣告退出稳定性问题关闭。见 [当前报告](STOP_OWNERSHIP_EXIT_EVIDENCE.md)。
-
-后续顺序仍为候选审阅与退出观察、下一测试版安装包/发布准备、主线整合和真实使用验收。它们是后续阶段，当前本地交付没有自动进入这些外部动作；真实首帧/连续性、实服/远控与安装分别验收。
+其后的独立事项是实际使用、安装生命周期验收和第三方剩余来源材料。早期8700039与d480eb8直接app.exit的退出超时仍为UNKNOWN；正常关闭通过没有关闭该观察项。历史68eb024的608项与五组运行保留在 [Stop归属报告](STOP_OWNERSHIP_EXIT_EVIDENCE.md)，不再作为当前候选。
 
 ## Current Production Baseline
 
@@ -40,11 +36,9 @@
 
 **边界：** 后续 STRM 设置页整理已经随 v0.2.4 完成并通过用户验收；现有 `rules[]`、Resolver 和播放身份链保持原约定。
 
-## NOW
-
 ### 构建复核与安装器重复性
 
-1a05f88本地候选已完成writer输出边界修正及重复验证，见 [构建复核交付](BUILD_REVIEW.md)。后续 v0.2.5/3ab10c9 重新通过535/535全量、17/17writer及两份独立runtime/原始installer字节比较，并作为测试版发布。对应源码材料补齐与主线整合保持独立事项；本轮继续既定播放实现。
+1a05f88已完成writer输出边界修正及重复验证，见 [构建复核交付](BUILD_REVIEW.md)。v0.2.5/3ab10c9另取得535/535全量、17/17writer及两份独立runtime/原始installer字节一致证据，并已发布。v0.2.6继承这些实现，另有其准确来源的正式构建、安装器与运行证据；旧重复性结果不改标成v0.2.6双构建。
 
 ### 构建输入与对应来源清单
 
@@ -56,15 +50,25 @@
 
 离线工具和合成样本报告已本地完成，见 [P2阶段观测](P2_TIMING_AND_CAPABILITY_REVIEW.md)。P2历史合成证据的输入sourceCommit为fb10f92；后续工程现已随v0.2.5测试版交付。构建输入清单已独立完成，材料缺口见上项；缺少真实服务样本不触发预热或Hydration实现。
 
-### P0 基线与主线整合审查
+### Settings 与 P0 基线整理
 
 基于完整 v0.2.4 候选整理当前状态与真实差异，见 [P0/P1 本地交付](P0_P1_DELIVERY.md)。Settings 用户验收通过；顶部细条用户确认消失；统一候选已补齐窗口交互、10 次 Next/Previous 与 Stop 回归。历史 430/430 和安装器 2147 文件结果见 [0.2.4 验收](SETTINGS_UI_024_ACCEPTANCE.md) 与 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)，不替代本轮验证。
 
-旧 `test-20261008-cc603ba` Release 已删除，原 tag 与验收文档保留。main 整合、PR 与后续发布单独决定。
+旧 `test-20261008-cc603ba` Release 已删除，原 tag 与验收文档保留。以上成果均在v0.2.6完整发布树中，主线整合范围见本页当前里程碑。
 
 ### P1 最小播放诊断与 Renderer 错误定位
 
-补齐现有 JSONL 的 native 文件事件、generation/request 关联、持帧及 surface 隐藏观察，采集有限脱敏 Renderer 错误位置，并检查交付版本一致性。范围、限额、不可用语义和验证要求见 [诊断 contract](P1_DIAGNOSTICS_CONTRACT.md)；实际完成状态见 [本地交付](P0_P1_DELIVERY.md)。
+已补齐现有 JSONL 的 native 文件事件、generation/request 关联、持帧及 surface 隐藏观察、有限脱敏 Renderer 错误位置与交付版本检查，随v0.2.5发布并保留在v0.2.6。范围、限额、不可用语义见 [诊断 contract](P1_DIAGNOSTICS_CONTRACT.md)，历史验收见 [本地交付](P0_P1_DELIVERY.md)。
+
+### 播放请求、Stop 与正常关闭
+
+v0.2.6已包含每请求options快照、pending报告抑制、捕获stream的Stop排空与一次报告、Native Helper共享destroy及全部pending退出等待。631项和八组完整隔离运行见 [0.2.6交付](LOCAL_PACKAGE_026.md)；真实Emby/CD2/远控仍按独立范围验收。
+
+## NOW
+
+### v0.2.6 主线整合审查
+
+独立分支 `codex/integrate-v0.2.6-main-20261009` 面向main提交完整发布成果，当前目标是可审阅PR与合并判定。最终状态、Git关系、新执行单测和原355f4e6产物的复用证明见 [主线整合报告](MAIN_INTEGRATION_026.md)。
 
 ### 1. NextTrack 切集瞬时白屏
 
@@ -79,6 +83,10 @@
 2026-10-09已核对元数据、URL与媒体预读复杂度。跨请求URL复用需要失效/取消/鉴权归属，媒体预读会新增服务端副作用，当前没有实际收益证据；按用户“复杂就不做”要求结束本轮预热研究，不进入实现排期，见P2报告。
 
 ## P2
+
+### About 高级运行信息
+
+部分字段UNKNOWN的版本来源/缓存小修留待下一轮，当前只保留已有展示行为。
 
 ### Fullscreen Dynamic Corner Policy
 
@@ -120,7 +128,7 @@
 ## DEFERRED / DECISION
 
 - Electron Forge migration evaluation：按现有安装与构建契约另行评估，不与播放问题混修。
-- 对应源码 / 通知交付 / 完整工具链材料：清单审计完成，缺口与补齐顺序见 [构建输入审计](BUILD_INPUT_AUDIT.md)，许可状态见 [许可文档](LICENSING.md)。
+- 对应源码与第三方完整构建材料：清单审计、固定工具链锁及四份通知随包已完成；Host/离线Web/libmpv等剩余材料见 [来源索引](SOURCE_MATERIALS.md) 与 [第三方审计](THIRD_PARTY_MATERIALS_AUDIT.md)，许可状态见 [许可文档](LICENSING.md)。
 
 ## Frozen Artifact
 

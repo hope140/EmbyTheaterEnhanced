@@ -2,7 +2,9 @@
 
 当前本地构建采用 [提交输入 contract](BUILD_HARDENING.md)、[精确 Node 目录](NODE_DEPENDENCY_BOUNDARY.md) 和 [完整本地工具链锁](BUILD_TOOLCHAINS.md)。新 build manifest 为 schema 3；历史 schema 2 审计按其原有语义读取。准确候选与分层实测结果在构建修正记录中单列。
 
-当前 v0.2.5 测试版的准确源码、两次独立构建、安装器原始字节及解包验证见 [发布记录](RELEASE_025.md)。Inno Files 使用 notimestamp；该结果仅针对所列固定源码与材料，不把下文早期容器不一致记录升级为通过。
+当前测试版v0.2.6 / 355f4e6的正式构建、安装器与2136文件解包验证见 [本地交付](LOCAL_PACKAGE_026.md)，公开下载与身份见 [发布记录](RELEASE_026.md)。主线整合只复用经逐文件与输入核对的原产物，不将其改标为整合文档HEAD，见 [整合报告](MAIN_INTEGRATION_026.md)。
+
+v0.2.5的两次独立构建、安装器原始字节一致及解包验证保留在 [历史发布记录](RELEASE_025.md)。Inno Files 使用 notimestamp；该结果仅针对所列固定源码与材料，不把下文早期容器不一致记录升级为通过。
 
 ## Pinned Electron 44 runtime input
 
