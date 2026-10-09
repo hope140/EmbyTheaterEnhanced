@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-09 08:30 UTC+8 — v0.2.4 Pre-release 发布完成
+
+`v0.2.4` 已作为 GitHub Pre-release 发布，Release ID `407374861`，sourceCommit `03a2e3b9ea7f1cf786b034b0a1882b10de79a39c`。安装包与 `.sha256` 校验文件两个资产均已上传；安装包 175,597,797 bytes，GitHub API digest、release 页面与本地 SHA256 均为 `4ea589368f2db40ce09ce4e46f4fe937a2d34a240582d871a8f3f5ae627e4b64`。下载的校验文件与本地校验文件哈希一致，文件内列出的安装包SHA256也匹配；本轮未完整重新下载 EXE。发布回读和历史维护校验均 PASS。
+
+六个既有 Release 仅更新标题、当前版本导航和历史正文展示；原始正文保留，11 个旧资产、日期、draft/prerelease flags 与已有 refs 均未变化。`main` 仍为 `46e995e`，正式 Latest 仍为 `v0.2.2`。设置页用户验收仍为 `PASS`；未据此扩展声称真实安装、CD2 或其它未覆盖场景通过。详细记录见 [0.2.4验收](SETTINGS_UI_024_ACCEPTANCE.md)。
+
 ## 2026-10-09 — 0.2.4设置页用户验收通过
 
 用户使用本会话提供的0.2.4测试入口后反馈：“可以了，我测过了”。本轮设置页一致性修正记为 `USER ACCEPTANCE PASS`，对应产品sourceCommit仍为03a2e3b9ea7f1cf786b034b0a1882b10de79a39c，关闭本次UI问题并保留观察。不补写用户未逐项提供的操作、显示模式或安装过程；此前自动化、隔离测试与安装包校验仍保留独立证据。本次仅同步文档，没有改产品、重建、安装或上传GitHub。

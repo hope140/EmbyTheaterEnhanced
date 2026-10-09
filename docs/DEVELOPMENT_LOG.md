@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-10-09 08:30 UTC+8 — v0.2.4 Pre-release 发布完成
+
+Model Tier：Tier 1。Model：主线程与 Luna 复核。Reason：整理已经用户验收的 0.2.4 本地测试包发布记录、下载入口和历史 Release 导航。Playback/Session Impact：无。Escalated：no。
+
+GitHub `v0.2.4` Pre-release 已发布，Release ID `407374861`，sourceCommit `03a2e3b9ea7f1cf786b034b0a1882b10de79a39c`。安装包与 `.sha256` 校验文件两个资产均为 uploaded；安装包 175,597,797 bytes，API digest 和本地 SHA256 均为 `4ea589368f2db40ce09ce4e46f4fe937a2d34a240582d871a8f3f5ae627e4b64`。校验文件已下载并重算，内容中的安装包哈希与本地文件一致；EXE 本轮没有完整重新下载。Release 验证记录为 `.work/release-0.2.4-20261009/release-verification.json`。
+
+六个既有 Release 的标题、当前版本导航和历史正文展示已更新，原始正文仍保留；11 个旧资产、历史日期、release flags 与既有 refs 均保持不变。`main` 为 `46e995e`，正式 Latest 仍为 `v0.2.2`。设置页用户验收为 `PASS`，但不扩展为真实安装或真实 Emby/CD2 等其它环境验收。完整范围见 [SETTINGS_UI_024_ACCEPTANCE](SETTINGS_UI_024_ACCEPTANCE.md)。
+
 ## 2026-10-09 — 用户确认0.2.4设置页修正可用
 
 Model Tier：Tier 1，验收记录整理；Playback/Session Impact：无。用户在获得0.2.4 runtime测试入口后明确反馈“可以了，我测过了”，记录本轮设置页修正整体验收通过，未推断系统安装、真实CD2/HDR或其它未说明的测试。产品源03a2e3b与现有.exe/SHA保持，文档diff与源码范围检查通过；没有重跑或重复宣称新自动化PASS。

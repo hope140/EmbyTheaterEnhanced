@@ -1,6 +1,12 @@
 # 0.2.4 设置页一致性修正测试包
 
-日期：2026-10-09（UTC+8）。路径均相对于 managed worktree `ete-settings-native-alignment`。交付状态：`USER ACCEPTANCE PASS / LOCAL INSTALLER READY`，尚未上传GitHub或合并主线。
+日期：2026-10-09（UTC+8）。路径均相对于 managed worktree `ete-settings-native-alignment`。交付状态：`USER ACCEPTANCE PASS / GITHUB PRE-RELEASE PUBLISHED`。
+
+## GitHub 发布记录
+
+`v0.2.4` 于 2026-10-09 08:30（UTC+8）作为 Pre-release 发布，Release ID `407374861`，tag 精确指向 sourceCommit `03a2e3b9ea7f1cf786b034b0a1882b10de79a39c`。可从[发布页](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.4)下载 [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.4/EmbyTheaterEnhanced-0.2.4-test-win-x64-setup.exe)和 [SHA-256 校验文件](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.4/EmbyTheaterEnhanced-0.2.4-test-win-x64-setup.exe.sha256)。两个资产均已上传；安装包 API digest 与本地文件 SHA256 一致，大小 175,597,797 bytes。校验文件已下载并重算，文件内容中的安装包哈希匹配；EXE 本轮未完整重新下载。
+
+六个旧 Release 仅增加标题导航和折叠式历史说明；历史正文仍完整保留，11 个旧资产及各 Release 的日期、flags 均未变化，现有 refs 保持不变。正式 Latest 仍为 [v0.2.2](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.2)，`main` 仍为 `46e995e`。回读结果见 `.work/release-0.2.4-20261009/release-verification.json` 和 `releases-after.json`。
 
 ## 用户验收
 
