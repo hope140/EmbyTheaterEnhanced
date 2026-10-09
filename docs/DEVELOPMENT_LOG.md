@@ -4,7 +4,10 @@
 
 - Model Tier: Tier 2 core design/review + Tier 1 bounded workers；Model: 当前主线程 GPT-6 系列，测试/harness/input worker GPT-5.6 Luna High/Max，独立核心复核 GPT-5.6 Sol High；Reason: 请求快照和 Session 报告归属涉及异步生命周期，主线程固定 contract 后委派测试与输入核对；Escalated: no。Task Risk=medium，Task Uncertainty=medium，Cross-module Scope=PlaybackManager overlay/tests/docs，Playback/Session Impact=local identity and pending report ownership。
 - 从准确 af688c8 建立独立 `codex/playback-session-20261009`，主目录未提交资料保持。产品仍0.2.5，固定3ab10c9产物只读作对照；后续构建使用唯一候选名称和新的sourceCommit。
-- 新harness在冻结产品的miss400对照复现旧metadata额外play、pending空身份Stopped和重复Started，正常结束且残留0。独立请求快照、显式临时pending状态和两处报告守卫的contract见 [修复记录](PLAYBACK_REQUEST_SESSION_FIX.md)。最终验证将在构建/矩阵完成后补记。
+- 新harness在冻结产品的miss400对照复现旧metadata额外play、pending空身份Stopped和重复Started，正常结束且残留0。测试提交084c0c8先加完整报告配对硬门槛，产品提交d480eb8只改39行覆盖器和contract文档。独立AMD VM回归基线2/7、候选7/7，主线程复跑通过；完整593/593、0失败/跳过。首次输入缺失570/579的失败记录保留，输入补齐相关50/50通过。
+- 正式候选 `ETE-0.2.5-session-fix-d480eb8-win-x64` 完整构建、来源/版本与package VerifyOnly通过；新旧2136文件各自与清单一致，仅PlaybackManager和6份来源记录改变。Sol High独立核心复核和Luna范围/隐私复核无新增明确问题。
+- 五种场景播放/Session断言全PASS，每轮5对完整会话，pending/重复/未配对报告为0，诊断/About/隔离分别通过。首轮runner为4PASS/1FAIL，hit0在11.924s写入smoke成功后120s未退出，精确PID清理后0残留；原因UNKNOWN且未改退出判定。同参数仅做一次独立复验，保留失败；详见 [修复记录](PLAYBACK_REQUEST_SESSION_FIX.md) 与 [结构化证据](evidence/playback-request-session-20261009.json)。
+- 独立hit0复验11.366s完整PASS，自然exit0、timedOut=false、残留0，127条诊断通过；产品/provenance/13份harness SHA与首轮一致。退出异常未复现但根因未定，首轮矩阵仍FAIL、观察项保留，不归因并行负载。后续提交只补7项VM测试与验收文档，不修改d480eb8产品或runtime。
 
 ## 2026-10-09 — runner 等待条件与失败证据收口
 

@@ -1,12 +1,19 @@
 # Known Issues
 
-2026-10-09 当前工程状态：产品仍为已发布的 v0.2.5/3ab10c9。发布时旧 runner 的 timeout / NOT_PASS 保留在 [发布记录](RELEASE_025.md)。新 runner 工具修正后，固定产品的隐藏矩阵为4 PASS / 1 FAIL，整体仍FAIL；全量580/580及后续Stop专项3/3通过。准确证据见 [runner记录](RUNNER_DETERMINISM.md)，诊断通过不自动关闭产品问题。
+2026-10-09 当前本地候选为0.2.5/d480eb8，两项请求/报告问题已通过行为回归和五种场景的隐藏播放验证；首次runner矩阵4PASS/1FAIL，hit0为成功报告落盘后的退出超时，原因UNKNOWN。全量593/593通过；详细证据见 [修复记录](PLAYBACK_REQUEST_SESSION_FIX.md)。已发布3ab10c9的旧失败证据继续保留在 [发布记录](RELEASE_025.md) 和 [runner记录](RUNNER_DETERMINISM.md)，本地修复不改写已发布产物。
 
-## 2026-10-09 — 两项待修产品异步身份问题
+## 2026-10-09 — 两项异步身份问题已在本地候选修复
 
 - **P1，CONFIRMED_LOCAL_BEHAVIOR：旧PlaybackInfo可再次调用播放器。** 同一待切入B的playOptions被两次Next复用，第二请求原地覆盖ID，旧请求守卫误过；miss场景在第二Next完成后释放旧响应，观察到额外embedded.play和重复Playing报告。这是共同PlaybackInfo阶段问题，不限于CD2 miss；hit/direct在更后面的CD2门槛通过不能排除它。
 - **P1，CONFIRMED_LOCAL_BEHAVIOR：pending Stop报告缺少身份。** B尚未Playing即被替换时，Stopped中PlaySessionId=null且MediaSourceId缺失；新矩阵五轮和旧成功样本均存在。真实Emby处理及会话影响仍NOT_VERIFIED，不视为已接受的无害行为。
-- 后续需分别固定不可共享改写的请求身份、定义pending清理与真实播放会话报告的归属，再做受限产品修复与新runtime验证。本轮只修测试工具，保留失败断言，未修改产品或重发安装包。
+- 状态：`FIXED IN LOCAL CANDIDATE / SYNTHETIC PLAYBACK VERIFIED`，sourceCommit=d480eb8。每次请求的独立快照修复迟到PlaybackInfo及旧错误，显式pending状态只抑制临时报告，真实Started/Stopped保持完整配对。修改前回归5项失败、修改后7/7通过；新候选五种场景均无pending/重复/未配对报告。真实Emby处理与影响保持NOT_VERIFIED。
+
+## 2026-10-09 — 隐藏hit0成功落盘后进程退出超时
+
+- 状态：`OBSERVED / ROOT CAUSE UNKNOWN`。
+- 产品：0.2.5/d480eb8；首轮hit0在11.924s记录完整smoke PASS，所有播放、Session和generation断言通过，但Electron根PID在120秒仍存活。runner按原边界强制清理，整体FAIL；零残留只代表清理结果。
+- 现有日志不能归因Native Helper、renderer、缓存或并行验证；未改产品退出流程或runner门槛。同参数仅做一次无其它验证并行的独立复验，结果在 [修复记录](PLAYBACK_REQUEST_SESSION_FIX.md) 单独保留，首轮失败不覆盖。
+- 独立复验为完整PASS：同一d480eb8与13个harness SHA，11.366s完成、自然exit0、timedOut=false、残留0。退出停滞未复现，继续观察，不能认定根因已解决。
 
 
 ## 2026-10-09 — 设置页一致性修正通过用户验收

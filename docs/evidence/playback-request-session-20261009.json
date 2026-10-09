@@ -1,0 +1,1945 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-09",
+  "timezone": "UTC+8",
+  "branch": "codex/playback-session-20261009",
+  "baselineCommit": "af688c87126771e8e9252a51c514547178c7af58",
+  "productSourceCommit": "d480eb800a8b809a0e470608f5f3da0d6d378de5",
+  "version": "0.2.5",
+  "runtime": "dist/ETE-0.2.5-session-fix-d480eb8-win-x64",
+  "baseline": {
+    "case": "frozen-miss-400",
+    "evidenceDirectory": ".work/p1-runtime-70a9f3625291440abe8f4fd0dfcbe874",
+    "status": "FAIL",
+    "playbackAssertions": "FAIL",
+    "runnerExitCode": 1,
+    "productSourceCommit": "3ab10c94d75659c0a421b729aac3147afa680751",
+    "harnessHead": "af688c87126771e8e9252a51c514547178c7af58",
+    "runtimeProvenanceSha256": "a55dc4b9b4488b2fdeca65629b9c38b8409a74e39d9c3307116296f8dac10718",
+    "harnessFiles": [
+      {
+        "path": "tools/test-p1-diagnostics.ps1",
+        "sha256": "f672b3135b5babafe646d056a50e885f0543115511f0f0296718e8d9286c6309"
+      },
+      {
+        "path": "tools/p1-diagnostics-smoke.cjs",
+        "sha256": "8d2f85273fb07df11d6f8becfb16ab30ad8b359f672fa5c7939bc083f012cb50"
+      },
+      {
+        "path": "tools/smoke-electron.cjs",
+        "sha256": "d9b317aab97104215de4546446f8179024a26e9c48be1c9750e9c472ebd7e89e"
+      },
+      {
+        "path": "tools/make-fixture.cjs",
+        "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+      },
+      {
+        "path": "tools/verify-p1-diagnostics.cjs",
+        "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+      },
+      {
+        "path": "tools/runtime-window-ownership.cjs",
+        "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+      },
+      {
+        "path": "tools/transition-stream-capture.cjs",
+        "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+      },
+      {
+        "path": "tests/pipeline-browser.js",
+        "sha256": "25c0a231a2bcc4cee5d38e2ff5fc0b283e934aa6bfd61543277e4505151fd2dc"
+      },
+      {
+        "path": "tests/generation-fixture-observer.js",
+        "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+      },
+      {
+        "path": "tests/fake-cd2-fixture.cjs",
+        "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+      },
+      {
+        "path": "tests/pipeline-deadline.cjs",
+        "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+      },
+      {
+        "path": "tests/pipeline-condition.js",
+        "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+      },
+      {
+        "path": "tests/pipeline-result.cjs",
+        "sha256": "312ec59c3fb739133b7d30823a67acbc3692bf70accdd6c8244071897a1d8be6"
+      }
+    ],
+    "settings": {
+      "cd2Mode": "miss",
+      "cd2DelayMs": 400,
+      "fixtureSeconds": 60
+    },
+    "elapsedMs": 9788.1525,
+    "allStageDocumentsHidden": true,
+    "outputCapture": "COMPLETE",
+    "timedOut": false,
+    "residualProcesses": 0,
+    "isolation": {
+      "appDataIsolated": true,
+      "userDataIsolated": true,
+      "aboutVersionMatched": true,
+      "aboutSourceCommitMatched": true,
+      "applicationDocumentMatched": true,
+      "applicationWindowInjected": true,
+      "auxiliaryWindowInjected": false,
+      "errorEventDispatched": true,
+      "promiseRejectionEventDispatched": true
+    },
+    "next": {
+      "selected": true,
+      "overlapEstablished": true,
+      "staleMetadataIgnored": false,
+      "exactPendingCancelled": true,
+      "priorStopped": true,
+      "nextStarted": true,
+      "rapidNextSettled": true,
+      "rapidNewestLoaded": true,
+      "serialSelected": true,
+      "serialPriorStopped": true,
+      "serialSourceLoaded": true,
+      "serialSessionPreserved": true
+    },
+    "sessionChecks": {
+      "requiredItems": {
+        "ordinary": [
+          "fixture-video"
+        ],
+        "strm": [
+          "fixture-strm"
+        ],
+        "queue": [
+          "fixture-next-a",
+          "fixture-next-b",
+          "fixture-next-c"
+        ]
+      },
+      "requiredItemResults": {
+        "ordinary": {
+          "itemIds": [
+            "fixture-video"
+          ],
+          "items": [
+            {
+              "itemId": "fixture-video",
+              "started": true,
+              "stopped": true,
+              "oneToOne": true,
+              "paired": true
+            }
+          ],
+          "passed": true
+        },
+        "strm": {
+          "itemIds": [
+            "fixture-strm"
+          ],
+          "items": [
+            {
+              "itemId": "fixture-strm",
+              "started": true,
+              "stopped": true,
+              "oneToOne": true,
+              "paired": true
+            }
+          ],
+          "passed": true
+        },
+        "queue": {
+          "itemIds": [
+            "fixture-next-a",
+            "fixture-next-b",
+            "fixture-next-c"
+          ],
+          "items": [
+            {
+              "itemId": "fixture-next-a",
+              "started": true,
+              "stopped": true,
+              "oneToOne": true,
+              "paired": true
+            },
+            {
+              "itemId": "fixture-next-b",
+              "started": true,
+              "stopped": true,
+              "oneToOne": false,
+              "paired": false
+            },
+            {
+              "itemId": "fixture-next-c",
+              "started": true,
+              "stopped": true,
+              "oneToOne": true,
+              "paired": true
+            }
+          ],
+          "passed": false
+        }
+      },
+      "startedCount": 6,
+      "stoppedCount": 6,
+      "pairedCount": 5,
+      "pendingStopped": 1,
+      "unmatchedStopped": 1,
+      "incompleteStarted": 0,
+      "incompleteStopped": 1,
+      "duplicateStarted": 1,
+      "duplicateStopped": 0,
+      "unpairedStarted": 1,
+      "unpairedStopped": 1,
+      "mismatchedStopped": 0,
+      "startedStoppedOneToOne": false,
+      "ordinaryStartedStopped": true,
+      "strmStartedStopped": true,
+      "queueStartedStopped": false,
+      "requiredStartedStopped": false,
+      "passed": false
+    },
+    "generation": null,
+    "gateEvidence": {},
+    "cd2Counts": {
+      "resolveCount": 1,
+      "cancelCount": 0,
+      "completedCount": 1,
+      "activeCount": 0,
+      "gateWaiterCount": 0
+    },
+    "directHeaderIsolation": null,
+    "diagnostics": {
+      "schemaVersion": 1,
+      "status": "PASS",
+      "failureCodes": [],
+      "totalLines": 110,
+      "validRecords": 110,
+      "malformedLines": 0,
+      "eventCounts": {
+        "native-helper/generation-begin": 6,
+        "native-helper/generation-retired": 6,
+        "native-helper/start-file": 6,
+        "native-helper/file-loaded": 6,
+        "native-helper/end-file": 3,
+        "native-helper/surface-hidden": 12,
+        "renderer/global-error": 1,
+        "renderer/unhandled-rejection": 1
+      },
+      "accurateRequestAssociations": 12,
+      "safeRendererFrameCounts": {
+        "globalError": 1,
+        "unhandledRejection": 1
+      },
+      "rawCanaryAbsent": true,
+      "sourceCommitMatched": true,
+      "injectionMarkerValid": true,
+      "realFirstFrameVerified": false,
+      "realFirstFrameStatus": "NOT_VERIFIED"
+    },
+    "artifactHashes": {
+      "electron-smoke.json": "06a834ecaab9db09112d37c5d3e7dae6c943e9093632c1320ddbf5264e74e808",
+      "runner-result.json": "bbbe1aee17a10afccb91b3f3007e0322b4155b604dc56304649a5b5e313829b0",
+      "harness-identity.json": "17bf186bdc28022789940f3053f73966bf1bb00829bf7099e8180a9c699327aa",
+      "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+      "p1-diagnostics-result.json": "e1f0256d86d4816e8ba0a76b79124bf0cc141e63a85b6b646ceb47c590d6e552"
+    }
+  },
+  "matrix": [
+    {
+      "case": "miss-400",
+      "evidenceDirectory": ".work/p1-runtime-d30b76c0591f482389e4dc8466fc6b85",
+      "status": "PASS",
+      "playbackAssertions": "PASS",
+      "runnerExitCode": 0,
+      "productSourceCommit": "d480eb800a8b809a0e470608f5f3da0d6d378de5",
+      "harnessHead": "d480eb800a8b809a0e470608f5f3da0d6d378de5",
+      "runtimeProvenanceSha256": "f590384fef4d656cbcea3c81976981a158102fd68c6a6bc9237b728c9f34d960",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "f672b3135b5babafe646d056a50e885f0543115511f0f0296718e8d9286c6309"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "8d2f85273fb07df11d6f8becfb16ab30ad8b359f672fa5c7939bc083f012cb50"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "d9b317aab97104215de4546446f8179024a26e9c48be1c9750e9c472ebd7e89e"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "25c0a231a2bcc4cee5d38e2ff5fc0b283e934aa6bfd61543277e4505151fd2dc"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "312ec59c3fb739133b7d30823a67acbc3692bf70accdd6c8244071897a1d8be6"
+        }
+      ],
+      "settings": {
+        "cd2Mode": "miss",
+        "cd2DelayMs": 400,
+        "fixtureSeconds": 60
+      },
+      "elapsedMs": 10340.645299999998,
+      "allStageDocumentsHidden": true,
+      "outputCapture": "COMPLETE",
+      "timedOut": false,
+      "residualProcesses": 0,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "next": {
+        "selected": true,
+        "overlapEstablished": true,
+        "staleMetadataIgnored": true,
+        "exactPendingCancelled": true,
+        "priorStopped": true,
+        "nextStarted": true,
+        "rapidNextSettled": true,
+        "rapidNewestLoaded": true,
+        "serialSelected": true,
+        "serialPriorStopped": true,
+        "serialSourceLoaded": true,
+        "serialSessionPreserved": true
+      },
+      "sessionChecks": {
+        "requiredItems": {
+          "ordinary": [
+            "fixture-video"
+          ],
+          "strm": [
+            "fixture-strm"
+          ],
+          "queue": [
+            "fixture-next-a",
+            "fixture-next-b",
+            "fixture-next-c"
+          ]
+        },
+        "requiredItemResults": {
+          "ordinary": {
+            "itemIds": [
+              "fixture-video"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-video",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "strm": {
+            "itemIds": [
+              "fixture-strm"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-strm",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "queue": {
+            "itemIds": [
+              "fixture-next-a",
+              "fixture-next-b",
+              "fixture-next-c"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-next-a",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-b",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-c",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          }
+        },
+        "startedCount": 5,
+        "stoppedCount": 5,
+        "pairedCount": 5,
+        "pendingStopped": 0,
+        "unmatchedStopped": 0,
+        "incompleteStarted": 0,
+        "incompleteStopped": 0,
+        "duplicateStarted": 0,
+        "duplicateStopped": 0,
+        "unpairedStarted": 0,
+        "unpairedStopped": 0,
+        "mismatchedStopped": 0,
+        "startedStoppedOneToOne": true,
+        "ordinaryStartedStopped": true,
+        "strmStartedStopped": true,
+        "queueStartedStopped": true,
+        "requiredStartedStopped": true,
+        "passed": true
+      },
+      "generation": null,
+      "gateEvidence": {},
+      "cd2Counts": {
+        "resolveCount": 1,
+        "cancelCount": 0,
+        "completedCount": 1,
+        "activeCount": 0,
+        "gateWaiterCount": 0
+      },
+      "directHeaderIsolation": null,
+      "diagnostics": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 98,
+        "validRecords": 98,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 5,
+          "native-helper/generation-retired": 5,
+          "native-helper/start-file": 5,
+          "native-helper/file-loaded": 5,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 11,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 10,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "artifactHashes": {
+        "electron-smoke.json": "9637020cba050df4ad8c83e932715b7feb15dbf7a2240a8e532ed47f582cb7ae",
+        "runner-result.json": "d48c1da857b37aa437184426d3ca59c7aa96e637f9d31aa76d8c393c7dcb9602",
+        "harness-identity.json": "82ac53066dcecbeb0a4b8c9167a4c775a95a4c7dce585c53602c9b6bd495e736",
+        "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+        "p1-diagnostics-result.json": "0fc5ce37b3a1b251edd9613d1e8a6d00538b5b7e7d9c1ac533c048347b524de5"
+      }
+    },
+    {
+      "case": "hit-0",
+      "evidenceDirectory": ".work/p1-runtime-d6496c8ae8ac41e9ae11236554f8601a",
+      "status": "FAIL",
+      "playbackAssertions": "PASS",
+      "runnerExitCode": 1,
+      "productSourceCommit": "d480eb800a8b809a0e470608f5f3da0d6d378de5",
+      "harnessHead": "d480eb800a8b809a0e470608f5f3da0d6d378de5",
+      "runtimeProvenanceSha256": "f590384fef4d656cbcea3c81976981a158102fd68c6a6bc9237b728c9f34d960",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "f672b3135b5babafe646d056a50e885f0543115511f0f0296718e8d9286c6309"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "8d2f85273fb07df11d6f8becfb16ab30ad8b359f672fa5c7939bc083f012cb50"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "d9b317aab97104215de4546446f8179024a26e9c48be1c9750e9c472ebd7e89e"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "25c0a231a2bcc4cee5d38e2ff5fc0b283e934aa6bfd61543277e4505151fd2dc"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "312ec59c3fb739133b7d30823a67acbc3692bf70accdd6c8244071897a1d8be6"
+        }
+      ],
+      "settings": {
+        "cd2Mode": "hit",
+        "cd2DelayMs": 0,
+        "fixtureSeconds": 60
+      },
+      "elapsedMs": 11924.2027,
+      "allStageDocumentsHidden": true,
+      "outputCapture": "COMPLETE",
+      "timedOut": true,
+      "residualProcesses": 0,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "next": {
+        "selected": true,
+        "overlapEstablished": true,
+        "staleMetadataIgnored": true,
+        "exactPendingCancelled": true,
+        "priorStopped": true,
+        "nextStarted": true,
+        "rapidNextSettled": true,
+        "rapidNewestLoaded": true,
+        "serialSelected": true,
+        "serialPriorStopped": true,
+        "serialSourceLoaded": true,
+        "serialSessionPreserved": true
+      },
+      "sessionChecks": {
+        "requiredItems": {
+          "ordinary": [
+            "fixture-video"
+          ],
+          "strm": [
+            "fixture-strm"
+          ],
+          "queue": [
+            "fixture-next-a",
+            "fixture-next-b",
+            "fixture-next-c"
+          ]
+        },
+        "requiredItemResults": {
+          "ordinary": {
+            "itemIds": [
+              "fixture-video"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-video",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "strm": {
+            "itemIds": [
+              "fixture-strm"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-strm",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "queue": {
+            "itemIds": [
+              "fixture-next-a",
+              "fixture-next-b",
+              "fixture-next-c"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-next-a",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-b",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-c",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          }
+        },
+        "startedCount": 5,
+        "stoppedCount": 5,
+        "pairedCount": 5,
+        "pendingStopped": 0,
+        "unmatchedStopped": 0,
+        "incompleteStarted": 0,
+        "incompleteStopped": 0,
+        "duplicateStarted": 0,
+        "duplicateStopped": 0,
+        "unpairedStarted": 0,
+        "unpairedStopped": 0,
+        "mismatchedStopped": 0,
+        "startedStoppedOneToOne": true,
+        "ordinaryStartedStopped": true,
+        "strmStartedStopped": true,
+        "queueStartedStopped": true,
+        "requiredStartedStopped": true,
+        "passed": true
+      },
+      "generation": {
+        "firstSuperseded": true,
+        "secondPlayed": true,
+        "oldCoreListenerIgnored": true,
+        "stopSuperseded": true,
+        "stopPreventedLateLoad": true,
+        "exactStopPendingCancelled": true,
+        "noUnhandledRejection": true
+      },
+      "gateEvidence": {
+        "rapidPending": {
+          "requestId": "play-6-11",
+          "pending": true,
+          "held": true,
+          "armId": "arm-1"
+        },
+        "rapidCancelled": {
+          "requestId": "play-6-11",
+          "cancelled": true,
+          "armId": "arm-1"
+        },
+        "stopPending": {
+          "requestId": "play-9003-21",
+          "pending": true,
+          "held": true,
+          "armId": "arm-2"
+        },
+        "stopCancelled": {
+          "requestId": "play-9003-21",
+          "cancelled": true,
+          "armId": "arm-2"
+        }
+      },
+      "cd2Counts": {
+        "resolveCount": 8,
+        "cancelCount": 2,
+        "completedCount": 6,
+        "activeCount": 0,
+        "gateWaiterCount": 0
+      },
+      "directHeaderIsolation": null,
+      "diagnostics": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 127,
+        "validRecords": 127,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 7,
+          "native-helper/generation-retired": 7,
+          "native-helper/start-file": 6,
+          "native-helper/file-loaded": 6,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 14,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 12,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "artifactHashes": {
+        "electron-smoke.json": "4a32a5f2db8c9a015dfc41a8ce8e156a42e55c900f29f309c630592b3a92e438",
+        "runner-result.json": "e51177ef236a2a419d18fbd0a8fa8d8181fb17d7f9ac3859a59b01ab03ff8683",
+        "harness-identity.json": "1ccab5799aab17d77a84c3c02b6be305ad5d8df3fc28c3c8a06b8e27d980ff94",
+        "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+        "p1-diagnostics-result.json": "ac5e104e22f48dbf86585691c3b9e826ce72661693686b43a43a0add36b280bd"
+      }
+    },
+    {
+      "case": "hit-400",
+      "evidenceDirectory": ".work/p1-runtime-ae639a823bf0464080c9678de06d69d9",
+      "status": "PASS",
+      "playbackAssertions": "PASS",
+      "runnerExitCode": 0,
+      "productSourceCommit": "d480eb800a8b809a0e470608f5f3da0d6d378de5",
+      "harnessHead": "d480eb800a8b809a0e470608f5f3da0d6d378de5",
+      "runtimeProvenanceSha256": "f590384fef4d656cbcea3c81976981a158102fd68c6a6bc9237b728c9f34d960",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "f672b3135b5babafe646d056a50e885f0543115511f0f0296718e8d9286c6309"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "8d2f85273fb07df11d6f8becfb16ab30ad8b359f672fa5c7939bc083f012cb50"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "d9b317aab97104215de4546446f8179024a26e9c48be1c9750e9c472ebd7e89e"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "25c0a231a2bcc4cee5d38e2ff5fc0b283e934aa6bfd61543277e4505151fd2dc"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "312ec59c3fb739133b7d30823a67acbc3692bf70accdd6c8244071897a1d8be6"
+        }
+      ],
+      "settings": {
+        "cd2Mode": "hit",
+        "cd2DelayMs": 400,
+        "fixtureSeconds": 60
+      },
+      "elapsedMs": 13185.574,
+      "allStageDocumentsHidden": true,
+      "outputCapture": "COMPLETE",
+      "timedOut": false,
+      "residualProcesses": 0,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "next": {
+        "selected": true,
+        "overlapEstablished": true,
+        "staleMetadataIgnored": true,
+        "exactPendingCancelled": true,
+        "priorStopped": true,
+        "nextStarted": true,
+        "rapidNextSettled": true,
+        "rapidNewestLoaded": true,
+        "serialSelected": true,
+        "serialPriorStopped": true,
+        "serialSourceLoaded": true,
+        "serialSessionPreserved": true
+      },
+      "sessionChecks": {
+        "requiredItems": {
+          "ordinary": [
+            "fixture-video"
+          ],
+          "strm": [
+            "fixture-strm"
+          ],
+          "queue": [
+            "fixture-next-a",
+            "fixture-next-b",
+            "fixture-next-c"
+          ]
+        },
+        "requiredItemResults": {
+          "ordinary": {
+            "itemIds": [
+              "fixture-video"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-video",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "strm": {
+            "itemIds": [
+              "fixture-strm"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-strm",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "queue": {
+            "itemIds": [
+              "fixture-next-a",
+              "fixture-next-b",
+              "fixture-next-c"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-next-a",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-b",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-c",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          }
+        },
+        "startedCount": 5,
+        "stoppedCount": 5,
+        "pairedCount": 5,
+        "pendingStopped": 0,
+        "unmatchedStopped": 0,
+        "incompleteStarted": 0,
+        "incompleteStopped": 0,
+        "duplicateStarted": 0,
+        "duplicateStopped": 0,
+        "unpairedStarted": 0,
+        "unpairedStopped": 0,
+        "mismatchedStopped": 0,
+        "startedStoppedOneToOne": true,
+        "ordinaryStartedStopped": true,
+        "strmStartedStopped": true,
+        "queueStartedStopped": true,
+        "requiredStartedStopped": true,
+        "passed": true
+      },
+      "generation": {
+        "firstSuperseded": true,
+        "secondPlayed": true,
+        "oldCoreListenerIgnored": true,
+        "stopSuperseded": true,
+        "stopPreventedLateLoad": true,
+        "exactStopPendingCancelled": true,
+        "noUnhandledRejection": true
+      },
+      "gateEvidence": {
+        "rapidPending": {
+          "requestId": "play-6-11",
+          "pending": true,
+          "held": true,
+          "armId": "arm-1"
+        },
+        "rapidCancelled": {
+          "requestId": "play-6-11",
+          "cancelled": true,
+          "armId": "arm-1"
+        },
+        "stopPending": {
+          "requestId": "play-9003-21",
+          "pending": true,
+          "held": true,
+          "armId": "arm-2"
+        },
+        "stopCancelled": {
+          "requestId": "play-9003-21",
+          "cancelled": true,
+          "armId": "arm-2"
+        }
+      },
+      "cd2Counts": {
+        "resolveCount": 8,
+        "cancelCount": 2,
+        "completedCount": 6,
+        "activeCount": 0,
+        "gateWaiterCount": 0
+      },
+      "directHeaderIsolation": null,
+      "diagnostics": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 128,
+        "validRecords": 128,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 7,
+          "native-helper/generation-retired": 7,
+          "native-helper/start-file": 6,
+          "native-helper/file-loaded": 6,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 14,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 12,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "artifactHashes": {
+        "electron-smoke.json": "0650f667730507534337e2a08dc9c43a589f2afac77adeadee93dc8450fea29a",
+        "runner-result.json": "a672964a20a5ec6c082b24b94ae7e6006dc2afdaddd3c046881d655bfb938e2a",
+        "harness-identity.json": "01248846cab8397792c5672a380c6fb38533dab010bbd42891bee5e468df927a",
+        "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+        "p1-diagnostics-result.json": "e71976e0cf4968b19f3be8f7492529f8325e3d653e3ecc80ded1f94e82510006"
+      }
+    },
+    {
+      "case": "hit-800",
+      "evidenceDirectory": ".work/p1-runtime-a37396ed0e594268aea0b9977a723002",
+      "status": "PASS",
+      "playbackAssertions": "PASS",
+      "runnerExitCode": 0,
+      "productSourceCommit": "d480eb800a8b809a0e470608f5f3da0d6d378de5",
+      "harnessHead": "d480eb800a8b809a0e470608f5f3da0d6d378de5",
+      "runtimeProvenanceSha256": "f590384fef4d656cbcea3c81976981a158102fd68c6a6bc9237b728c9f34d960",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "f672b3135b5babafe646d056a50e885f0543115511f0f0296718e8d9286c6309"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "8d2f85273fb07df11d6f8becfb16ab30ad8b359f672fa5c7939bc083f012cb50"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "d9b317aab97104215de4546446f8179024a26e9c48be1c9750e9c472ebd7e89e"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "25c0a231a2bcc4cee5d38e2ff5fc0b283e934aa6bfd61543277e4505151fd2dc"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "312ec59c3fb739133b7d30823a67acbc3692bf70accdd6c8244071897a1d8be6"
+        }
+      ],
+      "settings": {
+        "cd2Mode": "hit",
+        "cd2DelayMs": 800,
+        "fixtureSeconds": 60
+      },
+      "elapsedMs": 15846.538999999999,
+      "allStageDocumentsHidden": true,
+      "outputCapture": "COMPLETE",
+      "timedOut": false,
+      "residualProcesses": 0,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "next": {
+        "selected": true,
+        "overlapEstablished": true,
+        "staleMetadataIgnored": true,
+        "exactPendingCancelled": true,
+        "priorStopped": true,
+        "nextStarted": true,
+        "rapidNextSettled": true,
+        "rapidNewestLoaded": true,
+        "serialSelected": true,
+        "serialPriorStopped": true,
+        "serialSourceLoaded": true,
+        "serialSessionPreserved": true
+      },
+      "sessionChecks": {
+        "requiredItems": {
+          "ordinary": [
+            "fixture-video"
+          ],
+          "strm": [
+            "fixture-strm"
+          ],
+          "queue": [
+            "fixture-next-a",
+            "fixture-next-b",
+            "fixture-next-c"
+          ]
+        },
+        "requiredItemResults": {
+          "ordinary": {
+            "itemIds": [
+              "fixture-video"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-video",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "strm": {
+            "itemIds": [
+              "fixture-strm"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-strm",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "queue": {
+            "itemIds": [
+              "fixture-next-a",
+              "fixture-next-b",
+              "fixture-next-c"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-next-a",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-b",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-c",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          }
+        },
+        "startedCount": 5,
+        "stoppedCount": 5,
+        "pairedCount": 5,
+        "pendingStopped": 0,
+        "unmatchedStopped": 0,
+        "incompleteStarted": 0,
+        "incompleteStopped": 0,
+        "duplicateStarted": 0,
+        "duplicateStopped": 0,
+        "unpairedStarted": 0,
+        "unpairedStopped": 0,
+        "mismatchedStopped": 0,
+        "startedStoppedOneToOne": true,
+        "ordinaryStartedStopped": true,
+        "strmStartedStopped": true,
+        "queueStartedStopped": true,
+        "requiredStartedStopped": true,
+        "passed": true
+      },
+      "generation": {
+        "firstSuperseded": true,
+        "secondPlayed": true,
+        "oldCoreListenerIgnored": true,
+        "stopSuperseded": true,
+        "stopPreventedLateLoad": true,
+        "exactStopPendingCancelled": true,
+        "noUnhandledRejection": true
+      },
+      "gateEvidence": {
+        "rapidPending": {
+          "requestId": "play-6-11",
+          "pending": true,
+          "held": true,
+          "armId": "arm-1"
+        },
+        "rapidCancelled": {
+          "requestId": "play-6-11",
+          "cancelled": true,
+          "armId": "arm-1"
+        },
+        "stopPending": {
+          "requestId": "play-9003-21",
+          "pending": true,
+          "held": true,
+          "armId": "arm-2"
+        },
+        "stopCancelled": {
+          "requestId": "play-9003-21",
+          "cancelled": true,
+          "armId": "arm-2"
+        }
+      },
+      "cd2Counts": {
+        "resolveCount": 8,
+        "cancelCount": 2,
+        "completedCount": 6,
+        "activeCount": 0,
+        "gateWaiterCount": 0
+      },
+      "directHeaderIsolation": null,
+      "diagnostics": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 128,
+        "validRecords": 128,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 7,
+          "native-helper/generation-retired": 7,
+          "native-helper/start-file": 6,
+          "native-helper/file-loaded": 6,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 14,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 12,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "artifactHashes": {
+        "electron-smoke.json": "5f0f0e3ba5c93b0e7269be9f338343b97d17463438b3e25be5f796589ee503ee",
+        "runner-result.json": "4a4388f86ea60c9921bf1bf07f975f14e04918637ec303e072c24d5847344258",
+        "harness-identity.json": "990ade273f10034cd4264a0e70196b1e260cbe12cb93e66e800d3b51526fe8af",
+        "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+        "p1-diagnostics-result.json": "e71976e0cf4968b19f3be8f7492529f8325e3d653e3ecc80ded1f94e82510006"
+      }
+    },
+    {
+      "case": "direct-400",
+      "evidenceDirectory": ".work/p1-runtime-ac1a84d23a244c389df6517de4de2e25",
+      "status": "PASS",
+      "playbackAssertions": "PASS",
+      "runnerExitCode": 0,
+      "productSourceCommit": "d480eb800a8b809a0e470608f5f3da0d6d378de5",
+      "harnessHead": "d480eb800a8b809a0e470608f5f3da0d6d378de5",
+      "runtimeProvenanceSha256": "f590384fef4d656cbcea3c81976981a158102fd68c6a6bc9237b728c9f34d960",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "f672b3135b5babafe646d056a50e885f0543115511f0f0296718e8d9286c6309"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "8d2f85273fb07df11d6f8becfb16ab30ad8b359f672fa5c7939bc083f012cb50"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "d9b317aab97104215de4546446f8179024a26e9c48be1c9750e9c472ebd7e89e"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "25c0a231a2bcc4cee5d38e2ff5fc0b283e934aa6bfd61543277e4505151fd2dc"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "312ec59c3fb739133b7d30823a67acbc3692bf70accdd6c8244071897a1d8be6"
+        }
+      ],
+      "settings": {
+        "cd2Mode": "direct",
+        "cd2DelayMs": 400,
+        "fixtureSeconds": 60
+      },
+      "elapsedMs": 14092.269699999999,
+      "allStageDocumentsHidden": true,
+      "outputCapture": "COMPLETE",
+      "timedOut": false,
+      "residualProcesses": 0,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "next": {
+        "selected": true,
+        "overlapEstablished": true,
+        "staleMetadataIgnored": true,
+        "exactPendingCancelled": true,
+        "priorStopped": true,
+        "nextStarted": true,
+        "rapidNextSettled": true,
+        "rapidNewestLoaded": true,
+        "serialSelected": true,
+        "serialPriorStopped": true,
+        "serialSourceLoaded": true,
+        "serialSessionPreserved": true
+      },
+      "sessionChecks": {
+        "requiredItems": {
+          "ordinary": [
+            "fixture-video"
+          ],
+          "strm": [
+            "fixture-strm"
+          ],
+          "queue": [
+            "fixture-next-a",
+            "fixture-next-b",
+            "fixture-next-c"
+          ]
+        },
+        "requiredItemResults": {
+          "ordinary": {
+            "itemIds": [
+              "fixture-video"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-video",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "strm": {
+            "itemIds": [
+              "fixture-strm"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-strm",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "queue": {
+            "itemIds": [
+              "fixture-next-a",
+              "fixture-next-b",
+              "fixture-next-c"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-next-a",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-b",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-c",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          }
+        },
+        "startedCount": 5,
+        "stoppedCount": 5,
+        "pairedCount": 5,
+        "pendingStopped": 0,
+        "unmatchedStopped": 0,
+        "incompleteStarted": 0,
+        "incompleteStopped": 0,
+        "duplicateStarted": 0,
+        "duplicateStopped": 0,
+        "unpairedStarted": 0,
+        "unpairedStopped": 0,
+        "mismatchedStopped": 0,
+        "startedStoppedOneToOne": true,
+        "ordinaryStartedStopped": true,
+        "strmStartedStopped": true,
+        "queueStartedStopped": true,
+        "requiredStartedStopped": true,
+        "passed": true
+      },
+      "generation": {
+        "firstSuperseded": true,
+        "secondPlayed": true,
+        "oldCoreListenerIgnored": true,
+        "stopSuperseded": true,
+        "stopPreventedLateLoad": true,
+        "exactStopPendingCancelled": true,
+        "noUnhandledRejection": true
+      },
+      "gateEvidence": {
+        "rapidPending": {
+          "requestId": "play-6-11",
+          "pending": true,
+          "held": true,
+          "armId": "arm-1"
+        },
+        "rapidCancelled": {
+          "requestId": "play-6-11",
+          "cancelled": true,
+          "armId": "arm-1"
+        },
+        "stopPending": {
+          "requestId": "play-9003-21",
+          "pending": true,
+          "held": true,
+          "armId": "arm-2"
+        },
+        "stopCancelled": {
+          "requestId": "play-9003-21",
+          "cancelled": true,
+          "armId": "arm-2"
+        }
+      },
+      "cd2Counts": {
+        "resolveCount": 8,
+        "cancelCount": 2,
+        "completedCount": 6,
+        "activeCount": 0,
+        "gateWaiterCount": 0
+      },
+      "directHeaderIsolation": {
+        "directRequestsObserved": true,
+        "allDirectUserAgentsMatched": true,
+        "noDirectUserAgentLeak": true
+      },
+      "diagnostics": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 128,
+        "validRecords": 128,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 7,
+          "native-helper/generation-retired": 7,
+          "native-helper/start-file": 6,
+          "native-helper/file-loaded": 6,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 14,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 12,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "artifactHashes": {
+        "electron-smoke.json": "b9f9e73f6ec8423af72003fb10805e63b95e13b73069d7a05426a0611baf1b06",
+        "runner-result.json": "413e2b4fe0e054d06c7b38841181f0a5eb03a10c6e0859308e55ed8b394469c0",
+        "harness-identity.json": "9f5c4d376582cef126476298c4f096af6b93b85c2dfea05e0cd9fee8cfd43a93",
+        "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+        "p1-diagnostics-result.json": "e71976e0cf4968b19f3be8f7492529f8325e3d653e3ecc80ded1f94e82510006"
+      }
+    }
+  ],
+  "matrixStatus": "FAIL",
+  "harnessHashConsistency": true,
+  "harnessReadbackMatches": true,
+  "runtimeComparison": {
+    "baselineSourceCommit": "3ab10c94d75659c0a421b729aac3147afa680751",
+    "candidateSourceCommit": "d480eb800a8b809a0e470608f5f3da0d6d378de5",
+    "baseline": {
+      "fileCount": 2136,
+      "missing": [],
+      "extra": [],
+      "hashMismatch": []
+    },
+    "candidate": {
+      "fileCount": 2136,
+      "missing": [],
+      "extra": [],
+      "hashMismatch": []
+    },
+    "changedFiles": [
+      "build-input-provenance.json",
+      "electronapp/www/modules/common/playback/playbackmanager.js",
+      "native-helper-provenance.json",
+      "runtime-dependencies.json",
+      "runtime-provenance.json",
+      "source-provenance.json",
+      "build-manifest.json"
+    ],
+    "candidateManifestSha256": "ba3a109870e0e3cfc62a1eb485866ae1e57a0056ab9608eb5ccdcfd20e939422"
+  },
+  "tests": {
+    "initial": {
+      "pass": 570,
+      "total": 579,
+      "fail": 9,
+      "skipped": 0,
+      "reason": "Missing vendor/preload and project grpc dependency",
+      "log": ".work/tests-before-inputs.log"
+    },
+    "inputRepair": {
+      "pass": 50,
+      "total": 50,
+      "skipped": 0,
+      "log": ".work/input-repair-tests.log"
+    },
+    "regressionBaseline": {
+      "pass": 2,
+      "fail": 5,
+      "total": 7,
+      "log": ".work/regression-baseline-red.log"
+    },
+    "regressionCandidate": {
+      "pass": 7,
+      "fail": 0,
+      "total": 7,
+      "skipped": 0,
+      "log": ".work/regression-candidate-green.log"
+    },
+    "full": {
+      "log": ".work/tests-final.log",
+      "tests": 593,
+      "pass": 593,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0
+    }
+  },
+  "independentReview": {
+    "model": "GPT-5.6 Sol High",
+    "scope": "request identity, pending report ownership, actual AMD VM tests",
+    "findings": 0
+  },
+  "evidenceLogHashes": {
+    ".work/tests-before-inputs.log": "3cb5256815c36c16cd16e5b25dff7f8e246e61722c01f7789437088860d48750",
+    ".work/input-repair-tests.log": "b34e04b75293d909212acf1c8049eb11174e45cd03e433f960872dd1773992db",
+    ".work/regression-baseline-red.log": "eb460bfc37f039a49b51d9c48d6180bededaeae1bfe36d09a71b11cacd1221ac",
+    ".work/regression-candidate-green.log": "e1300eac0535d740439706816495084e5c0d6b51a9f5b3e67a6c89d732003f2e",
+    ".work/tests-final.log": "0fb572a72c6cce03ef3b337bf4d4e91c626ce20ea632774dd9dc546fb79c5d99",
+    ".work/build-session-fix.log": "ba97ee76aab6a467e85dc44d7d3f0c67e6f7c687b5bf505c21873c25bcd05fd4",
+    ".work/package-verify.log": "51d2043be8d8310a28bacd1db0e720c28c1e5416a8e384baa0fee0d97240e67e"
+  },
+  "regressionTestSha256": "32cac4232598a8b8d5e02d3dbb39fd364bdda83760cba9156697de18dbbfe85a",
+  "excludedAcceptance": [
+    "real Emby/CD2",
+    "real remote clients",
+    "visible first frame",
+    "HDR/multi-display",
+    "system install lifecycle"
+  ],
+  "realServerImpact": "NOT_VERIFIED",
+  "publication": "LOCAL_ONLY",
+  "rechecks": [
+    {
+      "case": "hit-0-isolated-recheck",
+      "evidenceDirectory": ".work/p1-runtime-c098b223cb43492180f11e07d4a98380",
+      "status": "PASS",
+      "playbackAssertions": "PASS",
+      "runnerExitCode": 0,
+      "productSourceCommit": "d480eb800a8b809a0e470608f5f3da0d6d378de5",
+      "harnessHead": "d480eb800a8b809a0e470608f5f3da0d6d378de5",
+      "runtimeProvenanceSha256": "f590384fef4d656cbcea3c81976981a158102fd68c6a6bc9237b728c9f34d960",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "f672b3135b5babafe646d056a50e885f0543115511f0f0296718e8d9286c6309"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "8d2f85273fb07df11d6f8becfb16ab30ad8b359f672fa5c7939bc083f012cb50"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "d9b317aab97104215de4546446f8179024a26e9c48be1c9750e9c472ebd7e89e"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "25c0a231a2bcc4cee5d38e2ff5fc0b283e934aa6bfd61543277e4505151fd2dc"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "312ec59c3fb739133b7d30823a67acbc3692bf70accdd6c8244071897a1d8be6"
+        }
+      ],
+      "settings": {
+        "cd2Mode": "hit",
+        "cd2DelayMs": 0,
+        "fixtureSeconds": 60
+      },
+      "elapsedMs": 11365.535,
+      "allStageDocumentsHidden": true,
+      "outputCapture": "COMPLETE",
+      "timedOut": false,
+      "residualProcesses": 0,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "next": {
+        "selected": true,
+        "overlapEstablished": true,
+        "staleMetadataIgnored": true,
+        "exactPendingCancelled": true,
+        "priorStopped": true,
+        "nextStarted": true,
+        "rapidNextSettled": true,
+        "rapidNewestLoaded": true,
+        "serialSelected": true,
+        "serialPriorStopped": true,
+        "serialSourceLoaded": true,
+        "serialSessionPreserved": true
+      },
+      "sessionChecks": {
+        "requiredItems": {
+          "ordinary": [
+            "fixture-video"
+          ],
+          "strm": [
+            "fixture-strm"
+          ],
+          "queue": [
+            "fixture-next-a",
+            "fixture-next-b",
+            "fixture-next-c"
+          ]
+        },
+        "requiredItemResults": {
+          "ordinary": {
+            "itemIds": [
+              "fixture-video"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-video",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "strm": {
+            "itemIds": [
+              "fixture-strm"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-strm",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "queue": {
+            "itemIds": [
+              "fixture-next-a",
+              "fixture-next-b",
+              "fixture-next-c"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-next-a",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-b",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-c",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          }
+        },
+        "startedCount": 5,
+        "stoppedCount": 5,
+        "pairedCount": 5,
+        "pendingStopped": 0,
+        "unmatchedStopped": 0,
+        "incompleteStarted": 0,
+        "incompleteStopped": 0,
+        "duplicateStarted": 0,
+        "duplicateStopped": 0,
+        "unpairedStarted": 0,
+        "unpairedStopped": 0,
+        "mismatchedStopped": 0,
+        "startedStoppedOneToOne": true,
+        "ordinaryStartedStopped": true,
+        "strmStartedStopped": true,
+        "queueStartedStopped": true,
+        "requiredStartedStopped": true,
+        "passed": true
+      },
+      "generation": {
+        "firstSuperseded": true,
+        "secondPlayed": true,
+        "oldCoreListenerIgnored": true,
+        "stopSuperseded": true,
+        "stopPreventedLateLoad": true,
+        "exactStopPendingCancelled": true,
+        "noUnhandledRejection": true
+      },
+      "gateEvidence": {
+        "rapidPending": {
+          "requestId": "play-6-11",
+          "pending": true,
+          "held": true,
+          "armId": "arm-1"
+        },
+        "rapidCancelled": {
+          "requestId": "play-6-11",
+          "cancelled": true,
+          "armId": "arm-1"
+        },
+        "stopPending": {
+          "requestId": "play-9003-21",
+          "pending": true,
+          "held": true,
+          "armId": "arm-2"
+        },
+        "stopCancelled": {
+          "requestId": "play-9003-21",
+          "cancelled": true,
+          "armId": "arm-2"
+        }
+      },
+      "cd2Counts": {
+        "resolveCount": 8,
+        "cancelCount": 2,
+        "completedCount": 6,
+        "activeCount": 0,
+        "gateWaiterCount": 0
+      },
+      "directHeaderIsolation": null,
+      "diagnostics": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 127,
+        "validRecords": 127,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 7,
+          "native-helper/generation-retired": 7,
+          "native-helper/start-file": 6,
+          "native-helper/file-loaded": 6,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 14,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 12,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "artifactHashes": {
+        "electron-smoke.json": "de424118c4559a409f5aa6e5249644e008b4ddb88117e3f40c3a7f3a038becaa",
+        "runner-result.json": "577080fb2db50ff3cd20ed9fb1507f26dd3c46d9022e9d698a33ab0f0c72edfd",
+        "harness-identity.json": "1ccab5799aab17d77a84c3c02b6be305ad5d8df3fc28c3c8a06b8e27d980ff94",
+        "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+        "p1-diagnostics-result.json": "ac5e104e22f48dbf86585691c3b9e826ce72661693686b43a43a0add36b280bd"
+      }
+    }
+  ],
+  "recheckIdentityMatches": true,
+  "recheckContext": "One bounded recheck after concurrent full unit tests and read-only package validation completed; original timeout remains FAIL, no budgets or product changed."
+}

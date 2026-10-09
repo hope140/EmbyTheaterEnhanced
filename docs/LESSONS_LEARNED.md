@@ -1,5 +1,11 @@
 # 已确认经验
 
+## 2026-10-09 — 请求快照与pending报告归属
+
+- 单调request ID放在复用options上仍可失效：后续请求会改写旧闭包读到的值。每次请求应在分配ID前建立独立快照，同时保留队列item到当前streamInfo的ID传播；回归同时观察旧成功、旧失败和真实player调用次数。
+- pending清理需要继续执行Stop、状态清空和事件，仅抑制尚未Started临时状态的报告。不能用通用`started=false`判定无会话，因为已有换流失败也会使用这个值；Started/Stopped验收需按ItemId、PlaySessionId、MediaSourceId和先后顺序配对。
+- 完整smoke成功落盘与Electron自然退出是两层证据。本轮hit0的播放断言全过但outer120s退出失败；强制清理后的零残留不能替代自然退出通过，独立复验也不能覆盖原失败或自动证明并行负载就是原因。
+
 ## 2026-10-09 — 隐藏回归的请求门槛与失败终态
 
 - 隐藏 renderer 的150ms定时器可能实际约1秒，不能用它证明两个异步请求重叠。应让假服务明确持有指定request，再核对该request的成功cancel；native generation overlap不等于上游CD2仍pending。

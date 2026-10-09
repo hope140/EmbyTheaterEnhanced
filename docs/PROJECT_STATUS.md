@@ -1,8 +1,10 @@
 # 项目状态
 
-## 2026-10-09 — 请求与会话局部修复候选验证中
+## 2026-10-09 — 请求与会话局部修复完成，退出异常单独保留
 
-从准确af688c8建立独立 `codex/playback-session-20261009`，为每次请求保留独立身份，并区分pending清理和真实会话Stopped报告。新harness在固定3ab10c9产品上重新检出两项缺陷；新候选仍须通过针对性回归、全量、来源检查和五组隐藏矩阵，当前不记完成。版本保持0.2.5，详细contract和证据见 [修复记录](PLAYBACK_REQUEST_SESSION_FIX.md)。
+从准确af688c8建立独立 `codex/playback-session-20261009`，产品sourceCommit=d480eb8，版本保持0.2.5。每次请求保留独立身份，pending清理不再生成空身份Stopped，已开始会话和错误收尾保持。基线回归2/7、候选7/7；最终全量593/593、0跳过，来源/版本及2136文件payload检查通过，独立核心复核无明确问题。
+
+五种场景的播放与Session断言均PASS，pending Stop为0、每轮5组完整Started/Stopped。首轮完整runner仍4PASS/1FAIL：hit0成功报告落盘后退出超时，强制收尾残留0，原因UNKNOWN。一次同产品/同harness的独立hit0复验完整PASS、自然exit0、残留0；五种参数均取得通过样本，但原退出失败不覆盖，稳定性继续观察。真实服务/远控、可见首帧、系统安装未执行。完整runtime与各层证据见 [修复记录](PLAYBACK_REQUEST_SESSION_FIX.md)。
 
 ## 2026-10-09 — 隐藏 runner 修正，产品矩阵仍有明确失败
 
