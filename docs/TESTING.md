@@ -1,5 +1,9 @@
 # 测试与验收
 
+## 2026-10-09 构建复核候选1a05f88
+
+最终`node --test --test-concurrency=1 tests/*.test.cjs`为535/535 PASS、0失败、0跳过；writer定向17/17，审核前构建定向50/50。两次独立build及package、输入与各层provenance、精确依赖目录均通过。runtime各2136文件路径/hash相同，两个原始安装器也完全同SHA；A完整性及解包2136/2136通过，B通过字节一致性关联该证据。原source文件mtime保留，使用Inno官方notimestamp控制容器元数据；没有后处理EXE。本轮不运行客户端或系统安装，详见 [构建复核](BUILD_REVIEW.md)。
+
 ## 2026-10-09 构建输入审计
 
 `node --test tests/build-input-audit.test.cjs tests/tracked-product-sources.test.cjs tests/electron-runtime-input.test.cjs`：19/19 PASS。新工具14项覆盖missing/mismatch分层、路径/链接边界、异常元数据脱敏、额外文件名隐藏、输出独占、退役目录、大小写与通知命名；Node syntax与diff检查通过。

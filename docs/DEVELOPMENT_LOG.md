@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-10-09 — 写入边界修正与安装器确定性
+
+Model Tier: Tier 2 risk management；Model: 当前主线程GPT-6系列，worker GPT-6 Luna High；Reason: 复核跨文件build/provenance写入边界及容器重复性，固定规格局部修复委派后由主线程检查真实diff；Escalated: no。Playback/Session Impact=none，Cross-module Scope=tools/installer/tests/docs。
+
+50项构建定向复跑通过。独立fixture重现旧writer跟随LICENSE硬链接改写runtime外canary且返回passed，全部在临时目录。worker修复后主线程补审原API委托及测试EEXIST误skip，最终17/17零跳过；再次独立复现为拒绝写入且外部canary保持。修复统一预检物理路径、完成标记、config原字节及全部通知，以独占创建和原子config替换保护目标。
+
+PE初步对照排除COFF时间戳；同一runtime重复编译SHA一致，原A/B有1244文件mtime不同。固定6.7.3官方源码和只改变notimestamp的实验确认该文件时间元数据影响。工程提交14f6d28、1a05f88；最终源535/535，两个runtime和原始installer均逐字节一致，A解包2136/2136通过。没有改输入mtime或生成后的EXE。详细来源、SHA与边界见 [BUILD_REVIEW](BUILD_REVIEW.md)。
+
 ## 2026-10-09 — 构建输入绑定与依赖打包修正
 
 Model Tier: Tier 2 integration/review，固定规格工具与测试按Tier 1拆分；Model: 当前主线程GPT-6系列，worker GPT-5.6 Sol High；Reason: 主线程负责跨build/package/provenance contract，worker完成审计边界、依赖目录、完整工具树与负向测试；Escalated: no，未改变产品架构。Task Risk=medium，Task Uncertainty=medium（外部材料来源），Cross-module Scope=build/package/provenance/tests/docs，Playback/Session Impact=none。

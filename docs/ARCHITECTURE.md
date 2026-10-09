@@ -1,5 +1,7 @@
 # 架构
 
+构建输出写入在操作前统一检查runtime物理路径、全部目标和完成标记，拒绝目标链接、重复通知和已有完整产物；config只接受已验证的base并原子替换，通知和provenance独占创建。安装器使用固定Inno的notimestamp省略构建源mtime，保留文件内容与既有安装选项。当前重复构建与精确范围见 [BUILD_REVIEW](BUILD_REVIEW.md)。
+
 P1 最小诊断复用 enhanced logger 和 trusted diagnostics IPC。controller 只在已有 generation/native 文件事件决策点旁路报告 disposition；service 增补持帧和 surface-hidden 的有限观察。main 侧最多保留 64 个内部请求关联，每分钟 120 条，新增 recorder 最多 32 个 pending writes。Renderer preload error/rejection listener 只发送固定类别和实际包内 JS 相对位置，main 再投影、去重和限频（20/min）；未知消息、任意 stack、函数名和包外位置不进入日志。完整隐私、限额、失败隔离与证据边界见 [P1_DIAGNOSTICS_CONTRACT](P1_DIAGNOSTICS_CONTRACT.md)。
 
 统一本地候选 `cc603ba` 以全屏/播放 `1e86e51` 合入 Settings `21ef9a4`。main的维护IPC只复用当前应用webContents与诊断快照，按原before-quit收口注销；libmpv新增About route，native持帧、窗口normal bounds、Session/Resolver身份链保持两侧既有实现。验证与来源见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。

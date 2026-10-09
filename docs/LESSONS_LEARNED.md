@@ -1,5 +1,11 @@
 # 已确认经验
 
+## 2026-10-09 — 输出链接与安装器文件时间
+
+- 只检查输出读回hash不能防止写入沿已有hardlink/symlink改写外部文件。创建通知前应预检所有目的地，config仅接受验证过的base并原子替换；已完成产物和已存在通知应拒绝覆盖。
+- 链接回归不能把EEXIST当成环境不支持；应实际建立fixture并验证外部canary保持，最终记录skip数量。
+- runtime文件字节相同不代表源mtime相同。先固定同一runtime验证容器稳定，再对不同mtime输入做单变量实验；固定Inno6.7.3的notimestamp可控制这项打包元数据，不应修改生成后的EXE来凑SHA。
+
 ## 2026-10-09 — 构建输入contract的实际收口
 
 - build与package同时读取同一工作文件，不能单独证明该文件属于sourceCommit；限定输入需对HEAD blob验证，普通source则直接从blob生成。

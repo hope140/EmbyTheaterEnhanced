@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-09 — 构建复核与安装器字节重复性完成
+
+从da672d2继续独立`codex/build-review-20261009`，修正通知/config/provenance写入的链接越界与旧产物覆盖边界，并使用Inno6.7.3原生notimestamp消除输入mtime对容器身份的影响。产品sourceCommit为1a05f88357a08f5d7c99a7e5de28de20aad0dc79，版本0.2.4。
+
+writer17/17、最终全量535/535均通过且0跳过。独立runtime各2136文件完全一致；正式安装器A/B各175653917 bytes、SHA256均133a74abb36e18dbd21a186c3b330759a9f213e4d0045c5a9fabcf9db4b04258。A完整性和解包2136/2136通过，B为同字节对照。与3b产物只有6份来源/构建记录改变，其余字节保持。未运行真实客户端或安装；交付和精确边界见 [构建复核](BUILD_REVIEW.md)。
+
 ## 2026-10-09 — 构建输入绑定与独立候选
 
 独立分支 `codex/build-hardening-20261009` 从审计基线 `49f643a` 继续。产品提交 `3b158f69e974802ef92a3d8c7ef6815139498d1f` 完成提交输入gate、schema 3 provenance、精确Node依赖、通知随包和完整本地GCC/Inno树固定；版本仍为0.2.4，`src/`、native C++、原vendor清单与依赖版本均未改动。
