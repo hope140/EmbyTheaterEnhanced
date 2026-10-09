@@ -1,5 +1,15 @@
 # 开发日志
 
+## 2026-10-09 — Stop 收尾归属与有界退出证据
+
+- Model Tier: Tier 2 core / Tier 1 workers；Model: 当前主线程 GPT-6 系列，输入/回归/取证测试 worker GPT-5.6 Luna High，独立核心审查 GPT-5.6 Sol High；Reason: Task Risk=high，Task Uncertainty=medium，Cross-module Scope=PlaybackManager/真实 libmpv stopped 事件边界，Playback/Session Impact=direct；Escalated: no。主线程设计与最终验收，worker 只执行固定范围任务。
+- 准确基线 60acba5；本地工具提交 db2f61b，产品 sourceCommit 68eb0249f8392480154513f3df267204a0f0eb74。源码维护入口仍为 tools/patch-playbackmanager.cjs，版本 0.2.5；原主目录未提交资料和两份旧产物保留。
+- 同一 captured stream 的物理 Stop 局部串行，过期 queued request 在执行前退出；一次 cleanup/report 与 current-request 分离。terminal joiner 共享完整拒绝结果，最新 Native token 仍经 prepare；nonlocal/self-managed 保留原 IIFE。审查发现的非本地生命周期越界、terminal 后重复 Stop、terminal join 吞错三项在交付前已修正。
+- 最终同一份 VM 测试修改前8 PASS/8 FAIL，修改后16/16；全量608/608、0跳过。主线程补强真实 manager + transition 联合 token、物理 terminal pending Next、准确共享 Error 和全Stop拒绝后的监听恢复，独立复核绑定最终源码及测试哈希。
+- 正式 build / package VerifyOnly / provenance通过，运行前后新旧runtime各2136文件与清单匹配；仅 PlaybackManager + 6份来源记录不同，23二进制一致。ignored 比较器首轮因遗漏内部 hash map 失败，修正工具后复算，失败日志保留；不是 runtime payload 失败。
+- 预定六次隔离运行已全部执行。新五组完整PASS、自然exit0；旧d480eb8 hit0在app.exit返回后仍OS退出超时，精确root PID/StartTime强清理后0残留。JS exit/quit回调不能替代OS退出；原因UNKNOWN，产品退出语义未改。临时线程快照因所属根进程已收尾而UNAVAILABLE，未编造线程归因。
+- 新14份harness输入六轮哈希一致；appData/userData/About/应用renderer归属/隐藏阶段检查通过，五项媒体各一对Started/Stopped，所有pending/重复/未配对指标0。真实服务、远控、首帧/连续性、HDR/多屏、安装与正常窗口关闭保持另列，见 [报告](STOP_OWNERSHIP_EXIT_EVIDENCE.md)。
+
 ## 2026-10-09 — PlaybackManager 请求与 pending 会话局部修复
 
 - Model Tier: Tier 2 core design/review + Tier 1 bounded workers；Model: 当前主线程 GPT-6 系列，测试/harness/input worker GPT-5.6 Luna High/Max，独立核心复核 GPT-5.6 Sol High；Reason: 请求快照和 Session 报告归属涉及异步生命周期，主线程固定 contract 后委派测试与输入核对；Escalated: no。Task Risk=medium，Task Uncertainty=medium，Cross-module Scope=PlaybackManager overlay/tests/docs，Playback/Session Impact=local identity and pending report ownership。

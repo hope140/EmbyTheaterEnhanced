@@ -1,0 +1,2075 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-09",
+  "timezone": "UTC+8",
+  "branch": "codex/stop-ownership-20261009",
+  "baseline": "60acba55f6058789004748bde3df3a10a2348d04",
+  "sourceCommit": "68eb0249f8392480154513f3df267204a0f0eb74",
+  "version": "0.2.5",
+  "runtime": "dist/ETE-0.2.5-stop-owner-68eb024-win-x64",
+  "candidateStatus": "LOCAL_REVIEW_CANDIDATE",
+  "stopOwnership": "FIXED_SYNTHETIC_AND_ISOLATED_RUNTIME_VERIFIED",
+  "tests": {
+    "exactBefore": {
+      "pass": 8,
+      "fail": 8
+    },
+    "exactAfter": {
+      "pass": 16,
+      "fail": 0
+    },
+    "full": {
+      "pass": 608,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "elapsedMs": 187065.3906
+    }
+  },
+  "originalProbe": {
+    "scope": "fake Stop completion order only",
+    "originalFilesPreserved": true,
+    "hashes": {
+      "review-stop-race.cjs": "af068ab7ff177a5dbb0a9bf3fe46f0dda67836c64680121fa78e402be471f89b",
+      "review-stop-race-result.jsonl": "95dd1e9d09e43bd7b1739fd26efb02bcc387e98a82a27baa66d171db18f1fd92",
+      "baseline-patch-playbackmanager.cjs": "f323c56b4c7efc1c034995758d60425e1fa756c8cbbeee79d9d9bde87dd7a603"
+    }
+  },
+  "coreReview": {
+    "role": "independent-core-review",
+    "model": "GPT-5.6 Sol High",
+    "productFile": "tools/patch-playbackmanager.cjs",
+    "workingFileSha256": "209cfad128d40d97de78931ff9b849418aa4541324d8b4f739bfc3acf80266ad",
+    "result": "NO_FURTHER_BLOCKING_CORE_ISSUE",
+    "resolved": [
+      "nonlocal-original-path-preserved",
+      "terminal-join-no-extra-stop",
+      "terminal-rejection-shared"
+    ],
+    "scope": [
+      "stream-cleanup-claim",
+      "dynamic-tail-drain",
+      "request-stale-skip",
+      "pending-report",
+      "terminal-handler-reuse",
+      "native-token-call-order"
+    ],
+    "limitations": [
+      "deterministic-VM-tests-not-real-server-or-visible-acceptance",
+      "nonlocal-original-path-source-reviewed-only"
+    ],
+    "finalTestSha256": "6af156326e8d3583b11a5490a88abbaef9eb7ced06d01475a06eddc6c69e29e3",
+    "finalTestsReviewed": true
+  },
+  "runtimeComparisonAfterRuns": {
+    "schemaVersion": 1,
+    "status": "OBSERVED",
+    "compared": {
+      "new": {
+        "label": "new",
+        "rootKind": "candidate",
+        "manifest": {
+          "schemaVersion": 3,
+          "sourceCommit": "68eb0249f8392480154513f3df267204a0f0eb74",
+          "version": "0.2.5",
+          "declaredPayloadFileCount": 2135,
+          "declaredPayloadSetSha256": "91807aab2e58672391da82d1f60b905f2e72731d8d45fa6379f83040eef93ed4",
+          "computedPayloadSetSha256": "91807aab2e58672391da82d1f60b905f2e72731d8d45fa6379f83040eef93ed4",
+          "payloadDigestStatus": "PASS"
+        },
+        "fileSet": {
+          "expectedPayloadFileCount": 2135,
+          "expectedTotalFileCount": 2136,
+          "actualTotalFileCount": 2136,
+          "matchedPayloadFileCount": 2135,
+          "manifestPresent": true,
+          "missingCount": 0,
+          "extraCount": 0,
+          "hashMismatchCount": 0,
+          "status": "PASS",
+          "missing": [],
+          "extra": [],
+          "hashMismatch": []
+        },
+        "identities": {
+          "sourceCommit": "68eb0249f8392480154513f3df267204a0f0eb74",
+          "version": "0.2.5",
+          "electron": {
+            "version": "44.4.2",
+            "exePath": "x64/electron/electron.exe",
+            "exeSha256": "0446040f3c63eb75d5b1e1663d5ef27f07730a82df3e4fa47ff77c1a33cef07c",
+            "recordedExeSha256": "0446040f3c63eb75d5b1e1663d5ef27f07730a82df3e4fa47ff77c1a33cef07c",
+            "treeSha256": "f9f14e4fe641b68296cf6d17357b4037a514c87ed8c83e91395de11d924c9030"
+          },
+          "nativeHelper": {
+            "sourceCommit": "68eb0249f8392480154513f3df267204a0f0eb74",
+            "sourceSha256": "7b7ae54af6ca292a40fc7fd8d315b12bc18599d9cd7cb23361d3671c80e459e4",
+            "clientHeaderSha256": "1acf99ee77c8c2a6f1d1993bd81bbc8a91d27fb5924e80171670e6139a4bd353",
+            "compilerSha256": "798a6eb495b30cf771dc759b5508d269ecb0dddac739719e8b30fe0ac0744b69",
+            "helperPath": "electronapp/native-helper/ete-mpv-helper.exe",
+            "helperSha256": "28054c75551177f1109859d4f8793d45a4c731aba1e43ddab9bb2f1c5dc030dc",
+            "recordedHelperSha256": "28054c75551177f1109859d4f8793d45a4c731aba1e43ddab9bb2f1c5dc030dc"
+          },
+          "mpv": {
+            "path": "electronapp/libmpv/x64/mpv-1.dll",
+            "sha256": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c",
+            "recordedSha256": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c",
+            "version": ""
+          },
+          "host": {
+            "executablePath": "Emby.Theater.exe",
+            "executableSha256": "11abf75c8f77ddb0078e7dd62a2eaae60dba244c113bc7893a7e56bc6527163e",
+            "configPath": "Emby.Theater.exe.config",
+            "configSha256": "5831fd61c63d76f430df19cb524fd6382584507bfcbfd2e579420d57a95d2010"
+          }
+        }
+      },
+      "old": {
+        "label": "old",
+        "rootKind": "historical-d480eb8",
+        "manifest": {
+          "schemaVersion": 3,
+          "sourceCommit": "d480eb800a8b809a0e470608f5f3da0d6d378de5",
+          "version": "0.2.5",
+          "declaredPayloadFileCount": 2135,
+          "declaredPayloadSetSha256": "e9fe285a60f460d28eb49b9277858d16af7f7cf81ce1331890bd317b53058680",
+          "computedPayloadSetSha256": "e9fe285a60f460d28eb49b9277858d16af7f7cf81ce1331890bd317b53058680",
+          "payloadDigestStatus": "PASS"
+        },
+        "fileSet": {
+          "expectedPayloadFileCount": 2135,
+          "expectedTotalFileCount": 2136,
+          "actualTotalFileCount": 2136,
+          "matchedPayloadFileCount": 2135,
+          "manifestPresent": true,
+          "missingCount": 0,
+          "extraCount": 0,
+          "hashMismatchCount": 0,
+          "status": "PASS",
+          "missing": [],
+          "extra": [],
+          "hashMismatch": []
+        },
+        "identities": {
+          "sourceCommit": "d480eb800a8b809a0e470608f5f3da0d6d378de5",
+          "version": "0.2.5",
+          "electron": {
+            "version": "44.4.2",
+            "exePath": "x64/electron/electron.exe",
+            "exeSha256": "0446040f3c63eb75d5b1e1663d5ef27f07730a82df3e4fa47ff77c1a33cef07c",
+            "recordedExeSha256": "0446040f3c63eb75d5b1e1663d5ef27f07730a82df3e4fa47ff77c1a33cef07c",
+            "treeSha256": "f9f14e4fe641b68296cf6d17357b4037a514c87ed8c83e91395de11d924c9030"
+          },
+          "nativeHelper": {
+            "sourceCommit": "d480eb800a8b809a0e470608f5f3da0d6d378de5",
+            "sourceSha256": "7b7ae54af6ca292a40fc7fd8d315b12bc18599d9cd7cb23361d3671c80e459e4",
+            "clientHeaderSha256": "1acf99ee77c8c2a6f1d1993bd81bbc8a91d27fb5924e80171670e6139a4bd353",
+            "compilerSha256": "798a6eb495b30cf771dc759b5508d269ecb0dddac739719e8b30fe0ac0744b69",
+            "helperPath": "electronapp/native-helper/ete-mpv-helper.exe",
+            "helperSha256": "28054c75551177f1109859d4f8793d45a4c731aba1e43ddab9bb2f1c5dc030dc",
+            "recordedHelperSha256": "28054c75551177f1109859d4f8793d45a4c731aba1e43ddab9bb2f1c5dc030dc"
+          },
+          "mpv": {
+            "path": "electronapp/libmpv/x64/mpv-1.dll",
+            "sha256": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c",
+            "recordedSha256": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c",
+            "version": ""
+          },
+          "host": {
+            "executablePath": "Emby.Theater.exe",
+            "executableSha256": "11abf75c8f77ddb0078e7dd62a2eaae60dba244c113bc7893a7e56bc6527163e",
+            "configPath": "Emby.Theater.exe.config",
+            "configSha256": "5831fd61c63d76f430df19cb524fd6382584507bfcbfd2e579420d57a95d2010"
+          }
+        }
+      }
+    },
+    "comparison": {
+      "fileSet": {
+        "newPayloadFileCount": 2135,
+        "oldPayloadFileCount": 2135,
+        "payloadMatchingHashCount": 2129,
+        "payloadChangedHashCount": 6,
+        "payloadOnlyNewCount": 0,
+        "payloadOnlyOldCount": 0,
+        "totalMatchingHashCount": 2129,
+        "totalChangedHashCount": 7,
+        "onlyNewCount": 0,
+        "onlyOldCount": 0,
+        "pathDiffCount": 7,
+        "payloadOnlyNew": [],
+        "payloadOnlyOld": [],
+        "payloadChangedHash": [
+          "build-input-provenance.json",
+          "electronapp/www/modules/common/playback/playbackmanager.js",
+          "native-helper-provenance.json",
+          "runtime-dependencies.json",
+          "runtime-provenance.json",
+          "source-provenance.json"
+        ],
+        "onlyNew": [],
+        "onlyOld": [],
+        "changedHash": [
+          "build-input-provenance.json",
+          "build-manifest.json",
+          "electronapp/www/modules/common/playback/playbackmanager.js",
+          "native-helper-provenance.json",
+          "runtime-dependencies.json",
+          "runtime-provenance.json",
+          "source-provenance.json"
+        ],
+        "binary": {
+          "pathCount": 23,
+          "matchingHashCount": 23,
+          "changedHashCount": 0,
+          "onlyNewCount": 0,
+          "onlyOldCount": 0,
+          "matchingHash": [
+            "Emby.Theater.exe",
+            "MediaBrowser.Common.dll",
+            "MediaBrowser.Model.dll",
+            "ServiceStack.Text.dll",
+            "SharpCompress.dll",
+            "SimpleInjector.dll",
+            "SocketHttpListener.dll",
+            "System.Configuration.dll",
+            "cec/cec-client.exe",
+            "cec/cec-client.x64.exe",
+            "cec/cec.dll",
+            "cec/cec.x64.dll",
+            "cec/p8-usbcec-driver-installer.exe",
+            "electronapp/libmpv/x64/RefreshRate.exe",
+            "electronapp/libmpv/x64/mpv-1.dll",
+            "electronapp/native-helper/ete-mpv-helper.exe",
+            "x64/electron/d3dcompiler_47.dll",
+            "x64/electron/dxcompiler.dll",
+            "x64/electron/dxil.dll",
+            "x64/electron/electron.exe",
+            "x64/electron/ffmpeg.dll",
+            "x64/electron/vk_swiftshader.dll",
+            "x64/electron/vulkan-1.dll"
+          ],
+          "changedHash": [],
+          "onlyNew": [],
+          "onlyOld": []
+        }
+      },
+      "identities": {
+        "sourceCommit": {
+          "new": "68eb0249f8392480154513f3df267204a0f0eb74",
+          "old": "d480eb800a8b809a0e470608f5f3da0d6d378de5",
+          "status": "DIFF"
+        },
+        "version": {
+          "new": "0.2.5",
+          "old": "0.2.5",
+          "status": "MATCH"
+        },
+        "electronVersion": {
+          "new": "44.4.2",
+          "old": "44.4.2",
+          "status": "MATCH"
+        },
+        "electronExeSha256": {
+          "new": "0446040f3c63eb75d5b1e1663d5ef27f07730a82df3e4fa47ff77c1a33cef07c",
+          "old": "0446040f3c63eb75d5b1e1663d5ef27f07730a82df3e4fa47ff77c1a33cef07c",
+          "status": "MATCH"
+        },
+        "nativeSourceCommit": {
+          "new": "68eb0249f8392480154513f3df267204a0f0eb74",
+          "old": "d480eb800a8b809a0e470608f5f3da0d6d378de5",
+          "status": "DIFF"
+        },
+        "nativeSourceSha256": {
+          "new": "7b7ae54af6ca292a40fc7fd8d315b12bc18599d9cd7cb23361d3671c80e459e4",
+          "old": "7b7ae54af6ca292a40fc7fd8d315b12bc18599d9cd7cb23361d3671c80e459e4",
+          "status": "MATCH"
+        },
+        "nativeHelperSha256": {
+          "new": "28054c75551177f1109859d4f8793d45a4c731aba1e43ddab9bb2f1c5dc030dc",
+          "old": "28054c75551177f1109859d4f8793d45a4c731aba1e43ddab9bb2f1c5dc030dc",
+          "status": "MATCH"
+        },
+        "mpvSha256": {
+          "new": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c",
+          "old": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c",
+          "status": "MATCH"
+        },
+        "hostExecutableSha256": {
+          "new": "11abf75c8f77ddb0078e7dd62a2eaae60dba244c113bc7893a7e56bc6527163e",
+          "old": "11abf75c8f77ddb0078e7dd62a2eaae60dba244c113bc7893a7e56bc6527163e",
+          "status": "MATCH"
+        },
+        "hostConfigSha256": {
+          "new": "5831fd61c63d76f430df19cb524fd6382584507bfcbfd2e579420d57a95d2010",
+          "old": "5831fd61c63d76f430df19cb524fd6382584507bfcbfd2e579420d57a95d2010",
+          "status": "MATCH"
+        }
+      },
+      "status": "DIFF"
+    }
+  },
+  "buildManifestSha256": "10054d7de3035d752f2bc73bf348c5ba325b830f90cd8d9e3bc355124879e752",
+  "harnessInputsIdenticalAcrossSixRuns": true,
+  "harnessFiles": [
+    {
+      "path": "tools/test-p1-diagnostics.ps1",
+      "sha256": "aaa0f65797dd1c3c227987d139a162265a8f4302e83591ab5034df06b487b7f4"
+    },
+    {
+      "path": "tools/p1-diagnostics-smoke.cjs",
+      "sha256": "8d2f85273fb07df11d6f8becfb16ab30ad8b359f672fa5c7939bc083f012cb50"
+    },
+    {
+      "path": "tools/smoke-electron.cjs",
+      "sha256": "b1105eed736aea4cbd320a2c752fc1cc644e8090f3e166e0393f807e655f9427"
+    },
+    {
+      "path": "tools/make-fixture.cjs",
+      "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+    },
+    {
+      "path": "tools/verify-p1-diagnostics.cjs",
+      "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+    },
+    {
+      "path": "tools/runtime-window-ownership.cjs",
+      "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+    },
+    {
+      "path": "tools/transition-stream-capture.cjs",
+      "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+    },
+    {
+      "path": "tools/exit-observation.cjs",
+      "sha256": "c8b75c16e3cd826749fc5790a54ef802b65e88c9462b6692e588cbcf97ab3bc0"
+    },
+    {
+      "path": "tests/pipeline-browser.js",
+      "sha256": "2849de138284a4b3bcc75fc494edcfd6c49517b2f5d5fb4378ab20969afce64c"
+    },
+    {
+      "path": "tests/generation-fixture-observer.js",
+      "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+    },
+    {
+      "path": "tests/fake-cd2-fixture.cjs",
+      "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+    },
+    {
+      "path": "tests/pipeline-deadline.cjs",
+      "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+    },
+    {
+      "path": "tests/pipeline-condition.js",
+      "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+    },
+    {
+      "path": "tests/pipeline-result.cjs",
+      "sha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749"
+    }
+  ],
+  "runs": [
+    {
+      "case": "old-hit0",
+      "evidenceDirectory": ".work/p1-runtime-49591016be3149b4b276810080ad2aa6",
+      "runnerCommandExitCode": 1,
+      "productSourceCommit": "d480eb800a8b809a0e470608f5f3da0d6d378de5",
+      "harnessHead": "68eb0249f8392480154513f3df267204a0f0eb74",
+      "runtimeProvenanceSha256": "f590384fef4d656cbcea3c81976981a158102fd68c6a6bc9237b728c9f34d960",
+      "settings": {
+        "cd2Mode": "hit",
+        "cd2DelayMs": 0,
+        "fixtureSeconds": 60
+      },
+      "playbackAssertions": "PASS",
+      "independentlyRecomputedPipeline": true,
+      "pipelineElapsedMs": 11677.7005,
+      "runnerElapsedMs": 121843,
+      "outputCapture": "COMPLETE",
+      "exitMode": "FORCED_CLEANUP",
+      "rootExitCode": 1,
+      "timedOut": true,
+      "cleanupAttempted": true,
+      "cleanupOwnershipMatched": true,
+      "residualProcesses": 0,
+      "childObservationCoverage": "FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE",
+      "childExitObservations": [
+        {
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_AFTER_FORCED_CLEANUP"
+        },
+        {
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_AFTER_FORCED_CLEANUP"
+        },
+        {
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_AFTER_FORCED_CLEANUP"
+        }
+      ],
+      "exitStages": [
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 1,
+          "stage": "observer-installed",
+          "elapsedMs": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 2,
+          "stage": "result-persist-begin",
+          "elapsedMs": 11697
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 3,
+          "stage": "result-persisted",
+          "elapsedMs": 11698
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 4,
+          "stage": "harness-cleanup-complete",
+          "elapsedMs": 11699
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 5,
+          "stage": "app-exit-requested",
+          "elapsedMs": 11699,
+          "exitCode": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 6,
+          "stage": "process-exit-observed",
+          "elapsedMs": 11705,
+          "exitCode": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 7,
+          "stage": "quit-observed",
+          "elapsedMs": 11705,
+          "exitCode": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 8,
+          "stage": "app-exit-returned",
+          "elapsedMs": 11707
+        }
+      ],
+      "beforeQuitObserved": false,
+      "willQuitObserved": false,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "versions": {
+        "electron": "44.4.2",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      },
+      "allStageDocumentsHidden": true,
+      "next": {
+        "selected": true,
+        "overlapEstablished": true,
+        "staleMetadataIgnored": true,
+        "exactPendingCancelled": true,
+        "priorStopped": true,
+        "nextStarted": true,
+        "rapidNextSettled": true,
+        "rapidNewestLoaded": true,
+        "serialSelected": true,
+        "serialPriorStopped": true,
+        "serialSourceLoaded": true,
+        "serialSessionPreserved": true
+      },
+      "sessionChecks": {
+        "requiredItems": {
+          "ordinary": [
+            "fixture-video"
+          ],
+          "strm": [
+            "fixture-strm"
+          ],
+          "queue": [
+            "fixture-next-a",
+            "fixture-next-b",
+            "fixture-next-c"
+          ]
+        },
+        "requiredItemResults": {
+          "ordinary": {
+            "itemIds": [
+              "fixture-video"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-video",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "strm": {
+            "itemIds": [
+              "fixture-strm"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-strm",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "queue": {
+            "itemIds": [
+              "fixture-next-a",
+              "fixture-next-b",
+              "fixture-next-c"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-next-a",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-b",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-c",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          }
+        },
+        "startedCount": 5,
+        "stoppedCount": 5,
+        "pairedCount": 5,
+        "pendingStopped": 0,
+        "unmatchedStopped": 0,
+        "incompleteStarted": 0,
+        "incompleteStopped": 0,
+        "duplicateStarted": 0,
+        "duplicateStopped": 0,
+        "unpairedStarted": 0,
+        "unpairedStopped": 0,
+        "mismatchedStopped": 0,
+        "startedStoppedOneToOne": true,
+        "ordinaryStartedStopped": true,
+        "strmStartedStopped": true,
+        "queueStartedStopped": true,
+        "requiredStartedStopped": true,
+        "passed": true
+      },
+      "generation": {
+        "firstSuperseded": true,
+        "secondPlayed": true,
+        "oldCoreListenerIgnored": true,
+        "stopSuperseded": true,
+        "stopPreventedLateLoad": true,
+        "exactStopPendingCancelled": true,
+        "noUnhandledRejection": true
+      },
+      "directHeaderIsolation": null,
+      "diagnostics": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 127,
+        "validRecords": 127,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 7,
+          "native-helper/generation-retired": 7,
+          "native-helper/start-file": 6,
+          "native-helper/file-loaded": 6,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 14,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 12,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "artifactHashes": {
+        "electron-smoke.json": "a6664c923a7536b7450b7c05f9fe488cad1bc3c18a3f2ad0896c89509ca021bd",
+        "runner-result.json": "09bfa361b56d884b1961985969f200a1b8aad918f42fd1512c95aa4ed4e53abd",
+        "exit-observation.jsonl": "26f55d5b5f0a5ff79faff0c5e7df9f6fe4bd7b8bfca9f0f8043ef5edf73ef129",
+        "runner-exit-observation.jsonl": "9dcf15f099a7bffebe827873a4d2c0d22684dbc390165865b4066283b7dc22c1",
+        "harness-identity.json": "d2de8b1ffe227b08f099be3fbf0cce57471411f23ddeb0a6c8287c990c9c5faa",
+        "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+        "p1-diagnostics-result.json": "ac5e104e22f48dbf86585691c3b9e826ce72661693686b43a43a0add36b280bd"
+      }
+    },
+    {
+      "case": "new-miss400",
+      "evidenceDirectory": ".work/p1-runtime-ff4342c27ad042c3a2282e3b7586d970",
+      "runnerCommandExitCode": 0,
+      "productSourceCommit": "68eb0249f8392480154513f3df267204a0f0eb74",
+      "harnessHead": "68eb0249f8392480154513f3df267204a0f0eb74",
+      "runtimeProvenanceSha256": "2f240d835f2e0af39ec87acd32d52144b203224e7cb105df2f327727be6469c2",
+      "settings": {
+        "cd2Mode": "miss",
+        "cd2DelayMs": 400,
+        "fixtureSeconds": 60
+      },
+      "playbackAssertions": "PASS",
+      "independentlyRecomputedPipeline": true,
+      "pipelineElapsedMs": 10685.0309,
+      "runnerElapsedMs": 11866,
+      "outputCapture": "COMPLETE",
+      "exitMode": "NATURAL",
+      "rootExitCode": 0,
+      "timedOut": false,
+      "cleanupAttempted": false,
+      "cleanupOwnershipMatched": null,
+      "residualProcesses": 0,
+      "childObservationCoverage": "FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE",
+      "childExitObservations": [
+        {
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        }
+      ],
+      "exitStages": [
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 1,
+          "stage": "observer-installed",
+          "elapsedMs": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 2,
+          "stage": "result-persist-begin",
+          "elapsedMs": 10704
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 3,
+          "stage": "result-persisted",
+          "elapsedMs": 10706
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 4,
+          "stage": "harness-cleanup-complete",
+          "elapsedMs": 10706
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 5,
+          "stage": "app-exit-requested",
+          "elapsedMs": 10706,
+          "exitCode": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 6,
+          "stage": "process-exit-observed",
+          "elapsedMs": 10713,
+          "exitCode": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 7,
+          "stage": "quit-observed",
+          "elapsedMs": 10713,
+          "exitCode": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 8,
+          "stage": "app-exit-returned",
+          "elapsedMs": 10715
+        }
+      ],
+      "beforeQuitObserved": false,
+      "willQuitObserved": false,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "versions": {
+        "electron": "44.4.2",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      },
+      "allStageDocumentsHidden": true,
+      "next": {
+        "selected": true,
+        "overlapEstablished": true,
+        "staleMetadataIgnored": true,
+        "exactPendingCancelled": true,
+        "priorStopped": true,
+        "nextStarted": true,
+        "rapidNextSettled": true,
+        "rapidNewestLoaded": true,
+        "serialSelected": true,
+        "serialPriorStopped": true,
+        "serialSourceLoaded": true,
+        "serialSessionPreserved": true
+      },
+      "sessionChecks": {
+        "requiredItems": {
+          "ordinary": [
+            "fixture-video"
+          ],
+          "strm": [
+            "fixture-strm"
+          ],
+          "queue": [
+            "fixture-next-a",
+            "fixture-next-b",
+            "fixture-next-c"
+          ]
+        },
+        "requiredItemResults": {
+          "ordinary": {
+            "itemIds": [
+              "fixture-video"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-video",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "strm": {
+            "itemIds": [
+              "fixture-strm"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-strm",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "queue": {
+            "itemIds": [
+              "fixture-next-a",
+              "fixture-next-b",
+              "fixture-next-c"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-next-a",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-b",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-c",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          }
+        },
+        "startedCount": 5,
+        "stoppedCount": 5,
+        "pairedCount": 5,
+        "pendingStopped": 0,
+        "unmatchedStopped": 0,
+        "incompleteStarted": 0,
+        "incompleteStopped": 0,
+        "duplicateStarted": 0,
+        "duplicateStopped": 0,
+        "unpairedStarted": 0,
+        "unpairedStopped": 0,
+        "mismatchedStopped": 0,
+        "startedStoppedOneToOne": true,
+        "ordinaryStartedStopped": true,
+        "strmStartedStopped": true,
+        "queueStartedStopped": true,
+        "requiredStartedStopped": true,
+        "passed": true
+      },
+      "generation": null,
+      "directHeaderIsolation": null,
+      "diagnostics": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 98,
+        "validRecords": 98,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 5,
+          "native-helper/generation-retired": 5,
+          "native-helper/start-file": 5,
+          "native-helper/file-loaded": 5,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 11,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 10,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "artifactHashes": {
+        "electron-smoke.json": "d38d63622fc047b96f6dd79f3caafedde042f955da3d922d1a2c1568026821f6",
+        "runner-result.json": "b47925978bf09d513d81f600ff32032214055bb807c1f0e66937e50e42d9201b",
+        "exit-observation.jsonl": "db3bfcd1073ed05c267edcd6d2af51aa33bc918785426e568fb885b7edf72618",
+        "runner-exit-observation.jsonl": "968151922315f2af2be9ceadcc0d528aba41a7f72b9a7f2d152335a7ad0000bd",
+        "harness-identity.json": "c7a21dbed2ab799d9eacb7019bc466227ce365e79f075ac8b9e8b1c25ff84df5",
+        "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+        "p1-diagnostics-result.json": "0fc5ce37b3a1b251edd9613d1e8a6d00538b5b7e7d9c1ac533c048347b524de5"
+      }
+    },
+    {
+      "case": "new-hit0",
+      "evidenceDirectory": ".work/p1-runtime-9419984d174b4a55ad2e213a8dc83d34",
+      "runnerCommandExitCode": 0,
+      "productSourceCommit": "68eb0249f8392480154513f3df267204a0f0eb74",
+      "harnessHead": "68eb0249f8392480154513f3df267204a0f0eb74",
+      "runtimeProvenanceSha256": "2f240d835f2e0af39ec87acd32d52144b203224e7cb105df2f327727be6469c2",
+      "settings": {
+        "cd2Mode": "hit",
+        "cd2DelayMs": 0,
+        "fixtureSeconds": 60
+      },
+      "playbackAssertions": "PASS",
+      "independentlyRecomputedPipeline": true,
+      "pipelineElapsedMs": 11418.8185,
+      "runnerElapsedMs": 15274,
+      "outputCapture": "COMPLETE",
+      "exitMode": "NATURAL",
+      "rootExitCode": 0,
+      "timedOut": false,
+      "cleanupAttempted": false,
+      "cleanupOwnershipMatched": null,
+      "residualProcesses": 0,
+      "childObservationCoverage": "FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE",
+      "childExitObservations": [
+        {
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        }
+      ],
+      "exitStages": [
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 1,
+          "stage": "observer-installed",
+          "elapsedMs": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 2,
+          "stage": "result-persist-begin",
+          "elapsedMs": 11439
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 3,
+          "stage": "result-persisted",
+          "elapsedMs": 11440
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 4,
+          "stage": "harness-cleanup-complete",
+          "elapsedMs": 11440
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 5,
+          "stage": "app-exit-requested",
+          "elapsedMs": 11441,
+          "exitCode": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 6,
+          "stage": "process-exit-observed",
+          "elapsedMs": 11449,
+          "exitCode": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 7,
+          "stage": "quit-observed",
+          "elapsedMs": 11455,
+          "exitCode": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 8,
+          "stage": "app-exit-returned",
+          "elapsedMs": 11455
+        }
+      ],
+      "beforeQuitObserved": false,
+      "willQuitObserved": false,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "versions": {
+        "electron": "44.4.2",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      },
+      "allStageDocumentsHidden": true,
+      "next": {
+        "selected": true,
+        "overlapEstablished": true,
+        "staleMetadataIgnored": true,
+        "exactPendingCancelled": true,
+        "priorStopped": true,
+        "nextStarted": true,
+        "rapidNextSettled": true,
+        "rapidNewestLoaded": true,
+        "serialSelected": true,
+        "serialPriorStopped": true,
+        "serialSourceLoaded": true,
+        "serialSessionPreserved": true
+      },
+      "sessionChecks": {
+        "requiredItems": {
+          "ordinary": [
+            "fixture-video"
+          ],
+          "strm": [
+            "fixture-strm"
+          ],
+          "queue": [
+            "fixture-next-a",
+            "fixture-next-b",
+            "fixture-next-c"
+          ]
+        },
+        "requiredItemResults": {
+          "ordinary": {
+            "itemIds": [
+              "fixture-video"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-video",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "strm": {
+            "itemIds": [
+              "fixture-strm"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-strm",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "queue": {
+            "itemIds": [
+              "fixture-next-a",
+              "fixture-next-b",
+              "fixture-next-c"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-next-a",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-b",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-c",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          }
+        },
+        "startedCount": 5,
+        "stoppedCount": 5,
+        "pairedCount": 5,
+        "pendingStopped": 0,
+        "unmatchedStopped": 0,
+        "incompleteStarted": 0,
+        "incompleteStopped": 0,
+        "duplicateStarted": 0,
+        "duplicateStopped": 0,
+        "unpairedStarted": 0,
+        "unpairedStopped": 0,
+        "mismatchedStopped": 0,
+        "startedStoppedOneToOne": true,
+        "ordinaryStartedStopped": true,
+        "strmStartedStopped": true,
+        "queueStartedStopped": true,
+        "requiredStartedStopped": true,
+        "passed": true
+      },
+      "generation": {
+        "firstSuperseded": true,
+        "secondPlayed": true,
+        "oldCoreListenerIgnored": true,
+        "stopSuperseded": true,
+        "stopPreventedLateLoad": true,
+        "exactStopPendingCancelled": true,
+        "noUnhandledRejection": true
+      },
+      "directHeaderIsolation": null,
+      "diagnostics": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 127,
+        "validRecords": 127,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 7,
+          "native-helper/generation-retired": 7,
+          "native-helper/start-file": 6,
+          "native-helper/file-loaded": 6,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 14,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 12,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "artifactHashes": {
+        "electron-smoke.json": "e7337e3e4047eb1ce195a923dfc12d7b7252954ed42c13440b4041c5cf565150",
+        "runner-result.json": "4d5c5e0bdd342ef6fb264e73351f7df3ecbe80961f5dfd22bc0c544df1642531",
+        "exit-observation.jsonl": "65780706e869380eecd6a9376e3f43d8639aba2213d13a0fc43a9f8e9f4683be",
+        "runner-exit-observation.jsonl": "0844216f90f7108c5e224992a8dfed9db4c15837254e64a3db27ed72a4af8ae6",
+        "harness-identity.json": "0ad4dc546cfc5e3ed1c71b4405d117aa9d01c7afa64bb13f95dcaa4af8d79d99",
+        "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+        "p1-diagnostics-result.json": "ac5e104e22f48dbf86585691c3b9e826ce72661693686b43a43a0add36b280bd"
+      }
+    },
+    {
+      "case": "new-hit400",
+      "evidenceDirectory": ".work/p1-runtime-d741957be7a64f4491393fed35cbc119",
+      "runnerCommandExitCode": 0,
+      "productSourceCommit": "68eb0249f8392480154513f3df267204a0f0eb74",
+      "harnessHead": "68eb0249f8392480154513f3df267204a0f0eb74",
+      "runtimeProvenanceSha256": "2f240d835f2e0af39ec87acd32d52144b203224e7cb105df2f327727be6469c2",
+      "settings": {
+        "cd2Mode": "hit",
+        "cd2DelayMs": 400,
+        "fixtureSeconds": 60
+      },
+      "playbackAssertions": "PASS",
+      "independentlyRecomputedPipeline": true,
+      "pipelineElapsedMs": 13720.215,
+      "runnerElapsedMs": 14825,
+      "outputCapture": "COMPLETE",
+      "exitMode": "NATURAL",
+      "rootExitCode": 0,
+      "timedOut": false,
+      "cleanupAttempted": false,
+      "cleanupOwnershipMatched": null,
+      "residualProcesses": 0,
+      "childObservationCoverage": "FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE",
+      "childExitObservations": [
+        {
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        }
+      ],
+      "exitStages": [
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 1,
+          "stage": "observer-installed",
+          "elapsedMs": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 2,
+          "stage": "result-persist-begin",
+          "elapsedMs": 13741
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 3,
+          "stage": "result-persisted",
+          "elapsedMs": 13742
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 4,
+          "stage": "harness-cleanup-complete",
+          "elapsedMs": 13742
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 5,
+          "stage": "app-exit-requested",
+          "elapsedMs": 13742,
+          "exitCode": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 6,
+          "stage": "process-exit-observed",
+          "elapsedMs": 13749,
+          "exitCode": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 7,
+          "stage": "quit-observed",
+          "elapsedMs": 13758,
+          "exitCode": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 8,
+          "stage": "app-exit-returned",
+          "elapsedMs": 13759
+        }
+      ],
+      "beforeQuitObserved": false,
+      "willQuitObserved": false,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "versions": {
+        "electron": "44.4.2",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      },
+      "allStageDocumentsHidden": true,
+      "next": {
+        "selected": true,
+        "overlapEstablished": true,
+        "staleMetadataIgnored": true,
+        "exactPendingCancelled": true,
+        "priorStopped": true,
+        "nextStarted": true,
+        "rapidNextSettled": true,
+        "rapidNewestLoaded": true,
+        "serialSelected": true,
+        "serialPriorStopped": true,
+        "serialSourceLoaded": true,
+        "serialSessionPreserved": true
+      },
+      "sessionChecks": {
+        "requiredItems": {
+          "ordinary": [
+            "fixture-video"
+          ],
+          "strm": [
+            "fixture-strm"
+          ],
+          "queue": [
+            "fixture-next-a",
+            "fixture-next-b",
+            "fixture-next-c"
+          ]
+        },
+        "requiredItemResults": {
+          "ordinary": {
+            "itemIds": [
+              "fixture-video"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-video",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "strm": {
+            "itemIds": [
+              "fixture-strm"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-strm",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "queue": {
+            "itemIds": [
+              "fixture-next-a",
+              "fixture-next-b",
+              "fixture-next-c"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-next-a",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-b",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-c",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          }
+        },
+        "startedCount": 5,
+        "stoppedCount": 5,
+        "pairedCount": 5,
+        "pendingStopped": 0,
+        "unmatchedStopped": 0,
+        "incompleteStarted": 0,
+        "incompleteStopped": 0,
+        "duplicateStarted": 0,
+        "duplicateStopped": 0,
+        "unpairedStarted": 0,
+        "unpairedStopped": 0,
+        "mismatchedStopped": 0,
+        "startedStoppedOneToOne": true,
+        "ordinaryStartedStopped": true,
+        "strmStartedStopped": true,
+        "queueStartedStopped": true,
+        "requiredStartedStopped": true,
+        "passed": true
+      },
+      "generation": {
+        "firstSuperseded": true,
+        "secondPlayed": true,
+        "oldCoreListenerIgnored": true,
+        "stopSuperseded": true,
+        "stopPreventedLateLoad": true,
+        "exactStopPendingCancelled": true,
+        "noUnhandledRejection": true
+      },
+      "directHeaderIsolation": null,
+      "diagnostics": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 128,
+        "validRecords": 128,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 7,
+          "native-helper/generation-retired": 7,
+          "native-helper/start-file": 6,
+          "native-helper/file-loaded": 6,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 14,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 12,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "artifactHashes": {
+        "electron-smoke.json": "c537546570f630eb92f4ab0f6cc8cb645023c55c914b1339d6662286d9cf1779",
+        "runner-result.json": "a134d36403bb6fff55b92a4653b5a30eacf1eba9266bf0e2f171e07fae319d06",
+        "exit-observation.jsonl": "d9735a60496097b01ab996dab04a8e02011abf4e890e4942537d041f2b4ee65e",
+        "runner-exit-observation.jsonl": "8c6aa9f9a80257c2c7b5022bbc75fbaea7a71453ceb4b95b9ce03424f78bfde3",
+        "harness-identity.json": "fd15e1c122bb88da688367e130b7b9bf7a626d887ae48c90a7249fb5374f85e6",
+        "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+        "p1-diagnostics-result.json": "e71976e0cf4968b19f3be8f7492529f8325e3d653e3ecc80ded1f94e82510006"
+      }
+    },
+    {
+      "case": "new-hit800",
+      "evidenceDirectory": ".work/p1-runtime-c3483a9793b3413e96977784ec36239d",
+      "runnerCommandExitCode": 0,
+      "productSourceCommit": "68eb0249f8392480154513f3df267204a0f0eb74",
+      "harnessHead": "68eb0249f8392480154513f3df267204a0f0eb74",
+      "runtimeProvenanceSha256": "2f240d835f2e0af39ec87acd32d52144b203224e7cb105df2f327727be6469c2",
+      "settings": {
+        "cd2Mode": "hit",
+        "cd2DelayMs": 800,
+        "fixtureSeconds": 60
+      },
+      "playbackAssertions": "PASS",
+      "independentlyRecomputedPipeline": true,
+      "pipelineElapsedMs": 14883.5823,
+      "runnerElapsedMs": 15966,
+      "outputCapture": "COMPLETE",
+      "exitMode": "NATURAL",
+      "rootExitCode": 0,
+      "timedOut": false,
+      "cleanupAttempted": false,
+      "cleanupOwnershipMatched": null,
+      "residualProcesses": 0,
+      "childObservationCoverage": "FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE",
+      "childExitObservations": [
+        {
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        }
+      ],
+      "exitStages": [
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 1,
+          "stage": "observer-installed",
+          "elapsedMs": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 2,
+          "stage": "result-persist-begin",
+          "elapsedMs": 14903
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 3,
+          "stage": "result-persisted",
+          "elapsedMs": 14904
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 4,
+          "stage": "harness-cleanup-complete",
+          "elapsedMs": 14905
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 5,
+          "stage": "app-exit-requested",
+          "elapsedMs": 14905,
+          "exitCode": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 6,
+          "stage": "process-exit-observed",
+          "elapsedMs": 14912,
+          "exitCode": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 7,
+          "stage": "quit-observed",
+          "elapsedMs": 14922,
+          "exitCode": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 8,
+          "stage": "app-exit-returned",
+          "elapsedMs": 14922
+        }
+      ],
+      "beforeQuitObserved": false,
+      "willQuitObserved": false,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "versions": {
+        "electron": "44.4.2",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      },
+      "allStageDocumentsHidden": true,
+      "next": {
+        "selected": true,
+        "overlapEstablished": true,
+        "staleMetadataIgnored": true,
+        "exactPendingCancelled": true,
+        "priorStopped": true,
+        "nextStarted": true,
+        "rapidNextSettled": true,
+        "rapidNewestLoaded": true,
+        "serialSelected": true,
+        "serialPriorStopped": true,
+        "serialSourceLoaded": true,
+        "serialSessionPreserved": true
+      },
+      "sessionChecks": {
+        "requiredItems": {
+          "ordinary": [
+            "fixture-video"
+          ],
+          "strm": [
+            "fixture-strm"
+          ],
+          "queue": [
+            "fixture-next-a",
+            "fixture-next-b",
+            "fixture-next-c"
+          ]
+        },
+        "requiredItemResults": {
+          "ordinary": {
+            "itemIds": [
+              "fixture-video"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-video",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "strm": {
+            "itemIds": [
+              "fixture-strm"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-strm",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "queue": {
+            "itemIds": [
+              "fixture-next-a",
+              "fixture-next-b",
+              "fixture-next-c"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-next-a",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-b",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-c",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          }
+        },
+        "startedCount": 5,
+        "stoppedCount": 5,
+        "pairedCount": 5,
+        "pendingStopped": 0,
+        "unmatchedStopped": 0,
+        "incompleteStarted": 0,
+        "incompleteStopped": 0,
+        "duplicateStarted": 0,
+        "duplicateStopped": 0,
+        "unpairedStarted": 0,
+        "unpairedStopped": 0,
+        "mismatchedStopped": 0,
+        "startedStoppedOneToOne": true,
+        "ordinaryStartedStopped": true,
+        "strmStartedStopped": true,
+        "queueStartedStopped": true,
+        "requiredStartedStopped": true,
+        "passed": true
+      },
+      "generation": {
+        "firstSuperseded": true,
+        "secondPlayed": true,
+        "oldCoreListenerIgnored": true,
+        "stopSuperseded": true,
+        "stopPreventedLateLoad": true,
+        "exactStopPendingCancelled": true,
+        "noUnhandledRejection": true
+      },
+      "directHeaderIsolation": null,
+      "diagnostics": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 128,
+        "validRecords": 128,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 7,
+          "native-helper/generation-retired": 7,
+          "native-helper/start-file": 6,
+          "native-helper/file-loaded": 6,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 14,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 12,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "artifactHashes": {
+        "electron-smoke.json": "678120a26ed847c9d86091f57c1fef5deaf32248049de5cf0d4f79088b64b377",
+        "runner-result.json": "bef2b820ff3c6705a47c9474dff2f6f89f7918e9525afb55ef5066a86e3db3e8",
+        "exit-observation.jsonl": "af197f4afe09589841af8cadd948e78dd29249614590057b73cc315dca341f6c",
+        "runner-exit-observation.jsonl": "1769474fb4f3df7bc30e92ad3fc5cead38a251f1e55febc04fd12b7f908c8069",
+        "harness-identity.json": "20198f596b14fb8801ef63e2a0cee03499a7e059d3d643866fa3e632332e6be4",
+        "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+        "p1-diagnostics-result.json": "e71976e0cf4968b19f3be8f7492529f8325e3d653e3ecc80ded1f94e82510006"
+      }
+    },
+    {
+      "case": "new-direct400",
+      "evidenceDirectory": ".work/p1-runtime-58ec72efda074a9d8148097e8cacca25",
+      "runnerCommandExitCode": 0,
+      "productSourceCommit": "68eb0249f8392480154513f3df267204a0f0eb74",
+      "harnessHead": "68eb0249f8392480154513f3df267204a0f0eb74",
+      "runtimeProvenanceSha256": "2f240d835f2e0af39ec87acd32d52144b203224e7cb105df2f327727be6469c2",
+      "settings": {
+        "cd2Mode": "direct",
+        "cd2DelayMs": 400,
+        "fixtureSeconds": 60
+      },
+      "playbackAssertions": "PASS",
+      "independentlyRecomputedPipeline": true,
+      "pipelineElapsedMs": 14204.551099999999,
+      "runnerElapsedMs": 15291,
+      "outputCapture": "COMPLETE",
+      "exitMode": "NATURAL",
+      "rootExitCode": 0,
+      "timedOut": false,
+      "cleanupAttempted": false,
+      "cleanupOwnershipMatched": null,
+      "residualProcesses": 0,
+      "childObservationCoverage": "FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE",
+      "childExitObservations": [
+        {
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        },
+        {
+          "role": "electron-child",
+          "gone": true,
+          "observation": "GONE_WITHOUT_OUTER_CLEANUP"
+        }
+      ],
+      "exitStages": [
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 1,
+          "stage": "observer-installed",
+          "elapsedMs": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 2,
+          "stage": "result-persist-begin",
+          "elapsedMs": 14223
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 3,
+          "stage": "result-persisted",
+          "elapsedMs": 14224
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 4,
+          "stage": "harness-cleanup-complete",
+          "elapsedMs": 14225
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 5,
+          "stage": "app-exit-requested",
+          "elapsedMs": 14225,
+          "exitCode": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 6,
+          "stage": "process-exit-observed",
+          "elapsedMs": 14231,
+          "exitCode": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 7,
+          "stage": "quit-observed",
+          "elapsedMs": 14233,
+          "exitCode": 0
+        },
+        {
+          "schemaVersion": 1,
+          "role": "main",
+          "sequence": 8,
+          "stage": "app-exit-returned",
+          "elapsedMs": 14233
+        }
+      ],
+      "beforeQuitObserved": false,
+      "willQuitObserved": false,
+      "isolation": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "versions": {
+        "electron": "44.4.2",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      },
+      "allStageDocumentsHidden": true,
+      "next": {
+        "selected": true,
+        "overlapEstablished": true,
+        "staleMetadataIgnored": true,
+        "exactPendingCancelled": true,
+        "priorStopped": true,
+        "nextStarted": true,
+        "rapidNextSettled": true,
+        "rapidNewestLoaded": true,
+        "serialSelected": true,
+        "serialPriorStopped": true,
+        "serialSourceLoaded": true,
+        "serialSessionPreserved": true
+      },
+      "sessionChecks": {
+        "requiredItems": {
+          "ordinary": [
+            "fixture-video"
+          ],
+          "strm": [
+            "fixture-strm"
+          ],
+          "queue": [
+            "fixture-next-a",
+            "fixture-next-b",
+            "fixture-next-c"
+          ]
+        },
+        "requiredItemResults": {
+          "ordinary": {
+            "itemIds": [
+              "fixture-video"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-video",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "strm": {
+            "itemIds": [
+              "fixture-strm"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-strm",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          },
+          "queue": {
+            "itemIds": [
+              "fixture-next-a",
+              "fixture-next-b",
+              "fixture-next-c"
+            ],
+            "items": [
+              {
+                "itemId": "fixture-next-a",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-b",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              },
+              {
+                "itemId": "fixture-next-c",
+                "started": true,
+                "stopped": true,
+                "oneToOne": true,
+                "paired": true
+              }
+            ],
+            "passed": true
+          }
+        },
+        "startedCount": 5,
+        "stoppedCount": 5,
+        "pairedCount": 5,
+        "pendingStopped": 0,
+        "unmatchedStopped": 0,
+        "incompleteStarted": 0,
+        "incompleteStopped": 0,
+        "duplicateStarted": 0,
+        "duplicateStopped": 0,
+        "unpairedStarted": 0,
+        "unpairedStopped": 0,
+        "mismatchedStopped": 0,
+        "startedStoppedOneToOne": true,
+        "ordinaryStartedStopped": true,
+        "strmStartedStopped": true,
+        "queueStartedStopped": true,
+        "requiredStartedStopped": true,
+        "passed": true
+      },
+      "generation": {
+        "firstSuperseded": true,
+        "secondPlayed": true,
+        "oldCoreListenerIgnored": true,
+        "stopSuperseded": true,
+        "stopPreventedLateLoad": true,
+        "exactStopPendingCancelled": true,
+        "noUnhandledRejection": true
+      },
+      "directHeaderIsolation": {
+        "directRequestsObserved": true,
+        "allDirectUserAgentsMatched": true,
+        "noDirectUserAgentLeak": true
+      },
+      "diagnostics": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 128,
+        "validRecords": 128,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 7,
+          "native-helper/generation-retired": 7,
+          "native-helper/start-file": 6,
+          "native-helper/file-loaded": 6,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 14,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 12,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "artifactHashes": {
+        "electron-smoke.json": "c172d782ee90b8696ddcfd57f3afc36304cce79317b6402477422823da9cbf97",
+        "runner-result.json": "dba77b00ce915427a9ea8b18fa47ca09c3d9c8008409a32de3efdd51cec4c6b4",
+        "exit-observation.jsonl": "70cf30e28d6ddc65e3fbb86f84e8f0e47e305076e5b9d905549f1c99010f963d",
+        "runner-exit-observation.jsonl": "1150ec5cc0b51676a3c5f6b4a25b82379e920045ac640ff68e82afc166605c13",
+        "harness-identity.json": "09d0231bf376770006a62118db53135f6c1f67dbe9eb0a7f34d3e81282c0a721",
+        "p1-diagnostics-injection.json": "7a504906c02967a167e895b9b639dab5f24b68f3d50710f13f6049ef4d0d6a5f",
+        "p1-diagnostics-result.json": "e71976e0cf4968b19f3be8f7492529f8325e3d653e3ecc80ded1f94e82510006"
+      }
+    }
+  ],
+  "exitConclusion": {
+    "oldControl": "REPRODUCED_AFTER_APP_EXIT_RETURN",
+    "newMatrix": "FIVE_NATURAL_EXITS",
+    "rootCause": "UNKNOWN",
+    "historicalTimeoutRetained": true,
+    "beforeQuitProductShutdown": "NOT_EXECUTED_BY_HARNESS",
+    "threadSnapshot": "UNAVAILABLE_OWNER_NO_LONGER_PRESENT_OR_MATCHED",
+    "productExitSemanticsChanged": false,
+    "observationRuns": 6,
+    "extraRepeats": 0,
+    "interpretation": "Node exit/quit callbacks and app.exit return do not establish OS process termination."
+  },
+  "evidenceHashes": {
+    "full-tests.log": "5e6ba906ca1fad451322ed6a47fd61671d10e5e59ab7da9612ce5fc110125d76",
+    "stop-regression-exact-before.log": "c6b60bdcb366ac14c1db79e24568e32e77ca9c81bf6f05206139c3e6e24ee2c4",
+    "stop-regression-final-after.log": "e6d796d83f6dbf974fc15d9b153a24c0b53b5bcc2fc2de3d9f4efa373d657bb2",
+    "build.log": "07294e36fba28f1377d2f8c1b600d4824855d4291f1d7f21ad5b326b9299d2a1",
+    "package-verify.log": "dbd2f04b09b9513214391aa2b6fcb4dc15f856d195d5a6287c6ac7b8b1c1280c",
+    "runtime-comparison-after-runs.log": "3a6df7ca31daa889f5d5b3ea1a09edd14b398de29012b7b479591025f50a6fb5",
+    "core-review.json": "eb2a563e041e7ab02142a209531d1144056f99b6d09186bf35691f7ad00f336b",
+    "run-plan.json": "1b92d2dbb5a757df8928f5d1759801fd01093753821e10fdb5ec9a2c36e43b47"
+  },
+  "excludedAcceptance": [
+    "real Emby/CD2",
+    "real remote clients",
+    "visible first frame/continuity",
+    "HDR/multi-display",
+    "system installation",
+    "normal product window-close shutdown"
+  ],
+  "publication": "LOCAL_ONLY"
+}

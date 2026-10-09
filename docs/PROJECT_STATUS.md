@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-10-09 — Stop 归属候选完成，退出停滞边界已取证
+
+本地分支 `codex/stop-ownership-20261009` 从准确 60acba5 继续；产品 sourceCommit 为 `68eb0249f8392480154513f3df267204a0f0eb74`，版本保持 0.2.5。修复同一旧 stream 的并发 Stop 回调、无标签 stopped 事件与重复报告归属，保留最新 Native presentation preparation 和 terminal queue/player 收尾。相同回归修改前 8/16、修改后 16/16；全量 608/608，独立核心复核通过。
+
+正式 runtime `dist/ETE-0.2.5-stop-owner-68eb024-win-x64` 构建、source/runtime/native/Electron/版本、package 与运行后 2136 文件检查通过；对 d480eb8 仅 PlaybackManager 及六份来源/清单记录变化，23 个二进制全部一致。新候选 miss400、hit0/400/800、direct400 五组完整 PASS，均自然 exit0、残留0；每组普通/STRM/A-B-C共5对完整会话，迟到额外 play、pending/重复/未配对报告为0。
+
+旧 d480eb8 的一次固定 hit0 对照复现退出停滞：11.7秒前后结果落盘、app.exit调用/返回与Node exit/Electron quit回调已完成，OS根进程到120秒仍未退出，精确归属强清理后残留0。原因仍 UNKNOWN，新候选五次自然退出不关闭该问题；正常产品 before-quit 关闭链未验收。六次计划均已执行，没有增加重复运行。完整结果与可复算哈希见 [Stop 与退出报告](STOP_OWNERSHIP_EXIT_EVIDENCE.md) 和 [结构化证据](evidence/stop-ownership-exit-20261009.json)。当前交付为本地可审阅候选。
+
 ## 2026-10-09 — 请求与会话局部修复完成，退出异常单独保留
 
 从准确af688c8建立独立 `codex/playback-session-20261009`，产品sourceCommit=d480eb8，版本保持0.2.5。每次请求保留独立身份，pending清理不再生成空身份Stopped，已开始会话和错误收尾保持。基线回归2/7、候选7/7；最终全量593/593、0跳过，来源/版本及2136文件payload检查通过，独立核心复核无明确问题。

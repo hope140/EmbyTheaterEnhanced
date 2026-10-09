@@ -1,5 +1,13 @@
 # 测试与验收
 
+## 2026-10-09 Stop 归属与退出分层取证
+
+当前本地产品sourceCommit为`68eb0249f8392480154513f3df267204a0f0eb74`，版本0.2.5。最终PlaybackManager VM同一16例在修改前8PASS/8FAIL、修复后16/16；全量608/608，0失败/取消/跳过。VM执行真实vendor overlay，并联用真实Native transition模块验证token准备、旧Stop排空、terminal overlap/reject、pending及三身份配对；无法据此声明可见画面或实服通过。
+
+正式构建、package VerifyOnly、版本及source/runtime/native/Electron来源验证通过。运行前后各2136文件（含manifest自身）完整匹配；对d480eb8仅PlaybackManager与6份来源/清单记录改变，23二进制一致。新runtime五组miss400、hit0/400/800、direct400完整PASS，均自然exit0/残留0，普通/STRM/A-B-C每轮5对完整Started/Stopped，pending/重复/未配对为0，迟到metadata不额外play。DirectUrl专属UA匹配且普通请求无泄漏。
+
+固定旧d480eb8 hit0对照播放断言PASS但OS退出FAIL：约11.7秒app.exit与Node/Electron退出回调已经返回，120秒归属核对后强清理，残留0。六次运行的14份harness输入完全同hash、隔离与真实About读回通过；退出根因UNKNOWN，正常产品before-quit链没有被本harness执行。完整矩阵、输入哈希和复算说明见 [报告](STOP_OWNERSHIP_EXIT_EVIDENCE.md) / [JSON](evidence/stop-ownership-exit-20261009.json)。
+
 ## 2026-10-09 固定 v0.2.5 的新隐藏 runner
 
 工具全量580/580及后续Stop间隔专项3/3通过，0失败/跳过。同一3ab10c9产品与相同13份harness输入分别验证hit 0/400/800ms、DirectUrl 400ms、miss 400ms；前四组PASS，miss因迟到PlaybackInfo再次调用player而FAIL，整体仍FAIL。保留该断言，后续产品修复必须重跑此失败例。

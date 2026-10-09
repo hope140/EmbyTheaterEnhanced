@@ -2,6 +2,12 @@
 
 本页是 Emby Theater Enhanced 未来开发计划的正式来源。问题的复现情况见 [Known Issues](KNOWN_ISSUES.md)，已完成工作的证据见 [项目状态](PROJECT_STATUS.md) 与 [测试记录](TESTING.md)。状态区分 `main` 发布基线、功能分支和待验收工作。
 
+## 当前本地里程碑（2026-10-09）
+
+`codex/stop-ownership-20261009` / sourceCommit `68eb024` 已交付0.2.5播放生命周期候选：请求快照、pending报告和Stop归属修复均在同一来源runtime复验，608/608、新五组矩阵/5对身份报告、完整来源与payload通过。退出取证已定位到旧d480eb8的app.exit返回后OS进程仍存活；新五组自然退出，根因继续UNKNOWN，不宣告退出稳定性问题关闭。见 [当前报告](STOP_OWNERSHIP_EXIT_EVIDENCE.md)。
+
+后续顺序仍为候选审阅与退出观察、下一测试版安装包/发布准备、主线整合和真实使用验收。它们是后续阶段，当前本地交付没有自动进入这些外部动作；真实首帧/连续性、实服/远控与安装分别验收。
+
 ## Current Production Baseline
 
 - `v0.2.2` 正式 Latest 对应提交 `9a034e8d627f71abbded01a1fba612d9282c9911`；2026-10-09 核验远端 `main=46e995e`，已包含 PR #18。最新测试版 `v0.2.5` 的产品 sourceCommit 为 `3ab10c94d75659c0a421b729aac3147afa680751`，从完整发布分支交付，尚未整合到 main；见 [发布与验收记录](RELEASE_025.md)。
@@ -102,7 +108,7 @@
 
 - Seek transient black frame：旧版本观察到，近期 `v0.2.2` 前台验收未稳定复现。
 - Stop / Exit transient black frame：同上，需区分停止与退出的时序。
-- rapid NextTrack `selected=false`：与 Electron 18 baseline 匹配的 formal 夹具限制，当前不作为 source regression。
+- rapid NextTrack旧`selected=false`为历史夹具结果；已由显式pending/cancel/迟到metadata门槛取代。d480eb8与68eb024分别修复其后确认的请求身份/pending报告、Stop归属问题；新五组全部通过，不再以旧“夹具限制”概括当前状态。
 - transport `stdout-end` stress：跨 Electron 18 与 44 的 harness / environment gap，不能据此直接改 Native Helper。
 
 ## DEFERRED / DECISION

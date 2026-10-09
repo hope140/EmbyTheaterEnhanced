@@ -1,6 +1,12 @@
 # Known Issues
 
-2026-10-09 当前本地候选为0.2.5/d480eb8，两项请求/报告问题已通过行为回归和五种场景的隐藏播放验证；首次runner矩阵4PASS/1FAIL，hit0为成功报告落盘后的退出超时，原因UNKNOWN。全量593/593通过；详细证据见 [修复记录](PLAYBACK_REQUEST_SESSION_FIX.md)。已发布3ab10c9的旧失败证据继续保留在 [发布记录](RELEASE_025.md) 和 [runner记录](RUNNER_DETERMINISM.md)，本地修复不改写已发布产物。
+2026-10-09 当前本地候选为0.2.5/68eb024，继承d480eb8的请求快照/pending报告修复，并补齐Stop收尾归属。全量608/608，新五组隐藏runtime完整PASS；旧d480eb8退出超时在本轮对照再次复现，根因UNKNOWN。详见 [Stop 与退出报告](STOP_OWNERSHIP_EXIT_EVIDENCE.md)。已发布3ab10c9和此前d480eb8的失败/通过样本各自保留，本地候选不改写已发布产物。
+
+## 2026-10-09 — replacement Stop 并发归属
+
+- 状态：`FIXED IN LOCAL CANDIDATE / SYNTHETIC AND ISOLATED RUNTIME VERIFIED`，sourceCommit=68eb024。
+- 旧行为：A已Started时两个Next都选择B，两个Stop闭包捕获同一A；顺序完成重复Stopped，乱序完成可清空B。真实libmpv还有stopped-before-resolve事件窗口。乱序由受控fake复算，不声明真实用户必现。
+- 新行为：同一旧stream的物理Stop排空前保持stopped解绑；captured stream领取一次收尾，新播放在旧物理操作之后进入。terminal、pending、旧metadata/错误及最新Native token回归均保持。最终同一测试修改前8/16、修改后16/16；新五组普通/STRM/队列各5对完整身份报告。真实服务器与可见呈现仍待各自验收。
 
 ## 2026-10-09 — 两项异步身份问题已在本地候选修复
 
@@ -14,6 +20,8 @@
 - 产品：0.2.5/d480eb8；首轮hit0在11.924s记录完整smoke PASS，所有播放、Session和generation断言通过，但Electron根PID在120秒仍存活。runner按原边界强制清理，整体FAIL；零残留只代表清理结果。
 - 现有日志不能归因Native Helper、renderer、缓存或并行验证；未改产品退出流程或runner门槛。同参数仅做一次无其它验证并行的独立复验，结果在 [修复记录](PLAYBACK_REQUEST_SESSION_FIX.md) 单独保留，首轮失败不覆盖。
 - 独立复验为完整PASS：同一d480eb8与13个harness SHA，11.366s完成、自然exit0、timedOut=false、残留0。退出停滞未复现，继续观察，不能认定根因已解决。
+- 后续本轮固定对照已再次复现：相同d480eb8、带14项哈希绑定的退出观察harness，11,698ms落盘，11,699ms请求app.exit，11,705ms记录Node exit/Electron quit，11,707ms返回；120s时OS根PID/StartTime仍匹配，强清理后0残留。故障边界为 `AFTER_APP_EXIT_RETURN / OS_EXIT_TIMEOUT`，不是已证实卡在产品before-quit链。正常pipeline fixture server和被绕过的产品native shutdown仅是静态候选，没有因果证据。
+- 新68eb024五组均自然退出，仍不能由通过样本关闭根因。线程/完整进程树停滞快照为UNAVAILABLE；本轮到六次既定运行即停止，不追加跑绿。正常产品窗口关闭、实服与安装仍NOT_VERIFIED。
 
 
 ## 2026-10-09 — 设置页一致性修正通过用户验收
@@ -81,11 +89,9 @@
 
 ### rapid NextTrack `selected=false`
 
-- 状态：`BASELINE-MATCHED LIMITATION / OBSERVE`。
-- `OBSERVED`：formal ordinary / CD2 miss 的 rapid NextTrack 夹具出现 `selected=false`；Electron 18 基线也有相同结果，相邻播放、控制、报告断言通过。
-- 用户影响：该夹具结果本身尚不能证明当前 source 的真实用户回归。
-- 下一步：只有新证据与基线断言向量不同，才重新定位客户端链路。
-- 区别：它是夹具断言限制，不解释真实用户的 NextTrack 白屏。
+- 状态：`HISTORICAL FIXTURE RESULT / SUPERSEDED BY EXPLICIT GATES`。
+- 旧Electron18/current对照的selected=false保留为历史证据；后续固定pending/cancel/metadata门槛已检出并修复真实的共享options与pending报告问题，本轮又修复更早的Stop并发窗口。不能继续把当前rapidNext整体归为已接受夹具限制。
+- 新68eb024五组的overlap、迟到metadata、双Next最终B及顺序C均通过。真实用户白屏与可见连续性仍由独立呈现验收判断。
 
 ### transport `stdout-end` stress
 
