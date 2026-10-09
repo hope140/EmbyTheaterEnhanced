@@ -51,9 +51,10 @@ function register(options) {
 
     registerHandler(CHANNELS.COPY_ENVIRONMENT, function () {
         if (!clipboard || typeof clipboard.writeText !== 'function') return {status: 'error', reason: 'clipboard_unavailable'};
-        const text = maintenance.formatEnvironmentText(appInfo());
+        const info = appInfo();
+        const text = maintenance.formatEnvironmentText(info);
         clipboard.writeText(text);
-        return {status: 'copied'};
+        return {status: 'copied', info};
     });
 
     registerHandler(CHANNELS.CHECK_UPDATE, function () {

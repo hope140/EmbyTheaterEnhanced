@@ -6,13 +6,13 @@
 
 v0.2.6 / 355f4e6的本地交付与Pre-release公开发布均已完成，三个发布资产已完整回下载核验，见 [发布记录](RELEASE_026.md)。产品验收为631/631、三场景正常关闭、五组完整隔离pipeline、安装器完整性及2136文件解包一致；准确来源与边界见 [本地交付](LOCAL_PACKAGE_026.md)。
 
-当前主线整合以完整发布分支4b24919为起点，保留全部81个领先提交；审查基线main46e995e没有独有提交。差异、验证、证据复用条件及PR状态统一见 [主线整合报告](MAIN_INTEGRATION_026.md)。发布tag与产品sourceCommit保持355f4e6；整合分支的文档提交不产生新版本或新安装包。
+PR #20已合入main bc50d181；主线整合以完整发布分支4b24919为起点，保留全部81个领先提交；审查基线main46e995e没有独有提交。差异、验证、证据复用条件及PR状态统一见 [主线整合报告](MAIN_INTEGRATION_026.md)。发布tag与产品sourceCommit保持355f4e6；整合分支的文档提交不产生新版本或新安装包。
 
 其后的独立事项是实际使用、安装生命周期验收和第三方剩余来源材料。早期8700039与d480eb8直接app.exit的退出超时仍为UNKNOWN；正常关闭通过没有关闭该观察项。历史68eb024的608项与五组运行保留在 [Stop归属报告](STOP_OWNERSHIP_EXIT_EVIDENCE.md)，不再作为当前候选。
 
 ## Current Production Baseline
 
-- `v0.2.2` 正式 Latest 对应提交 `9a034e8d627f71abbded01a1fba612d9282c9911`；2026-10-09 核验远端 `main=46e995e`，已包含 PR #18。最新测试版 `v0.2.6` 的产品 sourceCommit 为 `355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f`，从完整发布分支交付，尚未整合到 main；见 [发布与验收记录](RELEASE_026.md)。
+- `v0.2.2` 正式 Latest 对应提交 `9a034e8d627f71abbded01a1fba612d9282c9911`；2026-10-09 核验远端 `main=bc50d181`，已包含 PR #18。最新测试版 `v0.2.6` 的产品 sourceCommit 为 `355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f`，已随PR #20整合到 main；见 [发布与验收记录](RELEASE_026.md)。
 - Native Helper + libmpv、Pepper / PPAPI 退役、Electron 44.4.2、apphost 启动命令兼容修复、Windows runtime / package provenance、STRM / CloudDrive2 / DirectUrl 基础路由和诊断包均已进入历史完成项；细节由既有专项文档维护。
 - Smart Path Mapping 已合入 `main`，尚未进入 `v0.2.2` 正式发布基线。
 
@@ -68,7 +68,7 @@ v0.2.6已包含每请求options快照、pending报告抑制、捕获stream的Sto
 
 ### v0.2.6 主线整合审查
 
-独立分支 `codex/integrate-v0.2.6-main-20261009` 已创建 [PR #20](https://github.com/hope140/EmbyTheaterEnhanced/pull/20)，整合审查和验证完成，当前等待人工review与合并决定。main尚未合并；完整单测631/631，当前未发现整合阻断，远端无已配置checks。Git关系、新执行单测和原355f4e6产物的复用证明见 [主线整合报告](MAIN_INTEGRATION_026.md)。
+独立分支 `codex/integrate-v0.2.6-main-20261009` 已创建 [PR #20](https://github.com/hope140/EmbyTheaterEnhanced/pull/20)，整合审查和验证完成，已于2026-10-09 22:22:16（UTC+8）合并，main=bc50d181；完整单测631/631，当前未发现整合阻断，远端无已配置checks。Git关系、新执行单测和原355f4e6产物的复用证明见 [主线整合报告](MAIN_INTEGRATION_026.md)。
 
 ### 1. NextTrack 切集瞬时白屏
 
@@ -86,7 +86,7 @@ v0.2.6已包含每请求options快照、pending报告抑制、捕获stream的Sto
 
 ### About 高级运行信息
 
-部分字段UNKNOWN的版本来源/缓存小修留待下一轮，当前只保留已有展示行为。
+grpc-js补丁与About版本来源/刷新维护正在独立本地分支执行，版本维持0.2.6；验收结果见 MAINTENANCE_GRPC_ABOUT.md。
 
 ### Fullscreen Dynamic Corner Policy
 

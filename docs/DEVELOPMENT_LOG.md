@@ -1,5 +1,18 @@
 # 开发日志
 
+## 2026-10-09 — grpc-js与About维护
+
+- Model Tier: Tier 2；Model: GPT-6.1 Sol Medium主线程 / GPT-6 Luna High测试与只读审查worker；Reason: Task Risk=medium，Task Uncertainty=medium（可信版本来源），Cross-module Scope=固定依赖/构建/维护IPC，Playback/Session Impact=none；Escalated: no。
+- 实时核验main bc50d181后独立worktree；依赖仅1.14.4到1.14.6，About使用来源和二进制绑定、动态刷新与复制同一快照。
+- 定向69/69、audit退出0；全量与正式构建验收进行中。旧About期望两项失败保留，未改播放链。详见 [维护记录](MAINTENANCE_GRPC_ABOUT.md)。
+
+## 2026-10-09 — PR #20 主线合并回读
+
+- Model Tier: Tier 1 Git与证据收尾；Model: 当前Codex主线程 / GPT-6 Luna High只读worker；Reason: Task Risk=medium（授权的远端main写入），Task Uncertainty=low，Cross-module Scope=Git与文档，Playback/Session Impact=none；Escalated: no。
+- 用户明确确认后，重新核对PR head45ec2d6、base46e995e、OPEN/非Draft、MERGEABLE/CLEAN及空review/comments；以准确head SHA保护执行merge commit，未使用squash/rebase、强推或删除分支。
+- GitHub返回merged=true，提交bc50d181cd5cafd14b31e2c0d24cbf7fd73b0ee1；回读PR closed/merged、远端main和两个父提交一致，合并树与已审阅head相同。原631项测试日志hash、六棵tree和34项输入复核PASS，未重跑相同测试。
+- 合并前后8个Release、15个附件及Latest身份不变；所有其它远端refs保持，GitHub自动移除了refs/pull/20/merge。产品tag仍指向355f4e6，未改版本或安装包。原始回执及验证记录保存在本地 `.work/pr20-merge/`，本条为本地合并后记录，未追加远端main提交。
+
 ## 2026-10-09 — 完整v0.2.6发布树主线整合
 
 - Model Tier: Tier 2核心整合审核 / Tier 1范围明确worker；Model: 当前GPT-6系列主线程，GPT-5.6 Luna High只读审查与测试worker；Reason: Task Risk=medium，Task Uncertainty=low（main已是发布树祖先），Cross-module Scope=发布成果跨层审查与文档，Playback/Session Impact=核对现有链、无新增产品修改；Escalated: no。

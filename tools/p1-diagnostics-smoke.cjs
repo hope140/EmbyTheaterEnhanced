@@ -55,6 +55,8 @@ function writeInjectionMarker(result) {
             userDataIsolated: app.getPath('userData') === isolatedUserData,
             aboutVersionMatched: result.aboutVersionMatched === true,
             aboutSourceCommitMatched: result.aboutSourceCommitMatched === true,
+            aboutBundledVersionsMatched: result.aboutBundledVersionsMatched === true,
+            aboutRuntimeStateSeparated: result.aboutRuntimeStateSeparated === true,
             applicationDocumentMatched: result.applicationDocumentMatched === true,
             applicationWindowInjected: result.applicationWindowInjected === true,
             auxiliaryWindowInjected: false,
@@ -114,9 +116,12 @@ function installBeforeSmoke() {
             let result = {};
             try {
                 result = await window.webContents.executeJavaScript(script);
-                const info = await window.webContents.executeJavaScript("window.ipc.invoke('enhanced-maintenance-info').then(function (result) { return {appVersion: result.info && result.info.appVersion, sourceCommit: result.info && result.info.sourceCommit}; })");
+                const info = await window.webContents.executeJavaScript("window.ipc.invoke('enhanced-maintenance-info').then(function (result) { return result.info; })");
                 result.aboutVersionMatched = info && info.appVersion === metadata.version;
                 result.aboutSourceCommitMatched = info && info.sourceCommit === provenance.sourceCommit;
+                const nativeRecord = JSON.parse(fs.readFileSync(path.join(runtime, 'native-helper-provenance.json'), 'utf8'));
+                result.aboutBundledVersionsMatched = info && info.nativeHelper === nativeRecord.helper.version && info.libmpv === nativeRecord.libmpv.version;
+                result.aboutRuntimeStateSeparated = info && info.nativeHelperState !== 'ready' && info.runningNativeHelper === 'NOT AVAILABLE' && info.runningLibmpv === 'NOT AVAILABLE';
             } catch (_) { }
             writeInjectionMarker(result || {});
         });

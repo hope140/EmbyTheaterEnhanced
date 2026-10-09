@@ -1,5 +1,17 @@
 # 项目状态
 
+## 2026-10-09 — grpc-js与About维护已实现，最终验收进行中
+
+从main bc50d181建立独立维护分支，grpc-js精确更新1.14.6，About按构建来源显示包内版本及独立运行状态。定向69项与npm audit通过，正在准备最终单测和新来源构建。详见 [维护记录](MAINTENANCE_GRPC_ABOUT.md)。
+
+## 2026-10-09 — PR #20 已合并到 main
+
+用户明确确认合并后，于22:22:16（UTC+8）将 [PR #20](https://github.com/hope140/EmbyTheaterEnhanced/pull/20) 以merge commit合入main。合并提交为 `bc50d181cd5cafd14b31e2c0d24cbf7fd73b0ee1`，父提交依次为原main `46e995e` 和已审阅整合提交 `45ec2d6`；保留完整发布与整合历史。
+
+合并后main整棵Git tree与45ec2d6完全相同，原631/631测试证据、六棵产品/工具/测试目录树及34项构建输入的身份关系保持。本轮没有重新测试、构建或启动客户端。远端回读确认PR已合并，8个Release与15个附件不变，v0.2.6产品仍为355f4e6，Latest仍v0.2.2；除main和GitHub自动移除的PR临时merge ref外，其余远端refs保持。合并回执保存在本地 `.work/pr20-merge/verification.json`。
+
+用户已反馈正在实际使用、暂未发现新问题；该反馈不扩大为真实服务、远控、可见首帧连续性、HDR/多屏或系统安装生命周期的逐项验收。既有直接app.exit UNKNOWN及第三方材料缺口继续保留。以下记录保留各阶段当时的状态。
+
 ## 2026-10-09 — v0.2.6 主线整合审查
 
 从完整发布分支4b24919建立独立 `codex/integrate-v0.2.6-main-20261009`。远端main46e995e即merge-base，main独有0、发布分支领先81，开工open PR为0；保留完整历史，无需冲突解决。main到发布树172文件范围及PR合并判定见 [整合报告](MAIN_INTEGRATION_026.md)。
