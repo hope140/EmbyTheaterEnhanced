@@ -20,7 +20,18 @@
 
 ## 发布结果
 
-状态：准备完成，远端发布与回读结果将在完成后补记。计划先推送发布分支和精确annotated tag，建立draft并上传三个资产，核对服务端大小/digest后发布为Pre-release。
+状态：**PUBLISHED / VERIFIED**。北京时间2026-10-09 21:20:19（UTC+8）发布，Release ID为`407934479`，`draft=false`、`prerelease=true`；正式Latest仍为v0.2.2。
+
+- [Release页面](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.6)
+- [Windows x64安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.6/EmbyTheaterEnhanced-0.2.6-test-355f4e6-win-x64-setup.exe)
+- [SHA256校验文件](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.6/EmbyTheaterEnhanced-0.2.6-test-355f4e6-win-x64-setup.exe.sha256)
+- [来源记录](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.6/EmbyTheaterEnhanced-0.2.6-test-355f4e6-win-x64-setup.exe.provenance.json)
+
+发布分支与annotated tag以atomic push建立。tag object为`ea4841bf7ed51471facc5b715a058e3de9b19241`，解引用精确为产品355f4e6；Release target_commitish同为准确产品SHA。三个附件均为uploaded，服务端大小/digest与本地相同。先验证draft资产，再发布。
+
+通过公开下载URL完整回下载EXE（175,621,807 bytes）和两个companion，三份文件SHA256全部匹配；本轮不是仅用服务端digest代替完整客户端下载。7个既有Release的标签/标志/发布日期、12个既有附件的ID/大小/digest及33项既有远端ref全部保持。main仍为46e995e。本轮发布没有重建、改动或重命名原安装器。
+
+结构化发布回读见 [发布证据](evidence/release-v0.2.6-20261009.json)。README更新发生在发布分支；产品tag不随发布文档提交移动，main整合仍是后续事项。
 
 ## 保留边界
 

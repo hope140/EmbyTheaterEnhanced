@@ -1,5 +1,7 @@
 # 0.2.6 本地测试包
 
+本页保留本地打包、失败定位与有界验收的阶段记录。后续用户授权的GitHub公开发布已完成，当前下载与完整发布回读见 [0.2.6发布记录](RELEASE_026.md)；最终本地结果见 [结构化交付证据](evidence/local-package-026-20261009.json)。
+
 最终状态：**本地可安装测试包交付完成**。产品sourceCommit为
 `355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f`，runtime为
 `dist/ETE-0.2.6-local-355f4e6-win-x64`，交付目录为

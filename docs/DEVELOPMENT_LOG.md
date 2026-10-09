@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-10-09 — v0.2.6 原产物公开测试发布
+
+- Model Tier: Tier 1 publication tooling/evidence worker，主线程负责准确身份与远端副作用边界；Model: 当前Codex主线程 / GPT-6 Luna High只读worker；Reason: 固定产物发布、Git与证据核验，不涉及新增产品实现；Escalated: no。
+- 用户明确授权发布GitHub。从干净53b488f建立独立 `codex/release-v0.2.6-test-20261009`；独立复核三个资产、证据及新增tracked文本隐私边界。提交身份与已公开v0.2.5一致；没有重写产品历史或重建安装器。
+- annotated v0.2.6精确指向355f4e6，发布分支/tag原子推送；Release407934479先draft上传并核对三个digest，再以prerelease=true/latest=false发布，target_commitish绑定准确SHA。
+- 完整175621807-byte EXE和两个companion从公开URL重新下载，全部hash匹配。保留原7个Release/12个附件/33项refs，main46e995e及Latest v0.2.2保持。具体sha、时间、资产ID和分层见 [发布记录](RELEASE_026.md) 与 [机器证据](evidence/release-v0.2.6-20261009.json)。
+- 发布分支README/状态同步新入口；产品tag不随文档HEAD移动。实际系统安装/升级/卸载、真实Emby/CD2/远控、可见首帧及HDR/多屏仍未新增验收，早期直接app.exit UNKNOWN保留。
+
 ## 2026-10-09 — 0.2.6 最终包验证与交付
 
 - 最终产品提交355f4e6，独立Tier2核心审查无P1/P2；full suite631/631，0fail/cancelled/skipped。service聚焦35/35，关闭工具36/36；前后失败与多实例拒绝测试日志保留。

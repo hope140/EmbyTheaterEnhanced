@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "status": "PUBLISHED_VERIFIED",
+  "date": "2026-10-09",
+  "timezone": "Asia/Hong_Kong",
+  "sourceCommit": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+  "deliveryBase": "53b488fa0a67c4508bbc770e92c6eb5efdf1a0b3",
+  "publicationBranch": "codex/release-v0.2.6-test-20261009",
+  "tag": {
+    "name": "v0.2.6",
+    "type": "annotated",
+    "objectSha": "ea4841bf7ed51471facc5b715a058e3de9b19241",
+    "peeledCommit": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f"
+  },
+  "release": {
+    "id": 407934479,
+    "url": "https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.6",
+    "publishedAtUtc": "2026-10-09T13:20:19Z",
+    "publishedAtLocal": "2026-10-09 21:20:19",
+    "draft": false,
+    "prerelease": true,
+    "targetCommitish": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+    "latest": false
+  },
+  "assets": [
+    {
+      "id": 625029582,
+      "name": "EmbyTheaterEnhanced-0.2.6-test-355f4e6-win-x64-setup.exe",
+      "bytes": 175621807,
+      "sha256": "bc878b4e929016071b8d7a41f9b281ad3118e62e8a1e469b0a5c9858718b1532",
+      "serverDigest": "sha256:bc878b4e929016071b8d7a41f9b281ad3118e62e8a1e469b0a5c9858718b1532",
+      "serverState": "uploaded",
+      "url": "https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.6/EmbyTheaterEnhanced-0.2.6-test-355f4e6-win-x64-setup.exe",
+      "serverIdentityMatched": true,
+      "publicDownload": {
+        "name": "EmbyTheaterEnhanced-0.2.6-test-355f4e6-win-x64-setup.exe",
+        "size": 175621807,
+        "expectedSize": 175621807,
+        "status": "FULL_HASH_MATCH"
+      }
+    },
+    {
+      "id": 625029583,
+      "name": "EmbyTheaterEnhanced-0.2.6-test-355f4e6-win-x64-setup.exe.sha256",
+      "bytes": 123,
+      "sha256": "9d50081d6ba794d40acbddd7658b62390b3a0d92b29128753a7457252a2c8e0b",
+      "serverDigest": "sha256:9d50081d6ba794d40acbddd7658b62390b3a0d92b29128753a7457252a2c8e0b",
+      "serverState": "uploaded",
+      "url": "https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.6/EmbyTheaterEnhanced-0.2.6-test-355f4e6-win-x64-setup.exe.sha256",
+      "serverIdentityMatched": true,
+      "publicDownload": {
+        "name": "EmbyTheaterEnhanced-0.2.6-test-355f4e6-win-x64-setup.exe.sha256",
+        "size": 123,
+        "expectedSize": 123,
+        "status": "FULL_HASH_MATCH"
+      }
+    },
+    {
+      "id": 625029584,
+      "name": "EmbyTheaterEnhanced-0.2.6-test-355f4e6-win-x64-setup.exe.provenance.json",
+      "bytes": 3956,
+      "sha256": "a2d232f25011a3e2a5bfb65207af24970d5297f6146f7008c15cad4b35c40316",
+      "serverDigest": "sha256:a2d232f25011a3e2a5bfb65207af24970d5297f6146f7008c15cad4b35c40316",
+      "serverState": "uploaded",
+      "url": "https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.6/EmbyTheaterEnhanced-0.2.6-test-355f4e6-win-x64-setup.exe.provenance.json",
+      "serverIdentityMatched": true,
+      "publicDownload": {
+        "name": "EmbyTheaterEnhanced-0.2.6-test-355f4e6-win-x64-setup.exe.provenance.json",
+        "size": 3956,
+        "expectedSize": 3956,
+        "status": "FULL_HASH_MATCH"
+      }
+    }
+  ],
+  "preservation": {
+    "oldReleaseCount": 7,
+    "oldAssetCount": 12,
+    "oldReleaseMetadataAndAssetsPreserved": true,
+    "oldRefCount": 33,
+    "oldRefsPreserved": true,
+    "latest": "v0.2.2",
+    "mainUnchanged": true
+  },
+  "productRebuilt": false,
+  "productBytesChanged": false,
+  "systemInstallationPerformed": false,
+  "realServiceAcceptancePerformed": false,
+  "localValidationReference": "local-package-026-20261009.json",
+  "retainedLimits": [
+    "earlier 0.2.6 direct app.exit OS exit timeout UNKNOWN",
+    "system installation/upgrade/uninstall unverified",
+    "real Emby/CD2 and remote control unverified",
+    "visible first frame/continuity and HDR/multi-display unverified",
+    "complete third-party corresponding source/build materials still incomplete"
+  ],
+  "uploadAllowlist": [
+    "installer EXE",
+    "SHA256 companion",
+    "installer provenance companion"
+  ]
+}

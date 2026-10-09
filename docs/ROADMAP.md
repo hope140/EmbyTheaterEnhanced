@@ -4,6 +4,8 @@
 
 ## 当前本地里程碑（2026-10-09）
 
+后续发布里程碑已完成：v0.2.6 / 355f4e6作为Pre-release公开，三个资产上传并完整回下载核验，见 [发布记录](RELEASE_026.md)。发布来自完整发布分支，main仍待整合。接续事项为主线整合审查、实际使用与安装生命周期验收、第三方剩余来源材料；直接app.exit UNKNOWN继续独立观察。以下本地候选段保留其原阶段身份。
+
 0.2.6本地可安装测试包已完成，产品sourceCommit=355f4e6；631/631、三场景正常关闭、五组完整pipeline、安装器完整性、2136文件解包一致性及交付读回均通过。交付目录为dist/delivery-0.2.6-355f4e6，使用和边界见 [交付报告](LOCAL_PACKAGE_026.md)。本地目标已完成；主线整合/公开发布、系统安装与真实使用验收仍按各自授权推进。直接app.exit UNKNOWN保留，未自动扩大研究。
 
 当前执行目标已进入0.2.6本地可安装测试包交付：独立候选整合必要材料、固定版本、正式build/package，完成五组隔离播放与三场景正常关闭、installer完整性和逐文件解包核对。进度见 [0.2.6本地包](LOCAL_PACKAGE_026.md)。本地交付完成后，主线整合、公开发布与真实使用验收仍是单独阶段。
@@ -14,7 +16,7 @@
 
 ## Current Production Baseline
 
-- `v0.2.2` 正式 Latest 对应提交 `9a034e8d627f71abbded01a1fba612d9282c9911`；2026-10-09 核验远端 `main=46e995e`，已包含 PR #18。最新测试版 `v0.2.5` 的产品 sourceCommit 为 `3ab10c94d75659c0a421b729aac3147afa680751`，从完整发布分支交付，尚未整合到 main；见 [发布与验收记录](RELEASE_025.md)。
+- `v0.2.2` 正式 Latest 对应提交 `9a034e8d627f71abbded01a1fba612d9282c9911`；2026-10-09 核验远端 `main=46e995e`，已包含 PR #18。最新测试版 `v0.2.6` 的产品 sourceCommit 为 `355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f`，从完整发布分支交付，尚未整合到 main；见 [发布与验收记录](RELEASE_026.md)。
 - Native Helper + libmpv、Pepper / PPAPI 退役、Electron 44.4.2、apphost 启动命令兼容修复、Windows runtime / package provenance、STRM / CloudDrive2 / DirectUrl 基础路由和诊断包均已进入历史完成项；细节由既有专项文档维护。
 - Smart Path Mapping 已合入 `main`，尚未进入 `v0.2.2` 正式发布基线。
 

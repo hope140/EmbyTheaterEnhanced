@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-09 — v0.2.6 Pre-release 已发布并完整回读
+
+用户授权将已验证的本地包按原字节发布。v0.2.6于21:20:19（UTC+8）发布为Pre-release，Release ID407934479，tag精确对应产品 `355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f`。安装包175621807 bytes，SHA256 `bc878b4e929016071b8d7a41f9b281ad3118e62e8a1e469b0a5c9858718b1532`。
+
+EXE、同名SHA256与provenance三个附件均uploaded且服务端digest匹配；三个文件从公开URL完整重新下载后hash也全部匹配。原7个Release、12个附件与33个refs保持；正式Latest仍v0.2.2，main仍46e995e。本轮不改产品或重建包，不扩大系统安装/真实服务/视觉验收。下载和准确分层见 [0.2.6发布记录](RELEASE_026.md)。
+
 ## 2026-10-09 — 0.2.6 本地可安装测试包交付完成
 
 最终产品sourceCommit为 `355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f`，版本0.2.6。交付目录 `dist/delivery-0.2.6-355f4e6/`，含setup.exe、同名SHA256/provenance、SHA256SUMS、中文使用说明、验证报告和结构化证据。安装器175621807 bytes，SHA256 `bc878b4e929016071b8d7a41f9b281ad3118e62e8a1e469b0a5c9858718b1532`。
