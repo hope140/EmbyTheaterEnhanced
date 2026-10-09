@@ -60,6 +60,7 @@ $harnessFilePaths = @(
     'tools/verify-p1-diagnostics.cjs',
     'tools/runtime-window-ownership.cjs',
     'tools/transition-stream-capture.cjs',
+    'tools/exit-observation.cjs',
     'tests/pipeline-browser.js',
     'tests/generation-fixture-observer.js',
     'tests/fake-cd2-fixture.cjs',
@@ -120,14 +121,28 @@ $envValues = @{
     ETE_CD2_LOCAL_PREFIX=$evidence; ETE_CD2_CLOUD_PREFIX='/fixture';
     APPDATA=(Join-Path $evidence 'appdata'); LOCALAPPDATA=(Join-Path $evidence 'localappdata');
     MPV_HOME=(Join-Path $evidence 'appdata/mpv'); NO_PROXY='127.0.0.1,localhost'
+    ETE_TEST_EXIT_TRACE='1'
 }
 foreach ($entry in $envValues.GetEnumerator()) { $info.EnvironmentVariables[$entry.Key]=[string]$entry.Value }
 foreach ($name in @('ELECTRON_RUN_AS_NODE','HTTP_PROXY','HTTPS_PROXY','ALL_PROXY','http_proxy','https_proxy','all_proxy')) { $info.EnvironmentVariables.Remove($name) }
+$runnerClock = [Diagnostics.Stopwatch]::StartNew()
+$lifecycle = New-Object 'System.Collections.Generic.List[object]'
+function Write-ExitStage {
+    param([string]$Stage, [object]$Detail = $null)
+    try {
+        if ($lifecycle.Count -ge 64) { return }
+        $row = [ordered]@{stage=$Stage; elapsedMs=$runnerClock.ElapsedMilliseconds; detail=$Detail}
+        $lifecycle.Add($row)
+        [IO.File]::AppendAllText((Join-Path $evidence 'runner-exit-observation.jsonl'),($row | ConvertTo-Json -Compress -Depth 5) + [Environment]::NewLine,$utf8)
+    } catch { }
+}
 $process = [Diagnostics.Process]::Start($info)
 $ownedStarted = $process.StartTime.ToUniversalTime()
+Write-ExitStage 'root-started' ([ordered]@{pid=$process.Id; startedUtc=$ownedStarted.ToString('o')})
 $stdout = $process.StandardOutput.ReadToEndAsync()
 $stderr = $process.StandardError.ReadToEndAsync()
-$exited = $process.WaitForExit(12000)
+# Two fixed observations discover short-lived children before the prior 12 s checkpoint.
+$exited = $process.WaitForExit(2000)
 $ownedIds = @($process.Id)
 $owned = @()
 $snapshot = @(Get-CimInstance Win32_Process)
@@ -136,10 +151,27 @@ do {
     $owned += $children
     $ownedIds += @($children | ForEach-Object { $_.ProcessId })
 } while ($children.Count)
-if (-not $exited) { $exited = $process.WaitForExit(108000) }
+$childIdentities = @($owned | ForEach-Object {
+    $role = if ($_.Name -eq 'ete-mpv-helper.exe') { 'native-helper' } elseif ($_.Name -eq 'electron.exe') { 'electron-child' } else { 'other-child' }
+    [ordered]@{pid=[int]$_.ProcessId; parentPid=[int]$_.ParentProcessId; startedUtc=$_.CreationDate.ToUniversalTime().ToString('o'); role=$role}
+})
+Write-ExitStage 'children-observed' $childIdentities
+if (-not $exited) { $exited = $process.WaitForExit([Math]::Max(0,12000 - [int]$runnerClock.ElapsedMilliseconds)) }
+Write-ExitStage 'checkpoint' ([ordered]@{rootExited=$exited})
+# Keep the original absolute 120 s limit; instrumentation does not extend it.
+if (-not $exited) { $exited = $process.WaitForExit([Math]::Max(0,120000 - [int]$runnerClock.ElapsedMilliseconds)) }
+$cleanupAttempted = $false
+$ownershipMatched = $null
+Write-ExitStage 'root-wait-complete' ([ordered]@{naturalExitObserved=$exited})
 if (-not $exited) {
     $current = Get-Process -Id $process.Id -ErrorAction SilentlyContinue
-    if ($current -and $current.StartTime.ToUniversalTime() -eq $ownedStarted) { & taskkill.exe /PID $process.Id /T /F | Out-Null }
+    $ownershipMatched = !!($current -and $current.StartTime.ToUniversalTime() -eq $ownedStarted)
+    if ($current -and $current.StartTime.ToUniversalTime() -eq $ownedStarted) {
+        $cleanupAttempted = $true
+        Write-ExitStage 'outer-cleanup-requested' ([ordered]@{ownershipMatched=$true})
+        & taskkill.exe /PID $process.Id /T /F | Out-Null
+        Write-ExitStage 'outer-cleanup-returned' ([ordered]@{commandExitCode=$LASTEXITCODE})
+    }
     $process.WaitForExit(5000) | Out-Null
 }
 $outputCapture = Read-RunnerOutput -StdoutTask $stdout -StderrTask $stderr
@@ -148,10 +180,28 @@ $outputCapture = Read-RunnerOutput -StdoutTask $stdout -StderrTask $stderr
 $exitCode = $null
 try { if ($process.HasExited) { $exitCode = $process.ExitCode } } catch { $exitCode = $null }
 $remaining = @(Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($runtime + '\',[StringComparison]::OrdinalIgnoreCase) })
-$summary = [ordered]@{ rootPid=$process.Id; timedOut=(-not $exited); exitCode=$exitCode; outputCapture=$outputCapture.status; observedDescendants=$owned.Count; candidateResidual=$remaining.Count; realServiceAccess=$false }
-$summary | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $evidence 'runner-result.json') -Encoding UTF8
+$childExitObservations = @($childIdentities | ForEach-Object {
+    $identity = $_
+    $child = Get-Process -Id $identity.pid -ErrorAction SilentlyContinue
+    # CIM CreationDate truncates 100 ns StartTime ticks to microseconds on Windows.
+    # This precision normalization is observation-only; root cleanup still uses exact StartTime.
+    $sameProcess = $false
+    if ($child) {
+        $childTicks = $child.StartTime.ToUniversalTime().Ticks
+        $capturedTicks = [datetime]::Parse($identity.startedUtc).ToUniversalTime().Ticks
+        $sameProcess = ($childTicks - ($childTicks % 10)) -eq $capturedTicks
+    }
+    [ordered]@{pid=$identity.pid; role=$identity.role; gone=$(if ($child -and -not $sameProcess) { $null } else { -not $sameProcess }); observation= $(if ($sameProcess) { 'STILL_PRESENT' } elseif ($child) { 'IDENTITY_MISMATCH' } elseif ($cleanupAttempted) { 'GONE_AFTER_FORCED_CLEANUP' } else { 'GONE_WITHOUT_OUTER_CLEANUP' })}
+})
+Write-ExitStage 'children-final-observation' $childExitObservations
+Write-ExitStage 'runner-complete' ([ordered]@{candidateResidual=$remaining.Count; outputCapture=$outputCapture.status})
+$summary = [ordered]@{ rootPid=$process.Id; timedOut=(-not $exited); exitCode=$exitCode; outputCapture=$outputCapture.status; observedDescendants=$owned.Count; candidateResidual=$remaining.Count; realServiceAccess=$false;
+    exitMode=$(if ($exited) { 'NATURAL' } elseif ($cleanupAttempted) { 'FORCED_CLEANUP' } else { 'TIMEOUT_OWNERSHIP_UNAVAILABLE' });
+    cleanupAttempted=$cleanupAttempted; cleanupOwnershipMatched=$ownershipMatched; elapsedMs=$runnerClock.ElapsedMilliseconds;
+    childExitObservations=$childExitObservations; childObservationCoverage='FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE'; lifecycle=$lifecycle.ToArray() }
+$summary | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $evidence 'runner-result.json') -Encoding UTF8
 $evidence | Set-Content -LiteralPath (Join-Path $root '.work/p1-latest-evidence.txt') -Encoding UTF8
-$summary | ConvertTo-Json
+$summary | ConvertTo-Json -Depth 8
 Write-Output ('Evidence: ' + $evidence.Substring($root.Length + 1))
 if (-not $exited -or $outputCapture.status -ne 'COMPLETE' -or $null -eq $exitCode -or $exitCode -ne 0 -or $remaining.Count) { throw 'P1 isolated runtime did not pass.' }
 & node (Join-Path $root 'tools/verify-p1-diagnostics.cjs') $runtime $evidence

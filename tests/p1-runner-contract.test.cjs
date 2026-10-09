@@ -28,7 +28,7 @@ test('harness identity lists fixed inputs and stores only commits, hashes and ru
     const paths = [
         'tools/test-p1-diagnostics.ps1', 'tools/p1-diagnostics-smoke.cjs', 'tools/smoke-electron.cjs',
         'tools/make-fixture.cjs', 'tools/verify-p1-diagnostics.cjs', 'tools/runtime-window-ownership.cjs',
-        'tools/transition-stream-capture.cjs', 'tests/pipeline-browser.js', 'tests/generation-fixture-observer.js',
+        'tools/transition-stream-capture.cjs', 'tools/exit-observation.cjs', 'tests/pipeline-browser.js', 'tests/generation-fixture-observer.js',
         'tests/fake-cd2-fixture.cjs', 'tests/pipeline-deadline.cjs', 'tests/pipeline-condition.js',
         'tests/pipeline-result.cjs'
     ];
@@ -44,16 +44,61 @@ test('harness identity lists fixed inputs and stores only commits, hashes and ru
     assert.doesNotMatch(identityBlock[1], /\$ProductRoot|\$productRoot|\$runtime\b|\$evidence\b|AbsolutePath/);
 });
 
-test('runner passes bounded CD2 and fixture settings and keeps a 120-second owned-process deadline', () => {
+test('runner keeps fixed 2-second snapshot, absolute 12-second checkpoint, and 120-second owned-process deadline', () => {
     assert.match(runner, /\[ValidateSet\('hit','direct','miss'\)\]\[string\]\$Cd2Mode = 'hit'/);
     assert.match(runner, /\[ValidateRange\(0,1000\)\]\[int\]\$Cd2DelayMs = 400/);
     assert.match(runner, /ETE_TEST_CD2_MODE=\$Cd2Mode; ETE_TEST_CD2_EXPECT=\$Cd2Mode; ETE_TEST_CD2_DELAY_MS=\[string\]\$Cd2DelayMs/);
     assert.match(runner, /\$fixtureSeconds\s*=\s*60/);
     assert.match(runner, /make-fixture\.cjs'\) \$fixture \$fixtureSeconds/);
     assert.match(runner, /ETE_TEST_FIXTURE_SECONDS=\[string\]\$fixtureSeconds/);
-    assert.match(runner, /WaitForExit\(12000\)/);
-    assert.match(runner, /WaitForExit\(108000\)/);
-    assert.match(runner, /if \(\$current -and \$current\.StartTime\.ToUniversalTime\(\) -eq \$ownedStarted\).*taskkill\.exe \/PID \$process\.Id \/T \/F/);
+    assert.match(runner, /WaitForExit\(2000\)/);
+    assert.match(runner, /WaitForExit\(\[Math\]::Max\(0,12000 - \[int\]\$runnerClock\.ElapsedMilliseconds\)\)/);
+    assert.match(runner, /WaitForExit\(\[Math\]::Max\(0,120000 - \[int\]\$runnerClock\.ElapsedMilliseconds\)\)/);
+    assert.doesNotMatch(runner, /WaitForExit\(108000\)/);
+    assert.match(runner, /ETE_TEST_EXIT_TRACE='1'/);
+    assert.match(runner, /'tools\/exit-observation\.cjs'/);
+    assert.match(runner, /Write-ExitStage 'checkpoint'/);
+    assert.match(runner, /Write-ExitStage 'root-wait-complete'/);
+    assert.match(runner, /if \(\$current -and \$current\.StartTime\.ToUniversalTime\(\) -eq \$ownedStarted\)\s*\{[\s\S]*?taskkill\.exe \/PID \$process\.Id \/T \/F/);
+    assert.match(runner, /\$ownershipMatched = !!\(\$current -and \$current\.StartTime\.ToUniversalTime\(\) -eq \$ownedStarted\)/);
+    assert.match(runner, /startedUtc=\$_\.CreationDate\.ToUniversalTime\(\)\.ToString\('o'\)/);
+    assert.match(runner, /# CIM CreationDate truncates 100 ns StartTime ticks to microseconds on Windows\./);
+    assert.match(runner, /\$childTicks = \$child\.StartTime\.ToUniversalTime\(\)\.Ticks/);
+    assert.match(runner, /\$capturedTicks = \[datetime\]::Parse\(\$identity\.startedUtc\)\.ToUniversalTime\(\)\.Ticks/);
+    assert.match(runner, /\(\$childTicks - \(\$childTicks % 10\)\) -eq \$capturedTicks/);
+    assert.doesNotMatch(runner, /\$child\.StartTime\.ToUniversalTime\(\)\.ToString\('o'\) -eq \$identity\.startedUtc/);
+    assert.match(runner, /exitMode=\$\(if \(\$exited\) \{ 'NATURAL' \} elseif \(\$cleanupAttempted\) \{ 'FORCED_CLEANUP' \} else \{ 'TIMEOUT_OWNERSHIP_UNAVAILABLE' \}\)/);
+    assert.match(runner, /cleanupAttempted=\$cleanupAttempted; cleanupOwnershipMatched=\$ownershipMatched/);
+    assert.match(runner, /childObservationCoverage='FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE'/);
+});
+
+test('PowerShell child identity normalization keeps same-microsecond identity and rejects distinct timestamps', t => {
+    const scriptPath = path.join(os.tmpdir(), 'ete-child-identity-' + process.pid + '-' + Date.now() + '.ps1');
+    const script = String.raw`
+param()
+function Test-ObservedChildIdentity {
+    param([datetime]$ChildStart, [datetime]$CapturedStart)
+    $childTicks = $ChildStart.ToUniversalTime().Ticks
+    $capturedTicks = $CapturedStart.ToUniversalTime().Ticks
+    return ($childTicks - ($childTicks % 10)) -eq $capturedTicks
+}
+$child = [datetime]::Parse('2026-10-09T07:52:41.5521137Z')
+$sameMicrosecond = [datetime]::Parse('2026-10-09T07:52:41.5521130Z')
+$distinctMicrosecond = [datetime]::Parse('2026-10-09T07:52:41.5521120Z')
+[ordered]@{
+    sameMicrosecond = Test-ObservedChildIdentity $child $sameMicrosecond
+    distinctMicrosecond = Test-ObservedChildIdentity $child $distinctMicrosecond
+} | ConvertTo-Json -Compress
+`;
+    t.after(() => { try { fs.rmSync(scriptPath, {force: true}); } catch (_) {} });
+    fs.writeFileSync(scriptPath, script, 'utf8');
+    const result = childProcess.spawnSync('powershell.exe', [
+        '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', scriptPath
+    ], {encoding: 'utf8', windowsHide: true, timeout: 10000});
+    assert.equal(result.status, 0, result.stderr || result.error);
+    const report = JSON.parse(result.stdout.trim());
+    assert.equal(report.sameMicrosecond, true);
+    assert.equal(report.distinctMicrosecond, false);
 });
 
 

@@ -14,6 +14,9 @@ const transitionFullscreen = transitionTimelineMode && process.env.ETE_TEST_TRAN
 const retainSurfaceStopProbe = transitionComparison && process.env.ETE_TEST_TRANSITION_RETAIN_SURFACE === '1';
 const hasNativeHelper = fs.existsSync(path.join(runtime || '', 'electronapp/native-helper/service.js'));
 if (!runtime || !evidence) throw Error('ETE_TEST_RUNTIME and ETE_TEST_EVIDENCE are required');
+const exitObservation = process.env.ETE_TEST_EXIT_TRACE === '1'
+    ? require('./exit-observation.cjs').createExitObservation({app, evidence})
+    : {record() {}};
 const expectedApplicationPath = path.join(runtime, 'electronapp', 'www', 'index.html');
 const windowOwnership = createWindowOwnership({expectedApplicationPath});
 app.setName('emby-theater-enhanced-smoke');
@@ -195,7 +198,9 @@ function writeResultAndExit(result) {
     result.harnessInjection = {applicationPipelineInjectionCount, auxiliaryPipelineInjectionCount};
     if (fakeCd2 && !result.cd2Fake) result.cd2Fake = fakeCd2.snapshot();
     if (pipelineDeadline) result.pipelineDeadline = pipelineDeadline.snapshot();
+    exitObservation.record('result-persist-begin');
     fs.writeFileSync(path.join(evidence, 'electron-smoke.json'), JSON.stringify(result, null, 2));
+    exitObservation.record('result-persisted');
     if (transitionActionListener) {
         ipcMain.removeListener('ete-test-transition-timeline-action', transitionActionListener);
         transitionActionListener = null;
@@ -204,7 +209,10 @@ function writeResultAndExit(result) {
         try { fixtureServer.closeAllConnections(); } catch (_) { }
         try { fixtureServer.close(); } catch (_) { }
     }
+    exitObservation.record('harness-cleanup-complete');
+    exitObservation.record('app-exit-requested', result.ok ? 0 : 1);
     app.exit(result.ok ? 0 : 1);
+    exitObservation.record('app-exit-returned');
 }
 function finish(result) {
     if (completed) return;
