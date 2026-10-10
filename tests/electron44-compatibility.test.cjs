@@ -13,7 +13,7 @@ test('Electron 44 uses the supported window-open handler without creating child 
     const source = fs.readFileSync(mainPath, 'utf8');
     assert.doesNotMatch(source, /\.on\(['"]new-window['"]/);
     assert.match(source, /setWindowOpenHandler\(function \(details\)/);
-    assert.match(source, /electron\.shell\.openExternal\(details\.url\)/);
+    assert.match(source, /externalUrl\.openExternalUrl\(electron\.shell, details\.url\)/);
     assert.match(source, /return \{ action: 'deny' \}/);
 });
 

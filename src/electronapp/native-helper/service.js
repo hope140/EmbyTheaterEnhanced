@@ -1,5 +1,7 @@
 'use strict';
 
+const rendererBoundary = require('../enhanced/renderer-boundary');
+
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -463,7 +465,11 @@ function createService(options) {
           sendEvent({type: 'bridge_error', reason: terminal.name});
           log('helper-terminal', {reason: terminal.name});
           client = null;
-          owned.kill().catch(function () {});
+          // Transport death releases playback authority, not owned-exit waiting.
+          const completion = owned.kill();
+          pendingClientDestructions.add(completion);
+          completion.then(function () { pendingClientDestructions.delete(completion); },
+            function () { pendingClientDestructions.delete(completion); });
         }
       });
       helperRuns.set(owned, helperRun);
@@ -684,7 +690,7 @@ function createService(options) {
     if (destroyPromise) return destroyPromise;
     destroyed = true;
     activeEndpointId = null;
-    // Renderer unload may already have detached client while its kill is pending.
+    // Renderer unload or transport death may detach client while its kill is pending.
     const pendingDestructions = Array.from(pendingClientDestructions);
     // Window closed and before-quit can overlap. Publish the shared completion
     // before cleanup starts so every caller waits for the owned native child.
@@ -699,12 +705,22 @@ function createService(options) {
       // One failed child must not let before-quit outrun other owned exits.
       const outcomes = await Promise.allSettled([destroyClient('service-destroy'), ...pendingDestructions]);
       const failure = outcomes.find(outcome => outcome.status === 'rejected');
-      if (failure) throw failure.reason;
+      // Native failure does not transfer ownership of local window resources.
+      // Attempt all releases, then preserve the original owned-client error.
+      let cleanupFailure = null;
       for (const binding of boundWindowEvents.splice(0)) {
-        try { binding.main.removeListener(binding.name, binding.listener); } catch (_) { }
+        try { binding.main.removeListener(binding.name, binding.listener); }
+        catch (error) { if (!cleanupFailure) cleanupFailure = {reason: error}; }
       }
-      if (surfaceWindow && !surfaceWindow.isDestroyed()) surfaceWindow.destroy();
-      surfaceWindow = null;
+      try {
+        if (surfaceWindow && !surfaceWindow.isDestroyed()) surfaceWindow.destroy();
+      } catch (error) {
+        if (!cleanupFailure) cleanupFailure = {reason: error};
+      } finally {
+        surfaceWindow = null;
+      }
+      if (failure) throw failure.reason;
+      if (cleanupFailure) throw cleanupFailure.reason;
     });
     return destroyPromise;
   }
@@ -733,7 +749,7 @@ function register(options) {
   const getWebContents = options.getWebContents;
   function trusted(event) {
     const expected = getWebContents();
-    return !!expected && event && event.sender === expected;
+    return rendererBoundary.isTrusted(event, expected);
   }
   ipcMain.handle(CALL_CHANNEL, async function (event, request) {
     if (!trusted(event)) return {status: 'error', reason: 'untrusted_sender'};

@@ -131,7 +131,7 @@ function makeNativeEndpoint() {
     return endpoint;
 }
 
-function loadPlayer(nativeClient, managerSetup) {
+function loadPlayer(nativeClient, managerSetup, resolverOverride) {
     let moduleFactory;
     const amdRequire = function (_dependencies, callback) {
         if (typeof callback === 'function') callback();
@@ -182,7 +182,7 @@ function loadPlayer(nativeClient, managerSetup) {
     const appSettings = {get() { return undefined; }, set() { }};
     const userSettings = {getSubtitleAppearanceSettings() { return {}; }};
     const connectionManager = {};
-    const strmResolver = {
+    const strmResolver = resolverOverride || {
         resolveAsync(info) { return Promise.resolve({type: 'native', source: info.nativeSource, reason: 'native_fallback'}); }
     };
     const Player = moduleFactory(globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings,

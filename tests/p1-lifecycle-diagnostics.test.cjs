@@ -117,7 +117,7 @@ class FakeIpcMain {
 
 test('renderer diagnostic IPC rejects other WebContents and child frames, and projects accepted records', function () {
   const ipcMain = new FakeIpcMain();
-  const currentWebContents = {mainFrame: {id: 'main-frame'}};
+  const currentWebContents = {mainFrame: {id: 'main-frame', url: require('./helpers/trusted-renderer.cjs').appUrl}};
   const otherWebContents = {mainFrame: {id: 'other-main'}};
   const output = [];
   const root = path.join(__dirname, '..', 'src', 'electronapp');

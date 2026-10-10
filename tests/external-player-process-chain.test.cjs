@@ -1,4 +1,5 @@
 'use strict';
+const {eventFor} = require('./helpers/trusted-renderer.cjs');
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -37,7 +38,7 @@ test('dead process channels and helpers are absent while active IPC stays wired'
 });
 
 test('Electron host keeps openurl dispatch and active host commands', () => {
-    assert.match(mainSource, /case 'openurl':[\s\S]{0,220}electron\.shell\.openExternal/);
+    assert.match(mainSource, /case 'openurl':[\s\S]{0,220}externalUrl\.openExternalUrl\(electron\.shell/);
     for (const command of ['windowstate-normal', 'windowstate-maximized', 'windowstate-fullscreen',
         'windowstate-minimized', 'sleep', 'shutdown', 'video-on', 'video-off', 'audio-on', 'audio-off', 'loaded']) {
         assert.match(mainSource, new RegExp("case '" + command + "'"));
@@ -107,8 +108,8 @@ test('CD2 resolve/cancel IPC remains a trusted active bridge', async () => {
 
     assert.equal(typeof handlers[cd2Ipc.RESOLVE_CHANNEL], 'function');
     assert.equal(typeof listeners[cd2Ipc.CANCEL_CHANNEL], 'function');
-    assert.deepEqual(await handlers[cd2Ipc.RESOLVE_CHANNEL]({sender: trustedSender}, {requestId: 'r1'}), {status: 'hit'});
-    listeners[cd2Ipc.CANCEL_CHANNEL]({sender: trustedSender}, {requestId: 'r1'});
+    assert.deepEqual(await handlers[cd2Ipc.RESOLVE_CHANNEL](eventFor(trustedSender), {requestId: 'r1'}), {status: 'hit'});
+    listeners[cd2Ipc.CANCEL_CHANNEL](eventFor(trustedSender), {requestId: 'r1'});
     unregister();
     assert.deepEqual(calls, [['resolve', 'r1'], ['cancel', 'r1'], ['close']]);
 });

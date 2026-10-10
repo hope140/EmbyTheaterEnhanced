@@ -158,7 +158,7 @@ function makeMediaSource(itemId, sessionId) {
     };
 }
 
-function makeFixture() {
+function makeFixture(options = {}) {
     const calls = {
         alerts: [],
         loadingShown: 0,
@@ -319,7 +319,7 @@ function makeFixture() {
                 {default: pluginManager},
                 {default: queueManagerClass},
                 {default: {
-                    enableCinemaMode() { return false; },
+                    enableCinemaMode() { return options.enableCinemaMode === true; },
                     skipForwardLength() { return 30; },
                     skipBackLength() { return 10; }
                 }},
@@ -1068,3 +1068,782 @@ test('an unmarked started=false change-stream failure still reports its existing
         }
     ], 'started=false alone does not suppress an existing change-stream session stop');
 });
+
+function makeStopBoundaryFixture(options) {
+    const fixture = makeFixture(options);
+    fixture.apiClient.getCurrentUser = () => Promise.resolve({Configuration: {}});
+    fixture.player.canSetAudioStreamIndex = () => false;
+    return fixture;
+}
+
+async function startPublicItem(fixture, id) {
+    const metadataIndex = fixture.calls.metadata.length;
+    const request = fixture.manager.play({items: [makeItem(id)], fullscreen: true});
+    const outcome = request.catch(error => error);
+    await waitFor(() => fixture.calls.metadata.length === metadataIndex + 1, id + ' public metadata starts');
+    fixture.resolveMetadata(metadataIndex, 'session-' + id);
+    assert.equal(await outcome, undefined, id + ' public Play succeeds');
+    await settle();
+    assert.equal(fixture.player.streamInfo.item.Id, id);
+    assert.equal(fixture.player.streamInfo.playSessionId, 'session-' + id);
+    return fixture.player.streamInfo;
+}
+
+function assertOnlyAStopped(fixture) {
+    assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), [
+        {itemId: 'A', playSessionId: 'session-A', mediaSourceId: 'media-A'}
+    ], 'terminal Stop reports exactly the original A identity once');
+}
+
+test('PLAY-01 public Play metadata pending is invalidated by terminal Stop', async () => {
+    const fixture = makeStopBoundaryFixture();
+    const request = fixture.manager.play({items: [makeItem('A')], fullscreen: false}).catch(error => error);
+    await waitFor(() => fixture.calls.metadata.length === 1, 'public metadata starts');
+    await fixture.manager.stop();
+    fixture.resolveMetadata(0, 'session-A-late');
+    await request;
+    await settle();
+    assert.equal(fixture.calls.play.length, 0);
+    assert.equal(fixture.calls.playbackStarts.length, 0);
+    assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStart'), []);
+    assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), []);
+});
+
+test('PLAY-01 double Next metadata responses remain invalid after Stop in either response order', async t => {
+    for (const order of [[0, 1], [1, 0]]) {
+        await t.test('response order ' + order.join(','), async () => {
+            const fixture = makeStopBoundaryFixture();
+            const {firstOutcome, secondOutcome} = await startSharedItemRequests(fixture);
+            await fixture.manager.stop();
+            for (const index of order) {
+                fixture.resolveMetadata(index, 'session-B-' + index);
+                await settle();
+                assert.equal(fixture.calls.play.length, 0, 'each stale response independently cannot load');
+            }
+            await Promise.all([firstOutcome, secondOutcome]);
+            assert.equal(fixture.calls.playbackStarts.length, 0);
+            assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), []);
+        });
+    }
+});
+
+test('PLAY-01 new public Play after Stop owns B while old Next metadata returns', async () => {
+    const fixture = makeStopBoundaryFixture();
+    const item = makeItem('A');
+    fixture.queueControl.nextItem = queue => {
+        queue.items = [item];
+        return {item, index: 0};
+    };
+    const oldRequest = fixture.manager.nextTrack().catch(error => error);
+    await waitFor(() => fixture.calls.metadata.length === 1, 'A metadata starts');
+    await fixture.manager.stop();
+    const streamB = await startPublicItem(fixture, 'B');
+    fixture.resolveMetadata(0, 'session-A-late');
+    await oldRequest;
+    await settle();
+    assert.equal(fixture.player.streamInfo, streamB);
+    assert.deepEqual(fixture.calls.play.map(stream => stream.item.Id), ['B']);
+    assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStart'), [
+        {itemId: 'B', playSessionId: 'session-B', mediaSourceId: 'media-B'}
+    ]);
+    assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), []);
+    await fixture.manager.stop();
+    await settle();
+    assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), [
+        {itemId: 'B', playSessionId: 'session-B', mediaSourceId: 'media-B'}
+    ]);
+});
+
+test('PLAY-01 active A changeStream metadata pending then Stop cannot reload A', async () => {
+    const fixture = makeStopBoundaryFixture();
+    await startQueueItem(fixture, [makeItem('A')], 'session-A');
+    const request = fixture.manager.setAudioStreamIndex(2).catch(error => error);
+    await waitFor(() => fixture.calls.metadata.length === 2, 'audio change metadata starts');
+    await fixture.manager.stop();
+    await settle();
+    assertOnlyAStopped(fixture);
+    fixture.resolveMetadata(1, 'session-A');
+    await request;
+    await settle();
+    assert.equal(fixture.calls.play.length, 1, 'late changeStream cannot make a second player.play');
+    assert.equal(fixture.calls.playbackStarts.length, 1);
+    assertOnlyAStopped(fixture);
+});
+
+test('PLAY-01 changeStream stopActiveEncodings pending releases the original A Stop once', async () => {
+    const fixture = makeStopBoundaryFixture();
+    await startQueueItem(fixture, [makeItem('A')], 'session-A');
+    const encodingGate = deferred();
+    const encodingCalls = [];
+    fixture.apiClient.stopActiveEncodings = sessionId => {
+        encodingCalls.push(sessionId);
+        return encodingGate.promise;
+    };
+    const request = fixture.manager.setAudioStreamIndex(2).catch(error => error);
+    await waitFor(() => fixture.calls.metadata.length === 2, 'audio change metadata starts');
+    fixture.resolveMetadata(1, 'session-A');
+    await waitFor(() => encodingCalls.length === 1, 'encoding stop is pending');
+    await fixture.manager.stop();
+    await settle();
+    const stoppedBeforeRelease = reportsFor(fixture.calls, 'reportPlaybackStopped');
+    encodingGate.resolve();
+    await request;
+    await settle();
+    assert.deepEqual(stoppedBeforeRelease, [
+        {itemId: 'A', playSessionId: 'session-A', mediaSourceId: 'media-A'}
+    ], 'Stop reports the started A while encoding cancellation is still pending');
+    assertOnlyAStopped(fixture);
+    assert.equal(fixture.calls.play.length, 1, 'releasing old encoding cancellation cannot load');
+});
+
+for (const rejectLate of [false, true]) {
+    test('PLAY-01 changeStream player.play late ' + (rejectLate ? 'rejection' : 'success') + ' cannot affect new B', async () => {
+        const fixture = makeStopBoundaryFixture();
+        await startQueueItem(fixture, [makeItem('A')], 'session-A');
+        const playGate = deferred();
+        const originalPlay = fixture.player.play;
+        fixture.player.play = stream => {
+            if (stream.item.Id !== 'A') return originalPlay.call(fixture.player, stream);
+            fixture.calls.play.push(stream);
+            return playGate.promise;
+        };
+        const request = fixture.manager.setAudioStreamIndex(2).catch(error => error);
+        await waitFor(() => fixture.calls.metadata.length === 2, 'audio change metadata starts');
+        const changedSource = makeMediaSource('A', 'session-A');
+        changedSource.SupportsTranscoding = false;
+        fixture.calls.metadata[1].pending.resolve({MediaSources: [changedSource], PlaySessionId: 'session-A'});
+        await waitFor(() => fixture.calls.play.length === 2, 'changeStream physical play is pending');
+        await fixture.manager.stop();
+        await settle();
+        const stoppedBeforeRelease = reportsFor(fixture.calls, 'reportPlaybackStopped');
+        const streamB = await startPublicItem(fixture, 'B');
+        const reportsBeforeRelease = JSON.stringify(fixture.calls.reports);
+        if (rejectLate) playGate.reject(new Error('late changeStream failure'));
+        else playGate.resolve();
+        await request;
+        await settle();
+        assert.equal(fixture.player.streamInfo, streamB, 'late continuation cannot overwrite B streamInfo');
+        assert.equal(JSON.stringify(fixture.calls.reports), reportsBeforeRelease, 'late continuation emits no reports');
+        assert.equal(fixture.calls.alerts.length, 0);
+        assert.equal(fixture.calls.playbackCancelled.length, 0);
+        assert.deepEqual(stoppedBeforeRelease, [
+            {itemId: 'A', playSessionId: 'session-A', mediaSourceId: 'media-A'}
+        ], 'A is stopped before admitting B');
+        assertOnlyAStopped(fixture);
+        assert.deepEqual(fixture.calls.play.map(stream => stream.item.Id), ['A', 'A', 'B']);
+        await fixture.manager.stop();
+        await settle();
+        assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), [
+            {itemId: 'A', playSessionId: 'session-A', mediaSourceId: 'media-A'},
+            {itemId: 'B', playSessionId: 'session-B', mediaSourceId: 'media-B'}
+        ]);
+    });
+}
+
+test('PLAY-01 reverse changeStream metadata responses allow only the current owner to load', async () => {
+    const fixture = makeStopBoundaryFixture();
+    await startQueueItem(fixture, [makeItem('A')], 'session-A');
+    const requestId = fixture.player.streamInfo._etePlayRequestId;
+    const first = fixture.manager.setAudioStreamIndex(1).catch(error => error);
+    await waitFor(() => fixture.calls.metadata.length === 2, 'first audio change starts');
+    const second = fixture.manager.setAudioStreamIndex(2).catch(error => error);
+    await waitFor(() => fixture.calls.metadata.length === 3, 'second audio change starts');
+    fixture.resolveMetadata(2, 'session-A');
+    await second;
+    await settle();
+    const newestStream = fixture.player.streamInfo;
+    assert.equal(newestStream._etePlayRequestId, requestId, 'valid changeStream preserves playback request identity');
+    assert.equal(fixture.player.audioStreamIndex, 2);
+    fixture.resolveMetadata(1, 'session-A');
+    await first;
+    await settle();
+    assert.equal(fixture.calls.play.length, 2, 'initial A and newest changeStream are the only loads');
+    assert.equal(fixture.player.streamInfo, newestStream);
+    assert.equal(fixture.player.audioStreamIndex, 2);
+    await fixture.manager.stop();
+    await settle();
+    assertOnlyAStopped(fixture);
+});
+
+test('PLAY-01 public Play waiting for current user cannot acquire a new request after Stop', async () => {
+    const fixture = makeStopBoundaryFixture();
+    const userGate = deferred();
+    let userCalls = 0;
+    fixture.apiClient.getCurrentUser = () => {
+        userCalls++;
+        return userGate.promise;
+    };
+    const request = fixture.manager.play({items: [makeItem('A')], fullscreen: false}).catch(error => error);
+    await waitFor(() => userCalls === 1, 'public Play waits for current user');
+    await fixture.manager.stop();
+    const stoppedSequence = fixture.manager._etePlayRequestSequence;
+    userGate.resolve({Configuration: {}});
+    await settle();
+    const staleMetadataCount = fixture.calls.metadata.length;
+    for (let index = 0; index < staleMetadataCount; index++) fixture.resolveMetadata(index, 'session-A-late');
+    await request;
+    await settle();
+    assert.equal(fixture.manager._etePlayRequestSequence, stoppedSequence, 'stale public Play cannot reacquire request identity');
+    assert.equal(staleMetadataCount, 0);
+    assert.equal(fixture.calls.play.length, 0);
+    assert.equal(fixture.calls.playbackStarts.length, 0);
+});
+
+test('PLAY-01 audio device profile pending across Stop cannot target new B', async () => {
+    const fixture = makeStopBoundaryFixture();
+    await startQueueItem(fixture, [makeItem('A')], 'session-A');
+    const profileGate = deferred();
+    let profileCalls = 0;
+    const originalProfile = fixture.player.getDeviceProfile;
+    fixture.player.getDeviceProfile = (...args) => {
+        if (++profileCalls === 1) return profileGate.promise;
+        return originalProfile.apply(fixture.player, args);
+    };
+    const request = fixture.manager.setAudioStreamIndex(2).catch(error => error);
+    await waitFor(() => profileCalls === 1, 'audio change waits for device profile');
+    await fixture.manager.stop();
+    const streamB = await startPublicItem(fixture, 'B');
+    profileGate.resolve({DirectPlayProfiles: [], TranscodingProfiles: [], SubtitleProfiles: []});
+    await settle();
+    const metadataCount = fixture.calls.metadata.length;
+    for (let index = 2; index < metadataCount; index++) fixture.resolveMetadata(index, 'session-A-late');
+    await request;
+    await settle();
+    assert.equal(metadataCount, 2, 'old audio change cannot request metadata from B');
+    assert.equal(fixture.calls.play.length, 2);
+    assert.equal(fixture.player.streamInfo, streamB);
+    assertOnlyAStopped(fixture);
+});
+
+test('PLAY-01 quality endpoint pending across Stop cannot change new B', async () => {
+    const fixture = makeStopBoundaryFixture();
+    await startQueueItem(fixture, [makeItem('A')], 'session-A');
+    const endpointGate = deferred();
+    let endpointCalls = 0;
+    const originalEndpoint = fixture.apiClient.getEndpointInfo;
+    fixture.apiClient.getEndpointInfo = () => {
+        if (++endpointCalls === 1) return endpointGate.promise;
+        return originalEndpoint.call(fixture.apiClient);
+    };
+    const request = fixture.manager.setMaxStreamingBitrate({maxBitrate: 500000}).catch(error => error);
+    await waitFor(() => endpointCalls === 1, 'quality change waits for endpoint');
+    await fixture.manager.stop();
+    const streamB = await startPublicItem(fixture, 'B');
+    endpointGate.resolve({IsInNetwork: true, IsLocal: true});
+    await settle();
+    const metadataCount = fixture.calls.metadata.length;
+    for (let index = 2; index < metadataCount; index++) fixture.resolveMetadata(index, 'session-B-unwanted');
+    await request;
+    await settle();
+    assert.equal(metadataCount, 2, 'old quality change cannot request B metadata');
+    assert.equal(fixture.calls.play.length, 2);
+    assert.equal(fixture.player.streamInfo, streamB);
+    assertOnlyAStopped(fixture);
+});
+
+test('PLAY-01 public Play during terminal physical Stop waits for complete drain', async () => {
+    const fixture = makeStopBoundaryFixture();
+    await startQueueItem(fixture, [makeItem('A')], 'session-A');
+    const terminalGate = deferred();
+    const replacementGates = [];
+    const originalStop = fixture.player.stop;
+    fixture.player.stop = (...args) => {
+        fixture.calls.stop.push(args);
+        if (args[0] === true) {
+            fixture.events.trigger(fixture.player, 'stopped');
+            return terminalGate.promise;
+        }
+        const gate = deferred();
+        replacementGates.push(gate);
+        return gate.promise;
+    };
+    const terminal = fixture.manager.stop().catch(error => error);
+    await waitFor(() => fixture.calls.stop.length === 1, 'physical terminal Stop starts');
+    const publicPlay = fixture.manager.play({items: [makeItem('B')], fullscreen: true}).catch(error => error);
+    await settle();
+    const metadataBeforeDrain = fixture.calls.metadata.length;
+    if (metadataBeforeDrain === 2) fixture.resolveMetadata(1, 'session-B');
+    await settle();
+    const playsBeforeDrain = fixture.calls.play.length;
+    terminalGate.resolve();
+    for (const gate of replacementGates) gate.resolve();
+    await terminal;
+    await waitFor(() => fixture.calls.metadata.length === 2, 'new public B is admitted after terminal drain');
+    fixture.resolveMetadata(1, 'session-B');
+    await publicPlay;
+    await settle();
+    fixture.player.stop = originalStop;
+    assert.equal(metadataBeforeDrain, 1, 'public B metadata waits behind the physical terminal Stop');
+    assert.equal(playsBeforeDrain, 1, 'public B cannot load while physical A Stop is unsettled');
+    assert.equal(fixture.player.streamInfo.item.Id, 'B');
+    assertOnlyAStopped(fixture);
+    await fixture.manager.stop();
+    await settle();
+    assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), [
+        {itemId: 'A', playSessionId: 'session-A', mediaSourceId: 'media-A'},
+        {itemId: 'B', playSessionId: 'session-B', mediaSourceId: 'media-B'}
+    ]);
+});
+
+test('PLAY-01 extra current changeStream terminal failure preserves existing alert and session stop', async () => {
+    const fixture = makeStopBoundaryFixture();
+    await startQueueItem(fixture, [makeItem('A')], 'session-A');
+    fixture.player.play = stream => {
+        fixture.calls.play.push(stream);
+        return Promise.reject(new Error('current audio load failed'));
+    };
+    const outcome = fixture.manager.setAudioStreamIndex(2).then(
+        value => ({status: 'fulfilled', value}),
+        error => ({status: 'rejected', error})
+    );
+    await waitFor(() => fixture.calls.metadata.length === 2, 'current audio metadata starts');
+    const source = makeMediaSource('A', 'session-A');
+    source.SupportsTranscoding = false;
+    fixture.calls.metadata[1].pending.resolve({MediaSources: [source], PlaySessionId: 'session-A'});
+    const result = await outcome;
+    await settle();
+    assertOnlyAStopped(fixture);
+    assert.equal(fixture.player.streamInfo, null);
+    assert.equal(fixture.calls.play.length, 2);
+    assert.equal(result.status, 'fulfilled', 'existing terminal failure settles through its alert path');
+    assert.equal(result.value, undefined);
+    assert.equal(fixture.calls.alerts.length, 1);
+    assert.equal(fixture.calls.alerts[0].text, 'PlaybackErrorNoCompatibleStream');
+});
+
+test('PLAY-01 extra direct audio selection profile gate cannot cross Stop into B', async () => {
+    const fixture = makeStopBoundaryFixture();
+    await startQueueItem(fixture, [makeItem('A')], 'session-A');
+    fixture.player.streamInfo.playMethod = 'DirectPlay';
+    fixture.player.canSetAudioStreamIndex = () => true;
+    const profileGate = deferred();
+    const directSelections = [];
+    let profileCalls = 0;
+    const originalProfile = fixture.player.getDeviceProfile;
+    fixture.player.getDeviceProfile = (...args) => {
+        if (++profileCalls === 1) return profileGate.promise;
+        return originalProfile.apply(fixture.player, args);
+    };
+    fixture.player.setAudioStreamIndex = index => directSelections.push(index);
+    const request = fixture.manager.setAudioStreamIndex(2).catch(error => error);
+    await waitFor(() => profileCalls === 1, 'direct audio action waits before entering changeStream');
+    assert.equal(fixture.calls.metadata.length, 1);
+    await fixture.manager.stop();
+    const streamB = await startPublicItem(fixture, 'B');
+    profileGate.resolve({DirectPlayProfiles: [], TranscodingProfiles: [], SubtitleProfiles: []});
+    await settle();
+    const metadataCount = fixture.calls.metadata.length;
+    for (let index = 2; index < metadataCount; index++) fixture.resolveMetadata(index, 'session-B-unwanted');
+    await request;
+    await settle();
+    assert.equal(metadataCount, 2, 'old direct audio continuation cannot initiate a B stream change');
+    assert.deepEqual(directSelections, []);
+    assert.equal(fixture.calls.play.length, 2);
+    assert.equal(fixture.player.streamInfo, streamB);
+    assertOnlyAStopped(fixture);
+});
+
+test('PLAY-01 extra public Play intros gate cannot acquire a request after Stop', async () => {
+    const fixture = makeStopBoundaryFixture({enableCinemaMode: true});
+    const introsGate = deferred();
+    let introsCalls = 0;
+    fixture.apiClient.getIntros = itemId => {
+        assert.equal(itemId, 'A');
+        introsCalls++;
+        return introsGate.promise;
+    };
+    const request = fixture.manager.play({items: [makeItem('A')], fullscreen: true}).catch(error => error);
+    await waitFor(() => introsCalls === 1, 'public Play reaches actual intros API');
+    assert.equal(fixture.calls.metadata.length, 0);
+    await fixture.manager.stop();
+    const stoppedSequence = fixture.manager._etePlayRequestSequence;
+    introsGate.resolve({Items: [makeItem('intro-A')]});
+    await settle();
+    const metadataCount = fixture.calls.metadata.length;
+    for (let index = 0; index < metadataCount; index++) fixture.resolveMetadata(index, 'session-intro-late');
+    await request;
+    await settle();
+    assert.equal(fixture.manager._etePlayRequestSequence, stoppedSequence);
+    assert.equal(metadataCount, 0);
+    assert.equal(fixture.calls.play.length, 0);
+    assert.equal(fixture.calls.playbackStarts.length, 0);
+    assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStart'), []);
+    assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), []);
+});
+
+for (const changedSession of ['session-A', 'session-A-changed']) {
+    test('PLAY-01 extra valid audio change preserves request identity with ' + changedSession, async () => {
+        const fixture = makeStopBoundaryFixture();
+        await startQueueItem(fixture, [makeItem('A')], 'session-A');
+        const requestId = fixture.player.streamInfo._etePlayRequestId;
+        const encodingStops = [];
+        fixture.apiClient.stopActiveEncodings = sessionId => {
+            encodingStops.push(sessionId);
+            return Promise.resolve();
+        };
+        const change = fixture.manager.setAudioStreamIndex(2);
+        await waitFor(() => fixture.calls.metadata.length === 2, 'valid audio change metadata starts');
+        fixture.resolveMetadata(1, changedSession);
+        await change;
+        await settle();
+        assert.equal(fixture.calls.play.length, 2);
+        assert.equal(fixture.player.streamInfo._etePlayRequestId, requestId);
+        assert.equal(fixture.player.streamInfo.playSessionId, changedSession);
+        assert.equal(fixture.player.audioStreamIndex, 2);
+        assert.deepEqual(encodingStops, ['session-A', 'session-A'], 'existing before/after cleanup retains previous session identity');
+        assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), []);
+        await fixture.manager.stop();
+        await settle();
+        assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), [
+            {itemId: 'A', playSessionId: changedSession, mediaSourceId: 'media-A'}
+        ]);
+    });
+}
+
+for (const rejectLate of [false, true]) {
+    test('PLAY-01 extra old changeStream play ' + (rejectLate ? 'rejection' : 'success') + ' cannot clean up current encoding', async () => {
+        const fixture = makeStopBoundaryFixture();
+        await startQueueItem(fixture, [makeItem('A')], 'session-A');
+        const encodingStops = [];
+        fixture.apiClient.stopActiveEncodings = sessionId => {
+            encodingStops.push(sessionId);
+            return Promise.resolve();
+        };
+        const oldPlayGate = deferred();
+        const originalPlay = fixture.player.play;
+        fixture.player.play = stream => {
+            if (stream.playSessionId !== 'session-A-old') return originalPlay.call(fixture.player, stream);
+            fixture.calls.play.push(stream);
+            return oldPlayGate.promise;
+        };
+        const oldChange = fixture.manager.setAudioStreamIndex(1).catch(error => error);
+        await waitFor(() => fixture.calls.metadata.length === 2, 'old audio metadata starts');
+        const oldSource = makeMediaSource('A', 'session-A-old');
+        oldSource.SupportsTranscoding = false;
+        fixture.calls.metadata[1].pending.resolve({MediaSources: [oldSource], PlaySessionId: 'session-A-old'});
+        await waitFor(() => fixture.calls.play.length === 2, 'old audio play is pending');
+        const newChange = fixture.manager.setAudioStreamIndex(2);
+        await waitFor(() => fixture.calls.metadata.length === 3, 'new audio metadata starts');
+        fixture.resolveMetadata(2, 'session-A-new');
+        await newChange;
+        const newestStream = fixture.player.streamInfo;
+        const stopsBeforeStale = encodingStops.slice();
+        const reportsBeforeStale = JSON.stringify(fixture.calls.reports);
+        assert.deepEqual(stopsBeforeStale, ['session-A', 'session-A', 'session-A']);
+        if (rejectLate) oldPlayGate.reject(new Error('old audio play failed'));
+        else oldPlayGate.resolve();
+        await oldChange;
+        await settle();
+        assert.deepEqual(encodingStops, stopsBeforeStale, 'stale completion performs no encoding cleanup');
+        assert.equal(fixture.player.streamInfo, newestStream);
+        assert.equal(fixture.player.streamInfo.playSessionId, 'session-A-new');
+        assert.equal(JSON.stringify(fixture.calls.reports), reportsBeforeStale);
+        assert.equal(fixture.calls.alerts.length, 0);
+    });
+}
+
+for (const rejectLate of [false, true]) {
+    test('PLAY-01 extra initial player.play late ' + (rejectLate ? 'rejection' : 'success') + ' cannot revive A after Stop and B', async () => {
+        const fixture = makeStopBoundaryFixture();
+        const initialGate = deferred();
+        const originalPlay = fixture.player.play;
+        fixture.player.play = stream => {
+            if (stream.item.Id !== 'A') return originalPlay.call(fixture.player, stream);
+            fixture.calls.play.push(stream);
+            return initialGate.promise;
+        };
+        const oldRequest = fixture.manager.play({items: [makeItem('A')], fullscreen: true}).catch(error => error);
+        await waitFor(() => fixture.calls.metadata.length === 1, 'initial A metadata starts');
+        const source = makeMediaSource('A', 'session-A');
+        source.SupportsTranscoding = false;
+        fixture.calls.metadata[0].pending.resolve({MediaSources: [source], PlaySessionId: 'session-A'});
+        await waitFor(() => fixture.calls.play.length === 1, 'initial A player.play is pending');
+        assert.equal(fixture.calls.playbackStarts.length, 0);
+        await fixture.manager.stop();
+        const streamB = await startPublicItem(fixture, 'B');
+        const reportsBeforeRelease = JSON.stringify(fixture.calls.reports);
+        if (rejectLate) initialGate.reject(new Error('late initial A load failure'));
+        else initialGate.resolve();
+        await oldRequest;
+        await settle();
+        assert.equal(fixture.player.streamInfo, streamB);
+        assert.equal(JSON.stringify(fixture.calls.reports), reportsBeforeRelease);
+        assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStart'), [
+            {itemId: 'B', playSessionId: 'session-B', mediaSourceId: 'media-B'}
+        ]);
+        assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), []);
+        assert.equal(fixture.calls.alerts.length, 0);
+        assert.equal(fixture.calls.playbackCancelled.length, 0);
+        await fixture.manager.stop();
+        await settle();
+        assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), [
+            {itemId: 'B', playSessionId: 'session-B', mediaSourceId: 'media-B'}
+        ]);
+    });
+}
+
+for (const rejectMetadata of [false, true]) {
+    test('PLAY-01 extra current changeStream automatic retry propagates metadata ' + (rejectMetadata ? 'rejection' : 'ErrorCode'), async () => {
+        const fixture = makeStopBoundaryFixture();
+        await startQueueItem(fixture, [makeItem('A')], 'session-A');
+        fixture.player.play = stream => {
+            fixture.calls.play.push(stream);
+            return Promise.reject(new Error('current audio load needs retry'));
+        };
+        const outcome = fixture.manager.setAudioStreamIndex(2).then(
+            value => ({status: 'fulfilled', value}),
+            error => ({status: 'rejected', error})
+        );
+        await waitFor(() => fixture.calls.metadata.length === 2, 'audio metadata starts');
+        fixture.resolveMetadata(1, 'session-A');
+        await waitFor(() => fixture.calls.metadata.length === 3, 'actual onPlaybackError automatic retry starts');
+        const retryError = new Error('retry playback metadata failed');
+        if (rejectMetadata) fixture.rejectMetadata(2, retryError);
+        else fixture.calls.metadata[2].pending.resolve({ErrorCode: 'NoCompatibleStream'});
+        const result = await outcome;
+        await settle();
+        assert.equal(fixture.calls.play.length, 2, 'failed retry metadata causes no third load');
+        assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), []);
+        assert.equal(fixture.player.streamInfo.item.Id, 'A');
+        assert.equal(fixture.player.streamInfo.playSessionId, 'session-A');
+        assert.equal(result.status, 'rejected', 'current retry failure must reach the original action caller');
+        if (rejectMetadata) assert.equal(result.error, retryError);
+        else assert.equal(result.error.errorCode, 'NoCompatibleStream');
+        await fixture.manager.stop();
+        await settle();
+        assertOnlyAStopped(fixture);
+    });
+}
+
+async function startPendingAutomaticRetry(fixture) {
+    await startQueueItem(fixture, [makeItem('A')], 'session-A');
+    const encodingStops = [];
+    fixture.apiClient.stopActiveEncodings = sessionId => {
+        encodingStops.push(sessionId);
+        return Promise.resolve();
+    };
+    const originalPlay = fixture.player.play;
+    let failedOnce = false;
+    fixture.player.play = stream => {
+        if (failedOnce) return originalPlay.call(fixture.player, stream);
+        failedOnce = true;
+        fixture.calls.play.push(stream);
+        return Promise.reject(new Error('current audio load needs one automatic retry'));
+    };
+    const outcome = fixture.manager.setAudioStreamIndex(1).then(
+        value => ({status: 'fulfilled', value}),
+        error => ({status: 'rejected', error})
+    );
+    await waitFor(() => fixture.calls.metadata.length === 2, 'first audio metadata starts');
+    fixture.resolveMetadata(1, 'session-A');
+    await waitFor(() => fixture.calls.metadata.length === 3, 'actual automatic retry metadata is pending');
+    assert.equal(fixture.calls.play.length, 2);
+    return {outcome, encodingStops};
+}
+
+for (const rejectLate of [false, true]) {
+    test('PLAY-01 retry boundary late metadata ' + (rejectLate ? 'rejection' : 'success') + ' after Stop cannot affect B', async () => {
+        const fixture = makeStopBoundaryFixture();
+        const {outcome, encodingStops} = await startPendingAutomaticRetry(fixture);
+        await fixture.manager.stop();
+        await settle();
+        assertOnlyAStopped(fixture);
+        const streamB = await startPublicItem(fixture, 'B');
+        const reportsBeforeStale = JSON.stringify(fixture.calls.reports);
+        const encodingBeforeStale = encodingStops.slice();
+        if (rejectLate) fixture.rejectMetadata(2, new Error('old retry metadata failed after Stop'));
+        else fixture.resolveMetadata(2, 'session-A-retry-late');
+        const result = await outcome;
+        await settle();
+        assert.equal(result.status, 'fulfilled', 'superseded retry is ignored by its original caller');
+        assert.equal(fixture.player.streamInfo, streamB);
+        assert.equal(fixture.player.streamInfo.playSessionId, 'session-B');
+        assert.deepEqual(fixture.calls.play.map(stream => stream.item.Id), ['A', 'A', 'B']);
+        assert.deepEqual(encodingStops, encodingBeforeStale, 'old retry has no encoding cleanup after B starts');
+        assert.equal(JSON.stringify(fixture.calls.reports), reportsBeforeStale);
+        assert.equal(fixture.calls.alerts.length, 0);
+        assert.equal(fixture.calls.playbackCancelled.length, 0);
+        await fixture.manager.stop();
+        await settle();
+        assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), [
+            {itemId: 'A', playSessionId: 'session-A', mediaSourceId: 'media-A'},
+            {itemId: 'B', playSessionId: 'session-B', mediaSourceId: 'media-B'}
+        ]);
+    });
+}
+
+test('PLAY-01 retry boundary late rejection cannot clear a newer pending stream change owner', async () => {
+    const fixture = makeStopBoundaryFixture();
+    const {outcome, encodingStops} = await startPendingAutomaticRetry(fixture);
+    const newPlayGate = deferred();
+    fixture.player.play = stream => {
+        fixture.calls.play.push(stream);
+        return newPlayGate.promise;
+    };
+    const newerChange = fixture.manager.setAudioStreamIndex(2);
+    await waitFor(() => fixture.calls.metadata.length === 4, 'new action metadata starts while old retry is pending');
+    fixture.resolveMetadata(3, 'session-A-new');
+    await waitFor(() => fixture.calls.play.length === 3, 'new action player.play is pending');
+    const newestOwner = fixture.player._eteStreamChange;
+    assert.ok(newestOwner, 'new pending action owns stream change');
+    assert.equal(fixture.player.isChangingStream, true);
+    const encodingBeforeStale = encodingStops.slice();
+    const reportsBeforeStale = JSON.stringify(fixture.calls.reports);
+    fixture.rejectMetadata(2, new Error('superseded retry metadata failed'));
+    const oldResult = await outcome;
+    await settle();
+    const ownerAfterStale = fixture.player._eteStreamChange;
+    const changingAfterStale = fixture.player.isChangingStream;
+    const encodingAfterStale = encodingStops.slice();
+    const reportsAfterStale = JSON.stringify(fixture.calls.reports);
+    newPlayGate.resolve();
+    await newerChange;
+    await settle();
+    assert.equal(oldResult.status, 'fulfilled');
+    assert.equal(ownerAfterStale, newestOwner, 'old retry cleanup cannot clear the new owner');
+    assert.equal(changingAfterStale, true, 'old retry cleanup cannot unmark new pending player.play');
+    assert.deepEqual(encodingAfterStale, encodingBeforeStale);
+    assert.equal(reportsAfterStale, reportsBeforeStale);
+    assert.equal(fixture.player.streamInfo.playSessionId, 'session-A-new');
+    assert.equal(fixture.player.audioStreamIndex, 2);
+    assert.equal(fixture.calls.play.length, 3);
+    assert.equal(fixture.calls.alerts.length, 0);
+    assert.equal(fixture.calls.playbackCancelled.length, 0);
+    await fixture.manager.stop();
+    await settle();
+    assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), [
+        {itemId: 'A', playSessionId: 'session-A-new', mediaSourceId: 'media-A'}
+    ]);
+});
+
+for (const emitStoppedBeforeReject of [false, true]) {
+    test('PLAY-01 terminal rejection settles public Play and admits later C ' +
+        (emitStoppedBeforeReject ? 'after stopped event' : 'before stopped event'), async () => {
+        const fixture = makeStopBoundaryFixture();
+        await startQueueItem(fixture, [makeItem('A')], 'session-A');
+        const terminalGate = deferred();
+        const terminalError = new Error('controlled physical terminal Stop rejection');
+        const originalStop = fixture.player.stop;
+        let physicalTerminalCalls = 0;
+        fixture.player.stop = (...args) => {
+            if (args[0] !== true) return originalStop.apply(fixture.player, args);
+            fixture.calls.stop.push(args);
+            physicalTerminalCalls++;
+            if (emitStoppedBeforeReject) fixture.events.trigger(fixture.player, 'stopped');
+            return terminalGate.promise;
+        };
+        const outcomes = {};
+        function captureOutcome(name, promise) {
+            return promise.then(
+                value => { outcomes[name] = {status: 'fulfilled', value}; },
+                error => { outcomes[name] = {status: 'rejected', error}; }
+            );
+        }
+        const firstStop = fixture.manager.stop();
+        const duplicateStop = fixture.manager.stop();
+        const firstStopOutcome = captureOutcome('firstStop', firstStop);
+        const duplicateStopOutcome = captureOutcome('duplicateStop', duplicateStop);
+        assert.equal(firstStop, duplicateStop, 'repeat Stop shares the terminal completion promise');
+        assert.equal(physicalTerminalCalls, 1, 'repeat Stop does not issue another physical stop');
+        assert.equal(fixture.manager._eteTerminalStop, firstStop);
+        const publicPlayOutcome = captureOutcome('publicPlay', fixture.manager.play({
+            items: [makeItem('B')], fullscreen: true
+        }));
+        await settle();
+        assert.equal(outcomes.publicPlay, undefined, 'B is pending while physical A Stop is unresolved');
+        assert.equal(fixture.calls.metadata.length, 1, 'B cannot request metadata before terminal completion');
+        assert.equal(fixture.calls.play.length, 1, 'only A has loaded while Stop is pending');
+        terminalGate.reject(terminalError);
+        await waitFor(() => outcomes.firstStop && outcomes.duplicateStop && outcomes.publicPlay,
+            'terminal rejection must settle both Stop callers and pending public Play B');
+        await Promise.all([firstStopOutcome, duplicateStopOutcome, publicPlayOutcome]);
+        assert.equal(outcomes.firstStop.status, 'rejected');
+        assert.equal(outcomes.firstStop.error, terminalError, 'first Stop preserves the physical error object');
+        assert.equal(outcomes.duplicateStop.status, 'rejected');
+        assert.equal(outcomes.duplicateStop.error, terminalError, 'repeat Stop preserves the same error object');
+        assert.equal(outcomes.publicPlay.status, 'rejected', 'B settles as a failure rather than waiting forever');
+        assert.equal(fixture.manager._eteTerminalStop, null, 'rejected terminal fence is released');
+        assert.equal(fixture.calls.metadata.length, 1, 'failed B never enters metadata');
+        assert.equal(fixture.calls.play.length, 1, 'failed B never loads');
+        assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), emitStoppedBeforeReject ? [
+            {itemId: 'A', playSessionId: 'session-A', mediaSourceId: 'media-A'}
+        ] : [], 'A is reported stopped only after its actual stopped event or replacement cleanup');
+        fixture.player.stop = originalStop;
+        const streamC = await startPublicItem(fixture, 'C');
+        assert.equal(streamC.mediaSource.Id, 'media-C');
+        assert.equal(fixture.manager._eteTerminalStop, null);
+        assert.deepEqual(fixture.calls.play.map(stream => stream.item.Id), ['A', 'C']);
+        assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStart'), [
+            {itemId: 'A', playSessionId: 'session-A', mediaSourceId: 'media-A'},
+            {itemId: 'C', playSessionId: 'session-C', mediaSourceId: 'media-C'}
+        ]);
+        assertOnlyAStopped(fixture);
+        await fixture.manager.stop();
+        await settle();
+        assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), [
+            {itemId: 'A', playSessionId: 'session-A', mediaSourceId: 'media-A'},
+            {itemId: 'C', playSessionId: 'session-C', mediaSourceId: 'media-C'}
+        ], 'failed B has no session report and A/C retain exactly one matching Stopped each');
+    });
+}
+
+for (const responseOrder of [[2, 3], [3, 2]]) {
+    test('PLAY-01 real Previous and Next pending across Stop ignore response order ' + responseOrder.join(','), async () => {
+        const fixture = makeStopBoundaryFixture();
+        const items = [makeItem('A'), makeItem('B'), makeItem('C')];
+        await startQueueItem(fixture, items, 'session-A');
+        const startB = fixture.manager.nextTrack();
+        await waitFor(() => fixture.calls.metadata.length === 2, 'Next requests B metadata');
+        assert.equal(fixture.calls.metadata[1].itemId, 'B');
+        fixture.resolveMetadata(1, 'session-B');
+        await startB;
+        await settle();
+        assert.equal(fixture.queue.currentIndex, 1);
+        assert.equal(fixture.player.streamInfo.item.Id, 'B');
+        assert.equal(fixture.player.streamInfo.playSessionId, 'session-B');
+
+        const pendingNext = fixture.manager.nextTrack().catch(error => error);
+        await waitFor(() => fixture.calls.metadata.length === 3, 'Next requests C metadata');
+        assert.equal(fixture.calls.metadata[2].itemId, 'C');
+        assert.equal(fixture.queue.currentIndex, 1, 'pending C has not advanced the started playlist index');
+        const pendingPrevious = fixture.manager.previousTrack().catch(error => error);
+        await waitFor(() => fixture.calls.metadata.length === 4, 'real Previous starts a metadata request');
+        assert.equal(fixture.calls.metadata[3].itemId, 'A', 'Previous selects the item before started B');
+        assert.equal(items[0].playOptions.command, 'previousTrack', 'Previous enters its real playInternal path');
+        await fixture.manager.stop();
+        await settle();
+        const expectedAB = [
+            {itemId: 'A', playSessionId: 'session-A', mediaSourceId: 'media-A'},
+            {itemId: 'B', playSessionId: 'session-B', mediaSourceId: 'media-B'}
+        ];
+        assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStart'), expectedAB);
+        assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), expectedAB);
+        assert.equal(fixture.calls.play.length, 2);
+        assert.equal(fixture.calls.playbackStarts.length, 2);
+        const reportsAfterStop = JSON.stringify(fixture.calls.reports);
+        for (const metadataIndex of responseOrder) {
+            fixture.resolveMetadata(metadataIndex, metadataIndex === 2 ? 'session-C-late' : 'session-A-previous-late');
+            await settle();
+            assert.equal(fixture.calls.play.length, 2, 'each old response cannot add a load after Stop');
+            assert.equal(fixture.calls.playbackStarts.length, 2, 'each old response cannot add playbackstart');
+            assert.equal(JSON.stringify(fixture.calls.reports), reportsAfterStop, 'each old response leaves session reports unchanged');
+        }
+        await Promise.all([pendingNext, pendingPrevious]);
+        assert.equal(fixture.calls.alerts.length, 0);
+        assert.equal(fixture.calls.playbackCancelled.length, 0);
+
+        const streamD = await startPublicItem(fixture, 'D');
+        assert.equal(streamD.mediaSource.Id, 'media-D');
+        assert.deepEqual(fixture.calls.play.map(stream => stream.item.Id), ['A', 'B', 'D']);
+        assert.equal(fixture.calls.playbackStarts.length, 3);
+        const expectedABD = expectedAB.concat([
+            {itemId: 'D', playSessionId: 'session-D', mediaSourceId: 'media-D'}
+        ]);
+        assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStart'), expectedABD);
+        assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), expectedAB);
+        await fixture.manager.stop();
+        await settle();
+        assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), expectedABD,
+            'A, B, and the new explicit D each retain exactly one correctly paired session stop');
+    });
+}

@@ -28,8 +28,9 @@ function git(root, args) {
     assert.equal(result.status, 0, result.stderr || result.error && result.error.message);
     return result.stdout.trim();
 }
-function setup(t) {
-    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'build-input-contract-'));
+function setup(t, temporaryRoot = os.tmpdir()) {
+    // Windows TEMP may use an 8.3 alias; fixtures must start at their physical path.
+    const base = fs.realpathSync.native(fs.mkdtempSync(path.join(temporaryRoot, 'build-input-contract-')));
     t.after(() => fs.rmSync(base, {recursive: true, force: true}));
     const repo = path.join(base, 'repo');
     const runtime = path.join(base, 'runtime');
@@ -51,6 +52,25 @@ function setup(t) {
     git(repo, ['commit', '-q', '-m', 'fixture']);
     return {base, repo, runtime, sourceCommit: git(repo, ['rev-parse', 'HEAD']), configBase};
 }
+
+test('temporary parent aliases produce a physical build input fixture', t => {
+    const parent = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'build-input-temp-alias-')));
+    t.after(() => fs.rmSync(parent, {recursive: true, force: true}));
+    const physical = path.join(parent, 'physical');
+    const alias = path.join(parent, 'alias');
+    fs.mkdirSync(physical);
+    fs.symlinkSync(physical, alias, process.platform === 'win32' ? 'junction' : 'dir');
+    const fixture = setup(t, alias);
+    assert.equal(path.dirname(fixture.base), physical);
+    assert.equal(fs.lstatSync(fixture.base).isSymbolicLink(), false);
+    assert.equal(fs.realpathSync.native(fixture.repo), fixture.repo);
+    assert.equal(contract.inspect(fixture.repo, fixture.sourceCommit).files.length, contract.INPUT_PATHS.length);
+    const docs = path.join(fixture.repo, 'docs');
+    const redirected = path.join(fixture.base, 'redirected-docs');
+    fs.renameSync(docs, redirected);
+    fs.symlinkSync(redirected, docs, process.platform === 'win32' ? 'junction' : 'dir');
+    assert.throws(() => contract.inspect(fixture.repo, fixture.sourceCommit), /links or redirects are forbidden/);
+});
 
 test('build input directory junctions are rejected even when their bytes match', t => {
     const fixture = setup(t);

@@ -1,4 +1,5 @@
 const test = require('node:test');
+const {eventFor} = require('./helpers/trusted-renderer.cjs');
 const assert = require('node:assert/strict');
 const http = require('node:http');
 
@@ -613,8 +614,8 @@ test('IPC exposes only trusted resolve and cancel operations', async () => {
     });
 
     assert.equal((await handlers[cd2Ipc.RESOLVE_CHANNEL]({sender: {}}, {requestId: 'bad'})).reason, 'untrusted_sender');
-    await handlers[cd2Ipc.RESOLVE_CHANNEL]({sender: trusted}, {requestId: 'good'});
-    listeners[cd2Ipc.CANCEL_CHANNEL]({sender: trusted}, {requestId: 'good'});
+    await handlers[cd2Ipc.RESOLVE_CHANNEL](eventFor(trusted), {requestId: 'good'});
+    listeners[cd2Ipc.CANCEL_CHANNEL](eventFor(trusted), {requestId: 'good'});
     unregister();
     assert.deepEqual(calls, [['resolve', 'good'], ['cancel', 'good'], ['close']]);
 });

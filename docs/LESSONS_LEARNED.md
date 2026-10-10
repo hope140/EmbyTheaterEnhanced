@@ -1,5 +1,13 @@
 # 已确认经验
 
+## 2026-10-10 — 独立审核与证据门槛
+
+- 对初始Play加generation守卫不能证明changeStream成功路径安全；每个异步入口必须单独验证Stop后迟到回调。
+- terminal解绑client与真实child退出是两件事；pending退出集合应覆盖renderer destroy与transport terminal，但已settled错误不擅自扩展为永久历史错误。
+- 本轮用户明确批准异常清理新contract，允许全部settled后清理listeners/surface并保持原错；旧“保留短路”的阶段经验不能覆盖新授权。
+- webContents身份不是frame/document身份；局部门槛不消除同一renderer世界中的宽fs/rawIPC风险。
+- 干净公开checkout与具有私有vendor的全量测试须分层。审核/测试启动后不得并发修改其输入；发现共享树变化时作废受影响运行并在独立树重验，不能引用混合输入为固定SHA通过。
+
 ## 2026-10-10 — async IPC内部的大文件工作仍需让出main
 
 - 将IPC handler标为async不能消除内部readFileSync/SHA256阻塞；将readFile改为Promise后一次性hash整个DLL仍会占用main。大文件应异步分块读，每次同步hash有明确字节上限。

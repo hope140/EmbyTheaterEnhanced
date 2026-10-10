@@ -1,6 +1,7 @@
 'use strict';
 
 const fs = require('fs');
+const rendererBoundary = require('./renderer-boundary');
 
 const cd2Service = require('./cd2-service');
 const pathRules = require('../resolvers/path-rules');
@@ -46,7 +47,7 @@ function register(options) {
 
     function isTrusted(event) {
         const expected = typeof getWebContents === 'function' ? getWebContents() : null;
-        return !!expected && event && event.sender === expected;
+        return rendererBoundary.isTrusted(event, expected);
     }
 
     function rejectUntrusted() {

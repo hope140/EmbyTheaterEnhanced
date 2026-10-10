@@ -1,4 +1,5 @@
 'use strict';
+const {eventFor} = require('./helpers/trusted-renderer.cjs');
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -88,7 +89,7 @@ function createConfigIpcHarness(serviceFactory, options) {
 }
 
 function invoke(harness, channel, payload, sender) {
-    return harness.handlers[channel]({sender: sender || harness.trusted}, payload);
+    return harness.handlers[channel](eventFor(sender || harness.trusted), payload);
 }
 
 test('preview IPC enforces the eight-sample limit at the trusted boundary', async () => {
@@ -702,11 +703,11 @@ test('config IPC trusts only the active renderer and never returns a secret', as
 
     const rejected = await handlers[configIpc.CHANNELS.GET]({sender: {}});
     assert.equal(rejected.reason, 'untrusted_sender');
-    await handlers[configIpc.CHANNELS.SET_TOKEN]({sender: trusted}, {token: 'ipc-secret-value'});
-    const publicConfig = await handlers[configIpc.CHANNELS.GET]({sender: trusted});
+    await handlers[configIpc.CHANNELS.SET_TOKEN](eventFor(trusted), {token: 'ipc-secret-value'});
+    const publicConfig = await handlers[configIpc.CHANNELS.GET](eventFor(trusted));
     assert.equal(publicConfig.cd2.tokenConfigured, true);
     assert.doesNotMatch(JSON.stringify(publicConfig), /ipc-secret-value/);
-    assert.deepEqual(await handlers[configIpc.CHANNELS.TEST_CONNECTION]({sender: trusted}), {
+    assert.deepEqual(await handlers[configIpc.CHANNELS.TEST_CONNECTION](eventFor(trusted)), {
         status: 'ok',
         reason: 'connected',
         connectionStatus: 'connected',

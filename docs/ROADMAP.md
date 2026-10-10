@@ -1,8 +1,20 @@
 # Development Roadmap
 
-本页是 Emby Theater Enhanced 后续计划的正式来源。当前完整源码与文档以 `main` 为准，测试包以v0.2.7的固定产品来源为准。问题的复现情况见 [Known Issues](KNOWN_ISSUES.md)，已完成工作的证据见 [项目状态](PROJECT_STATUS.md) 与 [测试记录](TESTING.md)。
+本页是 Emby Theater Enhanced 后续计划的正式来源。公开维护基线以 `main` 为准，公开测试包仍为v0.2.7；本地统一候选单独固定sourceCommit，不代表已合入main或发布。问题的复现情况见 [Known Issues](KNOWN_ISSUES.md)，已完成工作的证据见 [项目状态](PROJECT_STATUS.md) 与 [测试记录](TESTING.md)。
 
-## 当前里程碑（2026-10-10 会话与文件复核）
+## 当前里程碑（2026-10-10 CI028 Hosted GREEN / READY_FOR_MERGE）
+
+用户授权后CI修复六提交快进并普通推送至统一候选db9ccde，原工作树三份文档hash不变。新增五测试来源已核对，旧测试与排除没有删除；[Hosted run 38040747159](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38040747159)公开657/657、诊断和全部静态实际success。主线程diff与产品输入复核通过，当前工程状态 **READY_FOR_MERGE**；按用户条件创建main目标PR，后续文档/PR checks分别绑定实际HEAD，不自动合并。产品runtime仍b139d87，未重建；[完整远端证据](CI028_HOSTED_VALIDATION.md)。以下本地READY_FOR_PUSH说明为该阶段历史快照。
+
+统一候选已按此前授权推送至 `codex/integration-028-candidate@aa86ddc`，用户六项真实播放验收为 **USER_ACCEPTANCE_PASS**；产品/runtime来源仍为 `b139d87da06cfba153a828766926b78230be4a0f`。Hosted run 38036913645 的626 PASS/26 FAIL原证据保留。
+
+本轮独立分支 `codex/ci028-windows-compat` 固定代码 `5b1e092`，仅修测试fixture物理路径、reporter BOM、编码回归与CI匿名诊断；公开657/657、独立6/6、语法/有限敏感/diff均通过。34项构建输入及产品目录与b139d87一致，不重建原runtime。状态 **READY_FOR_PUSH**；等待单独授权更新远端并执行新的Hosted CI，尚未READY_FOR_MERGE。详见 [CI028](CI028_WINDOWS_COMPAT.md)。字幕/音轨延迟P2/LEGACY_BEHAVIOR/ACCEPTED_WITH_FOLLOWUP；安装四阶段NOT_EXECUTED按用户确认不作为本次推送前置条件。本轮不扩展它们的实现范围。
+
+### 统一候选工程验收历史快照
+
+本轮从实际远端main `0b782ddec404f4148cb6c8c16f19bc22201d3252` 创建独立工作树，统一PLAY-01、SEC-01/02、LIFE-01/02、CI-01与相关报告，人工冲突0；原工作区及修复分支保留。候选固定sourceCommit为 `b139d87da06cfba153a828766926b78230be4a0f`，状态 **READY_FOR_USER_ACCEPTANCE**。最终全量723/723、独立核心119/119、实际构建manager字节48/48与八组新隔离runtime通过，原始Session报告独立复算25对，运行后payload哈希与零残留验证通过。公开离线runner652/652，六份材料依赖文件明确排除，已在完整全量执行；托管Actions未执行。准确来源、顺序与证据等级见 [统一候选](INTEGRATION_028_CANDIDATE.md) 和 [机器证据](evidence/integration-028-candidate.json)。
+
+组合工程验收已完成，等待实际使用验收；真实Emby/CD2、真实远控、画面及安装生命周期未执行。原PLAY-01独立来源及RED/GREEN记录见 [专项报告](PLAY01_STOP_BOUNDARY.md)，独立审核与历史证据继续保留，入口见 [交付验收](REVIEW_028_DELIVERY.md)、[播放矩阵](RELEASE_ACCEPTANCE_MATRIX.md)、[安装卡](INSTALLER_LIFECYCLE_CARD.md)。以下0.2.7发布数据保留历史身份。
 
 0.2.7产品d8fcb0f9和获审阅的安装器已按原字节发布为Pre-release，完整源码、文档及原始审核证据已通过 [PR #21](https://github.com/hope140/EmbyTheaterEnhanced/pull/21) 合入main，整合提交ef4fcf58。整体审核直接使用main并记录实际HEAD，入口见 [AI审核指南](AI_REVIEW_GUIDE.md)；发布与合并核验见 [0.2.7发布记录](RELEASE_027.md) 和 [主线收尾](MAIN_CLOSEOUT_027.md)。
 
@@ -10,22 +22,25 @@
 
 grpc-js 1.14.6、About随包版本/刷新及异步校验均已进入main与0.2.7完整维护栈。旧6815d2f/7ec6ace与dbee15af/7cc7eb85仍为各自阶段的来源，最终产品采用d8fcb0f9、观测工具0e87d4f。原公开v0.2.6/355f4e6保持其历史身份。
 
-0.2.7最终产品全量651/651、工具42/42、父会话53/53，十组串行隔离运行及About初始/ready IPC通过。安装器175,632,871 bytes，SHA256为86bee55146714f4f7e493cadb8b483537644f513c92364df7fc0c18f5315f3db；解包与runtime各2,137文件一致。旧observer误判FAIL和原证据层级保留；本轮远端公开只复制获核验产物和证据，不重建或重跑相同产品。
+0.2.7最终产品全量651/651、工具42/42、父会话53/53，十组串行隔离运行及About初始/ready IPC通过。安装器175,632,871 bytes，SHA256为86bee55146714f4f7e493cadb8b483537644f513c92364df7fc0c18f5315f3db；解包与runtime各2,137文件一致。旧observer误判FAIL和原证据层级保留；该发布轮次只复制获核验产物和证据，没有重建或重跑相同产品。本次独立审核未执行远端写入。
 
 用户已开始日常使用，暂未报告新问题；不再把“等待开始使用”作为工程阻塞，也不扩展成所有真实场景均已验收。早期直接app.exit超时仍为UNKNOWN；完整安装生命周期、真实服务专项、可见连续性、HDR/多屏继续独立记录。前期优先级的历史快照见 [结构化复核记录](evidence/project-priorities-20261010.json)，后续完成事实以本页当前状态和 [主线收尾记录](evidence/main-closeout-027-20261010.json)为准。
 
 ## 后续优先级与里程碑
 
-下表只列未完成事项。原A1维护整合、D1项目规则收口、R1测试版发布均已完成，不再占用待办。当前没有经确认的未处理P0阻断；A2的P1表示收到独立审核后的处理顺序，不预设审核一定发现P1产品故障。日常使用反馈继续作为观察来源。
+下表只列尚未关闭的工程与验收事项。原A1/D1/R1及独立审核已经完成；发现P1不等于真实用户环境已发生，具体复现层级以独立报告为准。
 
 | 优先级 / 编号 | 工作与当前状态 | 可自主推进的准备 | 完成标准 / 需要用户参与 |
 |---|---|---|---|
-| P1 / A2 | 独立整体审核反馈，WAITING_REVIEW | main、审核指南、计划与原始证据已齐备；收到意见后逐项核对触发条件和来源 | 用户将其它AI审核结果带回；对确认问题按严重度修复并验证，对误报或证据不足项记录理由。尚未收到意见不重复改写稳定实现 |
+| P1 / PLAY-01、SEC-01/02、LIFE-02；P2 / LIFE-01 | INTEGRATED / USER_ACCEPTANCE_PASS | b139d87统一来源；原723项全量、119项独立核心、八组runtime及25对Session保留来源；六项用户真实播放PASS | 远端CI阻断解除且获单独授权后再PR/main整合，LIFE-02保持依赖LIFE-01 |
+| P2 / CI-01、CI028 | HOSTED_GREEN / READY_FOR_MERGE；原RED保留 | db9ccde Hosted657/657、全部静态/诊断实际success；原本地657/657及独立6/6保持来源；六材料NOT_EXECUTED；生产validator不变 | PR最新HEAD检查与最后diff回读后等用户决定是否合并；不自动merge或发布 |
+| P2 / QA-01 | OFFLINE_MATRIX_VERIFIED / SIX_USER_CASES_PASS | 原runtime八组与PLAY-01确定性门控保留来源；六项真实验收按用户报告记录 | 未覆盖场景与专项层级单列；P2字幕/音轨延迟accepted followup，本轮不修改 |
+| P2 / SEC-02后续 | DESIGN_REQUIRED | 主frame/导航已局部加固；fs/rawIPC/CORS/CSP/isolation依赖已列明 | 窄preload接口与兼容性设计；不能直接整体启用隔离开关 |
 | P2 / T1 | 有界核查完成，WAITING_EXTERNAL | 160项实体回读一致，三轮查询和四类缺口已记录于 [材料收尾](THIRD_PARTY_MATERIALS_CLOSEOUT_027.md) | 外部材料到达后按准确身份接续，索取需单独授权发送 |
-| P2 / I1 | 安装生命周期，独立环境待安排 | 干净安装、原位升级、卸载、重装四阶段检查与回滚方案已准备 | 用户确认测试环境及系统安装范围后执行；核对设置/DeviceId预期保留、快捷方式和非预期残留，不覆盖日常客户端 |
+| P2 / INST-01 | PREPARED / REAL NOT_EXECUTED | 四阶段卡与只读目录/DeviceId快照工具、合成验证已准备 | 独立VM和系统安装范围授权后执行v0.2.2→候选升级、卸载、重装；不使用历史0.1.x脚本冒充当前验收 |
 | P3 / H1 | 全屏圆角、混合DPI/多屏、HDR专项，DEFERRED | 最小场景、当前候选身份与观察项已整理 | 有相应设备/新样本并确认前台验证后执行；先定位再决定局部修复，不扩大为显示链重构 |
 
-已完成里程碑：M1完整维护审阅并合入main；M2发布并完整回读0.2.7测试安装包。下一里程碑M3为独立整体审核意见处置完成：确认的问题有复现、修复和相称验证，证据不足项有明确结论。其后M4为稳定版范围决策：结合安装生命周期与第三方材料处置结果，明确可发布范围和仍保留的验收边界。M4不要求立即补齐所有硬件场景，也不将日常使用反馈替代专项验收。
+已完成里程碑：M1完整维护审阅并合入main；M2发布并完整回读0.2.7测试安装包；M3确定问题的独立修复、统一候选工程验收、用户六项实际使用验收与CI028 Hosted GREEN。候选与CI修复已推独立远端分支，按授权准备PR；主线合并及发布仍需单独授权。其后M4为稳定版范围决策：结合真实场景、安装生命周期与第三方材料处置结果，明确可发布范围和仍保留的验收边界。M4不要求立即补齐所有硬件场景，也不将日常使用反馈替代专项验收。
 
 ### 项目规则收口与全局候选范围
 
@@ -103,7 +118,7 @@ v0.2.6已包含每请求options快照、pending报告抑制、捕获stream的Sto
 
 ## NOW
 
-当前可直接把GitHub main交给其它AI整体审核，随后按A2处置返回意见。已有工程维护、审核、测试包、发布、主线整合及当前文档导航全部收尾；材料T1等待准确外部输入，安装I1与显示H1等待相应环境。现阶段不重复开发已完成的grpc/About功能，不重复发布同一产物。剩余事项的条件和用户参与点以上表为准。
+统一候选b139d87工程验收完成，交付runtime与报告，等待实际使用验收。保留各独立修复分支和原始失败证据；后续PR/main整合及发布须另行授权。材料T1仍WAITING_EXTERNAL，显示H1及历史观察维持原条件触发边界。
 
 ## 可选后续研究
 

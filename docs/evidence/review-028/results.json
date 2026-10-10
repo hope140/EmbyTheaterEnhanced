@@ -1,0 +1,444 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-10",
+  "timezone": "UTC+8",
+  "auditHead": "0b782ddec404f4148cb6c8c16f19bc22201d3252",
+  "productSource": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+  "evidencePolicy": "Original local bytes hashed; raw private filesystem exceptions remain outside Git. Independent branches, no merged product candidate.",
+  "stableReleaseReadiness": "BLOCKED_PLAY01_AND_PENDING_ACCEPTANCE",
+  "layers": {
+    "STATIC_VERIFIED": true,
+    "UNIT_VERIFIED": "scoped per task; PLAY-01 remains RED",
+    "ISOLATED_RUNTIME_VERIFIED": "NOT_EXECUTED",
+    "REAL_SERVER_VERIFIED": "NOT_EXECUTED",
+    "USER_VISUAL_ACCEPTED": "NOT_EXECUTED",
+    "SYSTEM_INSTALL": "NOT_EXECUTED"
+  },
+  "artifacts": [
+    {
+      "owner": "audit",
+      "worktreeName": "release-independent-audit",
+      "branch": "codex/sec02-frame-boundary",
+      "observedHead": "4d794119948ee4a9c13dbf724222bc25eabaf87c",
+      "modifiedFiles": [
+        "docs/SEC02_RENDERER_BOUNDARY.md",
+        "src/electronapp/enhanced/cd2-ipc.js",
+        "src/electronapp/enhanced/diagnostics-ipc.js",
+        "src/electronapp/enhanced/maintenance-ipc.js",
+        "src/electronapp/enhanced/renderer-boundary.js",
+        "src/electronapp/enhanced/strm-config-ipc.js",
+        "src/electronapp/main.js",
+        "src/electronapp/native-helper/service.js",
+        "tests/cd2-service.test.cjs",
+        "tests/client-diagnostics.test.cjs",
+        "tests/external-player-process-chain.test.cjs",
+        "tests/helpers/trusted-renderer.cjs",
+        "tests/p1-lifecycle-diagnostics.test.cjs",
+        "tests/renderer-boundary.test.cjs",
+        "tests/settings-visual-system.test.cjs",
+        "tests/strm-mapping-assistant.test.cjs",
+        "tests/strm-resolver-settings.test.cjs"
+      ],
+      "rawLocalEvidence": [
+        {
+          "path": ".work/audit-a1/change-stream-probe.log",
+          "bytes": 1631,
+          "sha256": "33b24dddb2d7d5e69b9164fb5834e0ebba9024a5861967f5c49e992fd5d105b0"
+        },
+        {
+          "path": ".work/audit-a1/player-tests.log",
+          "bytes": 2088,
+          "sha256": "15359c46d7a237199eb67e9d6877667d4898f8fce11cc5761f66255ad66c0634"
+        },
+        {
+          "path": ".work/audit-a1/review.md",
+          "bytes": 6693,
+          "sha256": "e50b3b6c4eff731348bd01c7342c72959cfa6feff9cf53afe128a3db1d9056b0"
+        },
+        {
+          "path": ".work/audit-a1/targeted-tests.log",
+          "bytes": 12395,
+          "sha256": "77e58a7b688d5040d116377f0f8363460c96df6c836175a5d1668b8e00857fcb"
+        },
+        {
+          "path": ".work/audit-a2/REPORT.md",
+          "bytes": 8562,
+          "sha256": "26d69c06755da939d3dabb9924dc23e752ec1be333f939db78f57f8ffb24a644"
+        },
+        {
+          "path": ".work/audit-a2/baseline-offline.exit.txt",
+          "bytes": 3,
+          "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+        },
+        {
+          "path": ".work/audit-a2/baseline-offline.log",
+          "bytes": 5852,
+          "sha256": "8114184cedc7ff07f8ced07998b5c9ca2de1678f8d7975d4c006763aff8790c2"
+        },
+        {
+          "path": ".work/audit-a2/lifecycle-repro-initial-fixture-error.log",
+          "bytes": 3176,
+          "sha256": "1856964b33c6d19f69b89c191de2a47f6bbaab9cf4a58a985d4610610ef01f8d"
+        },
+        {
+          "path": ".work/audit-a2/lifecycle-repro-second-fixture-error.log",
+          "bytes": 3176,
+          "sha256": "6c87fdfcd209555123eab68d47f2acad27b51e91b0266d151a424aae4740321e"
+        },
+        {
+          "path": ".work/audit-a2/lifecycle-repro.exit.txt",
+          "bytes": 3,
+          "sha256": "f1b2f662800122bed0ff255693df89c4487fbdcf453d3524a42d4ec20c3d9c04"
+        },
+        {
+          "path": ".work/audit-a2/lifecycle-repro.log",
+          "bytes": 2569,
+          "sha256": "48ae5aa154796cf46279e9af300481f1295433af53f14004c9d78b8bc331e371"
+        },
+        {
+          "path": ".work/audit-a2/receipt.json",
+          "bytes": 1814,
+          "sha256": "528372f275e0bdd37c6cffc0d3f14efef3adbeef4f5b32dc324c7355b633fb3b"
+        },
+        {
+          "path": ".work/audit-a4/audit-context.txt",
+          "bytes": 264,
+          "sha256": "c26dc1e9b461a113184c5f6093d8bd02efaed0674f3cce6e7886b1460a696c08"
+        },
+        {
+          "path": ".work/audit-a4/npm-ci.log",
+          "bytes": 27,
+          "sha256": "9828dfbb91f40ec5cf11de14e79b29aff3d7b1ba22c4635a840e4b82c64a6060"
+        },
+        {
+          "path": ".work/audit-a4/npm-test-serial.log",
+          "bytes": 71752,
+          "sha256": "89c88e6d30837ff89fdd6614d0dfd9b1e4d71edcbddd64294648203da1d3fa7d"
+        },
+        {
+          "path": ".work/audit-a4/public-test-files.txt",
+          "bytes": 8457,
+          "sha256": "22164e9b60d7c611dbc4c0e715c062240c04d3caf71aa01a29d2dfc11401ca4c"
+        },
+        {
+          "path": ".work/audit-a4/public-unit-tests.log",
+          "bytes": 58118,
+          "sha256": "cc4d8f7277d3445db01b6bc1eea200e7c45e4467abecd9d288644e631dff17db"
+        },
+        {
+          "path": ".work/sec02/fixture-import-failure.log",
+          "bytes": 14525,
+          "sha256": "9c70ac8e0bf0cfa2aa695e75a0372b251d11afb0c95373c43ffe512dfcb05ce1"
+        },
+        {
+          "path": ".work/sec02/green.log",
+          "bytes": 14055,
+          "sha256": "203af422e9e3e3b4f0f1cb48321f7612f7b71a50adc92a7ad513a19f4adfa27b"
+        },
+        {
+          "path": ".work/sec02/red.log",
+          "bytes": 4570,
+          "sha256": "9bb534624b3ed9ca7847f7ba646a4a28f9ede472301dd3876512f556171e86cb"
+        },
+        {
+          "path": ".work/sec02/targeted.log",
+          "bytes": 15714,
+          "sha256": "2fcc02f9feb33fea077fea35488f2e71b109939f5077d382c2c6dc968bab9531"
+        }
+      ]
+    },
+    {
+      "owner": "sec01",
+      "worktreeName": "audit-sec01",
+      "branch": "codex/sec01-external-links",
+      "observedHead": "4683ca148a49ca53df3b0e91058df10729bad917",
+      "modifiedFiles": [
+        "docs/SEC01_EXTERNAL_LINKS.md",
+        "src/electronapp/enhanced/external-url.js",
+        "src/electronapp/main.js",
+        "tests/electron44-compatibility.test.cjs",
+        "tests/external-player-process-chain.test.cjs",
+        "tests/external-url.test.cjs"
+      ],
+      "rawLocalEvidence": [
+        {
+          "path": ".work/sec01/green.log",
+          "bytes": 983,
+          "sha256": "0f52e1c3a5ca8285f273dda33f47c8ccc990cc4018b7963c7d799bdeb2479fc9"
+        },
+        {
+          "path": ".work/sec01/inputs.json",
+          "bytes": 874,
+          "sha256": "5a5817147eb928cff75e9c7b0157addb3856574e6d729b415c2b87f2c31f81ce"
+        },
+        {
+          "path": ".work/sec01/preload-input.json",
+          "bytes": 214,
+          "sha256": "d73278dcd338d28e31a5fc9793d062751d920804a56b77c9931d3147ee74c089"
+        },
+        {
+          "path": ".work/sec01/red-final-fixture.log",
+          "bytes": 2362,
+          "sha256": "d4c9e3dd58ab6cc8315b9d6d72cac9ac070e69fa690641abcfd6bb0cef8f281d"
+        },
+        {
+          "path": ".work/sec01/red.log",
+          "bytes": 2362,
+          "sha256": "f5400ceed358a4055d668eeda5b7f12be5d3c92437e139c77a3b7f1ad864d6a1"
+        },
+        {
+          "path": ".work/sec01/static.log",
+          "bytes": 296,
+          "sha256": "af8f9b3307d384b650bb4eb549571649dbb7fa52302843a1cc64294e65aa2c8b"
+        },
+        {
+          "path": ".work/sec01/targeted.log",
+          "bytes": 3589,
+          "sha256": "58a59b419cac5f61742890d14f6b8316535787fa9863a91ad511f3662722d37e"
+        }
+      ]
+    },
+    {
+      "owner": "lifecycle",
+      "worktreeName": "audit-lifecycle",
+      "branch": "codex/life02-terminal-join",
+      "observedHead": "0cd3e75b284ec412063702b2e578aee737f9a63c",
+      "modifiedFiles": [
+        "docs/LIFECYCLE_REVIEW_FIXES.md",
+        "src/electronapp/native-helper/service.js",
+        "tests/fixtures/native-helper-delayed-exit.cjs",
+        "tests/native-helper-service.test.cjs",
+        "tests/native-helper-terminal-join.test.cjs"
+      ],
+      "rawLocalEvidence": [
+        {
+          "path": ".work/lifecycle-fixes/fake-process-residual.json",
+          "bytes": 141,
+          "sha256": "965abc4cad3cd7f21a6edcd1b5a70351867a7e457bcd4b736042a5ae85750264"
+        },
+        {
+          "path": ".work/lifecycle-fixes/life01-green.exit.txt",
+          "bytes": 3,
+          "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+        },
+        {
+          "path": ".work/lifecycle-fixes/life01-green.log",
+          "bytes": 6311,
+          "sha256": "a5260da5ceafbdd4a5983d9ffbf7ae4858cb926299d6ec46e999873f7c79e483"
+        },
+        {
+          "path": ".work/lifecycle-fixes/life01-red.exit.txt",
+          "bytes": 3,
+          "sha256": "f1b2f662800122bed0ff255693df89c4487fbdcf453d3524a42d4ec20c3d9c04"
+        },
+        {
+          "path": ".work/lifecycle-fixes/life01-red.log",
+          "bytes": 10004,
+          "sha256": "26b7629d24cfd74711d50d81b916a16f9cc85f44c5cecd8efc14fa4ccfdeabc9"
+        },
+        {
+          "path": ".work/lifecycle-fixes/life02-green.exit.txt",
+          "bytes": 3,
+          "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+        },
+        {
+          "path": ".work/lifecycle-fixes/life02-green.log",
+          "bytes": 6494,
+          "sha256": "9e52de69adc8aed631b087e37b3380ad2cfb46e1092bc6f6e65f19e577a41a87"
+        },
+        {
+          "path": ".work/lifecycle-fixes/life02-red.exit.txt",
+          "bytes": 3,
+          "sha256": "f1b2f662800122bed0ff255693df89c4487fbdcf453d3524a42d4ec20c3d9c04"
+        },
+        {
+          "path": ".work/lifecycle-fixes/life02-red.log",
+          "bytes": 1800,
+          "sha256": "123ac48d92d3d191dfd1ae4bba1291b2651afe6babe6fffa3498b5c4646fc7b8"
+        },
+        {
+          "path": ".work/lifecycle-fixes/receipt.json",
+          "bytes": 2873,
+          "sha256": "69b2f91e3db74c09670c58699588eeb36077c595fbba95e93c35e1f67ec762ac"
+        },
+        {
+          "path": ".work/parent-review/diff-check.log",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".work/parent-review/fixture-residual.json",
+          "bytes": 87,
+          "sha256": "84aef68dee9eafa5999596834fcd83f61fe1882785e6fa24b001474ab09cfbeb"
+        },
+        {
+          "path": ".work/parent-review/lifecycle-final-review.md",
+          "bytes": 3934,
+          "sha256": "b2c2bf12d18edd1f0626165c2207f12a77acbf1f941c569498e2b7cf5e737d68"
+        },
+        {
+          "path": ".work/parent-review/lifecycle-native-suite.exit.txt",
+          "bytes": 3,
+          "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+        },
+        {
+          "path": ".work/parent-review/lifecycle-native-suite.log",
+          "bytes": 6495,
+          "sha256": "d53447e30bd92afc5ed2a1261483e7a05b6b7aecabdb0affb1c2c0fadd3640d2"
+        },
+        {
+          "path": ".work/parent-review/node-check.log",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".work/parent-review/simultaneous-close-destroy.exit.txt",
+          "bytes": 3,
+          "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+        },
+        {
+          "path": ".work/parent-review/simultaneous-close-destroy.log",
+          "bytes": 213,
+          "sha256": "925c3f9f6512955f36ad931659ce033e1607b15a1445c82f3cf5509f5cf2ddbb"
+        },
+        {
+          "path": ".work/parent-review/static-gates.json",
+          "bytes": 413,
+          "sha256": "243eeceaf6c1773d1a74d80516e7367a40c47da24c42013e4ac126df0310df30"
+        },
+        {
+          "path": ".work/parent-review/terminal-snapshot-race.exit.txt",
+          "bytes": 3,
+          "sha256": "f1b2f662800122bed0ff255693df89c4487fbdcf453d3524a42d4ec20c3d9c04"
+        },
+        {
+          "path": ".work/parent-review/terminal-snapshot-race.log",
+          "bytes": 1780,
+          "sha256": "f3cba1366dfc434e4575ff8acb9bc170af0fe03652f7294fb30de3e38e7be5c4"
+        }
+      ]
+    },
+    {
+      "owner": "ci",
+      "worktreeName": "audit-ci",
+      "branch": "codex/ci-public-offline",
+      "observedHead": "46d066801b2cde9ef65a463b289b526790c8f2d6",
+      "modifiedFiles": [
+        ".github/workflows/public-ci.yml",
+        "docs/PUBLIC_CI.md",
+        "tests/ci-diff-check.test.cjs",
+        "tests/ci-public-tests.test.cjs",
+        "tests/ci-secret-scan.test.cjs",
+        "tools/ci-diff-check.cjs",
+        "tools/ci-powershell-syntax.ps1",
+        "tools/ci-public-tests.cjs",
+        "tools/ci-secret-scan.cjs",
+        "tools/ci-syntax.cjs"
+      ],
+      "rawLocalEvidence": [
+        {
+          "path": ".work/ci/diff-check-exit.txt",
+          "bytes": 3,
+          "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+        },
+        {
+          "path": ".work/ci/diff-check.log",
+          "bytes": 25,
+          "sha256": "1220446829d1e63a819c6fb6b8fdb18e5d3c249bd335a78b8f743351081e604a"
+        },
+        {
+          "path": ".work/ci/javascript-syntax.log",
+          "bytes": 65,
+          "sha256": "9d41a402421fd132457ba18301a81a6491f87fbe38f865d57314049b708c20d3"
+        },
+        {
+          "path": ".work/ci/npm-ci.log",
+          "bytes": 147,
+          "sha256": "6b0e815f60848e77b2ed267b7d88d7df963ab5168fed353e92f2e24838ee3f70"
+        },
+        {
+          "path": ".work/ci/powershell-syntax.log",
+          "bytes": 64,
+          "sha256": "ef22ce49703698d79eaf75bba6445129a6264b4922eee5dc0b7183918c4bd5a1"
+        },
+        {
+          "path": ".work/ci/public-tests-exit.txt",
+          "bytes": 3,
+          "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+        },
+        {
+          "path": ".work/ci/public-tests-interrupted.log",
+          "bytes": 527,
+          "sha256": "439c2d0e62c35c50a38c3942d5eac6bb53dd7956aa8c6294210ea9a9f2802e03"
+        },
+        {
+          "path": ".work/ci/public-tests.log",
+          "bytes": 57933,
+          "sha256": "d2ee1ab36a174fb8da83c4e23440bec8866cd98193aba9ec63f0c48309026205"
+        },
+        {
+          "path": ".work/ci/secret-scan.log",
+          "bytes": 171,
+          "sha256": "f5cf9db91b65b47e5653f82ffa62e3074c6e23a33986691cb1e41f2a609ded51"
+        }
+      ]
+    },
+    {
+      "owner": "readiness",
+      "worktreeName": "audit-release-prep-docs",
+      "branch": "codex/release-readiness-20261010",
+      "observedHead": "d875ba5b69ef75bcc6ba439182700f3fb865f70c",
+      "modifiedFiles": [
+        "README.md",
+        "TODO.md",
+        "docs/AI_REVIEW_GUIDE.md",
+        "docs/ARCHITECTURE.md",
+        "docs/DEVELOPMENT_LOG.md",
+        "docs/INSTALLER_LIFECYCLE_CARD.md",
+        "docs/KNOWN_ISSUES.md",
+        "docs/LESSONS_LEARNED.md",
+        "docs/LIFECYCLE_REVIEW_FIXES.md",
+        "docs/PROJECT_STATUS.md",
+        "docs/PUBLIC_CI.md",
+        "docs/RELEASE_ACCEPTANCE_MATRIX.md",
+        "docs/REVIEW_028_DELIVERY.md",
+        "docs/ROADMAP.md",
+        "docs/SEC01_EXTERNAL_LINKS.md",
+        "docs/SEC02_RENDERER_BOUNDARY.md",
+        "docs/TESTING.md",
+        "docs/archive/TODO_FIRST_ROUND.md",
+        "docs/evidence/review-028/results.json",
+        "tests/installer-lifecycle-snapshot.test.cjs",
+        "tests/review-probes/change-stream-stop.cjs",
+        "tools/installer-lifecycle-snapshot.cjs"
+      ],
+      "rawLocalEvidence": [
+        {
+          "path": ".work/readiness/document-validation.json",
+          "bytes": 57,
+          "sha256": "249794e14fe358c6827c93401cd75d489a04aa1dd3bd92f8fc41df6affc3c53b"
+        },
+        {
+          "path": ".work/readiness/offline.log",
+          "bytes": 605,
+          "sha256": "e4e1dd9d4361277c98b94e0cff8a0c041829d94aa67f21619c4d3c469062c8a4"
+        },
+        {
+          "path": ".work/readiness/play01-parent-red.log",
+          "bytes": 1633,
+          "sha256": "e18f31718df461a945c2a65a81827cb7fb943972a2bbfa9f78a3ba8201ae559b"
+        },
+        {
+          "path": ".work/readiness/snapshot-tests.log",
+          "bytes": 314,
+          "sha256": "cb18b8fa059669bf44fc0da41e43371b0aa992c19bf724b92cd8d6eac53e8cfc"
+        },
+        {
+          "path": ".work/readiness/staged-secret-scan.json",
+          "bytes": 27,
+          "sha256": "f3efb0b81d48670bc399eceb29dfb5cffb18c9dfa45883701a607de2952a4884"
+        }
+      ]
+    }
+  ]
+}

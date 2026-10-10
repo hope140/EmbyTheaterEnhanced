@@ -1,5 +1,33 @@
 # 测试与验收
 
+## 2026-10-10 — CI028 Hosted实际验收
+
+固定db9ccde的push run38040747159：公开657/657（87文件发现81执行6材料NOT_EXECUTED），fail/cancel/skip/todo0；路径诊断、JS220、PS25、有限敏感268、diff均实际success而非skipped。Hosted5.1代码页1252旧无BOMParseFile21/执行1、BOM版两者0；PS7两个变体两者0；真实短名/物理差异及junction拒绝实测通过。新五case、旧排除、原RED、34产品输入及文档HEAD分层见 [远端记录](CI028_HOSTED_VALIDATION.md)。后续文档push/PR checks按各自HEAD回读，不重跑本地相同输入或重建b139runtime。
+
+## 2026-10-10 — CI028 Windows兼容专项
+
+代码固定 `5b1e092`：公开runner在仓库外真实8.3 TEMP中657/657（87文件发现、81执行，6份材料依赖NOT_EXECUTED），fail/cancel/skip/todo0，exit0；独立定向6/6，其余28项path case不计该pattern层已执行。JS220、PowerShell5.1与7各25、有限敏感268及diff通过。原Hosted626/652、原路径5/30、初步路径32/32以及实现期654/657均原样保留并区分输入，不能被最终GREEN覆盖。
+
+旧reporter无BOM；本机PS5.1默认代码页936、PS7为65001，旧5.1成功只是locale观察。CP1252控制解码固定复现147:35失败，BOM后通过；两shell解析/合成执行及正文blob等价严格验证。两个生产validator未改变；真实junction仍拒绝。完整命令、原始结果、哈希和边界见 [CI028](CI028_WINDOWS_COMPAT.md)。新Hosted NOT_EXECUTED；34项构建输入和产品目录未变，不重建原b139d87 runtime。本轮未重新运行材料完整层、真实播放或安装专项，用户既有六项PASS保留USER_ACCEPTANCE_PASS。
+
+## 2026-10-10 — 统一候选b139d87验收
+
+最终完整离线723/723、独立核心119/119、实际构建manager字节48/48，均失败/跳过/取消0。公开CI本地652/652，85文件发现、79执行，6份材料依赖NOT_EXECUTED；新增PM测试位于原有排除文件，不改变selected输入，指纹明确，本机完整层均执行。JS217、PowerShell25、有限敏感265及diff通过，托管Actions未执行。
+
+新固定来源构建、运行前后package VerifyOnly及八组隐藏隔离矩阵通过；自然退出/残留与阶段观察单列，五组pipeline共25对Session原始三元身份独立复算通过，2,138 payload文件运行后哈希一致。精确迟到门控仍为UNIT，普通Electron矩阵为ISOLATED_RUNTIME，实服/视觉/安装未执行。全部命令、旧/新输入层级、原始证据与READY边界见 [候选报告](INTEGRATION_028_CANDIDATE.md)。以下历史测试按原sourceCommit解读。
+
+## 2026-10-10 — PLAY-01 固定源码验证
+
+本地产品提交 `1a62f3d`：`node --test tests/playbackmanager-request-session.test.cjs tests/review-probes/play01-native-gates.cjs` 为46/46；`npm test -- --test-concurrency=1` 为681/681，无失败/取消/跳过。独立review另跑PM44、Native门控2、原Native lifecycle6通过。原探针修复前load2、修复后load1；Next/public Play、重叠请求、Stop后新Play、Session归属、Native创建/Resolver pending以及合法/迟到retry均使用受控gate验证。
+
+本机已核验并准备固定vendor/preload，未缺材料跳过；Native门控探针在无输入时显式失败，单列于review-probes，未改变公开CI策略。固定源码构建通过，hit400/direct0/miss0三组隐藏隔离runtime均自然exit0/残留0，每组5对Session报告独立复算通过。精确迟到响应gate仍为UNIT_VERIFIED，真实服务/视觉/安装NOT_EXECUTED。完整命令、RED及实现期失败、输入hash、隔离runtime结果见 [PLAY-01报告](PLAY01_STOP_BOUNDARY.md)。下方上一轮RED及缺材料失败保持原基线事实，不能被本轮GREEN覆盖。
+
+## 2026-10-10 — 独立审核的本地分支证据
+
+测试输入与提交各自绑定，尚无组合候选：SEC01定向39/39（独立复核新12/12），SEC02定向148/148（独立复核新9/9），LIFE01 Native66/66，LIFE02 Native68/68（独立复核68/68与额外probe1/1）。PLAY-01独立安全断言保持RED（Stop后loadCount2而期望1），原公开checkout全量632项623通过/9缺材料失败，均未改标通过。初次工具/fixture失败另见 [交付记录](REVIEW_028_DELIVERY.md)。
+
+公开CI层单列6份固定材料依赖文件；工程原始日志与最终CI计数见交付报告。快照工具仅合成目录测试通过，不等于系统四阶段验收。后续命令与逐场景标准见 [播放矩阵](RELEASE_ACCEPTANCE_MATRIX.md)、[安装卡](INSTALLER_LIFECYCLE_CARD.md)。新runtime、真实服务器、用户视觉与系统安装本轮均NOT_EXECUTED。
+
 ## 2026-10-10 — 0.2.7主线合并核验
 
 PR #21已合入main，合并tree与获审阅发布HEAD一致；六棵产品/工具/测试目录树、34项构建输入与各自准确来源逐项核对，九份公开原始证据字节hash保持。详细身份见 [主线收尾](MAIN_CLOSEOUT_027.md)。本次没有新产品测试、runtime运行或构建；以下651/42/53及十组运行继续按原来源和层级记录。GitHub检查集合为空，不声称CI通过。

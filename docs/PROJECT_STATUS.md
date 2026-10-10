@@ -1,5 +1,35 @@
 # 项目状态
 
+## 2026-10-10 — CI028 Hosted GREEN，候选 READY_FOR_MERGE
+
+用户授权后将六个CI修复提交从aa86ddc快进到db9ccde，普通push并从GitHub回读SHA/提交/14文件范围一致；main仍0b782dd。原候选工作树三份未提交文档保留在codex/integration-028-local-docs，前后hash一致。新增5项测试来源已逐项确认，原公开runner与六份材料排除不变。
+
+[Hosted run 38040747159](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38040747159)实际657/657、fail/cancel/skip0，路径诊断、JS220、PowerShell25、有限敏感268及diff全部success，无静态步骤跳过。Runner实际短名/物理路径差异、PS5.1代码页1252旧无BOM失败/BOM成功已观测；首次26项RED仍完整保留。主线程diff及输入复核通过，READY_FOR_MERGE；后续文档提交及PR检查分别回读，不自动合并。产品/runtime仍b139d87，本轮未新构建。详情见 [远端验收](CI028_HOSTED_VALIDATION.md)。以下条目保留当时身份。
+
+## 2026-10-10 — CI028 Windows 兼容修复，本地 READY_FOR_PUSH
+
+远端统一候选仍为 `aa86ddc6b0d5a911440ee6dff41ac20147e8f8e6`；Hosted run 38036913645 的 626 PASS / 26 FAIL 原日志保留。独立分支 `codex/ci028-windows-compat` 固定代码 `5b1e09284b8aa7c74d635b02ce9aebec9de0c016`，只调整自建 fixture 的物理根路径、reporter UTF-8 BOM、编码回归与匿名 CI 诊断。两个生产路径校验器不变。
+
+公开全集在仓库外真实 8.3 TEMP 中657/657、独立6/6，通过JS220、两种PowerShell各25、有限敏感268和diff检查。六份材料文件明确NOT_EXECUTED，原RED及中间失败完整保留。34项构建输入及产品目录与已验收 `b139d87` 一致，未重建runtime。用户六项播放仍记USER_ACCEPTANCE_PASS；字幕/音轨延迟P2/LEGACY_BEHAVIOR/ACCEPTED_WITH_FOLLOWUP，安装专项NOT_EXECUTED按确认不阻断推送。本轮不改播放逻辑。
+
+本地 **READY_FOR_PUSH**；修复后的Hosted **NOT_EXECUTED**，尚不声明READY_FOR_MERGE，等待单独推送授权。详见 [CI专项](CI028_WINDOWS_COMPAT.md) 与 [机器索引](evidence/ci028-windows-compat.json)。以下条目保留各自历史来源与当时状态。
+
+## 2026-10-10 — 统一候选 READY_FOR_USER_ACCEPTANCE
+
+实际main0b782dd上独立整合PLAY01、SEC01/02、LIFE01/02、CI与验收文档，固定候选 `b139d87da06cfba153a828766926b78230be4a0f`。无人工冲突，原修复产品字节完整保留；仅追加四项Stop拒绝及真实Previous/Next组合测试。最终全量723/723、公开子集652/652（6材料文件明确NOT_EXECUTED，但本机完整层均执行）、独立核心119/119通过；实际构建manager字节48/48通过。
+
+新来源正式构建及运行前后package VerifyOnly通过；八组隐藏隔离runtime均自然exit0/无强清理/残留0，五组pipeline原始报告合计25对Session独立复算正确，2,138 payload哈希/2,139总文件数一致。主线程最终diff、原始结果和来源验收通过。报告见 [统一候选](INTEGRATION_028_CANDIDATE.md)。真实服务器、视觉、安装生命周期及托管Actions未执行；等待用户实际验收，main与已发布版本仍未变。以下条目均按其历史来源解读。
+
+## 2026-10-10 — PLAY-01 独立修复与离线验收
+
+产品修复固定为 `1a62f3d6675a48050df6827c3807d9720f45f560`，分支 `codex/play01-stop-boundary`。只修改PlaybackManager生成补丁及相关测试，公开Play和换流请求归属覆盖Stop同步终止边界；SEC/LIFE/CI分支保持独立。定向46/46、完整离线681/681通过，原RED与实现期间失败保留，独立复核通过。固定输入构建及三组隐藏隔离runtime（hit400/direct0/miss0）PASS，均自然exit0/残留0；每组5对Session身份独立复算通过，2,136 payload文件运行后哈希一致。精确迟到响应时序为UNIT_VERIFIED，真实服务/视觉/安装未执行。根因、contract与原始证据见 [PLAY-01报告](PLAY01_STOP_BOUNDARY.md)。以下审核与发布条目均为各自阶段的历史证据，不表示本地修复已进入main或发布版本。
+
+## 2026-10-10 — 独立审核与本地修复准备
+
+固定main `0b782dd`、产品v0.2.7 `d8fcb0f9`完成A1–A4审核。SEC01/SEC02局部边界、LIFE01/02各自独立本地提交并经diff与单测复核，CI/QA/安装卡在准备分支；未合并、推送或生成新runtime。PLAY-01已由主线程再次复现：Stop后旧changeStream仍load媒体，单列P1及稳定版阻断，核心contract需独立收敛。完整状态、提交、原始命令、失败与证据层级见 [交付报告](REVIEW_028_DELIVERY.md)，计划见 [ROADMAP](ROADMAP.md)。
+
+旧651/42/53和十组runtime保持原来源。当前单测通过不替代新组合候选runtime/实服/视觉/安装验收；四类第三方材料继续WAITING_EXTERNAL。以下历史条目的“完成/当前”按各自日期和提交解读。
+
 ## 2026-10-10 — 0.2.7 已发布并合入 main，当前工程收尾完成
 
 用户要求的源码/文档同步、测试包发布与主线整合均已执行。[PR #21](https://github.com/hope140/EmbyTheaterEnhanced/pull/21)以merge commit ef4fcf58合入main，保留原main bc50d181和已审阅发布HEAD 1addcc73为父提交；合并树与已审阅HEAD完全相同。当前完整项目入口为main，[整体审核指南](AI_REVIEW_GUIDE.md)提供9份原字节测试/打包证据与hash索引，[路线图](ROADMAP.md)将已完成事项移出待办，只保留独立审核反馈、外部材料和实际环境验证计划。详情见 [主线收尾](MAIN_CLOSEOUT_027.md)。

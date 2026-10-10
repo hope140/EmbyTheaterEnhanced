@@ -1,5 +1,20 @@
 # Known Issues
 
+## 2026-10-10 — 候选用户验收与CI收尾
+
+产品b139d87的六项真实播放为USER_ACCEPTANCE_PASS；CI028已普通整合推送，db9ccde Hosted657/657与全部静态GREEN，最终diff复核后READY_FOR_MERGE，main/v0.2.7仍未包含候选补丁。字幕/音轨切换延迟继续P2/LEGACY_BEHAVIOR/ACCEPTED_WITH_FOLLOWUP，不阻断本次整合；安装专项NOT_EXECUTED按用户确认不阻断推送。没有扩大为所有真实场景或显示专项已通过。详情见 [Hosted收尾](CI028_HOSTED_VALIDATION.md)，下文按历史阶段解释。
+
+## 2026-10-10 — 统一候选状态
+
+PLAY01、SEC01/02局部边界、LIFE01/02已完整进入本地候选b139d87，组合离线及隔离runtime通过，状态READY_FOR_USER_ACCEPTANCE，见 [候选验收](INTEGRATION_028_CANDIDATE.md)。下文独立分支状态为历史阶段；main/v0.2.7仍未包含这些补丁。PLAY01迟到时序对源transform和实际构建manager均为UNIT_VERIFIED；实际服务、可见画面、安装和真实Helper崩溃未执行，SEC02完整隔离设计及四类材料缺口保持。
+
+## 2026-10-10 — 独立审核新增发现
+
+- **P1 PLAY-01 / LOCAL_FIX_UNIT_VERIFIED / NOT_MERGED**：v0.2.7及当前main仍含Stop后旧换流响应重载问题。本地独立产品提交1a62f3d在manager捕获请求和换流owner，并同步终止Stop前意图；原RED已复现，定向46/46、全量681/681、独立复核通过。缺陷在本地确定性范围关闭，发布阻断需待批准整合和候选验收后解除。真实服务未执行；隔离runtime证据单列，不扩大为真实画面或报告送达验收。见 [修复报告](PLAY01_STOP_BOUNDARY.md)；[原审核](INDEPENDENT_REVIEW_028.md)保留。
+- **SEC01 / SEC02 / LIFE01 / LIFE02**：外链协议、IPC主frame/文档、异常资源清理及terminal-owned退出等待已有独立本地修复，当前仅STATIC/UNIT层通过，尚未进入main或安装包。SEC02宽preload/CSP/CORS/isolation迁移仍待设计；默认controller.kill拒绝可达性UNKNOWN。详见 [交付报告](REVIEW_028_DELIVERY.md)。
+
+本轮没有新P0结论；以下历史观察与已修结果保留原身份。
+
 2026-10-10当前入口：v0.2.7已发布，完整维护已随PR #21合入main，见 [发布记录](RELEASE_027.md)。grpc/About维护已完成；旧直接app.exit根因UNKNOWN、全屏播放圆角DEFERRED、真实服务/可见呈现/安装/显示专项仍按原证据层级保留。后续按 [路线图](ROADMAP.md)推进，以下候选记录是历史证据，不能将旧“待执行”当作本轮尚未收尾。
 
 2026-10-09发布更新：v0.2.6 / 355f4e6已作为Pre-release公开，631项全量、正常关闭与播放八组隔离结果、安装包身份与完整下载回读见 [发布记录](RELEASE_026.md)。正常产品关闭通过不消除早期候选直接app.exit的UNKNOWN；安装/实服/视觉验收边界保持。下方记录保留各候选的原始sourceCommit和失败/通过层级。

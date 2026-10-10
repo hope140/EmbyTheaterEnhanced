@@ -17,6 +17,7 @@
     var nativeImage = electron.nativeImage;
     var productIdentity = require('./product-identity');
     var appHostCommand = require('./apphost-command');
+    var externalUrl = require('./enhanced/external-url');
     var productMetadata = require('./package.json');
     productIdentity.setAppName(app, productMetadata);
     var path = require('path');
@@ -24,6 +25,7 @@
     var deviceIdentity = require('./device-identity');
     var enhancedDiagnostics = require('./enhanced/diagnostics');
     var maintenanceIpc = require('./enhanced/maintenance-ipc');
+    var rendererBoundary = require('./enhanced/renderer-boundary');
     var bundledVersions = require('./enhanced/bundled-versions');
 
     var appBootstrapState = appBootstrap.bootstrap({
@@ -371,7 +373,7 @@
                     restartSystem();
                     break;
                 case 'openurl':
-                    electron.shell.openExternal(appHostCommand.getOpenUrlTarget(parsedRequest));
+                    externalUrl.openExternalUrl(electron.shell, appHostCommand.getOpenUrlTarget(parsedRequest));
                     break;
                 case 'video-on':
                     sleepLock = powerSaveBlocker.start('prevent-display-sleep')
@@ -458,7 +460,7 @@
         }).then(response => {
           switch (response.response) {
             case 1:
-              shell.openExternal('https://hooke007.github.io/unofficial/mpv_shaders.html');
+              externalUrl.openExternalUrl(shell, 'https://hooke007.github.io/unofficial/mpv_shaders.html');
               break;
             case 2:
               if (fs.existsSync(mpvConfPath)) {
@@ -1054,7 +1056,7 @@
         Promise.resolve(nativeShutdown).catch(function () {}).then(function () { app.quit(); });
     });
     ipcMain.on('enhanced-diagnostics', function (event, snapshot) {
-        if (event.sender === getWebContents()) {
+        if (rendererBoundary.isTrusted(event, getWebContents())) {
             enhancedLog({category: 'mpv', event: 'snapshot', details: enhancedDiagnostics.sanitize(snapshot)});
         }
     });
@@ -1191,9 +1193,10 @@
             }
 
             getWebContents().on('dom-ready', setStartInfo);
+            rendererBoundary.restrictNavigation(getWebContents());
 
             getWebContents().setWindowOpenHandler(function (details) {
-                electron.shell.openExternal(details.url);
+                externalUrl.openExternalUrl(electron.shell, details.url);
                 return { action: 'deny' };
             });
 

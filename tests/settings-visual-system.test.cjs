@@ -1,4 +1,5 @@
 'use strict';
+const {eventFor} = require('./helpers/trusted-renderer.cjs');
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -144,22 +145,22 @@ test('maintenance IPC checks sender trust, supports unregister and limits clipbo
     });
     assert.equal(appInfoCalls, 0, 'untrusted copy requests must not read application information');
     assert.equal(copiedText, '', 'untrusted copy requests must not touch the clipboard');
-    assert.equal((await ipcMain.handlers.get(maintenanceIpc.CHANNELS.GET_INFO)({sender: trusted})).status, 'ok');
+    assert.equal((await ipcMain.handlers.get(maintenanceIpc.CHANNELS.GET_INFO)(eventFor(trusted))).status, 'ok');
     assert.deepEqual(await ipcMain.handlers.get(maintenanceIpc.CHANNELS.CHECK_UPDATE)({sender: untrusted}), {
         status: 'error', reason: 'untrusted_sender'
     });
     assert.equal(fixtureCalls, 0);
     const beforeCopyCalls = appInfoCalls;
-    const copyResult = await ipcMain.handlers.get(maintenanceIpc.CHANNELS.COPY_ENVIRONMENT)({sender: trusted});
+    const copyResult = await ipcMain.handlers.get(maintenanceIpc.CHANNELS.COPY_ENVIRONMENT)(eventFor(trusted));
     assert.equal(copyResult.status, 'copied');
     assert.equal(appInfoCalls, beforeCopyCalls + 1, 'copy should build one immutable information snapshot');
     assert.equal(copyResult.info.appVersion, '0.2.3');
     assert.match(copiedText, /Emby Theater Enhanced: 0\.2\.3/);
     assert.match(copiedText, /Native Helper: helper-bundled/);
     assert.match(copiedText, /Running Native Helper: helper-running/);
-    assert.equal((await ipcMain.handlers.get(maintenanceIpc.CHANNELS.CHECK_UPDATE)({sender: trusted})).status, 'update-available');
+    assert.equal((await ipcMain.handlers.get(maintenanceIpc.CHANNELS.CHECK_UPDATE)(eventFor(trusted))).status, 'update-available');
     assert.equal(fixtureCalls, 1);
-    assert.equal((await ipcMain.handlers.get(maintenanceIpc.CHANNELS.OPEN_RELEASES)({sender: trusted}, {
+    assert.equal((await ipcMain.handlers.get(maintenanceIpc.CHANNELS.OPEN_RELEASES)(eventFor(trusted), {
         url: 'https://github.com.evil.example/hope140/EmbyTheaterEnhanced/releases/tag/v9'
     })).status, 'opened');
     assert.deepEqual(opened, [maintenance.RELEASES_URL]);
@@ -211,7 +212,7 @@ test('maintenance IPC maps async information failure to an error without clipboa
     });
     for (const channel of [maintenanceIpc.CHANNELS.GET_INFO, maintenanceIpc.CHANNELS.COPY_ENVIRONMENT,
         maintenanceIpc.CHANNELS.CHECK_UPDATE]) {
-        assert.deepEqual(await ipcMain.handlers.get(channel)({sender: trusted}),
+        assert.deepEqual(await ipcMain.handlers.get(channel)(eventFor(trusted)),
             {status: 'error', reason: 'maintenance_operation_failed'});
     }
     assert.equal(sideEffects, 0);

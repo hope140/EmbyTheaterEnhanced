@@ -290,9 +290,9 @@ test('closed-triggered destroy gates register unregister on the first native kil
   assert.equal(ipcMain.listenerCount(NOTIFY_CHANNEL), 0);
 });
 
-test('destroy failure is the same Error for concurrent and later callers without retrying cleanup', async function () {
+test('destroy failure is the same Error for concurrent and later callers after local cleanup', async function () {
   const ClientClass = makeClientClass();
-  const {service} = makeService(ClientClass);
+  const {main, service} = makeService(ClientClass);
   await service.call('create');
   const active = ClientClass.clients[0];
   const failure = new Error('native-kill-failed');
@@ -313,7 +313,8 @@ test('destroy failure is the same Error for concurrent and later callers without
   assert.strictEqual(service.destroy(), first, 'later destroy must preserve the failed shared Promise');
   await assert.rejects(service.destroy(), error => error === failure);
   assert.equal(killCalls, 1);
-  assert.equal(surfaceDestroyCalls, 0, 'native failure preserves the existing cleanup short circuit');
+  assert.equal(surfaceDestroyCalls, 1, 'native failure still releases the owned surface');
+  assert.equal(main.eventNames().length, 0, 'native failure still unbinds main listeners');
 });
 
 test('renderer destroy shares its in-flight native kill with full service destroy and unregister', async function () {
@@ -366,9 +367,9 @@ test('renderer destroy shares its in-flight native kill with full service destro
   assert.equal(surfaceDestroyCalls, 1);
 });
 
-test('renderer destroy kill failure is shared with full service destroy and preserves the cleanup short circuit', async function () {
+test('renderer destroy kill failure is shared with full service destroy after local cleanup', async function () {
   const ClientClass = makeClientClass();
-  const {service} = makeService(ClientClass);
+  const {main, service} = makeService(ClientClass);
   const created = await service.call('create');
   const active = ClientClass.clients[0];
   const failure = new Error('renderer-native-kill-failed');
@@ -390,7 +391,8 @@ test('renderer destroy kill failure is shared with full service destroy and pres
   await assert.rejects(fullDestroy, error => error === failure);
   await assert.rejects(service.destroy(), error => error === failure);
   assert.equal(killCalls, 1, 'a renderer kill failure must not trigger a retry');
-  assert.equal(surfaceDestroyCalls, 0, 'renderer kill failure preserves the existing cleanup short circuit');
+  assert.equal(surfaceDestroyCalls, 1, 'renderer kill failure still releases the surface');
+  assert.equal(main.eventNames().length, 0, 'renderer kill failure still unbinds main listeners');
 });
 
 test('full destroy waits for a second renderer-owned client after the first client rejects', async function () {
@@ -440,7 +442,7 @@ test('full destroy waits for a second renderer-owned client after the first clie
   await assert.rejects(fullDestroy, error => error === errorA);
   assert.equal(killCallsA, 1);
   assert.equal(killCallsB, 1);
-  assert.equal(surfaceDestroyCalls, 0, 'the first owned-client error preserves the surface short circuit');
+  assert.equal(surfaceDestroyCalls, 1, 'local cleanup runs after every owned client settles');
 });
 
 test('full destroy waits for the current second client after a prior renderer destroy rejects', async function () {
@@ -488,7 +490,121 @@ test('full destroy waits for the current second client after a prior renderer de
   await assert.rejects(fullDestroy, error => error === errorA);
   assert.equal(killCallsA, 1);
   assert.equal(killCallsB, 1);
-  assert.equal(surfaceDestroyCalls, 0, 'the first owned-client error preserves the surface short circuit');
+  assert.equal(surfaceDestroyCalls, 1, 'local cleanup runs after every owned client settles');
+});
+
+test('destroy preserves current failure priority after pending failure and cleanup attempts', async function () {
+  const ClientClass = makeClientClass();
+  const {main, service} = makeService(ClientClass);
+  const created = await service.call('create');
+  const pendingKill = deferred();
+  const pendingError = new Error('pending-kill-failed');
+  ClientClass.clients[0].kill = () => pendingKill.promise;
+  const rendererDestroy = service.call('destroy', {}, created.endpointId);
+  rendererDestroy.catch(() => {});
+  await Promise.resolve();
+  await service.call('create');
+  const currentKill = deferred();
+  const currentError = new Error('current-kill-failed');
+  ClientClass.clients[1].kill = () => currentKill.promise;
+  const surface = FakeWindow.instances[1];
+  const first = service.destroy();
+  first.catch(() => {});
+  await Promise.resolve();
+  pendingKill.reject(pendingError);
+  let settled = false;
+  first.then(() => { settled = true; }, () => { settled = true; });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(settled, false);
+  assert.equal(surface.destroyed, false, 'surface must wait for the current client too');
+  assert.ok(main.eventNames().length > 0);
+  currentKill.reject(currentError);
+  await assert.rejects(rendererDestroy, error => error === pendingError);
+  await assert.rejects(first, error => error === currentError);
+  assert.equal(surface.destroyed, true);
+  assert.equal(main.eventNames().length, 0);
+  assert.strictEqual(service.destroy(), first);
+});
+
+test('destroy chooses rejected pending clients in snapshot order, not settlement order', async function () {
+  const ClientClass = makeClientClass();
+  const {main, service} = makeService(ClientClass);
+  const firstEndpoint = await service.call('create');
+  const killA = deferred(); const errorA = new Error('first-pending-failed');
+  ClientClass.clients[0].kill = () => killA.promise;
+  const rendererA = service.call('destroy', {}, firstEndpoint.endpointId);
+  rendererA.catch(() => {});
+  await Promise.resolve();
+  const secondEndpoint = await service.call('create');
+  const killB = deferred(); const errorB = new Error('second-pending-failed');
+  ClientClass.clients[1].kill = () => killB.promise;
+  const rendererB = service.call('destroy', {}, secondEndpoint.endpointId);
+  rendererB.catch(() => {});
+  await Promise.resolve();
+  const full = service.destroy(); full.catch(() => {});
+  killB.reject(errorB);
+  let settled = false;
+  full.then(() => { settled = true; }, () => { settled = true; });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(settled, false);
+  killA.reject(errorA);
+  await assert.rejects(rendererA, error => error === errorA);
+  await assert.rejects(rendererB, error => error === errorB);
+  await assert.rejects(full, error => error === errorA);
+  assert.equal(FakeWindow.instances[1].destroyed, true);
+  assert.equal(main.eventNames().length, 0);
+});
+
+for (const rejectKill of [false, true]) {
+  test('destroy attempts every local cleanup and preserves primary error; kill rejected=' + rejectKill, async function () {
+    const ClientClass = makeClientClass();
+    const {main, service} = makeService(ClientClass);
+    await service.call('create');
+    const killError = new Error('primary-kill-failure');
+    const listenerError = new Error('listener-cleanup-failure');
+    const surfaceError = new Error('surface-cleanup-failure');
+    let killCalls = 0;
+    ClientClass.clients[0].kill = function () {
+      killCalls++;
+      return rejectKill ? Promise.reject(killError) : Promise.resolve({code: 0});
+    };
+    const boundCount = main.eventNames().length;
+    const removals = [];
+    const originalRemove = main.removeListener.bind(main);
+    main.removeListener = function (name, listener) {
+      removals.push(name);
+      if (name === 'move') throw listenerError;
+      return originalRemove(name, listener);
+    };
+    let surfaceCalls = 0;
+    FakeWindow.instances[1].destroy = function () { surfaceCalls++; throw surfaceError; };
+    const first = service.destroy(); const second = service.destroy();
+    assert.strictEqual(first, second);
+    await assert.rejects(first, error => error === (rejectKill ? killError : listenerError));
+    await assert.rejects(second, error => error === (rejectKill ? killError : listenerError));
+    assert.equal(removals.length, boundCount, 'one listener failure cannot skip other removals');
+    assert.equal(surfaceCalls, 1, 'listener failure cannot skip surface destruction');
+    assert.equal(service.status().surfaceVisible, false, 'the service releases its surface reference');
+    assert.strictEqual(service.destroy(), first);
+    assert.equal(killCalls, 1);
+    assert.equal(surfaceCalls, 1);
+  });
+}
+
+test('surface cleanup failure is cached when owned native cleanup succeeds', async function () {
+  const ClientClass = makeClientClass();
+  const {main, service} = makeService(ClientClass);
+  await service.call('create');
+  const failure = new Error('surface-destroy-failed');
+  let calls = 0;
+  FakeWindow.instances[1].destroy = function () { calls++; throw failure; };
+  const first = service.destroy();
+  await assert.rejects(first, error => error === failure);
+  await assert.rejects(service.destroy(), error => error === failure);
+  assert.strictEqual(service.destroy(), first);
+  assert.equal(calls, 1);
+  assert.equal(main.eventNames().length, 0);
+  assert.equal(service.status().surfaceVisible, false);
 });
 
 async function presentationHarness() {

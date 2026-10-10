@@ -1,5 +1,44 @@
 # 开发日志
 
+## 2026-10-10 — CI028普通推送、Hosted验证与PR准备
+
+- Model Tier：Tier1；Model：当前GPT-6系列主线程（精确子型号UNKNOWN）；Reason：已验收提交的有界Git整合、证据回读与最终diff检查；Task Risk中、Uncertainty低、Playback/Session新增影响0；Escalated：no。简单串行整合直接执行，没有扩大本地审核或重跑相同产品。
+- Fetch实时main0b782dd/候选aa86ddc，核实祖先后快进六提交至db9ccde。原工作树改置保留分支并核对三文档hash不变；普通push后GitHub提交链与14文件一致。五新增case逐项登记，旧case未删/六排除未变。
+- Hosted38040747159实际657/657、静态与匿名路径诊断全success，无跳过；PS5.1实际1252与旧无BOM失败、BOM成功印证机制，原26项RED保留。产品/34构建输入仍b139d87不变；不重建runtime，不升级Actions。
+- 主线程最终diff复核通过，READY_FOR_MERGE并按用户条件准备创建PR；新的文档HEAD/PR event逐项核对实际CI结果。main未合并，未发布/安装；六用户PASS、P2字幕音轨accepted followup、安装NOT_EXECUTED保持。原始回执与来源见 [Hosted验收](CI028_HOSTED_VALIDATION.md)。
+
+## 2026-10-10 — GitHub Actions 26项失败专项，本地收尾
+
+- Model Tier：Tier 1（界定明确的Windows fixture/编码/CI修复）；Model：GPT-6系列主线程（精确子型号UNKNOWN）、GPT-6 Luna High编码worker、GPT-6.1 Sol High独立review；Reason：产品contract不变，root保留路径权限边界、真实diff和最终验收；Escalated：no。Task Risk中、Uncertainty由实测收敛、Cross-module Scope限tests/tools/CI、Playback/Session Impact无产品变更。
+- 从实际候选aa86ddc创建独立worktree及codex/ci028-windows-compat；原工作树改动保留。旧路径组真实NTFS短名RED为25/30失败；CP1252控制解码重现旧reporter147:35。只物理化测试根目录，只给中文脚本加BOM，生产validator不变。
+- 主线程纠正新增编码测试的locale假设和worker的936/65001事实误写；独立review发现新增junction用例复用已消耗ownership，改为新空runtime。首轮全集654/657 RED包含该错误与TEMP置于隐藏Git树内引起的两个测试隔离错误，原日志完整保留。两项原case在仓库外短TEMP原样通过。
+- 冻结5b1e092后公开657/657、独立6/6通过；六份材料文件仍NOT_EXECUTED。JS220、PS5.1/7各25、有限敏感268和diff通过；34项被消费输入及产品目录均与b139d87一致，不重建已验收runtime。原始证据按来源/hash索引，见 [专项报告](CI028_WINDOWS_COMPAT.md)。
+- 用户既有六项真实验收保留USER_ACCEPTANCE_PASS；字幕/音轨延迟P2 legacy accepted followup、安装专项NOT_EXECUTED按本轮授权边界记录。本地形成最小提交；远端main0b782dd及候选aa86ddc重新只读回读不变，没有push/PR/发布/安装。READY_FOR_PUSH，新的Hosted执行待用户单独授权。
+
+## 2026-10-10 — 已完成修复统一整合及候选验收
+
+- Model Tier：Tier 2；Model：GPT-6系列主线程（精确子型号工具未报告）；Reason：已批准补丁的跨Playback/IPC/Helper组合，Risk中高、Uncertainty中，主线程保留归属与最终验收。输入准备GPT-6 Luna High，独立source review GPT-6.1 Sol High，测试worker沿用；Escalated：no。
+- 用户明确授权独立integration worktree、必要局部修改、离线测试、构建和本地提交。实际main0b782dd；按核验父链整合9份来源，LIFE02跟随LIFE01，PLAY01基于文档验收输入，零人工冲突。SEC2共享上下文与重复文档经内容等价复核；没有开启完整隔离迁移或修改其它历史功能。
+- 追加4项受控组合case；早阶段c603全量721/721、核心117/117保持原身份，新增真实Previous两顺序后冻结b139d87，最终全量723/723、独立119/119。公开652/652在c603执行，其79份selected输入及全部产品/工具/fixture未变，6材料排除不计PASS，本机完整层未漏跑。实际构建manager48项再次通过。
+- 固定b139d87正式构建、34项输入/88项source/精确依赖/原生来源与前后package VerifyOnly通过，payload2,138/总2,139。八组既有隐藏矩阵通过，自然exit0/无强清理/残留0；root独立复算25对Session，并核对全部运行后payload。READY_FOR_USER_ACCEPTANCE，仅交本地候选与报告，不代表真实服务/视觉/安装/托管CI或正式发布验收。
+- 文档在产品整合后统一当前入口和ROADMAP，历史报告/原RED保留。精确提交顺序、原始证据、来源与未覆盖项见 [候选验收](INTEGRATION_028_CANDIDATE.md)。原工作区/分支保留，没有push/PR/合并main/Release或现用安装。
+
+## 2026-10-10 — PLAY-01 Stop 请求归属修复
+
+- Model Tier：Tier 2；Model：当前GPT-6系列主线程（精确子型号UNKNOWN），沿用独立链路review与测试worker；Reason：Risk高、Uncertainty中、跨manager异步入口与libmpv边界，Playback/Session有影响。主线程收敛最小归属规则并复核真实diff，worker限测试与独立审查；Escalated：no。
+- 用户单独授权PLAY-01本地修复、确定性RED/GREEN、本地提交和条件允许的隔离runtime。实际main为0b782dd、v0.2.7产品d8fcb0f9；从文档交付db8f017建立独立工作树，SEC/LIFE/CI未合入，原工作区保留。
+- 产品提交1a62f3d提前绑定公开Play的request序号，换流继续点使用捕获stream/sequence/owner，Stop同步终止旧意图并保存完成屏障；下层Resolver/Native/Session代码不变。合法retry错误传播的实现期回归被独立review发现并修复，保留失败日志。
+- RED矩阵30项21通过/9失败；最终定向46/46、全量681/681，失败/跳过/取消均0。独立复核PM44、Native门控2、原lifecycle6通过；无原断言削弱。固定vendor/preload本机齐全，公开材料边界保持。构建、runtime、未覆盖场景及证据索引见 [PLAY-01报告](PLAY01_STOP_BOUNDARY.md)。
+- 固定1a62f3d构建来源通过，hit400/direct0/miss0三组隐藏隔离pipeline均自然exit0/无强清理/残留0，主线程原始报告复算各5对Session一致，运行后2,136 payload哈希与2,137总文件数一致。108份本地原始证据索引保留RED/GREEN及失败；收尾仅文档，不重建同一产品。真实服务/视觉/安装未执行，无push/PR/merge/tag/release。
+
+## 2026-10-10 — 独立审核、安全与生命周期局部加固
+
+- Model Tier：主线程Tier3；Model：当前会话GPT-6系列（工具未提供精确主线程子型号，UNKNOWN）；Reason：用户指定主线程跨层安全/生命周期风险判定与最终验收；Escalated：无临时升级。明确实现/复核使用GPT-6.1 Sol High，CI使用GPT-6 Luna High。Risk高、Uncertainty中、跨Playback/Native/IPC/构建；核心Playback仅审核与RED复现。
+- 固定main0b782dd、产品d8fcb0f9，独立worktree保护原Settings工作目录。阶段一先以d875ba5提交；随后SEC01/SEC02/LIFE01/LIFE02各自独立本地提交。没有合并、推送、PR、tag、发布或系统安装。
+- PLAY-01保留正式版阻断。四项局部补丁经真实diff/定向测试复核；失败与修复前RED均保留，不修改核心换流或现用profile。CI公开子集与6份材料依赖明确分层。
+- QA矩阵、VM四阶段卡、只读合成快照工具和唯一ROADMAP入口完成；根TODO历史原件转存archive。来源/材料WAITING_EXTERNAL不重查，既有显示/app.exit等观察保持原边界。
+- 所有精确提交、测试命令、计数、失败和未覆盖层级见 [交付记录](REVIEW_028_DELIVERY.md)。
+
 ## 2026-10-10 — 0.2.7 合入main，当前文档与待办收尾
 
 - 用户明确要求将应收尾事项全部完成并合并，让其它AI直接审核GitHub main。PR #21在准确head 1addcc73、base bc50d181条件下合并，回读MERGED；merge ef4fcf58保留两父提交，tree与已审阅head完全一致。空CI检查集合单列，不当作CI通过。
