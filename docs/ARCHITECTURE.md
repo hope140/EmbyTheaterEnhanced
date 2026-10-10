@@ -1,18 +1,18 @@
 # 架构
 
-## 2026-10-10 本地审核候选（尚未合并）
+## 2026-10-10 统一本地候选（尚未进入main）
 
-以下新增contract只属于独立本地修复，不能当作已发布v0.2.7行为：SEC01在系统浏览器入口允许HTTP/HTTPS并收口错误；SEC02增强IPC只接受当前webContents的实际mainFrame和固定包内index，主导航/redirect受限。原preload宽fs/rawIPC及isolation/sandbox/CORS/CSP依赖保留待设计。LIFE01在全部owned退出settled后仍尝试所有listener/surface清理，再按current/pending顺序传播原错误；无native错才传播cleanup错。LIFE02把terminal解绑的owned kill加入同pending集合，不改变generation、重建或kill策略。提交和层级见 [交付记录](REVIEW_028_DELIVERY.md)。
+以下新增contract已整合到统一本地候选b139d87，不能当作已发布v0.2.7行为：SEC01在系统浏览器入口允许HTTP/HTTPS并收口错误；SEC02增强IPC只接受当前webContents的实际mainFrame和固定包内index，主导航/redirect受限。原preload宽fs/rawIPC及isolation/sandbox/CORS/CSP依赖保留待设计。LIFE01在全部owned退出settled后仍尝试所有listener/surface清理，再按current/pending顺序传播原错误；无native错才传播cleanup错。LIFE02把terminal解绑的owned kill加入同pending集合，不改变generation、重建或kill策略。精确来源及组合验证见 [候选报告](INTEGRATION_028_CANDIDATE.md)，原独立分支身份见 [交付记录](REVIEW_028_DELIVERY.md)。
 
-PLAY-01独立本地候选 `1a62f3d` 已补齐原changeStream成功路径和公开Play前置异步入口的归属。公开本地Play同步捕获request序号，playInternal消费该身份；换流捕获stream对象、sequence、request ID及独立owner，各异步继续点检查归属。同ID的有效换流仍允许。terminal Stop同步失效旧意图并清除换流标记，完成Promise阻止新意图越过旧物理Stop；Stop之后明确新Play仍被接受。已接管source的错误继续由原恢复链传播，避免合法retry被误吞。未改变Session身份、Resolver或Native fallback规则，详见 [PLAY-01](PLAY01_STOP_BOUNDARY.md)。下文原错误短路与terminal边界描述继续代表审核基线/已发布实现，新增局部规则以本段为准；SEC/LIFE补丁并未合入PLAY-01分支。
+PLAY-01源提交 `1a62f3d` 的产品字节完整进入b139d87，补齐原changeStream成功路径和公开Play前置异步入口的归属。公开本地Play同步捕获request序号，playInternal消费该身份；换流捕获stream对象、sequence、request ID及独立owner，各异步继续点检查归属。同ID的有效换流仍允许。terminal Stop同步失效旧意图并清除换流标记，完成Promise阻止新意图越过旧物理Stop；Stop之后明确新Play仍被接受。Stop拒绝时等待的公开Play结束失败，屏障清除，随后新Play可恢复。已接管source的错误继续由原恢复链传播，避免合法retry被误吞。未改变Session身份、Resolver或Native fallback规则。原PLAY01专项及单独分支runtime见 [原报告](PLAY01_STOP_BOUNDARY.md)，统一产品与新增组合case见 [候选报告](INTEGRATION_028_CANDIDATE.md)。
 
 About包内版本校验由main持有固定runtimeRoot/sourceCommit的异步reader。四个固定文件按64 KiB读取/哈希，读取前后及整轮结束复核文件身份；仅共享进行中的Promise，完成/UNKNOWN即清除，后续查询重验全部字节。实时Helper状态在await包内结果后独立获取；维护GET_INFO/COPY/CHECK_UPDATE及诊断EXPORT均await信息快照。复制同快照、sender白名单及renderer请求代际保持，查询不启动播放器。验证层级与来源见 [About异步版本校验](ABOUT_VERSION_ASYNC.md) 及 [0.2.7维护收口](MAINTENANCE_027.md)。
 
-Native Helper service 的完整 destroy 使用单一缓存 Promise。首次调用同步置 destroyed 并清除 endpoint admission，随后异步执行原清理；主窗口 closed 与 before-quit/unregister 的重复调用共享同一完成或拒绝，不能以“已开始销毁”代替“已完成”。原错误短路、kill策略、Session和播放操作保持，正常窗口关闭证据见 [本地包记录](LOCAL_PACKAGE_026.md)。
+Native Helper service 的完整 destroy 使用单一缓存 Promise。首次调用同步置 destroyed 并清除 endpoint admission，随后异步执行清理；主窗口 closed 与 before-quit/unregister 的重复调用共享同一完成或拒绝，不能以“已开始销毁”代替“已完成”。原owned错误保留，统一候选在全部退出settled后仍尝试本地资源清理；kill策略、Session和播放操作保持。原正常窗口关闭来源见 [本地包记录](LOCAL_PACKAGE_026.md)，当前来源见 [统一候选](INTEGRATION_028_CANDIDATE.md)。
 
 renderer endpoint destroy可先清空client指针再等待其owned child退出。service使用pending集合跟踪这些destroyClient完成结果；完整destroy在同步封住admission后捕获尚未完成的集合，并在解绑surface前等待。空client指针不等于旧child已经退出。此修复限于已观察到的renderer destroy先行路径，不重写terminal callback或controller退出策略。
 
-current退出和捕获的pending退出进入同一次allSettled；一个实例失败不能使before-quit越过其它尚未完成的退出。全部settled后优先传播current错误，再按pending快照顺序传播原始错误；任一失败仍在surface清理前短路，不新增重试或强杀。
+current退出和捕获的pending退出进入同一次allSettled；一个实例失败不能使before-quit越过其它尚未完成的退出。全部settled后先尝试全部listener/surface释放，再优先传播current错误、按pending快照顺序传播原始错误；没有owned错误才传播本地cleanup错误，不新增重试或强杀。terminal解绑但尚未完成的kill与renderer先行destroy共用pending集合。
 
 本地 playlist-managed player 的 replacement Stop 使用 player + 捕获 streamInfo 的局部收尾记录。已开始的物理 Stop 顺序完成，尚未执行的过期请求跳过；最新请求仍执行自己的 Stop/presentation preparation。记录排空前保持原 stopped listener 解绑，防止无 session 标签的迟到 stopped 事件作用于新流。清理/事件/报告按捕获流领取一次，不由 request id 早退代替；当前 streamInfo 只在对象身份相等时清空。terminal Stop 同步失效请求并加入现存记录，重复 Stop 与后来的 Next 共用包含拒绝结果的 terminal Promise；排空后调用既有 onPlaybackStopped 完成 queue 与 player removal。remote/self-managed player 保留原路径。详见 [Stop 归属与退出证据](STOP_OWNERSHIP_EXIT_EVIDENCE.md)。
 

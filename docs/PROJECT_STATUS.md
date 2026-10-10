@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-10 — 统一候选 READY_FOR_USER_ACCEPTANCE
+
+实际main0b782dd上独立整合PLAY01、SEC01/02、LIFE01/02、CI与验收文档，固定候选 `b139d87da06cfba153a828766926b78230be4a0f`。无人工冲突，原修复产品字节完整保留；仅追加四项Stop拒绝及真实Previous/Next组合测试。最终全量723/723、公开子集652/652（6材料文件明确NOT_EXECUTED，但本机完整层均执行）、独立核心119/119通过；实际构建manager字节48/48通过。
+
+新来源正式构建及运行前后package VerifyOnly通过；八组隐藏隔离runtime均自然exit0/无强清理/残留0，五组pipeline原始报告合计25对Session独立复算正确，2,138 payload哈希/2,139总文件数一致。主线程最终diff、原始结果和来源验收通过。报告见 [统一候选](INTEGRATION_028_CANDIDATE.md)。真实服务器、视觉、安装生命周期及托管Actions未执行；等待用户实际验收，main与已发布版本仍未变。以下条目均按其历史来源解读。
+
 ## 2026-10-10 — PLAY-01 独立修复与离线验收
 
 产品修复固定为 `1a62f3d6675a48050df6827c3807d9720f45f560`，分支 `codex/play01-stop-boundary`。只修改PlaybackManager生成补丁及相关测试，公开Play和换流请求归属覆盖Stop同步终止边界；SEC/LIFE/CI分支保持独立。定向46/46、完整离线681/681通过，原RED与实现期间失败保留，独立复核通过。固定输入构建及三组隐藏隔离runtime（hit400/direct0/miss0）PASS，均自然exit0/残留0；每组5对Session身份独立复算通过，2,136 payload文件运行后哈希一致。精确迟到响应时序为UNIT_VERIFIED，真实服务/视觉/安装未执行。根因、contract与原始证据见 [PLAY-01报告](PLAY01_STOP_BOUNDARY.md)。以下审核与发布条目均为各自阶段的历史证据，不表示本地修复已进入main或发布版本。

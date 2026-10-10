@@ -1,5 +1,11 @@
 # 测试与验收
 
+## 2026-10-10 — 统一候选b139d87验收
+
+最终完整离线723/723、独立核心119/119、实际构建manager字节48/48，均失败/跳过/取消0。公开CI本地652/652，85文件发现、79执行，6份材料依赖NOT_EXECUTED；新增PM测试位于原有排除文件，不改变selected输入，指纹明确，本机完整层均执行。JS217、PowerShell25、有限敏感265及diff通过，托管Actions未执行。
+
+新固定来源构建、运行前后package VerifyOnly及八组隐藏隔离矩阵通过；自然退出/残留与阶段观察单列，五组pipeline共25对Session原始三元身份独立复算通过，2,138 payload文件运行后哈希一致。精确迟到门控仍为UNIT，普通Electron矩阵为ISOLATED_RUNTIME，实服/视觉/安装未执行。全部命令、旧/新输入层级、原始证据与READY边界见 [候选报告](INTEGRATION_028_CANDIDATE.md)。以下历史测试按原sourceCommit解读。
+
 ## 2026-10-10 — PLAY-01 固定源码验证
 
 本地产品提交 `1a62f3d`：`node --test tests/playbackmanager-request-session.test.cjs tests/review-probes/play01-native-gates.cjs` 为46/46；`npm test -- --test-concurrency=1` 为681/681，无失败/取消/跳过。独立review另跑PM44、Native门控2、原Native lifecycle6通过。原探针修复前load2、修复后load1；Next/public Play、重叠请求、Stop后新Play、Session归属、Native创建/Resolver pending以及合法/迟到retry均使用受控gate验证。

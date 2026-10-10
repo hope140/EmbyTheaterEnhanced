@@ -1,10 +1,12 @@
 # Development Roadmap
 
-本页是 Emby Theater Enhanced 后续计划的正式来源。当前完整源码与文档以 `main` 为准，测试包以v0.2.7的固定产品来源为准。问题的复现情况见 [Known Issues](KNOWN_ISSUES.md)，已完成工作的证据见 [项目状态](PROJECT_STATUS.md) 与 [测试记录](TESTING.md)。
+本页是 Emby Theater Enhanced 后续计划的正式来源。公开维护基线以 `main` 为准，公开测试包仍为v0.2.7；本地统一候选单独固定sourceCommit，不代表已合入main或发布。问题的复现情况见 [Known Issues](KNOWN_ISSUES.md)，已完成工作的证据见 [项目状态](PROJECT_STATUS.md) 与 [测试记录](TESTING.md)。
 
-## 当前里程碑（2026-10-10 独立审核）
+## 当前里程碑（2026-10-10 统一候选验收）
 
-审核固定main `0b782dd`、产品v0.2.7 `d8fcb0f9`。独立审核完成，PLAY-01已在独立本地产品提交 `1a62f3d` 修复，定向46/46、全量681/681及独立复核通过；尚未进入main或发布版本。请求归属contract、构建与隔离runtime结果见 [PLAY-01报告](PLAY01_STOP_BOUNDARY.md)。SEC-01、SEC-02局部边界、LIFE-01与LIFE-02仍为各自本地分支，未提前合并。本轮只关闭PLAY-01的确定性局部问题，正式版仍需组合候选与实际场景验收。准备入口见 [独立报告](INDEPENDENT_REVIEW_028.md)、[交付验收](REVIEW_028_DELIVERY.md)、[播放矩阵](RELEASE_ACCEPTANCE_MATRIX.md)、[安装卡](INSTALLER_LIFECYCLE_CARD.md)。以下0.2.7发布数据保留历史身份。
+本轮从实际远端main `0b782ddec404f4148cb6c8c16f19bc22201d3252` 创建独立工作树，统一PLAY-01、SEC-01/02、LIFE-01/02、CI-01与相关报告，人工冲突0；原工作区及修复分支保留。候选固定sourceCommit为 `b139d87da06cfba153a828766926b78230be4a0f`，状态 **READY_FOR_USER_ACCEPTANCE**。最终全量723/723、独立核心119/119、实际构建manager字节48/48与八组新隔离runtime通过，原始Session报告独立复算25对，运行后payload哈希与零残留验证通过。公开离线runner652/652，六份材料依赖文件明确排除，已在完整全量执行；托管Actions未执行。准确来源、顺序与证据等级见 [统一候选](INTEGRATION_028_CANDIDATE.md) 和 [机器证据](evidence/integration-028-candidate.json)。
+
+组合工程验收已完成，等待实际使用验收；真实Emby/CD2、真实远控、画面及安装生命周期未执行。原PLAY-01独立来源及RED/GREEN记录见 [专项报告](PLAY01_STOP_BOUNDARY.md)，独立审核与历史证据继续保留，入口见 [交付验收](REVIEW_028_DELIVERY.md)、[播放矩阵](RELEASE_ACCEPTANCE_MATRIX.md)、[安装卡](INSTALLER_LIFECYCLE_CARD.md)。以下0.2.7发布数据保留历史身份。
 
 0.2.7产品d8fcb0f9和获审阅的安装器已按原字节发布为Pre-release，完整源码、文档及原始审核证据已通过 [PR #21](https://github.com/hope140/EmbyTheaterEnhanced/pull/21) 合入main，整合提交ef4fcf58。整体审核直接使用main并记录实际HEAD，入口见 [AI审核指南](AI_REVIEW_GUIDE.md)；发布与合并核验见 [0.2.7发布记录](RELEASE_027.md) 和 [主线收尾](MAIN_CLOSEOUT_027.md)。
 
@@ -22,16 +24,15 @@ grpc-js 1.14.6、About随包版本/刷新及异步校验均已进入main与0.2.7
 
 | 优先级 / 编号 | 工作与当前状态 | 可自主推进的准备 | 完成标准 / 需要用户参与 |
 |---|---|---|---|
-| P1 / PLAY-01 | LOCAL_FIX_UNIT_VERIFIED / NOT_MERGED | 最小contract、RED/GREEN及独立复核已完成；产品1a62f3d | 获准后独立PR审查；隔离runtime结果见专项报告；组合候选和真实服务验收后解除发布阻断 |
-| P1 / SEC-01、SEC-02、LIFE-02；P2 / LIFE-01 | LOCAL_UNIT_VERIFIED / NOT_MERGED | 四项独立提交已完成源码与局部测试复核 | 获批准后逐项PR；LIFE-02依赖LIFE-01；组合候选需重新验证IPC、正常关闭与播放路由 |
-| P2 / CI-01 | 本地公开离线CI准备 | 精确区分公开测试与6份材料依赖测试，语法/diff/有限敏感检查 | Actions真实运行待push/PR授权；完整vendor构建层仍单列 |
-| P2 / QA-01 | PREPARED | 可执行离线测试、真实场景矩阵与授权边界已准备 | 新合并候选runtime与获授权的Emby/CD2/Session/字幕章节/远控验收 |
+| P1 / PLAY-01、SEC-01/02、LIFE-02；P2 / LIFE-01 | LOCAL_INTEGRATED / READY_FOR_USER_ACCEPTANCE | b139d87统一来源；723项全量、119项独立核心、八组runtime及25对Session验证完成 | 用户实际使用验收；后续获授权再PR/main整合，LIFE-02保持依赖LIFE-01 |
+| P2 / CI-01 | LOCAL_PUBLIC_VERIFIED / HOSTED NOT_EXECUTED | 85文件发现、79执行、652/652；六份材料文件未在公开层执行，完整全量已覆盖；语法/diff/有限敏感检查通过 | Actions真实运行待push/PR授权；公开CI与固定输入构建层继续分别记录 |
+| P2 / QA-01 | OFFLINE_MATRIX_VERIFIED / REAL_PENDING | 新统一runtime八组通过，PLAY-01精确门控还以实际manager字节验证 | 获授权的真实Emby/CD2/Session/字幕章节/远控及用户画面验收，不能由离线结果替代 |
 | P2 / SEC-02后续 | DESIGN_REQUIRED | 主frame/导航已局部加固；fs/rawIPC/CORS/CSP/isolation依赖已列明 | 窄preload接口与兼容性设计；不能直接整体启用隔离开关 |
 | P2 / T1 | 有界核查完成，WAITING_EXTERNAL | 160项实体回读一致，三轮查询和四类缺口已记录于 [材料收尾](THIRD_PARTY_MATERIALS_CLOSEOUT_027.md) | 外部材料到达后按准确身份接续，索取需单独授权发送 |
 | P2 / INST-01 | PREPARED / REAL NOT_EXECUTED | 四阶段卡与只读目录/DeviceId快照工具、合成验证已准备 | 独立VM和系统安装范围授权后执行v0.2.2→候选升级、卸载、重装；不使用历史0.1.x脚本冒充当前验收 |
 | P3 / H1 | 全屏圆角、混合DPI/多屏、HDR专项，DEFERRED | 最小场景、当前候选身份与观察项已整理 | 有相应设备/新样本并确认前台验证后执行；先定位再决定局部修复，不扩大为显示链重构 |
 
-已完成里程碑：M1完整维护审阅并合入main；M2发布并完整回读0.2.7测试安装包。下一里程碑M3为独立整体审核意见处置完成：确认的问题有复现、修复和相称验证，证据不足项有明确结论。其后M4为稳定版范围决策：结合安装生命周期与第三方材料处置结果，明确可发布范围和仍保留的验收边界。M4不要求立即补齐所有硬件场景，也不将日常使用反馈替代专项验收。
+已完成里程碑：M1完整维护审阅并合入main；M2发布并完整回读0.2.7测试安装包；M3本轮范围内确定问题的独立修复及统一候选工程验收。M3只交付本地候选，实际使用与获授权的主线整合仍待执行。其后M4为稳定版范围决策：结合真实场景、安装生命周期与第三方材料处置结果，明确可发布范围和仍保留的验收边界。M4不要求立即补齐所有硬件场景，也不将日常使用反馈替代专项验收。
 
 ### 项目规则收口与全局候选范围
 
@@ -109,7 +110,7 @@ v0.2.6已包含每请求options快照、pending报告抑制、捕获stream的Sto
 
 ## NOW
 
-独立审核已完成，先处理PLAY-01的核心contract与回归设计，随后按授权进行独立修复PR及组合候选验收。当前只完成本地分支、测试和准备；没有push/PR/merge/tag/发布/安装。材料T1仍WAITING_EXTERNAL，显示H1及历史观察维持原条件触发边界。
+统一候选b139d87工程验收完成，交付runtime与报告，等待实际使用验收。保留各独立修复分支和原始失败证据；后续PR/main整合及发布须另行授权。材料T1仍WAITING_EXTERNAL，显示H1及历史观察维持原条件触发边界。
 
 ## 可选后续研究
 

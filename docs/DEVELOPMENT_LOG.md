@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-10-10 — 已完成修复统一整合及候选验收
+
+- Model Tier：Tier 2；Model：GPT-6系列主线程（精确子型号工具未报告）；Reason：已批准补丁的跨Playback/IPC/Helper组合，Risk中高、Uncertainty中，主线程保留归属与最终验收。输入准备GPT-6 Luna High，独立source review GPT-6.1 Sol High，测试worker沿用；Escalated：no。
+- 用户明确授权独立integration worktree、必要局部修改、离线测试、构建和本地提交。实际main0b782dd；按核验父链整合9份来源，LIFE02跟随LIFE01，PLAY01基于文档验收输入，零人工冲突。SEC2共享上下文与重复文档经内容等价复核；没有开启完整隔离迁移或修改其它历史功能。
+- 追加4项受控组合case；早阶段c603全量721/721、核心117/117保持原身份，新增真实Previous两顺序后冻结b139d87，最终全量723/723、独立119/119。公开652/652在c603执行，其79份selected输入及全部产品/工具/fixture未变，6材料排除不计PASS，本机完整层未漏跑。实际构建manager48项再次通过。
+- 固定b139d87正式构建、34项输入/88项source/精确依赖/原生来源与前后package VerifyOnly通过，payload2,138/总2,139。八组既有隐藏矩阵通过，自然exit0/无强清理/残留0；root独立复算25对Session，并核对全部运行后payload。READY_FOR_USER_ACCEPTANCE，仅交本地候选与报告，不代表真实服务/视觉/安装/托管CI或正式发布验收。
+- 文档在产品整合后统一当前入口和ROADMAP，历史报告/原RED保留。精确提交顺序、原始证据、来源与未覆盖项见 [候选验收](INTEGRATION_028_CANDIDATE.md)。原工作区/分支保留，没有push/PR/合并main/Release或现用安装。
+
 ## 2026-10-10 — PLAY-01 Stop 请求归属修复
 
 - Model Tier：Tier 2；Model：当前GPT-6系列主线程（精确子型号UNKNOWN），沿用独立链路review与测试worker；Reason：Risk高、Uncertainty中、跨manager异步入口与libmpv边界，Playback/Session有影响。主线程收敛最小归属规则并复核真实diff，worker限测试与独立审查；Escalated：no。

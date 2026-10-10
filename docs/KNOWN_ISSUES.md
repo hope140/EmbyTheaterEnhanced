@@ -1,5 +1,9 @@
 # Known Issues
 
+## 2026-10-10 — 统一候选状态
+
+PLAY01、SEC01/02局部边界、LIFE01/02已完整进入本地候选b139d87，组合离线及隔离runtime通过，状态READY_FOR_USER_ACCEPTANCE，见 [候选验收](INTEGRATION_028_CANDIDATE.md)。下文独立分支状态为历史阶段；main/v0.2.7仍未包含这些补丁。PLAY01迟到时序对源transform和实际构建manager均为UNIT_VERIFIED；实际服务、可见画面、安装和真实Helper崩溃未执行，SEC02完整隔离设计及四类材料缺口保持。
+
 ## 2026-10-10 — 独立审核新增发现
 
 - **P1 PLAY-01 / LOCAL_FIX_UNIT_VERIFIED / NOT_MERGED**：v0.2.7及当前main仍含Stop后旧换流响应重载问题。本地独立产品提交1a62f3d在manager捕获请求和换流owner，并同步终止Stop前意图；原RED已复现，定向46/46、全量681/681、独立复核通过。缺陷在本地确定性范围关闭，发布阻断需待批准整合和候选验收后解除。真实服务未执行；隔离runtime证据单列，不扩大为真实画面或报告送达验收。见 [修复报告](PLAY01_STOP_BOUNDARY.md)；[原审核](INDEPENDENT_REVIEW_028.md)保留。

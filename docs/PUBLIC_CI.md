@@ -1,5 +1,7 @@
 # Public offline CI
 
+2026-10-10 unified candidate b139d87: the local public runner passed 652/652 (85 discovered files, 79 executed, six material-required files NOT_EXECUTED). Execution HEAD was c603251; the only subsequent change was the excluded manager test file, with selected source/tool/fixture inputs unchanged and recorded fingerprints. The complete material-enabled candidate suite passed 723/723. Current local syntax/diff/finite-scan gates passed; hosted GitHub Actions remain NOT_EXECUTED. See [candidate acceptance](INTEGRATION_028_CANDIDATE.md). The original branch record below retains its own identity.
+
 The GitHub Actions workflow in `.github/workflows/public-ci.yml` runs on pull requests and pushes. It uses a Windows runner, grants `contents: read`, disables persisted checkout credentials, pins both Actions to full commit SHAs, and installs the locked JavaScript dependency tree with `npm ci --ignore-scripts`. It does not need repository secrets or build/runtime binaries.
 
 The pinned actions are `actions/checkout` v4.4.0 at `11d5960a326750d5838078e36cf38b85af677262` and `actions/setup-node` v4.4.0 at `49933ea5288caeca8642d1e84afbd3f7d6820020`. Their release pages show GitHub verified signatures: [checkout v4.4.0](https://github.com/actions/checkout/releases/tag/v4.4.0) and [setup-node v4.4.0](https://github.com/actions/setup-node/releases/tag/v4.4.0). Node.js is pinned to 24.18.1.
