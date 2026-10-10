@@ -1,9 +1,12 @@
 # Runtime source and notice materials
 
-This index accompanies the local 0.2.6 test candidate. The project LICENSE,
+This index accompanies the local 0.2.7 test candidate. The project LICENSE,
 THIRD_PARTY_NOTICES.md, LICENSING.md and this index are copied from its committed
 source and bound by build-input-provenance.json. Product build evidence for
-0.2.6 is separate from the historical material audit below.
+0.2.7 is separate from the historical material audit below. The bounded follow-up
+and remaining external records are listed in
+[0.2.7 material closeout](THIRD_PARTY_MATERIALS_CLOSEOUT_027.md); no new binary or
+unproven corresponding-source relationship is introduced by that review.
 
 The 2026-10-09 local source-material supplement is documented in
 [THIRD_PARTY_MATERIALS_AUDIT](THIRD_PARTY_MATERIALS_AUDIT.md), with a bounded
