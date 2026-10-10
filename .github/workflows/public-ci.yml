@@ -1,0 +1,48 @@
+name: Public offline CI
+
+on:
+  pull_request:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-public-offline:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # actions/setup-node v4.4.0
+        with:
+          node-version: 24.18.1
+
+      - name: Install locked JavaScript dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Run public offline test set
+        run: node tools/ci-public-tests.cjs
+
+      - name: Check maintained JavaScript syntax
+        run: node tools/ci-syntax.cjs
+
+      - name: Check maintained PowerShell syntax
+        shell: pwsh
+        run: ./tools/ci-powershell-syntax.ps1
+
+      - name: Check credentials patterns in maintained source
+        run: node tools/ci-secret-scan.cjs
+
+      - name: Check patch whitespace
+        env:
+          CI_EVENT_NAME: ${{ github.event_name }}
+          CI_PULL_REQUEST_BASE: ${{ github.event.pull_request.base.sha }}
+          CI_PUSH_BEFORE: ${{ github.event.before }}
+          CI_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: node tools/ci-diff-check.cjs
