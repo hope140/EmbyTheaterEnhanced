@@ -1,5 +1,17 @@
 # 开发日志
 
+## 2026-10-10 — v0.2.9 外挂字幕候选真实 Helper/mpv 与桌面可见验收
+
+- Model Tier：Tier 2；Model：当前 GPT-6 系列主线程；Reason：libmpv 异步归属与 Native Helper/mpv 可见层验证，Task Risk 中、Uncertainty 中、Cross-module Scope 为测试链多层、Playback/Session Impact 仅局部字幕选择；Escalated：no。
+- 复核产品 diff 仅为最新选择序号与 MediaSource/Play 联合归属；原 8 项 RED 4/8，原断言保留并转 GREEN 8/8，新增 3 项后 11/11。相关字幕、Native Helper 和播放核心测试 151/151；独立 Electron/Helper/mpv 隐藏与桌面可见探针各 8/8，100ms 快速操作后的画面 A/B/Off、Stop 和换集已逐项查看，Helper error 0。
+- 固定 Electron/libmpv 与本分支编译 Helper、合成媒体、隔离 profile/runtime；仅合成 Session。透明前景使 Helper 视频承载窗口可见，最初不透明探针遮挡的截屏未用于通过结论。匿名证据见 [第二阶段 A](V029_SUBTITLE_RACE_PHASE2.md)。真实 Emby/115、安装版及远控 NOT_EXECUTED；候选仅 READY_FOR_INTEGRATION_REVIEW，未经正式整合。
+
+## 2026-10-10 — v0.2.9 外挂字幕选择归属 RED/GREEN
+
+- Model Tier：Tier 2；Model：当前 GPT-6 系列主线程（精确子型号未报告）；Reason：同一 Play 内异步 timer 与 mpv 命令归属涉及播放器生命周期，Task Risk 中、Uncertainty 已由 RED 收敛、Cross-module Scope 限 libmpv 与测试、Playback/Session Impact 局部字幕选择；Escalated：no。
+- 确认旧 3/3 原始函数实验所用 `b139d87` blob 与 v0.2.8 `libmpv.js` 均为 `63d28b8`。新增完整 AMD 模块/真实插件入口虚拟时钟 fixture，修复前 8 tests/4 pass/4 fail，原始 TAP/退出码保存在本工作树忽略目录；修复后 10/10、相关三文件合计 51/51，源码/测试语法与 diff 检查通过。
+- 仅在 `setSubtitleStream` 入口记录最新序号及 MediaSource，并在 700ms 回调提交前联合当前 Play 判断；未改 700ms、缓存、其他播放链或日志。真实 Emby/115、可见字幕和系统安装仍未执行。详见 [第一阶段 A](V029_SUBTITLE_RACE_PHASE1.md)，未提交、推送、PR、整合或发布实验改动。
+
 ## 2026-10-10 — v0.2.8 最小版本更新与发布准备
 
 - Model Tier：Tier 1；Model：当前 GPT-6 系列主线程（精确子型号 UNKNOWN）、GPT-6 Luna High 只读输入核对；Reason：明确版本更新、固定工具链构建与发布核验；Task Risk 中、Uncertainty 低、Playback/Session Impact 0；Escalated：no。

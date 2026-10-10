@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "scope": "full-libmpv-AMD + real-main-service + native-helper + pinned-libmpv",
+  "status": "passed",
+  "visible": true,
+  "mediaSha256": "31f577bfaa1ffba320bc826f786eb51a140cfea86dd31d3de1a468f0d943331a",
+  "cases": [
+    {
+      "name": "single-A",
+      "submitted": [
+        "A"
+      ],
+      "sid": "1",
+      "tracks": {
+        "count": 3,
+        "subtitles": 1,
+        "selectedSubtitles": 1
+      },
+      "frame": {
+        "fileName": "frame-visible-6-single-A.png",
+        "sha256": "0f52b5488a78350e34ac2d3497ba52c13058b1157e2893f19ca1af02281a6138",
+        "bytes": 1865
+      },
+      "desktopFrame": {
+        "fileName": "visible-visible-6-single-A.png",
+        "sha256": "38c6ce9acbc35249ee3999b374118b0c2ea6cbecc8a51db25baf94e3f9dbc19d",
+        "bytes": 5501,
+        "brightSubtitlePixels": 726
+      },
+      "coreIdle": false,
+      "operationErrors": 0
+    },
+    {
+      "name": "single-B",
+      "submitted": [
+        "B"
+      ],
+      "sid": "1",
+      "tracks": {
+        "count": 3,
+        "subtitles": 1,
+        "selectedSubtitles": 1
+      },
+      "frame": {
+        "fileName": "frame-visible-6-single-B.png",
+        "sha256": "1189d1da208bea5e18be913c44812825d865b749d2e641bfa81bf8239f0cbc2a",
+        "bytes": 1855
+      },
+      "desktopFrame": {
+        "fileName": "visible-visible-6-single-B.png",
+        "sha256": "c7abe447ccdaf09c5fb72057b454c72abdd84917e71420081101a888e35e7d34",
+        "bytes": 5455,
+        "brightSubtitlePixels": 746
+      },
+      "coreIdle": false,
+      "operationErrors": 0
+    },
+    {
+      "name": "A-to-B",
+      "submitted": [
+        "B"
+      ],
+      "sid": "1",
+      "tracks": {
+        "count": 3,
+        "subtitles": 1,
+        "selectedSubtitles": 1
+      },
+      "frame": {
+        "fileName": "frame-visible-6-A-to-B.png",
+        "sha256": "1189d1da208bea5e18be913c44812825d865b749d2e641bfa81bf8239f0cbc2a",
+        "bytes": 1855
+      },
+      "desktopFrame": {
+        "fileName": "visible-visible-6-A-to-B.png",
+        "sha256": "c7abe447ccdaf09c5fb72057b454c72abdd84917e71420081101a888e35e7d34",
+        "bytes": 5455,
+        "brightSubtitlePixels": 746
+      },
+      "coreIdle": false,
+      "operationErrors": 0
+    },
+    {
+      "name": "A-to-Off",
+      "submitted": [],
+      "sid": "false",
+      "tracks": {
+        "count": 2,
+        "subtitles": 0,
+        "selectedSubtitles": 0
+      },
+      "frame": {
+        "fileName": "frame-visible-6-A-to-Off.png",
+        "sha256": "822ac87e5ddd2281d27ed4467d1b0bfba0e842fd8b9e5c09934ea5c13eae2eef",
+        "bytes": 1014
+      },
+      "desktopFrame": {
+        "fileName": "visible-visible-6-A-to-Off.png",
+        "sha256": "2b4cfd949a84a96237a42d6b34c1aede2c115908fbcb63a0b111a78efd02d06c",
+        "bytes": 2664,
+        "brightSubtitlePixels": 0
+      },
+      "coreIdle": false,
+      "operationErrors": 0
+    },
+    {
+      "name": "A-to-B-to-A",
+      "submitted": [
+        "A"
+      ],
+      "sid": "1",
+      "tracks": {
+        "count": 3,
+        "subtitles": 1,
+        "selectedSubtitles": 1
+      },
+      "frame": {
+        "fileName": "frame-visible-6-A-to-B-to-A.png",
+        "sha256": "0f52b5488a78350e34ac2d3497ba52c13058b1157e2893f19ca1af02281a6138",
+        "bytes": 1865
+      },
+      "desktopFrame": {
+        "fileName": "visible-visible-6-A-to-B-to-A.png",
+        "sha256": "38c6ce9acbc35249ee3999b374118b0c2ea6cbecc8a51db25baf94e3f9dbc19d",
+        "bytes": 5501,
+        "brightSubtitlePixels": 726
+      },
+      "coreIdle": false,
+      "operationErrors": 0
+    },
+    {
+      "name": "A-to-A",
+      "submitted": [
+        "A"
+      ],
+      "sid": "1",
+      "tracks": {
+        "count": 3,
+        "subtitles": 1,
+        "selectedSubtitles": 1
+      },
+      "frame": {
+        "fileName": "frame-visible-6-A-to-A.png",
+        "sha256": "0f52b5488a78350e34ac2d3497ba52c13058b1157e2893f19ca1af02281a6138",
+        "bytes": 1865
+      },
+      "desktopFrame": {
+        "fileName": "visible-visible-6-A-to-A.png",
+        "sha256": "38c6ce9acbc35249ee3999b374118b0c2ea6cbecc8a51db25baf94e3f9dbc19d",
+        "bytes": 5501,
+        "brightSubtitlePixels": 726
+      },
+      "coreIdle": false,
+      "operationErrors": 0
+    },
+    {
+      "name": "Stop",
+      "submitted": [],
+      "coreIdle": true,
+      "operationErrors": 0
+    },
+    {
+      "name": "new-Play",
+      "submitted": [
+        "B"
+      ],
+      "sid": "1",
+      "tracks": {
+        "count": 3,
+        "subtitles": 1,
+        "selectedSubtitles": 1
+      },
+      "frame": {
+        "fileName": "frame-visible-6-new-Play.png",
+        "sha256": "1189d1da208bea5e18be913c44812825d865b749d2e641bfa81bf8239f0cbc2a",
+        "bytes": 1855
+      },
+      "desktopFrame": {
+        "fileName": "visible-visible-6-new-Play.png",
+        "sha256": "c7abe447ccdaf09c5fb72057b454c72abdd84917e71420081101a888e35e7d34",
+        "bytes": 5455,
+        "brightSubtitlePixels": 746
+      },
+      "coreIdle": false,
+      "operationErrors": 0
+    }
+  ]
+}
