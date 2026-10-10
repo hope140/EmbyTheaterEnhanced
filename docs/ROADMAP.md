@@ -4,7 +4,7 @@
 
 ## 当前里程碑（2026-10-10 会话与文件复核）
 
-0.2.7产品d8fcb0f9、本地交付HEAD0bcbfc74及安装器已经完成主会话独立复核。本轮按用户授权准备将完整源码、必要文档及证据放到远端，并以Pre-release发布原字节安装包；实际状态见 [0.2.7发布记录](RELEASE_027.md)。整体审核使用codex/release-v0.2.7-test-20261010，入口见 [AI审核指南](AI_REVIEW_GUIDE.md)。
+0.2.7产品d8fcb0f9和获审阅的安装器已按原字节发布为Pre-release，完整源码、必要文档及原始审核证据已进入远端发布分支；实际状态见 [0.2.7发布记录](RELEASE_027.md)。整体审核使用codex/release-v0.2.7-test-20261010及 [PR #21](https://github.com/hope140/EmbyTheaterEnhanced/pull/21)，入口见 [AI审核指南](AI_REVIEW_GUIDE.md)。main保留为bc50d181审核基线，未自动合并。
 
 PR #20已于2026-10-09 22:22:16（UTC+8）合并；本次远端回读main为bc50d181，开放PR为0。原main46e995e与整合提交45ec2d6为合并父提交。发布tag与产品sourceCommit保持355f4e6；[主线整合报告](MAIN_INTEGRATION_026.md) 中OPEN是创建阶段的历史回执。
 
@@ -20,9 +20,9 @@ grpc-js 1.14.6、About随包版本/刷新及异步校验均已进入0.2.7完整�
 
 | 优先级 / 编号 | 工作与当前状态 | 可自主推进的准备 | 完成标准 / 需要用户参与 |
 |---|---|---|---|
-| P1 / A1 | 完整维护收口与本地包交付完成，NOT IN MAIN | 本轮完整栈复核、新版本固定来源、单测和隔离验证完成，见 [收口报告](MAINTENANCE_027.md) | 父会话已审查通过，本地0.2.7包完成；远端整合另按明确授权 |
+| P1 / A1 | 完整维护已推送，PR #21 OPEN / NOT IN MAIN | 完整栈、固定来源及证据已提供给其它AI整体审核，见 [审核入口](AI_REVIEW_GUIDE.md) | 父会话已审查并发布0.2.7测试包；下一步读取独立审核意见，再决定修正与main合并 |
 | P1 / D1 | 协作与历史文档收口，项目规则S1–S5已接受并应用 | 保留审计结论，重组S1–S5候选并修正下面列出的三处歧义；本轮已更新当前状态导航 | S1–S5按已审阅方向生效，三处歧义已修正；S6为EXCLUDED_BY_USER / KEEP_CANDIDATE，不阻塞A1 |
-| P2 / R1 | 下一测试版准备，依赖A1审查及分发决定 | 整理准确变更说明、版本一致性、来源、校验文件和发布清单 | 本轮采用未占用的0.2.7本地测试身份，父会话审核通过后生成最终安装包；若版本或其它构建输入变化，必须生成并验证新来源产物。保留现有v0.2.6 tag和资产，不给7cc7eb85候选改名冒充新版本 |
+| P2 / R1 | 0.2.7测试版已公开，RELEASED | 完整来源、原始验证记录、安装器及companion已提供 | 现有0.2.6 tag和资产保持；后续新版本按新来源验证。本轮不再重复安排发布准备 |
 | P2 / T1 | 有界核查完成，WAITING_EXTERNAL | 160项实体回读一致，三轮查询和四类缺口已记录于 [材料收尾](THIRD_PARTY_MATERIALS_CLOSEOUT_027.md) | 外部材料到达后按准确身份接续，索取需单独授权发送 |
 | P2 / I1 | 安装生命周期，独立环境待安排 | 准备干净安装、原位升级、卸载、重装四阶段检查与回滚方案 | 用户确认测试环境及系统安装范围后执行；核对设置/DeviceId预期保留、快捷方式和非预期残留，不覆盖日常客户端 |
 | P3 / H1 | 全屏圆角、混合DPI/多屏、HDR专项 | 整理最小场景、当前候选身份及观察项 | 有相应设备/新样本并确认前台验证后执行；目前维持DEFERRED，不与A1混修 |
@@ -39,7 +39,7 @@ S1模型型号集中并按任务能力选取、S2历史方案作用域、S3当�
 
 ## Current Production Baseline
 
-- `v0.2.2` 正式 Latest 对应提交 `9a034e8d627f71abbded01a1fba612d9282c9911`；2026-10-10回读远端 `main=bc50d181`，已包含PR #20。公开测试版 `v0.2.6` 的产品sourceCommit仍为 `355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f`，已随PR #20整合；后续grpc/About维护仍为独立本地候选。见 [发布与验收记录](RELEASE_026.md)。
+- `v0.2.2` 正式Latest对应9a034e8d；远端main=bc50d181已包含PR #20。最新公开测试版v0.2.7绑定产品d8fcb0f9，完整发布/审核分支及PR #21已提供，尚未合入main。旧v0.2.6/355f4e6保持历史身份；见 [0.2.7发布记录](RELEASE_027.md) 与 [0.2.6记录](RELEASE_026.md)。
 - Native Helper + libmpv、Pepper / PPAPI 退役、Electron 44.4.2、apphost 启动命令兼容修复、Windows runtime / package provenance、STRM / CloudDrive2 / DirectUrl 基础路由和诊断包均已进入历史完成项；细节由既有专项文档维护。
 - Smart Path Mapping 已合入 `main`，尚未进入 `v0.2.2` 正式发布基线。
 

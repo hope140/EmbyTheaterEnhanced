@@ -1,6 +1,8 @@
 # v0.2.7 测试发布与远端审核
 
-日期：2026-10-10（UTC+8）。当前阶段：PREPARED_NOT_PUBLISHED；实际发布完成后更新本节与远端回读证据。
+日期：2026-10-10（UTC+8）。状态：**PUBLISHED / PRE-RELEASE**。v0.2.7于11:24:27（UTC+8）公开，Release ID408588855；正式Latest仍为v0.2.2。
+
+[Release与下载](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.7) · [整体审核PR #21](https://github.com/hope140/EmbyTheaterEnhanced/pull/21)。PR保持OPEN/非Draft供外部审核，main仍为bc50d181，未自动合并。
 
 用户授权将本地应公开的项目成果放到GitHub，并发布已验证测试包供其它AI整体审核。本轮从完整维护交付0bcbfc74建立codex/release-v0.2.7-test-20261010，保留全部实现与历史，仅补公开导航、审核入口和证据；不会重建产品。
 
@@ -28,4 +30,12 @@
 
 ## 远端回读
 
-发布前保留main、既有refs、8个Release和15个附件的快照；v0.2.7不存在时才创建精确源码tag和新Release。先上传草稿并核对三个资产的大小/服务端digest，再发布为Pre-release；发布后回读源码tag、附件和公开下载。当前审核PR及下载验证结果将在实际操作后记录，不提前写PASS。
+发布前保留main、既有refs、8个Release和15个附件的快照。v0.2.7 annotated tag object为b53f36f54685554d8d342fb30a07ffa51f1c526b，解引用产品d8fcb0f9。发布准备提交1d7a651随新分支和tag原子推送；审核PR #21已创建并附加。后续发布记录提交单列，不改变产品tag。
+
+三个资产均uploaded，EXE ID626883014、SHA256文件ID626882949、provenance ID626882956，大小和服务端digest均与本地逐项匹配；核对后才将草稿公开为Pre-release，target_commitish为准确产品SHA。GitHub合并状态MERGEABLE/CLEAN与空检查集合单列，未声称CI通过。公开下载及旧远端对象保持结果见 [发布机器证据](evidence/release-v0.2.7-20261010.json)。
+
+三个附件均已完整回下载并重算SHA256匹配。第一次匿名EXE直链在300秒取得69,237,248/175,632,871 bytes后超时，来源文件直链另出现一次HTTP500；原失败保留。随后EXE和provenance经GitHub CLI/API路线完整取得，EXE下载约37.96秒，SHA256文件经匿名公开链接取得，全部与本地和服务端digest一致。没有改代理/系统配置，也不把首轮匿名下载说成完成。公开AI指南和651项日志从raw地址下载后与Git blob完全一致。
+
+旧47项远端refs、8个Release和15个附件的原身份、正文、标志及digest保持。只新增发布分支、v0.2.7及PR #21对应自动refs；main未合并。后续公开文档提交仅更新本发布分支。
+
+公开原始证据保留CRLF/LF实际字节，目录级属性仅承认CR为换行的一部分并关闭文本转换，仍检查其它空白错误。第一次普通whitespace检查把原始CR当尾随空白的结果没有导致改写原日志；九份Git blob的SHA256与源文件完全一致。

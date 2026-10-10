@@ -1,5 +1,12 @@
 # 开发日志
 
+## 2026-10-10 — 0.2.7 Pre-release 与审核入口公开完成
+
+- 用户授权范围内发布原字节安装包并推送完整审核分支；PR #21已创建并附加，OPEN/非Draft，main仍bc50d181。v0.2.7 annotated tag b53f36f5解引用产品d8fcb0f9；Release408588855于11:24:27（UTC+8）公开为Pre-release，Latest仍v0.2.2。
+- 三资产服务端digest/大小先核对后公开；全部附件随后完整下载重算匹配。匿名EXE直链首轮300秒超时、provenance直链一次HTTP500保留；换GitHub CLI/API路径后EXE约37.96秒完整下载，未修改代理或系统配置。公开指南和651项原始日志与Git blob也匹配。
+- 旧47项refs、8个Release及15个附件保持。九份原始证据按原字节进Git；仅对该目录标记CR为原始换行且禁用文本转换，普通diff检查继续执行。当前开发日志中不必要的旧身份字段已去除，历史提交不改写。
+- 本轮未重建、未重跑产品、未合并main；本地未纳入产品的实验/旧资料按同步范围保留。发布结论与原651/42/53及十组运行的来源分列；第三方WAITING_EXTERNAL、系统与前台未验收、旧app.exit UNKNOWN和全局S6边界保持。
+
 ## 2026-10-10 — 0.2.7 发布与公开审核材料准备
 
 - Model Tier: Tier 1固定产物发布/资料盘点，主线程负责公开边界及最终核验；Model: 当前Codex主线程 / GPT-6 Luna High只读worker；Reason: 固定产品与既有测试证据，新增文档及GitHub发布，无产品实现变更；Escalated: no。

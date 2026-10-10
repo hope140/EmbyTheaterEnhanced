@@ -16,7 +16,7 @@
 | 类别 / 本地分支 | 处理及理由 |
 |---|---|
 | codex/source-materials-20261009 | 15个改动路径在交付树均存在，10个Git blob完全相同，其余5份持续维护文档已有后续更新。实质材料索引已公开；原独立头05a08e9留本地作历史追溯，不声明它本身已经远端可达 |
-| codex/build-input-writer-safe、codex/fake-cd2-fixture、codex/pipeline-deadline-watchdog-20261009 | 独立执行/夹具分支，最终交付已有相应后续实现与测试；原分支差异作为本地研究参考，不自动并入获审阅产品 |
+| codex/build-input-writer-safe、codex/fake-cd2-fixture、codex/pipeline-deadline-watchdog-20261009 | 独立执行/夹具分支；非祖先差异不等于当前产品缺功能，也未宣称全部patch逐项等价。以获审阅交付为准，原分支保留作专项研究，不自动并入或公开为当前实现 |
 | codex/electron44-activation-reconcile | 历史激活/生命周期候选，未按当前产品重新验收；保留本地，不当作缺失的当前修复推送 |
 | audit/daily-use-readiness、codex/project-roadmap-docs、docs/subagent-policy | 旧审计/导航/委派说明被较新的交付文档覆盖，保留历史本地分支 |
 | codex/v0.2.3-settings-ux、fix/product-session-identity | 旧Settings/Session候选，较新成果已进入交付；保留旧工作树和未提交资料 |

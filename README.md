@@ -1,6 +1,6 @@
 # Emby Theater Enhanced
 
-基于 Carnival 3.0 与综合补丁的 Windows Emby 客户端维护工程。当前正式版为 `v0.2.2`；`v0.2.7` 测试包已完成本地验收，发布状态见 [0.2.7发布记录](docs/RELEASE_027.md)。其它AI或人工整体审核请从 [审核入口](docs/AI_REVIEW_GUIDE.md)开始，使用完整审核分支核对实际HEAD。
+基于 Carnival 3.0 与综合补丁的 Windows Emby 客户端维护工程。当前正式版为 `v0.2.2`，最新测试版 `v0.2.7` 已作为Pre-release发布，详见 [0.2.7发布记录](docs/RELEASE_027.md)。其它AI或人工整体审核请从 [审核入口](docs/AI_REVIEW_GUIDE.md)开始，使用完整审核分支核对实际HEAD。
 
 Emby Theater Enhanced is an unofficial community-maintained project. It is not affiliated with or endorsed by Emby.
 
@@ -10,13 +10,13 @@ Emby Theater Enhanced 是非官方社区维护项目，与 Emby 不存在隶属�
 
 | 渠道 | 版本 | 入口 |
 |---|---|---|
-| 最新测试版 · Pre-release | `v0.2.6` | [发布说明](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.6) · [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.6/EmbyTheaterEnhanced-0.2.6-test-355f4e6-win-x64-setup.exe) · [SHA-256 文件](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.6/EmbyTheaterEnhanced-0.2.6-test-355f4e6-win-x64-setup.exe.sha256) |
+| 最新测试版 · Pre-release | `v0.2.7` | [发布说明](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.7) · [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.7/EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe) · [SHA-256 文件](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.7/EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe.sha256) |
 | 当前正式版 · Latest | `v0.2.2` | [发布说明](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.2) · [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.2/EmbyTheaterEnhanced-0.2.2-win-x64-setup.exe) |
-| 历史版本 | `v0.2.5` 及更早版本 | [全部历史版本](https://github.com/hope140/EmbyTheaterEnhanced/releases) |
+| 历史版本 | `v0.2.6` 及更早版本 | [全部历史版本](https://github.com/hope140/EmbyTheaterEnhanced/releases) |
 
 ## 整体审核与开发计划
 
-0.2.7完整维护交付包含grpc-js 1.14.6、About可信版本与刷新、64KiB异步校验。产品sourceCommit固定d8fcb0f9，完整审核分支为codex/release-v0.2.7-test-20261010；[AI审核指南](docs/AI_REVIEW_GUIDE.md)提供源码、测试日志、安装器逐文件证据和未验证边界。[本地到远端同步范围](docs/REMOTE_SYNC_027.md)说明旧分支及主目录资料的处理，避免把过时工作副本当作当前项目。
+0.2.7完整维护交付包含grpc-js 1.14.6、About可信版本与刷新、64KiB异步校验。产品sourceCommit固定d8fcb0f9，完整审核分支为codex/release-v0.2.7-test-20261010，[PR #21](https://github.com/hope140/EmbyTheaterEnhanced/pull/21)保持OPEN供独立审核；main尚未合入本轮维护。[AI审核指南](docs/AI_REVIEW_GUIDE.md)提供源码、测试日志、安装器逐文件证据和未验证边界。[本地到远端同步范围](docs/REMOTE_SYNC_027.md)说明旧分支及主目录资料的处理，避免把过时工作副本当作当前项目。
 
 以下保留上一轮公开基线与历史验收导航。
 
