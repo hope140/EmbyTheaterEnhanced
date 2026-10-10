@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-10 — 0.2.7 远端公开与整体审核准备
+
+用户已授权同步应公开的本地项目成果并发布测试包。完整发布/审核分支从0bcbfc74继续，产品与安装包保持d8fcb0f9原身份；阶段为PREPARED_NOT_PUBLISHED，实际状态见 [发布记录](RELEASE_027.md)。[整体审核入口](AI_REVIEW_GUIDE.md)提供9份按原字节公开的测试/打包证据及hash索引，[同步范围](REMOTE_SYNC_027.md)区分已覆盖成果、历史研究和本地保留项。主目录已有改动、旧产物及全局S6保留；main作为审核对照基线。
+
 ## 2026-10-10 — 0.2.7 第二阶段本地测试包完成
 
 主会话PARENT_REVIEW_PASS后，从批准产品d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0和manifest c6794efc6b69aeef67c3274903715e2483955a564dc9b2bc8a3e4cefd24ffe6c生成新安装器；大小175632871 bytes、SHA256 86bee55146714f4f7e493cadb8b483537644f513c92364df7fc0c18f5315f3db。Inno完整性、2137文件解包比较、PE字符串0.2.7/数值0.2.7.0、source/version/companion及交付副本hash回读均通过。打包后返回维护分支，产品runtime保持原字节。交付目录 dist/delivery-0.2.7-maintenance-d8fcb0f/；报告见 [0.2.7本地交付](LOCAL_PACKAGE_027.md)。

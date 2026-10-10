@@ -1,5 +1,12 @@
 # 开发日志
 
+## 2026-10-10 — 0.2.7 发布与公开审核材料准备
+
+- Model Tier: Tier 1固定产物发布/资料盘点，主线程负责公开边界及最终核验；Model: 当前Codex主线程 / GPT-6 Luna High只读worker；Reason: 固定产品与既有测试证据，新增文档及GitHub发布，无产品实现变更；Escalated: no。
+- 用户授权同步应公开成果和发布测试包。从干净0bcbfc74创建独立发布工作树，盘点本地heads、远端refs和主目录未提交资料；完整交付已包含的历史不用逐分支重复推送，未纳入产品的实验不自动合入。
+- 原字节公开9份经检查的测试/打包日志与回执，通过目录级-text保持Git字节身份；原profile、客户日志及未筛选runner资料保留本地。为旧上游切集研究补明确历史作用域，并去除当前开发日志里不必要的旧Git身份字段，不重写历史。
+- 准备AI_REVIEW_GUIDE、REMOTE_SYNC_027和RELEASE_027，实际发布/远端回读在完成后补记。测试包、三个原始companion相关文件与产品sourceCommit不重建、不重标；正式Latest继续保留v0.2.2。
+
 ## 2026-10-10 — 0.2.7 审核后打包与本地交付
 
 - Model Tier: Tier 1固定输入打包及证据收尾；Model: 当前GPT-6.1 Sol High主线程；Reason: Task Risk=low/medium（本地可安装产物），Task Uncertainty=low，Cross-module Scope=package/evidence/docs，Playback/Session Impact=none；Escalated: no。顺序依赖明确，不额外委派。
@@ -1425,7 +1432,7 @@ Escalated: no
 
 ## 2026-09-13 — STRM Mount Resolver 第一版
 
-按用户确认的 `feat/strm-mount-resolver` 规格，在 repo-local Git identity `hope140 <hope140y@outlook.com>` 下实现最小确定性 STRM Mount Resolver。Resolver 只在 `libmpv.playInternal(options)` 的最终 `loadfile` 前替换 source，继续沿用 PlaybackManager、Item、MediaSource、PlaySessionId、字幕/音轨、offset、播放上报和远控链路。
+- Git 提交身份已按当时项目约定配置；本次公开文档省略不必要的个人身份字段，原提交与历史不改写。
 
 完成内容：
 
