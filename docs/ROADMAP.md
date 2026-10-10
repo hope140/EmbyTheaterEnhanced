@@ -1,6 +1,8 @@
 # Development Roadmap
 
-本页是 Emby Theater Enhanced 后续计划的正式来源。公开维护基线以 `main` 为准，公开测试包仍为v0.2.7；本地统一候选单独固定sourceCommit，不代表已合入main或发布。问题的复现情况见 [Known Issues](KNOWN_ISSUES.md)，已完成工作的证据见 [项目状态](PROJECT_STATUS.md) 与 [测试记录](TESTING.md)。
+本页是 Emby Theater Enhanced 后续计划的正式来源。公开维护基线以 `main` 为准；PR #23 已合入 `fc452dfe`，main CI 38042826203 SUCCESS。公开测试包仍为 v0.2.7，已授权的 v0.2.8 Pre-release 正在准备，尚未发布。问题的复现情况见 [Known Issues](KNOWN_ISSUES.md)，已完成工作的证据见 [项目状态](PROJECT_STATUS.md) 与 [测试记录](TESTING.md)。
+
+当前发布步骤：最小版本 PR 经 CI GREEN 合入，再从最终 main 提交重新构建、验证、打包并发布三个附件。新包 sourceCommit 必须为最终 main HEAD；历史 `b139d87` 仅保留此前工程与人工验收身份。字幕/音轨延迟保持 P2 accepted followup，外挂字幕竞态可见影响未验证；安装专项及公开材料依赖测试的验证边界不变。以下里程碑和表格保留合并前的历史快照，不构成当前 PR #23 尚待合并的状态。
 
 ## 当前里程碑（2026-10-10 CI028 Hosted GREEN / READY_FOR_MERGE）
 

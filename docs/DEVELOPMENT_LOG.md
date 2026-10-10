@@ -1,5 +1,11 @@
 # 开发日志
 
+## 2026-10-10 — v0.2.8 最小版本更新与发布准备
+
+- Model Tier：Tier 1；Model：当前 GPT-6 系列主线程（精确子型号 UNKNOWN）、GPT-6 Luna High 只读输入核对；Reason：明确版本更新、固定工具链构建与发布核验；Task Risk 中、Uncertainty 低、Playback/Session Impact 0；Escalated：no。
+- 核对实时 main `fc452dfe`、PR #23 MERGED、main CI 38042826203 SUCCESS，以及 v0.2.8 tag/Release 不存在。原工作树和旧构建物保留；新独立分支仅更新 package.json 与 lock 的三处版本，依赖和播放代码不变。
+- 用户授权最小版本 PR、GREEN 后 merge commit 合入、最终 main 来源重建、打包及 Pre-release 发布。此条是准备记录，不能当作新产物 PASS；最终来源和各层原始验证按发布回执交付，不把历史 `b139d87` 或六项人工验收改标为新包运行结果。
+
 ## 2026-10-10 — CI028普通推送、Hosted验证与PR准备
 
 - Model Tier：Tier1；Model：当前GPT-6系列主线程（精确子型号UNKNOWN）；Reason：已验收提交的有界Git整合、证据回读与最终diff检查；Task Risk中、Uncertainty低、Playback/Session新增影响0；Escalated：no。简单串行整合直接执行，没有扩大本地审核或重跑相同产品。

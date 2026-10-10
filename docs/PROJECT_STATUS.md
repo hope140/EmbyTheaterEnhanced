@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-10 — v0.2.8 测试版发布准备
+
+PR #23 已以 merge commit `fc452dfe9cc11249309ef4c2f1199ca7223fbe05` 合入 main；合并后 [CI 38042826203](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38042826203) 最终 SUCCESS，公开测试与全部静态步骤通过。用户明确授权 v0.2.8 Pre-release；独立发布分支只将 package/lock 三处产品版本从 0.2.7 更新为 0.2.8，不升级依赖或改变产品逻辑。
+
+本条状态为 PREPARING，尚未发布。最小版本 PR 必须经 CI GREEN 后合入；新 runtime 和安装包必须从最终 main HEAD 构建，不能使用旧 `b139d87` 作为新发布来源。六项用户播放验收保留 USER_ACCEPTANCE_PASS；字幕/音轨延迟 P2 / LEGACY_BEHAVIOR / ACCEPTED_WITH_FOLLOWUP；过期外挂字幕命令竞态可见影响未验证。安装四阶段 NOT_EXECUTED，公开 CI 六份材料依赖测试 NOT_EXECUTED；本机材料齐全的回归另行记录。发布后的准确来源、哈希及验证结果以 Release 三份附件和发布回执为准。以下均保留历史阶段身份。
+
 ## 2026-10-10 — CI028 Hosted GREEN，候选 READY_FOR_MERGE
 
 用户授权后将六个CI修复提交从aa86ddc快进到db9ccde，普通push并从GitHub回读SHA/提交/14文件范围一致；main仍0b782dd。原候选工作树三份未提交文档保留在codex/integration-028-local-docs，前后hash一致。新增5项测试来源已逐项确认，原公开runner与六份材料排除不变。
