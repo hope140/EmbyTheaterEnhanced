@@ -17,6 +17,7 @@
     var nativeImage = electron.nativeImage;
     var productIdentity = require('./product-identity');
     var appHostCommand = require('./apphost-command');
+    var externalUrl = require('./enhanced/external-url');
     var productMetadata = require('./package.json');
     productIdentity.setAppName(app, productMetadata);
     var path = require('path');
@@ -371,7 +372,7 @@
                     restartSystem();
                     break;
                 case 'openurl':
-                    electron.shell.openExternal(appHostCommand.getOpenUrlTarget(parsedRequest));
+                    externalUrl.openExternalUrl(electron.shell, appHostCommand.getOpenUrlTarget(parsedRequest));
                     break;
                 case 'video-on':
                     sleepLock = powerSaveBlocker.start('prevent-display-sleep')
@@ -458,7 +459,7 @@
         }).then(response => {
           switch (response.response) {
             case 1:
-              shell.openExternal('https://hooke007.github.io/unofficial/mpv_shaders.html');
+              externalUrl.openExternalUrl(shell, 'https://hooke007.github.io/unofficial/mpv_shaders.html');
               break;
             case 2:
               if (fs.existsSync(mpvConfPath)) {
@@ -1193,7 +1194,7 @@
             getWebContents().on('dom-ready', setStartInfo);
 
             getWebContents().setWindowOpenHandler(function (details) {
-                electron.shell.openExternal(details.url);
+                externalUrl.openExternalUrl(electron.shell, details.url);
                 return { action: 'deny' };
             });
 
