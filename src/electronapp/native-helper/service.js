@@ -465,7 +465,11 @@ function createService(options) {
           sendEvent({type: 'bridge_error', reason: terminal.name});
           log('helper-terminal', {reason: terminal.name});
           client = null;
-          owned.kill().catch(function () {});
+          // Transport death releases playback authority, not owned-exit waiting.
+          const completion = owned.kill();
+          pendingClientDestructions.add(completion);
+          completion.then(function () { pendingClientDestructions.delete(completion); },
+            function () { pendingClientDestructions.delete(completion); });
         }
       });
       helperRuns.set(owned, helperRun);
@@ -686,7 +690,7 @@ function createService(options) {
     if (destroyPromise) return destroyPromise;
     destroyed = true;
     activeEndpointId = null;
-    // Renderer unload may already have detached client while its kill is pending.
+    // Renderer unload or transport death may detach client while its kill is pending.
     const pendingDestructions = Array.from(pendingClientDestructions);
     // Window closed and before-quit can overlap. Publish the shared completion
     // before cleanup starts so every caller waits for the owned native child.
