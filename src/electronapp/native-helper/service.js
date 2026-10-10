@@ -701,12 +701,22 @@ function createService(options) {
       // One failed child must not let before-quit outrun other owned exits.
       const outcomes = await Promise.allSettled([destroyClient('service-destroy'), ...pendingDestructions]);
       const failure = outcomes.find(outcome => outcome.status === 'rejected');
-      if (failure) throw failure.reason;
+      // Native failure does not transfer ownership of local window resources.
+      // Attempt all releases, then preserve the original owned-client error.
+      let cleanupFailure = null;
       for (const binding of boundWindowEvents.splice(0)) {
-        try { binding.main.removeListener(binding.name, binding.listener); } catch (_) { }
+        try { binding.main.removeListener(binding.name, binding.listener); }
+        catch (error) { if (!cleanupFailure) cleanupFailure = {reason: error}; }
       }
-      if (surfaceWindow && !surfaceWindow.isDestroyed()) surfaceWindow.destroy();
-      surfaceWindow = null;
+      try {
+        if (surfaceWindow && !surfaceWindow.isDestroyed()) surfaceWindow.destroy();
+      } catch (error) {
+        if (!cleanupFailure) cleanupFailure = {reason: error};
+      } finally {
+        surfaceWindow = null;
+      }
+      if (failure) throw failure.reason;
+      if (cleanupFailure) throw cleanupFailure.reason;
     });
     return destroyPromise;
   }
