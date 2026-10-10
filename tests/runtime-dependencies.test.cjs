@@ -120,8 +120,12 @@ test('temporary parent aliases produce a physical dependency fixture', t => {
         fs.mkdirSync(external);
         fs.symlinkSync(external, path.join(fixture.source, 'node_modules', 'long', 'linked'),
             process.platform === 'win32' ? 'junction' : 'dir');
+        // A successful copy consumes ownership; the rejection needs a fresh output.
+        const rejectedFixture = {...fixture, runtime: path.join(fixture.root, 'dist', 'junction-candidate')};
+        fs.mkdirSync(rejectedFixture.runtime);
+        const rejectedToken = prepareRuntime(rejectedFixture);
         assert.throws(() => contract.copyRuntimeDependencies(
-            fixture.root, fixture.runtime, fixture.source, token), /symlink or junction/);
+            rejectedFixture.root, rejectedFixture.runtime, rejectedFixture.source, rejectedToken), /symlink or junction/);
     } finally {
         cleanup(fixture);
         fs.rmSync(parent, {recursive: true, force: true});
