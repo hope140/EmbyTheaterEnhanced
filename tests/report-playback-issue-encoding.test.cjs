@@ -27,6 +27,11 @@ function runProbe(shell, mode, scriptPath, outputRoot) {
 $ErrorActionPreference = 'Stop'
 $target = $env:ETE_ENCODING_TARGET
 $mode = $env:ETE_ENCODING_MODE
+if ($mode -eq 'environment') {
+    [Console]::WriteLine(('PS_VERSION=' + $PSVersionTable.PSVersion.ToString()))
+    [Console]::WriteLine(('DEFAULT_CODEPAGE=' + [Text.Encoding]::Default.CodePage))
+    exit 0
+}
 if ($mode -eq 'parse-file') {
     $tokens = $null
     $errors = $null
@@ -120,17 +125,46 @@ test('reporter script encoding stays valid in Windows PowerShell 5.1 and PowerSh
 
   const matrix = {};
   for (const [shellName, shell] of [['WindowsPowerShell51', PS51], ['PowerShell7', pwsh]]) {
+    const environment = runProbe(shell, 'environment', '', tempRoot);
+    assert.equal(environment.error, undefined, `${shellName} environment probe launch failed.`);
+    assert.equal(environment.status, 0, `${shellName} environment probe failed: ${environment.stderr}${environment.stdout}`);
+    const environmentScalars = {
+      psVersion: /^PS_VERSION=([^\r\n]+)$/m.exec(environment.stdout)?.[1],
+      defaultCodePage: Number(/^DEFAULT_CODEPAGE=(\d+)$/m.exec(environment.stdout)?.[1]),
+    };
+    assert.ok(environmentScalars.psVersion, `${shellName} PowerShell version was not reported.`);
+    assert.ok(Number.isInteger(environmentScalars.defaultCodePage), `${shellName} default code page was not reported.`);
+    matrix[`${shellName}.environment`] = {classification: 'LOCAL_SHELL_SCALARS', ...environmentScalars};
+
+    const shellResults = {};
     for (const [variantName, scriptPath] of [['gitBlobNoBom', legacyPath], ['bomAdded', bomPath]]) {
       const outputRoot = path.join(tempRoot, `${shellName}-${variantName}`);
       const parse = runProbe(shell, 'parse-file', scriptPath, outputRoot);
       const execute = runProbe(shell, 'execute', scriptPath, outputRoot);
-      matrix[`${shellName}.${variantName}`] = {parseFile: parse, execute};
+      const localeDependentLegacy = shellName === 'WindowsPowerShell51' && variantName === 'gitBlobNoBom';
+      matrix[`${shellName}.${variantName}`] = {
+        classification: localeDependentLegacy ? 'RUNNER_LOCALE_DEPENDENT_OBSERVATION' : 'MUST_PASS',
+        parseFile: parse,
+        execute,
+      };
+      shellResults[variantName] = {parseFileStatus: parse.status, executeStatus: execute.status};
       assert.equal(parse.error, undefined, `${shellName}/${variantName} ParseFile launch failed.`);
-      assert.equal(parse.status, 0, `${shellName}/${variantName} ParseFile failed: ${parse.stderr}${parse.stdout}`);
       assert.equal(execute.error, undefined, `${shellName}/${variantName} execution launch failed.`);
-      assert.equal(execute.status, 0, `${shellName}/${variantName} execution failed: ${execute.stderr}${execute.stdout}`);
-      assert.match(execute.stdout, /"status"\s*:\s*"READY"/, `${shellName}/${variantName} did not return READY.`);
+      if (localeDependentLegacy) {
+        assert.ok([0, 21].includes(parse.status), `Unexpected Windows PowerShell 5.1 legacy ParseFile status ${parse.status}: ${parse.stderr}${parse.stdout}`);
+        if (parse.status === 0) {
+          assert.equal(execute.status, 0, `WindowsPowerShell51/gitBlobNoBom parsed but execution failed: ${execute.stderr}${execute.stdout}`);
+          assert.match(execute.stdout, /"status"\s*:\s*"READY"/, 'WindowsPowerShell51/gitBlobNoBom did not return READY after successful parsing.');
+        } else {
+          assert.notEqual(execute.status, 0, 'WindowsPowerShell51/gitBlobNoBom execution succeeded although ParseFile rejected its ANSI-decoded source.');
+        }
+      } else {
+        assert.equal(parse.status, 0, `${shellName}/${variantName} ParseFile failed: ${parse.stderr}${parse.stdout}`);
+        assert.equal(execute.status, 0, `${shellName}/${variantName} execution failed: ${execute.stderr}${execute.stdout}`);
+        assert.match(execute.stdout, /"status"\s*:\s*"READY"/, `${shellName}/${variantName} did not return READY.`);
+      }
     }
+    t.diagnostic(`encoding diagnostic: shell=${shellName} version=${environmentScalars.psVersion} defaultCodePage=${environmentScalars.defaultCodePage} legacyParseFile=${shellResults.gitBlobNoBom.parseFileStatus} legacyExecute=${shellResults.gitBlobNoBom.executeStatus} bomParseFile=${shellResults.bomAdded.parseFileStatus} bomExecute=${shellResults.bomAdded.executeStatus}; legacy=RUNNER_LOCALE_DEPENDENT_OBSERVATION`);
   }
 
   const simulatedAnsi = runProbe(PS51, 'parse-simulated-cp1252', legacyPath, tempRoot);
