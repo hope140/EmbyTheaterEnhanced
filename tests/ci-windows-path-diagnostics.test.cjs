@@ -15,6 +15,12 @@ test('path diagnostic records raw and physical temporary paths without profile n
     assert.equal(report.rawMkdtemp.lstat.directory, true);
     assert.equal(report.rawMkdtemp.lstat.symbolicLink, false);
     assert.ok(report.ancestors.length > 0);
+    for (const entry of [...report.ancestors, report.rawMkdtemp, report.physicalMkdtemp,
+        report.rawChild, report.physicalChild, report.temporaryRoot, report.parent]) {
+        assert.match(entry.resolved, /^<PATH_\d+>$/);
+        assert.match(entry.native, /^<PATH_\d+>$/);
+    }
+    assert.equal(report.physicalMkdtemp.resolved, report.physicalMkdtemp.native);
     assert.equal(diagnostic.displayPath('C:\\Users\\runneradmin\\Temp'), 'C:\\Users\\<USER>\\Temp');
     assert.equal(diagnostic.displayPath('C:\\Users\\RUNNER~1\\Temp'), 'C:\\Users\\<USER>\\Temp');
     assert.equal(diagnostic.displayPath('/home/tester/tmp'), '/home/<USER>/tmp');
