@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-10 — PLAY-01 独立修复与离线验收
+
+产品修复固定为 `1a62f3d6675a48050df6827c3807d9720f45f560`，分支 `codex/play01-stop-boundary`。只修改PlaybackManager生成补丁及相关测试，公开Play和换流请求归属覆盖Stop同步终止边界；SEC/LIFE/CI分支保持独立。定向46/46、完整离线681/681通过，原RED与实现期间失败保留，独立复核通过。固定输入构建及三组隐藏隔离runtime（hit400/direct0/miss0）PASS，均自然exit0/残留0；每组5对Session身份独立复算通过，2,136 payload文件运行后哈希一致。精确迟到响应时序为UNIT_VERIFIED，真实服务/视觉/安装未执行。根因、contract与原始证据见 [PLAY-01报告](PLAY01_STOP_BOUNDARY.md)。以下审核与发布条目均为各自阶段的历史证据，不表示本地修复已进入main或发布版本。
+
 ## 2026-10-10 — 独立审核与本地修复准备
 
 固定main `0b782dd`、产品v0.2.7 `d8fcb0f9`完成A1–A4审核。SEC01/SEC02局部边界、LIFE01/02各自独立本地提交并经diff与单测复核，CI/QA/安装卡在准备分支；未合并、推送或生成新runtime。PLAY-01已由主线程再次复现：Stop后旧changeStream仍load媒体，单列P1及稳定版阻断，核心contract需独立收敛。完整状态、提交、原始命令、失败与证据层级见 [交付报告](REVIEW_028_DELIVERY.md)，计划见 [ROADMAP](ROADMAP.md)。

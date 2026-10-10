@@ -4,7 +4,7 @@
 
 ## 当前里程碑（2026-10-10 独立审核）
 
-审核固定main `0b782dd`、产品v0.2.7 `d8fcb0f9`。独立审核完成，确认PLAY-01：换流PlaybackInfo迟到可在Stop完成后重新load旧媒体，当前为正式版阻断。SEC-01、SEC-02局部边界、LIFE-01与LIFE-02已有独立本地修复提交；尚未合并、构建新runtime或发布。准备与验证入口见 [独立报告](INDEPENDENT_REVIEW_028.md)、[交付验收](REVIEW_028_DELIVERY.md)、[播放矩阵](RELEASE_ACCEPTANCE_MATRIX.md)、[安装卡](INSTALLER_LIFECYCLE_CARD.md)。以下0.2.7发布数据保留历史身份。
+审核固定main `0b782dd`、产品v0.2.7 `d8fcb0f9`。独立审核完成，PLAY-01已在独立本地产品提交 `1a62f3d` 修复，定向46/46、全量681/681及独立复核通过；尚未进入main或发布版本。请求归属contract、构建与隔离runtime结果见 [PLAY-01报告](PLAY01_STOP_BOUNDARY.md)。SEC-01、SEC-02局部边界、LIFE-01与LIFE-02仍为各自本地分支，未提前合并。本轮只关闭PLAY-01的确定性局部问题，正式版仍需组合候选与实际场景验收。准备入口见 [独立报告](INDEPENDENT_REVIEW_028.md)、[交付验收](REVIEW_028_DELIVERY.md)、[播放矩阵](RELEASE_ACCEPTANCE_MATRIX.md)、[安装卡](INSTALLER_LIFECYCLE_CARD.md)。以下0.2.7发布数据保留历史身份。
 
 0.2.7产品d8fcb0f9和获审阅的安装器已按原字节发布为Pre-release，完整源码、文档及原始审核证据已通过 [PR #21](https://github.com/hope140/EmbyTheaterEnhanced/pull/21) 合入main，整合提交ef4fcf58。整体审核直接使用main并记录实际HEAD，入口见 [AI审核指南](AI_REVIEW_GUIDE.md)；发布与合并核验见 [0.2.7发布记录](RELEASE_027.md) 和 [主线收尾](MAIN_CLOSEOUT_027.md)。
 
@@ -22,7 +22,7 @@ grpc-js 1.14.6、About随包版本/刷新及异步校验均已进入main与0.2.7
 
 | 优先级 / 编号 | 工作与当前状态 | 可自主推进的准备 | 完成标准 / 需要用户参与 |
 |---|---|---|---|
-| P1 / PLAY-01 | CONFIRMED_OFFLINE / BLOCKS_STABLE | 已保留真实PlaybackManager+libmpv的RED探针 | 单独确认换流请求/捕获流/编码清理contract，再做Stop/Next/Previous/并发换流回归及新runtime验证 |
+| P1 / PLAY-01 | LOCAL_FIX_UNIT_VERIFIED / NOT_MERGED | 最小contract、RED/GREEN及独立复核已完成；产品1a62f3d | 获准后独立PR审查；隔离runtime结果见专项报告；组合候选和真实服务验收后解除发布阻断 |
 | P1 / SEC-01、SEC-02、LIFE-02；P2 / LIFE-01 | LOCAL_UNIT_VERIFIED / NOT_MERGED | 四项独立提交已完成源码与局部测试复核 | 获批准后逐项PR；LIFE-02依赖LIFE-01；组合候选需重新验证IPC、正常关闭与播放路由 |
 | P2 / CI-01 | 本地公开离线CI准备 | 精确区分公开测试与6份材料依赖测试，语法/diff/有限敏感检查 | Actions真实运行待push/PR授权；完整vendor构建层仍单列 |
 | P2 / QA-01 | PREPARED | 可执行离线测试、真实场景矩阵与授权边界已准备 | 新合并候选runtime与获授权的Emby/CD2/Session/字幕章节/远控验收 |

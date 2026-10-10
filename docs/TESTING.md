@@ -1,5 +1,11 @@
 # 测试与验收
 
+## 2026-10-10 — PLAY-01 固定源码验证
+
+本地产品提交 `1a62f3d`：`node --test tests/playbackmanager-request-session.test.cjs tests/review-probes/play01-native-gates.cjs` 为46/46；`npm test -- --test-concurrency=1` 为681/681，无失败/取消/跳过。独立review另跑PM44、Native门控2、原Native lifecycle6通过。原探针修复前load2、修复后load1；Next/public Play、重叠请求、Stop后新Play、Session归属、Native创建/Resolver pending以及合法/迟到retry均使用受控gate验证。
+
+本机已核验并准备固定vendor/preload，未缺材料跳过；Native门控探针在无输入时显式失败，单列于review-probes，未改变公开CI策略。固定源码构建通过，hit400/direct0/miss0三组隐藏隔离runtime均自然exit0/残留0，每组5对Session报告独立复算通过。精确迟到响应gate仍为UNIT_VERIFIED，真实服务/视觉/安装NOT_EXECUTED。完整命令、RED及实现期失败、输入hash、隔离runtime结果见 [PLAY-01报告](PLAY01_STOP_BOUNDARY.md)。下方上一轮RED及缺材料失败保持原基线事实，不能被本轮GREEN覆盖。
+
 ## 2026-10-10 — 独立审核的本地分支证据
 
 测试输入与提交各自绑定，尚无组合候选：SEC01定向39/39（独立复核新12/12），SEC02定向148/148（独立复核新9/9），LIFE01 Native66/66，LIFE02 Native68/68（独立复核68/68与额外probe1/1）。PLAY-01独立安全断言保持RED（Stop后loadCount2而期望1），原公开checkout全量632项623通过/9缺材料失败，均未改标通过。初次工具/fixture失败另见 [交付记录](REVIEW_028_DELIVERY.md)。

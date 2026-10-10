@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-10-10 — PLAY-01 Stop 请求归属修复
+
+- Model Tier：Tier 2；Model：当前GPT-6系列主线程（精确子型号UNKNOWN），沿用独立链路review与测试worker；Reason：Risk高、Uncertainty中、跨manager异步入口与libmpv边界，Playback/Session有影响。主线程收敛最小归属规则并复核真实diff，worker限测试与独立审查；Escalated：no。
+- 用户单独授权PLAY-01本地修复、确定性RED/GREEN、本地提交和条件允许的隔离runtime。实际main为0b782dd、v0.2.7产品d8fcb0f9；从文档交付db8f017建立独立工作树，SEC/LIFE/CI未合入，原工作区保留。
+- 产品提交1a62f3d提前绑定公开Play的request序号，换流继续点使用捕获stream/sequence/owner，Stop同步终止旧意图并保存完成屏障；下层Resolver/Native/Session代码不变。合法retry错误传播的实现期回归被独立review发现并修复，保留失败日志。
+- RED矩阵30项21通过/9失败；最终定向46/46、全量681/681，失败/跳过/取消均0。独立复核PM44、Native门控2、原lifecycle6通过；无原断言削弱。固定vendor/preload本机齐全，公开材料边界保持。构建、runtime、未覆盖场景及证据索引见 [PLAY-01报告](PLAY01_STOP_BOUNDARY.md)。
+- 固定1a62f3d构建来源通过，hit400/direct0/miss0三组隐藏隔离pipeline均自然exit0/无强清理/残留0，主线程原始报告复算各5对Session一致，运行后2,136 payload哈希与2,137总文件数一致。108份本地原始证据索引保留RED/GREEN及失败；收尾仅文档，不重建同一产品。真实服务/视觉/安装未执行，无push/PR/merge/tag/release。
+
 ## 2026-10-10 — 独立审核、安全与生命周期局部加固
 
 - Model Tier：主线程Tier3；Model：当前会话GPT-6系列（工具未提供精确主线程子型号，UNKNOWN）；Reason：用户指定主线程跨层安全/生命周期风险判定与最终验收；Escalated：无临时升级。明确实现/复核使用GPT-6.1 Sol High，CI使用GPT-6 Luna High。Risk高、Uncertainty中、跨Playback/Native/IPC/构建；核心Playback仅审核与RED复现。

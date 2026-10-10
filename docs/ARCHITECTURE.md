@@ -4,7 +4,7 @@
 
 以下新增contract只属于独立本地修复，不能当作已发布v0.2.7行为：SEC01在系统浏览器入口允许HTTP/HTTPS并收口错误；SEC02增强IPC只接受当前webContents的实际mainFrame和固定包内index，主导航/redirect受限。原preload宽fs/rawIPC及isolation/sandbox/CORS/CSP依赖保留待设计。LIFE01在全部owned退出settled后仍尝试所有listener/surface清理，再按current/pending顺序传播原错误；无native错才传播cleanup错。LIFE02把terminal解绑的owned kill加入同pending集合，不改变generation、重建或kill策略。提交和层级见 [交付记录](REVIEW_028_DELIVERY.md)。
 
-已复现PLAY-01说明原请求保护并未覆盖changeStream成功异步路径；该链需独立请求/捕获流/编码清理contract，当前未修改。下文原错误短路与terminal边界描述继续代表审核基线/已发布实现，不代表上述本地候选。
+PLAY-01独立本地候选 `1a62f3d` 已补齐原changeStream成功路径和公开Play前置异步入口的归属。公开本地Play同步捕获request序号，playInternal消费该身份；换流捕获stream对象、sequence、request ID及独立owner，各异步继续点检查归属。同ID的有效换流仍允许。terminal Stop同步失效旧意图并清除换流标记，完成Promise阻止新意图越过旧物理Stop；Stop之后明确新Play仍被接受。已接管source的错误继续由原恢复链传播，避免合法retry被误吞。未改变Session身份、Resolver或Native fallback规则，详见 [PLAY-01](PLAY01_STOP_BOUNDARY.md)。下文原错误短路与terminal边界描述继续代表审核基线/已发布实现，新增局部规则以本段为准；SEC/LIFE补丁并未合入PLAY-01分支。
 
 About包内版本校验由main持有固定runtimeRoot/sourceCommit的异步reader。四个固定文件按64 KiB读取/哈希，读取前后及整轮结束复核文件身份；仅共享进行中的Promise，完成/UNKNOWN即清除，后续查询重验全部字节。实时Helper状态在await包内结果后独立获取；维护GET_INFO/COPY/CHECK_UPDATE及诊断EXPORT均await信息快照。复制同快照、sender白名单及renderer请求代际保持，查询不启动播放器。验证层级与来源见 [About异步版本校验](ABOUT_VERSION_ASYNC.md) 及 [0.2.7维护收口](MAINTENANCE_027.md)。
 

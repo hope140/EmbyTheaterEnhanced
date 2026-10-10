@@ -2,7 +2,7 @@
 
 ## 2026-10-10 — 独立审核新增发现
 
-- **P1 PLAY-01 / CONFIRMED_OFFLINE / BLOCKS_STABLE**：当前v0.2.7等同产品链，音轨/质量换流的PlaybackInfo挂起后完成Stop，再释放旧响应可重新load旧媒体。真实PlaybackManager transform与libmpv模块离线复现，原生endpoint/API为fake；真实服务未执行。追踪 `tools/patch-playbackmanager.cjs:91` 及 `src/electronapp/plugins/libmpv.js:190`，不得以已有Next/Stop测试通过关闭。见 [独立报告](INDEPENDENT_REVIEW_028.md)。
+- **P1 PLAY-01 / LOCAL_FIX_UNIT_VERIFIED / NOT_MERGED**：v0.2.7及当前main仍含Stop后旧换流响应重载问题。本地独立产品提交1a62f3d在manager捕获请求和换流owner，并同步终止Stop前意图；原RED已复现，定向46/46、全量681/681、独立复核通过。缺陷在本地确定性范围关闭，发布阻断需待批准整合和候选验收后解除。真实服务未执行；隔离runtime证据单列，不扩大为真实画面或报告送达验收。见 [修复报告](PLAY01_STOP_BOUNDARY.md)；[原审核](INDEPENDENT_REVIEW_028.md)保留。
 - **SEC01 / SEC02 / LIFE01 / LIFE02**：外链协议、IPC主frame/文档、异常资源清理及terminal-owned退出等待已有独立本地修复，当前仅STATIC/UNIT层通过，尚未进入main或安装包。SEC02宽preload/CSP/CORS/isolation迁移仍待设计；默认controller.kill拒绝可达性UNKNOWN。详见 [交付报告](REVIEW_028_DELIVERY.md)。
 
 本轮没有新P0结论；以下历史观察与已修结果保留原身份。

@@ -26,6 +26,16 @@
 
 内部contract的变化是**请求归属更早确定、换流有独立owner、terminal完成形成新播放屏障**。ItemId/MediaSourceId/PlaySessionId、正常Playing/Stopped报告内容、队列含义与fallback规则保持。
 
+修改位置（绑定产品提交 `1a62f3d`）：`tools/patch-playbackmanager.cjs:23` 为playInternal身份消费，`:56` 为terminal等待，`:303` 为换流owner判定，`:359` 为已接管source的错误传播，`:419` 为Stop完成屏障。其余新增替换是上述入口与继续点的窄守卫；没有修改vendor字节。
+
+| 时序 | 修复前 | 修复后 |
+| --- | --- | --- |
+| Next → PlaybackInfo pending → Stop → 返回 | 已有request守卫能阻止加载 | 保持原保护，单个/重叠请求及逆序返回均验证 |
+| Play → user/intro/item准备pending → Stop → 返回 | 可能在playInternal重新领新request ID | 入口已捕获旧ID，停止于继续点 |
+| A换流 → PlaybackInfo pending → Stop → 返回 | 旧ID可建立新libmpv generation并load A | owner与sequence失效，不进入player.play |
+| Stop pending → 用户新Play B → Stop完成 | 可能过早进入新播放准备 | B获得新身份，等待旧物理Stop排空后继续 |
+| A换流/初始player.play pending → Stop → B → A完成/失败 | 旧结果可能重写stream或进入错误恢复 | 旧回调不控制B，合法当前重试仍保留原错误 |
+
 ## 确定性验证与失败记录
 
 测试使用deferred Promise/gate决定顺序。轮询只等待已记录的门控条件；没有以固定sleep决定竞态或放宽原断言。原16个PlaybackManager测试与原Native lifecycle测试块保留。
@@ -53,13 +63,32 @@ PlaybackManager测试需要固定vendor输入，可用进程内 `ETE_PLAYBACKMAN
 | 完整离线回归（固定vendor、prepared preload齐全） | 681/681；失败/跳过/取消均0 | UNIT_VERIFIED |
 | 独立复核重跑 | PM 44/44、Native门控2/2、原Native lifecycle 6/6 | UNIT_VERIFIED |
 | 主线程与独立diff审查、语法和diff检查 | 通过；原测试断言保持 | STATIC_VERIFIED |
+| 固定源码构建及来源校验 | exit0，2,136 payload文件，包含manifest共2,137 | STATIC_VERIFIED |
+| 隔离runtime：CD2 hit400 / direct0 / miss0 | 三组均PASS，自然exit0、无强清理、残留0 | ISOLATED_RUNTIME_VERIFIED |
 
 最终patch SHA256为 `23f8860f2126be3f6a74c05632b7b93625310f4ccd047238fbc0d6d6f44d18bc`。原始日志保存在 `.work/play01/targeted-final.log`、`full-regression.log` 与 `independent-*.log`；独立复核结论与其发现的已修复回归保存在 `independent-review.md`。本轮固定输入到位，未因缺少vendor/preload跳过测试；公开checkout仍需遵循材料依赖边界，不能把此本机结果当作公开CI结果。
 
-隔离runtime将在固定本地源码提交后构建，构建与运行尚未计入本表。真实Emby/CD2、用户视觉与系统安装均NOT_EXECUTED。
+### 隔离构建与运行
+
+固定产品/测试提交为 `1a62f3d6675a48050df6827c3807d9720f45f560`。本地runtime为 `dist/PLAY01-1a62f3d`，版本字段仍为0.2.7，仅作为隔离验证产物，不是新发布包。运行使用现有未修改的隐藏窗口runner、独立appData/userData/MPV_HOME及本地假服务；三组bootstrap前隔离读回通过。
+
+```powershell
+pwsh -NoProfile -File tools/build.ps1 -OutputName PLAY01-1a62f3d
+pwsh -NoProfile -File tools/test-p1-diagnostics.ps1 -RuntimeName PLAY01-1a62f3d -Cd2Mode hit -Cd2DelayMs 400 -ProductCloseAfterPipeline -AboutAsync
+pwsh -NoProfile -File tools/test-p1-diagnostics.ps1 -RuntimeName PLAY01-1a62f3d -Cd2Mode direct -Cd2DelayMs 0 -ProductCloseAfterPipeline -AboutAsync
+pwsh -NoProfile -File tools/test-p1-diagnostics.ps1 -RuntimeName PLAY01-1a62f3d -Cd2Mode miss -Cd2DelayMs 0 -ProductCloseAfterPipeline -AboutAsync
+```
+
+固定Electron44.4.2、libmpv、编译器树、34项构建输入及source/runtime/native来源均校验通过；未升级依赖或安装软件。三组诊断分别128/129/98条，准确request关联12/12/10。普通媒体、STRM、队列切集、Pause/Resume/Seek/Stop与现有generation门控在该离线pipeline通过；CD2 miss未阻断既有降级。主线程独立按原始Playing/Stopped的ItemId/MediaSourceId/PlaySessionId分组，每组均恰好5对且先Playing后Stopped。运行后逐文件复核2,136个payload哈希及2,137总文件数一致。
+
+PLAY-01专用迟到PlaybackInfo时序由Node中真实生成的manager与真实libmpv JavaScript配合受控gate验证；没有将三组常规runtime扩大为该时序的Electron直接复现。真实Emby/CD2、真实远控、字幕章节的真实内容、用户可见首帧/连续性和系统安装均NOT_EXECUTED。没有缺vendor/preload而漏跑的本机测试，但材料未提供的公开checkout不能复用本机完整构建可执行性的结论。
+
+机器证据、准确命令及108份本地原始证据的相对路径/字节数/SHA256见 [证据索引](evidence/play01-stop-boundary.json)。原RED、初次anchor错误、合法retry错误传播回归及修复后GREEN均保留；未将包含本机绝对路径的原始日志复制到公开文档。后续收尾仅改文档，不改变构建输入，不为相同产品重复构建。
 
 ## 回滚与边界
 
-修复提交可通过独立 `git revert <PLAY-01修复提交>` 回滚，不需要恢复vendor或改tag。若未整合，直接不采用本分支即可；原v0.2.7及SEC/LIFE/CI分支均保留。构建产物只用于本地隔离验证，不安装到现用客户端。
+产品/测试/根因报告提交为 `1a62f3d6675a48050df6827c3807d9720f45f560`，可通过 `git revert 1a62f3d6675a48050df6827c3807d9720f45f560` 单独回滚（本轮未执行回滚）。后续同分支docs提交只记录验收与当前计划。若未整合，直接不采用本分支即可；原v0.2.7及SEC/LIFE/CI分支均保留。构建产物只用于本地隔离验证，不安装到现用客户端。
+
+下一步仅建议独立PLAY-01 PR，保留与SEC/LIFE的可独立回滚边界；真正整合前应复核基线漂移，组合候选另跑验收。是否创建PR、合并或发布仍需用户授权，本轮未执行。
 
 离线假API只能验证请求与报告序列，不能证明真实服务器已收到报告或转码资源已回收。真实服务器、可见画面与正式版组合候选仍须另行验收；本修复不关闭上一轮SEC02完整隔离迁移和第三方材料缺口。
