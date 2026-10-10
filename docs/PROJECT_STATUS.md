@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-10 — CI028 Hosted GREEN，候选 READY_FOR_MERGE
+
+用户授权后将六个CI修复提交从aa86ddc快进到db9ccde，普通push并从GitHub回读SHA/提交/14文件范围一致；main仍0b782dd。原候选工作树三份未提交文档保留在codex/integration-028-local-docs，前后hash一致。新增5项测试来源已逐项确认，原公开runner与六份材料排除不变。
+
+[Hosted run 38040747159](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38040747159)实际657/657、fail/cancel/skip0，路径诊断、JS220、PowerShell25、有限敏感268及diff全部success，无静态步骤跳过。Runner实际短名/物理路径差异、PS5.1代码页1252旧无BOM失败/BOM成功已观测；首次26项RED仍完整保留。主线程diff及输入复核通过，READY_FOR_MERGE；后续文档提交及PR检查分别回读，不自动合并。产品/runtime仍b139d87，本轮未新构建。详情见 [远端验收](CI028_HOSTED_VALIDATION.md)。以下条目保留当时身份。
+
 ## 2026-10-10 — CI028 Windows 兼容修复，本地 READY_FOR_PUSH
 
 远端统一候选仍为 `aa86ddc6b0d5a911440ee6dff41ac20147e8f8e6`；Hosted run 38036913645 的 626 PASS / 26 FAIL 原日志保留。独立分支 `codex/ci028-windows-compat` 固定代码 `5b1e09284b8aa7c74d635b02ce9aebec9de0c016`，只调整自建 fixture 的物理根路径、reporter UTF-8 BOM、编码回归与匿名 CI 诊断。两个生产路径校验器不变。

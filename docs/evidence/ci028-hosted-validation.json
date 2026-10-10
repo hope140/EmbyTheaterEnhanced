@@ -1,0 +1,362 @@
+{
+  "schemaVersion": 1,
+  "repository": "hope140/EmbyTheaterEnhanced",
+  "branch": "codex/integration-028-candidate",
+  "baselineMain": "0b782ddec404f4148cb6c8c16f19bc22201d3252",
+  "before": "aa86ddc6b0d5a911440ee6dff41ac20147e8f8e6",
+  "firstHostedHead": "db9ccdeb0f932f2dc5eb769353203f03da1684a8",
+  "productSourceCommit": "b139d87da06cfba153a828766926b78230be4a0f",
+  "codeCommit": "5b1e09284b8aa7c74d635b02ce9aebec9de0c016",
+  "integration": {
+    "method": "fast-forward",
+    "commits": 6,
+    "remoteFiles": 14,
+    "conflicts": 0,
+    "forcePush": false,
+    "preservedWorktreeBranch": "codex/integration-028-local-docs",
+    "preservedDocumentCount": 3,
+    "preservedHashesUnchanged": true
+  },
+  "testOrigin": {
+    "base": "aa86ddc6b0d5a911440ee6dff41ac20147e8f8e6",
+    "head": "db9ccdeb0f932f2dc5eb769353203f03da1684a8",
+    "addedTestDeclarations": [
+      "+test('temporary parent aliases produce a physical build input fixture', t => {",
+      "+test('path diagnostic records raw and physical temporary paths without profile names', () => {",
+      "+test('diagnostic distinguishes a real junction from a physical directory', () => {",
+      "+test('reporter script encoding stays valid in Windows PowerShell 5.1 and PowerShell 7', t => {",
+      "+test('temporary parent aliases produce a physical dependency fixture', t => {"
+    ],
+    "removedTestDeclarations": [],
+    "publicRunnerAndExclusionsUnchanged": true
+  },
+  "hosted": {
+    "runId": 38040747159,
+    "url": "https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38040747159",
+    "event": "push",
+    "conclusion": "success",
+    "createdAt": "2026-10-10T09:15:30Z",
+    "completedAt": "2026-10-10T09:21:06Z",
+    "tests": {
+      "tests": 657,
+      "pass": 657,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 292372.7765
+    },
+    "discoveredFiles": 87,
+    "executedFiles": 81,
+    "materialRequiredNotExecutedFiles": 6,
+    "requiredSteps": [
+      {
+        "completedAt": "2026-10-10T09:15:55Z",
+        "conclusion": "success",
+        "name": "Inspect Windows temporary path identity",
+        "number": 5,
+        "startedAt": "2026-10-10T09:15:55Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-10T09:20:48Z",
+        "conclusion": "success",
+        "name": "Run public offline test set",
+        "number": 6,
+        "startedAt": "2026-10-10T09:15:55Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-10T09:21:01Z",
+        "conclusion": "success",
+        "name": "Check maintained JavaScript syntax",
+        "number": 7,
+        "startedAt": "2026-10-10T09:20:48Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-10T09:21:01Z",
+        "conclusion": "success",
+        "name": "Check maintained PowerShell syntax",
+        "number": 8,
+        "startedAt": "2026-10-10T09:21:01Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-10T09:21:02Z",
+        "conclusion": "success",
+        "name": "Check credentials patterns in maintained source",
+        "number": 9,
+        "startedAt": "2026-10-10T09:21:01Z",
+        "status": "completed"
+      },
+      {
+        "completedAt": "2026-10-10T09:21:02Z",
+        "conclusion": "success",
+        "name": "Check patch whitespace",
+        "number": 10,
+        "startedAt": "2026-10-10T09:21:02Z",
+        "status": "completed"
+      }
+    ],
+    "javascriptFiles": 220,
+    "powershellFiles": 25,
+    "finiteScanFiles": 268
+  },
+  "hostedPathDiagnostic": {
+    "schemaVersion": 1,
+    "platform": "win32",
+    "node": "v24.18.1",
+    "temporaryRoot": {
+      "resolved": "<PATH_1>",
+      "native": "<PATH_2>",
+      "resolvedEqualsNative": false,
+      "hasShortNameSegment": true,
+      "lstat": {
+        "directory": true,
+        "symbolicLink": false,
+        "mode": 16822
+      }
+    },
+    "parent": {
+      "resolved": "<PATH_3>",
+      "native": "<PATH_4>",
+      "resolvedEqualsNative": false,
+      "hasShortNameSegment": true,
+      "lstat": {
+        "directory": true,
+        "symbolicLink": false,
+        "mode": 16822
+      }
+    },
+    "rawMkdtemp": {
+      "resolved": "<PATH_11>",
+      "native": "<PATH_12>",
+      "resolvedEqualsNative": false,
+      "hasShortNameSegment": true,
+      "lstat": {
+        "directory": true,
+        "symbolicLink": false,
+        "mode": 16822
+      }
+    },
+    "physicalMkdtemp": {
+      "resolved": "<PATH_12>",
+      "native": "<PATH_12>",
+      "resolvedEqualsNative": true,
+      "hasShortNameSegment": false,
+      "lstat": {
+        "directory": true,
+        "symbolicLink": false,
+        "mode": 16822
+      }
+    },
+    "rawChild": {
+      "resolved": "<PATH_13>",
+      "native": "<PATH_14>",
+      "resolvedEqualsNative": false,
+      "hasShortNameSegment": true,
+      "lstat": {
+        "directory": true,
+        "symbolicLink": false,
+        "mode": 16822
+      }
+    },
+    "physicalChild": {
+      "resolved": "<PATH_14>",
+      "native": "<PATH_14>",
+      "resolvedEqualsNative": true,
+      "hasShortNameSegment": false,
+      "lstat": {
+        "directory": true,
+        "symbolicLink": false,
+        "mode": 16822
+      }
+    },
+    "ancestors": [
+      {
+        "resolved": "<PATH_1>",
+        "native": "<PATH_2>",
+        "resolvedEqualsNative": false,
+        "hasShortNameSegment": true,
+        "lstat": {
+          "directory": true,
+          "symbolicLink": false,
+          "mode": 16822
+        }
+      },
+      {
+        "resolved": "<PATH_3>",
+        "native": "<PATH_4>",
+        "resolvedEqualsNative": false,
+        "hasShortNameSegment": true,
+        "lstat": {
+          "directory": true,
+          "symbolicLink": false,
+          "mode": 16822
+        }
+      },
+      {
+        "resolved": "<PATH_5>",
+        "native": "<PATH_6>",
+        "resolvedEqualsNative": false,
+        "hasShortNameSegment": true,
+        "lstat": {
+          "directory": true,
+          "symbolicLink": false,
+          "mode": 16822
+        }
+      },
+      {
+        "resolved": "<PATH_7>",
+        "native": "<PATH_8>",
+        "resolvedEqualsNative": false,
+        "hasShortNameSegment": true,
+        "lstat": {
+          "directory": true,
+          "symbolicLink": false,
+          "mode": 16822
+        }
+      },
+      {
+        "resolved": "<PATH_9>",
+        "native": "<PATH_9>",
+        "resolvedEqualsNative": true,
+        "hasShortNameSegment": false,
+        "lstat": {
+          "directory": true,
+          "symbolicLink": false,
+          "mode": 16676
+        }
+      },
+      {
+        "resolved": "<PATH_10>",
+        "native": "<PATH_10>",
+        "resolvedEqualsNative": true,
+        "hasShortNameSegment": false,
+        "lstat": {
+          "directory": true,
+          "symbolicLink": false,
+          "mode": 16822
+        }
+      }
+    ],
+    "credentialsCollected": false
+  },
+  "hostedEncoding": {
+    "WindowsPowerShell51": {
+      "version": "5.1.26100.33438",
+      "defaultCodePage": 1252,
+      "legacyParseExit": 21,
+      "legacyExecutionExit": 1,
+      "bomParseExit": 0,
+      "bomExecutionExit": 0
+    },
+    "PowerShell7": {
+      "version": "7.6.6",
+      "defaultCodePage": 65001,
+      "legacyParseExit": 0,
+      "legacyExecutionExit": 0,
+      "bomParseExit": 0,
+      "bomExecutionExit": 0
+    }
+  },
+  "productIdentity": {
+    "consumedInputs": 34,
+    "consumedMismatch": [],
+    "productDiff": [],
+    "productionValidatorsChanged": false,
+    "runtimeRebuilt": false
+  },
+  "originalRed": {
+    "runId": 38036913645,
+    "url": "https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38036913645",
+    "head": "aa86ddc6b0d5a911440ee6dff41ac20147e8f8e6",
+    "pass": 626,
+    "fail": 26,
+    "evidenceIndex": "docs/evidence/ci028-windows-compat.json",
+    "rawPreserved": true,
+    "originalPathAndCodePageRemainUnknown": true
+  },
+  "review": {
+    "fullCandidateDiffChecked": true,
+    "unexpectedPayloadOrTemporaryFiles": false,
+    "mainChanged": false
+  },
+  "acceptance": {
+    "status": "READY_FOR_MERGE",
+    "mergeAuthorized": false,
+    "sixRealPlaybackCases": "USER_ACCEPTANCE_PASS",
+    "audioSubtitleLatency": "P2 / LEGACY_BEHAVIOR / ACCEPTED_WITH_FOLLOWUP",
+    "installerLifecycle": "NOT_EXECUTED",
+    "laterDocumentationAndPullRequestCI": "reported separately against their own HEAD; this record remains the db9 push run"
+  },
+  "rawEvidence": [
+    {
+      "path": ".work/remote-ci028/actions-db9-green.json",
+      "bytes": 2751,
+      "sha256": "2ded1d2280939989f28d3ca711cca25d98727101ed1c4b897ac9063c7d650776",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/remote-ci028/actions-db9-green.log",
+      "bytes": 159602,
+      "sha256": "cae15a1da4c5fc865b730bc05a9995d79984b1d628596195ea4be57b55adc77b",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/remote-ci028/remote-refs-db9.txt",
+      "bytes": 141,
+      "sha256": "4414e1d63a689cd2ce3f16d8639a346e0fe59991b6e59f22eb92bde902ed8871",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/remote-ci028/remote-readback-db9.json",
+      "bytes": 773,
+      "sha256": "c96b1840e1a171481918f390e94ccc7d7d8e035cd47133e92c26f2bc864b1023",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/remote-ci028/runs-db9.json",
+      "bytes": 251,
+      "sha256": "42699ade553f0c5753b97ccbd163ba8f7f817ded172a1f875d1a86e529be6716",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/remote-ci028/five-new-tests.json",
+      "bytes": 693,
+      "sha256": "e1ed97a6b3a864894096a7649ceb1748f9286b194c0af432bafdc644164b9afa",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/remote-ci028/preserved-documents-before.json",
+      "bytes": 408,
+      "sha256": "b75a499873138ee72df696019c5212bc1345003349154d6509d8421f27795053",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/remote-ci028/watch-db9.log",
+      "bytes": 6925,
+      "sha256": "04cdf86103d24f18f05d2858f1b63a213af9c7d8fc06fd9bd8a951a8269ed905",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/remote-ci028/watch-db9.exit",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/remote-ci028/main-core-diff.txt",
+      "bytes": 6158,
+      "sha256": "b391288f5a7a6a2ebfe1f4001a1fb2e249445c98ba6698090d216df596bb8ee8",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/remote-ci028/main-file-scope.txt",
+      "bytes": 2663,
+      "sha256": "48469fe16640eff96ce3f21ab703f2f73dce4f413aa84f395c2415dfafcc37ea",
+      "privacy": "LOCAL_RAW_ONLY"
+    }
+  ]
+}

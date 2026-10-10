@@ -2,7 +2,9 @@
 
 本页是 Emby Theater Enhanced 后续计划的正式来源。公开维护基线以 `main` 为准，公开测试包仍为v0.2.7；本地统一候选单独固定sourceCommit，不代表已合入main或发布。问题的复现情况见 [Known Issues](KNOWN_ISSUES.md)，已完成工作的证据见 [项目状态](PROJECT_STATUS.md) 与 [测试记录](TESTING.md)。
 
-## 当前里程碑（2026-10-10 CI028专项收尾）
+## 当前里程碑（2026-10-10 CI028 Hosted GREEN / READY_FOR_MERGE）
+
+用户授权后CI修复六提交快进并普通推送至统一候选db9ccde，原工作树三份文档hash不变。新增五测试来源已核对，旧测试与排除没有删除；[Hosted run 38040747159](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38040747159)公开657/657、诊断和全部静态实际success。主线程diff与产品输入复核通过，当前工程状态 **READY_FOR_MERGE**；按用户条件创建main目标PR，后续文档/PR checks分别绑定实际HEAD，不自动合并。产品runtime仍b139d87，未重建；[完整远端证据](CI028_HOSTED_VALIDATION.md)。以下本地READY_FOR_PUSH说明为该阶段历史快照。
 
 统一候选已按此前授权推送至 `codex/integration-028-candidate@aa86ddc`，用户六项真实播放验收为 **USER_ACCEPTANCE_PASS**；产品/runtime来源仍为 `b139d87da06cfba153a828766926b78230be4a0f`。Hosted run 38036913645 的626 PASS/26 FAIL原证据保留。
 
@@ -31,14 +33,14 @@ grpc-js 1.14.6、About随包版本/刷新及异步校验均已进入main与0.2.7
 | 优先级 / 编号 | 工作与当前状态 | 可自主推进的准备 | 完成标准 / 需要用户参与 |
 |---|---|---|---|
 | P1 / PLAY-01、SEC-01/02、LIFE-02；P2 / LIFE-01 | INTEGRATED / USER_ACCEPTANCE_PASS | b139d87统一来源；原723项全量、119项独立核心、八组runtime及25对Session保留来源；六项用户真实播放PASS | 远端CI阻断解除且获单独授权后再PR/main整合，LIFE-02保持依赖LIFE-01 |
-| P2 / CI-01、CI028 | LOCAL_FIXED / READY_FOR_PUSH；原HOSTED FAIL | 5b1e092公开657/657、独立6/6；六份材料文件NOT_EXECUTED；语法/diff/有限敏感通过；生产validator不变 | 用户单独授权推送后执行新Hosted验证，实际GREEN前不宣称READY_FOR_MERGE |
+| P2 / CI-01、CI028 | HOSTED_GREEN / READY_FOR_MERGE；原RED保留 | db9ccde Hosted657/657、全部静态/诊断实际success；原本地657/657及独立6/6保持来源；六材料NOT_EXECUTED；生产validator不变 | PR最新HEAD检查与最后diff回读后等用户决定是否合并；不自动merge或发布 |
 | P2 / QA-01 | OFFLINE_MATRIX_VERIFIED / SIX_USER_CASES_PASS | 原runtime八组与PLAY-01确定性门控保留来源；六项真实验收按用户报告记录 | 未覆盖场景与专项层级单列；P2字幕/音轨延迟accepted followup，本轮不修改 |
 | P2 / SEC-02后续 | DESIGN_REQUIRED | 主frame/导航已局部加固；fs/rawIPC/CORS/CSP/isolation依赖已列明 | 窄preload接口与兼容性设计；不能直接整体启用隔离开关 |
 | P2 / T1 | 有界核查完成，WAITING_EXTERNAL | 160项实体回读一致，三轮查询和四类缺口已记录于 [材料收尾](THIRD_PARTY_MATERIALS_CLOSEOUT_027.md) | 外部材料到达后按准确身份接续，索取需单独授权发送 |
 | P2 / INST-01 | PREPARED / REAL NOT_EXECUTED | 四阶段卡与只读目录/DeviceId快照工具、合成验证已准备 | 独立VM和系统安装范围授权后执行v0.2.2→候选升级、卸载、重装；不使用历史0.1.x脚本冒充当前验收 |
 | P3 / H1 | 全屏圆角、混合DPI/多屏、HDR专项，DEFERRED | 最小场景、当前候选身份与观察项已整理 | 有相应设备/新样本并确认前台验证后执行；先定位再决定局部修复，不扩大为显示链重构 |
 
-已完成里程碑：M1完整维护审阅并合入main；M2发布并完整回读0.2.7测试安装包；M3确定问题的独立修复、统一候选工程验收与用户六项实际使用验收。候选已推独立远端分支；本轮CI028局部修复仍仅本地，更新远端及主线整合各需单独授权。其后M4为稳定版范围决策：结合真实场景、安装生命周期与第三方材料处置结果，明确可发布范围和仍保留的验收边界。M4不要求立即补齐所有硬件场景，也不将日常使用反馈替代专项验收。
+已完成里程碑：M1完整维护审阅并合入main；M2发布并完整回读0.2.7测试安装包；M3确定问题的独立修复、统一候选工程验收、用户六项实际使用验收与CI028 Hosted GREEN。候选与CI修复已推独立远端分支，按授权准备PR；主线合并及发布仍需单独授权。其后M4为稳定版范围决策：结合真实场景、安装生命周期与第三方材料处置结果，明确可发布范围和仍保留的验收边界。M4不要求立即补齐所有硬件场景，也不将日常使用反馈替代专项验收。
 
 ### 项目规则收口与全局候选范围
 

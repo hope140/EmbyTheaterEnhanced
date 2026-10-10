@@ -1,5 +1,7 @@
 # CI028 Windows 路径与脚本编码专项
 
+本页是本地修复阶段的历史身份与RED/GREEN证据。用户随后授权整合/普通push；db9ccde的Hosted657/657与全部静态实际GREEN，主线程diff复核后状态READY_FOR_MERGE，见 [远端验收](CI028_HOSTED_VALIDATION.md)。下文NOT_EXECUTED与UNKNOWN保留各自当时run/source作用域。
+
 ## 范围与身份
 
 本轮仅修复公开离线 CI 的环境兼容阻断。从远端候选 `aa86ddc6b0d5a911440ee6dff41ac20147e8f8e6` 建立独立分支 `codex/ci028-windows-compat`；原候选工作树的已有文档改动保留。代码与测试固定提交为 `5b1e09284b8aa7c74d635b02ce9aebec9de0c016`，后续文档提交单列。

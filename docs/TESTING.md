@@ -1,5 +1,9 @@
 # 测试与验收
 
+## 2026-10-10 — CI028 Hosted实际验收
+
+固定db9ccde的push run38040747159：公开657/657（87文件发现81执行6材料NOT_EXECUTED），fail/cancel/skip/todo0；路径诊断、JS220、PS25、有限敏感268、diff均实际success而非skipped。Hosted5.1代码页1252旧无BOMParseFile21/执行1、BOM版两者0；PS7两个变体两者0；真实短名/物理差异及junction拒绝实测通过。新五case、旧排除、原RED、34产品输入及文档HEAD分层见 [远端记录](CI028_HOSTED_VALIDATION.md)。后续文档push/PR checks按各自HEAD回读，不重跑本地相同输入或重建b139runtime。
+
 ## 2026-10-10 — CI028 Windows兼容专项
 
 代码固定 `5b1e092`：公开runner在仓库外真实8.3 TEMP中657/657（87文件发现、81执行，6份材料依赖NOT_EXECUTED），fail/cancel/skip/todo0，exit0；独立定向6/6，其余28项path case不计该pattern层已执行。JS220、PowerShell5.1与7各25、有限敏感268及diff通过。原Hosted626/652、原路径5/30、初步路径32/32以及实现期654/657均原样保留并区分输入，不能被最终GREEN覆盖。

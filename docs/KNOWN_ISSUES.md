@@ -1,5 +1,9 @@
 # Known Issues
 
+## 2026-10-10 — 候选用户验收与CI收尾
+
+产品b139d87的六项真实播放为USER_ACCEPTANCE_PASS；CI028已普通整合推送，db9ccde Hosted657/657与全部静态GREEN，最终diff复核后READY_FOR_MERGE，main/v0.2.7仍未包含候选补丁。字幕/音轨切换延迟继续P2/LEGACY_BEHAVIOR/ACCEPTED_WITH_FOLLOWUP，不阻断本次整合；安装专项NOT_EXECUTED按用户确认不阻断推送。没有扩大为所有真实场景或显示专项已通过。详情见 [Hosted收尾](CI028_HOSTED_VALIDATION.md)，下文按历史阶段解释。
+
 ## 2026-10-10 — 统一候选状态
 
 PLAY01、SEC01/02局部边界、LIFE01/02已完整进入本地候选b139d87，组合离线及隔离runtime通过，状态READY_FOR_USER_ACCEPTANCE，见 [候选验收](INTEGRATION_028_CANDIDATE.md)。下文独立分支状态为历史阶段；main/v0.2.7仍未包含这些补丁。PLAY01迟到时序对源transform和实际构建manager均为UNIT_VERIFIED；实际服务、可见画面、安装和真实Helper崩溃未执行，SEC02完整隔离设计及四类材料缺口保持。

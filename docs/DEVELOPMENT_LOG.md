@@ -1,5 +1,12 @@
 # 开发日志
 
+## 2026-10-10 — CI028普通推送、Hosted验证与PR准备
+
+- Model Tier：Tier1；Model：当前GPT-6系列主线程（精确子型号UNKNOWN）；Reason：已验收提交的有界Git整合、证据回读与最终diff检查；Task Risk中、Uncertainty低、Playback/Session新增影响0；Escalated：no。简单串行整合直接执行，没有扩大本地审核或重跑相同产品。
+- Fetch实时main0b782dd/候选aa86ddc，核实祖先后快进六提交至db9ccde。原工作树改置保留分支并核对三文档hash不变；普通push后GitHub提交链与14文件一致。五新增case逐项登记，旧case未删/六排除未变。
+- Hosted38040747159实际657/657、静态与匿名路径诊断全success，无跳过；PS5.1实际1252与旧无BOM失败、BOM成功印证机制，原26项RED保留。产品/34构建输入仍b139d87不变；不重建runtime，不升级Actions。
+- 主线程最终diff复核通过，READY_FOR_MERGE并按用户条件准备创建PR；新的文档HEAD/PR event逐项核对实际CI结果。main未合并，未发布/安装；六用户PASS、P2字幕音轨accepted followup、安装NOT_EXECUTED保持。原始回执与来源见 [Hosted验收](CI028_HOSTED_VALIDATION.md)。
+
 ## 2026-10-10 — GitHub Actions 26项失败专项，本地收尾
 
 - Model Tier：Tier 1（界定明确的Windows fixture/编码/CI修复）；Model：GPT-6系列主线程（精确子型号UNKNOWN）、GPT-6 Luna High编码worker、GPT-6.1 Sol High独立review；Reason：产品contract不变，root保留路径权限边界、真实diff和最终验收；Escalated：no。Task Risk中、Uncertainty由实测收敛、Cross-module Scope限tests/tools/CI、Playback/Session Impact无产品变更。
