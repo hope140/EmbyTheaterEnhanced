@@ -15,7 +15,7 @@ function project(info) {
 }
 
 function validInfo(info, expected) {
-    if (!info || info.appVersion !== '0.2.6' || info.sourceCommit !== expected.sourceCommit ||
+    if (!info || !expected.appVersion || info.appVersion !== expected.appVersion || info.sourceCommit !== expected.sourceCommit ||
         info.nativeHelper !== expected.helper.version || info.libmpv !== expected.libmpv.version ||
         !['idle', 'starting', 'ready', 'failed', 'destroyed', 'stopped', 'NOT AVAILABLE'].includes(info.nativeHelperState)) return false;
     return info.nativeHelperState === 'ready' ? info.runningNativeHelper === expected.helper.version &&
@@ -36,6 +36,11 @@ function install({electron, runtime, evidence, expectedIndex}) {
     if (observation) throw new Error('about-observation-already-installed');
     const appRoot = path.join(runtime, 'electronapp');
     const expected = JSON.parse(fs.readFileSync(path.join(runtime, 'native-helper-provenance.json'), 'utf8'));
+    const build = JSON.parse(fs.readFileSync(path.join(runtime, 'build-manifest.json'), 'utf8'));
+    const metadata = JSON.parse(fs.readFileSync(path.join(appRoot, 'package.json'), 'utf8'));
+    if (build.sourceCommit !== expected.sourceCommit || build.version !== metadata.version ||
+        !/^\d+\.\d+\.\d+$/.test(build.version || '')) throw new Error('about-observation-package-identity-mismatch');
+    expected.appVersion = build.version;
     const maintenance = require(path.join(appRoot, 'enhanced/maintenance.js'));
     const report = {schemaVersion: 1, sourceCommit: expected.sourceCommit, status: 'PENDING',
         testBoundaries: {clipboard: 'IN_MEMORY_CAPTURE', saveDialog: 'FIXED_EVIDENCE_FILE', updateTransport: 'LOCAL_RELEASE_FIXTURE'},
@@ -66,7 +71,7 @@ function install({electron, runtime, evidence, expectedIndex}) {
     maintenanceIpc.register = function (options) {
         return registerMaintenance({...informationOptions(options),
             clipboard: {writeText(text) { clipboardText = text; }},
-            requestJson: async () => { updateRequests++; return {tag_name: 'v0.2.6', html_url: maintenance.RELEASES_URL}; }});
+            requestJson: async () => { updateRequests++; return {tag_name: 'v' + expected.appVersion, html_url: maintenance.RELEASES_URL}; }});
     };
     const diagnosticsIpc = require(path.join(appRoot, 'enhanced/diagnostics-ipc.js'));
     const registerDiagnostics = diagnosticsIpc.register;

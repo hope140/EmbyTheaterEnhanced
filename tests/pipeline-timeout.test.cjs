@@ -117,11 +117,13 @@ test('About observation deadline returns failure without awaiting pending work o
 
 test('About snapshots validate current runtime state independently during helper replacement', () => {
     const {validInfo} = require('../tools/about-version-observation.cjs');
-    const expected = {sourceCommit: 'a'.repeat(40), helper: {version: '1.0.0'}, libmpv: {version: 'v0.41.0'}};
-    const ready = {appVersion: '0.2.6', sourceCommit: expected.sourceCommit, nativeHelper: '1.0.0', libmpv: 'v0.41.0',
+    const expected = {appVersion: '0.2.7', sourceCommit: 'a'.repeat(40), helper: {version: '1.0.0'}, libmpv: {version: 'v0.41.0'}};
+    const ready = {appVersion: '0.2.7', sourceCommit: expected.sourceCommit, nativeHelper: '1.0.0', libmpv: 'v0.41.0',
         nativeHelperState: 'ready', runningNativeHelper: '1.0.0', runningLibmpv: 'mpv v0.41.0'};
     const stopped = {...ready, nativeHelperState: 'stopped', runningNativeHelper: 'NOT AVAILABLE', runningLibmpv: 'NOT AVAILABLE'};
     for (const info of [ready, stopped, ready]) assert.equal(validInfo(info, expected), true);
+    assert.equal(validInfo({...ready, appVersion: '0.2.6'}, expected), false, 'old version cannot validate a new candidate');
+    assert.equal(validInfo(ready, {...expected, appVersion: undefined}), false, 'expected package identity is required');
     assert.equal(validInfo({...stopped, runningNativeHelper: '1.0.0'}, expected), false, 'non-ready cannot retain a cached running version');
     assert.equal(validInfo({...ready, runningLibmpv: 'NOT AVAILABLE'}, expected), false);
     assert.equal(validInfo({...ready, sourceCommit: 'b'.repeat(40)}, expected), false);
