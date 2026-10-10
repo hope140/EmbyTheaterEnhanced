@@ -1715,3 +1715,74 @@ test('PLAY-01 retry boundary late rejection cannot clear a newer pending stream 
         {itemId: 'A', playSessionId: 'session-A-new', mediaSourceId: 'media-A'}
     ]);
 });
+
+for (const emitStoppedBeforeReject of [false, true]) {
+    test('PLAY-01 terminal rejection settles public Play and admits later C ' +
+        (emitStoppedBeforeReject ? 'after stopped event' : 'before stopped event'), async () => {
+        const fixture = makeStopBoundaryFixture();
+        await startQueueItem(fixture, [makeItem('A')], 'session-A');
+        const terminalGate = deferred();
+        const terminalError = new Error('controlled physical terminal Stop rejection');
+        const originalStop = fixture.player.stop;
+        let physicalTerminalCalls = 0;
+        fixture.player.stop = (...args) => {
+            if (args[0] !== true) return originalStop.apply(fixture.player, args);
+            fixture.calls.stop.push(args);
+            physicalTerminalCalls++;
+            if (emitStoppedBeforeReject) fixture.events.trigger(fixture.player, 'stopped');
+            return terminalGate.promise;
+        };
+        const outcomes = {};
+        function captureOutcome(name, promise) {
+            return promise.then(
+                value => { outcomes[name] = {status: 'fulfilled', value}; },
+                error => { outcomes[name] = {status: 'rejected', error}; }
+            );
+        }
+        const firstStop = fixture.manager.stop();
+        const duplicateStop = fixture.manager.stop();
+        const firstStopOutcome = captureOutcome('firstStop', firstStop);
+        const duplicateStopOutcome = captureOutcome('duplicateStop', duplicateStop);
+        assert.equal(firstStop, duplicateStop, 'repeat Stop shares the terminal completion promise');
+        assert.equal(physicalTerminalCalls, 1, 'repeat Stop does not issue another physical stop');
+        assert.equal(fixture.manager._eteTerminalStop, firstStop);
+        const publicPlayOutcome = captureOutcome('publicPlay', fixture.manager.play({
+            items: [makeItem('B')], fullscreen: true
+        }));
+        await settle();
+        assert.equal(outcomes.publicPlay, undefined, 'B is pending while physical A Stop is unresolved');
+        assert.equal(fixture.calls.metadata.length, 1, 'B cannot request metadata before terminal completion');
+        assert.equal(fixture.calls.play.length, 1, 'only A has loaded while Stop is pending');
+        terminalGate.reject(terminalError);
+        await waitFor(() => outcomes.firstStop && outcomes.duplicateStop && outcomes.publicPlay,
+            'terminal rejection must settle both Stop callers and pending public Play B');
+        await Promise.all([firstStopOutcome, duplicateStopOutcome, publicPlayOutcome]);
+        assert.equal(outcomes.firstStop.status, 'rejected');
+        assert.equal(outcomes.firstStop.error, terminalError, 'first Stop preserves the physical error object');
+        assert.equal(outcomes.duplicateStop.status, 'rejected');
+        assert.equal(outcomes.duplicateStop.error, terminalError, 'repeat Stop preserves the same error object');
+        assert.equal(outcomes.publicPlay.status, 'rejected', 'B settles as a failure rather than waiting forever');
+        assert.equal(fixture.manager._eteTerminalStop, null, 'rejected terminal fence is released');
+        assert.equal(fixture.calls.metadata.length, 1, 'failed B never enters metadata');
+        assert.equal(fixture.calls.play.length, 1, 'failed B never loads');
+        assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), emitStoppedBeforeReject ? [
+            {itemId: 'A', playSessionId: 'session-A', mediaSourceId: 'media-A'}
+        ] : [], 'A is reported stopped only after its actual stopped event or replacement cleanup');
+        fixture.player.stop = originalStop;
+        const streamC = await startPublicItem(fixture, 'C');
+        assert.equal(streamC.mediaSource.Id, 'media-C');
+        assert.equal(fixture.manager._eteTerminalStop, null);
+        assert.deepEqual(fixture.calls.play.map(stream => stream.item.Id), ['A', 'C']);
+        assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStart'), [
+            {itemId: 'A', playSessionId: 'session-A', mediaSourceId: 'media-A'},
+            {itemId: 'C', playSessionId: 'session-C', mediaSourceId: 'media-C'}
+        ]);
+        assertOnlyAStopped(fixture);
+        await fixture.manager.stop();
+        await settle();
+        assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), [
+            {itemId: 'A', playSessionId: 'session-A', mediaSourceId: 'media-A'},
+            {itemId: 'C', playSessionId: 'session-C', mediaSourceId: 'media-C'}
+        ], 'failed B has no session report and A/C retain exactly one matching Stopped each');
+    });
+}
