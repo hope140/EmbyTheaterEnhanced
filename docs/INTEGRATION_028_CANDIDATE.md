@@ -93,6 +93,8 @@ Node24.18.1、npm11.17.0、PowerShell7.6.5。全部原始日志/退出码/固定
 
 收尾文档预检首次exit1：检查覆盖整个历史DEVELOPMENT_LOG，命中了原有绝对路径。未修改历史证据；新路径检查改为本轮增加内容，完整文档的250条本地链接与有限敏感模式仍核对，修正预检exit0。首次失败和修正日志分别保存在final-doc-check与final-doc-check-v2，没有覆盖失败记录；此项不是产品测试、构建或runtime失败。
 
+文档提交9541cac之后，以旧sourceCommit参数再次调用构建输入gate返回exit1，原因是该工具明确要求sourceCommit等于当前HEAD。此次拒绝的工具回执单独保存；改以实际文档HEAD执行原gate，再与冻结b139d87的34项文件/blob/hash逐项严格比较，验证输入未变。没有绕过构建gate、重标产物来源或重建runtime。
+
 需要回滚时，可在整合分支使用 `git revert` 回滚相应候选提交；LIFE02先于LIFE01回滚，SEC02移除后须同步其测试fixture，PLAY01与其组合测试按各自提交处理。原分支和所有原提交保留；未合入main时不采用此分支即可。此处仅说明方式，本轮未执行回滚。
 
 最终范围：真实Emby/CD2、实际远控、字幕/章节内容、可见首帧/连续性、显示专项、安装/升级/卸载/重装均NOT_EXECUTED。安装器源与payload校验不等于安装生命周期验收。完整renderer隔离、材料缺口、历史app.exit UNKNOWN及显示DEFERRED保持原边界。候选只准备交用户实际验收；push/PR/main整合/Release/现用安装均未执行。

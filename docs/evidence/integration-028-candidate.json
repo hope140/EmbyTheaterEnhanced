@@ -592,6 +592,14 @@
       "observed": "First privacy check scanned complete historical DEVELOPMENT_LOG and matched an existing absolute path.",
       "resolution": "Scoped new-path checks to this task additions; retained historical report content. The full document link and finite secret-pattern checks still run. Corrected check exit 0 is separately preserved in final-doc-check-v2.log.",
       "productTestFailure": false
+    },
+    {
+      "layer": "Post-documentation build identity check",
+      "evidence": ".work/integration/post-docs-input-gate-receipt.json",
+      "exitCode": 1,
+      "observed": "Strict build input sourceCommit==HEAD gate rejected frozen b139d87 after documentation HEAD advanced to 9541cac.",
+      "resolution": "Unchanged gate executed using actual documentation HEAD; all 34 file/blob/hash entries strictly match the saved frozen b139d87 contract. Separate post-docs-identity-check.log exit 0. No gate override or artifact relabeling.",
+      "productTestFailure": false
     }
   ],
   "historicalFailures": "Source branch RED and retry/fixture failures remain bound to their original reports and worktrees; no historical failure is relabeled as this candidate PASS",
@@ -1627,8 +1635,8 @@
     },
     {
       "path": ".work/integration/final-acceptance.cjs",
-      "bytes": 9843,
-      "sha256": "23658770d88e51d216ad146533a692f7ce93232ff9b4f6ed2b7162220a1ddc61"
+      "bytes": 10483,
+      "sha256": "fcf585ec5b947e344d4912379e23a0209dedbe9870c8d37bb363d9b82d530f7a"
     },
     {
       "path": ".work/integration/final-build-inputs.exit",
@@ -1891,6 +1899,21 @@
       "sha256": "b9ffd09687a9b3686d57bf65326f45d59dbeeb8d43fac412335a18b8c96f6ba9"
     },
     {
+      "path": ".work/integration/post-docs-identity-check.exit",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": ".work/integration/post-docs-identity-check.log",
+      "bytes": 220,
+      "sha256": "7cc3a55512320d02c4940941e424340f2c67de87c8581671877b69c6d5699c0c"
+    },
+    {
+      "path": ".work/integration/post-docs-input-gate-receipt.json",
+      "bytes": 719,
+      "sha256": "4913425aadaeb3814675855346fe60f4fc6bd43f7ccca95fbc3f99420132c531"
+    },
+    {
       "path": ".work/integration/powershell-syntax.exit",
       "bytes": 3,
       "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
@@ -2087,8 +2110,8 @@
     },
     {
       "path": ".work/integration/verify-final-docs.cjs",
-      "bytes": 2251,
-      "sha256": "b2963e6dce8a752d86ca85d46c4aaa24693a0c4463395b8f2bc19a80b44d482a"
+      "bytes": 2666,
+      "sha256": "ee3dc347215b120e692044b40e2a388473cac670dbe3ce1c8768bc05224831d7"
     },
     {
       "path": ".work/integration/verify-runtime-pm-input.cjs",
