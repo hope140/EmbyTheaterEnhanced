@@ -1,5 +1,7 @@
 # 0.2.7 项目维护收口
 
+2026-10-10第二阶段已在父会话审核通过后完成本地测试包，见 [0.2.7交付](LOCAL_PACKAGE_027.md)。以下保持第一阶段READY_FOR_PARENT_REVIEW记录与当时执行计划。
+
 日期：2026-10-10（UTC+8）。阶段一状态：**READY_FOR_PARENT_REVIEW**。
 
 本轮继承完整维护HEAD dbee15af，审阅并保留grpc-js 1.14.6、About包内版本来源、异步校验及实际IPC观测全部前置。新产品sourceCommit为 d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0，正式runtime为 dist/ETE-0.2.7-maintenance-d8fcb0f-win-x64。最终工具提交为 0e87d4f5b85ee136d1fe3d0ab47eaac25d64ac9d，文档最终HEAD按本分支Git日志读取；它们是不同证据身份。

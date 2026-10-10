@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-10 — 0.2.7 第二阶段本地测试包完成
+
+主会话PARENT_REVIEW_PASS后，从批准产品d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0和manifest c6794efc6b69aeef67c3274903715e2483955a564dc9b2bc8a3e4cefd24ffe6c生成新安装器；大小175632871 bytes、SHA256 86bee55146714f4f7e493cadb8b483537644f513c92364df7fc0c18f5315f3db。Inno完整性、2137文件解包比较、PE字符串0.2.7/数值0.2.7.0、source/version/companion及交付副本hash回读均通过。打包后返回维护分支，产品runtime保持原字节。交付目录 dist/delivery-0.2.7-maintenance-d8fcb0f/；报告见 [0.2.7本地交付](LOCAL_PACKAGE_027.md)。
+
+阶段一651/651、十组隔离及原材料事实保持其身份；父会话另有53/53独立复核。系统/真实服务/前台/显示未执行、材料WAITING_EXTERNAL与旧app.exit UNKNOWN边界保持；公开main/Release与全局S6不变。以下READY_FOR_PARENT_REVIEW是当时第一阶段记录。
+
 ## 2026-10-10 — 0.2.7 项目维护第一阶段，READY_FOR_PARENT_REVIEW
 
 从完整维护HEAD dbee15af建立独立codex/maintenance-027-20261010，包含main bc50d181和grpc/About全部前置提交。固定产品sourceCommit为 d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0，最终观测夹具为 0e87d4f5b85ee136d1fe3d0ab47eaac25d64ac9d；后续文档HEAD单列，不替代产品身份。远端main/PR #20/公开v0.2.6及Latest v0.2.2保持已核对身份，v0.2.7无远端占用，本轮只形成本地测试候选。

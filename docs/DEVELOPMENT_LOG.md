@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-10-10 — 0.2.7 审核后打包与本地交付
+
+- Model Tier: Tier 1固定输入打包及证据收尾；Model: 当前GPT-6.1 Sol High主线程；Reason: Task Risk=low/medium（本地可安装产物），Task Uncertainty=low，Cross-module Scope=package/evidence/docs，Playback/Session Impact=none；Escalated: no。顺序依赖明确，不额外委派。
+- 父会话批准review2b568643/productd8fcb0f/工具0e87d4f和固定manifest；独立53/53、十组166项产物与完整runtime回读通过。按当前授权clean树暂时detached产品提交执行原package，随后返回维护分支，未重建相同产品。
+- 新EXE 175632871 bytes，SHA256 86bee55146714f4f7e493cadb8b483537644f513c92364df7fc0c18f5315f3db；来源及companion绑定。Inno完整性2137应用文件及内部script通过，解包2137缺失/多余/哈希不符0，runtime再次匹配；原件和交付副本全部SHA256SUMS回读一致。
+- PE最初字符串断言误用0.2.7.0，实际为有填充空格的0.2.7；保留初次记录后按trim字符串及固定四段数值同时核验。最终资源0.2.7/0.2.7.0，包字节未改；应用版本由解包metadata和同一runtime的实际IPC对照。
+- 本地目录dist/delivery-0.2.7-maintenance-d8fcb0f，中文说明、验证和机器证据完成。第一阶段证据原SHA保持；纯打包/文档不重跑产品全量。四类材料WAITING_EXTERNAL、系统/显示/真实服务NOT_EXECUTED及历史UNKNOWN保持，S6未应用。详见 [交付报告](LOCAL_PACKAGE_027.md)。
+
 ## 2026-10-10 — 0.2.7 项目维护第一阶段收口
 
 - Model Tier: Tier 2；Model: GPT-6.1 Sol High主线程 / GPT-6 Luna High材料及安装器只读worker；Reason: Task Risk=medium，Task Uncertainty=medium（整合、证据身份及系统边界），Cross-module Scope=维护/文档/构建/测试，Playback/Session Impact=复核原不变量、无产品链变更；Escalated: no。委派只用于两项独立核查，主线程复核文件、输入关系及哈希。

@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "status": "PASS",
+  "date": "2026-10-10",
+  "productSourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+  "approvedReviewHead": "2b5686438fa0129fbb8686fae88c55264e1d38a5",
+  "directory": "dist/delivery-0.2.7-maintenance-d8fcb0f",
+  "fileCount": 10,
+  "checksumEntryCount": 9,
+  "installerOriginal": {
+    "file": "dist/EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe",
+    "bytes": 175632871,
+    "sha256": "86bee55146714f4f7e493cadb8b483537644f513c92364df7fc0c18f5315f3db"
+  },
+  "installerCopy": {
+    "file": "dist\\delivery-0.2.7-maintenance-d8fcb0f\\EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe",
+    "bytes": 175632871,
+    "sha256": "86bee55146714f4f7e493cadb8b483537644f513c92364df7fc0c18f5315f3db"
+  },
+  "files": [
+    {
+      "file": "EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe",
+      "bytes": 175632871,
+      "sha256": "86bee55146714f4f7e493cadb8b483537644f513c92364df7fc0c18f5315f3db"
+    },
+    {
+      "file": "EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe.provenance.json",
+      "bytes": 2154,
+      "sha256": "a6226c8c8ea50a863c1a0ce8eb149c7ebdb3758e9becc05f4ed7144cf7305aed"
+    },
+    {
+      "file": "EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe.sha256",
+      "bytes": 110,
+      "sha256": "4263cde47bd72fd36ff7a0e827526e64bb058bf5ba443c42f9dc1d426e7ece1c"
+    },
+    {
+      "file": "PARENT_REVIEW.json",
+      "bytes": 4128,
+      "sha256": "744140df57108d05aa061c4e096c243384f1262047c3ffb3bc3ce71be72a0a0d"
+    },
+    {
+      "file": "README.zh-CN.md",
+      "bytes": 1884,
+      "sha256": "89a15486233f7b54598cf110b09b6ba04ba11b34053a13492b41db204f74a221"
+    },
+    {
+      "file": "VALIDATION.md",
+      "bytes": 2130,
+      "sha256": "965f20f892c21b5f20b8aec5f1f99a77ac68639328dd9d12644bdb6f23a2893b"
+    },
+    {
+      "file": "installer-verification.json",
+      "bytes": 564412,
+      "sha256": "6f8fa4f1be2c720432c9cda7f7fc4b3a0d25c33849618241275fcee9288e5995"
+    },
+    {
+      "file": "local-package-027-20261010.json",
+      "bytes": 8452,
+      "sha256": "77e2b87956e136cd44e3c9208158d0ca6a94ab7eafc352c9eb10fb1cdce5649c"
+    },
+    {
+      "file": "maintenance-027-20261010.json",
+      "bytes": 136744,
+      "sha256": "a553858e2723db255355f5d84021d5f750cad1fb5ecc380f3ec4567e9df9fed7"
+    }
+  ],
+  "checksumFile": {
+    "file": "dist\\delivery-0.2.7-maintenance-d8fcb0f\\SHA256SUMS",
+    "bytes": 888,
+    "sha256": "c27a16c366bc7c02466bba4c0c3ff2313da2af23b1fa70f06886ed83463cd8b3"
+  },
+  "originalCopyMatched": true,
+  "allFilesReadBack": true
+}
