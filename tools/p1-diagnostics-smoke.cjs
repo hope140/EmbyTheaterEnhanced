@@ -25,6 +25,9 @@ const appRoot = path.resolve(runtime, 'electronapp');
 const metadata = JSON.parse(fs.readFileSync(path.join(appRoot, 'package.json'), 'utf8'));
 const provenance = JSON.parse(fs.readFileSync(path.join(runtime, 'runtime-provenance.json'), 'utf8'));
 const expectedIndex = path.resolve(appRoot, 'www', 'index.html');
+if (process.env.ETE_TEST_ABOUT_ASYNC === '1') {
+    require('./about-version-observation.cjs').install({electron: require('electron'), runtime, evidence, expectedIndex});
+}
 const expectedIndexUrl = pathToFileURL(expectedIndex);
 const sourceUrl = pathToFileURL(path.resolve(appRoot, 'plugins', 'libmpv.js')).href;
 const injectedWindows = new WeakSet();

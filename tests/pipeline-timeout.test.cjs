@@ -38,7 +38,7 @@ function fakeClock() {
     };
 }
 
-function harness(executeJavaScript) {
+function harness(executeJavaScript, aboutObservation) {
     const clock = fakeClock();
     const results = [];
     const context = vm.createContext({
@@ -48,6 +48,8 @@ function harness(executeJavaScript) {
         pipelineDeadline: {dispose() {}},
         transitionTimelineMode: false,
         mediaRequests: [],
+        process: {env: aboutObservation ? {ETE_TEST_ABOUT_ASYNC: '1'} : {}},
+        require: () => ({current: () => aboutObservation}),
         testCd2Origin: '',
         withSourceUrl: source => source,
         windowOwnership: {getApplicationWindow: () => ({webContents: {executeJavaScript}})},
@@ -74,6 +76,57 @@ test('a late pipeline success cannot replace a timeout while renderer evidence i
     await inspecting;
     assert.equal(fixture.results.length, 1, 'The delayed inspection must not write a second result.');
     assert.equal(fixture.clock.pendingCount, 0);
+});
+
+test('optional About observation is awaited and cannot hide a failed pipeline', async () => {
+    let finishAbout;
+    const fixture = harness(() => Promise.resolve([]), {complete: () => new Promise(resolve => { finishAbout = resolve; })});
+    const pending = fixture.finish({ok: false, error: 'pipeline-failed'});
+    assert.equal(fixture.results.length, 0);
+    finishAbout({status: 'PASS'});
+    await pending;
+    assert.equal(fixture.results.length, 1);
+    assert.equal(fixture.results[0].ok, false);
+    assert.equal(fixture.results[0].error, 'pipeline-failed');
+});
+
+test('failed or rejected About observation cannot produce a successful terminal result', async () => {
+    for (const complete of [async () => ({status: 'FAIL'}), async () => { throw Error('observer-failed'); }]) {
+        const fixture = harness(() => Promise.resolve([]), {complete});
+        await fixture.finish({ok: true});
+        assert.equal(fixture.results.length, 1);
+        assert.equal(fixture.results[0].ok, false);
+        assert.equal(fixture.results[0].aboutAsync.status, 'FAIL');
+    }
+});
+
+test('About observation deadline returns failure without awaiting pending work or accepting late success', async () => {
+    const {waitWithDeadline} = require('../tools/about-version-observation.cjs');
+    const clock = fakeClock();
+    let finish;
+    const work = new Promise(resolve => { finish = resolve; });
+    const pending = waitWithDeadline(work, 15000, clock);
+    clock.advance(15000);
+    assert.equal(await pending, false);
+    assert.equal(clock.pendingCount, 0);
+    finish();
+    assert.equal(await pending, false, 'late completion cannot change the timeout receipt');
+    assert.equal(await waitWithDeadline(Promise.resolve(), 15000, clock), true);
+    assert.equal(clock.pendingCount, 0);
+});
+
+test('About snapshots validate current runtime state independently during helper replacement', () => {
+    const {validInfo} = require('../tools/about-version-observation.cjs');
+    const expected = {sourceCommit: 'a'.repeat(40), helper: {version: '1.0.0'}, libmpv: {version: 'v0.41.0'}};
+    const ready = {appVersion: '0.2.6', sourceCommit: expected.sourceCommit, nativeHelper: '1.0.0', libmpv: 'v0.41.0',
+        nativeHelperState: 'ready', runningNativeHelper: '1.0.0', runningLibmpv: 'mpv v0.41.0'};
+    const stopped = {...ready, nativeHelperState: 'stopped', runningNativeHelper: 'NOT AVAILABLE', runningLibmpv: 'NOT AVAILABLE'};
+    for (const info of [ready, stopped, ready]) assert.equal(validInfo(info, expected), true);
+    assert.equal(validInfo({...stopped, runningNativeHelper: '1.0.0'}, expected), false, 'non-ready cannot retain a cached running version');
+    assert.equal(validInfo({...ready, runningLibmpv: 'NOT AVAILABLE'}, expected), false);
+    assert.equal(validInfo({...ready, sourceCommit: 'b'.repeat(40)}, expected), false);
+    assert.equal(validInfo({...ready, nativeHelper: '9.9.9'}, expected), false);
+    assert.equal(validInfo({...ready, nativeHelperState: 'unexpected'}, expected), false);
 });
 
 test('a renderer destroyed between inspection awaits still produces a failed terminal result', async () => {

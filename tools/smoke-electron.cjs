@@ -222,7 +222,19 @@ function finish(result) {
     if (fakeCd2) result.cd2Fake = fakeCd2.snapshot();
     if (pipelineDeadline) pipelineDeadline.dispose();
     if (fakeCd2) fakeCd2.dispose();
-    if (!transitionTimelineMode) return writeResultAndExit(result);
+    if (!transitionTimelineMode) {
+        const about = process.env.ETE_TEST_ABOUT_ASYNC === '1' ? require('./about-version-observation.cjs').current() : null;
+        if (!about) return writeResultAndExit(result);
+        return about.complete().then(observed => {
+            result.aboutAsync = {status: observed.status};
+            if (observed.status !== 'PASS') result.ok = false;
+            writeResultAndExit(result);
+        }, () => {
+            result.aboutAsync = {status: 'FAIL', reason: 'observation-failed'};
+            result.ok = false;
+            writeResultAndExit(result);
+        });
+    }
     transitionCapture.waitForResults().then(async pixel => {
         result.pixel = pixel;
         const prerequisites = result.state && result.state.pipeline && result.state.pipeline.pixelPrerequisite;
@@ -310,6 +322,7 @@ app.on('browser-window-created', (_, win) => {
         if (ownership.role !== 'application' || !ownership.shouldStartProbe) return;
         setTimeout(async () => {
             try {
+                if (process.env.ETE_TEST_ABOUT_ASYNC === '1') await require('./about-version-observation.cjs').current().initialDone;
                 const state = await win.webContents.executeJavaScript(withSourceUrl(String.raw`(function () {
                     window.__eteSmokeErrorEvidence = window.__eteSmokeErrorEvidence || {errors:[], unhandledRejections:[], pipelineStage:'startup-probe'};
                     if (!window.__eteSmokeErrorEvidence.listenersInstalled) {
@@ -633,7 +646,7 @@ const diagnosticsModule = require(path.join(runtime, 'electronapp/enhanced/diagn
 const createDiagnosticsLogger = diagnosticsModule.createLogger;
 diagnosticsModule.createLogger = function () {
     const logger = createDiagnosticsLogger.apply(this, arguments);
-    return function (record) {
+    const observedLogger = function (record) {
         const details = record && record.details || {};
         if (diagnosticEvents.length < 128) diagnosticEvents.push({
             category: record && record.category || null,
@@ -646,6 +659,7 @@ diagnosticsModule.createLogger = function () {
         });
         return logger(record);
     };
+    return Object.assign(observedLogger, logger);
 };
 if (transitionComparison) {
     process.once('uncaughtException', error => finish({ok:false,error:errorEvidence(error, 'main')}));
