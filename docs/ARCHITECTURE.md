@@ -1,5 +1,11 @@
 # 架构
 
+## 2026-10-10 本地审核候选（尚未合并）
+
+以下新增contract只属于独立本地修复，不能当作已发布v0.2.7行为：SEC01在系统浏览器入口允许HTTP/HTTPS并收口错误；SEC02增强IPC只接受当前webContents的实际mainFrame和固定包内index，主导航/redirect受限。原preload宽fs/rawIPC及isolation/sandbox/CORS/CSP依赖保留待设计。LIFE01在全部owned退出settled后仍尝试所有listener/surface清理，再按current/pending顺序传播原错误；无native错才传播cleanup错。LIFE02把terminal解绑的owned kill加入同pending集合，不改变generation、重建或kill策略。提交和层级见 [交付记录](REVIEW_028_DELIVERY.md)。
+
+已复现PLAY-01说明原请求保护并未覆盖changeStream成功异步路径；该链需独立请求/捕获流/编码清理contract，当前未修改。下文原错误短路与terminal边界描述继续代表审核基线/已发布实现，不代表上述本地候选。
+
 About包内版本校验由main持有固定runtimeRoot/sourceCommit的异步reader。四个固定文件按64 KiB读取/哈希，读取前后及整轮结束复核文件身份；仅共享进行中的Promise，完成/UNKNOWN即清除，后续查询重验全部字节。实时Helper状态在await包内结果后独立获取；维护GET_INFO/COPY/CHECK_UPDATE及诊断EXPORT均await信息快照。复制同快照、sender白名单及renderer请求代际保持，查询不启动播放器。验证层级与来源见 [About异步版本校验](ABOUT_VERSION_ASYNC.md) 及 [0.2.7维护收口](MAINTENANCE_027.md)。
 
 Native Helper service 的完整 destroy 使用单一缓存 Promise。首次调用同步置 destroyed 并清除 endpoint admission，随后异步执行原清理；主窗口 closed 与 before-quit/unregister 的重复调用共享同一完成或拒绝，不能以“已开始销毁”代替“已完成”。原错误短路、kill策略、Session和播放操作保持，正常窗口关闭证据见 [本地包记录](LOCAL_PACKAGE_026.md)。

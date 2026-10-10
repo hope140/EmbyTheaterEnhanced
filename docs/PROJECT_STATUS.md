@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-10 — 独立审核与本地修复准备
+
+固定main `0b782dd`、产品v0.2.7 `d8fcb0f9`完成A1–A4审核。SEC01/SEC02局部边界、LIFE01/02各自独立本地提交并经diff与单测复核，CI/QA/安装卡在准备分支；未合并、推送或生成新runtime。PLAY-01已由主线程再次复现：Stop后旧changeStream仍load媒体，单列P1及稳定版阻断，核心contract需独立收敛。完整状态、提交、原始命令、失败与证据层级见 [交付报告](REVIEW_028_DELIVERY.md)，计划见 [ROADMAP](ROADMAP.md)。
+
+旧651/42/53和十组runtime保持原来源。当前单测通过不替代新组合候选runtime/实服/视觉/安装验收；四类第三方材料继续WAITING_EXTERNAL。以下历史条目的“完成/当前”按各自日期和提交解读。
+
 ## 2026-10-10 — 0.2.7 已发布并合入 main，当前工程收尾完成
 
 用户要求的源码/文档同步、测试包发布与主线整合均已执行。[PR #21](https://github.com/hope140/EmbyTheaterEnhanced/pull/21)以merge commit ef4fcf58合入main，保留原main bc50d181和已审阅发布HEAD 1addcc73为父提交；合并树与已审阅HEAD完全相同。当前完整项目入口为main，[整体审核指南](AI_REVIEW_GUIDE.md)提供9份原字节测试/打包证据与hash索引，[路线图](ROADMAP.md)将已完成事项移出待办，只保留独立审核反馈、外部材料和实际环境验证计划。详情见 [主线收尾](MAIN_CLOSEOUT_027.md)。

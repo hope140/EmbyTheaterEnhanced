@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-10-10 — 独立审核、安全与生命周期局部加固
+
+- Model Tier：主线程Tier3；Model：当前会话GPT-6系列（工具未提供精确主线程子型号，UNKNOWN）；Reason：用户指定主线程跨层安全/生命周期风险判定与最终验收；Escalated：无临时升级。明确实现/复核使用GPT-6.1 Sol High，CI使用GPT-6 Luna High。Risk高、Uncertainty中、跨Playback/Native/IPC/构建；核心Playback仅审核与RED复现。
+- 固定main0b782dd、产品d8fcb0f9，独立worktree保护原Settings工作目录。阶段一先以d875ba5提交；随后SEC01/SEC02/LIFE01/LIFE02各自独立本地提交。没有合并、推送、PR、tag、发布或系统安装。
+- PLAY-01保留正式版阻断。四项局部补丁经真实diff/定向测试复核；失败与修复前RED均保留，不修改核心换流或现用profile。CI公开子集与6份材料依赖明确分层。
+- QA矩阵、VM四阶段卡、只读合成快照工具和唯一ROADMAP入口完成；根TODO历史原件转存archive。来源/材料WAITING_EXTERNAL不重查，既有显示/app.exit等观察保持原边界。
+- 所有精确提交、测试命令、计数、失败和未覆盖层级见 [交付记录](REVIEW_028_DELIVERY.md)。
+
 ## 2026-10-10 — 0.2.7 合入main，当前文档与待办收尾
 
 - 用户明确要求将应收尾事项全部完成并合并，让其它AI直接审核GitHub main。PR #21在准确head 1addcc73、base bc50d181条件下合并，回读MERGED；merge ef4fcf58保留两父提交，tree与已审阅head完全一致。空CI检查集合单列，不当作CI通过。

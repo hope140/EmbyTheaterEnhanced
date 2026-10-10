@@ -1,5 +1,7 @@
 # Emby Theater Enhanced
 
+2026-10-10 独立审核与下一正式版准备见 [交付报告](docs/REVIEW_028_DELIVERY.md)，当前计划唯一入口为 [ROADMAP](docs/ROADMAP.md)。本地修复尚未合并；PLAY-01换流迟到响应为正式版阻断，现有v0.2.7发布身份保持。
+
 基于 Carnival 3.0 与综合补丁的 Windows Emby 客户端维护工程。当前正式版为 `v0.2.2`，最新测试版 `v0.2.7` 已作为Pre-release发布，详见 [0.2.7发布记录](docs/RELEASE_027.md)。完整维护成果已合入 `main`；其它AI或人工整体审核请从 [审核入口](docs/AI_REVIEW_GUIDE.md)开始，使用 `main` 并记录实际HEAD。
 
 Emby Theater Enhanced is an unofficial community-maintained project. It is not affiliated with or endorsed by Emby.

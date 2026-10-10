@@ -1,5 +1,12 @@
 # Known Issues
 
+## 2026-10-10 — 独立审核新增发现
+
+- **P1 PLAY-01 / CONFIRMED_OFFLINE / BLOCKS_STABLE**：当前v0.2.7等同产品链，音轨/质量换流的PlaybackInfo挂起后完成Stop，再释放旧响应可重新load旧媒体。真实PlaybackManager transform与libmpv模块离线复现，原生endpoint/API为fake；真实服务未执行。追踪 `tools/patch-playbackmanager.cjs:91` 及 `src/electronapp/plugins/libmpv.js:190`，不得以已有Next/Stop测试通过关闭。见 [独立报告](INDEPENDENT_REVIEW_028.md)。
+- **SEC01 / SEC02 / LIFE01 / LIFE02**：外链协议、IPC主frame/文档、异常资源清理及terminal-owned退出等待已有独立本地修复，当前仅STATIC/UNIT层通过，尚未进入main或安装包。SEC02宽preload/CSP/CORS/isolation迁移仍待设计；默认controller.kill拒绝可达性UNKNOWN。详见 [交付报告](REVIEW_028_DELIVERY.md)。
+
+本轮没有新P0结论；以下历史观察与已修结果保留原身份。
+
 2026-10-10当前入口：v0.2.7已发布，完整维护已随PR #21合入main，见 [发布记录](RELEASE_027.md)。grpc/About维护已完成；旧直接app.exit根因UNKNOWN、全屏播放圆角DEFERRED、真实服务/可见呈现/安装/显示专项仍按原证据层级保留。后续按 [路线图](ROADMAP.md)推进，以下候选记录是历史证据，不能将旧“待执行”当作本轮尚未收尾。
 
 2026-10-09发布更新：v0.2.6 / 355f4e6已作为Pre-release公开，631项全量、正常关闭与播放八组隔离结果、安装包身份与完整下载回读见 [发布记录](RELEASE_026.md)。正常产品关闭通过不消除早期候选直接app.exit的UNKNOWN；安装/实服/视觉验收边界保持。下方记录保留各候选的原始sourceCommit和失败/通过层级。
