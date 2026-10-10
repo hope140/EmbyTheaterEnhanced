@@ -1,4 +1,5 @@
 'use strict';
+const {eventFor} = require('./helpers/trusted-renderer.cjs');
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -117,7 +118,7 @@ function registerPreviewIpc(options = {}) {
         trusted,
         handlers,
         invoke(request) {
-            return handlers[configIpc.CHANNELS.PREVIEW_MAPPING]({sender: trusted}, request);
+            return handlers[configIpc.CHANNELS.PREVIEW_MAPPING](eventFor(trusted), request);
         },
         invokeUntrusted(request) {
             return handlers[configIpc.CHANNELS.PREVIEW_MAPPING]({sender: {}}, request);
@@ -325,7 +326,7 @@ test('explicit Save is the only persistence boundary for an accepted schema v1 d
         assert.equal(draft.status, 'added');
         assert.deepEqual(store.getPublicConfig(), before);
 
-        const response = await handlers[configIpc.CHANNELS.SAVE]({sender: trusted}, {
+        const response = await handlers[configIpc.CHANNELS.SAVE](eventFor(trusted), {
             config: Object.assign({}, before, {rules: draft.rules})
         });
         assert.equal(response.status, 'saved');

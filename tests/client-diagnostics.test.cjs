@@ -1,4 +1,5 @@
 'use strict';
+const {eventFor} = require('./helpers/trusted-renderer.cjs');
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -586,7 +587,7 @@ test('structured renderer records use the dedicated IPC channel while mpv snapsh
             shell: {openPath: async () => ''}
         });
         assert.equal(typeof listeners[diagnosticsIpc.CHANNELS.LOG], 'function');
-        listeners[diagnosticsIpc.CHANNELS.LOG]({sender: trusted}, {
+        listeners[diagnosticsIpc.CHANNELS.LOG](eventFor(trusted), {
             category: 'resolver',
             event: 'route-selected',
             details: {requestId: 'wiring-1', route: 'cd2-http', reason: 'cd2_hit'}
@@ -653,15 +654,15 @@ test('diagnostics IPC requires the trusted renderer and keeps export paths out o
             shell
         });
         assert.deepEqual(await handlers[diagnosticsIpc.CHANNELS.GET_STATUS]({sender: {}}), {status: 'error', reason: 'untrusted_sender'});
-        assert.equal((await handlers[diagnosticsIpc.CHANNELS.GET_STATUS]({sender: trusted})).status, 'ok');
+        assert.equal((await handlers[diagnosticsIpc.CHANNELS.GET_STATUS](eventFor(trusted))).status, 'ok');
         assert.equal(infoCalls, 0, 'status query does not read package versions');
         assert.deepEqual(await handlers[diagnosticsIpc.CHANNELS.EXPORT]({sender: {}}), {status: 'error', reason: 'untrusted_sender'});
         assert.equal(infoCalls, 0, 'untrusted export does not read application information');
-        assert.equal((await handlers[diagnosticsIpc.CHANNELS.EXPORT]({sender: trusted})).status, 'exported');
+        assert.equal((await handlers[diagnosticsIpc.CHANNELS.EXPORT](eventFor(trusted))).status, 'exported');
         assert.equal(infoCalls, 1);
         assert.equal(fs.readFileSync(exported, 'utf8'), 'safe-report\n');
-        assert.equal((await handlers[diagnosticsIpc.CHANNELS.CLEAR]({sender: trusted}, {})).reason, 'confirmation_required');
-        assert.equal((await handlers[diagnosticsIpc.CHANNELS.CLEAR]({sender: trusted}, {confirmed: true})).status, 'cleared');
+        assert.equal((await handlers[diagnosticsIpc.CHANNELS.CLEAR](eventFor(trusted), {})).reason, 'confirmation_required');
+        assert.equal((await handlers[diagnosticsIpc.CHANNELS.CLEAR](eventFor(trusted), {confirmed: true})).status, 'cleared');
         assert.equal(cleared, 1);
     } finally {
         fs.rmSync(outputRoot, {recursive: true, force: true});

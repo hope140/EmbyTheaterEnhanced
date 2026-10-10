@@ -25,6 +25,7 @@
     var deviceIdentity = require('./device-identity');
     var enhancedDiagnostics = require('./enhanced/diagnostics');
     var maintenanceIpc = require('./enhanced/maintenance-ipc');
+    var rendererBoundary = require('./enhanced/renderer-boundary');
     var bundledVersions = require('./enhanced/bundled-versions');
 
     var appBootstrapState = appBootstrap.bootstrap({
@@ -1055,7 +1056,7 @@
         Promise.resolve(nativeShutdown).catch(function () {}).then(function () { app.quit(); });
     });
     ipcMain.on('enhanced-diagnostics', function (event, snapshot) {
-        if (event.sender === getWebContents()) {
+        if (rendererBoundary.isTrusted(event, getWebContents())) {
             enhancedLog({category: 'mpv', event: 'snapshot', details: enhancedDiagnostics.sanitize(snapshot)});
         }
     });
@@ -1192,6 +1193,7 @@
             }
 
             getWebContents().on('dom-ready', setStartInfo);
+            rendererBoundary.restrictNavigation(getWebContents());
 
             getWebContents().setWindowOpenHandler(function (details) {
                 externalUrl.openExternalUrl(electron.shell, details.url);

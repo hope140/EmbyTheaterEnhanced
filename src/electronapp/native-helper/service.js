@@ -1,5 +1,7 @@
 'use strict';
 
+const rendererBoundary = require('../enhanced/renderer-boundary');
+
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -733,7 +735,7 @@ function register(options) {
   const getWebContents = options.getWebContents;
   function trusted(event) {
     const expected = getWebContents();
-    return !!expected && event && event.sender === expected;
+    return rendererBoundary.isTrusted(event, expected);
   }
   ipcMain.handle(CALL_CHANNEL, async function (event, request) {
     if (!trusted(event)) return {status: 'error', reason: 'untrusted_sender'};

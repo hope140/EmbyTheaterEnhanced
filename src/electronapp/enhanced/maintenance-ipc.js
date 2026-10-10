@@ -1,6 +1,7 @@
 'use strict';
 
 const maintenance = require('./maintenance');
+const rendererBoundary = require('./renderer-boundary');
 
 const CHANNELS = Object.freeze({
     GET_INFO: 'enhanced-maintenance-info',
@@ -19,7 +20,7 @@ function register(options) {
 
     function isTrusted(event) {
         const expected = typeof getWebContents === 'function' ? getWebContents() : null;
-        return !!expected && event && event.sender === expected;
+        return rendererBoundary.isTrusted(event, expected);
     }
 
     function rejectUntrusted() {

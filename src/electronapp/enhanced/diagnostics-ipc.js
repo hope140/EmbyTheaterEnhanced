@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const diagnostics = require('./diagnostics');
 const rendererErrors = require('./renderer-errors');
+const rendererBoundary = require('./renderer-boundary');
 
 const CHANNELS = Object.freeze({
     LOG: 'enhanced-diagnostics-log',
@@ -28,7 +29,7 @@ function register(options) {
 
     function isTrusted(event) {
         const expected = typeof getWebContents === 'function' ? getWebContents() : null;
-        return !!expected && event && event.sender === expected;
+        return rendererBoundary.isTrusted(event, expected);
     }
 
     function rejectUntrusted() {

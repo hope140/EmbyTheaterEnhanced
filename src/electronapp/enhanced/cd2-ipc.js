@@ -1,5 +1,7 @@
 'use strict';
 
+const rendererBoundary = require('./renderer-boundary');
+
 const RESOLVE_CHANNEL = 'enhanced-cd2-resolve';
 const CANCEL_CHANNEL = 'enhanced-cd2-cancel';
 
@@ -10,7 +12,7 @@ function register(options) {
 
     function isTrusted(event) {
         const expected = getWebContents();
-        return !!expected && event && event.sender === expected;
+        return rendererBoundary.isTrusted(event, expected);
     }
 
     ipcMain.handle(RESOLVE_CHANNEL, function (event, request) {
