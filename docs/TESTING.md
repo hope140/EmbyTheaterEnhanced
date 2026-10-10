@@ -1,5 +1,11 @@
 # 测试与验收
 
+## 2026-10-10 — CI028 Windows兼容专项
+
+代码固定 `5b1e092`：公开runner在仓库外真实8.3 TEMP中657/657（87文件发现、81执行，6份材料依赖NOT_EXECUTED），fail/cancel/skip/todo0，exit0；独立定向6/6，其余28项path case不计该pattern层已执行。JS220、PowerShell5.1与7各25、有限敏感268及diff通过。原Hosted626/652、原路径5/30、初步路径32/32以及实现期654/657均原样保留并区分输入，不能被最终GREEN覆盖。
+
+旧reporter无BOM；本机PS5.1默认代码页936、PS7为65001，旧5.1成功只是locale观察。CP1252控制解码固定复现147:35失败，BOM后通过；两shell解析/合成执行及正文blob等价严格验证。两个生产validator未改变；真实junction仍拒绝。完整命令、原始结果、哈希和边界见 [CI028](CI028_WINDOWS_COMPAT.md)。新Hosted NOT_EXECUTED；34项构建输入和产品目录未变，不重建原b139d87 runtime。本轮未重新运行材料完整层、真实播放或安装专项，用户既有六项PASS保留USER_ACCEPTANCE_PASS。
+
 ## 2026-10-10 — 统一候选b139d87验收
 
 最终完整离线723/723、独立核心119/119、实际构建manager字节48/48，均失败/跳过/取消0。公开CI本地652/652，85文件发现、79执行，6份材料依赖NOT_EXECUTED；新增PM测试位于原有排除文件，不改变selected输入，指纹明确，本机完整层均执行。JS217、PowerShell25、有限敏感265及diff通过，托管Actions未执行。

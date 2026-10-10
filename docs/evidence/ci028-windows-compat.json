@@ -1,0 +1,657 @@
+{
+  "schemaVersion": 1,
+  "baselineCommit": "aa86ddc6b0d5a911440ee6dff41ac20147e8f8e6",
+  "codeCommit": "5b1e09284b8aa7c74d635b02ce9aebec9de0c016",
+  "productSourceCommit": "b139d87da06cfba153a828766926b78230be4a0f",
+  "branch": "codex/ci028-windows-compat",
+  "codeCommits": [
+    "5ddf03a2170e8bba68981cb394bbe36df1ffa1e8",
+    "1b7fadaa15f3f8724fa2e517edbe7dfd746f99c1",
+    "d3be0020ff3b8149a4e061e21e4d9e39565c2855",
+    "ff53e0a13574ba4f41d477cda23b0f7d01de265c",
+    "5b1e09284b8aa7c74d635b02ce9aebec9de0c016"
+  ],
+  "hostedOriginal": {
+    "url": "https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38036913645",
+    "head": "aa86ddc6b0d5a911440ee6dff41ac20147e8f8e6",
+    "tests": 652,
+    "pass": 626,
+    "fail": 26,
+    "groups": {
+      "buildInput": 12,
+      "runtimeDependency": 13,
+      "reporter": 1
+    },
+    "subsequentStaticGates": "SKIPPED",
+    "exactTemporaryAlias": "UNKNOWN",
+    "defaultCodePage": "UNKNOWN"
+  },
+  "localOriginalPathRed": {
+    "tests": 30,
+    "pass": 5,
+    "fail": 25,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "duration_ms": 13342.4512
+  },
+  "intermediatePathGreen": {
+    "tests": 32,
+    "pass": 32,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "duration_ms": 158287.5727,
+    "scope": "before added internal-junction assertions"
+  },
+  "intermediateFf53PublicRed": {
+    "tests": 657,
+    "pass": 654,
+    "fail": 3,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "duration_ms": 285497.8617,
+    "codeCommit": "ff53e0a13574ba4f41d477cda23b0f7d01de265c",
+    "causes": [
+      "new negative fixture reused consumed ownership",
+      "TEMP inside Git ancestor violated missing-authority premise",
+      "PowerShell 5.1 provider could not resolve hidden short-path ancestor during fixture cleanup"
+    ]
+  },
+  "externalTempControls": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "duration_ms": 2219.9391,
+    "originalTestsUnmodified": true,
+    "outsideGit": true
+  },
+  "finalPublic": {
+    "tests": 657,
+    "pass": 657,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "duration_ms": 283107.9682,
+    "discoveredFiles": 87,
+    "executedFiles": 81,
+    "materialRequiredNotExecutedFiles": 6,
+    "exit": 0,
+    "temporaryRoot": "owned external system TEMP using actual NTFS 8.3 alias",
+    "evidenceLevel": "UNIT_VERIFIED"
+  },
+  "independent": {
+    "diagnosticPass": 2,
+    "aliasJunctionPass": 4,
+    "fail": 0,
+    "patternNotExecutedCases": 28,
+    "review": "PASS"
+  },
+  "static": {
+    "javascript": {
+      "files": 220,
+      "exit": 0
+    },
+    "powershell51": {
+      "files": 25,
+      "exit": 0
+    },
+    "powershell7": {
+      "files": 25,
+      "exit": 0
+    },
+    "finiteCredentialPatterns": {
+      "files": 268,
+      "exit": 0,
+      "completeSecretScan": false
+    },
+    "supplementalDocumentationScan": {
+      "files": 7,
+      "findings": 0,
+      "privatePathAdded": false
+    },
+    "diff": {
+      "exit": 0
+    },
+    "evidenceLevel": "STATIC_VERIFIED"
+  },
+  "encoding": {
+    "WindowsPowerShell51": {
+      "version": "5.1.26100.9444",
+      "defaultCodePage": 936,
+      "gitBlobNoBom": {
+        "classification": "RUNNER_LOCALE_DEPENDENT_OBSERVATION",
+        "parseExit": 0,
+        "executionExit": 0
+      },
+      "bomAdded": {
+        "classification": "MUST_PASS",
+        "parseExit": 0,
+        "executionExit": 0
+      }
+    },
+    "PowerShell7": {
+      "version": "7.6.5",
+      "defaultCodePage": 65001,
+      "gitBlobNoBom": {
+        "classification": "MUST_PASS",
+        "parseExit": 0,
+        "executionExit": 0
+      },
+      "bomAdded": {
+        "classification": "MUST_PASS",
+        "parseExit": 0,
+        "executionExit": 0
+      }
+    },
+    "simulatedCp1252": {
+      "withoutBomExit": 22,
+      "withBomExit": 0,
+      "originalErrorLineColumnMatched": true
+    },
+    "bomPresent": true,
+    "gitBlobBodyIdentical": true
+  },
+  "anonymousPathDiagnostic": {
+    "schemaVersion": 1,
+    "platform": "win32",
+    "node": "v24.18.1",
+    "temporaryRoot": {
+      "resolved": "<PATH_1>",
+      "native": "<PATH_2>",
+      "resolvedEqualsNative": false,
+      "hasShortNameSegment": true,
+      "lstat": {
+        "directory": true,
+        "symbolicLink": false,
+        "mode": 16822
+      }
+    },
+    "parent": {
+      "resolved": "<PATH_3>",
+      "native": "<PATH_3>",
+      "resolvedEqualsNative": true,
+      "hasShortNameSegment": false,
+      "lstat": {
+        "directory": true,
+        "symbolicLink": false,
+        "mode": 16822
+      }
+    },
+    "rawMkdtemp": {
+      "resolved": "<PATH_9>",
+      "native": "<PATH_10>",
+      "resolvedEqualsNative": false,
+      "hasShortNameSegment": true,
+      "lstat": {
+        "directory": true,
+        "symbolicLink": false,
+        "mode": 16822
+      }
+    },
+    "physicalMkdtemp": {
+      "resolved": "<PATH_10>",
+      "native": "<PATH_10>",
+      "resolvedEqualsNative": true,
+      "hasShortNameSegment": false,
+      "lstat": {
+        "directory": true,
+        "symbolicLink": false,
+        "mode": 16822
+      }
+    },
+    "rawChild": {
+      "resolved": "<PATH_11>",
+      "native": "<PATH_12>",
+      "resolvedEqualsNative": false,
+      "hasShortNameSegment": true,
+      "lstat": {
+        "directory": true,
+        "symbolicLink": false,
+        "mode": 16822
+      }
+    },
+    "physicalChild": {
+      "resolved": "<PATH_12>",
+      "native": "<PATH_12>",
+      "resolvedEqualsNative": true,
+      "hasShortNameSegment": false,
+      "lstat": {
+        "directory": true,
+        "symbolicLink": false,
+        "mode": 16822
+      }
+    },
+    "ancestors": [
+      {
+        "resolved": "<PATH_1>",
+        "native": "<PATH_2>",
+        "resolvedEqualsNative": false,
+        "hasShortNameSegment": true,
+        "lstat": {
+          "directory": true,
+          "symbolicLink": false,
+          "mode": 16822
+        }
+      },
+      {
+        "resolved": "<PATH_3>",
+        "native": "<PATH_3>",
+        "resolvedEqualsNative": true,
+        "hasShortNameSegment": false,
+        "lstat": {
+          "directory": true,
+          "symbolicLink": false,
+          "mode": 16822
+        }
+      },
+      {
+        "resolved": "<PATH_4>",
+        "native": "<PATH_4>",
+        "resolvedEqualsNative": true,
+        "hasShortNameSegment": false,
+        "lstat": {
+          "directory": true,
+          "symbolicLink": false,
+          "mode": 16822
+        }
+      },
+      {
+        "resolved": "<PATH_5>",
+        "native": "<PATH_5>",
+        "resolvedEqualsNative": true,
+        "hasShortNameSegment": false,
+        "lstat": {
+          "directory": true,
+          "symbolicLink": false,
+          "mode": 16822
+        }
+      },
+      {
+        "resolved": "<PATH_6>",
+        "native": "<PATH_6>",
+        "resolvedEqualsNative": true,
+        "hasShortNameSegment": false,
+        "lstat": {
+          "directory": true,
+          "symbolicLink": false,
+          "mode": 16822
+        }
+      },
+      {
+        "resolved": "<PATH_7>",
+        "native": "<PATH_7>",
+        "resolvedEqualsNative": true,
+        "hasShortNameSegment": false,
+        "lstat": {
+          "directory": true,
+          "symbolicLink": false,
+          "mode": 16676
+        }
+      },
+      {
+        "resolved": "<PATH_8>",
+        "native": "<PATH_8>",
+        "resolvedEqualsNative": true,
+        "hasShortNameSegment": false,
+        "lstat": {
+          "directory": true,
+          "symbolicLink": false,
+          "mode": 16822
+        }
+      }
+    ],
+    "credentialsCollected": false
+  },
+  "productIdentity": {
+    "buildInputCount": 34,
+    "allBuildInputBlobsIdentical": true,
+    "productDirectoriesChanged": [],
+    "productionValidatorsChanged": false,
+    "runtimeRebuilt": false,
+    "reporterConsumedByBuild": false,
+    "priorRuntimeEvidenceRetainsOriginalIdentity": true
+  },
+  "acceptance": {
+    "priorSixUserCases": "USER_ACCEPTANCE_PASS",
+    "audioSubtitleLatency": "P2 / LEGACY_BEHAVIOR / ACCEPTED_WITH_FOLLOWUP",
+    "installerLifecycle": "NOT_EXECUTED",
+    "newRealServerRun": "NOT_EXECUTED",
+    "fixedHostedRun": "NOT_EXECUTED",
+    "localStatus": "READY_FOR_PUSH",
+    "readyForMerge": false,
+    "nextRemoteWriteRequiresSeparateAuthorization": true
+  },
+  "rawEvidence": [
+    {
+      "path": ".work/ci028/hosted-original-red.log",
+      "bytes": 185979,
+      "sha256": "a65de60b022f91a2b1e314fa76446de6241be255937549936be9fd3de7e03954",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/hosted-original-red.json",
+      "bytes": 2462,
+      "sha256": "72fb78b82537361ff53d9a08f63492f14ba76635a8ee5f1992e0c7a12e545b43",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/local-short-path.json",
+      "bytes": 275,
+      "sha256": "ee553c7b889ce84f2a27e4894583ac825203ef80368691b4e09cd24428fc015f",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/path-original-red.log",
+      "bytes": 38542,
+      "sha256": "d169b7b7095cd837e21bb8fa14a77493a78a70b60c4e22992722f10c57329e25",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/path-original-red.exit",
+      "bytes": 3,
+      "sha256": "f1b2f662800122bed0ff255693df89c4487fbdcf453d3524a42d4ec20c3d9c04",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/path-alias-green.log",
+      "bytes": 2892,
+      "sha256": "dceae10ec179229efd370cfb77844f2efa76ca424207c16629e8271fd9a2d54e",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/path-alias-green.exit",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/public-ff53-negative-fixture-red.log",
+      "bytes": 66643,
+      "sha256": "5297e0ad49476e3fe0e7c853cba97b767da6222ebe7a3d0c4ec83e5330cb5776",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/public-ff53-negative-fixture-red.exit",
+      "bytes": 3,
+      "sha256": "f1b2f662800122bed0ff255693df89c4487fbdcf453d3524a42d4ec20c3d9c04",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/independent-ff53-short.log",
+      "bytes": 4277,
+      "sha256": "f0169df11e5b08278a4388c466293ea71926ab6d1b57bbec16b026bdf032db6a",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/ownership-fixture-green.log",
+      "bytes": 286,
+      "sha256": "723352e927eceeba092671d7a8586d5ced7bddbf282bc14b35ba16abdf9b8771",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/ownership-fixture-green.exit",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/external-short-path.json",
+      "bytes": 243,
+      "sha256": "d422bc1cd1f8375948660fb1d1bf88a08c83f43f4e9d8d730ad57ef2f2b24e00",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/external-temp-git-probe.log",
+      "bytes": 70,
+      "sha256": "cbd7253ed1a5569e4d074e4758d98cdb50206ea818b3daba3521c86484a4fc7f",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/external-temp-controls.log",
+      "bytes": 346,
+      "sha256": "72f50728bb80facb0b4e7e611cbab7d33ffeffe6add6c439f0219b3c4147c7a4",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/external-temp-controls.exit",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/public-final-external-short.log",
+      "bytes": 61446,
+      "sha256": "2d30375908899711bdbc5f133a275e99efad4802793024c4bc66147759aafad1",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/public-final-external-short.exit",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/independent-5b1-external-short.log",
+      "bytes": 2196,
+      "sha256": "b1de1e06b152d1c16f53557548ca60cc9c94d809fe4af8d3a027c015d47be58c",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/independent-review.md",
+      "bytes": 11524,
+      "sha256": "8c66e3bfb0133f43ad11de6ae93afce4c3b2f04cf2e2baa6adbc8ea8184d75aa",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/final-path-diagnostic-physical.json",
+      "bytes": 3057,
+      "sha256": "90128837533b384a1513f7dd263a6e2d7511e4794e867ada6c88c699c54ab549",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/final-path-diagnostic-short-alias.json",
+      "bytes": 4068,
+      "sha256": "93fd39641274ab0ac089930f39a6ab10025abd4022b254a19dc541f4b5ac80fe",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/final-path-diagnostic-external-short.json",
+      "bytes": 3312,
+      "sha256": "e41b2e9ef4fd3d1fa969506eb0e6dc0e895dbbbc3e5cccf506e0bb0d885c7051",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/consumed-inputs.json",
+      "bytes": 9634,
+      "sha256": "fd7c3091a3515464d4d952795803b581b6522e0b67fff20637b48ff4142d3068",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/consumed-inputs-final-code.json",
+      "bytes": 9634,
+      "sha256": "6a90049bc89e63d1704fc234c75cfc98faf1fe539aff412310ea18797a12c556",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/final-encoding-matrix.json",
+      "bytes": 3615,
+      "sha256": "866b7b017ae02be8758f6bff2a9abc3d64cd0c260e1f1752d70c33f11d54ffae",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/js-syntax-final.log",
+      "bytes": 65,
+      "sha256": "3fc011f0f5d6cf6c05c39472b32b1c8828cc9384be3f1292da633c9d177bddc8",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/js-syntax-final.exit",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/js-syntax-final-code.log",
+      "bytes": 65,
+      "sha256": "3fc011f0f5d6cf6c05c39472b32b1c8828cc9384be3f1292da633c9d177bddc8",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/js-syntax-final-code.exit",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/ps51-syntax-final.log",
+      "bytes": 64,
+      "sha256": "ef22ce49703698d79eaf75bba6445129a6264b4922eee5dc0b7183918c4bd5a1",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/ps51-syntax-final.exit",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/ps7-syntax-final.log",
+      "bytes": 64,
+      "sha256": "ef22ce49703698d79eaf75bba6445129a6264b4922eee5dc0b7183918c4bd5a1",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/ps7-syntax-final.exit",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/secret-final.log",
+      "bytes": 172,
+      "sha256": "12f6c94c2d84b87fd75c1ef9c93bb367d1f72d54d54fead714c009250f5f3535",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/secret-final.exit",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/secret-final-docs.log",
+      "bytes": 172,
+      "sha256": "12f6c94c2d84b87fd75c1ef9c93bb367d1f72d54d54fead714c009250f5f3535",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/secret-final-docs.exit",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/docs-final-audit.json",
+      "bytes": 101,
+      "sha256": "57880d0817af5cf3cbe4564f7689331de0167b2f1298c23d2a02a8a8e193f611",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/diff-final.log",
+      "bytes": 26,
+      "sha256": "76b12873a1d7d121020089664c81dad223d829260a45636b4ba58168797dfe46",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/diff-final.exit",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/npm-ci.log",
+      "bytes": 27,
+      "sha256": "9828dfbb91f40ec5cf11de14e79b29aff3d7b1ba22c4635a840e4b82c64a6060",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/npm-ci.exit",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/remote-before-delivery.txt",
+      "bytes": 141,
+      "sha256": "9fbaa4280d60d3211f3c7bbd92926334290f3fc34b83db403d7d56498d3ee2d8",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/encoding-worker/matrix.json",
+      "bytes": 3615,
+      "sha256": "1e544e184fda9bf68c2cec35bf9f83b342f39f751efe89c1cc1e9e992e8c0885",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/encoding-worker/matrix-before-hosted-fix.json",
+      "bytes": 3162,
+      "sha256": "4df9b29fc68e0c5cd0e2d12b3f21be3b66710dffae84350f62411338dac44976",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/encoding-worker/red-test.log",
+      "bytes": 1086,
+      "sha256": "d10f04e018192c1931d61ed65d2f3eb99e493e3173d167d681cd285f83b7a6bb",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/encoding-worker/red-test.exit",
+      "bytes": 13,
+      "sha256": "cf24cebe066d6fc14449d3afcfcbc2e9da129f2a2229521490cc982d7ea32fb8",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/encoding-worker/green-encoding-hosted-compatible.log",
+      "bytes": 608,
+      "sha256": "67dfc1588b40646ca1e99eb7b29d77b8541443eba34dbe3c98d4805a37d25af5",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/encoding-worker/green-encoding-hosted-compatible.exit",
+      "bytes": 13,
+      "sha256": "c1e97067c5f479a44a6f57297a0a8f87a59d181c3c529910f8bf059094bc3abb",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/encoding-worker/green-snapshot-selftest.log",
+      "bytes": 185,
+      "sha256": "30ec02fd6aafcd534d1fdceb67f53a660f081e611ebf5c05094d1306dffefe40",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/encoding-worker/green-snapshot-selftest.exit",
+      "bytes": 13,
+      "sha256": "c1e97067c5f479a44a6f57297a0a8f87a59d181c3c529910f8bf059094bc3abb",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/encoding-worker/evidence.txt",
+      "bytes": 1642,
+      "sha256": "07aca5ab766d13dd4ecb49ab89c6ae502fde7fb84c345669b52e7e59fcc7b1ab",
+      "privacy": "LOCAL_RAW_ONLY"
+    },
+    {
+      "path": ".work/ci028/encoding-worker/hosted-compatible-followup.txt",
+      "bytes": 1063,
+      "sha256": "e99eb9bb23447ae48af2db78047ec5ea99e095e1bbc692304ac12c0ba2845246",
+      "privacy": "LOCAL_RAW_ONLY"
+    }
+  ]
+}

@@ -2,7 +2,13 @@
 
 本页是 Emby Theater Enhanced 后续计划的正式来源。公开维护基线以 `main` 为准，公开测试包仍为v0.2.7；本地统一候选单独固定sourceCommit，不代表已合入main或发布。问题的复现情况见 [Known Issues](KNOWN_ISSUES.md)，已完成工作的证据见 [项目状态](PROJECT_STATUS.md) 与 [测试记录](TESTING.md)。
 
-## 当前里程碑（2026-10-10 统一候选验收）
+## 当前里程碑（2026-10-10 CI028专项收尾）
+
+统一候选已按此前授权推送至 `codex/integration-028-candidate@aa86ddc`，用户六项真实播放验收为 **USER_ACCEPTANCE_PASS**；产品/runtime来源仍为 `b139d87da06cfba153a828766926b78230be4a0f`。Hosted run 38036913645 的626 PASS/26 FAIL原证据保留。
+
+本轮独立分支 `codex/ci028-windows-compat` 固定代码 `5b1e092`，仅修测试fixture物理路径、reporter BOM、编码回归与CI匿名诊断；公开657/657、独立6/6、语法/有限敏感/diff均通过。34项构建输入及产品目录与b139d87一致，不重建原runtime。状态 **READY_FOR_PUSH**；等待单独授权更新远端并执行新的Hosted CI，尚未READY_FOR_MERGE。详见 [CI028](CI028_WINDOWS_COMPAT.md)。字幕/音轨延迟P2/LEGACY_BEHAVIOR/ACCEPTED_WITH_FOLLOWUP；安装四阶段NOT_EXECUTED按用户确认不作为本次推送前置条件。本轮不扩展它们的实现范围。
+
+### 统一候选工程验收历史快照
 
 本轮从实际远端main `0b782ddec404f4148cb6c8c16f19bc22201d3252` 创建独立工作树，统一PLAY-01、SEC-01/02、LIFE-01/02、CI-01与相关报告，人工冲突0；原工作区及修复分支保留。候选固定sourceCommit为 `b139d87da06cfba153a828766926b78230be4a0f`，状态 **READY_FOR_USER_ACCEPTANCE**。最终全量723/723、独立核心119/119、实际构建manager字节48/48与八组新隔离runtime通过，原始Session报告独立复算25对，运行后payload哈希与零残留验证通过。公开离线runner652/652，六份材料依赖文件明确排除，已在完整全量执行；托管Actions未执行。准确来源、顺序与证据等级见 [统一候选](INTEGRATION_028_CANDIDATE.md) 和 [机器证据](evidence/integration-028-candidate.json)。
 
@@ -24,15 +30,15 @@ grpc-js 1.14.6、About随包版本/刷新及异步校验均已进入main与0.2.7
 
 | 优先级 / 编号 | 工作与当前状态 | 可自主推进的准备 | 完成标准 / 需要用户参与 |
 |---|---|---|---|
-| P1 / PLAY-01、SEC-01/02、LIFE-02；P2 / LIFE-01 | LOCAL_INTEGRATED / READY_FOR_USER_ACCEPTANCE | b139d87统一来源；723项全量、119项独立核心、八组runtime及25对Session验证完成 | 用户实际使用验收；后续获授权再PR/main整合，LIFE-02保持依赖LIFE-01 |
-| P2 / CI-01 | LOCAL_PUBLIC_VERIFIED / HOSTED NOT_EXECUTED | 85文件发现、79执行、652/652；六份材料文件未在公开层执行，完整全量已覆盖；语法/diff/有限敏感检查通过 | Actions真实运行待push/PR授权；公开CI与固定输入构建层继续分别记录 |
-| P2 / QA-01 | OFFLINE_MATRIX_VERIFIED / REAL_PENDING | 新统一runtime八组通过，PLAY-01精确门控还以实际manager字节验证 | 获授权的真实Emby/CD2/Session/字幕章节/远控及用户画面验收，不能由离线结果替代 |
+| P1 / PLAY-01、SEC-01/02、LIFE-02；P2 / LIFE-01 | INTEGRATED / USER_ACCEPTANCE_PASS | b139d87统一来源；原723项全量、119项独立核心、八组runtime及25对Session保留来源；六项用户真实播放PASS | 远端CI阻断解除且获单独授权后再PR/main整合，LIFE-02保持依赖LIFE-01 |
+| P2 / CI-01、CI028 | LOCAL_FIXED / READY_FOR_PUSH；原HOSTED FAIL | 5b1e092公开657/657、独立6/6；六份材料文件NOT_EXECUTED；语法/diff/有限敏感通过；生产validator不变 | 用户单独授权推送后执行新Hosted验证，实际GREEN前不宣称READY_FOR_MERGE |
+| P2 / QA-01 | OFFLINE_MATRIX_VERIFIED / SIX_USER_CASES_PASS | 原runtime八组与PLAY-01确定性门控保留来源；六项真实验收按用户报告记录 | 未覆盖场景与专项层级单列；P2字幕/音轨延迟accepted followup，本轮不修改 |
 | P2 / SEC-02后续 | DESIGN_REQUIRED | 主frame/导航已局部加固；fs/rawIPC/CORS/CSP/isolation依赖已列明 | 窄preload接口与兼容性设计；不能直接整体启用隔离开关 |
 | P2 / T1 | 有界核查完成，WAITING_EXTERNAL | 160项实体回读一致，三轮查询和四类缺口已记录于 [材料收尾](THIRD_PARTY_MATERIALS_CLOSEOUT_027.md) | 外部材料到达后按准确身份接续，索取需单独授权发送 |
 | P2 / INST-01 | PREPARED / REAL NOT_EXECUTED | 四阶段卡与只读目录/DeviceId快照工具、合成验证已准备 | 独立VM和系统安装范围授权后执行v0.2.2→候选升级、卸载、重装；不使用历史0.1.x脚本冒充当前验收 |
 | P3 / H1 | 全屏圆角、混合DPI/多屏、HDR专项，DEFERRED | 最小场景、当前候选身份与观察项已整理 | 有相应设备/新样本并确认前台验证后执行；先定位再决定局部修复，不扩大为显示链重构 |
 
-已完成里程碑：M1完整维护审阅并合入main；M2发布并完整回读0.2.7测试安装包；M3本轮范围内确定问题的独立修复及统一候选工程验收。M3只交付本地候选，实际使用与获授权的主线整合仍待执行。其后M4为稳定版范围决策：结合真实场景、安装生命周期与第三方材料处置结果，明确可发布范围和仍保留的验收边界。M4不要求立即补齐所有硬件场景，也不将日常使用反馈替代专项验收。
+已完成里程碑：M1完整维护审阅并合入main；M2发布并完整回读0.2.7测试安装包；M3确定问题的独立修复、统一候选工程验收与用户六项实际使用验收。候选已推独立远端分支；本轮CI028局部修复仍仅本地，更新远端及主线整合各需单独授权。其后M4为稳定版范围决策：结合真实场景、安装生命周期与第三方材料处置结果，明确可发布范围和仍保留的验收边界。M4不要求立即补齐所有硬件场景，也不将日常使用反馈替代专项验收。
 
 ### 项目规则收口与全局候选范围
 

@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-10-10 — CI028 Windows 兼容修复，本地 READY_FOR_PUSH
+
+远端统一候选仍为 `aa86ddc6b0d5a911440ee6dff41ac20147e8f8e6`；Hosted run 38036913645 的 626 PASS / 26 FAIL 原日志保留。独立分支 `codex/ci028-windows-compat` 固定代码 `5b1e09284b8aa7c74d635b02ce9aebec9de0c016`，只调整自建 fixture 的物理根路径、reporter UTF-8 BOM、编码回归与匿名 CI 诊断。两个生产路径校验器不变。
+
+公开全集在仓库外真实 8.3 TEMP 中657/657、独立6/6，通过JS220、两种PowerShell各25、有限敏感268和diff检查。六份材料文件明确NOT_EXECUTED，原RED及中间失败完整保留。34项构建输入及产品目录与已验收 `b139d87` 一致，未重建runtime。用户六项播放仍记USER_ACCEPTANCE_PASS；字幕/音轨延迟P2/LEGACY_BEHAVIOR/ACCEPTED_WITH_FOLLOWUP，安装专项NOT_EXECUTED按确认不阻断推送。本轮不改播放逻辑。
+
+本地 **READY_FOR_PUSH**；修复后的Hosted **NOT_EXECUTED**，尚不声明READY_FOR_MERGE，等待单独推送授权。详见 [CI专项](CI028_WINDOWS_COMPAT.md) 与 [机器索引](evidence/ci028-windows-compat.json)。以下条目保留各自历史来源与当时状态。
+
 ## 2026-10-10 — 统一候选 READY_FOR_USER_ACCEPTANCE
 
 实际main0b782dd上独立整合PLAY01、SEC01/02、LIFE01/02、CI与验收文档，固定候选 `b139d87da06cfba153a828766926b78230be4a0f`。无人工冲突，原修复产品字节完整保留；仅追加四项Stop拒绝及真实Previous/Next组合测试。最终全量723/723、公开子集652/652（6材料文件明确NOT_EXECUTED，但本机完整层均执行）、独立核心119/119通过；实际构建manager字节48/48通过。

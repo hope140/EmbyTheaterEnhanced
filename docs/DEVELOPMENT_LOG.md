@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-10-10 — GitHub Actions 26项失败专项，本地收尾
+
+- Model Tier：Tier 1（界定明确的Windows fixture/编码/CI修复）；Model：GPT-6系列主线程（精确子型号UNKNOWN）、GPT-6 Luna High编码worker、GPT-6.1 Sol High独立review；Reason：产品contract不变，root保留路径权限边界、真实diff和最终验收；Escalated：no。Task Risk中、Uncertainty由实测收敛、Cross-module Scope限tests/tools/CI、Playback/Session Impact无产品变更。
+- 从实际候选aa86ddc创建独立worktree及codex/ci028-windows-compat；原工作树改动保留。旧路径组真实NTFS短名RED为25/30失败；CP1252控制解码重现旧reporter147:35。只物理化测试根目录，只给中文脚本加BOM，生产validator不变。
+- 主线程纠正新增编码测试的locale假设和worker的936/65001事实误写；独立review发现新增junction用例复用已消耗ownership，改为新空runtime。首轮全集654/657 RED包含该错误与TEMP置于隐藏Git树内引起的两个测试隔离错误，原日志完整保留。两项原case在仓库外短TEMP原样通过。
+- 冻结5b1e092后公开657/657、独立6/6通过；六份材料文件仍NOT_EXECUTED。JS220、PS5.1/7各25、有限敏感268和diff通过；34项被消费输入及产品目录均与b139d87一致，不重建已验收runtime。原始证据按来源/hash索引，见 [专项报告](CI028_WINDOWS_COMPAT.md)。
+- 用户既有六项真实验收保留USER_ACCEPTANCE_PASS；字幕/音轨延迟P2 legacy accepted followup、安装专项NOT_EXECUTED按本轮授权边界记录。本地形成最小提交；远端main0b782dd及候选aa86ddc重新只读回读不变，没有push/PR/发布/安装。READY_FOR_PUSH，新的Hosted执行待用户单独授权。
+
 ## 2026-10-10 — 已完成修复统一整合及候选验收
 
 - Model Tier：Tier 2；Model：GPT-6系列主线程（精确子型号工具未报告）；Reason：已批准补丁的跨Playback/IPC/Helper组合，Risk中高、Uncertainty中，主线程保留归属与最终验收。输入准备GPT-6 Luna High，独立source review GPT-6.1 Sol High，测试worker沿用；Escalated：no。

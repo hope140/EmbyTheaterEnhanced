@@ -1,5 +1,7 @@
 # Public offline CI
 
+2026-10-10 CI028 follow-up: hosted aa86ddc run [38036913645](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38036913645) failed 26 of 652 tests; later static gates were skipped. Local fixed code `5b1e092` passed **657/657** using an owned external NTFS 8.3 TEMP (87 files discovered, 81 executed, the same six material-required files NOT_EXECUTED). Independent targeted review passed 6/6. JavaScript 220, PowerShell 5.1 and 7 each 25, finite scan 268, and diff gates passed. The product/build inputs remain identical to b139d87; no runtime rebuild. The fixed hosted workflow remains **NOT_EXECUTED**, awaiting separate push authorization. See [Windows compatibility evidence](CI028_WINDOWS_COMPAT.md). Earlier records below retain their own source identity and status.
+
 2026-10-10 unified candidate b139d87: the local public runner passed 652/652 (85 discovered files, 79 executed, six material-required files NOT_EXECUTED). Execution HEAD was c603251; the only subsequent change was the excluded manager test file, with selected source/tool/fixture inputs unchanged and recorded fingerprints. The complete material-enabled candidate suite passed 723/723. Current local syntax/diff/finite-scan gates passed; hosted GitHub Actions remain NOT_EXECUTED. See [candidate acceptance](INTEGRATION_028_CANDIDATE.md). The original branch record below retains its own identity.
 
 The GitHub Actions workflow in `.github/workflows/public-ci.yml` runs on pull requests and pushes. It uses a Windows runner, grants `contents: read`, disables persisted checkout credentials, pins both Actions to full commit SHAs, and installs the locked JavaScript dependency tree with `npm ci --ignore-scripts`. It does not need repository secrets or build/runtime binaries.
@@ -23,6 +25,7 @@ These cases are reported as `material-required` and `NOT EXECUTED`; their exclus
 
 The other gates perform these checks:
 
+- `tools/ci-windows-path-diagnostics.cjs` runs before tests and records raw/native temporary path identity, short-name flags, lstat and ancestor relationships. All path values use stable opaque labels; it reads no credentials or file contents and cleans only its own physical temporary directory. This diagnostic has been validated locally; a new hosted result is still pending.
 - `tools/ci-syntax.cjs` runs `node --check` on every tracked `.js`, `.cjs`, and `.mjs` file under maintained `src/`, `tools/`, and `tests/` paths.
 - `tools/ci-powershell-syntax.ps1` parses every tracked `.ps1` and `.psm1` file in those paths using PowerShell's parser.
 - `tools/ci-secret-scan.cjs` checks tracked text in maintained source, CI workflow files, and this document for a small fixed set of private-key, AWS, GitHub token, and OpenAI key patterns. Findings contain only path and rule identifiers. This finite pattern scan is not a complete secret scan.
