@@ -26,6 +26,9 @@ jobs:
       - name: Install locked JavaScript dependencies without lifecycle scripts
         run: npm ci --ignore-scripts
 
+      - name: Inspect Windows temporary path identity
+        run: node tools/ci-windows-path-diagnostics.cjs
+
       - name: Run public offline test set
         run: node tools/ci-public-tests.cjs
 

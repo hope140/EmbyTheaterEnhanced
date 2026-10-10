@@ -29,8 +29,9 @@ function writePackage(projectRoot, packagePath, name, version, files = {}) {
     }
 }
 
-function makeFixture() {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-runtime-deps-'));
+function makeFixture(temporaryRoot = os.tmpdir()) {
+    // Resolve only the test fixture root, never an untrusted production input.
+    const root = fs.realpathSync.native(fs.mkdtempSync(path.join(temporaryRoot, 'ete-runtime-deps-')));
     const runtime = path.join(root, 'dist', 'candidate');
     const source = path.join(root, '.work', 'runtime-dependencies-fixture');
     fs.mkdirSync(runtime, {recursive: true});
@@ -100,6 +101,32 @@ function prepareRuntime(fixture) {
 function cleanup(fixture) {
     fs.rmSync(fixture.root, {recursive: true, force: true});
 }
+
+test('temporary parent aliases produce a physical dependency fixture', t => {
+    const parent = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-runtime-temp-alias-')));
+    const physical = path.join(parent, 'physical');
+    const alias = path.join(parent, 'alias');
+    fs.mkdirSync(physical);
+    fs.symlinkSync(physical, alias, process.platform === 'win32' ? 'junction' : 'dir');
+    const fixture = makeFixture(alias);
+    try {
+        assert.equal(path.dirname(fixture.root), physical);
+        assert.equal(fs.lstatSync(fixture.root).isSymbolicLink(), false);
+        assert.equal(fs.realpathSync.native(fixture.root), fixture.root);
+        const token = prepareRuntime(fixture);
+        contract.copyRuntimeDependencies(fixture.root, fixture.runtime, fixture.source, token);
+        assert.equal(contract.inspectRuntime(fixture.root, fixture.runtime, fixture.sourceCommit).valid, true);
+        const external = path.join(parent, 'external');
+        fs.mkdirSync(external);
+        fs.symlinkSync(external, path.join(fixture.source, 'node_modules', 'long', 'linked'),
+            process.platform === 'win32' ? 'junction' : 'dir');
+        assert.throws(() => contract.copyRuntimeDependencies(
+            fixture.root, fixture.runtime, fixture.source, token), /symlink or junction/);
+    } finally {
+        cleanup(fixture);
+        fs.rmSync(parent, {recursive: true, force: true});
+    }
+});
 
 test('fresh locked package directories replace stale Carnival bytes and remain loadable', () => {
     const fixture = makeFixture();
