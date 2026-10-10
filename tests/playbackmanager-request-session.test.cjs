@@ -1786,3 +1786,64 @@ for (const emitStoppedBeforeReject of [false, true]) {
         ], 'failed B has no session report and A/C retain exactly one matching Stopped each');
     });
 }
+
+for (const responseOrder of [[2, 3], [3, 2]]) {
+    test('PLAY-01 real Previous and Next pending across Stop ignore response order ' + responseOrder.join(','), async () => {
+        const fixture = makeStopBoundaryFixture();
+        const items = [makeItem('A'), makeItem('B'), makeItem('C')];
+        await startQueueItem(fixture, items, 'session-A');
+        const startB = fixture.manager.nextTrack();
+        await waitFor(() => fixture.calls.metadata.length === 2, 'Next requests B metadata');
+        assert.equal(fixture.calls.metadata[1].itemId, 'B');
+        fixture.resolveMetadata(1, 'session-B');
+        await startB;
+        await settle();
+        assert.equal(fixture.queue.currentIndex, 1);
+        assert.equal(fixture.player.streamInfo.item.Id, 'B');
+        assert.equal(fixture.player.streamInfo.playSessionId, 'session-B');
+
+        const pendingNext = fixture.manager.nextTrack().catch(error => error);
+        await waitFor(() => fixture.calls.metadata.length === 3, 'Next requests C metadata');
+        assert.equal(fixture.calls.metadata[2].itemId, 'C');
+        assert.equal(fixture.queue.currentIndex, 1, 'pending C has not advanced the started playlist index');
+        const pendingPrevious = fixture.manager.previousTrack().catch(error => error);
+        await waitFor(() => fixture.calls.metadata.length === 4, 'real Previous starts a metadata request');
+        assert.equal(fixture.calls.metadata[3].itemId, 'A', 'Previous selects the item before started B');
+        assert.equal(items[0].playOptions.command, 'previousTrack', 'Previous enters its real playInternal path');
+        await fixture.manager.stop();
+        await settle();
+        const expectedAB = [
+            {itemId: 'A', playSessionId: 'session-A', mediaSourceId: 'media-A'},
+            {itemId: 'B', playSessionId: 'session-B', mediaSourceId: 'media-B'}
+        ];
+        assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStart'), expectedAB);
+        assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), expectedAB);
+        assert.equal(fixture.calls.play.length, 2);
+        assert.equal(fixture.calls.playbackStarts.length, 2);
+        const reportsAfterStop = JSON.stringify(fixture.calls.reports);
+        for (const metadataIndex of responseOrder) {
+            fixture.resolveMetadata(metadataIndex, metadataIndex === 2 ? 'session-C-late' : 'session-A-previous-late');
+            await settle();
+            assert.equal(fixture.calls.play.length, 2, 'each old response cannot add a load after Stop');
+            assert.equal(fixture.calls.playbackStarts.length, 2, 'each old response cannot add playbackstart');
+            assert.equal(JSON.stringify(fixture.calls.reports), reportsAfterStop, 'each old response leaves session reports unchanged');
+        }
+        await Promise.all([pendingNext, pendingPrevious]);
+        assert.equal(fixture.calls.alerts.length, 0);
+        assert.equal(fixture.calls.playbackCancelled.length, 0);
+
+        const streamD = await startPublicItem(fixture, 'D');
+        assert.equal(streamD.mediaSource.Id, 'media-D');
+        assert.deepEqual(fixture.calls.play.map(stream => stream.item.Id), ['A', 'B', 'D']);
+        assert.equal(fixture.calls.playbackStarts.length, 3);
+        const expectedABD = expectedAB.concat([
+            {itemId: 'D', playSessionId: 'session-D', mediaSourceId: 'media-D'}
+        ]);
+        assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStart'), expectedABD);
+        assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), expectedAB);
+        await fixture.manager.stop();
+        await settle();
+        assert.deepEqual(reportsFor(fixture.calls, 'reportPlaybackStopped'), expectedABD,
+            'A, B, and the new explicit D each retain exactly one correctly paired session stop');
+    });
+}
