@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-10-10 — About包内版本异步P2本地修复
+
+从完整维护6815d2f建立独立 `codex/about-async-20261010`。main按64 KiB异步读取/哈希固定包内文件，仅共享in-flight查询，完成后重新校验；维护IPC与诊断导出等待信息快照，实时Helper状态单独刷新。定向37/37、最终全量646/646及静态检查通过。旧函数级三次查询timer延迟266.87ms，新首次/重复/并发为1.43/0.60/0.57ms；这是纯Node函数级证据。首次全量640/646因隔离patch输入缺失失败，日志保留；输入hash核验后原失败组14/14通过。
+
+用户随后授权本地提交、正式构建、隔离验证和本地候选交付。产品sourceCommit7cc7eb85、观测工具c9502aec；新runtime/安装候选完成，实际ready后维护IPC、复制同快照、诊断导出与main响应性通过。idle和最终hit400完整pipeline自然exit0/残留0，原始5对Session独立配对通过；工具49/49，安装器175,627,068 bytes，SHA2567037014b…24fb0116，2,137文件解包与运行后核验0不符。
+
+初版工具要求换流期间持续ready而误判FAIL，原run120秒强清理/残留0保持；修正逐快照状态校验后仅做一次完整pipeline通过。旧7ec6ace产物与八组证据仅归属旧候选，发布身份保持；本轮未推送/PR/合并/发布/系统安装，真实服务/视觉/HDR/多屏和旧app.exit UNKNOWN边界保持。详见 [异步校验记录](ABOUT_VERSION_ASYNC.md)。
+
 ## 2026-10-09 — grpc-js与About本地维护交付完成
 
 从main bc50d181建立独立维护分支，grpc-js精确更新1.14.6，About按构建来源显示包内版本及独立运行状态。定向69项、About/metadata15项、全量638/638与npm audit退出0通过；产品sourceCommit 7ec6ace，新runtime和本地安装候选完成。八组串行隔离回归自然退出、残留0；2137文件解包比较全部一致。详见 [维护记录](MAINTENANCE_GRPC_ABOUT.md)。

@@ -1,5 +1,9 @@
 # grpc-js 与 About 本地维护
 
+2026-10-10后续：独立审阅发现包内版本同步读取/哈希造成main阻塞，
+本地异步修复与证据见 [About异步版本校验](ABOUT_VERSION_ASYNC.md)。
+以下7ec6ace候选和八组运行记录保持原身份，不作为后续修复的runtime验收。
+
 日期：2026-10-09（UTC+8）。基线为 main 合并提交
 bc50d181cd5cafd14b31e2c0d24cbf7fd73b0ee1，分支
 codex/maintenance-grpc-about-20261009，版本保持0.2.6。

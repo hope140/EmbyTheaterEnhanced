@@ -1,5 +1,18 @@
 # 开发日志
 
+## 2026-10-10 — About版本查询main响应性P2
+
+- Model Tier: Tier 2；Model: GPT-6.1 Sol High主线程 / GPT-6 Luna High只读worker；Reason: Task Risk=medium，Task Uncertainty=medium（异步读取及文件身份归属），Cross-module Scope=main/维护IPC/诊断EXPORT，Playback/Session Impact=none；Escalated: no。
+- 核对原维护树6815d2f干净、远端main仍bc50d181、维护分支未在远端出现，主目录未提交资料保留；从准确6815d2f建立新托管worktree及codex/about-async-20261010，旧树/产物不修改。
+- 主线程固定64 KiB异步read/hash、整轮文件身份复核、仅in-flight Promise共享及结束清理、错误后重验contract；main await后读取实时status，三个维护IPC及diagnostics EXPORT等待对象。worker只读核对调用全集、源码diff与固定输入可用性；主线程复核核心及测试diff。
+- 定向37/37；首次与重复读取timer/并发共享、身份变化UNKNOWN/恢复/handle清理、ready状态及异步IPC覆盖。旧同DLL连续三次timer266.87ms，新首次/重复/三路并发1.43/0.60/0.57ms，最大查询期间timer间隔1.52/2.01/1.91ms；记录为纯Node函数级样本。
+- 最终全量646/646（约140.75秒），0fail/cancel/skip；7文件语法、diff、6份文档链接和新增文本隐私检查通过。首次全量640/646的6项失败均缺隔离patch client输入，原日志保留；复制固定patch且共1,060个vendor文件hash复核后，失败组14/14和最终全量通过，未弱化断言。
+- 用户随后明确仅本分支本地提交、正式构建、隔离验证及本地候选交付授权，保持0.2.6。产品提交7cc7eb85，工具提交c9502aec；后续文档HEAD不替代产品sourceCommit，未推送/PR/合并/发布/系统安装。
+- 固定输入独立复制并重验，正式runtime payload2,136/完整2,137；source/runtime/native/Electron、依赖与package门槛通过。旧对照DLL、新输入及新输出均119,725,568 bytes/SHA256965efde4…53f14d0c，来源身份分别记录；二进制不变，产品JS仅4文件变化。
+- 实际application renderer初始与ready后IPC通过，包内1.0.0/v0.41.0-920-gdd5d17d32，ready握手1.0.0/mpv v0.41.0-920-gdd5d17d32；copy同一白名单snapshot和实际诊断export输入/输出对应，查询上下文Helper spawn/Native调用0。main首次/三并发及ready的timer延迟1.83/0.90/0.36/0.23ms，最大采样间隔7.02ms；隐藏观测不扩大视觉验收。
+- 初版工具误将replacement中的ready→stopped判FAIL，原hit400播放与5对Session通过但normal-close未执行，外层120秒强清理、残留0，原证据保持FAIL。独立复核修正逐快照校验，仍要求首GET实际ready，49/49工具单测后仅跑一次完整pipeline；idle和最终pipeline自然exit0、无强清理、残留0，5对原始Session身份/顺序独立复算、P1诊断129条/12关联通过。工具15秒收尾上限也由审查纠正，fake-clock覆盖，原120秒runner不扩大。
+- installer完整性、2,137解包文件与运行后runtime全匹配；安装器175,627,068 bytes、SHA2567037014b…24fb0116，两个companion/source7cc7eb85绑定。交付在dist/delivery-0.2.6-about-async-7cc7eb8。原app.exit UNKNOWN与真实服务/安装/视觉/HDR/多屏未验收保持。详见 [异步校验](ABOUT_VERSION_ASYNC.md)。
+
 ## 2026-10-09 — grpc-js与About维护
 
 - Model Tier: Tier 2；Model: GPT-6.1 Sol Medium主线程 / GPT-6 Luna High测试与只读审查worker；Reason: Task Risk=medium，Task Uncertainty=medium（可信版本来源），Cross-module Scope=固定依赖/构建/维护IPC，Playback/Session Impact=none；Escalated: no。

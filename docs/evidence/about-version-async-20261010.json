@@ -1,0 +1,1474 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-10",
+  "timezone": "Asia/Shanghai",
+  "status": "PASS_LOCAL_CANDIDATE_WITH_RETAINED_OBSERVER_FAILURE",
+  "baseCommit": "6815d2fa93bf613d028dbaa96328c7ef3e0e55b5",
+  "branch": "codex/about-async-20261010",
+  "version": "0.2.6",
+  "newSourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+  "newRuntime": "dist/ETE-0.2.6-about-async-7cc7eb8-win-x64",
+  "newInstaller": "dist/EmbyTheaterEnhanced-0.2.6-about-async-7cc7eb8-win-x64-setup.exe",
+  "currentProductFiles": [
+    {
+      "file": "src/electronapp/enhanced/bundled-versions.js",
+      "sha256": "f851b9f15075d7fc527dad441ffcc89e1c4304b15a863a127f296ec684476471",
+      "canonicalLfSha256": "509552653ef1520df09b98dbea29267bb9c01302e5ea1eaf91153db223da4a1b"
+    },
+    {
+      "file": "src/electronapp/main.js",
+      "sha256": "14d0f1e4014c799adb84c98eebc046c7e27a4fc108b36c58d6b98234c7d41ea9",
+      "canonicalLfSha256": "f0023014bb55a63771e23114c8a8f3133de10c1da39ed718d463087c6cf7bad8"
+    },
+    {
+      "file": "src/electronapp/enhanced/maintenance-ipc.js",
+      "sha256": "278835778c22a31bae8810dba9d8c890b22504d09120a938f07c034af8f7f075",
+      "canonicalLfSha256": "354a7c5685bbb8acddd89a71809b06a18e04335b3cf31df5494e41c25553cab9"
+    },
+    {
+      "file": "src/electronapp/enhanced/diagnostics-ipc.js",
+      "sha256": "3819910f25ad1c012b2184258fec608b12c9bdba19de9127e2ccc612a30cfcbb",
+      "canonicalLfSha256": "46f6a15a7e1232b37c9ba37d5eac38d36b352349e1a37bbce8ebf28fb1afe468"
+    }
+  ],
+  "contract": {
+    "chunkBytes": 65536,
+    "provenanceLimitBytes": 65536,
+    "manifestLimitBytes": 2097152,
+    "binaryLimitBytes": 134217728,
+    "sharedWork": "IN_FLIGHT_ONLY_FIXED_ROOT_AND_COMMIT",
+    "invalidation": "CLEAR_AFTER_EVERY_COMPLETION_INCLUDING_UNKNOWN",
+    "persistentResultCache": false,
+    "laterQueries": "FULL_BYTE_REVALIDATION",
+    "fileIdentityChecks": [
+      "lstat snapshot",
+      "opened handle stat",
+      "post-read handle stat",
+      "final four-file snapshot"
+    ],
+    "runtimeHelperState": "READ_AFTER_AWAIT_ON_EVERY_QUERY",
+    "rendererSuppliedPathsVersionsHashes": false
+  },
+  "tests": {
+    "targeted": {
+      "file": ".work/about-async/targeted-tests.log",
+      "sha256": "1bd15cd11d5d406d7c05ea06e5389fc3745274d0867140a2ebab22e4187adf9c",
+      "tests": 37,
+      "pass": 37,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "duration_ms": 200.9544
+    },
+    "inputRecovery": {
+      "file": ".work/about-async/input-recovery-tests.log",
+      "sha256": "9d4b07e40b2b08ec450d302780f9b4a8882d85138bc5e83d66c1dfaab874c37d",
+      "tests": 14,
+      "pass": 14,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "duration_ms": 10693.7956
+    },
+    "full": {
+      "file": ".work/about-async/final-tests.log",
+      "sha256": "2e4dbe8f1ec87a3ff1b93f773dd026c999fd501a1e4d2fca692ac39749558dbe",
+      "tests": 646,
+      "pass": 646,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "duration_ms": 140752.6798
+    },
+    "initialMissingInput": {
+      "file": ".work/about-async/initial-missing-input-tests.log",
+      "sha256": "3d3bfa0025cf8b0e1c4f95ed90240e700a9b6833873c75a4d26e83493758539c",
+      "tests": 646,
+      "pass": 640,
+      "fail": 6,
+      "cancelled": 0,
+      "skipped": 0,
+      "duration_ms": 142681.083,
+      "reason": "ISOLATED_VENDOR_PATCH_CLIENT_INPUT_MISSING",
+      "productFailureClaim": false
+    }
+  },
+  "preparedInputs": {
+    "copiedVendorFilesHashVerified": 1060,
+    "preparedPreload": "GENERATED_FROM_FIXED_CARNIVAL",
+    "dependencies": "NPM_CI_EXISTING_LOCK_NO_SCRIPTS_NO_UPGRADE"
+  },
+  "responsiveness": {
+    "rawFile": ".work/about-async/responsiveness.json",
+    "rawFileSha256": "4f34f1968c682748ed5121c3ea906b20a742063d3162d385ef9cf26d703ccb22",
+    "script": ".work/about-async/benchmark.cjs",
+    "scriptSha256": "3b9916fe32c016958a49df62a8aaf86ad5162448f1cbcbc3efe96eabe356571a",
+    "schemaVersion": 1,
+    "node": "24.18.1",
+    "binarySize": 119725568,
+    "artifactSourceCommit": "7ec6aceb2c97185fa8fd9a128b8737f02c0c3b19",
+    "evidenceScope": "PURE_NODE_FUNCTION_LEVEL_USING_READONLY_OLD_RUNTIME_BINARY",
+    "modes": [
+      {
+        "label": "baseline-sync-three-queries",
+        "elapsedMs": 266.8027,
+        "timerDelayMs": 266.87469999999996,
+        "ticksBeforeComplete": 0,
+        "maxGapMs": 0,
+        "samples": [
+          {
+            "elapsedMs": 88.1583,
+            "versions": {
+              "helperVersion": "1.0.0",
+              "libmpvVersion": "v0.41.0-920-gdd5d17d32"
+            }
+          },
+          {
+            "elapsedMs": 89.13839999999999,
+            "versions": {
+              "helperVersion": "1.0.0",
+              "libmpvVersion": "v0.41.0-920-gdd5d17d32"
+            }
+          },
+          {
+            "elapsedMs": 89.39599999999999,
+            "versions": {
+              "helperVersion": "1.0.0",
+              "libmpvVersion": "v0.41.0-920-gdd5d17d32"
+            }
+          }
+        ]
+      },
+      {
+        "label": "candidate-first-query",
+        "elapsedMs": 124.68860000000001,
+        "timerDelayMs": 1.4300000000000068,
+        "ticksBeforeComplete": 124,
+        "maxGapMs": 1.5203000000000202,
+        "versions": {
+          "helperVersion": "1.0.0",
+          "libmpvVersion": "v0.41.0-920-gdd5d17d32"
+        },
+        "opened": 4,
+        "binaryReadBytes": 119725568,
+        "maxReadBytes": 65536
+      },
+      {
+        "label": "candidate-repeated-query",
+        "elapsedMs": 118.0267,
+        "timerDelayMs": 0.6007999999999925,
+        "ticksBeforeComplete": 117,
+        "maxGapMs": 2.012999999999977,
+        "versions": {
+          "helperVersion": "1.0.0",
+          "libmpvVersion": "v0.41.0-920-gdd5d17d32"
+        },
+        "opened": 4,
+        "binaryReadBytes": 119725568,
+        "maxReadBytes": 65536
+      },
+      {
+        "label": "candidate-three-concurrent-queries",
+        "elapsedMs": 113.8954,
+        "timerDelayMs": 0.5686000000000604,
+        "ticksBeforeComplete": 114,
+        "maxGapMs": 1.909400000000005,
+        "sharedPromise": true,
+        "versions": [
+          {
+            "helperVersion": "1.0.0",
+            "libmpvVersion": "v0.41.0-920-gdd5d17d32"
+          },
+          {
+            "helperVersion": "1.0.0",
+            "libmpvVersion": "v0.41.0-920-gdd5d17d32"
+          },
+          {
+            "helperVersion": "1.0.0",
+            "libmpvVersion": "v0.41.0-920-gdd5d17d32"
+          }
+        ],
+        "opened": 4,
+        "binaryReadBytes": 119725568,
+        "maxReadBytes": 65536
+      }
+    ],
+    "baselineMaxGapInterpretation": "UNAVAILABLE_NO_TICKS_BEFORE_COMPLETION",
+    "sampleCount": 1,
+    "claimedScope": "FUNCTION_LEVEL_ONLY_NOT_ELECTRON_RUNTIME_OR_PLAYBACK"
+  },
+  "static": {
+    "schemaVersion": 1,
+    "syntax": [
+      {
+        "file": "src/electronapp/enhanced/bundled-versions.js",
+        "exitCode": 0
+      },
+      {
+        "file": "src/electronapp/enhanced/diagnostics-ipc.js",
+        "exitCode": 0
+      },
+      {
+        "file": "src/electronapp/enhanced/maintenance-ipc.js",
+        "exitCode": 0
+      },
+      {
+        "file": "src/electronapp/main.js",
+        "exitCode": 0
+      },
+      {
+        "file": "tests/bundled-versions.test.cjs",
+        "exitCode": 0
+      },
+      {
+        "file": "tests/client-diagnostics.test.cjs",
+        "exitCode": 0
+      },
+      {
+        "file": "tests/pipeline-timeout.test.cjs",
+        "exitCode": 0
+      },
+      {
+        "file": "tests/settings-visual-system.test.cjs",
+        "exitCode": 0
+      },
+      {
+        "file": "tools/about-version-observation.cjs",
+        "exitCode": 0
+      },
+      {
+        "file": "tools/p1-diagnostics-smoke.cjs",
+        "exitCode": 0
+      },
+      {
+        "file": "tools/smoke-electron.cjs",
+        "exitCode": 0
+      }
+    ],
+    "syntaxFailures": 0,
+    "changedMarkdownFiles": 6,
+    "brokenLinks": [],
+    "privateMatches": [],
+    "diffCheckExitCode": 0,
+    "powershellSyntaxFiles": [
+      "tools/test-p1-diagnostics.ps1"
+    ],
+    "powershellSyntaxFailures": 0
+  },
+  "independentReview": {
+    "type": "READONLY_PRODUCT_TEST_TOOL_DOCUMENT_DIFF_REVIEW",
+    "resolvedFindings": [
+      "OBSERVER_15_SECOND_HARD_DEADLINE",
+      "VALID_RUNTIME_STATE_CHANGES_DURING_REPLACEMENT"
+    ],
+    "unresolvedFindings": []
+  },
+  "acceptance": {
+    "formalBuild": "PASS",
+    "isolatedRuntime": "PASS_IDLE_AND_ONE_CORRECTED_FULL_PIPELINE",
+    "actualReadyIpcSnapshot": "PASS_REAL_APPLICATION_RENDERER_ON_NEW_RUNTIME",
+    "copySnapshotAndDiagnosticExport": "PASS_WITH_FIXTURE_SIDE_EFFECT_BOUNDARIES",
+    "systemInstall": "NOT_EXECUTED",
+    "realEmbyCd2RemoteControl": "NOT_EXECUTED",
+    "visibleVideoHdrMultiDisplay": "NOT_EXECUTED",
+    "historicalDirectAppExitRootCause": "UNKNOWN"
+  },
+  "oldCandidateEvidence": "RETAINS_7EC6ACE_IDENTITY_NOT_REUSED_AS_NEW_ACCEPTANCE",
+  "commitPushPrRelease": "LOCAL_COMMITS_ONLY",
+  "publishedVersionIdentity": "UNCHANGED",
+  "productCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+  "observationToolCommit": "c9502aec5a451e9dfa6b7696ba44309b336985c3",
+  "authorization": {
+    "date": "2026-10-10",
+    "scope": [
+      "LOCAL_COMMITS_ON_CODEX_ABOUT_ASYNC_BRANCH",
+      "FORMAL_BUILD",
+      "ISOLATED_VALIDATION",
+      "LOCAL_CANDIDATE_DELIVERY"
+    ],
+    "version": "0.2.6",
+    "pushPrMergeReleaseSystemInstall": false
+  },
+  "dllIdentity": {
+    "schemaVersion": 1,
+    "functionLevelComparisonInput": {
+      "runtime": "dist/ETE-0.2.6-maintenance-7ec6ace-win-x64",
+      "sourceCommit": "7ec6aceb2c97185fa8fd9a128b8737f02c0c3b19",
+      "file": "electronapp/libmpv/x64/mpv-1.dll",
+      "size": 119725568,
+      "sha256": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c",
+      "manifestSha256": "76864d7da72d0418006983978c8adddb0b5c9a40240fcc6e179f775f609c23ee",
+      "nativeProvenanceSha256": "39d5fed6dc35810dc7bd44cb43cfc29f0023b9e7f3902763e53cc20062203abc",
+      "identityAndManifestMatched": true,
+      "owner": "maintenance-grpc-about-20261009"
+    },
+    "newBuildInput": {
+      "file": "vendor/patch/payload/libmpv/mpv-1.dll",
+      "sha256": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c",
+      "size": 119725568,
+      "lockedManifest": "vendor/native-helper-manifest.json",
+      "expectedSha256": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c"
+    },
+    "newRuntimeOutput": {
+      "runtime": "dist/ETE-0.2.6-about-async-7cc7eb8-win-x64",
+      "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+      "file": "electronapp/libmpv/x64/mpv-1.dll",
+      "size": 119725568,
+      "sha256": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c",
+      "manifestSha256": "0aeaa89b1065f4a1effcd59271d7c398c68b97193b868b8befc7ceb9b6f6709e",
+      "nativeProvenanceSha256": "7904d99e2aa051a6628d9eba59c73940ff39a71e73331adb210cb82310ab9bcb",
+      "identityAndManifestMatched": true
+    },
+    "inputOutputAndLockMatched": true,
+    "previousRuntimeComparison": {
+      "comparedManifestEntries": 2136,
+      "changedFiles": [
+        "build-input-provenance.json",
+        "electronapp/enhanced/bundled-versions.js",
+        "electronapp/enhanced/diagnostics-ipc.js",
+        "electronapp/enhanced/maintenance-ipc.js",
+        "electronapp/main.js",
+        "native-helper-provenance.json",
+        "runtime-dependencies.json",
+        "runtime-provenance.json",
+        "source-provenance.json"
+      ],
+      "changedBinaryFiles": [],
+      "removedFiles": []
+    }
+  },
+  "installer": {
+    "schemaVersion": 1,
+    "status": "PASS",
+    "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+    "runtime": "dist/ETE-0.2.6-about-async-7cc7eb8-win-x64",
+    "installer": "dist/EmbyTheaterEnhanced-0.2.6-about-async-7cc7eb8-win-x64-setup.exe",
+    "version": "0.2.6",
+    "size": 175627068,
+    "sha256": "7037014b2f3e5088bf11c1ee9c9079b19b4dff1cbf8cc57e988dbd2b24fb0116",
+    "companionSha256": "7a44e031622ed2f3c24c1787089d87550fad34742086af31af7649f6535a9e86",
+    "provenanceSha256": "4e0573b2d00bd76096cd5d613e1549b3fad75255c3ad16b1ff980909eeb1fbbd",
+    "companionBindingsMatched": true,
+    "runtimeManifestSha256": "0aeaa89b1065f4a1effcd59271d7c398c68b97193b868b8befc7ceb9b6f6709e",
+    "expected": 2137,
+    "actual": 2137,
+    "missing": [],
+    "extra": [],
+    "mismatch": [],
+    "postRuntimePayloadMismatch": []
+  },
+  "isolatedRuntime": [
+    {
+      "case": "pipeline-hit400-stable-state-gate-failure",
+      "directory": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d",
+      "productSourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+      "harnessHead": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "8b69b97204e1e231934905eb3636a2d0fa1f7e6c341cb543d98698a35a487284"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "9bbbc77875af32acac7102c4f73635dd849a4f7abae0d2c7f71819244f43f044"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "984a98698c4e2fc4d60909f1d4decc007e25e19ab32cc1fa87236282e60812b5"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tools/exit-observation.cjs",
+          "sha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee"
+        },
+        {
+          "path": "tools/normal-close-observation.cjs",
+          "sha256": "81385163c8c806e581966fa40aedb0360965341886dc970bd0d6668600cc0562"
+        },
+        {
+          "path": "tools/verify-normal-close.cjs",
+          "sha256": "f32e8d32efdd7aa443e62faaa929d6ab9ceb4f0e968365052eab92cce33b6291"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "0ade5c67167d6117f991c386e4211e20825806c6a998ea34663606eb19e5d96e"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749"
+        },
+        {
+          "path": "tools/about-version-observation.cjs",
+          "sha256": "d8d3eab2eecf2e8392e378d7f791ebe409c03c6b3916b7f1b3de9e4b339c4400"
+        }
+      ],
+      "rawStatus": "FAIL",
+      "exitMode": "FORCED_CLEANUP",
+      "exitCode": 1,
+      "cleanupAttempted": true,
+      "residual": 0,
+      "aboutIpc": {
+        "schemaVersion": 1,
+        "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+        "status": "FAIL",
+        "testBoundaries": {
+          "clipboard": "IN_MEMORY_CAPTURE",
+          "saveDialog": "FIXED_EVIDENCE_FILE",
+          "updateTransport": "LOCAL_RELEASE_FIXTURE"
+        },
+        "stages": {
+          "initial": {
+            "snapshots": [
+              {
+                "appVersion": "0.2.6",
+                "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.6",
+                "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.6",
+                "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.6",
+                "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              }
+            ],
+            "copiedSnapshot": {
+              "appVersion": "0.2.6",
+              "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+              "nativeHelper": "1.0.0",
+              "libmpv": "v0.41.0-920-gdd5d17d32",
+              "nativeHelperState": "stopped",
+              "runningNativeHelper": "NOT AVAILABLE",
+              "runningLibmpv": "NOT AVAILABLE"
+            },
+            "snapshotVersionsMatched": true,
+            "copyMatches": true,
+            "copiedVersionMatched": true,
+            "updateStatus": "latest",
+            "exportStatus": "exported",
+            "exportFile": "about-export-1.txt",
+            "exportSourceCommitMatched": true,
+            "exportRunningStateMatched": true,
+            "metrics": [
+              {
+                "elapsedMs": 167.4731,
+                "ticksBeforeComplete": 164,
+                "timerDelayMs": 1.745399999999961,
+                "maxGapMs": 2.045000000000016
+              },
+              {
+                "elapsedMs": 142.80319999999995,
+                "ticksBeforeComplete": 143,
+                "timerDelayMs": 0.5643000000000029,
+                "maxGapMs": 1.7211999999999534
+              }
+            ],
+            "responsive": true
+          },
+          "ready": {
+            "snapshots": [
+              {
+                "appVersion": "0.2.6",
+                "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "ready",
+                "runningNativeHelper": "1.0.0",
+                "runningLibmpv": "mpv v0.41.0-920-gdd5d17d32"
+              },
+              {
+                "appVersion": "0.2.6",
+                "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.6",
+                "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.6",
+                "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              }
+            ],
+            "copiedSnapshot": {
+              "appVersion": "0.2.6",
+              "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+              "nativeHelper": "1.0.0",
+              "libmpv": "v0.41.0-920-gdd5d17d32",
+              "nativeHelperState": "ready",
+              "runningNativeHelper": "1.0.0",
+              "runningLibmpv": "mpv v0.41.0-920-gdd5d17d32"
+            },
+            "snapshotVersionsMatched": false,
+            "copyMatches": true,
+            "copiedVersionMatched": true,
+            "updateStatus": "latest",
+            "exportStatus": "exported",
+            "exportFile": "about-export-2.txt",
+            "exportSourceCommitMatched": true,
+            "exportRunningStateMatched": true,
+            "metrics": [
+              {
+                "elapsedMs": 239.1858000000002,
+                "ticksBeforeComplete": 226,
+                "timerDelayMs": 0.16810000000077707,
+                "maxGapMs": 6.124300000000403
+              },
+              {
+                "elapsedMs": 250.14450000000033,
+                "ticksBeforeComplete": 241,
+                "timerDelayMs": 0.9895999999998821,
+                "maxGapMs": 4.006900000000314
+              }
+            ],
+            "responsive": true
+          }
+        },
+        "helperStartsInInformationContext": 0,
+        "nativeCallsInInformationContext": 0,
+        "errors": [],
+        "updateFixtureRequests": 2
+      },
+      "normalClose": {
+        "status": "NOT_COMPLETED"
+      },
+      "sessions": {
+        "startedCount": 5,
+        "stoppedCount": 5,
+        "independentIdentityPairs": true,
+        "sessionChecks": {
+          "requiredItems": {
+            "ordinary": [
+              "fixture-video"
+            ],
+            "strm": [
+              "fixture-strm"
+            ],
+            "queue": [
+              "fixture-next-a",
+              "fixture-next-b",
+              "fixture-next-c"
+            ]
+          },
+          "requiredItemResults": {
+            "ordinary": {
+              "itemIds": [
+                "fixture-video"
+              ],
+              "items": [
+                {
+                  "itemId": "fixture-video",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                }
+              ],
+              "passed": true
+            },
+            "strm": {
+              "itemIds": [
+                "fixture-strm"
+              ],
+              "items": [
+                {
+                  "itemId": "fixture-strm",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                }
+              ],
+              "passed": true
+            },
+            "queue": {
+              "itemIds": [
+                "fixture-next-a",
+                "fixture-next-b",
+                "fixture-next-c"
+              ],
+              "items": [
+                {
+                  "itemId": "fixture-next-a",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                },
+                {
+                  "itemId": "fixture-next-b",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                },
+                {
+                  "itemId": "fixture-next-c",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                }
+              ],
+              "passed": true
+            }
+          },
+          "startedCount": 5,
+          "stoppedCount": 5,
+          "pairedCount": 5,
+          "pendingStopped": 0,
+          "unmatchedStopped": 0,
+          "incompleteStarted": 0,
+          "incompleteStopped": 0,
+          "duplicateStarted": 0,
+          "duplicateStopped": 0,
+          "unpairedStarted": 0,
+          "unpairedStopped": 0,
+          "mismatchedStopped": 0,
+          "startedStoppedOneToOne": true,
+          "ordinaryStartedStopped": true,
+          "strmStartedStopped": true,
+          "queueStartedStopped": true,
+          "requiredStartedStopped": true,
+          "passed": true
+        }
+      },
+      "artifacts": [
+        {
+          "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/harness-identity.json",
+          "sha256": "24cc95a05c2011eca909fa0b82ec49110cd50fef7f217bf06eeb358b38157211"
+        },
+        {
+          "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/runner-result.json",
+          "sha256": "b2efd805929b56274f6412cdea7bd25bcbf201d65605d43021995ecbd955de45"
+        },
+        {
+          "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/electron-smoke.json",
+          "sha256": "edc4182f43efa08a17df6fbeff4912361b15816f5700841a4b8080fd5162b084"
+        },
+        {
+          "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/about-async-ipc.json",
+          "sha256": "378e70726219e93ac812763f38164f8ba39a3a75f489263505d736a505c41a47"
+        },
+        {
+          "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/normal-close.jsonl",
+          "sha256": "631ce8193eff285a2e92e078929b2504a3da37ec61797bee16816e712a5cb55f"
+        },
+        {
+          "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/exit-observation.jsonl",
+          "sha256": "48dbb78fcc24059551efe104af5b381f7e8df274cfdba29791625fe0553de712"
+        },
+        {
+          "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/p1-diagnostics-injection.json",
+          "sha256": "9d0371c7a1d9b08d87d678038b4c282bfa70d2ffa0cc3f2d85b339d0cfbf2ed7"
+        },
+        {
+          "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/runner-exit-observation.jsonl",
+          "sha256": "2713d6ede9e15fd1e84048b2845a927d1681dbd6e9b2106e450b08ff4d7628bf"
+        },
+        {
+          "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/stdout.log",
+          "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+        },
+        {
+          "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/stderr.log",
+          "sha256": "38fb1d58e72e3992fdb5cdb83e0dc272bdef20e49044742a41474bf390459337"
+        },
+        {
+          "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/appdata/EmbyTheaterEnhanced/logs/ete-client.jsonl",
+          "sha256": "e5966675491be5cd6625c3b3b9d5ba000e1aa767457ad2908b295ee32098b019"
+        },
+        {
+          "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/about-export-1.txt",
+          "sha256": "e4853163fa06129fb92e1cd51a367e175f9cefe1fd0292b4bd88bd589e81a8ef"
+        },
+        {
+          "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/about-export-2.txt",
+          "sha256": "dca41a5f94a94ce7cf22abf9ceeac03188bab14110f60b3bec58c3e97a13db5c"
+        }
+      ],
+      "failureClassification": "OBSERVER_REQUIRED_CONTINUOUS_READY_DURING_VALID_HELPER_REPLACEMENT"
+    },
+    {
+      "case": "pipeline-hit400-corrected",
+      "directory": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42",
+      "productSourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+      "harnessHead": "c9502aec5a451e9dfa6b7696ba44309b336985c3",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "8b69b97204e1e231934905eb3636a2d0fa1f7e6c341cb543d98698a35a487284"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "9bbbc77875af32acac7102c4f73635dd849a4f7abae0d2c7f71819244f43f044"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "984a98698c4e2fc4d60909f1d4decc007e25e19ab32cc1fa87236282e60812b5"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tools/exit-observation.cjs",
+          "sha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee"
+        },
+        {
+          "path": "tools/normal-close-observation.cjs",
+          "sha256": "81385163c8c806e581966fa40aedb0360965341886dc970bd0d6668600cc0562"
+        },
+        {
+          "path": "tools/verify-normal-close.cjs",
+          "sha256": "f32e8d32efdd7aa443e62faaa929d6ab9ceb4f0e968365052eab92cce33b6291"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "0ade5c67167d6117f991c386e4211e20825806c6a998ea34663606eb19e5d96e"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749"
+        },
+        {
+          "path": "tools/about-version-observation.cjs",
+          "sha256": "0f48b10bc247b312ea59a666b388ea3cf63e3948a06ddeffa282bca3d2375ec8"
+        }
+      ],
+      "rawStatus": "PASS",
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "cleanupAttempted": false,
+      "residual": 0,
+      "aboutIpc": {
+        "schemaVersion": 1,
+        "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+        "status": "PASS",
+        "testBoundaries": {
+          "clipboard": "IN_MEMORY_CAPTURE",
+          "saveDialog": "FIXED_EVIDENCE_FILE",
+          "updateTransport": "LOCAL_RELEASE_FIXTURE"
+        },
+        "stages": {
+          "initial": {
+            "snapshots": [
+              {
+                "appVersion": "0.2.6",
+                "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.6",
+                "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.6",
+                "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.6",
+                "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              }
+            ],
+            "copiedSnapshot": {
+              "appVersion": "0.2.6",
+              "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+              "nativeHelper": "1.0.0",
+              "libmpv": "v0.41.0-920-gdd5d17d32",
+              "nativeHelperState": "stopped",
+              "runningNativeHelper": "NOT AVAILABLE",
+              "runningLibmpv": "NOT AVAILABLE"
+            },
+            "snapshotVersionsMatched": true,
+            "expectedStageStateObserved": true,
+            "copyMatches": true,
+            "copiedVersionMatched": true,
+            "updateStatus": "latest",
+            "exportStatus": "exported",
+            "exportFile": "about-export-1.txt",
+            "exportSourceCommitMatched": true,
+            "exportSnapshot": {
+              "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+              "state": "stopped",
+              "helperVersion": "UNKNOWN",
+              "libmpvVersion": "mpv v0.41.0-920-gdd5d17d32"
+            },
+            "exportRunningStateMatched": true,
+            "metrics": [
+              {
+                "elapsedMs": 148.2172,
+                "ticksBeforeComplete": 141,
+                "timerDelayMs": 1.832899999999995,
+                "maxGapMs": 6.009200000000021
+              },
+              {
+                "elapsedMs": 143.91309999999993,
+                "ticksBeforeComplete": 144,
+                "timerDelayMs": 0.9000999999999522,
+                "maxGapMs": 1.7026999999999362
+              }
+            ],
+            "responsive": true
+          },
+          "ready": {
+            "snapshots": [
+              {
+                "appVersion": "0.2.6",
+                "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "ready",
+                "runningNativeHelper": "1.0.0",
+                "runningLibmpv": "mpv v0.41.0-920-gdd5d17d32"
+              },
+              {
+                "appVersion": "0.2.6",
+                "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.6",
+                "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.6",
+                "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              }
+            ],
+            "copiedSnapshot": {
+              "appVersion": "0.2.6",
+              "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+              "nativeHelper": "1.0.0",
+              "libmpv": "v0.41.0-920-gdd5d17d32",
+              "nativeHelperState": "ready",
+              "runningNativeHelper": "1.0.0",
+              "runningLibmpv": "mpv v0.41.0-920-gdd5d17d32"
+            },
+            "snapshotVersionsMatched": true,
+            "expectedStageStateObserved": true,
+            "copyMatches": true,
+            "copiedVersionMatched": true,
+            "updateStatus": "latest",
+            "exportStatus": "exported",
+            "exportFile": "about-export-2.txt",
+            "exportSourceCommitMatched": true,
+            "exportSnapshot": {
+              "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+              "state": "ready",
+              "helperVersion": "1.0.0",
+              "libmpvVersion": "mpv v0.41.0-920-gdd5d17d32"
+            },
+            "exportRunningStateMatched": true,
+            "metrics": [
+              {
+                "elapsedMs": 282.16740000000027,
+                "ticksBeforeComplete": 265,
+                "timerDelayMs": 0.356300000000374,
+                "maxGapMs": 7.018900000000031
+              },
+              {
+                "elapsedMs": 245.21629999999914,
+                "ticksBeforeComplete": 236,
+                "timerDelayMs": 0.23409999999967113,
+                "maxGapMs": 5.03020000000015
+              }
+            ],
+            "responsive": true
+          }
+        },
+        "helperStartsInInformationContext": 0,
+        "nativeCallsInInformationContext": 0,
+        "errors": [],
+        "updateFixtureRequests": 2
+      },
+      "normalClose": {
+        "schemaVersion": 1,
+        "scenario": "pipeline",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN",
+        "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd"
+      },
+      "sessions": {
+        "startedCount": 5,
+        "stoppedCount": 5,
+        "independentIdentityPairs": true,
+        "sessionChecks": {
+          "requiredItems": {
+            "ordinary": [
+              "fixture-video"
+            ],
+            "strm": [
+              "fixture-strm"
+            ],
+            "queue": [
+              "fixture-next-a",
+              "fixture-next-b",
+              "fixture-next-c"
+            ]
+          },
+          "requiredItemResults": {
+            "ordinary": {
+              "itemIds": [
+                "fixture-video"
+              ],
+              "items": [
+                {
+                  "itemId": "fixture-video",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                }
+              ],
+              "passed": true
+            },
+            "strm": {
+              "itemIds": [
+                "fixture-strm"
+              ],
+              "items": [
+                {
+                  "itemId": "fixture-strm",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                }
+              ],
+              "passed": true
+            },
+            "queue": {
+              "itemIds": [
+                "fixture-next-a",
+                "fixture-next-b",
+                "fixture-next-c"
+              ],
+              "items": [
+                {
+                  "itemId": "fixture-next-a",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                },
+                {
+                  "itemId": "fixture-next-b",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                },
+                {
+                  "itemId": "fixture-next-c",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                }
+              ],
+              "passed": true
+            }
+          },
+          "startedCount": 5,
+          "stoppedCount": 5,
+          "pairedCount": 5,
+          "pendingStopped": 0,
+          "unmatchedStopped": 0,
+          "incompleteStarted": 0,
+          "incompleteStopped": 0,
+          "duplicateStarted": 0,
+          "duplicateStopped": 0,
+          "unpairedStarted": 0,
+          "unpairedStopped": 0,
+          "mismatchedStopped": 0,
+          "startedStoppedOneToOne": true,
+          "ordinaryStartedStopped": true,
+          "strmStartedStopped": true,
+          "queueStartedStopped": true,
+          "requiredStartedStopped": true,
+          "passed": true
+        }
+      },
+      "artifacts": [
+        {
+          "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/harness-identity.json",
+          "sha256": "5af7d78836b8c2089ae98e3795b961347ef34d16890278593bc46f7e3d583e0f"
+        },
+        {
+          "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/runner-result.json",
+          "sha256": "5bb63d29bda611153333c4ac24c61239dee2252a7215a39da4f99f231ef72a46"
+        },
+        {
+          "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/electron-smoke.json",
+          "sha256": "6720e350bbc3fe6026d37288946109a9dd6580b138be3940bd29e869d49ab0eb"
+        },
+        {
+          "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/about-async-ipc.json",
+          "sha256": "640ca2ab1aefee67e34e6a31263d2243977035ad8e5e0e3e8dcccdbe07f3c2ab"
+        },
+        {
+          "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/normal-close.jsonl",
+          "sha256": "dbb14d7032fbabe60112241d34d5bdb2bf43919bec0f20bbce851e93af2852ce"
+        },
+        {
+          "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/exit-observation.jsonl",
+          "sha256": "cb8a84e254426110242f2638f27055b897ba6aed852ac934f6589fca662ffa28"
+        },
+        {
+          "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/p1-diagnostics-injection.json",
+          "sha256": "9d0371c7a1d9b08d87d678038b4c282bfa70d2ffa0cc3f2d85b339d0cfbf2ed7"
+        },
+        {
+          "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/normal-close-result.json",
+          "sha256": "b4319a4a7cf676a6c6d882ad629bab0d6d710d4fa73e80487a973174cf06618b"
+        },
+        {
+          "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/p1-diagnostics-result.json",
+          "sha256": "dda8f58f576b0c854b7c023fbe182790f044e0f6d0db10b233f063dbb4bec9f5"
+        },
+        {
+          "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/runner-exit-observation.jsonl",
+          "sha256": "561cc7a55c46c4db9802a01852984e8d88975360a4b9d9e274d5cebf477a6d7a"
+        },
+        {
+          "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/stdout.log",
+          "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+        },
+        {
+          "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/stderr.log",
+          "sha256": "31f485b567db307adb64bc31c26a6f9390f0298f4aac55d459eff2232b0c6f82"
+        },
+        {
+          "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/appdata/EmbyTheaterEnhanced/logs/ete-client.jsonl",
+          "sha256": "9b2a62828027e3bd9dc3f578ad57809f86bb03b29e566d3da3d5b3222ffe8f14"
+        },
+        {
+          "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/about-export-1.txt",
+          "sha256": "c9a1be7ab1509ae6d495910c413bd3c62d434ff6f2adb5184c9830c06308302f"
+        },
+        {
+          "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/about-export-2.txt",
+          "sha256": "7c950ed118a6b89bc56c1b5160d2ef227ec643da62fd2723594dbdf8e61ae45d"
+        }
+      ]
+    },
+    {
+      "case": "idle",
+      "directory": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6",
+      "productSourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+      "harnessHead": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "8b69b97204e1e231934905eb3636a2d0fa1f7e6c341cb543d98698a35a487284"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "9bbbc77875af32acac7102c4f73635dd849a4f7abae0d2c7f71819244f43f044"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "984a98698c4e2fc4d60909f1d4decc007e25e19ab32cc1fa87236282e60812b5"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tools/exit-observation.cjs",
+          "sha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee"
+        },
+        {
+          "path": "tools/normal-close-observation.cjs",
+          "sha256": "81385163c8c806e581966fa40aedb0360965341886dc970bd0d6668600cc0562"
+        },
+        {
+          "path": "tools/verify-normal-close.cjs",
+          "sha256": "f32e8d32efdd7aa443e62faaa929d6ab9ceb4f0e968365052eab92cce33b6291"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "0ade5c67167d6117f991c386e4211e20825806c6a998ea34663606eb19e5d96e"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749"
+        },
+        {
+          "path": "tools/about-version-observation.cjs",
+          "sha256": "d8d3eab2eecf2e8392e378d7f791ebe409c03c6b3916b7f1b3de9e4b339c4400"
+        }
+      ],
+      "rawStatus": "PASS",
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "cleanupAttempted": false,
+      "residual": 0,
+      "aboutIpc": {
+        "schemaVersion": 1,
+        "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+        "status": "PASS",
+        "testBoundaries": {
+          "clipboard": "IN_MEMORY_CAPTURE",
+          "saveDialog": "FIXED_EVIDENCE_FILE",
+          "updateTransport": "LOCAL_RELEASE_FIXTURE"
+        },
+        "stages": {
+          "initial": {
+            "snapshots": [
+              {
+                "appVersion": "0.2.6",
+                "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.6",
+                "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.6",
+                "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.6",
+                "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              }
+            ],
+            "copiedSnapshot": {
+              "appVersion": "0.2.6",
+              "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+              "nativeHelper": "1.0.0",
+              "libmpv": "v0.41.0-920-gdd5d17d32",
+              "nativeHelperState": "stopped",
+              "runningNativeHelper": "NOT AVAILABLE",
+              "runningLibmpv": "NOT AVAILABLE"
+            },
+            "snapshotVersionsMatched": true,
+            "copyMatches": true,
+            "copiedVersionMatched": true,
+            "updateStatus": "latest",
+            "exportStatus": "exported",
+            "exportFile": "about-export-1.txt",
+            "exportSourceCommitMatched": true,
+            "exportRunningStateMatched": true,
+            "metrics": [
+              {
+                "elapsedMs": 163.83079999999995,
+                "ticksBeforeComplete": 158,
+                "timerDelayMs": 2.2374999999999545,
+                "maxGapMs": 4.633199999999988
+              },
+              {
+                "elapsedMs": 140.16359999999997,
+                "ticksBeforeComplete": 140,
+                "timerDelayMs": 0.6614999999999895,
+                "maxGapMs": 1.6399000000000115
+              }
+            ],
+            "responsive": true
+          }
+        },
+        "helperStartsInInformationContext": 0,
+        "nativeCallsInInformationContext": 0,
+        "errors": [],
+        "updateFixtureRequests": 1
+      },
+      "normalClose": {
+        "schemaVersion": 1,
+        "scenario": "idle",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN",
+        "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd"
+      },
+      "sessions": {
+        "startedCount": 0,
+        "stoppedCount": 0,
+        "independentIdentityPairs": true,
+        "sessionChecks": null
+      },
+      "artifacts": [
+        {
+          "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/harness-identity.json",
+          "sha256": "8e643e95c2d23c2bbd39af52366a5ce6617b683271d6c32c1e30118415bff032"
+        },
+        {
+          "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/runner-result.json",
+          "sha256": "227fc7933759b8254996f388465598bbca1dfa2bd7e063e418e1068aa1f6fa14"
+        },
+        {
+          "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/electron-smoke.json",
+          "sha256": "1505d6fa4cc8a488f707e26d6006dcc282e3beb84a7d3cfde8af02a226183c75"
+        },
+        {
+          "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/about-async-ipc.json",
+          "sha256": "f87634023033a64d9f803863f50962469f1ed9a63117b302fb1c91579f605498"
+        },
+        {
+          "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/normal-close.jsonl",
+          "sha256": "9f32c0ab82f3e1f3304b9e2368c7ec51efe9dc150cc69aa1761bbe16ce8828b1"
+        },
+        {
+          "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/exit-observation.jsonl",
+          "sha256": "e02ee74dc8b368ccf9718189a2ff1bf4e72ab3d039eec240b90ba1f7f149c66d"
+        },
+        {
+          "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/p1-diagnostics-injection.json",
+          "sha256": "9d0371c7a1d9b08d87d678038b4c282bfa70d2ffa0cc3f2d85b339d0cfbf2ed7"
+        },
+        {
+          "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/normal-close-result.json",
+          "sha256": "e09f36fcc098773052a1d8631b6e0c9c9e3dcbc86b0f9fc5f6cd8685e668c590"
+        },
+        {
+          "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/runner-exit-observation.jsonl",
+          "sha256": "cf8d7b26685b930f03c852b01bcaaf0fccb2b1986d5d632ded698e5b714ca903"
+        },
+        {
+          "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/stdout.log",
+          "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+        },
+        {
+          "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/stderr.log",
+          "sha256": "ebaaae971e89d53e2947acc3cda9ce47e2ea94bce3500f265b92871f74379db3"
+        },
+        {
+          "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/appdata/EmbyTheaterEnhanced/logs/ete-client.jsonl",
+          "sha256": "367cc4358182dc4296eec25e2551ff3e32404613bbb982519b5df5370c3352c1"
+        },
+        {
+          "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/about-export-1.txt",
+          "sha256": "868028b6a7df5eb84dbde23df1054df8e196a12481da9ffbf7424b992fd8c50d"
+        }
+      ]
+    }
+  ],
+  "observationTests": {
+    "file": ".work/about-async/observer-regression-tests-corrected.log",
+    "sha256": "850ac493c05886bf503ccaa96059e627479e4b3c1c5cd8bc84c656617dc80b35"
+  },
+  "observationTestPassedCount": 49,
+  "buildAndPackageLogs": [
+    {
+      "file": ".work/about-async/build.log",
+      "sha256": "c093e08ed09ef64d30b555518a98ffba17a84c21f082e5bfea313ca185a2df2c"
+    },
+    {
+      "file": ".work/about-async/package-verify.log",
+      "sha256": "49bf645e12a30ae2c186ba51fff1c0064f7be70b1a15155caacc48043021798d"
+    },
+    {
+      "file": ".work/about-async/package.log",
+      "sha256": "a97c5cd02add9c2a2ffa11a8f5ded822c53c2016786f582ad997d420f24dc6c4"
+    },
+    {
+      "file": ".work/about-async/installer-integrity.log",
+      "sha256": "e67cc43ae6a9bced47edbaff40d0618af4efc0558b685c7a0e2fd4714e54fd64"
+    },
+    {
+      "file": ".work/about-async/installer-extraction.log",
+      "sha256": "ea6ff9fb5744b039b8479578fd97c7686aad4b678c510ebd7b92b66e93180a75"
+    }
+  ],
+  "preparedInputVerification": {
+    "file": ".work/about-async/input-preparation/validation-20261010.txt",
+    "sha256": "04707118e55889b9333bd838f4be74ade4cde02280e3ba4e71fc66c21daea6cc"
+  },
+  "validationHead": "c9502aec5a451e9dfa6b7696ba44309b336985c3",
+  "delivery": {
+    "directory": "dist/delivery-0.2.6-about-async-7cc7eb8",
+    "documentationCommitRelation": "DOCUMENTATION_ONLY_HEAD_IS_REPORTED_SEPARATELY_FROM_PRODUCT_SOURCE",
+    "files": [
+      "EmbyTheaterEnhanced-0.2.6-about-async-7cc7eb8-win-x64-setup.exe",
+      "EmbyTheaterEnhanced-0.2.6-about-async-7cc7eb8-win-x64-setup.exe.sha256",
+      "EmbyTheaterEnhanced-0.2.6-about-async-7cc7eb8-win-x64-setup.exe.provenance.json",
+      "README.zh-CN.md",
+      "VALIDATION.md",
+      "about-version-async-20261010.json",
+      "SHA256SUMS"
+    ]
+  }
+}

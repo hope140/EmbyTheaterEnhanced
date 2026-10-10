@@ -1,5 +1,13 @@
 # 已确认经验
 
+## 2026-10-10 — async IPC内部的大文件工作仍需让出main
+
+- 将IPC handler标为async不能消除内部readFileSync/SHA256阻塞；将readFile改为Promise后一次性hash整个DLL仍会占用main。大文件应异步分块读，每次同步hash有明确字节上限。
+- 仅共享进行中的包内校验Promise能合并并发又保留后续身份重验；UNKNOWN也必须清除以允许文件恢复。读取期间多次stat及最后全文件复核缩小替换窗口，但不是未签名整包安全认证或恶意并发写入的原子快照。
+- 包内读取变async时必须审计所有consumer；diagnostics EXPORT也要await对象。实时Helper状态在await之后读取，不能随包内Promise缓存。函数级timer证据与新正式Electron runtime验收分别记录。
+- 实际pipeline换流会自然销毁/重建Helper，不能要求一组异步查询一直ready。每个snapshot分别检查ready握手或非ready的NOT AVAILABLE；ready验收仍须有实际ready首GET，不能仅凭unit fixture。诊断export以自己实际收到的appInfo为对照。
+- 观测工具的外层race后不能再无界join未完成工作。超时应封存失败receipt；工具误判导致的原run/强清理保持，不把修正工具后的通过覆盖回历史。
+
 ## 2026-10-09 — 包内版本与运行版本来源
 
 - 包内Helper版本应从sourceCommit的源码声明提取，和二进制/源码hash一起生成provenance；libmpv使用固定清单。About读取时核对manifest对provenance自身hash及实际二进制，不为版本查询启动播放器。
