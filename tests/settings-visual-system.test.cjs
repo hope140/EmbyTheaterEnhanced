@@ -124,7 +124,8 @@ test('maintenance IPC checks sender trust, supports unregister and limits clipbo
     const unregister = maintenanceIpc.register({
         ipcMain,
         getWebContents: function () { return trusted; },
-        getAppInfo: function () {
+        getAppInfo: async function () {
+            await new Promise(resolve => setImmediate(resolve));
             appInfoCalls++;
             return {appVersion: appInfoCalls === 1 || appInfoCalls > 2 ? '0.2.2' : '0.2.3', bundledVersions: {helperVersion: 'helper-bundled', libmpvVersion: 'mpv-bundled'}, nativeHelper: {helperVersion: 'helper-running', libmpvVersion: 'mpv-running', state: 'ready'}};
         },
@@ -167,6 +168,53 @@ test('maintenance IPC checks sender trust, supports unregister and limits clipbo
 
     unregister();
     assert.equal(ipcMain.handlers.size, 0);
+});
+
+test('main reads live Helper status after asynchronous package validation on every query', async () => {
+    const main = fs.readFileSync(path.join(repoRoot, 'src/electronapp/main.js'), 'utf8');
+    const start = main.indexOf('    var readCurrentBundledVersions =');
+    const end = main.indexOf('    function getPlatformInfo()', start);
+    assert.ok(start >= 0 && end > start);
+    let finish;
+    let state = 'starting';
+    let statusCalls = 0;
+    const context = {
+        path, __dirname: '/runtime/electronapp', diagnosticsAppInfo: {buildCommit: 'a'.repeat(40)},
+        bundledVersions: {createBundledVersionReader: () => () => new Promise(resolve => { finish = resolve; })},
+        nativeHelperService: {status() { statusCalls++; return {state, helperVersion: state === 'ready' ? '1.0.0' : null}; }}
+    };
+    vm.createContext(context);
+    vm.runInContext(main.slice(start, end), context);
+    const pending = context.getCurrentEnhancedAppInfo();
+    assert.equal(statusCalls, 0);
+    state = 'ready';
+    finish({helperVersion: '1.0.0', libmpvVersion: 'v0.41.0'});
+    assert.equal((await pending).nativeHelper.state, 'ready');
+    const next = context.getCurrentEnhancedAppInfo();
+    state = 'stopped';
+    finish(null);
+    const result = await next;
+    assert.equal(result.nativeHelper.state, 'stopped');
+    assert.equal(result.bundledVersions, null);
+    assert.equal(statusCalls, 2);
+});
+
+test('maintenance IPC maps async information failure to an error without clipboard or update side effects', async () => {
+    const ipcMain = fakeIpcMain();
+    const trusted = {};
+    let sideEffects = 0;
+    maintenanceIpc.register({
+        ipcMain, getWebContents: () => trusted,
+        getAppInfo: async () => { await Promise.resolve(); throw new Error('fixture failure'); },
+        clipboard: {writeText() { sideEffects++; }},
+        requestJson: async () => { sideEffects++; return {}; }
+    });
+    for (const channel of [maintenanceIpc.CHANNELS.GET_INFO, maintenanceIpc.CHANNELS.COPY_ENVIRONMENT,
+        maintenanceIpc.CHANNELS.CHECK_UPDATE]) {
+        assert.deepEqual(await ipcMain.handlers.get(channel)({sender: trusted}),
+            {status: 'error', reason: 'maintenance_operation_failed'});
+    }
+    assert.equal(sideEffects, 0);
 });
 
 test('About loads environment on entry and checks updates only after a user click', async () => {
