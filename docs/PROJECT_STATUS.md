@@ -1,5 +1,26 @@
 # 项目状态
 
+## 2026-10-10 — 0.2.7 项目维护第一阶段，READY_FOR_PARENT_REVIEW
+
+从完整维护HEAD dbee15af建立独立codex/maintenance-027-20261010，包含main bc50d181和grpc/About全部前置提交。固定产品sourceCommit为 d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0，最终观测夹具为 0e87d4f5b85ee136d1fe3d0ab47eaac25d64ac9d；后续文档HEAD单列，不替代产品身份。远端main/PR #20/公开v0.2.6及Latest v0.2.2保持已核对身份，v0.2.7无远端占用，本轮只形成本地测试候选。
+
+项目S1–S5局部应用，当前导航、历史方案作用域、同源证据复用和委派开销已收口；全局S6按用户澄清为EXCLUDED_BY_USER / KEEP_CANDIDATE。最终完整单测651/651、工具定向42/42；新runtime正式构建、四层来源、精确依赖与package VerifyOnly通过，payload2,136/完整2,137。八组原矩阵加两组最终隔离读回均PASS、自然exit0、无强清理、残留0。About初始与Helper ready后的实际IPC、复制同一快照、诊断EXPORT及main响应性通过；最终两组在bootstrap前读回appData/userData/MPV_HOME。旧八组没有新MPV_HOME读回marker，原身份及边界保持。所有完整pipeline原始报告独立复算5对ItemId/MediaSourceId/PlaySessionId及顺序，最终P1诊断129条/12准确关联通过。
+
+材料160项实体哈希回读一致，五份外部输入/工具链清单Git blob与原材料阶段相同；三轮定向检索没有取得新精确对应材料，四类缺口逐项WAITING_EXTERNAL。安装器/profile静态审查与四阶段执行/回滚计划完成，未发现可立即使用的隔离VM/Sandbox；系统生命周期NOT_EXECUTED，HDR/多屏/圆角专项DEFERRED。旧app.exit UNKNOWN及第一版observer FAIL保留。真实服务、远控、可见视频与系统安装没有本轮PASS。
+
+第一阶段未生成最终安装EXE，等待父会话独立审查完整diff及原始证据。报告见 [维护收口](MAINTENANCE_027.md) 和 [机器证据](evidence/maintenance-027-20261010.json)。以下保留各阶段记录。
+
+## 2026-10-10 — 会话与项目文件复核、后续优先级（原独立复核阶段）
+
+本次重新读取交付、整合、About问题定位、grpc/About维护、About异步修复和文档规则审计六个相关会话，并以真实Git状态、远端main/PR/Release和本地证据交叉核对。远端main仍为bc50d181，PR #20已合并，开放PR为0；公开v0.2.6仍绑定355f4e6，Latest仍v0.2.2。下文OPEN/待合并是各历史阶段记录，不再代表当前状态。
+
+最新完整维护分支codex/about-async-20261010已到干净HEAD dbee15af，完整包含main与维护6815d2f；产品为7cc7eb85，工具为c9502aec。产品全量646/646、工具49/49原日志哈希及最终idle/hit400证据回读匹配；Helper ready后实际IPC、DLL身份、安装候选及2,137文件解包验收已完成，不再等待本地提交或正式构建。安装器175,627,068 bytes，SHA256为7037014b2f3e5088bf11c1ee9c9079b19b4dff1cbf8cc57e988dbd2b24fb0116。初版observer误判FAIL保持，真实服务/前台可见/系统安装及旧app.exit UNKNOWN边界保持。
+
+下一步优先级已写入 [路线图](ROADMAP.md)：P1完整维护栈审阅与整合准备、文档候选收口；P2后续测试版准备、第三方材料与独立安装生命周期；P3硬件/显示专项，具体故障按新证据升级。用户正在日常使用且暂未报告新问题，不能据此扩大专项PASS。协作规则S1/S2/S4/S5和全局S6仍待选择，本轮只更新当前导航与规划，没有应用规则patch。
+
+本轮只做读取、证据复核和独立文档工作树修改，未重新运行产品测试、构建或客户端，也未提交、推送、PR、合并、发布、安装或修改全局规则。新旧产品和原主目录均保留。来源身份与复核范围见 [结构化记录](evidence/project-priorities-20261010.json)。
+
+
 ## 2026-10-10 — About包内版本异步P2本地修复
 
 从完整维护6815d2f建立独立 `codex/about-async-20261010`。main按64 KiB异步读取/哈希固定包内文件，仅共享in-flight查询，完成后重新校验；维护IPC与诊断导出等待信息快照，实时Helper状态单独刷新。定向37/37、最终全量646/646及静态检查通过。旧函数级三次查询timer延迟266.87ms，新首次/重复/并发为1.43/0.60/0.57ms；这是纯Node函数级证据。首次全量640/646因隔离patch输入缺失失败，日志保留；输入hash核验后原失败组14/14通过。
@@ -772,7 +793,7 @@ Local audit workspace：41 个 ignored snapshot files 曾在本机删除。Durab
 
 更新时间 2026-09-14（UTC+8）。**当前产品代码保持冻结。readiness harness baseline 已由 `3d1cc6d906131d2e7e1d0a10af5fd354b228a41d` 提交；本轮独立 follow-up 加固了 runtime provenance、终态单写入和 PID ownership 边界。历史 real acceptance artifact 已分开记录：旧 `readiness-main-20260914-070236533-48d1e60e` 是 acceptance success 但 runner 在旧生命周期下以 242507ms timeout 收尾；较新的 `terminal-real-20260914-073146032-27837240` 是 acceptance success、runnerResult=`completed`、timedOut=`false`、elapsed=`15959ms`、residual=0。两次均保持 `loadfile` unavailable observability gap，不作为 gate。**
 
-## 接手摘要
+## [历史 0.1.1 阶段] 接手摘要
 
 - Baseline：用户提供的 Carnival 3.0（应用 3.0.20-3.0）+ 综合补丁最终 ZIP。
 - Enhanced：0.1.1 开发候选；Windows host 文件版本保持 3.0.20.0，Electron 应用构建版本为 0.1.1。
@@ -781,7 +802,7 @@ Local audit workspace：41 个 ignored snapshot files 曾在本机删除。Durab
 - 交付：`dist/EmbyTheaterEnhanced-0.1.1-final-win-x64/Start-Enhanced.cmd`；`dist/EmbyTheaterEnhanced-0.1.1-win-x64-setup.exe`。旧 0.1.0 产物保留。
 - 工具：`tools/prepare.ps1`、`build.ps1`、`package.ps1`、`test-runtime.ps1`、`test-host.ps1`、`tests/readiness-acceptance.ps1`。
 
-## 验收状态
+## [历史 0.1.1 阶段] 验收状态
 
 | 项目 | 状态 |
 |---|---|
@@ -803,11 +824,11 @@ Local audit workspace：41 个 ignored snapshot files 曾在本机删除。Durab
 | 环境诊断 | 实际 Electron/Chrome/Node、DLL API/version、ready/playing 已取得 |
 | mpv.conf / GPU / HDR | 配置规则/隔离通过；真实样本 gpu-next、d3d11va 硬解及缓存 3221225472 字节已取得；HDR/画质效果不是本次样本覆盖范围 |
 
-## 已确认环境
+## [历史 0.1.1 阶段] 已确认环境
 
 Electron **18.3.15**；Chromium **100.0.4896.160**；Node **16.13.2**；mpv **v0.41.0-920-gdd5d17d32**；libmpv client API **2.5**。package.json 中旧 Electron 依赖声明不代表实际版本。
 
-## 已知问题与限制
+## [历史 0.1.1 阶段] 已知问题与限制
 
 1. 缓存负数根因已关闭：native 设置正确，bridge int32 回传截断；0.1.1 精确文本诊断已修复。未测实际内存占用峰值，不将配置值等同于内存分配量。
 2. APPDATA 隔离问题已关闭：原生默认搜索 Windows Known Folder，测试改用 MPV_HOME 并验证配置标记。正式用户配置未修改。
@@ -820,7 +841,7 @@ Electron **18.3.15**；Chromium **100.0.4896.160**；Node **16.13.2**；mpv **v0
 9. PR #4 只支持受限 file-local User-Agent；`additionalHeaders` 任意非空即回退 same-origin。Pepper 不暴露可靠 HTTP 403/end-file error 分类，因此只实现 known-expiry 的一次 bounded reacquire，不声称运行中 403 自动恢复。既有真实 DirectUrl 分层 smoke 通过；本轮重建 runtime 的 DirectUrl fixture 在首个 source 请求后于 UI 切换阶段 timeout，真实 DirectSmoke 在 resolver 阶段 timeout，均未取得新的完整 Session/WebSocket/controls/reports 证据。
 10. Acceptance runner 已改为单次 owned root PID 的 bounded runner：terminal report 出现后等待短 flush window；cleanup 先验证 root PID CreationDate，只有匹配后才观察并登记 descendants，随后只对该 root process tree 执行 `taskkill /PID ... /T /F`；无 terminal report 才使用 deadline timeout，最终始终写入 `runner-result.json`、stdout 和 stderr。success/failure/timeout、terminal race、`inspectProfile` integration race、PID-reuse-with-descendant 与 PID CreationDate mismatch synthetic 均通过。CIM unavailable 会 fail closed 为 `cleanupStatus=unverified`、`ownershipVerified=false`、residual 未知，不报告完整 success，也不观察/登记/kill 不确定 descendants。后续 follow-up 的 full provenance manifest 覆盖全部 repo-owned `src/electronapp` 文件，并将 package metadata 与 PlaybackManager 作为显式 build overlay；vendor baseline、node_modules production closure、Electron runtime binaries 与 native mpv 均独立排除。历史较新的 real artifact 中 `inspect`/`select`/`play-called`/`resolver-result`/`manager-play-resolved` 通过，`loadfileObservation=unavailable`；runner 总耗时 15959ms、runnerResult=completed、timedOut=false、residual owned processes=0。
 
-## 当前阻塞项与下一步
+## [历史 0.1.1 阶段] 当前阻塞项与下一步
 
 用户已登录非管理员账号，明确允许选择任意影视测试，并确认全库为 STRM、WatchTogether 以后台控制正常为准。2026-09-14 persistent profile inspect 返回 `logged-in`。两个不同 POSIX STRM 样本在同一条本地 ignored source-side mapping 下均由 resolver 返回 `cd2_hit`、source kind 为 `cd2-url`；真实 embedded libmpv 播放推进，Play/Pause/Seek/Resume/NextTrack/Stop 全部通过，Session/WebSocket 回读正常，10 条播放报告全部被服务器接受，停止后 NowPlayingItem 清空。测试会留下样本正常观看进度，未额外重置用户数据。
 
@@ -832,7 +853,7 @@ Electron **18.3.15**；Chromium **100.0.4896.160**；Node **16.13.2**；mpv **v0
 
 PR #2 新增 `cd2-resolver.js` 与 main-process `cd2-service.js`/`cd2-ipc.js`，通过 build-time overlay 给未公开 PlaybackManager 增加 request id，libmpv 使用 monotonic generation、AbortController 和 gRPC cancel。43/43 Node tests 通过；独立 frozen Stop-before-player 断言旧请求未调用 `player.play`、未产生 Playing report。完整 frozen Electron 中 dependency require、fake gRPC、CD2 hit、Mount/Native fallback、Play/Pause/Seek/Resume/NextTrack/Stop、报告、双 NextTrack、active cancel 与 0 active leak 通过。真实 CD2 media 通过；两个真实 Emby POSIX STRM 样本均 `cd2_hit`，embedded libmpv/core-playing、Session/WebSocket/controls/reports 全部通过。未修改 CD2 配置、mount、cache、账号或网盘数据。
 
-## 推荐继续入口
+## [历史 0.1.1 阶段] 推荐继续入口
 
 - `docs/TESTING.md`：验证命令和真实测试卡。
 - `docs/LIBMPV_RUNTIME.md`：缓存负数、配置来源与 GPU 属性。

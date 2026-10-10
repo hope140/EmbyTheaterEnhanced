@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-10",
+  "stopRule": "Three bounded targeted rounds completed; no broad follow-on search.",
+  "rounds": [
+    {
+      "round": 1,
+      "queries": [
+        "site:github.com/mpv-player/mpv-winbuild-cmake dd5d17d328 20260809 libmpv",
+        "Emby Theater Windows 3.0.20.0 Emby.Theater.exe build source 3.0.20",
+        "site:github.com/msys2/MINGW-packages mingw-w64-ucrt-x86_64-crt 14.0.0.r92.g818fa6510 PKGBUILD",
+        "Emby Theater offline web fonts images Carnival 3.0 source Web assets"
+      ],
+      "observations": [
+        "mpv-winbuild repository/release history exists; exact searched artifact not identified.",
+        "Host 3.0.20 release points to pinned 708fadc source reference.",
+        "MSYS2 repository exists; search did not surface exact three recipe hashes."
+      ]
+    },
+    {
+      "round": 2,
+      "queries": [
+        "site:github.com/shinchiro/mpv-winbuild-cmake/releases/tag/20260809 \"mpv-dev-x86_64\"",
+        "site:github.com/shinchiro/mpv-winbuild-cmake \"dd5d17d328\"",
+        "site:github.com/msys2/MINGW-packages \"14.0.0.r92.g818fa6510\" mingw-w64-ucrt-x86_64-crt",
+        "site:github.com/MediaBrowser/emby-theater-windows/releases/tag/3.0.20 \"3.0.20\""
+      ],
+      "observations": [
+        "GET https://api.github.com/repos/shinchiro/mpv-winbuild-cmake/releases/tags/20260809 returned HTTP 404.",
+        "Host 3.0.20 release confirmed fixed tag/source commit; no binary build relation shown.",
+        "Exact mpv archive/commit producer relationship not found in search results."
+      ]
+    },
+    {
+      "round": 3,
+      "queries": [
+        "site:github.com/MediaBrowser \"www\" \"Emby Theater\" Web app",
+        "site:github.com/MediaBrowser/emby-theater-electron \"www\"",
+        "site:github.com/MediaBrowser \"emby-web\" repository",
+        "site:github.com/msys2/MINGW-packages mingw-w64-crt-git PKGBUILD 2026 winpthreads-git"
+      ],
+      "observations": [
+        "emby-webcomponents and emby-web-defaultskin are partial source candidates, not the complete pinned 761-file Web tree.",
+        "Raw current master paths mingw-w64-crt-git, mingw-w64-headers-git and mingw-w64-winpthreads-git returned HTTP 404.",
+        "Raw current master mingw-w64-crt and mingw-w64-headers PKGBUILD paths returned HTTP 200; current bytes are not exact historical matches."
+      ]
+    }
+  ]
+}

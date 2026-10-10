@@ -1,5 +1,25 @@
 # 开发日志
 
+## 2026-10-10 — 0.2.7 项目维护第一阶段收口
+
+- Model Tier: Tier 2；Model: GPT-6.1 Sol High主线程 / GPT-6 Luna High材料及安装器只读worker；Reason: Task Risk=medium，Task Uncertainty=medium（整合、证据身份及系统边界），Cross-module Scope=维护/文档/构建/测试，Playback/Session Impact=复核原不变量、无产品链变更；Escalated: no。委派只用于两项独立核查，主线程复核文件、输入关系及哈希。
+- 用户授权本轮项目内非新功能维护、本地提交、构建/隔离验证和审核后测试包；随后明确S6保持候选，未触碰全局AGENTS、配置或memory。从dbee15af隔离继续，旧主目录和其它工作树保留。
+- 62ca290统一0.2.7版本与随包来源索引；d8fcb0f使About observer绑定实际manifest/package版本及sourceCommit，拒绝旧0.2.6/缺失预期身份；0e87d4f补bootstrap前MPV_HOME环境读回与错误路径阻止启动测试。src/native树与完整维护dbee15af一致，稳定Playback/Session/Resolver/Native/窗口链未改。
+- 固定vendor1060文件、Electron73文件、UCRT64 6990文件、Inno118文件、innounp5文件及两原归档按已有contract复核。正式构建source d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0；payload2136/完整2137，来源/依赖/版本/package门槛通过。产品与build inputs变化产出新runtime，旧7cc7eb85产物保持原名原字节。
+- 初次完整650/650，定向83/83；补夹具读回后工具42/42，最终完整651/651（343.30秒），0失败/取消/跳过。旧八组与最终两组串行隔离运行通过；最终两组三目录marker均true，独立原始Session身份配对和P1脱敏回归通过。来源与日志hash分列，未将旧结果改标。
+- 项目S1–S5按审阅候选局部融合，保留About后续事实，修正PR20/NOW、委派前置与证据复用三处语义。70%/5%目标保留，质量优先；型号依据官方Models/Subagents和当前工具，未改模型配置。旧优先级复核文档及JSON按原阶段保留。
+- 材料三轮检索、160/160实体回读及五项输入blob关系核对完成；具体缺口WAITING_EXTERNAL。安装器及profile静态审查、四阶段/回滚计划、HDR/多屏/全屏圆角前置完成；隔离系统环境不可用，真实系统/显示执行未发生。
+- 本轮产品source d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0与工具 0e87d4f5b85ee136d1fe3d0ab47eaac25d64ac9d分别固定；文档最终HEAD由Git日志回读。最终EXE在父会话独立审核通过后生成；本阶段READY_FOR_PARENT_REVIEW。未推送、PR、远端合并、tag或Release。详见 [收口报告](MAINTENANCE_027.md)。
+
+## 2026-10-10 — 跨会话状态核对与优先级落文档（原独立复核阶段）
+
+- Model Tier: Tier 1文档与固定证据复核，主线程负责跨来源状态判断；Model: 当前Codex主线程 / GPT-6 Luna High只读worker；Reason: Task Risk=low，Task Uncertainty=medium（旧报告与后续完成状态并存），Cross-module Scope=docs only，Playback/Session Impact=none；Escalated: no。
+- 用户授权审核本地相关会话、项目文件并写入后续优先级。从实时main bc50d181建立独立文档worktree，保留原主目录未提交资料及所有维护树。读取六个相关会话的结果及后续授权/完成状态，不以会话列表的旧摘要代替实际交付。
+- 核对本地dbee15af完整继承bc50d181/6815d2f，区分产品7cc7eb85、工具c9502aec、文档HEAD和公开355f4e6；记录6提交/33文件范围。原646/646与49/49日志、最终idle/hit400原始文件、候选安装器及companion匹配；保留初版observer失败。本次是证据回读，不是再次执行产品验收。
+- ROADMAP更新已合并事实，将完整维护整合列P1，并补文档候选、后续测试版、第三方材料、安装生命周期和显示专项的完成条件与用户参与点。已完成的About功能移出待实现，NextTrack白屏及app.exit转为准确观察项；预热/Hydration继续既定边界。
+- 文档规则审计仍为候选；本轮不改AGENTS、AI_MODEL_POLICY、全局规则或70%/5%目标。P1中列出候选仍需修正的委派条件与证据复用语义，S3当前状态导航在本次授权范围内同步。只做事实/来源、链接、JSON、diff和新增文本检查，不重建，不产生新产品PASS。
+
+
 ## 2026-10-10 — About版本查询main响应性P2
 
 - Model Tier: Tier 2；Model: GPT-6.1 Sol High主线程 / GPT-6 Luna High只读worker；Reason: Task Risk=medium，Task Uncertainty=medium（异步读取及文件身份归属），Cross-module Scope=main/维护IPC/诊断EXPORT，Playback/Session Impact=none；Escalated: no。

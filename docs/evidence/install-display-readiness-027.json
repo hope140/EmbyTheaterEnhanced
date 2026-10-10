@@ -1,0 +1,133 @@
+{
+  "schema": "ete.install-display-readiness.v1",
+  "review": {
+    "date": "2026-10-10",
+    "timezone": "Asia/Hong_Kong",
+    "model_tier": "Tier 1",
+    "model": "GPT-6 Luna High",
+    "scope": "static installer/profile audit and lifecycle/display acceptance plan",
+    "mutated_product_files": false,
+    "tests_run": false
+  },
+  "source": {
+    "branch": "codex/maintenance-027-20261010",
+    "commit": "dbee15afc76d97ed68117206e6ac6b638315732b",
+    "worktree_status": "clean_before_report_creation",
+    "files": {
+      "AGENTS.md": "f7b87990ed8673cb363f72dfdacb5af83cb9a2caa9777a08b410cca1987831ed",
+      "docs/ARCHITECTURE.md": "cb1cacd869fb258853ea4d1d87f785295d09f887d6b6005e5566d5e30e2b7263",
+      "docs/PROJECT_STATUS.md": "58937774f37f5d1e71f5747669c2a12c44824dd03fa8e1091c63c17b6967d924",
+      "docs/LESSONS_LEARNED.md": "18dfe98bd2d28dbbc858a799ed0a7a712442cad4fef326f0ac7b21d9930928a7",
+      "installer/EmbyTheaterEnhanced.iss": "2c3fe05629d5b55fe938d8e24554991d079bb5e95e2d40622078b84c64a67dc3",
+      "tools/package.ps1": "72e85149f1f18dfb3ce1905176116bdb2d0e1471bcb29d2d2ac24347cf5e6680",
+      "src/electronapp/device-identity.js": "f1942296b53092a917c70a15ec653af4de41faf8954e74f98f77e8cd338b88f4",
+      "src/electronapp/enhanced/bootstrap.js": "162dc45af73a71500ae5d936ee6b73a1aa38713f78308f701f23a00e3ba492aa",
+      "src/electronapp/main.js": "14d0f1e4014c799adb84c98eebc046c7e27a4fc108b36c58d6b98234c7d41ea9",
+      "docs/BUILD_REVIEW.md": "1e6a185e8dea39dc394be2d294062dd49376acec1084557209ed4902762f5b7f",
+      "docs/BUILD_INPUT_AUDIT.md": "0b31dc80840f12c02c9b3e85fe1aa14f7f7a4fc69cc2df31c591cbccff48c357",
+      "docs/FULLSCREEN_WINDOW_STATE.md": "2b8d9fc9a1959002c9043528923f7803ae0ae8b7c56a74795b9835f0440eb366",
+      "docs/ELECTRON_44_UPGRADE.md": "f5c7d568b438d2140b0eeab4a6f7fe1c97ebb593b5d5f3db726f908efbcba3c6",
+      "docs/UNIFIED_CANDIDATE_ACCEPTANCE.md": "cefc8af86a4d28ebe55bbe44950b011ba588f0e6676ac4ce16bdf3f36d0b4f91"
+    },
+    "hash_capture_note": "Hashes were captured during the initial static read. Shared worktree changes to AGENTS.md and docs/LESSONS_LEARNED.md appeared later during concurrent root work; product source and installer hashes were rechecked and match.",
+    "additional_references": [
+      {
+        "path": "docs/ROADMAP.md",
+        "sourceCommit": "bc50d181cd5cafd14b31e2c0d24cbf7fd73b0ee1",
+        "workingTreeStatus": "modified",
+        "sha256": "00615369be5c63993e33e9fe020938340df338d39c9418ea1a80c8e46b3f3db3",
+        "section": "Fullscreen Dynamic Corner Policy"
+      }
+    ]
+  },
+  "installer_static_findings": {
+    "fixed_app_id": true,
+    "default_install_directory": "{autopf}\\Emby Theater Enhanced",
+    "recursive_runtime_payload": true,
+    "ignore_version": true,
+    "no_timestamp": true,
+    "close_applications": false,
+    "custom_uninstall_delete_section": false,
+    "custom_profile_cleanup_found": false,
+    "interpretation": "Installer source has no project-defined profile deletion; profile retention expectation is static only until lifecycle test."
+  },
+  "profile_static_findings": {
+    "profile_root": "%APPDATA%\\EmbyTheaterEnhanced",
+    "config_directory": "%APPDATA%\\EmbyTheaterEnhanced\\config",
+    "device_identity_file": "%APPDATA%\\EmbyTheaterEnhanced\\config\\device-identity.json",
+    "device_identity_policy": "reuse valid UUID v4; atomically create/recreate when missing or invalid",
+    "bootstrap_seed_policy": "create system.xml and cec-driver\\cancel only when missing"
+  },
+  "isolation_environment": {
+    "windows_sandbox_feature": "Disabled",
+    "hyper_v_feature": "Disabled",
+    "vmms_service": "unavailable",
+    "hyper_v_management_command": "unavailable",
+    "hypervisor_present": true,
+    "existing_managed_vm_count": "unavailable",
+    "availability": "not_found_as_immediately_usable",
+    "note": "Hypervisor presence alone does not establish an available isolated VM. No feature/service was installed or started."
+  },
+  "lifecycle_stages": {
+    "clean_install": {
+      "status": "NOT_EXECUTED",
+      "required_environment": "snapshot-capable isolated Windows VM"
+    },
+    "in_place_upgrade": {
+      "status": "NOT_EXECUTED",
+      "required_environment": "isolated VM with exact prior installer and profile canary"
+    },
+    "uninstall": {
+      "status": "NOT_EXECUTED",
+      "required_environment": "isolated VM with installed candidate and profile canary"
+    },
+    "reinstall": {
+      "status": "NOT_EXECUTED",
+      "required_environment": "isolated VM retaining profile after uninstall"
+    }
+  },
+  "display_acceptance": {
+    "hdr": {
+      "status": "NOT_EXECUTED",
+      "prerequisites": [
+        "HDR-capable Windows output",
+        "HDR enabled on target display",
+        "known HDR sample",
+        "record GPU and decode path"
+      ]
+    },
+    "multi_display_mixed_dpi": {
+      "status": "NOT_EXECUTED",
+      "prerequisites": [
+        "two active displays",
+        "record resolution/scaling/primary status",
+        "exercise window/fullscreen/move/alt-tab/minimize-restore"
+      ]
+    },
+    "fullscreen_edge_and_round_corner_observation": {
+      "status": "NOT_EXECUTED",
+      "prerequisites": [
+        "visible foreground session",
+        "record display resolution and scaling",
+        "sample top/edge video region and fullscreen bounds"
+      ],
+      "historical_corner_defect_evidence": "REPRODUCIBLE / DEFERRED: windowed is rounded and fullscreen square before playback; after playback starts, fullscreen incorrectly becomes rounded.",
+      "historical_top_strip_evidence": "Separate issue; does not substitute for dynamic corner reproduction.",
+      "corner_root_cause": "Playback surface top-level window DWM corner state not synchronized with mainWindow fullscreen is a strong suspicion, not a confirmed cause.",
+      "observation_prerequisite": "Confirm window identity and observe DWM state in visible foreground before implementation.",
+      "historical_source": "docs/ROADMAP.md, Fullscreen Dynamic Corner Policy",
+      "distinct_from_top_strip": true
+    }
+  },
+  "tests": {
+    "static_review": "completed",
+    "build": "NOT_EXECUTED",
+    "package_or_payload_verification": "NOT_EXECUTED",
+    "installer_compile_or_extract": "NOT_EXECUTED",
+    "install_or_uninstall": "NOT_EXECUTED",
+    "electron_launch": "NOT_EXECUTED",
+    "real_emby_or_cd2": "NOT_EXECUTED",
+    "hdr_or_multidisplay": "NOT_EXECUTED"
+  },
+  "evidence_boundary": "Historical candidate results are not current-HEAD acceptance. unavailable/not_found are not recorded as false."
+}

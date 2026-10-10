@@ -1,0 +1,3675 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-10",
+  "timezone": "Asia/Shanghai",
+  "status": "READY_FOR_PARENT_REVIEW",
+  "baseCommit": "bc50d181cd5cafd14b31e2c0d24cbf7fd73b0ee1",
+  "completeMaintenanceBase": "dbee15afc76d97ed68117206e6ac6b638315732b",
+  "branch": "codex/maintenance-027-20261010",
+  "version": "0.2.7",
+  "productSourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+  "finalHarnessCommit": "0e87d4f5b85ee136d1fe3d0ab47eaac25d64ac9d",
+  "documentationHeadRelation": "Final documentation commit is separate; product and build inputs remain bound to productSourceCommit.",
+  "runtime": "dist/ETE-0.2.7-maintenance-d8fcb0f-win-x64",
+  "installer": "NOT_GENERATED_PENDING_PARENT_REVIEW",
+  "scope": {
+    "projectRules": "S1_S5_APPLIED",
+    "globalS6": "EXCLUDED_BY_USER_KEEP_CANDIDATE",
+    "remoteWrites": false,
+    "systemInstall": false,
+    "newProductFeatures": false
+  },
+  "tests": {
+    "initialTargeted": {
+      "file": ".work/maintenance027/targeted-tests.log",
+      "bytes": 7923,
+      "sha256": "a341b9f0ccf8ea75d2b97adc86a7f1eb3e47e281eb3f75b89778f41bff392e7b",
+      "tests": 83,
+      "pass": 83,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "duration_ms": 6155.4258
+    },
+    "initialFull": {
+      "file": ".work/maintenance027/initial-full-tests.log",
+      "bytes": 59335,
+      "sha256": "b7df5d62c95fb005d502e820ecce239a812952ce4f8934228a38cebb433a4f44",
+      "tests": 650,
+      "pass": 650,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "duration_ms": 358261.7623
+    },
+    "finalTool": {
+      "file": ".work/maintenance027/final-tool-tests.log",
+      "bytes": 4352,
+      "sha256": "6b69dc2346d16fda29ca7851273ae843664118dbe1c8e17542ee8149068b5ed1",
+      "tests": 42,
+      "pass": 42,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "duration_ms": 860.5621
+    },
+    "finalFull": {
+      "file": ".work/maintenance027/final-full-tests.log",
+      "bytes": 59407,
+      "sha256": "fb707991543c5b189205e59e980665c6a318e29d9cf2ac90982ec09a35e3cbe7",
+      "tests": 651,
+      "pass": 651,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "duration_ms": 343299.9451
+    }
+  },
+  "productTrees": [
+    {
+      "path": "src",
+      "previousTree": "3b340730d1362bf57007558d3044538afc012619",
+      "currentTree": "3b340730d1362bf57007558d3044538afc012619"
+    },
+    {
+      "path": "native",
+      "previousTree": "4ccb89d84e1478e19f54bd33856ccca01fb0e1ee",
+      "currentTree": "4ccb89d84e1478e19f54bd33856ccca01fb0e1ee"
+    }
+  ],
+  "build": {
+    "manifest": {
+      "file": "dist/ETE-0.2.7-maintenance-d8fcb0f-win-x64/build-manifest.json",
+      "bytes": 375552,
+      "sha256": "c6794efc6b69aeef67c3274903715e2483955a564dc9b2bc8a3e4cefd24ffe6c"
+    },
+    "payloadCount": 2136,
+    "completeRuntimeCount": 2137,
+    "postRunPayloadMismatch": 0,
+    "pathSetMatched": true,
+    "source": {
+      "file": "dist/ETE-0.2.7-maintenance-d8fcb0f-win-x64/source-provenance.json",
+      "bytes": 19127,
+      "sha256": "612d5a8f124ac11eec74e9dc948ceaddd026cb6c77ca3c46ef2b61725f084e23"
+    },
+    "native": {
+      "file": "dist/ETE-0.2.7-maintenance-d8fcb0f-win-x64/native-helper-provenance.json",
+      "bytes": 3992,
+      "sha256": "b5a0c2e24d22c8b6960a041e5d28cf79fbe353e726c4d79bc4f5c60e3a66cc6a"
+    },
+    "runtime": {
+      "file": "dist/ETE-0.2.7-maintenance-d8fcb0f-win-x64/runtime-provenance.json",
+      "bytes": 50835,
+      "sha256": "501e1c3471f4508948d6f3dc846f59be1fb424e390334e686b80b1ecbaa72e81"
+    },
+    "inputs": {
+      "file": "dist/ETE-0.2.7-maintenance-d8fcb0f-win-x64/build-input-provenance.json",
+      "bytes": 9046,
+      "sha256": "08e82e57e0018d1361322ce43cc33647b5c292501a304f55d17d68f38a5aaebc"
+    },
+    "dependencies": {
+      "file": "dist/ETE-0.2.7-maintenance-d8fcb0f-win-x64/runtime-dependencies.json",
+      "bytes": 477959,
+      "sha256": "4e029aa91a7daa8f131d5575dd4e0a5da3461e56e99b87551191f85000a08342"
+    },
+    "changedPayloadComparedWithOldCandidate": [
+      {
+        "path": "build-input-provenance.json",
+        "oldSha256": "5c69528f162281c17d21ceeda6f56ace97b28a7a02542c3de2747fcc28dead44",
+        "newSha256": "08e82e57e0018d1361322ce43cc33647b5c292501a304f55d17d68f38a5aaebc"
+      },
+      {
+        "path": "docs/SOURCE_MATERIALS.md",
+        "oldSha256": "befae7e7f3d0053de68200c0adc6cf85efc9ae17cc32106d97ce957475b1d1c2",
+        "newSha256": "cc4b71ec41454b8d26ec24926b74868e1c59f299efdcbfc46edc02ffe6933396"
+      },
+      {
+        "path": "electronapp/package.json",
+        "oldSha256": "c6e7f2493088dd670d71a186f0de73c8cbd5982401a250f03ae46a9a4e7a4003",
+        "newSha256": "f2962b2729b820d67e01d0e16acd5147fbd5283e6d666c379aa80a02f3760cf1"
+      },
+      {
+        "path": "native-helper-provenance.json",
+        "oldSha256": "7904d99e2aa051a6628d9eba59c73940ff39a71e73331adb210cb82310ab9bcb",
+        "newSha256": "b5a0c2e24d22c8b6960a041e5d28cf79fbe353e726c4d79bc4f5c60e3a66cc6a"
+      },
+      {
+        "path": "runtime-dependencies.json",
+        "oldSha256": "fc976f3b2ff37eadcf187c2457917b225de31bedb6bf906001286771dccd1a97",
+        "newSha256": "4e029aa91a7daa8f131d5575dd4e0a5da3461e56e99b87551191f85000a08342"
+      },
+      {
+        "path": "runtime-provenance.json",
+        "oldSha256": "649cb59f806553dc268e40b22bdb7182a9e48c09fac2e0e8a5e01ede577c1b1c",
+        "newSha256": "501e1c3471f4508948d6f3dc846f59be1fb424e390334e686b80b1ecbaa72e81"
+      },
+      {
+        "path": "source-provenance.json",
+        "oldSha256": "2063a24e36b9dec26b268070ccba51075e03b9600750b135a76d68371d974183",
+        "newSha256": "612d5a8f124ac11eec74e9dc948ceaddd026cb6c77ca3c46ef2b61725f084e23"
+      }
+    ],
+    "oldCandidateSourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+    "packageVerifyCheckpoint": "PASSED_AT_PRODUCT_HEAD_BEFORE_DOCUMENTATION_AND_HARNESS_ONLY_COMMIT",
+    "buildLog": {
+      "file": ".work/maintenance027/build.log",
+      "bytes": 11302,
+      "sha256": "92436873ec6592459fd977452ba4195a07a097a073b95adc601d1ed15f04dbfa"
+    },
+    "packageVerifyLog": {
+      "file": ".work/maintenance027/package-verify.log",
+      "bytes": 758,
+      "sha256": "c5635bed3af301f3cfcc9510de392e608b6ac64bb2192155e4806321d955860a"
+    },
+    "outputDirectoryRelation": {
+      "createdAs": "dist/ETE-0.2.7-maintenance-a4pending-win-x64",
+      "finalDirectory": "dist/ETE-0.2.7-maintenance-d8fcb0f-win-x64",
+      "action": "Newly built directory moved after build completion; original build log preserved. No previous candidate or installer was relabeled.",
+      "postMoveAndPostRunPayloadValidated": true
+    }
+  },
+  "runtimeRuns": [
+    {
+      "case": "playing",
+      "directory": ".work/p1-runtime-15f6607bb9564757802973a0b3f01562",
+      "productSourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+      "harnessHead": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "8b69b97204e1e231934905eb3636a2d0fa1f7e6c341cb543d98698a35a487284"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "9bbbc77875af32acac7102c4f73635dd849a4f7abae0d2c7f71819244f43f044"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "984a98698c4e2fc4d60909f1d4decc007e25e19ab32cc1fa87236282e60812b5"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tools/exit-observation.cjs",
+          "sha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee"
+        },
+        {
+          "path": "tools/normal-close-observation.cjs",
+          "sha256": "81385163c8c806e581966fa40aedb0360965341886dc970bd0d6668600cc0562"
+        },
+        {
+          "path": "tools/verify-normal-close.cjs",
+          "sha256": "f32e8d32efdd7aa443e62faaa929d6ab9ceb4f0e968365052eab92cce33b6291"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "0ade5c67167d6117f991c386e4211e20825806c6a998ea34663606eb19e5d96e"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749"
+        }
+      ],
+      "settings": {
+        "cd2Mode": "hit",
+        "cd2DelayMs": 400,
+        "fixtureSeconds": 60,
+        "normalClose": "playing",
+        "aboutAsync": false
+      },
+      "status": "PASS",
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "timedOut": false,
+      "cleanupAttempted": false,
+      "residual": 0,
+      "childObservationCoverage": "FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE",
+      "marker": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "aboutBundledVersionsMatched": true,
+        "aboutRuntimeStateSeparated": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "mpvHomePreBootstrapReadback": "NOT_RECORDED_BY_ORIGINAL_HARNESS",
+      "normalClose": {
+        "schemaVersion": 1,
+        "scenario": "playing",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN",
+        "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0"
+      },
+      "sessions": {
+        "started": 1,
+        "stopped": 0,
+        "identityAndOrderPairs": false,
+        "checks": null
+      },
+      "about": null,
+      "diagnostic": null,
+      "artifacts": [
+        {
+          "file": ".work/p1-runtime-15f6607bb9564757802973a0b3f01562/harness-identity.json",
+          "bytes": 2785,
+          "sha256": "1977d7ccff1b19def1a116bca16b3809e34d5b04bce4aeac929855291536736d"
+        },
+        {
+          "file": ".work/p1-runtime-15f6607bb9564757802973a0b3f01562/runner-result.json",
+          "bytes": 2698,
+          "sha256": "2bee5b19f94d42519e78980b39e8f1882d6f8c84243137580c9e44d2626a6c8d"
+        },
+        {
+          "file": ".work/p1-runtime-15f6607bb9564757802973a0b3f01562/electron-smoke.json",
+          "bytes": 9913,
+          "sha256": "e3f27f9fc479ca27005bdc18aad0297cd17b7141a47f2b36caeed55796dd9c87"
+        },
+        {
+          "file": ".work/p1-runtime-15f6607bb9564757802973a0b3f01562/normal-close-result.json",
+          "bytes": 262,
+          "sha256": "2eb67d7aa303d95867b9cf2365fc0c419f8641c05719f2c53e6c68da5fcd66c4"
+        },
+        {
+          "file": ".work/p1-runtime-15f6607bb9564757802973a0b3f01562/normal-close.jsonl",
+          "bytes": 1658,
+          "sha256": "fb07e2cb1a4754e21ebd4ed84a4f4ae03dc14fe75de323b7cad351d2463db424"
+        },
+        {
+          "file": ".work/p1-runtime-15f6607bb9564757802973a0b3f01562/exit-observation.jsonl",
+          "bytes": 769,
+          "sha256": "aa8af4a0fe5f8b4f8ab1729f8a05ef0858b637b8df1e9653d734490e8238caba"
+        },
+        {
+          "file": ".work/p1-runtime-15f6607bb9564757802973a0b3f01562/runner-exit-observation.jsonl",
+          "bytes": 1077,
+          "sha256": "70defefab49b1162e566a6ed1485c53897f5a549be7d4387cf9151731f966921"
+        },
+        {
+          "file": ".work/p1-runtime-15f6607bb9564757802973a0b3f01562/p1-diagnostics-injection.json",
+          "bytes": 343,
+          "sha256": "9d0371c7a1d9b08d87d678038b4c282bfa70d2ffa0cc3f2d85b339d0cfbf2ed7"
+        },
+        {
+          "file": ".work/p1-runtime-15f6607bb9564757802973a0b3f01562/stdout.log",
+          "bytes": 2,
+          "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+        },
+        {
+          "file": ".work/p1-runtime-15f6607bb9564757802973a0b3f01562/stderr.log",
+          "bytes": 406,
+          "sha256": "da36a7dd551cc3edecf643fabd92b90365949a214d330c8e434afdc67ca0b0d5"
+        },
+        {
+          "file": ".work/p1-runtime-15f6607bb9564757802973a0b3f01562/source-provenance.log",
+          "bytes": 86,
+          "sha256": "649c354d261793d8ddb544a53990f3afe68b86e31cb5b67497975ee42241af11"
+        },
+        {
+          "file": ".work/p1-runtime-15f6607bb9564757802973a0b3f01562/runtime-provenance.log",
+          "bytes": 65850,
+          "sha256": "d881ff5775efc64399c78e09032c2698a7508953a7fcb7cec5854eee3bea9e5e"
+        },
+        {
+          "file": ".work/p1-runtime-15f6607bb9564757802973a0b3f01562/native-provenance.log",
+          "bytes": 3164,
+          "sha256": "d6705cf4b012d4bf36c654637304fbba767d697c6cfaeb092fbe5098fa189418"
+        },
+        {
+          "file": ".work/p1-runtime-15f6607bb9564757802973a0b3f01562/electron-provenance.log",
+          "bytes": 233,
+          "sha256": "d21cb99304bb21d55fa619e8d7e74e915d7e8faaf2d8740b2d20d59f15439f77"
+        },
+        {
+          "file": ".work/p1-runtime-15f6607bb9564757802973a0b3f01562/appdata/EmbyTheaterEnhanced/logs/ete-client.jsonl",
+          "bytes": 7614,
+          "sha256": "c28f2f4bacbf32335a78c2bd18dc52bfb11e2fdc8ac6cf66b3b9fc6de7556264"
+        }
+      ]
+    },
+    {
+      "case": "final-idle-about",
+      "directory": ".work/p1-runtime-176b6fc726374e7c9f9e4eb93e3d169c",
+      "productSourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+      "harnessHead": "0e87d4f5b85ee136d1fe3d0ab47eaac25d64ac9d",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "8b69b97204e1e231934905eb3636a2d0fa1f7e6c341cb543d98698a35a487284"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "ef371709caa23c410c65f2c4d8dbc3ea463cc3c056a6918361583020a4707627"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "984a98698c4e2fc4d60909f1d4decc007e25e19ab32cc1fa87236282e60812b5"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tools/exit-observation.cjs",
+          "sha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee"
+        },
+        {
+          "path": "tools/normal-close-observation.cjs",
+          "sha256": "81385163c8c806e581966fa40aedb0360965341886dc970bd0d6668600cc0562"
+        },
+        {
+          "path": "tools/verify-normal-close.cjs",
+          "sha256": "f32e8d32efdd7aa443e62faaa929d6ab9ceb4f0e968365052eab92cce33b6291"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "0ade5c67167d6117f991c386e4211e20825806c6a998ea34663606eb19e5d96e"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749"
+        },
+        {
+          "path": "tools/about-version-observation.cjs",
+          "sha256": "62b2a49b186801a1c3cbe23da50c40520de15d6b2b8d1a1c23b83457d3ada767"
+        }
+      ],
+      "settings": {
+        "cd2Mode": "hit",
+        "cd2DelayMs": 400,
+        "fixtureSeconds": 60,
+        "normalClose": "idle",
+        "aboutAsync": true
+      },
+      "status": "PASS",
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "timedOut": false,
+      "cleanupAttempted": false,
+      "residual": 0,
+      "childObservationCoverage": "FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE",
+      "marker": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "mpvHomeIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "aboutBundledVersionsMatched": true,
+        "aboutRuntimeStateSeparated": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "mpvHomePreBootstrapReadback": "PASS",
+      "normalClose": {
+        "schemaVersion": 1,
+        "scenario": "idle",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN",
+        "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0"
+      },
+      "sessions": {
+        "started": 0,
+        "stopped": 0,
+        "identityAndOrderPairs": true,
+        "checks": null
+      },
+      "about": {
+        "schemaVersion": 1,
+        "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+        "status": "PASS",
+        "testBoundaries": {
+          "clipboard": "IN_MEMORY_CAPTURE",
+          "saveDialog": "FIXED_EVIDENCE_FILE",
+          "updateTransport": "LOCAL_RELEASE_FIXTURE"
+        },
+        "stages": {
+          "initial": {
+            "snapshots": [
+              {
+                "appVersion": "0.2.7",
+                "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.7",
+                "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.7",
+                "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.7",
+                "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              }
+            ],
+            "copiedSnapshot": {
+              "appVersion": "0.2.7",
+              "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+              "nativeHelper": "1.0.0",
+              "libmpv": "v0.41.0-920-gdd5d17d32",
+              "nativeHelperState": "stopped",
+              "runningNativeHelper": "NOT AVAILABLE",
+              "runningLibmpv": "NOT AVAILABLE"
+            },
+            "snapshotVersionsMatched": true,
+            "expectedStageStateObserved": true,
+            "copyMatches": true,
+            "copiedVersionMatched": true,
+            "updateStatus": "latest",
+            "exportStatus": "exported",
+            "exportFile": "about-export-1.txt",
+            "exportSourceCommitMatched": true,
+            "exportSnapshot": {
+              "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+              "state": "stopped",
+              "helperVersion": "UNKNOWN",
+              "libmpvVersion": "mpv v0.41.0-920-gdd5d17d32"
+            },
+            "exportRunningStateMatched": true,
+            "metrics": [
+              {
+                "elapsedMs": 269.0600999999999,
+                "ticksBeforeComplete": 265,
+                "timerDelayMs": 2.1638999999999555,
+                "maxGapMs": 3.481299999999976
+              },
+              {
+                "elapsedMs": 263.53869999999995,
+                "ticksBeforeComplete": 248,
+                "timerDelayMs": 1.0968000000000302,
+                "maxGapMs": 6.471000000000004
+              }
+            ],
+            "responsive": true
+          }
+        },
+        "helperStartsInInformationContext": 0,
+        "nativeCallsInInformationContext": 0,
+        "errors": [],
+        "updateFixtureRequests": 1
+      },
+      "diagnostic": null,
+      "artifacts": [
+        {
+          "file": ".work/p1-runtime-176b6fc726374e7c9f9e4eb93e3d169c/harness-identity.json",
+          "bytes": 2934,
+          "sha256": "991fc585ace31aed87a11f6cff6a7d86e52121174fb58f722d14d298fdacd492"
+        },
+        {
+          "file": ".work/p1-runtime-176b6fc726374e7c9f9e4eb93e3d169c/runner-result.json",
+          "bytes": 2695,
+          "sha256": "798d242d2cbc4f7c8026f11b537e3f1d4b09f0948032ec858d3294eb8cf2022c"
+        },
+        {
+          "file": ".work/p1-runtime-176b6fc726374e7c9f9e4eb93e3d169c/electron-smoke.json",
+          "bytes": 3754,
+          "sha256": "46bd6b36d56186f0e3c0e1f55e6602a698dfd3ea17fc5fa358945206fe1cc475"
+        },
+        {
+          "file": ".work/p1-runtime-176b6fc726374e7c9f9e4eb93e3d169c/normal-close-result.json",
+          "bytes": 259,
+          "sha256": "851053f3b42eb7d01fceb92d23d6268832e66ea6cc319a4842aaf0397c59b984"
+        },
+        {
+          "file": ".work/p1-runtime-176b6fc726374e7c9f9e4eb93e3d169c/normal-close.jsonl",
+          "bytes": 1355,
+          "sha256": "6a2923d21f6c663f730efe4e9958bc98d7b3fa3cc4ec773cca03c919a7b91db4"
+        },
+        {
+          "file": ".work/p1-runtime-176b6fc726374e7c9f9e4eb93e3d169c/exit-observation.jsonl",
+          "bytes": 769,
+          "sha256": "e735e00971c00a89ee28a967e9c1da3e05b4b079e5021ac9cc5064e0649b1100"
+        },
+        {
+          "file": ".work/p1-runtime-176b6fc726374e7c9f9e4eb93e3d169c/runner-exit-observation.jsonl",
+          "bytes": 1075,
+          "sha256": "b78ac0f86276da0c17911abdef12ed6b0ca88264062d78f101a4ae43eb123bf3"
+        },
+        {
+          "file": ".work/p1-runtime-176b6fc726374e7c9f9e4eb93e3d169c/p1-diagnostics-injection.json",
+          "bytes": 366,
+          "sha256": "b1199649aa2e95639e4e3c0e2248081c15302aad8ab5abc39102e4522f159b0e"
+        },
+        {
+          "file": ".work/p1-runtime-176b6fc726374e7c9f9e4eb93e3d169c/stdout.log",
+          "bytes": 2,
+          "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+        },
+        {
+          "file": ".work/p1-runtime-176b6fc726374e7c9f9e4eb93e3d169c/stderr.log",
+          "bytes": 406,
+          "sha256": "4c249c6783664cf483c8482e1f5bf8fceaaedd66a6df33884068690442388bdb"
+        },
+        {
+          "file": ".work/p1-runtime-176b6fc726374e7c9f9e4eb93e3d169c/source-provenance.log",
+          "bytes": 86,
+          "sha256": "649c354d261793d8ddb544a53990f3afe68b86e31cb5b67497975ee42241af11"
+        },
+        {
+          "file": ".work/p1-runtime-176b6fc726374e7c9f9e4eb93e3d169c/runtime-provenance.log",
+          "bytes": 65850,
+          "sha256": "d881ff5775efc64399c78e09032c2698a7508953a7fcb7cec5854eee3bea9e5e"
+        },
+        {
+          "file": ".work/p1-runtime-176b6fc726374e7c9f9e4eb93e3d169c/native-provenance.log",
+          "bytes": 3164,
+          "sha256": "d6705cf4b012d4bf36c654637304fbba767d697c6cfaeb092fbe5098fa189418"
+        },
+        {
+          "file": ".work/p1-runtime-176b6fc726374e7c9f9e4eb93e3d169c/electron-provenance.log",
+          "bytes": 233,
+          "sha256": "d21cb99304bb21d55fa619e8d7e74e915d7e8faaf2d8740b2d20d59f15439f77"
+        },
+        {
+          "file": ".work/p1-runtime-176b6fc726374e7c9f9e4eb93e3d169c/about-async-ipc.json",
+          "bytes": 3140,
+          "sha256": "648421921e5ff3ff3ea81daf911746c235b92c8c9072da9a319b8b1bb5127737"
+        },
+        {
+          "file": ".work/p1-runtime-176b6fc726374e7c9f9e4eb93e3d169c/appdata/EmbyTheaterEnhanced/logs/ete-client.jsonl",
+          "bytes": 1739,
+          "sha256": "e4375122662c5891ecc9fb7c32bf312253674e8615425e7d073b170c4a569c9e"
+        },
+        {
+          "file": ".work/p1-runtime-176b6fc726374e7c9f9e4eb93e3d169c/about-export-1.txt",
+          "bytes": 2801,
+          "sha256": "fcc7a153fff4456118a8ad15476c6d87ee622dcfdb2b490549e15913aaad4904"
+        }
+      ]
+    },
+    {
+      "case": "miss400",
+      "directory": ".work/p1-runtime-21089bb4215647b09c9adb99af9abb46",
+      "productSourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+      "harnessHead": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "8b69b97204e1e231934905eb3636a2d0fa1f7e6c341cb543d98698a35a487284"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "9bbbc77875af32acac7102c4f73635dd849a4f7abae0d2c7f71819244f43f044"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "984a98698c4e2fc4d60909f1d4decc007e25e19ab32cc1fa87236282e60812b5"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tools/exit-observation.cjs",
+          "sha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee"
+        },
+        {
+          "path": "tools/normal-close-observation.cjs",
+          "sha256": "81385163c8c806e581966fa40aedb0360965341886dc970bd0d6668600cc0562"
+        },
+        {
+          "path": "tools/verify-normal-close.cjs",
+          "sha256": "f32e8d32efdd7aa443e62faaa929d6ab9ceb4f0e968365052eab92cce33b6291"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "0ade5c67167d6117f991c386e4211e20825806c6a998ea34663606eb19e5d96e"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749"
+        }
+      ],
+      "settings": {
+        "cd2Mode": "miss",
+        "cd2DelayMs": 400,
+        "fixtureSeconds": 60,
+        "normalClose": "pipeline",
+        "aboutAsync": false
+      },
+      "status": "PASS",
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "timedOut": false,
+      "cleanupAttempted": false,
+      "residual": 0,
+      "childObservationCoverage": "FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE",
+      "marker": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "aboutBundledVersionsMatched": true,
+        "aboutRuntimeStateSeparated": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "mpvHomePreBootstrapReadback": "NOT_RECORDED_BY_ORIGINAL_HARNESS",
+      "normalClose": {
+        "schemaVersion": 1,
+        "scenario": "pipeline",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN",
+        "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0"
+      },
+      "sessions": {
+        "started": 5,
+        "stopped": 5,
+        "identityAndOrderPairs": true,
+        "checks": {
+          "requiredItems": {
+            "ordinary": [
+              "fixture-video"
+            ],
+            "strm": [
+              "fixture-strm"
+            ],
+            "queue": [
+              "fixture-next-a",
+              "fixture-next-b",
+              "fixture-next-c"
+            ]
+          },
+          "requiredItemResults": {
+            "ordinary": {
+              "itemIds": [
+                "fixture-video"
+              ],
+              "items": [
+                {
+                  "itemId": "fixture-video",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                }
+              ],
+              "passed": true
+            },
+            "strm": {
+              "itemIds": [
+                "fixture-strm"
+              ],
+              "items": [
+                {
+                  "itemId": "fixture-strm",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                }
+              ],
+              "passed": true
+            },
+            "queue": {
+              "itemIds": [
+                "fixture-next-a",
+                "fixture-next-b",
+                "fixture-next-c"
+              ],
+              "items": [
+                {
+                  "itemId": "fixture-next-a",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                },
+                {
+                  "itemId": "fixture-next-b",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                },
+                {
+                  "itemId": "fixture-next-c",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                }
+              ],
+              "passed": true
+            }
+          },
+          "startedCount": 5,
+          "stoppedCount": 5,
+          "pairedCount": 5,
+          "pendingStopped": 0,
+          "unmatchedStopped": 0,
+          "incompleteStarted": 0,
+          "incompleteStopped": 0,
+          "duplicateStarted": 0,
+          "duplicateStopped": 0,
+          "unpairedStarted": 0,
+          "unpairedStopped": 0,
+          "mismatchedStopped": 0,
+          "startedStoppedOneToOne": true,
+          "ordinaryStartedStopped": true,
+          "strmStartedStopped": true,
+          "queueStartedStopped": true,
+          "requiredStartedStopped": true,
+          "passed": true
+        }
+      },
+      "about": null,
+      "diagnostic": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 99,
+        "validRecords": 99,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 5,
+          "native-helper/generation-retired": 5,
+          "native-helper/start-file": 5,
+          "native-helper/file-loaded": 5,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 11,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 10,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "artifacts": [
+        {
+          "file": ".work/p1-runtime-21089bb4215647b09c9adb99af9abb46/harness-identity.json",
+          "bytes": 2787,
+          "sha256": "14d7e05ac559d1194d7a27135aac7d77a79041f398f378186a31bed53044565d"
+        },
+        {
+          "file": ".work/p1-runtime-21089bb4215647b09c9adb99af9abb46/runner-result.json",
+          "bytes": 2703,
+          "sha256": "a52ac77734e40ed5a51b83ba3d949e28ac700b1f86439233b478f35a31465af8"
+        },
+        {
+          "file": ".work/p1-runtime-21089bb4215647b09c9adb99af9abb46/electron-smoke.json",
+          "bytes": 64748,
+          "sha256": "8f3142a00288c1310decc0859bd5586ac223a2877ccf315805c71fdd32b39262"
+        },
+        {
+          "file": ".work/p1-runtime-21089bb4215647b09c9adb99af9abb46/normal-close-result.json",
+          "bytes": 263,
+          "sha256": "c2b6233d9e634c582f84bf2e3c0103137bddb1a4119edcfe78708cc0080b69ee"
+        },
+        {
+          "file": ".work/p1-runtime-21089bb4215647b09c9adb99af9abb46/normal-close.jsonl",
+          "bytes": 2280,
+          "sha256": "e02284d9590a3342886f08b04bb97cc1d5987056f3033c2585562a533b618633"
+        },
+        {
+          "file": ".work/p1-runtime-21089bb4215647b09c9adb99af9abb46/exit-observation.jsonl",
+          "bytes": 776,
+          "sha256": "4bab1259503a95df78ad4b687580c9b9e7f366dc95557177af8a5d9fd2eec787"
+        },
+        {
+          "file": ".work/p1-runtime-21089bb4215647b09c9adb99af9abb46/runner-exit-observation.jsonl",
+          "bytes": 1081,
+          "sha256": "65ccb7c36f86221c5c7482562e2f73ec38005e4bcb83d7c3e5aa75685d3f7215"
+        },
+        {
+          "file": ".work/p1-runtime-21089bb4215647b09c9adb99af9abb46/p1-diagnostics-injection.json",
+          "bytes": 343,
+          "sha256": "9d0371c7a1d9b08d87d678038b4c282bfa70d2ffa0cc3f2d85b339d0cfbf2ed7"
+        },
+        {
+          "file": ".work/p1-runtime-21089bb4215647b09c9adb99af9abb46/stdout.log",
+          "bytes": 2,
+          "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+        },
+        {
+          "file": ".work/p1-runtime-21089bb4215647b09c9adb99af9abb46/stderr.log",
+          "bytes": 1215,
+          "sha256": "50d1f7094df3f2fae126fab938670e6e23aaf33fb43e2a2d0e5516f3c4068dcd"
+        },
+        {
+          "file": ".work/p1-runtime-21089bb4215647b09c9adb99af9abb46/source-provenance.log",
+          "bytes": 86,
+          "sha256": "649c354d261793d8ddb544a53990f3afe68b86e31cb5b67497975ee42241af11"
+        },
+        {
+          "file": ".work/p1-runtime-21089bb4215647b09c9adb99af9abb46/runtime-provenance.log",
+          "bytes": 65850,
+          "sha256": "d881ff5775efc64399c78e09032c2698a7508953a7fcb7cec5854eee3bea9e5e"
+        },
+        {
+          "file": ".work/p1-runtime-21089bb4215647b09c9adb99af9abb46/native-provenance.log",
+          "bytes": 3164,
+          "sha256": "d6705cf4b012d4bf36c654637304fbba767d697c6cfaeb092fbe5098fa189418"
+        },
+        {
+          "file": ".work/p1-runtime-21089bb4215647b09c9adb99af9abb46/electron-provenance.log",
+          "bytes": 233,
+          "sha256": "d21cb99304bb21d55fa619e8d7e74e915d7e8faaf2d8740b2d20d59f15439f77"
+        },
+        {
+          "file": ".work/p1-runtime-21089bb4215647b09c9adb99af9abb46/p1-diagnostics-result.json",
+          "bytes": 744,
+          "sha256": "8506f7301d92c03c1fa6b0674168d0fde64f4a2fb1498d032c24640dac84b64d"
+        },
+        {
+          "file": ".work/p1-runtime-21089bb4215647b09c9adb99af9abb46/appdata/EmbyTheaterEnhanced/logs/ete-client.jsonl",
+          "bytes": 38753,
+          "sha256": "0ac8922ea5eb74bdd063c17d5fcfbcb6745052a4819f29ceb1880ff90c60a111"
+        }
+      ]
+    },
+    {
+      "case": "final-hit400-about",
+      "directory": ".work/p1-runtime-32e67257904a4e91bdfb5a4a788bcbce",
+      "productSourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+      "harnessHead": "0e87d4f5b85ee136d1fe3d0ab47eaac25d64ac9d",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "8b69b97204e1e231934905eb3636a2d0fa1f7e6c341cb543d98698a35a487284"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "ef371709caa23c410c65f2c4d8dbc3ea463cc3c056a6918361583020a4707627"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "984a98698c4e2fc4d60909f1d4decc007e25e19ab32cc1fa87236282e60812b5"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tools/exit-observation.cjs",
+          "sha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee"
+        },
+        {
+          "path": "tools/normal-close-observation.cjs",
+          "sha256": "81385163c8c806e581966fa40aedb0360965341886dc970bd0d6668600cc0562"
+        },
+        {
+          "path": "tools/verify-normal-close.cjs",
+          "sha256": "f32e8d32efdd7aa443e62faaa929d6ab9ceb4f0e968365052eab92cce33b6291"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "0ade5c67167d6117f991c386e4211e20825806c6a998ea34663606eb19e5d96e"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749"
+        },
+        {
+          "path": "tools/about-version-observation.cjs",
+          "sha256": "62b2a49b186801a1c3cbe23da50c40520de15d6b2b8d1a1c23b83457d3ada767"
+        }
+      ],
+      "settings": {
+        "cd2Mode": "hit",
+        "cd2DelayMs": 400,
+        "fixtureSeconds": 60,
+        "normalClose": "pipeline",
+        "aboutAsync": true
+      },
+      "status": "PASS",
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "timedOut": false,
+      "cleanupAttempted": false,
+      "residual": 0,
+      "childObservationCoverage": "FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE",
+      "marker": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "mpvHomeIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "aboutBundledVersionsMatched": true,
+        "aboutRuntimeStateSeparated": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "mpvHomePreBootstrapReadback": "PASS",
+      "normalClose": {
+        "schemaVersion": 1,
+        "scenario": "pipeline",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN",
+        "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0"
+      },
+      "sessions": {
+        "started": 5,
+        "stopped": 5,
+        "identityAndOrderPairs": true,
+        "checks": {
+          "requiredItems": {
+            "ordinary": [
+              "fixture-video"
+            ],
+            "strm": [
+              "fixture-strm"
+            ],
+            "queue": [
+              "fixture-next-a",
+              "fixture-next-b",
+              "fixture-next-c"
+            ]
+          },
+          "requiredItemResults": {
+            "ordinary": {
+              "itemIds": [
+                "fixture-video"
+              ],
+              "items": [
+                {
+                  "itemId": "fixture-video",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                }
+              ],
+              "passed": true
+            },
+            "strm": {
+              "itemIds": [
+                "fixture-strm"
+              ],
+              "items": [
+                {
+                  "itemId": "fixture-strm",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                }
+              ],
+              "passed": true
+            },
+            "queue": {
+              "itemIds": [
+                "fixture-next-a",
+                "fixture-next-b",
+                "fixture-next-c"
+              ],
+              "items": [
+                {
+                  "itemId": "fixture-next-a",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                },
+                {
+                  "itemId": "fixture-next-b",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                },
+                {
+                  "itemId": "fixture-next-c",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                }
+              ],
+              "passed": true
+            }
+          },
+          "startedCount": 5,
+          "stoppedCount": 5,
+          "pairedCount": 5,
+          "pendingStopped": 0,
+          "unmatchedStopped": 0,
+          "incompleteStarted": 0,
+          "incompleteStopped": 0,
+          "duplicateStarted": 0,
+          "duplicateStopped": 0,
+          "unpairedStarted": 0,
+          "unpairedStopped": 0,
+          "mismatchedStopped": 0,
+          "startedStoppedOneToOne": true,
+          "ordinaryStartedStopped": true,
+          "strmStartedStopped": true,
+          "queueStartedStopped": true,
+          "requiredStartedStopped": true,
+          "passed": true
+        }
+      },
+      "about": {
+        "schemaVersion": 1,
+        "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+        "status": "PASS",
+        "testBoundaries": {
+          "clipboard": "IN_MEMORY_CAPTURE",
+          "saveDialog": "FIXED_EVIDENCE_FILE",
+          "updateTransport": "LOCAL_RELEASE_FIXTURE"
+        },
+        "stages": {
+          "initial": {
+            "snapshots": [
+              {
+                "appVersion": "0.2.7",
+                "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.7",
+                "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.7",
+                "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.7",
+                "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              }
+            ],
+            "copiedSnapshot": {
+              "appVersion": "0.2.7",
+              "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+              "nativeHelper": "1.0.0",
+              "libmpv": "v0.41.0-920-gdd5d17d32",
+              "nativeHelperState": "stopped",
+              "runningNativeHelper": "NOT AVAILABLE",
+              "runningLibmpv": "NOT AVAILABLE"
+            },
+            "snapshotVersionsMatched": true,
+            "expectedStageStateObserved": true,
+            "copyMatches": true,
+            "copiedVersionMatched": true,
+            "updateStatus": "latest",
+            "exportStatus": "exported",
+            "exportFile": "about-export-1.txt",
+            "exportSourceCommitMatched": true,
+            "exportSnapshot": {
+              "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+              "state": "stopped",
+              "helperVersion": "UNKNOWN",
+              "libmpvVersion": "mpv v0.41.0-920-gdd5d17d32"
+            },
+            "exportRunningStateMatched": true,
+            "metrics": [
+              {
+                "elapsedMs": 288.85369999999995,
+                "ticksBeforeComplete": 269,
+                "timerDelayMs": 2.74369999999999,
+                "maxGapMs": 7.6411999999999125
+              },
+              {
+                "elapsedMs": 269.23969999999997,
+                "ticksBeforeComplete": 263,
+                "timerDelayMs": 1.4845000000000255,
+                "maxGapMs": 2.1929000000000087
+              }
+            ],
+            "responsive": true
+          },
+          "ready": {
+            "snapshots": [
+              {
+                "appVersion": "0.2.7",
+                "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "ready",
+                "runningNativeHelper": "1.0.0",
+                "runningLibmpv": "mpv v0.41.0-920-gdd5d17d32"
+              },
+              {
+                "appVersion": "0.2.7",
+                "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "starting",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.7",
+                "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "starting",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.7",
+                "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "starting",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              }
+            ],
+            "copiedSnapshot": {
+              "appVersion": "0.2.7",
+              "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+              "nativeHelper": "1.0.0",
+              "libmpv": "v0.41.0-920-gdd5d17d32",
+              "nativeHelperState": "ready",
+              "runningNativeHelper": "1.0.0",
+              "runningLibmpv": "mpv v0.41.0-920-gdd5d17d32"
+            },
+            "snapshotVersionsMatched": true,
+            "expectedStageStateObserved": true,
+            "copyMatches": true,
+            "copiedVersionMatched": true,
+            "updateStatus": "latest",
+            "exportStatus": "exported",
+            "exportFile": "about-export-2.txt",
+            "exportSourceCommitMatched": true,
+            "exportSnapshot": {
+              "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+              "state": "ready",
+              "helperVersion": "1.0.0",
+              "libmpvVersion": "mpv v0.41.0-920-gdd5d17d32"
+            },
+            "exportRunningStateMatched": true,
+            "metrics": [
+              {
+                "elapsedMs": 364.9278000000004,
+                "ticksBeforeComplete": 340,
+                "timerDelayMs": 0.32549999999991996,
+                "maxGapMs": 6.9539999999997235
+              },
+              {
+                "elapsedMs": 327.3224,
+                "ticksBeforeComplete": 296,
+                "timerDelayMs": 0.5884999999998399,
+                "maxGapMs": 9.985400000000482
+              }
+            ],
+            "responsive": true
+          }
+        },
+        "helperStartsInInformationContext": 0,
+        "nativeCallsInInformationContext": 0,
+        "errors": [],
+        "updateFixtureRequests": 2
+      },
+      "diagnostic": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 129,
+        "validRecords": 129,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 7,
+          "native-helper/generation-retired": 7,
+          "native-helper/start-file": 6,
+          "native-helper/file-loaded": 6,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 14,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 12,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "artifacts": [
+        {
+          "file": ".work/p1-runtime-32e67257904a4e91bdfb5a4a788bcbce/harness-identity.json",
+          "bytes": 2938,
+          "sha256": "8926772a977e3135af6932dbad6e9eca8184f5cb532877ea19d0576fefcec894"
+        },
+        {
+          "file": ".work/p1-runtime-32e67257904a4e91bdfb5a4a788bcbce/runner-result.json",
+          "bytes": 2704,
+          "sha256": "a46fdef3edac52c70a160e9c19c5a055a69f9592af45d792fa014c4af3bfda9c"
+        },
+        {
+          "file": ".work/p1-runtime-32e67257904a4e91bdfb5a4a788bcbce/electron-smoke.json",
+          "bytes": 84718,
+          "sha256": "9d7385e5408d096c70e68098f1f29c19fa53c1b6bdbb10a3cf1225055c357232"
+        },
+        {
+          "file": ".work/p1-runtime-32e67257904a4e91bdfb5a4a788bcbce/normal-close-result.json",
+          "bytes": 263,
+          "sha256": "c2b6233d9e634c582f84bf2e3c0103137bddb1a4119edcfe78708cc0080b69ee"
+        },
+        {
+          "file": ".work/p1-runtime-32e67257904a4e91bdfb5a4a788bcbce/normal-close.jsonl",
+          "bytes": 2585,
+          "sha256": "e1067077f539aa5d60a88cc110264bdb7b4d86ed5841649b711952983005ce82"
+        },
+        {
+          "file": ".work/p1-runtime-32e67257904a4e91bdfb5a4a788bcbce/exit-observation.jsonl",
+          "bytes": 776,
+          "sha256": "79a2da5fcea65cbfa9d09ee5602b0a707d0807a2364b5a99ef59181bf9cb1092"
+        },
+        {
+          "file": ".work/p1-runtime-32e67257904a4e91bdfb5a4a788bcbce/runner-exit-observation.jsonl",
+          "bytes": 1082,
+          "sha256": "fbe230faac14ae58657ff2acd1b1a7cc77e84022c19275e8c9ee9630857c1a17"
+        },
+        {
+          "file": ".work/p1-runtime-32e67257904a4e91bdfb5a4a788bcbce/p1-diagnostics-injection.json",
+          "bytes": 366,
+          "sha256": "b1199649aa2e95639e4e3c0e2248081c15302aad8ab5abc39102e4522f159b0e"
+        },
+        {
+          "file": ".work/p1-runtime-32e67257904a4e91bdfb5a4a788bcbce/stdout.log",
+          "bytes": 2,
+          "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+        },
+        {
+          "file": ".work/p1-runtime-32e67257904a4e91bdfb5a4a788bcbce/stderr.log",
+          "bytes": 406,
+          "sha256": "686f8e48a278cbbbf8b6db8ad9eebc1620b698aee8415619e32c4869a5f275e2"
+        },
+        {
+          "file": ".work/p1-runtime-32e67257904a4e91bdfb5a4a788bcbce/source-provenance.log",
+          "bytes": 86,
+          "sha256": "649c354d261793d8ddb544a53990f3afe68b86e31cb5b67497975ee42241af11"
+        },
+        {
+          "file": ".work/p1-runtime-32e67257904a4e91bdfb5a4a788bcbce/runtime-provenance.log",
+          "bytes": 65850,
+          "sha256": "d881ff5775efc64399c78e09032c2698a7508953a7fcb7cec5854eee3bea9e5e"
+        },
+        {
+          "file": ".work/p1-runtime-32e67257904a4e91bdfb5a4a788bcbce/native-provenance.log",
+          "bytes": 3164,
+          "sha256": "d6705cf4b012d4bf36c654637304fbba767d697c6cfaeb092fbe5098fa189418"
+        },
+        {
+          "file": ".work/p1-runtime-32e67257904a4e91bdfb5a4a788bcbce/electron-provenance.log",
+          "bytes": 233,
+          "sha256": "d21cb99304bb21d55fa619e8d7e74e915d7e8faaf2d8740b2d20d59f15439f77"
+        },
+        {
+          "file": ".work/p1-runtime-32e67257904a4e91bdfb5a4a788bcbce/about-async-ipc.json",
+          "bytes": 5871,
+          "sha256": "5b0a041590deef109c4636bf5bfb1773b9984f4af5a690f3ebee27adfae7aa8a"
+        },
+        {
+          "file": ".work/p1-runtime-32e67257904a4e91bdfb5a4a788bcbce/p1-diagnostics-result.json",
+          "bytes": 746,
+          "sha256": "dda8f58f576b0c854b7c023fbe182790f044e0f6d0db10b233f063dbb4bec9f5"
+        },
+        {
+          "file": ".work/p1-runtime-32e67257904a4e91bdfb5a4a788bcbce/appdata/EmbyTheaterEnhanced/logs/ete-client.jsonl",
+          "bytes": 53047,
+          "sha256": "94c2e0c2fdf06fa2706a9e7d7e96f69a06c020f40a0faa73fcac2a674201fc1f"
+        },
+        {
+          "file": ".work/p1-runtime-32e67257904a4e91bdfb5a4a788bcbce/about-export-1.txt",
+          "bytes": 2801,
+          "sha256": "ac3331be7cee7b6ae2c6d8b29d594753ac05cedb33a3ada8511e10642b11b0a3"
+        },
+        {
+          "file": ".work/p1-runtime-32e67257904a4e91bdfb5a4a788bcbce/about-export-2.txt",
+          "bytes": 20413,
+          "sha256": "a079f312ff34e83b808d8a5d8161bbc77426617faa18e85e2c808370ed919149"
+        }
+      ]
+    },
+    {
+      "case": "stopped",
+      "directory": ".work/p1-runtime-438659515c5e499c88eada92a397e4b1",
+      "productSourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+      "harnessHead": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "8b69b97204e1e231934905eb3636a2d0fa1f7e6c341cb543d98698a35a487284"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "9bbbc77875af32acac7102c4f73635dd849a4f7abae0d2c7f71819244f43f044"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "984a98698c4e2fc4d60909f1d4decc007e25e19ab32cc1fa87236282e60812b5"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tools/exit-observation.cjs",
+          "sha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee"
+        },
+        {
+          "path": "tools/normal-close-observation.cjs",
+          "sha256": "81385163c8c806e581966fa40aedb0360965341886dc970bd0d6668600cc0562"
+        },
+        {
+          "path": "tools/verify-normal-close.cjs",
+          "sha256": "f32e8d32efdd7aa443e62faaa929d6ab9ceb4f0e968365052eab92cce33b6291"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "0ade5c67167d6117f991c386e4211e20825806c6a998ea34663606eb19e5d96e"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749"
+        }
+      ],
+      "settings": {
+        "cd2Mode": "hit",
+        "cd2DelayMs": 400,
+        "fixtureSeconds": 60,
+        "normalClose": "stopped",
+        "aboutAsync": false
+      },
+      "status": "PASS",
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "timedOut": false,
+      "cleanupAttempted": false,
+      "residual": 0,
+      "childObservationCoverage": "FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE",
+      "marker": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "aboutBundledVersionsMatched": true,
+        "aboutRuntimeStateSeparated": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "mpvHomePreBootstrapReadback": "NOT_RECORDED_BY_ORIGINAL_HARNESS",
+      "normalClose": {
+        "schemaVersion": 1,
+        "scenario": "stopped",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN",
+        "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0"
+      },
+      "sessions": {
+        "started": 1,
+        "stopped": 1,
+        "identityAndOrderPairs": true,
+        "checks": null
+      },
+      "about": null,
+      "diagnostic": null,
+      "artifacts": [
+        {
+          "file": ".work/p1-runtime-438659515c5e499c88eada92a397e4b1/harness-identity.json",
+          "bytes": 2785,
+          "sha256": "1b6d9706508ae0de1e27be68a0202ea8a956762691f257653aa9c5ffad4c3e95"
+        },
+        {
+          "file": ".work/p1-runtime-438659515c5e499c88eada92a397e4b1/runner-result.json",
+          "bytes": 2698,
+          "sha256": "2fa68dd4429a9bf1efefb760211322b0340a8037f2a55a67a8f834b4572cbe3e"
+        },
+        {
+          "file": ".work/p1-runtime-438659515c5e499c88eada92a397e4b1/electron-smoke.json",
+          "bytes": 12254,
+          "sha256": "4c213f97918a227febfc0d922cdff18fa845873c646601a60e3dcb08a8bbaccb"
+        },
+        {
+          "file": ".work/p1-runtime-438659515c5e499c88eada92a397e4b1/normal-close-result.json",
+          "bytes": 262,
+          "sha256": "fe686b0236047f74eb54af78f6a38cf949698b95964087a8bf8836b3e480444f"
+        },
+        {
+          "file": ".work/p1-runtime-438659515c5e499c88eada92a397e4b1/normal-close.jsonl",
+          "bytes": 1658,
+          "sha256": "339cd24d79b5804816cc173f2bf5bfd7a1d0dba8791c795bb015fa9469b9268c"
+        },
+        {
+          "file": ".work/p1-runtime-438659515c5e499c88eada92a397e4b1/exit-observation.jsonl",
+          "bytes": 769,
+          "sha256": "6ce96126cbf566e98e1f2ae1176aca5e8ba4a52c902227cdd640c6cdd895e429"
+        },
+        {
+          "file": ".work/p1-runtime-438659515c5e499c88eada92a397e4b1/runner-exit-observation.jsonl",
+          "bytes": 1077,
+          "sha256": "8bda467ac40df3f35fe4d38198460a0ca2822d19d749a801d89d34f61bcce64c"
+        },
+        {
+          "file": ".work/p1-runtime-438659515c5e499c88eada92a397e4b1/p1-diagnostics-injection.json",
+          "bytes": 343,
+          "sha256": "9d0371c7a1d9b08d87d678038b4c282bfa70d2ffa0cc3f2d85b339d0cfbf2ed7"
+        },
+        {
+          "file": ".work/p1-runtime-438659515c5e499c88eada92a397e4b1/stdout.log",
+          "bytes": 2,
+          "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+        },
+        {
+          "file": ".work/p1-runtime-438659515c5e499c88eada92a397e4b1/stderr.log",
+          "bytes": 406,
+          "sha256": "1238517d78cd89b5da6dbea46bac1fd764749c71dd8ad8da54c7862e4ba001f4"
+        },
+        {
+          "file": ".work/p1-runtime-438659515c5e499c88eada92a397e4b1/source-provenance.log",
+          "bytes": 86,
+          "sha256": "649c354d261793d8ddb544a53990f3afe68b86e31cb5b67497975ee42241af11"
+        },
+        {
+          "file": ".work/p1-runtime-438659515c5e499c88eada92a397e4b1/runtime-provenance.log",
+          "bytes": 65850,
+          "sha256": "d881ff5775efc64399c78e09032c2698a7508953a7fcb7cec5854eee3bea9e5e"
+        },
+        {
+          "file": ".work/p1-runtime-438659515c5e499c88eada92a397e4b1/native-provenance.log",
+          "bytes": 3164,
+          "sha256": "d6705cf4b012d4bf36c654637304fbba767d697c6cfaeb092fbe5098fa189418"
+        },
+        {
+          "file": ".work/p1-runtime-438659515c5e499c88eada92a397e4b1/electron-provenance.log",
+          "bytes": 233,
+          "sha256": "d21cb99304bb21d55fa619e8d7e74e915d7e8faaf2d8740b2d20d59f15439f77"
+        },
+        {
+          "file": ".work/p1-runtime-438659515c5e499c88eada92a397e4b1/appdata/EmbyTheaterEnhanced/logs/ete-client.jsonl",
+          "bytes": 7923,
+          "sha256": "d4d3cfeaa09025f70acac59a97aa73bc14b55d4355cab4f7de1df803b6d29310"
+        }
+      ]
+    },
+    {
+      "case": "hit800",
+      "directory": ".work/p1-runtime-481e80b424cd4c5b86342c989e480cf8",
+      "productSourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+      "harnessHead": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "8b69b97204e1e231934905eb3636a2d0fa1f7e6c341cb543d98698a35a487284"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "9bbbc77875af32acac7102c4f73635dd849a4f7abae0d2c7f71819244f43f044"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "984a98698c4e2fc4d60909f1d4decc007e25e19ab32cc1fa87236282e60812b5"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tools/exit-observation.cjs",
+          "sha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee"
+        },
+        {
+          "path": "tools/normal-close-observation.cjs",
+          "sha256": "81385163c8c806e581966fa40aedb0360965341886dc970bd0d6668600cc0562"
+        },
+        {
+          "path": "tools/verify-normal-close.cjs",
+          "sha256": "f32e8d32efdd7aa443e62faaa929d6ab9ceb4f0e968365052eab92cce33b6291"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "0ade5c67167d6117f991c386e4211e20825806c6a998ea34663606eb19e5d96e"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749"
+        }
+      ],
+      "settings": {
+        "cd2Mode": "hit",
+        "cd2DelayMs": 800,
+        "fixtureSeconds": 60,
+        "normalClose": "pipeline",
+        "aboutAsync": false
+      },
+      "status": "PASS",
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "timedOut": false,
+      "cleanupAttempted": false,
+      "residual": 0,
+      "childObservationCoverage": "FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE",
+      "marker": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "aboutBundledVersionsMatched": true,
+        "aboutRuntimeStateSeparated": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "mpvHomePreBootstrapReadback": "NOT_RECORDED_BY_ORIGINAL_HARNESS",
+      "normalClose": {
+        "schemaVersion": 1,
+        "scenario": "pipeline",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN",
+        "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0"
+      },
+      "sessions": {
+        "started": 5,
+        "stopped": 5,
+        "identityAndOrderPairs": true,
+        "checks": {
+          "requiredItems": {
+            "ordinary": [
+              "fixture-video"
+            ],
+            "strm": [
+              "fixture-strm"
+            ],
+            "queue": [
+              "fixture-next-a",
+              "fixture-next-b",
+              "fixture-next-c"
+            ]
+          },
+          "requiredItemResults": {
+            "ordinary": {
+              "itemIds": [
+                "fixture-video"
+              ],
+              "items": [
+                {
+                  "itemId": "fixture-video",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                }
+              ],
+              "passed": true
+            },
+            "strm": {
+              "itemIds": [
+                "fixture-strm"
+              ],
+              "items": [
+                {
+                  "itemId": "fixture-strm",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                }
+              ],
+              "passed": true
+            },
+            "queue": {
+              "itemIds": [
+                "fixture-next-a",
+                "fixture-next-b",
+                "fixture-next-c"
+              ],
+              "items": [
+                {
+                  "itemId": "fixture-next-a",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                },
+                {
+                  "itemId": "fixture-next-b",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                },
+                {
+                  "itemId": "fixture-next-c",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                }
+              ],
+              "passed": true
+            }
+          },
+          "startedCount": 5,
+          "stoppedCount": 5,
+          "pairedCount": 5,
+          "pendingStopped": 0,
+          "unmatchedStopped": 0,
+          "incompleteStarted": 0,
+          "incompleteStopped": 0,
+          "duplicateStarted": 0,
+          "duplicateStopped": 0,
+          "unpairedStarted": 0,
+          "unpairedStopped": 0,
+          "mismatchedStopped": 0,
+          "startedStoppedOneToOne": true,
+          "ordinaryStartedStopped": true,
+          "strmStartedStopped": true,
+          "queueStartedStopped": true,
+          "requiredStartedStopped": true,
+          "passed": true
+        }
+      },
+      "about": null,
+      "diagnostic": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 128,
+        "validRecords": 128,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 7,
+          "native-helper/generation-retired": 7,
+          "native-helper/start-file": 6,
+          "native-helper/file-loaded": 6,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 14,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 12,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "artifacts": [
+        {
+          "file": ".work/p1-runtime-481e80b424cd4c5b86342c989e480cf8/harness-identity.json",
+          "bytes": 2786,
+          "sha256": "17bafaab4fe29088b6cd56766cffe93758f4a2c1ce3d5d6c3edcdd8efe40778b"
+        },
+        {
+          "file": ".work/p1-runtime-481e80b424cd4c5b86342c989e480cf8/runner-result.json",
+          "bytes": 2704,
+          "sha256": "ceea65c8a3beb72fafcfba82e7add8e7a8915c1742c8608a00f218d66e3ed389"
+        },
+        {
+          "file": ".work/p1-runtime-481e80b424cd4c5b86342c989e480cf8/electron-smoke.json",
+          "bytes": 84619,
+          "sha256": "06bde01a15972654ff26963509d3618a6dab781a9e4f81467bc8677dee4765a6"
+        },
+        {
+          "file": ".work/p1-runtime-481e80b424cd4c5b86342c989e480cf8/normal-close-result.json",
+          "bytes": 263,
+          "sha256": "c2b6233d9e634c582f84bf2e3c0103137bddb1a4119edcfe78708cc0080b69ee"
+        },
+        {
+          "file": ".work/p1-runtime-481e80b424cd4c5b86342c989e480cf8/normal-close.jsonl",
+          "bytes": 2585,
+          "sha256": "c0d5922fd52c6d3467bbc54b2e652b1fa3707944ba02f21d7b5be3feb639d95e"
+        },
+        {
+          "file": ".work/p1-runtime-481e80b424cd4c5b86342c989e480cf8/exit-observation.jsonl",
+          "bytes": 776,
+          "sha256": "b3216c4dc0eb331e41ebb52cfefeeb13547504456e2249eb68c1bccd26ddabd0"
+        },
+        {
+          "file": ".work/p1-runtime-481e80b424cd4c5b86342c989e480cf8/runner-exit-observation.jsonl",
+          "bytes": 1082,
+          "sha256": "0f328712d4bc751c673ac2e5549a2a7793773f83ef18cd795617f397456fd411"
+        },
+        {
+          "file": ".work/p1-runtime-481e80b424cd4c5b86342c989e480cf8/p1-diagnostics-injection.json",
+          "bytes": 343,
+          "sha256": "9d0371c7a1d9b08d87d678038b4c282bfa70d2ffa0cc3f2d85b339d0cfbf2ed7"
+        },
+        {
+          "file": ".work/p1-runtime-481e80b424cd4c5b86342c989e480cf8/stdout.log",
+          "bytes": 2,
+          "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+        },
+        {
+          "file": ".work/p1-runtime-481e80b424cd4c5b86342c989e480cf8/stderr.log",
+          "bytes": 406,
+          "sha256": "9cf627f1aeb2309f628c359a773c7e4cd751e527ab9c4fdf7bc7755a3ee1f133"
+        },
+        {
+          "file": ".work/p1-runtime-481e80b424cd4c5b86342c989e480cf8/source-provenance.log",
+          "bytes": 86,
+          "sha256": "649c354d261793d8ddb544a53990f3afe68b86e31cb5b67497975ee42241af11"
+        },
+        {
+          "file": ".work/p1-runtime-481e80b424cd4c5b86342c989e480cf8/runtime-provenance.log",
+          "bytes": 65850,
+          "sha256": "d881ff5775efc64399c78e09032c2698a7508953a7fcb7cec5854eee3bea9e5e"
+        },
+        {
+          "file": ".work/p1-runtime-481e80b424cd4c5b86342c989e480cf8/native-provenance.log",
+          "bytes": 3164,
+          "sha256": "d6705cf4b012d4bf36c654637304fbba767d697c6cfaeb092fbe5098fa189418"
+        },
+        {
+          "file": ".work/p1-runtime-481e80b424cd4c5b86342c989e480cf8/electron-provenance.log",
+          "bytes": 233,
+          "sha256": "d21cb99304bb21d55fa619e8d7e74e915d7e8faaf2d8740b2d20d59f15439f77"
+        },
+        {
+          "file": ".work/p1-runtime-481e80b424cd4c5b86342c989e480cf8/p1-diagnostics-result.json",
+          "bytes": 746,
+          "sha256": "e71976e0cf4968b19f3be8f7492529f8325e3d653e3ecc80ded1f94e82510006"
+        },
+        {
+          "file": ".work/p1-runtime-481e80b424cd4c5b86342c989e480cf8/appdata/EmbyTheaterEnhanced/logs/ete-client.jsonl",
+          "bytes": 52771,
+          "sha256": "4405158aaca6f552c72e4f80cfdd9111b67b27b023f847580e7f62659216badc"
+        }
+      ]
+    },
+    {
+      "case": "hit0",
+      "directory": ".work/p1-runtime-5c3b6cbf90be4f19b18d4577135294d9",
+      "productSourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+      "harnessHead": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "8b69b97204e1e231934905eb3636a2d0fa1f7e6c341cb543d98698a35a487284"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "9bbbc77875af32acac7102c4f73635dd849a4f7abae0d2c7f71819244f43f044"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "984a98698c4e2fc4d60909f1d4decc007e25e19ab32cc1fa87236282e60812b5"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tools/exit-observation.cjs",
+          "sha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee"
+        },
+        {
+          "path": "tools/normal-close-observation.cjs",
+          "sha256": "81385163c8c806e581966fa40aedb0360965341886dc970bd0d6668600cc0562"
+        },
+        {
+          "path": "tools/verify-normal-close.cjs",
+          "sha256": "f32e8d32efdd7aa443e62faaa929d6ab9ceb4f0e968365052eab92cce33b6291"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "0ade5c67167d6117f991c386e4211e20825806c6a998ea34663606eb19e5d96e"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749"
+        }
+      ],
+      "settings": {
+        "cd2Mode": "hit",
+        "cd2DelayMs": 0,
+        "fixtureSeconds": 60,
+        "normalClose": "pipeline",
+        "aboutAsync": false
+      },
+      "status": "PASS",
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "timedOut": false,
+      "cleanupAttempted": false,
+      "residual": 0,
+      "childObservationCoverage": "FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE",
+      "marker": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "aboutBundledVersionsMatched": true,
+        "aboutRuntimeStateSeparated": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "mpvHomePreBootstrapReadback": "NOT_RECORDED_BY_ORIGINAL_HARNESS",
+      "normalClose": {
+        "schemaVersion": 1,
+        "scenario": "pipeline",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN",
+        "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0"
+      },
+      "sessions": {
+        "started": 5,
+        "stopped": 5,
+        "identityAndOrderPairs": true,
+        "checks": {
+          "requiredItems": {
+            "ordinary": [
+              "fixture-video"
+            ],
+            "strm": [
+              "fixture-strm"
+            ],
+            "queue": [
+              "fixture-next-a",
+              "fixture-next-b",
+              "fixture-next-c"
+            ]
+          },
+          "requiredItemResults": {
+            "ordinary": {
+              "itemIds": [
+                "fixture-video"
+              ],
+              "items": [
+                {
+                  "itemId": "fixture-video",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                }
+              ],
+              "passed": true
+            },
+            "strm": {
+              "itemIds": [
+                "fixture-strm"
+              ],
+              "items": [
+                {
+                  "itemId": "fixture-strm",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                }
+              ],
+              "passed": true
+            },
+            "queue": {
+              "itemIds": [
+                "fixture-next-a",
+                "fixture-next-b",
+                "fixture-next-c"
+              ],
+              "items": [
+                {
+                  "itemId": "fixture-next-a",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                },
+                {
+                  "itemId": "fixture-next-b",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                },
+                {
+                  "itemId": "fixture-next-c",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                }
+              ],
+              "passed": true
+            }
+          },
+          "startedCount": 5,
+          "stoppedCount": 5,
+          "pairedCount": 5,
+          "pendingStopped": 0,
+          "unmatchedStopped": 0,
+          "incompleteStarted": 0,
+          "incompleteStopped": 0,
+          "duplicateStarted": 0,
+          "duplicateStopped": 0,
+          "unpairedStarted": 0,
+          "unpairedStopped": 0,
+          "mismatchedStopped": 0,
+          "startedStoppedOneToOne": true,
+          "ordinaryStartedStopped": true,
+          "strmStartedStopped": true,
+          "queueStartedStopped": true,
+          "requiredStartedStopped": true,
+          "passed": true
+        }
+      },
+      "about": null,
+      "diagnostic": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 128,
+        "validRecords": 128,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 7,
+          "native-helper/generation-retired": 7,
+          "native-helper/start-file": 6,
+          "native-helper/file-loaded": 6,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 14,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 12,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "artifacts": [
+        {
+          "file": ".work/p1-runtime-5c3b6cbf90be4f19b18d4577135294d9/harness-identity.json",
+          "bytes": 2784,
+          "sha256": "821b1f7598114a084a447285b5946e1321b04e4febc3df4b13eeaba42321c9a5"
+        },
+        {
+          "file": ".work/p1-runtime-5c3b6cbf90be4f19b18d4577135294d9/runner-result.json",
+          "bytes": 2704,
+          "sha256": "63ddb902e200830b14236088a32908d90db06359105e3dedee96020939a57245"
+        },
+        {
+          "file": ".work/p1-runtime-5c3b6cbf90be4f19b18d4577135294d9/electron-smoke.json",
+          "bytes": 84659,
+          "sha256": "671a3f9290e6820957fd81cd9f4e6302f9d38964b25fd0880b7df43694f782f8"
+        },
+        {
+          "file": ".work/p1-runtime-5c3b6cbf90be4f19b18d4577135294d9/normal-close-result.json",
+          "bytes": 263,
+          "sha256": "c2b6233d9e634c582f84bf2e3c0103137bddb1a4119edcfe78708cc0080b69ee"
+        },
+        {
+          "file": ".work/p1-runtime-5c3b6cbf90be4f19b18d4577135294d9/normal-close.jsonl",
+          "bytes": 2585,
+          "sha256": "905c98ebb12c470cec04effca4e90962222f3fba357e66aaf7da73ca1e92fdf3"
+        },
+        {
+          "file": ".work/p1-runtime-5c3b6cbf90be4f19b18d4577135294d9/exit-observation.jsonl",
+          "bytes": 776,
+          "sha256": "524a5e7710e19d102c340b45931b9d9d3eea2fa7f09692679d1f74782f839ea3"
+        },
+        {
+          "file": ".work/p1-runtime-5c3b6cbf90be4f19b18d4577135294d9/runner-exit-observation.jsonl",
+          "bytes": 1082,
+          "sha256": "bf38135501baaeb3dfa4c32ec3fca4c79cca1efe598dd4e8b3ee7f9cc9b1bcbb"
+        },
+        {
+          "file": ".work/p1-runtime-5c3b6cbf90be4f19b18d4577135294d9/p1-diagnostics-injection.json",
+          "bytes": 343,
+          "sha256": "9d0371c7a1d9b08d87d678038b4c282bfa70d2ffa0cc3f2d85b339d0cfbf2ed7"
+        },
+        {
+          "file": ".work/p1-runtime-5c3b6cbf90be4f19b18d4577135294d9/stdout.log",
+          "bytes": 2,
+          "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+        },
+        {
+          "file": ".work/p1-runtime-5c3b6cbf90be4f19b18d4577135294d9/stderr.log",
+          "bytes": 406,
+          "sha256": "21c661501a78068ccec14490cd89d26afc31c45317ac26d39ccfebe83ed26247"
+        },
+        {
+          "file": ".work/p1-runtime-5c3b6cbf90be4f19b18d4577135294d9/source-provenance.log",
+          "bytes": 86,
+          "sha256": "649c354d261793d8ddb544a53990f3afe68b86e31cb5b67497975ee42241af11"
+        },
+        {
+          "file": ".work/p1-runtime-5c3b6cbf90be4f19b18d4577135294d9/runtime-provenance.log",
+          "bytes": 65850,
+          "sha256": "d881ff5775efc64399c78e09032c2698a7508953a7fcb7cec5854eee3bea9e5e"
+        },
+        {
+          "file": ".work/p1-runtime-5c3b6cbf90be4f19b18d4577135294d9/native-provenance.log",
+          "bytes": 3164,
+          "sha256": "d6705cf4b012d4bf36c654637304fbba767d697c6cfaeb092fbe5098fa189418"
+        },
+        {
+          "file": ".work/p1-runtime-5c3b6cbf90be4f19b18d4577135294d9/electron-provenance.log",
+          "bytes": 233,
+          "sha256": "d21cb99304bb21d55fa619e8d7e74e915d7e8faaf2d8740b2d20d59f15439f77"
+        },
+        {
+          "file": ".work/p1-runtime-5c3b6cbf90be4f19b18d4577135294d9/p1-diagnostics-result.json",
+          "bytes": 746,
+          "sha256": "e71976e0cf4968b19f3be8f7492529f8325e3d653e3ecc80ded1f94e82510006"
+        },
+        {
+          "file": ".work/p1-runtime-5c3b6cbf90be4f19b18d4577135294d9/appdata/EmbyTheaterEnhanced/logs/ete-client.jsonl",
+          "bytes": 52818,
+          "sha256": "13513c1421e2a4972a126e932d28155fc23f73e8322581d6b0684fb90b10520d"
+        }
+      ]
+    },
+    {
+      "case": "idle-about",
+      "directory": ".work/p1-runtime-6b266b2085df48d6a6849d691f9a7223",
+      "productSourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+      "harnessHead": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "8b69b97204e1e231934905eb3636a2d0fa1f7e6c341cb543d98698a35a487284"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "9bbbc77875af32acac7102c4f73635dd849a4f7abae0d2c7f71819244f43f044"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "984a98698c4e2fc4d60909f1d4decc007e25e19ab32cc1fa87236282e60812b5"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tools/exit-observation.cjs",
+          "sha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee"
+        },
+        {
+          "path": "tools/normal-close-observation.cjs",
+          "sha256": "81385163c8c806e581966fa40aedb0360965341886dc970bd0d6668600cc0562"
+        },
+        {
+          "path": "tools/verify-normal-close.cjs",
+          "sha256": "f32e8d32efdd7aa443e62faaa929d6ab9ceb4f0e968365052eab92cce33b6291"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "0ade5c67167d6117f991c386e4211e20825806c6a998ea34663606eb19e5d96e"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749"
+        },
+        {
+          "path": "tools/about-version-observation.cjs",
+          "sha256": "62b2a49b186801a1c3cbe23da50c40520de15d6b2b8d1a1c23b83457d3ada767"
+        }
+      ],
+      "settings": {
+        "cd2Mode": "hit",
+        "cd2DelayMs": 400,
+        "fixtureSeconds": 60,
+        "normalClose": "idle",
+        "aboutAsync": true
+      },
+      "status": "PASS",
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "timedOut": false,
+      "cleanupAttempted": false,
+      "residual": 0,
+      "childObservationCoverage": "FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE",
+      "marker": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "aboutBundledVersionsMatched": true,
+        "aboutRuntimeStateSeparated": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "mpvHomePreBootstrapReadback": "NOT_RECORDED_BY_ORIGINAL_HARNESS",
+      "normalClose": {
+        "schemaVersion": 1,
+        "scenario": "idle",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN",
+        "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0"
+      },
+      "sessions": {
+        "started": 0,
+        "stopped": 0,
+        "identityAndOrderPairs": true,
+        "checks": null
+      },
+      "about": {
+        "schemaVersion": 1,
+        "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+        "status": "PASS",
+        "testBoundaries": {
+          "clipboard": "IN_MEMORY_CAPTURE",
+          "saveDialog": "FIXED_EVIDENCE_FILE",
+          "updateTransport": "LOCAL_RELEASE_FIXTURE"
+        },
+        "stages": {
+          "initial": {
+            "snapshots": [
+              {
+                "appVersion": "0.2.7",
+                "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.7",
+                "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.7",
+                "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.7",
+                "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              }
+            ],
+            "copiedSnapshot": {
+              "appVersion": "0.2.7",
+              "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+              "nativeHelper": "1.0.0",
+              "libmpv": "v0.41.0-920-gdd5d17d32",
+              "nativeHelperState": "stopped",
+              "runningNativeHelper": "NOT AVAILABLE",
+              "runningLibmpv": "NOT AVAILABLE"
+            },
+            "snapshotVersionsMatched": true,
+            "expectedStageStateObserved": true,
+            "copyMatches": true,
+            "copiedVersionMatched": true,
+            "updateStatus": "latest",
+            "exportStatus": "exported",
+            "exportFile": "about-export-1.txt",
+            "exportSourceCommitMatched": true,
+            "exportSnapshot": {
+              "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+              "state": "stopped",
+              "helperVersion": "UNKNOWN",
+              "libmpvVersion": "mpv v0.41.0-920-gdd5d17d32"
+            },
+            "exportRunningStateMatched": true,
+            "metrics": [
+              {
+                "elapsedMs": 190.27029999999996,
+                "ticksBeforeComplete": 183,
+                "timerDelayMs": 2.206899999999962,
+                "maxGapMs": 5.504000000000019
+              },
+              {
+                "elapsedMs": 364.2079,
+                "ticksBeforeComplete": 327,
+                "timerDelayMs": 0.9700000000000273,
+                "maxGapMs": 15.447300000000041
+              }
+            ],
+            "responsive": true
+          }
+        },
+        "helperStartsInInformationContext": 0,
+        "nativeCallsInInformationContext": 0,
+        "errors": [],
+        "updateFixtureRequests": 1
+      },
+      "diagnostic": null,
+      "artifacts": [
+        {
+          "file": ".work/p1-runtime-6b266b2085df48d6a6849d691f9a7223/harness-identity.json",
+          "bytes": 2934,
+          "sha256": "5dcc25f888f20018a784f1b81adab423668043762eea27f7bb4fbe47d52d777c"
+        },
+        {
+          "file": ".work/p1-runtime-6b266b2085df48d6a6849d691f9a7223/runner-result.json",
+          "bytes": 2698,
+          "sha256": "52fdaa481891f54da1978cef3f4dd3380686816b158e3e925eb0d35b669a3221"
+        },
+        {
+          "file": ".work/p1-runtime-6b266b2085df48d6a6849d691f9a7223/electron-smoke.json",
+          "bytes": 3763,
+          "sha256": "5bd5941af85ca38ffb07aa6e00748a3ec828c4749da732d96087612934b2958d"
+        },
+        {
+          "file": ".work/p1-runtime-6b266b2085df48d6a6849d691f9a7223/normal-close-result.json",
+          "bytes": 259,
+          "sha256": "851053f3b42eb7d01fceb92d23d6268832e66ea6cc319a4842aaf0397c59b984"
+        },
+        {
+          "file": ".work/p1-runtime-6b266b2085df48d6a6849d691f9a7223/normal-close.jsonl",
+          "bytes": 1355,
+          "sha256": "623d6225e7cf1c12884f995c4187126c2e2960d978bc18f8f7ad30422f7429fc"
+        },
+        {
+          "file": ".work/p1-runtime-6b266b2085df48d6a6849d691f9a7223/exit-observation.jsonl",
+          "bytes": 769,
+          "sha256": "28b16f1ea5269f2bcd0ee43d1487a3231e125a769d879643af5d82682128dcf0"
+        },
+        {
+          "file": ".work/p1-runtime-6b266b2085df48d6a6849d691f9a7223/runner-exit-observation.jsonl",
+          "bytes": 1077,
+          "sha256": "1cf1ad877468970d8acd3a32c07f5b34f0ad5abfa56104eb27ebf17ffba08237"
+        },
+        {
+          "file": ".work/p1-runtime-6b266b2085df48d6a6849d691f9a7223/p1-diagnostics-injection.json",
+          "bytes": 343,
+          "sha256": "9d0371c7a1d9b08d87d678038b4c282bfa70d2ffa0cc3f2d85b339d0cfbf2ed7"
+        },
+        {
+          "file": ".work/p1-runtime-6b266b2085df48d6a6849d691f9a7223/stdout.log",
+          "bytes": 2,
+          "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+        },
+        {
+          "file": ".work/p1-runtime-6b266b2085df48d6a6849d691f9a7223/stderr.log",
+          "bytes": 406,
+          "sha256": "44b05a9e54aa5e55cec89509cf686e944c1d7fdc30cc65884879046d3cc1fe7e"
+        },
+        {
+          "file": ".work/p1-runtime-6b266b2085df48d6a6849d691f9a7223/source-provenance.log",
+          "bytes": 86,
+          "sha256": "649c354d261793d8ddb544a53990f3afe68b86e31cb5b67497975ee42241af11"
+        },
+        {
+          "file": ".work/p1-runtime-6b266b2085df48d6a6849d691f9a7223/runtime-provenance.log",
+          "bytes": 65850,
+          "sha256": "d881ff5775efc64399c78e09032c2698a7508953a7fcb7cec5854eee3bea9e5e"
+        },
+        {
+          "file": ".work/p1-runtime-6b266b2085df48d6a6849d691f9a7223/native-provenance.log",
+          "bytes": 3164,
+          "sha256": "d6705cf4b012d4bf36c654637304fbba767d697c6cfaeb092fbe5098fa189418"
+        },
+        {
+          "file": ".work/p1-runtime-6b266b2085df48d6a6849d691f9a7223/electron-provenance.log",
+          "bytes": 233,
+          "sha256": "d21cb99304bb21d55fa619e8d7e74e915d7e8faaf2d8740b2d20d59f15439f77"
+        },
+        {
+          "file": ".work/p1-runtime-6b266b2085df48d6a6849d691f9a7223/about-async-ipc.json",
+          "bytes": 3131,
+          "sha256": "6ee8cd3039cf2419cc2daa1a1971474645dd6b44ba3fad7dfcf3fecc35e7799c"
+        },
+        {
+          "file": ".work/p1-runtime-6b266b2085df48d6a6849d691f9a7223/appdata/EmbyTheaterEnhanced/logs/ete-client.jsonl",
+          "bytes": 1739,
+          "sha256": "0c0aec38bb0507f9b10cb3408c7a7433c4bd6ddac3c597439d6efe28945c6d29"
+        },
+        {
+          "file": ".work/p1-runtime-6b266b2085df48d6a6849d691f9a7223/about-export-1.txt",
+          "bytes": 2801,
+          "sha256": "1064985b18c4d802a7f352e03e294cb289b6a961cbe273881851b13834be92dc"
+        }
+      ]
+    },
+    {
+      "case": "direct400",
+      "directory": ".work/p1-runtime-a5fceda5362643bfbac7d620affd70cb",
+      "productSourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+      "harnessHead": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "8b69b97204e1e231934905eb3636a2d0fa1f7e6c341cb543d98698a35a487284"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "9bbbc77875af32acac7102c4f73635dd849a4f7abae0d2c7f71819244f43f044"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "984a98698c4e2fc4d60909f1d4decc007e25e19ab32cc1fa87236282e60812b5"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tools/exit-observation.cjs",
+          "sha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee"
+        },
+        {
+          "path": "tools/normal-close-observation.cjs",
+          "sha256": "81385163c8c806e581966fa40aedb0360965341886dc970bd0d6668600cc0562"
+        },
+        {
+          "path": "tools/verify-normal-close.cjs",
+          "sha256": "f32e8d32efdd7aa443e62faaa929d6ab9ceb4f0e968365052eab92cce33b6291"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "0ade5c67167d6117f991c386e4211e20825806c6a998ea34663606eb19e5d96e"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749"
+        }
+      ],
+      "settings": {
+        "cd2Mode": "direct",
+        "cd2DelayMs": 400,
+        "fixtureSeconds": 60,
+        "normalClose": "pipeline",
+        "aboutAsync": false
+      },
+      "status": "PASS",
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "timedOut": false,
+      "cleanupAttempted": false,
+      "residual": 0,
+      "childObservationCoverage": "FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE",
+      "marker": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "aboutBundledVersionsMatched": true,
+        "aboutRuntimeStateSeparated": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "mpvHomePreBootstrapReadback": "NOT_RECORDED_BY_ORIGINAL_HARNESS",
+      "normalClose": {
+        "schemaVersion": 1,
+        "scenario": "pipeline",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN",
+        "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0"
+      },
+      "sessions": {
+        "started": 5,
+        "stopped": 5,
+        "identityAndOrderPairs": true,
+        "checks": {
+          "requiredItems": {
+            "ordinary": [
+              "fixture-video"
+            ],
+            "strm": [
+              "fixture-strm"
+            ],
+            "queue": [
+              "fixture-next-a",
+              "fixture-next-b",
+              "fixture-next-c"
+            ]
+          },
+          "requiredItemResults": {
+            "ordinary": {
+              "itemIds": [
+                "fixture-video"
+              ],
+              "items": [
+                {
+                  "itemId": "fixture-video",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                }
+              ],
+              "passed": true
+            },
+            "strm": {
+              "itemIds": [
+                "fixture-strm"
+              ],
+              "items": [
+                {
+                  "itemId": "fixture-strm",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                }
+              ],
+              "passed": true
+            },
+            "queue": {
+              "itemIds": [
+                "fixture-next-a",
+                "fixture-next-b",
+                "fixture-next-c"
+              ],
+              "items": [
+                {
+                  "itemId": "fixture-next-a",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                },
+                {
+                  "itemId": "fixture-next-b",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                },
+                {
+                  "itemId": "fixture-next-c",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                }
+              ],
+              "passed": true
+            }
+          },
+          "startedCount": 5,
+          "stoppedCount": 5,
+          "pairedCount": 5,
+          "pendingStopped": 0,
+          "unmatchedStopped": 0,
+          "incompleteStarted": 0,
+          "incompleteStopped": 0,
+          "duplicateStarted": 0,
+          "duplicateStopped": 0,
+          "unpairedStarted": 0,
+          "unpairedStopped": 0,
+          "mismatchedStopped": 0,
+          "startedStoppedOneToOne": true,
+          "ordinaryStartedStopped": true,
+          "strmStartedStopped": true,
+          "queueStartedStopped": true,
+          "requiredStartedStopped": true,
+          "passed": true
+        }
+      },
+      "about": null,
+      "diagnostic": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 128,
+        "validRecords": 128,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 7,
+          "native-helper/generation-retired": 7,
+          "native-helper/start-file": 6,
+          "native-helper/file-loaded": 6,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 14,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 12,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "artifacts": [
+        {
+          "file": ".work/p1-runtime-a5fceda5362643bfbac7d620affd70cb/harness-identity.json",
+          "bytes": 2789,
+          "sha256": "fc17782cf2162b9458c5ca53bf7f043ea9bb1c0660b5f8a7eff9f723cabd9d05"
+        },
+        {
+          "file": ".work/p1-runtime-a5fceda5362643bfbac7d620affd70cb/runner-result.json",
+          "bytes": 2704,
+          "sha256": "c3ad011ee3d33a7cfa72e8dbe80f19a7483fe7ec90343073a20b4fb4d1517764"
+        },
+        {
+          "file": ".work/p1-runtime-a5fceda5362643bfbac7d620affd70cb/electron-smoke.json",
+          "bytes": 84998,
+          "sha256": "8daec14282cac3691218619605746920c724c836aa1fb5e9f643e2f20547ae0c"
+        },
+        {
+          "file": ".work/p1-runtime-a5fceda5362643bfbac7d620affd70cb/normal-close-result.json",
+          "bytes": 263,
+          "sha256": "c2b6233d9e634c582f84bf2e3c0103137bddb1a4119edcfe78708cc0080b69ee"
+        },
+        {
+          "file": ".work/p1-runtime-a5fceda5362643bfbac7d620affd70cb/normal-close.jsonl",
+          "bytes": 2585,
+          "sha256": "c58ec9be4c1aa33ddffeac2036949c39db6b63558eaf992d6fae4ea634e9406d"
+        },
+        {
+          "file": ".work/p1-runtime-a5fceda5362643bfbac7d620affd70cb/exit-observation.jsonl",
+          "bytes": 776,
+          "sha256": "b74339b4a4d5dbc8151086d21fce42adcf43a40e56b4bafc598b08b76cb8017e"
+        },
+        {
+          "file": ".work/p1-runtime-a5fceda5362643bfbac7d620affd70cb/runner-exit-observation.jsonl",
+          "bytes": 1082,
+          "sha256": "6759090201fb5e6454aae61c94211ce06787af19b7a77cee172f1b64a0f20288"
+        },
+        {
+          "file": ".work/p1-runtime-a5fceda5362643bfbac7d620affd70cb/p1-diagnostics-injection.json",
+          "bytes": 343,
+          "sha256": "9d0371c7a1d9b08d87d678038b4c282bfa70d2ffa0cc3f2d85b339d0cfbf2ed7"
+        },
+        {
+          "file": ".work/p1-runtime-a5fceda5362643bfbac7d620affd70cb/stdout.log",
+          "bytes": 2,
+          "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+        },
+        {
+          "file": ".work/p1-runtime-a5fceda5362643bfbac7d620affd70cb/stderr.log",
+          "bytes": 406,
+          "sha256": "c5f4f408ded203ef01dbf27d739e673d4fec098f638ccca10d43b2123e375a89"
+        },
+        {
+          "file": ".work/p1-runtime-a5fceda5362643bfbac7d620affd70cb/source-provenance.log",
+          "bytes": 86,
+          "sha256": "649c354d261793d8ddb544a53990f3afe68b86e31cb5b67497975ee42241af11"
+        },
+        {
+          "file": ".work/p1-runtime-a5fceda5362643bfbac7d620affd70cb/runtime-provenance.log",
+          "bytes": 65850,
+          "sha256": "d881ff5775efc64399c78e09032c2698a7508953a7fcb7cec5854eee3bea9e5e"
+        },
+        {
+          "file": ".work/p1-runtime-a5fceda5362643bfbac7d620affd70cb/native-provenance.log",
+          "bytes": 3164,
+          "sha256": "d6705cf4b012d4bf36c654637304fbba767d697c6cfaeb092fbe5098fa189418"
+        },
+        {
+          "file": ".work/p1-runtime-a5fceda5362643bfbac7d620affd70cb/electron-provenance.log",
+          "bytes": 233,
+          "sha256": "d21cb99304bb21d55fa619e8d7e74e915d7e8faaf2d8740b2d20d59f15439f77"
+        },
+        {
+          "file": ".work/p1-runtime-a5fceda5362643bfbac7d620affd70cb/p1-diagnostics-result.json",
+          "bytes": 746,
+          "sha256": "e71976e0cf4968b19f3be8f7492529f8325e3d653e3ecc80ded1f94e82510006"
+        },
+        {
+          "file": ".work/p1-runtime-a5fceda5362643bfbac7d620affd70cb/appdata/EmbyTheaterEnhanced/logs/ete-client.jsonl",
+          "bytes": 52893,
+          "sha256": "2a5a7f20f2ca222f11fa083878afa4a4ec0ec944253815bff5927f6551c0c7c7"
+        }
+      ]
+    },
+    {
+      "case": "hit400-about",
+      "directory": ".work/p1-runtime-ecf6934f16074f9b9c5a632a7176c0eb",
+      "productSourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+      "harnessHead": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+      "harnessFiles": [
+        {
+          "path": "tools/test-p1-diagnostics.ps1",
+          "sha256": "8b69b97204e1e231934905eb3636a2d0fa1f7e6c341cb543d98698a35a487284"
+        },
+        {
+          "path": "tools/p1-diagnostics-smoke.cjs",
+          "sha256": "9bbbc77875af32acac7102c4f73635dd849a4f7abae0d2c7f71819244f43f044"
+        },
+        {
+          "path": "tools/smoke-electron.cjs",
+          "sha256": "984a98698c4e2fc4d60909f1d4decc007e25e19ab32cc1fa87236282e60812b5"
+        },
+        {
+          "path": "tools/make-fixture.cjs",
+          "sha256": "0dc889dca9be9eedd099f3ede12128626abe178a33ca3782bb569d84b822938b"
+        },
+        {
+          "path": "tools/verify-p1-diagnostics.cjs",
+          "sha256": "930a261bb62dbfde868f6af88254a2c1a5c0db1b504fe1cc187574b82d4262ca"
+        },
+        {
+          "path": "tools/runtime-window-ownership.cjs",
+          "sha256": "92856d84f9cbbd021847ac07c1c91ee8762683b5c5e9b327a988725bc761feb5"
+        },
+        {
+          "path": "tools/transition-stream-capture.cjs",
+          "sha256": "091e1e6b9110b02233e39312bc00696f3d907e911a85e73ad740127d0c26f266"
+        },
+        {
+          "path": "tools/exit-observation.cjs",
+          "sha256": "16eb5c1baa32529db85f39cb0699b2a8fc8731587a66710775acea0fc72601ee"
+        },
+        {
+          "path": "tools/normal-close-observation.cjs",
+          "sha256": "81385163c8c806e581966fa40aedb0360965341886dc970bd0d6668600cc0562"
+        },
+        {
+          "path": "tools/verify-normal-close.cjs",
+          "sha256": "f32e8d32efdd7aa443e62faaa929d6ab9ceb4f0e968365052eab92cce33b6291"
+        },
+        {
+          "path": "tests/pipeline-browser.js",
+          "sha256": "0ade5c67167d6117f991c386e4211e20825806c6a998ea34663606eb19e5d96e"
+        },
+        {
+          "path": "tests/generation-fixture-observer.js",
+          "sha256": "513cd201cc0d189321b89e96d682a9a2e4401a48f663290cd263b07c992ab670"
+        },
+        {
+          "path": "tests/fake-cd2-fixture.cjs",
+          "sha256": "0b0bb30dafd0ac09452cee050d81c9831cab384d9452fbb4c4a33dd3dd251e20"
+        },
+        {
+          "path": "tests/pipeline-deadline.cjs",
+          "sha256": "2add37978e534dc827bcfe1ee300df23c6d607e51d5690d78a2f860d72b8b289"
+        },
+        {
+          "path": "tests/pipeline-condition.js",
+          "sha256": "163223ea09c354bcb8b3c868cd74234759e1132dcff2a7d05b695ade8b3c69cf"
+        },
+        {
+          "path": "tests/pipeline-result.cjs",
+          "sha256": "f1466f2e6867b188dab642c55ffad22ee620f3023e7148a942b23fb34811c749"
+        },
+        {
+          "path": "tools/about-version-observation.cjs",
+          "sha256": "62b2a49b186801a1c3cbe23da50c40520de15d6b2b8d1a1c23b83457d3ada767"
+        }
+      ],
+      "settings": {
+        "cd2Mode": "hit",
+        "cd2DelayMs": 400,
+        "fixtureSeconds": 60,
+        "normalClose": "pipeline",
+        "aboutAsync": true
+      },
+      "status": "PASS",
+      "exitMode": "NATURAL",
+      "exitCode": 0,
+      "timedOut": false,
+      "cleanupAttempted": false,
+      "residual": 0,
+      "childObservationCoverage": "FIXED_2S_SNAPSHOT_NOT_EXHAUSTIVE",
+      "marker": {
+        "appDataIsolated": true,
+        "userDataIsolated": true,
+        "aboutVersionMatched": true,
+        "aboutSourceCommitMatched": true,
+        "aboutBundledVersionsMatched": true,
+        "aboutRuntimeStateSeparated": true,
+        "applicationDocumentMatched": true,
+        "applicationWindowInjected": true,
+        "auxiliaryWindowInjected": false,
+        "errorEventDispatched": true,
+        "promiseRejectionEventDispatched": true
+      },
+      "mpvHomePreBootstrapReadback": "NOT_RECORDED_BY_ORIGINAL_HARNESS",
+      "normalClose": {
+        "schemaVersion": 1,
+        "scenario": "pipeline",
+        "status": "PASS",
+        "failures": [],
+        "realServiceAccess": false,
+        "visibleAcceptance": "NOT_EXECUTED",
+        "historicalAppExitRootCause": "UNKNOWN",
+        "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0"
+      },
+      "sessions": {
+        "started": 5,
+        "stopped": 5,
+        "identityAndOrderPairs": true,
+        "checks": {
+          "requiredItems": {
+            "ordinary": [
+              "fixture-video"
+            ],
+            "strm": [
+              "fixture-strm"
+            ],
+            "queue": [
+              "fixture-next-a",
+              "fixture-next-b",
+              "fixture-next-c"
+            ]
+          },
+          "requiredItemResults": {
+            "ordinary": {
+              "itemIds": [
+                "fixture-video"
+              ],
+              "items": [
+                {
+                  "itemId": "fixture-video",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                }
+              ],
+              "passed": true
+            },
+            "strm": {
+              "itemIds": [
+                "fixture-strm"
+              ],
+              "items": [
+                {
+                  "itemId": "fixture-strm",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                }
+              ],
+              "passed": true
+            },
+            "queue": {
+              "itemIds": [
+                "fixture-next-a",
+                "fixture-next-b",
+                "fixture-next-c"
+              ],
+              "items": [
+                {
+                  "itemId": "fixture-next-a",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                },
+                {
+                  "itemId": "fixture-next-b",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                },
+                {
+                  "itemId": "fixture-next-c",
+                  "started": true,
+                  "stopped": true,
+                  "oneToOne": true,
+                  "paired": true
+                }
+              ],
+              "passed": true
+            }
+          },
+          "startedCount": 5,
+          "stoppedCount": 5,
+          "pairedCount": 5,
+          "pendingStopped": 0,
+          "unmatchedStopped": 0,
+          "incompleteStarted": 0,
+          "incompleteStopped": 0,
+          "duplicateStarted": 0,
+          "duplicateStopped": 0,
+          "unpairedStarted": 0,
+          "unpairedStopped": 0,
+          "mismatchedStopped": 0,
+          "startedStoppedOneToOne": true,
+          "ordinaryStartedStopped": true,
+          "strmStartedStopped": true,
+          "queueStartedStopped": true,
+          "requiredStartedStopped": true,
+          "passed": true
+        }
+      },
+      "about": {
+        "schemaVersion": 1,
+        "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+        "status": "PASS",
+        "testBoundaries": {
+          "clipboard": "IN_MEMORY_CAPTURE",
+          "saveDialog": "FIXED_EVIDENCE_FILE",
+          "updateTransport": "LOCAL_RELEASE_FIXTURE"
+        },
+        "stages": {
+          "initial": {
+            "snapshots": [
+              {
+                "appVersion": "0.2.7",
+                "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.7",
+                "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.7",
+                "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.7",
+                "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              }
+            ],
+            "copiedSnapshot": {
+              "appVersion": "0.2.7",
+              "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+              "nativeHelper": "1.0.0",
+              "libmpv": "v0.41.0-920-gdd5d17d32",
+              "nativeHelperState": "stopped",
+              "runningNativeHelper": "NOT AVAILABLE",
+              "runningLibmpv": "NOT AVAILABLE"
+            },
+            "snapshotVersionsMatched": true,
+            "expectedStageStateObserved": true,
+            "copyMatches": true,
+            "copiedVersionMatched": true,
+            "updateStatus": "latest",
+            "exportStatus": "exported",
+            "exportFile": "about-export-1.txt",
+            "exportSourceCommitMatched": true,
+            "exportSnapshot": {
+              "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+              "state": "stopped",
+              "helperVersion": "UNKNOWN",
+              "libmpvVersion": "mpv v0.41.0-920-gdd5d17d32"
+            },
+            "exportRunningStateMatched": true,
+            "metrics": [
+              {
+                "elapsedMs": 189.4142,
+                "ticksBeforeComplete": 188,
+                "timerDelayMs": 1.91640000000001,
+                "maxGapMs": 1.9411999999999807
+              },
+              {
+                "elapsedMs": 177.22360000000003,
+                "ticksBeforeComplete": 175,
+                "timerDelayMs": 0.925200000000018,
+                "maxGapMs": 2.5457999999999856
+              }
+            ],
+            "responsive": true
+          },
+          "ready": {
+            "snapshots": [
+              {
+                "appVersion": "0.2.7",
+                "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "ready",
+                "runningNativeHelper": "1.0.0",
+                "runningLibmpv": "mpv v0.41.0-920-gdd5d17d32"
+              },
+              {
+                "appVersion": "0.2.7",
+                "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.7",
+                "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              },
+              {
+                "appVersion": "0.2.7",
+                "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+                "nativeHelper": "1.0.0",
+                "libmpv": "v0.41.0-920-gdd5d17d32",
+                "nativeHelperState": "stopped",
+                "runningNativeHelper": "NOT AVAILABLE",
+                "runningLibmpv": "NOT AVAILABLE"
+              }
+            ],
+            "copiedSnapshot": {
+              "appVersion": "0.2.7",
+              "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+              "nativeHelper": "1.0.0",
+              "libmpv": "v0.41.0-920-gdd5d17d32",
+              "nativeHelperState": "ready",
+              "runningNativeHelper": "1.0.0",
+              "runningLibmpv": "mpv v0.41.0-920-gdd5d17d32"
+            },
+            "snapshotVersionsMatched": true,
+            "expectedStageStateObserved": true,
+            "copyMatches": true,
+            "copiedVersionMatched": true,
+            "updateStatus": "latest",
+            "exportStatus": "exported",
+            "exportFile": "about-export-2.txt",
+            "exportSourceCommitMatched": true,
+            "exportSnapshot": {
+              "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+              "state": "ready",
+              "helperVersion": "1.0.0",
+              "libmpvVersion": "mpv v0.41.0-920-gdd5d17d32"
+            },
+            "exportRunningStateMatched": true,
+            "metrics": [
+              {
+                "elapsedMs": 264.5408000000007,
+                "ticksBeforeComplete": 251,
+                "timerDelayMs": 1.0750000000007276,
+                "maxGapMs": 6.076799999999821
+              },
+              {
+                "elapsedMs": 241.8792000000003,
+                "ticksBeforeComplete": 238,
+                "timerDelayMs": 0.5010000000002037,
+                "maxGapMs": 2.993999999999687
+              }
+            ],
+            "responsive": true
+          }
+        },
+        "helperStartsInInformationContext": 0,
+        "nativeCallsInInformationContext": 0,
+        "errors": [],
+        "updateFixtureRequests": 2
+      },
+      "diagnostic": {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "failureCodes": [],
+        "totalLines": 128,
+        "validRecords": 128,
+        "malformedLines": 0,
+        "eventCounts": {
+          "native-helper/generation-begin": 7,
+          "native-helper/generation-retired": 7,
+          "native-helper/start-file": 6,
+          "native-helper/file-loaded": 6,
+          "native-helper/end-file": 2,
+          "native-helper/surface-hidden": 14,
+          "renderer/global-error": 1,
+          "renderer/unhandled-rejection": 1
+        },
+        "accurateRequestAssociations": 12,
+        "safeRendererFrameCounts": {
+          "globalError": 1,
+          "unhandledRejection": 1
+        },
+        "rawCanaryAbsent": true,
+        "sourceCommitMatched": true,
+        "injectionMarkerValid": true,
+        "realFirstFrameVerified": false,
+        "realFirstFrameStatus": "NOT_VERIFIED"
+      },
+      "artifacts": [
+        {
+          "file": ".work/p1-runtime-ecf6934f16074f9b9c5a632a7176c0eb/harness-identity.json",
+          "bytes": 2938,
+          "sha256": "484651232e9eaa90978421fe0891ae4af6d531206c9489c0b868adff6c99f493"
+        },
+        {
+          "file": ".work/p1-runtime-ecf6934f16074f9b9c5a632a7176c0eb/runner-result.json",
+          "bytes": 2704,
+          "sha256": "92e7e3f4590bf2275c3aa7f2528d465c64d9bc9e15119a48dd98653d51829023"
+        },
+        {
+          "file": ".work/p1-runtime-ecf6934f16074f9b9c5a632a7176c0eb/electron-smoke.json",
+          "bytes": 84603,
+          "sha256": "46a89ebf3708064ba4f04454d159f739e133c7849db61a5e79e5a44c15d4d2fd"
+        },
+        {
+          "file": ".work/p1-runtime-ecf6934f16074f9b9c5a632a7176c0eb/normal-close-result.json",
+          "bytes": 263,
+          "sha256": "c2b6233d9e634c582f84bf2e3c0103137bddb1a4119edcfe78708cc0080b69ee"
+        },
+        {
+          "file": ".work/p1-runtime-ecf6934f16074f9b9c5a632a7176c0eb/normal-close.jsonl",
+          "bytes": 2585,
+          "sha256": "2acbaa38800ea46b4d527a8556f66bd9b53909c909c3798a105a7b5306f1f875"
+        },
+        {
+          "file": ".work/p1-runtime-ecf6934f16074f9b9c5a632a7176c0eb/exit-observation.jsonl",
+          "bytes": 776,
+          "sha256": "fdb1c3e2a08e4d2fc8dbfcf91fe806a815311cc23b1ffd73c2c093bcbd781de5"
+        },
+        {
+          "file": ".work/p1-runtime-ecf6934f16074f9b9c5a632a7176c0eb/runner-exit-observation.jsonl",
+          "bytes": 1082,
+          "sha256": "d1ae40f69dcaa3ffdf2f7c666fc5d514ba9191e30a12ade5f46d50ce4ebeb4dd"
+        },
+        {
+          "file": ".work/p1-runtime-ecf6934f16074f9b9c5a632a7176c0eb/p1-diagnostics-injection.json",
+          "bytes": 343,
+          "sha256": "9d0371c7a1d9b08d87d678038b4c282bfa70d2ffa0cc3f2d85b339d0cfbf2ed7"
+        },
+        {
+          "file": ".work/p1-runtime-ecf6934f16074f9b9c5a632a7176c0eb/stdout.log",
+          "bytes": 2,
+          "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+        },
+        {
+          "file": ".work/p1-runtime-ecf6934f16074f9b9c5a632a7176c0eb/stderr.log",
+          "bytes": 406,
+          "sha256": "ad951b47a1f73b9ca8bdd0156930e85c4e0e635b699282871fcb98debc87a191"
+        },
+        {
+          "file": ".work/p1-runtime-ecf6934f16074f9b9c5a632a7176c0eb/source-provenance.log",
+          "bytes": 86,
+          "sha256": "649c354d261793d8ddb544a53990f3afe68b86e31cb5b67497975ee42241af11"
+        },
+        {
+          "file": ".work/p1-runtime-ecf6934f16074f9b9c5a632a7176c0eb/runtime-provenance.log",
+          "bytes": 65850,
+          "sha256": "d881ff5775efc64399c78e09032c2698a7508953a7fcb7cec5854eee3bea9e5e"
+        },
+        {
+          "file": ".work/p1-runtime-ecf6934f16074f9b9c5a632a7176c0eb/native-provenance.log",
+          "bytes": 3164,
+          "sha256": "d6705cf4b012d4bf36c654637304fbba767d697c6cfaeb092fbe5098fa189418"
+        },
+        {
+          "file": ".work/p1-runtime-ecf6934f16074f9b9c5a632a7176c0eb/electron-provenance.log",
+          "bytes": 233,
+          "sha256": "d21cb99304bb21d55fa619e8d7e74e915d7e8faaf2d8740b2d20d59f15439f77"
+        },
+        {
+          "file": ".work/p1-runtime-ecf6934f16074f9b9c5a632a7176c0eb/about-async-ipc.json",
+          "bytes": 5864,
+          "sha256": "908a8b634f7ea33fc919d91e33ebedc2641a5f6ab5c5339ecdb5d85b707a7c38"
+        },
+        {
+          "file": ".work/p1-runtime-ecf6934f16074f9b9c5a632a7176c0eb/p1-diagnostics-result.json",
+          "bytes": 746,
+          "sha256": "e71976e0cf4968b19f3be8f7492529f8325e3d653e3ecc80ded1f94e82510006"
+        },
+        {
+          "file": ".work/p1-runtime-ecf6934f16074f9b9c5a632a7176c0eb/appdata/EmbyTheaterEnhanced/logs/ete-client.jsonl",
+          "bytes": 52771,
+          "sha256": "f47035ed1a292931ba526d379001bd723003ad99925d7651270f929d956f2290"
+        },
+        {
+          "file": ".work/p1-runtime-ecf6934f16074f9b9c5a632a7176c0eb/about-export-1.txt",
+          "bytes": 2801,
+          "sha256": "3c5c548cc40cdb0f0eee9ea7e52f290de1d9eeb16a3ca0971bc012cb07af0bdc"
+        },
+        {
+          "file": ".work/p1-runtime-ecf6934f16074f9b9c5a632a7176c0eb/about-export-2.txt",
+          "bytes": 16794,
+          "sha256": "58d4c0817529e1dd140c6da1f2dfaa031a5286fbd9bb444f2601a12ca20bb983"
+        }
+      ]
+    }
+  ],
+  "static": {
+    "schemaVersion": 1,
+    "baseCommit": "bc50d181cd5cafd14b31e2c0d24cbf7fd73b0ee1",
+    "files": 48,
+    "syntax": [
+      {
+        "file": "src/electronapp/enhanced/bundled-versions.js",
+        "exitCode": 0
+      },
+      {
+        "file": "src/electronapp/enhanced/diagnostics-ipc.js",
+        "exitCode": 0
+      },
+      {
+        "file": "src/electronapp/enhanced/maintenance-ipc.js",
+        "exitCode": 0
+      },
+      {
+        "file": "src/electronapp/enhanced/maintenance.js",
+        "exitCode": 0
+      },
+      {
+        "file": "src/electronapp/main.js",
+        "exitCode": 0
+      },
+      {
+        "file": "src/electronapp/plugins/mpvplayer/about.js",
+        "exitCode": 0
+      },
+      {
+        "file": "tests/bundled-versions.test.cjs",
+        "exitCode": 0
+      },
+      {
+        "file": "tests/client-diagnostics.test.cjs",
+        "exitCode": 0
+      },
+      {
+        "file": "tests/native-helper-version-metadata.test.cjs",
+        "exitCode": 0
+      },
+      {
+        "file": "tests/p1-runner-contract.test.cjs",
+        "exitCode": 0
+      },
+      {
+        "file": "tests/pipeline-timeout.test.cjs",
+        "exitCode": 0
+      },
+      {
+        "file": "tests/settings-visual-system.test.cjs",
+        "exitCode": 0
+      },
+      {
+        "file": "tools/about-version-observation.cjs",
+        "exitCode": 0
+      },
+      {
+        "file": "tools/materialize-native-helper-source.cjs",
+        "exitCode": 0
+      },
+      {
+        "file": "tools/native-helper-provenance.cjs",
+        "exitCode": 0
+      },
+      {
+        "file": "tools/p1-diagnostics-smoke.cjs",
+        "exitCode": 0
+      },
+      {
+        "file": "tools/smoke-electron.cjs",
+        "exitCode": 0
+      }
+    ],
+    "jsonParsed": 10,
+    "brokenLinks": [],
+    "privateMatches": [],
+    "diffCheck": 0,
+    "status": "PASS",
+    "artifact": {
+      "file": ".work/maintenance027/static-checks.json",
+      "bytes": 1697,
+      "sha256": "6bbb2ffa79c3cbd415424604921bc717531f4b36522a19569ceaa8f23c847691"
+    }
+  },
+  "materials": {
+    "status": "BOUNDED_CHECK_COMPLETE_WITH_WAITING_EXTERNAL",
+    "reused": 160,
+    "physicalReadback": {
+      "file": "docs/evidence/third-party-readback-027.json",
+      "bytes": 41663,
+      "sha256": "cfc57a1f04bce828ebec2a8984c3f94619821e24b9b3e94be5f0caf4d8c36297"
+    },
+    "followup": {
+      "file": "docs/evidence/third-party-closeout-027.json",
+      "bytes": 9660,
+      "sha256": "9c03bf1f31dda2163d341bd63dcc174f38b261c8f747e493a5f0f87168d558c8"
+    },
+    "queryRecord": {
+      "file": "docs/evidence/third-party-queries-027.json",
+      "bytes": 2440,
+      "sha256": "16e710edbb0b102ca1cbc9e55ed7e380b71f4458cb141d0f05e3cb2341ddc10a"
+    }
+  },
+  "installerAndDisplay": {
+    "staticReview": "PASS_WITH_EXECUTION_BOUNDARIES",
+    "environmentAvailability": "NO_CONFIRMED_READY_ISOLATED_VM",
+    "systemLifecycle": "NOT_EXECUTED",
+    "hdr": "DEFERRED_NOT_EXECUTED",
+    "mixedDpiMultiMonitor": "DEFERRED_NOT_EXECUTED",
+    "fullscreenCorners": "REPRODUCIBLE_DEFERRED_NOT_EXECUTED",
+    "evidence": {
+      "file": "docs/evidence/install-display-readiness-027.json",
+      "bytes": 6701,
+      "sha256": "4279d25b38054967e3a12297a8fba196a4020baecd7a18ebcabf9c148536b450"
+    }
+  },
+  "preservedHistory": {
+    "observerFirstFailure": "RETAINED_IN_ABOUT_VERSION_ASYNC_ORIGINAL_EVIDENCE",
+    "directAppExitRootCause": "UNKNOWN",
+    "published026": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+    "latest": "v0.2.2"
+  },
+  "remoteReadbackArtifacts": [
+    {
+      "file": ".work/maintenance027/remote-refs.txt",
+      "bytes": 3869,
+      "sha256": "af787d628083c32dd22419ed2f7421b0b04f6864e3c6da9251c03b71c62f8371"
+    },
+    {
+      "file": ".work/maintenance027/pr20.json",
+      "bytes": 230,
+      "sha256": "e92aa3a467d869bbf8d01bbae06914ffe2e03083b414d04acd2275651c75a06f"
+    },
+    {
+      "file": ".work/maintenance027/releases.json",
+      "bytes": 765,
+      "sha256": "8f1d90f04d614fcbdb1c0424e4fd1d4312752ee0230c3afaaf39dd1b0eee9195"
+    },
+    {
+      "file": ".work/maintenance027/open-prs.json",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    }
+  ],
+  "acceptance": {
+    "realEmbyCd2RemoteControl": "NOT_EXECUTED",
+    "foregroundVisual": "NOT_EXECUTED",
+    "systemInstall": "NOT_EXECUTED",
+    "legalSourceClosure": "NOT_CLAIMED"
+  },
+  "npmAudit": {
+    "artifact": {
+      "file": ".work/maintenance027/npm-audit.json",
+      "bytes": 360,
+      "sha256": "bfda7c8168ecc3b0eaa00ec1041a779e07dc5805bedcd48bb3f7a1897c96ac18"
+    },
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    }
+  },
+  "finalRemoteRefReadback": {
+    "file": ".work/maintenance027/final-remote-refs.txt",
+    "bytes": 176,
+    "sha256": "60f4704b1d94617a1c241b3bbf3c8f0b2923c9c9e4b19403ddc33c2d3a3d35a5"
+  },
+  "powershellSyntax": {
+    "artifact": {
+      "file": ".work/maintenance027/powershell-syntax.json",
+      "bytes": 153,
+      "sha256": "a7d0b49a63f1c6d1957ecd678566736ebf42cb52454821a78d2d47c500dff300"
+    },
+    "results": [
+      {
+        "file": "tools/build-native-helper.ps1",
+        "errors": 0
+      },
+      {
+        "file": "tools/test-p1-diagnostics.ps1",
+        "errors": 0
+      }
+    ]
+  }
+}
