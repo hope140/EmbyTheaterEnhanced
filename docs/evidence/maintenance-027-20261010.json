@@ -3655,6 +3655,14 @@
     "bytes": 176,
     "sha256": "60f4704b1d94617a1c241b3bbf3c8f0b2923c9c9e4b19403ddc33c2d3a3d35a5"
   },
+  "documentationFormatting": {
+    "retainedInitialStageCheck": {
+      "file": ".work/maintenance027/staged-whitespace-failure.txt",
+      "bytes": 268,
+      "sha256": "5e540034680425ee1cda5da081f28141b78fd9ee32c0e3bcbe2e9e45210acd8c"
+    },
+    "resolution": "Two Markdown hard-break trailing spaces changed to paragraph spacing; final tracked diff check passed. Product/build/test inputs unchanged."
+  },
   "powershellSyntax": {
     "artifact": {
       "file": ".work/maintenance027/powershell-syntax.json",

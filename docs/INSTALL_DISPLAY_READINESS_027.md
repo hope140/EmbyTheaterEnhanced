@@ -1,7 +1,8 @@
 # INSTALL_DISPLAY_READINESS_027 — 静态审查与执行准备
 
-审查时间：2026-10-10（Asia/Hong_Kong）  
-仓库：`codex/maintenance-027-20261010`，HEAD `dbee15afc76d97ed68117206e6ac6b638315732b`  
+审查时间：2026-10-10（Asia/Hong_Kong）
+
+仓库：`codex/maintenance-027-20261010`，HEAD `dbee15afc76d97ed68117206e6ac6b638315732b`
 审查等级：Tier 1；风险低（静态读取与项目内报告写入），不确定性中等（真实安装生命周期及显示硬件没有本轮运行证据），跨模块范围低，Playback/Session impact 无（未改产品）。
 
 ## Observed
