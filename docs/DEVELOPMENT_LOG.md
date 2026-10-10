@@ -1,5 +1,73 @@
 # 开发日志
 
+## 2026-10-10 — 0.2.7 Pre-release 与审核入口公开完成
+
+- 用户授权范围内发布原字节安装包并推送完整审核分支；PR #21已创建并附加，OPEN/非Draft，main仍bc50d181。v0.2.7 annotated tag b53f36f5解引用产品d8fcb0f9；Release408588855于11:24:27（UTC+8）公开为Pre-release，Latest仍v0.2.2。
+- 三资产服务端digest/大小先核对后公开；全部附件随后完整下载重算匹配。匿名EXE直链首轮300秒超时、provenance直链一次HTTP500保留；换GitHub CLI/API路径后EXE约37.96秒完整下载，未修改代理或系统配置。公开指南和651项原始日志与Git blob也匹配。
+- 旧47项refs、8个Release及15个附件保持。九份原始证据按原字节进Git；仅对该目录标记CR为原始换行且禁用文本转换，普通diff检查继续执行。当前开发日志中不必要的旧身份字段已去除，历史提交不改写。
+- 本轮未重建、未重跑产品、未合并main；本地未纳入产品的实验/旧资料按同步范围保留。发布结论与原651/42/53及十组运行的来源分列；第三方WAITING_EXTERNAL、系统与前台未验收、旧app.exit UNKNOWN和全局S6边界保持。
+
+## 2026-10-10 — 0.2.7 发布与公开审核材料准备
+
+- Model Tier: Tier 1固定产物发布/资料盘点，主线程负责公开边界及最终核验；Model: 当前Codex主线程 / GPT-6 Luna High只读worker；Reason: 固定产品与既有测试证据，新增文档及GitHub发布，无产品实现变更；Escalated: no。
+- 用户授权同步应公开成果和发布测试包。从干净0bcbfc74创建独立发布工作树，盘点本地heads、远端refs和主目录未提交资料；完整交付已包含的历史不用逐分支重复推送，未纳入产品的实验不自动合入。
+- 原字节公开9份经检查的测试/打包日志与回执，通过目录级-text保持Git字节身份；原profile、客户日志及未筛选runner资料保留本地。为旧上游切集研究补明确历史作用域，并去除当前开发日志里不必要的旧Git身份字段，不重写历史。
+- 准备AI_REVIEW_GUIDE、REMOTE_SYNC_027和RELEASE_027，实际发布/远端回读在完成后补记。测试包、三个原始companion相关文件与产品sourceCommit不重建、不重标；正式Latest继续保留v0.2.2。
+
+## 2026-10-10 — 0.2.7 审核后打包与本地交付
+
+- Model Tier: Tier 1固定输入打包及证据收尾；Model: 当前GPT-6.1 Sol High主线程；Reason: Task Risk=low/medium（本地可安装产物），Task Uncertainty=low，Cross-module Scope=package/evidence/docs，Playback/Session Impact=none；Escalated: no。顺序依赖明确，不额外委派。
+- 父会话批准review2b568643/productd8fcb0f/工具0e87d4f和固定manifest；独立53/53、十组166项产物与完整runtime回读通过。按当前授权clean树暂时detached产品提交执行原package，随后返回维护分支，未重建相同产品。
+- 新EXE 175632871 bytes，SHA256 86bee55146714f4f7e493cadb8b483537644f513c92364df7fc0c18f5315f3db；来源及companion绑定。Inno完整性2137应用文件及内部script通过，解包2137缺失/多余/哈希不符0，runtime再次匹配；原件和交付副本全部SHA256SUMS回读一致。
+- PE最初字符串断言误用0.2.7.0，实际为有填充空格的0.2.7；保留初次记录后按trim字符串及固定四段数值同时核验。最终资源0.2.7/0.2.7.0，包字节未改；应用版本由解包metadata和同一runtime的实际IPC对照。
+- 本地目录dist/delivery-0.2.7-maintenance-d8fcb0f，中文说明、验证和机器证据完成。第一阶段证据原SHA保持；纯打包/文档不重跑产品全量。四类材料WAITING_EXTERNAL、系统/显示/真实服务NOT_EXECUTED及历史UNKNOWN保持，S6未应用。详见 [交付报告](LOCAL_PACKAGE_027.md)。
+
+## 2026-10-10 — 0.2.7 项目维护第一阶段收口
+
+- Model Tier: Tier 2；Model: GPT-6.1 Sol High主线程 / GPT-6 Luna High材料及安装器只读worker；Reason: Task Risk=medium，Task Uncertainty=medium（整合、证据身份及系统边界），Cross-module Scope=维护/文档/构建/测试，Playback/Session Impact=复核原不变量、无产品链变更；Escalated: no。委派只用于两项独立核查，主线程复核文件、输入关系及哈希。
+- 用户授权本轮项目内非新功能维护、本地提交、构建/隔离验证和审核后测试包；随后明确S6保持候选，未触碰全局AGENTS、配置或memory。从dbee15af隔离继续，旧主目录和其它工作树保留。
+- 62ca290统一0.2.7版本与随包来源索引；d8fcb0f使About observer绑定实际manifest/package版本及sourceCommit，拒绝旧0.2.6/缺失预期身份；0e87d4f补bootstrap前MPV_HOME环境读回与错误路径阻止启动测试。src/native树与完整维护dbee15af一致，稳定Playback/Session/Resolver/Native/窗口链未改。
+- 固定vendor1060文件、Electron73文件、UCRT64 6990文件、Inno118文件、innounp5文件及两原归档按已有contract复核。正式构建source d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0；payload2136/完整2137，来源/依赖/版本/package门槛通过。产品与build inputs变化产出新runtime，旧7cc7eb85产物保持原名原字节。
+- 初次完整650/650，定向83/83；补夹具读回后工具42/42，最终完整651/651（343.30秒），0失败/取消/跳过。旧八组与最终两组串行隔离运行通过；最终两组三目录marker均true，独立原始Session身份配对和P1脱敏回归通过。来源与日志hash分列，未将旧结果改标。
+- 项目S1–S5按审阅候选局部融合，保留About后续事实，修正PR20/NOW、委派前置与证据复用三处语义。70%/5%目标保留，质量优先；型号依据官方Models/Subagents和当前工具，未改模型配置。旧优先级复核文档及JSON按原阶段保留。
+- 材料三轮检索、160/160实体回读及五项输入blob关系核对完成；具体缺口WAITING_EXTERNAL。安装器及profile静态审查、四阶段/回滚计划、HDR/多屏/全屏圆角前置完成；隔离系统环境不可用，真实系统/显示执行未发生。
+- 本轮产品source d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0与工具 0e87d4f5b85ee136d1fe3d0ab47eaac25d64ac9d分别固定；文档最终HEAD由Git日志回读。最终EXE在父会话独立审核通过后生成；本阶段READY_FOR_PARENT_REVIEW。未推送、PR、远端合并、tag或Release。详见 [收口报告](MAINTENANCE_027.md)。
+
+## 2026-10-10 — 跨会话状态核对与优先级落文档（原独立复核阶段）
+
+- Model Tier: Tier 1文档与固定证据复核，主线程负责跨来源状态判断；Model: 当前Codex主线程 / GPT-6 Luna High只读worker；Reason: Task Risk=low，Task Uncertainty=medium（旧报告与后续完成状态并存），Cross-module Scope=docs only，Playback/Session Impact=none；Escalated: no。
+- 用户授权审核本地相关会话、项目文件并写入后续优先级。从实时main bc50d181建立独立文档worktree，保留原主目录未提交资料及所有维护树。读取六个相关会话的结果及后续授权/完成状态，不以会话列表的旧摘要代替实际交付。
+- 核对本地dbee15af完整继承bc50d181/6815d2f，区分产品7cc7eb85、工具c9502aec、文档HEAD和公开355f4e6；记录6提交/33文件范围。原646/646与49/49日志、最终idle/hit400原始文件、候选安装器及companion匹配；保留初版observer失败。本次是证据回读，不是再次执行产品验收。
+- ROADMAP更新已合并事实，将完整维护整合列P1，并补文档候选、后续测试版、第三方材料、安装生命周期和显示专项的完成条件与用户参与点。已完成的About功能移出待实现，NextTrack白屏及app.exit转为准确观察项；预热/Hydration继续既定边界。
+- 文档规则审计仍为候选；本轮不改AGENTS、AI_MODEL_POLICY、全局规则或70%/5%目标。P1中列出候选仍需修正的委派条件与证据复用语义，S3当前状态导航在本次授权范围内同步。只做事实/来源、链接、JSON、diff和新增文本检查，不重建，不产生新产品PASS。
+
+
+## 2026-10-10 — About版本查询main响应性P2
+
+- Model Tier: Tier 2；Model: GPT-6.1 Sol High主线程 / GPT-6 Luna High只读worker；Reason: Task Risk=medium，Task Uncertainty=medium（异步读取及文件身份归属），Cross-module Scope=main/维护IPC/诊断EXPORT，Playback/Session Impact=none；Escalated: no。
+- 核对原维护树6815d2f干净、远端main仍bc50d181、维护分支未在远端出现，主目录未提交资料保留；从准确6815d2f建立新托管worktree及codex/about-async-20261010，旧树/产物不修改。
+- 主线程固定64 KiB异步read/hash、整轮文件身份复核、仅in-flight Promise共享及结束清理、错误后重验contract；main await后读取实时status，三个维护IPC及diagnostics EXPORT等待对象。worker只读核对调用全集、源码diff与固定输入可用性；主线程复核核心及测试diff。
+- 定向37/37；首次与重复读取timer/并发共享、身份变化UNKNOWN/恢复/handle清理、ready状态及异步IPC覆盖。旧同DLL连续三次timer266.87ms，新首次/重复/三路并发1.43/0.60/0.57ms，最大查询期间timer间隔1.52/2.01/1.91ms；记录为纯Node函数级样本。
+- 最终全量646/646（约140.75秒），0fail/cancel/skip；7文件语法、diff、6份文档链接和新增文本隐私检查通过。首次全量640/646的6项失败均缺隔离patch client输入，原日志保留；复制固定patch且共1,060个vendor文件hash复核后，失败组14/14和最终全量通过，未弱化断言。
+- 用户随后明确仅本分支本地提交、正式构建、隔离验证及本地候选交付授权，保持0.2.6。产品提交7cc7eb85，工具提交c9502aec；后续文档HEAD不替代产品sourceCommit，未推送/PR/合并/发布/系统安装。
+- 固定输入独立复制并重验，正式runtime payload2,136/完整2,137；source/runtime/native/Electron、依赖与package门槛通过。旧对照DLL、新输入及新输出均119,725,568 bytes/SHA256965efde4…53f14d0c，来源身份分别记录；二进制不变，产品JS仅4文件变化。
+- 实际application renderer初始与ready后IPC通过，包内1.0.0/v0.41.0-920-gdd5d17d32，ready握手1.0.0/mpv v0.41.0-920-gdd5d17d32；copy同一白名单snapshot和实际诊断export输入/输出对应，查询上下文Helper spawn/Native调用0。main首次/三并发及ready的timer延迟1.83/0.90/0.36/0.23ms，最大采样间隔7.02ms；隐藏观测不扩大视觉验收。
+- 初版工具误将replacement中的ready→stopped判FAIL，原hit400播放与5对Session通过但normal-close未执行，外层120秒强清理、残留0，原证据保持FAIL。独立复核修正逐快照校验，仍要求首GET实际ready，49/49工具单测后仅跑一次完整pipeline；idle和最终pipeline自然exit0、无强清理、残留0，5对原始Session身份/顺序独立复算、P1诊断129条/12关联通过。工具15秒收尾上限也由审查纠正，fake-clock覆盖，原120秒runner不扩大。
+- installer完整性、2,137解包文件与运行后runtime全匹配；安装器175,627,068 bytes、SHA2567037014b…24fb0116，两个companion/source7cc7eb85绑定。交付在dist/delivery-0.2.6-about-async-7cc7eb8。原app.exit UNKNOWN与真实服务/安装/视觉/HDR/多屏未验收保持。详见 [异步校验](ABOUT_VERSION_ASYNC.md)。
+
+## 2026-10-09 — grpc-js与About维护
+
+- Model Tier: Tier 2；Model: GPT-6.1 Sol Medium主线程 / GPT-6 Luna High测试与只读审查worker；Reason: Task Risk=medium，Task Uncertainty=medium（可信版本来源），Cross-module Scope=固定依赖/构建/维护IPC，Playback/Session Impact=none；Escalated: no。
+- 实时核验main bc50d181后独立worktree；依赖仅1.14.4到1.14.6，About使用来源和二进制绑定、动态刷新与复制同一快照。
+- 定向69/69、audit退出0；全量638/638、正式build/四层provenance/package通过，八组隐藏runtime自然exit0/残留0，安装器完整性和2137文件逐项比较通过。旧About期望两项失败保留（初次全量载入旧测试），未改播放链。详见 [维护记录](MAINTENANCE_GRPC_ABOUT.md)。
+
+## 2026-10-09 — PR #20 主线合并回读
+
+- Model Tier: Tier 1 Git与证据收尾；Model: 当前Codex主线程 / GPT-6 Luna High只读worker；Reason: Task Risk=medium（授权的远端main写入），Task Uncertainty=low，Cross-module Scope=Git与文档，Playback/Session Impact=none；Escalated: no。
+- 用户明确确认后，重新核对PR head45ec2d6、base46e995e、OPEN/非Draft、MERGEABLE/CLEAN及空review/comments；以准确head SHA保护执行merge commit，未使用squash/rebase、强推或删除分支。
+- GitHub返回merged=true，提交bc50d181cd5cafd14b31e2c0d24cbf7fd73b0ee1；回读PR closed/merged、远端main和两个父提交一致，合并树与已审阅head相同。原631项测试日志hash、六棵tree和34项输入复核PASS，未重跑相同测试。
+- 合并前后8个Release、15个附件及Latest身份不变；所有其它远端refs保持，GitHub自动移除了refs/pull/20/merge。产品tag仍指向355f4e6，未改版本或安装包。原始回执及验证记录保存在本地 `.work/pr20-merge/`，本条为本地合并后记录，未追加远端main提交。
+
 ## 2026-10-09 — 完整v0.2.6发布树主线整合
 
 - Model Tier: Tier 2核心整合审核 / Tier 1范围明确worker；Model: 当前GPT-6系列主线程，GPT-5.6 Luna High只读审查与测试worker；Reason: Task Risk=medium，Task Uncertainty=low（main已是发布树祖先），Cross-module Scope=发布成果跨层审查与文档，Playback/Session Impact=核对现有链、无新增产品修改；Escalated: no。
@@ -1371,7 +1439,7 @@ Escalated: no
 
 ## 2026-09-13 — STRM Mount Resolver 第一版
 
-按用户确认的 `feat/strm-mount-resolver` 规格，在 repo-local Git identity `hope140 <hope140y@outlook.com>` 下实现最小确定性 STRM Mount Resolver。Resolver 只在 `libmpv.playInternal(options)` 的最终 `loadfile` 前替换 source，继续沿用 PlaybackManager、Item、MediaSource、PlaySessionId、字幕/音轨、offset、播放上报和远控链路。
+- Git 提交身份已按当时项目约定配置；本次公开文档省略不必要的个人身份字段，原提交与历史不改写。
 
 完成内容：
 

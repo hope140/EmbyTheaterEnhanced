@@ -1,0 +1,1005 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-10",
+  "previousSourceCommit": "05a08e9113ae1485256a505c64d7aba7d9edd67b",
+  "productSourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+  "scope": "ARCHIVE_BYTES_AND_INPUT_RELATION_READBACK_NOT_NEW_SIGNATURE_OR_REBUILD_VERIFICATION",
+  "total": 160,
+  "matched": 160,
+  "missing": 0,
+  "mismatched": 0,
+  "relation": [
+    {
+      "path": "vendor/runtime-manifest.json",
+      "previousBlob": "9779c44e21b002a3b19fdb1964f4ad90d4dfedd9",
+      "productBlob": "9779c44e21b002a3b19fdb1964f4ad90d4dfedd9",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/electron-runtime-manifest.json",
+      "previousBlob": "229e88149575a7b53992d1c4d25fcfd48233268c",
+      "productBlob": "229e88149575a7b53992d1c4d25fcfd48233268c",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/native-helper-manifest.json",
+      "previousBlob": "b9b17fa674b4109b36be805968cc1a3a8c016fe5",
+      "productBlob": "b9b17fa674b4109b36be805968cc1a3a8c016fe5",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/toolchain-manifest.json",
+      "previousBlob": "b39ba168381a255f6126e0ed2d771b9e3ef632c1",
+      "productBlob": "b39ba168381a255f6126e0ed2d771b9e3ef632c1",
+      "unchanged": true
+    },
+    {
+      "path": "tools/build-toolchains.lock.json",
+      "previousBlob": "0c34707ead36804b223a2c5c4004ede4e067f47f",
+      "productBlob": "0c34707ead36804b223a2c5c4004ede4e067f47f",
+      "unchanged": true
+    }
+  ],
+  "checks": [
+    {
+      "path": ".work/source-materials/mpv/FFmpeg-2a20737f662fd3f3f5999e873b9e7c90b5efc375.zip",
+      "expectedSha256": "83682c0c78048afdf1362c5da7c2680ab70796112e9344c7d09fdb848804956f",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/mpv/mpv-dev-x86_64-20260809-git-dd5d17d328.7z",
+      "expectedSha256": "c6aebf40bb722efe79090bfeb61e68625f0837770347e5a8b610aef78900cf12",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/host/libcec-libcec-3.0.0-source.zip",
+      "expectedSha256": "fe28f2d0f0c9301a1877c194c0da53bf90888c2fe2b6c5aef3d6e52a02dd5eef",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/host/mediabrowser.common.3.3.10.nupkg",
+      "expectedSha256": "4d9bd3ed99e9b2b6cd22622018af5667246d8b866041f540afdb973b30d30d0b",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/host/pulse-eight-platform-e237d8b-source.zip",
+      "expectedSha256": "9549e33d5d924b61a9bc5e8cdec81d354a783ef0c54444a9d8cdfd49796bbb94",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/host/servicestack-text-official-v4.5.14-source.zip",
+      "expectedSha256": "97ed2dfa327dc5d2827c373205df551d5fdb595b0ac6e7f925d0c1f118364dd9",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/host/servicestack-text-v4.5.14-license.txt",
+      "expectedSha256": "b3b85e98776c6f99a5354363a45b8f5284fef916765a34cbadc6ca5612e149ec",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/host/servicestack.text.4.5.14.nupkg",
+      "expectedSha256": "7fd29722344036768ab3c7e1be3c70382f93e57ce2b5be0cf3d918b66b85eb5e",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/host/sharpcompress-0.10.3-source.zip",
+      "expectedSha256": "d9aef8910904ef173e4ef48a017ef6e0347ee45d9939c83c4bb84030545d4a20",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/host/sharpcompress-official-adamhathcock-0.10.3-source.zip",
+      "expectedSha256": "af6b25d2439c6242e52f5a1cc5d83c690dfeae7beffa0fa2597af9b3bef8c231",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/host/sharpcompress.0.10.3.nupkg",
+      "expectedSha256": "7c5ea29a27b38a93d9fafa124b630d2201876f02301288c522d609bb83cb8eb5",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/host/simpleinjector-v4.0.0-reference-licence.txt",
+      "expectedSha256": "07fef33021c361180a450dc662a0b43f8efc1e2c11ef81a46d7e36a735a9d10d",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/host/simpleinjector.4.0.11.nupkg",
+      "expectedSha256": "a177ec830e2350e460667b8e61b7a27d09da94181775d51bdcb2c9295a749c10",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/host/sockethttplistener.1.0.50.nupkg",
+      "expectedSha256": "e9f6e93636e38e5b95a68b727e4f04901bb41f4d7598733c9134761d6c0ed9f9",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/web-npm/detect-rpi-1.4.0.tgz",
+      "expectedSha256": "c5285d4677f639c67291fc526209aff4da3e21f36fb4b3ed91356e5d75124ac0",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/web-npm/is-linux-1.0.1.tgz",
+      "expectedSha256": "b4d8f3cb3238709f34e2cf1bdeeece1d76bbc9477a86b6e2306fabcb8af244d7",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/web-npm/is-osx-1.0.2.tgz",
+      "expectedSha256": "a4746e8c8f1ffe16b08e9f3a771c12714873df74e4a1a2ab8a71098669f681b5",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/web-npm/is-windows-0.1.1.tgz",
+      "expectedSha256": "5ae08be9b9ad35bad29780765a20fc43afe6116073ca5e6b98d1932d371f60b5",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/web-npm/is-windows-1.0.2.tgz",
+      "expectedSha256": "7b1128270d2aafc5a03af6e5cc5336eab331dd7cfbae805f76da6867fe8731a2",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/web-npm/power-off-1.1.2.tgz",
+      "expectedSha256": "6e66ee370d02bba1ba9094e4d8d8a3efcb80cf8f87d1ea092deef5927b7682e7",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/web-npm/sleep-mode-1.1.0.tgz",
+      "expectedSha256": "86cef50bebd3cbb5466a68bad69659a8bdcef8040cdf7d76cb297668fb3ea346",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/toolchain/innounp-267.zip",
+      "expectedSha256": "ac1d98bba6588072ade06163781938df274f444bec7318069668608d1e5faae8",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/toolchain/innounp-source-07ee3b1a05a26fa27a0efe110fe78dfa72c06c71.zip",
+      "expectedSha256": "f82fe1e7754bceb7adc05a11fd078371616b21daffd0550d2cd69d71762f3c04",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/toolchain/issrc-4adf37ed7f3fd2bd11c6836ba056e3de170fbabf.zip",
+      "expectedSha256": "76a45c106a59b9133ac0891341d88742b0f1446e223688c0ae4f69db95673d44",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-binutils.PKGBUILD",
+      "expectedSha256": "fea24b484400681bc6e1dd00fd42e8ecf25cafdd79c8d51f8a6b37f64c25e300",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-gcc.PKGBUILD",
+      "expectedSha256": "40f248fa589babd9315cc589a76a0c00939355bd68c92287a2dcb7d1acb58f96",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-gettext.PKGBUILD",
+      "expectedSha256": "853ef80a50588f29355722a4513f24cf1a5f8de06e0b5ee326580464db539741",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-gmp.PKGBUILD",
+      "expectedSha256": "b9d3bb2b5b12cb0fc47c4dc17a9a2aa82513236eaefa34c8dfc57dd0d92bc42a",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-isl.PKGBUILD",
+      "expectedSha256": "357e568e64456464d2dc0f61b7b34720cc4f8125e74f6b94667e53ab4bb1b595",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-libiconv.PKGBUILD",
+      "expectedSha256": "9b3212d06910560fb59e017e0b73a29d392a5082d3a47a613e61509bd7dcd475",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-mpc.PKGBUILD",
+      "expectedSha256": "6779f6aea6f6c80219cc0d31fc840f88b074e28296bd315460793d60665c5ff7",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-mpfr.PKGBUILD",
+      "expectedSha256": "6ffc49a5e6194f63c2514fa789b849a572de8b6b84e0cfa6b085397506308dac",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-tzdata.PKGBUILD",
+      "expectedSha256": "41f117d725c0c7273e85866eaa12140152bbc367fed433eb17b087f88c18a932",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-binutils-2.46-4-any.pkg.tar.zst",
+      "expectedSha256": "32ed684d21ba1665ebb4093c71931b90ad445b8a948d32d22122b5855d49019e",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-binutils-2.46-4-any.pkg.tar.zst.BUILDINFO",
+      "expectedSha256": "703c9f79c3f42adfaa9243039b1863975ac8a6bf205b93cdee96e7ad3ffe6b3c",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-binutils-2.46-4-any.pkg.tar.zst.PKGINFO",
+      "expectedSha256": "2f29a9bded4baac8c134ff3e5dff785fc7269d4c7ff5a60c54ac2073fd6fa9e7",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-binutils-2.46-4-any.pkg.tar.zst.sig",
+      "expectedSha256": "20e746f1129e14fca549f1215da35c6d52975c8d1a08b08418cc6aee09c163cf",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-crt-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst",
+      "expectedSha256": "dc1d67ba5e76acd46d7c9cc8046bd9838c8464bcadcd9a341187e8ee6f92fa4a",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-crt-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst.BUILDINFO",
+      "expectedSha256": "3e13ec6ea41f195cd475f0ea5e2af53e766e9a29ebe168be93ecc399bf17f109",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-crt-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst.PKGINFO",
+      "expectedSha256": "8e660a7912350c45cf20fd355b9c3201812c881dff1e00eb577dc09b673343b3",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-crt-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst.sig",
+      "expectedSha256": "da3eae53b59bc10b860bdebcf861a166c1111e858bf17d399052cee87698ee46",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-gcc-16.1.0-5-any.pkg.tar.zst",
+      "expectedSha256": "2b5be791133f5fafac2537ad9d1579c9a421b791d7bf57fba6fb54484ec59622",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-gcc-16.1.0-5-any.pkg.tar.zst.BUILDINFO",
+      "expectedSha256": "cc63ea8484722f1eed9708ee94c4648eedeb6f8df40f059be49af1e720863f32",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-gcc-16.1.0-5-any.pkg.tar.zst.PKGINFO",
+      "expectedSha256": "886694e82b2e85c116f214b81131b991fd1d75fec0c0937a35065dcac1a6bfec",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-gcc-16.1.0-5-any.pkg.tar.zst.sig",
+      "expectedSha256": "a5bb4c7ed1de89c94efa8f2632d02c50679af9b05e3ca3805ea320e971fb06a2",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-gcc-libs-16.1.0-5-any.pkg.tar.zst",
+      "expectedSha256": "4dab54c95756da3e18ca375ae4c7fdeb709fc04bf209eb131c120e27704fb5b3",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-gcc-libs-16.1.0-5-any.pkg.tar.zst.BUILDINFO",
+      "expectedSha256": "ef1dc1a59c8c02c4858f6e482a87be8acc4e3df572ae190a8c32039ec5626ca6",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-gcc-libs-16.1.0-5-any.pkg.tar.zst.PKGINFO",
+      "expectedSha256": "c770b26becdabc9928442d1ebb3f9017c0b3df566c1f84e20204f40a68f5e773",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-gcc-libs-16.1.0-5-any.pkg.tar.zst.sig",
+      "expectedSha256": "8c0d41e007f5bbdc4a7cdf892a8e3294f874c5c1cc4fdcd332f9006571cde27c",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-gettext-runtime-1.0-1-any.pkg.tar.zst",
+      "expectedSha256": "ba693dda4ac375af76ce481ff3a6e7481286546cc7dc6d56c7021dae34084157",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-gettext-runtime-1.0-1-any.pkg.tar.zst.BUILDINFO",
+      "expectedSha256": "78e8996e85498fc8fbb6068b4902b8070c42f5943f8b09ee74d579283aa55dcb",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-gettext-runtime-1.0-1-any.pkg.tar.zst.PKGINFO",
+      "expectedSha256": "9f764c25d7ef78382dee1c4fe490c684a6afce481da84a44085b11bf90c0f8b4",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-gettext-runtime-1.0-1-any.pkg.tar.zst.sig",
+      "expectedSha256": "4754e870d55cacb5e7e3707313b68edb29d2598cc7a1ee399c74715007f38c4d",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-gmp-6.3.0-2-any.pkg.tar.zst",
+      "expectedSha256": "e82a75968a556484a50084578238a84eb60fb93e34986fd6695c537975bd39ea",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-gmp-6.3.0-2-any.pkg.tar.zst.BUILDINFO",
+      "expectedSha256": "ac4a5faeb55fa4fb1a6bcb10773b60ab6fe7683f7707f2f05ecc76b9c8d06398",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-gmp-6.3.0-2-any.pkg.tar.zst.PKGINFO",
+      "expectedSha256": "718a5adb829fb97ea376efe87f4321159c877f8872c842631f9e36043cd5092b",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-gmp-6.3.0-2-any.pkg.tar.zst.sig",
+      "expectedSha256": "99d2b95269ef099bdc8f3dd0e3db8a9171346e4076bfe0c0c58855d7b97220ff",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-headers-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst",
+      "expectedSha256": "660a996d685d8238ecd72e02a2c7ff004f49dfee0d3a42ded0146464bdd67f03",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-headers-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst.BUILDINFO",
+      "expectedSha256": "c43fecfa18951063f354c3bdadfcdd34295f68e5db90ef20dbe097b7afb7b636",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-headers-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst.PKGINFO",
+      "expectedSha256": "5bb3e13611a648cc959dbb26dabd2b09ef939c7cf2efe95cab01c31f6fbe86a2",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-headers-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst.sig",
+      "expectedSha256": "f0f0216c16f578313a080766c83099b4b1c212014825d653146603bcf62a96a2",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-isl-0.27-1-any.pkg.tar.zst",
+      "expectedSha256": "f23edcbe1206429e6fdb5f1dfc3053cf08c0d5bd1d8135a948a75146d65ce394",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-isl-0.27-1-any.pkg.tar.zst.BUILDINFO",
+      "expectedSha256": "75a8497386a7aed2bf08b12dd3079beadad82824b91c036667a509e969e9649b",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-isl-0.27-1-any.pkg.tar.zst.PKGINFO",
+      "expectedSha256": "5b0d427b8b54942776767e60ded24cf486dcf266e77847cde199aff02cfd4e26",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-isl-0.27-1-any.pkg.tar.zst.sig",
+      "expectedSha256": "5a5dd3bd2a4201712f9237301892afa619880e614b01f2647b8e90fee0c7b57e",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-libiconv-1.19-1-any.pkg.tar.zst",
+      "expectedSha256": "9a500f38c2b91808741c62fae746b3e9110b33a1ecf5c30fa0c66dbedddf7e16",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-libiconv-1.19-1-any.pkg.tar.zst.BUILDINFO",
+      "expectedSha256": "cd8611ec386d9015e4eb9e79af509a613387097399736a676e6df49f650f5ff0",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-libiconv-1.19-1-any.pkg.tar.zst.PKGINFO",
+      "expectedSha256": "64cbb0cd423ab0761c1487666f8b9399b85581820cec21003007ce7583d19da1",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-libiconv-1.19-1-any.pkg.tar.zst.sig",
+      "expectedSha256": "e18abd753c47dbed046cf619f0855c2bc05ae17a7f3eabba8a2e841478a4f6b2",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-libwinpthread-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst",
+      "expectedSha256": "f5d440cf021014e25098a763ebfd9f4e0339187848efdb194e821cc1fe3ae682",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-libwinpthread-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst.BUILDINFO",
+      "expectedSha256": "1c7386b7832c0540a596114046fac4d8cdad09a1538aa7fa6225738825f3aa4a",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-libwinpthread-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst.PKGINFO",
+      "expectedSha256": "a8fd4f8b4dc7535547f945703f2a177a5702f8b669c6ffbc0161cd959ee06c8b",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-libwinpthread-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst.sig",
+      "expectedSha256": "ab0b5246920577f5cf19131747929b7abba1fd9b7956ac3d6c83940770b26f5c",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-mpc-1.4.1-1-any.pkg.tar.zst",
+      "expectedSha256": "f06556e811c711ce91609484e31d358e4f495811ba29813bf2284a3b236d82ce",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-mpc-1.4.1-1-any.pkg.tar.zst.BUILDINFO",
+      "expectedSha256": "5b61043c24da80874c4a6c1ad31be4fbb353aa86b5d5e8223d2fecc79e454b0d",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-mpc-1.4.1-1-any.pkg.tar.zst.PKGINFO",
+      "expectedSha256": "1f725c9af0f369c1f4a2c2221290bd0bcab38e01f1ff9ad394c0a7d583024de7",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-mpc-1.4.1-1-any.pkg.tar.zst.sig",
+      "expectedSha256": "c6816cce004dfe57f976a60bdac037a52c7dbf29a4ee0f8085acca13b26cb5a0",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-mpfr-4.2.2-3-any.pkg.tar.zst",
+      "expectedSha256": "6b70a275d2ec75c70aa50a236c218e6b7ee9a5ab4c6d52cb0b580267b7d200fe",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-mpfr-4.2.2-3-any.pkg.tar.zst.BUILDINFO",
+      "expectedSha256": "c61cdcbfa964717103e265a49e0fdd6077c41e613fa1564ca134210484138585",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-mpfr-4.2.2-3-any.pkg.tar.zst.PKGINFO",
+      "expectedSha256": "8edb102509ae8f47b426ef3c40fd85fa0f49061cbb56b82d92556b847f2a69c9",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-mpfr-4.2.2-3-any.pkg.tar.zst.sig",
+      "expectedSha256": "6eb04885039d85bbf17a932840fc54aca8b871545711347c04309dcc840e11cd",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-tzdata-2026b-1-any.pkg.tar.zst",
+      "expectedSha256": "fade60c68dc6dbe4afddc9111ee235a0ae90ff398ab7cc1222bfb0791a1c8ce4",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-tzdata-2026b-1-any.pkg.tar.zst.BUILDINFO",
+      "expectedSha256": "6d1cf7c9c4070f5714d4ee2cfb861dbca88bf5c3709a8c0ca0f123dae72673b0",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-tzdata-2026b-1-any.pkg.tar.zst.PKGINFO",
+      "expectedSha256": "940440c65955df247e087a3d2c376f974815557b44341c4f5db3c8bc0148b19b",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-tzdata-2026b-1-any.pkg.tar.zst.sig",
+      "expectedSha256": "644cc13f84cb4f3ecb9ae6f789da6ffce08bb81c7015d9e05371a0f3b655d06a",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-windows-default-manifest-6.4-4-any.pkg.tar.zst",
+      "expectedSha256": "6d1c9e2ab75aace04d30fb43974b24d5505bfd7872ca23fea773fc9ae70bd248",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-windows-default-manifest-6.4-4-any.pkg.tar.zst.BUILDINFO",
+      "expectedSha256": "b4ca6785f83de8981cbd824a067b38b0d5036540c7af858f355772f907ef2799",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-windows-default-manifest-6.4-4-any.pkg.tar.zst.PKGINFO",
+      "expectedSha256": "7b2cd22f4d5841ab5ec8915f5653d338ac22b0e3b4d39e01e07aa8acf3df759b",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-windows-default-manifest-6.4-4-any.pkg.tar.zst.sig",
+      "expectedSha256": "8e701ba98ab7b9f72d001c7600bcff07ace72c79d89cc68137cbefc12c6e5dfa",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-winpthreads-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst",
+      "expectedSha256": "5c9b5ee5c7af7af692f244776283c7729a2c648b365b0be62623012efdb11975",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-winpthreads-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst.BUILDINFO",
+      "expectedSha256": "df8df2838b5a9753063cb4722eb3b757e0cb8aa85e6936307f0933f7dbb9dac4",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-winpthreads-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst.PKGINFO",
+      "expectedSha256": "0073d3191abb0a8675ac68666341063ccddf1e43d94400795c4dbb129141bcc4",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-winpthreads-14.0.0.r92.g818fa6510-1-any.pkg.tar.zst.sig",
+      "expectedSha256": "cc059fe54ef02cd016408712e2cef09e77c0dcc0ca4c8fa8e8ffb93f1e331895",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-zlib-1.3.2-2-any.pkg.tar.zst",
+      "expectedSha256": "841401182976d2f9e17e5c0ebaac51f2a8014140ea53d67625e91c8fb3c85ea0",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-zlib-1.3.2-2-any.pkg.tar.zst.BUILDINFO",
+      "expectedSha256": "fdad29bf34766da93b0f880078e5d282202e45ab5e00785b0b1d7e02d3aa1c18",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-zlib-1.3.2-2-any.pkg.tar.zst.PKGINFO",
+      "expectedSha256": "71a298f9b28fcfb13ff3d6ca0becb5bb70bb22acd6893b3f81fe559fea1c5bed",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-zlib-1.3.2-2-any.pkg.tar.zst.sig",
+      "expectedSha256": "3c21e4ca62ae9544f37ad41b0910f64d60f4f0c4c4113bc5c9287ce2b6396acb",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-zstd-1.5.7-2-any.pkg.tar.zst",
+      "expectedSha256": "dbdb8427280046a2b41697780aa4c52983b708082b0da4755951dc3bea96ca89",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-zstd-1.5.7-2-any.pkg.tar.zst.BUILDINFO",
+      "expectedSha256": "af0d6ea9dc8918a589851970fd8e038669b541c4446c6749cd9d210ec0343113",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-zstd-1.5.7-2-any.pkg.tar.zst.PKGINFO",
+      "expectedSha256": "5ccf7351f501ab144aaa79b964862ce09331525119197e6467e25ec7cad01874",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-ucrt-x86_64-zstd-1.5.7-2-any.pkg.tar.zst.sig",
+      "expectedSha256": "97b4fe48e37ed32bc8a952c01737b6263dceb5a9c2c6f6b3a2def8e22f4e8b35",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-windows-default-manifest.PKGBUILD",
+      "expectedSha256": "60b9b97d17e6f3ee543ba56fa4690dc8b327d0a24cf33c32a8fffdd831e216b3",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-zlib.PKGBUILD",
+      "expectedSha256": "8a4a54a964eab7efa313e2faa8267052bc237ef61f8adf82a55cc93f4028db8a",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/mingw-w64-zstd.PKGBUILD",
+      "expectedSha256": "ef88e168f729b6e57bdccb8d566a1cbc1b0b1fd4ef86b26cc4c441236e496388",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/msys2-binary.gpg",
+      "expectedSha256": "76242a1ab8a73958852df76d91e57f2a478b1dd9b108ed580b924ed4c5531816",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/msys2.gpg",
+      "expectedSha256": "79cc43bd8b8a4e8c952340adc0ae93d3ff8e50c40f244321cf58fa014282f4ea",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-binutils/0002-check-for-unusual-file-harder.patch",
+      "expectedSha256": "2c99345fc575c3a060d6677537f636c6c4154fac0fde508070f3b6296c1060d4",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-binutils/0010-bfd-Increase-_bfd_coff_max_nscns-to-65279.patch",
+      "expectedSha256": "4e8ac055df61b1b5d6ae29dc87e1154737c2e87c7b244b44866702cabf1a5d18",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-binutils/0011-libiberty-Preserve-errno-across-calls-to-libiberty_v.patch",
+      "expectedSha256": "90890cf76f820e61d4eeeef356b0d08ff0c7a90a07691b42a37a1e17abc29cda",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-binutils/0500-fix-weak-undef-symbols-after-image-base-change.patch",
+      "expectedSha256": "d0cd7344421054fb38339cf8b6622e4e80ecda94750ffb429b702b247a5f28ae",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-binutils/2001-ld-option-to-move-default-bases-under-4GB.patch",
+      "expectedSha256": "9945635f4a67712616202f09cbb66cf70df01be168c2c8054c455bb58bf334dd",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-binutils/2003-Revert-Restore-old-behaviour-of-windres-so-that-opti.patch",
+      "expectedSha256": "3e3c53b0751a6389cd50dcbd7f78b52aaa55113414da01d3415592af18809702",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-binutils/4000-fix-DEBUG_S_INLINEELINES.patch",
+      "expectedSha256": "5ed35a728b956ad49a5e196ae59f681666f2754f0a4903b9280a430d7a312ea8",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-binutils/libiberty-unlink-handle-windows-nul.patch",
+      "expectedSha256": "7ccbd418695733c50966068fa9755a6abb156f53af23701d2bc097c63e9e0030",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-binutils/PKGBUILD",
+      "expectedSha256": "fea24b484400681bc6e1dd00fd42e8ecf25cafdd79c8d51f8a6b37f64c25e300",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-binutils/reproducible-import-libraries.patch",
+      "expectedSha256": "a094660ec95996c00b598429843b7869037732146442af567ada9f539bd40480",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-gcc/0003-Windows-Follow-Posix-dir-exists-semantics-more-close.patch",
+      "expectedSha256": "3fc35067823f87e48dd3bfd265e7593000dc110fa9ad5f16c81b896765fc897a",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-gcc/0007-Build-EXTRA_GNATTOOLS-for-Ada.patch",
+      "expectedSha256": "90d5cb570083f9dea4ac0f0f87e3e8d2230f5052e6f9b946061a20a224a9d195",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-gcc/0008-Prettify-linking-no-undefined.patch",
+      "expectedSha256": "8d2d53ae26b777d90189240494de1b895c5efa1ebdcdfbf5774f29fc742499d9",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-gcc/0011-Enable-shared-gnat-implib.patch",
+      "expectedSha256": "5ef4148acc4a2b7ed648d4fe75fab5545e84b4b93a12d6ba4e4ea6061dd635fa",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-gcc/0012-Handle-spaces-in-path-for-default-manifest.patch",
+      "expectedSha256": "e98805ead7d78ee2a92f237894c4b2b7ddc1688e1b517d8c04f28d440202e40f",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-gcc/0014-gcc-9-branch-clone_function_name_1-Retain-any-stdcall-suffix.patch",
+      "expectedSha256": "fd9bdecb2bbc4796bbc9f00b708dac42ef9e3464a06d6d27e5475cee117de5be",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-gcc/0020-libgomp-Don-t-hard-code-MS-printf-attributes.patch",
+      "expectedSha256": "ad1f7b5e7afaaec008b7cbd14feea13a10989fa91bda7003af72d457619bb199",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-gcc/0022-unset-native-system-header-dir.patch",
+      "expectedSha256": "d8b9b979dc1742f63d23dfca92bc05944612bd196a31fb882b8a616baba84383",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-gcc/0140-gcc-diagnostic-color.patch",
+      "expectedSha256": "c94004dab1685a6fa9124de86aae742df4136a2e9ff5d5e1ad87ecdc35fbcef4",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-gcc/0200-add-m-no-align-vector-insn-option-for-i386.patch",
+      "expectedSha256": "1484911163634f30324827619c873a6267b377abba0df8bbedfd128163c53ea4",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-gcc/2001-fix-building-rust-on-mingw-w64.patch",
+      "expectedSha256": "a411f59953553a3d01dd64c79b1acbb91eca092c4cb01bfd26b1c51c3eb798e8",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-gcc/3001-fix-codeview-crashes.patch",
+      "expectedSha256": "f21f9ab731e9cab8fd4ca8c289497f859ef7004e6fa0507877dc2559ac2071c3",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-gcc/gdbinit",
+      "expectedSha256": "bce81824fc89e5e62cca350de4c17a27e27a18a1a1ad5ca3492aec1fc5af3234",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-gcc/PKGBUILD",
+      "expectedSha256": "40f248fa589babd9315cc589a76a0c00939355bd68c92287a2dcb7d1acb58f96",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-gettext/0005-Fix-compilation-of-pthread_sigmask.c.patch",
+      "expectedSha256": "cbc2f533012d646521afa20f8b256917fce040741ff42cf53fb6dd7123a6670a",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-gettext/0021-replace-fsync.patch",
+      "expectedSha256": "380dbddee2f9e2feee4c1435e8a942b5d11d0125e60c3350ebb10c19b19011aa",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-gettext/0022-libasprintf.patch",
+      "expectedSha256": "c354f6a7021069c99b90f1c6d6f6a4ccf40a01e9f6742b866df2b5a7286cb868",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-gettext/0024-disable-gnu-format.patch",
+      "expectedSha256": "ce7ccf6dd3a492cab322253cd67310899b546eccc25821c25cbc047a1a984633",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-gettext/0030-fix-build-with-mingw-w64-clang.patch",
+      "expectedSha256": "9b1b4f0c65b3bc1a3103c921a02c203cecf533d145f0bd90023406e760f81749",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-gettext/122-Use-LF-as-newline-in-envsubst.patch",
+      "expectedSha256": "ec39103d851262c02c27b7038f3c538e03afaefc6aa050311d62519d192ff38c",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-gettext/PKGBUILD",
+      "expectedSha256": "853ef80a50588f29355722a4513f24cf1a5f8de06e0b5ee326580464db539741",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-gmp/do-not-use-dllimport.diff",
+      "expectedSha256": "385ab704f82c47f3aecc9141f43c96e7b8de2bf0e654dc457ce0f1a039db2c68",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-gmp/gmp-staticlib.diff",
+      "expectedSha256": "7c3cde2634baa2cb1c31404bbfed2d8d7ba33556971ac842a08f2e87667849ab",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-gmp/PKGBUILD",
+      "expectedSha256": "b9d3bb2b5b12cb0fc47c4dc17a9a2aa82513236eaefa34c8dfc57dd0d92bc42a",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-isl/isl-0.14.1-no-undefined.patch",
+      "expectedSha256": "83655a7202f0a0dcce1782d4b365252bf1ad12a522b7ad82ab578ee5ec46433b",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-isl/PKGBUILD",
+      "expectedSha256": "357e568e64456464d2dc0f61b7b34720cc4f8125e74f6b94667e53ab4bb1b595",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-libiconv/0002-fix-cr-for-awk-in-configure.all.patch",
+      "expectedSha256": "89d5c0f666e50a0186cfb142ba7b77e8fe1ac4d65bdfd9ae14ae8d2f0045a87c",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-libiconv/0003-add-cp65001-as-utf8-alias.patch",
+      "expectedSha256": "cb2b1cca44c9b9bd11c3bd33997c10d22dff263542275324c88f34b59910ef87",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-libiconv/fix-pointer-buf.patch",
+      "expectedSha256": "6b6e2393840f4dc6067587165777b1a07978f4c05247d7c1010a45ad251bbeeb",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-libiconv/iconv.pc",
+      "expectedSha256": "56e7ec406bf42eb66b1d972f20d229f7a76ba00c38c7b4403bf348875704baae",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-libiconv/PKGBUILD",
+      "expectedSha256": "9b3212d06910560fb59e017e0b73a29d392a5082d3a47a613e61509bd7dcd475",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-mpc/PKGBUILD",
+      "expectedSha256": "6779f6aea6f6c80219cc0d31fc840f88b074e28296bd315460793d60665c5ff7",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-mpfr/patches.diff",
+      "expectedSha256": "a9099cee74188d5f522b7b3fca0097196c6dd38126f8f042d233010cbf92e8d0",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-mpfr/PKGBUILD",
+      "expectedSha256": "6ffc49a5e6194f63c2514fa789b849a572de8b6b84e0cfa6b085397506308dac",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-tzdata/PKGBUILD",
+      "expectedSha256": "41f117d725c0c7273e85866eaa12140152bbc367fed433eb17b087f88c18a932",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-windows-default-manifest/PKGBUILD",
+      "expectedSha256": "60b9b97d17e6f3ee543ba56fa4690dc8b327d0a24cf33c32a8fffdd831e216b3",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-zlib/01-zlib-1.2.11-1-buildsys.mingw.patch",
+      "expectedSha256": "b58b353d976d6fdd9a5094e60fa39439d4f14e9bf8be4a8bd475f2cd47f10226",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-zlib/03-dont-put-sodir-into-L.mingw.patch",
+      "expectedSha256": "7287d12db57dcf0f66964c861100bf06ebe1ddcb243e7ee0773fcab1b2935596",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-zlib/04-fix-largefile-support.patch",
+      "expectedSha256": "8e1cdf8edfc6ac08b0e660ca42a977942a88fab3ff59c01c87ba96500e2c3e63",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-zlib/07-Add-no-undefined-to-link-to-enable-build-shared-vers.patch",
+      "expectedSha256": "fb83292f494f649ea7f1835aa4abea61acc593d7f90625741d42cd99cac0e075",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-zlib/08-Add-bzip2-library-to-pkg-config-file.patch",
+      "expectedSha256": "0be98a7e660e7c068856f08b9e92d6c73a6b0d88c3e29a9716140b147f7c23c5",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-zlib/PKGBUILD",
+      "expectedSha256": "8a4a54a964eab7efa313e2faa8267052bc237ef61f8adf82a55cc93f4028db8a",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-zstd/PKGBUILD",
+      "expectedSha256": "ef88e168f729b6e57bdccb8d566a1cbc1b0b1fd4ef86b26cc4c441236e496388",
+      "exists": true,
+      "matched": true
+    },
+    {
+      "path": ".work/source-materials/msys2-v2/recipes/mingw-w64-zstd/zstd-1.4.0-fileio-mingw.patch",
+      "expectedSha256": "283e584477a8f70c9bea86a500486dd11dfcb59b22690fd94deb44a3f95a6668",
+      "exists": true,
+      "matched": true
+    }
+  ]
+}

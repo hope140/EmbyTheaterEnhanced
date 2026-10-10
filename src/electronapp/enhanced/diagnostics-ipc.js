@@ -77,7 +77,8 @@ function register(options) {
         if (!logger || typeof logger.exportReport !== 'function' || !dialog || typeof dialog.showSaveDialog !== 'function') {
             return {status: 'error', reason: 'diagnostics_unavailable'};
         }
-        const report = await logger.exportReport(typeof settings.getAppInfo === 'function' ? settings.getAppInfo() : {});
+        const appInfo = typeof settings.getAppInfo === 'function' ? await settings.getAppInfo() : {};
+        const report = await logger.exportReport(appInfo);
         const fileName = diagnostics.makeExportFileName(new Date());
         let defaultPath = fileName;
         try {

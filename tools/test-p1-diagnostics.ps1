@@ -4,7 +4,8 @@ param(
     [ValidateSet('hit','direct','miss')][string]$Cd2Mode = 'hit',
     [ValidateRange(0,1000)][int]$Cd2DelayMs = 400,
     [ValidateSet('idle','playing','stopped')][string]$NormalClose = '',
-    [switch]$ProductCloseAfterPipeline
+    [switch]$ProductCloseAfterPipeline,
+    [switch]$AboutAsync
 )
 $ErrorActionPreference = 'Stop'
 $Cd2Mode = $Cd2Mode.ToLowerInvariant()
@@ -75,6 +76,7 @@ $harnessFilePaths = @(
     'tests/pipeline-result.cjs'
 )
 $harnessFiles = @()
+if ($AboutAsync) { $harnessFilePaths += 'tools/about-version-observation.cjs' }
 foreach ($relativePath in $harnessFilePaths) {
     $file = Join-Path $root ($relativePath.Replace('/',[IO.Path]::DirectorySeparatorChar))
     if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw ('Required harness input missing: ' + $relativePath) }
@@ -91,7 +93,7 @@ $identity = [ordered]@{
     runtimeProvenanceSha256=$runtimeProvenanceSha256
     harnessHead=$harnessHead
     harnessFiles=$harnessFiles
-    settings=[ordered]@{cd2Mode=$Cd2Mode; cd2DelayMs=$Cd2DelayMs; fixtureSeconds=$fixtureSeconds; normalClose=$closeMode}
+    settings=[ordered]@{cd2Mode=$Cd2Mode; cd2DelayMs=$Cd2DelayMs; fixtureSeconds=$fixtureSeconds; normalClose=$closeMode; aboutAsync=[bool]$AboutAsync}
 }
 [IO.File]::WriteAllText((Join-Path $evidence 'harness-identity.json'),($identity | ConvertTo-Json -Depth 8) + [Environment]::NewLine,$utf8)
 # Launch a package, so app.getVersion() follows runtime metadata rather than
@@ -131,6 +133,7 @@ $envValues = @{
 }
 foreach ($entry in $envValues.GetEnumerator()) { $info.EnvironmentVariables[$entry.Key]=[string]$entry.Value }
 if ($closeMode) { $info.EnvironmentVariables['ETE_TEST_NORMAL_CLOSE']=$closeMode }
+if ($AboutAsync) { $info.EnvironmentVariables['ETE_TEST_ABOUT_ASYNC']='1' }
 foreach ($name in @('ELECTRON_RUN_AS_NODE','HTTP_PROXY','HTTPS_PROXY','ALL_PROXY','http_proxy','https_proxy','all_proxy')) { $info.EnvironmentVariables.Remove($name) }
 $runnerClock = [Diagnostics.Stopwatch]::StartNew()
 $lifecycle = New-Object 'System.Collections.Generic.List[object]'

@@ -26,8 +26,8 @@ function register(options) {
         return {status: 'error', reason: 'untrusted_sender'};
     }
 
-    function appInfo() {
-        const raw = typeof settings.getAppInfo === 'function' ? settings.getAppInfo() : {};
+    async function appInfo() {
+        const raw = typeof settings.getAppInfo === 'function' ? await settings.getAppInfo() : {};
         const platform = typeof settings.getPlatformInfo === 'function' ? settings.getPlatformInfo() : {};
         const display = typeof settings.getDisplayInfo === 'function' ? settings.getDisplayInfo() : {};
         return maintenance.buildEnvironmentInfo(raw, platform, display);
@@ -45,19 +45,20 @@ function register(options) {
         registered.push(channel);
     }
 
-    registerHandler(CHANNELS.GET_INFO, function () {
-        return {status: 'ok', info: appInfo()};
+    registerHandler(CHANNELS.GET_INFO, async function () {
+        return {status: 'ok', info: await appInfo()};
     });
 
-    registerHandler(CHANNELS.COPY_ENVIRONMENT, function () {
+    registerHandler(CHANNELS.COPY_ENVIRONMENT, async function () {
         if (!clipboard || typeof clipboard.writeText !== 'function') return {status: 'error', reason: 'clipboard_unavailable'};
-        const text = maintenance.formatEnvironmentText(appInfo());
+        const info = await appInfo();
+        const text = maintenance.formatEnvironmentText(info);
         clipboard.writeText(text);
-        return {status: 'copied'};
+        return {status: 'copied', info};
     });
 
-    registerHandler(CHANNELS.CHECK_UPDATE, function () {
-        const info = appInfo();
+    registerHandler(CHANNELS.CHECK_UPDATE, async function () {
+        const info = await appInfo();
         return maintenance.checkLatestRelease({
             currentVersion: info.appVersion,
             requestJson: settings.requestJson

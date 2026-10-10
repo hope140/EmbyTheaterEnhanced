@@ -1,0 +1,194 @@
+{
+  "schemaVersion": 1,
+  "auditDate": "2026-10-10",
+  "scope": "Bounded public-source follow-up; read-only trees; no downloaded code executed.",
+  "baseline": {
+    "sourceMaterialsCommit": "05a08e9113ae1485256a505c64d7aba7d9edd67b",
+    "previouslyVerifiedMaterials": 160,
+    "previouslyVerifiedMsys2Packages": 17,
+    "recollectionPerformed": false,
+    "sourceEvidenceHashes": {
+      "docs/evidence/third-party-materials-files-20261009.json": {
+        "bytes": 36766,
+        "sha256": "a4456eb691100f6f8cbefb552871bd4f394084d1e15eecfac2db4e860a1acec6"
+      },
+      "docs/evidence/third-party-toolchains-20261009.json": {
+        "bytes": 111347,
+        "sha256": "546269fb9b8b791f3d2b3f399fc31613c2768fc66a5e8853c28988dfc1521646"
+      },
+      "docs/evidence/third-party-host-20261009.json": {
+        "bytes": 17342,
+        "sha256": "e632160666a1a2e12e86bb0d16429ba639c5aff573c3e7e2cdd3c92b6f1e7bb0"
+      },
+      "docs/evidence/third-party-web-npm-20261009.json": {
+        "bytes": 25485,
+        "sha256": "f466716091e1bd852767792e3fa051368bc03916d70c9875d3b4f9091f4f69c7"
+      },
+      "docs/evidence/third-party-mpv-20261009.json": {
+        "bytes": 10635,
+        "sha256": "5231b5337170f80798b071d6335be6e6969bcb8d121bb7fbeab3912d278f7e5f"
+      },
+      "docs/THIRD_PARTY_MATERIALS_AUDIT.md": {
+        "bytes": 12811,
+        "sha256": "ad6ceaa7eaee34e30e87adaaf48c23bbfa9d7ca399d6560a69c3fd53cc595354"
+      },
+      "docs/THIRD_PARTY_MATERIALS_REQUEST.md": {
+        "bytes": 4659,
+        "sha256": "9d34963c910acc0feded4e061738e1471768e28388fcb2cf95b19309feb8c780"
+      }
+    }
+  },
+  "findings": [
+    {
+      "area": "Patched libmpv winbuild and dependencies",
+      "status": "WAITING_EXTERNAL",
+      "exactTarget": {
+        "archive": "mpv-dev-x86_64-20260809-git-dd5d17d328.7z",
+        "archiveSha256": "c6aebf40bb722efe79090bfeb61e68625f0837770347e5a8b610aef78900cf12",
+        "dllSha256": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c",
+        "mpvCommit": "dd5d17d3285a095a0f712fa9d116e22a076492de",
+        "ffmpegCommit": "2a20737f662fd3f3f5999e873b9e7c90b5efc375"
+      },
+      "checked": [
+        "https://api.github.com/repos/shinchiro/mpv-winbuild-cmake/releases/tags/20260809 (HTTP 404)",
+        "https://github.com/shinchiro/mpv-winbuild-cmake/releases",
+        "https://sourceforge.net/projects/mpv-player-windows/files/libmpv/mpv-dev-x86_64-20260809-git-dd5d17d328.7z/download (prior exact archive evidence)"
+      ],
+      "conclusion": "The exact winbuild release/workflow for this archive was not identified. SourceForge archive identity and its DLL member identity remain prior verified facts, but do not identify producing workflow or complete dependencies.",
+      "needed": [
+        "Producing winbuild commit and workflow/build log bound to archive SHA256",
+        "All resolved dependency source revisions and hashes",
+        "Applied patches, configure/build options and compiler/toolchain lock",
+        "Applicable notices mapped to the archive composition"
+      ],
+      "nextStep": "Request the producer build record and resolved dependency manifest; accept only records bound to the exact archive and DLL hashes."
+    },
+    {
+      "area": "Windows Host executable and managed DLL build relations",
+      "status": "WAITING_EXTERNAL",
+      "exactTarget": {
+        "releaseTag": "3.0.20",
+        "sourceCommit": "708fadc068cbf66ced6aece4a32f3e12bb2c4e13",
+        "hostExeSha256": "11abf75c8f77ddb0078e7dd62a2eaae60dba244c113bc7893a7e56bc6527163e",
+        "dllGaps": [
+          "MediaBrowser.Model.dll",
+          "SharpCompress.dll",
+          "SocketHttpListener.dll",
+          "System.Configuration.dll"
+        ],
+        "previousExactNugetMembers": [
+          "MediaBrowser.Common 3.3.10",
+          "ServiceStack.Text 4.5.14",
+          "SimpleInjector 4.0.11"
+        ]
+      },
+      "checked": [
+        "https://github.com/MediaBrowser/emby-theater-windows/releases",
+        "https://github.com/MediaBrowser/emby-theater-windows/tree/708fadc068cbf66ced6aece4a32f3e12bb2c4e13"
+      ],
+      "conclusion": "The upstream source reference and selected NuGet members are known from prior audit. No build log, dependency restoration set, patches, SDK/targeting pack identity or output hash map binds Host EXE and remaining DLLs to source.",
+      "needed": [
+        "Exact source revision and patch set for each binary",
+        "Dependency lock/restoration inputs",
+        "MSBuild/.NET SDK/targeting pack/compiler and build log",
+        "PDB or output hash evidence when available",
+        "Version-applicable notices per dependency"
+      ],
+      "nextStep": "Request provenance keyed by each frozen binary SHA256; keep UNKNOWN unless source/package members match exact binary identity."
+    },
+    {
+      "area": "Offline Web, fonts and images",
+      "status": "WAITING_EXTERNAL",
+      "exactTarget": {
+        "root": "vendor/carnival/electronapp/www",
+        "fileCount": 761,
+        "fonts": 23,
+        "images": 19,
+        "manifest": "vendor/runtime-manifest.json"
+      },
+      "checked": [
+        "https://github.com/MediaBrowser/emby-webcomponents",
+        "https://github.com/MediaBrowser/emby-web-defaultskin",
+        "https://github.com/MediaBrowser/emby-theater-windows/tree/708fadc068cbf66ced6aece4a32f3e12bb2c4e13"
+      ],
+      "conclusion": "Found repositories are component/skin references, not the exact complete shipped Web tree. No precise Web revision, build lock, overlay map, or per-asset source and notice evidence found. CSS names alone do not establish font version, identity or license.",
+      "needed": [
+        "Exact Web source revision/archive and independent SHA256",
+        "Matching dependency lock/build instructions",
+        "Per-file Carnival/patch overlay map to source inputs and output hashes",
+        "Exact source and applicable notice for each of 23 fonts and 19 images",
+        "Complete-tree comparison and shipped notice set"
+      ],
+      "nextStep": "Request Web source snapshot and generated asset provenance keyed to existing 761-file manifest; preserve unmatched files as UNKNOWN."
+    },
+    {
+      "area": "Remaining MSYS2 recipes",
+      "status": "WAITING_EXTERNAL",
+      "exactTargets": [
+        {
+          "pkgbase": "mingw-w64-crt",
+          "pkgver": "14.0.0.r92.g818fa6510-1",
+          "pkgbuildSha256": "1184cd3db7d34ea97d3d018fbedbf6538a84f34919134129be059c6b38237fbd",
+          "priorStatus": "UNKNOWN_WITHIN_THREE_COMMITS"
+        },
+        {
+          "pkgbase": "mingw-w64-headers",
+          "pkgver": "14.0.0.r92.g818fa6510-1",
+          "pkgbuildSha256": "753c4d21b13eb6c9acf655a8f8e9d7a1442856473ee27c31539521a74b44d738",
+          "priorStatus": "UNKNOWN_WITHIN_THREE_COMMITS"
+        },
+        {
+          "pkgbase": "mingw-w64-winpthreads",
+          "pkgver": "14.0.0.r92.g818fa6510-1",
+          "pkgbuildSha256": "4e4ca85729312e5731f27ce73a06c1406a1308eefe29653a6589b59138a7438b",
+          "priorStatus": "UNKNOWN_WITHIN_THREE_COMMITS"
+        }
+      ],
+      "checked": [
+        "https://github.com/msys2/MINGW-packages",
+        "https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-crt-git/PKGBUILD (404)",
+        "https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-headers-git/PKGBUILD (404)",
+        "https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-winpthreads-git/PKGBUILD (404)",
+        "https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-crt/PKGBUILD (200, current revision not treated as exact)",
+        "https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-headers/PKGBUILD (200, current revision not treated as exact)"
+      ],
+      "conclusion": "Three candidate commits did not match pinned package BUILDINFO hashes. Current path presence or nearby version does not establish recipe identity. Prior 12 exact recipes and 54 recipe/patch hashes are unchanged.",
+      "needed": [
+        "Historical PKGBUILD bytes matching the three exact BUILDINFO hashes",
+        "Corresponding full recipe directory and patches at the same commit",
+        "Referenced upstream source archives and hashes if required for closure"
+      ],
+      "nextStep": "Resolve exact recipe commit and path migration from package CI/build records, stopping unless bytes match the recorded PKGBUILD SHA256."
+    }
+  ],
+  "validation": {
+    "targetedQueryRounds": 3,
+    "newMaterialsDownloaded": 0,
+    "scriptsOrBinariesRun": false,
+    "originalInventoryChanged": false,
+    "credentialOrPrivatePathScan": "PASS_MAIN_STATIC_SCAN",
+    "projectOrProductChanges": false,
+    "fileHashReadback": "The three deliverables were reopened, parsed where JSON, and SHA256/byte length checked."
+  },
+  "limitations": [
+    "No legal or license certification",
+    "No source-to-binary reproducibility claim",
+    "No complete corresponding-source closure claim"
+  ],
+  "workerOriginalOutputFiles": {
+    "THIRD_PARTY_MATERIALS_CLOSEOUT_027.md": {
+      "bytes": 3052,
+      "sha256": "3c3e43d045aa6ccef7d7fc7f7a88f83ca8b8ffdd1b9190c530bdcdecb3f2c06b"
+    },
+    "query-record-027.json": {
+      "bytes": 2440,
+      "sha256": "16e710edbb0b102ca1cbc9e55ed7e380b71f4458cb141d0f05e3cb2341ddc10a"
+    }
+  },
+  "integratedReview": {
+    "archiveReadback": "docs/evidence/third-party-readback-027.json",
+    "readbackSha256": "cfc57a1f04bce828ebec2a8984c3f94619821e24b9b3e94be5f0caf4d8c36297",
+    "originalOutputs": ".work/maintenance027/materials",
+    "scope": "Worker outputs retained; integrated Markdown links and status updated by root."
+  }
+}

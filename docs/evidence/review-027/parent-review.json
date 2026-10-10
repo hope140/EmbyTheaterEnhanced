@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "status": "PARENT_REVIEW_PASS",
+  "reviewedAtUtc": "2026-10-10T02:41:56.851Z",
+  "reviewHead": "2b5686438fa0129fbb8686fae88c55264e1d38a5",
+  "productSourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+  "finalHarnessCommit": "0e87d4f5b85ee136d1fe3d0ab47eaac25d64ac9d",
+  "runtime": "dist/ETE-0.2.7-maintenance-d8fcb0f-win-x64",
+  "manifestSha256": "c6794efc6b69aeef67c3274903715e2483955a564dc9b2bc8a3e4cefd24ffe6c",
+  "evidenceSha256": "a553858e2723db255355f5d84021d5f750cad1fb5ecc380f3ec4567e9df9fed7",
+  "scope": {
+    "mainBase": "bc50d181cd5cafd14b31e2c0d24cbf7fd73b0ee1",
+    "completeMaintenanceBase": "dbee15afc76d97ed68117206e6ac6b638315732b",
+    "globalS6": "EXCLUDED_BY_USER_KEEP_CANDIDATE",
+    "newProductFeatures": false
+  },
+  "parentChecks": {
+    "diffReview": "PASS_NO_CONFIRMED_BLOCKER",
+    "srcNativeSameAsCompleteMaintenanceBase": true,
+    "committedBuildInputsMatchProduct": true,
+    "committedBuildInputCount": 34,
+    "targetedTests": {
+      "tests": 53,
+      "passed": 53,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "log": ".work/parent-review/targeted-tests.log",
+      "sha256": "07897213dd9df2b9aea8643f5d82fc38d6077333a90db404751a4d626caa8836"
+    },
+    "records": [
+      {
+        "file": ".work/maintenance027/targeted-tests.log",
+        "sha256": "a341b9f0ccf8ea75d2b97adc86a7f1eb3e47e281eb3f75b89778f41bff392e7b",
+        "bytes": 7923
+      },
+      {
+        "file": ".work/maintenance027/initial-full-tests.log",
+        "sha256": "b7df5d62c95fb005d502e820ecce239a812952ce4f8934228a38cebb433a4f44",
+        "bytes": 59335
+      },
+      {
+        "file": ".work/maintenance027/final-tool-tests.log",
+        "sha256": "6b69dc2346d16fda29ca7851273ae843664118dbe1c8e17542ee8149068b5ed1",
+        "bytes": 4352
+      },
+      {
+        "file": ".work/maintenance027/final-full-tests.log",
+        "sha256": "fb707991543c5b189205e59e980665c6a318e29d9cf2ac90982ec09a35e3cbe7",
+        "bytes": 59407
+      },
+      {
+        "file": ".work/maintenance027/npm-audit.json",
+        "sha256": "bfda7c8168ecc3b0eaa00ec1041a779e07dc5805bedcd48bb3f7a1897c96ac18",
+        "bytes": 360
+      },
+      {
+        "file": "docs/evidence/third-party-readback-027.json",
+        "sha256": "cfc57a1f04bce828ebec2a8984c3f94619821e24b9b3e94be5f0caf4d8c36297",
+        "bytes": 41663
+      },
+      {
+        "file": "docs/evidence/third-party-closeout-027.json",
+        "sha256": "9c03bf1f31dda2163d341bd63dcc174f38b261c8f747e493a5f0f87168d558c8",
+        "bytes": 9660
+      },
+      {
+        "file": "docs/evidence/third-party-queries-027.json",
+        "sha256": "16e710edbb0b102ca1cbc9e55ed7e380b71f4458cb141d0f05e3cb2341ddc10a",
+        "bytes": 2440
+      },
+      {
+        "file": "docs/evidence/install-display-readiness-027.json",
+        "sha256": "4279d25b38054967e3a12297a8fba196a4020baecd7a18ebcabf9c148536b450",
+        "bytes": 6701
+      }
+    ],
+    "independentWorker": {
+      "tests": "83/83, 650/650, 42/42, 651/651 verified from raw logs",
+      "runtimeRunArtifactReferences": 166,
+      "missingOrMismatched": 0,
+      "runtimeFiles": 2137,
+      "payloadEntries": 2136,
+      "payloadMismatches": 0,
+      "finalIsolationMarkers": true,
+      "olderEightRunsNotRelabeled": true
+    }
+  },
+  "confirmedBlockers": [],
+  "limits": [
+    "Third-party source/build correspondence remains WAITING_EXTERNAL",
+    "System installation lifecycle not executed: no confirmed ready isolated VM",
+    "Real Emby/CD2/remote/visible video/HDR/multimonitor not accepted in this task",
+    "Historical direct app.exit root cause UNKNOWN; historical observer failure retained"
+  ],
+  "packagingAuthorization": {
+    "localInstaller": true,
+    "approvedProductSource": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+    "approvedRuntimeManifest": "c6794efc6b69aeef67c3274903715e2483955a564dc9b2bc8a3e4cefd24ffe6c",
+    "version": "0.2.7",
+    "recheckAfterProductOrBuildInputChange": true,
+    "remotePush": false,
+    "pullRequest": false,
+    "remoteMerge": false,
+    "tag": false,
+    "release": false,
+    "systemInstall": false
+  }
+}

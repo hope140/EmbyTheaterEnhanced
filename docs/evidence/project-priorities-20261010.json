@@ -1,0 +1,523 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-10",
+  "timezone": "Asia/Shanghai",
+  "checkedAtUtc": "2026-10-10T02:00:09.501Z",
+  "scope": "PRIORITY_AND_STATUS_RECONCILIATION_READBACK_ONLY",
+  "remote": {
+    "main": "bc50d181cd5cafd14b31e2c0d24cbf7fd73b0ee1",
+    "pr20": {
+      "baseRefName": "main",
+      "headRefOid": "45ec2d6a054b497d95797aa3af4d60a7e7d76224",
+      "mergeCommit": {
+        "oid": "bc50d181cd5cafd14b31e2c0d24cbf7fd73b0ee1"
+      },
+      "mergedAt": "2026-10-09T14:22:16Z",
+      "number": 20,
+      "state": "MERGED",
+      "url": "https://github.com/hope140/EmbyTheaterEnhanced/pull/20"
+    },
+    "openPullRequests": [],
+    "release": {
+      "id": 407934479,
+      "tag": "v0.2.6",
+      "sourceCommit": "355f4e6ba434074d1cd5c17e24cd79bad0f5eb1f",
+      "prerelease": true,
+      "draft": false,
+      "assets": [
+        {
+          "name": "EmbyTheaterEnhanced-0.2.6-test-355f4e6-win-x64-setup.exe",
+          "size": 175621807,
+          "digest": "sha256:bc878b4e929016071b8d7a41f9b281ad3118e62e8a1e469b0a5c9858718b1532"
+        },
+        {
+          "name": "EmbyTheaterEnhanced-0.2.6-test-355f4e6-win-x64-setup.exe.provenance.json",
+          "size": 3956,
+          "digest": "sha256:a2d232f25011a3e2a5bfb65207af24970d5297f6146f7008c15cad4b35c40316"
+        },
+        {
+          "name": "EmbyTheaterEnhanced-0.2.6-test-355f4e6-win-x64-setup.exe.sha256",
+          "size": 123,
+          "digest": "sha256:9d50081d6ba794d40acbddd7658b62390b3a0d92b29128753a7457252a2c8e0b"
+        }
+      ]
+    },
+    "latest": "v0.2.2"
+  },
+  "candidate": {
+    "branch": "codex/about-async-20261010",
+    "head": "dbee15afc76d97ed68117206e6ac6b638315732b",
+    "clean": true,
+    "baseCommit": "6815d2fa93bf613d028dbaa96328c7ef3e0e55b5",
+    "productSourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+    "observationToolCommit": "c9502aec5a451e9dfa6b7696ba44309b336985c3",
+    "version": "0.2.6",
+    "mainIsAncestor": true,
+    "maintenanceIsAncestor": true,
+    "commits": [
+      "4db40cdcbd62f02156e517f09cb626a4558b2e56",
+      "7ec6aceb2c97185fa8fd9a128b8737f02c0c3b19",
+      "6815d2fa93bf613d028dbaa96328c7ef3e0e55b5",
+      "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+      "c9502aec5a451e9dfa6b7696ba44309b336985c3",
+      "dbee15afc76d97ed68117206e6ac6b638315732b"
+    ],
+    "changedFiles": [
+      "THIRD_PARTY_NOTICES.md",
+      "docs/ABOUT_VERSION_ASYNC.md",
+      "docs/ARCHITECTURE.md",
+      "docs/DEVELOPMENT_LOG.md",
+      "docs/LESSONS_LEARNED.md",
+      "docs/MAINTENANCE_GRPC_ABOUT.md",
+      "docs/MAIN_INTEGRATION_026.md",
+      "docs/PACKAGING.md",
+      "docs/PROJECT_STATUS.md",
+      "docs/ROADMAP.md",
+      "docs/evidence/about-version-async-20261010.json",
+      "docs/evidence/maintenance-grpc-about-20261009.json",
+      "package-lock.json",
+      "package.json",
+      "src/electronapp/enhanced/bundled-versions.js",
+      "src/electronapp/enhanced/diagnostics-ipc.js",
+      "src/electronapp/enhanced/maintenance-ipc.js",
+      "src/electronapp/enhanced/maintenance.js",
+      "src/electronapp/main.js",
+      "src/electronapp/plugins/mpvplayer/about.html",
+      "src/electronapp/plugins/mpvplayer/about.js",
+      "tests/bundled-versions.test.cjs",
+      "tests/client-diagnostics.test.cjs",
+      "tests/native-helper-version-metadata.test.cjs",
+      "tests/pipeline-timeout.test.cjs",
+      "tests/settings-visual-system.test.cjs",
+      "tools/about-version-observation.cjs",
+      "tools/build-native-helper.ps1",
+      "tools/materialize-native-helper-source.cjs",
+      "tools/native-helper-provenance.cjs",
+      "tools/p1-diagnostics-smoke.cjs",
+      "tools/smoke-electron.cjs",
+      "tools/test-p1-diagnostics.ps1"
+    ],
+    "logs": {
+      "targeted": {
+        "file": ".work/about-async/targeted-tests.log",
+        "sha256": "1bd15cd11d5d406d7c05ea06e5389fc3745274d0867140a2ebab22e4187adf9c",
+        "matched": true,
+        "tests": 37,
+        "pass": 37,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "inputRecovery": {
+        "file": ".work/about-async/input-recovery-tests.log",
+        "sha256": "9d4b07e40b2b08ec450d302780f9b4a8882d85138bc5e83d66c1dfaab874c37d",
+        "matched": true,
+        "tests": 14,
+        "pass": 14,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "full": {
+        "file": ".work/about-async/final-tests.log",
+        "sha256": "2e4dbe8f1ec87a3ff1b93f773dd026c999fd501a1e4d2fca692ac39749558dbe",
+        "matched": true,
+        "tests": 646,
+        "pass": 646,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "initialMissingInput": {
+        "file": ".work/about-async/initial-missing-input-tests.log",
+        "sha256": "3d3bfa0025cf8b0e1c4f95ed90240e700a9b6833873c75a4d26e83493758539c",
+        "matched": true,
+        "tests": 646,
+        "pass": 640,
+        "fail": 6,
+        "cancelled": 0,
+        "skipped": 0
+      }
+    },
+    "observationTests": {
+      "file": ".work/about-async/observer-regression-tests-corrected.log",
+      "sha256": "850ac493c05886bf503ccaa96059e627479e4b3c1c5cd8bc84c656617dc80b35",
+      "matched": true,
+      "passed": 49
+    },
+    "runs": [
+      {
+        "case": "pipeline-hit400-stable-state-gate-failure",
+        "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+        "harnessHead": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+        "status": "FAIL",
+        "exitMode": "FORCED_CLEANUP",
+        "exitCode": 1,
+        "cleanupAttempted": true,
+        "residual": 0,
+        "artifactsVerified": [
+          {
+            "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/harness-identity.json",
+            "sha256": "24cc95a05c2011eca909fa0b82ec49110cd50fef7f217bf06eeb358b38157211",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/runner-result.json",
+            "sha256": "b2efd805929b56274f6412cdea7bd25bcbf201d65605d43021995ecbd955de45",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/electron-smoke.json",
+            "sha256": "edc4182f43efa08a17df6fbeff4912361b15816f5700841a4b8080fd5162b084",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/about-async-ipc.json",
+            "sha256": "378e70726219e93ac812763f38164f8ba39a3a75f489263505d736a505c41a47",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/normal-close.jsonl",
+            "sha256": "631ce8193eff285a2e92e078929b2504a3da37ec61797bee16816e712a5cb55f",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/exit-observation.jsonl",
+            "sha256": "48dbb78fcc24059551efe104af5b381f7e8df274cfdba29791625fe0553de712",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/p1-diagnostics-injection.json",
+            "sha256": "9d0371c7a1d9b08d87d678038b4c282bfa70d2ffa0cc3f2d85b339d0cfbf2ed7",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/runner-exit-observation.jsonl",
+            "sha256": "2713d6ede9e15fd1e84048b2845a927d1681dbd6e9b2106e450b08ff4d7628bf",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/stdout.log",
+            "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/stderr.log",
+            "sha256": "38fb1d58e72e3992fdb5cdb83e0dc272bdef20e49044742a41474bf390459337",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/appdata/EmbyTheaterEnhanced/logs/ete-client.jsonl",
+            "sha256": "e5966675491be5cd6625c3b3b9d5ba000e1aa767457ad2908b295ee32098b019",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/about-export-1.txt",
+            "sha256": "e4853163fa06129fb92e1cd51a367e175f9cefe1fd0292b4bd88bd589e81a8ef",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-52f2ac443d3d438ebbeb54a96b83593d/about-export-2.txt",
+            "sha256": "dca41a5f94a94ce7cf22abf9ceeac03188bab14110f60b3bec58c3e97a13db5c",
+            "matched": true
+          }
+        ],
+        "failureClassification": "OBSERVER_REQUIRED_CONTINUOUS_READY_DURING_VALID_HELPER_REPLACEMENT"
+      },
+      {
+        "case": "pipeline-hit400-corrected",
+        "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+        "harnessHead": "c9502aec5a451e9dfa6b7696ba44309b336985c3",
+        "status": "PASS",
+        "exitMode": "NATURAL",
+        "exitCode": 0,
+        "cleanupAttempted": false,
+        "residual": 0,
+        "artifactsVerified": [
+          {
+            "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/harness-identity.json",
+            "sha256": "5af7d78836b8c2089ae98e3795b961347ef34d16890278593bc46f7e3d583e0f",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/runner-result.json",
+            "sha256": "5bb63d29bda611153333c4ac24c61239dee2252a7215a39da4f99f231ef72a46",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/electron-smoke.json",
+            "sha256": "6720e350bbc3fe6026d37288946109a9dd6580b138be3940bd29e869d49ab0eb",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/about-async-ipc.json",
+            "sha256": "640ca2ab1aefee67e34e6a31263d2243977035ad8e5e0e3e8dcccdbe07f3c2ab",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/normal-close.jsonl",
+            "sha256": "dbb14d7032fbabe60112241d34d5bdb2bf43919bec0f20bbce851e93af2852ce",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/exit-observation.jsonl",
+            "sha256": "cb8a84e254426110242f2638f27055b897ba6aed852ac934f6589fca662ffa28",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/p1-diagnostics-injection.json",
+            "sha256": "9d0371c7a1d9b08d87d678038b4c282bfa70d2ffa0cc3f2d85b339d0cfbf2ed7",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/normal-close-result.json",
+            "sha256": "b4319a4a7cf676a6c6d882ad629bab0d6d710d4fa73e80487a973174cf06618b",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/p1-diagnostics-result.json",
+            "sha256": "dda8f58f576b0c854b7c023fbe182790f044e0f6d0db10b233f063dbb4bec9f5",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/runner-exit-observation.jsonl",
+            "sha256": "561cc7a55c46c4db9802a01852984e8d88975360a4b9d9e274d5cebf477a6d7a",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/stdout.log",
+            "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/stderr.log",
+            "sha256": "31f485b567db307adb64bc31c26a6f9390f0298f4aac55d459eff2232b0c6f82",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/appdata/EmbyTheaterEnhanced/logs/ete-client.jsonl",
+            "sha256": "9b2a62828027e3bd9dc3f578ad57809f86bb03b29e566d3da3d5b3222ffe8f14",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/about-export-1.txt",
+            "sha256": "c9a1be7ab1509ae6d495910c413bd3c62d434ff6f2adb5184c9830c06308302f",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-884c462e0a2f420f8e35de93fdd99b42/about-export-2.txt",
+            "sha256": "7c950ed118a6b89bc56c1b5160d2ef227ec643da62fd2723594dbdf8e61ae45d",
+            "matched": true
+          }
+        ],
+        "failureClassification": null
+      },
+      {
+        "case": "idle",
+        "sourceCommit": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+        "harnessHead": "7cc7eb85cfa64c20ec9f161d2a6649a49637cacd",
+        "status": "PASS",
+        "exitMode": "NATURAL",
+        "exitCode": 0,
+        "cleanupAttempted": false,
+        "residual": 0,
+        "artifactsVerified": [
+          {
+            "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/harness-identity.json",
+            "sha256": "8e643e95c2d23c2bbd39af52366a5ce6617b683271d6c32c1e30118415bff032",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/runner-result.json",
+            "sha256": "227fc7933759b8254996f388465598bbca1dfa2bd7e063e418e1068aa1f6fa14",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/electron-smoke.json",
+            "sha256": "1505d6fa4cc8a488f707e26d6006dcc282e3beb84a7d3cfde8af02a226183c75",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/about-async-ipc.json",
+            "sha256": "f87634023033a64d9f803863f50962469f1ed9a63117b302fb1c91579f605498",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/normal-close.jsonl",
+            "sha256": "9f32c0ab82f3e1f3304b9e2368c7ec51efe9dc150cc69aa1761bbe16ce8828b1",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/exit-observation.jsonl",
+            "sha256": "e02ee74dc8b368ccf9718189a2ff1bf4e72ab3d039eec240b90ba1f7f149c66d",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/p1-diagnostics-injection.json",
+            "sha256": "9d0371c7a1d9b08d87d678038b4c282bfa70d2ffa0cc3f2d85b339d0cfbf2ed7",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/normal-close-result.json",
+            "sha256": "e09f36fcc098773052a1d8631b6e0c9c9e3dcbc86b0f9fc5f6cd8685e668c590",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/runner-exit-observation.jsonl",
+            "sha256": "cf8d7b26685b930f03c852b01bcaaf0fccb2b1986d5d632ded698e5b714ca903",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/stdout.log",
+            "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/stderr.log",
+            "sha256": "ebaaae971e89d53e2947acc3cda9ce47e2ea94bce3500f265b92871f74379db3",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/appdata/EmbyTheaterEnhanced/logs/ete-client.jsonl",
+            "sha256": "367cc4358182dc4296eec25e2551ff3e32404613bbb982519b5df5370c3352c1",
+            "matched": true
+          },
+          {
+            "file": ".work/p1-runtime-a0df657746be435f9864cd8938af9af6/about-export-1.txt",
+            "sha256": "868028b6a7df5eb84dbde23df1054df8e196a12481da9ffbf7424b992fd8c50d",
+            "matched": true
+          }
+        ],
+        "failureClassification": null
+      }
+    ],
+    "installer": {
+      "file": "dist/EmbyTheaterEnhanced-0.2.6-about-async-7cc7eb8-win-x64-setup.exe",
+      "bytes": 175627068,
+      "sha256": "7037014b2f3e5088bf11c1ee9c9079b19b4dff1cbf8cc57e988dbd2b24fb0116",
+      "payloadReceipt": {
+        "expected": 2137,
+        "actual": 2137,
+        "missing": [],
+        "extra": [],
+        "mismatch": []
+      },
+      "extractionRerunThisTask": false
+    }
+  },
+  "sources": [
+    {
+      "kind": "about",
+      "file": "docs/ABOUT_VERSION_ASYNC.md",
+      "commit": "dbee15afc76d97ed68117206e6ac6b638315732b",
+      "sha256": "bf1b6a06ff05603b81351045fe93d6f050ab5b271295d49835ca1233320c7723"
+    },
+    {
+      "kind": "maintenance",
+      "file": "docs/MAINTENANCE_GRPC_ABOUT.md",
+      "commit": "6815d2fa93bf613d028dbaa96328c7ef3e0e55b5",
+      "sha256": "429b180e26c0ae1c3e8b1e33aeaf3ba0b3dae9597eeaa2ff1ec373e652379fb6"
+    },
+    {
+      "kind": "materials",
+      "file": "docs/THIRD_PARTY_MATERIALS_AUDIT.md",
+      "commit": "bc50d181cd5cafd14b31e2c0d24cbf7fd73b0ee1",
+      "sha256": "ad6ceaa7eaee34e30e87adaaf48c23bbfa9d7ca399d6560a69c3fd53cc595354"
+    },
+    {
+      "kind": "materialsRequest",
+      "file": "docs/THIRD_PARTY_MATERIALS_REQUEST.md",
+      "commit": "bc50d181cd5cafd14b31e2c0d24cbf7fd73b0ee1",
+      "sha256": "9d34963c910acc0feded4e061738e1471768e28388fcb2cf95b19309feb8c780"
+    }
+  ],
+  "policyAudit": {
+    "status": "CANDIDATE_NOT_APPLIED",
+    "report": "AUDIT_REPORT.md",
+    "reportSha256": "ef0b7a77c4dec49c068716803cbdfaacd08af34d1ba31f32dd462dc78152f557",
+    "projectPatchSha256": "c813f85323fd2fe250d7e225a6dfa44f4dfef5befe91d0595234a848c3fcf91c",
+    "globalPatchSha256": "ed09b73ccf0f5112758871a57d9ed574b35170bce5e684f6ea81cf01b69c5ce7",
+    "pending": [
+      "S1",
+      "S2",
+      "S4",
+      "S5",
+      "S6"
+    ],
+    "navigationS3UpdatedWithinCurrentDocumentationScope": true
+  },
+  "conversationReadback": {
+    "count": 6,
+    "topics": [
+      "published local package",
+      "main integration and subsequent authorization",
+      "original About UNKNOWN request",
+      "grpc and About maintenance",
+      "asynchronous About completion",
+      "model and documentation audit"
+    ],
+    "evidenceKind": "Technical delivery summaries cross-checked against repository files and artifacts; no private conversation content embedded."
+  },
+  "priorities": [
+    {
+      "id": "A1",
+      "priority": "P1",
+      "state": "LOCAL_COMPLETE_INTEGRATION_REVIEW_NEXT",
+      "needsUserDecision": [
+        "push",
+        "pull request",
+        "merge"
+      ]
+    },
+    {
+      "id": "D1",
+      "priority": "P1",
+      "state": "POLICY_DECISIONS_PENDING",
+      "needsUserDecision": [
+        "apply project policy candidates",
+        "apply global policy candidate separately"
+      ]
+    },
+    {
+      "id": "R1",
+      "priority": "P2",
+      "state": "AFTER_REVIEW_AND_RELEASE_DECISION",
+      "needsUserDecision": [
+        "version and release"
+      ]
+    },
+    {
+      "id": "T1",
+      "priority": "P2",
+      "state": "BOUNDED_MATERIALS_FOLLOWUP",
+      "needsUserDecision": [
+        "contact external providers"
+      ]
+    },
+    {
+      "id": "I1",
+      "priority": "P2",
+      "state": "ISOLATED_ENVIRONMENT_AND_INSTALL_SCOPE_REQUIRED",
+      "needsUserDecision": [
+        "system installation lifecycle"
+      ]
+    },
+    {
+      "id": "H1",
+      "priority": "P3",
+      "state": "HARDWARE_OR_NEW_SAMPLE_GATED"
+    }
+  ],
+  "acceptance": {
+    "newProductTestsRun": false,
+    "newRuntimeRun": false,
+    "newBuild": false,
+    "pushed": false,
+    "merged": false,
+    "published": false,
+    "globalRulesModified": false,
+    "userDailyUseFeedback": "IN_USE_NO_NEW_ISSUE_REPORTED_NOT_SCENARIO_ACCEPTANCE",
+    "historicalDirectAppExit": "UNKNOWN",
+    "observerFailureRetained": true
+  }
+}

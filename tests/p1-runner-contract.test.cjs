@@ -6,9 +6,38 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
+const vm = require('node:vm');
 
 const runnerPath = path.join(__dirname, '..', 'tools', 'test-p1-diagnostics.ps1');
 const runner = fs.readFileSync(runnerPath, 'utf8');
+
+test('P1 bootstrap checks the child MPV_HOME and Electron paths before product modules load', () => {
+    const source = fs.readFileSync(path.join(__dirname, '..', 'tools', 'p1-diagnostics-smoke.cjs'), 'utf8');
+    const prefix = source.slice(0, source.indexOf('const appRoot ='));
+    const evidence = path.resolve('isolated-fixture');
+    const mpvHome = path.join(evidence, 'appdata', 'mpv');
+    function boot(value, exists = true, wrongElectronPath = false) {
+        const paths = {};
+        const required = [];
+        const app = {setPath(key, value) { paths[key] = value; }, getPath(key) { return wrongElectronPath ? 'wrong-path' : paths[key]; }};
+        vm.runInNewContext(prefix, {process: {env: {ETE_TEST_RUNTIME: 'fixture-runtime', ETE_TEST_EVIDENCE: evidence, MPV_HOME: value}},
+            require(name) {
+                required.push(name);
+                if (name === 'electron') return {app};
+                if (name === 'node:fs') return {mkdirSync() {}, existsSync() { return exists; }};
+                return require(name);
+            }});
+        assert.equal(paths.appData, path.join(evidence, 'appdata'));
+        assert.equal(paths.userData, path.join(evidence, 'profile'));
+        assert.ok(required.every(name => ['node:fs', 'node:path', 'node:url', 'electron'].includes(name)));
+    }
+    boot(mpvHome);
+    for (const value of [undefined, '', path.resolve('unrelated-mpv-profile')]) {
+        assert.throws(() => boot(value), /MPV_HOME isolation failed before product bootstrap/);
+    }
+    assert.throws(() => boot(mpvHome, false), /MPV_HOME isolation failed before product bootstrap/);
+    assert.throws(() => boot(mpvHome, true, true), /profile isolation failed before product bootstrap/);
+});
 
 test('ProductRoot resolves the candidate and all product provenance gates use it', () => {
     assert.match(runner, /\[string\]\$ProductRoot\s*=\s*''/);

@@ -26,6 +26,7 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!./enhanced-s
         BaseView.apply(this, arguments);
         this.view = view;
         this.info = null;
+        this.infoRequestId = 0;
         view.querySelector('.btnCheckUpdates').addEventListener('click', this.checkUpdates.bind(this));
         view.querySelector('.btnCopyEnvironment').addEventListener('click', this.copyEnvironment.bind(this));
         view.querySelector('.btnOpenReleases').addEventListener('click', this.openReleases.bind(this));
@@ -37,28 +38,34 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!./enhanced-s
 
     Object.assign(AboutView.prototype, BaseView.prototype);
 
+    AboutView.prototype.renderInfo = function (info) {
+        this.info = info;
+        var view = this.view;
+        var fields = {
+            aboutHeaderVersion: 'appVersion', aboutAppVersion: 'appVersion',
+            aboutElectron: 'electron', aboutChromium: 'chromium', aboutNativeHelper: 'nativeHelper',
+            aboutLibmpv: 'libmpv', aboutSourceCommit: 'sourceCommit', aboutNode: 'node',
+            aboutWindows: 'windows', aboutDisplayDpi: 'displayDpi', aboutNativeHelperState: 'nativeHelperState',
+            aboutRunningNativeHelper: 'runningNativeHelper', aboutRunningLibmpv: 'runningLibmpv'
+        };
+        Object.keys(fields).forEach(function (name) { setValue(view, '.' + name, info[fields[name]]); });
+    };
+
     AboutView.prototype.loadInfo = function () {
         var view = this.view;
+        var requestId = ++this.infoRequestId;
         loading.show();
         return request(CHANNELS.info).then(function (response) {
             if (!response || response.status !== 'ok' || !response.info) throw new Error('maintenance_info_failed');
-            this.info = response.info;
-            setValue(view, '.aboutHeaderVersion', response.info.appVersion);
-            setValue(view, '.aboutAppVersion', response.info.appVersion);
-            setValue(view, '.aboutElectron', response.info.electron);
-            setValue(view, '.aboutChromium', response.info.chromium);
-            setValue(view, '.aboutNativeHelper', response.info.nativeHelper);
-            setValue(view, '.aboutLibmpv', response.info.libmpv);
-            setValue(view, '.aboutSourceCommit', response.info.sourceCommit);
-            setValue(view, '.aboutNode', response.info.node);
-            setValue(view, '.aboutWindows', response.info.windows);
-            setValue(view, '.aboutDisplayDpi', response.info.displayDpi, 'NOT AVAILABLE');
+            if (requestId !== this.infoRequestId) return;
+            this.renderInfo(response.info);
             setStatus(view.querySelector('.aboutCopyState'), '', false);
         }.bind(this)).catch(function () {
+            if (requestId !== this.infoRequestId) return;
             setStatus(view.querySelector('.aboutCopyState'), '无法读取版本信息，请重启应用后重试。', true);
-        }).then(function () {
-            loading.hide();
-        });
+        }.bind(this)).then(function () {
+            if (requestId === this.infoRequestId) loading.hide();
+        }.bind(this));
     };
 
     AboutView.prototype.checkUpdates = function () {
@@ -92,14 +99,16 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!./enhanced-s
 
     AboutView.prototype.copyEnvironment = function () {
         var state = this.view.querySelector('.aboutCopyState');
-        var ready = this.info ? Promise.resolve() : this.loadInfo();
-        ready.then(function () {
-            return request(CHANNELS.copy);
-        }).then(function (response) {
+        var requestId = ++this.infoRequestId;
+        loading.hide();
+        request(CHANNELS.copy).then(function (response) {
+            if (requestId !== this.infoRequestId) return;
+            if (response && response.status === 'copied' && response.info) this.renderInfo(response.info);
             setStatus(state, response && response.status === 'copied' ? '已复制版本/环境信息。' : '复制失败，请稍后重试。', !(response && response.status === 'copied'));
-        }).catch(function () {
+        }.bind(this)).catch(function () {
+            if (requestId !== this.infoRequestId) return;
             setStatus(state, '复制失败，请稍后重试。', true);
-        });
+        }.bind(this));
     };
 
     AboutView.prototype.openReleases = function () {
@@ -109,8 +118,7 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!./enhanced-s
 
     AboutView.prototype.onResume = function (options) {
         BaseView.prototype.onResume.apply(this, arguments);
-        if (!this.info || (options && options.refresh)) this.loadInfo();
-        else loading.hide();
+        this.loadInfo();
     };
 
     AboutView.prototype.onPause = function () {

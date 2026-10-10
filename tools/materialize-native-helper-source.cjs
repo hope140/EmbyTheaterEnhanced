@@ -16,9 +16,11 @@ function materialize(rootArg, commit, sourcePath, outputPath) {
   const objectId = run(root, ['rev-parse', commit + ':' + sourcePath]).toString('utf8').trim();
   if (!/^[0-9a-f]{40,64}$/i.test(objectId)) throw new Error('Invalid native helper blob id.');
   const bytes = run(root, ['cat-file', 'blob', objectId]);
+  const versions = [...bytes.toString('utf8').matchAll(/constexpr const char\* HELPER_VERSION = "([0-9]+\.[0-9]+\.[0-9]+)";/g)];
+  if (versions.length !== 1) throw new Error('Native helper version declaration is missing or ambiguous.');
   fs.mkdirSync(path.dirname(outputPath), {recursive: true});
   fs.writeFileSync(outputPath, bytes);
-  return {objectId, sha256: crypto.createHash('sha256').update(bytes).digest('hex'), size: bytes.length};
+  return {objectId, sha256: crypto.createHash('sha256').update(bytes).digest('hex'), size: bytes.length, version: versions[0][1]};
 }
 
 if (require.main === module) {

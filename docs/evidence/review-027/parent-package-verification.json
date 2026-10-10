@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "status": "PASS",
+  "verifiedAtUtc": "2026-10-10T02:55:35.124Z",
+  "head": "0bcbfc74f2dbd9ed35bfb82eee719d25d2260b03",
+  "reviewedHead": "2b5686438fa0129fbb8686fae88c55264e1d38a5",
+  "productSourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+  "version": "0.2.7",
+  "installer": {
+    "file": "dist/EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe",
+    "bytes": 175632871,
+    "sha256": "86bee55146714f4f7e493cadb8b483537644f513c92364df7fc0c18f5315f3db"
+  },
+  "runtimeManifestSha256": "c6794efc6b69aeef67c3274903715e2483955a564dc9b2bc8a3e4cefd24ffe6c",
+  "postReviewChanges": [
+    "CHANGELOG.md",
+    "docs/DEVELOPMENT_LOG.md",
+    "docs/LOCAL_PACKAGE_027.md",
+    "docs/MAINTENANCE_027.md",
+    "docs/PROJECT_STATUS.md",
+    "docs/ROADMAP.md",
+    "docs/evidence/local-package-027-20261010.json",
+    "docs/evidence/local-package-027-delivery-20261010.json"
+  ],
+  "buildInputCount": 34,
+  "changedBuildInputs": [],
+  "verifiedRawRecords": [
+    {
+      "file": ".work/parent-review/PARENT_REVIEW.json",
+      "bytes": 4128,
+      "sha256": "744140df57108d05aa061c4e096c243384f1262047c3ffb3bc3ce71be72a0a0d"
+    },
+    {
+      "file": ".work/maintenance027/package/approved-phase1-evidence.json",
+      "bytes": 136744,
+      "sha256": "a553858e2723db255355f5d84021d5f750cad1fb5ecc380f3ec4567e9df9fed7"
+    },
+    {
+      "file": "dist/EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe",
+      "bytes": 175632871,
+      "sha256": "86bee55146714f4f7e493cadb8b483537644f513c92364df7fc0c18f5315f3db"
+    },
+    {
+      "file": "dist/EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe.sha256",
+      "bytes": 110,
+      "sha256": "4263cde47bd72fd36ff7a0e827526e64bb058bf5ba443c42f9dc1d426e7ece1c"
+    },
+    {
+      "file": "dist/EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe.provenance.json",
+      "bytes": 2154,
+      "sha256": "a6226c8c8ea50a863c1a0ce8eb149c7ebdb3758e9becc05f4ed7144cf7305aed"
+    },
+    {
+      "file": ".work/maintenance027/package/installer-integrity.log",
+      "bytes": 172926,
+      "sha256": "69dd8c0d6fa97b772866ec3f02bdef121803ca372bc70dbc98bbf97a782e3696"
+    },
+    {
+      "file": ".work/maintenance027/package/installer-verification.json",
+      "bytes": 564412,
+      "sha256": "6f8fa4f1be2c720432c9cda7f7fc4b3a0d25c33849618241275fcee9288e5995"
+    },
+    {
+      "file": ".work/maintenance027/package/installer-extraction.log",
+      "bytes": 177202,
+      "sha256": "3f9f2c0fa6a32fa4efdc04979464a7381f57735d3974f4df507b2f9f5d8302b2"
+    }
+  ],
+  "approvedOriginalEvidenceHashMatchesGitBlob": true,
+  "runtime": {
+    "relativePath": "dist/ETE-0.2.7-maintenance-d8fcb0f-win-x64",
+    "files": 2137,
+    "missing": 0,
+    "mismatchOrExtra": 0
+  },
+  "extracted": {
+    "relativePath": ".work/maintenance027/package/extract/{app}",
+    "files": 2137,
+    "missing": 0,
+    "mismatchOrExtra": 0
+  },
+  "delivery": {
+    "directory": "dist/delivery-0.2.7-maintenance-d8fcb0f",
+    "fileCount": 10,
+    "files": [
+      {
+        "file": "dist\\delivery-0.2.7-maintenance-d8fcb0f\\EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe",
+        "bytes": 175632871,
+        "sha256": "86bee55146714f4f7e493cadb8b483537644f513c92364df7fc0c18f5315f3db"
+      },
+      {
+        "file": "dist\\delivery-0.2.7-maintenance-d8fcb0f\\EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe.provenance.json",
+        "bytes": 2154,
+        "sha256": "a6226c8c8ea50a863c1a0ce8eb149c7ebdb3758e9becc05f4ed7144cf7305aed"
+      },
+      {
+        "file": "dist\\delivery-0.2.7-maintenance-d8fcb0f\\EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe.sha256",
+        "bytes": 110,
+        "sha256": "4263cde47bd72fd36ff7a0e827526e64bb058bf5ba443c42f9dc1d426e7ece1c"
+      },
+      {
+        "file": "dist\\delivery-0.2.7-maintenance-d8fcb0f\\PARENT_REVIEW.json",
+        "bytes": 4128,
+        "sha256": "744140df57108d05aa061c4e096c243384f1262047c3ffb3bc3ce71be72a0a0d"
+      },
+      {
+        "file": "dist\\delivery-0.2.7-maintenance-d8fcb0f\\README.zh-CN.md",
+        "bytes": 1884,
+        "sha256": "89a15486233f7b54598cf110b09b6ba04ba11b34053a13492b41db204f74a221"
+      },
+      {
+        "file": "dist\\delivery-0.2.7-maintenance-d8fcb0f\\VALIDATION.md",
+        "bytes": 2130,
+        "sha256": "965f20f892c21b5f20b8aec5f1f99a77ac68639328dd9d12644bdb6f23a2893b"
+      },
+      {
+        "file": "dist\\delivery-0.2.7-maintenance-d8fcb0f\\installer-verification.json",
+        "bytes": 564412,
+        "sha256": "6f8fa4f1be2c720432c9cda7f7fc4b3a0d25c33849618241275fcee9288e5995"
+      },
+      {
+        "file": "dist\\delivery-0.2.7-maintenance-d8fcb0f\\local-package-027-20261010.json",
+        "bytes": 8452,
+        "sha256": "77e2b87956e136cd44e3c9208158d0ca6a94ab7eafc352c9eb10fb1cdce5649c"
+      },
+      {
+        "file": "dist\\delivery-0.2.7-maintenance-d8fcb0f\\maintenance-027-20261010.json",
+        "bytes": 136744,
+        "sha256": "a553858e2723db255355f5d84021d5f750cad1fb5ecc380f3ec4567e9df9fed7"
+      }
+    ],
+    "checksumSha256": "c27a16c366bc7c02466bba4c0c3ff2313da2af23b1fa70f06886ed83463cd8b3",
+    "privacyCandidates": 0
+  },
+  "newProductTestsRun": false,
+  "newInstallerExtractionRun": false
+}

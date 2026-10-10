@@ -24,6 +24,7 @@
     var deviceIdentity = require('./device-identity');
     var enhancedDiagnostics = require('./enhanced/diagnostics');
     var maintenanceIpc = require('./enhanced/maintenance-ipc');
+    var bundledVersions = require('./enhanced/bundled-versions');
 
     var appBootstrapState = appBootstrap.bootstrap({
         appDataPath: app.getPath('appData'),
@@ -119,8 +120,11 @@
     var unregisterNativeHelperIpc = function () { return Promise.resolve(); };
     var nativeHelperService;
 
-    function getCurrentEnhancedAppInfo() {
+    var readCurrentBundledVersions = bundledVersions.createBundledVersionReader(path.resolve(__dirname, '..'), diagnosticsAppInfo.buildCommit);
+    async function getCurrentEnhancedAppInfo() {
+        var currentBundledVersions = await readCurrentBundledVersions();
         return Object.assign({}, diagnosticsAppInfo, {
+            bundledVersions: currentBundledVersions,
             nativeHelper: nativeHelperService && typeof nativeHelperService.status === 'function' ? nativeHelperService.status() : null
         });
     }

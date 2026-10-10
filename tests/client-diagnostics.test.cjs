@@ -618,13 +618,19 @@ test('diagnostics IPC requires the trusted renderer and keeps export paths out o
     const outputRoot = tempRoot('ete-client-ipc-');
     const exported = path.join(outputRoot, 'report.txt');
     let cleared = 0;
+    let infoCalls = 0;
+    let infoReady = false;
     const ipcMain = {
         handle(channel, handler) { handlers[channel] = handler; },
         removeHandler(channel) { delete handlers[channel]; }
     };
     const logger = {
         status: async () => ({enabled: true, logDirectory: diagnostics.DISPLAY_LOG_DIRECTORY, currentBytes: 12}),
-        exportReport: async () => 'safe-report\n',
+        exportReport: async info => {
+            assert.equal(infoReady, true);
+            assert.deepEqual(info, {appVersion: '0.2.6', bundledVersions: {helperVersion: '1.0.0'}});
+            return 'safe-report\n';
+        },
         getPaths: () => ({directory: path.join(outputRoot, 'logs')}),
         clear: async () => { cleared++; return true; }
     };
@@ -635,6 +641,12 @@ test('diagnostics IPC requires the trusted renderer and keeps export paths out o
             ipcMain,
             logger,
             getWebContents: () => trusted,
+            getAppInfo: async () => {
+                infoCalls++;
+                await new Promise(resolve => setImmediate(resolve));
+                infoReady = true;
+                return {appVersion: '0.2.6', bundledVersions: {helperVersion: '1.0.0'}};
+            },
             getBrowserWindow: () => ({}),
             app: {getPath: () => outputRoot},
             dialog,
@@ -642,7 +654,11 @@ test('diagnostics IPC requires the trusted renderer and keeps export paths out o
         });
         assert.deepEqual(await handlers[diagnosticsIpc.CHANNELS.GET_STATUS]({sender: {}}), {status: 'error', reason: 'untrusted_sender'});
         assert.equal((await handlers[diagnosticsIpc.CHANNELS.GET_STATUS]({sender: trusted})).status, 'ok');
+        assert.equal(infoCalls, 0, 'status query does not read package versions');
+        assert.deepEqual(await handlers[diagnosticsIpc.CHANNELS.EXPORT]({sender: {}}), {status: 'error', reason: 'untrusted_sender'});
+        assert.equal(infoCalls, 0, 'untrusted export does not read application information');
         assert.equal((await handlers[diagnosticsIpc.CHANNELS.EXPORT]({sender: trusted})).status, 'exported');
+        assert.equal(infoCalls, 1);
         assert.equal(fs.readFileSync(exported, 'utf8'), 'safe-report\n');
         assert.equal((await handlers[diagnosticsIpc.CHANNELS.CLEAR]({sender: trusted}, {})).reason, 'confirmation_required');
         assert.equal((await handlers[diagnosticsIpc.CHANNELS.CLEAR]({sender: trusted}, {confirmed: true})).status, 'cleared');

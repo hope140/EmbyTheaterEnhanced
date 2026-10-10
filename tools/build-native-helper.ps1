@@ -55,7 +55,7 @@ try {
         compiler = [ordered]@{ fileName=(Split-Path $compiler -Leaf); sha256=$compilerSha256; version=$compilerVersion; flags=@($flags + $linkerFlags) }
         toolchain = $toolchain
         libmpv = [ordered]@{ runtimePath=$manifest.libmpv.runtimePath; sha256=$manifest.libmpv.sha256; version=$manifest.libmpv.version; clientApi=$manifest.libmpv.clientApi }
-        helper = [ordered]@{ runtimePath=$manifest.runtimePath; sha256=(Get-FileHash -LiteralPath $output -Algorithm SHA256).Hash.ToLowerInvariant(); size=(Get-Item -LiteralPath $output).Length; testing=[bool]$Testing }
+        helper = [ordered]@{ runtimePath=$manifest.runtimePath; version=$materialized.version; sha256=(Get-FileHash -LiteralPath $output -Algorithm SHA256).Hash.ToLowerInvariant(); size=(Get-Item -LiteralPath $output).Length; testing=[bool]$Testing }
         contract = $contract
     }
     [IO.File]::WriteAllText((Join-Path $RuntimeRoot $manifest.provenancePath), ($record | ConvertTo-Json -Depth 8) + "`n", $utf8)

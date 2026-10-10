@@ -25,6 +25,7 @@ function validate(rootArg, runtimeArg, sourceCommit) {
   const temporary = path.join(root, '.work', 'native-helper-provenance-' + process.pid + '-' + Date.now() + '.cpp');
   try {
     const source = materialize(root, sourceCommit, manifest.sourcePath, temporary);
+    if (!record.helper || record.helper.version !== source.version) errors.push('native-helper-version-mismatch');
     if (!record.source || record.source.path !== manifest.sourcePath || record.source.gitBlobObjectId !== source.objectId || record.source.sha256 !== source.sha256 || record.source.size !== source.size) {
       errors.push('native-helper-source-identity-mismatch');
     }
@@ -33,6 +34,7 @@ function validate(rootArg, runtimeArg, sourceCommit) {
   const header = path.join(root, manifest.clientHeader.path);
   if (!exists(header) || hashFile(header) !== manifest.clientHeader.sha256 || !record.clientHeader || record.clientHeader.sha256 !== manifest.clientHeader.sha256) errors.push('native-helper-header-mismatch');
   const libmpv = path.join(runtime, manifest.libmpv.runtimePath);
+  if (!record.libmpv || record.libmpv.version !== manifest.libmpv.version || record.libmpv.clientApi !== manifest.libmpv.clientApi) errors.push('native-helper-libmpv-version-mismatch');
   if (!exists(libmpv) || hashFile(libmpv) !== manifest.libmpv.sha256 || !record.libmpv || record.libmpv.sha256 !== manifest.libmpv.sha256) errors.push('native-helper-libmpv-mismatch');
   const helper = path.join(runtime, manifest.runtimePath);
   if (!exists(helper) || !record.helper || record.helper.runtimePath !== manifest.runtimePath || record.helper.sha256 !== hashFile(helper) || record.helper.size !== fs.statSync(helper).size || record.helper.testing !== false) errors.push('native-helper-binary-mismatch');

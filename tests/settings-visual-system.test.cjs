@@ -78,14 +78,15 @@ test('maintenance version ordering and update states use injected release fixtur
     }), {status: 'error', reason: 'invalid-current-version'});
 });
 
-test('About environment summary is read-only and hides libmpv until helper readiness', () => {
+test('About environment summary separates verified bundled versions from helper readiness', () => {
     const appInfo = Object.freeze({
         appVersion: '0.2.3',
         electron: '44.4.2',
         chromium: '152.0.7977.130',
         node: '24.21.0',
         buildCommit: 'a'.repeat(40),
-        nativeHelper: Object.freeze({helperVersion: '0.2.1-helper', libmpvVersion: 'mpv v0.41.0', state: 'starting'})
+        bundledVersions: Object.freeze({helperVersion: '0.2.1-helper', libmpvVersion: 'mpv v0.41.0'}),
+        nativeHelper: Object.freeze({helperVersion: '0.2.2-helper', libmpvVersion: 'mpv v0.42.0', state: 'starting'})
     });
     const platformInfo = Object.freeze({windows: 'Windows test build'});
     const displayInfo = Object.freeze({summary: 'scaleFactor 1.50'});
@@ -93,13 +94,22 @@ test('About environment summary is read-only and hides libmpv until helper readi
 
     assert.deepEqual(info, {
         appVersion: '0.2.3', electron: '44.4.2', chromium: '152.0.7977.130', node: '24.21.0',
-        nativeHelper: '0.2.1-helper', libmpv: 'UNKNOWN', sourceCommit: 'a'.repeat(40),
+        nativeHelper: '0.2.1-helper', libmpv: 'mpv v0.41.0', nativeHelperState: 'starting',
+        runningNativeHelper: 'NOT AVAILABLE', runningLibmpv: 'NOT AVAILABLE', sourceCommit: 'a'.repeat(40),
         windows: 'Windows test build', displayDpi: 'scaleFactor 1.50'
     });
-    assert.match(maintenance.formatEnvironmentText(info), /libmpv: UNKNOWN/);
-    assert.equal(maintenance.buildEnvironmentInfo({nativeHelper: {helperVersion: 'helper'}}).libmpv, 'UNKNOWN');
-    assert.equal(maintenance.buildEnvironmentInfo({nativeHelper: {state: 'ready', libmpvVersion: 'mpv v0.41.0'}}).libmpv, 'mpv v0.41.0');
-    assert.equal(appInfo.nativeHelper.libmpvVersion, 'mpv v0.41.0');
+    assert.match(maintenance.formatEnvironmentText(info), /libmpv: mpv v0\.41\.0/);
+    assert.equal(maintenance.buildEnvironmentInfo({nativeHelper: {helperVersion: 'helper', libmpvVersion: 'mpv v0.41.0'}}).libmpv, 'UNKNOWN');
+    const readyInfo = maintenance.buildEnvironmentInfo({
+        bundledVersions: {helperVersion: '0.2.1-helper', libmpvVersion: 'mpv v0.41.0'},
+        nativeHelper: {state: 'ready', helperVersion: '0.2.2-helper', libmpvVersion: 'mpv v0.42.0'}
+    });
+    assert.equal(readyInfo.nativeHelper, '0.2.1-helper');
+    assert.equal(readyInfo.libmpv, 'mpv v0.41.0');
+    assert.equal(readyInfo.nativeHelperState, 'ready');
+    assert.equal(readyInfo.runningNativeHelper, '0.2.2-helper');
+    assert.equal(readyInfo.runningLibmpv, 'mpv v0.42.0');
+    assert.equal(appInfo.nativeHelper.libmpvVersion, 'mpv v0.42.0');
     assert.equal(displayInfo.summary, 'scaleFactor 1.50');
 });
 
@@ -110,10 +120,15 @@ test('maintenance IPC checks sender trust, supports unregister and limits clipbo
     let copiedText = '';
     const opened = [];
     let fixtureCalls = 0;
+    let appInfoCalls = 0;
     const unregister = maintenanceIpc.register({
         ipcMain,
         getWebContents: function () { return trusted; },
-        getAppInfo: function () { return {appVersion: '0.2.2', nativeHelper: {helperVersion: 'helper', libmpvVersion: 'mpv', state: 'ready'}}; },
+        getAppInfo: async function () {
+            await new Promise(resolve => setImmediate(resolve));
+            appInfoCalls++;
+            return {appVersion: appInfoCalls === 1 || appInfoCalls > 2 ? '0.2.2' : '0.2.3', bundledVersions: {helperVersion: 'helper-bundled', libmpvVersion: 'mpv-bundled'}, nativeHelper: {helperVersion: 'helper-running', libmpvVersion: 'mpv-running', state: 'ready'}};
+        },
         getPlatformInfo: function () { return {windows: 'Windows test'}; },
         getDisplayInfo: function () { return {}; },
         clipboard: {writeText: function (value) { copiedText = value; }},
@@ -124,13 +139,24 @@ test('maintenance IPC checks sender trust, supports unregister and limits clipbo
         }
     });
 
+    assert.deepEqual(await ipcMain.handlers.get(maintenanceIpc.CHANNELS.COPY_ENVIRONMENT)({sender: untrusted}), {
+        status: 'error', reason: 'untrusted_sender'
+    });
+    assert.equal(appInfoCalls, 0, 'untrusted copy requests must not read application information');
+    assert.equal(copiedText, '', 'untrusted copy requests must not touch the clipboard');
     assert.equal((await ipcMain.handlers.get(maintenanceIpc.CHANNELS.GET_INFO)({sender: trusted})).status, 'ok');
     assert.deepEqual(await ipcMain.handlers.get(maintenanceIpc.CHANNELS.CHECK_UPDATE)({sender: untrusted}), {
         status: 'error', reason: 'untrusted_sender'
     });
     assert.equal(fixtureCalls, 0);
-    assert.equal((await ipcMain.handlers.get(maintenanceIpc.CHANNELS.COPY_ENVIRONMENT)({sender: trusted})).status, 'copied');
-    assert.match(copiedText, /Emby Theater Enhanced: 0\.2\.2/);
+    const beforeCopyCalls = appInfoCalls;
+    const copyResult = await ipcMain.handlers.get(maintenanceIpc.CHANNELS.COPY_ENVIRONMENT)({sender: trusted});
+    assert.equal(copyResult.status, 'copied');
+    assert.equal(appInfoCalls, beforeCopyCalls + 1, 'copy should build one immutable information snapshot');
+    assert.equal(copyResult.info.appVersion, '0.2.3');
+    assert.match(copiedText, /Emby Theater Enhanced: 0\.2\.3/);
+    assert.match(copiedText, /Native Helper: helper-bundled/);
+    assert.match(copiedText, /Running Native Helper: helper-running/);
     assert.equal((await ipcMain.handlers.get(maintenanceIpc.CHANNELS.CHECK_UPDATE)({sender: trusted})).status, 'update-available');
     assert.equal(fixtureCalls, 1);
     assert.equal((await ipcMain.handlers.get(maintenanceIpc.CHANNELS.OPEN_RELEASES)({sender: trusted}, {
@@ -144,9 +170,57 @@ test('maintenance IPC checks sender trust, supports unregister and limits clipbo
     assert.equal(ipcMain.handlers.size, 0);
 });
 
+test('main reads live Helper status after asynchronous package validation on every query', async () => {
+    const main = fs.readFileSync(path.join(repoRoot, 'src/electronapp/main.js'), 'utf8');
+    const start = main.indexOf('    var readCurrentBundledVersions =');
+    const end = main.indexOf('    function getPlatformInfo()', start);
+    assert.ok(start >= 0 && end > start);
+    let finish;
+    let state = 'starting';
+    let statusCalls = 0;
+    const context = {
+        path, __dirname: '/runtime/electronapp', diagnosticsAppInfo: {buildCommit: 'a'.repeat(40)},
+        bundledVersions: {createBundledVersionReader: () => () => new Promise(resolve => { finish = resolve; })},
+        nativeHelperService: {status() { statusCalls++; return {state, helperVersion: state === 'ready' ? '1.0.0' : null}; }}
+    };
+    vm.createContext(context);
+    vm.runInContext(main.slice(start, end), context);
+    const pending = context.getCurrentEnhancedAppInfo();
+    assert.equal(statusCalls, 0);
+    state = 'ready';
+    finish({helperVersion: '1.0.0', libmpvVersion: 'v0.41.0'});
+    assert.equal((await pending).nativeHelper.state, 'ready');
+    const next = context.getCurrentEnhancedAppInfo();
+    state = 'stopped';
+    finish(null);
+    const result = await next;
+    assert.equal(result.nativeHelper.state, 'stopped');
+    assert.equal(result.bundledVersions, null);
+    assert.equal(statusCalls, 2);
+});
+
+test('maintenance IPC maps async information failure to an error without clipboard or update side effects', async () => {
+    const ipcMain = fakeIpcMain();
+    const trusted = {};
+    let sideEffects = 0;
+    maintenanceIpc.register({
+        ipcMain, getWebContents: () => trusted,
+        getAppInfo: async () => { await Promise.resolve(); throw new Error('fixture failure'); },
+        clipboard: {writeText() { sideEffects++; }},
+        requestJson: async () => { sideEffects++; return {}; }
+    });
+    for (const channel of [maintenanceIpc.CHANNELS.GET_INFO, maintenanceIpc.CHANNELS.COPY_ENVIRONMENT,
+        maintenanceIpc.CHANNELS.CHECK_UPDATE]) {
+        assert.deepEqual(await ipcMain.handlers.get(channel)({sender: trusted}),
+            {status: 'error', reason: 'maintenance_operation_failed'});
+    }
+    assert.equal(sideEffects, 0);
+});
+
 test('About loads environment on entry and checks updates only after a user click', async () => {
     const invoked = [];
     let finishUpdate;
+    let infoCalls = 0;
     const nodes = new Map();
     const loadingCalls = [];
     function fakeNode() {
@@ -177,9 +251,10 @@ test('About loads environment on entry and checks updates only after a user clic
                 invoke: function (channel) {
                     invoked.push(channel);
                     if (channel === 'enhanced-maintenance-info') {
+                        infoCalls++;
                         return Promise.resolve({
                             status: 'ok',
-                            info: {appVersion: '0.2.3', electron: '44.4.2', chromium: '152', node: '24', nativeHelper: 'helper 0.2.1', libmpv: 'UNKNOWN', sourceCommit: 'abc', windows: 'Windows', displayDpi: 'NOT AVAILABLE'}
+                            info: {appVersion: infoCalls === 1 ? '0.2.3' : '0.2.4', electron: '44.4.2', chromium: '152', node: '24', nativeHelper: 'helper 0.2.1', libmpv: 'mpv v0.41.0', sourceCommit: 'abc', windows: 'Windows', displayDpi: 'NOT AVAILABLE', nativeHelperState: 'idle', runningNativeHelper: 'NOT AVAILABLE', runningLibmpv: 'NOT AVAILABLE'}
                         });
                     }
                     if (channel === 'enhanced-maintenance-check-update') {
@@ -198,7 +273,8 @@ test('About loads environment on entry and checks updates only after a user clic
     assert.equal(view.querySelector('.aboutAppVersion').textContent, '0.2.3');
     for (const [selector, value] of [
         ['.aboutElectron', '44.4.2'], ['.aboutChromium', '152'], ['.aboutNativeHelper', 'helper 0.2.1'],
-        ['.aboutLibmpv', 'UNKNOWN'], ['.aboutSourceCommit', 'abc'], ['.aboutNode', '24'], ['.aboutWindows', 'Windows']
+        ['.aboutLibmpv', 'mpv v0.41.0'], ['.aboutSourceCommit', 'abc'], ['.aboutNode', '24'], ['.aboutWindows', 'Windows'],
+        ['.aboutNativeHelperState', 'idle'], ['.aboutRunningNativeHelper', 'NOT AVAILABLE'], ['.aboutRunningLibmpv', 'NOT AVAILABLE']
     ]) {
         assert.equal(view.querySelector(selector).textContent, value);
     }
@@ -211,6 +287,113 @@ test('About loads environment on entry and checks updates only after a user clic
     finishUpdate({status: 'latest', currentVersion: '0.2.3'});
     await new Promise(function (resolve) { setImmediate(resolve); });
     assert.equal(updateButton.disabled, false);
+
+    controller.onResume();
+    await new Promise(function (resolve) { setImmediate(resolve); });
+    assert.equal(infoCalls, 2, 'each resume refreshes environment information');
+    assert.equal(view.querySelector('.aboutAppVersion').textContent, '0.2.4');
+    assert.deepEqual(invoked, ['enhanced-maintenance-info', 'enhanced-maintenance-check-update', 'enhanced-maintenance-info']);
+});
+
+test('About renders the exact trusted copy snapshot and ignores an older pending load response', async () => {
+    const pending = [];
+    const nodes = new Map();
+    const loadingCalls = [];
+    function fakeNode() {
+        return {textContent: '', disabled: false, hidden: false, attributes: {}, listeners: {},
+            addEventListener(type, listener) { this.listeners[type] = listener; },
+            setAttribute(name, value) { this.attributes[name] = value; },
+            getAttribute(name) { return this.attributes[name] || null; }};
+    }
+    const view = {querySelector(selector) {
+        if (!nodes.has(selector)) nodes.set(selector, fakeNode());
+        return nodes.get(selector);
+    }};
+    function BaseView() {}
+    BaseView.prototype.onResume = function () {};
+    BaseView.prototype.onPause = function () {};
+    let AboutView;
+    const context = {
+        define(_dependencies, factory) { AboutView = factory({show() { loadingCalls.push('show'); }, hide() { loadingCalls.push('hide'); }}, BaseView); },
+        window: {ipc: {invoke(channel) {
+            return new Promise(resolve => pending.push({channel, resolve}));
+        }}}
+    };
+    vm.runInNewContext(readPluginFile('about.js'), context, {filename: 'about.js'});
+    const controller = new AboutView(view);
+    const oldLoad = controller.loadInfo();
+    view.querySelector('.btnCopyEnvironment').listeners.click();
+    assert.deepEqual(pending.map(item => item.channel), ['enhanced-maintenance-info', 'enhanced-maintenance-copy-environment']);
+
+    const snapshot = {appVersion: '0.2.8', electron: '44.4.2', chromium: '152', node: '24', nativeHelper: 'bundled-helper', libmpv: 'bundled-mpv', sourceCommit: 'd'.repeat(40), windows: 'Windows copy snapshot', displayDpi: '125%', nativeHelperState: 'ready', runningNativeHelper: 'running-helper', runningLibmpv: 'running-mpv'};
+    pending[1].resolve({status: 'copied', info: snapshot});
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(view.querySelector('.aboutAppVersion').textContent, snapshot.appVersion);
+    assert.equal(view.querySelector('.aboutNativeHelper').textContent, snapshot.nativeHelper);
+    assert.equal(view.querySelector('.aboutRunningNativeHelper').textContent, snapshot.runningNativeHelper);
+    assert.equal(view.querySelector('.aboutRunningLibmpv').textContent, snapshot.runningLibmpv);
+    assert.equal(view.querySelector('.aboutWindows').textContent, snapshot.windows);
+    assert.equal(view.querySelector('.aboutDisplayDpi').textContent, snapshot.displayDpi);
+
+    pending[0].resolve({status: 'ok', info: Object.assign({}, snapshot, {appVersion: 'stale-version'})});
+    await oldLoad;
+    assert.equal(view.querySelector('.aboutAppVersion').textContent, snapshot.appVersion,
+        'an earlier load response must not replace the newer copy snapshot');
+    assert.deepEqual(loadingCalls, ['show', 'hide'], 'an obsolete load cannot hide loading owned by a newer request');
+});
+
+test('About ignores an older copy rejection and keeps the current load loading state', async () => {
+    const pending = [];
+    const nodes = new Map();
+    const loadingCalls = [];
+    function fakeNode() {
+        return {textContent: '', disabled: false, hidden: false, attributes: {}, listeners: {},
+            addEventListener(type, listener) { this.listeners[type] = listener; },
+            setAttribute(name, value) { this.attributes[name] = value; },
+            getAttribute(name) { return this.attributes[name] || null; }};
+    }
+    const view = {querySelector(selector) {
+        if (!nodes.has(selector)) nodes.set(selector, fakeNode());
+        return nodes.get(selector);
+    }};
+    function BaseView() {}
+    BaseView.prototype.onResume = function () {};
+    BaseView.prototype.onPause = function () {};
+    let AboutView;
+    const context = {
+        define(_dependencies, factory) { AboutView = factory({show() { loadingCalls.push('show'); }, hide() { loadingCalls.push('hide'); }}, BaseView); },
+        window: {ipc: {invoke(channel) {
+            return new Promise((resolve, reject) => pending.push({channel, resolve, reject}));
+        }}}
+    };
+    vm.runInNewContext(readPluginFile('about.js'), context, {filename: 'about.js'});
+    const controller = new AboutView(view);
+
+    const oldLoad = controller.loadInfo();
+    view.querySelector('.btnCopyEnvironment').listeners.click();
+    const currentLoad = controller.loadInfo();
+    assert.deepEqual(pending.map(item => item.channel), [
+        'enhanced-maintenance-info', 'enhanced-maintenance-copy-environment', 'enhanced-maintenance-info'
+    ]);
+    assert.deepEqual(loadingCalls, ['show', 'hide', 'show']);
+
+    pending[0].resolve({status: 'ok', info: {appVersion: 'stale-load'}});
+    await oldLoad;
+    assert.deepEqual(loadingCalls, ['show', 'hide', 'show'], 'the old load cannot hide the newer load indicator');
+
+    pending[2].resolve({status: 'ok', info: {appVersion: 'current-load'}});
+    await currentLoad;
+    assert.deepEqual(loadingCalls, ['show', 'hide', 'show', 'hide']);
+    assert.equal(view.querySelector('.aboutAppVersion').textContent, 'current-load');
+    const status = view.querySelector('.aboutCopyState');
+    assert.equal(status.textContent, '');
+    assert.equal(status.getAttribute('role'), 'status');
+
+    pending[1].reject(new Error('stale copy failure'));
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(status.textContent, '', 'an old copy rejection cannot replace current load status');
+    assert.equal(status.getAttribute('role'), 'status');
+    assert.deepEqual(loadingCalls, ['show', 'hide', 'show', 'hide']);
 });
 
 test('main registers maintenance IPC for the current renderer and unregisters it before quit', () => {
@@ -243,7 +426,7 @@ test('About route and all three settings pages use Emby native page and control 
     assert.match(readPluginFile('strm.js'), /document\.createElement\(tag, \{is: customName\}\)/);
     const about = readPluginFile('about.html');
     assert.match(about, /<details\b[^>]*class="[^"]*ete-about-advanced[^"]*"[\s\S]*?<\/details>/);
-    for (const label of ['Electron', 'Chromium', 'Native Helper', 'libmpv', 'Source Commit']) {
+    for (const label of ['Electron', 'Chromium', 'Native Helper', 'libmpv', 'Helper 运行状态', '运行中的 Helper', '运行中的 libmpv', 'Source Commit']) {
         assert.match(about, new RegExp('<span>' + label + '</span>'), 'About advanced details include ' + label);
     }
     assert.match(about, /<code class="aboutAppVersion">/);

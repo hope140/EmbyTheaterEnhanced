@@ -1,5 +1,7 @@
 # 架构
 
+About包内版本校验由main持有固定runtimeRoot/sourceCommit的异步reader。四个固定文件按64 KiB读取/哈希，读取前后及整轮结束复核文件身份；仅共享进行中的Promise，完成/UNKNOWN即清除，后续查询重验全部字节。实时Helper状态在await包内结果后独立获取；维护GET_INFO/COPY/CHECK_UPDATE及诊断EXPORT均await信息快照。复制同快照、sender白名单及renderer请求代际保持，查询不启动播放器。验证层级与正式候选待执行项见 [About异步版本校验](ABOUT_VERSION_ASYNC.md)。
+
 Native Helper service 的完整 destroy 使用单一缓存 Promise。首次调用同步置 destroyed 并清除 endpoint admission，随后异步执行原清理；主窗口 closed 与 before-quit/unregister 的重复调用共享同一完成或拒绝，不能以“已开始销毁”代替“已完成”。原错误短路、kill策略、Session和播放操作保持，正常窗口关闭证据见 [本地包记录](LOCAL_PACKAGE_026.md)。
 
 renderer endpoint destroy可先清空client指针再等待其owned child退出。service使用pending集合跟踪这些destroyClient完成结果；完整destroy在同步封住admission后捕获尚未完成的集合，并在解绑surface前等待。空client指针不等于旧child已经退出。此修复限于已观察到的renderer destroy先行路径，不重写terminal callback或controller退出策略。
@@ -48,7 +50,7 @@ STRM 增强：在 `libmpv.js` 的 `playInternal(options)` 中，若 `Item.Path` 
 
 STRM resolver settings 由 `enhanced/strm-config-store.js` 持久化 schema version 1 配置和 main-process-only secret 文件；`enhanced/strm-config-ipc.js` 只向当前 BrowserWindow 返回脱敏配置。`libmpv.getRoutes()` 注册 `mpvplayer/strm.html`，页面保存规则后提示重启生效。规则使用最长前缀匹配，支持 `cloud-first`、`mount-first` 和可校验的 `custom` order；AUTO discovery 只能更新 AUTO，USER 与 DISABLED tombstone 受到保护。
 
-Settings 的 STRM、诊断与 About 沿用 Emby 原生主题、verticalSection、sectionTitle与控件，共同加载 `mpvplayer/enhanced-settings.css`。共享规则限制在 `.ete-settings-page` 根下，负责宽度、间距和按钮层级；三个页面的 CSS 只负责各自布局。动态input/select在创建时传入 `{is: 'emby-*'}`，About高级运行信息默认折叠。About route 通过现有 `libmpv.getRoutes()` 注册。`enhanced/maintenance-ipc.js` 只接受当前应用 `webContents`，提供版本/环境信息、剪贴板白名单复制、用户点击后有界查询最新 Release、受限 Releases 外链四项维护操作；数据整理在 `enhanced/maintenance.js`，不进入播放或 Resolver 链。libmpv 只在 Native Helper ready 时展示为已确认版本，显示缩放来自主显示器 `scaleFactor`。
+Settings 的 STRM、诊断与 About 沿用 Emby 原生主题、verticalSection、sectionTitle与控件，共同加载 `mpvplayer/enhanced-settings.css`。共享规则限制在 `.ete-settings-page` 根下，负责宽度、间距和按钮层级；三个页面的 CSS 只负责各自布局。动态input/select在创建时传入 `{is: 'emby-*'}`，About高级运行信息默认折叠。About route 通过现有 `libmpv.getRoutes()` 注册。`enhanced/maintenance-ipc.js` 只接受当前应用 `webContents`，提供版本/环境信息、剪贴板白名单复制、用户点击后有界查询最新 Release、受限 Releases 外链四项维护操作；数据整理在 `enhanced/maintenance.js`，不进入播放或 Resolver 链。随包 Helper/libmpv 版本经 native provenance、build manifest 和实际二进制哈希核验，运行状态与握手版本单独展示；未 ready 的运行版本为 NOT AVAILABLE，显示缩放来自主显示器 `scaleFactor`。
 
 设置页的 CloudDrive2 连接状态由 `strm-config-ipc.js` 的当前 main-process 会话统一持有。`TEST_CONNECTION` 使用现有只读 `testConnection()` 探针更新 `unknown/checking/connected/failed` 与单调 revision；`GET_CONNECTION_STATUS` 和规则测试只返回同一快照。规则测试的 `mapped` 仅证明 prefix replacement 格式有效，与连通性分开。配置或 Token 成功保存后状态失效为 `unknown`。renderer 只展示带 revision 的快照，测试结果会立即刷新页面上所有规则卡；这不改变 CD2 service 或播放 route。
 

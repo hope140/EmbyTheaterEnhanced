@@ -1,5 +1,11 @@
 # 测试与验收
 
+## 2026-10-10 — 0.2.7最终输入验证
+
+产品sourceCommit d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0，最终夹具0e87d4f5b85ee136d1fe3d0ab47eaac25d64ac9d。完整单测651/651，工具42/42；八组新版本矩阵及两组最终隔离读回串行PASS，正常产品关闭均自然exit0/无强清理/残留0。原650/650与旧八组保持各自输入，新增MPV_HOME读回只对最终两组声明。准确命令/日志hash/来源/状态与各层边界见 [维护报告](MAINTENANCE_027.md) 和 [机器证据](evidence/maintenance-027-20261010.json)。
+
+验证按变更范围和来源身份选择。纯文档审核只需核对事实、引用、diff、链接和敏感信息；产品、构建或测试输入变化时，执行受影响 gate。待复用证据所依赖的产品、构建和测试输入均未改变且身份已核对时，可按原 sourceCommit、实际输入、产物身份及原层级复用，保持原运行来源；源码/构建输入改变需新来源验证，测试输入改变需重新执行受影响 gate。静态、单测、隔离 runtime、真实服务、前台可见和系统安装各自记录，不能互相替代。
+
 ## 2026-10-09 v0.2.6主线整合
 
 整合树从完整发布HEAD4b24919建立；本轮重新执行 `node --test --test-concurrency=1 tests/*.test.cjs`，完整日志631/631、0失败/取消/跳过，约238.7秒。准确环境、退出码、日志hash与其它静态检查见 [主线整合报告](MAIN_INTEGRATION_026.md) 和 [机器证据](evidence/main-integration-026-20261009.json)。下文保留各早期候选的测试阶段，不能将历史FAIL或UNKNOWN静默改为当前PASS。
@@ -165,7 +171,9 @@ node --test tests/libmpv-stats.test.cjs
 
 该测试加载真实 AMD `libmpv.js`/Player，确认一个 optional property 的精确 `property-unavailable` 只使对应 Stats field 缺失，其余 category 与 structured number/boolean/string/map/array/INT64 string 继续返回；非 `property-unavailable` 错误仍使 `getStats()` reject。它不改变或替代 direct/global `getProperty()`、helper transport/protocol/generation tests。
 
-## 当前自动检查
+## [历史 Phase 1] 自动检查命令与结果
+
+以下默认 runtime 路径和 152/152 属于该阶段，不是当前任务的固定入口或通过数量；开工时选择准确产物、目标版本和受影响测试。
 
 ```powershell
 npm test
@@ -300,7 +308,7 @@ UI/runtime 测试必须串行执行。测试输出只保留在 `.work` 隔离目
 
 构建和哈希检查可以独立执行。原有无服务器的 DirectStream fixture 和隐藏窗口超时记录保留，最新通过证据见状态文档。
 
-## 验收分层
+## 历史第一轮验收分层
 
 | 层级 | 第一轮结果 |
 |---|---|

@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-10",
+  "timezone": "Asia/Shanghai",
+  "status": "PUBLISHED_AND_FULL_ASSET_READBACK_VERIFIED",
+  "release": {
+    "id": 408588855,
+    "url": "https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.7",
+    "tag": "v0.2.7",
+    "targetCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+    "draft": false,
+    "prerelease": true,
+    "publishedAtUtc": "2026-10-10T03:24:27Z",
+    "publishedAtLocal": "2026-10-10 11:24:27 UTC+8",
+    "latestStable": "v0.2.2"
+  },
+  "tag": {
+    "object": "b53f36f54685554d8d342fb30a07ffa51f1c526b",
+    "peeledCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0"
+  },
+  "source": {
+    "branch": "codex/release-v0.2.7-test-20261010",
+    "preparationHead": "1d7a6512671da507eecceb2d2ee9d30f3f281c94",
+    "maintenanceDeliveryHead": "0bcbfc74f2dbd9ed35bfb82eee719d25d2260b03",
+    "productSourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+    "productRebuilt": false,
+    "releaseDocumentationCommit": "Subsequent documentation-only closeout; inspect current branch HEAD"
+  },
+  "pullRequest": {
+    "baseRefOid": "bc50d181cd5cafd14b31e2c0d24cbf7fd73b0ee1",
+    "headRefOid": "1d7a6512671da507eecceb2d2ee9d30f3f281c94",
+    "isDraft": false,
+    "mergeStateStatus": "CLEAN",
+    "mergeable": "MERGEABLE",
+    "number": 21,
+    "state": "OPEN",
+    "statusCheckRollup": [],
+    "url": "https://github.com/hope140/EmbyTheaterEnhanced/pull/21",
+    "ciConclusion": "NO_REPORTED_CHECKS_NOT_CI_PASS",
+    "merged": false,
+    "snapshotPhase": "After creation, before publication closeout documentation commit"
+  },
+  "assets": [
+    {
+      "name": "EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe",
+      "id": 626883014,
+      "bytes": 175632871,
+      "sha256": "86bee55146714f4f7e493cadb8b483537644f513c92364df7fc0c18f5315f3db",
+      "serverDigest": "sha256:86bee55146714f4f7e493cadb8b483537644f513c92364df7fc0c18f5315f3db",
+      "state": "uploaded",
+      "downloadMethod": "GH_CLI_API_ROUTE",
+      "fullDownloadedBytes": 175632871,
+      "downloadSha256": "86bee55146714f4f7e493cadb8b483537644f513c92364df7fc0c18f5315f3db",
+      "fullDownloadMatched": true
+    },
+    {
+      "name": "EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe.sha256",
+      "id": 626882949,
+      "bytes": 110,
+      "sha256": "4263cde47bd72fd36ff7a0e827526e64bb058bf5ba443c42f9dc1d426e7ece1c",
+      "serverDigest": "sha256:4263cde47bd72fd36ff7a0e827526e64bb058bf5ba443c42f9dc1d426e7ece1c",
+      "state": "uploaded",
+      "downloadMethod": "ANONYMOUS_RELEASE_URL",
+      "fullDownloadedBytes": 110,
+      "downloadSha256": "4263cde47bd72fd36ff7a0e827526e64bb058bf5ba443c42f9dc1d426e7ece1c",
+      "fullDownloadMatched": true
+    },
+    {
+      "name": "EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe.provenance.json",
+      "id": 626882956,
+      "bytes": 2154,
+      "sha256": "a6226c8c8ea50a863c1a0ce8eb149c7ebdb3758e9becc05f4ed7144cf7305aed",
+      "serverDigest": "sha256:a6226c8c8ea50a863c1a0ce8eb149c7ebdb3758e9becc05f4ed7144cf7305aed",
+      "state": "uploaded",
+      "downloadMethod": "GH_CLI_API_ROUTE",
+      "fullDownloadedBytes": 2154,
+      "downloadSha256": "a6226c8c8ea50a863c1a0ce8eb149c7ebdb3758e9becc05f4ed7144cf7305aed",
+      "fullDownloadMatched": true
+    }
+  ],
+  "publicSourceReadback": [
+    {
+      "file": "docs/AI_REVIEW_GUIDE.md",
+      "sha256": "917ef4873feabbbed98551cd401a8b00401ff4c381eb4a2e6a6b202028d4c57d",
+      "matchesGitBlob": true
+    },
+    {
+      "file": "docs/evidence/review-027/final-full-tests.txt",
+      "sha256": "fb707991543c5b189205e59e980665c6a318e29d9cf2ac90982ec09a35e3cbe7",
+      "matchesGitBlob": true
+    }
+  ],
+  "oldRemoteObjects": {
+    "oldReleaseCount": 8,
+    "oldAssetCount": 15,
+    "oldReleasesAndAssetsChanged": [],
+    "oldRefCount": 47,
+    "changedOldRefs": [],
+    "addedRefs": [
+      {
+        "ref": "refs/heads/codex/release-v0.2.7-test-20261010",
+        "sha": "1d7a6512671da507eecceb2d2ee9d30f3f281c94"
+      },
+      {
+        "ref": "refs/pull/21/head",
+        "sha": "1d7a6512671da507eecceb2d2ee9d30f3f281c94"
+      },
+      {
+        "ref": "refs/pull/21/merge",
+        "sha": "af075bd2981cfba18a4638cc0418137d77bbf83f"
+      },
+      {
+        "ref": "refs/tags/v0.2.7",
+        "sha": "b53f36f54685554d8d342fb30a07ffa51f1c526b"
+      }
+    ]
+  },
+  "publicationValidation": {
+    "localLinksChecked": 128,
+    "rawEvidenceFiles": 9,
+    "rawEvidenceBytesPreservedInGit": true,
+    "legacyIdentityRemovedFromCurrentDevelopmentLog": true,
+    "historyRewritten": false
+  },
+  "downloadAttempts": {
+    "directExe": {
+      "result": "TIMEOUT",
+      "timeoutSeconds": 300,
+      "receivedBytes": 69237248,
+      "expectedBytes": 175632871,
+      "complete": false
+    },
+    "directProvenance": {
+      "result": "HTTP_500",
+      "complete": false
+    },
+    "apiExe": {
+      "method": "GH_RELEASE_DOWNLOAD_API_ROUTE",
+      "timedOut": false,
+      "exitCode": 0,
+      "elapsedSeconds": 37.9563678,
+      "errorPresent": false,
+      "fullHashVerified": true
+    },
+    "conclusion": "All three assets were fully downloaded and matched; EXE and provenance used authenticated GitHub CLI/API route after direct-route failures. Do not claim the first anonymous EXE download completed.",
+    "networkConfigChanged": false
+  },
+  "scope": {
+    "main": "bc50d181cd5cafd14b31e2c0d24cbf7fd73b0ee1",
+    "mainChanged": false,
+    "oldReleasesChanged": false,
+    "systemInstallExecuted": false,
+    "globalS6": "EXCLUDED_BY_USER_KEEP_CANDIDATE",
+    "historicalDirectAppExit": "UNKNOWN",
+    "thirdPartySourceClosure": "WAITING_EXTERNAL",
+    "realAndVisibleAcceptanceExpanded": false
+  }
+}

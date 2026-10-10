@@ -1,0 +1,253 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-10",
+  "timezone": "Asia/Shanghai",
+  "status": "INSTALLER_VERIFIED_DELIVERY_RECEIPT_SEPARATE",
+  "version": "0.2.7",
+  "productSourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+  "reviewHead": "2b5686438fa0129fbb8686fae88c55264e1d38a5",
+  "finalHarnessCommit": "0e87d4f5b85ee136d1fe3d0ab47eaac25d64ac9d",
+  "runtime": "dist/ETE-0.2.7-maintenance-d8fcb0f-win-x64",
+  "runtimeManifestSha256": "c6794efc6b69aeef67c3274903715e2483955a564dc9b2bc8a3e4cefd24ffe6c",
+  "parentReview": {
+    "file": ".work/parent-review/PARENT_REVIEW.json",
+    "bytes": 4128,
+    "sha256": "744140df57108d05aa061c4e096c243384f1262047c3ffb3bc3ce71be72a0a0d"
+  },
+  "parentTargetedTests": {
+    "tests": 53,
+    "passed": 53,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "log": ".work/parent-review/targeted-tests.log",
+    "sha256": "07897213dd9df2b9aea8643f5d82fc38d6077333a90db404751a4d626caa8836"
+  },
+  "approvedPhase1Evidence": {
+    "file": ".work/maintenance027/package/approved-phase1-evidence.json",
+    "bytes": 136744,
+    "sha256": "a553858e2723db255355f5d84021d5f750cad1fb5ecc380f3ec4567e9df9fed7",
+    "authority": "Approved review Git blob; original LF bytes restored only to private evidence output",
+    "checkoutPhysicalSha256": "7e9d63e784bf9d71498624c81463edb4008c043974d24ab20639b5c7273560f4",
+    "checkoutOnlyEolDifference": true
+  },
+  "installer": {
+    "file": "dist/EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe",
+    "bytes": 175632871,
+    "sha256": "86bee55146714f4f7e493cadb8b483537644f513c92364df7fc0c18f5315f3db"
+  },
+  "checksum": {
+    "file": "dist/EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe.sha256",
+    "bytes": 110,
+    "sha256": "4263cde47bd72fd36ff7a0e827526e64bb058bf5ba443c42f9dc1d426e7ece1c"
+  },
+  "provenance": {
+    "file": "dist/EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe.provenance.json",
+    "bytes": 2154,
+    "sha256": "a6226c8c8ea50a863c1a0ce8eb149c7ebdb3758e9becc05f4ed7144cf7305aed"
+  },
+  "innoIntegrity": {
+    "status": "PASS",
+    "checkedAppFiles": 2137,
+    "additionalContainerMetadata": "install_script.iss",
+    "log": {
+      "file": ".work/maintenance027/package/installer-integrity.log",
+      "bytes": 172926,
+      "sha256": "69dd8c0d6fa97b772866ec3f02bdef121803ca372bc70dbc98bbf97a782e3696"
+    }
+  },
+  "extraction": {
+    "status": "PASS",
+    "expected": 2137,
+    "actual": 2137,
+    "missing": [],
+    "extra": [],
+    "mismatch": [],
+    "postRuntimePayloadMismatch": [],
+    "receipt": {
+      "file": ".work/maintenance027/package/installer-verification.json",
+      "bytes": 564412,
+      "sha256": "6f8fa4f1be2c720432c9cda7f7fc4b3a0d25c33849618241275fcee9288e5995"
+    },
+    "log": {
+      "file": ".work/maintenance027/package/installer-extraction.log",
+      "bytes": 177202,
+      "sha256": "3f9f2c0fa6a32fa4efdc04979464a7381f57735d3974f4df507b2f9f5d8302b2"
+    },
+    "extractedVersion": {
+      "appVersion": "0.2.7",
+      "nativeHelperVersion": "1.0.0",
+      "libmpvVersion": "v0.41.0-920-gdd5d17d32",
+      "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0"
+    }
+  },
+  "peVersions": [
+    {
+      "file": "dist/EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe",
+      "rawFileVersion": "0.2.7               ",
+      "rawProductVersion": "0.2.7                                             ",
+      "fileVersion": "0.2.7",
+      "productVersion": "0.2.7",
+      "fixedFileVersion": [
+        0,
+        2,
+        7,
+        0
+      ],
+      "fixedProductVersion": [
+        0,
+        2,
+        7,
+        0
+      ],
+      "versionResourceAvailable": true,
+      "sha256": "86bee55146714f4f7e493cadb8b483537644f513c92364df7fc0c18f5315f3db"
+    },
+    {
+      "file": ".work/maintenance027/package/extract/{app}/Emby.Theater.exe",
+      "rawFileVersion": "3.0.20.0",
+      "rawProductVersion": "3.0.20.0",
+      "fileVersion": "3.0.20.0",
+      "productVersion": "3.0.20.0",
+      "fixedFileVersion": [
+        3,
+        0,
+        20,
+        0
+      ],
+      "fixedProductVersion": [
+        3,
+        0,
+        20,
+        0
+      ],
+      "versionResourceAvailable": true,
+      "sha256": "11abf75c8f77ddb0078e7dd62a2eaae60dba244c113bc7893a7e56bc6527163e"
+    },
+    {
+      "file": ".work/maintenance027/package/extract/{app}/x64/electron/electron.exe",
+      "rawFileVersion": "44.4.2",
+      "rawProductVersion": "44.4.2",
+      "fileVersion": "44.4.2",
+      "productVersion": "44.4.2",
+      "fixedFileVersion": [
+        44,
+        4,
+        2,
+        0
+      ],
+      "fixedProductVersion": [
+        44,
+        4,
+        2,
+        0
+      ],
+      "versionResourceAvailable": true,
+      "sha256": "0446040f3c63eb75d5b1e1663d5ef27f07730a82df3e4fa47ff77c1a33cef07c"
+    },
+    {
+      "file": ".work/maintenance027/package/extract/{app}/electronapp/native-helper/ete-mpv-helper.exe",
+      "rawFileVersion": null,
+      "rawProductVersion": null,
+      "fileVersion": null,
+      "productVersion": null,
+      "fixedFileVersion": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "fixedProductVersion": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "versionResourceAvailable": false,
+      "sha256": "28054c75551177f1109859d4f8793d45a4c731aba1e43ddab9bb2f1c5dc030dc"
+    },
+    {
+      "file": ".work/maintenance027/package/extract/{app}/electronapp/libmpv/x64/mpv-1.dll",
+      "rawFileVersion": "v0.41.0-920-gdd5d17d32",
+      "rawProductVersion": "v0.41.0-920-gdd5d17d32",
+      "fileVersion": "v0.41.0-920-gdd5d17d32",
+      "productVersion": "v0.41.0-920-gdd5d17d32",
+      "fixedFileVersion": [
+        2,
+        0,
+        0,
+        0
+      ],
+      "fixedProductVersion": [
+        2,
+        0,
+        0,
+        0
+      ],
+      "versionResourceAvailable": true,
+      "sha256": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c"
+    }
+  ],
+  "peIdentityCheck": {
+    "status": "PASS",
+    "initialCheck": "INCORRECT_STRICT_STRING_EXPECTATION_0.2.7.0",
+    "actualStringVersion": "0.2.7",
+    "actualFixedVersion": "0.2.7.0",
+    "resolution": "Trim padding and validate both string and numeric PE resource identity; installer bytes unchanged",
+    "installerSha256": "86bee55146714f4f7e493cadb8b483537644f513c92364df7fc0c18f5315f3db",
+    "artifact": {
+      "file": ".work/maintenance027/package/pe-verification.json",
+      "bytes": 371,
+      "sha256": "6673ce9d2253a92fd62ee0e1d129d339c3f1ed0f215d5fb8aff3d05214e1792f"
+    },
+    "initialRecord": {
+      "file": ".work/maintenance027/package/pe-versions-initial.json",
+      "bytes": 1489,
+      "sha256": "8cd8d754000dac2aee789e30320c740d31a1d71604fb8a9626f788f94894a70e"
+    }
+  },
+  "actualApplicationVersion": {
+    "scope": "Prior actual trusted IPC from the identical approved runtime, matched to extracted payload; no new executable launch",
+    "snapshots": [
+      {
+        "stage": "initial",
+        "appVersion": "0.2.7",
+        "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+        "nativeHelper": "1.0.0",
+        "libmpv": "v0.41.0-920-gdd5d17d32",
+        "nativeHelperState": "stopped",
+        "runningNativeHelper": "NOT AVAILABLE",
+        "runningLibmpv": "NOT AVAILABLE"
+      },
+      {
+        "stage": "ready",
+        "appVersion": "0.2.7",
+        "sourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+        "nativeHelper": "1.0.0",
+        "libmpv": "v0.41.0-920-gdd5d17d32",
+        "nativeHelperState": "ready",
+        "runningNativeHelper": "1.0.0",
+        "runningLibmpv": "mpv v0.41.0-920-gdd5d17d32"
+      }
+    ]
+  },
+  "packageLog": {
+    "file": ".work/maintenance027/package/package.log",
+    "bytes": 857,
+    "sha256": "2f3f0cf89ea02027b60e47cfa43d78e6ff87be37050b8e2e4ff7c5bd23f6efe2"
+  },
+  "inputsAndBuildRelation": "Packaged at detached approved product commit using unchanged approved runtime; returned to reviewed branch. No rebuild.",
+  "deliveryDirectory": "dist/delivery-0.2.7-maintenance-d8fcb0f",
+  "deliveryReceipt": "docs/evidence/local-package-027-delivery-20261010.json",
+  "boundaries": {
+    "systemLifecycle": "NOT_EXECUTED",
+    "realEmbyCd2RemoteControl": "NOT_EXECUTED",
+    "foregroundVisibleVideo": "NOT_EXECUTED",
+    "hdrMultiMonitorCorners": "DEFERRED_NOT_EXECUTED",
+    "thirdPartyMaterials": "WAITING_EXTERNAL_FOUR_AREAS",
+    "historicalDirectAppExit": "UNKNOWN",
+    "historicalObserverFailure": "RETAINED",
+    "globalS6": "EXCLUDED_BY_USER_KEEP_CANDIDATE",
+    "remoteWrites": false
+  }
+}

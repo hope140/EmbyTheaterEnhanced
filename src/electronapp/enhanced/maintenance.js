@@ -192,6 +192,7 @@ function checkLatestRelease(options) {
 function buildEnvironmentInfo(appInfo, platformInfo, displayInfo) {
     const info = appInfo || {};
     const nativeHelper = info.nativeHelper && typeof info.nativeHelper === 'object' ? info.nativeHelper : {};
+    const bundled = info.bundledVersions || {};
     const platform = platformInfo || {};
     const display = displayInfo || {};
     return {
@@ -199,8 +200,11 @@ function buildEnvironmentInfo(appInfo, platformInfo, displayInfo) {
         electron: safeValue(info.electron),
         chromium: safeValue(info.chromium),
         node: safeValue(info.node),
-        nativeHelper: safeValue(nativeHelper.helperVersion),
-        libmpv: nativeHelper.state === 'ready' ? safeValue(nativeHelper.libmpvVersion) : 'UNKNOWN',
+        nativeHelper: safeValue(bundled.helperVersion),
+        libmpv: safeValue(bundled.libmpvVersion),
+        nativeHelperState: ['idle', 'starting', 'ready', 'failed', 'destroyed', 'stopped'].includes(nativeHelper.state) ? nativeHelper.state : 'NOT AVAILABLE',
+        runningNativeHelper: nativeHelper.state === 'ready' ? safeValue(nativeHelper.helperVersion, 'NOT AVAILABLE') : 'NOT AVAILABLE',
+        runningLibmpv: nativeHelper.state === 'ready' ? safeValue(nativeHelper.libmpvVersion, 'NOT AVAILABLE') : 'NOT AVAILABLE',
         sourceCommit: safeValue(info.buildCommit),
         windows: safeValue(platform.windows),
         displayDpi: safeValue(display.summary, 'NOT AVAILABLE')
@@ -216,6 +220,9 @@ function formatEnvironmentText(info) {
         'Node: ' + safeValue(value.node),
         'Native Helper: ' + safeValue(value.nativeHelper),
         'libmpv: ' + safeValue(value.libmpv),
+        'Native Helper state: ' + safeValue(value.nativeHelperState, 'NOT AVAILABLE'),
+        'Running Native Helper: ' + safeValue(value.runningNativeHelper, 'NOT AVAILABLE'),
+        'Running libmpv: ' + safeValue(value.runningLibmpv, 'NOT AVAILABLE'),
         'Source Commit: ' + safeValue(value.sourceCommit),
         'Windows: ' + safeValue(value.windows),
         '显示缩放: ' + safeValue(value.displayDpi, 'NOT AVAILABLE')

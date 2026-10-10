@@ -13,6 +13,7 @@ if (!runtime || !evidence) throw new Error('ETE_TEST_RUNTIME and ETE_TEST_EVIDEN
 // do not isolate the product bootstrap/logger/device identity directory.
 const isolatedAppData = path.resolve(evidence, 'appdata');
 const isolatedUserData = path.resolve(evidence, 'profile');
+const isolatedMpvHome = path.resolve(isolatedAppData, 'mpv');
 fs.mkdirSync(isolatedAppData, {recursive: true});
 fs.mkdirSync(isolatedUserData, {recursive: true});
 app.setPath('appData', isolatedAppData);
@@ -20,11 +21,18 @@ app.setPath('userData', isolatedUserData);
 if (app.getPath('appData') !== isolatedAppData || app.getPath('userData') !== isolatedUserData) {
     throw new Error('P1 profile isolation failed before product bootstrap');
 }
+// Verify the child's inherited environment before loading any product module.
+if (!process.env.MPV_HOME || path.resolve(process.env.MPV_HOME) !== isolatedMpvHome || !fs.existsSync(isolatedMpvHome)) {
+    throw new Error('P1 MPV_HOME isolation failed before product bootstrap');
+}
 
 const appRoot = path.resolve(runtime, 'electronapp');
 const metadata = JSON.parse(fs.readFileSync(path.join(appRoot, 'package.json'), 'utf8'));
 const provenance = JSON.parse(fs.readFileSync(path.join(runtime, 'runtime-provenance.json'), 'utf8'));
 const expectedIndex = path.resolve(appRoot, 'www', 'index.html');
+if (process.env.ETE_TEST_ABOUT_ASYNC === '1') {
+    require('./about-version-observation.cjs').install({electron: require('electron'), runtime, evidence, expectedIndex});
+}
 const expectedIndexUrl = pathToFileURL(expectedIndex);
 const sourceUrl = pathToFileURL(path.resolve(appRoot, 'plugins', 'libmpv.js')).href;
 const injectedWindows = new WeakSet();
@@ -53,8 +61,11 @@ function writeInjectionMarker(result) {
         fs.writeFileSync(path.join(evidence, 'p1-diagnostics-injection.json'), JSON.stringify({
             appDataIsolated: app.getPath('appData') === isolatedAppData,
             userDataIsolated: app.getPath('userData') === isolatedUserData,
+            mpvHomeIsolated: path.resolve(process.env.MPV_HOME || '') === isolatedMpvHome,
             aboutVersionMatched: result.aboutVersionMatched === true,
             aboutSourceCommitMatched: result.aboutSourceCommitMatched === true,
+            aboutBundledVersionsMatched: result.aboutBundledVersionsMatched === true,
+            aboutRuntimeStateSeparated: result.aboutRuntimeStateSeparated === true,
             applicationDocumentMatched: result.applicationDocumentMatched === true,
             applicationWindowInjected: result.applicationWindowInjected === true,
             auxiliaryWindowInjected: false,
@@ -114,9 +125,12 @@ function installBeforeSmoke() {
             let result = {};
             try {
                 result = await window.webContents.executeJavaScript(script);
-                const info = await window.webContents.executeJavaScript("window.ipc.invoke('enhanced-maintenance-info').then(function (result) { return {appVersion: result.info && result.info.appVersion, sourceCommit: result.info && result.info.sourceCommit}; })");
+                const info = await window.webContents.executeJavaScript("window.ipc.invoke('enhanced-maintenance-info').then(function (result) { return result.info; })");
                 result.aboutVersionMatched = info && info.appVersion === metadata.version;
                 result.aboutSourceCommitMatched = info && info.sourceCommit === provenance.sourceCommit;
+                const nativeRecord = JSON.parse(fs.readFileSync(path.join(runtime, 'native-helper-provenance.json'), 'utf8'));
+                result.aboutBundledVersionsMatched = info && info.nativeHelper === nativeRecord.helper.version && info.libmpv === nativeRecord.libmpv.version;
+                result.aboutRuntimeStateSeparated = info && info.nativeHelperState !== 'ready' && info.runningNativeHelper === 'NOT AVAILABLE' && info.runningLibmpv === 'NOT AVAILABLE';
             } catch (_) { }
             writeInjectionMarker(result || {});
         });

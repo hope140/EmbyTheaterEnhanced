@@ -1,5 +1,19 @@
 # 已确认经验
 
+## 2026-10-10 — async IPC内部的大文件工作仍需让出main
+
+- 将IPC handler标为async不能消除内部readFileSync/SHA256阻塞；将readFile改为Promise后一次性hash整个DLL仍会占用main。大文件应异步分块读，每次同步hash有明确字节上限。
+- 仅共享进行中的包内校验Promise能合并并发又保留后续身份重验；UNKNOWN也必须清除以允许文件恢复。读取期间多次stat及最后全文件复核缩小替换窗口，但不是未签名整包安全认证或恶意并发写入的原子快照。
+- 包内读取变async时必须审计所有consumer；diagnostics EXPORT也要await对象。实时Helper状态在await之后读取，不能随包内Promise缓存。函数级timer证据与新正式Electron runtime验收分别记录。
+- 实际pipeline换流会自然销毁/重建Helper，不能要求一组异步查询一直ready。每个snapshot分别检查ready握手或非ready的NOT AVAILABLE；ready验收仍须有实际ready首GET，不能仅凭unit fixture。诊断export以自己实际收到的appInfo为对照。
+- 观测工具的外层race后不能再无界join未完成工作。超时应封存失败receipt；工具误判导致的原run/强清理保持，不把修正工具后的通过覆盖回历史。
+
+## 2026-10-09 — 包内版本与运行版本来源
+
+- 包内Helper版本应从sourceCommit的源码声明提取，和二进制/源码hash一起生成provenance；libmpv使用固定清单。About读取时核对manifest对provenance自身hash及实际二进制，不为版本查询启动播放器。
+- 包内身份与当前运行状态分别展示，未ready的握手版本不可用。复制返回生成剪贴板文本的同一个白名单快照，页面恢复刷新；成功、失败与loading收尾都需要请求代际保护。
+- 固定依赖补丁后生成新sourceCommit/runtime身份；隐藏fake CD2通过不扩大为真实服务或可见播放验收。
+
 ## 2026-10-09 — 正常关闭的清理Promise必须共享
 
 - 仅缓存service destroy不足以覆盖renderer endpoint先行销毁。client=null只表示已解绑；它拥有的退出Promise须被pending集合保留，并由随后完整destroy在admission封口后捕获等待。
@@ -117,7 +131,9 @@
 - never-shown BrowserWindow 可能报告 visible 却延迟 CSS 动画完成；隔离探针应区分未显示、显示后和真实客户端的证据，不由隐藏渲染行为推导播放修复。
 - diagnostics 自测找不到 bundle 时要先检查子进程是否真正启动。Start-Process 会将未引用的含空格 -File 路径拆开；本次修参数引用即可保持原隐私 gate 通过，不应调长等待或减弱断言。
 
-## 2026-09-24 — Transparent playback gap needs an in-window visual owner
+## [历史方案，已被 Native presentation 取代] 2026-09-24 — Transparent playback gap needs an in-window visual owner
+
+以下保留当时 renderer overlay 的方案和观察范围，不能作为当前实现限制。当前持帧、取消与 native ownership contract 见 [ARCHITECTURE](ARCHITECTURE.md) 的 Next/Previous native presentation 及本页 2026-10-08 Native presentation ownership；历史视觉失败与 INCONCLUSIVE 不变。
 
 - 用户报告的 NextTrack 空白发生在透明播放窗口内：播放 surface 隐藏后，桌面可从视频区域显露。视觉过渡层应由现有 renderer 在 surface teardown 前同步持有，并限制在播放容器内，不能改变 main window、Native Helper 或 Session ownership。
 - 队列管理器在换项时已持有选中 Item；复用该 Item 的现有 image URL builder 可以显示 Backdrop 优先、Primary poster fallback 的封面，而不再请求下一集元数据。过渡图必须在视频容器内用 100% 宽高和 `object-fit:cover` 填满，竖版 poster 允许居中裁切；图片缺失或失败应立即落到黑底，不能阻塞播放请求。
@@ -136,6 +152,8 @@
 - 页面静态控件与动态规则卡可在同一 runtime 中呈现两套外观；只检查 HTML class 和 CSS 存在不足以发现此问题。回归测试应观察生成控件的创建选项，并保留真实视觉复核为独立 gate。
 
 ## 2026-09-24 — Settings visual review is a separate gate
+
+其中新增页面按钮基线的实施建议已被后续采用 Emby 原生控件的方案取代，当前视觉实现以 [ARCHITECTURE](ARCHITECTURE.md) 的 Settings 段落为准；真实视觉验收、可靠来源与缺失值边界继续适用。
 
 - 上一轮 STRM UI 的静态测试、provenance 与构建通过，但用户实际查看后判定视觉 FAIL；这些后台证据不能替代三个页面切换时的字体、控件、卡片和按钮可读性验收。
 - 诊断页同属后续新增页面，不能把它的原生按钮和卡片样式视为成熟设计规范。共享 Settings 视觉层应在带命名空间的根类下定义 token 与组件，各页只保留布局特例；Emby 原生 `raised/button-submit` 不应用作新增页面的按钮基线。
@@ -232,6 +250,10 @@
 - 新 BrowserWindow 会改变 `window-all-closed` 条件。video host 必须绑定 main `closed` 并关闭 owned helper/host，否则主窗口关闭后应用可能残留。
 - `core-idle` observer 初始可以先回报 `true`；测试 core-playing 必须等待同 generation 的有效 `false`，不能只等待 property name。
 - libmpv API 返回负值只说明该次 operation 被拒绝，不能由统一 exception handler 自动升级成 protocol corruption。submission-oriented command 需要独立、typed、generation-scoped、privacy-safe 的 operation diagnostic；真正 schema/identity/version 错误仍单独 fail closed。
+
+## 历史 Carnival / Pepper 阶段的编号经验
+
+以下版本、bridge 能力、runtime、测试数和“当前”均指原阶段；Pepper 已退役，不能将其能力限制套用于 Native Helper。身份链、证据分层、授权、脱敏和归属原则继续适用，历史失败与来源不改写。
 
 1. 本地 SFX 可直接解包为 1009 个文件，未发现加密条目；无须逆向安装器。
 2. `electronapp/package.json` 声明 Electron ^9.4.0，但本地 `x64/electron/electron.exe` 文件版本是 18.3.15。运行时版本需要实测，不可从开发依赖推断。
