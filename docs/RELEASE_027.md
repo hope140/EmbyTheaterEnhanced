@@ -2,7 +2,7 @@
 
 日期：2026-10-10（UTC+8）。状态：**PUBLISHED / PRE-RELEASE**。v0.2.7于11:24:27（UTC+8）公开，Release ID408588855；正式Latest仍为v0.2.2。
 
-[Release与下载](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.7) · [整体审核PR #21](https://github.com/hope140/EmbyTheaterEnhanced/pull/21)。PR保持OPEN/非Draft供外部审核，main仍为bc50d181，未自动合并。
+[Release与下载](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.7) · [已合并PR #21](https://github.com/hope140/EmbyTheaterEnhanced/pull/21)。完整维护已合入main，整合提交ef4fcf58；整体审核从main及 [审核指南](AI_REVIEW_GUIDE.md)开始，合并核验见 [主线收尾](MAIN_CLOSEOUT_027.md)。
 
 用户授权将本地应公开的项目成果放到GitHub，并发布已验证测试包供其它AI整体审核。本轮从完整维护交付0bcbfc74建立codex/release-v0.2.7-test-20261010，保留全部实现与历史，仅补公开导航、审核入口和证据；不会重建产品。
 
@@ -36,6 +36,6 @@
 
 三个附件均已完整回下载并重算SHA256匹配。第一次匿名EXE直链在300秒取得69,237,248/175,632,871 bytes后超时，来源文件直链另出现一次HTTP500；原失败保留。随后EXE和provenance经GitHub CLI/API路线完整取得，EXE下载约37.96秒，SHA256文件经匿名公开链接取得，全部与本地和服务端digest一致。没有改代理/系统配置，也不把首轮匿名下载说成完成。公开AI指南和651项日志从raw地址下载后与Git blob完全一致。
 
-旧47项远端refs、8个Release和15个附件的原身份、正文、标志及digest保持。只新增发布分支、v0.2.7及PR #21对应自动refs；main未合并。后续公开文档提交仅更新本发布分支。
+发布阶段的快照确认旧47项远端refs、8个Release和15个附件的原身份、正文、标志及digest保持；当时只新增发布分支、v0.2.7及PR #21对应自动refs，main尚未合并。随后用户明确要求完成主线收尾，PR #21已合入main；上述发布机器证据保持原阶段，不改写历史OPEN记录。v0.2.7的Release导航随后指向main，tag与附件字节保持。
 
 公开原始证据保留CRLF/LF实际字节，目录级属性仅承认CR为换行的一部分并关闭文本转换，仍检查其它空白错误。第一次普通whitespace检查把原始CR当尾随空白的结果没有导致改写原日志；九份Git blob的SHA256与源文件完全一致。

@@ -1,5 +1,7 @@
 # 0.2.7 本地测试包交付
 
+后续进度：本页同一安装包已按原字节发布为v0.2.7 Pre-release，完整维护已合入main，见 [发布记录](RELEASE_027.md) 与 [主线收尾](MAIN_CLOSEOUT_027.md)。以下LOCAL_PACKAGE_READY是本地交付阶段的准确回执。
+
 日期：2026-10-10（UTC+8）。状态：**LOCAL_PACKAGE_READY**。主会话已PARENT_REVIEW_PASS，本轮第二阶段完成。
 
 产品sourceCommit为 d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0，批准审阅HEAD为 2b5686438fa0129fbb8686fae88c55264e1d38a5，最终观测工具为 0e87d4f5b85ee136d1fe3d0ab47eaac25d64ac9d。文档收尾HEAD由维护分支Git日志及本地交接记录回读，独立于产品身份。

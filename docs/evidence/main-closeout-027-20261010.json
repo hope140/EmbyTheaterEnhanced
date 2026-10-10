@@ -1,0 +1,377 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-10",
+  "timezone": "Asia/Shanghai",
+  "verifiedAtUtc": "2026-10-10T04:08:52.579Z",
+  "scope": "PR #21 merge verification; subsequent documentation closeout does not rebuild or change product inputs",
+  "status": "MERGED_TREE_AND_SOURCE_IDENTITIES_VERIFIED",
+  "pullRequest": {
+    "baseRefOid": "bc50d181cd5cafd14b31e2c0d24cbf7fd73b0ee1",
+    "headRefOid": "1addcc732bb94c552bd512776326a5b50e54d77a",
+    "mergeCommit": {
+      "oid": "ef4fcf58ec9fcfa4728ef42eba25911f8c0de7ab"
+    },
+    "mergedAt": "2026-10-10T04:04:50Z",
+    "state": "MERGED",
+    "statusCheckRollup": [],
+    "url": "https://github.com/hope140/EmbyTheaterEnhanced/pull/21"
+  },
+  "merge": {
+    "commit": "ef4fcf58ec9fcfa4728ef42eba25911f8c0de7ab",
+    "parents": [
+      "bc50d181cd5cafd14b31e2c0d24cbf7fd73b0ee1",
+      "1addcc732bb94c552bd512776326a5b50e54d77a"
+    ],
+    "tree": "442933b7b24300c47546f5fcd6d633b9369d57a0",
+    "reviewedHeadTree": "442933b7b24300c47546f5fcd6d633b9369d57a0",
+    "equal": true
+  },
+  "source": {
+    "productSourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+    "reviewedDeliveryHead": "0bcbfc74f2dbd9ed35bfb82eee719d25d2260b03",
+    "trees": [
+      {
+        "path": "src",
+        "reviewedTree": "3b340730d1362bf57007558d3044538afc012619",
+        "mergedTree": "3b340730d1362bf57007558d3044538afc012619",
+        "equal": true
+      },
+      {
+        "path": "native",
+        "reviewedTree": "4ccb89d84e1478e19f54bd33856ccca01fb0e1ee",
+        "mergedTree": "4ccb89d84e1478e19f54bd33856ccca01fb0e1ee",
+        "equal": true
+      },
+      {
+        "path": "tools",
+        "reviewedTree": "a5c432aa00bad639d9e2dc8fb4cadb029e2ae149",
+        "mergedTree": "a5c432aa00bad639d9e2dc8fb4cadb029e2ae149",
+        "equal": true
+      },
+      {
+        "path": "tests",
+        "reviewedTree": "b7e970a23f17b56ad137271ee5b1c327b22e9b9a",
+        "mergedTree": "b7e970a23f17b56ad137271ee5b1c327b22e9b9a",
+        "equal": true
+      },
+      {
+        "path": "installer",
+        "reviewedTree": "e1d4d349f2ef740cb917079afa249efbfa5971f7",
+        "mergedTree": "e1d4d349f2ef740cb917079afa249efbfa5971f7",
+        "equal": true
+      },
+      {
+        "path": "vendor",
+        "reviewedTree": "a6df37c4be8d135edde66cd3476580b0b08210f5",
+        "mergedTree": "a6df37c4be8d135edde66cd3476580b0b08210f5",
+        "equal": true
+      }
+    ],
+    "buildInputs": [
+      {
+        "path": "LICENSE",
+        "productBlob": "6cd7f14ff8d0bc728af9dea506c14807c705c3df",
+        "mergedBlob": "6cd7f14ff8d0bc728af9dea506c14807c705c3df",
+        "equal": true
+      },
+      {
+        "path": "THIRD_PARTY_NOTICES.md",
+        "productBlob": "54cdd794dbb6e95713a4813507b2aa0ab28a3b91",
+        "mergedBlob": "54cdd794dbb6e95713a4813507b2aa0ab28a3b91",
+        "equal": true
+      },
+      {
+        "path": "docs/LICENSING.md",
+        "productBlob": "5c0ff55989226625dc3af0a632a17d6d63ffcfec",
+        "mergedBlob": "5c0ff55989226625dc3af0a632a17d6d63ffcfec",
+        "equal": true
+      },
+      {
+        "path": "docs/SOURCE_MATERIALS.md",
+        "productBlob": "2146354419e090b811335b87e3a5a8b835e4bde2",
+        "mergedBlob": "2146354419e090b811335b87e3a5a8b835e4bde2",
+        "equal": true
+      },
+      {
+        "path": "installer/EmbyTheaterEnhanced.iss",
+        "productBlob": "6c8d3d73f3835e95760397fc8506894a4cb8c0ff",
+        "mergedBlob": "6c8d3d73f3835e95760397fc8506894a4cb8c0ff",
+        "equal": true
+      },
+      {
+        "path": "package-lock.json",
+        "productBlob": "a649ce802cfde3356e9efea186f715423ac2cf3c",
+        "mergedBlob": "a649ce802cfde3356e9efea186f715423ac2cf3c",
+        "equal": true
+      },
+      {
+        "path": "package.json",
+        "productBlob": "cb76164cc8a34ae8081c37a26f9532588dd406fb",
+        "mergedBlob": "cb76164cc8a34ae8081c37a26f9532588dd406fb",
+        "equal": true
+      },
+      {
+        "path": "tools/build-input-contract.cjs",
+        "productBlob": "87b7fb26e1659070d0c12e8253104b1c1d6875d4",
+        "mergedBlob": "87b7fb26e1659070d0c12e8253104b1c1d6875d4",
+        "equal": true
+      },
+      {
+        "path": "tools/build-input-provenance.cjs",
+        "productBlob": "adfd0ee905f7b210eb4331db2a4ca91d61d97efc",
+        "mergedBlob": "adfd0ee905f7b210eb4331db2a4ca91d61d97efc",
+        "equal": true
+      },
+      {
+        "path": "tools/build-native-helper.ps1",
+        "productBlob": "a75f0471c99d6e164b97d6070ecca199f5eb3132",
+        "mergedBlob": "a75f0471c99d6e164b97d6070ecca199f5eb3132",
+        "equal": true
+      },
+      {
+        "path": "tools/build-toolchains.cjs",
+        "productBlob": "84d12831aa4a5783dc5c2aca0fe11f9743c1aa69",
+        "mergedBlob": "84d12831aa4a5783dc5c2aca0fe11f9743c1aa69",
+        "equal": true
+      },
+      {
+        "path": "tools/build-toolchains.lock.json",
+        "productBlob": "0c34707ead36804b223a2c5c4004ede4e067f47f",
+        "mergedBlob": "0c34707ead36804b223a2c5c4004ede4e067f47f",
+        "equal": true
+      },
+      {
+        "path": "tools/build.ps1",
+        "productBlob": "23fff46da76a367e72a6e12a3c8790b05810385d",
+        "mergedBlob": "23fff46da76a367e72a6e12a3c8790b05810385d",
+        "equal": true
+      },
+      {
+        "path": "tools/copy-runtime-dependencies.cjs",
+        "productBlob": "762aa5904ed5e3ac2fb290c6614a82e5776ffb96",
+        "mergedBlob": "762aa5904ed5e3ac2fb290c6614a82e5776ffb96",
+        "equal": true
+      },
+      {
+        "path": "tools/copy-tracked-product-sources.cjs",
+        "productBlob": "6fe298ac1339c12e502e751af78d12a973fadfc9",
+        "mergedBlob": "6fe298ac1339c12e502e751af78d12a973fadfc9",
+        "equal": true
+      },
+      {
+        "path": "tools/electron-runtime-input.cjs",
+        "productBlob": "a77a9cd0140cc1c5032f4346c2f3df3711638857",
+        "mergedBlob": "a77a9cd0140cc1c5032f4346c2f3df3711638857",
+        "equal": true
+      },
+      {
+        "path": "tools/materialize-native-helper-source.cjs",
+        "productBlob": "5ed81c1d5e987b42ec9713af48ed463f35dfd6ab",
+        "mergedBlob": "5ed81c1d5e987b42ec9713af48ed463f35dfd6ab",
+        "equal": true
+      },
+      {
+        "path": "tools/native-helper-contract.cjs",
+        "productBlob": "56a3d27e118993358ddef04839f86c60f2553638",
+        "mergedBlob": "56a3d27e118993358ddef04839f86c60f2553638",
+        "equal": true
+      },
+      {
+        "path": "tools/native-helper-provenance.cjs",
+        "productBlob": "5772cc711ba32109863fc3008f3b8dc274222bb7",
+        "mergedBlob": "5772cc711ba32109863fc3008f3b8dc274222bb7",
+        "equal": true
+      },
+      {
+        "path": "tools/package.ps1",
+        "productBlob": "0bd1a6b6173926859d34d4662a7bd8032dc92022",
+        "mergedBlob": "0bd1a6b6173926859d34d4662a7bd8032dc92022",
+        "equal": true
+      },
+      {
+        "path": "tools/patch-external-player-registration.cjs",
+        "productBlob": "295e6f8935b40b0e8b28440a3dda57f837278036",
+        "mergedBlob": "295e6f8935b40b0e8b28440a3dda57f837278036",
+        "equal": true
+      },
+      {
+        "path": "tools/patch-playbackmanager.cjs",
+        "productBlob": "efc56b85a7dcf7d883eb0935db8eadf09dc127fa",
+        "mergedBlob": "efc56b85a7dcf7d883eb0935db8eadf09dc127fa",
+        "equal": true
+      },
+      {
+        "path": "tools/prepare-preload.cjs",
+        "productBlob": "64e669cba2ad2e88af929b211c5b04015aa0c2ea",
+        "mergedBlob": "64e669cba2ad2e88af929b211c5b04015aa0c2ea",
+        "equal": true
+      },
+      {
+        "path": "tools/prepare-web-overlays.cjs",
+        "productBlob": "39d2637c8a314bc0826962e11032bccc915acf69",
+        "mergedBlob": "39d2637c8a314bc0826962e11032bccc915acf69",
+        "equal": true
+      },
+      {
+        "path": "tools/runtime-dependency-contract.cjs",
+        "productBlob": "3dac625bafbf9be8e0c44d819554f7df3a84b0e8",
+        "mergedBlob": "3dac625bafbf9be8e0c44d819554f7df3a84b0e8",
+        "equal": true
+      },
+      {
+        "path": "tools/runtime-exclusions.cjs",
+        "productBlob": "2129f17c41dbd0574f6be8ce6a06ca46a9e5c1ec",
+        "mergedBlob": "2129f17c41dbd0574f6be8ce6a06ca46a9e5c1ec",
+        "equal": true
+      },
+      {
+        "path": "tools/runtime-provenance.cjs",
+        "productBlob": "d1904a23286675b0284a1daf37719f50d295d209",
+        "mergedBlob": "d1904a23286675b0284a1daf37719f50d295d209",
+        "equal": true
+      },
+      {
+        "path": "tools/source-provenance.cjs",
+        "productBlob": "b55de396eb956fd4880f4862ee5e1adb733d71c1",
+        "mergedBlob": "b55de396eb956fd4880f4862ee5e1adb733d71c1",
+        "equal": true
+      },
+      {
+        "path": "tools/tracked-file-hash.cjs",
+        "productBlob": "3a04e2a21cf0c3d03060ff78ff935266d22f6877",
+        "mergedBlob": "3a04e2a21cf0c3d03060ff78ff935266d22f6877",
+        "equal": true
+      },
+      {
+        "path": "tools/verify-product-version.cjs",
+        "productBlob": "26d3a52f2f4c6287900ba64cc0b6b81b68382ac8",
+        "mergedBlob": "26d3a52f2f4c6287900ba64cc0b6b81b68382ac8",
+        "equal": true
+      },
+      {
+        "path": "vendor/electron-runtime-manifest.json",
+        "productBlob": "229e88149575a7b53992d1c4d25fcfd48233268c",
+        "mergedBlob": "229e88149575a7b53992d1c4d25fcfd48233268c",
+        "equal": true
+      },
+      {
+        "path": "vendor/native-helper-manifest.json",
+        "productBlob": "b9b17fa674b4109b36be805968cc1a3a8c016fe5",
+        "mergedBlob": "b9b17fa674b4109b36be805968cc1a3a8c016fe5",
+        "equal": true
+      },
+      {
+        "path": "vendor/runtime-manifest.json",
+        "productBlob": "9779c44e21b002a3b19fdb1964f4ad90d4dfedd9",
+        "mergedBlob": "9779c44e21b002a3b19fdb1964f4ad90d4dfedd9",
+        "equal": true
+      },
+      {
+        "path": "vendor/toolchain-manifest.json",
+        "productBlob": "b39ba168381a255f6126e0ed2d771b9e3ef632c1",
+        "mergedBlob": "b39ba168381a255f6126e0ed2d771b9e3ef632c1",
+        "equal": true
+      }
+    ]
+  },
+  "rawEvidence": [
+    {
+      "path": "docs/evidence/review-027/final-full-tests.txt",
+      "bytes": 59407,
+      "sha256": "fb707991543c5b189205e59e980665c6a318e29d9cf2ac90982ec09a35e3cbe7",
+      "gitAndWorkingBytesMatch": true
+    },
+    {
+      "path": "docs/evidence/review-027/final-tool-tests.txt",
+      "bytes": 4352,
+      "sha256": "6b69dc2346d16fda29ca7851273ae843664118dbe1c8e17542ee8149068b5ed1",
+      "gitAndWorkingBytesMatch": true
+    },
+    {
+      "path": "docs/evidence/review-027/npm-audit.json",
+      "bytes": 360,
+      "sha256": "bfda7c8168ecc3b0eaa00ec1041a779e07dc5805bedcd48bb3f7a1897c96ac18",
+      "gitAndWorkingBytesMatch": true
+    },
+    {
+      "path": "docs/evidence/review-027/parent-targeted-tests.txt",
+      "bytes": 5518,
+      "sha256": "07897213dd9df2b9aea8643f5d82fc38d6077333a90db404751a4d626caa8836",
+      "gitAndWorkingBytesMatch": true
+    },
+    {
+      "path": "docs/evidence/review-027/parent-review.json",
+      "bytes": 4128,
+      "sha256": "744140df57108d05aa061c4e096c243384f1262047c3ffb3bc3ce71be72a0a0d",
+      "gitAndWorkingBytesMatch": true
+    },
+    {
+      "path": "docs/evidence/review-027/parent-package-verification.json",
+      "bytes": 5133,
+      "sha256": "d352ff4aff975a2f35c8ec8e8de8c7031331bc308246f8558739e110666e052f",
+      "gitAndWorkingBytesMatch": true
+    },
+    {
+      "path": "docs/evidence/review-027/installer-verification.json",
+      "bytes": 564412,
+      "sha256": "6f8fa4f1be2c720432c9cda7f7fc4b3a0d25c33849618241275fcee9288e5995",
+      "gitAndWorkingBytesMatch": true
+    },
+    {
+      "path": "docs/evidence/review-027/installer-integrity.txt",
+      "bytes": 172926,
+      "sha256": "69dd8c0d6fa97b772866ec3f02bdef121803ca372bc70dbc98bbf97a782e3696",
+      "gitAndWorkingBytesMatch": true
+    },
+    {
+      "path": "docs/evidence/review-027/installer-extraction.txt",
+      "bytes": 177202,
+      "sha256": "3f9f2c0fa6a32fa4efdc04979464a7381f57735d3974f4df507b2f9f5d8302b2",
+      "gitAndWorkingBytesMatch": true
+    }
+  ],
+  "release": {
+    "id": 408588855,
+    "url": "https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.7",
+    "tag": "v0.2.7",
+    "tagObject": "b53f36f54685554d8d342fb30a07ffa51f1c526b",
+    "productSourceCommit": "d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0",
+    "draft": false,
+    "prerelease": true,
+    "latestStable": "v0.2.2",
+    "assets": [
+      {
+        "id": 626883014,
+        "name": "EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe",
+        "size": 175632871,
+        "digest": "sha256:86bee55146714f4f7e493cadb8b483537644f513c92364df7fc0c18f5315f3db"
+      },
+      {
+        "id": 626882956,
+        "name": "EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe.provenance.json",
+        "size": 2154,
+        "digest": "sha256:a6226c8c8ea50a863c1a0ce8eb149c7ebdb3758e9becc05f4ed7144cf7305aed"
+      },
+      {
+        "id": 626882949,
+        "name": "EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe.sha256",
+        "size": 110,
+        "digest": "sha256:4263cde47bd72fd36ff7a0e827526e64bb058bf5ba443c42f9dc1d426e7ece1c"
+      }
+    ]
+  },
+  "validation": {
+    "newProductTests": false,
+    "newRuntimeRuns": false,
+    "productRebuilt": false,
+    "ci": "NO_CHECKS_REPORTED; not CI PASS",
+    "reusedEvidence": "651 product / 42 tools / 53 parent checks and 10 isolated runs retain their original source and input identities"
+  },
+  "limits": [
+    "Third-party materials WAITING_EXTERNAL",
+    "System installation lifecycle NOT_EXECUTED for 0.2.7",
+    "Real services, remote control, visible video and display specialties not expanded",
+    "Historical direct app.exit root cause UNKNOWN",
+    "Global S6 EXCLUDED_BY_USER / KEEP_CANDIDATE"
+  ]
+}

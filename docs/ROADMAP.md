@@ -1,33 +1,31 @@
 # Development Roadmap
 
-本页是 Emby Theater Enhanced 未来开发计划的正式来源。问题的复现情况见 [Known Issues](KNOWN_ISSUES.md)，已完成工作的证据见 [项目状态](PROJECT_STATUS.md) 与 [测试记录](TESTING.md)。状态区分 `main` 发布基线、功能分支和待验收工作。
+本页是 Emby Theater Enhanced 后续计划的正式来源。当前完整源码与文档以 `main` 为准，测试包以v0.2.7的固定产品来源为准。问题的复现情况见 [Known Issues](KNOWN_ISSUES.md)，已完成工作的证据见 [项目状态](PROJECT_STATUS.md) 与 [测试记录](TESTING.md)。
 
 ## 当前里程碑（2026-10-10 会话与文件复核）
 
-0.2.7产品d8fcb0f9和获审阅的安装器已按原字节发布为Pre-release，完整源码、必要文档及原始审核证据已进入远端发布分支；实际状态见 [0.2.7发布记录](RELEASE_027.md)。整体审核使用codex/release-v0.2.7-test-20261010及 [PR #21](https://github.com/hope140/EmbyTheaterEnhanced/pull/21)，入口见 [AI审核指南](AI_REVIEW_GUIDE.md)。main保留为bc50d181审核基线，未自动合并。
+0.2.7产品d8fcb0f9和获审阅的安装器已按原字节发布为Pre-release，完整源码、文档及原始审核证据已通过 [PR #21](https://github.com/hope140/EmbyTheaterEnhanced/pull/21) 合入main，整合提交ef4fcf58。整体审核直接使用main并记录实际HEAD，入口见 [AI审核指南](AI_REVIEW_GUIDE.md)；发布与合并核验见 [0.2.7发布记录](RELEASE_027.md) 和 [主线收尾](MAIN_CLOSEOUT_027.md)。
 
-PR #20已于2026-10-09 22:22:16（UTC+8）合并；本次远端回读main为bc50d181，开放PR为0。原main46e995e与整合提交45ec2d6为合并父提交。发布tag与产品sourceCommit保持355f4e6；[主线整合报告](MAIN_INTEGRATION_026.md) 中OPEN是创建阶段的历史回执。
+上一轮PR #20已于2026-10-09 22:22:16（UTC+8）合并，得到历史基线bc50d181；父提交为46e995e与45ec2d6。其v0.2.6产品sourceCommit保持355f4e6；[主线整合报告](MAIN_INTEGRATION_026.md) 中OPEN是创建阶段的历史回执。
 
-grpc-js 1.14.6、About随包版本/刷新及异步校验均已进入0.2.7完整维护栈。旧6815d2f/7ec6ace与dbee15af/7cc7eb85仍为各自阶段的来源，最终产品采用d8fcb0f9、观测工具0e87d4f。维护成果未包含在原公开v0.2.6/355f4e6中；发布分支和main的整合状态分别回读，不把Release创建当作main合并。
+grpc-js 1.14.6、About随包版本/刷新及异步校验均已进入main与0.2.7完整维护栈。旧6815d2f/7ec6ace与dbee15af/7cc7eb85仍为各自阶段的来源，最终产品采用d8fcb0f9、观测工具0e87d4f。原公开v0.2.6/355f4e6保持其历史身份。
 
 0.2.7最终产品全量651/651、工具42/42、父会话53/53，十组串行隔离运行及About初始/ready IPC通过。安装器175,632,871 bytes，SHA256为86bee55146714f4f7e493cadb8b483537644f513c92364df7fc0c18f5315f3db；解包与runtime各2,137文件一致。旧observer误判FAIL和原证据层级保留；本轮远端公开只复制获核验产物和证据，不重建或重跑相同产品。
 
-用户已开始日常使用，暂未报告新问题；不再把“等待开始使用”作为工程阻塞，也不扩展成所有真实场景均已验收。早期直接app.exit超时仍为UNKNOWN；完整安装生命周期、真实服务专项、可见连续性、HDR/多屏继续独立记录。本次事实、来源与优先级见 [结构化复核记录](evidence/project-priorities-20261010.json)。
+用户已开始日常使用，暂未报告新问题；不再把“等待开始使用”作为工程阻塞，也不扩展成所有真实场景均已验收。早期直接app.exit超时仍为UNKNOWN；完整安装生命周期、真实服务专项、可见连续性、HDR/多屏继续独立记录。前期优先级的历史快照见 [结构化复核记录](evidence/project-priorities-20261010.json)，后续完成事实以本页当前状态和 [主线收尾记录](evidence/main-closeout-027-20261010.json)为准。
 
 ## 后续优先级与里程碑
 
-下表保留2026-10-10复核确定的优先级，本轮按用户项目内维护授权推进。P1表示下一步工程优先项，不表示新发现P1产品故障；当前已读会话及文件中未见尚未处理、足以升级为P0的明确新问题。推送、PR、合并、发布、系统安装和全局规则修改各按用户确认范围执行。
+下表只列未完成事项。原A1维护整合、D1项目规则收口、R1测试版发布均已完成，不再占用待办。当前没有经确认的未处理P0阻断；A2的P1表示收到独立审核后的处理顺序，不预设审核一定发现P1产品故障。日常使用反馈继续作为观察来源。
 
 | 优先级 / 编号 | 工作与当前状态 | 可自主推进的准备 | 完成标准 / 需要用户参与 |
 |---|---|---|---|
-| P1 / A1 | 完整维护已推送，PR #21 OPEN / NOT IN MAIN | 完整栈、固定来源及证据已提供给其它AI整体审核，见 [审核入口](AI_REVIEW_GUIDE.md) | 父会话已审查并发布0.2.7测试包；下一步读取独立审核意见，再决定修正与main合并 |
-| P1 / D1 | 协作与历史文档收口，项目规则S1–S5已接受并应用 | 保留审计结论，重组S1–S5候选并修正下面列出的三处歧义；本轮已更新当前状态导航 | S1–S5按已审阅方向生效，三处歧义已修正；S6为EXCLUDED_BY_USER / KEEP_CANDIDATE，不阻塞A1 |
-| P2 / R1 | 0.2.7测试版已公开，RELEASED | 完整来源、原始验证记录、安装器及companion已提供 | 现有0.2.6 tag和资产保持；后续新版本按新来源验证。本轮不再重复安排发布准备 |
+| P1 / A2 | 独立整体审核反馈，WAITING_REVIEW | main、审核指南、计划与原始证据已齐备；收到意见后逐项核对触发条件和来源 | 用户将其它AI审核结果带回；对确认问题按严重度修复并验证，对误报或证据不足项记录理由。尚未收到意见不重复改写稳定实现 |
 | P2 / T1 | 有界核查完成，WAITING_EXTERNAL | 160项实体回读一致，三轮查询和四类缺口已记录于 [材料收尾](THIRD_PARTY_MATERIALS_CLOSEOUT_027.md) | 外部材料到达后按准确身份接续，索取需单独授权发送 |
-| P2 / I1 | 安装生命周期，独立环境待安排 | 准备干净安装、原位升级、卸载、重装四阶段检查与回滚方案 | 用户确认测试环境及系统安装范围后执行；核对设置/DeviceId预期保留、快捷方式和非预期残留，不覆盖日常客户端 |
-| P3 / H1 | 全屏圆角、混合DPI/多屏、HDR专项 | 整理最小场景、当前候选身份及观察项 | 有相应设备/新样本并确认前台验证后执行；目前维持DEFERRED，不与A1混修 |
+| P2 / I1 | 安装生命周期，独立环境待安排 | 干净安装、原位升级、卸载、重装四阶段检查与回滚方案已准备 | 用户确认测试环境及系统安装范围后执行；核对设置/DeviceId预期保留、快捷方式和非预期残留，不覆盖日常客户端 |
+| P3 / H1 | 全屏圆角、混合DPI/多屏、HDR专项，DEFERRED | 最小场景、当前候选身份与观察项已整理 | 有相应设备/新样本并确认前台验证后执行；先定位再决定局部修复，不扩大为显示链重构 |
 
-里程碑M1是完整维护成果进入可审阅整合状态，随后按明确授权完成主线整合；M2是按确定的新发布身份形成可分发测试包；M3是安装生命周期与第三方剩余材料的处置结论具备后，再评估正式稳定版范围。M3不是要求用户立即补齐所有硬件场景，也不将日常使用反馈替代各项专项验收。
+已完成里程碑：M1完整维护审阅并合入main；M2发布并完整回读0.2.7测试安装包。下一里程碑M3为独立整体审核意见处置完成：确认的问题有复现、修复和相称验证，证据不足项有明确结论。其后M4为稳定版范围决策：结合安装生命周期与第三方材料处置结果，明确可发布范围和仍保留的验收边界。M4不要求立即补齐所有硬件场景，也不将日常使用反馈替代专项验收。
 
 ### 项目规则收口与全局候选范围
 
@@ -35,19 +33,27 @@ S1模型型号集中并按任务能力选取、S2历史方案作用域、S3当�
 
 ### 来源与后续接手
 
-整体审核使用本轮发布分支与 [AI审核指南](AI_REVIEW_GUIDE.md)，其中包含About、grpc维护及0.2.7全部专项文档、原始测试日志与来源记录。main仍需独立核对；项目S1–S5已应用，全局S6继续排除。接手时先记录当前HEAD、差异及产品来源，不把旧会话的“等待授权”或旧候选状态当作当前进度。
+整体审核使用main与 [AI审核指南](AI_REVIEW_GUIDE.md)，其中包含About、grpc维护及0.2.7全部专项文档、原始测试日志与来源记录。项目S1–S5已应用，全局S6继续排除。接手时先记录main实际HEAD与产品来源，不把历史会话的“等待授权”“待打包”或旧PR的OPEN快照当作当前进度。
 
 ## Current Production Baseline
 
-- `v0.2.2` 正式Latest对应9a034e8d；远端main=bc50d181已包含PR #20。最新公开测试版v0.2.7绑定产品d8fcb0f9，完整发布/审核分支及PR #21已提供，尚未合入main。旧v0.2.6/355f4e6保持历史身份；见 [0.2.7发布记录](RELEASE_027.md) 与 [0.2.6记录](RELEASE_026.md)。
+- `v0.2.2` 正式Latest对应9a034e8d；main已包含PR #20与PR #21的完整维护历史。最新公开测试版v0.2.7绑定产品d8fcb0f9，完整项目审核直接使用main。旧v0.2.6/355f4e6保持历史身份；见 [0.2.7发布记录](RELEASE_027.md) 与 [0.2.6记录](RELEASE_026.md)。
 - Native Helper + libmpv、Pepper / PPAPI 退役、Electron 44.4.2、apphost 启动命令兼容修复、Windows runtime / package provenance、STRM / CloudDrive2 / DirectUrl 基础路由和诊断包均已进入历史完成项；细节由既有专项文档维护。
 - Smart Path Mapping 已合入 `main`，尚未进入 `v0.2.2` 正式发布基线。
 
 ## COMPLETED
 
+### 0.2.7 维护、文档规则与公开交付（原A1 / D1 / R1）
+
+grpc-js 1.14.6、About可信版本/刷新/异步校验、S1–S5项目规则、历史方案作用域、公开审核资料及原字节测试安装器均已完成。PR #21以ef4fcf58合入main，合并树与已审阅1addcc73完全一致；v0.2.7及三个资产已发布并完整回下载核验。详见 [主线收尾](MAIN_CLOSEOUT_027.md)。全局S6按用户决定排除，不列为待批准或交付阻塞。
+
+### About 高级运行信息
+
+版本来源、刷新与main异步校验已由原7cc7eb85候选实现；0.2.7完整继承并验证了Helper ready后的实际IPC、复制同快照与诊断导出。见 [异步维护记录](ABOUT_VERSION_ASYNC.md) 和 [0.2.7维护收口](MAINTENANCE_027.md)。该项已实现、已发布、已进入main。
+
 ### v0.2.6 主线整合
 
-[PR #20](https://github.com/hope140/EmbyTheaterEnhanced/pull/20) 已MERGED，合并提交bc50d181保留父提交46e995e与45ec2d6及完整历史。原整合全量631/631和发布产物355f4e6保持各自身份；当时无CI检查不代表CI通过。该项退出NOW，新的维护整合按A1处理。
+[PR #20](https://github.com/hope140/EmbyTheaterEnhanced/pull/20) 已MERGED，合并提交bc50d181保留父提交46e995e与45ec2d6及完整历史。原整合全量631/631和发布产物355f4e6保持各自身份；当时无CI检查不代表CI通过。后续0.2.7整合亦已完成，见上项。
 
 ### Smart Path Mapping
 
@@ -97,25 +103,13 @@ v0.2.6已包含每请求options快照、pending报告抑制、捕获stream的Sto
 
 ## NOW
 
-当前顺序为完整维护栈审阅与0.2.7本地交付准备。项目S1–S5收口、材料有界核查、安装器静态审查与显示前置整理在本轮完成，父会话已独立审核通过，最终本地测试包及完整解包/副本校验已完成，见 [交付报告](LOCAL_PACKAGE_027.md)。grpc/About来源及异步修复沿用已完成实现；不重复开发。原主目录与旧候选保留，公开main/Release身份保持。
+当前可直接把GitHub main交给其它AI整体审核，随后按A2处置返回意见。已有工程维护、审核、测试包、发布、主线整合及当前文档导航全部收尾；材料T1等待准确外部输入，安装I1与显示H1等待相应环境。现阶段不重复开发已完成的grpc/About功能，不重复发布同一产物。剩余事项的条件和用户参与点以上表为准。
 
 ## 可选后续研究
 
 2026-10-09已核对元数据、URL与媒体预读复杂度。跨请求URL复用需要失效/取消/鉴权归属，媒体预读会新增服务端副作用，当前没有实际收益证据；按用户“复杂就不做”要求结束本轮预热研究，不进入实现排期，见P2报告。
 
 ## P2
-
-### About 高级运行信息
-
-版本来源、刷新与main异步校验已由原7cc7eb85本地候选覆盖，实际Helper ready后IPC证据已取得；本轮完整继承并以0.2.7新来源验证，见 [原异步维护](ABOUT_VERSION_ASYNC.md) 与本轮收口。公开v0.2.6保持原身份。
-
-### Fullscreen Dynamic Corner Policy
-
-**状态：** `REPRODUCIBLE / DEFERRED`。未播放时 windowed 有圆角、fullscreen 为直角；开始播放后 fullscreen 错误出现圆角。
-
-**当前判断：** playback surface top-level window 的 DWM corner state 未随 mainWindow fullscreen 状态同步是较强嫌疑，尚未证实为根因。
-
-**目标：** windowed 为圆角、fullscreen 为直角，播放面跟随 mainWindow。先确认窗口身份和 DWM state；没有新证据前不回到 redraw timers、focus hacks、`SetWindowPos` loops 或 GPU flags。
 
 ### CD2 Path Hydration
 
@@ -129,6 +123,14 @@ v0.2.6已包含每请求options快照、pending报告抑制、捕获stream的Sto
 
 ## P3
 
+### Fullscreen Dynamic Corner Policy
+
+**状态：** `REPRODUCIBLE / DEFERRED`。未播放时 windowed 有圆角、fullscreen 为直角；开始播放后 fullscreen 错误出现圆角。按H1列P3显示专项，未新增播放阻断证据。
+
+**当前判断：** playback surface top-level window 的 DWM corner state 未随 mainWindow fullscreen 状态同步是较强嫌疑，尚未证实为根因。
+
+**目标：** windowed 为圆角、fullscreen 为直角，播放面跟随 mainWindow。先确认窗口身份和 DWM state；没有新证据前不回到 redraw timers、focus hacks、`SetWindowPos` loops 或 GPU flags。
+
 ### Mixed-DPI / Multi-monitor scaling
 
 **状态：** `DEFERRED`；需要真实多显示器与不同缩放比环境验收。
@@ -141,6 +143,7 @@ v0.2.6已包含每请求options快照、pending报告抑制、捕获stream的Sto
 
 以下项目暂无足够的新证据进入主动修复；新样本出现时先更新 [Known Issues](KNOWN_ISSUES.md)：
 
+- 历史候选直接app.exit后OS进程未退出：根因UNKNOWN，正常产品关闭通过不等于该路径已解决；有新复现时按原始证据继续定位。
 - Seek transient black frame：旧版本观察到，近期 `v0.2.2` 前台验收未稳定复现。
 - Stop / Exit transient black frame：同上，需区分停止与退出的时序。
 - rapid NextTrack旧`selected=false`为历史夹具结果；已由显式pending/cancel/迟到metadata门槛取代。d480eb8与68eb024分别修复其后确认的请求身份/pending报告、Stop归属问题；新五组全部通过，不再以旧“夹具限制”概括当前状态。

@@ -1,6 +1,6 @@
 # 架构
 
-About包内版本校验由main持有固定runtimeRoot/sourceCommit的异步reader。四个固定文件按64 KiB读取/哈希，读取前后及整轮结束复核文件身份；仅共享进行中的Promise，完成/UNKNOWN即清除，后续查询重验全部字节。实时Helper状态在await包内结果后独立获取；维护GET_INFO/COPY/CHECK_UPDATE及诊断EXPORT均await信息快照。复制同快照、sender白名单及renderer请求代际保持，查询不启动播放器。验证层级与正式候选待执行项见 [About异步版本校验](ABOUT_VERSION_ASYNC.md)。
+About包内版本校验由main持有固定runtimeRoot/sourceCommit的异步reader。四个固定文件按64 KiB读取/哈希，读取前后及整轮结束复核文件身份；仅共享进行中的Promise，完成/UNKNOWN即清除，后续查询重验全部字节。实时Helper状态在await包内结果后独立获取；维护GET_INFO/COPY/CHECK_UPDATE及诊断EXPORT均await信息快照。复制同快照、sender白名单及renderer请求代际保持，查询不启动播放器。验证层级与来源见 [About异步版本校验](ABOUT_VERSION_ASYNC.md) 及 [0.2.7维护收口](MAINTENANCE_027.md)。
 
 Native Helper service 的完整 destroy 使用单一缓存 Promise。首次调用同步置 destroyed 并清除 endpoint admission，随后异步执行原清理；主窗口 closed 与 before-quit/unregister 的重复调用共享同一完成或拒绝，不能以“已开始销毁”代替“已完成”。原错误短路、kill策略、Session和播放操作保持，正常窗口关闭证据见 [本地包记录](LOCAL_PACKAGE_026.md)。
 

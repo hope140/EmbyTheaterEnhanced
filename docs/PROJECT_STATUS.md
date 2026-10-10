@@ -1,8 +1,10 @@
 # 项目状态
 
-## 2026-10-10 — 0.2.7 已公开，整体审核入口已就绪
+## 2026-10-10 — 0.2.7 已发布并合入 main，当前工程收尾完成
 
-用户授权的源码/文档同步与测试包发布已执行。完整发布/审核分支从0bcbfc74继续，v0.2.7于11:24:27（UTC+8）公开为Pre-release，Release408588855，产品与安装包保持d8fcb0f9原身份。三个资产服务端digest与本地一致；Latest仍v0.2.2，详细回读见 [发布记录](RELEASE_027.md)。[PR #21](https://github.com/hope140/EmbyTheaterEnhanced/pull/21)保持OPEN/非Draft供整体审核，main仍bc50d181；[整体审核入口](AI_REVIEW_GUIDE.md)提供9份原字节测试/打包证据与hash索引。[同步范围](REMOTE_SYNC_027.md)说明历史分支、旧工作副本与本地保留项；主目录已有改动、旧产物及全局S6保留。
+用户要求的源码/文档同步、测试包发布与主线整合均已执行。[PR #21](https://github.com/hope140/EmbyTheaterEnhanced/pull/21)以merge commit ef4fcf58合入main，保留原main bc50d181和已审阅发布HEAD 1addcc73为父提交；合并树与已审阅HEAD完全相同。当前完整项目入口为main，[整体审核指南](AI_REVIEW_GUIDE.md)提供9份原字节测试/打包证据与hash索引，[路线图](ROADMAP.md)将已完成事项移出待办，只保留独立审核反馈、外部材料和实际环境验证计划。详情见 [主线收尾](MAIN_CLOSEOUT_027.md)。
+
+v0.2.7于11:24:27（UTC+8）公开为Pre-release，Release408588855；产品d8fcb0f9、安装包及三个资产保持原身份，Latest仍v0.2.2，回读见 [发布记录](RELEASE_027.md)。合并与导航收尾没有产品变更，原651/42/53项与十组运行证据按原来源复用，无CI检查不能称为CI通过。[同步范围](REMOTE_SYNC_027.md)说明历史分支、旧工作副本与本地保留项；主目录已有改动、旧产物及全局S6保留。以下按时间保存历史阶段，当时的OPEN、待授权或待打包不再代表当前进度。
 
 ## 2026-10-10 — 0.2.7 第二阶段本地测试包完成
 
