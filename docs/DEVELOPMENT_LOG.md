@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-10-10 — 0.2.7 合入main，当前文档与待办收尾
+
+- 用户明确要求将应收尾事项全部完成并合并，让其它AI直接审核GitHub main。PR #21在准确head 1addcc73、base bc50d181条件下合并，回读MERGED；merge ef4fcf58保留两父提交，tree与已审阅head完全一致。空CI检查集合单列，不当作CI通过。
+- 六棵产品/工具/测试目录树与完整维护交付一致，34项构建输入与产品d8fcb0f9一致，九份原字节公开证据hash保持；v0.2.7 tag及三个资产ID/大小/digest不变，Latest仍v0.2.2。复核见 [主线收尾](MAIN_CLOSEOUT_027.md)。
+- 当前README、状态、审核指南、路线图与Release导航统一main；已完成A1/D1/R1/About移出待办。余下为独立审核反馈处置、外部材料、隔离安装环境与设备专项，不重复安排已完成实现或发布。历史阶段回执保持原身份。
+- Model Tier: Tier 1，主线程负责远端身份与最终合并；Model: 当前Codex主线程；Reason: Task Risk=medium（主线写入），Task Uncertainty=low，Cross-module Scope=docs/Git，Playback/Session Impact=none；Escalated: no。顺序依赖明确，本次直接完成。
+- 此次执行合并身份、文档链接、diff与新增公开文本检查，复用原651/42/53及十组隔离结果；没有新增产品测试/运行或系统安装，原FAIL/UNKNOWN与材料缺口保持。
+
 ## 2026-10-10 — 0.2.7 Pre-release 与审核入口公开完成
 
 - 用户授权范围内发布原字节安装包并推送完整审核分支；PR #21已创建并附加，OPEN/非Draft，main仍bc50d181。v0.2.7 annotated tag b53f36f5解引用产品d8fcb0f9；Release408588855于11:24:27（UTC+8）公开为Pre-release，Latest仍v0.2.2。

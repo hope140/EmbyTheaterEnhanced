@@ -6,23 +6,24 @@
 
 | 对象 | 身份 |
 |---|---|
-| 完整审核分支 | codex/release-v0.2.7-test-20261010；先记录实际HEAD，避免审核过程中分支变化 |
-| 已审阅的维护交付HEAD | 0bcbfc74f2dbd9ed35bfb82eee719d25d2260b03；本发布分支保留它的完整历史 |
+| 完整审核分支 | main；先记录实际HEAD，避免审核过程中分支变化 |
+| 已审阅的维护交付HEAD | 0bcbfc74f2dbd9ed35bfb82eee719d25d2260b03；已随PR #21完整合入main |
 | 安装包产品sourceCommit | d8fcb0f9f9f0aac92b472386a8f29e1a8235cba0；v0.2.7 tag绑定此提交 |
 | 最终隔离观测工具 | 0e87d4f5b85ee136d1fe3d0ab47eaac25d64ac9d |
-| 比较基线main | 本轮开始为bc50d181cd5cafd14b31e2c0d24cbf7fd73b0ee1；审核时重新回读，不假定main包含本分支 |
+| 本轮维护前比较基线 | bc50d181cd5cafd14b31e2c0d24cbf7fd73b0ee1；仅用于理解本轮增量，不是当前main |
+| 维护整合提交 | ef4fcf58ec9fcfa4728ef42eba25911f8c0de7ab；PR #21 merge commit，后续文档收尾提交不改变产品身份 |
 | Runtime manifest SHA256 | c6794efc6b69aeef67c3274903715e2483955a564dc9b2bc8a3e4cefd24ffe6c |
 | 安装包SHA256 | 86bee55146714f4f7e493cadb8b483537644f513c92364df7fc0c18f5315f3db |
 
-对整个项目做静态审核时使用完整审核分支；对安装包精确来源做核对时使用product sourceCommit。后续公开说明和证据提交不应被当作安装器的产品提交。发布及审核PR的最新状态见 [发布记录](RELEASE_027.md)。
+对整个项目做静态审核时使用 `main`；对安装包精确来源做核对时使用product sourceCommit。后续公开说明和证据提交不应被当作安装器的产品提交。发布与合并事实见 [发布记录](RELEASE_027.md) 和 [主线收尾](MAIN_CLOSEOUT_027.md)，剩余计划见 [路线图](ROADMAP.md)。
 
 ```powershell
 git clone https://github.com/hope140/EmbyTheaterEnhanced.git
 cd EmbyTheaterEnhanced
 git fetch origin --tags
-git checkout codex/release-v0.2.7-test-20261010
+git checkout main
 git rev-parse HEAD
-git diff origin/main...HEAD --stat
+git diff bc50d181cd5cafd14b31e2c0d24cbf7fd73b0ee1..HEAD --stat
 ```
 
 ## 建议的审核顺序
@@ -63,6 +64,6 @@ git diff origin/main...HEAD --stat
 
 ## 可直接交给另一个AI的任务
 
-请基于本页固定审核分支和实际HEAD，对整个项目开展独立代码、架构、安全、测试与交付审核。不要只复述已有报告，也不要把历史提案当当前实现。先给按严重度排序的可行动问题，包含文件/行号、触发条件、影响、证据和最小修复建议；区分已复现、静态确认和待验证。检查原始日志、源码/工具/runtime身份及构建输入边界。没有发现明确问题时直说，并列出本次覆盖和未覆盖范围。此次是审核任务，未经用户要求不修改代码、安装系统软件、启动真实客户端/服务或向外部发送内容。
+请以GitHub仓库 `main` 的实际HEAD为固定对象，对整个项目开展独立代码、架构、安全、测试与交付审核，并评估ROADMAP中剩余计划的优先级与完成条件。不要只复述已有报告，也不要把历史提案当当前实现。先给按严重度排序的可行动问题，包含文件/行号、触发条件、影响、证据和最小修复建议；区分已复现、静态确认和待验证。检查原始日志、源码/工具/runtime身份及构建输入边界。没有发现明确问题时直说，并列出本次覆盖和未覆盖范围。此次是审核任务，未经用户要求不修改代码、安装系统软件、启动真实客户端/服务或向外部发送内容。
 
 本地旧分支和历史资料的取舍见 [同步范围](REMOTE_SYNC_027.md)。[2026-10-07上游切集研究](archive/UPSTREAM_TRANSITION_COMPARISON_20261007.md)仅作历史对照，不作为新修复指令。
