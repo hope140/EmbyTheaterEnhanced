@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "USER_UI_ACCEPTANCE": "PASS",
+  "date": "2026-10-11",
+  "evidenceType": "USER_REPORT",
+  "candidateSourceCommit": "40c704db5239b76a63c8fca4ef5a361c4352648e",
+  "installerSha256": "70b8c5bbeb4589e8e4842bd70706c5ce980d521fdc5f596e2969f099f124b1f1",
+  "scope": {
+    "simplifiedChineseDefault": "PASS",
+    "manualLanguageSelection": "PASS",
+    "upgradeDirectoryPage": "PASS",
+    "newUiIssues": "NONE_REPORTED_WITHIN_SCOPE"
+  },
+  "FULL_INSTALLER_LIFECYCLE_ACCEPTANCE": "NOT_EXECUTED",
+  "notPromoted": [
+    "fresh-install",
+    "complete-v0.2.9-upgrade",
+    "uninstall",
+    "reinstall",
+    "running-client-upgrade",
+    "silent-failure-file-state",
+    "profile-and-DeviceId-retention",
+    "shortcuts-and-uninstall-registration",
+    "UAC-and-ordinary-user-launch",
+    "DPI",
+    "English-Windows"
+  ],
+  "sourceOfEvidence": "Explicit current user confirmation; no new agent frontend/system execution",
+  "syncPlayNextTransparentScreen": {
+    "status": "USER_REPORTED_PENDING_INVESTIGATION",
+    "scope": "Separate pre-Stable playback task",
+    "rootCause": "UNKNOWN",
+    "fixedByInstallerPR": false
+  },
+  "publication": {
+    "tagCreated": false,
+    "stableReleaseCreated": false,
+    "candidatePromotedToFormal": false
+  }
+}

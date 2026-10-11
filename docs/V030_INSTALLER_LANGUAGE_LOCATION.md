@@ -1,5 +1,7 @@
 # v0.3.0 安装器语言与目录体验改进
 
+最新验收：`USER_UI_ACCEPTANCE=PASS`。用户已确认中文默认、手动语言选择与升级目录页符合预期，无新增界面问题。完整安装/卸载生命周期仍NOT_EXECUTED；本次安装器整合与Stable剩余门禁见 [整合记录](V030_INSTALLER_INTEGRATION.md)。以下编译、合成与候选证据保持原来源。
+
 本轮延续 `codex/v030-installer` / Draft PR #28，根据用户反馈修正中文 Windows 升级时仍选中英文、升级时无法自行选择安装目录两项体验。开工 HEAD `7bbd5f7e954d315455414299c58dfd991eca4534`，远端 main 仍为 `6eb11b9350889bc4152c22c68bf7e204f3c1bce5`。首份候选及其证据保持原身份，不覆盖原文件，不创建 Stable Tag/Release。
 
 ## 原生行为与修改
@@ -28,6 +30,6 @@ Inno 6.7.3 的固定源码 `4adf37ed7f3fd2bd11c6836ba056e3de170fbabf` 中，`Set
 
 独立审查确认无未关闭问题，报告见 [增量审查](V030_INSTALLER_LANGUAGE_LOCATION_REVIEW.md)，匿名结果与原始日志hash见 [机器证据](evidence/v030-installer-language-location.json)。原始记录在 `.work/v030-language-followup/evidence/`，native probe在 `.work/installer-language-probe-9472fe4347c04736abec51b49ccb60b0/`，解包在 `.work/v030-extracted-40c704d/`，三个编译对照在 `.work/v030-language-followup/directory-controls/`。后续报告提交不重标候选source，也不为文档重新构建。
 
-真实独立 Windows 安装、升级/更换目录、卸载/重装与前台页面仍 `NOT_EXECUTED`；用户报告两项体验问题不构成其它安装阶段通过。本轮继续 `INSTALLER_READY_WITH_LIMITATIONS`，等待用户体验新候选。
+完整独立 Windows 安装、升级/更换目录、卸载/重装生命周期仍 `NOT_EXECUTED`。2026-10-11用户前台三项已转为 `USER_UI_ACCEPTANCE=PASS`，其它英语OS、DPI/UAC、登记/配置保留与完整系统验收不随之转PASS。本候选仍保留完整生命周期限制，安装器整合后也不是Stable正式产物。
 
 来源：[固定旧语言查找源码](https://github.com/jrsoftware/issrc/blob/4adf37ed7f3fd2bd11c6836ba056e3de170fbabf/Projects/Src/Setup.MainFunc.pas)、[固定语言框源码](https://github.com/jrsoftware/issrc/blob/4adf37ed7f3fd2bd11c6836ba056e3de170fbabf/Projects/Src/Setup.SelectLanguageForm.pas)、[DisableDirPage](https://jrsoftware.org/ishelp/topic_setup_disabledirpage.htm)、[UsePreviousAppDir](https://jrsoftware.org/ishelp/topic_setup_usepreviousappdir.htm)。

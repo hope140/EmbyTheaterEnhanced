@@ -1,5 +1,7 @@
 # v0.3.0 安装器候选验收
 
+当前用户验收与整合入口见 [安装器整合](V030_INSTALLER_INTEGRATION.md)：新候选三项 `USER_UI_ACCEPTANCE=PASS`，完整系统生命周期仍NOT_EXECUTED。以下首份候选结论保留原阶段和来源。
+
 最终状态：`INSTALLER_READY_WITH_LIMITATIONS`。实现、离线工程门禁、候选产物与独立审查完成；真实安装生命周期和用户前台体验仍待执行。
 
 用户反馈后的语言默认和目录页改进及新候选身份见 [后续改进报告](V030_INSTALLER_LANGUAGE_LOCATION.md)。下方的首份候选 `75621cd`、default语言名、完整回归与产物身份是原始阶段证据，不能作为新版的编译或前台通过结果。

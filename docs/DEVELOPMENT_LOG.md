@@ -1,5 +1,11 @@
 # 开发日志
 
+## 2026-10-11 — 用户安装器UI验收与最终整合
+
+- 当前用户明确授予PR28 Ready、Merge Commit、main CI核验授权，不授予Tag/Stable Release或候选改标。用户报告绑定40c704d/SHA70b8c5bb...的中文默认、手动语言和升级目录页PASS；仅USER_UI_ACCEPTANCE扩大为PASS，完整系统生命周期、英语OS、DPI/UAC、配置/DeviceId/登记等不扩大结论。
+- 开工HEAD19d37ba/main6eb11b9，两次Hosted689/689 SUCCESS、reviewThreads0/无分页、MERGEABLE/CLEAN、无远端正式approval记录；本地独立review无未关闭问题。全PR src/native及PlaybackManager/Session/Resolver/核心构建与播放overlay diff0。文档更新后按新的准确HEAD重新核对门禁，再整合并回读main。Task Risk中（远端合并）、Uncertainty低、Scope文档/Git/CI，Playback/Session Impact无；复核Tier2、明确文档执行Tier1，运行型号未由工具可靠返回，Escalated=no。
+- SyncPlay主控下一集时被控偶发透明仅按用户事实登记为正式版前独立PENDING_INVESTIGATION，根因UNKNOWN；未新建播放实现、未修核心。正式main构建与材料/生命周期及该问题处置须后续门禁，不复用或重标现候选。
+
 ## 2026-10-11 — 安装器语言默认与目录页反馈
 
 - 用户授权按系统语言处理旧唯一英文记录，并反馈升级时无法自选安装位置。开工branch/HEAD `codex/v030-installer`/7bbd5f7，main6eb11b9、Draft PR28不变，工作树干净。Task Risk低，Uncertainty中（语言对话框早于脚本事件）经固定上游源码核对降为低；Scope installer/测试/来源/文档，Playback/Session Impact无。原生调用时机分析Tier2，明确规格执行与测试Tier1，测试worker实际gpt-6-luna/high；主线程精确型号未由工具可靠返回，Escalated=no。

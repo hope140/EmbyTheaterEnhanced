@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-11 — USER_UI_ACCEPTANCE=PASS / 安装器整合
+
+用户确认40c704d候选的中文默认、手动语言选择与升级目录页均符合预期，没有新增界面问题；该三项记为USER_UI_ACCEPTANCE=PASS。完整系统安装/升级/卸载/重装、配置/DeviceId/登记/快捷方式和UAC/普通用户启动仍NOT_EXECUTED。安装器整合入口为 [PR #28](https://github.com/hope140/EmbyTheaterEnhanced/pull/28)，最新合并状态与main CI按实际PR/提交回读，不改标候选为正式产物。用户已授权最终门禁后Ready、Merge Commit整合及main CI核验；本次无Tag/Stable Release。
+
+SyncPlay主控下一集时被控端偶发透明屏幕保留为USER_REPORTED / PENDING_INVESTIGATION正式版前播放项，已登记 [独立专项](SYNCPLAY_NEXT_TRANSPARENT_SCREEN_TASK.md)，不在安装器PR修复。Stable剩余安装生命周期、该播放项处置、材料与正式main新构建/发行门禁见 [整合记录](V030_INSTALLER_INTEGRATION.md)。以下各候选构建/未验收表述是原阶段证据。
+
 ## 2026-10-11 — 安装器语言与目录改进
 
 按用户反馈将英文内部名由旧版 `default` 改为 `english`，使旧唯一英文登记回到 Windows UI 默认语言；新中英文选择继续原生保存复用。升级目录页始终显示，保留原位置预填。新候选source40c704d/175668946bytes，SHA70b8c5bbeb4589e8e4842bd70706c5ce980d521fdc5f596e2969f099f124b1f1，0.3.0/NotSigned。定向11/11、原生初始化7/7、39input来源、正式编译/两语言/目录no-auto-yes对照/2139文件及复制hash通过，独立review无未关闭问题。原完整762/762按原来源复用；只改installer与测试，AppId/guard/profile和播放链保持。仍 `INSTALLER_READY_WITH_LIMITATIONS`，真实安装、更换目录和前台仍NOT_EXECUTED。详见 [改进报告](V030_INSTALLER_LANGUAGE_LOCATION.md)；原首份候选及证据保留，Draft PR28延续，不merge、不Stable。
