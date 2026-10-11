@@ -1,3 +1,6 @@
 *.proto text eol=lf
+# Preserve the upstream language resource and license bytes bound by SHA256SUMS.
+/installer/languages/ChineseSimplified.isl -text whitespace=-blank-at-eol
+/installer/languages/LICENSE.txt -text whitespace=cr-at-eol
 # Public verification evidence retains the exact bytes of the original receipts.
 /docs/evidence/review-027/* -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

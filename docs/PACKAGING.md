@@ -1,5 +1,9 @@
 # 构建与打包
 
+## v0.3.0 安装器候选
+
+本轮安装器新增项目内受控简体中文资源与写入前运行/占用保护，完整工具链锁、AppId、profile 和播放链保持。候选使用含 `installer-candidate` 的独立文件名，不覆盖 v0.2.9。新增语言及 guard 输入随 sourceCommit 纳入构建来源契约；真实安装和前台页面须由隔离 Windows 验收。实现及分层结果见 [候选验收](V030_INSTALLER_ACCEPTANCE.md)。本轮不创建 v0.3.0 Stable Tag/Release。
+
 当前本地构建采用 [提交输入 contract](BUILD_HARDENING.md)、[精确 Node 目录](NODE_DEPENDENCY_BOUNDARY.md) 和 [完整本地工具链锁](BUILD_TOOLCHAINS.md)。新 build manifest 为 schema 3；历史 schema 2 审计按其原有语义读取。准确候选与分层实测结果在构建修正记录中单列。
 
 2026-10-11 发布回读：最新测试版为 [v0.2.9](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.9)，正式 Latest 为 [v0.2.2](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.2)。本轮 v0.2.9 从通过 CI 的 main `084554e07782ca6461b7ed67cadd298a92450b24` 重新构建；2139文件解包、安装器版本与三个公开附件下载均验证，SHA256和provenance绑定同一来源。精确结果见 [维护收尾](V029_MAINTENANCE_CLOSEOUT.md)，真实安装生命周期另见 [安装与材料审查](V029_INSTALL_MATERIALS_REVIEW.md)。后续文档提交不重标该产物sourceCommit。

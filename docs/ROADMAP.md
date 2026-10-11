@@ -4,6 +4,8 @@
 
 问题细节见 [Known Issues](KNOWN_ISSUES.md)，当前工程身份及验收层级见 [项目状态](PROJECT_STATUS.md)，测试入口见 [TESTING](TESTING.md)。历史记录中的 OPEN、READY_FOR_MERGE、NOT_EXECUTED 仅代表原日期及来源，不能覆盖本页当前状态。
 
+v0.3.0安装器新候选的中文默认、手动语言选择、升级目录页已获USER_UI_ACCEPTANCE=PASS；完整安装/卸载生命周期尚未执行。安装器整合走PR #28与其main检查记录，不创建Stable资产。SyncPlay主控Next导致被控偶发透明屏幕另列 [正式版前独立播放专项](SYNCPLAY_NEXT_TRANSPARENT_SCREEN_TASK.md)，不在安装器PR修复。Stable余项统一见 [安装器整合与发布门禁](V030_INSTALLER_INTEGRATION.md)。
+
 ## 已完成里程碑
 
 | 里程碑 | 当前状态 | 证据入口 |

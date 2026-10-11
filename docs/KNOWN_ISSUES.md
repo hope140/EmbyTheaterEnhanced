@@ -13,6 +13,8 @@
 | CD2 Path Hydration | EVIDENCE_GATED | 等待真实 FindFileByPath=not_found 与可见性前后样本 |
 | 黑帧、旧版本白屏、特殊 app.exit、transport stress | OBSERVE / 原证据状态保留 | 有新样本再定位；未把未复现或正常路径 PASS 写成彻底修复 |
 | 诊断自由文本认证/Cookie、空格路径尾值 | FIXED / PUBLISHED v0.2.9 | `1012dac` 最小修复，focused 47/47、独立 34/34，实际合成 snapshot/ZIP 回读；不宣称所有未知秘密已覆盖 |
+| SyncPlay主控下一集时被控端偶发透明屏幕 | USER_REPORTED / PENDING_INVESTIGATION / PRE_STABLE_PLAYBACK_ITEM | 用户报告尚未复现或定位；[独立专项](SYNCPLAY_NEXT_TRANSPARENT_SCREEN_TASK.md)核查并形成正式版处置，安装器PR不修复、不关闭 |
+| v0.3.0安装器界面与完整生命周期 | USER_UI_ACCEPTANCE=PASS / FULL_LIFECYCLE_NOT_EXECUTED | 仅中文默认、手动语言与升级目录页由用户通过；完整系统安装/卸载及配置/DeviceId等仍待[生命周期卡](INSTALLER_LIFECYCLE_CARD.md)验收 |
 
 外挂字幕守卫只拦截尚在原 700ms 等待中的过期 `sub-add`，已经提交的命令不由该守卫撤回。它不改变内嵌字幕 sid、音轨 aid、缓存或切轨性能；v0.2.9 也不将该性能专项标为修复。
 

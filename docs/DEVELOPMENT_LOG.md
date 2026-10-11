@@ -1,5 +1,28 @@
 # 开发日志
 
+## 2026-10-11 — 用户安装器UI验收与最终整合
+
+- 当前用户明确授予PR28 Ready、Merge Commit、main CI核验授权，不授予Tag/Stable Release或候选改标。用户报告绑定40c704d/SHA70b8c5bb...的中文默认、手动语言和升级目录页PASS；仅USER_UI_ACCEPTANCE扩大为PASS，完整系统生命周期、英语OS、DPI/UAC、配置/DeviceId/登记等不扩大结论。
+- 开工HEAD19d37ba/main6eb11b9，两次Hosted689/689 SUCCESS、reviewThreads0/无分页、MERGEABLE/CLEAN、无远端正式approval记录；本地独立review无未关闭问题。全PR src/native及PlaybackManager/Session/Resolver/核心构建与播放overlay diff0。文档更新后按新的准确HEAD重新核对门禁，再整合并回读main。Task Risk中（远端合并）、Uncertainty低、Scope文档/Git/CI，Playback/Session Impact无；复核Tier2、明确文档执行Tier1，运行型号未由工具可靠返回，Escalated=no。
+- SyncPlay主控下一集时被控偶发透明仅按用户事实登记为正式版前独立PENDING_INVESTIGATION，根因UNKNOWN；未新建播放实现、未修核心。正式main构建与材料/生命周期及该问题处置须后续门禁，不复用或重标现候选。
+
+## 2026-10-11 — 安装器语言默认与目录页反馈
+
+- 用户授权按系统语言处理旧唯一英文记录，并反馈升级时无法自选安装位置。开工branch/HEAD `codex/v030-installer`/7bbd5f7，main6eb11b9、Draft PR28不变，工作树干净。Task Risk低，Uncertainty中（语言对话框早于脚本事件）经固定上游源码核对降为低；Scope installer/测试/来源/文档，Playback/Session Impact无。原生调用时机分析Tier2，明确规格执行与测试Tier1，测试worker实际gpt-6-luna/high；主线程精确型号未由工具可靠返回，Escalated=no。
+- Inno6.7.3固定上游4adf37e确认previous语言按Name完整匹配，unknown=-1并回到UILanguage；语言框与silent共享该查询。最小实现将default改english，中文名不变；UsePreviousLanguage仍yes。不重启安装器、不自建语言页、不写真实登记。DisableDirPage=no保留UsePreviousAppDir=yes，使升级也可选目录。
+- 首份内部候选default英文记录会重新选系统语言一次，新的/LANG=english或chinesesimplified继续优先于旧偏好。保留已发布v0.2.9和首份候选字节；新版包/检查/独立审查收尾后回填 [专项报告](V030_INSTALLER_LANGUAGE_LOCATION.md)。真实前台、UAC与系统生命周期仍NOT_EXECUTED；不merge、不Stable。
+- 新固定source40c704d build/package前后与39inputs/4通知通过；0.3.0/NotSigned的EXE175668946bytes、SHA70b8c5bbeb4589e8e4842bd70706c5ce980d521fdc5f596e2969f099f124b1f1，2139解包/复制hash零差异。与原候选仅五来源JSON及manifest改变，全部产品/二进制与package版本不变；包内两语言与14产品自定义消息一致。
+- 本轮定向11/11、主线程PS5.1原生语言初始化7/7、JS225/PS5.1与7各28/有限扫描276/diff通过。原完整762/762和guard12按原身份复用，不重跑完整矩阵。唯一本地验包辅助断言误要求unp显式no；源writer及固定工具三控制样包证实no有意省略（auto/yes显式），调整证据解释后PASS，包/产品未改。独立审查、匿名结果和报告收口为INSTALLER_READY_WITH_LIMITATIONS；更新原Draft PR28等待用户体验，真实安装/前台/英语OS仍NOT_EXECUTED。
+
+## 2026-10-11 — v0.3.0 安装器专项
+
+- Task Risk：中（升级/卸载、UAC 与用户资料）；Task Uncertainty：中，语言资源与运行保护需要实证；Cross-module Scope：installer、构建来源、相关测试和文档；Playback/Session Impact：无修改。建议主线程 Tier2；语言资源和合成测试按固定 contract 委派 Tier1（工具实际路由 `gpt-6-luna/high`），独立 review 保留主线程架构审查。主线程精确运行型号未由工具可靠返回，Escalated=no。
+- 基线远端 main6eb11b9、v0.2.9 tag对象b4ab009e/产品084554e、Release409622572与三个asset身份已只读记录；独立 managed worktree 与 `codex/v030-installer` 分支，保留原工作区既有改动。
+- 项目内取入 Inno6.7.3 tag 简体中文资源、许可证和原始hash，英文内部名 `default` 兼容旧安装。WMI exact target process path + 四关键PE只打开不写入的占用保护，PrepareToInstall与InitializeUninstall共用。保持CloseApplications=no；不新增进程终止或profile清理。
+- 固定产物source75621cd；39输入/4通知、source/runtime/dependency/provenance与编译前后package通过，2138payload+manifest总2139，解包逐文件零差异。与v0.2.9仅版本及5份元数据不同，其它产品字节不变；包内default/简中0804及14条自定义消息实际匹配。EXE175657242 bytes/SHA4c0f607db268aedaa2c356b1084a202686693ea95a49f2b8a6a7f0fcd9c0cfb6，PE0.3.0/0.3.0.0、NotSigned；交付复制后hash一致。
+- 独立评审发现上游检出CRLF错误声明与损坏登记跳过保护两个P2，均回读修复。PS5.1正式合成guard11次/12项断言PASS；JS225/PS5.1与7各27/有限扫描275/diff/文档链接通过。初轮全量761/762唯一旧英文Description断言失败；局部更新保持入口/工作目录/安全flags并核对双语，6/6通过，最终完整762/762/exit0/无fail-cancel-skip-todo。原失败保留；测试与两原始资源专属whitespace属性修正不改变产物输入，不重标source。
+- 本任务未确认隔离Windows VM，不执行真实安装/升级/卸载/重装或实际前台页面、DPI、UAC、普通用户启动。最终 `INSTALLER_READY_WITH_LIMITATIONS`，报告、匿名机器证据与独立审查已收口；工程门禁后提交Draft PR等待用户安装体验，不自动merge；没有创建Stable Tag/Release。
+
 ## 2026-10-11 — v0.2.9 发布与工程收尾
 
 - PR26准确HEAD2a4ea1f在Push38133680652/PR38133686686均SUCCESS、无未解决review thread且CLEAN后，以Merge commit合入main084554e；其main38134108870 SUCCESS，真实Hosted686/686及静态步骤通过。Task Risk发布中、Uncertainty低、Playback/Session contract不变；主线程Tier2、独立审核分离，Model精确运行配置未由工具返回；Escalated=no。
