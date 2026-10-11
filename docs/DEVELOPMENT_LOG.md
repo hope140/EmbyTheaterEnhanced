@@ -1,5 +1,12 @@
 # 开发日志
 
+## 2026-10-11 — v0.3.0 安装器专项
+
+- Task Risk：中（升级/卸载、UAC 与用户资料）；Task Uncertainty：中，语言资源与运行保护需要实证；Cross-module Scope：installer、构建来源、相关测试和文档；Playback/Session Impact：无修改。建议主线程 Tier2；语言资源和合成测试按固定 contract 委派 Tier1（工具实际路由 `gpt-6-luna/high`），独立 review 保留主线程架构审查。主线程精确运行型号未由工具可靠返回，Escalated=no。
+- 基线远端 main6eb11b9、v0.2.9 tag对象b4ab009e/产品084554e、Release409622572与三个asset身份已只读记录；独立 managed worktree 与 `codex/v030-installer` 分支，保留原工作区既有改动。
+- 项目内取入 Inno6.7.3 tag 简体中文资源、许可证和原始hash，英文内部名 `default` 兼容旧安装。WMI exact target process path + 四关键PE只打开不写入的占用保护，PrepareToInstall与InitializeUninstall共用。保持CloseApplications=no；不新增进程终止或profile清理。
+- 本任务未确认隔离Windows VM，不执行真实安装。新候选、测试、解包、独立审查与文档结果在 [验收报告](V030_INSTALLER_ACCEPTANCE.md) 回填；没有创建Stable Tag/Release。
+
 ## 2026-10-11 — v0.2.9 发布与工程收尾
 
 - PR26准确HEAD2a4ea1f在Push38133680652/PR38133686686均SUCCESS、无未解决review thread且CLEAN后，以Merge commit合入main084554e；其main38134108870 SUCCESS，真实Hosted686/686及静态步骤通过。Task Risk发布中、Uncertainty低、Playback/Session contract不变；主线程Tier2、独立审核分离，Model精确运行配置未由工具返回；Escalated=no。

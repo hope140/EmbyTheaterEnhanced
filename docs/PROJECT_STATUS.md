@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-11 — v0.3.0 安装器候选实现
+
+从远端 main `6eb11b9` 独立实现安装器中文/英文、欢迎/卸载文案及写入前运行/文件占用保护。固定 Inno6.7.3、原 AppId、普通用户完成页启动与 profile 保留 contract 不变；生产播放源码未改。公开测试版仍 v0.2.9，v0.3.0 Stable 尚未创建。工程及独立审查结果待回填，真实安装/升级/卸载/重装和用户前台界面 `NOT_EXECUTED`，详见 [安装器验收](V030_INSTALLER_ACCEPTANCE.md)。
+
 ## 2026-10-11 — V029_PRE_RELEASE_PUBLISHED
 
 [v0.2.9 测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.9) 已公开，Release409622572、Pre-release=true、Draft=false，Tag指向产品main `084554e07782ca6461b7ed67cadd298a92450b24`。三个附件实际下载后与本地size/hash/provenance一致，公开链接均HTTP200；v0.2.8 Tag/资产保持，正式Latest仍v0.2.2。最终文档身份与全部证据见 [综合收尾](V029_MAINTENANCE_CLOSEOUT.md)。
