@@ -52,9 +52,10 @@ const LOCATION_KEYS = Object.freeze({
     mpvhome: true
 });
 const URL_PATTERN = /https?:\/\/[^\s"'<>]+/gi;
-const WINDOWS_PATH_PATTERN = /(?:[A-Za-z]:[\\/]|\\\\)[^\s"'<>|]+/g;
-const POSIX_PATH_PATTERN = /(^|[\s=(,:])\/(?!\/)(?:[^\s"'<>|]+\/)*[^\s"'<>|]+/g;
+const WINDOWS_PATH_PATTERN = /(?:[A-Za-z]:[\\/]|\\\\)[^\r\n"'<>|]+/g;
+const POSIX_PATH_PATTERN = /(^|[\s=(,:])\/(?!\/)[^\r\n"'<>|]+/g;
 const BEARER_PATTERN = /\bBearer\s+[^\s,;]+/gi;
+const HEADER_VALUE_PATTERN = /(\b(?:proxy-authorization|authorization|set-cookie|cookie)[ \t]*[:=][ \t]*)[^\r\n]*/gi;
 const SECRET_ASSIGNMENT_PATTERN = /((?:authorization|x-emby-token|api[_-]?key|access[_-]?token|token|password|cookie|secret)\s*[:=]\s*)[^\s,;&]+/gi;
 
 function hashText(value) {
@@ -118,6 +119,8 @@ function formatUrlForText(value) {
 
 function sanitizeText(value) {
     let output = String(value == null ? '' : value);
+    // Header values can contain schemes, spaces and multiple cookies; redact the whole line.
+    output = output.replace(HEADER_VALUE_PATTERN, '$1[REDACTED]');
     output = output.replace(URL_PATTERN, formatUrlForText);
     output = output.replace(WINDOWS_PATH_PATTERN, function (match) {
         return '[pathHash=' + hashPath(match) + ']';

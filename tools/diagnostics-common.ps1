@@ -112,6 +112,8 @@ function Protect-DiagnosticText {
     if ($null -eq $Value) { return $null }
     $text = [string]$Value
     if ($text.Length -gt $script:MaxStringLength) { $text = $text.Substring(0, $script:MaxStringLength) + '...[truncated]' }
+    # Preserve following lines, but never retain a scheme or secondary cookie on this line.
+    $text = [regex]::Replace($text, '(?i)(\b(?:proxy-authorization|authorization|set-cookie|cookie)[ \t]*[:=][ \t]*)[^\r\n]*', '$1[redacted]')
     $text = [regex]::Replace($text, '(?i)\bBearer\s+[^\s,;]+', '[redacted-auth]')
     $text = [regex]::Replace($text, '(?i)((?:authorization|x-emby-token|api[_-]?key|access[_-]?token|token|password|cookie|secret|pickcode|deviceid|sessionid|playsessionid|mediasourceid|itemid)\s*[:=]\s*)[^\s,;&]+', '$1[redacted]')
     $text = [regex]::Replace($text, '(?i)\b[a-z][a-z0-9+.-]*://[^\s"''<>]+', {
@@ -119,11 +121,11 @@ function Protect-DiagnosticText {
         $candidate = $match.Value.TrimEnd(')', ']', '}', ',', '.', ';', '!', '?')
         return Format-SafeSummary (Get-UrlSummary $candidate) 'url'
     })
-    $text = [regex]::Replace($text, '(?:[A-Za-z]:[\\/]|\\\\)[^\s"''<>|]+', {
+    $text = [regex]::Replace($text, '(?:[A-Za-z]:[\\/]|\\\\)[^\r\n"''<>|]+', {
         param($match)
         return Format-SafeSummary (Get-PathSummary $match.Value) 'path'
     })
-    $text = [regex]::Replace($text, '(^|[\s=(,:])/(?!/)(?:[^\s"''<>|]+/)*[^\s"''<>|]+', {
+    $text = [regex]::Replace($text, '(^|[\s=(,:])/(?!/)[^\r\n"''<>|]+', {
         param($match)
         $prefixLength = if ($match.Groups[1].Success) { $match.Groups[1].Value.Length } else { 0 }
         $prefix = if ($prefixLength) { $match.Value.Substring(0, $prefixLength) } else { '' }
@@ -245,10 +247,11 @@ function Get-DiagnosticRedactionPatterns {
     return [ordered]@{
         'raw_url' = '(?i)\b[a-z][a-z0-9+.-]*://'
         'bearer_value' = '(?i)\bBearer\s+[A-Za-z0-9._~+/-]+'
-        'secret_assignment' = '(?i)(authorization|x-emby-token|api[_-]?key|access[_-]?token|token|password|cookie|secret|pickcode)\s*[:=]\s*(?!\[redacted\])[^\s,;]+'
-        'absolute_windows_path' = '(?i)(?:[A-Za-z]:[\\/]|\\\\)[^\s"'']+'
+        'secret_assignment' = '(?i)(authorization|x-emby-token|api[_-]?key|access[_-]?token|token|password|cookie|secret|pickcode)\s*[:=](?>(?:\s|\\t)*)(?!\[redacted\])[^\s,;]+'
+        'header_value' = '(?i)\b(?:proxy-authorization|authorization|set-cookie|cookie)[ \t]*[:=](?>(?:[ \t]|\\t)*)(?!\[redacted\](?=(?:[ \t]|\\t)*(?:\\r\\n|\\n|\\r|\r|\n|"|$)))[^\r\n]+'
+        'absolute_windows_path' = '(?i)(?<![A-Za-z0-9])(?:[A-Za-z]:[\\/]|\\\\)[^\s"'']+'
         'absolute_posix_json_path' = '"\s*:\s*"/(?:[^"/]+/)+[^"/]+"'
-        'sensitive_json_key' = '(?i)"(?:authorization|x-emby-token|api[_-]?key|access[_-]?token|token|password|cookie|secret|credential|username|pickcode|commandline)"\s*:'
+        'sensitive_json_key' = '(?i)"(?:proxy[-_]?authorization|authorization|x-emby-token|api[_-]?key|access[_-]?token|token|password|set[-_]?cookie|cookie|secret|credential|username|pickcode|commandline)"\s*:'
         'raw_sensitive_id_key' = '(?i)"(?:deviceid|sessionid|playsessionid|mediasourceid|itemid|userid|requestid|endpointid|helperinstanceid)"\s*:'
     }
 }
