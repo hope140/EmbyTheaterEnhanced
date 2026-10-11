@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-10-12 — v0.3.0 正式版工程收尾
+
+- 当前用户授权分析、局部修改、测试/构建、独立review、提交/推送/PR，禁止自动merge/Stable/现用客户端修改。Task Risk中高；Uncertainty中；Scope为PlaybackManager overlay/libmpv presentation与发行证据；Playback/Session身份和报告合同保持。Model Tier2；主线程/独立review继承当前配置（精确SKU未由工具返回），明确测试/材料worker请求gpt-5.6-luna/high；Reason为Stop/Play异步归属及跨层呈现；Escalated=no。
+- 实际maina8ba606；原31d1107无额外前置产品依赖，映射5288fb9；a31163b映射c27755c。冲突仅两份状态/日志。独立review发现Video→Audio继承持帧问题，RED后4行按exact request ID清理，68a0026 GREEN；补Helper exit/rebuild两分支。核心126/126、独立138/138；最终产品/测试后完整783/783，旧轮781保留原身份。
+- 固定source322a037重新build/package，完整工具链、39inputs/4notices、三层来源/dependencies和2139解包/hash通过。Installer175636053bytes、SHAdc3627ffc21d8560b3d9d03f64433fc628bfe5f5e2fb1cd5cc73adfc470c5eb0，0.3.0/NotSigned；Helper仍28054c…/testingfalse；installer/生产依赖diff0。验包辅助误计npm原包tests和Messages已纠正检查范围，产物未改。
+- 隔离假DirectUrl pipeline/21报告/controls/serial与rapid Next/取消/UA隔离PASS。窗口PlayNow81/79、remoteNext74/78、local79/75帧非视频样本0，最大间隔<=60ms；fullscreen47/48帧409/386ms INCONCLUSIVE，100ms门槛不变。四轮owned residual0（local清理1自有子进程）；首次视觉调用因绝对fixture参数不足preflight拒绝，修正调用后通过。
+- PR29保持OPEN；候选push/PR CI均SUCCESS，最终文档HEAD另回读。第三方履行/权利UNKNOWN与纯重建缺口分开。总体BLOCKED_WITH_EVIDENCE，真实Windows/Together、分发材料及用户Stable决定保留；[readiness](V030_STABLE_READINESS.md)、Release Notes草案和匿名JSON已交付，无安装/部署/Stable。
+
 ## 2026-10-11 — P1 远程媒体替换持帧
 
 - Task Risk 高；Task Uncertainty 中；Cross-module Scope 为冻结 PlaybackManager overlay / libmpv adapter / presentation intent；Playback/Session Impact 保持既有身份与报告。Model Tier 2；主线程当前模型精确标识未由运行时工具返回；明确调用图与时钟测试委派 gpt-6-luna high，独立 review 继承主线程配置；Reason 为异步归属与跨层呈现，Escalated=no。

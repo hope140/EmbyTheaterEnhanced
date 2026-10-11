@@ -1,5 +1,7 @@
 # v0.3.0 安装器整合与稳定版门禁
 
+2026-10-12增量：PR28已合并至main `a8ba606`；Together修复进入独立OPEN [PR29](https://github.com/hope140/EmbyTheaterEnhanced/pull/29)，受控根因和窗口合成验证已有，真实双端仍PENDING_USER_ACCEPTANCE、全屏INCONCLUSIVE。本轮新内部候选及门禁统一见[V030_STABLE_READINESS](V030_STABLE_READINESS.md)。下方旧日期记录保留阶段身份，以最新readiness为准。
+
 ## 用户前台验收
 
 2026-10-11，用户明确确认新候选的中文默认语言、手动语言选择、升级安装目录页面均符合预期，没有发现新的界面问题。`USER_UI_ACCEPTANCE=PASS`，来源为用户前台报告，绑定候选source `40c704db5239b76a63c8fca4ef5a361c4352648e` / SHA256 `70b8c5bbeb4589e8e4842bd70706c5ce980d521fdc5f596e2969f099f124b1f1`。匿名回执见 [用户验收证据](evidence/v030-installer-user-ui-acceptance.json)。
