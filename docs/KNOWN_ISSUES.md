@@ -12,7 +12,7 @@
 | 圆角现象 | USER_REPORTED_RESOLVED / NO_CHANGE_REQUIRED | 用户接受当前窗口和全屏表现；未新增独立视觉 PASS |
 | CD2 Path Hydration | EVIDENCE_GATED | 等待真实 FindFileByPath=not_found 与可见性前后样本 |
 | 黑帧、旧版本白屏、特殊 app.exit、transport stress | OBSERVE / 原证据状态保留 | 有新样本再定位；未把未复现或正常路径 PASS 写成彻底修复 |
-| 诊断自由文本 Basic 凭据、多 Cookie 尾值 | CONFIRMED / RELEASE_BLOCKER，最小修复验证中 | 以合成敏感数据回归，解除阻断后纳入 v0.2.9；不输出真实凭据 |
+| 诊断自由文本认证/Cookie、空格路径尾值 | FIXED / CODE_REVIEW_PASS，待 v0.2.9 发布 | `1012dac` 最小修复，focused 47/47、独立 34/34，实际合成 snapshot/ZIP 回读；不宣称所有未知秘密已覆盖 |
 
 外挂字幕守卫只拦截尚在原 700ms 等待中的过期 `sub-add`，已经提交的命令不由该守卫撤回。它不改变内嵌字幕 sid、音轨 aid、缓存或切轨性能；v0.2.9 也不将该性能专项标为修复。
 

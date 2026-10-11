@@ -2,7 +2,7 @@
 
 日期：2026-10-11（UTC+8）。审查者未参与生产修复、版本更新或发布操作；仅修改本报告。审查基线为 `9774b73469dea9a3651f03737153c872947223ee`，维护版本提交为 `5e33d1f`；隐私候选按实际文件字节复核。最终 sourceCommit、远端 CI、runtime、安装器和下载资产仍须按后续实际证据确认。
 
-当前审核状态：`PENDING_FINAL_GATES`。以下局部审查结论不等于批准公开发布。
+当前审核状态：`CODE_REVIEW_PASS / FINAL_GATES_PENDING`。最终隐私修复与独立 focused 已通过，当前检查范围内没有剩余明确生产代码阻断；完整回归、远端 CI、构建与资产门禁仍未由本报告放行。
 
 ## 审查范围与发现
 
@@ -13,7 +13,7 @@
 | 播放与 Session 范围 | 相对本轮 main 基线，维护树没有新增播放逻辑；外挂字幕守卫已在基线 PR #25 中。隐私候选仅改诊断 sanitizer 与 PowerShell 收集共用层，不改变播放、缓存、IPC 或 Helper 生命周期 |
 | 文档范围 | README、ROADMAP、PROJECT_STATUS、KNOWN_ISSUES、DEVELOPMENT_LOG、ARCHITECTURE、TESTING、PACKAGING、LICENSING、CHANGELOG 及独立报告；当前与历史证据分层，发布准备措辞仍需交付后同步 |
 | 安装与材料 | 四阶段均 REAL_INSTALL_NOT_EXECUTED；材料 WAITING_EXTERNAL 保留，不把静态、解包或旧材料签名改为本轮系统/合规 PASS |
-| 隐私发现 | 合成 Basic 凭据、多 Cookie 尾值与带空格绝对路径媒体名泄漏均为实际可复现发现；必须完成最小修复与最终回归后解除发布阻断 |
+| 隐私发现 | 合成 Basic 凭据、多 Cookie 尾值与带空格绝对路径媒体名泄漏均已由最小候选修复；独立 34/34 focused GREEN。解除局部代码阻断，最终全集、CI/构建仍需完成 |
 | Renderer 隔离 | 窄边界与兼容性设计范围；本轮候选未开启 contextIsolation/sandbox/webSecurity 等全量隔离迁移 |
 
 本轮范围内未发现新增第三方组件或未经解释的依赖更换。该结论不认定既有材料缺口已经满足许可条件。
@@ -29,12 +29,22 @@
 更新候选的实际 diff 已复核：
 
 - `src/electronapp/enhanced/diagnostics.js` 增加 Authorization、Proxy-Authorization、Cookie、Set-Cookie 全行值脱敏；Windows/UNC/POSIX 绝对路径匹配包括空格，URL 处理保持在路径处理之前。
-- `tools/diagnostics-common.ps1` 应用同样头字段与路径规则；最终 gate 增加原始/部分脱敏头字段和 Proxy-Authorization/Set-Cookie key 拒绝，使用 .NET atomic 空白匹配避免回溯误报。
+- `tools/diagnostics-common.ps1` 应用同样头字段与路径规则；最终 gate 增加原始/部分脱敏头字段和 Proxy-Authorization/Set-Cookie key 拒绝，使用 .NET atomic 空白匹配避免回溯误报，同时识别 JSON 转义 tab；原 secret_assignment gate 也保持此完整占位符边界。Windows path gate 排除非路径字母数字前缀误报，实际原始驱动器/UNC 路径仍拒绝。
 - 合成回归新增驱动器/UNC/POSIX 空格路径、后行保留、四种头字段、大小写、多 Cookie、完整 placeholder 与尾值拒绝、PowerShell 5.1/7、真实 collector ZIP 解包内容断言。没有实际用户凭据或真实媒体。
 
-独立执行的内存矩阵为 JS 13/13（空格路径、pipe/换行边界、四种头字段）及 PowerShell 7 header gate 32/32（四字段、空白变体、完整 placeholder 接受与尾值拒绝）。保守路径投影可能隐藏同一行紧随路径的说明文字，这是本轮已明确接受的诊断精度取舍。独立探针首轮有命令语法错误及对 delimiter 前空白保留的过严断言，均未作为产品 FAIL/GREEN 或发布门禁；修正探针后取得上述结果。
+独立执行的内存矩阵为 JS 13/13（空格路径、pipe/换行边界、四种头字段）及 PowerShell 7 header gate 32/32（四字段、空白变体、完整 placeholder 接受与尾值拒绝）。保守路径投影可能隐藏同一行紧随路径的说明文字，这是本轮已明确接受的诊断精度取舍。
 
-最终完整隐私套件、PowerShell 5.1/7 实际 collector 与原始日志由安全报告及最终收尾证据记录，未完成前不解除门禁。有限规则不保证识别裸露未知秘密、任意私人名称或所有秘密格式。
+最终候选独立运行 `node --test tests/v029-diagnostics-privacy.test.cjs tests/client-diagnostics.test.cjs`：34/34 PASS（新隐私 18、既有 client 16），fail/cancel/skip/todo 均为 0，实际耗时 19.7 秒。包括 Windows PowerShell 5.1/7 头字段行为、原始/尾值 gate 拒绝、问题 snapshot 和 collector ZIP 内容读取；不是只检查扫描器返回 true。安全 Agent 的最终相关集合原始日志另有 47/47 GREEN，主线程最终全集记录单列。未修改或减弱已有断言。
+
+独立 focused 结束后读取的候选文件 SHA256（实际 CRLF 工作文件字节，不替代最终 Git/source provenance）：
+
+| 文件 | SHA256 |
+|---|---|
+| src/electronapp/enhanced/diagnostics.js | 48fcc086c7e36e24a0dee20b74d5cf3349d4097c0354426a70f56d5c97de555e |
+| tools/diagnostics-common.ps1 | bd66da57135f818a357465445db29248aab434cebcf75ef1fe6f1d09b3ae643f |
+| tests/v029-diagnostics-privacy.test.cjs | a63ac7ec46915bd5cead33e597e151ddb9b35d19b5569573b414e36b2e5f4e4b |
+
+有限规则不保证识别裸露未知秘密、任意私人名称或所有秘密格式；未形成全量 Renderer 隔离或完整隐私认证。
 
 ## 原始证据审查
 
