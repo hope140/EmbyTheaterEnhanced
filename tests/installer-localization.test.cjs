@@ -43,35 +43,39 @@ function placeholders(value) {
 function assertLanguagePairs(entries, label) {
     assert.ok(entries.size > 0, label + ' must define entries for both languages');
     for (const [id, values] of entries) {
-        assert.deepEqual([...values.keys()].sort(), ['chinesesimplified', 'default'], label + ' pair missing for ' + id);
-        assert.deepEqual(placeholders(values.get('chinesesimplified')), placeholders(values.get('default')),
+        assert.deepEqual([...values.keys()].sort(), ['chinesesimplified', 'english'], label + ' pair missing for ' + id);
+        assert.deepEqual(placeholders(values.get('chinesesimplified')), placeholders(values.get('english')),
             label + ' placeholder mismatch for ' + id);
     }
 }
 
-test('installer offers the preserved English identity and Simplified Chinese with Windows language preference', () => {
+test('installer offers the explicit English preference identity and Simplified Chinese with Windows language preference', () => {
     const source = fs.readFileSync(installerPath, 'utf8');
     const setup = section(source, 'Setup').join('\n');
     const languages = section(source, 'Languages');
     const languageNames = languages.map(line => /^\s*Name\s*:\s*"([^"]+)"/i.exec(line.trim())).filter(Boolean).map(match => match[1]);
 
-    assert.deepEqual(languageNames.sort(), ['chinesesimplified', 'default']);
+    assert.deepEqual(languageNames.sort(), ['chinesesimplified', 'english']);
     assert.match(source, /^\s*Name\s*:\s*"chinesesimplified"\s*;\s*MessagesFile\s*:\s*"languages\\ChineseSimplified\.isl"/im);
     assert.match(setup, /^\s*UsePreviousLanguage\s*=\s*yes\s*$/im);
     assert.match(setup, /^\s*LanguageDetectionMethod\s*=\s*uilanguage\s*$/im);
     assert.match(setup, /^\s*ShowLanguageDialog\s*=\s*yes\s*$/im);
+    assert.match(setup, /^\s*DisableDirPage\s*=\s*no\s*$/im);
+    assert.match(setup, /^\s*UsePreviousAppDir\s*=\s*yes\s*$/im);
+    assert.equal(languageNames.includes('default'), false,
+        'the legacy English-only record must fall back to Windows UI language');
     assert.match(source, /^\s*#include\s+"installer-guard\.iss"\s*$/im);
 });
 
 test('custom and native installer messages keep paired placeholders across both languages', () => {
     const source = fs.readFileSync(installerPath, 'utf8');
-    const customMessages = keyedEntries(section(source, 'CustomMessages'), ['default', 'chinesesimplified'], '[CustomMessages]');
+    const customMessages = keyedEntries(section(source, 'CustomMessages'), ['english', 'chinesesimplified'], '[CustomMessages]');
     assertLanguagePairs(customMessages, '[CustomMessages]');
     for (const id of ['ClientRunning', 'ProcessCheckFailed', 'FileBusy', 'InstalledRecordInvalid',
         'RecoveryAdvice', 'DesktopShortcut', 'LaunchApp']) {
         assert.ok(customMessages.has(id), '[CustomMessages] must provide both languages for ' + id);
     }
-    const nativeMessages = keyedEntries(section(source, 'Messages'), ['default', 'chinesesimplified'], '[Messages]');
+    const nativeMessages = keyedEntries(section(source, 'Messages'), ['english', 'chinesesimplified'], '[Messages]');
     for (const id of ['WelcomeLabel2', 'ConfirmUninstall', 'UninstalledAll']) {
         assert.ok(nativeMessages.has(id), '[Messages] must preserve the native ' + id + ' text in both languages');
     }

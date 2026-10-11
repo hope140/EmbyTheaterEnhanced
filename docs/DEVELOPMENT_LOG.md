@@ -1,5 +1,11 @@
 # 开发日志
 
+## 2026-10-11 — 安装器语言默认与目录页反馈
+
+- 用户授权按系统语言处理旧唯一英文记录，并反馈升级时无法自选安装位置。开工branch/HEAD `codex/v030-installer`/7bbd5f7，main6eb11b9、Draft PR28不变，工作树干净。Task Risk低，Uncertainty中（语言对话框早于脚本事件）经固定上游源码核对降为低；Scope installer/测试/来源/文档，Playback/Session Impact无。原生调用时机分析Tier2，明确规格执行与测试Tier1，测试worker实际gpt-6-luna/high；主线程精确型号未由工具可靠返回，Escalated=no。
+- Inno6.7.3固定上游4adf37e确认previous语言按Name完整匹配，unknown=-1并回到UILanguage；语言框与silent共享该查询。最小实现将default改english，中文名不变；UsePreviousLanguage仍yes。不重启安装器、不自建语言页、不写真实登记。DisableDirPage=no保留UsePreviousAppDir=yes，使升级也可选目录。
+- 首份内部候选default英文记录会重新选系统语言一次，新的/LANG=english或chinesesimplified继续优先于旧偏好。保留已发布v0.2.9和首份候选字节；新版包/检查/独立审查收尾后回填 [专项报告](V030_INSTALLER_LANGUAGE_LOCATION.md)。真实前台、UAC与系统生命周期仍NOT_EXECUTED；不merge、不Stable。
+
 ## 2026-10-11 — v0.3.0 安装器专项
 
 - Task Risk：中（升级/卸载、UAC 与用户资料）；Task Uncertainty：中，语言资源与运行保护需要实证；Cross-module Scope：installer、构建来源、相关测试和文档；Playback/Session Impact：无修改。建议主线程 Tier2；语言资源和合成测试按固定 contract 委派 Tier1（工具实际路由 `gpt-6-luna/high`），独立 review 保留主线程架构审查。主线程精确运行型号未由工具可靠返回，Escalated=no。
