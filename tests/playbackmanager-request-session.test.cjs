@@ -1228,6 +1228,35 @@ for (const oldResult of ['success', 'failure']) {
     });
 }
 
+test('P1 Audio replacement clears an inherited Video intent before physical Stop', async () => {
+    const fixture = makeStopBoundaryFixture();
+    await startPublicItem(fixture, 'A');
+    const {transition, evidence} = installP1Presentation(fixture);
+    const b = fixture.manager.play({items: [makeItem('B')]}).catch(error => error);
+    await waitFor(() => fixture.calls.metadata.length === 2);
+    const bToken = transition.loadingToken(2);
+    assert.ok(bToken);
+    fixture.player.getDeviceProfile = () => Promise.resolve({
+        CodecProfiles: [], DirectPlayProfiles: [], TranscodingProfiles: [], SubtitleProfiles: []
+    });
+    fixture.apiClient.getAudioStreamUrl = () => 'stream://audio-C';
+    const audio = Object.assign(makeItem('C'), {MediaType: 'Audio', Type: 'Audio'});
+    const c = fixture.manager.play({items: [audio]}).catch(error => error);
+    await waitFor(() => fixture.calls.stop.length === 2);
+    assert.equal(evidence.preparations.length, 1, 'Audio must not capture a second Video hold');
+    assert.equal(transition.isActive(), false, 'Audio Stop must have no inherited presentation intent');
+    assert.ok(evidence.cancelled.includes(bToken), 'the retained B Video hold is released');
+    fixture.resolveMetadata(1, 'session-B-stale');
+    await b;
+    await waitFor(() => fixture.calls.metadata.length === 3 || fixture.calls.play.length === 2);
+    if (fixture.calls.metadata.length === 3) fixture.resolveMetadata(2, 'session-C');
+    const result = await c;
+    assert.equal(result instanceof Error, false, 'Audio playback still succeeds');
+    assert.equal(fixture.player.streamInfo.item.Id, 'C');
+    assert.equal(fixture.calls.play.some(row => row.item.Id === 'B'), false);
+    await fixture.manager.stop();
+});
+
 test('P1 remote metadata failure clears hold before native load', async () => {
     const fixture = makeStopBoundaryFixture();
     await startPublicItem(fixture, 'A');

@@ -92,6 +92,8 @@ Phase 2.2 把 Phase 1 的单组 suffix HIGH 限定为 `fileMatch`，它不再授
 
 ## Next/Previous native presentation
 
+统一替换边界在目标媒体类型已确定为非 Video 时，必须在物理 Stop 前按当前 request ID 释放公开 Play 继承的 Video presentation intent；公开和内部 options 的对象身份不同，不能仅依赖 WeakMap 的原 options key 清理。Video→Video 的 admission 接管和 native one-shot reveal 合同保持不变。
+
 当前候选 contract 由 native presentation hold 管理旧视频帧，图片不进入 renderer DOM。`PlaybackManager.nextTrack()` 与 `previousTrack()` 继续通过原同步入口选择媒体、分配 request sequence 并触发 retire；presentation 工作不得插入 manager 调用前的 await，也不得替换 Item、MediaSource、PlaySession、Session 或 WebSocket 所有权。外部/self-managed player 不进入该候选。
 
 Renderer controller 必须为每个 Next/Previous 请求绑定独立 presentation token，`beforeTeardown` 固定使用建立时捕获的 record。Main/helper 将它与当前 playback epoch、endpoint/helper instance、generation 和 holdId 绑定。新 record 完成 acquire 前保留旧 hold；只有当前 record 成功后才释放其 superseded holds。旧 prepare、load 失败或 late completion 只能释放其自有 token，不能撤下新视频或清理另一个 generation 的 hold。临时 NextTrack stop 可以保留当前 presentation；用户 Stop、destroy、退出和 stale/failed request 走明确清理。自动 reveal 由 native one-shot generation/capture fence 处理；renderer 的 `playbackReady` 只交接 token，不手动撤下旧帧。失败路径 fail-open，不能留下永久遮挡。

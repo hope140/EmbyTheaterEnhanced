@@ -223,6 +223,10 @@ replaceOnce(
               activePlayer.prepareReplacementPresentation(requestOptions._etePlayRequestId);
               enhancedPresentationOwners.set(requestOptions, activePlayer);
             }
+            // Public Play can inherit a Video hold before its item type is known.
+            if (!terminal && replacementMediaType !== "Video" &&
+                typeof activePlayer.finishReplacementPresentation === "function")
+              activePlayer.finishReplacementPresentation(requestOptions._etePlayRequestId);
             return (terminal ? activePlayer.stop(!0, !0) : activePlayer.stop(destroyPlayer)).then(function () {
               owner.stopped = true;
             });

@@ -13,6 +13,7 @@
 | success transfers reveal to native and releases manager hold | `tests/nexttrack-native-transition.test.cjs:363` `playbackReady clears the deadline and transfers the token without cancelling it`; `tests/playbackmanager-request-session.test.cjs:1080` | PASS |
 | Native Helper exit/rebuild 清理 replacement presentation state | `tests/native-helper-lifecycle.test.cjs:439` `native helper exit during replacement releases its presentation token`; `tests/native-helper-service.test.cjs:1012` `helper crash clears a pending presentation before the replacement helper prepares` | PASS（本轮新增） |
 | prepare rejection fail-open 到 ordinary stop | `tests/native-helper-lifecycle.test.cjs:419` | PASS |
+| B Video pending → C Audio 释放继承意图并完成 Audio 播放 | `tests/playbackmanager-request-session.test.cjs` `P1 Audio replacement clears an inherited Video intent before physical Stop` | RED→GREEN；只抓取 B 帧，C 普通 Stop，B stale 不播放 |
 
 本轮新增 2 个实际分支，覆盖 renderer replacement 侧的 `bridge_error` 释放，以及 service 侧 helper crash 后重建时旧 pending prepare 的迟到结果隔离。指定三个 presentation 文件的测试总数由 83 增至 84；本轮额外 service 文件独立测试为 41/41。新增 case 使用 deferred/注入式 harness；未宣称真实 Emby、真实远控传输、真实窗口/全屏像素或 helper rebuild 的现场验收。
 
