@@ -218,6 +218,12 @@ function createHarness(options) {
         async play(playOptions) {
             stats.initialPlayOptions = playOptions;
             stats.playCalls = (stats.playCalls || 0) + 1;
+            if (playOptions.ids) {
+                stats.remotePlayAtMs = clock.now();
+                const selected = items.get(playOptions.ids[0]);
+                setCurrent(selected.__eteTimelineKey);
+                return undefined;
+            }
             items.clear();
             playOptions.items.forEach(item => items.set(item.Id, item));
             setCurrent('A');
@@ -272,7 +278,14 @@ function createHarness(options) {
         api,
         items,
         records: [],
-        events: {},
+        events: {trigger(_api, _type, messages) {
+            const message = messages[0];
+            stats.messages = stats.messages || [];
+            stats.messages.push(message);
+            if (message.MessageType === 'Play') manager.play({ids:message.Data.ItemIds});
+            else if (message.Data.Command === 'NextTrack') manager.nextTrack();
+            else manager.previousTrack();
+        }},
         fixture: 'http://127.0.0.1/media-a',
         options: {
             mediaAUrl: 'http://127.0.0.1/media-a',
@@ -280,6 +293,7 @@ function createHarness(options) {
             posterBaseUrl: 'http://127.0.0.1/poster.svg'
         }
     };
+    context.options.remoteCommand = settings.remoteCommand;
 
     return {clock, context, document, head, body, manager, stats, window: windowObject};
 }
@@ -394,3 +408,26 @@ test('historical no-overlay baseline can complete when queue and core transition
     assert.equal(harness.head.children.length, 0);
     assert.equal(harness.clock.pendingCount(), 0);
 });
+
+for (const remoteCommand of ['PlayNow', 'NextTrack']) {
+    test('remote visual fixture dispatches ' + remoteCommand + ' through the message receiver after capture starts', async () => {
+        const harness = createHarness({overlay: false, remoteCommand});
+        setCurrentColorReader(harness, () => ({atMs:harness.clock.now(),
+            colorClass:harness.manager.currentItem().__eteTimelineKey === 'A' ? 'red' : 'green'}));
+        const pending = harness.window.runTransitionTimelineFixture(harness.context);
+        await flushMicrotasks(harness.clock);
+        assert.equal(harness.stats.messages.length, 1);
+        assert.equal(harness.stats.captureStarts.length, 1);
+        await harness.clock.advance(2100);
+        await flushMicrotasks(harness.clock);
+        assert.equal(harness.stats.messages.length, 2);
+        await harness.clock.advance(2100);
+        await flushMicrotasks(harness.clock);
+        const result = await pending;
+        assert.equal(result.status, 'completed');
+        assert.equal(result.logicalChecks.nextItemB, true);
+        assert.equal(result.logicalChecks.previousItemA, true);
+        assert.equal(result.timeline.filter(row => row.event === 'synthetic-websocket-message').length, 2);
+        assert.equal(harness.clock.pendingCount(), 0);
+    });
+}

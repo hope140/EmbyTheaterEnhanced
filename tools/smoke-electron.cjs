@@ -429,7 +429,9 @@ app.on('browser-window-created', (_, win) => {
                     }
                     const timelineSource = fs.readFileSync(path.join(__dirname,'../tests/transition-timeline-browser.js'),'utf8');
                     const pipelineSource = fs.readFileSync(path.join(__dirname,'../tests/pipeline-browser.js'),'utf8');
-                    const timelineOptions = {mediaAUrl, mediaBUrl, posterBaseUrl, fullscreen:transitionFullscreen};
+                    const remoteCommand = process.env.ETE_TEST_TRANSITION_COMMAND || 'Local';
+                    if (!['Local', 'PlayNow', 'NextTrack'].includes(remoteCommand)) throw new Error('invalid-transition-command');
+                    const timelineOptions = {mediaAUrl, mediaBUrl, posterBaseUrl, fullscreen:transitionFullscreen, remoteCommand};
                     state.pipeline = await win.webContents.executeJavaScript(withSourceUrl(
                         timelineSource + '\n' + pipelineSource + '\nrunPipelineFixture(' +
                         JSON.stringify(mediaAUrl) + ', null, null, null, false, ' + JSON.stringify(timelineOptions) + ')',

@@ -20,6 +20,35 @@ async function flushMicrotasks() {
     await Promise.resolve();
 }
 
+function makeFakeClock() {
+    let now = 0;
+    let nextId = 1;
+    const timers = new Map();
+    return {
+        setTimeout(callback, delay) {
+            const id = nextId++;
+            timers.set(id, {at: now + delay, callback});
+            return id;
+        },
+        clearTimeout(id) { timers.delete(id); },
+        advance(milliseconds) {
+            const target = now + milliseconds;
+            while (true) {
+                let next = null;
+                for (const [id, timer] of timers) {
+                    if (timer.at <= target && (!next || timer.at < next.timer.at)) next = {id, timer};
+                }
+                if (!next) break;
+                now = next.timer.at;
+                timers.delete(next.id);
+                next.timer.callback();
+            }
+            now = target;
+        },
+        get pendingCount() { return timers.size; }
+    };
+}
+
 function makeEndpoint() {
     const endpoint = {
         prepareCalls:[],
@@ -39,11 +68,14 @@ function makeEndpoint() {
     return endpoint;
 }
 
-function makeHarness() {
+function makeHarness(clock) {
     const endpoints = [];
-    const transition = transitionModule.createNative({
-        getEndpoint() { return endpoints.shift() || null; }
-    });
+    const options = {getEndpoint() { return endpoints.shift() || null; }};
+    if (clock) {
+        options.setTimeout = clock.setTimeout;
+        options.clearTimeout = clock.clearTimeout;
+    }
+    const transition = transitionModule.createNative(options);
     return {
         transition,
         addEndpoint() {
@@ -222,4 +254,164 @@ test('loadingToken stays unavailable when prepare resolves not ready', async fun
     endpoint.preparations.get(token).resolve({ready:false});
     assert.equal(await stop, null);
     assert.equal(harness.transition.loadingToken(92), null);
+});
+
+test('replacement reuses the matching local request token without preparing twice', async function () {
+    const clock = makeFakeClock();
+    const harness = makeHarness(clock);
+    const endpoint = harness.addEndpoint();
+    const token = harness.transition.show();
+    harness.transition.markLoading(token, 101);
+
+    harness.transition.replacement(101);
+    assert.equal(harness.transition.isActive(), true);
+    assert.deepEqual(endpoint.prepareCalls, [], 'replacement does not start a second preparation');
+    assert.equal(clock.pendingCount, 1, 'the existing token keeps its single deadline');
+
+    const stop = harness.transition.beforeTeardown();
+    await flushMicrotasks();
+    assert.deepEqual(endpoint.prepareCalls, [token]);
+    endpoint.preparations.get(token).resolve({ready:true});
+    assert.equal(await stop, token);
+    assert.equal(harness.transition.loadingToken(101), token);
+    assert.equal(clock.pendingCount, 1);
+});
+
+test('replacement creates a remote request token and exposes it only after prepare succeeds', async function () {
+    const clock = makeFakeClock();
+    const harness = makeHarness(clock);
+    const endpoint = harness.addEndpoint();
+    harness.transition.replacement(102);
+
+    assert.equal(harness.transition.isActive(), true);
+    assert.equal(harness.transition.loadingToken(102), null);
+    const stop = harness.transition.beforeTeardown();
+    await flushMicrotasks();
+    assert.deepEqual(endpoint.prepareCalls, [1]);
+    assert.equal(harness.transition.loadingToken(102), null);
+
+    endpoint.preparations.get(1).resolve({ready:true});
+    assert.equal(await stop, 1);
+    assert.equal(harness.transition.loadingToken(102), 1);
+});
+
+test('prepared but unarmed presentation is released at its own 15 second deadline', async function () {
+    const clock = makeFakeClock();
+    const harness = makeHarness(clock);
+    const endpoint = harness.addEndpoint();
+    const token = harness.transition.show();
+    harness.transition.markLoading(token, 103);
+    const stop = harness.transition.beforeTeardown();
+    await flushMicrotasks();
+    endpoint.preparations.get(token).resolve({ready:true});
+    assert.equal(await stop, token);
+    assert.equal(harness.transition.loadingToken(103), token);
+
+    clock.advance(14999);
+    assert.equal(harness.transition.isActive(), true);
+    assert.deepEqual(endpoint.cancelCalls, []);
+    clock.advance(1);
+    assert.equal(harness.transition.isActive(), false);
+    assert.deepEqual(endpoint.cancelCalls, [token]);
+    assert.equal(clock.pendingCount, 0);
+});
+
+test('deadline bounds a deferred prepare and a late success cannot revive its token', async function () {
+    const clock = makeFakeClock();
+    const harness = makeHarness(clock);
+    const {endpoint, token, stopping, pending} = await beginPending(harness);
+    harness.transition.markLoading(token, 104);
+
+    clock.advance(15000);
+    assert.equal(harness.transition.isActive(), false);
+    assert.equal(harness.transition.loadingToken(104), null);
+    assert.deepEqual(endpoint.cancelCalls, [token]);
+    assert.equal(clock.pendingCount, 0);
+
+    pending.resolve({ready:true});
+    assert.equal(await stopping, null);
+    assert.equal(harness.transition.isActive(), false);
+    assert.equal(harness.transition.loadingToken(104), null);
+    assert.deepEqual(endpoint.cancelCalls, [token], 'late success cannot release twice');
+});
+
+test('older A and B deadlines release only their own tokens after C becomes active', async function () {
+    const clock = makeFakeClock();
+    const harness = makeHarness(clock);
+    const a = harness.addEndpoint();
+    const tokenA = harness.transition.show();
+    clock.advance(1000);
+    const b = harness.addEndpoint();
+    const tokenB = harness.transition.show();
+    clock.advance(1000);
+    const c = harness.addEndpoint();
+    const tokenC = harness.transition.show();
+
+    clock.advance(14000); // A and then B reach their own deadlines; C is still within its lease.
+    assert.equal(harness.transition.isActive(), true);
+    assert.deepEqual(a.cancelCalls, [tokenA]);
+    assert.deepEqual(b.cancelCalls, [tokenB]);
+    assert.deepEqual(c.cancelCalls, []);
+    assert.equal(clock.pendingCount, 1);
+
+    clock.advance(1000);
+    assert.equal(harness.transition.isActive(), false);
+    assert.deepEqual(c.cancelCalls, [tokenC]);
+    assert.equal(clock.pendingCount, 0);
+});
+
+test('playbackReady clears the deadline and transfers the token without cancelling it', async function () {
+    const clock = makeFakeClock();
+    const harness = makeHarness(clock);
+    const endpoint = harness.addEndpoint();
+    const token = harness.transition.show();
+    harness.transition.markLoading(token, 105);
+    const stop = harness.transition.beforeTeardown();
+    await flushMicrotasks();
+    endpoint.preparations.get(token).resolve({ready:true});
+    assert.equal(await stop, token);
+
+    harness.transition.playbackReady(105);
+    assert.equal(harness.transition.isActive(), false);
+    assert.equal(clock.pendingCount, 0);
+    clock.advance(15000);
+    assert.deepEqual(endpoint.cancelCalls, [], 'native owns the transferred presentation token');
+});
+
+test('unavailable prepare and rejected prepare leave no live deadline', async function () {
+    const unavailableClock = makeFakeClock();
+    const unavailable = transitionModule.createNative({
+        getEndpoint() { return null; },
+        setTimeout:unavailableClock.setTimeout,
+        clearTimeout:unavailableClock.clearTimeout
+    });
+    assert.equal(unavailable.show(), null);
+    assert.equal(unavailableClock.pendingCount, 0);
+
+    const clock = makeFakeClock();
+    const harness = makeHarness(clock);
+    const {endpoint, token, stopping, pending} = await beginPending(harness);
+    assert.equal(clock.pendingCount, 1);
+    pending.reject(new Error('prepare rejected'));
+    assert.equal(await stopping, null);
+    assert.equal(harness.transition.isActive(), false);
+    assert.deepEqual(endpoint.cancelCalls, [token]);
+    assert.equal(clock.pendingCount, 0);
+});
+
+test('terminal cancel clears all outstanding deadlines', function () {
+    const clock = makeFakeClock();
+    const harness = makeHarness(clock);
+    const endpointA = harness.addEndpoint();
+    const tokenA = harness.transition.show();
+    const endpointB = harness.addEndpoint();
+    const tokenB = harness.transition.show();
+
+    assert.equal(clock.pendingCount, 2);
+    harness.transition.cancel();
+    assert.equal(harness.transition.isActive(), false);
+    assert.equal(clock.pendingCount, 0);
+    assert.deepEqual(endpointA.cancelCalls, [tokenA]);
+    assert.deepEqual(endpointB.cancelCalls, [tokenB]);
+    assert.deepEqual(harness.transition.loadingToken(106), null);
 });

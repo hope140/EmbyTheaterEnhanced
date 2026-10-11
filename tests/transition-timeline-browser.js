@@ -235,7 +235,30 @@
             }
             root.ipc.send('ete-test-transition-timeline-action', kind, slot.startedAtMs);
 
-            var operation = kind === 'next' ? manager.nextTrack() : manager.previousTrack();
+            var operation;
+            if (settings.remoteCommand === 'PlayNow' || settings.remoteCommand === 'NextTrack') {
+                // This fixture has no authenticated view navigation. Give the real
+                // InputManager a focus target for its bubbling command notification.
+                var focusTarget = typeof doc.querySelector === 'function' && doc.querySelector('.mpv-videoPlayerContainer');
+                if (focusTarget && typeof focusTarget.focus === 'function') {
+                    focusTarget.tabIndex = -1;
+                    focusTarget.focus({preventScroll:true});
+                }
+                var method = settings.remoteCommand === 'PlayNow' ? 'play' : kind === 'next' ? 'nextTrack' : 'previousTrack';
+                var original = manager[method];
+                // Capture the Promise while dispatching through the frozen message receiver.
+                manager[method] = function () {
+                    operation = original.apply(this, arguments);
+                    return operation;
+                };
+                try {
+                    record('synthetic-websocket-message', target, {messageType:settings.remoteCommand === 'PlayNow' ? 'Play' : 'Playstate', command:method});
+                    context.events.trigger(api, 'message', [settings.remoteCommand === 'PlayNow'
+                        ? {MessageType:'Play', Data:{PlayCommand:'PlayNow', ItemIds:[Array.from(items.values()).find(function (item) { return item.__eteTimelineKey === target; }).Id]}}
+                        : {MessageType:'Playstate', Data:{Command:kind === 'next' ? 'NextTrack' : 'PreviousTrack'}}]);
+                } finally { manager[method] = original; }
+                if (!operation) throw new Error('timeline-remote-message-not-dispatched');
+            } else operation = kind === 'next' ? manager.nextTrack() : manager.previousTrack();
             await withDeadline(operation, Math.min(3500, remainingMs()), kind + '-playback');
             slot.currentItem = currentItemKey(manager, timelineKeyById);
             slot.status = 'fulfilled';
@@ -383,7 +406,9 @@
                 if (failureMessage === 'timeline-pixel-prerequisite') completedStatus = 'observation-blocked';
                 var safeFailure = /^timeline-[a-z-]+(?::[a-z-]+)?$/.test(failureMessage)
                     ? failureMessage : 'timeline-fixture-error';
-                record('fixture-failed', currentItemKey(manager, timelineKeyById), {reason: safeFailure});
+                record('fixture-failed', currentItemKey(manager, timelineKeyById), {reason: safeFailure,
+                    errorName: error && /^(TypeError|ReferenceError|Error)$/.test(error.name) ? error.name : 'UNKNOWN',
+                    fixtureDetail: /^[A-Za-z0-9 ._'()]{1,120}$/.test(failureMessage) ? failureMessage : 'UNAVAILABLE'});
                 var nextFailure = actionStates.next || {};
                 var previousFailure = actionStates.previous || {};
                 var notRun = completedStatus === 'observation-blocked' ? 'NOT_RUN' : false;

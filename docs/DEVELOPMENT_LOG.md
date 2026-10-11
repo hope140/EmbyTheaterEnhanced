@@ -1,5 +1,11 @@
 # 开发日志
 
+## 2026-10-11 — P1 远程媒体替换持帧
+
+- Task Risk 高；Task Uncertainty 中；Cross-module Scope 为冻结 PlaybackManager overlay / libmpv adapter / presentation intent；Playback/Session Impact 保持既有身份与报告。Model Tier 2；主线程当前模型精确标识未由运行时工具返回；明确调用图与时钟测试委派 gpt-6-luna high，独立 review 继承主线程配置；Reason 为异步归属与跨层呈现，Escalated=no。
+- 独立worktree/分支从6eb11b9开始，保留原工作树未提交内容；只读 NAS 确认插件1.6.0.5/现存哈希，发送命令为PlayNow。原RED3项、review RED1项，后续83项GREEN；源码只接统一替换边界、公开Play既有intent接管与prepared阶段期限，Native CPP/service/main未改。
+- 独立审查实际发现并复核关闭B/C pre-admission异步缺口；当前完整测试/构建/窗口和全屏像素验证待结果回填。真实主控/被控联测尚未执行；不把合成状态断言标为真实视觉PASS。详见[P1报告](P1_REMOTE_PRESENTATION.md)。
+
 ## 2026-10-11 — 用户安装器UI验收与最终整合
 
 - 当前用户明确授予PR28 Ready、Merge Commit、main CI核验授权，不授予Tag/Stable Release或候选改标。用户报告绑定40c704d/SHA70b8c5bb...的中文默认、手动语言和升级目录页PASS；仅USER_UI_ACCEPTANCE扩大为PASS，完整系统生命周期、英语OS、DPI/UAC、配置/DeviceId/登记等不扩大结论。

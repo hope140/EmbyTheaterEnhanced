@@ -1076,6 +1076,34 @@ function makeStopBoundaryFixture(options) {
     return fixture;
 }
 
+for (const fullscreen of [false, true]) {
+    test('P1 remote PlayNow replacement owns presentation before physical Stop, fullscreen=' + fullscreen, async () => {
+        const controller = makeStopBoundaryFixture();
+        const controlled = makeStopBoundaryFixture();
+        await startPublicItem(controller, 'A');
+        await startPublicItem(controlled, 'A');
+        const order = [];
+        controlled.player.prepareReplacementPresentation = requestId => order.push(['prepare', requestId]);
+        controlled.player.finishReplacementPresentation = requestId => order.push(['finish', requestId]);
+        const stop = controlled.player.stop;
+        controlled.player.stop = function (...args) {
+            order.push(['stop', ...args]);
+            return stop.apply(this, args);
+        };
+        const replacement = controlled.manager.play({items: [makeItem('B')], fullscreen});
+        await waitFor(() => controlled.calls.metadata.length === 2);
+        const requestId = controlled.manager._etePlayRequestSequence;
+        assert.deepEqual(order.slice(0, 2), [['prepare', requestId], ['stop', false]],
+            'remote PlayNow must acquire a presentation intent at the unified replacement boundary');
+        assert.equal(controller.player.streamInfo.item.Id, 'A', 'logical controller identity remains independent');
+        controlled.resolveMetadata(1, 'session-B');
+        await replacement;
+        assert.deepEqual(order.at(-1), ['finish', requestId]);
+        assert.equal(controlled.player.streamInfo.item.Id, 'B');
+        assertOnlyAStopped(controlled);
+    });
+}
+
 async function startPublicItem(fixture, id) {
     const metadataIndex = fixture.calls.metadata.length;
     const request = fixture.manager.play({items: [makeItem(id)], fullscreen: true});
@@ -1094,6 +1122,151 @@ function assertOnlyAStopped(fixture) {
         {itemId: 'A', playSessionId: 'session-A', mediaSourceId: 'media-A'}
     ], 'terminal Stop reports exactly the original A identity once');
 }
+
+function installP1Presentation(fixture) {
+    const module = require('../src/electronapp/enhanced/nexttrack-transition');
+    const evidence = {surfaceVisible: true, nativeToken: null, preparations: [], cancelled: []};
+    const endpoint = {
+        preparePresentation(token) {
+            evidence.preparations.push({token, ready: evidence.surfaceVisible});
+            if (evidence.surfaceVisible) evidence.nativeToken = token;
+            return Promise.resolve({ready: evidence.surfaceVisible});
+        },
+        cancelPresentation(token) {
+            evidence.cancelled.push(token);
+            if (evidence.nativeToken === token) evidence.surfaceVisible = false;
+            return Promise.resolve();
+        }
+    };
+    const transition = module.createNative({getEndpoint: () => endpoint});
+    fixture.player.admitReplacementPresentation = id => transition.admit && transition.admit(id);
+    fixture.player.prepareReplacementPresentation = id => transition.replacement(id);
+    fixture.player.finishReplacementPresentation = id => transition.playbackFailed(id);
+    const stop = fixture.player.stop;
+    fixture.player.stop = async function (...args) {
+        if (args[0]) { transition.cancel(); evidence.surfaceVisible = false; }
+        else if (!await transition.beforeTeardown()) evidence.surfaceVisible = false;
+        return stop.apply(this, args);
+    };
+    const play = fixture.player.play;
+    fixture.player.play = function (info) {
+        evidence.surfaceVisible = true;
+        transition.playbackReady(info._etePlayRequestId);
+        return play.call(this, info);
+    };
+    return {transition, evidence};
+}
+
+test('P1 C admission pending user lookup retains B hold across late B metadata settlement', async () => {
+    const fixture = makeStopBoundaryFixture();
+    await startPublicItem(fixture, 'A');
+    const {transition, evidence} = installP1Presentation(fixture);
+    const b = fixture.manager.play({items: [makeItem('B')]});
+    await waitFor(() => fixture.calls.metadata.length === 2);
+    const bToken = transition.loadingToken(2);
+    assert.ok(bToken);
+    const user = deferred();
+    fixture.apiClient.getCurrentUser = () => user.promise;
+    const c = fixture.manager.play({items: [makeItem('C')]});
+    await settle();
+    assert.equal(fixture.manager._etePlayRequestSequence, 3);
+    fixture.resolveMetadata(1, 'session-B-stale');
+    await b;
+    assert.equal(evidence.surfaceVisible, true, 'C pending user lookup must inherit the old visible frame');
+    assert.deepEqual(evidence.cancelled, [], 'late B cannot release a hold needed by admitted C');
+    user.resolve({Configuration: {}});
+    await waitFor(() => fixture.calls.metadata.length === 3);
+    assert.equal(evidence.preparations.at(-1).ready, true, 'C can still capture the held frame');
+    fixture.resolveMetadata(2, 'session-C');
+    await c;
+    assert.equal(fixture.player.streamInfo.item.Id, 'C');
+    assert.equal(transition.isActive(), false);
+});
+
+test('P1 admitted C failure before replacement releases its own intent and retained B frame', async () => {
+    const fixture = makeStopBoundaryFixture();
+    await startPublicItem(fixture, 'A');
+    const {transition, evidence} = installP1Presentation(fixture);
+    const b = fixture.manager.play({items: [makeItem('B')]});
+    await waitFor(() => fixture.calls.metadata.length === 2);
+    const user = deferred();
+    fixture.apiClient.getCurrentUser = () => user.promise;
+    const c = fixture.manager.play({items: [makeItem('C')]}).catch(error => error);
+    await settle();
+    fixture.resolveMetadata(1, 'session-B-stale');
+    await b;
+    assert.equal(evidence.surfaceVisible, true);
+    user.reject(new Error('fixture-user-failed'));
+    assert.match((await c).message, /fixture-user-failed/);
+    assert.equal(transition.isActive(), false);
+    assert.equal(evidence.surfaceVisible, false);
+    assert.equal(evidence.preparations.length, 1, 'C admission never captures a native frame');
+});
+
+for (const oldResult of ['success', 'failure']) {
+    test('P1 rapid remote B/C ignores late B metadata ' + oldResult, async () => {
+        const fixture = makeStopBoundaryFixture();
+        await startPublicItem(fixture, 'A');
+        const {transition, evidence} = installP1Presentation(fixture);
+        const b = fixture.manager.play({items: [makeItem('B')]}).catch(error => error);
+        await waitFor(() => fixture.calls.metadata.length === 2);
+        const c = fixture.manager.play({items: [makeItem('C')]});
+        await waitFor(() => fixture.calls.metadata.length === 3);
+        const cToken = transition.loadingToken(3);
+        assert.ok(cToken);
+        if (oldResult === 'success') fixture.resolveMetadata(1, 'session-B-stale');
+        else fixture.rejectMetadata(1, new Error('stale-B'));
+        await b;
+        assert.equal(transition.loadingToken(3), cToken);
+        assert.equal(evidence.surfaceVisible, true);
+        fixture.resolveMetadata(2, 'session-C');
+        await c;
+        assert.equal(fixture.calls.play.some(row => row.item.Id === 'B'), false);
+        assert.equal(fixture.player.streamInfo.item.Id, 'C');
+        assert.equal(transition.isActive(), false);
+        assertOnlyAStopped(fixture);
+    });
+}
+
+test('P1 remote metadata failure clears hold before native load', async () => {
+    const fixture = makeStopBoundaryFixture();
+    await startPublicItem(fixture, 'A');
+    const {transition, evidence} = installP1Presentation(fixture);
+    const b = fixture.manager.play({items: [makeItem('B')]}).catch(error => error);
+    await waitFor(() => fixture.calls.metadata.length === 2);
+    fixture.rejectMetadata(1, new Error('fixture-media-failed'));
+    await b;
+    assert.equal(transition.isActive(), false);
+    assert.equal(evidence.surfaceVisible, false);
+    assert.equal(fixture.calls.play.length, 1);
+});
+
+test('P1 terminal Stop during remote loading cancels hold and late media cannot load', async () => {
+    const fixture = makeStopBoundaryFixture();
+    await startPublicItem(fixture, 'A');
+    const {transition, evidence} = installP1Presentation(fixture);
+    const b = fixture.manager.play({items: [makeItem('B')]}).catch(error => error);
+    await waitFor(() => fixture.calls.metadata.length === 2);
+    await fixture.manager.stop();
+    assert.equal(transition.isActive(), false);
+    assert.equal(evidence.surfaceVisible, false);
+    fixture.resolveMetadata(1, 'session-B-late');
+    await b;
+    assert.equal(fixture.calls.play.length, 1);
+    assertOnlyAStopped(fixture);
+});
+
+test('P1 explicit remote Stop then Play remains terminal and acquires no old-frame hold', async () => {
+    const fixture = makeStopBoundaryFixture();
+    await startPublicItem(fixture, 'A');
+    const {transition, evidence} = installP1Presentation(fixture);
+    await fixture.manager.stop();
+    assert.equal(evidence.surfaceVisible, false);
+    await startPublicItem(fixture, 'B');
+    assert.deepEqual(evidence.preparations, []);
+    assert.equal(transition.isActive(), false);
+    assert.equal(fixture.player.streamInfo.item.Id, 'B');
+});
 
 test('PLAY-01 public Play metadata pending is invalidated by terminal Stop', async () => {
     const fixture = makeStopBoundaryFixture();

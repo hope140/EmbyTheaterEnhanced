@@ -194,7 +194,11 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
         return Promise.resolve(response);
     };
     api.getItem = (user,id) => Promise.resolve(items.get(id) || activeItem);
-    api.getItems = () => Promise.resolve({Items:[activeItem],TotalRecordCount:1});
+    api.getItems = (_user, options) => {
+        const selected = timelineOptions && options && options.Ids
+            ? options.Ids.split(',').map(id => items.get(id)).filter(Boolean) : [activeItem];
+        return Promise.resolve({Items:selected,TotalRecordCount:selected.length});
+    };
     api.ajax = request => {
         trace.push('ajax: '+new URL(request.url).pathname);
         if (request.url.includes('/Sessions/Playing')) {

@@ -1155,6 +1155,20 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             return;
         };
 
+        self.prepareReplacementPresentation = function (requestId) {
+            nextTransition.replacement(requestId);
+        };
+
+        self.admitReplacementPresentation = function (requestId) {
+            return nextTransition.admit(requestId);
+        };
+
+        self.finishReplacementPresentation = function (requestId) {
+            // Success has transferred reveal to native; failure/stale completion
+            // can only release the record owned by this exact manager request.
+            nextTransition.playbackFailed(requestId);
+        };
+
         self.stop = async function (destroyPlayer) {
             var request = activePlayRequest;
             var presentationToken = null;

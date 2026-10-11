@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-11 — P1 被控端远程切集呈现专项
+
+从 main 收尾 `6eb11b9` 创建独立 `codex/p1-remote-presentation-20261011`。用户确认被控端 0.2.9；NAS 只读核验 Together 1.6.0.5 的现存 DLL 与本机诊断 assembly 哈希一致。实际 handoff 发 PlayNow，原 Next/Previous 包装未覆盖统一媒体替换 Stop。三项原始 RED 与独立 review 发现的 B/C admission RED 均复现；统一 replacement 持帧与已有 intent 提前接管后相关 83/83 GREEN，独立复核未发现剩余明确问题。
+
+当前构建、完整回归和像素证据进行中，不标真实视觉 PASS；没有服务器变更、现用客户端覆盖、PR28 改动或发布。精确调用链、假设和验收边界见 [P1 远程切集报告](P1_REMOTE_PRESENTATION.md)。
+
 ## 2026-10-11 — USER_UI_ACCEPTANCE=PASS / 安装器整合
 
 用户确认40c704d候选的中文默认、手动语言选择与升级目录页均符合预期，没有新增界面问题；该三项记为USER_UI_ACCEPTANCE=PASS。完整系统安装/升级/卸载/重装、配置/DeviceId/登记/快捷方式和UAC/普通用户启动仍NOT_EXECUTED。安装器整合入口为 [PR #28](https://github.com/hope140/EmbyTheaterEnhanced/pull/28)，最新合并状态与main CI按实际PR/提交回读，不改标候选为正式产物。用户已授权最终门禁后Ready、Merge Commit整合及main CI核验；本次无Tag/Stable Release。

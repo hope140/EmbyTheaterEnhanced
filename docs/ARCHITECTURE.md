@@ -1,5 +1,9 @@
 # 架构
 
+## P1 统一媒体替换呈现合同
+
+本地 playlist-managed same-player Video replacement Stop 通过libmpv窄hook创建request-bound presentation intent，复用现有原生prepare/stopForPresentation/arm/reveal。公开Play只在已有intent时同步接管，保护前置item/user/intro等待期间的B/C交错；按options WeakMap和request ID进行整轮完成清理。prepared未arm阶段有独立15秒失败期限，native arm后原租期保持。terminal Stop、不同player、Audio与Session/Resolver语义保持；Native Helper CPP、协议和surface ownership没有变化。消息路径及证据见[P1远程呈现](P1_REMOTE_PRESENTATION.md)。
+
 ## 当前主线架构 — 2026-10-11
 
 开工核验 `main@9774b73469dea9a3651f03737153c872947223ee` 已包含下述 PLAY-01、SEC01/02、LIFE01/02、About 异步校验和 Smart Path Mapping；PR #25 的外挂字幕选择守卫已合并。Native Helper 是唯一生产 bridge，STRM 增强只替换最终 source，PlaybackManager 与 Session 身份链保持。下方候选名和旧版本陈述是各专项的历史来源，不代表今天尚未集成。当前维护与验证边界见 [v0.2.9 收尾](V029_MAINTENANCE_CLOSEOUT.md)。

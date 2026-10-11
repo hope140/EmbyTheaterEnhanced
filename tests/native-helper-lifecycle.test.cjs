@@ -253,6 +253,31 @@ function operationIndex(endpoint, type, predicate) {
     return endpoint.operations.findIndex(row => row.type === type && (!predicate || predicate(row)));
 }
 
+test('P1 remote replacement hook retains native frame through Stop and arms matching new generation', async () => {
+    const endpoint = makeNativeEndpoint();
+    const pending = makeDeferred();
+    endpoint.preparePresentationHandler = () => pending.promise;
+    const nativeClient = {create() { return Promise.resolve({mode: 'native-helper', endpoint}); }};
+    const {player} = loadPlayer(nativeClient);
+    await player.play(playOptions(1));
+    assert.equal(typeof player.prepareReplacementPresentation, 'function');
+    player.prepareReplacementPresentation(2);
+    const stopping = player.stop(false);
+    await waitFor(() => operationIndex(endpoint, 'preparePresentation') >= 0);
+    assert.equal(operationIndex(endpoint, 'stopForPresentation'), -1);
+    pending.resolve({ready: true});
+    await stopping;
+    const held = endpoint.operations.find(row => row.type === 'stopForPresentation');
+    assert.ok(held);
+    await player.play(playOptions(2));
+    player.finishReplacementPresentation(2);
+    assert.equal(endpoint.operations.filter(row => row.type === 'preparePresentation').length, 1);
+    assert.ok(endpoint.operations.some(row => row.type === 'beginGeneration' && row.presentationToken === held.token));
+    assert.equal(endpoint.operations.some(row => row.type === 'cancelPresentation' && row.token === held.token), false,
+        'successful core-playing leaves first-frame reveal to native');
+    await player.stop(true);
+});
+
 test('concurrent first plays share one native helper creation', async () => {
     const endpoint = makeNativeEndpoint();
     let createCalls = 0;
