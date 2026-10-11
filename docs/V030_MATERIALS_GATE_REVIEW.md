@@ -1,10 +1,10 @@
 # v0.3.0 剩余许可、分发材料与安装门禁增量审查
 
-日期：2026-10-12（UTC+8）。审查基线为 `a8ba606c0bb4d8c4540ff7f9ad17eccb3d35db50`（main，PR #28 已合入的树）。本报告只新增本文件，不修改源码、vendor、安装器、客户端、系统或服务器；不构成法律意见、发布批准或 Stable 授权。
+日期：2026-10-12（UTC+8）。审查基线为 `a8ba606c0bb4d8c4540ff7f9ad17eccb3d35db50`（main，PR #28 已合入的树）。本报告服务于内部候选审查，不是正式 main 发行产物；主线程当前 guard 12、language 7、定向 91 已完成，最终构建仍待 review。本报告只新增本文件，不修改源码、vendor、安装器、客户端、系统或服务器；不构成法律意见、发布批准或 Stable 授权。
 
 ## 审查范围与判断口径
 
-已读取 `AGENTS.md`、`docs/ARCHITECTURE.md`、`docs/PROJECT_STATUS.md`、`docs/LESSONS_LEARNED.md`，以及 `V030_INSTALLER_INTEGRATION.md`、`V029_INSTALL_MATERIALS_REVIEW.md`、`THIRD_PARTY_MATERIALS_AUDIT.md`、`THIRD_PARTY_MATERIALS_REQUEST.md`、`THIRD_PARTY_MATERIALS_CLOSEOUT_027.md`、`LICENSING.md`、`SOURCE_MATERIALS.md`、`THIRD_PARTY_NOTICES.md`、`BUILD_INPUT_AUDIT.md`。本轮复用这些文件中带有 sourceCommit、输入身份和验证层级的历史证据，不把旧候选、测试版发布或文档回读改标为本轮新运行。
+已读取 `AGENTS.md`、`docs/ARCHITECTURE.md`、`docs/PROJECT_STATUS.md`、`docs/LESSONS_LEARNED.md`，以及 `V030_INSTALLER_INTEGRATION.md`、`V029_INSTALL_MATERIALS_REVIEW.md`、`THIRD_PARTY_MATERIALS_AUDIT.md`、`THIRD_PARTY_MATERIALS_REQUEST.md`、`THIRD_PARTY_MATERIALS_CLOSEOUT_027.md`、`LICENSING.md`、`SOURCE_MATERIALS.md`、`THIRD_PARTY_NOTICES.md`、`BUILD_INPUT_AUDIT.md`。另只读核对指定独立 P1 报告 `P1_REMOTE_PRESENTATION.md` 的根因、窗口合成和 fullscreen 边界。本轮复用这些文件中带有 sourceCommit、输入身份和验证层级的历史证据，不把旧候选、测试版发布或文档回读改标为本轮新运行。
 
 `PASS` 只表示对应证据层通过；`WAITING_EXTERNAL` 表示材料尚未取得或关系尚不能建立；`NOT_EXECUTED` 表示尚未做实际环境操作。发行权、适用许可和对应源码材料必须逐组件判断，项目根 `GPL-2.0-only` 不能统一覆盖第三方组件。
 
@@ -21,15 +21,17 @@
 
 ## Stable 前仍需处理的实际门禁
 
+下表的“发行阻断”只针对适用 copyleft 组件的对应源码/通知履行路径未闭合；不能把“发行权/适用 license 尚未确认”写成已认定违法，后者一律保持 `UNKNOWN`，等待提供者事实和发行责任人决定。没有确认 copyleft 义务的组件只记录材料与权利状态缺口。
+
 | 门禁 | 状态 | 阻断性质与最小收口 |
 |---|---|---|
 | 独立 Windows 系统安装 | `REAL_INSTALL_NOT_EXECUTED` | Stable 前置门禁。需可恢复快照的隔离 Windows，实际跑全新安装、v0.2.9 升级、卸载、重装，并回读 payload、旧文件、profile/DeviceId、快捷方式、卸载登记、UAC、普通用户和运行中升级失败/重试；不能用合成 probe、编译或解包代替。 |
-| Together 双端 SyncPlay | `USER_REPORTED / PENDING_INVESTIGATION / PRE_STABLE_PLAYBACK_ITEM`（`SYNCPLAY_NEXT_TRANSPARENT_SCREEN_TASK.md`） | 安装器 PR 未修复。需绑定两端版本/runtime、复现或形成明确证据边界；若修复则需定向审查与真实双端下一集及相邻场景。单端播放、模拟测试和安装器 PASS 不能关闭。 |
-| Host 与未匹配支撑 DLL | `WAITING_EXTERNAL` | 这是实际分发材料缺口，不等同于“没有重建能力”。仍缺 Host 精确 source/build 关系，以及 `MediaBrowser.Model`、`SharpCompress`、`SocketHttpListener`、`System.Configuration` 的准确输入和适用通知；需按目标 binary hash 收集材料后复核。 |
-| CEC、driver、RefreshRate | `WAITING_EXTERNAL` | 公开 Host archive 中有八项 binary identity，但精确 source/build/toolchain 与完整通知未闭合；libCEC 参考源码不能自动覆盖 driver installer。需逐项材料索引和通知/获取安排。 |
-| patched libmpv | `WAITING_EXTERNAL` | archive/DLL 字节关系已确认，但缺 winbuild revision、workflow/build log、resolved dependencies、patch/config/toolchain 和完整 notices；单个 mpv commit、header 或 DLL 文件名不能替代这些材料。 |
-| 离线 Web、字体、图片及继承 overlay | `WAITING_EXTERNAL` | 冻结的 761 Web 路径、23 字体、19 图片是输入身份盘点，不是逐资产来源或再分发条件。仍需精确 revision、依赖锁、overlay/import 映射和适用通知。 |
-| ServiceStack.Text 许可路线 | `EXACT binary / route unresolved` | `4.5.14` DLL 与 NuGet 成员已有 EXACT 观察，但固定源码许可文本同时列 AGPL-3.0、FOSS License Exception 和商业许可入口；本报告不选择适用路线，也不作兼容性或合规保证。需由发行责任人取得并记录适用许可/通知决定。 |
+| Together 双端 SyncPlay | `ROOT_CAUSE_CONFIRMED / WINDOWED_SYNTHETIC_VISUAL_PASS / FULLSCREEN_INCONCLUSIVE / REAL_TOGETHER_ACCEPTANCE=PENDING_USER_ACCEPTANCE` | P1 证据已定位 `PlayNow → replacement Stop → carrier hidden → transparent background exposed` 根因；产品修复由 `31d1107` 整合到 `5288fb9`，后续 `a31163b → c27755c`。窗口合成证据已有，真实主控/被控联测仍需用户验收；fullscreen 继续 `INCONCLUSIVE`，不能由窗口 PASS 代替。 |
+| Host 与未匹配支撑 DLL | `发行阻断（适用 copyleft 时）：源码/通知履行未闭合；发行权/适用 license=UNKNOWN` | 对适用 copyleft 组件，精确对应源码/通知履行路径尚未闭合；不能从公开参考源或文件版本推断发行权/适用 license，后者保持 `UNKNOWN`。仍缺 Host 精确 source/build 关系，以及 `MediaBrowser.Model`、`SharpCompress`、`SocketHttpListener`、`System.Configuration` 的准确输入和适用通知。 |
+| CEC、driver、RefreshRate | `发行阻断（适用 copyleft 时）：源码/通知履行未闭合；发行权/适用 license=UNKNOWN` | 公开 Host archive 中有八项 binary identity，但对应源码、构建材料和完整通知履行尚未闭合；libCEC 参考源码不能自动覆盖 driver installer。具体发行权和适用许可保持 `UNKNOWN`，需逐项材料索引与提供者事实。 |
+| patched libmpv | `发行阻断（适用 copyleft 时）：源码/通知履行未闭合；发行权/适用 license=UNKNOWN` | archive/DLL 字节关系已确认，但缺 winbuild revision、workflow/build log、resolved dependencies、patch/config/toolchain 和完整 notices。固定 mpv `Copyright` 显示许可模式依构建选项和依赖而定，因此发行权/适用 license 不能推断；单个 mpv commit、header 或 DLL 文件名也不能替代对应源码/通知履行。 |
+| 离线 Web、字体、图片及继承 overlay | `DISTRIBUTION_RIGHTS/LICENSE=UNKNOWN; MATERIALS_WAITING_EXTERNAL` | 冻结的 761 Web 路径、23 字体、19 图片只是输入身份盘点，不是逐资产来源或再分发条件。仍需精确 revision、依赖锁、overlay/import 映射和适用通知；当前不据此断言存在 copyleft 义务，待提供者事实确认。 |
+| ServiceStack.Text 许可路线 | `RELEASE_BLOCKER: DISTRIBUTION_RIGHTS/LICENSE=UNKNOWN` | `4.5.14` DLL 与 NuGet 成员已有 EXACT 观察，但固定源码许可文本同时列 AGPL-3.0、FOSS License Exception 和商业许可入口；适用路线、对应条件和发行权尚未确认。本报告不选择路线，也不作兼容性或合规保证，需取得提供者事实并由发行责任人记录决定。 |
 | Electron 源码重建、剩余 MSYS2 recipe、工具源码到 binary 重建 | `REPRODUCIBILITY GAP` | 这些是可复现性/材料完整度问题。按当前证据不自动升级为分发阻断；若正式发布策略要求完整对应源码、获取安排或可重建保证，则需在 Stable 决策中明确加门禁。 |
 | 最终 Stable 产物与发布 | 未执行 | 必须从准确最终 main 生成新 runtime/installer，复核版本、source/runtime/package provenance、完整 path/hash、签名状态和附件下载回读；当前候选不可改名冒充正式产物。最后仍需用户明确 Stable 发布决定。 |
 
@@ -38,11 +40,11 @@
 下列工作彼此独立，可在不改播放核心的前提下推进，但完成一项不替代其它门禁：
 
 1. 有隔离环境后执行四阶段 Windows 安装生命周期及运行中升级/静默失败回读。
-2. 单独启动 SyncPlay 双端专项，先取证再决定是否修复；其状态由专项文档维护。
+2. 在已有根因和窗口合成证据基础上，完成真实 Together 主控/被控验收；fullscreen 保持 `INCONCLUSIVE`，其状态由专项文档维护。
 3. 对最终 main 做一次材料索引和 payload gate，确认四份项目通知、Electron notices、npm notices、helper/libmpv 和 Pepper exclusion 的最终 path/hash。
 4. 取得或确认 Host、libmpv、CEC/driver、Web/资产和未匹配 DLL 的对应材料、适用通知或公开获取安排；收到材料后只读 hash/来源/边界预检，再作发行决定。
 
-这些工作均不能把 `WAITING_EXTERNAL`、`REAL_INSTALL_NOT_EXECUTED` 或双端待核查改成 PASS。历史 v0.2.9 发布也不构成 v0.3.0 的授权、材料闭合或系统验收。
+这些工作均不能把 `WAITING_EXTERNAL`、`REAL_INSTALL_NOT_EXECUTED` 或 `REAL_TOGETHER_ACCEPTANCE=PENDING_USER_ACCEPTANCE` 改成 PASS。历史 v0.2.9 发布也不构成 v0.3.0 的授权、材料闭合或系统验收。
 
 ## 官方固定来源核对
 
@@ -63,4 +65,4 @@
 
 ## 最终结论
 
-当前 v0.3.0 可保留安装器工程与三项用户 UI `PASS`，并可把 Electron 未源码重建单列为复现边界。Stable 仍不能放行：独立 Windows 安装生命周期未执行，SyncPlay 双端问题仍待核查，且 Host/libmpv/CEC/driver/Web/资产及部分 DLL 的实际分发材料、适用通知或对应源码/获取安排仍 `WAITING_EXTERNAL`。是否接受剩余材料风险、是否进入最终构建和是否创建 Stable Release，必须由用户在上述证据收口后明确决定。
+当前 v0.3.0 可保留安装器工程与三项用户 UI `PASS`，并可把 Electron 未源码重建单列为复现边界。Stable 仍不能放行：独立 Windows 安装生命周期未执行，真实 Together 主控/被控验收仍 `PENDING_USER_ACCEPTANCE`，fullscreen 仍 `INCONCLUSIVE`；对适用 copyleft 组件的对应源码/通知履行路径未闭合，Host/libmpv/CEC/driver 等发行权或适用 license 仍 `UNKNOWN`。这些实际发行材料门禁与系统/用户验收需要分别收口；仅缺少精确重建或工具链重建能力不自动构成阻断。是否接受剩余材料风险、是否进入最终构建和是否创建 Stable Release，必须由用户在上述证据收口后明确决定。
