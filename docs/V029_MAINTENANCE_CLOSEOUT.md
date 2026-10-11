@@ -35,7 +35,11 @@ README、ROADMAP、Known Issues、PROJECT_STATUS、DEVELOPMENT_LOG 完成当前�
 
 初始材料六文件与额外 PLAY-01 native gates 合计 73/73，失败/取消/跳过 0；材料测试与公开集合合起来覆盖全部发现文件。初始静态 JS 223、PowerShell 5.1/7 各 26、有限凭据扫描 272 文件通过；最后新增测试后数量按最终运行重新记录。有限凭据和格式回归不证明所有未知秘密都已覆盖。
 
-最终测试、独立审核、PR CI 和 main CI：待本轮最终实际运行与远端回读。公开 Hosted 仍保留六份材料依赖文件 `NOT_EXECUTED`，本机材料层结果单列。Renderer 风险矩阵与兼容设计见安全审查；此次不迁移旧 Web 的全部隔离开关。
+最终本地输入固定后的公开全集为 686/686、六材料文件加额外 PLAY-01 为 73/73，失败/取消/跳过/todo 均为 0。覆盖 89 个发现文件中的 757 项，以及额外 2 项 PLAY-01 native gates，合计 759 项执行；focused 47 和独立 34 已包含重复覆盖，不能累加。测试开始时为 `1012dac`，其后只提交非构建文档为 `0bac2e8`；生产/工具/测试及34输入身份完全相同。原 Git fixture 失败 case 在固定全集中通过，根因仍不猜测。
+
+最终静态 JS 224、PowerShell 5.1/7 各26、有限凭据273、文档14文件/266相对链接通过。候选 `0bac2e8b2294fb4011bb3f2cef0c48624a35a570` build/VerifyOnly、34输入/4通知和 2138 payload 加manifest共2139文件通过。初次 `1012dac` 构建因主线程提交文档移动 HEAD 被 Native source gate 正确拒绝，保留原partial/log，不记为PASS。
+
+独立代码审查已通过；PR CI 和 main CI 待远端回读。公开 Hosted 仍保留六份材料依赖文件 `NOT_EXECUTED`，本机材料层结果单列。Renderer 风险矩阵与兼容设计见安全审查；此次不迁移旧 Web 的全部隔离开关。
 
 ## 安装生命周期与第三方材料
 

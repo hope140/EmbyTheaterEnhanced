@@ -1,5 +1,12 @@
 # 开发日志
 
+## 2026-10-11 — v0.2.9 本地门禁通过
+
+- 外挂字幕修复已在开工 main9774b73；本轮根版本提交5e33d1f、独立隐私修复16ae6c2整合为1012dac。两处诊断生产文件与18项合成回归经主线程diff和独立34/34审核，focused47/47及实际snapshot/ZIP回读通过，不改变播放/Session/缓存。
+- 固定输入后公开686/686、六材料加额外PLAY01为73/73，fail/cancel/skip/todo均0；89发现文件757项+额外2项实际执行。初轮667/668的临时Git读取失败、单例1/1复跑和最后全集结果分列，不弱化断言或猜测根因。
+- 本地候选0bac2e8 build/VerifyOnly通过，34输入/4通知、2138payload+manifest总2139；先前1012构建期间主线程移动doc HEAD被门禁拒绝，partial/log保留，固定HEAD后重新构建，不将失败记为PASS。
+- JS224、PS5.1/7各26、有限敏感273、14文档/266链接通过。远端PR/main CI、最终main安装包及Release回读尚待执行；材料缺口WAITING_EXTERNAL、四阶段REAL_INSTALL_NOT_EXECUTED和真实服务/视觉边界保持。
+
 ## 2026-10-11 — 综合维护与 v0.2.9 文档收尾
 
 - Model Tier：主线程 Tier 2，文档委派 Tier 1；Model：当前运行配置的精确型号未由工具可靠返回，文档代理继承当前环境配置；Reason：主线程承担发布、来源与独立审核整合，文档任务为明确文件和事实的范围内同步；Task Risk 文档低/发布中，Task Uncertainty 低，Cross-module Scope 为文档、测试与打包流程，Playback/Session Impact 无新增合同变化；Escalated：no。

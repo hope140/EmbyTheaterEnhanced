@@ -2,7 +2,7 @@
 
 日期：2026-10-11（UTC+8）。审查者未参与生产修复、版本更新或发布操作；仅修改本报告。审查基线为 `9774b73469dea9a3651f03737153c872947223ee`，维护版本提交为 `5e33d1f`；隐私候选按实际文件字节复核。最终 sourceCommit、远端 CI、runtime、安装器和下载资产仍须按后续实际证据确认。
 
-当前审核状态：`CODE_REVIEW_PASS / FINAL_GATES_PENDING`。最终隐私修复与独立 focused 已通过，当前检查范围内没有剩余明确生产代码阻断；完整回归、远端 CI、构建与资产门禁仍未由本报告放行。
+当前审核状态：`PREMERGE_REVIEW_PASS / REMOTE_AND_RELEASE_GATES_PENDING`。本地固定候选的代码、完整回归、静态及 candidate build/VerifyOnly 均已核验；可以进入最小 PR。实际合并仍须 PR HEAD/目标 main/Hosted CI/无冲突门禁，公开发布仍须最终 main 构建及资产回读。
 
 ## 审查范围与发现
 
@@ -72,3 +72,22 @@
 6. README、路线图、Known Issues、状态、开发日志、发布说明及综合收尾实际同步；相关相对链接存在，新增公开文本无私人路径、真实凭据或媒体 URL。真实安装、第三方材料、延迟专项与设备缺口保留准确状态。
 
 没有独立系统、适当显示硬件或外部对应材料不是本次授权测试版的自动阻断。CI、来源、payload、明确隐私/安全问题或新增高风险发行问题仍是相应发布门禁。
+
+## 固定候选本地门禁与 PR 审查结论
+
+审核对象为 `0bac2e8b2294fb4011bb3f2cef0c48624a35a570`。整合修复 `1012dac20647a83e4e7853380d389e8eee040dd0` 与独立隐私提交 `16ae6c2` 的三个文件 Git blob 逐项完全相同；版本、通知和源码提交均已确定。相对本轮开工 main，最终修改范围为版本、必要诊断隐私修复及其测试、工程文档，未混入播放性能、Renderer 隔离迁移或其它功能。
+
+| 最终实际证据 | 独立核验 |
+|---|---|
+| `.work/v029-release/public-final.log` | 89 test 文件发现、83 公开执行、精确排除原六份材料文件；686/686 PASS，fail/cancel/skip/todo=0。原失败的正常写入 fixture case 在本轮完整集合中通过，原断言未改，原失败继续保留，未知根因不写成已经修复 |
+| `.work/v029-release/material-play01-final.log` | 六份材料文件及额外 PLAY-01 native gates 73/73 PASS，fail/cancel/skip/todo=0；其中 71 项属于发现全集、两项额外。合计发现全集 757 项，连额外两项为 759 次通过，材料不记为 Hosted 执行 |
+| `js-final.log`、`ps51-final.log`、`ps7-final.log`、`scan-final.log` | JS 224、PowerShell 5.1/7 各 26、有限凭据模式 273 tracked 文本文件通过 |
+| `docs-final-pre-pr.json` | 14 份当前文档、266 个相对链接、四种新增文本有限模式检查，无失败 |
+| `candidate-build-fixed.log` | 最终候选从准确 `0bac2e8` 提交生成；source、Native Helper、build input 与 tracked product provenance 均通过；34 项固定输入、四份 notices、88 个 tracked product 文件；runtime 0.2.9 |
+| `candidate-verify-fixed.log` | package VerifyOnly 通过；精确 npm 33 生产包/1142 文件与七个保留包/29 文件、退役 Pepper 缺席、全部 runtime payload 2138 文件通过；加 manifest 文件为 2139 |
+
+已读取 `candidate-build.log` 的真实失败：sourceCommit=1012dac 时 HEAD 在构建期间前移，Native helper gate 拒绝 `source commit must equal HEAD`。这不是产物通过，原 partial 及日志保留。随后以固定 `0bac2e8` 独立新目录重建通过，不修改原失败身份。
+
+PR 描述已独立阅读，产品范围、隐私收益、安装和外部材料缺口、版本及预发布目标准确。当前检查范围内无剩余明确代码/本地工程门禁阻断，独立意见为 `PREMERGE_REVIEW_PASS`。此结论支持进入 PR 并在远端条件全部满足后使用 Merge commit；不跳过 CI，不直接批准公开 Release。
+
+本节之后若只提交审核/测试证据文档，必须逐项证明其不改 `src/`、`native/`、tools、tests、34 固定输入与四份随包 notices。candidate 产物的 sourceCommit 仍为 `0bac2e8`，不能改标为后续文档 HEAD。公开安装包必须按本次任务从最终通过 CI 的 main HEAD 重新构建。
