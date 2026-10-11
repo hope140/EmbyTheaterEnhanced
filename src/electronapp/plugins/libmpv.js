@@ -133,6 +133,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         var playGeneration = 0;
         var highestPlaybackRequestId = 0;
         var activePlayRequest;
+        var subtitleSelectionSequence = 0;
         var enhancedRouteState = playbackRouteStats && typeof playbackRouteStats.create === 'function'
             ? playbackRouteStats.create()
             : null;
@@ -1623,6 +1624,8 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
         function setSubtitleStream(index, ownerRequest) {
             ownerRequest = ownerRequest || activePlayRequest;
+            var selectionSequence = ++subtitleSelectionSequence;
+            var ownerMediaSource = mediaSource;
             setProperty({ "sub-delay": 0 })
             if (index === null || index < 0) {
                 return setProperty({ "sid": "no" });
@@ -1640,7 +1643,8 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                                 setTimeout(() => { resolve() }, 700);
                                });
                                promise.then(() => {
-                                 if (isCurrentPlayRequest(ownerRequest)) {
+                                  if (isCurrentPlayRequest(ownerRequest) &&
+                                      selectionSequence === subtitleSelectionSequence && mediaSource === ownerMediaSource) {
                                      var pendingSubtitle = sendCommand(["sub-add", stream.DeliveryUrl, "cached", stream.DisplayTitle || "", stream.Language || ""]);
                                      if (pendingSubtitle && typeof pendingSubtitle.catch === 'function') {
                                          pendingSubtitle.catch(function () {

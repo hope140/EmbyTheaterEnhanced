@@ -1,5 +1,25 @@
 # 开发日志
 
+## 2026-10-11 — v0.2.9 字幕竞态修复整合与 PR 验证
+
+- Model Tier：Tier 2；Model：GPT-6 系列主线程、GPT-5.6 Sol High 独立审核、GPT-6 Luna High 测试与静态审核；Reason：局部异步归属修复的真实 diff、来源等价性与 Session 边界复核；Task Risk 中、Uncertainty 低、Cross-module Scope 为一个生产文件及既有测试链、Playback/Session Impact 无新增合同变化；Escalated：no。
+- 实时 fetch 确认 main 为 `888310d`，新独立工作树执行 `cherry-pick -x 11a1c50` 得 `100179c`。原父级只含研究文档；两个文档上下文冲突仅迁入原 A 新增段。非文档 Git 树与原修复完全一致，34/34 构建输入相同，未混入 B；原研究、验收树及材料保留。
+- 独立源码审核 PASS；完整 11 项在未修复 Git blob 下 RED 4/7、修复 strict GREEN 11/11。公开 668/668 + 材料 71/71 覆盖全部 88 文件，PLAY-01 32/32、审核核心子集 99/99 通过；最终无失败/跳过。缺少 ignored 输入的准备失败完整保留，按固定材料与正式 preload 生成器补齐后重跑通过。
+- JS 223、PS7/PS5.1 各 26、有限凭据模式 272 文件及 diff 检查通过。按完整非文档字节等价性复用 `11a1c50` 真实 Emby 五组 PASS 与 Session/API 远控/正常轨道证据；没有新 runtime，原 provenance 不改标。独立整合报告和匿名索引见 [整合记录](V029_SUBTITLE_INTEGRATION.md)。
+- 用户本轮授权必要整合提交、普通 push 与 PR，并要求等待当前 HEAD 的 Hosted CI；该远端回执在检查完成后核对并交付。版本仍 0.2.8，Tag/Release 与现用客户端保持，B 仅保留观测准备状态；不自动合并或发布。
+
+## 2026-10-10 — v0.2.9 外挂字幕候选真实 Helper/mpv 与桌面可见验收
+
+- Model Tier：Tier 2；Model：当前 GPT-6 系列主线程；Reason：libmpv 异步归属与 Native Helper/mpv 可见层验证，Task Risk 中、Uncertainty 中、Cross-module Scope 为测试链多层、Playback/Session Impact 仅局部字幕选择；Escalated：no。
+- 复核产品 diff 仅为最新选择序号与 MediaSource/Play 联合归属；原 8 项 RED 4/8，原断言保留并转 GREEN 8/8，新增 3 项后 11/11。相关字幕、Native Helper 和播放核心测试 151/151；独立 Electron/Helper/mpv 隐藏与桌面可见探针各 8/8，100ms 快速操作后的画面 A/B/Off、Stop 和换集已逐项查看，Helper error 0。
+- 固定 Electron/libmpv 与本分支编译 Helper、合成媒体、隔离 profile/runtime；仅合成 Session。透明前景使 Helper 视频承载窗口可见，最初不透明探针遮挡的截屏未用于通过结论。匿名证据见 [第二阶段 A](V029_SUBTITLE_RACE_PHASE2.md)。真实 Emby/115、安装版及远控 NOT_EXECUTED；候选仅 READY_FOR_INTEGRATION_REVIEW，未经正式整合。
+
+## 2026-10-10 — v0.2.9 外挂字幕选择归属 RED/GREEN
+
+- Model Tier：Tier 2；Model：当前 GPT-6 系列主线程（精确子型号未报告）；Reason：同一 Play 内异步 timer 与 mpv 命令归属涉及播放器生命周期，Task Risk 中、Uncertainty 已由 RED 收敛、Cross-module Scope 限 libmpv 与测试、Playback/Session Impact 局部字幕选择；Escalated：no。
+- 确认旧 3/3 原始函数实验所用 `b139d87` blob 与 v0.2.8 `libmpv.js` 均为 `63d28b8`。新增完整 AMD 模块/真实插件入口虚拟时钟 fixture，修复前 8 tests/4 pass/4 fail，原始 TAP/退出码保存在本工作树忽略目录；修复后 10/10、相关三文件合计 51/51，源码/测试语法与 diff 检查通过。
+- 仅在 `setSubtitleStream` 入口记录最新序号及 MediaSource，并在 700ms 回调提交前联合当前 Play 判断；未改 700ms、缓存、其他播放链或日志。真实 Emby/115、可见字幕和系统安装仍未执行。详见 [第一阶段 A](V029_SUBTITLE_RACE_PHASE1.md)，未提交、推送、PR、整合或发布实验改动。
+
 ## 2026-10-10 — v0.2.8 最小版本更新与发布准备
 
 - Model Tier：Tier 1；Model：当前 GPT-6 系列主线程（精确子型号 UNKNOWN）、GPT-6 Luna High 只读输入核对；Reason：明确版本更新、固定工具链构建与发布核验；Task Risk 中、Uncertainty 低、Playback/Session Impact 0；Escalated：no。
