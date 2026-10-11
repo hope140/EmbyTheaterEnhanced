@@ -1,8 +1,8 @@
 # 项目状态
 
-## 2026-10-11 — v0.3.0 安装器候选实现
+## 2026-10-11 — INSTALLER_READY_WITH_LIMITATIONS
 
-从远端 main `6eb11b9` 独立实现安装器中文/英文、欢迎/卸载文案及写入前运行/文件占用保护。固定 Inno6.7.3、原 AppId、普通用户完成页启动与 profile 保留 contract 不变；生产播放源码未改。公开测试版仍 v0.2.9，v0.3.0 Stable 尚未创建。工程及独立审查结果待回填，真实安装/升级/卸载/重装和用户前台界面 `NOT_EXECUTED`，详见 [安装器验收](V030_INSTALLER_ACCEPTANCE.md)。
+从远端 main `6eb11b9` 独立实现安装器中文/英文、欢迎/卸载文案及写入前运行/文件占用保护。固定 Inno6.7.3、原 AppId、普通用户完成页启动与 profile 保留 contract 不变；生产播放源码未改。候选source `75621cd`，0.3.0/175657242 bytes，SHA256 `4c0f607db268aedaa2c356b1084a202686693ea95a49f2b8a6a7f0fcd9c0cfb6`，未签名。39输入/4通知、Inno编译、两包内语言、14条自定义消息、2139全文件解包与复制后hash通过；最终完整离线762/762、PS5.1合成保护12项通过，独立审查收口。原全量761/762的旧英文断言失败及局部6/6修正证据保留。公开测试版仍 v0.2.9，v0.3.0 Stable 尚未创建。真实安装/升级/卸载/重装、DPI/UAC/普通用户启动和用户前台界面 `NOT_EXECUTED`，Draft PR等待安装体验审阅。详见 [安装器验收](V030_INSTALLER_ACCEPTANCE.md)。
 
 ## 2026-10-11 — V029_PRE_RELEASE_PUBLISHED
 

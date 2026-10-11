@@ -5,7 +5,9 @@
 - Task Risk：中（升级/卸载、UAC 与用户资料）；Task Uncertainty：中，语言资源与运行保护需要实证；Cross-module Scope：installer、构建来源、相关测试和文档；Playback/Session Impact：无修改。建议主线程 Tier2；语言资源和合成测试按固定 contract 委派 Tier1（工具实际路由 `gpt-6-luna/high`），独立 review 保留主线程架构审查。主线程精确运行型号未由工具可靠返回，Escalated=no。
 - 基线远端 main6eb11b9、v0.2.9 tag对象b4ab009e/产品084554e、Release409622572与三个asset身份已只读记录；独立 managed worktree 与 `codex/v030-installer` 分支，保留原工作区既有改动。
 - 项目内取入 Inno6.7.3 tag 简体中文资源、许可证和原始hash，英文内部名 `default` 兼容旧安装。WMI exact target process path + 四关键PE只打开不写入的占用保护，PrepareToInstall与InitializeUninstall共用。保持CloseApplications=no；不新增进程终止或profile清理。
-- 本任务未确认隔离Windows VM，不执行真实安装。新候选、测试、解包、独立审查与文档结果在 [验收报告](V030_INSTALLER_ACCEPTANCE.md) 回填；没有创建Stable Tag/Release。
+- 固定产物source75621cd；39输入/4通知、source/runtime/dependency/provenance与编译前后package通过，2138payload+manifest总2139，解包逐文件零差异。与v0.2.9仅版本及5份元数据不同，其它产品字节不变；包内default/简中0804及14条自定义消息实际匹配。EXE175657242 bytes/SHA4c0f607db268aedaa2c356b1084a202686693ea95a49f2b8a6a7f0fcd9c0cfb6，PE0.3.0/0.3.0.0、NotSigned；交付复制后hash一致。
+- 独立评审发现上游检出CRLF错误声明与损坏登记跳过保护两个P2，均回读修复。PS5.1正式合成guard11次/12项断言PASS；JS225/PS5.1与7各27/有限扫描275/diff/文档链接通过。初轮全量761/762唯一旧英文Description断言失败；局部更新保持入口/工作目录/安全flags并核对双语，6/6通过，最终完整762/762/exit0/无fail-cancel-skip-todo。原失败保留；测试与两原始资源专属whitespace属性修正不改变产物输入，不重标source。
+- 本任务未确认隔离Windows VM，不执行真实安装/升级/卸载/重装或实际前台页面、DPI、UAC、普通用户启动。最终 `INSTALLER_READY_WITH_LIMITATIONS`，报告、匿名机器证据与独立审查已收口；工程门禁后提交Draft PR等待用户安装体验，不自动merge；没有创建Stable Tag/Release。
 
 ## 2026-10-11 — v0.2.9 发布与工程收尾
 

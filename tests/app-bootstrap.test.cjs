@@ -60,7 +60,9 @@ test('installer and build inputs use the executable directly and exclude legacy 
 
     assert.match(installer, /Name: "\{group\}\\Emby Theater Enhanced"; Filename: "\{app\}\\Emby\.Theater\.exe";/);
     assert.match(installer, /Name: "\{autodesktop\}\\Emby Theater Enhanced"; Filename: "\{app\}\\Emby\.Theater\.exe";/);
-    assert.match(installer, /Filename: "\{app\}\\Emby\.Theater\.exe"; WorkingDir: "\{app\}"; Description: "Launch Emby Theater Enhanced"/);
+    assert.match(installer, /Filename: "\{app\}\\Emby\.Theater\.exe"; WorkingDir: "\{app\}"; Description: "\{cm:LaunchApp\}"; Flags: nowait postinstall skipifsilent runasoriginaluser/);
+    assert.match(installer, /^default\.LaunchApp=Launch Emby Theater Enhanced\r?$/m);
+    assert.match(installer, /^chinesesimplified\.LaunchApp=启动 Emby Theater Enhanced\r?$/m);
     assert.doesNotMatch(installer, /powershell\.exe|cmd\.exe|Start-Enhanced\.(ps1|cmd)/i);
     assert.doesNotMatch(build, /Start-Enhanced\.(ps1|cmd)/i);
     assert.doesNotMatch(provenance, /Start-Enhanced\.(ps1|cmd)/i);
