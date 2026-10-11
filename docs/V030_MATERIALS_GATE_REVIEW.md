@@ -31,7 +31,7 @@
 | CEC、driver、RefreshRate | `发行阻断（适用 copyleft 时）：源码/通知履行未闭合；发行权/适用 license=UNKNOWN` | 公开 Host archive 中有八项 binary identity，但对应源码、构建材料和完整通知履行尚未闭合；libCEC 参考源码不能自动覆盖 driver installer。具体发行权和适用许可保持 `UNKNOWN`，需逐项材料索引与提供者事实。 |
 | patched libmpv | `发行阻断（适用 copyleft 时）：源码/通知履行未闭合；发行权/适用 license=UNKNOWN` | archive/DLL 字节关系已确认，但缺 winbuild revision、workflow/build log、resolved dependencies、patch/config/toolchain 和完整 notices。固定 mpv `Copyright` 显示许可模式依构建选项和依赖而定，因此发行权/适用 license 不能推断；单个 mpv commit、header 或 DLL 文件名也不能替代对应源码/通知履行。 |
 | 离线 Web、字体、图片及继承 overlay | `DISTRIBUTION_RIGHTS/LICENSE=UNKNOWN; MATERIALS_WAITING_EXTERNAL` | 冻结的 761 Web 路径、23 字体、19 图片只是输入身份盘点，不是逐资产来源或再分发条件。仍需精确 revision、依赖锁、overlay/import 映射和适用通知；当前不据此断言存在 copyleft 义务，待提供者事实确认。 |
-| ServiceStack.Text 许可路线 | `RELEASE_BLOCKER: DISTRIBUTION_RIGHTS/LICENSE=UNKNOWN` | `4.5.14` DLL 与 NuGet 成员已有 EXACT 观察，但固定源码许可文本同时列 AGPL-3.0、FOSS License Exception 和商业许可入口；适用路线、对应条件和发行权尚未确认。本报告不选择路线，也不作兼容性或合规保证，需取得提供者事实并由发行责任人记录决定。 |
+| ServiceStack.Text 许可履行路线 | `RELEASE_GATE: OBLIGATION_PATH_NOT_CLOSED` | `4.5.14` DLL 与 NuGet 成员已有 EXACT 观察。主线程再次核对固定许可证：FOSS exception 明确包含 GPL 2.0，但仍要求 Software 遵守 AGPLv3、Additions 提供完整源码且满足该 exception 条件；商业许可是另一入口。不能把 AGPL/GPL 名称直接判为不兼容，也不能仅凭项目 GPL 声明证明闭合。需绑定 Host/Additions 精确来源并记录满足的许可与源码获取路径；本轮未取得商业授权证据。 |
 | Electron 源码重建、剩余 MSYS2 recipe、工具源码到 binary 重建 | `REPRODUCIBILITY GAP` | 这些是可复现性/材料完整度问题。按当前证据不自动升级为分发阻断；若正式发布策略要求完整对应源码、获取安排或可重建保证，则需在 Stable 决策中明确加门禁。 |
 | 最终 Stable 产物与发布 | 未执行 | 必须从准确最终 main 生成新 runtime/installer，复核版本、source/runtime/package provenance、完整 path/hash、签名状态和附件下载回读；当前候选不可改名冒充正式产物。最后仍需用户明确 Stable 发布决定。 |
 
