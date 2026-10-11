@@ -96,6 +96,7 @@ function makeNativeEndpoint() {
     const endpoint = Object.assign(target, {
         style: {},
         operations: [],
+        suppressCorePlaying: false,
         preparePresentation(token) {
             endpoint.operations.push({type: 'preparePresentation', token});
             if (endpoint.preparePresentationHandler) return endpoint.preparePresentationHandler(token);
@@ -121,7 +122,9 @@ function makeNativeEndpoint() {
             endpoint.operations.push({type: 'command', data});
             if (Array.isArray(data) && data[0] === 'loadfile') {
                 endpoint.operations.push({type: 'load', url: data[1]});
-                setImmediate(() => endpoint.dispatchEvent({type: 'message', data: {type: 'property_change', data: {name: 'core-idle', value: false}}}));
+                if (!endpoint.suppressCorePlaying) {
+                    setImmediate(() => endpoint.dispatchEvent({type: 'message', data: {type: 'property_change', data: {name: 'core-idle', value: false}}}));
+                }
             }
             return Promise.resolve({status: 'accepted'});
         },
@@ -431,4 +434,27 @@ test('prepare rejection fails open through the ordinary stop path', async () => 
     assert.equal(nextBegin.presentationToken, null);
     assert.ok(operationIndex(endpoint, 'load', row => row.url === 'fixture://native-2') >= 0);
     await player.stop(true);
+});
+
+test('native helper exit during replacement releases its presentation token', async () => {
+    const endpoint = makeNativeEndpoint();
+    const nativeClient = {create() { return Promise.resolve({mode: 'native-helper', endpoint}); }};
+    const {player, playbackManager} = loadPlayer(nativeClient, transitionManagerSetup([item('A'), item('B')]));
+    await player.play(playOptions(1));
+
+    endpoint.suppressCorePlaying = true;
+    const replacement = playbackManager.nextTrack(player).catch(error => error);
+    await waitFor(() => operationIndex(endpoint, 'load', row => row.url === 'fixture://native-2') >= 0,
+        'replacement load did not begin before helper exit');
+    const presentation = endpoint.operations.find(row => row.type === 'preparePresentation');
+    assert.ok(presentation, 'replacement must prepare a presentation token');
+
+    endpoint.dispatchEvent({type: 'message', data: {type: 'bridge_error', data: {reason: 'helper-exited'}}});
+    const error = await replacement;
+    assert.equal(error && error.name, 'NativeHelperError');
+    assert.match(error && error.message, /helper-exited/);
+    assert.ok(endpoint.operations.some(row => row.type === 'cancelPresentation' && row.token === presentation.token),
+        'helper exit must release the replacement presentation token');
+    await player.stop(true);
+    assert.equal(endpoint.destroyedCount(), 1);
 });
