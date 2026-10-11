@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-10-11 — v0.2.9 外挂字幕修复独立整合
+
+独立 `codex/v029-subtitle-integration` 从 fetch 确认未变化的 main `888310d`，以 `cherry-pick -x` 整合已验收 `11a1c50` 为 `100179c`。生产 diff 仅为 libmpv 外挂字幕延迟命令的选择序号与 Play/MediaSource 联合守卫，700ms 保留；所有非文档 Git 输入和 34 项锁定构建输入与原修复一致，独立整合审核 PASS。
+
+完整专项基线 RED 4 PASS / 7 FAIL，修复 strict 11/11；公开 668/668 与材料 71/71 覆盖全部 88 个测试文件，最终无失败或跳过；PLAY-01 32/32 及 JS/两种 PowerShell/有限凭据/diff 检查通过。按字节等价性复用原候选真实 Emby 五组 PASS、Session/API 远控及正常内嵌轨道证据，原 runtime 来源仍为 `11a1c50`，没有新构建或改标 provenance。
+
+本地整合门禁 PASS；本轮已获普通 push 与面向 main 的 PR 授权，最终远端结论以 PR 当前 HEAD 的 Hosted checks 和交付回执为准，不自动合并。B 切轨延迟仍未修复。来源、测试与验收边界见 [整合记录](V029_SUBTITLE_INTEGRATION.md) 和 [匿名证据](evidence/v029-subtitle-integration.json)。以下保留各阶段当时状态。
+
 ## 2026-10-10 — v0.2.9 第二阶段 A：字幕候选隔离验收
 
 独立 `codex/v029-subtitle-race-exp` 的最小修复经旧 8 项 RED 4/8 → 原 8 项 GREEN 8/8，连同新增 3 项合计 11/11 GREEN。完整生产 libmpv 插件通过真实 main service、Native Helper、mpv 和透明前景窗口，在合成 A/B 字幕的 100ms 快速操作中完成 8/8 场景；桌面截帧确认 A→B 显示 B、A→Off 无字幕、A→B→A 显示 A、换集显示新 Play 的 B。字幕、Native Helper 与播放核心相关测试 151/151 PASS。仅此隔离候选标记 **READY_FOR_INTEGRATION_REVIEW**；真实 Emby/115 Session 与安装版仍未验收。证据和边界见 [第二阶段 A](V029_SUBTITLE_RACE_PHASE2.md)。

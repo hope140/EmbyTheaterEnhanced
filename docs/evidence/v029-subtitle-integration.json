@@ -1,0 +1,211 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-11",
+  "baseline": "888310de8ebae941b407ae070102b84d4fec1e5e",
+  "acceptedOriginal": "11a1c508c2942b0fca35f971f58c1eec16e6aa03",
+  "cherryPickedCommit": "100179cc794a866e54e4bd7318e673d1cb0a7371",
+  "cherryPickTrace": true,
+  "equivalence": {
+    "status": "PASS",
+    "scope": "all tracked paths outside docs/",
+    "treeInventorySha256": "7b3f45723c5ca1e4b001d17271155a708642c75e06dde8ada7e164c95b9b131b",
+    "libmpvBlob": "e9968e9ff24c6099008f57dac7f56327f3e8e0ca",
+    "nonDocumentationDifferences": 0,
+    "documentationConflictResolution": "Only original A additions applied over current main; parent research context omitted"
+  },
+  "independentCodeReview": {
+    "acceptedOriginal": "PASS",
+    "integration": "PASS",
+    "integrationSourceCommit": "100179cc794a866e54e4bd7318e673d1cb0a7371",
+    "findings": [],
+    "lockedBuildInputs": {
+      "equal": 34,
+      "total": 34,
+      "differences": 0
+    },
+    "localReportSha256": "36a9c1efa3509500781ad6288517c9280ba7031413c4cf55d059ee30b342b8ad"
+  },
+  "priorRealAcceptance": {
+    "sourceCommit": "11a1c508c2942b0fca35f971f58c1eec16e6aa03",
+    "date": "2026-10-11",
+    "sourceReportSha256": "e725ed2eae1cb087175a4cf4df1ff9ff27e2375d0cefdde713bd059d91b7d1c3",
+    "scenarios": [
+      {
+        "scenario": "A_TO_B",
+        "status": "PASS",
+        "operationGapsMs": [
+          101.8
+        ],
+        "finalSubtitle": "B",
+        "oldSubAddCount": 0
+      },
+      {
+        "scenario": "A_TO_OFF",
+        "status": "PASS",
+        "operationGapsMs": [
+          106.8
+        ],
+        "finalSubtitle": "Off",
+        "oldSubAddCount": 0
+      },
+      {
+        "scenario": "A_TO_B_TO_A",
+        "status": "PASS",
+        "operationGapsMs": [
+          106.1,
+          107.1
+        ],
+        "finalSubtitle": "A",
+        "oldSubAddCount": 0
+      },
+      {
+        "scenario": "QUICK_STOP",
+        "status": "PASS",
+        "operationGapsMs": [
+          110.2
+        ],
+        "finalSubtitle": null,
+        "oldSubAddCount": 0
+      },
+      {
+        "scenario": "NEXT_EPISODE_B",
+        "status": "PASS",
+        "operationGapsMs": [
+          107.5
+        ],
+        "finalSubtitle": "B-new",
+        "oldSubAddCount": 0
+      }
+    ],
+    "distinctExternalContent": true,
+    "subtitleFormat": "ASS",
+    "videoContinuity": "PASS bounded post-action samples",
+    "sessionOwnership": "PASS five matched Playing/Stopped pairs",
+    "remoteControl": "PASS real Emby API/WebSocket Pause/Unpause/Stop",
+    "embeddedSubtitles": "PASS Off/On",
+    "audioSelection": "PASS aid 1 to 2",
+    "physicalRemoteHardware": "NOT_EXECUTED",
+    "subjectiveListening": "NOT_EXECUTED",
+    "evidenceReusedByCodeEquivalence": true
+  },
+  "runtime": {
+    "builtForIntegration": false,
+    "priorRuntimeSourceCommit": "11a1c508c2942b0fca35f971f58c1eec16e6aa03",
+    "newCommitRuntimeAcceptance": "NOT_EXECUTED",
+    "reason": "No new runtime; prior real acceptance reused by byte equivalence, never relabeled as a new build"
+  },
+  "scope": {
+    "delayMs": 700,
+    "guards": [
+      "Play",
+      "latest subtitle selection",
+      "MediaSource"
+    ],
+    "productionFilesChanged": [
+      "src/electronapp/plugins/libmpv.js"
+    ],
+    "bPerformanceFixed": false,
+    "productVersion": "0.2.8",
+    "releaseModified": false
+  },
+  "validation": {
+    "sourceCommit": "100179cc794a866e54e4bd7318e673d1cb0a7371",
+    "subsequentCommits": "Documentation only; no change to tested code, tests or build inputs",
+    "baselineRed": {
+      "schemaVersion": 1,
+      "mode": "in-memory-production-source-replacement",
+      "baseline": "888310de8ebae941b407ae070102b84d4fec1e5e",
+      "baselineSourceBlob": "63d28b8803433951d76183315706ebd862a135d0",
+      "testSourceCommit": "100179cc794a866e54e4bd7318e673d1cb0a7371",
+      "testBlob": "ac0f9cf4329c0317124d6dd1b5cfc5ad56be5075",
+      "tests": 11,
+      "pass": 4,
+      "fail": 7,
+      "exitCode": 1,
+      "expectedRed": true
+    },
+    "baselineRedTapSha256": "a491363e78c05e7d269be7bf011f03502ac4f1bd1059d97b4c8ffef4c247acd7",
+    "subtitleStrict": {
+      "command": "node --unhandled-rejections=strict --test tests/subtitle-selection-ownership.test.cjs",
+      "exitCode": 0,
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "skip": 0,
+      "log": ".work/integration-tests/subtitle-strict.log"
+    },
+    "publicSuite": {
+      "command": "node tools/ci-public-tests.cjs",
+      "exitCode": 0,
+      "discoveredTestFiles": 88,
+      "excludedMaterialFiles": 6,
+      "executedTestFiles": 82,
+      "tests": 668,
+      "pass": 668,
+      "fail": 0,
+      "skip": 0,
+      "cancelled": 0,
+      "todo": 0,
+      "log": ".work/integration-tests/public-tests.log"
+    },
+    "materialSuite": {
+      "files": [
+        "tests/device-identity.test.cjs",
+        "tests/external-player-process-chain.test.cjs",
+        "tests/playback-route-stats.test.cjs",
+        "tests/playbackmanager-request-session.test.cjs",
+        "tests/runtime-provenance.test.cjs",
+        "tests/web-overlay-preparation.test.cjs"
+      ],
+      "command": "node --test --test-concurrency=1 <six material-required files>",
+      "exitCode": 0,
+      "tests": 71,
+      "pass": 71,
+      "fail": 0,
+      "skip": 0,
+      "log": ".work/integration-tests/material-tests-rerun.log"
+    },
+    "play01": {
+      "exitCode": 0,
+      "tests": 32,
+      "pass": 32,
+      "fail": 0,
+      "skip": 0,
+      "log": ".work/integration-tests/play01-rerun.log"
+    },
+    "coverage": {
+      "allDiscoveredFiles": 88,
+      "publicFiles": 82,
+      "materialFiles": 6,
+      "uncoveredFiles": 0,
+      "uniqueTests": 739,
+      "completeOfflineCoverage": true,
+      "standaloneNpmTest": "not run separately; public runner plus six material-required files cover the discovered test set"
+    },
+    "inputAudit": {
+      "carnival": "PASS 1009/1009",
+      "patch": "PASS 51/51",
+      "electron": "PASS 44.4.2 73 files",
+      "nativeHeader": "PASS",
+      "lockedProductionPackages": "PASS 33, missing 0, mismatch 0",
+      "archive": "not used; verified prepared vendor inputs reused",
+      "runtime": "not prepared by design"
+    },
+    "preparationFailures": "Missing ignored vendor/preload inputs; preserved locally and resolved before final passing runs",
+    "independentCoreSubset": {
+      "tests": 99,
+      "pass": 99,
+      "fail": 0
+    },
+    "staticAtCodeCommit": {
+      "javascriptFiles": 223,
+      "powershell7Files": 26,
+      "windowsPowershell51Files": 26,
+      "credentialPatternTextFiles": 272,
+      "status": "PASS",
+      "diffChecks": "PASS"
+    },
+    "localSummarySha256": "d65abc900608c8a285111d4992706ec136265340473570e699e21e87481235d4",
+    "hosted": "Consult final pull request current-HEAD checks and remote validation receipt"
+  }
+}

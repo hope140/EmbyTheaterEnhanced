@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-10-11 — v0.2.9 字幕竞态修复整合与 PR 验证
+
+- Model Tier：Tier 2；Model：GPT-6 系列主线程、GPT-5.6 Sol High 独立审核、GPT-6 Luna High 测试与静态审核；Reason：局部异步归属修复的真实 diff、来源等价性与 Session 边界复核；Task Risk 中、Uncertainty 低、Cross-module Scope 为一个生产文件及既有测试链、Playback/Session Impact 无新增合同变化；Escalated：no。
+- 实时 fetch 确认 main 为 `888310d`，新独立工作树执行 `cherry-pick -x 11a1c50` 得 `100179c`。原父级只含研究文档；两个文档上下文冲突仅迁入原 A 新增段。非文档 Git 树与原修复完全一致，34/34 构建输入相同，未混入 B；原研究、验收树及材料保留。
+- 独立源码审核 PASS；完整 11 项在未修复 Git blob 下 RED 4/7、修复 strict GREEN 11/11。公开 668/668 + 材料 71/71 覆盖全部 88 文件，PLAY-01 32/32、审核核心子集 99/99 通过；最终无失败/跳过。缺少 ignored 输入的准备失败完整保留，按固定材料与正式 preload 生成器补齐后重跑通过。
+- JS 223、PS7/PS5.1 各 26、有限凭据模式 272 文件及 diff 检查通过。按完整非文档字节等价性复用 `11a1c50` 真实 Emby 五组 PASS 与 Session/API 远控/正常轨道证据；没有新 runtime，原 provenance 不改标。独立整合报告和匿名索引见 [整合记录](V029_SUBTITLE_INTEGRATION.md)。
+- 用户本轮授权必要整合提交、普通 push 与 PR，并要求等待当前 HEAD 的 Hosted CI；该远端回执在检查完成后核对并交付。版本仍 0.2.8，Tag/Release 与现用客户端保持，B 仅保留观测准备状态；不自动合并或发布。
+
 ## 2026-10-10 — v0.2.9 外挂字幕候选真实 Helper/mpv 与桌面可见验收
 
 - Model Tier：Tier 2；Model：当前 GPT-6 系列主线程；Reason：libmpv 异步归属与 Native Helper/mpv 可见层验证，Task Risk 中、Uncertainty 中、Cross-module Scope 为测试链多层、Playback/Session Impact 仅局部字幕选择；Escalated：no。

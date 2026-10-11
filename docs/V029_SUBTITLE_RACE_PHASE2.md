@@ -1,5 +1,7 @@
 # v0.2.9 第二阶段 A：外挂字幕竞态隔离验收
 
+本页保留合成隔离验收的历史状态；2026-10-11 的独立审核、真实 Emby 验收复用与整合记录见 [字幕修复整合](V029_SUBTITLE_INTEGRATION.md)。
+
 日期：2026-10-10。基线为 `v0.2.8@888310de`；候选仅位于独立 `codex/v029-subtitle-race-exp` 工作树。结论：**READY_FOR_INTEGRATION_REVIEW**，仅指此最小候选可供正式整合审查，尚不是 main、发布包或真实 Emby/115 用户验收。
 
 ## 修复 diff 与 RED/GREEN
