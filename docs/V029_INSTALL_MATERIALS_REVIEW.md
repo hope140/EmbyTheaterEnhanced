@@ -71,3 +71,34 @@ bootstrap 只在独立 Enhanced profile 中创建缺失的 `config/system.xml` �
 本轮实际运行 `node --test tests/installer-lifecycle-snapshot.test.cjs tests/installer-output-name.test.cjs`：3 PASS、0 FAIL、0 SKIP、0 CANCEL。原始输出在本轮忽略的 `.work/v029-materials/installer-preparation-tests.tap`。仅验证合成四阶段快照、保密投影、覆盖拒绝与候选文件名合同。报告完成后执行 `git diff --check` 与有限相对链接/敏感路径检查；最终 runtime、安装器版本/来源、CI 和三个公开附件的实测结果由综合收尾报告单列。
 
 后续仅在安全隔离环境可用或精确材料到达时继续对应验收。没有新的明确高风险分发问题时，原材料 WAITING_EXTERNAL 与系统安装未执行按本轮授权保留为测试版真实边界；正式稳定版仍需单独收口安装/设备验收与发行材料审查。
+
+## 候选 runtime 实体核对
+
+后续对 `dist/CANDIDATE-029-0bac2e8` 实体进行只读核对，来源为 `0bac2e8b2294fb4011bb3f2cef0c48624a35a570`、版本 0.2.9。此节仅属于候选 runtime，不能替代最终 main 构建、安装器、公开附件或真实系统安装结论；没有重复运行前述工具测试。
+
+- 实际读取全部 2,138 payload 文件的 SHA256，并核对完整目录集合；连同 manifest 共 2,139 文件，missing/extra/hash mismatch 均为 0。source、dependency 和 Native Helper provenance 的 sourceCommit 均为该候选提交。
+- 四份项目通知与该 sourceCommit 的原始 Git blob 字节完全相同。实际 SHA256 为 LICENSE `2bdb13b91b9440dcfdf51b2f72e04e566c92eb50d48350ada10b30a1d37c3c05`、THIRD_PARTY_NOTICES `b0553d7741f08209087418d66204f509850fa0b6fd39e330b4679cb52cbe6bde`、LICENSING `fa4a35b0847579137ea063840e22581ee6dbde579eefdfc8e491c89303393564`、SOURCE_MATERIALS `cc4b71ec41454b8d26ec24926b74868e1c59f299efdcbfc46edc02ffe6933396`。
+- 与 v0.2.8 / `888310de8ebae941b407ae070102b84d4fec1e5e` 的发布 runtime manifest 对比，路径集合没有新增或删除；全部 23 个 EXE/DLL/NODE 分类文件的实际 hash 与旧 manifest 相同。差异仅为项目 LICENSING、diagnostics、libmpv 插件、产品 package 元数据及五份来源/依赖记录，不引入新第三方 binary 或资产。
+- Electron 全树实际 73 文件，LICENSE 与 LICENSES.chromium.html 存在；electron.exe 为锁定 `0446040f3c63eb75d5b1e1663d5ef27f07730a82df3e4fa47ff77c1a33cef07c`，全部 Electron 文件 hash 与旧发布 manifest 相同。固定 libmpv 实际 hash 为 `965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c`；Native Helper 存在，退役 Pepper 不存在。
+- npm selected 33-package identity（版本/integrity）与七个 retained Carnival package identity 均与 v0.2.8 完全相同；selected 1,142 文件 + retained 29 文件 = combined 1,171 文件。整个 npm 文件集没有字节变化，包含其随包 notices；grpc-js/proto-loader 两份 LICENSE 存在。
+
+上述候选实体核对未发现相对 v0.2.8 新增的第三方材料风险；原 WAITING_EXTERNAL 缺口保持。原始有限记录为忽略的 `.work/v029-materials/candidate-runtime-materials.json`；它只保存相对路径、身份和结果，不作为新的构建信任根或许可认证。最终 main runtime 与安装器结论由综合收尾报告另行记录。
+
+## 最终 main runtime 材料核对
+
+最终正式构建 `dist/RELEASE-029-084554e` 的产品来源为 `084554e07782ca6461b7ed67cadd298a92450b24`、版本 0.2.9。本轮追加只读实体核对，没有重跑旧工具测试、运行安装器或修改通知本体。
+
+- 34 项输入的 path/Git blob/hash 记录与候选 `0bac2e8` 完全相同；四份项目通知的实体 SHA256 均保持上节值，逐份等于最终 sourceCommit 原始 Git blob。
+- 最终 manifest 仍列 2,138 payload 文件，path 集合相对候选没有增加或删除。最终与候选的 payload hash 差异仅为五份来源/依赖记录；产品源码和第三方文件的声明 hash 不变。
+- 实际重新读取 23 个 EXE/DLL/NODE 分类文件、Electron + npm 两树合计 1,244 个文件的 SHA256，均与候选及最终 manifest 相同。此 1,244 文件为 Electron 73 + npm 1,171，包括其随包 notices；没有新增第三方组件或通知缺失。
+- 五份来源/依赖记录的 sourceCommit 均指向最终 `084554e`；原始有限记录保存在忽略的 `.work/v029-materials/final-runtime-materials.json`。
+
+最终 main runtime 材料核对未发现新增风险。安装器正在由主线程独立打包，其版本、解包完整集合和三个附件回读应以综合收尾报告及实际 installer verification 为准。主线程八组隐藏运行矩阵属于 `ISOLATED_RUNTIME`；它们不构成系统安装四阶段的证据，`REAL_INSTALL_NOT_EXECUTED` 与原材料 `WAITING_EXTERNAL` 均保持。
+
+## 最终安装器解包材料回读
+
+主线程随后完成标准安装器及解包验证。本审查回读 `.work/v029-release/installer-verification.json`：来源 `084554e07782ca6461b7ed67cadd298a92450b24`、版本 0.2.9、expected/actual 均为 2,139 文件，missing/extra/mismatch 均为 0、failures 为空。该完整文件集合/哈希结果归属主线程执行，本审查未重复全量哈希。PE 记录实际 product/file 字符串为 0.2.9，四段 numeric product/file version 为 0.2.9.0。
+
+标准安装器 `EmbyTheaterEnhanced-0.2.9-win-x64-setup.exe` 为 175,650,591 bytes，记录 SHA256 `2f4fa378eb75f91f21a5163d4cdb01244621d6bb8144a12c84b81ee419c914a0`；安装器自身 identity 与附件下载回读由主线程发布门禁另外确认。
+
+本审查独立读取 `.work/v029-release/unpack-final/{app}` 内四份项目通知的实际字节，四份 SHA256 均与上节值相同，并分别等于最终提交的原始 Git blob 及最终 runtime 文件。没有发现通知丢失、替换或新增材料风险。此结论为 `INSTALLER_EXTRACTION`；未执行安装器安装/卸载操作，系统四阶段仍为 `REAL_INSTALL_NOT_EXECUTED`，第三方对应源码/许可材料仍为 `WAITING_EXTERNAL`。

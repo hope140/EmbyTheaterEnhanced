@@ -1,8 +1,8 @@
 # Emby Theater Enhanced
 
-基于 Carnival 3.0 与综合补丁的 Windows Emby 客户端维护工程。当前正式版为 `v0.2.2`，最新公开测试版为 `v0.2.8`。PLAY-01、SEC-01/02 局部加固、LIFE-01/02 和 CI028 已进入主线及 v0.2.8；[PR #25](https://github.com/hope140/EmbyTheaterEnhanced/pull/25) 的外挂字幕异步选择竞态修复已合入 `main`，尚未随 v0.2.8 发布。
+基于 Carnival 3.0 与综合补丁的 Windows Emby 客户端维护工程。当前正式版为 `v0.2.2`，最新公开测试版为 `v0.2.9`。PLAY-01、SEC-01/02 局部加固、LIFE-01/02 和 CI028 已随 v0.2.8 交付；[PR #25](https://github.com/hope140/EmbyTheaterEnhanced/pull/25) 的外挂字幕异步选择竞态修复和必要诊断隐私修复已随 v0.2.9 发布。
 
-2026-10-11 核对的 main 为 `9774b73469dea9a3651f03737153c872947223ee`；v0.2.9 最小维护测试版正在准备。当前状态和验收边界见 [项目状态](docs/PROJECT_STATUS.md)，后续计划唯一入口为 [ROADMAP](docs/ROADMAP.md)。整体审核从 [审核入口](docs/AI_REVIEW_GUIDE.md)开始，并记录实际 HEAD；历史候选状态按原日期与来源解读。
+2026-10-11，v0.2.9 产品来源为通过 CI 的 main `084554e07782ca6461b7ed67cadd298a92450b24`，三个公开附件已实际下载并核对，旧 v0.2.8 资产保持。最终来源、SHA256、文档收尾及验收边界见 [综合报告](docs/V029_MAINTENANCE_CLOSEOUT.md) 和 [项目状态](docs/PROJECT_STATUS.md)，后续计划入口为 [ROADMAP](docs/ROADMAP.md)。整体审核从 [审核入口](docs/AI_REVIEW_GUIDE.md)开始，并记录实际 HEAD；历史候选状态按原日期与来源解读。
 
 Emby Theater Enhanced is an unofficial community-maintained project. It is not affiliated with or endorsed by Emby.
 
@@ -12,9 +12,9 @@ Emby Theater Enhanced 是非官方社区维护项目，与 Emby 不存在隶属�
 
 | 渠道 | 版本 | 入口 |
 |---|---|---|
-| 最新测试版 · Pre-release | `v0.2.8` | [发布说明](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.8) · [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.8/EmbyTheaterEnhanced-0.2.8-win-x64-setup.exe) · [SHA-256 文件](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.8/EmbyTheaterEnhanced-0.2.8-win-x64-setup.exe.sha256) · [来源记录](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.8/EmbyTheaterEnhanced-0.2.8-win-x64-setup.exe.provenance.json) |
+| 最新测试版 · Pre-release | `v0.2.9` | [发布说明](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.9) · [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.9/EmbyTheaterEnhanced-0.2.9-win-x64-setup.exe) · [SHA-256 文件](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.9/EmbyTheaterEnhanced-0.2.9-win-x64-setup.exe.sha256) · [来源记录](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.9/EmbyTheaterEnhanced-0.2.9-win-x64-setup.exe.provenance.json) |
 | 当前正式版 · Latest | `v0.2.2` | [发布说明](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.2) · [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.2/EmbyTheaterEnhanced-0.2.2-win-x64-setup.exe) |
-| 历史版本 | `v0.2.7` 及更早版本 | [全部历史版本](https://github.com/hope140/EmbyTheaterEnhanced/releases) |
+| 历史版本 | `v0.2.8` 及更早版本 | [全部历史版本](https://github.com/hope140/EmbyTheaterEnhanced/releases) |
 
 下载 Windows x64 安装包后，先核对随附 SHA-256 与来源记录，再按安装器提示选择独立安装目录。安装生命周期四阶段的本轮真实执行结果单独记录，解包完整性不能代替安装、升级、卸载和重装验收。
 
@@ -22,7 +22,7 @@ Emby Theater Enhanced 是非官方社区维护项目，与 Emby 不存在隶属�
 
 v0.2.8 已交付 Stop 后旧播放/换流响应归属修复、外链与增强 IPC 的局部安全边界、Native Helper 异常资源清理和退出等待，以及 Windows CI 兼容修正。发布来源为 `888310de8ebae941b407ae070102b84d4fec1e5e`；具体工程与人工证据见 [统一候选验收](docs/INTEGRATION_028_CANDIDATE.md)、[CI 收尾](docs/CI028_HOSTED_VALIDATION.md) 和 [v0.2.8 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.8)。
 
-v0.2.9 计划交付已经合入 main 的外挂字幕异步选择竞态修复。当旧外挂字幕选择仍在 700ms 等待中，较新的字幕选择、关闭字幕、Stop 或换集使其失效，旧回调会在提交 `sub-add` 前被拦截；已经提交的命令不在此守卫的撤回范围内。原 700ms 与内嵌字幕、音轨、缓存行为保持。修复及历史真实 Emby 验收来源见 [整合记录](docs/V029_SUBTITLE_INTEGRATION.md)。
+v0.2.9 已交付外挂字幕异步选择竞态修复。当旧外挂字幕选择仍在 700ms 等待中，较新的字幕选择、关闭字幕、Stop 或换集使其失效，旧回调会在提交 `sub-add` 前被拦截；已经提交的命令不在此守卫的撤回范围内。原 700ms 与内嵌字幕、音轨、缓存行为保持。修复及历史真实 Emby 验收来源见 [整合记录](docs/V029_SUBTITLE_INTEGRATION.md)。
 
 本轮诊断隐私修复已通过合成回归与独立审核，隐藏自由文本中的完整认证/Cookie 头字段值，以及带空格绝对路径的私人媒体名尾部；实际问题快照和诊断 ZIP 已回读验证。该必要修复随 v0.2.9 交付，有限规则不代表全部未知秘密格式均已识别。详细范围见 [安全审查](docs/V029_SECURITY_REVIEW.md)。
 

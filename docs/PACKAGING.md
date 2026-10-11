@@ -2,7 +2,7 @@
 
 当前本地构建采用 [提交输入 contract](BUILD_HARDENING.md)、[精确 Node 目录](NODE_DEPENDENCY_BOUNDARY.md) 和 [完整本地工具链锁](BUILD_TOOLCHAINS.md)。新 build manifest 为 schema 3；历史 schema 2 审计按其原有语义读取。准确候选与分层实测结果在构建修正记录中单列。
 
-2026-10-11 开工回读：最新测试版为 [v0.2.8](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.8)，正式 Latest 为 [v0.2.2](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.2)。本轮 v0.2.9 从最终通过 CI 的 main 提交重新构建，安装器、SHA256 和 provenance 必须绑定同一来源；精确结果见 [维护收尾](V029_MAINTENANCE_CLOSEOUT.md)。真实安装生命周期另见 [安装与材料审查](V029_INSTALL_MATERIALS_REVIEW.md)。
+2026-10-11 发布回读：最新测试版为 [v0.2.9](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.9)，正式 Latest 为 [v0.2.2](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.2)。本轮 v0.2.9 从通过 CI 的 main `084554e07782ca6461b7ed67cadd298a92450b24` 重新构建；2139文件解包、安装器版本与三个公开附件下载均验证，SHA256和provenance绑定同一来源。精确结果见 [维护收尾](V029_MAINTENANCE_CLOSEOUT.md)，真实安装生命周期另见 [安装与材料审查](V029_INSTALL_MATERIALS_REVIEW.md)。后续文档提交不重标该产物sourceCommit。
 
 历史 v0.2.6 / 355f4e6 的正式构建、安装器与2136文件解包验证见 [本地交付](LOCAL_PACKAGE_026.md)，公开下载与身份见 [发布记录](RELEASE_026.md)。当时主线整合只复用经逐文件与输入核对的原产物，不将其改标为整合文档HEAD，见 [整合报告](MAIN_INTEGRATION_026.md)。
 

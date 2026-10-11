@@ -1,5 +1,17 @@
 # 项目状态
 
+## 2026-10-11 — V029_PRE_RELEASE_PUBLISHED
+
+[v0.2.9 测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.9) 已公开，Release409622572、Pre-release=true、Draft=false，Tag指向产品main `084554e07782ca6461b7ed67cadd298a92450b24`。三个附件实际下载后与本地size/hash/provenance一致，公开链接均HTTP200；v0.2.8 Tag/资产保持，正式Latest仍v0.2.2。最终文档身份与全部证据见 [综合收尾](V029_MAINTENANCE_CLOSEOUT.md)。
+
+本轮版本及隐私修复PR #26已Merge commit合入main，Push/PR/main CI均SUCCESS。公开686/686、六材料加额外PLAY01为73/73，失败/跳过/取消0；JS224、PS5.1/7各26、有限扫描273通过。最终新runtime、八组隐藏自然退出、25对原始Session及2139文件安装器解包通过。诊断隐私的必要修复是本轮唯一新增生产维护逻辑；外挂字幕修复已由PR #25进入基线。
+
+圆角 `USER_REPORTED_RESOLVED / NO_CHANGE_REQUIRED`，切轨性能 `DEFERRED / USER_ACCEPTED`。真实四阶段安装 `REAL_INSTALL_NOT_EXECUTED`，实服/视觉本轮未重验，第三方材料 `WAITING_EXTERNAL`；CD2 not_found、历史黑帧/白屏/app.exit/stress及设备问题只保留真实证据触发。后续少量任务见 [ROADMAP](ROADMAP.md)。
+
+## 维护准备期历史快照
+
+以下准备状态按当时来源保留，最终状态由上方已发布记录覆盖。
+
 ## 2026-10-11 — 综合维护与 v0.2.9 发布准备
 
 当前状态按本轮实际回读更新：远端 main 为 `9774b73469dea9a3651f03737153c872947223ee`，[PR #25](https://github.com/hope140/EmbyTheaterEnhanced/pull/25) 已 MERGED，[main CI 38102353653](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38102353653) SUCCESS。正式 Latest 仍为 [v0.2.2](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.2)，最新公开测试版为 [v0.2.8](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.8)，产品来源 `888310de8ebae941b407ae070102b84d4fec1e5e`。下表是发布准备阶段状态，v0.2.9 的最终来源、门禁及附件以本轮最终回执为准。

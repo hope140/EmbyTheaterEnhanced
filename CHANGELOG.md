@@ -1,6 +1,6 @@
 # 变更记录
 
-## 0.2.9 测试版准备 — 2026-10-11
+## 0.2.9 测试版 — 2026-10-11
 
 - 外挂字幕选择等待结束后核对当前 Play、字幕选择序号和 MediaSource，阻止快速切换、Off、Stop 或换集时的旧 `sub-add` 覆盖新意图。PR #25 已合并；原 700ms 等待保留。
 - 修正诊断自由文本中 Authorization 和多项 Cookie 的脱敏缺口；最小安全修复的 RED/GREEN 和 ZIP 回读见 [安全审查](docs/V029_SECURITY_REVIEW.md)。
