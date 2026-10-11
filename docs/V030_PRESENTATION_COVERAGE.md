@@ -11,10 +11,10 @@
 | 新 Play 在旧 Stop/前置 user lookup 期间接管 existing intent | `tests/playbackmanager-request-session.test.cjs:1160` `P1 C admission pending user lookup retains B hold across late B metadata settlement`; `:1303` `new public Play after Stop owns B while old Next metadata returns` | PASS |
 | replacement failure / timeout / cancel / user Stop | `tests/playbackmanager-request-session.test.cjs:1231`, `:1244`; `tests/nexttrack-native-transition.test.cjs:298`, `:319`, `:402` | PASS |
 | success transfers reveal to native and releases manager hold | `tests/nexttrack-native-transition.test.cjs:363` `playbackReady clears the deadline and transfers the token without cancelling it`; `tests/playbackmanager-request-session.test.cjs:1080` | PASS |
-| Native Helper exit during replacement首帧等待清理 token | `tests/native-helper-lifecycle.test.cjs:439` `native helper exit during replacement releases its presentation token` | PASS（本轮新增） |
+| Native Helper exit/rebuild 清理 replacement presentation state | `tests/native-helper-lifecycle.test.cjs:439` `native helper exit during replacement releases its presentation token`; `tests/native-helper-service.test.cjs:1012` `helper crash clears a pending presentation before the replacement helper prepares` | PASS（本轮新增） |
 | prepare rejection fail-open 到 ordinary stop | `tests/native-helper-lifecycle.test.cjs:419` | PASS |
 
-本轮新增 1 个实际分支，测试总数由 83 增至 84。新增 case 使用 deferred/注入式 harness 行为抑制 `core-playing`，由 `bridge_error` 模拟 helper exit，验证 `NativeHelperError`、对应 `cancelPresentation` 和后续 destroy；未宣称真实 Emby、真实远控传输、真实窗口/全屏像素或 helper rebuild 的现场验收。
+本轮新增 2 个实际分支，覆盖 renderer replacement 侧的 `bridge_error` 释放，以及 service 侧 helper crash 后重建时旧 pending prepare 的迟到结果隔离。指定三个 presentation 文件的测试总数由 83 增至 84；本轮额外 service 文件独立测试为 41/41。新增 case 使用 deferred/注入式 harness；未宣称真实 Emby、真实远控传输、真实窗口/全屏像素或 helper rebuild 的现场验收。
 
 验证命令：
 
