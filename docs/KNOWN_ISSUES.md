@@ -2,17 +2,17 @@
 
 ## 2026-10-11 当前状态
 
-公开测试版为 [v0.2.8](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.8)，正式 Latest 为 v0.2.2；本轮核对 main 为 `9774b73469dea9a3651f03737153c872947223ee`。[PR #25](https://github.com/hope140/EmbyTheaterEnhanced/pull/25) 已合并，v0.2.9 正在准备。下方旧候选和未合并表述是原阶段记录，以本节当前结论为准。
+公开测试版为 [v0.2.9](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.9)，正式 Latest 为 v0.2.2；产品来源为 main `084554e07782ca6461b7ed67cadd298a92450b24`。[PR #25](https://github.com/hope140/EmbyTheaterEnhanced/pull/25) 已合并，其外挂字幕修复已随 v0.2.9 交付，v0.2.8 不包含该修复。下方旧候选和未合并表述是原阶段记录，以本节当前结论为准。
 
 | 项目 | 当前状态 | 证据和后续 |
 |---|---|---|
-| 外挂字幕过期异步选择 | FIXED / MERGED；尚未随 v0.2.8 发布 | `100179c` 修复随 PR #25 进入 main；[整合记录](V029_SUBTITLE_INTEGRATION.md) 保留真实 Emby `11a1c50` 验收来源与复用边界；计划随 v0.2.9 交付 |
+| 外挂字幕过期异步选择 | FIXED / MERGED / PUBLISHED v0.2.9 | `100179c` 修复随 PR #25 进入 main；[整合记录](V029_SUBTITLE_INTEGRATION.md) 保留真实 Emby `11a1c50` 验收来源与复用边界；v0.2.8不包含该修复 |
 | PLAY-01、SEC-01/02 局部边界、LIFE-01/02、CI028 | 已进入 main 与 v0.2.8 | 历史独立分支的 NOT_MERGED/READY 不再代表当前事实；SEC 完整隔离仍为后续设计 |
 | 内嵌字幕和音轨切换延迟 | DEFERRED / USER_ACCEPTED | STRM/115 用户体感约 5–10 秒；保留 Refresh Seek、缓存覆盖消失与 underrun 研究，可靠视听 T4 和安全性能修复未取得 |
 | 圆角现象 | USER_REPORTED_RESOLVED / NO_CHANGE_REQUIRED | 用户接受当前窗口和全屏表现；未新增独立视觉 PASS |
 | CD2 Path Hydration | EVIDENCE_GATED | 等待真实 FindFileByPath=not_found 与可见性前后样本 |
 | 黑帧、旧版本白屏、特殊 app.exit、transport stress | OBSERVE / 原证据状态保留 | 有新样本再定位；未把未复现或正常路径 PASS 写成彻底修复 |
-| 诊断自由文本认证/Cookie、空格路径尾值 | FIXED / CODE_REVIEW_PASS，待 v0.2.9 发布 | `1012dac` 最小修复，focused 47/47、独立 34/34，实际合成 snapshot/ZIP 回读；不宣称所有未知秘密已覆盖 |
+| 诊断自由文本认证/Cookie、空格路径尾值 | FIXED / PUBLISHED v0.2.9 | `1012dac` 最小修复，focused 47/47、独立 34/34，实际合成 snapshot/ZIP 回读；不宣称所有未知秘密已覆盖 |
 
 外挂字幕守卫只拦截尚在原 700ms 等待中的过期 `sub-add`，已经提交的命令不由该守卫撤回。它不改变内嵌字幕 sid、音轨 aid、缓存或切轨性能；v0.2.9 也不将该性能专项标为修复。
 

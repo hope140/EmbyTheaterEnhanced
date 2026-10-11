@@ -6,6 +6,8 @@
 
 本轮未执行新的真实 Emby / 115 / CD2 播放、前台视觉或实体遥控器验收。外挂字幕修复的真实验收按 [整合报告](V029_SUBTITLE_INTEGRATION.md) 的代码等价性关系复用；真实系统四阶段安装另记 `REAL_INSTALL_NOT_EXECUTED`。内嵌切轨性能专项按用户决定暂缓，不新增 T4 或缓存实验。
 
+最终本轮结果为公开686/686、材料加额外PLAY01为73/73，失败/取消/跳过0；89发现文件757项加额外2项完整执行。产品main084554e的Hosted CI通过，最终新runtime八组隐藏自然退出/残留0、25对原始Session、2139全文件解包和三个公开附件实际下载通过。上述各层分别记录，不把其数量累加为新的实服或视觉验收。
+
 ## 2026-10-10 — CI028 Hosted实际验收
 
 固定db9ccde的push run38040747159：公开657/657（87文件发现81执行6材料NOT_EXECUTED），fail/cancel/skip/todo0；路径诊断、JS220、PS25、有限敏感268、diff均实际success而非skipped。Hosted5.1代码页1252旧无BOMParseFile21/执行1、BOM版两者0；PS7两个变体两者0；真实短名/物理差异及junction拒绝实测通过。新五case、旧排除、原RED、34产品输入及文档HEAD分层见 [远端记录](CI028_HOSTED_VALIDATION.md)。后续文档push/PR checks按各自HEAD回读，不重跑本地相同输入或重建b139runtime。

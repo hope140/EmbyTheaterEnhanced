@@ -4,6 +4,8 @@
 
 开工核验 `main@9774b73469dea9a3651f03737153c872947223ee` 已包含下述 PLAY-01、SEC01/02、LIFE01/02、About 异步校验和 Smart Path Mapping；PR #25 的外挂字幕选择守卫已合并。Native Helper 是唯一生产 bridge，STRM 增强只替换最终 source，PlaybackManager 与 Session 身份链保持。下方候选名和旧版本陈述是各专项的历史来源，不代表今天尚未集成。当前维护与验证边界见 [v0.2.9 收尾](V029_MAINTENANCE_CLOSEOUT.md)。
 
+已发布v0.2.9产品来源为main `084554e07782ca6461b7ed67cadd298a92450b24`。本轮唯一新增生产维护为诊断文本序列化：完整认证/Cookie头字段值在路径/URL投影前抹除，绝对路径摘要包含空格并保留后行；PowerShell末端gate拒绝原始或部分脱敏头字段，处理JSON tab与空白回溯。它不改变renderer权限、IPC、播放/Session或Helper协议；未知秘密/裸标题不保证识别，范围见 [安全审查](V029_SECURITY_REVIEW.md)。
+
 ## 2026-10-10 统一本地候选（历史快照）
 
 以下新增contract已整合到统一本地候选b139d87，不能当作已发布v0.2.7行为：SEC01在系统浏览器入口允许HTTP/HTTPS并收口错误；SEC02增强IPC只接受当前webContents的实际mainFrame和固定包内index，主导航/redirect受限。原preload宽fs/rawIPC及isolation/sandbox/CORS/CSP依赖保留待设计。LIFE01在全部owned退出settled后仍尝试所有listener/surface清理，再按current/pending顺序传播原错误；无native错才传播cleanup错。LIFE02把terminal解绑的owned kill加入同pending集合，不改变generation、重建或kill策略。精确来源及组合验证见 [候选报告](INTEGRATION_028_CANDIDATE.md)，原独立分支身份见 [交付记录](REVIEW_028_DELIVERY.md)。

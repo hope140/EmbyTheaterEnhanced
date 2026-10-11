@@ -1,5 +1,12 @@
 # 开发日志
 
+## 2026-10-11 — v0.2.9 发布与工程收尾
+
+- PR26准确HEAD2a4ea1f在Push38133680652/PR38133686686均SUCCESS、无未解决review thread且CLEAN后，以Merge commit合入main084554e；其main38134108870 SUCCESS，真实Hosted686/686及静态步骤通过。Task Risk发布中、Uncertainty低、Playback/Session contract不变；主线程Tier2、独立审核分离，Model精确运行配置未由工具返回；Escalated=no。
+- 从固定84新建RELEASE-029-084554e，34输入、4通知、Native/Electron/source/runtime/dependency全来源及package前后验证通过；8组ISOLATED_RUNTIME自然exit0/残留0/无强清理，主线程与独立review各从原始三身份复算25对。安装器Inno6.7.3、PE0.2.9/numeric0.2.9.0、容器与2139全文件解包通过。
+- 独立PRE_RELEASE_REVIEW_PASS后创建annotated v0.2.9 tag b4ab009e，指向84；公开Release409622572，Pre-release=true/Draft=false，三个附件实际下载后size/SHA/source相同，链接HTTP200。EXE175650591 bytes、SHA2562f4fa378eb75f91f21a5163d4cdb01244621d6bb8144a12c84b81ee419c914a0。v0.2.8 Tag/资产回读无变化，Latest保持v0.2.2。
+- 本轮已完成的工程转V029_PRE_RELEASE_PUBLISHED；README/ROADMAP/KnownIssues/Status/Testing/Packaging/报告回填实际交付。后续文档提交不改产品、测试、工具、34输入或产物sourceCommit。原失败、准备期与旧实际验收完整保留，不改标本次PASS；真实系统安装、实服/视觉及第三方材料边界继续独立记录。
+
 ## 2026-10-11 — v0.2.9 本地门禁通过
 
 - 外挂字幕修复已在开工 main9774b73；本轮根版本提交5e33d1f、独立隐私修复16ae6c2整合为1012dac。两处诊断生产文件与18项合成回归经主线程diff和独立34/34审核，focused47/47及实际snapshot/ZIP回读通过，不改变播放/Session/缓存。

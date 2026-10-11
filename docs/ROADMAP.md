@@ -1,6 +1,6 @@
 # Development Roadmap
 
-本页是后续维护计划的正式入口。2026-10-11 核对的 main 为 `9774b73469dea9a3651f03737153c872947223ee`，[PR #25](https://github.com/hope140/EmbyTheaterEnhanced/pull/25) 已合并，[main CI 38102353653](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38102353653) SUCCESS。公开测试版为 [v0.2.8 Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.8)，正式 Latest 为 [v0.2.2](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.2)。v0.2.9 正在准备；发布结果以最终回读为准。
+本页是后续维护计划入口。2026-10-11，公开测试版 [v0.2.9 Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.9) 已交付，产品main来源 `084554e07782ca6461b7ed67cadd298a92450b24`，[PR #25](https://github.com/hope140/EmbyTheaterEnhanced/pull/25) 与 [PR #26](https://github.com/hope140/EmbyTheaterEnhanced/pull/26) 已合并，[产品main CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38134108870) SUCCESS。正式 Latest 仍为 [v0.2.2](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.2)，准确资产和最终文档身份见 [综合收尾](V029_MAINTENANCE_CLOSEOUT.md)。
 
 问题细节见 [Known Issues](KNOWN_ISSUES.md)，当前工程身份及验收层级见 [项目状态](PROJECT_STATUS.md)，测试入口见 [TESTING](TESTING.md)。历史记录中的 OPEN、READY_FOR_MERGE、NOT_EXECUTED 仅代表原日期及来源，不能覆盖本页当前状态。
 
@@ -12,14 +12,14 @@
 | Smart Path Mapping 和设置页整理 | COMPLETED；PR #18 MERGED，用户功能验收通过 | [Settings 契约](STRM_RESOLVER_SETTINGS.md)、[0.2.4 用户验收](SETTINGS_UI_024_ACCEPTANCE.md) |
 | About、诊断、构建来源与通知交付 | COMPLETED；保留对应源码材料缺口 | [About](ABOUT_VERSION_ASYNC.md)、[诊断](P1_DIAGNOSTICS_CONTRACT.md)、[构建复核](BUILD_REVIEW.md) |
 | PLAY-01、SEC-01/02 局部加固、LIFE-01/02、CI028 | COMPLETED；已进入 main 与 v0.2.8 | [统一候选历史验收](INTEGRATION_028_CANDIDATE.md)、[Hosted 收尾](CI028_HOSTED_VALIDATION.md) |
-| 外挂字幕异步选择竞态修复 | COMPLETED IN MAIN；尚未随 v0.2.8 发布，等待 v0.2.9 交付 | [PR #25](https://github.com/hope140/EmbyTheaterEnhanced/pull/25)、[整合与历史真实验收](V029_SUBTITLE_INTEGRATION.md) |
+| 外挂字幕异步选择竞态修复 | COMPLETED / PUBLISHED v0.2.9；v0.2.8不包含该修复 | [PR #25](https://github.com/hope140/EmbyTheaterEnhanced/pull/25)、[整合与历史真实验收](V029_SUBTITLE_INTEGRATION.md) |
 | 圆角现象 | USER_REPORTED_RESOLVED / NO_CHANGE_REQUIRED | 用户接受当前窗口与全屏表现；未新增独立视觉 PASS |
 
-## 正在进行：v0.2.9 最小维护交付
+## v0.2.9 维护交付已完成
 
-本轮生产修复范围是 PR #25 的外挂字幕异步选择守卫，连同正确的产品版本和必要文档同步。发布从通过 CI 的最终 main HEAD 重新构建，不复用旧包身份。门禁包括完整公开离线与本地材料依赖测试、独立审核、固定构建输入、runtime/package provenance、安装器解包、三个附件回读；各项以最终运行结果记录。
+本轮交付 PR #25 的外挂字幕异步选择守卫、必要诊断隐私修复及版本/文档同步。发布从通过 CI 的产品main重新构建，公开686/686和材料加PLAY01为73/73、独立审核、34输入、八组隐藏runtime、来源/package验证、2139文件解包、三个公开附件实际下载均通过。旧v0.2.8资产保持，精确证据与未覆盖层级见综合收尾。
 
-诊断自由文本认证/Cookie 与空格路径的最小脱敏修复已通过 focused 47/47、独立 34/34 和合成问题快照/ZIP 回读，代码审查解除明确隐私阻断；最终全集、CI 与包来源门禁继续按本轮实际结果放行。
+诊断自由文本认证/Cookie 与空格路径修复已随v0.2.9交付；focused47/47、独立34/34及合成问题快照/ZIP回读通过，有限规则不宣称覆盖所有未知秘密。后续只根据新样本或明确边界问题维护。
 
 诊断隐私、Native Helper 既有生命周期、安全边界、脚本与文档一致性执行有限复核。Renderer 进一步隔离作为兼容性设计任务，候选是否形成与是否进入发布分开判断。构建流程见 [PACKAGING](PACKAGING.md)，第三方边界见 [LICENSING](LICENSING.md)。
 

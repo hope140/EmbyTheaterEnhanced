@@ -1,6 +1,8 @@
 # v0.2.9 综合维护收尾
 
-日期：2026-10-11（UTC+8）。当前阶段：发布准备，最终状态以本页后续实际回读为准。
+日期：2026-10-11（UTC+8）。最终状态：`V029_PRE_RELEASE_PUBLISHED`。
+
+v0.2.9 产品/构建最终main HEAD：`084554e07782ca6461b7ed67cadd298a92450b24`。最终文档main HEAD以本报告所在的main文档收尾提交及交付回执标识，产品输入等价性独立核对；文档HEAD不替代下方安装包sourceCommit。
 
 ## 来源与工作区
 
@@ -12,9 +14,9 @@
 
 | 分类 | 实际结果 |
 |---|---|
-| COMPLETED | 开工 refs/worktree/PR/Release/CI 核查；文档当前/历史对账；安装与材料静态准备；既有 PLAY-01、SEC/LIFE、Smart Mapping 和 PR #25 已合并 |
-| READY_TO_RELEASE | 外挂字幕修复可作为 v0.2.9 默认生产修复；还需最终安全、回归、独立审核、PR/main CI、来源构建和附件回读全部门禁 |
-| ACTIONABLE_NOW | 必要诊断隐私修复、最终来源测试、版本 PR 和包验证 |
+| COMPLETED | 状态/worktree/PR/Release/CI审计、文档对账、最小隐私修复、全量门禁、独立审查、PR26/main、最终来源构建、八组隔离runtime、2139文件解包及v0.2.9三个附件下载回读 |
+| READY_TO_RELEASE | 本轮待发布工程已交付为V029_PRE_RELEASE_PUBLISHED，没有遗留手工发布步骤 |
+| ACTIONABLE_NOW | 没有剩余本轮阻断；后续只按真实样本或外部材料推进下列有限事项 |
 | EVIDENCE_GATED | 系统四阶段安装、真实 CD2 not_found 样本、特定媒体与历史异常新证据 |
 | DEFERRED | 内嵌字幕/音轨切轨性能 USER_ACCEPTED；HDR、多屏/Mixed-DPI；对应第三方材料 WAITING_EXTERNAL；Renderer 迁移、Forge |
 | EXCLUDED_BY_USER | 圆角调整、115/T4 继续实验、生产缓存调参、稳定播放与 Session 重构、现用客户端卸载/重装 |
@@ -39,7 +41,9 @@ README、ROADMAP、Known Issues、PROJECT_STATUS、DEVELOPMENT_LOG 完成当前�
 
 最终静态 JS 224、PowerShell 5.1/7 各26、有限凭据273、文档14文件/266相对链接通过。候选 `0bac2e8b2294fb4011bb3f2cef0c48624a35a570` build/VerifyOnly、34输入/4通知和 2138 payload 加manifest共2139文件通过。初次 `1012dac` 构建因主线程提交文档移动 HEAD 被 Native source gate 正确拒绝，保留原partial/log，不记为PASS。
 
-独立代码审查已通过；PR CI 和 main CI 待远端回读。公开 Hosted 仍保留六份材料依赖文件 `NOT_EXECUTED`，本机材料层结果单列。Renderer 风险矩阵与兼容设计见安全审查；此次不迁移旧 Web 的全部隔离开关。
+独立 `PREMERGE_REVIEW_PASS` 后创建 [PR #26](https://github.com/hope140/EmbyTheaterEnhanced/pull/26)，准确 HEAD 为 `2a4ea1fb9830447d8372e6f46d6caef9c8c6f557`，目标 main 仍 `9774b73`。Push [38133680652](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38133680652) 与 PR [38133686686](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38133686686) 均 SUCCESS；PR 日志实读686/686、JS224/PS26/有限扫描273和diff通过，无未解决review thread、MERGEABLE/CLEAN。
+
+按 Merge commit 合入 main 为 `084554e07782ca6461b7ed67cadd298a92450b24`，父提交为开工main与准确PR HEAD，merge tree 与PR HEAD相同。合并后 [main CI 38134108870](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38134108870) SUCCESS，日志实读686/686、JS224/PS26/有限扫描273及diff通过。公开 Hosted 保留六份材料依赖文件 `NOT_EXECUTED`，本机材料层结果单列。CI 有 pinned Actions runtime 被 Hosted Node24接管的上游提示，但各步骤均success；本轮不自动升级Action锁。Renderer 风险矩阵与兼容设计见安全审查；此次不迁移旧 Web 的全部隔离开关。
 
 ## 安装生命周期与第三方材料
 
@@ -49,9 +53,31 @@ README、ROADMAP、Known Issues、PROJECT_STATUS、DEVELOPMENT_LOG 完成当前�
 
 ## 构建、资产与最终状态
 
-最终产品 sourceCommit、runtime/installer 版本、安装包 SHA256、payload 集合、CI 及三个远端附件回读：发布门禁通过后按实际来源补录。
+最终产品/构建 main HEAD 为 `084554e07782ca6461b7ed67cadd298a92450b24`。在该 main CI 成功后，从固定来源新建 `RELEASE-029-084554e`，没有复用或更名旧包。34 输入、4 notices、88 tracked product 文件、Native source/header/compiler/helper、Electron73文件、npm33+7包/1171文件及全部 source/runtime provenance 通过。
 
-目标公开入口为 [v0.2.9 测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.9)，目前不把该目标链接标记为已发布。附件必须是 `EmbyTheaterEnhanced-0.2.9-win-x64-setup.exe`、同名 `.sha256` 和 `.provenance.json`，Release 必须非 Draft、Pre-release，正式 Latest 保持 v0.2.2。
+八组隐藏隔离 runtime 为 idle、playing、stopped、hit0/400/800、direct400、miss400，均自然exit0、未timeout、无外层强清理、候选残留0。三组正常关闭与五组完整pipeline各自执行；原始 Item/MediaSource/PlaySession 三元身份由主线程与独立审核分别复算25对，一对一且Start先于Stop。DirectUrl专用UA匹配、普通请求未继承。实际产品关闭证据不解决历史 app.exit 根因；子进程观察另保留固定2秒快照不是穷尽观察的边界。全部属于 `ISOLATED_RUNTIME`，实服/可见/系统安装仍未执行。
+
+运行后的 package重新核验通过，固定 Inno6.7.3 编译三个标准资产。PE字符串版本0.2.9、fixed numeric版本0.2.9.0；容器完整性通过，解包2139/2139，missing/extra/mismatch均0，runtime/manifest/安装器provenance及SHA companion完全绑定。最初PE探针误要求字符串含第四段且未Trim padding，修正为实际字符串与四段numeric双验；安装器没有因此改写。
+
+| 资产 | 大小 / 身份 |
+|---|---|
+| `EmbyTheaterEnhanced-0.2.9-win-x64-setup.exe` | 175650591 bytes；SHA256 `2f4fa378eb75f91f21a5163d4cdb01244621d6bb8144a12c84b81ee419c914a0` |
+| 同名 `.sha256` | 110 bytes；准确引用上述hash和EXE文件名 |
+| 同名 `.provenance.json` | 3943 bytes；sourceCommit084554e、version0.2.9、installer size/hash和工具链绑定 |
+
+runtime build manifest SHA256为 `3f93b40fa8ca2bdb5e0fc5c89072089c9432d46bb0737de9e60d52b82bae96ab`。
+
+公开入口为 [Emby Theater Enhanced v0.2.9 测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.9)，Release ID `409622572`、Pre-release=true、Draft=false。annotated Tag对象 `b4ab009e03cab5afc9fa7407f719c24ede7a2e97` 的实际commit为 `084554e07782ca6461b7ed67cadd298a92450b24`，本地与GitHub ref/tag object回读一致。
+
+| 实际下载入口 | 远端/本地回读 |
+|---|---|
+| [Windows x64安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.9/EmbyTheaterEnhanced-0.2.9-win-x64-setup.exe) | 175650591 bytes，HTTP200，SHA256同上 |
+| [SHA256附件](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.9/EmbyTheaterEnhanced-0.2.9-win-x64-setup.exe.sha256) | 110 bytes，HTTP200，文件SHA256 `fd6be796cdf357bab53e3597655482cdfc3153eb9f6cca0bd10f70d438a8ca39` |
+| [Provenance附件](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.9/EmbyTheaterEnhanced-0.2.9-win-x64-setup.exe.provenance.json) | 3943 bytes，HTTP200，文件SHA256 `f2ddc77bfb15c54e3c6594554d632d21e30c451746d10e5aa3fc557a773bec1c` |
+
+三个附件均实际重新下载，其size/hash与本地和GitHub digest相同；下载的provenance和SHA companion再次绑定正确sourceCommit、version、EXE大小/hash与runtime manifest。旧v0.2.8 Release/三个asset ID、size、digest、链接及tag对象在发布前后完全一致。正式 [Latest v0.2.2](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.2) 再次回读保持。
+
+原始本地日志、失败目录与安装/来源回执保留在本任务隔离输出；[公开机器摘要](evidence/v029-maintenance-closeout.json) 只保留匿名结果、准确身份、相对证据位置和hash。最终文档提交只同步交付结果，须保持34输入、产品/Native/工具/测试与发布源完全相同；不重标产物、不重建或修改历史Release。
 
 ## 下一阶段
 

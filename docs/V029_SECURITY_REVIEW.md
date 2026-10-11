@@ -72,3 +72,7 @@ PowerShell 最终 gate 同时检查 header 的完整 placeholder 边界及对应
 主要命令为 `node --test --test-concurrency=1` 后接相关 test 文件。新增隐私测试包含 structured credentials/new API key、URL、三种空格路径、四种 header 大小写/多行、raw/partial-placeholder 拒绝、空白/tab placeholder、PowerShell 7、敏感 JSON key，以及实际 reporter snapshot/collector ZIP 回读；没有跳过断言或使用真实媒体。
 
 本报告不宣称 runtime、真实 Emby/115/CD2、远控、可见画面、真实安装或第三方分发许可通过。这些层级由主线程在综合收尾报告分别给出。
+
+## 主线程后续交付层级
+
+上述报告阶段之后，最终产品main084554e已完成八组隐藏 `ISOLATED_RUNTIME` 正常关闭/完整播放链、25对Session和无候选进程残留，随后完成 `INSTALLER_EXTRACTION` 与公开三个附件下载验证；完整原始来源见综合收尾。该补充不把旧fake-child测试改标成真实Helper验收，也不扩展为本轮实服、前台视觉或真实系统安装PASS。v0.2.9已随必要诊断隐私修复公开交付，有限格式覆盖边界保持。
