@@ -2,7 +2,7 @@
 
 ## 2026-10-11 — 安装器语言与目录改进
 
-按用户反馈将英文内部名由旧版 `default` 改为 `english`，使旧唯一英文登记回到 Windows UI 默认语言；新中英文选择继续原生保存复用。升级目录页改为始终显示，保留原位置预填。代码仅安装器及相应测试，原 AppId/guard/profile 与播放链不变；新版候选和原生初始化验证结果在 [改进报告](V030_INSTALLER_LANGUAGE_LOCATION.md) 回填。原首份候选与其分层证据保留，真实安装/前台仍未替代验收。
+按用户反馈将英文内部名由旧版 `default` 改为 `english`，使旧唯一英文登记回到 Windows UI 默认语言；新中英文选择继续原生保存复用。升级目录页始终显示，保留原位置预填。新候选source40c704d/175668946bytes，SHA70b8c5bbeb4589e8e4842bd70706c5ce980d521fdc5f596e2969f099f124b1f1，0.3.0/NotSigned。定向11/11、原生初始化7/7、39input来源、正式编译/两语言/目录no-auto-yes对照/2139文件及复制hash通过，独立review无未关闭问题。原完整762/762按原来源复用；只改installer与测试，AppId/guard/profile和播放链保持。仍 `INSTALLER_READY_WITH_LIMITATIONS`，真实安装、更换目录和前台仍NOT_EXECUTED。详见 [改进报告](V030_INSTALLER_LANGUAGE_LOCATION.md)；原首份候选及证据保留，Draft PR28延续，不merge、不Stable。
 
 ## 2026-10-11 — INSTALLER_READY_WITH_LIMITATIONS
 

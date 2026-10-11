@@ -5,6 +5,8 @@
 - 用户授权按系统语言处理旧唯一英文记录，并反馈升级时无法自选安装位置。开工branch/HEAD `codex/v030-installer`/7bbd5f7，main6eb11b9、Draft PR28不变，工作树干净。Task Risk低，Uncertainty中（语言对话框早于脚本事件）经固定上游源码核对降为低；Scope installer/测试/来源/文档，Playback/Session Impact无。原生调用时机分析Tier2，明确规格执行与测试Tier1，测试worker实际gpt-6-luna/high；主线程精确型号未由工具可靠返回，Escalated=no。
 - Inno6.7.3固定上游4adf37e确认previous语言按Name完整匹配，unknown=-1并回到UILanguage；语言框与silent共享该查询。最小实现将default改english，中文名不变；UsePreviousLanguage仍yes。不重启安装器、不自建语言页、不写真实登记。DisableDirPage=no保留UsePreviousAppDir=yes，使升级也可选目录。
 - 首份内部候选default英文记录会重新选系统语言一次，新的/LANG=english或chinesesimplified继续优先于旧偏好。保留已发布v0.2.9和首份候选字节；新版包/检查/独立审查收尾后回填 [专项报告](V030_INSTALLER_LANGUAGE_LOCATION.md)。真实前台、UAC与系统生命周期仍NOT_EXECUTED；不merge、不Stable。
+- 新固定source40c704d build/package前后与39inputs/4通知通过；0.3.0/NotSigned的EXE175668946bytes、SHA70b8c5bbeb4589e8e4842bd70706c5ce980d521fdc5f596e2969f099f124b1f1，2139解包/复制hash零差异。与原候选仅五来源JSON及manifest改变，全部产品/二进制与package版本不变；包内两语言与14产品自定义消息一致。
+- 本轮定向11/11、主线程PS5.1原生语言初始化7/7、JS225/PS5.1与7各28/有限扫描276/diff通过。原完整762/762和guard12按原身份复用，不重跑完整矩阵。唯一本地验包辅助断言误要求unp显式no；源writer及固定工具三控制样包证实no有意省略（auto/yes显式），调整证据解释后PASS，包/产品未改。独立审查、匿名结果和报告收口为INSTALLER_READY_WITH_LIMITATIONS；更新原Draft PR28等待用户体验，真实安装/前台/英语OS仍NOT_EXECUTED。
 
 ## 2026-10-11 — v0.3.0 安装器专项
 
