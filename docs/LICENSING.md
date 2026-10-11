@@ -1,5 +1,7 @@
 # 许可与公开范围
 
+2026-10-11 当前发行材料与版本状态见 [安装与第三方材料审查](V029_INSTALL_MATERIALS_REVIEW.md) 与 [v0.2.9 收尾](V029_MAINTENANCE_CLOSEOUT.md)；下文旧日期的版本和材料缺口按其原审计对象读取。材料缺口继续 `WAITING_EXTERNAL`，既往分发事实不证明授权、对应源码或完整通知已经闭合。
+
 2026-10-09后续本地[材料审计](THIRD_PARTY_MATERIALS_AUDIT.md)已取得libmpv原
 dev archive及公开校验记录，证实其DLL与打包DLL字节一致，并补齐三项NuGet
 binary对应、继承npm原包/随包许可对照、参考源码及工具链原包材料。

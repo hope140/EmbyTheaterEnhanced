@@ -1,5 +1,21 @@
 # 开发日志
 
+## 2026-10-11 — v0.2.9 本地门禁通过
+
+- 外挂字幕修复已在开工 main9774b73；本轮根版本提交5e33d1f、独立隐私修复16ae6c2整合为1012dac。两处诊断生产文件与18项合成回归经主线程diff和独立34/34审核，focused47/47及实际snapshot/ZIP回读通过，不改变播放/Session/缓存。
+- 固定输入后公开686/686、六材料加额外PLAY01为73/73，fail/cancel/skip/todo均0；89发现文件757项+额外2项实际执行。初轮667/668的临时Git读取失败、单例1/1复跑和最后全集结果分列，不弱化断言或猜测根因。
+- 本地候选0bac2e8 build/VerifyOnly通过，34输入/4通知、2138payload+manifest总2139；先前1012构建期间主线程移动doc HEAD被门禁拒绝，partial/log保留，固定HEAD后重新构建，不将失败记为PASS。
+- JS224、PS5.1/7各26、有限敏感273、14文档/266链接通过。远端PR/main CI、最终main安装包及Release回读尚待执行；材料缺口WAITING_EXTERNAL、四阶段REAL_INSTALL_NOT_EXECUTED和真实服务/视觉边界保持。
+
+## 2026-10-11 — 综合维护与 v0.2.9 文档收尾
+
+- Model Tier：主线程 Tier 2，文档委派 Tier 1；Model：当前运行配置的精确型号未由工具可靠返回，文档代理继承当前环境配置；Reason：主线程承担发布、来源与独立审核整合，文档任务为明确文件和事实的范围内同步；Task Risk 文档低/发布中，Task Uncertainty 低，Cross-module Scope 为文档、测试与打包流程，Playback/Session Impact 无新增合同变化；Escalated：no。
+- 本轮 main 回读 `9774b73469dea9a3651f03737153c872947223ee`，PR #25 MERGED、main CI 38102353653 SUCCESS；v0.2.8 已公开为 Pre-release，来源 `888310de8ebae941b407ae070102b84d4fec1e5e`，Latest 仍 v0.2.2。新独立发布工作树保留原目录与各专项成果，按互斥文档所有权委派。
+- README 更新当前渠道、下载/来源入口、v0.2.8 已交付修复和 v0.2.9 外挂字幕守卫范围；ROADMAP 按完成、当前交付、观察、证据触发、设备与长期工程整理。PROJECT_STATUS 与 Known Issues 区分当前事实和历史快照，保留既有 sourceCommit、测试数量与失败记录。
+- 圆角按用户当前决定记录 `USER_REPORTED_RESOLVED / NO_CHANGE_REQUIRED`；内嵌字幕/音轨约 5–10 秒切换延迟为 `DEFERRED / USER_ACCEPTED`，保留研究和 T4 缺口。CD2 Hydration、黑帧、白屏、特殊 app.exit、transport stress 继续按真实样本或原状态追踪。
+- 诊断自由文本 Basic 凭据和多 Cookie 尾值泄漏风险已由安全审查发现，按 `RELEASE_BLOCKER` 进入独立最小脱敏修复与合成回归；待本轮实际验证和主线程复核解除后才能纳入发布。文档准备阶段不预写修复 PASS。
+- 此条为维护准备阶段记录。v0.2.9 最终版本、回归、构建、安装器和 Release 门禁以本轮实际证据补录；历史真实 Emby/runtime 验收不改标为新产物 PASS，系统安装与第三方材料缺口分列。文档验证仅覆盖 diff、相对链接、当前事实及新增文本敏感信息。
+
 ## 2026-10-11 — v0.2.9 字幕竞态修复整合与 PR 验证
 
 - Model Tier：Tier 2；Model：GPT-6 系列主线程、GPT-5.6 Sol High 独立审核、GPT-6 Luna High 测试与静态审核；Reason：局部异步归属修复的真实 diff、来源等价性与 Session 边界复核；Task Risk 中、Uncertainty 低、Cross-module Scope 为一个生产文件及既有测试链、Playback/Session Impact 无新增合同变化；Escalated：no。
