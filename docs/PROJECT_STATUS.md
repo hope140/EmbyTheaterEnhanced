@@ -1,5 +1,28 @@
 # 项目状态
 
+## 2026-10-11 — 综合维护与 v0.2.9 发布准备
+
+当前状态按本轮实际回读更新：远端 main 为 `9774b73469dea9a3651f03737153c872947223ee`，[PR #25](https://github.com/hope140/EmbyTheaterEnhanced/pull/25) 已 MERGED，[main CI 38102353653](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38102353653) SUCCESS。正式 Latest 仍为 [v0.2.2](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.2)，最新公开测试版为 [v0.2.8](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.8)，产品来源 `888310de8ebae941b407ae070102b84d4fec1e5e`。下表是发布准备阶段状态，v0.2.9 的最终来源、门禁及附件以本轮最终回执为准。
+
+| 分类 | 项目与边界 |
+|---|---|
+| COMPLETED | v0.2.8 公开交付；Native Helper/libmpv、STRM/CD2/DirectUrl、Smart Path Mapping、PLAY-01、SEC 局部加固、LIFE 和 CI028；PR #25 外挂字幕修复已合入 main |
+| READY_TO_RELEASE | 已验收的外挂字幕修复可进入 v0.2.9 最小发布；最终版本 PR、CI、构建、独立审核与三个附件回读门禁仍需本轮实际执行 |
+| ACTIONABLE_NOW | 版本更新、文档收尾、诊断隐私与 Renderer 有限复核、完整回归、来源与 payload 验证、安装与第三方材料核查 |
+| EVIDENCE_GATED | CD2 Path Hydration 的真实 not_found 样本、特定媒体问题、独立系统安装生命周期及历史异常新样本 |
+| DEFERRED | 内嵌字幕/音轨切换性能 `DEFERRED / USER_ACCEPTED`；HDR、Mixed-DPI/多显示器；Renderer 完整隔离和 Forge 独立评估；对应第三方材料 `WAITING_EXTERNAL` |
+| EXCLUDED_BY_USER | 恢复圆角、DWM policy 改造、继续切轨性能实验、缓存调参、核心播放/Session 重构、现用客户端安装变更 |
+
+圆角现象为 `USER_REPORTED_RESOLVED / NO_CHANGE_REQUIRED`：用户接受当前窗口与全屏表现，本轮没有新增独立视觉 PASS。STRM/115 内嵌字幕和音轨切换约 5–10 秒的体感延迟保留研究，可靠视听 T4 与安全性能修复未取得，专项已暂缓。历史黑帧、白屏、app.exit 和 transport stress 均保持原证据状态；正常关闭或通过样本不消除未知根因。
+
+本轮诊断审查发现自由文本 Basic 凭据、多 Cookie 尾值的真实泄漏风险，记为 `RELEASE_BLOCKER`。已按明确隐私阻断在独立分支进行最小修复与合成回归；解除该阻断前不可执行公开发布，最终状态按主线程复核补录。
+
+README、ROADMAP、Known Issues 已同步当前版本与已合并事实；历史测试、提交与 runtime provenance 保留原身份。PR #25 修复的真实 Emby 证据继续归属 `11a1c50`，经非文档输入字节等价性支持整合复用，不能记成 v0.2.9 新产物实测。系统安装验收、第三方材料和本轮回归/构建结果分别记录；最新维护计划见 [ROADMAP](ROADMAP.md)。
+
+## 历史阶段记录
+
+以下各条保留原日期、sourceCommit、失败与通过层级。旧 OPEN、READY_FOR_MERGE、待授权或 NOT_EXECUTED 不代表当前同名任务仍处于该状态。
+
 ## 2026-10-11 — v0.2.9 外挂字幕修复独立整合
 
 独立 `codex/v029-subtitle-integration` 从 fetch 确认未变化的 main `888310d`，以 `cherry-pick -x` 整合已验收 `11a1c50` 为 `100179c`。生产 diff 仅为 libmpv 外挂字幕延迟命令的选择序号与 Play/MediaSource 联合守卫，700ms 保留；所有非文档 Git 输入和 34 项锁定构建输入与原修复一致，独立整合审核 PASS。

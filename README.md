@@ -1,8 +1,8 @@
 # Emby Theater Enhanced
 
-2026-10-10 PLAY/SEC/LIFE/CI统一本地候选已达到READY_FOR_USER_ACCEPTANCE，固定产品b139d87，见 [候选验收](docs/INTEGRATION_028_CANDIDATE.md)。当前计划唯一入口为 [ROADMAP](docs/ROADMAP.md)。候选尚未进入main或发布版本；现有v0.2.7发布身份保持。
+基于 Carnival 3.0 与综合补丁的 Windows Emby 客户端维护工程。当前正式版为 `v0.2.2`，最新公开测试版为 `v0.2.8`。PLAY-01、SEC-01/02 局部加固、LIFE-01/02 和 CI028 已进入主线及 v0.2.8；[PR #25](https://github.com/hope140/EmbyTheaterEnhanced/pull/25) 的外挂字幕异步选择竞态修复已合入 `main`，尚未随 v0.2.8 发布。
 
-基于 Carnival 3.0 与综合补丁的 Windows Emby 客户端维护工程。当前正式版为 `v0.2.2`，最新测试版 `v0.2.7` 已作为Pre-release发布，详见 [0.2.7发布记录](docs/RELEASE_027.md)。完整维护成果已合入 `main`；其它AI或人工整体审核请从 [审核入口](docs/AI_REVIEW_GUIDE.md)开始，使用 `main` 并记录实际HEAD。
+2026-10-11 核对的 main 为 `9774b73469dea9a3651f03737153c872947223ee`；v0.2.9 最小维护测试版正在准备。当前状态和验收边界见 [项目状态](docs/PROJECT_STATUS.md)，后续计划唯一入口为 [ROADMAP](docs/ROADMAP.md)。整体审核从 [审核入口](docs/AI_REVIEW_GUIDE.md)开始，并记录实际 HEAD；历史候选状态按原日期与来源解读。
 
 Emby Theater Enhanced is an unofficial community-maintained project. It is not affiliated with or endorsed by Emby.
 
@@ -12,11 +12,23 @@ Emby Theater Enhanced 是非官方社区维护项目，与 Emby 不存在隶属�
 
 | 渠道 | 版本 | 入口 |
 |---|---|---|
-| 最新测试版 · Pre-release | `v0.2.7` | [发布说明](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.7) · [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.7/EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe) · [SHA-256 文件](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.7/EmbyTheaterEnhanced-0.2.7-win-x64-setup.exe.sha256) |
+| 最新测试版 · Pre-release | `v0.2.8` | [发布说明](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.8) · [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.8/EmbyTheaterEnhanced-0.2.8-win-x64-setup.exe) · [SHA-256 文件](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.8/EmbyTheaterEnhanced-0.2.8-win-x64-setup.exe.sha256) · [来源记录](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.8/EmbyTheaterEnhanced-0.2.8-win-x64-setup.exe.provenance.json) |
 | 当前正式版 · Latest | `v0.2.2` | [发布说明](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.2) · [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.2/EmbyTheaterEnhanced-0.2.2-win-x64-setup.exe) |
-| 历史版本 | `v0.2.6` 及更早版本 | [全部历史版本](https://github.com/hope140/EmbyTheaterEnhanced/releases) |
+| 历史版本 | `v0.2.7` 及更早版本 | [全部历史版本](https://github.com/hope140/EmbyTheaterEnhanced/releases) |
 
-## 整体审核与开发计划
+下载 Windows x64 安装包后，先核对随附 SHA-256 与来源记录，再按安装器提示选择独立安装目录。安装生命周期四阶段的本轮真实执行结果单独记录，解包完整性不能代替安装、升级、卸载和重装验收。
+
+## 当前维护内容
+
+v0.2.8 已交付 Stop 后旧播放/换流响应归属修复、外链与增强 IPC 的局部安全边界、Native Helper 异常资源清理和退出等待，以及 Windows CI 兼容修正。发布来源为 `888310de8ebae941b407ae070102b84d4fec1e5e`；具体工程与人工证据见 [统一候选验收](docs/INTEGRATION_028_CANDIDATE.md)、[CI 收尾](docs/CI028_HOSTED_VALIDATION.md) 和 [v0.2.8 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.8)。
+
+v0.2.9 计划交付已经合入 main 的外挂字幕异步选择竞态修复。当旧外挂字幕选择仍在 700ms 等待中，较新的字幕选择、关闭字幕、Stop 或换集使其失效，旧回调会在提交 `sub-add` 前被拦截；已经提交的命令不在此守卫的撤回范围内。原 700ms 与内嵌字幕、音轨、缓存行为保持。修复及历史真实 Emby 验收来源见 [整合记录](docs/V029_SUBTITLE_INTEGRATION.md)。
+
+本轮诊断审查发现自由文本中的 Basic 凭据和多 Cookie 尾值存在泄漏风险，已进入独立最小脱敏修复与合成回归验证；完成门禁后作为必要隐私修复纳入 v0.2.9。有限回归覆盖不代表全部未知秘密格式均已识别。
+
+当前主要保留问题是 STRM/115 内嵌字幕及音轨切换约 5–10 秒的用户体感延迟，状态为 `DEFERRED / USER_ACCEPTED`。CD2 Path Hydration 等待真实 `not_found` 样本；历史黑帧、白屏、特殊 app.exit 超时按原证据观察。用户反馈当前窗口和全屏圆角现象已解决，记为 `USER_REPORTED_RESOLVED / NO_CHANGE_REQUIRED`。详情见 [Known Issues](docs/KNOWN_ISSUES.md)。
+
+## 历史交付与审核导航
 
 0.2.7完整维护交付包含grpc-js 1.14.6、About可信版本与刷新、64KiB异步校验。[PR #21](https://github.com/hope140/EmbyTheaterEnhanced/pull/21)已合并到 `main`，保留完整维护历史；安装包产品sourceCommit仍为d8fcb0f9。[AI审核指南](docs/AI_REVIEW_GUIDE.md)提供源码、测试日志、安装器逐文件证据和未验证边界，[后续计划](docs/ROADMAP.md)仅将未完成事项列入待办。[本地到远端同步范围](docs/REMOTE_SYNC_027.md)说明历史资料的处理，[主线收尾记录](docs/MAIN_CLOSEOUT_027.md)说明合并核验。
 
@@ -28,6 +40,8 @@ v0.2.6完整发布树的主线整合差异、验证与PR状态见 [主线整合�
 
 P0/P1 的历史证据见[本地交付](docs/P0_P1_DELIVERY.md)，随 v0.2.5 交付并保留在v0.2.6的诊断继续遵循[诊断 contract](docs/P1_DIAGNOSTICS_CONTRACT.md)。P2 已交付[离线阶段观测工具与能力结论](docs/P2_TIMING_AND_CAPABILITY_REVIEW.md)。[构建输入、来源与可再构建范围审计](docs/BUILD_INPUT_AUDIT.md)已整理固定输入、实际payload和对应源码材料缺口；当前本地构建依赖外部固定输入，公开仓库本身尚不能完整构建全部组件。进度与优先级见 [Development Roadmap](docs/ROADMAP.md)，可复现问题与观察项见 [Known Issues](docs/KNOWN_ISSUES.md)。Smart Path Mapping 已完成用户功能验收和最终远端复审，并通过 PR #18 合入 `main`。
 
+## 已完成能力
+
 ### 核心架构
 
 - [x] Native Helper + libmpv 播放架构、Helper 子窗口 / HWND 播放面
@@ -35,6 +49,8 @@ P0/P1 的历史证据见[本地交付](docs/P0_P1_DELIVERY.md)，随 v0.2.5 交�
 - [x] Electron 44.4.2 升级及 apphost 启动命令兼容修复
 - [x] Windows runtime / package provenance 校验
 - [x] `v0.2.2` 正式发布
+
+播放采用 Native Helper + libmpv 作为唯一生产 bridge。Helper 拥有视频子窗口，Electron main 监督进程与播放面，透明前景窗口保留 Emby UI/OSD/input；PlaybackManager、Item、MediaSource、PlaySession、Session/WebSocket 和远控生命周期仍由既有链拥有。STRM 增强仅替换最终 source，保留身份和 Native fallback 合同，见 [架构](docs/ARCHITECTURE.md)。
 
 ### STRM / CloudDrive2
 
@@ -52,7 +68,7 @@ P0/P1 的历史证据见[本地交付](docs/P0_P1_DELIVERY.md)，随 v0.2.5 交�
 - [x] 播放 / Pause / Seek / Stop 基础链路与 Fullscreen 基础控制
 - [x] `v0.2.2` 视频冻结根边界修复
 - [x] NextTrack 原生持帧还原（v0.2.3 起提供；全屏短闪与真实媒体仍按各自验收范围观察）
-- [ ] Fullscreen 播放后圆角状态同步
+- [x] 圆角状态用户反馈已解决（`USER_REPORTED_RESOLVED / NO_CHANGE_REQUIRED`；未新增独立视觉 PASS）
 - [ ] Mixed-DPI / 多显示器缩放适配
 
 ### 诊断与维护

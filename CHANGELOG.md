@@ -1,5 +1,16 @@
 # 变更记录
 
+## 0.2.9 测试版准备 — 2026-10-11
+
+- 外挂字幕选择等待结束后核对当前 Play、字幕选择序号和 MediaSource，阻止快速切换、Off、Stop 或换集时的旧 `sub-add` 覆盖新意图。PR #25 已合并；原 700ms 等待保留。
+- 修正诊断自由文本中 Authorization 和多项 Cookie 的脱敏缺口；最小安全修复的 RED/GREEN 和 ZIP 回读见 [安全审查](docs/V029_SECURITY_REVIEW.md)。
+- README、路线图、已知问题及发布来源对账；内嵌字幕/音轨切换性能暂缓，圆角按用户反馈结束。准确发布状态、资产和验证边界见 [维护收尾](docs/V029_MAINTENANCE_CLOSEOUT.md)。
+
+## 0.2.8 测试版 — 2026-10-10
+
+- 整合 PLAY-01 Stop 后迟到播放意图守卫、SEC01/02 外链与主 Frame 边界、LIFE01/02 完整 Native Helper 退出收尾，以及已有 About 和 Smart Path Mapping 维护。
+- 发布提交 `888310de8ebae941b407ae070102b84d4fec1e5e`，公开入口为 [v0.2.8 Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.8)。外挂字幕异步选择守卫在此版之后合入 main，因此不属于 v0.2.8 安装包。
+
 ## 0.2.7 本地测试包 — 2026-10-10
 
 - 继承完整v0.2.6维护栈，精确锁定grpc-js 1.14.6；About随包版本来自源码/manifest与二进制hash绑定，实时运行状态独立展示。

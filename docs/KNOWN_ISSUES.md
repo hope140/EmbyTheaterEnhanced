@@ -1,5 +1,25 @@
 # Known Issues
 
+## 2026-10-11 当前状态
+
+公开测试版为 [v0.2.8](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.8)，正式 Latest 为 v0.2.2；本轮核对 main 为 `9774b73469dea9a3651f03737153c872947223ee`。[PR #25](https://github.com/hope140/EmbyTheaterEnhanced/pull/25) 已合并，v0.2.9 正在准备。下方旧候选和未合并表述是原阶段记录，以本节当前结论为准。
+
+| 项目 | 当前状态 | 证据和后续 |
+|---|---|---|
+| 外挂字幕过期异步选择 | FIXED / MERGED；尚未随 v0.2.8 发布 | `100179c` 修复随 PR #25 进入 main；[整合记录](V029_SUBTITLE_INTEGRATION.md) 保留真实 Emby `11a1c50` 验收来源与复用边界；计划随 v0.2.9 交付 |
+| PLAY-01、SEC-01/02 局部边界、LIFE-01/02、CI028 | 已进入 main 与 v0.2.8 | 历史独立分支的 NOT_MERGED/READY 不再代表当前事实；SEC 完整隔离仍为后续设计 |
+| 内嵌字幕和音轨切换延迟 | DEFERRED / USER_ACCEPTED | STRM/115 用户体感约 5–10 秒；保留 Refresh Seek、缓存覆盖消失与 underrun 研究，可靠视听 T4 和安全性能修复未取得 |
+| 圆角现象 | USER_REPORTED_RESOLVED / NO_CHANGE_REQUIRED | 用户接受当前窗口和全屏表现；未新增独立视觉 PASS |
+| CD2 Path Hydration | EVIDENCE_GATED | 等待真实 FindFileByPath=not_found 与可见性前后样本 |
+| 黑帧、旧版本白屏、特殊 app.exit、transport stress | OBSERVE / 原证据状态保留 | 有新样本再定位；未把未复现或正常路径 PASS 写成彻底修复 |
+| 诊断自由文本 Basic 凭据、多 Cookie 尾值 | CONFIRMED / RELEASE_BLOCKER，最小修复验证中 | 以合成敏感数据回归，解除阻断后纳入 v0.2.9；不输出真实凭据 |
+
+外挂字幕守卫只拦截尚在原 700ms 等待中的过期 `sub-add`，已经提交的命令不由该守卫撤回。它不改变内嵌字幕 sid、音轨 aid、缓存或切轨性能；v0.2.9 也不将该性能专项标为修复。
+
+## 历史阶段记录
+
+以下保留原始版本、提交和验证层级；当前规划见 [ROADMAP](ROADMAP.md)。
+
 ## 2026-10-10 — 候选用户验收与CI收尾
 
 产品b139d87的六项真实播放为USER_ACCEPTANCE_PASS；CI028已普通整合推送，db9ccde Hosted657/657与全部静态GREEN，最终diff复核后READY_FOR_MERGE，main/v0.2.7仍未包含候选补丁。字幕/音轨切换延迟继续P2/LEGACY_BEHAVIOR/ACCEPTED_WITH_FOLLOWUP，不阻断本次整合；安装专项NOT_EXECUTED按用户确认不阻断推送。没有扩大为所有真实场景或显示专项已通过。详情见 [Hosted收尾](CI028_HOSTED_VALIDATION.md)，下文按历史阶段解释。
@@ -92,17 +112,14 @@ PLAY01、SEC01/02局部边界、LIFE01/02已完整进入本地候选b139d87，�
 - 下一步：保持已验证呈现实现并观察；出现新的具体样本时再定位。全屏窗口修复未改变该实现。
 - 区别：不是 Seek 或 Stop / Exit 的 transient black frame，也不是 rapid NextTrack `selected=false` 的既有夹具限制。
 
-## Deferred
+## 用户反馈已解决
 
-### 播放开始后 Fullscreen 圆角出现
+### 窗口与 Fullscreen 圆角状态
 
-- 状态：`REPRODUCIBLE / DEFERRED`。
-- 复现：未播放时在 windowed 与 fullscreen 间切换，再开始播放并观察 fullscreen 窗口边角。
-- `OBSERVED`：未播放时 windowed 有圆角、fullscreen 为直角；开始播放后 fullscreen 错误出现圆角。
-- 用户影响：fullscreen 视觉状态不一致；当前没有播放中断证据。
-- `SUSPECTED`：playback surface 的 top-level window 与 mainWindow fullscreen 状态的 DWM corner 同步可能不一致；根因尚未证实。
-- 下一步：分别识别 mainWindow 与播放面的窗口、状态和 DWM corner policy；目标为 windowed 圆角、fullscreen 直角，播放面跟随 mainWindow。
-- 区别：这是播放开始后的圆角状态问题，不等同于 `v0.2.2` 已修复的视频冻结。
+- 当前状态：`USER_REPORTED_RESOLVED / NO_CHANGE_REQUIRED`。
+- 2026-10-11 用户明确反馈此前修复已使窗口和全屏都不显示圆角，并接受当前实际表现；此项结束，不再作为主动修复任务。
+- 历史现象为未播放时 windowed 圆角、fullscreen 直角，而播放后 fullscreen 出现圆角；旧 DWM 同步解释始终是未证实假设。
+- 本轮没有新增独立视觉测试，不能将用户反馈改写为自动化 PASS。当前保持现有窗口与播放面实现。
 
 ## Observe
 

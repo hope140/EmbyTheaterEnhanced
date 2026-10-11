@@ -1,64 +1,68 @@
 # Development Roadmap
 
-本页是 Emby Theater Enhanced 后续计划的正式来源。公开维护基线以 `main` 为准；PR #23 已合入 `fc452dfe`，main CI 38042826203 SUCCESS。公开测试包仍为 v0.2.7，已授权的 v0.2.8 Pre-release 正在准备，尚未发布。问题的复现情况见 [Known Issues](KNOWN_ISSUES.md)，已完成工作的证据见 [项目状态](PROJECT_STATUS.md) 与 [测试记录](TESTING.md)。
+本页是后续维护计划的正式入口。2026-10-11 核对的 main 为 `9774b73469dea9a3651f03737153c872947223ee`，[PR #25](https://github.com/hope140/EmbyTheaterEnhanced/pull/25) 已合并，[main CI 38102353653](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38102353653) SUCCESS。公开测试版为 [v0.2.8 Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.8)，正式 Latest 为 [v0.2.2](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.2)。v0.2.9 正在准备；发布结果以最终回读为准。
 
-当前发布步骤：最小版本 PR 经 CI GREEN 合入，再从最终 main 提交重新构建、验证、打包并发布三个附件。新包 sourceCommit 必须为最终 main HEAD；历史 `b139d87` 仅保留此前工程与人工验收身份。字幕/音轨延迟保持 P2 accepted followup，外挂字幕竞态可见影响未验证；安装专项及公开材料依赖测试的验证边界不变。以下里程碑和表格保留合并前的历史快照，不构成当前 PR #23 尚待合并的状态。
+问题细节见 [Known Issues](KNOWN_ISSUES.md)，当前工程身份及验收层级见 [项目状态](PROJECT_STATUS.md)，测试入口见 [TESTING](TESTING.md)。历史记录中的 OPEN、READY_FOR_MERGE、NOT_EXECUTED 仅代表原日期及来源，不能覆盖本页当前状态。
 
-## 当前里程碑（2026-10-10 CI028 Hosted GREEN / READY_FOR_MERGE）
+## 已完成里程碑
 
-用户授权后CI修复六提交快进并普通推送至统一候选db9ccde，原工作树三份文档hash不变。新增五测试来源已核对，旧测试与排除没有删除；[Hosted run 38040747159](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38040747159)公开657/657、诊断和全部静态实际success。主线程diff与产品输入复核通过，当前工程状态 **READY_FOR_MERGE**；按用户条件创建main目标PR，后续文档/PR checks分别绑定实际HEAD，不自动合并。产品runtime仍b139d87，未重建；[完整远端证据](CI028_HOSTED_VALIDATION.md)。以下本地READY_FOR_PUSH说明为该阶段历史快照。
+| 里程碑 | 当前状态 | 证据入口 |
+|---|---|---|
+| Native Helper + libmpv、Pepper 退役、Electron 44.4.2 与 apphost 启动兼容 | COMPLETED | [架构](ARCHITECTURE.md)、[Native Helper](NATIVE_HELPER_BRIDGE.md)、[Electron 44](ELECTRON_44_UPGRADE.md) |
+| Smart Path Mapping 和设置页整理 | COMPLETED；PR #18 MERGED，用户功能验收通过 | [Settings 契约](STRM_RESOLVER_SETTINGS.md)、[0.2.4 用户验收](SETTINGS_UI_024_ACCEPTANCE.md) |
+| About、诊断、构建来源与通知交付 | COMPLETED；保留对应源码材料缺口 | [About](ABOUT_VERSION_ASYNC.md)、[诊断](P1_DIAGNOSTICS_CONTRACT.md)、[构建复核](BUILD_REVIEW.md) |
+| PLAY-01、SEC-01/02 局部加固、LIFE-01/02、CI028 | COMPLETED；已进入 main 与 v0.2.8 | [统一候选历史验收](INTEGRATION_028_CANDIDATE.md)、[Hosted 收尾](CI028_HOSTED_VALIDATION.md) |
+| 外挂字幕异步选择竞态修复 | COMPLETED IN MAIN；尚未随 v0.2.8 发布，等待 v0.2.9 交付 | [PR #25](https://github.com/hope140/EmbyTheaterEnhanced/pull/25)、[整合与历史真实验收](V029_SUBTITLE_INTEGRATION.md) |
+| 圆角现象 | USER_REPORTED_RESOLVED / NO_CHANGE_REQUIRED | 用户接受当前窗口与全屏表现；未新增独立视觉 PASS |
 
-统一候选已按此前授权推送至 `codex/integration-028-candidate@aa86ddc`，用户六项真实播放验收为 **USER_ACCEPTANCE_PASS**；产品/runtime来源仍为 `b139d87da06cfba153a828766926b78230be4a0f`。Hosted run 38036913645 的626 PASS/26 FAIL原证据保留。
+## 正在进行：v0.2.9 最小维护交付
 
-本轮独立分支 `codex/ci028-windows-compat` 固定代码 `5b1e092`，仅修测试fixture物理路径、reporter BOM、编码回归与CI匿名诊断；公开657/657、独立6/6、语法/有限敏感/diff均通过。34项构建输入及产品目录与b139d87一致，不重建原runtime。状态 **READY_FOR_PUSH**；等待单独授权更新远端并执行新的Hosted CI，尚未READY_FOR_MERGE。详见 [CI028](CI028_WINDOWS_COMPAT.md)。字幕/音轨延迟P2/LEGACY_BEHAVIOR/ACCEPTED_WITH_FOLLOWUP；安装四阶段NOT_EXECUTED按用户确认不作为本次推送前置条件。本轮不扩展它们的实现范围。
+本轮生产修复范围是 PR #25 的外挂字幕异步选择守卫，连同正确的产品版本和必要文档同步。发布从通过 CI 的最终 main HEAD 重新构建，不复用旧包身份。门禁包括完整公开离线与本地材料依赖测试、独立审核、固定构建输入、runtime/package provenance、安装器解包、三个附件回读；各项以最终运行结果记录。
 
-### 统一候选工程验收历史快照
+诊断审查已发现自由文本 Basic 凭据、多 Cookie 尾值的泄漏风险，最小脱敏修复在独立分支验证。该明确隐私阻断必须解除后才能发布；最终产品 diff 与合成回归另行复核。
 
-本轮从实际远端main `0b782ddec404f4148cb6c8c16f19bc22201d3252` 创建独立工作树，统一PLAY-01、SEC-01/02、LIFE-01/02、CI-01与相关报告，人工冲突0；原工作区及修复分支保留。候选固定sourceCommit为 `b139d87da06cfba153a828766926b78230be4a0f`，状态 **READY_FOR_USER_ACCEPTANCE**。最终全量723/723、独立核心119/119、实际构建manager字节48/48与八组新隔离runtime通过，原始Session报告独立复算25对，运行后payload哈希与零残留验证通过。公开离线runner652/652，六份材料依赖文件明确排除，已在完整全量执行；托管Actions未执行。准确来源、顺序与证据等级见 [统一候选](INTEGRATION_028_CANDIDATE.md) 和 [机器证据](evidence/integration-028-candidate.json)。
+诊断隐私、Native Helper 既有生命周期、安全边界、脚本与文档一致性执行有限复核。Renderer 进一步隔离作为兼容性设计任务，候选是否形成与是否进入发布分开判断。构建流程见 [PACKAGING](PACKAGING.md)，第三方边界见 [LICENSING](LICENSING.md)。
 
-组合工程验收已完成，等待实际使用验收；真实Emby/CD2、真实远控、画面及安装生命周期未执行。原PLAY-01独立来源及RED/GREEN记录见 [专项报告](PLAY01_STOP_BOUNDARY.md)，独立审核与历史证据继续保留，入口见 [交付验收](REVIEW_028_DELIVERY.md)、[播放矩阵](RELEASE_ACCEPTANCE_MATRIX.md)、[安装卡](INSTALLER_LIFECYCLE_CARD.md)。以下0.2.7发布数据保留历史身份。
+安装器四阶段只在已可用的独立 Windows VM/Sandbox 或可丢弃系统执行；环境不足时记录 `REAL_INSTALL_NOT_EXECUTED` 并保留 [四阶段测试卡](INSTALLER_LIFECYCLE_CARD.md)。解包、哈希、隔离 runtime 和现用客户端日常使用均不替代此系统验收。
 
-0.2.7产品d8fcb0f9和获审阅的安装器已按原字节发布为Pre-release，完整源码、文档及原始审核证据已通过 [PR #21](https://github.com/hope140/EmbyTheaterEnhanced/pull/21) 合入main，整合提交ef4fcf58。整体审核直接使用main并记录实际HEAD，入口见 [AI审核指南](AI_REVIEW_GUIDE.md)；发布与合并核验见 [0.2.7发布记录](RELEASE_027.md) 和 [主线收尾](MAIN_CLOSEOUT_027.md)。
+## 持续观察
 
-上一轮PR #20已于2026-10-09 22:22:16（UTC+8）合并，得到历史基线bc50d181；父提交为46e995e与45ec2d6。其v0.2.6产品sourceCommit保持355f4e6；[主线整合报告](MAIN_INTEGRATION_026.md) 中OPEN是创建阶段的历史回执。
+| 项目 | 当前证据 | 重新调查的触发条件 |
+|---|---|---|
+| Seek / Stop / Exit 偶发黑帧 | 历史 OBSERVE；当前频率未确认 | 新版本、操作时序及有限播放面样本 |
+| 旧版本 NextTrack 短暂白屏 | USER_REPORTED_RESOLVED / MONITORING | 新的明确可复现样本 |
+| 特殊 app.exit OS 退出超时 | OBSERVED / ROOT CAUSE UNKNOWN；正常关闭通过不关闭此项 | 新的准确进程归属与退出时序证据 |
+| Native Helper transport `stdout-end` stress 差异 | HARNESS / ENVIRONMENT GAP | 独立、可复核差异证据 |
 
-grpc-js 1.14.6、About随包版本/刷新及异步校验均已进入main与0.2.7完整维护栈。旧6815d2f/7ec6ace与dbee15af/7cc7eb85仍为各自阶段的来源，最终产品采用d8fcb0f9、观测工具0e87d4f。原公开v0.2.6/355f4e6保持其历史身份。
+无新证据时保持现有播放、Session 和 Native Helper 合同。
 
-0.2.7最终产品全量651/651、工具42/42、父会话53/53，十组串行隔离运行及About初始/ready IPC通过。安装器175,632,871 bytes，SHA256为86bee55146714f4f7e493cadb8b483537644f513c92364df7fc0c18f5315f3db；解包与runtime各2,137文件一致。旧observer误判FAIL和原证据层级保留；该发布轮次只复制获核验产物和证据，没有重建或重跑相同产品。本次独立审核未执行远端写入。
+## 证据触发
 
-用户已开始日常使用，暂未报告新问题；不再把“等待开始使用”作为工程阻塞，也不扩展成所有真实场景均已验收。早期直接app.exit超时仍为UNKNOWN；完整安装生命周期、真实服务专项、可见连续性、HDR/多屏继续独立记录。前期优先级的历史快照见 [结构化复核记录](evidence/project-priorities-20261010.json)，后续完成事实以本页当前状态和 [主线收尾记录](evidence/main-closeout-027-20261010.json)为准。
+- **CD2 Path Hydration：EVIDENCE_GATED。** 等待真实 `FindFileByPath=not_found` 与路径可见性前后对照，再区分目录未物化、timeout、transport、鉴权等原因；既有 Mount / Native fallback 保持。
+- **特定媒体播放问题：EVIDENCE_GATED。** 有实际媒体类别与明确操作样本后再开展定向验收；普通文件、真实远控、可见连续性分别记录覆盖。
+- **内嵌字幕 / 音轨性能：DEFERRED / USER_ACCEPTED。** 用户体感约 5–10 秒，已有 Refresh Seek、缓存覆盖消失与 underrun 研究；可靠视听 T4 和安全修复未取得。保留全部研究，待用户明确重新启动与实际样本后接续。
 
-## 后续优先级与里程碑
+## 设备相关
 
-下表只列尚未关闭的工程与验收事项。原A1/D1/R1及独立审核已经完成；发现P1不等于真实用户环境已发生，具体复现层级以独立报告为准。
+HDR、Mixed-DPI / 多显示器为 `DEFERRED`。适当硬件或新的用户报告到位后做限定场景验证，再判断是否有局部修复；当前没有对应专项 PASS。
 
-| 优先级 / 编号 | 工作与当前状态 | 可自主推进的准备 | 完成标准 / 需要用户参与 |
-|---|---|---|---|
-| P1 / PLAY-01、SEC-01/02、LIFE-02；P2 / LIFE-01 | INTEGRATED / USER_ACCEPTANCE_PASS | b139d87统一来源；原723项全量、119项独立核心、八组runtime及25对Session保留来源；六项用户真实播放PASS | 远端CI阻断解除且获单独授权后再PR/main整合，LIFE-02保持依赖LIFE-01 |
-| P2 / CI-01、CI028 | HOSTED_GREEN / READY_FOR_MERGE；原RED保留 | db9ccde Hosted657/657、全部静态/诊断实际success；原本地657/657及独立6/6保持来源；六材料NOT_EXECUTED；生产validator不变 | PR最新HEAD检查与最后diff回读后等用户决定是否合并；不自动merge或发布 |
-| P2 / QA-01 | OFFLINE_MATRIX_VERIFIED / SIX_USER_CASES_PASS | 原runtime八组与PLAY-01确定性门控保留来源；六项真实验收按用户报告记录 | 未覆盖场景与专项层级单列；P2字幕/音轨延迟accepted followup，本轮不修改 |
-| P2 / SEC-02后续 | DESIGN_REQUIRED | 主frame/导航已局部加固；fs/rawIPC/CORS/CSP/isolation依赖已列明 | 窄preload接口与兼容性设计；不能直接整体启用隔离开关 |
-| P2 / T1 | 有界核查完成，WAITING_EXTERNAL | 160项实体回读一致，三轮查询和四类缺口已记录于 [材料收尾](THIRD_PARTY_MATERIALS_CLOSEOUT_027.md) | 外部材料到达后按准确身份接续，索取需单独授权发送 |
-| P2 / INST-01 | PREPARED / REAL NOT_EXECUTED | 四阶段卡与只读目录/DeviceId快照工具、合成验证已准备 | 独立VM和系统安装范围授权后执行v0.2.2→候选升级、卸载、重装；不使用历史0.1.x脚本冒充当前验收 |
-| P3 / H1 | 全屏圆角、混合DPI/多屏、HDR专项，DEFERRED | 最小场景、当前候选身份与观察项已整理 | 有相应设备/新样本并确认前台验证后执行；先定位再决定局部修复，不扩大为显示链重构 |
+## 长期工程与正式稳定版准备
 
-已完成里程碑：M1完整维护审阅并合入main；M2发布并完整回读0.2.7测试安装包；M3确定问题的独立修复、统一候选工程验收、用户六项实际使用验收与CI028 Hosted GREEN。候选与CI修复已推独立远端分支，按授权准备PR；主线合并及发布仍需单独授权。其后M4为稳定版范围决策：结合真实场景、安装生命周期与第三方材料处置结果，明确可发布范围和仍保留的验收边界。M4不要求立即补齐所有硬件场景，也不将日常使用反馈替代专项验收。
+| 项目 | 状态与下一步 |
+|---|---|
+| Renderer 进一步隔离 | DESIGN_REQUIRED；窄 preload、fs/raw IPC、CSP/CORS、webSecurity/contextIsolation/sandbox 的兼容性与安全矩阵先行 |
+| 第三方对应源码、授权与完整构建材料 | WAITING_EXTERNAL；[材料索引](SOURCE_MATERIALS.md)、[审计](THIRD_PARTY_MATERIALS_AUDIT.md)、[收尾](THIRD_PARTY_MATERIALS_CLOSEOUT_027.md) 保留精确身份和未取得项；不推断分发授权 |
+| 安装生命周期 | PREPARED / EVIDENCE_GATED；独立系统到位后执行全新安装、升级、卸载、重装，分别核对程序残留与 profile/DeviceId 有意保留 |
+| 正式稳定版发布 | 尚未排定；综合真实使用、安装生命周期、材料处置与精确版本证据决定范围及剩余边界 |
+| Electron Forge 迁移 | OPTIONAL / DEFERRED；按现有构建与安装契约独立评估 |
 
-### 项目规则收口与全局候选范围
+## 范围决策与历史导航
 
-S1模型型号集中并按任务能力选取、S2历史方案作用域、S3当前导航、S4一次收尾与同源证据复用、S5计入委派协调开销已在项目内应用。70%/5%既有目标保留，不按配额牺牲质量。worker流程前明确“决定采用委派时”；复用条件明确“待复用证据所依赖的产品、构建和测试输入均未改变且身份已核对”。S6全局候选按用户范围澄清为 `EXCLUDED_BY_USER / KEEP_CANDIDATE`，全局AGENTS、配置与memory不在本轮范围。
+圆角状态已按用户反馈结束，无新增 DWM policy 工作。内嵌切轨性能专项暂缓；历史预热研究按用户“复杂就不做”结束，见 [P2 研究](P2_TIMING_AND_CAPABILITY_REVIEW.md)。全局 S6 为 `EXCLUDED_BY_USER / KEEP_CANDIDATE`，全局配置与 memory 不在本轮范围。
 
-### 来源与后续接手
+完整历史来源见 [0.2.7 发布](RELEASE_027.md)、[主线收尾](MAIN_CLOSEOUT_027.md)、[CI028](CI028_WINDOWS_COMPAT.md)、[v0.2.8 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.8) 与 [外挂字幕整合](V029_SUBTITLE_INTEGRATION.md)。以下保留原完成阶段的版本、提交与验证数量，不能改标为 v0.2.9 新运行。
 
-整体审核使用main与 [AI审核指南](AI_REVIEW_GUIDE.md)，其中包含About、grpc维护及0.2.7全部专项文档、原始测试日志与来源记录。项目S1–S5已应用，全局S6继续排除。接手时先记录main实际HEAD与产品来源，不把历史会话的“等待授权”“待打包”或旧PR的OPEN快照当作当前进度。
-
-## Current Production Baseline
-
-- `v0.2.2` 正式Latest对应9a034e8d；main已包含PR #20与PR #21的完整维护历史。最新公开测试版v0.2.7绑定产品d8fcb0f9，完整项目审核直接使用main。旧v0.2.6/355f4e6保持历史身份；见 [0.2.7发布记录](RELEASE_027.md) 与 [0.2.6记录](RELEASE_026.md)。
-- Native Helper + libmpv、Pepper / PPAPI 退役、Electron 44.4.2、apphost 启动命令兼容修复、Windows runtime / package provenance、STRM / CloudDrive2 / DirectUrl 基础路由和诊断包均已进入历史完成项；细节由既有专项文档维护。
-- Smart Path Mapping 已合入 `main`，尚未进入 `v0.2.2` 正式发布基线。
-
-## COMPLETED
+## 历史已完成记录（截至 v0.2.7 / v0.2.6 阶段）
 
 ### 0.2.7 维护、文档规则与公开交付（原A1 / D1 / R1）
 
@@ -118,59 +122,6 @@ grpc-js 1.14.6、About可信版本/刷新/异步校验、S1–S5项目规则、�
 
 v0.2.6已包含每请求options快照、pending报告抑制、捕获stream的Stop排空与一次报告、Native Helper共享destroy及全部pending退出等待。631项和八组完整隔离运行见 [0.2.6交付](LOCAL_PACKAGE_026.md)；真实Emby/CD2/远控仍按独立范围验收。
 
-## NOW
-
-统一候选b139d87工程验收完成，交付runtime与报告，等待实际使用验收。保留各独立修复分支和原始失败证据；后续PR/main整合及发布须另行授权。材料T1仍WAITING_EXTERNAL，显示H1及历史观察维持原条件触发边界。
-
-## 可选后续研究
-
-2026-10-09已核对元数据、URL与媒体预读复杂度。跨请求URL复用需要失效/取消/鉴权归属，媒体预读会新增服务端副作用，当前没有实际收益证据；按用户“复杂就不做”要求结束本轮预热研究，不进入实现排期，见P2报告。
-
-## P2
-
-### CD2 Path Hydration
-
-**状态：** `EVIDENCE-GATED`，等待真实 `not_found` 样本。先取得 CD2 路径可见性前后对照，区分目录未物化与 timeout / transport / 鉴权问题；再决定是否设计有界恢复。
-
-**不要误修：** 不预先实现 ancestor enumeration、cold directory materialization 或 retry loop。既有 Mount / Native fallback 保持有效。
-
-### Installer Residual Audit
-
-**状态：** 静态审查及四阶段/回滚计划已完成，见 [安装与显示准备](INSTALL_DISPLAY_READINESS_027.md)。当前未发现可立即使用的隔离VM/Sandbox；四阶段系统执行为NOT_EXECUTED。profile/DeviceId有意保留与程序残留分别取证。
-
-## P3
-
-### Fullscreen Dynamic Corner Policy
-
-**状态：** `REPRODUCIBLE / DEFERRED`。未播放时 windowed 有圆角、fullscreen 为直角；开始播放后 fullscreen 错误出现圆角。按H1列P3显示专项，未新增播放阻断证据。
-
-**当前判断：** playback surface top-level window 的 DWM corner state 未随 mainWindow fullscreen 状态同步是较强嫌疑，尚未证实为根因。
-
-**目标：** windowed 为圆角、fullscreen 为直角，播放面跟随 mainWindow。先确认窗口身份和 DWM state；没有新证据前不回到 redraw timers、focus hacks、`SetWindowPos` loops 或 GPU flags。
-
-### Mixed-DPI / Multi-monitor scaling
-
-**状态：** `DEFERRED`；需要真实多显示器与不同缩放比环境验收。
-
-### HDR Validation
-
-**状态：** `DEFERRED`；保留真实 HDR 媒体与显示链专项验证。
-
-## OBSERVE
-
-以下项目暂无足够的新证据进入主动修复；新样本出现时先更新 [Known Issues](KNOWN_ISSUES.md)：
-
-- 历史候选直接app.exit后OS进程未退出：根因UNKNOWN，正常产品关闭通过不等于该路径已解决；有新复现时按原始证据继续定位。
-- Seek transient black frame：旧版本观察到，近期 `v0.2.2` 前台验收未稳定复现。
-- Stop / Exit transient black frame：同上，需区分停止与退出的时序。
-- rapid NextTrack旧`selected=false`为历史夹具结果；已由显式pending/cancel/迟到metadata门槛取代。d480eb8与68eb024分别修复其后确认的请求身份/pending报告、Stop归属问题；新五组全部通过，不再以旧“夹具限制”概括当前状态。
-- transport `stdout-end` stress：跨 Electron 18 与 44 的 harness / environment gap，不能据此直接改 Native Helper。
-
-## DEFERRED / DECISION
-
-- Electron Forge migration evaluation：按现有安装与构建契约另行评估，不与播放问题混修。
-- 对应源码与第三方完整构建材料：清单审计、固定工具链锁及四份通知随包已完成；Host/离线Web/libmpv等剩余材料见 [来源索引](SOURCE_MATERIALS.md) 与 [第三方审计](THIRD_PARTY_MATERIALS_AUDIT.md)，许可状态见 [许可文档](LICENSING.md)。
-
 ## Frozen Artifact
 
-既有文档记录 `.work/stop-barrier-candidate.patch` 为 **FROZEN / DO NOT TOUCH**。本独立 worktree 中未见该文件；本轮没有读取、应用、修改或删除它。
+既有文档记录 `.work/stop-barrier-candidate.patch` 为 **FROZEN / DO NOT TOUCH**。其保留与存在情况由原工作树管理，本轮不读取、应用、修改或删除它。

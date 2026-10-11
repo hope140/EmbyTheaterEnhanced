@@ -1,5 +1,11 @@
 # 测试与验收
 
+## 2026-10-11 — v0.2.9 维护验收入口
+
+本轮按实际发现文件运行公开离线集合及全部六份材料依赖集合，另核对 PLAY-01、外挂字幕竞态、诊断脱敏、Native Helper、Session、安全边界、Windows PowerShell 5.1/7 语法和最终构建来源。数量、失败原始记录、准确 sourceCommit、CI 与隔离 runtime 结果见 [维护收尾](V029_MAINTENANCE_CLOSEOUT.md)。以下各日期的 PASS、FAIL、NOT_EXECUTED 保持其原身份，不作为本轮新运行结果。
+
+本轮未执行新的真实 Emby / 115 / CD2 播放、前台视觉或实体遥控器验收。外挂字幕修复的真实验收按 [整合报告](V029_SUBTITLE_INTEGRATION.md) 的代码等价性关系复用；真实系统四阶段安装另记 `REAL_INSTALL_NOT_EXECUTED`。内嵌切轨性能专项按用户决定暂缓，不新增 T4 或缓存实验。
+
 ## 2026-10-10 — CI028 Hosted实际验收
 
 固定db9ccde的push run38040747159：公开657/657（87文件发现81执行6材料NOT_EXECUTED），fail/cancel/skip/todo0；路径诊断、JS220、PS25、有限敏感268、diff均实际success而非skipped。Hosted5.1代码页1252旧无BOMParseFile21/执行1、BOM版两者0；PS7两个变体两者0；真实短名/物理差异及junction拒绝实测通过。新五case、旧排除、原RED、34产品输入及文档HEAD分层见 [远端记录](CI028_HOSTED_VALIDATION.md)。后续文档push/PR checks按各自HEAD回读，不重跑本地相同输入或重建b139runtime。
