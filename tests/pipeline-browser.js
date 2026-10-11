@@ -193,7 +193,7 @@ async function runPipelineFixture(fixture, mountSidecar, cd2Mode, cd2Origin, sto
         }
         return Promise.resolve(response);
     };
-    api.getItem = (user,id) => Promise.resolve(items.get(id) || activeItem);
+    api.getItem = (user,id) => Promise.resolve(items.get(Array.isArray(id) ? id[0] : id) || activeItem);
     api.getItems = (_user, options) => {
         const selected = timelineOptions && options && options.Ids
             ? options.Ids.split(',').map(id => items.get(id)).filter(Boolean) : [activeItem];

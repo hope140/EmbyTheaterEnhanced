@@ -4,7 +4,9 @@
 
 从 main 收尾 `6eb11b9` 创建独立 `codex/p1-remote-presentation-20261011`。用户确认被控端 0.2.9；NAS 只读核验 Together 1.6.0.5 的现存 DLL 与本机诊断 assembly 哈希一致。实际 handoff 发 PlayNow，原 Next/Previous 包装未覆盖统一媒体替换 Stop。三项原始 RED 与独立 review 发现的 B/C admission RED 均复现；统一 replacement 持帧与已有 intent 提前接管后相关 83/83 GREEN，独立复核未发现剩余明确问题。
 
-当前构建、完整回归和像素证据进行中，不标真实视觉 PASS；没有服务器变更、现用客户端覆盖、PR28 改动或发布。精确调用链、假设和验收边界见 [P1 远程切集报告](P1_REMOTE_PRESENTATION.md)。
+产品修复提交31d1107，完整回归777/777、后续harness相关50/50、隔离DirectUrl runtime（ordinary/STRM、Session/22报告、Seek/Pause/Stop、rapid/serial Next）与来源/payload校验通过。最终窗口PlayNow72/72帧、remote Next/Previous76/77、本地Next/Previous76/76，实际非视频像素均0；原0.2.9对照mixed15/13并隐藏surface。全屏46/49帧、gap454/367ms保持INCONCLUSIVE，不能宣称全屏无短闪。
+
+独立代码/交付审核完成，ZIP2142逐文件SHA回读通过；候选`dist/ETE-P1-remote-31d1107.zip`采用包旁独立profile入口，真实Together及该入口登录待用户验收。没有服务器变更、现用客户端覆盖或发布；PR28在期间由其他操作转为MERGED，本会话未写入/合并它，也未自动将修复集成到其新main。精确调用链、假设、失败历史和边界见 [P1 远程切集报告](P1_REMOTE_PRESENTATION.md)。
 
 ## 2026-10-11 — USER_UI_ACCEPTANCE=PASS / 安装器整合
 

@@ -4,7 +4,9 @@
 
 - Task Risk 高；Task Uncertainty 中；Cross-module Scope 为冻结 PlaybackManager overlay / libmpv adapter / presentation intent；Playback/Session Impact 保持既有身份与报告。Model Tier 2；主线程当前模型精确标识未由运行时工具返回；明确调用图与时钟测试委派 gpt-6-luna high，独立 review 继承主线程配置；Reason 为异步归属与跨层呈现，Escalated=no。
 - 独立worktree/分支从6eb11b9开始，保留原工作树未提交内容；只读 NAS 确认插件1.6.0.5/现存哈希，发送命令为PlayNow。原RED3项、review RED1项，后续83项GREEN；源码只接统一替换边界、公开Play既有intent接管与prepared阶段期限，Native CPP/service/main未改。
-- 独立审查实际发现并复核关闭B/C pre-admission异步缺口；当前完整测试/构建/窗口和全屏像素验证待结果回填。真实主控/被控联测尚未执行；不把合成状态断言标为真实视觉PASS。详见[P1报告](P1_REMOTE_PRESENTATION.md)。
+- 独立审查实际发现并复核关闭B/C pre-admission异步缺口。产品31d1107完整777/777（最初preload缺失、后续临时Git异常与单项/低并发全轮复跑分列），最终harness50/50、DirectUrl真实隔离runtime/22报告通过；初构建缺锁定工具树保留partial，补完整输入后新输出成功。Helper字节保持。
+- 同一最终harness的窗口真实ROI采样：0.2.9对照mixed15/13，31d1107 PlayNow72/72、remote Next76/77、本地76/76均非视频样本0；全屏46/49、max454/367ms仍INCONCLUSIVE。工具修正fake单元素ID数组、固定窗口测试策略和explicit appData隔离，没有改产品模式；初harness失败完整保留。
+- 候选ZIP240357378 bytes、2142逐文件SHA回读及独立交付静态审核通过。没有真实主控/被控联测或交付入口登录验收；没有本轮远端写入。收尾发现PR28已由其他操作合并，候选继续固定0.2.9基线。详见[P1报告](P1_REMOTE_PRESENTATION.md)。
 
 ## 2026-10-11 — 用户安装器UI验收与最终整合
 

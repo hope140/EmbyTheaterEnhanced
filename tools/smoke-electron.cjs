@@ -14,6 +14,11 @@ const transitionFullscreen = transitionTimelineMode && process.env.ETE_TEST_TRAN
 const retainSurfaceStopProbe = transitionComparison && process.env.ETE_TEST_TRANSITION_RETAIN_SURFACE === '1';
 const hasNativeHelper = fs.existsSync(path.join(runtime || '', 'electronapp/native-helper/service.js'));
 if (!runtime || !evidence) throw Error('ETE_TEST_RUNTIME and ETE_TEST_EVIDENCE are required');
+// Windows Known Folders can ignore APPDATA overrides. Bind bootstrap/log/device
+// identity explicitly as well as the renderer profile supplied on the command line.
+const isolatedAppData = path.join(evidence, 'appdata');
+fs.mkdirSync(isolatedAppData, {recursive:true});
+app.setPath('appData', isolatedAppData);
 const exitObservation = process.env.ETE_TEST_EXIT_TRACE === '1'
     ? require('./exit-observation.cjs').createExitObservation({app, evidence})
     : {record() {}};

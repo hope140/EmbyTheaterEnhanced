@@ -237,17 +237,15 @@
 
             var operation;
             if (settings.remoteCommand === 'PlayNow' || settings.remoteCommand === 'NextTrack') {
-                // This fixture has no authenticated view navigation. Give the real
-                // InputManager a focus target for its bubbling command notification.
-                var focusTarget = typeof doc.querySelector === 'function' && doc.querySelector('.mpv-videoPlayerContainer');
-                if (focusTarget && typeof focusTarget.focus === 'function') {
-                    focusTarget.tabIndex = -1;
-                    focusTarget.focus({preventScroll:true});
-                }
                 var method = settings.remoteCommand === 'PlayNow' ? 'play' : kind === 'next' ? 'nextTrack' : 'previousTrack';
                 var original = manager[method];
                 // Capture the Promise while dispatching through the frozen message receiver.
                 manager[method] = function () {
+                    // Frozen PlayNow defaults to fullscreen. Windowed presentation
+                    // comparison fixes only this test viewport policy, preserving ids.
+                    if (settings.remoteCommand === 'PlayNow' && settings.fullscreen !== true) {
+                        arguments[0] = Object.assign({}, arguments[0], {fullscreen:false});
+                    }
                     operation = original.apply(this, arguments);
                     return operation;
                 };
