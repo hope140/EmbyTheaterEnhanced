@@ -1,0 +1,367 @@
+{
+  "schemaVersion": 1,
+  "observedDate": "2026-10-12",
+  "timeZone": "Asia/Shanghai",
+  "sourceBase": "72d4688821822860d20342ae8c784a279b06b4f5",
+  "scope": "Official acquisition and static inspection only; no target DLL or CLI execution; no runtime/product/installer/license modification",
+  "modelAssessment": {
+    "risk": "Distribution materials and cross-license interpretation",
+    "uncertainty": "Actual linked cached dependencies and license combination",
+    "finalLegalRouteReview": "Parent",
+    "playbackSessionImpact": "NONE",
+    "tier": 2
+  },
+  "target": {
+    "currentTargetArchiveDownload": "FAILED_HTML_RETURNED",
+    "mpvApi": "2.5",
+    "shaSource": "Independently hashed current read-only stable-rc",
+    "path": "electronapp/libmpv/x64/mpv-1.dll",
+    "archiveBytes": 31173907,
+    "bytes": 119725568,
+    "mpvCommit": "dd5d17d3285a095a0f712fa9d116e22a076492de",
+    "archiveShaSource": "Official SourceForge current download page; historical independently hashed exact archive evidence third-party-mpv-20261009.json",
+    "archiveSha256": "c6aebf40bb722efe79090bfeb61e68625f0837770347e5a8b610aef78900cf12",
+    "archiveName": "mpv-dev-x86_64-20260809-git-dd5d17d328.7z",
+    "historicalArchiveMemberToDll": "EXACT_HISTORICAL_NOT_RERUN",
+    "sha256": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c"
+  },
+  "acquired": [
+    {
+      "path": ".work/mpv-unblock/mpv-source.zip",
+      "bytes": 8023071,
+      "sha256": "e82426ff14b1c05705f9e16889bba17f28e578b6c5a0b32ed03b0f9ee050c72f",
+      "url": "https://codeload.github.com/mpv-player/mpv/zip/dd5d17d3285a095a0f712fa9d116e22a076492de",
+      "relation": "Fixed official mpv source"
+    },
+    {
+      "path": ".work/mpv-unblock/builder-source.zip",
+      "bytes": 175497,
+      "sha256": "770882870fd2d66411150947777147e8c7ebaa5b8b6e980b7643b79b7bc4a989",
+      "url": "https://codeload.github.com/shinchiro/mpv-winbuild-cmake/zip/cd1edc11dc6887a50f705717619d879f5a93a488",
+      "relation": "Exact builder checkout shown in official x86_64 job log"
+    },
+    {
+      "path": ".work/mpv-unblock/ffmpeg-source.zip",
+      "bytes": 23956097,
+      "sha256": "0fccef617d0692c50223162202ba894d8397412d5c94ea978ac528dac6775af9",
+      "url": "https://codeload.github.com/FFmpeg/FFmpeg/zip/2a20737f662fd3f3f5999e873b9e7c90b5efc375",
+      "relation": "Full fixed official FFmpeg source; source association supported by job update/build/no-patch evidence, not full dependency closure"
+    },
+    {
+      "path": ".work/mpv-unblock/target-run-logs-auth.zip",
+      "bytes": 82245,
+      "sha256": "9c66d17745ef7592dad1721cf86f9edee0227f1b2950fa4e353724d2a9475ff4",
+      "url": "https://api.github.com/repos/shinchiro/mpv-winbuild-cmake/actions/runs/31285220366/logs",
+      "relation": "Official job logs; authenticated read-only gh API download"
+    },
+    {
+      "path": ".work/mpv-unblock/target-x86_64-artifact.zip",
+      "bytes": 33584857,
+      "sha256": "9e197bc768085e7cadc1f9a4126ff50c2ac9b5b53bad743fcf510a9d3d865156",
+      "url": "https://api.github.com/repos/shinchiro/mpv-winbuild-cmake/actions/artifacts/9029755936/zip",
+      "relation": "Exact artifact SHA matches upstream uploaded digest; CLI artifact only, not target libmpv dev archive"
+    },
+    {
+      "path": ".work/mpv-unblock/recipe-source-inventory.json",
+      "bytes": 30904,
+      "sha256": "f0a753dddb2cbf4b4a1520b4169f85fcc4fe3c448332333ddb2d52fbb54d4511",
+      "url": "https://github.com/shinchiro/mpv-winbuild-cmake/tree/cd1edc11dc6887a50f705717619d879f5a93a488/packages",
+      "relation": "Locally extracted exact recipes hashes and source/patch declarations; not resolved linked source lock"
+    }
+  ],
+  "metadataReceipts": [
+    {
+      "path": ".work/mpv-unblock/builder-repository.json",
+      "bytes": 5541,
+      "sha256": "b0f9bc2ff52e589479b5a5113bfea7db338c6c30e19fe8c4b44d4fab77798c68",
+      "url": "https://api.github.com/repos/shinchiro/mpv-winbuild-cmake",
+      "relation": "Official repository metadata"
+    },
+    {
+      "path": ".work/mpv-unblock/builder-before-archive.json",
+      "bytes": 3437,
+      "sha256": "8d300e25b3aed506c1f878dd410be093f834831e8425b74d0b8f9b7d9bb93f64",
+      "url": "https://api.github.com/repos/shinchiro/mpv-winbuild-cmake/commits?until=2026-08-09T00:28:46Z&per_page=1",
+      "relation": "Discovery only, then confirmed actual checkout by run log"
+    },
+    {
+      "path": ".work/mpv-unblock/builder-runs.json",
+      "bytes": 68012,
+      "sha256": "fcc3acdf942c892c99b1c59e3bf7c918f313f1079c7940b7607e8b6f6536bdf7",
+      "url": "https://api.github.com/repos/shinchiro/mpv-winbuild-cmake/actions/runs?created=2026-08-08..2026-08-09&per_page=100",
+      "relation": "Run discovery and status"
+    },
+    {
+      "path": ".work/mpv-unblock/target-run-jobs",
+      "bytes": 27195,
+      "sha256": "daf8a01d45a9f7ef635f8d335a8ec4b60281f58c8906ee4bd3640db2770ad83b",
+      "url": "https://api.github.com/repos/shinchiro/mpv-winbuild-cmake/actions/runs/31285220366/jobs?per_page=100",
+      "relation": "Official job/step statuses"
+    },
+    {
+      "path": ".work/mpv-unblock/target-run-artifacts",
+      "bytes": 5579,
+      "sha256": "5cc26d592c8dfcd04b4d8fb8a314af73e790cbb48dd205b391415d7b0fb387c3",
+      "url": "https://api.github.com/repos/shinchiro/mpv-winbuild-cmake/actions/runs/31285220366/artifacts?per_page=100",
+      "relation": "8 current artifacts, no retained configure-log artifact"
+    }
+  ],
+  "officialWorkflow": {
+    "containerDigestSha256": "8be8be63102aebd01d8297d2f96a0be905a979c0e8418e674b7b6d50b46c6df3",
+    "id": 31285220366,
+    "checkoutRelation": "CONFIRMED_IN_JOB_LOG",
+    "mpvPatchStep": "No patch step",
+    "headCommit": "cd1edc11dc6887a50f705717619d879f5a93a488",
+    "ffmpegRevisionUpdate": "f944afd04..2a20737f6 master -> origin/master",
+    "uploadRelativePath": "libmpv/mpv-dev-x86_64-20260809-git-dd5d17d328.7z",
+    "compiler": "clang workflow/toolchain; host cc GNU 16.1.1 is not the target compiler identity",
+    "url": "https://github.com/shinchiro/mpv-winbuild-cmake/actions/runs/31285220366",
+    "attempt": 1,
+    "ffmpegPatchStep": "No patch step",
+    "fullConfigureLogs": "NOT_ACQUIRED; workflow retention-days 1; job transcript is acquired",
+    "archiveCreatedLog": {
+      "fileCount": 6,
+      "lines": [
+        607,
+        609,
+        617
+      ],
+      "path": ".work/mpv-unblock/run-logs/3_Building mpv (x86_64).txt",
+      "archiveBytes": 31173907,
+      "entryCount": 8,
+      "uncompressedBytes": 119916200
+    },
+    "conclusion": "success",
+    "sourceforgeUploadJob": 93175452533,
+    "nextV3UploadUtc": "2026-08-09T00:28:46.4536383Z",
+    "createdUtc": "2026-08-09T00:00:03Z",
+    "uploadUtc": "2026-08-09T00:28:45.2213539Z",
+    "officialArtifactUploadedSha256": "9e197bc768085e7cadc1f9a4126ff50c2ac9b5b53bad743fcf510a9d3d865156",
+    "event": "workflow_dispatch",
+    "archivePublicationRelation": "CONFIRMED_EXACT_NAME_VARIANT_SIZE_UPLOAD_PATH; hash-to-run INFERRED because no dev archive SHA in log",
+    "artifactDigestMatchesDownloaded": true,
+    "customCommand": "mpv-fullclean",
+    "x86_64Job": 93172668157
+  },
+  "licenseFacts": {
+    "mpvDefault": "gpl=true in fixed meson.options",
+    "rootLicenseChanged": false,
+    "targetActualConfiguration": "Recipe plus actual job association strengthens inference; cached linked sources/config result incomplete",
+    "helperLinkage": "LoadLibraryExW/GetProcAddress at native/mpv-helper/ete-mpv-helper.cpp:1370",
+    "ffmpegVersion3Terms": "Confirmed in fixed FFmpeg LICENSE.md",
+    "helperLicense": "GPL-2.0-only at native/mpv-helper/ete-mpv-helper.cpp:1",
+    "compatibilityDecision": "PENDING_PARENT_REVIEW; cannot assume GPL2-only/GPL3 linked combination compatible; API ISC is not core DLL license",
+    "recipeMpv": "--prefer-static; no -Dgpl=false",
+    "completeLinkedDependencyNotice": "NOT_CLOSED",
+    "recipeFfmpeg": [
+      "--enable-gpl",
+      "--enable-version3"
+    ]
+  },
+  "notices": [
+    {
+      "path": "docs/redistribution-notices/mpv/Copyright",
+      "bytes": 4096,
+      "sha256": "bfe9ee4cceabcb8ecbfadf208d04156f73d801e6a57369a5606bb8341e204a23",
+      "url": "https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/Copyright",
+      "relation": "Exact upstream archive bytes"
+    },
+    {
+      "path": "docs/redistribution-notices/mpv/LICENSE.GPL",
+      "bytes": 17984,
+      "sha256": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
+      "url": "https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/LICENSE.GPL",
+      "relation": "Exact upstream archive bytes"
+    },
+    {
+      "path": "docs/redistribution-notices/mpv/LICENSE.LGPL",
+      "bytes": 26410,
+      "sha256": "72b672113d642cbb8ef5dcc76938db801983c56e50b1400ab930f1a64d6dc8d9",
+      "url": "https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/LICENSE.LGPL",
+      "relation": "Exact upstream archive bytes"
+    },
+    {
+      "path": "docs/redistribution-notices/mpv/API-NOTICE.txt",
+      "bytes": 1012,
+      "sha256": "a9044950bf847aaa0566b77223cbf399c8db345b7c3914668c491fbae4146d90",
+      "url": "https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/include/mpv/client.h",
+      "relation": "Complete first two header notice blocks, extracted verbatim"
+    },
+    {
+      "path": "docs/redistribution-notices/mpv/ffmpeg/COPYING.GPLv2",
+      "bytes": 18092,
+      "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643",
+      "url": "https://github.com/FFmpeg/FFmpeg/blob/2a20737f662fd3f3f5999e873b9e7c90b5efc375/COPYING.GPLv2",
+      "relation": "Exact upstream archive bytes"
+    },
+    {
+      "path": "docs/redistribution-notices/mpv/ffmpeg/COPYING.GPLv3",
+      "bytes": 35147,
+      "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+      "url": "https://github.com/FFmpeg/FFmpeg/blob/2a20737f662fd3f3f5999e873b9e7c90b5efc375/COPYING.GPLv3",
+      "relation": "Exact upstream archive bytes"
+    },
+    {
+      "path": "docs/redistribution-notices/mpv/ffmpeg/COPYING.LGPLv2.1",
+      "bytes": 26517,
+      "sha256": "246041b6ecf9bc32d718a62c57877c78b5eb397b6467e74ed7ae2626ab189c30",
+      "url": "https://github.com/FFmpeg/FFmpeg/blob/2a20737f662fd3f3f5999e873b9e7c90b5efc375/COPYING.LGPLv2.1",
+      "relation": "Exact upstream archive bytes"
+    },
+    {
+      "path": "docs/redistribution-notices/mpv/ffmpeg/COPYING.LGPLv3",
+      "bytes": 7651,
+      "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768",
+      "url": "https://github.com/FFmpeg/FFmpeg/blob/2a20737f662fd3f3f5999e873b9e7c90b5efc375/COPYING.LGPLv3",
+      "relation": "Exact upstream archive bytes"
+    },
+    {
+      "path": "docs/redistribution-notices/mpv/ffmpeg/CREDITS",
+      "bytes": 277,
+      "sha256": "28ecc96d495fa5ad48c76739a8f8d2c8980548d7a171585a6eb3f27a9ac8e4a2",
+      "url": "https://github.com/FFmpeg/FFmpeg/blob/2a20737f662fd3f3f5999e873b9e7c90b5efc375/CREDITS",
+      "relation": "Exact upstream archive bytes"
+    },
+    {
+      "path": "docs/redistribution-notices/mpv/ffmpeg/jfdctfst.c.notice.txt",
+      "bytes": 3389,
+      "sha256": "9608a1781393c906ac6254ee965f19a599608428eaf84efdd8c7ba198f14e877",
+      "url": "https://github.com/FFmpeg/FFmpeg/blob/2a20737f662fd3f3f5999e873b9e7c90b5efc375/libavcodec/jfdctfst.c",
+      "relation": "Complete opening source notice block, extracted verbatim"
+    },
+    {
+      "path": "docs/redistribution-notices/mpv/ffmpeg/jfdctint_template.c.notice.txt",
+      "bytes": 2937,
+      "sha256": "7469382cb23a47a033113c2c00d8e02e5071d76cb420d804f078527a906da679",
+      "url": "https://github.com/FFmpeg/FFmpeg/blob/2a20737f662fd3f3f5999e873b9e7c90b5efc375/libavcodec/jfdctint_template.c",
+      "relation": "Complete opening source notice block, extracted verbatim"
+    },
+    {
+      "path": "docs/redistribution-notices/mpv/ffmpeg/jrevdct.c.notice.txt",
+      "bytes": 3035,
+      "sha256": "c5d96aa8ff9e78b9214a1bec3d2dd5d65e3196eae08fa7c6ba7466a5a793ba0f",
+      "url": "https://github.com/FFmpeg/FFmpeg/blob/2a20737f662fd3f3f5999e873b9e7c90b5efc375/libavcodec/jrevdct.c",
+      "relation": "Complete opening source notice block, extracted verbatim"
+    },
+    {
+      "path": "docs/redistribution-notices/mpv/ffmpeg/LICENSE.md",
+      "bytes": 4346,
+      "sha256": "2e1d16c72fd74e12063776371da757322f8b77589386532f4fd8634bde7de1af",
+      "url": "https://github.com/FFmpeg/FFmpeg/blob/2a20737f662fd3f3f5999e873b9e7c90b5efc375/LICENSE.md",
+      "relation": "Exact upstream archive bytes"
+    }
+  ],
+  "sourceAcquisition": {
+    "buildScripts": "https://github.com/shinchiro/mpv-winbuild-cmake/tree/cd1edc11dc6887a50f705717619d879f5a93a488",
+    "mpvPreferredSource": "https://github.com/mpv-player/mpv/tree/dd5d17d3285a095a0f712fa9d116e22a076492de",
+    "bitExactRebuild": "REPRODUCIBILITY_ONLY, not universally required as legal proof",
+    "requiredBits": "Preferred source + applied changes + scripts controlling build/installation, actual linked component notices and valid source-delivery arrangement",
+    "ffmpegPreferredSource": "https://github.com/FFmpeg/FFmpeg/tree/2a20737f662fd3f3f5999e873b9e7c90b5efc375",
+    "availableFixedRecipeAndPatch": true,
+    "cachedDependencyResolvedSourceLock": "MISSING"
+  },
+  "closed": [
+    "Fixed mpv full source archive accessible and acquired",
+    "mpv Copyright/GPL/LGPL/API notice texts preserved",
+    "Exact publisher workflow run and actual builder checkout acquired",
+    "Exact target dev basename/variant/size/publication path confirmed in official log",
+    "Fixed FFmpeg source archive and GPL/LGPL/credits/IJG texts acquired",
+    "Same-run CLI artifact hash exactly matched official artifact digest"
+  ],
+  "remaining": [
+    "All linked cached dependency preferred-source revisions/patches/notice lock",
+    "Actual mpv and FFmpeg configure outputs and linked component list",
+    "GPL3 combination versus existing GPL2-only Helper/maintenance layer decision",
+    "Valid complete source-delivery arrangement and actual notice payload integration",
+    "Current exact dev archive reacquisition failed; historical exact-byte evidence retained"
+  ],
+  "failedDownloads": [
+    {
+      "path": ".work/mpv-unblock/target-dev.7z",
+      "bytes": 143954,
+      "sha256": "9a8cb07b530beee0b035a734f716b96f21fb19214009f668c37ed479c3e80a47",
+      "url": "https://downloads.sourceforge.net/project/mpv-player-windows/libmpv/mpv-dev-x86_64-20260809-git-dd5d17d328.7z",
+      "relation": "HTTP HTML, rejected; not target archive"
+    },
+    {
+      "path": ".work/mpv-unblock/target-dev-confirmed.7z",
+      "bytes": 143720,
+      "sha256": "801bd6ee112d23a612363ca2e166bee5652bf134cd2d315429452ef8cd8fe8a0",
+      "url": "Official SourceForge HTML redirect for exact target and zenlayer mirror; transient query omitted",
+      "relation": "HTTP HTML again, rejected; not target archive"
+    }
+  ],
+  "boundedAcquisition": {
+    "targetBinaryExecuted": false,
+    "authenticatedSameLogs": "SUCCEEDED",
+    "initialTargetedAttempts": 12,
+    "unauthenticatedLogsHttp": 403,
+    "stop": "14 targeted acquisition attempts completed; no other date/version or historical release404 retried",
+    "approvedSpecificAdditionalDownloads": 2,
+    "cliBinaryExecuted": false
+  },
+  "sourceText": {
+    "path": "docs/redistribution-notices/mpv/SOURCES.md",
+    "bytes": 2750,
+    "sha256": "aeecfbb3582c9fda662cf5f8457c668a8a4f89c117d355d0502783e28d524705",
+    "url": "Local fixed upstream material index",
+    "relation": "Source pointers, notice scope and IJG acknowledgement"
+  },
+  "staticStrings": [
+    {
+      "component": "mpv-1.dll",
+      "strings": [
+        "N-125998-g2a20737f6",
+        "v0.41.0-920-gdd5d17d32"
+      ],
+      "sha256": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c"
+    },
+    {
+      "component": "mpv.exe",
+      "strings": [
+        "N-125998-g2a20737f6",
+        "v0.41.0-920-gdd5d17d32"
+      ],
+      "sha256": "fd563852a19caea795a611917542ce848134d967f2de928ec67fb2fff47c56ac"
+    }
+  ],
+  "targetCompilerMarkers": {
+    "relation": "CONFIRMED ASCII substring presence; not proof of complete compiler/config/license mode",
+    "llvmSubstringPresent": true,
+    "clangSubstringPresent": true
+  },
+  "alternative": {
+    "action": "Controlled isolated rebuild with fully pinned sources/patches/license mode after separate implementation authorization",
+    "status": "PROPOSED_ONLY",
+    "ffmpegOfficialCommit": "2a20737f662fd3f3f5999e873b9e7c90b5efc375",
+    "currentProductionReplacement": false,
+    "mpvOfficialCommit": "dd5d17d3285a095a0f712fa9d116e22a076492de",
+    "mustPreserve": [
+      "API2.5/helper exports/generation/playlist-entry identity",
+      "Electron44.4.2 IPC and HWND/surface ownership",
+      "gpu-next/hwdec/HDR real visual acceptance",
+      "STRM DirectUrl/CD2/Mount/native fallback",
+      "subtitles/audio/seek/pause/resume/stop/next and Session/report/remote controls"
+    ],
+    "coreDeletion": "REJECTED, libmpv remains necessary production core"
+  },
+  "verification": {
+    "officialArtifactDigest": "MATCH",
+    "noticeChecks": "Exact copy or verbatim full opening notices",
+    "zipMemberTraversalOrLinks": "No suspicious ZIP names in acquired run logs/CLI artifact",
+    "targetDllSha": "MATCH",
+    "noticeHashEncoding": "Measured fixed upstream LF bytes. Git autocrlf may change checkout bytes; preserve LF or treat source-byte hash separately from checkout hash",
+    "archiveIntegrityResult": "6/6 7-Zip test PASS",
+    "sourceZipLicenseMembers": "PRESENT",
+    "cliArchiveLicenseFiles": "NONE",
+    "runtimeInstallPlayback": "NOT_EXECUTED",
+    "archiveIntegrityTests": [
+      "mpv-source.zip",
+      "ffmpeg-source.zip",
+      "builder-source.zip",
+      "target-run-logs-auth.zip",
+      "target-x86_64-artifact.zip",
+      "mpv-x86_64-20260809-git-dd5d17d328.7z"
+    ]
+  }
+}
