@@ -1,5 +1,9 @@
 # 架构
 
+## P1 统一媒体替换呈现合同
+
+本地 playlist-managed same-player Video replacement Stop 通过libmpv窄hook创建request-bound presentation intent，复用现有原生prepare/stopForPresentation/arm/reveal。公开Play只在已有intent时同步接管，保护前置item/user/intro等待期间的B/C交错；按options WeakMap和request ID进行整轮完成清理。prepared未arm阶段有独立15秒失败期限，native arm后原租期保持。terminal Stop、不同player、Audio与Session/Resolver语义保持；Native Helper CPP、协议和surface ownership没有变化。消息路径及证据见[P1远程呈现](P1_REMOTE_PRESENTATION.md)。
+
 ## 当前主线架构 — 2026-10-11
 
 开工核验 `main@9774b73469dea9a3651f03737153c872947223ee` 已包含下述 PLAY-01、SEC01/02、LIFE01/02、About 异步校验和 Smart Path Mapping；PR #25 的外挂字幕选择守卫已合并。Native Helper 是唯一生产 bridge，STRM 增强只替换最终 source，PlaybackManager 与 Session 身份链保持。下方候选名和旧版本陈述是各专项的历史来源，不代表今天尚未集成。当前维护与验证边界见 [v0.2.9 收尾](V029_MAINTENANCE_CLOSEOUT.md)。
@@ -87,6 +91,8 @@ Phase 2.2 把 Phase 1 的单组 suffix HIGH 限定为 `fileMatch`，它不再授
 构建证据补充：新构建以限定输入gate将package/lock、vendor metadata、实际生成规则和通知绑定到sourceCommit，schema 3记录inputs/source/runtime关系。33个npm选择包从新安装目录精确生成；七个Carnival包身份另按原manifest保留。完整本地GCC/Inno目录由补充锁固定，config保留base/generator/output关系。历史P1的long残留和输入边界仍见 [BUILD_INPUT_AUDIT](BUILD_INPUT_AUDIT.md)，新contract见 [BUILD_HARDENING](BUILD_HARDENING.md)；生产播放架构不变。
 
 ## Next/Previous native presentation
+
+统一替换边界在目标媒体类型已确定为非 Video 时，必须在物理 Stop 前按当前 request ID 释放公开 Play 继承的 Video presentation intent；公开和内部 options 的对象身份不同，不能仅依赖 WeakMap 的原 options key 清理。Video→Video 的 admission 接管和 native one-shot reveal 合同保持不变。
 
 当前候选 contract 由 native presentation hold 管理旧视频帧，图片不进入 renderer DOM。`PlaybackManager.nextTrack()` 与 `previousTrack()` 继续通过原同步入口选择媒体、分配 request sequence 并触发 retire；presentation 工作不得插入 manager 调用前的 await，也不得替换 Item、MediaSource、PlaySession、Session 或 WebSocket 所有权。外部/self-managed player 不进入该候选。
 

@@ -1009,6 +1009,58 @@ test('stale work after a crash cannot recreate or mutate the next helper', async
   await service.destroy();
 });
 
+test('helper crash clears a pending presentation before the replacement helper prepares', async function () {
+  const h = await presentationHarness();
+  h.retire(h.begun.generationId, 1);
+  const oldPrepare = deferred();
+  const oldRequest = h.active.request;
+  h.active.request = function (method, params, options) {
+    if (method === 'presentation-prepare') {
+      h.requests.push({method, params, options});
+      return oldPrepare.promise;
+    }
+    return oldRequest(method, params, options);
+  };
+  const oldPreparing = h.service.call('prepare-presentation', {token: 1}, h.created.endpointId);
+  await Promise.resolve();
+  assert.ok(h.requests.some(row => row.method === 'presentation-prepare'));
+
+  h.active.crash();
+  assert.equal(h.surface.visible, false, 'helper crash hides the old held surface');
+  assert.equal(h.service.status().crashCount, 1);
+
+  const recreated = await h.service.call('create');
+  assert.equal(recreated.endpointId, h.created.endpointId);
+  const ClientClass = h.active.constructor;
+  assert.equal(ClientClass.clients.length, 2);
+  const replacement = ClientClass.clients[1];
+  const replacementRequests = [];
+  replacement.request = function (method, params, options) {
+    replacementRequests.push({method, params, options});
+    if (method === 'presentation-prepare') return Promise.resolve({ready: true, painted: true, holdId: 2});
+    if (method === 'presentation-arm') return Promise.resolve({ready: true, status: 'armed', holdId: params.holdId});
+    return Promise.resolve({released: true});
+  };
+  const replacementGeneration = await h.service.call('begin-generation', {label: 'B'}, recreated.endpointId);
+  await h.service.call('set-visible', {visible: true, generationId: replacementGeneration.generationId}, recreated.endpointId);
+  h.retire(replacementGeneration.generationId, 2);
+  const replacementPrepared = await h.service.call('prepare-presentation', {token: 2}, recreated.endpointId);
+  assert.deepEqual(replacementPrepared, {status: 'ok', ready: true});
+
+  oldPrepare.resolve({ready: true, painted: true, holdId: 99});
+  assert.deepEqual(await oldPreparing, {status: 'ok', ready: false}, 'late old prepare cannot revive the old token');
+  assert.equal(replacementRequests.some(row => row.method === 'presentation-release' && row.params.holdId === 99), false,
+    'late old hold cannot issue release work against the replacement helper');
+  await h.service.call('command', {data: 'stop', generationId: null, presentationToken: 2}, recreated.endpointId);
+  assert.equal(h.surface.visible, true, 'matching replacement token retains the new frame');
+  const armed = await h.service.call('begin-generation', {label: 'C', presentationToken: 2, requestEpoch: 3}, recreated.endpointId);
+  assert.ok(replacementRequests.some(row => row.method === 'presentation-arm' && row.params.holdId === 2));
+  await h.service.call('command', {data: 'stop', generationId: armed.generationId}, recreated.endpointId);
+  assert.equal(h.surface.visible, false);
+  assert.equal(h.service.status().recreateCount, 1);
+  await h.service.destroy();
+});
+
 for (const observerFailure of ['throw', 'reject']) {
   test(`native-helper diagnostics associate presentation lifecycle and fail open when logger ${observerFailure}s`, async function () {
     const diagnosticEvents = new Set(['generation-begin', 'generation-retired', 'presentation-prepare',

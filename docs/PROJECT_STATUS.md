@@ -1,5 +1,19 @@
 # 项目状态
 
+## 2026-10-12 — v0.3.0 工程整合完成 / BLOCKED_WITH_EVIDENCE
+
+最新main `a8ba606`已包含PR28；原Together `31d1107`/`a31163b`分别整合为`5288fb9`/`c27755c`，独立审查关闭Audio继承持帧边界`68a0026`。新[PR29](https://github.com/hope140/EmbyTheaterEnhanced/pull/29)保持OPEN；准确候选`322a037cdccb39ad57923bcd7551d9954ba815bd`的push/PR CI均SUCCESS。最终783/783、核心126/126、独立138/138、guard12/language7通过。
+
+内部0.3.0 runtime/installer、三层来源、2139解包路径/hash通过，未签名；窗口PlayNow、远控/本地Next/Previous合成像素PASS。fullscreen409/386ms仍INCONCLUSIVE，真实Together=PENDING_USER_ACCEPTANCE、Windows安装生命周期=NOT_EXECUTED，分发材料门禁待收口。准确身份/哈希与验收层级见[V030_STABLE_READINESS](V030_STABLE_READINESS.md)。无merge、Stable、系统安装或现用客户端修改。以下旧日期PENDING_INVESTIGATION属于安装器阶段，本节为最新状态。
+
+## 2026-10-11 — P1 被控端远程切集呈现专项
+
+从 main 收尾 `6eb11b9` 创建独立 `codex/p1-remote-presentation-20261011`。用户确认被控端 0.2.9；NAS 只读核验 Together 1.6.0.5 的现存 DLL 与本机诊断 assembly 哈希一致。实际 handoff 发 PlayNow，原 Next/Previous 包装未覆盖统一媒体替换 Stop。三项原始 RED 与独立 review 发现的 B/C admission RED 均复现；统一 replacement 持帧与已有 intent 提前接管后相关 83/83 GREEN，独立复核未发现剩余明确问题。
+
+产品修复提交31d1107，完整回归777/777、后续harness相关50/50、隔离DirectUrl runtime（ordinary/STRM、Session/22报告、Seek/Pause/Stop、rapid/serial Next）与来源/payload校验通过。最终窗口PlayNow72/72帧、remote Next/Previous76/77、本地Next/Previous76/76，实际非视频像素均0；原0.2.9对照mixed15/13并隐藏surface。全屏46/49帧、gap454/367ms保持INCONCLUSIVE，不能宣称全屏无短闪。
+
+独立代码/交付审核完成，ZIP2142逐文件SHA回读通过；候选`dist/ETE-P1-remote-31d1107.zip`采用包旁独立profile入口，真实Together及该入口登录待用户验收。没有服务器变更、现用客户端覆盖或发布；PR28在期间由其他操作转为MERGED，本会话未写入/合并它，也未自动将修复集成到其新main。精确调用链、假设、失败历史和边界见 [P1 远程切集报告](P1_REMOTE_PRESENTATION.md)。
+
 ## 2026-10-11 — USER_UI_ACCEPTANCE=PASS / 安装器整合
 
 用户确认40c704d候选的中文默认、手动语言选择与升级目录页均符合预期，没有新增界面问题；该三项记为USER_UI_ACCEPTANCE=PASS。完整系统安装/升级/卸载/重装、配置/DeviceId/登记/快捷方式和UAC/普通用户启动仍NOT_EXECUTED。安装器整合入口为 [PR #28](https://github.com/hope140/EmbyTheaterEnhanced/pull/28)，最新合并状态与main CI按实际PR/提交回读，不改标候选为正式产物。用户已授权最终门禁后Ready、Merge Commit整合及main CI核验；本次无Tag/Stable Release。

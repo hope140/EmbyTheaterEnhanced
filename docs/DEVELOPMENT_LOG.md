@@ -1,5 +1,21 @@
 # 开发日志
 
+## 2026-10-12 — v0.3.0 正式版工程收尾
+
+- 当前用户授权分析、局部修改、测试/构建、独立review、提交/推送/PR，禁止自动merge/Stable/现用客户端修改。Task Risk中高；Uncertainty中；Scope为PlaybackManager overlay/libmpv presentation与发行证据；Playback/Session身份和报告合同保持。Model Tier2；主线程/独立review继承当前配置（精确SKU未由工具返回），明确测试/材料worker请求gpt-5.6-luna/high；Reason为Stop/Play异步归属及跨层呈现；Escalated=no。
+- 实际maina8ba606；原31d1107无额外前置产品依赖，映射5288fb9；a31163b映射c27755c。冲突仅两份状态/日志。独立review发现Video→Audio继承持帧问题，RED后4行按exact request ID清理，68a0026 GREEN；补Helper exit/rebuild两分支。核心126/126、独立138/138；最终产品/测试后完整783/783，旧轮781保留原身份。
+- 固定source322a037重新build/package，完整工具链、39inputs/4notices、三层来源/dependencies和2139解包/hash通过。Installer175636053bytes、SHAdc3627ffc21d8560b3d9d03f64433fc628bfe5f5e2fb1cd5cc73adfc470c5eb0，0.3.0/NotSigned；Helper仍28054c…/testingfalse；installer/生产依赖diff0。验包辅助误计npm原包tests和Messages已纠正检查范围，产物未改。
+- 隔离假DirectUrl pipeline/21报告/controls/serial与rapid Next/取消/UA隔离PASS。窗口PlayNow81/79、remoteNext74/78、local79/75帧非视频样本0，最大间隔<=60ms；fullscreen47/48帧409/386ms INCONCLUSIVE，100ms门槛不变。四轮owned residual0（local清理1自有子进程）；首次视觉调用因绝对fixture参数不足preflight拒绝，修正调用后通过。
+- PR29保持OPEN；候选push/PR CI均SUCCESS，最终文档HEAD另回读。第三方履行/权利UNKNOWN与纯重建缺口分开。总体BLOCKED_WITH_EVIDENCE，真实Windows/Together、分发材料及用户Stable决定保留；[readiness](V030_STABLE_READINESS.md)、Release Notes草案和匿名JSON已交付，无安装/部署/Stable。
+
+## 2026-10-11 — P1 远程媒体替换持帧
+
+- Task Risk 高；Task Uncertainty 中；Cross-module Scope 为冻结 PlaybackManager overlay / libmpv adapter / presentation intent；Playback/Session Impact 保持既有身份与报告。Model Tier 2；主线程当前模型精确标识未由运行时工具返回；明确调用图与时钟测试委派 gpt-6-luna high，独立 review 继承主线程配置；Reason 为异步归属与跨层呈现，Escalated=no。
+- 独立worktree/分支从6eb11b9开始，保留原工作树未提交内容；只读 NAS 确认插件1.6.0.5/现存哈希，发送命令为PlayNow。原RED3项、review RED1项，后续83项GREEN；源码只接统一替换边界、公开Play既有intent接管与prepared阶段期限，Native CPP/service/main未改。
+- 独立审查实际发现并复核关闭B/C pre-admission异步缺口。产品31d1107完整777/777（最初preload缺失、后续临时Git异常与单项/低并发全轮复跑分列），最终harness50/50、DirectUrl真实隔离runtime/22报告通过；初构建缺锁定工具树保留partial，补完整输入后新输出成功。Helper字节保持。
+- 同一最终harness的窗口真实ROI采样：0.2.9对照mixed15/13，31d1107 PlayNow72/72、remote Next76/77、本地76/76均非视频样本0；全屏46/49、max454/367ms仍INCONCLUSIVE。工具修正fake单元素ID数组、固定窗口测试策略和explicit appData隔离，没有改产品模式；初harness失败完整保留。
+- 候选ZIP240357378 bytes、2142逐文件SHA回读及独立交付静态审核通过。没有真实主控/被控联测或交付入口登录验收；没有本轮远端写入。收尾发现PR28已由其他操作合并，候选继续固定0.2.9基线。详见[P1报告](P1_REMOTE_PRESENTATION.md)。
+
 ## 2026-10-11 — 用户安装器UI验收与最终整合
 
 - 当前用户明确授予PR28 Ready、Merge Commit、main CI核验授权，不授予Tag/Stable Release或候选改标。用户报告绑定40c704d/SHA70b8c5bb...的中文默认、手动语言和升级目录页PASS；仅USER_UI_ACCEPTANCE扩大为PASS，完整系统生命周期、英语OS、DPI/UAC、配置/DeviceId/登记等不扩大结论。

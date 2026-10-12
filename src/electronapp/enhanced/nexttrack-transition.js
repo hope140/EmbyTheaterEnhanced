@@ -203,10 +203,18 @@
         var revision = 0;
         var active = null;
         var records = new Map();
+        var schedule = options.setTimeout || setTimeout;
+        var unschedule = options.clearTimeout || clearTimeout;
+
+        function clearDeadline(record) {
+            if (record.deadline != null) unschedule(record.deadline);
+            record.deadline = null;
+        }
 
         function release(record) {
             if (!record || record.released) return;
             record.released = true;
+            clearDeadline(record);
             records.delete(record.token);
             if (record.endpoint && typeof record.endpoint.cancelPresentation === 'function') {
                 try { Promise.resolve(record.endpoint.cancelPresentation(record.token)).catch(function () {}); }
@@ -232,7 +240,28 @@
             if (!endpoint || typeof endpoint.preparePresentation !== 'function') return null;
             active = {token: ++revision, endpoint: endpoint, requestId: null, pending: null, ready: false, released: false};
             records.set(active.token, active);
+            var record = active;
+            // PlaybackInfo can stall before native arm starts its own bounded lease.
+            record.deadline = schedule(function () {
+                if (active === record) clear(record.token);
+                else release(record);
+            }, 15000);
+            if (record.deadline && typeof record.deadline.unref === 'function') record.deadline.unref();
             return active.token;
+        }
+        function replacement(requestId) {
+            if (!Number.isSafeInteger(requestId) || requestId <= 0) return;
+            // Local Next/Previous already admitted this same request synchronously.
+            if (active && active.requestId === requestId) return;
+            var token = show();
+            if (token != null) markLoading(token, requestId);
+        }
+        function admit(requestId) {
+            // A newer public Play may await item/user/intro work before Stop.
+            // Transfer only an existing intent; first Play does not create a hold.
+            if (!active) return false;
+            replacement(requestId);
+            return !!active && active.requestId === requestId;
         }
         function beforeTeardown() {
             var record = active;
@@ -265,6 +294,7 @@
             if (!active || active.requestId !== requestId) return;
             var record = active;
             active = null;
+            clearDeadline(record);
             records.delete(record.token);
             releaseSuperseded(record);
             // Native owns the one-shot reveal. core-playing does not prove presentation.
@@ -280,6 +310,7 @@
             return active && active.requestId === requestId && active.ready ? active.token : null;
         }
         return {show: show, beforeTeardown: beforeTeardown, markLoading: markLoading,
+            replacement: replacement, admit: admit,
             playbackStarted: playbackStarted, playbackReady: playbackReady, playbackFailed: playbackFailed,
             settled: clear, fail: clear, cancel: cancel, loadingToken: loadingToken,
             isActive: function () { return !!active; }, currentState: function () { return active ? 'LOADING_NEXT' : 'IDLE'; }};

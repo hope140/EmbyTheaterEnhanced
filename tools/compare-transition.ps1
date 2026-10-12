@@ -9,6 +9,8 @@ param(
     [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9._-]{0,47}$')]
     [string]$Label,
     [switch]$Fullscreen,
+    [ValidateSet('Local', 'PlayNow', 'NextTrack')]
+    [string]$RemoteCommand = 'Local',
     [switch]$RetainSurfaceStopProbe,
     [ValidateRange(0, 500)]
     [int]$ArtworkDelayMs = 0,
@@ -483,7 +485,7 @@ function New-CompactSummary($Identity, $Smoke, $ProcessExitCode, $TimedOut, $Cle
             $Cleanup.ownershipMismatch -eq 0 -and $Cleanup.ownershipUnverified -eq 0) { 'passed' } else { 'failed' }
         label = $Label; runtime = $Identity.RuntimeName; sourceCommit = $Identity.SourceCommit
         productVersion = $Identity.ProductVersion; electronVersion = if ($versions) { $versions.electron } else { $Identity.ElectronVersion }
-        bridge = $Identity.BridgeKind; fullscreen = [bool]$Fullscreen; artworkDelayMs = $ArtworkDelayMs
+        bridge = $Identity.BridgeKind; fullscreen = [bool]$Fullscreen; remoteCommand = $RemoteCommand; artworkDelayMs = $ArtworkDelayMs
         experimentalPresentation = [bool]$RetainSurfaceStopProbe
         manifest = [ordered]@{
             fileCount = $Identity.BuildFileCount; buildManifestSha256 = $Identity.BuildManifestSha256
@@ -621,6 +623,7 @@ try {
     $envVars['ETE_TEST_VISIBLE'] = '1'
     $envVars['ETE_TEST_PIPELINE'] = '1'
     $envVars['ETE_TEST_TRANSITION_TIMELINE'] = '1'
+    $envVars['ETE_TEST_TRANSITION_COMMAND'] = $RemoteCommand
     $envVars['ETE_TEST_TRANSITION_COMPARE'] = '1'
     $envVars['ETE_TEST_ARTWORK_DELAY_MS'] = [string]$ArtworkDelayMs
     $envVars['ETE_TEST_TRANSITION_FULLSCREEN'] = if ($Fullscreen) { '1' } else { '0' }

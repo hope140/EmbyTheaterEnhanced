@@ -1,5 +1,7 @@
 # Development Roadmap
 
+2026-10-12：v0.3.0工程收尾完成，修复位于OPEN PR29；真实Windows/Together验收与分发材料待收口，总体BLOCKED_WITH_EVIDENCE。准确候选、CI和门禁见[V030_STABLE_READINESS](V030_STABLE_READINESS.md)，不继续扩展播放或字幕性能功能。
+
 本页是后续维护计划入口。2026-10-11，公开测试版 [v0.2.9 Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.9) 已交付，产品main来源 `084554e07782ca6461b7ed67cadd298a92450b24`，[PR #25](https://github.com/hope140/EmbyTheaterEnhanced/pull/25) 与 [PR #26](https://github.com/hope140/EmbyTheaterEnhanced/pull/26) 已合并，[产品main CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38134108870) SUCCESS。正式 Latest 仍为 [v0.2.2](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.2)，准确资产和最终文档身份见 [综合收尾](V029_MAINTENANCE_CLOSEOUT.md)。
 
 问题细节见 [Known Issues](KNOWN_ISSUES.md)，当前工程身份及验收层级见 [项目状态](PROJECT_STATUS.md)，测试入口见 [TESTING](TESTING.md)。历史记录中的 OPEN、READY_FOR_MERGE、NOT_EXECUTED 仅代表原日期及来源，不能覆盖本页当前状态。

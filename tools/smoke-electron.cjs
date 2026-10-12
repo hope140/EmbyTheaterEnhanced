@@ -14,6 +14,11 @@ const transitionFullscreen = transitionTimelineMode && process.env.ETE_TEST_TRAN
 const retainSurfaceStopProbe = transitionComparison && process.env.ETE_TEST_TRANSITION_RETAIN_SURFACE === '1';
 const hasNativeHelper = fs.existsSync(path.join(runtime || '', 'electronapp/native-helper/service.js'));
 if (!runtime || !evidence) throw Error('ETE_TEST_RUNTIME and ETE_TEST_EVIDENCE are required');
+// Windows Known Folders can ignore APPDATA overrides. Bind bootstrap/log/device
+// identity explicitly as well as the renderer profile supplied on the command line.
+const isolatedAppData = path.join(evidence, 'appdata');
+fs.mkdirSync(isolatedAppData, {recursive:true});
+app.setPath('appData', isolatedAppData);
 const exitObservation = process.env.ETE_TEST_EXIT_TRACE === '1'
     ? require('./exit-observation.cjs').createExitObservation({app, evidence})
     : {record() {}};
@@ -429,7 +434,9 @@ app.on('browser-window-created', (_, win) => {
                     }
                     const timelineSource = fs.readFileSync(path.join(__dirname,'../tests/transition-timeline-browser.js'),'utf8');
                     const pipelineSource = fs.readFileSync(path.join(__dirname,'../tests/pipeline-browser.js'),'utf8');
-                    const timelineOptions = {mediaAUrl, mediaBUrl, posterBaseUrl, fullscreen:transitionFullscreen};
+                    const remoteCommand = process.env.ETE_TEST_TRANSITION_COMMAND || 'Local';
+                    if (!['Local', 'PlayNow', 'NextTrack'].includes(remoteCommand)) throw new Error('invalid-transition-command');
+                    const timelineOptions = {mediaAUrl, mediaBUrl, posterBaseUrl, fullscreen:transitionFullscreen, remoteCommand};
                     state.pipeline = await win.webContents.executeJavaScript(withSourceUrl(
                         timelineSource + '\n' + pipelineSource + '\nrunPipelineFixture(' +
                         JSON.stringify(mediaAUrl) + ', null, null, null, false, ' + JSON.stringify(timelineOptions) + ')',

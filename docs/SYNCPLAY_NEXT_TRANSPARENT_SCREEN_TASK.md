@@ -1,6 +1,6 @@
 # SyncPlay 下一集透明屏幕独立专项
 
-状态 `USER_REPORTED / PENDING_INVESTIGATION / PRE_STABLE_PLAYBACK_ITEM`。用户此前报告，SyncPlay主控切换下一集时，被控端偶发透明屏幕。本轮只保存该事实和独立专项入口；未复现、未定位，根因 `UNKNOWN`，不与历史黑帧、白屏或窗口恢复问题合并判定，不在安装器PR中修改播放代码。
+2026-10-12当前状态 `ROOT_CAUSE_CONFIRMED / FIX_IN_PR29 / WINDOWED_SYNTHETIC_VISUAL_PASS / FULLSCREEN_INCONCLUSIVE / PENDING_USER_ACCEPTANCE`。独立专项定位Together1.6.0.5的PlayNow绕过本地Next/Previous持帧入口，原replacement Stop隐藏carrier而暴露透明背景，有确定性RED→GREEN及窗口ROI对照。原31d1107已进入OPEN [PR29](https://github.com/hope140/EmbyTheaterEnhanced/pull/29)，未合并；[P1报告](P1_REMOTE_PRESENTATION.md)和[本轮readiness](V030_STABLE_READINESS.md)保留来源和边界。受控根因不替代真实双端验收。
 
 ## 独立专项范围
 
@@ -14,4 +14,4 @@
 
 取得可复核复现/原因或明确的证据边界，形成独立处置结论；若实施修复，须有定向测试、独立复核和实际双端SyncPlay下一集及相邻正常场景验收。若证据不足则继续待核查，只有用户明确接受相应正式版风险才能改变处置状态。安装器用户UI验收、单端播放通过或模拟测试不能关闭该问题。
 
-当前没有创建或启动播放实现任务，没有产生修复提交。后续专项建议Tier2，安装器整合门禁与此正式版前播放项分开记录。
+Tier2整合和独立审查已完成；真实Together主控/被控仍PENDING_USER_ACCEPTANCE，安装器UI、合成消息/像素和单端runtime不关闭此项。原2026-10-11 UNKNOWN/未实现登记已被上述带来源事实更新，PR28保留安装器范围。

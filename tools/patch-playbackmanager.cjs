@@ -45,6 +45,12 @@ replaceOnce(
     '            .catch(function (error) {\n' +
     '              if (!isCurrentEnhancedPlayRequest(playOptions)) return;\n' +
     '              return onUnhandledPlaybackFailure(error);\n' +
+    '            }).then(function (result) {\n' +
+    '              finishEnhancedPresentation(playOptions);\n' +
+    '              return result;\n' +
+    '            }, function (error) {\n' +
+    '              finishEnhancedPresentation(playOptions);\n' +
+    '              throw error;\n' +
     '            }));'
 );
 
@@ -141,7 +147,29 @@ replaceOnce(
 replaceOnce(
     'replacement stop coordinator',
     '    function playAfterBitrateDetect(maxBitrate, item, playOptions, onPlaybackStartedFn) {',
-    `    function stopForEnhancedReplacement(activePlayer, newPlayer, newItem, playOptions) {
+    `    var enhancedPresentationOwners = new WeakMap();
+    function admitEnhancedPresentation(playOptions) {
+      var player = self._currentPlayer;
+      if (player && typeof player.admitReplacementPresentation === "function" &&
+          player.admitReplacementPresentation(playOptions._etePlayRequestId))
+        enhancedPresentationOwners.set(playOptions, player);
+    }
+    function settleEnhancedPublicPlay(promise, playOptions) {
+      return promise.then(function (result) {
+        finishEnhancedPresentation(playOptions);
+        return result;
+      }, function (error) {
+        finishEnhancedPresentation(playOptions);
+        throw error;
+      });
+    }
+    function finishEnhancedPresentation(playOptions) {
+      var player = enhancedPresentationOwners.get(playOptions);
+      enhancedPresentationOwners.delete(playOptions);
+      if (player && typeof player.finishReplacementPresentation === "function")
+        player.finishReplacementPresentation(playOptions._etePlayRequestId);
+    }
+    function stopForEnhancedReplacement(activePlayer, newPlayer, newItem, playOptions) {
       var playerData = getPlayerData(activePlayer),
         streamInfo = playerData.streamInfo,
         owner = playerData._eteReplacementStop;
@@ -180,7 +208,7 @@ replaceOnce(
             return owner.completion;
           });
         }
-        owner.enqueue = function (destroyPlayer, terminal, requestOptions) {
+        owner.enqueue = function (destroyPlayer, terminal, requestOptions, replacementPlayer, replacementMediaType) {
           // A later Next waits for terminal teardown; it cannot Stop a destroyed endpoint.
           if (owner.terminal) return owner.terminalResult;
           if (terminal) owner.terminal = true;
@@ -188,6 +216,17 @@ replaceOnce(
           // stopped events stay detached until no old physical Stop can arrive.
           var operation = owner.tail.then(function () {
             if (!terminal && !isCurrentEnhancedPlayRequest(requestOptions)) return;
+            // Every same-player video replacement reaches this boundary, including
+            // remote PlayNow and direct queue replacement. Terminal Stop never does.
+            if (!terminal && activePlayer === replacementPlayer && replacementMediaType === "Video" &&
+                typeof activePlayer.prepareReplacementPresentation === "function") {
+              activePlayer.prepareReplacementPresentation(requestOptions._etePlayRequestId);
+              enhancedPresentationOwners.set(requestOptions, activePlayer);
+            }
+            // Public Play can inherit a Video hold before its item type is known.
+            if (!terminal && replacementMediaType !== "Video" &&
+                typeof activePlayer.finishReplacementPresentation === "function")
+              activePlayer.finishReplacementPresentation(requestOptions._etePlayRequestId);
             return (terminal ? activePlayer.stop(!0, !0) : activePlayer.stop(destroyPlayer)).then(function () {
               owner.stopped = true;
             });
@@ -201,7 +240,7 @@ replaceOnce(
         };
       }
       owner.nextMediaType = newItem.MediaType;
-      return owner.enqueue(activePlayer !== newPlayer, false, playOptions);
+      return owner.enqueue(activePlayer !== newPlayer, false, playOptions, newPlayer, newItem.MediaType);
     }
     function playAfterBitrateDetect(maxBitrate, item, playOptions, onPlaybackStartedFn) {`
 );
@@ -277,12 +316,26 @@ replaceOnce('public play admission',
     `        options = Object.assign({}, options);
         self._etePlayRequestSequence = (self._etePlayRequestSequence || 0) + 1;
         options._etePlayRequestId = self._etePlayRequestSequence;
+        admitEnhancedPresentation(options);
         if (options.items)
           return translateItemsForPlayback(options.items, options, !0).then(function (items) {`);
 replaceOnce('public item lookup continuation',
     'getItemsForPlayback(options.serverId, {Ids: options.ids.join(",")}).then(function (result) {\n              return translateItemsForPlayback(result.Items, options).then(function (items) {',
     'getItemsForPlayback(options.serverId, {Ids: options.ids.join(",")}).then(function (result) {\n' +
     '              if (!isCurrentEnhancedPlayRequest(options)) return;\n              return translateItemsForPlayback(result.Items, options).then(function (items) {');
+replaceOnce('public items presentation settlement',
+    '          return translateItemsForPlayback(options.items, options, !0).then(function (items) {\n' +
+    '            return playWithIntros(items, options);\n          });',
+    '          return settleEnhancedPublicPlay(translateItemsForPlayback(options.items, options, !0).then(function (items) {\n' +
+    '            return playWithIntros(items, options);\n          }), options);');
+replaceOnce('public ids presentation settlement',
+    '        if (options.serverId)\n          return (\n            options.fullscreen && _loading.default.show(),\n' +
+    '            getItemsForPlayback(options.serverId, {Ids: options.ids.join(",")}).then(function (result) {',
+    '        if (options.serverId)\n          return settleEnhancedPublicPlay((\n            options.fullscreen && _loading.default.show(),\n' +
+    '            getItemsForPlayback(options.serverId, {Ids: options.ids.join(",")}).then(function (result) {');
+replaceOnce('public ids presentation settlement end',
+    '            })\n          );\n        throw new Error("serverId required!");',
+    '            })\n          ), options);\n        finishEnhancedPresentation(options);\n        throw new Error("serverId required!");');
 replaceOnce('intro entry ownership',
     '    function playWithIntros(items, options) {',
     '    function playWithIntros(items, options) {\n      if (!isCurrentEnhancedPlayRequest(options)) return Promise.resolve();');
