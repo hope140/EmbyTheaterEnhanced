@@ -1,67 +1,21 @@
 # 许可与公开范围
 
-## 当前维护者决定：LICENSE_GATE_WAIVED_BY_MAINTAINER
+## 当前源码版本
 
-2026-10-12维护者终止许可证专项并接受现存许可证/第三方材料风险，取消材料未闭合作为内部自动阻止开发、CI、构建和发行准备的门禁。**不是合规验证通过、UNKNOWN转PASS或第三方授权**；主项目官方Emby GPL-2.0基础、根LICENSE、全部通知/版权和原审计结论保留。[维护者决定](V030_MAINTAINER_RELEASE_DECISION.md)为最新执行政策；下文既有法律/材料事实不改写，不再主动启动补件/追溯审计。公开上传、Tag/Stable仍待独立授权。
+v0.3.0 正式发布对应源码为 `sourceCommit=20e42511b54989550165511a7604aa1b73519ff2`。该版本是在维护者接受仍未解决的许可证与第三方材料风险后发布；风险接受不构成法律合规认证、第三方授权或对未知事项的确认。
 
-## PR31 最新GPL发行审核口径
+## 项目许可
 
-按用户明确方案，以官方Emby Theater GPL-2.0上游为主要基础维护开源衍生项目。官方GPL代码和已有有效GPL授权的修改不要求额外Carnival作者许可；实际对象对应源/修改说明/通知缺口与未知独创增量分开，不要求bit-exact重建。独立第三方组件依各自条款；当前首要阻断为libmpv/FFmpeg的v3配方与GPL-2.0-only Helper组合，最小可用授权路线尚未实施。[PR31审核](V030_PR31_GPL_RELEASE_REVIEW.md)给出准确边界和三组最少事项；根GPL-2.0-only及冻结源码未改。
+本仓库维护层按 **GPL-2.0-only** 发布，完整条款见根目录 [`LICENSE`](../LICENSE)。参考的 [Emby Theater Electron 3.0.21 提交](https://github.com/MediaBrowser/emby-theater-electron/tree/db0f4c814ee1e7d9b5f50010065c5cb64a20357e) 与 [Emby Theater Windows 3.0.20 提交](https://github.com/MediaBrowser/emby-theater-windows/tree/708fadc068cbf66ced6aece4a32f3e12bb2c4e13) 提供 GPL v2 文本；已审阅的维护源码中没有发现明确的 “version 2 or any later version” 声明，因此不据此宣称 GPL-2.0-or-later。`src/electronapp/package.json` 的 `MIT` 字段不能单独决定整个衍生维护工程的许可。
 
-## 2026-10-12 发行解阻补件
+已纳入公开源码的上游修改及其来源标注见 [`docs/MODIFIED_UPSTREAM_FILES.md`](MODIFIED_UPSTREAM_FILES.md) 和 [`vendor/runtime-manifest.json`](../vendor/runtime-manifest.json)。第三方组件仍适用各自的许可证及通知义务，根许可证不会替代这些义务。
 
-完整当前结果见[V030_RELEASE_UNBLOCK_PLAN](V030_RELEASE_UNBLOCK_PLAN.md)。Roboto21字体的内嵌Apache身份、已识别jQuery3.6.0 MIT通知、ServiceStack官方版本源/许可文本、mpv实际run/固定配方与FFmpeg源、CEC driver官方同字节入口已经补齐；22份全文进入现有THIRD_PARTY_NOTICES交付入口，旧候选未重包。核心rights/完整源/依赖通知仍有未闭合项，不能仅凭全文补件批准完整二进制。具体GPLv3配方与GPL-2.0-only Helper组合及modified思源RFN条件待解决；本轮不改根许可证、上游条款或资产。
+## 材料与来源边界
 
-## v0.3.0 最终收口增量
+已知未决项包括 libmpv/FFmpeg 固定 GPLv3 配方与 GPL-2.0-only Helper 的组合、部分 Host/Additions 及缓存链接依赖的对应源码和通知缺口、定制资产的来源/条款，以及修改后的思源字体 Reserved Font Name 条件。详见 [GPL 与来源履行评估](V030_PR31_GPL_RELEASE_REVIEW.md) 和下列组件材料矩阵；这些事实未因正式发布或文档整理改为已解决。
 
-本轮仅补充已精确匹配的SimpleInjector4.0.11 MIT版权/许可全文，随THIRD_PARTY_NOTICES交付；该组件LICENSING_OBLIGATION_RESOLVED，未精确重建只列REPRODUCIBILITY_ONLY。完整身份见[材料矩阵](V030_DISTRIBUTION_MATERIALS_FINAL.md)。这不代表全包许可组合、Host/Additions、libmpv/FFmpeg依赖、CEC/driver或离线Web/资产的分发依据已闭合；它们保持按实际义务/未知权利分项阻断，不把历史发布或无法重建当作许可结论。
+[`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md) 与 [`docs/redistribution-notices/`](redistribution-notices/) 保存现有通知和版权文本。组件来源、固定版本、哈希、对应源码关系及未决义务分别见 [`构建输入审计`](BUILD_INPUT_AUDIT.md)、[`第三方材料审计`](THIRD_PARTY_MATERIALS_AUDIT.md)、[`发行材料矩阵`](V030_DISTRIBUTION_MATERIALS_FINAL.md) 与 [`源码材料索引`](SOURCE_MATERIALS.md)。
 
-2026-10-11 当前发行材料与版本状态见 [安装与第三方材料审查](V029_INSTALL_MATERIALS_REVIEW.md) 与 [v0.2.9 收尾](V029_MAINTENANCE_CLOSEOUT.md)；下文旧日期的版本和材料缺口按其原审计对象读取。材料缺口继续 `WAITING_EXTERNAL`，既往分发事实不证明授权、对应源码或完整通知已经闭合。
+Carnival、综合补丁、完整离线 Web、部分 Host/辅助二进制及图形资产的来源、完整对应源码或适用通知仍有未确认事项。`EXACT`、`REFERENCE`、`MISSING`、`UNKNOWN` 描述的是各审计中界定的材料关系，不是合规评级。已取得上游参考源码或通知文本本身，不证明它与特定二进制完整对应，也不补足未知授权。
 
-2026-10-09后续本地[材料审计](THIRD_PARTY_MATERIALS_AUDIT.md)已取得libmpv原
-dev archive及公开校验记录，证实其DLL与打包DLL字节一致，并补齐三项NuGet
-binary对应、继承npm原包/随包许可对照、参考源码及工具链原包材料。
-ServiceStack.Text v4.5.14固定源码的[许可文本](https://github.com/ServiceStack/ServiceStack.Text/blob/e5819a8de75a8bae64ddc7a64008613067893e32/license.txt)
-包含AGPL-3.0、FOSS License Exception和商业许可说明；这是准确版本的源码
-材料，不能用项目GPL-2.0-only或当前通用terms页面代替，也不据此断言实际
-DLL的构建许可选择或给出兼容性结论。完整构建来源、未识别资产和部分组件
-通知仍有缺口，具体见[最小索取清单](THIRD_PARTY_MATERIALS_REQUEST.md)。
-新增研究材料尚未进入任何既有安装包；本轮不作法律合规认证。
-
-本轮构建修正候选将根 `LICENSE`、`THIRD_PARTY_NOTICES.md`、本页与 [来源材料索引](SOURCE_MATERIALS.md) 按 sourceCommit 的 Git blob 字节放入 runtime，并在安装器打包前验证。下文 P1 缺少根通知的记录属于历史产物；通知随包不代表未知第三方材料已补齐。
-
-## 结论
-
-本仓库维护层采用 **GPL-2.0-only**，完整文本见根目录 `LICENSE`。
-
-依据是官方 `MediaBrowser/emby-theater-electron` 的 3.0.21 对照提交与 `MediaBrowser/emby-theater-windows` 的 3.0.20 对照提交均提供 GNU GPL v2 文本。所审计的维护源码没有发现明确的 “version 2 or any later version” 版权/许可声明；GPL v2 文本末尾的示例不是对本项目的额外授权。因此不能证明 `GPL-2.0-or-later`，本项目保守地使用 `GPL-2.0-only`。
-
-`src/electronapp/package.json` 中的 `MIT` 字段与上述官方仓库根许可不一致，不能单独作为整个衍生维护工程的许可依据。
-
-## Git 公开源码范围
-
-- 可审计的维护脚本、测试、安装器、文档和许可文件。
-- 已确认可维护的 Electron 应用层文件；其具体来源判定保留在 `docs/CARNIVAL_BASELINE.md` 与 `vendor/runtime-manifest.json`。
-- 构建输入清单和哈希，不包含输入本体。
-
-## 修改后的上游文件
-
-首次公开前已审计 `vendor/runtime-manifest.json` 中 B 类、且进入公开基线的文本代码文件。每个此类 JavaScript、CSS 或 HTML 文件内均带有 2026-09-12/13 的显著修改声明，并指向根 `LICENSE`。无法在严格 JSON 中安全添加注释的 B 类 `package.json` 与翻译 JSON 已排除，等待其来源和修改记录可单独证明后再公开。审计清单见 `docs/MODIFIED_UPSTREAM_FILES.md`。
-
-## Git 中不包含的材料
-
-- `vendor/carnival/`、`vendor/patch/` 和原始 Carnival SFX、综合补丁 ZIP。
-- `dist/`、`build/`、安装器、原生 DLL/NODE/EXE/PDB 及其他生成二进制。
-- `src/electronapp/www/` 的完整离线 Web 快照：其大部分归为 E 类，精确上游来源与再分发权尚未独立确认。
-- 原始真实播放证据：其中包含私人媒体库的内部标识；公开文档只保留脱敏结论。
-- 任何凭据、用户 profile、安装测试输出、日志、缓存和本机路径。
-
-上述是 Git 跟踪边界，不表示安装包不携带这些组件。来源未知不构成已确认的授权；新增分发材料仍需逐项核对来源、适用条件、对应源码和第三方通知。
-
-## 当前分发事实与材料状态
-
-`v0.1.1-baseline` 是历史源码治理起点；项目此后已发布 Windows 安装包，2026-10-09只读核验 Latest 为v0.2.2、最新Pre-release为v0.2.4。发布存在这一事实不表示来源、通知或完整对应源码材料已经闭合。
-
-[构建输入审计](BUILD_INPUT_AUDIT.md) 对P1本地候选fb10f92分别记录CONFIRMED、MISSING和UNKNOWN。已确认Electron许可文件和npm可见license文件随包保留；候选完整payload中没有根项目LICENSE/THIRD_PARTY_NOTICES。Host/支撑DLL、CEC/RefreshRate、libmpv及其依赖、离线Web/资产的精确对应源码或完整通知材料仍有缺口。该候选与已发布v0.2.4的03a2e3b不是同一个sourceCommit。
-
-维护层的GPL-2.0-only声明保持；第三方组件不能由该声明统一推定许可。后续需按实际发行文件集合补齐来源、适用许可文本、构建材料、完整对应源码或适用的获取安排，再作专门审查。本页和本轮事实清单不构成法律合规认证，也不改变已发布资产。
+Git 跟踪范围不等于安装包范围。完整离线 Web、生成二进制和部分外部输入不随公开源码仓库提供；具体 payload 及重建边界见 [`PACKAGING.md`](PACKAGING.md)。本页汇总现有许可依据和未决边界，不作法律合规认证。

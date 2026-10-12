@@ -5,7 +5,7 @@
 `sourceCommit=1a05f88357a08f5d7c99a7e5de28de20aad0dc79`、版本 0.2.4
 的 build-review 交付及其既有输入清单。本页是后续本地材料交付，不改变该候选、
 同期发布分支或安装包。历史 535/535、双 runtime 和双安装器一致结果仍归属
-[BUILD_REVIEW](BUILD_REVIEW.md)，不作为本轮新增测试。
+[BUILD_REVIEW（历史记录）](https://github.com/hope140/EmbyTheaterEnhanced/blob/v0.3.0/docs/BUILD_REVIEW.md)，不作为本轮新增测试。
 
 `EXACT` 仅表示指明的文件字节对应；`REFERENCE` 表示已固定的参考来源，
 不代表已从该源码重建二进制。`MISSING` 表示所需材料未收集，`UNKNOWN`
