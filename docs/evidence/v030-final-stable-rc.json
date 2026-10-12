@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 1,
+  "artifactClass": "INTERNAL_ENGINEERING_CANDIDATE",
+  "releaseApproved": false,
+  "label": "v0.3.0-stable-rc",
+  "mainProductBase": "89a0501f96eebdd7ee6952f594038bafe151eb43",
+  "sourceCommit": "7827425e07024fcca3bf671aa4401bb3020291b0",
+  "version": "0.3.0",
+  "installer": {
+    "fileName": "EmbyTheaterEnhanced-v0.3.0-stable-rc-7827425-internal-win-x64-setup.exe",
+    "size": 175643954,
+    "sha256": "3ab89708de4d3680c5b19605069af138f585b1baeb3bf4fbcc196daadf7e492f"
+  },
+  "installerAuthenticode": "NotSigned",
+  "runtimePath": "dist/ETE-v0.3.0-stable-rc-20261012-internal",
+  "buildManifestSha256": "fd27dfea9418fed1a5eecef69af53624692847cdfa48ae53cea52af8444cac10",
+  "payloadSetSha256": "1353809d891dc8fed0cb8fc5318c801c2050380dcc2cbb9cf4c30527cd6df349",
+  "manifestPayloadFileCount": 2138,
+  "runtimeAndExtractedFileCount": 2139,
+  "verificationRule": "exact own manifest path set and SHA256; count derived from manifest",
+  "exactExtraction": "PASS",
+  "provenance": {
+    "inputs": {
+      "path": "build-input-provenance.json",
+      "sha256": "cf95063bfaa5abbfce92e5bc03eb0e9ee3a621e2a225ec5730ecbc1b1bc61b12"
+    },
+    "source": {
+      "path": "source-provenance.json",
+      "sha256": "109525929cc15c6cd859067cb0ca3344100d08100837b3ad729fce24f8ffe25d"
+    },
+    "runtime": {
+      "path": "runtime-provenance.json",
+      "sha256": "9fd738552793a4b470dbd7ed50bac33f98d7568096c0c51f7a61e47b42c4089a"
+    }
+  },
+  "notices": [
+    {
+      "path": "LICENSE",
+      "gitBlobObjectId": "6cd7f14ff8d0bc728af9dea506c14807c705c3df",
+      "sha256": "2bdb13b91b9440dcfdf51b2f72e04e566c92eb50d48350ada10b30a1d37c3c05"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "gitBlobObjectId": "031ab3a6ce218e1a07650c6520fc3d9000c848aa",
+      "sha256": "77dc5c40dd7e4859eb813754ab17e0aa6f153472074d1d030f3fdc1691fd49e6"
+    },
+    {
+      "path": "docs/LICENSING.md",
+      "gitBlobObjectId": "86dc2a3f978a482e587f48c4b31f5c1a9fa584ee",
+      "sha256": "d4327d38b5352180876531193a09e404ffa5c7aedd726a98e0058b152e95fa23"
+    },
+    {
+      "path": "docs/SOURCE_MATERIALS.md",
+      "gitBlobObjectId": "85c760467a35c59655c0c9eb2ac4a10bbd158f5d",
+      "sha256": "d83a52e7c6d127facda6be58fecfce80c82166cd8293db495d1a3b4e44fdfa49"
+    }
+  ],
+  "installerLanguages": [
+    "english",
+    "chinesesimplified"
+  ],
+  "installerCustomMessageCount": 14,
+  "completeSimpleInjectorMitNoticeDelivered": true,
+  "maintainedProjectHarnessAbsent": true,
+  "registryTestAssets": 12,
+  "retiredPepperAbsent": true,
+  "helper": {
+    "runtimePath": "electronapp/native-helper/ete-mpv-helper.exe",
+    "version": "1.0.0",
+    "sha256": "28054c75551177f1109859d4f8793d45a4c731aba1e43ddab9bb2f1c5dc030dc",
+    "size": 3339711,
+    "testing": false
+  },
+  "libmpv": {
+    "runtimePath": "electronapp/libmpv/x64/mpv-1.dll",
+    "sha256": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c",
+    "version": "v0.41.0-920-gdd5d17d32",
+    "clientApi": "2.5"
+  },
+  "nativeToolchain": {
+    "schemaVersion": 1,
+    "status": "passed",
+    "kind": "native",
+    "authority": {
+      "toolchainManifest": {
+        "path": "vendor/toolchain-manifest.json",
+        "gitBlobObjectId": "b39ba168381a255f6126e0ed2d771b9e3ef632c1",
+        "canonicalTextSha256": "e5bc53955f6a4380fc337d889a73be5cd6b0bfbe4459a601213a76f8dac30bfc"
+      },
+      "nativeHelperManifest": {
+        "path": "vendor/native-helper-manifest.json",
+        "gitBlobObjectId": "b9b17fa674b4109b36be805968cc1a3a8c016fe5",
+        "canonicalTextSha256": "ff23f2eafa26e5f327fb70878569aceab22c568d317eb155c5b6a053107ac895"
+      }
+    },
+    "compiler": {
+      "root": ".work/toolchain/msys2/ucrt64",
+      "path": "bin/g++.exe",
+      "sha256": "798a6eb495b30cf771dc759b5508d269ecb0dddac739719e8b30fe0ac0744b69",
+      "version": "g++.exe (Rev5, Built by MSYS2 project) 16.1.0"
+    },
+    "tree": {
+      "fileCount": 6990,
+      "bytes": 553090415,
+      "sha256": "5215ec9725ad0ef660064944eef6aba5106bd09044a0f70a6e37c4252815fab3"
+    }
+  },
+  "innoCompiler": {
+    "schemaVersion": 1,
+    "status": "passed",
+    "kind": "inno",
+    "authority": {
+      "toolchainManifest": {
+        "path": "vendor/toolchain-manifest.json",
+        "gitBlobObjectId": "b39ba168381a255f6126e0ed2d771b9e3ef632c1",
+        "canonicalTextSha256": "e5bc53955f6a4380fc337d889a73be5cd6b0bfbe4459a601213a76f8dac30bfc"
+      },
+      "nativeHelperManifest": {
+        "path": "vendor/native-helper-manifest.json",
+        "gitBlobObjectId": "b9b17fa674b4109b36be805968cc1a3a8c016fe5",
+        "canonicalTextSha256": "ff23f2eafa26e5f327fb70878569aceab22c568d317eb155c5b6a053107ac895"
+      }
+    },
+    "version": "6.7.3",
+    "archive": {
+      "size": 10592232,
+      "sha256": "9c73c3bae7ed48d44112a0f48e66742c00090bdb5bef71d9d3c056c66e97b732",
+      "path": ".work/toolchain/innosetup-6.7.3.exe"
+    },
+    "unpackerArchive": {
+      "size": 572593,
+      "sha256": "ac1d98bba6588072ade06163781938df274f444bec7318069668608d1e5faae8",
+      "path": ".work/toolchain/innounp.zip"
+    },
+    "unpacker": {
+      "root": ".work/toolchain/innounp",
+      "path": "innounp.exe",
+      "sha256": "1c8453c198dd3fe7947f3705e59d2294ddce3dfa9f96a737e94449b119f44181",
+      "tree": {
+        "fileCount": 5,
+        "bytes": 1782207,
+        "sha256": "f179e8ef4189195758b0620e7a3bfa6f5305f96f7cb5a79b587e5aa582ca6081"
+      }
+    },
+    "compiler": {
+      "root": ".work/toolchain/inno/{app}",
+      "path": "ISCC.exe",
+      "sha256": "0a8757031b33777e4c9cbffee40f11a5062b36d25cbe144c1db73b6102b80ad7",
+      "tree": {
+        "fileCount": 118,
+        "bytes": 28932279,
+        "sha256": "b463554775c237560cb13ca5759098b963764256744f638ad2706ab0b8cba0dd"
+      }
+    }
+  },
+  "noticeAffectedTests": {
+    "pass": 20,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0
+  },
+  "existingEngineeringEvidenceReused": {
+    "fullRegression": 783,
+    "independentReview": 138,
+    "windowedSynthetic": "PASS",
+    "fullscreenSynthetic": "INCONCLUSIVE",
+    "sourceCommit": "322a037cdccb39ad57923bcd7551d9954ba815bd",
+    "reviewedCodeCommit": "68a0026b6fa65e965aa5a7d6ce7cdf91f6de8545",
+    "newlyExecuted": false
+  },
+  "realTogetherUserAcceptance": "PASS",
+  "realInstallLifecycle": "REAL_INSTALL_NOT_EXECUTED",
+  "overall": "ENGINEERING_READY_RELEASE_BLOCKED"
+}

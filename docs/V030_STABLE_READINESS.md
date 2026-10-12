@@ -67,4 +67,4 @@
 | 单纯重建能力缺口 | Electron/Chromium未源码重建、部分MSYS2 recipe/bootstrap不齐属于复现限制，不自动追加法律阻断 |
 | 用户决定 | PR29合并已获本轮授权并完成；最终main发行构建及Stable放行仍需后续授权。本轮未构建/改标安装器，未创建v0.3.0 Tag/Release |
 
-工程候选可以进入真实使用验收；**Stable发行放行仍被材料证据缺口与未执行的系统/真实使用验收阻挡**，总体保留 `BLOCKED_WITH_EVIDENCE`。材料履行路径与验收闭合后，由用户作最终Stable决定。发行草案见 [V030_RELEASE_NOTES_DRAFT](V030_RELEASE_NOTES_DRAFT.md)。
+2026-10-12最终状态更新为 **ENGINEERING_READY_RELEASE_BLOCKED**：Together已报告场景USER_REPORTED_PASS，历史全屏采样仍INCONCLUSIVE；系统安装生命周期及实质发行材料门禁保留。准确新stable-rc、来源和需用户处理的事项见[V030_FINAL_RELEASE_GATE](V030_FINAL_RELEASE_GATE.md)，不重复要求已确认正常的Together或中文页面。发行草案见[V030_RELEASE_NOTES_DRAFT](V030_RELEASE_NOTES_DRAFT.md)。

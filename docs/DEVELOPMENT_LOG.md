@@ -6,6 +6,8 @@
 - 开工远端main89a0501，PR28/29 MERGED，v0.2.9仍公开Pre-release。用户“实测了一下没问题了。”记REAL_TOGETHER_USER_ACCEPTANCE=PASS/USER_REPORTED_PASS；实际客户端source/版本、次数、硬件、媒体和全屏条件NOT_REPORTED，旧783/138/窗口PASS/全屏INCONCLUSIVE全部保留原来源。本轮未改播放源码或重复像素实验。
 - 只读Hyper-V/Sandbox为Disabled，Get-VM/VBoxManage/vmrun/Sandbox/QEMU管理入口和VMMS不可用，未识别获授权且可恢复的Windows目标；真实安装/升级/卸载/重装保持REAL_INSTALL_NOT_EXECUTED，短人工方案单列，未启用系统功能。
 - 材料worker报告经主线程复核修正身份笔误及源码义务条件。精确官方SimpleInjector4.0.11 nupkg再次回读，net45 DLL与目标6a8e55… EXACT，nuspec许可入口指向官方MIT文本；固定license e3ce923…/SHAdf8a87…完整追加到原THIRD_PARTY_NOTICES，原内容保留。该组件LICENSING_OBLIGATION_RESOLVED，未源码重建REPRODUCIBILITY_ONLY；libmpv/FFmpeg、Host/Additions和Web/资产等实质履行/权利门禁保留，不向外部发送索取请求。
+- 7827425基于main89构建新v0.3.0-stable-rc内部候选，完整锁定build/package、39inputs/4notices、两语言/14消息、三层来源及own-manifest所有paths/hash通过。EXE175643954bytes/SHA3ab89708de4d3680c5b19605069af138f585b1baeb3bf4fbcc196daadf7e492f，0.3.0/NotSigned；2138payload+manifest=2139零差异。只因通知补充执行受影响20项PASS，无新case；旧783/138/guard/语言/窗口证据复用身份不变。独立只读review发现矩阵npm/CEC/FFmpeg语义冲突后修正并闭合，最终PASS，未要求重建782。
+- 最终ENGINEERING_READY_RELEASE_BLOCKED；[最终门禁](V030_FINAL_RELEASE_GATE.md)仅保留系统生命周期与实质发行材料、后续用户发布决定。审核分支/PR/CI完成后本地final-remote回读；未merge审核PR、未Tag/Release/改v0.2.9资产/现用客户端。
 
 ## 2026-10-12 — PR29 主线整合
 
