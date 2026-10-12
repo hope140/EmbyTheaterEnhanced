@@ -9,3 +9,9 @@
 当前公开文档整理采用独立 PR。CD2 新资源刷新属于后续独立实现，尚未包含在 v0.3.0。文档整理不改变源码、测试、Tag 或发行附件。
 
 [用户指南](USER_GUIDE.md) · [贡献](CONTRIBUTING.md) · [许可及材料风险](LICENSING.md) · [公开资料整理范围](PUBLIC_DOCUMENTATION.md)
+
+## CD2 新资源候选（目标 v0.3.1）
+
+仅目标 FindFileByPath 确认 NOT_FOUND 后有限刷新父目录，完整消费流后最多重查一次。正常 1200ms、恢复总上限 3000ms、3层父目录、单锁与30秒冷却保持。Stop/Next/close 取消和 CD2 → Mount → Native 回退保持，播放会话及 DirectUrl header 合同不变。
+
+当前为 PR #32 与 PR #33 的独立整合预演，未合并 GitHub PR、未更新真实 main，也未发布或覆盖客户端。真实 CD2 新资源验收未执行，设计见 [刷新合同](CD2_NEW_RESOURCE_REFRESH.md)，操作见 [隔离验收](CD2_REAL_ACCEPTANCE.md)。PR #32 获授权合并后，PR #33 才按新 main 更新并重新验证。

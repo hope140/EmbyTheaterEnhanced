@@ -96,6 +96,9 @@
             if (dependencies && Number.isSafeInteger(dependencies.deadlineAt)) {
                 request.deadlineAt = dependencies.deadlineAt;
             }
+            if (dependencies && Number.isSafeInteger(dependencies.refreshDeadlineAt)) {
+                request.refreshDeadlineAt = dependencies.refreshDeadlineAt;
+            }
             response = await transport.resolve(request);
             if (signal && signal.aborted) throw abortError();
             if (response && response.status === 'cancelled') throw abortError();

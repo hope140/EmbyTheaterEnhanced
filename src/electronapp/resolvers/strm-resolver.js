@@ -10,6 +10,7 @@
     'use strict';
 
     var DEFAULT_TOTAL_BUDGET_MS = 1200;
+    var REFRESH_RECOVERY_BUDGET_MS = 1800;
     var DEFAULT_ORDER = ['direct-url', 'cd2-http', 'mount', 'native'];
     var MOUNT_FIRST_ORDER = ['mount', 'direct-url', 'cd2-http', 'native'];
 
@@ -363,7 +364,8 @@
                             candidates: candidates,
                             ruleId: rule.id,
                             mode: stage === 'direct-url' ? 'direct' : 'same-origin',
-                            deadlineAt: deadlineAt
+                            deadlineAt: deadlineAt,
+                            refreshDeadlineAt: deadlineAt + REFRESH_RECOVERY_BUDGET_MS
                         });
                         if (result && result.type === 'url') {
                             result.isStrm = true;

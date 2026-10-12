@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const pathRules = require('../resolvers/path-rules');
+const cd2Refresh = require('./cd2-refresh');
 
 const DEFAULT_TOTAL_BUDGET_MS = 1200;
 const CONNECT_BUDGET_MS = 200;
@@ -11,7 +12,7 @@ const FIND_BUDGET_MS = 350;
 const DOWNLOAD_BUDGET_MS = 500;
 const DIRECT_DOWNLOAD_BUDGET_MS = 500;
 const SAME_ORIGIN_RESERVE_MS = 500;
-const EXPECTED_PROTO_SHA256 = 'dbd103f5530863d7ef3726ef7c39e4a686e960296a750389bbf454cc252accb6';
+const EXPECTED_PROTO_SHA256 = '34ada5e7a007f7e8ed0bb6a8a53a0b444cd27b7401fe318a18df9eaa0f7b4b36';
 const PROTO_PATH = path.join(__dirname, 'proto', 'clouddrive-v1.proto');
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 const DIRECT_URL_MARGIN_RATIO = 0.10;
@@ -142,6 +143,8 @@ function classifyError(error, status) {
     if (status && error.code === status.DEADLINE_EXCEEDED) return 'timeout';
     if (status && error.code === status.CANCELLED) return 'cancelled';
     if (status && error.code === status.UNAVAILABLE) return 'unavailable';
+    if (status && typeof error.code === 'number' &&
+        (error.code === status.UNAUTHENTICATED || error.code === status.PERMISSION_DENIED)) return 'auth_failed';
     return 'rpc_error';
 }
 
@@ -307,6 +310,7 @@ function createService(options) {
     const onDiagnostic = typeof settings.onDiagnostic === 'function' ? settings.onDiagnostic : function () {};
     const active = new Map();
     const modeSessions = new Map();
+    const refresher = cd2Refresh.createRefresher({now: now, find: findDirectory, stream: refreshDirectory});
     let transport;
     let transportError;
 
@@ -391,8 +395,8 @@ function createService(options) {
             const remaining = Math.max(0, deadline - now());
             let timer;
             const cancelCurrent = function () {
-                if (call && typeof call.cancel === 'function') call.cancel();
                 finish({error: {localReason: 'cancelled'}});
+                if (call && typeof call.cancel === 'function') call.cancel();
             };
             if (remaining <= 0) {
                 resolve({error: {localReason: 'timeout'}});
@@ -408,8 +412,8 @@ function createService(options) {
             };
             entry.cancelCurrent = cancelCurrent;
             timer = setTimer(function () {
-                if (call && typeof call.cancel === 'function') call.cancel();
                 finish({error: {localReason: 'timeout'}});
+                if (call && typeof call.cancel === 'function') call.cancel();
             }, remaining);
 
             try {
@@ -420,7 +424,7 @@ function createService(options) {
                     {deadline: new Date(deadline)},
                     function (error, response) { finish({error: error, response: response}); }
                 );
-                entry.call = call;
+                if (!settled) entry.call = call;
                 if (entry.cancelled) cancelCurrent();
             } catch (error) {
                 finish({error: error});
@@ -459,6 +463,110 @@ function createService(options) {
                 finish({error: {localReason: 'client_unavailable'}});
             }
         });
+    }
+
+    async function findDirectory(entry, cloudPath, deadline) {
+        const reply = await unary(entry, 'FindFileByPath', {parentPath: '', path: cloudPath}, deadline);
+        if (reply.error) return {reason: classifyError(reply.error, getTransport().status)};
+        const file = reply.response;
+        const directory = file && normalizeCloudPath(file.fullPathName) === cloudPath &&
+            (file.isDirectory === true || file.fileType === 'Directory' || file.fileType === 0);
+        return {directory: !!directory};
+    }
+
+    function refreshDirectory(entry, cloudPath, deadline) {
+        return new Promise(function (resolve) {
+            let call;
+            let timer;
+            let settled = false;
+            let ended = false;
+            let statusOk = false;
+            function discard() { /* Drain data without retaining directory entries. */ }
+            function ignoreLateError() { /* Cancellation may deliver a late error. */ }
+            function finish(value) {
+                if (settled) return;
+                settled = true;
+                clearTimer(timer);
+                if (entry.cancelCurrent === cancelCurrent) entry.cancelCurrent = null;
+                if (entry.call === call) entry.call = null;
+                if (call && typeof call.removeListener === 'function') {
+                    call.removeListener('data', discard);
+                    call.removeListener('end', onEnd);
+                    call.removeListener('status', onStatus);
+                    call.removeListener('error', onError);
+                    call.on('error', ignoreLateError);
+                }
+                resolve(value);
+            }
+            function stop(reason) {
+                finish({reason: reason});
+                if (call && typeof call.cancel === 'function') call.cancel();
+            }
+            function cancelCurrent() { stop('cancelled'); }
+            function onEnd() {
+                ended = true;
+                if (statusOk) finish({});
+            }
+            function onStatus(status) {
+                if (!status || status.code !== 0) {
+                    stop(classifyError(status, getTransport().status));
+                    return;
+                }
+                statusOk = true;
+                if (ended) finish({});
+            }
+            function onError(error) { stop(classifyError(error, getTransport().status)); }
+            if (entry.cancelled) return resolve({reason: 'cancelled'});
+            if (deadline <= now()) return resolve({reason: 'timeout'});
+            entry.cancelCurrent = cancelCurrent;
+            timer = setTimer(function () { stop('timeout'); }, deadline - now());
+            try {
+                const current = getTransport();
+                call = current.client.GetSubFiles({path: cloudPath, forceRefresh: true, checkExpires: true},
+                    current.metadata, {deadline: new Date(deadline)});
+                entry.call = call;
+                call.on('error', onError);
+                call.on('end', onEnd);
+                call.on('status', onStatus);
+                call.on('data', discard);
+                if (entry.cancelled) cancelCurrent();
+            } catch (_) {
+                stop('rpc_error');
+            }
+        });
+    }
+
+    function recoveryDeadline(request, normalDeadline) {
+        const requested = Number(request && request.refreshDeadlineAt);
+        const maximum = normalDeadline + cd2Refresh.REFRESH_BUDGET_MS;
+        return Number.isSafeInteger(requested) && requested > 0 ? Math.min(maximum, requested) : maximum;
+    }
+
+    async function findWithRefresh(entry, cloudPath, mapping, request, startedAt, overallDeadline) {
+        let reply = await unary(entry, 'FindFileByPath', {parentPath: '', path: cloudPath},
+            Math.min(overallDeadline, startedAt + FIND_BUDGET_MS));
+        if (entry.cancelled || !reply.error || reply.error.localReason ||
+            classifyError(reply.error, getTransport().status) !== 'not_found' ||
+            typeof getTransport().client.GetSubFiles !== 'function') {
+            return {reply: reply, deadline: overallDeadline};
+        }
+        const deadline = recoveryDeadline(request, overallDeadline);
+        const refreshStartedAt = now();
+        emitDiagnostic('info', 'refresh-start', {requestId: request.requestId, elapsedMs: 0});
+        const refreshed = await refresher.refresh(entry, cloudPath, normalizeCloudPath(mapping.cloudPrefix), deadline);
+        emitDiagnostic('info', 'refresh-end', {requestId: request.requestId,
+            reason: refreshed.refreshed ? 'refreshed' : refreshed.reason,
+            levelCount: refreshed.levels || 0,
+            elapsedMs: Math.max(0, now() - refreshStartedAt)});
+        if (entry.cancelled) return {reply: {error: {localReason: 'cancelled'}}, deadline: deadline, attempted: true};
+        if (refreshed.refreshed) {
+            reply = await unary(entry, 'FindFileByPath', {parentPath: '', path: cloudPath},
+                Math.min(deadline, now() + FIND_BUDGET_MS));
+        } else if (refreshed.reason === 'timeout' || refreshed.reason === 'auth_failed' ||
+            refreshed.reason === 'rpc_error' || refreshed.reason === 'unavailable') {
+            reply = {error: {localReason: refreshed.reason}};
+        }
+        return {reply: reply, deadline: deadline, attempted: true};
     }
 
     function clearModeSession(requestId) {
@@ -502,7 +610,7 @@ function createService(options) {
         const candidates = request && request.candidates;
         const mode = request && request.mode;
         const startedAt = now();
-        const overallDeadline = modeDeadline(request, startedAt);
+        let overallDeadline = modeDeadline(request, startedAt);
         const mapping = modeMapping(request || {});
         let cloudPath;
         let entry;
@@ -531,17 +639,33 @@ function createService(options) {
 
         if (mode === 'direct' && !config.directUrlEnabled) return result('miss', 'direct_url_disabled');
         session = modeSessions.get(requestId);
+        if (session && session.cloudPath === cloudPath && session.recoveryDeadlineAt) {
+            overallDeadline = Math.min(session.recoveryDeadlineAt, recoveryDeadline(request, overallDeadline));
+        }
         if (session && (session.cloudPath !== cloudPath || now() >= overallDeadline)) {
             clearModeSession(requestId);
             session = null;
         }
         if (session) {
+            if (session.finalMiss) return result('miss', session.finalMiss);
             fileResponse = session.fileResponse;
             directResponse = session.directResponse;
         }
 
         entry = {cancelled: false, call: null, cancelCurrent: null};
         active.set(requestId, entry);
+
+        function retainRecoveryForNextMode() {
+            const recoveredDeadline = entry.recoveryDeadlineAt || session && session.recoveryDeadlineAt;
+            if (!recoveredDeadline) {
+                clearModeSession(requestId);
+                return;
+            }
+            // Custom orders may try direct after a failed same-origin stage.
+            // Keep the validated file and original deadline, never its invalid URL.
+            rememberModeSession(requestId, {cloudPath: cloudPath, fileResponse: fileResponse,
+                recoveryDeadlineAt: recoveredDeadline});
+        }
 
         try {
             if (!fileResponse) {
@@ -551,12 +675,19 @@ function createService(options) {
                 phaseDiagnostic(mode, 'client-ready', startedAt);
 
                 phaseDiagnostic(mode, 'find-file-start', startedAt);
-                reply = await unary(entry, 'FindFileByPath', {parentPath: '', path: cloudPath},
-                    Math.min(overallDeadline, startedAt + FIND_BUDGET_MS));
+                const found = await findWithRefresh(entry, cloudPath, mapping, request, startedAt, overallDeadline);
+                reply = found.reply;
+                overallDeadline = found.deadline;
+                entry.recoveryDeadlineAt = found.attempted ? overallDeadline : null;
                 phaseDiagnostic(mode, 'find-file-end', startedAt);
                 if (entry.cancelled) return result('cancelled', 'cancelled');
-                if (reply.error) return result('miss', classifyError(reply.error, getTransport().status));
-                if (!isRegularFile(reply.response)) return result('miss', 'invalid_file');
+                const findReason = reply.error ? classifyError(reply.error, getTransport().status) :
+                    !isRegularFile(reply.response) ? 'invalid_file' : null;
+                if (findReason) {
+                    if (found.attempted) rememberModeSession(requestId, {cloudPath: cloudPath,
+                        finalMiss: findReason, recoveryDeadlineAt: overallDeadline});
+                    return result('miss', findReason);
+                }
                 fileResponse = reply.response;
             }
 
@@ -589,23 +720,25 @@ function createService(options) {
                 if (mode === 'direct') {
                     rememberModeSession(requestId, {
                         cloudPath: cloudPath,
+                        recoveryDeadlineAt: entry.recoveryDeadlineAt || session && session.recoveryDeadlineAt,
                         fileResponse: fileResponse,
                         directResponse: directResponse,
                         directReason: classifyError(reply.error, getTransport().status)
                     });
                 } else {
-                    clearModeSession(requestId);
+                    retainRecoveryForNextMode();
                 }
                 return result('miss', classifyError(reply.error, getTransport().status));
             }
 
             if (mode === 'same-origin') {
                 if (!reply.response || reply.response.directUrl || reply.response.externalUrl) {
-                    clearModeSession(requestId);
+                    retainRecoveryForNextMode();
                     return result('miss', 'unsupported_response');
                 }
                 source = sameOriginSource(reply.response, config.origin);
-                clearModeSession(requestId);
+                if (source) clearModeSession(requestId);
+                else retainRecoveryForNextMode();
                 return source
                     ? result('hit', 'cd2_hit', source, {sourceKind: 'cd2-url'})
                     : result('miss', 'invalid_download_url');
@@ -652,6 +785,7 @@ function createService(options) {
 
             rememberModeSession(requestId, {
                 cloudPath: cloudPath,
+                recoveryDeadlineAt: entry.recoveryDeadlineAt || session && session.recoveryDeadlineAt,
                 fileResponse: fileResponse,
                 directResponse: directResponse,
                 directReason: directReason
@@ -698,7 +832,9 @@ function createService(options) {
             if (entry.cancelled) return result('cancelled', 'cancelled');
             if (reply.error) return result('miss', reply.error.localReason);
 
-            reply = await unary(entry, 'FindFileByPath', {parentPath: '', path: cloudPath}, Math.min(overallDeadline, start + FIND_BUDGET_MS));
+            const found = await findWithRefresh(entry, cloudPath, {cloudPrefix: config.cloudPrefix}, request, start, overallDeadline);
+            reply = found.reply;
+            overallDeadline = found.deadline;
             if (entry.cancelled) return result('cancelled', 'cancelled');
             directReason = classifyError(reply.error, getTransport().status);
             if (reply.error) return result('miss', directReason);

@@ -7,8 +7,19 @@ package clouddrive;
 // 54b2abae0537f1b4c65752edaac059d3cda4790e, Apache-2.0.
 service CloudDriveFileSrv {
   rpc FindFileByPath(FindFileByPathRequest) returns (CloudDriveFile) {}
+  rpc GetSubFiles(ListSubFileRequest) returns (stream SubFilesReply) {}
   rpc GetDownloadUrlPath(GetDownloadUrlPathRequest)
       returns (DownloadUrlPathInfo) {}
+}
+
+message ListSubFileRequest {
+  string path = 1;
+  bool forceRefresh = 2;
+  optional bool checkExpires = 3;
+}
+
+message SubFilesReply {
+  repeated CloudDriveFile subFiles = 1;
 }
 
 message FindFileByPathRequest {
