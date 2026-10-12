@@ -1,102 +1,79 @@
 # Emby Theater Enhanced
 
-基于 Carnival 3.0 与综合补丁的 Windows Emby 客户端维护工程。当前正式版为 `v0.2.2`，最新公开测试版为 `v0.2.9`。PLAY-01、SEC-01/02 局部加固、LIFE-01/02 和 CI028 已随 v0.2.8 交付；[PR #25](https://github.com/hope140/EmbyTheaterEnhanced/pull/25) 的外挂字幕异步选择竞态修复和必要诊断隐私修复已随 v0.2.9 发布。
+Emby Theater Enhanced 是面向 Windows x64 的非官方 Emby Theater 社区维护版本，使用内嵌 libmpv 播放。它保留 Emby 的播放会话与远程控制，并为 STRM 媒体提供 CloudDrive2 和本地挂载路径解析。项目与 Emby 无隶属、合作或认可关系。
 
-2026-10-11，v0.2.9 产品来源为通过 CI 的 main `084554e07782ca6461b7ed67cadd298a92450b24`，三个公开附件已实际下载并核对，旧 v0.2.8 资产保持。最终来源、SHA256、文档收尾及验收边界见 [综合报告](docs/V029_MAINTENANCE_CLOSEOUT.md) 和 [项目状态](docs/PROJECT_STATUS.md)，后续计划入口为 [ROADMAP](docs/ROADMAP.md)。整体审核从 [审核入口](docs/AI_REVIEW_GUIDE.md)开始，并记录实际 HEAD；历史候选状态按原日期与来源解读。
+## 功能
 
-Emby Theater Enhanced is an unofficial community-maintained project. It is not affiliated with or endorsed by Emby.
+- 内嵌 libmpv 播放，沿用 Emby 的播放进度、字幕、音轨和远程控制。
+- STRM 的 CloudDrive2 DirectUrl/HTTP 解析、本地挂载与原生源回退。
+- 智能路径映射助手、诊断导出和手动检查更新。
+- 简体中文/英文安装器及 Together 同步切集支持。
 
-Emby Theater Enhanced 是非官方社区维护项目，与 Emby 不存在隶属、合作或认可关系。
+## 下载 v0.3.0
 
-## 发布版本
+v0.3.0 是当前正式版。请从 [GitHub v0.3.0 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.0) 下载 Windows x64 安装包：
 
-| 渠道 | 版本 | 入口 |
-|---|---|---|
-| 最新测试版 · Pre-release | `v0.2.9` | [发布说明](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.9) · [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.9/EmbyTheaterEnhanced-0.2.9-win-x64-setup.exe) · [SHA-256 文件](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.9/EmbyTheaterEnhanced-0.2.9-win-x64-setup.exe.sha256) · [来源记录](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.9/EmbyTheaterEnhanced-0.2.9-win-x64-setup.exe.provenance.json) |
-| 当前正式版 · Latest | `v0.2.2` | [发布说明](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.2) · [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.2.2/EmbyTheaterEnhanced-0.2.2-win-x64-setup.exe) |
-| 历史版本 | `v0.2.8` 及更早版本 | [全部历史版本](https://github.com/hope140/EmbyTheaterEnhanced/releases) |
+- [下载 EmbyTheaterEnhanced-0.3.0-release-prepared-20e4251-win-x64-setup.exe](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.0/EmbyTheaterEnhanced-0.3.0-release-prepared-20e4251-win-x64-setup.exe)
+- [SHA-256 校验文件](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.0/EmbyTheaterEnhanced-0.3.0-release-prepared-20e4251-win-x64-setup.exe.sha256) · [安装包来源记录](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.0/EmbyTheaterEnhanced-0.3.0-release-prepared-20e4251-win-x64-setup.exe.provenance.json)
 
-下载 Windows x64 安装包后，先核对随附 SHA-256 与来源记录，再按安装器提示选择独立安装目录。安装生命周期四阶段的本轮真实执行结果单独记录，解包完整性不能代替安装、升级、卸载和重装验收。
+安装包 SHA-256：
 
-## 当前维护内容
+```text
+a7eed18d97295d0fcda635ad90df1609f394553b5afc60c821877609842277f7
+```
 
-v0.2.8 已交付 Stop 后旧播放/换流响应归属修复、外链与增强 IPC 的局部安全边界、Native Helper 异常资源清理和退出等待，以及 Windows CI 兼容修正。发布来源为 `888310de8ebae941b407ae070102b84d4fec1e5e`；具体工程与人工证据见 [统一候选验收](docs/INTEGRATION_028_CANDIDATE.md)、[CI 收尾](docs/CI028_HOSTED_VALIDATION.md) 和 [v0.2.8 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.8)。
+该安装包未进行数字签名。它对应源码提交 [`20e42511b54989550165511a7604aa1b73519ff2`](https://github.com/hope140/EmbyTheaterEnhanced/commit/20e42511b54989550165511a7604aa1b73519ff2)。来源记录用于核对安装包身份；公开仓库尚未包含全部第三方构建输入，因此不能据此声称所有组件均可从公开源码完整重建，也不能声称第三方许可合规已全面验证。下载和运行前请自行评估 Windows 安全提示及第三方软件风险。
 
-v0.2.9 已交付外挂字幕异步选择竞态修复。当旧外挂字幕选择仍在 700ms 等待中，较新的字幕选择、关闭字幕、Stop 或换集使其失效，旧回调会在提交 `sub-add` 前被拦截；已经提交的命令不在此守卫的撤回范围内。原 700ms 与内嵌字幕、音轨、缓存行为保持。修复及历史真实 Emby 验收来源见 [整合记录](docs/V029_SUBTITLE_INTEGRATION.md)。
+## 安装
 
-本轮诊断隐私修复已通过合成回归与独立审核，隐藏自由文本中的完整认证/Cookie 头字段值，以及带空格绝对路径的私人媒体名尾部；实际问题快照和诊断 ZIP 已回读验证。该必要修复随 v0.2.9 交付，有限规则不代表全部未知秘密格式均已识别。详细范围见 [安全审查](docs/V029_SECURITY_REVIEW.md)。
+1. 下载上方 `.exe` 安装包，核对 SHA-256。
+2. 关闭正在运行的 Emby Theater Enhanced，然后运行安装程序并按提示完成安装。
+3. 首次启动时连接 Emby 服务器。升级时按安装向导确认原安装目录。
 
-当前主要保留问题是 STRM/115 内嵌字幕及音轨切换约 5–10 秒的用户体感延迟，状态为 `DEFERRED / USER_ACCEPTED`。CD2 Path Hydration 等待真实 `not_found` 样本；历史黑帧、白屏、特殊 app.exit 超时按原证据观察。用户反馈当前窗口和全屏圆角现象已解决，记为 `USER_REPORTED_RESOLVED / NO_CHANGE_REQUIRED`。详情见 [Known Issues](docs/KNOWN_ISSUES.md)。
+安装器可能显示 Windows 管理员权限提示。不要下载 GitHub 自动生成的 Source code 压缩包来安装客户端。
 
-## 历史交付与审核导航
+## 配置 STRM 与 CloudDrive2
 
-0.2.7完整维护交付包含grpc-js 1.14.6、About可信版本与刷新、64KiB异步校验。[PR #21](https://github.com/hope140/EmbyTheaterEnhanced/pull/21)已合并到 `main`，保留完整维护历史；安装包产品sourceCommit仍为d8fcb0f9。[AI审核指南](docs/AI_REVIEW_GUIDE.md)提供源码、测试日志、安装器逐文件证据和未验证边界，[后续计划](docs/ROADMAP.md)仅将未完成事项列入待办。[本地到远端同步范围](docs/REMOTE_SYNC_027.md)说明历史资料的处理，[主线收尾记录](docs/MAIN_CLOSEOUT_027.md)说明合并核验。
+在 Emby Theater 的“设置”→“播放”→“STRM 智能解析”中启用智能解析。需要使用 CloudDrive2 时填写本机服务地址，设置 Token，启用 CloudDrive2 并测试连接；随后添加路径规则并点击“保存设置”。设置和 Token 保存后，重启应用，播放链才会应用新配置。
 
-以下保留上一轮公开基线与历史验收导航。
+每条规则把同一媒体的三种路径对应起来：
 
-2026-10-09，最新测试版 [v0.2.6 Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.6) 从完整发布分支交付，正式 Latest 仍为 [v0.2.2](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.2)。本版修复连续切集请求身份、pending/并发 Stop 报告归属及正常关闭的 Native Helper 等待，并整合第三方材料通知。631项全量、三种正常关闭与五组完整隔离播放矩阵通过；准确源码、下载、SHA256及保留边界见 [0.2.6发布记录](docs/RELEASE_026.md)。此前设置页用户验收仍归属 [0.2.4验收记录](docs/SETTINGS_UI_024_ACCEPTANCE.md)。
+| 字段 | 填写内容 |
+|---|---|
+| STRM 源路径 | Emby `MediaSource.Path` 中记录的媒体源前缀。它不要求是本机可访问路径。 |
+| CloudDrive2 路径 | 同一媒体在 CloudDrive2 中的逻辑路径前缀。 |
+| 本地挂载路径 | 可选；填写当前客户端能访问的挂载目录，用于 Mount fallback。 |
 
-v0.2.6完整发布树的主线整合差异、验证与PR状态见 [主线整合报告](docs/MAIN_INTEGRATION_026.md)。发布产品身份仍为355f4e6，整合文档不改变已发布的tag和安装包。
+例如，一条规则可以是：
 
-P0/P1 的历史证据见[本地交付](docs/P0_P1_DELIVERY.md)，随 v0.2.5 交付并保留在v0.2.6的诊断继续遵循[诊断 contract](docs/P1_DIAGNOSTICS_CONTRACT.md)。P2 已交付[离线阶段观测工具与能力结论](docs/P2_TIMING_AND_CAPABILITY_REVIEW.md)。[构建输入、来源与可再构建范围审计](docs/BUILD_INPUT_AUDIT.md)已整理固定输入、实际payload和对应源码材料缺口；当前本地构建依赖外部固定输入，公开仓库本身尚不能完整构建全部组件。进度与优先级见 [Development Roadmap](docs/ROADMAP.md)，可复现问题与观察项见 [Known Issues](docs/KNOWN_ISSUES.md)。Smart Path Mapping 已完成用户功能验收和最终远端复审，并通过 PR #18 合入 `main`。
+```text
+Emby Item.Path（STRM sidecar identity）：X:\Emby\STRM\Movies\Dune.strm
+Emby MediaSource.Path（source identity）：X:\115\电影\Dune.mkv
+STRM 源路径规则：X:\115\电影
+CloudDrive2 路径：/CloudNAS/CloudDrive/115open/115/电影
+本地挂载路径：Z:\115\电影
+```
 
-## 已完成能力
+`Item.Path` 标识 `.strm` sidecar；规则优先匹配 `MediaSource.Path`。只有媒体源路径无法识别为绝对路径时，解析器才会使用 `Item.Path` 作为匹配输入。示例路径仅说明字段关系，请替换成服务器返回的真实路径。多个规则重叠时使用匹配到的最长源路径前缀。
 
-### 核心架构
+不确定路径边界时，可在“智能映射助手”填写至少两组不同目录下的同一文件路径样本，检查建议后再加入规则并保存。助手不会自动扫描媒体库或替你保存配置。
 
-- [x] Native Helper + libmpv 播放架构、Helper 子窗口 / HWND 播放面
-- [x] Native Helper 崩溃隔离与重建；Pepper / PPAPI 播放桥退役
-- [x] Electron 44.4.2 升级及 apphost 启动命令兼容修复
-- [x] Windows runtime / package provenance 校验
-- [x] `v0.2.2` 正式发布
+## 常见问题
 
-播放采用 Native Helper + libmpv 作为唯一生产 bridge。Helper 拥有视频子窗口，Electron main 监督进程与播放面，透明前景窗口保留 Emby UI/OSD/input；PlaybackManager、Item、MediaSource、PlaySession、Session/WebSocket 和远控生命周期仍由既有链拥有。STRM 增强仅替换最终 source，保留身份和 Native fallback 合同，见 [架构](docs/ARCHITECTURE.md)。
+**增强解析失败会怎样？** 普通解析失败会继续尝试 Emby 原生播放源。取消或已被新播放请求替代的操作不会继续旧请求的 fallback。
 
-### STRM / CloudDrive2
+**STRM/115 的内嵌字幕或音轨切换为什么要等 5–10 秒？** 这是当前已知延迟，v0.3.0 尚未解决。
 
-- [x] STRM 原始路径识别、CloudDrive2 路径解析与 DirectUrl capability
-- [x] CD2 HTTP → Mount → Native fallback；手动 `rules[]` 与最长前缀匹配
-- [x] Smart Path Mapping inference engine、多样本 Mapping Boundary 推导、Existing Rule Coverage 检测与 Mount 路径推导
-- [x] Smart Mapping 显式 Save draft 语义、CloudDrive2 连接状态同步
-- [x] Smart Path Mapping Final PR Audit
-- [x] Smart Path Mapping PR / Merge
-- [x] STRM 设置页一致性修正（用户验收通过，已随 v0.2.4 测试版发布）
-- [ ] CD2 Path Hydration（等待真实 `not_found` 样本）
+**新入库资源为什么在 CD2 中找不到？** v0.3.0 尚不会自动刷新 CD2 目录缓存。先确认路径规则及 CD2 中的文件，必要时在 CD2 刷新对应目录；Emby 入库和 CD2 缓存更新是不同步骤。
 
-### 播放体验
+**这是什么软件，支持哪些系统？** 这是非官方社区维护项目，仅提供 Windows x64 客户端；不代表 Emby 官方产品，也不提供 macOS 或 Linux 客户端。
 
-- [x] 播放 / Pause / Seek / Stop 基础链路与 Fullscreen 基础控制
-- [x] `v0.2.2` 视频冻结根边界修复
-- [x] NextTrack 原生持帧还原（v0.2.3 起提供；全屏短闪与真实媒体仍按各自验收范围观察）
-- [x] 圆角状态用户反馈已解决（`USER_REPORTED_RESOLVED / NO_CHANGE_REQUIRED`；未新增独立视觉 PASS）
-- [ ] Mixed-DPI / 多显示器缩放适配
+**为什么 Windows 会提示未知发布者？** 当前安装包没有数字签名。请先核对上述发布页、文件名、SHA-256 和来源记录，再自行判断是否运行。
 
-### 诊断与维护
+## 项目链接
 
-- [x] 诊断包导出、播放 / 路由诊断信息与敏感信息脱敏
-- [x] 最小播放诊断与 Renderer 错误位置采集（随 v0.2.5 测试版交付，证据见发布记录）
-- [x] About环境信息、手动更新查询与发布入口
-- [ ] Installer install / upgrade / uninstall / reinstall 残留审计
-
-### 观察项
-
-- [ ] Seek transient black frame
-- [ ] Stop / Exit transient black frame
-- [x] rapid NextTrack确定性夹具、请求身份与Stop归属修复（本地/隔离证据见0.2.6发布记录）
-- [ ] transport `stdout-end` stress / harness gap
-- [ ] HDR 专项验证
-
-### 暂缓 / 决策项
-
-- [ ] Electron Forge 迁移评估
-- [x] 构建输入与对应来源清单审计（本地材料与P1候选）
-- [x] [本地构建输入绑定、依赖目录与通知交付contract](docs/BUILD_HARDENING.md)
-- [x] 同提交两次独立runtime与installer字节一致（2136文件，见[构建复核](docs/BUILD_REVIEW.md)）
-- [x] 第三方材料索引与四份通知随包交付
-- [ ] 第三方剩余对应源码与完整构建材料补齐
-
-## 项目文档
-
-- [当前状态与验收边界](docs/PROJECT_STATUS.md) / [测试与构建](docs/TESTING.md)
-- [架构](docs/ARCHITECTURE.md) / [STRM 设置契约](docs/STRM_RESOLVER_SETTINGS.md) / [DirectUrl 契约](docs/CD2_DIRECT_URL.md)
-- [本地构建](docs/PACKAGING.md) / [许可与公开范围](docs/LICENSING.md)
+- [全部版本与发布说明](https://github.com/hope140/EmbyTheaterEnhanced/releases)
+- [新用户指南](docs/USER_GUIDE.md)
+- [贡献指南](docs/CONTRIBUTING.md)
+- [许可与第三方材料说明](docs/LICENSING.md)
+- [变更记录](CHANGELOG.md)

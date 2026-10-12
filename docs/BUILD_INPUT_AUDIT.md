@@ -1,18 +1,13 @@
 # 构建输入、来源与可再构建范围审计
 
-后续工程已在独立分支实施，见 [构建输入绑定与候选](BUILD_HARDENING.md)、[Node边界](NODE_DEPENDENCY_BOUNDARY.md)、[工具链固定](BUILD_TOOLCHAINS.md) 和 [补充来源材料](SOURCE_MATERIALS.md)。下方P1数量、缺口和未执行项保持为原审计时点记录，不直接用后续结果改写旧产物身份。
+本页记录 2026-10-09 对历史 v0.2.4 P1 输入和产物的审计，不描述当前 v0.3.0 payload。当前正式发布源码为 `sourceCommit=20e42511b54989550165511a7604aa1b73519ff2`；P1 结果仍绑定其原始身份，不外推到新版本。后续构建约束见 [BUILD_HARDENING.md](BUILD_HARDENING.md)、[NODE_DEPENDENCY_BOUNDARY.md](NODE_DEPENDENCY_BOUNDARY.md)、[BUILD_TOOLCHAINS.md](BUILD_TOOLCHAINS.md) 与 [SOURCE_MATERIALS.md](SOURCE_MATERIALS.md)。
 
-日期：2026-10-09（UTC+8）。审计起点 `1abf55496e3425c1930805de54796c1fa3069504`，本地分支 `codex/build-input-audit-20261009`。本轮只修改审计工具、测试和文档，产品版本仍为 0.2.4。
-
-导出器与测试的本地提交为 `0b44a81`；下方机器清单使用该实现、现有P1材料和本轮起点的权威输入清单。文档/证据提交独立于工具提交，均不改变产品sourceCommit。
-
-当前证据支持“使用本机保存的固定输入组装 runtime，并从 Git 源码编译 Native Helper”。它不支持“仅克隆公开仓库即可完整构建”或“所有组件均可从对应源码逐字节重建”。下面把文件身份、来源材料、实际生成和验证层次分别记录；`CONFIRMED` 是所述事实已确认，`MISSING` 是所述材料未在审计范围内找到，`UNKNOWN` 是尚不能建立对应关系，均不是法律合规评级。
+`CONFIRMED`、`MISSING`、`UNKNOWN` 描述各自审计范围内的文件身份和材料关系，不是法律合规评级。公开仓库不包含全部外部构建输入，也未证明所有组件都能从对应源码重建。
 
 ## 对象与权威记录
 
-- 产品样本是 P1 `sourceCommit=fb10f920a39112ff72b0f82715da8345702f634b` 的 `dist/ETE-0.2.4-p1-fb10f92-win-x64/`，持有该产物的工作树与历史验证见 [P0/P1 交付](P0_P1_DELIVERY.md)。本轮没有给它换 sourceCommit 或重新打包。
-- P1 到本轮起点之间，`src/`、`native/`、四份 vendor manifest、依赖声明/锁文件、正式 prepare/build/package/provenance 工具均无差异；后续审计提交不改变这些产品输入。
-- 2026-10-09 只读刷新 GitHub：`main=46e995ef83fca7f7a882e3dc633bdcc2d2d521c7`，Latest 为 [v0.2.2](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.2)，[v0.2.4](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.4) 为 Pre-release。已发布 v0.2.4 的产品源为 `03a2e3b9ea7f1cf786b034b0a1882b10de79a39c`；它与 P1 是不同对象。本轮未重新下载或审计已发布安装包的全部 payload。
+- 审计样本是 P1 `sourceCommit=fb10f920a39112ff72b0f82715da8345702f634b` 的 v0.2.4 payload。该对象与已发布 v0.2.4 的产品源 `03a2e3b9ea7f1cf786b034b0a1882b10de79a39c` 不同；以下发现只适用于相应历史对象。
+- P1 与审计起点之间，`src/`、`native/`、四份 vendor manifest、依赖声明/锁文件及 prepare/build/package/provenance 工具保持一致；审计结果不改变 P1 的 sourceCommit。
 
 继续使用现有三层记录，不建立第二套权威 manifest：
 
@@ -22,11 +17,11 @@
 | 产品源码与 runtime 关系 | `runtime-provenance.json`、`native-helper-provenance.json` | commit blob、prepared preload、overlay、header/compiler/helper 与 runtime 的关系 |
 | 最终 payload | `build-manifest.json`；安装器解包回比 | 全部文件集合及哈希；不能单独证明对应源码、下载来源或许可条件 |
 
-`vendor/toolchain-manifest.json` 是现有工具来源记录，当前 package gate 不消费它。本文和 `docs/evidence/build-input-*.json` 都是从这些材料导出的观察，不作为构建的新信任根。
+`vendor/toolchain-manifest.json` 是工具来源记录，当前 package gate 不消费它。本文是从这些固定输入和历史产物导出的观察，不作为构建的新信任根。
 
-[机器清单](evidence/build-input-inventory-20261009.json)记录三个归档、1009/51个vendor文件、Electron73文件、header、33包选择、40个实际包根、23个EXE/DLL和45个可见通知路径。P1 payload2149项加manifest自身共2150文件，文件集合和hash一致。报告整体`assessment=MISMATCH`来自包目录比较的20个long旧文件；`runtime.status=PASS`只表示原payload清单与实物一致，两者并不矛盾。
+历史清单记录三个归档、1009/51个vendor文件、Electron 73 个文件、header、33个包选择、40个实际包根、23个EXE/DLL和45个可见通知路径。P1 payload 2149 项加 manifest 自身共2150个文件，文件集合和hash一致。报告整体 `assessment=MISMATCH` 来自包目录比较的20个 long 旧文件；`runtime.status=PASS` 只表示原payload清单与实物一致，两者并不矛盾。
 
-`vendor/README.md`保留早期双归档和“本地验收”说明；原vendor文档与输入保持只读。本节、[PACKAGING](PACKAGING.md)和当前通知文档补充Electron44/helper输入及既有二进制发行事实，早期措辞不作为当前分发状态。
+`vendor/README.md` 与原始 vendor 输入保持不变。当前构建边界见 [PACKAGING.md](PACKAGING.md)；本节下方内容仅描述本页所列历史 P1 对象。
 
 ## 输入与对应来源矩阵
 
@@ -80,7 +75,7 @@ P1 runtime 含23个 `.exe/.dll/.node` 扩展名的二进制文件，`.node`数�
 | 命题 | 当前判断 | 支撑与边界 |
 |---|---|---|
 | 本机既有固定输入可构建 | 已有P1实际构建证据，本轮重验其输入/产物关系 | 产品fb10f92已有正式build/package/安装器回比；本轮只读验证既有产物，未虚构一次新build |
-| 干净工作树加现有输入可构建 | 历史Phase1双worktree通过；当前材料/脚本路径已盘点，当前双build未重做 | [历史clean-room](CLEANROOM_REPRODUCIBILITY.md)不能直接升级为当前Electron44/Native Helper字节重复构建证据。除3归档/npm外还需header和完整现有GCC环境 |
+| 干净工作树加现有输入可构建 | 历史 Phase 1 双 worktree 结果仅适用于当时固定输入 | 不证明当前 Electron 44 / Native Helper payload 可重复构建；还需固定完整外部归档、header 与编译器工具链 |
 | 仅公开仓库可构建 | 当前不成立 | Carnival/补丁/完整Web/预编译输入未纳入Git；其可公开获取与对应源码并未闭合。公开Electron和header可下载不能补齐其余输入 |
 | Native Helper从源码可编译 | 已有P1源构建记录，本轮source/header/compiler/output关系通过 | 不能由此声称整个产品源码可构建；完整工具链固定仍缺失 |
 | 相同材料组装出相同runtime字节 | 有限历史证据，当前整体未重新证明 | 旧Phase1两树和历史helper重复hash只适用记录的revision/环境。当前未锁定所有构建输入，新增sourceCommit还会改变provenance字节 |
@@ -89,35 +84,7 @@ P1 runtime 含23个 `.exe/.dll/.node` 扩展名的二进制文件，`.node`数�
 ## 有界独立检查与发现
 
 1. 重新运行P1的source、runtime、native-helper、Electron validator，均通过；runtime产品scope85，Electron73文件。这里使用P1材料根和fb10f92，避免把当前审计HEAD冒充旧runtime的源。
-2. 新审计工作树运行 `npm ci --ignore-scripts --no-audit --no-fund`，按锁文件安装34包（其中1个dev）。33个生产包1142文件与P1逐文件比较：missing=0、mismatch=0、extra=20。20个extra全部位于`long`且逐个hash等于Carnival `long@3.2.0`原文件。报告见 [npm独立对照](evidence/build-input-npm-20261009.json)。这是copy-overlay保留旧文件的事实，不据此推断播放缺陷。
-3. 只读解析g++实际程序/库路径并hash：cc1plus、collect2、as、ld、libstdc++.a、libgcc.a、libmingw32.a、libuser32.a、crt2.o均存在，见 [工具链观察](evidence/build-input-toolchain-20261009.json)。这是工具链缺口的样本，不是完整closure。当前MSYS2本地包记录包括gcc/gcc-libs16.1.0-5、binutils2.46-4、crt/headers/winpthreads14.0.0.r92.g818fa6510-1；尚未验证这些包的完整原始归档及源码。
+2. P1 锁文件安装的 33 个生产包共 1,142 个文件；与 payload 对照为 `missing=0`、`mismatch=0`、`extra=20`。20 个额外文件均为 Carnival `long@3.2.0` 的既有文件，反映该历史 payload 的依赖目录状态，不单独证明播放缺陷。
+3. 对历史 helper 编译环境解析到 `cc1plus`、`collect2`、`as`、`ld`、`libstdc++`、`libgcc`、MinGW/import libraries 与 CRT 对象；这不足以证明完整工具链来源和源码闭包。
 4. 正式build读取工作文件 `package.json` / `package-lock.json` 和vendor manifest。它们当前与基线一致，但不像普通产品文件从sourceCommit物化；同sourceCommit加dirty元数据可能生成不同产物。`node_modules`实际bytes也不在复制前绑定npm tarball。后续收紧需独立构建contract变更，不能把已有provenance描述成已经实现这些gate。
 5. `Emby.Theater.exe.config` 的ProgramDataPath由build进行锚点替换，最终hash有payload记录，但没有独立base/generator/output relation条目。安装器compiler同样没有正式version/hash断言。本文披露这些准确限制，不将“可审计结果”扩写为“所有输入均固定”。
-
-## 复跑与证据边界
-
-`tools/audit-build-inputs.cjs` 是只读导出器，显式传入材料位置；仅向一个新output写报告，拒绝覆盖。manifest中的输入相对路径决定检查范围，缺失材料记为MISSING并继续其它项目。输出不包含材料根的私人绝对路径、原始日志或媒体信息。它验证的是本地文件身份，不能替代正式source/runtime validator、来源证明或许可判断。
-
-```powershell
-node tools/audit-build-inputs.cjs --repo-root . --inputs-root <材料工作树> --archive-root <三个归档所在目录> --runtime <既有P1-runtime> --output .work/build-input-observation.json
-node --test tests/build-input-audit.test.cjs tests/tracked-product-sources.test.cjs tests/electron-runtime-input.test.cjs
-```
-
-同一报告的input状态、runtime payload状态、dependency file-set差异分别阅读，不能把报告成功写出当作构建通过。tarball `integrity`字段只是引用锁文件；要重复本轮fresh npm对照，应先在新目录/新工作树执行相同锁文件的 `npm ci --ignore-scripts --no-audit --no-fund`，再指明该输入目录。不要在旧工作树运行清理命令来制造“干净”输入。
-
-本轮复用P1安装器完整性和2150/2150回比历史记录，并重算既有安装器SHA256：`d23ff3a0a7794fa66250e2cdfef7f8bc85a4bd4cab0b48d3f57cfbe5e679a84e`。未执行客户端、profile、系统安装、真实Emby/CD2、窗口/GPU或远控验收。
-
-实际验证：新增14项工具测试与既有5项Git blob/Electron输入测试共19/19通过，包含输入缺失继续、篡改/extra、路径/链接拒绝、版本元数据隐私、大小写/通知文件名、退役目录、输出独占和缺文件计数；Node语法与diff检查通过。新工作树仅npm准备后执行导出得到`INCOMPLETE`，Carnival/补丁/Electron/header分别为MISSING，未将缺失误记为通过。主目录已有改动及P1安装包保持；原产品源码/版本/manifest/构建链无diff。
-
-## 剩余材料与最小补齐顺序
-
-| 优先级 | 缺口 | 最小下一步 / 完成条件 |
-|---|---|---|
-| 高 | 当前分发内容的通知与完整对应源码材料未闭合 | 按实际payload准备逐组件材料索引，收集Host/支撑DLL、libmpv及依赖、CEC/RefreshRate、Web/资产的精确revision/来源/许可文本/构建材料；核对根项目许可与通知的随包方案。缺项继续显式标未知，最终许可判断另行完成 |
-| 高 | libmpv所称上游asset入口现不可用 | 向原提供者取得原dev archive、独立发布端hash/签名或可信发布记录，核对说明声明的archive hash，再收集winbuild脚本revision、依赖revision/patch/config/toolchain；先验证与本地DLL相等，不能用一个mpv commit代替完整对应源码 |
-| 中 | Node最终文件集合包含归档继承包和long旧文件 | 固定并审阅33包之外的列表及20个旧文件用途；下一次获授权构建contract变更时选择明确保留或清理，并做新目录构建/payload对照。此次不更换依赖或旧产物 |
-| 中 | helper及installer完整工具链未锁定 | 保存现有工具链精确包/归档及完整tree identity，补完整许可/源码材料；让正式gate消费它。先核对工具链来源，再做同输入的有界双build |
-| 中 | build元数据与sourceCommit边界不完整 | 对package/lock/vendor元数据及config transform补明确commit/relation gate；使用dirty元数据负向测试验证fail closed，独立小范围提交 |
-| 后续验证 | 当前双worktree与installer字节重复性 | 前述材料收齐后，在两个全新输出验证runtime路径/hash；另行固定Inno环境并比较容器bytes。一次build、一个SHA或历史PASS不能替代这些条件 |
-
-来源未知不会自动触发组件替换、删除资产或撤下Release。本轮交付是清单与材料缺口；这些后续实施项仍需按各自范围决定。

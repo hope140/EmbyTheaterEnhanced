@@ -1,6 +1,6 @@
 # 构建输入绑定与依赖生成
 
-2026-10-09后续复核已修正writer输出边界，并在1a05f88候选上取得runtime和安装器容器字节一致证据，见 [BUILD_REVIEW](BUILD_REVIEW.md)。本页以下3b158f6的容器不一致与其他结果保留历史归属。
+2026-10-09后续复核已修正writer输出边界，并在1a05f88候选上取得runtime和安装器容器字节一致证据，见 [BUILD_REVIEW（历史记录）](https://github.com/hope140/EmbyTheaterEnhanced/blob/v0.3.0/docs/BUILD_REVIEW.md)。本页以下3b158f6的容器不一致与其他结果保留历史归属。
 
 基线为审计提交 `49f643a`，独立分支 `codex/build-hardening-20261009`。
 本轮只修改构建、审计、测试与文档；产品版本保留 0.2.4。候选产物必须
@@ -108,10 +108,10 @@ Helper、全部产品JS和ProgramDataPath最终配置均与P1字节一致。
 build/package及schema 3审计要求材料工作树HEAD等于产物sourceCommit；
 若当前HEAD已前进到交付文档提交，复跑应使用独立检查工作树中的准确
 3b158f6与固定输入，不能把文档HEAD重新标到现有runtime上。
-完整机器结果见 [交付证据](evidence/build-hardening-delivery-20261009.json)、
+完整机器结果见 [交付证据（历史记录）](https://github.com/hope140/EmbyTheaterEnhanced/blob/v0.3.0/docs/evidence/build-hardening-delivery-20261009.json)、
 [新输入清单](evidence/build-hardening-input-inventory-20261009.json)、
 [来源材料](evidence/build-hardening-source-materials-20261009.json) 和
-[工具链材料](evidence/build-hardening-toolchains-20261009.json)。
+[工具链材料（历史记录）](https://github.com/hope140/EmbyTheaterEnhanced/blob/v0.3.0/docs/evidence/build-hardening-toolchains-20261009.json)。
 
 ## 剩余材料与验收边界
 

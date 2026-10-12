@@ -1,101 +1,19 @@
-# 架构
+# 架构与维护边界
 
-## P1 统一媒体替换呈现合同
+普通媒体链路为 Emby Web → PlaybackManager → libmpv adapter → Electron main Native Helper supervisor → Windows helper → 内嵌 libmpv。Native Helper 是唯一生产 bridge；旧 Pepper/PPAPI 不进入 runtime。
 
-本地 playlist-managed same-player Video replacement Stop 通过libmpv窄hook创建request-bound presentation intent，复用现有原生prepare/stopForPresentation/arm/reveal。公开Play只在已有intent时同步接管，保护前置item/user/intro等待期间的B/C交错；按options WeakMap和request ID进行整轮完成清理。prepared未arm阶段有独立15秒失败期限，native arm后原租期保持。terminal Stop、不同player、Audio与Session/Resolver语义保持；Native Helper CPP、协议和surface ownership没有变化。消息路径及证据见[P1远程呈现](P1_REMOTE_PRESENTATION.md)。
+PlaybackManager 拥有 Item、MediaSource、MediaSourceId、PlaySessionId、Session/WebSocket、进度、远控与 Together 生命周期。STRM Resolver 只决定最终 loadfile source，不重建播放会话。Item.Path 是 sidecar identity，MediaSource.Path 是 source identity，options.url 是原生播放 source；普通媒体和 Transcode 保持原生链路。
 
-## 当前主线架构 — 2026-10-11
+STRM 按持久化 rules 的 cloud-first、mount-first 或 custom 顺序尝试 DirectUrl、CD2 同源 HTTP、Mount 和 Native。main 持有 Token、gRPC 与映射；renderer 只通过窄 IPC 请求结果。source/cloud/mount 三个前缀分开，严格路径边界、最长前缀匹配和拒绝路径穿越。DirectUrl 只开放经过校验的 file-local User-Agent，未知 additionalHeaders 回退同源 HTTP。
 
-开工核验 `main@9774b73469dea9a3651f03737153c872947223ee` 已包含下述 PLAY-01、SEC01/02、LIFE01/02、About 异步校验和 Smart Path Mapping；PR #25 的外挂字幕选择守卫已合并。Native Helper 是唯一生产 bridge，STRM 增强只替换最终 source，PlaybackManager 与 Session 身份链保持。下方候选名和旧版本陈述是各专项的历史来源，不代表今天尚未集成。当前维护与验证边界见 [v0.2.9 收尾](V029_MAINTENANCE_CLOSEOUT.md)。
+当前 CD2 stages 共享 1200ms absolute budget，连接最多 200ms、Find 最多 350ms、下载阶段最多 500ms。连续 direct/same-origin 尝试复用 Find 结果。RPC/mapping/响应失败继续 Mount/Native；Abort/superseded 向上终止。PlaybackManager request id、libmpv generation、AbortSignal、IPC request id 和 gRPC cancel 共同阻止迟到响应加载旧媒体。
 
-已发布v0.2.9产品来源为main `084554e07782ca6461b7ed67cadd298a92450b24`。本轮唯一新增生产维护为诊断文本序列化：完整认证/Cookie头字段值在路径/URL投影前抹除，绝对路径摘要包含空格并保留后行；PowerShell末端gate拒绝原始或部分脱敏头字段，处理JSON tab与空白回溯。它不改变renderer权限、IPC、播放/Session或Helper协议；未知秘密/裸标题不保证识别，范围见 [安全审查](V029_SECURITY_REVIEW.md)。
+媒体替换复用 request-bound presentation intent 与原生 prepare/stop/arm/reveal，已有 intent 在前置异步阶段随新请求接管。未 arm 的准备持帧有独立 15 秒上限；terminal Stop、失败、音频切换和退休请求清理所属状态。Session 与远控仍由原链拥有。
 
-## 2026-10-10 统一本地候选（历史快照）
+透明主窗口拥有 UI/OSD/输入，独立 video host 承载 helper child HWND。窗口与全屏状态由 main 管理；Helper 失败不退回旧 bridge。销毁共享 Promise，并等待所属进程退出和资源清理，保留错误。
 
-以下新增contract已整合到统一本地候选b139d87，不能当作已发布v0.2.7行为：SEC01在系统浏览器入口允许HTTP/HTTPS并收口错误；SEC02增强IPC只接受当前webContents的实际mainFrame和固定包内index，主导航/redirect受限。原preload宽fs/rawIPC及isolation/sandbox/CORS/CSP依赖保留待设计。LIFE01在全部owned退出settled后仍尝试所有listener/surface清理，再按current/pending顺序传播原错误；无native错才传播cleanup错。LIFE02把terminal解绑的owned kill加入同pending集合，不改变generation、重建或kill策略。精确来源及组合验证见 [候选报告](INTEGRATION_028_CANDIDATE.md)，原独立分支身份见 [交付记录](REVIEW_028_DELIVERY.md)。
+About 校验固定 provenance/manifest 与二进制身份，实时运行状态独立读取；缺失信息保留 UNKNOWN/NOT AVAILABLE。诊断旁路复用 logger 与 sender 校验，不改变 source 或播放时序。
 
-PLAY-01源提交 `1a62f3d` 的产品字节完整进入b139d87，补齐原changeStream成功路径和公开Play前置异步入口的归属。公开本地Play同步捕获request序号，playInternal消费该身份；换流捕获stream对象、sequence、request ID及独立owner，各异步继续点检查归属。同ID的有效换流仍允许。terminal Stop同步失效旧意图并清除换流标记，完成Promise阻止新意图越过旧物理Stop；Stop之后明确新Play仍被接受。Stop拒绝时等待的公开Play结束失败，屏障清除，随后新Play可恢复。已接管source的错误继续由原恢复链传播，避免合法retry被误吞。未改变Session身份、Resolver或Native fallback规则。原PLAY01专项及单独分支runtime见 [原报告](PLAY01_STOP_BOUNDARY.md)，统一产品与新增组合case见 [候选报告](INTEGRATION_028_CANDIDATE.md)。
+构建由 tools/build.ps1 从固定 sourceCommit 的 Git blob、生成器和锁定外部输入组装。source-provenance、runtime-provenance 和 build-manifest 分层记录；完整运行时仍依赖仓库外输入。Electron 使用固定 44.4.2 Windows x64 完整树。
 
-About包内版本校验由main持有固定runtimeRoot/sourceCommit的异步reader。四个固定文件按64 KiB读取/哈希，读取前后及整轮结束复核文件身份；仅共享进行中的Promise，完成/UNKNOWN即清除，后续查询重验全部字节。实时Helper状态在await包内结果后独立获取；维护GET_INFO/COPY/CHECK_UPDATE及诊断EXPORT均await信息快照。复制同快照、sender白名单及renderer请求代际保持，查询不启动播放器。验证层级与来源见 [About异步版本校验](ABOUT_VERSION_ASYNC.md) 及 [0.2.7维护收口](MAINTENANCE_027.md)。
-
-Native Helper service 的完整 destroy 使用单一缓存 Promise。首次调用同步置 destroyed 并清除 endpoint admission，随后异步执行清理；主窗口 closed 与 before-quit/unregister 的重复调用共享同一完成或拒绝，不能以“已开始销毁”代替“已完成”。原owned错误保留，统一候选在全部退出settled后仍尝试本地资源清理；kill策略、Session和播放操作保持。原正常窗口关闭来源见 [本地包记录](LOCAL_PACKAGE_026.md)，当前来源见 [统一候选](INTEGRATION_028_CANDIDATE.md)。
-
-renderer endpoint destroy可先清空client指针再等待其owned child退出。service使用pending集合跟踪这些destroyClient完成结果；完整destroy在同步封住admission后捕获尚未完成的集合，并在解绑surface前等待。空client指针不等于旧child已经退出。此修复限于已观察到的renderer destroy先行路径，不重写terminal callback或controller退出策略。
-
-current退出和捕获的pending退出进入同一次allSettled；一个实例失败不能使before-quit越过其它尚未完成的退出。全部settled后先尝试全部listener/surface释放，再优先传播current错误、按pending快照顺序传播原始错误；没有owned错误才传播本地cleanup错误，不新增重试或强杀。terminal解绑但尚未完成的kill与renderer先行destroy共用pending集合。
-
-本地 playlist-managed player 的 replacement Stop 使用 player + 捕获 streamInfo 的局部收尾记录。已开始的物理 Stop 顺序完成，尚未执行的过期请求跳过；最新请求仍执行自己的 Stop/presentation preparation。记录排空前保持原 stopped listener 解绑，防止无 session 标签的迟到 stopped 事件作用于新流。清理/事件/报告按捕获流领取一次，不由 request id 早退代替；当前 streamInfo 只在对象身份相等时清空。terminal Stop 同步失效请求并加入现存记录，重复 Stop 与后来的 Next 共用包含拒绝结果的 terminal Promise；排空后调用既有 onPlaybackStopped 完成 queue 与 player removal。remote/self-managed player 保留原路径。详见 [Stop 归属与退出证据](STOP_OWNERSHIP_EXIT_EVIDENCE.md)。
-
-PlaybackManager 的每次 `playInternal` 在分配 request ID 前复制 options，并把队列 item 指向该次快照。后续 Next 只给新快照分配 ID，旧异步闭包保持旧身份；现有各阶段 current-request 守卫、terminal Stop 失效和 streamInfo 向 libmpv 的 ID 传播继续生效。`onPlaybackRequested` 设置的临时 streamInfo 显式标为 pending，替换和 terminal Stop 仍做原有清理、事件与队列操作，只抑制该临时对象的 Stopped 报告；`onPlaybackStarted` 进入真实会话后清除此标记。不能用 `started === false` 通用过滤 Stopped，因为已开始会话的 changeStream 失败也会产生该值，仍需要原有错误收尾报告。验证范围见 [请求与会话修复](PLAYBACK_REQUEST_SESSION_FIX.md)。
-
-构建输出写入在操作前统一检查runtime物理路径、全部目标和完成标记，拒绝目标链接、重复通知和已有完整产物；config只接受已验证的base并原子替换，通知和provenance独占创建。安装器使用固定Inno的notimestamp省略构建源mtime，保留文件内容与既有安装选项。当前重复构建与精确范围见 [BUILD_REVIEW](BUILD_REVIEW.md)。
-
-P1 最小诊断复用 enhanced logger 和 trusted diagnostics IPC。controller 只在已有 generation/native 文件事件决策点旁路报告 disposition；service 增补持帧和 surface-hidden 的有限观察。main 侧最多保留 64 个内部请求关联，每分钟 120 条，新增 recorder 最多 32 个 pending writes。Renderer preload error/rejection listener 只发送固定类别和实际包内 JS 相对位置，main 再投影、去重和限频（20/min）；未知消息、任意 stack、函数名和包外位置不进入日志。完整隐私、限额、失败隔离与证据边界见 [P1_DIAGNOSTICS_CONTRACT](P1_DIAGNOSTICS_CONTRACT.md)。
-
-统一本地候选 `cc603ba` 以全屏/播放 `1e86e51` 合入 Settings `21ef9a4`。main的维护IPC只复用当前应用webContents与诊断快照，按原before-quit收口注销；libmpv新增About route，native持帧、窗口normal bounds、Session/Resolver身份链保持两侧既有实现。验证与来源见 [统一候选验收](UNIFIED_CANDIDATE_ACCEPTANCE.md)。
-
-Electron candidate production runtime is the pinned official Electron 44.4.2 Stable Windows x64 tree. `tools/build.ps1` removes the copied Carnival `x64/electron` directory before copying the validated official tree; source/runtime provenance bind the exact archive, full 73-file tree and `electron.exe`. Carnival Electron 18.3.15 remains a separate historical baseline input and is never relabeled as the production runtime. Compatibility changes are limited to the removed window-open API and the six existing internal XHR schemes; BrowserWindow/HWND ownership, Native Helper IPC and playback/session contracts remain unchanged. See [ELECTRON_44_UPGRADE](ELECTRON_44_UPGRADE.md).
-
-当前生产 bridge 状态：`Pepper / PPAPI bridge = RETIRED`，`Native Helper = ONLY production bridge`。旧 Carnival Pepper binary 只作为 immutable archive provenance input 保留，正式 runtime、installer payload 和正常启动链均不包含它。
-
-本地全屏候选 `1e86e51` 保留透明main与独立video carrier的既有归属。Windows透明全屏使用main进程的enter/leave状态、最小化状态和显示器geometry共同维护；进入时保存normal bounds及resizable/movable，退出时恢复，重复请求和OS restore不会重置normal bounds。显式Normal清除待恢复状态，关闭时按fullscreenActive决定保存normal bounds。只有全屏活动期锁定main交互，普通窗口可缩放；carrier持续由main bounds驱动，使用thickFrame/resizable/movable=false。IPC、native持帧与Session生命周期不变，详见 [全屏窗口记录](FULLSCREEN_WINDOW_STATE.md)。
-
-## Production Native Helper Bridge candidate
-
-`feat/native-helper-bridge` 使用 renderer logical adapter、Electron main supervisor、private inherited framed pipes 与独立 Windows helper 作为唯一 production mpv bridge。helper-owned child HWND 输出到 main-process video host；原 transparent BrowserWindow 独立置于其上，因此现有 Emby UI/OSD/input ownership 不变。完整 identity、event attribution、crash、surface 与 build contract 见 [NATIVE_HELPER_BRIDGE](NATIVE_HELPER_BRIDGE.md)。
-
-此层只消费 Resolver 的最终 `native/local/url` source。PlaybackManager、Item、MediaSource、MediaSourceId、PlaySessionId、Session、WebSocket、progress、remote control 与 NextTrack 仍由既有链拥有。启动时不注册 PPAPI plugin；Native Helper failure fail closed，不切换旧 bridge。
-
-Native helper 将 transport/protocol failure 与 libmpv operation failure 分开。前者继续终止 helper；后者在 request 已通过 allowlist、schema 与 current-generation ownership 后，以 typed generation event 返回并保持 helper、transport 与 generation，不升级为 lifecycle failure。
-
-`player.getStats()` 是展示型 telemetry 边界。Media、Video 与 Audio category 内的 property 都按现有 null/省略/零值展示 contract 作为 optional stats 读取；仅精确的 `property-unavailable` 降级为 `null`，其余 transport、protocol、helper、generation 与未知错误继续 reject。该规则不改变通用 `getProperty()` 或 helper property response 语义。
-
-Native endpoint 的 ready-stage 精确 cache snapshot 是 optional diagnostic mutation，不属于 generation-independent read。renderer client 仅暴露无参数窄方法：无 active generation 时返回 unavailable，不提交 set/command；存在 generation 时捕获同一 generation，依次执行 exact diagnostic set、expand 与 read，并在每个 await 后复核 ownership。generation 缺失、stale 或调用中退休只使该 snapshot unavailable；其他 transport/protocol 错误仍 reject。普通 getProperty、任意 command/set、helper fatal 与 generation retirement contract 不变。
-
-正式 runtime harness 不以 BrowserWindow 创建顺序或数量判断 application ownership。它只把 exact packaged `electronapp/www/index.html` 的 `file:` document 绑定为唯一 application renderer，绑定存活期间不会被后续窗口覆盖；native-helper `data:` surface 和未来辅助窗口只做脱敏分类，不接收 AMD、pluginManager 或 pipeline 注入。AMD 状态是选定 application 后的 assertion，不是 window identity。
-
-Generation fixture 不再用固定 sleep 猜测 A/B overlap。harness observer 只有在 Play A 的 core-playing listener 已注册、native generation 已创建且 Promise 仍 pending 时才放行 Play B；它关联 requestId/generationId、retire 与 listener removal。旧 listener assertion 检查 takeover 后 callback 不再增加，而不是复用 Promise rejected。Stop subcase 等待 fake CD2 resolve 已进入且 Promise pending，再触发 stop/cancel，以确定性验证 resolver cancellation 与 late load prevention。
-
-基线为提供的 Carnival 3.0（应用声明 3.0.20-3.0）叠加综合补丁。保留 Windows .NET 启动壳、Electron、离线 Web UI 与内嵌 libmpv 的现有目录关系。
-
-普通视频：Emby → PlaybackManager → 原生 MediaSource → libmpv 插件 → Native Helper → mpv-1.dll。Session、PlaySession、进度和远控仍由 Emby Web 生命周期负责。
-
-STRM 增强：在 `libmpv.js` 的 `playInternal(options)` 中，若 `Item.Path` 缺失但 item/server identity 充分，则通过现有 `connectionManager.getApiClient(serverId).getItem(userId, itemId, {Fields:'Path'}, signal)` 做一次有界 metadata recovery；只有返回的原始 Path 以 `.strm` 结尾时才恢复 STRM sidecar identity。`sourcePath=MediaSource.Path` 和 `nativeSource=options.url` 保持不变；普通媒体不因 `DirectStream + file + mkv` 被识别为 STRM。随后仅在确定的 STRM context 内按 DirectUrl/CD2 HTTP/Mount/Native 顺序解析。Resolver 位于 `libmpv.js` 的 `playInternal(options)`，只替换最终交给 `loadfile` 的 source。`sidecarPath`、`sourcePath`、`nativeSource` 三者不可互换；PlaybackManager、Item、MediaSource、PlaySession、WebSocket 和远控生命周期保持原链路。Transcode 永远使用 native source。
-
-`src/electronapp/resolvers/strm-resolver.js` 负责 STRM 判定、异步 source 编排、播放方式保护与 fallback；`mount-resolver.js` 生成确定性本地候选并执行 `existsSync`；`cd2-resolver.js` 只通过窄 IPC 请求 source。Electron main process 的 `enhanced/cd2-service.js` 持有 token、proto、grpc channel 与 active calls，按命中的规则执行 `sourcePrefix → cloudPrefix` mapping，依次调用 `FindFileByPath` 与 `GetDownloadUrlPath`。DirectUrl 只在 URL、expiry、空 additionalHeaders 与受限 User-Agent 全部安全时返回；否则复用同次响应或再次请求的 same-origin `downloadUrlPath`。source/mount/cloud 三个 prefix 保持独立；Windows drive/UNC 比较大小写不敏感，absolute POSIX 比较大小写敏感，均执行严格边界与 `..` 检查。main 从 persistent config store 创建 service，并立即删除 `process.env` 中的全部 `ETE_CD2_*` 输入，renderer 不继承 token、origin、mapping、Bearer metadata、raw gRPC client 或方法名。
-
-STRM resolver settings 由 `enhanced/strm-config-store.js` 持久化 schema version 1 配置和 main-process-only secret 文件；`enhanced/strm-config-ipc.js` 只向当前 BrowserWindow 返回脱敏配置。`libmpv.getRoutes()` 注册 `mpvplayer/strm.html`，页面保存规则后提示重启生效。规则使用最长前缀匹配，支持 `cloud-first`、`mount-first` 和可校验的 `custom` order；AUTO discovery 只能更新 AUTO，USER 与 DISABLED tombstone 受到保护。
-
-Settings 的 STRM、诊断与 About 沿用 Emby 原生主题、verticalSection、sectionTitle与控件，共同加载 `mpvplayer/enhanced-settings.css`。共享规则限制在 `.ete-settings-page` 根下，负责宽度、间距和按钮层级；三个页面的 CSS 只负责各自布局。动态input/select在创建时传入 `{is: 'emby-*'}`，About高级运行信息默认折叠。About route 通过现有 `libmpv.getRoutes()` 注册。`enhanced/maintenance-ipc.js` 只接受当前应用 `webContents`，提供版本/环境信息、剪贴板白名单复制、用户点击后有界查询最新 Release、受限 Releases 外链四项维护操作；数据整理在 `enhanced/maintenance.js`，不进入播放或 Resolver 链。随包 Helper/libmpv 版本经 native provenance、build manifest 和实际二进制哈希核验，运行状态与握手版本单独展示；未 ready 的运行版本为 NOT AVAILABLE，显示缩放来自主显示器 `scaleFactor`。
-
-设置页的 CloudDrive2 连接状态由 `strm-config-ipc.js` 的当前 main-process 会话统一持有。`TEST_CONNECTION` 使用现有只读 `testConnection()` 探针更新 `unknown/checking/connected/failed` 与单调 revision；`GET_CONNECTION_STATUS` 和规则测试只返回同一快照。规则测试的 `mapped` 仅证明 prefix replacement 格式有效，与连通性分开。配置或 Token 成功保存后状态失效为 `unknown`。renderer 只展示带 revision 的快照，测试结果会立即刷新页面上所有规则卡；这不改变 CD2 service 或播放 route。
-
-播放器只通过 `loadfile <url> replace -1 user-agent=<value>` 传入已验证的 file-local User-Agent；不修改全局 `user-agent` 或 `http-header-fields`。`additionalHeaders` 当前不进入播放器。完整 contract 见 `CD2_DIRECT_URL.md`。
-
-异步播放使用 PlaybackManager request id 与 libmpv monotonic generation 双层保护。新 Play、terminal `PlaybackManager.stop()`、NextTrack、libmpv Stop 和 destroy 会使旧请求失效；新 Play 内部为换项执行的 previous-player stop 不额外失效新请求。active unary call 会被取消，每个异步阶段、`currentSrc` 修改和最终 `loadfile` 前均检查 generation。连接准备最多 200ms，Find 最多 350ms，Direct 与 same-origin download 各最多 500ms，并共享 1200ms absolute budget。任何非 Abort transport reject、timeout、RPC、mapping 或 response validation 失败都继续 Mount → native；Abort 和 superseded 向上终止，late response 不能加载旧 source 或触发旧 PlaybackManager error recovery。
-
-STRM Smart Path Mapping Phase 1 是独立 pure evaluator 与显式 dry-run hook。它只消费调用方提供的 absolute local path、有限 absolute POSIX cloud candidates 和 manual mappings，按 path kind 做严格 segment parsing、longest common suffix、confidence 与 ambiguity 判定。`HIGH` 要求 filename 加至少三个连续父目录且候选唯一；manual mapping 永远优先。preview diagnostic 不记录 raw/suggested path。当前 CloudDrive2 proto 没有 mount/root enumeration、目录树或 stable file ID，因此产品播放不调用该 evaluator，version 1 `rules[]`、Resolver route 和 source replacement 完全不变。完整 contract 见 [STRM_SMART_PATH_MAPPING](STRM_SMART_PATH_MAPPING.md)。
-
-Phase 2 最初通过 STRM config IPC 提供单样本 preview；该版本以单样本 `MATCHED/HIGH` 允许加入规则的判定已被 Phase 2.2 取代。当前助手只有多样本 `boundary=MATCHED/HIGH` 且无 existing-rule coverage/conflict 时，才把建议转成普通 `USER` rule draft；不调用 `applyDiscovery()`，不写磁盘，也不 hot reload。离页不再隐式保存，普通配置和规则只有显式 Save 才调用 `store.save()`，之后仍要求重启。Token 的设置/清除保留独立、明确的 main-process secret 操作。preview/accepted diagnostics 只记录分开的 fileMatch/boundary confidence 与枚举/计数，不记录路径。该 UI 层不进入 `libmpv.playInternal()`、`selectRule()`、`resolveAsync()` 或 CD2 service。
-
-Phase 2.1 固定三路径语义：`sourcePrefix` 是 STRM / Emby `MediaSource.Path` identity，`cloudPrefix` 是 CloudDrive2 逻辑路径，`mountPrefix` 是当前客户端 filesystem mount。Cloud inference 继续使用 Phase 1 contract；optional mount inference 复用 strict parser/suffix core，支持 Windows drive/UNC 互映与 POSIX→POSIX，并以 cloud suggestion 的 sourcePrefix 固定 relative suffix。Cloud HIGH + Mount 非 HIGH 时仍生成 cloud-only `USER` draft。所有 rule add/edit/remove/disable/restore 都只改变 draft，直到显式 Save；不迁移既有 rules。
-
-Phase 2.2 把 Phase 1 的单组 suffix HIGH 限定为 `fileMatch`，它不再授权添加规则。助手先用当前 `rules[]` 的最长前缀和 canonical `replacePrefix` 检查全部样本的已有 cloud/mount coverage；已覆盖或冲突均不推导新规则。对未覆盖样本，至少两组不同目录的完整路径须在 source/cloud 各自产生非 root 最深公共父目录，并在其下有分叉且每组相对 suffix 一致，才能得 `boundary=MATCHED/HIGH`。Mount 使用相同 sourcePrefix 验证多组 relative suffix；最终仍只生成一个 `USER` rule draft，等待显式 Save。此 pure preview 不进入 Resolver 或播放链。
-
-`vendor/` 保留已校验的输入说明与文件清单，解包 runtime 不进版本控制；`src/electronapp/` 是可维护应用层；`tools/` 负责本地构建与验证；`installer/` 只负责安装。普通 tracked `src/electronapp` 文件由固定 `sourceCommit` 的 Git tree 枚举，并以原始 blob bytes 写入 runtime；working tree、index、CRLF/LF checkout policy 和 ignored `src/electronapp/www` 都不是这层输入。`apiclient.js`、`toast.css` 由 manifest 锁定的综合补丁 payload 生成，`app.js` 由固定 Carnival base 执行 tracked canonical transform；三者都校验 base/input/generator/output SHA256。`src/electronapp/preload.js` 由 `tools/prepare-preload.cjs` 从 Carnival preload 生成，是 ignored prepared workspace artifact，不是普通 Git blob source。`source-provenance.json` 记录 vendor/archive、Web、Electron、Native Helper、retired bridge input exclusion、libmpv 和 production dependency closure，`runtime-provenance.json` 记录 commit blob/prepared/overlay/exclusion 到 runtime 的关系，`build-manifest.json` 只枚举最终 payload；三层语义不得互换。旧 archive input 不代表 production dependency，也不进入正式 runtime。
-
-正式安装入口直接启动 `{app}\Emby.Theater.exe`。Electron main process 在创建窗口前执行幂等 bootstrap，按 `{runtime}\config\system.xml` 作为 seed，只补齐 Enhanced profile 的 `config`、`cec-driver`、缺失 `system.xml` 和 `cancel`，不覆盖用户文件、不改变 `ProgramDataPath`，也不启动外部进程。
-
-正式 ETE 的 Device identity 在 main process 启动时从 bootstrap 返回的 ETE `config` 目录读取或创建 `device-identity.json`。文件只保存 version 和随机 UUID；缺失或损坏时安全重建，升级沿用已有值，clean profile 生成新值。`deviceName` 继续使用 `os.hostname()`，`deviceId` 不再使用 hostname，也不依赖 app name、版本、服务器、用户或 token。`loadStartInfo` 将同一个持久化 DeviceId 交给 apphost、ConnectionManager、HTTP ApiClient、WebSocket 和播放报告；旧 hostname DeviceId 不迁移、不自动删除服务器 Device/Session。
-
-构建证据补充：新构建以限定输入gate将package/lock、vendor metadata、实际生成规则和通知绑定到sourceCommit，schema 3记录inputs/source/runtime关系。33个npm选择包从新安装目录精确生成；七个Carnival包身份另按原manifest保留。完整本地GCC/Inno目录由补充锁固定，config保留base/generator/output关系。历史P1的long残留和输入边界仍见 [BUILD_INPUT_AUDIT](BUILD_INPUT_AUDIT.md)，新contract见 [BUILD_HARDENING](BUILD_HARDENING.md)；生产播放架构不变。
-
-## Next/Previous native presentation
-
-统一替换边界在目标媒体类型已确定为非 Video 时，必须在物理 Stop 前按当前 request ID 释放公开 Play 继承的 Video presentation intent；公开和内部 options 的对象身份不同，不能仅依赖 WeakMap 的原 options key 清理。Video→Video 的 admission 接管和 native one-shot reveal 合同保持不变。
-
-当前候选 contract 由 native presentation hold 管理旧视频帧，图片不进入 renderer DOM。`PlaybackManager.nextTrack()` 与 `previousTrack()` 继续通过原同步入口选择媒体、分配 request sequence 并触发 retire；presentation 工作不得插入 manager 调用前的 await，也不得替换 Item、MediaSource、PlaySession、Session 或 WebSocket 所有权。外部/self-managed player 不进入该候选。
-
-Renderer controller 必须为每个 Next/Previous 请求绑定独立 presentation token，`beforeTeardown` 固定使用建立时捕获的 record。Main/helper 将它与当前 playback epoch、endpoint/helper instance、generation 和 holdId 绑定。新 record 完成 acquire 前保留旧 hold；只有当前 record 成功后才释放其 superseded holds。旧 prepare、load 失败或 late completion 只能释放其自有 token，不能撤下新视频或清理另一个 generation 的 hold。临时 NextTrack stop 可以保留当前 presentation；用户 Stop、destroy、退出和 stale/failed request 走明确清理。自动 reveal 由 native one-shot generation/capture fence 处理；renderer 的 `playbackReady` 只交接 token，不手动撤下旧帧。失败路径 fail-open，不能留下永久遮挡。
-
-原 `create()` DOM overlay 实现仅保留给历史测试，`libmpv.js` 激活 `createNative()`。Native提供窄范围的prepare/arm/release与按control generation取消；像素不离开native，复用不可变缓冲区。自动衔接采用15秒异常超时清理，正常揭开没有固定显示延迟；旧token Stop先识别为过时操作，较新endpoint epoch可取消尚未回包的begin。已进入6473ecb本地候选，完整窗口合成媒体对照通过、全屏短闪仍INCONCLUSIVE，真实用户验收未关闭；详细分层证据见 [PLAYBACK_PRESENTATION_RESTORE](PLAYBACK_PRESENTATION_RESTORE.md)。
+[STRM](STRM_RESOLVER.md) · [配置](STRM_RESOLVER_SETTINGS.md) · [DirectUrl](CD2_DIRECT_URL.md) · [Native Helper](NATIVE_HELPER_BRIDGE.md) · [构建](PACKAGING.md)
