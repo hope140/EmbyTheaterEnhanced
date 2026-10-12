@@ -1,5 +1,7 @@
 # v0.3.0 公开发行解阻结果
 
+专项已由维护者明确终止，当前 **LICENSE_GATE_WAIVED_BY_MAINTAINER**，不是合规验证通过。既有UNKNOWN、GPL组合和材料缺口作为公开前已知风险保留；本页后续补件/追溯/bit-exact方案不再主动执行，不再自动阻止工程准备。当前授权为PR31整合、合并main新构建/验包/Release Notes附件，公开权限尚未授予，详见[维护者决定](V030_MAINTAINER_RELEASE_DECISION.md)。下方原结论和事实不改写。
+
 2026-10-12（UTC+8）。状态 **RELEASE_BLOCKED_EXTERNAL_MATERIALS**；项目保持 **V030_FEATURE_FROZEN / ENGINEERING_READY_RELEASE_BLOCKED**。
 
 用户最新明确以官方Emby GPL-2.0上游为许可/来源基础，取消额外Carnival作者许可的默认门禁。当前审核优先级和最少放行项见[PR31 GPL发行审核](V030_PR31_GPL_RELEASE_REVIEW.md)：官方GPL代码/有效GPL修改无需重复索取授权；源码履行与真正未知独创/第三方条款分开。下表中来源未映射不再自动解释为整组无GPL授权；libmpv/Helper组合仍是第一优先阻断。

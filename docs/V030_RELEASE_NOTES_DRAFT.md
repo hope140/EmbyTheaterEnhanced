@@ -1,5 +1,7 @@
 # Emby Theater Enhanced v0.3.0 Release Notes 草案
 
+正式发行说明准备入口已更新为[V030_RELEASE_NOTES](V030_RELEASE_NOTES.md)，维护者风险接受决定见[V030_MAINTAINER_RELEASE_DECISION](V030_MAINTAINER_RELEASE_DECISION.md)。下方保留原草案；许可缺口不再作为内部自动阻止准备的门禁，原事实未改写，公开发布尚未授权。
+
 本文件供最终发行审阅；v0.3.0 Stable尚未发布，当前V030_FEATURE_FREEZE。最终工程候选和剩余发行门禁见[V030_FINAL_RELEASE_GATE](V030_FINAL_RELEASE_GATE.md)。
 
 - 安装器提供简体中文和英文，按Windows UI语言选择默认值，保留用户后续语言选择；升级安装显示目录页并预填原位置。

@@ -1,5 +1,7 @@
 # v0.3.0 Final Release Gate
 
+最新执行政策：**LICENSE_GATE_WAIVED_BY_MAINTAINER / V030_FEATURE_FROZEN / PUBLICATION_PENDING_MAINTAINER_APPROVAL**。维护者接受已知许可/第三方材料风险并终止专项；不把UNKNOWN或GPL组合待决改为PASS，不修改原审计事实。内部许可未闭合不再自动阻止构建/准备，准确通知/manifest/provenance等工程检查继续。已授权PR31整合及合并main新构建，正式说明见[V030_RELEASE_NOTES](V030_RELEASE_NOTES.md)；公开操作尚未授权。[决定](V030_MAINTAINER_RELEASE_DECISION.md)覆盖下文历史门禁的自动阻止行为，以下原证据保留身份。
+
 2026-10-12最新解阻状态：**V030_FEATURE_FROZEN / ENGINEERING_READY_RELEASE_BLOCKED / RELEASE_BLOCKED_EXTERNAL_MATERIALS**。远端main基线 `72d4688821822860d20342ae8c784a279b06b4f5`。用户覆盖升级、升级后启动使用现已USER_REPORTED_PASS；配置/DeviceId等未确认。真实安装未覆盖项转为披露质量风险，本轮不再要求重复体验/优先四阶段自动化。发行材料新增闭合及仍有实质意义的阻断以[V030_RELEASE_UNBLOCK_PLAN](V030_RELEASE_UNBLOCK_PLAN.md)为准；下文旧工程证据不改写其历史身份。
 
 ## 1. 已完成

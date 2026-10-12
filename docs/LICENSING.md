@@ -1,5 +1,9 @@
 # 许可与公开范围
 
+## 当前维护者决定：LICENSE_GATE_WAIVED_BY_MAINTAINER
+
+2026-10-12维护者终止许可证专项并接受现存许可证/第三方材料风险，取消材料未闭合作为内部自动阻止开发、CI、构建和发行准备的门禁。**不是合规验证通过、UNKNOWN转PASS或第三方授权**；主项目官方Emby GPL-2.0基础、根LICENSE、全部通知/版权和原审计结论保留。[维护者决定](V030_MAINTAINER_RELEASE_DECISION.md)为最新执行政策；下文既有法律/材料事实不改写，不再主动启动补件/追溯审计。公开上传、Tag/Stable仍待独立授权。
+
 ## PR31 最新GPL发行审核口径
 
 按用户明确方案，以官方Emby Theater GPL-2.0上游为主要基础维护开源衍生项目。官方GPL代码和已有有效GPL授权的修改不要求额外Carnival作者许可；实际对象对应源/修改说明/通知缺口与未知独创增量分开，不要求bit-exact重建。独立第三方组件依各自条款；当前首要阻断为libmpv/FFmpeg的v3配方与GPL-2.0-only Helper组合，最小可用授权路线尚未实施。[PR31审核](V030_PR31_GPL_RELEASE_REVIEW.md)给出准确边界和三组最少事项；根GPL-2.0-only及冻结源码未改。

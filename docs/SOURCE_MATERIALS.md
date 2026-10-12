@@ -1,5 +1,9 @@
 # Runtime source and notice materials
 
+## Maintainer decision: LICENSE_GATE_WAIVED_BY_MAINTAINER
+
+On 2026-10-12 the maintainer accepted existing licensing/third-party material risks and ended the audit. Incomplete licensing materials no longer automatically block internal development, CI, builds or release preparation. This is not compliance verification, a new upstream/third-party grant, or an UNKNOWN-to-PASS change. All prior sources, notices, copyright and audit conclusions remain. See [maintainer decision](V030_MAINTAINER_RELEASE_DECISION.md); no further proactive tracing/supplementation audit is scheduled. Public installer upload, Stable tag and Release still require separate approval. Engineering checks of exact notices, manifests and provenance remain enforced.
+
 ## PR31 GPL-source fulfillment review
 
 Official Emby GPL sources and valid GPL modifications do not require an additional Carnival author permission by default. Source identity/changes, complete corresponding-source delivery and notice obligations remain distinct from unknown independent additions and third-party terms. No universal bit-exact/PDB/historical-machine requirement is imposed. The current minimal gates and libmpv/Helper licensing routes are in [V030_PR31_GPL_RELEASE_REVIEW](V030_PR31_GPL_RELEASE_REVIEW.md); the proposed component-specific licensing route is not implemented, and the complete Windows binary remains blocked.

@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-12 — LICENSE_GATE_WAIVED_BY_MAINTAINER / 发行准备
+
+维护者明确终止许可证专项并接受现存风险：内部许可材料不再自动阻止常规开发/CI/构建/发行准备；UNKNOWN、GPL组合问题和原审计结论不改为PASS，不重授权上游或删除归属。决定见[V030_MAINTAINER_RELEASE_DECISION](V030_MAINTAINER_RELEASE_DECISION.md)，后续不主动追溯/补件/重建审计，仅具体有效权利主张时按组件处理。
+
+V030_FEATURE_FROZEN保持；用户Together、覆盖升级/启动和安装器UI PASS保持范围，全屏INCONCLUSIVE及未确认系统场景披露。本轮授权PR31 Merge Commit整合、合并main新构建/来源/通知/完整验包和[正式Release Notes准备](V030_RELEASE_NOTES.md)，状态PUBLICATION_PENDING_MAINTAINER_APPROVAL；未授权公开binary上传、Stable Tag/Release。下方许可阻断文字是原阶段结论，当前内部门禁按维护者决定覆盖其自动阻止行为，事实不被推翻。
+
 ## 2026-10-12 — PR31 GPL许可审核策略收敛
 
 当前main72d4688/PR31审查HEAD94556b7，两次原CI702/702成功。用户明确按官方Emby GPL-2.0上游维护，取消额外Carnival作者许可的默认门禁；官方GPL grant与实际对象对应源/修改履行分离，未知独创/第三方单列，不要求bit-exact/PDB/历史机器。限定静态核查确认libmpv v3配方与GPL-2.0-only Helper直接加载组合是首要待决；只对Helper另给兼容授权和兼容core构建均为未实施路线，主GPL2上游保持。[PR31审核](V030_PR31_GPL_RELEASE_REVIEW.md)收敛为组合许可、真实对应源/通知交付、具体独立项三组。当前完整Windows二进制仍RELEASE_BLOCKED_EXTERNAL_MATERIALS；功能冻结/工程就绪、用户升级/启动/Together/UI PASS保持，未重跑功能/安装或发布Stable。
