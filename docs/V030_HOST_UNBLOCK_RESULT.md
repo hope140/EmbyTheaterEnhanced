@@ -64,4 +64,4 @@ B 路线建议在隔离 candidate 编译 Host，只使用已确认授权/可获�
 
 本轮实际执行 archive/source-member SHA256、official tag identity、两份 NuGet EXACT、当前候选9文件对manifest回读、5份许可/metadata全文与原始成员byte-exact、JSON解析/计数、文本敏感边界和 `git diff --check`。准确结果在机器回执 validation；没有重复产品全量测试、runtime启动或安装测试。
 
-最新用户报告“昨天覆盖升级成功，升级后正常启动/使用”按当前任务记录为 **USER_INSTALL_ACCEPTANCE=PASS**，upgrade/start/use=`USER_REPORTED_PASS`。配置保留、DeviceId保留没有确认；卸载/重装没有执行；不能扩成完整生命周期通过。此事实不替代发行材料判断。
+最新用户报告“昨天覆盖升级成功，升级后正常启动/使用”按当前任务记录为 **USER_INSTALL_ACCEPTANCE=PASS**，upgrade/start/use=`USER_REPORTED_PASS`。配置保留、DeviceId保留没有确认；本轮未执行卸载/重装，用户也没有报告这两项，不能扩成完整生命周期通过。此事实不替代发行材料判断。

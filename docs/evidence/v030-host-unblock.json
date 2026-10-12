@@ -530,10 +530,11 @@
     "startupAndUse": "USER_REPORTED_PASS",
     "configurationRetention": "NOT_VERIFIED",
     "DeviceIdRetention": "NOT_VERIFIED",
-    "uninstall": "NOT_EXECUTED",
-    "reinstall": "NOT_EXECUTED",
+    "uninstall": "NOT_CONFIRMED",
+    "reinstall": "NOT_CONFIRMED",
     "newMachineTesting": "NOT_EXECUTED",
-    "source": "Latest current-task user report as relayed by parent; not a new installer run by this worker"
+    "source": "Latest current-task user report as relayed by parent; not a new installer run by this worker",
+    "workerSystemLifecycle": "REAL_INSTALL_NOT_EXECUTED"
   },
   "validation": {
     "archiveReadback": "PASS",

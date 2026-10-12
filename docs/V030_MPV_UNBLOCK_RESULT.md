@@ -28,13 +28,13 @@
 - 已有 fixed mpv/FFmpeg source 获取入口、builder 全部 recipe/patch 和实际发布日志，后续不再请求“先找 workflow”。必要补充缩为 run `31285220366` 的 **resolved dependency source lock / source bundle**（包括缓存复用库），各 source revision、tarball hash、实际 patches；本地 `recipe-source-inventory.json` 已列出官方获取声明。仅更新时出现的短 hash 不能替代所有未变化缓存库的锁。
 - 提供/恢复该 run 的 `mpv-*-configure.log`、FFmpeg `ffbuild/config.log` / `config.h` / `config.mak`、mpv Meson 配置结果和实际链接组件清单，确认 recipe 计划与已安装缓存库的关系。workflow 的 configure/build 日志 artifact retention 为 1 day，当前 artifact API 中已不包含日志包；当前取得的 job 日志本身可保留，但不包含全部配置正文。
 - 根据上述实际组成补齐各依赖的准确许可、版权通知及必要源文件 notice，并选择履行对应源码的有效交付方式。完整 preferred source、修改与控制构建的 scripts 是必要材料；PDB、精确 Docker/toolchain复刻或 bit-exact 二进制重建不作为普遍法律前提。已知 Docker digest仅为技术来源补强。
-- 独立处理 GPLv3 组合与现有 GPL-2.0-only Helper/维护层的许可路线，不能由用户简单授权升级其没有权利变更的上游条款。将本轮通知加入实际随包材料需要后续获得构建/打包授权，并更新新 artifact 的 manifest；本轮 repository 收集不等于旧包 notice 已交付。
+- 独立处理 GPLv3 组合与现有 GPL-2.0-only Helper/维护层的许可路线，不能由用户简单授权升级其没有权利变更的上游条款。当前任务已允许发行准备构建；父线程将全文整合既有根通知并验证Git blob交付，未重包旧候选。未来新 artifact 必须绑定自己的 manifest；repository 收集不等于旧包 notice 已交付。
 
 ## B：官方固定源码重建替代的最小验证合同（仅建议）
 
 候选源码版本可使用本轮实际取得的官方 mpv `dd5d17d3285a095a0f712fa9d116e22a076492de`（client API 2.5）与固定 FFmpeg `2a20737f662fd3f3f5999e873b9e7c90b5efc375`，由项目控制所有依赖锁、补丁和许可模式，产生新的 libmpv 二进制；它不是重标当前提供者 DLL，也不称它已 release-ready。每个依赖必须选有准确源码/适用许可/完整通知的固定输入。选择 GPLv2-compatible 或 LGPL 路线时，需明确禁用 FFmpeg version3-only/不兼容组件、不能盲用现有 `--enable-version3` 配方；必要功能是否可保留由验证决定。
 
-实施前需单独授权隔离构建与候选验收。合同：保留 libmpv API 2.5 以及当前 Helper 所有必需 exports/事件/属性、generation/playlist-entry 归属、file-local headers 与异步 stop/recreate；Electron 44.4.2/Helper IPC和 HWND/surface/presentation 归属保持。隔离 gate 必须覆盖 gpu-next、Windows hwdec、HDR 的实际显示/颜色验收、STRM DirectUrl/CD2/Mount/native fallback、字幕/音轨/seek/暂停/恢复/Stop/Next、真实 Session/report/远控和 repeated video frame evidence。编译成功、API 版本或 time-pos 推进均不足以通过替代。任何必要能力回退即拒绝候选；不能为了许可材料闭合删掉用户已有功能。
+实施前需先明确可兼容的许可组成和已授权的最小替代边界，不能借材料任务重构冻结播放器。合同：保留 libmpv API 2.5 以及当前 Helper 所有必需 exports/事件/属性、generation/playlist-entry 归属、file-local headers 与异步 stop/recreate；Electron 44.4.2/Helper IPC和 HWND/surface/presentation 归属保持。若未来确实更换 core，按影响核对 gpu-next、Windows hwdec/颜色、STRM DirectUrl/CD2/Mount/native fallback、字幕/音轨/seek/暂停/恢复/Stop/Next、真实 Session/report/远控和 repeated video frame evidence；这是替代影响范围，不是本轮重新开启HDR专项或要求重跑全部历史实验。编译成功、API 版本或 time-pos 推进均不足以通过替代。任何必要能力回退即拒绝候选；不能为了许可材料闭合删掉用户已有功能。
 
 ## C：核心处置
 
