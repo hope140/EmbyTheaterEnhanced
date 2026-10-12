@@ -2,7 +2,9 @@
 
 ## 1. 已完成
 
-2026-10-12（UTC+8）进入 **V030_FEATURE_FREEZE**。开工及收尾核对远端main为 `89a0501f96eebdd7ee6952f594038bafe151eb43`；PR28/29均MERGED，包含安装器语言/升级保护与Together统一Video替换持帧修复。审核分支只改发行文档和通知，`src/tools/tests/installer/vendor/native/package/lock`相对main无diff，未增加功能或测试。
+2026-10-12（UTC+8）项目状态 **V030_FEATURE_FROZEN / ENGINEERING_READY_RELEASE_BLOCKED**，工程收尾阶段已结束。PR28/29/30均MERGED；合并前main `89a0501f96eebdd7ee6952f594038bafe151eb43`、PR30 HEAD `6e9c644f1e8e6b3f6989ab5825ae1bc1272c3c16`。用户授权后于13:41:06通过Merge Commit `2de72919d114f053b15e1e747d26e641e764eaaa`合入main，父节点准确为89a0501/6e9c644，完整tree与已审查PR HEAD相同。20文件diff仅为发行文档/通知，冻结产品、installer/package/lock无变化，未增加功能或测试。
+
+合并前最新HEAD的[push CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38204599101)和[PR CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38204650512)均SUCCESS，独立只读审查PASS、未解决review threads为0（GitHub正式approval记录0）；全部diff及39项消费输入与已审候选对应。合并后main2de7291的[CI 38209020299](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38209020299)已 **SUCCESS / 702项 / fail0**。冻结状态同步后的最终main HEAD/CI由[main检查](https://github.com/hope140/EmbyTheaterEnhanced/actions?query=branch%3Amain)及本地 `.work/pr30-main-merge/final-main.json`记录。整合证据见[v030-pr30-main-closeout.json](evidence/v030-pr30-main-closeout.json)，不重新开展测试或材料审计。
 
 复用PR29原完整 **783/783**、独立 **138/138**、窗口合成视觉PASS，分别保留原source32/独立代码68a0026身份。PR28安装器guard12项、语言7场景及中文默认/手动选择/升级目录页用户PASS按相同源码/工具链复用。本轮仅因随包通知补充执行受影响的构建输入/runtime provenance测试 **20/20，fail/cancel/skip/todo=0**；没有重复783/138或合成像素实验。新候选build/package/三层来源/全部manifest路径与hash验包通过，独立只读最终审查及PR/CI入口由本报告末尾的审核回执记录。
 
@@ -55,10 +57,10 @@
 
 1. 后续提供已可用、获授权、可恢复的Windows环境，或安排操作员按四阶段卡完成必要系统生命周期；当前无需守在电脑前。
 2. 取得上述目标二进制/资产的许可、归属、对应源码/修改/构建配置或有效获取安排，供后续有界核验；本轮未代发外部联系。
-3. 安装与发行材料门禁闭合后，对审核PR和最终Stable发布作明确决定。已正常的Together体验和中文安装页面不重复要求验收。
+3. 审核PR30已按本轮授权合并。安装与发行材料门禁闭合后，仅需对最终Stable发布作明确决定；已正常的Together体验和中文安装页面不重复要求验收。
 
 ## 7. 最终结论
 
-**ENGINEERING_READY_RELEASE_BLOCKED**。冻结产品、用户已报告Together场景和新内部RC工程证据已收口；真实Windows安装生命周期及第三方分发/源码/通知门禁尚未满足，不能选择READY_FOR_STABLE_RELEASE_APPROVAL。未创建v0.3.0 Tag或GitHub Stable Release，未变更v0.2.9资产，未改现用客户端。
+**V030_FEATURE_FROZEN / ENGINEERING_READY_RELEASE_BLOCKED**。PR30主线整合和工程收尾已完成；REAL_TOGETHER_USER_ACCEPTANCE=PASS及安装器三项USER_UI_ACCEPTANCE=PASS保留，历史全屏合成采样仍INCONCLUSIVE。真实Windows安装生命周期REAL_INSTALL_NOT_EXECUTED及第三方发行材料未闭合状态不变，不能选择READY_FOR_STABLE_RELEASE_APPROVAL。本轮不启动其它专项，未创建v0.3.0 Tag/Stable Release，未变更v0.2.9资产、内部候选身份或现用客户端。
 
-审核分支 `codex/v030-final-release-gate-20261012`，必要PR与CI由[本分支PR入口](https://github.com/hope140/EmbyTheaterEnhanced/pulls?q=is%3Apr+head%3Acodex%2Fv030-final-release-gate-20261012)和本地 `.work/v030-final/final-remote.json` 最终回执定位。独立只读最终审查 **PASS**，组件分类冲突已修正后复核关闭；[只读审查回执](evidence/v030-final-readonly-review.json)记录逐文件hash、完整通知、用户反馈边界和审查快照。原工程数字保留自身来源，不改标为本轮新测试。审核PR保持待用户决定，不自动合并或发布。
+审核分支 `codex/v030-final-release-gate-20261012`保留，[PR30](https://github.com/hope140/EmbyTheaterEnhanced/pull/30) **MERGED**。独立只读最终审查PASS与[审查回执](evidence/v030-final-readonly-review.json)保留原身份；候选始终绑定7827425及既有SHA，不改为main正式产物。后续只处理上述实际发行门禁与发布决定；本轮工程收尾已关闭。

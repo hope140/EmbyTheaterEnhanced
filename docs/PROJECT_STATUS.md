@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-12 — V030_FEATURE_FROZEN / ENGINEERING_READY_RELEASE_BLOCKED
+
+用户认可最终工程报告并授权结束工程收尾。PR30最新HEAD6e9c644/main89a0501、两次CI SUCCESS、独立只读审查、全部20文件diff与39项消费输入核对通过；冻结代码/installer/package/lock无新变化。13:41:06 Merge Commit合入main为 `2de72919d114f053b15e1e747d26e641e764eaaa`，parents=89a0501/6e9c644，tree与PR HEAD一致。合并后main CI入口38209020299，最终状态文档HEAD/CI及回执见[V030_FINAL_RELEASE_GATE](V030_FINAL_RELEASE_GATE.md)。
+
+合并提交main CI已SUCCESS，702项/fail0。工程收尾阶段已关闭；Together用户验收PASS、安装器三项用户UI PASS继续有效，不重复测试。REAL_INSTALL_NOT_EXECUTED、实质发行材料WAITING_EXTERNAL/UNKNOWN/NOTICE_GAP和历史全屏INCONCLUSIVE保留。内部RC仍source7827425/SHA3ab897…/NotSigned，仅工程候选。未新增功能、重审历史材料、启动其它专项、改现用客户端或创建Stable Tag/Release；下方记录按原阶段身份读取。
+
 ## 2026-10-12 — V030_FEATURE_FREEZE / Together USER_REPORTED_PASS
 
 开工远端main仍89a0501f96eebdd7ee6952f594038bafe151eb43，PR28/29均MERGED，最新公开Pre-release仍v0.2.9。用户真实Together反馈“实测了一下没问题了。”，REAL_TOGETHER_USER_ACCEPTANCE=PASS，透明屏专项按已报告场景关闭；未明确的客户端版本、媒体、次数、硬件和全屏条件不推断，历史全屏采样INCONCLUSIVE保留。
