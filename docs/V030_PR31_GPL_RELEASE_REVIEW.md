@@ -1,6 +1,6 @@
 # PR31：GPL 来源与最小 Windows 发行门禁
 
-后续维护者明确决定 **LICENSE_GATE_WAIVED_BY_MAINTAINER**，终止专项并接受风险。以下审核UNKNOWN/GPL组合事实与原未放行结论保留历史身份；其内部自动阻止构建/准备行为由[维护者决定](V030_MAINTAINER_RELEASE_DECISION.md)豁免，不等于合规PASS。当前仅授权PR31整合及新main产物准备，公开上传/Stable仍待单独决定；不继续主动补件或新一轮法律审计。
+后续维护者明确决定 **LICENSE_GATE_WAIVED_BY_MAINTAINER**，终止专项并接受风险。以下审核UNKNOWN/GPL组合事实与原未放行结论保留历史身份；其内部自动阻止构建/准备行为由[维护者决定（历史记录）](https://github.com/hope140/EmbyTheaterEnhanced/blob/v0.3.0/docs/V030_MAINTAINER_RELEASE_DECISION.md)豁免，不等于合规PASS。当前仅授权PR31整合及新main产物准备，公开上传/Stable仍待单独决定；不继续主动补件或新一轮法律审计。
 
 2026-10-12（UTC+8）。审核对象 PR31 `94556b73ba6b5106d3ac87ed1b43a1bf9eb04862`，远端 main `72d4688821822860d20342ae8c784a279b06b4f5`。用户明确以官方 Emby Theater GPL-2.0 上游维护开源衍生项目，不以 Carnival 作者额外许可作为默认发布前提。本页修正前轮矩阵过宽的 rights-unknown 口径，保留原文件身份和历史回执。
 

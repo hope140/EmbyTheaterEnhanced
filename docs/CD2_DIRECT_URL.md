@@ -91,7 +91,3 @@ CloudDrive2 resolver 本身仍由现有 `ETE_CD2_ENABLED` 控制。PR #4 在 CD2
 - `DDSRem-Dev/clouddrive2-client` 的 wrapper 与固定 proto 确认 `get_direct_url` 参数以及 `expiresIn` 为距离过期的秒数。
 
 这些项目只用于交叉核对 acquisition/response contract。它们使用普通 HTTP client 的 header 字典，不能证明 libmpv header 隔离；本项目仍以 mpv 0.41 官方 per-file options 与 exact frozen Pepper 实测为播放器依据。
-
-Model Tier: 2
-Model: GPT-5.6 Sol High contract review
-Escalated: yes；涉及 file-local header 隔离、expiry、generation 与 fallback correctness。

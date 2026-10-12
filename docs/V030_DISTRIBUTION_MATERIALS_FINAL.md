@@ -1,6 +1,6 @@
 # v0.3.0 Final Release Gate：分发材料有界增量核查
 
-2026-10-12后续解阻增量见[V030_RELEASE_UNBLOCK_PLAN](V030_RELEASE_UNBLOCK_PLAN.md)。已新取得官方ServiceStack版本源、实际mpv run/builder/FFmpeg源、Roboto/jQuery全文、driver官方同字节入口；22份完整文本已进入根通知准备。旧表为原阶段证据，不再作为这些新增项仍完全未知的判断；也不把新增文本等同完整发行授权。GPLv3组合、思源RFN及实际核心权利/对应源问题按新回执保留。
+2026-10-12后续解阻增量见[V030_RELEASE_UNBLOCK_PLAN（历史记录）](https://github.com/hope140/EmbyTheaterEnhanced/blob/v0.3.0/docs/V030_RELEASE_UNBLOCK_PLAN.md)。已新取得官方ServiceStack版本源、实际mpv run/builder/FFmpeg源、Roboto/jQuery全文、driver官方同字节入口；22份完整文本已进入根通知准备。旧表为原阶段证据，不再作为这些新增项仍完全未知的判断；也不把新增文本等同完整发行授权。GPLv3组合、思源RFN及实际核心权利/对应源问题按新回执保留。
 
 日期：2026-10-12（UTC+8）
 审查基线：`main@89a0501f96eebdd7ee6952f594038bafe151eb43`

@@ -1,75 +1,60 @@
 # 变更记录
 
-## 0.2.9 测试版 — 2026-10-11
+本文记录已公开发布版本中的用户可见变化。当前正式版为 v0.3.0；标为测试版的版本通过 GitHub Pre-release 发布。
 
-- 外挂字幕选择等待结束后核对当前 Play、字幕选择序号和 MediaSource，阻止快速切换、Off、Stop 或换集时的旧 `sub-add` 覆盖新意图。PR #25 已合并；原 700ms 等待保留。
-- 修正诊断自由文本中 Authorization 和多项 Cookie 的脱敏缺口；最小安全修复的 RED/GREEN 和 ZIP 回读见 [安全审查](docs/V029_SECURITY_REVIEW.md)。
-- README、路线图、已知问题及发布来源对账；内嵌字幕/音轨切换性能暂缓，圆角按用户反馈结束。准确发布状态、资产和验证边界见 [维护收尾](docs/V029_MAINTENANCE_CLOSEOUT.md)。
+## v0.3.0 — 2026-10-12 · 正式版
 
-## 0.2.8 测试版 — 2026-10-10
+- 安装器支持简体中文和英文，默认语言参考 Windows 显示语言；升级时可确认并使用原安装目录。
+- 修复 Together PlayNow 同步切换视频时可能出现的透明屏，并完善连续切换、取消、失败和 Helper 重建时的视频画面保持。
 
-- 整合 PLAY-01 Stop 后迟到播放意图守卫、SEC01/02 外链与主 Frame 边界、LIFE01/02 完整 Native Helper 退出收尾，以及已有 About 和 Smart Path Mapping 维护。
-- 发布提交 `888310de8ebae941b407ae070102b84d4fec1e5e`，公开入口为 [v0.2.8 Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.8)。外挂字幕异步选择守卫在此版之后合入 main，因此不属于 v0.2.8 安装包。
+## v0.2.9 — 2026-10-11 · 测试版
 
-## 0.2.7 本地测试包 — 2026-10-10
+- 修复快速切换外挂字幕、关闭字幕、停止或换集时，迟到的旧字幕选择可能覆盖新选择的问题。
+- 修复诊断导出中部分认证信息及带空格路径脱敏不完整的问题。
 
-- 继承完整v0.2.6维护栈，精确锁定grpc-js 1.14.6；About随包版本来自源码/manifest与二进制hash绑定，实时运行状态独立展示。
-- About包内校验采用64KiB异步读取/hash，IPC复制和诊断导出使用一致快照；并发仅共享进行中读取，后续查询重验，保持sender和迟到结果归属。
-- 项目规则与历史导航收口、第三方材料有界核查、安装生命周期和显示验收准备完成。最终651/651、八组矩阵与两组最终隔离读回通过；完整证据及执行边界见 [维护报告](docs/MAINTENANCE_027.md)。父会话审核通过后已生成新安装包并完成完整性、2137文件解包、版本/来源及副本校验，见 [本地交付](docs/LOCAL_PACKAGE_027.md)。
+## v0.2.8 — 2026-10-10 · 测试版
 
-## 0.2.6 测试版 — 2026-10-09
+- 修复停止播放后迟到的媒体响应重新启动旧播放的问题，并完善并发停止时的播放状态与报告归属。
+- 改善外部链接与窗口消息边界，以及 Native Helper 异常退出和清理过程。
 
-- 每次播放请求建立独立options快照，阻止迟到PlaybackInfo再次play；pending临时状态不发送缺少会话身份的Stopped报告。
-- replacement Stop按捕获stream排空物理停止，只清理/报告一次；terminal overlap保留失败，最新原生持帧token仍准备。
-- 正常关闭共享Native Helper destroy Promise，等待renderer先行退出与全部捕获的清理结果后再传播失败。
-- 完善确定性假CD2/播放矩阵、正常关闭验证及第三方来源材料索引。最终产品355f4e6的631/631、三种正常关闭和五组完整隔离pipeline通过，安装器2136文件解包一致，见 [0.2.6发布记录](docs/RELEASE_026.md)。早期直接app.exit退出超时仍UNKNOWN；真实服务、可见呈现及系统安装验收边界保持。
+## v0.2.7 — 2026-10-10 · 测试版
 
-## 0.2.5 测试版 — 2026-10-09
+- 关于页面显示经过校验的应用、Native Helper 与 libmpv 版本和来源信息；支持主动检查更新与复制环境信息。
+- 大型组件的版本校验改为分块读取，减少检查期间对界面的阻塞。
 
-- 增加有限、脱敏的播放请求与原生事件关联、持帧/surface观察和Renderer包内错误位置采集；诊断旁路不改变播放身份链。
-- 源码仓库增加单日志离线阶段分析工具，未知、缺失或冲突端点保持不可用。
-- 构建绑定准确提交输入与固定工具链，精确生成生产依赖目录，补齐随包通知与来源索引，加强输出链接/覆盖边界；固定输入下两份runtime与原始installer字节一致。
-- 继承v0.2.4设置页一致性及此前持帧切集、全屏修复。535/535全量和17/17writer通过；隐藏runtime完整runner保留已记录的超时/快速Next夹具限制。准确产物与各层验证见 [0.2.5发布记录](docs/RELEASE_025.md)。
+## v0.2.6 — 2026-10-09 · 测试版
 
-## 0.1.1 Phase 2B Pepper retirement — 2026-09-17
+- 修复连续切集、并发停止和迟到播放响应中的状态归属问题。
+- 关闭客户端时等待已启动的 Native Helper 清理完成。
 
-- Pepper / PPAPI bridge retired；Native Helper is now the sole production mpv bridge.
-- Removed PPAPI registration, old `<embed>` bridge creation, Pepper-only direct probes and retired `.node` runtime payload. Explicit `ETE_MPV_BRIDGE_MODE=pepper` fails with `legacy-mode-removed`.
-- Runtime exclusion and provenance records retain the old Carnival binary only as historical input; formal payload excludes it.
-- `npm test` 201/201；source/native/runtime provenance、package verify 与 Native Helper/REAL smoke evidence passed. Concurrent Remote NextTrack and renderer ReferenceError remain deferred non-blocking follow-ups.
+## v0.2.5 — 2026-10-09 · 测试版
 
-## 0.1.1 CloudDrive2 DirectUrl 候选 — 2026-09-14
+- 增加播放请求、原生播放事件和渲染器错误的有限诊断信息，并提供诊断日志导出。
+- 增加本地离线日志阶段分析工具；该工具用于排查问题，不会改变播放行为。
 
-- 新增 capability-based DirectUrl acquisition；不安全或不可用时严格回到 CD2 same-origin HTTP → Mount → Native。
-- 当前 frozen Pepper/libmpv 仅开放已实测的 `loadfile <url> replace -1 user-agent=<value>`；禁止全局 User-Agent set/reset，任意 additionalHeaders 均判为 unsupported。
-- 新增 User-Agent、URL、expiry 校验、一次 bounded near-expiry reacquire、共享 750ms absolute budget 与 `ETE_CD2_DIRECT_URL=0` 回退开关。
-- unit/fake 56/56；frozen UA-A → UA-B → same-origin 无泄漏；fake DirectUrl 完整 PlaybackManager/controls/reports 通过；真实 CD2 DirectUrl + returned UA 在 embedded libmpv 中播放推进。
-- 本轮完整真实 PlaybackManager 验收连续停在 resolver 前的 `playback-not-started`；不把已有 PR #2 Session/WebSocket 结果冒充为 PR #4 全链通过。
+## v0.2.4 — 2026-10-09 · 测试版
 
-## 0.1.1 CloudDrive2 Resolver 候选 — 2026-09-13
+- 统一 STRM、诊断和关于页面的设置布局、按钮样式及导航标题。
 
-- 新增 main-process CloudDrive2 gRPC transport、窄化 renderer IPC、单条安全 path mapping 与 same-origin download URL 校验。
-- STRM source 优先级更新为 CD2 HTTP → Mount → Native；Transcode 保持 Native，DirectUrl 延后。
-- 新增 PlaybackManager request id、libmpv generation、RPC cancel、旧 core-playing listener 清理与 750ms absolute budget。
-- frozen runtime 构建精确复制 grpc-js/proto-loader production closure，并拒绝 native addon；两次构建与 installer 解包逐哈希一致。
-- unit/fake/frozen runtime、Stop-before-player、transport fallback、真实 CD2 只读 smoke 与独立真实 MKV 播放通过；真实 Emby Session/控制因保存登录态不可用仍待验收。
+## v0.2.3 — 2026-10-08 · 测试版
 
-## 0.1.1 开发候选 — 2026-09-12
+- 提供统一的增强设置页面，并修复连续切集时的视频画面保持和全屏窗口处理。
 
-- 确认 native 缓存配置正确、legacy bridge 回传 int64 时截断；修复诊断的精确字节数记录并保留原始回传值。覆盖 900MiB 至 8192MiB 边界测试。
-- 同 embed 诊断串行执行、直接匹配该 embed 的回复；精确文本不可用时如实记为 unavailable。
-- 测试通过 MPV_HOME 实际隔离 native 配置；启动诊断区分候选配置文件与真实加载证据。
-- 新增真实 PlaybackManager、ApiClient 报告序列化和消息分派的本地集成测试，普通视频、STRM、Pause/Resume/Seek/Stop/Next 全部通过。服务器部分为 fixture，实际 Emby 验收仍待用户样本。
-- 新版 runtime、安装包已生成；保持 Electron 与 native binary 基线。
+## v0.2.2 — 2026-09-20 · 正式版
 
-## 0.1.0 开发候选 — 2026-09-12
+- 升级 Electron 至 44.4.2，保留 Native Helper 与 libmpv 播放架构。
+- 修复 Electron 44 启动命令兼容、启动视频冻结及全屏控制问题。
 
-- 建立 Carnival + 综合补丁基线、可维护应用源码、SHA256 文件清单和知识库。
-- 新增 vendor 校验、可重复 portable runtime 构建和 Inno Setup 6 安装包流程。
-- 吸收输入包的 toast、WebSocket 与 3072 MiB 缓存选项修复，未改变用户默认缓存值。
-- 使用输入包的新 libmpv，冻结随包 Electron。
-- 禁用外置播放器自动注册及直接模块实例入口，保留原代码。
-- 新增实际运行时版本与 libmpv 属性诊断；不支持字段超时退出，日志不包含媒体地址或凭据。
-- 新增隔离启动、合成媒体测试入口和诊断容错测试。
+## v0.2.1 — 2026-09-18 · 正式版
 
-这不是已完成真实 Emby 验收的正式发布；没有创建 Git commit 或远端发布。
+- 修复全屏切换时 Native Helper 视频层级问题，恢复全屏 OSD 和播放控制显示与交互。
+
+## v0.2.0 — 2026-09-17 · 正式版
+
+- 以 Native Helper 替换 Pepper / PPAPI 播放桥，并保留 STRM、CloudDrive2、远程控制和播放进度能力。
+- 改善 Helper 异常隔离和播放请求归属处理。
+
+## v0.1.1 — 2026-09-16 · 首个正式版
+
+- 发布 Windows x64 内嵌 libmpv 客户端，提供 STRM Resolver、CloudDrive2 DirectUrl/HTTP、本地挂载映射及 Emby 原生播放回退。
+- 保留 Emby 播放会话、进度、远程控制、诊断日志和 Watch Together 支持。

@@ -1,44 +1,10 @@
 # Runtime source and notice materials
 
-## Maintainer decision: LICENSE_GATE_WAIVED_BY_MAINTAINER
+The v0.3.0 release source is `sourceCommit=20e42511b54989550165511a7604aa1b73519ff2`. The root `LICENSE`, `THIRD_PARTY_NOTICES.md`, `docs/LICENSING.md` and this index are source-controlled materials; build provenance binds their committed bytes. Maintainer risk acceptance for the release does not establish legal compliance or resolve unknown source, permission or notice obligations.
 
-On 2026-10-12 the maintainer accepted existing licensing/third-party material risks and ended the audit. Incomplete licensing materials no longer automatically block internal development, CI, builds or release preparation. This is not compliance verification, a new upstream/third-party grant, or an UNKNOWN-to-PASS change. All prior sources, notices, copyright and audit conclusions remain. See [maintainer decision](V030_MAINTAINER_RELEASE_DECISION.md); no further proactive tracing/supplementation audit is scheduled. Public installer upload, Stable tag and Release still require separate approval. Engineering checks of exact notices, manifests and provenance remain enforced.
+Use [`V030_PR31_GPL_RELEASE_REVIEW.md`](V030_PR31_GPL_RELEASE_REVIEW.md) for the GPL combination and source-delivery assessment, [`V030_DISTRIBUTION_MATERIALS_FINAL.md`](V030_DISTRIBUTION_MATERIALS_FINAL.md) for the component matrix and exact identities, [`THIRD_PARTY_MATERIALS_AUDIT.md`](THIRD_PARTY_MATERIALS_AUDIT.md) for fixed historical source/hash observations, and [`BUILD_INPUT_AUDIT.md`](BUILD_INPUT_AUDIT.md) for build-input boundaries. Full notice and copyright texts are in [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md) and [`redistribution-notices/`](redistribution-notices/).
 
-## PR31 GPL-source fulfillment review
-
-Official Emby GPL sources and valid GPL modifications do not require an additional Carnival author permission by default. Source identity/changes, complete corresponding-source delivery and notice obligations remain distinct from unknown independent additions and third-party terms. No universal bit-exact/PDB/historical-machine requirement is imposed. The current minimal gates and libmpv/Helper licensing routes are in [V030_PR31_GPL_RELEASE_REVIEW](V030_PR31_GPL_RELEASE_REVIEW.md); the proposed component-specific licensing route is not implemented, and the complete Windows binary remains blocked.
-
-## 2026-10-12 bounded release-unblock supplement
-
-The current actionable result is [V030_RELEASE_UNBLOCK_PLAN](V030_RELEASE_UNBLOCK_PLAN.md). Fixed official ServiceStack source, mpv/FFmpeg sources and builder/run evidence, Web font/MIT notices and an exact official driver binary location have been obtained. All 22 collected full-text supplements are integrated into THIRD_PARTY_NOTICES.md under the existing four-file delivery contract; raw snapshots and normalized aggregate hashes remain separately identified. This is preparation for a future committed-source build, not repackaging of the existing internal RC. Core rights, corresponding-source delivery, cached linked dependencies, GPL combination and modified-font RFN conditions remain open as individually documented. Full Git archives or reference sources are not declared corresponding source for unknown imported components.
-
-## v0.3.0 final notice supplement
-
-2026-10-12: the exact official SimpleInjector 4.0.11 NuGet net45 DLL was read again and matched the shipped SHA256 `6a8e55d1f114fb579f4b92169af71dc197d86dd13a79199a4f047dc4b22bf0bc`. Its nuspec license URL resolves to the official MIT license; fixed license snapshot `e3ce923d72bca2a5e1452725685b59b886c64bac` has SHA256 `df8a87df7cecf121f7d960f664a6d458dcadd01329c560de40eb26e1f801b918`. The full copyright/permission text is now delivered in THIRD_PARTY_NOTICES.md. This component notice path is resolved, and MIT does not require corresponding source distribution; its missing exact source-build relation is REPRODUCIBILITY_ONLY. This does not approve the whole bundle or close Host/Additions, patched libmpv/FFmpeg, CEC/driver or Web/asset obligations.
-
-The current matrix is [V030_DISTRIBUTION_MATERIALS_FINAL](V030_DISTRIBUTION_MATERIALS_FINAL.md), with [SimpleInjector identity receipt](evidence/v030-simpleinjector-license.json). Reports outside the four delivered notices remain repository-only. Historical observations below retain their original identities; a new stable-rc binds its own sourceCommit and manifests.
-
-This index accompanies the local 0.2.7 test candidate. The project LICENSE,
-THIRD_PARTY_NOTICES.md, LICENSING.md and this index are copied from its committed
-source and bound by build-input-provenance.json. Product build evidence for
-0.2.7 is separate from the historical material audit below. The bounded follow-up
-and remaining external records are listed in
-[0.2.7 material closeout](THIRD_PARTY_MATERIALS_CLOSEOUT_027.md); no new binary or
-unproven corresponding-source relationship is introduced by that review.
-
-The 2026-10-09 local source-material supplement is documented in
-[THIRD_PARTY_MATERIALS_AUDIT](THIRD_PARTY_MATERIALS_AUDIT.md), with a bounded
-[provider request list](THIRD_PARTY_MATERIALS_REQUEST.md). It is a separate
-review branch based on 5af8443, auditing the 0.2.4 / 1a05f88 input. Its reports
-and updated four-file notice text are integrated into the 0.2.6 source;
-the research archives have not been inserted into the product payload.
-The two linked supplemental documents and JSON evidence are repository-only;
-the existing four-file notice packaging contract has not been expanded.
-
-The original version of this index accompanies the local 0.2.4 build-hardening
-candidate. That payload's index, project LICENSE, THIRD_PARTY_NOTICES.md and
-LICENSING.md were copied from its sourceCommit. build-input-provenance.json identifies those
-blobs; source-provenance.json identifies the external runtime inputs.
+`EXACT` describes a byte identity for the named files; `REFERENCE` describes a fixed source location without proving that it generated a binary. `MISSING` and `UNKNOWN` retain the scope defined by each historical audit and are not compliance ratings. A source archive, matching notice or public reference does not by itself prove complete corresponding source or redistribution rights.
 
 | Component | Confirmed material | Still required for exact corresponding-source reconstruction |
 |---|---|---|
