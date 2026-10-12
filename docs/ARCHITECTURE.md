@@ -8,6 +8,8 @@ STRM 按持久化 rules 的 cloud-first、mount-first 或 custom 顺序尝试 Di
 
 当前 CD2 stages 共享 1200ms absolute budget，连接最多 200ms、Find 最多 350ms、下载阶段最多 500ms。连续 direct/same-origin 尝试复用 Find 结果。RPC/mapping/响应失败继续 Mount/Native；Abort/superseded 向上终止。PlaybackManager request id、libmpv generation、AbortSignal、IPC request id 和 gRPC cancel 共同阻止迟到响应加载旧媒体。
 
+新资源候选仅在目标 FindFileByPath 确认 NOT_FOUND 后允许一次有限恢复：父目录最多 3 层且不越映射边界，GetSubFiles 流必须完整结束及最终 OK，目标最多重查一次。目录探测/刷新块最多 1800ms，恢复总期限最多 3000ms；正常命中保持原 1200ms。单锁、30秒冷却和取消限制重复/迟到工作，详见 [恢复合同](CD2_NEW_RESOURCE_REFRESH.md)。
+
 媒体替换复用 request-bound presentation intent 与原生 prepare/stop/arm/reveal，已有 intent 在前置异步阶段随新请求接管。未 arm 的准备持帧有独立 15 秒上限；terminal Stop、失败、音频切换和退休请求清理所属状态。Session 与远控仍由原链拥有。
 
 透明主窗口拥有 UI/OSD/输入，独立 video host 承载 helper child HWND。窗口与全屏状态由 main 管理；Helper 失败不退回旧 bridge。销毁共享 Promise，并等待所属进程退出和资源清理，保留错误。
