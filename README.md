@@ -6,23 +6,20 @@ Emby Theater Enhanced 是面向 Windows x64 的非官方 Emby Theater 社区维�
 
 - 内嵌 libmpv 播放，沿用 Emby 的播放进度、字幕、音轨和远程控制。
 - STRM 的 CloudDrive2 DirectUrl/HTTP 解析、本地挂载与原生源回退。
+- CD2 新资源首次查询未找到时，有限刷新父目录并重新查询。
 - 智能路径映射助手、诊断导出和手动检查更新。
 - 简体中文/英文安装器及 Together 同步切集支持。
 
-## 下载 v0.3.0
+## 下载 v0.3.1
 
-v0.3.0 是当前正式版。请从 [GitHub v0.3.0 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.0) 下载 Windows x64 安装包：
+v0.3.1 是当前正式版。请从 [GitHub v0.3.1 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.1) 下载 Windows x64 安装包：
 
-- [下载 EmbyTheaterEnhanced-0.3.0-release-prepared-20e4251-win-x64-setup.exe](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.0/EmbyTheaterEnhanced-0.3.0-release-prepared-20e4251-win-x64-setup.exe)
-- [SHA-256 校验文件](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.0/EmbyTheaterEnhanced-0.3.0-release-prepared-20e4251-win-x64-setup.exe.sha256) · [安装包来源记录](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.0/EmbyTheaterEnhanced-0.3.0-release-prepared-20e4251-win-x64-setup.exe.provenance.json)
+- [下载 EmbyTheaterEnhanced-0.3.1-win-x64-setup.exe](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.1/EmbyTheaterEnhanced-0.3.1-win-x64-setup.exe)
+- [SHA-256 校验文件](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.1/EmbyTheaterEnhanced-0.3.1-win-x64-setup.exe.sha256) · [安装包来源记录](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.1/EmbyTheaterEnhanced-0.3.1-win-x64-setup.exe.provenance.json)
 
-安装包 SHA-256：
+安装包 SHA-256 与准确源码提交见 Release 正文及随附校验文件、来源记录。
 
-```text
-a7eed18d97295d0fcda635ad90df1609f394553b5afc60c821877609842277f7
-```
-
-该安装包未进行数字签名。它对应源码提交 [`20e42511b54989550165511a7604aa1b73519ff2`](https://github.com/hope140/EmbyTheaterEnhanced/commit/20e42511b54989550165511a7604aa1b73519ff2)。来源记录用于核对安装包身份；公开仓库尚未包含全部第三方构建输入，因此不能据此声称所有组件均可从公开源码完整重建，也不能声称第三方许可合规已全面验证。下载和运行前请自行评估 Windows 安全提示及第三方软件风险。
+该安装包未进行数字签名，源码由 [v0.3.1 Tag](https://github.com/hope140/EmbyTheaterEnhanced/tree/v0.3.1) 固定。来源记录用于核对安装包身份；公开仓库尚未包含全部第三方构建输入，因此不能据此声称所有组件均可从公开源码完整重建，也不能声称第三方许可合规已全面验证。下载和运行前请自行评估 Windows 安全提示及第三方软件风险。
 
 ## 安装
 
@@ -62,9 +59,9 @@ CloudDrive2 路径：/CloudNAS/CloudDrive/115open/115/电影
 
 **增强解析失败会怎样？** 普通解析失败会继续尝试 Emby 原生播放源。取消或已被新播放请求替代的操作不会继续旧请求的 fallback。
 
-**STRM/115 的内嵌字幕或音轨切换为什么要等 5–10 秒？** 这是当前已知延迟，v0.3.0 尚未解决。
+**STRM/115 的内嵌字幕或音轨切换为什么要等 5–10 秒？** 这是当前已知延迟，v0.3.1 尚未解决。
 
-**新入库资源为什么在 CD2 中找不到？** v0.3.0 尚不会自动刷新 CD2 目录缓存。先确认路径规则及 CD2 中的文件，必要时在 CD2 刷新对应目录；Emby 入库和 CD2 缓存更新是不同步骤。
+**新入库资源为什么在 CD2 中找不到？** v0.3.1 在首次查询确认 NOT_FOUND 后，会有限刷新父目录并重查一次；正常命中保持原有 1200ms 查询预算，恢复总上限为 3000ms，并有 30 秒冷却及并发保护。仍未找到时请确认路径规则及 CD2 中的文件，必要时手动刷新对应目录；Emby 入库和 CD2 缓存更新是不同步骤。
 
 **这是什么软件，支持哪些系统？** 这是非官方社区维护项目，仅提供 Windows x64 客户端；不代表 Emby 官方产品，也不提供 macOS 或 Linux 客户端。
 
