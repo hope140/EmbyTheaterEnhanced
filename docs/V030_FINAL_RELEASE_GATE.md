@@ -1,5 +1,9 @@
 # v0.3.0 Final Release Gate
 
+最新执行政策：**LICENSE_GATE_WAIVED_BY_MAINTAINER / V030_FEATURE_FROZEN / PUBLICATION_PENDING_MAINTAINER_APPROVAL**。维护者接受已知许可/第三方材料风险并终止专项；不把UNKNOWN或GPL组合待决改为PASS，不修改原审计事实。内部许可未闭合不再自动阻止构建/准备，准确通知/manifest/provenance等工程检查继续。已授权PR31整合及合并main新构建，正式说明见[V030_RELEASE_NOTES](V030_RELEASE_NOTES.md)；公开操作尚未授权。[决定](V030_MAINTAINER_RELEASE_DECISION.md)覆盖下文历史门禁的自动阻止行为，以下原证据保留身份。
+
+2026-10-12最新解阻状态：**V030_FEATURE_FROZEN / ENGINEERING_READY_RELEASE_BLOCKED / RELEASE_BLOCKED_EXTERNAL_MATERIALS**。远端main基线 `72d4688821822860d20342ae8c784a279b06b4f5`。用户覆盖升级、升级后启动使用现已USER_REPORTED_PASS；配置/DeviceId等未确认。真实安装未覆盖项转为披露质量风险，本轮不再要求重复体验/优先四阶段自动化。发行材料新增闭合及仍有实质意义的阻断以[V030_RELEASE_UNBLOCK_PLAN](V030_RELEASE_UNBLOCK_PLAN.md)为准；下文旧工程证据不改写其历史身份。
+
 ## 1. 已完成
 
 2026-10-12（UTC+8）项目状态 **V030_FEATURE_FROZEN / ENGINEERING_READY_RELEASE_BLOCKED**，工程收尾阶段已结束。PR28/29/30均MERGED；合并前main `89a0501f96eebdd7ee6952f594038bafe151eb43`、PR30 HEAD `6e9c644f1e8e6b3f6989ab5825ae1bc1272c3c16`。用户授权后于13:41:06通过Merge Commit `2de72919d114f053b15e1e747d26e641e764eaaa`合入main，父节点准确为89a0501/6e9c644，完整tree与已审查PR HEAD相同。20文件diff仅为发行文档/通知，冻结产品、installer/package/lock无变化，未增加功能或测试。
@@ -18,7 +22,7 @@
 
 只读环境探测未识别已获授权、可恢复快照的Windows测试目标：Hyper-V/Sandbox Disabled，相关管理命令及VMMS不可用，snapshot inventory UNAVAILABLE。已停止真实安装尝试，没有启用系统功能或覆盖现用客户端。
 
-已完成：冻结安装器/guard/bootstrap/DeviceId静态合同核对、原生保护/语言证据复用、新0.3.0 installer编译与完整解包回读；这些不替代系统验收。**全新安装、v0.2.9→v0.3.0升级、卸载、重装、运行中升级/静默退出码、配置/DeviceId保留、快捷方式/卸载登记/权限、普通用户启动全部 REAL_INSTALL_NOT_EXECUTED**。后续四阶段最短可执行方案与v0.2.9精确升级输入见[V030_INSTALL_LIFECYCLE_FINAL](V030_INSTALL_LIFECYCLE_FINAL.md)，已确认的中文安装页面不重复要求验收。
+已完成：冻结安装器/guard/bootstrap/DeviceId静态合同核对、原生保护/语言证据复用、新0.3.0 installer编译与完整解包回读。用户另明确报告真实Windows覆盖升级成功、升级后正常启动及使用，记录 **USER_INSTALL_ACCEPTANCE=PASS / USER_REPORTED_PASS**，不再描述为完全未测试。未报告旧版本/安装包SHA，不扩大为已确认准确v0.2.9升级路径、配置/DeviceId保留或全部生命周期。全新、卸载/重装、运行中静默退出码、登记/权限/普通用户条件仍未确认；Codex系统测试仍REAL_INSTALL_NOT_EXECUTED。这些为披露质量风险，本轮按用户要求不重复安装体验或优先自动化；保留[V030_INSTALL_LIFECYCLE_FINAL](V030_INSTALL_LIFECYCLE_FINAL.md)合同。
 
 ## 4. 第三方发行材料
 
@@ -55,12 +59,12 @@
 
 ## 6. 还需要用户做什么
 
-1. 后续提供已可用、获授权、可恢复的Windows环境，或安排操作员按四阶段卡完成必要系统生命周期；当前无需守在电脑前。
+1. 无需重复覆盖升级、启动使用或中文页面；未覆盖系统场景作为质量风险供最终发布决定，若后续选择验证再按四阶段卡在隔离环境执行。
 2. 取得上述目标二进制/资产的许可、归属、对应源码/修改/构建配置或有效获取安排，供后续有界核验；本轮未代发外部联系。
 3. 审核PR30已按本轮授权合并。安装与发行材料门禁闭合后，仅需对最终Stable发布作明确决定；已正常的Together体验和中文安装页面不重复要求验收。
 
 ## 7. 最终结论
 
-**V030_FEATURE_FROZEN / ENGINEERING_READY_RELEASE_BLOCKED**。PR30主线整合和工程收尾已完成；REAL_TOGETHER_USER_ACCEPTANCE=PASS及安装器三项USER_UI_ACCEPTANCE=PASS保留，历史全屏合成采样仍INCONCLUSIVE。真实Windows安装生命周期REAL_INSTALL_NOT_EXECUTED及第三方发行材料未闭合状态不变，不能选择READY_FOR_STABLE_RELEASE_APPROVAL。本轮不启动其它专项，未创建v0.3.0 Tag/Stable Release，未变更v0.2.9资产、内部候选身份或现用客户端。
+**V030_FEATURE_FROZEN / ENGINEERING_READY_RELEASE_BLOCKED**。PR30主线整合和工程收尾已完成；REAL_TOGETHER_USER_ACCEPTANCE=PASS、安装器三项USER_UI_ACCEPTANCE=PASS及最新覆盖升级/启动USER_REPORTED_PASS保留，历史全屏合成采样仍INCONCLUSIVE。Codex四阶段系统测试REAL_INSTALL_NOT_EXECUTED，未覆盖场景披露为质量风险。第三方实质权利/完整源/组合许可未闭合，不能选择READY_FOR_STABLE_RELEASE_APPROVAL；最新解阻结论见[V030_RELEASE_UNBLOCK_PLAN](V030_RELEASE_UNBLOCK_PLAN.md)。未创建v0.3.0 Tag/Stable Release、变更v0.2.9资产、旧候选身份或现用客户端。
 
 审核分支 `codex/v030-final-release-gate-20261012`保留，[PR30](https://github.com/hope140/EmbyTheaterEnhanced/pull/30) **MERGED**。独立只读最终审查PASS与[审查回执](evidence/v030-final-readonly-review.json)保留原身份；候选始终绑定7827425及既有SHA，不改为main正式产物。后续只处理上述实际发行门禁与发布决定；本轮工程收尾已关闭。

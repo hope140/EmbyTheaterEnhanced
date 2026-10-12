@@ -1,5 +1,21 @@
 # 项目状态
 
+## 2026-10-12 — LICENSE_GATE_WAIVED_BY_MAINTAINER / 发行准备
+
+维护者明确终止许可证专项并接受现存风险：内部许可材料不再自动阻止常规开发/CI/构建/发行准备；UNKNOWN、GPL组合问题和原审计结论不改为PASS，不重授权上游或删除归属。决定见[V030_MAINTAINER_RELEASE_DECISION](V030_MAINTAINER_RELEASE_DECISION.md)，后续不主动追溯/补件/重建审计，仅具体有效权利主张时按组件处理。
+
+V030_FEATURE_FROZEN保持；用户Together、覆盖升级/启动和安装器UI PASS保持范围，全屏INCONCLUSIVE及未确认系统场景披露。本轮授权PR31 Merge Commit整合、合并main新构建/来源/通知/完整验包和[正式Release Notes准备](V030_RELEASE_NOTES.md)，状态PUBLICATION_PENDING_MAINTAINER_APPROVAL；未授权公开binary上传、Stable Tag/Release。下方许可阻断文字是原阶段结论，当前内部门禁按维护者决定覆盖其自动阻止行为，事实不被推翻。
+
+## 2026-10-12 — PR31 GPL许可审核策略收敛
+
+当前main72d4688/PR31审查HEAD94556b7，两次原CI702/702成功。用户明确按官方Emby GPL-2.0上游维护，取消额外Carnival作者许可的默认门禁；官方GPL grant与实际对象对应源/修改履行分离，未知独创/第三方单列，不要求bit-exact/PDB/历史机器。限定静态核查确认libmpv v3配方与GPL-2.0-only Helper直接加载组合是首要待决；只对Helper另给兼容授权和兼容core构建均为未实施路线，主GPL2上游保持。[PR31审核](V030_PR31_GPL_RELEASE_REVIEW.md)收敛为组合许可、真实对应源/通知交付、具体独立项三组。当前完整Windows二进制仍RELEASE_BLOCKED_EXTERNAL_MATERIALS；功能冻结/工程就绪、用户升级/启动/Together/UI PASS保持，未重跑功能/安装或发布Stable。
+
+## 2026-10-12 — 第三方发行解阻 / RELEASE_BLOCKED_EXTERNAL_MATERIALS
+
+远端main重新核对为72d4688821822860d20342ae8c784a279b06b4f5；项目V030_FEATURE_FROZEN / ENGINEERING_READY_RELEASE_BLOCKED。用户确认昨天覆盖升级成功、升级后正常启动使用，记录USER_INSTALL_ACCEPTANCE=PASS及两项USER_REPORTED_PASS；配置/DeviceId、卸载/重装等未确认，不重复安装体验。Codex四阶段REAL_INSTALL_NOT_EXECUTED保留为测试执行身份，未覆盖项按用户调整披露为质量风险；Together/UI验收和原783/138/窗口PASS/全屏INCONCLUSIVE保留。
+
+本轮完成官方Host/ServiceStack版本源与全文、mpv实际发布run/固定builder/FFmpeg源、Roboto/jQuery通知、官方driver目标SHA匹配、思源内嵌OFL回读；22完整文本整合既有THIRD_PARTY_NOTICES入口。核心实际源/分发权、libmpv依赖源/通知和GPLv3组合、modified思源RFN等仍待闭合，完整Windows公开二进制未获放行。详见[V030_RELEASE_UNBLOCK_PLAN](V030_RELEASE_UNBLOCK_PLAN.md)；源码/资产替代方案均未实施，无冻结源码/installer/依赖变更、新测试/重复播放或现用客户端操作，无二进制公开上传、Tag/Stable Release。下方历史记录按原日期与来源读取。
+
 ## 2026-10-12 — V030_FEATURE_FROZEN / ENGINEERING_READY_RELEASE_BLOCKED
 
 用户认可最终工程报告并授权结束工程收尾。PR30最新HEAD6e9c644/main89a0501、两次CI SUCCESS、独立只读审查、全部20文件diff与39项消费输入核对通过；冻结代码/installer/package/lock无新变化。13:41:06 Merge Commit合入main为 `2de72919d114f053b15e1e747d26e641e764eaaa`，parents=89a0501/6e9c644，tree与PR HEAD一致。合并后main CI入口38209020299，最终状态文档HEAD/CI及回执见[V030_FINAL_RELEASE_GATE](V030_FINAL_RELEASE_GATE.md)。

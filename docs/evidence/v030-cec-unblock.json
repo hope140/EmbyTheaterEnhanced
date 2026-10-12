@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-12",
+  "baseline": "72d4688821822860d20342ae8c784a279b06b4f5",
+  "candidateSourceCommit": "7827425e07024fcca3bf671aa4401bb3020291b0",
+  "targets": [
+    {
+      "path": "cec/cec.dll",
+      "bytes": 325568,
+      "sha256": "6e2932ab53f4d05d5f815499786a48c3ccb8a60c527aa2f34e4abbf14dc66d04"
+    },
+    {
+      "path": "cec/cec-client.exe",
+      "bytes": 89536,
+      "sha256": "42f601278f82c37d0cc26460d4ac80e62f6cec5b84b2efb0ee8ed75c1cbc4519"
+    },
+    {
+      "path": "cec/cec-client.x64.exe",
+      "bytes": 89536,
+      "sha256": "42f601278f82c37d0cc26460d4ac80e62f6cec5b84b2efb0ee8ed75c1cbc4519"
+    },
+    {
+      "path": "cec/p8-usbcec-driver-installer.exe",
+      "bytes": 619536,
+      "sha256": "6e4d5a091720cf5ad727896bbf3766e5529468e24849183439506130bde3546a"
+    },
+    {
+      "path": "electronapp/libmpv/x64/RefreshRate.exe",
+      "bytes": 7168,
+      "sha256": "c3ac38b3345d804afc4ba97f34f059d0c4294ac5f55f62a25948ee62975eaa81"
+    }
+  ],
+  "officialDriver": {
+    "url": "https://raw.githubusercontent.com/Pulse-Eight/libcec/3dcc821c86576c94ac3b5b73fd764cc16dfe05b1/support/p8-usbcec-driver-installer.exe",
+    "bytes": 619536,
+    "sha256": "6e4d5a091720cf5ad727896bbf3766e5529468e24849183439506130bde3546a",
+    "relation": "EXACT_SHA256_MATCH"
+  },
+  "referenceMaterials": [
+    {
+      "path": "docs/redistribution-notices/cec/COPYING",
+      "url": "https://raw.githubusercontent.com/Pulse-Eight/libcec/3dcc821c86576c94ac3b5b73fd764cc16dfe05b1/COPYING",
+      "bytes": 16415,
+      "sha256": "3618005b3db4eb8ede7292d233e6c41605cb8dcbd33e8790eff6e29c1e4f3789"
+    },
+    {
+      "path": "docs/redistribution-notices/cec/AUTHORS",
+      "url": "https://raw.githubusercontent.com/Pulse-Eight/libcec/3dcc821c86576c94ac3b5b73fd764cc16dfe05b1/AUTHORS",
+      "bytes": 131,
+      "sha256": "c6b16e8b4b4ed50de08d3eb014f1d049d844c1b79221f360f8207bd6e0a2b179"
+    }
+  ],
+  "driverSourceReferences": [
+    {
+      "path": "project/p8-usbcec-driver.nsi",
+      "bytes": 4126,
+      "sha256": "e7fb08f5c89ebf7d053f6b6b5ffcd47245100246b1888811272e46641070b965"
+    },
+    {
+      "path": "driver/p8usb-cec.inf",
+      "bytes": 2596,
+      "sha256": "90334a9ce70e23fd83f1d124d73a69674f3cb6cf2e4fc2294b133e935db5dc4a"
+    }
+  ],
+  "driverContainsDPInst": "NSIS reference packs dpinst-amd64.exe and dpinst-x86.exe; component redistribution grant not confirmed",
+  "closed": "official driver binary location and full reference libCEC license/authors text",
+  "remaining": "libCEC target preferred source/changes; DPInst terms; RefreshRate target source/grant",
+  "runtimeExecuted": false,
+  "productChanged": false
+}

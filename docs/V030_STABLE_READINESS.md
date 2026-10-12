@@ -1,5 +1,9 @@
 # v0.3.0 Stable readiness
 
+当前 **LICENSE_GATE_WAIVED_BY_MAINTAINER / V030_FEATURE_FROZEN / PUBLICATION_PENDING_MAINTAINER_APPROVAL**。维护者接受风险、终止许可专项，内部许可未闭合不再自动阻止发行准备；原UNKNOWN/组合问题、报告和用户验收边界不改写。PR31审核整合、合并main新产物与工程验包按当前授权执行；公开上传/Tag/Stable仍待单独决定。[维护者记录](V030_MAINTAINER_RELEASE_DECISION.md)为最新政策，下方为原阶段身份。
+
+2026-10-12最新补充：用户实际覆盖升级成功、升级后启动/使用 **USER_REPORTED_PASS**，总体 **USER_INSTALL_ACCEPTANCE=PASS**；配置/DeviceId、卸载/重装等未确认。Codex四阶段测试REAL_INSTALL_NOT_EXECUTED与用户通过的体验分开记录，不重复体验。当前功能冻结/工程就绪、公开二进制仍 **RELEASE_BLOCKED_EXTERNAL_MATERIALS**；新准确材料/通知闭合及剩余最少资料见[V030_RELEASE_UNBLOCK_PLAN](V030_RELEASE_UNBLOCK_PLAN.md)。下方阶段状态保留当时身份。
+
 2026-10-12状态 **V030_FEATURE_FROZEN / ENGINEERING_READY_RELEASE_BLOCKED**。PR28/29/30均MERGED，工程收尾阶段结束；PR30 Merge Commit为2de72919d114f053b15e1e747d26e641e764eaaa。Together用户反馈PASS与安装器三项用户UI PASS保留，不重复测试；历史全屏INCONCLUSIVE、REAL_INSTALL_NOT_EXECUTED和发行材料未闭合状态不扩大结论。最新main/CI及内部候选身份见[V030_FINAL_RELEASE_GATE](V030_FINAL_RELEASE_GATE.md)，旧阶段记录保留自身来源。
 
 ## 源码、PR 与 CI

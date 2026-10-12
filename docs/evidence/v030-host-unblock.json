@@ -1,0 +1,557 @@
+{
+  "schemaVersion": 1,
+  "observedDate": "2026-10-12",
+  "timeZone": "Asia/Shanghai",
+  "taskTier": 2,
+  "reason": "Version-bound material collection with component license/source and Host behavior analysis; no product implementation.",
+  "baseCommit": "72d4688821822860d20342ae8c784a279b06b4f5",
+  "branch": "codex/v030-host-materials-20261012",
+  "scope": "ACTUAL_OFFICIAL_MATERIALS_READBACK_AND_CANDIDATE_CONCLUSIONS; no legal certification, product rebuild, runtime execution or release",
+  "runtime": {
+    "relativeRole": "dist/ETE-v0.3.0-stable-rc-20261012-internal in original final-gate worktree",
+    "sourceCommit": "7827425e07024fcca3bf671aa4401bb3020291b0",
+    "version": "0.3.0",
+    "payload": {
+      "fileCount": 2138,
+      "payloadSetSha256": "1353809d891dc8fed0cb8fc5318c801c2050380dcc2cbb9cf4c30527cd6df349"
+    },
+    "manifestSha256": "fd27dfea9418fed1a5eecef69af53624692847cdfa48ae53cea52af8444cac10",
+    "files": [
+      {
+        "path": "Emby.Theater.exe",
+        "bytes": 202240,
+        "sha256": "11abf75c8f77ddb0078e7dd62a2eaae60dba244c113bc7893a7e56bc6527163e",
+        "fileVersion": "3.0.20.0",
+        "matchesRuntimeManifest": true
+      },
+      {
+        "path": "MediaBrowser.Common.dll",
+        "bytes": 44032,
+        "sha256": "8fc955a5215e862f5bde882cedbe2be52e6a242d89d03406844993595d72657f",
+        "fileVersion": "1.0.0.0",
+        "matchesRuntimeManifest": true
+      },
+      {
+        "path": "MediaBrowser.Model.dll",
+        "bytes": 424960,
+        "sha256": "f2eeca1c65e56e96340dc84ff91de6e4cc25bb2e510706748606f05c1e39ebaf",
+        "fileVersion": "1.0.0.0",
+        "matchesRuntimeManifest": true
+      },
+      {
+        "path": "ServiceStack.Text.dll",
+        "bytes": 411648,
+        "sha256": "2cc4fc93be82d4818dc81beb9f5cd0e4f995c77e1725c129e4918e8aeaeb39c1",
+        "fileVersion": "4.5.14.0",
+        "matchesRuntimeManifest": true
+      },
+      {
+        "path": "SharpCompress.dll",
+        "bytes": 420864,
+        "sha256": "3c34138417974ce215e5d1b5bdbb7abd578ce77420073ea9de3f46ccebe42b55",
+        "fileVersion": "0.10.3.0",
+        "matchesRuntimeManifest": true
+      },
+      {
+        "path": "SimpleInjector.dll",
+        "bytes": 382464,
+        "sha256": "6a8e55d1f114fb579f4b92169af71dc197d86dd13a79199a4f047dc4b22bf0bc",
+        "fileVersion": "4.0.11.0",
+        "matchesRuntimeManifest": true
+      },
+      {
+        "path": "SocketHttpListener.dll",
+        "bytes": 115200,
+        "sha256": "7d1e347f1cb6ff10b011547665bcf13bb734306e8977e572021161f52a43f852",
+        "fileVersion": "3.2.32.4",
+        "matchesRuntimeManifest": true
+      },
+      {
+        "path": "System.Configuration.dll",
+        "bytes": 93200,
+        "sha256": "3dba0c61e075728780723d7e517f6276674e29f6e9d5942c0b95a240f1e8f1bf",
+        "fileVersion": "4.0.30319.18020 built by: FX45RTMGDR",
+        "matchesRuntimeManifest": true
+      },
+      {
+        "path": "Emby.Theater.exe.config",
+        "bytes": 2141,
+        "sha256": "5831fd61c63d76f430df19cb524fd6382584507bfcbfd2e579420d57a95d2010",
+        "fileVersion": null,
+        "matchesRuntimeManifest": true
+      }
+    ]
+  },
+  "priorEvidence": {
+    "path": "docs/evidence/third-party-host-20261009.json",
+    "sha256": "e632160666a1a2e12e86bb0d16429ba639c5aff573c3e7e2cdd3c92b6f1e7bb0",
+    "reuse": "Archive identities only; all selected entities independently reacquired and hashed in this run."
+  },
+  "officialQueries": {
+    "limit": 12,
+    "used": 9,
+    "newDownloads": 6,
+    "items": [
+      {
+        "number": 1,
+        "url": "https://www.nuget.org/packages/MediaBrowser.Common/3.3.10",
+        "method": "web.open",
+        "result": "tool inaccessible; exact flat-container endpoint downloaded later"
+      },
+      {
+        "number": 2,
+        "url": "https://github.com/ServiceStack/ServiceStack.Text/blob/e5819a8de75a8bae64ddc7a64008613067893e32/license.txt",
+        "method": "web.open",
+        "result": "official license read"
+      },
+      {
+        "number": 3,
+        "url": "https://github.com/MediaBrowser/emby-theater-windows/tree/708fadc068cbf66ced6aece4a32f3e12bb2c4e13",
+        "method": "web.open",
+        "result": "tool inaccessible; exact codeload endpoint downloaded later"
+      },
+      {
+        "number": 4,
+        "url": "https://api.nuget.org/v3-flatcontainer/mediabrowser.common/3.3.10/mediabrowser.common.3.3.10.nupkg",
+        "method": "curl download",
+        "result": "success"
+      },
+      {
+        "number": 5,
+        "url": "https://api.nuget.org/v3-flatcontainer/servicestack.text/4.5.14/servicestack.text.4.5.14.nupkg",
+        "method": "curl download",
+        "result": "success"
+      },
+      {
+        "number": 6,
+        "url": "https://codeload.github.com/ServiceStack/ServiceStack.Text/zip/e5819a8de75a8bae64ddc7a64008613067893e32",
+        "method": "curl download",
+        "result": "success"
+      },
+      {
+        "number": 7,
+        "url": "https://codeload.github.com/MediaBrowser/emby-theater-windows/zip/708fadc068cbf66ced6aece4a32f3e12bb2c4e13",
+        "method": "curl download",
+        "result": "success"
+      },
+      {
+        "number": 8,
+        "url": "https://www.gnu.org/licenses/agpl-3.0.txt",
+        "method": "curl download",
+        "result": "success"
+      },
+      {
+        "number": 9,
+        "url": "https://api.github.com/repos/ServiceStack/ServiceStack.Text/git/ref/tags/v4.5.14",
+        "method": "curl download",
+        "result": "success; official tag mapped to fixed commit"
+      }
+    ]
+  },
+  "archives": [
+    {
+      "path": ".work/host-unblock/mediabrowser.common.3.3.10.nupkg",
+      "bytes": 177439,
+      "sha256": "4d9bd3ed99e9b2b6cd22622018af5667246d8b866041f540afdb973b30d30d0b",
+      "url": "https://api.nuget.org/v3-flatcontainer/mediabrowser.common/3.3.10/mediabrowser.common.3.3.10.nupkg",
+      "previousEvidenceSha256": "4d9bd3ed99e9b2b6cd22622018af5667246d8b866041f540afdb973b30d30d0b",
+      "matchesPreviousArchiveIdentity": true
+    },
+    {
+      "path": ".work/host-unblock/servicestack.text.4.5.14.nupkg",
+      "bytes": 560785,
+      "sha256": "7fd29722344036768ab3c7e1be3c70382f93e57ce2b5be0cf3d918b66b85eb5e",
+      "url": "https://api.nuget.org/v3-flatcontainer/servicestack.text/4.5.14/servicestack.text.4.5.14.nupkg",
+      "previousEvidenceSha256": "7fd29722344036768ab3c7e1be3c70382f93e57ce2b5be0cf3d918b66b85eb5e",
+      "matchesPreviousArchiveIdentity": true
+    },
+    {
+      "path": ".work/host-unblock/servicestack-text-e5819a8-source.zip",
+      "bytes": 6376149,
+      "sha256": "97ed2dfa327dc5d2827c373205df551d5fdb595b0ac6e7f925d0c1f118364dd9",
+      "url": "https://codeload.github.com/ServiceStack/ServiceStack.Text/zip/e5819a8de75a8bae64ddc7a64008613067893e32",
+      "previousEvidenceSha256": "97ed2dfa327dc5d2827c373205df551d5fdb595b0ac6e7f925d0c1f118364dd9",
+      "matchesPreviousArchiveIdentity": true
+    },
+    {
+      "path": ".work/host-unblock/windows-host-708fadc-source.zip",
+      "bytes": 198671303,
+      "sha256": "7dc15a294137c0a40553282289f4590b7cf75a8f9169dafbe5d08d2fe3a1a884",
+      "url": "https://codeload.github.com/MediaBrowser/emby-theater-windows/zip/708fadc068cbf66ced6aece4a32f3e12bb2c4e13",
+      "previousEvidenceSha256": "7dc15a294137c0a40553282289f4590b7cf75a8f9169dafbe5d08d2fe3a1a884",
+      "matchesPreviousArchiveIdentity": true
+    },
+    {
+      "path": ".work/host-unblock/AGPL-3.0.txt",
+      "bytes": 34523,
+      "sha256": "0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0",
+      "url": "https://www.gnu.org/licenses/agpl-3.0.txt"
+    }
+  ],
+  "exactNoticeFiles": [
+    {
+      "path": "docs/redistribution-notices/host/ServiceStack.Text-v4.5.14-license.txt",
+      "bytes": 3746,
+      "sha256": "b3b85e98776c6f99a5354363a45b8f5284fef916765a34cbadc6ca5612e149ec",
+      "archive": ".work/host-unblock/servicestack-text-e5819a8-source.zip",
+      "originalMember": {
+        "entry": "ServiceStack.Text-e5819a8de75a8bae64ddc7a64008613067893e32/license.txt",
+        "bytes": 3746,
+        "sha256": "b3b85e98776c6f99a5354363a45b8f5284fef916765a34cbadc6ca5612e149ec"
+      },
+      "byteExact": true,
+      "gitBlobSha1": "228199f61cae44c85a07e2faa29c2fca89792fc0",
+      "stagedRawByteExact": true
+    },
+    {
+      "path": "docs/redistribution-notices/host/Windows-Host-708fadc-LICENSE.md",
+      "bytes": 18014,
+      "sha256": "f371b80469fb235bc500ec29e0e85b682d4a6157a158567d828ff0be544d4f1d",
+      "archive": ".work/host-unblock/windows-host-708fadc-source.zip",
+      "originalMember": {
+        "entry": "emby-theater-windows-708fadc068cbf66ced6aece4a32f3e12bb2c4e13/LICENSE.md",
+        "bytes": 18014,
+        "sha256": "f371b80469fb235bc500ec29e0e85b682d4a6157a158567d828ff0be544d4f1d"
+      },
+      "byteExact": true,
+      "gitBlobSha1": "4522ba065934f53f9d4b7fde1953d9f332fe1abb",
+      "stagedRawByteExact": true
+    },
+    {
+      "path": "docs/redistribution-notices/host/MediaBrowser.Common-3.3.10.nuspec.xml",
+      "bytes": 736,
+      "sha256": "4f773b8c1a85e1582e6ab931f20e712ea74e98052f3caf743ebbdd2f6cfd3549",
+      "archive": ".work/host-unblock/mediabrowser.common.3.3.10.nupkg",
+      "originalMember": {
+        "entry": "MediaBrowser.Common.nuspec",
+        "bytes": 736,
+        "sha256": "4f773b8c1a85e1582e6ab931f20e712ea74e98052f3caf743ebbdd2f6cfd3549"
+      },
+      "byteExact": true,
+      "gitBlobSha1": "87aa807ec9733b3daf70a46697a4caae0757d96f",
+      "stagedRawByteExact": true
+    },
+    {
+      "path": "docs/redistribution-notices/host/ServiceStack.Text-4.5.14.nuspec.xml",
+      "bytes": 1098,
+      "sha256": "8c617f41bd570318e46291e8956e6b6d55f686fc469340962cca620c78cee140",
+      "archive": ".work/host-unblock/servicestack.text.4.5.14.nupkg",
+      "originalMember": {
+        "entry": "ServiceStack.Text.nuspec",
+        "bytes": 1098,
+        "sha256": "8c617f41bd570318e46291e8956e6b6d55f686fc469340962cca620c78cee140"
+      },
+      "byteExact": true,
+      "gitBlobSha1": "ed4c306c521f157491743c4cdee0f451862a06c9",
+      "stagedRawByteExact": true
+    },
+    {
+      "path": "docs/redistribution-notices/host/AGPL-3.0.txt",
+      "bytes": 34523,
+      "sha256": "0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0",
+      "url": "https://www.gnu.org/licenses/agpl-3.0.txt",
+      "downloadIdentity": {
+        "path": ".work/host-unblock/AGPL-3.0.txt",
+        "bytes": 34523,
+        "sha256": "0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0"
+      },
+      "byteExact": true,
+      "gitBlobSha1": "be3f7b28e564e7dd05eaf59d64adba1a4065ac0e",
+      "stagedRawByteExact": true
+    }
+  ],
+  "selectedSourceMemberIdentities": [
+    {
+      "entry": "emby-theater-windows-708fadc068cbf66ced6aece4a32f3e12bb2c4e13/Emby.Theater/Program.cs",
+      "bytes": 19096,
+      "sha256": "94449b341c4848ba52eed299c5bee60e3a79542535092b0168d5686ab9d2e1c8",
+      "archive": ".work/host-unblock/windows-host-708fadc-source.zip"
+    },
+    {
+      "entry": "emby-theater-windows-708fadc068cbf66ced6aece4a32f3e12bb2c4e13/Emby.Theater/App/ElectronApp.cs",
+      "bytes": 9170,
+      "sha256": "6a6bda5284f9b500d3cf7d572f62fef2809d37d33eac7b3e3d26d3f8d591247e",
+      "archive": ".work/host-unblock/windows-host-708fadc-source.zip"
+    },
+    {
+      "entry": "emby-theater-windows-708fadc068cbf66ced6aece4a32f3e12bb2c4e13/Emby.Theater/App/DeviceId.cs",
+      "bytes": 2596,
+      "sha256": "45844251c155bdcdc832e8482555111de3ea7edac41c9933ac51ea1f86f0d376",
+      "archive": ".work/host-unblock/windows-host-708fadc-source.zip"
+    },
+    {
+      "entry": "emby-theater-windows-708fadc068cbf66ced6aece4a32f3e12bb2c4e13/Emby.Theater/AppBase/BaseApplicationPaths.cs",
+      "bytes": 4899,
+      "sha256": "77dc2d3b33066f5da49fcf11fc49bc8763b2834615073cca84f73c434a126f0f",
+      "archive": ".work/host-unblock/windows-host-708fadc-source.zip"
+    },
+    {
+      "entry": "emby-theater-windows-708fadc068cbf66ced6aece4a32f3e12bb2c4e13/Emby.Theater/TheaterServer.cs",
+      "bytes": 5141,
+      "sha256": "f7decd047951adb578d4b2982e80f15ae7a495334e2dde5d9062139cd7313043",
+      "archive": ".work/host-unblock/windows-host-708fadc-source.zip"
+    },
+    {
+      "entry": "emby-theater-windows-708fadc068cbf66ced6aece4a32f3e12bb2c4e13/Emby.Theater/Properties/AssemblyInfo.cs",
+      "bytes": 1356,
+      "sha256": "4e31b882a63c0ae329f811a3dd087fa00414ca108dfe809d62a1915dcc2c96ab",
+      "archive": ".work/host-unblock/windows-host-708fadc-source.zip"
+    },
+    {
+      "entry": "emby-theater-windows-708fadc068cbf66ced6aece4a32f3e12bb2c4e13/Emby.Theater/Emby.Theater.csproj",
+      "bytes": 15965,
+      "sha256": "288bf2623eeb6280bf932d64ddde3b3f4afaadfad916964767cdc47ce75c4855",
+      "archive": ".work/host-unblock/windows-host-708fadc-source.zip"
+    },
+    {
+      "entry": "emby-theater-windows-708fadc068cbf66ced6aece4a32f3e12bb2c4e13/Emby.Theater/packages.config",
+      "bytes": 300,
+      "sha256": "5775a0e475005542180b1e7de6c9251b961b9a3733013f8a809482a3e0b81f17",
+      "archive": ".work/host-unblock/windows-host-708fadc-source.zip"
+    },
+    {
+      "entry": "emby-theater-windows-708fadc068cbf66ced6aece4a32f3e12bb2c4e13/Emby.Theater/App.config",
+      "bytes": 2057,
+      "sha256": "3b012466f0fae68940ea37700954cb91cacca043513b1d3113807bde0372db36",
+      "archive": ".work/host-unblock/windows-host-708fadc-source.zip"
+    },
+    {
+      "entry": "ServiceStack.Text-e5819a8de75a8bae64ddc7a64008613067893e32/src/ServiceStack.Text/Properties/AssemblyInfo.cs",
+      "bytes": 1445,
+      "sha256": "61917dd56de7d116635271449082ab8c092e24a5e46fc2f27f3e76a0b54aa6f6",
+      "archive": ".work/host-unblock/servicestack-text-e5819a8-source.zip"
+    },
+    {
+      "entry": "ServiceStack.Text-e5819a8de75a8bae64ddc7a64008613067893e32/src/ServiceStack.Text/ServiceStack.Text.csproj",
+      "bytes": 4686,
+      "sha256": "964f5e8b00b630c4c777fa457e153019a2e353a6365b9b8c59b458ec1b009bd6",
+      "archive": ".work/host-unblock/servicestack-text-e5819a8-source.zip"
+    },
+    {
+      "entry": "ServiceStack.Text-e5819a8de75a8bae64ddc7a64008613067893e32/NuGet/ServiceStack.Text/servicestack.text.nuspec",
+      "bytes": 1309,
+      "sha256": "900b6938c5b3d3c686610825fbe3b89faf5dbcae29c44b2307b4dea830f1cffc",
+      "archive": ".work/host-unblock/servicestack-text-e5819a8-source.zip"
+    },
+    {
+      "entry": "ServiceStack.Text-e5819a8de75a8bae64ddc7a64008613067893e32/build/build.proj",
+      "bytes": 3942,
+      "sha256": "23b806ddc90222888a99dbafd588105e52d65111a4155e53c19003a2836cb302",
+      "archive": ".work/host-unblock/servicestack-text-e5819a8-source.zip"
+    },
+    {
+      "entry": "ServiceStack.Text-e5819a8de75a8bae64ddc7a64008613067893e32/build/build.tasks",
+      "bytes": 1448,
+      "sha256": "e5626b1717f79f43104fca6c71c591c9eb732c1b849cdfd976d2f487d600f4ab",
+      "archive": ".work/host-unblock/servicestack-text-e5819a8-source.zip"
+    }
+  ],
+  "serviceStack": {
+    "officialPackageDll": {
+      "entry": "lib/net45/ServiceStack.Text.dll",
+      "bytes": 411648,
+      "sha256": "2cc4fc93be82d4818dc81beb9f5cd0e4f995c77e1725c129e4918e8aeaeb39c1"
+    },
+    "runtimeDll": {
+      "path": "ServiceStack.Text.dll",
+      "bytes": 411648,
+      "sha256": "2cc4fc93be82d4818dc81beb9f5cd0e4f995c77e1725c129e4918e8aeaeb39c1",
+      "fileVersion": "4.5.14.0",
+      "matchesRuntimeManifest": true
+    },
+    "packageExact": true,
+    "officialTag": "refs/tags/v4.5.14",
+    "officialTagCommit": "e5819a8de75a8bae64ddc7a64008613067893e32",
+    "tagResponseIdentity": {
+      "path": ".work/host-unblock/servicestack-v4.5.14-ref.json",
+      "bytes": 410,
+      "sha256": "5352f295b763d1aa33a0fc709e847c1ef434366bca929947cb04856d19554af2"
+    },
+    "sourceAvailability": "SOFTWARE_SOURCE_AVAILABILITY_RESOLVED: official publisher release tag, full source archive and build scripts acquired and read back; no evidence of target DLL modification against official package",
+    "sourceBuildIdentity": "NOT_REBUILT; not a universal source-license precondition",
+    "checkedInLibraryDll": {
+      "entry": "ServiceStack.Text-e5819a8de75a8bae64ddc7a64008613067893e32/lib/net45/ServiceStack.Text.dll",
+      "bytes": 412160,
+      "sha256": "7c1049eb3de6fcede2e6746a43067a0e17e0b506523f6b6d1fa0ac5a2cd567b8"
+    },
+    "checkedInDllMatchesTarget": false,
+    "versionGeneration": "build/build.proj defaults MajorVersion=4, MinorVersion=5, PatchVersion=BUILD_NUMBER, UpdateVersion stamps AssemblyInfo and NuGetPack passes PackageVersion; placeholder AssemblyInfo/nuspec versions and stale checked-in library DLL do not invalidate publisher tag source by themselves",
+    "copyrightFacts": [
+      "Copyright (c) 2013 ServiceStack in exact license.txt",
+      "ServiceStack 2017 and contributors in exact official package nuspec"
+    ],
+    "license": "AGPLv3 plus fixed FOSS License Exception; full texts collected; no commercial route selected",
+    "softwareClosed": [
+      "Official unmodified package binary identity",
+      "Fixed publisher version source availability",
+      "Exact publisher copyright and FOSS exception full text",
+      "GNU AGPLv3 full text acquisition"
+    ],
+    "additionsPending": [
+      "Define which Host/Additions are independent work and their actual applicable licenses",
+      "Complete source for all applicable Additions, including unknown Carnival Host/Model or other dependent works as determined by final reviewer",
+      "Distribution/source access arrangement accompanying object code and notices"
+    ],
+    "runtimeNoticeDelivery": "NOT_IN_CURRENT_FROZEN_RUNTIME; collected repository supplement requires a separately authorized packaging/final-release step"
+  },
+  "common": {
+    "officialPackageDll": {
+      "entry": "lib/netstandard1.3/MediaBrowser.Common.dll",
+      "bytes": 44032,
+      "sha256": "8fc955a5215e862f5bde882cedbe2be52e6a242d89d03406844993595d72657f"
+    },
+    "runtimeDll": {
+      "path": "MediaBrowser.Common.dll",
+      "bytes": 44032,
+      "sha256": "8fc955a5215e862f5bde882cedbe2be52e6a242d89d03406844993595d72657f",
+      "fileVersion": "1.0.0.0",
+      "matchesRuntimeManifest": true
+    },
+    "packageExact": true,
+    "modelPackageMember": {
+      "entry": "lib/netstandard1.3/MediaBrowser.Model.dll",
+      "bytes": 426496,
+      "sha256": "db22f8ea6cb6afdfab184f80d8b85a10d8a9f148ff4cae167db87ce9cd245153"
+    },
+    "modelMatchesTarget": false,
+    "copyright": "Copyright © Emby 2013 from exact nuspec; complete original nuspec collected",
+    "licensing": "UNKNOWN: official package contains no LICENSE/COPYING/NOTICE and no licenseUrl/expression; Host GPL root is not automatically a license grant for this separate DLL",
+    "closed": [
+      "Official exact package-member origin independently reacquired",
+      "Full package copyright/metadata collected"
+    ],
+    "pending": [
+      "Applicable license grant and exact preferred source/changes if that grant requires corresponding source",
+      "Independent origin/source/license for nonmatching Model DLL"
+    ]
+  },
+  "host": {
+    "referenceCommit": "708fadc068cbf66ced6aece4a32f3e12bb2c4e13",
+    "rootLicense": "Full GPL version 2 text acquired from reference LICENSE.md; applicability to Carnival executable remains unbound",
+    "sourceAvailability": "REFERENCE_SOURCE_AVAILABILITY_RESOLVED",
+    "targetSourceRelation": "UNKNOWN; no provider source/patch or unmodified-build attestation binds Carnival EXE",
+    "assemblyCopyrightDeclaration": "[assembly: AssemblyCopyright(\"Copyright ©  2015\")]",
+    "sourceTargetFramework": "v4.6.2",
+    "solution": "VS15 classical MSBuild, Emby.Theater and RefreshRate projects",
+    "assemblyVersion": "3.0.20",
+    "behaviorFacts": [
+      "Electron path selects x64/x86 from OS bitness; app directory, data/electron, cec-client and mpv executable paths passed as four quoted positional arguments",
+      "ProgramDataPath substitutes ApplicationData and resolves relative paths; source App.config value empty, shipped config points to ApplicationData/EmbyTheaterEnhanced",
+      "Global EmbyTheater mutex with 5-second wait",
+      "Host DeviceId is data/device.txt GUID; current ETE persistent identity is separate config/device-identity.json",
+      "Local SocketHttpListener binds localhost:8154; current filesystem.js consumes fileexists/directoryexists routes",
+      "RunApplication calls InstallCecDriver: profile cancel/INF checks, user prompt, possible VC++/driver installer execution",
+      "Electron exited triggers Program.Exit; reference StartProcess never assigns its local Process to _process, so source close behavior cannot be assumed equivalent to Carnival binary",
+      "No Native Helper ownership or libmpv loading in Host source; current ETE main/native-helper modules own those production features"
+    ],
+    "exactBundledBinaryMappings": [
+      {
+        "entry": "emby-theater-windows-708fadc068cbf66ced6aece4a32f3e12bb2c4e13/ThirdParty/SharpCompress/SharpCompress.dll",
+        "bytes": 420864,
+        "sha256": "3c34138417974ce215e5d1b5bdbb7abd578ce77420073ea9de3f46ccebe42b55",
+        "runtimePath": "SharpCompress.dll",
+        "runtimeSha256": "3c34138417974ce215e5d1b5bdbb7abd578ce77420073ea9de3f46ccebe42b55",
+        "exact": true
+      },
+      {
+        "entry": "emby-theater-windows-708fadc068cbf66ced6aece4a32f3e12bb2c4e13/ThirdParty/emby/SocketHttpListener.dll",
+        "bytes": 115200,
+        "sha256": "7d1e347f1cb6ff10b011547665bcf13bb734306e8977e572021161f52a43f852",
+        "runtimePath": "SocketHttpListener.dll",
+        "runtimeSha256": "7d1e347f1cb6ff10b011547665bcf13bb734306e8977e572021161f52a43f852",
+        "exact": true
+      }
+    ],
+    "minimalProviderMaterial": [
+      "Attestation keyed to exact EXE hash that reference source is unmodified, or full actual preferred source and modification patch plus compilation/install-control scripts and necessary interface definitions",
+      "Precise dependent component source/license records where those components have source obligations; notice mapping for the actual distributed set",
+      "Source delivery/access arrangement for the actual object-code distribution"
+    ],
+    "reproducibilityExtras": [
+      "Exact SDK/compiler/targeting pack/build log and optional PDB aid provenance/reproduction; no universal requirement to supply PDB or reproduce identical output",
+      "Normally distributed system toolchain/components are assessed against applicable license exceptions instead of automatically demanded as private source"
+    ],
+    "rebuildAlternative": "B_PROPOSED_NOT_IMPLEMENTED: compile GPL reference in an isolated candidate with licensed dependencies and explicitly controlled content-copy inputs; do not silently inherit old Electron/PPAPI/driver payload",
+    "regressionRequired": [
+      "Architecture and quoted argv with spaces",
+      "EmbyTheaterEnhanced profile bootstrap/config/DeviceId",
+      "Single instance, exit/restart/child cleanup",
+      "8154 consumers, startup option/system behavior",
+      "CEC prompt/cancel/driver behavior in a disposable environment",
+      "Electron44 APPHOST STARTUP COMMAND CANONICALIZATION preserved",
+      "Native Helper startup/stop/fullscreen/presentation plus Session identity and ordinary/STRM/Together regression",
+      "Installer upgrade/start/config retention/uninstall/reinstall lifecycle for the new launcher"
+    ]
+  },
+  "conditionalUnknowns": [
+    {
+      "component": "System.Configuration.dll",
+      "licensing": "UNKNOWN",
+      "sourceDuty": "Only if verified component origin/license imposes it; framework FileVersion/HintPath do not decide redistribution right or source duty"
+    },
+    {
+      "component": "SharpCompress.dll",
+      "binaryLocation": "EXACT member of fixed official Host source archive",
+      "licensing": "UNKNOWN for exact shipped file",
+      "sourceDuty": "Conditional on exact original license; bundled Host GPL does not automatically assign third-party terms"
+    },
+    {
+      "component": "SocketHttpListener.dll",
+      "binaryLocation": "EXACT member of fixed official Host source archive",
+      "licensing": "UNKNOWN for exact shipped file",
+      "sourceDuty": "Conditional on exact original license; no unrelated NuGet candidates retried"
+    },
+    {
+      "component": "MediaBrowser.Model.dll",
+      "licensing": "UNKNOWN",
+      "sourceDuty": "Conditional; Common official package Model does not match target"
+    }
+  ],
+  "options": [
+    {
+      "option": "A",
+      "state": "PROVIDER_NEEDED",
+      "proposal": "Keep existing target binaries; collect actual Host/Additions preferred source/patch, per-component grant/notice and source delivery plan keyed to target hashes. Software ServiceStack source and exact notice texts are now collected."
+    },
+    {
+      "option": "B",
+      "state": "PROPOSED_NOT_IMPLEMENTED",
+      "proposal": "Separate GPL-reference Host rebuild and independently licensed dependency closure; compare functional contracts before proposing product replacement. Rebuild feasibility does not itself close unknown dependency grants."
+    },
+    {
+      "option": "C",
+      "state": "PROPOSED_NOT_IMPLEMENTED",
+      "proposal": "Design a source-maintained launcher/required local services with explicit feature mapping. It can remove opaque Host/dependencies only after replacement coverage and new authorization; it does not resolve unrelated libmpv/Web/assets rights."
+    }
+  ],
+  "userAcceptance": {
+    "USER_INSTALL_ACCEPTANCE": "PASS",
+    "upgrade": "USER_REPORTED_PASS",
+    "startupAndUse": "USER_REPORTED_PASS",
+    "configurationRetention": "NOT_VERIFIED",
+    "DeviceIdRetention": "NOT_VERIFIED",
+    "uninstall": "NOT_CONFIRMED",
+    "reinstall": "NOT_CONFIRMED",
+    "newMachineTesting": "NOT_EXECUTED",
+    "source": "Latest current-task user report as relayed by parent; not a new installer run by this worker",
+    "workerSystemLifecycle": "REAL_INSTALL_NOT_EXECUTED"
+  },
+  "validation": {
+    "archiveReadback": "PASS",
+    "officialTagIdentity": "PASS",
+    "noticeByteEquality": "PASS",
+    "runtimeManifestAndSelectedNineFiles": "PASS",
+    "commonExact": "PASS",
+    "serviceStackExact": "PASS",
+    "jsonRoundtrip": "PASS",
+    "gitDiffCheck": "PASS",
+    "productionChanges": "NONE",
+    "downloadedCodeExecution": "NONE",
+    "hostRebuild": "NOT_EXECUTED",
+    "installerExecution": "NOT_EXECUTED",
+    "remoteWrite": "NONE",
+    "sensitiveScan": "PASS: authored report/index/receipt contain no private absolute paths or credential-like fields",
+    "stagedRawNoticeBytes": "PASS: 5/5",
+    "originalNoticeAttributes": "Exact ServiceStack license preserves upstream trailing spaces; two exact NuGet metadata files recognize original CRLF; no directory/global whitespace exception"
+  }
+}

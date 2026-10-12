@@ -1,5 +1,26 @@
 # 开发日志
 
+## 2026-10-12 — 维护者豁免内部许可门禁 / PR31整合与发行准备
+
+- 维护者明确授权终止专项、风险接受和LICENSE_GATE_WAIVED_BY_MAINTAINER标记、PR31审核合并、合并main新构建/验包/Release Notes附件；公开binary/Tag/Stable仍需单独确认。Task Risk中高（Git合并/来源产物），Uncertainty低（既有冻结构建合同），Scope治理/Git/build/package，Playback/Session Impact NONE；Tier2最终验收、固定执行Tier1，模型继承配置（精确SKU未由工具返回），Escalated=no。没有再次审计许可或篡改UNKNOWN，根LICENSE及冻结源码保持。
+- 开工main72d4688/PR31 HEAD35b2fe4，两次CI SUCCESS、独立只读审核PASS；新政策只追加维护者决定与最新状态，并准备正式发行说明。程序build/package未发现依许可材料完整性拒绝的自动判定，继续保留通知hash/manifest/provenance/工具链等工程检查。
+- 保留全部历史材料和候选；在独立worktree使用原锁定输入复制件，从合并main准确提交生成新输出，不覆盖旧包/客户端/用户配置，不执行BAT/系统安装、虚拟化配置或外部联系。实际merge/main CI与新产物SHA、来源、完整解包/路径集核验将在本轮本地发行准备报告中记录，公开权限仍PENDING。
+- 工程通知交付核验补入已收集而尚未进入原22聚合的两份NuGet版权元数据与独立Apache全文；当前根通知覆盖25份现有snapshot，原22全文/原通知前缀、raw字节和历史回执保留。没有获取新材料或新许可认定，四文件交付合同不改；新准备回执v030-maintainer-notice-delivery与后续实际新产物验证分开。
+
+## 2026-10-12 — PR31 官方GPL基础与最小门禁重评
+
+- 当前用户要求审核收敛、优先libmpv/FFmpeg组合，不重构/重复已通过功能/自动Stable。延续本发行解阻任务已有文档/PR授权；Model Tier2（许可/源与IPC边界），Task Risk高、Uncertainty中、Scope定向源码/条款/治理文档，Playback/Session Impact NONE；运行配置继承、精确SKU未由工具返回；Escalated=no。只读worker收集明确Host/Web来源范围，主线程持有组合/最终放行判断。
+- main72d4688/PR31 HEAD94556b7与原两次CI SUCCESS核对。官方Emby GPL grant已有，取消额外Carnival作者许可默认门禁；有效GPL修改聚焦对应源/修改/通知，不以bit-exact重建/PDB/旧机器作为普遍门禁。未匹配不证明独创；目标RC真实包含三个定制入口，逐路径/hash登记且源码明文已随包，未知的是来源/适用授权而非一律没有源码。
+- 实际回读GNU FAQ兼容/聚合条款（下载全文存忽略证据）、固定FFmpeg LICENSE与builder60/61配置、HelperGPL2only和同进程API调用、原新增commitc593676及JS spawn/stdio边界。DLL静态未检出gpl/version3flags，未将阴性搜索当许可模式证明。提出仅Helper有权许可的最小候选，IPC独立性需看语义，未改根LICENSE/SPDX/冻结源码或实施替代。
+- 验证纯文档事实/链接/JSON/hash/diff/有限敏感模式，产品源码、工具链、测试实现及生产生成逻辑不变，不重复20/783/138/安装/像素；两项随包治理索引文字发生变化，后续新源码提交绑定其新hash，不宣称旧RC含新文档。审核结论完整Windows公开包仍阻断，最少事项见V030_PR31_GPL_RELEASE_REVIEW；无merge/tag/release/binary上传/客户端修改。
+
+## 2026-10-12 — v0.3.0 公开发行材料解阻
+
+- 当前用户授权独立worktree、定向材料研究、必要补件/验证/审核分支/PR；最新将实际覆盖升级、启动使用记USER_REPORTED_PASS，不优先四阶段、不重复已验收体验。Task Risk中高（许可与再分发）、Uncertainty中、Scope来源/完整通知/治理文档，Playback/Session Impact NONE。主线程Tier2负责材料判断；固定身份收集委派worker，模型继承运行配置（精确SKU未由工具返回）；Reason为明确材料合同与跨组件许可边界，Escalated=no。各worker独立worktree，未修改冻结产品或安装器。
+- 开工main72d4688；三笔材料原提交db650b9/04040ca/8d5a409分别cherry-pick -x至cadc11e/bda4626/a21f292，原始LF许可快照采用单次Git参数保留，不改全局配置。各报告/JSON实际diff、目标/官方实体hash由主线程复核；没有重复历史全量审计/测试。
+- 新实际取得ServiceStack v4.5.14源与完整FOSS/AGPL、Host reference源，mpv成功run31285220366与固定builder/FFmpeg源，Roboto/jQuery全文，driver官方同SHA入口；22完整文本汇入原THIRD_PARTY_NOTICES四文件合同，原归属保留。GPLv3组合与modified思源RFN成为具体待决，未改根LICENSE或字体。目标源码/rights与各自适用源码义务条件化，bit-exact/PDB不作为普遍法律前提。
+- 用户真实覆盖升级/启动使用PASS单列回执；未知旧版/hash、配置/DeviceId、卸载等不扩结论。Codex本轮不安装/卸载/启用虚拟化，未替换运行组件，未重建旧候选、公开上传二进制、自动Merge/Tag/Stable。验证/只读review/PR/CI回执见v030-unblock-validation与V030_RELEASE_UNBLOCK_PLAN；完整二进制RELEASE_BLOCKED_EXTERNAL_MATERIALS，工程就绪和功能冻结不变。
+
 ## 2026-10-12 — PR30 MERGED / 工程收尾阶段结束
 
 - 当前用户授权最后检查PR30、无新增问题时Merge Commit合并、main CI及最终冻结状态同步；禁止新功能/重复测试/历史材料审计/其它专项/Stable/客户端覆盖。Task Risk中（远端Git写入），Uncertainty低，Scope Git/CI/docs，Playback/Session Impact无。Model Tier1；当前模型配置继承（精确SKU未由工具返回）；Reason为固定SHA和已认可审查的串行整合；Escalated=no，不委派重复审核。

@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-12",
+  "contract": "existing NOTICE_PATHS, unchanged",
+  "destination": "THIRD_PARTY_NOTICES.md",
+  "originalPrefixBytes": 7712,
+  "originalPrefixSha256": "0d3624570d8e8f6c7c453f3659011455f0fba58c10a45837dc6aa7f9153e8248",
+  "aggregateSha256": "1bd34d43e83901672a17aec8edc548b329b99200a37be0658fb562e8cc462078",
+  "aggregation": "full text; CRLF->LF, horizontal trailing whitespace normalization, final-newline trim then one aggregate section newline; raw snapshots untouched",
+  "snapshots": [
+    {
+      "path": "docs/redistribution-notices/web/Roboto-LICENSE.txt",
+      "rawSha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "normalizedTextSha256": "43070e2d4e532684de521b885f385d0841030efa2b1a20bafb76133a5e1379c1",
+      "bytes": 11357
+    },
+    {
+      "path": "docs/redistribution-notices/web/jquery-3.6.0-LICENSE.txt",
+      "rawSha256": "d4db9ebe6f29f5168eac45ad713f055623ac5d0dcd5ba92da23d650ae012020d",
+      "normalizedTextSha256": "81af5cbaa86574c056a36371c810828fa0303c75f66c4ac91bbc78b7e8c16340",
+      "bytes": 1097
+    },
+    {
+      "path": "docs/redistribution-notices/web/Material-Icons-LICENSE.txt",
+      "rawSha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd",
+      "normalizedTextSha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd",
+      "bytes": 11357
+    },
+    {
+      "path": "docs/redistribution-notices/host/ServiceStack.Text-v4.5.14-license.txt",
+      "rawSha256": "b3b85e98776c6f99a5354363a45b8f5284fef916765a34cbadc6ca5612e149ec",
+      "normalizedTextSha256": "727d280d68fad7be1aec4b582b26fcaef7fa9a1ed98c6524c6df2b6edeeec52f",
+      "bytes": 3746
+    },
+    {
+      "path": "docs/redistribution-notices/host/AGPL-3.0.txt",
+      "rawSha256": "0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0",
+      "normalizedTextSha256": "4df3c306dddaaf4baffdff5ca820cc679ac8cd6dc263c6a74517783e42fa7a3b",
+      "bytes": 34523
+    },
+    {
+      "path": "docs/redistribution-notices/host/Windows-Host-708fadc-LICENSE.md",
+      "rawSha256": "f371b80469fb235bc500ec29e0e85b682d4a6157a158567d828ff0be544d4f1d",
+      "normalizedTextSha256": "8238bf45a45e7170661f3f6c6991b6f27166642378003174750c1f3709ee20f6",
+      "bytes": 18014
+    },
+    {
+      "path": "docs/redistribution-notices/mpv/Copyright",
+      "rawSha256": "bfe9ee4cceabcb8ecbfadf208d04156f73d801e6a57369a5606bb8341e204a23",
+      "normalizedTextSha256": "c066ff9ee5ac3729e85ea11977b13b42734da838aa6fe6ce6fe1a34d642cfc08",
+      "bytes": 4096
+    },
+    {
+      "path": "docs/redistribution-notices/mpv/LICENSE.GPL",
+      "rawSha256": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
+      "normalizedTextSha256": "de124e5a899ae4074ebf5c0f790494178ab66d310606b86203d67a6f3ef45168",
+      "bytes": 17984
+    },
+    {
+      "path": "docs/redistribution-notices/mpv/LICENSE.LGPL",
+      "rawSha256": "72b672113d642cbb8ef5dcc76938db801983c56e50b1400ab930f1a64d6dc8d9",
+      "normalizedTextSha256": "96d22399b3db2599a10dabd852d0f232b6b20cc62f76a3f0988cb3ff0afa2034",
+      "bytes": 26410
+    },
+    {
+      "path": "docs/redistribution-notices/mpv/API-NOTICE.txt",
+      "rawSha256": "a9044950bf847aaa0566b77223cbf399c8db345b7c3914668c491fbae4146d90",
+      "normalizedTextSha256": "41c647b0c4c7826927f6fee9b27a9aa330d5476bebb23cc5300c10eb14c9db90",
+      "bytes": 1012
+    },
+    {
+      "path": "docs/redistribution-notices/mpv/ffmpeg/LICENSE.md",
+      "rawSha256": "2e1d16c72fd74e12063776371da757322f8b77589386532f4fd8634bde7de1af",
+      "normalizedTextSha256": "e708b271eead3b09dc67076baf05ce30a8856f48ba5065cc8cdeafe97b41b21e",
+      "bytes": 4346
+    },
+    {
+      "path": "docs/redistribution-notices/mpv/ffmpeg/COPYING.GPLv2",
+      "rawSha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643",
+      "normalizedTextSha256": "f9c375a1be4a41f7b70301dd83c91cb89e41567478859b77eef375a52d782505",
+      "bytes": 18092
+    },
+    {
+      "path": "docs/redistribution-notices/mpv/ffmpeg/COPYING.GPLv3",
+      "rawSha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+      "normalizedTextSha256": "c53a65c2fd561c87eaabf1072ef5dcab8653042bc15308465f52413585eb6271",
+      "bytes": 35147
+    },
+    {
+      "path": "docs/redistribution-notices/mpv/ffmpeg/COPYING.LGPLv2.1",
+      "rawSha256": "246041b6ecf9bc32d718a62c57877c78b5eb397b6467e74ed7ae2626ab189c30",
+      "normalizedTextSha256": "9dbeb0f8568e2aa001500a3b7f4102deb2fcdaa4fb8eaa275b9a8810ef7b26db",
+      "bytes": 26517
+    },
+    {
+      "path": "docs/redistribution-notices/mpv/ffmpeg/COPYING.LGPLv3",
+      "rawSha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768",
+      "normalizedTextSha256": "ea8af5e789cb2d4e9b10bce3874982ade163b749b6bfbdb32e2df21c4d106de1",
+      "bytes": 7651
+    },
+    {
+      "path": "docs/redistribution-notices/mpv/ffmpeg/CREDITS",
+      "rawSha256": "28ecc96d495fa5ad48c76739a8f8d2c8980548d7a171585a6eb3f27a9ac8e4a2",
+      "normalizedTextSha256": "5827496d182fc2cc51c5f3830f4fd7ea30b7fa2234d410351e00b4b901b4db59",
+      "bytes": 277
+    },
+    {
+      "path": "docs/redistribution-notices/mpv/ffmpeg/jfdctfst.c.notice.txt",
+      "rawSha256": "9608a1781393c906ac6254ee965f19a599608428eaf84efdd8c7ba198f14e877",
+      "normalizedTextSha256": "f831f4602bd8c0446d5e26a4b14ddfa4581b95e4b61bb7cbb4697f22558e2e0f",
+      "bytes": 3389
+    },
+    {
+      "path": "docs/redistribution-notices/mpv/ffmpeg/jfdctint_template.c.notice.txt",
+      "rawSha256": "7469382cb23a47a033113c2c00d8e02e5071d76cb420d804f078527a906da679",
+      "normalizedTextSha256": "90da7eecd5d9e83cb5061af38fb56c4b99b975204f98d224249770c31812275a",
+      "bytes": 2937
+    },
+    {
+      "path": "docs/redistribution-notices/mpv/ffmpeg/jrevdct.c.notice.txt",
+      "rawSha256": "c5d96aa8ff9e78b9214a1bec3d2dd5d65e3196eae08fa7c6ba7466a5a793ba0f",
+      "normalizedTextSha256": "ee552ade15c696e8e75e9c1aa91193c8299ea3961e3510ab7667f9b3eea17123",
+      "bytes": 3035
+    },
+    {
+      "path": "docs/redistribution-notices/cec/COPYING",
+      "rawSha256": "3618005b3db4eb8ede7292d233e6c41605cb8dcbd33e8790eff6e29c1e4f3789",
+      "normalizedTextSha256": "6c4d365b0d7698b8fc1eb58a3963bd7b4c5bf3d1c184e3e48818b62c07dcb560",
+      "bytes": 16415
+    },
+    {
+      "path": "docs/redistribution-notices/cec/AUTHORS",
+      "rawSha256": "c6b16e8b4b4ed50de08d3eb014f1d049d844c1b79221f360f8207bd6e0a2b179",
+      "normalizedTextSha256": "c6b16e8b4b4ed50de08d3eb014f1d049d844c1b79221f360f8207bd6e0a2b179",
+      "bytes": 131
+    },
+    {
+      "path": "docs/redistribution-notices/fonts/Source-Han-Serif-OFL.txt",
+      "rawSha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2",
+      "normalizedTextSha256": "9f6ffa4d4ceb839c1d12b830273c1d9f01cb0f5e2535f6143b8f7befdd5650d5",
+      "bytes": 4301
+    }
+  ],
+  "count": 22,
+  "deliveryState": "TRACKED_NOTICE_PREPARED_NOT_REPACKAGED",
+  "oldCandidateUnchanged": true,
+  "originalPrefixNormalizedSha256": "77dc5c40dd7e4859eb813754ab17e0aa6f153472074d1d030f3fdc1691fd49e6",
+  "aggregateCanonicalLfSha256": "36582b175488403774c3c80b125805efe59d59e806ec5f287c4d77639f7a13ed"
+}

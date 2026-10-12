@@ -1,6 +1,8 @@
 # v0.3.0 安装生命周期最终验收入口
 
-当前 `REAL_INSTALL_NOT_EXECUTED`。2026-10-12只读探测见[环境回执](evidence/v030-final-install-environment.json)：Hyper-V/Sandbox Disabled，相关管理命令及VMMS不可用，未识别获授权、可恢复快照的Windows目标。停止真实安装/卸载尝试，未启用系统功能，未访问或覆盖现用客户端/profile。
+2026-10-12补充：用户确认昨天亲自在Windows覆盖升级成功，升级后启动及使用正常。当前 **USER_INSTALL_ACCEPTANCE=PASS**，覆盖升级和升级后启动/使用 **USER_REPORTED_PASS**，见[用户回执](evidence/v030-user-install-acceptance.json)。旧版本/安装包SHA未报告，不扩大为准确v0.2.9→v0.3.0或配置/DeviceId保留通过；卸载、重装、静默/UAC等未确认。不重复已经完成的安装体验。
+
+下方四阶段是保留的隔离自动化合同，**本轮不优先执行**，未覆盖项作为明确质量风险供最终放行评估。Codex系统测试 `REAL_INSTALL_NOT_EXECUTED`，不再用此字段描述用户已通过的覆盖升级。2026-10-12原只读探测见[环境回执](evidence/v030-final-install-environment.json)：未识别获授权、可恢复快照的Windows目标。没有启用系统功能、安装/卸载或覆盖现用客户端/profile。
 
 main89a0501的installer、guard、bootstrap和DeviceId源码与已验收基线相同；PR28原guard12项/语言7场景及三项用户UI PASS可复用，来源见[V030_STABLE_READINESS](V030_STABLE_READINESS.md)。新候选另做编译、版本、来源和全部manifest路径/hash验包；这些证据不扩大到真实系统操作。已通过的中文默认、语言选择和升级目录页面不重复要求用户验收。
 
@@ -13,7 +15,7 @@ main89a0501的installer、guard、bootstrap和DeviceId源码与已验收基线�
 | 阶段 | 操作与必要核验 | 当前状态 |
 |---|---|---|
 | 全新安装 | 干净VM安装rc；按候选manifest核对所有payload、单一卸载项、快捷方式目标、权限、首次配置/DeviceId，普通用户启动及正常退出 | REAL_INSTALL_NOT_EXECUTED |
-| v0.2.9→v0.3.0升级 | v0.2.9快照创建canary；先测试运行中交互阻止及静默非零退出（Setup退出码、目标文件hash保持）；正常退出后重试升级；核对设置/DeviceId、旧文件、单一登记、路径和普通用户启动 | REAL_INSTALL_NOT_EXECUTED |
+| v0.2.9→v0.3.0升级 | v0.2.9快照创建canary；先测试运行中交互阻止及静默非零退出（Setup退出码、目标文件hash保持）；正常退出后重试升级；核对设置/DeviceId、旧文件、单一登记、路径和普通用户启动 | 覆盖升级/启动使用USER_REPORTED_PASS；准确旧版/配置等未确认；本合同REAL_INSTALL_NOT_EXECUTED |
 | 卸载 | 用该实例uninstaller；验证运行保护，退出后正常卸载；程序、快捷方式、登记清除，profile/canary/DeviceId按政策保留，无owned进程或非预期服务/任务 | REAL_INSTALL_NOT_EXECUTED |
 | 重装 | 卸载后快照安装同rc；完整payload、单一profile/登记、canary与DeviceId复用、普通用户启动/退出，结束恢复快照 | REAL_INSTALL_NOT_EXECUTED |
 

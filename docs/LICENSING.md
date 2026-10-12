@@ -1,5 +1,17 @@
 # 许可与公开范围
 
+## 当前维护者决定：LICENSE_GATE_WAIVED_BY_MAINTAINER
+
+2026-10-12维护者终止许可证专项并接受现存许可证/第三方材料风险，取消材料未闭合作为内部自动阻止开发、CI、构建和发行准备的门禁。**不是合规验证通过、UNKNOWN转PASS或第三方授权**；主项目官方Emby GPL-2.0基础、根LICENSE、全部通知/版权和原审计结论保留。[维护者决定](V030_MAINTAINER_RELEASE_DECISION.md)为最新执行政策；下文既有法律/材料事实不改写，不再主动启动补件/追溯审计。公开上传、Tag/Stable仍待独立授权。
+
+## PR31 最新GPL发行审核口径
+
+按用户明确方案，以官方Emby Theater GPL-2.0上游为主要基础维护开源衍生项目。官方GPL代码和已有有效GPL授权的修改不要求额外Carnival作者许可；实际对象对应源/修改说明/通知缺口与未知独创增量分开，不要求bit-exact重建。独立第三方组件依各自条款；当前首要阻断为libmpv/FFmpeg的v3配方与GPL-2.0-only Helper组合，最小可用授权路线尚未实施。[PR31审核](V030_PR31_GPL_RELEASE_REVIEW.md)给出准确边界和三组最少事项；根GPL-2.0-only及冻结源码未改。
+
+## 2026-10-12 发行解阻补件
+
+完整当前结果见[V030_RELEASE_UNBLOCK_PLAN](V030_RELEASE_UNBLOCK_PLAN.md)。Roboto21字体的内嵌Apache身份、已识别jQuery3.6.0 MIT通知、ServiceStack官方版本源/许可文本、mpv实际run/固定配方与FFmpeg源、CEC driver官方同字节入口已经补齐；22份全文进入现有THIRD_PARTY_NOTICES交付入口，旧候选未重包。核心rights/完整源/依赖通知仍有未闭合项，不能仅凭全文补件批准完整二进制。具体GPLv3配方与GPL-2.0-only Helper组合及modified思源RFN条件待解决；本轮不改根许可证、上游条款或资产。
+
 ## v0.3.0 最终收口增量
 
 本轮仅补充已精确匹配的SimpleInjector4.0.11 MIT版权/许可全文，随THIRD_PARTY_NOTICES交付；该组件LICENSING_OBLIGATION_RESOLVED，未精确重建只列REPRODUCIBILITY_ONLY。完整身份见[材料矩阵](V030_DISTRIBUTION_MATERIALS_FINAL.md)。这不代表全包许可组合、Host/Additions、libmpv/FFmpeg依赖、CEC/driver或离线Web/资产的分发依据已闭合；它们保持按实际义务/未知权利分项阻断，不把历史发布或无法重建当作许可结论。
