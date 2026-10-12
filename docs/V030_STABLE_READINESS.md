@@ -1,6 +1,6 @@
 # v0.3.0 Stable readiness
 
-日期：2026-10-12（UTC+8）。总体状态 **`BLOCKED_WITH_EVIDENCE`**。用户认可既有验证并授权工程整合；PR29已通过Merge Commit进入main，主线整合项关闭。真实Together双端、全屏视觉、Windows安装生命周期、第三方发行材料及最终Stable放行门禁保持原状态。
+2026-10-12进入 **V030_FEATURE_FREEZE**。PR28/29已合并，用户真实Together反馈“实测了一下没问题了。”，`REAL_TOGETHER_USER_ACCEPTANCE=PASS`、已报告场景USER_REPORTED_PASS；未报告条件不扩大结论，历史全屏合成采样仍INCONCLUSIVE。最新收尾及候选身份统一见[V030_FINAL_RELEASE_GATE](V030_FINAL_RELEASE_GATE.md)。本页下面工程记录保留原提交身份，历史BLOCKED/PENDING不覆盖最新用户反馈。
 
 ## 源码、PR 与 CI
 
@@ -62,9 +62,9 @@
 | 已关闭 | 来源与最小整合、冲突保护、已有测试/审查、783回归、内部候选来源/版本/通知/payload及PR29主线Merge Commit整合；安装器三项既有用户UI PASS保留 |
 | Codex独立工作 | 本轮工程、假服务、窗口/全屏有界观测、材料增量审查、Release Notes草案已完成；不继续扩展功能 |
 | 真实Windows隔离系统 | **REAL_INSTALL_NOT_EXECUTED**：全新安装、v0.2.9升级、卸载/重装、运行中升级/静默失败、配置/DeviceId/登记/快捷方式、UAC/普通用户/英文OS/DPI；未发现直接可用VM/Sandbox，未启用系统功能或在现用系统安装 |
-| 真实Together双端 | **PENDING_USER_ACCEPTANCE**：现场主控/被控、真实媒体、消息送达和呈现；全屏 **INCONCLUSIVE** |
+| 真实Together使用反馈 | **REAL_TOGETHER_USER_ACCEPTANCE=PASS / USER_REPORTED_PASS**，仅已报告体验场景；未明确硬件、媒体、次数、全屏条件不补造。历史全屏合成采样 **INCONCLUSIVE** |
 | 提供者材料/授权 | [材料审查](V030_MATERIALS_GATE_REVIEW.md)：libmpv/链接依赖对应源码、构建选项/patch/通知履行路径未闭合；Host/部分DLL、CEC/driver/RefreshRate、Web/字体/图片精确来源/适用权利材料仍 WAITING_EXTERNAL/UNKNOWN。ServiceStack.Text FOSS exception包含GPL2，仍须核对Host/Additions源码及履行路径，不能仅按许可名称判兼容 |
 | 单纯重建能力缺口 | Electron/Chromium未源码重建、部分MSYS2 recipe/bootstrap不齐属于复现限制，不自动追加法律阻断 |
 | 用户决定 | PR29合并已获本轮授权并完成；最终main发行构建及Stable放行仍需后续授权。本轮未构建/改标安装器，未创建v0.3.0 Tag/Release |
 
-工程候选可以进入真实使用验收；**Stable发行放行仍被材料证据缺口与未执行的系统/真实使用验收阻挡**，总体保留 `BLOCKED_WITH_EVIDENCE`。材料履行路径与验收闭合后，由用户作最终Stable决定。发行草案见 [V030_RELEASE_NOTES_DRAFT](V030_RELEASE_NOTES_DRAFT.md)。
+2026-10-12最终状态更新为 **ENGINEERING_READY_RELEASE_BLOCKED**：Together已报告场景USER_REPORTED_PASS，历史全屏采样仍INCONCLUSIVE；系统安装生命周期及实质发行材料门禁保留。准确新stable-rc、来源和需用户处理的事项见[V030_FINAL_RELEASE_GATE](V030_FINAL_RELEASE_GATE.md)，不重复要求已确认正常的Together或中文页面。发行草案见[V030_RELEASE_NOTES_DRAFT](V030_RELEASE_NOTES_DRAFT.md)。

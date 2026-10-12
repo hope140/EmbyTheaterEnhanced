@@ -1,6 +1,6 @@
 # Emby Theater Enhanced v0.3.0 Release Notes 草案
 
-本文件供最终发行审阅；v0.3.0 Stable尚未发布。
+本文件供最终发行审阅；v0.3.0 Stable尚未发布，当前V030_FEATURE_FREEZE。最终工程候选和剩余发行门禁见[V030_FINAL_RELEASE_GATE](V030_FINAL_RELEASE_GATE.md)。
 
 - 安装器提供简体中文和英文，按Windows UI语言选择默认值，保留用户后续语言选择；升级安装显示目录页并预填原位置。
 - 运行中安装/卸载保护提示正常关闭客户端，升级保留个人配置与DeviceId。
@@ -9,4 +9,4 @@
 
 783/783完整本地回归、126/126核心定向、138/138独立扩展审查、内部候选构建和2139文件解包回读通过。窗口合成媒体的本地/远控Next/Previous与PlayNow呈现检查通过。
 
-发行前仍需真实Windows安装生命周期、真实Together双端和分发材料履行路径审查。全屏合成观测仍INCONCLUSIVE。内部候选为0.3.0、未签名，最终Stable附件需从获授权的准确main提交重新构建。
+用户已实际体验Together并反馈“实测了一下没问题了。”，REAL_TOGETHER_USER_ACCEPTANCE=PASS，仅限已报告场景。全屏合成采样仍INCONCLUSIVE；未报告条件不视为覆盖。发行前仍需真实Windows安装生命周期及分发材料履行路径收口；不重复要求已通过的中文安装页面或Together体验。新v0.3.0-stable-rc是内部工程候选，签名与来源以最终门禁报告为准，未获得Stable发行批准。

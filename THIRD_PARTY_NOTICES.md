@@ -93,3 +93,33 @@ notice in this materials branch is a later revision and has not been repackaged.
 The earlier P1 runtime omitted the root notices; it and existing Releases are
 unchanged. Complete third-party corresponding-source and notice materials
 remain open where the accompanying source index marks them unknown or missing.
+
+## SimpleInjector 4.0.11 license notice
+
+The shipped SimpleInjector.dll is byte-identical to the official NuGet 4.0.11 net45 member. Its package license URL points to the official MIT license. The complete copyright and permission notice follows; this resolves this component notice, without clearing unrelated Host/Additions or bundle obligations.
+
+NuGet source: https://www.nuget.org/packages/SimpleInjector/4.0.11
+License snapshot: https://raw.githubusercontent.com/simpleinjector/SimpleInjector/e3ce923d72bca2a5e1452725685b59b886c64bac/LICENSE
+License SHA256: df8a87df7cecf121f7d960f664a6d458dcadd01329c560de40eb26e1f801b918
+
+The MIT License (MIT)
+
+Copyright (c) 2013 Simple Injector Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

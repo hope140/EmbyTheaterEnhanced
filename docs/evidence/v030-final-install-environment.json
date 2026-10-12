@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "probeDate": "2026-10-12",
+  "scope": "current host readonly capability probe",
+  "capabilities": {
+    "Get-VM": false,
+    "VBoxManage": false,
+    "vmrun": false,
+    "WindowsSandbox.exe": false,
+    "qemu-system-x86_64.exe": false,
+    "vmmsServiceAvailable": false
+  },
+  "features": {
+    "Microsoft-Hyper-V-All": "Disabled",
+    "Containers-DisposableClientVM": "Disabled"
+  },
+  "knownVmProcesses": [],
+  "recoverableAuthorizedWindowsTarget": "NOT_IDENTIFIED",
+  "snapshotInventory": "UNAVAILABLE",
+  "environmentChanged": false,
+  "realInstallationAttempted": false,
+  "lifecycleAcceptance": "REAL_INSTALL_NOT_EXECUTED"
+}

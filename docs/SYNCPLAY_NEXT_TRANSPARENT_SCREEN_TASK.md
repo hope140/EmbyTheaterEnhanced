@@ -1,6 +1,8 @@
 # SyncPlay 下一集透明屏幕独立专项
 
-2026-10-12当前状态 `ROOT_CAUSE_CONFIRMED / FIX_MERGED_MAIN / WINDOWED_SYNTHETIC_VISUAL_PASS / FULLSCREEN_INCONCLUSIVE / PENDING_USER_ACCEPTANCE`。原31d1107经[PR29](https://github.com/hope140/EmbyTheaterEnhanced/pull/29)的Merge Commit98b0651进入main；原PlayNow根因及RED→GREEN/窗口ROI证据保留，本轮没有新增实验。[P1报告](P1_REMOTE_PRESENTATION.md)和[readiness](V030_STABLE_READINESS.md)保留来源，真实双端与全屏待验收状态不变。
+2026-10-12当前状态 `CLOSED_USER_REPORTED_PASS / FIX_MERGED_MAIN`，`REAL_TOGETHER_USER_ACCEPTANCE=PASS`。用户反馈“实测了一下没问题了。”，允许将用户实际体验的Together场景从PENDING_USER_ACCEPTANCE关闭为USER_REPORTED_PASS。未报告的运行次数、媒体、硬件、全屏条件及实际客户端sourceCommit保持NOT_REPORTED；不扩大为所有组合通过。[匿名回执](evidence/v030-together-user-acceptance.json)记录用户反馈来源。
+
+main89a0501包含PR29的Merge Commit98b0651和原31d1107修复。根因为Together1.6.0.5的PlayNow绕过本地NextTrack持帧入口；统一same-player Video替换Stop边界复用Native presentation hold。原完整783/783、独立138/138及窗口合成视觉PASS保留原来源，历史全屏合成采样仍INCONCLUSIVE。用户反馈没有改写任何机器/像素证据。本轮不改播放源码或重复实验；正式版冻结与门禁见[V030_FINAL_RELEASE_GATE](V030_FINAL_RELEASE_GATE.md)。
 
 ## 独立专项范围
 
@@ -14,4 +16,4 @@
 
 取得可复核复现/原因或明确的证据边界，形成独立处置结论；若实施修复，须有定向测试、独立复核和实际双端SyncPlay下一集及相邻正常场景验收。若证据不足则继续待核查，只有用户明确接受相应正式版风险才能改变处置状态。安装器用户UI验收、单端播放通过或模拟测试不能关闭该问题。
 
-Tier2整合和独立审查已完成；真实Together主控/被控仍PENDING_USER_ACCEPTANCE，安装器UI、合成消息/像素和单端runtime不关闭此项。原2026-10-11 UNKNOWN/未实现登记已被上述带来源事实更新，PR28保留安装器范围。
+本专项工程整合、独立审查和已报告真实使用验收均已关闭。历史INCONCLUSIVE及未明确覆盖的组合继续保留各自证据边界；不再要求用户重复已经报告正常的Together场景，不另开播放研发专项。

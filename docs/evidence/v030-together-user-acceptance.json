@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "receivedDate": "2026-10-12",
+  "source": "user message in the current final-closeout task",
+  "reportedStatement": "实测了一下没问题了。",
+  "REAL_TOGETHER_USER_ACCEPTANCE": "PASS",
+  "scenarioStatus": "USER_REPORTED_PASS",
+  "scope": "用户实际体验的 Together 同步播放场景中未再发现原透明屏问题",
+  "testedRuntimeSourceCommit": "NOT_REPORTED",
+  "testedVersion": "NOT_REPORTED",
+  "testedAt": "NOT_REPORTED",
+  "fullscreenConditions": "NOT_REPORTED",
+  "runCount": "NOT_REPORTED",
+  "mediaTypes": "NOT_REPORTED",
+  "hardwareAndDisplayCombinations": "NOT_REPORTED",
+  "machineTrace": "NOT_PROVIDED",
+  "historicalWindowedSyntheticVisual": "PASS",
+  "historicalFullscreenSyntheticVisual": "INCONCLUSIVE",
+  "historicalEvidenceRewritten": false,
+  "finalMainContainsFix": {
+    "main": "89a0501f96eebdd7ee6952f594038bafe151eb43",
+    "pr29Merge": "98b0651da551af529b5d0f0a1fa73578e01b32c8",
+    "originalProductFix": "31d11073fb33dad17bbaefec37f7260dafb8d50e"
+  }
+}
