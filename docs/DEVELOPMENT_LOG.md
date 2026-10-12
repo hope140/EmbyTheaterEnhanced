@@ -5,6 +5,7 @@
 - 维护者明确授权终止专项、风险接受和LICENSE_GATE_WAIVED_BY_MAINTAINER标记、PR31审核合并、合并main新构建/验包/Release Notes附件；公开binary/Tag/Stable仍需单独确认。Task Risk中高（Git合并/来源产物），Uncertainty低（既有冻结构建合同），Scope治理/Git/build/package，Playback/Session Impact NONE；Tier2最终验收、固定执行Tier1，模型继承配置（精确SKU未由工具返回），Escalated=no。没有再次审计许可或篡改UNKNOWN，根LICENSE及冻结源码保持。
 - 开工main72d4688/PR31 HEAD35b2fe4，两次CI SUCCESS、独立只读审核PASS；新政策只追加维护者决定与最新状态，并准备正式发行说明。程序build/package未发现依许可材料完整性拒绝的自动判定，继续保留通知hash/manifest/provenance/工具链等工程检查。
 - 保留全部历史材料和候选；在独立worktree使用原锁定输入复制件，从合并main准确提交生成新输出，不覆盖旧包/客户端/用户配置，不执行BAT/系统安装、虚拟化配置或外部联系。实际merge/main CI与新产物SHA、来源、完整解包/路径集核验将在本轮本地发行准备报告中记录，公开权限仍PENDING。
+- 工程通知交付核验补入已收集而尚未进入原22聚合的两份NuGet版权元数据与独立Apache全文；当前根通知覆盖25份现有snapshot，原22全文/原通知前缀、raw字节和历史回执保留。没有获取新材料或新许可认定，四文件交付合同不改；新准备回执v030-maintainer-notice-delivery与后续实际新产物验证分开。
 
 ## 2026-10-12 — PR31 官方GPL基础与最小门禁重评
 
