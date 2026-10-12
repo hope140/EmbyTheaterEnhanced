@@ -1,0 +1,8 @@
+# Preserve the exact upstream bytes recorded in the source index.
+/AGPL-3.0.txt -text
+# These two exact NuGet nuspec files use original CRLF newlines.
+/MediaBrowser.Common-3.3.10.nuspec.xml -text whitespace=cr-at-eol
+/ServiceStack.Text-4.5.14.nuspec.xml -text whitespace=cr-at-eol
+/Windows-Host-708fadc-LICENSE.md -text
+# Only this upstream license contains original trailing spaces.
+/ServiceStack.Text-v4.5.14-license.txt -text whitespace=-blank-at-eol
