@@ -655,6 +655,18 @@ function createService(options) {
         entry = {cancelled: false, call: null, cancelCurrent: null};
         active.set(requestId, entry);
 
+        function retainRecoveryForNextMode() {
+            const recoveredDeadline = entry.recoveryDeadlineAt || session && session.recoveryDeadlineAt;
+            if (!recoveredDeadline) {
+                clearModeSession(requestId);
+                return;
+            }
+            // Custom orders may try direct after a failed same-origin stage.
+            // Keep the validated file and original deadline, never its invalid URL.
+            rememberModeSession(requestId, {cloudPath: cloudPath, fileResponse: fileResponse,
+                recoveryDeadlineAt: recoveredDeadline});
+        }
+
         try {
             if (!fileResponse) {
                 reply = await waitForReady(entry, Math.min(overallDeadline, startedAt + CONNECT_BUDGET_MS));
@@ -714,18 +726,19 @@ function createService(options) {
                         directReason: classifyError(reply.error, getTransport().status)
                     });
                 } else {
-                    clearModeSession(requestId);
+                    retainRecoveryForNextMode();
                 }
                 return result('miss', classifyError(reply.error, getTransport().status));
             }
 
             if (mode === 'same-origin') {
                 if (!reply.response || reply.response.directUrl || reply.response.externalUrl) {
-                    clearModeSession(requestId);
+                    retainRecoveryForNextMode();
                     return result('miss', 'unsupported_response');
                 }
                 source = sameOriginSource(reply.response, config.origin);
-                clearModeSession(requestId);
+                if (source) clearModeSession(requestId);
+                else retainRecoveryForNextMode();
                 return source
                     ? result('hit', 'cd2_hit', source, {sourceKind: 'cd2-url'})
                     : result('miss', 'invalid_download_url');

@@ -16,11 +16,13 @@ Token、流目录、条目与 URL 保留 main-only；诊断只增加固定阶段
 
 ## 本候选自动化验证
 
-- 新恢复测试 26/26；包含真实 loopback gRPC 假服务、两种 EOF/最终状态顺序、3000ms 共享上限、父目录探测期间取消与 64 项冷却容量。
-- CD2/预算/STRM/设置相关新旧集合 117/117。
+- 新恢复测试 33/33；包含真实 loopback gRPC 假服务、两种 EOF/最终状态顺序、3000ms 共享上限、父目录探测期间取消、64 项冷却容量和反向 custom 顺序。
+- CD2/预算/STRM/设置相关新旧集合 124/124。
 - 使用 manifest 哈希核验的只读原始输入执行 PlaybackManager/Session/Stop/Next 测试 58/58。
-- 完整公开离线集合 728/728；按既有 runner 排除 6 份材料依赖测试。上述 58 项单列，不与公开集合相加冒充完整实服验收。
+- 原候选 53286b1 的完整公开离线集合 728/728；反向 custom 顺序修正后的准确 HEAD 另行执行完整 CI。按既有 runner 排除 6 份材料依赖测试，上述 58 项单列，不与公开集合相加冒充完整实服验收。
 - JavaScript、PowerShell 语法、有限凭据扫描、proto 哈希与差异检查通过。
+
+自定义顺序先 CD2 HTTP、再 DirectUrl 时，同源下载 RPC/响应校验失败继续保留恢复后的文件和原 absolute deadline，DirectUrl 不第三次查目标。失败的 URL 不进入复用状态，UA/header 校验保持。五种失败响应已有实际 RED/GREEN 回归。
 
 ## 真实新资源验收入口
 

@@ -2,6 +2,8 @@
 
 ## 2026-10-12 — CD2 新资源有限恢复
 
+- 整合准备复核修正反向 custom 顺序：同源下载失败后保留已恢复文件及原期限，避免 DirectUrl 第三次查找；失败 URL 不复用。局部回归覆盖 RPC error/timeout、unsupported/invalid/empty 响应。
+
 - 参考固定 ETLP beta 的有限父目录刷新，实现 main-only GetSubFiles 流消费与最多一次目标重查；只在目标查询 gRPC NOT_FOUND 后触发。
 - 保持正常命中的 RPC 和预算，缺失恢复共用有界延长期限，direct/same-origin 复用恢复结果；单锁和父目录冷却限制重复工作。
 - Stop/Next/close 复用现有取消链；失败流先保留原原因再取消，禁止迟到流结束触发重查。旧 PlaybackManager、Session、Native Helper、UA/header 与安装器源码保持。

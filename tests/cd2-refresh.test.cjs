@@ -708,3 +708,139 @@ test('refresh failure continues through actual STRM Mount then Native fallback',
         }
     }
 });
+
+test('STRM custom order reuses one recovery result after same-origin failures before DirectUrl', {timeout: 10000}, async t => {
+    const cases = [
+        {name: 'RPC error', http: {error: rpcError(RPC_STATUS.UNAVAILABLE)}},
+        {name: 'timeout', http: {error: rpcError(RPC_STATUS.DEADLINE_EXCEEDED)}},
+        {name: 'unsupported response', http: {response: {
+            downloadUrlPath: '/api/static/episode.mkv', directUrl: 'https://cdn.example.test/episode.mkv'
+        }}},
+        {name: 'invalid same-origin URL', http: {response: {downloadUrlPath: 'https://other.example.test/episode.mkv'}}},
+        {name: 'empty response', http: {response: null}}
+    ];
+
+    for (const scenario of cases) {
+        await t.test(scenario.name, {timeout: 10000}, async () => {
+            const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-cd2-custom-order-'));
+            const mediaDirectory = path.join(directory, 'show', 'season');
+            fs.mkdirSync(mediaDirectory, {recursive: true});
+            const sidecarPath = path.join(mediaDirectory, 'episode.mkv.strm');
+            const sourcePath = path.join(mediaDirectory, 'episode.mkv');
+            const cloudTarget = TARGET;
+            const clock = createClock(1000);
+            let targetLookupCount = 0;
+            const config = {
+                version: 1,
+                enabled: true,
+                rules: [{
+                    id: 'custom-refresh-order',
+                    enabled: true,
+                    originState: 'USER',
+                    sourcePrefix: cd2Service.normalizeMappingPrefix(directory),
+                    cloudPrefix: '/cloud/media',
+                    strategy: 'custom',
+                    order: ['cd2-http', 'direct-url', 'mount', 'native']
+                }],
+                origin: cd2Service.parseOrigin('http://127.0.0.1:19798'),
+                token: 'synthetic-test-token',
+                directUrlEnabled: true,
+                totalBudgetMs: 1200
+            };
+            const harness = foundThenRefreshHarness({
+                clock,
+                config,
+                find(findPath) {
+                    if (findPath === cloudTarget) {
+                        targetLookupCount++;
+                        return targetLookupCount === 1
+                            ? {error: rpcError(RPC_STATUS.NOT_FOUND)}
+                            : {response: fileResponse(cloudTarget)};
+                    }
+                    return {response: fileResponse(findPath, {fileType: 'Directory', isDirectory: true})};
+                },
+                download(requestValue) {
+                    if (requestValue.get_direct_url) {
+                        return {response: {directUrl: 'https://cdn.example.test/episode.mkv'}};
+                    }
+                    return scenario.http;
+                }
+            });
+
+            try {
+                const startedAt = clock.now();
+                const pending = strmResolver.resolveAsync({
+                    item: {Path: sidecarPath},
+                    mediaSource: {Path: sourcePath, Container: 'strm'},
+                    url: 'https://emby.example.test/native',
+                    playMethod: 'DirectPlay'
+                }, {
+                    fs,
+                    now: clock.now,
+                    requestId: 'custom-' + scenario.name.replace(/\W/g, ''),
+                    config,
+                    cd2Transport: harness.transport
+                });
+                await waitFor(() => harness.streams.length === 1, 'custom order did not refresh the new target');
+                emitSuccessfulStream(harness.streams[0]);
+                const result = await pending;
+
+                assert.equal(result.type, 'url');
+                assert.equal(result.sourceKind, 'direct-url');
+                assert.equal(targetLookupCount, 2, 'custom order must perform only the initial lookup and one recheck');
+                assert.equal(methodCalls(harness, 'FindFileByPath').filter(call => call.request.path === cloudTarget).length, 2);
+                assert.equal(methodCalls(harness, 'GetSubFiles').length, 1);
+                assert.deepEqual(methodCalls(harness, 'GetDownloadUrlPath').map(call => call.request.get_direct_url), [false, true]);
+                assert.ok(methodCalls(harness, 'GetDownloadUrlPath').every(call =>
+                    call.options.deadline.getTime() <= startedAt + 3000));
+            } finally {
+                harness.service.close();
+                fs.rmSync(directory, {recursive: true, force: true});
+            }
+        });
+    }
+});
+
+test('STRM custom warm hit stays on same-origin without refresh or DirectUrl retry', {timeout: 10000}, async () => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-cd2-custom-warm-'));
+    const mediaDirectory = path.join(directory, 'show', 'season');
+    fs.mkdirSync(mediaDirectory, {recursive: true});
+    const sidecarPath = path.join(mediaDirectory, 'episode.mkv.strm');
+    const sourcePath = path.join(mediaDirectory, 'episode.mkv');
+    const clock = createClock(1000);
+    const config = {
+        version: 1,
+        enabled: true,
+        rules: [{
+            id: 'custom-warm-order', enabled: true, originState: 'USER',
+            sourcePrefix: cd2Service.normalizeMappingPrefix(directory), cloudPrefix: '/cloud/media',
+            strategy: 'custom', order: ['cd2-http', 'direct-url', 'mount', 'native']
+        }],
+        origin: cd2Service.parseOrigin('http://127.0.0.1:19798'),
+        token: 'synthetic-test-token', directUrlEnabled: true, totalBudgetMs: 1200
+    };
+    const harness = createHarness({clock, config});
+
+    try {
+        const result = await strmResolver.resolveAsync({
+            item: {Path: sidecarPath},
+            mediaSource: {Path: sourcePath, Container: 'strm'},
+            url: 'https://emby.example.test/native', playMethod: 'DirectPlay'
+        }, {
+            fs,
+            now: clock.now,
+            requestId: 'custom-warm-hit',
+            config,
+            cd2Transport: harness.transport
+        });
+
+        assert.equal(result.type, 'url');
+        assert.equal(result.sourceKind, 'cd2-url');
+        assert.equal(methodCalls(harness, 'GetSubFiles').length, 0);
+        assert.equal(targetFinds(harness).length, 1);
+        assert.deepEqual(methodCalls(harness, 'GetDownloadUrlPath').map(call => call.request.get_direct_url), [false]);
+    } finally {
+        harness.service.close();
+        fs.rmSync(directory, {recursive: true, force: true});
+    }
+});
