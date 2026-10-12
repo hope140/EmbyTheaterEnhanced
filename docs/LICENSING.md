@@ -1,5 +1,9 @@
 # 许可与公开范围
 
+## 2026-10-12 发行解阻补件
+
+完整当前结果见[V030_RELEASE_UNBLOCK_PLAN](V030_RELEASE_UNBLOCK_PLAN.md)。Roboto21字体的内嵌Apache身份、已识别jQuery3.6.0 MIT通知、ServiceStack官方版本源/许可文本、mpv实际run/固定配方与FFmpeg源、CEC driver官方同字节入口已经补齐；22份全文进入现有THIRD_PARTY_NOTICES交付入口，旧候选未重包。核心rights/完整源/依赖通知仍有未闭合项，不能仅凭全文补件批准完整二进制。具体GPLv3配方与GPL-2.0-only Helper组合及modified思源RFN条件待解决；本轮不改根许可证、上游条款或资产。
+
 ## v0.3.0 最终收口增量
 
 本轮仅补充已精确匹配的SimpleInjector4.0.11 MIT版权/许可全文，随THIRD_PARTY_NOTICES交付；该组件LICENSING_OBLIGATION_RESOLVED，未精确重建只列REPRODUCIBILITY_ONLY。完整身份见[材料矩阵](V030_DISTRIBUTION_MATERIALS_FINAL.md)。这不代表全包许可组合、Host/Additions、libmpv/FFmpeg依赖、CEC/driver或离线Web/资产的分发依据已闭合；它们保持按实际义务/未知权利分项阻断，不把历史发布或无法重建当作许可结论。

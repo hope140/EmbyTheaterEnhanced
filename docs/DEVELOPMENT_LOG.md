@@ -1,5 +1,12 @@
 # 开发日志
 
+## 2026-10-12 — v0.3.0 公开发行材料解阻
+
+- 当前用户授权独立worktree、定向材料研究、必要补件/验证/审核分支/PR；最新将实际覆盖升级、启动使用记USER_REPORTED_PASS，不优先四阶段、不重复已验收体验。Task Risk中高（许可与再分发）、Uncertainty中、Scope来源/完整通知/治理文档，Playback/Session Impact NONE。主线程Tier2负责材料判断；固定身份收集委派worker，模型继承运行配置（精确SKU未由工具返回）；Reason为明确材料合同与跨组件许可边界，Escalated=no。各worker独立worktree，未修改冻结产品或安装器。
+- 开工main72d4688；三笔材料原提交db650b9/04040ca/8d5a409分别cherry-pick -x至cadc11e/bda4626/a21f292，原始LF许可快照采用单次Git参数保留，不改全局配置。各报告/JSON实际diff、目标/官方实体hash由主线程复核；没有重复历史全量审计/测试。
+- 新实际取得ServiceStack v4.5.14源与完整FOSS/AGPL、Host reference源，mpv成功run31285220366与固定builder/FFmpeg源，Roboto/jQuery全文，driver官方同SHA入口；22完整文本汇入原THIRD_PARTY_NOTICES四文件合同，原归属保留。GPLv3组合与modified思源RFN成为具体待决，未改根LICENSE或字体。目标源码/rights与各自适用源码义务条件化，bit-exact/PDB不作为普遍法律前提。
+- 用户真实覆盖升级/启动使用PASS单列回执；未知旧版/hash、配置/DeviceId、卸载等不扩结论。Codex本轮不安装/卸载/启用虚拟化，未替换运行组件，未重建旧候选、公开上传二进制、自动Merge/Tag/Stable。验证/只读review/PR/CI回执见v030-unblock-validation与V030_RELEASE_UNBLOCK_PLAN；完整二进制RELEASE_BLOCKED_EXTERNAL_MATERIALS，工程就绪和功能冻结不变。
+
 ## 2026-10-12 — PR30 MERGED / 工程收尾阶段结束
 
 - 当前用户授权最后检查PR30、无新增问题时Merge Commit合并、main CI及最终冻结状态同步；禁止新功能/重复测试/历史材料审计/其它专项/Stable/客户端覆盖。Task Risk中（远端Git写入），Uncertainty低，Scope Git/CI/docs，Playback/Session Impact无。Model Tier1；当前模型配置继承（精确SKU未由工具返回）；Reason为固定SHA和已认可审查的串行整合；Escalated=no，不委派重复审核。

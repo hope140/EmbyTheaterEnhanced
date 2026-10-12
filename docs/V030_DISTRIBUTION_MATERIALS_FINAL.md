@@ -1,5 +1,7 @@
 # v0.3.0 Final Release Gate：分发材料有界增量核查
 
+2026-10-12后续解阻增量见[V030_RELEASE_UNBLOCK_PLAN](V030_RELEASE_UNBLOCK_PLAN.md)。已新取得官方ServiceStack版本源、实际mpv run/builder/FFmpeg源、Roboto/jQuery全文、driver官方同字节入口；22份完整文本已进入根通知准备。旧表为原阶段证据，不再作为这些新增项仍完全未知的判断；也不把新增文本等同完整发行授权。GPLv3组合、思源RFN及实际核心权利/对应源问题按新回执保留。
+
 日期：2026-10-12（UTC+8）
 审查基线：`main@89a0501f96eebdd7ee6952f594038bafe151eb43`
 候选身份：`sourceCommit=322a037cdccb39ad57923bcd7551d9954ba815bd`，版本 `0.3.0`，内部 runtime 目录 `dist/ETE-0.3.0-internal-20261012`。该目录的 `build-manifest.json` 为 2138 个 payload 文件，`payloadSetSha256=2a9185188f296b3da0da4818041915ab869e3c3fae323a272a3afa53d0b8a38a`；构建清单 SHA256 为 `dcd94ea61592cbbd4cc1ad0a76a699b19169bfd3eaa00a7a4d1bb81f9707dc1f`。
