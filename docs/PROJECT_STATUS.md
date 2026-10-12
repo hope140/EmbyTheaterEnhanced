@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-12 — CD2 新资源恢复候选（目标 v0.3.1）
+
+当前正式版仍为 v0.3.0，源码 20e4251；本候选不创建新 Tag、Release 或安装包。仅 FindFileByPath 确认 NOT_FOUND 后有界刷新父目录，消费 GetSubFiles 流至成功结束并只重查一次。正常 1200ms 路径保持，恢复总上限 3000ms；服务内单锁、30秒父目录冷却、Stop/Next/close 取消和原回退链保持。完整设计及证据边界见 [CD2 新资源刷新](CD2_NEW_RESOURCE_REFRESH.md)。
+
+本候选以假服务与自动化测试验证，不宣称真实新入库资源已经通过。实际 ETE/CD2 故障分类与真实新资源验收待用户提供新样本，历史发布/验收状态按原日期读取。公开文档整理在独立文档 PR 中，不包含于本产品 diff。
+
 ## 2026-10-12 — LICENSE_GATE_WAIVED_BY_MAINTAINER / 发行准备
 
 维护者明确终止许可证专项并接受现存风险：内部许可材料不再自动阻止常规开发/CI/构建/发行准备；UNKNOWN、GPL组合问题和原审计结论不改为PASS，不重授权上游或删除归属。决定见[V030_MAINTAINER_RELEASE_DECISION](V030_MAINTAINER_RELEASE_DECISION.md)，后续不主动追溯/补件/重建审计，仅具体有效权利主张时按组件处理。

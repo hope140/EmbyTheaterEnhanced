@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-10-12 — CD2 新资源有限恢复
+
+- 参考固定 ETLP beta 的有限父目录刷新，实现 main-only GetSubFiles 流消费与最多一次目标重查；只在目标查询 gRPC NOT_FOUND 后触发。
+- 保持正常命中的 RPC 和预算，缺失恢复共用有界延长期限，direct/same-origin 复用恢复结果；单锁和父目录冷却限制重复工作。
+- Stop/Next/close 复用现有取消链；失败流先保留原原因再取消，禁止迟到流结束触发重查。旧 PlaybackManager、Session、Native Helper、UA/header 与安装器源码保持。
+- 新测试使用合成流、fake clock 及 loopback gRPC 服务；真实 ETE/CD2 新入库资源未执行，候选不作为发行或真实呈现验收。
+- 设计、耗时预算及最终验证入口为 [CD2 新资源刷新](CD2_NEW_RESOURCE_REFRESH.md)，与公开资料清理保持独立 PR。
+
 ## 2026-10-12 — 维护者豁免内部许可门禁 / PR31整合与发行准备
 
 - 维护者明确授权终止专项、风险接受和LICENSE_GATE_WAIVED_BY_MAINTAINER标记、PR31审核合并、合并main新构建/验包/Release Notes附件；公开binary/Tag/Stable仍需单独确认。Task Risk中高（Git合并/来源产物），Uncertainty低（既有冻结构建合同），Scope治理/Git/build/package，Playback/Session Impact NONE；Tier2最终验收、固定执行Tier1，模型继承配置（精确SKU未由工具返回），Escalated=no。没有再次审计许可或篡改UNKNOWN，根LICENSE及冻结源码保持。
