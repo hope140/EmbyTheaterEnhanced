@@ -1,22 +1,26 @@
 # v0.3.0 Stable readiness
 
-日期：2026-10-12（UTC+8）。总体状态 **`BLOCKED_WITH_EVIDENCE`**。工程整合、独立审查、完整回归与内部候选已完成，可以执行隔离 Windows 和真实 Together 验收；分发材料及最终 Stable 放行门禁尚未闭合。
+日期：2026-10-12（UTC+8）。总体状态 **`BLOCKED_WITH_EVIDENCE`**。用户认可既有验证并授权工程整合；PR29已通过Merge Commit进入main，主线整合项关闭。真实Together双端、全屏视觉、Windows安装生命周期、第三方发行材料及最终Stable放行门禁保持原状态。
 
 ## 源码、PR 与 CI
 
 | 身份 | 值 |
 |---|---|
-| 实际远端 main / PR28 merge | `a8ba606c0bb4d8c4540ff7f9ad17eccb3d35db50` |
+| 合并前 main / PR28 merge | `a8ba606c0bb4d8c4540ff7f9ad17eccb3d35db50` |
+| PR29 合并前 HEAD | `c79efebb459cfa37509d5e77bab82e6fbdaefa14` |
+| main 的 PR29 Merge Commit | `98b0651da551af529b5d0f0a1fa73578e01b32c8`，2026-10-12 08:38:10（UTC+8） |
 | 原 Together 产品修复 / 整合提交 | `31d11073fb33dad17bbaefec37f7260dafb8d50e` → `5288fb9530ce389d0bf22bf431f01a76341cf928` |
 | 原工具/证据收尾 / 整合提交 | `a31163bf68ba684c3e274a0be4f9e8a378be6c04` → `c27755cf6c5ccdef0246dcd822afaea2890c8e73` |
 | 原分支与依赖 | 本地 `codex/p1-remote-presentation-20261011`；共同基线 `6eb11b9350889bc4152c22c68bf7e204f3c1bce5`；相对新 main 无其它前置产品提交 |
 | Audio 边界修正 | `68a0026b6fa65e965aa5a7d6ce7cdf91f6de8545` |
 | 准确内部候选 sourceCommit | `322a037cdccb39ad57923bcd7551d9954ba815bd` |
-| 新分支与 PR | `codex/v030-stable-readiness-20261012`；[PR29](https://github.com/hope140/EmbyTheaterEnhanced/pull/29)，OPEN、未合并 |
+| 修复分支与 PR | `codex/v030-stable-readiness-20261012`；[PR29](https://github.com/hope140/EmbyTheaterEnhanced/pull/29)，**MERGED**，保留原分支及提交身份 |
 
 两笔原提交均以 `cherry-pick -x` 保留身份映射；实际冲突仅为 PROJECT_STATUS/DEVELOPMENT_LOG 新增记录，双方内容保留。原工作区、旧隔离包和现用客户端保持原状态。
 
-候选 sourceCommit 两次 Hosted `windows-public-offline` CI 为 SUCCESS：[push](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38158220590)、[PR](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38158231771)。收尾文档 HEAD 的最新 CI 以 [PR Checks](https://github.com/hope140/EmbyTheaterEnhanced/pull/29/checks) 和本地 `.work/v030-readiness/final-remote.json` 最终回执为准；候选产物始终绑定上表 sourceCommit。
+合并前最新HEAD `c79efeb…` 的两次CI均SUCCESS：[push](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38159092503)、[PR](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38159095612)，公开离线集702/702。全部27文件diff、独立审查和现有证据身份核对通过，未解决review threads为0；GitHub正式approval记录为0，独立本地审查及用户本轮认可据实记录。Merge Commit父节点准确为a8ba606/c79efeb，完整Git tree与PR HEAD相同，安装器、版本、依赖及39项构建输入无回退。
+
+合并后main `98b0651…` 的[CI 38188764430](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38188764430)已 **SUCCESS，702/702，fail=0**。状态文档同步后的最终main HEAD与CI见[main检查](https://github.com/hope140/EmbyTheaterEnhanced/actions?query=branch%3Amain)及本地 `.work/pr29-main-merge/final-main.json`。本轮整合证据见[v030-main-integration.json](evidence/v030-main-integration.json)。本轮仅合并及文档同步，不新增测试或重复783/138回归、合成/像素实验，原证据保留各自来源。原installer继续绑定322a037，未重建或改标。
 
 ## 修改和实测
 
@@ -55,12 +59,12 @@
 
 | 分类 | 状态与下一步 |
 |---|---|
-| 已关闭 | 来源与最小整合、冲突保护、新分支测试、独立审查、783回归、候选来源/版本/通知/payload；安装器三项既有用户UI PASS保留 |
+| 已关闭 | 来源与最小整合、冲突保护、已有测试/审查、783回归、内部候选来源/版本/通知/payload及PR29主线Merge Commit整合；安装器三项既有用户UI PASS保留 |
 | Codex独立工作 | 本轮工程、假服务、窗口/全屏有界观测、材料增量审查、Release Notes草案已完成；不继续扩展功能 |
 | 真实Windows隔离系统 | **REAL_INSTALL_NOT_EXECUTED**：全新安装、v0.2.9升级、卸载/重装、运行中升级/静默失败、配置/DeviceId/登记/快捷方式、UAC/普通用户/英文OS/DPI；未发现直接可用VM/Sandbox，未启用系统功能或在现用系统安装 |
 | 真实Together双端 | **PENDING_USER_ACCEPTANCE**：现场主控/被控、真实媒体、消息送达和呈现；全屏 **INCONCLUSIVE** |
 | 提供者材料/授权 | [材料审查](V030_MATERIALS_GATE_REVIEW.md)：libmpv/链接依赖对应源码、构建选项/patch/通知履行路径未闭合；Host/部分DLL、CEC/driver/RefreshRate、Web/字体/图片精确来源/适用权利材料仍 WAITING_EXTERNAL/UNKNOWN。ServiceStack.Text FOSS exception包含GPL2，仍须核对Host/Additions源码及履行路径，不能仅按许可名称判兼容 |
 | 单纯重建能力缺口 | Electron/Chromium未源码重建、部分MSYS2 recipe/bootstrap不齐属于复现限制，不自动追加法律阻断 |
-| 用户决定 | 合并修复PR、最终main构建及Stable放行须后续明确授权；本轮未merge、未创建v0.3.0 Tag/Release |
+| 用户决定 | PR29合并已获本轮授权并完成；最终main发行构建及Stable放行仍需后续授权。本轮未构建/改标安装器，未创建v0.3.0 Tag/Release |
 
 工程候选可以进入真实使用验收；**Stable发行放行仍被材料证据缺口与未执行的系统/真实使用验收阻挡**，总体保留 `BLOCKED_WITH_EVIDENCE`。材料履行路径与验收闭合后，由用户作最终Stable决定。发行草案见 [V030_RELEASE_NOTES_DRAFT](V030_RELEASE_NOTES_DRAFT.md)。

@@ -1,5 +1,7 @@
 # P1 同步播放被控端切集呈现
 
+2026-10-12整合更新：原31d1107已通过PR29的Merge Commit `98b0651da551af529b5d0f0a1fa73578e01b32c8`进入main。下面本地候选、未push/merge表述保留原专项日期及身份；当前真实Together仍PENDING_USER_ACCEPTANCE、全屏INCONCLUSIVE，状态见[V030_STABLE_READINESS](V030_STABLE_READINESS.md)。本轮未新增实验或改标旧产物。
+
 ## 当前范围与身份
 
 2026-10-11，独立分支 `codex/p1-remote-presentation-20261011`，基线 `6eb11b9350889bc4152c22c68bf7e204f3c1bce5`。用户确认被控端为 0.2.9；其现场 sourceCommit 尚未读取。发布的 0.2.9 产品来源为 `084554e07782ca6461b7ed67cadd298a92450b24`，本轮也用该现存隔离 runtime 作对照。

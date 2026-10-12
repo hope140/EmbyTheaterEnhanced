@@ -1,6 +1,6 @@
 # SyncPlay 下一集透明屏幕独立专项
 
-2026-10-12当前状态 `ROOT_CAUSE_CONFIRMED / FIX_IN_PR29 / WINDOWED_SYNTHETIC_VISUAL_PASS / FULLSCREEN_INCONCLUSIVE / PENDING_USER_ACCEPTANCE`。独立专项定位Together1.6.0.5的PlayNow绕过本地Next/Previous持帧入口，原replacement Stop隐藏carrier而暴露透明背景，有确定性RED→GREEN及窗口ROI对照。原31d1107已进入OPEN [PR29](https://github.com/hope140/EmbyTheaterEnhanced/pull/29)，未合并；[P1报告](P1_REMOTE_PRESENTATION.md)和[本轮readiness](V030_STABLE_READINESS.md)保留来源和边界。受控根因不替代真实双端验收。
+2026-10-12当前状态 `ROOT_CAUSE_CONFIRMED / FIX_MERGED_MAIN / WINDOWED_SYNTHETIC_VISUAL_PASS / FULLSCREEN_INCONCLUSIVE / PENDING_USER_ACCEPTANCE`。原31d1107经[PR29](https://github.com/hope140/EmbyTheaterEnhanced/pull/29)的Merge Commit98b0651进入main；原PlayNow根因及RED→GREEN/窗口ROI证据保留，本轮没有新增实验。[P1报告](P1_REMOTE_PRESENTATION.md)和[readiness](V030_STABLE_READINESS.md)保留来源，真实双端与全屏待验收状态不变。
 
 ## 独立专项范围
 

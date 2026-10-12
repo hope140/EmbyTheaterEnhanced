@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "prNumber": 29,
+  "prState": "MERGED",
+  "mergeStrategy": "merge_commit",
+  "mergedAtUtc": "2026-10-12T00:38:10Z",
+  "mergedAtLocal": "2026-10-12 08:38:10 UTC+8",
+  "mergeCommit": "98b0651da551af529b5d0f0a1fa73578e01b32c8",
+  "parents": [
+    "a8ba606c0bb4d8c4540ff7f9ad17eccb3d35db50",
+    "c79efebb459cfa37509d5e77bab82e6fbdaefa14"
+  ],
+  "treeId": "c840b9ae4fececba7a76321329e488546d78119e",
+  "mergedTreeEqualsPrHead": true,
+  "premerge": {
+    "status": "PASS",
+    "base": "a8ba606c0bb4d8c4540ff7f9ad17eccb3d35db50",
+    "head": "c79efebb459cfa37509d5e77bab82e6fbdaefa14",
+    "reviewed": "68a0026b6fa65e965aa5a7d6ce7cdf91f6de8545",
+    "changedFiles": [
+      "docs/ARCHITECTURE.md",
+      "docs/DEVELOPMENT_LOG.md",
+      "docs/KNOWN_ISSUES.md",
+      "docs/P1_REMOTE_PRESENTATION.md",
+      "docs/PROJECT_STATUS.md",
+      "docs/ROADMAP.md",
+      "docs/SYNCPLAY_NEXT_TRANSPARENT_SCREEN_TASK.md",
+      "docs/V030_INDEPENDENT_REVIEW.md",
+      "docs/V030_INSTALLER_INTEGRATION.md",
+      "docs/V030_MATERIALS_GATE_REVIEW.md",
+      "docs/V030_PRESENTATION_COVERAGE.md",
+      "docs/V030_RELEASE_NOTES_DRAFT.md",
+      "docs/V030_STABLE_READINESS.md",
+      "docs/evidence/v030-readiness-candidate.json",
+      "docs/evidence/v030-readiness-validation.json",
+      "src/electronapp/enhanced/nexttrack-transition.js",
+      "src/electronapp/plugins/libmpv.js",
+      "tests/native-helper-lifecycle.test.cjs",
+      "tests/native-helper-service.test.cjs",
+      "tests/nexttrack-native-transition.test.cjs",
+      "tests/pipeline-browser.js",
+      "tests/playbackmanager-request-session.test.cjs",
+      "tests/transition-timeline-browser.js",
+      "tests/transition-timeline-browser.test.cjs",
+      "tools/compare-transition.ps1",
+      "tools/patch-playbackmanager.cjs",
+      "tools/smoke-electron.cjs"
+    ],
+    "fullDiffSha256": "250620a90775a0e81fd861549fe83ce97eb82bd7ac52ac74a1599d59bacf1b26",
+    "checks": [
+      {
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38159095612/job/114528062167"
+      },
+      {
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "url": "https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38159092503/job/114528053104"
+      }
+    ],
+    "unresolvedReviewThreads": 0,
+    "formalGithubReviews": 0,
+    "independentLocalReview": "PASS",
+    "codeAndTestsIdenticalToReviewedCommit": true,
+    "installerVersionAndBuildContractUnchanged": true,
+    "buildInputCount": 39,
+    "existingEvidenceHashes": "PASS",
+    "mergeAuthorized": true,
+    "stableReadiness": "BLOCKED_WITH_EVIDENCE",
+    "realTogether": "PENDING_USER_ACCEPTANCE",
+    "fullscreen": "INCONCLUSIVE",
+    "windowsInstallLifecycle": "NOT_EXECUTED",
+    "distributionMaterials": "WAITING_EXTERNAL/UNKNOWN"
+  },
+  "mainMergeCi": {
+    "conclusion": "success",
+    "head_sha": "98b0651da551af529b5d0f0a1fa73578e01b32c8",
+    "html_url": "https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38188764430",
+    "id": 38188764430,
+    "status": "completed",
+    "publicOfflineTests": 702,
+    "passed": 702,
+    "failed": 0
+  },
+  "originalCandidateSourceCommit": "322a037cdccb39ad57923bcd7551d9954ba815bd",
+  "originalCandidateInstallerSha256": "dc3627ffc21d8560b3d9d03f64433fc628bfe5f5e2fb1cd5cc73adfc470c5eb0",
+  "historicalEvidenceReused": {
+    "fullRegression": 783,
+    "independentReview": 138,
+    "sourceCommit": "322a037cdccb39ad57923bcd7551d9954ba815bd",
+    "reviewedCodeCommit": "68a0026b6fa65e965aa5a7d6ce7cdf91f6de8545",
+    "newlyExecuted": false
+  },
+  "newTests": 0,
+  "syntheticExperiments": 0,
+  "newBuilds": 0,
+  "stableGateStatuses": {
+    "overall": "BLOCKED_WITH_EVIDENCE",
+    "realTogether": "PENDING_USER_ACCEPTANCE",
+    "fullscreen": "INCONCLUSIVE",
+    "windowsLifecycle": "NOT_EXECUTED",
+    "distributionMaterials": "WAITING_EXTERNAL/UNKNOWN"
+  },
+  "stableTagCreated": false,
+  "stableReleaseCreated": false,
+  "installedClientModified": false,
+  "finalMainHeadReceipt": ".work/pr29-main-merge/final-main.json"
+}

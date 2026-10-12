@@ -1,5 +1,12 @@
 # 开发日志
 
+## 2026-10-12 — PR29 主线整合
+
+- 当前用户授权PR29检查、Merge Commit合并、main CI及状态同步，禁止新增功能、重复实验、Stable/Tag及现用客户端覆盖。Task Risk中（远端Git）；Uncertainty低（固定SHA与已认可合同）；Scope Git/CI/docs；Playback/Session Impact无新实现。Model Tier1执行，核心diff复用既有Tier2独立审查及字节等价核对；当前运行配置继承、精确SKU未由工具返回；Reason为明确工程整合；Escalated=no，简单串行不委派。
+- 开工maina8ba606/PR29c79efeb；两次CI SUCCESS，review threads0/无分页，GitHub正式approval记录0，用户已认可独立审查。核对全部27文件diff、783/138既有日志hash、installer/package/lock/vendor/native/build diff0、39输入一致；本轮不新增测试、不重复回归和像素实验。
+- 北京时间08:38:10 Merge Commit合并PR29为98b0651da551af529b5d0f0a1fa73578e01b32c8，parents=a8ba606/c79efeb，tree与c79efeb完全一致。main CI38188764430 SUCCESS/702项/fail0；后续仅状态文档提交和普通fast-forward push，最终HEAD/CI回读至.work/pr29-main-merge/final-main.json。
+- 保留BLOCKED_WITH_EVIDENCE及真实Together/全屏/Windows生命周期/发行材料状态；旧内部installer仍source322a037，原ZIP、现用客户端及用户未提交内容保持。无Tag/Release、重建/改名、安装或新研发专项。
+
 ## 2026-10-12 — v0.3.0 正式版工程收尾
 
 - 当前用户授权分析、局部修改、测试/构建、独立review、提交/推送/PR，禁止自动merge/Stable/现用客户端修改。Task Risk中高；Uncertainty中；Scope为PlaybackManager overlay/libmpv presentation与发行证据；Playback/Session身份和报告合同保持。Model Tier2；主线程/独立review继承当前配置（精确SKU未由工具返回），明确测试/材料worker请求gpt-5.6-luna/high；Reason为Stop/Play异步归属及跨层呈现；Escalated=no。

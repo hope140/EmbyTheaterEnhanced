@@ -1,6 +1,6 @@
 # v0.3.0 安装器整合与稳定版门禁
 
-2026-10-12增量：PR28已合并至main `a8ba606`；Together修复进入独立OPEN [PR29](https://github.com/hope140/EmbyTheaterEnhanced/pull/29)，受控根因和窗口合成验证已有，真实双端仍PENDING_USER_ACCEPTANCE、全屏INCONCLUSIVE。本轮新内部候选及门禁统一见[V030_STABLE_READINESS](V030_STABLE_READINESS.md)。下方旧日期记录保留阶段身份，以最新readiness为准。
+2026-10-12增量：PR28合并a8ba606后，Together修复已经[PR29](https://github.com/hope140/EmbyTheaterEnhanced/pull/29)的Merge Commit98b0651进入main；整合核对installer、0.3.0版本、升级保护与构建合同不变，三项用户UI PASS保留。真实双端PENDING_USER_ACCEPTANCE、全屏INCONCLUSIVE、系统生命周期和发行材料门禁不扩大结论；最新状态见[V030_STABLE_READINESS](V030_STABLE_READINESS.md)，旧日期保留原来源。
 
 ## 用户前台验收
 

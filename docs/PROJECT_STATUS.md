@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-12 — PR29 MERGED / Stable 门禁保留
+
+用户授权本轮仅做主线整合；合并前maina8ba606、PR29 HEADc79efeb、两次CI SUCCESS、独立审查、27文件diff和39构建输入核对通过，安装器/0.3.0版本/依赖/来源无回退。北京时间08:38:10使用Merge Commit合并为 `98b0651da551af529b5d0f0a1fa73578e01b32c8`，父节点a8ba606/c79efeb，完整tree与PR HEAD相同。main CI入口[38188764430](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38188764430)，状态文档后的最终HEAD/CI见[readiness](V030_STABLE_READINESS.md)及本地最终回执。
+
+合并提交main CI已SUCCESS，公开离线集702/702、fail=0。工程整合项关闭，Stable总体仍BLOCKED_WITH_EVIDENCE；Together双端PENDING_USER_ACCEPTANCE、全屏INCONCLUSIVE、Windows安装生命周期NOT_EXECUTED、发行材料WAITING_EXTERNAL/UNKNOWN。原内部候选继续source322a037；本轮未新增功能/测试、重复合成实验、安装、改标产物或Stable发布。下方工程收尾记录是合并前快照。
+
 ## 2026-10-12 — v0.3.0 工程整合完成 / BLOCKED_WITH_EVIDENCE
 
 最新main `a8ba606`已包含PR28；原Together `31d1107`/`a31163b`分别整合为`5288fb9`/`c27755c`，独立审查关闭Audio继承持帧边界`68a0026`。新[PR29](https://github.com/hope140/EmbyTheaterEnhanced/pull/29)保持OPEN；准确候选`322a037cdccb39ad57923bcd7551d9954ba815bd`的push/PR CI均SUCCESS。最终783/783、核心126/126、独立138/138、guard12/language7通过。
