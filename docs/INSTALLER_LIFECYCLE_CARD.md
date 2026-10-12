@@ -2,6 +2,8 @@
 
 ## v0.3.0 当前执行入口
 
+2026-10-12最终入口见[V030_INSTALL_LIFECYCLE_FINAL](V030_INSTALL_LIFECYCLE_FINAL.md)：升级基线v0.2.9，候选为新的stable-rc；本机只读探测未识别可靠可恢复环境，REAL_INSTALL_NOT_EXECUTED。下方旧阶段证据按原身份保留，三项中文UI体验不重复验收。
+
 `USER_UI_ACCEPTANCE=PASS`：用户确认新候选中文默认语言、手动语言选择和升级目录页均符合预期。仅这三项前台验收完成；下方系统生命周期仍NOT_EXECUTED，不能由UI或合成检查替代。剩余正式版门禁见 [整合记录](V030_INSTALLER_INTEGRATION.md)。
 
 本轮主要升级基线改用已发布 v0.2.9，准确 hash/sourceCommit 和候选身份见 [v0.3.0 安装器验收](V030_INSTALLER_ACCEPTANCE.md)。下方 v0.2.2 是历史方案，不能替代本轮基线。本轮真实系统安装、升级、卸载、重装及运行中升级全部 `NOT_EXECUTED`。

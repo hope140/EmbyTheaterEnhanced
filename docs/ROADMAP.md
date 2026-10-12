@@ -1,5 +1,7 @@
 # Development Roadmap
 
+2026-10-12当前V030_FEATURE_FREEZE：Together原问题已有USER_REPORTED_PASS；停止新增播放器/HDR/系统媒体控制/OSD/字幕音轨性能/远控协议/Native Helper/非必要安装器功能。只处理实际发布阻断、安全与安装兼容和材料，最终计划与来源见[V030_FINAL_RELEASE_GATE](V030_FINAL_RELEASE_GATE.md)。旧门禁记录保留原日期。
+
 2026-10-12：v0.3.0工程收尾及主线整合完成，PR29已通过Merge Commit进入main98b0651；真实Windows/Together、全屏视觉和发行材料门禁保留，总体BLOCKED_WITH_EVIDENCE。来源/main CI见[V030_STABLE_READINESS](V030_STABLE_READINESS.md)，本轮不另开研发专项。
 
 本页是后续维护计划入口。2026-10-11，公开测试版 [v0.2.9 Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.9) 已交付，产品main来源 `084554e07782ca6461b7ed67cadd298a92450b24`，[PR #25](https://github.com/hope140/EmbyTheaterEnhanced/pull/25) 与 [PR #26](https://github.com/hope140/EmbyTheaterEnhanced/pull/26) 已合并，[产品main CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38134108870) SUCCESS。正式 Latest 仍为 [v0.2.2](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.2)，准确资产和最终文档身份见 [综合收尾](V029_MAINTENANCE_CLOSEOUT.md)。

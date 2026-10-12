@@ -1,5 +1,9 @@
 # 许可与公开范围
 
+## v0.3.0 最终收口增量
+
+本轮仅补充已精确匹配的SimpleInjector4.0.11 MIT版权/许可全文，随THIRD_PARTY_NOTICES交付；该组件LICENSING_OBLIGATION_RESOLVED，未精确重建只列REPRODUCIBILITY_ONLY。完整身份见[材料矩阵](V030_DISTRIBUTION_MATERIALS_FINAL.md)。这不代表全包许可组合、Host/Additions、libmpv/FFmpeg依赖、CEC/driver或离线Web/资产的分发依据已闭合；它们保持按实际义务/未知权利分项阻断，不把历史发布或无法重建当作许可结论。
+
 2026-10-11 当前发行材料与版本状态见 [安装与第三方材料审查](V029_INSTALL_MATERIALS_REVIEW.md) 与 [v0.2.9 收尾](V029_MAINTENANCE_CLOSEOUT.md)；下文旧日期的版本和材料缺口按其原审计对象读取。材料缺口继续 `WAITING_EXTERNAL`，既往分发事实不证明授权、对应源码或完整通知已经闭合。
 
 2026-10-09后续本地[材料审计](THIRD_PARTY_MATERIALS_AUDIT.md)已取得libmpv原

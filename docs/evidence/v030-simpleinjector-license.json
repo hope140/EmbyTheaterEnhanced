@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "auditDate": "2026-10-12",
+  "component": "SimpleInjector 4.0.11",
+  "dllSha256": "6a8e55d1f114fb579f4b92169af71dc197d86dd13a79199a4f047dc4b22bf0bc",
+  "packageSha256": "a177ec830e2350e460667b8e61b7a27d09da94181775d51bdcb2c9295a749c10",
+  "officialPackage": "https://api.nuget.org/v3-flatcontainer/simpleinjector/4.0.11/simpleinjector.4.0.11.nupkg",
+  "packageMember": "lib/net45/SimpleInjector.dll",
+  "memberExact": true,
+  "nuspecLicenseUrl": "https://simpleinjector.org/license",
+  "licenseSource": "https://raw.githubusercontent.com/simpleinjector/SimpleInjector/e3ce923d72bca2a5e1452725685b59b886c64bac/LICENSE",
+  "licenseSha256": "df8a87df7cecf121f7d960f664a6d458dcadd01329c560de40eb26e1f801b918",
+  "noticeDelivery": "THIRD_PARTY_NOTICES.md",
+  "statuses": [
+    "LICENSING_OBLIGATION_RESOLVED",
+    "REPRODUCIBILITY_ONLY"
+  ],
+  "correspondingSourceRequiredByThisLicense": false,
+  "bundleLicenseApproval": false
+}

@@ -1,5 +1,12 @@
 # 开发日志
 
+## 2026-10-12 — V030_FEATURE_FREEZE / 最终发行门禁
+
+- 当前用户授权Together反馈收口、环境只读探测/可靠隔离安装（若已可用且获授权）、有界材料补充、新stable-rc内部候选、审核分支/PR/CI/独立只读审查；禁止冻结播放源码改动、系统强制配置、现用客户端覆盖、v0.2.9资产变更、Stable Tag/Release。Task Risk中（来源/发行材料）；Uncertainty中；Scope docs/notices/build evidence；Playback/Session Impact无。Model Tier2材料判断与最终验收，固定执行Tier1；主线程/独立review继承当前配置，材料worker请求gpt-5.6-luna/high；精确主线程SKU未由工具返回；Escalated=no。
+- 开工远端main89a0501，PR28/29 MERGED，v0.2.9仍公开Pre-release。用户“实测了一下没问题了。”记REAL_TOGETHER_USER_ACCEPTANCE=PASS/USER_REPORTED_PASS；实际客户端source/版本、次数、硬件、媒体和全屏条件NOT_REPORTED，旧783/138/窗口PASS/全屏INCONCLUSIVE全部保留原来源。本轮未改播放源码或重复像素实验。
+- 只读Hyper-V/Sandbox为Disabled，Get-VM/VBoxManage/vmrun/Sandbox/QEMU管理入口和VMMS不可用，未识别获授权且可恢复的Windows目标；真实安装/升级/卸载/重装保持REAL_INSTALL_NOT_EXECUTED，短人工方案单列，未启用系统功能。
+- 材料worker报告经主线程复核修正身份笔误及源码义务条件。精确官方SimpleInjector4.0.11 nupkg再次回读，net45 DLL与目标6a8e55… EXACT，nuspec许可入口指向官方MIT文本；固定license e3ce923…/SHAdf8a87…完整追加到原THIRD_PARTY_NOTICES，原内容保留。该组件LICENSING_OBLIGATION_RESOLVED，未源码重建REPRODUCIBILITY_ONLY；libmpv/FFmpeg、Host/Additions和Web/资产等实质履行/权利门禁保留，不向外部发送索取请求。
+
 ## 2026-10-12 — PR29 主线整合
 
 - 当前用户授权PR29检查、Merge Commit合并、main CI及状态同步，禁止新增功能、重复实验、Stable/Tag及现用客户端覆盖。Task Risk中（远端Git）；Uncertainty低（固定SHA与已认可合同）；Scope Git/CI/docs；Playback/Session Impact无新实现。Model Tier1执行，核心diff复用既有Tier2独立审查及字节等价核对；当前运行配置继承、精确SKU未由工具返回；Reason为明确工程整合；Escalated=no，简单串行不委派。

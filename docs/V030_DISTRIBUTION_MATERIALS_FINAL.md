@@ -22,7 +22,7 @@
 
 | 组件（覆盖范围） | 二进制/版本/来源身份 | licence / notice 事实 | 状态 | 对应源码义务、获取路径与 rights gap | 技术重建限制、现有材料能否履行、最小缺失材料 |
 |---|---|---|---|---|---|
-| Windows Host `Emby.Theater.exe` | SHA `11abf75c8f77ddb0078e7dd62a2eaae60dba244c113bc7893a7e56bc6527163e`；PE `3.0.20.0`；Carnival 输入。公开参考为 Windows Host commit `708fadc068cbf66ced6ae4a32f3e12bb2c4e13` | 项目 GPL-2.0-only 文本已随包；Host 二进制没有可将该 EXE 绑定到参考源码的独立 notice 集合 | `DISTRIBUTION_RIGHTS_UNKNOWN` + `CORRESPONDING_SOURCE_WAITING_EXTERNAL` + `NOTICE_GAP` | 公开参考仓库是 reference，不能证明 Carnival EXE 的精确 source tree、修改或发行权；获取路径为固定 Host reference/archive 与提供者材料索引 | 不能由程序集版本重建。最小缺失：精确 source tree/commit、相对参考源补丁、依赖/SDK/MSBuild、命令/日志和对应 notice。现有材料不能履行完整对应源码义务 |
+| Windows Host `Emby.Theater.exe` | SHA `11abf75c8f77ddb0078e7dd62a2eaae60dba244c113bc7893a7e56bc6527163e`；PE `3.0.20.0`；Carnival 输入。公开参考为 Windows Host commit `708fadc068cbf66ced6aece4a32f3e12bb2c4e13` | 项目 GPL-2.0-only 文本已随包；Host 二进制没有可将该 EXE 绑定到参考源码的独立 notice 集合 | `DISTRIBUTION_RIGHTS_UNKNOWN` + `CORRESPONDING_SOURCE_WAITING_EXTERNAL` + `NOTICE_GAP` | 公开参考仓库是 reference，不能证明 Carnival EXE 的精确 source tree、修改或发行权；获取路径为固定 Host reference/archive 与提供者材料索引 | 不能由程序集版本重建。最小缺失：精确 source tree/commit、相对参考源补丁、依赖/SDK/MSBuild、命令/日志和对应 notice。现有材料不能履行完整对应源码义务 |
 | Host 托管 DLL：`MediaBrowser.Common.dll` | SHA `8fc955a5215e862f5bde882cedbe2be52e6a242d89d03406844993595d72657f`；PE `1.0.0.0`；历史 EXACT NuGet `MediaBrowser.Common 3.3.10` 成员 | NuGet package/项目 notice 路径随包事实已核对；精确 source/build 关系未建立 | `DISTRIBUTION_RIGHTS_UNKNOWN` + `CORRESPONDING_SOURCE_WAITING_EXTERNAL` | 既有 NuGet nupkg 可取得并与 DLL 成员 EXACT；这只关闭成员来源观察，不关闭 Host 构建/修改关系与完整通知 | 最小缺失：Host 组装关系、精确源码/修改记录、构建输入和 notice 交付映射 |
 | Host 托管 DLL：`MediaBrowser.Model.dll` | SHA `f2eeca1c65e56e96340dc84ff91de6e4cc25bb2e510706748606f05c1e39ebaf`；PE `1.0.0.0`；同 Common 3.3.10 包成员不匹配 | 不能沿用 Common 结论；独立 notice/来源未闭合 | `DISTRIBUTION_RIGHTS_UNKNOWN` + `CORRESPONDING_SOURCE_WAITING_EXTERNAL` + `NOTICE_GAP` | 公开同名包仅为候选，不能改标为对应来源；需提供者精确包/commit 与二进制 hash 对照 | 最小缺失：匹配源包或 source tree、修改/构建记录、license/notice 路径 |
 | Host 托管 DLL：`ServiceStack.Text.dll` | SHA `2cc4fc93be82d4818dc81beb9f5cd0e4f995c77e1725c129e4918e8aeaeb39c1`；PE `4.5.14.0`；`ServiceStack.Text 4.5.14` `lib/net45` 成员 EXACT | 固定源码 license 文本 commit `e5819a8de75a8bae64ddc7a64008613067893e32` 明确 AGPLv3、FOSS License Exception 和商业入口；NuGet 本身无独立 license 文件 | `DISTRIBUTION_RIGHTS_UNKNOWN` + `CORRESPONDING_SOURCE_WAITING_EXTERNAL` + `NOTICE_GAP` | FOSS exception 原文包含 GPL 2.0，但 Software 仍受 AGPL/additions 完整 source 等条件约束；本轮不选商业或 copyleft 路线。公开 license 文本可随材料提供，不能代替 Host/Additions 精确来源和履行安排 | 最小缺失：Host 中该 DLL 的精确构建/修改关系、Additions 完整源码和获取安排、适用 notice、责任人选择的许可路径 |
@@ -42,7 +42,7 @@
 
 已实际关闭：候选 payload 的 2138 条路径/hash、source/runtime/build/native-helper provenance 的身份绑定；四份项目材料的随包路径；Electron archive、73 文件树和两份 Electron notice；libmpv dev archive 到 `mpv-1.dll` 的字节对应；三项 NuGet DLL 的成员 EXACT（Common、ServiceStack.Text、SimpleInjector）；七个继承 npm 包的 registry SRI 与可见 license 文件；Native Helper source/header/helper/toolchain identity；33 个 lock 生产包的选择与聚合文件树。
 
-仍阻断 Stable 分发材料决定：Host EXE 与未匹配 DLL 的精确 source/build/notice 关系；ServiceStack.Text FOSS exception 下 Host/Additions 完整源码和责任人选择的履行路径；patched libmpv 的 winbuild、FFmpeg/其它链接依赖、patch/config/toolchain 和完整 notice 集合；CEC/driver/RefreshRate 的逐项构建来源；离线 Web、字体、图片及 overlay 的逐资产来源/通知；继承 npm 包的原始导入/修改记录。`REPRODUCIBILITY_ONLY` 项（Electron 源码重建、部分工具链 bootstrap）单独记录，不被误写成许可判断。
+仍阻断 Stable 分发材料决定：Host EXE 与未匹配 DLL 的精确 source/build/notice 关系；ServiceStack.Text FOSS exception 下 Host/Additions 完整源码和责任人选择的履行路径；patched libmpv 的 winbuild、FFmpeg/其它链接依赖、patch/config/toolchain 和完整 notice 集合；CEC/driver/RefreshRate 的逐项构建来源；离线 Web、字体、图片及 overlay 的逐资产来源/通知。继承MIT/Apache包的导入/修改历史仅列复现限制，完整通知已保留；不单独因此阻断。`REPRODUCIBILITY_ONLY` 项（Electron 源码重建、部分工具链 bootstrap）单独记录，不被误写成许可判断。
 
 用户报告“实测了一下没问题了”只可作为 `USER_REPORTED_PASS` 的外部前台证据标签；本材料核查不重写真实 Together、Windows 安装生命周期或 fullscreen 历史状态。fullscreen 仍为 `INCONCLUSIVE`，真实 Together 和安装生命周期仍以现有状态文档为准。
 
@@ -50,10 +50,10 @@
 
 以下入口只针对已有固定 revision/archive/package，不重复失败候选下载；它们是事实/候选材料入口，最终许可路径由 parent 决定。
 
-1. [Windows Host reference `708fadc...`](https://github.com/MediaBrowser/emby-theater-windows/tree/708fadc068cbf66ced6ae4a32f3e12bb2c4e13) — 公开源码/reference；不证明 Carnival EXE 对应重建。
+1. [Windows Host reference `708fadc...`](https://github.com/MediaBrowser/emby-theater-windows/tree/708fadc068cbf66ced6aece4a32f3e12bb2c4e13) — 公开源码/reference；不证明 Carnival EXE 对应重建。
 2. [MediaBrowser.Common 3.3.10 NuGet](https://www.nuget.org/packages/MediaBrowser.Common/3.3.10) — 既有 DLL member EXACT 的 package 入口。
 3. [ServiceStack.Text 4.5.14 NuGet](https://www.nuget.org/packages/ServiceStack.Text/4.5.14) — 既有 DLL member EXACT 的 package 入口。
-4. [SimpleInjector 4.0.11 NuGet](https://www.nuget.org/packages/SimpleInjector/4.0.11) 与[官方 MIT LICENSE](https://github.com/simpleinjector/SimpleInjector/blob/master/LICENSE) — 既有 DLL member EXACT 和许可 metadata/文本入口。
+4. [SimpleInjector 4.0.11 NuGet](https://www.nuget.org/packages/SimpleInjector/4.0.11) 与[固定官方 MIT LICENSE](https://github.com/simpleinjector/SimpleInjector/blob/e3ce923d72bca2a5e1452725685b59b886c64bac/LICENSE) — 既有 DLL member EXACT 和许可 metadata/文本入口。
 5. [ServiceStack license at `e5819a8...`](https://github.com/ServiceStack/ServiceStack.Text/blob/e5819a8de75a8bae64ddc7a64008613067893e32/license.txt) — 固定许可文本；不选择商业或 copyleft 路线。
 6. [mpv dev archive record](https://sourceforge.net/projects/mpv-player-windows/files/libmpv/mpv-dev-x86_64-20260809-git-dd5d17d328.7z/download) — 固定 archive/checksum 入口，历史已核对。
 7. [mpv source `dd5d17d...`](https://github.com/mpv-player/mpv/tree/dd5d17d3285a095a0f712fa9d116e22a076492de) — 固定 source/header reference；不替代 winbuild/dependency closure。
@@ -68,3 +68,11 @@
 读取了项目 `AGENTS.md`、`docs/ARCHITECTURE.md`、`docs/PROJECT_STATUS.md`、`docs/LESSONS_LEARNED.md`、`docs/AI_MODEL_POLICY.md`，以及材料 gate、材料 request/closeout、`SOURCE_MATERIALS.md`、`LICENSING.md`、`THIRD_PARTY_NOTICES.md`、`BUILD_INPUT_AUDIT.md` 和 v0.3.0 readiness/candidate evidence。只读核对指定 readiness `vendor`、候选 `dist/.../build-manifest.json`、provenance 和明确的 `.work` 审计/解包输入；没有全量递归扫描私人目录，没有启动第三方程序、安装器、驱动、客户端或服务，也没有重跑测试。
 
 本轮公开入口查询为 4 组定向 primary-source search，加上既有历史核实入口的固定复用；未下载新的程序、archive 或源码。机器明细见 [`v030-distribution-materials-final.json`](evidence/v030-distribution-materials-final.json)，其中保留候选 manifest 的每一项 file/hash，并给出按组件的聚合索引。该报告不修改原 `THIRD_PARTY_NOTICES.md`。
+
+## 主线程最终复核增量
+
+再次下载官方SimpleInjector4.0.11 nupkg，net45成员SHA与目标DLL完全一致；nuspec指向官方许可入口，固定MIT文本e3ce923d72bca2a5e1452725685b59b886c64bac已完整追加到THIRD_PARTY_NOTICES.md，原有通知保留。准确身份见[SimpleInjector回执](evidence/v030-simpleinjector-license.json)。该组件许可/通知履行已闭合；未精确重建只记REPRODUCIBILITY_ONLY，不为它要求对应源码。
+
+其余matched或unknown组件的源码请求应按适用许可证条件判断；System.Configuration等许可证路径未确认时，CORRESPONDING_SOURCE_WAITING_EXTERNAL只作为条件性需求。已知存在再分发依据缺口或copyleft源码/通知履行路径缺口的组件继续阻断，PDB和bit-exact重建不是普遍法律必备材料。当前官方FFmpeg说明与固定mpv Copyright均要求按实际构建/链接组成判断；针对锁定DLL的静态ASCII扫描未发现configure flags，仅有Lavf63.5.101/Lavc63.7.100文字，不能据此绑定FFmpeg源码revision或许可模式。
+
+本机器JSON是原322a037内部候选的历史材料身份索引，最终stable-rc完整payload以其自身manifest和最终门禁回执为准，不能把此旧集合改标为新产物。

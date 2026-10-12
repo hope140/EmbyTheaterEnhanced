@@ -1,5 +1,11 @@
 # Runtime source and notice materials
 
+## v0.3.0 final notice supplement
+
+2026-10-12: the exact official SimpleInjector 4.0.11 NuGet net45 DLL was read again and matched the shipped SHA256 `6a8e55d1f114fb579f4b92169af71dc197d86dd13a79199a4f047dc4b22bf0bc`. Its nuspec license URL resolves to the official MIT license; fixed license snapshot `e3ce923d72bca2a5e1452725685b59b886c64bac` has SHA256 `df8a87df7cecf121f7d960f664a6d458dcadd01329c560de40eb26e1f801b918`. The full copyright/permission text is now delivered in THIRD_PARTY_NOTICES.md. This component notice path is resolved, and MIT does not require corresponding source distribution; its missing exact source-build relation is REPRODUCIBILITY_ONLY. This does not approve the whole bundle or close Host/Additions, patched libmpv/FFmpeg, CEC/driver or Web/asset obligations.
+
+The current matrix is [V030_DISTRIBUTION_MATERIALS_FINAL](V030_DISTRIBUTION_MATERIALS_FINAL.md), with [SimpleInjector identity receipt](evidence/v030-simpleinjector-license.json). Reports outside the four delivered notices remain repository-only. Historical observations below retain their original identities; a new stable-rc binds its own sourceCommit and manifests.
+
 This index accompanies the local 0.2.7 test candidate. The project LICENSE,
 THIRD_PARTY_NOTICES.md, LICENSING.md and this index are copied from its committed
 source and bound by build-input-provenance.json. Product build evidence for

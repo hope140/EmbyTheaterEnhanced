@@ -9048,5 +9048,9 @@
       "path": "x64/electron/vulkan-1.dll",
       "sha256": "7611034fc1bc24fa103b4c6bf923974cdec46fa506952d6f82cfef836db99fd1"
     }
-  ]
+  ],
+  "evidenceScope": "historical 322a037 input/payload identity index; fresh stable-rc verified separately",
+  "verifiedHostReference": "708fadc068cbf66ced6aece4a32f3e12bb2c4e13",
+  "simpleInjectorFinalReceipt": "docs/evidence/v030-simpleinjector-license.json",
+  "noticeSupplement": "new complete MIT copyright/permission notice appended; original content preserved"
 }

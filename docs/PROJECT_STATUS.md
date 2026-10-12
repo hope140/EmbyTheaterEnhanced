@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-12 — V030_FEATURE_FREEZE / Together USER_REPORTED_PASS
+
+开工远端main仍89a0501f96eebdd7ee6952f594038bafe151eb43，PR28/29均MERGED，最新公开Pre-release仍v0.2.9。用户真实Together反馈“实测了一下没问题了。”，REAL_TOGETHER_USER_ACCEPTANCE=PASS，透明屏专项按已报告场景关闭；未明确的客户端版本、媒体、次数、硬件和全屏条件不推断，历史全屏采样INCONCLUSIVE保留。
+
+v0.3.0功能冻结，本轮只做发行文档/材料、隔离安装准备和专用stable-rc内部候选。只读探测未识别可靠且获授权的可恢复Windows目标，安装生命周期REAL_INSTALL_NOT_EXECUTED，不启用系统功能或测试现用安装。最新来源、候选及实质发行门禁见[V030_FINAL_RELEASE_GATE](V030_FINAL_RELEASE_GATE.md)；下方旧PENDING是历史阶段记录。
+
 ## 2026-10-12 — PR29 MERGED / Stable 门禁保留
 
 用户授权本轮仅做主线整合；合并前maina8ba606、PR29 HEADc79efeb、两次CI SUCCESS、独立审查、27文件diff和39构建输入核对通过，安装器/0.3.0版本/依赖/来源无回退。北京时间08:38:10使用Merge Commit合并为 `98b0651da551af529b5d0f0a1fa73578e01b32c8`，父节点a8ba606/c79efeb，完整tree与PR HEAD相同。main CI入口[38188764430](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38188764430)，状态文档后的最终HEAD/CI见[readiness](V030_STABLE_READINESS.md)及本地最终回执。
