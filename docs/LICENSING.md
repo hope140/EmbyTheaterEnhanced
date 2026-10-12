@@ -1,5 +1,9 @@
 # 许可与公开范围
 
+## PR31 最新GPL发行审核口径
+
+按用户明确方案，以官方Emby Theater GPL-2.0上游为主要基础维护开源衍生项目。官方GPL代码和已有有效GPL授权的修改不要求额外Carnival作者许可；实际对象对应源/修改说明/通知缺口与未知独创增量分开，不要求bit-exact重建。独立第三方组件依各自条款；当前首要阻断为libmpv/FFmpeg的v3配方与GPL-2.0-only Helper组合，最小可用授权路线尚未实施。[PR31审核](V030_PR31_GPL_RELEASE_REVIEW.md)给出准确边界和三组最少事项；根GPL-2.0-only及冻结源码未改。
+
 ## 2026-10-12 发行解阻补件
 
 完整当前结果见[V030_RELEASE_UNBLOCK_PLAN](V030_RELEASE_UNBLOCK_PLAN.md)。Roboto21字体的内嵌Apache身份、已识别jQuery3.6.0 MIT通知、ServiceStack官方版本源/许可文本、mpv实际run/固定配方与FFmpeg源、CEC driver官方同字节入口已经补齐；22份全文进入现有THIRD_PARTY_NOTICES交付入口，旧候选未重包。核心rights/完整源/依赖通知仍有未闭合项，不能仅凭全文补件批准完整二进制。具体GPLv3配方与GPL-2.0-only Helper组合及modified思源RFN条件待解决；本轮不改根许可证、上游条款或资产。

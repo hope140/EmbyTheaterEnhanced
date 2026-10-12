@@ -1,5 +1,9 @@
 # Runtime source and notice materials
 
+## PR31 GPL-source fulfillment review
+
+Official Emby GPL sources and valid GPL modifications do not require an additional Carnival author permission by default. Source identity/changes, complete corresponding-source delivery and notice obligations remain distinct from unknown independent additions and third-party terms. No universal bit-exact/PDB/historical-machine requirement is imposed. The current minimal gates and libmpv/Helper licensing routes are in [V030_PR31_GPL_RELEASE_REVIEW](V030_PR31_GPL_RELEASE_REVIEW.md); the proposed component-specific licensing route is not implemented, and the complete Windows binary remains blocked.
+
 ## 2026-10-12 bounded release-unblock supplement
 
 The current actionable result is [V030_RELEASE_UNBLOCK_PLAN](V030_RELEASE_UNBLOCK_PLAN.md). Fixed official ServiceStack source, mpv/FFmpeg sources and builder/run evidence, Web font/MIT notices and an exact official driver binary location have been obtained. All 22 collected full-text supplements are integrated into THIRD_PARTY_NOTICES.md under the existing four-file delivery contract; raw snapshots and normalized aggregate hashes remain separately identified. This is preparation for a future committed-source build, not repackaging of the existing internal RC. Core rights, corresponding-source delivery, cached linked dependencies, GPL combination and modified-font RFN conditions remain open as individually documented. Full Git archives or reference sources are not declared corresponding source for unknown imported components.

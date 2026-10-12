@@ -1,5 +1,7 @@
 # v0.3.0 Host / 托管 DLL 材料解阻结果
 
+PR31最新审核口径见[GPL发行审核](V030_PR31_GPL_RELEASE_REVIEW.md)：官方Host源的GPL grant已有，无需重复作者授权；目标EXE实际对应源/修改缺口单列。前轮UNKNOWN不得外推为官方代码没有授权。独立DLL的条款及确实无授权独创增量仍分别判断，bit-exact不是普遍履行门禁；本页原实体/hash证据保留。
+
 日期 2026-10-12（UTC+8）。固定 base `72d4688821822860d20342ae8c784a279b06b4f5`，只读候选 `sourceCommit=7827425e07024fcca3bf671aa4401bb3020291b0` / `0.3.0`。本轮 Task Risk/Uncertainty 为 Tier 2，仅收集并核对明确版本材料及 Host 行为；没有产品、安装器、vendor 或依赖变更，没有运行下载代码、重建 Host 或安装测试。机器回执见 [v030-host-unblock.json](evidence/v030-host-unblock.json)，全文与官方获取路径见 [SOURCE_INDEX](redistribution-notices/host/SOURCE_INDEX.md)。最终许可充分性和整个 bundle 的分发决定由主线程复核。
 
 ## 本轮实际闭合

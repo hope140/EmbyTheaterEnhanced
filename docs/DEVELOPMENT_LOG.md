@@ -1,5 +1,12 @@
 # 开发日志
 
+## 2026-10-12 — PR31 官方GPL基础与最小门禁重评
+
+- 当前用户要求审核收敛、优先libmpv/FFmpeg组合，不重构/重复已通过功能/自动Stable。延续本发行解阻任务已有文档/PR授权；Model Tier2（许可/源与IPC边界），Task Risk高、Uncertainty中、Scope定向源码/条款/治理文档，Playback/Session Impact NONE；运行配置继承、精确SKU未由工具返回；Escalated=no。只读worker收集明确Host/Web来源范围，主线程持有组合/最终放行判断。
+- main72d4688/PR31 HEAD94556b7与原两次CI SUCCESS核对。官方Emby GPL grant已有，取消额外Carnival作者许可默认门禁；有效GPL修改聚焦对应源/修改/通知，不以bit-exact重建/PDB/旧机器作为普遍门禁。未匹配不证明独创；目标RC真实包含三个定制入口，逐路径/hash登记且源码明文已随包，未知的是来源/适用授权而非一律没有源码。
+- 实际回读GNU FAQ兼容/聚合条款（下载全文存忽略证据）、固定FFmpeg LICENSE与builder60/61配置、HelperGPL2only和同进程API调用、原新增commitc593676及JS spawn/stdio边界。DLL静态未检出gpl/version3flags，未将阴性搜索当许可模式证明。提出仅Helper有权许可的最小候选，IPC独立性需看语义，未改根LICENSE/SPDX/冻结源码或实施替代。
+- 验证纯文档事实/链接/JSON/hash/diff/有限敏感模式，产品源码、工具链、测试实现及生产生成逻辑不变，不重复20/783/138/安装/像素；两项随包治理索引文字发生变化，后续新源码提交绑定其新hash，不宣称旧RC含新文档。审核结论完整Windows公开包仍阻断，最少事项见V030_PR31_GPL_RELEASE_REVIEW；无merge/tag/release/binary上传/客户端修改。
+
 ## 2026-10-12 — v0.3.0 公开发行材料解阻
 
 - 当前用户授权独立worktree、定向材料研究、必要补件/验证/审核分支/PR；最新将实际覆盖升级、启动使用记USER_REPORTED_PASS，不优先四阶段、不重复已验收体验。Task Risk中高（许可与再分发）、Uncertainty中、Scope来源/完整通知/治理文档，Playback/Session Impact NONE。主线程Tier2负责材料判断；固定身份收集委派worker，模型继承运行配置（精确SKU未由工具返回）；Reason为明确材料合同与跨组件许可边界，Escalated=no。各worker独立worktree，未修改冻结产品或安装器。

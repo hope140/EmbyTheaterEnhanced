@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-12",
+  "timeZone": "UTC+8",
+  "reviewedPr": 31,
+  "reviewedHead": "94556b73ba6b5106d3ac87ed1b43a1bf9eb04862",
+  "main": "72d4688821822860d20342ae8c784a279b06b4f5",
+  "policy": {
+    "primaryBasis": "Official Emby Theater GPL-2.0 upstream and valid GPL modifications",
+    "extraCarnivalAuthorPermissionDefaultGate": false,
+    "bitExactRebuildDefaultGate": false,
+    "permissionInferredFromNonEnforcement": false,
+    "independentThirdPartyTermsPreserved": true
+  },
+  "officialGplSources": [
+    {
+      "repository": "MediaBrowser/emby-theater-windows",
+      "commit": "708fadc068cbf66ced6aece4a32f3e12bb2c4e13",
+      "grant": "GPL v2 existing upstream grant",
+      "targetSourceRelation": "pending preferred source/changes, not default upstream permission"
+    },
+    {
+      "repository": "MediaBrowser/emby-theater-electron",
+      "commit": "db0f4c814ee1e7d9b5f50010065c5cb64a20357e",
+      "grant": "GPL v2 existing upstream grant",
+      "scope": "identified upstream paths; does not automatically cover independent assets or unmapped full offline Web"
+    }
+  ],
+  "primaryFaq": {
+    "url": "https://www.gnu.org/licenses/gpl-faq.html",
+    "bytes": 197515,
+    "sha256": "6b48c709107e216b22c8415ed5c190c1c10818ac79f792563dfa501ee8dcec14",
+    "sections": [
+      "v2v3Compatibility",
+      "MereAggregation",
+      "GPLPlugins",
+      "GPLInProprietarySystem"
+    ],
+    "downloadedAndRead": true
+  },
+  "mpv": {
+    "dllSha256": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c",
+    "builderCommit": "cd1edc11dc6887a50f705717619d879f5a93a488",
+    "officialRun": 31285220366,
+    "runToTargetArchive": "direct-publication-supported inference without target archive SHA attestation",
+    "recipe": {
+      "path": "packages/ffmpeg.cmake",
+      "bytes": 3147,
+      "sha256": "359c9c7da360f57d3a438e6fe117af6169cbd9aa3672751fd2bfc31e02be8fff",
+      "gplLine": 60,
+      "version3Line": 61,
+      "flags": [
+        "--enable-gpl",
+        "--enable-version3"
+      ],
+      "noNonfreeFlagInRecipe": true
+    },
+    "mpvRecipe": {
+      "path": "packages/mpv.cmake",
+      "bytes": 4648,
+      "sha256": "cfb9b0fbaaf6013069fe3eeda7e9e9644546f09cd772dbd549f8eb7fa21c7122",
+      "preferStatic": true
+    },
+    "fixedFfmpegLicense": {
+      "path": "docs/redistribution-notices/mpv/ffmpeg/LICENSE.md",
+      "bytes": 4346,
+      "sha256": "2e1d16c72fd74e12063776371da757322f8b77589386532f4fd8634bde7de1af"
+    },
+    "dllStaticMarkerReadback": {
+      "sha256": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c",
+      "markers": {
+        "--enable-gpl": {
+          "found": false,
+          "offset": -1
+        },
+        "--enable-version3": {
+          "found": false,
+          "offset": -1
+        },
+        "--enable-nonfree": {
+          "found": false,
+          "offset": -1
+        },
+        "GPL version 3": {
+          "found": false,
+          "offset": -1
+        },
+        "--prefix=": {
+          "found": true,
+          "offset": 106460073
+        }
+      }
+    },
+    "markerInterpretation": "absence is not proof flags disabled or GPLv2 mode"
+  },
+  "helper": {
+    "path": "native/mpv-helper/ete-mpv-helper.cpp",
+    "bytes": 108730,
+    "sha256": "ba299fa6a5732b5a3dcfc1cdb1abbc300d2fc23acb103e916b3ace184767a583",
+    "license": "GPL-2.0-only explicit line 1",
+    "firstAddedCommit": "c5936760419395acc7dc2ee3941499f4f47b4bcf",
+    "firstCommitChangeType": "A",
+    "firstLicenseWasAlreadyV2Only": true,
+    "copyingOfUpstreamCodeExcludedByGitAddition": false,
+    "sameProcessDynamicApiLoading": true,
+    "apiLoadLines": [
+      1370,
+      1372
+    ],
+    "ipc": {
+      "path": "src/electronapp/native-helper/controller.js",
+      "bytes": 27647,
+      "sha256": "156a722d57a88db54758174eb0c9157e5c2466b77ac33f272728025b46b8f86a",
+      "spawnLines": [
+        149,
+        154
+      ],
+      "transport": "separate process, length-prefixed JSON over stdio pipes",
+      "separateWorkAutomaticallyEstablished": false
+    },
+    "minimumLicensingRoute": "PROPOSED_NOT_IMPLEMENTED: verify full Helper grant authority and IPC work boundary; give only this component compatible v3 grant if supported, preserve GPLv2 Emby upstream",
+    "alternative": "PROPOSED_NOT_IMPLEMENTED: compatible fully sourced libmpv build preserving features"
+  },
+  "customizationCandidates": [
+    {
+      "path": "Emby.ConfigureAndUninstall.bat",
+      "bytes": 11504,
+      "sha256": "ce3db8b5f498243a04b4a5699f5b6fcf8366cf70b4fad99b12192eae0fa91fca",
+      "actuallyInCandidate": true,
+      "sourceForm": "readable scripts shipped",
+      "classification": "CUSTOMIZATION_ORIGIN_AND_GRANT_UNCONFIRMED_CANDIDATE",
+      "carnivalOriginalAuthorshipProven": false,
+      "gplGrantProvenByFileTitle": false
+    },
+    {
+      "path": "Emby.Dialog.bat",
+      "bytes": 2365,
+      "sha256": "6f243e10cfe2234be014c0c690d1918d3f1ad356846b22a63cb83cf51a223ba0",
+      "actuallyInCandidate": true,
+      "sourceForm": "readable scripts shipped",
+      "classification": "CUSTOMIZATION_ORIGIN_AND_GRANT_UNCONFIRMED_CANDIDATE",
+      "carnivalOriginalAuthorshipProven": false,
+      "gplGrantProvenByFileTitle": false
+    },
+    {
+      "path": "electronapp/www/modules/CustomCssJS.js",
+      "bytes": 4548,
+      "sha256": "2177de28dcc4e715f07c63329dc361c5b4ddd37eb7e59f273830b22acea37912",
+      "actuallyInCandidate": true,
+      "sourceForm": "readable scripts shipped",
+      "classification": "CUSTOMIZATION_ORIGIN_AND_GRANT_UNCONFIRMED_CANDIDATE",
+      "carnivalOriginalAuthorshipProven": false,
+      "gplGrantProvenByFileTitle": false
+    }
+  ],
+  "sourceFulfillment": {
+    "missing": "actual preferred sources/changes/interface/build-install scripts and source delivery for remaining copyleft objects; independent grant/notice only for actual separate components",
+    "notUniversallyRequired": [
+      "bit-exact rebuild",
+      "PDB",
+      "historical machine",
+      "all compiler bootstrap sources"
+    ],
+    "effectiveGplCodeExtraAuthorPermissionRequired": false
+  },
+  "userAcceptance": {
+    "overwriteUpgrade": "USER_REPORTED_PASS",
+    "postUpgradeStartupAndUse": "USER_REPORTED_PASS",
+    "together": "USER_REPORTED_PASS",
+    "otherSystemScenarios": "not expanded"
+  },
+  "validation": {
+    "protectedDiff": "ZERO",
+    "productTestsRerun": false,
+    "installerExecuted": false,
+    "rootLicenseChanged": false,
+    "reviewChecks": "facts, source/code references, own-manifest candidates, hashes, GPL text, diff and finite sensitive-pattern scan",
+    "readonlySourceScopeWorker": "completed and parent-reviewed; no writes/tests/network",
+    "historicalCi": "94556b7 push+PR SUCCESS 702/702; not claimed new-head result",
+    "independentReadonlyReview": {
+      "status": "PASS",
+      "scope": "8 governance deltas plus new review report/receipt, source hashes/line references, GPL scope and minimal routes",
+      "closedNewReviewFindings": 0,
+      "checks": "helper/IPC/fixed recipes/candidate scripts/DLL marker offsets/FAQ hashes and section anchors, local links, JSON, protected diff and whitespace",
+      "didNotRunProductTests": true
+    }
+  },
+  "conclusion": "RELEASE_BLOCKED_EXTERNAL_MATERIALS",
+  "publicCompleteWindowsInstallerApproved": false
+}

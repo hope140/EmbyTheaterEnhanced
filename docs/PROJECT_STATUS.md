@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-12 — PR31 GPL许可审核策略收敛
+
+当前main72d4688/PR31审查HEAD94556b7，两次原CI702/702成功。用户明确按官方Emby GPL-2.0上游维护，取消额外Carnival作者许可的默认门禁；官方GPL grant与实际对象对应源/修改履行分离，未知独创/第三方单列，不要求bit-exact/PDB/历史机器。限定静态核查确认libmpv v3配方与GPL-2.0-only Helper直接加载组合是首要待决；只对Helper另给兼容授权和兼容core构建均为未实施路线，主GPL2上游保持。[PR31审核](V030_PR31_GPL_RELEASE_REVIEW.md)收敛为组合许可、真实对应源/通知交付、具体独立项三组。当前完整Windows二进制仍RELEASE_BLOCKED_EXTERNAL_MATERIALS；功能冻结/工程就绪、用户升级/启动/Together/UI PASS保持，未重跑功能/安装或发布Stable。
+
 ## 2026-10-12 — 第三方发行解阻 / RELEASE_BLOCKED_EXTERNAL_MATERIALS
 
 远端main重新核对为72d4688821822860d20342ae8c784a279b06b4f5；项目V030_FEATURE_FROZEN / ENGINEERING_READY_RELEASE_BLOCKED。用户确认昨天覆盖升级成功、升级后正常启动使用，记录USER_INSTALL_ACCEPTANCE=PASS及两项USER_REPORTED_PASS；配置/DeviceId、卸载/重装等未确认，不重复安装体验。Codex四阶段REAL_INSTALL_NOT_EXECUTED保留为测试执行身份，未覆盖项按用户调整披露为质量风险；Together/UI验收和原783/138/窗口PASS/全屏INCONCLUSIVE保留。
