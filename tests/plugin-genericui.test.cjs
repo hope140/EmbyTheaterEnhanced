@@ -40,7 +40,7 @@ class Element {
     addEventListener(name, fn, options = {}) { const list = this.listeners.get(name) || []; list.push({fn, once: !!(options && options.once)}); this.listeners.set(name, list); }
     removeEventListener(name, fn) { this.listeners.set(name, (this.listeners.get(name) || []).filter(item => item.fn !== fn)); }
     listenerCount(name) { return (this.listeners.get(name) || []).length; }
-    dispatch(name, event = {}) { event.type = name; event.target = event.target || this; for (const entry of [...(this.listeners.get(name) || [])]) { entry.fn.call(this, event); if (entry.once) this.removeEventListener(name, entry.fn); } }
+    dispatch(name, event = {}) { event.type = name; event.target = event.target || this; event.currentTarget = this; for (const entry of [...(this.listeners.get(name) || [])]) { entry.fn.call(this, event); if (entry.once) this.removeEventListener(name, entry.fn); } }
     contains(node) { return node === this || this.children.some(child => child.contains(node)); }
     closest(selector) { if (selector === '[data-data1]' && this.getAttribute('data-data1')) return this; return null; }
     querySelector(selector) {
@@ -55,6 +55,7 @@ class Element {
         function walk(element) {
             for (const child of element.children) {
                 if (selector === 'select[multiple]' && child.tagName === 'SELECT' && child.getAttribute('multiple') !== null) found.push(child);
+                if (selector === '.emby-tab-button' && child.className.split(/\s+/).includes('emby-tab-button')) found.push(child);
                 walk(child);
             }
         }
@@ -111,13 +112,14 @@ const syntheticEditorItems = [
 
 function syntheticPage(pageId = 'synthetic-a', viewId = 'view-a', options = {}) {
     return {
-        PageId: pageId, ViewId: viewId, PluginId: 'synthetic-plugin-id', Caption: 'Synthetic plugin', SubCaption: 'Fixture only',
+        PageId: pageId, ViewId: viewId, PluginId: 'synthetic-plugin-id', Caption: options.caption || 'Synthetic plugin', SubCaption: 'Fixture only',
         ...(options.viewType ? {ViewType: options.viewType} : {}),
         EditObjectContainer: {EditorRoot: {EditorType: 'Group', EditorItems: syntheticEditorItems,
             PropertyConditions: [{TargetPropertyId: 'enabled', AffectedPropertyId: 'text', ConditionType: 'Visible', SimpleCondition: 'IsTrue'}],
             PostbackActions: [{TargetEditorId: 'choice', PostbackCommandId: 'RunSynthetic', CommandParameterPropertyId: 'text'}]},
             Object: {text: 'hello', numeric: 3, enabled: true, choice: '1', date: '2026-01-02T00:00:00Z', status: {Status: 'Succeeded'}}, DefaultObject: {}},
-        TabPageInfos: [{PageId: pageId, DisplayName: 'Home', Href: './genericui?PageId=synthetic-a'},
+        TabPageInfos: [{PageId: pageId, DisplayName: options.tabCaption || 'Home', Href: './genericui?PageId=' + encodeURIComponent(pageId)},
+            {PageId: 'synthetic-b', DisplayName: 'Next', Href: '/genericui?PageId=synthetic-b'},
             {PageId: 'unsafe', DisplayName: 'External', Href: 'https://evil.invalid/'}],
         Commands: [{CommandType: 'PageSave', Caption: 'Save', IsVisible: true, IsEnabled: true},
             {CommandType: 'RunSynthetic', Caption: 'Run', IsVisible: true, IsEnabled: false}, ...(options.commands || [])]
@@ -150,7 +152,74 @@ function runtime(options = {}) {
     }};
     const schema = loadAmd('schema.js', {});
     const document = new FakeDocument();
+    document.title = 'Scheduled tasks';
+    const routeCalls = [], headerState = {title: '', defaultTitleCount: 0};
+    const headerTabsHost = new Element('div');
+    let tabsOwner = null, headerTabsElement = null;
+    function setHeaderSelection(root, index) {
+        if (!root) return;
+        root.selectedIndex = index;
+        const slider = root.querySelector('.emby-tabs-slider');
+        slider.children.forEach((button, i) => {
+            button.className = 'emby-tab-button main-tab-button' + (i === index ? ' emby-tab-button-active' : '');
+            if (i === index) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current');
+        });
+    }
+    const mainTabs = {
+        lastTabs: [],
+        setTabs(view, selectedIndex, getTabsFn, _getTabContainersFn, onTabChange) {
+            if (!view) {
+                tabsOwner = null; headerTabsElement = null; headerTabsHost.replaceChildren();
+                return {tabsContainer: headerTabsHost, replaced: false};
+            }
+            if (tabsOwner === view && headerTabsElement) {
+                this.selectedTabIndex(selectedIndex);
+                return {tabsContainer: headerTabsHost, replaced: false};
+            }
+            tabsOwner = view;
+            const tabs = getTabsFn();
+            this.lastTabs = tabs;
+            const root = new Element('div'); root.className = 'tabs-viewmenubar';
+            root.setAttribute('is', 'emby-tabs');
+            if (onTabChange) root.addEventListener('tabchange', onTabChange);
+            const slider = new Element('div'); slider.className = 'emby-tabs-slider'; root.appendChild(slider);
+            tabs.forEach((tab, index) => {
+                const button = new Element('button');
+                button.className = 'emby-tab-button main-tab-button';
+                button.textContent = tab.name;
+                button.setAttribute('data-index', index);
+                if (index === selectedIndex) { button.className += ' emby-tab-button-active'; button.setAttribute('aria-current', 'page'); }
+                slider.appendChild(button);
+            });
+            headerTabsHost.replaceChildren(root);
+            headerTabsElement = root;
+            root.selectTab = function(index) {
+                const previousIndex = root.selectedIndex;
+                setHeaderSelection(root, index);
+                root.dispatch('tabchange', {detail: {selectedTabIndex: index, previousIndex}});
+            };
+            root.selectedIndex = selectedIndex;
+            return {tabsContainer: headerTabsHost, replaced: true};
+        },
+        getTabsElement() { return headerTabsElement; },
+        selectTab(index) { if (headerTabsElement) headerTabsElement.selectTab(index); },
+        selectedTabIndex(index) {
+            if (!headerTabsElement) return;
+            const previousIndex = headerTabsElement.selectedIndex;
+            setHeaderSelection(headerTabsElement, index);
+            headerTabsElement.dispatch('tabchange', {detail: {selectedTabIndex: index, previousIndex}});
+        },
+        adopt(view) { return this.setTabs(view, 0, () => [{name: 'Owner'}], null, null); },
+        owner() { return tabsOwner; }
+    };
+    const appHeader = {
+        setDefaultTitle() { headerState.defaultTitleCount++; headerState.title = ''; document.title = 'Emby'; },
+        setTitle(value) { headerState.title = value; document.title = value; }
+    };
+    const appRouter = {show(href) { routeCalls.push(href); return options.routeShow ? options.routeShow(href) : Promise.resolve(); }};
     const deps = {'modules/viewmanager/baseview.js': {default: base},
+        'modules/maintabsmanager.js': {default: mainTabs}, 'modules/appheader/appheader.js': {default: appHeader},
+        'modules/approuter.js': {default: appRouter},
         'modules/emby-apiclient/connectionmanager.js': {default: {currentApiClient: () => client}},
         'modules/emby-apiclient/events.js': {default: events},
         'modules/common/input/api.js': {default: {}},
@@ -158,15 +227,16 @@ function runtime(options = {}) {
         'modules/genericedit/genericedit.js': genericEdit, './schema.js': {default: schema}, './responsehelper.js': {default: {}},
         'modules/emby-elements/emby-scroller/emby-scroller.js': {}, 'modules/emby-elements/emby-button/emby-button.js': {},
         'modules/dialoghelper/dialoghelper.js': {default: {created: [], opened: [], closed: [], createDialog(config) { const dialog = new Element('div'); dialog.config = config; this.created.push(dialog); return dialog; }, open(dialog) { this.opened.push(dialog); }, close(dialog) { this.closed.push(dialog); dialog.dispatch('close'); }}},
-        require: ids => Promise.resolve(ids.map(id => ({'alert': () => Promise.resolve(), 'toast': () => {}, 'confirm': options.confirm || (() => Promise.resolve()), 'appRouter': {show() {}}}[id] || {}))), document};
+        require: ids => Promise.resolve(ids.map(id => ({'alert': () => Promise.resolve(), 'toast': () => {}, 'confirm': options.confirm || (() => Promise.resolve()), 'appRouter': appRouter}[id] || {}))), document};
     const View = loadAmd('genericui.js', deps);
-    return {View, client, events, requests, editorCalls, document, dialogHelper: deps['modules/dialoghelper/dialoghelper.js'].default, schema};
+    return {View, client, events, requests, editorCalls, document, dialogHelper: deps['modules/dialoghelper/dialoghelper.js'].default, schema,
+        mainTabs, appHeader, headerState, headerTabsHost, routeCalls};
 }
 
 async function tick() { await Promise.resolve(); await Promise.resolve(); }
 async function resolveView(rt, request, data = syntheticPage()) { request.gate.resolve(data); await tick(); await tick(); }
 
-test('synthetic schema renders representative GenericEdit field kinds and safe tabs', async () => {
+test('synthetic schema renders representative GenericEdit fields and canonical header tabs', async () => {
     const rt = runtime(), shell = makeShell(), view = new rt.View(shell.view, {PageId: 'synthetic-a'});
     view.onResume();
     const request = rt.requests[0];
@@ -181,11 +251,31 @@ test('synthetic schema renders representative GenericEdit field kinds and safe t
     assert.deepEqual(JSON.parse(JSON.stringify(rt.editorCalls.render[0].EditorRoot.PostbackActions)),
         [{TargetEditorId: 'choice', PostbackCommandId: 'RunSynthetic', CommandParameterPropertyId: 'text'}]);
     assert.equal(rt.editorCalls.set.length, 1);
-    const tabs = shell.view.querySelector('.pluginTabs').children;
-    assert.equal(tabs.length, 1);
-    assert.equal(tabs[0].getAttribute('href'), 'genericui?PageId=synthetic-a');
+    assert.equal(rt.mainTabs.owner(), view.view);
+    const tabs = rt.mainTabs.getTabsElement().querySelector('.emby-tabs-slider').children;
+    assert.equal(tabs.length, 2, 'only local GenericUI routes are exposed as tabs');
+    assert.equal(tabs[0].textContent, 'Home');
     assert.equal(tabs[0].getAttribute('aria-current'), 'page');
+    rt.mainTabs.selectTab(1);
+    await tick();
+    assert.deepEqual(rt.routeCalls, ['genericui?PageId=synthetic-b']);
+    assert.equal(rt.requests.length, 1, 'tab navigation must not issue a UI/Command request');
+    assert.equal(tabs[1].getAttribute('aria-current'), 'page');
     assert.equal(shell.view.querySelector('.mainContent').listenerCount('change'), 1);
+});
+
+test('plugin captions own the header and use escaped header HTML with a plain document title', async () => {
+    const rt = runtime(), shell = makeShell(), view = new rt.View(shell.view, {PageId: 'synthetic-a'});
+    const caption = '<img src=x onerror=alert(1)>';
+    view.onResume();
+    assert.equal(rt.document.title, 'Emby', 'entering GenericUI clears the previous page title');
+    assert.equal(rt.headerState.defaultTitleCount, 1);
+    await resolveView(rt, rt.requests[0], syntheticPage('synthetic-a', 'view-a', {caption, tabCaption: caption}));
+    assert.equal(rt.headerState.title, '&lt;img src=x onerror=alert(1)&gt;');
+    assert.equal(rt.document.title, caption);
+    assert.equal(view.view.getAttribute('data-title'), '&lt;img src=x onerror=alert(1)&gt;');
+    assert.equal(shell.view.querySelector('.mainTitle').textContent, caption);
+    assert.equal(rt.mainTabs.lastTabs[0].name, '&lt;img src=x onerror=alert(1)&gt;');
 });
 
 test('resume, pause, and destroy own one UIPageInfoChanged listener and DOM handlers', async () => {
@@ -206,6 +296,33 @@ test('resume, pause, and destroy own one UIPageInfoChanged listener and DOM hand
     assert.equal(rt.events.listeners.length, 0);
     assert.equal(shell.view.listenerCount('click'), 0);
     assert.equal(shell.form.listenerCount('submit'), 0);
+    assert.equal(rt.mainTabs.owner(), null, 'destroy releases tabs when this view still owns them');
+});
+
+test('pause and late render or route rejection cannot overwrite a newer header owner', async () => {
+    const renderGate = deferred(), routeGate = deferred();
+    let renderCount = 0;
+    const rt = runtime({renderForm: () => ++renderCount === 1 ? undefined : renderGate.promise, routeShow: () => routeGate.promise});
+    const oldShell = makeShell(), oldView = new rt.View(oldShell.view, {PageId: 'synthetic-a'});
+    oldView.onResume();
+    await resolveView(rt, rt.requests[0]);
+    const oldData = oldView.data;
+    const oldGeneration = oldView.generation;
+    const lateRender = oldView.render(syntheticPage('synthetic-a', 'late-view', {caption: 'Late old title'}), oldGeneration);
+    rt.mainTabs.selectTab(1);
+    assert.deepEqual(rt.routeCalls, ['genericui?PageId=synthetic-b']);
+    oldView.onPause();
+
+    const newShell = makeShell(), newView = new rt.View(newShell.view, {PageId: 'new-owner'});
+    rt.mainTabs.adopt(newView.view);
+    rt.appHeader.setTitle('New owner');
+    renderGate.resolve(); await lateRender; await tick();
+    routeGate.reject(new Error('stale route rejection')); await tick(); await tick();
+
+    assert.equal(rt.headerState.title, 'New owner');
+    assert.equal(rt.document.title, 'New owner');
+    assert.equal(rt.mainTabs.owner(), newView.view, 'pausing the old controller must preserve another owner’s tabs');
+    assert.strictEqual(oldView.data, oldData, 'the render started by the paused controller must not commit');
 });
 
 test('late UI/View and Command responses from an old generation cannot replace the new page', async () => {
@@ -284,11 +401,30 @@ test('UIPageInfoChanged updates only the owned client and page, with matching vi
     await tick();
     assert.equal(rt.editorCalls.render.length, renders);
     const updated = syntheticPage('synthetic-a', 'other-view'); updated.IsPageChangeInfo = true;
+    updated.TabPageInfos[0].DisplayName = 'Home updated';
     rt.events.emit('UIPageInfoChanged', {}, rt.client, updated);
     await tick(); await tick();
     assert.equal(rt.editorCalls.render.length, renders + 1);
     assert.equal(view.data.ViewId, 'other-view');
+    assert.equal(rt.mainTabs.lastTabs[0].name, 'Home updated', 'same-owner notification must rebuild native tab metadata');
     assert.equal(shell.view.querySelector('.mainContent').listenerCount('change'), 1);
+});
+
+test('a rejected current tab route restores the page-owned selected pill', async () => {
+    const routeGate = deferred(), rt = runtime({routeShow: () => routeGate.promise});
+    const shell = makeShell(), view = new rt.View(shell.view, {PageId: 'synthetic-a'});
+    view.onResume(); await resolveView(rt, rt.requests[0]);
+    rt.mainTabs.selectTab(1);
+    assert.equal(rt.mainTabs.getTabsElement().selectedIndex, 1);
+    routeGate.reject(new Error('synthetic route failure'));
+    await tick(); await tick();
+    const tabs = rt.mainTabs.getTabsElement().querySelector('.emby-tabs-slider').children;
+    assert.equal(rt.mainTabs.getTabsElement().selectedIndex, 0);
+    assert.equal(tabs.filter(tab => tab.getAttribute('aria-current') === 'page').length, 1);
+    assert.equal(tabs[0].getAttribute('aria-current'), 'page');
+    assert.deepEqual(rt.routeCalls, ['genericui?PageId=synthetic-b']);
+    assert.equal(rt.requests.length, 1, 'route failure must not issue a settings command');
+    assert.equal(rt.headerState.title, 'Synthetic plugin');
 });
 
 test('denied or missing UI/View responses show a static error without response details', async () => {

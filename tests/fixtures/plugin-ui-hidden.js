@@ -77,7 +77,7 @@
         'enhanced/plugin-ui/responsehelper.js', 'modules/emby-elements/emby-input/emby-input.js',
         'modules/emby-elements/emby-button/emby-button.js', 'modules/emby-elements/emby-checkbox/emby-checkbox.js',
         'modules/emby-elements/emby-scroller/emby-scroller.js', 'modules/emby-elements/emby-select/emby-select.js',
-        'enhanced/plugin-ui/premierecontainer.js'
+        'enhanced/plugin-ui/premierecontainer.js', 'modules/maintabsmanager.js', 'modules/appheader/appheader.js'
     ];
     requireAll(moduleIds).then(function(loaded) {
         check(loaded.every(Boolean), 'required_modules_resolved');
@@ -123,7 +123,8 @@
             check(viewNode.querySelectorAll('script').length === 0, 'unsafe_values_no_script_nodes');
             check(viewNode.querySelectorAll('[onerror],[onclick]').length === 0, 'unsafe_values_no_event_attributes');
             check(!window.__fixture.injected, 'unsafe_values_not_executed');
-            check(viewNode.querySelector('.pluginTabs').children.length === 1, 'unsafe_tab_url_rejected');
+            var headerTabs = window.__pluginHeaderTabs && window.__pluginHeaderTabs.querySelector('.emby-tabs-slider');
+            check(!!headerTabs && headerTabs.children.length === 1, 'only_safe_header_tab_rendered');
             check(viewNode.querySelector('.labelText').textContent.indexOf('<img') === 0, 'label_text_rendered_as_text');
             check(!viewNode.querySelector('.labelText').getAttribute('href'), 'unsafe_label_link_removed');
             var progress = viewNode.querySelector('.taskProgressInner');
@@ -229,6 +230,61 @@ define('modules/dialoghelper/dialoghelper.js', ['exports'], function(exports) {
 });
 define('modules/approuter.js', ['exports'], function(exports) {
     exports.default = {handleAnchorClick: function() {}, getRouteInfo: function() { return null; }, show: function() {}};
+});
+define('modules/maintabsmanager.js', ['exports'], function(exports) {
+    var owner = null, current = null, host = document.createElement('div');
+    exports.default = {
+        setTabs: function(view, selectedIndex, getTabsFn, _getTabContainersFn, onTabChange) {
+            if (!view) {
+                owner = null; current = null; host.replaceChildren(); window.__pluginHeaderTabs = null;
+                return {tabsContainer: host, replaced: false};
+            }
+            owner = view;
+            var tabs = getTabsFn(), root = document.createElement('div'), slider = document.createElement('div');
+            root.className = 'tabs-viewmenubar'; root.setAttribute('is', 'emby-tabs');
+            slider.className = 'emby-tabs-slider'; root.appendChild(slider);
+            if (onTabChange) root.addEventListener('tabchange', onTabChange);
+            function select(index) {
+                var previousIndex = root.selectedIndex;
+                root.selectedIndex = index;
+                Array.from(slider.children).forEach(function(button, buttonIndex) {
+                    button.className = 'emby-tab-button main-tab-button' + (buttonIndex === index ? ' emby-tab-button-active' : '');
+                    if (buttonIndex === index) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current');
+                });
+                root.dispatchEvent(new CustomEvent('tabchange', {detail: {selectedTabIndex: index, previousIndex: previousIndex}}));
+            }
+            root.selectedIndex = selectedIndex;
+            tabs.forEach(function(tab, index) {
+                var button = document.createElement('button');
+                button.className = 'emby-tab-button main-tab-button' + (index === selectedIndex ? ' emby-tab-button-active' : '');
+                button.textContent = tab.name; button.setAttribute('data-index', index);
+                if (index === selectedIndex) button.setAttribute('aria-current', 'page');
+                slider.appendChild(button);
+                button.addEventListener('click', function() { current = root; select(index); });
+            });
+            current = root;
+            host.replaceChildren(root); window.__pluginHeaderTabs = root;
+            return {tabsContainer: host, replaced: true};
+        },
+        getTabsElement: function() { return current; },
+        selectedTabIndex: function(index) {
+            if (!current || index == null) return;
+            var root = current, slider = root.querySelector('.emby-tabs-slider'), previousIndex = root.selectedIndex;
+            root.selectedIndex = index;
+            Array.from(slider.children).forEach(function(button, buttonIndex) {
+                button.className = 'emby-tab-button main-tab-button' + (buttonIndex === index ? ' emby-tab-button-active' : '');
+                if (buttonIndex === index) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current');
+            });
+            root.dispatchEvent(new CustomEvent('tabchange', {detail: {selectedTabIndex: index, previousIndex: previousIndex}}));
+        },
+        owner: function() { return owner; }
+    };
+});
+define('modules/appheader/appheader.js', ['exports'], function(exports) {
+    exports.default = {
+        setDefaultTitle: function() { document.title = 'Emby'; },
+        setTitle: function(title) { document.title = title == null ? 'Emby' : String(title); }
+    };
 });
 define('modules/common/usersettings/usersettings.js', ['exports'], function(exports) {
     exports.default = {language: function() { return 'en-us'; }, dateTimeLocale: function() { return 'en-us'; }};

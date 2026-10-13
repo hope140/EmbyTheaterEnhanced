@@ -40,6 +40,17 @@
 - 本轮风险/不确定性为Tier 2，Playback/Session影响为NONE。主线程沿用用户配置；明确测试及离线检查由GPT-6 Luna High执行，最终源码只读审核为GPT-6 Astra High，本次限定diff未发现明确P1/P2。没有扩大为架构重写。
 - 新私有验收入口继续使用独立appData/userData/sessionData/temp/MPV_HOME和新DeviceId，只复制自身布置的已授权登录种子，提供Open.cmd。可分享ZIP不含登录种子或机器_state。所有机器操作均为后台，真实前台结果、Host/系统安装/播放/远控及业务命令仍未执行；没有推送、PR、合并、Tag、Release、部署或NAS业务写入。
 
+## 2026-10-13 页签真实点击与标题修正
+
+- 用户对ceba1fd反馈三个页面能打开，记录为PAGE_OPEN_PASS / TAB_UX_NOT_ACCEPTED；不推断保存、全部页签或视觉已通过。上一轮页签矩阵使用direct router.show，仅保留读取/渲染证据。
+- 隐藏完整产品的HTMLElement.click复现RED：正文6个普通anchor，真实点击1次但tabchange/router/UI/View增量均0、目标和返回未提交；应用标题保持上一页。仅取得最小网页GenericUI模块的只读合同标识，未复制实现或私人截图。
+- 维护GenericUI复用原maintabsmanager/appheader/approuter的canonical实例，原生居中按钮经tabchange送入原router；正文链接移除，沿用原胶囊与focus样式，不新增全局CSS或overlay。有效普通页面Caption同步页头；header输入转义，document.title为纯文本，Dialog/Wizard保留父页标题。
+- 页签元素、异步路由恢复和标题依附controller/代际；通知只重建自己的元数据，pause/destroy不清理新owner。独立审核复现原selectedTabIndex同步派发tabchange导致失败恢复再导航，局部try/finally抑制重入，mock同步派发后原“只导航一次”断言通过。
+- 工作实验真实后台点击覆盖神医5个额外页签往返10次、Madby7个往返14次，总24次HTMLElement.click、24次router、24次UI/View；每步PageId、Caption/页头、选中pill、居中及一页可见匹配，离开到普通设置时旧组已清理，业务命令及非只读HTTP为0。实验与后续来源绑定复验分别记录，不能记为前台视觉PASS。
+- 定向28/28、公开773/773、材料130/130、隐藏合成45项通过；JS243文件/PS28文件语法、294个tracked文本的有限凭据扫描通过。CI diff wrapper首次缺环境参数属于harness输入错误，按既有合同与有效本地base重跑PASS；工作diff-check通过。
+- Task Risk/Uncertainty为Tier 2，Playback/Session影响NONE。主线程沿用用户配置，明确测试由GPT-6 Luna High执行，最终源码只读审核由GPT-6 Astra High执行，恢复重入P2已关闭。没有修改普通设置、播放、认证、窗口、依赖或产品版本。
+- 本地提交与来源绑定新产物仍采用独立路径，保留ceba客户端及授权登录副本。直接Electron入口和后台结果不代表Host、安装、真实播放或新修订视觉验收；没有推送、PR、合并、Tag、Release、部署或NAS业务写入。
+
 ## 2026-10-12
 
 - 整理 README 与 CHANGELOG，更新 v0.3.0 下载和版本导航。

@@ -1,6 +1,6 @@
 # 项目状态
 
-2026-10-13：268598b 候选的真实前台结果为 USER_REPORTED_FAIL：神医助手、Madby、Backup & Restore 均显示加载失败并保留旧页面。本次修正共享 AMD 身份重复实例及 Emby 4.10 的 RegularPage 协议；真实管理员只读后台工作实验已通过三个 controller/DOM、神医和 Madby 各两个额外页签、普通设置返回 Backup 的单页切换。公共回归770/770、材料层130/130、隐藏合成45项通过。正式产物的准确 sourceCommit、payload/provenance 及后台回执以独立验收包记录为准。产品版本保持0.3.1；本修订前台视觉仍待用户验收，直接 Electron 检查不代表 Host、安装或真实播放通过。详见 [兼容合同](PLUGIN_SETTINGS_COMPATIBILITY.md)。
+2026-10-13：用户确认ceba1fd的三个插件页面可打开，状态为PAGE_OPEN_PASS / TAB_UX_NOT_ACCEPTED。上一轮额外页签检查直接调用路由，只证明读取/渲染，未覆盖点击。此次复用原生居中页签管理器与胶囊选中态，补齐Caption与应用页头同步；真实后台工作实验通过神医5个、Madby7个额外页签的按钮点击及返回，共24次点击/路由/页面读取，每步标题、当前PageId、选中态及单页可见一致，普通设置清理旧页签。准确提交、来源绑定构建、回归及后台回执由独立验收包固定。产品版本保持0.3.1；新修订前台视觉待用户验收，Host、安装、真实播放及业务命令未验收。详见 [兼容合同](PLUGIN_SETTINGS_COMPATIBILITY.md)。
 
 2026-10-12：当前正式版为 [v0.3.1](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.1)，Windows x64。准确发行源码、安装器 SHA-256 和来源记录见 Release；同名 Tag 固定最终 main 源码。
 

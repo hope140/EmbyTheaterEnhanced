@@ -2,8 +2,8 @@ define(['exports', 'modules/viewmanager/baseview.js', 'modules/emby-apiclient/co
     'modules/emby-apiclient/events.js', 'modules/common/input/api.js', 'modules/common/globalize.js',
     'modules/genericedit/genericedit.js', './schema.js', './responsehelper.js',
     'modules/emby-elements/emby-scroller/emby-scroller.js', 'modules/emby-elements/emby-button/emby-button.js',
-    'modules/dialoghelper/dialoghelper.js'],
-function(exports, baseView, connection, events, notifications, globalize, genericEdit, schema, responseHelper, scroller, button, dialogHelper) {
+    'modules/dialoghelper/dialoghelper.js', 'modules/maintabsmanager.js', 'modules/appheader/appheader.js', 'modules/approuter.js'],
+function(exports, baseView, connection, events, notifications, globalize, genericEdit, schema, responseHelper, scroller, button, dialogHelper, mainTabs, appHeader, appRouter) {
     'use strict';
     // Canonical IDs reuse the initialized application singletons in Alameda.
     // This one standard Babel helper is referenced by the frozen field editor
@@ -17,6 +17,9 @@ function(exports, baseView, connection, events, notifications, globalize, generi
         this.pageId = params && params.PageId;
         this.generation = 0;
         this.active = false;
+        this.tabs = [];
+        this.tabRequest = 0;
+        this.boundTabChange = this.onTabChange.bind(this);
         this.boundUpdate = this.onUpdate.bind(this);
         this.boundClick = this.onClick.bind(this);
         this.boundSubmit = this.onSubmit.bind(this);
@@ -39,12 +42,19 @@ function(exports, baseView, connection, events, notifications, globalize, generi
         if (this.active) return;
         this.active = true;
         this.apiClient = connection.default.currentApiClient();
+        appHeader.default.setDefaultTitle();
+        if (this.pageData) {
+            this.renderTabs(this.pageData);
+            this.setHeaderTitle(this.pageData.Caption, this.generation);
+        }
         events.default.on(notifications.default, eventName, this.boundUpdate);
         this.load();
     };
     View.prototype.onPause = function() {
         this.active = false;
         this.generation++;
+        this.tabRequest++;
+        this.clearHeaderTabs();
         this.commandPending = false;
         events.default.off(notifications.default, eventName, this.boundUpdate);
         this.closeDialog();
@@ -135,7 +145,11 @@ function(exports, baseView, connection, events, notifications, globalize, generi
             self.data = data;
             self.pageId = data.PageId;
             if (isDialog) self.dialog = view;
-            if (!isDialog) { self.pageData = data; self.renderTabs(data); }
+            if (!isDialog) {
+                self.pageData = data;
+                self.renderTabs(data);
+                self.setHeaderTitle(data.Caption, generation);
+            }
             self.renderCommands(data);
             if (isDialog) dialogHelper.default.open(view);
         });
@@ -162,18 +176,70 @@ function(exports, baseView, connection, events, notifications, globalize, generi
         dialogHelper.default.close(dialog);
     };
     View.prototype.renderTabs = function(data) {
-        var nav = this.view.querySelector('.pluginTabs');
-        nav.replaceChildren();
-        data.TabPageInfos.forEach(function(tab) {
-            var href = schema.default.tabHref(tab.Href), element;
-            if (!href) return;
-            element = document.createElement('a');
-            element.textContent = tab.DisplayName || '';
-            element.href = href;
-            element.className = 'emby-button';
-            if (tab.PageId === data.PageId) element.setAttribute('aria-current', 'page');
-            nav.appendChild(element);
+        var self = this;
+        this.tabs = data.TabPageInfos.map(function(tab) {
+            return {PageId: tab.PageId, name: schema.default.escape(tab.DisplayName || ''), href: schema.default.tabHref(tab.Href)};
+        }).filter(function(tab) { return !!tab.href; });
+        if (!this.tabs.length) { this.clearHeaderTabs(); return; }
+        var index = this.tabIndex();
+        // Rebuild owned metadata on notifications; setTabs otherwise only
+        // changes selection when the owner view is unchanged.
+        if (this.headerTabsElement && mainTabs.default.getTabsElement() === this.headerTabsElement) mainTabs.default.setTabs(null);
+        // Native header tabs own selection, focus and the existing pill styles.
+        // Buttons use the native tabchange event instead of file:// anchors.
+        mainTabs.default.setTabs(this.view, index, function() {
+            return self.tabs.map(function(tab) { return {name: tab.name}; });
+        }, null, this.boundTabChange);
+        this.headerTabsElement = mainTabs.default.getTabsElement();
+        this.syncTabSelection(index);
+    };
+    View.prototype.tabIndex = function() {
+        var pageId = this.pageData && this.pageData.PageId;
+        var index = this.tabs.findIndex(function(tab) { return tab.PageId === pageId; });
+        return index < 0 ? 0 : index;
+    };
+    View.prototype.syncTabSelection = function(index) {
+        if (!this.headerTabsElement) return;
+        this.headerTabsElement.setAttribute('role', 'tablist');
+        this.headerTabsElement.querySelectorAll('.emby-tab-button').forEach(function(element, buttonIndex) {
+            element.setAttribute('role', 'tab');
+            element.setAttribute('aria-selected', buttonIndex === index ? 'true' : 'false');
+            if (buttonIndex === index) element.setAttribute('aria-current', 'page');
+            else element.removeAttribute('aria-current');
         });
+    };
+    View.prototype.onTabChange = function(event) {
+        if (this.restoringTabSelection || !this.active || !this.view || event.currentTarget !== this.headerTabsElement || mainTabs.default.getTabsElement() !== this.headerTabsElement) return;
+        var index = event.detail && event.detail.selectedTabIndex;
+        if (!Number.isInteger(index) || index < 0 || index >= this.tabs.length) return;
+        var tab = this.tabs[index];
+        var self = this, request = ++this.tabRequest;
+        this.syncTabSelection(index);
+        function restoreSelection() {
+            if (!self.active || request !== self.tabRequest || mainTabs.default.getTabsElement() !== self.headerTabsElement) return;
+            // Native selectedTabIndex synchronously emits tabchange too.
+            // Restoring a failed intent must not create another navigation.
+            self.restoringTabSelection = true;
+            try { mainTabs.default.selectedTabIndex(self.tabIndex()); }
+            finally { self.restoringTabSelection = false; }
+            self.syncTabSelection(self.tabIndex());
+        }
+        try { Promise.resolve(appRouter.default.show(tab.href)).catch(restoreSelection); }
+        catch (_) { restoreSelection(); }
+    };
+    View.prototype.clearHeaderTabs = function() {
+        if (this.headerTabsElement && mainTabs.default.getTabsElement() === this.headerTabsElement) mainTabs.default.setTabs(null);
+        this.headerTabsElement = null;
+        this.tabs = [];
+    };
+    View.prototype.setHeaderTitle = function(caption, generation) {
+        if (!this.current(generation)) return;
+        caption = typeof caption === 'string' ? caption : '';
+        var escaped = schema.default.escape(caption);
+        this.view.setAttribute('data-title', escaped);
+        // The inherited header writes HTML; browser title remains plain text.
+        appHeader.default.setTitle(escaped);
+        document.title = caption || 'Emby';
     };
     View.prototype.renderCommands = function(data) {
         var container = this.root().querySelector('.pluginCommands');

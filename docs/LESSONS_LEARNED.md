@@ -12,3 +12,4 @@
 - GenericUI 可复用旧通知出口；新版同名模块依赖不同不能作为替换整个共享 input/API 或播放栈的理由。合成 schema 通过仍需真实插件前台验证。
 - Alameda 按规范化的 AMD 标识缓存实例，不按最终文件路径去重。维护目录中的共享依赖应引用原 `modules/...` 标识；同文件的 `../www/modules/...` 会重复创建未初始化的 service locator/appsettings 等实例，必须用真实应用加载链验证。
 - 真实插件协议枚举不能由合成 fixture 推断。Emby 4.10 的普通 GenericUI 响应使用 `RegularPage`；应先取得只读结构证据，再验证真实 controller 和 DOM，错误提示出现不能记为兼容通过。
+- 页签direct route检查与真实按钮点击是不同证据。使用原生tab组件时，程序selectedTabIndex同样触发tabchange；恢复选中态必须抑制自己的处理器，mock也必须保留此行为。动态Caption只更新正文不能更新应用页头，标题更新还需转义及请求归属保护。

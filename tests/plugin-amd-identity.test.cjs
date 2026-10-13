@@ -14,6 +14,9 @@ const loaderPath = path.join(webRoot, 'modules/alameda/alameda.js');
 const moduleContracts = {
     'genericui.js': [
         'modules/viewmanager/baseview.js',
+        'modules/maintabsmanager.js',
+        'modules/appheader/appheader.js',
+        'modules/approuter.js',
         'modules/emby-apiclient/connectionmanager.js',
         'modules/emby-apiclient/events.js',
         'modules/common/input/api.js',
