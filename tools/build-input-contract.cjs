@@ -22,7 +22,7 @@ const INPUT_PATHS = Object.freeze([
     'tools/build-input-provenance.cjs', 'tools/copy-tracked-product-sources.cjs',
     'tools/build-toolchains.cjs', 'tools/build-toolchains.lock.json',
     'tools/tracked-file-hash.cjs', 'tools/prepare-preload.cjs',
-    'tools/prepare-web-overlays.cjs', 'tools/patch-external-player-registration.cjs',
+    'tools/prepare-web-overlays.cjs', 'tools/patch-external-player-registration.cjs', 'tools/patch-plugin-settings.cjs',
     'tools/patch-playbackmanager.cjs', 'tools/runtime-exclusions.cjs',
     'tools/copy-runtime-dependencies.cjs', 'tools/electron-runtime-input.cjs',
     'tools/runtime-dependency-contract.cjs',

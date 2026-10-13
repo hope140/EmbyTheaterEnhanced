@@ -24,6 +24,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/package.ps1
 
 构建从已验证的 vendor 输入生成 runtime，物化官方 Electron 目录，从 `<sourceCommit>` 读取 `src/electronapp` 的 Git blobs，再按各自 contract 生成 preload/Web overlay、复制 production dependencies、应用 PlaybackManager overlay、替换固定 libmpv 并写 provenance 与 payload manifest。普通源码直接写 Git blob bytes，不把 dirty/staged checkout 内容当作所选提交源码。Web overlay 只接受 manifest 中固定的 base、payload 与 generator；任一 hash 或锚点不匹配即停止。
 
+插件设置兼容候选串联 app 路由/别名变换，并新增 viewmanager 与 approuter 的窄取消/事务 overlay。维护模块从 `src/electronapp/enhanced/plugin-ui` 的 Git blobs 进入 runtime，完整 ignored Web snapshot 仍不作为输入。候选未提交时 build-input 门禁拒绝组装；材料 fixture 和隐藏实验不能替代新 sourceCommit 的正式构建。详见 [兼容合同](PLUGIN_SETTINGS_COMPATIBILITY.md)。
+
 `source-provenance.json` 记录外部归档、manifest、runtime/Web 输入、Electron、Native Helper、libmpv 与 production dependencies；`runtime-provenance.json` 绑定 Git 源码和生成 overlay；`build-manifest.json` schema 3 绑定 source commit、输入与 provenance 及 canonical payload-set digest。打包前校验路径、重复项、完整 file set、逐文件 SHA256 和 provenance binding。Inno 递归复制已验证 runtime；`-RuntimeName` 选择目标，`-OutputBaseFilename` 只设安装包文件名。
 
 ## 安装和可重复性边界

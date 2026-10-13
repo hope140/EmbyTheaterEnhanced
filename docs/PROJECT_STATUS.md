@@ -1,5 +1,7 @@
 # 项目状态
 
+2026-10-13：插件设置兼容候选已完成本地实现与后台合同验证，基线为 v0.3.1 / 080d352。主会话对上一封存修订完成审核及公开回归 761/761。最后两项 P2 修正后的定向测试 56/56、overlay/provenance fixture 6/6、隐藏 Electron 45 项通过；旧版公开回归不改写为本修订全套结果。当前待主会话确认 P2 收口及本地提交授权，真实神医助手、Madby、Backup & Restore 的前台结果尚未验证。详见 [兼容合同](PLUGIN_SETTINGS_COMPATIBILITY.md)。
+
 2026-10-12：当前正式版为 [v0.3.1](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.1)，Windows x64。准确发行源码、安装器 SHA-256 和来源记录见 Release；同名 Tag 固定最终 main 源码。
 
 已提供原生 libmpv 播放、STRM/CD2 与挂载回退、智能路径映射、诊断导出及设置页维护功能。v0.3.0 增加中英文安装器，并修复 Together 同步切集的透明屏及媒体替换状态清理。

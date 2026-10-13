@@ -4,10 +4,12 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const externalPlayerRegistration = require('./patch-external-player-registration.cjs');
+const pluginSettings = require('./patch-plugin-settings.cjs');
 const trackedFileHash = require('./tracked-file-hash.cjs');
 
 const GENERATOR_PATH = 'tools/prepare-web-overlays.cjs';
 const APP_GENERATOR_PATH = 'tools/patch-external-player-registration.cjs';
+const PLUGIN_GENERATOR_PATH = 'tools/patch-plugin-settings.cjs';
 
 const WEB_OVERLAY_CONTRACT = Object.freeze([
     Object.freeze({
@@ -40,8 +42,30 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/app.js',
         expectedBaseSha256: '3EF3102567458359A02E2FE8F79A8700CFE9C223347ABE5AB6ECB8BD93BE89D2',
         expectedInputSha256: null,
-        expectedOutputSha256: 'A5A3CDDCF279496EE3792EE0E29F7CD347F969C5EB3876C284CC990DF9755F08',
-        generatorPaths: Object.freeze([GENERATOR_PATH, APP_GENERATOR_PATH])
+        expectedOutputSha256: '48D5C7FF151B6E1B253C83664B9F7637D9C007823C6A8737E130E77F9511541C',
+        generatorPaths: Object.freeze([GENERATOR_PATH, APP_GENERATOR_PATH, PLUGIN_GENERATOR_PATH])
+    }),
+    Object.freeze({
+        id: 'plugin-viewmanager',
+        mode: 'tracked-canonical-transform',
+        basePath: 'vendor/carnival/electronapp/www/modules/viewmanager/viewmanager.js',
+        inputPath: null,
+        runtimePath: 'electronapp/www/modules/viewmanager/viewmanager.js',
+        expectedBaseSha256: 'A15C0615FB7B2F69A0EAAF7052B9CDD6317E6A58D9D2B2D2C5B407ED4A95E1E3',
+        expectedInputSha256: null,
+        expectedOutputSha256: 'EDEE65987D3AC9834FFE6DCA704D054FC70D5991A8199F884FFB5ED02A989F19',
+        generatorPaths: Object.freeze([GENERATOR_PATH, PLUGIN_GENERATOR_PATH])
+    }),
+    Object.freeze({
+        id: 'plugin-router',
+        mode: 'tracked-canonical-transform',
+        basePath: 'vendor/carnival/electronapp/www/modules/approuter.js',
+        inputPath: null,
+        runtimePath: 'electronapp/www/modules/approuter.js',
+        expectedBaseSha256: 'CF4621BF3865BDE1ECB77BEFB2BEA67A0B4B505FC285BC83B743A880C4306AA1',
+        expectedInputSha256: null,
+        expectedOutputSha256: '3A2A73970AEA9156C79BCF5545693904B69A4C448854FA3BAAF4EEB6DD621691',
+        generatorPaths: Object.freeze([GENERATOR_PATH, PLUGIN_GENERATOR_PATH])
     })
 ]);
 
@@ -75,7 +99,13 @@ function outputFor(root, contract) {
         if (transformed.action !== 'patched') {
             throw new Error('Web overlay canonical transform did not patch the frozen app.js base.');
         }
-        return {base, input: Buffer.from(transformed.text, 'utf8')};
+        return {base, input: Buffer.from(pluginSettings.patchApp(transformed.text), 'utf8')};
+    }
+    if (contract.id === 'plugin-viewmanager' && contract.mode === 'tracked-canonical-transform') {
+        return {base, input: Buffer.from(pluginSettings.patchViewManager(base.toString('utf8')), 'utf8')};
+    }
+    if (contract.id === 'plugin-router' && contract.mode === 'tracked-canonical-transform') {
+        return {base, input: Buffer.from(pluginSettings.patchRouter(base.toString('utf8')), 'utf8')};
     }
     throw new Error('Unsupported Web overlay contract: ' + contract.id);
 }
