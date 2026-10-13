@@ -26,7 +26,8 @@ define(['exports'], function(exports) {
     function prepare(data) {
         var copy = clone(data, 0, {n: 0});
         if (!copy || typeof copy.PageId !== 'string' || typeof copy.ViewId !== 'string' || !copy.EditObjectContainer || !copy.EditObjectContainer.EditorRoot) throw new Error('Invalid plugin schema');
-        if (copy.ViewType && ['Page', 'Dialog', 'Wizard'].indexOf(copy.ViewType) < 0) throw new Error('Unsupported plugin view');
+        // Emby 4.10 names a regular page RegularPage; retain its wire value.
+        if (copy.ViewType && ['Page', 'RegularPage', 'Dialog', 'Wizard'].indexOf(copy.ViewType) < 0) throw new Error('Unsupported plugin view');
         var container = copy.EditObjectContainer;
         if (!container.Object || typeof container.Object !== 'object' || Array.isArray(container.Object)) throw new Error('Invalid plugin values');
         container.DefaultObject = container.DefaultObject || {};

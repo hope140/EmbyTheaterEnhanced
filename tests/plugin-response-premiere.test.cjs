@@ -42,8 +42,8 @@ test('response helper rejection and alert are static safe errors; AbortError sta
     const loading = {default: {hideCalls: 0, hide() { this.hideCalls++; }}};
     const globalize = {default: {translate: key => key}};
     const helper = loadAmd('responsehelper.js', {
-        '../../www/modules/loading/loading.js': loading,
-        '../../www/modules/common/globalize.js': globalize
+        'modules/loading/loading.js': loading,
+        'modules/common/globalize.js': globalize
     }, {
         require(ids) { return Promise.resolve(ids.map(id => id === 'alert' ? options => { alerts.push(options); return Promise.resolve(); } : {})); },
         console: {log(...args) { logs.push(args); }, error(...args) { logs.push(args); }, warn(...args) { logs.push(args); }}
@@ -73,8 +73,8 @@ for (const failurePhase of ['require-reject', 'require-throw', 'alert-reject']) 
     test('response helper sanitizes downstream ' + failurePhase + ' rejection', async () => {
         const raw = {status: 404, url: 'https://private.invalid', headers: {Authorization: 'synthetic-token'}, responseText: 'private server payload'};
         const helper = loadAmd('responsehelper.js', {
-            '../../www/modules/loading/loading.js': {default: {hide() {}}},
-            '../../www/modules/common/globalize.js': {default: {translate: key => key}}
+            'modules/loading/loading.js': {default: {hide() {}}},
+            'modules/common/globalize.js': {default: {translate: key => key}}
         }, {require() {
             if (failurePhase === 'require-throw') throw raw;
             if (failurePhase === 'require-reject') return Promise.reject(raw);
@@ -97,8 +97,8 @@ function premiereHarness(validateFeature, isUnlockedByDefault) {
     const registrations = new Map(), calls = [];
     const customElements = {get(name) { return registrations.get(name); }, define(name, constructor, options) { registrations.set(name, constructor); calls.push({name, constructor, options}); }};
     const Premiere = loadAmd('premierecontainer.js', {
-        '../../www/modules/registrationservices/registrationservices.js': {default: {validateFeature(...args) { calls.push({validateArgs: args}); return validateFeature(...args); }}},
-        '../../www/modules/common/servicelocator.js': {iapManager: {isUnlockedByDefault(feature) { calls.push({unlockFeature: feature}); return isUnlockedByDefault(feature); }}}
+        'modules/registrationservices/registrationservices.js': {default: {validateFeature(...args) { calls.push({validateArgs: args}); return validateFeature(...args); }}},
+        'modules/common/servicelocator.js': {iapManager: {isUnlockedByDefault(feature) { calls.push({unlockFeature: feature}); return isUnlockedByDefault(feature); }}}
     }, {HTMLDivElement: FakeDiv, customElements});
     return {Premiere, customElements, calls};
 }

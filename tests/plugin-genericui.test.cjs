@@ -150,17 +150,17 @@ function runtime(options = {}) {
     }};
     const schema = loadAmd('schema.js', {});
     const document = new FakeDocument();
-    const deps = {'../../www/modules/viewmanager/baseview.js': {default: base},
-        '../../www/modules/emby-apiclient/connectionmanager.js': {default: {currentApiClient: () => client}},
-        '../../www/modules/emby-apiclient/events.js': {default: events},
-        '../../www/modules/common/input/api.js': {default: {}},
-        '../../www/modules/common/globalize.js': globalize,
-        '../../www/modules/genericedit/genericedit.js': genericEdit, './schema.js': {default: schema}, './responsehelper.js': {default: {}},
-        '../../www/modules/emby-elements/emby-scroller/emby-scroller.js': {}, '../../www/modules/emby-elements/emby-button/emby-button.js': {},
-        '../../www/modules/dialoghelper/dialoghelper.js': {default: {created: [], opened: [], closed: [], createDialog(config) { const dialog = new Element('div'); dialog.config = config; this.created.push(dialog); return dialog; }, open(dialog) { this.opened.push(dialog); }, close(dialog) { this.closed.push(dialog); dialog.dispatch('close'); }}},
+    const deps = {'modules/viewmanager/baseview.js': {default: base},
+        'modules/emby-apiclient/connectionmanager.js': {default: {currentApiClient: () => client}},
+        'modules/emby-apiclient/events.js': {default: events},
+        'modules/common/input/api.js': {default: {}},
+        'modules/common/globalize.js': globalize,
+        'modules/genericedit/genericedit.js': genericEdit, './schema.js': {default: schema}, './responsehelper.js': {default: {}},
+        'modules/emby-elements/emby-scroller/emby-scroller.js': {}, 'modules/emby-elements/emby-button/emby-button.js': {},
+        'modules/dialoghelper/dialoghelper.js': {default: {created: [], opened: [], closed: [], createDialog(config) { const dialog = new Element('div'); dialog.config = config; this.created.push(dialog); return dialog; }, open(dialog) { this.opened.push(dialog); }, close(dialog) { this.closed.push(dialog); dialog.dispatch('close'); }}},
         require: ids => Promise.resolve(ids.map(id => ({'alert': () => Promise.resolve(), 'toast': () => {}, 'confirm': options.confirm || (() => Promise.resolve()), 'appRouter': {show() {}}}[id] || {}))), document};
     const View = loadAmd('genericui.js', deps);
-    return {View, client, events, requests, editorCalls, document, dialogHelper: deps['../../www/modules/dialoghelper/dialoghelper.js'].default, schema};
+    return {View, client, events, requests, editorCalls, document, dialogHelper: deps['modules/dialoghelper/dialoghelper.js'].default, schema};
 }
 
 async function tick() { await Promise.resolve(); await Promise.resolve(); }

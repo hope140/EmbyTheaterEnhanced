@@ -29,6 +29,17 @@
 - 明确脚本任务由 GPT-6 Luna High 执行，隔离脚本最终只读审核由 GPT-6 Astra High 完成。审核发现的状态文件链接写入、根目录父层重解析边界及 Electron ASAR 物理文件校验问题已修复；环境字典保持对象返回，避免 PowerShell 枚举破坏子进程隔离环境。
 - 本验收包直接运行 Electron，不能称为 Host 或安装等价验证。HTTP(S) 护栏限定默认 Chromium session，拒绝 UI/Command 与非浏览请求（登录/能力注册除外）；不证明任意插件 GET 或其它协议都无副作用。真实三个插件视觉、播放及远控结果尚未执行。
 
+## 2026-10-13 真实插件失败复现与修正
+
+- 268598b 的前台三插件结果为 USER_REPORTED_FAIL，静态 fallback 提示不代表修复。旧764/764及合成45项继续保留原来源及覆盖范围。
+- 初始授权登录种子与最新已关闭隔离会话的选择比较为 server MATCH、user DIFFERENT；最新副本经只读 API 验证为管理员。仅使用用户授权的登录副本，复制源文件前后哈希保持，不读取其他 profile，不输出身份、URL、凭据或配置值。
+- 神医和 Madby 的真实 UI/View 均HTTP200，协议类型为 RegularPage；旧 schema 拒绝该类型，形成明确RED。维护schema仅增加该普通页面枚举并保留wire value，未知类型拒绝保持。
+- 真实完整产品路由在 controller-import/view-load 阶段又复现失败。维护模块的 ../../www/modules 相对引用在 Alameda 中形成 ../www/modules 第二身份，得到未初始化的共享实例。仅将三个维护模块的共享依赖改为原 modules/... 身份，自有schema/helper仍使用相对引用；未修改共享模块、认证或播放链。
+- 新增最小合成协议与真实 Alameda 身份回归，保留 RegularPage RED及三模块 identity RED。旧fake/hidden registry同步canonical身份，既有行为和安全断言保持。定向35/35、新合同6/6、公共770/770、材料130/130、隐藏45项通过；语法及有限凭据模式扫描通过。
+- 工作实验只覆盖四个维护模块，完整产品其余字节保持。真实后台GREEN包括神医/Madby首载表单与各两个额外页签、Backup真实HTML/controller及BackupRestore/BackupInfo HTTP200、普通设置往返；controller和DOM均有证据，每次只有一个可见当前页。实验不冒充source-bound产物；最终提交重建与产物回执另行固定准确身份。
+- 本轮风险/不确定性为Tier 2，Playback/Session影响为NONE。主线程沿用用户配置；明确测试及离线检查由GPT-6 Luna High执行，最终源码只读审核为GPT-6 Astra High，本次限定diff未发现明确P1/P2。没有扩大为架构重写。
+- 新私有验收入口继续使用独立appData/userData/sessionData/temp/MPV_HOME和新DeviceId，只复制自身布置的已授权登录种子，提供Open.cmd。可分享ZIP不含登录种子或机器_state。所有机器操作均为后台，真实前台结果、Host/系统安装/播放/远控及业务命令仍未执行；没有推送、PR、合并、Tag、Release、部署或NAS业务写入。
+
 ## 2026-10-12
 
 - 整理 README 与 CHANGELOG，更新 v0.3.0 下载和版本导航。

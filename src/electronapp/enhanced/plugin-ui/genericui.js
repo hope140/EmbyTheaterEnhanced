@@ -1,10 +1,11 @@
-define(['exports', '../../www/modules/viewmanager/baseview.js', '../../www/modules/emby-apiclient/connectionmanager.js',
-    '../../www/modules/emby-apiclient/events.js', '../../www/modules/common/input/api.js', '../../www/modules/common/globalize.js',
-    '../../www/modules/genericedit/genericedit.js', './schema.js', './responsehelper.js',
-    '../../www/modules/emby-elements/emby-scroller/emby-scroller.js', '../../www/modules/emby-elements/emby-button/emby-button.js',
-    '../../www/modules/dialoghelper/dialoghelper.js'],
+define(['exports', 'modules/viewmanager/baseview.js', 'modules/emby-apiclient/connectionmanager.js',
+    'modules/emby-apiclient/events.js', 'modules/common/input/api.js', 'modules/common/globalize.js',
+    'modules/genericedit/genericedit.js', './schema.js', './responsehelper.js',
+    'modules/emby-elements/emby-scroller/emby-scroller.js', 'modules/emby-elements/emby-button/emby-button.js',
+    'modules/dialoghelper/dialoghelper.js'],
 function(exports, baseView, connection, events, notifications, globalize, genericEdit, schema, responseHelper, scroller, button, dialogHelper) {
     'use strict';
+    // Canonical IDs reuse the initialized application singletons in Alameda.
     // This one standard Babel helper is referenced by the frozen field editor
     // but absent from its helper bundle. Never replace a supplied helper.
     if (typeof babelHelpers !== 'undefined' && !babelHelpers.toConsumableArray) {

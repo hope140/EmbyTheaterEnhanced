@@ -1,4 +1,4 @@
-define(['exports', '../../www/modules/loading/loading.js', '../../www/modules/common/globalize.js'], function(exports, loading, globalize) {
+define(['exports', 'modules/loading/loading.js', 'modules/common/globalize.js'], function(exports, loading, globalize) {
     'use strict';
     function message(response) {
         if (response && response.status === 401) return 'Plugin request denied. Sign in again.';

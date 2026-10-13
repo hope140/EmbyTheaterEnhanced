@@ -22,18 +22,18 @@
         define(name, [target], function(value) { return value; });
     }
     function aliases() {
-        defineAlias('baseView', 'www/modules/viewmanager/baseview.js');
-        defineAlias('datetime', 'www/modules/common/datetime.js');
-        defineAlias('globalize', 'www/modules/common/globalize.js');
-        defineAlias('apphost', 'www/modules/apphost.js');
-        defineAlias('loading', 'www/modules/loading/loading.js');
-        defineAlias('pluginManager', 'www/modules/common/pluginmanager.js');
+        defineAlias('baseView', 'modules/viewmanager/baseview.js');
+        defineAlias('datetime', 'modules/common/datetime.js');
+        defineAlias('globalize', 'modules/common/globalize.js');
+        defineAlias('apphost', 'modules/apphost.js');
+        defineAlias('loading', 'modules/loading/loading.js');
+        defineAlias('pluginManager', 'modules/common/pluginmanager.js');
         defineAlias('responseHelper', 'enhanced/plugin-ui/responsehelper.js');
-        defineAlias('emby-input', 'www/modules/emby-elements/emby-input/emby-input.js');
-        defineAlias('emby-button', 'www/modules/emby-elements/emby-button/emby-button.js');
-        defineAlias('emby-checkbox', 'www/modules/emby-elements/emby-checkbox/emby-checkbox.js');
-        defineAlias('emby-scroller', 'www/modules/emby-elements/emby-scroller/emby-scroller.js');
-        defineAlias('emby-select', 'www/modules/emby-elements/emby-select/emby-select.js');
+        defineAlias('emby-input', 'modules/emby-elements/emby-input/emby-input.js');
+        defineAlias('emby-button', 'modules/emby-elements/emby-button/emby-button.js');
+        defineAlias('emby-checkbox', 'modules/emby-elements/emby-checkbox/emby-checkbox.js');
+        defineAlias('emby-scroller', 'modules/emby-elements/emby-scroller/emby-scroller.js');
+        defineAlias('emby-select', 'modules/emby-elements/emby-select/emby-select.js');
         defineAlias('emby-premierecontainer', 'enhanced/plugin-ui/premierecontainer.js');
     }
     function requireAll(ids) {
@@ -70,13 +70,13 @@
     var moduleIds = [
         'baseView', 'datetime', 'globalize', 'apphost', 'loading', 'pluginManager', 'responseHelper',
         'emby-input', 'emby-button', 'emby-checkbox', 'emby-scroller', 'emby-select', 'emby-premierecontainer',
-        'www/modules/dom.js', 'www/modules/emby-apiclient/events.js', 'www/modules/genericedit/genericedit.js',
+        'modules/dom.js', 'modules/emby-apiclient/events.js', 'modules/genericedit/genericedit.js',
         'enhanced/plugin-ui/genericui.js', 'enhanced/plugin-ui/schema.js',
-        'www/modules/viewmanager/baseview.js', 'www/modules/common/datetime.js', 'www/modules/common/globalize.js',
-        'www/modules/apphost.js', 'www/modules/loading/loading.js', 'www/modules/common/pluginmanager.js',
-        'enhanced/plugin-ui/responsehelper.js', 'www/modules/emby-elements/emby-input/emby-input.js',
-        'www/modules/emby-elements/emby-button/emby-button.js', 'www/modules/emby-elements/emby-checkbox/emby-checkbox.js',
-        'www/modules/emby-elements/emby-scroller/emby-scroller.js', 'www/modules/emby-elements/emby-select/emby-select.js',
+        'modules/viewmanager/baseview.js', 'modules/common/datetime.js', 'modules/common/globalize.js',
+        'modules/apphost.js', 'modules/loading/loading.js', 'modules/common/pluginmanager.js',
+        'enhanced/plugin-ui/responsehelper.js', 'modules/emby-elements/emby-input/emby-input.js',
+        'modules/emby-elements/emby-button/emby-button.js', 'modules/emby-elements/emby-checkbox/emby-checkbox.js',
+        'modules/emby-elements/emby-scroller/emby-scroller.js', 'modules/emby-elements/emby-select/emby-select.js',
         'enhanced/plugin-ui/premierecontainer.js'
     ];
     requireAll(moduleIds).then(function(loaded) {
@@ -203,7 +203,7 @@
 }());
 
 // The renderer-side transport is synthetic and remains on loopback.
-define('www/modules/emby-apiclient/connectionmanager.js', ['exports'], function(exports) {
+define('modules/emby-apiclient/connectionmanager.js', ['exports'], function(exports) {
     var client = {
         getUrl: function(name, query) {
             var params = new URLSearchParams(query || {});
@@ -220,28 +220,28 @@ define('www/modules/emby-apiclient/connectionmanager.js', ['exports'], function(
     exports.default = {currentApiClient: function() { return client; }};
 });
 
-define('www/modules/common/input/api.js', ['exports'], function(exports) { exports.default = window.__notifications = {}; });
-define('www/modules/layoutmanager.js', ['exports'], function(exports) { exports.default = {tv: false}; });
-define('www/modules/browser.js', ['exports'], function(exports) { exports.default = {android: false}; });
-define('www/modules/actionsheet/actionsheet.js', ['exports'], function(exports) { exports.default = {}; });
-define('www/modules/dialoghelper/dialoghelper.js', ['exports'], function(exports) {
+define('modules/common/input/api.js', ['exports'], function(exports) { exports.default = window.__notifications = {}; });
+define('modules/layoutmanager.js', ['exports'], function(exports) { exports.default = {tv: false}; });
+define('modules/browser.js', ['exports'], function(exports) { exports.default = {android: false}; });
+define('modules/actionsheet/actionsheet.js', ['exports'], function(exports) { exports.default = {}; });
+define('modules/dialoghelper/dialoghelper.js', ['exports'], function(exports) {
     exports.default = {createDialog: function() { throw new Error('dialog path not in scope'); }, open: function() {}, close: function() {}};
 });
-define('www/modules/approuter.js', ['exports'], function(exports) {
+define('modules/approuter.js', ['exports'], function(exports) {
     exports.default = {handleAnchorClick: function() {}, getRouteInfo: function() { return null; }, show: function() {}};
 });
-define('www/modules/common/usersettings/usersettings.js', ['exports'], function(exports) {
+define('modules/common/usersettings/usersettings.js', ['exports'], function(exports) {
     exports.default = {language: function() { return 'en-us'; }, dateTimeLocale: function() { return 'en-us'; }};
 });
-define('www/modules/common/servicelocator.js', ['exports'], function(exports) {
+define('modules/common/servicelocator.js', ['exports'], function(exports) {
     exports.appHost = {supports: function() { return false; }};
     exports.iapManager = {isUnlockedByDefault: function() { return Promise.reject({}); }};
 });
-define('www/modules/registrationservices/registrationservices.js', ['exports'], function(exports) {
+define('modules/registrationservices/registrationservices.js', ['exports'], function(exports) {
     exports.default = {validateFeature: function() { return Promise.resolve(); }};
 });
-define('www/modules/common/appsettings.js', ['exports'], function(exports) { exports.default = {}; });
-define('www/modules/alert.js', [], function() { return Promise.resolve(); });
+define('modules/common/appsettings.js', ['exports'], function(exports) { exports.default = {}; });
+define('modules/alert.js', [], function() { return Promise.resolve(); });
 define('alert', [], function() { return function() { window.__p2Alerts = (window.__p2Alerts || 0) + 1; return Promise.resolve(); }; });
-define('www/modules/toast.js', [], function() { return function() {}; });
+define('modules/toast.js', [], function() { return function() {}; });
 ['listViewStyle', 'formDialogStyle', 'flexStyles', 'material-icons'].forEach(function(id) { define(id, [], function() { return {}; }); });

@@ -1,4 +1,4 @@
-define(['exports', '../../www/modules/registrationservices/registrationservices.js', '../../www/modules/common/servicelocator.js'], function(exports, registration, services) {
+define(['exports', 'modules/registrationservices/registrationservices.js', 'modules/common/servicelocator.js'], function(exports, registration, services) {
     'use strict';
     // Compatibility display element only. Reuse existing entitlement checks;
     // this does not unlock features or introduce an authentication route.
