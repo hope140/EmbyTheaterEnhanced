@@ -10,7 +10,7 @@
 - 新维护模块补齐传统两个依赖与 GenericUI 页面、页签、字段、命令、通知、Dialog/Wizard 生命周期。NAS 只读资源用于协议对照；没有复制其实现、执行 DLL、保存设置或触发命令。
 - 首轮公开离线测试 741/741；后续公开集合一次运行 760 项，759 通过、1 项旧 transform 断言失败，该断言已同步并在增量集合复测通过。材料层完整适用测试 82/82，最后生成器变更再验 overlay/provenance fixture；最新插件相关增量集合 70/70。按收尾指示保留原始结果，不重复已完成矩阵或合并成一次准确候选全套绿色声明。
 - 隐藏 Electron 44.4.2 合成 fixture 42 项通过，真实 AMD/字段编辑器与控件、13 组传统依赖 identity 均有机器证据，配置/命令只发往 loopback。最后取消入口先拒绝已 abort signal；子菜单显示副本安全转义，命令和确认由 canonical metadata 恢复，ItemList 动作提示补齐。真实三个插件前台结果仍待验收。
-- 正式源码绑定构建已实际拒绝未提交生成器，门禁保持；没有提交、推送、发布、部署、系统安装或真实 profile/前台操作。候选实验不能称为正式 package/provenance 通过。
+- 提交前源码绑定构建曾拒绝未提交生成器，门禁保持；该阶段实验未取得正式 package/provenance 通过证据。后续本地提交及构建结果见下方交付记录。
 
 ## 2026-10-13 最终审核两项 P2 收口
 
@@ -19,6 +19,15 @@
 - 插件导航与 GenericUI router 的错误 toast 在实际 AMD 回调执行时重新校验请求归属；新增 deferred 模块测试保留 RED 42/46、修复后 GREEN 46/46。当前有效失败提示及 signal 单独取消均有断言。
 - 两项修复由主线程实现，明确 toast 测试由 GPT-6 Luna High 执行；冻结核心、依赖、认证与业务接口保持。后续证据与重新封存文件以本次 P2 报告为准。
 - 收口定向 56/56，受影响 overlay/provenance fixture 6/6；隐藏 Electron 45 项通过，其中新增3项直接检查浏览器中的 typed rejection、敏感字段清理及 AbortError 静默。7个受影响脚本语法/有限凭据扫描与 diff-check 通过。旧761/761保持上一封存修订身份，未重复完整公开矩阵。
+
+## 2026-10-13 本地提交与隔离验收交付
+
+- 用户授权精确审核的31文件本地提交及必要状态同步、构建与后台验证。实现提交 d4440ed；仅整理7个测试文件末尾多余空行，保留代码逻辑与原换行。没有推送、PR、合并、Tag、Release、部署或系统安装。
+- 提交后公开离线测试 764/764、材料层测试 130/130、隐藏 Electron 合成验证45项通过，前台动作为 NONE。旧761/761继续保留此前封存修订身份。
+- 固定输入与完整工具链通过校验，源码绑定构建、2144项 payload 集合和三层 provenance 校验通过；native helper 为正常构建，testing=false。状态同步后从最终提交重新构建，准确交付身份见产物清单。
+- 隔离入口在 bootstrap 前绑定 appData、userData、sessionData、temp、日志、crashDumps 与 MPV_HOME，生成新 DeviceId，不复制现用 profile 或凭据。后台探针加载实际主页面并抑制显示调用；启动 dry-run 通过。
+- 明确脚本任务由 GPT-6 Luna High 执行，隔离脚本最终只读审核由 GPT-6 Astra High 完成。审核发现的状态文件链接写入、根目录父层重解析边界及 Electron ASAR 物理文件校验问题已修复；环境字典保持对象返回，避免 PowerShell 枚举破坏子进程隔离环境。
+- 本验收包直接运行 Electron，不能称为 Host 或安装等价验证。HTTP(S) 护栏限定默认 Chromium session，拒绝 UI/Command 与非浏览请求（登录/能力注册除外）；不证明任意插件 GET 或其它协议都无副作用。真实三个插件视觉、播放及远控结果尚未执行。
 
 ## 2026-10-12
 

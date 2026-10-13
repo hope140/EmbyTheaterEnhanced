@@ -1,6 +1,6 @@
 # 项目状态
 
-2026-10-13：插件设置兼容候选已完成本地实现与后台合同验证，基线为 v0.3.1 / 080d352。主会话对上一封存修订完成审核及公开回归 761/761。最后两项 P2 修正后的定向测试 56/56、overlay/provenance fixture 6/6、隐藏 Electron 45 项通过；旧版公开回归不改写为本修订全套结果。当前待主会话确认 P2 收口及本地提交授权，真实神医助手、Madby、Backup & Restore 的前台结果尚未验证。详见 [兼容合同](PLUGIN_SETTINGS_COMPATIBILITY.md)。
+2026-10-13：插件设置兼容候选经最终审核及用户授权完成本地提交 d4440ed，基线为 v0.3.1 / 080d352。提交后公开测试 764/764、材料层测试 130/130、隐藏 Electron 合成验证 45 项通过；源码绑定构建及完整 payload/provenance 校验通过。隔离验收入口的后台产品 bootstrap 和启动 dry-run 已通过，前台动作为 NONE。交付产物的准确源码及文件 SHA-256 以 bundle-manifest 和 runtime provenance 为准；产品版本仍为 0.3.1。真实神医助手、Madby、Backup & Restore 的前台结果待用户验收；直接 Electron 验收不代表 Host、安装或真实播放通过。详见 [兼容合同](PLUGIN_SETTINGS_COMPATIBILITY.md)。
 
 2026-10-12：当前正式版为 [v0.3.1](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.1)，Windows x64。准确发行源码、安装器 SHA-256 和来源记录见 Release；同名 Tag 固定最终 main 源码。
 
