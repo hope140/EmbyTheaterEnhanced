@@ -72,6 +72,7 @@ define(['exports'], function(exports) {
             if (!element) return;
             root.etePluginEditorElements.set(item, element);
             element.setAttribute('data-ete-editor', item.EditorType);
+            if (element.tagName === 'SELECT') element.parentElement.classList.add('ete-plugin-select-field');
             if (item.EditorType === 'Group') {
                 var title = Array.from(element.children).find(function(child) { return child.classList.contains('sectionTitleContainer'); });
                 var section = Array.from(element.children).find(function(child) { return child.classList.contains('sectionContent'); });
