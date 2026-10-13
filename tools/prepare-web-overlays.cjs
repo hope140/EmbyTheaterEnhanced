@@ -42,7 +42,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/app.js',
         expectedBaseSha256: '3EF3102567458359A02E2FE8F79A8700CFE9C223347ABE5AB6ECB8BD93BE89D2',
         expectedInputSha256: null,
-        expectedOutputSha256: '48D5C7FF151B6E1B253C83664B9F7637D9C007823C6A8737E130E77F9511541C',
+        expectedOutputSha256: 'F35D21CA15CB16F90B5AD9B470EB216D03C79B096B86233C26D4FFA9252D92AE',
         generatorPaths: Object.freeze([GENERATOR_PATH, APP_GENERATOR_PATH, PLUGIN_GENERATOR_PATH])
     }),
     Object.freeze({
@@ -53,7 +53,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/modules/viewmanager/viewmanager.js',
         expectedBaseSha256: 'A15C0615FB7B2F69A0EAAF7052B9CDD6317E6A58D9D2B2D2C5B407ED4A95E1E3',
         expectedInputSha256: null,
-        expectedOutputSha256: 'EDEE65987D3AC9834FFE6DCA704D054FC70D5991A8199F884FFB5ED02A989F19',
+        expectedOutputSha256: 'B03FC49C1405A903DF837D7B9F50CD0763F807F184DFC900C1CF7309C970B8B2',
         generatorPaths: Object.freeze([GENERATOR_PATH, PLUGIN_GENERATOR_PATH])
     }),
     Object.freeze({

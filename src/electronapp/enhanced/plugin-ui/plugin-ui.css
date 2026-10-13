@@ -1,0 +1,51 @@
+.ete-plugin-view .mainTitle { margin: 0 0 .8em; }
+.ete-plugin-view .mainSubTitle { margin-bottom: 1.5em; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ete-plugin-view .mainSubTitle:empty,
+.ete-plugin-view .pluginCommands:empty { display: none; }
+.ete-plugin-content { min-width: 0; }
+.ete-plugin-content .sectionTitleContainer { flex-wrap: wrap; gap: .5em; }
+.ete-plugin-content .sectionTitle { overflow-wrap: anywhere; }
+.ete-plugin-content .ete-plugin-section-description { margin: .5em 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ete-plugin-content .fieldDescription,
+.ete-plugin-content .labelText,
+.ete-plugin-content .captionText { white-space: pre-wrap; overflow-wrap: anywhere; }
+.ete-plugin-content .labelText:not([href]) { color: inherit; }
+.ete-plugin-content .toggleLabel { display: block; width: 100%; padding-inline-end: 4em; box-sizing: border-box; }
+.ete-plugin-content .toggleLabel::before { position: absolute; inset-inline-start: auto; inset-inline-end: 0; margin-inline-end: 0; }
+.ete-plugin-content .toggleLabel::after { inset-inline-start: auto; inset-inline-end: 1.466em; left: auto; right: 1.466em; transition-property: right, inset-inline-end; }
+.ete-plugin-content .emby-toggle:checked + .toggleLabel::after { inset-inline-start: auto; inset-inline-end: 0; left: auto; right: 0; }
+.ete-plugin-content .toggleFieldDescription { padding-inline-start: 0; }
+.ete-plugin-content .emby-toggle:disabled + .toggleLabel { opacity: .5; cursor: default; }
+.ete-plugin-content .verticalSection > p { margin: .5em 0; }
+.ete-plugin-content .horizontalSection { flex-wrap: wrap; gap: .5em; }
+.ete-plugin-content .btnButtonItem { max-width: 100%; }
+.ete-plugin-content .buttonText { white-space: normal; overflow-wrap: anywhere; }
+.ete-plugin-content .ete-plugin-status {
+    display: flex; align-items: center; gap: 1em; margin-top: 1em;
+    padding: 1em; border-radius: .6em; background: var(--background-secondary, rgba(128, 128, 128, .12));
+}
+.ete-plugin-content .ete-plugin-status > .itemAction {
+    height: auto !important; min-width: 2em !important; margin: 0 !important; align-self: center !important;
+}
+.ete-plugin-content .ete-plugin-status .statusIcon { font-size: 2em !important; }
+.ete-plugin-content .ete-plugin-status .listItemBody { min-width: 0; min-height: 0; padding: 0; }
+.ete-plugin-content .ete-plugin-status .primaryText { font-size: 1em !important; font-weight: 600; }
+.ete-plugin-content .ete-plugin-status .primaryText,
+.ete-plugin-content .ete-plugin-status .secondaryText { white-space: pre-wrap; overflow-wrap: anywhere; }
+.ete-plugin-content .ete-plugin-status .secondaryText { margin-top: .35em; }
+.ete-plugin-content .ete-plugin-status .secondaryText:empty { display: none; }
+.ete-plugin-content .ete-plugin-list { display: flex; flex-direction: column; }
+.ete-plugin-content .ete-plugin-listitem { min-width: 0; border-radius: 0; }
+.ete-plugin-content .ete-plugin-listitem > div:first-child { min-width: 0; flex-wrap: wrap; align-items: center; }
+.ete-plugin-content .ete-plugin-listitem .listItemBody { min-width: 0; flex: 1 1 12em; }
+.ete-plugin-content .ete-plugin-listitem .listItemBodyText { white-space: normal; overflow-wrap: anywhere; }
+.ete-plugin-content .ete-plugin-listicon { margin: .5em; font-size: 1.5em; }
+.ete-plugin-content .ete-plugin-link { cursor: pointer; }
+.ete-plugin-content .ete-plugin-link:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
+.ete-plugin-content .ete-plugin-bottom-panel { position: static !important; margin-top: 1.5em; }
+.ete-plugin-view .pluginCommands { display: flex; flex-wrap: wrap; gap: .75em; margin-top: 1.5em; }
+.ete-plugin-view .pluginCommands .emby-button { margin: 0; }
+@media (max-width: 640px) {
+    .ete-plugin-content .ete-plugin-listitem .paperlist { margin-left: 1em !important; }
+    .ete-plugin-content .ete-plugin-listitem .emby-button { margin: .5em; }
+}

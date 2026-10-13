@@ -1,5 +1,7 @@
 # 插件设置兼容合同
 
+当前显示组件与验证边界另见[插件显示审计](PLUGIN_DISPLAY_AUDIT.md)。维护display/CSS限定插件页面和dialog；传统模板新增emby-dialogclosebutton别名，并在解析前加载且重新检查epoch/signal，原对话框helper保持。
+
 本候选从 v0.3.1 的 `080d352f3ea5d00aa6e5a5233e14808b9278fc02` 开始。服务器资源只用于只读协议对照，没有复制服务器 Web/GenericUI 实现或执行插件 DLL。候选没有更改 PlaybackManager、Session、Resolver、Native Helper、Electron、认证或 IPC。
 
 ## 来源与组装

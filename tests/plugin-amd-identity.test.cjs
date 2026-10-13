@@ -56,6 +56,8 @@ function sentinel(moduleId, isRelativeAlias) {
 function createRuntime() {
     const initialized = new Map();
     const factories = new Map();
+    const cssSentinel = {moduleId: 'css!./plugin-ui.css'};
+    const cssRequests = [];
     let currentSourceId = null;
     const customElements = {get() { return undefined; }, define() {}};
     class HTMLDivElement {}
@@ -68,8 +70,15 @@ function createRuntime() {
         customElements,
         document: {
             createElement(name) {
-                assert.equal(name, 'script');
                 const listeners = new Map();
+                if (name === 'link') return {
+                    attributes: new Map(),
+                    setAttribute(key, value) { this.attributes.set(key, value); },
+                    getAttribute(key) { return this.attributes.get(key); },
+                    testSentinel: cssSentinel,
+                    onload: null
+                };
+                assert.equal(name, 'script');
                 return {
                     addEventListener(name, callback) { listeners.set(name, callback); },
                     fire(name) { const listener = listeners.get(name); if (listener) listener(); }
@@ -77,6 +86,12 @@ function createRuntime() {
             },
             head: {
                 appendChild(script) {
+                    if (script.attributes && script.attributes.get('rel') === 'stylesheet') {
+                        assert.strictEqual(script.testSentinel, cssSentinel);
+                        cssRequests.push({href: script.getAttribute('href'), sentinel: script.testSentinel});
+                        if (script.onload) script.onload();
+                        return;
+                    }
                     const match = /(?:^|\/)enhanced\/plugin-ui\/([^/?]+\.js)(?:\?.*)?$/.exec(script.src);
                     if (!match) throw new Error('Unexpected AMD script request: ' + script.src);
                     const filename = match[1];
@@ -131,7 +146,7 @@ function createRuntime() {
         context.define(relativeId, [], () => relativeValue);
     }
 
-    return {context, canonical, aliases, factories, initialized};
+    return {context, canonical, aliases, factories, initialized, cssSentinel, cssRequests};
 }
 
 function requireModule(context, moduleId) {
@@ -165,6 +180,14 @@ test('maintenance AMD modules resolve shared imports to the initialized canonica
                 assert.notEqual(ownHelperIndex, -1);
                 assert.strictEqual(record.values[ownSchemaIndex], await requireModule(runtime.context, '../enhanced/plugin-ui/schema.js'));
                 assert.strictEqual(record.values[ownHelperIndex], await requireModule(runtime.context, '../enhanced/plugin-ui/responsehelper.js'));
+                const ownDisplayIndex = record.ids.indexOf('./display.js');
+                assert.notEqual(ownDisplayIndex, -1);
+                assert.strictEqual(record.values[ownDisplayIndex], await requireModule(runtime.context, '../enhanced/plugin-ui/display.js'));
+                const cssIndex = record.ids.indexOf('css!./plugin-ui.css');
+                assert.notEqual(cssIndex, -1);
+                assert.equal(runtime.cssRequests.length, 1);
+                assert.equal(path.posix.normalize(runtime.cssRequests[0].href), '../enhanced/plugin-ui/plugin-ui.css');
+                assert.strictEqual(runtime.cssRequests[0].sentinel, runtime.cssSentinel);
             }
         });
     }

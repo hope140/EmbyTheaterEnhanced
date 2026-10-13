@@ -17,6 +17,7 @@ function patchApp(text) {
         '                  }),\n' +
         '                  appRouter.addRoute({path: "/configurationpage",');
     return replaceOnce(text, 'define("baseView", [], getDynamicImport("./modules/viewmanager/baseview.js")),',
+        'define("emby-dialogclosebutton", [], getDynamicImport("./../enhanced/plugin-ui/dialogclosebutton.js")),\n' +
         'define("responseHelper", [], getDynamicImport("./../enhanced/plugin-ui/responsehelper.js")),\n' +
         '      define("emby-premierecontainer", [], getDynamicImport("./../enhanced/plugin-ui/premierecontainer.js")),\n' +
         '      define("baseView", [], getDynamicImport("./modules/viewmanager/baseview.js")),');
@@ -74,22 +75,31 @@ function pluginNavigation() {
         var originalFactory = options.controllerFactory;
         return Promise.resolve().then(function() {
             eteCheck(epoch, signal);
+            function etePrepareNewPage() {
+                normalized = normalizeNewView(options, options.isPluginPage);
+                stage = normalized.elem;
+                if (!stage) throw new Error('Plugin page missing view');
+                stage.etePluginPage = true;
+                stage.classList.add('page', 'hide');
+                var dependencies = stage.getAttribute('data-require');
+                dependencies = dependencies ? dependencies.split(',') : [];
+                if (options.isPluginPage) dependencies.push('legacy/dashboard', 'css!legacy/dashboard');
+                if (normalized.hasjQuery) dependencies.push('jQuery');
+                return require(dependencies);
+            }
             if (restored) {
                 pageIndex = currentUrls.indexOf(options.url);
                 stage = pageIndex >= 0 ? allPages[pageIndex] : null;
                 if (!stage || !stage.etePluginPage || stage.allowRestore === false) throw new Error('Plugin view not cached');
                 return;
             }
-            normalized = normalizeNewView(options, options.isPluginPage);
-            stage = normalized.elem;
-            if (!stage) throw new Error('Plugin page missing view');
-            stage.etePluginPage = true;
-            stage.classList.add('page', 'hide');
-            var dependencies = stage.getAttribute('data-require');
-            dependencies = dependencies ? dependencies.split(',') : [];
-            if (options.isPluginPage) dependencies.push('legacy/dashboard', 'css!legacy/dashboard');
-            if (normalized.hasjQuery) dependencies.push('jQuery');
-            return require(dependencies);
+            if (options.isPluginPage) {
+                return require(['emby-dialogclosebutton']).then(function() {
+                    eteCheck(epoch, signal);
+                    return etePrepareNewPage();
+                });
+            }
+            return etePrepareNewPage();
         }).then(function() {
             eteCheck(epoch, signal);
             if (!restored) {

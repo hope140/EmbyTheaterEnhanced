@@ -2,8 +2,9 @@ define(['exports', 'modules/viewmanager/baseview.js', 'modules/emby-apiclient/co
     'modules/emby-apiclient/events.js', 'modules/common/input/api.js', 'modules/common/globalize.js',
     'modules/genericedit/genericedit.js', './schema.js', './responsehelper.js',
     'modules/emby-elements/emby-scroller/emby-scroller.js', 'modules/emby-elements/emby-button/emby-button.js',
-    'modules/dialoghelper/dialoghelper.js', 'modules/maintabsmanager.js', 'modules/appheader/appheader.js', 'modules/approuter.js'],
-function(exports, baseView, connection, events, notifications, globalize, genericEdit, schema, responseHelper, scroller, button, dialogHelper, mainTabs, appHeader, appRouter) {
+    'modules/dialoghelper/dialoghelper.js', 'modules/maintabsmanager.js', 'modules/appheader/appheader.js', 'modules/approuter.js',
+    './display.js', 'css!./plugin-ui.css'],
+function(exports, baseView, connection, events, notifications, globalize, genericEdit, schema, responseHelper, scroller, button, dialogHelper, mainTabs, appHeader, appRouter, display) {
     'use strict';
     // Canonical IDs reuse the initialized application singletons in Alameda.
     // This one standard Babel helper is referenced by the frozen field editor
@@ -83,11 +84,20 @@ function(exports, baseView, connection, events, notifications, globalize, generi
         var self = this;
         if (!this.current(generation)) return Promise.resolve();
         var data = schema.default.prepare(input), detached = document.createElement('div');
+        var editorContainer = schema.default.displayContainer(data.EditObjectContainer);
+        // The inherited postback listener captures Object. Keep that binding
+        // canonical; only its markup-consuming value pass uses an escaped copy.
+        editorContainer.Object = data.EditObjectContainer.Object;
+        editorContainer.DefaultObject = data.EditObjectContainer.DefaultObject;
+        var root = editorContainer.EditorRoot;
+        if (root.DisplayName === schema.default.escape(data.Caption)) root.DisplayName = '';
+        if (root.Description === schema.default.escape(data.SubCaption)) root.Description = '';
         detached.className = 'mainContent';
         // Keep the inherited editor and its local field/condition listeners on
         // a fresh node. A stale asynchronous render never touches the live page.
-        return Promise.resolve(genericEdit.default.renderForm(data.EditObjectContainer, detached)).then(function() {
+        return Promise.resolve(genericEdit.default.renderForm(editorContainer, detached)).then(function() {
             if (!self.current(generation)) return;
+            display.default.prepare(detached, data.EditObjectContainer);
             Array.from(detached.querySelectorAll('select[multiple]')).forEach(function(select) {
                 // Frozen emby-select expects an option provider even for the
                 // static multiple selects emitted by the inherited editor.
@@ -135,11 +145,13 @@ function(exports, baseView, connection, events, notifications, globalize, generi
                 if (item.TitleButton) buttonState(item.TitleButton);
             }
             buttonState(data.EditObjectContainer.EditorRoot);
+            display.default.apply(detached, data.EditObjectContainer);
             var isDialog = data.ViewType === 'Dialog' || data.ViewType === 'Wizard';
             self.closeDialog();
             var view = isDialog ? self.createDialog(data) : self.view, old = view.querySelector('.mainContent');
             old.parentNode.replaceChild(detached, old);
             view.querySelector('.mainTitle').textContent = data.Caption || '';
+            view.querySelector('.mainTitle').hidden = !isDialog;
             view.querySelector('.mainSubTitle').textContent = data.SubCaption || '';
             view.querySelector('.pluginError').hidden = true;
             self.data = data;
@@ -157,6 +169,7 @@ function(exports, baseView, connection, events, notifications, globalize, generi
     View.prototype.createDialog = function(data) {
         var self = this, dialog = dialogHelper.default.createDialog({removeOnClose: true, enableHistory: false, size: data.ShowDialogFullScreen ? 'fullscreen' : 'small', autoFocus: true});
         dialog.classList.add('formDialog');
+        dialog.classList.add('ete-plugin-view');
         dialog.innerHTML = '<form class="dialogContentInner"><h2 class="mainTitle"></h2><div class="mainSubTitle"></div><p class="pluginError" role="status" hidden></p><div class="mainContent"></div><div class="pluginCommands"></div></form>';
         dialog.addEventListener('click', this.boundClick);
         dialog.addEventListener('command', this.boundCommand);

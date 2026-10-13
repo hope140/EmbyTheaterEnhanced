@@ -64,6 +64,15 @@
 
     window.__fixture = {injected: false};
     window.__fixtureResult = null;
+    window.__fixtureObservations = {};
+    var stylesLoaded = false, scopedStyle = document.createElement('link');
+    scopedStyle.rel = 'stylesheet';
+    scopedStyle.href = '/fixtures/enhanced/plugin-ui/plugin-ui.css';
+    var scopedStyleReady = new Promise(function(resolve) {
+        scopedStyle.onload = function() { stylesLoaded = true; resolve(true); };
+        scopedStyle.onerror = function() { resolve(false); };
+        document.head.appendChild(scopedStyle);
+    });
     require.config({baseUrl: '/', noRequireCss: true});
     aliases();
 
@@ -117,9 +126,28 @@
         return wait(120).then(function() {
             var loadFailed = !view.data && !viewNode.querySelector('.pluginError').hidden;
             check(view.data && view.data.PageId === 'synthetic', loadFailed ? 'ui_view_failed_' + window.__renderPhase : 'ui_view_pending_or_not_rendered');
-            ['text', 'numeric', 'enabled', 'single', 'multiple', 'date', 'status', 'action'].forEach(function(id) {
+            ['text', 'numeric', 'enabled', 'single', 'multiple', 'date', 'status', 'action', 'readonly', 'radioChoice', 'progressZero', 'progressClamp', 'groupActionOne', 'descriptionChild', 'nestedInput', 'showFlag', 'hiddenField', 'safeLabel'].forEach(function(id) {
                 check(!!byId(id), 'field_' + id + '_rendered');
             });
+            check(byId('enabled').getAttribute('is') === 'emby-toggle', 'boolean_uses_emby_toggle');
+            check(byId('readonly').getAttribute('is') === 'emby-toggle' && byId('readonly').disabled, 'readonly_boolean_toggle_disabled');
+            check(byId('readonlyGroupedToggle').disabled, 'readonly_grouped_toggle_disabled');
+            check(byId('disabledToggle').disabled, 'schema_disabled_toggle_disabled');
+            check(byId('hiddenToggle').closest('.toggleContainer').classList.contains('hide'), 'schema_hidden_toggle_hidden');
+            check(byId('conditionalToggle').disabled, 'conditional_toggle_initially_disabled');
+            check(byId('status').querySelector('.primaryText').textContent === 'Ready & <safe>' && byId('status').querySelector('.secondaryText').textContent === 'Status & <safe>', 'status_preserves_plain_text_once');
+            check(byId('action').querySelector('.buttonText').textContent === 'Run & <command>', 'button_preserves_plain_text_once');
+            check(byId('caption').querySelector('.captionText').textContent === 'Caption & <safe>', 'caption_preserves_plain_text_once');
+            check(byId('label').querySelector('.labelText').textContent === window.__fixturePage.EditObjectContainer.Object.label.Text && !byId('label').querySelector('img'), 'label_preserves_plain_text_without_html');
+            check(byId('status').querySelector('.statusIcon').textContent === 'check_circle_outline', 'succeeded_status_icon_is_plain_mapped_text');
+            check(byId('action').querySelector('.buttonIcon').textContent === 'delete', 'standard_icon_maps_button_glyph');
+            check(byId('progressZero').max === 100 && byId('progressZero').value === 0, 'zero_progress_uses_safe_default_maximum');
+            check(byId('progressClamp').max === 10 && byId('progressClamp').value === 10, 'progress_value_clamps_to_maximum');
+            check(Array.from(byId('radioChoice').querySelectorAll('input')).length === 2 && Array.from(byId('radioChoice').querySelectorAll('input')).every(function(input) { return input.disabled; }), 'readonly_radio_choices_disabled');
+            check(byId('nestedInput').disabled, 'nested_group_conditions_disable_control');
+            check(byId('hiddenField').closest('.inputContainer').classList.contains('hide'), 'visible_condition_cannot_override_explicit_false');
+            check(byId('text').value.indexOf('<img') === 0 && viewNode.querySelectorAll('.inputContainer img').length === 0, 'unsafe_text_value_remains_input_text');
+            check(viewNode.querySelector('.mainTitle').textContent === 'Synthetic settings' && !Array.from(viewNode.querySelectorAll('.mainContent .sectionTitle')).some(function(node) { return node.textContent === 'Synthetic settings'; }), 'ordinary_page_title_owns_duplicate_root_heading');
             check(viewNode.querySelectorAll('script').length === 0, 'unsafe_values_no_script_nodes');
             check(viewNode.querySelectorAll('[onerror],[onclick]').length === 0, 'unsafe_values_no_event_attributes');
             check(!window.__fixture.injected, 'unsafe_values_not_executed');
@@ -127,6 +155,11 @@
             check(!!headerTabs && headerTabs.children.length === 1, 'only_safe_header_tab_rendered');
             check(viewNode.querySelector('.labelText').textContent.indexOf('<img') === 0, 'label_text_rendered_as_text');
             check(!viewNode.querySelector('.labelText').getAttribute('href'), 'unsafe_label_link_removed');
+            var safeLabel = byId('safeLabel').querySelector('.labelText');
+            check(safeLabel.href === 'https://docs.example/path?view=fixture' && safeLabel.rel === 'noopener noreferrer', 'safe_http_link_bound_without_raw_href_fallback');
+            var safeClick = new MouseEvent('click', {bubbles: true, cancelable: true});
+            safeLabel.dispatchEvent(safeClick);
+            check(safeClick.defaultPrevented, 'safe_link_click_prevents_browser_navigation');
             var progress = viewNode.querySelector('.taskProgressInner');
             check(!!progress && progress.style.width === '42%', 'finite_progress_rendered_safely');
             check(Array.from(viewNode.querySelectorAll('.listItemBodyText')).some(function(node) { return node.textContent.indexOf('<img') === 0; }), 'itemlist_tag_text_rendered_safely');
@@ -139,11 +172,21 @@
             loaded[14].default.trigger(window.__notifications, 'UIPageInfoChanged', [window.__fixtureClient, update]);
             return wait(80).then(function() {
                 check(view.data.ViewId === 'view-updated', 'notification_rerendered_owned_page');
+                check(window.__safeOpenUrlCount === 1, 'safe_link_click_uses_stubbed_shell_only');
                 check(byId('text').value === 'notification value', 'notification_values_rendered');
                 check(!!byId('numeric') && !!byId('single') && !!byId('multiple'), 'notification_preserved_editor_schema');
 
             byId('text').value = 'edited text';
             byId('numeric').value = '17';
+                byId('nestedEnabled').checked = true;
+                byId('nestedEnabled').dispatchEvent(new Event('change', {bubbles: true}));
+                check(byId('nestedInput').disabled, 'disabled_parent_group_blocks_nested_enabled_control');
+                byId('enabled').checked = true;
+                byId('enabled').dispatchEvent(new Event('change', {bubbles: true}));
+                check(!byId('nestedInput').disabled, 'group_and_nested_conditions_restore_control');
+                check(byId('readonly').disabled, 'readonly_boolean_stays_disabled_after_condition_change');
+                check(byId('readonlyGroupedToggle').disabled && byId('disabledToggle').disabled, 'grouped_boolean_baselines_survive_condition_change');
+                check(!byId('conditionalToggle').disabled, 'conditional_boolean_reenables_live_toggle');
             byId('enabled').checked = true;
             byId('single').value = 'two';
             byId('multiple').values = ['red', 'blue'];
@@ -159,6 +202,13 @@
                 var midnightUtc = Date.parse('2026-03-04T00:00:00Z');
                 var expectedDate = new Date(midnightUtc + new Date(midnightUtc).getTimezoneOffset() * 60000).toISOString();
                 check(sent.date === expectedDate, 'date_edit_captured_with_inherited_timezone_conversion');
+
+                view.pageId = 'dialog';
+                return view.load().then(function() { return wait(60); }).then(function() {
+                    check(view.dialog && view.dialog.querySelector('.mainTitle').textContent === 'Synthetic settings', 'dialog_keeps_its_caption_title');
+                    check(view.dialog.querySelector('.mainSubTitle').textContent === 'Loopback fixture', 'dialog_keeps_its_subtitle');
+                    check(!Array.from(view.dialog.querySelectorAll('.mainContent .sectionTitle')).some(function(node) { return node.textContent === 'Synthetic settings'; }), 'dialog_suppresses_duplicate_editor_root_heading');
+                    view.closeDialog();
 
                 view.pageId = 'malicious-progress';
                 return view.load().then(function() { return wait(60); }).then(function() {
@@ -179,6 +229,7 @@
                     });
                 });
                 });
+                });
             });
             });
         });
@@ -197,9 +248,25 @@
             });
         });
     }).then(function() {
-        window.__fixtureResult = {ok: true, assertions: assertions, observations: {missing_dependency_rejected: window.__missingRejected === true}};
+        var textDescription = byId('text').parentElement.querySelector('.fieldDescription');
+        window.__fixtureObservations.descriptionNodePresent = !!textDescription;
+        window.__fixtureObservations.descriptionBreaks = textDescription ? textDescription.querySelectorAll('br').length : 0;
+        window.__fixtureObservations.descriptionHasLiteralUnsafeMarkup = !!textDescription && textDescription.textContent.indexOf('<img') >= 0;
+        check(!!textDescription, 'description_node_present');
+        check(textDescription.textContent.indexOf('First line\nSecond') >= 0, 'description_newline_preserved_as_text');
+        check(textDescription.textContent.indexOf('<img') >= 0, 'description_markup_rendered_as_text');
+        var descriptionParent = byId('descriptionParent'), descriptionChild = byId('descriptionChild');
+        var childDescription = descriptionChild && Array.from(descriptionChild.children).find(function(node) { return node.classList.contains('ete-plugin-section-description'); });
+        check(descriptionParent && descriptionChild && !Array.from(descriptionParent.children).some(function(node) { return node.classList.contains('ete-plugin-section-description'); }) && childDescription && childDescription.textContent.indexOf('Nested description only') >= 0, 'unheaded_group_keeps_descendant_description_in_child');
+        var parentListItem = byId('items.listitem1'), parentListIcon = parentListItem.querySelector('.ete-plugin-listicon .md-icon'), childListIcon = byId('items.listitem1.button1').querySelector('.md-icon');
+        check(parentListIcon && parentListIcon.textContent === 'delete' && childListIcon && childListIcon.textContent === 'play_arrow', 'itemlist_parent_standard_icon_does_not_replace_child_icon');
+        check(byId('groupActionOne').disabled && byId('groupActionTwo').disabled, 'unidentified_button_group_disables_its_children');
+        return scopedStyleReady.then(function(loaded) {
+            check(loaded, 'scoped_stylesheet_loaded');
+            window.__fixtureResult = {ok: true, assertions: assertions, observations: Object.assign({missing_dependency_rejected: window.__missingRejected === true, stylesLoaded: stylesLoaded}, window.__fixtureObservations)};
+        });
     }).catch(function(error) {
-        window.__fixtureResult = {ok: false, assertions: assertions, failureClass: error && error.fixtureClass || 'runtime_exception', observations: {missing_dependency_rejected: window.__missingRejected === true}};
+        window.__fixtureResult = {ok: false, assertions: assertions, failureClass: error && error.fixtureClass || 'runtime_exception', observations: Object.assign({missing_dependency_rejected: window.__missingRejected === true, stylesLoaded: stylesLoaded}, window.__fixtureObservations)};
     });
 }());
 
@@ -221,12 +288,17 @@ define('modules/emby-apiclient/connectionmanager.js', ['exports'], function(expo
     exports.default = {currentApiClient: function() { return client; }};
 });
 
+define('shell', [], function() {
+    return {openUrl: function(value, target) {
+        if (/^https?:\/\//i.test(value) && target === '_blank') window.__safeOpenUrlCount = (window.__safeOpenUrlCount || 0) + 1;
+    }};
+});
 define('modules/common/input/api.js', ['exports'], function(exports) { exports.default = window.__notifications = {}; });
 define('modules/layoutmanager.js', ['exports'], function(exports) { exports.default = {tv: false}; });
 define('modules/browser.js', ['exports'], function(exports) { exports.default = {android: false}; });
 define('modules/actionsheet/actionsheet.js', ['exports'], function(exports) { exports.default = {}; });
 define('modules/dialoghelper/dialoghelper.js', ['exports'], function(exports) {
-    exports.default = {createDialog: function() { throw new Error('dialog path not in scope'); }, open: function() {}, close: function() {}};
+    exports.default = {createDialog: function() { return document.createElement('div'); }, open: function() {}, close: function(dialog) { dialog.dispatchEvent(new Event('close')); }};
 });
 define('modules/approuter.js', ['exports'], function(exports) {
     exports.default = {handleAnchorClick: function() {}, getRouteInfo: function() { return null; }, show: function() {}};

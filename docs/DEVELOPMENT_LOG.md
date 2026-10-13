@@ -1,5 +1,14 @@
 # 维护记录
 
+## 2026-10-13 三插件显示整体收口
+
+- 按用户要求集中对照全部14个GenericUI页、Backup主页与两对话框，以及6个邻接传统页面；真实网页与候选截图、计算样式分别核对，正常、窄窗口和125%缩放均有证据。私有值、服务端原始资源及截图不进提交或共享包。
+- 窄display适配复用旧字段编辑器与原开关组件；纯文本和HTML消费者分别保持边界，状态和StandardIcon不解析任意HTML。修正父子图标归属、无标题父组说明、按钮组以及live Boolean替换后的状态Map；Boolean只读/隐藏实际RED后修正，当前隐藏合成92项通过。
+- Backup真实模板声明的新关闭组件通过受控AMD别名和插件preparse加载补齐；保留epoch/signal门禁，只关闭所属dialog，不触发表单提交。隐藏动画验证通过后台绘制推进，前台动作NONE。
+- 主会话接管模型容量中断后的收尾。定向测试42/42、公开787/787、材料54/54通过；GPT-6 Astra High只读生产审查无明确P1/P2。GPT-6 Luna High完成纯文本/动态来源DOM审计及关闭组件的隔离补丁，主会话核对真实diff和native行为。
+- 生成器仅新增close组件加载；固定vendor输入不变，审核生成字节后同步app/viewmanager输出hash，未降低dirty generator、source/runtime provenance门禁。获授权本地提交和来源绑定构建，最终准确身份及回读结果由独立产物清单提供。
+- 保留客户端宿主主题、字体与冻结核心。当前用户状态仍为DISPLAY_PARITY_NOT_ACCEPTED，后台检查不替代整体验收；没有发布、部署、安装、远端写入或业务操作。
+
 ## 2026-10-13 插件设置兼容候选
 
 - 基线为 v0.3.1 / 080d352。主目录旧 Settings 支线及其已有改动未修改，候选使用独立 managed worktree / codex/plugin-settings-compat。

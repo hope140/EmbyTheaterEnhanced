@@ -36,7 +36,8 @@ function moduleFile(urlPath) {
     if (urlPath.startsWith('/fixtures/modules/')) urlPath = urlPath.slice('/fixtures'.length);
     if (urlPath.startsWith('/fixtures/www/modules/')) urlPath = urlPath.slice('/fixtures'.length);
     if (!urlPath.startsWith('/modules/') && !urlPath.startsWith('/www/modules/')) return null;
-    const adapter = /^\/modules\/enhanced\/plugin-ui\/(genericui|schema|responsehelper|premierecontainer)\.js$/.exec(urlPath);
+    if (urlPath === '/modules/enhanced/plugin-ui/plugin-ui.css') return path.join(adapterDir, 'plugin-ui.css');
+    const adapter = /^\/modules\/enhanced\/plugin-ui\/(genericui|schema|responsehelper|premierecontainer|display)\.js$/.exec(urlPath);
     if (adapter) return path.join(adapterDir, `${adapter[1] === 'responsehelper' ? 'responsehelper' : adapter[1]}.js`);
     const carnival = urlPath.startsWith('/modules/') ? urlPath.slice('/modules/'.length) : urlPath.slice('/www/modules/'.length);
     const full = path.resolve(vendorModules, carnival);
@@ -97,26 +98,73 @@ function page(pageId) {
     const unsafe = '<img src=x onerror="window.__fixture.injected=true">';
     return {
         PageId: pageId, ViewId: `view-${pageId}`, Caption: 'Synthetic settings', SubCaption: 'Loopback fixture',
+        ...(pageId === 'dialog' ? {ViewType: 'Dialog'} : {}),
         EditObjectContainer: {
-            EditorRoot: {EditorType: 'Group', EditorItems: [
-                {Id: 'text', EditorType: 'Text', DisplayName: 'Text field', AllowEmpty: true},
+            EditorRoot: {EditorType: 'Group', DisplayName: 'Synthetic settings', Description: 'Loopback fixture', EditorItems: [
+                {Id: 'text', EditorType: 'Text', DisplayName: 'Text field', Description: 'First line\nSecond <img src=x onerror="window.__fixture.injected=true">', AllowEmpty: true},
                 {Id: 'numeric', EditorType: 'Numeric', DisplayName: 'Numeric field', AllowEmpty: true},
                 {Id: 'enabled', EditorType: 'Boolean', DisplayName: 'Enabled'},
                 {Id: 'single', EditorType: 'SelectSingle', DisplayName: 'Single choice', SelectOptions: [{Name: 'One', Value: 'one', IsEnabled: true}, {Name: 'Two', Value: 'two', IsEnabled: true}]},
                 {Id: 'multiple', EditorType: 'SelectMultiple', DisplayName: 'Multiple choice', SelectOptions: [{Name: 'Red', Value: 'red', IsEnabled: true}, {Name: 'Blue', Value: 'blue', IsEnabled: true}]},
                 {Id: 'date', EditorType: 'Date', DisplayName: 'Date field', AllowEmpty: true},
+                {Id: 'showFlag', EditorType: 'Boolean', DisplayName: 'Show flag'},
+                {Id: 'hiddenField', EditorType: 'Text', DisplayName: 'Explicitly hidden', IsVisible: false},
                 {Id: 'status', EditorType: 'StatusItem', DisplayName: 'Status'},
                 {Id: 'action', EditorType: 'ButtonItem', DisplayName: 'Action'},
                 {Id: 'label', EditorType: 'LabelItem', DisplayName: 'Safe label'},
-                {Id: 'items', EditorType: 'ItemList', DisplayName: 'Safe list'}
-            ], PropertyConditions: []},
+                {Id: 'safeLabel', EditorType: 'LabelItem', DisplayName: 'Safe link'},
+                {Id: 'items', EditorType: 'ItemList', DisplayName: 'Safe list'},
+                {Id: 'readonly', EditorType: 'Boolean', DisplayName: 'Read only', IsReadOnly: true},
+                {Id: 'booleanStateGroup', EditorType: 'Group', DisplayName: 'Boolean states', EditorItems: [
+                    {Id: 'readonlyGroupedToggle', EditorType: 'Boolean', DisplayName: 'Read only grouped', IsReadOnly: true},
+                    {Id: 'disabledToggle', EditorType: 'Boolean', DisplayName: 'Disabled toggle', IsEnabled: false},
+                    {Id: 'hiddenToggle', EditorType: 'Boolean', DisplayName: 'Hidden toggle', IsVisible: false},
+                    {Id: 'conditionalToggle', EditorType: 'Boolean', DisplayName: 'Conditional toggle'}
+                ]},
+                {Id: 'caption', EditorType: 'CaptionItem', DisplayName: 'Caption'},
+                {Id: 'radioChoice', EditorType: 'SelectSingle', DisplayName: 'Radio choice', ShowAsRadio: true, IsReadOnly: true, SelectOptions: [{Name: 'One', Value: 'one'}, {Name: 'Two', Value: 'two'}]},
+                {Id: 'progressZero', EditorType: 'ProgressItem', DisplayName: 'Zero progress'},
+                {Id: 'progressClamp', EditorType: 'ProgressItem', DisplayName: 'Clamped progress'},
+                {EditorType: 'ButtonGroup', IsEnabled: false, EditorItems: [
+                    {Id: 'groupActionOne', EditorType: 'ButtonItem'}, {Id: 'groupActionTwo', EditorType: 'ButtonItem'}
+                ]},
+                {Id: 'descriptionParent', EditorType: 'Group', EditorItems: [
+                    {Id: 'descriptionChild', EditorType: 'Group', DisplayName: 'Child group', Description: 'Nested description only', EditorItems: [
+                        {Id: 'descriptionField', EditorType: 'Text', DisplayName: 'Description field', AllowEmpty: true}
+                    ]}
+                ]},
+                {Id: 'conditionalGroup', EditorType: 'Group', DisplayName: 'Conditional group', EditorItems: [
+                    {Id: 'nestedGroup', EditorType: 'Group', DisplayName: 'Nested group', PropertyConditions: [
+                        {TargetPropertyId: 'nestedEnabled', AffectedPropertyId: 'nestedInput', ConditionType: 'Enabled', SimpleCondition: 'IsTrue'}
+                    ], EditorItems: [
+                        {Id: 'nestedInput', EditorType: 'Text', DisplayName: 'Nested input', AllowEmpty: true},
+                        {Id: 'nestedEnabled', EditorType: 'Boolean', DisplayName: 'Nested enabled'}
+                    ]}
+                ]}
+            ], PropertyConditions: [
+                {TargetPropertyId: 'enabled', AffectedPropertyId: 'conditionalGroup', ConditionType: 'Enabled', SimpleCondition: 'IsTrue'},
+                {TargetPropertyId: 'showFlag', AffectedPropertyId: 'hiddenField', ConditionType: 'Visible', SimpleCondition: 'IsTrue'}
+                ,{TargetPropertyId: 'enabled', AffectedPropertyId: 'conditionalToggle', ConditionType: 'Enabled', SimpleCondition: 'IsTrue'}
+            ]},
             Object: {
-                text: 'before', numeric: 3, enabled: false, single: 'one', multiple: 'red', date: '2026-01-02T00:00:00Z',
-                status: {Status: 'Succeeded', Caption: 'Ready', StatusText: 'Synthetic status'},
-                action: {Caption: 'Run synthetic command', Icon: 'play_arrow', IsEnabled: true, IsVisible: true, Data1: 'RunSynthetic'},
+                text: unsafe, numeric: 3, enabled: false, single: 'one', multiple: 'red', date: '2026-01-02T00:00:00Z',
+                showFlag: true, hiddenField: 'hidden value',
+                radioChoice: 'two', radioOptions: [{Name: 'One', Value: 'one'}, {Name: 'Two', Value: 'two'}], readonly: false,
+                readonlyGroupedToggle: false, disabledToggle: false, hiddenToggle: false, conditionalToggle: false,
+                caption: {Caption: 'Caption & <safe>', IsVisible: true},
+                progressZero: {CurrentValue: 0, MaxValue: 0}, progressClamp: {CurrentValue: 20, MaxValue: 10},
+                groupActionOne: {Caption: 'Group action one', Icon: 'add', IsEnabled: true, IsVisible: true, Data1: 'GroupOne'},
+                groupActionTwo: {Caption: 'Group action two', Icon: 'edit', IsEnabled: true, IsVisible: true, Data1: 'GroupTwo'},
+                descriptionField: 'Nested description field', nestedInput: 'nested value', nestedEnabled: false,
+                status: {Status: 'Succeeded', Caption: 'Ready & <safe>', StatusText: 'Status & <safe>'},
+                action: {Caption: 'Run & <command>', StandardIcon: 'Delete', Icon: 'play_arrow', IsEnabled: true, IsVisible: true, Data1: 'RunSynthetic'},
                 label: {Text: unsafe, HyperLink: 'javascript:window.__fixture.injected=true', IsVisible: true},
-                items: [{PrimaryText: unsafe, SecondaryText: unsafe, Tag: {Text: unsafe}, Icon: unsafe, HasPercentage: true, PercentComplete: pageId === 'malicious-progress' ? unsafe : 42, HyperLink: 'javascript:window.__fixture.injected=true'}]
-            }, DefaultObject: {}
+                safeLabel: {Text: 'Open local fixture target', HyperLink: 'https://docs.example/path?view=fixture', IsVisible: true},
+                items: [
+                    {PrimaryText: unsafe, SecondaryText: unsafe, Tag: {Text: unsafe}, Icon: unsafe, HasPercentage: true, PercentComplete: pageId === 'malicious-progress' ? unsafe : 42, HyperLink: 'javascript:window.__fixture.injected=true'},
+                    {PrimaryText: 'Parent icon with child action', StandardIcon: 'Delete', Button1: {Caption: 'Child action', Icon: 'play_arrow', IsEnabled: true, IsVisible: true, Data1: 'ChildAction'}}
+                ]
+            }, DefaultObject: {readonly: false}
         },
         TabPageInfos: [{PageId: pageId, DisplayName: 'Home', Href: `./genericui?PageId=${encodeURIComponent(pageId)}`},
             {PageId: 'unsafe', DisplayName: unsafe, Href: 'https://invalid.example/'}],
@@ -139,6 +187,7 @@ function writeStatus(ok, assertionCount, detailClass, observations = {}) {
         path.join(vendorModules, 'emby-elements/emby-select/emby-select.js'),
         path.join(adapterDir, 'genericui.js'), path.join(adapterDir, 'schema.js'),
         path.join(adapterDir, 'responsehelper.js'), path.join(adapterDir, 'premierecontainer.js'),
+        path.join(adapterDir, 'display.js'), path.join(adapterDir, 'plugin-ui.css'),
         path.join(__dirname, 'plugin-ui-hidden-runner.cjs'),
         path.join(__dirname, 'fixtures/plugin-ui-hidden.html'), path.join(__dirname, 'fixtures/plugin-ui-hidden.js')
     ];
@@ -147,11 +196,12 @@ function writeStatus(ok, assertionCount, detailClass, observations = {}) {
         electron_exe_sha256: sha256(electronPath), scripts_sha256: Object.fromEntries(scripts.map(file => [path.relative(root, file).replace(/\\/g, '/'), sha256(file)])),
         assertions: assertionCount, failure_class: ok ? null : detailClass,
         observations,
-        fixture_stubs: ['loopback synthetic API client', 'layout/browser/service/dialog notification shells', 'Alameda CSS loading disabled', 'static app CSS alias modules'],
+        fixture_stubs: ['loopback synthetic API client', 'layout/browser/service/dialog notification shells', 'vendor Alameda CSS loading disabled; scoped plugin CSS served from loopback', 'static app CSS alias modules'],
         counters: {...counters},
         note: 'Counts and classifications only; no response bodies or raw error messages are recorded.'
     };
     fs.writeFileSync(path.join(outputDir, 'status.json'), JSON.stringify(result, null, 2), 'utf8');
+    fs.writeFileSync(path.join(outputRoot, 'display-hidden-fixture.json'), JSON.stringify(result, null, 2), 'utf8');
     try { win && win.destroy(); } catch (_) {}
     try { server && server.close(); } catch (_) {}
     app.exit(ok ? 0 : 1);
@@ -192,7 +242,7 @@ app.whenReady().then(() => {
         }
         clearTimeout(timeout);
         if (!outcome) return writeStatus(false, 0, 'renderer_result_unavailable');
-        const transportEvidence = counters.apiCommand === 1 && counters.commandDataValid === 1 && counters.missingModule >= 1 && counters.blockedExternal === 0 && !counters.unexpectedShow;
+        const transportEvidence = counters.apiCommand === 1 && counters.commandDataValid === 1 && counters.missingModule >= 1 && counters.blockedExternal === 0 && !counters.unexpectedShow && outcome.observations && outcome.observations.stylesLoaded === true;
         writeStatus(outcome.ok === true && transportEvidence, outcome.assertions || 0,
             outcome.ok === true ? (transportEvidence ? null : 'transport_evidence_incomplete') : outcome.failureClass || 'assertion_failed', outcome.observations || {});
     } catch (_) {

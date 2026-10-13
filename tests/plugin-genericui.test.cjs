@@ -217,6 +217,11 @@ function runtime(options = {}) {
         setTitle(value) { headerState.title = value; document.title = value; }
     };
     const appRouter = {show(href) { routeCalls.push(href); return options.routeShow ? options.routeShow(href) : Promise.resolve(); }};
+    const displayCalls = {prepare: [], apply: []};
+    const display = {default: {
+        prepare(root, container) { displayCalls.prepare.push({root, container}); },
+        apply(root, container) { displayCalls.apply.push({root, container}); }
+    }};
     const deps = {'modules/viewmanager/baseview.js': {default: base},
         'modules/maintabsmanager.js': {default: mainTabs}, 'modules/appheader/appheader.js': {default: appHeader},
         'modules/approuter.js': {default: appRouter},
@@ -225,11 +230,12 @@ function runtime(options = {}) {
         'modules/common/input/api.js': {default: {}},
         'modules/common/globalize.js': globalize,
         'modules/genericedit/genericedit.js': genericEdit, './schema.js': {default: schema}, './responsehelper.js': {default: {}},
+        './display.js': display,
         'modules/emby-elements/emby-scroller/emby-scroller.js': {}, 'modules/emby-elements/emby-button/emby-button.js': {},
         'modules/dialoghelper/dialoghelper.js': {default: {created: [], opened: [], closed: [], createDialog(config) { const dialog = new Element('div'); dialog.config = config; this.created.push(dialog); return dialog; }, open(dialog) { this.opened.push(dialog); }, close(dialog) { this.closed.push(dialog); dialog.dispatch('close'); }}},
         require: ids => Promise.resolve(ids.map(id => ({'alert': () => Promise.resolve(), 'toast': () => {}, 'confirm': options.confirm || (() => Promise.resolve()), 'appRouter': appRouter}[id] || {}))), document};
     const View = loadAmd('genericui.js', deps);
-    return {View, client, events, requests, editorCalls, document, dialogHelper: deps['modules/dialoghelper/dialoghelper.js'].default, schema,
+    return {View, client, events, requests, editorCalls, displayCalls, document, dialogHelper: deps['modules/dialoghelper/dialoghelper.js'].default, schema,
         mainTabs, appHeader, headerState, headerTabsHost, routeCalls};
 }
 
@@ -251,6 +257,8 @@ test('synthetic schema renders representative GenericEdit fields and canonical h
     assert.deepEqual(JSON.parse(JSON.stringify(rt.editorCalls.render[0].EditorRoot.PostbackActions)),
         [{TargetEditorId: 'choice', PostbackCommandId: 'RunSynthetic', CommandParameterPropertyId: 'text'}]);
     assert.equal(rt.editorCalls.set.length, 1);
+    assert.equal(rt.displayCalls.prepare.length, 1);
+    assert.equal(rt.displayCalls.apply.length, 1);
     assert.equal(rt.mainTabs.owner(), view.view);
     const tabs = rt.mainTabs.getTabsElement().querySelector('.emby-tabs-slider').children;
     assert.equal(tabs.length, 2, 'only local GenericUI routes are exposed as tabs');
@@ -262,6 +270,58 @@ test('synthetic schema renders representative GenericEdit fields and canonical h
     assert.equal(rt.requests.length, 1, 'tab navigation must not issue a UI/Command request');
     assert.equal(tabs[1].getAttribute('aria-current'), 'page');
     assert.equal(shell.view.querySelector('.mainContent').listenerCount('change'), 1);
+});
+
+test('root editor headings are suppressed only when they repeat the page caption and description', async () => {
+    const rt = runtime(), shell = makeShell(), view = new rt.View(shell.view, {PageId: 'synthetic-a'});
+    const data = syntheticPage();
+    data.Caption = 'Page & title';
+    data.SubCaption = 'Page description';
+    data.EditObjectContainer.EditorRoot.DisplayName = data.Caption;
+    data.EditObjectContainer.EditorRoot.Description = data.SubCaption;
+    view.onResume(); await resolveView(rt, rt.requests[0], data);
+    const renderedRoot = rt.editorCalls.render[0].EditorRoot;
+    assert.equal(renderedRoot.DisplayName, '');
+    assert.equal(renderedRoot.Description, '');
+
+    view.pageId = 'synthetic-b';
+    const next = view.load();
+    const distinct = syntheticPage('synthetic-b');
+    distinct.Caption = 'Next page';
+    distinct.SubCaption = 'Next description';
+    distinct.EditObjectContainer.EditorRoot.DisplayName = 'Distinct root title';
+    distinct.EditObjectContainer.EditorRoot.Description = 'Distinct root description';
+    await resolveView(rt, rt.requests[1], distinct);
+    await next;
+    const nextRoot = rt.editorCalls.render[1].EditorRoot;
+    assert.equal(nextRoot.DisplayName, 'Distinct root title');
+    assert.equal(nextRoot.Description, 'Distinct root description');
+});
+
+test('GenericEdit postback keeps canonical object identities while value rendering uses an escaped ItemList copy', async () => {
+    const rt = runtime(), shell = makeShell(), view = new rt.View(shell.view, {PageId: 'synthetic-a'});
+    const page = syntheticPage();
+    const canonicalData = '{"PrimaryText":"<img src=x onerror=attack()>","Tag":"<b>kept</b>"}';
+    page.EditObjectContainer.EditorRoot.EditorItems = [{Id: 'items', EditorType: 'ItemList'}];
+    page.EditObjectContainer.Object.items = [{Text: '<em>unsafe</em>', Tag: {Text: '<b>tag</b>'}, Data: canonicalData}];
+    page.EditObjectContainer.DefaultObject.items = [{Text: '<i>fallback</i>', Data: canonicalData}];
+    view.onResume(); await resolveView(rt, rt.requests[0], page);
+
+    const canonical = view.data.EditObjectContainer;
+    const rendered = rt.editorCalls.render[0];
+    const values = rt.editorCalls.set[0].container;
+    assert.strictEqual(rendered.Object, canonical.Object);
+    assert.strictEqual(rendered.DefaultObject, canonical.DefaultObject);
+    assert.notStrictEqual(values.Object, canonical.Object);
+    assert.notStrictEqual(values.DefaultObject, canonical.DefaultObject);
+    assert.equal(values.Object.items[0].Text, '&lt;em&gt;unsafe&lt;/em&gt;');
+    assert.equal(values.Object.items[0].Tag.Text, '&lt;b&gt;tag&lt;/b&gt;');
+    assert.equal(values.Object.items[0].Data, canonicalData);
+    assert.equal(canonical.Object.items[0].Text, '<em>unsafe</em>');
+    assert.equal(canonical.Object.items[0].Tag.Text, '<b>tag</b>');
+    assert.equal(canonical.Object.items[0].Data, canonicalData);
+    assert.equal(values.DefaultObject.items[0].Text, '&lt;i&gt;fallback&lt;/i&gt;');
+    assert.equal(canonical.DefaultObject.items[0].Text, '<i>fallback</i>');
 });
 
 test('plugin captions own the header and use escaped header HTML with a plain document title', async () => {
@@ -446,8 +506,14 @@ test('Dialog and Wizard render into their own roots and command actions enforce 
         const data = syntheticPage('synthetic-a', 'view-a', {viewType, commands: [
             {CommandType: commandType, Caption: commandType, IsVisible: true, IsEnabled: true}
         ]});
+        data.EditObjectContainer.EditorRoot.DisplayName = data.Caption;
+        data.EditObjectContainer.EditorRoot.Description = data.SubCaption;
         view.onResume(); await resolveView(rt, rt.requests[0], data);
         assert.ok(view.dialog, `${viewType} should have a modal root`);
+        assert.equal(view.dialog.querySelector('.mainTitle').textContent, data.Caption);
+        assert.equal(view.dialog.querySelector('.mainSubTitle').textContent, data.SubCaption);
+        assert.equal(rt.editorCalls.render[0].EditorRoot.DisplayName, '');
+        assert.equal(rt.editorCalls.render[0].EditorRoot.Description, '');
         assert.equal(rt.dialogHelper.opened[0], view.dialog);
         const form = view.dialog.querySelector('form');
         assert.ok(form);
