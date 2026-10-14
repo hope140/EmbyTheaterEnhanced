@@ -104,6 +104,7 @@ test('bundled identity reader returns package file hashes independently of runti
   }));
   assert.deepEqual(await readBundledVersions(root, sourceCommit), {
     helperVersion: '0.3.0',
+    helperFileSha256: sha256(files[0][1]),
     libmpvVersion: 'v0.41.0-test', libmpvFileSha256: sha256(files[1][1])
   });
 });

@@ -1,5 +1,15 @@
 # 维护记录
 
+## 2026-10-14 M02 手动内核候选实施
+
+- 用户已确认方案为手动导入完整候选ZIP、下次应用启动生效、候选启动验证失败一次回到固定baseline。新隔离组合worktree基于`a820f5d5dfba35f1f52b93a6d7097af80552fb02`；保留旧M01候选、共享旧主目录与所有已有改动。本批无Git提交/推送/PR/合并/发布/安装授权。
+- 主线程保留`service.js`、`main.js`、窄IPC、startup effective target、退出确认和fallback；Luna worker分别负责纯ZIP/schema/PE parser及profile store测试。候选包只含`candidate.json`、`mpv-1.dll`、`SOURCE.txt`、`NOTICE.txt`；固定生产Helper SHA/API131077/protocol1/capabilities，不接收renderer任意路径/URL/command，不执行包内文件。大包解析/hash/Deflate/PE预检在本地worker_threads运行，关闭等待本任务worker退出。
+- Profile状态以DLL SHA寻址、对象不可覆盖；导入不选择，选择仅为pendingRestart。Main在应用构造时冻结一次启动选择；无候选继续baseline lazy启动，候选才在renderer page load前启动前验证。失败候选仅在owned process exit确认后fallback一次；有效候选失败后本进程effective target锁存baseline，后续create或baseline crash重建不重新试候选。成功候选的显式recreate仍绑定同一candidate；播放中Helper crash不换库/重放session。损坏JSON/unknown schema和超限普通state仅由用户显式baseline选择原子修复，state link/directory拒绝并保留。
+- About明确分开包/静态结果、pending/active、ready handshake和image SHA UNKNOWN；source/notice来自随包声明，releaseability NOT_ASSESSED。离线维护工具生成固定ZIP并在输出前用同一import validator readback。无可信候选来源、完整runtime build、Helper/DLL load、真实profile、播放器前台、Emby/服务器或业务播放验收。
+- 定向矩阵：16个测试文件164/164，包含ZIP Store/Deflate尾流消费、CRC/schema/path/flags/Zip64/属性/重复名/offset重叠、PE架构/节表/RVA/导出、package store的取消/并发/原子性/state修复、严格IPC、About error/status、lazy baseline、candidate启动/单次fallback/有效target锁存/recreate/crash/destroy竞态和worker cancel/timeout/error/exit join。另有精确hash匹配的已构建baseline DLL只读PE检查，未加载或执行。
+- 静态门禁：23个JS/CJS `node --check`通过、`git diff --check`通过、限定密钥/用户绝对路径扫描0命中。未执行完整`npm test`、source-bound build/installer/系统写入，候选保持uncommitted隔离状态。独立Astra readback对精确sourceContentSet `7958559f3a917ec9adf7396688dc0ab2438e4b65be909f07eb156f8a2567c194` 做90/90及SHA稳定检查；之后仅在main/IPC/About补充“Helper身份已验证但profile候选存储不可用”的独立状态原因与说明，增加对应IPC/UI断言，本worktree重跑当前完整相关集合164/164。
+- Model Tier 3；Model为当前GPT-6主线程（运行时未显示更细模型别名），Reason为跨main/IPC/store/Native Helper的启动/退出/安全边界；Escalated为NO（从起始即按Tier 3）。Luna纯模块worker在独立文件owner下完成parser/store；Astra进行了只读独立核心复核。结果停在父会话集中审核，无新Git写入授权。
+
 ## 2026-10-14 L02 停用旧 AppHost 系统动作
 
 - 用户选择停用旧 sleep/shutdown/restart 协议动作。Web apphost 不再广告这三项能力或暴露对应方法；apphost-command 白名单及 main 协议分派不再接受和执行这些 token，删除专属系统动作函数。拒绝请求仍调用协议 callback 并返回空响应。apphost.js 是 source-maintained 的 src/electronapp 产品文件；基线提交 aab528b 的 Git blob 为 52614ee25e10d74df5da8d2583ed9955e455b677，输入字节 SHA-256 为 7087A292E7262131E0F1EA08716E257846B55FE23510302A7D6E6AC746DA6A21，直接修改受 sourceCommit 绑定，不需要 vendor overlay。

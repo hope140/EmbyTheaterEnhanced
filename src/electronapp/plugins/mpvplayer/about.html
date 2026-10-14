@@ -30,6 +30,21 @@
             </div>
         </section>
 
+        <section class="ete-settings-section verticalSection" aria-labelledby="ete-about-kernel-title">
+            <div class="ete-settings-section-header">
+                <div><h2 id="ete-about-kernel-title" class="sectionTitle">libmpv 内核候选</h2><p>只导入本地完整候选包。选择只在下次应用启动时生效；当前播放和 Native Helper 不切换。技术检查不代表来源许可审查或可发行结论。</p></div>
+            </div>
+            <div class="ete-settings-card about-kernel-card">
+                <div class="ete-settings-actions">
+                    <button type="button" is="emby-button" class="raised button-submit ete-settings-button ete-settings-button--primary btnImportKernel">导入 ZIP 候选</button>
+                    <button type="button" is="emby-button" class="raised ete-settings-button ete-settings-button--secondary btnSelectBaseline">下次启动使用固定基线</button>
+                </div>
+                <div class="ete-settings-status aboutKernelState" role="status" aria-live="polite"></div>
+                <div class="ete-settings-status aboutKernelOperationState" role="status" aria-live="polite"></div>
+                <div class="aboutKernelCandidates" aria-live="polite"></div>
+            </div>
+        </section>
+
         <section class="ete-settings-section verticalSection" aria-labelledby="ete-about-platform-title">
             <div class="ete-settings-section-header"><div><h2 id="ete-about-platform-title" class="sectionTitle">运行环境</h2></div></div>
             <div class="ete-settings-card">

@@ -95,6 +95,28 @@ function validateCommand(input) {
   return args;
 }
 
+function normalizeStartupKernelSelection(value) {
+  if (value && value.kind === 'candidate' && /^[0-9a-f]{64}$/.test(value.candidateId || '') &&
+      typeof value.libmpvPath === 'string' && path.isAbsolute(value.libmpvPath) &&
+      typeof value.expectedLibmpvVersion === 'string' && /^mpv v[\x20-\x7e]{1,123}$/.test(value.expectedLibmpvVersion)) {
+    return Object.freeze({
+      kind: 'candidate',
+      candidateId: value.candidateId,
+      libmpvPath: path.resolve(value.libmpvPath),
+      expectedLibmpvVersion: value.expectedLibmpvVersion
+    });
+  }
+  if (value && value.kind === 'baseline') {
+    return Object.freeze({
+      kind: 'baseline',
+      selectionState: value.selectionState === 'invalid' ? 'invalid' : 'valid',
+      invalidCandidateId: /^[0-9a-f]{64}$/.test(value.invalidCandidateId || '') ? value.invalidCandidateId : null,
+      reasonCode: /^[a-z0-9-]{1,48}$/.test(value.reasonCode || '') ? value.reasonCode : null
+    });
+  }
+  return Object.freeze({kind: 'baseline', selectionState: value ? 'invalid' : 'valid', invalidCandidateId: null, reasonCode: value ? 'selection-invalid' : null});
+}
+
 function createService(options) {
   const settings = options || {};
   const electron = settings.electron;
@@ -109,6 +131,15 @@ function createService(options) {
   const helperPath = path.join(runtimeRoot, 'electronapp', 'native-helper', 'ete-mpv-helper.exe');
   const libmpvPath = path.join(runtimeRoot, 'electronapp', 'libmpv', 'x64', 'mpv-1.dll');
   const mode = resolveMode(settings.mode);
+  const kernelStore = settings.kernelStore || null;
+  const startupKernel = normalizeStartupKernelSelection(settings.startupKernelSelection || null);
+  const baselineKernelTarget = Object.freeze({candidateId: null, libmpvPath,
+    expectedLibmpvVersion: EXPECTED_LIBMPV_VERSION, sha256: EXPECTED_LIBMPV_SHA256});
+  const startupCandidateTarget = startupKernel.kind === 'candidate'
+    ? Object.freeze({candidateId: startupKernel.candidateId, libmpvPath: startupKernel.libmpvPath,
+        expectedLibmpvVersion: startupKernel.expectedLibmpvVersion, sha256: startupKernel.candidateId})
+    : null;
+  let effectiveKernelTarget = startupCandidateTarget || baselineKernelTarget;
   let client = null;
   let startingClient = null;
   let startPromise = null;
@@ -117,6 +148,15 @@ function createService(options) {
   let crashCount = 0;
   let recreateCount = 0;
   let everStarted = false;
+  let activeKernelId = null;
+  let activeKernelVersion = EXPECTED_LIBMPV_VERSION;
+  let activeKernelSha256 = EXPECTED_LIBMPV_SHA256;
+  let kernelActivationState = startupKernel.kind === 'candidate' ? 'candidate-pending' :
+    startupKernel.invalidCandidateId ? 'candidate-invalid-pending-fallback' : 'baseline-lazy';
+  let kernelFailureReason = startupKernel.reasonCode;
+  let startupKernelFailure = null;
+  let candidateStartupAttempted = false;
+  let kernelFallbackOccurred = false;
   let destroyed = false;
   let destroyPromise = null;
   const pendingClientDestructions = new Set();
@@ -430,71 +470,201 @@ function createService(options) {
     return surfaceWindow;
   }
 
-  async function ensureClient() {
+  function recordKernelActivation(candidateId, outcome, reasonCode) {
+    if (!kernelStore || typeof kernelStore.recordActivationResult !== 'function') return Promise.resolve(null);
+    return Promise.resolve(kernelStore.recordActivationResult(candidateId, outcome, reasonCode)).catch(function () {
+      kernelFailureReason = 'activation-state-write-failed';
+      log('kernel-activation-state-write-failed', {outcome});
+      return null;
+    });
+  }
+
+  function candidateFailureCode(error) {
+    const code = String(error && (error.code || error.message) || '');
+    return ['invalid-helper-handshake', 'missing-helper-capability', 'unexpected-libmpv-version'].includes(code)
+      ? 'candidate-handshake-failed'
+      : code === 'candidate-integrity-failed' || code === 'candidate-not-found'
+        ? 'candidate-integrity-failed'
+        : 'candidate-start-failed';
+  }
+
+  async function startTarget(target, candidateStartup) {
     if (destroyed) throw new Error('native-helper-service-destroyed');
-    if (client && !client.transportTerminated && !client.exited) return client;
-    if (startPromise) return startPromise;
+    activeKernelVersion = target.expectedLibmpvVersion;
+    activeKernelSha256 = target.sha256;
+    if (target.candidateId) {
+      if (!kernelStore || typeof kernelStore.verifyCandidateForStartup !== 'function') throw Object.assign(new Error('candidate-integrity-failed'), {code: 'candidate-integrity-failed'});
+      await kernelStore.verifyCandidateForStartup(target.candidateId, target.expectedLibmpvVersion);
+      if (destroyed) throw new Error('native-helper-service-destroyed');
+    }
     const host = ensureSurfaceWindow();
-    if (!fileSystem.existsSync(helperPath) || !fileSystem.existsSync(libmpvPath)) throw new Error('native-helper-runtime-missing');
-    startPromise = (async function () {
-      let owned;
-      const helperRun = ++helperRunSequence;
-      owned = new ClientClass({
-        helperPath,
-        libmpvPath,
-        parentWindowHandle: decimalWindowHandle(host),
-        expectedLibmpvVersion: EXPECTED_LIBMPV_VERSION,
-        onDiagnostic: function (record) { diagnostic(Object.assign({}, record, {helperRun})); },
-        onEvent: function (message) {
-          if (client !== owned) return;
-          if (message.name === 'end-file' && message.value && message.value.reason === 4) {
-            if (message.generationId !== owned.currentGenerationId) return;
-            clearPresentation(presentation);
-            surfaceWanted = false;
-            syncSurfaceVisibility('media-error');
-            sendEvent({type: 'bridge_error', reason: 'load-failed'});
-            log('load-failed', {reason: 'mpv-end-file-error'});
-            return;
-          }
-          if (!observed.has(message.name)) return;
-          sendEvent({type: 'property_change', generationId: message.generationId, data: {name: message.name, value: message.value}});
-        },
-        onTerminal: function (terminal) {
-          if (client !== owned) return;
-          crashCount += terminal.name === 'process-exit-terminal' || terminal.name === 'stdout-end' ? 1 : 0;
+    if (!fileSystem.existsSync(helperPath) || !fileSystem.existsSync(target.libmpvPath)) throw new Error('native-helper-runtime-missing');
+    let owned;
+    const helperRun = ++helperRunSequence;
+    owned = new ClientClass({
+      helperPath,
+      libmpvPath: target.libmpvPath,
+      parentWindowHandle: decimalWindowHandle(host),
+      expectedLibmpvVersion: target.expectedLibmpvVersion,
+      onDiagnostic: function (record) { diagnostic(Object.assign({}, record, {helperRun})); },
+      onEvent: function (message) {
+        if (client !== owned) return;
+        if (message.name === 'end-file' && message.value && message.value.reason === 4) {
+          if (message.generationId !== owned.currentGenerationId) return;
           clearPresentation(presentation);
-          lastVisibleMedia = null;
-          ++generationEpoch;
           surfaceWanted = false;
-          syncSurfaceVisibility('helper-terminal');
-          sendEvent({type: 'bridge_error', reason: terminal.name});
-          log('helper-terminal', {reason: terminal.name});
-          client = null;
-          // Transport death releases playback authority, not owned-exit waiting.
-          const completion = owned.kill();
-          pendingClientDestructions.add(completion);
-          completion.then(function () { pendingClientDestructions.delete(completion); },
-            function () { pendingClientDestructions.delete(completion); });
+          syncSurfaceVisibility('media-error');
+          sendEvent({type: 'bridge_error', reason: 'load-failed'});
+          log('load-failed', {reason: 'mpv-end-file-error'});
+          return;
         }
-      });
-      helperRuns.set(owned, helperRun);
-      startingClient = owned;
+        if (!observed.has(message.name)) return;
+        sendEvent({type: 'property_change', generationId: message.generationId, data: {name: message.name, value: message.value}});
+      },
+      onTerminal: function (terminal) {
+        if (client !== owned) return;
+        crashCount += terminal.name === 'process-exit-terminal' || terminal.name === 'stdout-end' ? 1 : 0;
+        clearPresentation(presentation);
+        lastVisibleMedia = null;
+        ++generationEpoch;
+        surfaceWanted = false;
+        syncSurfaceVisibility('helper-terminal');
+        sendEvent({type: 'bridge_error', reason: terminal.name});
+        log('helper-terminal', {reason: terminal.name});
+        if (activeKernelId) {
+          kernelActivationState = 'candidate-runtime-failed';
+          kernelFailureReason = 'candidate-runtime-failed';
+        }
+        client = null;
+        // Transport death releases playback authority, not owned-exit waiting.
+        const completion = owned.kill();
+        pendingClientDestructions.add(completion);
+        completion.then(function () { pendingClientDestructions.delete(completion); },
+          function () { pendingClientDestructions.delete(completion); });
+      }
+    });
+    helperRuns.set(owned, helperRun);
+    startingClient = owned;
+    try {
+      await owned.start();
+      if (destroyed) {
+        await owned.kill();
+        if (owned.exitPromise) await owned.exitPromise;
+        throw new Error('native-helper-service-destroyed');
+      }
+      if (everStarted) recreateCount += 1;
+      everStarted = true;
+      client = owned;
+      activeKernelId = target.candidateId;
+      activeKernelVersion = owned.handshake.libmpvVersion;
+      activeKernelSha256 = target.sha256;
+      kernelActivationState = target.candidateId
+        ? 'candidate-active'
+        : candidateStartup ? 'candidate-fallback-baseline-active' : 'baseline-active';
+      log('helper-ready', {protocolVersion: PROTOCOL_VERSION, helperVersion: owned.handshake.helperVersion, libmpvVersion: owned.handshake.libmpvVersion});
+      if (target.candidateId) await recordKernelActivation(target.candidateId, 'candidate-ready', 'candidate-ready');
+      return owned;
+    } catch (error) {
+      if (client === owned) client = null;
+      let exited = owned.exited === true;
       try {
-        await owned.start();
-        if (destroyed) {
-          await owned.kill();
+        await owned.kill();
+        if (owned.exitPromise) await owned.exitPromise;
+        exited = owned.exited === true || exited;
+      } catch (_) { exited = owned.exited === true; }
+      if (!exited) {
+        const failure = new Error('native-helper-exit-unconfirmed');
+        failure.fallbackSafe = false;
+        throw failure;
+      }
+      throw error;
+    } finally {
+      if (startingClient === owned) startingClient = null;
+    }
+  }
+
+  function ensureClient() {
+    if (destroyed) return Promise.reject(new Error('native-helper-service-destroyed'));
+    if (startupKernelFailure) return Promise.reject(new Error('native-helper-startup-failed'));
+    if (client && !client.transportTerminated && !client.exited) return Promise.resolve(client);
+    if (startPromise) return startPromise;
+    startPromise = (async function () {
+      if (!candidateStartupAttempted && (startupKernel.kind === 'candidate' || startupKernel.invalidCandidateId)) {
+        candidateStartupAttempted = true;
+        let reasonCode = startupKernel.reasonCode || 'candidate-start-failed';
+        if (startupKernel.kind === 'candidate') {
+          kernelActivationState = 'candidate-starting';
+          try {
+            return await startTarget(effectiveKernelTarget, true);
+          } catch (error) {
+            if (destroyed) throw new Error('native-helper-service-destroyed');
+            if (error && error.fallbackSafe === false) {
+              reasonCode = 'candidate-exit-unconfirmed';
+              kernelActivationState = 'candidate-exit-unconfirmed';
+              kernelFailureReason = reasonCode;
+              startupKernelFailure = reasonCode;
+              await recordKernelActivation(startupKernel.candidateId, 'candidate-fallback', reasonCode);
+              throw new Error('native-helper-startup-failed');
+            }
+            reasonCode = candidateFailureCode(error);
+            effectiveKernelTarget = baselineKernelTarget;
+            kernelFallbackOccurred = true;
+            kernelActivationState = 'candidate-fallback-baseline-starting';
+            kernelFailureReason = reasonCode;
+            await recordKernelActivation(startupKernel.candidateId, 'candidate-fallback', reasonCode);
+          }
+        } else {
+          effectiveKernelTarget = baselineKernelTarget;
+          kernelFallbackOccurred = true;
+          kernelActivationState = 'candidate-invalid-fallback-baseline-starting';
+          reasonCode = startupKernel.reasonCode || 'candidate-integrity-failed';
+          kernelFailureReason = reasonCode;
+          await recordKernelActivation(startupKernel.invalidCandidateId, 'candidate-fallback', reasonCode);
+        }
+        try {
+          return await startTarget(effectiveKernelTarget, true);
+        } catch (error) {
+          if (destroyed || error && error.message === 'native-helper-service-destroyed') {
+            throw new Error('native-helper-service-destroyed');
+          }
+          kernelActivationState = 'baseline-start-failed';
+          startupKernelFailure = 'base-start-failed';
+          kernelFailureReason = 'base-start-failed';
+          await recordKernelActivation(startupKernel.candidateId || startupKernel.invalidCandidateId,
+            'baseline-start-failed', 'base-start-failed');
+          throw new Error('native-helper-startup-failed');
+        }
+      }
+
+      try {
+        return await startTarget(effectiveKernelTarget, kernelFallbackOccurred);
+      } catch (error) {
+        if (destroyed || error && error.message === 'native-helper-service-destroyed') {
           throw new Error('native-helper-service-destroyed');
         }
-        if (everStarted) recreateCount += 1;
-        everStarted = true;
-        client = owned;
-        log('helper-ready', {protocolVersion: PROTOCOL_VERSION, helperVersion: owned.handshake.helperVersion, libmpvVersion: owned.handshake.libmpvVersion});
-        return owned;
-      } finally {
-        if (startingClient === owned) startingClient = null;
+        if (kernelFallbackOccurred && effectiveKernelTarget.candidateId === null) {
+          kernelActivationState = 'baseline-start-failed';
+          startupKernelFailure = 'base-start-failed';
+          kernelFailureReason = 'base-start-failed';
+          await recordKernelActivation(startupKernel.candidateId || startupKernel.invalidCandidateId,
+            'baseline-start-failed', 'base-start-failed');
+          throw new Error('native-helper-startup-failed');
+        }
+        throw error;
       }
     }()).finally(function () { startPromise = null; });
     return startPromise;
+  }
+
+  function prewarm() {
+    if (startupKernel.kind !== 'candidate' && !startupKernel.invalidCandidateId) {
+      return Promise.resolve({status: 'skipped', reason: 'baseline-selected'});
+    }
+    return ensureClient().then(function () {
+      return {status: 'ready', kernel: kernelActivationState};
+    }).catch(function () {
+      return {status: 'failed', kernel: kernelActivationState, reasonCode: kernelFailureReason || 'base-start-failed'};
+    });
   }
 
   function requireEndpoint(endpointId) {
@@ -746,20 +916,30 @@ function createService(options) {
       libmpvVersion: handshake ? handshake.libmpvVersion : null,
       mpvClientApiVersion: handshake ? handshake.mpvClientApiVersion : null,
       validatedCapabilities,
-      expectedLibmpvVersion: EXPECTED_LIBMPV_VERSION,
+      expectedLibmpvVersion: activeKernelVersion,
       expectedMpvClientApiVersion: EXPECTED_MPV_CLIENT_API_VERSION,
-      expectedLibmpvSha256: EXPECTED_LIBMPV_SHA256,
+      expectedLibmpvSha256: activeKernelSha256,
       libmpvSha256: null,
       libmpvImageSha256: null,
       fixedNativeRenderPath: 'vo=gpu-next; gpu-api=d3d11',
       renderSettingUiValues: 'mpv-vo/mpv-gpuapi not applied as Native properties',
       observedNativeRenderPath: null,
+      kernel: {
+        startupSelection: startupKernel.kind,
+        startupCandidateId: startupKernel.candidateId || startupKernel.invalidCandidateId || null,
+        startupDecisionAttempted: candidateStartupAttempted,
+        effectiveCandidateId: effectiveKernelTarget.candidateId,
+        fallbackOccurred: kernelFallbackOccurred,
+        activeCandidateId: activeKernelId,
+        activationState: kernelActivationState,
+        reasonCode: kernelFailureReason || startupKernelFailure || null
+      },
       crashCount,
       recreateCount
     };
   }
 
-  return {call, destroy, mode, notify, status};
+  return {call, destroy, mode, notify, prewarm, status, kernelStatus: function () { return status().kernel; }};
 }
 
 function register(options) {

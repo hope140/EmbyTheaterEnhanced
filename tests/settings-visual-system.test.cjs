@@ -303,7 +303,7 @@ test('About loads environment on entry and checks updates only after a user clic
     await new Promise(function (resolve) { setImmediate(resolve); });
     assert.equal(infoCalls, 2, 'each resume refreshes environment information');
     assert.equal(view.querySelector('.aboutAppVersion').textContent, '0.2.4');
-    assert.deepEqual(invoked, ['enhanced-maintenance-info', 'enhanced-maintenance-check-update', 'enhanced-maintenance-info']);
+    assert.deepEqual(invoked, ['enhanced-maintenance-info', 'enhanced-maintenance-check-update', 'enhanced-maintenance-info', 'enhanced-mpv-kernel-status']);
 });
 
 test('About renders the exact trusted copy snapshot and ignores an older pending load response', async () => {
@@ -442,6 +442,24 @@ test('About route and all three settings pages use Emby native page and control 
     }
     assert.match(about, /<code class="aboutAppVersion">/);
     assert.match(about, /class="raised button-submit ete-settings-button ete-settings-button--primary btnCheckUpdates"/);
+});
+
+test('About kernel controls keep native keyboard buttons, live status, and wrapping long identities', () => {
+    const html = readPluginFile('about.html');
+    const controller = readPluginFile('about.js');
+    const css = readPluginFile('about.css');
+    assert.match(html, /aria-labelledby="ete-about-kernel-title"/);
+    assert.match(html, /<button type="button" is="emby-button"[^>]*btnImportKernel/);
+    assert.match(html, /<button type="button" is="emby-button"[^>]*btnSelectBaseline/);
+    assert.match(html, /class="ete-settings-status aboutKernelState" role="status" aria-live="polite"/);
+    assert.match(html, /class="ete-settings-status aboutKernelOperationState" role="status" aria-live="polite"/);
+    assert.match(controller, /enhanced-mpv-kernel-status/);
+    assert.match(controller, /enhanced-mpv-kernel-import/);
+    assert.match(controller, /enhanced-mpv-kernel-select/);
+    assert.match(controller, /identity\.textContent = candidate\.candidateId/);
+    assert.match(controller, /card\.appendChild\(select\)/);
+    assert.match(css, /\.about-kernel-candidate code\s*\{[^}]*overflow-wrap:\s*anywhere/s);
+    assert.doesNotMatch(controller, /\.innerHTML\s*=/);
 });
 
 test('functional STRM control classes remain available in the page or its generated controls', () => {

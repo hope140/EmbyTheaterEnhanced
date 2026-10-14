@@ -57,6 +57,7 @@ test('bundled versions require matching provenance and hashes for fixed runtime 
 
     assert.deepEqual(await readBundledVersions(fixture.runtimeRoot, sourceCommit), {
         helperVersion: '0.2.5',
+        helperFileSha256: sha256(fixture.helper),
         libmpvVersion: 'v0.41.0',
         libmpvFileSha256: sha256(fixture.libmpv)
     });

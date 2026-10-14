@@ -120,7 +120,16 @@
     var unregisterDiagnosticsIpc = function () {};
     var unregisterMaintenanceIpc = function () {};
     var unregisterNativeHelperIpc = function () { return Promise.resolve(); };
+    var unregisterMpvKernelIpc = function () {
+        var pendingStore = mpvKernelStore;
+        return pendingStore && typeof pendingStore.close === 'function'
+            ? Promise.resolve().then(function () { return pendingStore.close(); })
+            : Promise.resolve();
+    };
     var nativeHelperService;
+    var mpvKernelStore = null;
+    var appIsShuttingDown = false;
+    var readyStartupPromise = Promise.resolve();
 
     var readCurrentBundledVersions = bundledVersions.createBundledVersionReader(path.resolve(__dirname, '..'), diagnosticsAppInfo.buildCommit);
     async function getCurrentEnhancedAppInfo() {
@@ -902,6 +911,10 @@
     var strmConfigStoreModule = require('./enhanced/strm-config-store');
     var cd2ServiceModule = require('./enhanced/cd2-service');
     var nativeHelperServiceModule = require('./native-helper/service');
+    var nativeHelperMode = nativeHelperServiceModule.resolveMode(process.env.ETE_MPV_BRIDGE_MODE);
+    var mpvKernelStoreModule = require('./enhanced/mpv-kernel-store');
+    var mpvKernelIpc = require('./enhanced/mpv-kernel-ipc');
+    var mpvKernelBootstrap = require('./enhanced/mpv-kernel-bootstrap');
     strmConfigStore = strmConfigStoreModule.createStore({
         rootDir: require('path').join(app.getPath('userData'), 'config'),
         environment: Object.assign({}, process.env)
@@ -943,31 +956,73 @@
         clipboard: electron.clipboard,
         shell: electron.shell
     });
-    nativeHelperService = nativeHelperServiceModule.createService({
-        electron: electron,
-        getMainWindow: function () { return mainWindow; },
-        getWebContents: getWebContents,
-        logger: enhancedLog,
-        runtimeRoot: path.resolve(__dirname, '..'),
-        mode: nativeHelperServiceModule.resolveMode(process.env.ETE_MPV_BRIDGE_MODE)
-    });
-    unregisterNativeHelperIpc = nativeHelperServiceModule.register({
-        ipcMain: ipcMain,
-        service: nativeHelperService,
-        getWebContents: getWebContents
-    });
+    async function initializeNativeHelperForStartup() {
+        var prepared = await mpvKernelBootstrap.prepare({
+            readBundledVersions: readCurrentBundledVersions,
+            profileRoot: appBootstrapState.profileRoot,
+            createStore: function (options) { return mpvKernelStoreModule.createStore(options); },
+            shouldCancel: function () { return appIsShuttingDown; },
+            onStoreCreated: function (store) {
+                mpvKernelStore = store;
+                if (appIsShuttingDown && typeof store.close === 'function') store.close();
+            }
+        });
+        if (appIsShuttingDown) {
+            if (prepared.store && typeof prepared.store.close === 'function') await prepared.store.close();
+            return null;
+        }
+        mpvKernelStore = prepared.store;
+        var startupSelection = prepared.startupSelection;
+        var kernelStoreUnavailableReason = prepared.identityState !== 'verified'
+            ? 'package-identity-unavailable'
+            : (mpvKernelStore ? null : 'store-unavailable');
+        if (prepared.identityState !== 'verified') {
+            enhancedLog({category: 'native-helper', event: 'kernel-package-identity-unavailable', details: {}});
+        } else if (!mpvKernelStore) {
+            enhancedLog({category: 'native-helper', event: 'kernel-store-unavailable', details: {reason: 'store-unavailable'}});
+        }
+
+        nativeHelperService = nativeHelperServiceModule.createService({
+            electron: electron,
+            getMainWindow: function () { return mainWindow; },
+            getWebContents: getWebContents,
+            logger: enhancedLog,
+            runtimeRoot: path.resolve(__dirname, '..'),
+            mode: nativeHelperMode,
+            kernelStore: mpvKernelStore,
+            startupKernelSelection: startupSelection
+        });
+        unregisterNativeHelperIpc = nativeHelperServiceModule.register({
+            ipcMain: ipcMain,
+            service: nativeHelperService,
+            getWebContents: getWebContents
+        });
+        unregisterMpvKernelIpc = mpvKernelIpc.register({
+            ipcMain: ipcMain,
+            dialog: electron.dialog,
+            getBrowserWindow: function () { return mainWindow; },
+            getWebContents: getWebContents,
+            service: nativeHelperService,
+            store: mpvKernelStore,
+            unavailableReason: kernelStoreUnavailableReason
+        });
+        return startupSelection;
+    }
     ['ETE_CD2_ENABLED', 'ETE_CD2_ORIGIN', 'ETE_CD2_TOKEN', 'ETE_CD2_LOCAL_PREFIX', 'ETE_CD2_CLOUD_PREFIX', 'ETE_CD2_DIRECT_URL', 'ETE_CD2_SOURCE_PREFIX', 'ETE_CD2_MOUNT_PREFIX', 'ETE_MPV_BRIDGE_MODE'].forEach(function (name) {
         delete process.env[name];
     });
     app.once('before-quit', function (event) {
         event.preventDefault();
+        appIsShuttingDown = true;
         enhancedLog({category: 'app', event: 'shutdown', details: {reason: 'before-quit'}});
         unregisterDiagnosticsIpc();
         unregisterMaintenanceIpc();
         unregisterStrmConfigIpc();
         unregisterCd2Ipc();
         var nativeShutdown = unregisterNativeHelperIpc();
-        Promise.resolve(nativeShutdown).catch(function () {}).then(function () { app.quit(); });
+        var kernelShutdown = unregisterMpvKernelIpc();
+        Promise.all([nativeShutdown, kernelShutdown, Promise.resolve(readyStartupPromise).catch(function () {})])
+            .catch(function () {}).then(function () { app.quit(); });
     });
     ipcMain.on('enhanced-diagnostics', function (event, snapshot) {
         if (rendererBoundary.isTrusted(event, getWebContents())) {
@@ -1098,7 +1153,11 @@
 
         // Create the browser window.
 
-        loadStartInfo().then(function () {
+        readyStartupPromise = initializeNativeHelperForStartup().then(function () {
+            if (appIsShuttingDown || !nativeHelperService) return null;
+            return loadStartInfo();
+        }).then(async function () {
+            if (appIsShuttingDown || !nativeHelperService) return;
 
             mainWindow = new BrowserWindow(windowOptions);
 
@@ -1126,6 +1185,15 @@
             registerCec();
             registerFile();
 
+            var kernelPrewarm = await nativeHelperService.prewarm();
+            if (appIsShuttingDown) return;
+            if (kernelPrewarm && kernelPrewarm.status === 'failed') {
+                enhancedLog({category: 'native-helper', event: 'kernel-startup-resolution-failed', details: {
+                    state: kernelPrewarm.kernel,
+                    reason: kernelPrewarm.reasonCode
+                }});
+            }
+
             // and load the index.html of the app.
             mainWindow.loadURL(`file://${__dirname}/www/index.html?autostart=false`);
             mainWindow.setMenu(null);
@@ -1142,7 +1210,8 @@
             mainWindow.on("unmaximize", onUnMaximize);
             mainWindow.on("show", onWindowShow);
             mainWindow.show();
-
+        }).catch(function () {
+            enhancedLog({category: 'native-helper', event: 'app-startup-initialization-failed', details: {reason: 'startup-initialization-failed'}});
         });
     });
 })();

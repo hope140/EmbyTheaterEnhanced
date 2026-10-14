@@ -84,6 +84,7 @@ async function readBundledVersions(runtimeRoot, sourceCommit) {
         if (!files.every((file, index) => sameFile(file.stat, after[index].stat))) return null;
         return Object.freeze({
             helperVersion: helper.version,
+            helperFileSha256: fileHashes[0],
             libmpvVersion: mpv.version,
             libmpvFileSha256: fileHashes[1]
         });
