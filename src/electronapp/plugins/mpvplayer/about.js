@@ -46,7 +46,14 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!./enhanced-s
             aboutElectron: 'electron', aboutChromium: 'chromium', aboutNativeHelper: 'nativeHelper',
             aboutLibmpv: 'libmpv', aboutSourceCommit: 'sourceCommit', aboutNode: 'node',
             aboutWindows: 'windows', aboutDisplayDpi: 'displayDpi', aboutNativeHelperState: 'nativeHelperState',
-            aboutRunningNativeHelper: 'runningNativeHelper', aboutRunningLibmpv: 'runningLibmpv'
+            aboutPackageLibmpvSha256: 'packageLibmpvSha256',
+            aboutExpectedLibmpvVersion: 'expectedLibmpvVersion', aboutExpectedMpvClientApiVersion: 'expectedMpvClientApiVersion',
+            aboutExpectedLibmpvSha256: 'expectedLibmpvSha256', aboutRunningNativeHelper: 'runningNativeHelper',
+            aboutRunningLibmpv: 'runningLibmpv', aboutRunningLibmpvClientApiVersion: 'runningLibmpvClientApiVersion',
+            aboutValidatedNativeHelperCapabilities: 'validatedNativeHelperCapabilities',
+            aboutRunningLibmpvImageSha256: 'runningLibmpvImageSha256',
+            aboutFixedNativeRenderPath: 'fixedNativeRenderPath', aboutRenderSettingUiValues: 'renderSettingUiValues',
+            aboutObservedNativeRenderPath: 'observedNativeRenderPath'
         };
         Object.keys(fields).forEach(function (name) { setValue(view, '.' + name, info[fields[name]]); });
     };

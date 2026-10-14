@@ -50,6 +50,20 @@ test('unknown commands remain unknown and cannot alias a supported action', () =
     }
 });
 
+test('wrong URL sources and percent-encoded protocol tokens do not alias known commands', () => {
+    for (const url of [
+        'https://remote.example/electronapphost://shutdown',
+        'file:///app/index.html#electronapphost://sleep',
+        'javascript:electronapphost://shutdown',
+        'electronapphost://%73leep/',
+        'electronapphost://shut%64own/',
+        'electronapphost://restart%2f'
+    ]) {
+        const parsed = command.parse(url, 'electronapphost');
+        assert.equal(command.isKnown(parsed.command), false, url);
+    }
+});
+
 test('raw URL and query are retained independently from the canonical token', () => {
     const parsed = command.parse('electronapphost://OpenURL/?url=HTTP://Host/Path?A=B&C=D', 'electronapphost');
     assert.equal(parsed.command, 'openurl');

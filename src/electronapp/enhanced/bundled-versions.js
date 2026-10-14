@@ -72,14 +72,21 @@ async function readBundledVersions(runtimeRoot, sourceCommit) {
         if (!helper || helper.testing !== false || !/^\d+\.\d+\.\d+$/.test(helper.version || '') ||
             !mpv || !/^v\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(mpv.version || '')) return null;
         const entries = [[helper, 'electronapp/native-helper/ete-mpv-helper.exe'], [mpv, 'electronapp/libmpv/x64/mpv-1.dll']];
+        const fileHashes = [];
         for (let index = 0; index < entries.length; index++) {
             const [entry, relative] = entries[index];
             if (entry.runtimePath !== relative || !/^[0-9a-f]{64}$/.test(entry.sha256 || '')) return null;
-            if ((await readFile(files[index + 2], false)).sha256 !== entry.sha256) return null;
+            const actual = await readFile(files[index + 2], false);
+            if (actual.sha256 !== entry.sha256) return null;
+            fileHashes.push(actual.sha256);
         }
         const after = await snapshot(runtimeRoot);
         if (!files.every((file, index) => sameFile(file.stat, after[index].stat))) return null;
-        return Object.freeze({helperVersion: helper.version, libmpvVersion: mpv.version});
+        return Object.freeze({
+            helperVersion: helper.version,
+            libmpvVersion: mpv.version,
+            libmpvFileSha256: fileHashes[1]
+        });
     } catch (_) {
         return null;
     }

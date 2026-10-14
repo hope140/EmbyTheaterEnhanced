@@ -1,5 +1,11 @@
 # 项目状态
 
+2026-10-14：M01 身份/配置候选已按父审核归一化补丁整合进同一隔离组合候选。补丁9路径（6产品、3测试），Native ready 状态/API/经握手校验的能力、包内与预期libmpv身份分层展示；实际加载映像SHA及render属性回读保持UNKNOWN。exclusiveAudio按页面大小写键优先、仅缺键回退旧小写键，显式false不被覆盖。M01相关Native/配置/About测试72/72通过；与批次01组合后的overlay/provenance/build-input、Next/Session等定向测试也通过。完整构建、真实Helper/DLL、MPV_HOME、真实播放/客户端仍未验收；原M01候选补丁和worktree保持未改，组合候选未提交。批次01剩余唯一行为审核停点为L02旧系统动作协议及请求来源授权。
+
+2026-10-14：批次01续办到候选复核停点。L01 CustomCssJS 错误隔离/重试缺口已修复：固定输入SHA-256 2177DE28DCC4E715F07C63329DC361C5B4DDD37EB7E59F273830B22ACEA37912，overlay输出SHA-256 B9F6268F3E3126426F189F38F1E57FF4CD03D8F9A213305157E1F6842F251103；AMD/VM合成行为16/16、固定material selftest、Web overlay准备4/4和build input consumer/tamper用例1/1通过。L03固定Host托管IL未发现两份BAT的直接引用，但动态/外部调用和手工依赖仍UNKNOWN；本轮不排除两份BAT，也不清理既有安装。L04退役全局Anime4K按键拦截，不再重命名全局mpv文件或隐式Stop；按键不重新分配。L05详情overlay移除旧外置按钮和timer，设置值保留，item VM4/4与Next/Session 76/76通过。AppHost/外链18/18、Pepper retirement 4/4、runtime provenance 2/2、build-input audit 20/20通过。唯一未决停点是L02旧sleep/shutdown/restart协议是否失效或改用主进程明确确认；当前仍未验证请求方/来源，未触发系统动作。未运行完整build、客户端、真实Emby、安装或BAT；没有提交、推送或发行。
+
+2026-10-14：ROADMAP 批次01推进到 CustomCssJS 信任边界候选，基线为实时核对的 main e862288。固定源哈希 overlay 让服务器/本地 CSS 保持原选择行为，服务器 forced_on、已选择 JS 和旧本地配置留存但不再执行；出现活动脚本配置或无效 JS 配置时提示，坏 JS 配置不阻断 CSS。定向变换用例3/3、完整 Web overlay 准备4/4、AppHost 命令规范化5/5通过，git diff --check通过。尚未构建完整 runtime、启动客户端、连接真实 Emby 或验证发布包；现有 v0.3.2 Tag/附件、Stable/Latest 未改变。批次仍在进行：AppHost sleep/shutdown/restart 协议的主动操作与请求方合同待设计；两个旧 BAT 因 Carnival Host 精确依赖未知而未排除；Anime4K 快捷键的替代/按键传递语义未决定；外置播放器旧详情计时器行为和用户依赖未实测，均未修改。
+
 2026-10-14：本次主线集成范围为已发布v0.3.2测试版的插件兼容源码、对应测试/构建合同与项目总排期。产品内容保持373209b的已发布身份，新增修改仅为文档；历史主要修复的集成核对未发现另一个明确的产品遗漏。Stable/Latest仍为v0.3.1，v0.3.2保持Pre-release，既有Tag、安装包及附件来源保持。集成通过PR和公开CI核对，不包含研究实验、重新打包或系统安装；实际合并记录见Git历史。
 
 2026-10-14：主分支集成核对确认远端main仍为v0.3.1的`080d352`，34个既有PR均已合并。v0.3.2已发布测试版，但`codex/plugin-settings-compat`的17个提交尚未合入main；刚调整的总排期仍为本地文档修改。历史主要修复经祖先、等价补丁及内容核对已承接，未发现另一个明确遗漏的产品实现；研究探针和窗口激活实验保持候选，两个合成安装快照辅助文件是否保留待判断。本轮仅核对并记录，未合并、提交或推送。

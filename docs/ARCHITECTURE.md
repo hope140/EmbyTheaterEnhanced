@@ -16,7 +16,13 @@ STRM 按持久化 rules 的 cloud-first、mount-first 或 custom 顺序尝试 Di
 
 About 校验固定 provenance/manifest 与二进制身份，实时运行状态独立读取；缺失信息保留 UNKNOWN/NOT AVAILABLE。诊断旁路复用 logger 与 sender 校验，不改变 source 或播放时序。
 
+About 的 M01 状态模型分别展示已校验包内 libmpv 文件 SHA、编译期预期版本/API/SHA 和 ready Helper 握手报告的运行版本/API/受限能力子集。包内文件 SHA 不表示当前加载映像 SHA；当前映像哈希与 Native 属性回读仍为 UNKNOWN。固定 Native render path 为 gpu-next/D3D11，mpv-vo/mpv-gpuapi 设置页值不作为 Native property 应用。
+
 构建由 tools/build.ps1 从固定 sourceCommit 的 Git blob、生成器和锁定外部输入组装。source-provenance、runtime-provenance 和 build-manifest 分层记录；完整运行时仍依赖仓库外输入。Electron 使用固定 44.4.2 Windows x64 完整树。
+
+CustomCssJS 作为固定源哈希的 Web overlay 构建：服务器/本地 CSS 仍按既有选择加载；服务器/本地 JavaScript 配置保留，但不会在可信 renderer 中求值，检测到旧脚本选择或无效 JS 配置时显示一次提示。JS 配置解析失败不阻断 CSS。该边界只关闭 CustomCssJS 执行入口，不代表 renderer 已整体隔离；应用 preload 的 window.fs/window.ipc 能力仍由其他产品代码使用。
+
+固定源哈希的 item 详情 overlay 仅退役旧外置播放器按钮与 fromPlayEnded 计时器；externalplayers/autoplay 旧值保持不写不删，普通下一集仍由 PlaybackManager 的 Emby EnableNextEpisodeAutoPlay 与 PlayQueue/nextTrack 管理。构建排除旧 Pepper input；两份旧 Carnival 批处理因动态/外部 Host 消费者和手工工作流尚未闭合而继续保留。AppHost 系统动作协议的请求来源/显式用户确认合同仍待审核。
 
 [STRM](STRM_RESOLVER.md) · [配置](STRM_RESOLVER_SETTINGS.md) · [DirectUrl](CD2_DIRECT_URL.md) · [Native Helper](NATIVE_HELPER_BRIDGE.md) · [构建](PACKAGING.md)
 

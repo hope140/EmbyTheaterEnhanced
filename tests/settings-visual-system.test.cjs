@@ -86,8 +86,9 @@ test('About environment summary separates verified bundled versions from helper 
         chromium: '152.0.7977.130',
         node: '24.21.0',
         buildCommit: 'a'.repeat(40),
-        bundledVersions: Object.freeze({helperVersion: '0.2.1-helper', libmpvVersion: 'mpv v0.41.0'}),
-        nativeHelper: Object.freeze({helperVersion: '0.2.2-helper', libmpvVersion: 'mpv v0.42.0', state: 'starting'})
+        bundledVersions: Object.freeze({helperVersion: '0.2.1-helper', libmpvVersion: 'mpv v0.41.0', libmpvFileSha256: 'b'.repeat(64)}),
+        nativeHelper: Object.freeze({helperVersion: '0.2.2-helper', libmpvVersion: 'mpv v0.42.0', state: 'starting',
+            expectedLibmpvVersion: 'mpv expected', expectedMpvClientApiVersion: 131077, expectedLibmpvSha256: 'a'.repeat(64)})
     });
     const platformInfo = Object.freeze({windows: 'Windows test build'});
     const displayInfo = Object.freeze({summary: 'scaleFactor 1.50'});
@@ -95,21 +96,30 @@ test('About environment summary separates verified bundled versions from helper 
 
     assert.deepEqual(info, {
         appVersion: '0.2.3', electron: '44.4.2', chromium: '152.0.7977.130', node: '24.21.0',
-        nativeHelper: '0.2.1-helper', libmpv: 'mpv v0.41.0', nativeHelperState: 'starting',
-        runningNativeHelper: 'NOT AVAILABLE', runningLibmpv: 'NOT AVAILABLE', sourceCommit: 'a'.repeat(40),
+        nativeHelper: '0.2.1-helper', libmpv: 'mpv v0.41.0', packageLibmpvSha256: 'b'.repeat(64),
+        nativeHelperState: 'starting', expectedLibmpvVersion: 'mpv expected', expectedMpvClientApiVersion: '131077',
+        expectedLibmpvSha256: 'a'.repeat(64), runningNativeHelper: 'NOT AVAILABLE', runningLibmpv: 'NOT AVAILABLE',
+        runningLibmpvClientApiVersion: 'UNKNOWN', validatedNativeHelperCapabilities: 'UNKNOWN', runningLibmpvImageSha256: 'UNKNOWN',
+        fixedNativeRenderPath: 'UNKNOWN', renderSettingUiValues: 'UNKNOWN', observedNativeRenderPath: 'UNKNOWN', sourceCommit: 'a'.repeat(40),
         windows: 'Windows test build', displayDpi: 'scaleFactor 1.50'
     });
-    assert.match(maintenance.formatEnvironmentText(info), /libmpv: mpv v0\.41\.0/);
+    assert.match(maintenance.formatEnvironmentText(info), /Package libmpv DLL SHA256: b{64}/);
+    assert.match(maintenance.formatEnvironmentText(info), /Expected libmpv DLL SHA256: a{64}/);
     assert.equal(maintenance.buildEnvironmentInfo({nativeHelper: {helperVersion: 'helper', libmpvVersion: 'mpv v0.41.0'}}).libmpv, 'UNKNOWN');
     const readyInfo = maintenance.buildEnvironmentInfo({
-        bundledVersions: {helperVersion: '0.2.1-helper', libmpvVersion: 'mpv v0.41.0'},
-        nativeHelper: {state: 'ready', helperVersion: '0.2.2-helper', libmpvVersion: 'mpv v0.42.0'}
+        bundledVersions: {helperVersion: '0.2.1-helper', libmpvVersion: 'mpv v0.41.0', libmpvFileSha256: 'b'.repeat(64)},
+        nativeHelper: {state: 'ready', helperVersion: '0.2.2-helper', libmpvVersion: 'mpv v0.42.0',
+            mpvClientApiVersion: 131077, validatedCapabilities: ['gpu-next', 'd3d11'], libmpvImageSha256: null}
     });
     assert.equal(readyInfo.nativeHelper, '0.2.1-helper');
     assert.equal(readyInfo.libmpv, 'mpv v0.41.0');
     assert.equal(readyInfo.nativeHelperState, 'ready');
     assert.equal(readyInfo.runningNativeHelper, '0.2.2-helper');
     assert.equal(readyInfo.runningLibmpv, 'mpv v0.42.0');
+    assert.equal(readyInfo.packageLibmpvSha256, 'b'.repeat(64));
+    assert.equal(readyInfo.runningLibmpvClientApiVersion, '131077');
+    assert.equal(readyInfo.validatedNativeHelperCapabilities, 'gpu-next, d3d11');
+    assert.equal(readyInfo.runningLibmpvImageSha256, 'UNKNOWN');
     assert.equal(appInfo.nativeHelper.libmpvVersion, 'mpv v0.42.0');
     assert.equal(displayInfo.summary, 'scaleFactor 1.50');
 });
@@ -427,7 +437,7 @@ test('About route and all three settings pages use Emby native page and control 
     assert.match(readPluginFile('strm.js'), /document\.createElement\(tag, \{is: customName\}\)/);
     const about = readPluginFile('about.html');
     assert.match(about, /<details\b[^>]*class="[^"]*ete-about-advanced[^"]*"[\s\S]*?<\/details>/);
-    for (const label of ['Electron', 'Chromium', 'Native Helper', 'libmpv', 'Helper 运行状态', '运行中的 Helper', '运行中的 libmpv', 'Source Commit']) {
+    for (const label of ['Electron', 'Chromium', 'Native Helper（包内）', 'libmpv（包内）', 'Package libmpv DLL SHA256', '预期 libmpv 版本', '预期 client API', '预期 libmpv DLL SHA256', 'Helper 运行状态', '运行中的 Helper', '运行中的 libmpv', '运行中的 client API', '握手校验的 Helper capabilities', '已加载 DLL 映像 SHA256', 'Source Commit']) {
         assert.match(about, new RegExp('<span>' + label + '</span>'), 'About advanced details include ' + label);
     }
     assert.match(about, /<code class="aboutAppVersion">/);

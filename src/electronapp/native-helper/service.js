@@ -16,6 +16,11 @@ const WINDOW_PLACEMENT_MODE = '--place-window-behind';
 const WINDOW_PLACEMENT_TIMEOUT_MS = 2000;
 const EXPECTED_LIBMPV_VERSION = 'mpv v0.41.0-920-gdd5d17d32';
 const EXPECTED_LIBMPV_SHA256 = '965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c';
+const EXPECTED_MPV_CLIENT_API_VERSION = 131077;
+// This is the required capability subset accepted by the unchanged controller handshake.
+const STATUS_CAPABILITIES = Object.freeze([
+  'private-inherited-pipe', 'native-child-hwnd', 'gpu-next', 'd3d11', 'generation-attribution'
+]);
 
 const OBSERVED_PROPERTIES = new Set([
   'pause', 'time-pos', 'duration', 'volume', 'mute', 'eof-reached',
@@ -726,15 +731,29 @@ function createService(options) {
   }
 
   function status() {
+    const handshake = client && !client.transportTerminated && client.handshake ? client.handshake : null;
+    const handshakeCapabilities = handshake && Array.isArray(handshake.capabilities) ? handshake.capabilities : [];
+    const validatedCapabilities = handshake
+      ? STATUS_CAPABILITIES.filter(capability => handshakeCapabilities.includes(capability))
+      : null;
     return {
       status: 'ok',
       mode,
       protocolVersion: PROTOCOL_VERSION,
       state: client && !client.transportTerminated ? 'ready' : startPromise ? 'starting' : 'stopped',
       surfaceVisible: !!(surfaceWindow && !surfaceWindow.isDestroyed() && surfaceWindow.isVisible()),
-      helperVersion: client && client.handshake ? client.handshake.helperVersion : null,
-      libmpvVersion: client && client.handshake ? client.handshake.libmpvVersion : EXPECTED_LIBMPV_VERSION,
-      libmpvSha256: EXPECTED_LIBMPV_SHA256,
+      helperVersion: handshake ? handshake.helperVersion : null,
+      libmpvVersion: handshake ? handshake.libmpvVersion : null,
+      mpvClientApiVersion: handshake ? handshake.mpvClientApiVersion : null,
+      validatedCapabilities,
+      expectedLibmpvVersion: EXPECTED_LIBMPV_VERSION,
+      expectedMpvClientApiVersion: EXPECTED_MPV_CLIENT_API_VERSION,
+      expectedLibmpvSha256: EXPECTED_LIBMPV_SHA256,
+      libmpvSha256: null,
+      libmpvImageSha256: null,
+      fixedNativeRenderPath: 'vo=gpu-next; gpu-api=d3d11',
+      renderSettingUiValues: 'mpv-vo/mpv-gpuapi not applied as Native properties',
+      observedNativeRenderPath: null,
       crashCount,
       recreateCount
     };

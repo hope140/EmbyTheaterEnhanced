@@ -114,10 +114,10 @@ test('CD2 resolve/cancel IPC remains a trusted active bridge', async () => {
     assert.deepEqual(calls, [['resolve', 'r1'], ['cancel', 'r1'], ['close']]);
 });
 
-test('Anime4K config helper and unrelated CEC process execution remain present', () => {
-    assert.match(mainSource, /require\('child_process'\)\.exec/);
-    assert.match(mainSource, /notepad\.exe/);
-    assert.match(mainSource, /Anime4K\.conf/);
+test('Anime4K shortcut retirement leaves global profiles untouched and preserves CEC process execution', () => {
+    assert.doesNotMatch(mainSource, /Anime4K\.conf/);
+    assert.doesNotMatch(mainSource, /before-input-event/);
+    assert.doesNotMatch(mainSource, /fs\.renameSync/);
 
     const cecSource = fs.readFileSync(path.join(__dirname, '../src/electronapp/cec/cec.js'), 'utf8');
     assert.match(cecSource, /child_process\.spawn/);

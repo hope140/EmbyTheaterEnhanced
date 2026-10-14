@@ -407,70 +407,9 @@
     }
 
     function onLoaded() {
-        var fs = require('fs');
-        var path = require('path');
-        var file1 = path.join(process.env.APPDATA, 'mpv', 'Anime4K.conf');
-        var file2 = path.join(process.env.APPDATA, 'mpv', 'Anime4K-off.conf');
         var mainWindow = electron.BrowserWindow.getAllWindows()[0];
-        mainWindow.webContents.on('before-input-event', function (event, input) {
-          if (input.control) {
-            switch (input.key.toLowerCase()) {
-              case '`':
-              case '0':
-                if (fs.existsSync(file1)) {
-                    fs.renameSync(file1, file2);
-                    sendCommand('stop');
-                    showMessage('已禁用【Anime4K】滤镜，重新播放立即生效！！！');
-                  } else {
-                    showMessage('已禁用【Anime4K】滤镜，无需重复执行操作！！！');
-                  }
-                event.preventDefault();
-                break;
-              case '1':
-                if (fs.existsSync(file2)) {
-                    fs.renameSync(file2, file1);
-                    sendCommand('stop');
-                    showMessage('已启用【Anime4K】滤镜，重新播放立即生效！！！');
-                  } else {
-                    showMessage('已启用【Anime4K】滤镜，无需重复执行操作！！！');
-                  }
-                event.preventDefault();
-                break;
-            }
-          }
-        });
         sendJavascript('window.PlayerWindowId="' + getWindowId(mainWindow) + '";');
         sendJavascript(`window.platform="${process.platform}";`);
-      }
-
-      function showMessage(message) {
-        var shell = electron.shell;
-        var dialog = electron.dialog;
-        var path = require('path');
-        var fs = require('fs');
-        var exec = require('child_process').exec;
-        var appdataPath = process.env.APPDATA;
-        var mpvConfPath = path.join(appdataPath, 'mpv', 'Anime4K.conf');
-        var mpvConfOffPath = path.join(appdataPath, 'mpv', 'Anime4K-off.conf');
-        dialog.showMessageBox({
-          type: 'info',
-          title: 'Emby Theater for Windows 外部扩展',
-          message: message,
-          buttons: ['好的', '查看帮助', '打开配置']
-        }).then(response => {
-          switch (response.response) {
-            case 1:
-              externalUrl.openExternalUrl(shell, 'https://hooke007.github.io/unofficial/mpv_shaders.html');
-              break;
-            case 2:
-              if (fs.existsSync(mpvConfPath)) {
-                exec('notepad.exe ' + mpvConfPath);
-              } else {
-                exec('notepad.exe ' + mpvConfOffPath);
-              }
-              break;
-          }
-        });
       }
 
     function registerFileSystem() {

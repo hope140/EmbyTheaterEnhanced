@@ -1,5 +1,30 @@
 # 维护记录
 
+## 2026-10-14 M01 身份与配置候选整合
+
+- 用户授权本地应用已审核的归一化 M01 补丁；在旧功能主线 managed worktree 使用 git apply --check 后应用9路径（6产品、3测试）。补丁 SHA-256 03DB9C95249D380BA8EA2790FFAB188A5BAA186681DE08DEE0FC4F3B449F7DCD；原始缺少终止换行的 M01_CANDIDATE.diff、M01 原 worktree 与两个早期 harness failure 记录均保留。
+- About/maintenance 分开展示包内libmpv文件SHA、编译期预期身份、ready Helper 握手实际版本/API/capabilities；未ready信息为UNKNOWN/NOT AVAILABLE。包内SHA不冒充已加载映像哈希；实际映像SHA与属性回读仍UNKNOWN。固定render path与被忽略的UI值解释不改变Native路径。
+- libmpv.js只对exclusiveAudio用规范UI键mpv-exclusiveAudio，缺失时兼容旧小写键；显式false优先，媒体类型仍限制为video。没有改PlaybackManager、Session、source/Resolver、generation、loadfile、Stop/Next、Helper协议或sender边界。
+- M01定向Native状态、设置组装、About/维护测试72/72通过；定向语法/静态检查经父审核。应用后组合回归：L01 AMD/VM16/16、AppHost/外链18/18、L04+process-chain6/6、L05 item VM4/4、Next/Session76/76、overlay4/4、runtime provenance2/2、Pepper4/4、build-input audit20/20、public selector1/1。Full tools/build.ps1、真实Helper/DLL、MPV_HOME、前台、服务器和播放均未执行。
+- Model Tier 2；主线程保留跨Native/renderer身份合同与最终审查，沿用会话模型。M01独立审查未发现产品越界；没有模型升级。source-bound全构建需要新增提交，本轮未提交/推送/PR/发布。
+
+## 2026-10-14 批次01续办 L01 与 L03-L05 候选
+
+- 在隔离 managed worktree 的 e862288 基线上继续。L01 的提示错误隔离与加载标记时机已修复：toast 缺失、抛错或 Promise rejection 都不阻断 CSS；JS 偏好解析失败只记录固定泛化信息，不输出配置或错误对象；加载成功后才置位 isCustomCssJSLoad。输入 CustomCssJS.js SHA-256 2177DE28DCC4E715F07C63329DC361C5B4DDD37EB7E59F273830B22ACEA37912；overlay 输出 SHA-256 B9F6268F3E3126426F189F38F1E57FF4CD03D8F9A213305157E1F6842F251103。旧 server/local 配置保留，CSS 保持选择链。
+- 公开AMD/VM用例16/16、L01固定原件 material selftest、Web overlay生成4/4、build-input消费者/篡改测试1/1通过。新增两条overlay patcher直接依赖进入build-input contract，runtime provenance测试通过固定原件与generator绑定。
+- L02新增真实main分派的合成非法scheme/编码command无动作检查以及windowstate、loaded、video/audio通知、openurl路径保持用例；共18/18通过。当前协议仍未验证sender/referrer，sleep/shutdown语义仍待决定；没有调用系统动作。
+- L03核验manifest固定的Host SHA与BAT SHA，并用ilspycmd做静态托管IL检查，未发现两个BAT名称、.bat字样或直接启动调用。托管IL范围外的动态路径/组件消费者及手工用户依赖仍UNKNOWN；因此runtime exclusions和manifest保持未排除这两份BAT。没有执行Host或BAT，也未清理已有安装目录。
+- L04移除onLoaded中的Anime4K before-input-event拦截、全局配置rename、隐式Stop及旧Notepad/Shader帮助对话框。新构建不重新分配按键，旧mpv配置不读写；用户指南增加兼容说明。合成按键归属及process-chain测试6/6通过，Next/Stop/Session owner相关回归76/76通过。
+- L05通过固定hash item.js/item.html overlays移除旧详情按钮、appSettings.autoplay写入和fromPlayEnded timer；旧autoplay/externalplayers值保留并在存在旧设置时给一次提示。PlaybackManager/PlayQueue/Session/Together未改；item AMD/VM合成4/4、固定material selftest、playback queue/session 76/76通过。
+- 任务 Tier 2；主线程保留权限/播放边界和最终审核，两名GPT-6 Luna worker提供只读AppHost及Host IL闭包材料。完整tools/build.ps1、客户端前台、真实Emby、安装、BAT/Host和系统动作均未执行。没有提交、推送、PR、合并或发布。
+
+## 2026-10-14 批次01 CustomCssJS 信任边界候选
+
+- 基线为实时远端 main e862288f10182e60ccb43128e71af755172210c1，在隔离 managed worktree 工作。新增 CustomCssJS.js 固定源哈希 overlay：CSS server/local 选择链保持；旧 JS forced_on、server/local 选择及本地存储数据保留但不执行；只在存在活动旧脚本或 JS 配置损坏时提示一次。JS 配置解析单独捕获，避免坏 JS 偏好阻断 CSS。未扩大到 preload、renderer sandbox、Native IPC 或播放模块重构。
+- Task Risk Tier 2；Task Uncertainty：JS 执行入口及固定输入已锁定，Host 与旧用户行为仍有 UNKNOWN；Cross-module Scope：Web 模块、生成器、测试与维护文档；Playback/Session Impact：NONE。主线程沿用会话默认模型，任务接口未暴露具体子型号；两个独立只读闭包审核由 GPT-6 Luna worker 执行。Reason：可信 renderer 中的任意脚本可达 preload 文件/IPC 能力；主线程保留安全合同和最终审查。Escalated：NO。
+- 输入 CustomCssJS.js SHA-256 2177DE28DCC4E715F07C63329DC361C5B4DDD37EB7E59F273830B22ACEA37912 与 e862288 runtime-manifest 一致；生成 overlay SHA-256 FD7B862359EB5E48C31A3759BC0B160DF127395B82291D4136B3FF869BC27D7B。定向变换3/3、全 Web overlay 构建准备4/4、AppHost 规范化合同5/5通过；变换输入以 manifest 锁定 vendor 文件验证。完整 runtime build、真实客户端、真实服务器、安装及用户脚本行为未执行。
+- 其余批次01候选保持未实现：AppHost 的系统动作仍可由旧协议静态调用，需先确定 legacy 请求停用或显式用户确认合同；两份旧 BAT 的 Carnival Host 固定名依赖为 UNKNOWN，暂不从 runtime 排除；Anime4K 快捷键的按键传递/替代行为未定；外置播放器 timer 的运行时 owner、resume 路由及用户依赖未知。没有执行系统动作、旧 BAT、mpv 全局配置或真实播放。
+
 ## 2026-10-14 插件兼容与总排期主线集成
 
 - 用户明确授权合并，范围为已发布插件兼容分支及本地总排期文档。基线为main 080d352、插件分支44816ad；产品源码保持373209b，当前新增提交仅整理状态、总排期和维护记录。经PR合并承接既有17个提交，不改变已发布Tag/附件身份或Stable渠道。
