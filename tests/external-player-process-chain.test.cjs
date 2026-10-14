@@ -8,6 +8,8 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const mainSource = fs.readFileSync(path.join(__dirname, '../src/electronapp/main.js'), 'utf8');
+const appHostSource = fs.readFileSync(path.join(__dirname, '../src/electronapp/apphost.js'), 'utf8');
+const appHostCommandSource = fs.readFileSync(path.join(__dirname, '../src/electronapp/apphost-command.js'), 'utf8');
 const shellSource = fs.readFileSync(path.join(__dirname, '../src/electronapp/shell.js'), 'utf8');
 const preloadSource = fs.readFileSync(path.join(__dirname, '../src/electronapp/preload.js'), 'utf8');
 const cd2Ipc = require('../src/electronapp/enhanced/cd2-ipc');
@@ -37,11 +39,18 @@ test('dead process channels and helpers are absent while active IPC stays wired'
     assert.match(preloadSource, /enhanced-diagnostics/);
 });
 
-test('Electron host keeps openurl dispatch and active host commands', () => {
+test('Electron host keeps active commands while retired system actions stay unavailable', () => {
     assert.match(mainSource, /case 'openurl':[\s\S]{0,220}externalUrl\.openExternalUrl\(electron\.shell/);
-    for (const command of ['windowstate-normal', 'windowstate-maximized', 'windowstate-fullscreen',
-        'windowstate-minimized', 'sleep', 'shutdown', 'video-on', 'video-off', 'audio-on', 'audio-off', 'loaded']) {
+    const activeCommands = ['windowstate-normal', 'windowstate-maximized', 'windowstate-fullscreen',
+        'windowstate-minimized', 'exit', 'openurl', 'video-on', 'video-off', 'audio-on', 'audio-off', 'loaded'];
+    for (const command of activeCommands) {
         assert.match(mainSource, new RegExp("case '" + command + "'"));
+        assert.match(appHostCommandSource, new RegExp("['\"]" + command + "['\"]"));
+    }
+    for (const command of ['sleep', 'shutdown', 'restart']) {
+        assert.doesNotMatch(mainSource, new RegExp("case\\s+['\"]" + command + "['\"]"));
+        assert.doesNotMatch(appHostCommandSource, new RegExp("['\"]" + command + "['\"]"));
+        assert.doesNotMatch(appHostSource, new RegExp("['\"]" + command + "['\"]|\\b" + command + "\\s*:\\s*function"));
     }
 });
 
