@@ -1,5 +1,7 @@
 # 构建与打包
 
+插件兼容测试产品版本为 v0.3.2，GitHub 发布属性为 Pre-release，Latest 保持 v0.3.1。根 package、锁文件、生成的运行时和安装器使用同一数字版本；安装器从 v0.3.2 Tag 指向的已提交源码重新构建。测试安装包采用标准产品入口和完整 payload，私有只读浏览验收脚本、登录种子及 profile 不进入安装包。内置更新检查仍只读取 Stable `/releases/latest`。
+
 当前正式产品版本为 v0.3.1，准确 `sourceCommit` 由同名 Tag 与 Release 安装包 provenance 固定。构建流程和输入约束由 [BUILD_HARDENING.md](BUILD_HARDENING.md)、[BUILD_TOOLCHAINS.md](BUILD_TOOLCHAINS.md)、[NODE_DEPENDENCY_BOUNDARY.md](NODE_DEPENDENCY_BOUNDARY.md)、vendor manifests 与 package lock 定义。公开仓库不含 Carnival、综合补丁、完整离线 Web、外部 Electron/libmpv 归档及所有预编译输入，因此单独克隆不能完成产品构建；来源及对应源码状态见 [BUILD_INPUT_AUDIT.md](BUILD_INPUT_AUDIT.md) 和 [SOURCE_MATERIALS.md](SOURCE_MATERIALS.md)。
 
 ## 固定运行时与输入

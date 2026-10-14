@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-14 插件兼容测试版收尾
+
+- 从 8d19eb8 的 clean 候选继续，核对远端 Stable/Latest 为 v0.3.1、未占用后续版本 v0.3.2。采用既有数字产品版本和 GitHub Pre-release 标记，内置 Stable 更新渠道保持；不增加 beta feed 或安装器版本规则。
+- 主线程有界审核 GenericUI、导航事务、取消/代际/owner、受控 overlay 与来源合同；只读 worker 审核 schema/display/错误/关闭组件并执行公开离线回归及材料检查。最终安装器从版本化提交生成新 runtime，另执行来源校验、完整解包文件集合/哈希比较与公开匿名下载回读；准确提交、哈希和最终执行结果写入 Release 来源记录及收尾记录。
+- 8d19eb8 正式来源回执包含 114 次后台对照、98/98 定向测试、104 项隐藏 DOM 和 2147 个 payload 文件。已核对四类回执的准确 sourceCommit、experimentalOverlay=false、前台动作 NONE、UI/Command=0 与非读取 HTTP=0。历史 e248b59 的 504 次工作对照/873 项回归不冒充新修订结果。
+- 私有入口本轮连续三次隐藏 bootstrap 与三次启动前校验通过，不能记为前台启动 PASS。正式页面回执已核对；旧隐藏 fixture 的 CSS 原始哈希与正式 runtime 不同，因此发行前在新 runtime 上重新执行该门禁，不借用旧结果冒充发行产物。正常测试安装包不携带只读验收 harness、登录种子或 profile，不将私有命令限制混入产品。前台显示、真实业务命令、播放/远控和系统安装保持 NOT_CHECKED/NOT_EXECUTED；未触发的分组说明及窄屏嵌套列表保持 NOT_EXERCISED。
+- Task Risk Tier 2；Task Uncertainty 有界；Cross-module Scope 为插件适配、受控构建 overlay 和发行身份；Playback/Session Impact NONE；Escalated NO。主线程沿用用户运行配置。两个只读 worker 按 GPT-6 Luna High 配置派发；worker 自报运行身份仅暴露 GPT-6，未独立确认子型号，因此不把派发配置当作其独立运行时身份认证。高风险正确性、修改、提交和发布由主线程保留。
+
 ## 2026-10-14 按钮主次、形状和布局集中核对
 
 - 用户指出网页绿色全宽保存与客户端普通小按钮不同。真实神医页的RED为网页PageSave宽度比1、button-submit=true、胶囊；旧适配宽度比约0.079、普通背景、约0.6em圆角。源因为renderCommands丢失网页btnSave/block及主要动作类，之前组件数量/几何矩阵没有覆盖按钮主次，不能把差异仅归为主题。
