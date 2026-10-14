@@ -1,5 +1,15 @@
 # 维护记录
 
+## 2026-10-14 v0.3.2 测试版发布完成
+
+- 产品来源固定为 `373209b641e966eb0672e54ceb415080cb5f126d`，包含测试材料分组修正；维护插件源码、8 个模块/模板及 3 项 Web 输出与 8d19eb8 完全一致。最终从该已提交源码生成独立 runtime，固定 Native Helper、完整 Electron 44.4.2 和锁定依赖保持。后续本项收尾只记录发布状态，不重标产品来源。
+- 完整串行门禁覆盖 97 个常规测试文件及 5 个显式插件材料 selftest，923/923 通过、失败/跳过 0；最终源码[公开 CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/38521023162)的 91 个公开测试文件实测 788/788 通过。JavaScript 248 文件、PowerShell 28 文件、有限凭据模式扫描 299 文本文件和 v0.3.1 至候选完整 diff 检查通过。未将首次 CI 的材料缺失失败或中断运行改为 PASS。
+- 最终实际 runtime 的 AMD/DOM 合成检查 104 项通过；连续三次隐藏产品 bootstrap 均加载产品入口，使用独立临时目录及不同新 DeviceId，前台动作 NONE。直接 Electron bootstrap 不是 Host、安装或用户视觉验收；修复基线私有入口另有三次 bootstrap 与三次启动前校验。
+- 安装器为 `EmbyTheaterEnhanced-0.3.2-373209b-win-x64-setup.exe`，175700593 字节，SHA-256 `a4c83e3fae09f87da4a1090192096a6cd067cd515bda7e4819212294db05e872`，PE 0.3.2.0、Authenticode NotSigned。固定编译器、来源和 package 校验通过；解包的 2147 个 payload 文件加 manifest 共 2148 项，缺失/额外/哈希差异 0。私有 harness、种子、profile 和已知私人路径未进入公开 payload 或附件。
+- Annotated Tag `v0.3.2` 解引用至准确产品提交，功能分支按正常推送更新。[GitHub Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.2)为非 Draft、Pre-release，Latest 仍为 v0.3.1。五个附件均匿名 HTTP 200 下载，大小、逐附件 SHA-256 和 GitHub digest 相同；安装器、来源 sidecar、两种校验文件及 Release 正文/说明附件关系一致。v0.3.1 Release 元数据、附件身份和 Tag 保持。
+- 前台显示 NOT_CHECKED；Host/系统安装、真实保存/备份/恢复、播放/远控 NOT_EXECUTED；实页未触发的分组说明和窄屏嵌套列表 NOT_EXERCISED。历史 114 次实页/模板/合成模态对照保持 8d19eb8 归属，504 次响应式工作对照保持 e248b59 归属。材料/许可 UNKNOWN 与既有风险状态保持，不把测试版发布当作新合规证明。
+- Model Tier 2，Playback/Session Impact NONE，Escalated NO；主线程沿用用户配置保留最终审核/发布，两项审查及测试分组/回归按 GPT-6 Luna High 配置派发，子代理未独立暴露实际路由身份。主线程实际核对 worker diff、原断言保留、无 vendor 正反边界及最终日志后验收。
+
 ## 2026-10-14 插件兼容测试版收尾
 
 - 首轮发行候选 5186e69 的本地 875/875 与正式 payload/隐藏门禁通过，但公开 CI 检出 5 项材料依赖测试误入离线集合（788/793，缺失未公开的 Alameda 与 app/view-manager 输入）。将完整 Alameda identity 测试及实际冻结材料的关闭别名顺序测试迁入显式 material-selftest，保留原断言，公开集合继续运行纯合成关闭测试；没有复制 vendor、跳过用例或弱化断言。该候选安装包未发布，后续从修正后的提交重新构建并重新核对门禁。
