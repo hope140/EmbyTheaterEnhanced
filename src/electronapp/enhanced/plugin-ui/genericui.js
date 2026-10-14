@@ -32,10 +32,10 @@ function(exports, baseView, connection, events, notifications, globalize, generi
     Object.assign(View.prototype, baseView.default.prototype);
     View.prototype.current = function(generation) { return !!this.view && this.active && generation === this.generation; };
     View.prototype.root = function() { return this.dialog || this.view; };
-    View.prototype.showError = function() {
+    View.prototype.showError = function(kind) {
         if (!this.view) return;
         var element = this.root().querySelector('.pluginError');
-        element.textContent = 'Plugin page could not be loaded. Please try again.';
+        element.textContent = kind === 'command' ? (/^zh/i.test(globalize.default.getCurrentLocale()) ? '操作未能完成，请重试。' : 'Plugin action could not be completed. Please try again.') : 'Plugin page could not be loaded. Please try again.';
         element.hidden = false;
     };
     View.prototype.onResume = function() {
@@ -261,12 +261,14 @@ function(exports, baseView, connection, events, notifications, globalize, generi
         container.replaceChildren();
         data.Commands.forEach(function(command) {
             if (!command.IsVisible || typeof command.CommandType !== 'string') return;
+            // Regular web pages use header/input navigation, not a PageBack footer.
+            if (command.CommandType === 'PageBack' && data.ViewType !== 'Dialog' && data.ViewType !== 'Wizard') return;
             var button = document.createElement('button', {is: 'emby-button'});
             button.type = command.CommandType === 'PageSave' ? 'submit' : 'button';
             button.setAttribute('is', 'emby-button');
             button.setAttribute('data-data1', command.CommandType);
             if (data.PluginId) button.setAttribute('data-data2', data.PluginId);
-            button.textContent = command.Caption || command.CommandType;
+            button.textContent = command.Caption || (command.CommandType === 'PageBack' ? globalize.default.translate('Back') : command.CommandType);
             button.disabled = !command.IsEnabled;
             button.className = 'raised emby-button';
             container.appendChild(button);
@@ -343,7 +345,7 @@ function(exports, baseView, connection, events, notifications, globalize, generi
                 }
                 return self.render(result, generation);
             });
-        }).catch(function() { if (self.current(generation)) self.showError(); })
+        }).catch(function() { if (self.current(generation)) self.showError('command'); })
             .finally(function() { if (self.commandPending === generation) self.commandPending = false; });
     };
     exports.default = View;

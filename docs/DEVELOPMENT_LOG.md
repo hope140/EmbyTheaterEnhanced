@@ -1,5 +1,12 @@
 # 维护记录
 
+## 2026-10-14 普通页面返回控件与错误语义
+
+- 真实网页仪表盘没有底部PageBack按钮，只有未显示的PageSave标准页面按钮；旧适配将元数据中的内部PageBack直接渲染为按钮，点击进入命令接口后被私有验收入口拦截，再显示通用加载失败。用户明确要求改成网页行为。
+- 普通Page/RegularPage不再渲染PageBack底部按钮；Dialog/Wizard仍保留对应返回控件，无Caption时使用原Back本地化。页面读取与动作失败分别显示静态提示，后者有中文/默认英文，不含服务器响应详情。键盘PageBack协议的Data=null、ItemId=null保持；更新合成模态按钮测试继续验证该协议，增加普通页面不显示内部按钮的回归。
+- 工作实验真实对照均为0个底部PageBack；点击实际顶栏返回箭头成功进入设置页、没有pluginError，UI/Command及非读取HTTP均0。曾研究只允许PageBack的私有守卫，但顶栏返回无需该接口，守卫及测试保存在私有研究目录而未进入产品或交付，原验收限制保持。
+- 产品定向29/29、隐藏合成100项和语法通过。Task Risk/Uncertainty为Tier 1，Playback/Session Impact为NONE；明确私有守卫研究由GPT-6 Luna High执行，主线程核对固定Electron上传数据并作最终范围决策；无需改变共享导航、认证、窗口或播放链。来源绑定构建与新独立入口由私有交付回执固定，前台待确认。
+
 ## 2026-10-14 仪表盘刷新导航与离页标题
 
 - 首次真实仪表盘协议含6项TabPageInfos；只读WebSocket观察复现5次同PageId/ViewId、IsPageChangeInfo=false且TabPageInfos为空的更新，旧适配顶部持续为0。网页组件对应分支只刷新内容，不清导航；没有执行业务命令，完成的非读取HTTP为0。

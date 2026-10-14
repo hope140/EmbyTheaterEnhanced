@@ -461,7 +461,7 @@ test('commands send the documented fields, honor validity and disabled state, an
     command.gate.reject(Object.assign(new Error('PRIVATE_SERVER_DETAIL'), {status: 404})); await saving;
     const error = shell.view.querySelector('.pluginError');
     assert.equal(error.hidden, false);
-    assert.equal(error.textContent, 'Plugin page could not be loaded. Please try again.');
+    assert.equal(error.textContent, '操作未能完成，请重试。');
     assert.equal(error.textContent.includes('PRIVATE_SERVER_DETAIL'), false);
     await invalidSave;
 });
@@ -665,10 +665,20 @@ test('schema rejects injection and prototype keys; ItemList display copy preserv
 
 function rtSchema(data) { return runtime().schema.prepare(data); }
 
-test('PageBack button also sends null data and item identity without extracting fields', async () => {
+test('regular pages do not expose the internal PageBack command as a footer button', async () => {
     const rt = runtime(), shell = makeShell(), view = new rt.View(shell.view, {PageId: 'synthetic-a'});
     view.onResume(); await resolveView(rt, rt.requests[0], syntheticPage('synthetic-a', 'view-a', {commands: [{CommandType: 'PageBack', IsVisible: true, IsEnabled: true}]}));
-    const button = shell.view.querySelector('.pluginCommands').children.find(child => child.getAttribute('data-data1') === 'PageBack');
+    const buttons = shell.view.querySelector('.pluginCommands').children;
+    assert.equal(buttons.some(child => child.getAttribute('data-data1') === 'PageBack'), false);
+    assert.equal(buttons.some(child => child.getAttribute('data-data1') === 'PageSave'), true);
+    assert.equal(rt.requests.length, 1);
+});
+
+test('modal PageBack button sends null data and item identity without extracting fields', async () => {
+    const rt = runtime(), shell = makeShell(), view = new rt.View(shell.view, {PageId: 'synthetic-a'});
+    view.onResume(); await resolveView(rt, rt.requests[0], syntheticPage('synthetic-a', 'view-a', {viewType: 'Dialog', commands: [{CommandType: 'PageBack', IsVisible: true, IsEnabled: true}]}));
+    const button = view.dialog.querySelector('.pluginCommands').children.find(child => child.getAttribute('data-data1') === 'PageBack');
+    assert.equal(button.textContent, 'Back');
     assert.equal(button.getAttribute('data-data2'), 'synthetic-plugin-id');
     view.onClick({target: button, preventDefault() {}, stopPropagation() {}});
     await tick();
