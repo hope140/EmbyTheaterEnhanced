@@ -22,7 +22,7 @@ About 的 M01 状态模型分别展示已校验包内 libmpv 文件 SHA、编译
 
 CustomCssJS 作为固定源哈希的 Web overlay 构建：服务器/本地 CSS 仍按既有选择加载；服务器/本地 JavaScript 配置保留，但不会在可信 renderer 中求值，检测到旧脚本选择或无效 JS 配置时显示一次提示。JS 配置解析失败不阻断 CSS。该边界只关闭 CustomCssJS 执行入口，不代表 renderer 已整体隔离；应用 preload 的 window.fs/window.ipc 能力仍由其他产品代码使用。
 
-固定源哈希的 item 详情 overlay 仅退役旧外置播放器按钮与 fromPlayEnded 计时器；externalplayers/autoplay 旧值保持不写不删，普通下一集仍由 PlaybackManager 的 Emby EnableNextEpisodeAutoPlay 与 PlayQueue/nextTrack 管理。构建排除旧 Pepper input；两份旧 Carnival 批处理因动态/外部 Host 消费者和手工工作流尚未闭合而继续保留。AppHost 系统动作协议的请求来源/显式用户确认合同仍待审核。
+固定源哈希的 item 详情 overlay 仅退役旧外置播放器按钮与 fromPlayEnded 计时器；externalplayers/autoplay 旧值保持不写不删，普通下一集仍由 PlaybackManager 的 Emby EnableNextEpisodeAutoPlay 与 PlayQueue/nextTrack 管理。构建排除旧 Pepper input；两份旧 Carnival 批处理因动态/外部 Host 消费者和手工工作流尚未闭合而继续保留。旧 AppHost sleep/shutdown/restart 协议动作已从 Web 能力广告、Web 调用入口、命令白名单和 main 分派移除；未知命令仍完成空响应，windowstate、exit、loaded、音视频通知与安全外链链路保持。
 
 [STRM](STRM_RESOLVER.md) · [配置](STRM_RESOLVER_SETTINGS.md) · [DirectUrl](CD2_DIRECT_URL.md) · [Native Helper](NATIVE_HELPER_BRIDGE.md) · [构建](PACKAGING.md)
 

@@ -1,6 +1,8 @@
 # 项目状态
 
-2026-10-14：M01 身份/配置候选已按父审核归一化补丁整合进同一隔离组合候选。补丁9路径（6产品、3测试），Native ready 状态/API/经握手校验的能力、包内与预期libmpv身份分层展示；实际加载映像SHA及render属性回读保持UNKNOWN。exclusiveAudio按页面大小写键优先、仅缺键回退旧小写键，显式false不被覆盖。M01相关Native/配置/About测试72/72通过；与批次01组合后的overlay/provenance/build-input、Next/Session等定向测试也通过。完整构建、真实Helper/DLL、MPV_HOME、真实播放/客户端仍未验收；原M01候选补丁和worktree保持未改，组合候选未提交。批次01剩余唯一行为审核停点为L02旧系统动作协议及请求来源授权。
+2026-10-14：用户已决定停用旧 AppHost sleep/shutdown/restart 协议动作。L02 本地候选已从 Web 能力广告/方法、main 命令白名单和系统动作分派移除三条入口；未知动作仍回调完成，windowstate、exit、loaded、音视频通知与 openurl 路径保留。真实 parser/main handler 与实际 apphost.js VM 测试22/22、相关 JS 语法检查和 git diff --check通过；系统动作副作用均为mock，未实际睡眠/关机/重启。L02独立差异尚未提交，等待父会话审核。前置30文件候选已在本地隔离分支提交为aab528b，未推送。
+
+2026-10-14：M01 身份/配置候选已按父审核归一化补丁整合进同一隔离组合候选。补丁9路径（6产品、3测试），Native ready 状态/API/经握手校验的能力、包内与预期libmpv身份分层展示；实际加载映像SHA及render属性回读保持UNKNOWN。exclusiveAudio按页面大小写键优先、仅缺键回退旧小写键，显式false不被覆盖。M01相关Native/配置/About测试72/72通过；与批次01组合后的overlay/provenance/build-input、Next/Session等定向测试也通过。完整构建、真实Helper/DLL、MPV_HOME、真实播放/客户端仍未验收；原M01候选补丁和worktree保持未改。该记录形成时组合候选尚未提交；之后30路径父审候选已在隔离分支本地提交为aab528b。该阶段剩余的L02语义审核决定已由用户选择停用旧动作，具体实现见首条状态。
 
 2026-10-14：批次01续办到候选复核停点。L01 CustomCssJS 错误隔离/重试缺口已修复：固定输入SHA-256 2177DE28DCC4E715F07C63329DC361C5B4DDD37EB7E59F273830B22ACEA37912，overlay输出SHA-256 B9F6268F3E3126426F189F38F1E57FF4CD03D8F9A213305157E1F6842F251103；AMD/VM合成行为16/16、固定material selftest、Web overlay准备4/4和build input consumer/tamper用例1/1通过。L03固定Host托管IL未发现两份BAT的直接引用，但动态/外部调用和手工依赖仍UNKNOWN；本轮不排除两份BAT，也不清理既有安装。L04退役全局Anime4K按键拦截，不再重命名全局mpv文件或隐式Stop；按键不重新分配。L05详情overlay移除旧外置按钮和timer，设置值保留，item VM4/4与Next/Session 76/76通过。AppHost/外链18/18、Pepper retirement 4/4、runtime provenance 2/2、build-input audit 20/20通过。唯一未决停点是L02旧sleep/shutdown/restart协议是否失效或改用主进程明确确认；当前仍未验证请求方/来源，未触发系统动作。未运行完整build、客户端、真实Emby、安装或BAT；没有提交、推送或发行。
 

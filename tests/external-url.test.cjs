@@ -177,6 +177,30 @@ test('the real AppHost dispatcher rejects wrong sources and encoded commands bef
     assert.deepEqual(calls.systemActions, []);
 });
 
+test('the real AppHost dispatcher completes but ignores legacy system-action requests', () => {
+    const opened = [];
+    const calls = callSites(url => { opened.push(url); return Promise.resolve(); });
+    for (const url of [
+        'electronapphost://sleep',
+        'electronapphost://SLEEP/',
+        'electronapphost://sleep//',
+        'electronapphost://shutdown',
+        'electronapphost://Shutdown/',
+        'electronapphost://shutdown//',
+        'electronapphost://restart',
+        'electronapphost://RESTART/',
+        'electronapphost://restart//',
+        'electronapphost://%73leep/',
+        'electronapphost://shut%64own/',
+        'electronapphost://restart%2f'
+    ]) calls.apphostRequest(url);
+
+    assert.deepEqual(opened, []);
+    assert.deepEqual(calls.mainActions, []);
+    assert.deepEqual(calls.powerActions, []);
+    assert.deepEqual(calls.systemActions, []);
+});
+
 test('the real AppHost dispatcher preserves window, loaded and audio/video lifecycle calls', () => {
     const calls = callSites(() => Promise.resolve());
     for (const [url, method] of [

@@ -22,12 +22,23 @@ test('window state commands canonicalize legacy case and standard-scheme slash',
 
 test('all current apphost commands remain recognized after canonicalization', () => {
     for (const value of [
-        'exit', 'sleep', 'shutdown', 'restart', 'openurl',
+        'exit', 'openurl',
         'video-on', 'video-off', 'audio-on', 'audio-off', 'loaded'
     ]) {
         const parsed = command.parse('electronapphost://' + value + '/', 'electronapphost');
         assert.equal(parsed.command, value);
         assert.equal(command.isKnown(parsed.command), true);
+    }
+});
+
+test('legacy system-action commands stay disabled across case and trailing-slash variants', () => {
+    for (const value of [
+        'sleep', 'SLEEP/', 'sleep//',
+        'shutdown', 'Shutdown/', 'shutdown//',
+        'restart', 'RESTART/', 'restart//'
+    ]) {
+        const parsed = command.parse('electronapphost://' + value, 'electronapphost');
+        assert.equal(command.isKnown(parsed.command), false, value);
     }
 });
 

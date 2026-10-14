@@ -313,22 +313,6 @@
         //});
     }
 
-    function sleepSystem() {
-
-        var sleepMode = require('sleep-mode');
-        sleepMode(function (err, stderr, stdout) {
-        });
-    }
-
-    function restartSystem() {
-    }
-
-    function shutdownSystem() {
-
-        var powerOff = require('power-off');
-        powerOff(function (err, stderr, stdout) {
-        });
-    }
     var windowStateOnLoad;
     function registerAppHost() {
 
@@ -362,15 +346,6 @@
                     break;
                 case 'exit':
                     closeWindow(mainWindow);
-                    break;
-                case 'sleep':
-                    sleepSystem();
-                    break;
-                case 'shutdown':
-                    shutdownSystem();
-                    break;
-                case 'restart':
-                    restartSystem();
                     break;
                 case 'openurl':
                     externalUrl.openExternalUrl(electron.shell, appHostCommand.getOpenUrlTarget(parsedRequest));

@@ -1,5 +1,12 @@
 # 维护记录
 
+## 2026-10-14 L02 停用旧 AppHost 系统动作
+
+- 用户选择停用旧 sleep/shutdown/restart 协议动作。Web apphost 不再广告这三项能力或暴露对应方法；apphost-command 白名单及 main 协议分派不再接受和执行这些 token，删除专属系统动作函数。拒绝请求仍调用协议 callback 并返回空响应。apphost.js 是 source-maintained 的 src/electronapp 产品文件；基线提交 aab528b 的 Git blob 为 52614ee25e10d74df5da8d2583ed9955e455b677，输入字节 SHA-256 为 7087A292E7262131E0F1EA08716E257846B55FE23510302A7D6E6AC746DA6A21，直接修改受 sourceCommit 绑定，不需要 vendor overlay。
+- 保持 APPHOST STARTUP COMMAND CANONICALIZATION、windowstate、exit、loaded、video/audio powerSaveBlocker 与 openurl 安全解析路径；未改变普通锁屏/播放电源阻止器。没有调用真实系统动作。
+- 实际 main handler 对大小写、尾斜杠、双尾斜杠和编码变体合成请求逐一回调并验证零副作用；实际 apphost.js VM 核验 capability 与方法均关闭，正常 windowstate/exit 命令保留。定向22/22、相关 JS 语法与 diff-check通过。
+- Task Risk/Uncertainty 与 Cross-module Scope 为 Tier 2；Playback/Session Impact 为 NONE。主线程保留协议/系统动作边界与最终审查，沿用当前会话模型，未升级。L02 产品/测试/文档差异独立于 aab528b，等待父会话审核后再决定最终构建。
+
 ## 2026-10-14 M01 身份与配置候选整合
 
 - 用户授权本地应用已审核的归一化 M01 补丁；在旧功能主线 managed worktree 使用 git apply --check 后应用9路径（6产品、3测试）。补丁 SHA-256 03DB9C95249D380BA8EA2790FFAB188A5BAA186681DE08DEE0FC4F3B449F7DCD；原始缺少终止换行的 M01_CANDIDATE.diff、M01 原 worktree 与两个早期 harness failure 记录均保留。
