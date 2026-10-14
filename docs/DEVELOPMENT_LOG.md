@@ -1,5 +1,12 @@
 # 维护记录
 
+## 2026-10-14 私有验收入口日志隔离修复
+
+- 新入口启动失败已在同一私有客户端复现：完整集合比对仅多出runtime下debug.log，manifest规定的文件均存在且哈希匹配。用户启动记录为child-exit-failure，不能把此前隐藏启动及dry-run通过视作实际前台启动通过。
+- 保留完整校验合同和product sourceCommit=25bef64，只为私有Start/Verify子进程环境显式设置ELECTRON_LOG_FILE，提前创建独立logs目录。原日志移至独立诊断目录；两个脚本经原manifest哈希核对后精确修改，只有对应harness条目的大小及哈希更新，product payload保持。
+- 复验bundle完整性PASS、隐藏真实产品bootstrap PASS（授权登录副本已复制、前台动作NONE）、连续两次Start dry-run PASS。额外隐藏Electron探针强制产生固定日志标记，验证日志落入独立运行目录且runtime没有新debug.log，之后bundle再次PASS。入口和桌面目标保持，前台重新打开仍待用户确认。
+- Task Risk/Uncertainty为Tier 1，Playback/Session Impact为NONE；沿用主线程运行配置，无架构或产品源码变化。未重新构建产品，私有harness修复以独立哈希回执记录，不更改25bef64产物来源或复用旧机器结果冒充前台证据。
+
 ## 2026-10-14 多选弹层高度修正
 
 - 用户反馈五项语言菜单展开高度不一致。读取当前网页组件样式并进行后台绘制的同尺寸真实DOM对照，确认网页虚拟弹层max-height为min(30em,70vh)，旧客户端按calc(98% - top)指定高度且仅有84%上限。1280×900下原五项菜单约630px、网页约395px；工作实验新增限制后约394px，差额来自主题边框。
