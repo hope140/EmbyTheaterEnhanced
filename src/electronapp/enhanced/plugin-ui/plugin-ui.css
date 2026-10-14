@@ -20,6 +20,12 @@
 .ete-plugin-content .ete-plugin-select-field > .emby-select-selectedNameContainer > div:first-child,
 .ete-plugin-content .ete-plugin-select-field > .selectArrowContainer > div:first-child { display: none; }
 .ete-plugin-content .ete-plugin-select-field .selectArrow { margin-top: 0; }
+/* The inherited select attaches its virtual menu to body. Apply the current
+   web height ceiling only while a maintained plugin view owns the page. */
+body:has(.ete-plugin-view:not(.hide) .ete-plugin-content select[multiple])
+    .actionSheet:not(.dialog-fullscreen):has(> .actionSheetScroller > .itemsContainer[data-virtualscrolllayout]) {
+    max-height: min(30em, 70vh);
+}
 .ete-plugin-content .sectionTitleContainer { flex-wrap: wrap; gap: .5em; }
 .ete-plugin-content .sectionTitle { overflow-wrap: anywhere; }
 .ete-plugin-content .ete-plugin-section-description { margin: .5em 0; white-space: pre-wrap; overflow-wrap: anywhere; }

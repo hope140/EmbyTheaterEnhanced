@@ -281,6 +281,21 @@
         check(byId('groupActionOne').disabled && byId('groupActionTwo').disabled, 'unidentified_button_group_disables_its_children');
         return scopedStyleReady.then(function(loaded) {
             check(loaded, 'scoped_stylesheet_loaded');
+            var popup = document.createElement('div');
+            popup.className = 'actionSheet'; popup.style.height = '1500px';
+            popup.innerHTML = '<div class="actionSheetScroller"><div class="itemsContainer" data-virtualscrolllayout="vertical-grid"></div></div>';
+            document.body.appendChild(popup);
+            var ceiling = Math.min(parseFloat(getComputedStyle(popup).fontSize) * 30, innerHeight * .7);
+            check(popup.getBoundingClientRect().height <= ceiling + 1, 'plugin_virtual_popup_obeys_web_height_ceiling');
+            byId('view').classList.add('hide');
+            check(popup.getBoundingClientRect().height > ceiling + 1, 'inactive_plugin_does_not_resize_shared_popup');
+            byId('view').classList.remove('hide');
+            popup.classList.add('dialog-fullscreen');
+            check(popup.getBoundingClientRect().height > ceiling + 1, 'fullscreen_action_sheet_keeps_existing_height');
+            popup.classList.remove('dialog-fullscreen');
+            popup.querySelector('.itemsContainer').removeAttribute('data-virtualscrolllayout');
+            check(popup.getBoundingClientRect().height > ceiling + 1, 'ordinary_action_sheet_keeps_existing_height');
+            popup.remove();
             window.__fixtureResult = {ok: true, assertions: assertions, observations: Object.assign({missing_dependency_rejected: window.__missingRejected === true, stylesLoaded: stylesLoaded}, window.__fixtureObservations)};
         });
     }).catch(function(error) {
