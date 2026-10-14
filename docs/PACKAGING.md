@@ -1,5 +1,7 @@
 # 构建与打包
 
+插件兼容测试产品版本为 v0.3.2，GitHub 发布属性为 Pre-release，Latest 保持 v0.3.1。根 package、锁文件、生成的运行时和安装器使用同一数字版本；安装器从 v0.3.2 Tag 指向的已提交源码重新构建。测试安装包采用标准产品入口和完整 payload，私有只读浏览验收脚本、登录种子及 profile 不进入安装包。内置更新检查仍只读取 Stable `/releases/latest`。
+
 当前正式产品版本为 v0.3.1，准确 `sourceCommit` 由同名 Tag 与 Release 安装包 provenance 固定。构建流程和输入约束由 [BUILD_HARDENING.md](BUILD_HARDENING.md)、[BUILD_TOOLCHAINS.md](BUILD_TOOLCHAINS.md)、[NODE_DEPENDENCY_BOUNDARY.md](NODE_DEPENDENCY_BOUNDARY.md)、vendor manifests 与 package lock 定义。公开仓库不含 Carnival、综合补丁、完整离线 Web、外部 Electron/libmpv 归档及所有预编译输入，因此单独克隆不能完成产品构建；来源及对应源码状态见 [BUILD_INPUT_AUDIT.md](BUILD_INPUT_AUDIT.md) 和 [SOURCE_MATERIALS.md](SOURCE_MATERIALS.md)。
 
 ## 固定运行时与输入
@@ -23,6 +25,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/package.ps1
 ```
 
 构建从已验证的 vendor 输入生成 runtime，物化官方 Electron 目录，从 `<sourceCommit>` 读取 `src/electronapp` 的 Git blobs，再按各自 contract 生成 preload/Web overlay、复制 production dependencies、应用 PlaybackManager overlay、替换固定 libmpv 并写 provenance 与 payload manifest。普通源码直接写 Git blob bytes，不把 dirty/staged checkout 内容当作所选提交源码。Web overlay 只接受 manifest 中固定的 base、payload 与 generator；任一 hash 或锚点不匹配即停止。
+
+插件设置兼容候选串联 app 路由/别名变换，并新增 viewmanager 与 approuter 的窄取消/事务 overlay。维护模块从 `src/electronapp/enhanced/plugin-ui` 的 Git blobs 进入 runtime，完整 ignored Web snapshot 仍不作为输入。候选未提交时 build-input 门禁拒绝组装；材料 fixture 和隐藏实验不能替代新 sourceCommit 的正式构建。详见 [兼容合同](PLUGIN_SETTINGS_COMPATIBILITY.md)。
 
 `source-provenance.json` 记录外部归档、manifest、runtime/Web 输入、Electron、Native Helper、libmpv 与 production dependencies；`runtime-provenance.json` 绑定 Git 源码和生成 overlay；`build-manifest.json` schema 3 绑定 source commit、输入与 provenance 及 canonical payload-set digest。打包前校验路径、重复项、完整 file set、逐文件 SHA256 和 provenance binding。Inno 递归复制已验证 runtime；`-RuntimeName` 选择目标，`-OutputBaseFilename` 只设安装包文件名。
 

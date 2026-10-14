@@ -53,7 +53,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Production Electron runtime replacement valida
 if ($LASTEXITCODE -ne 0) { throw 'Tracked product source materialization failed.' }
 # preload.js is an ignored prepared artifact with a tracked generator contract.
 Copy-Item -LiteralPath (Join-Path $root 'src/electronapp/preload.js') -Destination (Join-Path $destination 'electronapp/preload.js') -Force
-# The frozen Web snapshot has exactly three authoritative overlays. Never copy ignored src/electronapp/www state.
+# Assemble only authoritative Web overlays; ignored src/electronapp/www is never copied.
 & node (Join-Path $root 'tools/prepare-web-overlays.cjs') $root $destination
 if ($LASTEXITCODE -ne 0) { throw 'Web overlay preparation failed.' }
 # The legacy External Player frontend is intentionally absent from Enhanced runtime.

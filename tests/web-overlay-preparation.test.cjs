@@ -27,6 +27,7 @@ function createContractRoot() {
     for (const contract of preparation.WEB_OVERLAY_CONTRACT) {
         paths.add(contract.basePath);
         if (contract.inputPath) paths.add(contract.inputPath);
+        for (const generatorPath of contract.generatorPaths) paths.add(generatorPath);
     }
     for (const relativePath of paths) copyFile(root, relativePath);
     for (const args of [
@@ -50,9 +51,10 @@ function outputHashes(runtime) {
 }
 
 test('generates exact Web overlays without an ignored src/electronapp/www snapshot', () => {
+    const root = createContractRoot();
     const runtime = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-web-overlay-runtime-'));
     try {
-        const report = preparation.apply(repoRoot, runtime);
+        const report = preparation.apply(root, runtime);
         assert.equal(report.status, 'passed');
         assert.deepEqual(
             report.entries.map(entry => ({path: entry.runtimePath, hash: entry.runtimeSha256})),
@@ -64,10 +66,24 @@ test('generates exact Web overlays without an ignored src/electronapp/www snapsh
         assert.equal(fs.existsSync(path.join(runtime, 'src', 'electronapp', 'www')), false);
 
         const first = outputHashes(runtime);
-        preparation.apply(repoRoot, runtime);
+        preparation.apply(root, runtime);
         assert.deepEqual(outputHashes(runtime), first);
-        assert.equal(preparation.inspect(repoRoot, runtime).status, 'passed');
+        assert.equal(preparation.inspect(root, runtime).status, 'passed');
     } finally {
+        fs.rmSync(root, {recursive: true, force: true});
+        fs.rmSync(runtime, {recursive: true, force: true});
+    }
+});
+
+test('rejects an uncommitted compatibility generator before writing any output', () => {
+    const root = createContractRoot();
+    const runtime = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-web-overlay-dirty-'));
+    try {
+        fs.appendFileSync(path.join(root, 'tools/patch-plugin-settings.cjs'), '\n// dirty fixture\n');
+        assert.throws(() => preparation.apply(root, runtime), /differs from HEAD/);
+        assert.deepEqual(fs.readdirSync(runtime), []);
+    } finally {
+        fs.rmSync(root, {recursive: true, force: true});
         fs.rmSync(runtime, {recursive: true, force: true});
     }
 });

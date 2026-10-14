@@ -115,6 +115,7 @@ function createFixture(root) {
         'tools/prepare-preload.cjs',
         'tools/prepare-web-overlays.cjs',
         'tools/patch-external-player-registration.cjs',
+        'tools/patch-plugin-settings.cjs',
         'tools/copy-runtime-dependencies.cjs',
         'tools/copy-tracked-product-sources.cjs',
         'tools/electron-runtime-input.cjs',

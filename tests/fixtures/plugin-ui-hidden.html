@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Hidden plugin UI fixture</title>
+    <script src="/modules/alameda/alameda.js"></script>
+    <script src="/modules/babelhelpers.js"></script>
+    <script>if (typeof babelHelpers !== 'undefined') self.babelHelpers = babelHelpers;</script>
+    <script src="/fixtures/plugin-ui-hidden.js"></script>
+</head>
+<body>
+    <main id="root">
+        <div id="view" is="emby-scroller" class="view ete-plugin-view">
+            <form>
+                <h2 class="mainTitle"></h2>
+                <div class="mainSubTitle"></div>
+                <nav class="pluginTabs"></nav>
+                <p class="pluginError" role="status" hidden></p>
+                <div class="mainContent"></div>
+                <div class="pluginCommands"></div>
+            </form>
+        </div>
+    </main>
+</body>
+</html>
