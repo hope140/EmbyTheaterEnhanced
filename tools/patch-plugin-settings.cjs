@@ -83,7 +83,7 @@ function pluginNavigation() {
                 stage.classList.add('page', 'hide');
                 var dependencies = stage.getAttribute('data-require');
                 dependencies = dependencies ? dependencies.split(',') : [];
-                if (options.isPluginPage) dependencies.push('legacy/dashboard', 'css!legacy/dashboard');
+                if (options.isPluginPage) dependencies.push('legacy/dashboard', 'css!legacy/dashboard', 'css!../enhanced/plugin-ui/plugin-ui.css');
                 if (normalized.hasjQuery) dependencies.push('jQuery');
                 return require(dependencies);
             }

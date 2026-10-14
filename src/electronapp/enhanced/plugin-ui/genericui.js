@@ -172,7 +172,7 @@ function(exports, baseView, connection, events, notifications, globalize, generi
         var self = this, dialog = dialogHelper.default.createDialog({removeOnClose: true, enableHistory: false, size: data.ShowDialogFullScreen ? 'fullscreen' : 'small', autoFocus: true});
         dialog.classList.add('formDialog');
         dialog.classList.add('ete-plugin-view');
-        dialog.innerHTML = '<form class="dialogContentInner"><h2 class="mainTitle"></h2><div class="mainSubTitle"></div><p class="pluginError" role="status" hidden></p><div class="mainContent"></div><div class="pluginCommands"></div></form>';
+        dialog.innerHTML = '<form class="dialogForm"><div class="dialogContentInner ete-plugin-dialog-scroll"><h2 class="mainTitle"></h2><div class="mainSubTitle"></div><p class="pluginError" role="status" hidden></p><div class="mainContent"></div></div><div class="pluginCommands"></div></form>';
         dialog.addEventListener('click', this.boundClick);
         dialog.addEventListener('command', this.boundCommand);
         dialog.querySelector('form').addEventListener('submit', this.boundSubmit);
@@ -196,6 +196,8 @@ function(exports, baseView, connection, events, notifications, globalize, generi
             return {PageId: tab.PageId, name: schema.default.escape(tab.DisplayName || ''), href: schema.default.tabHref(tab.Href)};
         }).filter(function(tab) { return !!tab.href; });
         if (!this.tabs.length) { this.clearHeaderTabs(); return; }
+        // Native responsive header tabs require the matching content offset.
+        this.view.classList.add('withTabs');
         var index = this.tabIndex();
         // Rebuild owned metadata on notifications; setTabs otherwise only
         // changes selection when the owner view is unchanged.
@@ -246,6 +248,7 @@ function(exports, baseView, connection, events, notifications, globalize, generi
         if (this.headerTabsElement && mainTabs.default.getTabsElement() === this.headerTabsElement) mainTabs.default.setTabs(null);
         this.headerTabsElement = null;
         this.tabs = [];
+        if (this.view) this.view.classList.remove('withTabs');
     };
     View.prototype.setHeaderTitle = function(caption, generation) {
         if (!this.current(generation)) return;

@@ -224,6 +224,7 @@
                 view.pageId = 'dialog';
                 return view.load().then(function() { return wait(60); }).then(function() {
                     check(view.dialog && view.dialog.querySelector('.mainTitle').textContent === 'Synthetic settings', 'dialog_keeps_its_caption_title');
+                    check(!!view.dialog.querySelector('.ete-plugin-dialog-scroll') && !view.dialog.querySelector('.ete-plugin-dialog-scroll').contains(view.dialog.querySelector('.pluginCommands')), 'dialog_commands_stay_outside_content_scroll');
                     check(view.dialog.querySelector('.mainSubTitle').textContent === 'Loopback fixture', 'dialog_keeps_its_subtitle');
                     check(!Array.from(view.dialog.querySelectorAll('.mainContent .sectionTitle')).some(function(node) { return node.textContent === 'Synthetic settings'; }), 'dialog_suppresses_duplicate_editor_root_heading');
                     view.closeDialog();

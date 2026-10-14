@@ -25,7 +25,7 @@ class Element {
         this.style = {};
         this.type = '';
         this.classes = new Set();
-        this.classList = {add: name => { this.classes.add(name); this.className = [...this.classes].join(' '); }, contains: name => this.classes.has(name)};
+        this.classList = {add: name => { this.classes.add(name); this.className = [...this.classes].join(' '); }, remove: name => { this.classes.delete(name); this.className = [...this.classes].join(' '); }, contains: name => this.classes.has(name)};
         this._innerHTML = '';
     }
     get innerHTML() { return this._innerHTML; }
@@ -346,12 +346,29 @@ test('same-view dashboard updates preserve omitted tabs while explicit page chan
     update.EditObjectContainer.Object.text = 'Fresh dashboard value';
     rt.events.emit('UIPageInfoChanged', {}, rt.client, update); await tick(); await tick();
     assert.equal(rt.mainTabs.lastTabs.length, 2);
+    assert.equal(shell.view.classList.contains('withTabs'), true);
     assert.equal(rt.editorCalls.set.at(-1).container.Object.text, 'Fresh dashboard value');
     assert.equal(update.TabPageInfos.length, 0, 'incoming notification remains unmodified');
     const transition = syntheticPage('synthetic-a', 'next-view');
     transition.TabPageInfos = []; transition.IsPageChangeInfo = true;
     rt.events.emit('UIPageInfoChanged', {}, rt.client, transition); await tick(); await tick();
     assert.equal(rt.mainTabs.getTabsElement(), null, 'explicit page change clears old navigation');
+    assert.equal(shell.view.classList.contains('withTabs'), false);
+});
+
+test('responsive tab spacing follows the owned header across pause, resume and an empty group', async () => {
+    const rt = runtime(), shell = makeShell(), view = new rt.View(shell.view, {PageId: 'synthetic-a'});
+    view.onResume(); await resolveView(rt, rt.requests[0]);
+    assert.equal(shell.view.classList.contains('withTabs'), true);
+    view.onPause();
+    assert.equal(shell.view.classList.contains('withTabs'), false);
+    view.onResume(); await resolveView(rt, rt.requests[1]);
+    assert.equal(shell.view.classList.contains('withTabs'), true);
+    const single = syntheticPage('synthetic-a', 'single-view');
+    single.TabPageInfos = []; single.IsPageChangeInfo = true;
+    rt.events.emit('UIPageInfoChanged', {}, rt.client, single); await tick(); await tick();
+    assert.equal(shell.view.classList.contains('withTabs'), false);
+    assert.equal(rt.mainTabs.getTabsElement(), null);
 });
 
 test('leaving GenericUI clears its title once and does not erase another tab owner', async () => {
