@@ -5,7 +5,11 @@
 - 用户选择停用旧 sleep/shutdown/restart 协议动作。Web apphost 不再广告这三项能力或暴露对应方法；apphost-command 白名单及 main 协议分派不再接受和执行这些 token，删除专属系统动作函数。拒绝请求仍调用协议 callback 并返回空响应。apphost.js 是 source-maintained 的 src/electronapp 产品文件；基线提交 aab528b 的 Git blob 为 52614ee25e10d74df5da8d2583ed9955e455b677，输入字节 SHA-256 为 7087A292E7262131E0F1EA08716E257846B55FE23510302A7D6E6AC746DA6A21，直接修改受 sourceCommit 绑定，不需要 vendor overlay。
 - 保持 APPHOST STARTUP COMMAND CANONICALIZATION、windowstate、exit、loaded、video/audio powerSaveBlocker 与 openurl 安全解析路径；未改变普通锁屏/播放电源阻止器。没有调用真实系统动作。
 - 实际 main handler 对大小写、尾斜杠、双尾斜杠和编码变体合成请求逐一回调并验证零副作用；实际 apphost.js VM 核验 capability 与方法均关闭，正常 windowstate/exit 命令保留。定向22/22、相关 JS 语法与 diff-check通过。
-- Task Risk/Uncertainty 与 Cross-module Scope 为 Tier 2；Playback/Session Impact 为 NONE。主线程保留协议/系统动作边界与最终审查，沿用当前会话模型，未升级。L02 产品/测试/文档差异独立于 aab528b，等待父会话审核后再决定最终构建。
+- Task Risk/Uncertainty 与 Cross-module Scope 为 Tier 2；Playback/Session Impact 为 NONE。主线程保留协议/系统动作边界与最终审查，沿用当前会话模型，未升级。父会话最终审核通过并记录于私有 L02_FINAL_REVIEW.md；9路径 L02 变更另提交为69e8141，和30路径aab528b可分别回退。
+- source-bound `tools/build.ps1` 以sourceCommit 69e8141abf61bd335ec58498937ce1689ff115e2完成。隔离runtime为dist/EmbyTheaterEnhanced-phase01-l02-20261014；build-manifest SHA-256 048eb6973d54de5d337f26e383ed1a556c1fcd707db1b53e07c632987b085580，payload 2147文件，canonical payload-set SHA-256 41b786dc862cab51d4a385b862f2de612831afc5e696d608ae1d77fac585a852。`tools/package.ps1 -VerifyOnly`完整文件集、逐文件hash、provenance、runtime exclusion和锁定依赖校验通过；未生成安装器。
+- 通过实际构建产物的Web AppHost VM检查21项，主协议分派器从构建后的main.js执行合成测试13/13。父会话在仅含一项bundled identity测试调整的test-only HEAD cca8f52复跑公共离线门禁：98/98测试文件集，819/819 cases，0失败/跳过；JS语法259、PowerShell语法28、有限凭据扫描310及diff-check均PASS。340个tracked源文件hash汇总为e8d244b9a744375b8dfdd8ef2270b01b7188444df1c2441dde19c2634a9b310d。原先784/787那次门禁作为旧结果保留，未覆盖或合并到本次结果；runtime仍只绑定产品sourceCommit 69e8141。
+- 隔离隐藏About DOM fixture直接加载生成runtime中的About.html、About.js、CSS及Babel/Emby button/scroller AMD模块；maintenance IPC仅返回合成状态，profile路径仅在私有fixture下，所有HTTP/HTTPS/WebSocket请求均被拦截。隔离窗的show/focus/activate均0，所有owned PID及子进程退出且无残留。run-20261014-06在私有几何回执生成器处因main harness作用域中缺少buildManifest而停止；父会话从独立run identity复核同一fixture也遇到相同缺项。800px/125%矩形及notReady/failed/missing完整DOM场景没有取得最终回执，状态明确保留NOT_VERIFIED；该fixture错误不能据此判定产品通过或产品失败。各run日志/回执保留于私有build-validation/hidden-about；没有产品源码或runtime变更，也未启动生产客户端、真实profile、服务器或系统动作。
+- 文档后续提交只同步构建、公共门禁和隐藏fixture边界；runtime build-manifest的sourceCommit保持69e8141，公共测试所用HEAD为cca8f52，文档commit单独记录，不冒充runtime来源。前台、真实Emby/远控和安装验收仍未执行。
 
 ## 2026-10-14 M01 身份与配置候选整合
 
