@@ -338,6 +338,35 @@ test('plugin captions own the header and use escaped header HTML with a plain do
     assert.equal(rt.mainTabs.lastTabs[0].name, '&lt;img src=x onerror=alert(1)&gt;');
 });
 
+test('same-view dashboard updates preserve omitted tabs while explicit page changes may clear them', async () => {
+    const rt = runtime(), shell = makeShell(), view = new rt.View(shell.view, {PageId: 'synthetic-a'});
+    view.onResume(); await resolveView(rt, rt.requests[0]);
+    const update = syntheticPage('synthetic-a', 'view-a');
+    update.TabPageInfos = [];
+    update.EditObjectContainer.Object.text = 'Fresh dashboard value';
+    rt.events.emit('UIPageInfoChanged', {}, rt.client, update); await tick(); await tick();
+    assert.equal(rt.mainTabs.lastTabs.length, 2);
+    assert.equal(rt.editorCalls.set.at(-1).container.Object.text, 'Fresh dashboard value');
+    assert.equal(update.TabPageInfos.length, 0, 'incoming notification remains unmodified');
+    const transition = syntheticPage('synthetic-a', 'next-view');
+    transition.TabPageInfos = []; transition.IsPageChangeInfo = true;
+    rt.events.emit('UIPageInfoChanged', {}, rt.client, transition); await tick(); await tick();
+    assert.equal(rt.mainTabs.getTabsElement(), null, 'explicit page change clears old navigation');
+});
+
+test('leaving GenericUI clears its title once and does not erase another tab owner', async () => {
+    const rt = runtime(), shell = makeShell(), view = new rt.View(shell.view, {PageId: 'synthetic-a'});
+    view.onResume(); await resolveView(rt, rt.requests[0]);
+    view.onPause();
+    assert.equal(rt.headerState.title, '');
+    rt.appHeader.setTitle('New page'); view.onPause();
+    assert.equal(rt.headerState.title, 'New page');
+    view.onResume(); await resolveView(rt, rt.requests[1]);
+    rt.mainTabs.adopt(makeShell().view); rt.appHeader.setTitle('Other owner');
+    view.onPause();
+    assert.equal(rt.headerState.title, 'Other owner');
+});
+
 test('resume, pause, and destroy own one UIPageInfoChanged listener and DOM handlers', async () => {
     const rt = runtime(), shell = makeShell(), view = new rt.View(shell.view, {PageId: 'synthetic-a'});
     view.onResume();

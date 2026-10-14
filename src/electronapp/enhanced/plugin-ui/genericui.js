@@ -52,6 +52,8 @@ function(exports, baseView, connection, events, notifications, globalize, generi
         this.load();
     };
     View.prototype.onPause = function() {
+        var headerTabs = mainTabs.default.getTabsElement();
+        if (this.active && (!headerTabs || headerTabs === this.headerTabsElement)) appHeader.default.setDefaultTitle();
         this.active = false;
         this.generation++;
         this.tabRequest++;
@@ -273,6 +275,11 @@ function(exports, baseView, connection, events, notifications, globalize, generi
     View.prototype.onUpdate = function(e, client, data) {
         if (!this.active || client !== this.apiClient || !this.data || !data || data.PageId !== this.data.PageId) return;
         if (data.ViewId !== this.data.ViewId && !data.IsPageChangeInfo) return;
+        // Same-view refreshes can omit navigation, as the dashboard does.
+        // Only a page transition may deliberately replace it with no tabs.
+        if (!data.IsPageChangeInfo && !this.dialog && this.pageData && (!data.TabPageInfos || !data.TabPageInfos.length)) {
+            data = Object.assign({}, data, {TabPageInfos: this.pageData.TabPageInfos});
+        }
         var self = this, generation = ++this.generation;
         Promise.resolve().then(function() { return self.render(data, generation); }).catch(function() { if (self.current(generation)) self.showError(); });
     };
