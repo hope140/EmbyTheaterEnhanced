@@ -81,6 +81,7 @@ function pluginNavigation() {
                 if (!stage) throw new Error('Plugin page missing view');
                 stage.etePluginPage = true;
                 stage.classList.add('page', 'hide');
+                if (options.isPluginPage) stage.classList.add('ete-plugin-legacy-page');
                 var dependencies = stage.getAttribute('data-require');
                 dependencies = dependencies ? dependencies.split(',') : [];
                 if (options.isPluginPage) dependencies.push('legacy/dashboard', 'css!legacy/dashboard', 'css!../enhanced/plugin-ui/plugin-ui.css');

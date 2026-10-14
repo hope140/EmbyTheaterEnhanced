@@ -31,6 +31,8 @@ define(['exports', 'modules/dialoghelper/dialoghelper.js', 'modules/common/globa
         if (existing) return existing;
         class EmbyDialogCloseButton extends HTMLButtonElement {
             connectedCallback() {
+                var dialog = this.closest('.dialog');
+                if (dialog) dialog.classList.add('ete-plugin-legacy-dialog');
                 this.type = 'button';
                 this.setAttribute('type', 'button');
                 this.classList.add('paper-icon-button-light', 'md-icon');

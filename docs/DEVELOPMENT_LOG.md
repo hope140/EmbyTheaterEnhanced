@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-14 按钮主次、形状和布局集中核对
+
+- 用户指出网页绿色全宽保存与客户端普通小按钮不同。真实神医页的RED为网页PageSave宽度比1、button-submit=true、胶囊；旧适配宽度比约0.079、普通背景、约0.6em圆角。源因为renderCommands丢失网页btnSave/block及主要动作类，之前组件数量/几何矩阵没有覆盖按钮主次，不能把差异仅归为主题。
+- 依据当前网页普通页面DOM与公共Wizard模板映射：PageSave全宽胶囊、enabled时主色；DialogOk主要确认，WizardNext/Finish/Back/辅助步骤中性胶囊；DialogCancel/WizardCancel移到标题栏图标，保留原data-data1、命令、enabled、可访问名称及form验证，不换业务接口。禁用主要操作不保留button-submit。确认区仍位于滚动内容之外，长内容和命令区可达。
+- 传统按钮核对另发现Backup主页及Restore/Extract模板保留旧小圆角。受控loader只给实际传统插件stage增加ete-plugin-legacy-page标记，已有维护关闭控件只给所属dialog增加标记；维护CSS限定这些区域的raised圆角，不改变普通设置或全局主题。viewmanager固定输出哈希为6C6A7315C74984F96171149AA2993ED9B276B9E92CBFFC6E1F78DBB8955513E6，冻结base/epoch/signal与owner校验保持。
+- 工作按钮矩阵覆盖神医6页、Madby8页的正常/800px/125%，84次；传统7页及2个模板18次；30字段Dialog/WizardNext/WizardFinish的小窗/全屏12次合成对照。主操作宽度比、主色标记/计算颜色、圆角、禁用、普通操作/路径图标、标题栏取消与末字段/按钮可达均分别记录，真实UI/Command及非读取HTTP为0，不点击保存、确认或配置动作。此前响应式504次及873全套结果保持原来源，本次不冒充新源码的全套结果。
+- 定向98/98、隐藏104项与语法/diff校验通过；新增保存启用/禁用角色转换、模态主次及取消归属测试、真实隐藏全宽/胶囊几何断言。只读按钮合同审计由GPT-6 Luna High执行，主线程负责接口/模板归属和交付审核；Task Tier 2，Playback/Session Impact NONE。后续严格source-bound构建与产物复验、重复入口验证另记私有回执。
+
 ## 2026-10-14 验收入口早期诊断日志合同修正
 
 - 用户再次报告e248b59打不开。只读完整集合比对显示唯一extra为app/x64/electron/debug.log；缺失及哈希变化均0，原日志路径环境绑定仍存在。上次路由修复未覆盖早期诊断日志，不能将一次启动检查通过当成长期入口可用证据。

@@ -172,7 +172,7 @@ function(exports, baseView, connection, events, notifications, globalize, generi
         var self = this, dialog = dialogHelper.default.createDialog({removeOnClose: true, enableHistory: false, size: data.ShowDialogFullScreen ? 'fullscreen' : 'small', autoFocus: true});
         dialog.classList.add('formDialog');
         dialog.classList.add('ete-plugin-view');
-        dialog.innerHTML = '<form class="dialogForm"><div class="dialogContentInner ete-plugin-dialog-scroll"><h2 class="mainTitle"></h2><div class="mainSubTitle"></div><p class="pluginError" role="status" hidden></p><div class="mainContent"></div></div><div class="pluginCommands"></div></form>';
+        dialog.innerHTML = '<form class="dialogForm"><div class="formDialogHeader"><div class="pluginDialogCommands"></div><h2 class="mainTitle"></h2></div><div class="dialogContentInner ete-plugin-dialog-scroll"><div class="mainSubTitle"></div><p class="pluginError" role="status" hidden></p><div class="mainContent"></div></div><div class="pluginCommands"></div></form>';
         dialog.addEventListener('click', this.boundClick);
         dialog.addEventListener('command', this.boundCommand);
         dialog.querySelector('form').addEventListener('submit', this.boundSubmit);
@@ -261,7 +261,9 @@ function(exports, baseView, connection, events, notifications, globalize, generi
     };
     View.prototype.renderCommands = function(data) {
         var container = this.root().querySelector('.pluginCommands');
+        var header = this.root().querySelector('.pluginDialogCommands');
         container.replaceChildren();
+        if (header) header.replaceChildren();
         data.Commands.forEach(function(command) {
             if (!command.IsVisible || typeof command.CommandType !== 'string') return;
             // Regular web pages use header/input navigation, not a PageBack footer.
@@ -274,7 +276,19 @@ function(exports, baseView, connection, events, notifications, globalize, generi
             button.textContent = command.Caption || (command.CommandType === 'PageBack' ? globalize.default.translate('Back') : command.CommandType);
             button.disabled = !command.IsEnabled;
             button.className = 'raised emby-button';
-            container.appendChild(button);
+            // The web template separates full-width save/confirm actions,
+            // neutral wizard steps and icon-only header cancellation.
+            if (command.CommandType === 'PageSave') button.className += ' block btnSave pagebutton';
+            if (header) button.className += ' block formDialogFooterItem';
+            if (command.CommandType === 'DialogOk') button.className += ' btnOk';
+            if (/^Wizard(?:Back|Next|Finish|Button[1-3])$/.test(command.CommandType)) button.className += ' raised-mini';
+            if (command.IsEnabled && (command.CommandType === 'PageSave' || command.CommandType === 'DialogOk')) button.className += ' button-submit';
+            if (header && (command.CommandType === 'DialogCancel' || command.CommandType === 'WizardCancel')) {
+                button.className = 'paper-icon-button-light md-icon ete-plugin-dialog-cancel';
+                button.setAttribute('aria-label', command.Caption || globalize.default.translate('ButtonCancel'));
+                button.textContent = 'close';
+                header.appendChild(button);
+            } else container.appendChild(button);
         });
     };
     View.prototype.onUpdate = function(e, client, data) {

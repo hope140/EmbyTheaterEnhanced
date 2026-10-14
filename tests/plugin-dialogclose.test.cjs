@@ -130,6 +130,7 @@ test('owner close button closes only its live dialog exactly once and never subm
     button.ownerDialog = owner;
     button.isConnected = true;
     button.connectedCallback();
+    assert.equal(owner.classList.contains('ete-plugin-legacy-dialog'), true, 'only the containing dialog receives plugin button styling');
 
     const event = button.click();
     button.click();

@@ -141,6 +141,10 @@
             check(byId('label').querySelector('.labelText').textContent === window.__fixturePage.EditObjectContainer.Object.label.Text && !byId('label').querySelector('img'), 'label_preserves_plain_text_without_html');
             check(byId('status').querySelector('.statusIcon').textContent === 'check_circle_outline', 'succeeded_status_icon_is_plain_mapped_text');
             check(byId('action').querySelector('.buttonIcon').textContent === 'delete', 'standard_icon_maps_button_glyph');
+            var saveButton = viewNode.querySelector('.pluginCommands button[data-data1="PageSave"]');
+            check(saveButton && saveButton.classList.contains('block') && saveButton.classList.contains('button-submit'), 'page_save_uses_full_width_primary_role');
+            check(saveButton.getBoundingClientRect().width >= saveButton.parentNode.getBoundingClientRect().width - 2, 'page_save_fills_command_area');
+            check(parseFloat(getComputedStyle(saveButton).borderRadius) >= saveButton.getBoundingClientRect().height / 2, 'page_save_has_web_pill_shape');
             var selectBox=byId('multiple').getBoundingClientRect();
             var selectName=byId('multiple').parentNode.querySelector('.emby-select-selectedName').getBoundingClientRect();
             var selectArrow=byId('multiple').parentNode.querySelector('.selectArrow').getBoundingClientRect();

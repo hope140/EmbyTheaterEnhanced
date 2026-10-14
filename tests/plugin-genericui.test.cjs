@@ -682,6 +682,38 @@ test('schema rejects injection and prototype keys; ItemList display copy preserv
 
 function rtSchema(data) { return runtime().schema.prepare(data); }
 
+test('save commands use the web full-width primary role and lose primary colour when disabled', async () => {
+    const rt = runtime(), shell = makeShell(), view = new rt.View(shell.view, {PageId: 'synthetic-a'});
+    view.onResume(); await resolveView(rt, rt.requests[0]);
+    let save = shell.view.querySelector('.pluginCommands').children.find(b => b.getAttribute('data-data1') === 'PageSave');
+    assert.match(save.className, /\bblock\b/); assert.match(save.className, /\bbutton-submit\b/);
+    assert.equal(save.type, 'submit');
+    const updated = syntheticPage('synthetic-a', 'view-a');
+    updated.Commands.find(c => c.CommandType === 'PageSave').IsEnabled = false;
+    rt.events.emit('UIPageInfoChanged', {}, rt.client, updated); await tick(); await tick();
+    save = shell.view.querySelector('.pluginCommands').children.find(b => b.getAttribute('data-data1') === 'PageSave');
+    assert.equal(save.disabled, true); assert.doesNotMatch(save.className, /\bbutton-submit\b/);
+    assert.match(save.className, /\bblock\b/);
+});
+
+test('modal confirms, wizard steps and cancellation retain distinct web button roles', async () => {
+    for (const [viewType, confirm, cancel] of [['Dialog', 'DialogOk', 'DialogCancel'], ['Wizard', 'WizardNext', 'WizardCancel'], ['Wizard', 'WizardFinish', 'WizardCancel']]) {
+        const rt = runtime(), shell = makeShell(), view = new rt.View(shell.view, {PageId: 'synthetic-a'});
+        const data = syntheticPage('synthetic-a', 'view-a', {viewType, commands: [
+            {CommandType: confirm, Caption: 'Proceed', IsVisible: true, IsEnabled: true},
+            {CommandType: cancel, Caption: 'Cancel', IsVisible: true, IsEnabled: true}
+        ]});
+        view.onResume(); await resolveView(rt, rt.requests[0], data);
+        const button = view.dialog.querySelector('.pluginCommands').children.find(b => b.getAttribute('data-data1') === confirm);
+        assert.match(button.className, /\bblock\b/);
+        assert.equal(/\bbutton-submit\b/.test(button.className), confirm === 'DialogOk');
+        const close = view.dialog.querySelector('.pluginDialogCommands').children[0];
+        assert.equal(close.getAttribute('data-data1'), cancel); assert.equal(close.getAttribute('aria-label'), 'Cancel');
+        assert.equal(close.textContent, 'close'); assert.doesNotMatch(close.className, /\bbutton-submit\b/);
+        assert.equal(view.dialog.querySelector('.pluginCommands').children.includes(close), false);
+    }
+});
+
 test('regular pages do not expose the internal PageBack command as a footer button', async () => {
     const rt = runtime(), shell = makeShell(), view = new rt.View(shell.view, {PageId: 'synthetic-a'});
     view.onResume(); await resolveView(rt, rt.requests[0], syntheticPage('synthetic-a', 'view-a', {commands: [{CommandType: 'PageBack', IsVisible: true, IsEnabled: true}]}));

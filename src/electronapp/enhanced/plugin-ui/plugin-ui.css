@@ -10,6 +10,11 @@
 .ete-plugin-view.formDialog > form {
     display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 0; overflow: hidden;
 }
+.ete-plugin-view.formDialog .formDialogHeader {
+    display: flex; align-items: center; gap: .75em; flex: 0 0 auto; padding: .75em 1.5em;
+}
+.ete-plugin-view.formDialog .formDialogHeader .mainTitle { margin: 0; }
+.ete-plugin-view.formDialog .pluginDialogCommands:empty { display: none; }
 .ete-plugin-view.formDialog .ete-plugin-dialog-scroll {
     flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 1.5em; box-sizing: border-box;
 }
@@ -81,6 +86,14 @@ body:has(.ete-plugin-view:not(.hide) .ete-plugin-content select[multiple])
 .ete-plugin-content .ete-plugin-bottom-panel { position: static !important; margin-top: 1.5em; }
 .ete-plugin-view .pluginCommands { display: flex; flex-wrap: wrap; gap: .75em; margin-top: 1.5em; }
 .ete-plugin-view .pluginCommands .emby-button { margin: 0; }
+.ete-plugin-view .pluginCommands > .raised,
+.ete-plugin-legacy-page .raised,
+.pluginConfigurationPage .raised,
+.ete-plugin-legacy-dialog .raised { border-radius: 100em; }
+.ete-plugin-view .pluginCommands > .block { width: 100%; }
+.ete-plugin-view.formDialog .pluginCommands > .formDialogFooterItem {
+    flex: 1 1 0; min-width: 0; width: auto; margin: 0 !important;
+}
 @media (max-width: 640px) {
     .ete-plugin-content .ete-plugin-listitem .paperlist { margin-left: 1em !important; }
     .ete-plugin-content .ete-plugin-listitem .emby-button { margin: .5em; }
