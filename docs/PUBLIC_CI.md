@@ -17,6 +17,12 @@ The public runner discovers `tests/*.test.cjs` and excludes only these six tests
 | `tests/runtime-provenance.test.cjs` | Vendor manifests, canonical Carnival files, patch payloads, and generated preload contract. |
 | `tests/web-overlay-preparation.test.cjs` | Frozen Web overlay bases and payloads from `vendor/carnival` and `vendor/patch`. |
 
+Plugin Alameda identity and actual frozen app/view-manager alias-order checks are explicit material tests in `tests/plugin-amd-identity-material-selftest.cjs` and `tests/plugin-dialogclose-material-selftest.cjs`. They retain the original assertions and require the unavailable Carnival Web inputs; they are not discovered by the public `tests/*.test.cjs` runner. The synthetic close-button tests remain in the public set. A prepared local checkout runs both explicitly:
+
+```powershell
+node --test tests/plugin-amd-identity-material-selftest.cjs tests/plugin-dialogclose-material-selftest.cjs
+```
+
 Other gates run these checks:
 
 - `tools/ci-syntax.cjs` checks tracked JavaScript files under maintained `src/`, `tools/`, and `tests/` paths.
