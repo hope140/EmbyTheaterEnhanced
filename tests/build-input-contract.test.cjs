@@ -96,7 +96,9 @@ test('every declared build input rejects dirty working text', t => {
 test('Web overlay patchers are consumed and source-bound build inputs', t => {
     const patcherPaths = [
         'tools/patch-custom-css-js.cjs',
-        'tools/patch-externalplayer-residue.cjs'
+        'tools/patch-externalplayer-residue.cjs',
+        'tools/patch-item-controls.cjs',
+        'tools/patch-server-home.cjs'
     ];
     const overlayPath = path.join(__dirname, '..', 'tools', 'prepare-web-overlays.cjs');
     const overlaySource = fs.readFileSync(overlayPath, 'utf8');

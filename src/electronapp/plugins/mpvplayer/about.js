@@ -1,4 +1,4 @@
-define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!./enhanced-settings', 'css!./about'], function (loading, BaseView) {
+define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!modules/listview/listview', 'css!./enhanced-settings', 'css!./about'], function (loading, BaseView) {
     'use strict';
 
     var CHANNELS = {
@@ -136,6 +136,8 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!./enhanced-s
         var importButton = view.querySelector('.btnImportKernel');
         var baselineButton = view.querySelector('.btnSelectBaseline');
         while (list.firstChild) list.removeChild(list.firstChild);
+        setValue(view, '.aboutKernelCurrent', '无法读取');
+        setValue(view, '.aboutKernelNext', '无法读取');
         if (!result || result.status === 'unavailable') {
             var unavailableText = result && result.reason === 'store-unavailable'
                 ? '候选存储不可用；现有播放链保持不变。'
@@ -160,6 +162,15 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!./enhanced-s
         var runtime = result.runtime || {};
         var currentId = runtime.activeCandidateId || null;
         var selectedId = result.selectedCandidateId || null;
+        function kernelName(id) {
+            if (!id) return '内置内核';
+            var candidate = result.candidates.find(function (item) { return item.candidateId === id; });
+            return candidate && candidate.version || '候选内核';
+        }
+        var currentKnown = !!currentId || Object.prototype.hasOwnProperty.call(runtime, 'effectiveCandidateId');
+        var nextKnown = Object.prototype.hasOwnProperty.call(result, 'selectedCandidateId');
+        setValue(view, '.aboutKernelCurrent', currentKnown ? kernelName(currentId || runtime.effectiveCandidateId) : 'UNKNOWN');
+        setValue(view, '.aboutKernelNext', result.selectionState === 'invalid' ? '选择无效，请重新选择' : nextKnown ? kernelName(selectedId) : 'UNKNOWN');
         var pendingRestart = selectedId !== currentId;
         var invalidSelectionText = runtime.activeCandidateId
             ? '下次启动选择状态无效；当前进程仍使用已启动候选 ' + runtime.activeCandidateId + '。本进程内核不变。'
@@ -168,7 +179,7 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!./enhanced-s
                 : '下次启动选择状态无效；本次启动选择固定基线。显式选择固定基线可修复状态。';
         var text = result.selectionState === 'invalid' ? invalidSelectionText :
             pendingRestart ? '已保存下次启动选择；当前运行内核保持不变。' :
-            runtime.activationState === 'candidate-active' ? '本次启动候选已通过 Helper 握手。DLL 映像 SHA 仍为 UNKNOWN。' :
+            runtime.activationState === 'candidate-active' ? '当前内核已通过启动校验。' :
             runtime.activationState === 'candidate-fallback-baseline-active' ? '候选启动失败，已在页面/播放启动前回到固定基线。' :
             runtime.activationState === 'baseline-start-failed' ? '候选与固定基线启动均失败；Native Helper 保持停止。' :
             runtime.activationState === 'candidate-runtime-failed' ? '候选运行期间 Helper 失败；本进程未切换内核。' :
@@ -176,24 +187,52 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!./enhanced-s
         setStatus(state, text, result.selectionState === 'invalid' || runtime.activationState === 'baseline-start-failed' || runtime.activationState === 'candidate-runtime-failed');
         result.candidates.forEach(function (candidate) {
             var card = document.createElement('div');
-            card.className = 'about-kernel-candidate';
-            var heading = document.createElement('strong');
+            card.className = 'listItem listItem-border about-kernel-candidate';
+            var content = document.createElement('div');
+            content.className = 'listItem-content';
+            var body = document.createElement('div');
+            body.className = 'listItemBody';
+            var heading = document.createElement('h3');
+            heading.className = 'listItemBodyText';
             heading.textContent = candidate.version || 'UNKNOWN';
+            var use = document.createElement('div');
+            use.className = 'secondaryText about-kernel-state';
+            use.textContent = candidate.candidateId === currentId
+                ? candidate.candidateId === selectedId ? '当前使用 · 下次启动继续使用' : '当前使用 · 已安排切换'
+                : candidate.candidateId === selectedId ? '下次启动使用' : '已导入';
+            var technical = document.createElement('details');
+            technical.className = 'ete-about-advanced about-kernel-details';
+            var summary = document.createElement('summary');
+            summary.textContent = '技术详情';
             var identity = document.createElement('code');
             identity.textContent = candidate.candidateId || 'UNKNOWN';
             var details = document.createElement('p');
             details.textContent = '包 SHA 与 PE 静态合同已验证；来源声明未独立核验；notice 已随包提供；可发行状态：NOT_ASSESSED。DLL 大小：' + String(candidate.sizeBytes || 'UNKNOWN') + ' bytes。';
-            var select = document.createElement('button');
+            var evidence = document.createElement('p');
+            evidence.textContent = '文件 SHA256';
+            evidence.appendChild(document.createElement('br'));
+            evidence.appendChild(identity);
+            var runtimeEvidence = document.createElement('p');
+            runtimeEvidence.textContent = '已加载 DLL 映像 SHA256：UNKNOWN。包文件校验与启动握手不代表映像哈希、来源许可或可发行性结论。';
+            var select = document.createElement('button', {is: 'emby-button'});
             select.type = 'button';
-            select.className = 'raised ete-settings-button ete-settings-button--secondary';
-            select.textContent = candidate.candidateId === selectedId ? '已选为下次启动候选' : '下次启动使用此候选';
+            // Preserve theme/focus classes installed by the native button constructor.
+            ['raised', 'ete-settings-button'].forEach(function (name) { select.classList.add(name); });
+            select.setAttribute('is', 'emby-button');
+            select.textContent = candidate.candidateId === selectedId ? '已选择' : '下次启动使用';
+            select.setAttribute('aria-label', select.textContent + ' ' + (candidate.version || '候选内核'));
             select.disabled = candidate.candidateId === selectedId || result.selectionState === 'invalid';
             select.addEventListener('click', function () { this.selectKernel(candidate.candidateId); }.bind(this));
-            card.appendChild(heading);
-            card.appendChild(document.createElement('br'));
-            card.appendChild(identity);
-            card.appendChild(details);
-            card.appendChild(select);
+            body.appendChild(heading);
+            body.appendChild(use);
+            technical.appendChild(summary);
+            technical.appendChild(evidence);
+            technical.appendChild(details);
+            technical.appendChild(runtimeEvidence);
+            body.appendChild(technical);
+            content.appendChild(body);
+            content.appendChild(select);
+            card.appendChild(content);
             list.appendChild(card);
         }, this);
         baselineButton.disabled = selectedId === null && result.selectionState !== 'invalid';

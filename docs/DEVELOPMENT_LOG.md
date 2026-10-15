@@ -1,5 +1,80 @@
 # 维护记录
 
+## 2026-10-15 v0.3.3测试版发布范围
+
+- 用户明确要求当前UI修复完成后发布测试版，并授权本任务可回退操作。版本推进为0.3.3，使用Pre-release，保留v0.3.1正式版/Latest及既有v0.3.2资产。
+- 集成已审核的内核候选打包CLI参数修正及真实子进程回归，来源为独立已完成7d03bbb的两个工具/测试Git blobs；状态文档在当前分支统一记录，不覆盖新进度。暂停的离线延迟工具保留独立分支，不恢复采样、性能实施或前台操作。
+- 详情新增生成器暴露runtime-provenance材料夹具遗漏：补入fixture固定文件清单后原两项正/负例通过，没有降低来源与tamper断言。3cddb46的材料失败保留，后续新来源重跑独立记录。
+- 3cddb46公开925/925通过；实际完整应用初始化后，合成详情控件使用四个真实EmbySelect，原生ActionSheet生成两项、选择区宽度恢复，窗口显示/Native启动均0。实际详情路由在严格网络限制下未完成，记录为夹具限制，不记为真实详情验收；控件检查不执行原Item业务controller或改真实媒体选择。
+- 发布安装器从最终main来源重新构建，校验版本/来源/完整payload及解包内容；发布后核对Tag、Pre-release/Latest与匿名下载字节。安装器保持NotSigned，来源许可等既有边界保留，不执行系统安装，不携带私有测试脚本、登录材料或用户导入的内核。
+
+## 2026-10-15 详情选择器原生菜单与布局跟进
+
+- 用户在About本地提交/构建授权后补充详情页UI差异，并明确本任务可回退操作直接推进。About九路径已单独提交59b34cd并构建，详情修复保持独立可回滚提交；不扩展为发布、安装或真实业务写入。
+- Model Tier: Tier 1；Model: 明确规格实施GPT-6 Luna High，主线程沿用当前配置负责审核；Reason: 两个属性与详情局部样式，既有原生控件和构建合同明确；Escalated: no。
+- 根因一：selectSource/selectVideo未指定data-menu=custom，桌面模式落入Windows原生菜单；selectAudio/selectSubtitles已使用Emby ActionSheet。仅在固定HTML overlay补两个属性，原Item controller、控件和菜单模块字节保持。
+- 根因二：Carnival layout.css的宽屏附加规则将noScrollY详情选择区限为24em，并对label/select增加上边距。固定布局overlay保留原文，仅追加.itemView内80em以上的width:auto与margin-top:0；不修改其他页的选择器或整套主题。
+- 新生成器进入build-input与runtime overlay来源合同，输入/输出SHA固定，重复或漂移锚点拒绝；HTML既有外置播放器退役变换链保留。执行冻结emby-select的pointer/Enter/change/disabled测试，以及5项定向与28项组合检查通过；父会话复读真实diff并重复5项通过。后续来源绑定构建、包体及原生控件隐藏验证独立记录，不宣称完整新版详情页已迁移。
+
+## 2026-10-15 About原生界面整理候选
+
+- Model Tier: Tier 1；Model: 主线程沿用当前配置，只读Web范围核对为GPT-6 Luna High；Reason: 已有界面与IPC合同明确，限定About三文件和回归/文档；Escalated: no。没有修改内核选择、启动、回退、播放或Session代码。
+- 用户确认20261015候选可以播放，截图显示候选已通过启动握手；这分别是USER_REPORTED有限播放与截图证据，映像SHA仍UNKNOWN，其他媒体组合与回退未验收。
+- 动态候选按钮使用document.createElement的原生emby-button注册并追加样式类，保留构造器的主题/焦点类；候选列表复用原listItem样式，不再使用独立边框卡片。默认显示本次/下次启动及简短状态，长哈希/PE/来源/许可声明收进技术详情，保持未知值和判断边界。
+- About原生primary按钮沿用button-submit主题填充，不更改其他设置页；空状态行不保留高度，去除空白占位。版本信息与操作功能、原IPC及错误/取消状态保持。相关定向测试19/19通过；实际原生按钮/样式的隔离渲染与来源绑定构建分别记录。
+- 只读复核Web范围：已做GenericUI/插件兼容与首页HomeSections接线；卡片、其他页族和共享播放组件主要沿用原有实现。Electron44.4.2是独立运行时升级，不能表述为整套新版Web迁移完成。路线图进度按已确认首页方向和延迟无限期延期同步。
+- 定向19/19、公开920/920、JS280项及331文本有限凭据模式扫描通过。源预览使用真实Emby按钮/滚动元素与列表/主题样式、合成IPC；390/800/1280的18组状态、默认折叠/展开、选用按钮的原生实例/主题类和ID分派通过，截图已人工检查，无外部网络或真实窗口显示。首轮夹具用矩形尺寸误判闭合details的不可见后代，次轮试图点击已禁用的选中按钮，分别更正可见性与交互前置条件后通过；未为夹具错误修改产品。该证据不替代来源绑定包/安装或真实内核操作；用户随后明确授权本批9路径本地提交和继续构建，复核差异及已审核字节后执行。
+
+## 2026-10-15 首页说明收敛与空收藏核对
+
+- Model Tier: Tier 2；Model: 主线程沿用当前配置，独立内核材料任务为GPT-6 Luna High；Reason: 原生页签加载与接口/渲染证据需区分；Escalated: no。没有改变播放、Session、认证或公共组件归属。
+- 移除成功首页顶部额外管理说明；回归改为要求stage直接由分区组成，显式空布局也不插入说明节点，28项定向检查通过。变更继续位于已授权的首页本地提交/后台构建范围。
+- 完整应用隐藏切换可创建12个Favorites分区，原生getItems/getArtists/getPeople成功返回0条；只读核对Filters=IsFavorite、IsFavorite=true、Filters=IsFavoriteOrLikes同样为空。用户明确原网页也无收藏，所以保留原生收藏行为，不用合成内容冒充真实收藏，也不将空列表误记为加载失败。
+- 独立材料任务准备20261015版shinchiro标准x64 libmpv ZIP，父会话使用产品worker重新验证四条目完整性、x64及必需导出通过。来源URL及下载摘要另行核对，候选DLL未加载、未替换基线；真实导入/启动/回退由用户后续单独测试。
+- 产品提交44edab5完成来源绑定构建及2155项payload校验；公开918/918、材料82/82、JS280项通过。实际应用在只读服务/隔离profile中切换主页-喜欢-主页：首页13分区、说明节点0，真实空收藏页签可进入；另一次仅在内存中提供1条合成收藏，原Favorites组件生成卡片。窗口实际显示0、Native子进程启动0，网络限制引起的独立renderer拒绝保留，不宣称全部renderer异常为0。直接启动入口完整文件集合与哈希检查通过，登录与STRM配置复用，不带入候选内核选择；文档HEAD与44edab5产品来源分开。
+
+## 2026-10-15 原生首页加载链验证收尾
+
+- 产品来源f087a4e重新来源绑定构建，公开918/918、材料82/82、JS280/PowerShell28及331文本有限扫描通过；2155 payload完整校验。原生别名回归28/28，组件隐藏窗口800/1280各14项通过；夹具已使用原app.js的getDynamicImport及拆包函数。
+- 完整应用检查直接运行实际main、app.js/router、HomeTab与BaseTab，使用隔离登录副本，只放行同一服务的元数据GET。实际构建出13个首页分区并出现卡片、布局有效，未再出现首页构造帧错误；禁止写入、WebSocket/其他网络与Native子进程，实际窗口显示0。观察到的卡片数是初始懒加载结果，不代表所有虚拟列表或前台交互完成验收。
+- 完整应用夹具前两次因误拦本机electronfile协议未进入应用层，保留失败；放行既有本机协议后通过，没有为夹具错误修改产品。只读模式下的非首页网络拒绝单独保留，不宣称所有renderer异常为0。
+- 新独立入口沿用已核对登录/连接配置，在新目录验证启动文件与payload，未覆盖用户正在运行的旧候选。f087a4e产物来源与后续文档HEAD分开；前台复测仍由用户完成，延迟项无限期延期。
+
+## 2026-10-15 首页原生模块导出合同修正
+
+- 用户实测be8e8c4首页空白。脱敏renderer日志定位到构造函数第1行669列；原生app.js的getDynamicImport经过returnFirstDependencyDefault返回controller本体，接线额外访问.default.create而中断，尚未进入服务端数据读取。
+- 旧Node/隐藏夹具把别名等同于原AMD module对象，掩盖了正式加载链的拆包语义。回归改用原app.js两段实际函数生成别名：修改前复现相同TypeError，修改后28/28通过。接线直接消费controller.create，并重新固定HomeTab输出SHA；不改公共加载器或其他模块导出合同。
+- 用户报告喜欢页可用、插件暂未发现问题、尝试播放暂时正常，只按各自有限反馈记录。切轨延迟无限期延期，后续不主动采集/优化；新内核导入因材料不足未验收。
+- 修复继续限定在此前明确批准的首页文件范围，后续本地来源绑定构建和隐藏完整应用验证分别记录；没有前台输入、推送或安装。
+
+## 2026-10-15 首页候选后台构建与验证收尾
+
+- 用户明确授权13路径本地提交及隔离构建/隐藏验证，候选先提交5444670；真实组件验证促成同范围内的激活修正be8e8c4。最终runtime保持be8e8c4来源，版本0.3.2，2155项payload通过package VerifyOnly及完整集合/哈希核对。本地ZIP2156条目（含manifest）逐条目读回，SHA-256为5905cc86ea209c8263d07127c37913c55031ecfb23704f596b72c941970b70aa。
+- 最终来源公开门禁918/918、材料门禁82/82，JS280项、PowerShell28项及331维护文本有限凭据模式检查通过。相对e15692e，产品文件仅新增两个首页模块、修改app.js与HomeTab；其余差异为来源/依赖记录，无payload移除，原Helper/DLL字节保持。
+- 隐藏DOM用实际构建资产及原CardBuilder/itemscontainer/imageloader/scroller，在800和1280 CSS视口各14断言通过；标题转义、卡片输出、离页取消和旧服务器回退有受控证据。show/focus/外部请求0，无测试Electron残余。BaseTab、API数据及宿主业务服务为fixture；未执行真实播放、会话/远控、登录复用或安装。
+- 保留所有首次失败：旧5444670卡片未激活，以及隐藏夹具缺input、图像辅助方法/样式alias、播放和菜单能力、shortcut服务等依赖。最终夹具改用原imageloader和shortcuts，补齐受控宿主服务，未为夹具失败修改生产公共组件。前台保持暂停；没有推送、PR或发行。
+- 本条为文档收尾，最终包和来源回执仍绑定be8e8c4，不因后续doc-only提交重标或重建已验证产物。
+
+## 2026-10-15 首次卡片容器激活修正
+
+- 5444670来源runtime的隐藏真实CardBuilder/itemscontainer检查在卡片断言失败；受控BaseTab和API服务不包含真实播放。实际组件的refresh monitor初始为paused，直接refreshItems提前返回；改为公开resume({refresh:true})，不更改组件、播放或Session实现。
+- Node fixture以真实paused初态建模，接口/生命周期28/28复核通过。保留第一次夹具模块依赖超时及第二次实际卡片失败，不把它们改成PASS；后续runtime按新提交单独构建/绑定。
+
+## 2026-10-15 首页渲染与生命周期接线候选
+
+- 已批准接口候选4d59329后继续本地接线：固定HomeTab/app.js overlay注册单一维护controller，沿用原BaseTab、ApiClient、CardBuilder、itemscontainer与焦点/播放owner。首批覆盖默认水平卡片布局，未支持视图、图像/尺寸或命令分区完整回旧首页。
+- 刷新前清除旧stage；暂停、销毁、user/server/client变化和新轮次使旧响应失效。旧renderer的user及加载等待也可取消且有期限；卡片渲染异常会回退，回退仍失败只显示可重试的通用提示。标题使用textContent，原上下文操作与Item DTO不重建。
+- 目标服务只读核对4.10.0.40：tv与mobile,desktop各13分区；resume/onnow/latestmedia三类条目API读取成功。仅保存脱敏schema摘要，无服务器写入、UI、原始响应或媒体内容落盘。
+- 接口与Node DOM/生命周期测试28/28，构建输入与overlay23/23通过。来源绑定构建、隐藏实际DOM与前台结果仍待后续；当前不以这些检查宣称页面或播放已验收。
+- Model Tier: Tier 2；Model: 主线程沿用当前会话模型；Reason: 页面事务、取消、fallback与来源生成关系；Escalated: no。真实服务摘要与原始试验过程保存在仓库外。
+
+## 2026-10-15 服务端首页只读接口候选
+
+- 用户选择跟随新版网页首页分区/顺序，保留旧版回退。自有适配模块复用当前ApiClient的getUrl/getJSON，不新建认证、播放或Session owner，不复制新版Web整树。
+- GET HomeSections及Section Items保留服务端顺序与原Item DTO；ID按路径段编码，查询参数固定，禁止转发任意URL/命令。刷新/暂停/销毁取消请求，过期client/server/user响应丢弃；请求或不支持布局整体回退。
+- 11项离线合同测试通过。版本门槛和DTO依据固定Web分析样本，不是目标服务器实测；尚未接到HomeTab或生成页面候选。接线/renderer与设置提示、真实服务、前台/播放验收分别保留待办。
+- Model Tier: Tier 2；Model: 主线程当前模型；Reason: 首页请求归属与兼容回退；Escalated: no。普通工具和文档核对由独立worker完成。
+
 ## 2026-10-15 主线集成与交付记录归属
 
 - 用户明确授权已审核累计59路径推送、创建PR、检查通过后合入main及最终main来源测试包构建；已创建[PR #36](https://github.com/hope140/EmbyTheaterEnhanced/pull/36)。产品范围保持，补充的内核管理使用说明与状态同步只触及既有文档。具体合并状态、main构建sourceCommit/包体SHA及未验收范围写入PR最终收尾说明；不通过后续doc-only提交重标旧产物来源。

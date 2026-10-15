@@ -1,6 +1,7 @@
 'use strict';
 
 const assert = require('node:assert/strict');
+const childProcess = require('node:child_process');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -45,6 +46,54 @@ function syntheticDll() {
   return bytes;
 }
 
+function createCliFixture(root) {
+  const runtimeRoot = path.join(root, 'runtime 树 with spaces');
+  const sourceCommit = 'b'.repeat(40);
+  const helperBytes = Buffer.from('Synthetic fixed helper bytes');
+  const runtimeDllBytes = Buffer.from('Synthetic fixed runtime libmpv bytes');
+  const helperPath = 'electronapp/native-helper/ete-mpv-helper.exe';
+  const runtimeDllPath = 'electronapp/libmpv/x64/mpv-1.dll';
+  for (const [relative, contents] of [[helperPath, helperBytes], [runtimeDllPath, runtimeDllBytes]]) {
+    const target = path.join(runtimeRoot, relative);
+    fs.mkdirSync(path.dirname(target), {recursive: true});
+    fs.writeFileSync(target, contents);
+  }
+  const provenance = Buffer.from(JSON.stringify({
+    schemaVersion: 1,
+    protocolVersion: 1,
+    sourceCommit,
+    helper: {version: '1.0.0', runtimePath: helperPath, sha256: hash(helperBytes), testing: false},
+    libmpv: {version: 'v0.42.0-example', runtimePath: runtimeDllPath, sha256: hash(runtimeDllBytes)}
+  }));
+  fs.writeFileSync(path.join(runtimeRoot, 'native-helper-provenance.json'), provenance);
+  fs.writeFileSync(path.join(runtimeRoot, 'runtime-provenance.json'), JSON.stringify({sourceCommit}));
+  fs.writeFileSync(path.join(runtimeRoot, 'build-manifest.json'), JSON.stringify({
+    schemaVersion: 3,
+    sourceCommit,
+    files: [{path: 'native-helper-provenance.json', sha256: hash(provenance)}]
+  }));
+
+  const paths = {
+    scriptPath: path.resolve(__dirname, '..', 'tools', 'package-mpv-kernel-candidate.cjs'),
+    runtimeRoot,
+    detailsPath: path.join(root, '内核 details.json'),
+    dllPath: path.join(root, 'libmpv 动态库.dll'),
+    sourcePath: path.join(root, 'SOURCE 来源.txt'),
+    noticePath: path.join(root, 'NOTICE 声明.txt'),
+    outputPath: path.join(root, 'candidate 输出.zip')
+  };
+  fs.writeFileSync(paths.detailsPath, JSON.stringify(details));
+  fs.writeFileSync(paths.dllPath, syntheticDll());
+  fs.writeFileSync(paths.sourcePath, source);
+  fs.writeFileSync(paths.noticePath, notice);
+  return {paths, helper: {sha256: hash(helperBytes), version: '1.0.0'}};
+}
+
+function runCli(paths, outputPath = paths.outputPath) {
+  return childProcess.spawnSync(process.execPath, [paths.scriptPath, paths.runtimeRoot, paths.detailsPath,
+    paths.dllPath, paths.sourcePath, paths.noticePath, outputPath], {encoding: 'utf8'});
+}
+
 test('offline writer emits a four-entry archive accepted by the import validator', () => {
   const dll = syntheticDll();
   const candidate = createMetadata(details, {'mpv-1.dll': dll, SOURCE: source, NOTICE: notice}, helper);
@@ -65,4 +114,52 @@ test('writer refuses an existing output without changing its bytes', async t => 
   fs.writeFileSync(output, 'keep-existing');
   await assert.rejects(writeOutput(output, Buffer.from('new bytes')), error => error.code === 'candidate-output-write-failed');
   assert.equal(fs.readFileSync(output, 'utf8'), 'keep-existing');
+});
+
+test('real CLI consumes six user arguments after node and script argv entries', t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ete 内核 CLI spaces-'));
+  t.after(() => fs.rmSync(root, {recursive: true, force: true}));
+  const {paths, helper: cliHelper} = createCliFixture(root);
+
+  const success = runCli(paths);
+  assert.equal(success.status, 0, success.stderr);
+  assert.equal(success.stderr, '');
+  const result = JSON.parse(success.stdout);
+  assert.equal(result.status, 'written');
+  const archive = fs.readFileSync(paths.outputPath);
+  const validated = validateCandidateArchive(archive, cliHelper);
+  assert.deepEqual(Object.keys(validated.members).sort(), ['NOTICE.txt','SOURCE.txt','candidate.json','mpv-1.dll']);
+  assert.equal(result.candidateId, validated.candidateId);
+
+  const missingArgument = childProcess.spawnSync(process.execPath,
+    [paths.scriptPath, paths.runtimeRoot, paths.detailsPath, paths.dllPath, paths.sourcePath, paths.noticePath],
+    {encoding: 'utf8'});
+  assert.equal(missingArgument.status, 1);
+  assert.equal(missingArgument.stderr.trim(), 'candidate-package-failed');
+  const extraArgumentPath = path.join(root, 'private-input-path-sentinel');
+  const tooManyArguments = childProcess.spawnSync(process.execPath,
+    [paths.scriptPath, paths.runtimeRoot, paths.detailsPath, paths.dllPath, paths.sourcePath, paths.noticePath,
+      paths.outputPath, extraArgumentPath], {encoding: 'utf8'});
+  assert.equal(tooManyArguments.status, 1);
+  assert.equal(tooManyArguments.stderr.trim(), 'candidate-package-failed');
+  assert.equal(tooManyArguments.stdout.includes(extraArgumentPath), false);
+  assert.equal(tooManyArguments.stderr.includes(extraArgumentPath), false);
+
+  const existingOutput = path.join(root, 'existing candidate.zip');
+  fs.writeFileSync(existingOutput, 'keep-existing-bytes');
+  const collision = runCli(paths, existingOutput);
+  assert.equal(collision.status, 1);
+  assert.equal(collision.stderr.trim(), 'candidate-output-write-failed');
+  assert.equal(fs.readFileSync(existingOutput, 'utf8'), 'keep-existing-bytes');
+
+  const badDll = path.join(root, '坏输入.dll');
+  fs.writeFileSync(badDll, 'invalid PE input');
+  const badInput = childProcess.spawnSync(process.execPath,
+    [paths.scriptPath, paths.runtimeRoot, paths.detailsPath, badDll, paths.sourcePath, paths.noticePath,
+      path.join(root, 'must-not-exist.zip')], {encoding: 'utf8'});
+  assert.equal(badInput.status, 1);
+  assert.equal(badInput.stderr.trim(), 'pe-invalid');
+  assert.equal(badInput.stdout.includes(badDll), false);
+  assert.equal(badInput.stderr.includes(badDll), false);
+  assert.equal(fs.existsSync(path.join(root, 'must-not-exist.zip')), false);
 });

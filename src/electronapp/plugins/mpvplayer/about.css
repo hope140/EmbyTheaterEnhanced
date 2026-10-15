@@ -1,3 +1,7 @@
+.about-settings-page { max-width: 90ch; }
+
+.about-settings-page .ete-settings-status:empty { display: none; }
+
 .about-settings-page .about-maintenance-card > .ete-settings-status {
     margin-top: .7em;
 }
@@ -12,9 +16,14 @@
 }
 
 .about-settings-page .about-kernel-card > .ete-settings-status { margin-top: .7em; }
-.about-settings-page .about-kernel-candidate { margin-top: .65em; padding: .7em; border: 1px solid var(--theme-divider-color, rgba(127, 127, 127, .25)); border-radius: .65em; }
+.about-settings-page .about-kernel-candidate { margin-top: .6em; }
+.about-settings-page .about-kernel-candidate .listItem-content { align-items: flex-start; gap: .8em; }
+.about-settings-page .about-kernel-candidate .listItemBody { min-width: 0; overflow: visible; padding-inline: 0; }
+.about-settings-page .about-kernel-state { margin-top: .3em; }
 .about-settings-page .about-kernel-candidate code { overflow-wrap: anywhere; word-break: break-word; }
-.about-settings-page .about-kernel-candidate .ete-settings-button { margin-top: .5em; }
+.about-settings-page .about-kernel-candidate .ete-settings-button { flex-shrink: 0; margin-top: .5em; }
+.about-settings-page .about-kernel-details { margin-top: .5em; }
+.about-settings-page .about-kernel-details p { margin-block: .5em; }
 
 .about-settings-page .ete-about-advanced summary {
     color: var(--theme-accent-text-color, inherit);
@@ -23,3 +32,8 @@
 }
 
 .about-settings-page .ete-about-advanced-content { margin-top: .4em; }
+
+@media (max-width: 760px) {
+    .about-settings-page .about-kernel-candidate .listItem-content { flex-wrap: wrap; gap: .25em; }
+    .about-settings-page .about-kernel-candidate .listItemBody { flex-basis: 100%; }
+}

@@ -179,13 +179,13 @@ async function writeOutput(outputPath, archive) {
 async function main(argv) {
     if (argv.length !== 8) fail('usage: package-mpv-kernel-candidate <runtime-root> <details.json> <mpv-1.dll> <SOURCE.txt> <NOTICE.txt> <output.zip>');
     const result = await packageCandidate({
-        runtimeRoot: path.resolve(argv[1]),
-        detailsPath: path.resolve(argv[2]),
-        dllPath: path.resolve(argv[3]),
-        sourcePath: path.resolve(argv[4]),
-        noticePath: path.resolve(argv[5])
+        runtimeRoot: path.resolve(argv[2]),
+        detailsPath: path.resolve(argv[3]),
+        dllPath: path.resolve(argv[4]),
+        sourcePath: path.resolve(argv[5]),
+        noticePath: path.resolve(argv[6])
     });
-    await writeOutput(argv[6], result.archive);
+    await writeOutput(argv[7], result.archive);
     process.stdout.write(JSON.stringify({status: 'written', candidateId: result.candidateId,
         version: result.metadata.libmpv.version, archiveSha256: sha256(result.archive), bytes: result.archive.length}) + '\n');
 }
