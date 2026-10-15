@@ -1,5 +1,9 @@
 # 项目状态
 
+2026-10-15整体收尾：累计已完成旧功能/M01、L02、M02及插件布局的59条路径已核对完整，17项变更产品源码与最终94dbcef runtime的Git blob/文件SHA匹配；首页迁移未混入，切轨延迟按用户要求暂停。275项JavaScript、28项PowerShell语法、326项维护文本的有限凭据模式检查和累计diff-check通过。本地验收ZIP已生成，2154个文件（含manifest）均从ZIP内逐项读回核对；未推送/合入主分支或发布。
+
+About先前未闭合的隐藏夹具已在最新94dbcef runtime单独补验：8个合成状态全部通过，覆盖未ready/ready/failed/缺字段/来源不可用及M02当前、pending、store不可用；内容窗口宽800（Electron坐标）、缩放125%，实测CSS视口640×702，无横向溢出，按钮可滚动/键盘到达。窗口show/focus/activate均0、退出后无所属进程，runtime payload零变化。该结果不改写历史69e8141的NOT_VERIFIED，也不代替真实Helper/DLL、服务器、播放/业务、前台或安装验收。正式source/runtime provenance validator以真实产品sourceCommit94dbcef为参数通过；文档HEAD单列。
+
 2026-10-15构建收尾：本批9文件已本地提交为`94dbcef4b6f50469e535fb91fe86209d16670ae4`，分支`codex/plugin-layout-followup-20261015`。来源绑定runtime为`dist/EmbyTheaterEnhanced-plugin-layout-94dbcef-20261015`，产品版本保持0.3.2；公开门禁890/890、材料门禁82/82、`package.ps1 -VerifyOnly`及父会话最终2153项payload逐SHA/完整集合核对通过。build-manifest SHA-256为`8b22c2110084946abfb955ae15666c6b11281e5bec884caaa076ad67e533b289`，payload-set SHA-256为`bf8ea4d3e2abee07e6084a786f804e64410d72202d767173f18a7bbf791715d7`。直接读取该runtime的隐藏Electron合成门禁131项、静态模板三视口12组几何复验通过；前台动作、真实插件JS/服务器业务、Helper/DLL执行和安装均未执行。首次材料测试早于准备文件生成而出现ENOENT，保留原失败后在构建完成状态重试通过。后续文档提交只同步结果，不改变产品来源；未推送、发布或生成安装器。
 
 2026-10-15：Chapter API 的 Path 列表宽度缺陷已形成独立修复候选。当前插件静态模板使用 33%/66% 的表格分栏；维护层对所有传统表格设置 `display:block` 会破坏该布局。候选保留原生表格布局，将超宽控件的横向滚动交给既有 `.content-primary`，不指定插件固定宽度。四个页面的静态模板、长合成内容在2030/1280/800三种视口共12组独立几何复核通过；包括目录滚动、窄Options键盘焦点局部横滚及外层纵向滚动。候选阶段只有静态模板与合成数据证据；之后的来源绑定构建和runtime复验见上条，真实网页/客户端前台及业务操作仍未执行。

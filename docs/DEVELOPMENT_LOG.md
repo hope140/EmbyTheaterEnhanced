@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-15 已完成批次整体收尾核对
+
+- 用户纠正应先收尾已完成成果，首页迁移不进入本批；切轨延迟继续按用户要求暂停。逐项核对旧功能/M01、L02、M02及插件布局的累计59路径，17项产品源码与94dbcef runtime字节/manifest相符，未发现已完成提交遗漏或新首页/延迟产品混入。主分支仍待本批明确合并授权，未做远端写入。
+- 提交前门禁275JS/28PowerShell语法、326个维护文本的有限凭据模式扫描与累计diff-check通过。890/890公开、82/82材料及131项隐藏插件/12组静态几何保留本轮来源。固定94dbcef runtime生成本地验收ZIP，从ZIP内读回2154个文件全量SHA匹配；ZIP SHA为`b08a652e984c8623e96459bcdacdfd8ffe5eaa13a91c1a9a4280c4168062a74b`，未作为Release发布或安装。
+- 旧About私有夹具的scope问题在新副本修正并预检查；唯一有效Electron运行通过8个合成状态和全部布局断言。内容窗口800（Electron坐标），125%缩放，实测CSS640×702、devicePixelRatio1.875；横溢出0，启用按钮可滚动/键盘到达。show/focus/activate为0，所属Electron退出且无残余，runtime仍2153项payload加manifest且无debug.log。保留启动前目录冲突及外层PowerShell变量命名错误；后者仅修正读回，没有重跑Electron。旧69e8141历史NOT_VERIFIED保持，新94dbcef合成DOM结果单列，不称真实Native/前台验收。
+- 通用审计最初误将最新doc-only HEAD85c4243作为runtime源，得到来源MISMATCH；原结果保留。主线程用正式source-provenance/runtime-provenance CLI显式绑定真实产品提交94dbcef后均通过、errors为空，未修改或弱化validator。文档收尾不改变产品/runtime来源，不重新构建已验证包。
+- Model Tier: Tier 1用于明确集成清单、既有私有fixture修正与包体验证；worker选择GPT-6 Luna High，主线程保留累计来源/最终结论审核。没有实施新首页、切轨性能变更、推送、PR、合并、发布、系统安装或现用profile操作。
+
 ## 2026-10-15 插件布局来源绑定构建收尾
 
 - 用户明确批准本批9文件本地提交和后台构建。父核对准确allowlist、全部SHA、反向patch和空index后提交`94dbcef4b6f50469e535fb91fe86209d16670ae4`。Tier 1 GPT-6 Luna High任务负责固定输入复制/校验、锁文件依赖、构建及测试证据；主线程保留候选审查、最终runtime隐藏复验和完整payload读回。原主目录与M02产物保持。
