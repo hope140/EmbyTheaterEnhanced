@@ -118,6 +118,7 @@ function createFixture(root) {
         'tools/patch-externalplayer-residue.cjs',
         'tools/patch-external-player-registration.cjs',
         'tools/patch-plugin-settings.cjs',
+        'tools/patch-server-home.cjs',
         'tools/copy-runtime-dependencies.cjs',
         'tools/copy-tracked-product-sources.cjs',
         'tools/electron-runtime-input.cjs',

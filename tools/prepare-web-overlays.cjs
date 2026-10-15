@@ -7,6 +7,7 @@ const externalPlayerRegistration = require('./patch-external-player-registration
 const customCssJs = require('./patch-custom-css-js.cjs');
 const externalPlayerResidue = require('./patch-externalplayer-residue.cjs');
 const pluginSettings = require('./patch-plugin-settings.cjs');
+const serverHome = require('./patch-server-home.cjs');
 const trackedFileHash = require('./tracked-file-hash.cjs');
 
 const GENERATOR_PATH = 'tools/prepare-web-overlays.cjs';
@@ -14,6 +15,7 @@ const APP_GENERATOR_PATH = 'tools/patch-external-player-registration.cjs';
 const CUSTOM_CSS_JS_GENERATOR_PATH = 'tools/patch-custom-css-js.cjs';
 const EXTERNAL_PLAYER_RESIDUE_GENERATOR_PATH = 'tools/patch-externalplayer-residue.cjs';
 const PLUGIN_GENERATOR_PATH = 'tools/patch-plugin-settings.cjs';
+const HOME_GENERATOR_PATH = 'tools/patch-server-home.cjs';
 
 const WEB_OVERLAY_CONTRACT = Object.freeze([
     Object.freeze({
@@ -79,8 +81,19 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/app.js',
         expectedBaseSha256: '3EF3102567458359A02E2FE8F79A8700CFE9C223347ABE5AB6ECB8BD93BE89D2',
         expectedInputSha256: null,
-        expectedOutputSha256: 'F35D21CA15CB16F90B5AD9B470EB216D03C79B096B86233C26D4FFA9252D92AE',
-        generatorPaths: Object.freeze([GENERATOR_PATH, APP_GENERATOR_PATH, PLUGIN_GENERATOR_PATH])
+        expectedOutputSha256: '0D4D5DBEE0B670A26E6909890B960DCCA2EBBF71B70D4D61BF74126A68E9CE5B',
+        generatorPaths: Object.freeze([GENERATOR_PATH, APP_GENERATOR_PATH, PLUGIN_GENERATOR_PATH, HOME_GENERATOR_PATH])
+    }),
+    Object.freeze({
+        id: 'server-home-tab',
+        mode: 'tracked-canonical-transform',
+        basePath: 'vendor/carnival/electronapp/www/home/hometab.js',
+        inputPath: null,
+        runtimePath: 'electronapp/www/home/hometab.js',
+        expectedBaseSha256: '649CD90AD590898187D7CFA4B969339734FC5DED93149EDEE0454C66C2773DA6',
+        expectedInputSha256: null,
+        expectedOutputSha256: 'BC65B892D974F272C3865BB0503D3960170834D0BE46E50190BB93250E8A7604',
+        generatorPaths: Object.freeze([GENERATOR_PATH, HOME_GENERATOR_PATH])
     }),
     Object.freeze({
         id: 'plugin-viewmanager',
@@ -145,7 +158,10 @@ function outputFor(root, contract) {
         if (transformed.action !== 'patched') {
             throw new Error('Web overlay canonical transform did not patch the frozen app.js base.');
         }
-        return {base, input: Buffer.from(pluginSettings.patchApp(transformed.text), 'utf8')};
+        return {base, input: Buffer.from(serverHome.patchApp(pluginSettings.patchApp(transformed.text)), 'utf8')};
+    }
+    if (contract.id === 'server-home-tab' && contract.mode === 'tracked-canonical-transform') {
+        return {base, input: Buffer.from(serverHome.patchHomeTab(base.toString('utf8')), 'utf8')};
     }
     if (contract.id === 'plugin-viewmanager' && contract.mode === 'tracked-canonical-transform') {
         return {base, input: Buffer.from(pluginSettings.patchViewManager(base.toString('utf8')), 'utf8')};

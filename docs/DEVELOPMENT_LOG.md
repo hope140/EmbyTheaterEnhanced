@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-15 首页渲染与生命周期接线候选
+
+- 已批准接口候选4d59329后继续本地接线：固定HomeTab/app.js overlay注册单一维护controller，沿用原BaseTab、ApiClient、CardBuilder、itemscontainer与焦点/播放owner。首批覆盖默认水平卡片布局，未支持视图、图像/尺寸或命令分区完整回旧首页。
+- 刷新前清除旧stage；暂停、销毁、user/server/client变化和新轮次使旧响应失效。旧renderer的user及加载等待也可取消且有期限；卡片渲染异常会回退，回退仍失败只显示可重试的通用提示。标题使用textContent，原上下文操作与Item DTO不重建。
+- 目标服务只读核对4.10.0.40：tv与mobile,desktop各13分区；resume/onnow/latestmedia三类条目API读取成功。仅保存脱敏schema摘要，无服务器写入、UI、原始响应或媒体内容落盘。
+- 接口与Node DOM/生命周期测试28/28，构建输入与overlay23/23通过。来源绑定构建、隐藏实际DOM与前台结果仍待后续；当前不以这些检查宣称页面或播放已验收。
+- Model Tier: Tier 2；Model: 主线程沿用当前会话模型；Reason: 页面事务、取消、fallback与来源生成关系；Escalated: no。真实服务摘要与原始试验过程保存在仓库外。
+
 ## 2026-10-15 服务端首页只读接口候选
 
 - 用户选择跟随新版网页首页分区/顺序，保留旧版回退。自有适配模块复用当前ApiClient的getUrl/getJSON，不新建认证、播放或Session owner，不复制新版Web整树。

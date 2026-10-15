@@ -1,6 +1,6 @@
 # 服务端首页接入合同
 
-首批采用服务端首页分区和顺序，保留旧首页回退；只读取配置，不在客户端实现服务端分区编辑。当前完成的是独立接口适配模块与离线合同测试，尚未接到 HomeTab，也没有改变现用首页。
+首批采用服务端首页分区和顺序，保留旧首页回退；只读取配置，不在客户端实现服务端分区编辑。当前已形成 HomeTab 接线、卡片渲染与固定源码 overlay 候选，尚未提交本轮接线或生成来源绑定页面包，现用首页保持原版本。
 
 ## 当前模块
 
@@ -9,18 +9,25 @@
 - 最低版本暂以固定 4.10.1.0 Web 分析样本的 `4.10.0.4` 判断为依据；严格检查版本格式，再实际尝试 GET。它是客户端能力提示，不是经实测确认的服务端兼容矩阵。
 - `loadSections({displayMode, signal})` 读取 `Users/{userId}/HomeSections`，displayMode 只允许 `tv` 或 `mobile,desktop`。保留返回顺序和标题；显式空数组保留为空布局。
 - `loadItems(section, {startIndex, limit, signal})` 只接受本轮模块返回的 section 对象，调用 `Users/{userId}/Sections/{sectionId}/Items`。ID 按单一路径段编码；只发送固定字段、图像类型、分页与同一 section 固定 RandomSeed，不转发服务端任意 URL 或 QueryOptions。
-- 保留普通 Item DTO 交给未来现有 CardBuilder，不创建或改写 Item/MediaSource/PlaySession 身份。不同 ServerId 的 Items 会拒绝。
+- 保留普通 Item DTO 交给现有 CardBuilder，不创建或改写 Item/MediaSource/PlaySession 身份。不同 ServerId 的 Items 会拒绝。
 - 每次刷新取消上一轮。请求关联当前 ApiClient、server、user 与轮次；暂停/销毁/外部取消使迟到响应失效。getJSON 即使忽略 AbortSignal，模块也会在取消或最长超时后结束等待；不会把旧 owner 的响应或失败交给新首页。
 - `server` 表示接口数据可供后续渲染；`fallback` 要求调用方回到完整旧首页；`cancelled` 要求丢弃，不触发旧首页渲染。默认请求期限 5 秒，仅为接口候选的保护上限，不是性能结论。
 
-当前支持常规媒体类 SectionType，以及 cards/buttons/list/spotlight 的结构声明。未支持类型、未知 ViewType、交互 HeaderButtons、坏 DTO、请求失败和超时都会要求整体回退；不悄悄遗漏用户配置的分区。Href、QueryOptions、HTML和命令不进入适配结果。标题必须由未来 renderer 使用 textContent 呈现，不能直接拼成 HTML。
+接口层接受常规媒体类 SectionType，以及 cards/buttons/list/spotlight 的结构声明。首批 renderer 只激活水平 cards、Primary 图像声明、默认卡片尺寸的组合；其他布局、非默认尺寸、交互 HeaderButtons、坏 DTO、请求失败和超时都会整体回退，不悄悄遗漏用户分区。Href、QueryOptions、HTML和命令不进入适配结果。分区标题使用 textContent，卡片、虚拟滚动与上下文动作仍由现有 CardBuilder/itemscontainer 提供。
 
-## 后续接线与验收
+## HomeTab 接线
 
-1. 先核对目标服务器只读响应及真实使用的 SectionType/ViewType/图像和布局字段，补齐 renderer 真正需要的 DTO；本轮只有固定客户端样本与合成响应。
-2. HomeTab 保持唯一生命周期 owner，在其暂停、销毁及刷新时调用 provider 的 cancel/dispose。既有 API client、CardBuilder、itemscontainer、focus/input 与 PlaybackManager/Session 保留原归属。
-3. 建立服务端配置与旧客户端首页设置的可见关系：服务端能力可用时使用网页配置；旧版本或不支持布局时完整回退。不得只切数据源却继续宣称旧首页设置能管理服务端分区。
-4. 根据已确认字段实现分区 renderer 和固定源码 overlay，补返回/焦点/滚动/空态/快速切换、请求失败后的完整回退及播放入口合同。新增 overlay 绑定固定输入及输出 SHA，不复制未知来源整树。
-5. 实际页面候选需另做来源绑定构建与隐藏/真实服务验证；前台和真实播放按恢复时的验收安排。本模块的 Node 测试不等于首页迁移完成。
+- 固定 Carnival HomeTab 只新增一个维护 controller，接入原 resume/refresh/pause/destroy，保留原 BaseTab、连接、焦点和播放 owner。AMD 维护模块以唯一注册 ID 加载，共用依赖使用原 canonical module ID。
+- 首页按服务端顺序构建分区。继续观看/下一集保留 backdrop 和原上下文动作，直播条目沿原 programlink；空分区由原 itemscontainer 隐藏。显式空首页不重新插入旧分区。
+- 每轮刷新清除并暂停旧节点，取消前轮请求；新数据完成后提交本轮 stage。取消、切换账号/服务器或销毁后不提交旧页面、不转入旧账号的回退。旧 renderer 的 user 读取和渲染等待也有取消及5秒等待上限。
+- 返回首页时重新读取服务端分区，并按已有卡片 ID 恢复焦点；找不到且本次要求自动聚焦时交给原 focusmanager。当前只做 Node DOM fixture，实际键盘、遥控和滚动体验仍待页面验证。
+- 服务端布局成功时提示“首页分区由服务器设置管理”；旧版本、不支持布局或读取失败回到完整旧首页及其原设置行为。首批没有服务端首页编辑器，不调用配置写接口。
+- overlay 固定 HomeTab 与 app.js 输入和输出 SHA，新生成器进入 build-input 和 runtime provenance 合同；不复制新版 Web 整树。
 
-离线检查：`node --test tests/home-server-sections.test.cjs`。不需要安装依赖或启动客户端。
+## 当前证据及剩余验证
+
+只读服务核对观察到 Emby 4.10.0.40，电视与桌面模式各13分区；当前均为支持的默认水平 cards 布局。继续观看、正在播出、最新内容三类条目接口分别读取成功，保留类型和数量摘要，不保存原始响应、媒体标题、URL或凭据。这不证明其他服务版本或任意首页配置可用。
+
+接口和渲染/生命周期的28项 Node 测试通过；构建输入及 overlay 的23项检查通过。合成 DOM、固定输入变换及只读 HTTP 不能代替真实渲染、播放或安装验收。接线候选需在明确提交授权后完成来源绑定构建、包体及隐藏页面验证；前台、真实播放和远控按恢复时的验收安排。
+
+离线检查：`node --test tests/home-server-sections.test.cjs tests/home-server-rendering.test.cjs`。不需要安装依赖或启动客户端。

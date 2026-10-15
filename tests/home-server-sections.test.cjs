@@ -119,3 +119,17 @@ test('AMD registration is inert and exports the same provider surface without lo
     assert.deepEqual(Object.keys(exported).sort(), ['createProvider', 'prepareSections', 'supportedVersion']);
     assert.equal(exported.supportedVersion('4.10.1.0'), true);
 });
+test('server display and monitor fields are projected and invalid values reject the full layout', () => {
+    const value = prepareSections([{...rows()[0], CollectionType: 'tvshows', Monitor: ['markplayed', 'videoplayback'], CardSizeOffset: -1}])[0];
+    assert.equal(value.CollectionType, 'tvshows'); assert.equal(value.CardSizeOffset, -1);
+    assert.deepEqual(value.Monitor, ['markplayed', 'videoplayback']); assert.ok(Object.isFrozen(value.Monitor));
+    for (const field of [{Monitor: ['unknown-command']}, {Monitor: 'videoplayback'}, {CardSizeOffset: 0.5}, {CardSizeOffset: 9}, {CollectionType: 'https://invalid'}]) {
+        assert.throws(() => prepareSections([{...rows()[0], ...field}]), /sections-unsupported/);
+    }
+});
+test('dot path segment identities are rejected before an HTTP URL can normalize them', async () => {
+    for (const id of ['.', '..']) {
+        assert.throws(() => prepareSections([{...rows()[0], Id: id}]), /sections-unsupported/);
+        const f = fixture(); f.user(id); assert.equal((await start(f)).status, 'fallback'); assert.equal(f.calls.length, 0); f.provider.dispose();
+    }
+});

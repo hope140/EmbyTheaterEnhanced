@@ -8,6 +8,8 @@
         'playlists', 'collections', 'activerecordings', 'onnow'];
     var views = ['cards', 'buttons', 'list', 'spotlight'];
     var imageTypes = ['Primary', 'Backdrop', 'Thumb'];
+    var monitors = ['videoplayback', 'audioplayback', 'markplayed', 'Recordings', 'Timers'];
+    var collectionTypes = ['movies', 'tvshows', 'music', 'audiobooks', 'livetv', 'mixed', 'boxsets', 'playlists', 'channels', 'homevideos', 'photos'];
     function text(value, max, empty) {
         return typeof value === 'string' && (empty || value.length > 0) && value.length <= max && !/[\u0000-\u001f\u007f]/.test(value);
     }
@@ -27,17 +29,22 @@
         if (!Array.isArray(input) || input.length > 64) throw new Error('sections-invalid');
         var ids = new Set();
         return input.map(function(row) {
-            if (!plain(row) || !text(row.Id, 256, false) || ids.has(row.Id) || !types.includes(row.SectionType) ||
+            if (!plain(row) || !text(row.Id, 256, false) || ['.', '..'].includes(row.Id) || ids.has(row.Id) || !types.includes(row.SectionType) ||
                 !text(row.Name, 256, true) || row.Subtitle != null && !text(row.Subtitle, 1024, true) ||
                 row.ViewType != null && !views.includes(row.ViewType) ||
                 row.ScrollDirection != null && !['Horizontal', 'Vertical'].includes(row.ScrollDirection) ||
                 row.ImageType != null && !imageTypes.includes(row.ImageType) ||
+                row.CollectionType != null && row.CollectionType !== '' && !collectionTypes.includes(row.CollectionType) ||
+                row.CardSizeOffset != null && (!Number.isInteger(row.CardSizeOffset) || row.CardSizeOffset < -3 || row.CardSizeOffset > 3) ||
+                row.Monitor != null && (!Array.isArray(row.Monitor) || row.Monitor.length > 8 || row.Monitor.some(function(value) { return !monitors.includes(value); })) ||
                 row.RandomSeed != null && (!Number.isSafeInteger(row.RandomSeed) || row.RandomSeed < 1 || row.RandomSeed > 10000000) ||
                 row.HeaderButtons != null && (!Array.isArray(row.HeaderButtons) || row.HeaderButtons.length)) throw new Error('sections-unsupported');
             ids.add(row.Id);
             return Object.freeze({Id: row.Id, SectionType: row.SectionType, Name: row.Name, Subtitle: row.Subtitle || '',
                 ViewType: row.ViewType || 'cards', ScrollDirection: row.ScrollDirection || 'Horizontal',
-                ImageType: row.ImageType || 'Primary', RandomSeed: row.RandomSeed || null});
+                ImageType: row.ImageType || 'Primary', RandomSeed: row.RandomSeed || null,
+                CollectionType: row.CollectionType || '', CardSizeOffset: row.CardSizeOffset || 0,
+                Monitor: Object.freeze((row.Monitor || []).slice())});
         });
     }
     function createProvider(getCurrentClient, options) {
@@ -55,7 +62,7 @@
             if (!client || typeof client.getJSON !== 'function' || typeof client.getUrl !== 'function' ||
                 typeof client.getCurrentUserId !== 'function' || typeof client.serverId !== 'function' || typeof client.serverVersion !== 'function') return null;
             var userId = client.getCurrentUserId(), serverId = client.serverId();
-            if (!text(userId, 256, false) || !text(serverId, 256, false)) return null;
+            if (!text(userId, 256, false) || ['.', '..'].includes(userId) || !text(serverId, 256, false)) return null;
             return {client: client, userId: userId, serverId: serverId, epoch: epoch};
         }
         function current(bound) {
