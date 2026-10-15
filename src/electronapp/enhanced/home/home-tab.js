@@ -103,10 +103,6 @@
             return {status: 'legacy'};
         }
         function render(next, sections, initial, ticket, options) {
-            var notice = document.createElement('p');
-            notice.className = 'fieldDescription padded-left padded-right';
-            notice.textContent = /^zh/i.test(locale.getCurrentLocale()) ? '首页分区由服务器设置管理' : 'Home sections are managed by your server settings';
-            next.appendChild(notice);
             return sections.map(function(section, index) {
                 var block = document.createElement('div');
                 block.className = 'verticalSection verticalSection-cards focusable hide';

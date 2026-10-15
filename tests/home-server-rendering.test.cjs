@@ -76,7 +76,8 @@ test('server layout renders ordered safe headings with original cards and no new
     const stage = f.root.children[0];
     assert.equal(stage.getAttribute('data-ete-home-source'), 'server');
     assert.deepEqual(stage.querySelectorAll('h2').map(h => h.textContent), ['<unsafe>', 'Recent']);
-    assert.ok(stage.children[0].textContent.includes('服务器设置'));
+    assert.equal(stage.children.length, sections().length);
+    assert.ok(stage.children.every(child => child.classList.contains('verticalSection')));
     const items = stage.querySelectorAll('.itemsContainer');
     assert.ok(items.every(item => item.options.renderer === f.cards));
     assert.deepEqual(items[0].options.contextMenuOptions, {removeFromResume: true});
@@ -106,6 +107,7 @@ test('unsupported layout, HTTP error and bad item payload use whole-page fallbac
 });
 test('explicit empty server homepage is empty and does not reinsert legacy sections', async () => {
     const f = fixture(() => Promise.resolve([])); assert.equal((await f.controller.resume()).status, 'server');
+    assert.equal(f.root.children[0].children.length, 0);
     assert.equal(f.root.querySelectorAll('.itemsContainer').length, 0); assert.equal(f.legacy.length, 0); f.controller.dispose();
 });
 test('pause/destroy cancel pending reads, and late server data cannot render or focus', async () => {

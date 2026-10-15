@@ -1,5 +1,12 @@
 # 维护记录
 
+## 2026-10-15 首页说明收敛与空收藏核对
+
+- Model Tier: Tier 2；Model: 主线程沿用当前配置，独立内核材料任务为GPT-6 Luna High；Reason: 原生页签加载与接口/渲染证据需区分；Escalated: no。没有改变播放、Session、认证或公共组件归属。
+- 移除成功首页顶部额外管理说明；回归改为要求stage直接由分区组成，显式空布局也不插入说明节点，28项定向检查通过。变更继续位于已授权的首页本地提交/后台构建范围。
+- 完整应用隐藏切换可创建12个Favorites分区，原生getItems/getArtists/getPeople成功返回0条；只读核对Filters=IsFavorite、IsFavorite=true、Filters=IsFavoriteOrLikes同样为空。用户明确原网页也无收藏，所以保留原生收藏行为，不用合成内容冒充真实收藏，也不将空列表误记为加载失败。
+- 独立材料任务准备20261015版shinchiro标准x64 libmpv ZIP，父会话使用产品worker重新验证四条目完整性、x64及必需导出通过。来源URL及下载摘要另行核对，候选DLL未加载、未替换基线；真实导入/启动/回退由用户后续单独测试。
+
 ## 2026-10-15 原生首页加载链验证收尾
 
 - 产品来源f087a4e重新来源绑定构建，公开918/918、材料82/82、JS280/PowerShell28及331文本有限扫描通过；2155 payload完整校验。原生别名回归28/28，组件隐藏窗口800/1280各14项通过；夹具已使用原app.js的getDynamicImport及拆包函数。
