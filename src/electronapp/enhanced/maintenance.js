@@ -195,6 +195,10 @@ function buildEnvironmentInfo(appInfo, platformInfo, displayInfo) {
     const bundled = info.bundledVersions || {};
     const platform = platformInfo || {};
     const display = displayInfo || {};
+    const isReady = nativeHelper.state === 'ready';
+    const capabilities = isReady && Array.isArray(nativeHelper.validatedCapabilities)
+        ? nativeHelper.validatedCapabilities.filter(value => typeof value === 'string' && /^[a-z0-9-]{1,64}$/.test(value))
+        : [];
     return {
         appVersion: safeValue(info.appVersion),
         electron: safeValue(info.electron),
@@ -202,9 +206,19 @@ function buildEnvironmentInfo(appInfo, platformInfo, displayInfo) {
         node: safeValue(info.node),
         nativeHelper: safeValue(bundled.helperVersion),
         libmpv: safeValue(bundled.libmpvVersion),
+        packageLibmpvSha256: safeValue(bundled.libmpvFileSha256),
         nativeHelperState: ['idle', 'starting', 'ready', 'failed', 'destroyed', 'stopped'].includes(nativeHelper.state) ? nativeHelper.state : 'NOT AVAILABLE',
-        runningNativeHelper: nativeHelper.state === 'ready' ? safeValue(nativeHelper.helperVersion, 'NOT AVAILABLE') : 'NOT AVAILABLE',
-        runningLibmpv: nativeHelper.state === 'ready' ? safeValue(nativeHelper.libmpvVersion, 'NOT AVAILABLE') : 'NOT AVAILABLE',
+        expectedLibmpvVersion: safeValue(nativeHelper.expectedLibmpvVersion),
+        expectedMpvClientApiVersion: safeValue(nativeHelper.expectedMpvClientApiVersion),
+        expectedLibmpvSha256: safeValue(nativeHelper.expectedLibmpvSha256),
+        runningNativeHelper: isReady ? safeValue(nativeHelper.helperVersion, 'UNKNOWN') : 'NOT AVAILABLE',
+        runningLibmpv: isReady ? safeValue(nativeHelper.libmpvVersion, 'UNKNOWN') : 'NOT AVAILABLE',
+        runningLibmpvClientApiVersion: isReady && Number.isSafeInteger(nativeHelper.mpvClientApiVersion) ? String(nativeHelper.mpvClientApiVersion) : 'UNKNOWN',
+        validatedNativeHelperCapabilities: isReady && capabilities.length ? capabilities.join(', ') : 'UNKNOWN',
+        runningLibmpvImageSha256: 'UNKNOWN',
+        fixedNativeRenderPath: safeValue(nativeHelper.fixedNativeRenderPath),
+        renderSettingUiValues: safeValue(nativeHelper.renderSettingUiValues),
+        observedNativeRenderPath: safeValue(nativeHelper.observedNativeRenderPath),
         sourceCommit: safeValue(info.buildCommit),
         windows: safeValue(platform.windows),
         displayDpi: safeValue(display.summary, 'NOT AVAILABLE')
@@ -218,11 +232,21 @@ function formatEnvironmentText(info) {
         'Electron: ' + safeValue(value.electron),
         'Chromium: ' + safeValue(value.chromium),
         'Node: ' + safeValue(value.node),
-        'Native Helper: ' + safeValue(value.nativeHelper),
-        'libmpv: ' + safeValue(value.libmpv),
+        'Package Native Helper: ' + safeValue(value.nativeHelper),
+        'Package libmpv: ' + safeValue(value.libmpv),
+        'Package libmpv DLL SHA256: ' + safeValue(value.packageLibmpvSha256),
+        'Expected libmpv version: ' + safeValue(value.expectedLibmpvVersion),
+        'Expected libmpv client API: ' + safeValue(value.expectedMpvClientApiVersion),
+        'Expected libmpv DLL SHA256: ' + safeValue(value.expectedLibmpvSha256),
         'Native Helper state: ' + safeValue(value.nativeHelperState, 'NOT AVAILABLE'),
         'Running Native Helper: ' + safeValue(value.runningNativeHelper, 'NOT AVAILABLE'),
         'Running libmpv: ' + safeValue(value.runningLibmpv, 'NOT AVAILABLE'),
+        'Running libmpv client API: ' + safeValue(value.runningLibmpvClientApiVersion, 'UNKNOWN'),
+        'Validated Native Helper capabilities: ' + safeValue(value.validatedNativeHelperCapabilities, 'UNKNOWN'),
+        'Loaded libmpv image SHA256: ' + safeValue(value.runningLibmpvImageSha256, 'UNKNOWN'),
+        'Native render path contract: ' + safeValue(value.fixedNativeRenderPath),
+        'mpv-vo/mpv-gpuapi UI values: ' + safeValue(value.renderSettingUiValues),
+        'Observed Native render properties: ' + safeValue(value.observedNativeRenderPath, 'UNKNOWN'),
         'Source Commit: ' + safeValue(value.sourceCommit),
         'Windows: ' + safeValue(value.windows),
         '显示缩放: ' + safeValue(value.displayDpi, 'NOT AVAILABLE')

@@ -43,3 +43,9 @@ E 类不表示加密或不可编辑。`www` 中 JS/HTML/CSS 可维护，但参�
 ## 当前限制
 
 没有大范围逆向分析，没有证明全部 native binary 的可重建性，没有完成 E 类每个文件的许可证/来源核验。第一轮实现是在锁定 vendor 上维护明文层。
+
+## 2026-10-14 旧批处理 Host 静态核查
+
+固定 e862288 输入中的 Emby.Theater.exe SHA-256 为 11abf75c8f77ddb0078e7dd62a2eaae60dba244c113bc7893a7e56bc6527163e。对该二进制托管 IL 做只读反编译，没有发现 Emby.ConfigureAndUninstall.bat、Emby.Dialog.bat 或 .bat 字符串，也没有发现直接启动这两条路径的托管调用。此结果只支持“未发现托管 IL 直接依赖”，不能排除动态路径、外部组件或用户手动工作流。
+
+因此当前 runtime exclusion 仍只包含 Pepper input，manifest 继续记录两份 BAT 输入且未将其排除。此轮没有构建新 runtime，生成产物中的实际文件状态仍为 NOT_VERIFIED。它们的精确外部消费者及手工兼容策略仍待确认；没有运行 BAT/Host、删除现有文件或写入安装目录。

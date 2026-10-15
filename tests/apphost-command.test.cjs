@@ -22,12 +22,23 @@ test('window state commands canonicalize legacy case and standard-scheme slash',
 
 test('all current apphost commands remain recognized after canonicalization', () => {
     for (const value of [
-        'exit', 'sleep', 'shutdown', 'restart', 'openurl',
+        'exit', 'openurl',
         'video-on', 'video-off', 'audio-on', 'audio-off', 'loaded'
     ]) {
         const parsed = command.parse('electronapphost://' + value + '/', 'electronapphost');
         assert.equal(parsed.command, value);
         assert.equal(command.isKnown(parsed.command), true);
+    }
+});
+
+test('legacy system-action commands stay disabled across case and trailing-slash variants', () => {
+    for (const value of [
+        'sleep', 'SLEEP/', 'sleep//',
+        'shutdown', 'Shutdown/', 'shutdown//',
+        'restart', 'RESTART/', 'restart//'
+    ]) {
+        const parsed = command.parse('electronapphost://' + value, 'electronapphost');
+        assert.equal(command.isKnown(parsed.command), false, value);
     }
 });
 
@@ -44,6 +55,20 @@ test('unknown commands remain unknown and cannot alias a supported action', () =
         'electronapphost://windowstate-maximized-extra/',
         'electronapphost://video-on-extra/',
         'electronapphost://unknown-command/'
+    ]) {
+        const parsed = command.parse(url, 'electronapphost');
+        assert.equal(command.isKnown(parsed.command), false, url);
+    }
+});
+
+test('wrong URL sources and percent-encoded protocol tokens do not alias known commands', () => {
+    for (const url of [
+        'https://remote.example/electronapphost://shutdown',
+        'file:///app/index.html#electronapphost://sleep',
+        'javascript:electronapphost://shutdown',
+        'electronapphost://%73leep/',
+        'electronapphost://shut%64own/',
+        'electronapphost://restart%2f'
     ]) {
         const parsed = command.parse(url, 'electronapphost');
         assert.equal(command.isKnown(parsed.command), false, url);

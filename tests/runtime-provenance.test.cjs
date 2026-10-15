@@ -114,6 +114,8 @@ function createFixture(root) {
     for (const relativePath of [
         'tools/prepare-preload.cjs',
         'tools/prepare-web-overlays.cjs',
+        'tools/patch-custom-css-js.cjs',
+        'tools/patch-externalplayer-residue.cjs',
         'tools/patch-external-player-registration.cjs',
         'tools/patch-plugin-settings.cjs',
         'tools/copy-runtime-dependencies.cjs',

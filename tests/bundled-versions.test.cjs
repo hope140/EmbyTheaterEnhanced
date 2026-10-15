@@ -57,7 +57,9 @@ test('bundled versions require matching provenance and hashes for fixed runtime 
 
     assert.deepEqual(await readBundledVersions(fixture.runtimeRoot, sourceCommit), {
         helperVersion: '0.2.5',
-        libmpvVersion: 'v0.41.0'
+        helperFileSha256: sha256(fixture.helper),
+        libmpvVersion: 'v0.41.0',
+        libmpvFileSha256: sha256(fixture.libmpv)
     });
     assert.equal(await readBundledVersions(fixture.runtimeRoot, 'bad-commit'), null, 'invalid source commit is unknown');
     assert.equal(await readBundledVersions(fixture.runtimeRoot, 'b'.repeat(40)), null, 'provenance from another commit is unknown');

@@ -38,10 +38,7 @@
             'runatstartup',
             'filedownload',
             'externallinks',
-            'externalappinfo',
-            'sleep',
-            //'restart',
-            'shutdown'
+            'externalappinfo'
         ];
 
         if (navigator.share) {
@@ -105,15 +102,6 @@
         },
         exit: function () {
             sendCommand('exit');
-        },
-        sleep: function () {
-            sendCommand('sleep');
-        },
-        restart: function () {
-            sendCommand('restart');
-        },
-        shutdown: function () {
-            sendCommand('shutdown');
         },
         init: function () {
 

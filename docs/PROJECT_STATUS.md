@@ -1,5 +1,33 @@
 # 项目状态
 
+2026-10-15主线集成：[PR #36](https://github.com/hope140/EmbyTheaterEnhanced/pull/36)汇总已完成的旧功能/M01、L02、M02和插件布局。本批功能实现、来源核对及后台验证已完成，集成状态和最终main构建来源以PR最终收尾记录为准；下面的94dbcef产物与验证记录保留原快照身份。首页迁移未实施，切轨延迟保持暂停；这次集成不发布Release或安装现用客户端。真实Helper/DLL、播放/远控、插件业务、前台和安装验收仍独立记录。
+
+2026-10-15整体收尾快照：累计已完成旧功能/M01、L02、M02及插件布局的59条路径已核对完整，17项变更产品源码与94dbcef runtime的Git blob/文件SHA匹配；首页迁移未混入，切轨延迟按用户要求暂停。275项JavaScript、28项PowerShell语法、326项维护文本的有限凭据模式检查和累计diff-check通过。本地验收ZIP已生成，2154个文件（含manifest）均从ZIP内逐项读回核对；本条记录的是提交集成前的本地验证，后续状态见上条。
+
+About先前未闭合的隐藏夹具已在最新94dbcef runtime单独补验：8个合成状态全部通过，覆盖未ready/ready/failed/缺字段/来源不可用及M02当前、pending、store不可用；内容窗口宽800（Electron坐标）、缩放125%，实测CSS视口640×702，无横向溢出，按钮可滚动/键盘到达。窗口show/focus/activate均0、退出后无所属进程，runtime payload零变化。该结果不改写历史69e8141的NOT_VERIFIED，也不代替真实Helper/DLL、服务器、播放/业务、前台或安装验收。正式source/runtime provenance validator以真实产品sourceCommit94dbcef为参数通过；文档HEAD单列。
+
+2026-10-15构建收尾：本批9文件已本地提交为`94dbcef4b6f50469e535fb91fe86209d16670ae4`，分支`codex/plugin-layout-followup-20261015`。来源绑定runtime为`dist/EmbyTheaterEnhanced-plugin-layout-94dbcef-20261015`，产品版本保持0.3.2；公开门禁890/890、材料门禁82/82、`package.ps1 -VerifyOnly`及父会话最终2153项payload逐SHA/完整集合核对通过。build-manifest SHA-256为`8b22c2110084946abfb955ae15666c6b11281e5bec884caaa076ad67e533b289`，payload-set SHA-256为`bf8ea4d3e2abee07e6084a786f804e64410d72202d767173f18a7bbf791715d7`。直接读取该runtime的隐藏Electron合成门禁131项、静态模板三视口12组几何复验通过；前台动作、真实插件JS/服务器业务、Helper/DLL执行和安装均未执行。首次材料测试早于准备文件生成而出现ENOENT，保留原失败后在构建完成状态重试通过。后续文档提交只同步结果，不改变产品来源；未推送、发布或生成安装器。
+
+2026-10-15：Chapter API 的 Path 列表宽度缺陷已形成独立修复候选。当前插件静态模板使用 33%/66% 的表格分栏；维护层对所有传统表格设置 `display:block` 会破坏该布局。候选保留原生表格布局，将超宽控件的横向滚动交给既有 `.content-primary`，不指定插件固定宽度。四个页面的静态模板、长合成内容在2030/1280/800三种视口共12组独立几何复核通过；包括目录滚动、窄Options键盘焦点局部横滚及外层纵向滚动。候选阶段只有静态模板与合成数据证据；之后的来源绑定构建和runtime复验见上条，真实网页/客户端前台及业务操作仍未执行。
+
+同批补齐当前基础编辑器的验证：FilePath、FolderPath、SpacerItem、独立RadioGroup，以及ItemsSourceId/StaticItemsSourceId选项和命令值。父会话相关Node复核55/55通过，隐藏Electron合成门禁131项通过，包含传统表格布局检查；未打开路径选择器，仅向本地合成服务提交一次命令。未发现这些用例需要额外产品修复，不据此宣称任意插件完整兼容或已迁入新版Web整树。
+
+M02本地阶段完成最终独立读回：产品`8d06f0b`、测试`d894e4e`、文档`dd34ac3`，2153项payload及manifest/provenance完整匹配。排期04保留历史耗时证据，当前缺少可读取的目标字幕/音频原始录制，不能确认T4或提出性能补丁；05现有基础控件证据已补充，06首页API/配置语义仍待方案确认。上述候选与已发布v0.3.2、M02构建身份分别记录。
+
+2026-10-14：M02 手动内核候选产品变更已在隔离分支 `codex/m02-kernel-management` 按28文件提交为 `8d06f0b53280a86c3b74c94c452cb6469d428312`。仅支持用户手选固定四条目 ZIP；由 worker_threads 校验 schema/哈希/x64 PE32+/17个必需导出，存入 ETE profile 的不可变 SHA 目录；About 选择只影响下次应用启动。启动时冻结一次候选，只有候选启动前需预热；baseline启动保持lazy。候选失败确认退出后锁存baseline并至多回退一次；baseline失败停止重试。后续两项 test-only 断言适配单独提交为 `d894e4ea093af026f8e463aaeb12677f99dfd4cc`，不改变产品源码和runtime来源。
+
+M02离线验证结果：16个定向测试文件164/164；完整公开门禁107文件、888/888；六项material-required测试82/82。独立Astra 90/90、后续父会话delta 13/13各自绑定不同源码/差异，不合并计数。source-bound runtime来自产品提交 `8d06f0b`，目录 `dist/EmbyTheaterEnhanced-m02-8d06f0b-20261014` 包含2153文件；build-manifest SHA-256 `b76274946b9012315eda1a5af181b59235c145c598f0130e51600200e0bad42f`，payload-set SHA-256 `5cf12c1679489cc5e4cc54af29c94e5779522619670fde7007238910747a98bd`。`package.ps1 -VerifyOnly`完整payload/provenance核对通过。产品runtime里的固定baseline DLL SHA-256为 `965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c`，Helper SHA-256为 `28054c75551177f1109859d4f8793d45a4c731aba1e43ddab9bb2f1c5dc030dc`；模拟及静态读取未加载或执行它们。
+
+未执行安装器/系统安装、真实Helper或候选DLL加载、真实 profile、客户端前台、Emby播放/Session/远控或服务器访问；候选SOURCE/NOTICE仍是随包声明，许可与可发行性未评估。具体首次失败、test-only修订、隔离模拟及构建回执保存在仓库外M02_BUILD_RESULT中；未推送、创建PR或发布。
+
+2026-10-14：用户选择停用旧 AppHost sleep/shutdown/restart 协议动作；父会话审查通过。前置30路径候选与L02 9路径变更分别本地提交为aab528b和69e8141。L02从 Web 能力广告/方法、main命令白名单与系统动作分派移除三条入口；未知动作仍回调完成，windowstate、exit、loaded、音视频通知与openurl保留。源 parser/main handler/AppHost VM测试22/22；从最终构建读取的 AppHost VM检查21项、真实 main dispatcher合成测试13/13通过。source-bound构建以产品 sourceCommit 69e8141完成，runtime位于dist/EmbyTheaterEnhanced-phase01-l02-20261014，build-manifest SHA-256 048eb6973d54de5d337f26e383ed1a556c1fcd707db1b53e07c632987b085580，列出2147个payload文件，payload-set SHA-256 41b786dc862cab51d4a385b862f2de612831afc5e696d608ae1d77fac585a852；package.ps1 -VerifyOnly通过。公共门禁在独立test-only HEAD cca8f52复跑通过：104发现文件中排除6项材料依赖，98项执行、819/819通过，JS259文件、PowerShell28文件、有限凭据扫描310文件和diff-check均通过；测试修订未改产品源码，runtime来源仍为69e8141。隐藏About DOM验收状态为NOT_VERIFIED：隔离Electron 44.4.2直接加载runtime About页面，show/focus/activate均为0；本地和父会话各一次最终诊断均在私有几何回执生成器引用未定义buildManifest变量时中止，因此没有800px/125%矩形及未ready/失败/缺字段的完整DOM回执，不能判为通过，也不能据此判定产品失败。所有owned Electron进程及子进程均退出。未启动生产客户端、访问真实profile/服务器、执行系统动作或生成安装器；没有推送、PR、合并、Tag或发布。
+
+2026-10-14：M01 身份/配置候选已按父审核归一化补丁整合进同一隔离组合候选。补丁9路径（6产品、3测试），Native ready 状态/API/经握手校验的能力、包内与预期libmpv身份分层展示；实际加载映像SHA及render属性回读保持UNKNOWN。exclusiveAudio按页面大小写键优先、仅缺键回退旧小写键，显式false不被覆盖。M01相关Native/配置/About测试72/72通过；与批次01组合后的overlay/provenance/build-input、Next/Session等定向测试也通过。完整构建、真实Helper/DLL、MPV_HOME、真实播放/客户端仍未验收；原M01候选补丁和worktree保持未改。该记录形成时组合候选尚未提交；之后30路径父审候选已在隔离分支本地提交为aab528b。该阶段剩余的L02语义审核决定已由用户选择停用旧动作，具体实现见首条状态。
+
+2026-10-14：批次01续办到候选复核停点。L01 CustomCssJS 错误隔离/重试缺口已修复：固定输入SHA-256 2177DE28DCC4E715F07C63329DC361C5B4DDD37EB7E59F273830B22ACEA37912，overlay输出SHA-256 B9F6268F3E3126426F189F38F1E57FF4CD03D8F9A213305157E1F6842F251103；AMD/VM合成行为16/16、固定material selftest、Web overlay准备4/4和build input consumer/tamper用例1/1通过。L03固定Host托管IL未发现两份BAT的直接引用，但动态/外部调用和手工依赖仍UNKNOWN；本轮不排除两份BAT，也不清理既有安装。L04退役全局Anime4K按键拦截，不再重命名全局mpv文件或隐式Stop；按键不重新分配。L05详情overlay移除旧外置按钮和timer，设置值保留，item VM4/4与Next/Session 76/76通过。AppHost/外链18/18、Pepper retirement 4/4、runtime provenance 2/2、build-input audit 20/20通过。唯一未决停点是L02旧sleep/shutdown/restart协议是否失效或改用主进程明确确认；当前仍未验证请求方/来源，未触发系统动作。未运行完整build、客户端、真实Emby、安装或BAT；没有提交、推送或发行。
+
+2026-10-14：ROADMAP 批次01推进到 CustomCssJS 信任边界候选，基线为实时核对的 main e862288。固定源哈希 overlay 让服务器/本地 CSS 保持原选择行为，服务器 forced_on、已选择 JS 和旧本地配置留存但不再执行；出现活动脚本配置或无效 JS 配置时提示，坏 JS 配置不阻断 CSS。定向变换用例3/3、完整 Web overlay 准备4/4、AppHost 命令规范化5/5通过，git diff --check通过。尚未构建完整 runtime、启动客户端、连接真实 Emby 或验证发布包；现有 v0.3.2 Tag/附件、Stable/Latest 未改变。批次仍在进行：AppHost sleep/shutdown/restart 协议的主动操作与请求方合同待设计；两个旧 BAT 因 Carnival Host 精确依赖未知而未排除；Anime4K 快捷键的替代/按键传递语义未决定；外置播放器旧详情计时器行为和用户依赖未实测，均未修改。
+
 2026-10-14：本次主线集成范围为已发布v0.3.2测试版的插件兼容源码、对应测试/构建合同与项目总排期。产品内容保持373209b的已发布身份，新增修改仅为文档；历史主要修复的集成核对未发现另一个明确的产品遗漏。Stable/Latest仍为v0.3.1，v0.3.2保持Pre-release，既有Tag、安装包及附件来源保持。集成通过PR和公开CI核对，不包含研究实验、重新打包或系统安装；实际合并记录见Git历史。
 
 2026-10-14：主分支集成核对确认远端main仍为v0.3.1的`080d352`，34个既有PR均已合并。v0.3.2已发布测试版，但`codex/plugin-settings-compat`的17个提交尚未合入main；刚调整的总排期仍为本地文档修改。历史主要修复经祖先、等价补丁及内容核对已承接，未发现另一个明确遗漏的产品实现；研究探针和窗口激活实验保持候选，两个合成安装快照辅助文件是否保留待判断。本轮仅核对并记录，未合并、提交或推送。

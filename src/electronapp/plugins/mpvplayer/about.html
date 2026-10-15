@@ -30,6 +30,21 @@
             </div>
         </section>
 
+        <section class="ete-settings-section verticalSection" aria-labelledby="ete-about-kernel-title">
+            <div class="ete-settings-section-header">
+                <div><h2 id="ete-about-kernel-title" class="sectionTitle">libmpv 内核候选</h2><p>只导入本地完整候选包。选择只在下次应用启动时生效；当前播放和 Native Helper 不切换。技术检查不代表来源许可审查或可发行结论。</p></div>
+            </div>
+            <div class="ete-settings-card about-kernel-card">
+                <div class="ete-settings-actions">
+                    <button type="button" is="emby-button" class="raised button-submit ete-settings-button ete-settings-button--primary btnImportKernel">导入 ZIP 候选</button>
+                    <button type="button" is="emby-button" class="raised ete-settings-button ete-settings-button--secondary btnSelectBaseline">下次启动使用固定基线</button>
+                </div>
+                <div class="ete-settings-status aboutKernelState" role="status" aria-live="polite"></div>
+                <div class="ete-settings-status aboutKernelOperationState" role="status" aria-live="polite"></div>
+                <div class="aboutKernelCandidates" aria-live="polite"></div>
+            </div>
+        </section>
+
         <section class="ete-settings-section verticalSection" aria-labelledby="ete-about-platform-title">
             <div class="ete-settings-section-header"><div><h2 id="ete-about-platform-title" class="sectionTitle">运行环境</h2></div></div>
             <div class="ete-settings-card">
@@ -38,12 +53,22 @@
                     <div class="ete-about-advanced-content">
                         <div class="ete-settings-info-row"><span>Electron</span><code class="aboutElectron">UNKNOWN</code></div>
                         <div class="ete-settings-info-row"><span>Chromium</span><code class="aboutChromium">UNKNOWN</code></div>
-                        <div class="ete-settings-info-row"><span>Native Helper</span><code class="aboutNativeHelper">UNKNOWN</code></div>
-                        <div class="ete-settings-info-row"><span>libmpv</span><code class="aboutLibmpv">UNKNOWN</code></div>
-                        <p>Native Helper 与 libmpv 版本对应当前安装包；下方显示当前运行状态。</p>
+                        <div class="ete-settings-info-row"><span>Native Helper（包内）</span><code class="aboutNativeHelper">UNKNOWN</code></div>
+                        <div class="ete-settings-info-row"><span>libmpv（包内）</span><code class="aboutLibmpv">UNKNOWN</code></div>
+                        <div class="ete-settings-info-row"><span>Package libmpv DLL SHA256</span><code class="aboutPackageLibmpvSha256">UNKNOWN</code></div>
+                        <p>包内文件由 build/provenance manifest 与 SHA256 校验；运行字段仅来自已通过握手校验的 ready Helper。</p>
+                        <div class="ete-settings-info-row"><span>预期 libmpv 版本</span><code class="aboutExpectedLibmpvVersion">UNKNOWN</code></div>
+                        <div class="ete-settings-info-row"><span>预期 client API</span><code class="aboutExpectedMpvClientApiVersion">UNKNOWN</code></div>
+                        <div class="ete-settings-info-row"><span>预期 libmpv DLL SHA256</span><code class="aboutExpectedLibmpvSha256">UNKNOWN</code></div>
                         <div class="ete-settings-info-row"><span>Helper 运行状态</span><code class="aboutNativeHelperState">NOT AVAILABLE</code></div>
                         <div class="ete-settings-info-row"><span>运行中的 Helper</span><code class="aboutRunningNativeHelper">NOT AVAILABLE</code></div>
                         <div class="ete-settings-info-row"><span>运行中的 libmpv</span><code class="aboutRunningLibmpv">NOT AVAILABLE</code></div>
+                        <div class="ete-settings-info-row"><span>运行中的 client API</span><code class="aboutRunningLibmpvClientApiVersion">UNKNOWN</code></div>
+                        <div class="ete-settings-info-row"><span>握手校验的 Helper capabilities</span><code class="aboutValidatedNativeHelperCapabilities">UNKNOWN</code></div>
+                        <div class="ete-settings-info-row"><span>已加载 DLL 映像 SHA256</span><code class="aboutRunningLibmpvImageSha256">UNKNOWN</code></div>
+                        <div class="ete-settings-info-row"><span>Native render path 合同</span><code class="aboutFixedNativeRenderPath">UNKNOWN</code></div>
+                        <div class="ete-settings-info-row"><span>mpv-vo / mpv-gpuapi 设置页值</span><code class="aboutRenderSettingUiValues">UNKNOWN</code></div>
+                        <div class="ete-settings-info-row"><span>当前 Native render 属性回读</span><code class="aboutObservedNativeRenderPath">UNKNOWN</code></div>
                         <div class="ete-settings-info-row"><span>Source Commit</span><code class="aboutSourceCommit">UNKNOWN</code></div>
                         <div class="ete-settings-info-row"><span>Node</span><code class="aboutNode">UNKNOWN</code></div>
                         <div class="ete-settings-info-row"><span>Windows</span><code class="aboutWindows">UNKNOWN</code></div>

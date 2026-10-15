@@ -23,6 +23,12 @@ function callSites(openExternal) {
     let windowHandler;
     let appHostHandler;
     const logs = [];
+    const systemActions = [];
+    const mainActions = [];
+    const powerActions = [];
+    const activePowerLocks = new Set();
+    let nextPowerLock = 0;
+    const mainWindow = {focus() { mainActions.push('focus'); }};
     const context = {
         electron: {
             shell: {openExternal},
@@ -31,7 +37,31 @@ function callSites(openExternal) {
         },
         appHostCommand,
         getWebContents() { return {setWindowOpenHandler(handler) { windowHandler = handler; }}; },
-        require: mainRequire,
+        mainWindow,
+        windowStateOnLoad: null,
+        hasAppLoaded: false,
+        sleepLock: 0,
+        setWindowState(state) { mainActions.push('windowstate:' + state); },
+        closeWindow() { mainActions.push('close'); },
+        onLoaded() { mainActions.push('loaded'); },
+        powerSaveBlocker: {
+            start(reason) {
+                const id = ++nextPowerLock;
+                activePowerLocks.add(id);
+                powerActions.push(['start', reason, id]);
+                return id;
+            },
+            isStarted(id) { return activePowerLocks.has(id); },
+            stop(id) {
+                activePowerLocks.delete(id);
+                powerActions.push(['stop', id]);
+            }
+        },
+        require(moduleName) {
+            if (moduleName === 'sleep-mode') return callback => { systemActions.push('sleep'); callback(); };
+            if (moduleName === 'power-off') return callback => { systemActions.push('shutdown'); callback(); };
+            return mainRequire(moduleName);
+        },
         process: {env: {APPDATA: 'fixture-appdata'}},
         console: {log(...args) { logs.push(args); }, warn(...args) { logs.push(args); }, error(...args) { logs.push(args); }}
     };
@@ -40,7 +70,6 @@ function callSites(openExternal) {
     if (helperImport) vm.runInContext(helperImport[0], context);
     vm.runInContext(excerpt('getWebContents().setWindowOpenHandler(function (details)', 'var url = getAppUrl();'), context);
     vm.runInContext(excerpt('function registerAppHost()', 'function onLoaded()') + '\nregisterAppHost();', context);
-    vm.runInContext(excerpt('function showMessage(message)', 'function registerFileSystem()'), context);
     return {
         window(value) {
             assert.equal(windowHandler({url: value}).action, 'deny', 'every window-open stays denied');
@@ -50,7 +79,14 @@ function callSites(openExternal) {
             appHostHandler({url: 'electronapphost://OpenURL/?url=' + value}, () => replies++);
             assert.equal(replies, 1, 'host protocol callback always completes');
         },
-        shader() { context.showMessage('fixture'); },
+        apphostRequest(url, method = 'GET', referrer = '') {
+            let replies = 0;
+            appHostHandler({url, method, referrer}, () => replies++);
+            assert.equal(replies, 1, 'host protocol callback always completes');
+        },
+        mainActions,
+        powerActions,
+        systemActions,
         logs
     };
 }
@@ -89,6 +125,7 @@ for (const entry of ['window', 'apphost']) {
         const calls = callSites(url => { opened.push(url); return Promise.resolve(); });
         for (const value of ['', ' ', '//example.test/path', 'https:example.test', 'https:/example.test',
             'https:///example.test', 'https://', 'https://example.test:bad/',
+            'https%3A//example.test/', 'https%3A%2F%2Fexample.test/',
             'https://user:secret@example.test/', 'https://user@example.test/', 'https://@example.test/',
             'https://example.test/\nnext', '\thttps://example.test/', 'https://example.test/path\u0000',
             'https://example.test/a\\b', 'https://example.test/%5cpath', 'https://example.test/?x=%0A',
@@ -124,19 +161,67 @@ test('window-open rejects non-string values without coercion', async () => {
     assert.deepEqual(opened, []);
 });
 
-test('the fixed shader help link uses the real main call site', async () => {
+test('the real AppHost dispatcher rejects wrong sources and encoded commands before system actions', () => {
     const opened = [];
     const calls = callSites(url => { opened.push(url); return Promise.resolve(); });
-    calls.shader();
-    await settle();
-    assert.deepEqual(opened, ['https://hooke007.github.io/unofficial/mpv_shaders.html']);
+    for (const url of [
+        'https://remote.example/electronapphost://shutdown',
+        'file:///app/index.html#electronapphost://sleep',
+        'javascript:electronapphost://shutdown',
+        'electronapphost://%73leep/',
+        'electronapphost://shut%64own/',
+        'electronapphost://unknown-command/'
+    ]) calls.apphostRequest(url);
+
+    assert.deepEqual(opened, []);
+    assert.deepEqual(calls.systemActions, []);
 });
 
-test('shader help shell rejection is contained', async () => {
-    const calls = callSites(() => Promise.reject(new Error('fixture failure')));
-    calls.shader();
-    await settle();
-    assert.deepEqual(calls.logs, []);
+test('the real AppHost dispatcher completes but ignores legacy system-action requests', () => {
+    const opened = [];
+    const calls = callSites(url => { opened.push(url); return Promise.resolve(); });
+    for (const url of [
+        'electronapphost://sleep',
+        'electronapphost://SLEEP/',
+        'electronapphost://sleep//',
+        'electronapphost://shutdown',
+        'electronapphost://Shutdown/',
+        'electronapphost://shutdown//',
+        'electronapphost://restart',
+        'electronapphost://RESTART/',
+        'electronapphost://restart//',
+        'electronapphost://%73leep/',
+        'electronapphost://shut%64own/',
+        'electronapphost://restart%2f'
+    ]) calls.apphostRequest(url);
+
+    assert.deepEqual(opened, []);
+    assert.deepEqual(calls.mainActions, []);
+    assert.deepEqual(calls.powerActions, []);
+    assert.deepEqual(calls.systemActions, []);
+});
+
+test('the real AppHost dispatcher preserves window, loaded and audio/video lifecycle calls', () => {
+    const calls = callSites(() => Promise.resolve());
+    for (const [url, method] of [
+        ['electronapphost://windowstate-Normal/', 'GET'],
+        ['electronapphost://loaded/', 'GET'],
+        ['electronapphost://video-on/', 'POST'],
+        ['electronapphost://video-off/', 'POST'],
+        ['electronapphost://audio-on/', 'POST'],
+        ['electronapphost://audio-off/', 'POST']
+    ]) {
+        calls.apphostRequest(url, method, 'file:///synthetic-trusted-window');
+    }
+
+    assert.deepEqual(calls.mainActions, ['windowstate:Normal', 'focus', 'loaded']);
+    assert.deepEqual(calls.powerActions, [
+        ['start', 'prevent-display-sleep', 1],
+        ['stop', 1],
+        ['start', 'prevent-app-suspension', 2],
+        ['stop', 2]
+    ]);
+    assert.deepEqual(calls.systemActions, []);
 });
 
 test('external URL helper returns a bounded outcome when shell is unavailable', async () => {

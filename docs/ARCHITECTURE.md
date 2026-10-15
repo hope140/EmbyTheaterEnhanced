@@ -16,7 +16,19 @@ STRM 按持久化 rules 的 cloud-first、mount-first 或 custom 顺序尝试 Di
 
 About 校验固定 provenance/manifest 与二进制身份，实时运行状态独立读取；缺失信息保留 UNKNOWN/NOT AVAILABLE。诊断旁路复用 logger 与 sender 校验，不改变 source 或播放时序。
 
+About 的 M01 状态模型分别展示已校验包内 libmpv 文件 SHA、编译期预期版本/API/SHA 和 ready Helper 握手报告的运行版本/API/受限能力子集。包内文件 SHA 不表示当前加载映像 SHA；当前映像哈希与 Native 属性回读仍为 UNKNOWN。固定 Native render path 为 gpu-next/D3D11，mpv-vo/mpv-gpuapi 设置页值不作为 Native property 应用。
+
+M02 内核候选管理保持 Native Helper 为唯一生产 bridge。包由 main 独占文件选择并通过 worker_threads 对固定四条目 ZIP、元数据、完整文件哈希、x64 PE32+ 与 17 个生产 Helper 必需导出做静态验证；包不携带可执行 Helper、脚本或任意旁依赖。候选对象只存于 ETE profile 的 SHA256 内容目录，导入不自动选择；IPC select 仅记下次重启选择。
+
+每次应用构造只冻结一次启动 kernel selection。选中有效候选时在页面 load 前复用同一个 Native Helper startPromise 做隐藏 surface/握手预热；未选候选时维持原 baseline lazy startup。候选启动失败须确认该子进程退出后才锁存固定基线并一次回退；基线失败停止 Native Helper且不循环重试。进程内 effective kernel 不随 IPC 选择变化；候选运行期间 crash 不切库、不重建 PlaybackManager/Session、不重放 loadfile，之后显式 create 仍只尝试该 frozen candidate。关闭时验证 worker 必须先退出，迟到 profile 读不得再启动验证 worker；pending import dialog不阻塞应用关闭。
+
+内核状态分开显示包内哈希、静态兼容、来源/notice 声明、当前进程 ready 握手和下次启动选择。Helper/DLL映像SHA、来源独立核验、许可审查与可发行性分别保持UNKNOWN或NOT_ASSESSED；静态PE通过和握手通过不等于加载映像哈希证据或许可结论。
+
 构建由 tools/build.ps1 从固定 sourceCommit 的 Git blob、生成器和锁定外部输入组装。source-provenance、runtime-provenance 和 build-manifest 分层记录；完整运行时仍依赖仓库外输入。Electron 使用固定 44.4.2 Windows x64 完整树。
+
+CustomCssJS 作为固定源哈希的 Web overlay 构建：服务器/本地 CSS 仍按既有选择加载；服务器/本地 JavaScript 配置保留，但不会在可信 renderer 中求值，检测到旧脚本选择或无效 JS 配置时显示一次提示。JS 配置解析失败不阻断 CSS。该边界只关闭 CustomCssJS 执行入口，不代表 renderer 已整体隔离；应用 preload 的 window.fs/window.ipc 能力仍由其他产品代码使用。
+
+固定源哈希的 item 详情 overlay 仅退役旧外置播放器按钮与 fromPlayEnded 计时器；externalplayers/autoplay 旧值保持不写不删，普通下一集仍由 PlaybackManager 的 Emby EnableNextEpisodeAutoPlay 与 PlayQueue/nextTrack 管理。构建排除旧 Pepper input；两份旧 Carnival 批处理因动态/外部 Host 消费者和手工工作流尚未闭合而继续保留。旧 AppHost sleep/shutdown/restart 协议动作已从 Web 能力广告、Web 调用入口、命令白名单和 main 分派移除；未知命令仍完成空响应，windowstate、exit、loaded、音视频通知与安全外链链路保持。
 
 [STRM](STRM_RESOLVER.md) · [配置](STRM_RESOLVER_SETTINGS.md) · [DirectUrl](CD2_DIRECT_URL.md) · [Native Helper](NATIVE_HELPER_BRIDGE.md) · [构建](PACKAGING.md)
 

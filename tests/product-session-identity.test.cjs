@@ -47,7 +47,8 @@ test('production and acceptance share one identity helper before product startup
     const build = fs.readFileSync(path.join(repoRoot, 'tools/build.ps1'), 'utf8');
     const identityCall = main.indexOf('productIdentity.setAppName(app, productMetadata);');
     const loadStartInfoDefinition = main.indexOf('function loadStartInfo()');
-    const loadStartInfoCall = main.indexOf('loadStartInfo().then(');
+    const loadStartInfoCallMatch = /\bloadStartInfo\(\)\s*(?:\.then\(|;)/.exec(main);
+    const loadStartInfoCall = loadStartInfoCallMatch ? loadStartInfoCallMatch.index : -1;
     const browserWindowCreation = main.indexOf('new BrowserWindow(');
 
     assert.match(main, /require\('\.\/package\.json'\)/);

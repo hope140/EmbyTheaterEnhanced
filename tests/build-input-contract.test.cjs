@@ -93,6 +93,33 @@ test('every declared build input rejects dirty working text', t => {
     }
 });
 
+test('Web overlay patchers are consumed and source-bound build inputs', t => {
+    const patcherPaths = [
+        'tools/patch-custom-css-js.cjs',
+        'tools/patch-externalplayer-residue.cjs'
+    ];
+    const overlayPath = path.join(__dirname, '..', 'tools', 'prepare-web-overlays.cjs');
+    const overlaySource = fs.readFileSync(overlayPath, 'utf8');
+    const preparation = require('../tools/prepare-web-overlays.cjs');
+    for (const patcherPath of patcherPaths) {
+        assert.ok(overlaySource.includes("require('./" + path.basename(patcherPath) + "')"),
+            'overlay builder must directly consume ' + patcherPath);
+        assert.ok(contract.INPUT_PATHS.includes(patcherPath), 'build input contract omits ' + patcherPath);
+        assert.ok(preparation.WEB_OVERLAY_CONTRACT.some(item => item.generatorPaths.includes(patcherPath)),
+            'overlay source relation omits ' + patcherPath);
+
+        const fixture = setup(t);
+        const result = contract.inspect(fixture.repo, fixture.sourceCommit);
+        const patcherInput = result.files.find(item => item.path === patcherPath);
+        assert.ok(patcherInput);
+        assert.equal(patcherInput.sha256, sha(fs.readFileSync(path.join(fixture.repo, ...patcherPath.split('/')))));
+
+        const patcherFile = path.join(fixture.repo, ...patcherPath.split('/'));
+        fs.appendFileSync(patcherFile, 'tampered patcher\n');
+        assert.throws(() => contract.inspect(fixture.repo, fixture.sourceCommit), /differs from HEAD/);
+    }
+});
+
 test('staged input changes are rejected', t => {
     const fixture = setup(t);
     write(fixture.repo, 'package-lock.json', '{"staged":true}\n');

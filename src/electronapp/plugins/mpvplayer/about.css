@@ -11,6 +11,11 @@
     padding-inline: 0;
 }
 
+.about-settings-page .about-kernel-card > .ete-settings-status { margin-top: .7em; }
+.about-settings-page .about-kernel-candidate { margin-top: .65em; padding: .7em; border: 1px solid var(--theme-divider-color, rgba(127, 127, 127, .25)); border-radius: .65em; }
+.about-settings-page .about-kernel-candidate code { overflow-wrap: anywhere; word-break: break-word; }
+.about-settings-page .about-kernel-candidate .ete-settings-button { margin-top: .5em; }
+
 .about-settings-page .ete-about-advanced summary {
     color: var(--theme-accent-text-color, inherit);
     cursor: pointer;

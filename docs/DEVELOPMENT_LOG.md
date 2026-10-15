@@ -1,5 +1,82 @@
 # 维护记录
 
+## 2026-10-15 主线集成与交付记录归属
+
+- 用户明确授权已审核累计59路径推送、创建PR、检查通过后合入main及最终main来源测试包构建；已创建[PR #36](https://github.com/hope140/EmbyTheaterEnhanced/pull/36)。产品范围保持，补充的内核管理使用说明与状态同步只触及既有文档。具体合并状态、main构建sourceCommit/包体SHA及未验收范围写入PR最终收尾说明；不通过后续doc-only提交重标旧产物来源。
+- 下面各条按原来源保留候选、本地构建和后台证据。本批不发布Release/Tag、不安装客户端，也不把合成DOM、fake-client或静态PE结果改称真实Native/播放/前台通过。首页迁移不启动，切轨延迟继续暂停。
+
+## 2026-10-15 已完成批次整体收尾核对
+
+- 用户纠正应先收尾已完成成果，首页迁移不进入本批；切轨延迟继续按用户要求暂停。逐项核对旧功能/M01、L02、M02及插件布局的累计59路径，17项产品源码与94dbcef runtime字节/manifest相符，未发现已完成提交遗漏或新首页/延迟产品混入。本条为远端操作前的本地审核记录；后续授权与集成归属见上条。
+- 提交前门禁275JS/28PowerShell语法、326个维护文本的有限凭据模式扫描与累计diff-check通过。890/890公开、82/82材料及131项隐藏插件/12组静态几何保留本轮来源。固定94dbcef runtime生成本地验收ZIP，从ZIP内读回2154个文件全量SHA匹配；ZIP SHA为`b08a652e984c8623e96459bcdacdfd8ffe5eaa13a91c1a9a4280c4168062a74b`，未作为Release发布或安装。
+- 旧About私有夹具的scope问题在新副本修正并预检查；唯一有效Electron运行通过8个合成状态和全部布局断言。内容窗口800（Electron坐标），125%缩放，实测CSS640×702、devicePixelRatio1.875；横溢出0，启用按钮可滚动/键盘到达。show/focus/activate为0，所属Electron退出且无残余，runtime仍2153项payload加manifest且无debug.log。保留启动前目录冲突及外层PowerShell变量命名错误；后者仅修正读回，没有重跑Electron。旧69e8141历史NOT_VERIFIED保持，新94dbcef合成DOM结果单列，不称真实Native/前台验收。
+- 通用审计最初误将最新doc-only HEAD85c4243作为runtime源，得到来源MISMATCH；原结果保留。主线程用正式source-provenance/runtime-provenance CLI显式绑定真实产品提交94dbcef后均通过、errors为空，未修改或弱化validator。文档收尾不改变产品/runtime来源，不重新构建已验证包。
+- Model Tier: Tier 1用于明确集成清单、既有私有fixture修正与包体验证；worker选择GPT-6 Luna High，主线程保留累计来源/最终结论审核。没有实施新首页、切轨性能变更、推送、PR、合并、发布、系统安装或现用profile操作。
+
+## 2026-10-15 插件布局来源绑定构建收尾
+
+- 用户明确批准本批9文件本地提交和后台构建。父核对准确allowlist、全部SHA、反向patch和空index后提交`94dbcef4b6f50469e535fb91fe86209d16670ae4`。Tier 1 GPT-6 Luna High任务负责固定输入复制/校验、锁文件依赖、构建及测试证据；主线程保留候选审查、最终runtime隐藏复验和完整payload读回。原主目录与M02产物保持。
+- 固定Carnival/patch/Electron44.4.2完整树、mpv头文件与GCC UCRT64工具链由已验证M02材料复用并校验；`npm ci --ignore-scripts`使用原锁，不升级依赖。source-bound输出`dist/EmbyTheaterEnhanced-plugin-layout-94dbcef-20261015`共2153项payload；build-manifest SHA为`8b22c2110084946abfb955ae15666c6b11281e5bec884caaa076ad67e533b289`，payload-set SHA为`bf8ea4d3e2abee07e6084a786f804e64410d72202d767173f18a7bbf791715d7`。VerifyOnly和隐藏测试后的父逐SHA/完整集合复核均通过。
+- 113个发现测试文件按原合同排除6项材料依赖，107文件公开门禁890/890。首次材料门禁并行启动过早，准备态preload尚未生成，统计77/78且4项未加载；保留失败后确认preload与本次runtime/manifest同SHA，在稳定准备态单次重试六项材料门禁82/82通过。没有改产品/测试来消除失败。
+- 父的私有fixture从最终runtime读取实际维护模块、冻结Web模块和Electron执行131项隐藏合成检查；1次本地有效命令、外部请求/目录选择器请求/前台动作均为0。实际runtime CSS的静态模板三视口12组复验通过。最终runtime来源始终为94dbcef，后续文档收尾单列，不重新构建。没有执行真实插件脚本/业务、Helper/DLL、播放、现用profile、前台、安装器或发布。
+
+## 2026-10-15 传统插件布局与基础编辑器验证
+
+- 基于`dd34ac3`在独立工作树处理Chapter API宽度反馈。只读获取当前插件字节并通过PE元数据静态提取四页模板，未加载DLL或执行插件脚本。属性隔离复现传统表格`display:block`导致33%布局列坍缩；移除该display覆盖，保留原表格约束，由现有内容容器承接横向溢出。没有改插件模板、路由、业务命令、PlaybackManager、Session、Native Helper或现用profile。
+- 同一实际CSS的四页、三视口共12组静态几何复核覆盖单层/嵌套百分比分栏、长合成行、目录滚动、窄Options输入焦点及外层纵向滚动。真实网页同尺寸矩形和前台仍未验收。原来仅恢复嵌套表布局的备选会遗漏单层分栏且窄Options仍整页溢出，未采用。
+- 现有基础editor/source-ID差分转为测试覆盖补齐：新增四类editor、对象数组选项、过滤/分页、本地provider、显示转义及canonical命令值不变的断言。worker相关Node测试40/40，父会话扩大到相邻路由/关闭/订阅的55/55复核通过，两次不合并计数；隐藏Electron合成门禁131项通过，1次loopback命令，外部请求/目录选择器请求/前台动作均为0。首次新fixture漏了冻结GenericEdit必需的SelectOptions数组而失败，补齐后重跑；保留失败证据，未据此修改产品或vendor。
+- Model Tier: Tier 1用于明确CSS和测试范围；Model: worker使用GPT-6 Luna High，主线程沿用当前会话配置并保留原因判定与最终审核；Reason: 局部布局及已确认控件合同，无播放/Session改动；Escalated: no。
+- M02最终提交边界、完整2153项payload、manifest/provenance、公开888/888及材料82/82已独立读回；fake-client重启/回退不替代真实内核或播放验收。04下一步缺少旧目标内容录制，保留T4 NOT_OBSERVED和700ms既有等待；06首页新API/配置归属仍需具体设计。当时的新候选未提交或构建；后续94dbcef构建结果见本日收尾记录，未发布。
+
+## 2026-10-14 M02 手动内核候选实施
+
+- 用户已确认方案为手动导入完整候选ZIP、下次应用启动生效、候选启动验证失败一次回到固定baseline。隔离组合worktree基于`a820f5d5dfba35f1f52b93a6d7097af80552fb02`；保留旧M01候选、共享旧主目录与所有已有改动。产品变更28文件已按单独回滚范围提交为`8d06f0b53280a86c3b74c94c452cb6469d428312`（`feat: add manual mpv kernel candidates`）。随后两项test-only断言适配单独提交为`d894e4ea093af026f8e463aaeb12677f99dfd4cc`；runtime源身份仍绑定产品提交`8d06f0b`。未推送、创建PR、合并、发布或安装。
+- 主线程保留`service.js`、`main.js`、窄IPC、startup effective target、退出确认和fallback；Luna worker分别负责纯ZIP/schema/PE parser及profile store测试。候选包只含`candidate.json`、`mpv-1.dll`、`SOURCE.txt`、`NOTICE.txt`；固定生产Helper SHA/API131077/protocol1/capabilities，不接收renderer任意路径/URL/command，不执行包内文件。大包解析/hash/Deflate/PE预检在本地worker_threads运行，关闭等待本任务worker退出。
+- Profile状态以DLL SHA寻址、对象不可覆盖；导入不选择，选择仅为pendingRestart。Main在应用构造时冻结一次启动选择；无候选继续baseline lazy启动，候选才在renderer page load前启动前验证。失败候选仅在owned process exit确认后fallback一次；有效候选失败后本进程effective target锁存baseline，后续create或baseline crash重建不重新试候选。成功候选的显式recreate仍绑定同一candidate；播放中Helper crash不换库/重放session。损坏JSON/unknown schema和超限普通state仅由用户显式baseline选择原子修复，state link/directory拒绝并保留。
+- About明确分开包/静态结果、pending/active、ready handshake和image SHA UNKNOWN；source/notice来自随包声明，releaseability NOT_ASSESSED。离线维护工具生成固定ZIP并在输出前用同一import validator readback。无可信候选来源、完整runtime build、Helper/DLL load、真实profile、播放器前台、Emby/服务器或业务播放验收。
+- 定向矩阵：16个测试文件164/164，覆盖ZIP Store/Deflate尾流消费、CRC/schema/path/flags/Zip64/属性/重复名/offset重叠、PE架构/节表/RVA/导出、profile store取消/并发/原子性/state修复、窄IPC、About状态与错误反馈，以及baseline lazy启动、候选预热、exact-exit后单次fallback、effective target锁存和destroy/recreate/crash边界。固定baseline DLL只做匹配SHA的静态PE预检，未加载或执行。独立Astra复核的90/90绑定其精确sourceContentSet `7958559f3a917ec9adf7396688dc0ab2438e4b65be909f07eb156f8a2567c194`；父会话对后续main/IPC/About小差异实跑13/13。三组结果分别记录，不相加。
+- 定向公开离线门禁：首次107个文件/888项中887通过、1失败，原因是`product-session-identity.test.cjs`只查找旧的`loadStartInfo().then(...)`语法；M02启动链改为`return loadStartInfo()`，identity先于该调用的产品不变量仍成立。test-only提交改为识别两种实际调用形式并保留原顺序断言，完整重跑107个文件、888/888通过、0跳过。六项material-required测试首次为81/82，唯一失败是旧`external-player-process-chain`把L02已退役的sleep命令当作正向保留项；test-only提交移除该过期正向项，保留并加强windowstate/exit/loaded/video/audio/openurl正向断言及sleep/shutdown/restart的禁用断言，之后82/82通过。
+- 依赖按原`package-lock.json`执行`npm ci --ignore-scripts --no-audit --no-fund`，34个包安装成功。经已验证mainline输入复制并逐项重核：Carnival 1009文件、patch 51文件、Electron 44.4.2 73文件、固定GCC 6990文件/553090415 bytes及mpv头文件均匹配各自合同。产品提交`8d06f0b`上运行`tools/build.ps1 -OutputName EmbyTheaterEnhanced-m02-8d06f0b-20261014`，生成2153文件；build-manifest SHA-256 `b76274946b9012315eda1a5af181b59235c145c598f0130e51600200e0bad42f`，payload-set SHA-256 `5cf12c1679489cc5e4cc54af29c94e5779522619670fde7007238910747a98bd`。`tools/package.ps1 -RuntimeName EmbyTheaterEnhanced-m02-8d06f0b-20261014 -VerifyOnly`核验2153文件、逐文件哈希及provenance通过。source/runtime/input provenance均指向产品提交；Helper SHA为`28054c75551177f1109859d4f8793d45a4c731aba1e43ddab9bb2f1c5dc030dc`，baseline DLL SHA为`965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c`。未生成安装器。
+- 使用构建runtime中的实际store/bootstrap/service代码和真实runtime身份、独立合成profile及Fake NativeHelperClient模拟baseline lazy启动、pending选择不改变当前target、重启冻结候选、坏SHA/API/version拒绝、候选exit receipt后一次baseline fallback、baseline失败停止重试；共三组模拟启动，不调用真实Helper进程或加载DLL，不创建真实BrowserWindow，不触发show/focus/activate、播放/Session/远控、真实profile或服务器。前三次模拟回执记录了夹具identity作用域、plan索引、事件索引及状态读取假设错误；修正夹具后第四次通过。全部尝试日志保留在仓库外`m02/build-validation/`。
+- 静态检查：产品候选23个JS/CJS语法检查通过；两项test-only文件也分别通过`node --check`，差异`git diff --check`通过。未运行完整`npm test`、安装器/系统安装、真实候选或Helper/DLL、前台UI、Emby播放/远控或服务器访问；也未推送、创建PR或发布。完整检查回执见仓库外`M02_BUILD_RESULT.md/json`。
+- Model Tier 3；Model为当前GPT-6主线程（运行时未显示更细模型别名），Reason为跨main/IPC/store/Native Helper的启动/退出/安全边界；Escalated为NO（从起始即按Tier 3）。Luna纯模块worker负责parser/store文件；Astra和父会话均只读复核。最终后台结果停在父会话payload/commit readback，不声称真实内核升级或播放验收。
+
+## 2026-10-14 L02 停用旧 AppHost 系统动作
+
+- 用户选择停用旧 sleep/shutdown/restart 协议动作。Web apphost 不再广告这三项能力或暴露对应方法；apphost-command 白名单及 main 协议分派不再接受和执行这些 token，删除专属系统动作函数。拒绝请求仍调用协议 callback 并返回空响应。apphost.js 是 source-maintained 的 src/electronapp 产品文件；基线提交 aab528b 的 Git blob 为 52614ee25e10d74df5da8d2583ed9955e455b677，输入字节 SHA-256 为 7087A292E7262131E0F1EA08716E257846B55FE23510302A7D6E6AC746DA6A21，直接修改受 sourceCommit 绑定，不需要 vendor overlay。
+- 保持 APPHOST STARTUP COMMAND CANONICALIZATION、windowstate、exit、loaded、video/audio powerSaveBlocker 与 openurl 安全解析路径；未改变普通锁屏/播放电源阻止器。没有调用真实系统动作。
+- 实际 main handler 对大小写、尾斜杠、双尾斜杠和编码变体合成请求逐一回调并验证零副作用；实际 apphost.js VM 核验 capability 与方法均关闭，正常 windowstate/exit 命令保留。定向22/22、相关 JS 语法与 diff-check通过。
+- Task Risk/Uncertainty 与 Cross-module Scope 为 Tier 2；Playback/Session Impact 为 NONE。主线程保留协议/系统动作边界与最终审查，沿用当前会话模型，未升级。父会话最终审核通过并记录于私有 L02_FINAL_REVIEW.md；9路径 L02 变更另提交为69e8141，和30路径aab528b可分别回退。
+- source-bound `tools/build.ps1` 以sourceCommit 69e8141abf61bd335ec58498937ce1689ff115e2完成。隔离runtime为dist/EmbyTheaterEnhanced-phase01-l02-20261014；build-manifest SHA-256 048eb6973d54de5d337f26e383ed1a556c1fcd707db1b53e07c632987b085580，payload 2147文件，canonical payload-set SHA-256 41b786dc862cab51d4a385b862f2de612831afc5e696d608ae1d77fac585a852。`tools/package.ps1 -VerifyOnly`完整文件集、逐文件hash、provenance、runtime exclusion和锁定依赖校验通过；未生成安装器。
+- 通过实际构建产物的Web AppHost VM检查21项，主协议分派器从构建后的main.js执行合成测试13/13。父会话在仅含一项bundled identity测试调整的test-only HEAD cca8f52复跑公共离线门禁：98/98测试文件集，819/819 cases，0失败/跳过；JS语法259、PowerShell语法28、有限凭据扫描310及diff-check均PASS。340个tracked源文件hash汇总为e8d244b9a744375b8dfdd8ef2270b01b7188444df1c2441dde19c2634a9b310d。原先784/787那次门禁作为旧结果保留，未覆盖或合并到本次结果；runtime仍只绑定产品sourceCommit 69e8141。
+- 隔离隐藏About DOM fixture直接加载生成runtime中的About.html、About.js、CSS及Babel/Emby button/scroller AMD模块；maintenance IPC仅返回合成状态，profile路径仅在私有fixture下，所有HTTP/HTTPS/WebSocket请求均被拦截。隔离窗的show/focus/activate均0，所有owned PID及子进程退出且无残留。run-20261014-06在私有几何回执生成器处因main harness作用域中缺少buildManifest而停止；父会话从独立run identity复核同一fixture也遇到相同缺项。800px/125%矩形及notReady/failed/missing完整DOM场景没有取得最终回执，状态明确保留NOT_VERIFIED；该fixture错误不能据此判定产品通过或产品失败。各run日志/回执保留于私有build-validation/hidden-about；没有产品源码或runtime变更，也未启动生产客户端、真实profile、服务器或系统动作。
+- 文档后续提交只同步构建、公共门禁和隐藏fixture边界；runtime build-manifest的sourceCommit保持69e8141，公共测试所用HEAD为cca8f52，文档commit单独记录，不冒充runtime来源。前台、真实Emby/远控和安装验收仍未执行。
+
+## 2026-10-14 M01 身份与配置候选整合
+
+- 用户授权本地应用已审核的归一化 M01 补丁；在旧功能主线 managed worktree 使用 git apply --check 后应用9路径（6产品、3测试）。补丁 SHA-256 03DB9C95249D380BA8EA2790FFAB188A5BAA186681DE08DEE0FC4F3B449F7DCD；原始缺少终止换行的 M01_CANDIDATE.diff、M01 原 worktree 与两个早期 harness failure 记录均保留。
+- About/maintenance 分开展示包内libmpv文件SHA、编译期预期身份、ready Helper 握手实际版本/API/capabilities；未ready信息为UNKNOWN/NOT AVAILABLE。包内SHA不冒充已加载映像哈希；实际映像SHA与属性回读仍UNKNOWN。固定render path与被忽略的UI值解释不改变Native路径。
+- libmpv.js只对exclusiveAudio用规范UI键mpv-exclusiveAudio，缺失时兼容旧小写键；显式false优先，媒体类型仍限制为video。没有改PlaybackManager、Session、source/Resolver、generation、loadfile、Stop/Next、Helper协议或sender边界。
+- M01定向Native状态、设置组装、About/维护测试72/72通过；定向语法/静态检查经父审核。应用后组合回归：L01 AMD/VM16/16、AppHost/外链18/18、L04+process-chain6/6、L05 item VM4/4、Next/Session76/76、overlay4/4、runtime provenance2/2、Pepper4/4、build-input audit20/20、public selector1/1。Full tools/build.ps1、真实Helper/DLL、MPV_HOME、前台、服务器和播放均未执行。
+- Model Tier 2；主线程保留跨Native/renderer身份合同与最终审查，沿用会话模型。M01独立审查未发现产品越界；没有模型升级。source-bound全构建需要新增提交，本轮未提交/推送/PR/发布。
+
+## 2026-10-14 批次01续办 L01 与 L03-L05 候选
+
+- 在隔离 managed worktree 的 e862288 基线上继续。L01 的提示错误隔离与加载标记时机已修复：toast 缺失、抛错或 Promise rejection 都不阻断 CSS；JS 偏好解析失败只记录固定泛化信息，不输出配置或错误对象；加载成功后才置位 isCustomCssJSLoad。输入 CustomCssJS.js SHA-256 2177DE28DCC4E715F07C63329DC361C5B4DDD37EB7E59F273830B22ACEA37912；overlay 输出 SHA-256 B9F6268F3E3126426F189F38F1E57FF4CD03D8F9A213305157E1F6842F251103。旧 server/local 配置保留，CSS 保持选择链。
+- 公开AMD/VM用例16/16、L01固定原件 material selftest、Web overlay生成4/4、build-input消费者/篡改测试1/1通过。新增两条overlay patcher直接依赖进入build-input contract，runtime provenance测试通过固定原件与generator绑定。
+- L02新增真实main分派的合成非法scheme/编码command无动作检查以及windowstate、loaded、video/audio通知、openurl路径保持用例；共18/18通过。当前协议仍未验证sender/referrer，sleep/shutdown语义仍待决定；没有调用系统动作。
+- L03核验manifest固定的Host SHA与BAT SHA，并用ilspycmd做静态托管IL检查，未发现两个BAT名称、.bat字样或直接启动调用。托管IL范围外的动态路径/组件消费者及手工用户依赖仍UNKNOWN；因此runtime exclusions和manifest保持未排除这两份BAT。没有执行Host或BAT，也未清理已有安装目录。
+- L04移除onLoaded中的Anime4K before-input-event拦截、全局配置rename、隐式Stop及旧Notepad/Shader帮助对话框。新构建不重新分配按键，旧mpv配置不读写；用户指南增加兼容说明。合成按键归属及process-chain测试6/6通过，Next/Stop/Session owner相关回归76/76通过。
+- L05通过固定hash item.js/item.html overlays移除旧详情按钮、appSettings.autoplay写入和fromPlayEnded timer；旧autoplay/externalplayers值保留并在存在旧设置时给一次提示。PlaybackManager/PlayQueue/Session/Together未改；item AMD/VM合成4/4、固定material selftest、playback queue/session 76/76通过。
+- 任务 Tier 2；主线程保留权限/播放边界和最终审核，两名GPT-6 Luna worker提供只读AppHost及Host IL闭包材料。完整tools/build.ps1、客户端前台、真实Emby、安装、BAT/Host和系统动作均未执行。没有提交、推送、PR、合并或发布。
+
+## 2026-10-14 批次01 CustomCssJS 信任边界候选
+
+- 基线为实时远端 main e862288f10182e60ccb43128e71af755172210c1，在隔离 managed worktree 工作。新增 CustomCssJS.js 固定源哈希 overlay：CSS server/local 选择链保持；旧 JS forced_on、server/local 选择及本地存储数据保留但不执行；只在存在活动旧脚本或 JS 配置损坏时提示一次。JS 配置解析单独捕获，避免坏 JS 偏好阻断 CSS。未扩大到 preload、renderer sandbox、Native IPC 或播放模块重构。
+- Task Risk Tier 2；Task Uncertainty：JS 执行入口及固定输入已锁定，Host 与旧用户行为仍有 UNKNOWN；Cross-module Scope：Web 模块、生成器、测试与维护文档；Playback/Session Impact：NONE。主线程沿用会话默认模型，任务接口未暴露具体子型号；两个独立只读闭包审核由 GPT-6 Luna worker 执行。Reason：可信 renderer 中的任意脚本可达 preload 文件/IPC 能力；主线程保留安全合同和最终审查。Escalated：NO。
+- 输入 CustomCssJS.js SHA-256 2177DE28DCC4E715F07C63329DC361C5B4DDD37EB7E59F273830B22ACEA37912 与 e862288 runtime-manifest 一致；生成 overlay SHA-256 FD7B862359EB5E48C31A3759BC0B160DF127395B82291D4136B3FF869BC27D7B。定向变换3/3、全 Web overlay 构建准备4/4、AppHost 规范化合同5/5通过；变换输入以 manifest 锁定 vendor 文件验证。完整 runtime build、真实客户端、真实服务器、安装及用户脚本行为未执行。
+- 其余批次01候选保持未实现：AppHost 的系统动作仍可由旧协议静态调用，需先确定 legacy 请求停用或显式用户确认合同；两份旧 BAT 的 Carnival Host 固定名依赖为 UNKNOWN，暂不从 runtime 排除；Anime4K 快捷键的按键传递/替代行为未定；外置播放器 timer 的运行时 owner、resume 路由及用户依赖未知。没有执行系统动作、旧 BAT、mpv 全局配置或真实播放。
+
 ## 2026-10-14 插件兼容与总排期主线集成
 
 - 用户明确授权合并，范围为已发布插件兼容分支及本地总排期文档。基线为main 080d352、插件分支44816ad；产品源码保持373209b，当前新增提交仅整理状态、总排期和维护记录。经PR合并承接既有17个提交，不改变已发布Tag/附件身份或Stable渠道。

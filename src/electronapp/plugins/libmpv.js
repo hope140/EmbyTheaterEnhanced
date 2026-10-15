@@ -1592,7 +1592,11 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
             dict['ad-lavc-ac3drc'] = parseInt(appSettings.get('mpv-drc') || '0') / 100;
 
-            if (appSettings.get('mpv-exclusiveaudio') === 'true' && mediaType === 'video') {
+            var exclusiveAudio = appSettings.get('mpv-exclusiveAudio');
+            if (exclusiveAudio === null || exclusiveAudio === undefined) {
+                exclusiveAudio = appSettings.get('mpv-exclusiveaudio');
+            }
+            if (exclusiveAudio === 'true' && mediaType === 'video') {
                 dict['audio-exclusive'] = 'yes';
             }
 
