@@ -1,5 +1,10 @@
 # 维护记录
 
+## 2026-10-15 首次卡片容器激活修正
+
+- 5444670来源runtime的隐藏真实CardBuilder/itemscontainer检查在卡片断言失败；受控BaseTab和API服务不包含真实播放。实际组件的refresh monitor初始为paused，直接refreshItems提前返回；改为公开resume({refresh:true})，不更改组件、播放或Session实现。
+- Node fixture以真实paused初态建模，接口/生命周期28/28复核通过。保留第一次夹具模块依赖超时及第二次实际卡片失败，不把它们改成PASS；后续runtime按新提交单独构建/绑定。
+
 ## 2026-10-15 首页渲染与生命周期接线候选
 
 - 已批准接口候选4d59329后继续本地接线：固定HomeTab/app.js overlay注册单一维护controller，沿用原BaseTab、ApiClient、CardBuilder、itemscontainer与焦点/播放owner。首批覆盖默认水平卡片布局，未支持视图、图像/尺寸或命令分区完整回旧首页。

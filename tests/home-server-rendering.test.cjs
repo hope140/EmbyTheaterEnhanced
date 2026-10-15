@@ -35,10 +35,11 @@ class Element {
     }
 }
 class Items extends Element {
-    constructor(document) { super(document); this.className = 'itemsContainer'; this.paused = false; }
+    constructor(document) { super(document); this.className = 'itemsContainer'; this.paused = true; }
     pause() { this.paused = true; }
+    resume(options) { this.paused = false; return options && options.refresh ? this.refreshItems() : Promise.resolve(); }
     async refreshItems() {
-        this.paused = false;
+        if (this.paused) return;
         const data = await this.fetchData({Limit: 12});
         this.options = this.getListOptions(data.Items);
         this.result = data;

@@ -172,7 +172,9 @@
                 var next = newStage(), items = render(next, response.sections, initial.map(function(result) { return result.result; }), ticket, options);
                 if (!current(ticket)) return {status: 'cancelled'};
                 attach(next, 'server');
-                await Promise.all(items.map(function(item) { return item.refreshItems(); }));
+                // The inherited itemscontainer/refresh monitor starts paused.
+                // Resume through its public lifecycle before requesting data.
+                await Promise.all(items.map(function(item) { return item.resume({refresh: true}); }));
                 if (ticket.fallback) return await ticket.fallback;
                 if (!current(ticket)) return {status: 'cancelled'};
                 ready(ticket, options);
