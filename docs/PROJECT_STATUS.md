@@ -1,5 +1,7 @@
 # 项目状态
 
+2026-10-15：[v0.3.3测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.3)已发布，PR #37合入main，Tag固定产品源码`11f29056c64abe2fb8133a409781a83e11cf9a60`；Stable/Latest仍为v0.3.1。最终main公开CI919项、材料144项及完整2155项payload检查通过；安装器解包2156文件（含manifest）逐项匹配。About三视口18状态、四原生选择器菜单及宽屏控件布局通过隔离检查，不代替真实详情业务、完整播放/回退或安装验收。安装包SHA-256为`066143a7a89fbf56ad9009b27298c4eb4c1e63f51c20b7642f463d43cc635589`，175696187 bytes，NotSigned；准确身份及下载校验见Release与随包provenance。本条文档收尾不改变已发布Tag或包来源。
+
 v0.3.3测试版范围为服务端首页分区、手动内核管理、About原生界面、插件兼容及详情选择器一致性；安装包使用标准产品入口和原固定内核，个人profile与导入对象不随包分发。最终main来源、Tag、安装器SHA及包体关系以该版本Release和随包provenance固定，Stable/Latest保持v0.3.1。本轮用户已要求完成后发布测试版；离线延迟工具仍留独立分支，切轨延迟无限期延期。
 
 2026-10-15详情选择器跟进：版本/视频缺少原生custom菜单标识，而音轨/字幕已有；候选通过固定HTML overlay统一四控件使用现有Emby ActionSheet。旧Carnival宽屏规则将选择区限制为24em并额外增加上边距，新增布局overlay仅在详情页80em以上恢复可用宽度和对齐，保留原CSS其余字节。5项定向及28项控件/overlay/构建合同检查通过；About修订已本地提交59b34cd并完成独立构建，后续一起形成最终来源绑定候选。用户已明确允许本任务可回退操作，无需再次逐项审批；没有据此推送、发布、安装或修改服务器数据。
