@@ -116,6 +116,7 @@ function createFixture(root) {
         'tools/prepare-web-overlays.cjs',
         'tools/patch-custom-css-js.cjs',
         'tools/patch-externalplayer-residue.cjs',
+        'tools/patch-item-controls.cjs',
         'tools/patch-external-player-registration.cjs',
         'tools/patch-plugin-settings.cjs',
         'tools/patch-server-home.cjs',
