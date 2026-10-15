@@ -1,5 +1,12 @@
 # 维护记录
 
+## 2026-10-15 服务端首页只读接口候选
+
+- 用户选择跟随新版网页首页分区/顺序，保留旧版回退。自有适配模块复用当前ApiClient的getUrl/getJSON，不新建认证、播放或Session owner，不复制新版Web整树。
+- GET HomeSections及Section Items保留服务端顺序与原Item DTO；ID按路径段编码，查询参数固定，禁止转发任意URL/命令。刷新/暂停/销毁取消请求，过期client/server/user响应丢弃；请求或不支持布局整体回退。
+- 11项离线合同测试通过。版本门槛和DTO依据固定Web分析样本，不是目标服务器实测；尚未接到HomeTab或生成页面候选。接线/renderer与设置提示、真实服务、前台/播放验收分别保留待办。
+- Model Tier: Tier 2；Model: 主线程当前模型；Reason: 首页请求归属与兼容回退；Escalated: no。普通工具和文档核对由独立worker完成。
+
 ## 2026-10-15 主线集成与交付记录归属
 
 - 用户明确授权已审核累计59路径推送、创建PR、检查通过后合入main及最终main来源测试包构建；已创建[PR #36](https://github.com/hope140/EmbyTheaterEnhanced/pull/36)。产品范围保持，补充的内核管理使用说明与状态同步只触及既有文档。具体合并状态、main构建sourceCommit/包体SHA及未验收范围写入PR最终收尾说明；不通过后续doc-only提交重标旧产物来源。
