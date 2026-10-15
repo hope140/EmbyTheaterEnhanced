@@ -17,6 +17,8 @@
 
 ## HomeTab 接线
 
+`ete-server-home` 使用原生 `getDynamicImport` 注册，该工厂已取出AMD模块的default；HomeTab直接调用别名对象的create，不再次访问default。别名回归必须消费原app.js的实际拆包函数，不能用直接返回AMD module对象的简化别名替代。
+
 - 固定 Carnival HomeTab 只新增一个维护 controller，接入原 resume/refresh/pause/destroy，保留原 BaseTab、连接、焦点和播放 owner。AMD 维护模块以唯一注册 ID 加载，共用依赖使用原 canonical module ID。
 - 首页按服务端顺序构建分区。继续观看/下一集保留 backdrop 和原上下文动作，直播条目沿原 programlink；空分区由原 itemscontainer 隐藏。显式空首页不重新插入旧分区。
 - 每轮刷新清除并暂停旧节点，取消前轮请求；新数据完成后提交本轮 stage。取消、切换账号/服务器或销毁后不提交旧页面、不转入旧账号的回退。旧 renderer 的 user 读取和渲染等待也有取消及5秒等待上限。

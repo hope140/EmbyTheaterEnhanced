@@ -177,7 +177,7 @@ test('transient identity lookup failures do not reject the HomeTab lifecycle Pro
     const f = fixture(); f.api.serverId = () => { throw new Error('disconnected'); };
     assert.equal((await f.controller.resume()).status, 'cancelled'); f.controller.dispose();
 });
-test('pinned HomeTab transform wires one controller to original lifecycle and rejects source drift', () => {
+test('pinned HomeTab consumes the native default-unwrapped alias and preserves original lifecycle', async () => {
     const input = fs.readFileSync(path.join(__dirname, '../vendor/carnival/electronapp/www/home/hometab.js'), 'utf8');
     const output = patcher.patchHomeTab(input);
     assert.throws(() => patcher.patchHomeTab(input.replace('this.sectionsContainer=', 'this.changedContainer=')), /anchor mismatch/);
@@ -186,11 +186,21 @@ test('pinned HomeTab transform wires one controller to original lifecycle and re
     function Base() {} Base.prototype.onResume = () => events.push('base-resume'); Base.prototype.onPause = () => events.push('base-pause'); Base.prototype.destroy = () => events.push('base-destroy');
     const control = {resume: () => events.push('resume'), refresh: () => events.push('refresh'), pause: () => events.push('pause'),
         dispose: () => events.push('dispose'), clear: () => events.push('clear')};
+    const app = fs.readFileSync(path.join(__dirname, '../vendor/carnival/electronapp/www/app.js'), 'utf8');
+    const unwrapStart = app.indexOf('function returnFirstDependencyDefault(');
+    const unwrapEnd = app.indexOf('function enableNativeGamepadKeyMapping(', unwrapStart);
+    const importStart = app.indexOf('function getDynamicImport(path)');
+    const importEnd = app.indexOf('function importFromPath(', importStart);
+    assert.ok(unwrapStart >= 0 && unwrapEnd > unwrapStart && importStart >= 0 && importEnd > importStart);
+    const exported = {default: {create(owner) { creates++; return control; }}};
+    const alias = await vm.runInNewContext(app.slice(unwrapStart, unwrapEnd) + app.slice(importStart, importEnd) +
+        'getDynamicImport("fixture-home")()', {require() { return Promise.resolve([exported]); }});
+    assert.equal(alias, exported.default);
     vm.runInNewContext(output, {define(dependencies, factory) {
         const exports = {};
         const args = Array.from(dependencies).map(name => name === 'exports' ? exports : name.includes('basetab') ? {default: Base} :
             name.includes('connectionmanager') ? {default: {currentApiClient: () => ({})}} : name === 'ete-server-home' ?
-            {default: {create(owner) { creates++; return control; }}} : {default: {}});
+            alias : {default: {}});
         factory(...args); HomeTab = exports.default;
     }}, {timeout: 1000});
     const tab = new HomeTab(view, {}); tab.onResume(); tab.refresh(); tab.onPause(); tab.destroy();

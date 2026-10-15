@@ -9,7 +9,7 @@ function patchHomeTab(text) {
         '"./../modules/emby-apiclient/connectionmanager.js","ete-server-home"]');
     text = once(text, '_embyItemscontainer,_connectionmanager){', '_embyItemscontainer,_connectionmanager,_eteHome){');
     text = once(text, 'this.sectionsContainer=view.querySelector(".sections"),',
-        'this.sectionsContainer=view.querySelector(".sections"),this.eteHome=_eteHome.default.create(this,{legacy:_homesections.default,loading:_loading.default,focus:_focusmanager.default,connection:_connectionmanager.default}),');
+        'this.sectionsContainer=view.querySelector(".sections"),this.eteHome=_eteHome.create(this,{legacy:_homesections.default,loading:_loading.default,focus:_focusmanager.default,connection:_connectionmanager.default}),');
     const resumeStart = 'HomeTab.prototype.onResume=function(options){';
     const refreshStart = 'HomeTab.prototype.refresh=function(options){';
     const pauseStart = 'HomeTab.prototype.onPause=function(){';
