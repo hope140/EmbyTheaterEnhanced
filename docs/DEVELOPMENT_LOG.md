@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-15 首页候选后台构建与验证收尾
+
+- 用户明确授权13路径本地提交及隔离构建/隐藏验证，候选先提交5444670；真实组件验证促成同范围内的激活修正be8e8c4。最终runtime保持be8e8c4来源，版本0.3.2，2155项payload通过package VerifyOnly及完整集合/哈希核对。本地ZIP2156条目（含manifest）逐条目读回，SHA-256为5905cc86ea209c8263d07127c37913c55031ecfb23704f596b72c941970b70aa。
+- 最终来源公开门禁918/918、材料门禁82/82，JS280项、PowerShell28项及331维护文本有限凭据模式检查通过。相对e15692e，产品文件仅新增两个首页模块、修改app.js与HomeTab；其余差异为来源/依赖记录，无payload移除，原Helper/DLL字节保持。
+- 隐藏DOM用实际构建资产及原CardBuilder/itemscontainer/imageloader/scroller，在800和1280 CSS视口各14断言通过；标题转义、卡片输出、离页取消和旧服务器回退有受控证据。show/focus/外部请求0，无测试Electron残余。BaseTab、API数据及宿主业务服务为fixture；未执行真实播放、会话/远控、登录复用或安装。
+- 保留所有首次失败：旧5444670卡片未激活，以及隐藏夹具缺input、图像辅助方法/样式alias、播放和菜单能力、shortcut服务等依赖。最终夹具改用原imageloader和shortcuts，补齐受控宿主服务，未为夹具失败修改生产公共组件。前台保持暂停；没有推送、PR或发行。
+- 本条为文档收尾，最终包和来源回执仍绑定be8e8c4，不因后续doc-only提交重标或重建已验证产物。
+
 ## 2026-10-15 首次卡片容器激活修正
 
 - 5444670来源runtime的隐藏真实CardBuilder/itemscontainer检查在卡片断言失败；受控BaseTab和API服务不包含真实播放。实际组件的refresh monitor初始为paused，直接refreshItems提前返回；改为公开resume({refresh:true})，不更改组件、播放或Session实现。
