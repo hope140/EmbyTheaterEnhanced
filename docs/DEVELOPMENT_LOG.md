@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-15 详情选择器原生菜单与布局跟进
+
+- 用户在About本地提交/构建授权后补充详情页UI差异，并明确本任务可回退操作直接推进。About九路径已单独提交59b34cd并构建，详情修复保持独立可回滚提交；不扩展为发布、安装或真实业务写入。
+- Model Tier: Tier 1；Model: 明确规格实施GPT-6 Luna High，主线程沿用当前配置负责审核；Reason: 两个属性与详情局部样式，既有原生控件和构建合同明确；Escalated: no。
+- 根因一：selectSource/selectVideo未指定data-menu=custom，桌面模式落入Windows原生菜单；selectAudio/selectSubtitles已使用Emby ActionSheet。仅在固定HTML overlay补两个属性，原Item controller、控件和菜单模块字节保持。
+- 根因二：Carnival layout.css的宽屏附加规则将noScrollY详情选择区限为24em，并对label/select增加上边距。固定布局overlay保留原文，仅追加.itemView内80em以上的width:auto与margin-top:0；不修改其他页的选择器或整套主题。
+- 新生成器进入build-input与runtime overlay来源合同，输入/输出SHA固定，重复或漂移锚点拒绝；HTML既有外置播放器退役变换链保留。执行冻结emby-select的pointer/Enter/change/disabled测试，以及5项定向与28项组合检查通过；父会话复读真实diff并重复5项通过。后续来源绑定构建、包体及原生控件隐藏验证独立记录，不宣称完整新版详情页已迁移。
+
 ## 2026-10-15 About原生界面整理候选
 
 - Model Tier: Tier 1；Model: 主线程沿用当前配置，只读Web范围核对为GPT-6 Luna High；Reason: 已有界面与IPC合同明确，限定About三文件和回归/文档；Escalated: no。没有修改内核选择、启动、回退、播放或Session代码。

@@ -6,6 +6,7 @@ const path = require('path');
 const externalPlayerRegistration = require('./patch-external-player-registration.cjs');
 const customCssJs = require('./patch-custom-css-js.cjs');
 const externalPlayerResidue = require('./patch-externalplayer-residue.cjs');
+const itemControls = require('./patch-item-controls.cjs');
 const pluginSettings = require('./patch-plugin-settings.cjs');
 const serverHome = require('./patch-server-home.cjs');
 const trackedFileHash = require('./tracked-file-hash.cjs');
@@ -14,6 +15,7 @@ const GENERATOR_PATH = 'tools/prepare-web-overlays.cjs';
 const APP_GENERATOR_PATH = 'tools/patch-external-player-registration.cjs';
 const CUSTOM_CSS_JS_GENERATOR_PATH = 'tools/patch-custom-css-js.cjs';
 const EXTERNAL_PLAYER_RESIDUE_GENERATOR_PATH = 'tools/patch-externalplayer-residue.cjs';
+const ITEM_CONTROLS_GENERATOR_PATH = 'tools/patch-item-controls.cjs';
 const PLUGIN_GENERATOR_PATH = 'tools/patch-plugin-settings.cjs';
 const HOME_GENERATOR_PATH = 'tools/patch-server-home.cjs';
 
@@ -48,8 +50,19 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/item/item.html',
         expectedBaseSha256: 'A11D00BB58F83A9F56A16F137342D5C3B62DF03AE83436527D426B56B160A6B5',
         expectedInputSha256: null,
-        expectedOutputSha256: '99C68FF278B71D26ED702A876C7C10312896A9BBED3D8928E7FC8B60917AE691',
-        generatorPaths: Object.freeze([GENERATOR_PATH, EXTERNAL_PLAYER_RESIDUE_GENERATOR_PATH])
+        expectedOutputSha256: '03A897B7266A59B687E2B74A8253BE9A46FC9997FAD18BC4E956E5A5ADFA1E33',
+        generatorPaths: Object.freeze([GENERATOR_PATH, EXTERNAL_PLAYER_RESIDUE_GENERATOR_PATH, ITEM_CONTROLS_GENERATOR_PATH])
+    }),
+    Object.freeze({
+        id: 'item-track-selection-layout',
+        mode: 'tracked-canonical-transform',
+        basePath: 'vendor/carnival/electronapp/www/modules/layout.css',
+        inputPath: null,
+        runtimePath: 'electronapp/www/modules/layout.css',
+        expectedBaseSha256: 'D6EB9A45859D776806B7B7078C4763C452DADA04834B3F461797DEE1FE80DC8C',
+        expectedInputSha256: null,
+        expectedOutputSha256: '81241E0E01B21602C646A6630D8707F75E99F619E600DD16018C4D9223F3DFF5',
+        generatorPaths: Object.freeze([GENERATOR_PATH, ITEM_CONTROLS_GENERATOR_PATH])
     }),
     Object.freeze({
         id: 'apiclient',
@@ -151,7 +164,11 @@ function outputFor(root, contract) {
         return {base, input: Buffer.from(externalPlayerResidue.patchItemText(base.toString('utf8')), 'utf8')};
     }
     if (contract.id === 'item-externalplayer-residue-template' && contract.mode === 'tracked-canonical-transform') {
-        return {base, input: Buffer.from(externalPlayerResidue.patchItemHtmlText(base.toString('utf8')), 'utf8')};
+        const withoutLegacyButton = externalPlayerResidue.patchItemHtmlText(base.toString('utf8'));
+        return {base, input: Buffer.from(itemControls.patchItemHtmlText(withoutLegacyButton), 'utf8')};
+    }
+    if (contract.id === 'item-track-selection-layout' && contract.mode === 'tracked-canonical-transform') {
+        return {base, input: Buffer.from(itemControls.patchLayoutCssText(base.toString('utf8')), 'utf8')};
     }
     if (contract.id === 'app-js' && contract.mode === 'tracked-canonical-transform') {
         const transformed = externalPlayerRegistration.patchText(base.toString('utf8'));

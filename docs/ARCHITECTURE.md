@@ -35,3 +35,5 @@ CustomCssJS 作为固定源哈希的 Web overlay 构建：服务器/本地 CSS �
 插件设置候选在受控 Web overlay 中增加窄路由/依赖映射及插件页导航事务，维护模块复用原 API client、字段编辑器和通知出口；共享播放、认证和 input/API 模块保持。来源、取消、错误与验收边界见 [兼容合同](PLUGIN_SETTINGS_COMPATIBILITY.md)。
 
 服务端首页接线候选仍以原 HomeTab/BaseTab 为生命周期 owner，通过固定 HomeTab/app.js overlay 加载一个维护 controller。它复用现有 ApiClient 只读 HomeSections 和 Section Items，服务能力或布局不支持时回完整旧 homesections。renderer 保留原 CardBuilder、itemscontainer、focus/input、播放与Session归属；暂停/刷新/销毁取消请求，旧页面 stage 与迟到响应不能重新提交。接口、布局首批支持范围和验证边界见[服务端首页合同](SERVER_HOME_SECTIONS.md)。
+
+详情页选择器保持原Item controller与EmbySelect/ActionSheet归属。固定HTML overlay补全版本/视频的custom菜单声明；固定layout.css overlay仅追加详情区域的宽屏选择区宽度/对齐纠正，原样式前缀完整保留。版本、视频、音轨和字幕值及change事件仍由原链路消费，不改PlaybackManager、媒体来源标识或切轨逻辑。
