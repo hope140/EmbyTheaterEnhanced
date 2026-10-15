@@ -8,6 +8,55 @@
     }
     function wait(ms) { return new Promise(function(resolve) { setTimeout(resolve, ms); }); }
     function byId(id) { return document.getElementById(id); }
+    function appendLegacyTableProbe(parent) {
+        var page = document.createElement('div');
+        page.className = 'pluginConfigurationPage';
+        var content = document.createElement('div');
+        content.className = 'content-primary';
+        content.style.width = '320px';
+        content.style.maxWidth = '320px';
+        function makePercentTable(id, width) {
+            var table = document.createElement('table');
+            table.id = id;
+            table.style.width = width;
+            var body = document.createElement('tbody'), row = document.createElement('tr');
+            var first = document.createElement('td'), second = document.createElement('td');
+            first.style.width = '33%';
+            first.textContent = 'Primary column';
+            second.style.width = '66%';
+            second.textContent = 'Secondary column';
+            row.appendChild(first);
+            row.appendChild(second);
+            body.appendChild(row);
+            table.appendChild(body);
+            return {table: table, first: first, second: second};
+        }
+        var simple = makePercentTable('legacy-table-probe', '300px');
+        var outer = makePercentTable('legacy-nested-outer-table', '300px');
+        var nested = makePercentTable('legacy-nested-inner-table', '100%');
+        outer.second.textContent = '';
+        outer.second.appendChild(nested.table);
+        var overflowTable = document.createElement('table');
+        overflowTable.id = 'legacy-overflow-table';
+        overflowTable.style.width = '100%';
+        var overflowBody = document.createElement('tbody'), overflowRow = document.createElement('tr');
+        var overflowCell = document.createElement('td');
+        var wideControl = document.createElement('input');
+        wideControl.type = 'text';
+        wideControl.value = 'Synthetic wide legacy control';
+        wideControl.style.width = '560px';
+        wideControl.style.minWidth = '560px';
+        overflowCell.appendChild(wideControl);
+        overflowRow.appendChild(overflowCell);
+        overflowBody.appendChild(overflowRow);
+        overflowTable.appendChild(overflowBody);
+        content.appendChild(simple.table);
+        content.appendChild(outer.table);
+        content.appendChild(overflowTable);
+        page.appendChild(content);
+        parent.appendChild(page);
+        return {page: page, content: content, simple: simple, outer: outer, nested: nested, overflowTable: overflowTable};
+    }
     function safeErrorClass(error) {
         var message = String(error && error.message || '');
         var property = /reading [\"']([A-Za-z0-9_$]+)[\"']/.exec(message);
@@ -123,12 +172,48 @@
         var viewNode = byId('view');
         var view = new View(viewNode, {PageId: 'synthetic'});
         view.onResume();
-        return wait(120).then(function() {
+        return wait(120).then(async function() {
             var loadFailed = !view.data && !viewNode.querySelector('.pluginError').hidden;
             check(view.data && view.data.PageId === 'synthetic', loadFailed ? 'ui_view_failed_' + window.__renderPhase : 'ui_view_pending_or_not_rendered');
-            ['text', 'numeric', 'enabled', 'single', 'multiple', 'date', 'status', 'action', 'readonly', 'radioChoice', 'progressZero', 'progressClamp', 'groupActionOne', 'descriptionChild', 'nestedInput', 'showFlag', 'hiddenField', 'safeLabel'].forEach(function(id) {
+            ['text', 'numeric', 'enabled', 'single', 'multiple', 'date', 'filePath', 'folderPath', 'spacer', 'radioGroup',
+                'singleSource', 'multipleSource', 'staticMultiple', 'status', 'action', 'readonly', 'radioChoice',
+                'progressZero', 'progressClamp', 'groupActionOne', 'descriptionChild', 'nestedInput', 'showFlag',
+                'hiddenField', 'safeLabel'].forEach(function(id) {
                 check(!!byId(id), 'field_' + id + '_rendered');
             });
+            var filePicker = byId('filePath').parentElement.parentElement.querySelector('.filePickerButton');
+            var folderPicker = byId('folderPath').parentElement.parentElement.querySelector('.filePickerButton');
+            check(byId('filePath').value === 'C:\\synthetic\\original.strm' && !!filePicker,
+                'file_path_renders_value_and_picker_without_opening_it');
+            check(byId('folderPath').value === 'C:\\synthetic\\media' && !!folderPicker,
+                'folder_path_renders_value_and_picker_without_opening_it');
+            check(byId('spacer').tagName === 'DIV' && byId('spacer').querySelectorAll('input,select,textarea').length === 0,
+                'spacer_renders_without_value_control');
+            var sourceRadios = Array.from(byId('radioGroup').querySelectorAll('input[type=radio]'));
+            check(sourceRadios.length === 2 && sourceRadios.some(function(input) { return input.value === 'radio-a' && input.checked; }),
+                'radio_group_uses_object_items_source_and_selected_value');
+            check(byId('radioGroup').querySelectorAll('img').length === 0 &&
+                byId('radioGroup').textContent.indexOf('<img src=x onerror=') >= 0,
+                'radio_group_source_labels_are_text_not_markup');
+            check(Array.from(byId('singleSource').options).map(function(option) { return option.value; }).join(',') === 'source-a,source-b' &&
+                byId('singleSource').value === 'source-a' &&
+                byId('singleSource').parentElement.querySelectorAll('img').length === 0,
+                'single_select_uses_object_items_source_as_safe_options');
+            check(Array.from(byId('staticMultiple').options).map(function(option) { return option.value; }).join(',') === 'static-keep',
+                'static_items_source_filters_multiple_options');
+            check(byId('staticMultiple').parentElement.querySelector('option').textContent === 'Keep <safe>',
+                'static_select_option_name_remains_text');
+            check(view.data.EditObjectContainer.Object.radioOptions[0].PrimaryText === '<img src=x onerror="window.__fixture.injected=true">' &&
+                view.data.EditObjectContainer.Object.singleOptions[0].Name === 'Alpha <safe>',
+                'source_option_labels_remain_canonical_in_page_data');
+            var sourcePage = await byId('multipleSource').getItems({Ids: ['multi-b', 'multi-c'], SearchTerm: 'a', StartIndex: 1, Limit: 1});
+            check(sourcePage.TotalRecordCount === 2 && sourcePage.Items.length === 1 &&
+                sourcePage.Items[0].Id === 'multi-c' && sourcePage.Items[0].Name === 'Gamma',
+                'multiple_select_source_provider_honors_ids_search_paging_and_count');
+            var staticPage = await byId('staticMultiple').getItems({SearchTerm: 'keep', StartIndex: 0, Limit: 10});
+            check(staticPage.TotalRecordCount === 1 && staticPage.Items.length === 1 &&
+                staticPage.Items[0].Id === 'static-keep',
+                'multiple_select_provider_reads_static_filtered_options');
             check(byId('enabled').getAttribute('is') === 'emby-toggle', 'boolean_uses_emby_toggle');
             check(byId('readonly').getAttribute('is') === 'emby-toggle' && byId('readonly').disabled, 'readonly_boolean_toggle_disabled');
             check(byId('readonlyGroupedToggle').disabled, 'readonly_grouped_toggle_disabled');
@@ -173,6 +258,37 @@
             check(viewNode.querySelectorAll('script').length === 0, 'unsafe_values_no_script_nodes');
             check(viewNode.querySelectorAll('[onerror],[onclick]').length === 0, 'unsafe_values_no_event_attributes');
             check(!window.__fixture.injected, 'unsafe_values_not_executed');
+            var legacyTableProbe = appendLegacyTableProbe(viewNode);
+            var tableDisplays = [
+                getComputedStyle(legacyTableProbe.simple.table).display,
+                getComputedStyle(legacyTableProbe.outer.table).display,
+                getComputedStyle(legacyTableProbe.nested.table).display,
+                getComputedStyle(legacyTableProbe.overflowTable).display
+            ];
+            var firstColumnWidth = legacyTableProbe.simple.first.getBoundingClientRect().width;
+            var secondColumnWidth = legacyTableProbe.simple.second.getBoundingClientRect().width;
+            var columnRatio = firstColumnWidth / secondColumnWidth;
+            var nestedRatio = legacyTableProbe.nested.first.getBoundingClientRect().width / legacyTableProbe.nested.second.getBoundingClientRect().width;
+            var tableContentStyle = getComputedStyle(legacyTableProbe.content);
+            window.__fixtureObservations.legacyTable = {
+                tableDisplays: tableDisplays,
+                firstColumnWidth: firstColumnWidth,
+                secondColumnWidth: secondColumnWidth,
+                columnRatio: columnRatio,
+                nestedColumnRatio: nestedRatio,
+                contentOverflowX: tableContentStyle.overflowX,
+                contentClientWidth: legacyTableProbe.content.clientWidth,
+                contentScrollWidth: legacyTableProbe.content.scrollWidth,
+                windowClientWidth: document.documentElement.clientWidth,
+                windowScrollWidth: document.documentElement.scrollWidth
+            };
+            check(tableDisplays.every(function(display) { return display === 'table'; }), 'legacy_tables_keep_native_table_display');
+            check(columnRatio > 0.35 && columnRatio < 0.65 && nestedRatio > 0.35 && nestedRatio < 0.65,
+                'legacy_single_and_nested_tables_keep_percent_column_ratio');
+            check(tableContentStyle.overflowX === 'auto' && legacyTableProbe.content.scrollWidth > legacyTableProbe.content.clientWidth + 1,
+                'legacy_table_wide_control_overflows_inside_content_primary');
+            check(document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
+                'legacy_table_does_not_expand_window_horizontal_scroll');
             var headerTabs = window.__pluginHeaderTabs && window.__pluginHeaderTabs.querySelector('.emby-tabs-slider');
             check(!!headerTabs && headerTabs.children.length === 1, 'only_safe_header_tab_rendered');
             check(viewNode.querySelector('.labelText').textContent.indexOf('<img') === 0, 'label_text_rendered_as_text');
@@ -213,6 +329,14 @@
             byId('single').value = 'two';
             byId('multiple').values = ['red', 'blue'];
             byId('date').value = '2026-03-04';
+            byId('filePath').value = 'C:\\synthetic\\edited.strm';
+            byId('folderPath').value = 'C:\\synthetic\\edited-folder';
+            byId('singleSource').value = 'source-b';
+            byId('multipleSource').values = ['multi-b', 'multi-c'];
+            byId('staticMultiple').values = ['static-keep'];
+            Array.from(byId('radioGroup').querySelectorAll('input[type=radio]')).forEach(function(input) {
+                input.checked = input.value === 'radio-b';
+            });
             return view.runCommand('PageSave').then(function() { return wait(90); }).then(function() {
                 check(!!window.__lastCommand, 'command_received');
                 var sent = JSON.parse(window.__lastCommand.Data);
@@ -221,6 +345,20 @@
                 check(sent.enabled === true, 'boolean_edit_captured');
                 check(sent.single === 'two', 'single_select_edit_captured');
                 check(Array.isArray(sent.multiple) ? sent.multiple.join(',') === 'red,blue' : sent.multiple === 'red,blue', 'multi_select_edit_captured');
+                check(sent.filePath === 'C:\\synthetic\\edited.strm' && sent.folderPath === 'C:\\synthetic\\edited-folder',
+                    'file_and_folder_paths_round_trip_without_picker');
+                check(sent.radioGroup === 'radio-b' && sent.singleSource === 'source-b',
+                    'object_backed_radio_and_single_select_values_round_trip');
+                check((Array.isArray(sent.multipleSource) ? sent.multipleSource.join(',') : sent.multipleSource) === 'multi-b,multi-c' &&
+                    (Array.isArray(sent.staticMultiple) ? sent.staticMultiple.join(',') : sent.staticMultiple) === 'static-keep',
+                    'object_and_static_source_multiple_values_round_trip');
+                check(!Object.prototype.hasOwnProperty.call(sent, 'spacer'),
+                    'spacer_does_not_add_command_value');
+                check(sent.radioOptions[0].PrimaryText === '<img src=x onerror="window.__fixture.injected=true">' &&
+                    sent.radioOptions[0].SecondaryText === 'Alpha & details' &&
+                    sent.singleOptions[0].Name === 'Alpha <safe>' &&
+                    sent.allowedStaticValues.join(',') === 'static-keep',
+                    'selector_source_arrays_remain_canonical_in_command_data');
                 var midnightUtc = Date.parse('2026-03-04T00:00:00Z');
                 var expectedDate = new Date(midnightUtc + new Date(midnightUtc).getTimezoneOffset() * 60000).toISOString();
                 check(sent.date === expectedDate, 'date_edit_captured_with_inherited_timezone_conversion');

@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-15 传统插件布局与基础编辑器验证
+
+- 基于`dd34ac3`在独立工作树处理Chapter API宽度反馈。只读获取当前插件字节并通过PE元数据静态提取四页模板，未加载DLL或执行插件脚本。属性隔离复现传统表格`display:block`导致33%布局列坍缩；移除该display覆盖，保留原表格约束，由现有内容容器承接横向溢出。没有改插件模板、路由、业务命令、PlaybackManager、Session、Native Helper或现用profile。
+- 同一实际CSS的四页、三视口共12组静态几何复核覆盖单层/嵌套百分比分栏、长合成行、目录滚动、窄Options输入焦点及外层纵向滚动。真实网页同尺寸矩形和前台仍未验收。原来仅恢复嵌套表布局的备选会遗漏单层分栏且窄Options仍整页溢出，未采用。
+- 现有基础editor/source-ID差分转为测试覆盖补齐：新增四类editor、对象数组选项、过滤/分页、本地provider、显示转义及canonical命令值不变的断言。worker相关Node测试40/40，父会话扩大到相邻路由/关闭/订阅的55/55复核通过，两次不合并计数；隐藏Electron合成门禁131项通过，1次loopback命令，外部请求/目录选择器请求/前台动作均为0。首次新fixture漏了冻结GenericEdit必需的SelectOptions数组而失败，补齐后重跑；保留失败证据，未据此修改产品或vendor。
+- Model Tier: Tier 1用于明确CSS和测试范围；Model: worker使用GPT-6 Luna High，主线程沿用当前会话配置并保留原因判定与最终审核；Reason: 局部布局及已确认控件合同，无播放/Session改动；Escalated: no。
+- M02最终提交边界、完整2153项payload、manifest/provenance、公开888/888及材料82/82已独立读回；fake-client重启/回退不替代真实内核或播放验收。04下一步缺少旧目标内容录制，保留T4 NOT_OBSERVED和700ms既有等待；06首页新API/配置归属仍需具体设计。当前新候选未提交、未构建或发布。
+
 ## 2026-10-14 M02 手动内核候选实施
 
 - 用户已确认方案为手动导入完整候选ZIP、下次应用启动生效、候选启动验证失败一次回到固定baseline。隔离组合worktree基于`a820f5d5dfba35f1f52b93a6d7097af80552fb02`；保留旧M01候选、共享旧主目录与所有已有改动。产品变更28文件已按单独回滚范围提交为`8d06f0b53280a86c3b74c94c452cb6469d428312`（`feat: add manual mpv kernel candidates`）。随后两项test-only断言适配单独提交为`d894e4ea093af026f8e463aaeb12677f99dfd4cc`；runtime源身份仍绑定产品提交`8d06f0b`。未推送、创建PR、合并、发布或安装。

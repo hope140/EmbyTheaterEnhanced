@@ -1,5 +1,11 @@
 # 项目状态
 
+2026-10-15：Chapter API 的 Path 列表宽度缺陷已形成独立修复候选。当前插件静态模板使用 33%/66% 的表格分栏；维护层对所有传统表格设置 `display:block` 会破坏该布局。候选保留原生表格布局，将超宽控件的横向滚动交给既有 `.content-primary`，不指定插件固定宽度。四个页面的静态模板、长合成内容在2030/1280/800三种视口共12组独立几何复核通过；包括目录滚动、窄Options键盘焦点局部横滚及外层纵向滚动。这是静态模板与合成数据证据，尚未构建本批runtime，也未执行真实网页/客户端前台或业务操作。
+
+同批补齐当前基础编辑器的验证：FilePath、FolderPath、SpacerItem、独立RadioGroup，以及ItemsSourceId/StaticItemsSourceId选项和命令值。父会话相关Node复核55/55通过，隐藏Electron合成门禁131项通过，包含传统表格布局检查；未打开路径选择器，仅向本地合成服务提交一次命令。未发现这些用例需要额外产品修复，不据此宣称任意插件完整兼容或已迁入新版Web整树。
+
+M02本地阶段完成最终独立读回：产品`8d06f0b`、测试`d894e4e`、文档`dd34ac3`，2153项payload及manifest/provenance完整匹配。排期04保留历史耗时证据，当前缺少可读取的目标字幕/音频原始录制，不能确认T4或提出性能补丁；05现有基础控件证据已补充，06首页API/配置语义仍待方案确认。上述候选与已发布v0.3.2、M02构建身份分别记录。
+
 2026-10-14：M02 手动内核候选产品变更已在隔离分支 `codex/m02-kernel-management` 按28文件提交为 `8d06f0b53280a86c3b74c94c452cb6469d428312`。仅支持用户手选固定四条目 ZIP；由 worker_threads 校验 schema/哈希/x64 PE32+/17个必需导出，存入 ETE profile 的不可变 SHA 目录；About 选择只影响下次应用启动。启动时冻结一次候选，只有候选启动前需预热；baseline启动保持lazy。候选失败确认退出后锁存baseline并至多回退一次；baseline失败停止重试。后续两项 test-only 断言适配单独提交为 `d894e4ea093af026f8e463aaeb12677f99dfd4cc`，不改变产品源码和runtime来源。
 
 M02离线验证结果：16个定向测试文件164/164；完整公开门禁107文件、888/888；六项material-required测试82/82。独立Astra 90/90、后续父会话delta 13/13各自绑定不同源码/差异，不合并计数。source-bound runtime来自产品提交 `8d06f0b`，目录 `dist/EmbyTheaterEnhanced-m02-8d06f0b-20261014` 包含2153文件；build-manifest SHA-256 `b76274946b9012315eda1a5af181b59235c145c598f0130e51600200e0bad42f`，payload-set SHA-256 `5cf12c1679489cc5e4cc54af29c94e5779522619670fde7007238910747a98bd`。`package.ps1 -VerifyOnly`完整payload/provenance核对通过。产品runtime里的固定baseline DLL SHA-256为 `965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c`，Helper SHA-256为 `28054c75551177f1109859d4f8793d45a4c731aba1e43ddab9bb2f1c5dc030dc`；模拟及静态读取未加载或执行它们。

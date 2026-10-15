@@ -680,6 +680,64 @@ test('schema rejects injection and prototype keys; ItemList display copy preserv
     assert.equal(({}).polluted, undefined);
 });
 
+test('schema allowlist matches the fixed base editor set and keeps grid editors rejected', () => {
+    const supported = [
+        'Group', 'Text', 'Numeric', 'Boolean', 'SelectSingle', 'SelectMultiple', 'Date',
+        'FilePath', 'FolderPath', 'StatusItem', 'ProgressItem', 'ButtonItem', 'ButtonGroup',
+        'CaptionItem', 'LabelItem', 'SpacerItem', 'ItemList', 'RadioGroup'
+    ];
+    assert.equal(supported.length, 18);
+    for (const type of supported) {
+        const page = syntheticPage();
+        page.EditObjectContainer.EditorRoot.EditorItems = [{Id: 'field', EditorType: type}];
+        assert.equal(rtSchema(page).EditObjectContainer.EditorRoot.EditorItems[0].EditorType, type, type);
+    }
+    for (const type of ['DataGrid', 'DxDataGrid', 'PivotGrid', 'DxPivotGrid', 'FutureEditor']) {
+        const page = syntheticPage();
+        page.EditObjectContainer.EditorRoot.EditorItems = [{Id: 'field', EditorType: type}];
+        assert.throws(() => rtSchema(page), /Unsupported plugin editor/, type);
+    }
+});
+
+test('object-backed selector paths stay canonical while only radio markup data is escaped for display', () => {
+    const page = syntheticPage();
+    page.EditObjectContainer.EditorRoot.EditorItems = [
+        {Id: 'radio', EditorType: 'RadioGroup', ItemsSourceId: 'sources.radio'},
+        {Id: 'single', EditorType: 'SelectSingle', ItemsSourceId: 'sources.single'},
+        {Id: 'multiple', EditorType: 'SelectMultiple', ItemsSourceId: 'sources.multiple'},
+        {Id: 'static', EditorType: 'SelectMultiple', StaticItemsSourceId: 'sources.allowed',
+            SelectOptions: [{Name: 'Allowed', Value: 'allowed'}]}
+    ];
+    page.EditObjectContainer.Object = {
+        radio: 'radio-a', single: 'single-a', multiple: 'multi-a', static: 'allowed',
+        sources: {
+            radio: [{Value: '<radio-a>', PrimaryText: '<img src=x onerror=attack()>', SecondaryText: 'Alpha & details', IsEnabled: true}],
+            single: [{Name: '<single option>', Value: 'single-a', IsEnabled: true}],
+            multiple: [{Name: 'Multi & one', Value: 'multi-a', IsEnabled: true}],
+            allowed: ['allowed']
+        }
+    };
+    const prepared = rtSchema(page);
+    assert.equal(prepared.EditObjectContainer.EditorRoot.EditorItems[0].ItemsSourceId, 'sources.radio');
+    assert.equal(prepared.EditObjectContainer.EditorRoot.EditorItems[1].ItemsSourceId, 'sources.single');
+    assert.equal(prepared.EditObjectContainer.EditorRoot.EditorItems[3].StaticItemsSourceId, 'sources.allowed');
+
+    const display = runtime().schema.displayContainer(prepared.EditObjectContainer);
+    assert.equal(display.Object.sources.radio[0].Value, '&lt;radio-a&gt;');
+    assert.equal(display.Object.sources.radio[0].PrimaryText, '&lt;img src=x onerror=attack()&gt;');
+    assert.equal(display.Object.sources.radio[0].SecondaryText, 'Alpha &amp; details');
+    assert.deepEqual(JSON.parse(JSON.stringify(display.Object.sources.single)), [{Name: '<single option>', Value: 'single-a', IsEnabled: true}]);
+    assert.deepEqual(JSON.parse(JSON.stringify(display.Object.sources.multiple)), [{Name: 'Multi & one', Value: 'multi-a', IsEnabled: true}]);
+    assert.deepEqual(JSON.parse(JSON.stringify(display.Object.sources.allowed)), ['allowed']);
+    assert.equal(prepared.EditObjectContainer.Object.sources.radio[0].PrimaryText, '<img src=x onerror=attack()>');
+    assert.equal(prepared.EditObjectContainer.Object.sources.radio[0].SecondaryText, 'Alpha & details');
+    assert.throws(() => {
+        const unsafe = syntheticPage();
+        unsafe.EditObjectContainer.EditorRoot.EditorItems = [{Id: 'choice', EditorType: 'RadioGroup', ItemsSourceId: 'sources.__proto__'}];
+        rtSchema(unsafe);
+    }, /Invalid plugin items source/);
+});
+
 function rtSchema(data) { return runtime().schema.prepare(data); }
 
 test('save commands use the web full-width primary role and lose primary colour when disabled', async () => {

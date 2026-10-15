@@ -16,7 +16,7 @@ const manifest = JSON.parse(fs.readFileSync(path.join(root, 'vendor/electron-run
 const electronPath = path.resolve(root, manifest.runtime.preparedPath, manifest.runtime.electronPath);
 const vendorModules = path.join(root, 'vendor/carnival/electronapp/www/modules');
 const adapterDir = path.join(root, 'src/electronapp/enhanced/plugin-ui');
-const counters = {requests: 0, moduleRequests: 0, apiView: 0, apiCommand: 0, commandDataValid: 0, missingModule: 0, missingModuleClasses: {}, blockedExternal: 0};
+const counters = {requests: 0, moduleRequests: 0, apiView: 0, apiCommand: 0, commandDataValid: 0, missingModule: 0, missingModuleClasses: {}, blockedExternal: 0, directoryBrowserRequests: 0};
 let finished = false;
 let server;
 let win;
@@ -73,7 +73,12 @@ function serve(req, res) {
                 const data = typeof command.Data === 'string' ? JSON.parse(command.Data) : null;
                 if (command.PageId === 'synthetic' && command.CommandId === 'PageSave' && data &&
                     data.text === 'edited text' && data.numeric === '17' && data.enabled === true && data.single === 'two' &&
-                    data.multiple === 'red,blue' && data.date === expectedDateIso()) counters.commandDataValid++;
+                    data.multiple === 'red,blue' && data.date === expectedDateIso() &&
+                    data.filePath === 'C:\\synthetic\\edited.strm' && data.folderPath === 'C:\\synthetic\\edited-folder' &&
+                    data.radioGroup === 'radio-b' && data.singleSource === 'source-b' &&
+                    data.multipleSource === 'multi-b,multi-c' && data.staticMultiple === 'static-keep' &&
+                    data.radioOptions[0].PrimaryText === '<img src=x onerror="window.__fixture.injected=true">' &&
+                    data.allowedStaticValues.join(',') === 'static-keep') counters.commandDataValid++;
                 send(res, 200, JSON.stringify(page('synthetic')), 'application/json; charset=utf-8');
             }
             catch (_) { send(res, 400, '{}', 'application/json; charset=utf-8'); }
@@ -87,6 +92,7 @@ function serve(req, res) {
     }
     if (route.endsWith('.js')) {
         counters.missingModule++;
+        if (route.includes('/directorybrowser/')) counters.directoryBrowserRequests++;
         const category = route.includes('/enhanced/plugin-ui/') ? 'adapter_path' : route.includes('/www/modules/') ? 'vendor_www_path' : route.includes('/modules/') ? 'vendor_modules_path' : route.includes('/fixture_missing_dependency') ? 'intentional_missing_dependency' : 'other_module_path';
         const key = category;
         counters.missingModuleClasses[key] = (counters.missingModuleClasses[key] || 0) + 1;
@@ -107,6 +113,14 @@ function page(pageId) {
                 {Id: 'single', EditorType: 'SelectSingle', DisplayName: 'Single choice', SelectOptions: [{Name: 'One', Value: 'one', IsEnabled: true}, {Name: 'Two', Value: 'two', IsEnabled: true}]},
                 {Id: 'multiple', EditorType: 'SelectMultiple', DisplayName: 'Multiple choice', SelectOptions: [{Name: 'Red', Value: 'red', IsEnabled: true}, {Name: 'Blue', Value: 'blue', IsEnabled: true}]},
                 {Id: 'date', EditorType: 'Date', DisplayName: 'Date field', AllowEmpty: true},
+                {Id: 'filePath', EditorType: 'FilePath', DisplayName: 'Synthetic file path'},
+                {Id: 'folderPath', EditorType: 'FolderPath', DisplayName: 'Synthetic folder path'},
+                {Id: 'spacer', EditorType: 'SpacerItem', DisplayName: 'Synthetic spacer'},
+                {Id: 'radioGroup', EditorType: 'RadioGroup', DisplayName: 'Source radio group', ItemsSourceId: 'radioOptions'},
+                {Id: 'singleSource', EditorType: 'SelectSingle', DisplayName: 'Source single select', SelectOptions: [], ItemsSourceId: 'singleOptions'},
+                {Id: 'multipleSource', EditorType: 'SelectMultiple', DisplayName: 'Source multiple select', SelectOptions: [], ItemsSourceId: 'multipleOptions'},
+                {Id: 'staticMultiple', EditorType: 'SelectMultiple', DisplayName: 'Static filtered multiple select', StaticItemsSourceId: 'allowedStaticValues',
+                    SelectOptions: [{Name: 'Keep <safe>', Value: 'static-keep', IsEnabled: true}, {Name: 'Drop', Value: 'static-drop', IsEnabled: true}]},
                 {Id: 'showFlag', EditorType: 'Boolean', DisplayName: 'Show flag'},
                 {Id: 'hiddenField', EditorType: 'Text', DisplayName: 'Explicitly hidden', IsVisible: false},
                 {Id: 'status', EditorType: 'StatusItem', DisplayName: 'Status'},
@@ -149,7 +163,24 @@ function page(pageId) {
             Object: {
                 text: unsafe, numeric: 3, enabled: false, single: 'one', multiple: 'red', date: '2026-01-02T00:00:00Z',
                 showFlag: true, hiddenField: 'hidden value',
-                radioChoice: 'two', radioOptions: [{Name: 'One', Value: 'one'}, {Name: 'Two', Value: 'two'}], readonly: false,
+                radioChoice: 'two',
+                filePath: 'C:\\synthetic\\original.strm', folderPath: 'C:\\synthetic\\media',
+                radioGroup: 'radio-a',
+                radioOptions: [
+                    {Value: 'radio-a', PrimaryText: '<img src=x onerror="window.__fixture.injected=true">', SecondaryText: 'Alpha & details', IsEnabled: true},
+                    {Value: 'radio-b', PrimaryText: 'Beta', SecondaryText: 'Beta details', IsEnabled: true}
+                ],
+                singleSource: 'source-a',
+                singleOptions: [{Name: 'Alpha <safe>', Value: 'source-a', IsEnabled: true}, {Name: 'Beta & safe', Value: 'source-b', IsEnabled: true}],
+                multipleSource: 'multi-a',
+                multipleOptions: [
+                    {Name: 'Alpha', Value: 'multi-a', IsEnabled: true},
+                    {Name: 'Beta', Value: 'multi-b', IsEnabled: true},
+                    {Name: 'Gamma', Value: 'multi-c', IsEnabled: true}
+                ],
+                staticMultiple: 'static-keep',
+                allowedStaticValues: ['static-keep'],
+                readonly: false,
                 readonlyGroupedToggle: false, disabledToggle: false, hiddenToggle: false, conditionalToggle: false,
                 caption: {Caption: 'Caption & <safe>', IsVisible: true},
                 progressZero: {CurrentValue: 0, MaxValue: 0}, progressClamp: {CurrentValue: 20, MaxValue: 10},
@@ -242,7 +273,9 @@ app.whenReady().then(() => {
         }
         clearTimeout(timeout);
         if (!outcome) return writeStatus(false, 0, 'renderer_result_unavailable');
-        const transportEvidence = counters.apiCommand === 1 && counters.commandDataValid === 1 && counters.missingModule >= 1 && counters.blockedExternal === 0 && !counters.unexpectedShow && outcome.observations && outcome.observations.stylesLoaded === true;
+        const transportEvidence = counters.apiCommand === 1 && counters.commandDataValid === 1 && counters.missingModule >= 1 &&
+            counters.blockedExternal === 0 && counters.directoryBrowserRequests === 0 && !counters.unexpectedShow &&
+            outcome.observations && outcome.observations.stylesLoaded === true;
         writeStatus(outcome.ok === true && transportEvidence, outcome.assertions || 0,
             outcome.ok === true ? (transportEvidence ? null : 'transport_evidence_incomplete') : outcome.failureClass || 'assertion_failed', outcome.observations || {});
     } catch (_) {
