@@ -1,12 +1,19 @@
 # 维护记录
 
+## 2026-10-15 插件布局来源绑定构建收尾
+
+- 用户明确批准本批9文件本地提交和后台构建。父核对准确allowlist、全部SHA、反向patch和空index后提交`94dbcef4b6f50469e535fb91fe86209d16670ae4`。Tier 1 GPT-6 Luna High任务负责固定输入复制/校验、锁文件依赖、构建及测试证据；主线程保留候选审查、最终runtime隐藏复验和完整payload读回。原主目录与M02产物保持。
+- 固定Carnival/patch/Electron44.4.2完整树、mpv头文件与GCC UCRT64工具链由已验证M02材料复用并校验；`npm ci --ignore-scripts`使用原锁，不升级依赖。source-bound输出`dist/EmbyTheaterEnhanced-plugin-layout-94dbcef-20261015`共2153项payload；build-manifest SHA为`8b22c2110084946abfb955ae15666c6b11281e5bec884caaa076ad67e533b289`，payload-set SHA为`bf8ea4d3e2abee07e6084a786f804e64410d72202d767173f18a7bbf791715d7`。VerifyOnly和隐藏测试后的父逐SHA/完整集合复核均通过。
+- 113个发现测试文件按原合同排除6项材料依赖，107文件公开门禁890/890。首次材料门禁并行启动过早，准备态preload尚未生成，统计77/78且4项未加载；保留失败后确认preload与本次runtime/manifest同SHA，在稳定准备态单次重试六项材料门禁82/82通过。没有改产品/测试来消除失败。
+- 父的私有fixture从最终runtime读取实际维护模块、冻结Web模块和Electron执行131项隐藏合成检查；1次本地有效命令、外部请求/目录选择器请求/前台动作均为0。实际runtime CSS的静态模板三视口12组复验通过。最终runtime来源始终为94dbcef，后续文档收尾单列，不重新构建。没有执行真实插件脚本/业务、Helper/DLL、播放、现用profile、前台、安装器或发布。
+
 ## 2026-10-15 传统插件布局与基础编辑器验证
 
 - 基于`dd34ac3`在独立工作树处理Chapter API宽度反馈。只读获取当前插件字节并通过PE元数据静态提取四页模板，未加载DLL或执行插件脚本。属性隔离复现传统表格`display:block`导致33%布局列坍缩；移除该display覆盖，保留原表格约束，由现有内容容器承接横向溢出。没有改插件模板、路由、业务命令、PlaybackManager、Session、Native Helper或现用profile。
 - 同一实际CSS的四页、三视口共12组静态几何复核覆盖单层/嵌套百分比分栏、长合成行、目录滚动、窄Options输入焦点及外层纵向滚动。真实网页同尺寸矩形和前台仍未验收。原来仅恢复嵌套表布局的备选会遗漏单层分栏且窄Options仍整页溢出，未采用。
 - 现有基础editor/source-ID差分转为测试覆盖补齐：新增四类editor、对象数组选项、过滤/分页、本地provider、显示转义及canonical命令值不变的断言。worker相关Node测试40/40，父会话扩大到相邻路由/关闭/订阅的55/55复核通过，两次不合并计数；隐藏Electron合成门禁131项通过，1次loopback命令，外部请求/目录选择器请求/前台动作均为0。首次新fixture漏了冻结GenericEdit必需的SelectOptions数组而失败，补齐后重跑；保留失败证据，未据此修改产品或vendor。
 - Model Tier: Tier 1用于明确CSS和测试范围；Model: worker使用GPT-6 Luna High，主线程沿用当前会话配置并保留原因判定与最终审核；Reason: 局部布局及已确认控件合同，无播放/Session改动；Escalated: no。
-- M02最终提交边界、完整2153项payload、manifest/provenance、公开888/888及材料82/82已独立读回；fake-client重启/回退不替代真实内核或播放验收。04下一步缺少旧目标内容录制，保留T4 NOT_OBSERVED和700ms既有等待；06首页新API/配置归属仍需具体设计。当前新候选未提交、未构建或发布。
+- M02最终提交边界、完整2153项payload、manifest/provenance、公开888/888及材料82/82已独立读回；fake-client重启/回退不替代真实内核或播放验收。04下一步缺少旧目标内容录制，保留T4 NOT_OBSERVED和700ms既有等待；06首页新API/配置归属仍需具体设计。当时的新候选未提交或构建；后续94dbcef构建结果见本日收尾记录，未发布。
 
 ## 2026-10-14 M02 手动内核候选实施
 
