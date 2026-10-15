@@ -441,7 +441,7 @@ test('About route and all three settings pages use Emby native page and control 
         assert.match(about, new RegExp('<span>' + label + '</span>'), 'About advanced details include ' + label);
     }
     assert.match(about, /<code class="aboutAppVersion">/);
-    assert.match(about, /class="raised button-submit ete-settings-button ete-settings-button--primary btnCheckUpdates"/);
+    assert.match(about, /class="raised button-submit ete-settings-button btnCheckUpdates"/);
 });
 
 test('About kernel controls keep native keyboard buttons, live status, and wrapping long identities', () => {
@@ -457,7 +457,9 @@ test('About kernel controls keep native keyboard buttons, live status, and wrapp
     assert.match(controller, /enhanced-mpv-kernel-import/);
     assert.match(controller, /enhanced-mpv-kernel-select/);
     assert.match(controller, /identity\.textContent = candidate\.candidateId/);
-    assert.match(controller, /card\.appendChild\(select\)/);
+    assert.match(controller, /document\.createElement\('button', \{is: 'emby-button'\}\)/);
+    assert.match(controller, /select\.classList\.add\(name\)/);
+    assert.match(controller, /content\.appendChild\(select\)/);
     assert.match(css, /\.about-kernel-candidate code\s*\{[^}]*overflow-wrap:\s*anywhere/s);
     assert.doesNotMatch(controller, /\.innerHTML\s*=/);
 });
@@ -499,7 +501,7 @@ test('shared CSS stays scoped and adjusts layout, light boundaries, and the them
         }).filter(function (selector) { return selector && !selector.startsWith('@'); });
         for (const selector of blocks) {
             for (const item of splitSelectorList(selector)) {
-                assert.ok(item.startsWith('.' + namespace + ' ') || item.startsWith('.' + namespace + ':'),
+                assert.match(item, new RegExp('^\\.' + namespace + '(?:\\s|$|[.#:[>+~])'),
                     page + ' selector escapes its page namespace: ' + item);
             }
         }
