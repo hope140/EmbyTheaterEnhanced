@@ -8,6 +8,7 @@ const vm = require('node:vm');
 const buildInputs = require('../tools/build-input-contract.cjs');
 const overlays = require('../tools/prepare-web-overlays.cjs');
 const residue = require('../tools/patch-externalplayer-residue.cjs');
+const itemControls = require('../tools/patch-item-controls.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
 const MATERIAL = Object.freeze([
@@ -24,8 +25,8 @@ const MATERIAL = Object.freeze([
         sourcePath: 'vendor/carnival/electronapp/www/item/item.html',
         runtimePath: 'electronapp/www/item/item.html',
         sourceSha256: 'A11D00BB58F83A9F56A16F137342D5C3B62DF03AE83436527D426B56B160A6B5',
-        outputSha256: '99C68FF278B71D26ED702A876C7C10312896A9BBED3D8928E7FC8B60917AE691',
-        transform: residue.patchItemHtmlText
+        outputSha256: '03A897B7266A59B687E2B74A8253BE9A46FC9997FAD18BC4E956E5A5ADFA1E33',
+        transform: value => itemControls.patchItemHtmlText(residue.patchItemHtmlText(value))
     })
 ]);
 const PM_PATH = 'vendor/carnival/electronapp/www/modules/common/playback/playbackmanager.js';
@@ -73,6 +74,7 @@ assert.ok(playbackSource.includes('EnableNextEpisodeAutoPlay'),
 assert.equal(overlays.WEB_OVERLAY_CONTRACT.some(item =>
     item.runtimePath === 'electronapp/www/modules/common/playback/playbackmanager.js'), false);
 assert.ok(buildInputs.INPUT_PATHS.includes('tools/patch-externalplayer-residue.cjs'));
+assert.ok(buildInputs.INPUT_PATHS.includes('tools/patch-item-controls.cjs'));
 
 process.stdout.write('Fixed item material self-test passed: ' +
     MATERIAL.map(item => item.sourceSha256 + ' -> ' + item.outputSha256).join('; ') +
