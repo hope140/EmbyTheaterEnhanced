@@ -1,6 +1,8 @@
 # 项目状态
 
-2026-10-15整体收尾：累计已完成旧功能/M01、L02、M02及插件布局的59条路径已核对完整，17项变更产品源码与最终94dbcef runtime的Git blob/文件SHA匹配；首页迁移未混入，切轨延迟按用户要求暂停。275项JavaScript、28项PowerShell语法、326项维护文本的有限凭据模式检查和累计diff-check通过。本地验收ZIP已生成，2154个文件（含manifest）均从ZIP内逐项读回核对；未推送/合入主分支或发布。
+2026-10-15主线集成：[PR #36](https://github.com/hope140/EmbyTheaterEnhanced/pull/36)汇总已完成的旧功能/M01、L02、M02和插件布局。本批功能实现、来源核对及后台验证已完成，集成状态和最终main构建来源以PR最终收尾记录为准；下面的94dbcef产物与验证记录保留原快照身份。首页迁移未实施，切轨延迟保持暂停；这次集成不发布Release或安装现用客户端。真实Helper/DLL、播放/远控、插件业务、前台和安装验收仍独立记录。
+
+2026-10-15整体收尾快照：累计已完成旧功能/M01、L02、M02及插件布局的59条路径已核对完整，17项变更产品源码与94dbcef runtime的Git blob/文件SHA匹配；首页迁移未混入，切轨延迟按用户要求暂停。275项JavaScript、28项PowerShell语法、326项维护文本的有限凭据模式检查和累计diff-check通过。本地验收ZIP已生成，2154个文件（含manifest）均从ZIP内逐项读回核对；本条记录的是提交集成前的本地验证，后续状态见上条。
 
 About先前未闭合的隐藏夹具已在最新94dbcef runtime单独补验：8个合成状态全部通过，覆盖未ready/ready/failed/缺字段/来源不可用及M02当前、pending、store不可用；内容窗口宽800（Electron坐标）、缩放125%，实测CSS视口640×702，无横向溢出，按钮可滚动/键盘到达。窗口show/focus/activate均0、退出后无所属进程，runtime payload零变化。该结果不改写历史69e8141的NOT_VERIFIED，也不代替真实Helper/DLL、服务器、播放/业务、前台或安装验收。正式source/runtime provenance validator以真实产品sourceCommit94dbcef为参数通过；文档HEAD单列。
 

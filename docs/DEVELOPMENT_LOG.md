@@ -1,8 +1,13 @@
 # 维护记录
 
+## 2026-10-15 主线集成与交付记录归属
+
+- 用户明确授权已审核累计59路径推送、创建PR、检查通过后合入main及最终main来源测试包构建；已创建[PR #36](https://github.com/hope140/EmbyTheaterEnhanced/pull/36)。产品范围保持，补充的内核管理使用说明与状态同步只触及既有文档。具体合并状态、main构建sourceCommit/包体SHA及未验收范围写入PR最终收尾说明；不通过后续doc-only提交重标旧产物来源。
+- 下面各条按原来源保留候选、本地构建和后台证据。本批不发布Release/Tag、不安装客户端，也不把合成DOM、fake-client或静态PE结果改称真实Native/播放/前台通过。首页迁移不启动，切轨延迟继续暂停。
+
 ## 2026-10-15 已完成批次整体收尾核对
 
-- 用户纠正应先收尾已完成成果，首页迁移不进入本批；切轨延迟继续按用户要求暂停。逐项核对旧功能/M01、L02、M02及插件布局的累计59路径，17项产品源码与94dbcef runtime字节/manifest相符，未发现已完成提交遗漏或新首页/延迟产品混入。主分支仍待本批明确合并授权，未做远端写入。
+- 用户纠正应先收尾已完成成果，首页迁移不进入本批；切轨延迟继续按用户要求暂停。逐项核对旧功能/M01、L02、M02及插件布局的累计59路径，17项产品源码与94dbcef runtime字节/manifest相符，未发现已完成提交遗漏或新首页/延迟产品混入。本条为远端操作前的本地审核记录；后续授权与集成归属见上条。
 - 提交前门禁275JS/28PowerShell语法、326个维护文本的有限凭据模式扫描与累计diff-check通过。890/890公开、82/82材料及131项隐藏插件/12组静态几何保留本轮来源。固定94dbcef runtime生成本地验收ZIP，从ZIP内读回2154个文件全量SHA匹配；ZIP SHA为`b08a652e984c8623e96459bcdacdfd8ffe5eaa13a91c1a9a4280c4168062a74b`，未作为Release发布或安装。
 - 旧About私有夹具的scope问题在新副本修正并预检查；唯一有效Electron运行通过8个合成状态和全部布局断言。内容窗口800（Electron坐标），125%缩放，实测CSS640×702、devicePixelRatio1.875；横溢出0，启用按钮可滚动/键盘到达。show/focus/activate为0，所属Electron退出且无残余，runtime仍2153项payload加manifest且无debug.log。保留启动前目录冲突及外层PowerShell变量命名错误；后者仅修正读回，没有重跑Electron。旧69e8141历史NOT_VERIFIED保持，新94dbcef合成DOM结果单列，不称真实Native/前台验收。
 - 通用审计最初误将最新doc-only HEAD85c4243作为runtime源，得到来源MISMATCH；原结果保留。主线程用正式source-provenance/runtime-provenance CLI显式绑定真实产品提交94dbcef后均通过、errors为空，未修改或弱化validator。文档收尾不改变产品/runtime来源，不重新构建已验证包。
