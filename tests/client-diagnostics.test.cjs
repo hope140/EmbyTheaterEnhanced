@@ -668,3 +668,37 @@ test('diagnostics IPC requires the trusted renderer and keeps export paths out o
         fs.rmSync(outputRoot, {recursive: true, force: true});
     }
 });
+
+test('sanitizes category, event, and fallback stage labels before normalization', () => {
+    const cases = [];
+    for (const field of ['category', 'event', 'stage']) {
+        const prefix = 'E1-' + field.toUpperCase() + '-';
+        cases.push({field, value: 'token=' + prefix + 'ASSIGNMENT', canary: prefix + 'ASSIGNMENT'});
+        cases.push({field, value: 'Authorization: Bearer ' + prefix + 'HEADER', canary: prefix + 'HEADER'});
+        cases.push({field, value: 'https://private.example/path?token=' + prefix + 'URL', canary: prefix + 'URL'});
+        cases.push({field, value: 'C:\\Users\\' + prefix + 'DRIVE\\Private Media.mkv', canary: prefix + 'DRIVE'});
+        cases.push({field, value: 'C:/Users/' + prefix + 'DRIVE-FORWARD/Private.mkv', canary: prefix + 'DRIVE-FORWARD'});
+        cases.push({field, value: '/home/' + prefix + 'POSIX/Private.mkv', canary: prefix + 'POSIX'});
+    }
+
+    for (const entry of cases) {
+        const record = {category: 'playback', event: 'playback-error', details: {}};
+        if (entry.field === 'category') record.category = entry.value;
+        else if (entry.field === 'event') record.event = entry.value;
+        else {
+            record.event = '';
+            record.stage = entry.value;
+        }
+        const sanitized = diagnostics.sanitizeRecord(record);
+        assert.equal(JSON.stringify(sanitized).includes(entry.canary), false,
+            entry.field + ' must not retain its synthetic canary');
+    }
+
+    const fixed = diagnostics.sanitizeRecord({category: 'native-helper', event: 'kernel-startup-resolution-failed'});
+    assert.equal(fixed.category, 'native-helper');
+    assert.equal(fixed.event, 'kernel-startup-resolution-failed');
+    const fallback = diagnostics.sanitizeRecord({category: '', event: '', stage: ''});
+    assert.equal(fallback.category, 'app');
+    assert.equal(fallback.event, 'event');
+    assert.equal(diagnostics.sanitizeRecord({event: 'a'.repeat(70)}).event, 'a'.repeat(64));
+});

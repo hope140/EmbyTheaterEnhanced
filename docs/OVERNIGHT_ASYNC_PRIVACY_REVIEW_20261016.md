@@ -1,6 +1,6 @@
 # Web请求归属与日志标签审查
 
-两项已获父审限定批准，当前为 `PARENT_APPROVED_IMPLEMENTATION_PENDING`。E2批准合同补足成功退休与失败两条终态；下面反映该修订，不把初稿catch-only方案视为充分。
+两项已获父审限定批准。E1已本地实施，45/45相关诊断测试通过；E2实现与材料扩展进行中。E2批准合同补足成功退休与失败两条终态；下面反映该修订，不把初稿catch-only方案视为充分。
 
 ## E1 诊断标签的条件式隐私缺口
 
@@ -10,7 +10,7 @@ Observed：`src/electronapp/enhanced/diagnostics.js` 的 sanitizeRecord 对 cate
 
 建议最小差异：只在 `diagnostics.js` 的safeLabel中先调用已有sanitizeText，再执行原字符白名单、64字符截断和fallback。普通固定标签保持字节一致；category、event、stage标签遵循与details已有相同的有限脱敏模式。允许相邻诊断单元测试覆盖secret assignment、认证头、URL、路径标签及正常标签/fallback；不新增label枚举白名单、不改变schema/字段/IPC/日志目录/轮转或授权判断。有限脱敏仍不等于完整秘密识别。
 
-验收：当前合成标签用例修前保留canary，修后无canary/路径片段；合法标签、schema、timestamp/level、details、现有序列化与快照门禁保持。私有证据为 `.work/overnight/E1_REPRO.cjs`、`.json` 及E1审核清单。
+验收：合成标签用例修前保留canary，修后相关45/45通过；覆盖category/event/stage各自的assignment/header/URL、Windows两种分隔符与POSIX路径，固定标签、fallback与64长度保持。主审把原输入后缀匹配改成独立canary断言，避免路径分隔符归一后掩盖残留。私有修前/修后与源探针保留；既有schema、timestamp/level、details、序列化与快照门禁通过。
 
 ## E2 电影缓存页返回后虚拟分块不可重试
 
