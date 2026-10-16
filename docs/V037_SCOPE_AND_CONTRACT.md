@@ -1,6 +1,6 @@
 # v0.3.7 播放控制与连接生命周期合同
 
-当前阶段：A/B/C 已按父审核的限定范围实施并完成下述相关验证，D 为 `D_CORE_REVIEW_REQUIRED`。版本号和发行状态保持；尚未生成 v0.3.7 来源候选。以下初始盘点保留其当时证据，后续实施结果和 D 差异草案见文末；D 生产生成器仍未修改。
+当前阶段：父会话已明确有条件批准 D；扩展测试、Item/request 归属核对和生产窄变换已完成，D 与原请求/Session 合计77/77通过。现在进入v0.3.7准确来源本地候选准备；尚未构建或发行。以下初始盘点、旧审核停点和草案保留其当时状态，当前实施结果见文末。
 
 ## 基线、任务分层与停点
 
@@ -210,3 +210,17 @@ B/C/public patcher 与既有 AppHost 最终定向共50/50通过；C 完整模块
 ### 独立菜单待办
 
 用户已确认后续仅调整 Emby Theater Enhanced 一栏的顺序为：操作快捷键 → HDMI-CEC → 视频设置 → 音频设置 → STRM智能解析 → 诊断与日志 → 关于Enhanced。版本未指定，其它栏、分类、路由与功能保持。本轮仅记录，不修改菜单，也不自动并入 v0.3.7。
+
+## D 条件审核后的实施闭合
+
+父会话执行原草案和现有58+7材料用例，定位当前有效 initial player.play rejection 仍可能走原 onPlaybackStarted/onPlaybackError 而未进入外层 catch，原草案64/65。父审副本在原错误主体之前增加本 request 资源退休，并对排队 mutation 增加 timer/observer guard、disconnect 后置 observer=null，原65项通过。父会话随后明确允许在补齐分支测试后落实到原生成器并继续本地合批候选。
+
+扩展后 observer 材料19项：原生产输出5通过/14修前失败；父审副本18通过/1失败。最后一项证明，同一 self-managed Player 的旧A itemstopped 仅凭player会退休新B资源。实际公开Play→player.play({items})保留不同 canonical Item 和原 request marker，A=1/B=2。最终 owner 额外捕获既有 Item 引用；self-managed stop 优先按事件 Item 中原 request id 清理，未携带 marker 时只匹配原 canonical Item 对象，不用 player 或相同Id猜归属。无 marker 的旧A clone 不退休B。同 owner 非终止 stop 和 exact Item 无 marker fallback 为正例，保留原状态/事件处理主体。
+
+父审项、正常50ms隐藏、四种 pre-observer 等待/取消正例、player选择/移除、旧mutation/已取消50ms callback、重复排队mutation均已覆盖。原58请求/Session在旧、父审和最终三个输出下全部通过；主线程独立执行审查输出及实际生产生成器，均为77/77、0 skipped。生产输出与最终审查副本逐字节SHA一致；没有把私有bridge当生产生成器。原stop coordinator、报告函数、queue、admission条件/原代次增量及错误返回顺序保持，新增语句只退休OSD资源。
+
+既有 self-managed stopped 会清 player.streamInfo，包括合成迟到A事件；本轮没有改变该核心事件接受/状态语义，测试明确保留这一边界。无法关联的Item clone不凭猜测清资源，不引入新事件字段或协议。所有结果仍为完整模块合成API/player/DOM层，未补写真正服务器/播放远控PASS。
+
+B普通 start/isStarted/stop API异常仍可在原AppHost完成callback之前向上传播，与旧main路径一致；本轮不改变协议或吞掉该异常，也不承诺这类OS失败已优雅恢复。shutdown保持现有窄catch/日志，并尝试释放两类所持资源。
+
+下一步固定0.3.7版本/准确sourceCommit，执行最终公开与材料门禁、来源构建、独立payload/provenance核对、隐藏实际应用相关原型/Events/组件验证以及独立本地交付。未授权远端发布、真实服务器写入、前台、系统安装或硬件验收仍不执行。

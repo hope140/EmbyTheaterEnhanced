@@ -2,6 +2,10 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const {spawnSync} = require('node:child_process');
 const {patchVideoOsd} = require('../tools/patch-videoosd-lifecycle.cjs');
 const {patchApiClient} = require('../tools/patch-apiclient-lifecycle.cjs');
 const buildInputs = require('../tools/build-input-contract.cjs');
@@ -53,3 +57,22 @@ test('ApiClient overlay keeps base, raw payload and transformed output identitie
     assert.ok(entry.generatorPaths.includes('tools/patch-apiclient-lifecycle.cjs'));
     assert.ok(buildInputs.INPUT_PATHS.includes('tools/patch-apiclient-lifecycle.cjs'));
 });
+
+for (const mode of ['missing', 'duplicate']) {
+    test('PlaybackManager generator refuses ' + mode + ' source anchors without changing the input', () => {
+        const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-playback-generator-refusal-'));
+        const file = path.join(directory, 'playbackmanager.js');
+        const anchor = '    function playInternal(item, playOptions, onPlaybackStartedFn) {\n      return "disc" === item.Container';
+        const input = mode === 'duplicate' ? anchor + '\n' + anchor : 'unrelated input\n';
+        try {
+            fs.writeFileSync(file, input);
+            const run = spawnSync(process.execPath, [path.join(__dirname, '../tools/patch-playbackmanager.cjs'), file], {encoding: 'utf8'});
+            assert.equal(run.status, 1);
+            assert.match(run.stderr, /anchor count mismatch/);
+            assert.equal(fs.readFileSync(file, 'utf8'), input);
+        } finally {
+            fs.unlinkSync(file);
+            fs.rmdirSync(directory);
+        }
+    });
+}

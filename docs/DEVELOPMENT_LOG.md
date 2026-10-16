@@ -1,5 +1,15 @@
 # 维护记录
 
+## 2026-10-16 v0.3.7 D扩展测试及生产窄变换
+
+Model Tier: Tier 2；Model: 主线程沿用配置，精确标识未暴露；GPT-6 Luna High只补限定fixture/用例与分支证据；Reason: observer/timer和self-managed Item/request归属由主线程设计/最终核对；Escalated: No。父会话先复核ABC，再明确批准D补测和条件实施，继续本地候选授权。
+
+父审执行发现原草案当前load失败未退休资源64/65，审查副本补initial rejection清理及queued mutation guard后65/65。新增四个pre-observer等待/取消无资源正例、selection/removal、raw旧mutation/已取消timer、重复mutation、self-managed当前/迟到事件等共19个observer case：旧输出5/19、父审18/19，最后缺口为player-only旧stop误清新B。实际自管理公开Play保留A/B canonical Item及request id1/2，最终资源hook按原id或exact Item对象退休，不猜无marker旧clone；原core streamInfo=null与事件接受主体未动。
+
+主线程独立审查副本77/77，生产patch-playbackmanager.cjs只追加已审资源helper/挂接，生成输出与审查副本SHA一致；实际生产58请求/Session+19 observer再次77/77，0 skipped。固定锚点错误输入拒绝测试8/8。原stop coordinator/报告/队列和admission谓词、错误返回、50ms行为保持；未改Native/Resolver/认证/协议/窗口/依赖。B普通电源API异常沿旧路径向上传播、可能先于AppHost callback；shutdown窄catch/双类清理保持，不扩写普通OS异常优雅恢复。
+
+固定物理材料按清单复制并验证：Carnival1009、patch51、完整Electron73、UCRT64 6990及header/原Inno工具树通过，无系统安装。指定旧工作树的Electron ZIP不存在，未下载/运行prepare.ps1；当前已有prepared完整树通过原门禁，直接用于既有build.ps1，不宣称本轮再次验证该ZIP归档字节。下一步固定版本/source并只构建一个最终本地候选。
+
 ## 2026-10-16 v0.3.7父审后A/B/C实施与D草案
 
 Model Tier: Tier 2；Model: 主线程沿用配置，精确标识未暴露；worker GPT-6 Luna High负责纯电源helper/限定测试及D只读分支清单；Reason: 视图、socket与应用退出资源的异步归属由主线程设计/验收；Escalated: No。父会话独立复现并明确批准A/B/C，D仅测试与逐分支diff草案。菜单重排只记录已确认独立待办，不赋版本、不改产品菜单。

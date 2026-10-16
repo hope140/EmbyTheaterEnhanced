@@ -57,7 +57,7 @@ function makeHarness() {
             trigger() { if (this.active) this.callback([], this); }
         }`);
     fixtureSource = fixtureSource.replace(visibleElementAnchor, 'querySelector() { return visibleElement; }');
-    fixtureSource += '\nglobalThis.observerHarness = {makeFixture, makeItem, settle, reportsFor, observerRecords, timerRecords, setVisibleElement(value) { visibleElement = value; }, fireTimer(id) { const timer = timerRecords.find(row => row.id === id); assert.ok(timer, "timer " + id + " exists"); if (!timer.cancelled) { timer.fired = true; timer.callback(); } }, activeObservers() { return observerRecords.filter(row => row.active); }, pendingTimers() { return timerRecords.filter(row => !row.cancelled && !row.fired); }};';
+    fixtureSource += '\nglobalThis.observerHarness = {makeFixture, makeItem, settle, reportsFor, observerRecords, timerRecords, setVisibleElement(value) { visibleElement = value; }, fireTimer(id) { const timer = timerRecords.find(row => row.id === id); assert.ok(timer, "timer " + id + " exists"); if (!timer.cancelled) { timer.fired = true; timer.callback(); } }, invokeTimerRegardlessOfCancellation(id) { const timer = timerRecords.find(row => row.id === id); assert.ok(timer, "timer " + id + " exists"); timer.fired = true; timer.callback(); }, invokeObserverCallback(observer) { assert.ok(observer); observer.callback([], observer); }, activeObservers() { return observerRecords.filter(row => row.active); }, pendingTimers() { return timerRecords.filter(row => !row.cancelled && !row.fired); }};';
 
     const observerRecords = [];
     const timerRecords = [];
@@ -105,6 +105,32 @@ function makeVisibleElement() {
     };
 }
 
+function makeRemotePlayer() {
+    return {
+        name: 'remote-fixture',
+        id: 'remote-fixture-id',
+        isLocalPlayer: false,
+        supportsProgress: true,
+        currentState: {},
+        canPlayMediaType() { return true; },
+        canPlayItem() { return true; },
+        getDeviceProfile() {
+            return Promise.resolve({DirectPlayProfiles: [], TranscodingProfiles: [], SubtitleProfiles: [], CodecProfiles: []});
+        },
+        play() { return Promise.resolve(); },
+        stop() { return Promise.resolve(); },
+        beginPlayerUpdates() {},
+        endPlayerUpdates() {},
+        currentTime() { return 0; },
+        duration() { return 120; },
+        getMaxStreamingBitrate() { return 1000000; },
+        getRepeatMode() { return 'RepeatNone'; },
+        getSubtitleOffset() { return 0; },
+        getPlaybackRate() { return 1; },
+        volume() { return 50; }
+    };
+}
+
 async function startPublicItem(h, fixture, id) {
     const index = fixture.calls.metadata.length;
     const request = fixture.manager.play({items: [h.makeItem(id)], fullscreen: true});
@@ -113,6 +139,17 @@ async function startPublicItem(h, fixture, id) {
     await request;
     await h.settle();
     return fixture.player.streamInfo;
+}
+
+async function startPublicItemOnManagedRoute(h, fixture, id) {
+    const request = fixture.manager.play({items: [h.makeItem(id)], fullscreen: true});
+    await request.catch(error => {
+        throw new Error(id + ' managed route rejected: ' + String(error) + ', play=' + fixture.calls.play.length +
+            ', alerts=' + fixture.calls.alerts.length + ', cancelled=' + fixture.calls.playbackCancelled.length +
+            ', metadata=' + fixture.calls.metadata.length);
+    });
+    await h.settle();
+    return fixture.manager.getCurrentPlayer();
 }
 
 async function waitFor(predicate, message) {
@@ -238,4 +275,230 @@ test('material regression: a 50ms hide scheduled by A cannot hide the reused vis
     h.fireTimer(oldTimer.id);
     oldTimer.fired = true;
     assert.deepEqual(reusedElement.changes, [], 'A delayed callback cannot hide B current OSD');
+});
+
+test('material control: Stop during current-user lookup creates no observer or volume timer', async () => {
+    const h = makeHarness();
+    const fixture = h.makeFixture();
+    let resolveUser;
+    let userCalls = 0;
+    fixture.apiClient.getCurrentUser = () => {
+        userCalls++;
+        return new Promise(resolve => { resolveUser = resolve; });
+    };
+    const request = fixture.manager.play({items: [h.makeItem('user-pending')], fullscreen: true}).catch(() => undefined);
+    await waitFor(() => userCalls === 1, 'public Play reaches current-user lookup');
+    await fixture.manager.stop();
+    resolveUser({Configuration: {}});
+    await request;
+    await h.settle();
+    assert.equal(h.observerRecords.length, 0);
+    assert.equal(h.pendingTimers().filter(row => row.delay === 50).length, 0);
+});
+
+test('material control: Stop during intro lookup creates no observer or volume timer', async () => {
+    const h = makeHarness();
+    const fixture = h.makeFixture({enableCinemaMode: true});
+    fixture.apiClient.getCurrentUser = () => Promise.resolve({Configuration: {}});
+    let resolveIntros;
+    let introCalls = 0;
+    fixture.apiClient.getIntros = () => {
+        introCalls++;
+        return new Promise(resolve => { resolveIntros = resolve; });
+    };
+    const request = fixture.manager.play({items: [h.makeItem('intro-pending')], fullscreen: true}).catch(() => undefined);
+    await waitFor(() => introCalls === 1, 'public Play reaches intro lookup');
+    await fixture.manager.stop();
+    resolveIntros({Items: []});
+    await request;
+    await h.settle();
+    assert.equal(h.observerRecords.length, 0);
+    assert.equal(h.pendingTimers().filter(row => row.delay === 50).length, 0);
+});
+
+test('material control: Stop during device-profile lookup creates no observer or volume timer', async () => {
+    const h = makeHarness();
+    const fixture = h.makeFixture();
+    fixture.apiClient.getCurrentUser = () => Promise.resolve({Configuration: {}});
+    fixture.player.canSetAudioStreamIndex = () => false;
+    let resolveProfile;
+    let profileCalls = 0;
+    fixture.player.getDeviceProfile = () => {
+        profileCalls++;
+        return new Promise(resolve => { resolveProfile = resolve; });
+    };
+    const request = fixture.manager.play({items: [h.makeItem('profile-pending')], fullscreen: true}).catch(() => undefined);
+    await waitFor(() => profileCalls === 1, 'public Play reaches device-profile lookup');
+    await fixture.manager.stop();
+    resolveProfile({DirectPlayProfiles: [], TranscodingProfiles: [], SubtitleProfiles: [], CodecProfiles: []});
+    await request;
+    await h.settle();
+    assert.equal(h.observerRecords.length, 0);
+    assert.equal(h.pendingTimers().filter(row => row.delay === 50).length, 0);
+    assert.equal(fixture.calls.play.length, 0);
+});
+
+test('material control: preplay interceptor cancellation creates no observer or volume timer', async () => {
+    const h = makeHarness();
+    const fixture = h.makeFixture({preplayInterceptors: [{
+        order: 0,
+        intercept() { return Promise.reject({errorCode: 'intercept-cancel'}); }
+    }]});
+    fixture.apiClient.getCurrentUser = () => Promise.resolve({Configuration: {}});
+    await fixture.manager.play({items: [h.makeItem('intercept-cancel')], fullscreen: true}).catch(() => undefined);
+    await h.settle();
+    assert.equal(h.observerRecords.length, 0);
+    assert.equal(h.pendingTimers().filter(row => row.delay === 50).length, 0);
+    assert.equal(fixture.calls.play.length, 0);
+});
+
+test('material regression: queued A observer callback after replacement cannot retire B', async () => {
+    const h = makeHarness();
+    const fixture = h.makeFixture();
+    fixture.apiClient.getCurrentUser = () => Promise.resolve({Configuration: {}});
+    fixture.player.canSetAudioStreamIndex = () => false;
+    await startPublicItem(h, fixture, 'A');
+    const observerA = h.observerRecords[0];
+    await startPublicItem(h, fixture, 'B');
+    const observerB = h.observerRecords[1];
+    h.invokeObserverCallback(observerA);
+    assert.equal(observerA.active, false);
+    assert.equal(h.activeObservers().length, 1);
+    assert.equal(h.activeObservers()[0], observerB);
+});
+
+test('material regression: manually invoked cancelled A hide timer cannot affect B OSD', async () => {
+    const h = makeHarness();
+    const fixture = h.makeFixture();
+    fixture.apiClient.getCurrentUser = () => Promise.resolve({Configuration: {}});
+    fixture.player.canSetAudioStreamIndex = () => false;
+    await startPublicItem(h, fixture, 'A');
+    const sharedElement = makeVisibleElement();
+    h.setVisibleElement(sharedElement);
+    h.activeObservers()[0].trigger();
+    const timerA = h.pendingTimers().find(row => row.delay === 50);
+    assert.ok(timerA, 'A schedules its existing 50ms hide');
+    await startPublicItem(h, fixture, 'B');
+    h.setVisibleElement(sharedElement);
+    h.invokeTimerRegardlessOfCancellation(timerA.id);
+    assert.equal(timerA.cancelled, true, 'A timer was cancelled when ownership changed');
+    assert.deepEqual(sharedElement.changes, [], 'raw late callback cannot hide B current OSD');
+});
+
+test('material regression: duplicate queued mutations for one owner schedule one 50ms hide without throwing', async () => {
+    const h = makeHarness();
+    const fixture = h.makeFixture();
+    fixture.apiClient.getCurrentUser = () => Promise.resolve({Configuration: {}});
+    fixture.player.canSetAudioStreamIndex = () => false;
+    await startPublicItem(h, fixture, 'A');
+    h.setVisibleElement(makeVisibleElement());
+    const observer = h.activeObservers()[0];
+    assert.doesNotThrow(() => {
+        observer.callback([], observer);
+        observer.callback([], observer);
+    });
+    assert.equal(h.pendingTimers().filter(row => row.delay === 50).length, 1);
+});
+
+test('material regression: old self-managed itemstopped cannot retire the current public Play owner', async () => {
+    const h = makeHarness();
+    const fixture = h.makeFixture({selfManagedPlayer: true});
+    fixture.apiClient.getCurrentUser = () => Promise.resolve({Configuration: {}});
+    await startPublicItemOnManagedRoute(h, fixture, 'A');
+    const itemA = fixture.calls.play[0].items[0];
+    await startPublicItemOnManagedRoute(h, fixture, 'B');
+    const itemB = fixture.calls.play[1].items[0];
+    assert.notEqual(itemA, itemB, 'public A and B route through distinct self-managed queue items');
+    assert.notEqual(itemA.Id, itemB.Id);
+    const requestIdA = itemA.playOptions && itemA.playOptions._etePlayRequestId;
+    const requestIdB = itemB.playOptions && itemB.playOptions._etePlayRequestId;
+    assert.equal(typeof requestIdA, 'number', 'actual self-managed A queue item carries play request id');
+    assert.equal(typeof requestIdB, 'number', 'actual self-managed B queue item carries play request id');
+    assert.notEqual(requestIdA, requestIdB);
+    fixture.events.trigger(fixture.player, 'itemstopped', [{}, {
+        item: itemA,
+        mediaSource: itemA.MediaSources[0],
+        nextMediaType: 'Video',
+        positionMs: 0
+    }]);
+    assert.equal(h.activeObservers().length, 1, 'late A stop keeps current B resource active');
+    assert.equal(h.activeObservers()[0], h.observerRecords[1]);
+    assert.equal(fixture.player.streamInfo, null,
+        'existing self-managed stopped handler still clears player streamInfo for this late event');
+    const unmarkedCloneOfA = Object.assign({}, itemA);
+    delete unmarkedCloneOfA.playOptions;
+    fixture.events.trigger(fixture.player, 'itemstopped', [{}, {
+        item: unmarkedCloneOfA,
+        mediaSource: itemA.MediaSources[0],
+        nextMediaType: 'Video',
+        positionMs: 0
+    }]);
+    assert.equal(h.activeObservers().length, 1, 'unmarked clone of old A cannot retire B by shared player identity');
+    assert.equal(h.activeObservers()[0], h.observerRecords[1]);
+});
+
+test('material control: same-owner self-managed nonterminal itemstopped retires its own resource', async () => {
+    const h = makeHarness();
+    const fixture = h.makeFixture({selfManagedPlayer: true});
+    fixture.apiClient.getCurrentUser = () => Promise.resolve({Configuration: {}});
+    await startPublicItemOnManagedRoute(h, fixture, 'same-owner');
+    const item = fixture.calls.play[0].items[0];
+    assert.equal(fixture.player.streamInfo.item, item, 'event carries the exact owner Item object');
+    assert.equal(h.activeObservers().length, 1);
+    fixture.events.trigger(fixture.player, 'itemstopped', [{}, {
+        item,
+        mediaSource: item.MediaSources[0],
+        nextMediaType: 'Video',
+        positionMs: 0
+    }]);
+    assert.equal(h.activeObservers().length, 0, 'same owner terminal event retires its resource without player removal');
+    assert.equal(fixture.manager.getCurrentPlayer(), fixture.player, 'nextMediaType retains the player selection');
+});
+
+test('material control: exact canonical Item without request marker still retires its own resource', async () => {
+    const h = makeHarness();
+    const fixture = h.makeFixture({selfManagedPlayer: true});
+    fixture.apiClient.getCurrentUser = () => Promise.resolve({Configuration: {}});
+    await startPublicItemOnManagedRoute(h, fixture, 'canonical-owner');
+    const canonicalItem = fixture.calls.play[0].items[0];
+    assert.equal(fixture.player.streamInfo.item, canonicalItem, 'owner and player event share the canonical Item reference');
+    assert.equal(typeof canonicalItem.playOptions._etePlayRequestId, 'number');
+    delete canonicalItem.playOptions;
+    fixture.events.trigger(fixture.player, 'itemstopped', [{}, {
+        item: canonicalItem,
+        mediaSource: canonicalItem.MediaSources[0],
+        nextMediaType: 'Video',
+        positionMs: 0
+    }]);
+    assert.equal(h.activeObservers().length, 0, 'exact canonical Item fallback retires only its own resource');
+    assert.equal(fixture.manager.getCurrentPlayer(), fixture.player);
+});
+
+test('material regression: selecting another player through setActivePlayer retires the previous owner', async () => {
+    const h = makeHarness();
+    const remotePlayer = makeRemotePlayer();
+    const fixture = h.makeFixture();
+    fixture.apiClient.getCurrentUser = () => Promise.resolve({Configuration: {}});
+    fixture.player.canSetAudioStreamIndex = () => false;
+    await startPublicItem(h, fixture, 'A');
+    fixture.manager.setActivePlayer(remotePlayer, {
+        id: remotePlayer.id,
+        playerName: remotePlayer.name,
+        deviceName: remotePlayer.name,
+        playableMediaTypes: ['Video'],
+        supportedCommands: []
+    });
+    assert.equal(fixture.manager.getCurrentPlayer(), remotePlayer);
+    assert.equal(h.activeObservers().length, 0, 'existing selection API retires the previous player owner');
+});
+
+test('material regression: existing self-managed shutdown removal event retires the current owner', async () => {
+    const h = makeHarness();
+    const fixture = h.makeFixture({selfManagedPlayer: true});
+    fixture.apiClient.getCurrentUser = () => Promise.resolve({Configuration: {}});
+    await startPublicItemOnManagedRoute(h, fixture, 'A');
+    assert.equal(h.activeObservers().length, 1);
+    fixture.events.trigger(fixture.player, 'shutdown');
+    assert.equal(fixture.manager.getCurrentPlayer(), null);
+    assert.equal(h.activeObservers().length, 0, 'existing self-managed shutdown event retires current player owner');
 });
