@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-10-16 — v0.3.7本地候选完成
+
+A/B/C/D局部修正按审核范围合批，产品源码固定`1246da1023c43981c7ed40a4e556cb95c7eb7e02`。最终公开离线977/977、材料200/200、D及原请求/Session77/77通过；源构建2159 payload/2160完整runtime、VerifyOnly、独立完整集合/逐项SHA与ZIP2164文件流回读通过。独立目录入口为`dist/ETE-v0.3.7-controls-1246da1-20261016/Start-v0.3.7.cmd`，ZIP为同名目录加`.zip`；具体SHA、来源关系和人工清单见[本地候选](V037_LOCAL_CANDIDATE.md)。后续文档HEAD与该产品来源分开。
+
+源构建隐藏实际应用OSD18、ApiClient原型/真实Events17、PM/真实队列/Events/原生DOM18项通过，API/Player/socket均为合成替身、OSD生命周期手动驱动。7个合成Session的start/stop身份配对，7 start/1 progress/7 stop；显示/外网/Native均0、资源及所属进程收口。独立启动探针确认0.3.7和资料路径隔离，生成profile不入交付。真实前台、服务器播放/远控、OS电源、安装与硬件仍未验收。
+
+本轮没有push/PR/merge/Tag/Release或系统安装，Stable/已发布版本状态保持原记录。菜单仅独立待办，未开始后续版本；先前失败和审核停点保留其历史归属。
+
 ## 2026-10-16 — v0.3.7 D条件审核闭合，准备合批本地候选
 
 父会话明确允许补测后落实D窄变换。扩展observer材料19项在旧输出5通过/14修前失败，父审输出18/19；唯一新增缺口为同一self-managed Player旧A stop清新B资源。最终用既有Item/request身份限定资源退休，保留原核心stop状态/事件语义，19/19通过。主线程审查副本与实际生产生成器均58请求/Session+19 observer合计77/77，输出SHA一致。

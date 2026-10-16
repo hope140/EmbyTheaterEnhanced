@@ -1,5 +1,19 @@
 # 维护记录
 
+## 2026-10-16 v0.3.7准确来源本地候选完成
+
+产品源码1246da1023c43981c7ed40a4e556cb95c7eb7e02，版本0.3.7，后续文档HEAD单独记录。Model Tier: Tier 2；主线程沿用配置并保留异步/核心最终核对，GPT-6 Luna High只补限定测试、固定输入预检和私有renderer夹具，未提交/改架构；Escalated: No。D以d13e418独立保存，1246da1只同步版本/候选说明。最终公开离线977/977、完整材料200/200，0失败/跳过；JS309、PowerShell28及360文件有限凭据模式检查通过。旧975不替代本次来源门禁。
+
+从准确提交Git blobs、固定prepared输入和项目内GCC构建新runtime：2159 payload/2160完整文件，VerifyOnly及独立逐文件SHA/完整集合、canonical payload-set核对通过；Helper28054c75和默认libmpv965efde4保持固定字节。ApiClient base/raw input/transformed output身份分层，完整provenance通过。未下载缺失的Electron ZIP，prepared73文件完整树通过原门禁；不宣称本轮独立回读该归档或当前加载DLL哈希。
+
+真实main/AMD的空profile隐藏检查：原VideoOsdView/组件18、ApiClient原型+真实Events17、PM构造器/真实队列/Events/原生MutationObserver18项，API/Player/socket为合成替身，OSD手动生命周期。合成报告7 start/1 progress/7 stop，7个Session身份一一配对；8个UI stop含1个未启动pending原事件，不混作Session报告。observer/timer终态0，显示、Node/浏览器外网、Native子进程0，所属进程退出。原file: Cache警告单列，无新增页面错误。
+
+私有连接脚本首轮restCountBeforeLogout作用域遗漏、第二轮播放脚本fullscreen:false导致原background模式无报告，失败分别保留；仅修夹具并维持原断言，产品字节未变后通过。独立交付launch.cjs探针通过版本/应用资料与argv隔离；其生成profile移动到本任务私有目录保留，绝对源/目标已核验位于工作树内，未读个人凭据、未动旧profile。
+
+独立目录dist/ETE-v0.3.7-controls-1246da1-20261016，完整2164文件ZIP流回读通过；ZIP240504661 bytes，SHA9e7ea2d64df19838e2942674f4efbe23be54cfeff8b0eadab74fea281180ed6c，附.sha256。测试说明与VALIDATION只含摘要，私有harness/profile/日志不入包，锁定依赖原带文件完整保留。源/runtime/delivery身份和人工项见V037_LOCAL_CANDIDATE，恢复见私有task state。未push/PR/merge/Tag/Release、真实前台/服务器播放远控/OS电源/安装/硬件，菜单与038等未实施。
+
+限定GPT-6 Luna High独立只读payload/ZIP审计27项通过，无差异；主线程已核对真实报告、再次回读runtime完整集合/SHA、ZIP精确大小写路径/sidecar/SHA与审核PM输出，并确认四个最终隐藏/启动根进程均已退出。最后仅文档收尾，不重构建、不重标1246da1产品来源，不将文件审计提升为DLL加载或真实服务验收。
+
 ## 2026-10-16 v0.3.7 D扩展测试及生产窄变换
 
 Model Tier: Tier 2；Model: 主线程沿用配置，精确标识未暴露；GPT-6 Luna High只补限定fixture/用例与分支证据；Reason: observer/timer和self-managed Item/request归属由主线程设计/最终核对；Escalated: No。父会话先复核ABC，再明确批准D补测和条件实施，继续本地候选授权。
