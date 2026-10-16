@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-17 有限维护组合验证与本地候选收尾
+
+最终产品来源5341f32985aabefa03f789b1428d8dfa2be5ba06，实际公开完整确认996/996、材料210/210、JS313/PS28/有限模式364通过。首次534公开995/996的单一Git夹具进程异常隔离1/1通过后完整确认；原失败保留。build/VerifyOnly与独立109产品/51输入/4notice Git blob、2159payload/2160runtime完整集合SHA通过，相对037仅5产品输出/6来源元数据变化。菜单9与OSD/API/PM53项隐藏通过；第一次夹具提前destroy导致的异步错误改为drain+pause后通过，产品未为此修改。实际候选入口隐藏启动资料隔离、show/network/真实Native子进程0；所属进程退出，profile不入交付。
+
+新目录ETE-night-maintenance-5341f32-20261017与ZIP已完成；ZIP2164文件流逐SHA/CRC、240674258 bytes，SHA3f39076954ae4b3ef18270a17ccfcb288c3b9cc2634d7a0ba6956f3f7db677c1。完整矩阵、失败历史、未测与最小清单见[报告](OVERNIGHT_REVIEW_REPORT_20261016.md)。Model Tier/worker角色沿前合同，主线程保留组合/核心判断；此收尾仅文档，不改变产品/ZIP或发布状态，待父会话最终产物验收。
+
 ## 2026-10-17 E2最终变换链边界修正
 
 首次组合材料207项中200通过，7项均被VirtualScroller最终输出hash拦住：中间Movie SHA被误作生产末态，实际还有Search patchBrowseGuard。追加实际Movie→Search回归亦证实Search marker被误扩为object。父审批准区分Movie专属marker和既有共享browse提交guard；Search变换器不改，Search-only维持true/null和原stale保护。19项最终组合回归通过，最终输出54537E...C3802F。旧8cc公开996/996、材料200/207、中间16项与新增修前17/19均原样保留，不合并成新来源PASS；新准确来源再次运行门禁。此阶段没有构建候选或操作已发资产。
