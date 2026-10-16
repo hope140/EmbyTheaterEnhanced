@@ -1,5 +1,9 @@
 # 维护注意事项
 
+- 搜索在标准布局走通用ListController，在电视布局才走SearchView；直接打开/search不足以覆盖默认搜索入口。公共API包装未接收signal时，本地取消与防迟到提交不等于底层HTTP已中断。
+- 控件disabled时程序派发keydown仍可能调用原监听器，不代表用户能打开菜单。取消验收先确认菜单真实打开并获得输入归属，再用原外部点击或键盘返回关闭，检查值与change次数；禁止把离开底层页面误记为取消成功。
+- 页面返回过程中，如果Fields仅在HTTP结束后resume，已经可见的输入会被paused检查忽略；应在原页面resume开始接收输入，但保留防抖及请求归属。已完成错误/空态随原view返回，新输入或刷新时再清除。
+
 - 新增Web变换器必须同时进入overlay generatorPaths、build-input-contract的INPUT_PATHS、输入防篡改测试patcher集合和runtime-provenance fixture复制列表。runtime自身VerifyOnly通过不能替代独立材料夹具验证；v0.3.5已实际遇到漏列导致的两项材料失败并修正。
 - BaseView在viewbeforeshow调用onBeginResume，在transition完成后才onResume清除paused；详情加载事务不能简单用paused判断。销毁后异步回复也必须在访问view、全局backdrop或focus之前核对代次与owner，不能只在最终列表提交处检查。
 

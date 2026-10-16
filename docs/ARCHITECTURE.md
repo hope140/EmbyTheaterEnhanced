@@ -39,3 +39,5 @@ CustomCssJS 作为固定源哈希的 Web overlay 构建：服务器/本地 CSS �
 详情页选择器保持原Item controller与EmbySelect/ActionSheet归属。固定HTML overlay补全版本/视频的custom菜单声明；固定layout.css overlay仅追加详情区域的宽屏选择区宽度/对齐纠正，原样式前缀完整保留。版本、视频、音轨和字幕值及change事件仍由原链路消费，不改PlaybackManager、媒体来源标识或切轨逻辑。
 
 v0.3.5详情生命周期overlay仍由原ItemPage/BaseView拥有页面；加载捕获递增代次及view，pause/destroy使旧代次失效。旧Item回复不再继续来源信息查询，主数据、reload后续和选择器异步回填在提交前核对归属；底层API保持既有请求协议。onBeginResume在实际onResume之前允许合法加载，不以paused状态替代事务标识。见[详情页合同](DETAIL_PAGE.md)。
+
+v0.3.5合批搜索保留两条原路由：标准ItemsView/ListController与电视SearchView/SearchResults。SearchFields保留500ms防抖并在输入、暂停及销毁时退休旧提交；标准列表仅在type=search安装维护helper，复用既有itemscontainer/virtual-scroller归属检查，电视结果按代次提交。ActionSheet仅给原无选择关闭拒绝加明确标记，EmbySelect只处理该标记；真实错误、多选关闭提交与原视频禁用展示保持。见[搜索与菜单合同](SEARCH_AND_MENU.md)。
