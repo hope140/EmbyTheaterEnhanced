@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-16 — v0.3.7用户验收反馈与Pre-release授权
+
+用户明确授权在执行会话发布v0.3.7测试版，包含必要push/PR、CI和父审后merge、最终main准确来源构建/标准安装器、Tag/Release五附件及匿名完整回读、main文档收尾。Stable/Latest保持v0.3.1。当前进入发行准备，尚未发布；验收与发行合同见[发行核验](V037_RELEASE_VERIFICATION.md)。
+
+用户按父会话清单第1—4及第6项反馈正常，仅记录已测场景USER_REPORTED_NORMAL；第5项电源/退出组合因缺环境未测，用户随后明确暂缓，后续使用发现问题再反馈，不再设为本次发布等待条件。未说明的媒体、硬件与系统层仍不补写PASS。旧候选目录/profile/log保持，不读不删；本轮不安装、不主动前台、不读取个人凭据、不写真实服务器、不开始038。以下保留本地候选和审核历史。
+
 ## 2026-10-16 — v0.3.7本地候选父审核通过，人工验收待完成
 
 父会话完成产品source `1246da1023c43981c7ed40a4e556cb95c7eb7e02`、文档快照`619be41`的最终审核：生产路径77/77，生成PM/runtime/审核副本一致，冻结边界与source后仅文档差异通过。父独立只读artifact审计302/302通过，完整核对2159 payload、2160 runtime、2164 ZIP及来源Git blobs、launcher/profile边界与ZIP字节/CRC。ZIP仍为240504661 bytes、SHA `9e7ea2d64df19838e2942674f4efbe23be54cfeff8b0eadab74fea281180ed6c`，未更改。

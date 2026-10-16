@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-16 v0.3.7发行准备授权
+
+Model Tier: Tier 1（明确发行合同）；Model: 主线程沿用配置，精确标识未暴露；限定GPT-6 Luna High只读复核累计scope及准备匿名回读脚本；Reason: 已审产品不变，按固定工具链和来源执行发行；Escalated: No。用户新授权测试版发布闭环，不继承旧版授权作推断。父会话负责PR审核与后续排期，当前产品冻结和边界保持。
+
+实时核对远端main dd198ac，未存在v0.3.7 Tag/Release或开放PR，Latest仍v0.3.1。当前ebaed19干净，1246da1后的产品/工具/测试/版本tree无差异。用户反馈清单1—4及6正常，仅记USER_REPORTED_NORMAL；第5电源/退出组合明确暂缓，NOT_TESTED且不阻塞发布。已保存旧Release/Latest/Tag快照；本次仅增量文档，之后创建PR供父审，最终main另构建标准安装器，不冒用本地wrapper ZIP来源。
+
+不读旧profile/个人凭据，不改旧目录或已有Release附件，不系统安装/主动前台/真实服务器写入，不启动038或混入菜单/签名需求。电源项后续使用反馈由用户决定，不再重复设等待门禁。
+
 ## 2026-10-16 v0.3.7父审核文档收尾
 
 Model Tier: Tier 1；Model: 主线程沿用配置，精确标识未暴露；Reason: 明确回执的文档/私有状态同步；Escalated: No。父会话审核产品source1246da1023c43981c7ed40a4e556cb95c7eb7e02及文档快照619be41，报告生产路径77/77、生成PM/runtime/已审副本一致，冻结与source后仅文档差异通过。读取既有`.work/v037-parent-final-artifact-audit/result.json`，302项全部PASS、failures为空，覆盖完整payload/runtime/ZIP逐SHA、Git blob来源、launcher/profile及ZIP完整字节/CRC。
