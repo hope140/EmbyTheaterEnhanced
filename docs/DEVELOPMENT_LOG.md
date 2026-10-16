@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-16 v0.3.5 搜索重复空态修正
+
+用户截图发现同页两条无匹配提示。旧完整应用默认getRouteUrl已复现2条（维护eteSearchStatus与原ListController.setEmptyListState各一条），修前单测也失败。Model Tier: Tier 1；Model: 当前主线程，精确标识未由工具暴露；Reason: 单helper删除重复UI owner，播放影响0；Escalated: No。限定worker仅调整测试，主线程复核真实DOM。
+
+产品来源cc7f542cf12a236bba22948030b5043a8a736e08，删除5行成功空态分支，原响应/原native空态/单字符提示保持，独立错误status保留。定向15/15、材料162/162、默认完整应用24项及390/800/1280恰好1条提示通过；VerifyOnly/完整2158文件/副本和启动隔离通过。未重复不相关全量公开套件，也未将旧来源结果记为新来源通过。新独立本地包身份与ZIP回读见V035_SEARCH_FEEDBACK_FIX；旧目录/ZIP/profile保留，未推送/PR/发布/安装，真实服务/前台/播放远控NOT_VERIFIED。
+
 ## 2026-10-16 v0.3.5 默认搜索入口P1修正
 
 父审核复现并拒绝441eafb。主线程使用旧完整runtime与原getRouteUrl默认路由独立复现item or serverId cannot be null，显示/网络/Native均0；此前强加serverId的隐藏夹具未覆盖默认入口，旧结果不算本问题通过。Model Tier: Tier 1（明确局部合同）；Model: 当前主线程，精确标识未由工具暴露；Reason: 单helper客户端选择与回复归属，播放影响0；Escalated: No。GPT-6 Luna High只补限定测试，保留修改前失败日志。

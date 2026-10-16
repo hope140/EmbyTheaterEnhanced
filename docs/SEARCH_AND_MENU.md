@@ -14,6 +14,8 @@
 
 当前请求失败显示既有HeaderError本地化文本，成功空结果保持原NoItemsMatchingFound，后续有效输入恢复；不添加全局重试、排序规则或结果数量。原ViewManager恢复既有view、滚动与焦点，未增加内容缓存。推荐的原ParentId行为与查询范围保持，不从后续建议推断新作用域语义。
 
+成功空结果统一交给原ListController.getEmptyListMessage/setEmptyListState；维护eteSearchStatus只显示请求错误，成功响应时隐藏。原单字符TwoSearchCharsRequired和空查询无匹配提示规则保留，验收需实际统计同页可见提示数量，不能只断言新增status出现。见[重复提示修正](V035_SEARCH_FEEDBACK_FIX.md)。
+
 ## 菜单取消
 
 固定原ActionSheet的无选择关闭分支使用Promise.reject()，原EmbySelect只有成功处理。旧完整应用实际关闭菜单产生undefined未处理拒绝。受控overlay仅在这个明确取消源头加ETE_ACTIONSHEET_CANCELLED标记，EmbySelect只处理该标记；成功setValues/change、真实异常对象或undefined错误、原生系统菜单及disabled判断保持。没有全局Promise/控制台拦截。
