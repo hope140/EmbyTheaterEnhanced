@@ -195,7 +195,7 @@ test('runtime provenance binds tracked product sources to committed Git blobs', 
         ]);
         const startupEntry = manifest.validatedProductScope.files[0];
         assert.equal(startupEntry.sourceSha256,
-            hash(fs.readFileSync(path.join(root, 'src/electronapp/enhanced/startup.svg'))));
+            hash(fs.readFileSync(path.join(root, 'src/electronapp/enhanced/startup.svg'))).toUpperCase());
         assert.equal(startupEntry.sourceSha256, startupEntry.runtimeSha256);
         assert.deepEqual(fs.readFileSync(path.join(runtime, 'electronapp/enhanced/startup.svg')),
             fs.readFileSync(path.join(root, 'src/electronapp/enhanced/startup.svg')));
