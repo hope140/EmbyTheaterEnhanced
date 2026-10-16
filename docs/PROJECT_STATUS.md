@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-16 — v0.3.7范围合同待审核
+
+从实时远端main `dd198ac037abd7658e78931dc52da285cf61d174` 建立独立工作树，已完成播放控制与连接生命周期的只读调用图、固定材料核验及限定隔离复现。四项问题为OSD倍率键盘监听/迟到timer、电源锁共享句柄、logout期间旧socket重连，以及PlaybackManager音量OSD observer跨Stop存活；最小候选文件、核心触及理由、回退与逐项验收见[范围合同](V037_SCOPE_AND_CONTRACT.md)。正常队列/InputManager/Session与现有对称清理保留，队列升级轮询仍为静态观察项。
+
+当前为`SCOPE_REVIEW_REQUIRED`，在规划会话审核停点停止，尚未修改生产代码或生成v0.3.7候选。PlaybackManager基线58/58与AppHost定向20/20通过；四项复现分别来自隔离VM或完整模块合成fixture，不代表完整应用、真实播放远控或OS电源验收。未执行前台、真实服务器、Native、安装或硬件操作；原工作区、旧产物和profile保持。版本与已发布状态仍按v0.3.6记录，当前没有远端写入。
+
 ## 2026-10-16 — v0.3.6启动页测试版已发布
 
 [v0.3.6启动页更新测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.6)已公开，PR #40已合并，产品Tag和安装器固定最终main来源`de1a731aa3e915b00988134b6f5331bfc867a84a`；Stable/Latest保持v0.3.1。五个附件均匿名完整回读通过，Release为非draft的Pre-release。原Emby PNG字节保留，副标改为THEATER ENHANCED，原loader/页面结构保持。

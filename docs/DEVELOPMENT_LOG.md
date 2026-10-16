@@ -1,5 +1,17 @@
 # 维护记录
 
+## 2026-10-16 v0.3.7只读范围合同
+
+Model Tier: Tier 2；Model: 主线程沿用配置，精确标识未由工具暴露；worker为GPT-6 Luna High，仅限只读模块/事件盘点与隔离VM；Reason: OSD/input、socket重连、main资源及PlaybackManager私有observer的跨模块异步归属；Escalated: No。Task Risk中高、Task Uncertainty中高、Cross-module Scope为上述四处，当前Playback/Session产品改动0。
+
+实时ls-remote main为dd198ac，v0.3.6 Tag解引用de1a731；新managed工作树从准确main建立codex/v037-controls，原Settings/v035/v036与profile/产物保持。固定材料SHA均对照当前manifest，ApiClient审计确认实际来源为综合补丁authoritative payload而非Carnival base。两名worker没有产品/公开文档/版本控制写入，只生成私有清单与VM脚本；主线程复核证据、执行关键复现并汇总合同。
+
+原main分派器与videohandler的fake电源API复现重复/交错on后off遗留句柄，普通单次开始停止为0；原OSD键盘注册和pause片段复现非映射键锁住倍率handler、3次操作留3个keyup listener、pause后500ms回调仍作用新owner。完整ApiClient模块/prototype及合成依赖复现logout REST pending时旧1秒timer重连，完成后token已清、新socket仍CONNECTING，主线程重跑一致。完整当前生成PlaybackManager的既有AMD fixture连续3次公开Play/Stop后observer存活1/2/3，start/stop报告各3；原50ms hide无owner检查。全部为隔离证据，不提升为真实应用/服务器/设备PASS。
+
+PlaybackManager基线58/58、AppHost/外链20/20、7个固定JS语法及材料hash通过。observer探针首轮fixture缺getCurrentUser，次轮background playback按原语义不报告，补齐既有fixture依赖并使用正常fullscreen后通过原断言；私有失败记录保留，产品与有效测试未改。完整应用/前台/Native/真实服务器播放远控/OS电源/安装/硬件均NOT_EXECUTED。生产代码、版本号、依赖与发行状态保持；私有状态保存恢复入口，不进入包体。
+
+交付docs/V037_SCOPE_AND_CONTRACT.md及PROJECT_STATUS；四项分别定义Observed/Expected、实际文件、最小候选差异、冻结、回退及验收。PlaybackManager私有observer和ApiClient核心必须经规划会话明确审核后才能修正；现有正常队列和Session清理不重写。本轮停在SCOPE_REVIEW_REQUIRED，没有push/PR/merge/Tag/Release、候选构建或系统/服务器写入。
+
 ## 2026-10-16 v0.3.6发行与匿名回读完成
 
 Model Tier: Tier 1；Model: 主线程沿用配置，测试worker GPT-6 Luna High；Reason: 固定启动资产/窄CSS变换及来源发行合同；Escalated: No。PR #40两项955/955通过后merge为de1a731aa3e915b00988134b6f5331bfc867a84a，最终main及Tag CI955/955通过。原图完整PNG字节复用，新SVG从准确Git blob物化；源码/工具链/完整payload来源门禁通过。
