@@ -47,4 +47,6 @@ v0.3.4 以电影库为试点，基线为 v0.3.3 后的 main `6fb61e3`。这是�
 
 本地构建及隐藏完整应用检查已完成，准确产品身份、交付入口与仍需人工确认的项目见 [v0.3.4本地候选](V034_LOCAL_CANDIDATE.md)。
 
+后续首页标题跳转续办的产品来源为ae245f6，仅接首页provider/renderer的已校验父媒体库与原最近页签；本页controller、分页与筛选排序实现保持。缓存策略和搜索布局未改变，旧ed00a97候选继续保留。
+
 源级复核命令：`node --test tests/movie-browser.test.cjs tests/movie-browser-material-selftest.cjs`。后者要求固定vendor材料存在，缺失直接失败；不能用简化fixture或跳过代替。

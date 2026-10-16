@@ -2,7 +2,28 @@
 
 电影库试点的实现、源码审阅、来源绑定构建与隔离后台检查已完成，当前供本地人工测试。此记录不表示GitHub发布或真实业务验收完成。
 
-## 准确来源与产物
+## 首页标题跳转续办候选
+
+当前入口为 `dist/ETE-v0.3.4-home-titles-ae245f6-20261016/Start-v0.3.4.cmd`，使用全新独立test-profile，首次需自行登录。原ed00a97入口、ZIP及profile继续保留。
+
+| 对象 | 当前身份 |
+| --- | --- |
+| 产品源码 | `ae245f623fa32957c155cfb8b5dd1f1e7aa78987`，版本0.3.4 |
+| Runtime | `dist/EmbyTheaterEnhanced-v034-home-titles-ae245f6-20261016`，2156 payload / 2157完整文件 |
+| Manifest SHA-256 | `b3cd0fe004b96ccaee8e3fe925579373f82cd1b86a4176a7c829d0c5445ad350` |
+| Payload-set SHA-256 | `acf43a44d4488ffa598d9101604c0cef47a6943dad0149c78211a8c96ca7442f` |
+| ZIP | `dist/ETE-v0.3.4-home-titles-ae245f6-20261016.zip`，2161文件逐项回读匹配 |
+| ZIP SHA-256 | `6e4abb611e896af0de8ec232d6290043354cd58e4204b4d8233e50cca68c12c2` |
+
+桌面首页latestmedia分区在有受支持电影/电视剧父媒体库时，通过原native标题、See All和canonical router跳到该库原suggestions最近页签。返回时恢复新标题/可见See All焦点；缺少支持目标的分区和TV布局保持普通标题。缓存、refresh清空/重试/5秒时限、搜索布局、播放核心与默认内核均保持。
+
+当前来源公开门禁940/940、定向/固定材料39/39通过；实际来源/包体核对和2161 ZIP逐文件读取通过。空profile、合成API的完整应用17项通过，包括原main/loader/router/native控件、标题/See All点击、真实Enter导航、返回焦点与内容、跨账号失效阻止、TV普通标题；390/800/1280视口无页面横向溢出并实际查看截图。原生See All仍由itemscontainer按条目数隐藏，未改变其门槛。show、外部请求、Node网络、Native启动和所属残留进程0；只有原file: Service Worker Cache警告。
+
+独立启动wrapper的appData/userData/config隔离探针通过，生成profile不随包；外层wrapper单独记录SHA，runtime仍绑定上述产品sourceCommit。请人工确认真实桌面首页标题跳转、Enter与返回焦点；实际服务器ParentItem DTO、前台视觉、真实播放/远控和安装保持NOT_VERIFIED。
+
+以下保留首批电影库候选的原始产物身份与证据，不能据其哈希校验当前标题跳转ZIP。
+
+## 首批电影库候选来源（ed00a97）
 
 | 对象 | 身份 |
 | --- | --- |

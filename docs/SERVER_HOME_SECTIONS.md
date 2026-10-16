@@ -23,6 +23,8 @@
 
 renderer使用canonical`modules/approuter.js`的原`getRouteUrl(parent,{section:'latest',serverId})`，电影映射到`/videos`、电视剧到`/tv`的`suggestions`页签，保持当前原生路由语义。标题由原`emby-sectiontitle`升级并派生See All，标题文本仍用textContent，点击与键盘交给原router/input；局部标题容器仅阻止旧epoch、失效账号/服务器或已退休stage的激活。没有通用sectionId列表路由，不把section.Id猜成媒体库Id。
 
+返回首页仍重新读取并重建分区，只扩展既有焦点身份记录以定位新标题或See All；若条目数使See All隐藏，则回到可见标题，不保留旧DOM或分区数据。原生itemscontainer对See All的显示门槛不改。
+
 无ParentItem、不支持目标及TV布局保留普通标题。此范围不覆盖任意分区类型或任意动态筛选列表。刷新清空、请求时限、重试、缓存与卡片/播放链保持原状；新增依赖只是随包原生router/button的canonical AMD入口，不更换Web输入或构建生成器。
 
 `ete-server-home` 使用原生 `getDynamicImport` 注册，该工厂已取出AMD模块的default；HomeTab直接调用别名对象的create，不再次访问default。别名回归必须消费原app.js的实际拆包函数，不能用直接返回AMD module对象的简化别名替代。
@@ -35,6 +37,8 @@ renderer使用canonical`modules/approuter.js`的原`getRouteUrl(parent,{section:
 - overlay 固定 HomeTab 与 app.js 输入和输出 SHA，新生成器进入 build-input 和 runtime provenance 合同；不复制新版 Web 整树。
 
 ## 当前证据及剩余验证
+
+2026-10-16标题续办：来源ae245f6的39项定向/固定材料与940项公开门禁通过；真实main/loader/router/native标题、合成API和空profile下17项完整应用检查通过，含电影点击、See All、电视剧Enter导航/返回、账号失效阻止及TV普通标题；390/800/1280视口检查通过。requestWait、clear、refresh函数体与b646374保持字节等价（只规范化换行作比较），未增加缓存策略。对应新包与hash见[V034_LOCAL_CANDIDATE](V034_LOCAL_CANDIDATE.md)。实际服务端ParentItem响应、前台与业务仍未验收；下面的早期真实只读记录保持原范围，不用它外推当前分区导航DTO。
 
 只读服务核对观察到 Emby 4.10.0.40，电视与桌面模式各13分区；当前均为支持的默认水平 cards 布局。继续观看、正在播出、最新内容三类条目接口分别读取成功，保留类型和数量摘要，不保存原始响应、媒体标题、URL或凭据。这不证明其他服务版本或任意首页配置可用。
 

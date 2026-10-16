@@ -1,6 +1,10 @@
 # 项目状态
 
-2026-10-16：首页标题跳转续办已进入本地实现。用户明确只做跳转、缓存保持现状。桌面latestmedia分区按安全ParentItem接原电影/电视剧媒体库latest路由及原生emby-sectiontitle；缺失/坏目标和TV保留普通标题，不新增sectionId列表。37项定向/材料检查通过；旧ed00a97完整应用的合成基线已复现5个标题、30张卡片而标题链接0。新的来源构建和完整应用验收待本批源码提交后执行；旧入口、ZIP与profile保留，版本继续0.3.4。
+2026-10-16：首页标题跳转续办已完成新本地测试交付，最终产品源码为`ae245f623fa32957c155cfb8b5dd1f1e7aa78987`，版本继续0.3.4。桌面latestmedia电影/电视剧父媒体库标题使用原native标题与canonical router进入suggestions，TV和缺少受支持父级的分区保留普通标题；返回恢复标题/See All焦点，若See All随条目数隐藏则恢复可见标题。缓存与搜索布局不变，requestWait/clear/refresh函数体与b646374逐字一致。原ed00a97目录、ZIP及用户profile保持。
+
+本批公开门禁940/940、定向/固定材料39/39、空profile合成完整应用17/17与390/800/1280视口检查通过；真实Enter事件从电视剧标题进入原tv suggestions并返回焦点。actual main/loader/router、native标题及See All升级、电影点击、账号失效阻止、TV普通标题均验证，实际show/外网/Node网络/Native启动0，非预期页面错误0，保留原file: Cache警告。旧源码无标题链接的完整应用基线已复现。真实服务器ParentItem DTO、前台体验、播放/远控及安装仍未验收。
+
+新runtime为`dist/EmbyTheaterEnhanced-v034-home-titles-ae245f6-20261016`，2156项payload与2157完整runtime文件集通过source/runtime provenance、VerifyOnly和独立哈希核对。manifest SHA `b3cd0fe004b96ccaee8e3fe925579373f82cd1b86a4176a7c829d0c5445ad350`，payload-set SHA `acf43a44d4488ffa598d9101604c0cef47a6943dad0149c78211a8c96ca7442f`。新入口位于`dist/ETE-v0.3.4-home-titles-ae245f6-20261016/Start-v0.3.4.cmd`；同名ZIP共2161文件完整回读通过，SHA `6e4abb611e896af0de8ec232d6290043354cd58e4204b4d8233e50cca68c12c2`，启动隔离探针通过且不带profile。详情见[当前本地候选](V034_LOCAL_CANDIDATE.md)。后续文档HEAD与该产品来源分开；没有推送/PR/合并/发布/安装或真实服务器写入。
 
 2026-10-16：v0.3.4电影库试点已完成本地测试交付，分支为`codex/v034-library`，产品源码提交为`ed00a97c11490a36e2a844c531772750deb22524`。用户已批准本批本地提交、构建和必要可回退修正；14文件按审核范围提交，之后未修改产品。实际调用图、最小差异与回退见[电影库合同](MOVIE_BROWSER.md)，产物身份与人工清单见[本地候选交付](V034_LOCAL_CANDIDATE.md)。保留原分页、筛选排序、卡片/列表和返回恢复，补齐Movie请求取消与迟到结果/焦点归属，电影分类明确进入videos页签。版本为0.3.4，默认libmpv字节保持原固定值。
 

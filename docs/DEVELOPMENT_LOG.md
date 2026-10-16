@@ -2,6 +2,13 @@
 
 ## 2026-10-16 首页分区标题跳转续办
 
+- 最终产品来源ae245f623fa32957c155cfb8b5dd1f1e7aa78987，依次保留4a9e4bc（标题接线）、eae49c6（返回焦点）和ae245f6（次级入口隐藏时回可见标题）三个小范围提交；起点b646374后的产品改动只在两个home模块，其他为直接相关测试/文档。
+- 隐藏完整应用先验证native标题/See All及正确电影路由，发现返回重建DOM后焦点为BODY；修正仅保留分区标题Id/入口种类。早期See All焦点断言曾点击只有6项时原组件已隐藏的入口，改用12项可见输入，并补充隐藏入口回可见标题测试；不改变原数量门槛或组件。另保留新生custom元素的is声明属性，实际instanceof和原loader一并核对。
+- 最终39项定向/材料、940项公开门禁通过；空profile+合成API完整应用17项、3视口通过，含真实Enter到tv suggestions、返回内容/标题/See All焦点、失效账号激活阻止及TV普通标题。实际show/浏览器外网/Node网络/Native启动0，非预期页面错误0，原file: Cache警告单列；未执行真实服务器/前台业务。requestWait/clear/refresh函数体与起点逐字一致，无缓存策略变化。
+- 来源构建为EmbyTheaterEnhanced-v034-home-titles-ae245f6-20261016，2156 payload / 2157完整runtime逐路径及SHA通过，两个home模块匹配指定Git blob；manifest SHA b3cd0fe004b96ccaee8e3fe925579373f82cd1b86a4176a7c829d0c5445ad350，payload-set SHA acf43a44d4488ffa598d9101604c0cef47a6943dad0149c78211a8c96ca7442f。独立VerifyOnly及2169项包体断言通过。
+- 新交付ETE-v0.3.4-home-titles-ae245f6-20261016与旧ed00a97目录/ZIP分开；启动wrapper隔离探针通过，生成profile移出交付。ZIP2161文件逐项回读通过（28个命名审计断言），SHA 6e4abb611e896af0de8ec232d6290043354cd58e4204b4d8233e50cca68c12c2；只保留12个与v0.3.3同字节的锁定依赖测试文件，没有本轮profile/harness/fixture。默认DLL哈希保持，未发布或安装。
+- 本轮还发现旧电影库合成夹具只设置serverInfo.Version，原运行serverVersion未赋值，因此旧case当时仅证明缺版本提示的原查询可用。已在独立空profile目录、原ed00a97不变runtime上经setSystemInfo显式设置4.10.0.40→4.6.0.0→恢复，25项补证通过且显示/网络/Native0；旧回执不改写为当时已设置版本。真实旧服务器矩阵仍未验证。
+- 以下为本批提交前记录；此后的文档HEAD不重标上述产品来源，不重跑已覆盖的无关门禁。旧产物和用户profile未被替换，没有远端写入或真实服务器业务操作。
 - Model Tier：Tier 2；Model：主线程继承会话配置、provider测试worker为GPT-6 Luna High；Reason：服务端导航DTO与原native标题/router接线；Escalated：无。风险/不确定性中，模块范围为home provider/renderer和定向测试，Playback/Session影响NONE。
 - 当前用户明确只补跳转，缓存先不做，保留现有搜索布局；本任务可回退本地提交/构建授权继续有效。起点b646374，旧产品ed00a97与其测试目录/ZIP保持，不能覆盖用户可能运行的产物。
 - 已在旧ed00a97的真实main/app/router/原组件中，用空profile和合成API复现5个分区、30张卡片、标题/See All链接0。初次夹具未通过原setSystemInfo设置ApiClient运行版本，导致走旧首页回退；修正夹具后基线通过，产品未改。只读静态样本与原homesections确认桌面latest父库经原router进入suggestions，TV为h2。
