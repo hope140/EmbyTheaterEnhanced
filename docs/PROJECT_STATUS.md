@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-16 — v0.3.6启动页实施与发布授权
+
+用户明确“直接完成并发布0.3.6吧”。范围为沿用原Emby标识、更换旧署名为THEATER ENHANCED与启动尺寸适配；新独立工作树从文档main 0f7f3a5起步。必要提交、push/PR、门禁后合并、最终主线来源构建/标准安装器、Tag与Pre-release及匿名附件回读、文档收尾包含在本次授权中，Latest保持v0.3.1。当前实施/验证中，尚未发布；旧包/profile、vendor及共享标识保持。详见[启动页合同](STARTUP_BRANDING.md)。
+
 2026-10-16：[v0.3.5 详情与搜索测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.5)已发布，PR #39已合入main。产品Tag与标准安装器固定最终主线源码`b0234c8a0e8d4fb264b21cf39f8ce68c9146d115`；Stable/Latest保持v0.3.1。五个公开附件全部匿名完整回读通过，Release为非draft的Pre-release；本版没有OPEN PR。
 
 最终产品来源公开CI951/951、固定材料162/162（exit 0）通过；真实AMD默认搜索24项及空结果三视口恰好1条通过。2157 payload、2158完整runtime和2158个{app}解包文件逐路径/SHA一致。安装器175741577 bytes，SHA-256 `03f8cf5f2b18f854cc6548a7fe2d60cd641a8187479c4fd2e3ad22c8dfd87414`，未签名。用户已完成此前cc7f542候选所测场景测试并授权发布；不补写真实远控、系统安装或旧服务器矩阵逐项PASS。准确来源、下载与验收边界见[发行核验](V035_RELEASE_VERIFICATION.md)。后续文档HEAD与产品来源分开，原候选和失败记录保留。

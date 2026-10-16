@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-16 v0.3.6启动图接入
+
+Model Tier: Tier 1；Model: 主线程沿用配置，限定测试worker GPT-6 Luna High；Reason: 独立视觉资产与固定index CSS变换，合同/输入输出明确；Escalated: No。Task Risk低、Task Uncertainty低、Cross-module Scope为启动资产/overlay/来源与发行工具，Playback/Session Impact为0。用户已明确要求完成并发布本版，按Pre-release执行，Stable v0.3.1保持。
+
+在独立工作树从0f7f3a5实施：复用原logowhite.png字节加入THEATER ENHANCED副标，不使用生成预览的重绘近似图；固定index窄变换只换背景资源及适配宽度。原loader/DOM/启动ready与播放/认证/IPC保持。测试worker只处理限定tests及来源fixture接线，不修改产品或执行merge。当前验证/来源构建及发行结果尚待实际完成，不预记PASS；全新物理vendor和项目工具链复用既有固定输入，仍由原门禁核验，无系统安装。
+
 ## 2026-10-16 v0.3.5 Pre-release发行完成
 
 Model Tier: Tier 1（明确发行合同）；Model: 当前主线程，精确标识未由工具暴露；Reason: 提交绑定构建/发行/回读，产品代码保持已审核候选；Escalated: No。用户明确“测试完成了，可以发布了”，按其当前cc7f542候选已测场景记录，不扩写人工逐项验收。

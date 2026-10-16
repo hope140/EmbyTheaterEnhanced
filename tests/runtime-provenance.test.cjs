@@ -123,12 +123,14 @@ function createFixture(root) {
         'tools/patch-plugin-settings.cjs',
         'tools/patch-server-home.cjs',
         'tools/patch-movie-browser.cjs',
+        'tools/patch-startup.cjs',
         'tools/copy-runtime-dependencies.cjs',
         'tools/copy-tracked-product-sources.cjs',
         'tools/electron-runtime-input.cjs',
         'tools/tracked-file-hash.cjs',
         'tools/runtime-exclusions.cjs'
     ]) copyRepoFile(root, relativePath);
+    copyRepoFile(root, 'src/electronapp/enhanced/startup.svg');
     writeFile(path.join(root, 'tools', 'patch-playbackmanager.cjs'), 'generator: playbackmanager\n');
     writeFile(path.join(root, 'tools', 'build.ps1'), 'generator: package-metadata\n');
 
@@ -138,7 +140,7 @@ function createFixture(root) {
     assert.equal(init.status, 0, init.stderr);
     childProcess.spawnSync('git', ['-C', root, 'config', 'user.name', 'ETE Test'], {encoding: 'utf8'});
     childProcess.spawnSync('git', ['-C', root, 'config', 'user.email', 'ete-test@example.invalid'], {encoding: 'utf8'});
-    const add = childProcess.spawnSync('git', ['-C', root, 'add', 'src/electronapp/some-normal-file.js', 'tools', 'package-lock.json', 'vendor/runtime-manifest.json', 'vendor/electron-runtime-manifest.json'], {encoding: 'utf8'});
+    const add = childProcess.spawnSync('git', ['-C', root, 'add', 'src/electronapp/some-normal-file.js', 'src/electronapp/enhanced/startup.svg', 'tools', 'package-lock.json', 'vendor/runtime-manifest.json', 'vendor/electron-runtime-manifest.json'], {encoding: 'utf8'});
     assert.equal(add.status, 0, add.stderr);
     const commit = childProcess.spawnSync('git', ['-C', root, 'commit', '-m', 'fixture'], {encoding: 'utf8'});
     assert.equal(commit.status, 0, commit.stderr);
@@ -188,9 +190,16 @@ test('runtime provenance binds tracked product sources to committed Git blobs', 
         assert.equal(manifest.validatedProductScope.sourceAcquisition.generatorPath,
             'tools/copy-tracked-product-sources.cjs');
         assert.deepEqual(manifest.validatedProductScope.files.map(entry => entry.sourcePath), [
+            'src/electronapp/enhanced/startup.svg',
             'src/electronapp/some-normal-file.js'
         ]);
-        const sourceEntry = manifest.validatedProductScope.files[0];
+        const startupEntry = manifest.validatedProductScope.files[0];
+        assert.equal(startupEntry.sourceSha256,
+            hash(fs.readFileSync(path.join(root, 'src/electronapp/enhanced/startup.svg'))));
+        assert.equal(startupEntry.sourceSha256, startupEntry.runtimeSha256);
+        assert.deepEqual(fs.readFileSync(path.join(runtime, 'electronapp/enhanced/startup.svg')),
+            fs.readFileSync(path.join(root, 'src/electronapp/enhanced/startup.svg')));
+        const sourceEntry = manifest.validatedProductScope.files[1];
         assert.equal(sourceEntry.relation, 'git-blob-copy');
         assert.match(sourceEntry.gitBlobObjectId, /^[0-9a-f]{40}$/);
         assert.equal(sourceEntry.sourceSha256, sourceEntry.runtimeSha256);
