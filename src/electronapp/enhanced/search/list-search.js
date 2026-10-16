@@ -12,7 +12,7 @@
             state.epoch++;
             Array.from(requests).forEach(function (cancel) { cancel(); });
             if (hide && owner.itemsContainer) owner.itemsContainer.classList.add('hide');
-            if (status) status.classList.add('hide');
+            if (status && hide) status.classList.add('hide');
         }
         var getItems = owner.getItems;
         owner.getItems = function (query, signal) {
