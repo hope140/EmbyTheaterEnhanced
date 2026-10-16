@@ -1,5 +1,7 @@
 # 构建与打包
 
+v0.3.7当前仅准备独立本地候选，数字版本已同步package/lock，使用最终本地源码提交重新构建并核对完整payload及provenance。公开测试版仍为下述v0.3.6，Stable/Latest仍v0.3.1；没有继承远端发布或系统安装授权。当前固定prepared物理输入通过原清单与工具链校验，未重新取得Electron ZIP归档；该归档本轮未独立回读，完整prepared树身份另行验证。
+
 [v0.3.6发行](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.6)已完成，产品Tag固定`de1a731aa3e915b00988134b6f5331bfc867a84a`。标准安装器`EmbyTheaterEnhanced-0.3.6-win-x64-setup.exe`，175752059 bytes，SHA-256 `020df218195e9999d443ad0832df6cd1be9a8c9f8dc8d7780b75b6c25893edc1`；2159个{app}解包文件与完整runtime逐路径一致，五附件匿名完整回读通过。安装器未签名，解包/隐藏运行不代表系统安装或用户前台验收。详细边界见[发行核验](V036_RELEASE_VERIFICATION.md)，文档后续HEAD不替代该产品来源。
 
 
