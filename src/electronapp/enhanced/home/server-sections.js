@@ -14,6 +14,16 @@
         return typeof value === 'string' && (empty || value.length > 0) && value.length <= max && !/[\u0000-\u001f\u007f]/.test(value);
     }
     function plain(value) { return !!value && typeof value === 'object' && !Array.isArray(value); }
+    function navigationId(value) { return typeof value === 'string' && /^[A-Za-z0-9_-]{1,256}$/.test(value); }
+    function navigationParent(row, serverId) {
+        var parent = row.ParentItem;
+        if (row.SectionType !== 'latestmedia' || !plain(parent) || !navigationId(serverId) || !navigationId(parent.Id) ||
+            parent.Type != null && !['CollectionFolder', 'VirtualFolder'].includes(parent.Type) ||
+            parent.IsFolder != null && parent.IsFolder !== true ||
+            !['movies', 'tvshows'].includes(parent.CollectionType) || parent.ServerId != null && parent.ServerId !== serverId ||
+            ['url', 'Href', 'QueryOptions', 'Script', 'Action', 'Command'].some(function(key) { return parent[key] != null; })) return null;
+        return Object.freeze({Id: parent.Id, CollectionType: parent.CollectionType, ServerId: serverId});
+    }
     function supportedVersion(value) {
         if (typeof value !== 'string' || !/^\d{1,5}(?:\.\d{1,5}){2,3}$/.test(value)) return false;
         var actual = value.split('.').map(Number), minimum = minimumVersion.split('.').map(Number);
@@ -23,9 +33,9 @@
         }
         return true;
     }
-    // Project only display data. QueryOptions, Href, HTML, header commands and
-    // server-supplied fetch paths never cross this adapter boundary.
-    function prepareSections(input) {
+    // Project display data and a narrow owner-bound library identity. URLs,
+    // paths, query overrides and commands never cross this adapter boundary.
+    function prepareSections(input, serverId) {
         if (!Array.isArray(input) || input.length > 64) throw new Error('sections-invalid');
         var ids = new Set();
         return input.map(function(row) {
@@ -44,6 +54,7 @@
                 ViewType: row.ViewType || 'cards', ScrollDirection: row.ScrollDirection || 'Horizontal',
                 ImageType: row.ImageType || 'Primary', RandomSeed: row.RandomSeed || null,
                 CollectionType: row.CollectionType || '', CardSizeOffset: row.CardSizeOffset || 0,
+                ParentItem: navigationParent(row, serverId),
                 Monitor: Object.freeze((row.Monitor || []).slice())});
         });
     }
@@ -110,7 +121,7 @@
                 if (!bound || !supportedVersion(bound.client.serverVersion())) return {status: 'fallback', reason: 'unsupported-server'};
                 if (!['tv', 'mobile,desktop'].includes(settings.displayMode)) return {status: 'fallback', reason: 'display-mode-invalid'};
                 var data = await read(bound, 'Users/' + encodeURIComponent(bound.userId) + '/HomeSections', {displayMode: settings.displayMode}, settings.signal);
-                var sections = prepareSections(data);
+                var sections = prepareSections(data, bound.serverId);
                 if (!current(bound) || settings.signal && settings.signal.aborted) return {status: 'cancelled'};
                 sections.forEach(function(section) {
                     sectionOwners.set(section, {bound: bound, seed: section.RandomSeed || Math.floor(Math.random() * 10000000) + 1});

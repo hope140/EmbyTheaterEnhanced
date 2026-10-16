@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-16 首页分区标题跳转续办
+
+- Model Tier：Tier 2；Model：主线程继承会话配置、provider测试worker为GPT-6 Luna High；Reason：服务端导航DTO与原native标题/router接线；Escalated：无。风险/不确定性中，模块范围为home provider/renderer和定向测试，Playback/Session影响NONE。
+- 当前用户明确只补跳转，缓存先不做，保留现有搜索布局；本任务可回退本地提交/构建授权继续有效。起点b646374，旧产品ed00a97与其测试目录/ZIP保持，不能覆盖用户可能运行的产物。
+- 已在旧ed00a97的真实main/app/router/原组件中，用空profile和合成API复现5个分区、30张卡片、标题/See All链接0。初次夹具未通过原setSystemInfo设置ApiClient运行版本，导致走旧首页回退；修正夹具后基线通过，产品未改。只读静态样本与原homesections确认桌面latest父库经原router进入suggestions，TV为h2。
+- provider投影冻结的Id/CollectionType/owner ServerId，Type/IsFolder仅作可选一致性校验；路由/路径/命令不跨边界。renderer显式加载原native标题和canonical router，文本用textContent，保留原See All/键盘机制，局部capture仅拒绝失效owner/stage。
+- provider17项、renderer16项、固定材料4项，共37项通过。材料用原getRouteUrl及原isLocalItem函数验证电影/电视剧latest路径；覆盖恶意URL/query/脚本、跨server、标题HTML、TV、旧owner激活、现有取消/清空与回退。没有改刷新清空、重试、时限或新增缓存；未更改vendor、媒体库/搜索/详情controller或播放核心。后续新来源构建/完整应用/ZIP结果另记。
+
 ## 2026-10-16 v0.3.4本地交付收尾
 
 - 用户随后明确允许本批可回退操作，批准14文件本地提交、来源绑定构建、包体核对及隔离隐藏/视口验收。核对审核回执中的14项文件集合和SHA均未改变，在codex/v034-library提交为ed00a97c11490a36e2a844c531772750deb22524；本轮没有新的产品修正。

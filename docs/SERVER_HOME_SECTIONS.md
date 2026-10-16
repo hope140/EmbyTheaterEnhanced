@@ -17,6 +17,14 @@
 
 ## HomeTab 接线
 
+### 媒体库分区标题
+
+桌面布局的`latestmedia`分区仅在`ParentItem`提供可校验的电影或电视剧媒体库身份时生成标题链接。provider只投影`Id`、`CollectionType`和当前owner绑定的`ServerId`，不制造缺省Type/IsFolder；若服务端提供这两个字段，则必须与受支持文件夹语义一致。ID限定为可安全放入原路由query的字母、数字、下划线与连字符，跨服务器、坏身份、url/Href/QueryOptions/脚本/动作覆盖会失去导航资格。其他DTO字段（含Path）不跨适配边界。
+
+renderer使用canonical`modules/approuter.js`的原`getRouteUrl(parent,{section:'latest',serverId})`，电影映射到`/videos`、电视剧到`/tv`的`suggestions`页签，保持当前原生路由语义。标题由原`emby-sectiontitle`升级并派生See All，标题文本仍用textContent，点击与键盘交给原router/input；局部标题容器仅阻止旧epoch、失效账号/服务器或已退休stage的激活。没有通用sectionId列表路由，不把section.Id猜成媒体库Id。
+
+无ParentItem、不支持目标及TV布局保留普通标题。此范围不覆盖任意分区类型或任意动态筛选列表。刷新清空、请求时限、重试、缓存与卡片/播放链保持原状；新增依赖只是随包原生router/button的canonical AMD入口，不更换Web输入或构建生成器。
+
 `ete-server-home` 使用原生 `getDynamicImport` 注册，该工厂已取出AMD模块的default；HomeTab直接调用别名对象的create，不再次访问default。别名回归必须消费原app.js的实际拆包函数，不能用直接返回AMD module对象的简化别名替代。
 
 - 固定 Carnival HomeTab 只新增一个维护 controller，接入原 resume/refresh/pause/destroy，保留原 BaseTab、连接、焦点和播放 owner。AMD 维护模块以唯一注册 ID 加载，共用依赖使用原 canonical module ID。
