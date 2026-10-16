@@ -1,5 +1,10 @@
 # 维护记录
 
+## 2026-10-16 v0.3.5 测试版发行准备
+
+2026-10-16：用户对cc7f542当前本地候选所测场景反馈“测试完成了，可以发布了”，记录为USER_REPORTED_TEST_COMPLETE，并明确授权v0.3.5 Pre-release发行。该反馈不补写未说明媒体、真实远控、系统安装或旧服务器矩阵逐项PASS。当前进入PR/门禁、最终main来源构建、标准安装器及公开回读流程；Stable保留v0.3.1。
+
+
 ## 2026-10-16 v0.3.5 搜索重复空态修正
 
 用户截图发现同页两条无匹配提示。旧完整应用默认getRouteUrl已复现2条（维护eteSearchStatus与原ListController.setEmptyListState各一条），修前单测也失败。Model Tier: Tier 1；Model: 当前主线程，精确标识未由工具暴露；Reason: 单helper删除重复UI owner，播放影响0；Escalated: No。限定worker仅调整测试，主线程复核真实DOM。
