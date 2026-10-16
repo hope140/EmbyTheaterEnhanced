@@ -174,6 +174,7 @@ function makeFixture(options = {}) {
     const events = makeEventHub();
     const queueControl = {nextItem: null};
     const queueManagerClass = makeQueueManager(queueControl);
+    const playerPlaylist = [];
     const player = {
         name: 'localplayer',
         id: 'local-player',
@@ -186,11 +187,15 @@ function makeFixture(options = {}) {
             return Promise.resolve({
                 DirectPlayProfiles: [],
                 TranscodingProfiles: [],
-                SubtitleProfiles: []
+                SubtitleProfiles: [],
+                CodecProfiles: []
             });
         },
         play(streamInfo) {
             calls.play.push(streamInfo);
+            if (options.selfManagedPlayer && streamInfo && Array.isArray(streamInfo.items)) {
+                playerPlaylist.splice(0, playerPlaylist.length, ...streamInfo.items);
+            }
             return Promise.resolve();
         },
         stop(...args) {
@@ -215,7 +220,14 @@ function makeFixture(options = {}) {
         getMaxStreamingBitrate() { return 1000000; },
         getRepeatMode() { return 'RepeatNone'; },
         getSubtitleOffset() { return 0; },
-        getPlaybackRate() { return 1; }
+        getPlaybackRate() { return 1; },
+        getPlaylist: options.selfManagedPlayer ? () => playerPlaylist : undefined,
+        getPlayerState: options.selfManagedPlayer ? () => ({
+            NowPlayingItem: playerPlaylist[0] || null,
+            PlayState: {PositionTicks: 0},
+            PlaylistIndex: 0,
+            PlaylistLength: playerPlaylist.length
+        }) : undefined
     };
     const apiClient = {
         deviceId() { return 'device-1'; },
@@ -230,6 +242,9 @@ function makeFixture(options = {}) {
             const metadata = {itemId, pending};
             calls.metadata.push(metadata);
             return pending.promise;
+        },
+        getAudioStreamUrls(items) {
+            return Promise.resolve(items.map(item => 'stream://' + item.Id));
         },
         reportPlaybackStart(info) {
             calls.reports.push({method: 'reportPlaybackStart', info});
@@ -257,6 +272,7 @@ function makeFixture(options = {}) {
     const pluginManager = {
         ofType(type) {
             if (type === 'mediaplayer') return [player];
+            if (type === 'preplayintercept') return options.preplayInterceptors || [];
             return [];
         }
     };

@@ -40,7 +40,7 @@ function callSites(openExternal) {
         mainWindow,
         windowStateOnLoad: null,
         hasAppLoaded: false,
-        sleepLock: 0,
+        appIsShuttingDown: false,
         setWindowState(state) { mainActions.push('windowstate:' + state); },
         closeWindow() { mainActions.push('close'); },
         onLoaded() { mainActions.push('loaded'); },
@@ -65,6 +65,7 @@ function callSites(openExternal) {
         process: {env: {APPDATA: 'fixture-appdata'}},
         console: {log(...args) { logs.push(args); }, warn(...args) { logs.push(args); }, error(...args) { logs.push(args); }}
     };
+    context.playbackPowerOwner = mainRequire('./enhanced/playback-power-owner').createOwner(context.powerSaveBlocker);
     vm.createContext(context);
     const helperImport = mainSource.match(/var externalUrl = require\([^\n]+\);/);
     if (helperImport) vm.runInContext(helperImport[0], context);

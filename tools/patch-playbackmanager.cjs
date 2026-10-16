@@ -491,4 +491,95 @@ replaceOnce('terminal stop completion fence',
       this._eteTerminalStop = completion;
       return completion;`);
 
+// Resource ownership only: leave the playback admission, stop coordinator,
+// reporting and queue decisions above unchanged.
+const volumeOsdHelpers = `  function retireEnhancedVolumeOsd(manager, requestId, player, expectedOwner) {
+    var owner = manager._eteVolumeOsdOwner;
+    if (!owner || (requestId != null && owner.requestId !== requestId) ||
+        (player && owner.player !== player) || (expectedOwner && owner !== expectedOwner)) return;
+    manager._eteVolumeOsdOwner = null;
+    if (owner.observer) owner.observer.disconnect();
+    if (owner.timer != null) clearTimeout(owner.timer);
+    owner.observer = owner.timer = null;
+  }
+  function beginEnhancedVolumeOsd(manager, player, streamInfo) {
+    retireEnhancedVolumeOsd(manager);
+    var owner = {player: player, requestId: streamInfo._etePlayRequestId, item: streamInfo.item, observer: null, timer: null};
+    manager._eteVolumeOsdOwner = owner;
+    function current() {
+      return manager._eteVolumeOsdOwner === owner && manager._currentPlayer === player &&
+        manager._etePlayRequestSequence === owner.requestId;
+    }
+    owner.observer = new MutationObserver(function () {
+      if (!current()) return retireEnhancedVolumeOsd(manager, null, null, owner);
+      if (owner.timer != null || !owner.observer) return;
+      var element = document.querySelector(".volumeOsd:not(.hide)");
+      if (!element) return;
+      owner.observer.disconnect();
+      owner.observer = null;
+      owner.timer = setTimeout(function () {
+        var mayHide = current();
+        retireEnhancedVolumeOsd(manager, null, null, owner);
+        if (mayHide) element.classList.add("hide");
+      }, 50);
+    });
+    owner.observer.observe(document.body, {childList: true, characterData: true, subtree: true});
+  }
+`;
+replaceOnce('volume OSD resource helpers', '  function addPlaylistItemsToPlaybackReport',
+    volumeOsdHelpers + '  function addPlaylistItemsToPlaybackReport');
+replaceOnce('volume OSD internal admission retirement',
+    '      if (!capturedRequestId) self._etePlayRequestSequence = (self._etePlayRequestSequence || 0) + 1;',
+    '      if (!capturedRequestId) {\n' +
+    '        self._etePlayRequestSequence = (self._etePlayRequestSequence || 0) + 1;\n' +
+    '        retireEnhancedVolumeOsd(self);\n      }');
+replaceOnce('volume OSD public admission retirement',
+    '        self._etePlayRequestSequence = (self._etePlayRequestSequence || 0) + 1;\n        options._etePlayRequestId',
+    '        self._etePlayRequestSequence = (self._etePlayRequestSequence || 0) + 1;\n' +
+    '        retireEnhancedVolumeOsd(self);\n        options._etePlayRequestId');
+replaceOnce('volume OSD terminal retirement',
+    '      this._etePlayRequestSequence = (this._etePlayRequestSequence || 0) + 1;\n',
+    '      this._etePlayRequestSequence = (this._etePlayRequestSequence || 0) + 1;\n      retireEnhancedVolumeOsd(this);\n');
+replaceOnce('volume OSD player selection retirement',
+    '      (currentPairingId = null),\n        (self._currentPlayer = player),',
+    '      if (previousPlayer !== player) retireEnhancedVolumeOsd(self, null, previousPlayer);\n' +
+    '      (currentPairingId = null),\n        (self._currentPlayer = player),');
+replaceOnce('volume OSD request ownership',
+    `      var mutation = new MutationObserver(function () {
+        var volumeOsdElement = document.querySelector(".volumeOsd:not(.hide)");
+        if (volumeOsdElement) {
+          setTimeout(function () {
+            volumeOsdElement.classList.add("hide");
+          }, 50);
+          mutation.disconnect();
+        }
+      });
+      mutation.observe(document.body, {childList: true, characterData: true, subtree: true});`,
+    '      beginEnhancedVolumeOsd(self, player, streamInfo);');
+replaceOnce('volume OSD self-managed item ownership',
+    '    function onPlaybackStoppedFromSelfManagingPlayer(e, playerStopInfo) {\n',
+    `    function onPlaybackStoppedFromSelfManagingPlayer(e, playerStopInfo) {
+      var stoppedItem = playerStopInfo && playerStopInfo.item;
+      var stoppedRequestId = stoppedItem && stoppedItem.playOptions && stoppedItem.playOptions._etePlayRequestId;
+      var volumeOwner = self._eteVolumeOsdOwner;
+      if (stoppedRequestId != null) {
+        retireEnhancedVolumeOsd(self, stoppedRequestId, this);
+      } else if (volumeOwner && volumeOwner.item === stoppedItem) {
+        retireEnhancedVolumeOsd(self, null, this, volumeOwner);
+      }
+`);
+replaceOnce('volume OSD stopped stream retirement',
+    '        if (playerData.streamInfo && playerData.streamInfo._eteStopHandled) return;\n',
+    '        if (playerData.streamInfo && playerData.streamInfo._eteStopHandled) return;\n' +
+    '        retireEnhancedVolumeOsd(self, playerData.streamInfo && playerData.streamInfo._etePlayRequestId, this);\n');
+replaceOnce('volume OSD failed request retirement',
+    '              if (!isCurrentEnhancedPlayRequest(playOptions)) return;\n              return onUnhandledPlaybackFailure(error);',
+    '              if (!isCurrentEnhancedPlayRequest(playOptions)) return;\n' +
+    '              retireEnhancedVolumeOsd(self, playOptions._etePlayRequestId);\n              return onUnhandledPlaybackFailure(error);');
+replaceOnce('volume OSD failed initial load retirement',
+    '                          if (!isCurrentEnhancedPlayRequest(playOptions) || (err && err.playbackSuperseded)) return;',
+    '                          if (!isCurrentEnhancedPlayRequest(playOptions) || (err && err.playbackSuperseded)) {\n' +
+    '                            retireEnhancedVolumeOsd(self, playOptions._etePlayRequestId);\n                            return;\n                          }\n' +
+    '                          retireEnhancedVolumeOsd(self, playOptions._etePlayRequestId);');
+
 fs.writeFileSync(file, source, 'utf8');

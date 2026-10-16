@@ -1,5 +1,71 @@
 # 维护记录
 
+## 2026-10-16 v0.3.7发行准备授权
+
+Model Tier: Tier 1（明确发行合同）；Model: 主线程沿用配置，精确标识未暴露；限定GPT-6 Luna High只读复核累计scope及准备匿名回读脚本；Reason: 已审产品不变，按固定工具链和来源执行发行；Escalated: No。用户新授权测试版发布闭环，不继承旧版授权作推断。父会话负责PR审核与后续排期，当前产品冻结和边界保持。
+
+实时核对远端main dd198ac，未存在v0.3.7 Tag/Release或开放PR，Latest仍v0.3.1。当前ebaed19干净，1246da1后的产品/工具/测试/版本tree无差异。用户反馈清单1—4及6正常，仅记USER_REPORTED_NORMAL；第5电源/退出组合明确暂缓，NOT_TESTED且不阻塞发布。已保存旧Release/Latest/Tag快照；本次仅增量文档，之后创建PR供父审，最终main另构建标准安装器，不冒用本地wrapper ZIP来源。
+
+不读旧profile/个人凭据，不改旧目录或已有Release附件，不系统安装/主动前台/真实服务器写入，不启动038或混入菜单/签名需求。电源项后续使用反馈由用户决定，不再重复设等待门禁。
+
+## 2026-10-16 v0.3.7父审核文档收尾
+
+Model Tier: Tier 1；Model: 主线程沿用配置，精确标识未暴露；Reason: 明确回执的文档/私有状态同步；Escalated: No。父会话审核产品source1246da1023c43981c7ed40a4e556cb95c7eb7e02及文档快照619be41，报告生产路径77/77、生成PM/runtime/已审副本一致，冻结与source后仅文档差异通过。读取既有`.work/v037-parent-final-artifact-audit/result.json`，302项全部PASS、failures为空，覆盖完整payload/runtime/ZIP逐SHA、Git blob来源、launcher/profile及ZIP完整字节/CRC。
+
+父审对象ZIP保持240504661 bytes、SHA9e7ea2d64df19838e2942674f4efbe23be54cfeff8b0eadab74fea281180ed6c；本轮没有重新执行这些门禁或修改任何产品/产物/VALIDATION/profile。只将当前状态同步为parent reviewed、manual review pending；前台、真实服务器播放/远控、OS电源与安装仍未验证。本轮docs-only提交HEAD与产品source分开，私有task state记录准确新HEAD；交付与heartbeat删除由父会话处理，没有新增远端、安装或前台动作。
+
+## 2026-10-16 v0.3.7准确来源本地候选完成
+
+产品源码1246da1023c43981c7ed40a4e556cb95c7eb7e02，版本0.3.7，后续文档HEAD单独记录。Model Tier: Tier 2；主线程沿用配置并保留异步/核心最终核对，GPT-6 Luna High只补限定测试、固定输入预检和私有renderer夹具，未提交/改架构；Escalated: No。D以d13e418独立保存，1246da1只同步版本/候选说明。最终公开离线977/977、完整材料200/200，0失败/跳过；JS309、PowerShell28及360文件有限凭据模式检查通过。旧975不替代本次来源门禁。
+
+从准确提交Git blobs、固定prepared输入和项目内GCC构建新runtime：2159 payload/2160完整文件，VerifyOnly及独立逐文件SHA/完整集合、canonical payload-set核对通过；Helper28054c75和默认libmpv965efde4保持固定字节。ApiClient base/raw input/transformed output身份分层，完整provenance通过。未下载缺失的Electron ZIP，prepared73文件完整树通过原门禁；不宣称本轮独立回读该归档或当前加载DLL哈希。
+
+真实main/AMD的空profile隐藏检查：原VideoOsdView/组件18、ApiClient原型+真实Events17、PM构造器/真实队列/Events/原生MutationObserver18项，API/Player/socket为合成替身，OSD手动生命周期。合成报告7 start/1 progress/7 stop，7个Session身份一一配对；8个UI stop含1个未启动pending原事件，不混作Session报告。observer/timer终态0，显示、Node/浏览器外网、Native子进程0，所属进程退出。原file: Cache警告单列，无新增页面错误。
+
+私有连接脚本首轮restCountBeforeLogout作用域遗漏、第二轮播放脚本fullscreen:false导致原background模式无报告，失败分别保留；仅修夹具并维持原断言，产品字节未变后通过。独立交付launch.cjs探针通过版本/应用资料与argv隔离；其生成profile移动到本任务私有目录保留，绝对源/目标已核验位于工作树内，未读个人凭据、未动旧profile。
+
+独立目录dist/ETE-v0.3.7-controls-1246da1-20261016，完整2164文件ZIP流回读通过；ZIP240504661 bytes，SHA9e7ea2d64df19838e2942674f4efbe23be54cfeff8b0eadab74fea281180ed6c，附.sha256。测试说明与VALIDATION只含摘要，私有harness/profile/日志不入包，锁定依赖原带文件完整保留。源/runtime/delivery身份和人工项见V037_LOCAL_CANDIDATE，恢复见私有task state。未push/PR/merge/Tag/Release、真实前台/服务器播放远控/OS电源/安装/硬件，菜单与038等未实施。
+
+限定GPT-6 Luna High独立只读payload/ZIP审计27项通过，无差异；主线程已核对真实报告、再次回读runtime完整集合/SHA、ZIP精确大小写路径/sidecar/SHA与审核PM输出，并确认四个最终隐藏/启动根进程均已退出。最后仅文档收尾，不重构建、不重标1246da1产品来源，不将文件审计提升为DLL加载或真实服务验收。
+
+## 2026-10-16 v0.3.7 D扩展测试及生产窄变换
+
+Model Tier: Tier 2；Model: 主线程沿用配置，精确标识未暴露；GPT-6 Luna High只补限定fixture/用例与分支证据；Reason: observer/timer和self-managed Item/request归属由主线程设计/最终核对；Escalated: No。父会话先复核ABC，再明确批准D补测和条件实施，继续本地候选授权。
+
+父审执行发现原草案当前load失败未退休资源64/65，审查副本补initial rejection清理及queued mutation guard后65/65。新增四个pre-observer等待/取消无资源正例、selection/removal、raw旧mutation/已取消timer、重复mutation、self-managed当前/迟到事件等共19个observer case：旧输出5/19、父审18/19，最后缺口为player-only旧stop误清新B。实际自管理公开Play保留A/B canonical Item及request id1/2，最终资源hook按原id或exact Item对象退休，不猜无marker旧clone；原core streamInfo=null与事件接受主体未动。
+
+主线程独立审查副本77/77，生产patch-playbackmanager.cjs只追加已审资源helper/挂接，生成输出与审查副本SHA一致；实际生产58请求/Session+19 observer再次77/77，0 skipped。固定锚点错误输入拒绝测试8/8。原stop coordinator/报告/队列和admission谓词、错误返回、50ms行为保持；未改Native/Resolver/认证/协议/窗口/依赖。B普通电源API异常沿旧路径向上传播、可能先于AppHost callback；shutdown窄catch/双类清理保持，不扩写普通OS异常优雅恢复。
+
+固定物理材料按清单复制并验证：Carnival1009、patch51、完整Electron73、UCRT64 6990及header/原Inno工具树通过，无系统安装。指定旧工作树的Electron ZIP不存在，未下载/运行prepare.ps1；当前已有prepared完整树通过原门禁，直接用于既有build.ps1，不宣称本轮再次验证该ZIP归档字节。下一步固定版本/source并只构建一个最终本地候选。
+
+## 2026-10-16 v0.3.7父审后A/B/C实施与D草案
+
+Model Tier: Tier 2；Model: 主线程沿用配置，精确标识未暴露；worker GPT-6 Luna High负责纯电源helper/限定测试及D只读分支清单；Reason: 视图、socket与应用退出资源的异步归属由主线程设计/验收；Escalated: No。父会话独立复现并明确批准A/B/C，D仅测试与逐分支diff草案。菜单重排只记录已确认独立待办，不赋版本、不改产品菜单。
+
+B以本地提交a5e29a7独立保存：音视频各持一个幂等电源id，ID0有效，陈旧inactive id可重获，shutdown先退休新on并尝试两类清理，失败保留错误和所持id。main before-quit先置关闭标记/收锁，原Native/kernel/startup drain及协议/窗口不变；实际main摘录覆盖drain未完成时通知回调完成、不再start和恰一次释放，清理失败不阻塞原退出收尾。videohandler未改，既有无token四命令的任意同类乱序问题仍不承诺解决。
+
+A固定VideoOSD窄变换保留20键表/500ms/倍率，监听和timer按resume/pause/release/destroy清理并显式传捕获player。完整隐藏应用发现首轮仅比较player对象不足以覆盖同一Player切集，已保留失败并接原OSD playbackstart/playbackstop当前player清理；最终实际VideoOsdView/AMD/原生组件18项通过，显示/网络/Native0。隔离runtime由v036准确manifest的2158文件逐项核验后复制，并作4项显式替换，fixture身份明确，不冒充v037来源构建；个人profile/旧包保持，fake电源API不施加系统电源效果。
+
+C仅改logout/ensure/open回调/close，增socket代次、可取消retry/deferred-close timer和pending logout计数，旧回调不影响新连接，显式close通知不吞掉，同实例重登可恢复。REST/auth字段/done清token、connected含义、原backoff与订阅重放保持；4方法外字节及CRLF验证通过。Carnival base、raw payload input、transformed output三SHA分别绑定，vendor不改；新增变换器接generatorPaths/INPUT_PATHS/tamper/provenance fixture。最初patcher未处理原payload CRLF导致锚点失败，修正后恢复原换行；不是材料变更或弱化校验。
+
+本轮公开离线975/975，早于同Player末次局部补修；之后相关定向50/50、A材料和最终输出overlay/provenance6/6复验通过。来源fixture首轮1项因SVG checkout CRLF与Git blob字节不一致失败，改为核对准确提交blob后通过，有效断言保留。D完整生成模块材料7项为1正例通过/6修前失败，生成器未改；新私有差异草案只node --check，未执行，不记修复PASS。当前合同逐项给出provisional/started/失败/取消/替换/Stop/迟到mutation与timer清理位置，并标出self-managed/preplay等待补case。
+
+在D核心审核停点保存状态与恢复入口，暂不生成整套候选/升级版本。不push/PR/merge/Release、前台、真实服务器/凭据、安装、硬件或缓存/切轨延迟工作；准确来源构建、真实播放远控/OS电源与安装验收均未执行。
+
+A/C及来源接线本地提交5a6e886，包含B提交a5e29a7；准确提交的51项build-input blobs检查通过，追加source-contract/tamper25/25，维护JS语法308项和有限凭据模式359项通过。D自测作为后续独立测试/文档提交，另有语法检查。完整应用仅直接构造并驱动原VideoOsdView/Events/原生组件，不补写真实播放Router路径、C真实WebSocket、B系统电源或任何硬件PASS；四次所属夹具进程退出，Native启动0。
+
+## 2026-10-16 v0.3.7只读范围合同
+
+Model Tier: Tier 2；Model: 主线程沿用配置，精确标识未由工具暴露；worker为GPT-6 Luna High，仅限只读模块/事件盘点与隔离VM；Reason: OSD/input、socket重连、main资源及PlaybackManager私有observer的跨模块异步归属；Escalated: No。Task Risk中高、Task Uncertainty中高、Cross-module Scope为上述四处，当前Playback/Session产品改动0。
+
+实时ls-remote main为dd198ac，v0.3.6 Tag解引用de1a731；新managed工作树从准确main建立codex/v037-controls，原Settings/v035/v036与profile/产物保持。固定材料SHA均对照当前manifest，ApiClient审计确认实际来源为综合补丁authoritative payload而非Carnival base。两名worker没有产品/公开文档/版本控制写入，只生成私有清单与VM脚本；主线程复核证据、执行关键复现并汇总合同。
+
+原main分派器与videohandler的fake电源API复现重复/交错on后off遗留句柄，普通单次开始停止为0；原OSD键盘注册和pause片段复现非映射键锁住倍率handler、3次操作留3个keyup listener、pause后500ms回调仍作用新owner。完整ApiClient模块/prototype及合成依赖复现logout REST pending时旧1秒timer重连，完成后token已清、新socket仍CONNECTING，主线程重跑一致。完整当前生成PlaybackManager的既有AMD fixture连续3次公开Play/Stop后observer存活1/2/3，start/stop报告各3；原50ms hide无owner检查。全部为隔离证据，不提升为真实应用/服务器/设备PASS。
+
+PlaybackManager基线58/58、AppHost/外链20/20、7个固定JS语法及材料hash通过。observer探针首轮fixture缺getCurrentUser，次轮background playback按原语义不报告，补齐既有fixture依赖并使用正常fullscreen后通过原断言；私有失败记录保留，产品与有效测试未改。完整应用/前台/Native/真实服务器播放远控/OS电源/安装/硬件均NOT_EXECUTED。生产代码、版本号、依赖与发行状态保持；私有状态保存恢复入口，不进入包体。
+
+交付docs/V037_SCOPE_AND_CONTRACT.md及PROJECT_STATUS；四项分别定义Observed/Expected、实际文件、最小候选差异、冻结、回退及验收。PlaybackManager私有observer和ApiClient核心必须经规划会话明确审核后才能修正；现有正常队列和Session清理不重写。本轮停在SCOPE_REVIEW_REQUIRED，没有push/PR/merge/Tag/Release、候选构建或系统/服务器写入。
+
 ## 2026-10-16 v0.3.6发行与匿名回读完成
 
 Model Tier: Tier 1；Model: 主线程沿用配置，测试worker GPT-6 Luna High；Reason: 固定启动资产/窄CSS变换及来源发行合同；Escalated: No。PR #40两项955/955通过后merge为de1a731aa3e915b00988134b6f5331bfc867a84a，最终main及Tag CI955/955通过。原图完整PNG字节复用，新SVG从准确Git blob物化；源码/工具链/完整payload来源门禁通过。

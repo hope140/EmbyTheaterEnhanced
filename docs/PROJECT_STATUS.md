@@ -1,5 +1,45 @@
 # 项目状态
 
+## 2026-10-16 — v0.3.7用户验收反馈与Pre-release授权
+
+用户明确授权在执行会话发布v0.3.7测试版，包含必要push/PR、CI和父审后merge、最终main准确来源构建/标准安装器、Tag/Release五附件及匿名完整回读、main文档收尾。Stable/Latest保持v0.3.1。当前进入发行准备，尚未发布；验收与发行合同见[发行核验](V037_RELEASE_VERIFICATION.md)。
+
+用户按父会话清单第1—4及第6项反馈正常，仅记录已测场景USER_REPORTED_NORMAL；第5项电源/退出组合因缺环境未测，用户随后明确暂缓，后续使用发现问题再反馈，不再设为本次发布等待条件。未说明的媒体、硬件与系统层仍不补写PASS。旧候选目录/profile/log保持，不读不删；本轮不安装、不主动前台、不读取个人凭据、不写真实服务器、不开始038。以下保留本地候选和审核历史。
+
+## 2026-10-16 — v0.3.7本地候选父审核通过，人工验收待完成
+
+父会话完成产品source `1246da1023c43981c7ed40a4e556cb95c7eb7e02`、文档快照`619be41`的最终审核：生产路径77/77，生成PM/runtime/审核副本一致，冻结边界与source后仅文档差异通过。父独立只读artifact审计302/302通过，完整核对2159 payload、2160 runtime、2164 ZIP及来源Git blobs、launcher/profile边界与ZIP字节/CRC。ZIP仍为240504661 bytes、SHA `9e7ea2d64df19838e2942674f4efbe23be54cfeff8b0eadab74fea281180ed6c`，未更改。
+
+当前状态为parent reviewed / manual review pending；人工前台、真实服务器播放/远控、OS电源与安装仍未验证。此次只更新文档和私有状态，读取既有父审回执，不重跑已过门禁、不改产品/runtime/ZIP/VALIDATION或旧profile。候选身份与证据入口见[本地候选](V037_LOCAL_CANDIDATE.md)；父会话负责交付和本任务heartbeat收尾。
+
+## 2026-10-16 — v0.3.7本地候选完成
+
+A/B/C/D局部修正按审核范围合批，产品源码固定`1246da1023c43981c7ed40a4e556cb95c7eb7e02`。最终公开离线977/977、材料200/200、D及原请求/Session77/77通过；源构建2159 payload/2160完整runtime、VerifyOnly、独立完整集合/逐项SHA与ZIP2164文件流回读通过。独立目录入口为`dist/ETE-v0.3.7-controls-1246da1-20261016/Start-v0.3.7.cmd`，ZIP为同名目录加`.zip`；具体SHA、来源关系和人工清单见[本地候选](V037_LOCAL_CANDIDATE.md)。后续文档HEAD与该产品来源分开。
+
+源构建隐藏实际应用OSD18、ApiClient原型/真实Events17、PM/真实队列/Events/原生DOM18项通过，API/Player/socket均为合成替身、OSD生命周期手动驱动。7个合成Session的start/stop身份配对，7 start/1 progress/7 stop；显示/外网/Native均0、资源及所属进程收口。独立启动探针确认0.3.7和资料路径隔离，生成profile不入交付。真实前台、服务器播放/远控、OS电源、安装与硬件仍未验收。
+
+本轮没有push/PR/merge/Tag/Release或系统安装，Stable/已发布版本状态保持原记录。菜单仅独立待办，未开始后续版本；先前失败和审核停点保留其历史归属。
+
+## 2026-10-16 — v0.3.7 D条件审核闭合，准备合批本地候选
+
+父会话明确允许补测后落实D窄变换。扩展observer材料19项在旧输出5通过/14修前失败，父审输出18/19；唯一新增缺口为同一self-managed Player旧A stop清新B资源。最终用既有Item/request身份限定资源退休，保留原核心stop状态/事件语义，19/19通过。主线程审查副本与实际生产生成器均58请求/Session+19 observer合计77/77，输出SHA一致。
+
+当前A/B/C/D局部实现就绪，进入0.3.7准确来源构建和独立本地交付准备，尚未构建新候选或发布。真实服务器/播放远控、OS电源、前台、安装与硬件仍未验收；菜单仅独立记录。先前D审核停点、修前失败和历史975门禁保留各自来源，不作为最终候选新来源PASS。
+
+## 2026-10-16 — v0.3.7 A/B/C局部修正，D核心差异待审
+
+父会话核验9b8cbd3合同并批准A/B/C；OSD倍率键监听/timer归属、main独立电源owner及退出清理、ApiClient关闭/重连代次已按限定范围实施。原键表/500ms、协议/认证字段、connected含义、订阅与原队列/Session归属保持。隐藏完整应用复核额外发现同一Player切集仍可执行旧timer，已接原OSD start/stop清理并在实际完整AMD/组件中修前复现、修后18项通过，显示/网络/Native为0。
+
+本轮公开离线975/975；最后同Player局部修正后的定向50/50、A材料自测和来源材料6/6通过。D只新增材料测试及逐分支草案，原生成器保持：当前7项中1通过、6项修前失败，未修复；草案仅语法检查，未执行。准确挂接点、缺口与保留的50ms行为见[更新合同](V037_SCOPE_AND_CONTRACT.md)。当前在`D_CORE_REVIEW_REQUIRED`停点等待父审，不构建未定核心的整套候选；版本号保持0.3.6，尚无v0.3.7来源候选/发行。完整应用证据来自明确替换的隔离夹具，不替代准确来源构建、真实播放远控、系统电源/安装/硬件验收。
+
+独立后续待办已记录：仅Emby Theater Enhanced栏按操作快捷键→HDMI-CEC→视频设置→音频设置→STRM智能解析→诊断与日志→关于Enhanced排序。版本未指定，本轮不改菜单，其它栏/分类/路由/功能保持。
+
+## 2026-10-16 — v0.3.7范围合同待审核
+
+从实时远端main `dd198ac037abd7658e78931dc52da285cf61d174` 建立独立工作树，已完成播放控制与连接生命周期的只读调用图、固定材料核验及限定隔离复现。四项问题为OSD倍率键盘监听/迟到timer、电源锁共享句柄、logout期间旧socket重连，以及PlaybackManager音量OSD observer跨Stop存活；最小候选文件、核心触及理由、回退与逐项验收见[范围合同](V037_SCOPE_AND_CONTRACT.md)。正常队列/InputManager/Session与现有对称清理保留，队列升级轮询仍为静态观察项。
+
+当前为`SCOPE_REVIEW_REQUIRED`，在规划会话审核停点停止，尚未修改生产代码或生成v0.3.7候选。PlaybackManager基线58/58与AppHost定向20/20通过；四项复现分别来自隔离VM或完整模块合成fixture，不代表完整应用、真实播放远控或OS电源验收。未执行前台、真实服务器、Native、安装或硬件操作；原工作区、旧产物和profile保持。版本与已发布状态仍按v0.3.6记录，当前没有远端写入。
+
 ## 2026-10-16 — v0.3.6启动页测试版已发布
 
 [v0.3.6启动页更新测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.6)已公开，PR #40已合并，产品Tag和安装器固定最终main来源`de1a731aa3e915b00988134b6f5331bfc867a84a`；Stable/Latest保持v0.3.1。五个附件均匿名完整回读通过，Release为非draft的Pre-release。原Emby PNG字节保留，副标改为THEATER ENHANCED，原loader/页面结构保持。
