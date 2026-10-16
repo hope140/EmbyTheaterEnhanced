@@ -2,7 +2,7 @@
 
 ## 当前基线与阶段
 
-本地维护从已发布后的 main `45bea67bb6f3c9e825c44c6e1a5e0f908f74b8d0` 开始，分支 `codex/post-v037-night`。v0.3.7 产品 Tag 仍固定 `bf6e48214820fac0558bdfe7f37526f1c7a3d7c2`，本轮不改变已发布资产或渠道。当前为首个合同停点，尚未修改产品、运行测试或生成新候选；以下状态会依据实际证据增量更新。
+本地维护从已发布后的 main `45bea67bb6f3c9e825c44c6e1a5e0f908f74b8d0` 开始，分支 `codex/post-v037-night`。v0.3.7 产品 Tag 仍固定 `bf6e48214820fac0558bdfe7f37526f1c7a3d7c2`，本轮不改变已发布资产或渠道。首个合同停点已通过，当前为定位与局部方案审查阶段；已运行私有合成复现，尚未修改产品、运行组合回归或生成新候选。
 
 本报告只覆盖当前仍可达的维护代码与构建入口。历史提交用作线索；旧版本曾经的缺陷、文件存在和模块注册均不直接代表当前缺陷或已观察到的运行行为。
 
@@ -28,10 +28,12 @@
 
 ## 证据与恢复
 
-基线工作树检查为空，已读取当前 AGENTS、架构、状态和维护经验。项目采用锁定 Node 工具链及 `tools/build.ps1` 来源构建；具体测试、固定物理材料和隐藏组件门禁按实际修改选择。当前尚未准备新工作树的物理材料或声明构建通过。
+基线工作树检查为空，已读取当前 AGENTS、架构、状态和维护经验。项目采用锁定 Node 工具链及 `tools/build.ps1` 来源构建；新工作树固定输入与锁定依赖已准备，未声明新来源构建通过。具体测试与隐藏组件门禁按实际修改选择。
 
 首轮安装与资源静态审核未发现可确认产品缺陷。没有防降级比较属于未指定策略，不据此增加限制；BAT手工/外部消费者仍UNKNOWN并保留。固定物理输入已准备，Electron/Native/Inno门禁通过，Electron原ZIP仍未重新回读。
 
-显示链实际函数体的合成复现确认B1未处理child/error、B2未知动作仍spawn、B3无数字响应抛错并使Promise悬挂。最小P1差异和未闭合显示器/超时/恢复归属见[显示审查](OVERNIGHT_DISPLAY_REVIEW_20261016.md)，状态为PARENT_REVIEW_REQUIRED，尚未修改产品。A菜单继续定位真实跨插件聚合owner；E诊断/内核与插件/Web有限审核进行中。每个问题按Observed、Expected、Evidence、Files、Tests、Blocker记录；缺少设备或材料时保留UNKNOWN/NOT_VERIFIED，继续其他独立项。
+显示链实际函数体的合成复现确认B1未处理child/error、B2未知动作仍spawn、B3无数字响应抛错并使Promise悬挂。最小P1差异和未闭合显示器/超时/恢复归属见[显示审查](OVERNIGHT_DISPLAY_REVIEW_20261016.md)。E1确认异常诊断标签可保留合成敏感片段；正常调用固定标签没有观察到该输入。E2在固定组件与维护wrapper的合成场景复现电影缓存页pause/resume(false)后同chunk无法重试。E1/E2精确文件、最小差异与失败用例见[异步及隐私审查](OVERNIGHT_ASYNC_PRIVACY_REVIEW_20261016.md)。三份产品方案均PARENT_REVIEW_REQUIRED，未实施；A继续定位真实跨插件菜单owner。
+
+主线程另有限核对STRM/CD2的source/sidecar分工、DirectUrl与User-Agent校验、同源回退、绝对deadline、取消与目录恢复边界；该已读范围内未发现新增确定缺陷。Native内部实现未作全量重新审核，真实服务/设备仍未验证，不把既有测试门禁等同于穷尽历史缺陷。每个问题按Observed、Expected、Evidence、Files、Tests、Blocker记录；缺条件继续独立项。
 
 私有恢复状态为 `.work/OVERNIGHT_TASK_STATE.json`，记录准确工作树、提交、工具/进程归属与下一步；原始审计证据置于 `.work/overnight/`。本轮未创建产品窗口或系统作业。最终如有产品修改，按准确本地 sourceCommit 构建新目录候选，并完整核对 provenance、payload 与 ZIP；没有产品修改则仅交报告。

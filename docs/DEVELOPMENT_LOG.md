@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-17 Web分块归属与诊断标签复现
+
+E1纯函数探针确认category/event字符白名单不能替代已有文本脱敏；正常产品调用固定标签，未声称常规泄露。E2使用固定VirtualScroller函数体、生产patcher和Movie wrapper复现pause/resume(false)后分块标记仍true而无法重新fetch，旧数据继续被抑制。最小标签处理与局部chunk token方案见[异步及隐私审查](OVERNIGHT_ASYNC_PRIVACY_REVIEW_20261016.md)，仅文档/私有证据，等待父审，不改变产品。STRM/CD2有限源码核对未发现新增确定问题；不把覆盖范围扩大为完整Native或真实服务验收。
+
 ## 2026-10-17 显示异常复现与局部方案停点
 
 三个现有函数体的合成用例复现child/error未收口、unknown仍spawn及无数字响应Promise悬挂，真实子进程/窗口/显示器操作为0。P1仅建议协议一次回调和无数字响应按原空结果settle，精确允许文件/不变量/测试见[显示审查](OVERNIGHT_DISPLAY_REVIEW_20261016.md)，待父审，产品未改。首轮安装/资源只读审核未发现确定缺陷，保留降级策略及手工消费者UNKNOWN。固定输入准备与4项门禁通过；E的信任/异步候选仍只收集证据，不授权worker实施。
