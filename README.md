@@ -23,7 +23,7 @@ v0.3.1 是当前正式版。请从 [GitHub v0.3.1 Release](https://github.com/ho
 
 ## 安装
 
-新功能测试可下载 [v0.3.6 测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.6)。该版本更新启动页，保留原Emby标识，副标改为THEATER ENHANCED，并适配不同窗口尺寸；包含此前详情、搜索与菜单修正。更多内容见[变更记录](CHANGELOG.md)与[搜索合同](docs/SEARCH_AND_MENU.md)。内置更新检查继续读取Stable渠道；测试版从对应Release手动下载。
+当前测试版为 [v0.3.7](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.7)，包含播放OSD、连接生命周期及音视频电源阻止器的维护。此前测试版和各版变更见[变更记录](CHANGELOG.md)。内置更新检查继续读取Stable渠道；Pre-release需从对应Release手动下载。
 
 1. 下载上方 `.exe` 安装包，核对 SHA-256。
 2. 关闭正在运行的 Emby Theater Enhanced，然后运行安装程序并按提示完成安装。

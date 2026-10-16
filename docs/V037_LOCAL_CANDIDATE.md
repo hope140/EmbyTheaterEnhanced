@@ -1,5 +1,10 @@
 # v0.3.7 播放控制与连接本地候选
 
+最新状态：v0.3.7 已作为 Pre-release 发布，产品Tag/sourceCommit 固定 `v0.3.7` / `bf6e48214820fac0558bdfe7f37526f1c7a3d7c2`，Stable/Latest保持v0.3.1。最终main发行核验见[发行核验](V037_RELEASE_VERIFICATION.md)。
+
+以下本地候选、父审核和阶段性验收原文均为历史记录，保留原身份及边界；这些旧阶段的未发布状态不表示当前发行状态。旧wrapper ZIP仍是历史候选产物，最终main安装器身份见[发行核验](V037_RELEASE_VERIFICATION.md)。
+
+
 最新进展：用户已对父清单第1—4及6项反馈正常，第5电源/退出组合由用户确认暂缓，并明确授权本版Pre-release发行。以下保留本地候选身份及当时验收状态，不把该wrapper ZIP当作最终main安装器；公开发行准备与后续核验见[发行核验](V037_RELEASE_VERIFICATION.md)。
 
 产品源码固定为 `1246da1023c43981c7ed40a4e556cb95c7eb7e02`，本地分支 `codex/v037-controls`。A/B/C/D 已按审核范围合批，独立目录与 ZIP 已生成；没有推送、PR、合并、Tag/Release 或系统安装。后续文档 HEAD 与该产品来源分开，不重标 runtime 来源。

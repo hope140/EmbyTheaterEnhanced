@@ -1,11 +1,11 @@
 # 构建与打包
 
-v0.3.7独立本地候选已完成，产品源码`1246da1023c43981c7ed40a4e556cb95c7eb7e02`。2159 payload/2160完整runtime与2164文件本地ZIP的完整集合及SHA通过；[候选身份和验收边界](V037_LOCAL_CANDIDATE.md)单列。公开测试版仍按下述v0.3.6记录，Stable/Latest仍v0.3.1；没有远端发布或系统安装。固定prepared物理输入通过原清单与工具链校验，未重新取得Electron ZIP归档；该归档本轮未独立回读，完整prepared树身份另行验证。
+v0.3.7 已作为 Pre-release 发布，产品Tag/sourceCommit 为 `v0.3.7` / `bf6e48214820fac0558bdfe7f37526f1c7a3d7c2`。主线与Tag CI 977/977，材料门禁200/200；2159 payload/2160完整runtime与2160个`{app}`解包文件完整集合、逐SHA一致。标准安装器 `EmbyTheaterEnhanced-0.3.7-win-x64-setup.exe` 为175733823 bytes，SHA-256 `aca0ff577ad111f726bf769706b23d5e0e2d7d1706e7bfa768c2d15e9db1f49d`，build-manifest SHA-256 `1439f6521e32d40758b049f4e15eb4ed171a9698bdbc27d776c9dfb303cec19e`。五附件匿名完整回读通过；Stable/Latest仍为v0.3.1。固定prepared物理输入按原清单和工具链校验，本轮没有重新取得或独立回读Electron ZIP归档，不将prepared树核验表述为该归档回读。详细来源、资产与验收边界见[发行核验](V037_RELEASE_VERIFICATION.md)。
 
 [v0.3.6发行](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.6)已完成，产品Tag固定`de1a731aa3e915b00988134b6f5331bfc867a84a`。标准安装器`EmbyTheaterEnhanced-0.3.6-win-x64-setup.exe`，175752059 bytes，SHA-256 `020df218195e9999d443ad0832df6cd1be9a8c9f8dc8d7780b75b6c25893edc1`；2159个{app}解包文件与完整runtime逐路径一致，五附件匿名完整回读通过。安装器未签名，解包/隐藏运行不代表系统安装或用户前台验收。详细边界见[发行核验](V036_RELEASE_VERIFICATION.md)，文档后续HEAD不替代该产品来源。
 
 
-本批测试产品版本为v0.3.6，发行渠道为Pre-release，Latest保持v0.3.1。根package、锁文件、生成runtime和安装器使用同一数字版本；发行安装器从v0.3.6 Tag指向的最终main源码重新构建，不沿用旧本地候选runtime冒充新来源。标准产品入口和完整payload随包，私有浏览验收脚本、独立启动wrapper、登录资料、profile及用户导入的内核不进入安装包。内置更新检查仍只读取Stable `/releases/latest`。
+以下为v0.3.6发行历史，发行渠道为Pre-release，Latest保持v0.3.1。根package、锁文件、生成runtime和安装器使用同一数字版本；发行安装器从v0.3.6 Tag指向的最终main源码重新构建，不沿用旧本地候选runtime冒充新来源。标准产品入口和完整payload随包，私有浏览验收脚本、独立启动wrapper、登录资料、profile及用户导入的内核不进入安装包。内置更新检查仍只读取Stable `/releases/latest`。
 
 [v0.3.5发行](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.5)已完成，Tag固定`b0234c8a0e8d4fb264b21cf39f8ce68c9146d115`。标准安装器`EmbyTheaterEnhanced-0.3.5-win-x64-setup.exe`，175741577 bytes，SHA-256 `03f8cf5f2b18f854cc6548a7fe2d60cd641a8187479c4fd2e3ad22c8dfd87414`。2158个{app}解包文件与来源runtime逐项一致；五个附件匿名完整回读通过。安装器未签名，解包验证不等于系统安装验收；后续文档HEAD不改变该来源。详见[发行核验](V035_RELEASE_VERIFICATION.md)。
 

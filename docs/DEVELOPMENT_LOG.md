@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-16 v0.3.7 Pre-release 发行收尾
+
+Model Tier: Tier 1（文档发行状态与证据同步）；Model: 主线程沿用配置，精确标识未由工具暴露；Reason: 已合并并完成验证的来源仅作发行记录与导航收尾；Escalated: No。本轮Worker限定处理固定输入、私有验证脚本及文档补丁，主线程核对实际差异与测试；发布决策和全部Git/远端操作由主线程执行，不据此声称型号变更。
+
+PR #41 已合并，产品Tag `v0.3.7` 固定 main source `bf6e48214820fac0558bdfe7f37526f1c7a3d7c2`。主线与Tag CI 977/977，材料200/200；最终runtime 2159 payload/2160完整文件，VerifyOnly通过，2160个安装器解包文件与runtime集合及逐SHA匹配。安装器 175733823 bytes，SHA-256 `aca0ff577ad111f726bf769706b23d5e0e2d7d1706e7bfa768c2d15e9db1f49d`；build-manifest SHA `1439f6521e32d40758b049f4e15eb4ed171a9698bdbc27d776c9dfb303cec19e`。相对已审本地候选只有6项source/provenance身份元数据不同，产品字节一致。五个附件匿名完整回读通过，发布状态及资产见[发行核验](V037_RELEASE_VERIFICATION.md)。文档收尾提交与产品source/tag单独记录。
+
+最终来源53项隐藏合成检查通过；窗口show、网络请求、Native子进程、所属残留为0。用户报告清单1—4和6项正常；第5项由用户暂缓且未测试，不作为本次门禁。没有据此声明真实播放/远控、系统电源、前台、系统安装或硬件PASS。旧1246da1本地wrapper ZIP及其SHA仅作为历史候选身份保留。下方发行准备段及后续候选记录均为历史快照，原文保留。
+
 ## 2026-10-16 v0.3.7发行准备授权
 
 Model Tier: Tier 1（明确发行合同）；Model: 主线程沿用配置，精确标识未暴露；限定GPT-6 Luna High只读复核累计scope及准备匿名回读脚本；Reason: 已审产品不变，按固定工具链和来源执行发行；Escalated: No。用户新授权测试版发布闭环，不继承旧版授权作推断。父会话负责PR审核与后续排期，当前产品冻结和边界保持。

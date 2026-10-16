@@ -1,5 +1,16 @@
 # 项目状态
 
+## 2026-10-16 — v0.3.7 测试版已发布
+
+[v0.3.7 GitHub Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.7) 已发布，PR [#41](https://github.com/hope140/EmbyTheaterEnhanced/pull/41) 已合并。产品 Tag `v0.3.7` 固定准确 main 源码 `bf6e48214820fac0558bdfe7f37526f1c7a3d7c2`；Stable/Latest 保持 v0.3.1。主线与 Tag CI 均为 977/977，固定材料门禁 200/200。
+
+最终 runtime 为 2159 个 payload / 2160 个完整文件；安装器解包 `{app}` 为 2160 个文件，与 runtime 完整集合及逐文件 SHA 一致。独立安装器审计确认产品路径与已审候选字节一致，差异仅限 6 个 source/provenance 身份文件。标准安装器 `EmbyTheaterEnhanced-0.3.7-win-x64-setup.exe` 为 175733823 bytes，SHA-256 `aca0ff577ad111f726bf769706b23d5e0e2d7d1706e7bfa768c2d15e9db1f49d`；build-manifest SHA-256 `1439f6521e32d40758b049f4e15eb4ed171a9698bdbc27d776c9dfb303cec19e`。五个附件均已匿名完整回读，详情见[发行核验](V037_RELEASE_VERIFICATION.md)。
+
+最终来源的 53 项隐藏检查通过；这些是隔离合成检查，实际窗口显示、网络请求、Native 子进程及所属残留均为 0。用户对父会话清单第1—4与第6项反馈正常，记录为已测场景 `USER_REPORTED_NORMAL`；第5项电源/退出组合按用户要求暂缓，`USER_DEFERRED_NOT_TESTED`，不作为本次发行门禁。本执行会话未独立开展真实服务器播放/远控、前台、OS电源、系统安装或硬件验收；用户已测场景按USER_REPORTED_NORMAL记录，不扩大未说明矩阵的PASS。
+
+后续文档 HEAD 与产品来源分开，不改变 Tag 或安装包来源。以下 v0.3.7 本地候选和审核过程为历史记录；已发布状态以上述为准。
+
+
 ## 2026-10-16 — v0.3.7用户验收反馈与Pre-release授权
 
 用户明确授权在执行会话发布v0.3.7测试版，包含必要push/PR、CI和父审后merge、最终main准确来源构建/标准安装器、Tag/Release五附件及匿名完整回读、main文档收尾。Stable/Latest保持v0.3.1。当前进入发行准备，尚未发布；验收与发行合同见[发行核验](V037_RELEASE_VERIFICATION.md)。
