@@ -2,7 +2,7 @@
 
 ## 审查状态
 
-当前为 `PARENT_REVIEW_REQUIRED`，产品未修改。审核源码来自基线 main `45bea67`；合同文档提交 `ada52f6` 未改变相关产品字节。以下复现使用实际函数体、VM、合成 XMLHttpRequest 和 child EventEmitter，没有启动 RefreshRate 工具、窗口、Native Helper 或真实显示操作。
+P1已获父审限定批准，当前为 `PARENT_APPROVED_IMPLEMENTATION_PENDING`，本文件涉及的显示逻辑尚未修改。审核源码来自基线 main `45bea67`；合同文档提交 `ada52f6` 未改变相关产品字节。以下复现使用实际函数体、VM、合成 XMLHttpRequest 和 child EventEmitter，没有启动 RefreshRate 工具、窗口、Native Helper 或真实显示操作。
 
 ## 已复现问题
 
@@ -32,4 +32,4 @@ P1不改PlaybackManager、Session/媒体身份、播放/暂停顺序、请求代
 - orgRefreshRate的恢复位于destroyInternal且未await；stop(false)沿原Player停止链保留实例。终止播放、替换、退出各自实际销毁路径和恢复时限继续审查，不直接改变原Session或窗口归属。
 - 真实多显示器、HDR、Mixed-DPI、刷新率切换/恢复和前台表现均为NOT_VERIFIED；不执行系统显示设置写入。
 
-父审前暂停P1产品实现；菜单、安装与资源等独立工作可继续。
+P1按上述限定范围实施；未闭合的显示器、超时、恢复与窗口跨层部分仍需新的精确差异父审。
