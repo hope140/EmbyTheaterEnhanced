@@ -41,7 +41,8 @@
                     if (!current()) return cancel();
                     owner.itemsContainer.classList.remove('hide');
                     if (status) status.classList.add('hide');
-                    if (status && !(result.Items || []).length && !(query && query.StartIndex)) {
+                    if (status && !(result.Items || []).length && !(query && query.StartIndex) &&
+                        owner.searchFields && (owner.searchFields.getSearchTerm() || '').trim()) {
                         status.textContent = globalize.translate('NoItemsMatchingFound');
                         status.classList.remove('hide');
                     }

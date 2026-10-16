@@ -60,7 +60,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/search/searchfields.js',
         expectedBaseSha256: '7F051FEA8519DF0233723CAE1635BF13D3AECAA194846B73BEFE3FFA95A82ACC',
         expectedInputSha256: null,
-        expectedOutputSha256: '19B452149D3A0655CC0FA1B77E9C6682A0139C33F361231F3B5F71E1FEFDF25B',
+        expectedOutputSha256: '5B1E7F37FEDF9522374B5CB641534E3F5457EF1465A845E5D6DDF8B688D4A739',
         searchTransform: 'patchSearchFields',
         generatorPaths: Object.freeze([GENERATOR_PATH, SEARCH_GENERATOR_PATH])
     }),
@@ -72,7 +72,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/list/list.js',
         expectedBaseSha256: 'AD46C8B15AEE29073FF5FD878F4D7643544B7A47360588F798FE6116717BC7CC',
         expectedInputSha256: null,
-        expectedOutputSha256: 'CFE1DF70FC5532F55E8DA71561EB7B9467FBA562E8BD12580CA7C3168D05F8B0',
+        expectedOutputSha256: '2D24CF3ABDBBD643DAF35AA2BCA0C07350950030DF564690372C0958F24F1FA5',
         searchTransform: 'patchListView',
         generatorPaths: Object.freeze([GENERATOR_PATH, SEARCH_GENERATOR_PATH])
     }),
