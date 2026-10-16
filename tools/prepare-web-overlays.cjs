@@ -11,6 +11,8 @@ const itemLifecycle = require('./patch-item-lifecycle.cjs');
 const pluginSettings = require('./patch-plugin-settings.cjs');
 const serverHome = require('./patch-server-home.cjs');
 const movieBrowser = require('./patch-movie-browser.cjs');
+const searchUi = require('./patch-search-ui.cjs');
+const selectCancel = require('./patch-select-cancel.cjs');
 const trackedFileHash = require('./tracked-file-hash.cjs');
 
 const GENERATOR_PATH = 'tools/prepare-web-overlays.cjs';
@@ -22,8 +24,82 @@ const ITEM_LIFECYCLE_GENERATOR_PATH = 'tools/patch-item-lifecycle.cjs';
 const PLUGIN_GENERATOR_PATH = 'tools/patch-plugin-settings.cjs';
 const HOME_GENERATOR_PATH = 'tools/patch-server-home.cjs';
 const MOVIE_GENERATOR_PATH = 'tools/patch-movie-browser.cjs';
+const SEARCH_GENERATOR_PATH = 'tools/patch-search-ui.cjs';
+const SELECT_CANCEL_GENERATOR_PATH = 'tools/patch-select-cancel.cjs';
 
 const WEB_OVERLAY_CONTRACT = Object.freeze([
+    Object.freeze({
+        id: 'search-view',
+        mode: 'tracked-canonical-transform',
+        basePath: 'vendor/carnival/electronapp/www/search/search.js',
+        inputPath: null,
+        runtimePath: 'electronapp/www/search/search.js',
+        expectedBaseSha256: 'B469D21AECB6A2A75BBD99B1058F594ABAB4BCBAAE1A87CD30177C815027D6D0',
+        expectedInputSha256: null,
+        expectedOutputSha256: '45BD5EAED3B373E3B7E7ABE5B3BDCA9D5C8480BFF218A1A8B3EEAF0BBA158AB8',
+        searchTransform: 'patchSearchView',
+        generatorPaths: Object.freeze([GENERATOR_PATH, SEARCH_GENERATOR_PATH])
+    }),
+    Object.freeze({
+        id: 'search-results',
+        mode: 'tracked-canonical-transform',
+        basePath: 'vendor/carnival/electronapp/www/search/searchresults.js',
+        inputPath: null,
+        runtimePath: 'electronapp/www/search/searchresults.js',
+        expectedBaseSha256: 'C6FCE6F9B8B4A7549565AEFC7A25EE3643FA2130FB32D5198B8DE9E1B2521174',
+        expectedInputSha256: null,
+        expectedOutputSha256: 'E2EC65E7C75875BA34C76F99A48BAFF80FEC6252ED3EA0BBFD49D52725D98EA4',
+        searchTransform: 'patchSearchResults',
+        generatorPaths: Object.freeze([GENERATOR_PATH, SEARCH_GENERATOR_PATH])
+    }),
+    Object.freeze({
+        id: 'search-fields',
+        mode: 'tracked-canonical-transform',
+        basePath: 'vendor/carnival/electronapp/www/search/searchfields.js',
+        inputPath: null,
+        runtimePath: 'electronapp/www/search/searchfields.js',
+        expectedBaseSha256: '7F051FEA8519DF0233723CAE1635BF13D3AECAA194846B73BEFE3FFA95A82ACC',
+        expectedInputSha256: null,
+        expectedOutputSha256: '19B452149D3A0655CC0FA1B77E9C6682A0139C33F361231F3B5F71E1FEFDF25B',
+        searchTransform: 'patchSearchFields',
+        generatorPaths: Object.freeze([GENERATOR_PATH, SEARCH_GENERATOR_PATH])
+    }),
+    Object.freeze({
+        id: 'search-list-view',
+        mode: 'tracked-canonical-transform',
+        basePath: 'vendor/carnival/electronapp/www/list/list.js',
+        inputPath: null,
+        runtimePath: 'electronapp/www/list/list.js',
+        expectedBaseSha256: 'AD46C8B15AEE29073FF5FD878F4D7643544B7A47360588F798FE6116717BC7CC',
+        expectedInputSha256: null,
+        expectedOutputSha256: 'CFE1DF70FC5532F55E8DA71561EB7B9467FBA562E8BD12580CA7C3168D05F8B0',
+        searchTransform: 'patchListView',
+        generatorPaths: Object.freeze([GENERATOR_PATH, SEARCH_GENERATOR_PATH])
+    }),
+    Object.freeze({
+        id: 'select-cancellation',
+        mode: 'tracked-canonical-transform',
+        basePath: 'vendor/carnival/electronapp/www/modules/emby-elements/emby-select/emby-select.js',
+        inputPath: null,
+        runtimePath: 'electronapp/www/modules/emby-elements/emby-select/emby-select.js',
+        expectedBaseSha256: '5A26DED88A18643FD189FDF4E367B1AE6B37B24664C75D55207192F58C5C6CD2',
+        expectedInputSha256: null,
+        expectedOutputSha256: '5C10C056FF8E075E6A7D54F1558EE51EE402463755B960678F4681A6C69E0CAB',
+        menuTransform: 'patchSelect',
+        generatorPaths: Object.freeze([GENERATOR_PATH, SELECT_CANCEL_GENERATOR_PATH])
+    }),
+    Object.freeze({
+        id: 'actionsheet-cancellation',
+        mode: 'tracked-canonical-transform',
+        basePath: 'vendor/carnival/electronapp/www/modules/actionsheet/actionsheet.js',
+        inputPath: null,
+        runtimePath: 'electronapp/www/modules/actionsheet/actionsheet.js',
+        expectedBaseSha256: '0AD2BFAD1AD2B694EC07C693A44F0EDFBD4EB76121C8939F0E5DE27E0ABEFE67',
+        expectedInputSha256: null,
+        expectedOutputSha256: '948F67D423647CC5D354DCCC2707D06C43E34CB42965D69A41C5A3C436D2511E',
+        menuTransform: 'patchActionSheet',
+        generatorPaths: Object.freeze([GENERATOR_PATH, SELECT_CANCEL_GENERATOR_PATH])
+    }),
     Object.freeze({
         id: 'movie-browse-items-container',
         mode: 'tracked-canonical-transform',
@@ -32,9 +108,9 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/modules/emby-elements/emby-itemscontainer/emby-itemscontainer.js',
         expectedBaseSha256: '46670CE92ADF5A46BA6F7689481E89CD39A5D423A9F97D9D78F45E49F1E86E49',
         expectedInputSha256: null,
-        expectedOutputSha256: '57C5A0F1FF6DE6129FC7BDFA54079E45454F6769F34C20AEFD39C5BD49F2C4DF',
+        expectedOutputSha256: '674DDFDC2FB23743878D0724EA57E09209165F296EEB0835DB91BCAC4D09988C',
         transform: 'patchItemsContainer',
-        generatorPaths: Object.freeze([GENERATOR_PATH, MOVIE_GENERATOR_PATH])
+        generatorPaths: Object.freeze([SEARCH_GENERATOR_PATH, GENERATOR_PATH, MOVIE_GENERATOR_PATH])
     }),
     Object.freeze({
         id: 'movie-browse-virtual-scroller',
@@ -44,9 +120,9 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/modules/virtual-scroller/virtual-scroller.js',
         expectedBaseSha256: 'D2982A619FDF3DC7F9ED13910D0CAB3723E7122440B02214057D2FC6A592A5B9',
         expectedInputSha256: null,
-        expectedOutputSha256: 'D84307154E5380B384452C76823B6AA7FDD5325855B431F4EA92A5EA3EEC1247',
+        expectedOutputSha256: 'C97F600AC9C48BA89448FF4CB6F6A2FD3C4669CFBE53622C0DA0C352D5080611',
         transform: 'patchVirtualScroller',
-        generatorPaths: Object.freeze([GENERATOR_PATH, MOVIE_GENERATOR_PATH])
+        generatorPaths: Object.freeze([SEARCH_GENERATOR_PATH, GENERATOR_PATH, MOVIE_GENERATOR_PATH])
     }),
 
     Object.freeze({
@@ -81,9 +157,9 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/modules/tabbedview/listcontroller.js',
         expectedBaseSha256: 'A8776FF47B4811A68AC177722FA3CD5FF7C7DE2B760B50EE9FB5ACF8C16D92D1',
         expectedInputSha256: null,
-        expectedOutputSha256: '999748A15FA9E0F81FF4F5945ADD32B21B24CE6DBD6DAE6A0F4C0B3CC883D643',
+        expectedOutputSha256: '70A5C1C43DE73732D2511FB768F4B77EAAD31155B7CC8EA2E2C7D0CCEDF402FD',
         transform: 'patchListController',
-        generatorPaths: Object.freeze([GENERATOR_PATH, MOVIE_GENERATOR_PATH])
+        generatorPaths: Object.freeze([SEARCH_GENERATOR_PATH, GENERATOR_PATH, MOVIE_GENERATOR_PATH])
     }),
     Object.freeze({
         id: 'movie-browse-categories',
@@ -171,8 +247,8 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/app.js',
         expectedBaseSha256: '3EF3102567458359A02E2FE8F79A8700CFE9C223347ABE5AB6ECB8BD93BE89D2',
         expectedInputSha256: null,
-        expectedOutputSha256: '2588872934F2F95D613AFD6B6DCFF90D654035873B278F556AB73BED96F5BC92',
-        generatorPaths: Object.freeze([GENERATOR_PATH, APP_GENERATOR_PATH, PLUGIN_GENERATOR_PATH, HOME_GENERATOR_PATH, MOVIE_GENERATOR_PATH])
+        expectedOutputSha256: 'E3A883851255A196231266B5060D28E637A538DB3337CD12D47F060C6820CD5C',
+        generatorPaths: Object.freeze([SEARCH_GENERATOR_PATH, GENERATOR_PATH, APP_GENERATOR_PATH, PLUGIN_GENERATOR_PATH, HOME_GENERATOR_PATH, MOVIE_GENERATOR_PATH])
     }),
     Object.freeze({
         id: 'server-home-tab',
@@ -234,6 +310,8 @@ function outputFor(root, contract) {
             input: readChecked(root, contract.inputPath, contract.expectedInputSha256, 'Web overlay input')
         };
     }
+    if (contract.searchTransform) return {base, input: Buffer.from(searchUi[contract.searchTransform](base.toString('utf8')), 'utf8')};
+    if (contract.menuTransform) return {base, input: Buffer.from(selectCancel[contract.menuTransform](base.toString('utf8')), 'utf8')};
     if (contract.id === 'custom-css-js' && contract.mode === 'tracked-canonical-transform') {
         return {base, input: Buffer.from(customCssJs.patchText(base.toString('utf8')), 'utf8')};
     }
@@ -252,13 +330,16 @@ function outputFor(root, contract) {
         if (transformed.action !== 'patched') {
             throw new Error('Web overlay canonical transform did not patch the frozen app.js base.');
         }
-        return {base, input: Buffer.from(movieBrowser.patchApp(serverHome.patchApp(pluginSettings.patchApp(transformed.text))), 'utf8')};
+        return {base, input: Buffer.from(searchUi.patchApp(movieBrowser.patchApp(serverHome.patchApp(pluginSettings.patchApp(transformed.text)))), 'utf8')};
     }
     if (contract.id === 'server-home-tab' && contract.mode === 'tracked-canonical-transform') {
         return {base, input: Buffer.from(serverHome.patchHomeTab(base.toString('utf8')), 'utf8')};
     }
     if (contract.id.startsWith('movie-browse-')) {
-        return {base, input: Buffer.from(movieBrowser[contract.transform](base.toString('utf8')), 'utf8')};
+        const movie = movieBrowser[contract.transform](base.toString('utf8'));
+        const output = contract.id === 'movie-browse-list-controller' ? searchUi.patchListController(movie) :
+            ['movie-browse-items-container', 'movie-browse-virtual-scroller'].includes(contract.id) ? searchUi.patchBrowseGuard(movie) : movie;
+        return {base, input: Buffer.from(output, 'utf8')};
     }
     if (contract.id === 'plugin-viewmanager' && contract.mode === 'tracked-canonical-transform') {
         return {base, input: Buffer.from(pluginSettings.patchViewManager(base.toString('utf8')), 'utf8')};
