@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-16 v0.3.5 详情事务候选
+
+Model Tier: Tier 2；Model: 当前Codex会话，运行时未向任务提供精确模型标识；Reason: 详情AMD控制器异步/离页/返回的跨组件正确性；Escalated: No。明确测试任务委派worker，产品合同和实现由主线程负责。
+
+基于实时main ef7a8d8建立独立工作树，保护原Settings工作区。核对Movie/Series/Season/Episode同一路由与类型分区，保留无问题证据的信息布局。旧完整应用隐藏探针在详情销毁后释放回复，复现null classList未处理拒绝；外网/显示/Native启动均0。增加固定源变换器，与既有item overlay串联，暂停/销毁/刷新失效旧事务，阻止旧主渲染、reload及选择回填；保持底层API和所有播放/Session owner。最终产品source 51ae2e4（1f0b58d后补齐构建输入与夹具并重建）；公开941/941、材料157/157、输入tamper专项19/19、隐藏完整应用24项与12组三视口、真实Tab/Shift+Tab及2157完整文件集/交付副本核对通过。启动隔离探针通过，profile已移出交付。初始两项provenance夹具失败、菜单取消undefined拒绝、菜单异步填充与Series按钮夹具修订均保留；取消诊断仍OBSERVED，前台/真实服务器/播放/远控/安装NOT_VERIFIED。最终ZIP2161文件完整流回读通过，SHA c16db379c003ce7ec1fad1cc8f4e0c297afe1187d530515fbbf8c7e8fd5efb16；旧.NET路径分隔符首次审计失败已保留并改用标准条目后通过。详细身份见V035_LOCAL_CANDIDATE；本轮没有push/PR/合并/发布/安装或真实服务器访问。
+
 ## 2026-10-16 v0.3.4测试版发行完成
 
 - PR #38的push与PR公开CI通过后合并，最终main源码及产品Tag固定为`98c26e4a123f0b8c623451ee7603fc431b28bddf`。独立工作树以该提交重新构建标准runtime和安装器，产品文件与最终本地候选一致；版本0.3.4，依赖、默认内核及播放核心不变。
