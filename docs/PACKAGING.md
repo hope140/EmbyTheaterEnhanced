@@ -2,6 +2,8 @@
 
 本批测试产品版本为v0.3.4，发行渠道为Pre-release，Latest保持v0.3.1。根package、锁文件、生成runtime和安装器使用同一数字版本；发行安装器从v0.3.4 Tag指向的最终main源码重新构建，不沿用旧本地候选runtime冒充新来源。标准产品入口和完整payload随包，私有浏览验收脚本、独立启动wrapper、登录资料、profile及用户导入的内核不进入安装包。内置更新检查仍只读取Stable `/releases/latest`。
 
+[v0.3.4发行](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.4)已完成，Tag固定`98c26e4a123f0b8c623451ee7603fc431b28bddf`。标准安装器为`EmbyTheaterEnhanced-0.3.4-win-x64-setup.exe`，175753774 bytes，SHA-256 `eedf03e83b0f4b2b2ef674134af4fefc5068573b5bb82466e3ad4191c46d0c3d`。2157项解包文件与来源runtime逐项一致，五项公开附件匿名完整回读通过。安装器未签名；解包验证不代表系统安装验收。此后文档提交与该产品来源分开。
+
 当前正式产品版本为 v0.3.1，准确 `sourceCommit` 由同名 Tag 与 Release 安装包 provenance 固定。构建流程和输入约束由 [BUILD_HARDENING.md](BUILD_HARDENING.md)、[BUILD_TOOLCHAINS.md](BUILD_TOOLCHAINS.md)、[NODE_DEPENDENCY_BOUNDARY.md](NODE_DEPENDENCY_BOUNDARY.md)、vendor manifests 与 package lock 定义。公开仓库不含 Carnival、综合补丁、完整离线 Web、外部 Electron/libmpv 归档及所有预编译输入，因此单独克隆不能完成产品构建；来源及对应源码状态见 [BUILD_INPUT_AUDIT.md](BUILD_INPUT_AUDIT.md) 和 [SOURCE_MATERIALS.md](SOURCE_MATERIALS.md)。
 
 ## 固定运行时与输入
