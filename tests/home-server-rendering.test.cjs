@@ -16,9 +16,12 @@ class Element {
     setAttribute(name, value) { this.attributes[name] = value; }
     getAttribute(name) { return this.attributes[name] || null; }
     contains(element) { return element === this || this.children.some(child => child.contains(element)); }
+    closest(selector) { if (selector === '[data-ete-home-title]' && this.getAttribute('data-ete-home-title') || selector === '.sectionSeeAllButton' && this.classList.contains('sectionSeeAllButton')) return this; return this.parentElement ? this.parentElement.closest(selector) : null; }
     addEventListener(name, fn) { (this.events ||= {})[name] = fn; }
     querySelectorAll(selector) {
         const matches = child => selector === 'h2' ? child.tag === 'h2' : selector === 'a' ? child.tag === 'a' : selector === '[data-id]' ? !!child.getAttribute('data-id') :
+            selector === '[data-ete-home-title]' ? !!child.getAttribute('data-ete-home-title') : selector === '.sectionTitleTextButton' ? child.classList.contains('sectionTitleTextButton') :
+            selector === '.sectionSeeAllButton' ? child.classList.contains('sectionSeeAllButton') :
             selector === '.sections' ? child.classList.contains('sections') : selector === '.itemsContainer' ? child instanceof Items : false;
         return this.children.flatMap(child => (matches(child) ? [child] : []).concat(child.querySelectorAll(selector)));
     }
@@ -122,6 +125,20 @@ test('TV, missing/unsupported parent and non-latest sections keep ordinary headi
         assert.deepEqual(f.root.querySelectorAll('h2').map(x => x.textContent), ['Latest', 'Missing', 'Resume']);
         f.controller.dispose();
     }
+});
+
+test('home refresh on return restores the corresponding new native title, without retaining content nodes', async () => {
+    const f = fixture(); f.deps.layout.tv = false;
+    let reads = 0;
+    f.api.getJSON = request => Promise.resolve(request.route.endsWith('/HomeSections') && ++reads ? [
+        {Id: 'latest', SectionType: 'latestmedia', Name: 'Latest', ParentItem: {Id: 'movie-library', CollectionType: 'movies'}}
+    ] : {Items: [{Id: 'one'}]});
+    await f.controller.resume(); const previous = f.root.querySelectorAll('a')[0];
+    f.document.activeElement = previous; f.controller.pause(); await f.controller.resume({autoFocus: false});
+    const current = f.root.querySelectorAll('a')[0];
+    assert.notEqual(previous, current); assert.equal(f.focus.at(-1), current);
+    assert.equal(reads, 2);
+    f.controller.dispose();
 });
 
 test('title and native See All container block activation after pause, identity change or replacement', async () => {

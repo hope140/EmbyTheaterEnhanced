@@ -32,6 +32,7 @@
         var waits = new Set();
         var active = false, disposed = false, epoch = 0, stage = null, stageMode = null, pending = null;
         var focusedItemId = null;
+        var focusedTitleId = null, focusedSeeAll = false;
         function current(ticket) {
             if (disposed || !active || ticket.epoch !== epoch || !owner.view) return false;
             try { return connection.currentApiClient() === ticket.client && ticket.client.serverId() === ticket.server && ticket.client.getCurrentUserId() === ticket.user; }
@@ -89,6 +90,10 @@
             var match = focusedItemId && Array.from(stage.querySelectorAll('[data-id]')).find(function(element) {
                 return element.getAttribute('data-id') === focusedItemId;
             });
+            var title = focusedTitleId && Array.from(stage.querySelectorAll('[data-ete-home-title]')).find(function(element) {
+                return element.getAttribute('data-ete-home-title') === focusedTitleId;
+            });
+            if (title) match = title.querySelector(focusedSeeAll ? '.sectionSeeAllButton' : '.sectionTitleTextButton') || match;
             if (match && typeof focus.focus === 'function') focus.focus(match);
             else if (options.autoFocus) focus.autoFocus(owner.view);
         }
@@ -120,6 +125,8 @@
                     if (typeof target === 'string' && target.indexOf(prefix) === 0) {
                         var title = document.createElement('div'), link = document.createElement('a', {is: 'emby-sectiontitle'});
                         title.className = 'sectionTitleContainer sectionTitleContainer-cards padded-left padded-right';
+                        title.setAttribute('data-ete-home-title', section.Id);
+                        link.setAttribute('is', 'emby-sectiontitle');
                         link.classList.add('more', 'button-link', 'button-link-color-inherit', 'sectionTitleTextButton');
                         link.setAttribute('href', '.' + target);
                         heading.classList.remove('padded-left', 'padded-right');
@@ -226,8 +233,14 @@
             pause: function() {
                 var element = document.activeElement;
                 if (element && stage && stage.contains(element)) {
-                    while (element && element !== stage && !element.getAttribute('data-id')) element = element.parentElement;
-                    focusedItemId = element && element !== stage ? element.getAttribute('data-id') : null;
+                    var title = element.closest && element.closest('[data-ete-home-title]');
+                    focusedTitleId = title ? title.getAttribute('data-ete-home-title') : null;
+                    focusedSeeAll = !!(title && element.closest('.sectionSeeAllButton'));
+                    if (title) focusedItemId = null;
+                    else {
+                        while (element && element !== stage && !element.getAttribute('data-id')) element = element.parentElement;
+                        focusedItemId = element && element !== stage ? element.getAttribute('data-id') : null;
+                    }
                 }
                 active = false;
                 epoch++;
