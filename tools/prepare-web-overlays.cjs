@@ -7,6 +7,7 @@ const externalPlayerRegistration = require('./patch-external-player-registration
 const customCssJs = require('./patch-custom-css-js.cjs');
 const externalPlayerResidue = require('./patch-externalplayer-residue.cjs');
 const itemControls = require('./patch-item-controls.cjs');
+const itemLifecycle = require('./patch-item-lifecycle.cjs');
 const pluginSettings = require('./patch-plugin-settings.cjs');
 const serverHome = require('./patch-server-home.cjs');
 const movieBrowser = require('./patch-movie-browser.cjs');
@@ -17,6 +18,7 @@ const APP_GENERATOR_PATH = 'tools/patch-external-player-registration.cjs';
 const CUSTOM_CSS_JS_GENERATOR_PATH = 'tools/patch-custom-css-js.cjs';
 const EXTERNAL_PLAYER_RESIDUE_GENERATOR_PATH = 'tools/patch-externalplayer-residue.cjs';
 const ITEM_CONTROLS_GENERATOR_PATH = 'tools/patch-item-controls.cjs';
+const ITEM_LIFECYCLE_GENERATOR_PATH = 'tools/patch-item-lifecycle.cjs';
 const PLUGIN_GENERATOR_PATH = 'tools/patch-plugin-settings.cjs';
 const HOME_GENERATOR_PATH = 'tools/patch-server-home.cjs';
 const MOVIE_GENERATOR_PATH = 'tools/patch-movie-browser.cjs';
@@ -114,8 +116,8 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/item/item.js',
         expectedBaseSha256: 'C8F51119365ECD2881B0A33F1F9E9DD6DA90E305572621188FB31A15FDCB4623',
         expectedInputSha256: null,
-        expectedOutputSha256: 'FBD8D1DB7906F2F5E9B742B956D25B2586DCDB097D5E34155998DB32410653C0',
-        generatorPaths: Object.freeze([GENERATOR_PATH, EXTERNAL_PLAYER_RESIDUE_GENERATOR_PATH])
+        expectedOutputSha256: '72311EB4FD8E2A151B280366218A44DE802DB1083BD71DA99F9EF1CB8CC3AB11',
+        generatorPaths: Object.freeze([GENERATOR_PATH, EXTERNAL_PLAYER_RESIDUE_GENERATOR_PATH, ITEM_LIFECYCLE_GENERATOR_PATH])
     }),
     Object.freeze({
         id: 'item-externalplayer-residue-template',
@@ -236,7 +238,7 @@ function outputFor(root, contract) {
         return {base, input: Buffer.from(customCssJs.patchText(base.toString('utf8')), 'utf8')};
     }
     if (contract.id === 'item-externalplayer-residue' && contract.mode === 'tracked-canonical-transform') {
-        return {base, input: Buffer.from(externalPlayerResidue.patchItemText(base.toString('utf8')), 'utf8')};
+        return {base, input: Buffer.from(itemLifecycle.patchItemLifecycle(externalPlayerResidue.patchItemText(base.toString('utf8'))), 'utf8')};
     }
     if (contract.id === 'item-externalplayer-residue-template' && contract.mode === 'tracked-canonical-transform') {
         const withoutLegacyButton = externalPlayerResidue.patchItemHtmlText(base.toString('utf8'));
