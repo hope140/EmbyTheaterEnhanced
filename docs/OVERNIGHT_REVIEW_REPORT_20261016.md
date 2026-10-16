@@ -30,6 +30,8 @@
 
 基线工作树检查为空，已读取当前 AGENTS、架构、状态和维护经验。项目采用锁定 Node 工具链及 `tools/build.ps1` 来源构建；具体测试、固定物理材料和隐藏组件门禁按实际修改选择。当前尚未准备新工作树的物理材料或声明构建通过。
 
-本轮暂未发现可报告的已复现问题，也尚无修复。每个问题将以 Observed、Expected、Evidence、Files、Tests、Blocker 记录；缺少设备或材料时保留 UNKNOWN/NOT_VERIFIED，继续其他独立项。后台合成、源构建 runtime、真实前台/播放远控、硬件与安装证据分开。
+首轮安装与资源静态审核未发现可确认产品缺陷。没有防降级比较属于未指定策略，不据此增加限制；BAT手工/外部消费者仍UNKNOWN并保留。固定物理输入已准备，Electron/Native/Inno门禁通过，Electron原ZIP仍未重新回读。
+
+显示链实际函数体的合成复现确认B1未处理child/error、B2未知动作仍spawn、B3无数字响应抛错并使Promise悬挂。最小P1差异和未闭合显示器/超时/恢复归属见[显示审查](OVERNIGHT_DISPLAY_REVIEW_20261016.md)，状态为PARENT_REVIEW_REQUIRED，尚未修改产品。A菜单继续定位真实跨插件聚合owner；E诊断/内核与插件/Web有限审核进行中。每个问题按Observed、Expected、Evidence、Files、Tests、Blocker记录；缺少设备或材料时保留UNKNOWN/NOT_VERIFIED，继续其他独立项。
 
 私有恢复状态为 `.work/OVERNIGHT_TASK_STATE.json`，记录准确工作树、提交、工具/进程归属与下一步；原始审计证据置于 `.work/overnight/`。本轮未创建产品窗口或系统作业。最终如有产品修改，按准确本地 sourceCommit 构建新目录候选，并完整核对 provenance、payload 与 ZIP；没有产品修改则仅交报告。

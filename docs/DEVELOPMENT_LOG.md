@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-17 显示异常复现与局部方案停点
+
+三个现有函数体的合成用例复现child/error未收口、unknown仍spawn及无数字响应Promise悬挂，真实子进程/窗口/显示器操作为0。P1仅建议协议一次回调和无数字响应按原空结果settle，精确允许文件/不变量/测试见[显示审查](OVERNIGHT_DISPLAY_REVIEW_20261016.md)，待父审，产品未改。首轮安装/资源只读审核未发现确定缺陷，保留降级策略及手工消费者UNKNOWN。固定输入准备与4项门禁通过；E的信任/异步候选仍只收集证据，不授权worker实施。
+
 ## 2026-10-16 发布后有限维护合同
 
 Model Tier: Tier 1（明确菜单/安装/资源证据）与 Tier 2（显示跨层及核心审查）；Model: 主线程沿用当前配置；三个 GPT-6 Luna High worker 分别只读定位菜单、安装升级和资源消费者；Reason: 先固化有限覆盖、证据和高风险停点；Escalated: No。基线 main `45bea67bb6f3c9e825c44c6e1a5e0f908f74b8d0`，独立本地分支 `codex/post-v037-night`。仅新增合同报告/状态记录，未修改产品或启动测试/候选。验收与恢复见[报告](OVERNIGHT_REVIEW_REPORT_20261016.md)，本轮不自动发布后续修正。
