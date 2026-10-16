@@ -93,7 +93,7 @@
     var initialShowEventsComplete = false;
     var previousBounds;
     var cecProcess;
-    var sleepLock = 0;
+    var playbackPowerOwner = require('./enhanced/playback-power-owner').createOwner(powerSaveBlocker);
     var { ipcMain } = require('electron')
     // Quit when all windows are closed.
     app.on('window-all-closed', function () {
@@ -360,22 +360,16 @@
                     externalUrl.openExternalUrl(electron.shell, appHostCommand.getOpenUrlTarget(parsedRequest));
                     break;
                 case 'video-on':
-                    sleepLock = powerSaveBlocker.start('prevent-display-sleep')
-                    //mainWindow.resizable = false;
+                    if (!appIsShuttingDown) playbackPowerOwner.setActive('video', true);
                     break;
                 case 'video-off':
-                    if (powerSaveBlocker.isStarted(sleepLock)) {
-                        powerSaveBlocker.stop(sleepLock)
-                    }
-                    //mainWindow.resizable = true;
+                    playbackPowerOwner.setActive('video', false);
                     break;
                 case 'audio-on':
-                    sleepLock = powerSaveBlocker.start('prevent-app-suspension')
+                    if (!appIsShuttingDown) playbackPowerOwner.setActive('audio', true);
                     break;
                 case 'audio-off':
-                    if (powerSaveBlocker.isStarted(sleepLock)) {
-                        powerSaveBlocker.stop(sleepLock)
-                    }
+                    playbackPowerOwner.setActive('audio', false);
                     break;
                 case 'loaded':
                     if (windowStateOnLoad) {
@@ -1014,6 +1008,11 @@
     app.once('before-quit', function (event) {
         event.preventDefault();
         appIsShuttingDown = true;
+        try {
+            playbackPowerOwner.shutdown();
+        } catch (error) {
+            enhancedLog({category: 'app', event: 'power-cleanup-failed', details: {message: error.message}});
+        }
         enhancedLog({category: 'app', event: 'shutdown', details: {reason: 'before-quit'}});
         unregisterDiagnosticsIpc();
         unregisterMaintenanceIpc();
