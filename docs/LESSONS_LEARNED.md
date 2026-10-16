@@ -1,5 +1,16 @@
 # 维护注意事项
 
+- 加反馈前核对原ListController.setEmptyListState等既有owner。只验证新增status显示会漏掉重复提示；应在真实页面统计可见同文案节点，并覆盖空输入、单字符、无匹配、错误与恢复。成功空结果保留原生owner，维护错误status不再同时输出第二份空态。
+
+- 搜索验收必须从实际getRouteUrl('search')开始；默认URL不含serverId，手工附加serverId会绕过currentApiClient分支并掩盖阻断。客户端选择应沿原controller的owner/显式/当前优先级，回复时同时核对API对象和userid；同userid不代表同一client或请求owner。
+
+- 搜索在标准布局走通用ListController，在电视布局才走SearchView；直接打开/search不足以覆盖默认搜索入口。公共API包装未接收signal时，本地取消与防迟到提交不等于底层HTTP已中断。
+- 控件disabled时程序派发keydown仍可能调用原监听器，不代表用户能打开菜单。取消验收先确认菜单真实打开并获得输入归属，再用原外部点击或键盘返回关闭，检查值与change次数；禁止把离开底层页面误记为取消成功。
+- 页面返回过程中，如果Fields仅在HTTP结束后resume，已经可见的输入会被paused检查忽略；应在原页面resume开始接收输入，但保留防抖及请求归属。已完成错误/空态随原view返回，新输入或刷新时再清除。
+
+- 新增Web变换器必须同时进入overlay generatorPaths、build-input-contract的INPUT_PATHS、输入防篡改测试patcher集合和runtime-provenance fixture复制列表。runtime自身VerifyOnly通过不能替代独立材料夹具验证；v0.3.5已实际遇到漏列导致的两项材料失败并修正。
+- BaseView在viewbeforeshow调用onBeginResume，在transition完成后才onResume清除paused；详情加载事务不能简单用paused判断。销毁后异步回复也必须在访问view、全局backdrop或focus之前核对代次与owner，不能只在最终列表提交处检查。
+
 - 原生emby-sectiontitle会派生See All，但后者仍由itemscontainer按条目数隐藏。动态构造要在createElement时指定is并保留原生类；返回重建DOM时只记录分区焦点身份，隐藏/消失的次级入口应回退可见标题，不用内容缓存解决焦点问题。
 - ApiClient的serverInfo.Version不等于serverVersion()运行提示；合成版本兼容测试应通过原setSystemInfo设置，并直接断言serverVersion，再检查行为，不能把字段赋值当生效证据。
 

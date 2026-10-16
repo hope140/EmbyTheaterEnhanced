@@ -8,6 +8,7 @@ const vm = require('node:vm');
 const buildInputs = require('../tools/build-input-contract.cjs');
 const overlays = require('../tools/prepare-web-overlays.cjs');
 const residue = require('../tools/patch-externalplayer-residue.cjs');
+const lifecycle = require('../tools/patch-item-lifecycle.cjs');
 const itemControls = require('../tools/patch-item-controls.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
@@ -17,8 +18,8 @@ const MATERIAL = Object.freeze([
         sourcePath: 'vendor/carnival/electronapp/www/item/item.js',
         runtimePath: 'electronapp/www/item/item.js',
         sourceSha256: 'C8F51119365ECD2881B0A33F1F9E9DD6DA90E305572621188FB31A15FDCB4623',
-        outputSha256: 'FBD8D1DB7906F2F5E9B742B956D25B2586DCDB097D5E34155998DB32410653C0',
-        transform: residue.patchItemText
+        outputSha256: '72311EB4FD8E2A151B280366218A44DE802DB1083BD71DA99F9EF1CB8CC3AB11',
+        transform: value => lifecycle.patchItemLifecycle(residue.patchItemText(value))
     }),
     Object.freeze({
         id: 'item-externalplayer-residue-template',

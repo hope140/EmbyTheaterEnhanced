@@ -1,6 +1,39 @@
 # 维护记录
 
+## 2026-10-16 v0.3.5 测试版发行准备
+
+2026-10-16：用户对cc7f542当前本地候选所测场景反馈“测试完成了，可以发布了”，记录为USER_REPORTED_TEST_COMPLETE，并明确授权v0.3.5 Pre-release发行。该反馈不补写未说明媒体、真实远控、系统安装或旧服务器矩阵逐项PASS。当前进入PR/门禁、最终main来源构建、标准安装器及公开回读流程；Stable保留v0.3.1。
+
+
+## 2026-10-16 v0.3.5 搜索重复空态修正
+
+用户截图发现同页两条无匹配提示。旧完整应用默认getRouteUrl已复现2条（维护eteSearchStatus与原ListController.setEmptyListState各一条），修前单测也失败。Model Tier: Tier 1；Model: 当前主线程，精确标识未由工具暴露；Reason: 单helper删除重复UI owner，播放影响0；Escalated: No。限定worker仅调整测试，主线程复核真实DOM。
+
+产品来源cc7f542cf12a236bba22948030b5043a8a736e08，删除5行成功空态分支，原响应/原native空态/单字符提示保持，独立错误status保留。定向15/15、材料162/162、默认完整应用24项及390/800/1280恰好1条提示通过；VerifyOnly/完整2158文件/副本和启动隔离通过。未重复不相关全量公开套件，也未将旧来源结果记为新来源通过。新独立本地包身份与ZIP回读见V035_SEARCH_FEEDBACK_FIX；旧目录/ZIP/profile保留，未推送/PR/发布/安装，真实服务/前台/播放远控NOT_VERIFIED。
+
+## 2026-10-16 v0.3.5 默认搜索入口P1修正
+
+父审核复现并拒绝441eafb。主线程使用旧完整runtime与原getRouteUrl默认路由独立复现item or serverId cannot be null，显示/网络/Native均0；此前强加serverId的隐藏夹具未覆盖默认入口，旧结果不算本问题通过。Model Tier: Tier 1（明确局部合同）；Model: 当前主线程，精确标识未由工具暴露；Reason: 单helper客户端选择与回复归属，播放影响0；Escalated: No。GPT-6 Luna High只补限定测试，保留修改前失败日志。
+
+产品只改list-search.js，来源2c9410c1bfd9ab27e7f3fe9943f9841b20494829；按owner.apiClient、显式serverId、canonical currentApiClient优先级选择，并在成功/错误提交前核对同一API对象和userid。测试提交8b484d2，定向15/15；默认原路由20、显式18、电视9、详情24/真实菜单取消、电影25、首页17及新来源材料162/162通过。2157 payload/2158完整runtime、VerifyOnly、独立SHA/交付副本与空profile启动隔离通过。公开首轮950/951，唯一临时Git fixture失败项保留原日志，隔离复验1/1通过；首次根因UNKNOWN；最终ZIP2162文件/234473398 bytes逐项回读通过，SHA 7f8a2b88d4c40d00391798209cd0fa055fa8c941b4c4164ac3c7fc93c35eab10；回执见V035_DEFAULT_SEARCH_FIX，未推送/PR/合并/发布或安装，真实服务器/前台/播放远控NOT_VERIFIED。
+
+## 2026-10-16 v0.3.5 搜索与菜单合批
+
+用户明确接受“继续进行吧，合进去一起”，新增标准/电视搜索与必要原生菜单取消修正；旧详情用户观察保留。Model Tier: Tier 2；Model: 当前Codex主线程，精确标识未由工具暴露；Reason: 两条搜索路由与异步提交/恢复，播放核心影响0；Escalated: No。GPT-6 Luna High worker只读盘点及限定测试，主线程保留产品设计与最终核对。
+
+新增patcher均进入固定overlay哈希、INPUT_PATHS、防篡改集合和provenance fixture。旧完整应用复现迟到覆盖和异步template空节点；后续修正返回时新输入与已完成错误状态保留。产品source 441eafb5dd5434174bad739eb0e1ed01abb0ae4f，测试提交3b5520d；同来源标准18、电视9、详情24、原电影库/首页及实际菜单取消通过，材料162/162。真实点击/键盘取消保值且change=0，视频禁用控制不伪算可选菜单。来源runtime2157 payload/2158完整文件、VerifyOnly/独立SHA和空profile启动隔离通过。最终公开948/948通过，ZIP2162文件/234473141 bytes逐项流回读通过，SHA 6b85f003ff3d75831fc65d05924c37696e45e9565765edca74eba082cd8f200e；详见V035_BROWSE_CANDIDATE。未推送/PR/合并/发布或系统安装，真实服务/前台/播放远控NOT_VERIFIED。
+
+## 2026-10-16 v0.3.5 详情事务候选
+
+Model Tier: Tier 2；Model: 当前Codex会话，运行时未向任务提供精确模型标识；Reason: 详情AMD控制器异步/离页/返回的跨组件正确性；Escalated: No。明确测试任务委派worker，产品合同和实现由主线程负责。
+
+基于实时main ef7a8d8建立独立工作树，保护原Settings工作区。核对Movie/Series/Season/Episode同一路由与类型分区，保留无问题证据的信息布局。旧完整应用隐藏探针在详情销毁后释放回复，复现null classList未处理拒绝；外网/显示/Native启动均0。增加固定源变换器，与既有item overlay串联，暂停/销毁/刷新失效旧事务，阻止旧主渲染、reload及选择回填；保持底层API和所有播放/Session owner。最终产品source 51ae2e4（1f0b58d后补齐构建输入与夹具并重建）；公开941/941、材料157/157、输入tamper专项19/19、隐藏完整应用24项与12组三视口、真实Tab/Shift+Tab及2157完整文件集/交付副本核对通过。启动隔离探针通过，profile已移出交付。初始两项provenance夹具失败、菜单取消undefined拒绝、菜单异步填充与Series按钮夹具修订均保留；取消诊断仍OBSERVED，前台/真实服务器/播放/远控/安装NOT_VERIFIED。最终ZIP2161文件完整流回读通过，SHA c16db379c003ce7ec1fad1cc8f4e0c297afe1187d530515fbbf8c7e8fd5efb16；旧.NET路径分隔符首次审计失败已保留并改用标准条目后通过。详细身份见V035_LOCAL_CANDIDATE；本轮没有push/PR/合并/发布/安装或真实服务器访问。
+
 ## 2026-10-16 v0.3.4测试版发行完成
+
+## 2026-10-16 — 详情候选反馈与批次讨论
+
+用户在收到51ae2e4本地候选及详情页测试说明后反馈“现在看起来没问题”。记录为当前已测场景USER_REPORTED_NO_ISSUE / MONITORING，不补写具体媒体、菜单取消、实际播放/远控/安装逐项通过。用户同时询问能否合并其他Web相关版本，当前仅进入批次调整讨论，尚未接受搜索或共享控件的新实施范围，也没有新的发布授权。
 
 - PR #38的push与PR公开CI通过后合并，最终main源码及产品Tag固定为`98c26e4a123f0b8c623451ee7603fc431b28bddf`。独立工作树以该提交重新构建标准runtime和安装器，产品文件与最终本地候选一致；版本0.3.4，依赖、默认内核及播放核心不变。
 - 最终主线公开CI940/940、固定材料156/156且无跳过。空profile和合成API的完整应用首页17项、电影库25项、390/800/1280视口通过；实际显示/外网/Node网络/Native启动0，所属进程退出，原file: Cache警告单列。首张电影1280截图早于隐藏窗口重绘，夹具在全新隔离目录强制尺寸变化并等待后重新截图核对，产品未改。
