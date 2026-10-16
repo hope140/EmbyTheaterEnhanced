@@ -1,5 +1,9 @@
 # v0.3.4 本地测试候选
 
+## 2026-10-16 用户反馈
+
+用户在收到ae245f6标题跳转候选后反馈“现在没看到有什么问题”。按上下文归属于当前v0.3.4候选的有限使用观察，记录为USER_REPORTED_NO_ISSUE / MONITORING；本次标题缺项转入观察。用户未逐项说明点击/Enter/See All/返回焦点、媒体类型或设备组合，不补写逐项PASS，也不扩大为真实播放、远控、旧服务器矩阵或安装验收。缓存继续不做，既有包体/sourceCommit保持，未因此发布或启动后续版本。
+
 电影库试点的实现、源码审阅、来源绑定构建与隔离后台检查已完成，当前供本地人工测试。此记录不表示GitHub发布或真实业务验收完成。
 
 ## 首页标题跳转续办候选
@@ -18,6 +22,8 @@
 桌面首页latestmedia分区在有受支持电影/电视剧父媒体库时，通过原native标题、See All和canonical router跳到该库原suggestions最近页签。返回时恢复新标题/可见See All焦点；缺少支持目标的分区和TV布局保持普通标题。缓存、refresh清空/重试/5秒时限、搜索布局、播放核心与默认内核均保持。
 
 当前来源公开门禁940/940、定向/固定材料39/39通过；实际来源/包体核对和2161 ZIP逐文件读取通过。空profile、合成API的完整应用17项通过，包括原main/loader/router/native控件、标题/See All点击、真实Enter导航、返回焦点与内容、跨账号失效阻止、TV普通标题；390/800/1280视口无页面横向溢出并实际查看截图。原生See All仍由itemscontainer按条目数隐藏，未改变其门槛。show、外部请求、Node网络、Native启动和所属残留进程0；只有原file: Service Worker Cache警告。
+
+上述计数绑定最终ae245f6来源的私有回执：公开为`home-title-public-ae245f6.log`（940），定向为`home-title-targeted-visible.log`（39）；较早`home-title-public-final.log`（939）与`home-title-targeted-final.log`（38）属于先前实现阶段，不作为最终来源记录。
 
 独立启动wrapper的appData/userData/config隔离探针通过，生成profile不随包；外层wrapper单独记录SHA，runtime仍绑定上述产品sourceCommit。请人工确认真实桌面首页标题跳转、Enter与返回焦点；实际服务器ParentItem DTO、前台视觉、真实播放/远控和安装保持NOT_VERIFIED。
 

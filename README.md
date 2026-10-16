@@ -23,7 +23,7 @@ v0.3.1 是当前正式版。请从 [GitHub v0.3.1 Release](https://github.com/ho
 
 ## 安装
 
-新功能测试可下载 [v0.3.3 测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.3)。该版本提供服务端首页分区、手动内核管理，并完善插件页面与原生控件显示；验收范围见 Release 与[显示审计](docs/PLUGIN_DISPLAY_AUDIT.md)。内置更新检查继续读取 Stable 渠道；测试版从该 Release 手动下载。
+新功能测试可下载 [v0.3.4 测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.4)。该版本完善电影库刷新、分页与返回焦点，并补齐桌面首页媒体库分区标题跳转；沿用v0.3.3的首页、手动内核管理和插件界面。验收范围见Release与[浏览合同](docs/MOVIE_BROWSER.md)。内置更新检查继续读取Stable渠道；测试版从对应Release手动下载。
 
 1. 下载上方 `.exe` 安装包，核对 SHA-256。
 2. 关闭正在运行的 Emby Theater Enhanced，然后运行安装程序并按提示完成安装。
