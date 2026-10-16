@@ -277,13 +277,13 @@ test('reports empty and failed queries separately and a new successful search cl
         assert.equal(f.status.classList.contains('hide'), true, 'blank input does not claim there are no matches');
 
         f.owner.searchFields.term = 'fixture';
-        f.owner.invalidateSearch();
-        const empty = f.owner.getItems({SearchTerm: 'absent', StartIndex: 0}, new AbortController().signal);
+        const empty = f.container.refreshItemsInternal();
         await tick();
-        f.calls[1].item.resolve({Items: [], TotalRecordCount: 0});
-        await empty;
-        assert.equal(f.status.textContent, 'NoItemsMatchingFound');
-        assert.equal(f.status.classList.contains('hide'), false);
+        const emptyResponse = {Items: [], TotalRecordCount: 0};
+        f.calls[1].item.resolve(emptyResponse);
+        assert.strictEqual(await empty, emptyResponse, 'the original empty result remains available to ListController');
+        assert.deepEqual(f.deliveries, [emptyResponse], 'the native ItemsContainer still receives empty results');
+        assert.equal(f.status.classList.contains('hide'), true, 'helper does not duplicate the original empty-state message');
 
         f.owner.invalidateSearch();
         const failed = f.owner.getItems({SearchTerm: 'broken', StartIndex: 0}, new AbortController().signal);
