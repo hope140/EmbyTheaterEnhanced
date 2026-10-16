@@ -22,3 +22,7 @@ index窄变换接入`prepare-web-overlays.cjs`的固定输入/输出SHA合同，
 准确来源构建与package VerifyOnly通过，2158项payload；真实main隐藏完整应用在390/800/1280宽度均加载新SVG，水平中心正确、黑底、无横向溢出，截图已查看。为观察启动画面，私有harness仅在首轮网络拦截器中暂替换apploader响应，未修改runtime；截图后取消拦截并正常重载同一原入口，原loader完成且启动图消失、初始页面就绪。实际显示、外网/Node网络、Native子进程均0。原file Cache service-worker警告保留、没有新增非预期页面错误。
 
 以上是隔离展示与启动转换证据，非真实登录服务器主页/前台/播放或系统安装验收；最终main仍需重新构建标准安装器并核对完整来源和公开下载。
+
+## 最终发行
+
+产品Tag固定de1a731aa3e915b00988134b6f5331bfc867a84a，标准安装器和五附件来源/匿名完整回读通过；最终main三视口截图与上述候选像素一致，原loader正常过渡。准确包身份与分层验收见[发行核验](V036_RELEASE_VERIFICATION.md)。后续文档提交不替代产品来源。

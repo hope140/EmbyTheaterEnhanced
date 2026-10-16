@@ -1,5 +1,14 @@
 # 维护记录
 
+## 2026-10-16 v0.3.6发行与匿名回读完成
+
+Model Tier: Tier 1；Model: 主线程沿用配置，测试worker GPT-6 Luna High；Reason: 固定启动资产/窄CSS变换及来源发行合同；Escalated: No。PR #40两项955/955通过后merge为de1a731aa3e915b00988134b6f5331bfc867a84a，最终main及Tag CI955/955通过。原图完整PNG字节复用，新SVG从准确Git blob物化；源码/工具链/完整payload来源门禁通过。
+
+最终main材料163/163、隐藏启动三视口/原loader正常重载通过，show/net/Native0，截图与已审候选像素一致。标准Inno编译后归档测试/2159文件解包SHA和完整集合通过；与v0.3.5 runtime比较仅启动资产/样式/版本及来源记录变化，Helper/libmpv字节保持。安装器175752059 bytes、020df218195e9999d443ad0832df6cd1be9a8c9f8dc8d7780b75b6c25893edc1、NotSigned。草稿五附件关系核验后公开Pre-release，匿名四小附件完整GET及安装器21段全部字节顺序SHA通过；未将上传状态或GitHub digest当成下载通过。
+
+首轮新增fixture预期SHA大小写不一致5/6及修正后6/6分别保留，没有放宽有效断言或修改产品哈希；完整材料按最终来源单轮记录。用户本次直接授权完成发布，未补做或虚构前台、真实播放/远控及系统安装；旧版本/Stable按快照核对，原profile/旧产物保持。后续仅文档收尾及其CI/最终远端回读，不重标产品Tag。
+
+
 ## 2026-10-16 v0.3.6启动图接入
 
 实施候选08ddc52：955/955公开离线通过，新增public/材料5项和来源fixture修正后6/6通过。首轮fixture仅新增预期SHA字母大小写不一致（5/6），已保持原哈希及有效断言修正预期格式，原日志保留。准确来源构建/VerifyOnly2158 payload通过；真实main空profile隐藏启动三视口图片/中心/黑底/无横溢出、原loader重载后初始页面就绪及启动图消失通过，截图已查，show/外网/Node网络/Native为0。私有harness、状态与截图不进入安装包，最终main/标准安装器/公开下载证据后续单列。

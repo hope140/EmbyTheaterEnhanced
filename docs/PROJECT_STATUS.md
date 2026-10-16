@@ -1,5 +1,12 @@
 # 项目状态
 
+## 2026-10-16 — v0.3.6启动页测试版已发布
+
+[v0.3.6启动页更新测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.6)已公开，PR #40已合并，产品Tag和安装器固定最终main来源`de1a731aa3e915b00988134b6f5331bfc867a84a`；Stable/Latest保持v0.3.1。五个附件均匿名完整回读通过，Release为非draft的Pre-release。原Emby PNG字节保留，副标改为THEATER ENHANCED，原loader/页面结构保持。
+
+最终main及Tag公开CI955/955、材料163/163（无跳过）、2158 payload/2159完整runtime与2159解包文件逐路径SHA通过；安装器175752059 bytes、SHA-256 `020df218195e9999d443ad0832df6cd1be9a8c9f8dc8d7780b75b6c25893edc1`，未签名。实际隐藏启动390/800/1280及原loader继续加载通过，实际显示/网络/Native启动0；没有补写前台、真实服务器/播放远控或系统安装验收。详情见[发行核验](V036_RELEASE_VERIFICATION.md)。后续文档HEAD与产品来源分开；以下保留过程记录。
+
+
 ## 2026-10-16 — v0.3.6启动页实施与发布授权
 
 用户明确“直接完成并发布0.3.6吧”。范围为沿用原Emby标识、更换旧署名为THEATER ENHANCED与启动尺寸适配；新独立工作树从文档main 0f7f3a5起步。必要提交、push/PR、门禁后合并、最终主线来源构建/标准安装器、Tag与Pre-release及匿名附件回读、文档收尾包含在本次授权中，Latest保持v0.3.1。当前实施/验证中，尚未发布；旧包/profile、vendor及共享标识保持。详见[启动页合同](STARTUP_BRANDING.md)。
