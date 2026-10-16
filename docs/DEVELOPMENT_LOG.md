@@ -1,6 +1,16 @@
 # 维护记录
 
-## 2026-10-16 v0.3.4电影库浏览候选
+## 2026-10-16 v0.3.4本地交付收尾
+
+- 用户随后明确允许本批可回退操作，批准14文件本地提交、来源绑定构建、包体核对及隔离隐藏/视口验收。核对审核回执中的14项文件集合和SHA均未改变，在codex/v034-library提交为ed00a97c11490a36e2a844c531772750deb22524；本轮没有新的产品修正。
+- 首次构建拒绝测试阶段的vendor目录联接，保留部分输出与日志；改用固定输入物理副本及项目内锁定工具链，在新r2输出完成构建。产品来源ed00a97，版本0.3.4，2156项payload和2157项runtime文件（含manifest）逐路径/SHA匹配；独立VerifyOnly和16项包体断言通过。manifest SHA 9cf1211f4c367f82445cac59883037b165c1cce18072a9c7383d5cfd811f577b，payload-set SHA 8a70575381f2ea59a64dab112b6a10d5d5bf19a7acd189bf948d9a33abcccbac。默认DLL仍为965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c。
+- 完整隐藏应用使用真实main/入口/路由/原组件、空profile及合成ApiClient，阻止浏览器和Node外网、LAN发现与子进程。最终23项浏览检查通过，含真实详情页进入/返回、1460非零滚动位置和同一影片焦点恢复、分页、筛选排序、卡片/列表、重复刷新、离页迟到响应、失败恢复和合成旧版本提示。390/800/1280 CSS视口均无页面横向溢出；390采用夹具临时最小尺寸覆盖，未改产品窗口约束。已实际查看三种截图。show、外部请求、Node网络、Native启动和残余进程0，只有原file: Service Worker Cache警告，非预期页面错误0。
+- 初期完整应用夹具缺electronfile本地协议allowlist、Prefixes应为数组、列表异步渲染需等待、虚拟卡片身份不能用缺失data-id，以及偏好保存应由合成API接收；对应失败与初步结果均保留，最终结论以修正后的完整夹具为准，不记作产品回归或借此改产品。真实服务器/个人profile/前台窗口均未参与。
+- 本地交付使用独立test-profile入口；launch.cjs在require正式main前显式固定appData/userData/sessionData/logs/temp，避免只依赖环境变量推断隔离。隐藏探针确认appData/userData/config均隔离、版本0.3.4，show/网络/子进程0；生成profile移到交付目录之外的私有验证目录，不随包分发。runtime文件保持来源绑定字节；外层入口作为本地交付wrapper单独记录SHA。
+- 最终r2 ZIP为2161文件（runtime2157+外层4），逐文件完整回读及4359项独立断言通过，SHA为81962ab3d5f521925408ecb07a89d14de27861735781dc65b727d8c1fdb8b735，与sidecar一致。12个上游protobufjs测试文件与v0.3.3 manifest/实际文件同SHA，9个对应锁定依赖记录一致；精确保留继承文件，不删除锁定依赖树，本轮profile/harness/fixture及非白名单测试文件0。
+- 交付与实际验证见V034_LOCAL_CANDIDATE。本次只追加文档提交，不重跑无关全量门禁或重标产品来源。尚未执行真实服务器矩阵、前台键盘/遥控、播放/远控或安装验收，没有推送/PR/合并/发布/系统安装。
+
+## 2026-10-16 v0.3.4电影库浏览候选（提交前快照）
 
 - Model Tier：Tier 2；Model：主线程继承当前会话配置，测试worker为GPT-6 Luna High；Reason：浏览controller、容器及异步取消跨模块接线；Escalated：无。Task Risk/Uncertainty：中；Cross-module Scope：电影页及原共用列表的条件接线；Playback/Session Impact：NONE。主线程保留合同、取消归属与最终审核。
 - 重新核对远端main为6fb61e3，从准确提交建立隔离工作树；读取原目录未提交的NEXT_STEPS_20261016完整计划，不覆盖原Settings分支与已有改动。电影试点范围已在当前任务接受，后续版本没有实施授权。

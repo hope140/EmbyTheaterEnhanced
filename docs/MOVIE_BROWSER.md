@@ -26,7 +26,7 @@ v0.3.4 以电影库为试点，基线为 v0.3.3 后的 main `6fb61e3`。这是�
 
 只维护自有模块、固定输入变换生成器、overlay/build-input 合同、相关测试和版本/说明。vendor 只读。app、VideosTab、ItemsTab、ListController、电影类别、itemscontainer 与 virtual-scroller 七个输出按原输入/新输出 SHA 绑定；生成器进入来源合同。Movie实例的首屏提交、分页item-source写入和原容器50ms延后焦点/monitor回调都复核轮次；同查询中被中断的分页仍可重试。移除本批 alias、模块及整组 overlay delta 可恢复原页面；不迁移持久化格式或配置。
 
-本地提交审核范围固定为以下14个文件。
+首批源码提交的审核范围为以下14个文件，已固定为 `ed00a97`。后续交付记录属于独立文档提交，不改变该产品来源。
 
 | 分组 | 文件 |
 | --- | --- |
@@ -44,5 +44,7 @@ v0.3.4 以电影库为试点，基线为 v0.3.3 后的 main `6fb61e3`。这是�
 - 人工：真实电影库分页、筛选排序、卡片/列表、进入详情后返回位置、键盘/遥控焦点和窄窗口。真实播放、远控、系统安装分别记录，不由浏览测试推定。
 
 本合同不承诺性能提升。构建、隐藏完整应用与人工结果以 PROJECT_STATUS 的实际证据为准；未执行项保持 NOT_EXECUTED / NOT_VERIFIED。
+
+本地构建及隐藏完整应用检查已完成，准确产品身份、交付入口与仍需人工确认的项目见 [v0.3.4本地候选](V034_LOCAL_CANDIDATE.md)。
 
 源级复核命令：`node --test tests/movie-browser.test.cjs tests/movie-browser-material-selftest.cjs`。后者要求固定vendor材料存在，缺失直接失败；不能用简化fixture或跳过代替。

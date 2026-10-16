@@ -1,10 +1,12 @@
 # 项目状态
 
-2026-10-16：v0.3.4电影库试点已形成未提交源码候选，基线为实时核对的main `6fb61e3`，实现与旧Settings工作区隔离。实际调用图/差异与回退见[电影库合同](MOVIE_BROWSER.md)。保留原筛选排序、虚拟分页、卡片/列表和返回恢复；Movie实例补齐signal下传、刷新/离页/销毁取消、ApiClient/账号与轮次归属检查，以及旧异步autofocus隔离；电影类别入口映射到实际videos页签。播放、认证、IPC与内核归属保持，产品版本候选为0.3.4。
+2026-10-16：v0.3.4电影库试点已完成本地测试交付，分支为`codex/v034-library`，产品源码提交为`ed00a97c11490a36e2a844c531772750deb22524`。用户已批准本批本地提交、构建和必要可回退修正；14文件按审核范围提交，之后未修改产品。实际调用图、最小差异与回退见[电影库合同](MOVIE_BROWSER.md)，产物身份与人工清单见[本地候选交付](V034_LOCAL_CANDIDATE.md)。保留原分页、筛选排序、卡片/列表和返回恢复，补齐Movie请求取消与迟到结果/焦点归属，电影分类明确进入videos页签。版本为0.3.4，默认libmpv字节保持原固定值。
 
-离线helper与固定材料22/22通过，包含在冻结源码上复现旧响应覆盖、使用原app.js default解包及原VideosTab/ItemsTab/ListController/容器refresh方法验证修复、分页与筛选参数、当前接口失败后恢复，以及无serverId的canonical连接与缓存resume。另覆盖首屏/分页最终提交、容器原50ms延迟焦点回调、旧分页失败与当前分页重试。overlay/runtime provenance夹具6/6通过；首轮构建输入及overlay23/23通过。另有隔离Electron源预览通过实际Alameda、原default拆包及维护模块接线检查，连接factory仅1次，窗口显示/聚焦及外部请求均0；此证据使用合成API与依赖，不代表完整客户端、真实服务器或视觉验收。完整公开离线门禁931/931通过，失败/跳过0；283项tracked JavaScript及新增/变更JavaScript语法检查、334项tracked文本和全部14项差异文本的有限凭据模式检查、diff-check通过。
+来源绑定runtime为`dist/EmbyTheaterEnhanced-v034-ed00a97-20261016-r2`，2156项payload及2157项runtime完整文件集（含manifest）核对通过；build-manifest SHA-256为`9cf1211f4c367f82445cac59883037b165c1cce18072a9c7383d5cfd811f577b`，payload-set SHA-256为`8a70575381f2ea59a64dab112b6a10d5d5bf19a7acd189bf948d9a33abcccbac`。公开离线931/931、电影单元/材料22/22、来源夹具6/6通过；包体验证16项通过。已取得的检查未重复跑全量。
 
-尚未提交、构建来源绑定runtime、生成可交付包或执行完整应用/视口验收。构建必须读取已提交源码，待本批准确文件集合的本地提交授权后继续；不绕过来源门禁。人工电影库/返回焦点、真实播放/远控与安装保持NOT_VERIFIED；v0.3.3及Stable/Latest身份不因本地候选改变。
+隐藏完整应用使用该runtime的真实main/app.js/router/controller和原卡片/列表，空隔离profile与合成API的23项检查通过，覆盖分页、筛选排序、卡片/列表、重复刷新、离页取消/迟到响应、接口失败恢复、合成旧版本提示及详情进入/返回；实际返回位置1460→1460，焦点保留同一合成影片。390/800/1280 CSS视口无页面横向溢出并完成截图检查；390仅由夹具临时解除最小窗口宽度，产品约束不变。窗口实际显示、外部请求、Node网络、Native子进程和所属进程残留均0。保留原file: Service Worker Cache警告，非预期页面错误0；这些证据不等于真实服务器、前台、播放/远控或安装验收。
+
+本地测试目录为`dist/ETE-v0.3.4-local-ed00a97-20261016`，入口`Start-v0.3.4.cmd`通过独立launch.cjs在启动前固定appData/userData/config到`test-profile`。隐藏入口探针确认隔离路径及版本，且显示/网络/子进程0；探针生成profile已移出交付。最终r2 ZIP共2161文件逐项回读通过，4359项独立审计断言通过，SHA为`81962ab3d5f521925408ecb07a89d14de27861735781dc65b727d8c1fdb8b735`。锁定依赖原带12个protobufjs测试文件与v0.3.3同字节，保留完整依赖树；没有本轮profile/harness/fixture。真实登录、服务器矩阵、前台键盘/遥控、播放及安装仍为NOT_VERIFIED。后续仅同步文档HEAD，不重标runtime来源；未推送、创建PR、合并、发布或系统安装。
 
 2026-10-15：[v0.3.3测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.3)已发布，PR #37合入main，Tag固定产品源码`11f29056c64abe2fb8133a409781a83e11cf9a60`；Stable/Latest仍为v0.3.1。最终main公开CI919项、材料144项及完整2155项payload检查通过；安装器解包2156文件（含manifest）逐项匹配。About三视口18状态、四原生选择器菜单及宽屏控件布局通过隔离检查，不代替真实详情业务、完整播放/回退或安装验收。安装包SHA-256为`066143a7a89fbf56ad9009b27298c4eb4c1e63f51c20b7642f463d43cc635589`，175696187 bytes，NotSigned；准确身份及下载校验见Release与随包provenance。本条文档收尾不改变已发布Tag或包来源。
 
