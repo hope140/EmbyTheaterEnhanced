@@ -114,6 +114,7 @@ function createFixture(root) {
     for (const relativePath of [
         'tools/prepare-preload.cjs',
         'tools/prepare-web-overlays.cjs',
+        'tools/patch-videoosd-lifecycle.cjs', 'tools/patch-apiclient-lifecycle.cjs',
         'tools/patch-custom-css-js.cjs',
         'tools/patch-externalplayer-residue.cjs',
         'tools/patch-item-controls.cjs',
@@ -194,11 +195,13 @@ test('runtime provenance binds tracked product sources to committed Git blobs', 
             'src/electronapp/some-normal-file.js'
         ]);
         const startupEntry = manifest.validatedProductScope.files[0];
+        const startupBlob = childProcess.execFileSync('git', ['-C', root, 'show',
+            manifest.validatedProductScope.sourceCommit + ':src/electronapp/enhanced/startup.svg']);
         assert.equal(startupEntry.sourceSha256,
-            hash(fs.readFileSync(path.join(root, 'src/electronapp/enhanced/startup.svg'))).toUpperCase());
+            hash(startupBlob).toUpperCase());
         assert.equal(startupEntry.sourceSha256, startupEntry.runtimeSha256);
         assert.deepEqual(fs.readFileSync(path.join(runtime, 'electronapp/enhanced/startup.svg')),
-            fs.readFileSync(path.join(root, 'src/electronapp/enhanced/startup.svg')));
+            startupBlob);
         const sourceEntry = manifest.validatedProductScope.files[1];
         assert.equal(sourceEntry.relation, 'git-blob-copy');
         assert.match(sourceEntry.gitBlobObjectId, /^[0-9a-f]{40}$/);

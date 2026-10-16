@@ -14,6 +14,8 @@ const movieBrowser = require('./patch-movie-browser.cjs');
 const searchUi = require('./patch-search-ui.cjs');
 const selectCancel = require('./patch-select-cancel.cjs');
 const startup = require('./patch-startup.cjs');
+const videoOsdLifecycle = require('./patch-videoosd-lifecycle.cjs');
+const apiClientLifecycle = require('./patch-apiclient-lifecycle.cjs');
 const trackedFileHash = require('./tracked-file-hash.cjs');
 
 const GENERATOR_PATH = 'tools/prepare-web-overlays.cjs';
@@ -28,8 +30,21 @@ const MOVIE_GENERATOR_PATH = 'tools/patch-movie-browser.cjs';
 const SEARCH_GENERATOR_PATH = 'tools/patch-search-ui.cjs';
 const SELECT_CANCEL_GENERATOR_PATH = 'tools/patch-select-cancel.cjs';
 const STARTUP_GENERATOR_PATH = 'tools/patch-startup.cjs';
+const OSD_LIFECYCLE_GENERATOR_PATH = 'tools/patch-videoosd-lifecycle.cjs';
+const APICLIENT_LIFECYCLE_GENERATOR_PATH = 'tools/patch-apiclient-lifecycle.cjs';
 
 const WEB_OVERLAY_CONTRACT = Object.freeze([
+    Object.freeze({
+        id: 'videoosd-lifecycle',
+        mode: 'tracked-canonical-transform',
+        basePath: 'vendor/carnival/electronapp/www/videoosd/videoosd.js',
+        inputPath: null,
+        runtimePath: 'electronapp/www/videoosd/videoosd.js',
+        expectedBaseSha256: '86AB60C897E827B5152435350FE7B3801D8AFD6B8889EEF96E9996E71BB5EEAB',
+        expectedInputSha256: null,
+        expectedOutputSha256: '76A677196C2D85891407BC94B6C3D0B74D981BE6FF552DB81BE6DC28A7EC549B',
+        generatorPaths: Object.freeze([GENERATOR_PATH, OSD_LIFECYCLE_GENERATOR_PATH])
+    }),
     Object.freeze({
         id: 'startup-index',
         mode: 'tracked-canonical-transform',
@@ -232,14 +247,14 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
     }),
     Object.freeze({
         id: 'apiclient',
-        mode: 'vendor-payload-replacement',
+        mode: 'vendor-payload-transform',
         basePath: 'vendor/carnival/electronapp/www/modules/emby-apiclient/apiclient.js',
         inputPath: 'vendor/patch/payload/client/apiclient.js',
         runtimePath: 'electronapp/www/modules/emby-apiclient/apiclient.js',
         expectedBaseSha256: 'F3516C72784E5BC8782ABBCE021F22A7F939034E5B8B70639672AE682E18ACC0',
         expectedInputSha256: 'A4A901640ABE6BC25188C1CF27FB53125B4F65EF2A797DEF033DC55165B080AE',
-        expectedOutputSha256: 'A4A901640ABE6BC25188C1CF27FB53125B4F65EF2A797DEF033DC55165B080AE',
-        generatorPaths: Object.freeze([GENERATOR_PATH])
+        expectedOutputSha256: '6342A2C809B8CD4C0E1E3E35FC49F6AF8A415E4F4F8F8F0363CB769E9A7EF95E',
+        generatorPaths: Object.freeze([GENERATOR_PATH, APICLIENT_LIFECYCLE_GENERATOR_PATH])
     }),
     Object.freeze({
         id: 'toast-css',
@@ -317,12 +332,17 @@ function readChecked(root, relativePath, expectedHash, label) {
 
 function outputFor(root, contract) {
     const base = readChecked(root, contract.basePath, contract.expectedBaseSha256, 'Web overlay base');
+    if (contract.mode === 'vendor-payload-transform' && contract.id === 'apiclient') {
+        const input = readChecked(root, contract.inputPath, contract.expectedInputSha256, 'Web overlay input');
+        return {base, input, output: Buffer.from(apiClientLifecycle.patchApiClient(input.toString('utf8')), 'utf8')};
+    }
     if (contract.mode === 'vendor-payload-replacement') {
         return {
             base,
             input: readChecked(root, contract.inputPath, contract.expectedInputSha256, 'Web overlay input')
         };
     }
+    if (contract.id === 'videoosd-lifecycle') return {base, input: Buffer.from(videoOsdLifecycle.patchVideoOsd(base.toString('utf8')), 'utf8')};
     if (contract.id === 'startup-index') return {base, input: Buffer.from(startup.patchStartup(base.toString('utf8')), 'utf8')};
     if (contract.searchTransform) return {base, input: Buffer.from(searchUi[contract.searchTransform](base.toString('utf8')), 'utf8')};
     if (contract.menuTransform) return {base, input: Buffer.from(selectCancel[contract.menuTransform](base.toString('utf8')), 'utf8')};
@@ -376,7 +396,8 @@ function generatorHashes(root, contract) {
 
 function expectedEntry(root, runtimeRoot, contract, write) {
     const values = outputFor(root, contract);
-    const outputHash = sha256(values.input);
+    const output = values.output || values.input;
+    const outputHash = sha256(output);
     if (outputHash !== contract.expectedOutputSha256) {
         throw new Error('Web overlay generated output hash mismatch: ' + contract.runtimePath +
             ' expected=' + contract.expectedOutputSha256 + ' actual=' + outputHash);
@@ -384,7 +405,7 @@ function expectedEntry(root, runtimeRoot, contract, write) {
     const runtimeFile = path.join(runtimeRoot, contract.runtimePath);
     if (write) {
         fs.mkdirSync(path.dirname(runtimeFile), {recursive: true});
-        fs.writeFileSync(runtimeFile, values.input);
+        fs.writeFileSync(runtimeFile, output);
     }
     if (!fs.existsSync(runtimeFile) || !fs.statSync(runtimeFile).isFile()) {
         throw new Error('Web overlay runtime output missing: ' + contract.runtimePath);
@@ -415,7 +436,7 @@ function apply(rootArg, runtimeRootArg) {
     // cannot leave a partially assembled Web snapshot.
     for (const contract of WEB_OVERLAY_CONTRACT) {
         const values = outputFor(root, contract);
-        const outputHash = sha256(values.input);
+        const outputHash = sha256(values.output || values.input);
         if (outputHash !== contract.expectedOutputSha256) {
             throw new Error('Web overlay generated output hash mismatch: ' + contract.runtimePath +
                 ' expected=' + contract.expectedOutputSha256 + ' actual=' + outputHash);

@@ -56,6 +56,12 @@ test('generates exact Web overlays without an ignored src/electronapp/www snapsh
     try {
         const report = preparation.apply(root, runtime);
         assert.equal(report.status, 'passed');
+        const apiClient = report.entries.find(entry => entry.id === 'apiclient');
+        const apiContract = preparation.WEB_OVERLAY_CONTRACT.find(entry => entry.id === 'apiclient');
+        assert.equal(apiClient.baseSha256, apiContract.expectedBaseSha256);
+        assert.equal(apiClient.inputSha256, apiContract.expectedInputSha256, 'input provenance records the unchanged raw payload');
+        assert.equal(apiClient.runtimeSha256, apiContract.expectedOutputSha256);
+        assert.notEqual(apiClient.inputSha256, apiClient.runtimeSha256, 'transformed output must not impersonate the raw payload');
         assert.deepEqual(
             report.entries.map(entry => ({path: entry.runtimePath, hash: entry.runtimeSha256})),
             preparation.WEB_OVERLAY_CONTRACT.map(contract => ({
