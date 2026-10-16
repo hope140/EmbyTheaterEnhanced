@@ -1,5 +1,7 @@
 # 维护注意事项
 
+- 搜索验收必须从实际getRouteUrl('search')开始；默认URL不含serverId，手工附加serverId会绕过currentApiClient分支并掩盖阻断。客户端选择应沿原controller的owner/显式/当前优先级，回复时同时核对API对象和userid；同userid不代表同一client或请求owner。
+
 - 搜索在标准布局走通用ListController，在电视布局才走SearchView；直接打开/search不足以覆盖默认搜索入口。公共API包装未接收signal时，本地取消与防迟到提交不等于底层HTTP已中断。
 - 控件disabled时程序派发keydown仍可能调用原监听器，不代表用户能打开菜单。取消验收先确认菜单真实打开并获得输入归属，再用原外部点击或键盘返回关闭，检查值与change次数；禁止把离开底层页面误记为取消成功。
 - 页面返回过程中，如果Fields仅在HTTP结束后resume，已经可见的输入会被paused检查忽略；应在原页面resume开始接收输入，但保留防抖及请求归属。已完成错误/空态随原view返回，新输入或刷新时再清除。

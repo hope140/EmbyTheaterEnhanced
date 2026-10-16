@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-16 v0.3.5 默认搜索入口P1修正
+
+父审核复现并拒绝441eafb。主线程使用旧完整runtime与原getRouteUrl默认路由独立复现item or serverId cannot be null，显示/网络/Native均0；此前强加serverId的隐藏夹具未覆盖默认入口，旧结果不算本问题通过。Model Tier: Tier 1（明确局部合同）；Model: 当前主线程，精确标识未由工具暴露；Reason: 单helper客户端选择与回复归属，播放影响0；Escalated: No。GPT-6 Luna High只补限定测试，保留修改前失败日志。
+
+产品只改list-search.js，来源2c9410c1bfd9ab27e7f3fe9943f9841b20494829；按owner.apiClient、显式serverId、canonical currentApiClient优先级选择，并在成功/错误提交前核对同一API对象和userid。测试提交8b484d2，定向15/15；默认原路由20、显式18、电视9、详情24/真实菜单取消、电影25、首页17及新来源材料162/162通过。2157 payload/2158完整runtime、VerifyOnly、独立SHA/交付副本与空profile启动隔离通过。公开首轮950/951，唯一临时Git fixture失败项保留原日志，隔离复验1/1通过；首次根因UNKNOWN；最终ZIP2162文件/234473398 bytes逐项回读通过，SHA 7f8a2b88d4c40d00391798209cd0fa055fa8c941b4c4164ac3c7fc93c35eab10；回执见V035_DEFAULT_SEARCH_FIX，未推送/PR/合并/发布或安装，真实服务器/前台/播放远控NOT_VERIFIED。
+
 ## 2026-10-16 v0.3.5 搜索与菜单合批
 
 用户明确接受“继续进行吧，合进去一起”，新增标准/电视搜索与必要原生菜单取消修正；旧详情用户观察保留。Model Tier: Tier 2；Model: 当前Codex主线程，精确标识未由工具暴露；Reason: 两条搜索路由与异步提交/恢复，播放核心影响0；Escalated: No。GPT-6 Luna High worker只读盘点及限定测试，主线程保留产品设计与最终核对。
