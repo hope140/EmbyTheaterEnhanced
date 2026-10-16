@@ -8,6 +8,10 @@
         if (!owner.params || owner.params.type !== 'search' || owner._eteSearchBrowse) return;
         var state = owner._eteSearchBrowse = {epoch: 0, paused: true, destroyed: false, pending: false};
         var requests = new Set(), status;
+        function getApiClient() {
+            return owner.apiClient || (owner.params.serverId
+                ? connection.getApiClient(owner.params.serverId) : connection.currentApiClient());
+        }
         function invalidate(hide) {
             state.epoch++;
             Array.from(requests).forEach(function (cancel) { cancel(); });
@@ -17,12 +21,12 @@
         var getItems = owner.getItems;
         owner.getItems = function (query, signal) {
             if (state.paused || state.destroyed || signal && signal.aborted) return Promise.reject(cancelled());
-            var epoch = state.epoch, api = owner.apiClient || connection.getApiClient(owner.params.serverId), user = api.getCurrentUserId();
+            var epoch = state.epoch, api = getApiClient(), user = api.getCurrentUserId();
             var controller = new AbortController();
             state.pending = true;
             return new Promise(function (resolve, reject) {
                 var settled = false;
-                function current() { return !state.paused && !state.destroyed && state.epoch === epoch && api.getCurrentUserId() === user; }
+                function current() { return !state.paused && !state.destroyed && state.epoch === epoch && getApiClient() === api && api.getCurrentUserId() === user; }
                 function finish(error, result) {
                     if (settled) return;
                     settled = true;
