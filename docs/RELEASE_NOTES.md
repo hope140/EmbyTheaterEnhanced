@@ -1,25 +1,29 @@
-# Emby Theater Enhanced v0.3.3 测试版
+# Emby Theater Enhanced v0.3.4 · 媒体库与首页跳转测试版
 
-Windows x64 测试版（Pre-release）。正式版 Latest 保持 v0.3.1；测试版需从本页手动下载。请使用附件安装包并核对随附 SHA-256，安装包未进行数字签名。
+**本次重点：电影库浏览稳定性与首页分区标题跳转。**
+
+Windows x64 **Pre-release 测试版**，请从本页手动下载。当前正式版为 [v0.3.1](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.1)。
 
 ## 更新内容
 
-- 首页读取服务端分区与顺序，继续复用现有卡片和播放入口，不支持的布局回到原首页。
-- 支持手动导入完整 ZIP 内核包，静态检查通过后可选择下次启动使用；本次播放不会即时换库，启动验证失败时按既定规则回退。
-- 关于页面改用原生按钮、列表和折叠技术详情，明确本次与下次启动的内核选择。
-- 统一详情页版本、视频、音轨和字幕的原生主题菜单，修正宽屏选择区限宽和额外间距。
-- 修正Chapter API目录列表宽度，并完善插件基础控件及选项数据源兼容检查。
-- 停用旧CustomCssJS脚本执行、旧外置播放器专属自动续播和休眠/关机/重启协议动作；保留CSS、已保存配置与原生播放链。
-- 修正内核打包工具参数处理。内置内核仍为原固定版本；用户手动导入的内核与个人配置不进入本安装包。
+- 电影库翻页、筛选排序及连续刷新时取消旧请求，避免迟到结果覆盖当前列表。
+- 完善离页与返回时的焦点保护，保留原有滚动位置恢复。
+- 修正电影分类入口，使其进入正确的影片页签。
+- 首页受支持的电影、电视剧分区标题可进入对应媒体库的最近页签，返回后恢复标题或“查看全部”焦点。
 
-## 使用与已知限制
+## 已知问题与限制
 
-已完成离线测试、材料依赖验证、来源/包体检查和隐藏原生控件检查。新版候选内核基本播放有用户反馈及启动握手截图，属于有限USER_REPORTED证据。真实保存/备份/恢复、完整媒体组合、候选失败回退、远控、硬件及系统安装仍分别验收。本次仅分批适配插件、首页及局部控件；媒体库、详情与搜索未整套迁移。STRM/115字幕音轨切换延迟未作性能修复，详见 [已知问题](https://github.com/hope140/EmbyTheaterEnhanced/blob/v0.3.3/docs/KNOWN_ISSUES.md)。
+- 缺少受支持媒体库目标的自定义分区及TV布局保留普通标题。
+- STRM/115内嵌字幕与音轨切换延迟仍未解决。更多内容见[已知问题](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/KNOWN_ISSUES.md)。
 
-项目是非官方社区维护版本，与 Emby 无隶属或认可关系。维护层保持 GPL-2.0-only，项目及第三方许可证、版权和通知保留。已知 libmpv/FFmpeg 与 Helper 的 GPL 组合、对应源码/通知材料缺口、部分独立组件和资产来源/条款仍未解决。维护者接受风险不代表合规验证通过或第三方授权；GitHub Source code 归档不是全部第三方二进制的完整对应源码。详情见 [许可与来源说明](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/LICENSING.md)。
+## 下载安装
 
-## 安装包身份
+- [下载 Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.4/EmbyTheaterEnhanced-0.3.4-win-x64-setup.exe)
+- [SHA-256 校验文件](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.4/EmbyTheaterEnhanced-0.3.4-win-x64-setup.exe.sha256)
+- 安装程序未进行数字签名。关闭正在运行的客户端后再安装。
 
-安装包名称含版本号与源码短提交，格式为 `EmbyTheaterEnhanced-0.3.3-<commit>-win-x64-setup.exe`。
+## 项目说明
 
-源码由 `v0.3.3` Tag 固定；最终 main 提交、安装包大小和 SHA-256 由实际构建产物生成，列于 Release 正文及随附 provenance、`.sha256` 和 `SHA256SUMS.txt`。下载 GitHub 自动生成的 Source code 归档不能代替客户端安装包。
+非官方社区维护项目。许可与第三方材料情况见[许可与来源说明](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/LICENSING.md)。
+
+[版本变更记录](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/CHANGELOG.md) · [与前一版本比较代码变化](https://github.com/hope140/EmbyTheaterEnhanced/compare/v0.3.3...v0.3.4)

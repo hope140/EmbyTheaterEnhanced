@@ -1,5 +1,8 @@
 # 维护注意事项
 
+- 原生emby-sectiontitle会派生See All，但后者仍由itemscontainer按条目数隐藏。动态构造要在createElement时指定is并保留原生类；返回重建DOM时只记录分区焦点身份，隐藏/消失的次级入口应回退可见标题，不用内容缓存解决焦点问题。
+- ApiClient的serverInfo.Version不等于serverVersion()运行提示；合成版本兼容测试应通过原setSystemInfo设置，并直接断言serverVersion，再检查行为，不能把字段赋值当生效证据。
+
 - 动态创建Emby原生按钮需在createElement时传入定制内建元素标识；只添加raised或事后设置is属性不能注册原生控件。构造器已添加主题/焦点类时应追加classList，不覆盖className。需用真实customElements构造器及按钮样式验证，普通DOM模拟无法证明原生外观。
 
 - 同一原生select可按data-menu和布局模式选择系统菜单或Emby ActionSheet，视觉不一致不代表缺少新版渲染库；先核对页面声明。详情组逐行堆叠也可能来自旧主题额外限宽，需确认实际命中规则后做页面局部纠正，保留控件值/change事件与播放归属。

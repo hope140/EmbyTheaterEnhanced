@@ -12,12 +12,16 @@ class Element {
     }
     appendChild(element) { element.parentElement = this; this.children.push(element); return element; }
     replaceChildren(...elements) { this.children.forEach(child => { child.parentElement = null; }); this.children = []; elements.forEach(element => this.appendChild(element)); }
+    replaceChild(next, previous) { const index = this.children.indexOf(previous); assert.ok(index >= 0); this.children[index] = next; previous.parentElement = null; next.parentElement = this; }
     setAttribute(name, value) { this.attributes[name] = value; }
     getAttribute(name) { return this.attributes[name] || null; }
     contains(element) { return element === this || this.children.some(child => child.contains(element)); }
+    closest(selector) { if (selector === '[data-ete-home-title]' && this.getAttribute('data-ete-home-title') || selector === '.sectionSeeAllButton' && this.classList.contains('sectionSeeAllButton')) return this; return this.parentElement ? this.parentElement.closest(selector) : null; }
     addEventListener(name, fn) { (this.events ||= {})[name] = fn; }
     querySelectorAll(selector) {
-        const matches = child => selector === 'h2' ? child.tag === 'h2' : selector === '[data-id]' ? !!child.getAttribute('data-id') :
+        const matches = child => selector === 'h2' ? child.tag === 'h2' : selector === 'a' ? child.tag === 'a' : selector === '[data-id]' ? !!child.getAttribute('data-id') :
+            selector === '[data-ete-home-title]' ? !!child.getAttribute('data-ete-home-title') : selector === '.sectionTitleTextButton' ? child.classList.contains('sectionTitleTextButton') :
+            selector === '.sectionSeeAllButton' ? child.classList.contains('sectionSeeAllButton') :
             selector === '.sections' ? child.classList.contains('sections') : selector === '.itemsContainer' ? child instanceof Items : false;
         return this.children.flatMap(child => (matches(child) ? [child] : []).concat(child.querySelectorAll(selector)));
     }
@@ -47,9 +51,9 @@ class Items extends Element {
 function sections() { return [{Id: 'first', SectionType: 'resume', Name: '<unsafe>', Monitor: ['videoplayback', 'markplayed']},
     {Id: 'second', SectionType: 'latestmedia', Name: 'Recent', CollectionType: 'movies'}]; }
 function fixture(handler) {
-    const document = {activeElement: null, createElement(tag) { return new Element(document, tag); }};
+    const document = {activeElement: null, createElement(tag, options) { const element = new Element(document, tag); element.customType = options && options.is; if (element.customType) element.classList.add('native-constructor-class'); return element; }};
     const view = new Element(document), root = document.createElement('div'); root.className = 'sections'; view.appendChild(root);
-    const cards = Object.freeze({id: 'original-cards'}), calls = [], legacy = [], focus = [], loading = [];
+    const cards = Object.freeze({id: 'original-cards'}), calls = [], legacy = [], focus = [], loading = [], routes = [];
     let version = '4.10.0.40', user = 'user-1', client;
     const api = {serverVersion: () => version, serverId: () => 'server-1', getCurrentUserId: () => user,
         getCurrentUser: () => Promise.resolve({Id: user}), getUrl(route, query) { return {route, query}; },
@@ -59,12 +63,13 @@ function fixture(handler) {
     client = api;
     const owner = {view, sectionsContainer: root, addFocusBehavior: item => focus.push(item)};
     const deps = {document, cards, layout: {tv: true}, globalize: {getCurrentLocale: () => 'zh-CN'},
+        router: {getRouteUrl(parent, options) { routes.push({parent, options}); return (parent.CollectionType === 'movies' ? '/videos?' : '/tv?') + 'serverId=' + options.serverId + '&parentId=' + parent.Id + '&tab=suggestions'; }},
         legacy: {loadSections(stage, actual, currentUser) { legacy.push({stage, client: actual, user: currentUser}); return Promise.resolve(); }},
         loading: {show: () => loading.push('show'), hide: () => loading.push('hide')},
         focus: {autoFocus: () => focus.push('auto'), focus: element => focus.push(element)},
         connection: {currentApiClient: () => client}};
     const controller = bridge.create(owner, deps);
-    return {owner, root, api, document, cards, calls, legacy, focus, loading, deps, controller,
+    return {owner, root, api, document, cards, calls, legacy, focus, loading, routes, deps, controller,
         version(value) { version = value; }, user(value) { user = value; }, switchClient() { client = {...api}; }};
 }
 test('server layout renders ordered safe headings with original cards and no new playback owner', async () => {
@@ -84,6 +89,94 @@ test('server layout renders ordered safe headings with original cards and no new
     assert.equal(items[0].getAttribute('data-monitor'), 'videoplayback,markplayed');
     assert.equal(f.calls.length, 3); assert.equal(f.legacy.length, 0); assert.ok(f.focus.includes('auto'));
     f.controller.dispose();
+});
+
+test('desktop latest library titles use the native section-title anchor, safe text and current server', async () => {
+    const f = fixture(); f.deps.layout.tv = false;
+    f.api.getJSON = request => Promise.resolve(request.route.endsWith('/HomeSections') ? [
+        {Id: 'section-not-library', SectionType: 'latestmedia', Name: '<img src=x onerror=alert(1)>',
+            ParentItem: {Id: 'movie-library', CollectionType: 'movies', Path: 'never-forwarded'}},
+        {Id: 'tv-section', SectionType: 'latestmedia', Name: 'Television', ParentItem: {Id: 'tv-library', CollectionType: 'tvshows'}}
+    ] : {Items: [{Id: 'one'}]});
+    assert.equal((await f.controller.resume()).status, 'server');
+    const links = f.root.querySelectorAll('a'); assert.equal(links.length, 2);
+    assert.equal(links[0].customType, 'emby-sectiontitle');
+    assert.equal(links[0].getAttribute('href'), './videos?serverId=server-1&parentId=movie-library&tab=suggestions');
+    assert.equal(links[1].getAttribute('href'), './tv?serverId=server-1&parentId=tv-library&tab=suggestions');
+    assert.ok(links[0].classList.contains('native-constructor-class'));
+    assert.ok(links[0].classList.contains('sectionTitleTextButton'));
+    assert.equal(links[0].querySelector('h2').textContent, '<img src=x onerror=alert(1)>');
+    assert.deepEqual(f.routes[0].options, {section: 'latest', serverId: 'server-1'});
+    assert.deepEqual(Object.keys(f.routes[0].parent).sort(), ['CollectionType', 'Id', 'ServerId']);
+    f.controller.dispose();
+});
+
+test('TV, missing/unsupported parent and non-latest sections keep ordinary headings', async () => {
+    for (const tv of [false, true]) {
+        const f = fixture(); f.deps.layout.tv = tv;
+        const parent = {Id: 'movie-library', CollectionType: 'movies'};
+        f.api.getJSON = request => Promise.resolve(request.route.endsWith('/HomeSections') ? [
+            {Id: 'latest', SectionType: 'latestmedia', Name: 'Latest', ParentItem: tv ? parent : {...parent, ServerId: 'other'}},
+            {Id: 'missing', SectionType: 'latestmedia', Name: 'Missing'},
+            {Id: 'resume', SectionType: 'resume', Name: 'Resume', ParentItem: parent}
+        ] : {Items: [{Id: 'one'}]});
+        assert.equal((await f.controller.resume()).status, 'server');
+        assert.equal(f.root.querySelectorAll('a').length, 0); assert.equal(f.routes.length, 0);
+        assert.deepEqual(f.root.querySelectorAll('h2').map(x => x.textContent), ['Latest', 'Missing', 'Resume']);
+        f.controller.dispose();
+    }
+});
+
+test('home refresh on return restores the corresponding new native title, without retaining content nodes', async () => {
+    const f = fixture(); f.deps.layout.tv = false;
+    let reads = 0;
+    f.api.getJSON = request => Promise.resolve(request.route.endsWith('/HomeSections') && ++reads ? [
+        {Id: 'latest', SectionType: 'latestmedia', Name: 'Latest', ParentItem: {Id: 'movie-library', CollectionType: 'movies'}}
+    ] : {Items: [{Id: 'one'}]});
+    await f.controller.resume(); const previous = f.root.querySelectorAll('a')[0];
+    f.document.activeElement = previous; f.controller.pause(); await f.controller.resume({autoFocus: false});
+    const current = f.root.querySelectorAll('a')[0];
+    assert.notEqual(previous, current); assert.equal(f.focus.at(-1), current);
+    assert.equal(reads, 2);
+    f.controller.dispose();
+});
+
+test('title and native See All container block activation after pause, identity change or replacement', async () => {
+    for (const action of ['pause', 'user', 'switchClient', 'refresh', 'dispose']) {
+        const f = fixture(); f.deps.layout.tv = false;
+        f.api.getJSON = request => Promise.resolve(request.route.endsWith('/HomeSections') ? [
+            {Id: 'latest', SectionType: 'latestmedia', Name: 'Latest', ParentItem: {Id: 'movie-library', CollectionType: 'movies'}}
+        ] : {Items: [{Id: 'one'}]});
+        await f.controller.resume(); const title = f.root.querySelectorAll('a')[0].parentElement;
+        function activate() { const event = {preventDefault() { this.prevented = true; }, stopImmediatePropagation() { this.stopped = true; }}; title.events.click(event); return event; }
+        assert.equal(activate().prevented, undefined);
+        if (action === 'user') f.user('other'); else if (action === 'switchClient') f.switchClient(); else await f.controller[action]();
+        const rejected = activate(); assert.equal(rejected.prevented, true); assert.equal(rejected.stopped, true);
+        f.controller.dispose();
+    }
+});
+
+test('a See All target hidden by refreshed content restores focus to the visible section title', async () => {
+    const f = fixture(); f.deps.layout.tv = false; let hide = false;
+    const create = f.document.createElement;
+    f.document.createElement = function(tag, options) {
+        const element = create(tag, options), append = element.appendChild;
+        element.appendChild = function(child) {
+            const result = append.call(this, child);
+            if (this.getAttribute('data-ete-home-title') && child.customType === 'emby-sectiontitle') {
+                const seeAll = create('a'); seeAll.classList.add('sectionSeeAllButton'); if (hide) seeAll.classList.add('hide');
+                append.call(this, seeAll);
+            }
+            return result;
+        };
+        return element;
+    };
+    f.api.getJSON = request => Promise.resolve(request.route.endsWith('/HomeSections') ? [
+        {Id: 'latest', SectionType: 'latestmedia', Name: 'Latest', ParentItem: {Id: 'movie-library', CollectionType: 'movies'}}
+    ] : {Items: [{Id: 'one'}]});
+    await f.controller.resume(); f.document.activeElement = f.root.querySelector('.sectionSeeAllButton');
+    f.controller.pause(); hide = true; await f.controller.resume({autoFocus: false});
+    assert.equal(f.focus.at(-1), f.root.querySelector('.sectionTitleTextButton')); f.controller.dispose();
 });
 test('old server uses complete legacy renderer and old user without new HomeSections request', async () => {
     const f = fixture(); f.version('4.9.0.0');

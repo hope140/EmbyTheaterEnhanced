@@ -1,5 +1,51 @@
 # 维护记录
 
+## 2026-10-16 v0.3.4测试版发行准备
+
+- 用户明确要求发测试包，批准本版主线集成、准确来源安装器、Pre-release发布与公开回读；当前核对main=6fb61e3、打开PR0、v0.3.4尚不存在。父会话已审核累计源码与本地候选，新增三文档有限用户反馈原样保留。
+- 发行文本围绕浏览取消、迟到提交与焦点、电影分类入口及首页媒体库标题，保留USER_REPORTED_NO_ISSUE/MONITORING边界，不推断逐项人工或播放/安装通过。版本仍0.3.4，依赖和默认内核不变，完整Web迁移未实施。
+- Model Tier：Tier 1（发行脚本/文档/已固定验证）；主线程继承当前会话模型，Luna worker做只读累计diff及包体复核；核心正确性与最终发布由主线程审核。新构建必须绑定最终主线提交，旧本地wrapper/profile不入发行包，所有旧候选继续保留。材料缺口与既有许可未决状态不因发布改写。
+
+## 2026-10-16 — 用户反馈暂未发现问题
+
+用户在收到ae245f6标题跳转候选后反馈“现在没看到有什么问题”。按上下文归属于当前v0.3.4候选的有限使用观察，记录为USER_REPORTED_NO_ISSUE / MONITORING；本次标题缺项转入观察。用户未逐项说明点击/Enter/See All/返回焦点、媒体类型或设备组合，不补写逐项PASS，也不扩大为真实播放、远控、旧服务器矩阵或安装验收。缓存继续不做，既有包体/sourceCommit保持，未因此发布或启动后续版本。
+
+## 2026-10-16 首页分区标题跳转续办
+
+- 最终产品来源ae245f623fa32957c155cfb8b5dd1f1e7aa78987，依次保留4a9e4bc（标题接线）、eae49c6（返回焦点）和ae245f6（次级入口隐藏时回可见标题）三个小范围提交；起点b646374后的产品改动只在两个home模块，其他为直接相关测试/文档。
+- 隐藏完整应用先验证native标题/See All及正确电影路由，发现返回重建DOM后焦点为BODY；修正仅保留分区标题Id/入口种类。早期See All焦点断言曾点击只有6项时原组件已隐藏的入口，改用12项可见输入，并补充隐藏入口回可见标题测试；不改变原数量门槛或组件。另保留新生custom元素的is声明属性，实际instanceof和原loader一并核对。
+- 最终39项定向/材料、940项公开门禁通过；空profile+合成API完整应用17项、3视口通过，含真实Enter到tv suggestions、返回内容/标题/See All焦点、失效账号激活阻止及TV普通标题。实际show/浏览器外网/Node网络/Native启动0，非预期页面错误0，原file: Cache警告单列；未执行真实服务器/前台业务。requestWait/clear/refresh函数体与起点逐字一致，无缓存策略变化。
+- 来源构建为EmbyTheaterEnhanced-v034-home-titles-ae245f6-20261016，2156 payload / 2157完整runtime逐路径及SHA通过，两个home模块匹配指定Git blob；manifest SHA b3cd0fe004b96ccaee8e3fe925579373f82cd1b86a4176a7c829d0c5445ad350，payload-set SHA acf43a44d4488ffa598d9101604c0cef47a6943dad0149c78211a8c96ca7442f。独立VerifyOnly及2169项包体断言通过。
+- 新交付ETE-v0.3.4-home-titles-ae245f6-20261016与旧ed00a97目录/ZIP分开；启动wrapper隔离探针通过，生成profile移出交付。ZIP2161文件逐项回读通过（28个命名审计断言），SHA 6e4abb611e896af0de8ec232d6290043354cd58e4204b4d8233e50cca68c12c2；只保留12个与v0.3.3同字节的锁定依赖测试文件，没有本轮profile/harness/fixture。默认DLL哈希保持，未发布或安装。
+- 本轮还发现旧电影库合成夹具只设置serverInfo.Version，原运行serverVersion未赋值，因此旧case当时仅证明缺版本提示的原查询可用。已在独立空profile目录、原ed00a97不变runtime上经setSystemInfo显式设置4.10.0.40→4.6.0.0→恢复，25项补证通过且显示/网络/Native0；旧回执不改写为当时已设置版本。真实旧服务器矩阵仍未验证。
+- 以下为本批提交前记录；此后的文档HEAD不重标上述产品来源，不重跑已覆盖的无关门禁。旧产物和用户profile未被替换，没有远端写入或真实服务器业务操作。
+- Model Tier：Tier 2；Model：主线程继承会话配置、provider测试worker为GPT-6 Luna High；Reason：服务端导航DTO与原native标题/router接线；Escalated：无。风险/不确定性中，模块范围为home provider/renderer和定向测试，Playback/Session影响NONE。
+- 当前用户明确只补跳转，缓存先不做，保留现有搜索布局；本任务可回退本地提交/构建授权继续有效。起点b646374，旧产品ed00a97与其测试目录/ZIP保持，不能覆盖用户可能运行的产物。
+- 已在旧ed00a97的真实main/app/router/原组件中，用空profile和合成API复现5个分区、30张卡片、标题/See All链接0。初次夹具未通过原setSystemInfo设置ApiClient运行版本，导致走旧首页回退；修正夹具后基线通过，产品未改。只读静态样本与原homesections确认桌面latest父库经原router进入suggestions，TV为h2。
+- provider投影冻结的Id/CollectionType/owner ServerId，Type/IsFolder仅作可选一致性校验；路由/路径/命令不跨边界。renderer显式加载原native标题和canonical router，文本用textContent，保留原See All/键盘机制，局部capture仅拒绝失效owner/stage。
+- provider17项、renderer16项、固定材料4项，共37项通过。材料用原getRouteUrl及原isLocalItem函数验证电影/电视剧latest路径；覆盖恶意URL/query/脚本、跨server、标题HTML、TV、旧owner激活、现有取消/清空与回退。没有改刷新清空、重试、时限或新增缓存；未更改vendor、媒体库/搜索/详情controller或播放核心。后续新来源构建/完整应用/ZIP结果另记。
+
+## 2026-10-16 v0.3.4本地交付收尾
+
+- 用户随后明确允许本批可回退操作，批准14文件本地提交、来源绑定构建、包体核对及隔离隐藏/视口验收。核对审核回执中的14项文件集合和SHA均未改变，在codex/v034-library提交为ed00a97c11490a36e2a844c531772750deb22524；本轮没有新的产品修正。
+- 首次构建拒绝测试阶段的vendor目录联接，保留部分输出与日志；改用固定输入物理副本及项目内锁定工具链，在新r2输出完成构建。产品来源ed00a97，版本0.3.4，2156项payload和2157项runtime文件（含manifest）逐路径/SHA匹配；独立VerifyOnly和16项包体断言通过。manifest SHA 9cf1211f4c367f82445cac59883037b165c1cce18072a9c7383d5cfd811f577b，payload-set SHA 8a70575381f2ea59a64dab112b6a10d5d5bf19a7acd189bf948d9a33abcccbac。默认DLL仍为965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c。
+- 完整隐藏应用使用真实main/入口/路由/原组件、空profile及合成ApiClient，阻止浏览器和Node外网、LAN发现与子进程。最终23项浏览检查通过，含真实详情页进入/返回、1460非零滚动位置和同一影片焦点恢复、分页、筛选排序、卡片/列表、重复刷新、离页迟到响应、失败恢复和合成旧版本提示。390/800/1280 CSS视口均无页面横向溢出；390采用夹具临时最小尺寸覆盖，未改产品窗口约束。已实际查看三种截图。show、外部请求、Node网络、Native启动和残余进程0，只有原file: Service Worker Cache警告，非预期页面错误0。
+- 初期完整应用夹具缺electronfile本地协议allowlist、Prefixes应为数组、列表异步渲染需等待、虚拟卡片身份不能用缺失data-id，以及偏好保存应由合成API接收；对应失败与初步结果均保留，最终结论以修正后的完整夹具为准，不记作产品回归或借此改产品。真实服务器/个人profile/前台窗口均未参与。
+- 本地交付使用独立test-profile入口；launch.cjs在require正式main前显式固定appData/userData/sessionData/logs/temp，避免只依赖环境变量推断隔离。隐藏探针确认appData/userData/config均隔离、版本0.3.4，show/网络/子进程0；生成profile移到交付目录之外的私有验证目录，不随包分发。runtime文件保持来源绑定字节；外层入口作为本地交付wrapper单独记录SHA。
+- 最终r2 ZIP为2161文件（runtime2157+外层4），逐文件完整回读及4359项独立断言通过，SHA为81962ab3d5f521925408ecb07a89d14de27861735781dc65b727d8c1fdb8b735，与sidecar一致。12个上游protobufjs测试文件与v0.3.3 manifest/实际文件同SHA，9个对应锁定依赖记录一致；精确保留继承文件，不删除锁定依赖树，本轮profile/harness/fixture及非白名单测试文件0。
+- 交付与实际验证见V034_LOCAL_CANDIDATE。本次只追加文档提交，不重跑无关全量门禁或重标产品来源。尚未执行真实服务器矩阵、前台键盘/遥控、播放/远控或安装验收，没有推送/PR/合并/发布/系统安装。
+
+## 2026-10-16 v0.3.4电影库浏览候选（提交前快照）
+
+- Model Tier：Tier 2；Model：主线程继承当前会话配置，测试worker为GPT-6 Luna High；Reason：浏览controller、容器及异步取消跨模块接线；Escalated：无。Task Risk/Uncertainty：中；Cross-module Scope：电影页及原共用列表的条件接线；Playback/Session Impact：NONE。主线程保留合同、取消归属与最终审核。
+- 重新核对远端main为6fb61e3，从准确提交建立隔离工作树；读取原目录未提交的NEXT_STEPS_20261016完整计划，不覆盖原Settings分支与已有改动。电影试点范围已在当前任务接受，后续版本没有实施授权。
+- 复用已完成Web评估及固定4.10.1.0私有静态样本，核对实际路由/API/分页/筛选排序/返回恢复，不引入新Web资产。电影库原功能继续由VideosTab→ItemsTab/ListController→itemscontainer/virtual-scroller提供。
+- 冻结材料复现普通getItems丢失signal与迟到首屏覆盖。新增Movie专用维护模块，取消Promise与底层signal分开处理，刷新/离页/销毁及账号变化均阻止旧结果和旧焦点回调；普通失败保留原错误对象与页面错误路径。发送前账号切换也不发出旧页查询。电影类别的movies页签参数改为已有videos，收藏/合集参数保持。
+- app与六个页面/共用模块输出纳入固定输入/输出SHA合同，新生成器加入build-input及provenance夹具。非Movie不安装维护层，其他页面的普通API调用仍保持原参数个数。版本与锁文件仅更新到0.3.4，无依赖升级。
+- worker首先报告迟到失败未检查账号的有效失败，主线程修复后12/12 helper测试通过；材料10/10通过，覆盖冻结基线复现、真实default拆包、原controller/容器refresh、分页筛选、离页/重复刷新、失败恢复与缓存resume。主审核补齐首屏/分页最终提交和容器50ms延迟焦点/monitor回调归属检查，旧分页失败不得重置新query tracking，同query中断分页仍可重试。overlay/runtime provenance6/6及首轮构建输入/overlay23/23通过。
+- 隔离Electron源预览用实际Alameda及原拆包函数加载维护模块和固定controller，canonical连接factory为1次，分页signal接线通过；显示、聚焦和外部请求0。首次夹具启动受ELECTRON_RUN_AS_NODE环境影响，随后页面相对路径配置错误，均保留失败现场；修正夹具后通过，不记作产品故障或完整应用/视觉验收。
+- 新工作树首次公开门禁897/899通过，因锁定依赖尚未准备导致两个CD2测试入口失败；随后仅用离线缓存执行npm ci --ignore-scripts，相关两文件60/60通过，完整公开门禁复跑931/931通过，失败/跳过0。未修改CD2产品或测试、依赖版本和锁定内容。最终source冻结后的22项电影检查和6项overlay/runtime provenance夹具通过；283项tracked及新增/变更JS语法、334项tracked与全部14差异文本有限凭据模式和diff-check通过。来源绑定构建要求提交源码；本批没有提交授权，完成可审阅源码与验证后一次性请求本地提交/构建。尚无runtime包、完整应用、窄视口、真实服务器/媒体/远控或安装通过结论；未推送、创建PR、合并或发布。
+
 ## 2026-10-15 v0.3.3发布收尾
 
 - PR #37已合入main，产品来源与v0.3.3 Tag均为11f29056c64abe2fb8133a409781a83e11cf9a60；最终主线公开CI919/919、材料144/144通过。材料测试已分离为显式selftest，原断言保留，不用跳过来制造通过。

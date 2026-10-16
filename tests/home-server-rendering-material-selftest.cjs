@@ -5,6 +5,52 @@ const path = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
 const patcher = require('../tools/patch-server-home.cjs');
+const provider = require('../src/electronapp/enhanced/home/server-sections.js');
+
+function nativeRouteUrl() {
+    const root = path.join(__dirname, '../vendor/carnival/electronapp/www');
+    const router = fs.readFileSync(path.join(root, 'modules/approuter.js'), 'utf8');
+    const start = router.indexOf('function getRouteUrl(item, options) {');
+    const end = router.indexOf('\n  function showAlert(', start);
+    const helpers = fs.readFileSync(path.join(root, 'modules/common/itemhelper.js'), 'utf8');
+    const localStart = helpers.indexOf('function isLocalItem(item){');
+    const localEnd = helpers.indexOf('Object.defineProperty(', localStart);
+    assert.ok(start >= 0 && end > start && localStart >= 0 && localEnd > localStart);
+    const isLocalItem = vm.runInNewContext('(' + helpers.slice(localStart, localEnd) + ')');
+    return vm.runInNewContext('(' + router.slice(start, end).trim() + ')', {_itemhelper: {default: {isLocalItem}}});
+}
+
+test('projected parent identities use the pinned router library latest routes without manufacturing type or query', () => {
+    const route = nativeRouteUrl();
+    for (const [collection, endpoint] of [['movies', 'videos'], ['tvshows', 'tv']]) {
+        const section = provider.prepareSections([{Id: 'unrelated-section', Name: 'Latest', SectionType: 'latestmedia',
+            ParentItem: {Id: 'library-123', CollectionType: collection}}], 'server-123')[0];
+        assert.equal(route(section.ParentItem, {section: 'latest', serverId: 'server-123'}),
+            '/' + endpoint + '?serverId=server-123&parentId=library-123&tab=suggestions');
+        assert.equal(section.ParentItem.Type, undefined); assert.equal(section.ParentItem.IsFolder, undefined);
+    }
+    for (const value of [{Id: 'x&serverId=other'}, {Id: 'x?tab=folders'}, {Id: 'x#fragment'}, {Id: '../x'},
+        {ServerId: 'other'}, {url: 'javascript:alert(1)'}, {Href: '//invalid'}, {QueryOptions: {tab: 'bad'}}, {CollectionType: 'unknown'}]) {
+        const section = provider.prepareSections([{Id: 'safe-section', Name: 'Latest', SectionType: 'latestmedia',
+            ParentItem: {Id: 'library-123', CollectionType: 'movies', ...value}}], 'server-123')[0];
+        assert.equal(section.ParentItem, null);
+    }
+    assert.equal(route({Id: 'local-library', CollectionType: 'movies', ServerId: 'server-123'}, {section: 'latest'}),
+        '/item?id=local-library&serverId=server-123');
+});
+
+test('home module loads the native title registration and router through canonical AMD identities', () => {
+    const source = fs.readFileSync(path.join(__dirname, '../src/electronapp/enhanced/home/home-tab.js'), 'utf8');
+    let exported;
+    vm.runInNewContext(source, {define(dependencies, factory) {
+        const ids = Array.from(dependencies); assert.ok(ids.includes('modules/approuter.js'));
+        assert.ok(ids.includes('modules/emby-elements/emby-button/emby-button.js'));
+        assert.equal(ids.some(id => id.includes('../www/')), false);
+        const exports = {}; factory(exports, {default: provider}, {default: {}}, {default: {tv: false}}, {default: {}},
+            {default: {getRouteUrl: nativeRouteUrl()}}, {default: {}}); exported = exports.default;
+    }});
+    assert.equal(typeof exported.create, 'function');
+});
 test('pinned HomeTab consumes the native default-unwrapped alias and preserves original lifecycle', async () => {
     const input = fs.readFileSync(path.join(__dirname, '../vendor/carnival/electronapp/www/home/hometab.js'), 'utf8');
     const output = patcher.patchHomeTab(input);

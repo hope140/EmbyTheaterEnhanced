@@ -1,5 +1,25 @@
 # 项目状态
 
+2026-10-16：用户已要求发布v0.3.4测试版，授权本版push/PR、CI通过后主线集成、准确最终main来源构建与标准安装器、产品Tag、Pre-release及全部附件匿名回读。发行正在执行，尚不以本条记为已发布。范围限于电影库取消/迟到结果/返回焦点及首页标题跳转，缓存、搜索布局、默认内核和播放核心保持。正式Stable/Latest继续v0.3.1；系统安装、真实服务器写入、前台验收和后续版本不在本次发行范围。
+
+## 2026-10-16 — 当前v0.3.4候选用户观察
+
+用户在收到ae245f6标题跳转候选后反馈“现在没看到有什么问题”。按上下文归属于当前v0.3.4候选的有限使用观察，记录为USER_REPORTED_NO_ISSUE / MONITORING；本次标题缺项转入观察。用户未逐项说明点击/Enter/See All/返回焦点、媒体类型或设备组合，不补写逐项PASS，也不扩大为真实播放、远控、旧服务器矩阵或安装验收。缓存继续不做，既有包体/sourceCommit保持，未因此发布或启动后续版本。
+
+2026-10-16：首页标题跳转续办已完成新本地测试交付，最终产品源码为`ae245f623fa32957c155cfb8b5dd1f1e7aa78987`，版本继续0.3.4。桌面latestmedia电影/电视剧父媒体库标题使用原native标题与canonical router进入suggestions，TV和缺少受支持父级的分区保留普通标题；返回恢复标题/See All焦点，若See All随条目数隐藏则恢复可见标题。缓存与搜索布局不变，requestWait/clear/refresh函数体与b646374逐字一致。原ed00a97目录、ZIP及用户profile保持。
+
+本批公开门禁940/940、定向/固定材料39/39、空profile合成完整应用17/17与390/800/1280视口检查通过；真实Enter事件从电视剧标题进入原tv suggestions并返回焦点。actual main/loader/router、native标题及See All升级、电影点击、账号失效阻止、TV普通标题均验证，实际show/外网/Node网络/Native启动0，非预期页面错误0，保留原file: Cache警告。旧源码无标题链接的完整应用基线已复现。真实服务器ParentItem DTO、前台体验、播放/远控及安装仍未验收。
+
+新runtime为`dist/EmbyTheaterEnhanced-v034-home-titles-ae245f6-20261016`，2156项payload与2157完整runtime文件集通过source/runtime provenance、VerifyOnly和独立哈希核对。manifest SHA `b3cd0fe004b96ccaee8e3fe925579373f82cd1b86a4176a7c829d0c5445ad350`，payload-set SHA `acf43a44d4488ffa598d9101604c0cef47a6943dad0149c78211a8c96ca7442f`。新入口位于`dist/ETE-v0.3.4-home-titles-ae245f6-20261016/Start-v0.3.4.cmd`；同名ZIP共2161文件完整回读通过，SHA `6e4abb611e896af0de8ec232d6290043354cd58e4204b4d8233e50cca68c12c2`，启动隔离探针通过且不带profile。详情见[当前本地候选](V034_LOCAL_CANDIDATE.md)。后续文档HEAD与该产品来源分开；没有推送/PR/合并/发布/安装或真实服务器写入。
+
+2026-10-16：v0.3.4电影库试点已完成本地测试交付，分支为`codex/v034-library`，产品源码提交为`ed00a97c11490a36e2a844c531772750deb22524`。用户已批准本批本地提交、构建和必要可回退修正；14文件按审核范围提交，之后未修改产品。实际调用图、最小差异与回退见[电影库合同](MOVIE_BROWSER.md)，产物身份与人工清单见[本地候选交付](V034_LOCAL_CANDIDATE.md)。保留原分页、筛选排序、卡片/列表和返回恢复，补齐Movie请求取消与迟到结果/焦点归属，电影分类明确进入videos页签。版本为0.3.4，默认libmpv字节保持原固定值。
+
+来源绑定runtime为`dist/EmbyTheaterEnhanced-v034-ed00a97-20261016-r2`，2156项payload及2157项runtime完整文件集（含manifest）核对通过；build-manifest SHA-256为`9cf1211f4c367f82445cac59883037b165c1cce18072a9c7383d5cfd811f577b`，payload-set SHA-256为`8a70575381f2ea59a64dab112b6a10d5d5bf19a7acd189bf948d9a33abcccbac`。公开离线931/931、电影单元/材料22/22、来源夹具6/6通过；包体验证16项通过。已取得的检查未重复跑全量。
+
+隐藏完整应用使用该runtime的真实main/app.js/router/controller和原卡片/列表，空隔离profile与合成API的23项检查通过，覆盖分页、筛选排序、卡片/列表、重复刷新、离页取消/迟到响应、接口失败恢复、合成旧版本提示及详情进入/返回；实际返回位置1460→1460，焦点保留同一合成影片。390/800/1280 CSS视口无页面横向溢出并完成截图检查；390仅由夹具临时解除最小窗口宽度，产品约束不变。窗口实际显示、外部请求、Node网络、Native子进程和所属进程残留均0。保留原file: Service Worker Cache警告，非预期页面错误0；这些证据不等于真实服务器、前台、播放/远控或安装验收。
+
+本地测试目录为`dist/ETE-v0.3.4-local-ed00a97-20261016`，入口`Start-v0.3.4.cmd`通过独立launch.cjs在启动前固定appData/userData/config到`test-profile`。隐藏入口探针确认隔离路径及版本，且显示/网络/子进程0；探针生成profile已移出交付。最终r2 ZIP共2161文件逐项回读通过，4359项独立审计断言通过，SHA为`81962ab3d5f521925408ecb07a89d14de27861735781dc65b727d8c1fdb8b735`。锁定依赖原带12个protobufjs测试文件与v0.3.3同字节，保留完整依赖树；没有本轮profile/harness/fixture。真实登录、服务器矩阵、前台键盘/遥控、播放及安装仍为NOT_VERIFIED。后续仅同步文档HEAD，不重标runtime来源；未推送、创建PR、合并、发布或系统安装。
+
 2026-10-15：[v0.3.3测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.3)已发布，PR #37合入main，Tag固定产品源码`11f29056c64abe2fb8133a409781a83e11cf9a60`；Stable/Latest仍为v0.3.1。最终main公开CI919项、材料144项及完整2155项payload检查通过；安装器解包2156文件（含manifest）逐项匹配。About三视口18状态、四原生选择器菜单及宽屏控件布局通过隔离检查，不代替真实详情业务、完整播放/回退或安装验收。安装包SHA-256为`066143a7a89fbf56ad9009b27298c4eb4c1e63f51c20b7642f463d43cc635589`，175696187 bytes，NotSigned；准确身份及下载校验见Release与随包provenance。本条文档收尾不改变已发布Tag或包来源。
 
 v0.3.3测试版范围为服务端首页分区、手动内核管理、About原生界面、插件兼容及详情选择器一致性；安装包使用标准产品入口和原固定内核，个人profile与导入对象不随包分发。最终main来源、Tag、安装器SHA及包体关系以该版本Release和随包provenance固定，Stable/Latest保持v0.3.1。本轮用户已要求完成后发布测试版；离线延迟工具仍留独立分支，切轨延迟无限期延期。

@@ -18,6 +18,7 @@ function fixture(handler = () => Promise.resolve(rows()), timeoutMs = 1000) {
         user(value) { user = value; }, server(value) { server = value; }, version(value) { version = value; }, switchClient() { current = {...client}; }};
 }
 const start = fixture => fixture.provider.loadSections({displayMode: 'mobile,desktop'});
+const latestSection = parent => ({Id: 'latest-section', SectionType: 'latestmedia', Name: 'Latest movies', ParentItem: parent});
 test('strict version gate skips old, malformed and missing server versions', async () => {
     for (const version of ['4.9.0.0', '4.10.0.3', '', 'garbage', '4.10.a.4', '4.10.0.4-beta']) {
         assert.equal(supportedVersion(version), false);
@@ -132,4 +133,102 @@ test('dot path segment identities are rejected before an HTTP URL can normalize 
         assert.throws(() => prepareSections([{...rows()[0], Id: id}]), /sections-unsupported/);
         const f = fixture(); f.user(id); assert.equal((await start(f)).status, 'fallback'); assert.equal(f.calls.length, 0); f.provider.dispose();
     }
+});
+
+test('latestmedia projects and freezes only owner-bound movie or TV parent route fields', () => {
+    for (const collectionType of ['movies', 'tvshows']) {
+        const parent = {Id: 'library_id-1', Type: 'CollectionFolder', IsFolder: true, CollectionType: collectionType,
+            ServerId: 'server-1', Name: 'Parent label', Path: 'private path', UserData: {PlaybackPositionTicks: 99}};
+        const section = prepareSections([latestSection(parent)], 'server-1')[0];
+        assert.ok(section.ParentItem);
+        assert.deepEqual(Object.keys(section.ParentItem).sort(), ['CollectionType', 'Id', 'ServerId']);
+        assert.deepEqual(section.ParentItem, {Id: 'library_id-1', CollectionType: collectionType, ServerId: 'server-1'});
+        assert.equal(Object.isFrozen(section.ParentItem), true);
+        assert.equal(section.ParentItem.Path, undefined);
+        assert.equal(section.ParentItem.Name, undefined);
+        assert.equal(section.ParentItem.UserData, undefined);
+        assert.equal(Object.isFrozen(section), true);
+    }
+
+    const unowned = prepareSections([latestSection({Id: 'library_id-1', CollectionType: 'movies'})])[0];
+    assert.equal(unowned.ParentItem, null, 'prepareSections without a bound server must not manufacture a route target');
+
+    const minimal = prepareSections([latestSection({Id: 'library_id-2', CollectionType: 'movies'})], 'server-1')[0];
+    assert.deepEqual(minimal.ParentItem, {Id: 'library_id-2', CollectionType: 'movies', ServerId: 'server-1'});
+    assert.equal(Object.hasOwn(minimal.ParentItem, 'Type'), false, 'missing Type stays missing');
+    assert.equal(Object.hasOwn(minimal.ParentItem, 'IsFolder'), false, 'missing IsFolder stays missing');
+});
+
+test('latestmedia drops malformed, cross-server, unsupported and hazardous ParentItem values without failing the section', () => {
+    const valid = {Id: 'library_id-1', Type: 'CollectionFolder', IsFolder: true, CollectionType: 'movies', ServerId: 'server-1'};
+    const badParents = [
+        null,
+        [],
+        {CollectionType: 'movies'},
+        {Id: 'library_id-1'},
+        {...valid, Id: ''},
+        {...valid, Id: '.'},
+        {...valid, Id: '..'},
+        {...valid, Id: 'id&serverId=other'},
+        {...valid, Id: 'x'.repeat(257)},
+        {...valid, ServerId: 'server-2'},
+        {...valid, CollectionType: 'music'},
+        {...valid, Type: 'Movie'},
+        {...valid, IsFolder: false}
+    ];
+    for (const parent of badParents) {
+        const result = prepareSections([latestSection(parent)], 'server-1');
+        assert.equal(result[0].SectionType, 'latestmedia');
+        assert.equal(result[0].ParentItem, null);
+    }
+    for (const property of ['url', 'Href', 'QueryOptions', 'Script', 'Action', 'Command']) {
+        const parent = {...valid, [property]: property === 'QueryOptions' ? {serverId: 'server-2'} : 'untrusted'};
+        const section = prepareSections([latestSection(parent)], 'server-1')[0];
+        assert.equal(section.ParentItem, null, property);
+        assert.equal(section.SectionType, 'latestmedia', 'unsafe navigation metadata must not force whole-page fallback');
+    }
+    const omittedParent = latestSection(valid);
+    delete omittedParent.ParentItem;
+    assert.equal(prepareSections([omittedParent], 'server-1')[0].ParentItem, null, 'missing ParentItem is no navigation target');
+    const nonLatest = prepareSections([{...latestSection(valid), SectionType: 'resume'}], 'server-1')[0];
+    assert.equal(nonLatest.ParentItem, null, 'only latestmedia receives a navigation parent');
+});
+
+test('loadSections binds a missing ParentItem ServerId to its owner and refuses cross-server routes without fallback', async () => {
+    const parent = {Id: 'library_id-1', Type: 'VirtualFolder', IsFolder: true, CollectionType: 'tvshows'};
+    const f = fixture(() => Promise.resolve([latestSection(parent)]));
+    const result = await start(f);
+    assert.equal(result.status, 'server');
+    assert.deepEqual(result.sections[0].ParentItem, {Id: 'library_id-1', CollectionType: 'tvshows', ServerId: 'server-1'});
+    f.provider.dispose();
+
+    const crossServer = fixture(() => Promise.resolve([latestSection({...parent, ServerId: 'other-server'})]));
+    const rejected = await start(crossServer);
+    assert.equal(rejected.status, 'server');
+    assert.equal(rejected.sections[0].ParentItem, null);
+    assert.equal(crossServer.calls.length, 1, 'bad navigation parent does not trigger fallback or another request');
+    crossServer.provider.dispose();
+});
+
+test('ParentItem navigation metadata does not change section item requests or add an item cache', async () => {
+    const parent = {Id: 'library_id-1', Type: 'CollectionFolder', IsFolder: true, CollectionType: 'movies'};
+    const item = {Id: 'movie-1', ServerId: 'server-1'};
+    const f = fixture(request => Promise.resolve(request.route.endsWith('/HomeSections')
+        ? [latestSection(parent)] : {Items: [item], TotalRecordCount: 41}));
+    const sections = await start(f);
+    const section = sections.sections[0];
+    assert.deepEqual(section.ParentItem, {Id: 'library_id-1', CollectionType: 'movies', ServerId: 'server-1'});
+
+    const first = await f.provider.loadItems(section, {startIndex: 12, limit: 4});
+    const second = await f.provider.loadItems(section, {startIndex: 12, limit: 4});
+    assert.equal(first.status, 'server');
+    assert.equal(second.status, 'server');
+    assert.equal(f.calls.length, 3, 'each loadItems call still performs its normal GET');
+    assert.equal(f.calls[1].request.route, 'Users/user%201/Sections/latest-section/Items');
+    assert.equal(f.calls[2].request.route, f.calls[1].request.route);
+    assert.equal(f.calls[1].request.query.StartIndex, 12);
+    assert.equal(f.calls[1].request.query.Limit, 4);
+    assert.equal(f.calls[2].request.query.RandomSeed, f.calls[1].request.query.RandomSeed);
+    assert.equal(first.result.Items[0], item);
+    f.provider.dispose();
 });

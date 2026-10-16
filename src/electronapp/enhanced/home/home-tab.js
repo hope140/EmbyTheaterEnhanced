@@ -1,10 +1,11 @@
 (function(factory) {
     if (typeof define === 'function') define(['exports', './server-sections.js', 'modules/cardbuilder/cardbuilder.js',
-        'modules/layoutmanager.js', 'modules/common/globalize.js'], function(exports, provider, cards, layout, globalize) {
-        exports.default = factory(provider.default, cards.default, layout.default, globalize.default);
+        'modules/layoutmanager.js', 'modules/common/globalize.js', 'modules/approuter.js',
+        'modules/emby-elements/emby-button/emby-button.js'], function(exports, provider, cards, layout, globalize, router) {
+        exports.default = factory(provider.default, cards.default, layout.default, globalize.default, router.default);
     });
     else if (typeof module === 'object' && module.exports) module.exports = factory(require('./server-sections.js'));
-})(function(serverSections, cards, layout, globalize) {
+})(function(serverSections, cards, layout, globalize, router) {
     'use strict';
     function abort() { var error = new Error('Home request cancelled'); error.name = 'AbortError'; return error; }
     function listOptions(section, renderer) {
@@ -26,10 +27,12 @@
         var legacy = dependencies.legacy, loading = dependencies.loading, focus = dependencies.focus, connection = dependencies.connection;
         var document = dependencies.document || owner.view.ownerDocument;
         var renderer = dependencies.cards || cards, layoutManager = dependencies.layout || layout, locale = dependencies.globalize || globalize;
+        var navigation = dependencies.router || router;
         var provider = serverSections.createProvider(function() { return connection.currentApiClient(); });
         var waits = new Set();
         var active = false, disposed = false, epoch = 0, stage = null, stageMode = null, pending = null;
         var focusedItemId = null;
+        var focusedTitleId = null, focusedSeeAll = false;
         function current(ticket) {
             if (disposed || !active || ticket.epoch !== epoch || !owner.view) return false;
             try { return connection.currentApiClient() === ticket.client && ticket.client.serverId() === ticket.server && ticket.client.getCurrentUserId() === ticket.user; }
@@ -87,6 +90,13 @@
             var match = focusedItemId && Array.from(stage.querySelectorAll('[data-id]')).find(function(element) {
                 return element.getAttribute('data-id') === focusedItemId;
             });
+            var title = focusedTitleId && Array.from(stage.querySelectorAll('[data-ete-home-title]')).find(function(element) {
+                return element.getAttribute('data-ete-home-title') === focusedTitleId;
+            });
+            if (title) {
+                var seeAll = focusedSeeAll && title.querySelector('.sectionSeeAllButton');
+                match = seeAll && !seeAll.classList.contains('hide') ? seeAll : title.querySelector('.sectionTitleTextButton') || match;
+            }
             if (match && typeof focus.focus === 'function') focus.focus(match);
             else if (options.autoFocus) focus.autoFocus(owner.view);
         }
@@ -110,7 +120,29 @@
                 block.innerHTML = '<h2 class="sectionTitle sectionTitle-cards padded-left padded-right"></h2>' +
                     '<div is="emby-scroller" data-mousewheel="false" data-centerfocus="true" class="padded-top-focusscale padded-bottom-focusscale padded-left padded-right">' +
                     '<div is="emby-itemscontainer" class="itemsContainer scrollSlider focuscontainer-x" data-virtualscrolllayout="horizontal-grid"></div></div>';
-                block.querySelector('h2').textContent = section.Name;
+                var heading = block.querySelector('h2');
+                heading.textContent = section.Name;
+                if (!layoutManager.tv && section.ParentItem && navigation && typeof navigation.getRouteUrl === 'function') {
+                    var target = navigation.getRouteUrl(section.ParentItem, {section: 'latest', serverId: ticket.server});
+                    var prefix = section.ParentItem.CollectionType === 'movies' ? '/videos?' : '/tv?';
+                    if (typeof target === 'string' && target.indexOf(prefix) === 0) {
+                        var title = document.createElement('div'), link = document.createElement('a', {is: 'emby-sectiontitle'});
+                        title.className = 'sectionTitleContainer sectionTitleContainer-cards padded-left padded-right';
+                        title.setAttribute('data-ete-home-title', section.Id);
+                        link.setAttribute('is', 'emby-sectiontitle');
+                        link.classList.add('more', 'button-link', 'button-link-color-inherit', 'sectionTitleTextButton');
+                        link.setAttribute('href', '.' + target);
+                        heading.classList.remove('padded-left', 'padded-right');
+                        block.replaceChild(title, heading);
+                        link.appendChild(heading);
+                        title.appendChild(link);
+                        // The native title adds its own See All anchor. Guard both
+                        // links while leaving active clicks/keyboard to its router.
+                        title.addEventListener('click', function(event) {
+                            if (!current(ticket) || stage !== next) { event.preventDefault(); event.stopImmediatePropagation(); }
+                        }, true);
+                    }
+                }
                 var items = block.querySelector('.itemsContainer'), cached = initial[index];
                 items.setAttribute('data-monitor', section.Monitor.join(','));
                 items.parentContainer = block;
@@ -204,8 +236,14 @@
             pause: function() {
                 var element = document.activeElement;
                 if (element && stage && stage.contains(element)) {
-                    while (element && element !== stage && !element.getAttribute('data-id')) element = element.parentElement;
-                    focusedItemId = element && element !== stage ? element.getAttribute('data-id') : null;
+                    var title = element.closest && element.closest('[data-ete-home-title]');
+                    focusedTitleId = title ? title.getAttribute('data-ete-home-title') : null;
+                    focusedSeeAll = !!(title && element.closest('.sectionSeeAllButton'));
+                    if (title) focusedItemId = null;
+                    else {
+                        while (element && element !== stage && !element.getAttribute('data-id')) element = element.parentElement;
+                        focusedItemId = element && element !== stage ? element.getAttribute('data-id') : null;
+                    }
                 }
                 active = false;
                 epoch++;
