@@ -1,5 +1,14 @@
 # 维护记录
 
+## 2026-10-16 v0.3.5 Pre-release发行完成
+
+Model Tier: Tier 1（明确发行合同）；Model: 当前主线程，精确标识未由工具暴露；Reason: 提交绑定构建/发行/回读，产品代码保持已审核候选；Escalated: No。用户明确“测试完成了，可以发布了”，按其当前cc7f542候选已测场景记录，不扩写人工逐项验收。
+
+PR #39 head7959651的Push/PR CI均951/951通过后merge为b0234c8a0e8d4fb264b21cf39f8ce68c9146d115；最终main和Tag公开CI均951/951通过。全新物理材料工作树首轮材料因未生成src/electronapp/preload.js而157/158、1失败；保留日志，按原固定生成器准备后完整162/162、exit 0，起止HEAD一致。未改断言/跳过材料。旧441eafb默认入口P1、2c9410c重复空态和旧Git fixture950/951+隔离1/1（根因UNKNOWN）仍各保留历史证据。
+
+从最终main新建runtime并编译标准Inno安装器；VerifyOnly、解包测试、2158个{app}文件与完整runtime逐项SHA/集合比对通过。Tag固定同一source，五附件草稿大小/digest/说明与校验关系通过后公开Pre-release。匿名四小文件完整GET及安装器21个range全部字节顺序hash通过，source/provenance/SHA/notes关系一致。安装器175741577 bytes、SHA 03f8cf5f2b18f854cc6548a7fe2d60cd641a8187479c4fd2e3ad22c8dfd87414、NotSigned。Stable/Latest v0.3.1及旧v0.3.3/v0.3.4正文/附件身份/flags回读保持。没有系统安装/真实服务器业务写入/前台或Native播放动作；详细验收边界见V035_RELEASE_VERIFICATION。后续仅文档收尾，不重标Tag/包来源。
+
+
 ## 2026-10-16 v0.3.5 测试版发行准备
 
 2026-10-16：用户对cc7f542当前本地候选所测场景反馈“测试完成了，可以发布了”，记录为USER_REPORTED_TEST_COMPLETE，并明确授权v0.3.5 Pre-release发行。该反馈不补写未说明媒体、真实远控、系统安装或旧服务器矩阵逐项PASS。当前进入PR/门禁、最终main来源构建、标准安装器及公开回读流程；Stable保留v0.3.1。

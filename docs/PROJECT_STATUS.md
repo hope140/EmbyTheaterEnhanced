@@ -1,5 +1,13 @@
 # 项目状态
 
+2026-10-16：[v0.3.5 详情与搜索测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.5)已发布，PR #39已合入main。产品Tag与标准安装器固定最终主线源码`b0234c8a0e8d4fb264b21cf39f8ce68c9146d115`；Stable/Latest保持v0.3.1。五个公开附件全部匿名完整回读通过，Release为非draft的Pre-release；本版没有OPEN PR。
+
+最终产品来源公开CI951/951、固定材料162/162（exit 0）通过；真实AMD默认搜索24项及空结果三视口恰好1条通过。2157 payload、2158完整runtime和2158个{app}解包文件逐路径/SHA一致。安装器175741577 bytes，SHA-256 `03f8cf5f2b18f854cc6548a7fe2d60cd641a8187479c4fd2e3ad22c8dfd87414`，未签名。用户已完成此前cc7f542候选所测场景测试并授权发布；不补写真实远控、系统安装或旧服务器矩阵逐项PASS。准确来源、下载与验收边界见[发行核验](V035_RELEASE_VERIFICATION.md)。后续文档HEAD与产品来源分开，原候选和失败记录保留。
+
+## 发行前历史记录
+
+以下内容记录当时的准备、候选和失败状态，不代表当前发行状态。
+
 2026-10-16：用户对cc7f542当前本地候选所测场景反馈“测试完成了，可以发布了”，记录为USER_REPORTED_TEST_COMPLETE，并明确授权v0.3.5 Pre-release发行。该反馈不补写未说明媒体、真实远控、系统安装或旧服务器矩阵逐项PASS。当前进入PR/门禁、最终main来源构建、标准安装器及公开回读流程；Stable保留v0.3.1。
 
 ## 本地候选历史记录
