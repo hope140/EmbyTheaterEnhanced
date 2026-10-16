@@ -2,6 +2,8 @@
 
 产品源码固定为 `1246da1023c43981c7ed40a4e556cb95c7eb7e02`，本地分支 `codex/v037-controls`。A/B/C/D 已按审核范围合批，独立目录与 ZIP 已生成；没有推送、PR、合并、Tag/Release 或系统安装。后续文档 HEAD 与该产品来源分开，不重标 runtime 来源。
 
+父会话已审核该产品来源及文档快照`619be41d095809830abbad6d3590239a4c9d7be8`，本地候选审核通过，当前仅人工验收待完成。父会话生产路径77/77通过，实际生成PM、runtime及审核副本一致，冻结边界和source后仅文档差异已核对。父独立只读artifact审计302/302通过，覆盖2159 payload/2160 runtime/2164 ZIP完整集合逐SHA、来源Git blobs、launcher/profile边界及ZIP完整字节/CRC；证据为私有`.work/v037-parent-final-artifact-audit/result.json`。本次收尾只读取既有回执，不重跑门禁或更改产物。真实前台、服务器播放/远控、OS电源与安装仍为人工未验证。
+
 ## 修改和保持的行为
 
 - 原 OSD 倍率键表、500ms阈值与倍率保持；监听和待执行 timer 随视图及媒体开始/停止清理，迟到回调不能作用于新 owner，包括同一Player对象的切集。

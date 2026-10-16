@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-16 — v0.3.7本地候选父审核通过，人工验收待完成
+
+父会话完成产品source `1246da1023c43981c7ed40a4e556cb95c7eb7e02`、文档快照`619be41`的最终审核：生产路径77/77，生成PM/runtime/审核副本一致，冻结边界与source后仅文档差异通过。父独立只读artifact审计302/302通过，完整核对2159 payload、2160 runtime、2164 ZIP及来源Git blobs、launcher/profile边界与ZIP字节/CRC。ZIP仍为240504661 bytes、SHA `9e7ea2d64df19838e2942674f4efbe23be54cfeff8b0eadab74fea281180ed6c`，未更改。
+
+当前状态为parent reviewed / manual review pending；人工前台、真实服务器播放/远控、OS电源与安装仍未验证。此次只更新文档和私有状态，读取既有父审回执，不重跑已过门禁、不改产品/runtime/ZIP/VALIDATION或旧profile。候选身份与证据入口见[本地候选](V037_LOCAL_CANDIDATE.md)；父会话负责交付和本任务heartbeat收尾。
+
 ## 2026-10-16 — v0.3.7本地候选完成
 
 A/B/C/D局部修正按审核范围合批，产品源码固定`1246da1023c43981c7ed40a4e556cb95c7eb7e02`。最终公开离线977/977、材料200/200、D及原请求/Session77/77通过；源构建2159 payload/2160完整runtime、VerifyOnly、独立完整集合/逐项SHA与ZIP2164文件流回读通过。独立目录入口为`dist/ETE-v0.3.7-controls-1246da1-20261016/Start-v0.3.7.cmd`，ZIP为同名目录加`.zip`；具体SHA、来源关系和人工清单见[本地候选](V037_LOCAL_CANDIDATE.md)。后续文档HEAD与该产品来源分开。
