@@ -117,6 +117,7 @@ function createFixture(root) {
         'tools/patch-custom-css-js.cjs',
         'tools/patch-externalplayer-residue.cjs',
         'tools/patch-item-controls.cjs',
+        'tools/patch-item-lifecycle.cjs',
         'tools/patch-external-player-registration.cjs',
         'tools/patch-plugin-settings.cjs',
         'tools/patch-server-home.cjs',
