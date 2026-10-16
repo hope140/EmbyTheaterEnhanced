@@ -93,7 +93,10 @@
             var title = focusedTitleId && Array.from(stage.querySelectorAll('[data-ete-home-title]')).find(function(element) {
                 return element.getAttribute('data-ete-home-title') === focusedTitleId;
             });
-            if (title) match = title.querySelector(focusedSeeAll ? '.sectionSeeAllButton' : '.sectionTitleTextButton') || match;
+            if (title) {
+                var seeAll = focusedSeeAll && title.querySelector('.sectionSeeAllButton');
+                match = seeAll && !seeAll.classList.contains('hide') ? seeAll : title.querySelector('.sectionTitleTextButton') || match;
+            }
             if (match && typeof focus.focus === 'function') focus.focus(match);
             else if (options.autoFocus) focus.autoFocus(owner.view);
         }

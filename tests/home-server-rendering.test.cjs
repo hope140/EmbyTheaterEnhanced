@@ -155,6 +155,29 @@ test('title and native See All container block activation after pause, identity 
         f.controller.dispose();
     }
 });
+
+test('a See All target hidden by refreshed content restores focus to the visible section title', async () => {
+    const f = fixture(); f.deps.layout.tv = false; let hide = false;
+    const create = f.document.createElement;
+    f.document.createElement = function(tag, options) {
+        const element = create(tag, options), append = element.appendChild;
+        element.appendChild = function(child) {
+            const result = append.call(this, child);
+            if (this.getAttribute('data-ete-home-title') && child.customType === 'emby-sectiontitle') {
+                const seeAll = create('a'); seeAll.classList.add('sectionSeeAllButton'); if (hide) seeAll.classList.add('hide');
+                append.call(this, seeAll);
+            }
+            return result;
+        };
+        return element;
+    };
+    f.api.getJSON = request => Promise.resolve(request.route.endsWith('/HomeSections') ? [
+        {Id: 'latest', SectionType: 'latestmedia', Name: 'Latest', ParentItem: {Id: 'movie-library', CollectionType: 'movies'}}
+    ] : {Items: [{Id: 'one'}]});
+    await f.controller.resume(); f.document.activeElement = f.root.querySelector('.sectionSeeAllButton');
+    f.controller.pause(); hide = true; await f.controller.resume({autoFocus: false});
+    assert.equal(f.focus.at(-1), f.root.querySelector('.sectionTitleTextButton')); f.controller.dispose();
+});
 test('old server uses complete legacy renderer and old user without new HomeSections request', async () => {
     const f = fixture(); f.version('4.9.0.0');
     assert.equal((await f.controller.resume()).status, 'legacy'); assert.equal(f.calls.length, 0);
