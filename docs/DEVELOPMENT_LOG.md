@@ -1,5 +1,21 @@
 # 维护记录
 
+## 2026-10-16 v0.3.7父审后A/B/C实施与D草案
+
+Model Tier: Tier 2；Model: 主线程沿用配置，精确标识未暴露；worker GPT-6 Luna High负责纯电源helper/限定测试及D只读分支清单；Reason: 视图、socket与应用退出资源的异步归属由主线程设计/验收；Escalated: No。父会话独立复现并明确批准A/B/C，D仅测试与逐分支diff草案。菜单重排只记录已确认独立待办，不赋版本、不改产品菜单。
+
+B以本地提交a5e29a7独立保存：音视频各持一个幂等电源id，ID0有效，陈旧inactive id可重获，shutdown先退休新on并尝试两类清理，失败保留错误和所持id。main before-quit先置关闭标记/收锁，原Native/kernel/startup drain及协议/窗口不变；实际main摘录覆盖drain未完成时通知回调完成、不再start和恰一次释放，清理失败不阻塞原退出收尾。videohandler未改，既有无token四命令的任意同类乱序问题仍不承诺解决。
+
+A固定VideoOSD窄变换保留20键表/500ms/倍率，监听和timer按resume/pause/release/destroy清理并显式传捕获player。完整隐藏应用发现首轮仅比较player对象不足以覆盖同一Player切集，已保留失败并接原OSD playbackstart/playbackstop当前player清理；最终实际VideoOsdView/AMD/原生组件18项通过，显示/网络/Native0。隔离runtime由v036准确manifest的2158文件逐项核验后复制，并作4项显式替换，fixture身份明确，不冒充v037来源构建；个人profile/旧包保持，fake电源API不施加系统电源效果。
+
+C仅改logout/ensure/open回调/close，增socket代次、可取消retry/deferred-close timer和pending logout计数，旧回调不影响新连接，显式close通知不吞掉，同实例重登可恢复。REST/auth字段/done清token、connected含义、原backoff与订阅重放保持；4方法外字节及CRLF验证通过。Carnival base、raw payload input、transformed output三SHA分别绑定，vendor不改；新增变换器接generatorPaths/INPUT_PATHS/tamper/provenance fixture。最初patcher未处理原payload CRLF导致锚点失败，修正后恢复原换行；不是材料变更或弱化校验。
+
+本轮公开离线975/975，早于同Player末次局部补修；之后相关定向50/50、A材料和最终输出overlay/provenance6/6复验通过。来源fixture首轮1项因SVG checkout CRLF与Git blob字节不一致失败，改为核对准确提交blob后通过，有效断言保留。D完整生成模块材料7项为1正例通过/6修前失败，生成器未改；新私有差异草案只node --check，未执行，不记修复PASS。当前合同逐项给出provisional/started/失败/取消/替换/Stop/迟到mutation与timer清理位置，并标出self-managed/preplay等待补case。
+
+在D核心审核停点保存状态与恢复入口，暂不生成整套候选/升级版本。不push/PR/merge/Release、前台、真实服务器/凭据、安装、硬件或缓存/切轨延迟工作；准确来源构建、真实播放远控/OS电源与安装验收均未执行。
+
+A/C及来源接线本地提交5a6e886，包含B提交a5e29a7；准确提交的51项build-input blobs检查通过，追加source-contract/tamper25/25，维护JS语法308项和有限凭据模式359项通过。D自测作为后续独立测试/文档提交，另有语法检查。完整应用仅直接构造并驱动原VideoOsdView/Events/原生组件，不补写真实播放Router路径、C真实WebSocket、B系统电源或任何硬件PASS；四次所属夹具进程退出，Native启动0。
+
 ## 2026-10-16 v0.3.7只读范围合同
 
 Model Tier: Tier 2；Model: 主线程沿用配置，精确标识未由工具暴露；worker为GPT-6 Luna High，仅限只读模块/事件盘点与隔离VM；Reason: OSD/input、socket重连、main资源及PlaybackManager私有observer的跨模块异步归属；Escalated: No。Task Risk中高、Task Uncertainty中高、Cross-module Scope为上述四处，当前Playback/Session产品改动0。

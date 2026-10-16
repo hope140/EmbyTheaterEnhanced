@@ -1,6 +1,6 @@
 # v0.3.7 播放控制与连接生命周期合同
 
-状态：`SCOPE_REVIEW_REQUIRED`。本轮只读盘点、隔离复现与文档已形成；生产代码、版本号和发行状态未变。此文件中的修正边界是待审核合同，不能作为自行解除核心冻结的依据。
+当前阶段：A/B/C 已按父审核的限定范围实施并完成下述相关验证，D 为 `D_CORE_REVIEW_REQUIRED`。版本号和发行状态保持；尚未生成 v0.3.7 来源候选。以下初始盘点保留其当时证据，后续实施结果和 D 差异草案见文末；D 生产生成器仍未修改。
 
 ## 基线、任务分层与停点
 
@@ -152,3 +152,61 @@ vendor、归档和既有 runtime 只读，绝不直接修改 ApiClient payload �
 - 私有 `.work/V037_TASK_STATE.json` 保存 source/HEAD、工作树、证据、待办与恢复入口。复现和 worker 清单位于 `.work/v037`；这些文件不进入产品或公开提交。路径参数和本机资料只保存在该私有状态。
 
 下一步是父会话审核 A/B/C/D 的精确允许范围与核心触及条件；本轮在此停止，不向其它聊天发送消息，也不持续轮询。
+
+## 父审核后的 A/B/C 实施与 D 停点
+
+父会话审核文档提交 `9b8cbd3`，用固定材料独立复现四项结果，随后明确批准 A/B/C 的局部实施；D 仅允许测试和逐分支差异草案。初始停点因此只对 A/B/C 解除，D 保持核心审核。原实现和错误记录没有被覆盖。
+
+A 使用 `tools/patch-videoosd-lifecycle.cjs` 变换固定 VideoOSD：原键表逐字保留，500ms 和倍率保持；具名 down/up 监听由现有 resume/pause/destroy 管理，releaseCurrentPlayer 仅退休本次按键 timer；回调核对视图/player，显式传捕获的 player。复核另外在隐藏完整应用复现同一个 Player 对象切集时，单靠对象相等仍会执行旧 timer；因此在原 OSD playbackstart/playbackstop 处理器内，限事件所属 player 仍是当前 player 时退休该 timer，原事件处理主体保持。B 新增独立电源 owner，main 四通知各自幂等释放所持句柄；before-quit 先置关闭状态并回收，再进入原 Native/kernel/startup drain。该异步窗口中的新 on 被忽略，协议、videohandler、sender、窗口语义保持。
+
+C 仅变换 logout、ensureWebSocket、openWebSocket 四回调和 closeWebSocket：当前 socket 代次、可撤销 retry/deferred-close timer 与退出进行中计数约束迟到动作；显式 close 仍有一次所属通知，原 backoff/合法消息/订阅重放、REST 字段/done 清 token 和 connected 含义保持。同实例合法再登录可恢复，setAuthenticationInfo/ConnectionManager/SessionPlayer 未修改。来源记录同时核对 Carnival base、原始 payload input 和生成 output，inputSha256 不再从生成 output 借值；原 payload SHA 保持不变。
+
+实际修改文件除上述 main、纯 helper、新变换器外，仅为必要 overlay/input/provenance 接线、针对性测试和本合同/状态记录。没有修改 PlaybackManager 生产生成器、Resolver/Native/认证/IPC/窗口/依赖或菜单。完整来源候选构建等待 D 审核，避免按未定核心反复构建。
+
+本地提交分开保存：`a5e29a7` 为 B 电源归属；`5a6e886eb207358709dacc84e77317f624601a20` 为 A/C 与必要来源/测试接线，包含前者。D 证据和本轮状态文档是后续独立提交，不冒充新候选来源。该源码提交的51项 build-input Git blob 检查通过；source-contract/tamper 定向25/25、维护JS语法308项及有限凭据模式扫描359项通过。最后仅新增D材料自测，另行语法检查；没有运行系统软件安装。
+
+当前针对性验证：A 摘录材料自测保留 20 键表和阈值，并覆盖同一 Player 的原 start/stop 处理器；隐藏完整应用加载原 VideoOsdView、完整 AMD 模块及原生 HTML 组件，以合成 player/rate sink 检查实际 resume/pause/release/destroy、DOM listener 安装/解除和同一 Player 连续停止/开始，最终18项通过，显示/网络/Native 子进程为0。此前同一 Player 的修前失败和17项历史结果分别保留。该 runtime 是从 v0.3.6 的2158个 manifest 文件核验复制后作4项明确替换的隔离夹具，不是 v0.3.7 来源候选，不声称其旧 provenance 仍验证新字节。
+
+该完整应用夹具直接构造原 VideoOsdView 并调用其实际生命周期，用真实 Events 和 DOM 组件验证挂接；未驱动真实播放所创建的 Router/OSD 路径。C 只有完整模块 fake socket/REST 验证，B 电源由 fake API 验证；三者都没有真实服务器、OS电源、前台或设备验收。四次夹具所属根进程均已退出，Native子进程始终0。
+
+B/C/public patcher 与既有 AppHost 最终定向共50/50通过；C 完整模块 fake socket/REST/timer 矩阵17/17（含四方法之外字节保持），修前13项中4通过/9失败。main 测试覆盖 before-quit 后 Native/kernel/startup 尚未 drain 时，通知回调完成、锁各回收一次且不再 start。六项 overlay/provenance 材料按最终A输出复验通过；首轮 SVG fixture 用 checkout 字节与 Git blob 比较因 CRLF 不符而失败，已改为实际提交 blob 复核，原有效断言和失败记录保留。本轮公开离线门禁975/975通过；该全量早于最后补齐同Player清理，最后局部差异已重跑相关定向、材料和完整组件场景，没有把早期全量记为新候选的来源绑定门禁。
+
+### D 逐分支差异草案，尚未执行
+
+新增 `tests/playbackmanager-observer-material-selftest.cjs`，材料必须存在且 size/SHA 与当前清单一致，缺失或变更明确失败。对未修改的生产生成器执行结果为 7 项中 1 通过、6 失败、0 skipped：同一有效 owner 可见 OSD 的 50ms 隐藏为正例；重复终止 Stop、无 started 的 pending load Stop、替换、load 失败、provisional 后 playback-info 失败及 A 的 timer 隐藏 B 复用节点为修前失败例。D 的失败仍是 `OBSERVED / NOT_FIXED`。
+
+精确生成源码差异保存在私有 `.work/v037/d-observer-proposed.patch`，相邻 `d-observer-proposed.js` 只是生成源码审查草案，只有语法检查，未作为产品/生成器/完整应用输入执行。原生成器与 `9b8cbd3` 字节一致。草案不包含新报告、队列或 stop coordinator 实现。
+
+拟议 resource owner 为原 manager 上单一私有对象 `{player, requestId, observer, timer}`。开始请求的 provisional streamInfo 和最终播放 streamInfo 是两个对象，因此不能用它们的对象相等作为开始后仍有效的判据；两者从 item.playOptions 继承同一个 `_etePlayRequestId`。草案使用捕获 player、原请求代次和 owner 对象三项核对。50ms timer 到期前再次检查，退休旧 owner 时只清相同对象，不能清掉新的 owner。
+
+| 拟变更函数/位置（当前生成源码） | 精确拟议差异 | 原语义保持 |
+| --- | --- | --- |
+| 模块局部新增两函数 | `beginEnhancedVolumeOsd(manager, player, streamInfo)` 保存 observer/50ms timer；`retireEnhancedVolumeOsd(manager, requestId?, player?, expectedOwner?)` 只清匹配 owner | 不新增公开 API/事件、Session 或协议 |
+| `onPlaybackRequested`，原约1540行 | 用 begin helper 替换原局部 MutationObserver 块 | provisional 标记、setCurrentPlayer 和 playerData.streamInfo 赋值不变 |
+| `playInternal` 非 capturedRequestId 分支，原约865行 | 原代次加一之后只插入退休旧资源；捕获 id 的 admission 条件、赋值和返回保持 | Next/Previous 的原 admission 和异步顺序不改 |
+| 公开 `play` 已有 admission，原约2299行 | 原代次加一后清资源，再按原代码给 options 赋 id | 不增加/跳过/重排播放请求；旧 A 仍可能播放，但其旧请求的 OSD 隐藏资源提前退休，不自动重建 |
+| `PlaybackManager.prototype.stop`，原约2637行 | 原代次加一后、原 completion fence 之前清资源 | 同步 physical Stop、重复 fence、排空、报告与返回原样 |
+| `setCurrentPlayerInternal`，原约402行 | 原 targetInfo 校验成功后，若 player 对象变化，仅清之前 player 的资源 | 原 begin/end updates、playerchange 与 target/Session 选择不变 |
+| `onPlaybackStopped`，原约1639行 | 原 isChangingStream 与 duplicate-stop guard 内，在原 streamInfo 标记/清空前清匹配 request/player 的资源 | 不新增 stale-event 分类，不改变原 stop 事件是否被接受及报告身份 |
+| `onPlaybackStoppedFromSelfManagingPlayer`，原约1602行 | 函数起始清匹配 player 的资源 | 原状态、itemstopped、destroy 和事件保持；此分支尚缺动态 fixture |
+| `playInternal.catch`，原约924行 | 原 current-request guard 后，清失败请求 id 的资源，再调用原失败处理 | 原错误/取消/alert、rejection 和 fallback 不变 |
+| `playAfterBitrateDetect` 的初始 `player.play` rejection，原约1323行 | 原 stale/superseded return 分支只增加按捕获 request id 退休资源 | 原 predicate/return 不变；不触碰 changeStream 的性能或700ms逻辑 |
+
+完整 diff 的回退单位仍是未来一个独立的 `patch-playbackmanager.cjs` 小范围变更。本阶段没有把草案写入该生成器。
+
+| 分支 | owner 生存期与清理点 | 当前证据/缺口 |
+| --- | --- | --- |
+| 尚未到 onPlaybackRequested 的 user/intro/device-profile 等等待 | 没有本次 observer；已有新 admission 只退休之前请求资源 | 现有请求代次门禁保留；preplay interceptor 不能由当前闭包 fixture 注入，`NOT_EXERCISED` |
+| provisional 已创建、player.play 未 started，随后 Stop | Stop 清 manager 当前资源；晚回复仍走原代次 guard | 修前失败 case，无 started 不报告 stop 的原回归保留 |
+| started 后 terminal Stop | Stop 即清，不等停止事件；后续 accepted stopped 清理幂等 | 修前循环存活1/2/3，start/stop各3；草案未执行 |
+| A→B 替换 | 新 admission 先清 A；B onRequested 创建新 owner；旧 A 回调因对象/代次不符不能清 B | 修前 B 开始后两个 observer；草案保持 stop coordinator 函数体原样 |
+| provisional 后 playback-info 或 load 失败 | 当前请求 catch/accepted stopped/superseded return 按 id 清资源 | 两类修前失败已分开；旧请求 rejection 不得清新 B |
+| active 同一 owner 看见 volume OSD | disconnect observer，保留唯一50ms timer，仍按原时间隐藏 | 现有正例通过，草案不得删除此行为 |
+| mutation/timer 已排队后退休或共享节点转属 B | observer 回调和50ms回调先核对 owner；清资源函数按 expectedOwner 对象匹配 | 修前同节点复用隐藏失败；草案批准后须补手工触发已取消回调、旧mutation不清新owner |
+| 选择远端/移除当前 player、自管理 player 停止 | 拟接现有 setCurrentPlayerInternal 与 self-managed stopped 清理 | 需要新增动态 case；不把普通本地 fixture 扩写为这些分支 PASS |
+
+审核重点是上述私有 resource 挂接是否允许，以及 admission 时提前退休 A 的隐藏资源是否符合已有可见行为约束。若批准 D，先把缺少的切 owner、自管理、取消及双重迟到 callback case 补齐为修前失败，再把这份精确差异转换为固定源变换；不先改 request/Session 架构。当前未执行草案测试，不承诺这份草案已修复全部路径。
+
+### 独立菜单待办
+
+用户已确认后续仅调整 Emby Theater Enhanced 一栏的顺序为：操作快捷键 → HDMI-CEC → 视频设置 → 音频设置 → STRM智能解析 → 诊断与日志 → 关于Enhanced。版本未指定，其它栏、分类、路由与功能保持。本轮仅记录，不修改菜单，也不自动并入 v0.3.7。
