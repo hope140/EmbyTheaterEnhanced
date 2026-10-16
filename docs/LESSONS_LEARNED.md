@@ -1,5 +1,7 @@
 # 维护注意事项
 
+- Promise已fulfilled仍可能在DOM提交前被pause/换代退休。可重试资源标记应在成功退休与失败两条终态都按当前请求token释放；仅加catch清理会留下缓存页无法重取的标记。清理不能覆盖新query或同map同chunk的新owner。
+
 - 脱敏回归直接断言独立合成canary无残留。用带分隔符的原始路径后缀比较会在字符归一后假阴性，即使敏感片段仍在；category/event/stage与details都应分别覆盖，保留正常标签及fallback合同。
 
 - 加反馈前核对原ListController.setEmptyListState等既有owner。只验证新增status显示会漏掉重复提示；应在真实页面统计可见同文案节点，并覆盖空输入、单字符、无匹配、错误与恢复。成功空结果保留原生owner，维护错误status不再同时输出第二份空态。

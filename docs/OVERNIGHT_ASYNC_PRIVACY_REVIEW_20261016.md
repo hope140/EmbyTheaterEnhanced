@@ -1,6 +1,6 @@
 # Web请求归属与日志标签审查
 
-两项已获父审限定批准。E1已本地实施，45/45相关诊断测试通过；E2实现与材料扩展进行中。E2批准合同补足成功退休与失败两条终态；下面反映该修订，不把初稿catch-only方案视为充分。
+两项均已按父审限定合同本地实施。E1相关诊断45/45通过；E2固定材料16/16通过，修前12通过/4失败。E2合同同时闭合成功退休与失败两条终态，不把初稿catch-only方案视为充分。
 
 ## E1 诊断标签的条件式隐私缺口
 
@@ -25,3 +25,5 @@ Observed：维护movieBrowser的onPause会递增epoch并拒绝所属请求；当
 必要失败回归：实际Movie wrapper pause→resume(false)取消失败可重试；已fulfilled但commit前epoch变化的成功退休可重试；旧query成功/失败不得清新map；同epoch同chunk旧请求不得清新owner；当前失败可重试；正常成功保留loaded且不重取；普通列表行为不变。扩展 `tests/movie-browser-material-selftest.cjs`，运行相邻helper、材料与最终来源门禁。
 
 E2不涉及PlaybackManager、Session、媒体身份、Native或协议；因涉及复杂异步归属，仍先父审后实施。完整原始证据保存在 `.work/overnight/E2_CHUNK_REPRO.cjs` 与E2审核报告中。
+
+实施后普通列表继续true/null；Movie有效成功保留truthy token，失败与成功退休都只清其当前token。主审把同epoch替换用例加强为同一map内同chunk的新owner，分别覆盖旧成功和失败。固定base SHA保持，生成输出SHA更新为 `2ADE4984B1A89FD0B8532D3692F582F6B86806E985FE35EFDEFD47B9DBB597A9`，仅更新原WEB_OVERLAY_CONTRACT的该项输出绑定，既有generator/input/provenance登记保持。组合回归与完整来源构建另行记录。

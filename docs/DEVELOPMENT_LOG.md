@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-17 E2电影分块双终态归属
+
+父审指出catch-only方案不足，批准补成功已fulfilled但提交前退休的分支。生产patchVirtualScroller只在Movie请求使用唯一truthy token，失败和success stale guard返回前只清当前同token；正常成功保留loaded，原数据守卫和非Movie true/null保持。隔离worker只扩材料测试，主审取真实diff并强化同map同epoch旧成功/失败保护，修前12/16、修后16/16。固定输入D298...A5B9不变，原overlay输出绑定改2ADE...597A9；没有新generator或缓存策略。组合来源/构建另核，真实前台与服务器未执行。
+
 ## 2026-10-17 B/P1刷新率协议错误收口
 
 按父审限定合同只改registerFreshRate和getRefreshRate/setRefreshRate：完成标记先于callback；unknown不spawn；同步spawn异常或child/error空回调且close不重复；无数字响应按旧空值resolve。16项实际函数体回归修前7通过/9失败，修后连同既有mpv设置与全屏状态共29/29通过。所有child/XHR为合成替身，未启动刷新率工具、显示器或窗口。DISPLAY1/工具路径/正常协议与输出保持，未加入超时、映射或恢复状态机。
