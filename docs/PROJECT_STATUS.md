@@ -1,5 +1,11 @@
 # 项目状态
 
+2026-10-16：v0.3.4电影库试点已形成未提交源码候选，基线为实时核对的main `6fb61e3`，实现与旧Settings工作区隔离。实际调用图/差异与回退见[电影库合同](MOVIE_BROWSER.md)。保留原筛选排序、虚拟分页、卡片/列表和返回恢复；Movie实例补齐signal下传、刷新/离页/销毁取消、ApiClient/账号与轮次归属检查，以及旧异步autofocus隔离；电影类别入口映射到实际videos页签。播放、认证、IPC与内核归属保持，产品版本候选为0.3.4。
+
+离线helper与固定材料22/22通过，包含在冻结源码上复现旧响应覆盖、使用原app.js default解包及原VideosTab/ItemsTab/ListController/容器refresh方法验证修复、分页与筛选参数、当前接口失败后恢复，以及无serverId的canonical连接与缓存resume。另覆盖首屏/分页最终提交、容器原50ms延迟焦点回调、旧分页失败与当前分页重试。overlay/runtime provenance夹具6/6通过；首轮构建输入及overlay23/23通过。另有隔离Electron源预览通过实际Alameda、原default拆包及维护模块接线检查，连接factory仅1次，窗口显示/聚焦及外部请求均0；此证据使用合成API与依赖，不代表完整客户端、真实服务器或视觉验收。完整公开离线门禁931/931通过，失败/跳过0；283项tracked JavaScript及新增/变更JavaScript语法检查、334项tracked文本和全部14项差异文本的有限凭据模式检查、diff-check通过。
+
+尚未提交、构建来源绑定runtime、生成可交付包或执行完整应用/视口验收。构建必须读取已提交源码，待本批准确文件集合的本地提交授权后继续；不绕过来源门禁。人工电影库/返回焦点、真实播放/远控与安装保持NOT_VERIFIED；v0.3.3及Stable/Latest身份不因本地候选改变。
+
 2026-10-15：[v0.3.3测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.3)已发布，PR #37合入main，Tag固定产品源码`11f29056c64abe2fb8133a409781a83e11cf9a60`；Stable/Latest仍为v0.3.1。最终main公开CI919项、材料144项及完整2155项payload检查通过；安装器解包2156文件（含manifest）逐项匹配。About三视口18状态、四原生选择器菜单及宽屏控件布局通过隔离检查，不代替真实详情业务、完整播放/回退或安装验收。安装包SHA-256为`066143a7a89fbf56ad9009b27298c4eb4c1e63f51c20b7642f463d43cc635589`，175696187 bytes，NotSigned；准确身份及下载校验见Release与随包provenance。本条文档收尾不改变已发布Tag或包来源。
 
 v0.3.3测试版范围为服务端首页分区、手动内核管理、About原生界面、插件兼容及详情选择器一致性；安装包使用标准产品入口和原固定内核，个人profile与导入对象不随包分发。最终main来源、Tag、安装器SHA及包体关系以该版本Release和随包provenance固定，Stable/Latest保持v0.3.1。本轮用户已要求完成后发布测试版；离线延迟工具仍留独立分支，切轨延迟无限期延期。

@@ -1,5 +1,16 @@
 # 维护记录
 
+## 2026-10-16 v0.3.4电影库浏览候选
+
+- Model Tier：Tier 2；Model：主线程继承当前会话配置，测试worker为GPT-6 Luna High；Reason：浏览controller、容器及异步取消跨模块接线；Escalated：无。Task Risk/Uncertainty：中；Cross-module Scope：电影页及原共用列表的条件接线；Playback/Session Impact：NONE。主线程保留合同、取消归属与最终审核。
+- 重新核对远端main为6fb61e3，从准确提交建立隔离工作树；读取原目录未提交的NEXT_STEPS_20261016完整计划，不覆盖原Settings分支与已有改动。电影试点范围已在当前任务接受，后续版本没有实施授权。
+- 复用已完成Web评估及固定4.10.1.0私有静态样本，核对实际路由/API/分页/筛选排序/返回恢复，不引入新Web资产。电影库原功能继续由VideosTab→ItemsTab/ListController→itemscontainer/virtual-scroller提供。
+- 冻结材料复现普通getItems丢失signal与迟到首屏覆盖。新增Movie专用维护模块，取消Promise与底层signal分开处理，刷新/离页/销毁及账号变化均阻止旧结果和旧焦点回调；普通失败保留原错误对象与页面错误路径。发送前账号切换也不发出旧页查询。电影类别的movies页签参数改为已有videos，收藏/合集参数保持。
+- app与六个页面/共用模块输出纳入固定输入/输出SHA合同，新生成器加入build-input及provenance夹具。非Movie不安装维护层，其他页面的普通API调用仍保持原参数个数。版本与锁文件仅更新到0.3.4，无依赖升级。
+- worker首先报告迟到失败未检查账号的有效失败，主线程修复后12/12 helper测试通过；材料10/10通过，覆盖冻结基线复现、真实default拆包、原controller/容器refresh、分页筛选、离页/重复刷新、失败恢复与缓存resume。主审核补齐首屏/分页最终提交和容器50ms延迟焦点/monitor回调归属检查，旧分页失败不得重置新query tracking，同query中断分页仍可重试。overlay/runtime provenance6/6及首轮构建输入/overlay23/23通过。
+- 隔离Electron源预览用实际Alameda及原拆包函数加载维护模块和固定controller，canonical连接factory为1次，分页signal接线通过；显示、聚焦和外部请求0。首次夹具启动受ELECTRON_RUN_AS_NODE环境影响，随后页面相对路径配置错误，均保留失败现场；修正夹具后通过，不记作产品故障或完整应用/视觉验收。
+- 新工作树首次公开门禁897/899通过，因锁定依赖尚未准备导致两个CD2测试入口失败；随后仅用离线缓存执行npm ci --ignore-scripts，相关两文件60/60通过，完整公开门禁复跑931/931通过，失败/跳过0。未修改CD2产品或测试、依赖版本和锁定内容。最终source冻结后的22项电影检查和6项overlay/runtime provenance夹具通过；283项tracked及新增/变更JS语法、334项tracked与全部14差异文本有限凭据模式和diff-check通过。来源绑定构建要求提交源码；本批没有提交授权，完成可审阅源码与验证后一次性请求本地提交/构建。尚无runtime包、完整应用、窄视口、真实服务器/媒体/远控或安装通过结论；未推送、创建PR、合并或发布。
+
 ## 2026-10-15 v0.3.3发布收尾
 
 - PR #37已合入main，产品来源与v0.3.3 Tag均为11f29056c64abe2fb8133a409781a83e11cf9a60；最终主线公开CI919/919、材料144/144通过。材料测试已分离为显式selftest，原断言保留，不用跳过来制造通过。

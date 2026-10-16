@@ -98,7 +98,8 @@ test('Web overlay patchers are consumed and source-bound build inputs', t => {
         'tools/patch-custom-css-js.cjs',
         'tools/patch-externalplayer-residue.cjs',
         'tools/patch-item-controls.cjs',
-        'tools/patch-server-home.cjs'
+        'tools/patch-server-home.cjs',
+        'tools/patch-movie-browser.cjs'
     ];
     const overlayPath = path.join(__dirname, '..', 'tools', 'prepare-web-overlays.cjs');
     const overlaySource = fs.readFileSync(overlayPath, 'utf8');
