@@ -13,6 +13,7 @@ const serverHome = require('./patch-server-home.cjs');
 const movieBrowser = require('./patch-movie-browser.cjs');
 const searchUi = require('./patch-search-ui.cjs');
 const selectCancel = require('./patch-select-cancel.cjs');
+const startup = require('./patch-startup.cjs');
 const trackedFileHash = require('./tracked-file-hash.cjs');
 
 const GENERATOR_PATH = 'tools/prepare-web-overlays.cjs';
@@ -26,8 +27,20 @@ const HOME_GENERATOR_PATH = 'tools/patch-server-home.cjs';
 const MOVIE_GENERATOR_PATH = 'tools/patch-movie-browser.cjs';
 const SEARCH_GENERATOR_PATH = 'tools/patch-search-ui.cjs';
 const SELECT_CANCEL_GENERATOR_PATH = 'tools/patch-select-cancel.cjs';
+const STARTUP_GENERATOR_PATH = 'tools/patch-startup.cjs';
 
 const WEB_OVERLAY_CONTRACT = Object.freeze([
+    Object.freeze({
+        id: 'startup-index',
+        mode: 'tracked-canonical-transform',
+        basePath: 'vendor/carnival/electronapp/www/index.html',
+        inputPath: null,
+        runtimePath: 'electronapp/www/index.html',
+        expectedBaseSha256: 'CA05A9A26DE19E16BB89C3595D29C95E3A56876439E968E3F464B218A101053A',
+        expectedInputSha256: null,
+        expectedOutputSha256: '18F777EE20F9829F3E7E4AB53A3442E7D4BD1532689E7ECE0B874281E0BB305D',
+        generatorPaths: Object.freeze([GENERATOR_PATH, STARTUP_GENERATOR_PATH])
+    }),
     Object.freeze({
         id: 'search-view',
         mode: 'tracked-canonical-transform',
@@ -310,6 +323,7 @@ function outputFor(root, contract) {
             input: readChecked(root, contract.inputPath, contract.expectedInputSha256, 'Web overlay input')
         };
     }
+    if (contract.id === 'startup-index') return {base, input: Buffer.from(startup.patchStartup(base.toString('utf8')), 'utf8')};
     if (contract.searchTransform) return {base, input: Buffer.from(searchUi[contract.searchTransform](base.toString('utf8')), 'utf8')};
     if (contract.menuTransform) return {base, input: Buffer.from(selectCancel[contract.menuTransform](base.toString('utf8')), 'utf8')};
     if (contract.id === 'custom-css-js' && contract.mode === 'tracked-canonical-transform') {
