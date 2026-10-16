@@ -2057,7 +2057,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 xhr.onload = function () {
                     if (this.response) {
                         var mat = this.response.match(/.*?(\d+)/)
-                        resolve(mat[1])
+                        resolve(mat ? mat[1] : undefined)
                     } else {
                         resolve()
                     }
@@ -2074,7 +2074,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 xhr.onload = function () {
                     if (this.response) {
                         var mat = this.response.match(/.*?(\d+)/)
-                        resolve(mat[1])
+                        resolve(mat ? mat[1] : undefined)
                     } else {
                         resolve()
                     }

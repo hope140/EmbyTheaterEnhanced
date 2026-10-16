@@ -492,6 +492,12 @@
             // Add 3 to account for ://
             var url = request.url.substr(customProtocol.length + 3).split('?')[0];
             var args = []
+            var completed = false;
+            function complete(value) {
+                if (completed) return;
+                completed = true;
+                callback(value);
+            }
             switch (url) {
                 case 'list_possible':
                     args.push(url)
@@ -506,6 +512,9 @@
                     args.push("\\\\.\\DISPLAY1")
                     args.push(request.url.split('=')[1])
                     break;
+                default:
+                    complete("");
+                    return;
             }
 
             var { spawn } = require('child_process');
@@ -513,16 +522,23 @@
 
             var output = ''
             if (process.platform === 'win32') {
-                var ls = spawn(path.join(__dirname, 'libmpv', process.arch, 'refreshrate.exe'), args);
-                ls.stdout.on('data', (data) => {
-                    output += data.toString()
-                });
+                try {
+                    var ls = spawn(path.join(__dirname, 'libmpv', process.arch, 'refreshrate.exe'), args);
+                    ls.stdout.on('data', (data) => {
+                        output += data.toString()
+                    });
+                    ls.on('error', function () {
+                        complete("");
+                    });
 
-                ls.on('close', (data) => {
-                    callback(output)
-                })
+                    ls.on('close', (data) => {
+                        complete(output)
+                    })
+                } catch (_) {
+                    complete("");
+                }
             } else {
-                callback(output)
+                complete(output)
             }
 
         });

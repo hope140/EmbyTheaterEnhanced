@@ -2,7 +2,7 @@
 
 ## 审查状态
 
-P1已获父审限定批准，当前为 `PARENT_APPROVED_IMPLEMENTATION_PENDING`，本文件涉及的显示逻辑尚未修改。审核源码来自基线 main `45bea67`；合同文档提交 `ada52f6` 未改变相关产品字节。以下复现使用实际函数体、VM、合成 XMLHttpRequest 和 child EventEmitter，没有启动 RefreshRate 工具、窗口、Native Helper 或真实显示操作。
+P1已按父审限定范围本地实施，状态为 `LOCAL_TARGETED_PASS`。16项真实函数体回归修前7通过/9失败；修后与既有设置装配、全屏状态测试合计29/29通过。以下复现和回归使用实际函数体、VM、合成XMLHttpRequest和child EventEmitter，没有启动RefreshRate工具、窗口、Native Helper或真实显示操作。
 
 ## 已复现问题
 
@@ -32,4 +32,4 @@ P1不改PlaybackManager、Session/媒体身份、播放/暂停顺序、请求代
 - orgRefreshRate的恢复位于destroyInternal且未await；stop(false)沿原Player停止链保留实例。终止播放、替换、退出各自实际销毁路径和恢复时限继续审查，不直接改变原Session或窗口归属。
 - 真实多显示器、HDR、Mixed-DPI、刷新率切换/恢复和前台表现均为NOT_VERIFIED；不执行系统显示设置写入。
 
-P1按上述限定范围实施；未闭合的显示器、超时、恢复与窗口跨层部分仍需新的精确差异父审。
+P1完成一次回调、未知动作不spawn、spawn异常空响应和无数字响应按原空值settle。原三种动作/参数/固定路径/DISPLAY1、正常输出、XHR method/URL与onerror拒绝保持；未闭合的显示器、超时、恢复与窗口跨层部分仍需新的精确差异父审。

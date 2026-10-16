@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-17 B/P1刷新率协议错误收口
+
+按父审限定合同只改registerFreshRate和getRefreshRate/setRefreshRate：完成标记先于callback；unknown不spawn；同步spawn异常或child/error空回调且close不重复；无数字响应按旧空值resolve。16项实际函数体回归修前7通过/9失败，修后连同既有mpv设置与全屏状态共29/29通过。所有child/XHR为合成替身，未启动刷新率工具、显示器或窗口。DISPLAY1/工具路径/正常协议与输出保持，未加入超时、映射或恢复状态机。
+
 ## 2026-10-17 E1诊断标签修正
 
 隔离worker在night-log-labels分支提交de44b69，仅safeLabel及相邻诊断回归。主线程检查实际diff后以no-commit取两文件，强化独立canary而非原路径后缀断言，补POSIX、两种Windows分隔符、fallback和截断；主树诊断集合45/45通过。源码只复用既有sanitizeText再原归一，不改schema/IPC/轮转或权限。原独立分支、修前失败和私有回执保留；当前本地修正不发布。
