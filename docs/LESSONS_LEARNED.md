@@ -1,5 +1,7 @@
 # 维护注意事项
 
+- Overlay输出SHA必须按完整生产变换链计算。Movie VirtualScroller后还有Search guard组合；只验证中间patcher会漏掉最终hash和owner范围变化。共享提交guard与特定功能的资源owner应分开，回归覆盖实际组合及其他功能保留路径。
+
 - Promise已fulfilled仍可能在DOM提交前被pause/换代退休。可重试资源标记应在成功退休与失败两条终态都按当前请求token释放；仅加catch清理会留下缓存页无法重取的标记。清理不能覆盖新query或同map同chunk的新owner。
 
 - 脱敏回归直接断言独立合成canary无残留。用带分隔符的原始路径后缀比较会在字符归一后假阴性，即使敏感片段仍在；category/event/stage与details都应分别覆盖，保留正常标签及fallback合同。

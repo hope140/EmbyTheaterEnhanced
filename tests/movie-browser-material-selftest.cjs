@@ -139,9 +139,10 @@ test('the native delayed focus and refresh-monitor callback also belongs to the 
         assert.equal(callbacks, stale ? 0 : 2);
     }
 });
-function virtualLoad(patched, instance) {
+function virtualLoad(patched, instance, composeSearch = false) {
     const input = read('modules/virtual-scroller/virtual-scroller.js');
-    const text = patched ? patch.patchVirtualScroller(input) : input;
+    let text = patched ? patch.patchVirtualScroller(input) : input;
+    if (composeSearch) text = require('../tools/patch-search-ui.cjs').patchBrowseGuard(text);
     const start = text.indexOf('this.boundLoadItems = function () {') + 'this.boundLoadItems = '.length;
     const end = text.indexOf('}.bind(this)', start) + 1;
     return vm.runInNewContext('(' + text.slice(start, end) + ')', {AbortController,
@@ -330,6 +331,59 @@ test('non-Movie virtual scrolling retains its original true/null marker behavior
 
         virtualLoad(patched, owner);
         assert.equal(requests.length, 2, 'ordinary list success remains cached');
+    }
+});
+test('final search-guard composition retains both Movie retirement outcomes', async () => {
+    for (const outcome of ['success', 'failure']) {
+        const request = deferred(), state = {epoch: 0, paused: false, destroyed: false};
+        const owner = virtualInstance(state, () => request.promise);
+        virtualLoad(true, owner, true);
+        state.epoch++;
+        if (outcome === 'success') request.resolve({Items: [{Id: 'retired-composed'}]});
+        else request.reject(new Error('retired composed request'));
+        await tick();
+        assert.equal(isTruthyChunkMarker(owner), false);
+        assert.deepEqual(owner._itemSource, []);
+    }
+});
+test('final search-guard composition preserves Search true/null markers and stale guards', async () => {
+    for (const stale of [false, true]) {
+        for (const outcome of ['success', 'failure']) {
+            const request = deferred(), state = {epoch: 0, paused: false, destroyed: false};
+            const owner = virtualInstance(undefined, () => request.promise);
+            delete owner._eteMovieBrowse;
+            owner._eteSearchBrowse = state;
+            virtualLoad(true, owner, true);
+            assert.strictEqual(owner.chunksLoaded[30], true, 'Search keeps its original boolean marker');
+            if (stale) state.epoch++;
+            if (outcome === 'success') request.resolve({Items: [{Id: 'composed-search'}]});
+            else request.reject(new Error('composed search failure'));
+            await tick();
+            assert.strictEqual(owner.chunksLoaded[30], !stale && outcome === 'failure' ? null : true);
+            assert.equal(owner._itemSource.length > 0, !stale && outcome === 'success');
+        }
+    }
+});
+test('final search-guard composition keeps a new Search query safe from old outcomes', async () => {
+    for (const outcome of ['success', 'failure']) {
+        const requests = [], state = {epoch: 0, paused: false, destroyed: false};
+        const owner = virtualInstance(undefined, () => {const request = deferred(); requests.push(request); return request.promise;});
+        delete owner._eteMovieBrowse;
+        owner._eteSearchBrowse = state;
+        virtualLoad(true, owner, true);
+        state.epoch++;
+        owner.chunksLoaded = {};
+        virtualLoad(true, owner, true);
+        const newMap = owner.chunksLoaded;
+        if (outcome === 'success') requests[0].resolve({Items: [{Id: 'old-search-query'}]});
+        else requests[0].reject(new Error('old search query failure'));
+        await tick();
+        assert.strictEqual(owner.chunksLoaded, newMap);
+        assert.strictEqual(owner.chunksLoaded[30], true);
+        assert.deepEqual(owner._itemSource, []);
+        requests[1].resolve({Items: [{Id: 'new-search-query'}]});
+        await tick();
+        assert.equal(owner._itemSource[30].Id, 'new-search-query');
     }
 });
 test('patches are bounded, syntax-valid and reject shifted or repeated anchors', () => {

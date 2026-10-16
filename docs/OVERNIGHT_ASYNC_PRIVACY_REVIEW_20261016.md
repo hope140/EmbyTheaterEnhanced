@@ -1,6 +1,6 @@
 # Web请求归属与日志标签审查
 
-两项均已按父审限定合同本地实施。E1相关诊断45/45通过；E2固定材料16/16通过，修前12通过/4失败。E2合同同时闭合成功退休与失败两条终态，不把初稿catch-only方案视为充分。
+两项均已按父审限定合同本地实施。E1相关诊断45/45通过；E2直接函数材料16/16之后补上真实Movie→Search组合，19/19通过。E2合同同时闭合成功退休与失败两条终态，并保持Search专属标记和提交守卫；初稿catch-only及仅中间变换验证均不是完整组合验收。
 
 ## E1 诊断标签的条件式隐私缺口
 
@@ -26,4 +26,8 @@ Observed：维护movieBrowser的onPause会递增epoch并拒绝所属请求；当
 
 E2不涉及PlaybackManager、Session、媒体身份、Native或协议；因涉及复杂异步归属，仍先父审后实施。完整原始证据保存在 `.work/overnight/E2_CHUNK_REPRO.cjs` 与E2审核报告中。
 
-实施后普通列表继续true/null；Movie有效成功保留truthy token，失败与成功退休都只清其当前token。主审把同epoch替换用例加强为同一map内同chunk的新owner，分别覆盖旧成功和失败。固定base SHA保持，生成输出SHA更新为 `2ADE4984B1A89FD0B8532D3692F582F6B86806E985FE35EFDEFD47B9DBB597A9`，仅更新原WEB_OVERLAY_CONTRACT的该项输出绑定，既有generator/input/provenance登记保持。组合回归与完整来源构建另行记录。
+实施后普通列表继续true/null；Movie有效成功保留truthy token，失败与成功退休都只清其当前token。同epoch替换用例使用同一map内同chunk的新owner，分别覆盖旧成功和失败。
+
+8cc7425首次材料门禁200/207：输出绑定误用了Movie中间SHA `2ADE4984...B597A9`，生产随后还有Search guard变换，实际最终SHA为 `8BFF9879...6BAFC4`；该组合也将token误扩到Search。旧19项补充回归17通过/2失败；私有Movie-only草案先验证18/18。父审随后批准限定修正：保留原共享browse提交guard，Movie标记另用原 `_eteMovieBrowse` 的直接属性查找，避免Search变换扩大marker owner；不改变Search变换器。Search-only正常/失败/退休/新query守卫及普通列表保持，实际最终组合19/19通过。
+
+最终组合输出SHA为 `54537E38237C5DDD5B0B087249E7B29BCFF5C409DEA4A4867FF607CAAAC3802F`；固定base和既有generator/input/provenance登记保持。原中间测试、首次材料失败与8cc公开996/996各自保留来源层次，新准确来源的组合门禁与构建重新执行。

@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-17 E2最终变换链边界修正
+
+首次组合材料207项中200通过，7项均被VirtualScroller最终输出hash拦住：中间Movie SHA被误作生产末态，实际还有Search patchBrowseGuard。追加实际Movie→Search回归亦证实Search marker被误扩为object。父审批准区分Movie专属marker和既有共享browse提交guard；Search变换器不改，Search-only维持true/null和原stale保护。19项最终组合回归通过，最终输出54537E...C3802F。旧8cc公开996/996、材料200/207、中间16项与新增修前17/19均原样保留，不合并成新来源PASS；新准确来源再次运行门禁。此阶段没有构建候选或操作已发资产。
+
 ## 2026-10-17 E2电影分块双终态归属
 
 父审指出catch-only方案不足，批准补成功已fulfilled但提交前退休的分支。生产patchVirtualScroller只在Movie请求使用唯一truthy token，失败和success stale guard返回前只清当前同token；正常成功保留loaded，原数据守卫和非Movie true/null保持。隔离worker只扩材料测试，主审取真实diff并强化同map同epoch旧成功/失败保护，修前12/16、修后16/16。固定输入D298...A5B9不变，原overlay输出绑定改2ADE...597A9；没有新generator或缓存策略。组合来源/构建另核，真实前台与服务器未执行。
