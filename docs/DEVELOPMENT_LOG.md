@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-16 发布后有限维护合同
+
+Model Tier: Tier 1（明确菜单/安装/资源证据）与 Tier 2（显示跨层及核心审查）；Model: 主线程沿用当前配置；三个 GPT-6 Luna High worker 分别只读定位菜单、安装升级和资源消费者；Reason: 先固化有限覆盖、证据和高风险停点；Escalated: No。基线 main `45bea67bb6f3c9e825c44c6e1a5e0f908f74b8d0`，独立本地分支 `codex/post-v037-night`。仅新增合同报告/状态记录，未修改产品或启动测试/候选。验收与恢复见[报告](OVERNIGHT_REVIEW_REPORT_20261016.md)，本轮不自动发布后续修正。
+
 ## 2026-10-16 v0.3.7 Pre-release 发行收尾
 
 Model Tier: Tier 1（文档发行状态与证据同步）；Model: 主线程沿用配置，精确标识未由工具暴露；Reason: 已合并并完成验证的来源仅作发行记录与导航收尾；Escalated: No。本轮Worker限定处理固定输入、私有验证脚本及文档补丁，主线程核对实际差异与测试；发布决策和全部Git/远端操作由主线程执行，不据此声称型号变更。

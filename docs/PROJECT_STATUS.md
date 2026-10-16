@@ -1,5 +1,10 @@
 # 项目状态
 
+## 2026-10-16 — 发布后有限维护审核启动
+
+已发布 main `45bea67` 为新隔离本地维护基线，分支 `codex/post-v037-night`。首个合同停点见[夜间审核报告](OVERNIGHT_REVIEW_REPORT_20261016.md)：覆盖指定七项设置栏排序、显示链、安装升级、旧资源消费者及当前仍可达维护代码。当前仅固化范围和开展只读定位，尚无产品修改或新候选；复杂显示/播放/异步/信任边界差异先父审。037发行状态及原资产保持，后续修正仅本地。
+
+
 ## 2026-10-16 — v0.3.7 测试版已发布
 
 [v0.3.7 GitHub Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.7) 已发布，PR [#41](https://github.com/hope140/EmbyTheaterEnhanced/pull/41) 已合并。产品 Tag `v0.3.7` 固定准确 main 源码 `bf6e48214820fac0558bdfe7f37526f1c7a3d7c2`；Stable/Latest 保持 v0.3.1。主线与 Tag CI 均为 977/977，固定材料门禁 200/200。
