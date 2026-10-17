@@ -578,7 +578,7 @@
             child.on('exit', function () { confirmExit(owner); });
             child.on('close', function () {
                 confirmExit(owner);
-                complete(owner, output, false);
+                complete(owner, Date.now() >= deadline ? "" : output, false);
             });
             child.on('error', function () {
                 // Failed spawn has no process to reap. An error on a spawned
