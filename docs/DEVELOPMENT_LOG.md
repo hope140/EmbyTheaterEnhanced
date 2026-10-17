@@ -8,6 +8,8 @@ B1来源311e366公开1061/1061、局部/相邻121/121、两AMD跨实例2项及ma
 
 B2只准备N1/N2窄合同及未应用diff，source311的完整AMD8场景/292trace记录修前FAIL/正控/UNKNOWN，草案只有语法检查，不计修后。跨实例旧回执被worker误跑覆盖的原件完整性损失已保全现场与hash；独立新目录用4a Git源和历史raw SHA重现2反例/83trace，不能称恢复原件，父自有证据未动。相关worker后续只读或只写自己新目录。版本与候选继续等待范围收敛，不把FIFO当逻辑lease。
 
+末态OS回读另发现此前Ctrl+C未结束的所属跨实例测试树；根据本任务完整命令、启动时间和父子关系确认后收口，再独立回读确认退出，没有按进程名操作其他Node。旧22项数据合同回读与最终进程退出证据分开，私有状态更新实际结论。
+
 ## 2026-10-17 v0.3.8 A局部实施与B归属设计
 
 Model Tier: Tier 2；Model: 主线程沿用当前配置；GPT-6 Luna High两个worker限定新增生命周期及完整AMD测试，一个worker只读跨实例归属库存；Reason: A已父准的main/XHR有界生命周期，主线程保留异步和shutdown最终判断；Escalated: No。A产品只改main.js/libmpv.js原入口与必要调用，无新产品helper文件、依赖、协议或Native变更。
