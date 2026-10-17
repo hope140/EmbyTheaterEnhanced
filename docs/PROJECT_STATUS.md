@@ -1,5 +1,19 @@
 # 项目状态
 
+## 2026-10-17 — v0.3.9有界主机矩阵完成，可信038已恢复
+
+状态为 `HOST_BOUNDED_MATRIX_COMPLETE_PARENT_FINAL_REVIEW_PENDING`。父已独立核准固定Inno6.7.3的精确两文件延后残留分类，原H5_A2的180秒目录归零失败保持；H6随后实际同目录重装038，root/child均由绑定句柄读到exit0，所属setup TEMP消失。最终独立读回为0.3.8/source `0bbc504fbb6ca98dfb7476e8078c4483347b4375`：2159声明payload及manifest字节准确，实际2163文件，另3项为uninstaller/dat和原debug.log。开始菜单指向已核Host；桌面任务按卸载后原默认unchecked，未擅加TASKS。未启动应用，不把文件门禁当启动/播放验收。
+
+H0完整备份、H1_A2只读文件锁拒绝、H2升级、H3降级、H4返回038、H5有界卸载及H6保留资料重装均有实际证据。最终994项/93727294字节profile及有效DeviceId文件保持；原036完整程序/资料备份和可信036/038包再次全量SHA核验可读。实际setup启动6次（含初次H1观察失败）、uninstaller1次、app0次，当前所属进程0。本次唯一uninstall TEMP根仍保留已核self-copy及空marker，不能声称TEMP文件零或全盘清理通过。
+
+无确认产品缺陷，src/native/tools/tests/installer及版本/依赖不变，没有039构建/PR/Tag/Release或远端写入，不造空版。空资料首次应用初始化、自选中文/迁移目录、标准账户/UAC接受拒绝、真实运行进程占用、目标ACL拒绝、向导/复制取消和复制失败恢复、前台/播放/远控仍未覆盖；不把有界H0–H6推广为原14项全通过。以下停点均是保留的过程历史，最终证据待父复核。
+
+## 2026-10-17 — v0.3.9卸载完成与固定工具链残留复核
+
+父已准精确目录末尾分隔符窄修，H5_A2实际启动并从绑定root/clone句柄读到exit0；所有声明payload/manifest、固定登记及两快捷方式已移除，994项资料/DeviceId文件字节保持。APP仅余原有debug.log。私有runner等待180秒后仍见本次TEMP根的两个文件，原attempt记为FAIL并保留；当前程序已卸载，H6尚未执行，不能继续沿用上一节的“038已安装”。
+
+同版本官方Inno6.7.3源码说明 `_unins.tmp` 与空 `_unins-done.tmp` 是延后残留清理机制，清理在后续卸载启动调用，Setup启动调用被注释。本次self-copy大小/SHA等于刚验证的卸载器、marker为空、无其他TEMP项，root/clone已实际结束；原门禁把进程退出与TEMP文件立即消失绑定，属于待纠正的验收假设，不据此判产品故障。[官方卸载机制](https://github.com/jrsoftware/issrc/blob/is-6_7_3/Projects/Src/Setup.Uninstall.pas#L196-L218)与[残留清理实现及Setup调用说明](https://github.com/jrsoftware/issrc/blob/is-6_7_3/Projects/Src/Setup.MainFunc.pas#L1460-L1624)已记录供父核。具体哈希/目录只在私有回执；不手删、不再运行卸载器触发广泛旧TEMP清理。父接受此有界分类后再按已准H6恢复可信038，产品源码/版本不变。
+
 ## 2026-10-17 — v0.3.9 H0–H4通过与H5登记表示停点
 
 父已核H1初次观察器失败，准予私有观察器修复和新attempt重验。H1_A2真实root退出7、TEMP子进程退出7，均由绑定进程句柄读取，错误32拒绝及程序/资料/登记/快捷方式不变通过；原失败仍保留。H2升级038、H3允许降回036、H4返回038均真实退出0、所属root/TEMP完成及声明payload逐SHA通过，完整994项资料/DeviceId文件保持；额外文件分别27/28/27另列，降级多出的038脚本不自动判缺陷或清理。

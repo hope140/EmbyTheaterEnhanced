@@ -1,5 +1,23 @@
 # 维护记录
 
+## 2026-10-17 v0.3.9有界系统验证收口与038恢复
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置，GPT-6 Luna High独立审已落盘回执；Reason: 父接受固定工具链残留语义后恢复已授权H6并收口真实证据；Escalated: No。父实际读官方固定6.7.3源码和本次self-copy SHA/空marker，接受仅这两项无额外/无reparse的延后残留。新增独占分类接受回执，旧H5_A2 FAIL不改；没有手删或额外卸载来触发清理。
+
+H6前再次核原036程序/资料备份完整集合及SHA、当前APP仅原debug.log、登记/两shortcut空、994项资料保持、无所属活进程、两项TEMP字节与post回执相同及可信038包SHA。H6实际root/child绑定句柄exit0，完整声明payload2159及manifest准确，实际2163文件/3extras，所属setup TEMP消失。后续独立最终全文件读回与H6_after一致，固定登记0.3.8/source0bbc504、当前fresh uninstaller/dat归属及哈希可读，开始菜单目标/工作目录/图标正确，桌面任务原默认unchecked。原036备份和两参考包再次全量校验可用。
+
+最终profile994文件/93727294字节及有效DeviceId文件不变。7次实际root操作为6次setup和1次uninstaller；H1初次未知root退出保持原失败，H1_A2实读7，H2/H3/H4/H5_A2/H6实读0。当前所属进程0、app启动0；精确已接受的uninstall TEMP两文件仍在，不作文件零或全盘临时目录清理宣称。H0三次私有工具/门禁失败、H1观察失败、H5 preexec表示失败和H5_A2立即归零假设失败全部保留各自独占回执。无产品改动/确认缺陷，不生成039版本/包或远端写入；本机子场景之外的原矩阵与运行/前台验收继续未测。状态完成于有界证据交父最终复核。
+
+独立worker的落盘回执一致性审计已由主线程实际读回：阶段exit/每实例绑定句柄退出、profile摘要、payload/extras计数与完整行、H5原FAIL/接受分类和H6默认shortcut状态一致，无新矛盾；该审计没有访问live APP/profile/注册表原值，不能替代主线程最终系统读回。四份文档diff/新增隐私扫描通过，src/native/tools/tests/installer及package文件仍与准确基线相同；纯文档收尾未重跑无关公开/材料全量门禁。
+
+## 2026-10-17 v0.3.9 H5_A2卸载与Inno6.7.3残留语义
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置；Reason: 父已准登记解析窄修后真实卸载及异常门禁；Escalated: No。H1–H4未重跑。H5_A2独占新回执实际root/clone均BOUND_PROCESS_HANDLE退出0；log卸载成功、无需重启。后读回确认声明payload和manifest/固定登记/两快捷方式移除，资料994项/DeviceId字节保持、ETE进程0，APP只余原有debug.log。没有启动应用或手动清理。
+
+所属TEMP在180秒仍有4377460字节 `_unins.tmp` 和空 `_unins-done.tmp`，原attempt按既定门禁FAIL保留。self-copy SHA与fresh uninstaller一致。官方固定tag is-6_7_3（GitHub读取解析tree c7af86b4b2fd03371185df2b09a1dca8d472ab70）Setup.Uninstall.pas 196–218/247–248创建done信号，408–460正常二阶段分支不保证立即自删，650于卸载启动调用DeleteResidualTempUninstallDirs；Setup.MainFunc.pas 1460–1624执行后续残留清理，3625–3635的Setup启动调用处于注释测试块。只读原始来源，不安装/升级工具链，不重跑卸载器或手删本次/其他TEMP。
+
+由此形成有界验收假设纠正草案：保留旧FAIL，区分root/clone真实退出和固定工具链延后文件；只接受本次已绑定TEMP根的精确self-copy SHA及空marker，没有未知项/重解析。此时仍等待父技术分类接受，H6草案只恢复原038，入口保持该门禁且复核当前APP残留/profile/登记/可信包；没有实际执行。当前client程序已卸载，资料及原036私有备份保留，不误报038当前已安装。
+
 ## 2026-10-17 v0.3.9 H1重验及H2–H4真实完成
 
 Model Tier: Tier 2；Model: 主线程沿用当前配置，GPT-6 Luna High静态复核；Reason: 父已接受观察器停点并准私有修复后重验；Escalated: No。观察器保持Start返回root进程Handle，已验证child绑定Handle/创建时间，CIM空路径在原绝对期限内有限重查并结合原Handle终态；真实非空映像差异、创建时间不符/PID复用仍拒绝并保存观测。TEMP只等本次目录清理、不手删。静态审查发现新脚本复制的未使用停止读回模式仍读旧H1证据，执行前已删除历史模式并禁止额外CLI参数。
