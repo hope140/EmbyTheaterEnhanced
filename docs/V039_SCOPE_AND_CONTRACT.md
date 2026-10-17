@@ -2,7 +2,7 @@
 
 ## 第一停点与准确基线
 
-2026-10-17，状态 `READY_FOR_PARENT_CONTRACT_REVIEW`。本合同承接用户的039安装升级与交付授权；先完成独立盘点和隔离准备，系统边界及具体修复由父会话实际审核后推进。
+2026-10-17，准备合同 `a8670819262273720d8846c192fd1215f7a9fbfb` 已获父实际审核通过，当前状态 `WAITING_DEDICATED_WINDOWS_ENVIRONMENT`。可独立盘点和合成准备已完成，下一条件是专用可回退Windows环境及其具体guest副作用许可，见[环境交接](V039_MANUAL_ENVIRONMENT_HANDOFF.md)。尚未获准启用宿主虚拟化、安装VM或启动宿主前台。
 
 准确main/docs基线为 `a1b2a04d21c023062934351f29868e9c1c908b7a`，已发布038产品source/Tag为 `0bbc504fbb6ca98dfb7476e8078c4483347b4375` / `v0.3.8`，分支 `codex/v039-install-lifecycle`。本轮尚无确认产品缺陷，产品版本保持0.3.8，不生成或重命名039候选。旧Settings工作区、038发行树、全部旧包/profile/Tag/Release保持。
 
@@ -74,7 +74,7 @@ Task Risk中、Uncertainty中（系统安装行为未测）、Cross-module Scope
 
 ## 允许文件、不变量与下一停点
 
-本阶段允许修改本合同、PROJECT_STATUS、DEVELOPMENT_LOG及自有忽略目录 `.work/v039/`、`.work/V039_TASK_STATE.json`。产品允许修改文件目前为NONE；只有明确Observed/Expected/修前复现、精确局部文件与不变量、有效修后用例经父审后，才另开实现范围。
+本阶段允许修改本合同、环境交接、PROJECT_STATUS、DEVELOPMENT_LOG及自有忽略目录 `.work/v039/`、`.work/V039_TASK_STATE.json`。产品允许修改文件目前为NONE；只有明确Observed/Expected/修前复现、精确局部文件与不变量、有效修后用例经父审后，才另开实现范围。
 
 冻结PlaybackManager/Session/Item/MediaSource/PlaySession、Resolver/CD2/Mount/DirectUrl、Native/libmpv/IPC认证/窗口、依赖及默认内核。profile/身份/降级语义不擅改；038完整lease/映射/显示、缓存/预热/切轨延迟、圆角和037电源系统实测仍暂缓。资源只对新增消费者证据明确的遗漏/打包问题局部修正；vendor、共享字体/主题、HTML回退及未知外部消费者保留。数字签名全部暂缓，不采购、注册、取私钥或接入服务。
 
