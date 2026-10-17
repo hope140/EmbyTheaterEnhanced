@@ -1,5 +1,9 @@
 # v0.3.9 安装升级验证测试版发行合同
 
+## 已执行的发行结果
+
+[v0.3.9 Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.9) 已公开，产品source `06d34a712e26e0d6d0b299b487cfd68625df71ed` / annotated Tag `v0.3.9` 固定，PR #43已正常合并。准确main新构建、包体/来源/解包、main与Tag各1095公共测试、材料210、一次H7及父实际安装后复核通过；五附件匿名全字节重hash、旧20Release/资产与43行旧Tag、Latest031保持已核。完整结果见[发行核验](V039_RELEASE_VERIFICATION.md)。后续文档HEAD独立于产品source，以下实施条款保留为执行合同，原验收边界不变。
+
 ## 当前授权与身份
 
 用户最新明确“那就发布吧，发布后准备后续版本内容”，现发布真实0.3.9安装升级验证Pre-release；此前无功能修复时不发039的收口选择由本指令覆盖。功能代码沿用038，只更新版本元数据、来源与验收/交付文档，不虚构修复或新增功能。Release标题为 `v0.3.9 · 安装升级验证测试版`，Stable/Latest保持031，签名继续暂缓。
