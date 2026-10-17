@@ -1,5 +1,11 @@
 # 维护注意事项
 
+- 绝对deadline不仅用timer执行顺序保证。事件循环阻塞后close/load可先于已经到期的timer到达，提交结果与获得执行槽时都应核当前绝对时间；用只推进Date.now但不调度timer的用例覆盖，不能只靠advance先跑timeout。
+
+- 固定材料齐备后，依赖prepared preload的测试还须先走原prepare-preload生成关系。require时缺生成文件属于测试输入缺口，不能计作有效断言失败后修复或跳过；保留原失败，补实体后独立复验。
+
+- 重用私有probe前先检查所有输出路径和副作用。可执行脚本复制到新目录仍可能写硬编码旧目录；历史回执不能覆盖，误覆盖后保留现场并分清独立重现与原件恢复。
+
 - Overlay输出SHA必须按完整生产变换链计算。Movie VirtualScroller后还有Search guard组合；只验证中间patcher会漏掉最终hash和owner范围变化。共享提交guard与特定功能的资源owner应分开，回归覆盖实际组合及其他功能保留路径。
 
 - Promise已fulfilled仍可能在DOM提交前被pause/换代退休。可重试资源标记应在成功退休与失败两条终态都按当前请求token释放；仅加catch清理会留下缓存页无法重取的标记。清理不能覆盖新query或同map同chunk的新owner。

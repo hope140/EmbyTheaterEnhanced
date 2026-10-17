@@ -2,7 +2,7 @@
 
 ## 审查状态与事实
 
-本文件是 B 的精确候选合同，`B_DESIGN_REVIEW_REQUIRED`，尚未实施队列或 lease。A 的有界请求实现与本候选分开，来源见[范围合同](V038_SCOPE_AND_CONTRACT.md)。本候选不增加协议动作、配置、Native/IPC 或二进制。
+当前为`B1_LOCAL_TARGETED_PASS / B2_NARROW_DESIGN_REVIEW_REQUIRED`。父审d8c7ad2后批准B1全局物理FIFO，已在产品来源311e366实施；B2完整lease未准实施，后续仅提交[两个窄子项](V038_NARROW_DISPLAY_REVIEW.md)设计。A的有界请求与B2候选分开，来源见[范围合同](V038_SCOPE_AND_CONTRACT.md)。没有新增协议动作、配置、Native/IPC或二进制。以下B1表已作为批准实现合同；完整B2字段只保留为未准的设计边界，不代表正在实施。
 
 实际固定 Web 注册链为 main `loadStartInfo` 枚举插件 → `Emby.App.start` → app.js `loadPlugin` → PluginManager 构造/按 id 注册 → PlaybackManager 的 registered/initMediaPlayer。PluginManager 仅在单个 renderer AMD 实例内去重，而且在检查 id 前已经调用构造器。main 的 dom-ready 会重新发送 StartInfo；新的 renderer 文档能构造新 adapter。Web beforeunload 只调用条件性的 onAppClose，不证明所有状态下都完成 destroy。main Native endpoint 也可能复用。因此不能把完整 AMD 夹具只 new 一次当作生产全局单实例证明。
 
@@ -33,7 +33,7 @@
 | 后续真实 exit/close | 清 quarantine，并释放已封口槽；只处理仍有效的队列项 | 不重放过期请求，不再次 callback |
 | shutdown | 先关入口，封口/移除全部排队项，回收运行项，等待 A 有界清理 | 不把工具关闭当作显示恢复；原 Native/kernel/startup drain 保持 |
 
-此设计在所有调用者经过原 main handler 的前提下，保证同一 main 进程不会并行执行多个刷新率工具；覆盖不同 adapter/renderer 的物理串行。它不提供跨 adapter 的逻辑 lease 或旧恢复优先级。
+该实现限所有调用者经过原main handler时的同main进程物理串行，覆盖不同adapter/renderer；不提供跨adapter逻辑lease或旧恢复优先级。311e366公开1061/1061、材料210/210，相关集合121/121通过，其中main排队/生命周期/原协议/deadline53项、两个完整AMD实例2项；真实工具未执行。后续测试清理调用修正2/2通过，产品源码不变。
 
 ## B2：adapter 局部 lease 候选
 
@@ -86,4 +86,6 @@ B1可独立闭合 main 的物理串行。B2的局部 token 无法告诉 main“�
 - B2完整AMD：同owner同/不同FPS合并；两种回包次序；change→Stop/Next；original首次实际change前捕获；未改变不持有；第三值放弃；设置关闭但仍持有lease；同实例新owner跳过未开始恢复；unknown有界结束且不补偿写。
 - 跨实例负控：在同一个 main handler 下构造两个真实AMD adapter，分别保留其独立局部字段，证明 B1 串行而局部lease无法证明全局接管；不得把这个限制用假全局token掩盖。
 
-本文件仅具体化设计与验收。A的实际局部修正、已有测试与固定输入保持，B产品差异须下一次父审后再实施。
+原跨实例历史回执的JSON/trace因测试worker误跑旧probe而被覆盖，原件完整性损失，不能称已恢复；覆盖现场及hash独立保留。已在全新目录从准确4a7ab92 Git源重建并核对历史raw SHA，独立复现同样2反例/83trace；这是新证据，不替代原件。父自有复现目录未动。
+
+B1已按批准范围局部实施；B2完整lease及N1/N2窄候选仍需具体父审。A、原候选与固定输入保持，不能把FIFO局部门禁计作全局恢复归属完成。

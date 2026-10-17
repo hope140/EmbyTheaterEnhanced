@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-17 v0.3.8 A父审边界修正与B1局部闭环
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置；GPT-6 Luna High worker仅新增FIFO/两完整AMD测试与B2窄失败探针，主线程实现及审查main/必要FPS消费者；Reason: 已批B1的全局物理槽与绝对期限；Escalated: No。7270803修正close先于迟到timer的绝对截止检查，4项1/4→4/4；f4bbbde封闭空/非正数change结果，3项0/3→3/3；311e366实现三原动作全局FIFO、receive deadline、排队过期、exit/close与callback/quarantine/shutdown，未新增协议或工具。
+
+B1来源311e366公开1061/1061、局部/相邻121/121、两AMD跨实例2项及main期限/队列53项通过，材料210/210、JS319/PS28、有限扫描370通过；所属惰性Node进程2次close/残留0。父实际源码复核与独立14/14通过。原4a全量npm1121/1122唯一缺prepared preload的require失败保持，固定生成后该夹具5/5通过，未弱化断言。主线程末态检查发现跨实例fixture只await函数而未调用，b165592仅修为实际shutdown调用并断言timer/入口，2/2通过；产品与此前门禁来源完全相同，未重复全部绿灯。未运行真实RefreshRate/Native、前台、显示设置或系统操作。
+
+B2只准备N1/N2窄合同及未应用diff，source311的完整AMD8场景/292trace记录修前FAIL/正控/UNKNOWN，草案只有语法检查，不计修后。跨实例旧回执被worker误跑覆盖的原件完整性损失已保全现场与hash；独立新目录用4a Git源和历史raw SHA重现2反例/83trace，不能称恢复原件，父自有证据未动。相关worker后续只读或只写自己新目录。版本与候选继续等待范围收敛，不把FIFO当逻辑lease。
+
 ## 2026-10-17 v0.3.8 A局部实施与B归属设计
 
 Model Tier: Tier 2；Model: 主线程沿用当前配置；GPT-6 Luna High两个worker限定新增生命周期及完整AMD测试，一个worker只读跨实例归属库存；Reason: A已父准的main/XHR有界生命周期，主线程保留异步和shutdown最终判断；Escalated: No。A产品只改main.js/libmpv.js原入口与必要调用，无新产品helper文件、依赖、协议或Native变更。

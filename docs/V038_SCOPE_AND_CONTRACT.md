@@ -2,7 +2,7 @@
 
 ## 当前阶段与来源
 
-2026-10-17，当前为 `A_LOCAL_TARGETED_PASS / B_DESIGN_REVIEW_REQUIRED`。从已父验夜间文档 HEAD `e2b0eff8de31b51500af7adbf6e9e032cd4b5cb6` 建立独立本地分支 `codex/v038-display`，继承产品来源 `5341f32985aabefa03f789b1428d8dfa2be5ba06` 的菜单、刷新率 P1、诊断标签和 Movie 分块四项修正。父审实际复核首个合同提交`adaad65`及独立复跑证据后，批准A限定实施；B只允许精确设计和有效失败用例。版本仍为0.3.7，尚无038候选。准确工作树、原始证据及恢复信息保存在被忽略的 `.work/V038_TASK_STATE.json`。
+2026-10-17，当前为 `A_B1_SOURCE_REVIEWED / NARROW_DESIGN_REVIEW_REQUIRED`。从已父验夜间文档 HEAD `e2b0eff8de31b51500af7adbf6e9e032cd4b5cb6` 建立独立本地分支 `codex/v038-display`，继承产品来源 `5341f32985aabefa03f789b1428d8dfa2be5ba06` 的四项修正。父审批准A及B1限定实施并实际审过产品来源`311e36690c2eff5ea014d98878d4899b0d82f587`，独立相关14/14通过；B2完整lease未准实施，后续只准备[窄子项审查](V038_NARROW_DISPLAY_REVIEW.md)。版本仍0.3.7，尚无038候选。准确工作树、原始证据及恢复信息保存在被忽略的 `.work/V038_TASK_STATE.json`。
 
 本轮继续用户已授权、可独立验证的本地工作。真实显示硬件与人工验收缺少条件时单列，不阻塞其他独立工作。新增跨层异步实现先经父会话审核；本合同中的候选细节不自动变成已接受方案。
 
@@ -72,6 +72,12 @@ renderer的`requestRefreshRate`是同文件内部helper，没有新模块/构建
 
 新增生命周期25项以精确`adaad65`源码复跑，其中原22项4通过/18失败，另3项0通过/3失败；完整AMD初始14项修前4通过/10失败，后补调用错误及未知状态边界，当前20项。最终相关集合104/104通过，包含原协议/设置/全屏、shutdown及Native/字幕相邻回归。A首轮实现额外捕获并修正迟到timeout重复abort、shutdown拒绝触发Promise.all提前退出两条问题，修前失败与夹具尝试保持。只使用所属惰性Node假子进程的Windows实测确认2次close、残留0；未运行真实RefreshRate或Native Helper，未写显示设置。
 
+父审另发现busy event loop下close可能先于迟到timer到达；7270803在close直接核当前绝对时间，到期空结果，已观察close无需kill。4项修前1/4、修后4/4。B1联调又确认main空结果会被旧FPS消费者当成功：f4bbbde只在消费者拒绝不可用rate，清本请求资格并自行恢复；helper原空值返回形状不变，3项修前0/3、完整Play23/23通过，成功3000ms保持。
+
+311e366落实B1全局物理FIFO，排队计原5000ms，只有结果封口及真实exit/close均满足才释放槽；callback异常、quarantine、shutdown按批准合同。新FIFO及旧生命周期相关121/121通过，两个完整AMD实例共享真实main注册器，假child/XHR/Native依赖明确；本来源所属惰性Node进程2次实际close、残留0。仓库公开入口1061/1061、完整材料210/210，静态JS319/PS28及有限凭据模式370通过。后续b165592仅修测试夹具实际调用shutdown并确认timer归零/入口关闭，2/2通过，产品源码不变；没有为测试清理修正重跑全部绿灯。
+
+先前4a来源完整`npm test`为1121/1122，唯一external-player-process-chain在require时缺生成preload，未运行有效断言，不是产品失败回归通过。按固定prepare-preload流程补实体，原夹具5/5复验通过，首轮日志保留；不改测试/跳过/放宽材料要求。之后按准确新来源运行仓库公开和材料入口，不将首轮结果沿用为新来源PASS。
+
 ### B 的候选归属约束
 
 - 同一显示目标的读、change 与恢复不能产生无归属的并行写入；同 owner 重复 FPS 合并，旧请求在队列执行前和每个 await 后检查归属。
@@ -103,4 +109,4 @@ renderer的`requestRefreshRate`是同文件内部helper，没有新模块/构建
 3. 适用的请求/Session、Native lifecycle、settings 与既有全屏回归。模拟窗口通过只代表状态模型，不替代多屏或硬件。
 4. 具体实现父审后再运行最终公开/固定材料门禁、准确 sourceCommit 构建、隐藏组件和入口、provenance 与完整 runtime/payload/ZIP 回读；产品来源与后续文档 HEAD 分开。
 
-当前A局部实现和相关验证完成，最终公开门禁另记录；B产品修改尚未开始，没有0.3.8 runtime。原候选、profile、失败记录及已发布0.3.7资产保持。
+当前A+B1局部实现、上述门禁及源码父审通过，N1/N2精确diff进入下个父审停点；均未应用，没有完整B2 lease或0.3.8 runtime。原候选、profile、失败记录及已发布0.3.7资产保持。
