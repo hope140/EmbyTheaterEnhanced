@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-17 — v0.3.9安装生命周期首合同
+
+从准确main/docs `a1b2a04d21c023062934351f29868e9c1c908b7a` 建立独立 `codex/v039-install-lifecycle`；[范围与合同](V039_SCOPE_AND_CONTRACT.md)进入父审。当前未发现确认产品缺陷，版本仍0.3.8，没有039候选或发布。12项相关Git blob自night5341保持，可复用C包15项原静态/合成证据和D包有限资源结论，不重标为系统PASS。
+
+已准备3套项目内合成BEFORE快照并确认收集器不改输入；限定只读探测及tracked声明盘点尚未建立项目专用可回退Windows环境。真实安装/覆盖/原允许降级/卸载重装/UAC/取消/失败恢复/退出码仍未执行；先父审具体环境与系统副作用，宿主及个人资料保持。用户已给符合条件的039测试版发布授权，不逐批重问；无确定改动不为版本号重包，签名及其它暂缓项保持，Latest仍031。
+
 ## 2026-10-17 — v0.3.8测试版已发布
 
 [v0.3.8 GitHub Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.8) 已发布，PR [#42](https://github.com/hope140/EmbyTheaterEnhanced/pull/42) 已正常合并。产品Tag `v0.3.8` 固定准确main来源 `0bbc504fbb6ca98dfb7476e8078c4483347b4375`；后续文档HEAD与产品来源分开。Stable/Latest保持v0.3.1。

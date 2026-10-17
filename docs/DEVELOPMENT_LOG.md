@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-17 v0.3.9第一停点与安装准备
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置，精确标识未暴露；两个GPT-6 Luna High worker分别只读规则/覆盖和限定环境能力；Reason: 数据保留与系统边界需主线程/父审核，明确盘点交低成本worker；Escalated: No。准确基线a1b2a04，旧038产品0bbc504和root旧Settings、所有候选/profile/资产保持。
+
+安装身份/目录、profile/config/DeviceId、guard与失败恢复原合同已读，未发现确定产品缺陷；主线程逐项核12个Git blob与night5341相同，复用C历史15/15及D有限审核，不重跑旧probe/覆盖回执。限定命令存在性及OS能力只读盘点没有启动/枚举个人VM或读取profile/凭据；环境worker因禁止Git未判断tracked声明，主线程补做tracked文件名检查为0，仍只记项目专用guest NOT_ESTABLISHED，不推断机器没有VM。
+
+新私有脚本仅在自有项目临时树创建3套不可执行sentinel资料，用原snapshot collector收集BEFORE；输入前后逐SHA保持，实际installer/app运行0，生命周期NOT_EXECUTED，未伪造AFTER。官方Inno退出码/静默/卸载clone合同仅作后续预期，不把退出0或隔离确认参数当系统验收。产品/版本/依赖未改，仅提交首合同与状态；后续精确环境、系统副作用和有效局部缺陷先父审，满足条件再沿授权发布，不凑039功能或启动040。
+
 ## 2026-10-17 v0.3.8发行闭环
 
 Model Tier: Tier 2；Model: 主线程沿用当前配置；GPT-6 Luna High worker限定固定输入与私有发行脚本，父会话独立源码/包体审计；Reason: 合并后准确来源和公开资产完整回读；Escalated: No。PR42的8332cde经两公开CI通过后正常merge，产品main/Tag固定0bbc504fbb6ca98dfb7476e8078c4483347b4375，产品内容与bd候选一致，包含夜间5341四修；没有新增核心或依赖差异。
