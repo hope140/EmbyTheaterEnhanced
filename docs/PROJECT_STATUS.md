@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-17 — v0.3.8 A有界显示探测局部修正
+
+父审adaad65后限定批准A：main接收起5000ms封口、1000ms所属进程确认与未退出隔离；XHR单次/Play探测总8000ms，失败仅降级可选显示探测，取消仍退休旧Play。原功能关闭查询与成功FPS的3000ms保持。FPS/旧恢复调用补必要错误收口，不把undefined或kill成功当作显示恢复证据。相关104/104及2个所属Node假进程真实close/残留0通过，未运行真实显示工具；最终公开门禁另记录。
+
+B的精确[归属设计](V038_DISPLAY_OWNERSHIP_REVIEW.md)分开main物理FIFO与adapter局部lease。实际Web注册不能证明跨renderer唯一owner，当前协议也无可信实例归属；B只设计/有效失败用例，未实施。版本仍0.3.7、没有038runtime或候选；真实映射/硬件/完整app-exit恢复保持UNKNOWN或未测，独立可验证工作继续。
+
 ## 2026-10-17 — v0.3.8 显示兼容合同与离线复现
 
 从已父验夜间 HEAD `e2b0eff8de31b51500af7adbf6e9e032cd4b5cb6` 建立独立本地 `codex/v038-display`，继承四项限定修正。当前只收集证据并形成[显示兼容合同](V038_SCOPE_AND_CONTRACT.md)，产品与版本仍为原 0.3.7，尚无 0.3.8 runtime。真实函数体探针确认无终态工具/XHR挂起，完整AMD夹具复现并发change、Stop/Next后旧物理变更及外部第三值被恢复覆盖；已有旧请求unpause保护的正反对照通过。协议16/16、设置2/2、全屏11/11通过，均为离线合成证据。

@@ -23,7 +23,7 @@ function pending() {
     return {promise, resolve};
 }
 
-function fixture() {
+function fixture(refreshShutdown = () => Promise.resolve()) {
     const active = new Set([99]);
     const starts = [];
     const stops = [];
@@ -49,6 +49,7 @@ function fixture() {
         unregisterMaintenanceIpc() {calls.push('maintenance');},
         unregisterStrmConfigIpc() {calls.push('config');},
         unregisterCd2Ipc() {calls.push('cd2');},
+        unregisterRefreshRate() {calls.push('refresh'); return refreshShutdown();},
         unregisterNativeHelperIpc() {calls.push('native'); return native.promise;},
         unregisterMpvKernelIpc() {calls.push('kernel'); return kernel.promise;},
         readyStartupPromise: ready.promise,
@@ -95,6 +96,36 @@ test('main shutdown keeps async cleanup progressing when one power release fails
     f.command('video-on'); f.command('audio-on');
     assert.equal(f.starts.length, 2);
     f.native.resolve(); f.kernel.resolve(); f.ready.resolve();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(f.calls.filter(call => call === 'quit').length, 1);
+});
+
+for (const mode of ['reject', 'throw']) {
+    test('refresh shutdown ' + mode + ' cannot skip the original Native/kernel/startup drain', async () => {
+        const failure = new Error('synthetic refresh callback failure');
+        const f = fixture(() => {if (mode === 'throw') throw failure; return Promise.reject(failure);});
+        f.quit();
+        await new Promise(resolve => setImmediate(resolve));
+        assert.equal(f.calls.includes('native'), true);
+        assert.equal(f.calls.includes('kernel'), true);
+        assert.equal(f.calls.includes('quit'), false);
+        f.native.resolve(); f.kernel.resolve();
+        await new Promise(resolve => setImmediate(resolve));
+        assert.equal(f.calls.includes('quit'), false, 'startup still owns its pending completion');
+        f.ready.resolve();
+        await new Promise(resolve => setImmediate(resolve));
+        assert.equal(f.calls.filter(call => call === 'quit').length, 1);
+    });
+}
+
+test('main quit also waits for bounded refresh cleanup after the original drains finish', async () => {
+    const refresh = pending();
+    const f = fixture(() => refresh.promise);
+    f.quit();
+    f.native.resolve(); f.kernel.resolve(); f.ready.resolve();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(f.calls.includes('quit'), false);
+    refresh.resolve();
     await new Promise(resolve => setImmediate(resolve));
     assert.equal(f.calls.filter(call => call === 'quit').length, 1);
 });

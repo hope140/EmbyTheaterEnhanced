@@ -119,6 +119,7 @@
     var unregisterStrmConfigIpc = function () {};
     var unregisterDiagnosticsIpc = function () {};
     var unregisterMaintenanceIpc = function () {};
+    var unregisterRefreshRate = function () { return Promise.resolve(); };
     var unregisterNativeHelperIpc = function () { return Promise.resolve(); };
     var unregisterMpvKernelIpc = function () {
         var pendingStore = mpvKernelStore;
@@ -486,17 +487,56 @@
 
         var protocol = electron.protocol;
         var customProtocol = 'electronrefreshrate';
+        var owners = new Set();
+        var accepting = true;
+        var shutdownPromise;
+
+        function release(owner) {
+            if (owner.completed && owner.exited) owners.delete(owner);
+        }
+
+        function confirmExit(owner) {
+            owner.exited = true;
+            if (owner.reapTimer != null) {
+                clearTimeout(owner.reapTimer);
+                owner.reapTimer = null;
+            }
+            owner.settleCleanup(true);
+            release(owner);
+        }
+
+        function terminate(owner) {
+            if (owner.exited || owner.terminating) return;
+            owner.terminating = true;
+            owner.reapTimer = setTimeout(function () {
+                owner.reapTimer = null;
+                // Keep the owner and safe exit/error listeners. A kill request
+                // does not prove that the process, or its side effect, ended.
+                owner.settleCleanup(false);
+            }, 1000);
+            try { owner.child.kill(); } catch (_) { /* Still quarantined until an observed exit. */ }
+        }
+
+        function complete(owner, value, stopChild) {
+            if (owner.completed) return;
+            owner.completed = true;
+            if (owner.deadlineTimer != null) {
+                clearTimeout(owner.deadlineTimer);
+                owner.deadlineTimer = null;
+            }
+            if (stopChild) terminate(owner);
+            release(owner);
+            owner.callback(value);
+        }
 
         protocol.registerStringProtocol(customProtocol, function (request, callback) {
-
+            var deadline = Date.now() + 5000;
             // Add 3 to account for ://
             var url = request.url.substr(customProtocol.length + 3).split('?')[0];
             var args = []
-            var completed = false;
-            function complete(value) {
-                if (completed) return;
-                completed = true;
-                callback(value);
+            if (!accepting || Array.from(owners).some(function (owner) { return owner.terminating && !owner.exited; })) {
+                callback("");
+                return;
             }
             switch (url) {
                 case 'list_possible':
@@ -513,35 +553,65 @@
                     args.push(request.url.split('=')[1])
                     break;
                 default:
-                    complete("");
+                    callback("");
                     return;
             }
 
             var { spawn } = require('child_process');
             var path = require('path');
 
-            var output = ''
-            if (process.platform === 'win32') {
-                try {
-                    var ls = spawn(path.join(__dirname, 'libmpv', process.arch, 'refreshrate.exe'), args);
-                    ls.stdout.on('data', (data) => {
-                        output += data.toString()
-                    });
-                    ls.on('error', function () {
-                        complete("");
-                    });
-
-                    ls.on('close', (data) => {
-                        complete(output)
-                    })
-                } catch (_) {
-                    complete("");
-                }
-            } else {
-                complete(output)
+            if (process.platform !== 'win32' || Date.now() >= deadline) {
+                callback("");
+                return;
             }
-
+            var child;
+            try { child = spawn(path.join(__dirname, 'libmpv', process.arch, 'refreshrate.exe'), args); }
+            catch (_) { callback(""); return; }
+            var owner = {child: child, callback: callback, completed: false, exited: false,
+                terminating: false, deadlineTimer: null, reapTimer: null};
+            owner.cleanup = new Promise(function (resolve) { owner.settleCleanup = resolve; });
+            owners.add(owner);
+            var output = '';
+            child.stdout.on('data', function (data) {
+                if (!owner.completed) output += data.toString();
+            });
+            child.on('exit', function () { confirmExit(owner); });
+            child.on('close', function () {
+                confirmExit(owner);
+                complete(owner, output, false);
+            });
+            child.on('error', function () {
+                // Failed spawn has no process to reap. An error on a spawned
+                // child alone is not evidence that the process has exited.
+                if (child.pid == null) confirmExit(owner);
+                complete(owner, "", !owner.exited);
+            });
+            owner.deadlineTimer = setTimeout(function () {
+                complete(owner, "", true);
+            }, Math.max(0, deadline - Date.now()));
         });
+
+        return function () {
+            if (shutdownPromise) return shutdownPromise;
+            accepting = false;
+            var resolveShutdown, rejectShutdown;
+            shutdownPromise = new Promise(function (resolve, reject) {
+                resolveShutdown = resolve;
+                rejectShutdown = reject;
+            });
+            var pending = Array.from(owners);
+            var errors = [];
+            pending.forEach(function (owner) {
+                try { complete(owner, "", true); }
+                catch (error) { errors.push(error); }
+                if (!owner.exited) terminate(owner);
+            });
+            Promise.all(pending.map(function (owner) { return owner.cleanup; })).then(function () {
+                if (errors.length) rejectShutdown(errors[0]);
+                else resolveShutdown();
+            });
+            return shutdownPromise;
+        };
     }
 
     function registerCec() {
@@ -1034,9 +1104,12 @@
         unregisterMaintenanceIpc();
         unregisterStrmConfigIpc();
         unregisterCd2Ipc();
+        var refreshShutdown;
+        try { refreshShutdown = unregisterRefreshRate(); }
+        catch (error) { refreshShutdown = Promise.reject(error); }
         var nativeShutdown = unregisterNativeHelperIpc();
         var kernelShutdown = unregisterMpvKernelIpc();
-        Promise.all([nativeShutdown, kernelShutdown, Promise.resolve(readyStartupPromise).catch(function () {})])
+        Promise.all([Promise.resolve(refreshShutdown).catch(function () {}), nativeShutdown, kernelShutdown, Promise.resolve(readyStartupPromise).catch(function () {})])
             .catch(function () {}).then(function () { app.quit(); });
     });
     ipcMain.on('enhanced-diagnostics', function (event, snapshot) {
@@ -1196,7 +1269,7 @@
             registerFileSystem();
             registerServerdiscovery();
             registerWakeOnLan();
-            registerFreshRate();
+            unregisterRefreshRate = registerFreshRate();
             registerCec();
             registerFile();
 

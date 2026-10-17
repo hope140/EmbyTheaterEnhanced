@@ -5,12 +5,14 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const test = require('node:test');
+const {FakeScheduler} = require('./fixtures/refresh-rate-lifecycle.cjs');
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'src/electronapp/plugins/libmpv.js'), 'utf8');
 
 // Case-sensitive Map-backed appSettings fixture; it is a test fixture, not a
 // substitute for Emby's loader or a real client configuration.
 function loadPlayer(refresh = {}) {
+  const clock = new FakeScheduler();
   const settings = new Map();
   const appSettings = {get: key => settings.has(key) ? settings.get(key) : undefined, set: (key, value) => settings.set(key, value)};
   let factory;
@@ -28,7 +30,8 @@ function loadPlayer(refresh = {}) {
     CustomEvent: function (name, options) { this.type = name; this.detail = options && options.detail; },
     window: {platform: 'win32', innerWidth: 1920, innerHeight: 1080, PlayerWindowId: 'fixture-window', ipc: {send: () => Promise.resolve()}},
     screen: {width: 1920, height: 1080},
-    setTimeout: callback => { callback(); return 1; },
+    Date: {now: () => clock.now},
+    setTimeout: clock.setTimeout.bind(clock), clearTimeout: clock.clearTimeout.bind(clock),
     document: {
       querySelector: () => null,
       body: {firstChild: null, insertBefore() {}},
@@ -78,6 +81,12 @@ function loadPlayer(refresh = {}) {
   const Player = factory(...modules);
   const instance = new Player();
   return {instance, settings, captured: playbackOptions, refreshRequests,
+    async settleDisplayChange(fps) {
+      const pending = instance._onEstimatedVfFpsChanged(fps);
+      for (let index = 0; index < 8; index++) await Promise.resolve();
+      clock.advance(3000);
+      return pending;
+    },
     setSubtitleAppearance(value) { subtitleAppearance = value; }};
 }
 
@@ -241,7 +250,7 @@ test('full AMD player assembles current video/audio settings from exact keys on 
 });
 
 test('display sync override selects only through synthetic refresh-rate fixtures', async () => {
-  const {instance, settings, refreshRequests} = loadPlayer({rates: '60;120;144', current: '60'});
+  const {instance, settings, refreshRequests, settleDisplayChange} = loadPlayer({rates: '60;120;144', current: '60'});
   settings.set('mpv-displaysync', 'true');
   settings.set('mpv-displaysync_override', '120;144');
   await instance.play({
@@ -252,7 +261,7 @@ test('display sync override selects only through synthetic refresh-rate fixtures
   assert.deepEqual(refreshRequests, [
     'electronrefreshrate://list_possible', 'electronrefreshrate://current'
   ], 'startup reads only synthetic list/current responses');
-  await instance._onEstimatedVfFpsChanged(24);
+  await settleDisplayChange(24);
   assert.deepEqual(refreshRequests, [
     'electronrefreshrate://list_possible', 'electronrefreshrate://current',
     'electronrefreshrate://change?rate=120'
@@ -279,7 +288,7 @@ test('display sync override selects only through synthetic refresh-rate fixtures
     mediaSource: {Path: 'default-rate-fixture.mkv', RunTimeTicks: 10000000, MediaStreams: []},
     url: 'default-rate-fixture.mkv', playMethod: 'DirectPlay', _etePlayRequestId: 1
   });
-  await noOverride.instance._onEstimatedVfFpsChanged(24);
+  await noOverride.settleDisplayChange(24);
   assert.ok(noOverride.refreshRequests.includes('electronrefreshrate://change?rate=120'),
     'empty override falls back to the first compatible synthetic rate');
 });

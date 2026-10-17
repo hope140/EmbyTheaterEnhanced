@@ -2,13 +2,13 @@
 
 ## 当前阶段与来源
 
-2026-10-17，当前为 `EVIDENCE_AND_SCOPE_REVIEW`。从已父验夜间文档 HEAD `e2b0eff8de31b51500af7adbf6e9e032cd4b5cb6` 建立独立本地分支 `codex/v038-display`，继承产品来源 `5341f32985aabefa03f789b1428d8dfa2be5ba06` 的菜单、刷新率 P1、诊断标签和 Movie 分块四项修正。本合同尚未批准新的产品实现；版本仍为 0.3.7。准确工作树、原始证据及恢复信息保存在被忽略的 `.work/V038_TASK_STATE.json`。
+2026-10-17，当前为 `A_LOCAL_TARGETED_PASS / B_DESIGN_REVIEW_REQUIRED`。从已父验夜间文档 HEAD `e2b0eff8de31b51500af7adbf6e9e032cd4b5cb6` 建立独立本地分支 `codex/v038-display`，继承产品来源 `5341f32985aabefa03f789b1428d8dfa2be5ba06` 的菜单、刷新率 P1、诊断标签和 Movie 分块四项修正。父审实际复核首个合同提交`adaad65`及独立复跑证据后，批准A限定实施；B只允许精确设计和有效失败用例。版本仍为0.3.7，尚无038候选。准确工作树、原始证据及恢复信息保存在被忽略的 `.work/V038_TASK_STATE.json`。
 
 本轮继续用户已授权、可独立验证的本地工作。真实显示硬件与人工验收缺少条件时单列，不阻塞其他独立工作。新增跨层异步实现先经父会话审核；本合同中的候选细节不自动变成已接受方案。
 
 ## 调用图与既有行为
 
-| 环节 | 当前实际入口 | 归属与需要保留的行为 |
+| 环节 | 基线实际入口 | 归属与需要保留的行为 |
 | --- | --- | --- |
 | Play 前置 | `libmpv.js` 的 `play` → `beginPlayRequest` → `playForRequest` → `displaySync` | 显示查询即使关闭 displaysync 仍执行，用于现有统计；查询后已有当前播放请求检查 |
 | 查询与变更 | `getRefreshRateList` / `getRefreshRate` / `setRefreshRate` → POST `electronrefreshrate` | 三个原动作、固定工具路径与合法结果形状保持；现有网络错误拒绝不能被悄悄吞掉 |
@@ -52,29 +52,35 @@
 
 既有全屏状态测试 11/11 通过，有限源码审查尚无新增确认缺陷。多屏、Mixed-DPI、HDR、实际显示器归属与物理刷新率行为为 NOT_VERIFIED；不运行旧可见 Win32 harness。
 
-## 待父审的最小修正方向
+## A已准范围与B待审方向
 
-### A 的候选技术合同
+### A 的批准技术合同与局部实现
 
-只改 main 刷新率工具生命周期、三个 XHR helper 及必要调用处与定向测试。候选不是新增公开协议或设置：
+只改 main 刷新率工具生命周期、三个 XHR helper 及必要调用处与定向测试；没有新增协议或设置：
 
 1. 每次原请求只完成一次；正常 close 保留 stdout，unknown/non-Windows/spawn-error 保留既有空结果。计时器和迟到事件都经过同一完成门。
 2. 工具无终态时有明确 deadline，失败只终止该次确认归属的 child；kill 请求和已观察退出分开。未确认退出时记录不确定状态，禁止继续发出可能重叠的显示写入，不把 kill 返回成功当作退出证据。
 3. main 退出先关闭新工具请求入口、完成所属 pending callback、尝试回收所属 child；接入原 before-quit Promise。没有显示 lease 的 main 清理不能冒称已恢复显示。
 4. XHR 监听 load/error/abort/timeout，以一次完成门清理所属 timer 和监听。超时先封闭结果再 abort，迟到回调不能重新提交。取消后的 Play 继续由原 request / AbortSignal 检查拒绝。
-5. helper 的正常解析与网络错误形状保持。显示查询失败不应无限阻塞播放；是否由 displaySync 在限定边界降级继续、并禁止该请求的自动切换，需要父审具体调用差异。
+5. helper 的正常解析与网络错误形状保持。displaySync只在显示探测边界降级继续，清该request自动切率资格与旧cache；原superseded、Resolver/Native错误仍沿原链。正常关闭同步功能时依旧查询统计。
 
-候选预算为工具 5000ms、终止确认窗口 1000ms、renderer 单请求及 Play 显示探测总预算 8000ms；原 FPS 稳定等待 3000ms 保留。5000ms 与现有 Native controller 默认请求上限一致，8000ms 与维护请求默认上限一致，均只是本轮技术上限候选，不是刷新率硬件耗时测量。1000ms 为新的有界清理假设；父审需要同时决定总预算扣减、排队时间计入和边界用例，未经审定不写入产品。
+批准预算为工具接收起绝对5000ms、另1000ms终止确认窗口、renderer单请求最多8000ms与Play显示探测整体8000ms；原FPS稳定等待3000ms保留。5000ms与8000ms来源为项目既有请求上限类比，1000ms为新的清理上限假设；父审批准的是技术界限，不是硬件耗时测量。list/current共用一个绝对deadline，剩余耗尽时不启动下一XHR；A尚无工具队列，后续若增加队列也必须从接收起扣减。
+
+main的5秒结果封口与另1秒退出观察，与renderer8秒结束本地等待是不同界限。较短renderer预算或AbortSignal只取消本地XHR；没有取消传输合同，不能声称main进程同时退出。未确认退出时保留owner及安全exit/error/close监听，阻止后续工具spawn；kill抛出、false或true都不替代退出证据。shutdown先关闭入口，单个callback异常在逐项资源处理后可拒绝共享Promise；before-quit单独隔离该拒绝，仍等待原Native/kernel/startup drain。
+
+renderer的`requestRefreshRate`是同文件内部helper，没有新模块/构建输入；三个旧函数只传原动作并保留解析值和onerror原对象。FPS调用连接原request signal；请求失败后只允许仍current的owner解除其原暂停，禁后续自动变更并报告固定事件。destroy原fire-and-forget恢复只补rejection处理及已知rate检查，避免新有界失败形成unhandled或从undefined推断应恢复；仍未await恢复、未实现B的lease。成功路径的3000ms与原播放/Native/Session链保持。
+
+新增生命周期25项以精确`adaad65`源码复跑，其中原22项4通过/18失败，另3项0通过/3失败；完整AMD初始14项修前4通过/10失败，后补调用错误及未知状态边界，当前20项。最终相关集合104/104通过，包含原协议/设置/全屏、shutdown及Native/字幕相邻回归。A首轮实现额外捕获并修正迟到timeout重复abort、shutdown拒绝触发Promise.all提前退出两条问题，修前失败与夹具尝试保持。只使用所属惰性Node假子进程的Windows实测确认2次close、残留0；未运行真实RefreshRate或Native Helper，未写显示设置。
 
 ### B 的候选归属约束
 
 - 同一显示目标的读、change 与恢复不能产生无归属的并行写入；同 owner 重复 FPS 合并，旧请求在队列执行前和每个 await 后检查归属。
 - 已发出的物理 change 不能仅因 renderer request 退休而视为已取消。先确认工具结束及当前状态，再让终止恢复或新 owner 继续；禁止旧回复回写新播放的统计或 unpause。
 - 恢复只针对实际确认改变且仍持有的状态。恢复前读取当前状态；与最后确认应用值不一致时保留后来的外部设置并释放旧归属。不可观测的相同值外部写入不能证明没有发生，必须注明限制。
-- 新 Play 的优先级高于旧未开始的恢复；已经开始的物理操作必须结束后再接管。terminal Stop 需要在自己的恢复结束或有限失败后完成，不能让迟到旧 change 跨过完成边界。
+- 新 Play 的优先级高于旧未开始的恢复；已经开始的物理操作必须先处理归属。terminal Stop有界结束；只有已确认工具结束的路径才能承诺旧变更不跨完成边界，未确认退出的物理副作用保持UNKNOWN。
 - 设置关闭后的恢复应按是否持有实际 lease 判断，不能直接用开关值推断。应用退出若没有可靠的现有 renderer teardown 路径，先报告缺口并交父审；不自行增加 Native/IPC 或认证协议。
 
-以上是验收约束；具体串行、继承/释放 lease 与 shutdown 接线待复现和父审后固化，尚未批准重写播放/恢复状态机。
+以上是验收约束；准确字段、函数挂接、完成/错误状态及跨实例负控见[显示归属设计审查](V038_DISPLAY_OWNERSHIP_REVIEW.md)。B尚未准实施，不重写播放/恢复状态机。
 
 供父审选择的局部实现形状为 adapter 内单条 refresh 操作队列与一个非持久 lease，而不是新增播放生命周期：队列中的读写使用原三个协议动作；排队前、执行前和每个await后核对原 request 与局部显示代次。同owner FPS保留最新一个待执行目标；稳定等待仍在原请求下执行且退休可结束等待，不让旧timer占用新owner的unpause权。
 
@@ -97,4 +103,4 @@
 3. 适用的请求/Session、Native lifecycle、settings 与既有全屏回归。模拟窗口通过只代表状态模型，不替代多屏或硬件。
 4. 具体实现父审后再运行最终公开/固定材料门禁、准确 sourceCommit 构建、隐藏组件和入口、provenance 与完整 runtime/payload/ZIP 回读；产品来源与后续文档 HEAD 分开。
 
-当前尚无新增产品修正或 0.3.8 runtime。原候选、profile、失败记录及已发布 0.3.7 资产保持。
+当前A局部实现和相关验证完成，最终公开门禁另记录；B产品修改尚未开始，没有0.3.8 runtime。原候选、profile、失败记录及已发布0.3.7资产保持。

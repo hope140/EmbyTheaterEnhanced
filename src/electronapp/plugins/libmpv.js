@@ -796,7 +796,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                     await embyRouter.showVideoOsd()
                     assertCurrentPlayRequest(request);
                 }
-                await displaySync();
+                await displaySync(request);
                 assertCurrentPlayRequest(request);
                 await createMediaElement(options);
                 assertCurrentPlayRequest(request);
@@ -1445,7 +1445,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
         self._onEstimatedVfFpsChanged = async function (fps) {
             var ownerRequest = activePlayRequest;
-            if (appSettings.get('mpv-displaysync') === 'true' && refreshRates && fps) {
+            if (ownerRequest && ownerRequest.displaySyncReady && appSettings.get('mpv-displaysync') === 'true' && refreshRates && fps) {
                 if ((window.innerWidth == screen.width) && (screen.height == window.innerHeight)) {
                     var calc = calcRefreshRate(refreshRates, fps)
                     var pos = []
@@ -1460,7 +1460,17 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                     var newRate = pos[0] ? pos[0] : calc[0]
                     if (newRate && newRate != curRefreshRate && isCurrentPlayRequest(ownerRequest)) {
                         self.pause()
-                        curRefreshRate = await setRefreshRate(newRate)
+                        try {
+                            curRefreshRate = await setRefreshRate(newRate, {signal: ownerRequest.controller.signal});
+                        } catch (_) {
+                            if (isCurrentPlayRequest(ownerRequest)) {
+                                ownerRequest.displaySyncReady = false;
+                                curRefreshRate = undefined;
+                                emitClientDiagnostic('warn', 'display', 'display-change-unavailable', requestDiagnosticDetails(ownerRequest));
+                                self.unpause();
+                            }
+                            return;
+                        }
                         await new Promise(r => setTimeout(r, 3000));
                         if (isCurrentPlayRequest(ownerRequest)) self.unpause()
                     }
@@ -1508,8 +1518,10 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
             appSettings.set('mpv-volume', playerState.volume);
 
-            if (orgRefreshRate != curRefreshRate) {
-                setRefreshRate(orgRefreshRate)
+            if (orgRefreshRate != null && curRefreshRate != null && orgRefreshRate != curRefreshRate) {
+                setRefreshRate(orgRefreshRate).catch(function () {
+                    emitClientDiagnostic('warn', 'display', 'display-restore-unavailable', {});
+                });
             }
 
             var dlg = videoDialog;
@@ -2022,11 +2034,34 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             });
         }
 
-        async function displaySync() {
-            refreshRates = await getRefreshRateList()
-            curRefreshRate = await getRefreshRate()
-            if (orgRefreshRate == null) {
-                orgRefreshRate = curRefreshRate
+        async function displaySync(request) {
+            var deadline = Date.now() + 8000;
+            assertCurrentPlayRequest(request);
+            request.displaySyncReady = false;
+            try {
+                var options = {signal: request.controller.signal, deadline: deadline};
+                var rates = await getRefreshRateList(options);
+                assertCurrentPlayRequest(request);
+                var rate = await getRefreshRate(options);
+                assertCurrentPlayRequest(request);
+                if (!rates || !rates.length || !Number.isFinite(Number(rate)) || Number(rate) <= 0) {
+                    var unavailable = new Error('Display probe returned no usable rate');
+                    unavailable.name = 'RefreshRateUnavailable';
+                    throw unavailable;
+                }
+                refreshRates = rates;
+                curRefreshRate = rate;
+                if (orgRefreshRate == null) orgRefreshRate = rate;
+                request.displaySyncReady = true;
+            } catch (error) {
+                // Cancellation still retires the original Play. Only optional
+                // display discovery is allowed to fail open into native playback.
+                assertCurrentPlayRequest(request);
+                refreshRates = undefined;
+                curRefreshRate = undefined;
+                emitClientDiagnostic('warn', 'display', 'display-probe-unavailable', Object.assign(requestDiagnosticDetails(request), {
+                    reason: error && error.name === 'RefreshRateTimeout' ? 'timeout' : 'probe-failed'
+                }));
             }
         }
 
@@ -2034,54 +2069,87 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             return rates.filter((rate) => rate % Math.round(fps) === 0)
         }
 
-        function getRefreshRateList() {
-            return new Promise((resolve, reject) => {
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', 'electronrefreshrate://list_possible')
-                xhr.onload = function () {
-                    if (this.response) {
-                        resolve(this.response.split(';'))
-                    } else {
-                        resolve()
-                    }
+        function requestRefreshRate(action, options) {
+            options = options || {};
+            var deadline = Date.now() + 8000;
+            if (Number.isFinite(options.deadline)) deadline = Math.min(deadline, options.deadline);
+            return new Promise(function (resolve, reject) {
+                var xhr, timer;
+                var completed = false;
+                var signal = options.signal;
+
+                function finish(failed, value) {
+                    if (completed) return;
+                    completed = true;
+                    if (timer != null) clearTimeout(timer);
+                    if (signal) signal.removeEventListener('abort', abort);
+                    if (xhr) xhr.onload = xhr.onerror = xhr.onabort = xhr.ontimeout = null;
+                    if (failed) reject(value);
+                    else resolve(value);
                 }
-                xhr.onerror = reject;
-                xhr.send();
-            })
+                function abortXhr() {
+                    try { if (xhr) xhr.abort(); } catch (_) { /* Local settlement already owns the outcome. */ }
+                }
+                function abort() {
+                    if (completed) return;
+                    var error = new Error('Display request was cancelled');
+                    error.name = 'RefreshRateAbort';
+                    finish(true, error);
+                    abortXhr();
+                }
+                function timeout() {
+                    if (completed) return;
+                    var error = new Error('Display request exceeded its deadline');
+                    error.name = 'RefreshRateTimeout';
+                    finish(true, error);
+                    abortXhr();
+                }
+
+                if (signal && signal.aborted) { abort(); return; }
+                if (Date.now() >= deadline) { timeout(); return; }
+                try {
+                    xhr = new XMLHttpRequest();
+                    if (signal) signal.addEventListener('abort', abort, {once: true});
+                    xhr.open('POST', 'electronrefreshrate://' + action);
+                    if (completed) return;
+                    xhr.onload = function () {
+                        if (completed) return;
+                        if (Date.now() >= deadline) { timeout(); return; }
+                        var value;
+                        if (xhr.response) {
+                            if (action === 'list_possible') value = xhr.response.split(';');
+                            else {
+                                var match = xhr.response.match(/.*?(\d+)/);
+                                value = match ? match[1] : undefined;
+                            }
+                        }
+                        finish(false, value);
+                    };
+                    xhr.onerror = function (error) { finish(true, error); };
+                    xhr.onabort = function (error) { finish(true, error); };
+                    xhr.ontimeout = timeout;
+                    var remaining = deadline - Date.now();
+                    if (remaining <= 0) { timeout(); return; }
+                    xhr.timeout = remaining;
+                    timer = setTimeout(timeout, remaining);
+                    if (!completed) xhr.send();
+                } catch (error) {
+                    finish(true, error);
+                    abortXhr();
+                }
+            });
         }
 
-        function getRefreshRate() {
-            return new Promise((resolve, reject) => {
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', 'electronrefreshrate://current')
-                xhr.onload = function () {
-                    if (this.response) {
-                        var mat = this.response.match(/.*?(\d+)/)
-                        resolve(mat ? mat[1] : undefined)
-                    } else {
-                        resolve()
-                    }
-                }
-                xhr.onerror = reject;
-                xhr.send();
-            })
+        function getRefreshRateList(options) {
+            return requestRefreshRate('list_possible', options);
         }
 
-        function setRefreshRate(rate) {
-            return new Promise((resolve, reject) => {
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', `electronrefreshrate://change?rate=${rate}`)
-                xhr.onload = function () {
-                    if (this.response) {
-                        var mat = this.response.match(/.*?(\d+)/)
-                        resolve(mat ? mat[1] : undefined)
-                    } else {
-                        resolve()
-                    }
-                }
-                xhr.onerror = reject;
-                xhr.send();
-            })
+        function getRefreshRate(options) {
+            return requestRefreshRate('current', options);
+        }
+
+        function setRefreshRate(rate, options) {
+            return requestRefreshRate('change?rate=' + rate, options);
         }
 
     }

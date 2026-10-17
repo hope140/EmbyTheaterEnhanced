@@ -6,6 +6,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const {EventEmitter} = require('node:events');
 const {namedFunction} = require('./fixtures/settings-menu-routes.cjs');
+const {FakeScheduler} = require('./fixtures/refresh-rate-lifecycle.cjs');
 const root = path.resolve(__dirname, '..');
 const main = fs.readFileSync(path.join(root, 'src/electronapp/main.js'), 'utf8');
 const player = fs.readFileSync(path.join(root, 'src/electronapp/plugins/libmpv.js'), 'utf8');
@@ -13,10 +14,12 @@ const device = String.raw`\\.\DISPLAY1`;
 
 function protocol(options = {}) {
     let handler, child;
+    const clock = new FakeScheduler();
     const spawns = [], replies = [];
     vm.runInNewContext(namedFunction(main, 'registerFreshRate') + '\nregisterFreshRate();', {
         electron: {protocol: {registerStringProtocol: (_name, value) => {handler = value;}}},
         process: {platform: options.platform || 'win32', arch: 'x64'}, __dirname: '/synthetic-app',
+        Date: {now: () => clock.now}, setTimeout: clock.setTimeout.bind(clock), clearTimeout: clock.clearTimeout.bind(clock),
         require: name => {
             if (name === 'path') return path;
             assert.equal(name, 'child_process');
@@ -82,9 +85,11 @@ test('non-Windows refresh request keeps the empty non-spawning path', () => {
 for (const name of ['getRefreshRate', 'setRefreshRate']) {
     function request() {
         let xhr;
+        const clock = new FakeScheduler();
         const call = name === 'getRefreshRate' ? '()' : '(60)';
-        const promise = vm.runInNewContext(namedFunction(player, name) + '\n' + name + call, {
+        const promise = vm.runInNewContext(namedFunction(player, 'requestRefreshRate') + '\n' + namedFunction(player, name) + '\n' + name + call, {
             Promise,
+            Date: {now: () => clock.now}, setTimeout: clock.setTimeout.bind(clock), clearTimeout: clock.clearTimeout.bind(clock),
             XMLHttpRequest: class {
                 constructor() {xhr = this;}
                 open(method, url) {this.method = method; this.url = url;}

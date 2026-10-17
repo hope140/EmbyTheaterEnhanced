@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-17 v0.3.8 A局部实施与B归属设计
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置；GPT-6 Luna High两个worker限定新增生命周期及完整AMD测试，一个worker只读跨实例归属库存；Reason: A已父准的main/XHR有界生命周期，主线程保留异步和shutdown最终判断；Escalated: No。A产品只改main.js/libmpv.js原入口与必要调用，无新产品helper文件、依赖、协议或Native变更。
+
+工具5000+1000与XHR/Play总8000预算按父准落地；未退出保留隔离，shutdown拒绝单独隔离，原Native/kernel/startup drain继续。显示失败只在displaySync降级，旧Play取消仍superseded；FPS失败清资格并只允许current解除其原暂停，原成功3000ms保留，恢复未await仅catch/已知值检查，B语义未实施。原22生命周期修前4/22、额外3项0/3，AMD初始14项4/14；最终相关104/104通过。新增测试暴露迟到timeout二次abort及首轮shutdown fail-fast，修前日志保留。Windows所属惰性Node子进程2次close、残留0；未执行RefreshRate/真实Native/前台/显示设置。最终公开验证另记准确来源。
+
+B设计基于实际固定Web构造/重载库存及固定Electron44.4.2 ProtocolRequest文档，不能证明生产跨renderer singleton；[设计审查](V038_DISPLAY_OWNERSHIP_REVIEW.md)列出全局物理队列、局部lease字段/挂接/状态和不能保证跨实例接管的缺口。只设计及补失败探针，未把A局部门禁计作最终038候选验收。
+
 ## 2026-10-17 v0.3.8 显示兼容证据与首个合同停点
 
 Model Tier: Tier 2；Model: 主线程沿用当前用户配置，精确标识未暴露；三个 GPT-6 Luna High worker 仅收集工具/XHR、完整AMD归属竞争及映射/窗口证据；Reason: 跨main工具与renderer显示异步，产品实现前固化调用图和父审边界；Escalated: No。隔离分支codex/v038-display精确基于e2b0eff，旧树/profile/候选保持。
