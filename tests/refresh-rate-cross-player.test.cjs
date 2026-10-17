@@ -274,7 +274,13 @@ test('two complete AMD players serialize refresh changes through one main handle
   await flushMicrotasks();
   assert.equal(h.physicalDisplay, '60');
 
-  await h.shutdown;
+  await h.shutdown();
+  assert.equal(h.clock.jobs.size, 0, 'fixture cleanup leaves no owned timer');
+  const childCountAtShutdown = h.children.length;
+  let closedReply;
+  h.requestMain('electronrefreshrate://current', value => {closedReply = value;});
+  assert.equal(closedReply, '', 'actual shutdown closed the tool request entry');
+  assert.equal(h.children.length, childCountAtShutdown);
 });
 
 test('a queued cross-player change expires at its receive-time deadline without spawning', async () => {
@@ -321,5 +327,6 @@ test('a queued cross-player change expires at its receive-time deadline without 
   assert.ok(endpointA.commands.some(command => Array.isArray(command) && command[0] === 'loadfile'));
   assert.ok(endpointB.commands.some(command => Array.isArray(command) && command[0] === 'loadfile'));
   h.finishChild(quarantinedChild, '');
-  await h.shutdown;
+  await h.shutdown();
+  assert.equal(h.clock.jobs.size, 0, 'confirmed child cleanup leaves no owned timer');
 });
