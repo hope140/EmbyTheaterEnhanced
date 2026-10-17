@@ -72,6 +72,14 @@ B1可独立闭合 main 的物理串行。B2的局部 token 无法告诉 main“�
 
 同值外部设置、读到写之间的外部竞争、真实目标显示器、进程未确认退出后的物理副作用与 renderer 销毁后的完整 app-exit 恢复均未闭合。单元/AMD结果不替代这些证据。
 
+### 已运行的跨实例负控
+
+本轮使用两组独立完整AMD renderer realm，每组共用一个真实抽取的main registerFreshRate闭包、假child/XHR与同一可控时钟，2个场景/83条trace复现。两场景均明确为产品期望FAIL，脚本REPRODUCED只表示复现符合预期。
+
+第一组A1/B1正常Play后，两次change分别对应同一main的child5/6，同时live；这为B1提供有效修前失败。第二组A2从60切120并确认，B2随后Play读到120；此时物理120且A最后确认120，局部比较守卫本应通过，但A的destroy仍恢复60。B没有收到退休调用，stats保持120，后续24fps目标120被缓存抑制。这直接说明“当前值等于A.lastApplied”不足以证明B没有接管同值。
+
+探针在A修改工作区启动，其两源码raw SHA与后续提交`4a7ab920b14551f997c3173ad95171e62dd52252`的工作区字节一致；原回执checkoutHead仍为启动时adaad65，不改写历史。测试Native endpoint为各adapter独立合成句柄，生产main可能复用endpoint；此夹具只证明显示adapter/main边界反例，不宣称完整真实多adapter播放拓扑可达或已验收。
+
 ## 待审核的有效用例
 
 - B1 main FIFO：两种 action及跨调用者不重叠；首项工具结束才启动次项；队列项5000ms到期不spawn；退出前迟到stdout；callback throw后继续pump；quarantine、late exit释放、shutdown取消排队项。
