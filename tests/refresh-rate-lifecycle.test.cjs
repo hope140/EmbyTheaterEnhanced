@@ -121,14 +121,14 @@ test('shutdown settles each pending request, blocks new spawns, and is bounded',
     const stopped = shutdown();
     assert.strictEqual(shutdown(), stopped);
     fixture.invoke('change?rate=60');
-    assert.equal(fixture.spawns.length, 2);
+    assert.equal(fixture.spawns.length, 1);
     assert.deepEqual(fixture.replies.map(reply => reply.value), ['', '', '']);
-    assert.deepEqual(fixture.children.map(child => child.killCalls.length), [1, 1]);
+    assert.deepEqual(fixture.children.map(child => child.killCalls.length), [1]);
 
     fixture.scheduler.advance(1000);
     await stopped;
     fixture.invoke('current');
-    assert.equal(fixture.spawns.length, 2);
+    assert.equal(fixture.spawns.length, 1);
 });
 
 test('one shutdown callback exception does not prevent cleanup of other pending requests', async () => {
@@ -138,7 +138,7 @@ test('one shutdown callback exception does not prevent cleanup of other pending 
     fixture.invoke('list_possible');
     const stopped = fixture.shutdown();
     assert.deepEqual(fixture.replies.map(reply => reply.value), ['', '']);
-    assert.deepEqual(fixture.children.map(child => child.killCalls.length), [1, 1]);
+    assert.deepEqual(fixture.children.map(child => child.killCalls.length), [1]);
     fixture.children.forEach(child => child.emit('close', 0));
     await assert.rejects(stopped, error => error === failure);
 });

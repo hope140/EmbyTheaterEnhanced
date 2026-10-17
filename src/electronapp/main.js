@@ -488,11 +488,21 @@
         var protocol = electron.protocol;
         var customProtocol = 'electronrefreshrate';
         var owners = new Set();
+        var pendingOwners = [];
+        var runningOwner = null;
+        var pumping = false;
         var accepting = true;
         var shutdownPromise;
 
         function release(owner) {
-            if (owner.completed && owner.exited) owners.delete(owner);
+            if (owner.completed && owner.exited) {
+                owners.delete(owner);
+                if (runningOwner === owner) runningOwner = null;
+            }
+        }
+
+        function quarantined() {
+            return Array.from(owners).some(function (owner) { return owner.terminating && !owner.exited; });
         }
 
         function confirmExit(owner) {
@@ -503,6 +513,7 @@
             }
             owner.settleCleanup(true);
             release(owner);
+            pump();
         }
 
         function terminate(owner) {
@@ -524,9 +535,59 @@
                 clearTimeout(owner.deadlineTimer);
                 owner.deadlineTimer = null;
             }
-            if (stopChild) terminate(owner);
+            var queuedIndex = pendingOwners.indexOf(owner);
+            if (queuedIndex >= 0) pendingOwners.splice(queuedIndex, 1);
+            if (!owner.child) {
+                owner.exited = true;
+                owner.settleCleanup(true);
+            } else if (stopChild) terminate(owner);
+            var callbackError;
+            try { owner.callback(value); } catch (error) { callbackError = error; }
             release(owner);
-            owner.callback(value);
+            try { pump(); } catch (error) { if (!callbackError) callbackError = error; }
+            if (callbackError) throw callbackError;
+        }
+
+        function start(owner) {
+            // Receiving, queuing and execution share the original deadline.
+            if (Date.now() >= owner.deadline) { complete(owner, "", false); return; }
+            runningOwner = owner;
+            var child;
+            try { child = owner.spawn(owner.file, owner.args); }
+            catch (_) {
+                confirmExit(owner);
+                complete(owner, "", false);
+                return;
+            }
+            owner.child = child;
+            var output = '';
+            child.stdout.on('data', function (data) {
+                if (!owner.completed) output += data.toString();
+            });
+            child.on('exit', function () { confirmExit(owner); });
+            child.on('close', function () {
+                confirmExit(owner);
+                complete(owner, Date.now() >= owner.deadline ? "" : output, false);
+            });
+            child.on('error', function () {
+                if (child.pid == null) confirmExit(owner);
+                complete(owner, "", !owner.exited);
+            });
+        }
+
+        function pump() {
+            if (pumping) return;
+            pumping = true;
+            var firstError;
+            try {
+                while (accepting && !runningOwner && !quarantined() && pendingOwners.length) {
+                    var owner = pendingOwners.shift();
+                    if (owner.completed) continue;
+                    try { start(owner); }
+                    catch (error) { if (!firstError) firstError = error; }
+                }
+            } finally { pumping = false; }
+            if (firstError) throw firstError;
         }
 
         protocol.registerStringProtocol(customProtocol, function (request, callback) {
@@ -534,7 +595,7 @@
             // Add 3 to account for ://
             var url = request.url.substr(customProtocol.length + 3).split('?')[0];
             var args = []
-            if (!accepting || Array.from(owners).some(function (owner) { return owner.terminating && !owner.exited; })) {
+            if (!accepting || quarantined()) {
                 callback("");
                 return;
             }
@@ -564,31 +625,16 @@
                 callback("");
                 return;
             }
-            var child;
-            try { child = spawn(path.join(__dirname, 'libmpv', process.arch, 'refreshrate.exe'), args); }
-            catch (_) { callback(""); return; }
-            var owner = {child: child, callback: callback, completed: false, exited: false,
-                terminating: false, deadlineTimer: null, reapTimer: null};
+            var owner = {child: null, callback: callback, completed: false, exited: false,
+                terminating: false, deadlineTimer: null, reapTimer: null, deadline: deadline,
+                spawn: spawn, file: path.join(__dirname, 'libmpv', process.arch, 'refreshrate.exe'), args: args};
             owner.cleanup = new Promise(function (resolve) { owner.settleCleanup = resolve; });
             owners.add(owner);
-            var output = '';
-            child.stdout.on('data', function (data) {
-                if (!owner.completed) output += data.toString();
-            });
-            child.on('exit', function () { confirmExit(owner); });
-            child.on('close', function () {
-                confirmExit(owner);
-                complete(owner, Date.now() >= deadline ? "" : output, false);
-            });
-            child.on('error', function () {
-                // Failed spawn has no process to reap. An error on a spawned
-                // child alone is not evidence that the process has exited.
-                if (child.pid == null) confirmExit(owner);
-                complete(owner, "", !owner.exited);
-            });
+            pendingOwners.push(owner);
             owner.deadlineTimer = setTimeout(function () {
                 complete(owner, "", true);
             }, Math.max(0, deadline - Date.now()));
+            pump();
         });
 
         return function () {
