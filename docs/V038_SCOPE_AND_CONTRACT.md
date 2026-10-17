@@ -2,7 +2,7 @@
 
 ## 当前阶段与来源
 
-2026-10-17，当前为 `A_B1_SOURCE_REVIEWED / NARROW_DESIGN_REVIEW_REQUIRED`。从已父验夜间文档 HEAD `e2b0eff8de31b51500af7adbf6e9e032cd4b5cb6` 建立独立本地分支 `codex/v038-display`，继承产品来源 `5341f32985aabefa03f789b1428d8dfa2be5ba06` 的四项修正。父审批准A及B1限定实施并实际审过产品来源`311e36690c2eff5ea014d98878d4899b0d82f587`，独立相关14/14通过；B2完整lease未准实施，后续只准备[窄子项审查](V038_NARROW_DISPLAY_REVIEW.md)。版本仍0.3.7，尚无038候选。准确工作树、原始证据及恢复信息保存在被忽略的 `.work/V038_TASK_STATE.json`。
+2026-10-17，当前为 `N1_LOCAL_TARGETED_PASS / N2_PARENT_REVIEW_PENDING`。从已父验夜间文档HEAD `e2b0eff8de31b51500af7adbf6e9e032cd4b5cb6`建立独立本地分支`codex/v038-display`，继承四项修正。A+B1来源311e366已实际父审；N1-v2形状后获父准并局部落实为`c64923c891d07c947c62e28f6d3efdddeac541a4`，相关70/70通过。N2及完整B2 lease未应用，具体状态见[窄子项审查](V038_NARROW_DISPLAY_REVIEW.md)。版本仍0.3.7，尚无038候选。准确工作树和证据入口保存在被忽略的`.work/V038_TASK_STATE.json`。
 
 本轮继续用户已授权、可独立验证的本地工作。真实显示硬件与人工验收缺少条件时单列，不阻塞其他独立工作。新增跨层异步实现先经父会话审核；本合同中的候选细节不自动变成已接受方案。
 
@@ -109,4 +109,4 @@ renderer的`requestRefreshRate`是同文件内部helper，没有新模块/构建
 3. 适用的请求/Session、Native lifecycle、settings 与既有全屏回归。模拟窗口通过只代表状态模型，不替代多屏或硬件。
 4. 具体实现父审后再运行最终公开/固定材料门禁、准确 sourceCommit 构建、隐藏组件和入口、provenance 与完整 runtime/payload/ZIP 回读；产品来源与后续文档 HEAD 分开。
 
-当前A+B1局部实现、上述门禁及源码父审通过，N1/N2精确diff进入下个父审停点；均未应用，没有完整B2 lease或0.3.8 runtime。原候选、profile、失败记录及已发布0.3.7资产保持。
+当前A+B1门禁及源码父审通过，N1已按已审v2形状局部实施并通过70项相关验证；N2未应用，包含不可用restore回包诊断的N1窄rebase草案继续父审。最终组合范围收敛后再更新版本与完整门禁；没有完整B2 lease或0.3.8 runtime。原候选、profile、失败记录及已发布0.3.7资产保持。

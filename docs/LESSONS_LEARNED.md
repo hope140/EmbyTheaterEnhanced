@@ -1,5 +1,9 @@
 # 维护注意事项
 
+- async drain的owner应在内部finally中同步释放，再让共享Promise结算。只在外层Promise.finally清理会留下微任务窗口，新事件可能附着到已结束work并丢失pending。回归应从实际endpoint完成出口排微任务，不能用同步重入替代该窗口。
+
+- 同一回归更换被测源码时保持目标断言一致，显式输入只切换源码。公开测试默认不依赖私有草案或写私有回执；修前、草案、产品输出由外层按不同文件名保存。暂停计数区分原Native Play的pause:false与增强任务的解暂停。
+
 - 绝对deadline不仅用timer执行顺序保证。事件循环阻塞后close/load可先于已经到期的timer到达，提交结果与获得执行槽时都应核当前绝对时间；用只推进Date.now但不调度timer的用例覆盖，不能只靠advance先跑timeout。
 
 - 固定材料齐备后，依赖prepared preload的测试还须先走原prepare-preload生成关系。require时缺生成文件属于测试输入缺口，不能计作有效断言失败后修复或跳过；保留原失败，补实体后独立复验。

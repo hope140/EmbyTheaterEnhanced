@@ -2,7 +2,7 @@
 
 ## 来源与状态
 
-基于产品来源`311e36690c2eff5ea014d98878d4899b0d82f587`，当前`NARROW_DESIGN_REVIEW_REQUIRED`。A及B1的已准修正与本候选分开；本文件只提交两个独立小方案，没有实施完整B2 lease。准确的独立最小diff及完整候选源码保存在本任务私有narrow-drafts目录，只做语法检查，均为`DRAFTS_NOT_APPLIED / runtimeBehavior NOT_EXECUTED`。
+当前为`N1_LOCAL_TARGETED_PASS / N2_PARENT_REVIEW_PENDING`。N1-v2形状已获父审批准，并在产品来源`c64923c891d07c947c62e28f6d3efdddeac541a4`局部实施；N2及完整B2 lease未实施。A+B1的已父验来源311e366与N1新来源分开，原草案与修前记录保留，不改写历史草案为产品PASS。
 
 完整AMD修前探针在此来源重新绑定renderer raw SHA `7e2d5ce3538de9f9839ebb86980f1d6cc159979482e40b8e470d74c0c7fc65a1`，8个场景、292条trace。探针执行成功表示准确复现现状，不是候选实现通过。N2的pre-destroy current观测为夹具控制的输入；原destroy尚未读取它，不能冒称产品守卫已运行。
 
@@ -36,7 +36,11 @@ Observed：同FPS在首回包前重复发两个120请求；不同FPS在首回包
 
 候选承诺仅是本实例任务单飞和latest合并，不提供跨renderer lease。原Play/Stop/Native/Session和恢复语义保持；B1的5秒排队期限与不确定进程隔离仍有效。没有新timeout或缓存策略。
 
-验收应把“已发送的首目标”与“work微任务启动前合并”分别覆盖：同/不同FPS突发、处理中多次更新只保留最后目标、相同目标不重复change、每个实际成功change后3000ms、等待中Stop/Next即清所属timer、旧回复不回写新cur/不unpause、收口微任务边界的新FPS不丢失、失败/空结果清资格，以及两个adapter仍共享B1物理槽。当前待审N1为v2草案，先前外层finally草案保留但已被本候选替代；这只是设计修订，未实施产品。
+验收把“已发送的首目标”与“work微任务启动前合并”分别覆盖：同/不同FPS突发、处理中多次更新只保留最后目标、相同目标不重复change、每个实际成功change后3000ms、等待中Stop/Next即清所属timer、旧回复不回写新cur/不unpause、收口微任务边界的新FPS不丢失、失败/空结果清资格，以及两个adapter仍共享B1物理槽。c64923c与已审v2草案仅有括号、缩进及注释差异，没有实施旧外层finally方案。
+
+同一最终测试在精确311源码上分别为1/9与4/9通过，在实际N1产品均为9/9；另有相邻Native/字幕25项和既有Play/settings/两adapter27项，合计70/70通过。父自有未应用草案9行对照通过，属于设计证据，未计入产品70项。
+
+关键收口用例在真实endpoint pause:false出口排queueMicrotask，确认旧drain共享Promise尚在结算时新FPS取得不同work并发送新目标。原311源码在该用例本来也通过；同一用例对旧未应用外层finally草案失败，验证能捕捉这类回归。成功稳定等待同时检查2999ms不恢复、3000ms恢复，测试自身有2000ms wall timeout防无界挂起。测试默认只读实际产品，显式输入只替换被测源，目标断言不随来源变化。
 
 ## N2：恢复前已观测第三值的守卫
 
@@ -57,8 +61,10 @@ Observed：本实例曾从60改120；夹具可读取当前144，但现destroy仍
 
 “未知current时不写”是本候选明确的安全失败选择，待父审，不是已实施行为。helper没有恢复后再读确认，沿原恢复语义仍不向调用者宣告恢复成功。org仍为旧初始快照；本子项没有解决首次实际change的lease捕获或跨adapter的同值接管。读到写的TOCTOU、用户同值外部写、另一个adapter同值接管及完整app-exit恢复仍为限制。
 
+为避免从旧完整候选回写时丢失N1，另保存基于c64923c的窄rebase v2草案，仍未应用、仅语法检查；它保留N1，并对restore change的空/非正数/与original不符回包增加固定unavailable诊断，没有新增恢复后回读、重试或成功声明。该诊断修订仍待N2矩阵及父审，不能计为产品已修。
+
 验收矩阵包括第三值跳过、同值保留、error/empty/0/timeout无写且分开诊断、新本实例Play退休旧未发恢复、query已耗尽预算不再发change、恢复拒绝已捕获、destroy/Native返回不受这次查询阻塞。两个adapter同值接管反例仍保留，不把第三值guard当作完整lease修复。
 
 ## 允许差异与审核停点
 
-两份候选各自只涉及`src/electronapp/plugins/libmpv.js`和必要相邻AMD测试；N1与N2可独立接受或拒绝，不能借合批扩张成完整B2状态机。当前只保存独立未应用diff、语法检查与真实修前证据；没有候选修后或真实硬件PASS。必须父审具体diff、字段/挂接和失败选择后才能改产品。
+N1只涉及`src/electronapp/plugins/libmpv.js`与两份完整AMD回归，已按父准形状实施并完成上述局部验证。N2仍只保存未应用diff、语法检查与修前事实，需独立父审才能改产品；不能借合批扩张成完整B2状态机。最终版本及全量门禁等待组合范围收敛，未开展真实硬件或新候选runtime验收。

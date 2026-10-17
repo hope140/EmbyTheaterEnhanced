@@ -2,7 +2,7 @@
 
 ## 审查状态与事实
 
-当前为`B1_LOCAL_TARGETED_PASS / B2_NARROW_DESIGN_REVIEW_REQUIRED`。父审d8c7ad2后批准B1全局物理FIFO，已在产品来源311e366实施；B2完整lease未准实施，后续仅提交[两个窄子项](V038_NARROW_DISPLAY_REVIEW.md)设计。A的有界请求与B2候选分开，来源见[范围合同](V038_SCOPE_AND_CONTRACT.md)。没有新增协议动作、配置、Native/IPC或二进制。以下B1表已作为批准实现合同；完整B2字段只保留为未准的设计边界，不代表正在实施。
+当前为`N1_LOCAL_TARGETED_PASS / N2_PARENT_REVIEW_PENDING`。B1全局物理FIFO已在311e366实施并父验；其后N1-v2形状获父准并落实c64923c，N2及B2完整lease未应用，见[窄子项](V038_NARROW_DISPLAY_REVIEW.md)。A、B1与窄子项来源分开，没有新增协议动作、配置、Native/IPC或二进制。以下B1表为已批准实现合同；完整B2字段只保留未准设计边界，不代表正在实施。
 
 实际固定 Web 注册链为 main `loadStartInfo` 枚举插件 → `Emby.App.start` → app.js `loadPlugin` → PluginManager 构造/按 id 注册 → PlaybackManager 的 registered/initMediaPlayer。PluginManager 仅在单个 renderer AMD 实例内去重，而且在检查 id 前已经调用构造器。main 的 dom-ready 会重新发送 StartInfo；新的 renderer 文档能构造新 adapter。Web beforeunload 只调用条件性的 onAppClose，不证明所有状态下都完成 destroy。main Native endpoint 也可能复用。因此不能把完整 AMD 夹具只 new 一次当作生产全局单实例证明。
 
@@ -88,4 +88,4 @@ B1可独立闭合 main 的物理串行。B2的局部 token 无法告诉 main“�
 
 原跨实例历史回执的JSON/trace因测试worker误跑旧probe而被覆盖，原件完整性损失，不能称已恢复；覆盖现场及hash独立保留。已在全新目录从准确4a7ab92 Git源重建并核对历史raw SHA，独立复现同样2反例/83trace；这是新证据，不替代原件。父自有复现目录未动。
 
-B1已按批准范围局部实施；B2完整lease及N1/N2窄候选仍需具体父审。A、原候选与固定输入保持，不能把FIFO局部门禁计作全局恢复归属完成。
+B1及N1已按各自父准范围局部实施；N2仍待具体父审，B2完整lease未准实施。原候选与固定输入保持，不能把FIFO或同adapter单飞计作全局恢复归属完成。

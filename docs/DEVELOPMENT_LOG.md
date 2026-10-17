@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-17 v0.3.8 N1按已审形状局部实施
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置；两个GPT-6 Luna High worker分别限定新增FPS合并与微任务/退休完整AMD测试，主线程保留源实现、diff和实际边界审核；Reason: N1-v2已父准，局部async工作归属；Escalated: No。产品c64923c只改libmpv的FPS工作记录/原invalidate挂接及相邻测试，不改main FIFO、destroy/恢复、Native/IPC或Session。相对父准v2差异仅括号/缩进/注释。
+
+最终同一测试对精确311源码分别8 fail/1 pass与5 fail/4 pass，N1产品各9/9；主线程合并新回归及Native/字幕43/43，既有Play/settings/两adapter27/27，合计70/70。成功3000ms边界和原暂停出口正控有效。真实endpoint unpause排微任务的收口用例，原311通过、旧未应用外层finally草案失败、当前产品通过，三类来源分开。首轮三处fixture误算Native初始pause:false或最后FPS目标，已保留尝试并修正，同一最终测试重跑精确旧源；公开测试去掉私有输出和随source改变预期，只以显式输入替换源码，各异步组有wall timeout。
+
+N2仍未准实施。保存基于N1的独立rebase v2草案，仅补不可用/不符restore回包的固定诊断提案，未应用且只有语法检查，不覆盖旧候选或父目录。版本、全量门禁、runtime/候选等组合范围收敛再执行；真实硬件/服务/前台/安装仍未验证。
+
 ## 2026-10-17 v0.3.8 A父审边界修正与B1局部闭环
 
 Model Tier: Tier 2；Model: 主线程沿用当前配置；GPT-6 Luna High worker仅新增FIFO/两完整AMD测试与B2窄失败探针，主线程实现及审查main/必要FPS消费者；Reason: 已批B1的全局物理槽与绝对期限；Escalated: No。7270803修正close先于迟到timer的绝对截止检查，4项1/4→4/4；f4bbbde封闭空/非正数change结果，3项0/3→3/3；311e366实现三原动作全局FIFO、receive deadline、排队过期、exit/close与callback/quarantine/shutdown，未新增协议或工具。

@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-17 — v0.3.8 N1同adapter FPS工作合并
+
+父审通过N1-v2形状后，产品来源`c64923c891d07c947c62e28f6d3efdddeac541a4`仅落实同adapter/request的共享drain、latest pending、原3000ms稳定等待及invalidate退休清理；await后复核record/request，内部finally先释放record再结算Promise。两份完整AMD新回归各9/9，连同Native/字幕与既有Play/settings/两adapter相关合计70/70通过；精确旧源用相同测试分别1/9、4/9。收口微任务用例另能拒绝旧未应用外层finally草案，未把它称为原311的失败。
+
+N2保持未应用，空/无效restore结果诊断的窄rebase草案也只完成语法检查，等待父矩阵与具体审核。[当前合同](V038_NARROW_DISPLAY_REVIEW.md)明确N1不提供跨renderer lease/main物理取消或完整恢复。版本仍0.3.7，没有038runtime；最终组合范围稳定后再做版本和完整门禁，未重复已绿的A+B1全量。
+
 ## 2026-10-17 — v0.3.8 A+B1来源复核与窄子项停点
 
 产品来源`311e36690c2eff5ea014d98878d4899b0d82f587`完成绝对close边界修正、不可用切率结果收口及main全局FIFO。公开1061/1061、相关121/121、材料210/210、JS319/PS28和有限模式370通过；本来源2个所属惰性Node假进程实际close、残留0，未执行真实显示工具。父已实际审源并独立复跑相关14/14通过；后续b165592仅修测试cleanup调用，2/2通过，产品不变。不冒称硬件或逻辑lease完成。
