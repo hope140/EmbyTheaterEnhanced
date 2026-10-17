@@ -1,5 +1,11 @@
 # 后续范围与启动条件
 
+## 2026-10-18 — 有限维护增量
+
+本轮在准确31fdc规划基线上维护既有诊断、UDP helper与Native构造：对象键已知格式脱敏、discovery错误终结、WOL一次响应，以及两处线程在全部成员初始化后启动。网络及Native精确差异先经技术审核，局部合同与合成验证见[复核报告](OVERNIGHT_REVIEW_REPORT_20261017.md)。最终本地候选source为e41a050，材料、标准构建/VerifyOnly、来源绑定及完整ZIP通过；实际生产Helper、真实网络与播放未运行。尚未发布新二进制。公开039仍固定06d34a7，不含本轮修正。
+
+系统集成新增需求继续按下文实际设备/网络/启动项条件分包；显示归属和硬件缺口、签名、缓存、切轨延迟、圆角等原决定保持。此次错误路径维护不产生040实施规格或发布承诺。
+
 ## 基线与用途
 
 本次范围准备基于准确main文档提交 `8f46ed48eda173796f597ff56f4a0fc18aef45fb`，产品为已公开的 [v0.3.9安装升级验证测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.9)，source固定 `06d34a712e26e0d6d0b299b487cfd68625df71ed`。产品main、Tag和发行文档main的公共CI各1095项通过，材料210项、H7及五附件匿名完整下载已核；旧发布和Latest031保持。详见[发行核验](V039_RELEASE_VERIFICATION.md)。

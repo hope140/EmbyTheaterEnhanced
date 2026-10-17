@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-10-18 — 夜间有限复核本地通过
+
+从准确31fdc新隔离分支完成有限A-F盘点，四项源码修正与两处文档事实更正已有独立小提交：诊断键脱敏8ace992、UDP helper一次终结74855b0、打包/许可历史语境dbf91ab、Native线程构造顺序e41a050。诊断同test修前1/7、修后7/7，相邻49/49；网络正式同test修前3/14、候选和实际产品14/14；Native受限源码合同修前1/3、修后3/3，相邻Node/fake集合78/78。网络和Native精确差异均先经技术审核，播放/Session及Native协议、运行loop和关闭归属保持。
+
+最终候选source e41a050bcbe0987cc895e90c43c068203b240821在独立冻结树完成材料210/210、标准构建/VerifyOnly、109普通源码及Native CPP另行绑定、51输入/4notice、2159payload/2160完整runtime与全ZIP回读。生产Helper testing=false，SHA-256为baaef0f2c4599cd48a2bfbb7bc188071dc548d57ddf3ee794fe5baeca3589494；默认libmpv身份与公开039保持。候选ZIP240470557 bytes，SHA-256为e1d524aaa175fc68f58abe82f9bc559b755b7eef6203409c3bf3554a9b94debe。详情及回退见[复核报告](OVERNIGHT_REVIEW_REPORT_20261017.md)。
+
+两个Native构造函数已改为所有成员初始化后在函数体启动线程，字段布局和生命周期保持。编译替代模型与源码合同只支持初始化顺序结论，实际生产Helper的ready、加载映像SHA与播放仍未执行。当前待分支公共CI与累计审核集成；未执行系统安装/现用客户端/产品UDP或真实服务器业务，不新建二进制版本，公开039 source/tag/资产及Latest031保持。以下记录保留各阶段身份。
+
 ## 2026-10-17 — 发行闭环后的后续范围准备
 
 039发行文档main `8f46ed48eda173796f597ff56f4a0fc18aef45fb` 的公共CI1095/1095通过，最终远端回读通过；产品source/Tag仍固定06d34a7/v0.3.9，公开附件、旧发布及Latest031保持。已形成[后续范围与启动条件](NEXT_RELEASE_SCOPE.md)，同步排期和安装已知问题；已交付Web/菜单/手动内核及完成安装场景移出待办。

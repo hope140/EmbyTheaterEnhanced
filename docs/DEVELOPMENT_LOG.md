@@ -1,5 +1,19 @@
 # 维护记录
 
+## 2026-10-18 夜间有限复核与本地来源候选
+
+Model Tier: Tier 2负责局部异步、Native构造合同和最终核对，Tier 1执行明确测试/资料/文档与固定材料准备；Model: 主线程沿用当前配置，worker为GPT-6 Luna High；Reason: 六包有限复核，网络及Native精确差异先经技术审核，PlaybackManager/Session/鉴权及Native协议、运行loop和关闭归属保持；Escalated: No。起点31fdc，诊断E01提交8ace992、网络A01/A02提交74855b0、文档C01/C02提交dbf91ab、Native A03提交e41a050分开可回退。
+
+诊断safeKey复用既有sanitizeText，7项同断言修前1通过/6失败、修后7通过，诊断相邻49项通过。UDP精确两helper差异经技术审后按SHA应用，保留JSON数组/重复结果/best-effort timeout和WOL138字节/参数/回调形状；正式14项同test修前3通过/11失败，候选与实际产品14/14，原错误harness/102包长假设日志独立保留，不作为生产故障证据。callback finally清理仅证明close请求，不等同于OS退出。
+
+Native定向检查确认WriterQueue/InputReader在线程成员初始化时启动run，后声明的状态成员尚未构造。经精确技术审核，仅将两处线程启动移到构造函数体，按批准SHA核对实际产品字节；字段布局、run/close/dtor和协议保持。同一受限源码合同修前1/3、候选和实际产品3/3，相邻9文件Node/fake集合78/78。固定GCC编译的单线程替代模型保留早期fixture编译失败，最终准确提取before/candidate声明与构造器；主线程独立核全部state marker及负对照。模型不证明真实线程race、Helper崩溃或播放结果。
+
+最终构建候选固定e41a050，使用新的冻结树避免覆盖早期dbf材料/构建回执；固定材料复制后完整/独立重哈希。24材料文件210/210实际退出0，标准build/VerifyOnly及109普通源码Gitblob绑定、Native CPP另核blob、51输入4notice、完整2160文件ZIP回读通过。ZIP240470557 bytes/SHA-256 e1d524aaa175fc68f58abe82f9bc559b755b7eef6203409c3bf3554a9b94debe，生产Helper testing=false/SHA-256 baaef0f2c4599cd48a2bfbb7bc188071dc548d57ddf3ee794fe5baeca3589494，默认libmpv身份保持。Helper字节随批准cpp修正变化；实际生产Helper未运行。随后纯报告文档HEAD不替代该候选来源，旧dbf候选及原回执保留。
+
+当前main十文档、21Release、PR43与产品tag已做有限只读身份/事实核对，未发现必须改旧Release正文之处，原对象快照保存。PACKAGING保留037历史全段，LICENSING只改030段标题，未决许可正文保持。前台/安装/真实服务器和UDP硬件未执行，签名及其它暂缓项未启动。分支CI/PR累计审与主线最终回读另按实际结果收口。
+
+网络首轮过程REPORT曾被补注，原字节未保存，原probe/log/RESULT及事故说明保留，不声称原报告已恢复。编译模型早期失败和修正后实际输出分别保留；回调、fake和源码合同不替代系统退出、真实网络或线程调度验收。最终公共CI与累计diff技术审通过后才正常集成，主线及公开对象再按真实状态读回。
+
 ## 2026-10-17 发布后的范围准备
 
 Model Tier: Tier 1文档准备；Model: 主线程沿用当前配置，GPT-6 Luna High限定只读系统能力盘点；Reason: 只同步实际交付/剩余条件，不改产品，显示跨层决策保留父审；Escalated: No。准确基线为8f46ed4（公共CI1095/1095），产品source06d与Tag分开。最终远端回读检查器首次误将GitHub LF与Windows CRLF工作文件比较，原失败/脚本保留；新检查器比较准确提交Git blob后通过，没有修改产品或远端来迁就检查。
