@@ -277,7 +277,9 @@ class WriterQueue {
         }
     }
 public:
-    explicit WriterQueue(HANDLE handle) : output(handle), writer(&WriterQueue::run, this) {}
+    explicit WriterQueue(HANDLE handle) : output(handle) {
+        writer = std::thread(&WriterQueue::run, this);
+    }
     ~WriterQueue() { close(); }
     bool enqueue(std::string payload, bool isCritical, const std::string& key = {}) {
         if (payload.empty() || payload.size() > MAX_FRAME_BYTES || stopping || failed) return false;
@@ -371,7 +373,9 @@ class InputReader {
         }
     }
 public:
-    explicit InputReader(HANDLE handle) : input(handle), reader(&InputReader::run, this) {}
+    explicit InputReader(HANDLE handle) : input(handle) {
+        reader = std::thread(&InputReader::run, this);
+    }
     ~InputReader() {
         if (reader.joinable()) {
             stopping = true;
