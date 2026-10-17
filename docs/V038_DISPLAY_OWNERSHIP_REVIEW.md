@@ -2,7 +2,7 @@
 
 ## 审查状态与事实
 
-当前有限范围为已准A/B1/N1/N2，进入0.3.8准确源候选准备。B1来源311e366已父验，N1来源c64923c已父验，N2按批准窄rebase-v2落实d0a9092，组合155/155，见[窄合同](V038_NARROW_DISPLAY_REVIEW.md)。没有新增协议动作、配置、Native/IPC或二进制；完整B2字段只保留未准设计边界，不代表正在实施。
+当前有限范围为已准A/B1/N1/N2，状态为`V038_LOCAL_CANDIDATE_COMPLETE`，最终0.3.8产品来源`bd486f5fa625496086248b80a3f8859dc19b19da`，见[交付报告](V038_LOCAL_CANDIDATE.md)。B1来源311e366已父验，N1来源c64923c已父验，N2按批准窄rebase-v2落实d0a9092，组合155/155，见[窄合同](V038_NARROW_DISPLAY_REVIEW.md)。没有新增协议动作、配置、Native/IPC或二进制；完整B2字段只保留未准设计边界，真实验收未执行，文档HEAD不替代产品来源。
 
 实际固定 Web 注册链为 main `loadStartInfo` 枚举插件 → `Emby.App.start` → app.js `loadPlugin` → PluginManager 构造/按 id 注册 → PlaybackManager 的 registered/initMediaPlayer。PluginManager 仅在单个 renderer AMD 实例内去重，而且在检查 id 前已经调用构造器。main 的 dom-ready 会重新发送 StartInfo；新的 renderer 文档能构造新 adapter。Web beforeunload 只调用条件性的 onAppClose，不证明所有状态下都完成 destroy。main Native endpoint 也可能复用。因此不能把完整 AMD 夹具只 new 一次当作生产全局单实例证明。
 

@@ -2,7 +2,7 @@
 
 ## 当前阶段与来源
 
-2026-10-17，当前为`FINITE_SCOPE_CLOSED / V038_LOCAL_CANDIDATE_PREPARATION`。独立分支`codex/v038-display`精确继承已父验夜间HEAD e2b0eff的四项修正；A/B1/N1/N2均按各自父准范围落实，最新N2代码来源d0a9092，组合相关155/155通过。有限范围已收敛、版本0.3.8，进入准确最终来源门禁及新候选准备，尚未生成runtime。完整B2 lease及已列条件缺口不扩大实施，见[窄合同](V038_NARROW_DISPLAY_REVIEW.md)。准确工作树/证据与恢复入口为被忽略的`.work/V038_TASK_STATE.json`。
+2026-10-17，当前为`V038_LOCAL_CANDIDATE_COMPLETE`。独立分支`codex/v038-display`精确继承已父验夜间HEAD e2b0eff的四项修正；A/B1/N1/N2均按各自父准范围落实，最终产品来源`bd486f5fa625496086248b80a3f8859dc19b19da`、版本0.3.8。公开1095/1095、材料210/210、源构建/VerifyOnly、隐藏组件62/62、隔离入口及2165文件ZIP逐项回读通过，详见[交付报告](V038_LOCAL_CANDIDATE.md)。完整B2 lease及已列条件缺口保持UNKNOWN，见[窄合同](V038_NARROW_DISPLAY_REVIEW.md)；真实验收仍未执行。准确工作树/证据与恢复入口为被忽略的`.work/V038_TASK_STATE.json`，后续文档HEAD不替代产品来源。
 
 本轮继续用户已授权、可独立验证的本地工作。真实显示硬件与人工验收缺少条件时单列，不阻塞其他独立工作。新增跨层异步实现先经父会话审核；本合同中的候选细节不自动变成已接受方案。
 

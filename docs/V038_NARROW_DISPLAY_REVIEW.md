@@ -2,7 +2,7 @@
 
 ## 来源与状态
 
-当前为`N1_N2_LOCAL_TARGETED_PASS / FINITE_CANDIDATE_PREPARATION`。N1形状及c64923c实现已父验；N2窄rebase-v2随后获父准，落实为`d0a9092a7af00baf9cbea02a9d5bf0f2a3befec2`，实际文件与批准草案字节一致。组合相关155/155通过，完整B2 lease未实施。原草案、A+B1来源及过程证据分别保留，最终0.3.8组合来源由后续构建清单固定。
+当前为`V038_LOCAL_CANDIDATE_COMPLETE`。N1形状及c64923c实现已父验；N2窄rebase-v2随后获父准，落实为`d0a9092a7af00baf9cbea02a9d5bf0f2a3befec2`，实际文件与批准草案字节一致。组合相关155/155通过，最终0.3.8产品来源固定为`bd486f5fa625496086248b80a3f8859dc19b19da`；完整门禁、源构建、隐藏及ZIP结果见[交付报告](V038_LOCAL_CANDIDATE.md)。完整B2 lease未实施，真实硬件/前台验收未执行。原草案、A+B1来源及过程证据分别保留，文档HEAD与产品来源分开。
 
 完整AMD修前探针在此来源重新绑定renderer raw SHA `7e2d5ce3538de9f9839ebb86980f1d6cc159979482e40b8e470d74c0c7fc65a1`，8个场景、292条trace。探针执行成功表示准确复现现状，不是候选实现通过。N2的pre-destroy current观测为夹具控制的输入；原destroy尚未读取它，不能冒称产品守卫已运行。
 

@@ -1,5 +1,15 @@
 # 维护记录
 
+## 2026-10-17 v0.3.8准确来源本地候选收尾
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置，精确标识未暴露；GPT-6 Luna High worker限定测试、私有交付脚本/文档草案与独立runtime审计；Reason: 已准有限显示异步组合及准确来源交付；Escalated: No。最终产品来源bd486f5fa625496086248b80a3f8859dc19b19da，版本0.3.8；仅改根包及lock版本字段，依赖保持。公开1095/1095、材料210/210，JS322/PS28语法与373 tracked文本有限凭据模式检查通过；有限扫描不是完整秘密扫描。
+
+同一来源源构建、VerifyOnly通过，2159 payload/2160完整runtime的集合/逐SHA与109产品/51输入/4notice Git blobs绑定通过；独立578/578审计确认相对夜间baseline仅8个路径变化，含2产品JS及版本/来源元数据，Native Helper/libmpv/Electron字节相同。隐藏实际组件62/62及候选launch.cjs隔离检查通过；两次实际显示/网络/Native子进程均0，正常退出且无所属残留。file协议Service Worker缓存错误保留，不计为真实网络或业务验收。
+
+最终候选ETE-v0.3.8-display-bd486f5-20261017为2165文件，ZIP完整集合、逐项SHA及CRC回读通过；233738938 bytes，SHA-256 5aa4bcf59b70cbcddf15575f7440b5a77859dc4bb47ed35d96f70aad43724cc8。候选profile只在同级专用目录，profile/harness/私有日志不入包。build-manifest及payload-set准确SHA、启动入口和边界见[V038_LOCAL_CANDIDATE](V038_LOCAL_CANDIDATE.md)。此后只同步文档，文档HEAD与产品source分开，未重新标记产物来源。
+
+完整B2 lease/CAS、跨renderer同值接管、显示映射与完整app-exit恢复仍UNKNOWN；人工验收USER_DEFERRED_NOT_TESTED，不阻塞有限本地交付，真实播放/远控/硬件/前台/安装未执行。保留全部初败、错误事务断言、历史覆盖事故与独立重建复验，不引用父私有未闭合补验为PASS。仅本地提交，没有推送、PR、merge、Tag、Release、部署或系统安装。
+
 ## 2026-10-17 v0.3.8 N2实施与有限组合来源准备
 
 Model Tier: Tier 2；Model: 主线程沿用当前配置；GPT-6 Luna High worker限定恢复AMD/相邻测试，另两worker只准备私有候选/隐藏harness；Reason: N2-v2已父准，保留N1的窄恢复观察守卫与准确来源交付；Escalated: No。d0a9092仅落实N2 helper/destroy调用及有效测试，实际源与批准私有草案字节相同。未知current不写、同值才恢复，共8000绝对预算，Native/destroy不等待，失败只诊断不重试；没有新lease/协议/工具。
