@@ -60,6 +60,6 @@
 
 ## 集成记录
 
-[PR #44](https://github.com/hope140/EmbyTheaterEnhanced/pull/44)按两父正常merge集成，代码集成main为`88fcac151d14a6e8d69ff5bd47db252b1d5b71c3`。父已实际核累计15文件diff及独立候选来源、工具链、runtime和ZIP；[BRANCH CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/39053833080)、[PR CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/39053853040)、[MAIN CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/39054901959)各1119项通过，fail/cancelled/skipped均0，语法、有限凭据模式和diff门禁通过。
+[PR #44](https://github.com/hope140/EmbyTheaterEnhanced/pull/44)经父审核后正常merge集成，代码集成main为`88fcac151d14a6e8d69ff5bd47db252b1d5b71c3`。父已实际核累计15文件diff及独立候选来源、工具链、runtime和ZIP；[BRANCH CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/39053833080)、[PR CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/39053853040)、[MAIN CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/39054901959)各1119项通过，fail/cancelled/skipped均0，语法、有限凭据模式和diff门禁通过。
 
 准确main的8份修改文档Git blob读回一致，21条旧Release的正文/身份/标志及附件元数据、43行原Tag引用和039准确Tag保持，Latest仍031；未重新下载旧附件。随后仅同步本报告、状态与后续文档，文档HEAD不替代e41候选来源；最终文档提交与CI对应关系保存在任务交付回执，可由提交Checks核对。回退按台账独立提交执行，原GitHub对象快照保留。
