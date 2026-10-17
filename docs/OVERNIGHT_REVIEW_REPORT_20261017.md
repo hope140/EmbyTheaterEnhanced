@@ -4,7 +4,7 @@
 
 本次为2026-10-17晚开始、跨零点延续的一次维护任务。准确基线为规划main `31fdc576492b0803d2ceb1ec19d08d466df88aa5`，分支`codex/post-v039-night-review`。产品发行身份仍是v0.3.9/source `06d34a712e26e0d6d0b299b487cfd68625df71ed`；本轮文档或源码提交不重标该Tag，也不替换公开附件。
 
-有限A-F本地复核及准确来源候选门禁通过，4项源码修正和2处文档更正已独立提交，待分支公共CI与累计审核集成。Native两构造函数按精确技术审核差异实施，实际源码合同3/3、相邻Native Node/fake集合78/78通过。风险中、不确定性中，覆盖当前维护源码、构建与验证、项目/GitHub文档、一致性隐私和后续安排；PlaybackManager/Session和Native协议/运行loop/关闭归属均未改。文档、资料和明确合成用例按Tier 1委派，主线程保留跨层异步、身份和信任边界及最终审核。
+有限A-F复核及准确来源候选门禁通过，4项源码修正和2处文档更正经独立累计审核后，由PR #44正常合并至main 88fcac1。分支、PR及合并main公共CI各1119/1119通过。Native两构造函数按精确技术审核差异实施，实际源码合同3/3、相邻Native Node/fake集合78/78通过。风险中、不确定性中，覆盖当前维护源码、构建与验证、项目/GitHub文档、一致性隐私和后续安排；PlaybackManager/Session和Native协议/运行loop/关闭归属均未改。文档、资料和明确合成用例按Tier 1委派，主线程保留跨层异步、身份和信任边界及最终审核。
 
 ## 覆盖表
 
@@ -13,7 +13,7 @@
 | A 源码 | main退出、电源owner、WebSocket生成器、诊断、Native service destroy；C++输入/写队列构造及wmain；discovery/WOL假socket/时钟 | 两UDP helper实际产品VM回归14/14；C++两构造器按批准差异修正，源码合同3/3、相邻Node/fake集合78/78 | Native只定向读构造/输入写队列和主循环，未遍历呈现/解码全部路径；没有真实网络/设备/播放验收，显示缺口保持 |
 | B 构建与验证 | build/package、输入/provenance、固定工具链、CI选择/退出、installer guard及对应测试入口 | 静态未确认代码缺陷，14个generator均列入输入；另完成准确e41a050标准构建、VerifyOnly及ZIP全量回读 | 安装guard只审源码/接线，未运行；构建/ZIP不计作启动、系统安装或播放证据 |
 | C 项目文档 | README、架构/状态/路线图当前段、已知问题、打包、许可、用户/贡献/CI指南 | 两处当前/历史表述纠正已局部实施 | 未通读全部历史和第三方材料；许可未决正文完整保留 |
-| D GitHub文档 | 十份main文档、21条Release原对象、PR #43、039/038/031 tag身份 | 所选main blob一致；已核Release身份未发现必须改远端文字的问题，原对象快照保存 | 附件此轮只核元数据，不重下旧包；本任务PR及最终远端记录在集成阶段补齐 |
+| D GitHub文档 | 十份main文档、21条Release原对象、PR #43、039/038/031 tag身份 | 所选main blob一致；已核Release身份未发现必须改远端文字的问题，原对象快照保存 | 附件此轮只核元数据，不重下旧包；PR #44已正常合并；修改文档按准确main Git blob回读，旧公开对象身份保持 |
 | E 一致性与隐私 | 所选文档链接/命令、诊断record/export与trusted sender边界 | 对象键已知格式遗漏修复；新回归7/7、相邻集合49/49 | 有限合成输入，不认证未知格式；未读个人日志或profile |
 | F 后续安排 | 既有范围和本轮新问题 | [后续范围](NEXT_RELEASE_SCOPE.md)增量记录既有能力维护，已交付功能不重立项 | 系统集成、显示硬件、0.4.0和暂缓项保持原条件 |
 
@@ -21,7 +21,7 @@
 
 | ID | Observed / Expected | 允许文件与修正 | 验证、状态与回退 |
 | --- | --- | --- | --- |
-| N-E01 | sanitizer清洗值和标签，但动态对象键保留已知Token/URL/路径格式；相同已知格式应在键和嵌套导出中清洗 | `src/electronapp/enhanced/diagnostics.js`的safeKey复用sanitizeText；新增`tests/diagnostic-object-keys.test.cjs`，普通键/96字符边界/值脱敏保持 | 同test SHA修前1通过/6失败，修后7/7；诊断相邻4文件49/49，fail/cancelled/skipped均0。独立提交`8ace992`，待累计diff/CI；回退`git revert 8ace992` |
+| N-E01 | sanitizer清洗值和标签，但动态对象键保留已知Token/URL/路径格式；相同已知格式应在键和嵌套导出中清洗 | `src/electronapp/enhanced/diagnostics.js`的safeKey复用sanitizeText；新增`tests/diagnostic-object-keys.test.cjs`，普通键/96字符边界/值脱敏保持 | 同test SHA修前1通过/6失败，修后7/7；诊断相邻4文件49/49，fail/cancelled/skipped均0。独立提交`8ace992`，累计diff/CI通过；回退`git revert 8ace992` |
 | N-C01 | PACKAGING首段无历史标记地突出037当前摘要；应明确当前039并保留旧证据 | `docs/PACKAGING.md`新增039准确source及核验入口，037全文置于历史小标题下 | 原037正文及后续记录完整保留；提交`dbf91ab`，回退`git revert dbf91ab` |
 | N-C02 | LICENSING用“当前源码版本”引出030历史风险接受；应明确历史语境 | `docs/LICENSING.md`只改该标题，许可/来源/未决正文不改 | 标题之外正文相同；与N-C01同提交/回退，不改变许可结论 |
 | N-A01 | discovery无socket error listener，合成error在listening前逃逸、没有响应/close；应沿既有JSON数组响应完成一次并清本次资源 | `serverdiscovery-native.js`共享终结guard、error入口、所属timer清理与迟到事件检查；新增假socket回归 | 同一正式14项修前3通过/11失败、候选及实际产品均14/14；提交`74855b0`，回退`git revert 74855b0`；真实网络NOT_EXECUTED |
@@ -60,4 +60,6 @@
 
 ## 集成记录
 
-本地修正按表中独立提交恢复，公共CI、PR累计审核与最终主线回读将在实际完成后记录；GitHub旧Release正文/Tag/附件/标志不变。GitHub文本如需更正，按已保存对象ID/title/body原字段恢复。
+[PR #44](https://github.com/hope140/EmbyTheaterEnhanced/pull/44)按两父正常merge集成，代码集成main为`88fcac151d14a6e8d69ff5bd47db252b1d5b71c3`。父已实际核累计15文件diff及独立候选来源、工具链、runtime和ZIP；[BRANCH CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/39053833080)、[PR CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/39053853040)、[MAIN CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/39054901959)各1119项通过，fail/cancelled/skipped均0，语法、有限凭据模式和diff门禁通过。
+
+准确main的8份修改文档Git blob读回一致，21条旧Release的正文/身份/标志及附件元数据、43行原Tag引用和039准确Tag保持，Latest仍031；未重新下载旧附件。随后仅同步本报告、状态与后续文档，文档HEAD不替代e41候选来源；最终文档提交与CI对应关系保存在任务交付回执，可由提交Checks核对。回退按台账独立提交执行，原GitHub对象快照保留。

@@ -1,6 +1,6 @@
 # 维护记录
 
-## 2026-10-18 夜间有限复核与本地来源候选
+## 2026-10-18 夜间有限复核与主线集成
 
 Model Tier: Tier 2负责局部异步、Native构造合同和最终核对，Tier 1执行明确测试/资料/文档与固定材料准备；Model: 主线程沿用当前配置，worker为GPT-6 Luna High；Reason: 六包有限复核，网络及Native精确差异先经技术审核，PlaybackManager/Session/鉴权及Native协议、运行loop和关闭归属保持；Escalated: No。起点31fdc，诊断E01提交8ace992、网络A01/A02提交74855b0、文档C01/C02提交dbf91ab、Native A03提交e41a050分开可回退。
 
@@ -10,9 +10,9 @@ Native定向检查确认WriterQueue/InputReader在线程成员初始化时启动
 
 最终构建候选固定e41a050，使用新的冻结树避免覆盖早期dbf材料/构建回执；固定材料复制后完整/独立重哈希。24材料文件210/210实际退出0，标准build/VerifyOnly及109普通源码Gitblob绑定、Native CPP另核blob、51输入4notice、完整2160文件ZIP回读通过。ZIP240470557 bytes/SHA-256 e1d524aaa175fc68f58abe82f9bc559b755b7eef6203409c3bf3554a9b94debe，生产Helper testing=false/SHA-256 baaef0f2c4599cd48a2bfbb7bc188071dc548d57ddf3ee794fe5baeca3589494，默认libmpv身份保持。Helper字节随批准cpp修正变化；实际生产Helper未运行。随后纯报告文档HEAD不替代该候选来源，旧dbf候选及原回执保留。
 
-当前main十文档、21Release、PR43与产品tag已做有限只读身份/事实核对，未发现必须改旧Release正文之处，原对象快照保存。PACKAGING保留037历史全段，LICENSING只改030段标题，未决许可正文保持。前台/安装/真实服务器和UDP硬件未执行，签名及其它暂缓项未启动。分支CI/PR累计审与主线最终回读另按实际结果收口。
+当前main十文档、21Release、PR43与产品tag已做有限只读身份/事实核对，未发现必须改旧Release正文之处，原对象快照保存。PACKAGING保留037历史全段，LICENSING只改030段标题，未决许可正文保持。前台/安装/真实服务器和UDP硬件未执行，签名及其它暂缓项未启动。PR #44已在父实际累计diff和独立候选核验通过后正常merge，代码main为`88fcac151d14a6e8d69ff5bd47db252b1d5b71c3`；分支/PR/main CI各1119/1119，8份文档Git blob与旧21 Release/附件元数据、43行旧Tag引用和Latest031读回通过。
 
-网络首轮过程REPORT曾被补注，原字节未保存，原probe/log/RESULT及事故说明保留，不声称原报告已恢复。编译模型早期失败和修正后实际输出分别保留；回调、fake和源码合同不替代系统退出、真实网络或线程调度验收。最终公共CI与累计diff技术审通过后才正常集成，主线及公开对象再按真实状态读回。
+网络首轮过程REPORT曾被补注，原字节未保存，原probe/log/RESULT及事故说明保留，不声称原报告已恢复。编译模型早期失败和修正后实际输出分别保留；回调、fake和源码合同不替代系统退出、真实网络或线程调度验收。最后纯文档同步不更改已核e41源码/输入及本地ZIP身份；最终文档CI和准确HEAD另存交付回执。
 
 ## 2026-10-17 发布后的范围准备
 
