@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-17 v0.3.8 N2实施与有限组合来源准备
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置；GPT-6 Luna High worker限定恢复AMD/相邻测试，另两worker只准备私有候选/隐藏harness；Reason: N2-v2已父准，保留N1的窄恢复观察守卫与准确来源交付；Escalated: No。d0a9092仅落实N2 helper/destroy调用及有效测试，实际源与批准私有草案字节相同。未知current不写、同值才恢复，共8000绝对预算，Native/destroy不等待，失败只诊断不重试；没有新lease/协议/工具。
+
+恢复矩阵15项及旧相关测试同一修前25/40、修后40/40，补并发destroy41/41，主线程组合155/155。首轮cross错误要求读写事务的失败保留，改为逐命令FIFO，并保留同时destroy与各自观测决策，未改产品迎合错误断言。父已读产品窄diff及并发case；额外父私有补验未闭合不引用为最终PASS。版本三字段锁0.3.8、依赖不变，后续完整门禁/构建固定准确sourceCommit；候选、运行和包体结果另记，当前未执行真实硬件/前台/远端动作。
+
 ## 2026-10-17 v0.3.8 N1按已审形状局部实施
 
 Model Tier: Tier 2；Model: 主线程沿用当前配置；两个GPT-6 Luna High worker分别限定新增FPS合并与微任务/退休完整AMD测试，主线程保留源实现、diff和实际边界审核；Reason: N1-v2已父准，局部async工作归属；Escalated: No。产品c64923c只改libmpv的FPS工作记录/原invalidate挂接及相邻测试，不改main FIFO、destroy/恢复、Native/IPC或Session。相对父准v2差异仅括号/缩进/注释。

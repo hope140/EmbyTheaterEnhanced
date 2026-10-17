@@ -2,7 +2,7 @@
 
 ## 来源与状态
 
-当前为`N1_LOCAL_TARGETED_PASS / N2_PARENT_REVIEW_PENDING`。N1-v2形状已获父审批准，并在产品来源`c64923c891d07c947c62e28f6d3efdddeac541a4`局部实施；N2及完整B2 lease未实施。A+B1的已父验来源311e366与N1新来源分开，原草案与修前记录保留，不改写历史草案为产品PASS。
+当前为`N1_N2_LOCAL_TARGETED_PASS / FINITE_CANDIDATE_PREPARATION`。N1形状及c64923c实现已父验；N2窄rebase-v2随后获父准，落实为`d0a9092a7af00baf9cbea02a9d5bf0f2a3befec2`，实际文件与批准草案字节一致。组合相关155/155通过，完整B2 lease未实施。原草案、A+B1来源及过程证据分别保留，最终0.3.8组合来源由后续构建清单固定。
 
 完整AMD修前探针在此来源重新绑定renderer raw SHA `7e2d5ce3538de9f9839ebb86980f1d6cc159979482e40b8e470d74c0c7fc65a1`，8个场景、292条trace。探针执行成功表示准确复现现状，不是候选实现通过。N2的pre-destroy current观测为夹具控制的输入；原destroy尚未读取它，不能冒称产品守卫已运行。
 
@@ -46,7 +46,7 @@ Observed：同FPS在首回包前重复发两个120请求；不同FPS在首回包
 
 Observed：本实例曾从60改120；夹具可读取当前144，但现destroy仍直接发缓存原值60。相同current120的正例仍有60恢复。错误、空及timeout只说明无法观测，修前证据不将其分类为第三值。
 
-候选只把原fire-and-forget恢复换成同文件`restoreRefreshRateIfUnchanged(expected, original, generation)`。参数在destroy原invalidate后立即捕获，expected为当时cur、original为旧org、generation为现有playGeneration；没有新增lease、持久字段、协议或main owner token。
+已按批准形状把原fire-and-forget恢复换成同文件`restoreRefreshRateIfUnchanged(expected, original, generation)`。参数在destroy原invalidate后立即捕获，expected为当时cur、original为旧org、generation为现有playGeneration；没有新增lease、持久字段、协议或main owner token。
 
 该helper仍为fire-and-forget，内部捕获全部显示探测/恢复拒绝，保持Native销毁和Stop返回不等待显示；不改原停止fence。读current和可能的change共用调用起8000ms绝对budget，使用A现有helper，不给每一步重置。没有额外retry或新稳定延时。
 
@@ -59,12 +59,14 @@ Observed：本实例曾从60改120；夹具可读取当前144，但现destroy仍
 | main quarantine / 排队到期空结果 | 按不可观测处理，不能绕开B1再开工具 |
 | 已发送恢复后出现新owner | 没有物理取消承诺；同一main的后续工具仍受B1顺序限制 |
 
-“未知current时不写”是本候选明确的安全失败选择，待父审，不是已实施行为。helper没有恢复后再读确认，沿原恢复语义仍不向调用者宣告恢复成功。org仍为旧初始快照；本子项没有解决首次实际change的lease捕获或跨adapter的同值接管。读到写的TOCTOU、用户同值外部写、另一个adapter同值接管及完整app-exit恢复仍为限制。
+“未知current时不写”已由父审明确批准并实施。helper没有恢复后再读确认，沿原恢复语义仍不向调用者宣告恢复成功。org仍为旧初始快照；本子项没有解决首次实际change的lease捕获或跨adapter的同值接管。读到写的TOCTOU、用户同值外部写、另一个adapter同值接管及完整app-exit恢复仍为限制。
 
-为避免从旧完整候选回写时丢失N1，另保存基于c64923c的窄rebase v2草案，仍未应用、仅语法检查；它保留N1，并对restore change的空/非正数/与original不符回包增加固定unavailable诊断，没有新增恢复后回读、重试或成功声明。该诊断修订仍待N2矩阵及父审，不能计为产品已修。
+N2最终按基于c64923c的窄rebase-v2实施，保留N1；restore change空/非正数/与original不符回包只记固定unavailable，没有恢复后回读、重试或成功声明。原未应用草案及父矩阵为设计证据；本次实际产品回归独立记录，不引用尚未闭合的额外私有补验。
+
+同一最终恢复矩阵与旧相关测试对精确c649 Git源为25/40，实际产品40/40；另新增并发destroy后组合41/41，保留原首轮错误断言和失败。新恢复矩阵15项覆盖第三/同值、error/empty/0/timeout、退休、Native及时返回、7999ms后只剩1ms及8000ms onload先于timer、restore拒绝与无效回包。两完整adapter实际观察到A.current→B.current→A.change→B.change也符合逐命令FIFO；每个adapter按自己实际观测决定，不要求query+restore事务。
 
 验收矩阵包括第三值跳过、同值保留、error/empty/0/timeout无写且分开诊断、新本实例Play退休旧未发恢复、query已耗尽预算不再发change、恢复拒绝已捕获、destroy/Native返回不受这次查询阻塞。两个adapter同值接管反例仍保留，不把第三值guard当作完整lease修复。
 
 ## 允许差异与审核停点
 
-N1只涉及`src/electronapp/plugins/libmpv.js`与两份完整AMD回归，已按父准形状实施并完成上述局部验证。N2仍只保存未应用diff、语法检查与修前事实，需独立父审才能改产品；不能借合批扩张成完整B2状态机。最终版本及全量门禁等待组合范围收敛，未开展真实硬件或新候选runtime验收。
+N1/N2均只涉及libmpv适配层及相邻完整AMD回归，按各自父准形状实施；有限范围现已收敛，进入0.3.8准确源的完整门禁和本地候选构建。完整B2状态机及已列缺口不扩大实施，真实硬件/前台/完整恢复仍未验收。
