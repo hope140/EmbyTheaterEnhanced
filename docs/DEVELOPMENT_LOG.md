@@ -1,5 +1,83 @@
 # 维护记录
 
+## 2026-10-17 v0.3.9真实版本发行接手
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置，GPT-6 Luna High只读盘点明确发行工具链；Reason: 版本改动明确，来源/包体/当前主机升级边界留主线程，普通检查可委派；Escalated: No。用户新指令明确即使无功能修复也发布安装升级验证039，旧不发空版的收口选择已被覆盖。隔离发行树从5b0ccce开始，原main基线a1b2a04、038产品source0bbc504分开记录。
+
+本次产品差异限根package/package-lock版本，说明文档如实记036↔038有界验收与沿用038功能。固定原工具链和材料重新绑定最终正常合并main，标准新0.3.9安装器不由038文件改名；新runtime逐文件只接受版本派生/来源身份元数据差异。旧038资产、profile/DeviceId/原036备份及父恢复Desktop均保护。新039包和private runner精确source/hash/参数先父技术核，再一次同目录升级，不复跑卸载矩阵或启动应用。
+
+原H0–H6父最终审核已完成，独立8组0失败，桌面入口后由父按H0原件exclusiveCopy恢复；这些既有结果不升级成039新包、完整14项或播放验收。公开五附件来源/匿名字节校验、Latest031保持、后续规划的有限范围按新发行合同执行，当前只处准备，没有新远端写入或安装。
+
+## 2026-10-17 v0.3.9有界系统验证收口与038恢复
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置，GPT-6 Luna High独立审已落盘回执；Reason: 父接受固定工具链残留语义后恢复已授权H6并收口真实证据；Escalated: No。父实际读官方固定6.7.3源码和本次self-copy SHA/空marker，接受仅这两项无额外/无reparse的延后残留。新增独占分类接受回执，旧H5_A2 FAIL不改；没有手删或额外卸载来触发清理。
+
+H6前再次核原036程序/资料备份完整集合及SHA、当前APP仅原debug.log、登记/两shortcut空、994项资料保持、无所属活进程、两项TEMP字节与post回执相同及可信038包SHA。H6实际root/child绑定句柄exit0，完整声明payload2159及manifest准确，实际2163文件/3extras，所属setup TEMP消失。后续独立最终全文件读回与H6_after一致，固定登记0.3.8/source0bbc504、当前fresh uninstaller/dat归属及哈希可读，开始菜单目标/工作目录/图标正确，桌面任务原默认unchecked。原036备份和两参考包再次全量校验可用。
+
+最终profile994文件/93727294字节及有效DeviceId文件不变。7次实际root操作为6次setup和1次uninstaller；H1初次未知root退出保持原失败，H1_A2实读7，H2/H3/H4/H5_A2/H6实读0。当前所属进程0、app启动0；精确已接受的uninstall TEMP两文件仍在，不作文件零或全盘临时目录清理宣称。H0三次私有工具/门禁失败、H1观察失败、H5 preexec表示失败和H5_A2立即归零假设失败全部保留各自独占回执。无产品改动/确认缺陷，不生成039版本/包或远端写入；本机子场景之外的原矩阵与运行/前台验收继续未测。状态完成于有界证据交父最终复核。
+
+独立worker的落盘回执一致性审计已由主线程实际读回：阶段exit/每实例绑定句柄退出、profile摘要、payload/extras计数与完整行、H5原FAIL/接受分类和H6默认shortcut状态一致，无新矛盾；该审计没有访问live APP/profile/注册表原值，不能替代主线程最终系统读回。四份文档diff/新增隐私扫描通过，src/native/tools/tests/installer及package文件仍与准确基线相同；纯文档收尾未重跑无关公开/材料全量门禁。
+
+## 2026-10-17 v0.3.9 H5_A2卸载与Inno6.7.3残留语义
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置；Reason: 父已准登记解析窄修后真实卸载及异常门禁；Escalated: No。H1–H4未重跑。H5_A2独占新回执实际root/clone均BOUND_PROCESS_HANDLE退出0；log卸载成功、无需重启。后读回确认声明payload和manifest/固定登记/两快捷方式移除，资料994项/DeviceId字节保持、ETE进程0，APP只余原有debug.log。没有启动应用或手动清理。
+
+所属TEMP在180秒仍有4377460字节 `_unins.tmp` 和空 `_unins-done.tmp`，原attempt按既定门禁FAIL保留。self-copy SHA与fresh uninstaller一致。官方固定tag is-6_7_3（GitHub读取解析tree c7af86b4b2fd03371185df2b09a1dca8d472ab70）Setup.Uninstall.pas 196–218/247–248创建done信号，408–460正常二阶段分支不保证立即自删，650于卸载启动调用DeleteResidualTempUninstallDirs；Setup.MainFunc.pas 1460–1624执行后续残留清理，3625–3635的Setup启动调用处于注释测试块。只读原始来源，不安装/升级工具链，不重跑卸载器或手删本次/其他TEMP。
+
+由此形成有界验收假设纠正草案：保留旧FAIL，区分root/clone真实退出和固定工具链延后文件；只接受本次已绑定TEMP根的精确self-copy SHA及空marker，没有未知项/重解析。此时仍等待父技术分类接受，H6草案只恢复原038，入口保持该门禁且复核当前APP残留/profile/登记/可信包；没有实际执行。当前client程序已卸载，资料及原036私有备份保留，不误报038当前已安装。
+
+## 2026-10-17 v0.3.9 H1重验及H2–H4真实完成
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置，GPT-6 Luna High静态复核；Reason: 父已接受观察器停点并准私有修复后重验；Escalated: No。观察器保持Start返回root进程Handle，已验证child绑定Handle/创建时间，CIM空路径在原绝对期限内有限重查并结合原Handle终态；真实非空映像差异、创建时间不符/PID复用仍拒绝并保存观测。TEMP只等本次目录清理、不手删。静态审查发现新脚本复制的未使用停止读回模式仍读旧H1证据，执行前已删除历史模式并禁止额外CLI参数。
+
+H1_A2独占新日志/STARTED/PROCESS/RESULT/快照实际通过：root为BOUND_HANDLE_AFTER_EMPTY_OR_GONE_CIM，子进程为BOUND_PROCESS_HANDLE，实际exit均7；错误32/句柄释放/完整前后保持通过。H2/H3/H4分别036→038、038→036、036→038，实际exit0、每步owned两实例结束、TEMP清理及payload/source/登记/快捷方式/994项profile字节保持通过。额外文件27/28/27；H3另有038的playback-power-owner脚本，按合同仅盘点，不擅清或扩大为功耗问题。
+
+H5尚未启动卸载器便在登记位置比较拒绝。新私有诊断及停止后全文件读回证实：DisplayVersion038；InstallLocation自H0字节未变，末尾反斜杠导致原始Equals失败，规范目标仍APP；程序/资料/登记/shortcut未变。此为私有比较器表示处理，非确认产品缺陷。已准备只允许精确APP+一个可选末尾反斜杠的窄草案及H5_A2独占回执，另拒绝卸载原路径的dot/相对/device/参数语法；仅语法通过，按父对非观察器新证据的停点等待技术核。未实际卸载或执行H6，没有产品/版本修改。
+
+## 2026-10-17 v0.3.9受保护备份与H1实际拒绝
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置，GPT-6 Luna High分别静态复核备份及生命周期脚本；Reason: 精确主机变更与所属进程证据；Escalated: No。父已接受6a8c95b中的真实ACL失败并批准窄目的权限实现：独占创建新空根，受保护DACL仅当前用户/SYSTEM/Administrators三allow、CI/OI FullControl，Owner与权限先读回，现有父目录不改且额外write/delete/权限主体拒绝。
+
+v3按计划完成新根保护和唯一登记元数据写入，但既有PowerShell回执使用true而非$true导致停止；原失败未覆盖。v4只读核验该本任务根的Owner/protected DACL、唯一非reparse登记文件及canonical一致性，不再修改已有根ACL，再从独占子目录继续。图标复制探针、完整程序/资料/快捷方式复制及源/目的全文件读回、源前后/登记稳定、3620条目ACL门禁全通过。H0最终PASS，2186程序/994资料文件。静态复核记录曾要求首次写入前断言新根仍为空，该断言已加入；v4实际分支无Set-Acl。
+
+生命周期脚本先经Node/PS语法和只读036完整门禁；静态审查指出桌面shortcut缺失原会被跳过，已改成显式核任务状态：覆盖阶段沿原已选任务，卸载后规范参数的新安装沿原默认unchecked，不擅加TASKS。该H6预期尚未实测，不能报告PASS。
+
+H1实际启动可信038一次并观察一个所属Inno TEMP子进程；持有的只读Host句柄触发安装日志PrepareToInstall failed/Windows错误32。观察器在路径一致性核对报错，finally释放句柄；回执未记录冲突时实际路径/创建时间，精确root退出码UNAVAILABLE，不把它归因为已证实退出竞态。父批准计划的预期7没有实际退出证据。停止后仅按已记录PID/父子范围只读复核：所属进程0、TEMP根已清理；另全量程序及资料SHA、DeviceId文件、固定登记和两快捷方式均与036前态一致。无强杀、无客户端启动，H2–H6未执行。下一步先补观察器诊断并父核，不弱化路径/未知/退出门禁；没有产品缺陷或039空版。
+
+## 2026-10-17 v0.3.9 H0首次执行与隐私门禁
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置，GPT-6 Luna High作限定静态复核；Reason: 已获精确本机顺序授权，需核不透明备份与真实权限；Escalated: No。父已批准H0–H6，无新增普通用户许可停点。产品及版本不变，未执行安装器或应用。
+
+H0首轮在备份初始化前失败：历史清单使用localeCompare，新脚本使用UTF-16排序，有序数组比较误报漂移。保留原脚本/失败回执，独立全文件重枚举/hash确认2186项完整集合、大小/SHA相同，新增/缺失/变化均0。新脚本仅统一排序并拒绝两侧大小写重复路径，独立静态复核接受；新输出名避免覆盖原回执。
+
+第二轮通过源身份门禁后，在创建BACKUP前拒绝父目录额外读取主体。历史补充预检只筛常见宽泛SID，结论不能提升为“只有本用户/SYSTEM/Administrators可读”；实际严格门禁有效拦截。未创建备份、未复制资料、未写APP/登记/快捷方式，036保持。按合同保存具体私有证据并停在父技术复核，不放宽规则、不修改现有父/系统ACL。可行目的权限方案须在资料复制前确定，H1–H6仍未执行；本轮不因验证工具问题制造039产品版本。
+
+实际验证：两份私有Node脚本语法检查、PowerShell AST检查通过；独立完整程序哈希复算通过；H0 v1/v2失败均保留。后续只做文档一致性与diff检查，不重跑无关产品回归。静态安装器读回未确认H1精确退出码或卸载残留集合，须结合实际日志和目标读回判断，不把静态推断当系统PASS。
+
+## 2026-10-17 v0.3.9本机授权与只读预检
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置；GPT-6 Luna High worker仅静态读私有收集器，不运行系统查询；Reason: 真实host路径、权限、资料保留与卸载安全；Escalated: No。用户本机授权撤销guest前提，未授权其他软件/驱动/服务/启动项/电源/防护/虚拟化或个人mpv变更。新本机合同以精确私有别名约束，不把DIR/静默标为隔离。
+
+只读核固定AppId的必要视图、安装元数据与完整文件哈希、ETE精确映像路径进程、当前令牌、空间、快捷方式及资料不透明摘要；两份已存在可信包按source/provenance/大小/SHA核实，无额外下载或复制。原包manifest列项无修改/缺失，非manifest项另列保留，不预认缺陷。资料仅必要DeviceId合法性布尔和哈希，不解析登录/Token/Cookie/服务器密码，原始路径和数据均在私有回执。
+
+首版预检/静态问题保留；v2收窄进程WQL为精确ETE路径并修逐项扫描预算，参考祖先及备份权限用独立只读补充证据闭合。Program Files下的已核ETE子目录是授权目标，禁止其容器/Windows及工作树/备份等重叠；备份目的位于忽略私有树，不得反过来成为安装目标。没有执行安装器/应用、关闭进程或写登记/快捷方式，真实系统矩阵尚未通过；先完成父路径技术审查及实际私有备份读回再继续，无新增用户普通审批。
+
+## 2026-10-17 v0.3.9环境交接收口
+
+Model Tier: Tier 1（本次明确文档交接）；Model: 主线程沿用当前配置；Reason: 父已实际通过准备范围，只同步环境条件和恢复入口；Escalated: No。新增环境交接及必要状态链接，产品/版本/依赖保持。交接区分环境启动与guest固定AppId/登记/快捷方式/TEMP/UAC副作用，说明临时DIR/静默不是宿主隔离，未新增或执行系统脚本。
+
+最小顺序为首次安装、覆盖升级、卸载保留资料、重装身份文件保留；静默skipifsilent不生成首次应用身份的结果边界明确，取消/失败/UAC按具体环境补充，不要求用户手测14项。038参考安装器source0bbc504、175754512 bytes、SHA2f0be46a17c16522f677e7a174da72815bec8d9a06ffb0181a5183670fdef2db沿既有发行证据，并只读核公开元数据对应；无额外下载/复制大包，旧包保留自己的版本来源。
+
+独立准备已完成，停在专用可回退Windows环境及guest系统写入许可，未运行安装器/应用或改宿主。父自有证据worker结果待父实际读回后通知；不把准备范围通过扩成系统安装PASS，不凑039候选或启动040。仅文档规则/来源/链接和Git diff检查，不重跑旧15绿灯。
+
+## 2026-10-17 v0.3.9第一停点与安装准备
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置，精确标识未暴露；两个GPT-6 Luna High worker分别只读规则/覆盖和限定环境能力；Reason: 数据保留与系统边界需主线程/父审核，明确盘点交低成本worker；Escalated: No。准确基线a1b2a04，旧038产品0bbc504和root旧Settings、所有候选/profile/资产保持。
+
+安装身份/目录、profile/config/DeviceId、guard与失败恢复原合同已读，未发现确定产品缺陷；主线程逐项核12个Git blob与night5341相同，复用C历史15/15及D有限审核，不重跑旧probe/覆盖回执。限定命令存在性及OS能力只读盘点没有启动/枚举个人VM或读取profile/凭据；环境worker因禁止Git未判断tracked声明，主线程补做tracked文件名检查为0，仍只记项目专用guest NOT_ESTABLISHED，不推断机器没有VM。
+
+新私有脚本仅在自有项目临时树创建3套不可执行sentinel资料，用原snapshot collector收集BEFORE；输入前后逐SHA保持，实际installer/app运行0，生命周期NOT_EXECUTED，未伪造AFTER。官方Inno退出码/静默/卸载clone合同仅作后续预期，不把退出0或隔离确认参数当系统验收。产品/版本/依赖未改，仅提交首合同与状态；后续精确环境、系统副作用和有效局部缺陷先父审，满足条件再沿授权发布，不凑039功能或启动040。
+
 ## 2026-10-17 v0.3.8发行闭环
 
 Model Tier: Tier 2；Model: 主线程沿用当前配置；GPT-6 Luna High worker限定固定输入与私有发行脚本，父会话独立源码/包体审计；Reason: 合并后准确来源和公开资产完整回读；Escalated: No。PR42的8332cde经两公开CI通过后正常merge，产品main/Tag固定0bbc504fbb6ca98dfb7476e8078c4483347b4375，产品内容与bd候选一致，包含夜间5341四修；没有新增核心或依赖差异。
