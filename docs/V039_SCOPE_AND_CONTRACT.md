@@ -2,7 +2,7 @@
 
 ## 第一停点与准确基线
 
-2026-10-17，准备合同 `a8670819262273720d8846c192fd1215f7a9fbfb` 已获父实际审核通过，当前状态 `WAITING_DEDICATED_WINDOWS_ENVIRONMENT`。可独立盘点和合成准备已完成，下一条件是专用可回退Windows环境及其具体guest副作用许可，见[环境交接](V039_MANUAL_ENVIRONMENT_HANDOFF.md)。尚未获准启用宿主虚拟化、安装VM或启动宿主前台。
+2026-10-17，准备合同 `a8670819262273720d8846c192fd1215f7a9fbfb` 已获父实际审核通过。用户随后明确允许本机ETE安装验证，guest前提已撤销；当前为 `READY_FOR_PARENT_HOST_PATH_REVIEW`，按[本机验收合同](V039_HOST_ACCEPTANCE_CONTRACT.md)核具体路径、备份/恢复和本项目系统副作用后推进，不再等待VM或重复普通用户许可。原[环境交接](V039_MANUAL_ENVIRONMENT_HANDOFF.md)保留为历史准备路线。
 
 准确main/docs基线为 `a1b2a04d21c023062934351f29868e9c1c908b7a`，已发布038产品source/Tag为 `0bbc504fbb6ca98dfb7476e8078c4483347b4375` / `v0.3.8`，分支 `codex/v039-install-lifecycle`。本轮尚无确认产品缺陷，产品版本保持0.3.8，不生成或重命名039候选。旧Settings工作区、038发行树、全部旧包/profile/Tag/Release保持。
 
@@ -64,7 +64,9 @@ Task Risk中、Uncertainty中（系统安装行为未测）、Cross-module Scope
 
 [卸载退出码合同](https://jrsoftware.org/ishelp/topic_uninstexitcodes.htm)要求把非0当未完成，且原卸载进程返回时临时clone仍可能清理；未来验收须另核所属清理完成，不只看单个退出值。
 
-## 隔离环境与系统边界停点
+## 隔离环境与系统边界停点（历史准备阶段）
+
+本节记录用户允许本机测试之前的边界；之后的本机授权及实际执行范围以[本机验收合同](V039_HOST_ACCEPTANCE_CONTRACT.md)为准。核心、资料保护及签名暂缓不变量继续有效。
 
 本轮只做限定命令存在性和OS能力只读查询，没有启动Sandbox/VM/container，没有枚举个人VM、磁盘、profile、凭据或服务器。主线程另核tracked项目环境声明为0；此结论只表示项目专用可回退Windows环境 `NOT_ESTABLISHED`，不证明机器没有其他VM。机器原始能力值保留私有回执，不作为产品要求或持久用户事实。
 
@@ -74,10 +76,10 @@ Task Risk中、Uncertainty中（系统安装行为未测）、Cross-module Scope
 
 ## 允许文件、不变量与下一停点
 
-本阶段允许修改本合同、环境交接、PROJECT_STATUS、DEVELOPMENT_LOG及自有忽略目录 `.work/v039/`、`.work/V039_TASK_STATE.json`。产品允许修改文件目前为NONE；只有明确Observed/Expected/修前复现、精确局部文件与不变量、有效修后用例经父审后，才另开实现范围。
+本阶段允许修改本合同、本机验收合同、环境交接、PROJECT_STATUS、DEVELOPMENT_LOG及自有忽略目录 `.work/v039/`、`.work/V039_TASK_STATE.json`。产品允许修改文件目前为NONE；只有明确Observed/Expected/修前复现、精确局部文件与不变量、有效修后用例经父审后，才另开实现范围。
 
 冻结PlaybackManager/Session/Item/MediaSource/PlaySession、Resolver/CD2/Mount/DirectUrl、Native/libmpv/IPC认证/窗口、依赖及默认内核。profile/身份/降级语义不擅改；038完整lease/映射/显示、缓存/预热/切轨延迟、圆角和037电源系统实测仍暂缓。资源只对新增消费者证据明确的遗漏/打包问题局部修正；vendor、共享字体/主题、HTML回退及未知外部消费者保留。数字签名全部暂缓，不采购、注册、取私钥或接入服务。
 
-父审核当前合同、真实diff与回执后，才决定可回退环境或证据明确的局部修复。无确认产品问题时交审核与剩余条件，不靠改版本号发包。若有真实必要改动、相关验证及父实际审核通过，原授权已覆盖push/PR/CI后正常merge、准确最终main标准构建/Tag/Pre-release、五附件匿名全字节校验和文档/远端收尾，Latest仍031；必要人工门禁未满足则保留候选，不跳过。结束于039发布或真正人工停点，不启动040。
+父核本机验收合同、精确目标及备份/恢复门禁后，推进已授权HOST真实安装，不再要求guest；产品修复仍只依据明确证据。无确认产品问题时交审核与剩余条件，不靠改版本号发包。若有真实必要改动、相关验证及父实际审核通过，原授权已覆盖push/PR/CI后正常merge、准确最终main标准构建/Tag/Pre-release、五附件匿名全字节校验和文档/远端收尾，Latest仍031；确有必要人工门禁未满足则保留候选，不跳过。结束于039发布或真正人工停点，不启动040。
 
-恢复入口为私有 `.work/V039_TASK_STATE.json`，列明准确工作树/HEAD、来源、报告、快照与下一步。当前没有PR、039构建/Tag/Release或系统操作；实际验证仅为12项Git blob复用绑定、3套合成BEFORE快照及输入字节回读、限定环境/项目声明盘点和文档检查。
+恢复入口为私有 `.work/V039_TASK_STATE.json`，列明准确工作树/HEAD、来源、报告、快照与下一步。当前没有PR、039构建/Tag/Release或安装变更；原12项Git blob复用绑定、3套合成BEFORE快照、限定环境盘点继续保留，新增HOST只读预检及精确副作用计划，实际备份与安装尚未执行。
