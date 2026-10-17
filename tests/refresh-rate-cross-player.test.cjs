@@ -216,7 +216,7 @@ function assertNativePlaybackContinued(harness, endpoint, playerId) {
     event.values.pause === false && event.seq > changeCompleted.seq), playerId + ' resumed after its successful display change');
 }
 
-test('two complete AMD players serialize refresh changes through one main handler and keep native playback alive', async () => {
+test('two complete AMD players serialize refresh changes through one main handler and keep native playback alive', {timeout: 2000}, async () => {
   const h = createHarness('two-player-fifo');
   const A = h.createAdapter('A');
   const B = h.createAdapter('B');
@@ -254,24 +254,30 @@ test('two complete AMD players serialize refresh changes through one main handle
     'both actual AMD callbacks made an independently completed change request');
 
   await A.instance.destroy();
-  await B.instance.destroy();
+  h.clock.advance(0);
   await flushMicrotasks();
   const restoreA = h.liveChanges();
   assert.equal(restoreA.length, 1, 'A original-rate restoration owns the main slot first');
   assert.equal(restoreA[0].rate, '60', 'A restores the original rate it observed at play');
   h.applyChange(restoreA[0]);
   h.finishChild(restoreA[0], 'Refresh rate ' + h.physicalDisplay + ' Hz');
+  h.clock.advance(0);
+  await flushMicrotasks();
+
+  await B.instance.destroy();
+  h.clock.advance(0);
   await flushMicrotasks();
   const restoreCallbackIndex = h.trace.map(event => event.event === 'main-protocol-callback' && event.url.includes('change') && event.value ? event.seq : 0)
     .filter(Boolean).at(-1);
-  const restoreBSpawn = h.trace.filter(event => event.event === 'main-spawn' && event.action === 'change').at(-1);
-  assert.ok(restoreBSpawn && restoreBSpawn.seq > restoreCallbackIndex,
-    'B original-rate restoration starts after A restoration callback completion');
-  assert.equal(restoreBSpawn.rate, '60', 'B restores its own original rate');
-  assert.equal(h.liveChanges().length, 1);
-  h.applyChange(h.liveChanges()[0]);
-  h.finishChild(h.liveChanges()[0], 'Refresh rate ' + h.physicalDisplay + ' Hz');
-  await flushMicrotasks();
+  const currentBSpawn = h.trace.filter(event => event.event === 'main-spawn' && event.action === 'current').at(-1);
+  assert.ok(currentBSpawn && currentBSpawn.seq > restoreCallbackIndex,
+    'B starts its current query only after A restoration callback completion');
+  assert.ok(h.trace.some(event => event.event === 'main-protocol-callback' && event.url.includes('current') &&
+    event.value === 'Refresh rate 60 Hz' && event.seq > currentBSpawn.seq),
+  'B bases its restore decision on the current value returned by its own query');
+  assert.equal(h.trace.filter(event => event.event === 'main-spawn' && event.action === 'change').length, 3,
+    'B skips its stale 60 restore after observing that A already restored the display');
+  assert.equal(h.liveChanges().length, 0, 'no second restore tool is running');
   assert.equal(h.physicalDisplay, '60');
 
   await h.shutdown();
@@ -283,7 +289,7 @@ test('two complete AMD players serialize refresh changes through one main handle
   assert.equal(h.children.length, childCountAtShutdown);
 });
 
-test('a queued cross-player change expires at its receive-time deadline without spawning', async () => {
+test('a queued cross-player change expires at its receive-time deadline without spawning', {timeout: 2000}, async () => {
   const h = createHarness('queued-timeout');
   const A = h.createAdapter('A');
   const B = h.createAdapter('B');
@@ -329,4 +335,85 @@ test('a queued cross-player change expires at its receive-time deadline without 
   h.finishChild(quarantinedChild, '');
   await h.shutdown();
   assert.equal(h.clock.jobs.size, 0, 'confirmed child cleanup leaves no owned timer');
+});
+
+test('concurrent destroys follow per-command FIFO and each adapter honors its observed current rate', {timeout: 2000}, async () => {
+  const h = createHarness('concurrent-destroy-fifo');
+  const A = h.createAdapter('A');
+  const B = h.createAdapter('B');
+  const endpointA = await play(A, h.clock);
+  const endpointB = await play(B, h.clock);
+  const changeA = A.instance._onEstimatedVfFpsChanged(24);
+  const changeB = B.instance._onEstimatedVfFpsChanged(24);
+  await flushMicrotasks();
+
+  assert.equal(h.liveChanges().length, 1, 'only one actual main change child is live');
+  const firstChange = h.liveChanges()[0];
+  h.applyChange(firstChange);
+  h.finishChild(firstChange, 'Refresh rate ' + h.physicalDisplay + ' Hz');
+  await flushMicrotasks();
+  const secondChange = h.liveChanges()[0];
+  assert.ok(secondChange, 'the other actual AMD player completes its initial change');
+  h.applyChange(secondChange);
+  h.finishChild(secondChange, 'Refresh rate ' + h.physicalDisplay + ' Hz');
+  await flushMicrotasks();
+  h.clock.advance(3000);
+  await Promise.all([changeA, changeB]);
+  assert.equal(h.physicalDisplay, '120');
+  assertNativePlaybackContinued(h, endpointA, 'A');
+  assertNativePlaybackContinued(h, endpointB, 'B');
+
+  const destroyStartSeq = h.trace.at(-1).seq;
+  await Promise.all([A.instance.destroy(), B.instance.destroy()]);
+  await flushMicrotasks();
+  let completed = false;
+  for (let step = 0; step < 24 && !completed; step++) {
+    h.clock.advance(0);
+    await flushMicrotasks();
+    const live = h.children.filter(child => !child.closed);
+    assert.ok(live.length <= 1, 'the shared main FIFO has at most one live utility child');
+    if (live.length) {
+      const child = live[0];
+      if (child.action === 'change') {
+        assert.equal(child.rate, '60', 'eligible restore changes target the original 60 Hz');
+        h.applyChange(child);
+        h.finishChild(child, 'Refresh rate ' + h.physicalDisplay + ' Hz');
+      } else {
+        assert.equal(child.action, 'current', 'destroy only queues current observations or qualified restore writes');
+        h.finishChild(child, 'Refresh rate ' + h.physicalDisplay + ' Hz');
+      }
+      await flushMicrotasks();
+      continue;
+    }
+
+    const reads = h.trace.filter(event => event.seq > destroyStartSeq && event.event === 'main-protocol-callback' && event.url.includes('current'));
+    const restoreSends = h.trace.filter(event => event.event === 'renderer-xhr-send' && event.url.includes('change?rate=60'));
+    const restoreReplies = h.trace.filter(event => event.event === 'renderer-xhr-complete' && event.url.includes('change?rate=60'));
+    if (reads.length === 2 && restoreReplies.length === restoreSends.length) {
+      completed = true;
+      for (const playerId of ['A', 'B']) {
+        const read = reads.find(event => event.playerId === playerId);
+        assert.ok(read, playerId + ' current observation is present in the protocol trace');
+        const writes = restoreSends.filter(event => event.playerId === playerId);
+        if (read.value === 'Refresh rate 120 Hz') {
+          assert.equal(writes.length, 1, playerId + ' observed its expected 120 Hz and issued one original-rate write');
+        } else if (read.value === 'Refresh rate 60 Hz') {
+          assert.equal(writes.length, 0, playerId + ' observed 60 Hz and skipped its stale original-rate write');
+        } else {
+          assert.fail(playerId + ' received unexpected current response: ' + String(read.value));
+        }
+      }
+      assert.equal(restoreSends.filter(event => event.playerId === 'A').length, 1,
+        'A is first in the destroy query order and performs its qualified original-rate write');
+    }
+  }
+
+  assert.equal(completed, true, 'both observation/restore chains finish within the bounded fake-clock drive: ' +
+    JSON.stringify(h.trace.filter(event => ['main-spawn', 'main-child-close', 'main-protocol-callback', 'renderer-xhr-send', 'renderer-xhr-complete']
+      .includes(event.event))));
+  assert.equal(h.physicalDisplay, '60', 'the completed concurrent restore flow ends at the original display rate');
+  assert.ok(endpointA.commands.some(command => Array.isArray(command) && command[0] === 'loadfile'));
+  assert.ok(endpointB.commands.some(command => Array.isArray(command) && command[0] === 'loadfile'));
+  await h.shutdown();
+  assert.equal(h.clock.jobs.size, 0, 'fixture cleanup leaves no owned timer');
 });

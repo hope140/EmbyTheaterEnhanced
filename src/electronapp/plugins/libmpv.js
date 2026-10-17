@@ -1550,6 +1550,28 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             return playerState.playbackRate;
         };
 
+        async function restoreRefreshRateIfUnchanged(expected, original, generation) {
+            var deadline = Date.now() + 8000;
+            try {
+                var observed = await getRefreshRate({deadline: deadline});
+                if (playGeneration !== generation || activePlayRequest) return;
+                if (!Number.isFinite(Number(observed)) || Number(observed) <= 0) {
+                    emitClientDiagnostic('warn', 'display', 'display-restore-unavailable', {reason: 'current-unavailable'});
+                    return;
+                }
+                if (observed != expected) {
+                    emitClientDiagnostic('info', 'display', 'display-restore-skipped', {reason: 'observed-change'});
+                    return;
+                }
+                var restored = await setRefreshRate(original, {deadline: deadline});
+                if (!Number.isFinite(Number(restored)) || Number(restored) <= 0 || restored != original) {
+                    emitClientDiagnostic('warn', 'display', 'display-restore-unavailable', {reason: 'restore-unavailable'});
+                }
+            } catch (_) {
+                emitClientDiagnostic('warn', 'display', 'display-restore-unavailable', {reason: 'probe-or-restore-failed'});
+            }
+        }
+
         async function destroyInternal() {
 
             invalidatePlayRequest();
@@ -1561,9 +1583,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             appSettings.set('mpv-volume', playerState.volume);
 
             if (orgRefreshRate != null && curRefreshRate != null && orgRefreshRate != curRefreshRate) {
-                setRefreshRate(orgRefreshRate).catch(function () {
-                    emitClientDiagnostic('warn', 'display', 'display-restore-unavailable', {});
-                });
+                restoreRefreshRateIfUnchanged(curRefreshRate, orgRefreshRate, playGeneration);
             }
 
             var dlg = videoDialog;

@@ -305,7 +305,8 @@ test('Next aborts a pending FPS change without letting the old owner unpause the
 
 for (const failure of ['network error', 'timeout']) {
   test(`destroy restoration ${failure} is caught without claiming completion or awaiting it`, async () => {
-    const h = loadPlayer({plans: {'electronrefreshrate://change?rate=60': [{pending: true}]}});
+    const h = loadPlayer({plans: {'electronrefreshrate://current': [{response: '60'}, {response: '120'}],
+      'electronrefreshrate://change?rate=60': [{pending: true}]}});
     await h.instance.play(options());
     await runFps(h, 24);
     assert.ok(changes(h).includes('electronrefreshrate://change?rate=120'), 'positive control changed the synthetic display rate: ' + JSON.stringify(h.refreshRequests));
