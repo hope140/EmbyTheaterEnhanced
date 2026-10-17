@@ -139,7 +139,7 @@ function normalizedKey(value) {
 }
 
 function safeKey(value) {
-    const text = String(value || '').replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 96);
+    const text = sanitizeText(value || '').replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 96);
     return text || 'field';
 }
 
