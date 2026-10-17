@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-17 v0.3.8测试版发行授权与准备
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置；GPT-6 Luna High worker仅准备固定材料，后续限定包体审计；Reason: 准确main来源、安装器及远端资产闭环，产品合同冻结；Escalated: No。Task Risk中、Uncertainty低、Cross-module Scope为发行工具链、Playback/Session Impact为NONE。新隔离发行树从0c8c051建立，保留bd486f5候选/profile与根目录旧Settings改动，不增改产品。
+
+用户授权必要提交/push/PR、CI后merge、main准确构建/标准安装器、Tag/Pre-release及五附件匿名完整回读、README/状态收尾。用户主要验收USER_REPORTED_NO_ISSUE，其余MONITORING；不虚构逐场景PASS，不等待额外补测。Stable/Latest保持031，真实硬件、系统安装、主动前台及服务器业务不在执行范围；缓存/切轨性能与下一版不推进。最终产品source与后续文档HEAD继续分开，具体产物和远端结果完成后追加。
+
 ## 2026-10-17 v0.3.8准确来源本地候选收尾
 
 Model Tier: Tier 2；Model: 主线程沿用当前配置，精确标识未暴露；GPT-6 Luna High worker限定测试、私有交付脚本/文档草案与独立runtime审计；Reason: 已准有限显示异步组合及准确来源交付；Escalated: No。最终产品来源bd486f5fa625496086248b80a3f8859dc19b19da，版本0.3.8；仅改根包及lock版本字段，依赖保持。公开1095/1095、材料210/210，JS322/PS28语法与373 tracked文本有限凭据模式检查通过；有限扫描不是完整秘密扫描。
