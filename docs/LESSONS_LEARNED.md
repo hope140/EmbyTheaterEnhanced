@@ -1,5 +1,23 @@
 # 维护注意事项
 
+- async drain的owner应在内部finally中同步释放，再让共享Promise结算。只在外层Promise.finally清理会留下微任务窗口，新事件可能附着到已结束work并丢失pending。回归应从实际endpoint完成出口排微任务，不能用同步重入替代该窗口。
+
+- 同一回归更换被测源码时保持目标断言一致，显式输入只切换源码。公开测试默认不依赖私有草案或写私有回执；修前、草案、产品输出由外层按不同文件名保存。暂停计数区分原Native Play的pause:false与增强任务的解暂停。
+
+- 绝对deadline不仅用timer执行顺序保证。事件循环阻塞后close/load可先于已经到期的timer到达，提交结果与获得执行槽时都应核当前绝对时间；用只推进Date.now但不调度timer的用例覆盖，不能只靠advance先跑timeout。
+
+- 固定材料齐备后，依赖prepared preload的测试还须先走原prepare-preload生成关系。require时缺生成文件属于测试输入缺口，不能计作有效断言失败后修复或跳过；保留原失败，补实体后独立复验。
+
+- 重用私有probe前先检查所有输出路径和副作用。可执行脚本复制到新目录仍可能写硬编码旧目录；历史回执不能覆盖，误覆盖后保留现场并分清独立重现与原件恢复。
+
+- Ctrl+C或关闭exec会话不证明Node测试树已退出。结束前按本任务命令、启动时间与父子PID确认归属，再回读实际退出；只清所属进程，不能用整个node进程名批量终止。
+
+- Overlay输出SHA必须按完整生产变换链计算。Movie VirtualScroller后还有Search guard组合；只验证中间patcher会漏掉最终hash和owner范围变化。共享提交guard与特定功能的资源owner应分开，回归覆盖实际组合及其他功能保留路径。
+
+- Promise已fulfilled仍可能在DOM提交前被pause/换代退休。可重试资源标记应在成功退休与失败两条终态都按当前请求token释放；仅加catch清理会留下缓存页无法重取的标记。清理不能覆盖新query或同map同chunk的新owner。
+
+- 脱敏回归直接断言独立合成canary无残留。用带分隔符的原始路径后缀比较会在字符归一后假阴性，即使敏感片段仍在；category/event/stage与details都应分别覆盖，保留正常标签及fallback合同。
+
 - 加反馈前核对原ListController.setEmptyListState等既有owner。只验证新增status显示会漏掉重复提示；应在真实页面统计可见同文案节点，并覆盖空输入、单字符、无匹配、错误与恢复。成功空结果保留原生owner，维护错误status不再同时输出第二份空态。
 
 - 搜索验收必须从实际getRouteUrl('search')开始；默认URL不含serverId，手工附加serverId会绕过currentApiClient分支并掩盖阻断。客户端选择应沿原controller的owner/显式/当前优先级，回复时同时核对API对象和userid；同userid不代表同一client或请求owner。

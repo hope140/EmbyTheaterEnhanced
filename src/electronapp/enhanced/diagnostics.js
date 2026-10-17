@@ -144,7 +144,7 @@ function safeKey(value) {
 }
 
 function safeLabel(value, fallback) {
-    const text = String(value == null ? '' : value).replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 64);
+    const text = sanitizeText(value).replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 64);
     return text || fallback;
 }
 

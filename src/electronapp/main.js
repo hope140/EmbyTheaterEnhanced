@@ -119,6 +119,7 @@
     var unregisterStrmConfigIpc = function () {};
     var unregisterDiagnosticsIpc = function () {};
     var unregisterMaintenanceIpc = function () {};
+    var unregisterRefreshRate = function () { return Promise.resolve(); };
     var unregisterNativeHelperIpc = function () { return Promise.resolve(); };
     var unregisterMpvKernelIpc = function () {
         var pendingStore = mpvKernelStore;
@@ -486,12 +487,118 @@
 
         var protocol = electron.protocol;
         var customProtocol = 'electronrefreshrate';
+        var owners = new Set();
+        var pendingOwners = [];
+        var runningOwner = null;
+        var pumping = false;
+        var accepting = true;
+        var shutdownPromise;
+
+        function release(owner) {
+            if (owner.completed && owner.exited) {
+                owners.delete(owner);
+                if (runningOwner === owner) runningOwner = null;
+            }
+        }
+
+        function quarantined() {
+            return Array.from(owners).some(function (owner) { return owner.terminating && !owner.exited; });
+        }
+
+        function confirmExit(owner) {
+            owner.exited = true;
+            if (owner.reapTimer != null) {
+                clearTimeout(owner.reapTimer);
+                owner.reapTimer = null;
+            }
+            owner.settleCleanup(true);
+            release(owner);
+            pump();
+        }
+
+        function terminate(owner) {
+            if (owner.exited || owner.terminating) return;
+            owner.terminating = true;
+            owner.reapTimer = setTimeout(function () {
+                owner.reapTimer = null;
+                // Keep the owner and safe exit/error listeners. A kill request
+                // does not prove that the process, or its side effect, ended.
+                owner.settleCleanup(false);
+            }, 1000);
+            try { owner.child.kill(); } catch (_) { /* Still quarantined until an observed exit. */ }
+        }
+
+        function complete(owner, value, stopChild) {
+            if (owner.completed) return;
+            owner.completed = true;
+            if (owner.deadlineTimer != null) {
+                clearTimeout(owner.deadlineTimer);
+                owner.deadlineTimer = null;
+            }
+            var queuedIndex = pendingOwners.indexOf(owner);
+            if (queuedIndex >= 0) pendingOwners.splice(queuedIndex, 1);
+            if (!owner.child) {
+                owner.exited = true;
+                owner.settleCleanup(true);
+            } else if (stopChild) terminate(owner);
+            var callbackError;
+            try { owner.callback(value); } catch (error) { callbackError = error; }
+            release(owner);
+            try { pump(); } catch (error) { if (!callbackError) callbackError = error; }
+            if (callbackError) throw callbackError;
+        }
+
+        function start(owner) {
+            // Receiving, queuing and execution share the original deadline.
+            if (Date.now() >= owner.deadline) { complete(owner, "", false); return; }
+            runningOwner = owner;
+            var child;
+            try { child = owner.spawn(owner.file, owner.args); }
+            catch (_) {
+                confirmExit(owner);
+                complete(owner, "", false);
+                return;
+            }
+            owner.child = child;
+            var output = '';
+            child.stdout.on('data', function (data) {
+                if (!owner.completed) output += data.toString();
+            });
+            child.on('exit', function () { confirmExit(owner); });
+            child.on('close', function () {
+                confirmExit(owner);
+                complete(owner, Date.now() >= owner.deadline ? "" : output, false);
+            });
+            child.on('error', function () {
+                if (child.pid == null) confirmExit(owner);
+                complete(owner, "", !owner.exited);
+            });
+        }
+
+        function pump() {
+            if (pumping) return;
+            pumping = true;
+            var firstError;
+            try {
+                while (accepting && !runningOwner && !quarantined() && pendingOwners.length) {
+                    var owner = pendingOwners.shift();
+                    if (owner.completed) continue;
+                    try { start(owner); }
+                    catch (error) { if (!firstError) firstError = error; }
+                }
+            } finally { pumping = false; }
+            if (firstError) throw firstError;
+        }
 
         protocol.registerStringProtocol(customProtocol, function (request, callback) {
-
+            var deadline = Date.now() + 5000;
             // Add 3 to account for ://
             var url = request.url.substr(customProtocol.length + 3).split('?')[0];
             var args = []
+            if (!accepting || quarantined()) {
+                callback("");
+                return;
+            }
             switch (url) {
                 case 'list_possible':
                     args.push(url)
@@ -506,26 +613,51 @@
                     args.push("\\\\.\\DISPLAY1")
                     args.push(request.url.split('=')[1])
                     break;
+                default:
+                    callback("");
+                    return;
             }
 
             var { spawn } = require('child_process');
             var path = require('path');
 
-            var output = ''
-            if (process.platform === 'win32') {
-                var ls = spawn(path.join(__dirname, 'libmpv', process.arch, 'refreshrate.exe'), args);
-                ls.stdout.on('data', (data) => {
-                    output += data.toString()
-                });
-
-                ls.on('close', (data) => {
-                    callback(output)
-                })
-            } else {
-                callback(output)
+            if (process.platform !== 'win32' || Date.now() >= deadline) {
+                callback("");
+                return;
             }
-
+            var owner = {child: null, callback: callback, completed: false, exited: false,
+                terminating: false, deadlineTimer: null, reapTimer: null, deadline: deadline,
+                spawn: spawn, file: path.join(__dirname, 'libmpv', process.arch, 'refreshrate.exe'), args: args};
+            owner.cleanup = new Promise(function (resolve) { owner.settleCleanup = resolve; });
+            owners.add(owner);
+            pendingOwners.push(owner);
+            owner.deadlineTimer = setTimeout(function () {
+                complete(owner, "", true);
+            }, Math.max(0, deadline - Date.now()));
+            pump();
         });
+
+        return function () {
+            if (shutdownPromise) return shutdownPromise;
+            accepting = false;
+            var resolveShutdown, rejectShutdown;
+            shutdownPromise = new Promise(function (resolve, reject) {
+                resolveShutdown = resolve;
+                rejectShutdown = reject;
+            });
+            var pending = Array.from(owners);
+            var errors = [];
+            pending.forEach(function (owner) {
+                try { complete(owner, "", true); }
+                catch (error) { errors.push(error); }
+                if (!owner.exited) terminate(owner);
+            });
+            Promise.all(pending.map(function (owner) { return owner.cleanup; })).then(function () {
+                if (errors.length) rejectShutdown(errors[0]);
+                else resolveShutdown();
+            });
+            return shutdownPromise;
+        };
     }
 
     function registerCec() {
@@ -1018,9 +1150,12 @@
         unregisterMaintenanceIpc();
         unregisterStrmConfigIpc();
         unregisterCd2Ipc();
+        var refreshShutdown;
+        try { refreshShutdown = unregisterRefreshRate(); }
+        catch (error) { refreshShutdown = Promise.reject(error); }
         var nativeShutdown = unregisterNativeHelperIpc();
         var kernelShutdown = unregisterMpvKernelIpc();
-        Promise.all([nativeShutdown, kernelShutdown, Promise.resolve(readyStartupPromise).catch(function () {})])
+        Promise.all([Promise.resolve(refreshShutdown).catch(function () {}), nativeShutdown, kernelShutdown, Promise.resolve(readyStartupPromise).catch(function () {})])
             .catch(function () {}).then(function () { app.quit(); });
     });
     ipcMain.on('enhanced-diagnostics', function (event, snapshot) {
@@ -1180,7 +1315,7 @@
             registerFileSystem();
             registerServerdiscovery();
             registerWakeOnLan();
-            registerFreshRate();
+            unregisterRefreshRate = registerFreshRate();
             registerCec();
             registerFile();
 

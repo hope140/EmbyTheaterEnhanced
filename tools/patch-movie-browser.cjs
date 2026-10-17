@@ -40,11 +40,17 @@ function patchItemsContainer(text) {
         'function () {\n          if (browse && (browse.paused || browse.destroyed || browse.epoch !== epoch)) return;\n          hasActiveElement &&');
 }
 function patchVirtualScroller(text) {
+    // A fulfilled callback can retire after pause just like a rejection; neither
+    // outcome may leave its marker stuck or clear a newer Movie request's marker.
+    // The later Search transform widens browse guards. Its marker type stays
+    // unchanged, so the Movie-only owner uses a separate direct property lookup.
     text = once(text, 'index = this.startIndexToLoad;',
-        'index = this.startIndexToLoad, browse = this._eteMovieBrowse, epoch = browse && browse.epoch;');
+        'index = this.startIndexToLoad, browse = this._eteMovieBrowse, epoch = browse && browse.epoch, movieChunk = this["_eteMovieBrowse"], chunkToken;\n        function retireOwnedMovieChunk() {\n          if (movieChunk && instance && instance.chunksLoaded && instance.chunksLoaded[chunkStart] === chunkToken) instance.chunksLoaded[chunkStart] = null;\n        }');
+    text = once(text, 'this.chunksLoaded[chunkStart] = !0',
+        'this.chunksLoaded[chunkStart] = chunkToken = movieChunk ? {} : !0');
     text = once(text, 'function (result) {\r\n                var items = result.Items || result,',
-        'function (result) {\n                if (browse && (browse.paused || browse.destroyed || browse.epoch !== epoch || index.signal.aborted || instance.currentAbortController !== index)) return;\n                var items = result.Items || result,');
+        'function (result) {\n                if (browse && (browse.paused || browse.destroyed || browse.epoch !== epoch || index.signal.aborted || instance.currentAbortController !== index)) { retireOwnedMovieChunk(); return; }\n                var items = result.Items || result,');
     return once(text, 'function (error) {\r\n                instance.chunksLoaded[chunkStart] = null;',
-        'function (error) {\n                if (browse && (browse.paused || browse.destroyed || browse.epoch !== epoch)) return;\n                instance.chunksLoaded[chunkStart] = null;');
+        'function (error) {\n                if (movieChunk) retireOwnedMovieChunk();\n                if (browse && (browse.paused || browse.destroyed || browse.epoch !== epoch)) return;\n                if (!movieChunk) instance.chunksLoaded[chunkStart] = null;');
 }
 module.exports = {patchVideosTab, patchListController, patchItemsTab, patchApp, patchMovieCategories, patchItemsContainer, patchVirtualScroller};

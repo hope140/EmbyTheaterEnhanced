@@ -148,7 +148,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/modules/virtual-scroller/virtual-scroller.js',
         expectedBaseSha256: 'D2982A619FDF3DC7F9ED13910D0CAB3723E7122440B02214057D2FC6A592A5B9',
         expectedInputSha256: null,
-        expectedOutputSha256: 'C97F600AC9C48BA89448FF4CB6F6A2FD3C4669CFBE53622C0DA0C352D5080611',
+        expectedOutputSha256: '54537E38237C5DDD5B0B087249E7B29BCFF5C409DEA4A4867FF607CAAAC3802F',
         transform: 'patchVirtualScroller',
         generatorPaths: Object.freeze([SEARCH_GENERATOR_PATH, GENERATOR_PATH, MOVIE_GENERATOR_PATH])
     }),

@@ -1,5 +1,105 @@
 # 维护记录
 
+## 2026-10-17 v0.3.8测试版发行授权与准备
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置；GPT-6 Luna High worker仅准备固定材料，后续限定包体审计；Reason: 准确main来源、安装器及远端资产闭环，产品合同冻结；Escalated: No。Task Risk中、Uncertainty低、Cross-module Scope为发行工具链、Playback/Session Impact为NONE。新隔离发行树从0c8c051建立，保留bd486f5候选/profile与根目录旧Settings改动，不增改产品。
+
+用户授权必要提交/push/PR、CI后merge、main准确构建/标准安装器、Tag/Pre-release及五附件匿名完整回读、README/状态收尾。用户主要验收USER_REPORTED_NO_ISSUE，其余MONITORING；不虚构逐场景PASS，不等待额外补测。Stable/Latest保持031，真实硬件、系统安装、主动前台及服务器业务不在执行范围；缓存/切轨性能与下一版不推进。最终产品source与后续文档HEAD继续分开，具体产物和远端结果完成后追加。
+
+## 2026-10-17 v0.3.8准确来源本地候选收尾
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置，精确标识未暴露；GPT-6 Luna High worker限定测试、私有交付脚本/文档草案与独立runtime审计；Reason: 已准有限显示异步组合及准确来源交付；Escalated: No。最终产品来源bd486f5fa625496086248b80a3f8859dc19b19da，版本0.3.8；仅改根包及lock版本字段，依赖保持。公开1095/1095、材料210/210，JS322/PS28语法与373 tracked文本有限凭据模式检查通过；有限扫描不是完整秘密扫描。
+
+同一来源源构建、VerifyOnly通过，2159 payload/2160完整runtime的集合/逐SHA与109产品/51输入/4notice Git blobs绑定通过；独立578/578审计确认相对夜间baseline仅8个路径变化，含2产品JS及版本/来源元数据，Native Helper/libmpv/Electron字节相同。隐藏实际组件62/62及候选launch.cjs隔离检查通过；两次实际显示/网络/Native子进程均0，正常退出且无所属残留。file协议Service Worker缓存错误保留，不计为真实网络或业务验收。
+
+最终候选ETE-v0.3.8-display-bd486f5-20261017为2165文件，ZIP完整集合、逐项SHA及CRC回读通过；233738938 bytes，SHA-256 5aa4bcf59b70cbcddf15575f7440b5a77859dc4bb47ed35d96f70aad43724cc8。候选profile只在同级专用目录，profile/harness/私有日志不入包。build-manifest及payload-set准确SHA、启动入口和边界见[V038_LOCAL_CANDIDATE](V038_LOCAL_CANDIDATE.md)。此后只同步文档，文档HEAD与产品source分开，未重新标记产物来源。
+
+完整B2 lease/CAS、跨renderer同值接管、显示映射与完整app-exit恢复仍UNKNOWN；人工验收USER_DEFERRED_NOT_TESTED，不阻塞有限本地交付，真实播放/远控/硬件/前台/安装未执行。保留全部初败、错误事务断言、历史覆盖事故与独立重建复验，不引用父私有未闭合补验为PASS。仅本地提交，没有推送、PR、merge、Tag、Release、部署或系统安装。
+
+## 2026-10-17 v0.3.8 N2实施与有限组合来源准备
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置；GPT-6 Luna High worker限定恢复AMD/相邻测试，另两worker只准备私有候选/隐藏harness；Reason: N2-v2已父准，保留N1的窄恢复观察守卫与准确来源交付；Escalated: No。d0a9092仅落实N2 helper/destroy调用及有效测试，实际源与批准私有草案字节相同。未知current不写、同值才恢复，共8000绝对预算，Native/destroy不等待，失败只诊断不重试；没有新lease/协议/工具。
+
+恢复矩阵15项及旧相关测试同一修前25/40、修后40/40，补并发destroy41/41，主线程组合155/155。首轮cross错误要求读写事务的失败保留，改为逐命令FIFO，并保留同时destroy与各自观测决策，未改产品迎合错误断言。父已读产品窄diff及并发case；额外父私有补验未闭合不引用为最终PASS。版本三字段锁0.3.8、依赖不变，后续完整门禁/构建固定准确sourceCommit；候选、运行和包体结果另记，当前未执行真实硬件/前台/远端动作。
+
+## 2026-10-17 v0.3.8 N1按已审形状局部实施
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置；两个GPT-6 Luna High worker分别限定新增FPS合并与微任务/退休完整AMD测试，主线程保留源实现、diff和实际边界审核；Reason: N1-v2已父准，局部async工作归属；Escalated: No。产品c64923c只改libmpv的FPS工作记录/原invalidate挂接及相邻测试，不改main FIFO、destroy/恢复、Native/IPC或Session。相对父准v2差异仅括号/缩进/注释。
+
+最终同一测试对精确311源码分别8 fail/1 pass与5 fail/4 pass，N1产品各9/9；主线程合并新回归及Native/字幕43/43，既有Play/settings/两adapter27/27，合计70/70。成功3000ms边界和原暂停出口正控有效。真实endpoint unpause排微任务的收口用例，原311通过、旧未应用外层finally草案失败、当前产品通过，三类来源分开。首轮三处fixture误算Native初始pause:false或最后FPS目标，已保留尝试并修正，同一最终测试重跑精确旧源；公开测试去掉私有输出和随source改变预期，只以显式输入替换源码，各异步组有wall timeout。
+
+N2仍未准实施。保存基于N1的独立rebase v2草案，仅补不可用/不符restore回包的固定诊断提案，未应用且只有语法检查，不覆盖旧候选或父目录。版本、全量门禁、runtime/候选等组合范围收敛再执行；真实硬件/服务/前台/安装仍未验证。
+
+## 2026-10-17 v0.3.8 A父审边界修正与B1局部闭环
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置；GPT-6 Luna High worker仅新增FIFO/两完整AMD测试与B2窄失败探针，主线程实现及审查main/必要FPS消费者；Reason: 已批B1的全局物理槽与绝对期限；Escalated: No。7270803修正close先于迟到timer的绝对截止检查，4项1/4→4/4；f4bbbde封闭空/非正数change结果，3项0/3→3/3；311e366实现三原动作全局FIFO、receive deadline、排队过期、exit/close与callback/quarantine/shutdown，未新增协议或工具。
+
+B1来源311e366公开1061/1061、局部/相邻121/121、两AMD跨实例2项及main期限/队列53项通过，材料210/210、JS319/PS28、有限扫描370通过；所属惰性Node进程2次close/残留0。父实际源码复核与独立14/14通过。原4a全量npm1121/1122唯一缺prepared preload的require失败保持，固定生成后该夹具5/5通过，未弱化断言。主线程末态检查发现跨实例fixture只await函数而未调用，b165592仅修为实际shutdown调用并断言timer/入口，2/2通过；产品与此前门禁来源完全相同，未重复全部绿灯。未运行真实RefreshRate/Native、前台、显示设置或系统操作。
+
+B2只准备N1/N2窄合同及未应用diff，source311的完整AMD8场景/292trace记录修前FAIL/正控/UNKNOWN，草案只有语法检查，不计修后。跨实例旧回执被worker误跑覆盖的原件完整性损失已保全现场与hash；独立新目录用4a Git源和历史raw SHA重现2反例/83trace，不能称恢复原件，父自有证据未动。相关worker后续只读或只写自己新目录。版本与候选继续等待范围收敛，不把FIFO当逻辑lease。
+
+末态OS回读另发现此前Ctrl+C未结束的所属跨实例测试树；根据本任务完整命令、启动时间和父子关系确认后收口，再独立回读确认退出，没有按进程名操作其他Node。旧22项数据合同回读与最终进程退出证据分开，私有状态更新实际结论。
+
+## 2026-10-17 v0.3.8 A局部实施与B归属设计
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置；GPT-6 Luna High两个worker限定新增生命周期及完整AMD测试，一个worker只读跨实例归属库存；Reason: A已父准的main/XHR有界生命周期，主线程保留异步和shutdown最终判断；Escalated: No。A产品只改main.js/libmpv.js原入口与必要调用，无新产品helper文件、依赖、协议或Native变更。
+
+工具5000+1000与XHR/Play总8000预算按父准落地；未退出保留隔离，shutdown拒绝单独隔离，原Native/kernel/startup drain继续。显示失败只在displaySync降级，旧Play取消仍superseded；FPS失败清资格并只允许current解除其原暂停，原成功3000ms保留，恢复未await仅catch/已知值检查，B语义未实施。原22生命周期修前4/22、额外3项0/3，AMD初始14项4/14；最终相关104/104通过。新增测试暴露迟到timeout二次abort及首轮shutdown fail-fast，修前日志保留。Windows所属惰性Node子进程2次close、残留0；未执行RefreshRate/真实Native/前台/显示设置。最终公开验证另记准确来源。
+
+B设计基于实际固定Web构造/重载库存及固定Electron44.4.2 ProtocolRequest文档，不能证明生产跨renderer singleton；[设计审查](V038_DISPLAY_OWNERSHIP_REVIEW.md)列出全局物理队列、局部lease字段/挂接/状态和不能保证跨实例接管的缺口。只设计及补失败探针，未把A局部门禁计作最终038候选验收。
+
+## 2026-10-17 v0.3.8 显示兼容证据与首个合同停点
+
+Model Tier: Tier 2；Model: 主线程沿用当前用户配置，精确标识未暴露；三个 GPT-6 Luna High worker 仅收集工具/XHR、完整AMD归属竞争及映射/窗口证据；Reason: 跨main工具与renderer显示异步，产品实现前固化调用图和父审边界；Escalated: No。隔离分支codex/v038-display精确基于e2b0eff，旧树/profile/候选保持。
+
+10个超时目标场景与调度器自检证明当前没有deadline；最终5个完整AMD场景与146条trace确认正常unpause、并发写的stats/物理值错序、Stop/Next后旧工具落地和盲恢复第三值。主审要求重做计数式时钟、未接setProperties的否定断言，并用现有stats出口纠正后续请求的时序推断；原尝试保留，采用真实可控调度与正向对照证据。协议16/16、设置2/2、全屏11/11通过；现有固定材料复制和4项身份核验通过，没有构建新runtime。固定Host参考源码已实际只读读取并记录SHA，当前生产窗口映射仍UNKNOWN，源码与二进制可重复构建关系未建立。
+
+[合同](V038_SCOPE_AND_CONTRACT.md)列出限定文件、一次完成/有界清理候选预算、物理操作与播放owner差异、外部设置优先和验收矩阵；预算来源仅为项目既有请求上限类比与明确新假设，待父审。当前只文档/私有证据，无新产品修改，不声称硬件、真实服务或前台PASS。
+
+## 2026-10-17 有限维护最终父审状态收尾
+
+父会话已实际复核产品source5341f32985aabefa03f789b1428d8dfa2be5ba06与文档快照9799a65d23944d59baffb468f791421defa5cbff，独立artifact298/298、0失败。源码、最终组合、996/210/62、Session/C15/VerifyOnly、入口及完整交付/ZIP证据均已父验；状态更新为PARENT_REVIEWED_LOCAL_CANDIDATE_COMPLETE，人工菜单/电影库往返等待用户。仅更新本报告/状态及私有恢复信息，不重跑门禁，不改source/runtime/ZIP/VALIDATION/profile。原失败和审计器schema/root-prefix错误保持；未测显示器映射、timeout/恢复owner、硬件/系统安装保留恢复条件，不扩大本轮范围。Model Tier: Tier 1（纯文档/状态）；主线程沿用当前配置；Escalated: No。
+
+以下为父审前的实施与收尾过程记录。
+
+## 2026-10-17 有限维护组合验证与本地候选收尾
+
+最终产品来源5341f32985aabefa03f789b1428d8dfa2be5ba06，实际公开完整确认996/996、材料210/210、JS313/PS28/有限模式364通过。首次534公开995/996的单一Git夹具进程异常隔离1/1通过后完整确认；原失败保留。build/VerifyOnly与独立109产品/51输入/4notice Git blob、2159payload/2160runtime完整集合SHA通过，相对037仅5产品输出/6来源元数据变化。菜单9与OSD/API/PM53项隐藏通过；第一次夹具提前destroy导致的异步错误改为drain+pause后通过，产品未为此修改。实际候选入口隐藏启动资料隔离、show/network/真实Native子进程0；所属进程退出，profile不入交付。
+
+新目录ETE-night-maintenance-5341f32-20261017与ZIP已完成；ZIP2164文件流逐SHA/CRC、240674258 bytes，SHA3f39076954ae4b3ef18270a17ccfcb288c3b9cc2634d7a0ba6956f3f7db677c1。完整矩阵、失败历史、未测与最小清单见[报告](OVERNIGHT_REVIEW_REPORT_20261016.md)。Model Tier/worker角色沿前合同，主线程保留组合/核心判断；此收尾仅文档，不改变产品/ZIP或发布状态，待父会话最终产物验收。
+
+## 2026-10-17 E2最终变换链边界修正
+
+首次组合材料207项中200通过，7项均被VirtualScroller最终输出hash拦住：中间Movie SHA被误作生产末态，实际还有Search patchBrowseGuard。追加实际Movie→Search回归亦证实Search marker被误扩为object。父审批准区分Movie专属marker和既有共享browse提交guard；Search变换器不改，Search-only维持true/null和原stale保护。19项最终组合回归通过，最终输出54537E...C3802F。旧8cc公开996/996、材料200/207、中间16项与新增修前17/19均原样保留，不合并成新来源PASS；新准确来源再次运行门禁。此阶段没有构建候选或操作已发资产。
+
+## 2026-10-17 E2电影分块双终态归属
+
+父审指出catch-only方案不足，批准补成功已fulfilled但提交前退休的分支。生产patchVirtualScroller只在Movie请求使用唯一truthy token，失败和success stale guard返回前只清当前同token；正常成功保留loaded，原数据守卫和非Movie true/null保持。隔离worker只扩材料测试，主审取真实diff并强化同map同epoch旧成功/失败保护，修前12/16、修后16/16。固定输入D298...A5B9不变，原overlay输出绑定改2ADE...597A9；没有新generator或缓存策略。组合来源/构建另核，真实前台与服务器未执行。
+
+## 2026-10-17 B/P1刷新率协议错误收口
+
+按父审限定合同只改registerFreshRate和getRefreshRate/setRefreshRate：完成标记先于callback；unknown不spawn；同步spawn异常或child/error空回调且close不重复；无数字响应按旧空值resolve。16项实际函数体回归修前7通过/9失败，修后连同既有mpv设置与全屏状态共29/29通过。所有child/XHR为合成替身，未启动刷新率工具、显示器或窗口。DISPLAY1/工具路径/正常协议与输出保持，未加入超时、映射或恢复状态机。
+
+## 2026-10-17 E1诊断标签修正
+
+隔离worker在night-log-labels分支提交de44b69，仅safeLabel及相邻诊断回归。主线程检查实际diff后以no-commit取两文件，强化独立canary而非原路径后缀断言，补POSIX、两种Windows分隔符、fallback和截断；主树诊断集合45/45通过。源码只复用既有sanitizeText再原归一，不改schema/IPC/轮转或权限。原独立分支、修前失败和私有回执保留；当前本地修正不发布。
+
+## 2026-10-17 指定设置栏排序局部修正
+
+原设置聚合器按route.order及翻译标题排序。仅给cec.js与libmpv.js getRoutes中的六项补order3—8，键盘保持原order2，其他路由字段保持。新增源码元数据与实际固定注册表达式/聚合器材料回归，修前1通过/2失败，修后3/3；同时覆盖sync开关及用户路线保留。首次夹具把注释/未激活对象当route的失败单列保留，不冒充产品修前证据。安装相关15/15隔离检查通过，不代表系统安装。B/P1、E1与修订E2已获父审限定批准，独立推进，不扩大显示/播放架构。
+
+## 2026-10-17 Web分块归属与诊断标签复现
+
+E1纯函数探针确认category/event字符白名单不能替代已有文本脱敏；正常产品调用固定标签，未声称常规泄露。E2使用固定VirtualScroller函数体、生产patcher和Movie wrapper复现pause/resume(false)后分块标记仍true而无法重新fetch，旧数据继续被抑制。最小标签处理与局部chunk token方案见[异步及隐私审查](OVERNIGHT_ASYNC_PRIVACY_REVIEW_20261016.md)，仅文档/私有证据，等待父审，不改变产品。STRM/CD2有限源码核对未发现新增确定问题；不把覆盖范围扩大为完整Native或真实服务验收。
+
+## 2026-10-17 显示异常复现与局部方案停点
+
+三个现有函数体的合成用例复现child/error未收口、unknown仍spawn及无数字响应Promise悬挂，真实子进程/窗口/显示器操作为0。P1仅建议协议一次回调和无数字响应按原空结果settle，精确允许文件/不变量/测试见[显示审查](OVERNIGHT_DISPLAY_REVIEW_20261016.md)，待父审，产品未改。首轮安装/资源只读审核未发现确定缺陷，保留降级策略及手工消费者UNKNOWN。固定输入准备与4项门禁通过；E的信任/异步候选仍只收集证据，不授权worker实施。
+
+## 2026-10-16 发布后有限维护合同
+
+Model Tier: Tier 1（明确菜单/安装/资源证据）与 Tier 2（显示跨层及核心审查）；Model: 主线程沿用当前配置；三个 GPT-6 Luna High worker 分别只读定位菜单、安装升级和资源消费者；Reason: 先固化有限覆盖、证据和高风险停点；Escalated: No。基线 main `45bea67bb6f3c9e825c44c6e1a5e0f908f74b8d0`，独立本地分支 `codex/post-v037-night`。仅新增合同报告/状态记录，未修改产品或启动测试/候选。验收与恢复见[报告](OVERNIGHT_REVIEW_REPORT_20261016.md)，本轮不自动发布后续修正。
+
 ## 2026-10-16 v0.3.7 Pre-release 发行收尾
 
 Model Tier: Tier 1（文档发行状态与证据同步）；Model: 主线程沿用配置，精确标识未由工具暴露；Reason: 已合并并完成验证的来源仅作发行记录与导航收尾；Escalated: No。本轮Worker限定处理固定输入、私有验证脚本及文档补丁，主线程核对实际差异与测试；发布决策和全部Git/远端操作由主线程执行，不据此声称型号变更。

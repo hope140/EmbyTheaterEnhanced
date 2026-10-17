@@ -1,5 +1,63 @@
 # 项目状态
 
+## 2026-10-17 — v0.3.8测试版发布准备
+
+用户已授权v0.3.8 Pre-release发布闭环，主要验收反馈记录为 `USER_REPORTED_NO_ISSUE`，其余场景 `MONITORING`；不展开为逐设备、真实硬件/播放/远控/安装PASS，不再等待补测。已父验bd486f5产品/0c8c051文档和夜间四项维护作为内容基线，在独立发行树准备PR/CI；最终安装器、Tag和来源记录须重新绑定合并后准确main，旧本地候选保持原身份。
+
+产品范围冻结为夜间四修与A/B1/N1/N2。完整lease/CAS、可靠映射和完整app-exit缺口保持，缓存和切轨延迟暂缓；Stable/Latest保持v0.3.1。发布后另记录实际PR、CI、安装器解包和全部五附件匿名回读证据。本次授权不含系统安装、主动前台、服务器业务或读取个人凭据。
+
+## 2026-10-17 — v0.3.8本地候选完成
+
+状态为 `V038_LOCAL_CANDIDATE_COMPLETE`。产品source `bd486f5fa625496086248b80a3f8859dc19b19da`、版本0.3.8，包含夜间四项维护及已准A/B1/N1/N2局部修正。准确来源公开1095/1095、材料210/210、源构建、VerifyOnly通过；2159 payload/2160完整runtime、109产品/51输入/4notice来源绑定与逐文件SHA闭合，独立runtime审计578/578通过。隐藏实际组件62/62及候选入口隔离检查通过，实际显示/网络/Native子进程均0，所属进程正常退出、无残留。
+
+候选 `dist/ETE-v0.3.8-display-bd486f5-20261017/Start-Candidate.cmd`；目录/ZIP各2165文件，ZIP为233738938 bytes，SHA-256 `5aa4bcf59b70cbcddf15575f7440b5a77859dc4bb47ed35d96f70aad43724cc8`，完整集合、逐项SHA及CRC回读通过。专用profile在候选同级，不进入ZIP；后续文档HEAD与上述产品来源分开。详情见[交付报告](V038_LOCAL_CANDIDATE.md)。历史初败、错误事务断言、证据覆盖事故和独立重建复验继续保留原记录。
+
+完整B2 lease/CAS、跨renderer同值接管、显示目标映射与完整app-exit恢复仍为UNKNOWN；真实播放/远控/显示硬件/前台/系统安装为 `USER_DEFERRED_NOT_TESTED` 或未执行。本地交付不等待人工反馈，不代表硬件验收或发布；本轮只有本地提交，没有远端写入。
+
+以下为阶段历史，旧来源与当时待办不替代上面的最终状态。
+
+## 2026-10-17 — v0.3.8 N1同adapter FPS工作合并
+
+父审通过N1-v2形状后，产品来源`c64923c891d07c947c62e28f6d3efdddeac541a4`仅落实同adapter/request的共享drain、latest pending、原3000ms稳定等待及invalidate退休清理；await后复核record/request，内部finally先释放record再结算Promise。两份完整AMD新回归各9/9，连同Native/字幕与既有Play/settings/两adapter相关合计70/70通过；精确旧源用相同测试分别1/9、4/9。收口微任务用例另能拒绝旧未应用外层finally草案，未把它称为原311的失败。
+
+N2保持未应用，空/无效restore结果诊断的窄rebase草案也只完成语法检查，等待父矩阵与具体审核。[当前合同](V038_NARROW_DISPLAY_REVIEW.md)明确N1不提供跨renderer lease/main物理取消或完整恢复。版本仍0.3.7，没有038runtime；最终组合范围稳定后再做版本和完整门禁，未重复已绿的A+B1全量。
+
+## 2026-10-17 — v0.3.8 A+B1来源复核与窄子项停点
+
+产品来源`311e36690c2eff5ea014d98878d4899b0d82f587`完成绝对close边界修正、不可用切率结果收口及main全局FIFO。公开1061/1061、相关121/121、材料210/210、JS319/PS28和有限模式370通过；本来源2个所属惰性Node假进程实际close、残留0，未执行真实显示工具。父已实际审源并独立复跑相关14/14通过；后续b165592仅修测试cleanup调用，2/2通过，产品不变。不冒称硬件或逻辑lease完成。
+
+4a首次完整npm集合1121/1122的唯一失败为require时缺生成preload；按固定生成器补齐后原夹具5/5通过，首轮失败保留。B1只提供物理串行。[N1/N2窄方案](V038_NARROW_DISPLAY_REVIEW.md)已补8场景/292trace修前事实及独立未应用diff：同adapter FPS合并、恢复前第三值观察守卫，具体失败选择待父审。版本仍0.3.7，没有038候选；跨实例同值接管、目标映射、完整app-exit恢复及真实硬件仍未闭合。
+
+## 2026-10-17 — v0.3.8 A有界显示探测局部修正
+
+父审adaad65后限定批准A：main接收起5000ms封口、1000ms所属进程确认与未退出隔离；XHR单次/Play探测总8000ms，失败仅降级可选显示探测，取消仍退休旧Play。原功能关闭查询与成功FPS的3000ms保持。FPS/旧恢复调用补必要错误收口，不把undefined或kill成功当作显示恢复证据。相关104/104及2个所属Node假进程真实close/残留0通过，未运行真实显示工具；最终公开门禁另记录。
+
+B的精确[归属设计](V038_DISPLAY_OWNERSHIP_REVIEW.md)分开main物理FIFO与adapter局部lease。实际Web注册不能证明跨renderer唯一owner，当前协议也无可信实例归属；B只设计/有效失败用例，未实施。版本仍0.3.7、没有038runtime或候选；真实映射/硬件/完整app-exit恢复保持UNKNOWN或未测，独立可验证工作继续。
+
+## 2026-10-17 — v0.3.8 显示兼容合同与离线复现
+
+从已父验夜间 HEAD `e2b0eff8de31b51500af7adbf6e9e032cd4b5cb6` 建立独立本地 `codex/v038-display`，继承四项限定修正。当前只收集证据并形成[显示兼容合同](V038_SCOPE_AND_CONTRACT.md)，产品与版本仍为原 0.3.7，尚无 0.3.8 runtime。真实函数体探针确认无终态工具/XHR挂起，完整AMD夹具复现并发change、Stop/Next后旧物理变更及外部第三值被恢复覆盖；已有旧请求unpause保护的正反对照通过。协议16/16、设置2/2、全屏11/11通过，均为离线合成证据。
+
+固定输入复制与四项身份门禁通过。固定参考源码已只读核查，现有生产合同仍缺窗口到Win32显示设备的可靠映射，保持UNKNOWN；硬件、前台与安装NOT_VERIFIED。跨层超时、恢复归属与退出具体修正先父审；预算为候选技术假设，未写入产品。不等待用户人工测试来阻塞独立工作，当前没有远端或系统写入。
+
+## 2026-10-17 — 有限维护本地候选父审完成
+
+产品source `5341f32985aabefa03f789b1428d8dfa2be5ba06` 完成四项限定修正，独立候选入口 `dist/ETE-night-maintenance-5341f32-20261017/Start-Night.cmd`。公开完整确认996/996、材料210/210、隐藏组件62、实际隔离入口、VerifyOnly和完整包体/ZIP回读通过。ZIP 240674258 bytes，SHA `3f39076954ae4b3ef18270a17ccfcb288c3b9cc2634d7a0ba6956f3f7db677c1`。来源109产品/51输入/4notice Git blobs闭合，2159 payload/2160runtime/2164ZIP文件流准确。后续文档HEAD与产品来源分开。
+
+状态为PARENT_REVIEWED_LOCAL_CANDIDATE_COMPLETE。父会话实际源码/最终组合复核及独立artifact298/298通过，父审文档快照9799a65与产品5341f32分开；本次仅文档状态收尾，候选与ZIP保持。本轮仅本地提交，未推送/发布。人工菜单与电影库往返等待用户反馈；安装与旧资源有限审核无新增确定缺陷，未知消费者保留。显示器映射、恢复owner/超时及真实硬件/系统等保留原因和恢复条件，不继续等待或扩张。全部失败阶段及审计器schema/root-prefix错误保留，详见[最终报告](OVERNIGHT_REVIEW_REPORT_20261016.md)。
+
+以下为本轮过程记录，当前状态以上述为准。
+
+## 2026-10-17 — 设置栏本地排序与限定修正
+
+隔离夜间树已落实指定七项排序的六个route.order字段，原聚合器与路由归属保持，3/3定向测试通过；组合来源构建和隐藏组件核对尚未执行。安装15/15隔离检查通过，未运行真实安装。显示P1、日志标签及电影分块双终态归属修正已获父审限定批准，分别实施与验证。范围、证据及未测见[夜间报告](OVERNIGHT_REVIEW_REPORT_20261016.md)；当前仅本地修正，037已发资产与渠道保持。
+
+
+## 2026-10-16 — 发布后有限维护审核启动
+
+已发布 main `45bea67` 为新隔离本地维护基线，分支 `codex/post-v037-night`。首个合同停点见[夜间审核报告](OVERNIGHT_REVIEW_REPORT_20261016.md)：覆盖指定七项设置栏排序、显示链、安装升级、旧资源消费者及当前仍可达维护代码。当前仅固化范围和开展只读定位，尚无产品修改或新候选；复杂显示/播放/异步/信任边界差异先父审。037发行状态及原资产保持，后续修正仅本地。
+
+
 ## 2026-10-16 — v0.3.7 测试版已发布
 
 [v0.3.7 GitHub Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.7) 已发布，PR [#41](https://github.com/hope140/EmbyTheaterEnhanced/pull/41) 已合并。产品 Tag `v0.3.7` 固定准确 main 源码 `bf6e48214820fac0558bdfe7f37526f1c7a3d7c2`；Stable/Latest 保持 v0.3.1。主线与 Tag CI 均为 977/977，固定材料门禁 200/200。

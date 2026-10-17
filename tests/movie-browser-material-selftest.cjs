@@ -139,14 +139,25 @@ test('the native delayed focus and refresh-monitor callback also belongs to the 
         assert.equal(callbacks, stale ? 0 : 2);
     }
 });
-function virtualLoad(patched, instance) {
+function virtualLoad(patched, instance, composeSearch = false) {
     const input = read('modules/virtual-scroller/virtual-scroller.js');
-    const text = patched ? patch.patchVirtualScroller(input) : input;
+    let text = patched ? patch.patchVirtualScroller(input) : input;
+    if (composeSearch) text = require('../tools/patch-search-ui.cjs').patchBrowseGuard(text);
     const start = text.indexOf('this.boundLoadItems = function () {') + 'this.boundLoadItems = '.length;
     const end = text.indexOf('}.bind(this)', start) + 1;
     return vm.runInNewContext('(' + text.slice(start, end) + ')', {AbortController,
         abortRequests(owner) { if (owner.currentAbortController) owner.currentAbortController.abort(); }}).call(instance);
 }
+function virtualInstance(state, fetchItems) {
+    return {startIndexToLoad: 30, virtualChunkSize: 30, chunksLoaded: {}, _itemSource: [], _itemSourceMap: {},
+        _eteMovieBrowse: state, fetchItems, scroller: {requestReset() {}}, currentAbortController: null};
+}
+function deferred() {
+    let resolve, reject;
+    const promise = new Promise((res, rej) => { resolve = res; reject = rej; });
+    return {promise, resolve, reject};
+}
+function isTruthyChunkMarker(instance, chunkStart = 30) { return !!instance.chunksLoaded[chunkStart]; }
 test('pinned virtual-scroller discards fulfilled stale chunks at the item-source boundary', async () => {
     for (const patched of [false, true]) {
         let resets = 0;
@@ -178,6 +189,202 @@ test('an aborted chunk in the same query remains retryable after scrolling elsew
     owner.currentAbortController.abort(); owner.currentAbortController = new AbortController();
     reject(new Error('chunk aborted')); await tick();
     assert.equal(owner.chunksLoaded[30], null);
+});
+test('real Movie wrapper pause and resume without refresh releases a cancelled virtual chunk for retry', async () => {
+    const f = await fixture();
+    const instance = virtualInstance(f.owner._eteMovieBrowse,
+        (query, signal) => f.owner.itemsContainer.fetchData(query, signal));
+    f.owner.onResume({refresh: false});
+
+    virtualLoad(true, instance);
+    await tick();
+    assert.equal(f.calls.length, 1);
+    assert.equal(isTruthyChunkMarker(instance), true);
+
+    f.owner.onPause();
+    await tick();
+    assert.equal(f.calls[0].signal.aborted, true, 'the maintained Movie wrapper aborts the in-flight request');
+    assert.equal(isTruthyChunkMarker(instance), false,
+        'a stale failure releases its own in-flight chunk marker');
+
+    f.owner.onResume({refresh: false});
+    virtualLoad(true, instance);
+    await tick();
+    assert.equal(f.calls.length, 2, 'resume(refresh:false) retries the same uncached chunk on the retained scroller');
+    f.calls[0].resolve({Items: [{Id: 'old-paused-result'}]});
+    f.calls[1].resolve({Items: [{Id: 'resumed-result'}]});
+    await tick();
+    assert.equal(instance._itemSource[30].Id, 'resumed-result');
+});
+test('fulfilled Movie chunk retired before callback commit releases its marker and can retry', async () => {
+    const state = {epoch: 0, paused: false, destroyed: false}, calls = [];
+    const owner = virtualInstance(state, () => {
+        calls.push(calls.length + 1);
+        return Promise.resolve({Items: [{Id: 'ready-before-retire'}]});
+    });
+    virtualLoad(true, owner);
+    assert.equal(isTruthyChunkMarker(owner), true);
+    // The transport is fulfilled, but its .then callback has not committed yet.
+    state.epoch++;
+    state.paused = true;
+    await tick();
+    assert.deepEqual(owner._itemSource, [], 'retired success must not enter the item source');
+    assert.equal(isTruthyChunkMarker(owner), false, 'the stale success releases only its own marker');
+
+    state.paused = false;
+    virtualLoad(true, owner);
+    await tick();
+    assert.equal(calls.length, 2, 'the retired fulfilled chunk is retryable');
+    assert.equal(owner._itemSource[30].Id, 'ready-before-retire');
+});
+test('old query success and failure cannot release a newer query chunk token', async () => {
+    for (const oldOutcome of ['success', 'failure']) {
+        const state = {epoch: 0, paused: false, destroyed: false}, requests = [];
+        const owner = virtualInstance(state, () => {
+            const item = deferred(); requests.push(item); return item.promise;
+        });
+        virtualLoad(true, owner);
+        const oldToken = owner.chunksLoaded[30];
+        state.epoch++;
+        owner.chunksLoaded = {}; // Frozen setItemSource starts the new query's map.
+        virtualLoad(true, owner);
+        const newToken = owner.chunksLoaded[30];
+        assert.notEqual(newToken, oldToken, 'each query request owns a distinct marker');
+
+        if (oldOutcome === 'success') requests[0].resolve({Items: [{Id: 'old-query'}]});
+        else requests[0].reject(new Error('old query failed'));
+        await tick();
+        assert.strictEqual(owner.chunksLoaded[30], newToken,
+            'a late old-query outcome cannot clear the new query marker');
+        assert.deepEqual(owner._itemSource, [], 'the old query cannot submit rows');
+
+        requests[1].resolve({Items: [{Id: 'new-query'}]});
+        await tick();
+        assert.equal(owner._itemSource[30].Id, 'new-query');
+    }
+});
+test('same-epoch replacement request keeps its chunk marker when the old owner completes late', async () => {
+    for (const oldOutcome of ['success', 'failure']) {
+    const state = {epoch: 0, paused: false, destroyed: false}, requests = [];
+    const owner = virtualInstance(state, (_query, signal) => {
+        const item = deferred(); requests.push({item, signal}); return item.promise;
+    });
+    virtualLoad(true, owner);
+    const oldToken = owner.chunksLoaded[30];
+    const originalMap = owner.chunksLoaded;
+    owner.chunksLoaded[30] = null; // Retry the slot without replacing its query map.
+    virtualLoad(true, owner);
+    const newToken = owner.chunksLoaded[30];
+    assert.notEqual(newToken, oldToken, 'same-epoch replacement request has a fresh marker');
+    assert.strictEqual(owner.chunksLoaded, originalMap, 'ownership is checked within the same map');
+    assert.equal(requests[0].signal.aborted, true, 'the scroller retires the old request owner');
+
+    if (oldOutcome === 'success') requests[0].item.resolve({Items: [{Id: 'old-owner'}]});
+    else requests[0].item.reject(Object.assign(new Error('old owner failed'), {name: 'AbortError'}));
+    await tick();
+    assert.strictEqual(owner.chunksLoaded[30], newToken,
+        'old same-epoch outcome cannot null the replacement request marker');
+    assert.deepEqual(owner._itemSource, [], 'old same-epoch success cannot submit rows');
+
+    requests[1].item.resolve({Items: [{Id: 'replacement-owner'}]});
+    await tick();
+    assert.equal(owner._itemSource[30].Id, 'replacement-owner');
+    }
+});
+test('current failure clears its own Movie marker for retry and normal success remains cached', async () => {
+    const requests = [];
+    const owner = virtualInstance({epoch: 0, paused: false, destroyed: false}, () => {
+        const item = deferred(); requests.push(item); return item.promise;
+    });
+    virtualLoad(true, owner);
+    requests[0].reject(new Error('current chunk failure'));
+    await tick();
+    assert.equal(isTruthyChunkMarker(owner), false, 'the current failed request releases its own marker');
+
+    virtualLoad(true, owner);
+    assert.equal(requests.length, 2, 'a current failure can retry the chunk');
+    requests[1].resolve({Items: [{Id: 'loaded'}]});
+    await tick();
+    assert.equal(isTruthyChunkMarker(owner), true, 'successful chunks remain cached');
+
+    virtualLoad(true, owner);
+    assert.equal(requests.length, 2, 'a successful chunk is not fetched a second time');
+});
+test('non-Movie virtual scrolling retains its original true/null marker behavior', async () => {
+    for (const patched of [false, true]) {
+        const requests = [];
+        const owner = virtualInstance(undefined, () => {
+            const item = deferred(); requests.push(item); return item.promise;
+        });
+        delete owner._eteMovieBrowse;
+        virtualLoad(patched, owner);
+        assert.equal(owner.chunksLoaded[30], true);
+        requests[0].reject(new Error('ordinary list failure'));
+        await tick();
+        assert.equal(owner.chunksLoaded[30], null, 'ordinary list failure keeps the frozen null reset');
+
+        virtualLoad(patched, owner);
+        assert.equal(requests.length, 2);
+        requests[1].resolve({Items: [{Id: 'ordinary-list'}]});
+        await tick();
+        assert.equal(owner.chunksLoaded[30], true, 'ordinary list success keeps the frozen truthy marker');
+
+        virtualLoad(patched, owner);
+        assert.equal(requests.length, 2, 'ordinary list success remains cached');
+    }
+});
+test('final search-guard composition retains both Movie retirement outcomes', async () => {
+    for (const outcome of ['success', 'failure']) {
+        const request = deferred(), state = {epoch: 0, paused: false, destroyed: false};
+        const owner = virtualInstance(state, () => request.promise);
+        virtualLoad(true, owner, true);
+        state.epoch++;
+        if (outcome === 'success') request.resolve({Items: [{Id: 'retired-composed'}]});
+        else request.reject(new Error('retired composed request'));
+        await tick();
+        assert.equal(isTruthyChunkMarker(owner), false);
+        assert.deepEqual(owner._itemSource, []);
+    }
+});
+test('final search-guard composition preserves Search true/null markers and stale guards', async () => {
+    for (const stale of [false, true]) {
+        for (const outcome of ['success', 'failure']) {
+            const request = deferred(), state = {epoch: 0, paused: false, destroyed: false};
+            const owner = virtualInstance(undefined, () => request.promise);
+            delete owner._eteMovieBrowse;
+            owner._eteSearchBrowse = state;
+            virtualLoad(true, owner, true);
+            assert.strictEqual(owner.chunksLoaded[30], true, 'Search keeps its original boolean marker');
+            if (stale) state.epoch++;
+            if (outcome === 'success') request.resolve({Items: [{Id: 'composed-search'}]});
+            else request.reject(new Error('composed search failure'));
+            await tick();
+            assert.strictEqual(owner.chunksLoaded[30], !stale && outcome === 'failure' ? null : true);
+            assert.equal(owner._itemSource.length > 0, !stale && outcome === 'success');
+        }
+    }
+});
+test('final search-guard composition keeps a new Search query safe from old outcomes', async () => {
+    for (const outcome of ['success', 'failure']) {
+        const requests = [], state = {epoch: 0, paused: false, destroyed: false};
+        const owner = virtualInstance(undefined, () => {const request = deferred(); requests.push(request); return request.promise;});
+        delete owner._eteMovieBrowse;
+        owner._eteSearchBrowse = state;
+        virtualLoad(true, owner, true);
+        state.epoch++;
+        owner.chunksLoaded = {};
+        virtualLoad(true, owner, true);
+        const newMap = owner.chunksLoaded;
+        if (outcome === 'success') requests[0].resolve({Items: [{Id: 'old-search-query'}]});
+        else requests[0].reject(new Error('old search query failure'));
+        await tick();
+        assert.strictEqual(owner.chunksLoaded, newMap);
+        assert.strictEqual(owner.chunksLoaded[30], true);
+        assert.deepEqual(owner._itemSource, []);
+        requests[1].resolve({Items: [{Id: 'new-search-query'}]});
+        await tick();
+        assert.equal(owner._itemSource[30].Id, 'new-search-query');
+    }
 });
 test('patches are bounded, syntax-valid and reject shifted or repeated anchors', () => {
     for (const [method, file] of [['patchVideosTab', 'modules/tabbedview/videostab.js'], ['patchItemsTab', 'modules/tabbedview/itemstab.js'],

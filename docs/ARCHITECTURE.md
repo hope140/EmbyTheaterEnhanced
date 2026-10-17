@@ -14,6 +14,10 @@ STRM 按持久化 rules 的 cloud-first、mount-first 或 custom 顺序尝试 Di
 
 透明主窗口拥有 UI/OSD/输入，独立 video host 承载 helper child HWND。窗口与全屏状态由 main 管理；Helper 失败不退回旧 bridge。销毁共享 Promise，并等待所属进程退出和资源清理，保留错误。
 
+可选自动刷新率仍走原协议和工具，main对原固定DISPLAY1的全部动作使用进程范围FIFO，接收起5000ms包含排队；超时后另1000ms观察所属进程退出，未确认则保留隔离并禁新工具。renderer显示探测共用8000ms总预算，失败只禁本请求自动切率并继续原播放，取消仍退休旧Play。同adapter的FPS使用一个request-bound工作记录与最新pending目标，成功后保持原3000ms，invalidate清所属等待，内部finally在Promise结算前释放record。该局部归属不是跨renderer lease，renderer abort不表示main物理取消；目标窗口映射及完整app-exit显示恢复仍未闭合。
+
+原恢复仍为fire-and-forget且不延迟Native销毁；先在共8000ms预算内观察current，同实例generation已变则跳过，第三值或不可观测不做补偿写。同值才沿原change恢复original，无效/不符回包只记固定unavailable，不重试也不声明硬件成功。该观察守卫不是原子事务或全局持有权，跨renderer同值及TOCTOU限制保持。
+
 About 校验固定 provenance/manifest 与二进制身份，实时运行状态独立读取；缺失信息保留 UNKNOWN/NOT AVAILABLE。诊断旁路复用 logger 与 sender 校验，不改变 source 或播放时序。
 
 About 的 M01 状态模型分别展示已校验包内 libmpv 文件 SHA、编译期预期版本/API/SHA 和 ready Helper 握手报告的运行版本/API/受限能力子集。包内文件 SHA 不表示当前加载映像 SHA；当前映像哈希与 Native 属性回读仍为 UNKNOWN。固定 Native render path 为 gpu-next/D3D11，mpv-vo/mpv-gpuapi 设置页值不作为 Native property 应用。

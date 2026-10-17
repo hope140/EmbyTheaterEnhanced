@@ -18,6 +18,7 @@ define(['globalize', 'apphost', 'playbackManager', 'pluginManager', 'events', 'e
                 type: 'settings',
                 title: 'HDMI-CEC',
                 category: 'Playback',
+                order: 3,
                 thumbImage: '',
                 icon: 'tv',
                 settingsTheme: true,
