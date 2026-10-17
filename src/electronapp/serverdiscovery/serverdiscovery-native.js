@@ -5,6 +5,8 @@ function findServers(timeoutMs, callback) {
 
     var servers = [];
     var client;
+    var timer = null;
+    var settled = false;
 
     try {
         client = dgram.createSocket({ type: 'udp4', reuseAddr: true });
@@ -14,6 +16,7 @@ function findServers(timeoutMs, callback) {
     }
 
     function onReceive(message, info) {
+        if (settled) return;
         console.log('Message from: ' + info.address + ':' + info.port);
         console.log('ServerDiscovery message received');
         try {
@@ -32,21 +35,24 @@ function findServers(timeoutMs, callback) {
     }
 
     function onTimerExpired() {
-        console.log('timer expired', servers.length, 'servers received');
-        console.log(servers);
-        callback(JSON.stringify(servers));
-
+        if (settled) return;
+        settled = true;
+        if (timer !== null) clearTimeout(timer);
         try {
-            client.close();
-        }
-        catch (err) {
-
+            console.log('timer expired', servers.length, 'servers received');
+            console.log(servers);
+            callback(JSON.stringify(servers));
+        } finally {
+            try { client.close(); } catch (_) { }
         }
     }
+
+    client.on('error', onTimerExpired);
 
     client.on('message', onReceive);
 
     client.on('listening', function () {
+        if (settled) return;
 
         try {
             var address = client.address();
@@ -57,7 +63,7 @@ function findServers(timeoutMs, callback) {
             });
             console.log('UDP Client listening on ' + address.address + ":" + address.port);
             console.log('starting udp receive timer with timeout ms: ' + timeoutMs);
-            timeoutMs = setTimeout(onTimerExpired, timeoutMs);
+            if (!settled) timer = setTimeout(onTimerExpired, timeoutMs);
         }
         catch (err) {
             onTimerExpired();

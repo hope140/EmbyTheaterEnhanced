@@ -39,19 +39,28 @@ exports.wake = function wake(mac, options, callback){
         callback(err);
         return;
     }
-    var socket = dgram.createSocket(
+    var socket;
+    var settled = false;
+    function finish() {
+        if (settled) return;
+        settled = true;
+        try {
+            callback && callback.apply(undefined, arguments);
+        } finally {
+            try { socket.close(); } catch (_) { }
+        }
+    }
+    socket = dgram.createSocket(
         net.isIPv6(options.address) ? 'udp6' : 'udp4'
     ).on('error', function(err){
-        socket.close();
-        callback && callback(err);
+        finish(err);
     }).once('listening', function(){
-        socket.setBroadcast(true);
+        if (!settled) socket.setBroadcast(true);
     });
     socket.send(
         magicPacket, 0, magicPacket.length,
         options.port, options.address, function(err, res){
-            callback && callback(err, res == magicPacket.length);
-            socket.close();
+            finish(err, res == magicPacket.length);
     });
 };
 /* Modified for Emby Theater Enhanced on 2026-09-12/13. Distributed under GPL-2.0-only; see LICENSE. */
