@@ -1461,7 +1461,11 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                     if (newRate && newRate != curRefreshRate && isCurrentPlayRequest(ownerRequest)) {
                         self.pause()
                         try {
-                            curRefreshRate = await setRefreshRate(newRate, {signal: ownerRequest.controller.signal});
+                            var appliedRate = await setRefreshRate(newRate, {signal: ownerRequest.controller.signal});
+                            if (!Number.isFinite(Number(appliedRate)) || Number(appliedRate) <= 0) {
+                                throw new Error('Display change returned no usable rate');
+                            }
+                            curRefreshRate = appliedRate;
                         } catch (_) {
                             if (isCurrentPlayRequest(ownerRequest)) {
                                 ownerRequest.displaySyncReady = false;

@@ -324,6 +324,21 @@ for (const failure of ['network error', 'timeout']) {
   });
 }
 
+for (const response of ['', '0', 'synthetic unavailable']) {
+  test('an unavailable FPS change result clears qualification and resumes the current owner: ' + (response || 'empty'), async () => {
+    const h = loadPlayer({plans: {'electronrefreshrate://change?rate=120': [{response}]}});
+    await h.instance.play(options());
+    const changing = h.instance._onEstimatedVfFpsChanged(24);
+    await drainMicrotasks();
+    assert.deepEqual(h.endpoint.pauseWrites.slice(-2), [true, false], 'no confirmed display change can hold the current request paused');
+    await changing;
+    assert.equal(h.clock.pendingDelays().includes(3000), false, 'unavailable result is not a successful stabilization');
+    const count = changes(h).length;
+    await h.instance._onEstimatedVfFpsChanged(24);
+    assert.equal(changes(h).length, count, 'unavailable result disables this request automatic changes');
+  });
+}
+
 test('an unknown current rate after a later probe failure cannot trigger a blind restore', async () => {
   const h = loadPlayer({plans: {'electronrefreshrate://current': [{response: '60'}, {error: true}]}});
   await h.instance.play(options(1));
