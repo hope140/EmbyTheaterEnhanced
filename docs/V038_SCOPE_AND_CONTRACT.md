@@ -1,5 +1,7 @@
 # v0.3.8 显示兼容范围与合同
 
+> 本文保留本地候选的技术合同与当时证据。v0.3.8正式测试版已发布，准确产品来源和发行验收见[发行核验](V038_RELEASE_VERIFICATION.md)。用户后续反馈为主要验收无异常、其余使用中观察；旧候选和原机器证据身份保持。
+
 ## 当前阶段与来源
 
 2026-10-17，当前为`V038_LOCAL_CANDIDATE_COMPLETE`。独立分支`codex/v038-display`精确继承已父验夜间HEAD e2b0eff的四项修正；A/B1/N1/N2均按各自父准范围落实，最终产品来源`bd486f5fa625496086248b80a3f8859dc19b19da`、版本0.3.8。公开1095/1095、材料210/210、源构建/VerifyOnly、隐藏组件62/62、隔离入口及2165文件ZIP逐项回读通过，详见[交付报告](V038_LOCAL_CANDIDATE.md)。完整B2 lease及已列条件缺口保持UNKNOWN，见[窄合同](V038_NARROW_DISPLAY_REVIEW.md)；真实验收仍未执行。准确工作树/证据与恢复入口为被忽略的`.work/V038_TASK_STATE.json`，后续文档HEAD不替代产品来源。

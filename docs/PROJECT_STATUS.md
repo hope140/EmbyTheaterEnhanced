@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-10-17 — v0.3.8测试版已发布
+
+[v0.3.8 GitHub Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.8) 已发布，PR [#42](https://github.com/hope140/EmbyTheaterEnhanced/pull/42) 已正常合并。产品Tag `v0.3.8` 固定准确main来源 `0bbc504fbb6ca98dfb7476e8078c4483347b4375`；后续文档HEAD与产品来源分开。Stable/Latest保持v0.3.1。
+
+main与Tag公开CI各1095/1095、固定材料210/210通过；准确main隐藏组件62/62通过，实际窗口显示/网络/Native启动及所属残留均0。标准安装器为175754512 bytes，SHA-256 `2f0be46a17c16522f677e7a174da72815bec8d9a06ffb0181a5183670fdef2db`；解包{app}的2160文件与完整runtime逐路径/逐SHA一致。相对已审bd486f5候选仅6个来源身份元数据变化，其余2154文件字节相同。五附件已匿名全字节回读并核对大小、SHA、来源、校验文件和同源发布说明，详见[发行核验](V038_RELEASE_VERIFICATION.md)。
+
+用户主要验收反馈为 `USER_REPORTED_NO_ISSUE`，其余 `MONITORING`，不扩展为逐设备或真实硬件/播放/远控/安装PASS。完整lease/CAS、可靠显示映射及完整app-exit恢复缺口保持；缓存和STRM字幕/音轨切换延迟暂缓。本次未执行系统安装、主动前台或真实服务器业务，不启动下一版。以下为发行准备和本地候选的历史记录。
+
 ## 2026-10-17 — v0.3.8测试版发布准备
 
 用户已授权v0.3.8 Pre-release发布闭环，主要验收反馈记录为 `USER_REPORTED_NO_ISSUE`，其余场景 `MONITORING`；不展开为逐设备、真实硬件/播放/远控/安装PASS，不再等待补测。已父验bd486f5产品/0c8c051文档和夜间四项维护作为内容基线，在独立发行树准备PR/CI；最终安装器、Tag和来源记录须重新绑定合并后准确main，旧本地候选保持原身份。

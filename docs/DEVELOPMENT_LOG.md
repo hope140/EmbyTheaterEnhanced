@@ -1,5 +1,15 @@
 # 维护记录
 
+## 2026-10-17 v0.3.8发行闭环
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置；GPT-6 Luna High worker限定固定输入与私有发行脚本，父会话独立源码/包体审计；Reason: 合并后准确来源和公开资产完整回读；Escalated: No。PR42的8332cde经两公开CI通过后正常merge，产品main/Tag固定0bbc504fbb6ca98dfb7476e8078c4483347b4375，产品内容与bd候选一致，包含夜间5341四修；没有新增核心或依赖差异。
+
+准确main公开CI与Tag CI各1095/1095，材料210/210，源构建/VerifyOnly、隐藏62项、标准Inno安装器解包2160路径/逐SHA及2154相同/6身份元数据对照通过。安装器175754512 bytes，SHA-256 2f0be46a17c16522f677e7a174da72815bec8d9a06ffb0181a5183670fdef2db；五附件按原Git blob发布说明、provenance和校验关系封存，全部匿名完整下载核验，安装器range按序覆盖全部字节重算SHA。Release非draft、prerelease，Latest保持031；后续README与状态提交仅文档，不改变产品Tag或产物来源。
+
+首轮私有适配版的受控baseline路径/末尾LF假设已修正且原脚本保留；实际首轮审计的Node→Windows PowerShell5.1缺Get-FileHash失败及诊断保留，直接5.1 VerifyOnly通过。最终审计仅把该子调用改为与构建相同的PowerShell7并捕获输出；旧签名查询空状态不作有效证据，另在当前宿主ErrorAction Stop查询确认NotSigned。所有来源、集合、SHA、候选比较及原VerifyOnly门禁保持，安装器字节未改。失败不归为产品问题，也不擦除为首次全绿。
+
+用户反馈主要验收USER_REPORTED_NO_ISSUE、其余MONITORING，独立真实前台/硬件/播放远控/系统安装仍未执行。旧Settings脏树、候选/profile和旧版本资产保留；不继续缓存/切轨优化或下一版。详细发行身份与五附件回读见[V038_RELEASE_VERIFICATION](V038_RELEASE_VERIFICATION.md)。
+
 ## 2026-10-17 v0.3.8测试版发行授权与准备
 
 Model Tier: Tier 2；Model: 主线程沿用当前配置；GPT-6 Luna High worker仅准备固定材料，后续限定包体审计；Reason: 准确main来源、安装器及远端资产闭环，产品合同冻结；Escalated: No。Task Risk中、Uncertainty低、Cross-module Scope为发行工具链、Playback/Session Impact为NONE。新隔离发行树从0c8c051建立，保留bd486f5候选/profile与根目录旧Settings改动，不增改产品。
