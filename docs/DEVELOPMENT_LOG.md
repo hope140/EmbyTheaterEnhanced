@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-17 v0.3.8 显示兼容证据与首个合同停点
+
+Model Tier: Tier 2；Model: 主线程沿用当前用户配置，精确标识未暴露；三个 GPT-6 Luna High worker 仅收集工具/XHR、完整AMD归属竞争及映射/窗口证据；Reason: 跨main工具与renderer显示异步，产品实现前固化调用图和父审边界；Escalated: No。隔离分支codex/v038-display精确基于e2b0eff，旧树/profile/候选保持。
+
+10个超时目标场景与调度器自检证明当前没有deadline；最终5个完整AMD场景与146条trace确认正常unpause、并发写的stats/物理值错序、Stop/Next后旧工具落地和盲恢复第三值。主审要求重做计数式时钟、未接setProperties的否定断言，并用现有stats出口纠正后续请求的时序推断；原尝试保留，采用真实可控调度与正向对照证据。协议16/16、设置2/2、全屏11/11通过；现有固定材料复制和4项身份核验通过，没有构建新runtime。固定Host参考源码已实际只读读取并记录SHA，当前生产窗口映射仍UNKNOWN，源码与二进制可重复构建关系未建立。
+
+[合同](V038_SCOPE_AND_CONTRACT.md)列出限定文件、一次完成/有界清理候选预算、物理操作与播放owner差异、外部设置优先和验收矩阵；预算来源仅为项目既有请求上限类比与明确新假设，待父审。当前只文档/私有证据，无新产品修改，不声称硬件、真实服务或前台PASS。
+
 ## 2026-10-17 有限维护最终父审状态收尾
 
 父会话已实际复核产品source5341f32985aabefa03f789b1428d8dfa2be5ba06与文档快照9799a65d23944d59baffb468f791421defa5cbff，独立artifact298/298、0失败。源码、最终组合、996/210/62、Session/C15/VerifyOnly、入口及完整交付/ZIP证据均已父验；状态更新为PARENT_REVIEWED_LOCAL_CANDIDATE_COMPLETE，人工菜单/电影库往返等待用户。仅更新本报告/状态及私有恢复信息，不重跑门禁，不改source/runtime/ZIP/VALIDATION/profile。原失败和审计器schema/root-prefix错误保持；未测显示器映射、timeout/恢复owner、硬件/系统安装保留恢复条件，不扩大本轮范围。Model Tier: Tier 1（纯文档/状态）；主线程沿用当前配置；Escalated: No。
