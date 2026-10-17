@@ -1,5 +1,23 @@
 # 维护记录
 
+## 2026-10-17 v0.3.9 H1重验及H2–H4真实完成
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置，GPT-6 Luna High静态复核；Reason: 父已接受观察器停点并准私有修复后重验；Escalated: No。观察器保持Start返回root进程Handle，已验证child绑定Handle/创建时间，CIM空路径在原绝对期限内有限重查并结合原Handle终态；真实非空映像差异、创建时间不符/PID复用仍拒绝并保存观测。TEMP只等本次目录清理、不手删。静态审查发现新脚本复制的未使用停止读回模式仍读旧H1证据，执行前已删除历史模式并禁止额外CLI参数。
+
+H1_A2独占新日志/STARTED/PROCESS/RESULT/快照实际通过：root为BOUND_HANDLE_AFTER_EMPTY_OR_GONE_CIM，子进程为BOUND_PROCESS_HANDLE，实际exit均7；错误32/句柄释放/完整前后保持通过。H2/H3/H4分别036→038、038→036、036→038，实际exit0、每步owned两实例结束、TEMP清理及payload/source/登记/快捷方式/994项profile字节保持通过。额外文件27/28/27；H3另有038的playback-power-owner脚本，按合同仅盘点，不擅清或扩大为功耗问题。
+
+H5尚未启动卸载器便在登记位置比较拒绝。新私有诊断及停止后全文件读回证实：DisplayVersion038；InstallLocation自H0字节未变，末尾反斜杠导致原始Equals失败，规范目标仍APP；程序/资料/登记/shortcut未变。此为私有比较器表示处理，非确认产品缺陷。已准备只允许精确APP+一个可选末尾反斜杠的窄草案及H5_A2独占回执，另拒绝卸载原路径的dot/相对/device/参数语法；仅语法通过，按父对非观察器新证据的停点等待技术核。未实际卸载或执行H6，没有产品/版本修改。
+
+## 2026-10-17 v0.3.9受保护备份与H1实际拒绝
+
+Model Tier: Tier 2；Model: 主线程沿用当前配置，GPT-6 Luna High分别静态复核备份及生命周期脚本；Reason: 精确主机变更与所属进程证据；Escalated: No。父已接受6a8c95b中的真实ACL失败并批准窄目的权限实现：独占创建新空根，受保护DACL仅当前用户/SYSTEM/Administrators三allow、CI/OI FullControl，Owner与权限先读回，现有父目录不改且额外write/delete/权限主体拒绝。
+
+v3按计划完成新根保护和唯一登记元数据写入，但既有PowerShell回执使用true而非$true导致停止；原失败未覆盖。v4只读核验该本任务根的Owner/protected DACL、唯一非reparse登记文件及canonical一致性，不再修改已有根ACL，再从独占子目录继续。图标复制探针、完整程序/资料/快捷方式复制及源/目的全文件读回、源前后/登记稳定、3620条目ACL门禁全通过。H0最终PASS，2186程序/994资料文件。静态复核记录曾要求首次写入前断言新根仍为空，该断言已加入；v4实际分支无Set-Acl。
+
+生命周期脚本先经Node/PS语法和只读036完整门禁；静态审查指出桌面shortcut缺失原会被跳过，已改成显式核任务状态：覆盖阶段沿原已选任务，卸载后规范参数的新安装沿原默认unchecked，不擅加TASKS。该H6预期尚未实测，不能报告PASS。
+
+H1实际启动可信038一次并观察一个所属Inno TEMP子进程；持有的只读Host句柄触发安装日志PrepareToInstall failed/Windows错误32。观察器在路径一致性核对报错，finally释放句柄；回执未记录冲突时实际路径/创建时间，精确root退出码UNAVAILABLE，不把它归因为已证实退出竞态。父批准计划的预期7没有实际退出证据。停止后仅按已记录PID/父子范围只读复核：所属进程0、TEMP根已清理；另全量程序及资料SHA、DeviceId文件、固定登记和两快捷方式均与036前态一致。无强杀、无客户端启动，H2–H6未执行。下一步先补观察器诊断并父核，不弱化路径/未知/退出门禁；没有产品缺陷或039空版。
+
 ## 2026-10-17 v0.3.9 H0首次执行与隐私门禁
 
 Model Tier: Tier 2；Model: 主线程沿用当前配置，GPT-6 Luna High作限定静态复核；Reason: 已获精确本机顺序授权，需核不透明备份与真实权限；Escalated: No。父已批准H0–H6，无新增普通用户许可停点。产品及版本不变，未执行安装器或应用。
