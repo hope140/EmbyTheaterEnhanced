@@ -130,6 +130,18 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         var orgRefreshRate;
         var curRefreshRate;
         var refreshRates;
+        var fpsDisplayWork;
+
+        function retireFpsDisplayWork() {
+            var work = fpsDisplayWork;
+            fpsDisplayWork = null;
+            if (!work) return;
+            work.pendingFps = null;
+            if (work.waitTimer != null) clearTimeout(work.waitTimer);
+            if (work.releaseWait) work.releaseWait();
+            work.waitTimer = null;
+            work.releaseWait = null;
+        }
         var playGeneration = 0;
         var highestPlaybackRequestId = 0;
         var activePlayRequest;
@@ -172,6 +184,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
         function invalidatePlayRequest() {
             playGeneration++;
+            retireFpsDisplayWork();
             if (enhancedRouteState) enhancedRouteState.clear();
             if (activePlayRequest) {
                 var previous = activePlayRequest;
@@ -1443,31 +1456,44 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             playerState["demuxer-cache-time"] = value
         }
 
-        self._onEstimatedVfFpsChanged = async function (fps) {
+        self._onEstimatedVfFpsChanged = function (fps) {
             var ownerRequest = activePlayRequest;
-            if (ownerRequest && ownerRequest.displaySyncReady && appSettings.get('mpv-displaysync') === 'true' && refreshRates && fps) {
-                if ((window.innerWidth == screen.width) && (screen.height == window.innerHeight)) {
-                    var calc = calcRefreshRate(refreshRates, fps)
-                    var pos = []
-                    if (appSettings.get('mpv-displaysync_override')) {
-                        var prefs = appSettings.get('mpv-displaysync_override').split(';')
-                        for (var pref of prefs) {
-                            if (calc.some((i) => i == pref)) {
-                                pos.push(pref)
+            if (!ownerRequest || !ownerRequest.displaySyncReady || !isCurrentPlayRequest(ownerRequest) ||
+                appSettings.get('mpv-displaysync') !== 'true' || !refreshRates || !fps ||
+                window.innerWidth != screen.width || window.innerHeight != screen.height) return Promise.resolve();
+            if (fpsDisplayWork && fpsDisplayWork.request === ownerRequest) {
+                fpsDisplayWork.pendingFps = fps;
+                return fpsDisplayWork.promise;
+            }
+            var work = {request: ownerRequest, pendingFps: fps, promise: null, waitTimer: null, releaseWait: null};
+            fpsDisplayWork = work;
+            work.promise = Promise.resolve().then(async function () {
+                try {
+                    while (work.pendingFps != null && fpsDisplayWork === work && isCurrentPlayRequest(ownerRequest) && ownerRequest.displaySyncReady) {
+                        var nextFps = work.pendingFps;
+                        work.pendingFps = null;
+                        if (appSettings.get('mpv-displaysync') !== 'true' || !refreshRates ||
+                            window.innerWidth != screen.width || window.innerHeight != screen.height) return;
+                        var calc = calcRefreshRate(refreshRates, nextFps);
+                        var pos = [];
+                        if (appSettings.get('mpv-displaysync_override')) {
+                            var prefs = appSettings.get('mpv-displaysync_override').split(';');
+                            for (var pref of prefs) {
+                                if (calc.some(function (rate) { return rate == pref; })) pos.push(pref);
                             }
                         }
-                    }
-                    var newRate = pos[0] ? pos[0] : calc[0]
-                    if (newRate && newRate != curRefreshRate && isCurrentPlayRequest(ownerRequest)) {
-                        self.pause()
+                        var newRate = pos[0] ? pos[0] : calc[0];
+                        if (!newRate || newRate == curRefreshRate) continue;
+                        self.pause();
                         try {
                             var appliedRate = await setRefreshRate(newRate, {signal: ownerRequest.controller.signal});
                             if (!Number.isFinite(Number(appliedRate)) || Number(appliedRate) <= 0) {
                                 throw new Error('Display change returned no usable rate');
                             }
+                            if (fpsDisplayWork !== work || !isCurrentPlayRequest(ownerRequest)) return;
                             curRefreshRate = appliedRate;
                         } catch (_) {
-                            if (isCurrentPlayRequest(ownerRequest)) {
+                            if (fpsDisplayWork === work && isCurrentPlayRequest(ownerRequest)) {
                                 ownerRequest.displaySyncReady = false;
                                 curRefreshRate = undefined;
                                 emitClientDiagnostic('warn', 'display', 'display-change-unavailable', requestDiagnosticDetails(ownerRequest));
@@ -1475,12 +1501,24 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                             }
                             return;
                         }
-                        await new Promise(r => setTimeout(r, 3000));
-                        if (isCurrentPlayRequest(ownerRequest)) self.unpause()
+                        await new Promise(function (resolve) {
+                            work.releaseWait = resolve;
+                            work.waitTimer = setTimeout(function () {
+                                work.waitTimer = null;
+                                work.releaseWait = null;
+                                resolve();
+                            }, 3000);
+                        });
+                        if (fpsDisplayWork === work && isCurrentPlayRequest(ownerRequest)) self.unpause();
                     }
+                } finally {
+                    // Release before the drain settles so a new FPS cannot join
+                    // completed work awaiting an outer Promise.finally callback.
+                    if (fpsDisplayWork === work) fpsDisplayWork = null;
                 }
-            }
-        }
+            });
+            return work.promise;
+        };
 
         self._onSubtitleOffsetUpdate = function (value) {
             playerState.subDelay = value * 1000;
