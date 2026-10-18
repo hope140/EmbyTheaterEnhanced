@@ -6,6 +6,10 @@ Model Tier: Tier 1；Model: 主线程沿用当前配置，GPT-6 Luna High 执行
 
 基于 v0.3.10 发行后的文档 main `adec0303be1eca3c46f22223066b863da9e771cb`，补用户操作步骤、索引、发行规范及模板，修正当前排期与已知问题的版本语境。检查按文本、链接、真实附件与 GitHub Markdown 结构执行，正常公共 CI 另记；不重复材料、构建、安装或播放。远端展示文案的变更须保存逐对象前后关系并回读，原始 notes 与附件保持发行时身份。最终范围与实际结果见[复核记录](POST_V0310_PUBLIC_DOCS_REVIEW_REPORT_20261018.md)。
 
+准确文档提交 `8f991cd8cd115afdaaf82aa75e0faa859e71dca9` 经实际呈现/三版正文审核及分支、PR 公共 CI 各 1119/1119 后，通过 PR #46 正常合并至 `39f7cf22058a578423bb2c8ef2f913545f4452dd`。公开指南 Git blob 确认后执行三个仅 `body` 的请求，逐对象及全量元数据读回通过；22 个标题、19 份未选正文、79 个附件身份、Tag/渠道与 Latest 保持。原始发行 notes、已核字节与当前展示文案的关系分开记录，本轮未追加二进制下载、构建或系统运行证据。
+
+合并后 main [CI 39104724762](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/39104724762) 原日志 1119/1119，fail/cancelled/skipped/todo 均为 0。仅同步本报告、项目状态与维护记录三份收尾文档，最终文档提交及其公共 CI 独立核对，不改变已发布产品身份。
+
 ## 2026-10-18 — v0.3.10 发行收口
 
 v0.3.10 Pre-release 已公开，产品 Tag 固定 v0.3.10 → 73a5379983e2be2a2bc0bdc8aec8f0fcb5f07d63；Stable/Latest 保持 v0.3.1。准确发行、CI、材料、包体与匿名附件证据见 [发行核验](V0310_RELEASE_VERIFICATION.md)。文档 HEAD 后续独立记录，不改变产品 Tag/source。系统安装、前台、真实 Helper ready/加载映像 SHA、播放/远控与设备验收保持 NOT_EXECUTED/UNKNOWN；许可未决按许可说明保留。

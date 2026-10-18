@@ -24,7 +24,7 @@
 
 本地检查改动范围、UTF-8、相对链接、下载链接与真实附件名称、渠道一致性及 GitHub Markdown 渲染结构。文档提交可通过反向补丁回退；Release 展示正文可按保存的原文恢复。正常仓库 CI 的结果与文档检查分别记录，不重复运行材料、构建或系统验收。
 
-## 覆盖与进度
+## 覆盖与实施前检查
 
 已核对 README、USER_GUIDE、KNOWN_ISSUES、CLIENT_DIAGNOSTICS、CONTRIBUTING、PUBLIC_CI、PACKAGING、LICENSING、SOURCE_MATERIALS、ROADMAP、NEXT_RELEASE_SCOPE 和 CHANGELOG 共 12 份现有文档。基线 63 个相对链接目标均存在。全部 22 个 Release 的 API 标题均已版本优先，正文下载链接均对应各自实际附件；v0.2.0 至 v0.2.2 缺独立 SHA 附件的历史事实保留。没有重写准确的标题或其余历史正文。
 
@@ -32,4 +32,22 @@
 
 PACKAGING 已有明确历史分区，旧 v0.3.9 段落按当时状态保留。许可、CHANGELOG、原始发行 notes 和产品文件不改。v0.3.10 的实现细节仍可在变更记录与核验文档追溯，不为统一文风删除已核事实。
 
-拟仅调整三个 Release 的展示正文：v0.3.1 明确其为当前正式版并补用户指南；v0.3.9 将结果入口改至发行与安装核验并补指南；v0.3.10 补指南。标题保持。先合并可读指南，再按已审核的逐对象原文/目标文字执行远端维护。原始 notes 附件保持；本报告此处记录的是实施前的准确检查和拟调整范围，最终 Git/CI 与逐对象回读结果另行补充。
+实施前确定仅调整三个 Release 的展示正文：v0.3.1 明确其为当前正式版并补用户指南；v0.3.9 将结果入口改至发行与安装核验并补指南；v0.3.10 补指南，标题保持。执行顺序为先合并指南，再按已审核的逐对象原文/目标文字维护远端。此处保留实施前的检查范围，实际结果见下节。
+
+## 已实施的公开调整
+
+[PR #46](https://github.com/hope140/EmbyTheaterEnhanced/pull/46) 经实际文档和正文前后对照审核后正常合并，文档 main 为 `39f7cf22058a578423bb2c8ef2f913545f4452dd`，准确准备提交为 `8f991cd8cd115afdaaf82aa75e0faa859e71dca9`。分支 [CI 39104205558](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/39104205558) 与 PR [CI 39104217501](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/39104217501) 各 1119/1119，fail、cancelled、skipped、todo 均为 0。合并树与已审核文档树一致。
+
+合并后 main [CI 39104724762](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/39104724762) 的原日志核对为 1119/1119，fail、cancelled、skipped、todo 均为 0。此后的报告同步提交独立于产品来源，其最终 HEAD 与对应 CI 按准确提交另行回读。
+
+确认公开指南的 Git blob 与合并提交一致后，仅更新以下展示正文：
+
+| Release | 对象 ID | 实际调整 |
+| --- | --- | --- |
+| [v0.3.1](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.1) | 410723326 | 明确当前 Stable / Latest、手动安装及测试版入口，补用户指南 |
+| [v0.3.9](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.9) | 415855401 | 核验结果直接链接 V039_RELEASE_VERIFICATION，补用户指南 |
+| [v0.3.10](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.10) | 416257802 | 补安装校验、升级、卸载与反馈指南 |
+
+三次请求均只包含 `body` 字段，写入前保存新鲜完整对象，写入后逐对象及全量回读通过。22 个标题、其余 19 份正文、原创建/发布时间、Tag、目标来源、发布标志及 79 个附件身份保持；47 行 Tag 引用及 Latest v0.3.1 保持。附件身份回读包括 ID、名称、大小、内容摘要与时间等字段，本轮未重复下载二进制；发行时的全字节证据仍见对应版本核验。
+
+三版网页展示正文现已不同于本轮保存的原文；v0.3.9、v0.3.10 的原始 `RELEASE_NOTES.md` 附件和产品来源保持发行时身份。历史核验中的初始正文一致性结论仍描述发布当时，不用于声称当前网页正文与原始附件同字节。没有重传附件、重打 Tag 或更改产品版本。
