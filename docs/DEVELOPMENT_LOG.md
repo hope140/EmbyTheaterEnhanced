@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-18 v0.3.10发行准备
+
+Model Tier: Tier 1处理明确版本/文档/固定流程，Tier 2保留准确来源、包体及最终审核；Model: 主线程沿用当前配置，GPT-6 Luna High限定只读工具盘点；Reason: 行为沿已审四修，实际版本传播链明确，发行身份需独立核对；Escalated: No。基线d6f19c0，新managed树/分支，root旧Settings脏树和全部旧包/资料/回执保留。
+
+根package.version、lock顶层version及packages[空键].version三处改0.3.10；runtime/manifest/Inno版本由既有链生成，不修改src/native/tools/tests/installer/vendor/workflow或依赖。父已实际核五字段纯validator传播没有一位patch截断，worker提供旧039脚本硬编码与材料路径清单；不为版本增加产品逻辑或重复该绿项。先交准备diff/notes父审，随后按新准确main保存本版真实公共/材料/构建/包体/匿名回读结果，不复用旧计数冒充。
+
 ## 2026-10-18 夜间有限复核与主线集成
 
 Model Tier: Tier 2负责局部异步、Native构造合同和最终核对，Tier 1执行明确测试/资料/文档与固定材料准备；Model: 主线程沿用当前配置，worker为GPT-6 Luna High；Reason: 六包有限复核，网络及Native精确差异先经技术审核，PlaybackManager/Session/鉴权及Native协议、运行loop和关闭归属保持；Escalated: No。起点31fdc，诊断E01提交8ace992、网络A01/A02提交74855b0、文档C01/C02提交dbf91ab、Native A03提交e41a050分开可回退。
