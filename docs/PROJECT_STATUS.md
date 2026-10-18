@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-18 — v0.3.10 发行收口
+
+v0.3.10 Pre-release 已公开，产品 Tag 固定 v0.3.10 → 73a5379983e2be2a2bc0bdc8aec8f0fcb5f07d63；Stable/Latest 保持 v0.3.1。准确发行、CI、材料、包体与匿名附件证据见 [发行核验](V0310_RELEASE_VERIFICATION.md)。文档 HEAD 后续独立记录，不改变产品 Tag/source。系统安装、前台、真实 Helper ready/加载映像 SHA、播放/远控与设备验收保持 NOT_EXECUTED/UNKNOWN；许可未决按许可说明保留。
+
+以下准备记录保留其当时停点。
+
 ## 2026-10-18 — v0.3.10维护测试版发行准备
 
 用户明确发布v0.3.10。新隔离发行分支从准确main d6f19c0开始，三处产品版本元数据更新为0.3.10，交付PR #44已审四修及文档维护，源码行为与依赖保持。按[发行合同](V0310_RELEASE_CONTRACT.md)准备PR/CI/正常merge、准确最终main构建与固定Inno安装器、包体解包、五附件匿名全字节回读和主线文档收尾；当前尚未构建或发布0310，Stable/Latest仍031，签名暂缓。

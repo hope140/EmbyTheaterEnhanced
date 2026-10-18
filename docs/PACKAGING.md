@@ -2,11 +2,15 @@
 
 ## 当前发行
 
-当前测试版为v0.3.9 Pre-release，产品Tag/sourceCommit为 `v0.3.9` / `06d34a712e26e0d6d0b299b487cfd68625df71ed`，Stable/Latest保持v0.3.1。准确安装器、runtime、五附件及安装升级验收边界见[v0.3.9发行核验](V039_RELEASE_VERIFICATION.md)。后续维护文档或代码HEAD不替代该产品来源。
+当前测试版为 [v0.3.10](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.10) Pre-release，产品 Tag/sourceCommit 为 `v0.3.10` / `73a5379983e2be2a2bc0bdc8aec8f0fcb5f07d63`，Stable/Latest 保持 v0.3.1。Main CI [run 39099388720](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/39099388720) 与 Tag CI [run 39101070181](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/39101070181) 均为 1119/1119；固定材料 210/210。准确安装器、runtime、五附件和匿名全字节回读见[v0.3.10 发行核验](V0310_RELEASE_VERIFICATION.md)。后续维护文档 HEAD 不替代该产品来源。
 
 ## 历史发行记录
 
 以下保留各版当时的来源、计数、工具输入及验收边界，不作为当前候选来源或新测试结果。
+
+### v0.3.9（历史）
+
+当前测试版为v0.3.9 Pre-release，产品Tag/sourceCommit为 `v0.3.9` / `06d34a712e26e0d6d0b299b487cfd68625df71ed`，Stable/Latest保持v0.3.1。准确安装器、runtime、五附件及安装升级验收边界见[v0.3.9发行核验](V039_RELEASE_VERIFICATION.md)。后续维护文档或代码HEAD不替代该产品来源。
 
 ### v0.3.7
 
