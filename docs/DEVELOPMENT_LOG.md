@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-18 — 用户文档与发行说明维护
+
+Model Tier: Tier 1；Model: 主线程沿用当前配置，GPT-6 Luna High 执行限定只读文档/Release 盘点；Reason: 明确范围的导航、事实链接和文本维护，来源与最终验收由主线程核对；Escalated: No。
+
+基于 v0.3.10 发行后的文档 main `adec0303be1eca3c46f22223066b863da9e771cb`，补用户操作步骤、索引、发行规范及模板，修正当前排期与已知问题的版本语境。检查按文本、链接、真实附件与 GitHub Markdown 结构执行，正常公共 CI 另记；不重复材料、构建、安装或播放。远端展示文案的变更须保存逐对象前后关系并回读，原始 notes 与附件保持发行时身份。最终范围与实际结果见[复核记录](POST_V0310_PUBLIC_DOCS_REVIEW_REPORT_20261018.md)。
+
 ## 2026-10-18 — v0.3.10 发行收口
 
 v0.3.10 Pre-release 已公开，产品 Tag 固定 v0.3.10 → 73a5379983e2be2a2bc0bdc8aec8f0fcb5f07d63；Stable/Latest 保持 v0.3.1。准确发行、CI、材料、包体与匿名附件证据见 [发行核验](V0310_RELEASE_VERIFICATION.md)。文档 HEAD 后续独立记录，不改变产品 Tag/source。系统安装、前台、真实 Helper ready/加载映像 SHA、播放/远控与设备验收保持 NOT_EXECUTED/UNKNOWN；许可未决按许可说明保留。

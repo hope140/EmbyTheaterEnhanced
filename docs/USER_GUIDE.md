@@ -1,6 +1,34 @@
-# 安装与 STRM 配置
+# 用户指南
 
-从 [Release 页面](https://github.com/hope140/EmbyTheaterEnhanced/releases) 选择所需稳定版或测试版的 Windows x64 安装包和 SHA-256 文件；主分支新增功能不表示已经发布。安装前关闭运行中的 ETE，核对文件哈希后按安装器选择语言和独立目录。安装器未签名；如系统提示，先检查来源和哈希。升级显示目录页并预填现有位置。卸载/重装等完整系统场景仍有验证缺口，重要配置请先备份。
+## 选择版本与校验下载
+
+当前正式版为 [v0.3.1](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.1)，当前测试版为 [v0.3.10](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.10)。两者均面向 Windows x64。测试版需要手动下载；内置检查更新读取 Stable 渠道，不自动安装更新。主分支新增功能不表示已经发布。
+
+从同一个 Release 下载 `.exe` 与对应 `.exe.sha256` 文件；`Source code` 压缩包用于源码，不是客户端安装包。将两个文件放在同一目录，在该目录打开 PowerShell。以 v0.3.10 为例：
+
+```powershell
+Get-FileHash -Algorithm SHA256 -LiteralPath '.\EmbyTheaterEnhanced-0.3.10-win-x64-setup.exe'
+Get-Content -LiteralPath '.\EmbyTheaterEnhanced-0.3.10-win-x64-setup.exe.sha256'
+```
+
+比较第一条命令的 `Hash` 与校验文件里的 64 位十六进制值，大小写不影响比较。选择其他版本时使用该版实际文件名。哈希不一致时停止安装并重新核对下载；哈希一致仅说明文件与发布校验值相符。安装包未签名，Windows 可能显示未知发布者提示。
+
+## 安装与升级
+
+1. 保存播放状态，正常退出客户端。
+2. 升级前备份重要配置。备份 `%APPDATA%\EmbyTheaterEnhanced`，以及存在时的 `%APPDATA%\Emby Theater Enhanced`；若自行指定了其他用户资料目录，也需备份该目录。仅复制程序安装目录不能完整备份用户资料。备份可能含登录资料和 Token，请只保存在可信的本地位置。
+3. 运行已校验的安装包，按管理员权限提示选择语言和安装目录。升级会预填已有安装位置，请确认原目录。
+4. 安装完成后启动客户端，在“关于”确认版本；首次使用时连接自己的 Emby 服务器。
+
+安装器会检查目标目录中的客户端及被占用文件，不会替你强行结束进程。若被拒绝，正常退出客户端后重试。复制或替换失败时保留错误信息，检查目录权限与剩余空间，再在原目录重试；必要时使用此前可信的安装包恢复。安装器不提供自动回滚。
+
+## 卸载与资料保留
+
+正常退出客户端后，在 Windows“设置”的应用列表中找到 Emby Theater Enhanced 并选择卸载，按向导完成。当前安装器卸载程序组件时保留个人设置、登录资料和 DeviceId；卸载后重装会继续使用保留资料，并非恢复全部默认设置。重要配置仍应先备份。
+
+安装、升级与卸载的已验证场景有明确边界，不能保证所有权限、取消、失败恢复和首次启动组合；见[已知问题](KNOWN_ISSUES.md)及[v0.3.9 安装核验](V039_RELEASE_VERIFICATION.md)。v0.3.10 的包体核验没有追加系统安装场景。
+
+## STRM 与 CloudDrive2
 
 启动后使用自己的 Emby 服务器登录。普通媒体无需配置 STRM 增强。进入播放设置中的“STRM 智能解析”，启用所需解析方式。
 
@@ -30,4 +58,11 @@ About 的内核管理区域显示当前进程和下次启动的选择。先准�
 
 详情页的旧外置播放器按钮和它的连播计时器已停用，相关设置会保留且不会自动改写。需要 Emby 自动播放下一集时，请继续使用播放设置中的“自动播放下一集”；该流程仍由正常播放队列管理。
 
-诊断设置提供状态、日志和导出包，About 提供版本与手动检查更新。提交问题前检查导出内容，隐藏账号、Token、Cookie、完整媒体地址和私人路径。更多内容见 [已知问题](KNOWN_ISSUES.md)、[配置合同](STRM_RESOLVER_SETTINGS.md) 和 [诊断](CLIENT_DIAGNOSTICS.md)。
+## 问题反馈
+
+1. 在“关于”记录应用版本；说明 Windows 版本、普通媒体或 STRM、预期行为与实际现象。
+2. 记下发生时间和时区，以及最少复现步骤。播放问题补充是否使用 CD2 或本地挂载、是否发生在切集、停止或切换字幕/音轨时。
+3. 在设置的“诊断与日志”点击“导出诊断日志”，保存 TXT。无法启动或无法导出时，先说明该情况并保留错误文字。
+4. 检查导出内容，隐藏账号、Token、Cookie、完整媒体地址、私人路径及媒体库标识，再到 [GitHub Issues](https://github.com/hope140/EmbyTheaterEnhanced/issues)提交问题和必要片段。不要上传整个用户资料备份。
+
+日志中的 `UNKNOWN` 表示缺少相应证据，不等同于失败。详细字段和可选仓库采集工具见[诊断说明](CLIENT_DIAGNOSTICS.md)；配置技术边界见[配置合同](STRM_RESOLVER_SETTINGS.md)，当前限制见[已知问题](KNOWN_ISSUES.md)。
