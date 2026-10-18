@@ -1,5 +1,11 @@
 # Client Diagnostics v1
 
+## 导出与反馈
+
+普通用户可先在设置中打开“诊断与日志”，点击“导出诊断日志”保存 TXT，检查内容后按[用户指南](USER_GUIDE.md#问题反馈)提交复现步骤。无法启动客户端时，先报告版本、现象和发生时间；下文的仓库 PowerShell 采集工具面向持有工具源码的排查者，不是普通安装用户的必备步骤。
+
+自动脱敏仅覆盖已知格式，导出成功不代表可以原样公开全部内容。上传或交给第三方分析前，检查账号、Token、Cookie、完整 URL、私人路径与媒体库标识。下面说明日志字段、技术边界及可选采集工具。
+
 客户端诊断是只读可观测层。它不改变 Resolver precedence、DirectUrl、CD2 budget、Mount 判定、PlaybackManager、Session、WebSocket、DeviceId、播放上报、NextTrack、WatchTogether 或 libmpv source selection。
 
 ## 日志位置与轮转
@@ -102,7 +108,7 @@ EmbyTheaterEnhanced-Diagnostics-YYYYMMDD-HHmmss.txt
 
 ## AI 分析建议
 
-将导出的 TXT 原样交给 ChatGPT/Codex/Hermes 时，优先询问：
+检查并移除仍可识别的敏感信息后，将必要的诊断片段交给分析工具时，可优先询问：
 
 - 最近一次 STRM 最终 route 是 `DIRECT URL`、`CD2 HTTP`、`MOUNT` 还是 `NATIVE FALLBACK`？
 - CD2 是命中、miss、error 还是 cancelled？Mount 是否实际到达并命中？

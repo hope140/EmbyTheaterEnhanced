@@ -1,5 +1,11 @@
 # 后续范围与启动条件
 
+## 当前状态
+
+有限维护的四项源码修正已随 [v0.3.10](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.10) Pre-release 发布；产品来源固定 `73a5379983e2be2a2bc0bdc8aec8f0fcb5f07d63`，正式版与 Latest 仍为 v0.3.1。详细结果见[发行核验](V0310_RELEASE_VERIFICATION.md)。这些修正已移出待发布项，真实设备、播放、Helper 运行及完整安装缺口仍按原验收边界保留。
+
+下面的显示归属、系统集成和安装条件继续作为候选，实施前按具体需求确定合同。尚未确定下一产品版本。以下日期段落保留当时基线与计划，其中“尚未发布”“之后执行夜间维护”等不代表当前待办。
+
 ## 2026-10-18 — 有限维护增量
 
 本轮在准确31fdc规划基线上维护既有诊断、UDP helper与Native构造：对象键已知格式脱敏、discovery错误终结、WOL一次响应，以及两处线程在全部成员初始化后启动。网络及Native精确差异先经技术审核，局部合同与合成验证见[复核报告](OVERNIGHT_REVIEW_REPORT_20261017.md)。修正经PR #44正常合并至main 88fcac1，分支/PR/main公共CI各1119项通过；最终本地候选source仍为e41a050，材料、标准构建/VerifyOnly、来源绑定及完整ZIP通过；实际生产Helper、真实网络与播放未运行。尚未发布新二进制。公开039仍固定06d34a7，不含本轮修正。

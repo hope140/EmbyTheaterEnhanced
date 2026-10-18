@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-18 — 用户文档与 Release 规范整理
+
+在 v0.3.10 发行完成后，整理正式/测试下载入口、哈希核对、安装升级卸载及问题反馈步骤，增加[文档索引](README.md)和[Release 规范与模板](RELEASE_CONVENTIONS.md)，更新当前排期说明并保留日期历史。复核范围、展示文案维护关系与检查方法见[复核记录](POST_V0310_PUBLIC_DOCS_REVIEW_REPORT_20261018.md)。产品来源、原始 notes、附件、Tag、渠道和许可未决事项保持，未增加产品或系统验收。
+
 ## 2026-10-18 — v0.3.10 发行收口
 
 v0.3.10 Pre-release 已公开，产品 Tag 固定 v0.3.10 → 73a5379983e2be2a2bc0bdc8aec8f0fcb5f07d63；Stable/Latest 保持 v0.3.1。准确发行、CI、材料、包体与匿名附件证据见 [发行核验](V0310_RELEASE_VERIFICATION.md)。文档 HEAD 后续独立记录，不改变产品 Tag/source。系统安装、前台、真实 Helper ready/加载映像 SHA、播放/远控与设备验收保持 NOT_EXECUTED/UNKNOWN；许可未决按许可说明保留。

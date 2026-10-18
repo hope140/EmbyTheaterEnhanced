@@ -10,26 +10,26 @@ Emby Theater Enhanced 是面向 Windows x64 的非官方 Emby Theater 社区维�
 - 智能路径映射助手、诊断导出和手动检查更新。
 - 简体中文/英文安装器及 Together 同步切集支持。
 
-## 下载 v0.3.1
+## 下载
 
-v0.3.1 是当前正式版。请从 [GitHub v0.3.1 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.1) 下载 Windows x64 安装包：
+仅提供 Windows x64 客户端。先选择发布渠道，再下载同一版本的安装包与校验文件。
 
-- [下载 EmbyTheaterEnhanced-0.3.1-win-x64-setup.exe](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.1/EmbyTheaterEnhanced-0.3.1-win-x64-setup.exe)
-- [SHA-256 校验文件](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.1/EmbyTheaterEnhanced-0.3.1-win-x64-setup.exe.sha256) · [安装包来源记录](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.1/EmbyTheaterEnhanced-0.3.1-win-x64-setup.exe.provenance.json)
+| 渠道 | 版本与发布说明 | 安装包 | 校验与来源 |
+| --- | --- | --- | --- |
+| 正式版 · Stable / Latest | [v0.3.1](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.1) | [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.1/EmbyTheaterEnhanced-0.3.1-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.1/EmbyTheaterEnhanced-0.3.1-win-x64-setup.exe.sha256) · [来源记录](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.1/EmbyTheaterEnhanced-0.3.1-win-x64-setup.exe.provenance.json) |
+| 测试版 · Pre-release | [v0.3.10](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.10) | [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.10/EmbyTheaterEnhanced-0.3.10-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.10/EmbyTheaterEnhanced-0.3.10-win-x64-setup.exe.sha256) · [来源记录](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.10/EmbyTheaterEnhanced-0.3.10-win-x64-setup.exe.provenance.json) |
 
-安装包 SHA-256 与准确源码提交见 Release 正文及随附校验文件、来源记录。
+v0.3.10 包含诊断导出、服务器发现/WOL 和播放器线程初始化的稳定性维护。[变更记录](CHANGELOG.md)说明各版差异，[发行核验](docs/V0310_RELEASE_VERIFICATION.md)记录本版验证范围。内置更新检查读取 Stable 渠道；测试版需要手动下载，不会因为版本号较新自动成为正式版。
 
-该安装包未进行数字签名，源码由 [v0.3.1 Tag](https://github.com/hope140/EmbyTheaterEnhanced/tree/v0.3.1) 固定。来源记录用于核对安装包身份；公开仓库尚未包含全部第三方构建输入，因此不能据此声称所有组件均可从公开源码完整重建，也不能声称第三方许可合规已全面验证。下载和运行前请自行评估 Windows 安全提示及第三方软件风险。
+安装包尚未进行数字签名，请核对来源与 SHA-256 后评估是否运行。来源记录用于核对包体身份；公开仓库尚缺部分第三方构建输入，完整重建与第三方许可仍有未决项，详见[许可与来源说明](docs/LICENSING.md)。
 
 ## 安装
 
-当前测试版为 [v0.3.10](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.10)，包含诊断导出、服务器发现/WOL及播放器线程初始化的稳定性维护。下载与验收范围见[发行核验](docs/V0310_RELEASE_VERIFICATION.md)。内置更新检查继续读取 Stable 渠道；Pre-release 需从对应 Release 手动下载。
-
-1. 下载上方 `.exe` 安装包，核对 SHA-256。
+1. 从上表选择版本，下载 `.exe` 安装包及同版本 SHA-256 文件，核对哈希。
 2. 关闭正在运行的 Emby Theater Enhanced，然后运行安装程序并按提示完成安装。
 3. 首次启动时连接 Emby 服务器。升级时按安装向导确认原安装目录。
 
-安装器可能显示 Windows 管理员权限提示。不要下载 GitHub 自动生成的 Source code 压缩包来安装客户端。
+安装器需要 Windows 管理员权限。具体校验命令、升级、卸载与失败处理见[用户指南](docs/USER_GUIDE.md)。GitHub 自动生成的 Source code 压缩包用于查看源码，安装客户端请使用 `.exe`。
 
 ## 配置 STRM 与 CloudDrive2
 
@@ -73,6 +73,8 @@ CloudDrive2 路径：/CloudNAS/CloudDrive/115open/115/电影
 
 - [全部版本与发布说明](https://github.com/hope140/EmbyTheaterEnhanced/releases)
 - [新用户指南](docs/USER_GUIDE.md)
+- [文档索引](docs/README.md)
+- [已知问题与反馈](docs/KNOWN_ISSUES.md)
 - [贡献指南](docs/CONTRIBUTING.md)
 - [许可与第三方材料说明](docs/LICENSING.md)
 - [变更记录](CHANGELOG.md)
