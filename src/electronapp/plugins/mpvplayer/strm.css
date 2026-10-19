@@ -71,6 +71,20 @@
 .strm-settings-page .ete-strm-rule-grid .inputContainer,
 .strm-settings-page .ete-strm-rule-grid .selectContainer { min-width: 0; }
 
+/* Keep the component's label above the control and its arrow centered on the control row. */
+.strm-settings-page .ete-strm-select-field { display: grid; grid-template-columns: minmax(0, 1fr); }
+.strm-settings-page .ete-strm-select-field > .selectLabel { grid-area: 1 / 1; }
+.strm-settings-page .ete-strm-select-field > select,
+.strm-settings-page .ete-strm-select-field > .selectArrowContainer { grid-area: 2 / 1; }
+.strm-settings-page .ete-strm-select-field > .selectArrowContainer {
+    align-self: center;
+    justify-self: end;
+    margin-inline-end: .3em;
+    position: static;
+}
+.strm-settings-page .ete-strm-select-field > .selectArrowContainer > div { display: none; }
+.strm-settings-page .ete-strm-select-field .selectArrow { display: block; margin-top: 0; }
+
 .strm-settings-page .ete-strm-order { margin: .4em 0 1em; }
 .strm-settings-page .ete-strm-order-label {
     color: var(--theme-secondary-text-color, rgba(255, 255, 255, .72));
@@ -84,8 +98,7 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
     margin-top: .75em;
 }
-.strm-settings-page .ete-strm-custom-order label { min-width: 0; }
-.strm-settings-page .ete-strm-custom-order select { margin-top: .3em; }
+.strm-settings-page .ete-strm-custom-order .selectContainer { margin-bottom: 0; }
 
 .strm-settings-page .ete-strm-rule-status-grid {
     border-top: 1px solid var(--line-background, rgba(255, 255, 255, .14));
