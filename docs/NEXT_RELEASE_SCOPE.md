@@ -1,6 +1,8 @@
 # 后续范围与启动条件
 
 
+[v0.3.12 下拉框对齐修正测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.12)已作为 Pre-release 发布。修复 STRM 存储类型、解析策略及既有自定义顺序编辑器的下拉箭头对齐，并统一标签关联；选项、顺序和保存语义保持。正式版与 Latest 仍为 v0.3.1，来源及验收见[发行核验](V0312_RELEASE_VERIFICATION.md)。
+
 [v0.3.11 页面布局修正测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.11)收录插件页面自有宽度及STRM表单局部收窄，普通默认限宽与其他设置页保持。范围和证据见[发行核验](V0311_RELEASE_VERIFICATION.md)，正式版/Latest仍为v0.3.1。
 ## 当前状态
 

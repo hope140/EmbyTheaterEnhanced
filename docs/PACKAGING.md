@@ -2,11 +2,15 @@
 
 ## 当前发行
 
-当前测试版为 [v0.3.11](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.11) Pre-release，产品sourceCommit为`3b308c7fcec44990d1a0820e1a982691d7d4e17b`，Stable/Latest保持v0.3.1。安装器、来源、完整runtime与公开附件结果见[v0.3.11发行核验](V0311_RELEASE_VERIFICATION.md)。产品来源与后续文档HEAD分别记录。
+当前测试版为 [v0.3.12](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.12) Pre-release，产品 sourceCommit 为 [408f74d](https://github.com/hope140/EmbyTheaterEnhanced/commit/408f74df626f23c9ad1295090548d7d95bc0525f)。Stable/Latest 保持 v0.3.1；发行核验见[V0312 发行核验](V0312_RELEASE_VERIFICATION.md)。
 
 ## 历史发行记录
 
 以下保留各版当时的来源、计数、工具输入及验收边界，不作为当前候选来源或新测试结果。
+
+### v0.3.11（历史）
+
+[v0.3.11](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.11) 当时为测试版 Pre-release，产品sourceCommit为`3b308c7fcec44990d1a0820e1a982691d7d4e17b`，Stable/Latest保持v0.3.1。安装器、来源、完整runtime与公开附件结果见[v0.3.11发行核验](V0311_RELEASE_VERIFICATION.md)。产品来源与后续文档HEAD分别记录。
 
 ### v0.3.10（历史）
 

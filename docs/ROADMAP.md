@@ -1,6 +1,8 @@
 # 项目总排期
 
 
+[v0.3.12 下拉框对齐修正测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.12)已公开，修复 STRM 主下拉框和既有自定义顺序编辑器的箭头/标签布局；来源及验证见[发行核验](V0312_RELEASE_VERIFICATION.md)。Stable/Latest 保持 v0.3.1，后续条件方向保持原决定。
+
 [v0.3.11 页面布局修正测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.11)收录插件页面自有宽度及STRM表单局部收窄，普通默认限宽与其他设置页保持。范围和证据见[发行核验](V0311_RELEASE_VERIFICATION.md)，正式版/Latest仍为v0.3.1。
 ## 当前交付与后续条件
 
