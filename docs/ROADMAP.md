@@ -1,5 +1,7 @@
 # 项目总排期
 
+
+[v0.3.11 页面布局修正测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.11)收录插件页面自有宽度及STRM表单局部收窄，普通默认限宽与其他设置页保持。范围和证据见[发行核验](V0311_RELEASE_VERIFICATION.md)，正式版/Latest仍为v0.3.1。
 ## 当前交付与后续条件
 
 [v0.3.10 稳定性维护测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.10)已发布，包含诊断动态字段脱敏、服务器发现/WOL 错误路径和 Native 线程初始化维护；准确来源与验收范围见[发行核验](V0310_RELEASE_VERIFICATION.md)。正式版与 Latest 仍为 v0.3.1。
