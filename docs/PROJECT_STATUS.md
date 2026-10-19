@@ -1,8 +1,8 @@
 # 项目状态
 
-## 2026-10-19 — v0.3.11页面布局修正发行准备
+## 2026-10-19 — v0.3.11页面布局修正测试版已发布
 
-本版修正插件页面自有宽度与STRM表单限宽，原默认、简介折叠和其他设置页保持。STRM收窄已获用户本地视觉认可；隔离宽窄模板/样式检查不替代真实播放、远控或系统安装验收。当前开始来源绑定构建与发行，尚未公开；范围与门禁见[发行合同](V0311_RELEASE_CONTRACT.md)，实际结果见[发行核验](V0311_RELEASE_VERIFICATION.md)。
+[v0.3.11](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.11)已公开为Pre-release，产品source `3b308c7fcec44990d1a0820e1a982691d7d4e17b`、PR #48已合并。Main/Tag CI各1123/1123、材料211/211、完整runtime/安装器解包2160项及五附件匿名全字节回读通过。普通默认/折叠与其他设置页保持，修复插件自有宽度并局部收窄STRM表单；Stable/Latest仍031。具体来源、哈希及未执行的安装/真实播放等边界见[发行核验](V0311_RELEASE_VERIFICATION.md)。
 
 ## 2026-10-18 — README 功能介绍精简
 

@@ -2,13 +2,13 @@
 
 ## 选择版本与校验下载
 
-当前正式版为 [v0.3.1](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.1)，当前测试版为 [v0.3.10](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.10)。两者均面向 Windows x64。测试版需要手动下载；内置检查更新读取 Stable 渠道，不自动安装更新。主分支新增功能不表示已经发布。
+当前正式版为 [v0.3.1](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.1)，当前测试版为 [v0.3.11](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.11)。两者均面向 Windows x64。测试版需要手动下载；内置检查更新读取 Stable 渠道，不自动安装更新。主分支新增功能不表示已经发布。
 
-从同一个 Release 下载 `.exe` 与对应 `.exe.sha256` 文件；`Source code` 压缩包用于源码，不是客户端安装包。将两个文件放在同一目录，在该目录打开 PowerShell。以 v0.3.10 为例：
+从同一个 Release 下载 `.exe` 与对应 `.exe.sha256` 文件；`Source code` 压缩包用于源码，不是客户端安装包。将两个文件放在同一目录，在该目录打开 PowerShell。以 v0.3.11 为例：
 
 ```powershell
-Get-FileHash -Algorithm SHA256 -LiteralPath '.\EmbyTheaterEnhanced-0.3.10-win-x64-setup.exe'
-Get-Content -LiteralPath '.\EmbyTheaterEnhanced-0.3.10-win-x64-setup.exe.sha256'
+Get-FileHash -Algorithm SHA256 -LiteralPath '.\EmbyTheaterEnhanced-0.3.11-win-x64-setup.exe'
+Get-Content -LiteralPath '.\EmbyTheaterEnhanced-0.3.11-win-x64-setup.exe.sha256'
 ```
 
 比较第一条命令的 `Hash` 与校验文件里的 64 位十六进制值，大小写不影响比较。选择其他版本时使用该版实际文件名。哈希不一致时停止安装并重新核对下载；哈希一致仅说明文件与发布校验值相符。安装包未签名，Windows 可能显示未知发布者提示。
@@ -26,7 +26,7 @@ Get-Content -LiteralPath '.\EmbyTheaterEnhanced-0.3.10-win-x64-setup.exe.sha256'
 
 正常退出客户端后，在 Windows“设置”的应用列表中找到 Emby Theater Enhanced 并选择卸载，按向导完成。当前安装器卸载程序组件时保留个人设置、登录资料和 DeviceId；卸载后重装会继续使用保留资料，并非恢复全部默认设置。重要配置仍应先备份。
 
-安装、升级与卸载的已验证场景有明确边界，不能保证所有权限、取消、失败恢复和首次启动组合；见[已知问题](KNOWN_ISSUES.md)及[v0.3.9 安装核验](V039_RELEASE_VERIFICATION.md)。v0.3.10 的包体核验没有追加系统安装场景。
+安装、升级与卸载的已验证场景有明确边界，不能保证所有权限、取消、失败恢复和首次启动组合；见[已知问题](KNOWN_ISSUES.md)及[v0.3.9 安装核验](V039_RELEASE_VERIFICATION.md)。v0.3.11 的包体核验没有追加系统安装场景。
 
 ## STRM 与 CloudDrive2
 

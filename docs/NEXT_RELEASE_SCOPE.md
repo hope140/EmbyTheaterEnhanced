@@ -1,5 +1,7 @@
 # 后续范围与启动条件
 
+
+[v0.3.11 页面布局修正测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.11)收录插件页面自有宽度及STRM表单局部收窄，普通默认限宽与其他设置页保持。范围和证据见[发行核验](V0311_RELEASE_VERIFICATION.md)，正式版/Latest仍为v0.3.1。
 ## 当前状态
 
 有限维护的四项源码修正已随 [v0.3.10](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.10) Pre-release 发布；产品来源固定 `73a5379983e2be2a2bc0bdc8aec8f0fcb5f07d63`，正式版与 Latest 仍为 v0.3.1。详细结果见[发行核验](V0310_RELEASE_VERIFICATION.md)。这些修正已移出待发布项，真实设备、播放、Helper 运行及完整安装缺口仍按原验收边界保留。
