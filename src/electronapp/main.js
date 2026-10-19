@@ -1146,17 +1146,25 @@
             enhancedLog({category: 'app', event: 'power-cleanup-failed', details: {message: error.message}});
         }
         enhancedLog({category: 'app', event: 'shutdown', details: {reason: 'before-quit'}});
-        unregisterDiagnosticsIpc();
-        unregisterMaintenanceIpc();
-        unregisterStrmConfigIpc();
-        unregisterCd2Ipc();
-        var refreshShutdown;
-        try { refreshShutdown = unregisterRefreshRate(); }
-        catch (error) { refreshShutdown = Promise.reject(error); }
-        var nativeShutdown = unregisterNativeHelperIpc();
-        var kernelShutdown = unregisterMpvKernelIpc();
-        Promise.all([Promise.resolve(refreshShutdown).catch(function () {}), nativeShutdown, kernelShutdown, Promise.resolve(readyStartupPromise).catch(function () {})])
-            .catch(function () {}).then(function () { app.quit(); });
+        function runCleanup(step, cleanup) {
+            var completion;
+            try { completion = cleanup(); }
+            catch (error) { completion = Promise.reject(error); }
+            return Promise.resolve(completion).catch(function () {
+                enhancedLog({level: 'warn', category: 'app', event: 'shutdown-cleanup-failed', details: {step: step}});
+            });
+        }
+        // A failed owner must not let quit outrun the other pending cleanups.
+        Promise.allSettled([
+            runCleanup('diagnostics', function () { return unregisterDiagnosticsIpc(); }),
+            runCleanup('maintenance', function () { return unregisterMaintenanceIpc(); }),
+            runCleanup('strm-config', function () { return unregisterStrmConfigIpc(); }),
+            runCleanup('cd2', function () { return unregisterCd2Ipc(); }),
+            runCleanup('refresh-rate', function () { return unregisterRefreshRate(); }),
+            runCleanup('native-helper', function () { return unregisterNativeHelperIpc(); }),
+            runCleanup('mpv-kernel', function () { return unregisterMpvKernelIpc(); }),
+            runCleanup('startup', function () { return readyStartupPromise; })
+        ]).then(function () { app.quit(); });
     });
     ipcMain.on('enhanced-diagnostics', function (event, snapshot) {
         if (rendererBoundary.isTrusted(event, getWebContents())) {

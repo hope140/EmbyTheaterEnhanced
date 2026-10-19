@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-19 — 退出状态与清理等待修正
+
+修正controller将有PID child error误作exit的问题：error持续监听且transport终结仍幂等，仅无PID的spawn失败直接结算，真实exit继续拥有进程终结确认。main原before-quit中的cleanup同步逐项启动，throw转换为拒绝并记录固定step；所有阶段结算后统一quit，避免单项失败跳过其他owner的pending收尾。power退役、PlaybackManager/Session、generation、service归属和原kill等待策略保持。
+
+两份真实源码VM回归覆盖重复事件、启动失败、同步/异步失败、其他阶段pending和单次quit；同断言固定39882基线2/19通过、修后19/19通过。完整公开离线集合1142/1142（失败/跳过/取消0），tracked语法327项和有限凭据模式378项及新增测试补充检查通过。原始验证日志留在仓库外；复现命令见[测试说明](TESTING.md)。本地差异尚未提交，不代表发行构建或实际客户端验收；整体退出期限仍须另定合同。
+
 ## 2026-10-19 — 0.3.12 测试版发布与完整回读
 
 用户验收本地包后明确授权发布，主线程按 Tier 1 固化来源并复核最终包体，GPT-6 Luna High 独立检查完整 runtime/解包、五附件、标签来源及导航。PR #50 的分支/PR CI 各 1123/1123 后正常合并至 `408f74df626f23c9ad1295090548d7d95bc0525f`，annotated Tag `fda6e8b2553ca04517f39f36e65899123eb108ae` 绑定该 source；main/Tag CI 各 1123/1123。固定材料 211/211，正式 source 重建/VerifyOnly/Inno/InnoUnp 完整性与 2160 项解包逐路径/大小/SHA 通过，48 个包内隔离控件检查通过。

@@ -177,9 +177,10 @@ class NativeHelperClient {
         this.onTransportTerminal('process-exit-terminal', `${code}:${signal || ''}`);
         settleExit({ code, signal });
       });
-      this.child.once('error', error => {
+      this.child.on('error', error => {
         this.onTransportTerminal('process-error', error.message);
-        settleExit({ code: null, signal: null, error: error.message });
+        // A live child's signal failure is not proof that its process exited.
+        if (!this.child.pid) settleExit({ code: null, signal: null, error: error.message });
       });
       this.child.once('close', (code, signal) => this.recordClose('process-close', { code, signal }));
     });

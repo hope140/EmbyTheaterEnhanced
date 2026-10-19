@@ -1,5 +1,8 @@
 # 维护注意事项
 
+- ChildProcess error可表示无法向仍存活的进程发送终止信号，不能一律当成exit。无PID的spawn失败与有PID的transport失败分别处理；process ownership保持到实际退出，重复error监听仍须安全且终态通知幂等。
+- 多owner退出收尾不能用Promise.all的快速拒绝代替全部完成。每个cleanup先在原同步时序中启动并隔离throw/reject，再等待全部outcome；故障诊断只写固定阶段。回归需让某项失败同时另一真实返回的Promise仍pending，不能等待失败阶段未返回的fixture gate。
+
 - 动态 EmbySelect 应通过 `label` 属性生成组件标签，避免手工同级标签与组件空标签叠加。每个选择器使用独立 `selectContainer`；嵌套普通 label 不提供箭头需要的定位容器。自定义标签布局不能继续依赖组件隐藏占位与固定 top/margin 来对齐，可局部将箭头与选择器放在同一网格行居中，并验证明暗主题、断点、标签关联、禁用/隐藏和焦点缩放。隔离控件几何证据与完整客户端视觉验收分开。
 
 - 宿主通用 `.readOnlyContent { max-width:90ch !important }` 会覆盖插件普通声明及页面内联限宽。解除通用强制限宽时保留宽屏默认、三行折叠和焦点简介独立规则；同一layout.css的多项变换应串联并只登记一个最终输出SHA。隔离CSS/DOM可验证级联及断点，不能代替已登录客户端视觉或播放验收。
