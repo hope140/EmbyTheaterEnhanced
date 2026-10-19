@@ -11,7 +11,7 @@
 | 各版更新内容 | [变更记录](../CHANGELOG.md) |
 | 项目许可与第三方来源 | [许可说明](LICENSING.md) · [第三方通知](../THIRD_PARTY_NOTICES.md) |
 
-当前正式版为 v0.3.1，测试版为 v0.3.11。主分支文档会继续维护；某项功能是否已发布，请以对应版本的 Release 和 Tag 为准。
+当前正式版为 v0.3.1，当前测试版为 [v0.3.12](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.12) Pre-release。主分支文档会继续维护；某项功能是否已发布，请以对应版本的 Release 和 Tag 为准。
 
 ## 开发与验证
 
@@ -24,6 +24,7 @@
 
 ## 发行证据与后续方向
 
+- [v0.3.12 发行核验](V0312_RELEASE_VERIFICATION.md)：产品来源、包体验收与验收边界。
 - [v0.3.11 发行核验](V0311_RELEASE_VERIFICATION.md)：页面布局修正、准确来源和包体核验。
 - [v0.3.10 发行核验](V0310_RELEASE_VERIFICATION.md)：准确源码、包体、校验与本版验收边界。
 - [v0.3.9 安装核验](V039_RELEASE_VERIFICATION.md)：已执行的有界升级、降级、卸载和重装场景。

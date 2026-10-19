@@ -22,7 +22,7 @@ Emby Theater Enhanced 是面向 Windows x64 的 Emby Theater 社区增强版，�
 | 渠道 | 下载 | 校验 |
 | --- | --- | --- |
 | 正式版 · [v0.3.1](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.1) | [Windows x64](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.1/EmbyTheaterEnhanced-0.3.1-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.1/EmbyTheaterEnhanced-0.3.1-win-x64-setup.exe.sha256) |
-| 测试版 · [v0.3.11](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.11) | [Windows x64](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.11/EmbyTheaterEnhanced-0.3.11-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.11/EmbyTheaterEnhanced-0.3.11-win-x64-setup.exe.sha256) |
+| 测试版 · [v0.3.12](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.12) | [Windows x64](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.12/EmbyTheaterEnhanced-0.3.12-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.12/EmbyTheaterEnhanced-0.3.12-win-x64-setup.exe.sha256) |
 
 内置更新检查读取正式版渠道，测试版需手动下载。各版具体变化见[变更记录](CHANGELOG.md)。
 
