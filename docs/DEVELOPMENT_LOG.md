@@ -1,5 +1,27 @@
 # 维护记录
 
+## 2026-10-19 — 0.3.12 用户确认与发行执行
+
+用户验收本地包后明确授权发布，主线程按 Tier 1 处理固定发行流程并保留最终来源/包体核验，GPT-6 Luna High 执行只读审查和证据盘点。通过正常 PR、公开 CI 与 main 合并固定产品 source，重新构建发行产物，按[合同](V0312_RELEASE_CONTRACT.md)公开 Pre-release。此前本地验收来源不冒充最终 main；发行执行结果见[核验记录](V0312_RELEASE_VERIFICATION.md)。本轮未获服务器或系统安装操作授权，不追加相关动作。
+
+## 2026-10-19 — 0.3.12 验收安装包完成
+
+用户明确允许本地提交本次修复及 0.3.12 版本后打包，发布须等待其后续验收。按 Tier 1 执行固定工具链打包，主线程保留来源/包体验收，GPT-6 Luna High 只读盘点材料。版本三处同步，更新候选变更说明；源码变化仅为本轮两份 STRM 文件。构建固定准确本地 commit，不混用旧 runtime 或绕过来源门禁；尚未完成的构建、安装与服务验收不记为通过。
+
+产品 source 固定 `282d39e5558361d7ce0a443620dd0e9b566d13a5`，物理复制并逐清单验证既有材料和工具链，未升级。构建与 VerifyOnly 通过后使用固定 Inno 编译，InnoUnp 完整性/解包和 2160 项 `{app}` 全部路径/大小/SHA 通过；版本资源为 0.3.12。相对 0.3.11 仅 8 项 payload 变化（两份 STRM、版本及五份来源/依赖元数据），Native Helper 字节及生产 `testing=false` 保持。独立 worker 复核全部 runtime、Git blob、版本和 provenance 通过，主线程检查完整回执并核交付三文件复制后 SHA。
+
+首轮测试在材料准备完成前启动，1133/1144 通过、11 项失败，原日志保留；补齐材料并固定来源后完整重跑 1205/1205，0 失败/取消/跳过/todo。材料测试 129/129、327 JS 与 28 PS 语法通过；包内实际组件/CSS 与源码的 48 个隔离控件几何及标签/禁用/隐藏/聚焦检查通过。来源、大小与完整哈希见[本地验收记录](V0312_LOCAL_ACCEPTANCE.md)。这些门禁不替代用户安装、客户端视觉或真实服务验收；当前等待用户验收，不执行远端或系统操作。后续文档提交与产品来源分开。
+
+## 2026-10-19 — STRM 下拉箭头与标签修正
+
+Model Tier: Tier 1；Model: 主线程沿当前配置，GPT-6 Luna High 执行只读盘点、diff 复核和相关测试；Reason: 明确范围的标签/布局修正；Playback/Session Impact: NONE；Escalated: No。
+
+`createLabeledSelect` 的手工标签与 EmbySelect 自动生成标签叠加；顺序编辑器的嵌套标签缺少箭头所需的定位容器。改用组件 `label` 属性，顺序字段增加独立 wrapper/ID；局部 CSS 将标签放在第一行、选择器与箭头叠放在第二行居中，取消旧占位与固定 margin 对齐。保留 `aria-label`、选项值、`dataset.index`、事件与持久化语义，vendor 保持只读。
+
+验证使用 v0.3.11 发行 runtime 的原始组件、主题和 Electron 44，以合成 custom 规则渲染源码；明暗主题 × 1280/760/680/420px 的 48 个选择器均中心差 0、箭头在控件内、没有横向越界，每个控件有唯一关联标签。另核对 ID、禁用隐藏、编辑器隐藏与聚焦缩放；Edge 隔离静态卡片截图辅助检查桌面/窄屏箭头。音频 2、视频 7、CEC 1 个原生选择器采用组件标签，未发现上述结构缺陷；其原生固定偏移存在小幅几何差异，本轮未改动。
+
+执行 `node --test tests/strm-ui-consolidation.test.cjs tests/settings-visual-system.test.cjs tests/settings-night-audit.test.cjs tests/strm-settings-races.test.cjs tests/strm-connection-status-ui.test.cjs`，44/44 通过；`node --check src/electronapp/plugins/mpvplayer/strm.js` 与 `git diff --check` 通过。Electron 隐藏窗口的 capturePage 不可用，改以组件几何检查和静态快照截图分层记录；不将其视为完整应用视觉验收。未构建发行包、操作现用客户端或服务器，未提交/推送/发布。
+
 ## 2026-10-19 — v0.3.11发行与文档收口
 
 两项CSS修正经PR #48正常合并到`3b308c7fcec44990d1a0820e1a982691d7d4e17b`，准确source重建并通过公开/固定材料与完整包体检查。annotated Tag绑定产品source，五附件经大小/digest及匿名全字节核对，旧Release/附件/Tag引用与Latest保持。

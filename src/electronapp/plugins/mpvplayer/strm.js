@@ -255,19 +255,17 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
     }
 
     function createLabeledSelect(ruleId, field, label, values, selected, labels) {
-        var wrapper = element('div', 'selectContainer ete-settings-field ete-strm-field');
+        var wrapper = element('div', 'selectContainer ete-settings-field ete-strm-field ete-strm-select-field');
         var selectId = 'ete-rule-' + ruleId + '-' + field;
-        var labelNode = element('label', 'ete-strm-field-label', label);
         var select = element('select', null, undefined, 'emby-select');
         select.id = selectId;
         select.classList.add('rule-' + field);
+        select.setAttribute('label', label);
         select.setAttribute('aria-label', label);
-        labelNode.htmlFor = selectId;
         values.forEach(function (value) {
             select.appendChild(option(value, labels[value] || value));
         });
         select.value = selected;
-        wrapper.appendChild(labelNode);
         wrapper.appendChild(select);
         return wrapper;
     }
@@ -276,16 +274,18 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         var wrapper = element('div', 'ete-strm-custom-order');
         order = strategyOrder('custom', order);
         for (var index = 0; index < STAGES.length; index++) {
-            var label = element('label', null, '第 ' + (index + 1) + ' 顺位');
+            var field = element('div', 'selectContainer ete-settings-field ete-strm-select-field');
             var select = element('select', 'rule-order-stage', undefined, 'emby-select');
+            select.id = 'ete-rule-' + ruleId + '-order-' + index;
+            select.setAttribute('label', '第 ' + (index + 1) + ' 顺位');
             select.setAttribute('aria-label', '自定义顺序第 ' + (index + 1) + ' 顺位');
             select.dataset.index = String(index);
             STAGES.forEach(function (stage) {
                 select.appendChild(option(stage, STAGE_LABELS[stage]));
             });
             select.value = order[index];
-            label.appendChild(select);
-            wrapper.appendChild(label);
+            field.appendChild(select);
+            wrapper.appendChild(field);
         }
         return wrapper;
     }
