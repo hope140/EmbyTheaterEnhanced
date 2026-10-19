@@ -7,6 +7,7 @@ const externalPlayerRegistration = require('./patch-external-player-registration
 const customCssJs = require('./patch-custom-css-js.cjs');
 const externalPlayerResidue = require('./patch-externalplayer-residue.cjs');
 const itemControls = require('./patch-item-controls.cjs');
+const contentWidth = require('./patch-content-width.cjs');
 const itemLifecycle = require('./patch-item-lifecycle.cjs');
 const pluginSettings = require('./patch-plugin-settings.cjs');
 const serverHome = require('./patch-server-home.cjs');
@@ -23,6 +24,7 @@ const APP_GENERATOR_PATH = 'tools/patch-external-player-registration.cjs';
 const CUSTOM_CSS_JS_GENERATOR_PATH = 'tools/patch-custom-css-js.cjs';
 const EXTERNAL_PLAYER_RESIDUE_GENERATOR_PATH = 'tools/patch-externalplayer-residue.cjs';
 const ITEM_CONTROLS_GENERATOR_PATH = 'tools/patch-item-controls.cjs';
+const CONTENT_WIDTH_GENERATOR_PATH = 'tools/patch-content-width.cjs';
 const ITEM_LIFECYCLE_GENERATOR_PATH = 'tools/patch-item-lifecycle.cjs';
 const PLUGIN_GENERATOR_PATH = 'tools/patch-plugin-settings.cjs';
 const HOME_GENERATOR_PATH = 'tools/patch-server-home.cjs';
@@ -242,8 +244,8 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/modules/layout.css',
         expectedBaseSha256: 'D6EB9A45859D776806B7B7078C4763C452DADA04834B3F461797DEE1FE80DC8C',
         expectedInputSha256: null,
-        expectedOutputSha256: '81241E0E01B21602C646A6630D8707F75E99F619E600DD16018C4D9223F3DFF5',
-        generatorPaths: Object.freeze([GENERATOR_PATH, ITEM_CONTROLS_GENERATOR_PATH])
+        expectedOutputSha256: '0F3224D9266E4D69C1707DA19A125268CBAD717469A9F3F85F7F17405C7CC84B',
+        generatorPaths: Object.freeze([GENERATOR_PATH, ITEM_CONTROLS_GENERATOR_PATH, CONTENT_WIDTH_GENERATOR_PATH])
     }),
     Object.freeze({
         id: 'apiclient',
@@ -357,7 +359,8 @@ function outputFor(root, contract) {
         return {base, input: Buffer.from(itemControls.patchItemHtmlText(withoutLegacyButton), 'utf8')};
     }
     if (contract.id === 'item-track-selection-layout' && contract.mode === 'tracked-canonical-transform') {
-        return {base, input: Buffer.from(itemControls.patchLayoutCssText(base.toString('utf8')), 'utf8')};
+        const withTrackSelectionLayout = itemControls.patchLayoutCssText(base.toString('utf8'));
+        return {base, input: Buffer.from(contentWidth.patchContentWidthText(withTrackSelectionLayout), 'utf8')};
     }
     if (contract.id === 'app-js' && contract.mode === 'tracked-canonical-transform') {
         const transformed = externalPlayerRegistration.patchText(base.toString('utf8'));

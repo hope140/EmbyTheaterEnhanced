@@ -55,8 +55,8 @@ test('STRM labels, Emby controls, and scoped layout styles stay coherent', () =>
     assert.match(html, /<input\b[^>]*is="emby-checkbox"/);
     assert.match(html, /class="raised button-submit ete-settings-button ete-settings-button--primary btnSave"/);
     assert.match(js, /document\.createElement\(tag, \{is: customName\}\)/);
-    assert.match(css, /\.strm-settings-page\s*>\s*form\.auto-center\s*\{[^}]*max-width:\s*100%;[^}]*width:\s*100%;/s,
-        'STRM form overrides Emby auto-center width limits within the shared page width');
+    assert.match(css, /\.strm-settings-page\s*>\s*form\.auto-center\s*\{[^}]*max-width:\s*90ch;[^}]*width:\s*100%;/s,
+        'only the STRM form uses a readable 90ch limit while remaining responsive');
     assert.match(css, /\.ete-strm-status-row\b/);
     assert.match(html, /<section class="[^"]*ete-strm-assistant"/);
     for (const label of ['本地挂载', 'CloudDrive2', '路径规则']) {
