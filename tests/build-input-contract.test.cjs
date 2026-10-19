@@ -99,6 +99,7 @@ test('Web overlay patchers are consumed and source-bound build inputs', t => {
         'tools/patch-custom-css-js.cjs',
         'tools/patch-externalplayer-residue.cjs',
         'tools/patch-item-controls.cjs',
+        'tools/patch-content-width.cjs',
         'tools/patch-item-lifecycle.cjs',
         'tools/patch-search-ui.cjs', 'tools/patch-select-cancel.cjs',
         'tools/patch-startup.cjs',

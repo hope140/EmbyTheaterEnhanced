@@ -1,5 +1,5 @@
 /* STRM keeps Emby's form controls; these rules only arrange its extra fields. */
-.strm-settings-page > form.auto-center { margin-inline: 0; max-width: 100%; min-width: 0; width: 100%; }
+.strm-settings-page > form.auto-center { margin-inline: 0; max-width: 90ch; min-width: 0; width: 100%; }
 .strm-settings-page .ete-strm-cd2-card { display: grid; gap: 1em; }
 .strm-settings-page .ete-strm-cd2-card .inputContainer { margin-bottom: 0; }
 

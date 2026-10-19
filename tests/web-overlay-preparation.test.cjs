@@ -72,6 +72,14 @@ test('generates exact Web overlays without an ignored src/electronapp/www snapsh
         assert.equal(fs.existsSync(path.join(runtime, 'src', 'electronapp', 'www')), false);
 
         const first = outputHashes(runtime);
+        const layoutContract = preparation.WEB_OVERLAY_CONTRACT.find(entry => entry.id === 'item-track-selection-layout');
+        const layoutEntry = report.entries.find(entry => entry.id === 'item-track-selection-layout');
+        const layoutOutput = fs.readFileSync(path.join(runtime, layoutContract.runtimePath), 'utf8');
+        assert.equal(layoutEntry.baseSha256, layoutContract.expectedBaseSha256);
+        assert.equal(layoutEntry.runtimeSha256, '0F3224D9266E4D69C1707DA19A125268CBAD717469A9F3F85F7F17405C7CC84B');
+        assert.match(layoutOutput, /\.readOnlyContent,\r?\n  form \{\r?\n    max-width: 90ch;/);
+        assert.match(layoutOutput, /\.secondaryText\.focusPreviewOverview \{\r?\n  max-width: 90ch !important;\r?\n\}/);
+        assert.doesNotMatch(layoutOutput, /\.readOnlyContent \{\r?\n  -webkit-line-clamp: 3;\r?\n  max-width: 90ch !important;/);
         preparation.apply(root, runtime);
         assert.deepEqual(outputHashes(runtime), first);
         assert.equal(preparation.inspect(root, runtime).status, 'passed');

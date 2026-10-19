@@ -7,11 +7,27 @@ const path = require('node:path');
 const vm = require('node:vm');
 const externalPlayerResidue = require('../tools/patch-externalplayer-residue.cjs');
 const itemControls = require('../tools/patch-item-controls.cjs');
+const contentWidth = require('../tools/patch-content-width.cjs');
 
 const repoRoot = path.resolve(__dirname, '..');
 const sourcePath = 'vendor/carnival/electronapp/www/item/item.html';
 const source = fs.readFileSync(path.join(repoRoot, sourcePath), 'utf8');
 const priorOverlay = externalPlayerResidue.patchItemHtmlText(source);
+
+test('transforms the frozen vendor CSS while retaining the existing track-selection overlay', () => {
+    const sourcePath = path.join(repoRoot, 'vendor/carnival/electronapp/www/modules/layout.css');
+    const source = fs.readFileSync(sourcePath, 'utf8');
+    const withTrackSelection = itemControls.patchLayoutCssText(source);
+    const output = contentWidth.patchContentWidthText(withTrackSelection);
+
+    assert.equal((output.match(/-webkit-line-clamp:/g) || []).length,
+        (withTrackSelection.match(/-webkit-line-clamp:/g) || []).length);
+    assert.match(output, /@media all and \(min-width: 50em\) \{\r?\n  \.readOnlyContent,\r?\n  form \{\r?\n    max-width: 90ch;/);
+    assert.match(output, /\.secondaryText\.focusPreviewOverview,\r?\n\.readOnlyContent \{\r?\n  -webkit-line-clamp: 3;\r?\n\}/);
+    assert.match(output, /\.secondaryText\.focusPreviewOverview \{\r?\n  max-width: 90ch !important;\r?\n\}/);
+    assert.doesNotMatch(output, /\.readOnlyContent \{\r?\n  -webkit-line-clamp: 3;\r?\n  max-width: 90ch !important;/);
+    assert.match(output, /\/\* ETE detail track selection layout overlay \*\//);
+});
 
 test('adds custom menu mode to source and video while preserving all other HTML bytes', () => {
     const output = itemControls.patchItemHtmlText(priorOverlay);
