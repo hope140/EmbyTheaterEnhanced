@@ -1,12 +1,14 @@
 # 后续范围与启动条件
 
 
-[v0.3.12 下拉框对齐修正测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.12)已作为 Pre-release 发布。修复 STRM 存储类型、解析策略及既有自定义顺序编辑器的下拉箭头对齐，并统一标签关联；选项、顺序和保存语义保持。正式版与 Latest 仍为 v0.3.1，来源及验收见[发行核验](V0312_RELEASE_VERIFICATION.md)。
+[v0.3.13 退出清理维护测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.13)已作为 Pre-release 发布，修复 Helper 实际退出确认及应用关闭时逐项处理清理异常并等待结算。整体退出期限和强退策略未变。正式版与 Latest 仍为 v0.3.1，来源及验收见[发行核验](V0313_RELEASE_VERIFICATION.md)。
+
+[v0.3.12 下拉框对齐修正测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.12)作为历史 Pre-release 保留。其 STRM 下拉箭头与标签修复及验收记录见[V0312 发行核验](V0312_RELEASE_VERIFICATION.md)。
 
 [v0.3.11 页面布局修正测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.11)收录插件页面自有宽度及STRM表单局部收窄，普通默认限宽与其他设置页保持。范围和证据见[发行核验](V0311_RELEASE_VERIFICATION.md)，正式版/Latest仍为v0.3.1。
 ## 当前状态
 
-有限维护的四项源码修正已随 [v0.3.10](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.10) Pre-release 发布；产品来源固定 `73a5379983e2be2a2bc0bdc8aec8f0fcb5f07d63`，正式版与 Latest 仍为 v0.3.1。详细结果见[发行核验](V0310_RELEASE_VERIFICATION.md)。这些修正已移出待发布项，真实设备、播放、Helper 运行及完整安装缺口仍按原验收边界保留。
+v0.3.10 的四项有限维护已作为 Pre-release 发布，为历史批次；产品来源固定 `73a5379983e2be2a2bc0bdc8aec8f0fcb5f07d63`，验收范围见[发行核验](V0310_RELEASE_VERIFICATION.md)。这些修正已移出待发布项，真实设备、播放、Helper 运行及完整安装缺口仍按原边界保留。
 
 下面的显示归属、系统集成和安装条件继续作为候选，实施前按具体需求确定合同。尚未确定下一产品版本。以下日期段落保留当时基线与计划，其中“尚未发布”“之后执行夜间维护”等不代表当前待办。
 
