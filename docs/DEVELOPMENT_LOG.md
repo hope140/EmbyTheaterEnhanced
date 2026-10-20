@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-20 — 0.3.13 发行准备
+
+用户有限试用反馈后授权Pre-release发行。F1/F2候选d4f6e8b的生产差异保持，只同步0.3.13版本和发行说明；按正常PR/Checks合并后重新绑定最终source构建，不沿用0.3.12本地安装器冒充新来源。原候选公开离线1142/1142、材料211/211与包体证据保持各自身份，最终门禁和公开回读另记录。真实故障注入、安装/播放/远控与硬件验收未新增；R1及许可未决状态保持。原有正式版、Tag和附件不修改。
+
 ## 2026-10-19 — 退出状态与清理等待修正
 
 修正controller将有PID child error误作exit的问题：error持续监听且transport终结仍幂等，仅无PID的spawn失败直接结算，真实exit继续拥有进程终结确认。main原before-quit中的cleanup同步逐项启动，throw转换为拒绝并记录固定step；所有阶段结算后统一quit，避免单项失败跳过其他owner的pending收尾。power退役、PlaybackManager/Session、generation、service归属和原kill等待策略保持。
