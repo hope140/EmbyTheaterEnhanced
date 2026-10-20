@@ -14,6 +14,7 @@ Emby Theater Enhanced 是面向 Windows x64 的 Emby Theater 社区增强版，�
 - **mpv 内核管理**：手动导入内核包，选择后在下次启动时生效。
 - **插件设置适配**：改善神医助手、Madby GenericUI 等插件设置页的控件、页签和滚动显示。
 - **首页分区同步**：按 Emby 服务器配置的分区和顺序显示首页内容。
+- **退出清理维护**：Helper 的实际进程退出单独确认，应用关闭时各清理步骤分别处理异常。
 
 ## 下载
 
@@ -22,11 +23,11 @@ Emby Theater Enhanced 是面向 Windows x64 的 Emby Theater 社区增强版，�
 | 渠道 | 下载 | 校验 |
 | --- | --- | --- |
 | 正式版 · [v0.3.1](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.1) | [Windows x64](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.1/EmbyTheaterEnhanced-0.3.1-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.1/EmbyTheaterEnhanced-0.3.1-win-x64-setup.exe.sha256) |
-| 测试版 · [v0.3.12](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.12) | [Windows x64](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.12/EmbyTheaterEnhanced-0.3.12-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.12/EmbyTheaterEnhanced-0.3.12-win-x64-setup.exe.sha256) |
+| 测试版 · [v0.3.13](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.13) | [Windows x64](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.13/EmbyTheaterEnhanced-0.3.13-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.13/EmbyTheaterEnhanced-0.3.13-win-x64-setup.exe.sha256) |
 
 内置更新检查读取正式版渠道，测试版需手动下载。各版具体变化见[变更记录](CHANGELOG.md)。
 
-当前下载包未签名，Windows 可能提示未知发布者。下载校验、安装升级和配置步骤见[用户指南](docs/USER_GUIDE.md)。
+当前测试版安装包未签名，Windows 可能提示未知发布者。下载校验、安装升级和配置步骤见[用户指南](docs/USER_GUIDE.md)。
 
 STRM/115 的内嵌字幕、音轨切换仍可能有数秒延迟；插件设置适配也有兼容范围。使用前可查看[已知问题](docs/KNOWN_ISSUES.md)，遇到问题按[反馈步骤](docs/USER_GUIDE.md#问题反馈)提供必要信息。
 

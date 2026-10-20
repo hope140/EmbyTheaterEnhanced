@@ -2,7 +2,7 @@
 
 ## 选择版本与校验下载
 
-当前正式版为 [v0.3.1](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.1)，当前测试版为 [v0.3.12](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.12)。两者均面向 Windows x64。测试版需要手动下载；内置检查更新读取 Stable 渠道，不自动安装更新。主分支新增功能不表示已经发布。
+当前正式版为 [v0.3.1](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.1)，当前测试版为 [v0.3.13](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.13)。两者均面向 Windows x64。测试版需要手动下载；内置检查更新读取 Stable 渠道，不自动安装更新。主分支新增功能不表示已经发布。
 
 从同一个 Release 下载 `.exe` 与对应 `.exe.sha256` 文件；`Source code` 压缩包用于源码，不是客户端安装包。将两个文件放在同一目录，在该目录打开 PowerShell。以 v0.3.12 为例：
 
@@ -11,7 +11,7 @@ Get-FileHash -Algorithm SHA256 -LiteralPath '.\EmbyTheaterEnhanced-0.3.12-win-x6
 Get-Content -LiteralPath '.\EmbyTheaterEnhanced-0.3.12-win-x64-setup.exe.sha256'
 ```
 
-比较第一条命令的 `Hash` 与校验文件里的 64 位十六进制值，大小写不影响比较。选择其他版本时使用该版实际文件名。哈希不一致时停止安装并重新核对下载；哈希一致仅说明文件与发布校验值相符。安装包未签名，Windows 可能显示未知发布者提示。
+比较第一条命令的 `Hash` 与校验文件里的 64 位十六进制值，大小写不影响比较。选择其他版本时使用该版实际文件名。哈希不一致时停止安装并重新核对下载；哈希一致仅说明文件与发布校验值相符。当前测试版安装包未签名，Windows 可能显示未知发布者提示。
 
 ## 安装与升级
 
