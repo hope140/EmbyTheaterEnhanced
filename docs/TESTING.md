@@ -1,5 +1,13 @@
 # 测试与验收
 
+退出收尾的定向回归可运行：
+
+```powershell
+node --test tests/native-helper-process-exit.test.cjs tests/app-shutdown-drain.test.cjs tests/native-helper-terminal-join.test.cjs tests/playback-power-main.test.cjs tests/refresh-rate-lifecycle.test.cjs
+```
+
+新增两份回归使用真实源码与fake app/child，覆盖有PID error不代替exit、无PID启动失败、重复事件、单项清理throw/reject及其他阶段pending、全部结算后quit一次。测试可用`ETE_TEST_SOURCE_ROOT`指向只包含同路径源码的基线快照进行相同断言的修前对照；默认始终读取当前工作树。这些用例不加载真实Native Helper或执行系统退出，不能代替进程残留、安装与播放验收。
+
 公开离线集合由 tools/ci-public-tests.cjs 实际发现 tests/*.test.cjs 并排除固定的材料依赖文件；不是完整产品验收。运行命令见 [贡献指南](CONTRIBUTING.md)，具体排除与流程见 [公开 CI](PUBLIC_CI.md)。
 
 具有完整固定输入的环境可运行 npm test；部分用例需要 vendor、prepared preload 或 Windows native 工具链。缺少材料应报告未执行或失败，不能删断言或伪造 PASS。

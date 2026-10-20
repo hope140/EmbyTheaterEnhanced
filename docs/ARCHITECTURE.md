@@ -34,6 +34,10 @@ CustomCssJS 作为固定源哈希的 Web overlay 构建：服务器/本地 CSS �
 
 固定源哈希的 item 详情 overlay 仅退役旧外置播放器按钮与 fromPlayEnded 计时器；externalplayers/autoplay 旧值保持不写不删，普通下一集仍由 PlaybackManager 的 Emby EnableNextEpisodeAutoPlay 与 PlayQueue/nextTrack 管理。构建排除旧 Pepper input；两份旧 Carnival 批处理因动态/外部 Host 消费者和手工工作流尚未闭合而继续保留。旧 AppHost sleep/shutdown/restart 协议动作已从 Web 能力广告、Web 调用入口、命令白名单和 main 分派移除；未知命令仍完成空响应，windowstate、exit、loaded、音视频通知与安全外链链路保持。
 
+Native Helper 的 transport 终态与 owned process 退出分别确认。有 PID 的 child error 只终结 transport/request，进程继续归原 controller/service 管理；实际 exit 才兑现 exitPromise并移出活跃集合。无 PID 的 spawn failure可直接结算；重复error不会重复终结或变成未处理事件。
+
+应用 before-quit 继续同步设置关闭状态、退役power owner并按原顺序注销各项能力；每项清理独立包含同步异常和异步拒绝，全部返回工作结算后才统一quit。失败诊断仅记录固定step，不记录原始异常负载。未确认退出的owned child或未结算startup仍属于等待范围；整体退出期限与强退策略未在本轮增加。
+
 [STRM](STRM_RESOLVER.md) · [配置](STRM_RESOLVER_SETTINGS.md) · [DirectUrl](CD2_DIRECT_URL.md) · [Native Helper](NATIVE_HELPER_BRIDGE.md) · [构建](PACKAGING.md)
 
 插件设置候选在受控 Web overlay 中增加窄路由/依赖映射及插件页导航事务，维护模块复用原 API client、字段编辑器和通知出口；共享播放、认证和 input/API 模块保持。来源、取消、错误与验收边界见 [兼容合同](PLUGIN_SETTINGS_COMPATIBILITY.md)。
