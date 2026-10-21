@@ -1,5 +1,7 @@
 # 架构与维护边界
 
+Current selection: package/preload/Host-config templates are maintained independently under tools/templates/runtime with locked transforms and provenance. Old physical input requirement is now 58 assets plus one current libmpv patch. See [template source and behavior](RUNTIME_TEMPLATES.md).
+
 Current input update: 29 retained npm files are independently prepared from pinned official Electron 3.0.20 Git blobs; explicit newline conversion preserves exact output. Normal dependency copying/provenance also use this component. Old Carnival physical requirements are now 61, plus one current libmpv patch. See [inherited npm](INHERITED_NPM_INPUT.md).
 
 Current production selection: 90 consumed Carnival files and one current libmpv patch remain physical requirements. The 144 replaced/retired Carnival and 48 unused patch records are historical metadata only. Required hashes and active path checks remain strict. See [current input selection](LEGACY_INPUT_SELECTION.md).

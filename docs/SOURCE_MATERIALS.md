@@ -1,5 +1,7 @@
 # Runtime source and notice materials
 
+Small template supplement: package matches official Electron e897adda except the retained old version suffix; Host config matches official Windows source and exact 3.0.20 release bytes. Preload remains an explicitly unresolved-origin seven-line compatibility template, locally preserved without a public distribution decision. Source hashes, differences and notices are in [the template contract](RUNTIME_TEMPLATES.md) and vendor/runtime-templates-manifest.json.
+
 Inherited npm acquisition update: all 29 selected files can be recovered from official Electron commit e897adda583b2339f077cb67113e71326a806de0 with the locked LF-to-CRLF conversion. The registry differences described below remain historical comparisons; no community code patch is needed against this official commit. Seven package declarations and unchanged notice files are individually pinned. See [component source and scope](INHERITED_NPM_INPUT.md).
 
 Current input/provenance boundary: [legacy input selection](LEGACY_INPUT_SELECTION.md) distinguishes 90 consumed Carnival files and one current libmpv patch from historical manifest-only records. Removing physical predecessor gates does not establish new source or redistribution claims.

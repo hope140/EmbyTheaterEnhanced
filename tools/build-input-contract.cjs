@@ -8,13 +8,14 @@ const {hashTrackedTextFile} = require('./tracked-file-hash.cjs');
 // Only consumed metadata, generators, validators and delivered notices belong
 // here. Ordinary product source is already materialized from commit blobs.
 const NOTICE_PATHS = Object.freeze([
-    'LICENSE', 'THIRD_PARTY_NOTICES.md', 'docs/LICENSING.md', 'docs/SOURCE_MATERIALS.md', 'docs/WINDOWS_HOST_INPUT.md', 'docs/INHERITED_NPM_INPUT.md'
+    'LICENSE', 'THIRD_PARTY_NOTICES.md', 'docs/LICENSING.md', 'docs/SOURCE_MATERIALS.md', 'docs/WINDOWS_HOST_INPUT.md', 'docs/INHERITED_NPM_INPUT.md', 'docs/RUNTIME_TEMPLATES.md'
 ]);
 const INPUT_PATHS = Object.freeze([
     'package.json', 'package-lock.json',
     'vendor/runtime-manifest.json', 'vendor/electron-runtime-manifest.json',
     'vendor/web-snapshot-manifest.json',
-    'vendor/windows-host-manifest.json', 'vendor/inherited-npm-manifest.json',
+    'vendor/windows-host-manifest.json', 'vendor/inherited-npm-manifest.json', 'vendor/runtime-templates-manifest.json',
+    'tools/templates/runtime/package.json','tools/templates/runtime/preload.js','tools/templates/runtime/Emby.Theater.exe.config',
     'vendor/native-helper-manifest.json', 'vendor/toolchain-manifest.json',
     'installer/EmbyTheaterEnhanced.iss', 'installer/installer-guard.iss',
     'installer/languages/ChineseSimplified.isl',
@@ -35,7 +36,7 @@ const INPUT_PATHS = Object.freeze([
     'tools/copy-runtime-dependencies.cjs', 'tools/electron-runtime-input.cjs',
     'tools/assemble-runtime-base.cjs',
     'tools/web-snapshot-input.cjs', 'tools/validate-build-materials.cjs',
-    'tools/windows-host-input.cjs', 'tools/inherited-npm-input.cjs', 'tools/prepare-windows-host.ps1',
+    'tools/windows-host-input.cjs', 'tools/inherited-npm-input.cjs', 'tools/runtime-template-input.cjs', 'tools/prepare-windows-host.ps1',
     'tools/runtime-dependency-contract.cjs',
     'tools/build-native-helper.ps1', 'tools/materialize-native-helper-source.cjs',
     'tools/native-helper-contract.cjs', 'tools/native-helper-provenance.cjs',

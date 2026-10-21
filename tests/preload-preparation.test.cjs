@@ -28,6 +28,7 @@ test('prepare writes and reuses the same generated artifact without external fil
         const vendorPath = path.join(root, preparation.BASE_PRELOAD_PATH);
         fs.mkdirSync(path.dirname(vendorPath), {recursive: true});
         fs.writeFileSync(vendorPath, vendorPreload, 'utf8');
+        require('./helpers/runtime-template-fixture.cjs').create(root,{'electronapp/preload.js':Buffer.from(vendorPreload)});
 
         const first = preparation.prepare(root);
         const target = path.join(root, preparation.PREPARED_PRELOAD_PATH);

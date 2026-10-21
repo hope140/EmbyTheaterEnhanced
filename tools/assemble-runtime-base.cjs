@@ -11,6 +11,7 @@ const {hashTrackedTextFile} = require('./tracked-file-hash.cjs');
 const webSnapshot = require('./web-snapshot-input.cjs');
 const windowsHost = require('./windows-host-input.cjs');
 const inheritedNpm = require('./inherited-npm-input.cjs');
+const templates = require('./runtime-template-input.cjs');
 
 function sha256(bytes) {
     return crypto.createHash('sha256').update(bytes).digest('hex');
@@ -87,11 +88,13 @@ function plan(rootArg, sourceCommit) {
         .filter(item => !webSnapshot.isLegacyWeb(item.path) && !hostPaths.has(item.path));
     const oldNpm=candidates.filter(item=>item.reason==='inherited-npm-dependency');
     if(oldNpm.length!==npm.files.length||oldNpm.some(item=>!npm.files.some(entry=>entry.path===item.path&&entry.size===item.size&&entry.sha256===item.sha256)))throw new Error('Inherited npm component differs from current retained package selection.');
-    const legacyCandidates=candidates.filter(item=>!npmPaths.has(item.path));
+    const template=templates.load(root),templatePaths=new Set(template.files.map(e=>e.runtimePath));
+    for(const entry of template.files)if(!candidates.some(item=>item.path===entry.runtimePath&&item.size===entry.size&&item.sha256===entry.sha256))throw Error('Runtime template differs from historical baseline identity.');
+    const legacyCandidates=candidates.filter(item=>!npmPaths.has(item.path)&&!templatePaths.has(item.path));
     const required = item => item.action === 'copy' || ['generated-host-config','generated-preload'].includes(item.reason);
     const entries = legacyCandidates.filter(required);
     const historicalEntries = legacyCandidates.filter(item => !required(item));
-    const ignoredInputPaths = [...new Set(['electronapp/www','electronapp/node_modules',...hostPaths,...npmPaths,...historicalEntries.map(item=>item.path),
+    const ignoredInputPaths = [...new Set(['electronapp/www','electronapp/node_modules',...hostPaths,...npmPaths,...templatePaths,...historicalEntries.map(item=>item.path),
         'x64/electron',...selected.packages.map(item=>'electronapp/'+item.packagePath)])];
     if(entries.some(item=>ignoredInputPaths.some(prefix=>item.path===prefix||item.path.startsWith(prefix+'/')))) {
         throw new Error('Historical input exclusion overlaps a consumed input.');
@@ -105,7 +108,7 @@ function plan(rootArg, sourceCommit) {
         webSnapshot: {manifestPath:webSnapshot.MANIFEST_PATH,
             treeSha256:web.treeSha256,fileCount:web.fileCount,bytes:web.bytes},windowsHost:{manifestPath:windowsHost.MANIFEST_PATH,
             treeSha256:host.treeSha256,fileCount:host.fileCount,bytes:host.bytes},inheritedNpm:{manifestPath:inheritedNpm.MANIFEST_PATH,
-            sourceCommit:npm.source.commit,treeSha256:npm.treeSha256,fileCount:npm.fileCount,bytes:npm.bytes}};
+            sourceCommit:npm.source.commit,treeSha256:npm.treeSha256,fileCount:npm.fileCount,bytes:npm.bytes},runtimeTemplates:{manifestPath:templates.MANIFEST_PATH,fileCount:3,bytes:template.bytes}};
 }
 
 function physical(absolute, directory) {
@@ -162,6 +165,7 @@ function assemble(rootArg, sourceCommit, runtimeArg, token) {
     webSnapshot.validate(root);
     windowsHost.validate(root);
     inheritedNpm.validate(root);
+    templates.validate(root);
     // Validate only consumed bytes and templates. Historical/replaced inputs
     // are references, while current component authorities remain fully checked.
     verifyInputs(carnivalRoot, result.entries, result.ignoredInputPaths);
@@ -176,9 +180,10 @@ function assemble(rootArg, sourceCommit, runtimeArg, token) {
     const webInput = webSnapshot.assemble(root, runtime);
     const hostInput = windowsHost.assemble(root,runtime);
     const npmInput = inheritedNpm.assemble(root,runtime);
+    const templateInput=templates.assemble(root,runtime);
     return {schemaVersion: result.schemaVersion, status: 'passed', sourceCommit: result.sourceCommit,
         sourceManifestSha256: result.sourceManifestSha256, groups: result.groups,
-        historicalReference:result.historicalReference,webInput,hostInput,inheritedNpm:npmInput};
+        historicalReference:result.historicalReference,webInput,hostInput,inheritedNpm:npmInput,runtimeTemplates:templateInput};
 }
 
 if (require.main === module) {

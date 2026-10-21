@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-21 - Remove small-template physical dependencies
+
+Record official package/config references and retained differences; preserve the seven-line bridge without claiming authorship. Normalize tracked text, verify source/generated hashes, and distinguish source versus transformed-base identities in provenance. Compare generation against a separate old-material oracle, including final package serialization. See [templates](RUNTIME_TEMPLATES.md).
+
 ## 2026-10-21 - Pinned upstream npm preparation
 
 Pin source commit, blob/SHA256, exact newline transform and output identities instead of relying on Windows checkout settings. Update base assembly, material and dependency/source provenance together so no hidden old npm read remains. Preserve upstream bundled metadata and code rather than replacing with newer registry packages. See [component contract](INHERITED_NPM_INPUT.md).

@@ -105,6 +105,7 @@ function fixture(t) {
         fileCount:hostFiles.length,bytes:hostFiles.reduce((n,f)=>n+f.size,0),treeSha256:web.treeHash(hostFiles),
         archive:{size:1,sha256:'0'.repeat(64)}});
     require('./helpers/inherited-npm-fixture.cjs').create(root);
+    require('./helpers/runtime-template-fixture.cjs').create(root);
     write(root, 'src/electronapp/main.js', 'committed main');
     write(root, '.gitignore', '/vendor/carnival/\n/dist/\n/.work/\n');
     git(root, ['init', '-q']);
@@ -193,6 +194,16 @@ test('independent inherited npm replaces the complete absent old npm directory',
     assert.equal(fs.existsSync(path.join(f.vendor,'electronapp/node_modules')),false);
 });
 
+test('maintained templates replace all three absent old template inputs',t=>{
+    const f=fixture(t),templates=require('../tools/runtime-template-input.cjs');
+    for(const name of Object.keys(templates.FILES))fs.unlinkSync(path.join(f.vendor,name));
+    const material=require('../tools/validate-build-materials.cjs').validate(f.root);
+    assembly.assemble(f.root,f.commit,f.runtime,f.token);
+    assert.equal(material.runtimeTemplates.fileCount,3);
+    assert.deepEqual(fs.readFileSync(path.join(f.runtime,'electronapp/package.json')),templates.read(f.root,'electronapp/package.json').bytes);
+    for(const name of Object.keys(templates.FILES))assert.equal(fs.existsSync(path.join(f.vendor,name)),false);
+});
+
 for (const mutation of ['changed-retained', 'extra', 'missing']) {
     test('preflight rejects ' + mutation + ' input before writing any payload', t => {
         const f = fixture(t);
@@ -223,7 +234,7 @@ test('changed retired files are not read or copied, while consumed templates rem
     write(f.vendor,'electronapp/main.js','changed historical source');
     write(f.vendor,'electronapp/libmpv/x64/mpv-1.dll','changed historical mpv');
     assert.equal(require('../tools/validate-build-materials.cjs').validate(f.root).status,'passed');
-    write(f.vendor,'electronapp/preload.js','changed consumed template');
+    write(f.root,'tools/templates/runtime/preload.js','changed consumed template');
     assert.throws(()=>assembly.assemble(f.root,f.commit,f.runtime,f.token),/identity mismatch/);
     assert.deepEqual(fs.readdirSync(f.runtime),[dependencies.OWNER_FILE]);
 });

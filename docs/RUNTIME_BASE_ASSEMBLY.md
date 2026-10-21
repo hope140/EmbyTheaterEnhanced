@@ -1,5 +1,7 @@
 # 文件级 runtime 基线组装
 
+Current follow-up: three maintained templates remove the old package/preload/config physical reads. Base output remains unchanged; 58 old assets and one libmpv patch remain. See [runtime templates](RUNTIME_TEMPLATES.md).
+
 Current selection follow-up: inherited npm is now an independent 29-file component, leaving 61 physical old Carnival inputs and one current libmpv patch. See [fixed inherited npm](INHERITED_NPM_INPUT.md).
 
 Current contract update: the historical stage-one full-input gate described below has been superseded. Normal builds require 90 consumed Carnival inputs and one libmpv patch; 144/48 predecessor records remain metadata only. See [current input selection](LEGACY_INPUT_SELECTION.md). Historical counts below describe their named baseline, not current physical requirements.

@@ -10,6 +10,7 @@ const runtimeExclusions = require('./runtime-exclusions.cjs');
 const electronRuntimeInput = require('./electron-runtime-input.cjs');
 const windowsHostInput = require('./windows-host-input.cjs');
 const inheritedNpmInput = require('./inherited-npm-input.cjs');
+const runtimeTemplates=require('./runtime-template-input.cjs');
 
 const MANIFEST_NAME = 'source-provenance.json';
 const HISTORICAL_ELECTRON_PATH = 'x64/electron/electron.exe';
@@ -239,6 +240,7 @@ function buildManifest(rootArg, runtimeArg, sourceCommit) {
             }))
         },
         runtimeIdentities: {electron, libmpv,windowsHost,inheritedNpm},
+        runtimeTemplates:runtimeTemplates.validate(root),
         historicalInputs: {carnivalElectron: historicalElectron},
         runtimeExclusions: {
             generatorPath: 'tools/runtime-exclusions.cjs',

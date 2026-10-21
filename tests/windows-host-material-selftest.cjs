@@ -21,6 +21,7 @@ test('real official Host and frozen Web preserve the complete base payload with 
     for(const entry of component.files)assert.equal(fs.existsSync(path.join(root,'vendor/carnival',entry.path)),false,'Old Host entry must be absent in this isolated proof');
     assert.equal(fs.existsSync(path.join(root,'vendor/carnival/electronapp/www')),false);
     assert.equal(fs.existsSync(path.join(root,'vendor/carnival/electronapp/node_modules')),false,'Old npm directory must be absent in this isolated proof');
+    for(const name of Object.keys(require('../tools/runtime-template-input.cjs').FILES))assert.equal(fs.existsSync(path.join(root,'vendor/carnival',name)),false,'Old templates must be absent in this isolated proof');
     const classified=assembly.classify(legacy.files,product.listTrackedProductSources(root,commit).map(x=>x.runtimePath),
         overlays.WEB_OVERLAY_CONTRACT.map(x=>x.runtimePath),dependencies.loadSelectedPackages(root).packages.map(x=>x.packagePath));
     const expected=[...classified.filter(x=>x.action==='copy'&&!web.isLegacyWeb(x.path)).map(({path,size,sha256})=>({path,size,sha256})),
@@ -35,7 +36,7 @@ test('real official Host and frozen Web preserve the complete base payload with 
     host.validateRuntime(root,runtime);
     const report={schemaVersion:1,status:'passed',sourceCommit:commit,sourceComparison:'Frozen original copy-entry manifest plus independent raw Web manifest',
         filesCompared:expected.length,treeSha256:web.treeHash(expected),hostFiles:component.fileCount,hostBytes:component.bytes,
-        oldHostPathsAbsent:true,oldWwwAbsent:true,oldNpmAbsent:true,inheritedNpm:result.inheritedNpm,modelSha256:model.sha256.toLowerCase(),modelUnchanged:true,
+        oldHostPathsAbsent:true,oldWwwAbsent:true,oldNpmAbsent:true,oldTemplatesAbsent:true,runtimeTemplates:result.runtimeTemplates,inheritedNpm:result.inheritedNpm,modelSha256:model.sha256.toLowerCase(),modelUnchanged:true,
         buildInputCount:inputs.files.length,runtimePath:path.relative(root,runtime).replaceAll(path.sep,'/'),
         notExecuted:['full npm/Electron/Native assembly','installer','application','driver installation','display or media playback']};
     const directory=path.join(root,'.work/verification');fs.mkdirSync(directory,{recursive:true});

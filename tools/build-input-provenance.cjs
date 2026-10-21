@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const contract = require('./build-input-contract.cjs');
+const templates=require('./runtime-template-input.cjs');
 const {readBlob} = require('./copy-tracked-product-sources.cjs');
 
 const NAME = 'build-input-provenance.json';
@@ -207,10 +208,8 @@ function noticeInputs(root, contractInputs) {
 function record(root, runtime, sourceCommit, write) {
     const inputs = contract.inspect(root, sourceCommit);
     const byPath = new Map(inputs.files.map(file => [file.path, file]));
-    const manifest = JSON.parse(readBlob(root, byPath.get('vendor/runtime-manifest.json').gitBlobObjectId));
-    const base = fs.readFileSync(path.join(root, 'vendor/carnival', CONFIG_PATH));
-    const expectedBase = manifest.files.find(file => file.path === CONFIG_PATH);
-    if (!expectedBase || hash(base) !== expectedBase.sha256.toLowerCase()) throw new Error('Config base does not match committed vendor manifest.');
+    const template=templates.read(root,CONFIG_PATH);
+    const base=template.bytes;
     const generated = configOutput(base);
     const notices = noticeInputs(root, inputs);
     if (write) {
@@ -231,7 +230,7 @@ function record(root, runtime, sourceCommit, write) {
         return {...notice.input, runtimePath: notice.path, relation: 'git-blob-copy'};
     });
     return {...inputs, configTransform: {
-        basePath: 'vendor/carnival/' + CONFIG_PATH, baseSha256: hash(base),
+        basePath: template.sourcePath, sourceTemplateSha256:template.sourceSha256,baseSha256: hash(base),baseRelation:'locked template transform',
         generatorPath: 'tools/build-input-provenance.cjs', generatorSha256: byPath.get('tools/build-input-provenance.cjs').sha256,
         runtimePath: CONFIG_PATH, outputSha256: hash(generated), relation: 'single ProgramDataPath anchor replacement; preserve other bytes'
     }, notices: noticeRecords};

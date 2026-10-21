@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-21 - Maintained small build templates
+
+Move package/preload/Host configuration to hash-locked maintained templates and preserve generated output bytes. Normal assembly, preload generation, config and runtime provenance no longer read the three old physical files. Remaining Carnival input is 58 assets plus one current libmpv patch. Preload origin remains explicitly unresolved and local-only; Model/UI/versions are unchanged. See [template contract](RUNTIME_TEMPLATES.md); final evidence is recorded separately.
+
 ## 2026-10-21 - Independent inherited npm input
 
 Move 29 retained npm files to a component recovered from official Electron 3.0.20 Git blobs with explicit LF-to-CRLF conversion. Normal assembly and dependency provenance no longer read the old npm directory. Physical Carnival requirements are now 61 files; current libmpv remains one. Preserve all output bytes, seven package identities/notices and strict component checks. See [fixed inherited npm](INHERITED_NPM_INPUT.md); final validation evidence is recorded separately.

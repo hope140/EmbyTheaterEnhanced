@@ -47,6 +47,7 @@ function setup(t, temporaryRoot = os.tmpdir()) {
     const configBase = Buffer.from('<configuration>\n  ' + CONFIG_ANCHOR + '\n</configuration>\n', 'utf8');
     json(repo, 'vendor/runtime-manifest.json', {schemaVersion: 1, files: [{path: CONFIG_PATH, sha256: sha(configBase)}]});
     write(repo, 'vendor/carnival/' + CONFIG_PATH, configBase);
+    require('./helpers/runtime-template-fixture.cjs').create(repo,{[CONFIG_PATH]:configBase});
     write(repo, 'docs/UNRELATED.md', 'unrelated committed documentation\n');
     git(repo, ['add', '--all']);
     git(repo, ['commit', '-q', '-m', 'fixture']);
@@ -345,8 +346,8 @@ test('normal write atomically transforms the base config and copies raw notice b
 
 test('config base, generated output and generator tampering are rejected', t => {
     const baseFixture = setup(t);
-    write(baseFixture.repo, 'vendor/carnival/' + CONFIG_PATH, Buffer.concat([baseFixture.configBase, Buffer.from('tampered')]));
-    assert.throws(() => provenance.run('write', baseFixture.repo, baseFixture.runtime, baseFixture.sourceCommit), /Config base does not match/);
+    write(baseFixture.repo, 'tools/templates/runtime/' + CONFIG_PATH, Buffer.concat([baseFixture.configBase, Buffer.from('tampered')]));
+    assert.throws(() => provenance.run('write', baseFixture.repo, baseFixture.runtime, baseFixture.sourceCommit), /differs from HEAD|template source identity mismatch/);
 
     const outputFixture = setup(t);
     provenance.run('write', outputFixture.repo, outputFixture.runtime, outputFixture.sourceCommit);
