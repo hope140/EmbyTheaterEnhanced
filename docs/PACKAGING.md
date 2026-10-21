@@ -87,3 +87,6 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/package.ps1
 
 
 The four small runtime inputs use [an independent fixed snapshot](SMALL_RUNTIME_INPUT.md), not their old Carnival paths. Preserve configuration bytes and auto-update behavior. This material branch needs the separately released 0.3.15 exit fix before final full-package validation; snapshot tests are not installer/playback acceptance.
+
+
+Normal preparation/build/provenance require zero old Carnival/combined-patch physical inputs. Restore the fixed components as documented in [zero-input contract](MODEL_COMPATIBILITY_INPUT.md). Local ignored snapshots are still required materials; this is independent packaging input management, not a full source rebuild. Retain the 0.3.15 exit fix before a final package candidate.

@@ -113,6 +113,7 @@ function fixture(t) {
     require('./helpers/runtime-template-fixture.cjs').create(root);
     require('./helpers/libmpv-fixture.cjs').create(root);
     require('./helpers/small-runtime-fixture.cjs').create(root,true);
+    require('./helpers/model-compatibility-fixture.cjs').create(root,true);
     require('./helpers/compatibility-fixture.cjs').create(root,legacyFiles.filter(e=>require('../tools/compatibility-resources-input.cjs').isCompatibility(e.path)));
     write(root, 'src/electronapp/main.js', 'committed main');
     write(root, '.gitignore', '/vendor/carnival/\n/dist/\n/.work/\n');
@@ -169,7 +170,8 @@ test('plan identifies retained inputs, templates, replacements and retired files
     assert.equal(byPath.has('external/retained.glsl'),false);
     assert.equal(plan.compatibilityResources.fileCount,1);
     assert.equal(plan.smallRuntime.fileCount,4);
-    assert.deepEqual(plan.entries.map(e=>e.path),['MediaBrowser.Model.dll']);
+    assert.deepEqual(plan.entries,[]);
+    assert.equal(plan.modelCompatibility.fileCount,1);
     assert.equal(plan.groups.reduce((total, group) => total + group.fileCount, 0), plan.entries.length);
     assert.deepEqual(fs.readdirSync(f.runtime), [dependencies.OWNER_FILE]);
     assert.equal(overlays.WEB_OVERLAY_CONTRACT.some(item => item.runtimePath === 'electronapp/www/index.html'), true);
@@ -235,7 +237,7 @@ for (const mutation of ['changed-retained', 'extra', 'missing']) {
     test('preflight rejects ' + mutation + ' input before writing any payload', t => {
         const f = fixture(t);
         if (mutation === 'changed-retained') write(f.root, 'vendor/compatibility-resources/snapshot-v1/external/retained.glsl', 'changed');
-        if (mutation === 'extra') write(f.vendor, 'unexpected.js', 'extra');
+        if (mutation === 'extra') write(f.root, 'vendor/model-compatibility/snapshot-v1/unexpected.js', 'extra');
         if (mutation === 'missing') fs.unlinkSync(path.join(f.root,'vendor/compatibility-resources/snapshot-v1/external/retained.glsl'));
         assert.throws(() => assembly.assemble(f.root, f.commit, f.runtime, f.token), /input|identity/);
         assert.deepEqual(fs.readdirSync(f.runtime), [dependencies.OWNER_FILE]);
@@ -293,7 +295,7 @@ test('all four old small paths may be absent while configuration and Model remai
     const expectedConfig=fs.readFileSync(path.join(f.vendor,'config/system.xml'));
     for(const name of small.SMALL_PATHS)fs.unlinkSync(path.join(f.vendor,name));
     const report=require('../tools/validate-build-materials.cjs').validate(f.root);
-    assert.equal(report.remainingCarnivalFiles,1);
+    assert.equal(report.remainingCarnivalFiles,0);
     assert.equal(report.remainingPatchFiles,0);
     assert.equal(report.smallRuntimeInput.fileCount,4);
     assembly.assemble(f.root,f.commit,f.runtime,f.token);
@@ -305,14 +307,26 @@ test('all four old small paths may be absent while configuration and Model remai
 
 test('remaining Model identity and independent configuration keep strict preflight validation',t=>{
     const f=fixture(t),small=require('../tools/small-runtime-input.cjs');
-    const model=fs.readFileSync(path.join(f.vendor,'MediaBrowser.Model.dll'));
-    write(f.vendor,'MediaBrowser.Model.dll','changed Model');
+    const modelInput=path.join(f.root,'vendor/model-compatibility/snapshot-v1/MediaBrowser.Model.dll');
+    const model=fs.readFileSync(modelInput);
+    fs.writeFileSync(modelInput,'changed Model');
     assert.throws(()=>assembly.assemble(f.root,f.commit,f.runtime,f.token),/identity/);
     assert.deepEqual(fs.readdirSync(f.runtime),[dependencies.OWNER_FILE]);
-    write(f.vendor,'MediaBrowser.Model.dll',model);
+    fs.writeFileSync(modelInput,model);
     write(f.root,small.INPUT_ROOT+'/config/system.xml','changed configuration');
     assert.throws(()=>assembly.assemble(f.root,f.commit,f.runtime,f.token),/snapshot identity/);
     assert.deepEqual(fs.readdirSync(f.runtime),[dependencies.OWNER_FILE]);
+});
+
+test('normal assembly and material gate ignore entirely absent old directories',t=>{
+    const f=fixture(t),model=require('../tools/model-compatibility-input.cjs');
+    fs.renameSync(f.vendor,path.join(f.root,'historical-material-not-an-input'));
+    fs.renameSync(path.join(f.root,'vendor/patch'),path.join(f.root,'historical-patch-not-an-input'));
+    const report=require('../tools/validate-build-materials.cjs').validate(f.root);
+    assert.equal(report.remainingCarnivalFiles,0);assert.equal(report.remainingPatchFiles,0);
+    assembly.assemble(f.root,f.commit,f.runtime,f.token);
+    assert.equal(model.validateRuntime(f.root,f.runtime).status,'passed');
+    assert.equal(fs.existsSync(f.vendor),false);
 });
 
 test('assembly refuses wrong ownership, commit, occupied destinations and repeat attempts', t => {

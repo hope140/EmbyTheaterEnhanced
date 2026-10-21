@@ -869,3 +869,6 @@ Model Tier: Tier 2；Model: 当前Codex会话，运行时未向任务提供精�
 
 
 2026-10-21: isolated small-input stage adds exact four-path import/validation/provenance and explicit preparation, removes four old physical gates, and preserves original materials. Includes configuration, language, notice and zero-byte CEC marker without executing or applying them. Tests cover missing legacy files, cold restore, configuration tamper, links and unchanged Model. See [contract](SMALL_RUNTIME_INPUT.md).
+
+
+2026-10-21: added original-byte Model component and runtime provenance, removed the final normal legacy physical input and old-installer bootstrap, and added independent Web restoration. Strict component checks remain; historical oracle tests are explicit. Original materials preserved. Validation covers missing entire old directories, snapshot tamper/links, cold restoration and unchanged payload/generators. See [contract](MODEL_COMPATIBILITY_INPUT.md).

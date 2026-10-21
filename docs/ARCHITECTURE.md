@@ -70,3 +70,6 @@ ActionSheet 空列表排版使用单独的固定源 `actionsheet.css` overlay；
 
 
 Four small runtime inputs are an independent exact-byte component. Model alone still comes from the reduced historical directory; see [small input contract](SMALL_RUNTIME_INPUT.md).
+
+
+Normal production inputs are now independent components only; the old Carnival and combined-patch directories are never read. Unmanaged retained legacy inputs fail rather than reviving a fallback. See [zero-input Model contract](MODEL_COMPATIBILITY_INPUT.md).

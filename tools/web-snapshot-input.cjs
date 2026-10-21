@@ -104,7 +104,25 @@ function assemble(rootArg, runtimeArg) {
     }
     return report;
 }
-// Explicit one-time import only. Production validation/assembly never reads the
+// Restore an already independent snapshot without any original package layout.
+function restoreSnapshot(rootArg, sourceArg) {
+    const root=path.resolve(rootArg),source=path.resolve(sourceArg),manifest=load(root);
+    const entries=[...manifest.files,...manifest.userPatches];
+    verifyTree(source,entries);
+    const destination=path.join(root,INPUT_ROOT);
+    if(fs.existsSync(destination))throw new Error('Web snapshot input already exists; restoration never overwrites.');
+    const buffers=entries.map(entry=>{
+        const bytes=fs.readFileSync(path.join(source,entry.path));
+        if(bytes.length!==entry.size||sha(bytes)!==entry.sha256)throw new Error('Web snapshot restore identity mismatch: '+entry.path);
+        return {entry,bytes};
+    });
+    for(const {entry,bytes} of buffers){
+        const target=path.join(destination,entry.path);mkdirPhysical(path.dirname(target));
+        fs.writeFileSync(target,bytes,{flag:'wx'});
+    }
+    return validate(root);
+}
+// Explicit historical one-time import only. Production validation/assembly never reads the
 // old www tree or the old patch payload. Never edits or deletes either source.
 function importSnapshot(rootArg, carnivalArg, patchArg) {
     const root = path.resolve(rootArg), manifest = load(root), destination = path.join(root,INPUT_ROOT);
@@ -130,9 +148,10 @@ if (require.main === module) {
         let result;
         if (command === 'validate' && root && !a && !b) result = validate(root);
         else if (command === 'assemble' && root && a && !b) result = assemble(root,a);
+        else if (command === 'restore' && root && a && !b) result = restoreSnapshot(root,a);
         else if (command === 'import' && root && a && b) result = importSnapshot(root,a,b);
-        else throw new Error('Usage: web-snapshot-input.cjs validate <root> | assemble <root> <dist-output> | import <root> <carnival-root> <patch-root>');
+        else throw new Error('Usage: web-snapshot-input.cjs validate <root> | assemble <root> <dist-output> | restore <root> <independent-snapshot-root> | import <root> <historical-carnival-root> <historical-patch-root>');
         process.stdout.write(JSON.stringify(result,null,2)+'\n');
     } catch(error) { process.stderr.write(error.message+'\n');process.exitCode=1; }
 }
-module.exports = {MANIFEST_PATH,INPUT_ROOT,WEB_ROOT,LEGACY_WEB_PREFIX,isLegacyWeb,treeHash,load,verifyTree,validate,assemble,importSnapshot};
+module.exports = {MANIFEST_PATH,INPUT_ROOT,WEB_ROOT,LEGACY_WEB_PREFIX,isLegacyWeb,treeHash,load,verifyTree,validate,assemble,restoreSnapshot,importSnapshot};

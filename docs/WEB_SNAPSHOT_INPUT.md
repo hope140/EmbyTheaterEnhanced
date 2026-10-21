@@ -42,3 +42,6 @@ npm test
 整体产品仍依赖preload和package小模板、保留npm包、附带资源及其它历史校验材料；libmpv、Electron和工具链也仍是固定外部输入。14份原样Windows Host/辅助二进制已转为[官方固定组件](WINDOWS_HOST_INPUT.md)，Model保持当前字节和原来源。后续应逐组件替换或独立保存，不能将此阶段宣称为完全移除旧整包或全部从源码构建。
 
 固定快照的传递/存储目标与公开再分发是后续独立决定；仅有清单的Git克隆尚不包含该材料正文。
+
+
+Normal first restoration can now use `node tools/web-snapshot-input.cjs restore . <independent-snapshot-root>` or `prepare.ps1 -WebSnapshotRoot`. This validates the exact fixed Web and user-patch tree without historical installer/extracted layouts. The older `import` command is a separate explicit historical acquisition tool.

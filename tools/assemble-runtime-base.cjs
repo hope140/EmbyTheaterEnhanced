@@ -14,6 +14,7 @@ const inheritedNpm = require('./inherited-npm-input.cjs');
 const templates = require('./runtime-template-input.cjs');
 const compatibility = require('./compatibility-resources-input.cjs');
 const smallRuntime = require('./small-runtime-input.cjs');
+const modelCompatibility = require('./model-compatibility-input.cjs');
 
 function sha256(bytes) {
     return crypto.createHash('sha256').update(bytes).digest('hex');
@@ -100,11 +101,16 @@ function plan(rootArg, sourceCommit) {
     const smallInput=smallRuntime.load(root),smallPaths=new Set(smallInput.files.map(e=>e.path));
     const oldSmall=afterCompatibility.filter(e=>smallRuntime.isSmallRuntime(e.path));
     if(oldSmall.length!==smallInput.files.length||oldSmall.some(e=>e.action!=='copy'||!smallInput.files.some(f=>f.path===e.path&&f.size===e.size&&f.sha256===e.sha256)))throw Error('Small runtime snapshot differs from retained historical identity.');
-    const otherCandidates=afterCompatibility.filter(e=>!smallPaths.has(e.path));
+    const afterSmall=afterCompatibility.filter(e=>!smallPaths.has(e.path));
+    const modelInput=modelCompatibility.load(root),modelPaths=new Set(modelInput.files.map(e=>e.path));
+    const oldModel=afterSmall.filter(e=>modelCompatibility.isModelCompatibility(e.path));
+    if(oldModel.length!==1||oldModel[0].action!=='copy'||oldModel[0].size!==modelInput.files[0].size||oldModel[0].sha256!==modelInput.files[0].sha256)throw Error('Model snapshot differs from historical compatibility identity.');
+    const otherCandidates=afterSmall.filter(e=>!modelPaths.has(e.path));
     const required = item => item.action === 'copy' || ['generated-host-config','generated-preload'].includes(item.reason);
     const entries = otherCandidates.filter(required);
+    if(entries.length)throw new Error('Unmanaged legacy runtime input remains; explicit independent component required.');
     const historicalEntries = otherCandidates.filter(item => !required(item));
-    const ignoredInputPaths = [...new Set(['electronapp/www','electronapp/node_modules','external',...smallPaths,...compatibilityPaths,...hostPaths,...npmPaths,...templatePaths,...historicalEntries.map(item=>item.path),
+    const ignoredInputPaths = [...new Set(['electronapp/www','electronapp/node_modules','external',...modelPaths,...smallPaths,...compatibilityPaths,...hostPaths,...npmPaths,...templatePaths,...historicalEntries.map(item=>item.path),
         'x64/electron',...selected.packages.map(item=>'electronapp/'+item.packagePath)])];
     if(entries.some(item=>ignoredInputPaths.some(prefix=>item.path===prefix||item.path.startsWith(prefix+'/')))) {
         throw new Error('Historical input exclusion overlaps a consumed input.');
@@ -118,7 +124,7 @@ function plan(rootArg, sourceCommit) {
         webSnapshot: {manifestPath:webSnapshot.MANIFEST_PATH,
             treeSha256:web.treeSha256,fileCount:web.fileCount,bytes:web.bytes},windowsHost:{manifestPath:windowsHost.MANIFEST_PATH,
             treeSha256:host.treeSha256,fileCount:host.fileCount,bytes:host.bytes},inheritedNpm:{manifestPath:inheritedNpm.MANIFEST_PATH,
-            sourceCommit:npm.source.commit,treeSha256:npm.treeSha256,fileCount:npm.fileCount,bytes:npm.bytes},runtimeTemplates:{manifestPath:templates.MANIFEST_PATH,fileCount:3,bytes:template.bytes},compatibilityResources:{manifestPath:compatibility.MANIFEST_PATH,fileCount:compatibilityInput.fileCount,bytes:compatibilityInput.bytes,treeSha256:compatibilityInput.treeSha256},smallRuntime:{manifestPath:smallRuntime.MANIFEST_PATH,fileCount:smallInput.fileCount,bytes:smallInput.bytes,treeSha256:smallInput.treeSha256}};
+            sourceCommit:npm.source.commit,treeSha256:npm.treeSha256,fileCount:npm.fileCount,bytes:npm.bytes},runtimeTemplates:{manifestPath:templates.MANIFEST_PATH,fileCount:3,bytes:template.bytes},compatibilityResources:{manifestPath:compatibility.MANIFEST_PATH,fileCount:compatibilityInput.fileCount,bytes:compatibilityInput.bytes,treeSha256:compatibilityInput.treeSha256},smallRuntime:{manifestPath:smallRuntime.MANIFEST_PATH,fileCount:smallInput.fileCount,bytes:smallInput.bytes,treeSha256:smallInput.treeSha256},modelCompatibility:{manifestPath:modelCompatibility.MANIFEST_PATH,fileCount:modelInput.fileCount,bytes:modelInput.bytes,treeSha256:modelInput.treeSha256}};
 }
 
 function physical(absolute, directory) {
@@ -171,33 +177,24 @@ function assemble(rootArg, sourceCommit, runtimeArg, token) {
         throw new Error('Assembly requires a fresh owned runtime.');
     }
     const result = plan(root, sourceCommit);
-    const carnivalRoot = path.join(root, 'vendor', 'carnival');
     webSnapshot.validate(root);
     windowsHost.validate(root);
     inheritedNpm.validate(root);
     templates.validate(root);
     compatibility.validate(root);
     smallRuntime.validate(root);
-    // Validate only consumed bytes and templates. Historical/replaced inputs
-    // are references, while current component authorities remain fully checked.
-    verifyInputs(carnivalRoot, result.entries, result.ignoredInputPaths);
-    for (const entry of result.entries.filter(item => item.action === 'copy' && !webSnapshot.isLegacyWeb(item.path))) {
-        const target = path.join(runtime, ...entry.path.split('/'));
-        fs.mkdirSync(path.dirname(target), {recursive: true});
-        physical(path.dirname(target), true);
-        fs.copyFileSync(path.join(carnivalRoot, ...entry.path.split('/')), target, fs.constants.COPYFILE_EXCL);
-        const bytes = fs.readFileSync(target);
-        if (bytes.length !== entry.size || sha256(bytes) !== entry.sha256) throw new Error('Assembled input identity mismatch: ' + entry.path);
-    }
+    modelCompatibility.validate(root);
+    // All production inputs are independently validated components; legacy trees are not read.
     const webInput = webSnapshot.assemble(root, runtime);
     const hostInput = windowsHost.assemble(root,runtime);
     const npmInput = inheritedNpm.assemble(root,runtime);
     const templateInput=templates.assemble(root,runtime);
     const compatibilityInput=compatibility.assemble(root,runtime);
     const smallInput=smallRuntime.assemble(root,runtime);
+    const modelInput=modelCompatibility.assemble(root,runtime);
     return {schemaVersion: result.schemaVersion, status: 'passed', sourceCommit: result.sourceCommit,
         sourceManifestSha256: result.sourceManifestSha256, groups: result.groups,
-        historicalReference:result.historicalReference,webInput,hostInput,inheritedNpm:npmInput,runtimeTemplates:templateInput,compatibilityResources:compatibilityInput,smallRuntime:smallInput};
+        historicalReference:result.historicalReference,webInput,hostInput,inheritedNpm:npmInput,runtimeTemplates:templateInput,compatibilityResources:compatibilityInput,smallRuntime:smallInput,modelCompatibility:modelInput};
 }
 
 if (require.main === module) {

@@ -94,3 +94,6 @@ Web生产输入现为`vendor/web-snapshot-manifest.json`固定的720份历史基
 
 
 The [small runtime snapshot](SMALL_RUNTIME_INPUT.md) preserves four historical packaged files and existing notices without claiming ETE authorship. Bodies stay ignored/local; source/version and public redistribution boundaries remain explicitly unresolved. No settings are changed. Approved body restoration is still needed for cloud use.
+
+
+The [Model compatibility snapshot](MODEL_COMPATIBILITY_INPUT.md) is the unchanged existing Carnival DLL, not official-byte or ETE-original content. The old full directories/archives are no longer normal build inputs. Exact origin remains marked unresolved, notices retained, and bodies local/ignored pending approved restorable storage.

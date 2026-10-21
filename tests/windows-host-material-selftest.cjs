@@ -18,6 +18,7 @@ test('real official Host and frozen Web preserve the complete base payload with 
     const commit=cp.execFileSync('git',['-C',root,'rev-parse','HEAD'],{encoding:'utf8'}).trim();
     const inputs=contract.inspect(root,commit),legacy=JSON.parse(fs.readFileSync(path.join(root,'vendor/runtime-manifest.json')));
     const component=host.load(root),snapshot=web.load(root);
+    assert.equal(fs.existsSync(path.join(root,'vendor/carnival')),false,'Whole old Carnival directory must be absent');
     const compatibility=require('../tools/compatibility-resources-input.cjs');
     const smallRuntime=require('../tools/small-runtime-input.cjs');
     for(const entry of smallRuntime.load(root).files)assert.equal(fs.existsSync(path.join(root,'vendor/carnival',entry.path)),false,'Old small runtime file must be absent');
@@ -43,7 +44,7 @@ test('real official Host and frozen Web preserve the complete base payload with 
     host.validateRuntime(root,runtime);
     const report={schemaVersion:1,status:'passed',sourceCommit:commit,sourceComparison:'Frozen original copy-entry manifest plus independent raw Web manifest',
         filesCompared:expected.length,treeSha256:web.treeHash(expected),hostFiles:component.fileCount,hostBytes:component.bytes,
-        oldHostPathsAbsent:true,oldWwwAbsent:true,oldCompatibilityResourcesAbsent:true,compatibilityResources:result.compatibilityResources,oldSmallRuntimePathsAbsent:true,smallRuntime:result.smallRuntime,oldPatchAbsent:true,libmpvInput,oldNpmAbsent:true,oldTemplatesAbsent:true,runtimeTemplates:result.runtimeTemplates,inheritedNpm:result.inheritedNpm,modelSha256:model.sha256.toLowerCase(),modelUnchanged:true,
+        wholeOldCarnivalAbsent:true,modelCompatibility:result.modelCompatibility,oldHostPathsAbsent:true,oldWwwAbsent:true,oldCompatibilityResourcesAbsent:true,compatibilityResources:result.compatibilityResources,oldSmallRuntimePathsAbsent:true,smallRuntime:result.smallRuntime,oldPatchAbsent:true,libmpvInput,oldNpmAbsent:true,oldTemplatesAbsent:true,runtimeTemplates:result.runtimeTemplates,inheritedNpm:result.inheritedNpm,modelSha256:model.sha256.toLowerCase(),modelUnchanged:true,
         buildInputCount:inputs.files.length,runtimePath:path.relative(root,runtime).replaceAll(path.sep,'/'),
         notExecuted:['full npm/Electron/Native assembly','installer','application','driver installation','display or media playback']};
     const directory=path.join(root,'.work/verification');fs.mkdirSync(directory,{recursive:true});

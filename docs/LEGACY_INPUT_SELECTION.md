@@ -46,3 +46,6 @@ Normal builds still need 90 Carnival files, one libmpv DLL, the independent Web 
 
 
 After independent small input selection, normal assembly consumes only unchanged Model from the historical directory. The four snapshot identities must match the retained historical manifest; their optional old paths are excluded while the active component and remaining Model remain strictly checked. See [small input contract](SMALL_RUNTIME_INPUT.md).
+
+
+Current normal legacy selection is empty. Model now belongs to its own original-byte component. An unmanaged retained legacy file is an error; no normal operation falls back to a Carnival tree. The historical manifest remains a reference for exact component identity relations, and full-tree oracle checks are explicit historical tests only.

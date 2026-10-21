@@ -70,3 +70,22 @@ test('one-time import checks all identities before creating input and never over
     assert.equal(web.importSnapshot(f.root,old,old).status,'passed');
     assert.throws(()=>web.importSnapshot(f.root,old,old),/already exists/);
 });
+
+test('independent Web restoration uses no legacy layout and preserves all raw and user-patch bytes',t=>{
+    const f=fixture(t),input=path.join(f.root,web.INPUT_ROOT),saved=path.join(f.root,'independent-source');
+    fs.renameSync(input,saved);
+    assert.equal(web.restoreSnapshot(f.root,saved).status,'passed');
+    for(const [name,bytes]of f.data)assert.deepEqual(fs.readFileSync(path.join(input,name)),bytes);
+    assert.equal(fs.existsSync(path.join(f.root,'vendor/carnival')),false);
+    assert.equal(fs.existsSync(path.join(f.root,'vendor/patch')),false);
+    assert.throws(()=>web.restoreSnapshot(f.root,saved),/already exists/);
+});
+
+test('independent Web restoration preflights user patches and extra files before any writes',t=>{
+    const f=fixture(t),input=path.join(f.root,web.INPUT_ROOT),saved=path.join(f.root,'independent-source');
+    fs.renameSync(input,saved);fs.appendFileSync(path.join(saved,'user-patches/client.js'),'changed');
+    assert.throws(()=>web.restoreSnapshot(f.root,saved),/identity/);assert.equal(fs.existsSync(input),false);
+    fs.writeFileSync(path.join(saved,'user-patches/client.js'),f.data.get('user-patches/client.js'));
+    fs.writeFileSync(path.join(saved,'unexpected'),'extra');
+    assert.throws(()=>web.restoreSnapshot(f.root,saved),/snapshot input/);assert.equal(fs.existsSync(input),false);
+});

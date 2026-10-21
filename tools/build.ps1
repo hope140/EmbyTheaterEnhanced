@@ -22,7 +22,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Fresh build output ownership failed.' }
 if ($LASTEXITCODE -ne 0) { throw 'Explicit runtime base assembly failed.' }
 & node (Join-Path $root 'tools/runtime-exclusions.cjs') verify $destination
 if ($LASTEXITCODE -ne 0) { throw 'Retired runtime exclusion verification failed.' }
-# Carnival Electron remains a historical baseline input. Production uses the
+# Carnival Electron is historical metadata only. Production uses the
 # exact full tree extracted from the pinned official Electron archive.
 $electronManifest = Get-Content -LiteralPath (Join-Path $root 'vendor/electron-runtime-manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $electronInputTool = Join-Path $root 'tools/electron-runtime-input.cjs'
