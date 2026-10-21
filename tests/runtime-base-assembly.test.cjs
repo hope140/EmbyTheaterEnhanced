@@ -106,6 +106,7 @@ function fixture(t) {
         archive:{size:1,sha256:'0'.repeat(64)}});
     require('./helpers/inherited-npm-fixture.cjs').create(root);
     require('./helpers/runtime-template-fixture.cjs').create(root);
+    require('./helpers/libmpv-fixture.cjs').create(root);
     write(root, 'src/electronapp/main.js', 'committed main');
     write(root, '.gitignore', '/vendor/carnival/\n/dist/\n/.work/\n');
     git(root, ['init', '-q']);
@@ -237,8 +238,8 @@ test('all gate-only predecessor files and unused patch scripts may be absent',t=
     fs.unlinkSync(path.join(f.root,'vendor/patch/install-all.bat'));
     const material=require('../tools/validate-build-materials.cjs').validate(f.root);
     assert.equal(material.remainingCarnivalFiles,plan.entries.length);
-    assert.equal(material.remainingPatchFiles,1);
-    assert.equal(material.historicalPatchFiles,1);
+    assert.equal(material.remainingPatchFiles,0);
+    assert.equal(material.historicalPatchFiles,2);
     assembly.assemble(f.root,f.commit,f.runtime,f.token);
     assert.equal(fs.existsSync(path.join(f.runtime,'x64/electron/electron.exe')),false);
     assert.equal(fs.existsSync(path.join(f.runtime,'electronapp/libmpv/x64/mpv-win32-x64.node')),false);
@@ -255,13 +256,20 @@ test('changed retired files are not read or copied, while consumed templates rem
     assert.deepEqual(fs.readdirSync(f.runtime),[dependencies.OWNER_FILE]);
 });
 
-test('current libmpv patch hashes and active patch directory extras stay strict',t=>{
+test('current independent libmpv hashes and component extras stay strict',t=>{
     const f=fixture(t),materials=require('../tools/validate-build-materials.cjs');
-    write(f.root,'vendor/patch/payload/libmpv/unexpected.dll','extra');
-    assert.throws(()=>materials.validate(f.root),/Unexpected Carnival input/);
-    fs.unlinkSync(path.join(f.root,'vendor/patch/payload/libmpv/unexpected.dll'));
-    write(f.root,'vendor/patch/payload/libmpv/mpv-1.dll','changed current libmpv');
+    write(f.root,'vendor/libmpv/20260809/unexpected.dll','extra');
+    assert.throws(()=>materials.validate(f.root),/Unexpected Web snapshot input/);
+    fs.unlinkSync(path.join(f.root,'vendor/libmpv/20260809/unexpected.dll'));
+    write(f.root,'vendor/libmpv/20260809/mpv-1.dll','changed current libmpv');
     assert.throws(()=>materials.validate(f.root),/identity mismatch/);
+});
+
+test('the entire old patch directory may be absent through validation and current DLL assembly',t=>{
+    const f=fixture(t),libmpv=require('../tools/libmpv-input.cjs');fs.rmSync(path.join(f.root,'vendor/patch'),{recursive:true});
+    const report=require('../tools/validate-build-materials.cjs').validate(f.root);assert.equal(report.remainingPatchFiles,0);assert.equal(report.historicalPatchDirectoryRead,false);
+    assembly.assemble(f.root,f.commit,f.runtime,f.token);libmpv.assemble(f.root,f.runtime);
+    assert.equal(libmpv.validateRuntime(f.root,f.runtime).status,'passed');assert.equal(fs.existsSync(path.join(f.root,'vendor/patch')),false);
 });
 
 test('assembly refuses wrong ownership, commit, occupied destinations and repeat attempts', t => {

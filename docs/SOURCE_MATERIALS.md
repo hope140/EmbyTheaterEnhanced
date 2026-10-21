@@ -1,5 +1,7 @@
 # Runtime source and notice materials
 
+Current libmpv acquisition: the physical input is an unchanged locally imported snapshot of the existing DLL, independently locked by vendor/libmpv-input-manifest.json. The previously audited SourceForge archive/hash remains a historical public candidate, not a successfully recovered current input. Source/build/notice limitations remain; the snapshot is not project-authored, published or recoverable from Git alone. See [source separation](LIBMPV_INPUT.md).
+
 Official resource extension: five additional same-byte members of the already pinned Windows 3.0.20 ZIP now have independent acquisition: three companion XML documentation files, windowsync and English player strings. Existing dependency notices/source limitations remain applicable to XML companions; the two Emby resource references retain upstream repository GPL v2 declarations. This is fixed release acquisition, not proof of rebuilding every component from source. See [component record](WINDOWS_HOST_INPUT.md).
 
 Small template supplement: package matches official Electron e897adda except the retained old version suffix; Host config matches official Windows source and exact 3.0.20 release bytes. Preload remains an explicitly unresolved-origin seven-line compatibility template, locally preserved without a public distribution decision. Source hashes, differences and notices are in [the template contract](RUNTIME_TEMPLATES.md) and vendor/runtime-templates-manifest.json.

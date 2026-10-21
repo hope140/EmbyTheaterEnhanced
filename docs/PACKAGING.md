@@ -1,5 +1,7 @@
 # 构建与打包
 
+Current libmpv input: use the verified independent local snapshot component. Normal prepare/build do not read or recreate the old patch directory or combined-patch ZIP. Keep existing DLL bytes/version; online snapshot recovery is not yet established. See [libmpv preparation](LIBMPV_INPUT.md).
+
 Template follow-up: normal build reads maintained, hash-locked package/preload/Host-config templates and preserves existing generators/versions. Old input requirement is 58 assets plus one libmpv patch. See [exact source and output relations](RUNTIME_TEMPLATES.md).
 
 Inherited npm follow-up: prepare the fixed 29-file component from the official pinned Git commit; assembly and dependency provenance do not use old npm bodies. Physical old Carnival count is 61. See [preparation and validation](INHERITED_NPM_INPUT.md).

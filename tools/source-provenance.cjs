@@ -11,6 +11,7 @@ const electronRuntimeInput = require('./electron-runtime-input.cjs');
 const windowsHostInput = require('./windows-host-input.cjs');
 const inheritedNpmInput = require('./inherited-npm-input.cjs');
 const runtimeTemplates=require('./runtime-template-input.cjs');
+const libmpvInput=require('./libmpv-input.cjs');
 
 const MANIFEST_NAME = 'source-provenance.json';
 const HISTORICAL_ELECTRON_PATH = 'x64/electron/electron.exe';
@@ -202,10 +203,12 @@ function buildManifest(rootArg, runtimeArg, sourceCommit) {
     const patchLibmpvEntry = manifestEntry(vendorManifest, 'patchFiles', LIBMPV_PATCH_PATH);
     const electron = productionElectronIdentity(root, runtime);
     const historicalElectron = historicalElectronInput(root, vendorManifest);
-    const libmpv = checkedRuntimeIdentity(root, runtime, patchLibmpvEntry, LIBMPV_RUNTIME_PATH, 'libmpv', 'vendor/patch');
+    const libmpv=libmpvInput.validateRuntime(root,runtime);
+    if(libmpv.inputSha256!==String(patchLibmpvEntry.sha256).toUpperCase())throw new Error('libmpv snapshot differs from historical patch identity.');
     libmpv.historicalPredecessor={path:'vendor/carnival/'+baseLibmpvEntry.path,
         recordedSha256:String(baseLibmpvEntry.sha256).toUpperCase(),evidence:'tracked-historical-manifest',physicalInputRequired:false};
-    libmpv.inputPath = patchLibmpvEntry.path;
+    libmpv.historicalPatchInput={path:'vendor/patch/'+patchLibmpvEntry.path,recordedSha256:String(patchLibmpvEntry.sha256).toUpperCase(),physicalInputRequired:false,evidence:'historical manifest plus unchanged snapshot import'};
+    libmpv.preparation={generatorPath:'tools/libmpv-input.cjs',generatorSha256:trackedFileHash.hashTrackedTextFile(root,'tools/libmpv-input.cjs')};
     libmpv.inputSha256 = String(patchLibmpvEntry.sha256).toUpperCase();
     const webInput = require('./web-snapshot-input.cjs').validate(root);
     const baseWebRoot = path.join(root, 'vendor', 'web-snapshot', 'www');

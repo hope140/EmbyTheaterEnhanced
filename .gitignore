@@ -10,7 +10,7 @@
 /vendor/official-reference/
 /vendor/native-helper-inputs/
 /src/electronapp/www/
-# Generated from vendor/carnival by tools/prepare-preload.cjs; never hand-copy.
+# Generated from locked runtime templates by tools/prepare-preload.cjs; never hand-copy.
 /src/electronapp/preload.js
 /src/electronapp/scripts/windowsync.js
 /src/electronapp/package.json
@@ -53,3 +53,5 @@ Thumbs.db
 Desktop.ini
 
 /vendor/inherited-npm/
+
+/vendor/libmpv/

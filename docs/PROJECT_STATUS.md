@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-21 - Independent local libmpv snapshot
+
+Keep the current DLL unchanged as a single hash-locked local component, explicitly imported from the old patch material. Remove normal old-patch reads and automatic combined-patch extraction. Current physical requirements are 53 Carnival files and zero patch files. Online archive/cloud recovery remains unresolved; no official recovery is claimed. Model/UI/versions remain unchanged. See [libmpv input](LIBMPV_INPUT.md); final regression/equivalence evidence is separate.
+
 ## 2026-10-21 - Five exact official auxiliary resources
 
 Extend the existing official Windows ZIP whitelist from 14 to 19 unchanged members: three XML documentation files, windowsync and English player strings. These five old physical inputs are no longer required, reducing Carnival from 58 to 53; libmpv remains one patch input. Model/UI/dependency versions and unknown-origin material publication remain unchanged. See [fixed official input](WINDOWS_HOST_INPUT.md); static equivalence and final full regression are recorded separately.

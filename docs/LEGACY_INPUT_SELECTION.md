@@ -1,5 +1,7 @@
 # Current legacy input selection
 
+Current patch removal: all normal vendor/patch physical requirements are removed. The same libmpv DLL is a separately validated local snapshot, leaving 53 Carnival assets and zero patch inputs. Historical patch identities remain metadata, and the deliberately supplied comparison oracle is not a normal dependency. See [snapshot contract](LIBMPV_INPUT.md).
+
 Current official-resource update: five additional exact official ZIP members are independently acquired, leaving 53 old Carnival physical inputs and one current libmpv patch. No behavioral file contents changed. See [official component](WINDOWS_HOST_INPUT.md).
 
 Subsequent template update: the three small templates are now maintained source inputs, leaving 58 physical Carnival assets plus one libmpv patch. Previous 90/61 counts describe earlier stages. See [template contract](RUNTIME_TEMPLATES.md).

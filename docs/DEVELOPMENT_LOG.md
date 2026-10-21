@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-21 - Remove the last normal patch-directory dependency
+
+Create a one-file local snapshot component with strict size/SHA/path/extra-file checks and explicit current versus historical/public-candidate provenance. Route build, preparation, material gate and source provenance through it. Keep independent old DLL bytes only as a deliberate comparison oracle. Do not substitute another version or claim current online recovery. See [component contract](LIBMPV_INPUT.md).
+
 ## 2026-10-21 - Reuse fixed official resource acquisition
 
 Add five previously hashed exact official ZIP members to the existing component whitelist, source/notice records and strict validation. Reuse dynamic assembly/provenance selection without introducing another prepared tree or changing generators. Test missing old resource paths and compare complete base/intermediate/Web outputs. Preserve prior prepared material as local evidence; do not overwrite or delete original inputs.

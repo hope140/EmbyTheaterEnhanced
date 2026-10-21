@@ -57,7 +57,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Fresh locked runtime dependency installation f
 if ($LASTEXITCODE -ne 0) { throw 'Runtime dependency copy failed.' }
 & node (Join-Path $root 'tools/patch-playbackmanager.cjs') (Join-Path $destination 'electronapp/www/modules/common/playback/playbackmanager.js')
 if ($LASTEXITCODE -ne 0) { throw 'PlaybackManager overlay failed.' }
-Copy-Item -LiteralPath (Join-Path $root 'vendor/patch/payload/libmpv/mpv-1.dll') -Destination (Join-Path $destination 'electronapp/libmpv/x64/mpv-1.dll') -Force
+& node (Join-Path $root 'tools/libmpv-input.cjs') assemble $root $destination
+if ($LASTEXITCODE -ne 0) { throw 'Independent libmpv snapshot copy failed.' }
 & (Join-Path $root 'tools/build-native-helper.ps1') -SourceCommit $sourceCommit -RuntimeRoot $destination
 if ($LASTEXITCODE -ne 0) { throw 'Native helper build failed.' }
 & node (Join-Path $root 'tools/native-helper-provenance.cjs') $root $destination $sourceCommit
