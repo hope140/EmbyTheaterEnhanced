@@ -19,6 +19,12 @@ if (-not (Test-Path -LiteralPath (Join-Path $root 'vendor/carnival'))) {
 if (-not (Test-Path -LiteralPath (Join-Path $root 'vendor/patch'))) {
     Expand-Archive -LiteralPath (Join-Path $archiveBase $manifest.archives[1].pattern) -DestinationPath (Join-Path $root 'vendor/patch')
 }
+if (-not (Test-Path -LiteralPath (Join-Path $root 'vendor/web-snapshot'))) {
+    & node (Join-Path $PSScriptRoot 'web-snapshot-input.cjs') import $root (Join-Path $root 'vendor/carnival') (Join-Path $root 'vendor/patch')
+    if ($LASTEXITCODE -ne 0) { throw 'One-time Web snapshot import failed.' }
+}
+& node (Join-Path $PSScriptRoot 'web-snapshot-input.cjs') validate $root
+if ($LASTEXITCODE -ne 0) { throw 'Web snapshot validation failed.' }
 & node (Join-Path $PSScriptRoot 'prepare-preload.cjs') $root
 if ($LASTEXITCODE -ne 0) { throw 'Prepared preload generation failed.' }
 & (Join-Path $PSScriptRoot 'prepare-electron-runtime.ps1') -ArchiveRoot $archiveBase

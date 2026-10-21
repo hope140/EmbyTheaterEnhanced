@@ -210,7 +210,8 @@ function buildManifest(rootArg, runtimeArg, sourceCommit) {
     libmpv.baseSha256 = String(baseLibmpvEntry.sha256).toUpperCase();
     libmpv.inputPath = patchLibmpvEntry.path;
     libmpv.inputSha256 = String(patchLibmpvEntry.sha256).toUpperCase();
-    const baseWebRoot = path.join(root, 'vendor', 'carnival', 'electronapp', 'www');
+    const webInput = require('./web-snapshot-input.cjs').validate(root);
+    const baseWebRoot = path.join(root, 'vendor', 'web-snapshot', 'www');
     const runtimeWebRoot = path.join(runtime, 'electronapp', 'www');
     const overlayReport = webOverlays.inspect(root, runtime);
     const retiredRuntimeInputs = runtimeExclusions.RETIRED_RUNTIME_PATHS.map(runtimePath =>
@@ -242,7 +243,8 @@ function buildManifest(rootArg, runtimeArg, sourceCommit) {
             inputs: retiredRuntimeInputs
         },
         webSnapshot: {
-            basePath: 'vendor/carnival/electronapp/www',
+            basePath: 'vendor/web-snapshot/www',
+            inputManifest: webInput,
             baseTree: treeIdentity(baseWebRoot, walkFiles(baseWebRoot)),
             overlays: overlayReport.entries,
             runtimePath: 'electronapp/www',

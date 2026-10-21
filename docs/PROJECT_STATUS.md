@@ -436,3 +436,6 @@ M02离线验证结果：16个定向测试文件164/164；完整公开门禁107�
 仅目标 FindFileByPath 确认 NOT_FOUND 后有限刷新父目录，完整消费流后最多重查一次。正常 1200ms、恢复总上限 3000ms、3层父目录、单锁与30秒冷却保持。Stop/Next/close 取消和 CD2 → Mount → Native 回退保持，播放会话及 DirectUrl header 合同不变。
 
 反向 custom 顺序的单次重查回归保留。六项真实 CD2 验收结果为 USER_REPORTED_PASS，不改写为独立机器实测。设计见 [刷新合同](CD2_NEW_RESOURCE_REFRESH.md)，验证方法见 [隔离验收](CD2_REAL_ACCEPTANCE.md)。新版本安装器从最终 main 单独构建并核对版本、完整 payload 与来源，既有用户反馈不替代新产物身份校验或完整系统安装验收。
+# Web输入独立化候选
+
+独立Web组件固定720份历史基底和两份既有用户Web补丁，生产路径与来源记录改读组件清单。旧www及旧补丁对应两份Web文件不再是生产材料门禁的必需输入。现有overlay和PlaybackManager变换保持；材料正文仅本地保存且Git忽略，来源/公开分发待核对。当前候选验证结果见交付记录，不代表完成全部旧包移除、上游源码重建或Windows播放验收。合同见[固定Web输入](WEB_SNAPSHOT_INPUT.md)。

@@ -73,3 +73,6 @@ Archive identity, source availability, notice delivery and full
 corresponding-source completeness are separate claims. Delivering this index
 closes the project-notice packaging gap; unknown component materials remain
 unknown. It does not certify redistribution terms or alter existing releases.
+# 独立历史Web材料
+
+Web生产输入现为`vendor/web-snapshot-manifest.json`固定的720份历史基底（22,009,668字节）与两份既有用户Web补丁。材料字节及已有通知原样保存，单次导入后构建不再读取旧包www；准确上游版本及部分文件来源仍未知，不能将整棵树归为项目原创。正文只在本地材料目录保存且Git忽略，公开再分发目标/材料尚待核对。清单不等于材料正文或完整上游源码，准备与验证见[固定Web输入](WEB_SNAPSHOT_INPUT.md)。

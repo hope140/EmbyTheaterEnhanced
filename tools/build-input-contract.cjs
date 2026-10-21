@@ -13,6 +13,7 @@ const NOTICE_PATHS = Object.freeze([
 const INPUT_PATHS = Object.freeze([
     'package.json', 'package-lock.json',
     'vendor/runtime-manifest.json', 'vendor/electron-runtime-manifest.json',
+    'vendor/web-snapshot-manifest.json',
     'vendor/native-helper-manifest.json', 'vendor/toolchain-manifest.json',
     'installer/EmbyTheaterEnhanced.iss', 'installer/installer-guard.iss',
     'installer/languages/ChineseSimplified.isl',
@@ -32,6 +33,7 @@ const INPUT_PATHS = Object.freeze([
     'tools/patch-playbackmanager.cjs', 'tools/runtime-exclusions.cjs',
     'tools/copy-runtime-dependencies.cjs', 'tools/electron-runtime-input.cjs',
     'tools/assemble-runtime-base.cjs',
+    'tools/web-snapshot-input.cjs', 'tools/validate-build-materials.cjs',
     'tools/runtime-dependency-contract.cjs',
     'tools/build-native-helper.ps1', 'tools/materialize-native-helper-source.cjs',
     'tools/native-helper-contract.cjs', 'tools/native-helper-provenance.cjs',

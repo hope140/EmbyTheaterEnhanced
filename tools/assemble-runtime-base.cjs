@@ -8,6 +8,7 @@ const overlays = require('./prepare-web-overlays.cjs');
 const dependencies = require('./runtime-dependency-contract.cjs');
 const {RETIRED_RUNTIME_PATHS} = require('./runtime-exclusions.cjs');
 const {hashTrackedTextFile} = require('./tracked-file-hash.cjs');
+const webSnapshot = require('./web-snapshot-input.cjs');
 
 function sha256(bytes) {
     return crypto.createHash('sha256').update(bytes).digest('hex');
@@ -77,10 +78,13 @@ function plan(rootArg, sourceCommit) {
     const product = sources.listTrackedProductSources(root, sourceCommit);
     const selected = dependencies.loadSelectedPackages(root);
     const entries = classify(manifest.files, product.map(item => item.runtimePath),
-        overlays.WEB_OVERLAY_CONTRACT.map(item => item.runtimePath), selected.packages.map(item => item.packagePath));
+        overlays.WEB_OVERLAY_CONTRACT.map(item => item.runtimePath), selected.packages.map(item => item.packagePath))
+        .filter(item => !webSnapshot.isLegacyWeb(item.path));
+    const web = webSnapshot.load(root);
     return {schemaVersion: 1, sourceCommit: sourceCommit.toLowerCase(), sourceManifestSha256,
         relation: 'existing vendor manifest + committed product paths + Web overlay contract + npm lock',
-        groups: summarize(entries), entries};
+        groups: summarize(entries), entries, webSnapshot: {manifestPath:webSnapshot.MANIFEST_PATH,
+            treeSha256:web.treeSha256,fileCount:web.fileCount,bytes:web.bytes}};
 }
 
 function physical(absolute, directory) {
@@ -98,7 +102,7 @@ function physical(absolute, directory) {
     if (directory ? !stat.isDirectory() : !stat.isFile()) throw new Error('Assembly path has an unexpected file type.');
 }
 
-function verifyInputs(carnivalRoot, entries) {
+function verifyInputs(carnivalRoot, entries, ignored = []) {
     physical(carnivalRoot, true);
     const expected = new Map(entries.map(entry => [entry.path, entry]));
     const found = new Set();
@@ -108,6 +112,9 @@ function verifyInputs(carnivalRoot, entries) {
         for (const child of fs.readdirSync(current.absolute, {withFileTypes: true})) {
             const name = current.relative ? current.relative + '/' + child.name : child.name;
             relativeFile(name);
+            // These paths are no longer input authorities. Do not traverse or
+            // hash an optional historical www/ or retired Web patch payload.
+            if (ignored.some(prefix => name === prefix || name.startsWith(prefix + '/'))) continue;
             const absolute = path.join(current.absolute, child.name);
             const stat = fs.lstatSync(absolute);
             physical(absolute, stat.isDirectory());
@@ -131,10 +138,11 @@ function assemble(rootArg, sourceCommit, runtimeArg, token) {
     }
     const result = plan(root, sourceCommit);
     const carnivalRoot = path.join(root, 'vendor', 'carnival');
-    // Validate every frozen input, including excluded historical inputs, before
-    // the first payload write. Their removal from input provenance is separate.
-    verifyInputs(carnivalRoot, result.entries);
-    for (const entry of result.entries.filter(item => item.action === 'copy')) {
+    webSnapshot.validate(root);
+    // Historical non-Web inputs still have their existing gate. Web identity
+    // comes only from its independent component manifest, never old www/.
+    verifyInputs(carnivalRoot, result.entries.filter(item => !webSnapshot.isLegacyWeb(item.path)), ['electronapp/www']);
+    for (const entry of result.entries.filter(item => item.action === 'copy' && !webSnapshot.isLegacyWeb(item.path))) {
         const target = path.join(runtime, ...entry.path.split('/'));
         fs.mkdirSync(path.dirname(target), {recursive: true});
         physical(path.dirname(target), true);
@@ -142,8 +150,9 @@ function assemble(rootArg, sourceCommit, runtimeArg, token) {
         const bytes = fs.readFileSync(target);
         if (bytes.length !== entry.size || sha256(bytes) !== entry.sha256) throw new Error('Assembled input identity mismatch: ' + entry.path);
     }
+    const webInput = webSnapshot.assemble(root, runtime);
     return {schemaVersion: result.schemaVersion, status: 'passed', sourceCommit: result.sourceCommit,
-        sourceManifestSha256: result.sourceManifestSha256, groups: result.groups};
+        sourceManifestSha256: result.sourceManifestSha256, groups: result.groups, webInput};
 }
 
 if (require.main === module) {

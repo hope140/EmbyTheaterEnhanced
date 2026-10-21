@@ -26,7 +26,7 @@ const PREPARED_ARTIFACT_CONTRACT = Object.freeze([{
 }]);
 const EXCLUDED_SOURCE_PREFIXES = Object.freeze([]);
 const RUNTIME_OVERLAY_CONTRACT = Object.freeze([
-    {runtimePath: OVERLAY_RUNTIME_PATH, sourcePath: 'vendor/carnival/electronapp/www/modules/common/playback/playbackmanager.js', generatorPath: OVERLAY_GENERATOR_PATH},
+    {runtimePath: OVERLAY_RUNTIME_PATH, sourcePath: 'vendor/web-snapshot/www/modules/common/playback/playbackmanager.js', generatorPath: OVERLAY_GENERATOR_PATH},
     {runtimePath: PACKAGE_RUNTIME_PATH, sourcePath: 'vendor/carnival/electronapp/package.json', generatorPath: PACKAGE_GENERATOR_PATH}
 ]);
 

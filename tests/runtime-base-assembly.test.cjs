@@ -81,7 +81,18 @@ function fixture(t) {
     json(source, 'package-lock.json', JSON.parse(fs.readFileSync(path.join(root, 'package-lock.json'))));
     json(source, 'node_modules/long/package.json', {name: 'long', version: '5.3.2'});
     write(source, 'node_modules/long/index.js', 'new dependency');
-    json(root, 'vendor/runtime-manifest.json', {schemaVersion: 1, files: inventory(vendor)});
+    const legacyFiles = inventory(vendor);
+    json(root, 'vendor/runtime-manifest.json', {schemaVersion: 1, files: legacyFiles,patchFiles:[]});
+    fs.mkdirSync(path.join(root,'vendor/patch'),{recursive:true});
+    const web = require('../tools/web-snapshot-input.cjs');
+    const webFiles = legacyFiles.filter(item => item.path.startsWith('electronapp/www/') &&
+        !item.path.startsWith('electronapp/www/modules/externalplayer/')).map(item => ({
+        ...item, originalPath:item.path, path:'www/'+item.path.slice('electronapp/www/'.length)
+    }));
+    for (const item of webFiles) write(root,'vendor/web-snapshot/'+item.path,
+        fs.readFileSync(path.join(vendor,item.originalPath)));
+    json(root, web.MANIFEST_PATH, {schemaVersion:1,inputRoot:web.INPUT_ROOT,files:webFiles,userPatches:[],
+        fileCount:webFiles.length,bytes:webFiles.reduce((n,f)=>n+f.size,0),treeSha256:web.treeHash(webFiles)});
     write(root, 'src/electronapp/main.js', 'committed main');
     write(root, '.gitignore', '/vendor/carnival/\n/dist/\n/.work/\n');
     git(root, ['init', '-q']);
@@ -127,13 +138,25 @@ test('plan identifies retained inputs, templates, replacements and retired files
     const byPath = new Map(plan.entries.map(entry => [entry.path, entry]));
     assert.equal(byPath.get('Emby.Theater.exe').action, 'copy');
     assert.equal(byPath.get('electronapp/main.js').reason, 'committed-product-source');
-    assert.equal(byPath.get('electronapp/www/index.html').reason, 'generated-web-overlay');
-    assert.equal(byPath.get('electronapp/www/modules/common/playback/playbackmanager.js').reason, 'playbackmanager-template');
+    assert.equal(byPath.has('electronapp/www/index.html'), false);
+    assert.equal(byPath.has('electronapp/www/modules/common/playback/playbackmanager.js'), false);
+    assert.equal(plan.webSnapshot.fileCount, 3);
     assert.equal(byPath.get('electronapp/node_modules/long/legacy.js').action, 'replace');
     assert.equal(byPath.get('external/retained.glsl').action, 'copy');
     assert.equal(plan.groups.reduce((total, group) => total + group.fileCount, 0), plan.entries.length);
     assert.deepEqual(fs.readdirSync(f.runtime), [dependencies.OWNER_FILE]);
     assert.equal(overlays.WEB_OVERLAY_CONTRACT.some(item => item.runtimePath === 'electronapp/www/index.html'), true);
+});
+
+test('production material gate and base assembly work when old www is absent',t=>{
+    const f=fixture(t);
+    fs.rmSync(path.join(f.vendor,'electronapp/www'),{recursive:true});
+    const materials=require('../tools/validate-build-materials.cjs');
+    assert.equal(materials.validate(f.root).status,'passed');
+    assert.equal(assembly.assemble(f.root,f.commit,f.runtime,f.token).webInput.fileCount,3);
+    assert.equal(fs.readFileSync(path.join(f.runtime,'electronapp/www/unchanged.js'),'utf8'),'unchanged Web');
+    assert.equal(fs.existsSync(path.join(f.runtime,'electronapp/www/modules/externalplayer')),false);
+    assert.equal(fs.existsSync(path.join(f.vendor,'electronapp/www')),false);
 });
 
 for (const mutation of ['changed-retained', 'changed-excluded', 'extra', 'missing']) {

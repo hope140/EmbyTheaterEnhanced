@@ -11,21 +11,8 @@ $inputContract = $inputContractJson | ConvertFrom-Json
 $destination = Join-Path (Join-Path $root 'dist') $OutputName
 if (Test-Path -LiteralPath $destination) { throw 'Output already exists. Choose a new -OutputName; builds never overwrite prior artifacts.' }
 $manifest = Get-Content -LiteralPath (Join-Path $root 'vendor/runtime-manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-foreach ($group in @(@{ Root='vendor/carnival'; Files=$manifest.files }, @{ Root='vendor/patch'; Files=$manifest.patchFiles })) {
-    $groupRoot = Join-Path $root $group.Root
-    $expectedPaths = @($group.Files | ForEach-Object { $_.path })
-    $actualFiles = @(Get-ChildItem -LiteralPath $groupRoot -Recurse -File)
-    if ($actualFiles.Count -ne $expectedPaths.Count) { throw "Unexpected vendor file count: $($group.Root)" }
-    foreach ($actual in $actualFiles) {
-        $relative = $actual.FullName.Substring($groupRoot.Length + 1).Replace('\','/')
-        if ($relative -notin $expectedPaths) { throw "Unexpected vendor file: $relative" }
-    }
-    foreach ($entry in $group.Files) {
-        $file = Join-Path (Join-Path $root $group.Root) $entry.path
-        if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw "Vendor file missing: $($entry.path). Run tools/prepare.ps1." }
-        if ((Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash -ne $entry.sha256) { throw "Vendor hash mismatch: $($entry.path)" }
-    }
-}
+& node (Join-Path $root 'tools/validate-build-materials.cjs') $root
+if ($LASTEXITCODE -ne 0) { throw 'Build material validation failed.' }
 & node (Join-Path $root 'tools/prepare-preload.cjs') $root
 if ($LASTEXITCODE -ne 0) { throw 'Prepared preload generation failed.' }
 New-Item -ItemType Directory -Path $destination -Force | Out-Null

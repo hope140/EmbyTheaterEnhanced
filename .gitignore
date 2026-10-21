@@ -3,6 +3,7 @@
 /build/
 /node_modules/
 /vendor/carnival/
+/vendor/web-snapshot/
 /vendor/patch/
 /vendor/electron/
 /vendor/official-reference/
