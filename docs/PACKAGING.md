@@ -1,5 +1,15 @@
 # 构建与打包
 
+Compatibility snapshot update: restore the fixed local 48-file component explicitly, then assemble identical runtime resources without their old directory. Remaining old inputs are five Carnival files, zero patch files. Final package validation must first synchronize the separate 0.3.15 exit fix; no application acceptance is part of this static component step. See [input contract](COMPATIBILITY_RESOURCES_INPUT.md).
+
+Current libmpv input: use the verified independent local snapshot component. Normal prepare/build do not read or recreate the old patch directory or combined-patch ZIP. Keep existing DLL bytes/version; online snapshot recovery is not yet established. See [libmpv preparation](LIBMPV_INPUT.md).
+
+Template follow-up: normal build reads maintained, hash-locked package/preload/Host-config templates and preserves existing generators/versions. Old input requirement is 58 assets plus one libmpv patch. See [exact source and output relations](RUNTIME_TEMPLATES.md).
+
+Inherited npm follow-up: prepare the fixed 29-file component from the official pinned Git commit; assembly and dependency provenance do not use old npm bodies. Physical old Carnival count is 61. See [preparation and validation](INHERITED_NPM_INPUT.md).
+
+Current material gate: normal assembly does not require retired Electron, Pepper, old base libmpv, replaced source/npm inputs or unused patch bodies. It still validates the actual 90 Carnival and one libmpv inputs plus independent components. See [current input selection](LEGACY_INPUT_SELECTION.md).
+
 ## 当前发行
 
 当前测试版为 [v0.3.14](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.14) Pre-release，产品 sourceCommit 为 [ce9310e](https://github.com/hope140/EmbyTheaterEnhanced/commit/ce9310e1c8392af174e4bb5cd3f84e8a6ab0c867)。Stable/Latest 保持 v0.3.1；准确来源、五附件及验收边界见[V0314 发行核验](V0314_RELEASE_VERIFICATION.md)。
@@ -78,3 +88,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/package.ps1
 安装入口启动 `{app}\Emby.Theater.exe`。卸载保留 Enhanced 用户数据和个人 mpv 配置；构建、打包不会写入用户的 mpv 配置、shader 或字体目录。
 
 可重复性只在固定的源码提交、外部输入、工具链与命令范围内成立。runtime manifest 可逐文件核对；安装器封装可能包含时间字段，项目不宣称 setup.exe 位级可重复，也不把第三方预编译组件描述为由本仓库源码完整重建。
+
+
+The four small runtime inputs use [an independent fixed snapshot](SMALL_RUNTIME_INPUT.md), not their old Carnival paths. Preserve configuration bytes and auto-update behavior. This material branch needs the separately released 0.3.15 exit fix before final full-package validation; snapshot tests are not installer/playback acceptance.
+
+
+Normal preparation/build/provenance require zero old Carnival/combined-patch physical inputs. Restore the fixed components as documented in [zero-input contract](MODEL_COMPATIBILITY_INPUT.md). Local ignored snapshots are still required materials; this is independent packaging input management, not a full source rebuild. Retain the 0.3.15 exit fix before a final package candidate.

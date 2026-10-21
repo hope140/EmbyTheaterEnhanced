@@ -13,8 +13,8 @@ const fixturePath = path.join(root, 'tests/playbackmanager-request-session.test.
 const playbackManagerRelativePath = path.join('electronapp', 'www', 'modules', 'common', 'playback', 'playbackmanager.js');
 const sourcePath = process.env.ETE_PLAYBACKMANAGER_SOURCE
     ? path.resolve(process.env.ETE_PLAYBACKMANAGER_SOURCE)
-    : path.join(root, 'vendor', 'carnival', playbackManagerRelativePath);
-const manifestPath = path.join(root, 'vendor', 'runtime-manifest.json');
+    : path.join(root, 'vendor', 'web-snapshot', 'www', 'modules', 'common', 'playback', 'playbackmanager.js');
+const manifestPath = path.join(root, 'vendor', 'web-snapshot-manifest.json');
 const observerAnchor = 'MutationObserver: class {\n            observe() {}\n            disconnect() {}\n        }';
 const visibleElementAnchor = 'querySelector() { return null; }';
 const fixtureEndAnchor = "test('serialized replacement stops preserve";
@@ -26,7 +26,7 @@ function countExact(source, needle) {
 function assertPlaybackManagerMaterial() {
     assert.ok(fs.existsSync(sourcePath), 'required PlaybackManager material is unavailable: ' + sourcePath);
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-    const rows = manifest.files.filter(entry => entry.path === playbackManagerRelativePath.split(path.sep).join('/'));
+    const rows = manifest.files.filter(entry => entry.path === playbackManagerRelativePath.split(path.sep).join('/').replace(/^electronapp\//,''));
     assert.equal(rows.length, 1, 'runtime manifest has exactly one PlaybackManager entry');
     const bytes = fs.readFileSync(sourcePath);
     const sha256 = crypto.createHash('sha256').update(bytes).digest('hex');

@@ -3,12 +3,14 @@
 /build/
 /node_modules/
 /vendor/carnival/
+/vendor/web-snapshot/
+/vendor/windows-host/
 /vendor/patch/
 /vendor/electron/
 /vendor/official-reference/
 /vendor/native-helper-inputs/
 /src/electronapp/www/
-# Generated from vendor/carnival by tools/prepare-preload.cjs; never hand-copy.
+# Generated from locked runtime templates by tools/prepare-preload.cjs; never hand-copy.
 /src/electronapp/preload.js
 /src/electronapp/scripts/windowsync.js
 /src/electronapp/package.json
@@ -49,3 +51,13 @@
 .idea/
 Thumbs.db
 Desktop.ini
+
+/vendor/inherited-npm/
+
+/vendor/libmpv/
+
+/vendor/compatibility-resources/
+
+/vendor/small-runtime/
+
+/vendor/model-compatibility/

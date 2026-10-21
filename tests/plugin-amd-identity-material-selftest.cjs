@@ -7,7 +7,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
-const webRoot = path.join(root, 'vendor/carnival/electronapp/www');
+const webRoot = path.join(root, 'vendor/web-snapshot/www');
 const pluginRoot = path.join(root, 'src/electronapp/enhanced/plugin-ui');
 const loaderPath = path.join(webRoot, 'modules/alameda/alameda.js');
 

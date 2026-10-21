@@ -9,7 +9,7 @@ const residue = require('../tools/patch-externalplayer-residue.cjs');
 const lifecycle = require('../tools/patch-item-lifecycle.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
-const ITEM_PATH = 'vendor/carnival/electronapp/www/item/item.js';
+const ITEM_PATH = 'vendor/web-snapshot/www/item/item.js';
 const EXPECTED_SOURCE_SHA256 = 'C8F51119365ECD2881B0A33F1F9E9DD6DA90E305572621188FB31A15FDCB4623';
 
 function sha256(value) {

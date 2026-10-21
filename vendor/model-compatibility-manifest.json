@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "version": "snapshot-v1",
+  "inputRoot": "vendor/model-compatibility/snapshot-v1",
+  "fileCount": 1,
+  "bytes": 424960,
+  "treeSha256": "670e214391ce8c20d61926415497cae827a496fb0a94197b9446f9d8348ac48f",
+  "provenance": {
+    "mode": "local-model-compatibility-snapshot",
+    "source": "Existing verified Carnival DLL preserved unchanged",
+    "physicalLegacyDirectoryRequired": false,
+    "wholeOldPackageCopied": false,
+    "claimedAsOwnOriginal": false,
+    "officialOnlineRecoveryEstablished": false,
+    "publicBodyUpload": false,
+    "dllExecuted": false,
+    "officialReplacement": false
+  },
+  "files": [
+    {
+      "path": "MediaBrowser.Model.dll",
+      "size": 424960,
+      "sha256": "f2eeca1c65e56e96340dc84ff91de6e4cc25bb2e510706748606f05c1e39ebaf",
+      "origin": {
+        "source": "Existing verified Carnival Model DLL",
+        "exactRevision": "unresolved",
+        "officialByteIdentity": false,
+        "claimedAsOwnOriginal": false,
+        "notice": "Preserved current compatibility bytes; official reference comparison and A/B results do not authorize a silent replacement"
+      }
+    }
+  ]
+}

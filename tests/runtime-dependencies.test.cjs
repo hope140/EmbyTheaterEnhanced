@@ -7,6 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 const contract = require('../tools/runtime-dependency-contract.cjs');
+const inheritedNpm=require('../tools/inherited-npm-input.cjs');
 const tool = path.resolve(__dirname, '..', 'tools', 'copy-runtime-dependencies.cjs');
 
 const INTEGRITY = 'sha512-YWJjZA==';
@@ -77,11 +78,12 @@ function makeFixture(temporaryRoot = os.tmpdir()) {
         schemaVersion: 1,
         files: vendorFiles.map(entry => ({...entry, category: 'C'}))
     });
+    require('./helpers/inherited-npm-fixture.cjs').create(root);
     assert.equal(childProcess.spawnSync('git', ['init', root], {encoding: 'utf8'}).status, 0);
     childProcess.spawnSync('git', ['-C', root, 'config', 'user.name', 'ETE Test'], {encoding: 'utf8'});
     childProcess.spawnSync('git', ['-C', root, 'config', 'user.email', 'ete-test@example.invalid'], {encoding: 'utf8'});
     childProcess.spawnSync('git', ['-C', root, 'config', 'core.autocrlf', 'false'], {encoding: 'utf8'});
-    assert.equal(childProcess.spawnSync('git', ['-C', root, 'add', 'package.json', 'package-lock.json', 'vendor/runtime-manifest.json'], {encoding: 'utf8'}).status, 0);
+    assert.equal(childProcess.spawnSync('git', ['-C', root, 'add', 'package.json', 'package-lock.json', 'vendor/runtime-manifest.json',inheritedNpm.MANIFEST_PATH], {encoding: 'utf8'}).status, 0);
     assert.equal(childProcess.spawnSync('git', ['-C', root, 'commit', '-m', 'fixture'], {encoding: 'utf8'}).status, 0);
     const sourceCommit = childProcess.spawnSync('git', ['-C', root, 'rev-parse', 'HEAD'], {encoding: 'utf8'}).stdout.trim();
     for (const relative of ['package.json', 'package-lock.json']) {
@@ -183,7 +185,7 @@ test('unowned Carnival dependency files fail before selected directories are del
     }
 });
 
-test('retained Carnival bytes must match the immutable vendor source', () => {
+test('retained runtime bytes must match the immutable independent source', () => {
     const fixture = makeFixture();
     try {
         const token = prepareRuntime(fixture);
@@ -195,13 +197,28 @@ test('retained Carnival bytes must match the immutable vendor source', () => {
     }
 });
 
-test('retained Carnival source is bound to the committed runtime manifest', () => {
+test('dependency copy and inspection do not read the absent old npm directory',()=>{
+    const fixture=makeFixture();
+    try {
+        const token=prepareRuntime(fixture);
+        fs.rmSync(path.join(fixture.vendorProject,'node_modules'),{recursive:true});
+        contract.copyRuntimeDependencies(fixture.root,fixture.runtime,fixture.source,token);
+        assert.equal(contract.inspectRuntime(fixture.root,fixture.runtime,fixture.sourceCommit).valid,true);
+        const record=JSON.parse(fs.readFileSync(path.join(fixture.runtime,contract.PROVENANCE_FILE)));
+        assert.equal(record.installContract.inheritedNpmManifestSha256,
+            require('../tools/tracked-file-hash.cjs').hashTrackedTextFile(fixture.root,inheritedNpm.MANIFEST_PATH));
+        assert.equal(Object.hasOwn(record.installContract,'carnivalManifestSha256'),false);
+        assert.equal(fs.existsSync(path.join(fixture.vendorProject,'node_modules')),false);
+    } finally {cleanup(fixture);}
+});
+
+test('official inherited source is bound to its committed component manifest', () => {
     const fixture = makeFixture();
     try {
         const token = prepareRuntime(fixture);
-        writeFile(path.join(fixture.vendorProject, 'node_modules', 'detect-rpi', 'index.js'), 'tampered vendor\n');
+        writeFile(path.join(fixture.root,inheritedNpm.INPUT_ROOT,'electronapp/node_modules/detect-rpi/index.js'), 'tampered vendor\n');
         assert.throws(() => contract.copyRuntimeDependencies(
-            fixture.root, fixture.runtime, fixture.source, token), /source versus committed manifest mismatch/);
+            fixture.root, fixture.runtime, fixture.source, token), /snapshot identity mismatch/);
     } finally {
         cleanup(fixture);
     }
@@ -348,7 +365,7 @@ test('validate binds provenance to the caller expected source commit and committ
         contract.copyRuntimeDependencies(fixture.root, fixture.runtime, fixture.source, token);
         assert.throws(() => contract.inspectRuntime(
             fixture.root, fixture.runtime, 'f'.repeat(40)), /source commit mismatch/);
-        const manifest = path.join(fixture.root, 'vendor', 'runtime-manifest.json');
+        const manifest = path.join(fixture.root,inheritedNpm.MANIFEST_PATH);
         fs.appendFileSync(manifest, ' ');
         assert.throws(() => contract.inspectRuntime(
             fixture.root, fixture.runtime, fixture.sourceCommit), /differs from HEAD/);

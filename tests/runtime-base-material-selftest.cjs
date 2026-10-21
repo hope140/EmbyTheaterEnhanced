@@ -15,9 +15,14 @@ const sources = require('../tools/copy-tracked-product-sources.cjs');
 const web = require('../tools/prepare-web-overlays.cjs');
 const preload = require('../tools/prepare-preload.cjs');
 const exclusions = require('../tools/runtime-exclusions.cjs');
+const libmpv=require('../tools/libmpv-input.cjs');
 const {configOutput} = require('../tools/build-input-provenance.cjs');
 
 const root = path.resolve(__dirname, '..');
+// A complete historical oracle is optional test evidence, never a production
+// acquisition path. Keep it separate from the reduced current input directory.
+const oracleRoot=process.env.ETE_LEGACY_RUNTIME_ORACLE_ROOT
+    ? path.resolve(process.env.ETE_LEGACY_RUNTIME_ORACLE_ROOT) : path.join(root,'vendor/carnival');
 function sha(bytes) { return crypto.createHash('sha256').update(bytes).digest('hex'); }
 function inventory(directory) {
     const files = [];
@@ -57,7 +62,13 @@ test('frozen-material intermediate payload matches the legacy route after common
     const token = dependencies.createOwner(root, runtimePaths[0], commit);
     const result = assembly.assemble(root, commit, runtimePaths[0], token);
     // The oracle deliberately retains the old whole-tree-copy route only here.
-    fs.cpSync(path.join(root, 'vendor/carnival'), runtimePaths[1], {recursive: true});
+    const historicalManifest=JSON.parse(fs.readFileSync(path.join(root,'vendor/runtime-manifest.json')));
+    assembly.verifyInputs(oracleRoot,historicalManifest.files);
+    fs.cpSync(oracleRoot, runtimePaths[1], {recursive: true});
+    const oracleConfig=fs.readFileSync(path.join(runtimePaths[1],'Emby.Theater.exe.config'));
+    const oraclePreload=preload.buildPreparedPreload(fs.readFileSync(path.join(runtimePaths[1],'electronapp/preload.js'),'utf8'));
+    const oracleLibmpv=fs.readFileSync(process.env.ETE_LEGACY_LIBMPV_ORACLE_FILE||path.resolve(oracleRoot,'../patch/payload/libmpv/mpv-1.dll'));
+    assert.equal(sha(oracleLibmpv),historicalManifest.patchFiles.find(e=>e.path==='payload/libmpv/mpv-1.dll').sha256.toLowerCase());
     preload.prepare(root);
     const selected = dependencies.loadSelectedPackages(root).packages;
     for (const runtime of runtimePaths) {
@@ -65,13 +76,13 @@ test('frozen-material intermediate payload matches the legacy route after common
         fs.rmSync(path.join(runtime, 'x64/electron'), {recursive: true, force: true});
         fs.rmSync(path.join(runtime, 'electronapp/www/modules/externalplayer'), {recursive: true, force: true});
         sources.materializeTrackedProductSources(root, commit, runtime);
-        fs.copyFileSync(path.join(root, preload.PREPARED_PRELOAD_PATH), path.join(runtime, preload.RUNTIME_PRELOAD_PATH));
+        fs.writeFileSync(path.join(runtime,preload.RUNTIME_PRELOAD_PATH),runtime===runtimePaths[0]?fs.readFileSync(path.join(root,preload.PREPARED_PRELOAD_PATH)):Buffer.from(oraclePreload));
         web.apply(root, runtime);
         const playback = path.join(runtime, 'electronapp/www/modules/common/playback/playbackmanager.js');
         const patched = spawnSync(process.execPath, [path.join(root, 'tools/patch-playbackmanager.cjs'), playback], {encoding: 'utf8'});
         assert.equal(patched.status, 0, patched.stderr);
-        fs.copyFileSync(path.join(root, 'vendor/patch/payload/libmpv/mpv-1.dll'), path.join(runtime, 'electronapp/libmpv/x64/mpv-1.dll'));
-        fs.writeFileSync(path.join(runtime, 'Emby.Theater.exe.config'), configOutput(fs.readFileSync(path.join(root, 'vendor/carnival/Emby.Theater.exe.config'))));
+        if(runtime===runtimePaths[0])libmpv.assemble(root,runtime);else fs.writeFileSync(path.join(runtime,libmpv.RUNTIME_PATH),oracleLibmpv);
+        fs.writeFileSync(path.join(runtime, 'Emby.Theater.exe.config'), configOutput(runtime===runtimePaths[0]?require('../tools/runtime-template-input.cjs').read(root,'Emby.Theater.exe.config').bytes:oracleConfig));
         // The existing dependency stage deletes these old directories before
         // copying a fresh locked npm closure. Compare its common input boundary.
         for (const entry of selected) fs.rmSync(path.join(runtime, 'electronapp', entry.packagePath), {recursive: true, force: true});

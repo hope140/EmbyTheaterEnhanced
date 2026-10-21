@@ -1,5 +1,17 @@
 # 架构与维护边界
 
+Current compatibility-resource input: 48 manual/external files now use a fixed local component with per-file origin and notice records, preserving runtime paths and bytes. Normal old input count is five Carnival files and zero patch files. Material snapshots remain external to Git. See [snapshot contract and limits](COMPATIBILITY_RESOURCES_INPUT.md).
+
+Current input update: libmpv is an independent verified local snapshot. Normal preparation/build/provenance require no vendor/patch directory or combined-patch archive. Remaining Carnival count is 53; patch count is zero. This changes acquisition paths only, with no DLL/Model/UI/version change. See [snapshot and recovery limits](LIBMPV_INPUT.md).
+
+Current official component extension: the fixed Windows 3.0.20 ZIP supplies 19 unchanged files, including three companion XML files, windowsync and English strings. Dynamic whitelist assembly removes their old physical reads. Remaining Carnival assets: 53; libmpv patch: one. Model and product behavior remain unchanged. See [official inputs](WINDOWS_HOST_INPUT.md).
+
+Current selection: package/preload/Host-config templates are maintained independently under tools/templates/runtime with locked transforms and provenance. Old physical input requirement is now 58 assets plus one current libmpv patch. See [template source and behavior](RUNTIME_TEMPLATES.md).
+
+Current input update: 29 retained npm files are independently prepared from pinned official Electron 3.0.20 Git blobs; explicit newline conversion preserves exact output. Normal dependency copying/provenance also use this component. Old Carnival physical requirements are now 61, plus one current libmpv patch. See [inherited npm](INHERITED_NPM_INPUT.md).
+
+Current production selection: 90 consumed Carnival files and one current libmpv patch remain physical requirements. The 144 replaced/retired Carnival and 48 unused patch records are historical metadata only. Required hashes and active path checks remain strict. See [current input selection](LEGACY_INPUT_SELECTION.md).
+
 普通媒体链路为 Emby Web → PlaybackManager → libmpv adapter → Electron main Native Helper supervisor → Windows helper → 内嵌 libmpv。Native Helper 是唯一生产 bridge；旧 Pepper/PPAPI 不进入 runtime。
 
 PlaybackManager 拥有 Item、MediaSource、MediaSourceId、PlaySessionId、Session/WebSocket、进度、远控与 Together 生命周期。STRM Resolver 只决定最终 loadfile source，不重建播放会话。Item.Path 是 sidecar identity，MediaSource.Path 是 source identity，options.url 是原生播放 source；普通媒体和 Transcode 保持原生链路。
@@ -28,7 +40,7 @@ M02 内核候选管理保持 Native Helper 为唯一生产 bridge。包由 main 
 
 内核状态分开显示包内哈希、静态兼容、来源/notice 声明、当前进程 ready 握手和下次启动选择。Helper/DLL映像SHA、来源独立核验、许可审查与可发行性分别保持UNKNOWN或NOT_ASSESSED；静态PE通过和握手通过不等于加载映像哈希证据或许可结论。
 
-构建由 tools/build.ps1 从固定 sourceCommit 的 Git blob、生成器和锁定外部输入组装。基础 payload 通过 assemble-runtime-base.cjs 从既有 manifest/合同推导文件清单，按文件复制仍保留的旧输入，跳过后续替换及退役项；完整 prepared Carnival 输入与历史来源校验继续保留。source-provenance、runtime-provenance 和 build-manifest 分层记录；完整运行时仍依赖仓库外输入。Electron 使用固定 44.4.2 Windows x64 完整树。边界见[文件级组装](RUNTIME_BASE_ASSEMBLY.md)。
+构建由 tools/build.ps1 从固定 sourceCommit 的 Git blob、生成器和锁定外部输入组装。基础 payload 通过 assemble-runtime-base.cjs 从 manifest/合同推导文件清单，按文件复制仍保留的非Web旧输入，跳过后续替换及退役项；Web改用独立固定快照及用户Web补丁，生产组装和来源记录不读取旧www。14份原样Host/辅助二进制改读官方Windows 3.0.20组件白名单，Model不替换。剩余非Web prepared Carnival 输入与历史来源校验继续保留。source-provenance、runtime-provenance 和 build-manifest 分层记录；完整运行时仍依赖仓库外输入。Electron 使用固定 44.4.2 Windows x64 完整树。边界见[文件级组装](RUNTIME_BASE_ASSEMBLY.md)、[固定Web输入](WEB_SNAPSHOT_INPUT.md)与[固定Host输入](WINDOWS_HOST_INPUT.md)。
 
 CustomCssJS 作为固定源哈希的 Web overlay 构建：服务器/本地 CSS 仍按既有选择加载；服务器/本地 JavaScript 配置保留，但不会在可信 renderer 中求值，检测到旧脚本选择或无效 JS 配置时显示一次提示。JS 配置解析失败不阻断 CSS。该边界只关闭 CustomCssJS 执行入口，不代表 renderer 已整体隔离；应用 preload 的 window.fs/window.ipc 能力仍由其他产品代码使用。
 
@@ -55,3 +67,9 @@ v0.3.5详情生命周期overlay仍由原ItemPage/BaseView拥有页面；加载�
 v0.3.5合批搜索保留两条原路由：标准ItemsView/ListController与电视SearchView/SearchResults。SearchFields保留500ms防抖并在输入、暂停及销毁时退休旧提交；标准列表仅在type=search安装维护helper，复用既有itemscontainer/virtual-scroller归属检查，电视结果按代次提交。ActionSheet仅给原无选择关闭拒绝加明确标记，EmbySelect只处理该标记；真实错误、多选关闭提交与原视频禁用展示保持。见[搜索与菜单合同](SEARCH_AND_MENU.md)。
 
 ActionSheet 空列表排版使用单独的固定源 `actionsheet.css` overlay；只清除空、非虚拟列表残留的末尾间距。原 ActionSheet JS、列表加载、按钮锚定、全屏、多选、选择/取消与播放远控归属保持。CSS 生成器和最终输出进入既有 build-input 与 provenance 合同，冻结输入只读。
+
+
+Four small runtime inputs are an independent exact-byte component. Model alone still comes from the reduced historical directory; see [small input contract](SMALL_RUNTIME_INPUT.md).
+
+
+Normal production inputs are now independent components only; the old Carnival and combined-patch directories are never read. Unmanaged retained legacy inputs fail rather than reviving a fallback. See [zero-input Model contract](MODEL_COMPATIBILITY_INPUT.md).

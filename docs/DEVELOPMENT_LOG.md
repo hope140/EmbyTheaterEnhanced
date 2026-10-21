@@ -24,6 +24,30 @@
 
 后续在准确提交上重新测试与构建，候选结果绑定仓库外回执；正式产品仍须经批准合并后从 main source 重建，Tag CI 完成才公开五附件。旧临时 baseline Tag、Release 和附件保持，文案处理另行审核。Knowledge Review：上传校验不能替代版本一致、source 中的 notes、发布前 Tag CI 和发行文档流程。
 
+## 2026-10-21 - Independent compatibility resource acquisition
+
+Select the exact 48 manual/external assets, lock every runtime path/size/SHA, import only the whitelist and preserve current bytes/notices. Move normal assembly/material/provenance reads to the independent snapshot; keep strict checks for the remaining five old inputs and all current components. Add absent-old-resource and input redirect/tampering coverage; compare complete static payloads. No UI/Model/version/final-product-baseline merge.
+
+## 2026-10-21 - Remove the last normal patch-directory dependency
+
+Create a one-file local snapshot component with strict size/SHA/path/extra-file checks and explicit current versus historical/public-candidate provenance. Route build, preparation, material gate and source provenance through it. Keep independent old DLL bytes only as a deliberate comparison oracle. Do not substitute another version or claim current online recovery. See [component contract](LIBMPV_INPUT.md).
+
+## 2026-10-21 - Reuse fixed official resource acquisition
+
+Add five previously hashed exact official ZIP members to the existing component whitelist, source/notice records and strict validation. Reuse dynamic assembly/provenance selection without introducing another prepared tree or changing generators. Test missing old resource paths and compare complete base/intermediate/Web outputs. Preserve prior prepared material as local evidence; do not overwrite or delete original inputs.
+
+## 2026-10-21 - Remove small-template physical dependencies
+
+Record official package/config references and retained differences; preserve the seven-line bridge without claiming authorship. Normalize tracked text, verify source/generated hashes, and distinguish source versus transformed-base identities in provenance. Compare generation against a separate old-material oracle, including final package serialization. See [templates](RUNTIME_TEMPLATES.md).
+
+## 2026-10-21 - Pinned upstream npm preparation
+
+Pin source commit, blob/SHA256, exact newline transform and output identities instead of relying on Windows checkout settings. Update base assembly, material and dependency/source provenance together so no hidden old npm read remains. Preserve upstream bundled metadata and code rather than replacing with newer registry packages. See [component contract](INHERITED_NPM_INPUT.md).
+
+## 2026-10-21 - Gate-only predecessor retirement
+
+Separate consumed input validation from historical provenance. Retain the tracked full manifest, label metadata-only identities explicitly, reject overlap with required paths, and keep active hash/link/extra-file checks. Add absent-predecessor and current-input tampering regressions; use an independent read-only historical oracle for whole intermediate payload comparison. No product, Model or dependency changes. See [selection](LEGACY_INPUT_SELECTION.md).
+
 ## 2026-10-21 — 公共测试的 Linux 开发支持
 
 三份测试修正路径夹具，两个测试使用跨平台 PowerShell helper；保留产品路径拒绝规则、原断言和 Windows 的真实文件系统/原 shell。五项诊断与编码集成增加明确的非 Windows 跳过原因，既有四项跳过保持；公共 runner 和 Windows workflow 未变。新增注册检查实际加载五份测试，确认 `win32` 不被跳过，Linux 的跳过均有原因。
@@ -860,3 +884,18 @@ Model Tier: Tier 2；Model: 当前Codex会话，运行时未向任务提供精�
 - 增加首次冷资源、二次命中、Stop/Next、播放画面及 Session 的隔离验收步骤。六项真实 CD2 验收为 USER_REPORTED_PASS，工程测试与用户反馈保持各自证据边界。
 - PR #32、#33 已合并，对应 main 公开 CI 成功。v0.3.1 同步产品版本、下载导航、更新说明和已知限制；运行公开离线测试、语法及凭据检查，结果以发布准备 PR 的 CI 为准。
 - 正式产物从最终 main 使用原固定输入及工具链单独构建；发布身份与回读证据保存在 Release 附件及本地审计记录中。
+# 固定Web输入整理
+
+增加独立Web材料清单、显式一次性导入与严格树校验；生产组装、Web overlay及来源记录切换到独立组件，保留现有变换和输出身份，移除旧www的必需物理读取。原材料与Model不变，材料正文不入Git；增加无旧www及输入完整性回归。验证范围和未完成项按本次交付结果记录，详见WEB_SNAPSHOT_INPUT.md。
+## 固定Host输入整理
+
+增加官方Windows 3.0.20归档与14文件白名单，按原字节准备、组装并验证runtime身份；旧目录对应文件退出物理门禁。保留Model及其它材料与既有版本，不运行归档安装器/辅助程序。新增组件完整性、无旧Host输入、来源与runtime篡改回归，详见WINDOWS_HOST_INPUT.md。
+
+
+2026-10-21: isolated small-input stage adds exact four-path import/validation/provenance and explicit preparation, removes four old physical gates, and preserves original materials. Includes configuration, language, notice and zero-byte CEC marker without executing or applying them. Tests cover missing legacy files, cold restore, configuration tamper, links and unchanged Model. See [contract](SMALL_RUNTIME_INPUT.md).
+
+
+2026-10-21: added original-byte Model component and runtime provenance, removed the final normal legacy physical input and old-installer bootstrap, and added independent Web restoration. Strict component checks remain; historical oracle tests are explicit. Original materials preserved. Validation covers missing entire old directories, snapshot tamper/links, cold restoration and unchanged payload/generators. See [contract](MODEL_COMPATIBILITY_INPUT.md).
+
+
+2026-10-21 local integration: the independent-component material work is combined with main e150981d (product 0.3.15), retaining the published exit fix and its regressions. Normal old Carnival/patch requirements are zero; original Model/config/UI/dependency identities are preserved. Prior material-stage baseline and release entries below remain historical records. Current full regression, matching-0.3.15 material comparison and any build/package results are separate evidence; no app launch, new release, push or remote-main merge is included.
