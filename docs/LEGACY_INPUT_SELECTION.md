@@ -1,0 +1,35 @@
+# Current legacy input selection
+
+Normal assembly validates only files whose bytes are copied or used as generation templates. The historical full manifest remains committed evidence, not a requirement to keep retired binaries. This is one incremental removal of old-package dependencies; it is not a complete source rebuild.
+
+## Physical input contract
+
+After the independent Web snapshot and official Windows Host component, the remaining Carnival requirement is reduced from 234 to 90 files. The patch requirement is reduced from 49 to one pinned libmpv DLL. The 144 and 48 removed requirements are not deleted from original materials or silently claimed as freshly verified.
+
+| Current Carnival input | Files | Bytes | Next independent source group |
+| --- | ---: | ---: | --- |
+| Application package template | 1 | 898 | Preserve semantics in a maintained template |
+| Inherited npm package files | 29 | 32,830 | Fixed registry archives plus recorded modifications/notices |
+| Retained assets and binaries | 58 | 30,223,804 | Component-specific pinned acquisition or an unchanged documented snapshot |
+| Host configuration template | 1 | 2,104 | Compare official template before independent acquisition |
+| Preload template | 1 | 214 | Preserve exact IPC behavior in an explicit input |
+
+The 58 assets include the unchanged Model DLL, 46 external resources and two manual batch files, plus nine configuration, language, documentation and auxiliary files. Copied does not imply invoked by the application. Manual compatibility resources require a separate decision before removal. Model remains unchanged.
+
+## Historical references without physical reads
+
+The 144 Carnival predecessors are 73 old Electron files, one Pepper bridge, 45 source-covered files, 24 files superseded by the locked npm closure, and the old base libmpv. The 48 unused patch files are scripts, fonts, shaders, presets and notes. The two Web patch inputs already belong to the independent Web component.
+
+The assembler derives selection from the committed product tree, overlay contract, npm lock and component manifests. Required entries cannot overlap ignored paths. Explicit retired paths, the retired Electron tree, superseded npm package directories and retired patch mpv namespace are optional and never traversed or copied. Unexpected files in active namespaces still fail. Required file hashes, directory types, ancestor links, extra files, and independent Web/Host manifests remain checked.
+
+Source provenance labels old Electron, Pepper and base libmpv identities as historical manifest records with physicalInputRequired=false. Current official Electron, current libmpv and all consumed components retain physical validation. Historical archive/count fields do not claim a fresh archive read. tools/audit-build-inputs.cjs remains a separate historical full-material audit; production does not invoke it.
+
+## Verification boundaries
+
+Public regression tests exercise absent and changed predecessors, strict consumed templates and current libmpv, extra files and path redirection. The explicit windows-host-material-selftest.cjs compares the 822-file base against the original copy-entry manifest plus the independent raw Web manifest. runtime-base-material-selftest.cjs accepts ETE_LEGACY_RUNTIME_ORACLE_ROOT only as a read-only complete historical comparison oracle, outside normal production input selection. It compares both routes after common production transforms. This optional test oracle is not a build dependency.
+
+No UI, Model, dependency version, original material or player behavior is changed. Static payload equivalence is not an installer, driver, display or playback acceptance test.
+
+## Remaining work
+
+Normal builds still need 90 Carnival files, one libmpv DLL, the independent Web snapshot/patches, the official Host component and the already fixed toolchain/npm/Electron inputs. prepare.ps1 still supports historical archive bootstrap for remaining components. It has not become a source-only acquisition workflow. First migrate the inherited npm group using verified archives and explicit local deltas, then small templates and independently sourced assets. Preserve unresolved origin labels; do not publish external snapshot bodies without the separate distribution decision.

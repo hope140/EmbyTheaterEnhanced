@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-21 - Gate-only predecessor retirement
+
+Separate consumed input validation from historical provenance. Retain the tracked full manifest, label metadata-only identities explicitly, reject overlap with required paths, and keep active hash/link/extra-file checks. Add absent-predecessor and current-input tampering regressions; use an independent read-only historical oracle for whole intermediate payload comparison. No product, Model or dependency changes. See [selection](LEGACY_INPUT_SELECTION.md).
+
 ## 2026-10-21 — 公共测试的 Linux 开发支持
 
 三份测试修正路径夹具，两个测试使用跨平台 PowerShell helper；保留产品路径拒绝规则、原断言和 Windows 的真实文件系统/原 shell。五项诊断与编码集成增加明确的非 Windows 跳过原因，既有四项跳过保持；公共 runner 和 Windows workflow 未变。新增注册检查实际加载五份测试，确认 `win32` 不被跳过，Linux 的跳过均有原因。

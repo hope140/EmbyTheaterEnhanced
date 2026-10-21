@@ -1,5 +1,7 @@
 # 构建与打包
 
+Current material gate: normal assembly does not require retired Electron, Pepper, old base libmpv, replaced source/npm inputs or unused patch bodies. It still validates the actual 90 Carnival and one libmpv inputs plus independent components. See [current input selection](LEGACY_INPUT_SELECTION.md).
+
 ## 当前发行
 
 当前测试版为 [v0.3.13](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.13) Pre-release，产品 sourceCommit 为 [d313e93](https://github.com/hope140/EmbyTheaterEnhanced/commit/d313e93a9d0920af7ed27cd1743d6bb9c9178d4d)。Stable/Latest 保持 v0.3.1；来源及验收边界见[V0313 发行核验](V0313_RELEASE_VERIFICATION.md)。

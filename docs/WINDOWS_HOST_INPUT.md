@@ -1,5 +1,7 @@
 # 固定Windows Host组件
 
+Subsequent selection update: the stage-specific 234/49 counts below are now 90/1 physical requirements after removal of gate-only predecessors. The official 14-file Host component is unchanged. See [current input selection](LEGACY_INPUT_SELECTION.md).
+
 此组件从官方Windows 3.0.20发布ZIP提取14份白名单文件。它们与此前Carnival输入逐字节相同，总计3,527,456字节；没有重新编译、升级版本或改变启动/播放行为。
 
 `MediaBrowser.Model.dll`明确排除在组件之外：官方文件与当前文件不同，当前Model仍保留原字节及原输入来源。Host配置小模板也仍属后续待迁输入。本步骤将必需的非Web Carnival物理文件从248份降至234份，旧补丁仍为49份。

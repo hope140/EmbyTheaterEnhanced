@@ -18,6 +18,10 @@ const exclusions = require('../tools/runtime-exclusions.cjs');
 const {configOutput} = require('../tools/build-input-provenance.cjs');
 
 const root = path.resolve(__dirname, '..');
+// A complete historical oracle is optional test evidence, never a production
+// acquisition path. Keep it separate from the reduced current input directory.
+const oracleRoot=process.env.ETE_LEGACY_RUNTIME_ORACLE_ROOT
+    ? path.resolve(process.env.ETE_LEGACY_RUNTIME_ORACLE_ROOT) : path.join(root,'vendor/carnival');
 function sha(bytes) { return crypto.createHash('sha256').update(bytes).digest('hex'); }
 function inventory(directory) {
     const files = [];
@@ -57,7 +61,9 @@ test('frozen-material intermediate payload matches the legacy route after common
     const token = dependencies.createOwner(root, runtimePaths[0], commit);
     const result = assembly.assemble(root, commit, runtimePaths[0], token);
     // The oracle deliberately retains the old whole-tree-copy route only here.
-    fs.cpSync(path.join(root, 'vendor/carnival'), runtimePaths[1], {recursive: true});
+    const historicalManifest=JSON.parse(fs.readFileSync(path.join(root,'vendor/runtime-manifest.json')));
+    assembly.verifyInputs(oracleRoot,historicalManifest.files);
+    fs.cpSync(oracleRoot, runtimePaths[1], {recursive: true});
     preload.prepare(root);
     const selected = dependencies.loadSelectedPackages(root).packages;
     for (const runtime of runtimePaths) {

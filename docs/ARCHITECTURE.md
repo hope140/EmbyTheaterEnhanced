@@ -1,5 +1,7 @@
 # 架构与维护边界
 
+Current production selection: 90 consumed Carnival files and one current libmpv patch remain physical requirements. The 144 replaced/retired Carnival and 48 unused patch records are historical metadata only. Required hashes and active path checks remain strict. See [current input selection](LEGACY_INPUT_SELECTION.md).
+
 普通媒体链路为 Emby Web → PlaybackManager → libmpv adapter → Electron main Native Helper supervisor → Windows helper → 内嵌 libmpv。Native Helper 是唯一生产 bridge；旧 Pepper/PPAPI 不进入 runtime。
 
 PlaybackManager 拥有 Item、MediaSource、MediaSourceId、PlaySessionId、Session/WebSocket、进度、远控与 Together 生命周期。STRM Resolver 只决定最终 loadfile source，不重建播放会话。Item.Path 是 sidecar identity，MediaSource.Path 是 source identity，options.url 是原生播放 source；普通媒体和 Transcode 保持原生链路。

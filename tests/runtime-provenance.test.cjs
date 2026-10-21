@@ -196,6 +196,25 @@ function runProvenanceRaw(command, root, runtime) {
     return childProcess.spawnSync(process.execPath, [tool, command, root, runtime, sourceCommit], {encoding: 'utf8'});
 }
 
+test('historical Electron, Pepper and old libmpv bodies are not provenance prerequisites',()=>{
+    const root=fs.mkdtempSync(path.join(os.tmpdir(),'ete-provenance-history-only-'));
+    try {
+        createFixture(root);
+        for(const relative of ['x64/electron/electron.exe','x64/electron/version','electronapp/libmpv/x64/mpv-win32-x64.node','electronapp/libmpv/x64/mpv-1.dll']) {
+            fs.unlinkSync(path.join(root,'vendor/carnival',relative));
+        }
+        const runtime=createRuntime(root,'runtime-without-history-bodies');
+        const source=JSON.parse(fs.readFileSync(path.join(runtime,'source-provenance.json')));
+        assert.equal(source.historicalInputs.carnivalElectron.physicalInputRequired,false);
+        assert.equal(source.historicalInputs.carnivalElectron.verification,'historical-manifest-only');
+        assert.equal(source.runtimeIdentities.libmpv.historicalPredecessor.physicalInputRequired,false);
+        assert.equal(source.runtimeExclusions.inputs[0].physicalInputRequired,false);
+        assert.equal(runProvenance('write',root,runtime).exitCode,0);
+        fs.appendFileSync(path.join(runtime,'electronapp/libmpv/x64/mpv-1.dll'),'changed current libmpv');
+        assert.notEqual(runProvenance('validate',root,runtime).exitCode,0);
+    } finally {fs.rmSync(root,{recursive:true,force:true});}
+});
+
 test('runtime provenance binds tracked product sources to committed Git blobs', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-provenance-'));
     try {

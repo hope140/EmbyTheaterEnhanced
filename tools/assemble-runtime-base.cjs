@@ -80,13 +80,24 @@ function plan(rootArg, sourceCommit) {
     const selected = dependencies.loadSelectedPackages(root);
     const host = windowsHost.load(root);
     const hostPaths = new Set(host.files.map(item=>item.path));
-    const entries = classify(manifest.files, product.map(item => item.runtimePath),
+    const candidates = classify(manifest.files, product.map(item => item.runtimePath),
         overlays.WEB_OVERLAY_CONTRACT.map(item => item.runtimePath), selected.packages.map(item => item.packagePath))
         .filter(item => !webSnapshot.isLegacyWeb(item.path) && !hostPaths.has(item.path));
+    const required = item => item.action === 'copy' || ['generated-host-config','generated-preload'].includes(item.reason);
+    const entries = candidates.filter(required);
+    const historicalEntries = candidates.filter(item => !required(item));
+    const ignoredInputPaths = [...new Set(['electronapp/www',...hostPaths,...historicalEntries.map(item=>item.path),
+        'x64/electron',...selected.packages.map(item=>'electronapp/'+item.packagePath)])];
+    if(entries.some(item=>ignoredInputPaths.some(prefix=>item.path===prefix||item.path.startsWith(prefix+'/')))) {
+        throw new Error('Historical input exclusion overlaps a consumed input.');
+    }
     const web = webSnapshot.load(root);
     return {schemaVersion: 1, sourceCommit: sourceCommit.toLowerCase(), sourceManifestSha256,
         relation: 'existing vendor manifest + committed product paths + Web overlay contract + npm lock',
-        groups: summarize(entries), entries, webSnapshot: {manifestPath:webSnapshot.MANIFEST_PATH,
+        groups: summarize(entries), entries,historicalEntries,ignoredInputPaths,
+        historicalReference:{fileCount:historicalEntries.length,groups:summarize(historicalEntries),
+            evidence:'tracked historical manifest only; no physical predecessor input is required'},
+        webSnapshot: {manifestPath:webSnapshot.MANIFEST_PATH,
             treeSha256:web.treeSha256,fileCount:web.fileCount,bytes:web.bytes},windowsHost:{manifestPath:windowsHost.MANIFEST_PATH,
             treeSha256:host.treeSha256,fileCount:host.fileCount,bytes:host.bytes}};
 }
@@ -144,9 +155,9 @@ function assemble(rootArg, sourceCommit, runtimeArg, token) {
     const carnivalRoot = path.join(root, 'vendor', 'carnival');
     webSnapshot.validate(root);
     windowsHost.validate(root);
-    // Historical non-Web inputs still have their existing gate. Web identity
-    // comes only from its independent component manifest, never old www/.
-    verifyInputs(carnivalRoot, result.entries, ['electronapp/www',...windowsHost.paths(root)]);
+    // Validate only consumed bytes and templates. Historical/replaced inputs
+    // are references, while current component authorities remain fully checked.
+    verifyInputs(carnivalRoot, result.entries, result.ignoredInputPaths);
     for (const entry of result.entries.filter(item => item.action === 'copy' && !webSnapshot.isLegacyWeb(item.path))) {
         const target = path.join(runtime, ...entry.path.split('/'));
         fs.mkdirSync(path.dirname(target), {recursive: true});
@@ -158,7 +169,8 @@ function assemble(rootArg, sourceCommit, runtimeArg, token) {
     const webInput = webSnapshot.assemble(root, runtime);
     const hostInput = windowsHost.assemble(root,runtime);
     return {schemaVersion: result.schemaVersion, status: 'passed', sourceCommit: result.sourceCommit,
-        sourceManifestSha256: result.sourceManifestSha256, groups: result.groups, webInput,hostInput};
+        sourceManifestSha256: result.sourceManifestSha256, groups: result.groups,
+        historicalReference:result.historicalReference,webInput,hostInput};
 }
 
 if (require.main === module) {
@@ -169,7 +181,7 @@ if (require.main === module) {
             throw new Error('Usage: assemble-runtime-base.cjs <plan|summary> <root> <sourceCommit> OR assemble <root> <sourceCommit> <runtime> <ownerToken>');
         }
         const result = command === 'assemble' ? assemble(root, commit, runtime, token) : plan(root, commit);
-        if (command === 'summary') delete result.entries;
+        if (command === 'summary') { delete result.entries;delete result.historicalEntries;delete result.ignoredInputPaths; }
         process.stdout.write(JSON.stringify(result, null, 2) + '\n');
     } catch (error) {
         process.stderr.write(error.message + '\n');

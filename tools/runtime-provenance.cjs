@@ -148,7 +148,8 @@ function baselineIdentity(root) {
         vendorFileCount: Array.isArray(manifest.files) ? manifest.files.length : null,
         vendorPatchFileCount: Array.isArray(manifest.patchFiles) ? manifest.patchFiles.length : null,
         runtimeExclusions: Array.isArray(manifest.runtimeExclusions) ? manifest.runtimeExclusions.slice() : [],
-        coverage: 'vendor bytes are identified by a manifest bound to sourceCommit; input bodies remain external'
+        countsAreHistoricalReferences:true,
+        coverage: 'historical manifest bound to sourceCommit; only current consumed inputs require physical validation'
     };
 }
 

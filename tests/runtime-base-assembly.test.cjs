@@ -82,7 +82,12 @@ function fixture(t) {
     json(source, 'node_modules/long/package.json', {name: 'long', version: '5.3.2'});
     write(source, 'node_modules/long/index.js', 'new dependency');
     const legacyFiles = inventory(vendor);
-    json(root, 'vendor/runtime-manifest.json', {schemaVersion: 1, files: legacyFiles,patchFiles:[]});
+    const patchBytes=Buffer.from('current libmpv fixture');
+    write(root,'vendor/patch/payload/libmpv/mpv-1.dll',patchBytes);
+    write(root,'vendor/patch/install-all.bat','historical script');
+    const patchFiles=[{path:'payload/libmpv/mpv-1.dll',sha256:sha(patchBytes)},
+        {path:'install-all.bat',sha256:sha(Buffer.from('historical script'))}];
+    json(root, 'vendor/runtime-manifest.json', {schemaVersion: 1, files: legacyFiles,patchFiles});
     fs.mkdirSync(path.join(root,'vendor/patch'),{recursive:true});
     const web = require('../tools/web-snapshot-input.cjs');
     const webFiles = legacyFiles.filter(item => item.path.startsWith('electronapp/www/') &&
@@ -144,11 +149,13 @@ test('plan identifies retained inputs, templates, replacements and retired files
     const byPath = new Map(plan.entries.map(entry => [entry.path, entry]));
     assert.equal(byPath.has('Emby.Theater.exe'), false);
     assert.equal(plan.windowsHost.fileCount,1);
-    assert.equal(byPath.get('electronapp/main.js').reason, 'committed-product-source');
+    assert.equal(byPath.has('electronapp/main.js'),false);
+    assert.equal(plan.historicalEntries.find(item=>item.path==='electronapp/main.js').reason,'committed-product-source');
     assert.equal(byPath.has('electronapp/www/index.html'), false);
     assert.equal(byPath.has('electronapp/www/modules/common/playback/playbackmanager.js'), false);
     assert.equal(plan.webSnapshot.fileCount, 3);
-    assert.equal(byPath.get('electronapp/node_modules/long/legacy.js').action, 'replace');
+    assert.equal(byPath.has('electronapp/node_modules/long/legacy.js'),false);
+    assert.equal(plan.historicalEntries.find(item=>item.path==='electronapp/node_modules/long/legacy.js').action,'replace');
     assert.equal(byPath.get('external/retained.glsl').action, 'copy');
     assert.equal(plan.groups.reduce((total, group) => total + group.fileCount, 0), plan.entries.length);
     assert.deepEqual(fs.readdirSync(f.runtime), [dependencies.OWNER_FILE]);
@@ -175,17 +182,49 @@ test('official Host component replaces old Host input in the production material
     assert.equal(fs.existsSync(path.join(f.vendor,'Emby.Theater.exe')),false);
 });
 
-for (const mutation of ['changed-retained', 'changed-excluded', 'extra', 'missing']) {
+for (const mutation of ['changed-retained', 'extra', 'missing']) {
     test('preflight rejects ' + mutation + ' input before writing any payload', t => {
         const f = fixture(t);
         if (mutation === 'changed-retained') write(f.vendor, 'external/retained.glsl', 'changed');
-        if (mutation === 'changed-excluded') write(f.vendor, 'x64/electron/electron.exe', 'changed');
         if (mutation === 'extra') write(f.vendor, 'unexpected.js', 'extra');
         if (mutation === 'missing') fs.unlinkSync(path.join(f.vendor, 'external/retained.glsl'));
         assert.throws(() => assembly.assemble(f.root, f.commit, f.runtime, f.token), /input/);
         assert.deepEqual(fs.readdirSync(f.runtime), [dependencies.OWNER_FILE]);
     });
 }
+
+test('all gate-only predecessor files and unused patch scripts may be absent',t=>{
+    const f=fixture(t),plan=assembly.plan(f.root,f.commit);
+    for(const item of plan.historicalEntries)fs.unlinkSync(path.join(f.vendor,item.path));
+    fs.unlinkSync(path.join(f.root,'vendor/patch/install-all.bat'));
+    const material=require('../tools/validate-build-materials.cjs').validate(f.root);
+    assert.equal(material.remainingCarnivalFiles,plan.entries.length);
+    assert.equal(material.remainingPatchFiles,1);
+    assert.equal(material.historicalPatchFiles,1);
+    assembly.assemble(f.root,f.commit,f.runtime,f.token);
+    assert.equal(fs.existsSync(path.join(f.runtime,'x64/electron/electron.exe')),false);
+    assert.equal(fs.existsSync(path.join(f.runtime,'electronapp/libmpv/x64/mpv-win32-x64.node')),false);
+});
+
+test('changed retired files are not read or copied, while consumed templates remain checked',t=>{
+    const f=fixture(t);
+    write(f.vendor,'x64/electron/electron.exe','changed historical body');
+    write(f.vendor,'electronapp/main.js','changed historical source');
+    write(f.vendor,'electronapp/libmpv/x64/mpv-1.dll','changed historical mpv');
+    assert.equal(require('../tools/validate-build-materials.cjs').validate(f.root).status,'passed');
+    write(f.vendor,'electronapp/preload.js','changed consumed template');
+    assert.throws(()=>assembly.assemble(f.root,f.commit,f.runtime,f.token),/identity mismatch/);
+    assert.deepEqual(fs.readdirSync(f.runtime),[dependencies.OWNER_FILE]);
+});
+
+test('current libmpv patch hashes and active patch directory extras stay strict',t=>{
+    const f=fixture(t),materials=require('../tools/validate-build-materials.cjs');
+    write(f.root,'vendor/patch/payload/libmpv/unexpected.dll','extra');
+    assert.throws(()=>materials.validate(f.root),/Unexpected Carnival input/);
+    fs.unlinkSync(path.join(f.root,'vendor/patch/payload/libmpv/unexpected.dll'));
+    write(f.root,'vendor/patch/payload/libmpv/mpv-1.dll','changed current libmpv');
+    assert.throws(()=>materials.validate(f.root),/identity mismatch/);
+});
 
 test('assembly refuses wrong ownership, commit, occupied destinations and repeat attempts', t => {
     const f = fixture(t);

@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-21 - Retired physical input gates
+
+Normal material validation and assembly now select 90 consumed Carnival inputs and one libmpv patch. Historical Electron/Pepper/base-libmpv provenance no longer reads retired bodies. Original materials, Model, UI and dependency versions are preserved. Targeted regressions passed; final full regression and static material comparison are recorded separately in the task receipt. See [selection and boundaries](LEGACY_INPUT_SELECTION.md).
+
 ## 2026-10-21 — Linux 公共离线测试兼容
 
 仅调整测试：Native Helper 夹具使用宿主绝对路径，Mount 夹具保持 Windows 客户端身份并在非 Windows 使用精确路径合成文件系统；Windows 继续使用真实文件系统。可移植 PowerShell helper 在 Linux 使用 `pwsh`，Windows 保留原 `powershell.exe` / `pwsh.exe`。产品路径安全校验、播放行为、依赖和材料排除规则保持。
