@@ -21,6 +21,9 @@ function attach(options) {
         !ipcMain || !nativeImage || !nativeTheme || !app) return function () {};
     const emit = createRecorder(options.log || function () {}, 'windows-media', 10);
     const clock = options.clock || {setTimeout, clearTimeout};
+    // BrowserWindow.webContents throws after the native window is destroyed.
+    // Retain the emitter whose listeners this attachment owns while it is live.
+    const webContents = window.webContents;
     let disposed = false, state = {active: false, paused: false}, registered = false, applied = false;
     let shown = typeof window.isVisible !== 'function' || window.isVisible(), retry = null, retries = 0;
     function cancelRetry() { if (retry !== null) clock.clearTimeout(retry); retry = null; }
@@ -56,7 +59,7 @@ function attach(options) {
     function show() { shown = true; retries = 0; render(); }
     function navigation(_event, _url, isInPlace, isMainFrame) { if (isMainFrame && !isInPlace) reset(); }
     function receive(event, value) {
-        if (disposed || !boundary.isTrusted(event, window.webContents) || !value ||
+        if (disposed || window.isDestroyed() || !boundary.isTrusted(event, webContents) || !value ||
             typeof value.active !== 'boolean' || typeof value.paused !== 'boolean' ||
             Object.keys(value).length !== 2 || !value.active && value.paused) return;
         if (state.active === value.active && state.paused === value.paused) { if (!applied) render(); return; }
@@ -66,22 +69,26 @@ function attach(options) {
     }
     function dispose() {
         if (disposed) return;
-        reset();
         disposed = true;
         cancelRetry();
+        retries = 0; state = {active: false, paused: false}; applied = false;
         ipcMain.removeListener(CHANNEL, receive);
         nativeTheme.removeListener('updated', render);
-        window.webContents.removeListener('did-start-navigation', navigation);
-        window.webContents.removeListener('render-process-gone', reset);
+        webContents.removeListener('did-start-navigation', navigation);
+        webContents.removeListener('render-process-gone', reset);
         window.removeListener('closed', dispose);
         window.removeListener('show', show);
         window.removeListener('restore', show);
         app.removeListener('before-quit', dispose);
+        if (!window.isDestroyed() && registered) {
+            try { applied = window.setThumbarButtons([]) === true; }
+            catch (_) { failed(); }
+        }
     }
     ipcMain.on(CHANNEL, receive);
     nativeTheme.on('updated', render);
-    window.webContents.on('did-start-navigation', navigation);
-    window.webContents.on('render-process-gone', reset);
+    webContents.on('did-start-navigation', navigation);
+    webContents.on('render-process-gone', reset);
     window.once('closed', dispose);
     window.on('show', show);
     window.on('restore', show);
