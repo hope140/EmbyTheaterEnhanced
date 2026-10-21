@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "version": "snapshot-v1",
+  "inputRoot": "vendor/small-runtime/snapshot-v1",
+  "fileCount": 4,
+  "bytes": 5216,
+  "treeSha256": "e4022080a54f46525af9f4540127669905820f8ea2c9a96ff48b49563708ac0e",
+  "provenance": {
+    "mode": "local-small-runtime-snapshot",
+    "source": "Four selected existing Carnival small runtime inputs only",
+    "wholeOldPackageCopied": false,
+    "physicalLegacyDirectoryRequired": false,
+    "claimedAsOwnOriginal": false,
+    "officialOnlineRecoveryEstablished": false,
+    "publicBodyUpload": false,
+    "configurationTransformed": false
+  },
+  "files": [
+    {
+      "path": "cec-driver/cancel",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "origin": {
+        "family": "Existing empty CEC marker",
+        "exactRevision": "unresolved",
+        "notice": "Existing bytes and notices preserved; not claimed as ETE original; never executed by preparation"
+      }
+    },
+    {
+      "path": "config/system.xml",
+      "size": 441,
+      "sha256": "d78758f94a14cea729fa28aed7fff98b30382ec5e435ecb02f31b6583becfcb9",
+      "origin": {
+        "family": "Legacy packaged configuration",
+        "exactRevision": "unresolved",
+        "notice": "Opaque unchanged packaged bytes; no settings, including auto-update, are edited or applied"
+      }
+    },
+    {
+      "path": "electronapp/plugins/mpvplayer/strings/zh-CN.json",
+      "size": 3393,
+      "sha256": "9d2b20f0863b794146d8b8989be3965ad186664e645b89ba31c6c2dcce8e3015",
+      "origin": {
+        "family": "Legacy Chinese language resource",
+        "exactRevision": "unresolved",
+        "notice": "Existing bytes and notices preserved; not claimed as ETE original; never executed by preparation"
+      }
+    },
+    {
+      "path": "注意事项.txt",
+      "size": 1382,
+      "sha256": "1e9e045ec2af5b77e0f7a8392ea07304ee2fc5e6cd5da2a8db3ce4d2af8da807",
+      "origin": {
+        "family": "Legacy packaged notice",
+        "exactRevision": "unresolved",
+        "notice": "Existing bytes and notices preserved; not claimed as ETE original; never executed by preparation"
+      }
+    }
+  ]
+}

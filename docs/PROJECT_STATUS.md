@@ -466,3 +466,8 @@ M02离线验证结果：16个定向测试文件164/164；完整公开门禁107�
 ## 固定Host输入候选
 
 14份与现状同字节的Host/辅助二进制改由官方Windows 3.0.20 ZIP白名单准备；Model、UI、Native与依赖版本不变。旧目录必需非Web文件由248降到234，旧补丁仍49份。正文被Git忽略，构建/来源记录绑定独立组件清单；静态组装、单元和完整运行验收分开记录。合同见[固定Host输入](WINDOWS_HOST_INPUT.md)。
+
+
+Current local material stage: four small packaged inputs (5,216 bytes) are independently snapshotted, reducing old Carnival requirements 5 -> 1 (unchanged Model), patch remains 0. Configuration including auto-update stays byte-identical. No product/version change or public body upload. Full-package acceptance must first coordinate the separate 0.3.15 exit fix. See [contract](SMALL_RUNTIME_INPUT.md); static/unit evidence is kept separately from runtime acceptance.
+
+User feedback 2026-10-21: audio-track/subtitle switching latency is provisionally closed after a long period without recurrence. This is a user-reported acceptance status, not proof of permanent technical elimination; no dedicated product change is included here.

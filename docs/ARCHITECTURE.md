@@ -67,3 +67,6 @@ v0.3.5详情生命周期overlay仍由原ItemPage/BaseView拥有页面；加载�
 v0.3.5合批搜索保留两条原路由：标准ItemsView/ListController与电视SearchView/SearchResults。SearchFields保留500ms防抖并在输入、暂停及销毁时退休旧提交；标准列表仅在type=search安装维护helper，复用既有itemscontainer/virtual-scroller归属检查，电视结果按代次提交。ActionSheet仅给原无选择关闭拒绝加明确标记，EmbySelect只处理该标记；真实错误、多选关闭提交与原视频禁用展示保持。见[搜索与菜单合同](SEARCH_AND_MENU.md)。
 
 ActionSheet 空列表排版使用单独的固定源 `actionsheet.css` overlay；只清除空、非虚拟列表残留的末尾间距。原 ActionSheet JS、列表加载、按钮锚定、全屏、多选、选择/取消与播放远控归属保持。CSS 生成器和最终输出进入既有 build-input 与 provenance 合同，冻结输入只读。
+
+
+Four small runtime inputs are an independent exact-byte component. Model alone still comes from the reduced historical directory; see [small input contract](SMALL_RUNTIME_INPUT.md).

@@ -1,4 +1,4 @@
-param([string]$ArchiveRoot = '', [string]$OfficialElectronSourceRoot = '', [string]$LibmpvSnapshotFile = '', [string]$CompatibilitySnapshotRoot = '')
+param([string]$ArchiveRoot = '', [string]$OfficialElectronSourceRoot = '', [string]$LibmpvSnapshotFile = '', [string]$CompatibilitySnapshotRoot = '', [string]$SmallRuntimeSnapshotRoot = '')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $manifest = Get-Content -LiteralPath (Join-Path $root 'vendor/runtime-manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -50,6 +50,13 @@ if (-not (Test-Path -LiteralPath (Join-Path $root 'vendor/compatibility-resource
 }
 & node (Join-Path $PSScriptRoot 'compatibility-resources-input.cjs') validate $root
 if ($LASTEXITCODE -ne 0) { throw 'Compatibility resource snapshot validation failed.' }
+if (-not (Test-Path -LiteralPath (Join-Path $root 'vendor/small-runtime/snapshot-v1'))) {
+    if (-not $SmallRuntimeSnapshotRoot) { throw 'Provide -SmallRuntimeSnapshotRoot with the exact four preserved small runtime files; no automatic legacy fallback.' }
+    & node (Join-Path $PSScriptRoot 'small-runtime-input.cjs') import $root $SmallRuntimeSnapshotRoot
+    if ($LASTEXITCODE -ne 0) { throw 'Small runtime snapshot preparation failed.' }
+}
+& node (Join-Path $PSScriptRoot 'small-runtime-input.cjs') validate $root
+if ($LASTEXITCODE -ne 0) { throw 'Small runtime snapshot validation failed.' }
 & node (Join-Path $PSScriptRoot 'prepare-preload.cjs') $root
 if ($LASTEXITCODE -ne 0) { throw 'Prepared preload generation failed.' }
 & (Join-Path $PSScriptRoot 'prepare-electron-runtime.ps1') -ArchiveRoot $archiveBase

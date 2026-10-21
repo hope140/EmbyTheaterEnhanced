@@ -18,6 +18,7 @@ const inheritedNpm = require('../tools/inherited-npm-input.cjs');
 const templates=require('../tools/runtime-template-input.cjs');
 const libmpvInput=require('../tools/libmpv-input.cjs');
 const compatibilityInput=require('../tools/compatibility-resources-input.cjs');
+const smallRuntimeInput=require('../tools/small-runtime-input.cjs');
 
 const repoRoot = path.resolve(__dirname, '..');
 const tool = path.join(repoRoot, 'tools', 'runtime-provenance.cjs');
@@ -90,6 +91,8 @@ function createFixture(root) {
     patchFiles.push({path: 'payload/libmpv/mpv-1.dll', sha256: hash(patchLibmpv)});
     require('./helpers/libmpv-fixture.cjs').create(root,patchLibmpv);
     require('./helpers/compatibility-fixture.cjs').create(root);
+    const small=require('./helpers/small-runtime-fixture.cjs').create(root);
+    for(const entry of small.files)addManifestFile(files,root,entry.path,fs.readFileSync(path.join(root,smallRuntimeInput.INPUT_ROOT,entry.path)));
     writeFile(path.join(root, 'vendor', 'runtime-manifest.json'), JSON.stringify({
         baseline: 'provenance-test-fixture',
         archives: [{pattern: 'base.exe', sha256: '0'.repeat(64)}],
@@ -157,7 +160,7 @@ function createFixture(root) {
         'tools/tracked-file-hash.cjs',
         'tools/runtime-exclusions.cjs',
         'tools/web-snapshot-input.cjs',
-        'tools/windows-host-input.cjs','tools/prepare-windows-host.ps1','tools/inherited-npm-input.cjs','tools/runtime-template-input.cjs','tools/libmpv-input.cjs','tools/compatibility-resources-input.cjs'
+        'tools/windows-host-input.cjs','tools/prepare-windows-host.ps1','tools/inherited-npm-input.cjs','tools/runtime-template-input.cjs','tools/libmpv-input.cjs','tools/compatibility-resources-input.cjs','tools/small-runtime-input.cjs'
     ]) copyRepoFile(root, relativePath);
     copyRepoFile(root, 'src/electronapp/enhanced/startup.svg');
     writeFile(path.join(root, 'tools', 'patch-playbackmanager.cjs'), 'generator: playbackmanager\n');
@@ -169,7 +172,7 @@ function createFixture(root) {
     assert.equal(init.status, 0, init.stderr);
     childProcess.spawnSync('git', ['-C', root, 'config', 'user.name', 'ETE Test'], {encoding: 'utf8'});
     childProcess.spawnSync('git', ['-C', root, 'config', 'user.email', 'ete-test@example.invalid'], {encoding: 'utf8'});
-    const add = childProcess.spawnSync('git', ['-C', root, 'add', 'src/electronapp/some-normal-file.js', 'src/electronapp/enhanced/startup.svg', 'tools', 'package-lock.json', 'vendor/runtime-manifest.json', 'vendor/electron-runtime-manifest.json',webSnapshot.MANIFEST_PATH,windowsHost.MANIFEST_PATH,inheritedNpm.MANIFEST_PATH,templates.MANIFEST_PATH,libmpvInput.MANIFEST_PATH,compatibilityInput.MANIFEST_PATH], {encoding: 'utf8'});
+    const add = childProcess.spawnSync('git', ['-C', root, 'add', 'src/electronapp/some-normal-file.js', 'src/electronapp/enhanced/startup.svg', 'tools', 'package-lock.json', 'vendor/runtime-manifest.json', 'vendor/electron-runtime-manifest.json',webSnapshot.MANIFEST_PATH,windowsHost.MANIFEST_PATH,inheritedNpm.MANIFEST_PATH,templates.MANIFEST_PATH,libmpvInput.MANIFEST_PATH,compatibilityInput.MANIFEST_PATH,smallRuntimeInput.MANIFEST_PATH], {encoding: 'utf8'});
     assert.equal(add.status, 0, add.stderr);
     const commit = childProcess.spawnSync('git', ['-C', root, 'commit', '-m', 'fixture'], {encoding: 'utf8'});
     assert.equal(commit.status, 0, commit.stderr);
@@ -189,6 +192,7 @@ function createRuntime(root, name) {
     writeFile(path.join(runtime, 'electronapp/libmpv/x64/mpv-1.dll'),
         fs.readFileSync(path.join(root,libmpvInput.INPUT_ROOT,'mpv-1.dll')));
     fs.cpSync(path.join(root,compatibilityInput.INPUT_ROOT),runtime,{recursive:true});
+    fs.cpSync(path.join(root,smallRuntimeInput.INPUT_ROOT),runtime,{recursive:true});
     webPreparation.apply(root, runtime);
     sourceProvenance.writeManifest(root, runtime, sourceCommit);
     return runtime;

@@ -43,3 +43,6 @@ No UI, Model, dependency version, original material or player behavior is change
 ## Remaining work
 
 Normal builds still need 90 Carnival files, one libmpv DLL, the independent Web snapshot/patches, the official Host component and the already fixed toolchain/npm/Electron inputs. prepare.ps1 still supports historical archive bootstrap for remaining components. It has not become a source-only acquisition workflow. First migrate the inherited npm group using verified archives and explicit local deltas, then small templates and independently sourced assets. Preserve unresolved origin labels; do not publish external snapshot bodies without the separate distribution decision.
+
+
+After independent small input selection, normal assembly consumes only unchanged Model from the historical directory. The four snapshot identities must match the retained historical manifest; their optional old paths are excluded while the active component and remaining Model remain strictly checked. See [small input contract](SMALL_RUNTIME_INPUT.md).

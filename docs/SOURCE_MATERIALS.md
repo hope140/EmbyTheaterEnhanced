@@ -91,3 +91,6 @@ Web生产输入现为`vendor/web-snapshot-manifest.json`固定的720份历史基
 ## 官方固定Host组件
 
 官方Windows 3.0.20发布ZIP（111,318,728字节，SHA256 `3bc01d288d64046483ef12a8e5a70cc31b6d8b65ed9ee1837554ab7eba797c4c`）中的14份白名单Host/辅助二进制与此前固定输入逐字节相同，现由独立组件准备。完整路径、大小和哈希见`vendor/windows-host-manifest.json`；准备及来源边界见[固定Host输入](WINDOWS_HOST_INPUT.md)。这补充了已知公开分发位置，不改变上文对精确源码重建或组件通知完整性的限制。Model未改用官方不同字节版本，仍保留当前文件。
+
+
+The [small runtime snapshot](SMALL_RUNTIME_INPUT.md) preserves four historical packaged files and existing notices without claiming ETE authorship. Bodies stay ignored/local; source/version and public redistribution boundaries remain explicitly unresolved. No settings are changed. Approved body restoration is still needed for cloud use.

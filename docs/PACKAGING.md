@@ -84,3 +84,6 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/package.ps1
 安装入口启动 `{app}\Emby.Theater.exe`。卸载保留 Enhanced 用户数据和个人 mpv 配置；构建、打包不会写入用户的 mpv 配置、shader 或字体目录。
 
 可重复性只在固定的源码提交、外部输入、工具链与命令范围内成立。runtime manifest 可逐文件核对；安装器封装可能包含时间字段，项目不宣称 setup.exe 位级可重复，也不把第三方预编译组件描述为由本仓库源码完整重建。
+
+
+The four small runtime inputs use [an independent fixed snapshot](SMALL_RUNTIME_INPUT.md), not their old Carnival paths. Preserve configuration bytes and auto-update behavior. This material branch needs the separately released 0.3.15 exit fix before final full-package validation; snapshot tests are not installer/playback acceptance.

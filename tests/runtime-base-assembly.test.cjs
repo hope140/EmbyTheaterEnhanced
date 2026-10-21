@@ -63,6 +63,11 @@ function fixture(t) {
         'electronapp/www/modules/externalplayer/old.js': 'retired Web',
         'x64/electron/electron.exe': 'retired electron',
         'external/retained.glsl': 'retained shader',
+        'MediaBrowser.Model.dll': 'unchanged Model fixture',
+        'cec-driver/cancel': '',
+        'config/system.xml': '<synthetic-config autoUpdate="unchanged"/>',
+        'electronapp/plugins/mpvplayer/strings/zh-CN.json': '{"synthetic":"translation"}',
+        '\u6ce8\u610f\u4e8b\u9879.txt': 'synthetic historical notice',
         'electronapp/node_modules/long/package.json': '{"name":"long","version":"3.2.0"}',
         'electronapp/node_modules/long/legacy.js': 'old dependency residue'
     };
@@ -107,6 +112,7 @@ function fixture(t) {
     require('./helpers/inherited-npm-fixture.cjs').create(root);
     require('./helpers/runtime-template-fixture.cjs').create(root);
     require('./helpers/libmpv-fixture.cjs').create(root);
+    require('./helpers/small-runtime-fixture.cjs').create(root,true);
     require('./helpers/compatibility-fixture.cjs').create(root,legacyFiles.filter(e=>require('../tools/compatibility-resources-input.cjs').isCompatibility(e.path)));
     write(root, 'src/electronapp/main.js', 'committed main');
     write(root, '.gitignore', '/vendor/carnival/\n/dist/\n/.work/\n');
@@ -162,6 +168,8 @@ test('plan identifies retained inputs, templates, replacements and retired files
     assert.equal(plan.historicalEntries.find(item=>item.path==='electronapp/node_modules/long/legacy.js').action,'replace');
     assert.equal(byPath.has('external/retained.glsl'),false);
     assert.equal(plan.compatibilityResources.fileCount,1);
+    assert.equal(plan.smallRuntime.fileCount,4);
+    assert.deepEqual(plan.entries.map(e=>e.path),['MediaBrowser.Model.dll']);
     assert.equal(plan.groups.reduce((total, group) => total + group.fileCount, 0), plan.entries.length);
     assert.deepEqual(fs.readdirSync(f.runtime), [dependencies.OWNER_FILE]);
     assert.equal(overlays.WEB_OVERLAY_CONTRACT.some(item => item.runtimePath === 'electronapp/www/index.html'), true);
@@ -278,6 +286,33 @@ test('old external resource directories may be absent while exact snapshot outpu
     const f=fixture(t),compatibility=require('../tools/compatibility-resources-input.cjs');fs.rmSync(path.join(f.vendor,'external'),{recursive:true});
     assert.equal(require('../tools/validate-build-materials.cjs').validate(f.root).compatibilityResources.fileCount,1);assembly.assemble(f.root,f.commit,f.runtime,f.token);
     assert.equal(compatibility.validateRuntime(f.root,f.runtime).status,'passed');assert.equal(fs.existsSync(path.join(f.vendor,'external')),false);
+});
+
+test('all four old small paths may be absent while configuration and Model remain unchanged',t=>{
+    const f=fixture(t),small=require('../tools/small-runtime-input.cjs');
+    const expectedConfig=fs.readFileSync(path.join(f.vendor,'config/system.xml'));
+    for(const name of small.SMALL_PATHS)fs.unlinkSync(path.join(f.vendor,name));
+    const report=require('../tools/validate-build-materials.cjs').validate(f.root);
+    assert.equal(report.remainingCarnivalFiles,1);
+    assert.equal(report.remainingPatchFiles,0);
+    assert.equal(report.smallRuntimeInput.fileCount,4);
+    assembly.assemble(f.root,f.commit,f.runtime,f.token);
+    assert.equal(small.validateRuntime(f.root,f.runtime).status,'passed');
+    assert.deepEqual(fs.readFileSync(path.join(f.runtime,'config/system.xml')),expectedConfig);
+    assert.deepEqual(fs.readFileSync(path.join(f.runtime,'MediaBrowser.Model.dll')),fs.readFileSync(path.join(f.vendor,'MediaBrowser.Model.dll')));
+    for(const name of small.SMALL_PATHS)assert.equal(fs.existsSync(path.join(f.vendor,name)),false);
+});
+
+test('remaining Model identity and independent configuration keep strict preflight validation',t=>{
+    const f=fixture(t),small=require('../tools/small-runtime-input.cjs');
+    const model=fs.readFileSync(path.join(f.vendor,'MediaBrowser.Model.dll'));
+    write(f.vendor,'MediaBrowser.Model.dll','changed Model');
+    assert.throws(()=>assembly.assemble(f.root,f.commit,f.runtime,f.token),/identity/);
+    assert.deepEqual(fs.readdirSync(f.runtime),[dependencies.OWNER_FILE]);
+    write(f.vendor,'MediaBrowser.Model.dll',model);
+    write(f.root,small.INPUT_ROOT+'/config/system.xml','changed configuration');
+    assert.throws(()=>assembly.assemble(f.root,f.commit,f.runtime,f.token),/snapshot identity/);
+    assert.deepEqual(fs.readdirSync(f.runtime),[dependencies.OWNER_FILE]);
 });
 
 test('assembly refuses wrong ownership, commit, occupied destinations and repeat attempts', t => {

@@ -57,3 +57,5 @@ Desktop.ini
 /vendor/libmpv/
 
 /vendor/compatibility-resources/
+
+/vendor/small-runtime/

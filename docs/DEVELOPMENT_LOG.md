@@ -866,3 +866,6 @@ Model Tier: Tier 2；Model: 当前Codex会话，运行时未向任务提供精�
 ## 固定Host输入整理
 
 增加官方Windows 3.0.20归档与14文件白名单，按原字节准备、组装并验证runtime身份；旧目录对应文件退出物理门禁。保留Model及其它材料与既有版本，不运行归档安装器/辅助程序。新增组件完整性、无旧Host输入、来源与runtime篡改回归，详见WINDOWS_HOST_INPUT.md。
+
+
+2026-10-21: isolated small-input stage adds exact four-path import/validation/provenance and explicit preparation, removes four old physical gates, and preserves original materials. Includes configuration, language, notice and zero-byte CEC marker without executing or applying them. Tests cover missing legacy files, cold restore, configuration tamper, links and unchanged Model. See [contract](SMALL_RUNTIME_INPUT.md).

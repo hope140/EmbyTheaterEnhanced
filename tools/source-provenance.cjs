@@ -13,6 +13,7 @@ const inheritedNpmInput = require('./inherited-npm-input.cjs');
 const runtimeTemplates=require('./runtime-template-input.cjs');
 const libmpvInput=require('./libmpv-input.cjs');
 const compatibilityInput=require('./compatibility-resources-input.cjs');
+const smallRuntimeInput=require('./small-runtime-input.cjs');
 
 const MANIFEST_NAME = 'source-provenance.json';
 const HISTORICAL_ELECTRON_PATH = 'x64/electron/electron.exe';
@@ -218,6 +219,8 @@ function buildManifest(rootArg, runtimeArg, sourceCommit) {
     const windowsHost = windowsHostInput.validateRuntime(root,runtime);
     const compatibilityResources=compatibilityInput.validateRuntime(root,runtime);
     compatibilityResources.preparation={generatorPath:'tools/compatibility-resources-input.cjs',generatorSha256:trackedFileHash.hashTrackedTextFile(root,'tools/compatibility-resources-input.cjs')};
+    const smallRuntime=smallRuntimeInput.validateRuntime(root,runtime);
+    smallRuntime.preparation={generatorPath:'tools/small-runtime-input.cjs',generatorSha256:trackedFileHash.hashTrackedTextFile(root,'tools/small-runtime-input.cjs')};
     const inheritedNpm = inheritedNpmInput.validateRuntime(root,runtime);
     inheritedNpm.preparation = {generatorPath:'tools/inherited-npm-input.cjs',
         generatorSha256:trackedFileHash.hashTrackedTextFile(root,'tools/inherited-npm-input.cjs')};
@@ -245,7 +248,7 @@ function buildManifest(rootArg, runtimeArg, sourceCommit) {
                 sha256: String(entry.sha256 || '').toUpperCase()
             }))
         },
-        runtimeIdentities: {electron, libmpv,windowsHost,inheritedNpm,compatibilityResources},
+        runtimeIdentities: {electron, libmpv,windowsHost,inheritedNpm,compatibilityResources,smallRuntime},
         runtimeTemplates:runtimeTemplates.validate(root),
         historicalInputs: {carnivalElectron: historicalElectron},
         runtimeExclusions: {
