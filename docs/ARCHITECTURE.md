@@ -1,5 +1,7 @@
 # 架构与维护边界
 
+Current official component extension: the fixed Windows 3.0.20 ZIP supplies 19 unchanged files, including three companion XML files, windowsync and English strings. Dynamic whitelist assembly removes their old physical reads. Remaining Carnival assets: 53; libmpv patch: one. Model and product behavior remain unchanged. See [official inputs](WINDOWS_HOST_INPUT.md).
+
 Current selection: package/preload/Host-config templates are maintained independently under tools/templates/runtime with locked transforms and provenance. Old physical input requirement is now 58 assets plus one current libmpv patch. See [template source and behavior](RUNTIME_TEMPLATES.md).
 
 Current input update: 29 retained npm files are independently prepared from pinned official Electron 3.0.20 Git blobs; explicit newline conversion preserves exact output. Normal dependency copying/provenance also use this component. Old Carnival physical requirements are now 61, plus one current libmpv patch. See [inherited npm](INHERITED_NPM_INPUT.md).

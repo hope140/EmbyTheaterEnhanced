@@ -1,5 +1,7 @@
 # Current legacy input selection
 
+Current official-resource update: five additional exact official ZIP members are independently acquired, leaving 53 old Carnival physical inputs and one current libmpv patch. No behavioral file contents changed. See [official component](WINDOWS_HOST_INPUT.md).
+
 Subsequent template update: the three small templates are now maintained source inputs, leaving 58 physical Carnival assets plus one libmpv patch. Previous 90/61 counts describe earlier stages. See [template contract](RUNTIME_TEMPLATES.md).
 
 Subsequent component update: the 29 inherited npm files below now have independent official Git acquisition and strict component validation. Normal old Carnival requirements are 61 files, plus one current libmpv patch. Earlier 90-file counts describe the predecessor stage. See [inherited npm component](INHERITED_NPM_INPUT.md).

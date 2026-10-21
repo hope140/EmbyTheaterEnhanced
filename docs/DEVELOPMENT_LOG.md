@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-21 - Reuse fixed official resource acquisition
+
+Add five previously hashed exact official ZIP members to the existing component whitelist, source/notice records and strict validation. Reuse dynamic assembly/provenance selection without introducing another prepared tree or changing generators. Test missing old resource paths and compare complete base/intermediate/Web outputs. Preserve prior prepared material as local evidence; do not overwrite or delete original inputs.
+
 ## 2026-10-21 - Remove small-template physical dependencies
 
 Record official package/config references and retained differences; preserve the seven-line bridge without claiming authorship. Normalize tracked text, verify source/generated hashes, and distinguish source versus transformed-base identities in provenance. Compare generation against a separate old-material oracle, including final package serialization. See [templates](RUNTIME_TEMPLATES.md).

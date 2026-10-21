@@ -1,5 +1,7 @@
 # Runtime source and notice materials
 
+Official resource extension: five additional same-byte members of the already pinned Windows 3.0.20 ZIP now have independent acquisition: three companion XML documentation files, windowsync and English player strings. Existing dependency notices/source limitations remain applicable to XML companions; the two Emby resource references retain upstream repository GPL v2 declarations. This is fixed release acquisition, not proof of rebuilding every component from source. See [component record](WINDOWS_HOST_INPUT.md).
+
 Small template supplement: package matches official Electron e897adda except the retained old version suffix; Host config matches official Windows source and exact 3.0.20 release bytes. Preload remains an explicitly unresolved-origin seven-line compatibility template, locally preserved without a public distribution decision. Source hashes, differences and notices are in [the template contract](RUNTIME_TEMPLATES.md) and vendor/runtime-templates-manifest.json.
 
 Inherited npm acquisition update: all 29 selected files can be recovered from official Electron commit e897adda583b2339f077cb67113e71326a806de0 with the locked LF-to-CRLF conversion. The registry differences described below remain historical comparisons; no community code patch is needed against this official commit. Seven package declarations and unchanged notice files are individually pinned. See [component source and scope](INHERITED_NPM_INPUT.md).

@@ -204,6 +204,22 @@ test('maintained templates replace all three absent old template inputs',t=>{
     for(const name of Object.keys(templates.FILES))assert.equal(fs.existsSync(path.join(f.vendor,name)),false);
 });
 
+test('official resource whitelist replaces old XML, sync and English language inputs without changing bytes',t=>{
+    const f=fixture(t),host=require('../tools/windows-host-input.cjs');
+    const manifest=JSON.parse(fs.readFileSync(path.join(f.root,'vendor/runtime-manifest.json')));
+    const component=host.load(f.root),added=['ServiceStack.Text.xml','SimpleInjector.xml','System.Configuration.xml','electronapp/scripts/windowsync.js','electronapp/plugins/mpvplayer/strings/en-US.json'];
+    for(const name of added){const bytes=Buffer.from('synthetic official resource: '+name),entry={path:name,size:bytes.length,sha256:sha(bytes)};
+        manifest.files.push(entry);component.files.push(entry);write(f.root,host.INPUT_ROOT+'/'+name,bytes);
+    }
+    component.fileCount=component.files.length;component.bytes=component.files.reduce((n,e)=>n+e.size,0);component.treeSha256=require('../tools/web-snapshot-input.cjs').treeHash(component.files);
+    json(f.root,'vendor/runtime-manifest.json',manifest);json(f.root,host.MANIFEST_PATH,component);
+    git(f.root,['add','vendor/runtime-manifest.json',host.MANIFEST_PATH]);git(f.root,['commit','-q','-m','synthetic official resource whitelist']);
+    const commit=git(f.root,['rev-parse','HEAD']),runtime=path.join(f.root,'dist/resources-candidate');fs.mkdirSync(runtime);const token=dependencies.createOwner(f.root,runtime,commit);
+    assert.equal(require('../tools/validate-build-materials.cjs').validate(f.root).hostInput.fileCount,6);
+    assembly.assemble(f.root,commit,runtime,token);
+    for(const name of added){assert.equal(fs.existsSync(path.join(f.vendor,name)),false);assert.deepEqual(fs.readFileSync(path.join(runtime,name)),fs.readFileSync(path.join(f.root,host.INPUT_ROOT,name)));}
+});
+
 for (const mutation of ['changed-retained', 'extra', 'missing']) {
     test('preflight rejects ' + mutation + ' input before writing any payload', t => {
         const f = fixture(t);

@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-21 - Five exact official auxiliary resources
+
+Extend the existing official Windows ZIP whitelist from 14 to 19 unchanged members: three XML documentation files, windowsync and English player strings. These five old physical inputs are no longer required, reducing Carnival from 58 to 53; libmpv remains one patch input. Model/UI/dependency versions and unknown-origin material publication remain unchanged. See [fixed official input](WINDOWS_HOST_INPUT.md); static equivalence and final full regression are recorded separately.
+
 ## 2026-10-21 - Maintained small build templates
 
 Move package/preload/Host configuration to hash-locked maintained templates and preserve generated output bytes. Normal assembly, preload generation, config and runtime provenance no longer read the three old physical files. Remaining Carnival input is 58 assets plus one current libmpv patch. Preload origin remains explicitly unresolved and local-only; Model/UI/versions are unchanged. See [template contract](RUNTIME_TEMPLATES.md); final evidence is recorded separately.
