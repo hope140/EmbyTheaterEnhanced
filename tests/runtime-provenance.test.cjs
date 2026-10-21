@@ -12,6 +12,7 @@ const preloadPreparation = require('../tools/prepare-preload.cjs');
 const webPreparation = require('../tools/prepare-web-overlays.cjs');
 const sourceProvenance = require('../tools/source-provenance.cjs');
 const electronRuntimeInput = require('../tools/electron-runtime-input.cjs');
+const webSnapshot = require('../tools/web-snapshot-input.cjs');
 
 const repoRoot = path.resolve(__dirname, '..');
 const tool = path.join(repoRoot, 'tools', 'runtime-provenance.cjs');
@@ -39,29 +40,37 @@ function addManifestFile(files, root, relativePath, content) {
 function createFixture(root) {
     const files = [];
     const patchFiles = [];
+    const componentFiles = [];
+    const componentPatches = [];
     const vendorPreload = "const { ipcRenderer } = require('electron');\r\nwindow.ipc = ipcRenderer;\r\nconst fs = require('fs');\r\nwindow.fs = fs;\r\nconst os = require('os');\r\nwindow.dirName = os.tmpdir();\r\nwindow.appdata = process.env.APPDATA;\r\n";
     addManifestFile(files, root, 'electronapp/preload.js', vendorPreload);
     addManifestFile(files, root, 'x64/electron/electron.exe', 'electron-fixture\n');
     addManifestFile(files, root, 'x64/electron/version', '18.3.15\n');
     addManifestFile(files, root, 'electronapp/libmpv/x64/mpv-win32-x64.node', 'bridge-fixture\n');
     addManifestFile(files, root, 'electronapp/libmpv/x64/mpv-1.dll', 'base-libmpv-fixture\n');
-    addManifestFile(files, root, 'electronapp/www/modules/common/playback/playbackmanager.js', 'const playback = true;\n');
+    const playbackFixture = Buffer.from('const playback = true;\n');
+    writeFile(path.join(root,webSnapshot.WEB_ROOT,'modules/common/playback/playbackmanager.js'),playbackFixture);
+    componentFiles.push({path:'www/modules/common/playback/playbackmanager.js',size:playbackFixture.length,sha256:hash(playbackFixture)});
     addManifestFile(files, root, 'electronapp/package.json', '{"name":"fixture"}\n');
 
     for (const contract of webPreparation.WEB_OVERLAY_CONTRACT) {
         copyRepoFile(root, contract.basePath);
-        const vendorPath = contract.basePath.replace('vendor/carnival/', '');
+        const vendorPath = contract.basePath.replace('vendor/web-snapshot/www/', 'electronapp/www/');
+        const componentPath = contract.basePath.replace('vendor/web-snapshot/', '');
+        const componentBytes = fs.readFileSync(path.join(root,contract.basePath));
+        if (!componentFiles.some(entry=>entry.path===componentPath)) componentFiles.push({path:componentPath,size:componentBytes.length,sha256:hash(componentBytes)});
         if (!files.some(entry => entry.path === vendorPath)) {
             files.push({path: vendorPath, sha256: hash(fs.readFileSync(path.join(root, contract.basePath)))});
         }
         if (contract.inputPath) {
             copyRepoFile(root, contract.inputPath);
-            patchFiles.push({
-                path: contract.inputPath.replace('vendor/patch/', ''),
-                sha256: hash(fs.readFileSync(path.join(root, contract.inputPath)))
-            });
+            const bytes=fs.readFileSync(path.join(root,contract.inputPath));
+            componentPatches.push({path:contract.inputPath.replace('vendor/web-snapshot/',''),size:bytes.length,sha256:hash(bytes)});
         }
     }
+    writeFile(path.join(root,webSnapshot.MANIFEST_PATH),JSON.stringify({schemaVersion:1,inputRoot:webSnapshot.INPUT_ROOT,
+        fileCount:componentFiles.length,bytes:componentFiles.reduce((n,f)=>n+f.size,0),treeSha256:webSnapshot.treeHash(componentFiles),
+        files:componentFiles,userPatches:componentPatches}));
 
     const patchLibmpv = Buffer.from('patched-libmpv-fixture\n');
     writeFile(path.join(root, 'vendor', 'patch', 'payload', 'libmpv', 'mpv-1.dll'), patchLibmpv);
@@ -131,7 +140,8 @@ function createFixture(root) {
         'tools/copy-tracked-product-sources.cjs',
         'tools/electron-runtime-input.cjs',
         'tools/tracked-file-hash.cjs',
-        'tools/runtime-exclusions.cjs'
+        'tools/runtime-exclusions.cjs',
+        'tools/web-snapshot-input.cjs'
     ]) copyRepoFile(root, relativePath);
     copyRepoFile(root, 'src/electronapp/enhanced/startup.svg');
     writeFile(path.join(root, 'tools', 'patch-playbackmanager.cjs'), 'generator: playbackmanager\n');
@@ -143,7 +153,7 @@ function createFixture(root) {
     assert.equal(init.status, 0, init.stderr);
     childProcess.spawnSync('git', ['-C', root, 'config', 'user.name', 'ETE Test'], {encoding: 'utf8'});
     childProcess.spawnSync('git', ['-C', root, 'config', 'user.email', 'ete-test@example.invalid'], {encoding: 'utf8'});
-    const add = childProcess.spawnSync('git', ['-C', root, 'add', 'src/electronapp/some-normal-file.js', 'src/electronapp/enhanced/startup.svg', 'tools', 'package-lock.json', 'vendor/runtime-manifest.json', 'vendor/electron-runtime-manifest.json'], {encoding: 'utf8'});
+    const add = childProcess.spawnSync('git', ['-C', root, 'add', 'src/electronapp/some-normal-file.js', 'src/electronapp/enhanced/startup.svg', 'tools', 'package-lock.json', 'vendor/runtime-manifest.json', 'vendor/electron-runtime-manifest.json',webSnapshot.MANIFEST_PATH], {encoding: 'utf8'});
     assert.equal(add.status, 0, add.stderr);
     const commit = childProcess.spawnSync('git', ['-C', root, 'commit', '-m', 'fixture'], {encoding: 'utf8'});
     assert.equal(commit.status, 0, commit.stderr);

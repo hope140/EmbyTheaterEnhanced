@@ -8,8 +8,8 @@ const patch = require('../tools/patch-plugin-settings.cjs');
 
 const root = path.resolve(__dirname, '..');
 test('actual generated app and view-manager patches install alias before plugin template parsing', () => {
-    const app = fs.readFileSync(path.join(root, 'vendor/carnival/electronapp/www/app.js'), 'utf8');
-    const viewManager = fs.readFileSync(path.join(root, 'vendor/carnival/electronapp/www/modules/viewmanager/viewmanager.js'), 'utf8');
+    const app = fs.readFileSync(path.join(root, 'vendor/web-snapshot/www/app.js'), 'utf8');
+    const viewManager = fs.readFileSync(path.join(root, 'vendor/web-snapshot/www/modules/viewmanager/viewmanager.js'), 'utf8');
     const patchedApp = patch.patchApp(app);
     const patchedViewManager = patch.patchViewManager(viewManager);
     assert.match(patchedApp, /define\("emby-dialogclosebutton", \[\], getDynamicImport\("\.\/\.\.\/enhanced\/plugin-ui\/dialogclosebutton\.js"\)\)/);

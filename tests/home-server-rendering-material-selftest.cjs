@@ -8,7 +8,7 @@ const patcher = require('../tools/patch-server-home.cjs');
 const provider = require('../src/electronapp/enhanced/home/server-sections.js');
 
 function nativeRouteUrl() {
-    const root = path.join(__dirname, '../vendor/carnival/electronapp/www');
+    const root = path.join(__dirname, '../vendor/web-snapshot/www');
     const router = fs.readFileSync(path.join(root, 'modules/approuter.js'), 'utf8');
     const start = router.indexOf('function getRouteUrl(item, options) {');
     const end = router.indexOf('\n  function showAlert(', start);
@@ -52,7 +52,7 @@ test('home module loads the native title registration and router through canonic
     assert.equal(typeof exported.create, 'function');
 });
 test('pinned HomeTab consumes the native default-unwrapped alias and preserves original lifecycle', async () => {
-    const input = fs.readFileSync(path.join(__dirname, '../vendor/carnival/electronapp/www/home/hometab.js'), 'utf8');
+    const input = fs.readFileSync(path.join(__dirname, '../vendor/web-snapshot/www/home/hometab.js'), 'utf8');
     const output = patcher.patchHomeTab(input);
     assert.throws(() => patcher.patchHomeTab(input.replace('this.sectionsContainer=', 'this.changedContainer=')), /anchor mismatch/);
     assert.throws(() => patcher.patchHomeTab(output), /anchor mismatch/);
@@ -60,7 +60,7 @@ test('pinned HomeTab consumes the native default-unwrapped alias and preserves o
     function Base() {} Base.prototype.onResume = () => events.push('base-resume'); Base.prototype.onPause = () => events.push('base-pause'); Base.prototype.destroy = () => events.push('base-destroy');
     const control = {resume: () => events.push('resume'), refresh: () => events.push('refresh'), pause: () => events.push('pause'),
         dispose: () => events.push('dispose'), clear: () => events.push('clear')};
-    const app = fs.readFileSync(path.join(__dirname, '../vendor/carnival/electronapp/www/app.js'), 'utf8');
+    const app = fs.readFileSync(path.join(__dirname, '../vendor/web-snapshot/www/app.js'), 'utf8');
     const unwrapStart = app.indexOf('function returnFirstDependencyDefault(');
     const unwrapEnd = app.indexOf('function enableNativeGamepadKeyMapping(', unwrapStart);
     const importStart = app.indexOf('function getDynamicImport(path)');
@@ -81,7 +81,7 @@ test('pinned HomeTab consumes the native default-unwrapped alias and preserves o
     assert.equal(creates, 1); assert.deepEqual(events, ['base-resume', 'resume', 'refresh', 'base-pause', 'pause', 'dispose', 'base-destroy', 'clear']);
 });
 test('app transform preserves plugin registrations and adds exactly one home module with valid syntax', () => {
-    const app = fs.readFileSync(path.join(__dirname, '../vendor/carnival/electronapp/www/app.js'), 'utf8');
+    const app = fs.readFileSync(path.join(__dirname, '../vendor/web-snapshot/www/app.js'), 'utf8');
     const external = require('../tools/patch-external-player-registration.cjs');
     const plugin = require('../tools/patch-plugin-settings.cjs');
     const input = plugin.patchApp(external.patchText(app).text), output = patcher.patchApp(input);

@@ -10,12 +10,12 @@ const itemControls = require('../tools/patch-item-controls.cjs');
 const contentWidth = require('../tools/patch-content-width.cjs');
 
 const repoRoot = path.resolve(__dirname, '..');
-const sourcePath = 'vendor/carnival/electronapp/www/item/item.html';
+const sourcePath = 'vendor/web-snapshot/www/item/item.html';
 const source = fs.readFileSync(path.join(repoRoot, sourcePath), 'utf8');
 const priorOverlay = externalPlayerResidue.patchItemHtmlText(source);
 
 test('transforms the frozen vendor CSS while retaining the existing track-selection overlay', () => {
-    const sourcePath = path.join(repoRoot, 'vendor/carnival/electronapp/www/modules/layout.css');
+    const sourcePath = path.join(repoRoot, 'vendor/web-snapshot/www/modules/layout.css');
     const source = fs.readFileSync(sourcePath, 'utf8');
     const withTrackSelection = itemControls.patchLayoutCssText(source);
     const output = contentWidth.patchContentWidthText(withTrackSelection);
@@ -56,8 +56,8 @@ test('fails closed on changed or duplicate selector anchors without modifying in
 });
 
 test('leaves Emby selector implementation and ActionSheet implementation unchanged', () => {
-    const selectorsPath = 'vendor/carnival/electronapp/www/modules/emby-elements/emby-select/emby-select.js';
-    const actionSheetPath = 'vendor/carnival/electronapp/www/modules/actionsheet/actionsheet.js';
+    const selectorsPath = 'vendor/web-snapshot/www/modules/emby-elements/emby-select/emby-select.js';
+    const actionSheetPath = 'vendor/web-snapshot/www/modules/actionsheet/actionsheet.js';
     const selectorsBefore = fs.readFileSync(path.join(repoRoot, selectorsPath));
     const actionSheetBefore = fs.readFileSync(path.join(repoRoot, actionSheetPath));
     const output = itemControls.patchItemHtmlText(priorOverlay);
@@ -67,7 +67,7 @@ test('leaves Emby selector implementation and ActionSheet implementation unchang
 });
 
 test('appends a detail-only wide-screen layout override while preserving the canonical CSS prefix', () => {
-    const layoutPath = 'vendor/carnival/electronapp/www/modules/layout.css';
+    const layoutPath = 'vendor/web-snapshot/www/modules/layout.css';
     const layout = fs.readFileSync(path.join(repoRoot, layoutPath), 'utf8');
     const output = itemControls.patchLayoutCssText(layout);
     const addition = output.slice(layout.length);
@@ -81,7 +81,7 @@ test('appends a detail-only wide-screen layout override while preserving the can
 });
 
 test('frozen Emby select routes custom pointer and Enter input through ActionSheet and keeps change events', async () => {
-    const modulePath = path.join(repoRoot, 'vendor/carnival/electronapp/www/modules/emby-elements/emby-select/emby-select.js');
+    const modulePath = path.join(repoRoot, 'vendor/web-snapshot/www/modules/emby-elements/emby-select/emby-select.js');
     const moduleSource = fs.readFileSync(modulePath, 'utf8');
     const calls = [];
     let EmbySelect;

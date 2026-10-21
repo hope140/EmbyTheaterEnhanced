@@ -8,11 +8,11 @@ const test = require('node:test');
 const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
-const defaultSourcePath = path.join(root, 'vendor/patch/payload/client/apiclient.js');
+const defaultSourcePath = path.join(root, 'vendor/web-snapshot/user-patches/apiclient.js');
 const sourcePath = process.env.ETE_APICLIENT_SOURCE || defaultSourcePath;
 const source = fs.readFileSync(sourcePath, 'utf8');
-const manifest = JSON.parse(fs.readFileSync(path.join(root, 'vendor/runtime-manifest.json'), 'utf8'));
-const pinned = manifest.patchFiles.find(entry => entry.path === 'payload/client/apiclient.js');
+const manifest = JSON.parse(fs.readFileSync(path.join(root, 'vendor/web-snapshot-manifest.json'), 'utf8'));
+const pinned = manifest.userPatches.find(entry => entry.path === 'user-patches/apiclient.js');
 assert.ok(pinned, 'manifest-pinned ApiClient material entry is required');
 const sourceSha256 = crypto.createHash('sha256').update(source).digest('hex').toUpperCase();
 assert.equal(sourceSha256, pinned.sha256.toUpperCase(), 'ApiClient source must match the runtime manifest SHA-256');

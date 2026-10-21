@@ -9,7 +9,7 @@ const crypto = require('node:crypto');
 const overlays = require('../tools/prepare-web-overlays.cjs');
 const {namedFunction, pluginRoutes, appSettingsRoutes} = require('./fixtures/settings-menu-routes.cjs');
 const root = path.resolve(__dirname, '..');
-const source = fs.readFileSync(path.join(root, 'vendor/carnival/electronapp/www/modules/navdrawer/navdrawercontent.js'), 'utf8');
+const source = fs.readFileSync(path.join(root, 'vendor/web-snapshot/www/modules/navdrawer/navdrawercontent.js'), 'utf8');
 assert.equal(crypto.createHash('sha256').update(source).digest('hex'), 'c235a30e0523abfddcd8050da004e20ae2ea0f7cb42a44189f12f4c827dfae18');
 
 test('actual pinned app settings owner orders only the Enhanced section and retains user routes', async t => {
@@ -28,7 +28,7 @@ test('actual pinned app settings owner orders only the Enhanced section and reta
         const keyboard = builtins.find(route => route.path === '/settings/keyboard.html');
         assert.equal(keyboard.order, 2);
         const routes = builtins.concat(pluginRoutes(root).map(route => ({...route, path: '/plugins/' + route.pluginId + '/' + route.path})));
-        const translations = JSON.parse(fs.readFileSync(path.join(root, 'vendor/carnival/electronapp/www/modules/common/strings/zh-CN.json')));
+        const translations = JSON.parse(fs.readFileSync(path.join(root, 'vendor/web-snapshot/www/modules/common/strings/zh-CN.json')));
         const context = {
             Promise,
             _globalize: {default: {translate: key => translations[key] || key}},

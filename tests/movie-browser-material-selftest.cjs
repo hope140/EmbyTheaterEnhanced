@@ -6,7 +6,7 @@ const vm = require('node:vm');
 const test = require('node:test');
 const patch = require('../tools/patch-movie-browser.cjs');
 const root = path.resolve(__dirname, '..');
-const read = name => fs.readFileSync(path.join(root, 'vendor/carnival/electronapp/www', name), 'utf8');
+const read = name => fs.readFileSync(path.join(root, 'vendor/web-snapshot/www', name), 'utf8');
 function amd(text, dependencies) {
     let exported;
     const define = (names, factory) => {
