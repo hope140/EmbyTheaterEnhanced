@@ -47,6 +47,10 @@ v0.3.7 已作为 Pre-release 发布，产品Tag/sourceCommit 为 `v0.3.7` / `bf6
 - Node、UCRT64、Inno/InnoUnp 与解包器版本和目录身份分别由 `package-lock.json`、`tools/build-toolchains.lock.json` 及 `vendor/*-manifest.json` 固定。构建不自动安装或升级系统工具，也不接受同版本但哈希不同的编译器。
 - 根 `LICENSE`、`THIRD_PARTY_NOTICES.md`、`docs/LICENSING.md` 与 `docs/SOURCE_MATERIALS.md` 按提交字节纳入输入及 provenance。该通知边界不证明其它材料具有授权或完整对应源码。
 
+## 文件级基线组装
+
+`tools/assemble-runtime-base.cjs` 依据原 vendor manifest、产品 Git tree、Web overlay 合同及 npm lock 逐文件组装基础 payload，跳过将被后续步骤替换或排除的 Carnival 副本。完整 prepared 输入与来源校验仍保留；这不表示已解除 Carnival/Web/Host 依赖。清单查询、失败边界与验证方法见[文件级组装](RUNTIME_BASE_ASSEMBLY.md)。
+
 ## 构建命令
 
 需预备三个固定输入归档（Carnival、综合补丁、Electron 44.4.2）和已验证的项目内工具链。`prepare.ps1` 使用 `-ArchiveRoot` 读取归档目录并核验 SHA256；缺少输入时流程不能完成。

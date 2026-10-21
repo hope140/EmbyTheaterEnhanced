@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-21 — 文件级基线组装集成候选
+
+基于远端已核验 `e286aee124f4cf7bd65d11d3febe7c01b4ac75cf` 独立集成构建整理。原菜单、首页及 Windows 媒体源码保持；按新 Git tree、25项 Web overlay、npm lock 和原 manifest 推导797项复制及212项替换/排除，不沿用旧基线计数。普通构建继续保持原Windows FFI试验边界，未改Host或播放行为。全部1009份prepared输入与历史provenance仍需保留；范围见[文件级组装](RUNTIME_BASE_ASSEMBLY.md)。
+
+候选公开离线回归1193/1193、显式材料合同211/211通过，失败/跳过/取消均0；新旧路线937个中间产物逐路径/大小/SHA一致。固定Electron、GCC完整树及Inno输入身份、语法和有限凭据模式检查通过。正式构建/打包验证另以绑定sourceCommit的本地回执记录；安装、应用启动、真实媒体/设备及服务器验收不在本阶段范围。此次本地提交只用于隔离验证，不自动推送、合入原分支或改变main。
+
 ## 2026-10-21 — 菜单居中、首页启动恢复与 Windows 媒体试验
 
 空设备 ActionSheet 通过固定源 CSS overlay 去除空列表末尾间距，有条目和虚拟列表保持原布局。首页在同一 refresh epoch 内等待既有 client/server/user 就绪，最长 3 秒；失败或取消后释放对应 pending，普通恢复可以重试。整页 fallback、分区顺序与原播放归属保持。

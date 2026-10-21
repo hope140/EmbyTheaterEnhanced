@@ -31,11 +31,10 @@ if ($LASTEXITCODE -ne 0) { throw 'Prepared preload generation failed.' }
 New-Item -ItemType Directory -Path $destination -Force | Out-Null
 $dependencyOwner = & node (Join-Path $root 'tools/copy-runtime-dependencies.cjs') create-owner $root $destination $sourceCommit
 if ($LASTEXITCODE -ne 0) { throw 'Fresh build output ownership failed.' }
-Get-ChildItem -LiteralPath (Join-Path $root 'vendor/carnival') | Copy-Item -Destination $destination -Recurse
-# The immutable Carnival copy contains the retired bridge input for historical
-# provenance only. It must never enter an Enhanced runtime.
-& node (Join-Path $root 'tools/runtime-exclusions.cjs') remove $destination
-if ($LASTEXITCODE -ne 0) { throw 'Retired runtime exclusion failed.' }
+& node (Join-Path $root 'tools/assemble-runtime-base.cjs') assemble $root $sourceCommit $destination $dependencyOwner
+if ($LASTEXITCODE -ne 0) { throw 'Explicit runtime base assembly failed.' }
+& node (Join-Path $root 'tools/runtime-exclusions.cjs') verify $destination
+if ($LASTEXITCODE -ne 0) { throw 'Retired runtime exclusion verification failed.' }
 # Carnival Electron remains a historical baseline input. Production uses the
 # exact full tree extracted from the pinned official Electron archive.
 $electronManifest = Get-Content -LiteralPath (Join-Path $root 'vendor/electron-runtime-manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -44,7 +43,7 @@ $electronInputTool = Join-Path $root 'tools/electron-runtime-input.cjs'
 if ($LASTEXITCODE -ne 0) { throw 'Prepared Electron runtime validation failed.' }
 $electronTarget = Join-Path $destination ([string]$electronManifest.runtime.runtimePath)
 $electronSource = Join-Path $root ([string]$electronManifest.runtime.preparedPath)
-if (Test-Path -LiteralPath $electronTarget) { Remove-Item -LiteralPath $electronTarget -Recurse -Force }
+if (Test-Path -LiteralPath $electronTarget) { throw 'Explicit base assembly unexpectedly copied the retired Electron tree.' }
 Copy-Item -LiteralPath $electronSource -Destination $electronTarget -Recurse
 & node $electronInputTool validate-runtime $root $destination
 if ($LASTEXITCODE -ne 0) { throw 'Production Electron runtime replacement validation failed.' }
@@ -57,11 +56,8 @@ Copy-Item -LiteralPath (Join-Path $root 'src/electronapp/preload.js') -Destinati
 & node (Join-Path $root 'tools/prepare-web-overlays.cjs') $root $destination
 if ($LASTEXITCODE -ne 0) { throw 'Web overlay preparation failed.' }
 # The legacy External Player frontend is intentionally absent from Enhanced runtime.
-# Keep vendor/carnival read-only; exclude the copied path from this fresh output.
+# The explicit base assembler never copies this retired subtree.
 $externalPlayerPath = Join-Path $destination 'electronapp/www/modules/externalplayer'
-if (Test-Path -LiteralPath $externalPlayerPath) {
-    Remove-Item -LiteralPath $externalPlayerPath -Recurse -Force
-}
 if (Test-Path -LiteralPath $externalPlayerPath) { throw 'External Player frontend exclusion failed.' }
 # npm verifies locked tarball integrity into a unique project, never reusing a
 # possibly edited node_modules directory from this or an earlier checkout.
