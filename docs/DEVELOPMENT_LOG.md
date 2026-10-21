@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-21 — 0.3.14 版本与发行流程准备
+
+独立发布修复分支固定 bb0c3a9 功能基线，只统一根 package/lock 为 0.3.14，按既有模板准备菜单与首页恢复的用户说明、合同及核验初稿。版本由原构建链传递到 runtime package、manifest 和安装器，不手改生成产物，不升级依赖。
+
+后续在准确提交上重新测试与构建，候选结果绑定仓库外回执；正式产品仍须经批准合并后从 main source 重建，Tag CI 完成才公开五附件。旧临时 baseline Tag、Release 和附件保持，文案处理另行审核。Knowledge Review：上传校验不能替代版本一致、source 中的 notes、发布前 Tag CI 和发行文档流程。
+
 ## 2026-10-21 — 公共测试的 Linux 开发支持
 
 三份测试修正路径夹具，两个测试使用跨平台 PowerShell helper；保留产品路径拒绝规则、原断言和 Windows 的真实文件系统/原 shell。五项诊断与编码集成增加明确的非 Windows 跳过原因，既有四项跳过保持；公共 runner 和 Windows workflow 未变。新增注册检查实际加载五份测试，确认 `win32` 不被跳过，Linux 的跳过均有原因。
