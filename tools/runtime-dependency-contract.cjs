@@ -518,6 +518,8 @@ function main(args) {
 }
 
 module.exports = {
+    assertRepoLayout,
+    loadOwner,
     CONTRACT_NAME,
     OWNER_FILE,
     PROVENANCE_FILE,

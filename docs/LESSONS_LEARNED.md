@@ -1,5 +1,7 @@
 # 维护注意事项
 
+- 构建跳过旧payload副本不等于可以省略其prepared输入，历史provenance仍可能回读旧Electron/Pepper。组装计划应从当前Git tree与overlay合同重算，按共同生产变换后的逐文件等价对照验证，再单独处理材料独立化；见[RUNTIME_BASE_ASSEMBLY.md](RUNTIME_BASE_ASSEMBLY.md)。
+
 - 本地 runtime 完整性入口须区分固定 payload 与精确允许的运行日志。Electron 可在二进制目录创建 debug.log，不能因此永久拒绝第二次启动；既有 payload 仍逐项校验，其他未知文件继续拒绝。System.Diagnostics.MainWindowHandle/CloseMainWindow 不足以证明实际 BrowserWindow 关闭，应结合应用窗口生命周期与进程退出核对。
 
 - Electron preload 可用的 require 不应留到后续回调再调用；提前捕获模块，再把原应用实例传入幂等 binder。appready/unload 时序须在真实 runtime 验证。暂停 seek 节流要有末次 flush，否则没有下一次 timeupdate 时系统进度会停在旧值。
