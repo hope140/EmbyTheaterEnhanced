@@ -191,3 +191,12 @@ test('before-quit contains a rejected startup drain and keeps the diagnostic pay
     assert.deepEqual(Object.keys(failures[0].details), ['step']);
     assert.equal(JSON.stringify(f.logs).includes('PRIVATE shutdown payload'), false);
 });
+
+test('before-quit also drains the optional native Windows media owner', async () => {
+    const f=fixture(), media=deferred();
+    f.context.disposeWindowsNativeMedia=()=>media.promise;
+    f.emitBeforeQuit();
+    for(const stage of stages)f.gates[stage].resolve();
+    await turn();assert.equal(f.quitCount,0);
+    media.resolve();await turn();assert.equal(f.quitCount,1);
+});

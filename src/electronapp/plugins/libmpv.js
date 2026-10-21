@@ -787,6 +787,9 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         };
 
         self.play = function (options) {
+            try {
+                if (typeof window.__eteBindWindowsMedia === 'function') window.__eteBindWindowsMedia(playbackManager, events, window);
+            } catch (_) { /* Optional Windows presentation cannot fail playback. */ }
             var request = beginPlayRequest(options);
             if (!request) return Promise.reject(supersededError());
             nextTransition.playbackStarted(request.playbackRequestId);

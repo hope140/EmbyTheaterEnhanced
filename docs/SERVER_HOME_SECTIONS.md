@@ -17,6 +17,8 @@
 
 ## HomeTab 接线
 
+冷启动 currentApiClient/server/user 暂未就绪时，当前 controller 在原 refresh epoch 内做最多 3 秒可取消等待，身份可用后再开始首页 GET。持续不可用显示通用错误；普通恢复不会永久复用已失败或 cancelled 的 Promise。清理、暂停、销毁退休等待，成功 active 恢复继续去重。该修改针对身份 readiness，不表示所有首屏慢请求已优化或所有冷启动环境均已覆盖。
+
 ### 媒体库分区标题
 
 桌面布局的`latestmedia`分区仅在`ParentItem`提供可校验的电影或电视剧媒体库身份时生成标题链接。provider只投影`Id`、`CollectionType`和当前owner绑定的`ServerId`，不制造缺省Type/IsFolder；若服务端提供这两个字段，则必须与受支持文件夹语义一致。ID限定为可安全放入原路由query的字母、数字、下划线与连字符，跨服务器、坏身份、url/Href/QueryOptions/脚本/动作覆盖会失去导航资格。其他DTO字段（含Path）不跨适配边界。

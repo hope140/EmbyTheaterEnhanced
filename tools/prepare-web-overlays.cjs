@@ -14,6 +14,7 @@ const serverHome = require('./patch-server-home.cjs');
 const movieBrowser = require('./patch-movie-browser.cjs');
 const searchUi = require('./patch-search-ui.cjs');
 const selectCancel = require('./patch-select-cancel.cjs');
+const actionSheetLayout = require('./patch-actionsheet-layout.cjs');
 const startup = require('./patch-startup.cjs');
 const videoOsdLifecycle = require('./patch-videoosd-lifecycle.cjs');
 const apiClientLifecycle = require('./patch-apiclient-lifecycle.cjs');
@@ -31,11 +32,23 @@ const HOME_GENERATOR_PATH = 'tools/patch-server-home.cjs';
 const MOVIE_GENERATOR_PATH = 'tools/patch-movie-browser.cjs';
 const SEARCH_GENERATOR_PATH = 'tools/patch-search-ui.cjs';
 const SELECT_CANCEL_GENERATOR_PATH = 'tools/patch-select-cancel.cjs';
+const ACTIONSHEET_LAYOUT_GENERATOR_PATH = 'tools/patch-actionsheet-layout.cjs';
 const STARTUP_GENERATOR_PATH = 'tools/patch-startup.cjs';
 const OSD_LIFECYCLE_GENERATOR_PATH = 'tools/patch-videoosd-lifecycle.cjs';
 const APICLIENT_LIFECYCLE_GENERATOR_PATH = 'tools/patch-apiclient-lifecycle.cjs';
 
 const WEB_OVERLAY_CONTRACT = Object.freeze([
+    Object.freeze({
+        id: 'actionsheet-layout',
+        mode: 'tracked-canonical-transform',
+        basePath: 'vendor/carnival/electronapp/www/modules/actionsheet/actionsheet.css',
+        inputPath: null,
+        runtimePath: 'electronapp/www/modules/actionsheet/actionsheet.css',
+        expectedBaseSha256: '5A4D6A7C89F9CF86FF3D5FB4DBB4ED4B53982DF0883CAA19C2E29F164AC7E39D',
+        expectedInputSha256: null,
+        expectedOutputSha256: '77E5268334ABA94F29C7C34F792BE92A94E7EC321451ABB1F9E80C1015E888E0',
+        generatorPaths: Object.freeze([GENERATOR_PATH, ACTIONSHEET_LAYOUT_GENERATOR_PATH])
+    }),
     Object.freeze({
         id: 'videoosd-lifecycle',
         mode: 'tracked-canonical-transform',
@@ -346,6 +359,7 @@ function outputFor(root, contract) {
     }
     if (contract.id === 'videoosd-lifecycle') return {base, input: Buffer.from(videoOsdLifecycle.patchVideoOsd(base.toString('utf8')), 'utf8')};
     if (contract.id === 'startup-index') return {base, input: Buffer.from(startup.patchStartup(base.toString('utf8')), 'utf8')};
+    if (contract.id === 'actionsheet-layout') return {base, input: Buffer.from(actionSheetLayout.patchActionSheetCss(base.toString('utf8')), 'utf8')};
     if (contract.searchTransform) return {base, input: Buffer.from(searchUi[contract.searchTransform](base.toString('utf8')), 'utf8')};
     if (contract.menuTransform) return {base, input: Buffer.from(selectCancel[contract.menuTransform](base.toString('utf8')), 'utf8')};
     if (contract.id === 'custom-css-js' && contract.mode === 'tracked-canonical-transform') {

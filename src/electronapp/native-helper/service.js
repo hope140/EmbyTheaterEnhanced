@@ -939,7 +939,8 @@ function createService(options) {
     };
   }
 
-  return {call, destroy, mode, notify, prewarm, status, kernelStatus: function () { return status().kernel; }};
+  return {call, destroy, mode, notify, prewarm, status, kernelStatus: function () { return status().kernel; },
+    getVideoWindow: function () { return !destroyed && surfaceWindow && !surfaceWindow.isDestroyed() ? surfaceWindow : null; }};
 }
 
 function register(options) {
