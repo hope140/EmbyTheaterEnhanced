@@ -1,7 +1,7 @@
 # 后续范围与启动条件
 
 
-[v0.3.13 退出清理维护测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.13)已作为 Pre-release 发布，修复 Helper 实际退出确认及应用关闭时逐项处理清理异常并等待结算。整体退出期限和强退策略未变。正式版与 Latest 仍为 v0.3.1，来源及验收见[发行核验](V0313_RELEASE_VERIFICATION.md)。
+[v0.3.14 菜单与首页恢复测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.14) 已作为 Pre-release 发布，修正空设备菜单标题居中与首页加载恢复；整体退出期限与强退策略保持原状。正式版与 Latest 仍为 v0.3.1，来源、五附件和验收边界见[发行核验](V0314_RELEASE_VERIFICATION.md)。后续需求仍按明确范围启动。
 
 [v0.3.12 下拉框对齐修正测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.12)作为历史 Pre-release 保留。其 STRM 下拉箭头与标签修复及验收记录见[V0312 发行核验](V0312_RELEASE_VERIFICATION.md)。
 
