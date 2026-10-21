@@ -1,5 +1,7 @@
 # 项目总排期
 
+[v0.3.15 播放后退出修复测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.15) 已作为 Pre-release 发布，仅修复任务栏媒体控制在窗口销毁后的清理与幂等性。最终来源和五附件见[发行核验](V0315_RELEASE_VERIFICATION.md)；正式版/Latest仍为v0.3.1。整体退出期限、强退策略与后续条件保持原状。
+
 
 [v0.3.14 菜单与首页恢复测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.14) 已作为 Pre-release 发布，修正空设备菜单标题居中与首页加载恢复；整体退出期限与强退策略保持原状。正式版与 Latest 仍为 v0.3.1，来源、五附件和验收边界见[发行核验](V0314_RELEASE_VERIFICATION.md)。后续需求仍按明确范围启动。
 
@@ -10,7 +12,7 @@
 
 [v0.3.10 稳定性维护测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.10)已发布，包含诊断动态字段脱敏、服务器发现/WOL 错误路径和 Native 线程初始化维护；准确来源与验收范围见[发行核验](V0310_RELEASE_VERIFICATION.md)。正式版与 Latest 仍为 v0.3.1。
 
-既有夜间维护及 v0.3.14 发行已经完成。后续候选仍按[范围与启动条件](NEXT_RELEASE_SCOPE.md)选择具体需求；尚无下一版本内容或日期承诺。整体退出期限与强退策略未纳入本版，签名、缓存、切轨延迟、圆角及缺硬件条件维持原决定。
+既有夜间维护及 v0.3.15 发行已经完成。后续候选仍按[范围与启动条件](NEXT_RELEASE_SCOPE.md)选择具体需求；尚无下一版本内容或日期承诺。整体退出期限与强退策略未纳入本版，签名、缓存、切轨延迟、圆角及缺硬件条件维持原决定。
 
 以下日期章节保留当时的排期与事实，其中“下一项”“尚未发布”等只描述记录时状态。
 
