@@ -9,6 +9,7 @@ const nativeHelperProvenance = require('./native-helper-provenance.cjs');
 const runtimeExclusions = require('./runtime-exclusions.cjs');
 const electronRuntimeInput = require('./electron-runtime-input.cjs');
 const windowsHostInput = require('./windows-host-input.cjs');
+const inheritedNpmInput = require('./inherited-npm-input.cjs');
 
 const MANIFEST_NAME = 'source-provenance.json';
 const HISTORICAL_ELECTRON_PATH = 'x64/electron/electron.exe';
@@ -210,6 +211,9 @@ function buildManifest(rootArg, runtimeArg, sourceCommit) {
     const runtimeWebRoot = path.join(runtime, 'electronapp', 'www');
     const overlayReport = webOverlays.inspect(root, runtime);
     const windowsHost = windowsHostInput.validateRuntime(root,runtime);
+    const inheritedNpm = inheritedNpmInput.validateRuntime(root,runtime);
+    inheritedNpm.preparation = {generatorPath:'tools/inherited-npm-input.cjs',
+        generatorSha256:trackedFileHash.hashTrackedTextFile(root,'tools/inherited-npm-input.cjs')};
     windowsHost.preparation = {generatorPath:'tools/prepare-windows-host.ps1',
         generatorSha256:trackedFileHash.hashTrackedTextFile(root,'tools/prepare-windows-host.ps1')};
     const retiredRuntimeInputs = runtimeExclusions.RETIRED_RUNTIME_PATHS.map(runtimePath =>
@@ -234,7 +238,7 @@ function buildManifest(rootArg, runtimeArg, sourceCommit) {
                 sha256: String(entry.sha256 || '').toUpperCase()
             }))
         },
-        runtimeIdentities: {electron, libmpv,windowsHost},
+        runtimeIdentities: {electron, libmpv,windowsHost,inheritedNpm},
         historicalInputs: {carnivalElectron: historicalElectron},
         runtimeExclusions: {
             generatorPath: 'tools/runtime-exclusions.cjs',

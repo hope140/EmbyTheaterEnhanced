@@ -1,5 +1,7 @@
 # 构建与打包
 
+Inherited npm follow-up: prepare the fixed 29-file component from the official pinned Git commit; assembly and dependency provenance do not use old npm bodies. Physical old Carnival count is 61. See [preparation and validation](INHERITED_NPM_INPUT.md).
+
 Current material gate: normal assembly does not require retired Electron, Pepper, old base libmpv, replaced source/npm inputs or unused patch bodies. It still validates the actual 90 Carnival and one libmpv inputs plus independent components. See [current input selection](LEGACY_INPUT_SELECTION.md).
 
 ## 当前发行

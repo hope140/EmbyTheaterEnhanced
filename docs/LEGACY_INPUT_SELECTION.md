@@ -1,5 +1,7 @@
 # Current legacy input selection
 
+Subsequent component update: the 29 inherited npm files below now have independent official Git acquisition and strict component validation. Normal old Carnival requirements are 61 files, plus one current libmpv patch. Earlier 90-file counts describe the predecessor stage. See [inherited npm component](INHERITED_NPM_INPUT.md).
+
 Normal assembly validates only files whose bytes are copied or used as generation templates. The historical full manifest remains committed evidence, not a requirement to keep retired binaries. This is one incremental removal of old-package dependencies; it is not a complete source rebuild.
 
 ## Physical input contract

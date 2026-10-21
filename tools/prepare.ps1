@@ -1,4 +1,4 @@
-param([string]$ArchiveRoot = '')
+param([string]$ArchiveRoot = '', [string]$OfficialElectronSourceRoot = '')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $manifest = Get-Content -LiteralPath (Join-Path $root 'vendor/runtime-manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -32,6 +32,13 @@ if (-not (Test-Path -LiteralPath (Join-Path $root 'vendor/windows-host/3.0.20'))
 }
 & node (Join-Path $PSScriptRoot 'windows-host-input.cjs') validate $root
 if ($LASTEXITCODE -ne 0) { throw 'Windows Host component validation failed.' }
+if (-not (Test-Path -LiteralPath (Join-Path $root 'vendor/inherited-npm/emby-electron-3.0.20'))) {
+    if (-not $OfficialElectronSourceRoot) { throw 'Provide -OfficialElectronSourceRoot with the pinned official Electron Git commit; inherited npm is never copied from Carnival.' }
+    & node (Join-Path $PSScriptRoot 'inherited-npm-input.cjs') prepare $root $OfficialElectronSourceRoot
+    if ($LASTEXITCODE -ne 0) { throw 'Official inherited npm component preparation failed.' }
+}
+& node (Join-Path $PSScriptRoot 'inherited-npm-input.cjs') validate $root
+if ($LASTEXITCODE -ne 0) { throw 'Inherited npm component validation failed.' }
 & node (Join-Path $PSScriptRoot 'prepare-preload.cjs') $root
 if ($LASTEXITCODE -ne 0) { throw 'Prepared preload generation failed.' }
 & (Join-Path $PSScriptRoot 'prepare-electron-runtime.ps1') -ArchiveRoot $archiveBase

@@ -5,6 +5,7 @@ const cp = require('node:child_process');
 const assembly = require('./assemble-runtime-base.cjs');
 const web = require('./web-snapshot-input.cjs');
 const host = require('./windows-host-input.cjs');
+const npm = require('./inherited-npm-input.cjs');
 const RETIRED_WEB_PATCH_PATHS = Object.freeze(['payload/client/apiclient.js','payload/client/toast.css']);
 const REQUIRED_PATCH_PATH = 'payload/libmpv/mpv-1.dll';
 function selectPatchInputs(manifest) {
@@ -26,6 +27,7 @@ function validate(rootArg,sourceCommit) {
     if (!Array.isArray(manifest.files) || !Array.isArray(manifest.patchFiles)) throw new Error('Invalid legacy material manifest.');
     const webInput = web.validate(root);
     const hostInput = host.validate(root);
+    const inheritedNpm = npm.validate(root);
     const commit=sourceCommit||cp.execFileSync('git',['-C',root,'rev-parse','HEAD'],{encoding:'utf8'}).trim();
     const plan=assembly.plan(root,commit),patches=selectPatchInputs(manifest);
     assembly.verifyInputs(path.join(root,'vendor/carnival'), plan.entries, plan.ignoredInputPaths);
@@ -34,7 +36,7 @@ function validate(rootArg,sourceCommit) {
     const patchRoot = path.join(root,'vendor/patch');
     const sized = patches.required.map(item => ({...item,size:fs.statSync(path.join(patchRoot,item.path)).size}));
     assembly.verifyInputs(patchRoot,sized,patches.ignored);
-    return {status:'passed',webInput,hostInput,remainingCarnivalFiles:plan.entries.length,remainingPatchFiles:patches.required.length,
+    return {status:'passed',webInput,hostInput,inheritedNpm,remainingCarnivalFiles:plan.entries.length,remainingPatchFiles:patches.required.length,
         historicalCarnivalFiles:plan.historicalEntries.length,historicalPatchFiles:patches.historical.length};
 }
 if (require.main === module) {

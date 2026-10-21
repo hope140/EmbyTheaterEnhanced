@@ -14,6 +14,7 @@ const sourceProvenance = require('../tools/source-provenance.cjs');
 const electronRuntimeInput = require('../tools/electron-runtime-input.cjs');
 const webSnapshot = require('../tools/web-snapshot-input.cjs');
 const windowsHost = require('../tools/windows-host-input.cjs');
+const inheritedNpm = require('../tools/inherited-npm-input.cjs');
 
 const repoRoot = path.resolve(__dirname, '..');
 const tool = path.join(repoRoot, 'tools', 'runtime-provenance.cjs');
@@ -79,6 +80,7 @@ function createFixture(root) {
         fileCount:1,bytes:hostBytes.length,treeSha256:webSnapshot.treeHash(hostFiles),files:hostFiles,
         archive:{size:1,sha256:'0'.repeat(64)}}));
 
+    require('./helpers/inherited-npm-fixture.cjs').create(root,[{path:'electronapp/node_modules/is-linux/index.js',bytes:Buffer.from('synthetic npm fixture')}]);
     const patchLibmpv = Buffer.from('patched-libmpv-fixture\n');
     writeFile(path.join(root, 'vendor', 'patch', 'payload', 'libmpv', 'mpv-1.dll'), patchLibmpv);
     patchFiles.push({path: 'payload/libmpv/mpv-1.dll', sha256: hash(patchLibmpv)});
@@ -149,7 +151,7 @@ function createFixture(root) {
         'tools/tracked-file-hash.cjs',
         'tools/runtime-exclusions.cjs',
         'tools/web-snapshot-input.cjs',
-        'tools/windows-host-input.cjs','tools/prepare-windows-host.ps1'
+        'tools/windows-host-input.cjs','tools/prepare-windows-host.ps1','tools/inherited-npm-input.cjs'
     ]) copyRepoFile(root, relativePath);
     copyRepoFile(root, 'src/electronapp/enhanced/startup.svg');
     writeFile(path.join(root, 'tools', 'patch-playbackmanager.cjs'), 'generator: playbackmanager\n');
@@ -161,7 +163,7 @@ function createFixture(root) {
     assert.equal(init.status, 0, init.stderr);
     childProcess.spawnSync('git', ['-C', root, 'config', 'user.name', 'ETE Test'], {encoding: 'utf8'});
     childProcess.spawnSync('git', ['-C', root, 'config', 'user.email', 'ete-test@example.invalid'], {encoding: 'utf8'});
-    const add = childProcess.spawnSync('git', ['-C', root, 'add', 'src/electronapp/some-normal-file.js', 'src/electronapp/enhanced/startup.svg', 'tools', 'package-lock.json', 'vendor/runtime-manifest.json', 'vendor/electron-runtime-manifest.json',webSnapshot.MANIFEST_PATH,windowsHost.MANIFEST_PATH], {encoding: 'utf8'});
+    const add = childProcess.spawnSync('git', ['-C', root, 'add', 'src/electronapp/some-normal-file.js', 'src/electronapp/enhanced/startup.svg', 'tools', 'package-lock.json', 'vendor/runtime-manifest.json', 'vendor/electron-runtime-manifest.json',webSnapshot.MANIFEST_PATH,windowsHost.MANIFEST_PATH,inheritedNpm.MANIFEST_PATH], {encoding: 'utf8'});
     assert.equal(add.status, 0, add.stderr);
     const commit = childProcess.spawnSync('git', ['-C', root, 'commit', '-m', 'fixture'], {encoding: 'utf8'});
     assert.equal(commit.status, 0, commit.stderr);
@@ -175,6 +177,7 @@ function createRuntime(root, name) {
     writeFile(path.join(runtime, 'electronapp', 'www', 'modules', 'common', 'playback', 'playbackmanager.js'), 'const playback = true;\n');
     writeFile(path.join(runtime, 'electronapp', 'package.json'), '{"name":"runtime"}\n');
     writeFile(path.join(runtime,'Emby.Theater.exe'),fs.readFileSync(path.join(root,windowsHost.INPUT_ROOT,'Emby.Theater.exe')));
+    fs.cpSync(path.join(root,inheritedNpm.INPUT_ROOT,'electronapp'),path.join(runtime,'electronapp'),{recursive:true});
     fs.cpSync(path.join(root, 'vendor', 'electron', '44.4.2', 'win32-x64'),
         path.join(runtime, 'x64', 'electron'), {recursive: true});
     writeFile(path.join(runtime, 'electronapp/libmpv/x64/mpv-1.dll'),

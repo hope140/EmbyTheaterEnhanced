@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-21 - Independent inherited npm input
+
+Move 29 retained npm files to a component recovered from official Electron 3.0.20 Git blobs with explicit LF-to-CRLF conversion. Normal assembly and dependency provenance no longer read the old npm directory. Physical Carnival requirements are now 61 files; current libmpv remains one. Preserve all output bytes, seven package identities/notices and strict component checks. See [fixed inherited npm](INHERITED_NPM_INPUT.md); final validation evidence is recorded separately.
+
 ## 2026-10-21 - Retired physical input gates
 
 Normal material validation and assembly now select 90 consumed Carnival inputs and one libmpv patch. Historical Electron/Pepper/base-libmpv provenance no longer reads retired bodies. Original materials, Model, UI and dependency versions are preserved. Targeted regressions passed; final full regression and static material comparison are recorded separately in the task receipt. See [selection and boundaries](LEGACY_INPUT_SELECTION.md).

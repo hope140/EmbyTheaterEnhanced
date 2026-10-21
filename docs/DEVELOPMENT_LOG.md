@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-21 - Pinned upstream npm preparation
+
+Pin source commit, blob/SHA256, exact newline transform and output identities instead of relying on Windows checkout settings. Update base assembly, material and dependency/source provenance together so no hidden old npm read remains. Preserve upstream bundled metadata and code rather than replacing with newer registry packages. See [component contract](INHERITED_NPM_INPUT.md).
+
 ## 2026-10-21 - Gate-only predecessor retirement
 
 Separate consumed input validation from historical provenance. Retain the tracked full manifest, label metadata-only identities explicitly, reject overlap with required paths, and keep active hash/link/extra-file checks. Add absent-predecessor and current-input tampering regressions; use an independent read-only historical oracle for whole intermediate payload comparison. No product, Model or dependency changes. See [selection](LEGACY_INPUT_SELECTION.md).

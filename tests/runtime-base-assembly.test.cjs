@@ -104,6 +104,7 @@ function fixture(t) {
     json(root,host.MANIFEST_PATH,{schemaVersion:1,version:'3.0.20',inputRoot:host.INPUT_ROOT,files:hostFiles,
         fileCount:hostFiles.length,bytes:hostFiles.reduce((n,f)=>n+f.size,0),treeSha256:web.treeHash(hostFiles),
         archive:{size:1,sha256:'0'.repeat(64)}});
+    require('./helpers/inherited-npm-fixture.cjs').create(root);
     write(root, 'src/electronapp/main.js', 'committed main');
     write(root, '.gitignore', '/vendor/carnival/\n/dist/\n/.work/\n');
     git(root, ['init', '-q']);
@@ -180,6 +181,16 @@ test('official Host component replaces old Host input in the production material
     assert.equal(assembly.assemble(f.root,f.commit,f.runtime,f.token).hostInput.fileCount,1);
     assert.equal(fs.readFileSync(path.join(f.runtime,'Emby.Theater.exe'),'utf8'),'host bytes');
     assert.equal(fs.existsSync(path.join(f.vendor,'Emby.Theater.exe')),false);
+});
+
+test('independent inherited npm replaces the complete absent old npm directory',t=>{
+    const f=fixture(t),npm=require('../tools/inherited-npm-input.cjs');
+    fs.rmSync(path.join(f.vendor,'electronapp/node_modules'),{recursive:true});
+    const material=require('../tools/validate-build-materials.cjs').validate(f.root);
+    const report=assembly.assemble(f.root,f.commit,f.runtime,f.token);
+    assert.equal(material.inheritedNpm.fileCount,npm.load(f.root).fileCount);
+    assert.equal(report.inheritedNpm.treeSha256,npm.validateRuntime(f.root,f.runtime).treeSha256);
+    assert.equal(fs.existsSync(path.join(f.vendor,'electronapp/node_modules')),false);
 });
 
 for (const mutation of ['changed-retained', 'extra', 'missing']) {

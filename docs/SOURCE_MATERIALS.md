@@ -1,5 +1,7 @@
 # Runtime source and notice materials
 
+Inherited npm acquisition update: all 29 selected files can be recovered from official Electron commit e897adda583b2339f077cb67113e71326a806de0 with the locked LF-to-CRLF conversion. The registry differences described below remain historical comparisons; no community code patch is needed against this official commit. Seven package declarations and unchanged notice files are individually pinned. See [component source and scope](INHERITED_NPM_INPUT.md).
+
 Current input/provenance boundary: [legacy input selection](LEGACY_INPUT_SELECTION.md) distinguishes 90 consumed Carnival files and one current libmpv patch from historical manifest-only records. Removing physical predecessor gates does not establish new source or redistribution claims.
 
 The v0.3.0 release source is `sourceCommit=20e42511b54989550165511a7604aa1b73519ff2`. The root `LICENSE`, `THIRD_PARTY_NOTICES.md`, `docs/LICENSING.md` and this index are source-controlled materials; build provenance binds their committed bytes. Maintainer risk acceptance for the release does not establish legal compliance or resolve unknown source, permission or notice obligations.

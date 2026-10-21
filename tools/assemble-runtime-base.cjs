@@ -10,6 +10,7 @@ const {RETIRED_RUNTIME_PATHS} = require('./runtime-exclusions.cjs');
 const {hashTrackedTextFile} = require('./tracked-file-hash.cjs');
 const webSnapshot = require('./web-snapshot-input.cjs');
 const windowsHost = require('./windows-host-input.cjs');
+const inheritedNpm = require('./inherited-npm-input.cjs');
 
 function sha256(bytes) {
     return crypto.createHash('sha256').update(bytes).digest('hex');
@@ -80,13 +81,17 @@ function plan(rootArg, sourceCommit) {
     const selected = dependencies.loadSelectedPackages(root);
     const host = windowsHost.load(root);
     const hostPaths = new Set(host.files.map(item=>item.path));
+    const npm=inheritedNpm.load(root),npmPaths=new Set(npm.files.map(item=>item.path));
     const candidates = classify(manifest.files, product.map(item => item.runtimePath),
         overlays.WEB_OVERLAY_CONTRACT.map(item => item.runtimePath), selected.packages.map(item => item.packagePath))
         .filter(item => !webSnapshot.isLegacyWeb(item.path) && !hostPaths.has(item.path));
+    const oldNpm=candidates.filter(item=>item.reason==='inherited-npm-dependency');
+    if(oldNpm.length!==npm.files.length||oldNpm.some(item=>!npm.files.some(entry=>entry.path===item.path&&entry.size===item.size&&entry.sha256===item.sha256)))throw new Error('Inherited npm component differs from current retained package selection.');
+    const legacyCandidates=candidates.filter(item=>!npmPaths.has(item.path));
     const required = item => item.action === 'copy' || ['generated-host-config','generated-preload'].includes(item.reason);
-    const entries = candidates.filter(required);
-    const historicalEntries = candidates.filter(item => !required(item));
-    const ignoredInputPaths = [...new Set(['electronapp/www',...hostPaths,...historicalEntries.map(item=>item.path),
+    const entries = legacyCandidates.filter(required);
+    const historicalEntries = legacyCandidates.filter(item => !required(item));
+    const ignoredInputPaths = [...new Set(['electronapp/www','electronapp/node_modules',...hostPaths,...npmPaths,...historicalEntries.map(item=>item.path),
         'x64/electron',...selected.packages.map(item=>'electronapp/'+item.packagePath)])];
     if(entries.some(item=>ignoredInputPaths.some(prefix=>item.path===prefix||item.path.startsWith(prefix+'/')))) {
         throw new Error('Historical input exclusion overlaps a consumed input.');
@@ -99,7 +104,8 @@ function plan(rootArg, sourceCommit) {
             evidence:'tracked historical manifest only; no physical predecessor input is required'},
         webSnapshot: {manifestPath:webSnapshot.MANIFEST_PATH,
             treeSha256:web.treeSha256,fileCount:web.fileCount,bytes:web.bytes},windowsHost:{manifestPath:windowsHost.MANIFEST_PATH,
-            treeSha256:host.treeSha256,fileCount:host.fileCount,bytes:host.bytes}};
+            treeSha256:host.treeSha256,fileCount:host.fileCount,bytes:host.bytes},inheritedNpm:{manifestPath:inheritedNpm.MANIFEST_PATH,
+            sourceCommit:npm.source.commit,treeSha256:npm.treeSha256,fileCount:npm.fileCount,bytes:npm.bytes}};
 }
 
 function physical(absolute, directory) {
@@ -155,6 +161,7 @@ function assemble(rootArg, sourceCommit, runtimeArg, token) {
     const carnivalRoot = path.join(root, 'vendor', 'carnival');
     webSnapshot.validate(root);
     windowsHost.validate(root);
+    inheritedNpm.validate(root);
     // Validate only consumed bytes and templates. Historical/replaced inputs
     // are references, while current component authorities remain fully checked.
     verifyInputs(carnivalRoot, result.entries, result.ignoredInputPaths);
@@ -168,9 +175,10 @@ function assemble(rootArg, sourceCommit, runtimeArg, token) {
     }
     const webInput = webSnapshot.assemble(root, runtime);
     const hostInput = windowsHost.assemble(root,runtime);
+    const npmInput = inheritedNpm.assemble(root,runtime);
     return {schemaVersion: result.schemaVersion, status: 'passed', sourceCommit: result.sourceCommit,
         sourceManifestSha256: result.sourceManifestSha256, groups: result.groups,
-        historicalReference:result.historicalReference,webInput,hostInput};
+        historicalReference:result.historicalReference,webInput,hostInput,inheritedNpm:npmInput};
 }
 
 if (require.main === module) {

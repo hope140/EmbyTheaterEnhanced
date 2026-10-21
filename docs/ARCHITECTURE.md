@@ -1,5 +1,7 @@
 # 架构与维护边界
 
+Current input update: 29 retained npm files are independently prepared from pinned official Electron 3.0.20 Git blobs; explicit newline conversion preserves exact output. Normal dependency copying/provenance also use this component. Old Carnival physical requirements are now 61, plus one current libmpv patch. See [inherited npm](INHERITED_NPM_INPUT.md).
+
 Current production selection: 90 consumed Carnival files and one current libmpv patch remain physical requirements. The 144 replaced/retired Carnival and 48 unused patch records are historical metadata only. Required hashes and active path checks remain strict. See [current input selection](LEGACY_INPUT_SELECTION.md).
 
 普通媒体链路为 Emby Web → PlaybackManager → libmpv adapter → Electron main Native Helper supervisor → Windows helper → 内嵌 libmpv。Native Helper 是唯一生产 bridge；旧 Pepper/PPAPI 不进入 runtime。
