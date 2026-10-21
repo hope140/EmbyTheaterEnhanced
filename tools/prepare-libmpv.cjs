@@ -23,8 +23,8 @@ function verifyArchive(file,a) {
 function download(url,destination,size) {
     try {
         return JSON.parse(cp.execFileSync('pwsh',['-NoProfile','-NonInteractive','-File',path.join(__dirname,'download-libmpv.ps1'),
-            '-SourceUrl',url,'-Destination',destination,'-MaximumBytes',String(size)],{encoding:'utf8',timeout:330000,maxBuffer:65536}).trim());
-    }catch(error){throw Error('Pinned libmpv download failed; no retry/latest fallback. '+String(error.stderr||error.message).slice(0,2000));}
+            '-SourceUrl',url,'-Destination',destination,'-MaximumBytes',String(size)],{encoding:'utf8',timeout:330000,maxBuffer:65536,stdio:['ignore','pipe','pipe']}).trim());
+    }catch(error){throw Error('Pinned libmpv download failed; no retry/latest fallback. '+String(error.stderr||'Downloader process failed without safe diagnostics.').slice(0,12000));}
 }
 function extract(file,a,entry) {
     const tar=process.platform==='win32'?'C:\\Windows\\System32\\tar.exe':'bsdtar';
