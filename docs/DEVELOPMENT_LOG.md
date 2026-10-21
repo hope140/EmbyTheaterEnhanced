@@ -903,3 +903,7 @@ Model Tier: Tier 2；Model: 当前Codex会话，运行时未向任务提供精�
 ## 2026-10-21 - Pinned libmpv recovery and repository snapshots
 
 Current libmpv is recovered from the fixed SourceForge asset using standard HTTPS redirects, exact archive magic/size/SHA256 and exact extracted DLL identity. Work cold recovery with no old package or snapshot DLL succeeded; Linux/cloud execution is not yet verified. DLL/version/API/Model/UI bytes are unchanged. Four required snapshot roots are now selected for user-authorized same-repository storage (775 files, 51,953,202 bytes) with byte-preserving Git attributes; libmpv and generated/cache/toolchain inputs stay ignored. Third-party source uncertainties remain explicitly recorded. No main merge or release is authorized by this change.
+
+## 2026-10-21 - Public CI path and snapshot-format regression
+
+GitHub Windows public CI exposed one preload fixture using a nonphysical TEMP alias. The fixture now canonicalizes its root, with a junction regression proving redirected product callers remain rejected; production validators are unchanged. Snapshot bytes must remain exact, including existing CRLF/trailing formatting: narrow per-file attributes describe inherited formatting, while a new CI step strictly validates all four snapshot trees against their manifests before tests/lint. Maintained source whitespace rules and all content/path/hash gates remain intact. No runtime, Model, playback or dependency-version change.

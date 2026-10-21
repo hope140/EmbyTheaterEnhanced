@@ -6,7 +6,40 @@
 /docs/evidence/review-027/* -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 
 # Fixed component snapshots: preserve every manifest-bound byte on all platforms.
-/vendor/web-snapshot/** -text
-/vendor/compatibility-resources/** -text
-/vendor/small-runtime/** -text
-/vendor/model-compatibility/** -text
+/vendor/web-snapshot/** -text whitespace=cr-at-eol
+/vendor/compatibility-resources/** -text whitespace=cr-at-eol
+/vendor/small-runtime/** -text whitespace=cr-at-eol
+/vendor/model-compatibility/** -text whitespace=cr-at-eol
+
+# Preserve existing formatting of these exact hashed snapshot files.
+# CI verifies every snapshot byte before tests/lint; maintained source keeps normal checks.
+"/vendor/compatibility-resources/snapshot-v1/Emby.ConfigureAndUninstall.bat" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/compatibility-resources/snapshot-v1/Emby.Dialog.bat" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/compatibility-resources/snapshot-v1/external/Anime4K/shaders/Anime4K_Clamp_Highlights.glsl" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/compatibility-resources/snapshot-v1/external/Anime4K/shaders/Anime4K_Darken_Fast.glsl" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/compatibility-resources/snapshot-v1/external/Anime4K/shaders/Anime4K_Darken_HQ.glsl" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/compatibility-resources/snapshot-v1/external/Anime4K/shaders/Anime4K_Darken_VeryFast.glsl" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/compatibility-resources/snapshot-v1/external/Anime4K/shaders/Anime4K_Deblur_DoG.glsl" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/compatibility-resources/snapshot-v1/external/Anime4K/shaders/Anime4K_Deblur_Original.glsl" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/compatibility-resources/snapshot-v1/external/Anime4K/shaders/Anime4K_Denoise_Bilateral_Mean.glsl" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/compatibility-resources/snapshot-v1/external/Anime4K/shaders/Anime4K_Denoise_Bilateral_Median.glsl" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/compatibility-resources/snapshot-v1/external/Anime4K/shaders/Anime4K_Denoise_Bilateral_Mode.glsl" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/compatibility-resources/snapshot-v1/external/Anime4K/shaders/Anime4K_Thin_Fast.glsl" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/compatibility-resources/snapshot-v1/external/Anime4K/shaders/Anime4K_Thin_HQ.glsl" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/compatibility-resources/snapshot-v1/external/Anime4K/shaders/Anime4K_Thin_VeryFast.glsl" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/compatibility-resources/snapshot-v1/external/Anime4K/shaders/Anime4K_Upscale_DTD_x2.glsl" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/compatibility-resources/snapshot-v1/external/Anime4K/shaders/Anime4K_Upscale_Deblur_DoG_x2.glsl" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/compatibility-resources/snapshot-v1/external/Anime4K/shaders/Anime4K_Upscale_Deblur_Original_x2.glsl" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/compatibility-resources/snapshot-v1/external/Anime4K/shaders/Anime4K_Upscale_DoG_x2.glsl" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/compatibility-resources/snapshot-v1/external/Anime4K/shaders/Anime4K_Upscale_Original_x2.glsl" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/compatibility-resources/snapshot-v1/external/Presets/mpv.conf" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/web-snapshot/www/index.html" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/web-snapshot/www/modules/emby-elements/emby-checkbox/emby-checkbox.css" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/web-snapshot/www/modules/imageuploader/imageuploader.template.html" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/web-snapshot/www/modules/itemcontextmenu.js" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/web-snapshot/www/modules/tabbedview/seriestab.js" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/web-snapshot/www/search/searchfields.js" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/web-snapshot/www/settings/password.html" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/web-snapshot/www/startup/connectlogin.html" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/web-snapshot/www/strings/zh-CN.json" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+"/vendor/web-snapshot/www/users/user.html" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
