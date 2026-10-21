@@ -3,7 +3,6 @@
 /build/
 /node_modules/
 /vendor/carnival/
-/vendor/web-snapshot/
 /vendor/windows-host/
 /vendor/patch/
 /vendor/electron/
@@ -55,9 +54,3 @@ Desktop.ini
 /vendor/inherited-npm/
 
 /vendor/libmpv/
-
-/vendor/compatibility-resources/
-
-/vendor/small-runtime/
-
-/vendor/model-compatibility/

@@ -1,0 +1,36 @@
+﻿<div class="formDialogHeader">
+    <button is="paper-icon-button-light" class="btnCancel autoSize" tabindex="-1"><i class="md-icon autortl">&#xE5C4;</i></button>
+    <h3 class="formDialogHeaderTitle">
+        ${HeaderAccessSchedule}
+    </h3>
+</div>
+<div class="formDialogContent scrollY" style="padding-top:2em;">
+    <div class="dialogContentInner dialog-content-centered padded-left padded-right">
+        <form class="scheduleForm" style="margin:auto;">
+
+            <div class="selectContainer">
+                <select is="emby-select" id="selectDay" label="${LabelAccessDay}">
+                    <option value="Sunday">星期日</option>
+                    <option value="Monday">星期一</option>
+                    <option value="Tuesday">星期二</option>
+                    <option value="Wednesday">星期三</option>
+                    <option value="Thursday">星期四</option>
+                    <option value="Friday">星期五</option>
+                    <option value="Saturday">星期六</option>
+                </select>
+            </div>
+            <div class="selectContainer">
+                <select is="emby-select" class="selectHour" id="selectStart" label="${LabelAccessStart}"></select>
+            </div>
+            <div class="selectContainer">
+                <select is="emby-select" class="selectHour" id="selectEnd" label="${LabelAccessEnd}"></select>
+            </div>
+
+            <div class="formDialogFooter">
+                <button is="emby-button" type="submit" class="raised button-submit block formDialogFooterItem">
+                    <span>${ButtonAdd}</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

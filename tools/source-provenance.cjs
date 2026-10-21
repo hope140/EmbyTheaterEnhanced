@@ -210,8 +210,10 @@ function buildManifest(rootArg, runtimeArg, sourceCommit) {
     if(libmpv.inputSha256!==String(patchLibmpvEntry.sha256).toUpperCase())throw new Error('libmpv snapshot differs from historical patch identity.');
     libmpv.historicalPredecessor={path:'vendor/carnival/'+baseLibmpvEntry.path,
         recordedSha256:String(baseLibmpvEntry.sha256).toUpperCase(),evidence:'tracked-historical-manifest',physicalInputRequired:false};
-    libmpv.historicalPatchInput={path:'vendor/patch/'+patchLibmpvEntry.path,recordedSha256:String(patchLibmpvEntry.sha256).toUpperCase(),physicalInputRequired:false,evidence:'historical manifest plus unchanged snapshot import'};
-    libmpv.preparation={generatorPath:'tools/libmpv-input.cjs',generatorSha256:trackedFileHash.hashTrackedTextFile(root,'tools/libmpv-input.cjs')};
+    libmpv.historicalPatchInput={path:'vendor/patch/'+patchLibmpvEntry.path,recordedSha256:String(patchLibmpvEntry.sha256).toUpperCase(),physicalInputRequired:false,evidence:'historical manifest plus identical pinned component hash'};
+    libmpv.preparation={generatorPath:'tools/libmpv-input.cjs',generatorSha256:trackedFileHash.hashTrackedTextFile(root,'tools/libmpv-input.cjs'),
+        acquisitionPath:'tools/prepare-libmpv.cjs',acquisitionSha256:trackedFileHash.hashTrackedTextFile(root,'tools/prepare-libmpv.cjs'),
+        transportPath:'tools/download-libmpv.ps1',transportSha256:trackedFileHash.hashTrackedTextFile(root,'tools/download-libmpv.ps1')};
     libmpv.inputSha256 = String(patchLibmpvEntry.sha256).toUpperCase();
     const webInput = require('./web-snapshot-input.cjs').validate(root);
     const baseWebRoot = path.join(root, 'vendor', 'web-snapshot', 'www');

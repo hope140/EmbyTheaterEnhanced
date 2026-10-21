@@ -36,7 +36,7 @@ const INPUT_PATHS = Object.freeze([
     'tools/copy-runtime-dependencies.cjs', 'tools/electron-runtime-input.cjs',
     'tools/assemble-runtime-base.cjs',
     'tools/web-snapshot-input.cjs', 'tools/validate-build-materials.cjs',
-    'tools/windows-host-input.cjs', 'tools/inherited-npm-input.cjs', 'tools/runtime-template-input.cjs', 'tools/libmpv-input.cjs', 'tools/compatibility-resources-input.cjs', 'tools/small-runtime-input.cjs', 'tools/model-compatibility-input.cjs', 'tools/prepare-windows-host.ps1',
+    'tools/windows-host-input.cjs', 'tools/inherited-npm-input.cjs', 'tools/runtime-template-input.cjs', 'tools/libmpv-input.cjs', 'tools/prepare-libmpv.cjs', 'tools/download-libmpv.ps1', 'tools/compatibility-resources-input.cjs', 'tools/small-runtime-input.cjs', 'tools/model-compatibility-input.cjs', 'tools/prepare-windows-host.ps1',
     'tools/runtime-dependency-contract.cjs',
     'tools/build-native-helper.ps1', 'tools/materialize-native-helper-source.cjs',
     'tools/native-helper-contract.cjs', 'tools/native-helper-provenance.cjs',

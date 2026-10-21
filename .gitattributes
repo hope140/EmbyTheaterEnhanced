@@ -4,3 +4,9 @@
 /installer/languages/LICENSE.txt -text whitespace=cr-at-eol
 # Public verification evidence retains the exact bytes of the original receipts.
 /docs/evidence/review-027/* -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+
+# Fixed component snapshots: preserve every manifest-bound byte on all platforms.
+/vendor/web-snapshot/** -text
+/vendor/compatibility-resources/** -text
+/vendor/small-runtime/** -text
+/vendor/model-compatibility/** -text

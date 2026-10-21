@@ -12,9 +12,10 @@
     "wholeOldPackageCopied": false,
     "claimedAsOwnOriginal": false,
     "officialOnlineRecoveryEstablished": false,
-    "publicBodyUpload": false,
+    "publicBodyUpload": true,
     "dllExecuted": false,
-    "officialReplacement": false
+    "officialReplacement": false,
+    "repositoryStorage": "Explicit user-authorized same-repository snapshot; existing source/notice uncertainties remain, no authorship reattribution"
   },
   "files": [
     {

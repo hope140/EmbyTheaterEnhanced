@@ -1,0 +1,139 @@
+.formDialog {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+  position: relative;
+  max-height: 90%;
+  min-width: 20%;
+  min-width: clamp(20%, 60ch, 50%);
+}
+.formDialogHeader {
+  padding: 1em 0.5em;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-flex-shrink: 0;
+  flex-shrink: 0;
+}
+.formDialogHeaderTitle {
+  -webkit-margin-start: 0.25em;
+  margin-inline-start: 0.25em;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.formDialogHeader.justify-content-center > .formDialogHeaderTitle {
+  -webkit-margin-start: 0;
+  margin-inline-start: 0;
+}
+.formDialogContent:not(.no-grow) {
+  -webkit-flex-grow: 1;
+  flex-grow: 1;
+}
+.dialogContentInner {
+  padding-bottom: 14em;
+}
+.dialog-content-centered {
+  margin: 0 auto;
+  max-width: 90ch;
+}
+.dialogContentTitle {
+  margin-top: 1em;
+}
+.formDialogFooter {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  display: -webkit-flex;
+  display: flex;
+  position: absolute;
+  padding: 1em 1em;
+  padding-bottom: calc(1em + env(safe-area-inset-bottom, 0));
+  z-index: 1;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-justify-content: center;
+  justify-content: center;
+  -webkit-flex-wrap: wrap;
+  flex-wrap: wrap;
+}
+@media not all and (pointer: fine) {
+  .formDialogFooter {
+    padding: 2em 1em;
+  }
+}
+.formDialogFooter-flex {
+  position: static;
+  width: 100%;
+}
+.layout-tv .formDialogFooter {
+  position: static;
+  padding: 1.25em 0;
+  background: 0 0;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+  width: auto;
+}
+.formDialogFooter-vertical {
+  padding-bottom: 1.5em;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+  width: 80% !important;
+  padding-top: 0.5em;
+}
+.formDialogFooterItem {
+  margin: 0.5em !important;
+  -webkit-flex-grow: 1;
+  flex-grow: 1;
+  text-align: center;
+  -webkit-flex-basis: 0;
+  flex-basis: 0;
+}
+.formDialogFooterItem-vertical,
+.layout-tv .formDialogFooterItem {
+  max-width: none !important;
+  width: 100%;
+  -webkit-justify-content: center;
+  justify-content: center;
+  margin: 1em 0 !important;
+}
+.formDialogFooterItem-nomarginbottom {
+  margin-bottom: 0 !important;
+}
+.formDialogFooterItem-autosize {
+  -webkit-flex-basis: initial;
+  flex-basis: initial;
+  -webkit-flex-grow: initial;
+  flex-grow: initial;
+  -webkit-padding-start: 2em;
+  padding-inline-start: 2em;
+  -webkit-padding-end: 2em;
+  padding-inline-end: 2em;
+}
+@media not all and (pointer: fine) {
+  .formDialogFooter .emby-button {
+    bottom: 20px;
+  }
+}
+@media all and (min-width: 50em) {
+  .formDialogFooterItem {
+    max-width: 80%;
+  }
+}
+@media all and (min-width: 80em) {
+  .formDialogFooterItem {
+    max-width: 70%;
+  }
+}
+.formDialogHelpButton {
+  margin-top: 0;
+  display: inline-block;
+  vertical-align: middle;
+  -webkit-margin-start: auto;
+  margin-inline-start: auto;
+  -webkit-margin-end: 1em;
+  margin-inline-end: 1em;
+}

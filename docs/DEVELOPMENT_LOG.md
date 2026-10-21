@@ -899,3 +899,7 @@ Model Tier: Tier 2；Model: 当前Codex会话，运行时未向任务提供精�
 
 
 2026-10-21 local integration: the independent-component material work is combined with main e150981d (product 0.3.15), retaining the published exit fix and its regressions. Normal old Carnival/patch requirements are zero; original Model/config/UI/dependency identities are preserved. Prior material-stage baseline and release entries below remain historical records. Current full regression, matching-0.3.15 material comparison and any build/package results are separate evidence; no app launch, new release, push or remote-main merge is included.
+
+## 2026-10-21 - Pinned libmpv recovery and repository snapshots
+
+Current libmpv is recovered from the fixed SourceForge asset using standard HTTPS redirects, exact archive magic/size/SHA256 and exact extracted DLL identity. Work cold recovery with no old package or snapshot DLL succeeded; Linux/cloud execution is not yet verified. DLL/version/API/Model/UI bytes are unchanged. Four required snapshot roots are now selected for user-authorized same-repository storage (775 files, 51,953,202 bytes) with byte-preserving Git attributes; libmpv and generated/cache/toolchain inputs stay ignored. Third-party source uncertainties remain explicitly recorded. No main merge or release is authorized by this change.

@@ -20,7 +20,7 @@
     ],
     "upstreamWebVersion": null,
     "exactUpstreamSourceRevision": null,
-    "redistributionReview": "pending; local materials only",
+    "redistributionReview": "Exact upstream revision and notice completeness remain unresolved; user authorized storing this preserved snapshot in the same repository",
     "meaning": "Preserves bytes and existing notices; not a complete upstream source reconstruction"
   },
   "files": [

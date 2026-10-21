@@ -1,0 +1,1 @@
+define(["exports","./../howlerjs/howler.core.js"],function(_exports,_howlerCore){Object.defineProperty(_exports,"__esModule",{value:!0}),_exports.default=void 0;var sounds={};_exports.default={play:function(options){var options=options.path,sound=sounds[options];sound||(sound=new _howlerCore.default({src:[options],volume:.3}),sounds[options]=sound),sound.play()}}});

@@ -1,27 +1,29 @@
-# Fixed local libmpv snapshot
+# Pinned libmpv archive recovery
 
-Normal preparation and build now use one independently hash-locked DLL snapshot under vendor/libmpv/20260809. The body is ignored by Git. Version, runtime filename, client interface and DLL bytes are unchanged. The current source is the previously prepared combined-patch DLL, not a fresh official download and not ETE-authored code.
+`node tools/prepare-libmpv.cjs .` restores the current DLL without Carnival, the combined patch, or a preserved DLL snapshot. It downloads one fixed SourceForge project archive, validates it, and statically extracts one member. No downloaded executable or DLL is run. `tools/prepare.ps1` invokes this entry when absent; explicit `-LibmpvSnapshotFile` remains an optional exact-hash offline import, never an automatic fallback.
 
-- Input: mpv-1.dll, 119,725,568 bytes, SHA256 965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c.
-- Runtime: electronapp/libmpv/x64/mpv-1.dll, exactly the same bytes.
-- Historical public candidate: mpv-dev-x86_64-20260809-git-dd5d17d328.7z, 31,173,907 bytes, SHA256 c6aebf40bb722efe79090bfeb61e68625f0837770347e5a8b610aef78900cf12. Its previously audited libmpv-2.dll matched this DLL, including the existing filename rename.
-- [Provider record](https://sourceforge.net/projects/mpv-player-windows/files/libmpv/mpv-dev-x86_64-20260809-git-dd5d17d328.7z/download) and [mpv source reference](https://github.com/mpv-player/mpv/tree/dd5d17d3285a095a0f712fa9d116e22a076492de) remain provenance candidates/references. Current preparation does not download or claim to recover that archive.
+## Fixed identities
 
-## Local preparation and strict identity
+The version, full source commit, asset URL, archive identity, member name and final DLL identity are locked in `vendor/libmpv-input-manifest.json`:
 
-~~~powershell
-node tools/libmpv-input.cjs import . <fixed-snapshot-file>
-node tools/libmpv-input.cjs validate .
-~~~
+- Version `20260809-git-dd5d17d328`; mpv `v0.41.0-920-gdd5d17d32`, client API 2.5.
+- Source commit `dd5d17d3285a095a0f712fa9d116e22a076492de`.
+- [Official asset](https://sourceforge.net/projects/mpv-player-windows/files/libmpv/mpv-dev-x86_64-20260809-git-dd5d17d328.7z/download), 31,173,907 bytes; SHA256 `c6aebf40bb722efe79090bfeb61e68625f0837770347e5a8b610aef78900cf12`.
+- Member `libmpv-2.dll`, renamed to `mpv-1.dll`: 119,725,568 bytes; SHA256 `965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c`.
+- Runtime path `electronapp/libmpv/x64/mpv-1.dll`.
 
-The explicit source file may be a preserved independent snapshot. It is checked for physical paths, exact size and SHA before creating output. Existing prepared snapshots are validated rather than overwritten. The prepared directory must contain exactly its single pinned file. Links, redirects, changed/missing/extra files and occupied runtime targets fail. Normal build copies the snapshot through the component module and validates the final runtime identity in source provenance; no DLL is executed by preparation.
+The DLL is byte-identical to the former patch input. Future upgrades require deliberate lock updates, native-helper header/API review and playback regression; there is no `latest` lookup.
 
-prepare.ps1 accepts -LibmpvSnapshotFile only when the component is absent. It never recreates or reads vendor/patch or automatically extracts the combined-patch archive. An absent independent Web snapshot now requires explicit restoration; its historical one-time importer remains a separate utility. The remaining Carnival bootstrap still needs its own original archive if the 53 remaining assets are absent, and official Electron retains its pinned archive check.
+## Cache and failure rules
 
-## Provenance, notices and recovery limits
+Requirements: Node, PowerShell 7 (`pwsh`) and trusted libarchive bsdtar. Windows uses existing `C:\Windows\System32\tar.exe`; Linux requires `bsdtar` (GNU tar alone cannot extract this 7z). No new downloader or extractor is installed by this tool.
 
-The tracked manifest declares local-snapshot provenance, the former path as historical metadata, current file hash and public archive candidate separately. Source provenance records the independent physical input and marks old patch/predecessor paths physicalInputRequired=false. The old patch manifest is retained as a historical identity comparison; no patch directory traversal is part of normal material validation.
+Archive cache `.work/libmpv-download/<asset>` and prepared DLL `vendor/libmpv/20260809/mpv-1.dll` remain ignored; no Git/LFS DLL history. Existing components and archives are checked. A missing archive downloads once to an exclusive temporary file, verifies 7z magic/size/SHA256, then promotes without replacing an occupied cache. Corrupt caches fail rather than silently refresh. Inspect and quarantine the identified corrupt cache before an explicit retry.
 
-Existing THIRD_PARTY_NOTICES.md and SOURCE_MATERIALS.md continue to apply. Exact winbuild/dependency sources, patches, options, toolchain and complete notices remain separate unresolved review items. Snapshot import is not a full source rebuild, a new redistribution authorization, a public binary upload or a successful cloud recovery. A Git clone alone cannot restore this ignored body; keep the verified snapshot in approved material storage until a verified acquisition route is available.
+The HTTP transport allows HTTPS only, at most five redirects, and only the fixed SourceForge project path and official mirrors. It does not emulate a browser, bypass challenges, retry denials, or fall back to another source/version. Non-200, HTML/download pages, wrong lengths/hashes, unsafe redirects, links and bad extracted bytes stop preparation. Only the named DLL member is extracted to memory and verified before writing.
 
-Historical inventory/audit tools and explicit comparison oracles may still read old full inputs when deliberately supplied; they are not normal build dependencies. Tests compare the new snapshot route against a separately supplied, hash-checked old DLL oracle.
+Work cold recovery from an empty isolated directory succeeded: project URL -> downloads.sourceforge.net -> twds.dl.sourceforge.net, HTTP 200/application/x-7z-compressed, exact identities above. Earlier failed saved responses were normal HTML download instruction pages; their exact historical cause is unknown. Target cloud/Linux network and bsdtar execution remain unverified and require separate evidence.
+
+## Source and notice limits
+
+The [mpv source reference](https://github.com/mpv-player/mpv/tree/dd5d17d3285a095a0f712fa9d116e22a076492de), THIRD_PARTY_NOTICES and SOURCE_MATERIALS records remain. Successful acquisition is not a full source rebuild: exact winbuild revision, linked dependencies/patches/options and complete corresponding-source/notice closure remain separate review items. The component is third-party. Acquisition scripts and identities are bound into build/source provenance; historical patch/predecessor paths are metadata only, without physical old-directory requirements.

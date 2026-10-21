@@ -1,0 +1,23 @@
+.videoSubtitles {
+  position: absolute;
+  bottom: 0;
+  text-align: center;
+  left: 0;
+  right: 0;
+  top: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  color: #fff;
+  margin: 1.5%;
+}
+.videoSubtitles-tv {
+  font-size: 2em;
+}
+.videoSubtitles-autofontsize {
+  font-size: max(5.4vmin, 1.3em);
+}
+@media all and (pointer: fine) {
+  .videoSubtitles-autofontsize {
+    font-size: max(5.4vmin, 1.7em);
+  }
+}

@@ -1,0 +1,207 @@
+.emby-button {
+  position: relative;
+  display: -webkit-inline-flex;
+  display: inline-flex;
+  -webkit-align-items: center;
+  align-items: center;
+  box-sizing: border-box;
+  margin: 0 0.29em;
+  font-size: inherit;
+  font-family: inherit;
+  color: inherit;
+  -webkit-user-select: none;
+  user-select: none;
+  z-index: 0;
+  padding: 0.72em 1.76ch;
+  vertical-align: middle;
+  border: 0;
+  vertical-align: middle;
+  border-radius: 0.6em;
+  position: relative;
+  font-weight: 500;
+  -webkit-tap-highlight-color: transparent;
+  text-decoration: none;
+  line-height: inherit;
+  outline: 0 !important;
+}
+.emby-button:not([disabled]) {
+  cursor: pointer;
+}
+.emby-button::-moz-focus-inner {
+  border: 0;
+}
+.button-link {
+  background: 0 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  vertical-align: initial;
+  outline: 0 !important;
+  text-shadow: inherit;
+}
+.button-link:focus {
+  text-shadow: none;
+}
+.button-link:not([disabled]) {
+  cursor: pointer;
+}
+.button-inherit-color {
+  color: inherit !important;
+}
+.raised {
+  text-align: center;
+}
+.raised-mini {
+  padding-top: 0.6em;
+  padding-bottom: 0.6em;
+  border-radius: 100em;
+}
+.raised > span {
+  -webkit-flex-shrink: 0;
+  flex-shrink: 0;
+}
+@media (hover: hover) and (pointer: fine) {
+  .button-link:not([disabled]):hover {
+    text-decoration: underline;
+  }
+}
+.button-link:not(.emby-button-tv):not([disabled]):active {
+  text-decoration: underline;
+}
+.emby-button-focusscale {
+  transition: -webkit-transform 0.2s ease-out !important;
+  transition: transform 0.2s ease-out !important;
+  -webkit-transform-origin: center center;
+  transform-origin: center center;
+}
+.emby-button-focusscale:focus {
+  -webkit-transform: scale(1.14);
+  transform: scale(1.14);
+  z-index: 1;
+}
+.button-icon,
+.fab > i {
+  font-size: 1.59em;
+}
+.button-icon-left {
+  -webkit-margin-end: 0.25em;
+  margin-inline-end: 0.25em;
+  -webkit-margin-start: -0.1em;
+  margin-inline-start: -0.1em;
+}
+.button-icon-right {
+  -webkit-margin-start: 0.25em;
+  margin-inline-start: 0.25em;
+  -webkit-margin-end: -0.1em;
+  margin-inline-end: -0.1em;
+}
+.fab {
+  display: -webkit-inline-flex;
+  display: inline-flex;
+  border-radius: 50%;
+  padding: 0.72em;
+  box-sizing: border-box;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-justify-content: center;
+  justify-content: center;
+  text-align: center;
+}
+.emby-button.block {
+  display: block;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-justify-content: center;
+  justify-content: center;
+  margin: 0.25em 0;
+  width: 100%;
+}
+.paper-icon-button-light {
+  position: relative;
+  display: -webkit-inline-flex;
+  display: inline-flex;
+  -webkit-align-items: center;
+  align-items: center;
+  box-sizing: border-box;
+  margin: 0 0.29em;
+  background: 0 0;
+  text-align: center;
+  font-size: inherit;
+  font-family: inherit;
+  color: inherit;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: pointer;
+  z-index: 0;
+  min-width: initial;
+  min-height: initial;
+  width: auto;
+  height: auto;
+  padding: 0.556em;
+  vertical-align: middle;
+  border: 0;
+  vertical-align: middle;
+  position: relative;
+  overflow: hidden;
+  border-radius: 50%;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-justify-content: center;
+  justify-content: center;
+  outline: 0 !important;
+}
+.paper-icon-button-light::-moz-focus-inner {
+  border: 0;
+}
+.paper-icon-button-light[disabled] {
+  opacity: 0.3;
+}
+.paper-icon-button-light > i {
+  font-size: 1.66956521739130434em;
+  position: relative;
+  z-index: 1;
+  vertical-align: middle;
+}
+.paper-icon-button-light.md-icon {
+  font-size: 1.66956521739130434em;
+  margin: 0 0.17em;
+  padding: 0.333em;
+  text-shadow: inherit;
+}
+.paper-icon-button-light:focus {
+  text-shadow: none;
+}
+.paper-icon-button-img {
+  width: 1.72em;
+  height: 1.72em;
+  object-fit: cover;
+  object-position: center;
+  max-height: 100%;
+  position: relative;
+  z-index: 1;
+  vertical-align: middle;
+}
+.icon-button-focusscale {
+  transition: -webkit-transform 0.2s ease-out !important;
+  transition: transform 0.2s ease-out !important;
+  -webkit-transform-origin: center center;
+  transform-origin: center center;
+}
+.icon-button-focusscale:focus {
+  -webkit-transform: scale(1.14);
+  transform: scale(1.14);
+  z-index: 1;
+}
+.btnFilterWithBubble {
+  position: relative;
+}
+.nobackdropfilter {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+.toggleButtonIcon {
+  border-radius: 0.3em;
+}
+.toggleButtonIcon-backdropfilter.toggleButtonIcon-active {
+  -webkit-backdrop-filter: blur(1.5em) saturate(1.8);
+  backdrop-filter: blur(1.5em) saturate(1.8);
+}

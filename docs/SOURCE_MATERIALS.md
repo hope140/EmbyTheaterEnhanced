@@ -2,7 +2,7 @@
 
 Compatibility resources: 48 unchanged local snapshot files retain per-file source/unknown distinctions in vendor/compatibility-resources-manifest.json. Anime4K MIT headers and the existing named Source Han Serif OFL record remain; exact revisions/unknown manual/theme authorship are not invented. No public body upload or official recovery is claimed. See [component provenance](COMPATIBILITY_RESOURCES_INPUT.md).
 
-Current libmpv acquisition: the physical input is an unchanged locally imported snapshot of the existing DLL, independently locked by vendor/libmpv-input-manifest.json. The previously audited SourceForge archive/hash remains a historical public candidate, not a successfully recovered current input. Source/build/notice limitations remain; the snapshot is not project-authored, published or recoverable from Git alone. See [source separation](LIBMPV_INPUT.md).
+Current libmpv acquisition: a pinned official SourceForge project archive now restores the identical current DLL on Work Windows, checked by full archive and DLL SHA256. This is acquisition, not a full source rebuild or completed cloud validation. See [download contract](LIBMPV_INPUT.md).
 
 Official resource extension: five additional same-byte members of the already pinned Windows 3.0.20 ZIP now have independent acquisition: three companion XML documentation files, windowsync and English player strings. Existing dependency notices/source limitations remain applicable to XML companions; the two Emby resource references retain upstream repository GPL v2 declarations. This is fixed release acquisition, not proof of rebuilding every component from source. See [component record](WINDOWS_HOST_INPUT.md).
 
@@ -97,3 +97,7 @@ The [small runtime snapshot](SMALL_RUNTIME_INPUT.md) preserves four historical p
 
 
 The [Model compatibility snapshot](MODEL_COMPATIBILITY_INPUT.md) is the unchanged existing Carnival DLL, not official-byte or ETE-original content. The old full directories/archives are no longer normal build inputs. Exact origin remains marked unresolved, notices retained, and bodies local/ignored pending approved restorable storage.
+
+## Current repository restoration update (2026-10-21)
+
+The user authorized tracking the exact required Web, compatibility-resource, small-runtime and original Model snapshots in this same repository. The 775 manifest-listed files (51,953,202 bytes) use ordinary Git with `-text` attributes to preserve bytes. Historical local-only/ignored-storage statements below describe earlier stages and are superseded for these four roots. Source attribution and unresolved exact revisions remain unchanged; storage permission is not a claim of new third-party authorship or complete corresponding source. libmpv stays ignored and is restored from the pinned archive via `node tools/prepare-libmpv.cjs .`; see [repository inputs](REPOSITORY_INPUTS.md). No old full installer/patch or real user profile is included.

@@ -1,0 +1,200 @@
+_:-ms-input-placeholder {
+  -ms-appearance: none;
+  height: 2.223em;
+  margin: 0;
+}
+.emby-slider {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 0.21em;
+  background: 0 0;
+  -webkit-user-select: none;
+  user-select: none;
+  outline: 0;
+  padding: 1em 0;
+  -webkit-align-self: center;
+  align-self: center;
+  z-index: 1;
+  cursor: pointer;
+  margin: -1.105em 0;
+  -webkit-tap-highlight-color: transparent;
+  display: block;
+  font-size: inherit;
+  opacity: 0;
+}
+.emby-slider::-moz-focus-outer {
+  border: 0;
+}
+.emby-slider::-ms-tooltip {
+  display: none;
+}
+.emby-slider::-webkit-slider-runnable-track {
+  background: 0 0;
+}
+.emby-slider::-moz-range-track {
+  border: none;
+}
+.emby-slider::-ms-track {
+  background: 0 0;
+  color: transparent;
+  width: 100%;
+  border: none;
+}
+.emby-slider::-ms-fill-lower {
+  display: none;
+}
+.emby-slider::-ms-fill-upper {
+  display: none;
+}
+.emby-slider::-webkit-slider-thumb {
+  width: 2em;
+  height: 2em;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: none;
+  transition: -webkit-transform 0.3s ease-out;
+  transition: transform 0.3s ease-out;
+  opacity: 0;
+}
+.emby-slider::-moz-range-thumb {
+  width: 2em;
+  height: 2em;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background-image: none;
+  border: none;
+  opacity: 0;
+}
+.emby-slider::-ms-thumb {
+  width: 2em;
+  height: 2em;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: none;
+  opacity: 0;
+}
+.emby-slider-container {
+  position: relative;
+  background: 0 0;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-direction: row;
+  flex-direction: row;
+  -webkit-justify-content: center;
+  justify-content: center;
+  -webkit-align-items: center;
+  align-items: center;
+}
+.emby-slider-background {
+  position: absolute;
+  height: 0.12em;
+  font-size: 2em;
+  margin-top: -0.105em;
+  width: 100%;
+  top: 50%;
+  left: 0;
+  inset-inline-start: 0;
+  inset-inline-end: initial;
+  display: -webkit-flex;
+  display: flex;
+  border: 0;
+  padding: 0;
+  border-radius: 0.6em;
+}
+.emby-slider-background-inner {
+  position: relative;
+  width: 100%;
+}
+.emby-slider-background-lower {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  inset-inline-start: 0;
+  inset-inline-end: initial;
+  width: 0;
+  border-top-left-radius: 0.6em;
+  border-bottom-left-radius: 0.6em;
+  border-start-start-radius: 0.6em;
+  border-start-end-radius: 0.6em;
+}
+.emby-slider-background-lower-clear {
+  background-color: transparent;
+}
+.emby-slider-background-upper {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  inset-inline-start: 0;
+  inset-inline-end: initial;
+  width: 0;
+}
+.emby-slider-thumb {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  inset-inline-start: 0;
+  inset-inline-end: initial;
+  width: 0.6em;
+  height: 0.6em;
+  margin-top: -0.37em;
+  font-size: 1.4em;
+  border-radius: 100%;
+  transition: -webkit-transform 0.4s ease-out;
+  transition: transform 0.4s ease-out;
+}
+.emby-slider-thumb-animateposition {
+  transition: -webkit-transform 0.4s ease-out, left 0.3s ease-out;
+  transition: transform 0.4s ease-out, left 0.3s ease-out;
+}
+.emby-slider:active + div + .emby-slider-thumb {
+  -webkit-transform: scale(1.4);
+  transform: scale(1.4);
+}
+@media all and (pointer: fine) and (hover: hover) {
+  .emby-slider:hover + div + .emby-slider-thumb {
+    -webkit-transform: scale(1.4);
+    transform: scale(1.4);
+  }
+}
+.emby-slider:focus-visible + div + .emby-slider-thumb {
+  -webkit-transform: scale(1.4);
+  transform: scale(1.4);
+}
+.emby-slider-editing + div + .emby-slider-thumb {
+  -webkit-transform: scale(1.4);
+  transform: scale(1.4);
+}
+.emby-slider-tv:focus + div + .emby-slider-thumb {
+  -webkit-transform: scale(1.4);
+  transform: scale(1.4);
+}
+.emby-slider[disabled] + div + .emby-slider-thumb {
+  display: none;
+}
+.sliderBubble {
+  position: absolute;
+  top: 0;
+  left: 0;
+  inset-inline-start: 0;
+  inset-inline-end: initial;
+  margin-top: -1.25em;
+  -webkit-transform: translate3d(-50%, -100%, 0);
+  transform: translate3d(-50%, -100%, 0);
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-justify-content: center;
+  justify-content: center;
+  border-radius: 0.6em;
+  z-index: 1;
+  -webkit-margin-start: 0.3em;
+  margin-inline-start: 0.3em;
+}
+.sliderBubbleText {
+  margin: 0;
+  padding: 0.35em 0.75em;
+}

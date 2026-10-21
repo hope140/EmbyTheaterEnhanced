@@ -1,0 +1,229 @@
+:root {
+  --main-drawer-transform: translateX(-100%);
+}
+[dir="rtl"]:root {
+  --main-drawer-transform: translateX(100%);
+}
+.mainDrawer {
+  padding: 1em 1.1em 10vh;
+  padding-top: calc(1em + env(safe-area-inset-top, 0));
+  padding-bottom: calc(10vh + env(safe-area-inset-bottom, 0));
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+  overscroll-behavior-y: contain;
+  position: fixed;
+  top: 0;
+  left: 0;
+  inset-inline-start: 0;
+  inset-inline-end: initial;
+  bottom: 0;
+  contain: strict;
+  z-index: 1099;
+  width: 80%;
+  width: min(80%, 30em);
+  -webkit-transform: translateX(-100%);
+  transform: translateX(-100%);
+  -webkit-transform: var(--main-drawer-transform);
+  transform: var(--main-drawer-transform);
+  box-sizing: border-box;
+}
+.mainDrawer.rtl {
+  -webkit-transform: translateX(100%);
+  transform: translateX(100%);
+}
+.drawer-docked {
+  will-change: initial !important;
+}
+.mainDrawer:not(.drawer-docked) {
+  transition: -webkit-transform 3ms cubic-bezier(0, 0, 0.3, 1);
+  transition: transform 3ms cubic-bezier(0, 0, 0.3, 1);
+}
+@media all and (min-width: 50em) {
+  .mainDrawer {
+    width: 30%;
+  }
+}
+@media all and (min-width: 80em) {
+  .mainDrawer {
+    width: 18.6em;
+  }
+}
+.drawer-open {
+  box-shadow: 0.14em 0 0.84em rgba(0, 0, 0, 0.4);
+  -webkit-transform: none;
+  transform: none;
+}
+.drawer-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  background-color: #000;
+  opacity: 0;
+  z-index: 1098;
+  will-change: opacity;
+  contain: strict;
+  -webkit-animation: drawer-backdrop-fadein 0.38s ease-out normal both;
+  animation: drawer-backdrop-fadein 0.38s ease-out normal both;
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+.drawer-backdrop-fadeout {
+  -webkit-animation: drawer-backdrop-fadeout 0.38s ease-out normal both;
+  animation: drawer-backdrop-fadeout 0.38s ease-out normal both;
+}
+@-webkit-keyframes drawer-backdrop-fadein {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.5;
+  }
+}
+@keyframes drawer-backdrop-fadein {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.5;
+  }
+}
+@-webkit-keyframes drawer-backdrop-fadeout {
+  from {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes drawer-backdrop-fadeout {
+  from {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 0;
+  }
+}
+.navDrawerCollapseSection {
+  margin: 0 0 0.25em !important;
+}
+.navDrawerCollapseButton {
+  margin: 0 !important;
+  border: 0 !important;
+  padding: 0.25em 0 !important;
+}
+.navDrawerCollapseContent {
+  border: 0 !important;
+  padding: 0 !important;
+}
+.navMenuOption {
+  display: -webkit-flex !important;
+  display: flex !important;
+  -webkit-align-items: center;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+  vertical-align: middle;
+  -webkit-flex-shrink: 0;
+  flex-shrink: 0;
+  font-weight: 400 !important;
+  margin: 0 !important;
+  -webkit-padding-start: 0.7em !important;
+  padding-inline-start: 0.7em !important;
+  border-radius: 0.6em !important;
+}
+.navMenuOption.emby-button-focusscale:focus {
+  -webkit-transform: scale(1.025);
+  transform: scale(1.025);
+}
+.navMenuOption-selected {
+  font-weight: 700 !important;
+}
+.navDrawerLogo {
+  width: 100%;
+  background-size: contain;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  -webkit-margin-start: 0.2em !important;
+  margin-inline-start: 0.2em !important;
+  -webkit-margin-end: 0 !important;
+  margin-inline-end: 0 !important;
+  -webkit-flex-grow: 0;
+  flex-grow: 0;
+}
+.navDrawerHeader {
+  margin: 0.75em 0;
+  position: relative;
+}
+.btnNavDrawerLogo {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.btnPinNavDrawer {
+  position: absolute !important;
+  inset-inline-end: -0.5em;
+  font-size: 84% !important;
+  margin: 0 !important;
+}
+.btnPinNavDrawer-iconpin {
+  -webkit-transform: rotate(180deg);
+  transform: rotate(180deg);
+}
+@media not all and (min-width: 50em) {
+  .btnPinNavDrawer {
+    display: none !important;
+  }
+}
+.navMenuOptionIcon {
+  -webkit-margin-end: 0.7em;
+  margin-inline-end: 0.7em;
+  -webkit-flex-shrink: 0;
+  flex-shrink: 0;
+  font-size: 1.7em;
+}
+.navMenuOptionText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.navMenuHeader {
+  -webkit-padding-start: 0.4em !important;
+  padding-inline-start: 0.4em !important;
+  margin: 0.75em 0 0.15em;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-flex-shrink: 0;
+  flex-shrink: 0;
+  -webkit-flex-wrap: wrap;
+  flex-wrap: wrap;
+}
+.navDrawerCollapseIcon {
+  inset-inline-end: 0 !important;
+}
+@media all and (pointer: fine) and (min-width: 80em) {
+  .navDrawerCollapseIcon {
+    inset-inline-end: initial !important;
+    inset-inline-start: 8.7em;
+  }
+}
+.navDrawerListItemImageContainer {
+  width: 1.9em !important;
+  height: 1.9em !important;
+  background-color: transparent !important;
+}
+@media all and (pointer: fine) {
+  .drawer-open .navDrawerListItemBody {
+    padding-top: 0.19em !important;
+    padding-bottom: 0.19em !important;
+  }
+}
+.navDrawerListItemIcon {
+  font-size: 1.7em !important;
+}

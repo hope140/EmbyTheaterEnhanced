@@ -1,0 +1,1 @@
+define(["exports","./../modules/viewmanager/baseview.js"],function(_exports,_baseview){function View(view,params){_baseview.default.apply(this,arguments)}Object.defineProperty(_exports,"__esModule",{value:!0}),_exports.default=void 0,Object.assign(View.prototype,_baseview.default.prototype),_exports.default=View});

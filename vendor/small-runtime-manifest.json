@@ -12,8 +12,9 @@
     "physicalLegacyDirectoryRequired": false,
     "claimedAsOwnOriginal": false,
     "officialOnlineRecoveryEstablished": false,
-    "publicBodyUpload": false,
-    "configurationTransformed": false
+    "publicBodyUpload": true,
+    "configurationTransformed": false,
+    "repositoryStorage": "Explicit user-authorized same-repository snapshot; existing source/notice uncertainties remain, no authorship reattribution"
   },
   "files": [
     {

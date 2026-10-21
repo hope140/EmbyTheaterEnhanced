@@ -45,3 +45,7 @@ npm test
 
 
 Normal first restoration can now use `node tools/web-snapshot-input.cjs restore . <independent-snapshot-root>` or `prepare.ps1 -WebSnapshotRoot`. This validates the exact fixed Web and user-patch tree without historical installer/extracted layouts. The older `import` command is a separate explicit historical acquisition tool.
+
+## Current repository restoration update (2026-10-21)
+
+The user authorized tracking the exact required Web, compatibility-resource, small-runtime and original Model snapshots in this same repository. The 775 manifest-listed files (51,953,202 bytes) use ordinary Git with `-text` attributes to preserve bytes. Historical local-only/ignored-storage statements below describe earlier stages and are superseded for these four roots. Source attribution and unresolved exact revisions remain unchanged; storage permission is not a claim of new third-party authorship or complete corresponding source. libmpv stays ignored and is restored from the pinned archive via `node tools/prepare-libmpv.cjs .`; see [repository inputs](REPOSITORY_INPUTS.md). No old full installer/patch or real user profile is included.

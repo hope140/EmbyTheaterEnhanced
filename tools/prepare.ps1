@@ -25,9 +25,12 @@ if (-not (Test-Path -LiteralPath (Join-Path $root 'vendor/inherited-npm/emby-ele
 & node (Join-Path $PSScriptRoot 'inherited-npm-input.cjs') validate $root
 if ($LASTEXITCODE -ne 0) { throw 'Inherited npm component validation failed.' }
 if (-not (Test-Path -LiteralPath (Join-Path $root 'vendor/libmpv/20260809'))) {
-    if (-not $LibmpvSnapshotFile) { throw 'Provide -LibmpvSnapshotFile with the exact fixed DLL snapshot; online archive recovery remains unresolved.' }
-    & node (Join-Path $PSScriptRoot 'libmpv-input.cjs') import $root $LibmpvSnapshotFile
-    if ($LASTEXITCODE -ne 0) { throw 'libmpv snapshot preparation failed.' }
+    if ($LibmpvSnapshotFile) {
+        & node (Join-Path $PSScriptRoot 'libmpv-input.cjs') import $root $LibmpvSnapshotFile
+    } else {
+        & node (Join-Path $PSScriptRoot 'prepare-libmpv.cjs') $root
+    }
+    if ($LASTEXITCODE -ne 0) { throw 'Pinned libmpv preparation failed.' }
 }
 & node (Join-Path $PSScriptRoot 'libmpv-input.cjs') validate $root
 if ($LASTEXITCODE -ne 0) { throw 'libmpv snapshot validation failed.' }

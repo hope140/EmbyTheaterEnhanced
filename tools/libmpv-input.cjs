@@ -40,7 +40,7 @@ function load(rootArg) {
         seen.add(entry.path.toLowerCase());
     }
     if(manifest.bytes!==manifest.files.reduce((n,f)=>n+f.size,0)||manifest.treeSha256!==web.treeHash(manifest.files))throw new Error('libmpv snapshot component summary mismatch.');
-    if(manifest.provenance?.mode!=='local-snapshot')throw new Error('Invalid libmpv snapshot origin declaration.');
+    if(!['local-snapshot','upstream-fixed-archive'].includes(manifest.provenance?.mode))throw new Error('Invalid libmpv snapshot origin declaration.');
     return manifest;
 }
 function paths(root) {return load(root).files.map(entry=>entry.path);}
@@ -48,7 +48,7 @@ function validate(rootArg) {
     const root=path.resolve(rootArg),manifest=load(root);
     web.verifyTree(path.join(root,INPUT_ROOT),manifest.files);
     return {status:'passed',manifestPath:MANIFEST_PATH,manifestSha256:sha(fs.readFileSync(path.join(root,MANIFEST_PATH))),
-        version:manifest.version,provenance:manifest.provenance,upstreamCandidate:manifest.upstreamCandidate,fileCount:manifest.fileCount,bytes:manifest.bytes,treeSha256:manifest.treeSha256};
+        version:manifest.version,provenance:manifest.provenance,archive:manifest.archive,upstreamCandidate:manifest.upstreamCandidate,fileCount:manifest.fileCount,bytes:manifest.bytes,treeSha256:manifest.treeSha256};
 }
 function importSnapshot(rootArg,sourceArg) {
     const root=path.resolve(rootArg),manifest=load(root),source=path.resolve(sourceArg);physical(source,false);
@@ -90,4 +90,4 @@ if(require.main===module) {
         process.stdout.write(JSON.stringify(result,null,2)+'\n');
     }catch(error){process.stderr.write(error.message+'\n');process.exitCode=1;}
 }
-module.exports={MANIFEST_PATH,INPUT_ROOT,RUNTIME_PATH,load,paths,validate,importSnapshot,validateRuntime,assemble};
+module.exports={MANIFEST_PATH,INPUT_ROOT,RUNTIME_PATH,load,paths,validate,importSnapshot,validateRuntime,assemble,physical,mkdirPhysical};

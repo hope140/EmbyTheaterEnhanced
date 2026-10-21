@@ -1,0 +1,27 @@
+.appfooter {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  z-index: 1;
+  contain: layout style;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+  padding-bottom: 0;
+}
+.appfooter-withContent {
+  padding-left: env(safe-area-inset-left, 0);
+  padding-right: env(safe-area-inset-right, 0);
+  /*padding-bottom: env(safe-area-inset-bottom, 0);*/
+}
+@media not all and (min-width: 50em) {
+  .appfooter-withContent50w {
+    padding-left: env(safe-area-inset-left, 0);
+    padding-right: env(safe-area-inset-right, 0);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+}
