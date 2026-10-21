@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-21 — 0.3.14 规范发行准备
+
+用户要求改为 0.3.14 测试版。独立分支以已合并的 bb0c3a9 为功能基线，只统一根 package/lock 版本并准备用户说明、发行合同及核验初稿；产品源码、UI、播放行为、依赖和固定工具链不变，不混入依赖拆分。
+
+本条为准备阶段记录，不将此前基线包的测试、哈希或用户反馈冒充本版新结果。候选验证、审查、最终 main source、annotated Tag/Tag CI、五附件与公开回读分别记录；不自动合并 main 或处理旧发布。见[发行合同](V0314_RELEASE_CONTRACT.md)。
+
 ## 2026-10-21 — Linux 公共离线测试兼容
 
 仅调整测试：Native Helper 夹具使用宿主绝对路径，Mount 夹具保持 Windows 客户端身份并在非 Windows 使用精确路径合成文件系统；Windows 继续使用真实文件系统。可移植 PowerShell helper 在 Linux 使用 `pwsh`，Windows 保留原 `powershell.exe` / `pwsh.exe`。产品路径安全校验、播放行为、依赖和材料排除规则保持。
