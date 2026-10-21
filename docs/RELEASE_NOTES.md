@@ -1,26 +1,26 @@
-# v0.3.14 · 菜单与首页恢复测试版
+# v0.3.15 · 播放后退出修复测试版
 
 Windows x64 **Pre-release 测试版**，请手动下载。当前正式版为 [v0.3.1](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.1)。内置更新检查读取 Stable 渠道，不会自动安装测试版。
 
 ## 本次更新
 
-- 修正设备菜单没有条目时的标题居中，保留有条目菜单的原有布局与操作。
-- 改善首页启动和返回时的加载恢复：等待既有客户端、服务器与用户状态就绪，失败后允许重试，离开页面时停止旧页面的加载提交。
+- 修复 Windows 播放后关闭窗口时，任务栏媒体控制清理可能触发的主进程 `Object has been destroyed` 错误弹窗。
+- 关闭后正确取消相关重试与监听，重复清理安全；任务栏播放/暂停和停止功能继续保留。
 
-本版沿用已合并的菜单与首页修正，统一应用及安装器版本为 0.3.14，不加入后续依赖拆分改动。来源及验证范围见[发行核验](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/V0314_RELEASE_VERIFICATION.md)。
+本版只包含这项退出修复及回归，不加入依赖拆分或 Host/Model 更新。验证范围见[发行核验](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/V0315_RELEASE_VERIFICATION.md)。
 
 ## 已知问题
 
-STRM/115 内嵌字幕和音轨切换延迟、多显示器目标选择及退出时的显示恢复仍有已知限制。Windows 系统媒体控制相关试验尚未完成正式打包接线，本版不承诺其完整可用。用户此前的功能验收反馈不代表本次新版本安装包已经完成自动化实机播放或完整安装验收。更多内容见[已知问题](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/KNOWN_ISSUES.md)。
+隔离 Electron 窗口已验证原错误和修复后的关闭流程，播放状态由夹具注入；未完成真实媒体、完整应用退出或系统安装矩阵验收。STRM/115 内嵌字幕和音轨切换延迟、多显示器目标选择及显示恢复等既有限制保持。可选 Windows FFI 系统媒体试验仍未完成普通构建接线。更多内容见[已知问题](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/KNOWN_ISSUES.md)。
 
 ## 下载安装
 
-- [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.14/EmbyTheaterEnhanced-0.3.14-win-x64-setup.exe)
-- [SHA-256 校验文件](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.14/EmbyTheaterEnhanced-0.3.14-win-x64-setup.exe.sha256)
+- [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.15/EmbyTheaterEnhanced-0.3.15-win-x64-setup.exe)
+- [SHA-256 校验文件](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.15/EmbyTheaterEnhanced-0.3.15-win-x64-setup.exe.sha256)
 - 安装程序未进行数字签名。关闭正在运行的客户端后再安装，步骤见[用户指南](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/USER_GUIDE.md)。
 
 ## 项目说明
 
 非官方社区维护项目，与 Emby 官方无隶属或认可关系。许可与第三方材料情况见[许可与来源说明](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/LICENSING.md)。既有未决来源、对应源码和许可事项保持未决。
 
-[版本变更记录](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/CHANGELOG.md) · [与前一版本比较](https://github.com/hope140/EmbyTheaterEnhanced/compare/v0.3.13...v0.3.14)
+[版本变更记录](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/CHANGELOG.md) · [与前一版本比较](https://github.com/hope140/EmbyTheaterEnhanced/compare/v0.3.14...v0.3.15)

@@ -10,19 +10,32 @@ const renderer = require('../src/electronapp/enhanced/windows-media-renderer');
 function mainFixture(overrides = {}) {
     const window = new EventEmitter(), ipcMain = new EventEmitter(), nativeTheme = new EventEmitter(), app = new EventEmitter();
     const toolbars = [], commands = [];
-    window.webContents = new EventEmitter();
-    window.webContents.mainFrame = {url: pathToFileURL(path.resolve(__dirname, '../src/electronapp/www/index.html')).href};
-    window.webContents.isDestroyed = () => false;
-    window.isDestroyed = () => false;
+    const webContents = new EventEmitter();
+    let destroyed = false;
+    Object.defineProperty(window, 'webContents', {get() {
+        if (destroyed) throw new TypeError('Object has been destroyed');
+        return webContents;
+    }});
+    webContents.mainFrame = {url: pathToFileURL(path.resolve(__dirname, '../src/electronapp/www/index.html')).href};
+    webContents.isDestroyed = () => destroyed;
+    window.isDestroyed = () => destroyed;
     let visible = overrides.visible !== false, remainingFailures = overrides.failures || 0;
     window.isVisible = () => visible;
-    window.setThumbarButtons = value => { toolbars.push(value); return remainingFailures-- > 0 ? false : true; };
+    window.setThumbarButtons = value => {
+        assert.equal(destroyed, false, 'cannot update a destroyed window');
+        toolbars.push(value);
+        if (overrides.onToolbar) overrides.onToolbar(value);
+        return remainingFailures-- > 0 ? false : true;
+    };
     const options = {platform: 'win32', window, ipcMain, nativeTheme, app,
         nativeImage: {createFromBitmap(bitmap, size) { assert.equal(bitmap.length, 4096); return {bitmap, size}; }},
         sendCommand: command => commands.push(command), clock: overrides.clock};
     const dispose = main.attach(options);
     const event = {sender: window.webContents, senderFrame: window.webContents.mainFrame};
-    return {window, ipcMain, nativeTheme, app, toolbars, commands, dispose, show() {visible=true;window.emit('show');},
+    return {window, webContents, ipcMain, nativeTheme, app, toolbars, commands, dispose,
+        destroy() { destroyed = true; window.emit('closed'); },
+        markDestroyed() { destroyed = true; },
+        show() {visible=true;window.emit('show');},
         send(value, receivedEvent = event) { ipcMain.emit(renderer.CHANNEL, receivedEvent, value); }};
 }
 
@@ -59,7 +72,7 @@ test('navigation reset shutdown and closed cleanup remove buttons and listener o
         if (action === 'navigation') f.window.webContents.emit('did-start-navigation',{},'file:///fixture',false,true);
         else if (action === 'crash') f.window.webContents.emit('render-process-gone');
         else if (action === 'shutdown') f.app.emit('before-quit');
-        else f.window.emit('closed');
+        else f.destroy();
         stale.click(); assert.equal(f.commands.length, 0);
         if (action !== 'navigation' && action !== 'crash') {
             assert.equal(f.ipcMain.listenerCount(renderer.CHANNEL), 0);
@@ -68,6 +81,65 @@ test('navigation reset shutdown and closed cleanup remove buttons and listener o
         }
         f.dispose(); f.dispose();
     }
+});
+
+test('playback then destroyed-window closed event retires every owned listener without accessing webContents', () => {
+    for (const paused of [false, true]) {
+        const f = mainFixture();
+        f.send({active: true, paused});
+        const stale = f.toolbars.at(-1), count = f.toolbars.length;
+        assert.doesNotThrow(() => f.destroy());
+        assert.doesNotThrow(() => { f.dispose(); f.app.emit('before-quit'); f.dispose(); });
+        stale.forEach(button => button.click());
+        assert.deepEqual(f.commands, []);
+        assert.equal(f.dispose.status().active, false);
+        assert.equal(f.toolbars.length, count);
+        for (const [owner, event] of [[f.ipcMain, renderer.CHANNEL], [f.nativeTheme, 'updated'],
+            [f.webContents, 'did-start-navigation'], [f.webContents, 'render-process-gone'],
+            [f.window, 'closed'], [f.window, 'show'], [f.window, 'restore'], [f.app, 'before-quit']]) {
+            assert.equal(owner.listenerCount(event), 0, event);
+        }
+    }
+});
+
+test('before-quit clears a live toolbar once and remains safe when closed follows', () => {
+    const f = mainFixture(); f.send({active: true, paused: false});
+    const count = f.toolbars.length;
+    f.app.emit('before-quit');
+    assert.deepEqual(f.toolbars.at(-1), []);
+    assert.equal(f.toolbars.length, count + 1);
+    assert.doesNotThrow(() => { f.destroy(); f.dispose(); });
+    assert.equal(f.toolbars.length, count + 1);
+});
+
+test('destroyed window before closed ignores late IPC and cancels pending toolbar retry', () => {
+    const timers = new Map(); let next = 0;
+    const clock = {setTimeout(fn) {timers.set(++next, fn);return next;}, clearTimeout(id) {timers.delete(id);}};
+    const f = mainFixture({failures: 10, clock}); f.send({active: true, paused: false});
+    const lateReceive = f.ipcMain.listeners(renderer.CHANNEL)[0], lateRetry = [...timers.values()][0];
+    f.markDestroyed();
+    assert.doesNotThrow(() => f.send({active: true, paused: true}));
+    assert.doesNotThrow(() => f.dispose());
+    assert.equal(timers.size, 0);
+    assert.equal(f.dispose.status().retries, 0);
+    const count = f.toolbars.length;
+    assert.doesNotThrow(() => { lateRetry(); lateReceive({}, {active: true, paused: false}); f.destroy(); f.dispose(); });
+    assert.equal(f.toolbars.length, count);
+});
+
+test('dispose retires callbacks before clearing a live toolbar, including reentrant cleanup and shell failure', () => {
+    let cleanup, stale, clearCount = 0;
+    const f = mainFixture({onToolbar(value) {
+        if (value.length === 0 && cleanup) { clearCount++; cleanup(); stale.click(); throw Error('shell unavailable'); }
+    }});
+    f.send({active: true, paused: false});
+    cleanup = f.dispose; stale = f.toolbars.at(-1)[0];
+    assert.doesNotThrow(() => { f.dispose(); f.dispose(); });
+    assert.equal(clearCount, 1);
+    assert.deepEqual(f.commands, []);
+    assert.equal(f.ipcMain.listenerCount(renderer.CHANNEL), 0);
+    assert.equal(f.dispose.status().active, false);
+    assert.equal(f.dispose.status().applied, false);
 });
 
 test('theme changes regenerate native icons and platform capability absence is harmless', () => {
