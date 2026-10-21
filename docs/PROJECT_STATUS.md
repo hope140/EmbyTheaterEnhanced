@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-10-21 — 菜单居中、首页启动恢复与 Windows 媒体试验
+
+空设备 ActionSheet 通过固定源 CSS overlay 去除空列表末尾间距，有条目和虚拟列表保持原布局。首页在同一 refresh epoch 内等待既有 client/server/user 就绪，最长 3 秒；失败或取消后释放对应 pending，普通恢复可以重试。整页 fallback、分区顺序与原播放归属保持。
+
+Windows 任务栏按钮接回原 inputmanager，preload 绑定原 PlaybackManager/events 并补充 Web MediaSession 状态。可选 SMTC/DWM 试验提供系统媒体状态、固定播放命令和所属 video host 缩略图；窗口显示后首次注册真实按钮，注册失败有限重试，最小化保留有效帧。用户已完成本轮有限人工接受；多屏/DPI 与长时稳定性未穷尽。
+
+当前仅保存本地源码，未生成新安装包。原生模块通过试验开关启用，固定 FFI 依赖尚未纳入正式构建合同；后续打包前须完成该接线与来源校验。实现、验收层次及复现入口见 [Windows 媒体控制](WINDOWS_MEDIA_CONTROLS.md)。
+
 ## 2026-10-20 — v0.3.13 测试版已发布
 
 [v0.3.13](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.13) 已公开为 Pre-release，Release ID 417908398；PR #52 合并后的产品 source 为 `d313e93a9d0920af7ed27cd1743d6bb9c9178d4d`，Tag 对象为 `70e236f58e89d21f00d89f066020185f24197b13`。Main/Tag CI 各 1142/1142，产品 push/PR CI 成功；固定材料 211/211，2160 项 runtime（2159 payload）、VerifyOnly、InnoUnp 与完整解包逐路径/大小/SHA 核验通过。安装器为 175752088 字节，SHA-256 `4d67499f5716bc10f4ca936757a274b0a57a7f621843d27043604ff49d00a923`，未签名。五附件匿名完整回读均通过；正式版与 Latest 保持 v0.3.1，旧 24 个 Release、89 个附件及 51 行 Tag 引用保持。具体来源与边界见[发行核验](V0313_RELEASE_VERIFICATION.md)。

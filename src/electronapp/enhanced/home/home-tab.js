@@ -29,6 +29,7 @@
         var renderer = dependencies.cards || cards, layoutManager = dependencies.layout || layout, locale = dependencies.globalize || globalize;
         var navigation = dependencies.router || router;
         var provider = serverSections.createProvider(function() { return connection.currentApiClient(); });
+        var identityClock = dependencies.identityClock || {now: Date.now, setTimeout: setTimeout, clearTimeout: clearTimeout};
         var waits = new Set();
         var active = false, disposed = false, epoch = 0, stage = null, stageMode = null, pending = null;
         var focusedItemId = null;
@@ -41,6 +42,49 @@
         function getItems(root) { return root ? Array.from(root.querySelectorAll('.itemsContainer')) : []; }
         function pauseItems(root) { getItems(root).forEach(function(items) { if (typeof items.pause === 'function') items.pause(); }); }
         function cancelWaits() { Array.from(waits).forEach(function(cancel) { cancel(); }); }
+        function activeEpoch(value) { return active && !disposed && !!owner.view && epoch === value; }
+        function identity(value) {
+            try {
+                var client = connection.currentApiClient();
+                if (!client) return null;
+                var server = client.serverId(), user = client.getCurrentUserId();
+                if (typeof server !== 'string' || !server || typeof user !== 'string' || !user) return null;
+                return {epoch: value, client: client, server: server, user: user, fallback: null};
+            } catch (_) { return null; }
+        }
+        function waitForIdentity(value, deadline) {
+            return new Promise(function(resolve, reject) {
+                var timer, settled = false;
+                function done(error, ticket) {
+                    if (settled) return;
+                    settled = true;
+                    identityClock.clearTimeout(timer);
+                    waits.delete(cancel);
+                    if (error) reject(error); else resolve(ticket);
+                }
+                function cancel() { done(abort()); }
+                function check() {
+                    if (!activeEpoch(value)) return cancel();
+                    if (identityClock.now() >= deadline) return done(new Error('Home identity unavailable'));
+                    var ticket = identity(value);
+                    var stable = ticket && current(ticket);
+                    if (identityClock.now() >= deadline) return done(new Error('Home identity unavailable'));
+                    if (stable) return done(null, ticket);
+                    timer = identityClock.setTimeout(check, Math.min(100, deadline - identityClock.now()));
+                }
+                waits.add(cancel);
+                check();
+            });
+        }
+        function showError() {
+            owner.sectionsRendered = false;
+            var errorStage = newStage(), message = document.createElement('p');
+            message.className = 'padded-left padded-right';
+            var chinese = /^zh/i.test(locale.getCurrentLocale());
+            message.textContent = chinese ? '首页暂时无法加载。' : 'Home could not be loaded.';
+            errorStage.appendChild(message);
+            attach(errorStage, 'error');
+        }
         function wait(ticket, operation) {
             if (!current(ticket)) return Promise.reject(abort());
             return new Promise(function(resolve, reject) {
@@ -175,17 +219,26 @@
             options = options || {};
             if (!active || disposed || !owner.view) return {status: 'cancelled'};
             clear();
-            var client, ticket;
+            var loadEpoch = epoch, identityDeadline = identityClock.now() + 3000, ticket = identity(loadEpoch);
+            loading.show();
             try {
-                client = connection.currentApiClient();
-                if (!client) return {status: 'cancelled'};
-                ticket = {epoch: epoch, client: client, server: client.serverId(), user: client.getCurrentUserId(), fallback: null};
-            } catch (_) { return {status: 'cancelled'}; }
-            owner.apiClient = client;
+                if (!ticket || !current(ticket) || identityClock.now() >= identityDeadline) ticket = await waitForIdentity(loadEpoch, identityDeadline);
+            } catch (_) {
+                if (!activeEpoch(loadEpoch)) return {status: 'cancelled'};
+                showError();
+                loading.hide();
+                return {status: 'error'};
+            }
+            if (!current(ticket) || identityClock.now() >= identityDeadline) {
+                if (!activeEpoch(loadEpoch)) return {status: 'cancelled'};
+                showError();
+                loading.hide();
+                return {status: 'error'};
+            }
+            owner.apiClient = ticket.client;
             owner.sectionsRendered = false;
             provider.cancel();
             pauseItems(stage);
-            loading.show();
             try {
                 var response = await provider.loadSections({displayMode: layoutManager.tv ? 'tv' : 'mobile,desktop'});
                 if (!current(ticket)) return {status: 'cancelled'};
@@ -212,26 +265,30 @@
                     try { return await fallback(ticket, options); } catch (_) { }
                 }
                 if (current(ticket)) {
-                    owner.sectionsRendered = false;
                     // Leave a retryable, bounded error without exposing request details.
-                    var errorStage = newStage(), message = document.createElement('p');
-                    message.className = 'padded-left padded-right';
-                    message.textContent = /^zh/i.test(locale.getCurrentLocale()) ? '首页暂时无法加载，请重新进入重试。' : 'Home could not be loaded. Please reopen it to retry.';
-                    errorStage.appendChild(message);
-                    attach(errorStage, 'error');
+                    showError();
                 }
                 return {status: current(ticket) ? 'error' : 'cancelled'};
             } finally { if (current(ticket)) loading.hide(); }
         }
+        function start(options) {
+            var work = refresh(options), record = {promise: work, epoch: epoch};
+            pending = record;
+            function release() { if (pending === record) pending = null; }
+            work.then(release, release);
+            return work;
+        }
         return {
-            refresh: function(options) { pending = refresh(options); return pending; },
+            refresh: start,
             resume: function(options) {
                 options = options || {};
                 if (disposed) return Promise.resolve({status: 'cancelled'});
-                if (active && !options.refresh) return pending || Promise.resolve();
+                if (active && !options.refresh) {
+                    if (pending && pending.epoch === epoch) return pending.promise;
+                    if (owner.sectionsRendered) return Promise.resolve({status: stageMode});
+                }
                 active = true;
-                pending = refresh(options);
-                return pending;
+                return start(options);
             },
             pause: function() {
                 var element = document.activeElement;

@@ -26,6 +26,9 @@
     var enhancedDiagnostics = require('./enhanced/diagnostics');
     var maintenanceIpc = require('./enhanced/maintenance-ipc');
     var rendererBoundary = require('./enhanced/renderer-boundary');
+    var windowsMediaControls = require('./enhanced/windows-media-controls');
+    var windowsNativeMedia = null;
+    var disposeWindowsNativeMedia = function () { return Promise.resolve(); };
     var bundledVersions = require('./enhanced/bundled-versions');
 
     var appBootstrapState = appBootstrap.bootstrap({
@@ -1163,6 +1166,7 @@
             runCleanup('refresh-rate', function () { return unregisterRefreshRate(); }),
             runCleanup('native-helper', function () { return unregisterNativeHelperIpc(); }),
             runCleanup('mpv-kernel', function () { return unregisterMpvKernelIpc(); }),
+            runCleanup('windows-media', function () { if (typeof disposeWindowsNativeMedia === 'function') return disposeWindowsNativeMedia(); }),
             runCleanup('startup', function () { return readyStartupPromise; })
         ]).then(function () { app.quit(); });
     });
@@ -1302,6 +1306,29 @@
             if (appIsShuttingDown || !nativeHelperService) return;
 
             mainWindow = new BrowserWindow(windowOptions);
+            windowsMediaControls.attach({
+                platform: process.platform, window: mainWindow, ipcMain: ipcMain,
+                app: app, nativeImage: nativeImage, nativeTheme: electron.nativeTheme,
+                log: enhancedLog,
+                sendCommand: function (command) { if (!appIsShuttingDown) sendCommand(command); }
+            });
+            if (process.platform === 'win32' && process.env.ETE_WINDOWS_NATIVE_TRIAL === '1') {
+                try {
+                    var nativeMediaPath = path.join(__dirname, 'enhanced', 'native-media');
+                    var winrtMedia = require(path.join(nativeMediaPath, 'winrt.cjs'));
+                    var dwmMedia = require(path.join(nativeMediaPath, 'dwm.cjs'));
+                    windowsNativeMedia = require('./enhanced/windows-native-media').attach({
+                        window: mainWindow, ipcMain: ipcMain, nativeImage: nativeImage,
+                        getVideoWindow: function () { return nativeHelperService && nativeHelperService.getVideoWindow(); },
+                        sendCommand: function (command) { if (!appIsShuttingDown) sendCommand(command); },
+                        koffi: require(path.join(nativeMediaPath, 'node_modules', 'koffi')),
+                        createBindings: winrtMedia.createBindings, createSmtc: winrtMedia.createSmtc,
+                        createDwm: dwmMedia.createDwm, attachThumbnail: dwmMedia.attachThumbnail, log: enhancedLog,
+                        artworkDirectory: path.join(app.getPath('userData'), 'windows-media-artwork')
+                    });
+                    disposeWindowsNativeMedia = windowsNativeMedia.dispose;
+                } catch (_) { enhancedLog({category: 'windows-media', event: 'integration-unavailable', details: {stage: 'startup'}}); }
+            }
 
             if (enableDevToolsOnStartup) {
                 mainWindow.openDevTools();

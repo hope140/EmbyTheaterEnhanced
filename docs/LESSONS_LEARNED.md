@@ -1,5 +1,12 @@
 # 维护注意事项
 
+- 本地 runtime 完整性入口须区分固定 payload 与精确允许的运行日志。Electron 可在二进制目录创建 debug.log，不能因此永久拒绝第二次启动；既有 payload 仍逐项校验，其他未知文件继续拒绝。System.Diagnostics.MainWindowHandle/CloseMainWindow 不足以证明实际 BrowserWindow 关闭，应结合应用窗口生命周期与进程退出核对。
+
+- Electron preload 可用的 require 不应留到后续回调再调用；提前捕获模块，再把原应用实例传入幂等 binder。appready/unload 时序须在真实 runtime 验证。暂停 seek 节流要有末次 flush，否则没有下一次 timeupdate 时系统进度会停在旧值。
+- PrintWindow 成功不证明 Native 视频有效。隐藏/最小化 surface 可以返回黑图，捕获前后应校验 owner/媒体代次和窗口状态并保留有效帧；DWM 成功、SMTC 成功与可见桌面验收分别记录。按需捕获应核对图像变化与 GDI 增量。
+
+- 菜单空态的居中须核对空列表容器，而不仅是标题的 text-align。ActionSheet 的列表末尾 padding 在无条目时仍占高度，会使标题视觉偏上；只针对实际为空的非虚拟列表清除，保留正常条目焦点间距和异步加载布局。隔离渲染替换 CSS 时保持原级联顺序并关闭过渡动画，避免将边框重置或动画中间帧误记为修复效果；几何中心与完整客户端视觉分层验证。
+
 - ChildProcess error可表示无法向仍存活的进程发送终止信号，不能一律当成exit。无PID的spawn失败与有PID的transport失败分别处理；process ownership保持到实际退出，重复error监听仍须安全且终态通知幂等。
 - 多owner退出收尾不能用Promise.all的快速拒绝代替全部完成。每个cleanup先在原同步时序中启动并隔离throw/reject，再等待全部outcome；故障诊断只写固定阶段。回归需让某项失败同时另一真实返回的Promise仍pending，不能等待失败阶段未返回的fixture gate。
 

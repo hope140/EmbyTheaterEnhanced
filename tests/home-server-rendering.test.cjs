@@ -50,7 +50,7 @@ class Items extends Element {
 }
 function sections() { return [{Id: 'first', SectionType: 'resume', Name: '<unsafe>', Monitor: ['videoplayback', 'markplayed']},
     {Id: 'second', SectionType: 'latestmedia', Name: 'Recent', CollectionType: 'movies'}]; }
-function fixture(handler) {
+function fixture(handler, identityClock) {
     const document = {activeElement: null, createElement(tag, options) { const element = new Element(document, tag); element.customType = options && options.is; if (element.customType) element.classList.add('native-constructor-class'); return element; }};
     const view = new Element(document), root = document.createElement('div'); root.className = 'sections'; view.appendChild(root);
     const cards = Object.freeze({id: 'original-cards'}), calls = [], legacy = [], focus = [], loading = [], routes = [];
@@ -68,6 +68,7 @@ function fixture(handler) {
         loading: {show: () => loading.push('show'), hide: () => loading.push('hide')},
         focus: {autoFocus: () => focus.push('auto'), focus: element => focus.push(element)},
         connection: {currentApiClient: () => client}};
+    if (identityClock) deps.identityClock = identityClock;
     const controller = bridge.create(owner, deps);
     return {owner, root, api, document, cards, calls, legacy, focus, loading, routes, deps, controller,
         version(value) { version = value; }, user(value) { user = value; }, switchClient() { client = {...api}; }};
@@ -264,7 +265,111 @@ test('refresh clears old visible data before fetching a changed user layout', as
     const pending = f.controller.refresh(); assert.equal(f.root.children.length, 0);
     f.controller.pause(); assert.equal((await pending).status, 'cancelled'); f.controller.dispose();
 });
-test('transient identity lookup failures do not reject the HomeTab lifecycle Promise', async () => {
-    const f = fixture(); f.api.serverId = () => { throw new Error('disconnected'); };
-    assert.equal((await f.controller.resume()).status, 'cancelled'); f.controller.dispose();
+function startupClock() {
+    let now = 0, next = 0;
+    const timers = new Map();
+    return {now: () => now,
+        setTimeout(fn, delay) { const id = ++next; timers.set(id, {fn, at: now + delay}); return id; },
+        clearTimeout(id) { timers.delete(id); },
+        advance(ms) { now += ms; for (const [id, timer] of [...timers]) if (timer.at <= now) { timers.delete(id); timer.fn(); } },
+        get size() { return timers.size; }};
+}
+
+test('cold startup waits for complete identity without making requests and then loads once', async () => {
+    const clock = startupClock(), f = fixture(null, clock);
+    let ready = false;
+    f.deps.connection.currentApiClient = () => ready ? f.api : null;
+    const first = f.controller.resume();
+    assert.equal(f.controller.resume(), first);
+    assert.equal(f.calls.length, 0);
+    ready = true; f.user(''); clock.advance(100);
+    assert.equal(f.calls.length, 0);
+    f.user('user-1'); clock.advance(100);
+    assert.equal((await first).status, 'server');
+    assert.equal(f.calls.length, 3);
+    assert.equal(clock.size, 0);
+    assert.equal((await f.controller.resume()).status, 'server');
+    assert.equal(f.calls.length, 3);
+    f.controller.dispose();
+});
+
+test('transient identity exceptions recover within the same cold startup attempt', async () => {
+    const clock = startupClock(), f = fixture(null, clock), server = f.api.serverId;
+    f.api.serverId = () => { throw new Error('private identity failure'); };
+    const first = f.controller.resume();
+    assert.equal(f.calls.length, 0);
+    f.api.serverId = server; clock.advance(100);
+    assert.equal((await first).status, 'server');
+    assert.equal(f.calls.length, 3);
+    f.controller.dispose();
+});
+
+test('identity deadline shows a generic retryable error and ordinary resume starts new work', async () => {
+    const clock = startupClock(), f = fixture(null, clock), server = f.api.serverId;
+    f.api.serverId = () => { throw new Error('private identity failure'); };
+    const first = f.controller.resume();
+    clock.advance(2999);
+    assert.equal(f.root.children.length, 0);
+    clock.advance(1);
+    assert.equal((await first).status, 'error');
+    assert.equal(f.loading.at(-1), 'hide');
+    assert.equal(f.root.children[0].getAttribute('data-ete-home-source'), 'error');
+    assert.equal(f.root.children[0].children.length, 1, 'error stage only contains its existing message');
+    assert.equal(f.root.children[0].children[0].tag, 'p');
+    assert.ok(!f.root.children[0].children[0].textContent.includes('private'));
+    assert.equal(clock.size, 0);
+    f.api.serverId = server;
+    assert.equal((await f.controller.resume()).status, 'server');
+    f.controller.dispose();
+});
+
+test('pause clear and dispose cancel identity waits and prevent late requests', async () => {
+    for (const action of ['pause', 'clear', 'dispose']) {
+        const clock = startupClock(), f = fixture(null, clock);
+        f.user(''); const first = f.controller.resume();
+        f.controller[action]();
+        assert.equal((await first).status, 'cancelled');
+        assert.equal(clock.size, 0);
+        f.user('user-1'); clock.advance(4000);
+        assert.equal(f.calls.length, 0);
+        assert.equal(f.root.children.length, 0);
+        assert.equal((await f.controller.resume()).status, action === 'dispose' ? 'cancelled' : 'server');
+        f.controller.dispose();
+    }
+});
+
+test('a new refresh owns pending cleanup when it replaces a startup wait', async () => {
+    const clock = startupClock(), f = fixture(null, clock);
+    f.user(''); const old = f.controller.resume();
+    const replacement = f.controller.refresh();
+    assert.equal((await old).status, 'cancelled');
+    assert.equal(f.controller.resume(), replacement);
+    f.user('user-1'); clock.advance(100);
+    assert.equal((await replacement).status, 'server');
+    assert.equal(f.calls.length, 3);
+    assert.equal(clock.size, 0);
+    f.controller.dispose();
+});
+
+test('slow synchronous identity probes cannot commit after the absolute startup deadline', async () => {
+    for (const slowProbe of [1, 2, 3]) {
+        const clock = startupClock(), f = fixture(null, clock), server = f.api.serverId;
+        let calls = 0;
+        f.api.serverId = () => { if (++calls === slowProbe) clock.advance(3000); return server(); };
+        assert.equal((await f.controller.resume()).status, 'error');
+        assert.equal(f.calls.length, 0);
+        assert.equal(clock.size, 0);
+        f.controller.dispose();
+    }
+});
+
+test('a transient identity revalidation exception still recovers during startup', async () => {
+    const clock = startupClock(), f = fixture(null, clock), server = f.api.serverId;
+    let calls = 0;
+    f.api.serverId = () => { if (++calls === 2) throw Error('temporary validation failure'); return server(); };
+    const work = f.controller.resume();
+    clock.advance(100);
+    assert.equal((await work).status, 'server');
+    assert.equal(f.calls.length, 3);
+    f.controller.dispose();
 });

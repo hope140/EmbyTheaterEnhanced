@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const preparation = require('../tools/prepare-preload.cjs');
+const vm = require('node:vm');
 
 const vendorPreload = "const { ipcRenderer } = require('electron');\r\nwindow.ipc = ipcRenderer;\r\nconst fs = require('fs');\r\nwindow.fs = fs;\r\nconst os = require('os');\r\nwindow.dirName = os.tmpdir();\r\nwindow.appdata = process.env.APPDATA;\r\n";
 
@@ -40,4 +41,33 @@ test('prepare writes and reuses the same generated artifact without external fil
     } finally {
         fs.rmSync(root, {recursive: true, force: true});
     }
+});
+
+test('media binding captures preload modules before access is revoked and is idempotent', () => {
+    let preloadOpen = true, installs = 0;
+    const playbackManager = {}, events = {}, rendererWindow = {}, window = {};
+    const context = {window, process: {env: {ETE_WINDOWS_NATIVE_TRIAL: '1'}},
+        ipcRenderer: {send() {}, invoke() { return Promise.resolve({token: 'fixture'}); }},
+        require(name) {
+            if (!preloadOpen) throw Error('require access revoked');
+            if (name === './enhanced/diagnostics') return {hashPath() {}};
+            if (name === './enhanced/renderer-errors') return {install() {}};
+            if (name === './enhanced/windows-media-renderer') return {install(target, send, options) {
+                installs++;
+                assert.equal(target, rendererWindow);
+                assert.equal(options.playbackManager, playbackManager);
+                assert.equal(options.events, events);
+                assert.equal(typeof options.requestNativeSession, 'function');
+                const dispose = () => {};
+                dispose.status = () => ({bound: true, disposed: false});
+                return dispose;
+            }};
+            throw Error('unexpected module');
+        }};
+    vm.runInNewContext(preparation.DIAGNOSTICS_BLOCK, context, {timeout: 1000});
+    preloadOpen = false;
+    window.__eteBindWindowsMedia(playbackManager, events, rendererWindow);
+    window.__eteBindWindowsMedia(playbackManager, events, rendererWindow);
+    assert.equal(installs, 1);
+    assert.equal(window.__eteWindowsMediaDiagnostics().bindError, null);
 });

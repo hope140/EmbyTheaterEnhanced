@@ -44,8 +44,14 @@ Native Helper 的 transport 终态与 owned process 退出分别确认。有 PID
 
 服务端首页接线候选仍以原 HomeTab/BaseTab 为生命周期 owner，通过固定 HomeTab/app.js overlay 加载一个维护 controller。它复用现有 ApiClient 只读 HomeSections 和 Section Items，服务能力或布局不支持时回完整旧 homesections。renderer 保留原 CardBuilder、itemscontainer、focus/input、播放与Session归属；暂停/刷新/销毁取消请求，旧页面 stage 与迟到响应不能重新提交。接口、布局首批支持范围和验证边界见[服务端首页合同](SERVER_HOME_SECTIONS.md)。
 
+冷启动首页在同一 refresh epoch 内等待既有连接身份就绪，最长 3 秒；暂停/清理/销毁取消探测。失败状态显示通用文字，pending 仅去重所属进行中请求，成功 active 状态保留原去重。
+
+Windows 本地试验由 preload 提前捕获模块，原 play 入口传入原 PlaybackManager/events 幂等绑定。任务栏按钮、Web MediaSession 展示和可选 SMTC/DWM 共用原状态，命令仍经原 inputmanager。main-only 适配器校验 mainFrame、文档 token、sequence 与媒体代次，只捕获所属 video host，按需更新、最小化保帧、退出等待退休。固定 FFI 尚未进入正式构建，不改变 Native、Session 和窗口归属；见[当前记录](WINDOWS_MEDIA_CONTROLS.md)。
+
 详情页选择器保持原Item controller与EmbySelect/ActionSheet归属。固定HTML overlay补全版本/视频的custom菜单声明；固定layout.css overlay追加详情区域的宽屏选择区宽度/对齐纠正，并精确拆分旧通用内容限宽规则。50em以上的 `.readOnlyContent, form` 继续默认90ch；通用 `.readOnlyContent` 不再强制90ch，使插件及页面自有上限生效。三行折叠与焦点简介自身的90ch重要声明保留，原始vendor只读；变换进入同一layout输出合同。版本、视频、音轨和字幕值及change事件仍由原链路消费，不改PlaybackManager、媒体来源标识或切轨逻辑。
 
 v0.3.5详情生命周期overlay仍由原ItemPage/BaseView拥有页面；加载捕获递增代次及view，pause/destroy使旧代次失效。旧Item回复不再继续来源信息查询，主数据、reload后续和选择器异步回填在提交前核对归属；底层API保持既有请求协议。onBeginResume在实际onResume之前允许合法加载，不以paused状态替代事务标识。见[详情页合同](DETAIL_PAGE.md)。
 
 v0.3.5合批搜索保留两条原路由：标准ItemsView/ListController与电视SearchView/SearchResults。SearchFields保留500ms防抖并在输入、暂停及销毁时退休旧提交；标准列表仅在type=search安装维护helper，复用既有itemscontainer/virtual-scroller归属检查，电视结果按代次提交。ActionSheet仅给原无选择关闭拒绝加明确标记，EmbySelect只处理该标记；真实错误、多选关闭提交与原视频禁用展示保持。见[搜索与菜单合同](SEARCH_AND_MENU.md)。
+
+ActionSheet 空列表排版使用单独的固定源 `actionsheet.css` overlay；只清除空、非虚拟列表残留的末尾间距。原 ActionSheet JS、列表加载、按钮锚定、全屏、多选、选择/取消与播放远控归属保持。CSS 生成器和最终输出进入既有 build-input 与 provenance 合同，冻结输入只读。

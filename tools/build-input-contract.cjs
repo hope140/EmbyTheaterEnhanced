@@ -25,6 +25,7 @@ const INPUT_PATHS = Object.freeze([
     'tools/prepare-web-overlays.cjs', 'tools/patch-videoosd-lifecycle.cjs', 'tools/patch-apiclient-lifecycle.cjs',
     'tools/patch-custom-css-js.cjs', 'tools/patch-externalplayer-residue.cjs', 'tools/patch-item-controls.cjs',
     'tools/patch-content-width.cjs',
+    'tools/patch-actionsheet-layout.cjs',
     'tools/patch-item-lifecycle.cjs',
         'tools/patch-search-ui.cjs', 'tools/patch-select-cancel.cjs', 'tools/patch-startup.cjs',
     'tools/patch-external-player-registration.cjs', 'tools/patch-plugin-settings.cjs', 'tools/patch-server-home.cjs', 'tools/patch-movie-browser.cjs',
