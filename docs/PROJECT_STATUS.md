@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-21 - Local manual/external resource snapshot
+
+Manage 48 unchanged compatibility resources as one explicitly grouped snapshot, reducing old Carnival physical inputs from 53 to five. Preserve source/unknown and embedded copyright/notice distinctions; keep Model and the four small files unchanged. Old patch remains zero. This isolated material baseline must incorporate the separate 0.3.15 exit fix before final packaging; no app acceptance is claimed. See [component contract](COMPATIBILITY_RESOURCES_INPUT.md).
+
 ## 2026-10-21 - Independent local libmpv snapshot
 
 Keep the current DLL unchanged as a single hash-locked local component, explicitly imported from the old patch material. Remove normal old-patch reads and automatic combined-patch extraction. Current physical requirements are 53 Carnival files and zero patch files. Online archive/cloud recovery remains unresolved; no official recovery is claimed. Model/UI/versions remain unchanged. See [libmpv input](LIBMPV_INPUT.md); final regression/equivalence evidence is separate.

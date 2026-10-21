@@ -1,5 +1,7 @@
 # 架构与维护边界
 
+Current compatibility-resource input: 48 manual/external files now use a fixed local component with per-file origin and notice records, preserving runtime paths and bytes. Normal old input count is five Carnival files and zero patch files. Material snapshots remain external to Git. See [snapshot contract and limits](COMPATIBILITY_RESOURCES_INPUT.md).
+
 Current input update: libmpv is an independent verified local snapshot. Normal preparation/build/provenance require no vendor/patch directory or combined-patch archive. Remaining Carnival count is 53; patch count is zero. This changes acquisition paths only, with no DLL/Model/UI/version change. See [snapshot and recovery limits](LIBMPV_INPUT.md).
 
 Current official component extension: the fixed Windows 3.0.20 ZIP supplies 19 unchanged files, including three companion XML files, windowsync and English strings. Dynamic whitelist assembly removes their old physical reads. Remaining Carnival assets: 53; libmpv patch: one. Model and product behavior remain unchanged. See [official inputs](WINDOWS_HOST_INPUT.md).

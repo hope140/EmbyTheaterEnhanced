@@ -12,6 +12,7 @@ const webSnapshot = require('./web-snapshot-input.cjs');
 const windowsHost = require('./windows-host-input.cjs');
 const inheritedNpm = require('./inherited-npm-input.cjs');
 const templates = require('./runtime-template-input.cjs');
+const compatibility = require('./compatibility-resources-input.cjs');
 
 function sha256(bytes) {
     return crypto.createHash('sha256').update(bytes).digest('hex');
@@ -91,10 +92,14 @@ function plan(rootArg, sourceCommit) {
     const template=templates.load(root),templatePaths=new Set(template.files.map(e=>e.runtimePath));
     for(const entry of template.files)if(!candidates.some(item=>item.path===entry.runtimePath&&item.size===entry.size&&item.sha256===entry.sha256))throw Error('Runtime template differs from historical baseline identity.');
     const legacyCandidates=candidates.filter(item=>!npmPaths.has(item.path)&&!templatePaths.has(item.path));
+    const compatibilityInput=compatibility.load(root),compatibilityPaths=new Set(compatibilityInput.files.map(e=>e.path));
+    const oldCompatibility=legacyCandidates.filter(e=>compatibility.isCompatibility(e.path));
+    if(oldCompatibility.length!==compatibilityInput.files.length||oldCompatibility.some(e=>e.action!=='copy'||!compatibilityInput.files.some(f=>f.path===e.path&&f.size===e.size&&f.sha256===e.sha256)))throw Error('Compatibility snapshot differs from retained historical identity.');
+    const otherCandidates=legacyCandidates.filter(e=>!compatibilityPaths.has(e.path));
     const required = item => item.action === 'copy' || ['generated-host-config','generated-preload'].includes(item.reason);
-    const entries = legacyCandidates.filter(required);
-    const historicalEntries = legacyCandidates.filter(item => !required(item));
-    const ignoredInputPaths = [...new Set(['electronapp/www','electronapp/node_modules',...hostPaths,...npmPaths,...templatePaths,...historicalEntries.map(item=>item.path),
+    const entries = otherCandidates.filter(required);
+    const historicalEntries = otherCandidates.filter(item => !required(item));
+    const ignoredInputPaths = [...new Set(['electronapp/www','electronapp/node_modules','external',...compatibilityPaths,...hostPaths,...npmPaths,...templatePaths,...historicalEntries.map(item=>item.path),
         'x64/electron',...selected.packages.map(item=>'electronapp/'+item.packagePath)])];
     if(entries.some(item=>ignoredInputPaths.some(prefix=>item.path===prefix||item.path.startsWith(prefix+'/')))) {
         throw new Error('Historical input exclusion overlaps a consumed input.');
@@ -108,7 +113,7 @@ function plan(rootArg, sourceCommit) {
         webSnapshot: {manifestPath:webSnapshot.MANIFEST_PATH,
             treeSha256:web.treeSha256,fileCount:web.fileCount,bytes:web.bytes},windowsHost:{manifestPath:windowsHost.MANIFEST_PATH,
             treeSha256:host.treeSha256,fileCount:host.fileCount,bytes:host.bytes},inheritedNpm:{manifestPath:inheritedNpm.MANIFEST_PATH,
-            sourceCommit:npm.source.commit,treeSha256:npm.treeSha256,fileCount:npm.fileCount,bytes:npm.bytes},runtimeTemplates:{manifestPath:templates.MANIFEST_PATH,fileCount:3,bytes:template.bytes}};
+            sourceCommit:npm.source.commit,treeSha256:npm.treeSha256,fileCount:npm.fileCount,bytes:npm.bytes},runtimeTemplates:{manifestPath:templates.MANIFEST_PATH,fileCount:3,bytes:template.bytes},compatibilityResources:{manifestPath:compatibility.MANIFEST_PATH,fileCount:compatibilityInput.fileCount,bytes:compatibilityInput.bytes,treeSha256:compatibilityInput.treeSha256}};
 }
 
 function physical(absolute, directory) {
@@ -166,6 +171,7 @@ function assemble(rootArg, sourceCommit, runtimeArg, token) {
     windowsHost.validate(root);
     inheritedNpm.validate(root);
     templates.validate(root);
+    compatibility.validate(root);
     // Validate only consumed bytes and templates. Historical/replaced inputs
     // are references, while current component authorities remain fully checked.
     verifyInputs(carnivalRoot, result.entries, result.ignoredInputPaths);
@@ -181,9 +187,10 @@ function assemble(rootArg, sourceCommit, runtimeArg, token) {
     const hostInput = windowsHost.assemble(root,runtime);
     const npmInput = inheritedNpm.assemble(root,runtime);
     const templateInput=templates.assemble(root,runtime);
+    const compatibilityInput=compatibility.assemble(root,runtime);
     return {schemaVersion: result.schemaVersion, status: 'passed', sourceCommit: result.sourceCommit,
         sourceManifestSha256: result.sourceManifestSha256, groups: result.groups,
-        historicalReference:result.historicalReference,webInput,hostInput,inheritedNpm:npmInput,runtimeTemplates:templateInput};
+        historicalReference:result.historicalReference,webInput,hostInput,inheritedNpm:npmInput,runtimeTemplates:templateInput,compatibilityResources:compatibilityInput};
 }
 
 if (require.main === module) {

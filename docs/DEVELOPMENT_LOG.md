@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-21 - Independent compatibility resource acquisition
+
+Select the exact 48 manual/external assets, lock every runtime path/size/SHA, import only the whitelist and preserve current bytes/notices. Move normal assembly/material/provenance reads to the independent snapshot; keep strict checks for the remaining five old inputs and all current components. Add absent-old-resource and input redirect/tampering coverage; compare complete static payloads. No UI/Model/version/final-product-baseline merge.
+
 ## 2026-10-21 - Remove the last normal patch-directory dependency
 
 Create a one-file local snapshot component with strict size/SHA/path/extra-file checks and explicit current versus historical/public-candidate provenance. Route build, preparation, material gate and source provenance through it. Keep independent old DLL bytes only as a deliberate comparison oracle. Do not substitute another version or claim current online recovery. See [component contract](LIBMPV_INPUT.md).

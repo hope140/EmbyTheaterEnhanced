@@ -1,5 +1,7 @@
 # 构建与打包
 
+Compatibility snapshot update: restore the fixed local 48-file component explicitly, then assemble identical runtime resources without their old directory. Remaining old inputs are five Carnival files, zero patch files. Final package validation must first synchronize the separate 0.3.15 exit fix; no application acceptance is part of this static component step. See [input contract](COMPATIBILITY_RESOURCES_INPUT.md).
+
 Current libmpv input: use the verified independent local snapshot component. Normal prepare/build do not read or recreate the old patch directory or combined-patch ZIP. Keep existing DLL bytes/version; online snapshot recovery is not yet established. See [libmpv preparation](LIBMPV_INPUT.md).
 
 Template follow-up: normal build reads maintained, hash-locked package/preload/Host-config templates and preserves existing generators/versions. Old input requirement is 58 assets plus one libmpv patch. See [exact source and output relations](RUNTIME_TEMPLATES.md).

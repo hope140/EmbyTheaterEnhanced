@@ -107,6 +107,7 @@ function fixture(t) {
     require('./helpers/inherited-npm-fixture.cjs').create(root);
     require('./helpers/runtime-template-fixture.cjs').create(root);
     require('./helpers/libmpv-fixture.cjs').create(root);
+    require('./helpers/compatibility-fixture.cjs').create(root,legacyFiles.filter(e=>require('../tools/compatibility-resources-input.cjs').isCompatibility(e.path)));
     write(root, 'src/electronapp/main.js', 'committed main');
     write(root, '.gitignore', '/vendor/carnival/\n/dist/\n/.work/\n');
     git(root, ['init', '-q']);
@@ -159,7 +160,8 @@ test('plan identifies retained inputs, templates, replacements and retired files
     assert.equal(plan.webSnapshot.fileCount, 3);
     assert.equal(byPath.has('electronapp/node_modules/long/legacy.js'),false);
     assert.equal(plan.historicalEntries.find(item=>item.path==='electronapp/node_modules/long/legacy.js').action,'replace');
-    assert.equal(byPath.get('external/retained.glsl').action, 'copy');
+    assert.equal(byPath.has('external/retained.glsl'),false);
+    assert.equal(plan.compatibilityResources.fileCount,1);
     assert.equal(plan.groups.reduce((total, group) => total + group.fileCount, 0), plan.entries.length);
     assert.deepEqual(fs.readdirSync(f.runtime), [dependencies.OWNER_FILE]);
     assert.equal(overlays.WEB_OVERLAY_CONTRACT.some(item => item.runtimePath === 'electronapp/www/index.html'), true);
@@ -224,10 +226,10 @@ test('official resource whitelist replaces old XML, sync and English language in
 for (const mutation of ['changed-retained', 'extra', 'missing']) {
     test('preflight rejects ' + mutation + ' input before writing any payload', t => {
         const f = fixture(t);
-        if (mutation === 'changed-retained') write(f.vendor, 'external/retained.glsl', 'changed');
+        if (mutation === 'changed-retained') write(f.root, 'vendor/compatibility-resources/snapshot-v1/external/retained.glsl', 'changed');
         if (mutation === 'extra') write(f.vendor, 'unexpected.js', 'extra');
-        if (mutation === 'missing') fs.unlinkSync(path.join(f.vendor, 'external/retained.glsl'));
-        assert.throws(() => assembly.assemble(f.root, f.commit, f.runtime, f.token), /input/);
+        if (mutation === 'missing') fs.unlinkSync(path.join(f.root,'vendor/compatibility-resources/snapshot-v1/external/retained.glsl'));
+        assert.throws(() => assembly.assemble(f.root, f.commit, f.runtime, f.token), /input|identity/);
         assert.deepEqual(fs.readdirSync(f.runtime), [dependencies.OWNER_FILE]);
     });
 }
@@ -272,6 +274,12 @@ test('the entire old patch directory may be absent through validation and curren
     assert.equal(libmpv.validateRuntime(f.root,f.runtime).status,'passed');assert.equal(fs.existsSync(path.join(f.root,'vendor/patch')),false);
 });
 
+test('old external resource directories may be absent while exact snapshot output remains checked',t=>{
+    const f=fixture(t),compatibility=require('../tools/compatibility-resources-input.cjs');fs.rmSync(path.join(f.vendor,'external'),{recursive:true});
+    assert.equal(require('../tools/validate-build-materials.cjs').validate(f.root).compatibilityResources.fileCount,1);assembly.assemble(f.root,f.commit,f.runtime,f.token);
+    assert.equal(compatibility.validateRuntime(f.root,f.runtime).status,'passed');assert.equal(fs.existsSync(path.join(f.vendor,'external')),false);
+});
+
 test('assembly refuses wrong ownership, commit, occupied destinations and repeat attempts', t => {
     const f = fixture(t);
     assert.throws(() => assembly.assemble(f.root, f.commit, f.runtime, '0'.repeat(64)), /ownership marker/);
@@ -289,9 +297,9 @@ test('input and runtime junctions are rejected without touching their targets', 
     const external = path.join(f.root, 'external-target');
     fs.mkdirSync(external);
     write(external, 'sentinel', 'preserve');
-    fs.renameSync(path.join(f.vendor, 'external'), path.join(f.root, 'saved-input'));
-    fs.symlinkSync(external, path.join(f.vendor, 'external'), process.platform === 'win32' ? 'junction' : 'dir');
-    assert.throws(() => assembly.assemble(f.root, f.commit, f.runtime, f.token), /link or redirect/);
+    fs.renameSync(path.join(f.root,'vendor/compatibility-resources/snapshot-v1/external'), path.join(f.root, 'saved-input'));
+    fs.symlinkSync(external, path.join(f.root,'vendor/compatibility-resources/snapshot-v1/external'), process.platform === 'win32' ? 'junction' : 'dir');
+    assert.throws(() => assembly.assemble(f.root, f.commit, f.runtime, f.token), /link.*redirect|symlink|junction/);
     assert.deepEqual(fs.readdirSync(f.runtime), [dependencies.OWNER_FILE]);
     const linkedRuntime = path.join(f.root, 'dist/linked');
     fs.symlinkSync(external, linkedRuntime, process.platform === 'win32' ? 'junction' : 'dir');

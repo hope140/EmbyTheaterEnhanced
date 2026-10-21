@@ -1,5 +1,7 @@
 # Current legacy input selection
 
+Current selection update: the manual/external resource component removes 48 physical old input requirements, leaving only Model and four small files in Carnival (five total), with old patch count zero. Actual component and remaining-input hashes/path/extra checks stay strict. See [compatibility snapshot](COMPATIBILITY_RESOURCES_INPUT.md).
+
 Current patch removal: all normal vendor/patch physical requirements are removed. The same libmpv DLL is a separately validated local snapshot, leaving 53 Carnival assets and zero patch inputs. Historical patch identities remain metadata, and the deliberately supplied comparison oracle is not a normal dependency. See [snapshot contract](LIBMPV_INPUT.md).
 
 Current official-resource update: five additional exact official ZIP members are independently acquired, leaving 53 old Carnival physical inputs and one current libmpv patch. No behavioral file contents changed. See [official component](WINDOWS_HOST_INPUT.md).

@@ -8,6 +8,7 @@ const host = require('./windows-host-input.cjs');
 const npm = require('./inherited-npm-input.cjs');
 const templates = require('./runtime-template-input.cjs');
 const libmpv = require('./libmpv-input.cjs');
+const compatibility = require('./compatibility-resources-input.cjs');
 const RETIRED_WEB_PATCH_PATHS = Object.freeze(['payload/client/apiclient.js','payload/client/toast.css']);
 const REQUIRED_PATCH_PATH = 'payload/libmpv/mpv-1.dll';
 function selectPatchInputs(manifest) {
@@ -32,11 +33,12 @@ function validate(rootArg,sourceCommit) {
     const inheritedNpm = npm.validate(root);
     const runtimeTemplates=templates.validate(root);
     const libmpvInput=libmpv.validate(root);
+    const compatibilityResources=compatibility.validate(root);
     const commit=sourceCommit||cp.execFileSync('git',['-C',root,'rev-parse','HEAD'],{encoding:'utf8'}).trim();
     const plan=assembly.plan(root,commit),patches=selectPatchInputs(manifest);
     assembly.verifyInputs(path.join(root,'vendor/carnival'), plan.entries, plan.ignoredInputPaths);
     if(patches.previous.sha256.toLowerCase()!==libmpv.load(root).files[0].sha256)throw new Error('libmpv snapshot differs from historical current DLL identity.');
-    return {status:'passed',webInput,hostInput,inheritedNpm,runtimeTemplates,libmpvInput,remainingCarnivalFiles:plan.entries.length,remainingPatchFiles:0,
+    return {status:'passed',webInput,hostInput,inheritedNpm,runtimeTemplates,libmpvInput,compatibilityResources,remainingCarnivalFiles:plan.entries.length,remainingPatchFiles:0,
         historicalCarnivalFiles:plan.historicalEntries.length,historicalPatchFiles:patches.historical.length,historicalPatchDirectoryRead:false};
 }
 if (require.main === module) {
