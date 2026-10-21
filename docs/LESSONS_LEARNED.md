@@ -1,5 +1,7 @@
 # 维护注意事项
 
+- 跨平台测试须分开宿主存储路径和 Windows 客户端 Mount 身份。Linux 的 `/tmp` 不能通过放宽产品路径校验变为 Windows 本地媒体；使用精确 Windows 身份夹具，保留真实 Windows 文件系统覆盖。可移植 PowerShell helper 使用宿主已有可信 shell，缺失仍失败；Windows 专属集成按平台明确跳过，并实际检查 Windows 注册不被跳过，不能用 Linux PS7 代替 PS5.1 编码结论。
+
 - 构建跳过旧payload副本不等于可以省略其prepared输入，历史provenance仍可能回读旧Electron/Pepper。组装计划应从当前Git tree与overlay合同重算，按共同生产变换后的逐文件等价对照验证，再单独处理材料独立化；见[RUNTIME_BASE_ASSEMBLY.md](RUNTIME_BASE_ASSEMBLY.md)。
 
 - 本地 runtime 完整性入口须区分固定 payload 与精确允许的运行日志。Electron 可在二进制目录创建 debug.log，不能因此永久拒绝第二次启动；既有 payload 仍逐项校验，其他未知文件继续拒绝。System.Diagnostics.MainWindowHandle/CloseMainWindow 不足以证明实际 BrowserWindow 关闭，应结合应用窗口生命周期与进程退出核对。

@@ -4,8 +4,11 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const {spawnSync} = require('node:child_process');
+const {windowsIntegrationSkip} = require('./helpers/test-platform.cjs');
 
-test('playback issue snapshot black-box contract', () => {
+test('playback issue snapshot black-box contract', {
+  skip: windowsIntegrationSkip('Requires Windows PowerShell 5.1 reporter integration and nested collector shell calls.')
+}, () => {
   const root = path.join(__dirname, '..');
   const script = path.join(__dirname, 'report-playback-issue-selftest.ps1');
   const systemRoot = process.env.SystemRoot || 'C:\\Windows';

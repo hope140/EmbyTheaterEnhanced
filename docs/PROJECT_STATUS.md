@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-21 — Linux 公共离线测试兼容
+
+仅调整测试：Native Helper 夹具使用宿主绝对路径，Mount 夹具保持 Windows 客户端身份并在非 Windows 使用精确路径合成文件系统；Windows 继续使用真实文件系统。可移植 PowerShell helper 在 Linux 使用 `pwsh`，Windows 保留原 `powershell.exe` / `pwsh.exe`。产品路径安全校验、播放行为、依赖和材料排除规则保持。
+
+Linux 公共集合实跑 1198 项，1189 通过、9 跳过、0 失败/取消；原 39 个失败中 34 项恢复，5 项 Windows 集成合同明确按平台跳过，另 4 项原 Windows 专属跳过保留。新增 5 项覆盖 shell 选择、实际集成测试注册的 Windows 执行条件与文件系统夹具边界；345 份 JS、28 份 PowerShell 语法和 396 份文本有限模式扫描通过。Windows 集成未实跑，现有 Windows CI 保留全部覆盖；不代表 Windows 播放、材料构建或老包依赖拆分完成。平台边界见 [公共 CI](PUBLIC_CI.md)。
+
 ## 2026-10-21 — 文件级基线组装集成候选
 
 基于远端已核验 `e286aee124f4cf7bd65d11d3febe7c01b4ac75cf` 独立集成构建整理。原菜单、首页及 Windows 媒体源码保持；按新 Git tree、25项 Web overlay、npm lock 和原 manifest 推导797项复制及212项替换/排除，不沿用旧基线计数。普通构建继续保持原Windows FFI试验边界，未改Host或播放行为。全部1009份prepared输入与历史provenance仍需保留；范围见[文件级组装](RUNTIME_BASE_ASSEMBLY.md)。

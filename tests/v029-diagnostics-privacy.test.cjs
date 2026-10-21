@@ -7,6 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const {spawnSync} = require('node:child_process');
 const diagnostics = require('../src/electronapp/enhanced/diagnostics');
+const {portablePowerShell, powerShell7, windowsIntegrationSkip} = require('./helpers/test-platform.cjs');
 
 const root = path.resolve(__dirname, '..');
 const basicValue = Buffer.from('synthetic-user:synthetic-private-password').toString('base64');
@@ -29,7 +30,7 @@ function powershellProbe(text, options = {}) {
             '$failures = @(Test-SnapshotRedaction -File $OutputFile)',
             '[ordered]@{text=$safe.userNote;gateFailures=$failures} | ConvertTo-Json -Compress'
         ].join('\r\n'));
-        const result = spawnSync(options.shell || 'powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', script,
+        const result = spawnSync(options.shell || portablePowerShell(), ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', script,
             root, input, path.join(temp, 'safe.json')], {encoding: 'utf8', windowsHide: true, timeout: 30000});
         assert.equal(result.error, undefined, 'PowerShell privacy probe could not run');
         assert.equal(result.status, 0, 'PowerShell privacy probe failed');
@@ -137,10 +138,10 @@ test('final snapshot gate admits only complete placeholders after header whitesp
 
 test('PowerShell 7 applies the same multiline header and refusal contract', () => {
     const text = `Proxy-Authorization: SyntheticScheme synthetic-proxy-credential\nSet-Cookie: first=synthetic; second=${cookieValue}\nafter=useful-status`;
-    const result = powershellProbe(text, {shell: 'pwsh.exe'});
+    const result = powershellProbe(text, {shell: powerShell7()});
     assert.equal(result.text, 'Proxy-Authorization: [redacted]\nSet-Cookie: [redacted]\nafter=useful-status');
     assert.deepEqual(result.gateFailures, []);
-    assert.equal(powershellProbe(`Cookie: [redacted] second=${cookieValue}`, {shell: 'pwsh.exe', rawGate: true})
+    assert.equal(powershellProbe(`Cookie: [redacted] second=${cookieValue}`, {shell: powerShell7(), rawGate: true})
         .gateFailures.some(code => code.startsWith('header_value:')), true);
 });
 
@@ -152,7 +153,9 @@ test('final snapshot gate rejects Proxy-Authorization and Set-Cookie JSON keys',
     }
 });
 
-test('actual issue snapshot and collector ZIP contain only sanitized synthetic secrets and media paths', () => {
+test('actual issue snapshot and collector ZIP contain only sanitized synthetic secrets and media paths', {
+    skip: windowsIntegrationSkip('Requires Windows reporter/collector integration with nested powershell.exe calls.')
+}, () => {
     const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-v029-zip-'));
     try {
         const logs = path.join(temp, 'logs');

@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const {spawnSync} = require('node:child_process');
+const {windowsIntegrationSkip} = require('./helpers/test-platform.cjs');
 
 const UTF8_BOM = Buffer.from([0xef, 0xbb, 0xbf]);
 const PS51 = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
@@ -82,7 +83,9 @@ exit $LASTEXITCODE
   };
 }
 
-test('reporter script encoding stays valid in Windows PowerShell 5.1 and PowerShell 7', t => {
+test('reporter script encoding stays valid in Windows PowerShell 5.1 and PowerShell 7', {
+  skip: windowsIntegrationSkip('Requires real Windows PowerShell 5.1 and PowerShell 7 for ANSI/BOM encoding compatibility.')
+}, t => {
   assert.ok(fs.existsSync(PS51), `Windows PowerShell 5.1 was not found at ${PS51}`);
   const pwsh = executable('pwsh.exe') || executable('pwsh');
   assert.ok(pwsh, 'PowerShell 7 (pwsh) is required for the encoding regression check.');

@@ -12,6 +12,7 @@ const protoLoader = require('@grpc/proto-loader');
 const cd2Service = require('../src/electronapp/enhanced/cd2-service');
 const cd2Resolver = require('../src/electronapp/resolvers/cd2-resolver');
 const strmResolver = require('../src/electronapp/resolvers/strm-resolver');
+const {windowsMountFileSystem} = require('./helpers/test-platform.cjs');
 
 const TARGET = '/cloud/media/show/season/episode.mkv';
 const LOCAL_TARGET = 'X:\\Media\\show\\season\\episode.mkv';
@@ -666,6 +667,8 @@ test('direct unsafe-header miss reuses refresh/recheck result for same-origin wi
 });
 
 test('refresh failure continues through actual STRM Mount then Native fallback', {timeout: 10000}, async () => {
+    const fs = windowsMountFileSystem();
+    const path = require('node:path').win32;
     const makeFixture = (hasMount) => {
         const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-cd2-refresh-'));
         const sidecarPath = path.join(directory, 'Episode.mkv.strm');

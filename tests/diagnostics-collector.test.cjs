@@ -4,8 +4,11 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const {windowsIntegrationSkip} = require('./helpers/test-platform.cjs');
 
-test('sanitized diagnostics collector black-box contract', () => {
+test('sanitized diagnostics collector black-box contract', {
+    skip: windowsIntegrationSkip('Requires Windows collector integration, nested powershell.exe and hidden process windows.')
+}, () => {
     const root = path.join(__dirname, '..');
     const script = path.join(__dirname, 'diagnostics-collector-selftest.ps1');
     const result = spawnSync('powershell.exe', [
