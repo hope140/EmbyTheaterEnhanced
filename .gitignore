@@ -4,6 +4,7 @@
 /node_modules/
 /vendor/carnival/
 /vendor/web-snapshot/
+/vendor/windows-host/
 /vendor/patch/
 /vendor/electron/
 /vendor/official-reference/

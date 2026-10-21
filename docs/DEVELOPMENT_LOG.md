@@ -839,3 +839,6 @@ Model Tier: Tier 2；Model: 当前Codex会话，运行时未向任务提供精�
 # 固定Web输入整理
 
 增加独立Web材料清单、显式一次性导入与严格树校验；生产组装、Web overlay及来源记录切换到独立组件，保留现有变换和输出身份，移除旧www的必需物理读取。原材料与Model不变，材料正文不入Git；增加无旧www及输入完整性回归。验证范围和未完成项按本次交付结果记录，详见WEB_SNAPSHOT_INPUT.md。
+## 固定Host输入整理
+
+增加官方Windows 3.0.20归档与14文件白名单，按原字节准备、组装并验证runtime身份；旧目录对应文件退出物理门禁。保留Model及其它材料与既有版本，不运行归档安装器/辅助程序。新增组件完整性、无旧Host输入、来源与runtime篡改回归，详见WINDOWS_HOST_INPUT.md。

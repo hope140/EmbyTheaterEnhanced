@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "version": "3.0.20",
+  "inputRoot": "vendor/windows-host/3.0.20",
+  "fileCount": 14,
+  "bytes": 3527456,
+  "treeSha256": "88156b217ad457e699f9bf63df68d8178ca4c0348c4c114db1d04854b14be273",
+  "archive": {
+    "name": "emby-theater-x64.zip",
+    "sourceUrl": "https://github.com/MediaBrowser/emby-theater-windows/releases/download/3.0.20/emby-theater-x64.zip",
+    "releaseUrl": "https://github.com/MediaBrowser/emby-theater-windows/releases/tag/3.0.20",
+    "size": 111318728,
+    "sha256": "3bc01d288d64046483ef12a8e5a70cc31b6d8b65ed9ee1837554ab7eba797c4c"
+  },
+  "sourceReference": "https://github.com/MediaBrowser/emby-theater-windows/tree/708fadc068cbf66ced6aece4a32f3e12bb2c4e13",
+  "excludedModel": {
+    "path": "MediaBrowser.Model.dll",
+    "reason": "Official member differs from current Model; keep existing bytes and source unchanged"
+  },
+  "redistributionReview": "No new public redistribution of binary bodies; preserve existing notices and unresolved component source/notice records",
+  "files": [
+    {
+      "path": "cec/cec-client.exe",
+      "size": 89536,
+      "sha256": "42f601278f82c37d0cc26460d4ac80e62f6cec5b84b2efb0ee8ed75c1cbc4519",
+      "sourceArchiveMember": "cec/cec-client.exe",
+      "sourceEvidence": "byte-identical member of official Windows 3.0.20 release; matches former frozen input",
+      "licenseEvidence": "Component-specific source and notice completeness remains separate; see docs/WINDOWS_HOST_INPUT.md"
+    },
+    {
+      "path": "cec/cec-client.x64.exe",
+      "size": 89536,
+      "sha256": "42f601278f82c37d0cc26460d4ac80e62f6cec5b84b2efb0ee8ed75c1cbc4519",
+      "sourceArchiveMember": "cec/cec-client.x64.exe",
+      "sourceEvidence": "byte-identical member of official Windows 3.0.20 release; matches former frozen input",
+      "licenseEvidence": "Component-specific source and notice completeness remains separate; see docs/WINDOWS_HOST_INPUT.md"
+    },
+    {
+      "path": "cec/cec.dll",
+      "size": 325568,
+      "sha256": "6e2932ab53f4d05d5f815499786a48c3ccb8a60c527aa2f34e4abbf14dc66d04",
+      "sourceArchiveMember": "cec/cec.dll",
+      "sourceEvidence": "byte-identical member of official Windows 3.0.20 release; matches former frozen input",
+      "licenseEvidence": "Component-specific source and notice completeness remains separate; see docs/WINDOWS_HOST_INPUT.md"
+    },
+    {
+      "path": "cec/cec.x64.dll",
+      "size": 325568,
+      "sha256": "6e2932ab53f4d05d5f815499786a48c3ccb8a60c527aa2f34e4abbf14dc66d04",
+      "sourceArchiveMember": "cec/cec.x64.dll",
+      "sourceEvidence": "byte-identical member of official Windows 3.0.20 release; matches former frozen input",
+      "licenseEvidence": "Component-specific source and notice completeness remains separate; see docs/WINDOWS_HOST_INPUT.md"
+    },
+    {
+      "path": "cec/p8-usbcec-driver-installer.exe",
+      "size": 619536,
+      "sha256": "6e4d5a091720cf5ad727896bbf3766e5529468e24849183439506130bde3546a",
+      "sourceArchiveMember": "cec/p8-usbcec-driver-installer.exe",
+      "sourceEvidence": "byte-identical member of official Windows 3.0.20 release; matches former frozen input",
+      "licenseEvidence": "Component-specific source and notice completeness remains separate; see docs/WINDOWS_HOST_INPUT.md"
+    },
+    {
+      "path": "electronapp/libmpv/x64/RefreshRate.exe",
+      "size": 7168,
+      "sha256": "c3ac38b3345d804afc4ba97f34f059d0c4294ac5f55f62a25948ee62975eaa81",
+      "sourceArchiveMember": "electronapp/libmpv/x64/RefreshRate.exe",
+      "sourceEvidence": "byte-identical member of official Windows 3.0.20 release; matches former frozen input",
+      "licenseEvidence": "Component-specific source and notice completeness remains separate; see docs/WINDOWS_HOST_INPUT.md"
+    },
+    {
+      "path": "Emby.Theater.exe",
+      "size": 202240,
+      "sha256": "11abf75c8f77ddb0078e7dd62a2eaae60dba244c113bc7893a7e56bc6527163e",
+      "sourceArchiveMember": "Emby.Theater.exe",
+      "sourceEvidence": "byte-identical member of official Windows 3.0.20 release; matches former frozen input",
+      "licenseEvidence": "Upstream Windows reference provides GPL v2 text; exact binary rebuild not performed"
+    },
+    {
+      "path": "Emby.Theater.pdb",
+      "size": 400896,
+      "sha256": "512f7c1354ac8914a6cd7b724b75a3c584ab48f88a4ce9a40ae3620de9062f5f",
+      "sourceArchiveMember": "Emby.Theater.pdb",
+      "sourceEvidence": "byte-identical member of official Windows 3.0.20 release; matches former frozen input",
+      "licenseEvidence": "Upstream Windows reference provides GPL v2 text; exact binary rebuild not performed"
+    },
+    {
+      "path": "MediaBrowser.Common.dll",
+      "size": 44032,
+      "sha256": "8fc955a5215e862f5bde882cedbe2be52e6a242d89d03406844993595d72657f",
+      "sourceArchiveMember": "MediaBrowser.Common.dll",
+      "sourceEvidence": "byte-identical member of official Windows 3.0.20 release; matches former frozen input",
+      "licenseEvidence": "Component-specific source and notice completeness remains separate; see docs/WINDOWS_HOST_INPUT.md"
+    },
+    {
+      "path": "ServiceStack.Text.dll",
+      "size": 411648,
+      "sha256": "2cc4fc93be82d4818dc81beb9f5cd0e4f995c77e1725c129e4918e8aeaeb39c1",
+      "sourceArchiveMember": "ServiceStack.Text.dll",
+      "sourceEvidence": "byte-identical member of official Windows 3.0.20 release; matches former frozen input",
+      "licenseEvidence": "Existing source reference records AGPL-3.0, FOSS exception and commercial text; no route selected for binary"
+    },
+    {
+      "path": "SharpCompress.dll",
+      "size": 420864,
+      "sha256": "3c34138417974ce215e5d1b5bdbb7abd578ce77420073ea9de3f46ccebe42b55",
+      "sourceArchiveMember": "SharpCompress.dll",
+      "sourceEvidence": "byte-identical member of official Windows 3.0.20 release; matches former frozen input",
+      "licenseEvidence": "Component-specific source and notice completeness remains separate; see docs/WINDOWS_HOST_INPUT.md"
+    },
+    {
+      "path": "SimpleInjector.dll",
+      "size": 382464,
+      "sha256": "6a8e55d1f114fb579f4b92169af71dc197d86dd13a79199a4f047dc4b22bf0bc",
+      "sourceArchiveMember": "SimpleInjector.dll",
+      "sourceEvidence": "byte-identical member of official Windows 3.0.20 release; matches former frozen input",
+      "licenseEvidence": "Component-specific source and notice completeness remains separate; see docs/WINDOWS_HOST_INPUT.md"
+    },
+    {
+      "path": "SocketHttpListener.dll",
+      "size": 115200,
+      "sha256": "7d1e347f1cb6ff10b011547665bcf13bb734306e8977e572021161f52a43f852",
+      "sourceArchiveMember": "SocketHttpListener.dll",
+      "sourceEvidence": "byte-identical member of official Windows 3.0.20 release; matches former frozen input",
+      "licenseEvidence": "Component-specific source and notice completeness remains separate; see docs/WINDOWS_HOST_INPUT.md"
+    },
+    {
+      "path": "System.Configuration.dll",
+      "size": 93200,
+      "sha256": "3dba0c61e075728780723d7e517f6276674e29f6e9d5942c0b95a240f1e8f1bf",
+      "sourceArchiveMember": "System.Configuration.dll",
+      "sourceEvidence": "byte-identical member of official Windows 3.0.20 release; matches former frozen input",
+      "licenseEvidence": "Component-specific source and notice completeness remains separate; see docs/WINDOWS_HOST_INPUT.md"
+    }
+  ]
+}

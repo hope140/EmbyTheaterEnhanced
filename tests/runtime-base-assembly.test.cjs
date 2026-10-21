@@ -93,6 +93,12 @@ function fixture(t) {
         fs.readFileSync(path.join(vendor,item.originalPath)));
     json(root, web.MANIFEST_PATH, {schemaVersion:1,inputRoot:web.INPUT_ROOT,files:webFiles,userPatches:[],
         fileCount:webFiles.length,bytes:webFiles.reduce((n,f)=>n+f.size,0),treeSha256:web.treeHash(webFiles)});
+    const host=require('../tools/windows-host-input.cjs');
+    const hostFiles=legacyFiles.filter(item=>item.path==='Emby.Theater.exe');
+    for(const item of hostFiles)write(root,host.INPUT_ROOT+'/'+item.path,fs.readFileSync(path.join(vendor,item.path)));
+    json(root,host.MANIFEST_PATH,{schemaVersion:1,version:'3.0.20',inputRoot:host.INPUT_ROOT,files:hostFiles,
+        fileCount:hostFiles.length,bytes:hostFiles.reduce((n,f)=>n+f.size,0),treeSha256:web.treeHash(hostFiles),
+        archive:{size:1,sha256:'0'.repeat(64)}});
     write(root, 'src/electronapp/main.js', 'committed main');
     write(root, '.gitignore', '/vendor/carnival/\n/dist/\n/.work/\n');
     git(root, ['init', '-q']);
@@ -136,7 +142,8 @@ test('plan identifies retained inputs, templates, replacements and retired files
     const f = fixture(t);
     const plan = assembly.plan(f.root, f.commit);
     const byPath = new Map(plan.entries.map(entry => [entry.path, entry]));
-    assert.equal(byPath.get('Emby.Theater.exe').action, 'copy');
+    assert.equal(byPath.has('Emby.Theater.exe'), false);
+    assert.equal(plan.windowsHost.fileCount,1);
     assert.equal(byPath.get('electronapp/main.js').reason, 'committed-product-source');
     assert.equal(byPath.has('electronapp/www/index.html'), false);
     assert.equal(byPath.has('electronapp/www/modules/common/playback/playbackmanager.js'), false);
@@ -159,13 +166,22 @@ test('production material gate and base assembly work when old www is absent',t=
     assert.equal(fs.existsSync(path.join(f.vendor,'electronapp/www')),false);
 });
 
+test('official Host component replaces old Host input in the production material gate and assembly',t=>{
+    const f=fixture(t);
+    fs.unlinkSync(path.join(f.vendor,'Emby.Theater.exe'));
+    assert.equal(require('../tools/validate-build-materials.cjs').validate(f.root).hostInput.fileCount,1);
+    assert.equal(assembly.assemble(f.root,f.commit,f.runtime,f.token).hostInput.fileCount,1);
+    assert.equal(fs.readFileSync(path.join(f.runtime,'Emby.Theater.exe'),'utf8'),'host bytes');
+    assert.equal(fs.existsSync(path.join(f.vendor,'Emby.Theater.exe')),false);
+});
+
 for (const mutation of ['changed-retained', 'changed-excluded', 'extra', 'missing']) {
     test('preflight rejects ' + mutation + ' input before writing any payload', t => {
         const f = fixture(t);
-        if (mutation === 'changed-retained') write(f.vendor, 'Emby.Theater.exe', 'changed');
+        if (mutation === 'changed-retained') write(f.vendor, 'external/retained.glsl', 'changed');
         if (mutation === 'changed-excluded') write(f.vendor, 'x64/electron/electron.exe', 'changed');
         if (mutation === 'extra') write(f.vendor, 'unexpected.js', 'extra');
-        if (mutation === 'missing') fs.unlinkSync(path.join(f.vendor, 'Emby.Theater.exe'));
+        if (mutation === 'missing') fs.unlinkSync(path.join(f.vendor, 'external/retained.glsl'));
         assert.throws(() => assembly.assemble(f.root, f.commit, f.runtime, f.token), /input/);
         assert.deepEqual(fs.readdirSync(f.runtime), [dependencies.OWNER_FILE]);
     });

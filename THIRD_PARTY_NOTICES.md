@@ -5320,3 +5320,11 @@ Snapshot: docs/redistribution-notices/web/Apache-2.0.txt
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+## Fixed Windows Host distribution component
+
+Fourteen unchanged Host/support binaries are now prepared from the pinned
+official Windows 3.0.20 release archive, rather than the Carnival directory.
+The file identities and source/notice boundaries are recorded independently
+in `vendor/windows-host-manifest.json` and `docs/WINDOWS_HOST_INPUT.md`.
+This does not replace MediaBrowser.Model.dll, select a new licensing route,
+establish a complete binary rebuild, or publish the binary bodies in Git.

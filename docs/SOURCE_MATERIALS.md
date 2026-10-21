@@ -76,3 +76,6 @@ unknown. It does not certify redistribution terms or alter existing releases.
 # 独立历史Web材料
 
 Web生产输入现为`vendor/web-snapshot-manifest.json`固定的720份历史基底（22,009,668字节）与两份既有用户Web补丁。材料字节及已有通知原样保存，单次导入后构建不再读取旧包www；准确上游版本及部分文件来源仍未知，不能将整棵树归为项目原创。正文只在本地材料目录保存且Git忽略，公开再分发目标/材料尚待核对。清单不等于材料正文或完整上游源码，准备与验证见[固定Web输入](WEB_SNAPSHOT_INPUT.md)。
+## 官方固定Host组件
+
+官方Windows 3.0.20发布ZIP（111,318,728字节，SHA256 `3bc01d288d64046483ef12a8e5a70cc31b6d8b65ed9ee1837554ab7eba797c4c`）中的14份白名单Host/辅助二进制与此前固定输入逐字节相同，现由独立组件准备。完整路径、大小和哈希见`vendor/windows-host-manifest.json`；准备及来源边界见[固定Host输入](WINDOWS_HOST_INPUT.md)。这补充了已知公开分发位置，不改变上文对精确源码重建或组件通知完整性的限制。Model未改用官方不同字节版本，仍保留当前文件。

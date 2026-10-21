@@ -9,6 +9,7 @@ const dependencies = require('./runtime-dependency-contract.cjs');
 const {RETIRED_RUNTIME_PATHS} = require('./runtime-exclusions.cjs');
 const {hashTrackedTextFile} = require('./tracked-file-hash.cjs');
 const webSnapshot = require('./web-snapshot-input.cjs');
+const windowsHost = require('./windows-host-input.cjs');
 
 function sha256(bytes) {
     return crypto.createHash('sha256').update(bytes).digest('hex');
@@ -77,14 +78,17 @@ function plan(rootArg, sourceCommit) {
     if (!Array.isArray(manifest.files) || !manifest.files.length) throw new Error('Carnival input manifest is empty.');
     const product = sources.listTrackedProductSources(root, sourceCommit);
     const selected = dependencies.loadSelectedPackages(root);
+    const host = windowsHost.load(root);
+    const hostPaths = new Set(host.files.map(item=>item.path));
     const entries = classify(manifest.files, product.map(item => item.runtimePath),
         overlays.WEB_OVERLAY_CONTRACT.map(item => item.runtimePath), selected.packages.map(item => item.packagePath))
-        .filter(item => !webSnapshot.isLegacyWeb(item.path));
+        .filter(item => !webSnapshot.isLegacyWeb(item.path) && !hostPaths.has(item.path));
     const web = webSnapshot.load(root);
     return {schemaVersion: 1, sourceCommit: sourceCommit.toLowerCase(), sourceManifestSha256,
         relation: 'existing vendor manifest + committed product paths + Web overlay contract + npm lock',
         groups: summarize(entries), entries, webSnapshot: {manifestPath:webSnapshot.MANIFEST_PATH,
-            treeSha256:web.treeSha256,fileCount:web.fileCount,bytes:web.bytes}};
+            treeSha256:web.treeSha256,fileCount:web.fileCount,bytes:web.bytes},windowsHost:{manifestPath:windowsHost.MANIFEST_PATH,
+            treeSha256:host.treeSha256,fileCount:host.fileCount,bytes:host.bytes}};
 }
 
 function physical(absolute, directory) {
@@ -139,9 +143,10 @@ function assemble(rootArg, sourceCommit, runtimeArg, token) {
     const result = plan(root, sourceCommit);
     const carnivalRoot = path.join(root, 'vendor', 'carnival');
     webSnapshot.validate(root);
+    windowsHost.validate(root);
     // Historical non-Web inputs still have their existing gate. Web identity
     // comes only from its independent component manifest, never old www/.
-    verifyInputs(carnivalRoot, result.entries.filter(item => !webSnapshot.isLegacyWeb(item.path)), ['electronapp/www']);
+    verifyInputs(carnivalRoot, result.entries, ['electronapp/www',...windowsHost.paths(root)]);
     for (const entry of result.entries.filter(item => item.action === 'copy' && !webSnapshot.isLegacyWeb(item.path))) {
         const target = path.join(runtime, ...entry.path.split('/'));
         fs.mkdirSync(path.dirname(target), {recursive: true});
@@ -151,8 +156,9 @@ function assemble(rootArg, sourceCommit, runtimeArg, token) {
         if (bytes.length !== entry.size || sha256(bytes) !== entry.sha256) throw new Error('Assembled input identity mismatch: ' + entry.path);
     }
     const webInput = webSnapshot.assemble(root, runtime);
+    const hostInput = windowsHost.assemble(root,runtime);
     return {schemaVersion: result.schemaVersion, status: 'passed', sourceCommit: result.sourceCommit,
-        sourceManifestSha256: result.sourceManifestSha256, groups: result.groups, webInput};
+        sourceManifestSha256: result.sourceManifestSha256, groups: result.groups, webInput,hostInput};
 }
 
 if (require.main === module) {

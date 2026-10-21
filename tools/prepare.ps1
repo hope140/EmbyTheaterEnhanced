@@ -25,6 +25,13 @@ if (-not (Test-Path -LiteralPath (Join-Path $root 'vendor/web-snapshot'))) {
 }
 & node (Join-Path $PSScriptRoot 'web-snapshot-input.cjs') validate $root
 if ($LASTEXITCODE -ne 0) { throw 'Web snapshot validation failed.' }
+if (-not (Test-Path -LiteralPath (Join-Path $root 'vendor/windows-host/3.0.20'))) {
+    $hostManifest = Get-Content -LiteralPath (Join-Path $root 'vendor/windows-host-manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+    & (Join-Path $PSScriptRoot 'prepare-windows-host.ps1') -ArchivePath (Join-Path $archiveBase ([string]$hostManifest.archive.name))
+    if ($LASTEXITCODE -ne 0) { throw 'Official Windows Host component preparation failed.' }
+}
+& node (Join-Path $PSScriptRoot 'windows-host-input.cjs') validate $root
+if ($LASTEXITCODE -ne 0) { throw 'Windows Host component validation failed.' }
 & node (Join-Path $PSScriptRoot 'prepare-preload.cjs') $root
 if ($LASTEXITCODE -ne 0) { throw 'Prepared preload generation failed.' }
 & (Join-Path $PSScriptRoot 'prepare-electron-runtime.ps1') -ArchiveRoot $archiveBase
