@@ -162,7 +162,7 @@ function createFixture(root) {
         'tools/tracked-file-hash.cjs',
         'tools/runtime-exclusions.cjs',
         'tools/web-snapshot-input.cjs',
-        'tools/windows-host-input.cjs','tools/prepare-windows-host.ps1','tools/inherited-npm-input.cjs','tools/runtime-template-input.cjs','tools/libmpv-input.cjs','tools/compatibility-resources-input.cjs','tools/small-runtime-input.cjs','tools/model-compatibility-input.cjs'
+        'tools/windows-host-input.cjs','tools/prepare-windows-host.ps1','tools/inherited-npm-input.cjs','tools/runtime-template-input.cjs','tools/libmpv-input.cjs','tools/prepare-libmpv.cjs','tools/download-libmpv.ps1','tools/compatibility-resources-input.cjs','tools/small-runtime-input.cjs','tools/model-compatibility-input.cjs'
     ]) copyRepoFile(root, relativePath);
     copyRepoFile(root, 'src/electronapp/enhanced/startup.svg');
     writeFile(path.join(root, 'tools', 'patch-playbackmanager.cjs'), 'generator: playbackmanager\n');
