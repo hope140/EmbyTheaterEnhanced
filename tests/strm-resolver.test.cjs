@@ -1,8 +1,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
+const {windowsMountFileSystem} = require('./helpers/test-platform.cjs');
+const fs = windowsMountFileSystem();
 const os = require('node:os');
-const path = require('node:path');
+const path = require('node:path').win32;
 
 const strmResolver = require('../src/electronapp/resolvers/strm-resolver');
 const cd2Resolver = require('../src/electronapp/resolvers/cd2-resolver');

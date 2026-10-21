@@ -17,6 +17,26 @@ The public runner discovers `tests/*.test.cjs` and excludes only these six tests
 | `tests/runtime-provenance.test.cjs` | Vendor manifests, canonical Carnival files, patch payloads, and generated preload contract. |
 | `tests/web-overlay-preparation.test.cjs` | Frozen Web overlay bases and payloads from `vendor/carnival` and `vendor/patch`. |
 
+### Linux source development
+
+The same public runner can run on Linux with Node.js 24.18.1, the locked npm dependencies and PowerShell 7 (`pwsh`) on PATH. Portable PowerShell helper probes use `pwsh` there; Windows retains `powershell.exe` and the explicit `pwsh.exe` checks. Missing executables fail the probes rather than causing skips.
+
+Five integration cases explicitly skip on non-Windows hosts and remain required by the existing Windows CI job:
+
+| Test | Windows requirement |
+| --- | --- |
+| `cd2-cold-warm-observer`: black-box contract | Nested Windows PowerShell 5.1 paths in the observer selftest. |
+| `diagnostics-collector`: black-box contract | Nested Windows shell calls and hidden process windows. |
+| `report-playback-issue`: snapshot black-box contract | Windows reporter and nested collector shell calls. |
+| `report-playback-issue-encoding`: encoding compatibility | Real Windows PowerShell 5.1 and PowerShell 7 ANSI/BOM behavior. |
+| `v029-diagnostics-privacy`: actual snapshot and collector ZIP | Windows reporter/collector integration; portable serialization and redaction probes still run on Linux. |
+
+The four existing Windows-specific skips in `compare-transition-runner.test.cjs` retain their individual reasons. All nine cases stay discovered; `tests/test-platform.test.cjs` checks that the five new registrations execute on `win32` and have explicit skip reasons on Linux. These registration checks do not execute Windows integrations.
+
+Mount tests use Windows client path identities on every host. They retain real filesystem fixtures on Windows and exact-path synthetic filesystem fixtures elsewhere. Native-helper service fixtures use host-absolute paths. Product path validation, POSIX local-probe refusal and existing assertions remain intact.
+
+Linux source tests do not validate Windows playback, Host, installation, hardware, or the unavailable material contracts. A Linux pass does not replace the Windows CI job or material validation.
+
 Plugin Alameda identity and actual frozen app/view-manager alias-order checks are explicit material tests in `tests/plugin-amd-identity-material-selftest.cjs` and `tests/plugin-dialogclose-material-selftest.cjs`. They retain the original assertions and require the unavailable Carnival Web inputs; they are not discovered by the public `tests/*.test.cjs` runner. The synthetic close-button tests remain in the public set. A prepared local checkout runs both explicitly:
 
 ```powershell

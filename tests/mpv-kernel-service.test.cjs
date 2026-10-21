@@ -6,10 +6,10 @@ const path = require('node:path');
 const {EventEmitter} = require('node:events');
 const {createService} = require('../src/electronapp/native-helper/service');
 
-const ROOT = 'C:\\ete-runtime-fixture';
+const ROOT = path.resolve('ete-runtime-fixture');
 const BASELINE = path.join(ROOT, 'electronapp', 'libmpv', 'x64', 'mpv-1.dll');
 const CANDIDATE_ID = 'a'.repeat(64);
-const CANDIDATE_PATH = path.join('C:\\ete-profile-fixture', 'mpv-kernels', 'objects', CANDIDATE_ID, 'mpv-1.dll');
+const CANDIDATE_PATH = path.join(path.resolve('ete-profile-fixture'), 'mpv-kernels', 'objects', CANDIDATE_ID, 'mpv-1.dll');
 const CAPABILITIES = ['private-inherited-pipe', 'native-child-hwnd', 'gpu-next', 'd3d11', 'generation-attribution'];
 
 class FakeWindow extends EventEmitter {

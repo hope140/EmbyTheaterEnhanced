@@ -7,6 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
+const {portablePowerShell} = require('./helpers/test-platform.cjs');
 
 const runnerPath = path.join(__dirname, '..', 'tools', 'test-p1-diagnostics.ps1');
 const runner = fs.readFileSync(runnerPath, 'utf8');
@@ -121,7 +122,7 @@ $distinctMicrosecond = [datetime]::Parse('2026-10-09T07:52:41.5521120Z')
 `;
     t.after(() => { try { fs.rmSync(scriptPath, {force: true}); } catch (_) {} });
     fs.writeFileSync(scriptPath, script, 'utf8');
-    const result = childProcess.spawnSync('powershell.exe', [
+    const result = childProcess.spawnSync(portablePowerShell(), [
         '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', scriptPath
     ], {encoding: 'utf8', windowsHide: true, timeout: 10000});
     assert.equal(result.status, 0, result.stderr || result.error);
@@ -163,7 +164,7 @@ $fault = & $helper $faultTask.Task $errTask.Task 10
 } | ConvertTo-Json -Compress
 `;
     fs.writeFileSync(psTest, psSource, 'utf8');
-    const result = childProcess.spawnSync('powershell.exe', [
+    const result = childProcess.spawnSync(portablePowerShell(), [
         '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', psTest, runnerPath
     ], {encoding: 'utf8', windowsHide: true, timeout: 10000});
     assert.equal(result.status, 0, result.stderr || result.error);
