@@ -31,6 +31,9 @@ jobs:
       - name: Inspect Windows temporary path identity
         run: node tools/ci-windows-path-diagnostics.cjs
 
+      - name: Verify exact repository snapshot bytes
+        run: node -e "for (const name of ['web-snapshot','compatibility-resources','small-runtime','model-compatibility']) require('./tools/'+name+'-input.cjs').validate(process.cwd()); console.log('All four repository snapshots match their manifests.');"
+
       - name: Run public offline test set
         run: node tools/ci-public-tests.cjs
 
