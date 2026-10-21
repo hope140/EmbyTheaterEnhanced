@@ -3,12 +3,14 @@ name: Public offline CI
 on:
   pull_request:
   push:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   windows-public-offline:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
@@ -49,3 +51,37 @@ jobs:
           CI_PUSH_BEFORE: ${{ github.event.before }}
           CI_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: node tools/ci-diff-check.cjs
+
+  manual-windows-test-package:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: windows-2025
+    timeout-minutes: 60
+    concurrency:
+      group: ete-manual-windows-test-package
+      cancel-in-progress: false
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up locked Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.18.1
+
+      - name: Build and verify test package from locked components
+        shell: pwsh
+        run: ./tools/ci-windows-test-package.ps1
+
+      - name: Upload verified test package
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: ete-test-win-x64-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-output/manual-windows-package/*
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+          include-hidden-files: false
