@@ -1,5 +1,7 @@
 # 后续范围与启动条件
 
+[v0.3.15 播放后退出修复测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.15) 已作为 Pre-release 发布，仅修复任务栏媒体控制在窗口销毁后的清理与幂等性。最终来源和五附件见[发行核验](V0315_RELEASE_VERIFICATION.md)；正式版/Latest仍为v0.3.1。整体退出期限、强退策略与后续条件保持原状。
+
 
 [v0.3.14 菜单与首页恢复测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.14) 已作为 Pre-release 发布，修正空设备菜单标题居中与首页加载恢复；整体退出期限与强退策略保持原状。正式版与 Latest 仍为 v0.3.1，来源、五附件和验收边界见[发行核验](V0314_RELEASE_VERIFICATION.md)。后续需求仍按明确范围启动。
 
