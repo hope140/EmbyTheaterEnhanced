@@ -60,3 +60,5 @@ node --test tests/runtime-base-material-selftest.cjs tests/windows-host-material
 真实材料回归独立按未改写的组件 manifest 加上显式批准的十项差值构造参考侧；精确比较 812 个基础文件、927 个共同生产变换后的中间文件。不能额外忽略任何文件或改变预期 hash 来放过缺失。CustomCssJS 输入/输出 SHA 保持既有合同。测试不是 Windows GUI、安装升级、真实 Emby/CD2、音视频设备或最终安装器验收；后者须在审阅分支上另行取得，不能沿用 v0.3.16 已构建产物的结果。
 
 本候选 Linux 实测：针对性装配/接线/安全门禁 105/105，来源与 runtime-provenance 4/4；公共 runner 1361 项中 1351 pass、0 fail、10 个明确 Windows 平台 skip。JS/PowerShell 语法、有限凭据模式及差异空白检查通过。来源夹具首轮有 4 个失败，因为整树复制仍放入已退役 notice；修正夹具使用生产排除阶段后单独复验 4/4，不将首轮记为绿。
+
+提交后补充：原公共 runner 显式排除的六个材料依赖测试文件已独立运行，84/84 通过、0 skip；含 Host 的三项真实材料验证 3/3 通过、0 skip。基础输出的完整路径/大小/SHA256 与原始清单减十项后的集合相同。该结果仍不是完整 Windows 安装器或应用验收。

@@ -1,6 +1,6 @@
 # Fixed small runtime input snapshot
 
-Current release selection: [the scoped legacy-resource audit](LEGACY_RESOURCE_RETIREMENT.md) excludes nine compatibility resources and one small notice from new runtime output. Original snapshot bytes/manifests and notices remain preserved and strictly validated; the historical byte-preservation statements below describe input storage, not the new output selection. Runtime reports carry separate output counts, bytes, tree hashes and excluded identities.
+Current release selection: [the scoped legacy-resource audit](https://github.com/hope140/EmbyTheaterEnhanced/blob/31e18aa6e97d7e5b8976ffb21b3cdf97240adf27/docs/LEGACY_RESOURCE_RETIREMENT.md) excludes nine compatibility resources and one small notice from new runtime output. Original snapshot bytes/manifests and notices remain preserved and strictly validated; the historical byte-preservation statements below describe input storage, not the new output selection. Runtime reports carry separate output counts, bytes, tree hashes and excluded identities.
 
 Four packaged inputs are independently preserved under `vendor/small-runtime/snapshot-v1`: `cec-driver/cancel`, `config/system.xml`, `electronapp/plugins/mpvplayer/strings/zh-CN.json` and the legacy Chinese notice text file named in the manifest. Their combined 5,216 bytes and runtime paths are unchanged. Model is excluded.
 
