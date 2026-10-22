@@ -19,11 +19,13 @@ const runtime = fs.mkdtempSync(path.join(root, 'dist', 'custom-css-material-'));
 try {
     const report = web.assemble(root, runtime);
     assert.equal(report.fileCount, 720);
-    assert.equal(report.runtimeFileCount, 719);
+    assert.equal(report.runtimeFileCount, 718);
+    assert.deepEqual(report.excludedFiles.map(item=>item.path), ['www/modules/CustomCssJS.js','www/modules/themes/logo.png']);
     overlays.apply(root, runtime);
     assert.equal(overlays.inspect(root, runtime).status, 'passed');
     assert.equal(exclusions.verify(runtime).status, 'passed');
     assert.equal(fs.existsSync(path.join(runtime, 'electronapp/www/modules/CustomCssJS.js')), false);
+    assert.equal(fs.existsSync(path.join(runtime, 'electronapp/www/modules/themes/logo.png')), false);
     const app = fs.readFileSync(path.join(runtime, 'electronapp/www/app.js'), 'utf8');
     assert.equal(app.includes('CustomCssJS'), false);
     assert.ok(app.includes('self.ApiClient.getUrl("Branding/Css")'));
