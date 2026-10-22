@@ -67,3 +67,5 @@ node --test tests/playback-lifecycle-patchers.test.cjs tests/web-overlay-prepara
 ```
 
 新材料自测逐字节比较生成结果与保留载体，限制 ApiClient 修改方法及 toast 删除范围；overlay 夹具没有 `user-patches` 目录，验证生产生成不依赖完整替换文件。完整组件门禁仍核对历史载体清单，未删除或重新归属 vendor 材料。来源记录中的生成器和输入关系会相应变化，因此 provenance/build-manifest 不应声称与旧构建逐字节相同；产品 Web payload 可以独立比较路径和文件 SHA256。此验证不等于 Windows 整包重建、GUI 或真实服务器/媒体验收。
+
+本次以 main `6fee412` 为拆分前参考，同一组件基底经 25 条 overlay 及既有 PlaybackManager 变换，720 个 Web 路径及文件 SHA256 完全一致。对按路径排序的 `{path,sha256}` 数组执行 `JSON.stringify` 后的 SHA256 为 `1b29d84dbcd3f8fe0537a7a129da3eab39df14492a0dcc40615a6194772a82bf`；该值是本次对照的摘要，不替代组件 manifest 的树算法。完整 npm test 为 1429 pass / 0 fail / 10 Windows 专属 skip。完整材料门禁因本环境缺少固定 `vendor/windows-host` 停止，未重建 Windows 整包。

@@ -4,7 +4,7 @@
 
 从 main `6fee412` 的独立分支提取用户已确认的综合补丁增量：ApiClient 的重连及进度上报 ensure、toast 的定位块删除。复用现有固定基底、overlay 及 HEAD 输入合同，新变换器精确重建历史载体后串联原生命周期修复。两份完整载体保留为只读来源/字节对照，不再作为生产 overlay 输入；原官方精确修订仍未确认，继承正文不标为用户原创。
 
-针对性 42/42 通过。完整回归与 720 文件 Web 字节对照结果待本分支最终核验；来源记录会因生成器身份变化而变化。未修改 vendor、产品功能、remoteaudio/remotevideo、依赖或版本，未操作发布分支、Tag/Release/附件；未进行 Windows 整包、GUI、登录或用户媒体验收。维护边界与复现见 [Web 输入合同](WEB_SNAPSHOT_INPUT.md)。
+针对性 42/42、显式 ApiClient/用户增量/VideoOSD 材料集合 31/31 通过；完整 npm test 为 1429 pass / 0 fail / 10 Windows 专属 skip。相对 main `6fee412`，共同生产变换后的 720 个 Web 文件路径与 SHA256 全部相同，25 个 overlay 最终 hash 不变。HEAD 构建输入合同、386 份 JS 语法及 443 份文本有限模式检查通过。来源记录会因生成器身份变化而变化。当前环境缺少 `vendor/windows-host`，完整材料门禁在该缺件处失败，未进行 Windows 整包、GUI、登录或用户媒体验收。vendor、产品功能、remoteaudio/remotevideo、依赖和版本保持；发布分支、Tag/Release/附件不动。维护边界与复现见 [Web 输入合同](WEB_SNAPSHOT_INPUT.md)。
 
 ## 2026-10-22 — v0.3.16 测试版准备
 
