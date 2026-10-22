@@ -97,7 +97,8 @@ test('HTTP and WebSocket identity chains consume the same appStartInfo device id
     const vendorRoot = path.join(repoRoot, 'vendor/web-snapshot/www');
     const app = fs.readFileSync(path.join(vendorRoot, 'app.js'), 'utf8');
     const connectionManager = fs.readFileSync(path.join(vendorRoot, 'modules/emby-apiclient/connectionmanager.js'), 'utf8');
-    const apiClient = fs.readFileSync(path.join(repoRoot, 'vendor/web-snapshot/user-patches/apiclient.js'), 'utf8');
+    const apiClient = require('../tools/patch-user-web.cjs').patchApiClient(
+        fs.readFileSync(path.join(vendorRoot, 'modules/emby-apiclient/apiclient.js'), 'utf8'));
     assert.match(app, /apphost\.deviceId\(\)/);
     assert.match(connectionManager, /deviceId:\s*this\.deviceId\(\)/);
     assert.match(apiClient, /deviceId="\.concat\(this\.deviceId\(\)\)/);

@@ -148,7 +148,7 @@ function createFixture(root) {
     for (const relativePath of [
         'tools/prepare-preload.cjs',
         'tools/prepare-web-overlays.cjs',
-        'tools/patch-videoosd-lifecycle.cjs', 'tools/patch-apiclient-lifecycle.cjs',
+        'tools/patch-videoosd-lifecycle.cjs', 'tools/patch-apiclient-lifecycle.cjs', 'tools/patch-user-web.cjs',
         'tools/patch-custom-css-js.cjs',
         'tools/patch-externalplayer-residue.cjs',
         'tools/patch-item-controls.cjs',

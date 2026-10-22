@@ -48,13 +48,23 @@ test('ApiClient patcher refuses absent, synthetic and changed authoritative mate
     }
 });
 
-test('ApiClient overlay keeps base, raw payload and transformed output identities separate', () => {
+test('user Web deltas and lifecycle fix share the existing canonical overlay system', () => {
+    const userWeb = require('../tools/patch-user-web.cjs');
+    for (const patcher of [userWeb.patchApiClient, userWeb.patchToastCss]) {
+        for (const input of [null, '', 'unrelated source']) assert.throws(() => patcher(input), /hash mismatch/);
+    }
+    for (const id of ['apiclient', 'toast-css']) {
+        const entry = overlays.WEB_OVERLAY_CONTRACT.find(item => item.id === id);
+        assert.equal(entry.mode, 'tracked-canonical-transform');
+        assert.equal(entry.inputPath, null, 'full historical replacements are no longer production overlay inputs');
+        assert.equal(entry.expectedInputSha256, null);
+        assert.ok(entry.generatorPaths.includes('tools/patch-user-web.cjs'));
+    }
     const entry = overlays.WEB_OVERLAY_CONTRACT.find(item => item.id === 'apiclient');
-    assert.equal(entry.mode, 'vendor-payload-transform');
     assert.equal(entry.expectedBaseSha256, 'F3516C72784E5BC8782ABBCE021F22A7F939034E5B8B70639672AE682E18ACC0');
-    assert.equal(entry.expectedInputSha256, 'A4A901640ABE6BC25188C1CF27FB53125B4F65EF2A797DEF033DC55165B080AE');
-    assert.notEqual(entry.expectedOutputSha256, entry.expectedInputSha256);
+    assert.equal(entry.expectedOutputSha256, '6342A2C809B8CD4C0E1E3E35FC49F6AF8A415E4F4F8F8F0363CB769E9A7EF95E');
     assert.ok(entry.generatorPaths.includes('tools/patch-apiclient-lifecycle.cjs'));
+    assert.ok(buildInputs.INPUT_PATHS.includes('tools/patch-user-web.cjs'));
     assert.ok(buildInputs.INPUT_PATHS.includes('tools/patch-apiclient-lifecycle.cjs'));
 });
 

@@ -8,9 +8,10 @@ const test = require('node:test');
 const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
-const defaultSourcePath = path.join(root, 'vendor/web-snapshot/user-patches/apiclient.js');
-const sourcePath = process.env.ETE_APICLIENT_SOURCE || defaultSourcePath;
-const source = fs.readFileSync(sourcePath, 'utf8');
+const basePath = path.join(root, 'vendor/web-snapshot/www/modules/emby-apiclient/apiclient.js');
+const source = process.env.ETE_APICLIENT_SOURCE
+  ? fs.readFileSync(process.env.ETE_APICLIENT_SOURCE, 'utf8')
+  : require('../tools/patch-user-web.cjs').patchApiClient(fs.readFileSync(basePath, 'utf8'));
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'vendor/web-snapshot-manifest.json'), 'utf8'));
 const pinned = manifest.userPatches.find(entry => entry.path === 'user-patches/apiclient.js');
 assert.ok(pinned, 'manifest-pinned ApiClient material entry is required');
@@ -402,4 +403,29 @@ test('current message delivery and listener replay each happen once', () => {
     'current message data is delivered unchanged');
   assert.equal(current.sent.length, 1, 'one registered message listener replays once');
   assert.equal(JSON.parse(current.sent[0]).MessageType, 'SessionStart');
+});
+
+test('progress reporting ensures the socket before the unchanged HTTP POST and respects throttling', async () => {
+  const h = createHarness();
+  const calls = [];
+  const ensure = h.client.ensureWebSocket.bind(h.client);
+  h.client.ensureWebSocket = () => { calls.push('ensure'); ensure(); };
+  const response = {synthetic: 'progress-ack'};
+  h.client.ajax = request => { calls.push(request); return Promise.resolve(response); };
+  const options = {EventName: 'pause', PositionTicks: 123456789, ItemId: 'synthetic-item'};
+  assert.equal(await h.client.reportPlaybackProgress(options), response);
+  assert.equal(calls[0], 'ensure');
+  assert.equal(h.sockets.length, 1);
+  assert.equal(JSON.stringify(calls[1]), JSON.stringify({
+    type: 'POST', data: JSON.stringify(options), contentType: 'application/json',
+    url: 'http://server.test/emby/Sessions/Playing/Progress'
+  }));
+  assert.equal(h.client.lastPlaybackProgressReport, 0);
+  assert.equal(h.client.lastPlaybackProgressReportTicks, options.PositionTicks);
+
+  calls.length = 0;
+  h.client.lastPlaybackProgressReport = Date.now() + 10000;
+  await h.client.reportPlaybackProgress({EventName: 'timeupdate', PositionTicks: 0});
+  assert.equal(calls.length, 0, 'throttled reports neither ensure nor POST');
+  assert.throws(() => h.client.reportPlaybackProgress(null), /null options/);
 });
