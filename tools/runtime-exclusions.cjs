@@ -5,8 +5,30 @@ const path = require('path');
 
 // These inputs remain in the immutable Carnival archive inventory for
 // provenance, but are deliberately absent from every Enhanced runtime.
+const RETIRED_COMPATIBILITY_PATHS = Object.freeze([
+  'external/Anime4K/Anime4K-off.conf',
+  'external/emby.disable/www/modules/layout.css',
+  'external/emby.disable/www/modules/themes/darkgradient/theme.css',
+  'external/emby.enable/www/modules/layout.css',
+  'external/emby.enable/www/modules/themes/darkgradient/theme.css',
+  'external/Presets/fonts/Source Han Serif SC-Bold.ttf',
+  'Emby.ConfigureAndUninstall.bat',
+  'Emby.Dialog.bat',
+  'external/Presets/mpv.conf'
+]);
+const RETIRED_SMALL_RUNTIME_PATHS = Object.freeze(['\u6ce8\u610f\u4e8b\u9879.txt', 'cec-driver/cancel']);
+const RETIRED_WEB_PATHS = Object.freeze(['electronapp/www/modules/CustomCssJS.js',
+  'electronapp/www/modules/themes/logo.png',
+  'electronapp/www/settings/cameraupload.js',
+  'electronapp/www/settings/cameraupload.html',
+  'electronapp/www/components/directorybrowser/directorybrowser.css',
+  'electronapp/www/modules/emby-apiclient/appstorage-cache.js',
+  'electronapp/www/serviceworker-app.js']);
 const RETIRED_RUNTIME_PATHS = Object.freeze([
-  'electronapp/libmpv/x64/mpv-win32-x64.node'
+  'electronapp/libmpv/x64/mpv-win32-x64.node',
+  ...RETIRED_COMPATIBILITY_PATHS,
+  ...RETIRED_SMALL_RUNTIME_PATHS,
+  ...RETIRED_WEB_PATHS
 ]);
 
 function runtimeFile(root, relativePath) {
@@ -55,4 +77,4 @@ if (require.main === module) {
   if (result.status !== 'passed') process.exitCode = 1;
 }
 
-module.exports = {RETIRED_RUNTIME_PATHS, remove, runtimeFile, verify};
+module.exports = {RETIRED_RUNTIME_PATHS, RETIRED_COMPATIBILITY_PATHS, RETIRED_SMALL_RUNTIME_PATHS, RETIRED_WEB_PATHS, remove, runtimeFile, verify};

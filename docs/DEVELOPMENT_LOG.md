@@ -1,5 +1,78 @@
 # 维护记录
 
+## 2026-10-22 — 三份 Web 残留与二十份 npm 产物投影
+
+按精确批准范围将三份无引用 Web 正文退出当前 v2 候选树/装配，Web713，兼容39/小组件2不变；保留实际目录选择器、localStorage/memory、空worker注册、playqueueconfirmation及语言/兼容入口。npm完整33包/1142文件与SRI/恢复输入保持，仅在新建有归属runtime复制时省略20个固定版本/路径/大小/hash产物，投影1122。provenance同时校验完整来源树、排除差集及其余字节，35份许可/notice不变。新增逐项负向、真实依赖复制、descriptor.json负对照、实际loader/存储初始化和Web装配回归；[完整范围与验收边界](SCOPED_RUNTIME_PROJECTION.md)。不改播放路径、CEC DLL、旧电源包，不合并、不打安装器或发布。
+
+外部交接原件及夹具生成器均通过SHA256校验；原npm探针121成员/定义/wire对照通过，Chromium localhost原12组及批准三文件组合补4组通过，均为隔离组件/模拟API证据，不是Windows整机验收。首次Windows公共集1385 pass/1 fail暴露新增复制测试依赖未准备的外部继承材料；改为合成无关继承包，真实33个锁定npm包和全部投影/协议/负向断言保持。无外部材料的公开测试cleanroom三项通过，不增加跳过或缩小选择。详见[浏览器证据](evidence/web-residue-browser.json)。
+
+## 2026-10-22 — 公共 CI 测试日志实时输出
+
+仅将 ci-public-tests.cjs 的子进程 stdout/stderr 从整组缓存后打印改为直接继承；保持测试选择、参数、串行、工作目录、退出码、启动错误和现有工作流时限。隔离测试用双输出握手证明子测试结束前可见日志，同时覆盖成功/失败、空退出状态和启动错误。四项脚本回归通过；本改动提供取消时的诊断进度，不将旧取消记录算作成功，也未减少测试或扩大资源清理范围。
+
+## 2026-10-22 — 移动端本地相机上传设置页退役
+
+追加移除 settings/cameraupload.js/.html，当前桌面host无本地上传能力、服务仅iOS/Android注册且旧设置路由已注释。仅删除该674-byte注释块，app其它原始/生成字节不变；不改共享设置存储、sync、通用/触屏布局或其他移动端候选。devices/cameraupload管理员路由、页面及devices配置读写API保留，真实controller的mock回归覆盖两字段和其它字段保留。
+
+活动集合39/2/716、基础/中间807/922，共十七个旧正文退出候选tree，必要声明、原manifest/hash和历史保持。051f990的Windows1372/1372成功记录保留身份，不冒充本追加提交结果；新head另跑CI。详细路径、hash、桌面入口和验证边界见[相机设置退役合同](MOBILE_CAMERA_SETTINGS_RETIREMENT.md)。不构建安装器、不合并、不发布。
+
+## 2026-10-22 — 合入 PR67 基线并迁移活动快照 v2
+
+同步已合并 main 7a21ca5，保留 ApiClient/toast 维护源、行为与来源说明，并解决两份状态文档及构建/测试合同的必要冲突。按确认范围迁移兼容39、小组件2、Web718；十五个旧正文退出当前 tree，原三份 manifest 的精确字节/hash 独立保存。Web 沿用根路径但版本明确为v2，app/index 同步消除旧模块/图片引用，最终生成身份保持。中文维护源改为完整37键，仍只有13项选定修订，24项继承值逐项hash保持。
+
+不将原有有效 Web 样式与备用样式的同字节关系当作新复制或扩大删除；保留必要声明、旧限制、CustomCssJS GPL与旧Git/tag。迁移边界、十五项清单及负向校验见[迁移合同](SNAPSHOT_V2_MIGRATION.md)。初轮迁移单测发现旧数量/旧正文断言与已提交输入守卫需按新阶段校正，失败日志保留；最终组合检查和CI另以提交为准，不触发安装器、合并69或发布。
+
+提交后全材料首轮215 pass/5 fail：四个来源夹具缺少两份退役小资源的历史元数据，一项启动材料自测仍对已变换v2重复应用旧生成器。补齐历史夹具并保持原18F777…B305D完整输出身份，重复变换明确拒绝；原失败日志保留，产品验证不放宽。
+
+迁移后本地公共集1372项：1362 pass、0 fail、10 Windows平台skip；修后全材料及六个依赖文件合计220/220、0 skip，基础809/中间924项完整对照通过。组件 provenance 明确记录v1 manifest身份和v2身份，历史SHA不以新输出SHA冒充。最终Windows CI另按提交核验。
+
+## 2026-10-22 — 旧启动 logo 最小退役
+
+追加剥离 modules/themes/logo.png（1238×377，32,892 bytes，624aa242…906c064）。沿用 PR70 的动态引用评估并补本地固定材料核对；生产 index 已由现有 ETE startup.svg 替代，其尺寸、透明背景和 contain/居中样式保持。真实 Web 装配/overlay 回归验证旧图缺席、自有图存在、生成 index 目标不悬空，保留屏保及明暗标题图。没有新设计图片或宣称 GUI/冷启/登录已实测。
+
+现为十三项退役、两个维护输出，Web 基底718项、基础/共同变换集合809/924，业务 payload 净减少27,002,259 bytes；provenance/通知和压缩体积另计。冻结正文和 manifest 全部保持，原 PNG 仍在当前源码树，源文件删除所需的新快照迁移仍仅评估。最终组合及 Windows CI 另按新 head 核验，不触发安装器、合并或发布。
+
+追加 logo 后首轮材料组合为86 pass/1 fail，失败是 CustomCssJS 材料自测仍断言719项旧输出数量；修为718并明确逐项断言两份批准排除及 logo 缺席，未放宽输入哈希、保留文件或未知差值检查。修后材料组合87/87通过，0 fail/skip/cancel，基础809/中间924项完整对照通过。
+
+## 2026-10-22 — 默认配置与十三项中文文本维护
+
+默认配置改为 ETE 维护的 typed JSON→确定性 XML；五个值、字段类型、root/namespace、首次缺配置才复制及已有文件不覆盖保持。播放器中文仅覆盖 T01/T04/T05/T07/T08/T09/T10/T13/T14/T15/T16/T17/T18，保持 37 keys 和其余 24 项原文，三项长说明采用单段。维护源、继承边界、输出 hash 及回归见[小组件维护合同](MAINTAINED_SMALL_RUNTIME.md)。vendor 原文/manifest 保留且全部校验，新 snapshot 迁移仍仅评估；不将旧作者或整份翻译署名为 ETE。
+
+前一 Windows 资源退役候选 `cfbd6e4` 公共集 1350 pass / 1 fail / 0 skip；失败是官方 Model 恢复测试夹具漏复制 Web 校验器新增的 runtime-exclusions 依赖。仅补齐夹具并新增跨平台依赖加载回归，Model 字节和校验不改。新配置/译文与该修复以新提交重新验证；不沿用旧绿灯，不触发完整安装器、不合并或发布。
+
+## 2026-10-22 — CustomCssJS 可选集成退役
+
+按明确退役范围，从新客户端装配中移除 CustomCssJS 模块和 app.js 注册，删除专属禁 JS 生成器及其无用合同/测试。它历史上有条件可执行，不是所有桌面环境都无路径；本轮选择撤出该可选第三方功能。保留普通 CSS、主题、原生 Branding/Css 的既有条件、storage、profile CEC 标记和 Carnival 隐藏标记。
+
+冻结 Web 输入仍为 720 项且全部哈希检查，实际基底输出 719 项；累计少 12 个运行资源，基础/共同变换后集合为 810/925。新增真实主界面插件阶段的可用/不可用接口回归、无端点请求、无模块输出及严格注册锚点检查。上游固定 commit、CRLF 同文本、接口/注入行为与 GPLv3 原文记录见[退役合同](LEGACY_RESOURCE_RETIREMENT.md)。当前源码树原文没有删除，新快照迁移仅评估；不合 main、不改已发布版本，Windows/GUI/实播证据按本候选另计。
+
+Linux 公共集 1351 项为 1341 pass、0 fail、10 个 Windows 平台 skip；六个材料依赖文件另测 84/84，真实材料 3/3。默认配置及中文本地化均先提供逐项差异，最终确认前维持原产品字节，候选不参与构建。修正退役测试的复验命令，并明确 MainActivity 分支只留在原始存档。完整安装包待相关 PR 工作完成后统一构建，本轮未触发。
+## 2026-10-22 — Maintain derived ApiClient and toast sources directly
+
+ApiClient 和 toast 的现有最终字节直接纳入 `src/electronapp/www` 下两个明确开放的维护路径，由既有 Git blob 装配器复制；移除对应用户补丁、ApiClient 生命周期生成器及两个 overlay 入口，其余 overlay 保持。维护源码明确为固定历史 Web 的派生文件，保留用户原有重连/进度/toast 修复和后续 socket/注销/计时器归属修复，不将继承正文整体标作原创，不替换原上游版本。
+
+原缺件已按固定官方 ZIP/Git blobs 和仓库原始归档恢复，材料门禁保持原校验。直接源码方案完整 npm test 为 1429 pass / 0 fail / 10 Windows 专属 skip；全部显式材料自测 136/136，0 fail/skip，完整门禁通过。822 个基底及937个中间文件对照通过；相对 main `6fee412` 的720个 Web 文件路径/SHA完全相同。HEAD输入合同84文件、JS语法385文件、有限模式检查442文件通过。未进行 Windows 整包、GUI、登录或用户媒体验收。vendor、remoteaudio/remotevideo、依赖和版本保持，发布分支、Tag/Release/附件不动。来源和复现见 [Web 输入合同](WEB_SNAPSHOT_INPUT.md)。
+
+## 2026-10-22 — v0.3.16 云构建与发布前文档修订
+
+产品 source 固定 `6fee412ad68934d0194303916cfe346e6254a228`，[Windows Actions run 39737710070](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/39737710070) 成功，发行模式开启：全量 1439/1439、显式材料 131/131、标准构建、VerifyOnly、安装器编译和完整解包对照通过，失败/跳过/取消均为 0。独立下载回执确认原 artifact 的 CRC、13 文件集合、校验表与安装器哈希；2170 个完整 runtime 文件对照通过。本次没有新包 GUI、真实播放或安装验收。
+
+按用户长期未再遇到的反馈，将音轨/字幕切换延迟记为已解决，更新当前问题、首页说明、后续范围和发行 notes，保留历史计划事实。产品 Tag 仍绑定 6fee412，安装器及两个 companion 不变；修订 notes 与 SHA256SUMS 是后续文档材料，不冒充构建 source 的原始 notes。具体身份、哈希及发布门禁见[发行核验](V0316_RELEASE_VERIFICATION.md)。
+
+## 2026-10-22 — CEC 包内副本与桌面 CSS 条件复核
+
+现用固定 Host IL 明确从 ProgramDataPath 读取 cec-driver/cancel；生产配置指向独立用户 profile，bootstrap 独立创建并保留该标记，不复制包内文件。因此把无消费者的包内 cancel 纳入剥离，profile 语义、CEC 启动链及用户文件保持；累计新 runtime 剥离 11 项/26,963,353 bytes，兼容/小组件输出 39/2 项。Host 先启动 Electron 再检查驱动，但没有等待 bootstrap 的握手；没有宣称首启时序或真实设备已验收。
+
+CustomCssJS 通过真实 app/pluginmanager 构造与登录事件可在无 MainActivity 的桌面环境处理服务端 forced_on CSS。没有独立客户端编辑页；普通选择依赖既存 localStorage，local CSS 也依赖服务端接口成功。多服务器桌面会跳过 Branding/Css，不能把两者视为同一入口。新增真实固定材料的 AMD/DOM 隔离回归，证据不升级为 GUI/真实服务验收。逐项依据及静态 IL 方法见[资源退役合同](LEGACY_RESOURCE_RETIREMENT.md)。原始快照、声明、三个保留文件与 Carnival 状态不改。
+
+
+## 2026-10-22 — 14 项旧资源用途与独立剥离候选
+
+核对安装、启动、菜单和手工 BAT 后，从新装配输出剥离两份旧 BAT、四份备用 CSS、字体、全局 mpv 预设、Anime4K-off.conf 及旧注意事项，共 10 文件/26,963,353 bytes。保留 system.xml 种子、中文播放器翻译、CEC cancel 标记和 CustomCssJS CSS 定制；Carnival/MainActivity 候选保持。原始 vendor 和 manifest 只读、全部输入哈希及版权/许可声明保留；来源和许可未闭合项不会因发布包瘦身自动解决。
+
+兼容/小组件实际输出为 39/3 项，新增 runtime 数量/字节/树身份及排除清单；重新夹回旧资源直接失败。真实材料参考侧用固定 manifest 与独立十项批准差值比较，812 个基础文件、927 个共同变换后的中间文件一致；CSS/禁 JS 与首次配置回归保持。运行时 provenance 夹具首轮仍复制旧 notice 而失败，修正夹具走同一排除阶段后单独复验，原失败保留。Windows 完整包、安装/升级、真实播放和硬件验收尚未执行，不套用 v0.3.16 云包证据。详细逐项理由、包体影响及复验入口见 [资源退役合同](LEGACY_RESOURCE_RETIREMENT.md)。
+
+
 ## 2026-10-22 — v0.3.16 测试版准备
 
 在 main 37ee98e 基线上统一 0.3.16 元数据与发行文件，保持产品源码、固定组件、依赖、播放器逻辑和 notices。手动 Windows 工作流增加显式 release_package 布尔输入，同一只读作业可生成标准安装包名、运行完整显式材料集合并暂存标准五附件；默认测试包流程保持。不会自动发布或新增写权限。

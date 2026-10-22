@@ -1,6 +1,15 @@
 # Runtime source and notice materials
 
-Current source/license priorities, historical Web evidence, frontend references and task status: [dependency research index](DEPENDENCY_RESEARCH.md). Archive byte identity and applicable license scope are tracked separately.
+Current source/license decisions, current-versus-historical scope and frontend evidence: [dependency research index](DEPENDENCY_RESEARCH.md).
+
+Scope at main a33bd03685eb62b66c3c994cc3c4dfcfc89f5c49: active Web713, compatibility39 shaders (37 MIT and2 Unlicense), maintained small-runtime2; selected npm source1142 files versus runtime1122. Retired source/font/theme/plugin statements below retain their original audit dates and are not current work items. Model selection stays with its completed component task; this index does not reopen the cancelled libmpv corresponding-source specialty.
+
+The npm runtime projection omits20 reviewed artifacts only during owned copying; all33 locked packages/1142 source files, SRI and35 identified notice files stay complete. Runtime1122 and Web713 identities are [recorded separately](SCOPED_RUNTIME_PROJECTION.md).
+
+Current v2 source selection removes twenty reviewed old bodies from the current tree while preserving exact v1 manifests/hashes, necessary notices and old Git history. Active component counts are 39/2/713; the complete Chinese maintained file still inherits 24 strings, so this is not new authorship or general license clearance. See [migration boundaries](SNAPSHOT_V2_MIGRATION.md); earlier current-tree archival statements below describe the preceding stage.
+
+
+Maintained small outputs: [typed configuration defaults and thirteen Chinese text revisions](MAINTAINED_SMALL_RUNTIME.md) are now maintained separately from the unchanged historical manifest. The same five default fields/values and twenty-four unchanged translation strings remain inherited; this does not claim old ETE authorship or complete localization/source-license resolution.
 
 Current Model selection: the separate [Model component](MODEL_COMPATIBILITY_INPUT.md) now locks the official Windows 3.0.20 release member, SHA-256 `db22f8ea6cb6afdfab184f80d8b85a10d8a9f148ff4cae167db87ce9cd245153`, and the complete official ZIP identity. Its former community variant remains in Git history; no community snapshot is a normal build dependency. Historical unchanged-Model statements below describe earlier stages. Exact binary source-rebuild and third-party notice boundaries remain separate from official release-byte identity.
 
@@ -105,3 +114,6 @@ The [Model compatibility snapshot](MODEL_COMPATIBILITY_INPUT.md) is the unchange
 ## Current repository restoration update (2026-10-21)
 
 The user authorized tracking the exact required Web, compatibility-resource, small-runtime and original Model snapshots in this same repository. The 775 manifest-listed files (51,953,202 bytes) use ordinary Git with `-text` attributes to preserve bytes. Historical local-only/ignored-storage statements below describe earlier stages and are superseded for these four roots. Source attribution and unresolved exact revisions remain unchanged; storage permission is not a claim of new third-party authorship or complete corresponding source. libmpv stays ignored and is restored from the pinned archive via `node tools/prepare-libmpv.cjs .`; see [repository inputs](REPOSITORY_INPUTS.md). No old full installer/patch or real user profile is included.
+
+
+CustomCssJS optional integration is retired from new runtime output. The preserved 4,548-byte Web input matches Shurelol/Emby.CustomCssJS commit `6933b58c62f98b0919977e953f068b1a581a7a1c` after CRLF-to-LF conversion only; the upstream 4,416-byte Git blob has SHA256 `3eaec19e8a27ef2894d262d2b8569bb6b1275baca249b1457f6679474c856009`. Its [upstream GPLv3 LICENSE](https://github.com/Shurelol/Emby.CustomCssJS/blob/6933b58c62f98b0919977e953f068b1a581a7a1c/LICENSE) and exact source relationship are recorded in the repository retirement audit. This resolves that textual match, not the entire historical package's provenance or licensing obligations. The raw snapshot remains in the source tree; the new runtime contains neither the module nor its registration.

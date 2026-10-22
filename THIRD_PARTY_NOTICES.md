@@ -1,5 +1,14 @@
 # Third-party notices
 
+The runtime-only npm projection preserves all locked source/recovery inputs and35 identified LICENSE/NOTICE/COPYING files. The three additional retired Web files have no in-file notice header; necessary existing notices and historical identities remain. See docs/SCOPED_RUNTIME_PROJECTION.md.
+
+Snapshot-v2 update: the twenty reviewed old bodies are absent from the current source tree. Their original manifests/hashes, necessary notice texts and existing Git history remain preserved; earlier statements that the original snapshot bodies remain current describe the prior stage. The retired logo contained the observed lettering “by David & NoisyX”; source/permission scope remains unresolved. This removal does not establish new authorship or whole-project license clearance. See docs/SNAPSHOT_V2_MIGRATION.md.
+
+
+Small-resource maintenance: new output uses ETE maintained typed configuration defaults and thirteen selected Chinese player text revisions; the original five default values and twenty-four unchanged Chinese strings retain their existing historical source boundaries. Historical identities, manifests and existing notices remain preserved; the removed old bodies remain in their old Git trees. This is not an assertion that ETE authored the old files or that all inherited localization rights are established. See docs/MAINTAINED_SMALL_RUNTIME.md and docs/SMALL_RUNTIME_INPUT.md.
+
+CustomCssJS archive update: the optional integration is omitted from new ETE runtime packages. Its retained source snapshot matches [Shurelol/Emby.CustomCssJS at 6933b58c](https://github.com/Shurelol/Emby.CustomCssJS/tree/6933b58c62f98b0919977e953f068b1a581a7a1c) after newline conversion only. The project's [GPLv3 LICENSE](https://github.com/Shurelol/Emby.CustomCssJS/blob/6933b58c62f98b0919977e953f068b1a581a7a1c/LICENSE) is preserved in the repository's Web notice records. This is a component-specific archival record; the old source identity remains recorded in Git history and manifest metadata, and no general licensing or historical redistribution conclusion follows from this limited source/runtime retirement.
+
 This file records the maintained source boundary and known components of the
 Windows runtime. Git exclusions do not describe installer contents. Binary
 releases already exist; this inventory does not certify their redistribution

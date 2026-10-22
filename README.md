@@ -29,7 +29,7 @@ Emby Theater Enhanced 是面向 Windows x64 的 Emby Theater 社区增强版，�
 
 当前测试版安装包未签名，Windows 可能提示未知发布者。下载校验、安装升级和配置步骤见[用户指南](docs/USER_GUIDE.md)。
 
-STRM/115 的内嵌字幕、音轨切换仍可能有数秒延迟；插件设置适配也有兼容范围。使用前可查看[已知问题](docs/KNOWN_ISSUES.md)，遇到问题按[反馈步骤](docs/USER_GUIDE.md#问题反馈)提供必要信息。
+音轨、字幕切换延迟已按长期未再出现的使用反馈记为已解决；插件设置适配仍有兼容范围。使用前可查看[已知问题](docs/KNOWN_ISSUES.md)，遇到问题按[反馈步骤](docs/USER_GUIDE.md#问题反馈)提供必要信息。
 
 ## 项目链接
 

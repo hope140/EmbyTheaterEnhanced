@@ -4,7 +4,6 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const externalPlayerRegistration = require('./patch-external-player-registration.cjs');
-const customCssJs = require('./patch-custom-css-js.cjs');
 const externalPlayerResidue = require('./patch-externalplayer-residue.cjs');
 const itemControls = require('./patch-item-controls.cjs');
 const contentWidth = require('./patch-content-width.cjs');
@@ -17,12 +16,10 @@ const selectCancel = require('./patch-select-cancel.cjs');
 const actionSheetLayout = require('./patch-actionsheet-layout.cjs');
 const startup = require('./patch-startup.cjs');
 const videoOsdLifecycle = require('./patch-videoosd-lifecycle.cjs');
-const apiClientLifecycle = require('./patch-apiclient-lifecycle.cjs');
 const trackedFileHash = require('./tracked-file-hash.cjs');
 
 const GENERATOR_PATH = 'tools/prepare-web-overlays.cjs';
 const APP_GENERATOR_PATH = 'tools/patch-external-player-registration.cjs';
-const CUSTOM_CSS_JS_GENERATOR_PATH = 'tools/patch-custom-css-js.cjs';
 const EXTERNAL_PLAYER_RESIDUE_GENERATOR_PATH = 'tools/patch-externalplayer-residue.cjs';
 const ITEM_CONTROLS_GENERATOR_PATH = 'tools/patch-item-controls.cjs';
 const CONTENT_WIDTH_GENERATOR_PATH = 'tools/patch-content-width.cjs';
@@ -35,7 +32,6 @@ const SELECT_CANCEL_GENERATOR_PATH = 'tools/patch-select-cancel.cjs';
 const ACTIONSHEET_LAYOUT_GENERATOR_PATH = 'tools/patch-actionsheet-layout.cjs';
 const STARTUP_GENERATOR_PATH = 'tools/patch-startup.cjs';
 const OSD_LIFECYCLE_GENERATOR_PATH = 'tools/patch-videoosd-lifecycle.cjs';
-const APICLIENT_LIFECYCLE_GENERATOR_PATH = 'tools/patch-apiclient-lifecycle.cjs';
 
 const WEB_OVERLAY_CONTRACT = Object.freeze([
     Object.freeze({
@@ -66,7 +62,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         basePath: 'vendor/web-snapshot/www/index.html',
         inputPath: null,
         runtimePath: 'electronapp/www/index.html',
-        expectedBaseSha256: 'CA05A9A26DE19E16BB89C3595D29C95E3A56876439E968E3F464B218A101053A',
+        expectedBaseSha256: '18F777EE20F9829F3E7E4AB53A3442E7D4BD1532689E7ECE0B874281E0BB305D',
         expectedInputSha256: null,
         expectedOutputSha256: '18F777EE20F9829F3E7E4AB53A3442E7D4BD1532689E7ECE0B874281E0BB305D',
         generatorPaths: Object.freeze([GENERATOR_PATH, STARTUP_GENERATOR_PATH])
@@ -217,17 +213,6 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         generatorPaths: Object.freeze([GENERATOR_PATH, MOVIE_GENERATOR_PATH])
     }),
     Object.freeze({
-        id: 'custom-css-js',
-        mode: 'tracked-canonical-transform',
-        basePath: 'vendor/web-snapshot/www/modules/CustomCssJS.js',
-        inputPath: null,
-        runtimePath: 'electronapp/www/modules/CustomCssJS.js',
-        expectedBaseSha256: '2177DE28DCC4E715F07C63329DC361C5B4DDD37EB7E59F273830B22ACEA37912',
-        expectedInputSha256: null,
-        expectedOutputSha256: 'B9F6268F3E3126426F189F38F1E57FF4CD03D8F9A213305157E1F6842F251103',
-        generatorPaths: Object.freeze([GENERATOR_PATH, CUSTOM_CSS_JS_GENERATOR_PATH])
-    }),
-    Object.freeze({
         id: 'item-externalplayer-residue',
         mode: 'tracked-canonical-transform',
         basePath: 'vendor/web-snapshot/www/item/item.js',
@@ -261,36 +246,14 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         generatorPaths: Object.freeze([GENERATOR_PATH, ITEM_CONTROLS_GENERATOR_PATH, CONTENT_WIDTH_GENERATOR_PATH])
     }),
     Object.freeze({
-        id: 'apiclient',
-        mode: 'vendor-payload-transform',
-        basePath: 'vendor/web-snapshot/www/modules/emby-apiclient/apiclient.js',
-        inputPath: 'vendor/web-snapshot/user-patches/apiclient.js',
-        runtimePath: 'electronapp/www/modules/emby-apiclient/apiclient.js',
-        expectedBaseSha256: 'F3516C72784E5BC8782ABBCE021F22A7F939034E5B8B70639672AE682E18ACC0',
-        expectedInputSha256: 'A4A901640ABE6BC25188C1CF27FB53125B4F65EF2A797DEF033DC55165B080AE',
-        expectedOutputSha256: '6342A2C809B8CD4C0E1E3E35FC49F6AF8A415E4F4F8F8F0363CB769E9A7EF95E',
-        generatorPaths: Object.freeze([GENERATOR_PATH, APICLIENT_LIFECYCLE_GENERATOR_PATH])
-    }),
-    Object.freeze({
-        id: 'toast-css',
-        mode: 'vendor-payload-replacement',
-        basePath: 'vendor/web-snapshot/www/modules/toast/toast.css',
-        inputPath: 'vendor/web-snapshot/user-patches/toast.css',
-        runtimePath: 'electronapp/www/modules/toast/toast.css',
-        expectedBaseSha256: 'E4E8EFCDFBE4841FD05B6CFE6B2A94393474899F3977416077D99B4F8CAD0E39',
-        expectedInputSha256: '654AEB05C1B89CA625CC6BD9145F1966A780C0E80FE1197F619800C5F1894743',
-        expectedOutputSha256: '654AEB05C1B89CA625CC6BD9145F1966A780C0E80FE1197F619800C5F1894743',
-        generatorPaths: Object.freeze([GENERATOR_PATH])
-    }),
-    Object.freeze({
         id: 'app-js',
         mode: 'tracked-canonical-transform',
         basePath: 'vendor/web-snapshot/www/app.js',
         inputPath: null,
         runtimePath: 'electronapp/www/app.js',
-        expectedBaseSha256: '3EF3102567458359A02E2FE8F79A8700CFE9C223347ABE5AB6ECB8BD93BE89D2',
+        expectedBaseSha256: '3B058D1F40F5D863F1A1220DC36C52B187CB5AE0C8073DC4527573DE294FC0A2',
         expectedInputSha256: null,
-        expectedOutputSha256: 'E3A883851255A196231266B5060D28E637A538DB3337CD12D47F060C6820CD5C',
+        expectedOutputSha256: '1F518BE3FFA0E59780AC68E468FEAC105C696DF468CFA9C90E88B9F6792E8EB6',
         generatorPaths: Object.freeze([SEARCH_GENERATOR_PATH, GENERATOR_PATH, APP_GENERATOR_PATH, PLUGIN_GENERATOR_PATH, HOME_GENERATOR_PATH, MOVIE_GENERATOR_PATH])
     }),
     Object.freeze({
@@ -345,26 +308,23 @@ function readChecked(root, relativePath, expectedHash, label) {
     return value;
 }
 
+// Retire this optional integration only; keep the ordinary plugin/bootstrap and CSS paths.
+function retireCustomCssJs(text) {
+    const line = /^[ \t]*list\.push\("\.\/modules\/CustomCssJS\.js"\),\r?\n/gm;
+    const matches = Array.from(text.matchAll(line));
+    if (matches.length !== 1) throw new Error('CustomCssJS registration contract mismatch.');
+    const output = text.replace(line, '');
+    if (output.includes('CustomCssJS')) throw new Error('CustomCssJS registration remains.');
+    return output;
+}
+
 function outputFor(root, contract) {
     const base = readChecked(root, contract.basePath, contract.expectedBaseSha256, 'Web overlay base');
-    if (contract.mode === 'vendor-payload-transform' && contract.id === 'apiclient') {
-        const input = readChecked(root, contract.inputPath, contract.expectedInputSha256, 'Web overlay input');
-        return {base, input, output: Buffer.from(apiClientLifecycle.patchApiClient(input.toString('utf8')), 'utf8')};
-    }
-    if (contract.mode === 'vendor-payload-replacement') {
-        return {
-            base,
-            input: readChecked(root, contract.inputPath, contract.expectedInputSha256, 'Web overlay input')
-        };
-    }
     if (contract.id === 'videoosd-lifecycle') return {base, input: Buffer.from(videoOsdLifecycle.patchVideoOsd(base.toString('utf8')), 'utf8')};
-    if (contract.id === 'startup-index') return {base, input: Buffer.from(startup.patchStartup(base.toString('utf8')), 'utf8')};
+    if (contract.id === 'startup-index') return {base, input: base};
     if (contract.id === 'actionsheet-layout') return {base, input: Buffer.from(actionSheetLayout.patchActionSheetCss(base.toString('utf8')), 'utf8')};
     if (contract.searchTransform) return {base, input: Buffer.from(searchUi[contract.searchTransform](base.toString('utf8')), 'utf8')};
     if (contract.menuTransform) return {base, input: Buffer.from(selectCancel[contract.menuTransform](base.toString('utf8')), 'utf8')};
-    if (contract.id === 'custom-css-js' && contract.mode === 'tracked-canonical-transform') {
-        return {base, input: Buffer.from(customCssJs.patchText(base.toString('utf8')), 'utf8')};
-    }
     if (contract.id === 'item-externalplayer-residue' && contract.mode === 'tracked-canonical-transform') {
         return {base, input: Buffer.from(itemLifecycle.patchItemLifecycle(externalPlayerResidue.patchItemText(base.toString('utf8'))), 'utf8')};
     }
@@ -477,4 +437,4 @@ if (require.main === module) {
     process.stdout.write(JSON.stringify(apply(root, runtimeRoot)) + '\n');
 }
 
-module.exports = {WEB_OVERLAY_CONTRACT, apply, inspect, sha256};
+module.exports = {retireCustomCssJs,WEB_OVERLAY_CONTRACT, apply, inspect, sha256};

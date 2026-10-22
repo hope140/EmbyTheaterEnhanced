@@ -5,6 +5,18 @@ const {windowsIntegrationSkip}=require('./helpers/test-platform.cjs');
 const sha=x=>crypto.createHash('sha256').update(x).digest('hex');
 const ps=x=>"'"+x.replaceAll("'","''")+"'";
 function powershell(code){return cp.spawnSync('powershell.exe',['-NoProfile','-NonInteractive','-Command',code],{encoding:'utf8',timeout:30000});}
+const RECOVERY_TOOLS=['model-compatibility-input.cjs','web-snapshot-input.cjs','runtime-exclusions.cjs','prepare-model-compatibility.ps1'];
+function copyRecoveryTools(cold){
+    fs.mkdirSync(path.join(cold,'tools'),{recursive:true});
+    for(const file of RECOVERY_TOOLS)fs.copyFileSync(path.join(__dirname,'../tools',file),path.join(cold,'tools',file));
+}
+test('isolated official Model recovery fixture resolves its complete Node dependency set',t=>{
+    const root=fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(),'ete-model-loader-')));
+    t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+    copyRecoveryTools(root);
+    const result=cp.spawnSync(process.execPath,['-e','require(process.argv[1])',path.join(root,'tools/model-compatibility-input.cjs')],{encoding:'utf8'});
+    assert.equal(result.status,0,result.stderr);
+});
 
 test('official ZIP recovery verifies unique exact member before writes and preserves existing mismatches',
     {skip:windowsIntegrationSkip('Windows PowerShell ZIP extraction integration')},t=>{
@@ -14,7 +26,7 @@ test('official ZIP recovery verifies unique exact member before writes and prese
         const expected=fs.readFileSync(path.join(root,input.INPUT_ROOT,'MediaBrowser.Model.dll'));
         for(const mode of ['valid','wrong-case','duplicate','changed-member','existing-mismatch','wrong-archive']){
             const cold=path.join(root,mode);fs.mkdirSync(path.join(cold,'tools'),{recursive:true});fs.mkdirSync(path.join(cold,'vendor'));
-            for(const file of ['model-compatibility-input.cjs','web-snapshot-input.cjs','prepare-model-compatibility.ps1'])fs.copyFileSync(path.join(__dirname,'../tools',file),path.join(cold,'tools',file));
+            copyRecoveryTools(cold);
             const archive=path.join(cold,'official.zip');
             const members=[{name:mode==='wrong-case'?'mediabrowser.model.dll':'MediaBrowser.Model.dll',bytes:mode==='changed-member'?Buffer.alloc(expected.length,0):expected},
                 {name:'unrelated.exe',bytes:Buffer.from('never execute or extract')}];

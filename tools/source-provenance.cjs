@@ -269,6 +269,7 @@ function buildManifest(rootArg, runtimeArg, sourceCommit) {
         webSnapshot: {
             basePath: 'vendor/web-snapshot/www',
             inputManifest: webInput,
+            baseSelection: require('./web-snapshot-input.cjs').runtimeSelection(require('./web-snapshot-input.cjs').load(root)),
             baseTree: treeIdentity(baseWebRoot, walkFiles(baseWebRoot)),
             overlays: overlayReport.entries,
             runtimePath: 'electronapp/www',

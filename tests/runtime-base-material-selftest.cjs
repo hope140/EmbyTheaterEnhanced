@@ -20,6 +20,27 @@ const libmpv = require('../tools/libmpv-input.cjs');
 const {configOutput} = require('../tools/build-input-provenance.cjs');
 
 const root = path.resolve(__dirname, '..');
+// Review-approved delta from the frozen manifests, independent of production selection.
+const approvedRetirements = new Set([
+    'electronapp/www/modules/CustomCssJS.js',
+    'electronapp/www/modules/themes/logo.png',
+    'electronapp/www/settings/cameraupload.js',
+    'electronapp/www/settings/cameraupload.html',
+    'electronapp/www/components/directorybrowser/directorybrowser.css',
+    'electronapp/www/modules/emby-apiclient/appstorage-cache.js',
+    'electronapp/www/serviceworker-app.js',
+    'external/Anime4K/Anime4K-off.conf',
+    'external/emby.disable/www/modules/layout.css',
+    'external/emby.disable/www/modules/themes/darkgradient/theme.css',
+    'external/emby.enable/www/modules/layout.css',
+    'external/emby.enable/www/modules/themes/darkgradient/theme.css',
+    'external/Presets/fonts/Source Han Serif SC-Bold.ttf',
+    'Emby.ConfigureAndUninstall.bat',
+    'Emby.Dialog.bat',
+    'external/Presets/mpv.conf',
+    'cec-driver/cancel',
+    '注意事项.txt'
+]);
 function sha(bytes) { return crypto.createHash('sha256').update(bytes).digest('hex'); }
 function inventory(directory) {
     const files = [];
@@ -54,7 +75,11 @@ function referenceBase(runtime) {
             const bytes = fs.readFileSync(path.join(root, manifest.inputRoot, entry.path));
             assert.equal(bytes.length, entry.size, name + ': ' + entry.path);
             assert.equal(sha(bytes), entry.sha256.toLowerCase(), name + ': ' + entry.path);
-            writeExclusive(runtime, name === 'web-snapshot' ? 'electronapp/' + entry.path : entry.path, bytes);
+            const runtimePath = name === 'web-snapshot' ? 'electronapp/' + entry.path : entry.path;
+            if (!approvedRetirements.has(runtimePath)) {
+                const output = require('./helpers/small-runtime-reference.cjs').bytes(root, runtimePath, bytes);
+                writeExclusive(runtime, runtimePath, output);
+            }
         }
     }
     // Preload and Host config are generated later; only package is a base file.

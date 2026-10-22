@@ -58,6 +58,13 @@ function createFixture(root) {
     addManifestFile(files, root, 'x64/electron/electron.exe', 'electron-fixture\n');
     addManifestFile(files, root, 'x64/electron/version', '18.3.15\n');
     addManifestFile(files, root, 'electronapp/libmpv/x64/mpv-win32-x64.node', 'bridge-fixture\n');
+    addManifestFile(files, root, 'electronapp/www/modules/CustomCssJS.js', 'retired optional Web fixture\n');
+    addManifestFile(files, root, 'electronapp/www/modules/themes/logo.png', 'retired startup logo fixture\n');
+    for(const name of ['electronapp/www/settings/cameraupload.js','electronapp/www/settings/cameraupload.html']) addManifestFile(files,root,name,'synthetic retired mobile settings');
+    for(const name of ['electronapp/www/components/directorybrowser/directorybrowser.css',
+        'electronapp/www/modules/emby-apiclient/appstorage-cache.js','electronapp/www/serviceworker-app.js']) {
+        addManifestFile(files,root,name,'synthetic retired Web residue');
+    }
     addManifestFile(files, root, 'electronapp/libmpv/x64/mpv-1.dll', 'base-libmpv-fixture\n');
     addManifestFile(files, root, 'MediaBrowser.Model.dll', 'historical Model fixture\n');
     const playbackFixture = Buffer.from('const playback = true;\n');
@@ -80,9 +87,9 @@ function createFixture(root) {
             componentPatches.push({path:contract.inputPath.replace('vendor/web-snapshot/',''),size:bytes.length,sha256:hash(bytes)});
         }
     }
-    writeFile(path.join(root,webSnapshot.MANIFEST_PATH),JSON.stringify({schemaVersion:1,inputRoot:webSnapshot.INPUT_ROOT,
+    writeFile(path.join(root,webSnapshot.MANIFEST_PATH),JSON.stringify(require('./helpers/snapshot-history-fixture.cjs').attach(root,'web-snapshot',{schemaVersion:1,inputRoot:webSnapshot.INPUT_ROOT,
         fileCount:componentFiles.length,bytes:componentFiles.reduce((n,f)=>n+f.size,0),treeSha256:webSnapshot.treeHash(componentFiles),
-        files:componentFiles,userPatches:componentPatches}));
+        files:componentFiles,userPatches:componentPatches})));
     const hostBytes=Buffer.from('official-host-fixture\n');
     const hostFiles=[{path:'Emby.Theater.exe',size:hostBytes.length,sha256:hash(hostBytes)}];
     writeFile(path.join(root,windowsHost.INPUT_ROOT,'Emby.Theater.exe'),hostBytes);
@@ -100,6 +107,10 @@ function createFixture(root) {
     require('./helpers/model-compatibility-fixture.cjs').create(root);
     const small=require('./helpers/small-runtime-fixture.cjs').create(root);
     for(const entry of small.files)addManifestFile(files,root,entry.path,fs.readFileSync(path.join(root,smallRuntimeInput.INPUT_ROOT,entry.path)));
+    for(const name of require('../tools/runtime-exclusions.cjs').RETIRED_SMALL_RUNTIME_PATHS) addManifestFile(files,root,name,name==='cec-driver/cancel'?'':'synthetic historical '+name);
+    for (const name of require('../tools/runtime-exclusions.cjs').RETIRED_COMPATIBILITY_PATHS) {
+        addManifestFile(files, root, name, 'synthetic retired resource; never executed');
+    }
     writeFile(path.join(root, 'vendor', 'runtime-manifest.json'), JSON.stringify({
         baseline: 'provenance-test-fixture',
         archives: [{pattern: 'base.exe', sha256: '0'.repeat(64)}],
@@ -148,8 +159,7 @@ function createFixture(root) {
     for (const relativePath of [
         'tools/prepare-preload.cjs',
         'tools/prepare-web-overlays.cjs',
-        'tools/patch-videoosd-lifecycle.cjs', 'tools/patch-apiclient-lifecycle.cjs',
-        'tools/patch-custom-css-js.cjs',
+        'tools/patch-videoosd-lifecycle.cjs',
         'tools/patch-externalplayer-residue.cjs',
         'tools/patch-item-controls.cjs',
         'tools/patch-content-width.cjs',
@@ -179,7 +189,7 @@ function createFixture(root) {
     assert.equal(init.status, 0, init.stderr);
     childProcess.spawnSync('git', ['-C', root, 'config', 'user.name', 'ETE Test'], {encoding: 'utf8'});
     childProcess.spawnSync('git', ['-C', root, 'config', 'user.email', 'ete-test@example.invalid'], {encoding: 'utf8'});
-    const add = childProcess.spawnSync('git', ['-C', root, 'add', 'src/electronapp/some-normal-file.js', 'src/electronapp/enhanced/startup.svg', 'tools', 'package-lock.json', 'vendor/runtime-manifest.json', 'vendor/electron-runtime-manifest.json',webSnapshot.MANIFEST_PATH,windowsHost.MANIFEST_PATH,inheritedNpm.MANIFEST_PATH,templates.MANIFEST_PATH,libmpvInput.MANIFEST_PATH,compatibilityInput.MANIFEST_PATH,smallRuntimeInput.MANIFEST_PATH,modelInput.MANIFEST_PATH], {encoding: 'utf8'});
+    const add = childProcess.spawnSync('git', ['-C', root, 'add', 'vendor/snapshot-history', smallRuntimeInput.DEFAULT_SOURCE_PATH, smallRuntimeInput.TRANSLATION_SOURCE_PATH, 'src/electronapp/some-normal-file.js', 'src/electronapp/enhanced/startup.svg', 'tools', 'package-lock.json', 'vendor/runtime-manifest.json', 'vendor/electron-runtime-manifest.json',webSnapshot.MANIFEST_PATH,windowsHost.MANIFEST_PATH,inheritedNpm.MANIFEST_PATH,templates.MANIFEST_PATH,libmpvInput.MANIFEST_PATH,compatibilityInput.MANIFEST_PATH,smallRuntimeInput.MANIFEST_PATH,modelInput.MANIFEST_PATH], {encoding: 'utf8'});
     assert.equal(add.status, 0, add.stderr);
     const commit = childProcess.spawnSync('git', ['-C', root, 'commit', '-m', 'fixture'], {encoding: 'utf8'});
     assert.equal(commit.status, 0, commit.stderr);
@@ -201,6 +211,10 @@ function createRuntime(root, name) {
     fs.cpSync(path.join(root,compatibilityInput.INPUT_ROOT),runtime,{recursive:true});
     fs.cpSync(path.join(root,smallRuntimeInput.INPUT_ROOT),runtime,{recursive:true});
     fs.cpSync(path.join(root,modelInput.INPUT_ROOT),runtime,{recursive:true});
+    require('../tools/runtime-exclusions.cjs').remove(runtime);
+    for (const name of ['config/system.xml',smallRuntimeInput.TRANSLATION_PATH]) {
+        writeFile(path.join(runtime,name),require('./helpers/small-runtime-reference.cjs').bytes(root,name,fs.readFileSync(path.join(root,smallRuntimeInput.INPUT_ROOT,name))));
+    }
     webPreparation.apply(root, runtime);
     sourceProvenance.writeManifest(root, runtime, sourceCommit);
     return runtime;
@@ -241,7 +255,9 @@ test('historical Electron, Pepper and old libmpv bodies are not provenance prere
     const root=createTempRoot('ete-provenance-history-only-');
     try {
         createFixture(root);
-        for(const relative of ['x64/electron/electron.exe','x64/electron/version','electronapp/libmpv/x64/mpv-win32-x64.node','electronapp/libmpv/x64/mpv-1.dll']) {
+        const retiredWeb = ['electronapp/www/components/directorybrowser/directorybrowser.css',
+            'electronapp/www/modules/emby-apiclient/appstorage-cache.js','electronapp/www/serviceworker-app.js'];
+        for(const relative of ['x64/electron/electron.exe','x64/electron/version','electronapp/libmpv/x64/mpv-win32-x64.node','electronapp/libmpv/x64/mpv-1.dll',...retiredWeb]) {
             fs.unlinkSync(path.join(root,'vendor/carnival',relative));
         }
         const runtime=createRuntime(root,'runtime-without-history-bodies');
@@ -250,6 +266,12 @@ test('historical Electron, Pepper and old libmpv bodies are not provenance prere
         assert.equal(source.historicalInputs.carnivalElectron.verification,'historical-manifest-only');
         assert.equal(source.runtimeIdentities.libmpv.historicalPredecessor.physicalInputRequired,false);
         assert.equal(source.runtimeExclusions.inputs[0].physicalInputRequired,false);
+        for (const runtimePath of retiredWeb) {
+            const entry = source.runtimeExclusions.inputs.find(input => input.runtimePath === runtimePath);
+            assert.equal(entry.physicalInputRequired,false); assert.equal(entry.excluded,true);
+            assert.equal(entry.recordedSha256,hash(Buffer.from('synthetic retired Web residue')).toUpperCase());
+            assert.equal(fs.existsSync(path.join(runtime,runtimePath)),false);
+        }
         assert.equal(runProvenance('write',root,runtime).exitCode,0);
         fs.appendFileSync(path.join(runtime,'electronapp/libmpv/x64/mpv-1.dll'),'changed current libmpv');
         assert.notEqual(runProvenance('validate',root,runtime).exitCode,0);

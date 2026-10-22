@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "configurationType": "BaseApplicationConfiguration",
+  "defaults": {
+    "EnableDebugLevelLogging": false,
+    "EnableAutoUpdate": false,
+    "LogFileRetentionDays": 0,
+    "RunAtStartup": false,
+    "IsStartupWizardCompleted": false
+  }
+}

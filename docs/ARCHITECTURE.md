@@ -1,5 +1,16 @@
 # 架构与维护边界
 
+Latest scoped projection: Web713 with only three newly approved unreferenced residues removed; fresh npm input remains33 complete packages/1142 files while the exact runtime projection is1122. See [selection, identities and acceptance boundaries](SCOPED_RUNTIME_PROJECTION.md).
+
+Latest scoped addition: only the native settings/cameraupload.js/.html pair leaves source/runtime; the devices administrator page and shared/touch code remain. Current Web selection is716; prior051f990 and its718-file selection remain historical. See [evidence and regression boundary](MOBILE_CAMERA_SETTINGS_RETIREMENT.md).
+
+当前活动输入已迁为 snapshot-v2：兼容39、小组件2、Web713；二十个旧正文退出当前 tree，旧 manifest/hash 和必要声明保留。Web 根路径保持，版本由 manifest 明示；app/index 的旧插件/图片引用已在 v2 输入中退役；本次 app 仅再删除已注释的相机设置路由。完整中文维护源为 src/localization/mpvplayer/zh-CN.json，保留24项继承译文和13项选定修订。见[迁移合同](SNAPSHOT_V2_MIGRATION.md)。下方先前“正文保留/仅评估”记录描述迁移前阶段。
+
+
+旧 themes/logo.png 不再进入新 runtime；生产 index 继续使用既有 startup.svg，标题/屏保图保持。原 PNG/原 index 仍在冻结输入，完整来源树移除另需快照迁移；见[退役合同](LEGACY_RESOURCE_RETIREMENT.md)。
+
+默认配置由 `src/config/system-defaults.json` 生成同字段/同默认值的首启 XML；中文播放器资源由完整 `src/localization/mpvplayer/zh-CN.json` 维护，其中十三项为选定修订、二十四项继承原文。两份维护输入进入既有小组件装配/provenance，用户配置和原翻译注册路径保持；见[维护合同](MAINTAINED_SMALL_RUNTIME.md)。
+
 Current Model selection: the independent component now uses the fixed official Windows 3.0.20 Model member and can recover it from the same pinned ZIP as Host. Historical unchanged-Model statements below describe earlier stages. No playback/Host/Electron/libmpv source or configuration-default change accompanies this selection. See [current contract and acceptance limits](MODEL_COMPATIBILITY_INPUT.md).
 
 Current compatibility-resource input: 48 manual/external files now use a fixed local component with per-file origin and notice records, preserving runtime paths and bytes. Normal old input count is five Carnival files and zero patch files. Material snapshots remain external to Git. See [snapshot contract and limits](COMPATIBILITY_RESOURCES_INPUT.md).
@@ -42,9 +53,9 @@ M02 内核候选管理保持 Native Helper 为唯一生产 bridge。包由 main 
 
 内核状态分开显示包内哈希、静态兼容、来源/notice 声明、当前进程 ready 握手和下次启动选择。Helper/DLL映像SHA、来源独立核验、许可审查与可发行性分别保持UNKNOWN或NOT_ASSESSED；静态PE通过和握手通过不等于加载映像哈希证据或许可结论。
 
-构建由 tools/build.ps1 从固定 sourceCommit 的 Git blob、生成器和锁定外部输入组装。基础 payload 通过 assemble-runtime-base.cjs 从 manifest/合同推导文件清单，按文件复制仍保留的非Web旧输入，跳过后续替换及退役项；Web改用独立固定快照及用户Web补丁，生产组装和来源记录不读取旧www。14份原样Host/辅助二进制改读官方Windows 3.0.20组件白名单，Model不替换。剩余非Web prepared Carnival 输入与历史来源校验继续保留。source-provenance、runtime-provenance 和 build-manifest 分层记录；完整运行时仍依赖仓库外输入。Electron 使用固定 44.4.2 Windows x64 完整树。边界见[文件级组装](RUNTIME_BASE_ASSEMBLY.md)、[固定Web输入](WEB_SNAPSHOT_INPUT.md)与[固定Host输入](WINDOWS_HOST_INPUT.md)。
+构建由 tools/build.ps1 从固定 sourceCommit 的 Git blob、生成器和锁定外部输入组装。基础 payload 通过 assemble-runtime-base.cjs 从 manifest/合同推导文件清单，按文件复制仍保留的非Web旧输入，跳过后续替换及退役项；Web使用独立固定快照；ApiClient与toast为明确上游派生的两份直接维护源码，由已有Git blob装配器覆盖同名基底路径，其余Web overlay保持。生产不再应用这两份用户补丁及ApiClient生命周期补丁，不读取旧www。14份原样Host/辅助二进制改读官方Windows 3.0.20组件白名单，Model不替换。剩余非Web prepared Carnival 输入与历史来源校验继续保留。source-provenance、runtime-provenance 和 build-manifest 分层记录；完整运行时仍依赖仓库外输入。Electron 使用固定 44.4.2 Windows x64 完整树。边界见[文件级组装](RUNTIME_BASE_ASSEMBLY.md)、[固定Web输入](WEB_SNAPSHOT_INPUT.md)与[固定Host输入](WINDOWS_HOST_INPUT.md)。
 
-CustomCssJS 作为固定源哈希的 Web overlay 构建：服务器/本地 CSS 仍按既有选择加载；服务器/本地 JavaScript 配置保留，但不会在可信 renderer 中求值，检测到旧脚本选择或无效 JS 配置时显示一次提示。JS 配置解析失败不阻断 CSS。该边界只关闭 CustomCssJS 执行入口，不代表 renderer 已整体隔离；应用 preload 的 window.fs/window.ipc 能力仍由其他产品代码使用。
+CustomCssJS 可选第三方集成已退役：固定 app.js 生成变换仅删除其插件注册，Web 装配不再输出该模块，旧专属禁 JS 生成器及其合同已移除。普通 CSS、主题、原生 Branding/Css 条件和个人 storage 保持。原始 Web 快照及其新核对的上游/GPLv3 记录仍保存，不能据此声称源码已清；见[退役范围和证据](LEGACY_RESOURCE_RETIREMENT.md)。
 
 固定源哈希的 item 详情 overlay 仅退役旧外置播放器按钮与 fromPlayEnded 计时器；externalplayers/autoplay 旧值保持不写不删，普通下一集仍由 PlaybackManager 的 Emby EnableNextEpisodeAutoPlay 与 PlayQueue/nextTrack 管理。构建排除旧 Pepper input；两份旧 Carnival 批处理因动态/外部 Host 消费者和手工工作流尚未闭合而继续保留。旧 AppHost sleep/shutdown/restart 协议动作已从 Web 能力广告、Web 调用入口、命令白名单和 main 分派移除；未知命令仍完成空响应，windowstate、exit、loaded、音视频通知与安全外链链路保持。
 

@@ -43,14 +43,16 @@
         }
 
         .app-splash {
-            background-image: url(modules/themes/logo.png);
+            background-image: url(../enhanced/startup.svg);
             background-position: center top;
             background-repeat: no-repeat;
             background-size: contain;
             position: fixed;
             top: 30%;
-            left: 30%;
-            right: 30%;
+            left: 50%;
+            width: 80%;
+            max-width: 560px;
+            transform: translateX(-50%);
             height: 20%;
             contain: strict;
             content-visibility: auto;
@@ -60,13 +62,6 @@
             display: none !important;
         }
 
-        @media (orientation: landscape) {
-
-            .app-splash {
-                left: 37.5%;
-                right: 37.5%;
-            }
-        }
     </style>
 
 </head>

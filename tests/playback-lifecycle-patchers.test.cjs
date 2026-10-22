@@ -7,7 +7,6 @@ const os = require('node:os');
 const path = require('node:path');
 const {spawnSync} = require('node:child_process');
 const {patchVideoOsd} = require('../tools/patch-videoosd-lifecycle.cjs');
-const {patchApiClient} = require('../tools/patch-apiclient-lifecycle.cjs');
 const buildInputs = require('../tools/build-input-contract.cjs');
 const overlays = require('../tools/prepare-web-overlays.cjs');
 
@@ -42,20 +41,14 @@ test('VideoOSD patcher is wired as a pinned overlay and build input', () => {
     assert.ok(buildInputs.INPUT_PATHS.includes(patcherPath));
 });
 
-test('ApiClient patcher refuses absent, synthetic and changed authoritative material', () => {
-    for (const input of [null, '', 'unrelated source', 'key: "logout",\nvalue: function () {}']) {
-        assert.throws(() => patchApiClient(input), /authoritative payload hash mismatch/);
+test('ApiClient and toast are direct maintained sources without overlay generators', () => {
+    for (const id of ['apiclient', 'toast-css']) {
+        assert.equal(overlays.WEB_OVERLAY_CONTRACT.some(entry => entry.id === id), false);
     }
-});
-
-test('ApiClient overlay keeps base, raw payload and transformed output identities separate', () => {
-    const entry = overlays.WEB_OVERLAY_CONTRACT.find(item => item.id === 'apiclient');
-    assert.equal(entry.mode, 'vendor-payload-transform');
-    assert.equal(entry.expectedBaseSha256, 'F3516C72784E5BC8782ABBCE021F22A7F939034E5B8B70639672AE682E18ACC0');
-    assert.equal(entry.expectedInputSha256, 'A4A901640ABE6BC25188C1CF27FB53125B4F65EF2A797DEF033DC55165B080AE');
-    assert.notEqual(entry.expectedOutputSha256, entry.expectedInputSha256);
-    assert.ok(entry.generatorPaths.includes('tools/patch-apiclient-lifecycle.cjs'));
-    assert.ok(buildInputs.INPUT_PATHS.includes('tools/patch-apiclient-lifecycle.cjs'));
+    for (const retired of ['tools/patch-user-web.cjs', 'tools/patch-apiclient-lifecycle.cjs']) {
+        assert.equal(buildInputs.INPUT_PATHS.includes(retired), false);
+        assert.equal(fs.existsSync(path.join(__dirname, '..', retired)), false);
+    }
 });
 
 for (const mode of ['missing', 'duplicate']) {

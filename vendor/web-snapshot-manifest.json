@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "inputRoot": "vendor/web-snapshot",
-  "fileCount": 720,
-  "bytes": 22009668,
-  "treeSha256": "7e4773f58b5592009bec5c54a05f17955ed1cb3053558a3e64fa325f8e094b6a",
+  "fileCount": 713,
+  "bytes": 21962068,
+  "treeSha256": "794e8a8f2a214fec70124eeade77b30242b5e0b000951bb744477b63a1ee454e",
   "origin": {
     "type": "frozen-historical-web-snapshot",
     "sourceManifest": "vendor/runtime-manifest.json",
@@ -34,10 +34,10 @@
     },
     {
       "path": "www/app.js",
-      "size": 102397,
-      "sha256": "3ef3102567458359a02e2fe8f79a8700cfe9c223347abe5ab6ecb8bd93be89d2",
+      "size": 101668,
+      "sha256": "3b058d1f40f5d863f1a1220dc36c52b187cb5ae0c8073dc4527573de294fc0a2",
       "originalPath": "electronapp/www/app.js",
-      "origin": "historical-snapshot-upstream-version-unresolved",
+      "origin": "v2 derived input: retire CustomCssJS registration and the inactive native camera settings route comment; other executable bytes retained",
       "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
     },
     {
@@ -157,14 +157,6 @@
       "size": 1861,
       "sha256": "f05fe1aa6b16c5418c0283ce11524c7266a5d0c218b3d3f20355c9806141756e",
       "originalPath": "electronapp/www/components/activitylog.js",
-      "origin": "historical-snapshot-upstream-version-unresolved",
-      "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
-    },
-    {
-      "path": "www/components/directorybrowser/directorybrowser.css",
-      "size": 105,
-      "sha256": "124ba078fd930fd0bb7835465e58cfaa671f6e131dce2cf417fd037c50b8cebb",
-      "originalPath": "electronapp/www/components/directorybrowser/directorybrowser.css",
       "origin": "historical-snapshot-upstream-version-unresolved",
       "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
     },
@@ -674,10 +666,10 @@
     },
     {
       "path": "www/index.html",
-      "size": 3991,
-      "sha256": "ca05a9a26de19e16bb89c3595d29c95e3a56876439e968e3f464b218a101053a",
+      "size": 3905,
+      "sha256": "18f777ee20f9829f3e7e4ab53a3442e7d4bd1532689e7ece0b874281e0bb305d",
       "originalPath": "electronapp/www/index.html",
-      "origin": "historical-snapshot-upstream-version-unresolved",
+      "origin": "v2 explicit retirement of optional plugin registration or startup image reference; other base bytes retained",
       "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
     },
     {
@@ -1793,14 +1785,6 @@
       "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
     },
     {
-      "path": "www/modules/CustomCssJS.js",
-      "size": 4548,
-      "sha256": "2177de28dcc4e715f07c63329dc361c5b4ddd37eb7e59f273830b22acea37912",
-      "originalPath": "electronapp/www/modules/CustomCssJS.js",
-      "origin": "historical-snapshot-upstream-version-unresolved",
-      "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
-    },
-    {
       "path": "www/modules/datagrid/datagrid.css",
       "size": 5533,
       "sha256": "5e6373a2d22e5b4b706735bbd1d7eb6b00c9f0891bf533d6b8c6d9b5da442aa0",
@@ -1885,14 +1869,6 @@
       "size": 32812,
       "sha256": "53d95de33c8c3ca4cdfa4f0491774b73638ec98f3c2abf71d0eb318a863e2f81",
       "originalPath": "electronapp/www/modules/emby-apiclient/apiclientex.js",
-      "origin": "historical-snapshot-upstream-version-unresolved",
-      "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
-    },
-    {
-      "path": "www/modules/emby-apiclient/appstorage-cache.js",
-      "size": 1155,
-      "sha256": "74f671613b0478c523667feb3889a3ff417fc044ab1bde5904ff7374bc1cfdcc",
-      "originalPath": "electronapp/www/modules/emby-apiclient/appstorage-cache.js",
       "origin": "historical-snapshot-upstream-version-unresolved",
       "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
     },
@@ -4169,14 +4145,6 @@
       "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
     },
     {
-      "path": "www/modules/themes/logo.png",
-      "size": 32892,
-      "sha256": "624aa2425d6bee862fd5469e191a2dad928931425e45ee31d006d6e71906c064",
-      "originalPath": "electronapp/www/modules/themes/logo.png",
-      "origin": "historical-snapshot-upstream-version-unresolved",
-      "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
-    },
-    {
       "path": "www/modules/themes/logodark.png",
       "size": 9967,
       "sha256": "f1b49f8a22a10f1fa16a1b447bd3ed9034bd391f40e26b11d6ec94213eeb95c5",
@@ -4593,34 +4561,10 @@
       "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
     },
     {
-      "path": "www/serviceworker-app.js",
-      "size": 1685,
-      "sha256": "adb28561d0e263fe2b6530263aed218d67ff1bfeb1070f2015c6297eb375290f",
-      "originalPath": "electronapp/www/serviceworker-app.js",
-      "origin": "historical-snapshot-upstream-version-unresolved",
-      "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
-    },
-    {
       "path": "www/serviceworker.js",
       "size": 0,
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "originalPath": "electronapp/www/serviceworker.js",
-      "origin": "historical-snapshot-upstream-version-unresolved",
-      "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
-    },
-    {
-      "path": "www/settings/cameraupload.html",
-      "size": 1586,
-      "sha256": "35883b422fe36e31323463ecd413265342e8b4f82ab6919e73574a27728a0b3e",
-      "originalPath": "electronapp/www/settings/cameraupload.html",
-      "origin": "historical-snapshot-upstream-version-unresolved",
-      "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
-    },
-    {
-      "path": "www/settings/cameraupload.js",
-      "size": 4814,
-      "sha256": "cab95e4f266d16c250930d6bb76fd07de18212f2bb777e141396ebdf3f3b6ea8",
-      "originalPath": "electronapp/www/settings/cameraupload.js",
       "origin": "historical-snapshot-upstream-version-unresolved",
       "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
     },
@@ -5802,5 +5746,11 @@
       "copyright": "User increment attribution does not reattribute the underlying third-party file; existing notices retained",
       "size": 3903
     }
-  ]
+  ],
+  "version": "snapshot-v2",
+  "migration": {
+    "historicalManifestPath": "vendor/snapshot-history/web-snapshot-v1-manifest.json",
+    "historicalManifestSha256": "1545509de092b6646840d8bedff85eceb631d9c1533fab5f3937af363e2a1b8a",
+    "relation": "Explicit v2 selection; historical bodies live only in old Git commits/tags; no old-package fallback"
+  }
 }
