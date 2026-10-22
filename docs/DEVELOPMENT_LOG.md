@@ -4,6 +4,8 @@
 
 按精确批准范围将三份无引用 Web 正文退出当前 v2 候选树/装配，Web713，兼容39/小组件2不变；保留实际目录选择器、localStorage/memory、空worker注册、playqueueconfirmation及语言/兼容入口。npm完整33包/1142文件与SRI/恢复输入保持，仅在新建有归属runtime复制时省略20个固定版本/路径/大小/hash产物，投影1122。provenance同时校验完整来源树、排除差集及其余字节，35份许可/notice不变。新增逐项负向、真实依赖复制、descriptor.json负对照、实际loader/存储初始化和Web装配回归；[完整范围与验收边界](SCOPED_RUNTIME_PROJECTION.md)。不改播放路径、CEC DLL、旧电源包，不合并、不打安装器或发布。
 
+外部交接原件及夹具生成器均通过SHA256校验；原npm探针121成员/定义/wire对照通过，Chromium localhost原12组及批准三文件组合补4组通过，均为隔离组件/模拟API证据，不是Windows整机验收。首次Windows公共集1385 pass/1 fail暴露新增复制测试依赖未准备的外部继承材料；改为合成无关继承包，真实33个锁定npm包和全部投影/协议/负向断言保持。无外部材料的公开测试cleanroom三项通过，不增加跳过或缩小选择。详见[浏览器证据](evidence/web-residue-browser.json)。
+
 ## 2026-10-22 — 公共 CI 测试日志实时输出
 
 仅将 ci-public-tests.cjs 的子进程 stdout/stderr 从整组缓存后打印改为直接继承；保持测试选择、参数、串行、工作目录、退出码、启动错误和现有工作流时限。隔离测试用双输出握手证明子测试结束前可见日志，同时覆盖成功/失败、空退出状态和启动错误。四项脚本回归通过；本改动提供取消时的诊断进度，不将旧取消记录算作成功，也未减少测试或扩大资源清理范围。

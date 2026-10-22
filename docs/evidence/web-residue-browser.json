@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "productSelectionCommit": "fb56c8ed1067a37c4be58d823d1e01b6f81022d4",
+  "browser": "Linux Chromium headless, localhost only, fresh isolated browser contexts",
+  "scope": "Real directory controls/interaction/style/screenshot, storage branches, plugin registration/choice and empty worker; API/provider/native services explicitly mocked",
+  "originalScripts": {
+    "npm-probe.cjs": {
+      "bytes": 4009,
+      "sha256": "95d540541b61e8be3ac92b02ecb7592c449cb136a6ef699c05f0aab74ee6d902"
+    },
+    "browser-harness.js": {
+      "bytes": 9238,
+      "sha256": "72ddd735c5aeea32aaee3e32883ed84f7cdcf3a1885240eb13f859ae2b3af016"
+    },
+    "run-browser.py": {
+      "bytes": 6462,
+      "sha256": "47363a4b096511c58e94d445e2c711adbfc28c81fe6c53c9b89ffb069398fdd1"
+    },
+    "handoff-fixtures.cjs": {
+      "bytes": 5247,
+      "sha256": "dbc6f7b77d7e91df3ca00918487cb9c9a06f26235987a1c41d7a73970ec850e0"
+    }
+  },
+  "fixtureAdaptation": "Only optional external baseline source argument; restore the three candidates from 75a350c into a new research directory with verified historical hashes. Actual repository overlays, playbackmanager generator, function extraction and assertions unchanged.",
+  "originalMatrix": {
+    "runs": 12,
+    "variants": [
+      "baseline",
+      "remove0",
+      "remove1",
+      "remove2",
+      "remove3",
+      "removeAll"
+    ],
+    "viewports": [
+      1280,
+      480
+    ],
+    "directoryDOMMetricsInteractionsAndScreenshotsEqual": true,
+    "negativeControlOnly": [
+      "remove1",
+      "removeAll"
+    ]
+  },
+  "approvedMatrix": {
+    "runs": 4,
+    "variants": [
+      "baseline",
+      "approved3"
+    ],
+    "viewports": [
+      1280,
+      480
+    ],
+    "removed": [
+      "components/directorybrowser/directorybrowser.css",
+      "modules/emby-apiclient/appstorage-cache.js",
+      "serviceworker-app.js"
+    ],
+    "kept": "modules/common/playback/playqueueconfirmation.js",
+    "allOriginalAssertionsPreserved": true,
+    "directoryDOMMetricsInteractionsAndScreenshotsEqual": true
+  },
+  "screenshots": [
+    {
+      "variant": "baseline",
+      "width": 1280,
+      "sha256": "09eceecc30142cc0400b8eb334dfe51beedf2432435d4c975169a779831eefe9"
+    },
+    {
+      "variant": "baseline",
+      "width": 480,
+      "sha256": "7540c0f76451d617740e7461bb42cd174b16a97aaa2f65ed7b04f168152de6ae"
+    },
+    {
+      "variant": "approved3",
+      "width": 1280,
+      "sha256": "09eceecc30142cc0400b8eb334dfe51beedf2432435d4c975169a779831eefe9"
+    },
+    {
+      "variant": "approved3",
+      "width": 480,
+      "sha256": "7540c0f76451d617740e7461bb42cd174b16a97aaa2f65ed7b04f168152de6ae"
+    }
+  ],
+  "externalRequestsBlocked": 0,
+  "fileNavigation": {
+    "historicalDenialRetried": false,
+    "currentNavigations": "localhost HTTP only"
+  },
+  "acceptanceLimits": "Research Web source-plus-real-overlays projection; not complete installer, Windows ETE window, login, server, upload or playback acceptance."
+}

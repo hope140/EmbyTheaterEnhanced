@@ -353,5 +353,14 @@
     "channelzMethods": 7,
     "orcaWireEqual": true,
     "networkDnsAndSpawnBlocked": true
+  },
+  "originalHandoffReplay": {
+    "scriptSha256": "95d540541b61e8be3ac92b02ecb7592c449cb136a6ef699c05f0aab74ee6d902",
+    "loadedMembers": 121,
+    "cd2RpcCount": 3,
+    "messageWireCount": 6,
+    "definitionSha256": "7c78d07cf96b14a6cd9ef7183640dda8ae873f29a34e6bc2007ab841f8cced6c",
+    "completeVersusProjectedFieldsEqual": true,
+    "blockedExternalAttempts": 0
   }
 }

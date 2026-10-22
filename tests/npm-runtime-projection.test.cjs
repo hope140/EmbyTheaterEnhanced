@@ -2,6 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const {execFileSync} = require('node:child_process');
 const deps = require('../tools/runtime-dependency-contract.cjs');
@@ -44,26 +45,40 @@ test('changed projection versions and every missing, altered or resized excluded
 });
 
 test('owned runtime copy records the complete source and exact projection before final validation', t => {
-    fs.mkdirSync(path.join(root, 'dist'), {recursive: true});
-    fs.mkdirSync(path.join(root, '.work'), {recursive: true});
-    const runtime = fs.mkdtempSync(path.join(root, 'dist', 'npm-projection-'));
-    const source = fs.mkdtempSync(path.join(root, '.work', 'runtime-dependencies-projection-'));
-    t.after(() => { fs.rmSync(runtime, {recursive: true, force: true}); fs.rmSync(source, {recursive: true, force: true}); });
-    for (const name of ['package.json', 'package-lock.json']) fs.copyFileSync(path.join(root, name), path.join(source, name));
+    const fixture = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-npm-projection-')));
+    t.after(() => fs.rmSync(fixture, {recursive: true, force: true}));
+    const runtime = path.join(fixture, 'dist', 'candidate'), source = path.join(fixture,'.work','runtime-dependencies-projection');
+    fs.mkdirSync(runtime, {recursive: true}); fs.mkdirSync(source, {recursive: true});
+    for (const name of ['package.json', 'package-lock.json']) {
+        fs.copyFileSync(path.join(root, name), path.join(source, name));
+        fs.copyFileSync(path.join(root, name), path.join(fixture, name));
+    }
+    // The reviewed 33 npm packages stay real; unrelated externally restored legacy
+    // packages use the same public synthetic fixture as the existing ownership tests.
+    const retained = deps.RETAINED_PACKAGES.flatMap(entry => {
+        const name = entry.packagePath.split('/').at(-1), prefix = 'electronapp/' + entry.packagePath;
+        return [{path:prefix+'/package.json',bytes:Buffer.from(JSON.stringify({name,version:entry.version}))},
+            {path:prefix+'/index.js',bytes:Buffer.from('module.exports = "synthetic retained package";\n')}];
+    });
+    require('./helpers/inherited-npm-fixture.cjs').create(fixture,retained);
+    const git = args => execFileSync('git', ['-C',fixture,...args], {encoding:'utf8'});
+    git(['init','-q']); git(['config','user.name','ETE Test']); git(['config','user.email','ete-test@example.invalid']);
+    git(['config','core.autocrlf','false']); git(['add','package.json','package-lock.json',inherited.MANIFEST_PATH]);
+    git(['commit','-q','-m','projection fixture']);
     for (const entry of selected.packages) {
         const target = path.join(source, entry.packagePath); fs.mkdirSync(path.dirname(target), {recursive: true});
         fs.cpSync(path.join(root, entry.packagePath), target, {recursive: true});
     }
-    const commit = execFileSync('git', ['-C', root, 'rev-parse', 'HEAD'], {encoding: 'utf8'}).trim();
-    const token = deps.createOwner(root, runtime, commit);
-    inherited.assemble(root, runtime);
+    const commit = git(['rev-parse','HEAD']).trim();
+    const token = deps.createOwner(fixture, runtime, commit);
+    inherited.assemble(fixture, runtime);
     const first = reviewed.excludedFiles[0], sourceFile = path.join(source, first.path), original = fs.readFileSync(sourceFile);
     fs.appendFileSync(sourceFile, 'altered input');
-    assert.throws(() => deps.copyRuntimeDependencies(root, runtime, source, token), /projection identity mismatch/);
+    assert.throws(() => deps.copyRuntimeDependencies(fixture, runtime, source, token), /projection identity mismatch/);
     assert.equal(fs.existsSync(path.join(runtime, deps.PROVENANCE_FILE)), false);
     assert.equal(fs.existsSync(path.join(runtime, 'electronapp/node_modules/@grpc')), false);
     fs.writeFileSync(sourceFile, original);
-    const result = deps.copyRuntimeDependencies(root, runtime, source, token);
+    const result = deps.copyRuntimeDependencies(fixture, runtime, source, token);
     assert.equal(result.sourceSelectedFileCount, 1142); assert.equal(result.selectedFileCount, 1122); assert.equal(result.excludedFileCount, 20);
     const targetProject = path.join(runtime, 'electronapp');
     assert.deepEqual(summary(collect(source)), reviewed.source);
@@ -77,16 +92,16 @@ test('owned runtime copy records the complete source and exact projection before
     assert.deepEqual(projected,baseline,'actual CJS members, RPC definitions, message wire, Channelz and ORCA must match');
     for (const file of reviewed.excludedFiles) assert.equal(fs.existsSync(path.join(targetProject, file.path)), false);
     for (const file of [...reviewed.retainedCriticalFiles, ...reviewed.noticeFiles]) assert.deepEqual(fs.readFileSync(path.join(targetProject,file.path)), fs.readFileSync(path.join(source,file.path)));
-    assert.equal(deps.inspectRuntime(root, runtime, commit).valid, true);
+    assert.equal(deps.inspectRuntime(fixture, runtime, commit).valid, true);
     const recordPath = path.join(runtime, deps.PROVENANCE_FILE), record = fs.readFileSync(recordPath);
     const changed = JSON.parse(record); changed.selected.excludedFiles.pop(); fs.writeFileSync(recordPath, JSON.stringify(changed));
-    assert.throws(() => deps.inspectRuntime(root, runtime, commit), /projection identity mismatch/); fs.writeFileSync(recordPath, record);
+    assert.throws(() => deps.inspectRuntime(fixture, runtime, commit), /projection identity mismatch/); fs.writeFileSync(recordPath, record);
     const stale = path.join(targetProject, first.path); fs.mkdirSync(path.dirname(stale), {recursive: true}); fs.writeFileSync(stale, original);
-    assert.throws(() => deps.inspectRuntime(root, runtime, commit), /file count mismatch/); fs.unlinkSync(stale);
+    assert.throws(() => deps.inspectRuntime(fixture, runtime, commit), /file count mismatch/); fs.unlinkSync(stale);
     const descriptor = path.join(targetProject, 'node_modules/protobufjs/google/protobuf/descriptor.json');
     const descriptorBytes = fs.readFileSync(descriptor); fs.unlinkSync(descriptor);
     assert.throws(() => require(path.join(targetProject,'node_modules/protobufjs/ext/descriptor')), error => error.code === 'MODULE_NOT_FOUND');
-    assert.throws(() => deps.inspectRuntime(root, runtime, commit), /file count mismatch/); fs.writeFileSync(descriptor, descriptorBytes);
-    assert.equal(deps.inspectRuntime(root, runtime, commit).valid, true);
+    assert.throws(() => deps.inspectRuntime(fixture, runtime, commit), /file count mismatch/); fs.writeFileSync(descriptor, descriptorBytes);
+    assert.equal(deps.inspectRuntime(fixture, runtime, commit).valid, true);
     assert.deepEqual(summary(collect(source)), reviewed.source);
 });
