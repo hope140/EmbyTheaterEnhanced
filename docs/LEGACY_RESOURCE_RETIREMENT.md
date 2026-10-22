@@ -33,7 +33,7 @@ AGENTS.md 要求 vendor 和原始归档只读，因此本候选通过既有 `too
 
 Host 参考仅使用仓库既有固定引用 [708fadc](https://github.com/MediaBrowser/emby-theater-windows/tree/708fadc068cbf66ced6aece4a32f3e12bb2c4e13)：[ElectronApp.StartProcess](https://github.com/MediaBrowser/emby-theater-windows/blob/708fadc068cbf66ced6aece4a32f3e12bb2c4e13/Emby.Theater/App/ElectronApp.cs) 直接启动 electron 并传入 app/data/CEC/mpv 路径；[Program.InstallCecDriver](https://github.com/MediaBrowser/emby-theater-windows/blob/708fadc068cbf66ced6aece4a32f3e12bb2c4e13/Emby.Theater/Program.cs) 根据 cancel 的存在性返回。对当前固定 ZIP/Host 做已有 manifest 哈希检查及只读字符串核对。参考代码不等于已证明 Host 的完整源码重建关系；没有为这 14 项追加来源调查。
 
-`index.html` 的隐藏 Carnival 标记和 CustomCssJS 的 MainActivity 分支本次不变。虽然 ETE 的生产运行在 Electron，仍不需要为包内资源剥离改动 reload 分支；保留候选记录，不扩大到其它 Android/远程播放模块。remoteaudio/remotevideo、Model、ApiClient/toast、src/、native/ 及用户数据路径均不改。
+`index.html` 的隐藏 Carnival 标记保持。CustomCssJS 的 MainActivity 分支只在未改写的原始存档中保留，随整个可选模块退出新 runtime；没有修改其它 Android/远程播放模块。remoteaudio/remotevideo、Model、ApiClient/toast、src/、native/ 及用户数据路径均不改。
 
 ## 装配、哈希与通知
 
@@ -53,12 +53,14 @@ Host 参考仅使用仓库既有固定引用 [708fadc](https://github.com/MediaB
 
 ```sh
 node --test tests/legacy-resource-retirement.test.cjs tests/compatibility-resources-input.test.cjs tests/small-runtime-input.test.cjs tests/runtime-base-assembly.test.cjs tests/pepper-retirement.test.cjs
-node --test tests/app-bootstrap.test.cjs tests/custom-css-js-amd-vm.test.cjs tests/custom-css-js-overlay.test.cjs tests/anime4k-shortcut-retirement.test.cjs
+node --test tests/app-bootstrap.test.cjs tests/custom-css-js-retirement.test.cjs tests/anime4k-shortcut-retirement.test.cjs
 node --test tests/runtime-provenance.test.cjs tests/build-input-audit.test.cjs tests/build-input-contract.test.cjs
 node --test tests/runtime-base-material-selftest.cjs tests/windows-host-material-selftest.cjs tests/custom-css-js-material-selftest.cjs
 ```
 
 真实材料回归独立按未改写的组件 manifest 加上显式批准的十二项差值构造参考侧；精确比较 810 个基础文件、925 个共同生产变换后的中间文件。不能额外忽略任何文件或改变预期 hash 来放过缺失。归档 CustomCssJS 输入 SHA 保持；旧运行输出退出合同，app.js 仅删除固定注册行。测试不是 Windows GUI、安装升级、真实 Emby/CD2、音视频设备或最终安装器验收；后者须在审阅分支上另行取得，不能沿用 v0.3.16 已构建产物的结果。
+
+十二项退役的 Linux 公共集为 1351 项：1341 pass、0 fail、10 个 Windows 平台 skip；其排除的六个材料依赖文件另测 84/84、0 skip，三项真实材料回归 3/3。默认配置维护和中文译文建议仅为待选草稿，用户最终确认前不进入有效产品变更。完整安装包按后续整合节奏统一构建，本轮未触发。
 
 初版十项剥离阶段的 Linux 实测：针对性装配/接线/安全门禁 105/105，来源与 runtime-provenance 4/4；公共 runner 1361 项中 1351 pass、0 fail、10 个明确 Windows 平台 skip。JS/PowerShell 语法、有限凭据模式及差异空白检查通过。来源夹具首轮有 4 个失败，因为整树复制仍放入已退役 notice；修正夹具使用生产排除阶段后单独复验 4/4，不将首轮记为绿。
 
