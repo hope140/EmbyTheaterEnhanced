@@ -10,6 +10,12 @@ Actions 产物只含安装包、校验值、来源回执、五份构建清单、
 
 首次手动派发可能要求默认分支先具备 `workflow_dispatch`。若 GitHub 拒绝分支派发，保持本 PR 未合并并报告该前置条件；不得自动合并、改权限或替换为自动发布。此流程不需要新增 secrets。标准公开仓库 runner 与产物存储使用仓库现有配额，不启用付费容量。
 
+## 暂存标准发行附件
+
+明确准备版本发行时，可手动选择 `release_package=true`。仍使用同一个只读 Windows 作业和固定输入；额外运行全部 `tests/*-material-selftest.cjs`，安装器使用 `EmbyTheaterEnhanced-<version>-win-x64-setup.exe`，同时暂存标准来源、单文件校验、准确 source 的原始 `RELEASE_NOTES.md` 及列出前四项的 `SHA256SUMS.txt`。Actions artifact 中保留其余验证清单与总结，供来源核验，不全部作为 Release 附件。
+
+该选项只构建、核验和上传 Actions artifact，不创建 Tag 或发布 Release。须先核对准确 source、版本、完整哈希、五附件及 Tag CI，再按[发行规范](RELEASE_CONVENTIONS.md)单独发布测试版。实际安装器 FileVersion、ProductVersion 和签名状态写入构建总结；云端不安装或启动客户端。
+
 ## 保留的固定下载失败诊断
 
 原传输函数保留给受控回归；本地仓库归档恢复入口不启动此下载器。以下描述传输诊断合同，不表示生产准备过程仍需远端归档请求。

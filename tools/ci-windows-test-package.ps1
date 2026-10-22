@@ -1,4 +1,4 @@
-param()
+param([switch]$ReleasePackage)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $root = Split-Path -Parent $PSScriptRoot
@@ -54,6 +54,12 @@ RunNode @('tools/ci-syntax.cjs')
 if (-not $?) { throw 'PowerShell syntax validation failed.' }
 RunNode @('tools/ci-secret-scan.cjs')
 RunNode @('tests/windows-host-material-selftest.cjs')
+if ($ReleasePackage) {
+    $materialTests = @(Get-ChildItem -LiteralPath (Join-Path $root 'tests') -Filter '*-material-selftest.cjs' -File | Sort-Object Name | ForEach-Object { 'tests/' + $_.Name })
+    if ($materialTests.Count -eq 0) { throw 'No explicit material regressions found.' }
+    & node --test --test-reporter=tap --test-concurrency=1 @materialTests
+    if ($LASTEXITCODE -ne 0) { throw 'Explicit material regressions failed; no release package will be uploaded.' }
+}
 
 & (Join-Path $PSScriptRoot 'build.ps1') -OutputName $runtimeName
 if (-not $?) { throw 'Runtime build failed.' }
@@ -61,6 +67,7 @@ if (-not $?) { throw 'Runtime build failed.' }
 if (-not $?) { throw 'Runtime verification failed.' }
 $version = (Get-Content -LiteralPath (Join-Path $root 'package.json') -Raw -Encoding UTF8 | ConvertFrom-Json).version
 $installerName = 'EmbyTheaterEnhanced-' + $version + '-test-' + $source.Substring(0,12) + '-' + $run + '-win-x64-setup'
+if ($ReleasePackage) { $installerName = 'EmbyTheaterEnhanced-' + $version + '-win-x64-setup' }
 & (Join-Path $PSScriptRoot 'package.ps1') -RuntimeName $runtimeName -OutputBaseFilename $installerName
 if (-not $?) { throw 'Installer compilation failed.' }
 $installer = Join-Path $root ('dist/' + $installerName + '.exe')
@@ -79,6 +86,14 @@ New-Item -ItemType Directory -Path $output | Out-Null
 foreach ($suffix in @('', '.provenance.json', '.sha256')) {
     Copy-Item -LiteralPath ($installer + $suffix) -Destination $output
 }
+if ($ReleasePackage) {
+    # Preserve the exact source blob, including its encoding and final newline.
+    & node -e "require('node:fs').writeFileSync(process.argv[2], require('node:child_process').execFileSync('git', ['show', process.argv[1] + ':docs/RELEASE_NOTES.md']));" $source (Join-Path $output 'RELEASE_NOTES.md')
+    if ($LASTEXITCODE -ne 0) { throw 'Committed release notes could not be staged.' }
+    $releaseFiles = @(([IO.Path]::GetFileName($installer)), ([IO.Path]::GetFileName($installer) + '.provenance.json'), ([IO.Path]::GetFileName($installer) + '.sha256'), 'RELEASE_NOTES.md')
+    $sums = @($releaseFiles | ForEach-Object { (Get-FileHash -LiteralPath (Join-Path $output $_) -Algorithm SHA256).Hash.ToLowerInvariant() + '  ' + $_ })
+    [IO.File]::WriteAllText((Join-Path $output 'SHA256SUMS.txt'), (($sums -join "`n") + "`n"), [Text.UTF8Encoding]::new($false))
+}
 foreach ($file in @('build-manifest.json','build-input-provenance.json','source-provenance.json','runtime-provenance.json','native-helper-provenance.json')) {
     Copy-Item -LiteralPath (Join-Path $runtime $file) -Destination $output
 }
@@ -96,6 +111,10 @@ $summary = [ordered]@{
     runId=$env:GITHUB_RUN_ID; runAttempt=$env:GITHUB_RUN_ATTEMPT
     runnerOS=$env:RUNNER_OS; runnerArch=$env:RUNNER_ARCH; imageOS=$env:ImageOS; imageVersion=$env:ImageVersion
     node=([string](& node --version)); installer=[IO.Path]::GetFileName($installer)
+    releasePackage=[bool]$ReleasePackage; version=$version
+    installerFileVersion=(Get-Item -LiteralPath $installer).VersionInfo.FileVersion
+    installerProductVersion=(Get-Item -LiteralPath $installer).VersionInfo.ProductVersion
+    installerSignatureStatus=[string](Get-AuthenticodeSignature -LiteralPath $installer).Status
     officialModel=[ordered]@{
         provenanceMode=$officialModel.provenance.mode; sourceUrl=$officialModel.archive.sourceUrl
         archiveSha256=$modelArchive.archiveSha256; archiveBytes=$modelArchive.archiveBytes
