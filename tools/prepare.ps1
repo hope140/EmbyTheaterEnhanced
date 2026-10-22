@@ -49,9 +49,14 @@ if (-not (Test-Path -LiteralPath (Join-Path $root 'vendor/small-runtime/snapshot
 & node (Join-Path $PSScriptRoot 'small-runtime-input.cjs') validate $root
 if ($LASTEXITCODE -ne 0) { throw 'Small runtime snapshot validation failed.' }
 if (-not (Test-Path -LiteralPath (Join-Path $root 'vendor/model-compatibility/snapshot-v1'))) {
-    if (-not $ModelSnapshotRoot) { throw 'Provide -ModelSnapshotRoot with the exact preserved Model snapshot; no official substitution or legacy fallback.' }
-    & node (Join-Path $PSScriptRoot 'model-compatibility-input.cjs') import $root $ModelSnapshotRoot
-    if ($LASTEXITCODE -ne 0) { throw 'Model snapshot preparation failed.' }
+    if ($ModelSnapshotRoot) {
+        # Compatibility parameter name retained; only the pinned official bytes pass.
+        & node (Join-Path $PSScriptRoot 'model-compatibility-input.cjs') import $root $ModelSnapshotRoot
+    } else {
+        $modelManifest = Get-Content -LiteralPath (Join-Path $root 'vendor/model-compatibility-manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+        & (Join-Path $PSScriptRoot 'prepare-model-compatibility.ps1') -ArchivePath (Join-Path $archiveBase ([string]$modelManifest.archive.name))
+    }
+    if ($LASTEXITCODE -ne 0) { throw 'Official Model component preparation failed.' }
 }
 & node (Join-Path $PSScriptRoot 'model-compatibility-input.cjs') validate $root
 if ($LASTEXITCODE -ne 0) { throw 'Model snapshot validation failed.' }

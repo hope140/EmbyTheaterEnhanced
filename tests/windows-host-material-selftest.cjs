@@ -6,6 +6,7 @@ const assembly=require('../tools/assemble-runtime-base.cjs'),dependencies=requir
 const product=require('../tools/copy-tracked-product-sources.cjs'),overlays=require('../tools/prepare-web-overlays.cjs');
 const web=require('../tools/web-snapshot-input.cjs'),host=require('../tools/windows-host-input.cjs');
 const contract=require('../tools/build-input-contract.cjs');
+const modelInput=require('../tools/model-compatibility-input.cjs');
 const root=path.resolve(__dirname,'..');
 const hash=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
 function inventory(directory) {
@@ -32,19 +33,20 @@ test('real official Host and frozen Web preserve the complete base payload with 
     for(const name of Object.keys(require('../tools/runtime-template-input.cjs').FILES))assert.equal(fs.existsSync(path.join(root,'vendor/carnival',name)),false,'Old templates must be absent in this isolated proof');
     const classified=assembly.classify(legacy.files,product.listTrackedProductSources(root,commit).map(x=>x.runtimePath),
         overlays.WEB_OVERLAY_CONTRACT.map(x=>x.runtimePath),dependencies.loadSelectedPackages(root).packages.map(x=>x.packagePath));
-    const expected=[...classified.filter(x=>x.action==='copy'&&!web.isLegacyWeb(x.path)).map(({path,size,sha256})=>({path,size,sha256})),
+    const expected=[...classified.filter(x=>x.action==='copy'&&!web.isLegacyWeb(x.path)&&!modelInput.isModelCompatibility(x.path)).map(({path,size,sha256})=>({path,size,sha256})),
+        ...modelInput.load(root).files.map(({path,size,sha256})=>({path,size,sha256})),
         ...snapshot.files.map(x=>({path:'electronapp/'+x.path,size:x.size,sha256:x.sha256}))].sort((a,b)=>a.path.localeCompare(b.path,'en'));
     const dist=path.join(root,'dist');fs.mkdirSync(dist,{recursive:true});
     const runtime=fs.mkdtempSync(path.join(dist,'windows-host-base-validation-'));
     const token=dependencies.createOwner(root,runtime,commit);
     const result=assembly.assemble(root,commit,runtime,token);
     assert.deepEqual(inventory(runtime),expected);
-    const model=legacy.files.find(x=>x.path==='MediaBrowser.Model.dll');
+    const model=modelInput.load(root).files[0];
     assert.equal(hash(fs.readFileSync(path.join(runtime,model.path))),model.sha256.toLowerCase());
     host.validateRuntime(root,runtime);
     const report={schemaVersion:1,status:'passed',sourceCommit:commit,sourceComparison:'Frozen original copy-entry manifest plus independent raw Web manifest',
         filesCompared:expected.length,treeSha256:web.treeHash(expected),hostFiles:component.fileCount,hostBytes:component.bytes,
-        wholeOldCarnivalAbsent:true,modelCompatibility:result.modelCompatibility,oldHostPathsAbsent:true,oldWwwAbsent:true,oldCompatibilityResourcesAbsent:true,compatibilityResources:result.compatibilityResources,oldSmallRuntimePathsAbsent:true,smallRuntime:result.smallRuntime,oldPatchAbsent:true,libmpvInput,oldNpmAbsent:true,oldTemplatesAbsent:true,runtimeTemplates:result.runtimeTemplates,inheritedNpm:result.inheritedNpm,modelSha256:model.sha256.toLowerCase(),modelUnchanged:true,
+        wholeOldCarnivalAbsent:true,modelCompatibility:result.modelCompatibility,oldHostPathsAbsent:true,oldWwwAbsent:true,oldCompatibilityResourcesAbsent:true,compatibilityResources:result.compatibilityResources,oldSmallRuntimePathsAbsent:true,smallRuntime:result.smallRuntime,oldPatchAbsent:true,libmpvInput,oldNpmAbsent:true,oldTemplatesAbsent:true,runtimeTemplates:result.runtimeTemplates,inheritedNpm:result.inheritedNpm,modelSha256:model.sha256.toLowerCase(),modelUnchanged:false,
         buildInputCount:inputs.files.length,runtimePath:path.relative(root,runtime).replaceAll(path.sep,'/'),
         notExecuted:['full npm/Electron/Native assembly','installer','application','driver installation','display or media playback']};
     const directory=path.join(root,'.work/verification');fs.mkdirSync(directory,{recursive:true});

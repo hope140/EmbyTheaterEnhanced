@@ -16,6 +16,7 @@ const web = require('../tools/prepare-web-overlays.cjs');
 const preload = require('../tools/prepare-preload.cjs');
 const exclusions = require('../tools/runtime-exclusions.cjs');
 const libmpv=require('../tools/libmpv-input.cjs');
+const model=require('../tools/model-compatibility-input.cjs');
 const {configOutput} = require('../tools/build-input-provenance.cjs');
 
 const root = path.resolve(__dirname, '..');
@@ -82,6 +83,8 @@ test('frozen-material intermediate payload matches the legacy route after common
         const patched = spawnSync(process.execPath, [path.join(root, 'tools/patch-playbackmanager.cjs'), playback], {encoding: 'utf8'});
         assert.equal(patched.status, 0, patched.stderr);
         if(runtime===runtimePaths[0])libmpv.assemble(root,runtime);else fs.writeFileSync(path.join(runtime,libmpv.RUNTIME_PATH),oracleLibmpv);
+        // This is an intentional binary replacement on both comparison routes.
+        fs.copyFileSync(path.join(root,model.INPUT_ROOT,'MediaBrowser.Model.dll'),path.join(runtime,'MediaBrowser.Model.dll'));
         fs.writeFileSync(path.join(runtime, 'Emby.Theater.exe.config'), configOutput(runtime===runtimePaths[0]?require('../tools/runtime-template-input.cjs').read(root,'Emby.Theater.exe.config').bytes:oracleConfig));
         // The existing dependency stage deletes these old directories before
         // copying a fresh locked npm closure. Compare its common input boundary.
@@ -94,7 +97,7 @@ test('frozen-material intermediate payload matches the legacy route after common
         assemblerWorkingSha256: sha(fs.readFileSync(path.join(root, 'tools/assemble-runtime-base.cjs'))),
         comparedFileCount: actual.length, comparedTreeSha256: sha(Buffer.from(JSON.stringify(actual))),
         assemblyGroups: result.groups,
-        scope: 'intermediate payload after production JS/Web/preload/config/libmpv transforms; before fresh npm, official Electron and Native Helper assembly',
+        scope: 'intermediate payload after production JS/Web/preload/config/libmpv and official Model transforms; before fresh npm, official Electron and Native Helper assembly',
         notExecuted: ['npm installation', 'Native Helper compilation', 'full build gate', 'installer', 'application', 'real services']};
     const output = path.join(root, '.work/verification/runtime-base-material-' + id + '.json');
     fs.mkdirSync(path.dirname(output), {recursive: true});

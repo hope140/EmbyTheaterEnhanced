@@ -1,4 +1,35 @@
-# Original-byte Model compatibility snapshot and zero legacy inputs
+# Pinned official Windows 3.0.20 Model input
+
+Current selection supersedes the historical stages below. `vendor/model-compatibility/snapshot-v1/MediaBrowser.Model.dll` now contains the official Windows **3.0.20** member: **426,496 bytes**, SHA-256 `db22f8ea6cb6afdfab184f80d8b85a10d8a9f148ff4cae167db87ce9cd245153`. The component path and provenance key remain stable; `snapshot-v1` is a storage schema, not a claim that community bytes remain selected.
+
+The manifest locks the member, tree and [official release](https://github.com/MediaBrowser/emby-theater-windows/releases/tag/3.0.20) asset: `emby-theater-x64.zip`, 111,318,728 bytes, SHA-256 `3bc01d288d64046483ef12a8e5a70cc31b6d8b65ed9ee1837554ab7eba797c4c`. This is the same ZIP as the separate 19-file Host component; its whitelist and Host bytes remain unchanged.
+
+## Current preparation and recovery
+
+```powershell
+node tools/model-compatibility-input.cjs validate .
+./tools/prepare-model-compatibility.ps1 -ArchivePath <official-3.0.20-zip>
+```
+
+A clone supplies the official member under existing byte-preserving Git attributes. If absent, `prepare.ps1 -ArchiveRoot <directory>` recovers it from the fixed ZIP. Recovery validates archive size/SHA, requires one case-sensitive root member and validates its size/SHA before creating output. It copies no unrelated member, executes no assembly or installer, and never overwrites a mismatched component. There is no old installer, combined patch, Carnival directory or community Model dependency.
+
+`-ModelSnapshotRoot` remains an optional explicit import parameter for an already recovered **official** member; the former variant fails the new identity lock. Exact file-set, hash, path and redirect rejection remain. Runtime provenance binds the archive, manifest, validator and recovery script to the delivered member and records the predecessor without reading it.
+
+The former 424,960-byte DLL, SHA-256 `f2eeca1c65e56e96340dc84ff91de6e4cc25bb2e510706748606f05c1e39ebaf`, remains recoverable from commit `ad14a95bfe2122d45508bbb21ea88cfc4f71ee77` at the same path. Original user materials and Git history are not removed. The historical runtime manifest stays historical metadata; assembly intentionally replaces its Model path with independently validated official bytes instead of requiring byte equality.
+
+Official distribution identity is established; a corresponding-source rebuild of this exact binary and complete notice obligations are not claimed. Existing notices remain and the DLL is not reattributed to ETE. No Host, Electron, libmpv, playback source, configuration default or product version is upgraded.
+
+## Compatibility evidence and limits
+
+Prior independent 0.3.15 candidates confirmed complete Host startup, local interfaces and test-account visual playback, pause/resume, progress, audio-menu selection and normal exit with the official member. Its run did not reproduce the original variant's CoreLib 7.0/FileNotFound update-path errors. Offline update fixtures covered empty, same/new version, missing asset, invalid tag and sorting, with no real update download or execution.
+
+Those earlier sources do not certify this newly integrated package. Components and official playback runs were separate candidates, not a new strictly one-DLL-only experiment. Actual sound listening, subtitle switching, long-duration playback and installation remain unverified. Application-data permission restoration findings are separate and are not attributed to Model. This integration does not repair ACLs, touch user profiles, run GUI playback, merge main or publish.
+
+Current automated results are recorded separately from prior manual acceptance. Regressions cover official identity and recovery, rejected old/mutated bytes, absent legacy inputs, runtime/provenance tampering, configuration/update boundaries and existing communication/session behavior.
+
+## Historical original-byte snapshot stage
+
+Everything below records prior stages and does not describe the currently selected DLL.
 
 `vendor/model-compatibility/snapshot-v1/MediaBrowser.Model.dll` preserves the existing 424,960-byte packaged DLL. SHA256 is `f2eeca1c65e56e96340dc84ff91de6e4cc25bb2e510706748606f05c1e39ebaf`. This is the current compatibility variant from the retained Carnival material, not the different official reference DLL, newly recovered official bytes, or ETE-authored source. Exact source revision remains unresolved. Existing source/notice records remain applicable. No DLL is loaded or executed during preparation or static validation.
 
