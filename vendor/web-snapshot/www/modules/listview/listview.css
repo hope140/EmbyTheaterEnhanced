@@ -1,0 +1,727 @@
+.listItem {
+  background: 0 0;
+  border: 0;
+  outline: 0 !important;
+  color: inherit;
+  vertical-align: middle;
+  font-family: inherit;
+  font-size: inherit;
+  margin: 0;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  text-align: start;
+  padding: 0;
+  -webkit-flex-shrink: 0;
+  flex-shrink: 0;
+  text-decoration: none;
+  line-height: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.listItem:not(.virtualScrollItem).dragging-over {
+  position: relative;
+}
+.listItem.dragging-over {
+  contain: none;
+}
+.dragging-over-top:before {
+  content: " ";
+  height: 0.1em;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  z-index: 99999;
+  border-radius: 100em;
+}
+.dragging-over-bottom:after {
+  content: " ";
+  height: 0.1em;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  z-index: 99999;
+  border-radius: 100em;
+}
+.listItem-noverticalpadding {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.listItemCursor {
+  cursor: pointer;
+}
+@media not all and (pointer: fine) {
+  .listItemContent-touchzoom {
+    transition: -webkit-transform 140ms ease-out;
+    transition: transform 140ms ease-out;
+    transition-delay: 0.1s;
+  }
+  .listItem:active > .listItemContent-touchzoom {
+    -webkit-transform: scale(0.97);
+    transform: scale(0.97);
+  }
+}
+.listItem-withContentWrapper {
+  -webkit-flex-direction: column;
+  flex-direction: column;
+  -webkit-align-items: flex-start;
+  align-items: flex-start;
+}
+.listItem-content {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  width: 100%;
+  position: relative;
+  contain: layout style;
+}
+.listItem-indexnumberleft {
+  min-width: 1.9em;
+  text-align: start;
+}
+.listItem-border {
+  border-bottom-width: 0.06em;
+  border-bottom-style: solid;
+}
+.listItemAside,
+.listItemIcon,
+.listItemImage,
+.listItemImageContainer {
+  -webkit-flex-shrink: 0;
+  flex-shrink: 0;
+}
+.listItemButton {
+  margin: 0;
+  -webkit-flex-shrink: 0;
+  flex-shrink: 0;
+  contain: layout style;
+  line-height: initial !important;
+}
+@media not all and (pointer: fine) {
+  .listItemContextMenuButton {
+    display: none;
+  }
+}
+.listItemBody {
+  -webkit-flex-grow: 1;
+  flex-grow: 1;
+  padding: 0.44em 0.75em;
+  min-height: 2.6em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+  vertical-align: middle;
+  -webkit-justify-content: center;
+  justify-content: center;
+  text-align: start;
+  -webkit-align-items: initial;
+  align-items: initial;
+  margin: 0;
+}
+.listItemBody-tall {
+  min-height: 3em;
+}
+.listItemBody-noleftpadding {
+  -webkit-padding-start: 0 !important;
+  padding-inline-start: 0 !important;
+}
+.listItemBody-code {
+  font-family: monospace;
+}
+.listItemBody-noverticalpadding {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.listItemBodyText {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+h3.listItemBodyText {
+  margin: 0.25em 0 0;
+}
+.listItemBodyText-nowrap {
+  white-space: nowrap;
+}
+.listItemBodyText-withmediainfo {
+  margin: 0.35em 0;
+  -webkit-flex-wrap: nowrap !important;
+  flex-wrap: nowrap !important;
+}
+.listItemBodyText-secondary {
+  font-size: 92%;
+}
+@media all and (min-width: 50em) {
+  .listItemBodyText-secondary-of {
+    font-size: inherit;
+  }
+}
+@media not all and (pointer: fine) {
+  .listItemBodyText-lf {
+    font-size: 113%;
+  }
+  .listItemBodyText-lf.listItemBodyText-secondary {
+    font-size: 88%;
+  }
+}
+.listItemImageContainer {
+  width: 3.26em;
+  height: 3.26em;
+  position: relative;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-justify-content: center;
+  justify-content: center;
+  border-radius: 0.3em;
+  overflow: hidden;
+  margin: 0.25em 0;
+  content-visibility: auto;
+  contain: strict;
+}
+.listItemImageContainer-banner {
+  width: 10em;
+  height: 1.85em;
+}
+.listItemImageContainer-fourThree {
+  width: 4.346666666667em;
+  height: 3.26em;
+}
+.listItemImageContainer-backdrop {
+  width: 5.79555556em;
+  height: 3.26em;
+}
+.listItemImageContainer-portrait {
+  width: 4.4666666666667em;
+  height: 6.7em;
+}
+.listItemImageContainer-medium {
+  height: 8em;
+  width: 14.22222222em;
+  margin: 0.5em 0;
+}
+.listItemImageContainer-medium.listItemImageContainer-banner {
+  height: 8em;
+  width: 14.22222222em;
+}
+.listItemImageContainer-medium.listItemImageContainer-fourThree {
+  height: 10.66666667em;
+  width: 5em;
+}
+.listItemImageContainer-medium.listItemImageContainer-portrait {
+  height: 8em;
+  width: 5.333333em;
+}
+.listItemImageContainer-medium.listItemImageContainer-square {
+  height: 8em;
+  width: 8em;
+}
+.listItemImageContainer-large {
+  width: 20vw;
+  height: 11.25vw;
+  margin: 0.5em 0;
+  -webkit-margin-end: 0.25em;
+  margin-inline-end: 0.25em;
+}
+@media all and (min-width: 50em) {
+  .listItemImageContainer-large {
+    margin-top: 1em;
+    margin-bottom: 1em;
+  }
+}
+.listItemImageContainer-large.listItemImageContainer-banner {
+  width: 20vw;
+  height: 11.25vw;
+}
+.listItemImageContainer-large.listItemImageContainer-fourThree {
+  height: 12vw;
+  width: 16vw;
+}
+.listItemImageContainer-large.listItemImageContainer-portrait {
+  height: 12vw;
+  width: 8vw;
+}
+.listItemImageContainer-large.listItemImageContainer-square {
+  height: 12vw;
+  width: 12vw;
+}
+@media all and (orientation: portrait) {
+  .listItemImageContainer-medium {
+    height: 5em;
+    width: 8.8888888em;
+  }
+  .listItemImageContainer-medium.listItemImageContainer-banner {
+    height: 5em;
+    width: 8.8888888em;
+  }
+  .listItemImageContainer-medium.listItemImageContainer-fourThree {
+    height: 6.6666667em;
+    width: 5em;
+  }
+  .listItemImageContainer-medium.listItemImageContainer-portrait {
+    height: 7.5em;
+    width: 5em;
+  }
+  .listItemImageContainer-medium.listItemImageContainer-square {
+    height: 5em;
+    width: 5em;
+  }
+  .listItemImageContainer-large {
+    width: 32vw;
+    height: 18vw;
+  }
+  .listItemImageContainer-large.listItemImageContainer-banner {
+    width: 32vw;
+    height: 18vw;
+  }
+  .listItemImageContainer-large.listItemImageContainer-fourThree {
+    height: 21vw;
+    width: 28vw;
+  }
+  .listItemImageContainer-large.listItemImageContainer-portrait {
+    height: 27vw;
+    width: 18vw;
+  }
+  .listItemImageContainer-large.listItemImageContainer-square {
+    width: 18vw;
+    height: 18vw;
+  }
+}
+.listItemImageContainer-large-tv.listItemImageContainer-backdrop {
+  width: 21.3333333333em;
+  height: 12em;
+}
+.listItemImageContainer-large-tv.listItemImageContainer-banner {
+  width: 64.86486em;
+  height: 12em;
+}
+.listItemImageContainer-large-tv.listItemImageContainer-fourThree {
+  width: 16em;
+  height: 12em;
+}
+.listItemImageContainer-large-tv.listItemImageContainer-square {
+  width: 12em;
+  height: 12em;
+}
+.listItemImageContainer-large-tv.listItemImageContainer-portrait {
+  width: 8em;
+  height: 12em;
+}
+@supports (aspect-ratio: 2 / 3) {
+  .listItemImageContainer-backdrop,
+  .listItemImageContainer-banner,
+  .listItemImageContainer-fourThree,
+  .listItemImageContainer-portrait,
+  .listItemImageContainer-square {
+    width: auto !important;
+  }
+}
+.listItemImage {
+  border-radius: 0.3em;
+  background-position: center center;
+  background-repeat: no-repeat;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  object-position: center center;
+  contain: layout style paint;
+  content-visibility: auto;
+}
+.listItemImage:not(.coveredImage) {
+  background-size: contain;
+  object-fit: contain;
+}
+.listItemImage.coveredImage {
+  background-size: contain;
+  object-fit: contain;
+}
+.listItemImage.coveredImage-noScale {
+  background-size: contain;
+  object-fit: contain;
+}
+.listItemImage-round {
+  border-radius: 100em;
+}
+.listItemImage-banner {
+  width: 100%;
+}
+.listItemImage-fourThree {
+  width: 100%;
+}
+.listItemImage-backdrop {
+  width: 100%;
+}
+.listItemImage-square {
+  width: 100%;
+}
+.listItemImage-portrait {
+  height: 100%;
+}
+@supports (aspect-ratio: 2 / 3) {
+  .listItemImage.coveredImage {
+    background-size: 100% 100%;
+    object-fit: fill;
+  }
+  .listItemImage.coveredImage-noScale {
+    background-size: cover;
+    object-fit: cover;
+  }
+  .listItemImage-banner {
+    height: auto;
+  }
+  .listItemImage-fourThree {
+    height: auto;
+  }
+  .listItemImage-backdrop {
+    height: auto;
+  }
+  .listItemImage-square {
+    height: auto;
+  }
+  .listItemImage-portrait {
+    width: auto;
+  }
+}
+.listItemImage.coveredImage-contain {
+  background-size: contain;
+  object-fit: contain;
+}
+.listItemImageButton {
+  margin: 0;
+  color: #fff;
+  font-size: 1em;
+  background: 0 0;
+  transition: -webkit-transform 0.2s ease-out;
+  transition: transform 0.2s ease-out;
+  display: -webkit-flex;
+  display: flex;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  inset-inline-start: 50%;
+  inset-inline-end: initial;
+  -webkit-margin-start: -1.85em;
+  margin-inline-start: -1.85em;
+  margin-top: -1.85em;
+}
+@media (hover: hover) and (pointer: fine) {
+  .listItemImageButton:hover {
+    -webkit-transform: scale(1.2, 1.2);
+    transform: scale(1.2, 1.2);
+  }
+}
+.listItemImageButton-icon {
+  background: rgba(0, 0, 0, 0.5);
+  border: 0.09em solid currentColor;
+  border-radius: 100em;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-justify-content: center;
+  justify-content: center;
+  -webkit-align-items: center;
+  align-items: center;
+  padding: 0.16em;
+}
+@media all and (max-width: 64em) {
+  .listItemImageButton {
+    font-size: 1.02em !important;
+  }
+}
+.listItemIcon {
+  font-size: 163%;
+  padding: 0 0.25em;
+}
+.listItemImageContainer > .listItemIcon {
+  margin: 0;
+}
+.drag-preventScrollY {
+  overflow-y: hidden !important;
+}
+.listViewDragHandle {
+  touch-action: none;
+  padding: 0.66em;
+}
+@media all and (max-width: 40em) {
+  .listViewDragHandle {
+    -webkit-padding-end: 0.1em;
+    padding-inline-end: 0.1em;
+  }
+}
+.listItemProgressBar {
+  position: absolute !important;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+}
+.listItem-button:focus {
+  border-radius: 0.6em;
+}
+.listItem:active {
+  border-radius: 0.6em;
+}
+.listItem:hover {
+  border-radius: 0.6em;
+}
+.listItem:focus-visible {
+  border-radius: 0.6em;
+}
+.listItem:focus .secondary {
+  color: inherit !important;
+}
+.listItem-focusscale {
+  transition: -webkit-transform 0.2s ease-out;
+  transition: transform 0.2s ease-out;
+}
+.listItem-focusscale:focus {
+  -webkit-transform: scale(1.025, 1.025);
+  transform: scale(1.025, 1.025);
+}
+.listItemMediaInfo {
+  display: none;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-margin-end: 1em;
+  margin-inline-end: 1em;
+  -webkit-flex-shrink: 0;
+  flex-shrink: 0;
+}
+.listGroupHeader-first {
+  margin-top: 0;
+}
+.listItemIndicator {
+  right: 0.324em;
+  inset-inline-start: initial;
+  inset-inline-end: 0.324em;
+  top: 0.324em;
+  position: absolute;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+}
+.listItemIndicator-mini {
+  right: 0.2em;
+  inset-inline-start: initial;
+  inset-inline-end: 0.2em;
+  top: 0.2em;
+}
+.listItem,
+.listItemBody,
+.listItemMediaInfo {
+  display: -webkit-flex;
+  display: flex;
+  contain: layout style;
+}
+.listItem-bottomoverview {
+  font-size: 88%;
+  height: 3.1em;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  margin-bottom: 1.35em;
+}
+@media not all and (min-width: 50em) {
+  .listItem-overview-autohide,
+  .listItemMediaInfo-autohide {
+    display: none !important;
+  }
+}
+@media all and (min-width: 50em) {
+  .listItem-bottomoverview {
+    display: none !important;
+  }
+}
+.listItem-overview {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  height: 3.1em;
+}
+.listItem-overview-threeline {
+  -webkit-line-clamp: 3;
+  height: 4.4em;
+}
+.layout-tv .listItem-overview-threeline {
+  height: max-content;
+}
+.listItemCheckboxContainer {
+  width: auto !important;
+}
+@media all and (max-width: 75em) {
+  .listViewUserDataButton {
+    display: none !important;
+  }
+}
+.listItemPlayedIndicator {
+  font-size: 1.6em;
+}
+.listItemPlayedIndicator.listItemIndicator-mini {
+  font-size: 1.1em;
+}
+.listItem .mediaStreamAttribute {
+  -webkit-padding-start: 2.3em;
+  padding-inline-start: 2.3em;
+}
+@media not all and (pointer: fine) {
+  .listItem-textActionButton {
+    pointer-events: none !important;
+  }
+}
+.listItemOverlayButton-hover {
+  display: none;
+  position: absolute;
+  margin: 0 !important;
+  color: #fff !important;
+}
+.listItem-indexnumberleft-withhoverbutton .listItemOverlayButton-hover {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  -webkit-margin-start: -0.756em !important;
+  margin-inline-start: -0.756em !important;
+  -webkit-margin-end: 0 !important;
+  margin-inline-end: 0 !important;
+}
+@media all and (hover: hover) and (pointer: fine) {
+  .listItemOverlayButtonIcon {
+    transition: -webkit-transform 0.2s ease-out;
+    transition: transform 0.2s ease-out;
+  }
+  .listItemOverlayButton-hover:hover .listItemOverlayButtonIcon {
+    -webkit-transform: scale(1.2);
+    transform: scale(1.2);
+  }
+  .listItem-indexnumberleft-withhoverbutton {
+    min-width: 2.4em;
+    position: relative;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-align-items: center;
+    align-items: center;
+  }
+  .listItem:hover .listItemOverlayButton-hover {
+    display: -webkit-flex;
+    display: flex;
+  }
+}
+.listItemOverlayButton-imagehover {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 0 !important;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  width: 100%;
+}
+.listItemOverlayButtonIcon {
+  border-radius: 100em;
+  width: 1.25em !important;
+  height: 1.25em !important;
+  -webkit-justify-content: center;
+  justify-content: center;
+  -webkit-align-items: center;
+  align-items: center;
+  display: -webkit-flex;
+  display: flex;
+  font-size: 1.5em !important;
+}
+.chkListItemSelectContainer {
+  font-size: 72%;
+  width: auto !important;
+  -webkit-padding-end: 1em !important;
+  padding-inline-end: 1em !important;
+  -webkit-margin-end: 0.4em !important;
+  margin-inline-end: 0.4em !important;
+  -webkit-padding-start: 0.75em !important;
+  padding-inline-start: 0.75em !important;
+  height: 100%;
+  display: none !important;
+}
+@media (hover: hover) and (pointer: fine) {
+  .chkListItemSelectContainer {
+    position: absolute !important;
+    left: -4.5em;
+    inset-inline-start: -4.5em;
+    inset-inline-end: initial;
+    width: 4.5em !important;
+    opacity: 0;
+    -webkit-justify-content: center;
+    justify-content: center;
+    -webkit-align-items: center;
+    align-items: center;
+    display: -webkit-flex !important;
+    display: flex !important;
+  }
+  .item-multiselected .chkListItemSelectContainer,
+  .multi-select-active .chkListItemSelectContainer {
+    opacity: 1;
+  }
+  .listItem:hover .chkListItemSelectContainer {
+    opacity: 1;
+  }
+}
+@media not all and (pointer: fine) {
+  .item-multiselected .chkListItemSelectContainer,
+  .multi-select-active .chkListItemSelectContainer {
+    display: -webkit-flex !important;
+    display: flex !important;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .listItem-hoverable:hover,
+  .listItem-hoverable:hover .chkListItemSelectContainer {
+    border-color: transparent !important;
+  }
+}
+.chkListItemSelect-checkboxLabel,
+.chkListItemSelect-checkboxLabel:before {
+  border-radius: 100em !important;
+}
+.chkListItemSelect-checkboxLabel:before {
+  border-width: 0.2em !important;
+}
+.chkListItemSelect-checkboxLabel:after {
+  border-width: 0.2em !important;
+}
+.multi-select-active .listItemButton,
+.multi-select-active .listItemImageButton,
+.multi-select-active .listItemIndicator,
+.multi-select-active .listItemOverlayButton-hover,
+.multi-select-active .listViewDragHandle {
+  display: none !important;
+}
+.listItem-emby-checkbox-label {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  -webkit-margin-start: 0.25em !important;
+  margin-inline-start: 0.25em !important;
+  -webkit-margin-end: 0.75em !important;
+  margin-inline-end: 0.75em !important;
+  width: auto !important;
+}
+.listItem-checkboxLabel-round {
+  -webkit-margin-end: 1em !important;
+  margin-inline-end: 1em !important;
+  font-size: 88%;
+}
+.listItem-checkboxLabel-round:before {
+  border-radius: 100em !important;
+  border-width: 0.16em !important;
+}

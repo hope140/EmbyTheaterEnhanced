@@ -9,7 +9,7 @@ const {patchVideoOsd} = require('../tools/patch-videoosd-lifecycle.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
 const SOURCE_PATH = process.env.ETE_VIDEOOSD_SOURCE ||
-    path.join(ROOT, 'vendor/carnival/electronapp/www/videoosd/videoosd.js');
+    path.join(ROOT, 'vendor/web-snapshot/www/videoosd/videoosd.js');
 const SOURCE_SHA256 = '86ab60c897e827b5152435350fe7b3801d8afd6b8889eef96e9996e71bb5eeab';
 const MATERIAL_PATH = 'electronapp/www/videoosd/videoosd.js';
 const REGISTRATION_START = '_dom.default.addEventListener(window, "keydown", function (event)';

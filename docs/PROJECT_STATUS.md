@@ -34,6 +34,30 @@
 
 本条为准备阶段记录，不将此前基线包的测试、哈希或用户反馈冒充本版新结果。候选验证、审查、最终 main source、annotated Tag/Tag CI、五附件与公开回读分别记录；不自动合并 main 或处理旧发布。见[发行合同](V0314_RELEASE_CONTRACT.md)。
 
+## 2026-10-21 - Local manual/external resource snapshot
+
+Manage 48 unchanged compatibility resources as one explicitly grouped snapshot, reducing old Carnival physical inputs from 53 to five. Preserve source/unknown and embedded copyright/notice distinctions; keep Model and the four small files unchanged. Old patch remains zero. This isolated material baseline must incorporate the separate 0.3.15 exit fix before final packaging; no app acceptance is claimed. See [component contract](COMPATIBILITY_RESOURCES_INPUT.md).
+
+## 2026-10-21 - Independent local libmpv snapshot
+
+Keep the current DLL unchanged as a single hash-locked local component, explicitly imported from the old patch material. Remove normal old-patch reads and automatic combined-patch extraction. Current physical requirements are 53 Carnival files and zero patch files. Online archive/cloud recovery remains unresolved; no official recovery is claimed. Model/UI/versions remain unchanged. See [libmpv input](LIBMPV_INPUT.md); final regression/equivalence evidence is separate.
+
+## 2026-10-21 - Five exact official auxiliary resources
+
+Extend the existing official Windows ZIP whitelist from 14 to 19 unchanged members: three XML documentation files, windowsync and English player strings. These five old physical inputs are no longer required, reducing Carnival from 58 to 53; libmpv remains one patch input. Model/UI/dependency versions and unknown-origin material publication remain unchanged. See [fixed official input](WINDOWS_HOST_INPUT.md); static equivalence and final full regression are recorded separately.
+
+## 2026-10-21 - Maintained small build templates
+
+Move package/preload/Host configuration to hash-locked maintained templates and preserve generated output bytes. Normal assembly, preload generation, config and runtime provenance no longer read the three old physical files. Remaining Carnival input is 58 assets plus one current libmpv patch. Preload origin remains explicitly unresolved and local-only; Model/UI/versions are unchanged. See [template contract](RUNTIME_TEMPLATES.md); final evidence is recorded separately.
+
+## 2026-10-21 - Independent inherited npm input
+
+Move 29 retained npm files to a component recovered from official Electron 3.0.20 Git blobs with explicit LF-to-CRLF conversion. Normal assembly and dependency provenance no longer read the old npm directory. Physical Carnival requirements are now 61 files; current libmpv remains one. Preserve all output bytes, seven package identities/notices and strict component checks. See [fixed inherited npm](INHERITED_NPM_INPUT.md); final validation evidence is recorded separately.
+
+## 2026-10-21 - Retired physical input gates
+
+Normal material validation and assembly now select 90 consumed Carnival inputs and one libmpv patch. Historical Electron/Pepper/base-libmpv provenance no longer reads retired bodies. Original materials, Model, UI and dependency versions are preserved. Targeted regressions passed; final full regression and static material comparison are recorded separately in the task receipt. See [selection and boundaries](LEGACY_INPUT_SELECTION.md).
+
 ## 2026-10-21 — Linux 公共离线测试兼容
 
 仅调整测试：Native Helper 夹具使用宿主绝对路径，Mount 夹具保持 Windows 客户端身份并在非 Windows 使用精确路径合成文件系统；Windows 继续使用真实文件系统。可移植 PowerShell helper 在 Linux 使用 `pwsh`，Windows 保留原 `powershell.exe` / `pwsh.exe`。产品路径安全校验、播放行为、依赖和材料排除规则保持。
@@ -470,3 +494,28 @@ M02离线验证结果：16个定向测试文件164/164；完整公开门禁107�
 仅目标 FindFileByPath 确认 NOT_FOUND 后有限刷新父目录，完整消费流后最多重查一次。正常 1200ms、恢复总上限 3000ms、3层父目录、单锁与30秒冷却保持。Stop/Next/close 取消和 CD2 → Mount → Native 回退保持，播放会话及 DirectUrl header 合同不变。
 
 反向 custom 顺序的单次重查回归保留。六项真实 CD2 验收结果为 USER_REPORTED_PASS，不改写为独立机器实测。设计见 [刷新合同](CD2_NEW_RESOURCE_REFRESH.md)，验证方法见 [隔离验收](CD2_REAL_ACCEPTANCE.md)。新版本安装器从最终 main 单独构建并核对版本、完整 payload 与来源，既有用户反馈不替代新产物身份校验或完整系统安装验收。
+# Web输入独立化候选
+
+独立Web组件固定720份历史基底和两份既有用户Web补丁，生产路径与来源记录改读组件清单。旧www及旧补丁对应两份Web文件不再是生产材料门禁的必需输入。现有overlay和PlaybackManager变换保持；材料正文仅本地保存且Git忽略，来源/公开分发待核对。当前候选验证结果见交付记录，不代表完成全部旧包移除、上游源码重建或Windows播放验收。合同见[固定Web输入](WEB_SNAPSHOT_INPUT.md)。
+## 固定Host输入候选
+
+14份与现状同字节的Host/辅助二进制改由官方Windows 3.0.20 ZIP白名单准备；Model、UI、Native与依赖版本不变。旧目录必需非Web文件由248降到234，旧补丁仍49份。正文被Git忽略，构建/来源记录绑定独立组件清单；静态组装、单元和完整运行验收分开记录。合同见[固定Host输入](WINDOWS_HOST_INPUT.md)。
+
+
+Current local material stage: four small packaged inputs (5,216 bytes) are independently snapshotted, reducing old Carnival requirements 5 -> 1 (unchanged Model), patch remains 0. Configuration including auto-update stays byte-identical. No product/version change or public body upload. Full-package acceptance must first coordinate the separate 0.3.15 exit fix. See [contract](SMALL_RUNTIME_INPUT.md); static/unit evidence is kept separately from runtime acceptance.
+
+User feedback 2026-10-21: audio-track/subtitle switching latency is provisionally closed after a long period without recurrence. This is a user-reported acceptance status, not proof of permanent technical elimination; no dedicated product change is included here.
+
+
+Zero-old-input stage: the original 424,960-byte Model DLL is independently snapshotted without official replacement. Carnival requirements 1 -> 0; patch remains 0. Normal preparation has no old-installer extraction and can restore independent Web/Model snapshots explicitly. Model, UI, config/auto-update and versions stay unchanged. Source bodies remain local/ignored. Subsequent integration must retain main 0.3.15 exit fix and use matching 0.3.15 source for comparisons; no app run is included in this stage.
+
+
+2026-10-21 local integration: the independent-component material work is combined with main e150981d (product 0.3.15), retaining the published exit fix and its regressions. Normal old Carnival/patch requirements are zero; original Model/config/UI/dependency identities are preserved. Prior material-stage baseline and release entries below remain historical records. Current full regression, matching-0.3.15 material comparison and any build/package results are separate evidence; no app launch, new release, push or remote-main merge is included.
+
+## 2026-10-21 - Pinned libmpv recovery and repository snapshots
+
+Current libmpv is recovered from the fixed SourceForge asset using standard HTTPS redirects, exact archive magic/size/SHA256 and exact extracted DLL identity. Work cold recovery with no old package or snapshot DLL succeeded; Linux/cloud execution is not yet verified. DLL/version/API/Model/UI bytes are unchanged. Four required snapshot roots are now selected for user-authorized same-repository storage (775 files, 51,953,202 bytes) with byte-preserving Git attributes; libmpv and generated/cache/toolchain inputs stay ignored. Third-party source uncertainties remain explicitly recorded. No main merge or release is authorized by this change.
+
+## 2026-10-21 - Public CI path and snapshot-format regression
+
+GitHub Windows public CI exposed one preload fixture using a nonphysical TEMP alias. The fixture now canonicalizes its root, with a junction regression proving redirected product callers remain rejected; production validators are unchanged. Snapshot bytes must remain exact, including existing CRLF/trailing formatting: narrow per-file attributes describe inherited formatting, while a new CI step strictly validates all four snapshot trees against their manifests before tests/lint. Maintained source whitespace rules and all content/path/hash gates remain intact. No runtime, Model, playback or dependency-version change.

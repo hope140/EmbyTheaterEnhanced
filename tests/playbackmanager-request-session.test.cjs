@@ -10,7 +10,7 @@ const vm = require('node:vm');
 
 const repoRoot = path.join(__dirname, '..');
 const playbackManagerRelativePath = path.join(
-    'vendor', 'carnival', 'electronapp', 'www', 'modules', 'common', 'playback', 'playbackmanager.js'
+    'vendor', 'web-snapshot', 'www', 'modules', 'common', 'playback', 'playbackmanager.js'
 );
 const patchToolPath = process.env.ETE_PLAYBACKMANAGER_PATCH_TOOL
     ? path.resolve(process.env.ETE_PLAYBACKMANAGER_PATCH_TOOL)

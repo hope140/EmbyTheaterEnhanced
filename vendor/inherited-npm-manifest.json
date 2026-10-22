@@ -1,0 +1,400 @@
+{
+  "schemaVersion": 1,
+  "version": "3.0.20",
+  "inputRoot": "vendor/inherited-npm/emby-electron-3.0.20",
+  "source": {
+    "repository": "https://github.com/MediaBrowser/emby-theater-electron",
+    "commit": "e897adda583b2339f077cb67113e71326a806de0",
+    "treeUrl": "https://github.com/MediaBrowser/emby-theater-electron/tree/e897adda583b2339f077cb67113e71326a806de0/node_modules",
+    "acquisition": "Read pinned Git blobs; never execute package scripts or copy checkout bytes"
+  },
+  "fileCount": 29,
+  "bytes": 32830,
+  "treeSha256": "49f31c63394385caffde5f97d04128be80929acfd62ed8c91628038536ec4778",
+  "packages": [
+    {
+      "path": "electronapp/node_modules/detect-rpi",
+      "name": "detect-rpi",
+      "version": "1.4.0",
+      "declaredLicense": "MIT",
+      "noticePath": "electronapp/node_modules/detect-rpi/LICENSE",
+      "noticeSha256": "84f17b9d90932c99e3e8bd565580c6671b4d6f3fc91263b6afaafd6874f21f50",
+      "scope": "Upstream bundled package; registry metadata/code may differ. Preserve all selected bytes."
+    },
+    {
+      "path": "electronapp/node_modules/is-linux",
+      "name": "is-linux",
+      "version": "1.0.1",
+      "declaredLicense": "MIT",
+      "noticePath": "electronapp/node_modules/is-linux/license",
+      "noticeSha256": "5e3fba3a85435d4d1612eb6226e7d502c52fdb7580dffa2e46891fa7a00d847d",
+      "scope": "Upstream bundled package; registry metadata/code may differ. Preserve all selected bytes."
+    },
+    {
+      "path": "electronapp/node_modules/is-osx",
+      "name": "is-osx",
+      "version": "1.0.2",
+      "declaredLicense": "MIT",
+      "noticePath": "electronapp/node_modules/is-osx/license",
+      "noticeSha256": "5e3fba3a85435d4d1612eb6226e7d502c52fdb7580dffa2e46891fa7a00d847d",
+      "scope": "Upstream bundled package; registry metadata/code may differ. Preserve all selected bytes."
+    },
+    {
+      "path": "electronapp/node_modules/is-windows",
+      "name": "is-windows",
+      "version": "1.0.2",
+      "declaredLicense": "MIT",
+      "noticePath": "electronapp/node_modules/is-windows/LICENSE",
+      "noticeSha256": "125be8338d6dc0e6da9d2cfbf0e2355e2090f0ddb9e09d43d7c16092b028bbca",
+      "scope": "Upstream bundled package; registry metadata/code may differ. Preserve all selected bytes."
+    },
+    {
+      "path": "electronapp/node_modules/power-off",
+      "name": "power-off",
+      "version": "1.1.2",
+      "declaredLicense": "MIT",
+      "noticePath": "electronapp/node_modules/power-off/license",
+      "noticeSha256": "27e2b1effad56afb98dcd16f4a539cd229da291c86fb40bd6352751f34069cd2",
+      "scope": "Upstream bundled package; registry metadata/code may differ. Preserve all selected bytes."
+    },
+    {
+      "path": "electronapp/node_modules/sleep-mode/node_modules/is-windows",
+      "name": "is-windows",
+      "version": "0.1.1",
+      "declaredLicense": "MIT",
+      "noticePath": "electronapp/node_modules/sleep-mode/node_modules/is-windows/LICENSE",
+      "noticeSha256": "022cda75198d62af2554a7fd1813c7b2a77fd25352ed491db0e56dfaf0ff2c59",
+      "scope": "Upstream bundled package; registry metadata/code may differ. Preserve all selected bytes."
+    },
+    {
+      "path": "electronapp/node_modules/sleep-mode",
+      "name": "sleep-mode",
+      "version": "1.1.0",
+      "declaredLicense": "MIT",
+      "noticePath": "electronapp/node_modules/sleep-mode/license",
+      "noticeSha256": "27e2b1effad56afb98dcd16f4a539cd229da291c86fb40bd6352751f34069cd2",
+      "scope": "Upstream bundled package; registry metadata/code may differ. Preserve all selected bytes."
+    }
+  ],
+  "files": [
+    {
+      "path": "electronapp/node_modules/detect-rpi/index.js",
+      "size": 1050,
+      "sha256": "9d504f133e5b7a4d8c8103d0fc1a7de526f1fdbf931c216f586676dd75b37551",
+      "sourcePath": "node_modules/detect-rpi/index.js",
+      "sourceSize": 1006,
+      "sourceSha256": "1ae420c20e5fec9e55854fbcb76bbd04e6ac8d14de8e55a7f897a551eff89b97",
+      "sourceGitBlob": "16b67df1d81b7b7293ff77de62fb0d366968147b",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/detect-rpi/LICENSE",
+      "size": 1058,
+      "sha256": "84f17b9d90932c99e3e8bd565580c6671b4d6f3fc91263b6afaafd6874f21f50",
+      "sourcePath": "node_modules/detect-rpi/LICENSE",
+      "sourceSize": 1052,
+      "sourceSha256": "0a6f27a39b3cc3e049dfb0c9b42e5f162d1e3a485b8a50e27d7feb61c5a5fbaa",
+      "sourceGitBlob": "187a16f701dc49d3bdd023a62ff12d1907df7952",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/detect-rpi/package.json",
+      "size": 1460,
+      "sha256": "c85ac83e6c9c40fbe359ccb9ce31b7f1a06e1d29c1d05b63d1e30877ca9e6fa7",
+      "sourcePath": "node_modules/detect-rpi/package.json",
+      "sourceSize": 1409,
+      "sourceSha256": "2e258ddff16bd34418a4c107db806e304a6b49d2b73d0c60a2b9c99cc38169d3",
+      "sourceGitBlob": "4e675be220de00a115ae02f4f80bb7093ad2ed14",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/detect-rpi/README.md",
+      "size": 418,
+      "sha256": "1c93e3199bbe0eba71463f8764d49c79a71a39ddfc49504ad976c06465add71c",
+      "sourcePath": "node_modules/detect-rpi/README.md",
+      "sourceSize": 396,
+      "sourceSha256": "bb1803eed6a6340889077699deeacd0a214c2ba782357e524f904187c4123ead",
+      "sourceGitBlob": "2abaa8dbe95724a49a8ccbe7888c59347c261294",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/is-linux/index.js",
+      "size": 171,
+      "sha256": "2fc51a99147bcb1093c21dd660e45b10448099230a0d110d1328dc943bf62b33",
+      "sourcePath": "node_modules/is-linux/index.js",
+      "sourceSize": 164,
+      "sourceSha256": "b88d708c42edf60d904700dcb7e2a419cd7f05cbabdac055d321c65f790cd84f",
+      "sourceGitBlob": "ab70c26176a4f8d021ff2b9ea92e2943cd3f2149",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/is-linux/license",
+      "size": 1132,
+      "sha256": "5e3fba3a85435d4d1612eb6226e7d502c52fdb7580dffa2e46891fa7a00d847d",
+      "sourcePath": "node_modules/is-linux/license",
+      "sourceSize": 1111,
+      "sourceSha256": "44d381d6dd50ec1a0bdce18a1fc0d64526f7070e062e3169be0db40f63f5fdf7",
+      "sourceGitBlob": "e5c5735f774f05adbdbc129356c4b91e25335d99",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/is-linux/package.json",
+      "size": 2293,
+      "sha256": "76552e0e05a8a0cb65f45cfb92d0fcb56a50832d8910061be95f87fc1e24d906",
+      "sourcePath": "node_modules/is-linux/package.json",
+      "sourceSize": 2200,
+      "sourceSha256": "cbc710ae3bdf1bd930ac0f86be9dd2c007b36619399d465dc5bfa3a35efc0caf",
+      "sourceGitBlob": "3ed437b32093f2fba65c6ea32b4e854ce74138f7",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/is-linux/readme.md",
+      "size": 399,
+      "sha256": "2f628e41fec7d515daa3429eb5d155074bbd90a76a984f5de99190c1713a650b",
+      "sourcePath": "node_modules/is-linux/readme.md",
+      "sourceSize": 375,
+      "sourceSha256": "69b05d61dfe1af7f01f4008e0de774ba8b0bd377584354dc67e867d4bae041e4",
+      "sourceGitBlob": "4c54047932f6c9dab3b994c33a26492209713678",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/is-osx/index.js",
+      "size": 172,
+      "sha256": "c2a146966c408f551548b0ec7d5674f7be8ad17458126b0fef6d082c28cd2315",
+      "sourcePath": "node_modules/is-osx/index.js",
+      "sourceSize": 165,
+      "sourceSha256": "3882d9c1b6a7d2c50c81e8addd2da424db2ee122f58a40ca0d70edd8c1ec692f",
+      "sourceGitBlob": "da834446b061eae966df1494c47c5071ad2e9981",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/is-osx/license",
+      "size": 1132,
+      "sha256": "5e3fba3a85435d4d1612eb6226e7d502c52fdb7580dffa2e46891fa7a00d847d",
+      "sourcePath": "node_modules/is-osx/license",
+      "sourceSize": 1111,
+      "sourceSha256": "44d381d6dd50ec1a0bdce18a1fc0d64526f7070e062e3169be0db40f63f5fdf7",
+      "sourceGitBlob": "e5c5735f774f05adbdbc129356c4b91e25335d99",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/is-osx/package.json",
+      "size": 2253,
+      "sha256": "f913ff051f95b20354ae136e12c3e3b720a89742f55145ef8a1a6ebbf40aff81",
+      "sourcePath": "node_modules/is-osx/package.json",
+      "sourceSize": 2160,
+      "sourceSha256": "ba63aca024fc9683d90c63d5571b9744b83cf73306ba3dfd5fed743ed1152e3f",
+      "sourceGitBlob": "cd64a6028d9c4d87c8924fdf909be01318991749",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/is-osx/readme.md",
+      "size": 383,
+      "sha256": "92bfb1f8bc42be5aaedc86f8ec9ca0bf70f0db3474b2f39bdf8a010be0241143",
+      "sourcePath": "node_modules/is-osx/readme.md",
+      "sourceSize": 359,
+      "sourceSha256": "bcb49d008058d107b0d1eab03a63ffcfb87151029077541476315c67cfad05a1",
+      "sourceGitBlob": "211f36c54f14dfac6b5e9a76928681559beb5d1f",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/is-windows/index.js",
+      "size": 851,
+      "sha256": "08bc864b73e90d99a4dc7c120ea46d5a608b065d39f6e639d5415836ed9ffa51",
+      "sourcePath": "node_modules/is-windows/index.js",
+      "sourceSize": 824,
+      "sourceSha256": "fd80f3a3431987b4c6d6b917735b0468ee15b78f414830c5018779cbbaafcaed",
+      "sourceGitBlob": "55d43e0920b513f9197918b7feaf962c523617d4",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/is-windows/LICENSE",
+      "size": 1109,
+      "sha256": "125be8338d6dc0e6da9d2cfbf0e2355e2090f0ddb9e09d43d7c16092b028bbca",
+      "sourcePath": "node_modules/is-windows/LICENSE",
+      "sourceSize": 1088,
+      "sourceSha256": "6b8eac57398e657431675649c722902adbbd3058e3af382f6bc4fd1c05325df6",
+      "sourceGitBlob": "f8de0630598b140c68d56369504ab2934bca399e",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/is-windows/package.json",
+      "size": 2566,
+      "sha256": "c73f9e7af974c90cf8cf0de6dee5428bee0bd769967bf1f67dd30be21dba4786",
+      "sourcePath": "node_modules/is-windows/package.json",
+      "sourceSize": 2453,
+      "sourceSha256": "b2f590cc2d4c9c24a6ae91e1c23d66c7c6145ac1eabb5c1e703fbe40e04c2d97",
+      "sourceGitBlob": "d0d8378cd4655374ca8c1b4dedcbf72416cba5ba",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/power-off/cli.js",
+      "size": 276,
+      "sha256": "6860ec73e60046fb06c3ed7333b725c643761664fc3c987952e7045bf6b4d892",
+      "sourcePath": "node_modules/power-off/cli.js",
+      "sourceSize": 258,
+      "sourceSha256": "ddb36116958fe8dcefa97005093a4ac9378dd578ce4f1010f4aabdffa56ac6b8",
+      "sourceGitBlob": "077c54e7bd1b9b2c16ff33e91cb71ab8089bb57a",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/power-off/index.js",
+      "size": 460,
+      "sha256": "3932fb5f8739c5b796e096f19fb83fe3698a8ecf02d2aa6b4669ffeba016005c",
+      "sourcePath": "node_modules/power-off/index.js",
+      "sourceSize": 439,
+      "sourceSha256": "ca19edbc77df97f60539ceebf5aa863bace382b720b1b930c0bb3b817a2b7e9b",
+      "sourceGitBlob": "73ac2c756445fff201daa1b469d8b2c2734bcc33",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/power-off/license",
+      "size": 1130,
+      "sha256": "27e2b1effad56afb98dcd16f4a539cd229da291c86fb40bd6352751f34069cd2",
+      "sourcePath": "node_modules/power-off/license",
+      "sourceSize": 1109,
+      "sourceSha256": "a630036221455fa3ec4224a919c00da89fc5442118d36549ed1cc06d1a31b0d1",
+      "sourceGitBlob": "88507d35529d74df61855cdf7f154f60a19570a8",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/power-off/package.json",
+      "size": 2564,
+      "sha256": "14b42bfc46fd4cec437221995f8057e624c98c94cdfd8186c0b2a4bacae4cd4e",
+      "sourcePath": "node_modules/power-off/package.json",
+      "sourceSize": 2459,
+      "sourceSha256": "f43825f2438110d5b54451745ae1c7ee02822980f59f8b141fc2bd1223885f0f",
+      "sourceGitBlob": "372bdddc34813f8e038e113f8afd16fb9028cb0d",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/power-off/readme.md",
+      "size": 410,
+      "sha256": "e9b6ffaada520b1cc90ccbee95d7f42556f0f1f98b8bd16772b0ecbab4dbba4c",
+      "sourcePath": "node_modules/power-off/readme.md",
+      "sourceSize": 371,
+      "sourceSha256": "2cb556e41c99f4e80aaaee3eb6ff54acee91e57bd3ac11d4f5bdc0bea620c953",
+      "sourceGitBlob": "3afd5cb2ae9c4a35b9cc913b25982029d75bb5f6",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/sleep-mode/cli.js",
+      "size": 172,
+      "sha256": "bdd7909e37b1424850325a168f5f0eed551a3100fcb52fc5b5369fc528c62a0e",
+      "sourcePath": "node_modules/sleep-mode/cli.js",
+      "sourceSize": 163,
+      "sourceSha256": "24c4cbfb5b8952fbda64bb35cac9539193bd70f62fcfe7310f714ae42d7d4bc7",
+      "sourceGitBlob": "0775cb225aa493dbf481b8a5674d2575811ce144",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/sleep-mode/index.js",
+      "size": 576,
+      "sha256": "ff60099fdd7a39496ba5b7456505aaffa6930557b888bd58417d8f365f526929",
+      "sourcePath": "node_modules/sleep-mode/index.js",
+      "sourceSize": 550,
+      "sourceSha256": "19dc254aec7046c95a7146658fd298276889053713eebf9688a4a80dba7da245",
+      "sourceGitBlob": "eab195d3ff45a23d61b84870d7880c4dbdfe51de",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/sleep-mode/license",
+      "size": 1130,
+      "sha256": "27e2b1effad56afb98dcd16f4a539cd229da291c86fb40bd6352751f34069cd2",
+      "sourcePath": "node_modules/sleep-mode/license",
+      "sourceSize": 1109,
+      "sourceSha256": "a630036221455fa3ec4224a919c00da89fc5442118d36549ed1cc06d1a31b0d1",
+      "sourceGitBlob": "88507d35529d74df61855cdf7f154f60a19570a8",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/sleep-mode/node_modules/is-windows/index.js",
+      "size": 585,
+      "sha256": "513db0d3b61d8e1e686bab30eb6400e597acc9fa63555813ead8cee7a672f393",
+      "sourcePath": "node_modules/sleep-mode/node_modules/is-windows/index.js",
+      "sourceSize": 563,
+      "sourceSha256": "0b5e12ad0ae64451e46219f2e1f52b2ecfcf5c5e035429afe17f468458ac3c3b",
+      "sourceGitBlob": "5921b613be2984c3fdc1ea9d3c3b72fc18971a4c",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/sleep-mode/node_modules/is-windows/LICENSE",
+      "size": 1104,
+      "sha256": "022cda75198d62af2554a7fd1813c7b2a77fd25352ed491db0e56dfaf0ff2c59",
+      "sourcePath": "node_modules/sleep-mode/node_modules/is-windows/LICENSE",
+      "sourceSize": 1083,
+      "sourceSha256": "0798f37cff4a3f438c071316e41f94ffe110116a313ab0fc4f8caa07218f1f0f",
+      "sourceGitBlob": "65f90aca8c2fff1b890f31f571aa41ddfc8d9a10",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/sleep-mode/node_modules/is-windows/package.json",
+      "size": 2732,
+      "sha256": "53f7b7538bfa9efe413fe771832af5a36419c26966fefdd241f1d88c5be91e11",
+      "sourcePath": "node_modules/sleep-mode/node_modules/is-windows/package.json",
+      "sourceSize": 2617,
+      "sourceSha256": "9561b96779509b48cebb25c010ff0deb01d48deb193857b0576193f56a9efa01",
+      "sourceGitBlob": "2cf6273bc6e5dc231ae6cb8f4d77a560de407275",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/sleep-mode/node_modules/is-windows/README.md",
+      "size": 2190,
+      "sha256": "ac2663a3830b2eddfe59f2de8fa4a3e3b3d0a1c4f6c26fa1f3901084469f28ae",
+      "sourcePath": "node_modules/sleep-mode/node_modules/is-windows/README.md",
+      "sourceSize": 2135,
+      "sourceSha256": "d0a2e10832b3798637956e83746b6da925ebeac7c386510685d8939049cfb6ab",
+      "sourceGitBlob": "f83101ba05261373844d980cefcb84a4ad597c9f",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/sleep-mode/package.json",
+      "size": 2627,
+      "sha256": "dec59ae6a1bfbd569195a8e28ce6f83740251294ec97b2c5bb9b050341c9e38a",
+      "sourcePath": "node_modules/sleep-mode/package.json",
+      "sourceSize": 2512,
+      "sourceSha256": "e40fb778f291a1a4207a5b1818d1692563f7cb7d49f86a1dc602a49ac0ed03e4",
+      "sourceGitBlob": "6e1b3eb2d9fa0b8eee60a12199c2f9c252290289",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    },
+    {
+      "path": "electronapp/node_modules/sleep-mode/readme.md",
+      "size": 427,
+      "sha256": "e0318a2ab8cd088429b3ad338e5b2e997ecb1db05dc7e972568c85211b51c2d9",
+      "sourcePath": "node_modules/sleep-mode/readme.md",
+      "sourceSize": 389,
+      "sourceSha256": "8a587c4837be344cf55ecdef984e20bf636a1d53ef6e99efe53cee66946407f9",
+      "sourceGitBlob": "df49d6bd926cf26d75ff44ef326311f3e428afa4",
+      "transform": "lf-to-crlf",
+      "relation": "Official committed text with explicit checkout newline conversion; no code patch"
+    }
+  ]
+}

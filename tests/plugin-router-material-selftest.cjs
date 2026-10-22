@@ -8,7 +8,7 @@ const vm = require('node:vm');
 const {patchRouter} = require('../tools/patch-plugin-settings.cjs');
 
 const REPO_ROOT = path.resolve(__dirname, '..');
-const ROUTER_MATERIAL = path.join(REPO_ROOT, 'vendor', 'carnival', 'electronapp', 'www', 'modules', 'approuter.js');
+const ROUTER_MATERIAL = path.join(REPO_ROOT, 'vendor', 'web-snapshot', 'www', 'modules', 'approuter.js');
 const hasMaterial = fs.existsSync(ROUTER_MATERIAL);
 
 function extractFunction(source, prefix) {

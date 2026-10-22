@@ -1,5 +1,17 @@
 # Runtime source and notice materials
 
+Compatibility resources: 48 unchanged local snapshot files retain per-file source/unknown distinctions in vendor/compatibility-resources-manifest.json. Anime4K MIT headers and the existing named Source Han Serif OFL record remain; exact revisions/unknown manual/theme authorship are not invented. No public body upload or official recovery is claimed. See [component provenance](COMPATIBILITY_RESOURCES_INPUT.md).
+
+Current libmpv acquisition: a pinned official SourceForge project archive now restores the identical current DLL on Work Windows, checked by full archive and DLL SHA256. This is acquisition, not a full source rebuild or completed cloud validation. See [download contract](LIBMPV_INPUT.md).
+
+Official resource extension: five additional same-byte members of the already pinned Windows 3.0.20 ZIP now have independent acquisition: three companion XML documentation files, windowsync and English player strings. Existing dependency notices/source limitations remain applicable to XML companions; the two Emby resource references retain upstream repository GPL v2 declarations. This is fixed release acquisition, not proof of rebuilding every component from source. See [component record](WINDOWS_HOST_INPUT.md).
+
+Small template supplement: package matches official Electron e897adda except the retained old version suffix; Host config matches official Windows source and exact 3.0.20 release bytes. Preload remains an explicitly unresolved-origin seven-line compatibility template, locally preserved without a public distribution decision. Source hashes, differences and notices are in [the template contract](RUNTIME_TEMPLATES.md) and vendor/runtime-templates-manifest.json.
+
+Inherited npm acquisition update: all 29 selected files can be recovered from official Electron commit e897adda583b2339f077cb67113e71326a806de0 with the locked LF-to-CRLF conversion. The registry differences described below remain historical comparisons; no community code patch is needed against this official commit. Seven package declarations and unchanged notice files are individually pinned. See [component source and scope](INHERITED_NPM_INPUT.md).
+
+Current input/provenance boundary: [legacy input selection](LEGACY_INPUT_SELECTION.md) distinguishes 90 consumed Carnival files and one current libmpv patch from historical manifest-only records. Removing physical predecessor gates does not establish new source or redistribution claims.
+
 The v0.3.0 release source is `sourceCommit=20e42511b54989550165511a7604aa1b73519ff2`. The root `LICENSE`, `THIRD_PARTY_NOTICES.md`, `docs/LICENSING.md` and this index are source-controlled materials; build provenance binds their committed bytes. Maintainer risk acceptance for the release does not establish legal compliance or resolve unknown source, permission or notice obligations.
 
 Use [`V030_PR31_GPL_RELEASE_REVIEW.md`](V030_PR31_GPL_RELEASE_REVIEW.md) for the GPL combination and source-delivery assessment, [`V030_DISTRIBUTION_MATERIALS_FINAL.md`](V030_DISTRIBUTION_MATERIALS_FINAL.md) for the component matrix and exact identities, [`THIRD_PARTY_MATERIALS_AUDIT.md`](THIRD_PARTY_MATERIALS_AUDIT.md) for fixed historical source/hash observations, and [`BUILD_INPUT_AUDIT.md`](BUILD_INPUT_AUDIT.md) for build-input boundaries. Full notice and copyright texts are in [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md) and [`redistribution-notices/`](redistribution-notices/).
@@ -73,3 +85,19 @@ Archive identity, source availability, notice delivery and full
 corresponding-source completeness are separate claims. Delivering this index
 closes the project-notice packaging gap; unknown component materials remain
 unknown. It does not certify redistribution terms or alter existing releases.
+# 独立历史Web材料
+
+Web生产输入现为`vendor/web-snapshot-manifest.json`固定的720份历史基底（22,009,668字节）与两份既有用户Web补丁。材料字节及已有通知原样保存，单次导入后构建不再读取旧包www；准确上游版本及部分文件来源仍未知，不能将整棵树归为项目原创。正文只在本地材料目录保存且Git忽略，公开再分发目标/材料尚待核对。清单不等于材料正文或完整上游源码，准备与验证见[固定Web输入](WEB_SNAPSHOT_INPUT.md)。
+## 官方固定Host组件
+
+官方Windows 3.0.20发布ZIP（111,318,728字节，SHA256 `3bc01d288d64046483ef12a8e5a70cc31b6d8b65ed9ee1837554ab7eba797c4c`）中的14份白名单Host/辅助二进制与此前固定输入逐字节相同，现由独立组件准备。完整路径、大小和哈希见`vendor/windows-host-manifest.json`；准备及来源边界见[固定Host输入](WINDOWS_HOST_INPUT.md)。这补充了已知公开分发位置，不改变上文对精确源码重建或组件通知完整性的限制。Model未改用官方不同字节版本，仍保留当前文件。
+
+
+The [small runtime snapshot](SMALL_RUNTIME_INPUT.md) preserves four historical packaged files and existing notices without claiming ETE authorship. Bodies stay ignored/local; source/version and public redistribution boundaries remain explicitly unresolved. No settings are changed. Approved body restoration is still needed for cloud use.
+
+
+The [Model compatibility snapshot](MODEL_COMPATIBILITY_INPUT.md) is the unchanged existing Carnival DLL, not official-byte or ETE-original content. The old full directories/archives are no longer normal build inputs. Exact origin remains marked unresolved, notices retained, and bodies local/ignored pending approved restorable storage.
+
+## Current repository restoration update (2026-10-21)
+
+The user authorized tracking the exact required Web, compatibility-resource, small-runtime and original Model snapshots in this same repository. The 775 manifest-listed files (51,953,202 bytes) use ordinary Git with `-text` attributes to preserve bytes. Historical local-only/ignored-storage statements below describe earlier stages and are superseded for these four roots. Source attribution and unresolved exact revisions remain unchanged; storage permission is not a claim of new third-party authorship or complete corresponding source. libmpv stays ignored and is restored from the pinned archive via `node tools/prepare-libmpv.cjs .`; see [repository inputs](REPOSITORY_INPUTS.md). No old full installer/patch or real user profile is included.

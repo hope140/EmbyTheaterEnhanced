@@ -1,0 +1,547 @@
+{
+  "schemaVersion": 1,
+  "version": "snapshot-v1",
+  "inputRoot": "vendor/compatibility-resources/snapshot-v1",
+  "fileCount": 48,
+  "bytes": 29353185,
+  "treeSha256": "301437050af10f4f5db863777c5824bdd01a429cd406d2c0a3d888e58090c445",
+  "provenance": {
+    "mode": "local-compatibility-snapshot",
+    "source": "Selected existing Carnival manual/external resource bytes only",
+    "wholeOldPackageCopied": false,
+    "physicalLegacyDirectoryRequired": false,
+    "claimedAsOwnOriginal": false,
+    "officialOnlineRecoveryEstablished": false,
+    "publicBodyUpload": true,
+    "repositoryStorage": "Explicit user-authorized same-repository snapshot; existing source/notice uncertainties remain, no authorship reattribution"
+  },
+  "groups": {
+    "manualBatchFiles": 2,
+    "Anime4KFiles": 40,
+    "themeFiles": 4,
+    "presetFiles": 1,
+    "fontFiles": 1
+  },
+  "files": [
+    {
+      "path": "Emby.ConfigureAndUninstall.bat",
+      "size": 11504,
+      "sha256": "ce3db8b5f498243a04b4a5699f5b6fcf8366cf70b4fad99b12192eae0fa91fca",
+      "origin": {
+        "family": "Legacy manual compatibility script",
+        "exactRevision": "unresolved",
+        "notice": "Author/source not established; not claimed as ETE original; never executed by preparation"
+      }
+    },
+    {
+      "path": "Emby.Dialog.bat",
+      "size": 2365,
+      "sha256": "6f243e10cfe2234be014c0c690d1918d3f1ad356846b22a63cb83cf51a223ba0",
+      "origin": {
+        "family": "Legacy manual compatibility script",
+        "exactRevision": "unresolved",
+        "notice": "Author/source not established; not claimed as ETE original; never executed by preparation"
+      }
+    },
+    {
+      "path": "external/Anime4K/Anime4K-off.conf",
+      "size": 4173,
+      "sha256": "8147f4dabc5e1216711be57f1252db3877924cfedd5eb51dfafdfce3c4019691",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Associated project/config file; no per-file license header established here"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_AutoDownscalePre_x2.glsl",
+      "size": 1596,
+      "sha256": "9141668ced0b26512253e6396e805820716f35b57c92950d9da489f8b96a7ba4",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Associated project/config file; no per-file license header established here"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_AutoDownscalePre_x4.glsl",
+      "size": 1604,
+      "sha256": "dadb7b713cfa1d810c55b5deff616072f3390e546fed1e6a54f80ea555f7b95d",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Associated project/config file; no per-file license header established here"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Clamp_Highlights.glsl",
+      "size": 2884,
+      "sha256": "8c5fb67c76bed3021f8a27b050c3b97a6ac1b284f9ce91c04189015c354c0217",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Darken_Fast.glsl",
+      "size": 6594,
+      "sha256": "e48e560a2dd7fc3267e0494bbedb540600378eabaf8da74da605b0bdf5899a93",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Darken_HQ.glsl",
+      "size": 6179,
+      "sha256": "e50a89ce7c4c8e8c2487faa3a0a5950af0384c51a440482e5f2540c0fa39c7bd",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Darken_VeryFast.glsl",
+      "size": 6660,
+      "sha256": "1d8ea6bdc53b733f5be293b3177069e7be16f4bdc8b182854d2b344cc8f19339",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Deblur_DoG.glsl",
+      "size": 4705,
+      "sha256": "d24499348ed515a9abd3efd6afd4849d3c952aac69e3bf4c03b6dc0559d5471f",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Deblur_Original.glsl",
+      "size": 6695,
+      "sha256": "8fd49d93f2079617fcf121b30877bd49094a4e1b0609c1c3038873b80752fb03",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Denoise_Bilateral_Mean.glsl",
+      "size": 2848,
+      "sha256": "48ec0cb087afaf0d2b92b848f45841aa152476f31cd3cf116f1381a087fcc70f",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Denoise_Bilateral_Median.glsl",
+      "size": 4340,
+      "sha256": "836d8ea1635088435f56db7837f000481afe185ca5955adc6ea5641679a2d69e",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Denoise_Bilateral_Mode.glsl",
+      "size": 3923,
+      "sha256": "9067c543a5bd2220c28a05022085ef511402ccc114a76112eabe4e3f7d350285",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Restore_CNN_L.glsl",
+      "size": 69921,
+      "sha256": "d6efe215e6ee8af1ec560478a91afc1df83fac4ba43b2c806ee61ca2267ed674",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Restore_CNN_M.glsl",
+      "size": 35916,
+      "sha256": "67ea3ed26539e8de3b7d307688535d2ff17e8d147e11dda0247da7770dbecf41",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Restore_CNN_S.glsl",
+      "size": 17136,
+      "sha256": "97c24dc370ab300c108bfaa09db7f175aeff343674842c299cf3940a3d330427",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Restore_CNN_Soft_L.glsl",
+      "size": 70020,
+      "sha256": "8f2a5c73b526c6e4c67bce0366f7dcd7410bfa4a31e718240d86f53660788e63",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Restore_CNN_Soft_M.glsl",
+      "size": 36016,
+      "sha256": "a78a2c76898e08e09e442a9628c64208c26e8e15789649b8755223f009794c02",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Restore_CNN_Soft_S.glsl",
+      "size": 17198,
+      "sha256": "9f6867f2ef42786729522d86fe24147cb4ea145418e3974df70496acf52dc392",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Restore_CNN_Soft_UL.glsl",
+      "size": 308873,
+      "sha256": "41d71cad7b2f3af9086852fca70046f763272d2cb49dd83de9647d942866cac8",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Restore_CNN_Soft_VL.glsl",
+      "size": 144204,
+      "sha256": "094334b0e20c1a201fe4941c7c68de72451e5aee9efb5524d7fb82b12dca64b9",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Restore_CNN_UL.glsl",
+      "size": 308660,
+      "sha256": "81ec48ff700108c8e1571ed82d4527006ee200c05e94f8b7f836c02179169b40",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Restore_CNN_VL.glsl",
+      "size": 144075,
+      "sha256": "35036722733305cd4d4e57660b883bbe2569ba2914033c254327107d7b77e35e",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Thin_Fast.glsl",
+      "size": 6482,
+      "sha256": "d725d210e3fbcc9c85202ef8df7e3ae405969ccde53454035dd927cde19ccf9b",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Thin_HQ.glsl",
+      "size": 6184,
+      "sha256": "4decfd6626cf5830630fa7b08dfc96df0f199b600937df7de8c6cbda059e7ab6",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Thin_VeryFast.glsl",
+      "size": 6571,
+      "sha256": "5dbdefeb7254daee261391dde8a5e5bea0c94bc9fa017444be89dbe79da2bdb4",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Upscale_CNN_x2_L.glsl",
+      "size": 73443,
+      "sha256": "db1fedf7be82f6fd9034e6bf39b64daf2b7576988bb584ec38f24f5236b1cd97",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Upscale_CNN_x2_M.glsl",
+      "size": 37685,
+      "sha256": "716e02098a68f0d648761f2b96b4dd139e1cb09b174bb369fca3aa34328fff7e",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Upscale_CNN_x2_S.glsl",
+      "size": 18638,
+      "sha256": "4c53ec2e287908f7ee7bcb266b0170421626d663576468b7d7dafc62962649a4",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Upscale_CNN_x2_UL.glsl",
+      "size": 290257,
+      "sha256": "fa7cf0ecc1cca84d8291bbff5a42b60f5816d57b4e97d42bc377235ac8db02e8",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Upscale_CNN_x2_VL.glsl",
+      "size": 146743,
+      "sha256": "5638fe31c37c151a3443fea3451a3ef91af073f4dbb9615f6c0d1e29db11493d",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Upscale_Deblur_DoG_x2.glsl",
+      "size": 4988,
+      "sha256": "5646f119f497f4c2c91267794f8b807823dc5833c233694e3c0a13916264066f",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Upscale_Deblur_Original_x2.glsl",
+      "size": 6590,
+      "sha256": "8eeea23f935d525ab3dced29c9a44e47c702d0c56c9258d3cda701285213b15b",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Upscale_Denoise_CNN_x2_L.glsl",
+      "size": 73584,
+      "sha256": "6cc4604c9544fd4fd9e3a75fd797511bf5fe1e626e9e1dbcee03302823a63207",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Upscale_Denoise_CNN_x2_M.glsl",
+      "size": 37714,
+      "sha256": "8c72b042e2301fe66a45c3089720459148e2504cd72af16f9c0d5017ff14181e",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Upscale_Denoise_CNN_x2_S.glsl",
+      "size": 18667,
+      "sha256": "1a45ad3aa20d8368399f2fd46791deed957c2fd0a4afd131cc92516827abab93",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Upscale_Denoise_CNN_x2_UL.glsl",
+      "size": 290040,
+      "sha256": "38bd11e7e92ff1a615a274be912d6f2cfe67f5b43771f0383a91c6ab3d0f8cb6",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Upscale_Denoise_CNN_x2_VL.glsl",
+      "size": 146811,
+      "sha256": "359c48fe5a317fbc6b706ce368401eef496e84ed98abac7a43efebca2b65d79b",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Upscale_DoG_x2.glsl",
+      "size": 4159,
+      "sha256": "13e204278f400c850e7a9f4df8bc9956e979ae01bf7a3d55d86c3f9debecb39d",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Upscale_DTD_x2.glsl",
+      "size": 16063,
+      "sha256": "3affea16ff7700d42c25f27fba4e85015ed4d985c7f773f968837e6ad4748d4c",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/Anime4K/shaders/Anime4K_Upscale_Original_x2.glsl",
+      "size": 6548,
+      "sha256": "5f126010bc7c67924dcc2f590b794f9afb7cf4d1fd3ecfb38eeb17542bb236e4",
+      "origin": {
+        "family": "Anime4K",
+        "upstreamReference": "https://github.com/bloc97/Anime4K",
+        "exactRevision": "unresolved",
+        "notice": "Embedded MIT notice preserved"
+      }
+    },
+    {
+      "path": "external/emby.disable/www/modules/layout.css",
+      "size": 22403,
+      "sha256": "93fc5c8974f8f2188e6f70b002a0477911f185b361955fb2d31cfa5a49aed74f",
+      "origin": {
+        "family": "Legacy Emby theme compatibility copy",
+        "exactRevision": "unresolved",
+        "notice": "Retain current bytes and embedded notices; exact official/community changes not attributed"
+      }
+    },
+    {
+      "path": "external/emby.disable/www/modules/themes/darkgradient/theme.css",
+      "size": 38329,
+      "sha256": "af5eb9749182e90577d64815278b7c5ddac9a729d7189dcfde22be90aaed3e1a",
+      "origin": {
+        "family": "Legacy Emby theme compatibility copy",
+        "exactRevision": "unresolved",
+        "notice": "Retain current bytes and embedded notices; exact official/community changes not attributed"
+      }
+    },
+    {
+      "path": "external/emby.enable/www/modules/layout.css",
+      "size": 22942,
+      "sha256": "d6eb9a45859d776806b7b7078c4763c452dada04834b3f461797dee1fe80dc8c",
+      "origin": {
+        "family": "Legacy Emby theme compatibility copy",
+        "exactRevision": "unresolved",
+        "notice": "Retain current bytes and embedded notices; exact official/community changes not attributed"
+      }
+    },
+    {
+      "path": "external/emby.enable/www/modules/themes/darkgradient/theme.css",
+      "size": 38723,
+      "sha256": "d8a7104966af90053348eee164f7ad2715e95dee06fa7d84f0f4515958e76cc9",
+      "origin": {
+        "family": "Legacy Emby theme compatibility copy",
+        "exactRevision": "unresolved",
+        "notice": "Retain current bytes and embedded notices; exact official/community changes not attributed"
+      }
+    },
+    {
+      "path": "external/Presets/fonts/Source Han Serif SC-Bold.ttf",
+      "size": 26821400,
+      "sha256": "8cc4d2cfccf84293ba0317bf77752dd453da79dc9ec5823d0792d8058bc1be0c",
+      "origin": {
+        "family": "Source Han Serif font as named",
+        "exactRevision": "unresolved",
+        "notice": "Existing Source Han Serif OFL text and Adobe copyright record retained; exact font identity/RFN review remains open"
+      }
+    },
+    {
+      "path": "external/Presets/mpv.conf",
+      "size": 132,
+      "sha256": "e8895c1c8902e6ad2d8e1bdebde6a9ab94065ff95e1c31af936c12748fa623c3",
+      "origin": {
+        "family": "Legacy manual preset",
+        "exactRevision": "unresolved",
+        "notice": "Author/source not established; packaged unchanged and never applied to user settings by preparation"
+      }
+    }
+  ]
+}

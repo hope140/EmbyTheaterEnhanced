@@ -9,7 +9,7 @@ const buildInputs = require('../tools/build-input-contract.cjs');
 const overlays = require('../tools/prepare-web-overlays.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
-const SOURCE_PATH = 'vendor/carnival/electronapp/www/modules/CustomCssJS.js';
+const SOURCE_PATH = 'vendor/web-snapshot/www/modules/CustomCssJS.js';
 const GENERATOR_PATH = 'tools/patch-custom-css-js.cjs';
 const EXPECTED_SOURCE_SHA256 = '2177DE28DCC4E715F07C63329DC361C5B4DDD37EB7E59F273830B22ACEA37912';
 const EXPECTED_OUTPUT_SHA256 = 'B9F6268F3E3126426F189F38F1E57FF4CD03D8F9A213305157E1F6842F251103';
@@ -26,8 +26,8 @@ const source = fs.readFileSync(sourceFile);
 const sourceHash = sha256(source);
 assert.equal(sourceHash, EXPECTED_SOURCE_SHA256, 'CustomCssJS source hash changed');
 
-const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'vendor/runtime-manifest.json'), 'utf8'));
-const manifestEntry = manifest.files.find(item => item.path === 'electronapp/www/modules/CustomCssJS.js');
+const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'vendor/web-snapshot-manifest.json'), 'utf8'));
+const manifestEntry = manifest.files.find(item => item.path === 'www/modules/CustomCssJS.js');
 assert.ok(manifestEntry, 'runtime manifest must include CustomCssJS.js');
 assert.equal(manifestEntry.sha256.toUpperCase(), sourceHash);
 

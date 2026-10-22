@@ -10,7 +10,7 @@ const movie = require('../tools/patch-movie-browser.cjs');
 const search = require('../tools/patch-search-ui.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
-const WWW = 'vendor/carnival/electronapp/www';
+const WWW = 'vendor/web-snapshot/www';
 const MATERIAL = Object.freeze({
     'search/searchfields.js': '7F051FEA8519DF0233723CAE1635BF13D3AECAA194846B73BEFE3FFA95A82ACC',
     'search/searchresults.js': 'C6FCE6F9B8B4A7549565AEFC7A25EE3643FA2130FB32D5198B8DE9E1B2521174',

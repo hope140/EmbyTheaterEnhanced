@@ -9,8 +9,8 @@ const vm = require('node:vm');
 const patcher = require('../tools/patch-select-cancel.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
-const ACTIONSHEET_PATH = 'vendor/carnival/electronapp/www/modules/actionsheet/actionsheet.js';
-const SELECT_PATH = 'vendor/carnival/electronapp/www/modules/emby-elements/emby-select/emby-select.js';
+const ACTIONSHEET_PATH = 'vendor/web-snapshot/www/modules/actionsheet/actionsheet.js';
+const SELECT_PATH = 'vendor/web-snapshot/www/modules/emby-elements/emby-select/emby-select.js';
 const ACTIONSHEET_SHA256 = '0AD2BFAD1AD2B694EC07C693A44F0EDFBD4EB76121C8939F0E5DE27E0ABEFE67';
 const SELECT_SHA256 = '5A26DED88A18643FD189FDF4E367B1AE6B37B24664C75D55207192F58C5C6CD2';
 

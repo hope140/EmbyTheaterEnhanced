@@ -1,0 +1,245 @@
+﻿<div class="view flex flex-direction-column">
+
+    <div class="videoOsd-ratingInfo padded-top-page hide">
+        <div class="videoOsd-ratingText">
+
+        </div>
+    </div>
+
+    <div class="upNextContainer hide">
+    </div>
+
+    <div class="playbackMultiply hide">
+        <style>
+            @-webkit-keyframes flowCss {
+                0% {
+                    background-position: 0 0;
+                }
+
+                100% {
+                    background-position: -400% 0;
+                }
+            }
+
+            @keyframes flowCss {
+                0% {
+                    background-position: 0 0;
+                }
+
+                100% {
+                    background-position: -400% 0;
+                }
+            }
+
+            .playbackMultiply {
+                text-align: center;
+            }
+
+            .playbackMultiply::before {
+                content: "▶▶▶";
+                background: linear-gradient(90deg, #fff, #fff0, #fff0);
+                filter: drop-shadow(0px 0px 3px #000);
+                color: rgba(0, 0, 0, 0);
+                -webkit-background-clip: text;
+                background-clip: text;
+                -webkit-background-size: 200% 200%;
+                background-size: 200% 200%;
+                animation: flowCss 1.2s infinite linear;
+                padding-top: 0.3em;
+                font-size: 1.2em;
+                margin-left: -2.0%;
+                position: absolute;
+            }
+        </style>
+    </div>
+
+    <button type="button" is="emby-button" class="raised hide btnSkipIntro">${HeaderSkipIntro}</button>
+
+    <div class="videoOsdBottom flex videoOsdBottom-hidden hide">
+
+        <div class="osdPlayQueue flex flex-direction-column hide osdContentSection" data-contentsection="playqueue"></div>
+
+        <div class="lyricsSection flex flex-direction-column hide osdContentSection" data-contentsection="lyrics"></div>
+
+        <div class="videoOsdBottom-maincontrols">
+
+            <div class="brightnessSliderContainer hide">
+
+                <i class="md-icon videoOsdBrightnessIcon">&#xe518;</i>
+
+                <div class="sliderContainer emby-slider-container-vertical flex-grow">
+                    <input is="emby-slider" type="range" step="1" min="0" max="100" value="55" defaultValue="55" class="videoOsdBrightnessSlider" tabindex="-1" orient="vertical" data-hoverthumb="true" />
+                </div>
+            </div>
+
+            <div is="emby-itemscontainer" class="osdPosterContainer flex flex-direction-column">
+            </div>
+
+            <div class="flex flex-direction-column videoOsdText">
+
+                <div class="videoOsdParentTitleContainer flex align-items-center">
+                    <h3 class="videoOsdParentTitle videoOsdParentTitle-small"></h3>
+                    <h1 class="videoOsdParentTitle videoOsdParentTitle-large hide"></h1>
+
+                    <button is="emby-button" type="button" class="fab btnOsdMore btnOsdMore-title hide" title="${More}" aria-label="${More}">
+                        <i class="md-icon">more_horiz</i>
+                    </button>
+                </div>
+
+                <div class="flex videoOsdSecondaryText secondaryText flex-wrap-wrap">
+                    <h3 class="videoOsdTitle"></h3>
+                    <h3 class="videoOsdThirdTitle hide"></h3>
+
+                    <div class="flex align-items-center videoOsdSecondaryMediaInfo mediaInfoItems">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-direction-row align-items-center justify-content-center videoOsdPositionContainer">
+                <div class="flex align-items-center videoOsdPositionText flex-shrink-zero"></div>
+                <div class="sliderContainer videoOsdPositionSliderContainer flex-grow" style="margin: 0 .75em 0;">
+                    <input type="range" step=".01" min="0" max="100" value="0" is="emby-slider" class="videoOsdPositionSlider" />
+                </div>
+                <div class="flex align-items-center videoOsdDurationText flex-shrink-zero"></div>
+            </div>
+
+            <div class="videoOsdBottom-buttons flex align-items-flex-start flex-direction-row focuscontainer-x focusable" data-focusabletype="autofocus">
+
+                <div class="flex flex-direction-column flex-grow justify-content-center flex-shrink-zero">
+
+                    <div class="flex flex-direction-row align-items-center flex-shrink-zero videoosd-transportbuttons">
+
+                        <button is="paper-icon-button-light" class="btnPreviousTrack hide" title="${HeaderPreviousItem}" aria-label="${HeaderPreviousItem}">
+                            <i class="md-icon">&#xE045;</i>
+                        </button>
+
+                        <div class="flex align-items-center flex-direction-row videoOsd-centerButtons">
+                            <button is="paper-icon-button-light" class="btnRewind hide" title="${Rewind}" aria-label="${Rewind}">
+                                <i class="md-icon btnRewindIcon">&#xE042;</i>
+                            </button>
+
+                            <button is="paper-icon-button-light" class="videoOsd-btnPause autofocus">
+                                <i class="md-icon autortl">&#xE034;</i>
+                            </button>
+
+                            <button is="paper-icon-button-light" class="btnVideoOsd-stop btnVideoOsd-stop-center hide" title="${Stop}" aria-label="${Stop}">
+                                <i class="md-icon">&#xe047;</i>
+                            </button>
+
+                            <button is="paper-icon-button-light" class="btnOsdFastForward hide" title="${FastForward}" aria-label="${FastForward}">
+                                <i class="md-icon btnOsdFastForwardIcon">&#xE042;</i>
+                            </button>
+                        </div>
+
+                        <button is="paper-icon-button-light" class="btnVideoOsd-stop btnVideoOsd-stop-bottom hide" title="${Stop}" aria-label="${Stop}">
+                            <i class="md-icon">&#xe047;</i>
+                        </button>
+
+                        <button is="paper-icon-button-light" class="btnNextTrack hide" title="${HeaderNextItem}" aria-label="${HeaderNextItem}">
+                            <i class="md-icon">&#xE044;</i>
+                        </button>
+                    </div>
+
+                </div>
+
+                <div class="flex flex-shrink-zero justify-content-flex-end flex-wrap-wrap videoOsdBottom-buttons-right">
+
+                    <div class="videoOsdVolumeControls flex flex-direction-row align-items-center hide-mouse-idle-tv" style="position:relative;">
+                        <button is="paper-icon-button-light" class="buttonMute flex-shrink-zero" title="${Mute}" aria-label="${Mute}">
+                            <i class="md-icon">&#xE050;</i>
+                        </button>
+
+                        <i class="md-icon osdVolumeDisplayIcon osdVolumeDisplayIcon-left secondaryText">volume_down</i>
+
+                        <div class="videoOsdVolumeSliderWrapper flex-grow hide">
+                            <div class="sliderContainer flex-grow">
+                                <input is="emby-slider" type="range" step="1" min="0" max="100" value="0" class="videoOsdVolumeSlider" tabindex="-1" />
+                            </div>
+                        </div>
+
+                        <i class="md-icon osdVolumeDisplayIcon osdVolumeDisplayIcon-right secondaryText">volume_up</i>
+                    </div>
+
+                    <button is="paper-icon-button-light" class="btnRecord hide" title="${Record}" aria-label="${Record}">
+                        <i class="md-icon">&#xE061;</i>
+                    </button>
+
+                    <button is="paper-icon-button-light" class="btnOsdRepeatMode toggleButton hide" title="${HeaderRepeatMode}" aria-label="${HeaderRepeatMode}">
+                        <i class="md-icon toggleButtonIcon">&#xe040;</i>
+                    </button>
+
+                    <button is="paper-icon-button-light" class="btnAudio hide" title="${Audio}" aria-label="${Audio}">
+                        <i class="md-icon">&#xE3A1;</i>
+                    </button>
+                    <button is="paper-icon-button-light" class="btnSubtitles hide" title="${Subtitles}" aria-label="${Subtitles}">
+                        <i class="md-icon">&#xE01C;</i>
+                    </button>
+                    <button is="paper-icon-button-light" class="btnVideoOsdSettings btnVideoOsdSettings-right hide" title="${Settings}" aria-label="${Settings}">
+                        <i class="largePaperIconButton md-icon">&#xE8B8;</i>
+                    </button>
+
+                    <button is="paper-icon-button-light" type="button" class="paper-icon-button-light btnOsdMore btnOsdMore-bottom hide" title="${More}" aria-label="${More}">
+                        <i class="md-icon">more_horiz</i>
+                    </button>
+                    <button is="paper-icon-button-light" class="btnPip hide" title="${PictureInPicture}" aria-label="${PictureInPicture}">
+                        <i class="md-icon">&#xE911;</i>
+                    </button>
+                    <button is="paper-icon-button-light" class="btnFullscreen hide" title="${Fullscreen}" aria-label="${Fullscreen}">
+                        <i class="md-icon">&#xE5D0;</i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="videoOsdBottom-contentbuttons flex align-items-center justify-content-center flex-direction-row focuscontainer-x focusable hide" data-focusabletype="nearest">
+
+                <button is="paper-icon-button-light" class="btnLyrics hide toggleButton osdContentSectionToggleButton" data-contentsection="lyrics" title="${Lyrics}" aria-label="${Lyrics}">
+                    <i class="md-icon toggleButtonIcon osdContentSectionToggleButtonIcon">&#xec0b;</i>
+                </button>
+
+                <button is="paper-icon-button-light" class="btnPlayQueue toggleButton toggleButton-active osdContentSectionToggleButton" data-contentsection="playqueue" title="${HeaderPlayQueue}" aria-label="${HeaderPlayQueue}">
+                    <i class="md-icon toggleButtonIcon toggleButtonIcon-active osdContentSectionToggleButtonIcon autortl">&#xe241;</i>
+                </button>
+
+                <button is="paper-icon-button-light" class="btnVideoOsdSettings btnVideoOsdSettings-transport hide" title="${Settings}" aria-label="${Settings}">
+                    <i class="largePaperIconButton md-icon">&#xE8B8;</i>
+                </button>
+
+            </div>
+
+            <div is="emby-tabs" class="videoOsdBottom-tabs flex flex-direction-row align-items-center focuscontainer-x hide" data-index="-1">
+
+                <div class="flex emby-tabs-slider scrollX hiddenScrollX scrollSliderX videoosd-tabsslider">
+                    <button is="paper-icon-button-light" class="btnCloseTabContent md-icon hide-mouse-idle-tv secondaryText hide" title="${Close}" aria-label="${Close}">expand_more</button>
+                    <button type="button" is="emby-button" class="emby-tab-button emby-button videoosd-tab-button secondaryText hide" data-index="0">${信息}</button>
+                    <button type="button" is="emby-button" class="emby-tab-button emby-button videoosd-tab-button secondaryText hide" data-index="1">${章节}</button>
+                    <button type="button" is="emby-button" class="emby-tab-button emby-button videoosd-tab-button secondaryText hide" data-index="2">${演员}</button>
+                    <button type="button" is="emby-button" class="emby-tab-button emby-button videoosd-tab-button secondaryText hide" data-index="3">${节目}</button>
+                    <button type="button" is="emby-button" class="emby-tab-button emby-button videoosd-tab-button secondaryText hide" data-index="4">${指南}</button>
+
+                </div>
+            </div>
+
+            <div class="videoosd-tabcontainers hide videoosd-tabcontainers-hidden flex">
+                <div class="videoosd-tab flex flex-direction-row flex-grow videoosd-infotab videoosd-padded-left videoosd-padded-right videoosd-tabBackground" data-index="0">
+                </div>
+
+                <div class="videoosd-tab videoosd-itemstab flex-grow focuscontainer-x" data-index="1">
+
+                </div>
+
+                <div class="videoosd-tab videoosd-itemstab flex-grow focuscontainer-x" data-index="2">
+
+                </div>
+
+                <div class="videoosd-tab videoosd-itemstab flex-grow focuscontainer-x" data-index="3">
+
+                </div>
+
+                <div class="videoosd-tab flex-grow focuscontainer-x videoosd-guidetab" data-index="4" style="padding-top:0;">
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

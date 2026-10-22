@@ -4,7 +4,8 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
-const BASE_PRELOAD_PATH = 'vendor/carnival/electronapp/preload.js';
+const templates=require('./runtime-template-input.cjs');
+const BASE_PRELOAD_PATH = 'tools/templates/runtime/preload.js';
 const PREPARED_PRELOAD_PATH = 'src/electronapp/preload.js';
 const RUNTIME_PRELOAD_PATH = 'electronapp/preload.js';
 const PREPARED_PRELOAD_MARKER = 'ETE_PREPARED_PRELOAD_V1';
@@ -93,7 +94,8 @@ function prepare(root) {
     const preparedPath = path.join(repositoryRoot, PREPARED_PRELOAD_PATH);
     if (!fs.existsSync(vendorPath)) throw new Error('Vendor preload is missing: ' + BASE_PRELOAD_PATH);
 
-    const vendorText = fs.readFileSync(vendorPath, 'utf8');
+    const template=templates.read(repositoryRoot,'electronapp/preload.js');
+    const vendorText = template.bytes.toString('utf8');
     const preparedText = buildPreparedPreload(vendorText);
     fs.mkdirSync(path.dirname(preparedPath), {recursive: true});
     let changed = true;
@@ -106,6 +108,7 @@ function prepare(root) {
         preparedPath: PREPARED_PRELOAD_PATH,
         runtimePath: RUNTIME_PRELOAD_PATH,
         baseSha256: sha256(Buffer.from(vendorText, 'utf8')),
+        sourceTemplateSha256:template.sourceSha256,baseRelation:'locked source template -> exact legacy bridge base',
         preparedSha256: sha256(Buffer.from(preparedText, 'utf8')),
         changed: changed
     };

@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "sourceRoot": "tools/templates/runtime",
+  "fileCount": 3,
+  "bytes": 3216,
+  "files": [
+    {
+      "kind": "package",
+      "runtimePath": "electronapp/package.json",
+      "sourcePath": "tools/templates/runtime/package.json",
+      "origin": {
+        "repository": "https://github.com/MediaBrowser/emby-theater-electron",
+        "commit": "e897adda583b2339f077cb67113e71326a806de0",
+        "path": "package.json",
+        "upstreamLfSha256": "0d5aada218fa675fdfa151c2fb28204b869ca7de2c0b9115c716fe73ee2c550b",
+        "difference": "Only legacy version 3.0.20 -> 3.0.20-3.0; normal product generator still replaces name/productName/version",
+        "notice": "Upstream repository LICENSE.md GPL-2.0; preserve inherited package metadata including its MIT declaration without treating that as a repository-wide license override"
+      },
+      "sourceSize": 861,
+      "sourceSha256": "a1281f2708d9747ee512675f076a2e5c83b1b38eec3b8a40377a8473f2432d51",
+      "transform": "lf-to-crlf",
+      "size": 898,
+      "sha256": "a4a3b715e426dfe58e05f7bbcf95124e0a90ba865022290de71d239317775f20"
+    },
+    {
+      "kind": "preload",
+      "runtimePath": "electronapp/preload.js",
+      "sourcePath": "tools/templates/runtime/preload.js",
+      "origin": {
+        "status": "unresolved",
+        "source": "Existing seven-line Carnival bridge compatibility template",
+        "difference": "None; preserve window.ipc/window.fs/window.dirName/window.appdata interfaces",
+        "notice": "Original author and exact upstream provenance not established; not claimed as ETE original work. Local-only pending separate public distribution review."
+      },
+      "sourceSize": 207,
+      "sourceSha256": "2d1f39a8771dfe6f4bfa03c13a98bc6a19e50f5b2e814721d33f56183fabea38",
+      "transform": "lf-to-crlf",
+      "size": 214,
+      "sha256": "d84006412b38a7eeeafefc9fe94af63d9f0aed3eff3c6ceb83d37aa400515575"
+    },
+    {
+      "kind": "host-config",
+      "runtimePath": "Emby.Theater.exe.config",
+      "sourcePath": "tools/templates/runtime/Emby.Theater.exe.config",
+      "origin": {
+        "repository": "https://github.com/MediaBrowser/emby-theater-windows",
+        "commit": "708fadc068cbf66ced6aece4a32f3e12bb2c4e13",
+        "path": "Emby.Theater/App.config",
+        "upstreamLfSha256": "3b012466f0fae68940ea37700954cb91cacca043513b1d3113807bde0372db36",
+        "releaseUrl": "https://github.com/MediaBrowser/emby-theater-windows/releases/download/3.0.20/emby-theater-x64.zip",
+        "releaseSha256": "3bc01d288d64046483ef12a8e5a70cc31b6d8b65ed9ee1837554ab7eba797c4c",
+        "difference": "None after LF normalization; exact release member bytes match current base",
+        "notice": "Upstream repository LICENSE.md GPL-2.0"
+      },
+      "sourceSize": 2057,
+      "sourceSha256": "3b012466f0fae68940ea37700954cb91cacca043513b1d3113807bde0372db36",
+      "transform": "lf-to-crlf",
+      "size": 2104,
+      "sha256": "9ec676fe7fdc6bf8bb034bca5b601d0c8006e6b684433a8c1412efe32cf10c71"
+    }
+  ]
+}

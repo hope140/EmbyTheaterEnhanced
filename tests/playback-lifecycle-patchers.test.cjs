@@ -34,7 +34,7 @@ test('VideoOSD patcher is wired as a pinned overlay and build input', () => {
     const overlay = overlays.WEB_OVERLAY_CONTRACT.find(item => item.id === 'videoosd-lifecycle');
 
     assert.ok(overlay, 'VideoOSD lifecycle overlay must exist');
-    assert.equal(overlay.basePath, 'vendor/carnival/electronapp/www/videoosd/videoosd.js');
+    assert.equal(overlay.basePath, 'vendor/web-snapshot/www/videoosd/videoosd.js');
     assert.equal(overlay.runtimePath, 'electronapp/www/videoosd/videoosd.js');
     assert.equal(overlay.expectedBaseSha256.toLowerCase(),
         '86ab60c897e827b5152435350fe7b3801d8afd6b8889eef96e9996e71bb5eeab');

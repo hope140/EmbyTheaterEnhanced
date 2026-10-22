@@ -1,0 +1,182 @@
+.toast-group {
+  position: fixed;
+  z-index: 9999999;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-justify-content: center;
+  justify-content: center;
+  gap: 1vh;
+  pointer-events: none;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+  padding-bottom: 8vh;
+  padding-bottom: calc(8vh + env(safe-area-inset-bottom, 0));
+  font-size: 110%;
+}
+[class*="accent-"].noScrollY.transparentDocument .toast-group {
+  position: relative;
+  transform: translate(-50%, -50%);
+  top: 15%;
+  left: 50%;
+}
+@media not all and (min-width: 50em) {
+  .toast-group {
+    font-size: 87%;
+  }
+}
+.toast-group-top {
+  -webkit-flex-direction: column-reverse;
+  flex-direction: column-reverse;
+  bottom: initial;
+  -webkit-align-items: flex-end;
+  align-items: flex-end;
+  top: 0;
+  padding-bottom: 0;
+  padding-top: 2em;
+  padding-top: calc(2em + env(safe-area-inset-top, 0));
+  -webkit-padding-end: 2em;
+  padding-inline-end: 2em;
+  -webkit-padding-end: calc(2em + env(safe-area-inset-right, 0));
+  padding-inline-end: calc(2em + env(safe-area-inset-right, 0));
+}
+.toast {
+  font-size: inherit;
+  font-family: inherit;
+  font-weight: inherit;
+  max-inline-size: min(60ch, 90vw);
+  padding: 1.5ch 2ch;
+  border-radius: 0.42em;
+  will-change: transform;
+  -webkit-animation: toast-fade-in 0.3s ease, toast-slide-in 0.3s ease, toast-fade-out 0.3s ease 3s;
+  animation: toast-fade-in 0.3s ease, toast-slide-in 0.3s ease, toast-fade-out 0.3s ease 3s;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-direction: row;
+  flex-direction: row;
+  -webkit-align-items: center;
+  align-items: center;
+}
+.toast-top {
+  -webkit-animation: toast-fade-in 0.3s ease, toast-slide-in-top 0.3s ease, toast-fade-out 0.3s ease 3s;
+  animation: toast-fade-in 0.3s ease, toast-slide-in-top 0.3s ease, toast-fade-out 0.3s ease 3s;
+}
+.toast-center {
+  -webkit-animation: toast-scale-up 0.3s ease-out, toast-scale-down 0.3s ease-out 3s;
+  animation: toast-scale-up 0.3s ease-out, toast-scale-down 0.3s ease-out 3s;
+  position: fixed;
+  top: 50%;
+  inset-inline-start: 50%;
+  width: 16em;
+  height: 17em;
+  -webkit-margin-start: -8em;
+  margin-inline-start: -8em;
+  margin-top: -8.5em;
+  -webkit-justify-content: center;
+  justify-content: center;
+  overflow: hidden;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+  padding-top: 0;
+  padding-bottom: 0;
+  z-index: 9999999;
+}
+.toast-primarytext {
+  margin: 0;
+}
+.toast-secondaryText {
+  font-size: 92%;
+  margin-top: 0.25em;
+}
+.toast-icon {
+  font-size: 160%;
+  margin: 0;
+  -webkit-margin-end: 0.5em;
+  margin-inline-end: 0.5em;
+}
+.toast-icon-center {
+  font-size: 800%;
+  -webkit-flex-shrink: 0;
+  flex-shrink: 0;
+  width: 1em;
+  height: 1em;
+  margin: 0;
+}
+@-webkit-keyframes toast-scale-up {
+  0% {
+    -webkit-transform: scale(0.8);
+    transform: scale(0.8);
+    opacity: 0;
+  }
+}
+@keyframes toast-scale-up {
+  0% {
+    -webkit-transform: scale(0.8);
+    transform: scale(0.8);
+    opacity: 0;
+  }
+}
+@-webkit-keyframes toast-scale-down {
+  to {
+    -webkit-transform: scale(0.8);
+    transform: scale(0.8);
+    opacity: 0;
+  }
+}
+@keyframes toast-scale-down {
+  to {
+    -webkit-transform: scale(0.8);
+    transform: scale(0.8);
+    opacity: 0;
+  }
+}
+@-webkit-keyframes toast-fade-in {
+  0% {
+    opacity: 0;
+  }
+}
+@keyframes toast-fade-in {
+  0% {
+    opacity: 0;
+  }
+}
+@-webkit-keyframes toast-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes toast-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@-webkit-keyframes toast-slide-in {
+  0% {
+    -webkit-transform: translateY(5vh);
+    transform: translateY(5vh);
+  }
+}
+@keyframes toast-slide-in {
+  0% {
+    -webkit-transform: translateY(5vh);
+    transform: translateY(5vh);
+  }
+}
+@-webkit-keyframes toast-slide-in-top {
+  0% {
+    -webkit-transform: translateY(-5vh);
+    transform: translateY(-5vh);
+  }
+}
+@keyframes toast-slide-in-top {
+  0% {
+    -webkit-transform: translateY(-5vh);
+    transform: translateY(-5vh);
+  }
+}

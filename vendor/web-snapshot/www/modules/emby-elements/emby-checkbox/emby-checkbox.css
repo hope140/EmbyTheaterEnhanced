@@ -1,0 +1,182 @@
+.emby-checkbox-label {
+  position: relative;
+  vertical-align: middle;
+  display: -webkit-inline-flex;
+  display: inline-flex;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  -webkit-align-items: center;
+  align-items: center;
+  cursor: pointer;
+  outline: 0 !important;
+}
+.checkboxFieldDescription {
+  -webkit-padding-start: 2.4em;
+  padding-inline-start: 2.4em;
+}
+.checkboxContainer {
+  margin-top: 0.25em;
+  margin-bottom: 1.5em;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-shrink: 0;
+  flex-shrink: 0;
+}
+.listItem .checkboxContainer {
+  margin-bottom: 0;
+}
+.checkboxListContainer {
+  margin-bottom: 1.41em;
+}
+.checkboxContainer-withDescription {
+  -webkit-flex-direction: column;
+  flex-direction: column;
+}
+.emby-checkbox {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  border: none;
+  outline: 0 !important;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+}
+.checkboxLabel {
+  position: relative;
+  margin: 0;
+  display: -webkit-inline-flex;
+  display: inline-flex;
+  -webkit-align-items: flex-start;
+  align-items: flex-start;
+  border-radius: 0.42em;
+  -webkit-padding-end: 0.5em;
+  padding-inline-end: 0.5em;
+}
+.emby-checkbox-notext + .checkboxLabel {
+  -webkit-padding-end: 0;
+  padding-inline-end: 0;
+}
+.checkboxList > .emby-checkbox-label {
+  display: -webkit-flex;
+  display: flex;
+  margin: 1em 0;
+}
+.checkboxListLabel {
+  margin-bottom: 0.5em;
+}
+.checkboxLabel::before {
+  content: "";
+  display: inline-block;
+  height: 1.56em;
+  width: 1.56em;
+  border: 0.16em solid;
+  border-radius: 0.3em;
+  position: static;
+  -webkit-margin-end: 0.5em;
+  margin-inline-end: 0.5em;
+  margin-top: -0.18em;
+  -webkit-flex-shrink: 0;
+  flex-shrink: 0;
+}
+.emby-checkbox-notext + .checkboxLabel:before {
+  -webkit-margin-end: 0;
+  margin-inline-end: 0;
+}
+.emby-checkbox[disabled] + .checkboxLabel {
+  background-color: rgba(0, 0, 0, 0.26);
+}
+.checkboxLabel::after {
+  position: absolute;
+  content: "";
+  display: inline-block;
+  height: 0.36em;
+  width: 1em;
+  border-left: 0.18em solid;
+  border-bottom: 0.18em solid;
+  -webkit-transform: rotate(-45deg);
+  transform: rotate(-45deg);
+  top: 0.32em;
+  left: 0.33em;
+  inset-inline-start: 0.33em;
+  inset-inline-end: initial;
+  color: #fff;
+}
+.emby-checkbox-notext + .checkboxLabel::after {
+  position: absolute;
+  content: "";
+  display: inline-block;
+  height: 0.54em;
+  width: 1.18em;
+  border-left: 0.18em solid;
+  border-bottom: 0.18em solid;
+  -webkit-transform: rotate(-45deg);
+  transform: rotate(-45deg);
+  top: 50%;
+  left: 50%;
+  inset-inline-start: 50%;
+  inset-inline-end: initial;
+  color: #fff;
+  margin-top: -0.4425em;
+  -webkit-margin-start: -0.59em;
+  margin-inline-start: -0.59em;
+  box-sizing: border-box;
+}
+.emby-checkbox + .checkboxLabel::after {
+  display: none;
+}
+.emby-checkbox:checked + .checkboxLabel::after {
+  display: block;
+}
+.emby-checkbox-label-tv {
+  transition: -webkit-transform 0.2s ease-out !important;
+  transition: transform 0.2s ease-out !important;
+  -webkit-transform-origin: center center;
+  transform-origin: center center;
+}
+.emby-checkbox-label-tv:focus-within {
+  -webkit-transform: scale(1.04);
+  transform: scale(1.04);
+  z-index: 1;
+}
+.emby-checkbox-tv:focus + .checkboxLabel {
+  font-weight: 500;
+}
+.emby-checkbox:focus-visible + .checkboxLabel {
+  font-weight: 500;
+}
+@media all and (min-width: 60em) {
+  .detailButton-autotext-text.autoplayButtonText {
+    margin-inline-end: 0.44em;
+    margin-inline-start: 0.44em;
+    display: inline;
+  }
+  .btnAutoPlay.detailButton.detailButton-autotext.emby-button {
+    min-width: 7em;
+  }
+  .btnAutoPlay .autoplayButtonText {
+    color: inherit;
+  }
+}
+.emby-checkbox-label-ExternalPlayerSwitch {
+  margin-top: 1.7em;
+  margin-bottom: 1em;
+  margin-left: 1.2em;
+  font-size: 100%;
+}
+.emby-checkbox-label-ExternalPlayerSwitch .checkboxLabel::before {
+  border-radius: 0.9em;
+  font-size: 0.72em;
+  margin-top: 0em;
+}
+.emby-checkbox-label-ExternalPlayerSwitch .checkboxLabel::after {
+  font-size: 0.84em;
+  left: 0.16em;
+  top: 0.39em;
+} 

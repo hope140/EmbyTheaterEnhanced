@@ -63,6 +63,11 @@ function fixture(t) {
         'electronapp/www/modules/externalplayer/old.js': 'retired Web',
         'x64/electron/electron.exe': 'retired electron',
         'external/retained.glsl': 'retained shader',
+        'MediaBrowser.Model.dll': 'unchanged Model fixture',
+        'cec-driver/cancel': '',
+        'config/system.xml': '<synthetic-config autoUpdate="unchanged"/>',
+        'electronapp/plugins/mpvplayer/strings/zh-CN.json': '{"synthetic":"translation"}',
+        '\u6ce8\u610f\u4e8b\u9879.txt': 'synthetic historical notice',
         'electronapp/node_modules/long/package.json': '{"name":"long","version":"3.2.0"}',
         'electronapp/node_modules/long/legacy.js': 'old dependency residue'
     };
@@ -81,7 +86,35 @@ function fixture(t) {
     json(source, 'package-lock.json', JSON.parse(fs.readFileSync(path.join(root, 'package-lock.json'))));
     json(source, 'node_modules/long/package.json', {name: 'long', version: '5.3.2'});
     write(source, 'node_modules/long/index.js', 'new dependency');
-    json(root, 'vendor/runtime-manifest.json', {schemaVersion: 1, files: inventory(vendor)});
+    const legacyFiles = inventory(vendor);
+    const patchBytes=Buffer.from('current libmpv fixture');
+    write(root,'vendor/patch/payload/libmpv/mpv-1.dll',patchBytes);
+    write(root,'vendor/patch/install-all.bat','historical script');
+    const patchFiles=[{path:'payload/libmpv/mpv-1.dll',sha256:sha(patchBytes)},
+        {path:'install-all.bat',sha256:sha(Buffer.from('historical script'))}];
+    json(root, 'vendor/runtime-manifest.json', {schemaVersion: 1, files: legacyFiles,patchFiles});
+    fs.mkdirSync(path.join(root,'vendor/patch'),{recursive:true});
+    const web = require('../tools/web-snapshot-input.cjs');
+    const webFiles = legacyFiles.filter(item => item.path.startsWith('electronapp/www/') &&
+        !item.path.startsWith('electronapp/www/modules/externalplayer/')).map(item => ({
+        ...item, originalPath:item.path, path:'www/'+item.path.slice('electronapp/www/'.length)
+    }));
+    for (const item of webFiles) write(root,'vendor/web-snapshot/'+item.path,
+        fs.readFileSync(path.join(vendor,item.originalPath)));
+    json(root, web.MANIFEST_PATH, {schemaVersion:1,inputRoot:web.INPUT_ROOT,files:webFiles,userPatches:[],
+        fileCount:webFiles.length,bytes:webFiles.reduce((n,f)=>n+f.size,0),treeSha256:web.treeHash(webFiles)});
+    const host=require('../tools/windows-host-input.cjs');
+    const hostFiles=legacyFiles.filter(item=>item.path==='Emby.Theater.exe');
+    for(const item of hostFiles)write(root,host.INPUT_ROOT+'/'+item.path,fs.readFileSync(path.join(vendor,item.path)));
+    json(root,host.MANIFEST_PATH,{schemaVersion:1,version:'3.0.20',inputRoot:host.INPUT_ROOT,files:hostFiles,
+        fileCount:hostFiles.length,bytes:hostFiles.reduce((n,f)=>n+f.size,0),treeSha256:web.treeHash(hostFiles),
+        archive:{size:1,sha256:'0'.repeat(64)}});
+    require('./helpers/inherited-npm-fixture.cjs').create(root);
+    require('./helpers/runtime-template-fixture.cjs').create(root);
+    require('./helpers/libmpv-fixture.cjs').create(root);
+    require('./helpers/small-runtime-fixture.cjs').create(root,true);
+    require('./helpers/model-compatibility-fixture.cjs').create(root,true);
+    require('./helpers/compatibility-fixture.cjs').create(root,legacyFiles.filter(e=>require('../tools/compatibility-resources-input.cjs').isCompatibility(e.path)));
     write(root, 'src/electronapp/main.js', 'committed main');
     write(root, '.gitignore', '/vendor/carnival/\n/dist/\n/.work/\n');
     git(root, ['init', '-q']);
@@ -125,28 +158,176 @@ test('plan identifies retained inputs, templates, replacements and retired files
     const f = fixture(t);
     const plan = assembly.plan(f.root, f.commit);
     const byPath = new Map(plan.entries.map(entry => [entry.path, entry]));
-    assert.equal(byPath.get('Emby.Theater.exe').action, 'copy');
-    assert.equal(byPath.get('electronapp/main.js').reason, 'committed-product-source');
-    assert.equal(byPath.get('electronapp/www/index.html').reason, 'generated-web-overlay');
-    assert.equal(byPath.get('electronapp/www/modules/common/playback/playbackmanager.js').reason, 'playbackmanager-template');
-    assert.equal(byPath.get('electronapp/node_modules/long/legacy.js').action, 'replace');
-    assert.equal(byPath.get('external/retained.glsl').action, 'copy');
+    assert.equal(byPath.has('Emby.Theater.exe'), false);
+    assert.equal(plan.windowsHost.fileCount,1);
+    assert.equal(byPath.has('electronapp/main.js'),false);
+    assert.equal(plan.historicalEntries.find(item=>item.path==='electronapp/main.js').reason,'committed-product-source');
+    assert.equal(byPath.has('electronapp/www/index.html'), false);
+    assert.equal(byPath.has('electronapp/www/modules/common/playback/playbackmanager.js'), false);
+    assert.equal(plan.webSnapshot.fileCount, 3);
+    assert.equal(byPath.has('electronapp/node_modules/long/legacy.js'),false);
+    assert.equal(plan.historicalEntries.find(item=>item.path==='electronapp/node_modules/long/legacy.js').action,'replace');
+    assert.equal(byPath.has('external/retained.glsl'),false);
+    assert.equal(plan.compatibilityResources.fileCount,1);
+    assert.equal(plan.smallRuntime.fileCount,4);
+    assert.deepEqual(plan.entries,[]);
+    assert.equal(plan.modelCompatibility.fileCount,1);
     assert.equal(plan.groups.reduce((total, group) => total + group.fileCount, 0), plan.entries.length);
     assert.deepEqual(fs.readdirSync(f.runtime), [dependencies.OWNER_FILE]);
     assert.equal(overlays.WEB_OVERLAY_CONTRACT.some(item => item.runtimePath === 'electronapp/www/index.html'), true);
 });
 
-for (const mutation of ['changed-retained', 'changed-excluded', 'extra', 'missing']) {
+test('production material gate and base assembly work when old www is absent',t=>{
+    const f=fixture(t);
+    fs.rmSync(path.join(f.vendor,'electronapp/www'),{recursive:true});
+    const materials=require('../tools/validate-build-materials.cjs');
+    assert.equal(materials.validate(f.root).status,'passed');
+    assert.equal(assembly.assemble(f.root,f.commit,f.runtime,f.token).webInput.fileCount,3);
+    assert.equal(fs.readFileSync(path.join(f.runtime,'electronapp/www/unchanged.js'),'utf8'),'unchanged Web');
+    assert.equal(fs.existsSync(path.join(f.runtime,'electronapp/www/modules/externalplayer')),false);
+    assert.equal(fs.existsSync(path.join(f.vendor,'electronapp/www')),false);
+});
+
+test('official Host component replaces old Host input in the production material gate and assembly',t=>{
+    const f=fixture(t);
+    fs.unlinkSync(path.join(f.vendor,'Emby.Theater.exe'));
+    assert.equal(require('../tools/validate-build-materials.cjs').validate(f.root).hostInput.fileCount,1);
+    assert.equal(assembly.assemble(f.root,f.commit,f.runtime,f.token).hostInput.fileCount,1);
+    assert.equal(fs.readFileSync(path.join(f.runtime,'Emby.Theater.exe'),'utf8'),'host bytes');
+    assert.equal(fs.existsSync(path.join(f.vendor,'Emby.Theater.exe')),false);
+});
+
+test('independent inherited npm replaces the complete absent old npm directory',t=>{
+    const f=fixture(t),npm=require('../tools/inherited-npm-input.cjs');
+    fs.rmSync(path.join(f.vendor,'electronapp/node_modules'),{recursive:true});
+    const material=require('../tools/validate-build-materials.cjs').validate(f.root);
+    const report=assembly.assemble(f.root,f.commit,f.runtime,f.token);
+    assert.equal(material.inheritedNpm.fileCount,npm.load(f.root).fileCount);
+    assert.equal(report.inheritedNpm.treeSha256,npm.validateRuntime(f.root,f.runtime).treeSha256);
+    assert.equal(fs.existsSync(path.join(f.vendor,'electronapp/node_modules')),false);
+});
+
+test('maintained templates replace all three absent old template inputs',t=>{
+    const f=fixture(t),templates=require('../tools/runtime-template-input.cjs');
+    for(const name of Object.keys(templates.FILES))fs.unlinkSync(path.join(f.vendor,name));
+    const material=require('../tools/validate-build-materials.cjs').validate(f.root);
+    assembly.assemble(f.root,f.commit,f.runtime,f.token);
+    assert.equal(material.runtimeTemplates.fileCount,3);
+    assert.deepEqual(fs.readFileSync(path.join(f.runtime,'electronapp/package.json')),templates.read(f.root,'electronapp/package.json').bytes);
+    for(const name of Object.keys(templates.FILES))assert.equal(fs.existsSync(path.join(f.vendor,name)),false);
+});
+
+test('official resource whitelist replaces old XML, sync and English language inputs without changing bytes',t=>{
+    const f=fixture(t),host=require('../tools/windows-host-input.cjs');
+    const manifest=JSON.parse(fs.readFileSync(path.join(f.root,'vendor/runtime-manifest.json')));
+    const component=host.load(f.root),added=['ServiceStack.Text.xml','SimpleInjector.xml','System.Configuration.xml','electronapp/scripts/windowsync.js','electronapp/plugins/mpvplayer/strings/en-US.json'];
+    for(const name of added){const bytes=Buffer.from('synthetic official resource: '+name),entry={path:name,size:bytes.length,sha256:sha(bytes)};
+        manifest.files.push(entry);component.files.push(entry);write(f.root,host.INPUT_ROOT+'/'+name,bytes);
+    }
+    component.fileCount=component.files.length;component.bytes=component.files.reduce((n,e)=>n+e.size,0);component.treeSha256=require('../tools/web-snapshot-input.cjs').treeHash(component.files);
+    json(f.root,'vendor/runtime-manifest.json',manifest);json(f.root,host.MANIFEST_PATH,component);
+    git(f.root,['add','vendor/runtime-manifest.json',host.MANIFEST_PATH]);git(f.root,['commit','-q','-m','synthetic official resource whitelist']);
+    const commit=git(f.root,['rev-parse','HEAD']),runtime=path.join(f.root,'dist/resources-candidate');fs.mkdirSync(runtime);const token=dependencies.createOwner(f.root,runtime,commit);
+    assert.equal(require('../tools/validate-build-materials.cjs').validate(f.root).hostInput.fileCount,6);
+    assembly.assemble(f.root,commit,runtime,token);
+    for(const name of added){assert.equal(fs.existsSync(path.join(f.vendor,name)),false);assert.deepEqual(fs.readFileSync(path.join(runtime,name)),fs.readFileSync(path.join(f.root,host.INPUT_ROOT,name)));}
+});
+
+for (const mutation of ['changed-retained', 'extra', 'missing']) {
     test('preflight rejects ' + mutation + ' input before writing any payload', t => {
         const f = fixture(t);
-        if (mutation === 'changed-retained') write(f.vendor, 'Emby.Theater.exe', 'changed');
-        if (mutation === 'changed-excluded') write(f.vendor, 'x64/electron/electron.exe', 'changed');
-        if (mutation === 'extra') write(f.vendor, 'unexpected.js', 'extra');
-        if (mutation === 'missing') fs.unlinkSync(path.join(f.vendor, 'Emby.Theater.exe'));
-        assert.throws(() => assembly.assemble(f.root, f.commit, f.runtime, f.token), /input/);
+        if (mutation === 'changed-retained') write(f.root, 'vendor/compatibility-resources/snapshot-v1/external/retained.glsl', 'changed');
+        if (mutation === 'extra') write(f.root, 'vendor/model-compatibility/snapshot-v1/unexpected.js', 'extra');
+        if (mutation === 'missing') fs.unlinkSync(path.join(f.root,'vendor/compatibility-resources/snapshot-v1/external/retained.glsl'));
+        assert.throws(() => assembly.assemble(f.root, f.commit, f.runtime, f.token), /input|identity/);
         assert.deepEqual(fs.readdirSync(f.runtime), [dependencies.OWNER_FILE]);
     });
 }
+
+test('all gate-only predecessor files and unused patch scripts may be absent',t=>{
+    const f=fixture(t),plan=assembly.plan(f.root,f.commit);
+    for(const item of plan.historicalEntries)fs.unlinkSync(path.join(f.vendor,item.path));
+    fs.unlinkSync(path.join(f.root,'vendor/patch/install-all.bat'));
+    const material=require('../tools/validate-build-materials.cjs').validate(f.root);
+    assert.equal(material.remainingCarnivalFiles,plan.entries.length);
+    assert.equal(material.remainingPatchFiles,0);
+    assert.equal(material.historicalPatchFiles,2);
+    assembly.assemble(f.root,f.commit,f.runtime,f.token);
+    assert.equal(fs.existsSync(path.join(f.runtime,'x64/electron/electron.exe')),false);
+    assert.equal(fs.existsSync(path.join(f.runtime,'electronapp/libmpv/x64/mpv-win32-x64.node')),false);
+});
+
+test('changed retired files are not read or copied, while consumed templates remain checked',t=>{
+    const f=fixture(t);
+    write(f.vendor,'x64/electron/electron.exe','changed historical body');
+    write(f.vendor,'electronapp/main.js','changed historical source');
+    write(f.vendor,'electronapp/libmpv/x64/mpv-1.dll','changed historical mpv');
+    assert.equal(require('../tools/validate-build-materials.cjs').validate(f.root).status,'passed');
+    write(f.root,'tools/templates/runtime/preload.js','changed consumed template');
+    assert.throws(()=>assembly.assemble(f.root,f.commit,f.runtime,f.token),/identity mismatch/);
+    assert.deepEqual(fs.readdirSync(f.runtime),[dependencies.OWNER_FILE]);
+});
+
+test('current independent libmpv hashes and component extras stay strict',t=>{
+    const f=fixture(t),materials=require('../tools/validate-build-materials.cjs');
+    write(f.root,'vendor/libmpv/20260809/unexpected.dll','extra');
+    assert.throws(()=>materials.validate(f.root),/Unexpected Web snapshot input/);
+    fs.unlinkSync(path.join(f.root,'vendor/libmpv/20260809/unexpected.dll'));
+    write(f.root,'vendor/libmpv/20260809/mpv-1.dll','changed current libmpv');
+    assert.throws(()=>materials.validate(f.root),/identity mismatch/);
+});
+
+test('the entire old patch directory may be absent through validation and current DLL assembly',t=>{
+    const f=fixture(t),libmpv=require('../tools/libmpv-input.cjs');fs.rmSync(path.join(f.root,'vendor/patch'),{recursive:true});
+    const report=require('../tools/validate-build-materials.cjs').validate(f.root);assert.equal(report.remainingPatchFiles,0);assert.equal(report.historicalPatchDirectoryRead,false);
+    assembly.assemble(f.root,f.commit,f.runtime,f.token);libmpv.assemble(f.root,f.runtime);
+    assert.equal(libmpv.validateRuntime(f.root,f.runtime).status,'passed');assert.equal(fs.existsSync(path.join(f.root,'vendor/patch')),false);
+});
+
+test('old external resource directories may be absent while exact snapshot output remains checked',t=>{
+    const f=fixture(t),compatibility=require('../tools/compatibility-resources-input.cjs');fs.rmSync(path.join(f.vendor,'external'),{recursive:true});
+    assert.equal(require('../tools/validate-build-materials.cjs').validate(f.root).compatibilityResources.fileCount,1);assembly.assemble(f.root,f.commit,f.runtime,f.token);
+    assert.equal(compatibility.validateRuntime(f.root,f.runtime).status,'passed');assert.equal(fs.existsSync(path.join(f.vendor,'external')),false);
+});
+
+test('all four old small paths may be absent while configuration and Model remain unchanged',t=>{
+    const f=fixture(t),small=require('../tools/small-runtime-input.cjs');
+    const expectedConfig=fs.readFileSync(path.join(f.vendor,'config/system.xml'));
+    for(const name of small.SMALL_PATHS)fs.unlinkSync(path.join(f.vendor,name));
+    const report=require('../tools/validate-build-materials.cjs').validate(f.root);
+    assert.equal(report.remainingCarnivalFiles,0);
+    assert.equal(report.remainingPatchFiles,0);
+    assert.equal(report.smallRuntimeInput.fileCount,4);
+    assembly.assemble(f.root,f.commit,f.runtime,f.token);
+    assert.equal(small.validateRuntime(f.root,f.runtime).status,'passed');
+    assert.deepEqual(fs.readFileSync(path.join(f.runtime,'config/system.xml')),expectedConfig);
+    assert.deepEqual(fs.readFileSync(path.join(f.runtime,'MediaBrowser.Model.dll')),fs.readFileSync(path.join(f.vendor,'MediaBrowser.Model.dll')));
+    for(const name of small.SMALL_PATHS)assert.equal(fs.existsSync(path.join(f.vendor,name)),false);
+});
+
+test('remaining Model identity and independent configuration keep strict preflight validation',t=>{
+    const f=fixture(t),small=require('../tools/small-runtime-input.cjs');
+    const modelInput=path.join(f.root,'vendor/model-compatibility/snapshot-v1/MediaBrowser.Model.dll');
+    const model=fs.readFileSync(modelInput);
+    fs.writeFileSync(modelInput,'changed Model');
+    assert.throws(()=>assembly.assemble(f.root,f.commit,f.runtime,f.token),/identity/);
+    assert.deepEqual(fs.readdirSync(f.runtime),[dependencies.OWNER_FILE]);
+    fs.writeFileSync(modelInput,model);
+    write(f.root,small.INPUT_ROOT+'/config/system.xml','changed configuration');
+    assert.throws(()=>assembly.assemble(f.root,f.commit,f.runtime,f.token),/snapshot identity/);
+    assert.deepEqual(fs.readdirSync(f.runtime),[dependencies.OWNER_FILE]);
+});
+
+test('normal assembly and material gate ignore entirely absent old directories',t=>{
+    const f=fixture(t),model=require('../tools/model-compatibility-input.cjs');
+    fs.renameSync(f.vendor,path.join(f.root,'historical-material-not-an-input'));
+    fs.renameSync(path.join(f.root,'vendor/patch'),path.join(f.root,'historical-patch-not-an-input'));
+    const report=require('../tools/validate-build-materials.cjs').validate(f.root);
+    assert.equal(report.remainingCarnivalFiles,0);assert.equal(report.remainingPatchFiles,0);
+    assembly.assemble(f.root,f.commit,f.runtime,f.token);
+    assert.equal(model.validateRuntime(f.root,f.runtime).status,'passed');
+    assert.equal(fs.existsSync(f.vendor),false);
+});
 
 test('assembly refuses wrong ownership, commit, occupied destinations and repeat attempts', t => {
     const f = fixture(t);
@@ -165,9 +346,9 @@ test('input and runtime junctions are rejected without touching their targets', 
     const external = path.join(f.root, 'external-target');
     fs.mkdirSync(external);
     write(external, 'sentinel', 'preserve');
-    fs.renameSync(path.join(f.vendor, 'external'), path.join(f.root, 'saved-input'));
-    fs.symlinkSync(external, path.join(f.vendor, 'external'), process.platform === 'win32' ? 'junction' : 'dir');
-    assert.throws(() => assembly.assemble(f.root, f.commit, f.runtime, f.token), /link or redirect/);
+    fs.renameSync(path.join(f.root,'vendor/compatibility-resources/snapshot-v1/external'), path.join(f.root, 'saved-input'));
+    fs.symlinkSync(external, path.join(f.root,'vendor/compatibility-resources/snapshot-v1/external'), process.platform === 'win32' ? 'junction' : 'dir');
+    assert.throws(() => assembly.assemble(f.root, f.commit, f.runtime, f.token), /link.*redirect|symlink|junction/);
     assert.deepEqual(fs.readdirSync(f.runtime), [dependencies.OWNER_FILE]);
     const linkedRuntime = path.join(f.root, 'dist/linked');
     fs.symlinkSync(external, linkedRuntime, process.platform === 'win32' ? 'junction' : 'dir');

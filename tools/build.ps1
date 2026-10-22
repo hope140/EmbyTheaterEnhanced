@@ -11,21 +11,8 @@ $inputContract = $inputContractJson | ConvertFrom-Json
 $destination = Join-Path (Join-Path $root 'dist') $OutputName
 if (Test-Path -LiteralPath $destination) { throw 'Output already exists. Choose a new -OutputName; builds never overwrite prior artifacts.' }
 $manifest = Get-Content -LiteralPath (Join-Path $root 'vendor/runtime-manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-foreach ($group in @(@{ Root='vendor/carnival'; Files=$manifest.files }, @{ Root='vendor/patch'; Files=$manifest.patchFiles })) {
-    $groupRoot = Join-Path $root $group.Root
-    $expectedPaths = @($group.Files | ForEach-Object { $_.path })
-    $actualFiles = @(Get-ChildItem -LiteralPath $groupRoot -Recurse -File)
-    if ($actualFiles.Count -ne $expectedPaths.Count) { throw "Unexpected vendor file count: $($group.Root)" }
-    foreach ($actual in $actualFiles) {
-        $relative = $actual.FullName.Substring($groupRoot.Length + 1).Replace('\','/')
-        if ($relative -notin $expectedPaths) { throw "Unexpected vendor file: $relative" }
-    }
-    foreach ($entry in $group.Files) {
-        $file = Join-Path (Join-Path $root $group.Root) $entry.path
-        if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw "Vendor file missing: $($entry.path). Run tools/prepare.ps1." }
-        if ((Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash -ne $entry.sha256) { throw "Vendor hash mismatch: $($entry.path)" }
-    }
-}
+& node (Join-Path $root 'tools/validate-build-materials.cjs') $root
+if ($LASTEXITCODE -ne 0) { throw 'Build material validation failed.' }
 & node (Join-Path $root 'tools/prepare-preload.cjs') $root
 if ($LASTEXITCODE -ne 0) { throw 'Prepared preload generation failed.' }
 New-Item -ItemType Directory -Path $destination -Force | Out-Null
@@ -35,7 +22,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Fresh build output ownership failed.' }
 if ($LASTEXITCODE -ne 0) { throw 'Explicit runtime base assembly failed.' }
 & node (Join-Path $root 'tools/runtime-exclusions.cjs') verify $destination
 if ($LASTEXITCODE -ne 0) { throw 'Retired runtime exclusion verification failed.' }
-# Carnival Electron remains a historical baseline input. Production uses the
+# Carnival Electron is historical metadata only. Production uses the
 # exact full tree extracted from the pinned official Electron archive.
 $electronManifest = Get-Content -LiteralPath (Join-Path $root 'vendor/electron-runtime-manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $electronInputTool = Join-Path $root 'tools/electron-runtime-input.cjs'
@@ -70,7 +57,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Fresh locked runtime dependency installation f
 if ($LASTEXITCODE -ne 0) { throw 'Runtime dependency copy failed.' }
 & node (Join-Path $root 'tools/patch-playbackmanager.cjs') (Join-Path $destination 'electronapp/www/modules/common/playback/playbackmanager.js')
 if ($LASTEXITCODE -ne 0) { throw 'PlaybackManager overlay failed.' }
-Copy-Item -LiteralPath (Join-Path $root 'vendor/patch/payload/libmpv/mpv-1.dll') -Destination (Join-Path $destination 'electronapp/libmpv/x64/mpv-1.dll') -Force
+& node (Join-Path $root 'tools/libmpv-input.cjs') assemble $root $destination
+if ($LASTEXITCODE -ne 0) { throw 'Independent libmpv snapshot copy failed.' }
 & (Join-Path $root 'tools/build-native-helper.ps1') -SourceCommit $sourceCommit -RuntimeRoot $destination
 if ($LASTEXITCODE -ne 0) { throw 'Native helper build failed.' }
 & node (Join-Path $root 'tools/native-helper-provenance.cjs') $root $destination $sourceCommit

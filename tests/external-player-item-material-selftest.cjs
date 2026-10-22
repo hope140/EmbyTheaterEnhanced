@@ -15,7 +15,7 @@ const ROOT = path.resolve(__dirname, '..');
 const MATERIAL = Object.freeze([
     Object.freeze({
         id: 'item-externalplayer-residue',
-        sourcePath: 'vendor/carnival/electronapp/www/item/item.js',
+        sourcePath: 'vendor/web-snapshot/www/item/item.js',
         runtimePath: 'electronapp/www/item/item.js',
         sourceSha256: 'C8F51119365ECD2881B0A33F1F9E9DD6DA90E305572621188FB31A15FDCB4623',
         outputSha256: '72311EB4FD8E2A151B280366218A44DE802DB1083BD71DA99F9EF1CB8CC3AB11',
@@ -23,20 +23,20 @@ const MATERIAL = Object.freeze([
     }),
     Object.freeze({
         id: 'item-externalplayer-residue-template',
-        sourcePath: 'vendor/carnival/electronapp/www/item/item.html',
+        sourcePath: 'vendor/web-snapshot/www/item/item.html',
         runtimePath: 'electronapp/www/item/item.html',
         sourceSha256: 'A11D00BB58F83A9F56A16F137342D5C3B62DF03AE83436527D426B56B160A6B5',
         outputSha256: '03A897B7266A59B687E2B74A8253BE9A46FC9997FAD18BC4E956E5A5ADFA1E33',
         transform: value => itemControls.patchItemHtmlText(residue.patchItemHtmlText(value))
     })
 ]);
-const PM_PATH = 'vendor/carnival/electronapp/www/modules/common/playback/playbackmanager.js';
+const PM_PATH = 'vendor/web-snapshot/www/modules/common/playback/playbackmanager.js';
 
 function sha256(value) {
     return crypto.createHash('sha256').update(value).digest('hex').toUpperCase();
 }
 
-const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'vendor/runtime-manifest.json'), 'utf8'));
+const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'vendor/web-snapshot-manifest.json'), 'utf8'));
 for (const material of MATERIAL) {
     const sourceFile = path.join(ROOT, ...material.sourcePath.split('/'));
     if (!fs.existsSync(sourceFile) || !fs.statSync(sourceFile).isFile()) {
@@ -45,7 +45,7 @@ for (const material of MATERIAL) {
     const source = fs.readFileSync(sourceFile);
     const sourceHash = sha256(source);
     assert.equal(sourceHash, material.sourceSha256, material.sourcePath + ' source hash changed');
-    const manifestEntry = manifest.files.find(item => item.path === material.sourcePath.replace(/^vendor\/carnival\//, ''));
+    const manifestEntry = manifest.files.find(item => item.path === material.sourcePath.replace(/^vendor\/web-snapshot\//, ''));
     assert.ok(manifestEntry, 'runtime manifest must include ' + material.runtimePath);
     assert.equal(manifestEntry.sha256.toUpperCase(), sourceHash);
 
@@ -67,7 +67,7 @@ if (!fs.existsSync(playbackSourceFile) || !fs.statSync(playbackSourceFile).isFil
     throw new Error('Required PlayQueue source material is missing: ' + PM_PATH);
 }
 const playbackSource = fs.readFileSync(playbackSourceFile, 'utf8');
-const playbackEntry = manifest.files.find(item => item.path === PM_PATH.replace(/^vendor\/carnival\//, ''));
+const playbackEntry = manifest.files.find(item => item.path === PM_PATH.replace(/^vendor\/web-snapshot\//, ''));
 assert.ok(playbackEntry, 'runtime manifest must include the playback manager');
 assert.equal(sha256(Buffer.from(playbackSource)).toLowerCase(), playbackEntry.sha256.toLowerCase());
 assert.ok(playbackSource.includes('EnableNextEpisodeAutoPlay'),

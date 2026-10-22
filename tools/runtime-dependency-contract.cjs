@@ -4,6 +4,7 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const {hashTrackedTextFile} = require('./tracked-file-hash.cjs');
+const inheritedNpm = require('./inherited-npm-input.cjs');
 
 const OWNER_FILE = '.ete-build-owner.json';
 const PROVENANCE_FILE = 'runtime-dependencies.json';
@@ -251,34 +252,19 @@ function collectRetained(projectRoot, label) {
 }
 
 function loadManifestRetained(repoRoot) {
-    const relativeManifest = 'vendor/runtime-manifest.json';
-    const manifest = readJson(path.join(repoRoot, relativeManifest), 'Committed Carnival runtime manifest').value;
-    if (!Array.isArray(manifest.files)) fail('Committed Carnival runtime manifest files are unavailable.');
-    const roots = retainedTopLevelPackages().map(entry => `electronapp/${entry.packagePath}`);
-    const files = manifest.files
-        .filter(entry => typeof entry?.path === 'string' && roots.some(root => entry.path.startsWith(`${root}/`)))
-        .map(entry => {
-            if (!Number.isSafeInteger(entry.size) || entry.size < 0 || typeof entry.sha256 !== 'string' || !/^[0-9a-f]{64}$/i.test(entry.sha256)) {
-                fail(`Committed Carnival dependency manifest entry is invalid: ${entry.path}`);
-            }
-            return {
-                path: entry.path.slice('electronapp/'.length),
-                size: entry.size,
-                sha256: entry.sha256.toLowerCase()
-            };
-        })
-        .sort((left, right) => left.path.localeCompare(right.path, 'en'));
-    if (!files.length) fail('Committed Carnival dependency manifest has no retained package files.');
-    return {
-        manifestSha256: hashTrackedTextFile(repoRoot, relativeManifest),
-        files
-    };
+    const manifest=inheritedNpm.load(repoRoot);
+    const roots=retainedTopLevelPackages().map(entry=>'electronapp/'+entry.packagePath);
+    if(manifest.files.some(entry=>!roots.some(root=>entry.path.startsWith(root+'/'))))fail('Inherited npm manifest contains an unexpected retained package.');
+    const files=manifest.files.map(entry=>({path:entry.path.slice('electronapp/'.length),size:entry.size,sha256:entry.sha256}))
+        .sort((left,right)=>left.path.localeCompare(right.path,'en'));
+    return {manifestSha256:hashTrackedTextFile(repoRoot,inheritedNpm.MANIFEST_PATH),files};
 }
 
 function verifiedRetained(repoRoot, vendorProject) {
+    inheritedNpm.validate(repoRoot);
     const manifest = loadManifestRetained(repoRoot);
-    const vendorFiles = collectRetained(vendorProject, 'Carnival dependency source');
-    sameFiles(vendorFiles, manifest.files, 'Carnival dependency source versus committed manifest');
+    const vendorFiles = collectRetained(vendorProject, 'Official inherited dependency source');
+    sameFiles(vendorFiles, manifest.files, 'Inherited dependency source versus committed manifest');
     return {manifestSha256: manifest.manifestSha256, files: vendorFiles};
 }
 
@@ -365,7 +351,7 @@ function copyRuntimeDependencies(repoRoot, runtimeRoot, sourceProjectRoot, token
     assertSourceProject(root, source);
     const selectedContract = loadSelectedPackages(root);
     const sourceSelected = collectSelected(source, selectedContract.packages, 'Fresh npm source');
-    const vendorProject = path.join(root, 'vendor', 'carnival', 'electronapp');
+    const vendorProject = path.join(root, inheritedNpm.INPUT_ROOT, 'electronapp');
     assertPhysicalPath(root, vendorProject, 'Carnival dependency source');
     const retainedContract = verifiedRetained(root, vendorProject);
     const retained = retainedContract.files;
@@ -407,7 +393,7 @@ function copyRuntimeDependencies(repoRoot, runtimeRoot, sourceProjectRoot, token
             command: 'npm ci --ignore-scripts --omit=dev --no-audit --no-fund',
             packageJsonSha256: hashTrackedTextFile(root, 'package.json'),
             packageLockSha256: selectedContract.lockSha256,
-            carnivalManifestSha256: retainedContract.manifestSha256
+            inheritedNpmManifestSha256: retainedContract.manifestSha256
         },
         selectedPackages: selectedContract.packages,
         retainedPackages: RETAINED_PACKAGES,
@@ -449,11 +435,11 @@ function inspectRuntime(repoRoot, runtimeRoot, expectedSourceCommit) {
         JSON.stringify(record.retainedPackages) !== JSON.stringify(RETAINED_PACKAGES)) {
         fail('Runtime dependency package contract mismatch.');
     }
-    const vendorProject = path.join(root, 'vendor', 'carnival', 'electronapp');
+    const vendorProject = path.join(root, inheritedNpm.INPUT_ROOT, 'electronapp');
     const retainedContract = verifiedRetained(root, vendorProject);
     const expectedRetained = retainedContract.files;
-    if (record.installContract?.carnivalManifestSha256 !== retainedContract.manifestSha256) {
-        fail('Runtime dependency provenance is not bound to the committed Carnival manifest.');
+    if (record.installContract?.inheritedNpmManifestSha256 !== retainedContract.manifestSha256) {
+        fail('Runtime dependency provenance is not bound to the committed inherited npm manifest.');
     }
     sameFiles(record.retained.files, expectedRetained, 'Recorded retained Carnival dependency bytes');
     if (record.retained.treeSha256 !== treeIdentity(expectedRetained).treeSha256) fail('Recorded retained tree identity mismatch.');

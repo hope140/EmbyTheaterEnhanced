@@ -8,6 +8,13 @@ const trackedFileHash = require('./tracked-file-hash.cjs');
 const nativeHelperProvenance = require('./native-helper-provenance.cjs');
 const runtimeExclusions = require('./runtime-exclusions.cjs');
 const electronRuntimeInput = require('./electron-runtime-input.cjs');
+const windowsHostInput = require('./windows-host-input.cjs');
+const inheritedNpmInput = require('./inherited-npm-input.cjs');
+const runtimeTemplates=require('./runtime-template-input.cjs');
+const libmpvInput=require('./libmpv-input.cjs');
+const compatibilityInput=require('./compatibility-resources-input.cjs');
+const smallRuntimeInput=require('./small-runtime-input.cjs');
+const modelInput=require('./model-compatibility-input.cjs');
 
 const MANIFEST_NAME = 'source-provenance.json';
 const HISTORICAL_ELECTRON_PATH = 'x64/electron/electron.exe';
@@ -75,16 +82,15 @@ function checkedRuntimeIdentity(root, runtime, manifestEntryValue, runtimePath, 
     return {role, inputPath, inputSha256, runtimePath, sha256: actual};
 }
 
-function checkedRetiredRuntimeInput(root, manifestEntryValue, runtimePath) {
+function historicalRetiredRuntimeInput(manifestEntryValue, runtimePath) {
     const inputPath = slash(path.join('vendor/carnival', manifestEntryValue.path));
-    const inputSha256 = hashFile(path.join(root, inputPath), 'Retired runtime input');
     const manifestSha256 = String(manifestEntryValue.sha256).toUpperCase();
-    if (inputSha256 !== manifestSha256) throw new Error('Retired runtime input hash mismatch: ' + inputPath);
     return {
         runtimePath,
-        inputPath,
-        inputSha256,
-        manifestSha256,
+        historicalPath:inputPath,
+        recordedSha256:manifestSha256,
+        evidence:'tracked-historical-manifest',
+        physicalInputRequired:false,
         excluded: true,
         reason: 'retired-runtime-input-not-copied'
     };
@@ -93,24 +99,23 @@ function checkedRetiredRuntimeInput(root, manifestEntryValue, runtimePath) {
 function historicalElectronInput(root, vendorManifest) {
     const executableEntry = manifestEntry(vendorManifest, 'files', HISTORICAL_ELECTRON_PATH);
     const versionEntry = manifestEntry(vendorManifest, 'files', HISTORICAL_ELECTRON_VERSION_PATH);
-    const executablePath = path.join(root, 'vendor', 'carnival', executableEntry.path);
-    const versionPath = path.join(root, 'vendor', 'carnival', versionEntry.path);
-    const executableSha256 = hashFile(executablePath, 'Historical Carnival Electron executable');
-    const versionSha256 = hashFile(versionPath, 'Historical Carnival Electron version');
-    if (executableSha256 !== String(executableEntry.sha256).toUpperCase() ||
-        versionSha256 !== String(versionEntry.sha256).toUpperCase()) {
-        throw new Error('Historical Carnival Electron input mismatch.');
-    }
-    const historicalRoot = path.join(root, 'vendor', 'carnival', 'x64', 'electron');
+    const executableSha256 = String(executableEntry.sha256).toUpperCase();
+    const versionSha256 = String(versionEntry.sha256).toUpperCase();
+    const entries=vendorManifest.files.filter(item=>item.path.startsWith('x64/electron/')).map(item=>({
+        path:item.path.slice('x64/electron/'.length),sha256:manifestEntry(vendorManifest,'files',item.path).sha256.toUpperCase()
+    })).sort((a,b)=>a.path.localeCompare(b.path));
+    const declaration=(vendorManifest.components||[]).find(item=>item.path===HISTORICAL_ELECTRON_PATH);
     return {
         role: 'historical-carnival-electron-baseline',
-        version: readFile(versionPath, 'Historical Carnival Electron version').toString('utf8').trim(),
-        inputPath: 'vendor/carnival/x64/electron',
+        versionDeclaration:declaration&&declaration.version||null,
+        historicalPath: 'vendor/carnival/x64/electron',
         executablePath: 'vendor/carnival/' + HISTORICAL_ELECTRON_PATH,
         executableSha256,
         versionPath: 'vendor/carnival/' + HISTORICAL_ELECTRON_VERSION_PATH,
         versionSha256,
-        inputTree: treeIdentity(historicalRoot, walkFiles(historicalRoot)),
+        manifestTree:{fileCount:entries.length,sha256:sha256(Buffer.from(entries.map(item=>item.path+'\0'+item.sha256+'\n').join(''),'utf8'))},
+        verification:'historical-manifest-only',
+        physicalInputRequired:false,
         excludedFromProduction: true,
         reason: 'replaced-by-pinned-official-electron-runtime'
     };
@@ -201,20 +206,33 @@ function buildManifest(rootArg, runtimeArg, sourceCommit) {
     const patchLibmpvEntry = manifestEntry(vendorManifest, 'patchFiles', LIBMPV_PATCH_PATH);
     const electron = productionElectronIdentity(root, runtime);
     const historicalElectron = historicalElectronInput(root, vendorManifest);
-    const libmpv = checkedRuntimeIdentity(root, runtime, patchLibmpvEntry, LIBMPV_RUNTIME_PATH, 'libmpv', 'vendor/patch');
-    const baseLibmpvInput = hashFile(path.join(root, 'vendor', 'carnival', baseLibmpvEntry.path), 'libmpv base input');
-    if (baseLibmpvInput !== String(baseLibmpvEntry.sha256).toUpperCase()) {
-        throw new Error('libmpv base input hash mismatch: vendor/carnival/' + baseLibmpvEntry.path);
-    }
-    libmpv.baseVendorPath = baseLibmpvEntry.path;
-    libmpv.baseSha256 = String(baseLibmpvEntry.sha256).toUpperCase();
-    libmpv.inputPath = patchLibmpvEntry.path;
+    const libmpv=libmpvInput.validateRuntime(root,runtime);
+    if(libmpv.inputSha256!==String(patchLibmpvEntry.sha256).toUpperCase())throw new Error('libmpv snapshot differs from historical patch identity.');
+    libmpv.historicalPredecessor={path:'vendor/carnival/'+baseLibmpvEntry.path,
+        recordedSha256:String(baseLibmpvEntry.sha256).toUpperCase(),evidence:'tracked-historical-manifest',physicalInputRequired:false};
+    libmpv.historicalPatchInput={path:'vendor/patch/'+patchLibmpvEntry.path,recordedSha256:String(patchLibmpvEntry.sha256).toUpperCase(),physicalInputRequired:false,evidence:'historical manifest plus identical pinned component hash'};
+    libmpv.preparation={generatorPath:'tools/libmpv-input.cjs',generatorSha256:trackedFileHash.hashTrackedTextFile(root,'tools/libmpv-input.cjs'),
+        acquisitionPath:'tools/prepare-libmpv.cjs',acquisitionSha256:trackedFileHash.hashTrackedTextFile(root,'tools/prepare-libmpv.cjs'),
+        transportPath:'tools/download-libmpv.ps1',transportSha256:trackedFileHash.hashTrackedTextFile(root,'tools/download-libmpv.ps1')};
     libmpv.inputSha256 = String(patchLibmpvEntry.sha256).toUpperCase();
-    const baseWebRoot = path.join(root, 'vendor', 'carnival', 'electronapp', 'www');
+    const webInput = require('./web-snapshot-input.cjs').validate(root);
+    const baseWebRoot = path.join(root, 'vendor', 'web-snapshot', 'www');
     const runtimeWebRoot = path.join(runtime, 'electronapp', 'www');
     const overlayReport = webOverlays.inspect(root, runtime);
+    const windowsHost = windowsHostInput.validateRuntime(root,runtime);
+    const compatibilityResources=compatibilityInput.validateRuntime(root,runtime);
+    compatibilityResources.preparation={generatorPath:'tools/compatibility-resources-input.cjs',generatorSha256:trackedFileHash.hashTrackedTextFile(root,'tools/compatibility-resources-input.cjs')};
+    const smallRuntime=smallRuntimeInput.validateRuntime(root,runtime);
+    smallRuntime.preparation={generatorPath:'tools/small-runtime-input.cjs',generatorSha256:trackedFileHash.hashTrackedTextFile(root,'tools/small-runtime-input.cjs')};
+    const modelCompatibility=modelInput.validateRuntime(root,runtime);
+    modelCompatibility.preparation={generatorPath:'tools/model-compatibility-input.cjs',generatorSha256:trackedFileHash.hashTrackedTextFile(root,'tools/model-compatibility-input.cjs')};
+    const inheritedNpm = inheritedNpmInput.validateRuntime(root,runtime);
+    inheritedNpm.preparation = {generatorPath:'tools/inherited-npm-input.cjs',
+        generatorSha256:trackedFileHash.hashTrackedTextFile(root,'tools/inherited-npm-input.cjs')};
+    windowsHost.preparation = {generatorPath:'tools/prepare-windows-host.ps1',
+        generatorSha256:trackedFileHash.hashTrackedTextFile(root,'tools/prepare-windows-host.ps1')};
     const retiredRuntimeInputs = runtimeExclusions.RETIRED_RUNTIME_PATHS.map(runtimePath =>
-        checkedRetiredRuntimeInput(root, manifestEntry(vendorManifest, 'files', runtimePath), runtimePath));
+        historicalRetiredRuntimeInput(manifestEntry(vendorManifest, 'files', runtimePath), runtimePath));
     let nativeHelper = null;
     if (fs.existsSync(path.join(root, 'vendor', 'native-helper-manifest.json'))) {
         nativeHelper = nativeHelperProvenance.validate(root, runtime, sourceCommit);
@@ -228,12 +246,15 @@ function buildManifest(rootArg, runtimeArg, sourceCommit) {
             manifestPath: 'vendor/runtime-manifest.json',
             manifestSha256: trackedFileHash.hashTrackedTextFile(root, 'vendor/runtime-manifest.json'),
             version: vendorManifest.baseline || 'unknown',
+            historicalReferenceOnly:true,
+            physicalArchivesRequired:false,
             archives: (vendorManifest.archives || []).map(entry => ({
                 pattern: entry.pattern,
                 sha256: String(entry.sha256 || '').toUpperCase()
             }))
         },
-        runtimeIdentities: {electron, libmpv},
+        runtimeIdentities: {electron, libmpv,windowsHost,inheritedNpm,compatibilityResources,smallRuntime,modelCompatibility},
+        runtimeTemplates:runtimeTemplates.validate(root),
         historicalInputs: {carnivalElectron: historicalElectron},
         runtimeExclusions: {
             generatorPath: 'tools/runtime-exclusions.cjs',
@@ -242,7 +263,8 @@ function buildManifest(rootArg, runtimeArg, sourceCommit) {
             inputs: retiredRuntimeInputs
         },
         webSnapshot: {
-            basePath: 'vendor/carnival/electronapp/www',
+            basePath: 'vendor/web-snapshot/www',
+            inputManifest: webInput,
             baseTree: treeIdentity(baseWebRoot, walkFiles(baseWebRoot)),
             overlays: overlayReport.entries,
             runtimePath: 'electronapp/www',

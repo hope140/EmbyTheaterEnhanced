@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const trackedProductSources = require('./copy-tracked-product-sources.cjs');
 const preloadPreparation = require('./prepare-preload.cjs');
+const templates=require('./runtime-template-input.cjs');
 const sourceProvenance = require('./source-provenance.cjs');
 const trackedFileHash = require('./tracked-file-hash.cjs');
 const runtimeExclusions = require('./runtime-exclusions.cjs');
@@ -26,8 +27,8 @@ const PREPARED_ARTIFACT_CONTRACT = Object.freeze([{
 }]);
 const EXCLUDED_SOURCE_PREFIXES = Object.freeze([]);
 const RUNTIME_OVERLAY_CONTRACT = Object.freeze([
-    {runtimePath: OVERLAY_RUNTIME_PATH, sourcePath: 'vendor/carnival/electronapp/www/modules/common/playback/playbackmanager.js', generatorPath: OVERLAY_GENERATOR_PATH},
-    {runtimePath: PACKAGE_RUNTIME_PATH, sourcePath: 'vendor/carnival/electronapp/package.json', generatorPath: PACKAGE_GENERATOR_PATH}
+    {runtimePath: OVERLAY_RUNTIME_PATH, sourcePath: 'vendor/web-snapshot/www/modules/common/playback/playbackmanager.js', generatorPath: OVERLAY_GENERATOR_PATH},
+    {runtimePath: PACKAGE_RUNTIME_PATH, sourcePath: 'tools/templates/runtime/package.json', generatorPath: PACKAGE_GENERATOR_PATH}
 ]);
 
 function usage() {
@@ -110,9 +111,10 @@ function buildPreparedArtifactEntries(root, runtime) {
         if (!exists(baseFile) || !exists(preparedFile) || !exists(runtimeFile) || !exists(generatorFile)) {
             throw new Error('Prepared artifact input missing: ' + contract.preparedPath);
         }
-        const baseText = fs.readFileSync(baseFile, 'utf8');
+        const template=templates.read(root,contract.runtimePath);
+        const baseText = template.bytes.toString('utf8');
         const expectedText = preloadPreparation.buildPreparedPreload(baseText);
-        const baseSha256 = hashFile(baseFile);
+        const baseSha256 = preloadPreparation.sha256(template.bytes);
         const generatorSha256 = trackedFileHash.hashTrackedTextFile(root, contract.generatorPath);
         const preparedSha256 = hashFile(preparedFile);
         const runtimeSha256 = hashFile(runtimeFile);
@@ -130,6 +132,7 @@ function buildPreparedArtifactEntries(root, runtime) {
             generatorPath: contract.generatorPath,
             category: contract.category,
             baseSha256: baseSha256,
+            sourceTemplateSha256:template.sourceSha256,baseRelation:'locked template transform',
             generatorSha256: generatorSha256,
             expectedPreparedSha256: expectedPreparedSha256,
             preparedSha256: preparedSha256,
@@ -148,7 +151,8 @@ function baselineIdentity(root) {
         vendorFileCount: Array.isArray(manifest.files) ? manifest.files.length : null,
         vendorPatchFileCount: Array.isArray(manifest.patchFiles) ? manifest.patchFiles.length : null,
         runtimeExclusions: Array.isArray(manifest.runtimeExclusions) ? manifest.runtimeExclusions.slice() : [],
-        coverage: 'vendor bytes are identified by a manifest bound to sourceCommit; input bodies remain external'
+        countsAreHistoricalReferences:true,
+        coverage: 'historical manifest bound to sourceCommit; only current consumed inputs require physical validation'
     };
 }
 

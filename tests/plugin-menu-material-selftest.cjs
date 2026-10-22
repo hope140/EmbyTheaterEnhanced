@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
-const material = path.join(root, 'vendor/carnival/electronapp/www/modules/genericedit/genericedit.js');
+const material = path.join(root, 'vendor/web-snapshot/www/modules/genericedit/genericedit.js');
 const hasMaterial = fs.existsSync(material);
 
 function extract(source, name) {

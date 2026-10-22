@@ -1,0 +1,279 @@
+﻿:root {
+  --headerlogo-background-position: left center;
+}
+[dir="rtl"]:root {
+  --headerlogo-background-position: right center;
+}
+.pageTitle {
+  vertical-align: middle;
+  margin: 0;
+  -webkit-align-items: center;
+  align-items: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  -webkit-margin-start: 0.5em;
+  margin-inline-start: 0.5em;
+}
+@media not all and (max-width: 80em) {
+  .semiTransparent.skinHeader-withBackground .pageTitleWithLogo {
+    display: none;
+  }
+}
+.skinHeader-withBackground.semiTransparent .pageTitleWithLogo {
+  font-size: 2em;
+}
+@media not all and (max-width: 80em) {
+  .pageTitle.pageTitleWithLogo {
+    font-size: 2em;
+  }
+}
+.mouseIdle-tv .semiTransparent .pageTitleWithLogo {
+  margin-left: 1.5em;
+}
+.pageTitleWithLogo {
+  background-position: left center;
+  background-position: var(--headerlogo-background-position);
+  background-size: contain;
+  background-repeat: no-repeat;
+  width: 10.25em;
+  height: 1.25em;
+}
+.pageTitleWithDefaultLogo {
+  width: 4.7em;
+}
+.headerButton {
+  -webkit-flex-shrink: 0;
+  flex-shrink: 0;
+}
+@media all and (display-mode: minimal-ui) {
+  .headerBackButton-showfullscreen {
+    display: none !important;
+  }
+}
+.headerUserButtonImage {
+  border-radius: 1000px;
+}
+.skinHeader {
+  z-index: 1;
+  display: -webkit-flex;
+  display: flex;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  box-sizing: border-box;
+  height: 5.525em;
+  -webkit-align-items: flex-start;
+  align-items: flex-start;
+  contain: strict;
+  padding-top: 1.2em;
+  padding-left: 0;
+  padding-left: env(safe-area-inset-left, 0);
+  padding-right: 0;
+  padding-right: env(safe-area-inset-right, 0);
+}
+@supports (height: calc(3.125em + 2 * max(3em, 4em))) {
+  .skinHeader {
+    height: calc(3.125em + 2 * max(1.2em, env(safe-area-inset-top, 0)));
+    padding-top: max(1.2em, env(safe-area-inset-top, 0));
+  }
+}
+@media all and (min-width: 50em) {
+  .headerHomeButton-withdockeddrawer,
+  .headerMenuButton-withfulldrawer {
+    display: none !important;
+  }
+  .skinHeader-withfulldrawer .pageTitleWithDefaultLogo {
+    display: none;
+  }
+  .skinHeader-withfulldrawer {
+    -webkit-padding-start: 1.4em;
+    padding-inline-start: 1.4em;
+  }
+}
+.headerMiddle {
+  overflow: hidden;
+  -webkit-flex-grow: 1;
+  flex-grow: 1;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-justify-content: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+@media not all and (min-width: 120em) {
+  .headerTop-withSectionTabs:not(.skinHeader-tv) {
+    -webkit-flex-wrap: wrap;
+    flex-wrap: wrap;
+    height: 9.11em;
+    -webkit-align-content: flex-start;
+    align-content: flex-start;
+  }
+  @supports (height: calc(3.125em + 2 * max(3em, 4em))) {
+    .headerTop-withSectionTabs:not(.skinHeader-tv) {
+      height: calc(6.71em + 2 * max(1.2em, env(safe-area-inset-top, 0)));
+    }
+  }
+  .headerMiddle-withSectionTabs:not(.headerMiddle-tv) {
+    -webkit-flex-grow: initial !important;
+    flex-grow: initial !important;
+    -webkit-flex-basis: 100%;
+    flex-basis: 100%;
+    -webkit-order: 3;
+    order: 3;
+    margin-top: 0.75em;
+  }
+}
+@media not all and (min-width: 66em) {
+  @media not all and (pointer: fine) {
+    .tabs-viewmenubar-backgroundcontainer:not(.tabs-viewmenubar-backgroundcontainer-tv) {
+      background: 0 0 !important;
+      -webkit-backdrop-filter: none !important;
+      backdrop-filter: none !important;
+    }
+    .tabs-viewmenubar-slider:not(.tabs-viewmenubar-slider-tv) {
+      padding: 0.25em 1em;
+    }
+  }
+}
+@media (pointer: fine) {
+  .adjustHeaderForEmbeddedScroll {
+    right: 1.08em;
+    inset-inline-start: 0;
+    inset-inline-end: 1.08em;
+  }
+}
+.headerLeft {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  overflow: hidden;
+  -webkit-padding-start: 0.7em;
+  padding-inline-start: 0.7em;
+  -webkit-flex-grow: 1;
+  flex-grow: 1;
+}
+.headerRight {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-justify-content: flex-end;
+  justify-content: flex-end;
+  white-space: nowrap;
+  -webkit-padding-end: 0.75em;
+  padding-inline-end: 0.75em;
+  -webkit-flex-grow: 0;
+  flex-grow: 0;
+}
+.headerLeft,
+.headerRight {
+  min-height: 3.127em;
+  box-sizing: border-box;
+  -webkit-flex-shrink: 1;
+  flex-shrink: 1;
+  -webkit-flex-basis: auto;
+  flex-basis: auto;
+}
+.headerTop-withSectionTabs .headerLeft,
+.headerTop-withSectionTabs .headerRight {
+  width: 20%;
+}
+.sectionTabs {
+  text-align: center;
+}
+.headerClock {
+  margin: 0 0.25em;
+  display: inline-block;
+  vertical-align: middle;
+  font-size: 84%;
+}
+.headerSelectedPlayer {
+  font-weight: 400;
+  max-width: 10em;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.headerHelpButton {
+  color: #42a5f5 !important;
+}
+@media all and (max-width: 37.5em) {
+  .headerSelectedPlayer {
+    display: none;
+  }
+}
+@media all and (max-width: 45em) {
+  .headerClock {
+    display: none !important;
+  }
+}
+.headerTop-tv-withSectionTabs .pageTitle:not(.pageTitleWithDefaultLogo) {
+  display: none !important;
+}
+@media not all and (min-width: 50em) {
+  .headerSettingsButton {
+    display: none !important;
+  }
+}
+.btnHeaderPremiere {
+  -webkit-margin-end: 1em;
+  margin-inline-end: 1em;
+}
+@media all and (max-width: 48em) {
+  .btnHeaderPremiere {
+    display: none !important;
+  }
+}
+.tabs-viewmenubar {
+  font-size: 97%;
+  max-width: 100%;
+}
+@media all and (pointer: fine) {
+  .tabs-viewmenubar {
+    max-width: 92%;
+  }
+}
+@media all and (min-width: 120em) {
+  .tabs-viewmenubar {
+    font-size: 97%;
+    max-width: 100%;
+  }
+  .headerTop-withSectionTabs .headerLeft {
+    -webkit-flex-grow: 0;
+    flex-grow: 0;
+  }
+}
+.headerTop-tv-withSectionTabs .headerLeft {
+  -webkit-flex-grow: 0;
+  flex-grow: 0;
+}
+.tabs-viewmenubar-tv {
+  max-width: 100%;
+  font-size: 77%;
+}
+@media all and (min-width: 130em) {
+  .tabs-viewmenubar {
+    max-width: 100%;
+  }
+}
+.tabs-viewmenubar {
+  border-radius: 100em;
+}
+.tabs-viewmenubar-slider {
+  padding: 0.25em;
+}
+.main-tab-button {
+  padding: 0.25em 1.76ch !important;
+  border-radius: 100em !important;
+}
+.main-tab-button-tv:focus {
+  -webkit-transform: scale(1.1) !important;
+  transform: scale(1.1) !important;
+}
