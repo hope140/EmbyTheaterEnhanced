@@ -1,5 +1,7 @@
 # Fixed small runtime input snapshot
 
+Current release selection: [the scoped legacy-resource audit](LEGACY_RESOURCE_RETIREMENT.md) excludes nine compatibility resources and one small notice from new runtime output. Original snapshot bytes/manifests and notices remain preserved and strictly validated; the historical byte-preservation statements below describe input storage, not the new output selection. Runtime reports carry separate output counts, bytes, tree hashes and excluded identities.
+
 Four packaged inputs are independently preserved under `vendor/small-runtime/snapshot-v1`: `cec-driver/cancel`, `config/system.xml`, `electronapp/plugins/mpvplayer/strings/zh-CN.json` and the legacy Chinese notice text file named in the manifest. Their combined 5,216 bytes and runtime paths are unchanged. Model is excluded.
 
 `vendor/small-runtime-manifest.json` locks the exact four paths, sizes, SHA256 identities, tree identity and source boundaries. These are preserved historical packaged bytes, not a claim of ETE authorship or newly recovered official sources. The Chinese translation and notice retain their existing bytes without an invented license. Existing project source/notice records remain applicable; source and public redistribution questions remain open where marked.

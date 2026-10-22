@@ -136,6 +136,7 @@ test('manifest-derived assembly equals legacy assembly after the same replacemen
     const oracleToken = dependencies.createOwner(f.root, oracle, f.commit);
     fs.cpSync(f.vendor, oracle, {recursive: true});
     for (const [runtime, token] of [[f.runtime, f.token], [oracle, oracleToken]]) {
+        require('../tools/runtime-exclusions.cjs').remove(runtime);
         sources.materializeTrackedProductSources(f.root, f.commit, runtime);
         for (const name of ['x64/electron', 'electronapp/www/modules/externalplayer', 'electronapp/libmpv/x64/mpv-win32-x64.node']) {
             fs.rmSync(path.join(runtime, name), {recursive: true, force: true});

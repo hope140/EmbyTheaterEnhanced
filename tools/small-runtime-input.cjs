@@ -3,6 +3,19 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const web = require('./web-snapshot-input.cjs');
+const {RETIRED_SMALL_RUNTIME_PATHS} = require('./runtime-exclusions.cjs');
+const retired = new Set(RETIRED_SMALL_RUNTIME_PATHS);
+function runtimeFiles(manifest) { return manifest.files.filter(entry => !retired.has(entry.path)); }
+function runtimeSelection(manifest) {
+    const files = runtimeFiles(manifest), excludedFiles = manifest.files.filter(entry => retired.has(entry.path));
+    return {runtimeFileCount: files.length, runtimeBytes: files.reduce((n, entry) => n + entry.size, 0),
+        runtimeTreeSha256: web.treeHash(files), excludedFiles};
+}
+function rejectRetiredOutput(runtime) {
+    for (const name of retired) if (fs.existsSync(path.join(runtime, name))) {
+        throw new Error('Retired resource present in runtime: ' + name);
+    }
+}
 const MANIFEST_PATH = 'vendor/small-runtime-manifest.json';
 const INPUT_ROOT = 'vendor/small-runtime/snapshot-v1';
 const SMALL_PATHS=Object.freeze(['cec-driver/cancel','config/system.xml','electronapp/plugins/mpvplayer/strings/zh-CN.json','\u6ce8\u610f\u4e8b\u9879.txt']);
@@ -60,23 +73,25 @@ function importSnapshot(rootArg,sourceArg) {
 }
 function validateRuntime(rootArg,runtimeArg) {
     const root=path.resolve(rootArg),runtime=path.resolve(runtimeArg),report=validate(root),manifest=load(root);
-    for(const entry of manifest.files) {
+    rejectRetiredOutput(runtime);
+    for(const entry of runtimeFiles(manifest)) {
         const file=path.join(runtime,entry.path);physical(file,false);const bytes=fs.readFileSync(file);
         if(bytes.length!==entry.size||sha(bytes)!==entry.sha256)throw new Error('Small runtime snapshot runtime identity mismatch: '+entry.path);
     }
-    return {...report,runtimeFiles:manifest.files.map(({path,size,sha256})=>({path,size,sha256}))};
+    return {...report,...runtimeSelection(manifest),runtimeFiles:runtimeFiles(manifest).map(({path,size,sha256})=>({path,size,sha256}))};
 }
 function assemble(rootArg,runtimeArg) {
     const root=path.resolve(rootArg),runtime=path.resolve(runtimeArg),rel=path.relative(path.join(root,'dist'),runtime);
     if(!rel||rel==='..'||rel.startsWith('..'+path.sep)||path.isAbsolute(rel))throw new Error('Small runtime snapshot assembly requires dedicated dist output.');
     const report=validate(root),manifest=load(root);
     for(const entry of manifest.files) if(fs.existsSync(path.join(runtime,entry.path)))throw new Error('Small runtime snapshot output already exists: '+entry.path);
-    for(const entry of manifest.files) {
+    rejectRetiredOutput(runtime);
+    for(const entry of runtimeFiles(manifest)) {
         const bytes=fs.readFileSync(path.join(root,INPUT_ROOT,entry.path));
         if(bytes.length!==entry.size||sha(bytes)!==entry.sha256)throw new Error('Small runtime snapshot input changed during assembly.');
         const target=path.join(runtime,entry.path);mkdirPhysical(path.dirname(target));fs.writeFileSync(target,bytes,{flag:'wx'});
     }
-    return report;
+    return {...report,...runtimeSelection(manifest)};
 }
 if(require.main===module) {
     try {
@@ -90,4 +105,4 @@ if(require.main===module) {
         process.stdout.write(JSON.stringify(result,null,2)+'\n');
     }catch(error){process.stderr.write(error.message+'\n');process.exitCode=1;}
 }
-module.exports={SMALL_PATHS,MANIFEST_PATH,INPUT_ROOT,isSmallRuntime,load,paths,validate,importSnapshot,validateRuntime,assemble};
+module.exports={runtimeSelection,SMALL_PATHS,MANIFEST_PATH,INPUT_ROOT,isSmallRuntime,load,paths,validate,importSnapshot,validateRuntime,assemble};

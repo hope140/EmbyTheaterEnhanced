@@ -48,7 +48,7 @@ function classify(files, productPaths, overlayPaths, selectedPackagePaths) {
         let action = 'copy';
         let reason = 'legacy-asset';
         if (name.startsWith('x64/electron/')) { action = 'exclude'; reason = 'replaced-electron'; }
-        else if (retired.has(name)) { action = 'exclude'; reason = 'retired-bridge'; }
+        else if (retired.has(name)) { action = 'exclude'; reason = name === 'electronapp/libmpv/x64/mpv-win32-x64.node' ? 'retired-bridge' : 'retired-legacy-resource'; }
         else if (name.startsWith('electronapp/www/modules/externalplayer/')) { action = 'exclude'; reason = 'retired-external-player'; }
         else if (product.has(name)) { action = 'replace'; reason = 'committed-product-source'; }
         else if (name === 'electronapp/preload.js') { action = 'replace'; reason = 'generated-preload'; }
@@ -96,11 +96,11 @@ function plan(rootArg, sourceCommit) {
     const legacyCandidates=candidates.filter(item=>!npmPaths.has(item.path)&&!templatePaths.has(item.path));
     const compatibilityInput=compatibility.load(root),compatibilityPaths=new Set(compatibilityInput.files.map(e=>e.path));
     const oldCompatibility=legacyCandidates.filter(e=>compatibility.isCompatibility(e.path));
-    if(oldCompatibility.length!==compatibilityInput.files.length||oldCompatibility.some(e=>e.action!=='copy'||!compatibilityInput.files.some(f=>f.path===e.path&&f.size===e.size&&f.sha256===e.sha256)))throw Error('Compatibility snapshot differs from retained historical identity.');
+    if(oldCompatibility.length!==compatibilityInput.files.length||oldCompatibility.some(e=>e.action!==(RETIRED_RUNTIME_PATHS.includes(e.path)?'exclude':'copy')||!compatibilityInput.files.some(f=>f.path===e.path&&f.size===e.size&&f.sha256===e.sha256)))throw Error('Compatibility snapshot differs from retained historical identity.');
     const afterCompatibility=legacyCandidates.filter(e=>!compatibilityPaths.has(e.path));
     const smallInput=smallRuntime.load(root),smallPaths=new Set(smallInput.files.map(e=>e.path));
     const oldSmall=afterCompatibility.filter(e=>smallRuntime.isSmallRuntime(e.path));
-    if(oldSmall.length!==smallInput.files.length||oldSmall.some(e=>e.action!=='copy'||!smallInput.files.some(f=>f.path===e.path&&f.size===e.size&&f.sha256===e.sha256)))throw Error('Small runtime snapshot differs from retained historical identity.');
+    if(oldSmall.length!==smallInput.files.length||oldSmall.some(e=>e.action!==(RETIRED_RUNTIME_PATHS.includes(e.path)?'exclude':'copy')||!smallInput.files.some(f=>f.path===e.path&&f.size===e.size&&f.sha256===e.sha256)))throw Error('Small runtime snapshot differs from retained historical identity.');
     const afterSmall=afterCompatibility.filter(e=>!smallPaths.has(e.path));
     const modelInput=modelCompatibility.load(root),modelPaths=new Set(modelInput.files.map(e=>e.path));
     const oldModel=afterSmall.filter(e=>modelCompatibility.isModelCompatibility(e.path));
@@ -126,7 +126,7 @@ function plan(rootArg, sourceCommit) {
         webSnapshot: {manifestPath:webSnapshot.MANIFEST_PATH,
             treeSha256:web.treeSha256,fileCount:web.fileCount,bytes:web.bytes},windowsHost:{manifestPath:windowsHost.MANIFEST_PATH,
             treeSha256:host.treeSha256,fileCount:host.fileCount,bytes:host.bytes},inheritedNpm:{manifestPath:inheritedNpm.MANIFEST_PATH,
-            sourceCommit:npm.source.commit,treeSha256:npm.treeSha256,fileCount:npm.fileCount,bytes:npm.bytes},runtimeTemplates:{manifestPath:templates.MANIFEST_PATH,fileCount:3,bytes:template.bytes},compatibilityResources:{manifestPath:compatibility.MANIFEST_PATH,fileCount:compatibilityInput.fileCount,bytes:compatibilityInput.bytes,treeSha256:compatibilityInput.treeSha256},smallRuntime:{manifestPath:smallRuntime.MANIFEST_PATH,fileCount:smallInput.fileCount,bytes:smallInput.bytes,treeSha256:smallInput.treeSha256},modelCompatibility:{manifestPath:modelCompatibility.MANIFEST_PATH,fileCount:modelInput.fileCount,bytes:modelInput.bytes,treeSha256:modelInput.treeSha256}};
+            sourceCommit:npm.source.commit,treeSha256:npm.treeSha256,fileCount:npm.fileCount,bytes:npm.bytes},runtimeTemplates:{manifestPath:templates.MANIFEST_PATH,fileCount:3,bytes:template.bytes},compatibilityResources:{...compatibility.runtimeSelection(compatibilityInput),manifestPath:compatibility.MANIFEST_PATH,fileCount:compatibilityInput.fileCount,bytes:compatibilityInput.bytes,treeSha256:compatibilityInput.treeSha256},smallRuntime:{...smallRuntime.runtimeSelection(smallInput),manifestPath:smallRuntime.MANIFEST_PATH,fileCount:smallInput.fileCount,bytes:smallInput.bytes,treeSha256:smallInput.treeSha256},modelCompatibility:{manifestPath:modelCompatibility.MANIFEST_PATH,fileCount:modelInput.fileCount,bytes:modelInput.bytes,treeSha256:modelInput.treeSha256}};
 }
 
 function physical(absolute, directory) {

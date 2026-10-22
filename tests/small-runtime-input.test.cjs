@@ -27,10 +27,15 @@ test('four-file cold restoration preserves opaque configuration and excludes Mod
     fs.writeFileSync(path.join(f.runtime, 'MediaBrowser.Model.dll'), 'unchanged Model');
     input.assemble(f.cold, f.runtime);
     for (const entry of f.manifest.files) {
+        if (entry.path === '\u6ce8\u610f\u4e8b\u9879.txt') {
+            assert.equal(fs.existsSync(path.join(f.runtime, entry.path)), false);
+            continue;
+        }
         assert.deepEqual(fs.readFileSync(path.join(f.runtime, entry.path)), fs.readFileSync(path.join(f.source, entry.path)));
     }
     assert.equal(fs.statSync(path.join(f.runtime, 'cec-driver/cancel')).size, 0);
     assert.equal(input.validateRuntime(f.cold, f.runtime).fileCount, 4);
+    assert.equal(input.validateRuntime(f.cold, f.runtime).runtimeFileCount, 3);
     assert.equal(fs.readFileSync(path.join(f.runtime, 'MediaBrowser.Model.dll'), 'utf8'), 'unchanged Model');
     assert.throws(() => input.assemble(f.cold, f.runtime), /already exists/);
 });
@@ -77,4 +82,11 @@ test('redirects, arbitrary output directories and runtime configuration tamperin
     fs.renameSync(folder, saved);
     fs.symlinkSync(saved, folder, process.platform === 'win32' ? 'junction' : 'dir');
     assert.throws(() => input.validate(f.root), /link|redirect/);
+});
+
+test('retired notice bytes remain mandatory snapshot input', t => {
+    const f = fixture(t);
+    fs.appendFileSync(path.join(f.source, '\u6ce8\u610f\u4e8b\u9879.txt'), 'changed');
+    assert.throws(() => input.assemble(f.root, path.join(f.root, 'dist/candidate')), /snapshot identity/);
+    assert.equal(fs.existsSync(path.join(f.root, 'dist/candidate')), false);
 });

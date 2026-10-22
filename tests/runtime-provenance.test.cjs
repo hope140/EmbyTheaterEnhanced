@@ -100,6 +100,9 @@ function createFixture(root) {
     require('./helpers/model-compatibility-fixture.cjs').create(root);
     const small=require('./helpers/small-runtime-fixture.cjs').create(root);
     for(const entry of small.files)addManifestFile(files,root,entry.path,fs.readFileSync(path.join(root,smallRuntimeInput.INPUT_ROOT,entry.path)));
+    for (const name of require('../tools/runtime-exclusions.cjs').RETIRED_COMPATIBILITY_PATHS) {
+        addManifestFile(files, root, name, 'synthetic retired resource; never executed');
+    }
     writeFile(path.join(root, 'vendor', 'runtime-manifest.json'), JSON.stringify({
         baseline: 'provenance-test-fixture',
         archives: [{pattern: 'base.exe', sha256: '0'.repeat(64)}],
@@ -201,6 +204,7 @@ function createRuntime(root, name) {
     fs.cpSync(path.join(root,compatibilityInput.INPUT_ROOT),runtime,{recursive:true});
     fs.cpSync(path.join(root,smallRuntimeInput.INPUT_ROOT),runtime,{recursive:true});
     fs.cpSync(path.join(root,modelInput.INPUT_ROOT),runtime,{recursive:true});
+    require('../tools/runtime-exclusions.cjs').remove(runtime);
     webPreparation.apply(root, runtime);
     sourceProvenance.writeManifest(root, runtime, sourceCommit);
     return runtime;

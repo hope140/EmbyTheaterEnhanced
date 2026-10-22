@@ -48,7 +48,8 @@ test('retired Pepper binary is removed from a runtime payload', () => {
 });
 
 test('vendor archive entry is historical input and has a runtime exclusion contract', () => {
-    assert.deepEqual(manifest.runtimeExclusions, runtimeExclusions.RETIRED_RUNTIME_PATHS);
+    assert.deepEqual(manifest.runtimeExclusions, ['electronapp/libmpv/x64/mpv-win32-x64.node']);
+    for (const archived of manifest.runtimeExclusions) assert.ok(runtimeExclusions.RETIRED_RUNTIME_PATHS.includes(archived));
     const entry = manifest.files.find(value => value.path === runtimeExclusions.RETIRED_RUNTIME_PATHS[0]);
     assert.ok(entry);
     assert.equal(entry.plannedReplacement, undefined, 'file entries stay archival inventory only');
