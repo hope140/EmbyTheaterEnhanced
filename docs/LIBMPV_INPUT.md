@@ -1,6 +1,6 @@
 # Pinned libmpv archive recovery
 
-Local review prototype: the original archive is committed only in the local review branch; public upload is pending corresponding-source and linked-component notice review. `node tools/prepare-libmpv.cjs .` restores the current DLL from `vendor/archive/libmpv/20260809` without Carnival, the combined patch, a preserved DLL snapshot, or a SourceForge request. It verifies the original archive against its size/SHA256 and the HEAD Git blob, then statically extracts one member. No executable or DLL is run. `tools/prepare.ps1` invokes this entry when absent; explicit `-LibmpvSnapshotFile` remains an optional exact-hash offline import.
+The original archive is stored in this repository with its source and notice directions. Exact finished-package source coverage and notice completeness remain unconfirmed; storage authorization is not a compliance certification. `node tools/prepare-libmpv.cjs .` restores the current DLL from `vendor/archive/libmpv/20260809` without Carnival, the combined patch, a preserved DLL snapshot, or a SourceForge request. It verifies the original archive against its size/SHA256 and the HEAD Git blob, then statically extracts one member. No executable or DLL is run. `tools/prepare.ps1` invokes this entry when absent; explicit `-LibmpvSnapshotFile` remains an optional exact-hash offline import.
 
 ## Fixed identities
 

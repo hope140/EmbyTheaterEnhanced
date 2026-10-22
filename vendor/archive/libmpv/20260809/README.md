@@ -1,7 +1,7 @@
 # Original fixed libmpv development archive
 
-Local review prototype. The archive has not been uploaded to the public ETE
-repository. Source-delivery and linked-component notice review is incomplete.
+This repository retains the unchanged third-party archive. Source coverage for
+this exact finished package and notice completeness are not independently certified.
 
 `mpv-dev-x86_64-20260809-git-dd5d17d328.7z` is the original, unmodified
 31,173,907-byte upstream archive, SHA256
@@ -31,12 +31,18 @@ Known preferred-source revisions are mpv
 `dd5d17d3285a095a0f712fa9d116e22a076492de`, FFmpeg
 `2a20737f662fd3f3f5999e873b9e7c90b5efc375`, and builder
 `cd1edc11dc6887a50f705717619d879f5a93a488`.
+The known fixed source trees can be obtained without a binary download:
+
+- [mpv complete source ZIP](https://codeload.github.com/mpv-player/mpv/zip/dd5d17d3285a095a0f712fa9d116e22a076492de).
+- [FFmpeg complete source ZIP](https://codeload.github.com/FFmpeg/FFmpeg/zip/2a20737f662fd3f3f5999e873b9e7c90b5efc375).
+- [Publisher build scripts, recipes and patches ZIP](https://codeload.github.com/shinchiro/mpv-winbuild-cmake/zip/cd1edc11dc6887a50f705717619d879f5a93a488).
+
 The fixed builder includes recipes and patches, but is not a lock of all actual
 cached dependency revisions. The archive itself carries no complete corresponding
 source or written source offer. These links and notices do not independently
-establish complete source delivery for the finished DLL. Public binary upload
-awaits the current distribution-material review decision; no new permission from
-upstream is claimed.
+establish complete source delivery for the finished DLL. Storage authorization
+does not certify that coverage or claim a new upstream licence grant. No written
+source offer is made by this note.
 
 The minimum distribution materials are the original package identity and origin,
 applicable licence/copyright notices, and clear corresponding-source access

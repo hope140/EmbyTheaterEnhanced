@@ -19,6 +19,11 @@ step for mpv/FFmpeg, but no complete resolved source inventory or complete linke
 configuration. Recipe presence alone does not mean that dependency entered the DLL.
 No new complete-source delivery claim or public binary upload follows from this update.
 
+The later repository-archive change retains the unmodified original development
+archive beside explicit source/notice directions. Its storage was authorized with
+the above coverage limits disclosed. This does not create a new written source
+offer or certify complete coverage of the finished package.
+
 mpv upstream revision: `dd5d17d3285a095a0f712fa9d116e22a076492de`.
 
 - [Preferred source tree](https://github.com/mpv-player/mpv/tree/dd5d17d3285a095a0f712fa9d116e22a076492de)
