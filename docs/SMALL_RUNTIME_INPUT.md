@@ -28,3 +28,11 @@ The final Model removal can use a separate original-byte snapshot of the existin
 ## Current repository restoration update (2026-10-21)
 
 The user authorized tracking the exact required Web, compatibility-resource, small-runtime and original Model snapshots in this same repository. The 775 manifest-listed files (51,953,202 bytes) use ordinary Git with `-text` attributes to preserve bytes. Historical local-only/ignored-storage statements below describe earlier stages and are superseded for these four roots. Source attribution and unresolved exact revisions remain unchanged; storage permission is not a claim of new third-party authorship or complete corresponding source. libmpv stays ignored and is restored from the pinned archive via `node tools/prepare-libmpv.cjs .`; see [repository inputs](REPOSITORY_INPUTS.md). No old full installer/patch or real user profile is included.
+
+## Retired notice text retained in delivered source records
+
+The removed runtime `注意事项.txt` also contains the following historical restriction, preserved here verbatim rather than discarded with its obsolete installation instructions:
+
+> 仅供学习测试，严禁用于商业用途，下载后请在24小时内删除！
+
+This records what that old packaged text says. Its author, authority and component scope remain unresolved; it is not presented as a newly established project-wide license. The exact UTF-16 file and its manifest identity remain in the immutable snapshot. Other copyright and license records continue to apply independently.

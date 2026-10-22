@@ -22,7 +22,7 @@ AGENTS.md 要求 vendor 和原始归档只读，因此本候选通过既有 `too
 | `config/system.xml` | 保留 | `tools/Start-Enhanced.ps1` 与 `src/electronapp/enhanced/bootstrap.js` 在用户 profile 缺配置时复制的种子。保留全部字节和首次复制/已有值不覆盖合同。 |
 | `electronapp/plugins/mpvplayer/strings/zh-CN.json` | 保留 | `src/electronapp/plugins/libmpv.js` 的 `getTranslations` 显式映射 zh-CN。删掉会损失播放器设置中文翻译。 |
 | `cec-driver/cancel`（0 bytes） | 保留 | 按存在性生效的 CEC 安装抑制标记。Host 参考源码 Program.InstallCecDriver 先判断 cancel 是否存在并返回；当前固定 Host 二进制也含该目录和取消提示。ETE bootstrap/启动器会在独立 profile 新建同名标记。包内副本保守保留，不把“零字节”当作无意义。 |
-| `注意事项.txt` | 删除 | UTF-16 旧用户说明指向已退役的外部播放器、旧配置/卸载菜单和权限修复，显卡建议也混用不适用于当前固定 Native 渲染路径的选项。没有当前运行读取者。原文包含旧使用限制，因此原始文件、其 manifest 记录与来源/许可文档均保留；仅退出当前运行包的用户操作说明。 |
+| `注意事项.txt` | 删除 | UTF-16 旧用户说明指向已退役的外部播放器、旧配置/卸载菜单和权限修复，显卡建议也混用不适用于当前固定 Native 渲染路径的选项。没有当前运行读取者。原文包含旧使用限制；其原文同时保留在随包 SMALL_RUNTIME_INPUT.md 的历史声明记录中，原始文件及 manifest 也保留。仅剥离过时操作说明文件，不删除声明记录。 |
 | `www/modules/CustomCssJS.js` | 保留 | app.js 的插件清单仍加载它；server/local CSS 选择及加载有效。既有 hash-pinned overlay 已禁止动态 JS 执行，保留脚本配置并提示；本候选不改变该合同。 |
 
 这里区分了“还有历史手工用途”和“当前受支持功能”。两份 BAT 及其配套资源作为一组旧手工工具退役，不能把这一变化描述为原来完全没有功能。新包不再附送背景模糊覆盖工具、全局字体/播放器预设和旧清账户/权限修复工具；当前 CSS 定制、主题、播放器字幕选择与 Native 播放链保持。
