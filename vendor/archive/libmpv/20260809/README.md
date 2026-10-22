@@ -33,6 +33,17 @@ Known preferred-source revisions are mpv
 `cd1edc11dc6887a50f705717619d879f5a93a488`.
 The fixed builder includes recipes and patches, but is not a lock of all actual
 cached dependency revisions. The archive itself carries no complete corresponding
-source or written source offer. These links and notices do not establish complete
-source delivery for the statically linked DLL. Public binary upload remains pending
-that review; no new permission from upstream is claimed.
+source or written source offer. These links and notices do not independently
+establish complete source delivery for the finished DLL. Public binary upload
+awaits the current distribution-material review decision; no new permission from
+upstream is claimed.
+
+The minimum distribution materials are the original package identity and origin,
+applicable licence/copyright notices, and clear corresponding-source access
+instructions beside the binary. GPLv3 section 6(d) permits equivalent access on a
+third-party source server, with continued availability remaining the distributor's
+responsibility. A separate all-dependency lock, full SBOM, individual permission
+from every author, PDB collection or bit-identical rebuild is not a universal
+prerequisite asserted by this review. The specific unconfirmed item is whether the
+published source directions cover this exact finished package; missing independent
+dependency attribution alone is not treated as a prohibition on copying it.
