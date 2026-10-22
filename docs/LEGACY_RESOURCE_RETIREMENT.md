@@ -10,7 +10,7 @@ AGENTS.md 要求 vendor 和原始归档只读，因此本候选通过既有 `too
 
 | 项目 | 新发布包选择 | 已核对的用途与理由 |
 | --- | --- | --- |
-| `external/Anime4K/Anime4K-off.conf` | 删除 | 旧 Ctrl+0/反引号切换所用替换文件；现有 `onLoaded` 已退役这些快捷键与全局 mpv 文件重命名，回归仍验证不注册、不改配置。文件本身含启用的 shader 行，不能因文件名假定它会关闭滤镜。正常启动和 Native Helper 不读取此包内备用文件。保留另一个 Anime4K.conf、input.conf 与全部 shader；不扩展清理范围。 |
+| `external/Anime4K/Anime4K-off.conf` | 删除 | 旧 Ctrl+0/反引号切换所用替换文件；现有 `onLoaded` 已退役这些快捷键与全局 mpv 文件重命名，回归仍验证不注册、不改配置。文件本身含启用的 shader 行，不能因文件名假定它会关闭滤镜。正常启动和 Native Helper 不读取此包内备用文件。保留现有全部 39 份 shader；快照中没有另附 Anime4K.conf 或 input.conf，不扩展清理范围。 |
 | `external/emby.disable/www/modules/layout.css` | 删除 | 仅供旧 BAT 的“禁用背景模糊”操作覆盖正式布局；不是浏览器加载的实际 layout.css。覆盖会抹去当前受哈希管理的布局修正。 |
 | `external/emby.disable/www/modules/themes/darkgradient/theme.css` | 删除 | 同一手工主题覆盖组；实际 Web 主题仍由原模块加载，保持原字节。 |
 | `external/emby.enable/www/modules/layout.css` | 删除 | 仅供旧 BAT 的“启用背景模糊”操作覆盖正式布局；不属于当前主题选择或 CSS 定制入口。 |
