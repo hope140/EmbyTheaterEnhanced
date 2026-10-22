@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-22 — 两份 Web 修复直接纳入派生维护源码候选
+
+ApiClient 和 toast 的现有最终字节直接纳入 `src/electronapp/www` 下两个明确开放的维护路径，由既有 Git blob 装配器复制；移除对应用户补丁、ApiClient 生命周期生成器及两个 overlay 入口，其余 overlay 保持。维护源码明确为固定历史 Web 的派生文件，保留用户原有重连/进度/toast 修复和后续 socket/注销/计时器归属修复，不将继承正文整体标作原创，不替换原上游版本。
+
+原缺件已按固定官方 ZIP/Git blobs 和仓库原始归档恢复，材料门禁保持原校验。直接源码方案完整 npm test 为 1429 pass / 0 fail / 10 Windows 专属 skip；全部显式材料自测 136/136，0 fail/skip，完整门禁通过。822 个基底及937个中间文件对照通过；相对 main `6fee412` 的720个 Web 文件路径/SHA完全相同。HEAD输入合同84文件、JS语法385文件、有限模式检查442文件通过。未进行 Windows 整包、GUI、登录或用户媒体验收。vendor、remoteaudio/remotevideo、依赖和版本保持，发布分支、Tag/Release/附件不动。来源和复现见 [Web 输入合同](WEB_SNAPSHOT_INPUT.md)。
+
 ## 2026-10-22 — v0.3.16 云构建与发布前文档修订
 
 产品 source 固定 `6fee412ad68934d0194303916cfe346e6254a228`，[Windows Actions run 39737710070](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/39737710070) 成功，发行模式开启：全量 1439/1439、显式材料 131/131、标准构建、VerifyOnly、安装器编译和完整解包对照通过，失败/跳过/取消均为 0。独立下载回执确认原 artifact 的 CRC、13 文件集合、校验表与安装器哈希；2170 个完整 runtime 文件对照通过。本次没有新包 GUI、真实播放或安装验收。

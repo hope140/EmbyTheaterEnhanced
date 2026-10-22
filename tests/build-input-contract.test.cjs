@@ -96,7 +96,7 @@ test('every declared build input rejects dirty working text', t => {
 
 test('Web overlay patchers are consumed and source-bound build inputs', t => {
     const patcherPaths = [
-        'tools/patch-videoosd-lifecycle.cjs', 'tools/patch-apiclient-lifecycle.cjs',
+        'tools/patch-videoosd-lifecycle.cjs',
         'tools/patch-custom-css-js.cjs',
         'tools/patch-externalplayer-residue.cjs',
         'tools/patch-item-controls.cjs',

@@ -83,3 +83,31 @@ test('LF and CRLF worktree representations produce the same runtime bytes', () =
         fs.rmSync(fixture.root, {recursive: true, force: true});
     }
 });
+
+test('maintained ApiClient and toast materialize directly from committed source without Web patches', () => {
+    const fixture = createRepository();
+    const runtime = path.join(fixture.root, 'runtime-maintained-web');
+    const relativePaths = ['www/modules/emby-apiclient/apiclient.js', 'www/modules/toast/toast.css'];
+    try {
+        writeFile(fixture.root, '.gitattributes', relativePaths.map(name => '/src/electronapp/' + name + ' -text').join('\n') + '\n');
+        const expected = new Map(relativePaths.map(name => [name, fs.readFileSync(path.join(__dirname, '../src/electronapp', name))]));
+        for (const [name, bytes] of expected) writeFile(fixture.root, 'src/electronapp/' + name, bytes);
+        git(fixture.root, ['add', '.gitattributes', 'src/electronapp']);
+        git(fixture.root, ['commit', '-m', 'maintain the two derived Web sources']);
+        const commit = git(fixture.root, ['rev-parse', 'HEAD']);
+        for (const name of relativePaths) writeFile(fixture.root, 'src/electronapp/' + name, 'dirty checkout bytes');
+        writeFile(fixture.root, 'src/electronapp/www/untracked.js', 'untracked Web shadow');
+        const result = sourceContract.materializeTrackedProductSources(fixture.root, commit, runtime);
+        for (const [name, bytes] of expected) {
+            assert.deepEqual(fs.readFileSync(path.join(runtime, 'electronapp', name)), bytes);
+            const entry = result.entries.find(entry => entry.runtimePath === 'electronapp/' + name);
+            assert.equal(entry.sourcePath, 'src/electronapp/' + name);
+            assert.equal(entry.sourceSha256, sourceContract.sha256(bytes));
+        }
+        assert.equal(fs.existsSync(path.join(runtime, 'electronapp/www/untracked.js')), false);
+        assert.equal(fs.existsSync(path.join(fixture.root, 'tools')), false, 'no patch generator is required');
+        assert.equal(fs.existsSync(path.join(fixture.root, 'vendor')), false, 'no historical carrier is required');
+    } finally {
+        fs.rmSync(fixture.root, {recursive: true, force: true});
+    }
+});

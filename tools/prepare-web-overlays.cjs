@@ -17,7 +17,6 @@ const selectCancel = require('./patch-select-cancel.cjs');
 const actionSheetLayout = require('./patch-actionsheet-layout.cjs');
 const startup = require('./patch-startup.cjs');
 const videoOsdLifecycle = require('./patch-videoosd-lifecycle.cjs');
-const apiClientLifecycle = require('./patch-apiclient-lifecycle.cjs');
 const trackedFileHash = require('./tracked-file-hash.cjs');
 
 const GENERATOR_PATH = 'tools/prepare-web-overlays.cjs';
@@ -35,7 +34,6 @@ const SELECT_CANCEL_GENERATOR_PATH = 'tools/patch-select-cancel.cjs';
 const ACTIONSHEET_LAYOUT_GENERATOR_PATH = 'tools/patch-actionsheet-layout.cjs';
 const STARTUP_GENERATOR_PATH = 'tools/patch-startup.cjs';
 const OSD_LIFECYCLE_GENERATOR_PATH = 'tools/patch-videoosd-lifecycle.cjs';
-const APICLIENT_LIFECYCLE_GENERATOR_PATH = 'tools/patch-apiclient-lifecycle.cjs';
 
 const WEB_OVERLAY_CONTRACT = Object.freeze([
     Object.freeze({
@@ -261,28 +259,6 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         generatorPaths: Object.freeze([GENERATOR_PATH, ITEM_CONTROLS_GENERATOR_PATH, CONTENT_WIDTH_GENERATOR_PATH])
     }),
     Object.freeze({
-        id: 'apiclient',
-        mode: 'vendor-payload-transform',
-        basePath: 'vendor/web-snapshot/www/modules/emby-apiclient/apiclient.js',
-        inputPath: 'vendor/web-snapshot/user-patches/apiclient.js',
-        runtimePath: 'electronapp/www/modules/emby-apiclient/apiclient.js',
-        expectedBaseSha256: 'F3516C72784E5BC8782ABBCE021F22A7F939034E5B8B70639672AE682E18ACC0',
-        expectedInputSha256: 'A4A901640ABE6BC25188C1CF27FB53125B4F65EF2A797DEF033DC55165B080AE',
-        expectedOutputSha256: '6342A2C809B8CD4C0E1E3E35FC49F6AF8A415E4F4F8F8F0363CB769E9A7EF95E',
-        generatorPaths: Object.freeze([GENERATOR_PATH, APICLIENT_LIFECYCLE_GENERATOR_PATH])
-    }),
-    Object.freeze({
-        id: 'toast-css',
-        mode: 'vendor-payload-replacement',
-        basePath: 'vendor/web-snapshot/www/modules/toast/toast.css',
-        inputPath: 'vendor/web-snapshot/user-patches/toast.css',
-        runtimePath: 'electronapp/www/modules/toast/toast.css',
-        expectedBaseSha256: 'E4E8EFCDFBE4841FD05B6CFE6B2A94393474899F3977416077D99B4F8CAD0E39',
-        expectedInputSha256: '654AEB05C1B89CA625CC6BD9145F1966A780C0E80FE1197F619800C5F1894743',
-        expectedOutputSha256: '654AEB05C1B89CA625CC6BD9145F1966A780C0E80FE1197F619800C5F1894743',
-        generatorPaths: Object.freeze([GENERATOR_PATH])
-    }),
-    Object.freeze({
         id: 'app-js',
         mode: 'tracked-canonical-transform',
         basePath: 'vendor/web-snapshot/www/app.js',
@@ -347,16 +323,6 @@ function readChecked(root, relativePath, expectedHash, label) {
 
 function outputFor(root, contract) {
     const base = readChecked(root, contract.basePath, contract.expectedBaseSha256, 'Web overlay base');
-    if (contract.mode === 'vendor-payload-transform' && contract.id === 'apiclient') {
-        const input = readChecked(root, contract.inputPath, contract.expectedInputSha256, 'Web overlay input');
-        return {base, input, output: Buffer.from(apiClientLifecycle.patchApiClient(input.toString('utf8')), 'utf8')};
-    }
-    if (contract.mode === 'vendor-payload-replacement') {
-        return {
-            base,
-            input: readChecked(root, contract.inputPath, contract.expectedInputSha256, 'Web overlay input')
-        };
-    }
     if (contract.id === 'videoosd-lifecycle') return {base, input: Buffer.from(videoOsdLifecycle.patchVideoOsd(base.toString('utf8')), 'utf8')};
     if (contract.id === 'startup-index') return {base, input: Buffer.from(startup.patchStartup(base.toString('utf8')), 'utf8')};
     if (contract.id === 'actionsheet-layout') return {base, input: Buffer.from(actionSheetLayout.patchActionSheetCss(base.toString('utf8')), 'utf8')};
