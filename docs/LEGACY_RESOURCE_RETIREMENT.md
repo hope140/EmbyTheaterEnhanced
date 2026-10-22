@@ -3,13 +3,13 @@
 Current v2 update: seventeen reviewed old bodies are removed from the current tree: fifteen retired resources and two maintained replacements. Active counts are39/2/716. The native camera settings pair is the latest narrow addition; [its desktop-usefulness and server-page regression evidence](MOBILE_CAMERA_SETTINGS_RETIREMENT.md) stays separate from the prior051f990 successful check. Original manifests/hashes and necessary declarations remain. Earlier statements below describe preceding stages.
 
 
-本候选从 `main` 的 `6fee412ad68934d0194303916cfe346e6254a228` 独立开展，处理初始十四项及后来明确追加的一张旧启动 logo。13 项不再进入**新构建的 runtime/安装包**，2 项功能保留并由维护层生成；profile 中实际生效的 CEC 标记继续独立创建。没有修改产品版本、v0.3.16 发行源码、Tag、Release 或附件；没有合并 main。ApiClient/toast 自有补丁另行维护。
+本候选从 `main` 的 `6fee412ad68934d0194303916cfe346e6254a228` 独立开展，处理初始十四项、追加的一张旧启动 logo 及两份移动端相机设置页。15 项不再进入**新构建的 runtime/安装包**，2 项功能保留并由维护层生成；profile 中实际生效的 CEC 标记继续独立创建。没有修改产品版本、v0.3.16 发行源码、Tag、Release 或附件；没有合并 main。ApiClient/toast 已由合入 main 的 PR67 维护，本 PR 保留其最终字节和行为。
 
-初期按只读快照规则仅做发布剥离；随后明确批准新快照迁移，现已将这十五个旧正文移出当前 tree。v1 的精确 manifest/hash 及旧 Git/tag 保留，活动 v2 严格校验其余资源与两个维护输出。用途退役和正文移除都不构成全部来源/许可已解决的证据。
+初期按只读快照规则仅做发布剥离；随后明确批准新快照迁移，现已将这十七个旧正文移出当前 tree。v1 的精确 manifest/hash 及旧 Git/tag 保留，活动 v2 严格校验其余资源与两个维护输出。用途退役和正文移除都不构成全部来源/许可已解决的证据。
 
 ## 逐项决定
 
-前九项路径相对 `vendor/compatibility-resources/snapshot-v1/`，第十至十三项相对 `vendor/small-runtime/snapshot-v1/`，最后两项相对 `vendor/web-snapshot/`。
+前九项路径相对 `vendor/compatibility-resources/snapshot-v1/`，第十至十三项相对 `vendor/small-runtime/snapshot-v1/`，最后四项相对 `vendor/web-snapshot/`。
 
 | 项目 | 新发布包选择 | 已核对的用途与理由 |
 | --- | --- | --- |
@@ -28,7 +28,11 @@ Current v2 update: seventeen reviewed old bodies are removed from the current tr
 | `注意事项.txt` | 删除 | UTF-16 旧用户说明指向已退役的外部播放器、旧配置/卸载菜单和权限修复，显卡建议也混用不适用于当前固定 Native 渲染路径的选项。没有当前运行读取者。原文包含旧使用限制；其原文同时保留在随包 SMALL_RUNTIME_INPUT.md 的历史声明记录中，旧 Git 原文及历史 manifest 保留。仅剥离过时操作说明文件，不删除声明记录。 |
 | `www/modules/CustomCssJS.js` | 删除可选集成 | 退役前可在 Electron 登录后消费服务端插件的 forced_on CSS，并非所有桌面场景都不可执行。本候选按明确退役范围删除本地注册、运行包模块及专属禁 JS 生成器；普通 CSS、主题和原生 Branding/Css 既有逻辑保持。旧 Git 中的脚本身份及已查明的上游/GPL 记录保留。 |
 
-| `www/modules/themes/logo.png` | 删除旧启动图 | 旧通用 index 的唯一字面引用已由固定 startup overlay 改为现有 ETE startup.svg；PR70 对 398 份 JS 的解码字符串、常量拼接和动态候选评估也未找到其他消费者。本候选仅剥离旧 PNG，不动标题/屏保图；原 index/PNG 仍作为冻结输入保存。尺寸、透明背景、动态主题及最终目标检查见下方。 |
+| `www/modules/themes/logo.png` | 删除旧启动图 | 旧通用 index 的唯一字面引用已由固定 startup overlay 改为现有 ETE startup.svg；PR70 对 398 份 JS 的解码字符串、常量拼接和动态候选评估也未找到其他消费者。本候选仅剥离旧 PNG，不动标题/屏保图；旧 index/PNG 的 Git 原文和历史 manifest 保留，当前活动 index 已使用现有 ETE SVG。尺寸、透明背景、动态主题及最终目标检查见下方。 |
+
+
+| `www/settings/cameraupload.js` | 删除移动端本地设置 | 调用本地照片目录、目标服务器与仅WiFi原生上传服务；当前桌面host不声明能力，服务仅iOS/Android注册，旧设置路由已注释。共享appsettings/sync和devices服务端管理controller保持。 |
+| `www/settings/cameraupload.html` | 删除配套页面 | 仅为上述本地上传controller提供目录、服务器、WiFi及进度表单；当前桌面没有有效注册入口。删除后设置路径无悬空导入，devices/cameraupload.html管理员路由、配置API及普通设置路由由独立mock回归保留。 |
 
 这里区分了“还有历史手工用途”和“当前受支持功能”。两份 BAT 及其配套资源作为一组旧手工工具退役，不能把这一变化描述为原来完全没有功能。新包不再附送背景模糊覆盖工具、全局字体/播放器预设和旧清账户/权限修复工具；该可选插件的 CSS/JS 配置消费不再提供；普通 CSS、主题、播放器字幕选择与 Native 播放链保持，不读取或删除旧 localStorage。
 
@@ -42,7 +46,7 @@ Host 参考仅使用仓库既有固定引用 [708fadc](https://github.com/MediaB
 
 ## 装配、哈希与通知
 
-原兼容48项与小组件4项的 manifest 原字节、每项记录及 treeSha256 保留并校验，不再要求旧正文存在。v2 按明确差值校验39项兼容资源和两个维护输出；活动输入不得缺失、篡改或夹入额外文件。输出只选 39 项兼容资源、2 项小资源和 718 项 Web 基底资源；组件运行时验证及最终 runtime 排除合同拒绝被重新放回的旧文件。plan、装配结果与 source-provenance 同时记录完整输入身份、实际 runtime 数量/字节/树哈希及排除项，避免用输入数量冒充实际分发数量。
+原兼容48项与小组件4项的 manifest 原字节、每项记录及 treeSha256 保留并校验，不再要求旧正文存在。v2 按明确差值校验39项兼容资源和两个维护输出；活动输入不得缺失、篡改或夹入额外文件。输出只选 39 项兼容资源、2 项小资源和 716 项 Web 基底资源；组件运行时验证及最终 runtime 排除合同拒绝被重新放回的旧文件。plan、装配结果与 source-provenance 同时记录完整输入身份、实际 runtime 数量/字节/树哈希及排除项，避免用输入数量冒充实际分发数量。
 
 | 组件 | 新 runtime 文件/字节 | 新 runtime tree SHA256 |
 | --- | --- | --- |
