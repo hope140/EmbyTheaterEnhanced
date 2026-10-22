@@ -61,6 +61,10 @@ function createFixture(root) {
     addManifestFile(files, root, 'electronapp/www/modules/CustomCssJS.js', 'retired optional Web fixture\n');
     addManifestFile(files, root, 'electronapp/www/modules/themes/logo.png', 'retired startup logo fixture\n');
     for(const name of ['electronapp/www/settings/cameraupload.js','electronapp/www/settings/cameraupload.html']) addManifestFile(files,root,name,'synthetic retired mobile settings');
+    for(const name of ['electronapp/www/components/directorybrowser/directorybrowser.css',
+        'electronapp/www/modules/emby-apiclient/appstorage-cache.js','electronapp/www/serviceworker-app.js']) {
+        addManifestFile(files,root,name,'synthetic retired Web residue');
+    }
     addManifestFile(files, root, 'electronapp/libmpv/x64/mpv-1.dll', 'base-libmpv-fixture\n');
     addManifestFile(files, root, 'MediaBrowser.Model.dll', 'historical Model fixture\n');
     const playbackFixture = Buffer.from('const playback = true;\n');
@@ -251,7 +255,9 @@ test('historical Electron, Pepper and old libmpv bodies are not provenance prere
     const root=createTempRoot('ete-provenance-history-only-');
     try {
         createFixture(root);
-        for(const relative of ['x64/electron/electron.exe','x64/electron/version','electronapp/libmpv/x64/mpv-win32-x64.node','electronapp/libmpv/x64/mpv-1.dll']) {
+        const retiredWeb = ['electronapp/www/components/directorybrowser/directorybrowser.css',
+            'electronapp/www/modules/emby-apiclient/appstorage-cache.js','electronapp/www/serviceworker-app.js'];
+        for(const relative of ['x64/electron/electron.exe','x64/electron/version','electronapp/libmpv/x64/mpv-win32-x64.node','electronapp/libmpv/x64/mpv-1.dll',...retiredWeb]) {
             fs.unlinkSync(path.join(root,'vendor/carnival',relative));
         }
         const runtime=createRuntime(root,'runtime-without-history-bodies');
@@ -260,6 +266,12 @@ test('historical Electron, Pepper and old libmpv bodies are not provenance prere
         assert.equal(source.historicalInputs.carnivalElectron.verification,'historical-manifest-only');
         assert.equal(source.runtimeIdentities.libmpv.historicalPredecessor.physicalInputRequired,false);
         assert.equal(source.runtimeExclusions.inputs[0].physicalInputRequired,false);
+        for (const runtimePath of retiredWeb) {
+            const entry = source.runtimeExclusions.inputs.find(input => input.runtimePath === runtimePath);
+            assert.equal(entry.physicalInputRequired,false); assert.equal(entry.excluded,true);
+            assert.equal(entry.recordedSha256,hash(Buffer.from('synthetic retired Web residue')).toUpperCase());
+            assert.equal(fs.existsSync(path.join(runtime,runtimePath)),false);
+        }
         assert.equal(runProvenance('write',root,runtime).exitCode,0);
         fs.appendFileSync(path.join(runtime,'electronapp/libmpv/x64/mpv-1.dll'),'changed current libmpv');
         assert.notEqual(runProvenance('validate',root,runtime).exitCode,0);
