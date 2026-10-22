@@ -13,7 +13,7 @@ function create(root, fromLegacy = false) {
     }
     const oldPaths = [...input.SMALL_PATHS, ...require('../../tools/runtime-exclusions.cjs').RETIRED_SMALL_RUNTIME_PATHS];
     const history = oldPaths.map(name=>{
-        const bytes=fromLegacy?fs.readFileSync(path.join(root,'vendor/carnival',name)):Buffer.from('synthetic historical '+name);
+        const bytes=fromLegacy?fs.readFileSync(path.join(root,'vendor/carnival',name)):Buffer.from(name==='cec-driver/cancel'?'':'synthetic historical '+name);
         return {path:name,size:bytes.length,sha256:crypto.createHash('sha256').update(bytes).digest('hex')};
     });
     const files=input.SMALL_PATHS.map(name=>{

@@ -117,7 +117,7 @@ function verifyTree(directory, entries) {
 function validate(rootArg) {
     const root = path.resolve(rootArg), manifest = load(root);
     verifyTree(path.join(root, INPUT_ROOT), [...manifest.files, ...manifest.userPatches]);
-    return {status:'passed',manifestPath:MANIFEST_PATH,manifestSha256:sha(fs.readFileSync(path.join(root,MANIFEST_PATH))),fileCount:manifest.fileCount,bytes:manifest.bytes,treeSha256:manifest.treeSha256,userPatchCount:manifest.userPatches.length};
+    return {status:'passed',manifestPath:MANIFEST_PATH,manifestSha256:sha(fs.readFileSync(path.join(root,MANIFEST_PATH))),version:manifest.version,migration:manifest.migration,fileCount:manifest.fileCount,bytes:manifest.bytes,treeSha256:manifest.treeSha256,userPatchCount:manifest.userPatches.length};
 }
 function assemble(rootArg, runtimeArg) {
     const root = path.resolve(rootArg), runtime = path.resolve(runtimeArg);

@@ -102,6 +102,7 @@ function createFixture(root) {
     require('./helpers/model-compatibility-fixture.cjs').create(root);
     const small=require('./helpers/small-runtime-fixture.cjs').create(root);
     for(const entry of small.files)addManifestFile(files,root,entry.path,fs.readFileSync(path.join(root,smallRuntimeInput.INPUT_ROOT,entry.path)));
+    for(const name of require('../tools/runtime-exclusions.cjs').RETIRED_SMALL_RUNTIME_PATHS) addManifestFile(files,root,name,name==='cec-driver/cancel'?'':'synthetic historical '+name);
     for (const name of require('../tools/runtime-exclusions.cjs').RETIRED_COMPATIBILITY_PATHS) {
         addManifestFile(files, root, name, 'synthetic retired resource; never executed');
     }

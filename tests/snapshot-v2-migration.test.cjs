@@ -9,7 +9,7 @@ test('exactly fifteen reviewed old bodies leave the current tree and all three h
     for(const entry of record.removedOldBodies)assert.equal(fs.existsSync(path.join(root,entry.previousPath)),false,entry.previousPath);
     for(const [name,count]of Object.entries({'compatibility-resources':39,'small-runtime':2,'web-snapshot':718})){
         const input=require('../tools/'+name+'-input.cjs'),manifest=input.load(root),previous=record.components[name];
-        assert.equal(manifest.version,'snapshot-v2');assert.equal(manifest.fileCount,count);assert.equal(input.validate(root).status,'passed');
+        assert.equal(manifest.version,'snapshot-v2');assert.equal(manifest.fileCount,count);assert.equal(input.validate(root).status,'passed');assert.deepEqual(input.validate(root).migration,manifest.migration);
         assert.equal(sha(fs.readFileSync(path.join(root,previous.historicalManifestPath))),previous.historicalManifestSha256);
         const old=JSON.parse(fs.readFileSync(path.join(root,previous.historicalManifestPath)));
         for(const entry of manifest.files){const bytes=fs.readFileSync(path.join(root,manifest.inputRoot,entry.path));if(oldNonempty.has(sha(bytes))){const retained=old.files.find(x=>x.path===entry.path);assert.ok(retained,'new location disguises an old body: '+entry.path);assert.equal(retained.sha256,entry.sha256,'pre-existing active bytes must remain unchanged');}}

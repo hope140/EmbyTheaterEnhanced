@@ -132,5 +132,22 @@
       "beforeSha256": "ca05a9a26de19e16bb89c3595d29c95e3a56876439e968e3f464b218a101053a",
       "afterSha256": "18f777ee20f9829f3e7e4ab53a3442e7d4bd1532689e7ece0b874281e0bb305d"
     }
+  ],
+  "verifiedTranslationValueChanges": 13,
+  "verifiedTranslationLineChanges": 13,
+  "verifiedInheritedValues": 24,
+  "preexistingSharedContent": [
+    {
+      "component": "web-snapshot",
+      "activePath": "www/modules/layout.css",
+      "sha256": "d6eb9a45859d776806b7b7078c4763c452dada04834b3f461797dee1fe80dc8c",
+      "meaning": "Pre-existing active bytes retained at the same path; not a new copy of a retired input"
+    },
+    {
+      "component": "web-snapshot",
+      "activePath": "www/modules/themes/darkgradient/theme.css",
+      "sha256": "d8a7104966af90053348eee164f7ad2715e95dee06fa7d84f0f4515958e76cc9",
+      "meaning": "Pre-existing active bytes retained at the same path; not a new copy of a retired input"
+    }
   ]
 }

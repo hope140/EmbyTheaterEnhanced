@@ -41,11 +41,12 @@ function systemDefaults(rootArg) {
 }
 function runtimeFiles(root, manifest) {
     const generated = [systemDefaults(root).metadata, translationOutput(root).metadata];
+    const historical=web.migrationHistory(root,manifest,[...retired],SMALL_PATHS);
     return manifest.files.filter(entry => !retired.has(entry.path)).map(entry => {
         const replacement = generated.find(item => item.runtimePath === entry.path);
         return replacement
         ? {...entry, size: replacement.size, sha256: replacement.sha256, sourcePath: replacement.sourcePath, sourceSha256: replacement.sourceSha256,
-            historicalSha256: entry.sha256, relation: replacement.relation} : entry;
+            historicalSha256: historical.files.find(item=>item.path===entry.path).sha256, relation: replacement.relation} : entry;
     });
 }
 function runtimeSelection(root, manifest) {
@@ -123,7 +124,7 @@ function validate(rootArg) {
     const root=path.resolve(rootArg),manifest=load(root);
     web.verifyTree(path.join(root,INPUT_ROOT),manifest.files);
     return {status:'passed',manifestPath:MANIFEST_PATH,manifestSha256:sha(fs.readFileSync(path.join(root,MANIFEST_PATH))),
-        version:manifest.version,provenance:manifest.provenance,fileCount:manifest.fileCount,bytes:manifest.bytes,treeSha256:manifest.treeSha256};
+        version:manifest.version,migration:manifest.migration,provenance:manifest.provenance,fileCount:manifest.fileCount,bytes:manifest.bytes,treeSha256:manifest.treeSha256};
 }
 function importSnapshot(rootArg,sourceArg) {
     const root=path.resolve(rootArg),manifest=load(root),source=path.resolve(sourceArg);physical(source,true);

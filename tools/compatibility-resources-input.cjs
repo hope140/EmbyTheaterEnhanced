@@ -62,7 +62,7 @@ function validate(rootArg) {
     const root=path.resolve(rootArg),manifest=load(root);
     web.verifyTree(path.join(root,INPUT_ROOT),manifest.files);
     return {status:'passed',manifestPath:MANIFEST_PATH,manifestSha256:sha(fs.readFileSync(path.join(root,MANIFEST_PATH))),
-        version:manifest.version,provenance:manifest.provenance,fileCount:manifest.fileCount,bytes:manifest.bytes,treeSha256:manifest.treeSha256};
+        version:manifest.version,migration:manifest.migration,provenance:manifest.provenance,fileCount:manifest.fileCount,bytes:manifest.bytes,treeSha256:manifest.treeSha256};
 }
 function importSnapshot(rootArg,sourceArg) {
     const root=path.resolve(rootArg),manifest=load(root),source=path.resolve(sourceArg);physical(source,true);

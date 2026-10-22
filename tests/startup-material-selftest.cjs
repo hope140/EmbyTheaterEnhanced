@@ -14,13 +14,15 @@ function sha256(value) {
     return crypto.createHash('sha256').update(value).digest('hex').toUpperCase();
 }
 
-test('frozen startup index produces the fixed overlay while retaining its DOM and loader bytes', () => {
+test('v2 startup input already has the fixed overlay identity and preserves DOM and loader bytes', () => {
     const contract = preparation.WEB_OVERLAY_CONTRACT.find(item => item.id === 'startup-index');
     assert.ok(contract, 'startup-index overlay contract must exist');
 
     const base = fs.readFileSync(path.join(repoRoot, contract.basePath));
     assert.equal(sha256(base), contract.expectedBaseSha256);
-    const output = Buffer.from(patchStartup(base.toString('utf8')), 'utf8');
+    const output = base;
+    assert.equal(sha256(output),'18F777EE20F9829F3E7E4AB53A3442E7D4BD1532689E7ECE0B874281E0BB305D');
+    assert.throws(()=>patchStartup(base.toString('utf8')),/Startup source contract mismatch/);
     assert.equal(sha256(output), contract.expectedOutputSha256);
 
     const baseText = base.toString('utf8');
