@@ -25,38 +25,77 @@ jobs:
         with:
           node-version: 24.18.1
 
+      - name: Classify complete event change range
+        id: scope
+        env:
+          CI_EVENT_NAME: ${{ github.event_name }}
+          CI_PULL_REQUEST_BASE: ${{ github.event.pull_request.base.sha }}
+          CI_PULL_REQUEST_HEAD: ${{ github.event.pull_request.head.sha }}
+          CI_PUSH_BEFORE: ${{ github.event.before }}
+          CI_PUSH_HEAD: ${{ github.event.after }}
+        run: node tools/ci-change-scope.cjs
+
+      - name: Check documentation format, local links and credential patterns
+        id: docs
+        if: steps.scope.outputs.mode == 'docs'
+        env:
+          CI_EVENT_NAME: ${{ github.event_name }}
+          CI_PULL_REQUEST_BASE: ${{ github.event.pull_request.base.sha }}
+          CI_PULL_REQUEST_HEAD: ${{ github.event.pull_request.head.sha }}
+          CI_PUSH_BEFORE: ${{ github.event.before }}
+          CI_PUSH_HEAD: ${{ github.event.after }}
+        run: node tools/ci-docs-check.cjs
+
       - name: Install locked JavaScript dependencies without lifecycle scripts
+        if: steps.scope.outputs.mode != 'docs'
         run: npm ci --ignore-scripts
 
       - name: Inspect Windows temporary path identity
+        if: steps.scope.outputs.mode != 'docs'
         run: node tools/ci-windows-path-diagnostics.cjs
 
       - name: Verify exact repository snapshot bytes
+        if: steps.scope.outputs.mode != 'docs'
         run: node -e "for (const name of ['web-snapshot','compatibility-resources','small-runtime','model-compatibility']) require('./tools/'+name+'-input.cjs').validate(process.cwd()); console.log('All four repository snapshots match their manifests.');"
 
       - name: Verify committed original libmpv archive
+        if: steps.scope.outputs.mode != 'docs'
         run: node tools/libmpv-input.cjs validate-archive .
 
       - name: Run public offline test set
+        id: regression
+        if: steps.scope.outputs.mode != 'docs'
         run: node tools/ci-public-tests.cjs
 
       - name: Check maintained JavaScript syntax
+        if: steps.scope.outputs.mode != 'docs'
         run: node tools/ci-syntax.cjs
 
       - name: Check maintained PowerShell syntax
+        if: steps.scope.outputs.mode != 'docs'
         shell: pwsh
         run: ./tools/ci-powershell-syntax.ps1
 
       - name: Check credentials patterns in maintained source
+        if: steps.scope.outputs.mode != 'docs'
         run: node tools/ci-secret-scan.cjs
 
       - name: Check patch whitespace
+        if: steps.scope.outputs.mode != 'docs'
         env:
           CI_EVENT_NAME: ${{ github.event_name }}
           CI_PULL_REQUEST_BASE: ${{ github.event.pull_request.base.sha }}
           CI_PUSH_BEFORE: ${{ github.event.before }}
           CI_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: node tools/ci-diff-check.cjs
+
+      - name: Report actual validation route
+        if: always()
+        env:
+          CI_SCOPE_MODE: ${{ steps.scope.outputs.mode }}
+          CI_DOCS_OUTCOME: ${{ steps.docs.outcome }}
+          CI_TEST_OUTCOME: ${{ steps.regression.outcome }}
+        run: node tools/ci-change-scope.cjs summary
 
   manual-windows-test-package:
     if: github.event_name == 'workflow_dispatch'
