@@ -20,7 +20,7 @@
 |---|---|
 | 历史Web来源取样 | 广泛历史取样结束；剩余内容按精确清单定点核对，4.7.8/4.7.11窗口已收束，结果见下节 |
 | 来源与许可闭合 | 首要进行项；按[五类问题](dependency-research/ISSUES.md)逐项取最小证据，仍在用的未闭合内容保留明确决定 |
-| 用户Web增量提取 | [PR #67](https://github.com/hope140/EmbyTheaterEnhanced/pull/67)未合并；[当前检查](https://github.com/hope140/EmbyTheaterEnhanced/pull/67/checks)与可合并状态以PR为准。它不表示旧Web全部成为项目原创 |
+| 用户Web增量提取 | [PR #67](https://github.com/hope140/EmbyTheaterEnhanced/pull/67)已合并；[当前检查](https://github.com/hope140/EmbyTheaterEnhanced/pull/67/checks)与可合并状态以PR为准。它不表示旧Web全部成为项目原创 |
 | v0.3.16 | source `6fee412ad68934d0194303916cfe346e6254a228`的[Windows打包作业](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/39737710070/job/119687231702)成功；[v0.3.16](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.16)已于2026-10-22 08:35 UTC公开发布，不是许可清零结论。[发行核验入口](V0316_RELEASE_VERIFICATION.md)由发行任务另行更新 |
 | 14项旧资源 | 来源普查已停止；8项变体与6项旧包转为[实际用途及分发清理](dependency-research/ISSUES.md#旧资源实际用途清理)，不列作活跃来源追溯。[PR #69](https://github.com/hope140/EmbyTheaterEnhanced/pull/69)退役集成进行中，尚未合并，不计作已删除 |
 | 前端新功能 | 当前仅保存历史参考；来源、许可及仍用内容的决定闭合前，不由此自动启动移植或功能扩张 |
@@ -82,6 +82,8 @@ Model当前为426,496 bytes、SHA256 `db22f8ea6cb6afdfab184f80d8b85a10d8a9f148ff
 许可主线另取得官方4.7.6 Debian包随带的2018-04-11许可文档原件与hash；其范围和限制及尚未建立的Web适用关系见[许可问题](dependency-research/ISSUES.md)。另有指定来源线索已按固定路径复核：CustomCssJS与Shurelol/Emby.CustomCssJS固定commit仅CRLF/LF不同，LICENSE为GPLv3文本，见[问题清单](dependency-research/ISSUES.md#customcssjs固定来源)。这不是官方byte对应或整体许可闭合；PR #69未合并前不减少使用/分发条目数。
 
 本窗口停止继续扩版本。[许可族与最小候选边界](dependency-research/ISSUES.md#代表组件的许可链有限核验)已记录page.js的MIT原件、WebVTT的Apache-2.0原件、早期官方GPL范围缺口及2022 Web自有修订授权缺口；本轮新增当前整文件许可闭合为0。下一步针对仍用文件的适用许可/补丁证据或logo缺底稿作最小核对，不擅自替换。
+
+用途筛查另已覆盖114内容差异范围：新查105项中104项仍有静态消费者、1项未判定候选（`settings/cameraupload.js`，4,814 bytes）；结合先前9项为112项有消费者、旧logo及camera设置JS两项可能残留、0项确证全模式未用。消费者包括条件模式，不等于桌面实际已加载；无整目录退役结论，未删除或把新候选并入PR #69。见[用途分类与清单](dependency-research/ISSUES.md#当前114差异清单的用途筛查)。来源不明不等于无用，许可未闭合数量仍未统计。
 
 ## 维护方式
 

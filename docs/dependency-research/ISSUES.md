@@ -24,7 +24,7 @@
 | 597份已定位Web | 既有联合审计已确认官方发行物byte身份；本PR交付其中160份独立对应证据 | 仍须按组件与准确版本绑定文本；不能以官方归档或历史Emby GPL声明统一覆盖2022网页 | 清单是冻结输入，最终生成/替换/分发还须沿现有构建合同核对 | 相同输入不证明所有runtime输出未修改；overlay另列 | 优先把既有597证据映射到适用许可/notice及当前消费者；缺文本或适用范围时记录具体缺口 |
 | 6份JS AST、1份CSS AST及114份非空未解释Web | AST对应保留独立等级；其余精确来源/引入revision未明 | 源码相似或AST同不补足许可、版权及版本适用证据 | 先核定哪些仍被复制/生成/实际分发，不按文件数假设必用 | 当前videoosd亮度/触控/倍速、码率默认值等有具体差异，作者未明 | 按原116清单扣除1份CSS结构对应及1份已定位CustomCssJS后的114清单定点追函数/补丁；无法闭合且仍需使用的，列明确替换或独立重写候选后另作决定，不直接替换 |
 | 空serviceworker | 空文件身份可核对 | 空字节不作为作者或年代指纹，也不推导整包许可 | 核定是否仍为所需占位/构建输出 | 不将空文件算作社区修改成果 | 随用途核对处理，不扩大来源扫描 |
-| 两份用户Web载体 | 冻结底稿及用户增量关系分开记录 | 用户修改不改变底稿及独立库的适用文本 | [PR #67](https://github.com/hope140/EmbyTheaterEnhanced/pull/67)提取增量，合并与runtime关系仍以该PR结果为准 | ApiClient的openWebSocket/reportPlaybackProgress及toast既有块删除，不代表整文件用户原创 | 核对提取后可重现输出、原作者通知和补丁边界；PR未合并前不写已交付 |
+| 两份用户Web载体 | 冻结底稿及用户增量关系分开记录 | 用户修改不改变底稿及独立库的适用文本 | [PR #67](https://github.com/hope140/EmbyTheaterEnhanced/pull/67)提取增量，已合并；runtime关系以该PR合同为准 | ApiClient的openWebSocket/reportPlaybackProgress及toast既有块删除，不代表整文件用户原创 | 沿已合并PR核对生成合同、原作者通知及补丁边界；不由增量提取推导整文件作者或许可 |
 | 官方Host/Model、继承npm等固定组件 | 依各组件manifest固定身份；当前Model已换官方字节 | 每个组件的准确许可/notice单列，不从Host或Electron根LICENSE覆盖全部DLL/npm/Web | 核对生产复制与随包通知，历史manifest记录不等于当前物理输入 | 维护源码、输入及生成关系按原合同区分 | 从[源码材料索引](../SOURCE_MATERIALS.md)、[Host输入](../WINDOWS_HOST_INPUT.md)、[Model输入](../MODEL_COMPATIBILITY_INPUT.md)、[继承npm](../INHERITED_NPM_INPUT.md)逐项引用已有材料，不重复宣称全部对应源码已重建 |
 | 14项旧资源 | 来源普查停止；不继续扩大未知包检索 | 是否还需要取得或保留某条目通知，须结合准确用途/分发范围 | 转下节用途清理；保留未闭合消费者证据 | 不把名称相似、版本变体或旧包载体当作项目原创 | 先完成消费者清单，再决定保留、退役或另提替换；不擅自改固定输入 |
 
@@ -81,6 +81,29 @@
 本搜索窗口到此收束：page.js不再猜版本，WebVTT不扩大族版本遍历，helper不再扫Server，logo无新线索不普查图库，核心不再盲扩旧归档。已查来源和许可仍保留可复查证据；下一次继续应由新的固定来源/授权材料，或明确的保留、替代、独立实现、退役决定触发。
 
 轻量缺底稿核对后，114项中仍有112项Server比较底稿、1项新增早期helper语义底稿、1项logo缺底稿；**byte/整文件AST新增仍为0，114差异未闭合总数不扣减**。logo没有扩大成图片资源库普查。
+
+## 当前114差异清单的用途筛查
+
+这是研究ref `6fee412` 的**内容差异清单**用途评估，不是全仓无用文件普查，也不是许可问题统计。扣除上节已看9文件，本轮目标为105；消费者索引限固定720 Web及定点维护层/装配合同。398份JS解析无误，注释不当作调用，单纯定义模块别名不算消费者；又在研究目录重做25项维护overlay并核验输出hash，没有运行产品或修改输入。
+
+| 此轮105目标的类别 | 数量 | 含义 |
+|---|---:|---|
+| 仍有静态消费者（含条件模式） | 104 | 99项有直接路径、AMD别名消费者、路由或样式引用；另外5项补到了动态或维护层消费者。不是宣称104项在当前用户桌面都实际请求过 |
+| 未判定／可能残留候选 | 1 | 仅`settings/cameraupload.js`，4,814 bytes；尚不作为已确认可删除内容 |
+| 已确证所有受支持模式未使用 | 0 | 不把grep无命中或来源未明当作确证 |
+
+合并前轮9项，固定114范围为112项仍有静态消费者、2项可能残留/未判定（旧logo与上述camera设置JS）、0项确证未用；尚未把PR #69计划中的删除计入结果。这个分母只覆盖114内容差异，不适用于597已对应文件或897总账；**许可未闭合数量仍未统计**。
+
+唯一新增候选：[settings/cameraupload.js](https://github.com/hope140/EmbyTheaterEnhanced/blob/6fee412ad68934d0194303916cfe346e6254a228/vendor/web-snapshot/www/settings/cameraupload.js)，SHA256 `cab95e4f266d16c250930d6bb76fd07de18212f2bb777e141396ebdf3f3b6ea8`。[app.js的设置路由](https://github.com/hope140/EmbyTheaterEnhanced/blob/6fee412ad68934d0194303916cfe346e6254a228/vendor/web-snapshot/www/app.js#L691)处于注释块；当前生成overlay仍保留该注释。所取Web与定点维护层未找到活动消费者，仍随manifest复制。伴随的settings HTML存在但不在本轮目标内；`devices/cameraupload.js`另有活动管理路由，不能一并删除。其他自定义导入/模式尚未运行验证，故仅列候选，不并入PR #69已批准项，也不提出整目录删除。潜在4,814 bytes是输入原始大小，不是已实现的安装器节省。
+
+| 初筛无直接路径的其余5项 | 补到的消费者／为何保留 |
+|---|---|
+| `modules/common/strings/zh-CN.json`、`strings/zh-CN.json` | app.js的sharedcomponents/core翻译列表均含zh-CN，按locale构造路径并由globalize选择加载 |
+| `modules/themes/darkgradient/theme.css` | skinmanager从注册主题ID/baseThemeId构造theme.css路径，多个主题别名使用该底主题 |
+| `users/profiletab.js` | users/user.js的profile tab ID与`./users/` + ID + `tab.js`动态导入对应 |
+| `modules/genericedit/genericedit.js` | ETE维护的plugin-ui/genericui.js直接导入，调用renderForm/setFormValues/getItemValues；维护overlay增加对应配置路由 |
+
+105条精确路径/hash、分类、消费者路径/行号/身份hash及动态说明见[证据JSON](evidence/web-history-20261022.json)的`usageScreen105`。本轮没有新的整目录退役证据。下一步若考虑camera候选，先独立决定保留或生产排除，再验隔离runtime的设置/管理相机上传区分、桌面/其他支持模式路由及请求失败；本PR不执行删除。许可适用可以依可靠版本/源码变换/授权范围等证据建立，不要求每个文件先找到同hash才可能有许可。
 
 ## 旧资源实际用途清理
 
