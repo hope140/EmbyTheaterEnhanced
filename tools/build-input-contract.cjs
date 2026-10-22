@@ -66,17 +66,72 @@ function physicalInput(root, relativePath) {
     }
 }
 
+function committedInputs(root, sourceCommit) {
+    // Keep batches invocation-local. HEAD and every physical working path are
+    // checked afresh by inspect; no successful validation is cached.
+    let tree;
+    try { tree = git(root, ['ls-tree', '-z', sourceCommit, '--', ...INPUT_PATHS]); }
+    catch { return null; }
+    const lines = new Map();
+    for (const line of tree.split('\0').filter(Boolean)) {
+        const tab = line.indexOf('\t');
+        const relativePath = line.slice(tab + 1);
+        if (tab < 0 || !INPUT_PATHS.includes(relativePath) || lines.has(relativePath)) return null;
+        lines.set(relativePath, line);
+    }
+    const regular = INPUT_PATHS.flatMap(relativePath => {
+        const match = /^(100644|100755) blob ([0-9a-f]{40})\t(.+)$/.exec(lines.get(relativePath) || '');
+        return match ? [{relativePath, objectId: match[2]}] : [];
+    });
+    const blobs = new Map();
+    if (!regular.length) return {lines, blobs};
+    let result;
+    try {
+        result = cp.spawnSync('git', ['-C', root, 'cat-file', '--batch'], {
+            input: regular.map(entry => entry.objectId + '\n').join(''),
+            encoding: null,
+            maxBuffer: 16 * 1024 * 1024
+        });
+    } catch { return {lines, blobs}; }
+    // A combined output can exceed the old per-file limit, or Git can fail
+    // after an otherwise valid prefix. Fall back to the original per-file
+    // reads, preserving their limits and first-error order.
+    if (result.error || result.status !== 0 || !Buffer.isBuffer(result.stdout)) return {lines, blobs};
+    const output = result.stdout;
+    let offset = 0;
+    for (const entry of regular) {
+        const end = output.indexOf(0x0a, offset);
+        if (end < 0) return {lines, blobs: new Map()};
+        const header = output.subarray(offset, end).toString('latin1');
+        offset = end + 1;
+        if (header === entry.objectId + ' missing') continue;
+        const match = /^([0-9a-f]{40}) blob (0|[1-9][0-9]*)$/.exec(header);
+        if (!match || match[1] !== entry.objectId) return {lines, blobs: new Map()};
+        const size = Number(match[2]);
+        if (!Number.isSafeInteger(size) || size > 16 * 1024 * 1024 ||
+            offset + size >= output.length || output[offset + size] !== 0x0a) {
+            return {lines, blobs: new Map()};
+        }
+        blobs.set(entry.relativePath, output.subarray(offset, offset + size));
+        offset += size + 1;
+    }
+    if (offset !== output.length) return {lines, blobs: new Map()};
+    return {lines, blobs};
+}
+
 function inspect(rootArg, sourceCommit) {
     const root = path.resolve(rootArg);
     if (!/^[0-9a-f]{40}$/i.test(sourceCommit || '') || git(root, ['rev-parse', 'HEAD']) !== sourceCommit.toLowerCase()) {
         throw new Error('Build input sourceCommit must equal HEAD.');
     }
+    const committed = committedInputs(root, sourceCommit);
     const files = INPUT_PATHS.map(relativePath => {
-        const line = git(root, ['ls-tree', sourceCommit, '--', relativePath]);
+        const line = committed ? committed.lines.get(relativePath) || '' : git(root, ['ls-tree', sourceCommit, '--', relativePath]);
         const match = /^(100644|100755) blob ([0-9a-f]{40})\t(.+)$/.exec(line);
         if (!match || match[3] !== relativePath) throw new Error('Build input must be a committed regular blob: ' + relativePath);
         physicalInput(root, relativePath);
-        return {path: relativePath, gitBlobObjectId: match[2], sha256: hashTrackedTextFile(root, relativePath).toLowerCase()};
+        return {path: relativePath, gitBlobObjectId: match[2],
+            sha256: hashTrackedTextFile(root, relativePath, committed?.blobs.get(relativePath)).toLowerCase()};
     });
     return {schemaVersion: 1, sourceCommit: sourceCommit.toLowerCase(),
         relation: 'HEAD Git blobs; working text must match after CRLF-to-LF normalization', files};

@@ -359,3 +359,142 @@ test('config base, generated output and generator tampering are rejected', t => 
     fs.appendFileSync(generatorFile, 'tampered generator\n');
     assert.throws(() => provenance.run('write', generatorFixture.repo, generatorFixture.runtime, generatorFixture.sourceCommit), /differs from HEAD/);
 });
+
+test('batched inspection preserves exact Git identities and bytes with three Git calls', t => {
+    const fixture = setup(t);
+    const values = [Buffer.alloc(0), Buffer.from('多行\nblob 17\n\0tail\r\n'), Buffer.from([0xff, 0x00, 0x0a])];
+    values.forEach((value, index) => write(fixture.repo, contract.INPUT_PATHS[index], value));
+    git(fixture.repo, ['add', '--all']);
+    git(fixture.repo, ['update-index', '--chmod=+x', contract.INPUT_PATHS[1]]);
+    git(fixture.repo, ['commit', '-q', '-m', 'framing fixtures']);
+    fixture.sourceCommit = git(fixture.repo, ['rev-parse', 'HEAD']);
+    const cp = require('node:child_process');
+    const original = cp.spawnSync;
+    const calls = [];
+    const mock = t.mock.method(cp, 'spawnSync', (command, args, options) => {
+        if (command === 'git') calls.push(args.slice(2));
+        return original(command, args, options);
+    });
+    const result = contract.inspect(fixture.repo, fixture.sourceCommit);
+    mock.mock.restore();
+    assert.equal(calls.length, 3);
+    assert.deepEqual(calls.map(args => args[0]), ['rev-parse', 'ls-tree', 'cat-file']);
+    assert.ok(calls[1].includes('-z'));
+    assert.deepEqual(calls[2], ['cat-file', '--batch']);
+    assert.deepEqual(result, {
+        schemaVersion: 1, sourceCommit: fixture.sourceCommit,
+        relation: 'HEAD Git blobs; working text must match after CRLF-to-LF normalization',
+        files: contract.INPUT_PATHS.map(relativePath => {
+            const value = fs.readFileSync(path.join(fixture.repo, ...relativePath.split('/')));
+            const objectId = crypto.createHash('sha1').update('blob ' + value.length + '\0').update(value).digest('hex');
+            return {path: relativePath, gitBlobObjectId: objectId, sha256: sha(value)};
+        })
+    });
+});
+
+test('invocation-local batches never cache successful working text or a previous HEAD', t => {
+    const fixture = setup(t);
+    const relative = contract.INPUT_PATHS.at(-1);
+    const file = path.join(fixture.repo, ...relative.split('/'));
+    const original = fs.readFileSync(file);
+    assert.doesNotThrow(() => contract.inspect(fixture.repo, fixture.sourceCommit));
+    fs.appendFileSync(file, 'new dirty bytes\n');
+    assert.throws(() => contract.inspect(fixture.repo, fixture.sourceCommit), /differs from HEAD/);
+    fs.writeFileSync(file, original);
+    fs.appendFileSync(file, 'new committed bytes\n');
+    git(fixture.repo, ['add', relative]);
+    git(fixture.repo, ['commit', '-q', '-m', 'advance bound input']);
+    assert.throws(() => contract.inspect(fixture.repo, fixture.sourceCommit), /sourceCommit must equal HEAD/);
+    const next = git(fixture.repo, ['rev-parse', 'HEAD']);
+    const result = contract.inspect(fixture.repo, next);
+    assert.equal(result.files.find(item => item.path === relative).sha256, sha(fs.readFileSync(file)));
+});
+
+test('untracked replacement and committed non-regular input retain the regular-blob refusal', t => {
+    const fixture = setup(t);
+    const relative = contract.INPUT_PATHS[0];
+    const file = path.join(fixture.repo, ...relative.split('/'));
+    const original = fs.readFileSync(file);
+    git(fixture.repo, ['rm', '--', relative]);
+    git(fixture.repo, ['commit', '-q', '-m', 'remove tracked input']);
+    write(fixture.repo, relative, original);
+    let head = git(fixture.repo, ['rev-parse', 'HEAD']);
+    assert.throws(() => contract.inspect(fixture.repo, head),
+        {message: 'Build input must be a committed regular blob: ' + relative});
+    git(fixture.repo, ['add', relative]);
+    git(fixture.repo, ['commit', '-q', '-m', 'restore tracked input']);
+    const objectId = git(fixture.repo, ['rev-parse', 'HEAD:' + relative]);
+    // Set a committed link mode without requiring a Windows symlink privilege.
+    git(fixture.repo, ['update-index', '--cacheinfo', '120000,' + objectId + ',' + relative]);
+    git(fixture.repo, ['commit', '-q', '-m', 'non-regular tracked input']);
+    head = git(fixture.repo, ['rev-parse', 'HEAD']);
+    assert.throws(() => contract.inspect(fixture.repo, head),
+        {message: 'Build input must be a committed regular blob: ' + relative});
+});
+
+test('missing Git blob retains its error and cannot supersede an earlier dirty input', t => {
+    const fixture = setup(t);
+    const relative = contract.INPUT_PATHS.at(-1);
+    const objectId = git(fixture.repo, ['rev-parse', 'HEAD:' + relative]);
+    fs.unlinkSync(path.join(fixture.repo, '.git', 'objects', objectId.slice(0, 2), objectId.slice(2)));
+    assert.throws(() => contract.inspect(fixture.repo, fixture.sourceCommit),
+        {message: 'Tracked generator is not committed: ' + relative});
+    const earlier = contract.INPUT_PATHS[0];
+    fs.appendFileSync(path.join(fixture.repo, ...earlier.split('/')), 'dirty before missing object\n');
+    assert.throws(() => contract.inspect(fixture.repo, fixture.sourceCommit),
+        {message: 'Tracked generator differs from HEAD: ' + earlier});
+});
+
+test('unusable batch data falls back to original reads without accepting dirty bytes', t => {
+    const fixture = setup(t);
+    const cp = require('node:child_process');
+    const original = cp.spawnSync;
+    const first = contract.INPUT_PATHS[0];
+    const file = path.join(fixture.repo, ...first.split('/'));
+    const bytes = fs.readFileSync(file);
+    const variants = [
+        result => { const stdout = Buffer.from(result.stdout); stdout[0] |= 0x80; return {...result, stdout}; },
+        result => ({...result, stdout: result.stdout.subarray(0, -1)}),
+        result => ({...result, stdout: Buffer.concat([result.stdout, Buffer.from('trailing')])}),
+        result => ({...result, stdout: Buffer.from(result.stdout.toString('binary').replace(/^[0-9a-f]{40}/, '0'.repeat(40)), 'binary')}),
+        result => ({...result, stdout: Buffer.from(result.stdout.toString('binary').replace(' blob ', ' tree '), 'binary')}),
+        result => ({...result, stdout: Buffer.from(result.stdout.toString('binary').replace(/ blob \d+\n/, ' blob 999999999999999999\n'), 'binary')}),
+        result => ({...result, error: new Error('simulated combined maxBuffer limit'), status: null}),
+        () => { throw new Error('simulated batch startup failure'); }
+    ];
+    for (const corrupt of variants) {
+        let fallbackReads = 0;
+        const mock = t.mock.method(cp, 'spawnSync', (command, args, options) => {
+            const result = original(command, args, options);
+            if (command === 'git' && args[2] === 'show') fallbackReads++;
+            return command === 'git' && args[2] === 'cat-file' && args[3] === '--batch' ? corrupt(result) : result;
+        });
+        try {
+            assert.equal(contract.inspect(fixture.repo, fixture.sourceCommit).files.length, contract.INPUT_PATHS.length);
+            assert.equal(fallbackReads, contract.INPUT_PATHS.length);
+            fs.appendFileSync(file, 'dirty after unusable batch\n');
+            assert.throws(() => contract.inspect(fixture.repo, fixture.sourceCommit),
+                {message: 'Tracked generator differs from HEAD: ' + first});
+        } finally {
+            fs.writeFileSync(file, bytes);
+            mock.mock.restore();
+        }
+    }
+});
+
+test('failed combined tree read keeps the original per-path checks and errors', t => {
+    const fixture = setup(t);
+    const cp = require('node:child_process');
+    const original = cp.spawnSync;
+    const mock = t.mock.method(cp, 'spawnSync', (command, args, options) => {
+        if (command === 'git' && args[2] === 'ls-tree' && args.includes('-z')) return {status: 1, stdout: '', stderr: 'simulated batch failure'};
+        return original(command, args, options);
+    });
+    try {
+        assert.equal(contract.inspect(fixture.repo, fixture.sourceCommit).files.length, contract.INPUT_PATHS.length);
+        const first = contract.INPUT_PATHS[0];
+        fs.appendFileSync(path.join(fixture.repo, ...first.split('/')), 'dirty with unavailable tree batch\n');
+        assert.throws(() => contract.inspect(fixture.repo, fixture.sourceCommit),
+            {message: 'Tracked generator differs from HEAD: ' + first});
+    } finally { mock.mock.restore(); }
+});
