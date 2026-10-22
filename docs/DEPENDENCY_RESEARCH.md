@@ -14,15 +14,15 @@
 
 ## 当前状态快照
 
-以下状态记录于2026-10-22 08:00 UTC；PR、CI和发行的后续状态以链接为准。研究文档本身尚待PR审阅，不能视作已合并。
+以下状态更新于2026-10-22；PR、CI和发行的后续状态以链接为准。[本轮研究文档PR #70](https://github.com/hope140/EmbyTheaterEnhanced/pull/70)已提交，尚未合并；后续结果继续追加同一PR。
 
 | 工作项 | 当前状态与下一步 |
 |---|---|
-| 历史Web来源取样 | 本轮完成并停止扩版本；已验证内容见下表和证据清单 |
+| 历史Web来源取样 | 广泛历史取样结束；剩余内容按精确清单定点核对，4.7.8/4.7.11窗口已收束，结果见下节 |
 | 来源与许可闭合 | 首要进行项；按[五类问题](dependency-research/ISSUES.md)逐项取最小证据，仍在用的未闭合内容保留明确决定 |
-| 用户Web增量提取 | [PR #67](https://github.com/hope140/EmbyTheaterEnhanced/pull/67)未合并；[该提交CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/39743507521)当时进行中。它不表示旧Web全部成为项目原创 |
-| v0.3.16 | source `6fee412ad68934d0194303916cfe346e6254a228`的[Windows打包作业](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/39737710070/job/119687231702)成功，待发布；不是许可清零结论。[发行核验入口](V0316_RELEASE_VERIFICATION.md)由发行任务另行更新 |
-| 14项旧资源 | 来源普查已停止；8项变体与6项旧包转为[实际用途及分发清理](dependency-research/ISSUES.md#旧资源实际用途清理)，不列作活跃来源追溯。该清理尚无仓库PR链接 |
+| 用户Web增量提取 | [PR #67](https://github.com/hope140/EmbyTheaterEnhanced/pull/67)未合并；[当前检查](https://github.com/hope140/EmbyTheaterEnhanced/pull/67/checks)与可合并状态以PR为准。它不表示旧Web全部成为项目原创 |
+| v0.3.16 | source `6fee412ad68934d0194303916cfe346e6254a228`的[Windows打包作业](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/39737710070/job/119687231702)成功；[v0.3.16](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.16)已于2026-10-22 08:35 UTC公开发布，不是许可清零结论。[发行核验入口](V0316_RELEASE_VERIFICATION.md)由发行任务另行更新 |
+| 14项旧资源 | 来源普查已停止；8项变体与6项旧包转为[实际用途及分发清理](dependency-research/ISSUES.md#旧资源实际用途清理)，不列作活跃来源追溯。[PR #69](https://github.com/hope140/EmbyTheaterEnhanced/pull/69)退役集成进行中，尚未合并，不计作已删除 |
 | 前端新功能 | 当前仅保存历史参考；来源、许可及仍用内容的决定闭合前，不由此自动启动移植或功能扩张 |
 
 本页不恢复已移除的libmpv对应源码覆盖专项；现有固定归档/身份合同见[libmpv输入](LIBMPV_INPUT.md)。若另有具体阻塞，应单独说明证据与待决定项，不悄悄恢复旧待办。
@@ -31,7 +31,7 @@
 
 | 范围／日期 | 已有结论 | 本页证据边界 |
 |---|---|---|
-| 720份冻结Web／2026-10-22 | 597份官方byte对应、6份仅严格AST对应、1份空serviceworker、116份非空未解释 | 引用既有文件级联合审计《ROUND5-FINAL-UNION》；完整597/116台账未随本PR复制，不冒称本轮全量复算 |
+| 720份冻结Web／2026-10-22 | 597份官方byte对应、6份仅严格AST对应、1份空serviceworker、116份非空未解释 | 引用既有文件级联合审计《ROUND5-FINAL-UNION》；597完整来源台账未随本PR复制；116精确路径/hash清单已取得并核对，不冒称重跑597归因 |
 | 897物理文件历史分类／同日 | 758固定上游、139其他；包含已被替换的Model身份 | 保留历史口径，不作为当前Model结论 |
 | 同一897口径的当前Model修正／同日 | 759固定上游、138其他 | 仅按当前Model锁及实际文件核对后修正一项，未重跑897全量分类 |
 
@@ -57,6 +57,29 @@ Model当前为426,496 bytes、SHA256 `db22f8ea6cb6afdfab184f80d8b85a10d8a9f148ff
 通用Web apphost在多个4.7样本与当前整文件严格AST相同；virtual-scroller在所取窗口仅4.7.6整文件AST相同。它们均非byte相同。AST保留标识符、字面值和控制流，只忽略位置、注释及literal原始写法。
 
 官方桌面3.0.2、3.0.10、3.0.15、3.0.16、3.0.19等源码没有www，启动代码加载未固定网页版本的tv.emby.media。因此桌面版本号、appVersion fallback及兼容阈值都不能代替网页版本或日期证明。
+
+## 剩余内容的定点结果
+
+在原116项中排除转用途清理的CustomCssJS，只比较其余115项；未重扫已确认597来源。官方4.7.8（2022-10-01）和4.7.11（2022-12-15）新增byte、BOM/CRLF及整文件JS AST对应均为0。
+
+新增1份**CSS结构对应**：`modules/virtual-scroller/virtual-scroller.css`与4.7.6/4.7.8的Emby.Web.dll资源经完整CSS语法树比较相同；保留选择器关系、声明顺序、important和值，未把任意空格删除当等价。它不是byte对应，也不闭合适用许可。
+
+| 当前派生口径 | 分类 |
+|---|---|
+| 720冻结Web | 597官方byte + 6 JS AST + 1 CSS AST + 1空文件 + 1固定revision规范化CustomCssJS来源 + 114非空待解释 |
+| 122 Web-pending | 6 JS AST + 1 CSS AST + 1空文件 + 114其他非空 |
+| 123未计入官方byte对应 | 122 Web-pending + 1已定位规范化来源CustomCssJS |
+| 114剩余非空 | 112有官方比较底稿但差异未闭合 + 2项在所取来源中缺底稿 |
+
+897的759/138保留为前述既有审计/当前Model修正的日期口径，本轮不默算整本台账，也不把未合并清理算作删除。两个用户carrier在720之外。精确剩余路径/hash、分组与具名函数差异见[证据JSON](dependency-research/evidence/web-history-20261022.json)的remainingAfterFollowup和namedFunctionDifferences；原116清单SHA256为`004481f14afde067c6a5ea398da23e855bb57b8d497f28b38de747746121bc09`。
+
+75份JS与所取官方底稿有完整AST差异，22份CSS在4.7样本有结构差异；13份HTML尚无DOM/可见等价证据，2份JSON存在键或值差异。仅playmethodhelper.js与themes/logo.png在所取普通文件/已知托管资源中仍缺底稿。结构差异不自动等于功能差异或作者归属。
+
+已进一步证明差异边界：app.js遮去4个已列函数体后，其余整树与4.7.6相同；ApiClient遮去上传两处、Latest、搜索4个方法体后，其余整树与4.7.14相同；AppSettings遮去3个码率方法体并排除当前独有autoplay后，其余整树与4.7.6相同。这些不是整文件AST对应，也不证明修改作者。
+
+许可主线另取得官方4.7.6 Debian包随带的2018-04-11许可文档原件与hash；其范围和限制及尚未建立的Web适用关系见[许可问题](dependency-research/ISSUES.md)。另有指定来源线索已按固定路径复核：CustomCssJS与Shurelol/Emby.CustomCssJS固定commit仅CRLF/LF不同，LICENSE为GPLv3文本，见[问题清单](dependency-research/ISSUES.md#customcssjs固定来源)。这不是官方byte对应或整体许可闭合；PR #69未合并前不减少使用/分发条目数。
+
+本窗口停止继续扩版本，下一步应针对仍用文件的适用许可/补丁证据或缺底稿两项作最小核对，不擅自替换。
 
 ## 维护方式
 
