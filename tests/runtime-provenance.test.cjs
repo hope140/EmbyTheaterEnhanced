@@ -60,6 +60,7 @@ function createFixture(root) {
     addManifestFile(files, root, 'electronapp/libmpv/x64/mpv-win32-x64.node', 'bridge-fixture\n');
     addManifestFile(files, root, 'electronapp/www/modules/CustomCssJS.js', 'retired optional Web fixture\n');
     addManifestFile(files, root, 'electronapp/www/modules/themes/logo.png', 'retired startup logo fixture\n');
+    for(const name of ['electronapp/www/settings/cameraupload.js','electronapp/www/settings/cameraupload.html']) addManifestFile(files,root,name,'synthetic retired mobile settings');
     addManifestFile(files, root, 'electronapp/libmpv/x64/mpv-1.dll', 'base-libmpv-fixture\n');
     addManifestFile(files, root, 'MediaBrowser.Model.dll', 'historical Model fixture\n');
     const playbackFixture = Buffer.from('const playback = true;\n');

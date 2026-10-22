@@ -1,5 +1,7 @@
 # 固定Web基底输入
 
+Latest scoped addition: only the native settings/cameraupload.js/.html pair leaves source/runtime; the devices administrator page and shared/touch code remain. Current Web selection is716; prior051f990 and its718-file selection remain historical. See [evidence and regression boundary](MOBILE_CAMERA_SETTINGS_RETIREMENT.md).
+
 Current v2 selection: the active manifest explicitly versions the existing vendor/web-snapshot root as snapshot-v2 with 718 resources and unchanged historical patch carriers. CustomCssJS.js and themes/logo.png leave the current tree, and the active app/index inputs already remove their obsolete references. The exact 720-entry v1 manifest/hash is preserved separately; final app/index outputs retain their approved identities. See [v2 migration](SNAPSHOT_V2_MIGRATION.md). Earlier 720-input/body-preservation statements below are historical.
 
 

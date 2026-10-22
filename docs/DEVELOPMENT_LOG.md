@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-22 — 移动端本地相机上传设置页退役
+
+追加移除 settings/cameraupload.js/.html，当前桌面host无本地上传能力、服务仅iOS/Android注册且旧设置路由已注释。仅删除该674-byte注释块，app其它原始/生成字节不变；不改共享设置存储、sync、通用/触屏布局或其他移动端候选。devices/cameraupload管理员路由、页面及devices配置读写API保留，真实controller的mock回归覆盖两字段和其它字段保留。
+
+活动集合39/2/716、基础/中间807/922，共十七个旧正文退出候选tree，必要声明、原manifest/hash和历史保持。051f990的Windows1372/1372成功记录保留身份，不冒充本追加提交结果；新head另跑CI。详细路径、hash、桌面入口和验证边界见[相机设置退役合同](MOBILE_CAMERA_SETTINGS_RETIREMENT.md)。不构建安装器、不合并、不发布。
+
 ## 2026-10-22 — 合入 PR67 基线并迁移活动快照 v2
 
 同步已合并 main 7a21ca5，保留 ApiClient/toast 维护源、行为与来源说明，并解决两份状态文档及构建/测试合同的必要冲突。按确认范围迁移兼容39、小组件2、Web718；十五个旧正文退出当前 tree，原三份 manifest 的精确字节/hash 独立保存。Web 沿用根路径但版本明确为v2，app/index 同步消除旧模块/图片引用，最终生成身份保持。中文维护源改为完整37键，仍只有13项选定修订，24项继承值逐项hash保持。

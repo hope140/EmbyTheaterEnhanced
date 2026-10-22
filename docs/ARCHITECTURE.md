@@ -1,5 +1,7 @@
 # 架构与维护边界
 
+Latest scoped addition: only the native settings/cameraupload.js/.html pair leaves source/runtime; the devices administrator page and shared/touch code remain. Current Web selection is716; prior051f990 and its718-file selection remain historical. See [evidence and regression boundary](MOBILE_CAMERA_SETTINGS_RETIREMENT.md).
+
 当前活动输入已迁为 snapshot-v2：兼容39、小组件2、Web718；十五个旧正文退出当前 tree，旧 manifest/hash 和必要声明保留。Web 根路径保持，版本由 manifest 明示；app/index 的旧插件/图片引用已在 v2 输入中退役，最终输出身份保持。完整中文维护源为 src/localization/mpvplayer/zh-CN.json，保留24项继承译文和13项选定修订。见[迁移合同](SNAPSHOT_V2_MIGRATION.md)。下方先前“正文保留/仅评估”记录描述迁移前阶段。
 
 

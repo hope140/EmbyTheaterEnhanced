@@ -24,6 +24,8 @@ const root = path.resolve(__dirname, '..');
 const approvedRetirements = new Set([
     'electronapp/www/modules/CustomCssJS.js',
     'electronapp/www/modules/themes/logo.png',
+    'electronapp/www/settings/cameraupload.js',
+    'electronapp/www/settings/cameraupload.html',
     'external/Anime4K/Anime4K-off.conf',
     'external/emby.disable/www/modules/layout.css',
     'external/emby.disable/www/modules/themes/darkgradient/theme.css',

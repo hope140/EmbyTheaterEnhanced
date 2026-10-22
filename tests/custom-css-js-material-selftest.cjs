@@ -19,8 +19,8 @@ fs.mkdirSync(path.join(root, 'dist'), {recursive: true});
 const runtime = fs.mkdtempSync(path.join(root, 'dist', 'custom-css-material-'));
 try {
     const report = web.assemble(root, runtime);
-    assert.equal(report.fileCount, 718);
-    assert.equal(report.runtimeFileCount, 718);
+    assert.equal(report.fileCount, 716);
+    assert.equal(report.runtimeFileCount, 716);
     assert.deepEqual(report.excludedFiles.map(item=>item.path), []);
     overlays.apply(root, runtime);
     assert.equal(overlays.inspect(root, runtime).status, 'passed');

@@ -1,6 +1,6 @@
-# 15 项旧资源用途与发布选择
+# 17 项旧资源用途与发布选择
 
-Current v2 update: all fifteen reviewed old bodies are now removed from the current tree, not merely omitted from runtime. New active counts are39/2/718; original manifests/hashes and necessary declarations remain. The two maintained replacements retain the approved values/text scope. [Exact migration and evidence](SNAPSHOT_V2_MIGRATION.md). Statements below about bodies remaining or migration awaiting approval describe the earlier retirement-only stage.
+Current v2 update: seventeen reviewed old bodies are removed from the current tree: fifteen retired resources and two maintained replacements. Active counts are39/2/716. The native camera settings pair is the latest narrow addition; [its desktop-usefulness and server-page regression evidence](MOBILE_CAMERA_SETTINGS_RETIREMENT.md) stays separate from the prior051f990 successful check. Original manifests/hashes and necessary declarations remain. Earlier statements below describe preceding stages.
 
 
 本候选从 `main` 的 `6fee412ad68934d0194303916cfe346e6254a228` 独立开展，处理初始十四项及后来明确追加的一张旧启动 logo。13 项不再进入**新构建的 runtime/安装包**，2 项功能保留并由维护层生成；profile 中实际生效的 CEC 标记继续独立创建。没有修改产品版本、v0.3.16 发行源码、Tag、Release 或附件；没有合并 main。ApiClient/toast 自有补丁另行维护。
@@ -48,11 +48,11 @@ Host 参考仅使用仓库既有固定引用 [708fadc](https://github.com/MediaB
 | --- | --- | --- |
 | compatibility-resources | 39 / 2,391,214 | `ca74d8b1bddeacc8f8e5a271ac75ad43301328f0e81be8cb350ea84110ca9ea4` |
 | small-runtime | 2 / 3,330 | `7d3ee238ca2be25533b2e28d31e64ba0c179c5a064ed7091b00c71557120ced2` |
-| web-snapshot 基底 | 718 / 21,972,087 | `b26cd795b6542cae6a5dc73d85736877a0bd2b8d7ac4baa51413a85dbfcb2168` |
+| web-snapshot 基底 | 716 / 21,965,013 | `072fc2012f271430b00881a8f16066598b2125e575ee66d6e420c76a09baa2b6` |
 
 根 LICENSE、THIRD_PARTY_NOTICES、SOURCE_MATERIALS、LICENSING、Adobe/OFL 记录及剩余 shader 内嵌 MIT 头保持；原始 notice 文本仍存档。字体退出 runtime 不代表源码存档中的字体许可事实被消除。其它仍分发的 Web、翻译、配置、shader、libmpv、Host 等材料仍按各自现有合同和未闭合项记录，不宣布“所有遗留来源/许可已解决”。
 
-发布资源集合少 13 个文件。同一生产变换下退役业务 payload 减少 26,968,863 bytes：此前十一项 26,963,353 bytes，加上原 CustomCssJS 生成模块 5,455 bytes 及 app.js 注册行 55 bytes；随后默认 XML 增加 102 bytes、选定译文减少 606 bytes，再剥离旧启动 PNG 的 32,892 bytes 后，合计业务 payload 净减少 27,002,259 bytes；来源/provenance/通知文件的变动另计。Web 基底少复制的是原始 4,548 bytes，不能将它当作旧生成模块大小。未声称最终安装器压缩体积，十五个旧正文现已退出当前 Git tree，仍使用的历史资源和必要声明保留，不能把有限范围移除称作源码全部清空。旧安装目录没有新增迁移删除逻辑；用户 storage 和 profile CEC 标记均保持。
+发布资源集合少 13 个文件。同一生产变换下退役业务 payload 减少 26,968,863 bytes：此前十一项 26,963,353 bytes，加上原 CustomCssJS 生成模块 5,455 bytes 及 app.js 注册行 55 bytes；随后默认 XML 增加 102 bytes、选定译文减少 606 bytes，再剥离旧启动 PNG 的 32,892 bytes 后，原阶段业务 payload 净减少 27,002,259 bytes；追加相机设置两文件及其674-byte非执行注释路由后，当前净减少27,009,333 bytes；来源/provenance/通知文件的变动另计。Web 基底少复制的是原始 4,548 bytes，不能将它当作旧生成模块大小。未声称最终安装器压缩体积，十五个旧正文现已退出当前 Git tree，仍使用的历史资源和必要声明保留，不能把有限范围移除称作源码全部清空。旧安装目录没有新增迁移删除逻辑；用户 storage 和 profile CEC 标记均保持。
 
 ## 复验方法与证据边界
 

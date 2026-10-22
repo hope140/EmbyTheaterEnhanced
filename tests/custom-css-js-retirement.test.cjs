@@ -22,7 +22,7 @@ const before = require('../tools/patch-search-ui.cjs').patchApp(
 const output = before;
 
 test('v2 app output preserves the previously approved final identity and all other CSS/plugins',()=>{
-    assert.equal(hash(output),'4DEB9669058340741AB8048140C2690C3EF39494A74C451272D69D7C37F8FFE4');
+    assert.equal(hash(output),'1F518BE3FFA0E59780AC68E468FEAC105C696DF468CFA9C90E88B9F6792E8EB6');
     assert.equal(hash(output),overlays.WEB_OVERLAY_CONTRACT.find(x=>x.id==='app-js').expectedOutputSha256);
     assert.ok(output.includes('self.ApiClient.getUrl("Branding/Css")'));
     assert.ok(output.includes('"css!modules/windowdrag.css"'));
@@ -75,8 +75,8 @@ test('Web assembly omits the approved module and logo while retaining immutable 
     const runtime = fs.mkdtempSync(path.join(root, 'dist', 'custom-css-retirement-'));
     t.after(() => fs.rmSync(runtime, {recursive: true}));
     const report = web.assemble(root, runtime);
-    assert.equal(report.fileCount, 718);
-    assert.equal(report.runtimeFileCount, 718);
+    assert.equal(report.fileCount, 716);
+    assert.equal(report.runtimeFileCount, 716);
     assert.deepEqual(report.excludedFiles.map(x => x.path), []);
     assert.equal(fs.existsSync(path.join(runtime, 'electronapp/www/modules/CustomCssJS.js')), false);
     assert.equal(fs.existsSync(path.join(root, 'tools/patch-custom-css-js.cjs')), false);

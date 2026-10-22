@@ -18,7 +18,9 @@ const RETIRED_COMPATIBILITY_PATHS = Object.freeze([
 ]);
 const RETIRED_SMALL_RUNTIME_PATHS = Object.freeze(['\u6ce8\u610f\u4e8b\u9879.txt', 'cec-driver/cancel']);
 const RETIRED_WEB_PATHS = Object.freeze(['electronapp/www/modules/CustomCssJS.js',
-  'electronapp/www/modules/themes/logo.png']);
+  'electronapp/www/modules/themes/logo.png',
+  'electronapp/www/settings/cameraupload.js',
+  'electronapp/www/settings/cameraupload.html']);
 const RETIRED_RUNTIME_PATHS = Object.freeze([
   'electronapp/libmpv/x64/mpv-win32-x64.node',
   ...RETIRED_COMPATIBILITY_PATHS,

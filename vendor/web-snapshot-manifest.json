@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "inputRoot": "vendor/web-snapshot",
-  "fileCount": 718,
-  "bytes": 21972087,
-  "treeSha256": "b26cd795b6542cae6a5dc73d85736877a0bd2b8d7ac4baa51413a85dbfcb2168",
+  "fileCount": 716,
+  "bytes": 21965013,
+  "treeSha256": "072fc2012f271430b00881a8f16066598b2125e575ee66d6e420c76a09baa2b6",
   "origin": {
     "type": "frozen-historical-web-snapshot",
     "sourceManifest": "vendor/runtime-manifest.json",
@@ -34,8 +34,8 @@
     },
     {
       "path": "www/app.js",
-      "size": 102342,
-      "sha256": "3492bfbe83d642f44f3f515d388f07d6efa4968ec85cefbcae3635cf9362783a",
+      "size": 101668,
+      "sha256": "3b058d1f40f5d863f1a1220dc36c52b187cb5ae0c8073dc4527573de294fc0a2",
       "originalPath": "electronapp/www/app.js",
       "origin": "v2 explicit retirement of optional plugin registration or startup image reference; other base bytes retained",
       "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
@@ -4589,22 +4589,6 @@
       "size": 0,
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "originalPath": "electronapp/www/serviceworker.js",
-      "origin": "historical-snapshot-upstream-version-unresolved",
-      "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
-    },
-    {
-      "path": "www/settings/cameraupload.html",
-      "size": 1586,
-      "sha256": "35883b422fe36e31323463ecd413265342e8b4f82ab6919e73574a27728a0b3e",
-      "originalPath": "electronapp/www/settings/cameraupload.html",
-      "origin": "historical-snapshot-upstream-version-unresolved",
-      "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
-    },
-    {
-      "path": "www/settings/cameraupload.js",
-      "size": 4814,
-      "sha256": "cab95e4f266d16c250930d6bb76fd07de18212f2bb777e141396ebdf3f3b6ea8",
-      "originalPath": "electronapp/www/settings/cameraupload.js",
       "origin": "historical-snapshot-upstream-version-unresolved",
       "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
     },
