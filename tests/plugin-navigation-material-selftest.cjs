@@ -5,14 +5,11 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const {
     FROZEN_VIEW_MANAGER,
-    PATCH_MODULE,
     makeRuntime,
-    patchTransformIfAvailable
+    loadPatchTransform
 } = require('./helpers/plugin-dom.cjs');
 
-const hasMaterial = fs.existsSync(FROZEN_VIEW_MANAGER);
-const patchTransform = hasMaterial ? patchTransformIfAvailable() : null;
-const hasCandidate = typeof patchTransform === 'function';
+const patchTransform = loadPatchTransform();
 
 function registerBasicControllers(runtime, names) {
     for (const name of names) runtime.registerController(`controller:${name}`, class Controller {});
@@ -97,11 +94,13 @@ function makeCandidateRuntime() {
     return makeRuntime({transform: patchTransform});
 }
 
-test('material selftest is available in source checkouts that include frozen vendor', {skip: !hasMaterial}, () => {
+test('navigation material is the validated independent Web snapshot', () => {
+    const snapshot = require('../tools/web-snapshot-input.cjs');
+    assert.equal(snapshot.validate(require('node:path').resolve(__dirname, '..')).status, 'passed');
     assert.equal(fs.existsSync(FROZEN_VIEW_MANAGER), true);
 });
 
-test('frozen RED: controller reject leaves the new plugin page beside the current page', {skip: !hasMaterial}, async () => {
+test('frozen RED: controller reject leaves the new plugin page beside the current page', async () => {
     const runtime = makeRuntime();
     await startFirstPage(runtime, 'A');
     const missingController = runtime.deferNext('controller:B');
@@ -113,7 +112,7 @@ test('frozen RED: controller reject leaves the new plugin page beside the curren
     assert.deepEqual(visibleNames(runtime), ['A', 'B']);
 });
 
-test('frozen RED: an aborted dependency load can replace a later successful plugin page', {skip: !hasMaterial}, async () => {
+test('frozen RED: an aborted dependency load can replace a later successful plugin page', async () => {
     const runtime = makeRuntime();
     registerBasicControllers(runtime, ['A', 'B']);
     const gate = runtime.deferNext('delayed-dependency');
@@ -133,7 +132,7 @@ test('frozen RED: an aborted dependency load can replace a later successful plug
     assert.deepEqual(visibleNames(runtime), ['A']);
 });
 
-test('candidate GREEN: dependency rejection leaves the current page intact', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: dependency rejection leaves the current page intact', async () => {
     const runtime = makeCandidateRuntime();
     await startFirstPage(runtime, 'A');
     const failedDependency = runtime.deferNext('broken-dependency');
@@ -145,7 +144,7 @@ test('candidate GREEN: dependency rejection leaves the current page intact', {sk
     assert.deepEqual(visibleNames(runtime), ['A']);
 });
 
-test('candidate GREEN: failed plugin dependencies expose only static errors and toasts', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: failed plugin dependencies expose only static errors and toasts', async () => {
     const runtime = makeCandidateRuntime();
     await startFirstPage(runtime, 'A');
     const rejected = runtime.deferNext('sensitive-dependency');
@@ -166,7 +165,7 @@ test('candidate GREEN: failed plugin dependencies expose only static errors and 
     assert.deepEqual(visibleNames(runtime), ['A']);
 });
 
-test('candidate GREEN: a failed plugin toast is suppressed after a newer page succeeds', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: a failed plugin toast is suppressed after a newer page succeeds', async () => {
     const runtime = makeCandidateRuntime();
     await startFirstPage(runtime, 'home');
     registerBasicControllers(runtime, ['B']);
@@ -186,7 +185,7 @@ test('candidate GREEN: a failed plugin toast is suppressed after a newer page su
     assert.deepEqual(runtime.toastMessages, []);
 });
 
-test('candidate GREEN: an aborted failed plugin toast is suppressed without a newer navigation', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: an aborted failed plugin toast is suppressed without a newer navigation', async () => {
     const runtime = makeCandidateRuntime();
     await startFirstPage(runtime, 'A');
     const controller = new AbortController();
@@ -209,7 +208,7 @@ test('candidate GREEN: an aborted failed plugin toast is suppressed without a ne
     assert.deepEqual(runtime.toastMessages, []);
 });
 
-test('candidate GREEN: null and string rejections become static errors with accurate stages', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: null and string rejections become static errors with accurate stages', async () => {
     const runtime = makeCandidateRuntime();
     await startFirstPage(runtime, 'A');
     const nullGate = runtime.deferNext('null-dependency');
@@ -229,7 +228,7 @@ test('candidate GREEN: null and string rejections become static errors with accu
     assert.deepEqual(visibleNames(runtime), ['A']);
 });
 
-test('candidate GREEN: first-page failure leaves no staged or visible page behind', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: first-page failure leaves no staged or visible page behind', async () => {
     const runtime = makeCandidateRuntime();
     const missingController = runtime.deferNext('controller:first');
     const navigation = runtime.manager.loadView(pluginOptions(runtime, 'first', {controller: 'controller:first'}));
@@ -242,7 +241,7 @@ test('candidate GREEN: first-page failure leaves no staged or visible page behin
     assert.deepEqual(runtime.document.main.children, []);
 });
 
-test('candidate GREEN: controller 404 removes only its failed plugin stage', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: controller 404 removes only its failed plugin stage', async () => {
     const runtime = makeCandidateRuntime();
     await startFirstPage(runtime, 'A');
     const missingController = runtime.deferNext('controller:B');
@@ -254,7 +253,7 @@ test('candidate GREEN: controller 404 removes only its failed plugin stage', {sk
     assert.deepEqual(visibleNames(runtime), ['A']);
 });
 
-test('candidate GREEN: a throwing controller constructor cleans its stage and remains retryable', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: a throwing controller constructor cleans its stage and remains retryable', async () => {
     const runtime = makeCandidateRuntime();
     await startFirstPage(runtime, 'A');
     runtime.registerController('controller:B', class BrokenController {
@@ -273,7 +272,7 @@ test('candidate GREEN: a throwing controller constructor cleans its stage and re
     assert.deepEqual(visibleNames(runtime), ['B']);
 });
 
-test('candidate GREEN: A-B-C navigation keeps a single visible page', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: A-B-C navigation keeps a single visible page', async () => {
     const runtime = makeCandidateRuntime();
     registerBasicControllers(runtime, ['A', 'B', 'C']);
 
@@ -285,7 +284,7 @@ test('candidate GREEN: A-B-C navigation keeps a single visible page', {skip: !ha
     assert.deepEqual(visibleNames(runtime), ['C']);
 });
 
-test('candidate GREEN: back restore reveals the cached page and hides the page being left', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: back restore reveals the cached page and hides the page being left', async () => {
     const runtime = makeCandidateRuntime();
     registerBasicControllers(runtime, ['A', 'B']);
     await load(runtime, 'A');
@@ -296,7 +295,7 @@ test('candidate GREEN: back restore reveals the cached page and hides the page b
     assert.deepEqual(visibleNames(runtime), ['A']);
 });
 
-test('candidate GREEN: failed restore keeps the current page and cached target retryable', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: failed restore keeps the current page and cached target retryable', async () => {
     const runtime = makeCandidateRuntime();
     registerBasicControllers(runtime, ['A', 'B']);
     await load(runtime, 'A');
@@ -328,7 +327,7 @@ test('candidate GREEN: failed restore keeps the current page and cached target r
     assert.deepEqual(visibleNames(runtime), ['A']);
 });
 
-test('candidate GREEN: cancelling an in-flight restore preserves the current page and cached target', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: cancelling an in-flight restore preserves the current page and cached target', async () => {
     const runtime = makeCandidateRuntime();
     registerBasicControllers(runtime, ['A', 'B']);
     await load(runtime, 'A');
@@ -355,7 +354,7 @@ test('candidate GREEN: cancelling an in-flight restore preserves the current pag
     assert.deepEqual(visibleNames(runtime), ['A']);
 });
 
-test('candidate GREEN: abort before dependency resolution rejects without mutating the current page', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: abort before dependency resolution rejects without mutating the current page', async () => {
     const runtime = makeCandidateRuntime();
     await startFirstPage(runtime, 'A');
     const gate = runtime.deferNext('slow-dependency');
@@ -373,7 +372,7 @@ test('candidate GREEN: abort before dependency resolution rejects without mutati
     assert.deepEqual(visibleNames(runtime), ['A']);
 });
 
-test('candidate GREEN: late controller resolution cannot replace a newer successful page', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: late controller resolution cannot replace a newer successful page', async () => {
     const runtime = makeCandidateRuntime();
     registerBasicControllers(runtime, ['B']);
     const lateController = runtime.deferNext('controller:A');
@@ -394,7 +393,7 @@ test('candidate GREEN: late controller resolution cannot replace a newer success
     assert.deepEqual(visibleNames(runtime), ['B']);
 });
 
-test('candidate GREEN: repeat navigation and stage destruction preserve the active page', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: repeat navigation and stage destruction preserve the active page', async () => {
     const runtime = makeCandidateRuntime();
     registerBasicControllers(runtime, ['A', 'B']);
     await load(runtime, 'A');
@@ -412,7 +411,7 @@ test('candidate GREEN: repeat navigation and stage destruction preserve the acti
     assert.deepEqual(visibleNames(runtime), ['B']);
 });
 
-test('candidate GREEN: genericui takes the plugin transaction path while ordinary routes remain outside it', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: genericui takes the plugin transaction path while ordinary routes remain outside it', async () => {
     const runtime = makeCandidateRuntime();
     registerBasicControllers(runtime, ['generic', 'ordinary']);
     const genericOptions = pluginOptions(runtime, 'generic', {type: 'genericui'});
@@ -429,7 +428,7 @@ test('candidate GREEN: genericui takes the plugin transaction path while ordinar
     assert.deepEqual(visibleNames(runtime), ['ordinary']);
 });
 
-test('candidate GREEN: script-bearing page loads jQuery and appends its hidden stage through the script path', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: script-bearing page loads jQuery and appends its hidden stage through the script path', async () => {
     const runtime = makeCandidateRuntime();
     await startFirstPage(runtime, 'A');
     const controllerGate = runtime.deferNext('controller:inline');
@@ -455,7 +454,7 @@ test('candidate GREEN: script-bearing page loads jQuery and appends its hidden s
     assert.deepEqual(visibleNames(runtime), ['inline']);
 });
 
-test('candidate GREEN: an initially aborted plugin request never inserts a stage', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: an initially aborted plugin request never inserts a stage', async () => {
     const runtime = makeCandidateRuntime();
     await startFirstPage(runtime, 'A');
     const controller = new AbortController();
@@ -467,7 +466,7 @@ test('candidate GREEN: an initially aborted plugin request never inserts a stage
     assert.deepEqual(visibleNames(runtime), ['A']);
 });
 
-test('candidate GREEN: navigation started synchronously by a controller constructor supersedes its stage', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: navigation started synchronously by a controller constructor supersedes its stage', async () => {
     const runtime = makeCandidateRuntime();
     let reentrantNavigation;
     runtime.registerController('controller:B', class Controller {});
@@ -484,7 +483,7 @@ test('candidate GREEN: navigation started synchronously by a controller construc
     assert.deepEqual(visibleNames(runtime), ['B']);
 });
 
-test('candidate GREEN: A-B-C-D rotates the three-page cache and destroys evicted A once', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: A-B-C-D rotates the three-page cache and destroys evicted A once', async () => {
     const runtime = makeCandidateRuntime();
     registerBasicControllers(runtime, ['A', 'B', 'C', 'D']);
     await load(runtime, 'A');
@@ -506,7 +505,7 @@ test('candidate GREEN: A-B-C-D rotates the three-page cache and destroys evicted
     assert.deepEqual(visibleNames(runtime), ['D']);
 });
 
-test('candidate GREEN: ordinary page controller rejection retains the frozen failure behavior', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: ordinary page controller rejection retains the frozen failure behavior', async () => {
     const runtime = makeCandidateRuntime();
     runtime.registerController('controller:ordinary-A', class Controller {});
     await runtime.manager.loadView({
@@ -529,7 +528,7 @@ test('candidate GREEN: ordinary page controller rejection retains the frozen fai
     assert.deepEqual(visibleNames(runtime), ['ordinary-A', 'ordinary-B']);
 });
 
-test('candidate GREEN: an ordinary dependency response arriving after a plugin commit cannot insert an old page', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: an ordinary dependency response arriving after a plugin commit cannot insert an old page', async () => {
     const runtime = makeCandidateRuntime();
     runtime.registerController('controller:ordinary-A', class Controller {});
     await runtime.manager.loadView(ordinaryOptions(runtime, 'ordinary-A'));
@@ -554,7 +553,7 @@ test('candidate GREEN: an ordinary dependency response arriving after a plugin c
     assert.deepEqual(visibleNames(runtime), ['new-plugin']);
 });
 
-test('candidate GREEN: an ordinary controller response after a plugin commit cleans only its owned page', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: an ordinary controller response after a plugin commit cleans only its owned page', async () => {
     const runtime = makeCandidateRuntime();
     runtime.registerController('controller:ordinary-A', class Controller {});
     await runtime.manager.loadView(ordinaryOptions(runtime, 'ordinary-A'));
@@ -586,7 +585,7 @@ test('candidate GREEN: an ordinary controller response after a plugin commit cle
     assert.deepEqual(visibleNames(runtime), ['new-plugin']);
 });
 
-test('candidate GREEN: an older ordinary transition completion cannot emit viewshow after a plugin commit', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: an older ordinary transition completion cannot emit viewshow after a plugin commit', async () => {
     const runtime = makeCandidateRuntime();
     runtime.registerController('controller:ordinary-A', class Controller {});
     await runtime.manager.loadView(ordinaryOptions(runtime, 'ordinary-A'));
@@ -625,7 +624,7 @@ test('candidate GREEN: an older ordinary transition completion cannot emit views
     assert.deepEqual(visibleNames(runtime), ['new-plugin']);
 });
 
-test('candidate GREEN: an ordinary restore resolving after a plugin commit cannot revive or destroy either page', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: an ordinary restore resolving after a plugin commit cannot revive or destroy either page', async () => {
     const runtime = makeCandidateRuntime();
     registerBasicControllers(runtime, ['ordinary-A', 'ordinary-B']);
     await runtime.manager.loadView(ordinaryOptions(runtime, 'ordinary-A'));
@@ -653,7 +652,7 @@ test('candidate GREEN: an ordinary restore resolving after a plugin commit canno
     assert.deepEqual(visibleNames(runtime), ['new-plugin']);
 });
 
-test('candidate GREEN: a failed plugin load does not invalidate the current ordinary transition owner', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: a failed plugin load does not invalidate the current ordinary transition owner', async () => {
     const runtime = makeCandidateRuntime();
     runtime.registerController('controller:ordinary-A', class Controller {});
     await runtime.manager.loadView(ordinaryOptions(runtime, 'ordinary-A'));
@@ -689,11 +688,11 @@ test('candidate GREEN: a failed plugin load does not invalidate the current ordi
     assert.deepEqual(visibleNames(runtime), ['ordinary-B']);
 });
 
-test('candidate GREEN: reentrant plugin failure during plugin beforeShow resumes the current A page', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: reentrant plugin failure during plugin beforeShow resumes the current A page', async () => {
     await assertReentrantPluginFailure('plugin');
 });
 
-test('candidate GREEN: reentrant plugin failure during ordinary beforeShow resumes the current A page', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: reentrant plugin failure during ordinary beforeShow resumes the current A page', async () => {
     await assertReentrantPluginFailure('ordinary');
 });
 
@@ -731,7 +730,7 @@ async function assertReentrantPluginFailure(bKind) {
     assert.deepEqual(visibleNames(runtime), ['A']);
 }
 
-test('candidate GREEN: the first successful plugin removes splash and normalizes windowScroll=3', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: the first successful plugin removes splash and normalizes windowScroll=3', async () => {
     const runtime = makeCandidateRuntime();
     registerBasicControllers(runtime, ['first-plugin']);
     const options = {
@@ -751,7 +750,7 @@ test('candidate GREEN: the first successful plugin removes splash and normalizes
     assert.deepEqual(visibleNames(runtime), ['first-plugin']);
 });
 
-test('candidate GREEN: scrollFrameY keeps embedded scroll and adjusts the header for windowScroll=3', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: scrollFrameY keeps embedded scroll and adjusts the header for windowScroll=3', async () => {
     const runtime = makeCandidateRuntime();
     registerBasicControllers(runtime, ['embedded-scroll']);
     const options = {
@@ -770,7 +769,7 @@ test('candidate GREEN: scrollFrameY keeps embedded scroll and adjusts the header
     assert.deepEqual(visibleNames(runtime), ['embedded-scroll']);
 });
 
-test('candidate GREEN: aborting an unsettled plugin dependency leaves the current page intact', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: aborting an unsettled plugin dependency leaves the current page intact', async () => {
     const runtime = makeCandidateRuntime();
     await startFirstPage(runtime, 'A');
     const gate = runtime.deferNext('never-plugin-dependency');
@@ -786,7 +785,7 @@ test('candidate GREEN: aborting an unsettled plugin dependency leaves the curren
     void navigation;
 });
 
-test('candidate GREEN: aborting an unsettled plugin controller immediately removes only its hidden stage', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: aborting an unsettled plugin controller immediately removes only its hidden stage', async () => {
     const runtime = makeCandidateRuntime();
     await startFirstPage(runtime, 'A');
     const gate = runtime.deferNext('controller:B');
@@ -808,7 +807,7 @@ test('candidate GREEN: aborting an unsettled plugin controller immediately remov
     void navigation;
 });
 
-test('candidate GREEN: aborting an unsettled ordinary dependency leaves no page stage', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: aborting an unsettled ordinary dependency leaves no page stage', async () => {
     const runtime = makeCandidateRuntime();
     runtime.registerController('controller:A', class Controller {});
     await runtime.manager.loadView(ordinaryOptions(runtime, 'A'));
@@ -825,7 +824,7 @@ test('candidate GREEN: aborting an unsettled ordinary dependency leaves no page 
     void navigation;
 });
 
-test('candidate GREEN: aborting an unsettled ordinary controller immediately removes only its owned stage', {skip: !hasCandidate, todo: !hasCandidate && `waiting for ${PATCH_MODULE}`}, async () => {
+test('candidate GREEN: aborting an unsettled ordinary controller immediately removes only its owned stage', async () => {
     const runtime = makeCandidateRuntime();
     runtime.registerController('controller:A', class Controller {});
     await runtime.manager.loadView(ordinaryOptions(runtime, 'A'));
@@ -848,7 +847,7 @@ test('candidate GREEN: aborting an unsettled ordinary controller immediately rem
 });
 
 for (const staleEntry of ['load', 'restore']) {
-    test('candidate GREEN: aborted late content ' + staleEntry + ' cannot retire the newer pending navigation', {skip: !hasCandidate}, async () => {
+    test('candidate GREEN: aborted late content ' + staleEntry + ' cannot retire the newer pending navigation', async () => {
         const runtime = makeCandidateRuntime();
         registerBasicControllers(runtime, ['A', 'B']);
         await load(runtime, 'A');

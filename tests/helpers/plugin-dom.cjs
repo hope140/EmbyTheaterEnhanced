@@ -8,8 +8,7 @@ const REPO_ROOT = path.resolve(__dirname, '../..');
 const FROZEN_VIEW_MANAGER = path.join(
     REPO_ROOT,
     'vendor',
-    'carnival',
-    'electronapp',
+    'web-snapshot',
     'www',
     'modules',
     'viewmanager',
@@ -300,8 +299,7 @@ function makeRuntime(options = {}) {
     };
 }
 
-function patchTransformIfAvailable() {
-    if (!fs.existsSync(PATCH_MODULE)) return null;
+function loadPatchTransform() {
     const patcher = require(PATCH_MODULE);
     if (!patcher || typeof patcher.patchViewManager !== 'function') {
         throw new TypeError('tools/patch-plugin-settings.cjs must export patchViewManager(text)');
@@ -315,5 +313,5 @@ module.exports = {
     FakeDocument,
     FakeElement,
     makeRuntime,
-    patchTransformIfAvailable
+    loadPatchTransform
 };

@@ -1,5 +1,7 @@
 # 文件级 runtime 基线组装
 
+当前材料自测从仓库固定 Web、Host、继承 npm、模板、兼容资源、小型 runtime 和官方 Model 组件独立构造参考基底，不再要求完整旧 Carnival 树。保留逐文件基底与共同生产变换后的中间产物比较；完整历史包等价性另由显式外部参考审计验证。下方阶段一说明和计数保留其历史范围；当前输入见 [固定组件](REPOSITORY_INPUTS.md)。
+
 Current follow-up: three maintained templates remove the old package/preload/config physical reads. Base output remains unchanged; 58 old assets and one libmpv patch remain. See [runtime templates](RUNTIME_TEMPLATES.md).
 
 Current selection follow-up: inherited npm is now an independent 29-file component, leaving 61 physical old Carnival inputs and one current libmpv patch. See [fixed inherited npm](INHERITED_NPM_INPUT.md).
@@ -109,9 +111,14 @@ node --test tests/runtime-base-assembly.test.cjs tests/runtime-dependencies.test
 node --test tests/runtime-base-material-selftest.cjs
 ```
 
-材料自测用真实产品 Git blobs、原 preload/Web/PlaybackManager 生成器、配置
-变换和固定 libmpv，比较新组装与旧复制路线的中间 payload，逐文件核对路径、
-大小和 SHA256。对比边界在 fresh npm、官方 Electron 和 Native Helper 组装之前；
-不编译 helper、不运行应用、不打安装包，也不绕过已提交 build-input 门禁。
-独占产物会在测试结束时清理，准确范围与脚本工作字节 SHA 保存在忽略的
-`.work/verification/` 独占回执中。该回执不代表新提交已完成正式构建。
+材料自测的参考侧直接读取固定组件 manifest，不复用被测 assembler 的
+`plan`、`classify` 或组件组装函数选择文件；两侧先比较完整原始基底，再用真实产品
+Git blobs、preload/Web/PlaybackManager 生成器、配置变换和固定 libmpv 比较
+中间 payload。逐文件核对路径、大小和 SHA256，防止后续覆盖掩盖基底漏件。
+独占目录在测试结束时清理，文件计数和树摘要写入测试日志。边界仍在 fresh npm、
+官方 Electron 和 Native Helper 组装之前；不运行应用或安装器。
+
+原新旧复制路线比较的全部断言保存在 `tests/audits/runtime-base-legacy-oracle.cjs`。
+它要求显式提供完整历史参考树和固定 libmpv 参考文件，不默认读取 `vendor/carnival`，
+也不获取缺失材料。该审计独立运行，不作为当前组件自测的隐含前置，具体命令和
+未执行项记录要求见 [测试说明](TESTING.md)。

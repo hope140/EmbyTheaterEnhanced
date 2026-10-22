@@ -14,6 +14,17 @@ node --test tests/native-helper-process-exit.test.cjs tests/app-shutdown-drain.t
 
 插件材料合同还需显式运行 `node --test tests/plugin-*-material-selftest.cjs`，覆盖 Alameda 实例身份、真实冻结导航/路由、菜单和关闭别名顺序。它们不在 `npm test` 或公开离线自动发现集合中；具有固定材料的发行环境必须另行核对，原断言保持。
 
+当前独立材料准备及 `prepare-preload.cjs` 完成后，可运行完整显式材料集合：
+
+```powershell
+node tools/validate-build-materials.cjs .
+node --test --test-concurrency=1 tests/*-material-selftest.cjs
+```
+
+导航用例直接读取已校验的 `vendor/web-snapshot`，保留冻结缺陷与当前修复的行为断言；缺少材料或 patcher 会失败，不再因旧 Carnival 路径缺失而跳过。runtime 基线用例按独立组件 manifest 构造参考产物，先比较原始基底，再比较共同生产变换后的完整中间产物，逐项核对路径、大小与 SHA256。该集合不需要完整旧 Carnival/patch 树，也不运行 Windows 应用或安装器。
+
+原完整历史包对照保留为可选外部参考审计 `tests/audits/runtime-base-legacy-oracle.cjs`，不在上述集合或 `tests/*.test.cjs` 中。只有已持有原始完整参考材料时，显式设置 `ETE_LEGACY_RUNTIME_ORACLE_ROOT` 与 `ETE_LEGACY_LIBMPV_ORACLE_FILE` 后运行 `node --test tests/audits/runtime-base-legacy-oracle.cjs`。缺参、缺件或身份不符均失败，不自动下载旧包。当前组件回归不能替代该独立历史等价结论；未运行审计时应明确报告未执行。
+
 详情页菜单材料自测需显式运行 `node --test tests/item-select-menus-material-selftest.cjs`；它直接读取固定 vendor HTML、布局 CSS 与冻结 Emby select 模块，不属于公开离线自动发现集合。外置播放器详情页合同需运行 `node tests/external-player-item-material-selftest.cjs`，覆盖原控件退役和详情菜单 overlay 输出哈希。首页固定材料自测需运行 `node tests/home-server-rendering-material-selftest.cjs`，覆盖冻结 HomeTab 与首页 overlay 接线合同。
 
 验收分层记录：单元/假服务验证逻辑；隔离 runtime 验证打包组件；真实 Emby/CD2 验证媒体、Session、远控；可见呈现验证视频区域；Windows 安装生命周期验证安装/升级/卸载/重装及权限。各层不能替代。
