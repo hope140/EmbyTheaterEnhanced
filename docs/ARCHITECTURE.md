@@ -2,12 +2,12 @@
 
 Latest scoped addition: only the native settings/cameraupload.js/.html pair leaves source/runtime; the devices administrator page and shared/touch code remain. Current Web selection is716; prior051f990 and its718-file selection remain historical. See [evidence and regression boundary](MOBILE_CAMERA_SETTINGS_RETIREMENT.md).
 
-当前活动输入已迁为 snapshot-v2：兼容39、小组件2、Web718；十五个旧正文退出当前 tree，旧 manifest/hash 和必要声明保留。Web 根路径保持，版本由 manifest 明示；app/index 的旧插件/图片引用已在 v2 输入中退役，最终输出身份保持。完整中文维护源为 src/localization/mpvplayer/zh-CN.json，保留24项继承译文和13项选定修订。见[迁移合同](SNAPSHOT_V2_MIGRATION.md)。下方先前“正文保留/仅评估”记录描述迁移前阶段。
+当前活动输入已迁为 snapshot-v2：兼容39、小组件2、Web716；十七个旧正文退出当前 tree，旧 manifest/hash 和必要声明保留。Web 根路径保持，版本由 manifest 明示；app/index 的旧插件/图片引用已在 v2 输入中退役；本次 app 仅再删除已注释的相机设置路由。完整中文维护源为 src/localization/mpvplayer/zh-CN.json，保留24项继承译文和13项选定修订。见[迁移合同](SNAPSHOT_V2_MIGRATION.md)。下方先前“正文保留/仅评估”记录描述迁移前阶段。
 
 
 旧 themes/logo.png 不再进入新 runtime；生产 index 继续使用既有 startup.svg，标题/屏保图保持。原 PNG/原 index 仍在冻结输入，完整来源树移除另需快照迁移；见[退役合同](LEGACY_RESOURCE_RETIREMENT.md)。
 
-默认配置由 `src/config/system-defaults.json` 生成同字段/同默认值的首启 XML；中文播放器资源在冻结输入上叠加 `src/localization/mpvplayer/zh-CN.json` 的十三项文本，其余二十四项保留。两份维护输入进入既有小组件装配/provenance，用户配置和原翻译注册路径保持；见[维护合同](MAINTAINED_SMALL_RUNTIME.md)。
+默认配置由 `src/config/system-defaults.json` 生成同字段/同默认值的首启 XML；中文播放器资源由完整 `src/localization/mpvplayer/zh-CN.json` 维护，其中十三项为选定修订、二十四项继承原文。两份维护输入进入既有小组件装配/provenance，用户配置和原翻译注册路径保持；见[维护合同](MAINTAINED_SMALL_RUNTIME.md)。
 
 Current Model selection: the independent component now uses the fixed official Windows 3.0.20 Model member and can recover it from the same pinned ZIP as Host. Historical unchanged-Model statements below describe earlier stages. No playback/Host/Electron/libmpv source or configuration-default change accompanies this selection. See [current contract and acceptance limits](MODEL_COMPATIBILITY_INPUT.md).
 

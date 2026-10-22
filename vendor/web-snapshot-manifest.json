@@ -37,7 +37,7 @@
       "size": 101668,
       "sha256": "3b058d1f40f5d863f1a1220dc36c52b187cb5ae0c8073dc4527573de294fc0a2",
       "originalPath": "electronapp/www/app.js",
-      "origin": "v2 explicit retirement of optional plugin registration or startup image reference; other base bytes retained",
+      "origin": "v2 derived input: retire CustomCssJS registration and the inactive native camera settings route comment; other executable bytes retained",
       "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
     },
     {

@@ -1,9 +1,9 @@
 # Runtime source and notice materials
 
-Current v2 source selection removes fifteen reviewed old bodies from the current tree while preserving exact v1 manifests/hashes, necessary notices and old Git history. Active component counts are 39/2/718; the complete Chinese maintained file still inherits 24 strings, so this is not new authorship or general license clearance. See [migration boundaries](SNAPSHOT_V2_MIGRATION.md); earlier current-tree archival statements below describe the preceding stage.
+Current v2 source selection removes seventeen reviewed old bodies from the current tree while preserving exact v1 manifests/hashes, necessary notices and old Git history. Active component counts are 39/2/716; the complete Chinese maintained file still inherits 24 strings, so this is not new authorship or general license clearance. See [migration boundaries](SNAPSHOT_V2_MIGRATION.md); earlier current-tree archival statements below describe the preceding stage.
 
 
-Maintained small outputs: [typed configuration defaults and thirteen Chinese text revisions](MAINTAINED_SMALL_RUNTIME.md) are now maintained separately from the unchanged archival input. The same five default fields/values and twenty-four unchanged translation strings remain inherited; this does not claim old ETE authorship or complete localization/source-license resolution.
+Maintained small outputs: [typed configuration defaults and thirteen Chinese text revisions](MAINTAINED_SMALL_RUNTIME.md) are now maintained separately from the unchanged historical manifest. The same five default fields/values and twenty-four unchanged translation strings remain inherited; this does not claim old ETE authorship or complete localization/source-license resolution.
 
 Current Model selection: the separate [Model component](MODEL_COMPATIBILITY_INPUT.md) now locks the official Windows 3.0.20 release member, SHA-256 `db22f8ea6cb6afdfab184f80d8b85a10d8a9f148ff4cae167db87ce9cd245153`, and the complete official ZIP identity. Its former community variant remains in Git history; no community snapshot is a normal build dependency. Historical unchanged-Model statements below describe earlier stages. Exact binary source-rebuild and third-party notice boundaries remain separate from official release-byte identity.
 
