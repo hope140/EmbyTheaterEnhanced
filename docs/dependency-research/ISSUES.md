@@ -23,19 +23,47 @@
 
 官方[4.7.6 arm64 Debian包](https://github.com/MediaBrowser/Emby.Releases/releases/download/4.7.6.0/emby-server-deb_4.7.6.0_arm64.deb)为76,094,120 bytes，SHA256 `2a75311bb9c9e44fd2cb7d6e2fb1d7d55de8927213a7c30fa12d92fa196c0efe`。仅静态读取ar/tar/DOCX，不执行安装器或产品。
 
-其中`data.tar.xz`内`opt/emby-server/licenses/license.docx`为18,373 bytes，SHA256 `a6d7ea65dcb06392479a85e1a10a7aeb872d803da6f784f6935fcd4ee63008c6`，文本标注更新于2018-04-11。它给出有限个人使用许可和有条件的完整Server复制例外，并限制修改、分发及面向公众提供下载；本轮没有由此建立拆取Web、修改后公开分发的许可依据。
+其中`data.tar.xz`内`opt/emby-server/licenses/license.docx`为18,373 bytes，SHA256 `a6d7ea65dcb06392479a85e1a10a7aeb872d803da6f784f6935fcd4ee63008c6`，文本标注更新于2018-04-11。其原文限制应分开理解：个人、非商业、可撤销、不可转让及不可再许可的使用授权；除下一节例外，限制复制、修改、分发、出售、出租及纳入其他产品，并保留法律禁止限制或书面许可等例外；复制例外仅指可安装Server整体、不得拆部分，不得收费或向公众提供下载（免费也包括），且须保留专有通知。文档还把文档规定的定制/修改作为有限例外，不能扩大为任意修改再分发的授权。本轮没有由此建立拆取Web、修改后公开分发的许可依据。原文也未出现GPL、LGPL、开源组件排除条款；同包独立组件通知另查，不把总条款覆盖到所有第三方权利。
 
 同包有独立组件notice和95行组件索引，但未建立这些文本对当前剩余Web的逐文件适用关系。应先明确Web与独立组件的许可链，再判断需要哪些补充依据或替换候选，不能从Electron根GPL文本或官方托管印象覆盖整个Web。
 
 另核对[现行Terms](https://emby.media/terms.html)，页面标注2026-08-16，含第三方组件独立条款；它不能替代4.7.6随包文本或证明2022适用关系。原始HTTP读取返回403，已用允许的网页读取取得内容；未伪造HTML原件hash。原包、DOCX、索引与解析边界均记录在证据JSON中。
 
 ## CustomCssJS固定来源
-+
-+已按指定固定路径核对[Shurelol/Emby.CustomCssJS commit 6933b58](https://github.com/Shurelol/Emby.CustomCssJS/tree/6933b58c62f98b0919977e953f068b1a581a7a1c)，不继续扩搜作者。`Emby.CustomCssJS/CustomCssJS.js`为4,416 bytes、SHA256 `3eaec19e8a27ef2894d262d2b8569bb6b1275baca249b1457f6679474c856009`；冻结文件4,548 bytes、SHA256 `2177de28dcc4e715f07c63329dc361c5b4ddd37eb7e59f273830b22acea37912`。仅将CRLF改LF即逐字节一致，上游无末尾换行保持。组件版本1.0.0.2及历史0fee38fa同文本结论引用对应组件核对结果，未重搜历史。
-+
-+同commit的[LICENSE](https://github.com/Shurelol/Emby.CustomCssJS/blob/6933b58c62f98b0919977e953f068b1a581a7a1c/LICENSE)含GPLv3全文，35,149 bytes、SHA256 `3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986`。这是固定来源与文本证据，不代表ETE整体许可、组合与分发范围已经闭合。[PR #69](https://github.com/hope140/EmbyTheaterEnhanced/pull/69)退役集成尚未合并，不将其计为已删除；后续仅跟随用途清理。
-+
-+## 旧资源实际用途清理
+
+已按指定固定路径核对[Shurelol/Emby.CustomCssJS commit 6933b58](https://github.com/Shurelol/Emby.CustomCssJS/tree/6933b58c62f98b0919977e953f068b1a581a7a1c)，不继续扩搜作者。`Emby.CustomCssJS/CustomCssJS.js`为4,416 bytes、SHA256 `3eaec19e8a27ef2894d262d2b8569bb6b1275baca249b1457f6679474c856009`；冻结文件4,548 bytes、SHA256 `2177de28dcc4e715f07c63329dc361c5b4ddd37eb7e59f273830b22acea37912`。仅将CRLF改LF即逐字节一致，上游无末尾换行保持。组件版本1.0.0.2及历史0fee38fa同文本结论引用对应组件核对结果，未重搜历史。
+
+同commit的[LICENSE](https://github.com/Shurelol/Emby.CustomCssJS/blob/6933b58c62f98b0919977e953f068b1a581a7a1c/LICENSE)含GPLv3全文，35,149 bytes、SHA256 `3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986`。这是固定来源与文本证据，不代表ETE整体许可、组合与分发范围已经闭合。[PR #69](https://github.com/hope140/EmbyTheaterEnhanced/pull/69)退役集成尚未合并，不将其计为已删除；后续仅跟随用途清理。
+
+## 代表组件的许可链（有限核验）
+
+下表针对原112份有比较底稿内容中的代表族，以及两项缺底稿内容；没有扩扫Server版本，也没有把“有开源上游”改写成当前修改版已获完整授权。固定文件、SHA256、函数比较结果和读取失败记录见[证据JSON](evidence/web-history-20261022.json)的`licenseApplicabilityFollowup`。
+
+| 来源族／实际边界 | 固定来源及许可证据 | 对当前输入可以确认的事 | 保留条件／尚缺证据 |
+|---|---|---|---|
+| 独立第三方候选：page.js路由 | [visionmedia/page.js 1.8.3 commit 1bc9369](https://github.com/visionmedia/page.js/tree/1bc93692b0924b686e2207a66e2e73a85e1ab058)，2018-01-22；同revision的Readme含MIT全文，package.json标MIT | 当前`modules/pagejs/page.js`经approuter调用，但与固定上游非byte/整文件AST同；路由注册、回退状态及Emby dom依赖存在差异。3个同名声明仅作比较入口，不证明具体引入版本或作者 | 固定MIT原件本身提供使用/修改/分发许可，并要求保留版权和许可通知；当前定制路由新增部分的授权仍缺，不能补MIT就宣称全文件闭合。若另选原版，须验证路由注册/返回键适配及其依赖，不能直接覆盖 |
+| 独立第三方族线索：WebVTT | [mozilla/vtt.js 0.13.0 commit f823de8](https://github.com/mozilla/vtt.js/tree/f823de834bc23d65300e58a6d391916bc00bcb75)，2016-12-01；lib/vtt.js文件头明确Apache-2.0，根LICENSE同版 | 当前`modules/webvtt/vtt.js`的解析/字幕布局接口和具名函数提供族线索；19个共同具名声明中4个AST同、15个不同（有嵌套重叠），不算整文件或版本对应。当前文件无这段上游版权/许可头 | 原版的再分发条件包括随附许可、保留相关通知、显著标明修改及适用NOTICE；当前派生链和新增部分授权未闭合。项目维护层GPL-2.0-only与Apache-2.0的组合也不能直接判可用：[GNU说明](https://www.gnu.org/licenses/license-compatibility.html)指出二者不兼容；是否构成同一组合及可选边界仍须具体核对，不改项目许可 |
+| 早期官方GPL文本与播放方式标签 | [Emby 3.5.3 commit 1d7c2ab](https://github.com/MediaBrowser/Emby/tree/1d7c2ab4bfebdae31f89fdaabd3b68782ccf495a)含Dashboard的`bower_components/emby-webcomponents/playback/playmethodhelper.js`及根GPL v2文本；webcomponents固定tip中的文件最后改于2017-07-01 | 当前helper与2018压缩源码的5种分支输出可逐项对应：无当前项→null；IsVideoDirect→DirectStream；Transcode→Transcode；DirectStream/DirectPlay→DirectPlay；其余→undefined。这是静态语义对应，封装和条件表达式不同，byte/整文件AST均不同 | 同树GPL文本是早期来源证据，不能覆盖新版整树；嵌套bower元数据又指向独立LICENSE URL，而所核对webcomponents tip无该根文件，需补准确适用范围或采用有明确许可的独立实现。当前消费者为playerstats显示标签，未发现本helper作播放地址选择；仍未执行运行验收 |
+| Emby自有Web核心／页面 | 官方4.7.6/4.7.14字节与函数比较底稿，加同版Debian随包license.docx；历史Electron GPL文本不含另取www | app.js、AppSettings、PlaybackManager、ApiClient和多数页面可以缩小来源差异，但没有取得覆盖这些实际2022/2023修订的独立开源授权链。webcomponents的bower许可URL不是许可正文 | 尚缺准确Web版本的许可声明/授权范围，不能用早期GPL或公开下载补足。按入口初始化、API/连接、播放状态、页面/样式族分别闭合；目前不能把这大片内容认定为“小补丁即可解决” |
+| 指定CustomCssJS来源 | 上节固定revision、CRLF规范化对应、GPLv3原件 | 来源已定位；GPLv3通知/源码义务与项目组合范围另查 | 由PR #69用途退役集成处理，不重复追作者，不因有GPL文本便认定整体可组合 |
+
+“可按现成许可保留”目前能直接落实到**已固定的MIT或Apache上游原件及其许可条件**，不能直接等同当前定制文件；GPL历史源码和CustomCssJS也须分别满足适用范围、对应源码/通知及组合条件。本轮没有新增可宣称整文件授权闭合的当前剩余文件，没有认定所有公开早期内容均受同一限制。
+
+## 最小替换／重写候选边界及影响
+
+这里列的是证据仍缺时可供决定的边界，不是实施计划或已确认必须删除的内容。本PR没有替换、重写或联系权利人。
+
+| 最小边界 | 静态消费者／功能影响 | 尚需的最小决定或验证 |
+|---|---|---|
+| `playmethodhelper.js`单一显示函数 | playerstats的播放方式标签；app.js注册模块 | 明确旧源码许可适用性，或另行决定独立实现5个输出分支；保持统计标签合同，勿扩大到播放核心 |
+| `themes/logo.png`单一图片 | 冻结index使用；现有startup overlay已改指向ETE startup.svg，但快照装配仍复制manifest内原图 | 当前hash未找到所取官方底稿；未建立图片许可。后续可确认有无其他消费者后决定退役/自有图片，不把“首屏不用”写成“不分发” |
+| page.js路由模块及approuter适配边界 | 页面跳转、历史回退、地址/路由状态 | 先区分MIT原始部分与未明新增部分；原版候选需适配现用注册/返回键合同，不自动移植 |
+| WebVTT解析/布局模块及HTML视频播放器调用边界 | HTML播放器外部VTT解析、字幕cue与布局；不能推断所有原生播放路径都依赖它 | 固定来源/修改授权及GPL组合边界；若另选库或重写，另验字幕语法、时间轴、布局和渲染，不扩展为播放器整体替换 |
+| Emby Web页面／核心族 | 初始化/连接、播放状态、卡片/列表、设置和OSD；不同族耦合实际存在 | 最小缺口是实际Web修订的授权范围，不是再找一个更早Server包。若无法取得证据，须按仍用功能族决定来源明确的替代前端或独立重写，现阶段不承诺能只替换某一个文件解决全部问题 |
+
+轻量缺底稿核对后，114项中仍有112项Server比较底稿、1项新增早期helper语义底稿、1项logo缺底稿；**byte/整文件AST新增仍为0，114差异未闭合总数不扣减**。logo没有扩大成图片资源库普查。
+
+## 旧资源实际用途清理
 
 14项（8变体、6旧包）不再列为活跃来源追溯。用途清理先为每项列出构建读取、runtime路径/加载方、安装器或手工分发消费者及现有通知；确认无消费者后才能提出退役候选。动态消费者或分发边界不明时保留问题，不因检索没有结果就删除。清理进展见[PR #69](https://github.com/hope140/EmbyTheaterEnhanced/pull/69)，尚未合并，不记录为已删除。
 

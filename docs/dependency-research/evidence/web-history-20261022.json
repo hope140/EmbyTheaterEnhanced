@@ -246,7 +246,7 @@
         "otherNonempty": 114
       },
       "notOfficialByteMatched123": "122 Web-pending plus normalized-source CustomCssJS",
-      "remaining114": "112 have sampled official comparands with unresolved structural/content differences; two lack a baseline in the selected sources",
+      "remaining114": "112 sampled Server comparands plus 1 early official helper semantic comparand; logo still lacks a selected-source baseline. All 114 remain unclosed; exact/AST source counts unchanged.",
       "carriers": "Two user-patch carriers remain outside the 720-file scope",
       "aggregate897": "759/138 remains the dated prior-audit/current-Model reference. This report does not silently recalculate that ledger or subtract unmerged retirement work."
     },
@@ -527,5 +527,192 @@
   ],
   "fixedNormalizedSources": [
     {"repo":"Shurelol/Emby.CustomCssJS","commit":"6933b58c62f98b0919977e953f068b1a581a7a1c","path":"Emby.CustomCssJS/CustomCssJS.js","sourceBytes":4416,"sourceSha256":"3eaec19e8a27ef2894d262d2b8569bb6b1275baca249b1457f6679474c856009","frozenBytes":4548,"frozenSha256":"2177de28dcc4e715f07c63329dc361c5b4ddd37eb7e59f273830b22acea37912","onlyTransformation":"CRLF to LF; upstream no final newline preserved","licensePath":"LICENSE","licenseBytes":35149,"licenseSha256":"3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986","licenseText":"GNU GPL Version 3","version":"1.0.0.2 (component worker version observation)","historicalSameTextRef":"0fee38fa (component worker observation, not re-searched)","retirementPR":69,"retirementMerged":false,"wholeProductLicenseClosed":false,"sourceURL":"https://github.com/Shurelol/Emby.CustomCssJS/blob/6933b58c62f98b0919977e953f068b1a581a7a1c/Emby.CustomCssJS/CustomCssJS.js","licenseURL":"https://github.com/Shurelol/Emby.CustomCssJS/blob/6933b58c62f98b0919977e953f068b1a581a7a1c/LICENSE","comparison":"fixed-revision normalized source correspondence, NOT official byte equality","licenseScopeConclusion":"GPLv3 text established at fixed repo commit; whole-product compatibility and distribution closure not established; no product code change","retirementStatus":"PR69 open and not merged when checked; not counted as deleted"}
-  ]
+  ],
+  "licenseApplicabilityFollowup": {
+    "dateUTC": "2026-10-22",
+    "scope": "representative source/license families, two missing-baseline items; no new Server versions, no product changes",
+    "fixedThirdPartyReferences": [
+      {
+        "repository": "mozilla/vtt.js",
+        "tag": "v0.13.0",
+        "commit": "f823de834bc23d65300e58a6d391916bc00bcb75",
+        "date": "2016-12-01T11:03:29-08:00",
+        "path": "LICENSE",
+        "sha256": "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0",
+        "bytes": 10175,
+        "url": "https://github.com/mozilla/vtt.js/blob/f823de834bc23d65300e58a6d391916bc00bcb75/LICENSE"
+      },
+      {
+        "repository": "mozilla/vtt.js",
+        "tag": "v0.13.0",
+        "commit": "f823de834bc23d65300e58a6d391916bc00bcb75",
+        "date": "2016-12-01T11:03:29-08:00",
+        "path": "lib/vtt.js",
+        "sha256": "ef7e920645a51b61f61ca475cd03c2308ed814ff402952e89b9e9e358095bc0b",
+        "bytes": 45012,
+        "url": "https://github.com/mozilla/vtt.js/blob/f823de834bc23d65300e58a6d391916bc00bcb75/lib/vtt.js"
+      },
+      {
+        "repository": "mozilla/vtt.js",
+        "tag": "v0.13.0",
+        "commit": "f823de834bc23d65300e58a6d391916bc00bcb75",
+        "date": "2016-12-01T11:03:29-08:00",
+        "path": "package.json",
+        "sha256": "b6c80b18c062e20d99fc692c85f08f32616929fa0a192dc81280ca0df28f42eb",
+        "bytes": 1254,
+        "url": "https://github.com/mozilla/vtt.js/blob/f823de834bc23d65300e58a6d391916bc00bcb75/package.json"
+      },
+      {
+        "repository": "visionmedia/page.js",
+        "tag": "1.8.3",
+        "commit": "1bc93692b0924b686e2207a66e2e73a85e1ab058",
+        "date": "2018-01-22T17:41:30-05:00",
+        "path": "Readme.md",
+        "sha256": "5bf6708cc812be64931122608f4b29d2d3de286672f14789f8e2e116fb3c496a",
+        "bytes": 17623,
+        "url": "https://github.com/visionmedia/page.js/blob/1bc93692b0924b686e2207a66e2e73a85e1ab058/Readme.md"
+      },
+      {
+        "repository": "visionmedia/page.js",
+        "tag": "1.8.3",
+        "commit": "1bc93692b0924b686e2207a66e2e73a85e1ab058",
+        "date": "2018-01-22T17:41:30-05:00",
+        "path": "index.js",
+        "sha256": "8952ba1d36a5fd0372b62df1c97fe2a21b61a1e6b60251d1ef0de8bb214de704",
+        "bytes": 17627,
+        "url": "https://github.com/visionmedia/page.js/blob/1bc93692b0924b686e2207a66e2e73a85e1ab058/index.js"
+      },
+      {
+        "repository": "visionmedia/page.js",
+        "tag": "1.8.3",
+        "commit": "1bc93692b0924b686e2207a66e2e73a85e1ab058",
+        "date": "2018-01-22T17:41:30-05:00",
+        "path": "package.json",
+        "sha256": "ebf21b70b849f8092445043f47e8ac87b3249f8587935d7d659e30929d048bf3",
+        "bytes": 1284,
+        "url": "https://github.com/visionmedia/page.js/blob/1bc93692b0924b686e2207a66e2e73a85e1ab058/package.json"
+      }
+    ],
+    "wholeFileAndNamedDeclarationComparisons": [
+      {
+        "path": "www/modules/webvtt/vtt.js",
+        "currentSha256": "97bda9c48cf440809d6453c8e36229f2384ca706dc46fe562d73963fb02c6aee",
+        "candidateSha256": "ef7e920645a51b61f61ca475cd03c2308ed814ff402952e89b9e9e358095bc0b",
+        "byteEqual": false,
+        "strictWholeASTEqual": false,
+        "namedDeclarationSame": [
+          "skipWhitespace",
+          "unescape1",
+          "StyleBox",
+          "WebVTT"
+        ],
+        "namedDeclarationDifferent": [
+          "ParsingError",
+          "parseTimeStamp",
+          "computeSeconds",
+          "Settings",
+          "parseOptions",
+          "parseCue",
+          "consumeTimeStamp",
+          "parseContent",
+          "pushNodes",
+          "determineBidi",
+          "CueStyleBox",
+          "BoxPosition",
+          "moveBoxToLinePosition",
+          "collectNextLine",
+          "parseHeader"
+        ],
+        "currentOnly": []
+      },
+      {
+        "path": "www/modules/pagejs/page.js",
+        "currentSha256": "bfdcf96ec474538e14b7e57495e8e0d5c607a20252d7110d57ad6323653425a9",
+        "candidateSha256": "8952ba1d36a5fd0372b62df1c97fe2a21b61a1e6b60251d1ef0de8bb214de704",
+        "byteEqual": false,
+        "strictWholeASTEqual": false,
+        "namedDeclarationSame": [],
+        "namedDeclarationDifferent": [
+          "page",
+          "decodeURLEncodedURIComponent",
+          "Context"
+        ],
+        "currentOnly": [
+          "onpopstate"
+        ]
+      },
+      {
+        "path": "www/modules/common/playback/playmethodhelper.js",
+        "currentSha256": "b9a6c50f3a8da2f7d29cff8a12aef9e57868124f085d787aacdd97c633763eb7",
+        "candidateSha256": "039703d02b802ad5f8aa6058aa23a5ba4f7389bbe03cefec21c06c571cd8fa81",
+        "byteEqual": false,
+        "strictWholeASTEqual": false,
+        "namedDeclarationSame": [],
+        "namedDeclarationDifferent": [],
+        "currentOnly": []
+      }
+    ],
+    "helperEarlyOfficial": {
+      "commit": "1d7c2ab4bfebdae31f89fdaabd3b68782ccf495a",
+      "path": "MediaBrowser.WebDashboard/dashboard-ui/bower_components/emby-webcomponents/playback/playmethodhelper.js",
+      "blobSha1": "a2d05f8096fc78c61707ba7e5139c9393cffa24b",
+      "sha256": "039703d02b802ad5f8aa6058aa23a5ba4f7389bbe03cefec21c06c571cd8fa81",
+      "bytes": 416,
+      "url": "https://github.com/MediaBrowser/Emby/blob/1d7c2ab4bfebdae31f89fdaabd3b68782ccf495a/MediaBrowser.WebDashboard/dashboard-ui/bower_components/emby-webcomponents/playback/playmethodhelper.js",
+      "rootLicense": {
+        "path": "LICENSE.md",
+        "sha256": "f371b80469fb235bc500ec29e0e85b682d4a6157a158567d828ff0be544d4f1d",
+        "bytes": 18014,
+        "text": "GNU GPL version 2; exact applicability to nested component/current revisions remains unclosed"
+      },
+      "webcomponentsTip": "69877ad3319a7b422d0e1f8289dc5ca234c4040d",
+      "lastFileChange": "93d3f89bd7d151d7bde09af6dffc0c627901831b",
+      "lastFileChangeDate": "2017-07-01T00:47:20-04:00",
+      "comparison": "manually compared five ordered branches; same outputs on valid session objects; no execution, no byte or whole-AST equality",
+      "scopeGap": "nested bower.json refers to a separate root LICENSE URL; inspected webcomponents tip has no such file; root GPL text is not treated as licensing all later Web"
+    },
+    "logo": {
+      "path": "www/modules/themes/logo.png",
+      "sha256": "624aa2425d6bee862fd5469e191a2dad928931425e45ee31d006d6e71906c064",
+      "baseline": "not located in selected official sources; no wider asset scan",
+      "consumer": "frozen index.html; maintained patch-startup changes to enhanced/startup.svg; web-snapshot-input assemble still copies manifest image",
+      "license": "unconfirmed"
+    },
+    "counters": {
+      "newByte": 0,
+      "newWholeAST": 0,
+      "newManuallyComparedSemanticBaseline": 1,
+      "currentWholeFileLicenseClosures": 0,
+      "remainingContentDifferences": 114,
+      "serverComparands": 112,
+      "earlySemanticComparands": 1,
+      "noComparand": 1
+    },
+    "licenseConditionBoundary": {
+      "pageJS": "MIT copyright/permission preservation applies to fixed original; custom current additions and introduction version not established",
+      "vttJS": "Apache-2.0 fixed original and file header; modification/notice duties, exact derived version and project GPL-2.0-only combination remain separate issues",
+      "EmbyWeb": "actual 2022/2023 revisions lack established independent grant; early repo GPL and public download do not fill this gap",
+      "CustomCssJS": "fixed normalized source and GPLv3 recorded separately; no whole-project compatibility or retirement completion claimed"
+    },
+    "readFailures": [
+      {
+        "action": "github_fetch tags collection",
+        "targets": [
+          "https://api.github.com/repos/visionmedia/page.js/tags?per_page=10",
+          "https://api.github.com/repos/mozilla/vtt.js/tags?per_page=10"
+        ],
+        "state": "denied by endpoint allowlist",
+        "error": "HTTP 400 INVALID_ARGUMENT: URL is not an allowed public GitHub repository or search endpoint",
+        "fallback": "read-only bare git clones of the same official public repositories; no downloaded product or build scripts executed"
+      },
+      {
+        "action": "web open GNU license-list",
+        "target": "https://www.gnu.org/licenses/license-list.html#apache2",
+        "state": "failed",
+        "error": "400 Timeout fetching",
+        "fallback": "official GNU license-compatibility page located through allowed web search"
+      }
+    ],
+    "compatibilityReference": "https://www.gnu.org/licenses/license-compatibility.html"
+  }
 }
