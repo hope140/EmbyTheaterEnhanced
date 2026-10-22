@@ -4,7 +4,7 @@
 
 ApiClient 和 toast 的现有最终字节直接纳入 `src/electronapp/www` 下两个明确开放的维护路径，由既有 Git blob 装配器复制；移除对应用户补丁、ApiClient 生命周期生成器及两个 overlay 入口，其余 overlay 保持。维护源码明确为固定历史 Web 的派生文件，保留用户原有重连/进度/toast 修复和后续 socket/注销/计时器归属修复，不将继承正文整体标作原创，不替换原上游版本。
 
-原缺件已按固定官方 ZIP/Git blobs 和仓库原始归档恢复，材料门禁保持原校验。直接源码方案的完整回归、材料和720文件字节对照在本分支核验后记录；不沿用旧生成器方案的测试计数。未进行 Windows 整包、GUI、登录或用户媒体验收。vendor、remoteaudio/remotevideo、依赖和版本保持，发布分支、Tag/Release/附件不动。来源和复现见 [Web 输入合同](WEB_SNAPSHOT_INPUT.md)。
+原缺件已按固定官方 ZIP/Git blobs 和仓库原始归档恢复，材料门禁保持原校验。直接源码方案完整 npm test 为 1429 pass / 0 fail / 10 Windows 专属 skip；全部显式材料自测 136/136，0 fail/skip，完整门禁通过。822 个基底及937个中间文件对照通过；相对 main `6fee412` 的720个 Web 文件路径/SHA完全相同。HEAD输入合同84文件、JS语法385文件、有限模式检查442文件通过。未进行 Windows 整包、GUI、登录或用户媒体验收。vendor、remoteaudio/remotevideo、依赖和版本保持，发布分支、Tag/Release/附件不动。来源和复现见 [Web 输入合同](WEB_SNAPSHOT_INPUT.md)。
 
 ## 2026-10-22 — v0.3.16 测试版准备
 

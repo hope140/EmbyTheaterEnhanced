@@ -74,3 +74,5 @@ node --test --test-concurrency=1 tests/*-material-selftest.cjs
 回归直接执行维护的 AMD 源码，覆盖重连、注销、计时器/消息归属及进度 POST/节流；测试固定最终 SHA256、继承正文不变范围和 toast 完整字节。装配夹具不提供任何 vendor/patch 生成器，且故意篡改工作树文件，确认最终字节只取指定提交的 Git blobs，未跟踪 Web 文件不会进入产物。
 
 完整组件门禁仍核对历史载体清单，未删除或重新归属 vendor 材料。来源关系由旧生成器改为普通受版本控制的派生源码，provenance/build-manifest 必然变化；产品 Web payload 则按完整720路径和文件SHA比较。Windows整包、GUI和真实服务/媒体须独立验收，不由静态材料对照代替。
+
+本次直接源码装配相对 main `6fee412` 的720个 Web 文件逐路径/SHA256完全一致。对按路径排序的 `{path,sha256}` 数组执行 `JSON.stringify` 后的摘要保持 `1b29d84dbcd3f8fe0537a7a129da3eab39df14492a0dcc40615a6194772a82bf`。完整 npm test 为1429 pass / 0 fail / 10 Windows专属skip；全部显式材料集合136 pass / 0 fail / 0 skip；原完整材料门禁通过，基底822文件/共同变换后937文件对照通过。来源记录中的两份文件转为指定提交的 `git-blob-copy` 关系，未声称整份provenance与旧构建字节相同。
