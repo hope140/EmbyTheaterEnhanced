@@ -14,10 +14,14 @@ function fixture(t) {
     const cold = path.join(root, 'cold');
     fs.mkdirSync(path.join(cold, 'vendor'), {recursive: true});
     fs.copyFileSync(path.join(root, input.MANIFEST_PATH), path.join(cold, input.MANIFEST_PATH));
+    for (const name of [input.DEFAULT_SOURCE_PATH, input.TRANSLATION_SOURCE_PATH]) {
+        fs.mkdirSync(path.dirname(path.join(cold, name)), {recursive: true});
+        fs.copyFileSync(path.join(root, name), path.join(cold, name));
+    }
     return {root, manifest, source, cold, runtime: path.join(cold, 'dist/candidate')};
 }
 
-test('four-file cold restoration preserves opaque configuration and excludes Model', t => {
+test('four-file cold restoration generates approved configuration/localization and excludes Model', t => {
     const f = fixture(t);
     fs.writeFileSync(path.join(f.source, 'MediaBrowser.Model.dll'), 'unrelated Model must not be imported');
     assert.equal(input.importSnapshot(f.cold, f.source).fileCount, 4);
@@ -31,7 +35,8 @@ test('four-file cold restoration preserves opaque configuration and excludes Mod
             assert.equal(fs.existsSync(path.join(f.runtime, entry.path)), false);
             continue;
         }
-        assert.deepEqual(fs.readFileSync(path.join(f.runtime, entry.path)), fs.readFileSync(path.join(f.source, entry.path)));
+        const expected = require('./helpers/small-runtime-reference.cjs').bytes(f.cold, entry.path, fs.readFileSync(path.join(f.source, entry.path)));
+        assert.deepEqual(fs.readFileSync(path.join(f.runtime, entry.path)), expected);
     }
     assert.equal(fs.existsSync(path.join(f.runtime, 'cec-driver/cancel')), false);
     assert.equal(input.validateRuntime(f.cold, f.runtime).fileCount, 4);

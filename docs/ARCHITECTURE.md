@@ -1,5 +1,7 @@
 # 架构与维护边界
 
+默认配置由 `src/config/system-defaults.json` 生成同字段/同默认值的首启 XML；中文播放器资源在冻结输入上叠加 `src/localization/mpvplayer/zh-CN.overrides.json` 的十三项文本，其余二十四项保留。两份维护输入进入既有小组件装配/provenance，用户配置和原翻译注册路径保持；见[维护合同](MAINTAINED_SMALL_RUNTIME.md)。
+
 Current Model selection: the independent component now uses the fixed official Windows 3.0.20 Model member and can recover it from the same pinned ZIP as Host. Historical unchanged-Model statements below describe earlier stages. No playback/Host/Electron/libmpv source or configuration-default change accompanies this selection. See [current contract and acceptance limits](MODEL_COMPATIBILITY_INPUT.md).
 
 Current compatibility-resource input: 48 manual/external files now use a fixed local component with per-file origin and notice records, preserving runtime paths and bytes. Normal old input count is five Carnival files and zero patch files. Material snapshots remain external to Git. See [snapshot contract and limits](COMPATIBILITY_RESOURCES_INPUT.md).

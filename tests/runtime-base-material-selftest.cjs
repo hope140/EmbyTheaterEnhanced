@@ -70,7 +70,10 @@ function referenceBase(runtime) {
             assert.equal(bytes.length, entry.size, name + ': ' + entry.path);
             assert.equal(sha(bytes), entry.sha256.toLowerCase(), name + ': ' + entry.path);
             const runtimePath = name === 'web-snapshot' ? 'electronapp/' + entry.path : entry.path;
-            if (!approvedRetirements.has(runtimePath)) writeExclusive(runtime, runtimePath, bytes);
+            if (!approvedRetirements.has(runtimePath)) {
+                const output = require('./helpers/small-runtime-reference.cjs').bytes(root, runtimePath, bytes);
+                writeExclusive(runtime, runtimePath, output);
+            }
         }
     }
     // Preload and Host config are generated later; only package is a base file.

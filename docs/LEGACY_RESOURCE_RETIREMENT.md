@@ -1,6 +1,6 @@
 # 14 项旧资源用途与发布选择
 
-本候选从 `main` 的 `6fee412ad68934d0194303916cfe346e6254a228` 独立开展，仅处理下表资源。12 项不再进入**新构建的 runtime/安装包**，2 项保留；profile 中实际生效的 CEC 标记继续独立创建。没有修改产品版本、v0.3.16 发行源码、Tag、Release 或附件；没有合并 main。ApiClient/toast 自有补丁另行维护。
+本候选从 `main` 的 `6fee412ad68934d0194303916cfe346e6254a228` 独立开展，仅处理下表资源。12 项不再进入**新构建的 runtime/安装包**，2 项功能保留并由维护层生成；profile 中实际生效的 CEC 标记继续独立创建。没有修改产品版本、v0.3.16 发行源码、Tag、Release 或附件；没有合并 main。ApiClient/toast 自有补丁另行维护。
 
 AGENTS.md 要求 vendor 和原始归档只读，因此本候选通过既有 `tools/runtime-exclusions.cjs` 与组件装配白名单剥离发布资源，**没有删除或改写 Git 中的原始快照文件**。源码归档仍含原材料，其来源与许可边界不会因成品瘦身而消失。没有以“用途退役”作为来源已解决、作者已确认或完整许可已核实的证据。
 
@@ -19,8 +19,8 @@ AGENTS.md 要求 vendor 和原始归档只读，因此本候选通过既有 `too
 | `Emby.ConfigureAndUninstall.bat` | 删除 | 有可手工双击的旧配置/卸载菜单，并非无用途文件。但它按旧 Emby Theater 目录、进程名及全局 mpv 路径工作；包括强制结束同名进程、整份 CSS 覆盖、SVP 环境变量/弹幕配置、账户及缓存删除、Everyone ACL 和旧卸载操作。当前 ETE 启动与 Inno 快捷方式不调用它，官方 Host 参考启动链也不调用它。退役不受当前安装/用户数据归属合同管理的旧手工入口。 |
 | `Emby.Dialog.bat` | 删除 | 旧安装后修复/提示脚本，会提升权限、复制全局字体及预设、结束进程并改旧目录 ACL。当前 Inno 的 Files/Icons/Run/Code、启动器和 main 不调用它；不作为当前安装后入口保留。 |
 | `external/Presets/mpv.conf` | 删除 | 由旧 Dialog BAT 手工覆盖全局 mpv 配置，指定字体、IPC pipe、hwdec 与 Anime4K include。不是 ETE 随包 system.xml，也不在 Native Helper 初始化选项中指定；移除其附送副本，不修改 libmpv 的配置发现行为或用户已有文件。 |
-| `config/system.xml` | 保留 | `tools/Start-Enhanced.ps1` 与 `src/electronapp/enhanced/bootstrap.js` 在用户 profile 缺配置时复制的种子。保留全部字节和首次复制/已有值不覆盖合同。 |
-| `electronapp/plugins/mpvplayer/strings/zh-CN.json` | 保留 | `src/electronapp/plugins/libmpv.js` 的 `getTranslations` 显式映射 zh-CN。删掉会损失播放器设置中文翻译。 |
+| `config/system.xml` | 保留 | `tools/Start-Enhanced.ps1` 与 `src/electronapp/enhanced/bootstrap.js` 在用户 profile 缺配置时复制的种子。维护的 JSON→XML 保留五个字段/默认值和首次复制/已有值不覆盖合同；格式/说明变化见[维护合同](MAINTAINED_SMALL_RUNTIME.md)。 |
+| `electronapp/plugins/mpvplayer/strings/zh-CN.json` | 保留 | `src/electronapp/plugins/libmpv.js` 的 `getTranslations` 显式映射 zh-CN。保持加载路径与 37 keys，维护层仅覆盖十三项已选择文字，其余二十四项原文保留。 |
 | `cec-driver/cancel`（0 bytes） | 删除包内副本 | 复核固定 Host IL 后区分路径：读取的是 ProgramDataPath/cec-driver/cancel；ETE 的 ProgramDataPath 指向用户 profile。bootstrap 在 profile 独立新建标记，从不复制包内副本。因此包内文件没有当前消费路径；profile 中真实有安装抑制语义的标记和创建/保留逻辑不改。详见下方时序与验收限制。 |
 | `注意事项.txt` | 删除 | UTF-16 旧用户说明指向已退役的外部播放器、旧配置/卸载菜单和权限修复，显卡建议也混用不适用于当前固定 Native 渲染路径的选项。没有当前运行读取者。原文包含旧使用限制；其原文同时保留在随包 SMALL_RUNTIME_INPUT.md 的历史声明记录中，原始文件及 manifest 也保留。仅剥离过时操作说明文件，不删除声明记录。 |
 | `www/modules/CustomCssJS.js` | 删除可选集成 | 退役前可在 Electron 登录后消费服务端插件的 forced_on CSS，并非所有桌面场景都不可执行。本候选按明确退役范围删除本地注册、运行包模块及专属禁 JS 生成器；普通 CSS、主题和原生 Branding/Css 既有逻辑保持。原始冻结脚本及已查明的上游/GPL 记录保留。 |
@@ -33,7 +33,7 @@ AGENTS.md 要求 vendor 和原始归档只读，因此本候选通过既有 `too
 
 Host 参考仅使用仓库既有固定引用 [708fadc](https://github.com/MediaBrowser/emby-theater-windows/tree/708fadc068cbf66ced6aece4a32f3e12bb2c4e13)：[ElectronApp.StartProcess](https://github.com/MediaBrowser/emby-theater-windows/blob/708fadc068cbf66ced6aece4a32f3e12bb2c4e13/Emby.Theater/App/ElectronApp.cs) 直接启动 electron 并传入 app/data/CEC/mpv 路径；[Program.InstallCecDriver](https://github.com/MediaBrowser/emby-theater-windows/blob/708fadc068cbf66ced6aece4a32f3e12bb2c4e13/Emby.Theater/Program.cs) 根据 cancel 的存在性返回。对当前固定 ZIP/Host 做已有 manifest 哈希检查及只读字符串核对。参考代码不等于已证明 Host 的完整源码重建关系；没有为这 14 项追加来源调查。
 
-`index.html` 的隐藏 Carnival 标记保持。CustomCssJS 的 MainActivity 分支只在未改写的原始存档中保留，随整个可选模块退出新 runtime；没有修改其它 Android/远程播放模块。remoteaudio/remotevideo、Model、ApiClient/toast、src/、native/ 及用户数据路径均不改。
+`index.html` 的隐藏 Carnival 标记保持。CustomCssJS 的 MainActivity 分支只在未改写的原始存档中保留，随整个可选模块退出新 runtime；没有修改其它 Android/远程播放模块。remoteaudio/remotevideo、Model、ApiClient/toast、native/ 及用户数据路径均不改；src/ 仅新增已确认的配置和本地化维护数据。
 
 ## 装配、哈希与通知
 
@@ -42,12 +42,12 @@ Host 参考仅使用仓库既有固定引用 [708fadc](https://github.com/MediaB
 | 组件 | 新 runtime 文件/字节 | 新 runtime tree SHA256 |
 | --- | --- | --- |
 | compatibility-resources | 39 / 2,391,214 | `ca74d8b1bddeacc8f8e5a271ac75ad43301328f0e81be8cb350ea84110ca9ea4` |
-| small-runtime | 2 / 3,834 | `0b9c9da4377ae0be32a8a2181f7427f3393036923aa2bec9c2d889835a67f430` |
+| small-runtime | 2 / 3,330 | `7d3ee238ca2be25533b2e28d31e64ba0c179c5a064ed7091b00c71557120ced2` |
 | web-snapshot 基底 | 719 / 22,005,120 | `e20bf1182a4b342e581dab82e6e0820230e081a931a2737b1bd7c56997ccaaa4` |
 
 根 LICENSE、THIRD_PARTY_NOTICES、SOURCE_MATERIALS、LICENSING、Adobe/OFL 记录及剩余 shader 内嵌 MIT 头保持；原始 notice 文本仍存档。字体退出 runtime 不代表源码存档中的字体许可事实被消除。其它仍分发的 Web、翻译、配置、shader、libmpv、Host 等材料仍按各自现有合同和未闭合项记录，不宣布“所有遗留来源/许可已解决”。
 
-发布资源集合少 12 个文件。同一生产变换下业务 payload 净减少 26,968,863 bytes：此前十一项 26,963,353 bytes，加上原 CustomCssJS 生成模块 5,455 bytes 及 app.js 注册行 55 bytes；来源/provenance/通知文件的变动另计。Web 基底少复制的是原始 4,548 bytes，不能将它当作旧生成模块大小。未声称最终安装器压缩体积，当前 Git 冻结快照正文仍在，源码分发没有因此被清空。旧安装目录没有新增迁移删除逻辑；用户 storage 和 profile CEC 标记均保持。
+发布资源集合少 12 个文件。同一生产变换下退役业务 payload 减少 26,968,863 bytes：此前十一项 26,963,353 bytes，加上原 CustomCssJS 生成模块 5,455 bytes 及 app.js 注册行 55 bytes；随后默认 XML 增加 102 bytes、选定译文减少 606 bytes，合计业务 payload 净减少 26,969,367 bytes；来源/provenance/通知文件的变动另计。Web 基底少复制的是原始 4,548 bytes，不能将它当作旧生成模块大小。未声称最终安装器压缩体积，当前 Git 冻结快照正文仍在，源码分发没有因此被清空。旧安装目录没有新增迁移删除逻辑；用户 storage 和 profile CEC 标记均保持。
 
 ## 复验方法与证据边界
 
@@ -60,7 +60,7 @@ node --test tests/runtime-base-material-selftest.cjs tests/windows-host-material
 
 真实材料回归独立按未改写的组件 manifest 加上显式批准的十二项差值构造参考侧；精确比较 810 个基础文件、925 个共同生产变换后的中间文件。不能额外忽略任何文件或改变预期 hash 来放过缺失。归档 CustomCssJS 输入 SHA 保持；旧运行输出退出合同，app.js 仅删除固定注册行。测试不是 Windows GUI、安装升级、真实 Emby/CD2、音视频设备或最终安装器验收；后者须在审阅分支上另行取得，不能沿用 v0.3.16 已构建产物的结果。
 
-十二项退役的 Linux 公共集为 1351 项：1341 pass、0 fail、10 个 Windows 平台 skip；其排除的六个材料依赖文件另测 84/84、0 skip，三项真实材料回归 3/3。默认配置维护和中文译文建议仅为待选草稿，用户最终确认前不进入有效产品变更。完整安装包按后续整合节奏统一构建，本轮未触发。
+十二项退役的 Linux 公共集为 1351 项：1341 pass、0 fail、10 个 Windows 平台 skip；其排除的六个材料依赖文件另测 84/84、0 skip，三项真实材料回归 3/3。默认配置维护方案和十三项译文现已进入维护层，精确范围和回归见[维护合同](MAINTAINED_SMALL_RUNTIME.md)。完整安装包按后续整合节奏统一构建，本轮未触发。
 
 初版十项剥离阶段的 Linux 实测：针对性装配/接线/安全门禁 105/105，来源与 runtime-provenance 4/4；公共 runner 1361 项中 1351 pass、0 fail、10 个明确 Windows 平台 skip。JS/PowerShell 语法、有限凭据模式及差异空白检查通过。来源夹具首轮有 4 个失败，因为整树复制仍放入已退役 notice；修正夹具使用生产排除阶段后单独复验 4/4，不将首轮记为绿。
 

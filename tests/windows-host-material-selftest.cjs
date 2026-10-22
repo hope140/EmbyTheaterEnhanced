@@ -33,7 +33,8 @@ test('real official Host and frozen Web preserve the complete base payload with 
     for(const name of Object.keys(require('../tools/runtime-template-input.cjs').FILES))assert.equal(fs.existsSync(path.join(root,'vendor/carnival',name)),false,'Old templates must be absent in this isolated proof');
     const classified=assembly.classify(legacy.files,product.listTrackedProductSources(root,commit).map(x=>x.runtimePath),
         overlays.WEB_OVERLAY_CONTRACT.map(x=>x.runtimePath),dependencies.loadSelectedPackages(root).packages.map(x=>x.packagePath));
-    const expected=[...classified.filter(x=>x.action==='copy'&&!web.isLegacyWeb(x.path)&&!modelInput.isModelCompatibility(x.path)).map(({path,size,sha256})=>({path,size,sha256})),
+    const expected=[...classified.filter(x=>x.action==='copy'&&!['config/system.xml',smallRuntime.TRANSLATION_PATH].includes(x.path)&&!web.isLegacyWeb(x.path)&&!modelInput.isModelCompatibility(x.path)).map(({path,size,sha256})=>({path,size,sha256})),
+        ...['config/system.xml',smallRuntime.TRANSLATION_PATH].map(name=>{const bytes=require('./helpers/small-runtime-reference.cjs').bytes(root,name,fs.readFileSync(path.join(root,smallRuntime.INPUT_ROOT,name)));return{path:name,size:bytes.length,sha256:hash(bytes)};}),
         ...modelInput.load(root).files.map(({path,size,sha256})=>({path,size,sha256})),
         ...snapshot.files.filter(x=>x.path!=='www/modules/CustomCssJS.js').map(x=>({path:'electronapp/'+x.path,size:x.size,sha256:x.sha256}))].sort((a,b)=>a.path.localeCompare(b.path,'en'));
     const dist=path.join(root,'dist');fs.mkdirSync(dist,{recursive:true});

@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-22 — 默认配置与十三项中文文本维护
+
+默认配置改为 ETE 维护的 typed JSON→确定性 XML；五个值、字段类型、root/namespace、首次缺配置才复制及已有文件不覆盖保持。播放器中文仅覆盖 T01/T04/T05/T07/T08/T09/T10/T13/T14/T15/T16/T17/T18，保持 37 keys 和其余 24 项原文，三项长说明采用单段。维护源、继承边界、输出 hash 及回归见[小组件维护合同](MAINTAINED_SMALL_RUNTIME.md)。vendor 原文/manifest 保留且全部校验，新 snapshot 迁移仍仅评估；不将旧作者或整份翻译署名为 ETE。
+
+前一 Windows 资源退役候选 `cfbd6e4` 公共集 1350 pass / 1 fail / 0 skip；失败是官方 Model 恢复测试夹具漏复制 Web 校验器新增的 runtime-exclusions 依赖。仅补齐夹具并新增跨平台依赖加载回归，Model 字节和校验不改。新配置/译文与该修复以新提交重新验证；不沿用旧绿灯，不触发完整安装器、不合并或发布。
+
 ## 2026-10-22 — CustomCssJS 可选集成退役
 
 按明确退役范围，从新客户端装配中移除 CustomCssJS 模块和 app.js 注册，删除专属禁 JS 生成器及其无用合同/测试。它历史上有条件可执行，不是所有桌面环境都无路径；本轮选择撤出该可选第三方功能。保留普通 CSS、主题、原生 Branding/Css 的既有条件、storage、profile CEC 标记和 Carnival 隐藏标记。

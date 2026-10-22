@@ -182,7 +182,7 @@ function createFixture(root) {
     assert.equal(init.status, 0, init.stderr);
     childProcess.spawnSync('git', ['-C', root, 'config', 'user.name', 'ETE Test'], {encoding: 'utf8'});
     childProcess.spawnSync('git', ['-C', root, 'config', 'user.email', 'ete-test@example.invalid'], {encoding: 'utf8'});
-    const add = childProcess.spawnSync('git', ['-C', root, 'add', 'src/electronapp/some-normal-file.js', 'src/electronapp/enhanced/startup.svg', 'tools', 'package-lock.json', 'vendor/runtime-manifest.json', 'vendor/electron-runtime-manifest.json',webSnapshot.MANIFEST_PATH,windowsHost.MANIFEST_PATH,inheritedNpm.MANIFEST_PATH,templates.MANIFEST_PATH,libmpvInput.MANIFEST_PATH,compatibilityInput.MANIFEST_PATH,smallRuntimeInput.MANIFEST_PATH,modelInput.MANIFEST_PATH], {encoding: 'utf8'});
+    const add = childProcess.spawnSync('git', ['-C', root, 'add', smallRuntimeInput.DEFAULT_SOURCE_PATH, smallRuntimeInput.TRANSLATION_SOURCE_PATH, 'src/electronapp/some-normal-file.js', 'src/electronapp/enhanced/startup.svg', 'tools', 'package-lock.json', 'vendor/runtime-manifest.json', 'vendor/electron-runtime-manifest.json',webSnapshot.MANIFEST_PATH,windowsHost.MANIFEST_PATH,inheritedNpm.MANIFEST_PATH,templates.MANIFEST_PATH,libmpvInput.MANIFEST_PATH,compatibilityInput.MANIFEST_PATH,smallRuntimeInput.MANIFEST_PATH,modelInput.MANIFEST_PATH], {encoding: 'utf8'});
     assert.equal(add.status, 0, add.stderr);
     const commit = childProcess.spawnSync('git', ['-C', root, 'commit', '-m', 'fixture'], {encoding: 'utf8'});
     assert.equal(commit.status, 0, commit.stderr);
@@ -205,6 +205,9 @@ function createRuntime(root, name) {
     fs.cpSync(path.join(root,smallRuntimeInput.INPUT_ROOT),runtime,{recursive:true});
     fs.cpSync(path.join(root,modelInput.INPUT_ROOT),runtime,{recursive:true});
     require('../tools/runtime-exclusions.cjs').remove(runtime);
+    for (const name of ['config/system.xml',smallRuntimeInput.TRANSLATION_PATH]) {
+        writeFile(path.join(runtime,name),require('./helpers/small-runtime-reference.cjs').bytes(root,name,fs.readFileSync(path.join(root,smallRuntimeInput.INPUT_ROOT,name))));
+    }
     webPreparation.apply(root, runtime);
     sourceProvenance.writeManifest(root, runtime, sourceCommit);
     return runtime;

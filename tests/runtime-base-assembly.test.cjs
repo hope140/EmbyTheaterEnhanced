@@ -66,7 +66,7 @@ function fixture(t) {
         'MediaBrowser.Model.dll': 'unchanged Model fixture',
         'cec-driver/cancel': '',
         'config/system.xml': '<synthetic-config autoUpdate="unchanged"/>',
-        'electronapp/plugins/mpvplayer/strings/zh-CN.json': '{"synthetic":"translation"}',
+        'electronapp/plugins/mpvplayer/strings/zh-CN.json': fs.readFileSync(path.join(__dirname, '../vendor/small-runtime/snapshot-v1/electronapp/plugins/mpvplayer/strings/zh-CN.json')),
         '\u6ce8\u610f\u4e8b\u9879.txt': 'synthetic historical notice',
         'electronapp/node_modules/long/package.json': '{"name":"long","version":"3.2.0"}',
         'electronapp/node_modules/long/legacy.js': 'old dependency residue'
@@ -149,6 +149,9 @@ test('manifest-derived assembly equals legacy assembly after the same replacemen
             'electronapp/libmpv/x64/mpv-1.dll': 'pinned mpv',
             'Emby.Theater.exe.config': 'generated config'
         })) write(runtime, name, value);
+        for (const name of ['config/system.xml', 'electronapp/plugins/mpvplayer/strings/zh-CN.json']) {
+            fs.writeFileSync(path.join(runtime, name), require('./helpers/small-runtime-reference.cjs').bytes(f.root, name, fs.readFileSync(path.join(f.vendor, name))));
+        }
         // The oracle applies the same intentional official Model replacement.
         fs.copyFileSync(path.join(f.root,require('../tools/model-compatibility-input.cjs').INPUT_ROOT,'MediaBrowser.Model.dll'),path.join(runtime,'MediaBrowser.Model.dll'));
         dependencies.copyRuntimeDependencies(f.root, runtime, f.source, token);
@@ -295,7 +298,7 @@ test('old external resource directories may be absent while exact snapshot outpu
 
 test('all four old small paths may be absent while configuration and Model remain unchanged',t=>{
     const f=fixture(t),small=require('../tools/small-runtime-input.cjs');
-    const expectedConfig=fs.readFileSync(path.join(f.vendor,'config/system.xml'));
+    const expectedConfig=small.systemDefaults(f.root).bytes;
     for(const name of small.SMALL_PATHS)fs.unlinkSync(path.join(f.vendor,name));
     const report=require('../tools/validate-build-materials.cjs').validate(f.root);
     assert.equal(report.remainingCarnivalFiles,0);

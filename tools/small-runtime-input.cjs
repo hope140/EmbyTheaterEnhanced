@@ -5,11 +5,83 @@ const crypto = require('node:crypto');
 const web = require('./web-snapshot-input.cjs');
 const {RETIRED_SMALL_RUNTIME_PATHS} = require('./runtime-exclusions.cjs');
 const retired = new Set(RETIRED_SMALL_RUNTIME_PATHS);
-function runtimeFiles(manifest) { return manifest.files.filter(entry => !retired.has(entry.path)); }
-function runtimeSelection(manifest) {
-    const files = runtimeFiles(manifest), excludedFiles = manifest.files.filter(entry => retired.has(entry.path));
+const DEFAULT_SOURCE_PATH = 'src/config/system-defaults.json';
+const TRANSLATION_PATH = 'electronapp/plugins/mpvplayer/strings/zh-CN.json';
+const TRANSLATION_SOURCE_PATH = 'src/localization/mpvplayer/zh-CN.overrides.json';
+const TRANSLATION_KEYS = Object.freeze(['UserRefreshRateHelp', 'EnableVideoDisplaySyncingHelp',
+    'EnableInterpolationHelp', 'LabelNetworkCache', 'LabelNetworkCacheHelp', 'DefaultAudioDelay',
+    'DefaultAudioDelayHelp', 'EnableExclusiveAudioModeHelp', 'LabelGpuApiHelp',
+    'LabelHardwareAccelerationHelp', 'VideoOutputHelp', 'DisplayVDrop', 'DisplayResample']);
+const DEFAULT_FIELDS = Object.freeze({EnableDebugLevelLogging: 'boolean', EnableAutoUpdate: 'boolean',
+    LogFileRetentionDays: 'integer', RunAtStartup: 'boolean', IsStartupWizardCompleted: 'boolean'});
+function systemDefaults(rootArg) {
+    const root = path.resolve(rootArg), file = path.join(root, DEFAULT_SOURCE_PATH);
+    physical(file, false);
+    const raw = fs.readFileSync(file), text = raw.toString('utf8');
+    if (!Buffer.from(text).equals(raw) || text.includes('\0') || /\r(?!\n)/.test(text)) throw Error('Invalid maintained default configuration text.');
+    const canonical = Buffer.from(text.replace(/\r\n/g, '\n'));
+    const source = JSON.parse(canonical.toString('utf8'));
+    if (source.schemaVersion !== 1 || source.configurationType !== 'BaseApplicationConfiguration' ||
+        Object.keys(source).sort().join(',') !== 'configurationType,defaults,schemaVersion' ||
+        !source.defaults || Array.isArray(source.defaults) ||
+        Object.keys(source.defaults).sort().join(',') !== Object.keys(DEFAULT_FIELDS).sort().join(',')) throw Error('Invalid maintained default configuration fields.');
+    for (const [name, type] of Object.entries(DEFAULT_FIELDS)) {
+        const value = source.defaults[name];
+        if (type === 'boolean' ? typeof value !== 'boolean' : !Number.isSafeInteger(value) || value < 0) throw Error('Invalid maintained default configuration value: ' + name);
+    }
+    const xml = ['<?xml version="1.0" encoding="utf-8"?>',
+        '<!-- ETE maintained first-run defaults; existing user configuration is never replaced. -->',
+        '<BaseApplicationConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">',
+        ...Object.keys(DEFAULT_FIELDS).map(name => '  <' + name + '>' + source.defaults[name] + '</' + name + '>'),
+        '</BaseApplicationConfiguration>', ''].join('\n');
+    const bytes = Buffer.from(xml);
+    return {bytes, metadata: {sourcePath: DEFAULT_SOURCE_PATH, sourceSha256: sha(canonical),
+        runtimePath: 'config/system.xml', size: bytes.length, sha256: sha(bytes),
+        relation: 'ETE maintained typed defaults -> first-run XML seed; legacy field names/default behavior retained'}};
+}
+function runtimeFiles(root, manifest) {
+    const generated = [systemDefaults(root).metadata, translationOutput(root).metadata];
+    return manifest.files.filter(entry => !retired.has(entry.path)).map(entry => {
+        const replacement = generated.find(item => item.runtimePath === entry.path);
+        return replacement
+        ? {...entry, size: replacement.size, sha256: replacement.sha256, sourcePath: replacement.sourcePath, sourceSha256: replacement.sourceSha256,
+            historicalSha256: entry.sha256, relation: replacement.relation} : entry;
+    });
+}
+function runtimeSelection(root, manifest) {
+    const files = runtimeFiles(root, manifest), excludedFiles = manifest.files.filter(entry => retired.has(entry.path));
     return {runtimeFileCount: files.length, runtimeBytes: files.reduce((n, entry) => n + entry.size, 0),
-        runtimeTreeSha256: web.treeHash(files), excludedFiles};
+        runtimeTreeSha256: web.treeHash(files), excludedFiles, maintainedDefaults: systemDefaults(root).metadata,
+        maintainedTranslation: translationOutput(root).metadata};
+}
+function translationOutput(rootArg) {
+    const root = path.resolve(rootArg), basePath = INPUT_ROOT + '/' + TRANSLATION_PATH;
+    const source = path.join(root, TRANSLATION_SOURCE_PATH), baseFile = path.join(root, basePath);
+    physical(source, false); physical(baseFile, false);
+    const raw = fs.readFileSync(source), canonical = Buffer.from(raw.toString('utf8').replace(/\r\n/g, '\n'));
+    if (!Buffer.from(raw.toString('utf8')).equals(raw)) throw Error('Invalid maintained translation encoding.');
+    const changes = JSON.parse(canonical.toString('utf8')), original = fs.readFileSync(baseFile);
+    let text = original.toString('utf8');
+    if (!Buffer.from(text).equals(original)) throw Error('Invalid base translation encoding.');
+    const base = JSON.parse(text);
+    if (!base || Array.isArray(base) || Object.keys(base).length !== 37 ||
+        Object.values(base).some(value => typeof value !== 'string') ||
+        !changes || Array.isArray(changes) || Object.keys(changes).sort().join(',') !== [...TRANSLATION_KEYS].sort().join(',')) {
+        throw Error('Invalid maintained translation key contract.');
+    }
+    for (const key of TRANSLATION_KEYS) {
+        if (!Object.hasOwn(base, key) || typeof changes[key] !== 'string' || !changes[key] || changes[key] === base[key]) {
+            throw Error('Invalid maintained translation value: ' + key);
+        }
+        const anchor = JSON.stringify(key) + ': ' + JSON.stringify(base[key]);
+        if (text.split(anchor).length !== 2) throw Error('Maintained translation anchor mismatch: ' + key);
+        text = text.replace(anchor, () => JSON.stringify(key) + ': ' + JSON.stringify(changes[key]));
+    }
+    const bytes = Buffer.from(text);
+    return {bytes, metadata: {basePath, baseSha256: sha(original), sourcePath: TRANSLATION_SOURCE_PATH,
+        sourceSha256: sha(canonical), runtimePath: TRANSLATION_PATH, size: bytes.length, sha256: sha(bytes),
+        changedKeys: [...TRANSLATION_KEYS], retainedKeyCount: 24,
+        relation: 'frozen 37-key translation + 13 ETE maintained text overrides; other 24 strings retained'}};
 }
 function rejectRetiredOutput(runtime) {
     for (const name of retired) if (fs.existsSync(path.join(runtime, name))) {
@@ -74,11 +146,11 @@ function importSnapshot(rootArg,sourceArg) {
 function validateRuntime(rootArg,runtimeArg) {
     const root=path.resolve(rootArg),runtime=path.resolve(runtimeArg),report=validate(root),manifest=load(root);
     rejectRetiredOutput(runtime);
-    for(const entry of runtimeFiles(manifest)) {
+    for(const entry of runtimeFiles(root, manifest)) {
         const file=path.join(runtime,entry.path);physical(file,false);const bytes=fs.readFileSync(file);
         if(bytes.length!==entry.size||sha(bytes)!==entry.sha256)throw new Error('Small runtime snapshot runtime identity mismatch: '+entry.path);
     }
-    return {...report,...runtimeSelection(manifest),runtimeFiles:runtimeFiles(manifest).map(({path,size,sha256})=>({path,size,sha256}))};
+    return {...report,...runtimeSelection(root, manifest),runtimeFiles:runtimeFiles(root, manifest).map(({path,size,sha256})=>({path,size,sha256}))};
 }
 function assemble(rootArg,runtimeArg) {
     const root=path.resolve(rootArg),runtime=path.resolve(runtimeArg),rel=path.relative(path.join(root,'dist'),runtime);
@@ -86,12 +158,13 @@ function assemble(rootArg,runtimeArg) {
     const report=validate(root),manifest=load(root);
     for(const entry of manifest.files) if(fs.existsSync(path.join(runtime,entry.path)))throw new Error('Small runtime snapshot output already exists: '+entry.path);
     rejectRetiredOutput(runtime);
-    for(const entry of runtimeFiles(manifest)) {
-        const bytes=fs.readFileSync(path.join(root,INPUT_ROOT,entry.path));
-        if(bytes.length!==entry.size||sha(bytes)!==entry.sha256)throw new Error('Small runtime snapshot input changed during assembly.');
+    for(const entry of runtimeFiles(root, manifest)) {
+        const bytes=entry.path === 'config/system.xml' ? systemDefaults(root).bytes :
+            entry.path === TRANSLATION_PATH ? translationOutput(root).bytes : fs.readFileSync(path.join(root,INPUT_ROOT,entry.path));
+        if(bytes.length!==entry.size||sha(bytes)!==entry.sha256)throw new Error('Small runtime input changed during assembly.');
         const target=path.join(runtime,entry.path);mkdirPhysical(path.dirname(target));fs.writeFileSync(target,bytes,{flag:'wx'});
     }
-    return {...report,...runtimeSelection(manifest)};
+    return {...report,...runtimeSelection(root, manifest)};
 }
 if(require.main===module) {
     try {
@@ -105,4 +178,4 @@ if(require.main===module) {
         process.stdout.write(JSON.stringify(result,null,2)+'\n');
     }catch(error){process.stderr.write(error.message+'\n');process.exitCode=1;}
 }
-module.exports={runtimeSelection,SMALL_PATHS,MANIFEST_PATH,INPUT_ROOT,isSmallRuntime,load,paths,validate,importSnapshot,validateRuntime,assemble};
+module.exports={DEFAULT_SOURCE_PATH,systemDefaults,TRANSLATION_SOURCE_PATH,TRANSLATION_PATH,translationOutput,runtimeSelection,SMALL_PATHS,MANIFEST_PATH,INPUT_ROOT,isSmallRuntime,load,paths,validate,importSnapshot,validateRuntime,assemble};

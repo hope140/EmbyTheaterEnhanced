@@ -42,11 +42,15 @@ test('only the eleven approved resources are retired; immutable input trees stil
     assert.equal(compatibility.validate(root).fileCount, 48);
     assert.equal(small.validate(root).fileCount, 4);
 });
-test('clean assembly preserves all 41 retained files byte for byte and reports both source and runtime identities', t => {
+test('clean assembly preserves 39 resources and applies only the two approved maintained replacements', t => {
     const output = runtime(t), expected = [];
     for (const input of [compatibility, small]) {
         const manifest = input.load(root), report = input.assemble(root, output);
-        const retained = manifest.files.filter(entry => !approvedSet.has(entry.path));
+        const retained = manifest.files.filter(entry => !approvedSet.has(entry.path)).map(entry => {
+            const original = fs.readFileSync(path.join(root, input.INPUT_ROOT, entry.path));
+            const bytes = require('./helpers/small-runtime-reference.cjs').bytes(root, entry.path, original);
+            return {...entry, size: bytes.length, sha256: sha(bytes)};
+        });
         assert.equal(report.fileCount, manifest.files.length, 'archive identity remains complete');
         assert.equal(report.runtimeFileCount, retained.length);
         assert.equal(report.runtimeBytes, retained.reduce((sum, entry) => sum + entry.size, 0));

@@ -6,8 +6,14 @@ const input = require('../../tools/small-runtime-input.cjs');
 const web = require('../../tools/web-snapshot-input.cjs');
 
 function create(root, fromLegacy = false) {
+    for (const name of [input.DEFAULT_SOURCE_PATH, input.TRANSLATION_SOURCE_PATH]) {
+        const destination = path.join(root, name);
+        fs.mkdirSync(path.dirname(destination), {recursive: true});
+        fs.copyFileSync(path.join(__dirname, '../../', name), destination);
+    }
     const files = input.SMALL_PATHS.map(name => {
         const bytes = fromLegacy ? fs.readFileSync(path.join(root, 'vendor/carnival', name)) :
+            name === input.TRANSLATION_PATH ? fs.readFileSync(path.join(__dirname, '../../', input.INPUT_ROOT, name)) :
             Buffer.from(name === 'cec-driver/cancel' ? '' : 'Synthetic opaque input: ' + name);
         const target = path.join(root, input.INPUT_ROOT, name);
         fs.mkdirSync(path.dirname(target), {recursive: true});

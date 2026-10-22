@@ -11,7 +11,8 @@ const NOTICE_PATHS = Object.freeze([
     'LICENSE', 'THIRD_PARTY_NOTICES.md', 'docs/LICENSING.md', 'docs/SOURCE_MATERIALS.md', 'docs/WINDOWS_HOST_INPUT.md', 'docs/INHERITED_NPM_INPUT.md', 'docs/RUNTIME_TEMPLATES.md', 'docs/LIBMPV_INPUT.md', 'docs/COMPATIBILITY_RESOURCES_INPUT.md', 'docs/SMALL_RUNTIME_INPUT.md', 'docs/MODEL_COMPATIBILITY_INPUT.md'
 ]);
 const INPUT_PATHS = Object.freeze([
-    'package.json', 'package-lock.json',
+    'package.json', 'package-lock.json', 'src/config/system-defaults.json',
+    'src/localization/mpvplayer/zh-CN.overrides.json',
     'vendor/runtime-manifest.json', 'vendor/electron-runtime-manifest.json',
     'vendor/web-snapshot-manifest.json',
     'vendor/windows-host-manifest.json', 'vendor/inherited-npm-manifest.json', 'vendor/runtime-templates-manifest.json', 'vendor/libmpv-input-manifest.json', 'vendor/compatibility-resources-manifest.json', 'vendor/small-runtime-manifest.json', 'vendor/model-compatibility-manifest.json',
