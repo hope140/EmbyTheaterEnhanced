@@ -24,6 +24,14 @@ libmpv 失败回执增加安全跳转状态、响应白名单字段和单次调�
 
 基于组件交付 `b5370b3a5dcb73e7420d1c185ef1d28fdabc79cc` 准备标准 GitHub Windows runner 手动作业，固定输入冷恢复、完整回归、静态安装包解包校验和一天测试产物。仅分支验证，不合并组件或本构建 PR，不创建 Release、不升级内核。执行结果以实际 run 和产物回执为准，说明见 [Actions 测试包](ACTIONS_TEST_PACKAGE.md)。
 
+## 2026-10-21 — v0.3.15 播放后退出修复测试版已发布
+
+[v0.3.15](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.15) 已公开为 Pre-release，Release ID `419704000`；PR #59 正常合并后的产品 source 为 `e150981d85369b9e61559ee53978a25cdad6f7ad`，annotated Tag 对象为 `5e718fe7c42fc38790142d95ee278ad011f75b15`。main/Tag CI 各1202/1202，最终本地公开集合1202/1202、材料212/212，失败/跳过/取消均0。
+
+最终main重新构建并通过版本、来源、VerifyOnly、InnoUnp及全部2163文件逐路径/大小/SHA核对。安装器175756102字节、未签名，五附件匿名完整回读通过。v0.3.14网页只把两处计划表述改为已修复链接；旧Tag、资产和原始notes保持。Latest仍为v0.3.1，详细身份见[发行核验](V0315_RELEASE_VERIFICATION.md)。
+
+本次真实Electron窗口生命周期四组通过，播放状态由IPC注入；未执行真实媒体、完整Host、服务器或系统安装验收。以下准备阶段记录保留当时身份。
+
 ## 2026-10-21 — 0.3.15 播放后退出修复候选
 
 基于已发布 0.3.14 产品 source `ce9310e1c8392af174e4bb5cd3f84e8a6ab0c867`，仅修正任务栏媒体控制销毁：保存注册时的 WebContents 引用，先退休状态、重试与自有监听，仅对存活窗口清空按钮。迟到 IPC 和重复清理安全；不关闭媒体控制、不加全局异常屏蔽、不混入依赖拆分或 Host/Model 更新。
