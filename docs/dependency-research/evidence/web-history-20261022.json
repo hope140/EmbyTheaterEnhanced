@@ -714,5 +714,196 @@
       }
     ],
     "compatibilityReference": "https://www.gnu.org/licenses/license-compatibility.html"
+  },
+  "componentDecisions": {
+    "dateUTC": "2026-10-22",
+    "analysisRef": "6fee412ad68934d0194303916cfe346e6254a228",
+    "counterSemantics": {
+      "114": "unexplained content/origin differences; NOT a license-problem count",
+      "597": "official-byte source identity; exact per-file license/application mapping not completed in this PR; licensed/unlicensed counts unknown",
+      "6_JS_AST_and_1_CSS_AST": "structural source correspondences, not demonstrated independent grants for the actual Web revisions",
+      "licenseUnclosedFileCount": null,
+      "unknownDoesNotMeanUnlicensed": true,
+      "noWholeTreeCertification": true,
+      "noImplicit720Minus114Calculation": true
+    },
+    "families": [
+      {
+        "family": "pageJS",
+      "sourceAndLicenseReferences": {
+        "fixedSourceURL": "https://github.com/visionmedia/page.js/blob/1bc93692b0924b686e2207a66e2e73a85e1ab058/index.js",
+        "fixedLicenseURL": "https://github.com/visionmedia/page.js/blob/1bc93692b0924b686e2207a66e2e73a85e1ab058/Readme.md#license"
+      },
+        "files": [
+          {
+            "path": "www/modules/pagejs/page.js",
+            "bytes": 6028,
+            "sha256": "bfdcf96ec474538e14b7e57495e8e0d5c607a20252d7110d57ad6323653425a9"
+          }
+        ],
+        "fileCount": 1,
+        "frozenBytes": 6028,
+        "licenseApplicability": "MIT applies to pinned upstream original; current custom version not established",
+        "behaviorRiskInference": "broad navigation and back/history behavior",
+        "noticeOnlyEstablished": false,
+        "nextDecision": "preserve current implementation with evidence, or choose explicitly licensed original plus independent adapter",
+        "searchBranch": "closed absent a new fixed source/license lead or an implementation decision",
+        "sourceEvidence": "licenseApplicabilityFollowup and fixedVersionLicenseEvidence in this document; source URLs are fixed to recorded revisions/archives"
+      },
+      {
+        "family": "WebVTT",
+      "sourceAndLicenseReferences": {
+        "fixedSourceURL": "https://github.com/mozilla/vtt.js/blob/f823de834bc23d65300e58a6d391916bc00bcb75/lib/vtt.js",
+        "fixedLicenseURL": "https://github.com/mozilla/vtt.js/blob/f823de834bc23d65300e58a6d391916bc00bcb75/LICENSE",
+        "cssUpstreamAndLicenseURL": null
+      },
+        "files": [
+          {
+            "path": "www/modules/webvtt/vtt.js",
+            "bytes": 28470,
+            "sha256": "97bda9c48cf440809d6453c8e36229f2384ca706dc46fe562d73963fb02c6aee"
+          },
+          {
+            "path": "www/modules/webvtt/vtt.css",
+            "bytes": 428,
+            "sha256": "8c5c30ea886110fde45511a37f9435fc2355b7c812e6dceb3cf98fa67f6b8317"
+          }
+        ],
+        "fileCount": 2,
+        "frozenBytes": 28898,
+        "licenseApplicability": "Apache-2.0 pinned JS original; current derivation and combination unresolved; CSS not covered by directory association",
+        "behaviorRiskInference": "HTML external VTT parsing/cues/layout; not all native playback proven",
+        "noticeOnlyEstablished": false,
+        "nextDecision": "resolve derivation/combination evidence or decide alternative implementation; CSS separately scoped",
+        "searchBranch": "closed absent a new fixed source/license lead or an implementation decision",
+        "sourceEvidence": "licenseApplicabilityFollowup and fixedVersionLicenseEvidence in this document; source URLs are fixed to recorded revisions/archives"
+      },
+      {
+        "family": "playmethodhelper",
+      "sourceAndLicenseReferences": {
+        "fixedSourceURL": "https://github.com/MediaBrowser/Emby/blob/1d7c2ab4bfebdae31f89fdaabd3b68782ccf495a/MediaBrowser.WebDashboard/dashboard-ui/bower_components/emby-webcomponents/playback/playmethodhelper.js",
+        "sameTreeLicenseURL": "https://github.com/MediaBrowser/Emby/blob/1d7c2ab4bfebdae31f89fdaabd3b68782ccf495a/LICENSE.md"
+      },
+        "files": [
+          {
+            "path": "www/modules/common/playback/playmethodhelper.js",
+            "bytes": 656,
+            "sha256": "b9a6c50f3a8da2f7d29cff8a12aef9e57868124f085d787aacdd97c633763eb7"
+          }
+        ],
+        "fileCount": 1,
+        "frozenBytes": 656,
+        "licenseApplicability": "old same-tree GPL v2 text and semantic baseline; current chain/component scope unresolved",
+        "behaviorRiskInference": "playerstats display labels; no media-source selection found",
+        "noticeOnlyEstablished": false,
+        "nextDecision": "decide evidence-based retention or independently implemented single display function",
+        "searchBranch": "closed absent a new fixed source/license lead or an implementation decision",
+        "sourceEvidence": "licenseApplicabilityFollowup and fixedVersionLicenseEvidence in this document; source URLs are fixed to recorded revisions/archives"
+      },
+      {
+        "family": "logo",
+      "sourceAndLicenseReferences": {
+        "frozenInputURL": "https://github.com/hope140/EmbyTheaterEnhanced/blob/6fee412ad68934d0194303916cfe346e6254a228/vendor/web-snapshot/www/modules/themes/logo.png",
+        "upstreamAndLicenseURL": null
+      },
+        "files": [
+          {
+            "path": "www/modules/themes/logo.png",
+            "bytes": 32892,
+            "sha256": "624aa2425d6bee862fd5469e191a2dad928931425e45ee31d006d6e71906c064"
+          }
+        ],
+        "fileCount": 1,
+        "frozenBytes": 32892,
+        "licenseApplicability": "no located fixed origin or applicable image grant",
+        "behaviorRiskInference": "startup visual replaced by maintained overlay, original still copied by manifest assembler",
+        "noticeOnlyEstablished": false,
+        "nextDecision": "confirm consumers/distribution then decide permission evidence or single-asset retirement/replacement",
+        "searchBranch": "closed absent a new fixed source/license lead or an implementation decision",
+        "sourceEvidence": "licenseApplicabilityFollowup and fixedVersionLicenseEvidence in this document; source URLs are fixed to recorded revisions/archives"
+      },
+      {
+        "family": "WebCoreRepresentatives",
+      "sourceAndLicenseReferences": {
+        "fixedComparandURLs": [
+          "https://github.com/MediaBrowser/Emby.Releases/releases/download/4.7.6.0/embyserver-netcore_4.7.6.0.zip",
+          "https://github.com/MediaBrowser/Emby.Releases/releases/download/4.7.14.0/embyserver-netcore_4.7.14.0.zip"
+        ],
+        "fixedShippedTermsPackageURL": "https://github.com/MediaBrowser/Emby.Releases/releases/download/4.7.6.0/emby-server-deb_4.7.6.0_arm64.deb",
+        "fixedShippedTermsMember": "data.tar.xz: ./opt/emby-server/licenses/license.docx",
+        "independentGrantForActualWebRevisionURL": null
+      },
+        "files": [
+          {
+            "path": "www/app.js",
+            "bytes": 102397,
+            "sha256": "3ef3102567458359a02e2fe8f79a8700cfe9c223347abe5ab6ecb8bd93be89d2"
+          },
+          {
+            "path": "www/modules/common/appsettings.js",
+            "bytes": 5007,
+            "sha256": "5c5f0e9d4ae508d9f4157d26ebbfd71885f91eaaa16ff6c40388c161feb06582"
+          },
+          {
+            "path": "www/modules/common/playback/playbackmanager.js",
+            "bytes": 125181,
+            "sha256": "8df9ea6f1be13f355925b2fd1b9bf7539c5a624d8731be484959a4ec861a1ebd"
+          },
+          {
+            "path": "www/modules/emby-apiclient/apiclient.js",
+            "bytes": 155508,
+            "sha256": "f3516c72784e5bc8782abbce021f22a7f939034e5b8b70639672ae682e18acc0"
+          }
+        ],
+        "fileCount": 4,
+        "frozenBytes": 388093,
+        "licenseApplicability": "actual 2022/2023 revision grant not established by early GPL or official download",
+        "behaviorRiskInference": "high coupling: initialization/settings/playback state/API; other UI files excluded from this size",
+        "noticeOnlyEstablished": false,
+        "nextDecision": "decide actual-version authorization evidence route or bounded alternative-frontend contracts; stop blind archive search",
+        "searchBranch": "closed absent a new fixed source/license lead or an implementation decision",
+        "sourceEvidence": "licenseApplicabilityFollowup and fixedVersionLicenseEvidence in this document; source URLs are fixed to recorded revisions/archives"
+      }
+    ],
+    "prefixHeaderCheck": {
+      "manifestFiles": 720,
+      "extensions": [
+        ".js",
+        ".css",
+        ".html",
+        ".json"
+      ],
+      "bytesPerFileAtMost": 5000,
+      "pattern": "word-boundary copyright, licensed under, SPDX-, MIT license, Apache license, GNU General/Lesser",
+      "candidateFiles": 0,
+      "boundary": "prefix-only static metadata lead check; not a full-content license audit or proof of missing permissions; no source re-attribution or known597 history rescan"
+    },
+    "factualVsInferred": {
+      "facts": "frozen sizes/hashes, fixed source/license originals, AST comparisons, observed static consumers",
+      "engineeringInference": "relative behavior impact and minimal module boundaries; not runtime acceptance",
+      "legalConclusion": "no absolute legal guarantee, infringement determination, or assertion all current files require replacement"
+    },
+    "scope": "documentation and static read-only classification only; no product replacement, rights-holder contact, new version sampling or removed source-coverage task"
+  },
+  "logoInspection": {
+    "path": "www/modules/themes/logo.png",
+    "fixedImageURL": "https://github.com/hope140/EmbyTheaterEnhanced/blob/6fee412ad68934d0194303916cfe346e6254a228/vendor/web-snapshot/www/modules/themes/logo.png",
+    "gitBlobSha1": "ad853d1c842be9d54c1739a5ce823694e4175b41",
+    "width": 1238,
+    "height": 377,
+    "pngBitDepth": 8,
+    "pngColorType": 6,
+    "appearance": "green play mark, white emby wordmark, visible by David & NoisyX credit; viewed directly",
+    "attributionBoundary": "visible credit is not verified authorship or applicable permission; not an unknown ETE app icon",
+    "originalConsumer": "www/index.html .app-splash background-image; general startup, not selected-theme-specific",
+    "desktopEntry": "src/electronapp/main.js loads file://.../www/index.html?autostart=false",
+    "maintainedStartupTransform": "tools/patch-startup.cjs replaces modules/themes/logo.png with ../enhanced/startup.svg; tools/prepare-web-overlays.cjs startup-index contract is applied by tools/build.ps1",
+    "transformedIndexSha256": "18f777ee20f9829f3e7e4ab53a3442e7d4bd1532689e7ece0b874281e0bb305d",
+    "transformedIndexOldReferencePresent": false,
+    "transformedIndexNewReferencePresent": true,
+    "separateScreensaver": "modules/logoscreensaver/plugin.js maps its own logowhite.png; not this PNG",
+    "distribution": "web-snapshot-input.cjs assemble copies manifest.files; original PNG not in inspected retired runtime exclusions",
+    "validation": "direct image inspection, PNG IHDR, bytes/hash, source/consumer inspection and maintained pure startup transformation only; no downloaded product, desktop GUI or request-trace execution",
+    "limitations": "normal maintained entry does not reference this PNG through startup style; static evidence does not rule out all dynamic/custom use or prove final installer contents independently"
   }
 }
