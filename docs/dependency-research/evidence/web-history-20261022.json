@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "observedUTC": "2026-10-22",
+  "analysisRef": "6fee412ad68934d0194303916cfe346e6254a228",
+  "scope": "720 files in vendor/web-snapshot-manifest.json; excludes two user-patch carriers and generated runtime overlays",
+  "methods": {
+    "rawExact": "same relative dashboard-ui path, size and SHA256; 160-file CSV additionally compared bytes directly",
+    "formatOnly": "text extensions only: remove one leading UTF-8 BOM, replace CRLF with LF; no other rewrites",
+    "strictAST": "Acorn 8.15.0: remove start/end/raw; retain identifiers, literals, operators and control flow",
+    "executedDownloadedProduct": false,
+    "uiAcceptancePerformed": false
+  },
+  "samples": [
+    {"version":"4.6.7.0","publishedUTC":"2021-11-21T21:22:58Z","archiveURL":"https://github.com/MediaBrowser/Emby.Releases/releases/download/4.6.7.0/embyserver-netcore_4.6.7.0.zip","archiveBytes":46438930,"archiveSha256":"c9418fb3e583a01dccb4951abd1a468408d338f50f71dc0856a64c91d050984e","rawExact":29,"BOM_CRLF_only":10,"normalizedTotal":39,"rawUnionAddedChronologically":29,"normalizedUnionAddedChronologically":39,"containsEmptyServiceworker":false},
+    {"version":"4.7.0.60","publishedUTC":"2022-05-17T17:43:26Z","archiveURL":"https://github.com/MediaBrowser/Emby.Releases/releases/download/4.7.0.60/embyserver-netcore_4.7.0.60.zip","archiveBytes":44938993,"archiveSha256":"480228f3adea6ed75eb8bf7917a4b3baadf51231a413cef46daad366fb43e649","rawExact":177,"BOM_CRLF_only":13,"normalizedTotal":190,"rawUnionAddedChronologically":148,"normalizedUnionAddedChronologically":151,"containsEmptyServiceworker":true},
+    {"version":"4.7.2.0","publishedUTC":"2022-06-03T15:12:16Z","archiveURL":"https://github.com/MediaBrowser/Emby.Releases/releases/download/4.7.2.0/embyserver-netcore_4.7.2.0.zip","archiveBytes":44917073,"archiveSha256":"366f24b7f27792060b4b17d2d0653f0383cb1f79d83091a3021970393a457a37","rawExact":181,"BOM_CRLF_only":56,"normalizedTotal":237,"rawUnionAddedChronologically":4,"normalizedUnionAddedChronologically":47,"containsEmptyServiceworker":true},
+    {"version":"4.7.4.0","publishedUTC":"2022-06-20T06:46:02Z","archiveURL":"https://github.com/MediaBrowser/Emby.Releases/releases/download/4.7.4.0/embyserver-netcore_4.7.4.0.zip","archiveBytes":44934300,"archiveSha256":"281ec41573395b5469794719debc1ef3876047c7d74106a8990e7daf70c4ca22","rawExact":220,"BOM_CRLF_only":69,"normalizedTotal":289,"rawUnionAddedChronologically":39,"normalizedUnionAddedChronologically":52,"containsEmptyServiceworker":true},
+    {"version":"4.7.5.0","publishedUTC":"2022-06-26T02:09:15Z","archiveURL":"https://github.com/MediaBrowser/Emby.Releases/releases/download/4.7.5.0/embyserver-netcore_4.7.5.0.zip","archiveBytes":44809566,"archiveSha256":"bca5d244ef347cc7de22e0d3eadb438730cbdba3c3289c9442117e6e22c0deb8","rawExact":220,"BOM_CRLF_only":72,"normalizedTotal":292,"rawUnionAddedChronologically":0,"normalizedUnionAddedChronologically":3,"containsEmptyServiceworker":true},
+    {"version":"4.7.6.0","publishedUTC":"2022-08-01T06:02:28Z","archiveURL":"https://github.com/MediaBrowser/Emby.Releases/releases/download/4.7.6.0/embyserver-netcore_4.7.6.0.zip","archiveBytes":44849375,"archiveSha256":"fcdd8b5d0c177bc8601ebdde33b953c7d728afd3367caba6ae34ec427b6f6074","rawExact":409,"BOM_CRLF_only":178,"normalizedTotal":587,"rawUnionAddedChronologically":189,"normalizedUnionAddedChronologically":295,"containsEmptyServiceworker":true},
+    {"version":"4.7.14.0","role":"previous-source-baseline-only","publishedUTC":"2023-08-24T03:29:14Z","archiveURL":"https://github.com/MediaBrowser/Emby.Releases/releases/download/4.7.14.0/embyserver-netcore_4.7.14.0.zip","archiveBytes":41299962,"archiveSha256":"ff5c412fb9f4faeb0f0d9da6c70e962205c29ff0483f161b85e9db05eb941804","samePathRawExact":253},
+    {"version":"4.8.0.80","role":"previous-source-baseline-only","publishedUTC":"2024-02-01T22:05:23Z","archiveURL":"https://github.com/MediaBrowser/Emby.Releases/releases/download/4.8.0.80/embyserver-netcore_4.8.0.80.zip","archiveBytes":48474402,"archiveSha256":"b8a2cea8aebb9c50c1f416e002fb77c326ec41af7785982e1046261d1997534b","samePathRawExact":69}
+  ],
+  "new160": {
+    "count": 160,
+    "bytes": 940396,
+    "allMatchVersion": "4.7.6.0",
+    "priorRawServerUnionWithin720": 256,
+    "overlapOf476WithPriorUnion": 248,
+    "outsidePriorUnion": 161,
+    "excludedOldDashboardPath": "www/components/directorybrowser/directorybrowser.css",
+    "csv": "web-476-byte-matches-20261022.csv",
+    "note": "Already incorporated by prior union audit; never add again to aggregate counts"
+  },
+  "oldSourceDedup": {
+    "webcomponents": {
+      "repo": "MediaBrowser/emby-webcomponents",
+      "head": "69877ad3319a7b422d0e1f8289dc5ca234c4040d",
+      "scope": "all reachable blobs from saved refs",
+      "matches": 7
+    },
+    "defaultskin": {
+      "repo": "MediaBrowser/emby-web-defaultskin",
+      "head": "822273018b82a4c63c2df7618020fb837656868d",
+      "master": "4165145cfe0055c1847fd5a00de564bf23a48676",
+      "scope": "all reachable blobs from saved refs",
+      "matches": 4
+    },
+    "dashboard": {
+      "repo": "MediaBrowser/Emby",
+      "commit": "1d7c2ab4bfebdae31f89fdaabd3b68782ccf495a",
+      "tree": "fb6d8a5d2d02de87bd51ef1971f09baaae8ac4fb",
+      "matches": 10
+    }
+  },
+  "coreComparisons": {
+    "app.js": [{"version":"4.6.7.0","sameNamedMembers":8,"wholeFileASTEqual":false,"changedNamedMembersCount":14,"currentOnlyNamedMembersCount":9,"officialOnlyNamedMembersCount":12},{"version":"4.7.0.60","sameNamedMembers":25,"wholeFileASTEqual":false,"changedNamedMembersCount":6,"currentOnlyNamedMembersCount":0,"officialOnlyNamedMembersCount":0},{"version":"4.7.2.0","sameNamedMembers":26,"wholeFileASTEqual":false,"changedNamedMembersCount":5,"currentOnlyNamedMembersCount":0,"officialOnlyNamedMembersCount":0},{"version":"4.7.4.0","sameNamedMembers":27,"wholeFileASTEqual":false,"changedNamedMembersCount":4,"currentOnlyNamedMembersCount":0,"officialOnlyNamedMembersCount":0},{"version":"4.7.5.0","sameNamedMembers":27,"wholeFileASTEqual":false,"changedNamedMembersCount":4,"currentOnlyNamedMembersCount":0,"officialOnlyNamedMembersCount":0},{"version":"4.7.6.0","sameNamedMembers":27,"wholeFileASTEqual":false,"changedNamedMembersCount":4,"currentOnlyNamedMembersCount":0,"officialOnlyNamedMembersCount":0}],
+    "modules/common/playback/playbackmanager.js": [{"version":"4.6.7.0","sameNamedMembers":32,"wholeFileASTEqual":false,"changedNamedMembersCount":34,"currentOnlyNamedMembersCount":8,"officialOnlyNamedMembersCount":2},{"version":"4.7.0.60","sameNamedMembers":53,"wholeFileASTEqual":false,"changedNamedMembersCount":19,"currentOnlyNamedMembersCount":2,"officialOnlyNamedMembersCount":0},{"version":"4.7.2.0","sameNamedMembers":54,"wholeFileASTEqual":false,"changedNamedMembersCount":18,"currentOnlyNamedMembersCount":2,"officialOnlyNamedMembersCount":0},{"version":"4.7.4.0","sameNamedMembers":54,"wholeFileASTEqual":false,"changedNamedMembersCount":18,"currentOnlyNamedMembersCount":2,"officialOnlyNamedMembersCount":0},{"version":"4.7.5.0","sameNamedMembers":54,"wholeFileASTEqual":false,"changedNamedMembersCount":18,"currentOnlyNamedMembersCount":2,"officialOnlyNamedMembersCount":0},{"version":"4.7.6.0","sameNamedMembers":65,"wholeFileASTEqual":false,"changedNamedMembersCount":8,"currentOnlyNamedMembersCount":1,"officialOnlyNamedMembersCount":0}],
+    "modules/common/appsettings.js": [{"version":"4.6.7.0","sameNamedMembers":12,"wholeFileASTEqual":false,"changedNamedMembersCount":6,"currentOnlyNamedMembersCount":2,"officialOnlyNamedMembersCount":0},{"version":"4.7.0.60","sameNamedMembers":16,"wholeFileASTEqual":false,"changedNamedMembersCount":3,"currentOnlyNamedMembersCount":1,"officialOnlyNamedMembersCount":0},{"version":"4.7.2.0","sameNamedMembers":16,"wholeFileASTEqual":false,"changedNamedMembersCount":3,"currentOnlyNamedMembersCount":1,"officialOnlyNamedMembersCount":0},{"version":"4.7.4.0","sameNamedMembers":16,"wholeFileASTEqual":false,"changedNamedMembersCount":3,"currentOnlyNamedMembersCount":1,"officialOnlyNamedMembersCount":0},{"version":"4.7.5.0","sameNamedMembers":16,"wholeFileASTEqual":false,"changedNamedMembersCount":3,"currentOnlyNamedMembersCount":1,"officialOnlyNamedMembersCount":0},{"version":"4.7.6.0","sameNamedMembers":16,"wholeFileASTEqual":false,"changedNamedMembersCount":3,"currentOnlyNamedMembersCount":1,"officialOnlyNamedMembersCount":0}],
+    "modules/emby-apiclient/apiclient.js": [{"version":"4.6.7.0","sameNamedMembers":72,"wholeFileASTEqual":false,"changedNamedMembersCount":176,"currentOnlyNamedMembersCount":36,"officialOnlyNamedMembersCount":9},{"version":"4.7.0.60","sameNamedMembers":226,"wholeFileASTEqual":false,"changedNamedMembersCount":39,"currentOnlyNamedMembersCount":19,"officialOnlyNamedMembersCount":6},{"version":"4.7.2.0","sameNamedMembers":227,"wholeFileASTEqual":false,"changedNamedMembersCount":38,"currentOnlyNamedMembersCount":19,"officialOnlyNamedMembersCount":6},{"version":"4.7.4.0","sameNamedMembers":227,"wholeFileASTEqual":false,"changedNamedMembersCount":38,"currentOnlyNamedMembersCount":19,"officialOnlyNamedMembersCount":6},{"version":"4.7.5.0","sameNamedMembers":227,"wholeFileASTEqual":false,"changedNamedMembersCount":38,"currentOnlyNamedMembersCount":19,"officialOnlyNamedMembersCount":6},{"version":"4.7.6.0","sameNamedMembers":243,"wholeFileASTEqual":false,"changedNamedMembersCount":23,"currentOnlyNamedMembersCount":18,"officialOnlyNamedMembersCount":3}]
+  },
+  "embedded476": {
+    "archiveMember": "system/Emby.Web.dll",
+    "assemblySha256": "71f4ceb87353a096943ad0457a01be9f1ccc8184bcf282525cde04e30ed42af0",
+    "resources": [
+      {
+        "webPath": "www/modules/apphost.js",
+        "currentBytes": 15851,
+        "currentSha256": "d5cb1e9715ad7255f8e93be78c4c0c079d5f69b3100d86996b5c1e2a35aad305",
+        "resourceOffset": 32192,
+        "resourceBytes": 11533,
+        "resourceSha256": "4397711dd61a5ede2ca2452a46e17d5e3dbf75ed591db85d7f6bfbaa80aabb75",
+        "comparison": "strict-AST-equal, not byte-equal"
+      },
+      {
+        "webPath": "www/modules/virtual-scroller/virtual-scroller.js",
+        "currentBytes": 40006,
+        "currentSha256": "d2982a619fdf3dc7f9ed13910d0cab3723e7122440b02214057d2fc6a592a5b9",
+        "resourceOffset": 76088,
+        "resourceBytes": 27670,
+        "resourceSha256": "6ad099b11b183d1e4939a3dd3092af307122b7112e26465be4d2c3308d836dba",
+        "comparison": "strict-AST-equal, not byte-equal"
+      }
+    ]
+  },
+  "electronSourceTags": [
+    {"tag":"3.0.2","sha":"6197e2e3c617e34719007ab66e4944a4a244ea0e","commitDate":"2018-08-24T02:04:18-04:00","urlLines":["var url = 'https://tv.emby.media';"],"wwwFileCount":0,"sourceURL":"https://github.com/MediaBrowser/emby-theater-electron/tree/6197e2e3c617e34719007ab66e4944a4a244ea0e"},
+    {"tag":"3.0.10","sha":"3ec71cf6255cdb4f2e2d71dd792edb8a0475641c","commitDate":"2019-10-31T14:08:02-04:00","urlLines":["var url = 'https://tv.emby.media';"],"wwwFileCount":0,"sourceURL":"https://github.com/MediaBrowser/emby-theater-electron/tree/3ec71cf6255cdb4f2e2d71dd792edb8a0475641c"},
+    {"tag":"3.0.15","sha":"aeaab148c71414f5b6c29cfc0f7cf4eac0f95c55","commitDate":"2021-03-29T12:53:14-04:00","urlLines":["var url = 'https://tv.emby.media';"],"wwwFileCount":0,"sourceURL":"https://github.com/MediaBrowser/emby-theater-electron/tree/aeaab148c71414f5b6c29cfc0f7cf4eac0f95c55"},
+    {"tag":"3.0.16","sha":"f573a9fa74766d6be5ceeec2a842e8bca80c5a4c","commitDate":"2022-08-10T15:48:31-04:00","urlLines":["var url = 'https://tv.emby.media';"],"wwwFileCount":0,"sourceURL":"https://github.com/MediaBrowser/emby-theater-electron/tree/f573a9fa74766d6be5ceeec2a842e8bca80c5a4c"},
+    {"tag":"3.0.19","sha":"915af80eeba533e3014192708ca3b722046fad03","commitDate":"2022-12-08T17:04:10-05:00","urlLines":["var url = 'https://tv.emby.media';"],"wwwFileCount":0,"sourceURL":"https://github.com/MediaBrowser/emby-theater-electron/tree/915af80eeba533e3014192708ca3b722046fad03"},
+    {"tag":"3.0.21","sha":"db0f4c814ee1e7d9b5f50010065c5cb64a20357e","commitDate":"2023-09-13T16:59:19-04:00","urlLines":["var url = 'https://tv.emby.media';"],"wwwFileCount":0,"sourceURL":"https://github.com/MediaBrowser/emby-theater-electron/tree/db0f4c814ee1e7d9b5f50010065c5cb64a20357e"}
+  ],
+  "uiMarkers": [
+    {"feature":"OSD分区标签","path":"videoosd/videoosd.html","marker":"videoOsdBottom-tabs","samples":[{"version":"4.6.7.0","markerPresent":false,"sha256":"4700bdd75f2d9244b0bde67b634a4e4837075e727a749d634747c2234f73c972","bytes":7137},{"version":"4.7.0.60","markerPresent":true,"sha256":"4fe5063721e33821c9762f9c8ca7fe0a5a735af9959815cdf6c919780031da42","bytes":11153},{"version":"4.7.2.0","markerPresent":true,"sha256":"45395a183fe3b14937159528bf5054832b8318b51515b45e98379840222091a2","bytes":11151},{"version":"4.7.4.0","markerPresent":true,"sha256":"45395a183fe3b14937159528bf5054832b8318b51515b45e98379840222091a2","bytes":11151},{"version":"4.7.5.0","markerPresent":true,"sha256":"45395a183fe3b14937159528bf5054832b8318b51515b45e98379840222091a2","bytes":11151},{"version":"4.7.6.0","markerPresent":true,"sha256":"18ab21c94230e8e00da73b9c56b1e2dc7d788633f75e827de7172ec36ed4606c","bytes":11155}]},
+    {"feature":"跳片头设置","path":"settings/playback.html","marker":"selectIntroSkip","samples":[{"version":"4.6.7.0","markerPresent":false,"sha256":"f8b8948abae1abd009fb39163a7e607ff7db27c70ad633b496c67a0fdfa1eb85","bytes":7037},{"version":"4.7.0.60","markerPresent":false,"sha256":"d5c240e5a05c3dc150679d4dc17b42f3bf8ee1d9a503e7b6cc7bf4b7dbfa809e","bytes":7372},{"version":"4.7.2.0","markerPresent":true,"sha256":"88dbf7a431517f119255a6296a4d05107087d372b507b8cb1678199f9a5a3474","bytes":7913},{"version":"4.7.4.0","markerPresent":true,"sha256":"88dbf7a431517f119255a6296a4d05107087d372b507b8cb1678199f9a5a3474","bytes":7913},{"version":"4.7.5.0","markerPresent":true,"sha256":"88dbf7a431517f119255a6296a4d05107087d372b507b8cb1678199f9a5a3474","bytes":7913},{"version":"4.7.6.0","markerPresent":true,"sha256":"751f236e1a9f27fa3d32de4503c8743926dc9a211f49933fc91b380a7dd148f6","bytes":7908}]},
+    {"feature":"表格视图选项","path":"modules/viewsettings/viewsettings.template.html","marker":"value=\"datagrid\"","samples":[{"version":"4.6.7.0","markerPresent":false,"sha256":"74272bdfd2d9eb7124ad1a74ca412557bf8066c68b8de61e2a27c7751c17f206","bytes":4006},{"version":"4.7.0.60","markerPresent":false,"sha256":"74272bdfd2d9eb7124ad1a74ca412557bf8066c68b8de61e2a27c7751c17f206","bytes":4006},{"version":"4.7.2.0","markerPresent":false,"sha256":"8e43a75481e7ff4af9215aadbf3e959fe0adf8d6e78bae764c7ba399c6d5896f","bytes":4033},{"version":"4.7.4.0","markerPresent":true,"sha256":"d6f00d1c8b21372ec514a72c491fd371c34baea750d442fb7394ce3daaf10aa7","bytes":2859},{"version":"4.7.5.0","markerPresent":true,"sha256":"d6f00d1c8b21372ec514a72c491fd371c34baea750d442fb7394ce3daaf10aa7","bytes":2859},{"version":"4.7.6.0","markerPresent":true,"sha256":"d6f00d1c8b21372ec514a72c491fd371c34baea750d442fb7394ce3daaf10aa7","bytes":2859}]},
+    {"feature":"Shift范围选择","path":"modules/multiselect/multiselect.js","marker":"e.shiftKey","samples":[{"version":"4.6.7.0","markerPresent":false,"sha256":"ad7032d36216d29f89670eeacd2068cb3d92e39a3c87f70511941a2ff3e2f850","bytes":15898},{"version":"4.7.0.60","markerPresent":false,"sha256":"9f4babe4f30438049eaca3f3d371a68b0bbd4cfdd074b5ba41c35d871bdd344d","bytes":17989},{"version":"4.7.2.0","markerPresent":false,"sha256":"9f4babe4f30438049eaca3f3d371a68b0bbd4cfdd074b5ba41c35d871bdd344d","bytes":17989},{"version":"4.7.4.0","markerPresent":false,"sha256":"1c2452091540d77d487157f45fba43afd2b44a573fb82f3e59b12dbef6621fd6","bytes":18152},{"version":"4.7.5.0","markerPresent":false,"sha256":"1c2452091540d77d487157f45fba43afd2b44a573fb82f3e59b12dbef6621fd6","bytes":18152},{"version":"4.7.6.0","markerPresent":true,"sha256":"7d86d1a163c8fd41174a1a298d1050fef5e89b6abbed9ffca5d659a2fcd874f4","bytes":19743}]},
+    {"feature":"全不选按钮","path":"modules/actionsheet/actionsheet.js","marker":"btnActionSheetSelectNone","samples":[{"version":"4.6.7.0","markerPresent":false,"sha256":"024a3ade8ca466355bcbb9bf174f1af0ed575d6bc2e138577a2d5f191ae1d528","bytes":12700},{"version":"4.7.0.60","markerPresent":false,"sha256":"21aedc94fa79936f819fd476b3531bae8e18a9129b794bb7636303d6bd2ccfbe","bytes":14015},{"version":"4.7.2.0","markerPresent":false,"sha256":"21aedc94fa79936f819fd476b3531bae8e18a9129b794bb7636303d6bd2ccfbe","bytes":14015},{"version":"4.7.4.0","markerPresent":false,"sha256":"87fcf8925453be0375199ce0e0c0c045e3a9831debebf49e1286b969fe07f950","bytes":16480},{"version":"4.7.5.0","markerPresent":false,"sha256":"87fcf8925453be0375199ce0e0c0c045e3a9831debebf49e1286b969fe07f950","bytes":16480},{"version":"4.7.6.0","markerPresent":true,"sha256":"0ad2bfad1ad2b694ec07c693a44f0edfbd4eb76121c8939f0e5de27e0abefe67","bytes":16933}]},
+    {"feature":"RTL语言选择","path":"modules/common/globalize.js","marker":"rtlLocales","samples":[{"version":"4.6.7.0","markerPresent":false,"sha256":"2bc1e138705668aa4e686725c3c4afc4d8d3d75f0e91a8de3745ec5138aa90ae","bytes":3724},{"version":"4.7.0.60","markerPresent":false,"sha256":"3dd22987bb1ca481504259b2fcbb9e016834938ae9908b016594149c7fed60a7","bytes":4190},{"version":"4.7.2.0","markerPresent":false,"sha256":"3dd22987bb1ca481504259b2fcbb9e016834938ae9908b016594149c7fed60a7","bytes":4190},{"version":"4.7.4.0","markerPresent":false,"sha256":"3dd22987bb1ca481504259b2fcbb9e016834938ae9908b016594149c7fed60a7","bytes":4190},{"version":"4.7.5.0","markerPresent":false,"sha256":"3dd22987bb1ca481504259b2fcbb9e016834938ae9908b016594149c7fed60a7","bytes":4190},{"version":"4.7.6.0","markerPresent":true,"sha256":"12edb7922a40167ada7add0e4af089d0eb4e2d010e1e9368585b3bb4dc0689f3","bytes":4400}]},
+    {"feature":"字幕背景不透明度","path":"settings/subtitles.html","marker":"${LabelBackgroundOpacity}","samples":[{"version":"4.6.7.0","markerPresent":false,"sha256":"c5557ee3880827d949384d0915f1faff7a480ba9746d856df9cc65e3b1d6d12c","bytes":6085},{"version":"4.7.0.60","markerPresent":true,"sha256":"ee2b29e67704f09b46be297b3cef03fa33d11a5856e65e3c8d002258d3a8cfc5","bytes":7955},{"version":"4.7.2.0","markerPresent":true,"sha256":"d2beb31afb2087068b94b4904fa3873966dbc9c8b49220c31919369eb3fe6db8","bytes":8047},{"version":"4.7.4.0","markerPresent":true,"sha256":"d2beb31afb2087068b94b4904fa3873966dbc9c8b49220c31919369eb3fe6db8","bytes":8047},{"version":"4.7.5.0","markerPresent":true,"sha256":"d2beb31afb2087068b94b4904fa3873966dbc9c8b49220c31919369eb3fe6db8","bytes":8047},{"version":"4.7.6.0","markerPresent":true,"sha256":"0d793e3a5ce9fb7b7ea5f2744acd861231b7927df69d5ac841443af39f13be9a","bytes":8042}]}
+  ],
+  "licenseObservations": {
+    "476ArchiveNoticeNameMatchCount": 0,
+    "noticeNamePattern": "license|copying|notice, case-insensitive; entry names only, not a full license-content audit",
+    "electron319": {
+      "repo": "MediaBrowser/emby-theater-electron",
+      "commit": "915af80eeba533e3014192708ca3b722046fad03",
+      "path": "LICENSE.md",
+      "sha256": "f371b80469fb235bc500ec29e0e85b682d4a6157a158567d828ff0be544d4f1d",
+      "declaredText": "GNU GPL Version 2",
+      "scopeLimit": "Does not assign a license to the separate 2022 Web snapshot"
+    },
+    "webcomponentsAndDefaultskin": "No root license/copying/notice-named file in inspected tips; no blanket license inferred"
+  },
+  "aggregateReference": {
+    "sourceTitle": "ROUND5-FINAL-UNION, existing file-level source union audit",
+    "date": "2026-10-22",
+    "referenceOnly": true,
+    "fullLedgerRecomputedInThisReport": false,
+    "fullLedgerIncluded": false,
+    "web720": {
+      "officialByte": 597,
+      "strictASTOnly": 6,
+      "emptyServiceworker": 1,
+      "nonemptyUnresolved": 116
+    },
+    "historicalPhysical897": {
+      "fixedUpstream": 758,
+      "other": 139,
+      "includesSupersededModel": true
+    },
+    "currentPhysical897": {
+      "fixedUpstream": 759,
+      "other": 138,
+      "basis": "one Model identity reclassification against current manifest and physical file; not a full 897-file rerun"
+    }
+  },
+  "currentModelIdentityCheck": {
+    "path": "vendor/model-compatibility/snapshot-v1/MediaBrowser.Model.dll",
+    "bytes": 426496,
+    "sha256": "db22f8ea6cb6afdfab184f80d8b85a10d8a9f148ff4cae167db87ce9cd245153",
+    "manifest": "vendor/model-compatibility-manifest.json",
+    "archiveIndependentlyDownloadedForThisCheck": false
+  },
+  "coreResidues476": {
+    "app.js": {"changedNamedMembers":["validateServerAddressWithEndpoint","validateServerAddress","onAppReady","start"],"currentOnlyNamedMembers":[],"officialOnlyNamedMembers":[]},
+    "modules/common/playback/playbackmanager.js": {"changedNamedMembers":["PlaybackManager","updateResultSetStartingPoint","playWithIntrosInternal","playAfterBitrateDetect","createStreamInfo","getTextTracks","onPlaybackStarted","onPlaybackStopped"],"currentOnlyNamedMembers":["onPlaybackRequested"],"officialOnlyNamedMembers":[]},
+    "modules/common/appsettings.js": {"changedNamedMembers":["AppSettings.prototype.maxStreamingBitrate","AppSettings.prototype.maxStaticMusicBitrate","AppSettings.prototype.maxChromecastBitrate"],"currentOnlyNamedMembers":["AppSettings.prototype.autoplay"],"officialOnlyNamedMembers":[]},
+    "modules/emby-apiclient/apiclient.js": {"changedNamedMembers":["setAuthorizationInfoIntoRequest","ajax","detectBitrate","getItem","updateLiveTvSeriesTimer","getEpisodes","getPlaybackInfo","getIntros","getVirtualFolders","getNextUpAudioBookItems","getNextUpEpisodes","uninstallPlugin","deleteUser","uploadUserImage","uploadItemImage","getPublicUsers","getLogoImageUrl","createUser","getEndpointInfo","getLatestItems","getPlayQueue","getSearchResults","deleteDevice"],"currentOnlyNamedMembers":["getCurrentLocale","setCurrentLocale","getNotificationTypes","sendTestUserNotification","saveUserNotification","getFeatures","uninstallPluginSingle","uninstallPlugins","deleteUserSingle","deleteUsers","getPublicUsersQueryResult","getDefaultImageSizes","getImageUrls","getTypedUserSettings","updateTypedUserSettings","deleteDeviceSingle","deleteDevices","getConfigurationPages"],"officialOnlyNamedMembers":["getNotificationSummary","getNotifications","markNotificationsRead"]}
+  }
+}

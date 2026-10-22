@@ -1,5 +1,7 @@
 # Runtime source and notice materials
 
+Current source/license priorities, historical Web evidence, frontend references and task status: [dependency research index](DEPENDENCY_RESEARCH.md). Archive byte identity and applicable license scope are tracked separately.
+
 Current Model selection: the separate [Model component](MODEL_COMPATIBILITY_INPUT.md) now locks the official Windows 3.0.20 release member, SHA-256 `db22f8ea6cb6afdfab184f80d8b85a10d8a9f148ff4cae167db87ce9cd245153`, and the complete official ZIP identity. Its former community variant remains in Git history; no community snapshot is a normal build dependency. Historical unchanged-Model statements below describe earlier stages. Exact binary source-rebuild and third-party notice boundaries remain separate from official release-byte identity.
 
 Compatibility resources: 48 unchanged local snapshot files retain per-file source/unknown distinctions in vendor/compatibility-resources-manifest.json. Anime4K MIT headers and the existing named Source Han Serif OFL record remain; exact revisions/unknown manual/theme authorship are not invented. No public body upload or official recovery is claimed. See [component provenance](COMPATIBILITY_RESOURCES_INPUT.md).
