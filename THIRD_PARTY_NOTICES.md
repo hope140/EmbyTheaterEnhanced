@@ -1,5 +1,7 @@
 # Third-party notices
 
+CustomCssJS archive update: the optional integration is omitted from new ETE runtime packages. Its retained source snapshot matches [Shurelol/Emby.CustomCssJS at 6933b58c](https://github.com/Shurelol/Emby.CustomCssJS/tree/6933b58c62f98b0919977e953f068b1a581a7a1c) after newline conversion only. The project's [GPLv3 LICENSE](https://github.com/Shurelol/Emby.CustomCssJS/blob/6933b58c62f98b0919977e953f068b1a581a7a1c/LICENSE) is preserved in the repository's Web notice records. This is a component-specific archival record; the original snapshot remains in source distributions, and no general licensing or historical redistribution conclusion follows from runtime retirement.
+
 This file records the maintained source boundary and known components of the
 Windows runtime. Git exclusions do not describe installer contents. Binary
 releases already exist; this inventory does not certify their redistribution

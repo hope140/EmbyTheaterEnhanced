@@ -89,3 +89,16 @@ test('independent Web restoration preflights user patches and extra files before
     fs.writeFileSync(path.join(saved,'unexpected'),'extra');
     assert.throws(()=>web.restoreSnapshot(f.root,saved),/snapshot input/);assert.equal(fs.existsSync(input),false);
 });
+
+test('retired optional Web source remains required and hash checked before assembly writes', t => {
+    const f = fixture(t), name = 'www/modules/CustomCssJS.js', bytes = Buffer.from('synthetic archived module');
+    const file = path.join(f.root, web.INPUT_ROOT, name);
+    fs.mkdirSync(path.dirname(file), {recursive: true}); fs.writeFileSync(file, bytes);
+    f.manifest.files.push({path: name, size: bytes.length, sha256: sha(bytes)});
+    f.manifest.fileCount++; f.manifest.bytes += bytes.length;
+    f.manifest.treeSha256 = web.treeHash(f.manifest.files);
+    fs.writeFileSync(path.join(f.root, web.MANIFEST_PATH), JSON.stringify(f.manifest));
+    fs.appendFileSync(file, 'changed');
+    assert.throws(() => web.assemble(f.root, f.output), /snapshot identity/);
+    assert.equal(fs.existsSync(f.output), false);
+});

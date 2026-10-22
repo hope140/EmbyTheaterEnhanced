@@ -35,7 +35,7 @@ test('real official Host and frozen Web preserve the complete base payload with 
         overlays.WEB_OVERLAY_CONTRACT.map(x=>x.runtimePath),dependencies.loadSelectedPackages(root).packages.map(x=>x.packagePath));
     const expected=[...classified.filter(x=>x.action==='copy'&&!web.isLegacyWeb(x.path)&&!modelInput.isModelCompatibility(x.path)).map(({path,size,sha256})=>({path,size,sha256})),
         ...modelInput.load(root).files.map(({path,size,sha256})=>({path,size,sha256})),
-        ...snapshot.files.map(x=>({path:'electronapp/'+x.path,size:x.size,sha256:x.sha256}))].sort((a,b)=>a.path.localeCompare(b.path,'en'));
+        ...snapshot.files.filter(x=>x.path!=='www/modules/CustomCssJS.js').map(x=>({path:'electronapp/'+x.path,size:x.size,sha256:x.sha256}))].sort((a,b)=>a.path.localeCompare(b.path,'en'));
     const dist=path.join(root,'dist');fs.mkdirSync(dist,{recursive:true});
     const runtime=fs.mkdtempSync(path.join(dist,'windows-host-base-validation-'));
     const token=dependencies.createOwner(root,runtime,commit);

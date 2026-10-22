@@ -58,6 +58,7 @@ function createFixture(root) {
     addManifestFile(files, root, 'x64/electron/electron.exe', 'electron-fixture\n');
     addManifestFile(files, root, 'x64/electron/version', '18.3.15\n');
     addManifestFile(files, root, 'electronapp/libmpv/x64/mpv-win32-x64.node', 'bridge-fixture\n');
+    addManifestFile(files, root, 'electronapp/www/modules/CustomCssJS.js', 'retired optional Web fixture\n');
     addManifestFile(files, root, 'electronapp/libmpv/x64/mpv-1.dll', 'base-libmpv-fixture\n');
     addManifestFile(files, root, 'MediaBrowser.Model.dll', 'historical Model fixture\n');
     const playbackFixture = Buffer.from('const playback = true;\n');
@@ -152,7 +153,6 @@ function createFixture(root) {
         'tools/prepare-preload.cjs',
         'tools/prepare-web-overlays.cjs',
         'tools/patch-videoosd-lifecycle.cjs', 'tools/patch-apiclient-lifecycle.cjs',
-        'tools/patch-custom-css-js.cjs',
         'tools/patch-externalplayer-residue.cjs',
         'tools/patch-item-controls.cjs',
         'tools/patch-content-width.cjs',

@@ -3,6 +3,14 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const {RETIRED_WEB_PATHS} = require('./runtime-exclusions.cjs');
+const retiredWeb = new Set(RETIRED_WEB_PATHS.map(name => name.slice('electronapp/'.length)));
+function runtimeFiles(manifest) { return manifest.files.filter(entry => !retiredWeb.has(entry.path)); }
+function runtimeSelection(manifest) {
+    const files = runtimeFiles(manifest);
+    return {runtimeFileCount: files.length, runtimeBytes: files.reduce((sum, entry) => sum + entry.size, 0),
+        runtimeTreeSha256: treeHash(files), excludedFiles: manifest.files.filter(entry => retiredWeb.has(entry.path))};
+}
 
 const MANIFEST_PATH = 'vendor/web-snapshot-manifest.json';
 const INPUT_ROOT = 'vendor/web-snapshot';
@@ -95,14 +103,14 @@ function assemble(rootArg, runtimeArg) {
     const target = path.join(runtime, 'electronapp/www');
     if (fs.existsSync(target)) throw new Error('Web assembly requires an absent www output.');
     mkdirPhysical(target);
-    for (const entry of manifest.files) {
+    for (const entry of runtimeFiles(manifest)) {
         const bytes = fs.readFileSync(path.join(root,INPUT_ROOT,entry.path));
         if (bytes.length !== entry.size || sha(bytes) !== entry.sha256) throw new Error('Web snapshot changed during assembly.');
         const destination = path.join(target,entry.path.slice('www/'.length));
         mkdirPhysical(path.dirname(destination));
         fs.writeFileSync(destination,bytes,{flag:'wx'});
     }
-    return report;
+    return {...report,...runtimeSelection(manifest)};
 }
 // Restore an already independent snapshot without any original package layout.
 function restoreSnapshot(rootArg, sourceArg) {
@@ -154,4 +162,4 @@ if (require.main === module) {
         process.stdout.write(JSON.stringify(result,null,2)+'\n');
     } catch(error) { process.stderr.write(error.message+'\n');process.exitCode=1; }
 }
-module.exports = {MANIFEST_PATH,INPUT_ROOT,WEB_ROOT,LEGACY_WEB_PREFIX,isLegacyWeb,treeHash,load,verifyTree,validate,assemble,restoreSnapshot,importSnapshot};
+module.exports = {runtimeSelection,MANIFEST_PATH,INPUT_ROOT,WEB_ROOT,LEGACY_WEB_PREFIX,isLegacyWeb,treeHash,load,verifyTree,validate,assemble,restoreSnapshot,importSnapshot};

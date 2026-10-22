@@ -22,6 +22,7 @@ const {configOutput} = require('../tools/build-input-provenance.cjs');
 const root = path.resolve(__dirname, '..');
 // Review-approved delta from the frozen manifests, independent of production selection.
 const approvedRetirements = new Set([
+    'electronapp/www/modules/CustomCssJS.js',
     'external/Anime4K/Anime4K-off.conf',
     'external/emby.disable/www/modules/layout.css',
     'external/emby.disable/www/modules/themes/darkgradient/theme.css',

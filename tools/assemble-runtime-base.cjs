@@ -123,7 +123,7 @@ function plan(rootArg, sourceCommit) {
         groups: summarize(entries), entries,historicalEntries,ignoredInputPaths,
         historicalReference:{fileCount:historicalEntries.length,groups:summarize(historicalEntries),
             evidence:'tracked historical manifest only; no physical predecessor input is required'},
-        webSnapshot: {manifestPath:webSnapshot.MANIFEST_PATH,
+        webSnapshot: {...webSnapshot.runtimeSelection(web),manifestPath:webSnapshot.MANIFEST_PATH,
             treeSha256:web.treeSha256,fileCount:web.fileCount,bytes:web.bytes},windowsHost:{manifestPath:windowsHost.MANIFEST_PATH,
             treeSha256:host.treeSha256,fileCount:host.fileCount,bytes:host.bytes},inheritedNpm:{manifestPath:inheritedNpm.MANIFEST_PATH,
             sourceCommit:npm.source.commit,treeSha256:npm.treeSha256,fileCount:npm.fileCount,bytes:npm.bytes},runtimeTemplates:{manifestPath:templates.MANIFEST_PATH,fileCount:3,bytes:template.bytes},compatibilityResources:{...compatibility.runtimeSelection(compatibilityInput),manifestPath:compatibility.MANIFEST_PATH,fileCount:compatibilityInput.fileCount,bytes:compatibilityInput.bytes,treeSha256:compatibilityInput.treeSha256},smallRuntime:{...smallRuntime.runtimeSelection(smallInput),manifestPath:smallRuntime.MANIFEST_PATH,fileCount:smallInput.fileCount,bytes:smallInput.bytes,treeSha256:smallInput.treeSha256},modelCompatibility:{manifestPath:modelCompatibility.MANIFEST_PATH,fileCount:modelInput.fileCount,bytes:modelInput.bytes,treeSha256:modelInput.treeSha256}};

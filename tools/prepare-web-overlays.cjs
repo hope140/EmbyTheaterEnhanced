@@ -4,7 +4,6 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const externalPlayerRegistration = require('./patch-external-player-registration.cjs');
-const customCssJs = require('./patch-custom-css-js.cjs');
 const externalPlayerResidue = require('./patch-externalplayer-residue.cjs');
 const itemControls = require('./patch-item-controls.cjs');
 const contentWidth = require('./patch-content-width.cjs');
@@ -22,7 +21,6 @@ const trackedFileHash = require('./tracked-file-hash.cjs');
 
 const GENERATOR_PATH = 'tools/prepare-web-overlays.cjs';
 const APP_GENERATOR_PATH = 'tools/patch-external-player-registration.cjs';
-const CUSTOM_CSS_JS_GENERATOR_PATH = 'tools/patch-custom-css-js.cjs';
 const EXTERNAL_PLAYER_RESIDUE_GENERATOR_PATH = 'tools/patch-externalplayer-residue.cjs';
 const ITEM_CONTROLS_GENERATOR_PATH = 'tools/patch-item-controls.cjs';
 const CONTENT_WIDTH_GENERATOR_PATH = 'tools/patch-content-width.cjs';
@@ -217,17 +215,6 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         generatorPaths: Object.freeze([GENERATOR_PATH, MOVIE_GENERATOR_PATH])
     }),
     Object.freeze({
-        id: 'custom-css-js',
-        mode: 'tracked-canonical-transform',
-        basePath: 'vendor/web-snapshot/www/modules/CustomCssJS.js',
-        inputPath: null,
-        runtimePath: 'electronapp/www/modules/CustomCssJS.js',
-        expectedBaseSha256: '2177DE28DCC4E715F07C63329DC361C5B4DDD37EB7E59F273830B22ACEA37912',
-        expectedInputSha256: null,
-        expectedOutputSha256: 'B9F6268F3E3126426F189F38F1E57FF4CD03D8F9A213305157E1F6842F251103',
-        generatorPaths: Object.freeze([GENERATOR_PATH, CUSTOM_CSS_JS_GENERATOR_PATH])
-    }),
-    Object.freeze({
         id: 'item-externalplayer-residue',
         mode: 'tracked-canonical-transform',
         basePath: 'vendor/web-snapshot/www/item/item.js',
@@ -290,7 +277,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/app.js',
         expectedBaseSha256: '3EF3102567458359A02E2FE8F79A8700CFE9C223347ABE5AB6ECB8BD93BE89D2',
         expectedInputSha256: null,
-        expectedOutputSha256: 'E3A883851255A196231266B5060D28E637A538DB3337CD12D47F060C6820CD5C',
+        expectedOutputSha256: '4DEB9669058340741AB8048140C2690C3EF39494A74C451272D69D7C37F8FFE4',
         generatorPaths: Object.freeze([SEARCH_GENERATOR_PATH, GENERATOR_PATH, APP_GENERATOR_PATH, PLUGIN_GENERATOR_PATH, HOME_GENERATOR_PATH, MOVIE_GENERATOR_PATH])
     }),
     Object.freeze({
@@ -345,6 +332,16 @@ function readChecked(root, relativePath, expectedHash, label) {
     return value;
 }
 
+// Retire this optional integration only; keep the ordinary plugin/bootstrap and CSS paths.
+function retireCustomCssJs(text) {
+    const line = /^[ \t]*list\.push\("\.\/modules\/CustomCssJS\.js"\),\r?\n/gm;
+    const matches = Array.from(text.matchAll(line));
+    if (matches.length !== 1) throw new Error('CustomCssJS registration contract mismatch.');
+    const output = text.replace(line, '');
+    if (output.includes('CustomCssJS')) throw new Error('CustomCssJS registration remains.');
+    return output;
+}
+
 function outputFor(root, contract) {
     const base = readChecked(root, contract.basePath, contract.expectedBaseSha256, 'Web overlay base');
     if (contract.mode === 'vendor-payload-transform' && contract.id === 'apiclient') {
@@ -362,9 +359,6 @@ function outputFor(root, contract) {
     if (contract.id === 'actionsheet-layout') return {base, input: Buffer.from(actionSheetLayout.patchActionSheetCss(base.toString('utf8')), 'utf8')};
     if (contract.searchTransform) return {base, input: Buffer.from(searchUi[contract.searchTransform](base.toString('utf8')), 'utf8')};
     if (contract.menuTransform) return {base, input: Buffer.from(selectCancel[contract.menuTransform](base.toString('utf8')), 'utf8')};
-    if (contract.id === 'custom-css-js' && contract.mode === 'tracked-canonical-transform') {
-        return {base, input: Buffer.from(customCssJs.patchText(base.toString('utf8')), 'utf8')};
-    }
     if (contract.id === 'item-externalplayer-residue' && contract.mode === 'tracked-canonical-transform') {
         return {base, input: Buffer.from(itemLifecycle.patchItemLifecycle(externalPlayerResidue.patchItemText(base.toString('utf8'))), 'utf8')};
     }
@@ -381,7 +375,7 @@ function outputFor(root, contract) {
         if (transformed.action !== 'patched') {
             throw new Error('Web overlay canonical transform did not patch the frozen app.js base.');
         }
-        return {base, input: Buffer.from(searchUi.patchApp(movieBrowser.patchApp(serverHome.patchApp(pluginSettings.patchApp(transformed.text)))), 'utf8')};
+        return {base, input: Buffer.from(retireCustomCssJs(searchUi.patchApp(movieBrowser.patchApp(serverHome.patchApp(pluginSettings.patchApp(transformed.text))))), 'utf8')};
     }
     if (contract.id === 'server-home-tab' && contract.mode === 'tracked-canonical-transform') {
         return {base, input: Buffer.from(serverHome.patchHomeTab(base.toString('utf8')), 'utf8')};
@@ -477,4 +471,4 @@ if (require.main === module) {
     process.stdout.write(JSON.stringify(apply(root, runtimeRoot)) + '\n');
 }
 
-module.exports = {WEB_OVERLAY_CONTRACT, apply, inspect, sha256};
+module.exports = {retireCustomCssJs,WEB_OVERLAY_CONTRACT, apply, inspect, sha256};
