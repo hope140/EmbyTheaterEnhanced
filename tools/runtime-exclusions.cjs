@@ -20,7 +20,10 @@ const RETIRED_SMALL_RUNTIME_PATHS = Object.freeze(['\u6ce8\u610f\u4e8b\u9879.txt
 const RETIRED_WEB_PATHS = Object.freeze(['electronapp/www/modules/CustomCssJS.js',
   'electronapp/www/modules/themes/logo.png',
   'electronapp/www/settings/cameraupload.js',
-  'electronapp/www/settings/cameraupload.html']);
+  'electronapp/www/settings/cameraupload.html',
+  'electronapp/www/components/directorybrowser/directorybrowser.css',
+  'electronapp/www/modules/emby-apiclient/appstorage-cache.js',
+  'electronapp/www/serviceworker-app.js']);
 const RETIRED_RUNTIME_PATHS = Object.freeze([
   'electronapp/libmpv/x64/mpv-win32-x64.node',
   ...RETIRED_COMPATIBILITY_PATHS,

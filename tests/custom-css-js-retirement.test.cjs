@@ -75,8 +75,8 @@ test('Web assembly omits the approved module and logo while retaining immutable 
     const runtime = fs.mkdtempSync(path.join(root, 'dist', 'custom-css-retirement-'));
     t.after(() => fs.rmSync(runtime, {recursive: true}));
     const report = web.assemble(root, runtime);
-    assert.equal(report.fileCount, 716);
-    assert.equal(report.runtimeFileCount, 716);
+    assert.equal(report.fileCount, 713);
+    assert.equal(report.runtimeFileCount, 713);
     assert.deepEqual(report.excludedFiles.map(x => x.path), []);
     assert.equal(fs.existsSync(path.join(runtime, 'electronapp/www/modules/CustomCssJS.js')), false);
     assert.equal(fs.existsSync(path.join(root, 'tools/patch-custom-css-js.cjs')), false);

@@ -1,6 +1,8 @@
 # Runtime source and notice materials
 
-Current v2 source selection removes seventeen reviewed old bodies from the current tree while preserving exact v1 manifests/hashes, necessary notices and old Git history. Active component counts are 39/2/716; the complete Chinese maintained file still inherits 24 strings, so this is not new authorship or general license clearance. See [migration boundaries](SNAPSHOT_V2_MIGRATION.md); earlier current-tree archival statements below describe the preceding stage.
+The npm runtime projection omits20 reviewed artifacts only during owned copying; all33 locked packages/1142 source files, SRI and35 identified notice files stay complete. Runtime1122 and Web713 identities are [recorded separately](SCOPED_RUNTIME_PROJECTION.md).
+
+Current v2 source selection removes twenty reviewed old bodies from the current tree while preserving exact v1 manifests/hashes, necessary notices and old Git history. Active component counts are 39/2/713; the complete Chinese maintained file still inherits 24 strings, so this is not new authorship or general license clearance. See [migration boundaries](SNAPSHOT_V2_MIGRATION.md); earlier current-tree archival statements below describe the preceding stage.
 
 
 Maintained small outputs: [typed configuration defaults and thirteen Chinese text revisions](MAINTAINED_SMALL_RUNTIME.md) are now maintained separately from the unchanged historical manifest. The same five default fields/values and twenty-four unchanged translation strings remain inherited; this does not claim old ETE authorship or complete localization/source-license resolution.

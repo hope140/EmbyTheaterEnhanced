@@ -120,7 +120,7 @@ test('clean generated startup resolves the existing transparent ETE SVG and pres
     const runtime = fs.mkdtempSync(path.join(repoRoot,'dist','retired-startup-logo-'));
     t.after(()=>fs.rmSync(runtime,{recursive:true}));
     const report = web.assemble(repoRoot,runtime);
-    assert.equal(report.fileCount,716); assert.equal(report.runtimeFileCount,716);
+    assert.equal(report.fileCount,713); assert.equal(report.runtimeFileCount,713);
     overlays.apply(repoRoot,runtime);
     const svgPath=path.join(runtime,'electronapp/enhanced/startup.svg');
     fs.mkdirSync(path.dirname(svgPath),{recursive:true});

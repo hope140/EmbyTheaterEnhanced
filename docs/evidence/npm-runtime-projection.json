@@ -1,0 +1,357 @@
+{
+  "schemaVersion": 1,
+  "analysisRef": "6fee412ad68934d0194303916cfe346e6254a228",
+  "reviewBaseline": "75a350cebf47980a9eb7af187c3a33af3e348a8f",
+  "scope": "Runtime-only projection; complete locked npm input and every license/notice remain",
+  "versions": {
+    "@grpc/grpc-js": "1.14.6",
+    "protobufjs": "7.6.6"
+  },
+  "packageCount": 33,
+  "source": {
+    "fileCount": 1142,
+    "bytes": 9625032,
+    "treeSha256": "3d01be3560278303043d5513b4956162a397c0af91f981cfcca50a915c1528a5"
+  },
+  "runtime": {
+    "fileCount": 1122,
+    "bytes": 9594492,
+    "treeSha256": "1566aa5b74aeb7162ef8a316120efa2378a6b29f7f7667271a28816288d91b56"
+  },
+  "excludedFiles": [
+    {
+      "path": "node_modules/@grpc/grpc-js/build/src/generated/google/protobuf/Edition.js",
+      "size": 702,
+      "sha256": "4d93fbe9063d4ec4092d6166ca6244d713898e7c6ed84ba011c945c41d42e865"
+    },
+    {
+      "path": "node_modules/@grpc/grpc-js/build/src/generated/google/protobuf/ExtensionRangeOptions.js",
+      "size": 381,
+      "sha256": "e4661934504f1ad2ed8409ae232d2ad80bc8fdf907aae5679c6fea6c6a8a16fc"
+    },
+    {
+      "path": "node_modules/@grpc/grpc-js/build/src/generated/google/protobuf/FeatureSet.js",
+      "size": 2286,
+      "sha256": "f44d2b106c7aa7244c1ede455298e962b6ee7b10103a582845ce9852dea415e8"
+    },
+    {
+      "path": "node_modules/@grpc/grpc-js/build/src/generated/google/protobuf/FieldDescriptorProto.js",
+      "size": 1112,
+      "sha256": "e4b7b5ed298f5f7d0ecf7adc128c04e649a10c057ac9901b0bb0b885e3691009"
+    },
+    {
+      "path": "node_modules/@grpc/grpc-js/build/src/generated/google/protobuf/FieldOptions.js",
+      "size": 1440,
+      "sha256": "924d8839d8ed33509c97ad6f3a1803bf93c5369544f0e66ae7f318df4cbbce6c"
+    },
+    {
+      "path": "node_modules/@grpc/grpc-js/build/src/generated/google/protobuf/FileOptions.js",
+      "size": 361,
+      "sha256": "ab18461b202bbec5bcb84be613eadeadafad0a309075a9db5bfd9ded9dac9d13"
+    },
+    {
+      "path": "node_modules/@grpc/grpc-js/build/src/generated/google/protobuf/GeneratedCodeInfo.js",
+      "size": 365,
+      "sha256": "6c7aa0f0f35e7085e3e3ae68a951545813bd01b583a7685ffe26b3bc6c463b63"
+    },
+    {
+      "path": "node_modules/@grpc/grpc-js/build/src/generated/google/protobuf/MethodOptions.js",
+      "size": 411,
+      "sha256": "54951b483d4446908f8b164dea0a655d05b73deb690c6989ef5ecc720a77ddd6"
+    },
+    {
+      "path": "node_modules/@grpc/grpc-js/build/src/generated/google/protobuf/SymbolVisibility.js",
+      "size": 339,
+      "sha256": "911ba4b19f8e068695af1fd827948277f04f1ee8236465a82aaf85ab3f493a14"
+    },
+    {
+      "path": "node_modules/@grpc/grpc-js/build/src/generated/grpc/channelz/v1/ChannelConnectivityState.js",
+      "size": 500,
+      "sha256": "40330f4b4f43d9c8226138ceb5747e4227573a061951e013792e418eccdb697f"
+    },
+    {
+      "path": "node_modules/@grpc/grpc-js/build/src/generated/grpc/channelz/v1/ChannelTraceEvent.js",
+      "size": 491,
+      "sha256": "9acf1a3c25c4020035b5dfabc8c3e87ad5a18eb59d1e92ff6cb1bb120a18dc42"
+    },
+    {
+      "path": "node_modules/@grpc/grpc-js/build/src/generated/validate/KnownRegex.js",
+      "size": 537,
+      "sha256": "f5ba1f1a9f409dcb34650413bc2bb0619eefd330a68b35a253d3a8800477d06a"
+    },
+    {
+      "path": "node_modules/protobufjs/google/api/annotations.json",
+      "size": 1987,
+      "sha256": "87bbf6275532afc56ed997cab8399c38a138ae7d65e7e88e1ab6686f728eee3e"
+    },
+    {
+      "path": "node_modules/protobufjs/google/api/annotations.proto",
+      "size": 188,
+      "sha256": "e6b649083c6b414b2368a1562308f0a9fdaa71e8f932a6b32efc623fdef3a6c7"
+    },
+    {
+      "path": "node_modules/protobufjs/google/api/http.json",
+      "size": 2087,
+      "sha256": "170d4e8c54a54f14b209e612473a8d15468d114f7f7d8e779b93ef3503bb293d"
+    },
+    {
+      "path": "node_modules/protobufjs/google/api/http.proto",
+      "size": 474,
+      "sha256": "f052d98111aec06cd47c4082a9265cb05f51a94bb1553229d299f99ac8ba4e8b"
+    },
+    {
+      "path": "node_modules/protobufjs/google/protobuf/api.proto",
+      "size": 642,
+      "sha256": "d706f909f2f115f4a18c6e64e38dd6c98ad647dba70c7a88f35e0b28414dab83"
+    },
+    {
+      "path": "node_modules/protobufjs/google/protobuf/descriptor.proto",
+      "size": 14464,
+      "sha256": "e79074e7bddefd24d589baef2627c9d039b807933ca0c1fb37e8fffc63df0e1c"
+    },
+    {
+      "path": "node_modules/protobufjs/google/protobuf/source_context.proto",
+      "size": 98,
+      "sha256": "992d3a7a0e8f79ccd4dc8da161376219aa7294408386fa6d65e130a45d31bff8"
+    },
+    {
+      "path": "node_modules/protobufjs/google/protobuf/type.proto",
+      "size": 1675,
+      "sha256": "8bb73f0bb286c2725880abe204e2a5168b084fcf851eb493c5ee90a85f270abd"
+    }
+  ],
+  "retainedCriticalFiles": [
+    {
+      "path": "node_modules/@grpc/grpc-js/proto/channelz.proto",
+      "size": 20366,
+      "sha256": "3724a98db4870287d1ab3fe0f320af17f196bdec363f50f17f9a2a0a772c9228"
+    },
+    {
+      "path": "node_modules/@grpc/grpc-js/proto/protoc-gen-validate/validate/validate.proto",
+      "size": 29342,
+      "sha256": "e56269caa0b6e3531055275cfef9539af46606e8ed26bfc8f615cf9f75b41d71"
+    },
+    {
+      "path": "node_modules/@grpc/grpc-js/proto/xds/xds/data/orca/v3/orca_load_report.proto",
+      "size": 2676,
+      "sha256": "3a4d5f9a51e4562a1ad3f46d59f995b5d132323922375e084ce86d5e0af26a58"
+    },
+    {
+      "path": "node_modules/@grpc/grpc-js/proto/xds/xds/service/orca/v3/orca.proto",
+      "size": 1644,
+      "sha256": "4365e94acb531e0e5339a03102242e19d5a525fa0bcf52b4dd1e9335b43d5453"
+    },
+    {
+      "path": "node_modules/protobufjs/google/protobuf/descriptor.json",
+      "size": 41511,
+      "sha256": "981b346ca9e4ab258dbf53e94104b86f680655137f30624a4eb541112a00d09b"
+    },
+    {
+      "path": "node_modules/protobufjs/google/protobuf/api.json",
+      "size": 2951,
+      "sha256": "e668c664c96276b9bcae4cc1121097606458bfd89598f7b6a8125fafad9161a5"
+    },
+    {
+      "path": "node_modules/protobufjs/google/protobuf/source_context.json",
+      "size": 332,
+      "sha256": "ef0a3a715ecd5e2cf8f3101bd1d6f3c9702c41f8ec0b0b96bcc99e3402339927"
+    },
+    {
+      "path": "node_modules/protobufjs/google/protobuf/type.json",
+      "size": 5470,
+      "sha256": "f493ddfb5158dae5b3bab2c7d45551f418a3cb68d0caf62f5c9da259c818215d"
+    }
+  ],
+  "noticeFiles": [
+    {
+      "path": "node_modules/@grpc/grpc-js/LICENSE",
+      "size": 11558,
+      "sha256": "e03ba41d7fab20700769fe4118bab50d800cb74f990353a05d2f5fff1c228363"
+    },
+    {
+      "path": "node_modules/@grpc/grpc-js/proto/protoc-gen-validate/LICENSE",
+      "size": 11560,
+      "sha256": "3ddf9be5c28fe27dad143a5dc76eea25222ad1dd68934a047064e56ed2fa40c5"
+    },
+    {
+      "path": "node_modules/@grpc/grpc-js/proto/xds/LICENSE",
+      "size": 11558,
+      "sha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6"
+    },
+    {
+      "path": "node_modules/@grpc/proto-loader/LICENSE",
+      "size": 11357,
+      "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1"
+    },
+    {
+      "path": "node_modules/@js-sdsl/ordered-map/LICENSE",
+      "size": 1067,
+      "sha256": "787684b2059945f845f404340e20c4c8e3f325f4ab7aaeaf8e985f38c8d84658"
+    },
+    {
+      "path": "node_modules/@protobufjs/aspromise/LICENSE",
+      "size": 1505,
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+    },
+    {
+      "path": "node_modules/@protobufjs/base64/LICENSE",
+      "size": 1505,
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+    },
+    {
+      "path": "node_modules/@protobufjs/codegen/LICENSE",
+      "size": 1505,
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+    },
+    {
+      "path": "node_modules/@protobufjs/eventemitter/LICENSE",
+      "size": 1505,
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+    },
+    {
+      "path": "node_modules/@protobufjs/fetch/LICENSE",
+      "size": 1505,
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+    },
+    {
+      "path": "node_modules/@protobufjs/float/LICENSE",
+      "size": 1505,
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+    },
+    {
+      "path": "node_modules/@protobufjs/path/LICENSE",
+      "size": 1505,
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+    },
+    {
+      "path": "node_modules/@protobufjs/pool/LICENSE",
+      "size": 1505,
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+    },
+    {
+      "path": "node_modules/@protobufjs/utf8/LICENSE",
+      "size": 1505,
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+    },
+    {
+      "path": "node_modules/@types/node/LICENSE",
+      "size": 1141,
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+    },
+    {
+      "path": "node_modules/ansi-regex/license",
+      "size": 1109,
+      "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
+    },
+    {
+      "path": "node_modules/ansi-styles/license",
+      "size": 1109,
+      "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
+    },
+    {
+      "path": "node_modules/cliui/LICENSE.txt",
+      "size": 731,
+      "sha256": "2dc0465729366c3a7890dfa9e972a1ba7048a26c02116fb8b419a6a1ac110149"
+    },
+    {
+      "path": "node_modules/color-convert/LICENSE",
+      "size": 1087,
+      "sha256": "693866fc419c6f61c8570438ec00659d156ec2b4d4a4d04091711f5f11a365d4"
+    },
+    {
+      "path": "node_modules/color-name/LICENSE",
+      "size": 1085,
+      "sha256": "c064f7a3e353bc1bc977f3c897941c75ef763f44f41677e0a15370ca0853d6e2"
+    },
+    {
+      "path": "node_modules/escalade/license",
+      "size": 1104,
+      "sha256": "9a9edad7baae52622bddf3c15b2ef8a33d2c89f2d25408ad13e8a7481c6b0c97"
+    },
+    {
+      "path": "node_modules/get-caller-file/LICENSE.md",
+      "size": 745,
+      "sha256": "902dbb4154679fb2b8d7c33878183f45b268d01eae5e5033dddaa8852d45f213"
+    },
+    {
+      "path": "node_modules/is-fullwidth-code-point/license",
+      "size": 1109,
+      "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
+    },
+    {
+      "path": "node_modules/lodash.camelcase/LICENSE",
+      "size": 1951,
+      "sha256": "ffd8b33b354585f4ce119f19c53728281e48a97b074491eb6bf6d5c5ff305272"
+    },
+    {
+      "path": "node_modules/long/LICENSE",
+      "size": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "node_modules/protobufjs/google/LICENSE",
+      "size": 1476,
+      "sha256": "4ab87e6e3c0c0b78e47c77d49ec10c048f8a519fb8062e6e3217e3e6e9b0c6e9"
+    },
+    {
+      "path": "node_modules/protobufjs/LICENSE",
+      "size": 1937,
+      "sha256": "49d6a1c9a623784c61c6cb70f773f3457faceb1914a13c8560a9823b7631950c"
+    },
+    {
+      "path": "node_modules/require-directory/LICENSE",
+      "size": 1099,
+      "sha256": "a92e52eb1fa7cd746e3827bf01d3a3589bbc8e1e51348b1da042aad165525ad1"
+    },
+    {
+      "path": "node_modules/string-width/license",
+      "size": 1109,
+      "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
+    },
+    {
+      "path": "node_modules/strip-ansi/license",
+      "size": 1109,
+      "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
+    },
+    {
+      "path": "node_modules/undici-types/LICENSE",
+      "size": 1090,
+      "sha256": "a6db8096b2707bc0102d256917d4d33f298ba36d8c3f25de067a2b5bb379db27"
+    },
+    {
+      "path": "node_modules/wrap-ansi/license",
+      "size": 1117,
+      "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
+    },
+    {
+      "path": "node_modules/y18n/LICENSE",
+      "size": 731,
+      "sha256": "2034cce3b6fafcddd642c4175e01d3ddfc332a53b9f20fdc46b1466dc89ac469"
+    },
+    {
+      "path": "node_modules/yargs-parser/LICENSE.txt",
+      "size": 731,
+      "sha256": "365496ca1f56da40b23c9815fc40fa9005847b2f8f8fd1c1a4929ef25ec8cd1d"
+    },
+    {
+      "path": "node_modules/yargs/LICENSE",
+      "size": 1146,
+      "sha256": "2f1a503bfab84b3ba7393627308b3274501e459e3b5185bbb56bbf16cb1602d4"
+    }
+  ],
+  "evidenceBoundary": "PR70 reports isolated browser and actual CJS/protocol probe comparisons; not Windows whole-machine or real service acceptance. This record pins file identities, not GUI or playback.",
+  "runtimeProbe": {
+    "sourceFiles": 1142,
+    "runtimeFiles": 1122,
+    "excludedFiles": 20,
+    "sourceTreeSha256": "3d01be3560278303043d5513b4956162a397c0af91f981cfcca50a915c1528a5",
+    "runtimeTreeSha256": "1566aa5b74aeb7162ef8a316120efa2378a6b29f7f7667271a28816288d91b56",
+    "definitionSha256": "7c78d07cf96b14a6cd9ef7183640dda8ae873f29a34e6bc2007ab841f8cced6c",
+    "loadedNpmMembers": 121,
+    "cd2RpcCount": 3,
+    "messageWireCount": 6,
+    "channelzMethods": 7,
+    "orcaWireEqual": true,
+    "networkDnsAndSpawnBlocked": true
+  }
+}

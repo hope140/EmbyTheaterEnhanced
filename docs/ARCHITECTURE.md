@@ -1,8 +1,10 @@
 # 架构与维护边界
 
+Latest scoped projection: Web713 with only three newly approved unreferenced residues removed; fresh npm input remains33 complete packages/1142 files while the exact runtime projection is1122. See [selection, identities and acceptance boundaries](SCOPED_RUNTIME_PROJECTION.md).
+
 Latest scoped addition: only the native settings/cameraupload.js/.html pair leaves source/runtime; the devices administrator page and shared/touch code remain. Current Web selection is716; prior051f990 and its718-file selection remain historical. See [evidence and regression boundary](MOBILE_CAMERA_SETTINGS_RETIREMENT.md).
 
-当前活动输入已迁为 snapshot-v2：兼容39、小组件2、Web716；十七个旧正文退出当前 tree，旧 manifest/hash 和必要声明保留。Web 根路径保持，版本由 manifest 明示；app/index 的旧插件/图片引用已在 v2 输入中退役；本次 app 仅再删除已注释的相机设置路由。完整中文维护源为 src/localization/mpvplayer/zh-CN.json，保留24项继承译文和13项选定修订。见[迁移合同](SNAPSHOT_V2_MIGRATION.md)。下方先前“正文保留/仅评估”记录描述迁移前阶段。
+当前活动输入已迁为 snapshot-v2：兼容39、小组件2、Web713；二十个旧正文退出当前 tree，旧 manifest/hash 和必要声明保留。Web 根路径保持，版本由 manifest 明示；app/index 的旧插件/图片引用已在 v2 输入中退役；本次 app 仅再删除已注释的相机设置路由。完整中文维护源为 src/localization/mpvplayer/zh-CN.json，保留24项继承译文和13项选定修订。见[迁移合同](SNAPSHOT_V2_MIGRATION.md)。下方先前“正文保留/仅评估”记录描述迁移前阶段。
 
 
 旧 themes/logo.png 不再进入新 runtime；生产 index 继续使用既有 startup.svg，标题/屏保图保持。原 PNG/原 index 仍在冻结输入，完整来源树移除另需快照迁移；见[退役合同](LEGACY_RESOURCE_RETIREMENT.md)。

@@ -1,15 +1,15 @@
-# 17 项旧资源用途与发布选择
+# 20 项旧正文用途与发布选择
 
-Current v2 update: seventeen reviewed old bodies are removed from the current tree: fifteen retired resources and two maintained replacements. Active counts are39/2/716. The native camera settings pair is the latest narrow addition; [its desktop-usefulness and server-page regression evidence](MOBILE_CAMERA_SETTINGS_RETIREMENT.md) stays separate from the prior051f990 successful check. Original manifests/hashes and necessary declarations remain. Earlier statements below describe preceding stages.
+Current v2 update: twenty reviewed old bodies are removed from the current tree: eighteen retired resources and two maintained replacements. Active counts are39/2/713. The latest Web/npm scope is described in [the runtime projection contract](SCOPED_RUNTIME_PROJECTION.md); [its desktop-usefulness and server-page regression evidence](MOBILE_CAMERA_SETTINGS_RETIREMENT.md) stays separate from the prior051f990 successful check. Original manifests/hashes and necessary declarations remain. Earlier statements below describe preceding stages.
 
 
-本候选从 `main` 的 `6fee412ad68934d0194303916cfe346e6254a228` 独立开展，处理初始十四项、追加的一张旧启动 logo 及两份移动端相机设置页。15 项不再进入**新构建的 runtime/安装包**，2 项功能保留并由维护层生成；profile 中实际生效的 CEC 标记继续独立创建。没有修改产品版本、v0.3.16 发行源码、Tag、Release 或附件；没有合并 main。ApiClient/toast 已由合入 main 的 PR67 维护，本 PR 保留其最终字节和行为。
+本候选从 `main` 的 `6fee412ad68934d0194303916cfe346e6254a228` 独立开展，处理初始十四项、追加的一张旧启动 logo、两份移动端相机设置页及三份无引用 Web 残留。18 项不再进入**新构建的 runtime/安装包**，2 项功能保留并由维护层生成；profile 中实际生效的 CEC 标记继续独立创建。没有修改产品版本、v0.3.16 发行源码、Tag、Release 或附件；没有合并 main。ApiClient/toast 已由合入 main 的 PR67 维护，本 PR 保留其最终字节和行为。
 
-初期按只读快照规则仅做发布剥离；随后明确批准新快照迁移，现已将这十七个旧正文移出当前 tree。v1 的精确 manifest/hash 及旧 Git/tag 保留，活动 v2 严格校验其余资源与两个维护输出。用途退役和正文移除都不构成全部来源/许可已解决的证据。
+初期按只读快照规则仅做发布剥离；随后明确批准新快照迁移，现已将这二十个旧正文移出当前 tree。v1 的精确 manifest/hash 及旧 Git/tag 保留，活动 v2 严格校验其余资源与两个维护输出。用途退役和正文移除都不构成全部来源/许可已解决的证据。
 
 ## 逐项决定
 
-前九项路径相对 `vendor/compatibility-resources/snapshot-v1/`，第十至十三项相对 `vendor/small-runtime/snapshot-v1/`，最后四项相对 `vendor/web-snapshot/`。
+前九项路径相对 `vendor/compatibility-resources/snapshot-v1/`，第十至十三项相对 `vendor/small-runtime/snapshot-v1/`，最后七项相对 `vendor/web-snapshot/`。
 
 | 项目 | 新发布包选择 | 已核对的用途与理由 |
 | --- | --- | --- |
@@ -34,6 +34,10 @@ Current v2 update: seventeen reviewed old bodies are removed from the current tr
 | `www/settings/cameraupload.js` | 删除移动端本地设置 | 调用本地照片目录、目标服务器与仅WiFi原生上传服务；当前桌面host不声明能力，服务仅iOS/Android注册，旧设置路由已注释。共享appsettings/sync和devices服务端管理controller保持。 |
 | `www/settings/cameraupload.html` | 删除配套页面 | 仅为上述本地上传controller提供目录、服务器、WiFi及进度表单；当前桌面没有有效注册入口。删除后设置路径无悬空导入，devices/cameraupload.html管理员路由、配置API及普通设置路由由独立mock回归保留。 |
 
+| `www/components/directorybrowser/directorybrowser.css` | 删除无引用旧样式 | 活动目录选择器使用共享列表/表单样式与现有布局类，不加载此文件，两个旧选择器已无对应标记；目录选择器 JS 保留。 |
+| `www/modules/emby-apiclient/appstorage-cache.js` | 删除未选中适配器 | 实际初始化仅选择 localStorage 或 memory，winjs 原生分支保留；不清理任何已有浏览器存储。 |
+| `www/serviceworker-app.js` | 删除未加载模块 | 实际 loader 注册的是保留的空 serviceworker.js，没有导入此旧 worker 应用模块；不删除 worker 注册入口或其他 serviceworker 模块。 |
+
 这里区分了“还有历史手工用途”和“当前受支持功能”。两份 BAT 及其配套资源作为一组旧手工工具退役，不能把这一变化描述为原来完全没有功能。新包不再附送背景模糊覆盖工具、全局字体/播放器预设和旧清账户/权限修复工具；该可选插件的 CSS/JS 配置消费不再提供；普通 CSS、主题、播放器字幕选择与 Native 播放链保持，不读取或删除旧 localStorage。
 
 ## 入口与依赖核对
@@ -46,17 +50,17 @@ Host 参考仅使用仓库既有固定引用 [708fadc](https://github.com/MediaB
 
 ## 装配、哈希与通知
 
-原兼容48项与小组件4项的 manifest 原字节、每项记录及 treeSha256 保留并校验，不再要求旧正文存在。v2 按明确差值校验39项兼容资源和两个维护输出；活动输入不得缺失、篡改或夹入额外文件。输出只选 39 项兼容资源、2 项小资源和 716 项 Web 基底资源；组件运行时验证及最终 runtime 排除合同拒绝被重新放回的旧文件。plan、装配结果与 source-provenance 同时记录完整输入身份、实际 runtime 数量/字节/树哈希及排除项，避免用输入数量冒充实际分发数量。
+原兼容48项与小组件4项的 manifest 原字节、每项记录及 treeSha256 保留并校验，不再要求旧正文存在。v2 按明确差值校验39项兼容资源和两个维护输出；活动输入不得缺失、篡改或夹入额外文件。输出只选 39 项兼容资源、2 项小资源和 713 项 Web 基底资源；组件运行时验证及最终 runtime 排除合同拒绝被重新放回的旧文件。plan、装配结果与 source-provenance 同时记录完整输入身份、实际 runtime 数量/字节/树哈希及排除项，避免用输入数量冒充实际分发数量。
 
 | 组件 | 新 runtime 文件/字节 | 新 runtime tree SHA256 |
 | --- | --- | --- |
 | compatibility-resources | 39 / 2,391,214 | `ca74d8b1bddeacc8f8e5a271ac75ad43301328f0e81be8cb350ea84110ca9ea4` |
 | small-runtime | 2 / 3,330 | `7d3ee238ca2be25533b2e28d31e64ba0c179c5a064ed7091b00c71557120ced2` |
-| web-snapshot 基底 | 716 / 21,965,013 | `072fc2012f271430b00881a8f16066598b2125e575ee66d6e420c76a09baa2b6` |
+| web-snapshot 基底 | 713 / 21,962,068 | `794e8a8f2a214fec70124eeade77b30242b5e0b000951bb744477b63a1ee454e` |
 
 根 LICENSE、THIRD_PARTY_NOTICES、SOURCE_MATERIALS、LICENSING、Adobe/OFL 记录及剩余 shader 内嵌 MIT 头保持；原始 notice 文本仍存档。字体退出 runtime 不代表源码存档中的字体许可事实被消除。其它仍分发的 Web、翻译、配置、shader、libmpv、Host 等材料仍按各自现有合同和未闭合项记录，不宣布“所有遗留来源/许可已解决”。
 
-发布资源集合少 13 个文件。同一生产变换下退役业务 payload 减少 26,968,863 bytes：此前十一项 26,963,353 bytes，加上原 CustomCssJS 生成模块 5,455 bytes 及 app.js 注册行 55 bytes；随后默认 XML 增加 102 bytes、选定译文减少 606 bytes，再剥离旧启动 PNG 的 32,892 bytes 后，原阶段业务 payload 净减少 27,002,259 bytes；追加相机设置两文件及其674-byte非执行注释路由后，当前净减少27,009,333 bytes；来源/provenance/通知文件的变动另计。Web 基底少复制的是原始 4,548 bytes，不能将它当作旧生成模块大小。未声称最终安装器压缩体积，十五个旧正文现已退出当前 Git tree，仍使用的历史资源和必要声明保留，不能把有限范围移除称作源码全部清空。旧安装目录没有新增迁移删除逻辑；用户 storage 和 profile CEC 标记均保持。
+发布资源集合少 13 个文件。同一生产变换下退役业务 payload 减少 26,968,863 bytes：此前十一项 26,963,353 bytes，加上原 CustomCssJS 生成模块 5,455 bytes 及 app.js 注册行 55 bytes；随后默认 XML 增加 102 bytes、选定译文减少 606 bytes，再剥离旧启动 PNG 的 32,892 bytes 后，原阶段业务 payload 净减少 27,002,259 bytes；追加相机设置两文件及其674-byte非执行注释路由后，该阶段净减少27,009,333 bytes；再移除三份 Web 残留和二十份 npm 产物后，当前净减少27,042,818 bytes；来源/provenance/通知文件的变动另计。Web 基底少复制的是原始 4,548 bytes，不能将它当作旧生成模块大小。未声称最终安装器压缩体积，二十个旧正文现已退出当前 Git tree，仍使用的历史资源和必要声明保留，不能把有限范围移除称作源码全部清空。旧安装目录没有新增迁移删除逻辑；用户 storage 和 profile CEC 标记均保持。
 
 ## 复验方法与证据边界
 

@@ -3,11 +3,11 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const root=path.resolve(__dirname,'..'),web=require('../tools/web-snapshot-input.cjs');
 const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
 const record=JSON.parse(fs.readFileSync(path.join(root,'docs/evidence/legacy-snapshot-v2.json')));
-test('exactly seventeen reviewed old bodies leave the current tree and all three historical manifests retain exact bytes',()=>{
-    assert.equal(record.removedOldBodies.length,17);assert.deepEqual(record.removedOldBodies.reduce((m,e)=>(m[e.component]=(m[e.component]||0)+1,m),{}),{'compatibility-resources':9,'small-runtime':4,'web-snapshot':4});
+test('exactly twenty reviewed old bodies leave the current tree and all three historical manifests retain exact bytes',()=>{
+    assert.equal(record.removedOldBodies.length,20);assert.deepEqual(record.removedOldBodies.reduce((m,e)=>(m[e.component]=(m[e.component]||0)+1,m),{}),{'compatibility-resources':9,'small-runtime':4,'web-snapshot':7});
     const oldNonempty=new Set(record.removedOldBodies.filter(x=>x.size).map(x=>x.sha256));
     for(const entry of record.removedOldBodies)assert.equal(fs.existsSync(path.join(root,entry.previousPath)),false,entry.previousPath);
-    for(const [name,count]of Object.entries({'compatibility-resources':39,'small-runtime':2,'web-snapshot':716})){
+    for(const [name,count]of Object.entries({'compatibility-resources':39,'small-runtime':2,'web-snapshot':713})){
         const input=require('../tools/'+name+'-input.cjs'),manifest=input.load(root),previous=record.components[name];
         assert.equal(manifest.version,'snapshot-v2');assert.equal(manifest.fileCount,count);assert.equal(input.validate(root).status,'passed');assert.deepEqual(input.validate(root).migration,manifest.migration);
         assert.equal(sha(fs.readFileSync(path.join(root,previous.historicalManifestPath))),previous.historicalManifestSha256);

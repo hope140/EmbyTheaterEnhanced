@@ -1,5 +1,7 @@
 # Retired native camera-upload settings page
 
+Historical scope note: the716-file/17-body/807–922 counts below describe this camera-pair stage. The later approved three Web residues change the current selection to713/20-body/804–919; the separate20 npm runtime exclusions retain complete source inputs. See [current projection](SCOPED_RUNTIME_PROJECTION.md).
+
 The unmerged PR69 snapshot-v2 selection additionally omits `www/settings/cameraupload.js` and `www/settings/cameraupload.html` from both the current source tree and newly assembled runtime. Their 4814/1586-byte historical identities remain in the unchanged v1 manifest and Git history. The prior `051f990` candidate and its successful [Windows CI39765270391](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/39765270391) remain distinct historical evidence; they do not cover this addition.
 
 The removed controller configures local photo folders, upload destination servers, WiFi-only behavior and native progress updates through the `cameraUpload` service. The fixed app.js registers that service only for iOS/Android. The current Electron apphost does not advertise cameraupload, and the settings route was already commented out. This is the desktop-usefulness decision for these two files, not a claim that every camera-upload-related property or service has no consumer.

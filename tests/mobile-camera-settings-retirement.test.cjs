@@ -84,7 +84,7 @@ test('active camera pair is absent while server devices files retain exact previ
 test('production Web assembly and overlays contain no dangling mobile settings imports',t=>{
     fs.mkdirSync(path.join(root,'dist'),{recursive:true});const runtime=fs.mkdtempSync(path.join(root,'dist','mobile-camera-retirement-'));
     t.after(()=>fs.rmSync(runtime,{recursive:true}));
-    const report=web.assemble(root,runtime);assert.equal(report.fileCount,716);assert.equal(report.runtimeFileCount,716);
+    const report=web.assemble(root,runtime);assert.equal(report.fileCount,713);assert.equal(report.runtimeFileCount,713);
     overlays.apply(root,runtime);assert.equal(overlays.inspect(root,runtime).status,'passed');
     for(const name of removed)assert.equal(fs.existsSync(path.join(runtime,'electronapp',name)),false);
     const result=fs.readFileSync(path.join(runtime,'electronapp/www/app.js'),'utf8');assert.doesNotMatch(result,/settings\/cameraupload/);

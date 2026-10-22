@@ -1,14 +1,14 @@
 # Legacy snapshot v2 selection
 
-This migration removes the seventeen specifically reviewed old files from the current source tree: nine compatibility resources, all four old small resources, and CustomCssJS.js plus themes/logo.png, followed by the native-only settings/cameraupload.js/.html pair. Fifteen are retired; the old configuration and Chinese localization are replaced by the already approved maintained outputs. No other resource is retired. [The exact seventeen old paths, sizes and hashes](evidence/legacy-snapshot-v2.json) are recorded separately.
+This migration removes the twenty specifically reviewed old files from the current source tree: nine compatibility resources, all four old small resources, and CustomCssJS.js plus themes/logo.png, followed by the native-only settings/cameraupload.js/.html pair. Eighteen are retired; the old configuration and Chinese localization are replaced by the already approved maintained outputs. The latest approved addition retires only directorybrowser.css, appstorage-cache.js and serviceworker-app.js; the separate npm projection retains its full source input. [The exact twenty old paths, sizes and hashes](evidence/legacy-snapshot-v2.json) are recorded separately.
 
 | Component | v1 | Active v2 | Current input root |
 |---|---:|---:|---|
 | compatibility-resources | 48 | 39 | vendor/compatibility-resources/snapshot-v2 |
 | small-runtime | 4 | 2 | vendor/small-runtime/snapshot-v2 |
-| Web | 720 | 716 | vendor/web-snapshot |
+| Web | 720 | 713 | vendor/web-snapshot |
 
-Web retains its established root to avoid changing unrelated source/provenance consumers; its manifest explicitly identifies snapshot-v2. The historical v1 manifest is separate and the loader rejects the v1 version. The two historical Web user-patch carriers remain byte-identical and outside the 716 resource count; retiring other material is outside this selection.
+Web retains its established root to avoid changing unrelated source/provenance consumers; its manifest explicitly identifies snapshot-v2. The historical v1 manifest is separate and the loader rejects the v1 version. The two historical Web user-patch carriers remain byte-identical and outside the 713 resource count; retiring other material is outside this selection.
 
 ## Exact identities and necessary reference changes
 
@@ -22,7 +22,7 @@ Some retired backup CSS has identical bytes to a stylesheet that already existed
 
 ## Source, notices and history
 
-All seventeen old paths are absent from the current tree. The two native camera settings files, raw old XML, old Chinese JSON, third-party plugin, font, batch files, preset/config, notice, packaged CEC marker and old startup PNG are not carried in a second active archive directory. The old bodies remain available through existing commits/tags; Git history is not rewritten. The change does not reclaim older clones, source ZIPs or installers or shrink historical Git objects.
+All twenty old paths are absent from the current tree. The three unreferenced Web residues, two native camera settings files, raw old XML, old Chinese JSON, third-party plugin, font, batch files, preset/config, notice, packaged CEC marker and old startup PNG are not carried in a second active archive directory. The old bodies remain available through existing commits/tags; Git history is not rewritten. The change does not reclaim older clones, source ZIPs or installers or shrink historical Git objects.
 
 Root LICENSE, THIRD_PARTY_NOTICES, source/notice records, Adobe/OFL and existing font naming/copyright boundaries, retained shader MIT headers, the historical notice restriction and the complete CustomCssJS GPLv3 record stay preserved. The old startup image's observed lettering included “by David & NoisyX”; that observation and unresolved authorship/permission boundary are retained without asserting a new grant. Removing these resources is not a whole-project license-clearance conclusion; other inherited source questions remain separate.
 
@@ -30,4 +30,4 @@ The v0.3.16 commit/tag/release/attachments are unchanged. Its original tools/man
 
 ## Verification boundary
 
-Tests assert the exact 39/2/718 active selections, all seventeen absent old paths, fixed historical manifest hashes, individual inherited translation values, generated XML contract, no obsolete Web consumers, strict negative migration cases and clean runtime material equivalence. The material oracle compares every path/size/hash independently using the active manifests and approved maintained output identities. Base/intermediate and source/provenance checks are distinct from GUI, login, playback and installer acceptance. This change does not trigger an installer build or publication.
+Tests assert the exact 39/2/713 active selections, all twenty absent old paths, fixed historical manifest hashes, individual inherited translation values, generated XML contract, no obsolete Web consumers, strict negative migration cases and clean runtime material equivalence. The material oracle compares every path/size/hash independently using the active manifests and approved maintained output identities. Base/intermediate and source/provenance checks are distinct from GUI, login, playback and installer acceptance. This change does not trigger an installer build or publication.

@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "inputRoot": "vendor/web-snapshot",
-  "fileCount": 716,
-  "bytes": 21965013,
-  "treeSha256": "072fc2012f271430b00881a8f16066598b2125e575ee66d6e420c76a09baa2b6",
+  "fileCount": 713,
+  "bytes": 21962068,
+  "treeSha256": "794e8a8f2a214fec70124eeade77b30242b5e0b000951bb744477b63a1ee454e",
   "origin": {
     "type": "frozen-historical-web-snapshot",
     "sourceManifest": "vendor/runtime-manifest.json",
@@ -157,14 +157,6 @@
       "size": 1861,
       "sha256": "f05fe1aa6b16c5418c0283ce11524c7266a5d0c218b3d3f20355c9806141756e",
       "originalPath": "electronapp/www/components/activitylog.js",
-      "origin": "historical-snapshot-upstream-version-unresolved",
-      "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
-    },
-    {
-      "path": "www/components/directorybrowser/directorybrowser.css",
-      "size": 105,
-      "sha256": "124ba078fd930fd0bb7835465e58cfaa671f6e131dce2cf417fd037c50b8cebb",
-      "originalPath": "electronapp/www/components/directorybrowser/directorybrowser.css",
       "origin": "historical-snapshot-upstream-version-unresolved",
       "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
     },
@@ -1877,14 +1869,6 @@
       "size": 32812,
       "sha256": "53d95de33c8c3ca4cdfa4f0491774b73638ec98f3c2abf71d0eb318a863e2f81",
       "originalPath": "electronapp/www/modules/emby-apiclient/apiclientex.js",
-      "origin": "historical-snapshot-upstream-version-unresolved",
-      "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
-    },
-    {
-      "path": "www/modules/emby-apiclient/appstorage-cache.js",
-      "size": 1155,
-      "sha256": "74f671613b0478c523667feb3889a3ff417fc044ab1bde5904ff7374bc1cfdcc",
-      "originalPath": "electronapp/www/modules/emby-apiclient/appstorage-cache.js",
       "origin": "historical-snapshot-upstream-version-unresolved",
       "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
     },
@@ -4573,14 +4557,6 @@
       "size": 2026,
       "sha256": "eb8e1955e7703c6893b0a3b01566cd3f5ce362fa1a9a2a1f1249a4d754433b82",
       "originalPath": "electronapp/www/server/notifications/notificationsettings.js",
-      "origin": "historical-snapshot-upstream-version-unresolved",
-      "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
-    },
-    {
-      "path": "www/serviceworker-app.js",
-      "size": 1685,
-      "sha256": "adb28561d0e263fe2b6530263aed218d67ff1bfeb1070f2015c6297eb375290f",
-      "originalPath": "electronapp/www/serviceworker-app.js",
       "origin": "historical-snapshot-upstream-version-unresolved",
       "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
     },

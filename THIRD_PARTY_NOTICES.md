@@ -1,6 +1,8 @@
 # Third-party notices
 
-Snapshot-v2 update: the seventeen reviewed old bodies are absent from the current source tree. Their original manifests/hashes, necessary notice texts and existing Git history remain preserved; earlier statements that the original snapshot bodies remain current describe the prior stage. The retired logo contained the observed lettering “by David & NoisyX”; source/permission scope remains unresolved. This removal does not establish new authorship or whole-project license clearance. See docs/SNAPSHOT_V2_MIGRATION.md.
+The runtime-only npm projection preserves all locked source/recovery inputs and35 identified LICENSE/NOTICE/COPYING files. The three additional retired Web files have no in-file notice header; necessary existing notices and historical identities remain. See docs/SCOPED_RUNTIME_PROJECTION.md.
+
+Snapshot-v2 update: the twenty reviewed old bodies are absent from the current source tree. Their original manifests/hashes, necessary notice texts and existing Git history remain preserved; earlier statements that the original snapshot bodies remain current describe the prior stage. The retired logo contained the observed lettering “by David & NoisyX”; source/permission scope remains unresolved. This removal does not establish new authorship or whole-project license clearance. See docs/SNAPSHOT_V2_MIGRATION.md.
 
 
 Small-resource maintenance: new output uses ETE maintained typed configuration defaults and thirteen selected Chinese player text revisions; the original five default values and twenty-four unchanged Chinese strings retain their existing historical source boundaries. Historical identities, manifests and existing notices remain preserved; the removed old bodies remain in their old Git trees. This is not an assertion that ETE authored the old files or that all inherited localization rights are established. See docs/MAINTAINED_SMALL_RUNTIME.md and docs/SMALL_RUNTIME_INPUT.md.

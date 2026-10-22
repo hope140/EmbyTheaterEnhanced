@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "previousCommit": "bb0ed4d99fd36b063e8b30cddcda035afdf3e7eb",
-  "scope": "15 retired resources plus 2 replaced small resources; previous 051f990 selection extended only by the mobile camera settings pair",
+  "scope": "18 retired resources plus 2 replaced small resources; npm runtime projection is separate and does not remove npm source inputs",
   "components": {
     "compatibility-resources": {
       "historicalManifestPath": "vendor/snapshot-history/compatibility-resources-v1-manifest.json",
@@ -23,9 +23,9 @@
       "historicalManifestPath": "vendor/snapshot-history/web-snapshot-v1-manifest.json",
       "historicalManifestSha256": "1545509de092b6646840d8bedff85eceb631d9c1533fab5f3937af363e2a1b8a",
       "previousCount": 720,
-      "activeCount": 716,
-      "activeBytes": 21965013,
-      "activeTreeSha256": "072fc2012f271430b00881a8f16066598b2125e575ee66d6e420c76a09baa2b6"
+      "activeCount": 713,
+      "activeBytes": 21962068,
+      "activeTreeSha256": "794e8a8f2a214fec70124eeade77b30242b5e0b000951bb744477b63a1ee454e"
     }
   },
   "removedOldBodies": [
@@ -130,9 +130,27 @@
       "previousPath": "vendor/web-snapshot/www/settings/cameraupload.html",
       "size": 1586,
       "sha256": "35883b422fe36e31323463ecd413265342e8b4f82ab6919e73574a27728a0b3e"
+    },
+    {
+      "component": "web-snapshot",
+      "previousPath": "vendor/web-snapshot/www/components/directorybrowser/directorybrowser.css",
+      "size": 105,
+      "sha256": "124ba078fd930fd0bb7835465e58cfaa671f6e131dce2cf417fd037c50b8cebb"
+    },
+    {
+      "component": "web-snapshot",
+      "previousPath": "vendor/web-snapshot/www/modules/emby-apiclient/appstorage-cache.js",
+      "size": 1155,
+      "sha256": "74f671613b0478c523667feb3889a3ff417fc044ab1bde5904ff7374bc1cfdcc"
+    },
+    {
+      "component": "web-snapshot",
+      "previousPath": "vendor/web-snapshot/www/serviceworker-app.js",
+      "size": 1685,
+      "sha256": "adb28561d0e263fe2b6530263aed218d67ff1bfeb1070f2015c6297eb375290f"
     }
   ],
-  "oldBodyBytes": 27011027,
+  "oldBodyBytes": 27013972,
   "webReferenceRewrites": [
     {
       "path": "www/app.js",
@@ -182,6 +200,33 @@
         "www/settings/cameraupload.html"
       ],
       "reason": "Mobile native photo-folder/server/WiFi upload settings; no current desktop capability/service/route; devices server administration remains"
+    },
+    {
+      "previousSelectionCommit": "75a350cebf47980a9eb7af187c3a33af3e348a8f",
+      "previousRemovedCount": 17,
+      "previousWebCount": 716,
+      "previousWindowsCI": {
+        "runId": 39777666484,
+        "tests": 1380,
+        "pass": 1380,
+        "fail": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "conclusion": "success"
+      },
+      "previousPushCI": {
+        "runId": 39777659650,
+        "conclusion": "cancelled",
+        "pass": 1327,
+        "fail": 0,
+        "cancelled": 6
+      },
+      "additionalRetiredPaths": [
+        "www/components/directorybrowser/directorybrowser.css",
+        "www/modules/emby-apiclient/appstorage-cache.js",
+        "www/serviceworker-app.js"
+      ],
+      "reason": "Unreferenced directory picker legacy CSS, unused CacheStorage adapter and unused service worker application; active directory picker, localStorage/memory and registered empty worker remain"
     }
   ]
 }
