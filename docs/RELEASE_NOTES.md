@@ -11,7 +11,7 @@ Windows x64 **Pre-release 测试版**，请手动下载。当前正式版为 [v0
 
 此前组合测试包有有限安装、浏览、播放、退出及重开登录态保持的验收反馈；这不代表本次 0.3.16 安装包已做 GUI、实际播放或系统安装验收。云端验证范围及准确来源见[本版发行核验](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/V0316_RELEASE_VERIFICATION.md)。
 
-STRM/115 内嵌字幕和音轨切换延迟、多显示器目标选择及显示恢复等既有限制保持。可选 Windows FFI 系统媒体试验仍未完成普通构建接线。更多内容见[已知问题](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/KNOWN_ISSUES.md)。
+音轨、字幕切换延迟按长期未再出现的使用反馈记为已解决。多显示器目标选择及显示恢复等既有限制保持。可选 Windows FFI 系统媒体试验仍未完成普通构建接线。更多内容见[已知问题](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/KNOWN_ISSUES.md)。
 
 ## 下载安装
 
