@@ -82,9 +82,9 @@ function createFixture(root) {
             componentPatches.push({path:contract.inputPath.replace('vendor/web-snapshot/',''),size:bytes.length,sha256:hash(bytes)});
         }
     }
-    writeFile(path.join(root,webSnapshot.MANIFEST_PATH),JSON.stringify({schemaVersion:1,inputRoot:webSnapshot.INPUT_ROOT,
+    writeFile(path.join(root,webSnapshot.MANIFEST_PATH),JSON.stringify(require('./helpers/snapshot-history-fixture.cjs').attach(root,'web-snapshot',{schemaVersion:1,inputRoot:webSnapshot.INPUT_ROOT,
         fileCount:componentFiles.length,bytes:componentFiles.reduce((n,f)=>n+f.size,0),treeSha256:webSnapshot.treeHash(componentFiles),
-        files:componentFiles,userPatches:componentPatches}));
+        files:componentFiles,userPatches:componentPatches})));
     const hostBytes=Buffer.from('official-host-fixture\n');
     const hostFiles=[{path:'Emby.Theater.exe',size:hostBytes.length,sha256:hash(hostBytes)}];
     writeFile(path.join(root,windowsHost.INPUT_ROOT,'Emby.Theater.exe'),hostBytes);
@@ -183,7 +183,7 @@ function createFixture(root) {
     assert.equal(init.status, 0, init.stderr);
     childProcess.spawnSync('git', ['-C', root, 'config', 'user.name', 'ETE Test'], {encoding: 'utf8'});
     childProcess.spawnSync('git', ['-C', root, 'config', 'user.email', 'ete-test@example.invalid'], {encoding: 'utf8'});
-    const add = childProcess.spawnSync('git', ['-C', root, 'add', smallRuntimeInput.DEFAULT_SOURCE_PATH, smallRuntimeInput.TRANSLATION_SOURCE_PATH, 'src/electronapp/some-normal-file.js', 'src/electronapp/enhanced/startup.svg', 'tools', 'package-lock.json', 'vendor/runtime-manifest.json', 'vendor/electron-runtime-manifest.json',webSnapshot.MANIFEST_PATH,windowsHost.MANIFEST_PATH,inheritedNpm.MANIFEST_PATH,templates.MANIFEST_PATH,libmpvInput.MANIFEST_PATH,compatibilityInput.MANIFEST_PATH,smallRuntimeInput.MANIFEST_PATH,modelInput.MANIFEST_PATH], {encoding: 'utf8'});
+    const add = childProcess.spawnSync('git', ['-C', root, 'add', 'vendor/snapshot-history', smallRuntimeInput.DEFAULT_SOURCE_PATH, smallRuntimeInput.TRANSLATION_SOURCE_PATH, 'src/electronapp/some-normal-file.js', 'src/electronapp/enhanced/startup.svg', 'tools', 'package-lock.json', 'vendor/runtime-manifest.json', 'vendor/electron-runtime-manifest.json',webSnapshot.MANIFEST_PATH,windowsHost.MANIFEST_PATH,inheritedNpm.MANIFEST_PATH,templates.MANIFEST_PATH,libmpvInput.MANIFEST_PATH,compatibilityInput.MANIFEST_PATH,smallRuntimeInput.MANIFEST_PATH,modelInput.MANIFEST_PATH], {encoding: 'utf8'});
     assert.equal(add.status, 0, add.stderr);
     const commit = childProcess.spawnSync('git', ['-C', root, 'commit', '-m', 'fixture'], {encoding: 'utf8'});
     assert.equal(commit.status, 0, commit.stderr);

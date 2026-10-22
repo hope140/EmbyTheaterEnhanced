@@ -62,7 +62,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         basePath: 'vendor/web-snapshot/www/index.html',
         inputPath: null,
         runtimePath: 'electronapp/www/index.html',
-        expectedBaseSha256: 'CA05A9A26DE19E16BB89C3595D29C95E3A56876439E968E3F464B218A101053A',
+        expectedBaseSha256: '18F777EE20F9829F3E7E4AB53A3442E7D4BD1532689E7ECE0B874281E0BB305D',
         expectedInputSha256: null,
         expectedOutputSha256: '18F777EE20F9829F3E7E4AB53A3442E7D4BD1532689E7ECE0B874281E0BB305D',
         generatorPaths: Object.freeze([GENERATOR_PATH, STARTUP_GENERATOR_PATH])
@@ -251,7 +251,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         basePath: 'vendor/web-snapshot/www/app.js',
         inputPath: null,
         runtimePath: 'electronapp/www/app.js',
-        expectedBaseSha256: '3EF3102567458359A02E2FE8F79A8700CFE9C223347ABE5AB6ECB8BD93BE89D2',
+        expectedBaseSha256: '3492BFBE83D642F44F3F515D388F07D6EFA4968EC85CEFBCAE3635CF9362783A',
         expectedInputSha256: null,
         expectedOutputSha256: '4DEB9669058340741AB8048140C2690C3EF39494A74C451272D69D7C37F8FFE4',
         generatorPaths: Object.freeze([SEARCH_GENERATOR_PATH, GENERATOR_PATH, APP_GENERATOR_PATH, PLUGIN_GENERATOR_PATH, HOME_GENERATOR_PATH, MOVIE_GENERATOR_PATH])
@@ -321,7 +321,7 @@ function retireCustomCssJs(text) {
 function outputFor(root, contract) {
     const base = readChecked(root, contract.basePath, contract.expectedBaseSha256, 'Web overlay base');
     if (contract.id === 'videoosd-lifecycle') return {base, input: Buffer.from(videoOsdLifecycle.patchVideoOsd(base.toString('utf8')), 'utf8')};
-    if (contract.id === 'startup-index') return {base, input: Buffer.from(startup.patchStartup(base.toString('utf8')), 'utf8')};
+    if (contract.id === 'startup-index') return {base, input: base};
     if (contract.id === 'actionsheet-layout') return {base, input: Buffer.from(actionSheetLayout.patchActionSheetCss(base.toString('utf8')), 'utf8')};
     if (contract.searchTransform) return {base, input: Buffer.from(searchUi[contract.searchTransform](base.toString('utf8')), 'utf8')};
     if (contract.menuTransform) return {base, input: Buffer.from(selectCancel[contract.menuTransform](base.toString('utf8')), 'utf8')};
@@ -341,7 +341,7 @@ function outputFor(root, contract) {
         if (transformed.action !== 'patched') {
             throw new Error('Web overlay canonical transform did not patch the frozen app.js base.');
         }
-        return {base, input: Buffer.from(retireCustomCssJs(searchUi.patchApp(movieBrowser.patchApp(serverHome.patchApp(pluginSettings.patchApp(transformed.text))))), 'utf8')};
+        return {base, input: Buffer.from(searchUi.patchApp(movieBrowser.patchApp(serverHome.patchApp(pluginSettings.patchApp(transformed.text)))), 'utf8')};
     }
     if (contract.id === 'server-home-tab' && contract.mode === 'tracked-canonical-transform') {
         return {base, input: Buffer.from(serverHome.patchHomeTab(base.toString('utf8')), 'utf8')};

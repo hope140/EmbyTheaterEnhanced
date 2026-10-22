@@ -14,6 +14,7 @@ function fixture(t) {
     const cold = path.join(root, 'cold');
     fs.mkdirSync(path.join(cold, 'vendor'), {recursive: true});
     fs.copyFileSync(path.join(root, input.MANIFEST_PATH), path.join(cold, input.MANIFEST_PATH));
+    require('./helpers/snapshot-history-fixture.cjs').copy(root,cold,manifest);
     for (const name of [input.DEFAULT_SOURCE_PATH, input.TRANSLATION_SOURCE_PATH]) {
         fs.mkdirSync(path.dirname(path.join(cold, name)), {recursive: true});
         fs.copyFileSync(path.join(root, name), path.join(cold, name));
@@ -21,10 +22,10 @@ function fixture(t) {
     return {root, manifest, source, cold, runtime: path.join(cold, 'dist/candidate')};
 }
 
-test('four-file cold restoration generates approved configuration/localization and excludes Model', t => {
+test('two-file v2 cold restoration generates approved configuration/localization and excludes Model', t => {
     const f = fixture(t);
     fs.writeFileSync(path.join(f.source, 'MediaBrowser.Model.dll'), 'unrelated Model must not be imported');
-    assert.equal(input.importSnapshot(f.cold, f.source).fileCount, 4);
+    assert.equal(input.importSnapshot(f.cold, f.source).fileCount, 2);
     assert.equal(fs.existsSync(path.join(f.cold, 'vendor/carnival')), false);
     assert.equal(fs.existsSync(path.join(f.cold, input.INPUT_ROOT, 'MediaBrowser.Model.dll')), false);
     fs.mkdirSync(f.runtime, {recursive: true});
@@ -39,7 +40,7 @@ test('four-file cold restoration generates approved configuration/localization a
         assert.deepEqual(fs.readFileSync(path.join(f.runtime, entry.path)), expected);
     }
     assert.equal(fs.existsSync(path.join(f.runtime, 'cec-driver/cancel')), false);
-    assert.equal(input.validateRuntime(f.cold, f.runtime).fileCount, 4);
+    assert.equal(input.validateRuntime(f.cold, f.runtime).fileCount, 2);
     assert.equal(input.validateRuntime(f.cold, f.runtime).runtimeFileCount, 2);
     assert.equal(fs.readFileSync(path.join(f.runtime, 'MediaBrowser.Model.dll'), 'utf8'), 'unchanged Model');
     assert.throws(() => input.assemble(f.cold, f.runtime), /already exists/);
@@ -56,14 +57,14 @@ for (const mutation of ['changed', 'missing', 'extra']) {
     });
 }
 
-test('a bad fourth source file fails before cold destination creation', t => {
+test('a bad final source file fails before cold destination creation', t => {
     const f = fixture(t), last = f.manifest.files.at(-1);
     fs.appendFileSync(path.join(f.source, last.path), 'changed');
     assert.throws(() => input.importSnapshot(f.cold, f.source), /import identity/);
     assert.equal(fs.existsSync(path.join(f.cold, input.INPUT_ROOT)), false);
 });
 
-test('manifest requires the exact four paths and excludes Model, aliases and traversal', t => {
+test('manifest requires the exact two paths and excludes Model, aliases and traversal', t => {
     const f = fixture(t);
     for (const name of ['MediaBrowser.Model.dll', '../outside', 'config/../outside', 'CONFIG/system.xml']) {
         const manifest = structuredClone(f.manifest);
@@ -89,9 +90,9 @@ test('redirects, arbitrary output directories and runtime configuration tamperin
     assert.throws(() => input.validate(f.root), /link|redirect/);
 });
 
-test('retired notice bytes remain mandatory snapshot input', t => {
+test('retired notice history remains mandatory without its body', t => {
     const f = fixture(t);
-    fs.appendFileSync(path.join(f.source, '\u6ce8\u610f\u4e8b\u9879.txt'), 'changed');
-    assert.throws(() => input.assemble(f.root, path.join(f.root, 'dist/candidate')), /snapshot identity/);
+    fs.appendFileSync(path.join(f.root,f.manifest.migration.historicalManifestPath),'changed');
+    assert.throws(() => input.assemble(f.root, path.join(f.root, 'dist/candidate')), /Historical snapshot manifest identity/);
     assert.equal(fs.existsSync(path.join(f.root, 'dist/candidate')), false);
 });

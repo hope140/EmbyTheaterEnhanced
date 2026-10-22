@@ -16,6 +16,7 @@ function fixture(t) {
     for (const [name,bytes] of data) { const file=path.join(root,web.INPUT_ROOT,name);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,bytes); }
     const files=entries.filter(e=>e.path.startsWith('www/'));
     const manifest={schemaVersion:1,inputRoot:web.INPUT_ROOT,fileCount:files.length,bytes:files.reduce((n,f)=>n+f.size,0),treeSha256:web.treeHash(files),files,userPatches:entries.filter(e=>!files.includes(e))};
+    require('./helpers/snapshot-history-fixture.cjs').attach(root,'web-snapshot',manifest);
     fs.writeFileSync(path.join(root,web.MANIFEST_PATH),JSON.stringify(manifest));
     return {root,data,manifest,output:path.join(root,'dist/component')};
 }
@@ -90,7 +91,7 @@ test('independent Web restoration preflights user patches and extra files before
     assert.throws(()=>web.restoreSnapshot(f.root,saved),/snapshot input/);assert.equal(fs.existsSync(input),false);
 });
 
-test('retired optional Web source remains required and hash checked before assembly writes', t => {
+test('retired optional Web source cannot be reintroduced into the active v2 manifest', t => {
     const f = fixture(t), name = 'www/modules/CustomCssJS.js', bytes = Buffer.from('synthetic archived module');
     const file = path.join(f.root, web.INPUT_ROOT, name);
     fs.mkdirSync(path.dirname(file), {recursive: true}); fs.writeFileSync(file, bytes);
@@ -99,6 +100,6 @@ test('retired optional Web source remains required and hash checked before assem
     f.manifest.treeSha256 = web.treeHash(f.manifest.files);
     fs.writeFileSync(path.join(f.root, web.MANIFEST_PATH), JSON.stringify(f.manifest));
     fs.appendFileSync(file, 'changed');
-    assert.throws(() => web.assemble(f.root, f.output), /snapshot identity/);
+    assert.throws(() => web.assemble(f.root, f.output), /Unapproved snapshot migration/);
     assert.equal(fs.existsSync(f.output), false);
 });

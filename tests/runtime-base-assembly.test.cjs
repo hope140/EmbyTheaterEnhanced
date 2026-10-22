@@ -66,7 +66,7 @@ function fixture(t) {
         'MediaBrowser.Model.dll': 'unchanged Model fixture',
         'cec-driver/cancel': '',
         'config/system.xml': '<synthetic-config autoUpdate="unchanged"/>',
-        'electronapp/plugins/mpvplayer/strings/zh-CN.json': fs.readFileSync(path.join(__dirname, '../vendor/small-runtime/snapshot-v1/electronapp/plugins/mpvplayer/strings/zh-CN.json')),
+        'electronapp/plugins/mpvplayer/strings/zh-CN.json': fs.readFileSync(path.join(__dirname, '../src/localization/mpvplayer/zh-CN.json')),
         '\u6ce8\u610f\u4e8b\u9879.txt': 'synthetic historical notice',
         'electronapp/node_modules/long/package.json': '{"name":"long","version":"3.2.0"}',
         'electronapp/node_modules/long/legacy.js': 'old dependency residue'
@@ -101,8 +101,8 @@ function fixture(t) {
     }));
     for (const item of webFiles) write(root,'vendor/web-snapshot/'+item.path,
         fs.readFileSync(path.join(vendor,item.originalPath)));
-    json(root, web.MANIFEST_PATH, {schemaVersion:1,inputRoot:web.INPUT_ROOT,files:webFiles,userPatches:[],
-        fileCount:webFiles.length,bytes:webFiles.reduce((n,f)=>n+f.size,0),treeSha256:web.treeHash(webFiles)});
+    json(root, web.MANIFEST_PATH, require('./helpers/snapshot-history-fixture.cjs').attach(root,'web-snapshot',{schemaVersion:1,inputRoot:web.INPUT_ROOT,files:webFiles,userPatches:[],
+        fileCount:webFiles.length,bytes:webFiles.reduce((n,f)=>n+f.size,0),treeSha256:web.treeHash(webFiles)}));
     const host=require('../tools/windows-host-input.cjs');
     const hostFiles=legacyFiles.filter(item=>item.path==='Emby.Theater.exe');
     for(const item of hostFiles)write(root,host.INPUT_ROOT+'/'+item.path,fs.readFileSync(path.join(vendor,item.path)));
@@ -175,7 +175,7 @@ test('plan identifies retained inputs, templates, replacements and retired files
     assert.equal(plan.historicalEntries.find(item=>item.path==='electronapp/node_modules/long/legacy.js').action,'replace');
     assert.equal(byPath.has('external/retained.glsl'),false);
     assert.equal(plan.compatibilityResources.fileCount,1);
-    assert.equal(plan.smallRuntime.fileCount,4);
+    assert.equal(plan.smallRuntime.fileCount,2);
     assert.deepEqual(plan.entries,[]);
     assert.equal(plan.modelCompatibility.fileCount,1);
     assert.equal(plan.groups.reduce((total, group) => total + group.fileCount, 0), plan.entries.length);
@@ -242,9 +242,9 @@ test('official resource whitelist replaces old XML, sync and English language in
 for (const mutation of ['changed-retained', 'extra', 'missing']) {
     test('preflight rejects ' + mutation + ' input before writing any payload', t => {
         const f = fixture(t);
-        if (mutation === 'changed-retained') write(f.root, 'vendor/compatibility-resources/snapshot-v1/external/retained.glsl', 'changed');
+        if (mutation === 'changed-retained') write(f.root, 'vendor/compatibility-resources/snapshot-v2/external/retained.glsl', 'changed');
         if (mutation === 'extra') write(f.root, 'vendor/model-compatibility/snapshot-v1/unexpected.js', 'extra');
-        if (mutation === 'missing') fs.unlinkSync(path.join(f.root,'vendor/compatibility-resources/snapshot-v1/external/retained.glsl'));
+        if (mutation === 'missing') fs.unlinkSync(path.join(f.root,'vendor/compatibility-resources/snapshot-v2/external/retained.glsl'));
         assert.throws(() => assembly.assemble(f.root, f.commit, f.runtime, f.token), /input|identity/);
         assert.deepEqual(fs.readdirSync(f.runtime), [dependencies.OWNER_FILE]);
     });
@@ -303,7 +303,7 @@ test('all four old small paths may be absent while configuration and Model remai
     const report=require('../tools/validate-build-materials.cjs').validate(f.root);
     assert.equal(report.remainingCarnivalFiles,0);
     assert.equal(report.remainingPatchFiles,0);
-    assert.equal(report.smallRuntimeInput.fileCount,4);
+    assert.equal(report.smallRuntimeInput.fileCount,2);
     assembly.assemble(f.root,f.commit,f.runtime,f.token);
     assert.equal(small.validateRuntime(f.root,f.runtime).status,'passed');
     assert.deepEqual(fs.readFileSync(path.join(f.runtime,'config/system.xml')),expectedConfig);
@@ -354,8 +354,8 @@ test('input and runtime junctions are rejected without touching their targets', 
     const external = path.join(f.root, 'external-target');
     fs.mkdirSync(external);
     write(external, 'sentinel', 'preserve');
-    fs.renameSync(path.join(f.root,'vendor/compatibility-resources/snapshot-v1/external'), path.join(f.root, 'saved-input'));
-    fs.symlinkSync(external, path.join(f.root,'vendor/compatibility-resources/snapshot-v1/external'), process.platform === 'win32' ? 'junction' : 'dir');
+    fs.renameSync(path.join(f.root,'vendor/compatibility-resources/snapshot-v2/external'), path.join(f.root, 'saved-input'));
+    fs.symlinkSync(external, path.join(f.root,'vendor/compatibility-resources/snapshot-v2/external'), process.platform === 'win32' ? 'junction' : 'dir');
     assert.throws(() => assembly.assemble(f.root, f.commit, f.runtime, f.token), /link.*redirect|symlink|junction/);
     assert.deepEqual(fs.readdirSync(f.runtime), [dependencies.OWNER_FILE]);
     const linkedRuntime = path.join(f.root, 'dist/linked');

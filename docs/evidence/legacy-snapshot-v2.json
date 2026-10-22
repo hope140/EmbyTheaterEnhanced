@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "previousCommit": "bb0ed4d99fd36b063e8b30cddcda035afdf3e7eb",
+  "scope": "13 retired resources plus 2 replaced small resources; old bodies absent from current source tree, preserved in Git history",
+  "components": {
+    "compatibility-resources": {
+      "historicalManifestPath": "vendor/snapshot-history/compatibility-resources-v1-manifest.json",
+      "historicalManifestSha256": "46f53395b12d5652a3b9d40b38ce11f1ea956319a99e2acdafae408c65447b3c",
+      "previousCount": 48,
+      "activeCount": 39,
+      "activeBytes": 2391214,
+      "activeTreeSha256": "ca74d8b1bddeacc8f8e5a271ac75ad43301328f0e81be8cb350ea84110ca9ea4"
+    },
+    "small-runtime": {
+      "historicalManifestPath": "vendor/snapshot-history/small-runtime-v1-manifest.json",
+      "historicalManifestSha256": "94a80ffca629767190350e9dcb71920089f649e7c29b038cb9552365db7ab3b0",
+      "previousCount": 4,
+      "activeCount": 2,
+      "activeBytes": 3330,
+      "activeTreeSha256": "7d3ee238ca2be25533b2e28d31e64ba0c179c5a064ed7091b00c71557120ced2"
+    },
+    "web-snapshot": {
+      "historicalManifestPath": "vendor/snapshot-history/web-snapshot-v1-manifest.json",
+      "historicalManifestSha256": "1545509de092b6646840d8bedff85eceb631d9c1533fab5f3937af363e2a1b8a",
+      "previousCount": 720,
+      "activeCount": 718,
+      "activeBytes": 21972087,
+      "activeTreeSha256": "b26cd795b6542cae6a5dc73d85736877a0bd2b8d7ac4baa51413a85dbfcb2168"
+    }
+  },
+  "removedOldBodies": [
+    {
+      "component": "compatibility-resources",
+      "previousPath": "vendor/compatibility-resources/snapshot-v1/Emby.ConfigureAndUninstall.bat",
+      "size": 11504,
+      "sha256": "ce3db8b5f498243a04b4a5699f5b6fcf8366cf70b4fad99b12192eae0fa91fca"
+    },
+    {
+      "component": "compatibility-resources",
+      "previousPath": "vendor/compatibility-resources/snapshot-v1/Emby.Dialog.bat",
+      "size": 2365,
+      "sha256": "6f243e10cfe2234be014c0c690d1918d3f1ad356846b22a63cb83cf51a223ba0"
+    },
+    {
+      "component": "compatibility-resources",
+      "previousPath": "vendor/compatibility-resources/snapshot-v1/external/Anime4K/Anime4K-off.conf",
+      "size": 4173,
+      "sha256": "8147f4dabc5e1216711be57f1252db3877924cfedd5eb51dfafdfce3c4019691"
+    },
+    {
+      "component": "compatibility-resources",
+      "previousPath": "vendor/compatibility-resources/snapshot-v1/external/emby.disable/www/modules/layout.css",
+      "size": 22403,
+      "sha256": "93fc5c8974f8f2188e6f70b002a0477911f185b361955fb2d31cfa5a49aed74f"
+    },
+    {
+      "component": "compatibility-resources",
+      "previousPath": "vendor/compatibility-resources/snapshot-v1/external/emby.disable/www/modules/themes/darkgradient/theme.css",
+      "size": 38329,
+      "sha256": "af5eb9749182e90577d64815278b7c5ddac9a729d7189dcfde22be90aaed3e1a"
+    },
+    {
+      "component": "compatibility-resources",
+      "previousPath": "vendor/compatibility-resources/snapshot-v1/external/emby.enable/www/modules/layout.css",
+      "size": 22942,
+      "sha256": "d6eb9a45859d776806b7b7078c4763c452dada04834b3f461797dee1fe80dc8c"
+    },
+    {
+      "component": "compatibility-resources",
+      "previousPath": "vendor/compatibility-resources/snapshot-v1/external/emby.enable/www/modules/themes/darkgradient/theme.css",
+      "size": 38723,
+      "sha256": "d8a7104966af90053348eee164f7ad2715e95dee06fa7d84f0f4515958e76cc9"
+    },
+    {
+      "component": "compatibility-resources",
+      "previousPath": "vendor/compatibility-resources/snapshot-v1/external/Presets/fonts/Source Han Serif SC-Bold.ttf",
+      "size": 26821400,
+      "sha256": "8cc4d2cfccf84293ba0317bf77752dd453da79dc9ec5823d0792d8058bc1be0c"
+    },
+    {
+      "component": "compatibility-resources",
+      "previousPath": "vendor/compatibility-resources/snapshot-v1/external/Presets/mpv.conf",
+      "size": 132,
+      "sha256": "e8895c1c8902e6ad2d8e1bdebde6a9ab94065ff95e1c31af936c12748fa623c3"
+    },
+    {
+      "component": "small-runtime",
+      "previousPath": "vendor/small-runtime/snapshot-v1/cec-driver/cancel",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "component": "small-runtime",
+      "previousPath": "vendor/small-runtime/snapshot-v1/config/system.xml",
+      "size": 441,
+      "sha256": "d78758f94a14cea729fa28aed7fff98b30382ec5e435ecb02f31b6583becfcb9"
+    },
+    {
+      "component": "small-runtime",
+      "previousPath": "vendor/small-runtime/snapshot-v1/electronapp/plugins/mpvplayer/strings/zh-CN.json",
+      "size": 3393,
+      "sha256": "9d2b20f0863b794146d8b8989be3965ad186664e645b89ba31c6c2dcce8e3015"
+    },
+    {
+      "component": "small-runtime",
+      "previousPath": "vendor/small-runtime/snapshot-v1/注意事项.txt",
+      "size": 1382,
+      "sha256": "1e9e045ec2af5b77e0f7a8392ea07304ee2fc5e6cd5da2a8db3ce4d2af8da807"
+    },
+    {
+      "component": "web-snapshot",
+      "previousPath": "vendor/web-snapshot/www/modules/CustomCssJS.js",
+      "size": 4548,
+      "sha256": "2177de28dcc4e715f07c63329dc361c5b4ddd37eb7e59f273830b22acea37912"
+    },
+    {
+      "component": "web-snapshot",
+      "previousPath": "vendor/web-snapshot/www/modules/themes/logo.png",
+      "size": 32892,
+      "sha256": "624aa2425d6bee862fd5469e191a2dad928931425e45ee31d006d6e71906c064"
+    }
+  ],
+  "oldBodyBytes": 27004627,
+  "webReferenceRewrites": [
+    {
+      "path": "www/app.js",
+      "beforeSha256": "3ef3102567458359a02e2fe8f79a8700cfe9c223347abe5ab6ecb8bd93be89d2",
+      "afterSha256": "3492bfbe83d642f44f3f515d388f07d6efa4968ec85cefbcae3635cf9362783a"
+    },
+    {
+      "path": "www/index.html",
+      "beforeSha256": "ca05a9a26de19e16bb89c3595d29c95e3a56876439e968e3f464b218a101053a",
+      "afterSha256": "18f777ee20f9829f3e7e4ab53a3442e7d4bd1532689e7ece0b874281e0bb305d"
+    }
+  ]
+}

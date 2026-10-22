@@ -17,7 +17,7 @@ function rejectRetiredOutput(runtime) {
     }
 }
 const MANIFEST_PATH = 'vendor/compatibility-resources-manifest.json';
-const INPUT_ROOT = 'vendor/compatibility-resources/snapshot-v1';
+const INPUT_ROOT = 'vendor/compatibility-resources/snapshot-v2';
 const isCompatibility=name=>name.startsWith('external/')||['Emby.ConfigureAndUninstall.bat','Emby.Dialog.bat'].includes(name);
 const sha = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 function relative(name) {
@@ -44,7 +44,7 @@ function mkdirPhysical(directory) {
 function load(rootArg) {
     const root=path.resolve(rootArg),file=path.join(root,MANIFEST_PATH);physical(file,false);
     const manifest=JSON.parse(fs.readFileSync(file,'utf8'));
-    if(manifest.schemaVersion!==1||manifest.version!=='snapshot-v1'||manifest.inputRoot!==INPUT_ROOT||
+    if(manifest.schemaVersion!==1||manifest.version!=='snapshot-v2'||manifest.inputRoot!==INPUT_ROOT||
         !Array.isArray(manifest.files)||!manifest.files.length||manifest.fileCount!==manifest.files.length)throw new Error('Invalid Compatibility snapshot component manifest.');
     const seen=new Set();
     for(const entry of manifest.files) {
@@ -54,6 +54,7 @@ function load(rootArg) {
     }
     if(manifest.bytes!==manifest.files.reduce((n,f)=>n+f.size,0)||manifest.treeSha256!==web.treeHash(manifest.files))throw new Error('Compatibility snapshot component summary mismatch.');
     if(manifest.provenance?.mode!=='local-compatibility-snapshot')throw new Error('Invalid compatibility snapshot origin.');
+    web.migrationHistory(root,manifest,[...retired]);
     return manifest;
 }
 function paths(root) {return load(root).files.map(entry=>entry.path);}

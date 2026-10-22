@@ -7,7 +7,7 @@ const {RETIRED_SMALL_RUNTIME_PATHS} = require('./runtime-exclusions.cjs');
 const retired = new Set(RETIRED_SMALL_RUNTIME_PATHS);
 const DEFAULT_SOURCE_PATH = 'src/config/system-defaults.json';
 const TRANSLATION_PATH = 'electronapp/plugins/mpvplayer/strings/zh-CN.json';
-const TRANSLATION_SOURCE_PATH = 'src/localization/mpvplayer/zh-CN.overrides.json';
+const TRANSLATION_SOURCE_PATH = 'src/localization/mpvplayer/zh-CN.json';
 const TRANSLATION_KEYS = Object.freeze(['UserRefreshRateHelp', 'EnableVideoDisplaySyncingHelp',
     'EnableInterpolationHelp', 'LabelNetworkCache', 'LabelNetworkCacheHelp', 'DefaultAudioDelay',
     'DefaultAudioDelayHelp', 'EnableExclusiveAudioModeHelp', 'LabelGpuApiHelp',
@@ -55,33 +55,21 @@ function runtimeSelection(root, manifest) {
         maintainedTranslation: translationOutput(root).metadata};
 }
 function translationOutput(rootArg) {
-    const root = path.resolve(rootArg), basePath = INPUT_ROOT + '/' + TRANSLATION_PATH;
-    const source = path.join(root, TRANSLATION_SOURCE_PATH), baseFile = path.join(root, basePath);
-    physical(source, false); physical(baseFile, false);
-    const raw = fs.readFileSync(source), canonical = Buffer.from(raw.toString('utf8').replace(/\r\n/g, '\n'));
-    if (!Buffer.from(raw.toString('utf8')).equals(raw)) throw Error('Invalid maintained translation encoding.');
-    const changes = JSON.parse(canonical.toString('utf8')), original = fs.readFileSync(baseFile);
-    let text = original.toString('utf8');
-    if (!Buffer.from(text).equals(original)) throw Error('Invalid base translation encoding.');
-    const base = JSON.parse(text);
-    if (!base || Array.isArray(base) || Object.keys(base).length !== 37 ||
-        Object.values(base).some(value => typeof value !== 'string') ||
-        !changes || Array.isArray(changes) || Object.keys(changes).sort().join(',') !== [...TRANSLATION_KEYS].sort().join(',')) {
-        throw Error('Invalid maintained translation key contract.');
-    }
-    for (const key of TRANSLATION_KEYS) {
-        if (!Object.hasOwn(base, key) || typeof changes[key] !== 'string' || !changes[key] || changes[key] === base[key]) {
-            throw Error('Invalid maintained translation value: ' + key);
-        }
-        const anchor = JSON.stringify(key) + ': ' + JSON.stringify(base[key]);
-        if (text.split(anchor).length !== 2) throw Error('Maintained translation anchor mismatch: ' + key);
-        text = text.replace(anchor, () => JSON.stringify(key) + ': ' + JSON.stringify(changes[key]));
-    }
-    const bytes = Buffer.from(text);
-    return {bytes, metadata: {basePath, baseSha256: sha(original), sourcePath: TRANSLATION_SOURCE_PATH,
-        sourceSha256: sha(canonical), runtimePath: TRANSLATION_PATH, size: bytes.length, sha256: sha(bytes),
-        changedKeys: [...TRANSLATION_KEYS], retainedKeyCount: 24,
-        relation: 'frozen 37-key translation + 13 ETE maintained text overrides; other 24 strings retained'}};
+    const root = path.resolve(rootArg), source = path.join(root,TRANSLATION_SOURCE_PATH);
+    physical(source,false);
+    const raw = fs.readFileSync(source), text = raw.toString('utf8');
+    if (!Buffer.from(text).equals(raw)) throw Error('Invalid maintained translation encoding.');
+    const bytes = Buffer.from(text.replace(/\r\n/g,'\n')), values = JSON.parse(bytes);
+    if (!values || Array.isArray(values) || Object.keys(values).length !== 37 ||
+        Object.values(values).some(value=>typeof value !== 'string') || TRANSLATION_KEYS.some(key=>!Object.hasOwn(values,key))) throw Error('Invalid maintained translation key contract.');
+    const review=JSON.parse(fs.readFileSync(path.join(root,MANIFEST_PATH),'utf8')).migration?.translationReview;
+    if (!review || review.oldKeyCount!==37 || review.newKeyCount!==37 ||
+        JSON.stringify([...review.changedKeys].sort())!==JSON.stringify([...TRANSLATION_KEYS].sort()) ||
+        Object.keys(review.retainedValueSha256).length!==24 ||
+        Object.keys(values).some(key=>!TRANSLATION_KEYS.includes(key) && sha(Buffer.from(values[key]))!==review.retainedValueSha256[key])) throw Error('Invalid maintained translation inherited-value contract.');
+    return {bytes, metadata:{sourcePath:TRANSLATION_SOURCE_PATH,sourceSha256:sha(bytes),
+        runtimePath:TRANSLATION_PATH,size:bytes.length,sha256:sha(bytes),changedKeys:[...TRANSLATION_KEYS],retainedKeyCount:24,
+        relation:'ETE maintained 37-key localization; 13 approved revisions, 24 inherited strings; historical identities retained separately'}};
 }
 function rejectRetiredOutput(runtime) {
     for (const name of retired) if (fs.existsSync(path.join(runtime, name))) {
@@ -89,9 +77,9 @@ function rejectRetiredOutput(runtime) {
     }
 }
 const MANIFEST_PATH = 'vendor/small-runtime-manifest.json';
-const INPUT_ROOT = 'vendor/small-runtime/snapshot-v1';
-const SMALL_PATHS=Object.freeze(['cec-driver/cancel','config/system.xml','electronapp/plugins/mpvplayer/strings/zh-CN.json','\u6ce8\u610f\u4e8b\u9879.txt']);
-const isSmallRuntime=name=>SMALL_PATHS.includes(name);
+const INPUT_ROOT = 'vendor/small-runtime/snapshot-v2';
+const SMALL_PATHS=Object.freeze(['config/system.xml',TRANSLATION_PATH]);
+const isSmallRuntime=name=>SMALL_PATHS.includes(name)||retired.has(name);
 const sha = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 function relative(name) {
     if (typeof name !== 'string' || !name || /[\\:\x00-\x1f\x7f]/.test(name) ||
@@ -117,7 +105,7 @@ function mkdirPhysical(directory) {
 function load(rootArg) {
     const root=path.resolve(rootArg),file=path.join(root,MANIFEST_PATH);physical(file,false);
     const manifest=JSON.parse(fs.readFileSync(file,'utf8'));
-    if(manifest.schemaVersion!==1||manifest.version!=='snapshot-v1'||manifest.inputRoot!==INPUT_ROOT||
+    if(manifest.schemaVersion!==1||manifest.version!=='snapshot-v2'||manifest.inputRoot!==INPUT_ROOT||
         !Array.isArray(manifest.files)||manifest.files.length!==SMALL_PATHS.length||manifest.fileCount!==manifest.files.length)throw new Error('Invalid Small runtime snapshot component manifest.');
     const seen=new Set();
     for(const entry of manifest.files) {
@@ -127,6 +115,7 @@ function load(rootArg) {
     }
     if(manifest.bytes!==manifest.files.reduce((n,f)=>n+f.size,0)||manifest.treeSha256!==web.treeHash(manifest.files))throw new Error('Small runtime snapshot component summary mismatch.');
     if(manifest.provenance?.mode!=='local-small-runtime-snapshot')throw new Error('Invalid small-runtime snapshot origin.');
+    web.migrationHistory(root,manifest,[...retired],SMALL_PATHS);
     return manifest;
 }
 function paths(root) {return load(root).files.map(entry=>entry.path);}

@@ -2101,7 +2101,6 @@
               return (
                 responses.electron && list.push("modules/externalplayer/plugin"),
                 list.push("./modules/confirmstillplaying/plugin.js"),
-                list.push("./modules/CustomCssJS.js"),
                 Promise.all(list.map(loadPlugin))
               );
             });

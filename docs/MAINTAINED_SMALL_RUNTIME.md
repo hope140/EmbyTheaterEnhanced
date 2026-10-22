@@ -1,6 +1,6 @@
 # ETE maintained configuration and player localization
 
-The immutable four-file input snapshot and its manifest remain unchanged and fully validated. New runtime assembly deliberately replaces only the configuration seed and thirteen Chinese player strings using maintained source files. No new snapshot migration, user-profile rewrite or playback change accompanies this selection.
+The exact historical four-file manifest remains preserved; its old bodies have been removed from the current tree by the [v2 migration](SNAPSHOT_V2_MIGRATION.md). The active snapshot contains only the two maintained outputs. New runtime assembly deliberately replaces only the configuration seed and thirteen Chinese player strings using maintained source files. No new snapshot migration, user-profile rewrite or playback change accompanies this selection.
 
 ## Default configuration
 
@@ -18,7 +18,7 @@ The XML adds an UTF-8 encoding declaration and a first-run comment, uses LF with
 
 ## Chinese player strings
 
-`src/localization/mpvplayer/zh-CN.overrides.json` contains exactly thirteen maintained text values. `tools/small-runtime-input.cjs` applies them to the validated 37-key historical JSON, preserving all other twenty-four values, key order, formatting and the final newline. The renderer registration and resource path are unchanged. These are text-only changes; the three long GPU/video explanations become single paragraphs without `<br>`.
+`src/localization/mpvplayer/zh-CN.json` contains the complete maintained 37-key resource: thirteen selected revised values and twenty-four inherited values. The latter retain individually recorded hashes, key order, formatting and the final newline; the old full body is not required by assembly. The renderer registration and resource path are unchanged. These are text-only changes; the three long GPU/video explanations become single paragraphs without `<br>`.
 
 | Review ID | Key | Current maintained value |
 |---|---|---|
@@ -46,4 +46,4 @@ Both maintained source files are committed build inputs. Source provenance recor
 
 `tests/maintained-small-runtime.test.cjs` compares all keys and all lines against independent approved values, checks the unchanged XML contract and typed defaults, runs real bootstrap against synthetic first/existing profiles, and executes the actual player translation registration in an isolated VM to load the assembled JSON. It rejects invalid fields/types and unapproved translation keys before output writes. The independent material oracle applies these two explicit replacements; all other retained files remain exact hash comparisons. This is not Host/GUI, playback or installer acceptance.
 
-The original source bodies are still in the current vendor tree. Maintaining these two outputs does not remove archival files, resolve all inherited source/license questions, rewrite Git history or alter existing releases. See [the scoped retirement record](LEGACY_RESOURCE_RETIREMENT.md).
+The old configuration and localization bodies are absent from the current tree; historical manifests/hashes and Git commits preserve their identities. The maintained output does not resolve all inherited source/license questions, rewrite Git history or alter existing releases. See [the scoped retirement record](LEGACY_RESOURCE_RETIREMENT.md).

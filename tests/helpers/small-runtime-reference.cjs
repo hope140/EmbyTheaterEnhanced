@@ -16,9 +16,10 @@ const APPROVED_TRANSLATIONS = Object.freeze({
     "DisplayResample": "显示同步（重采样）"
 });
 const CONFIGURATION = Buffer.from("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- ETE maintained first-run defaults; existing user configuration is never replaced. -->\n<BaseApplicationConfiguration xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n  <EnableDebugLevelLogging>false</EnableDebugLevelLogging>\n  <EnableAutoUpdate>false</EnableAutoUpdate>\n  <LogFileRetentionDays>0</LogFileRetentionDays>\n  <RunAtStartup>false</RunAtStartup>\n  <IsStartupWizardCompleted>false</IsStartupWizardCompleted>\n</BaseApplicationConfiguration>\n");
-function translation(original) {
-    const values = JSON.parse(original.toString('utf8'));
-    return Buffer.from(JSON.stringify(Object.assign(values, APPROVED_TRANSLATIONS), null, 4) + '\n');
+function translation() {
+    const bytes=Buffer.from(require('node:fs').readFileSync(require('node:path').join(__dirname,'../../src/localization/mpvplayer/zh-CN.json'),'utf8').replace(/\r\n/g,'\n'));
+    require('node:assert/strict').equal(require('node:crypto').createHash('sha256').update(bytes).digest('hex'),'7f8dfdeda7709cc61ab1201df0446842c2ce5034845f4f9d278e7a5b5caff329');
+    return bytes;
 }
 function bytes(root, name, original) {
     if (name === 'config/system.xml') return CONFIGURATION;

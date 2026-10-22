@@ -39,8 +39,8 @@ function inventory(directory, prefix = '') {
 }
 test('only the eleven approved resources are retired; immutable input trees still validate', () => {
     assert.deepEqual([...exclusions.RETIRED_COMPATIBILITY_PATHS, ...exclusions.RETIRED_SMALL_RUNTIME_PATHS].sort(), [...approved].sort());
-    assert.equal(compatibility.validate(root).fileCount, 48);
-    assert.equal(small.validate(root).fileCount, 4);
+    assert.equal(compatibility.validate(root).fileCount, 39);
+    assert.equal(small.validate(root).fileCount, 2);
 });
 test('clean assembly preserves 39 resources and applies only the two approved maintained replacements', t => {
     const output = runtime(t), expected = [];

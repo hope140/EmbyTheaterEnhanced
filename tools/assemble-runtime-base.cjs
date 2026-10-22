@@ -94,13 +94,13 @@ function plan(rootArg, sourceCommit) {
     const template=templates.load(root),templatePaths=new Set(template.files.map(e=>e.runtimePath));
     for(const entry of template.files)if(!candidates.some(item=>item.path===entry.runtimePath&&item.size===entry.size&&item.sha256===entry.sha256))throw Error('Runtime template differs from historical baseline identity.');
     const legacyCandidates=candidates.filter(item=>!npmPaths.has(item.path)&&!templatePaths.has(item.path));
-    const compatibilityInput=compatibility.load(root),compatibilityPaths=new Set(compatibilityInput.files.map(e=>e.path));
+    const compatibilityInput=compatibility.load(root),compatibilityHistory=webSnapshot.migrationHistory(root,compatibilityInput,require('./runtime-exclusions.cjs').RETIRED_COMPATIBILITY_PATHS),compatibilityPaths=new Set(compatibilityHistory.files.map(e=>e.path));
     const oldCompatibility=legacyCandidates.filter(e=>compatibility.isCompatibility(e.path));
-    if(oldCompatibility.length!==compatibilityInput.files.length||oldCompatibility.some(e=>e.action!==(RETIRED_RUNTIME_PATHS.includes(e.path)?'exclude':'copy')||!compatibilityInput.files.some(f=>f.path===e.path&&f.size===e.size&&f.sha256===e.sha256)))throw Error('Compatibility snapshot differs from retained historical identity.');
+    if(oldCompatibility.length!==compatibilityHistory.files.length||oldCompatibility.some(e=>e.action!==(RETIRED_RUNTIME_PATHS.includes(e.path)?'exclude':'copy')||!compatibilityHistory.files.some(f=>f.path===e.path&&f.size===e.size&&f.sha256===e.sha256)))throw Error('Compatibility snapshot differs from retained historical identity.');
     const afterCompatibility=legacyCandidates.filter(e=>!compatibilityPaths.has(e.path));
-    const smallInput=smallRuntime.load(root),smallPaths=new Set(smallInput.files.map(e=>e.path));
+    const smallInput=smallRuntime.load(root),smallHistory=webSnapshot.migrationHistory(root,smallInput,require('./runtime-exclusions.cjs').RETIRED_SMALL_RUNTIME_PATHS,smallRuntime.SMALL_PATHS),smallPaths=new Set(smallHistory.files.map(e=>e.path));
     const oldSmall=afterCompatibility.filter(e=>smallRuntime.isSmallRuntime(e.path));
-    if(oldSmall.length!==smallInput.files.length||oldSmall.some(e=>e.action!==(RETIRED_RUNTIME_PATHS.includes(e.path)?'exclude':'copy')||!smallInput.files.some(f=>f.path===e.path&&f.size===e.size&&f.sha256===e.sha256)))throw Error('Small runtime snapshot differs from retained historical identity.');
+    if(oldSmall.length!==smallHistory.files.length||oldSmall.some(e=>e.action!==(RETIRED_RUNTIME_PATHS.includes(e.path)?'exclude':'copy')||!smallHistory.files.some(f=>f.path===e.path&&f.size===e.size&&f.sha256===e.sha256)))throw Error('Small runtime snapshot differs from retained historical identity.');
     const afterSmall=afterCompatibility.filter(e=>!smallPaths.has(e.path));
     const modelInput=modelCompatibility.load(root),modelPaths=new Set(modelInput.files.map(e=>e.path));
     const oldModel=afterSmall.filter(e=>modelCompatibility.isModelCompatibility(e.path));

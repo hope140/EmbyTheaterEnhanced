@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "inputRoot": "vendor/web-snapshot",
-  "fileCount": 720,
-  "bytes": 22009668,
-  "treeSha256": "7e4773f58b5592009bec5c54a05f17955ed1cb3053558a3e64fa325f8e094b6a",
+  "fileCount": 718,
+  "bytes": 21972087,
+  "treeSha256": "b26cd795b6542cae6a5dc73d85736877a0bd2b8d7ac4baa51413a85dbfcb2168",
   "origin": {
     "type": "frozen-historical-web-snapshot",
     "sourceManifest": "vendor/runtime-manifest.json",
@@ -34,10 +34,10 @@
     },
     {
       "path": "www/app.js",
-      "size": 102397,
-      "sha256": "3ef3102567458359a02e2fe8f79a8700cfe9c223347abe5ab6ecb8bd93be89d2",
+      "size": 102342,
+      "sha256": "3492bfbe83d642f44f3f515d388f07d6efa4968ec85cefbcae3635cf9362783a",
       "originalPath": "electronapp/www/app.js",
-      "origin": "historical-snapshot-upstream-version-unresolved",
+      "origin": "v2 explicit retirement of optional plugin registration or startup image reference; other base bytes retained",
       "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
     },
     {
@@ -674,10 +674,10 @@
     },
     {
       "path": "www/index.html",
-      "size": 3991,
-      "sha256": "ca05a9a26de19e16bb89c3595d29c95e3a56876439e968e3f464b218a101053a",
+      "size": 3905,
+      "sha256": "18f777ee20f9829f3e7e4ab53a3442e7d4bd1532689e7ece0b874281e0bb305d",
       "originalPath": "electronapp/www/index.html",
-      "origin": "historical-snapshot-upstream-version-unresolved",
+      "origin": "v2 explicit retirement of optional plugin registration or startup image reference; other base bytes retained",
       "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
     },
     {
@@ -1789,14 +1789,6 @@
       "size": 1250,
       "sha256": "597c91d795d63b30f71ea922b2081e6f277959a29db2377a92560c585e0a96cc",
       "originalPath": "electronapp/www/modules/controlbox.js",
-      "origin": "historical-snapshot-upstream-version-unresolved",
-      "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
-    },
-    {
-      "path": "www/modules/CustomCssJS.js",
-      "size": 4548,
-      "sha256": "2177de28dcc4e715f07c63329dc361c5b4ddd37eb7e59f273830b22acea37912",
-      "originalPath": "electronapp/www/modules/CustomCssJS.js",
       "origin": "historical-snapshot-upstream-version-unresolved",
       "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
     },
@@ -4169,14 +4161,6 @@
       "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
     },
     {
-      "path": "www/modules/themes/logo.png",
-      "size": 32892,
-      "sha256": "624aa2425d6bee862fd5469e191a2dad928931425e45ee31d006d6e71906c064",
-      "originalPath": "electronapp/www/modules/themes/logo.png",
-      "origin": "historical-snapshot-upstream-version-unresolved",
-      "copyright": "Existing in-file notices retained verbatim; see docs/WEB_SNAPSHOT_INPUT.md"
-    },
-    {
       "path": "www/modules/themes/logodark.png",
       "size": 9967,
       "sha256": "f1b49f8a22a10f1fa16a1b447bd3ed9034bd391f40e26b11d6ec94213eeb95c5",
@@ -5802,5 +5786,11 @@
       "copyright": "User increment attribution does not reattribute the underlying third-party file; existing notices retained",
       "size": 3903
     }
-  ]
+  ],
+  "version": "snapshot-v2",
+  "migration": {
+    "historicalManifestPath": "vendor/snapshot-history/web-snapshot-v1-manifest.json",
+    "historicalManifestSha256": "1545509de092b6646840d8bedff85eceb631d9c1533fab5f3937af363e2a1b8a",
+    "relation": "Explicit v2 selection; historical bodies live only in old Git commits/tags; no old-package fallback"
+  }
 }

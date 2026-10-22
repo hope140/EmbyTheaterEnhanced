@@ -1,5 +1,8 @@
 # 固定Web基底输入
 
+Current v2 selection: the active manifest explicitly versions the existing vendor/web-snapshot root as snapshot-v2 with 718 resources and unchanged historical patch carriers. CustomCssJS.js and themes/logo.png leave the current tree, and the active app/index inputs already remove their obsolete references. The exact 720-entry v1 manifest/hash is preserved separately; final app/index outputs retain their approved identities. See [v2 migration](SNAPSHOT_V2_MIGRATION.md). Earlier 720-input/body-preservation statements below are historical.
+
+
 Current release selection: [the scoped resource retirement](LEGACY_RESOURCE_RETIREMENT.md) preserves all 720 immutable Web inputs while copying only 718 to the runtime. The obsolete themes/logo.png is excluded after its startup reference was already replaced by the existing ETE SVG; title/screensaver images remain. CustomCssJS is an explicitly retired optional third-party integration: its local app registration, runtime module and dedicated overlay generator are removed. Normal CSS/Branding paths stay unchanged. Input validation still requires every original byte; this is not deletion from the current source snapshot. The newly confirmed upstream text/GPL record is documented separately in that audit.
 
 Web构建使用独立组件`vendor/web-snapshot/`及受版本控制的`vendor/web-snapshot-manifest.json`，不读取`vendor/carnival/electronapp/www`。这是历史页面的字节快照，不代表已恢复该版本的完整上游源码或实现了整个产品的源码重建。

@@ -19,23 +19,21 @@ const before = require('../tools/patch-search-ui.cjs').patchApp(
         require('../tools/patch-server-home.cjs').patchApp(
             require('../tools/patch-plugin-settings.cjs').patchApp(
                 require('../tools/patch-external-player-registration.cjs').patchText(original).text))));
-const output = overlays.retireCustomCssJs(before);
+const output = before;
 
-test('canonical app delta is exactly the optional registration line; other CSS and plugins remain', () => {
-    assert.equal(hash(before), 'E3A883851255A196231266B5060D28E637A538DB3337CD12D47F060C6820CD5C');
-    assert.equal(output, before.replace('                list.push("./modules/CustomCssJS.js"),\n', ''));
-    assert.equal(Buffer.byteLength(before) - Buffer.byteLength(output), 55);
-    assert.equal(hash(output), overlays.WEB_OVERLAY_CONTRACT.find(x => x.id === 'app-js').expectedOutputSha256);
+test('v2 app output preserves the previously approved final identity and all other CSS/plugins',()=>{
+    assert.equal(hash(output),'4DEB9669058340741AB8048140C2690C3EF39494A74C451272D69D7C37F8FFE4');
+    assert.equal(hash(output),overlays.WEB_OVERLAY_CONTRACT.find(x=>x.id==='app-js').expectedOutputSha256);
     assert.ok(output.includes('self.ApiClient.getUrl("Branding/Css")'));
     assert.ok(output.includes('"css!modules/windowdrag.css"'));
-    assert.equal(output.includes('CustomCssJS'), false);
-    assert.equal(overlays.WEB_OVERLAY_CONTRACT.some(x => x.id === 'custom-css-js'), false);
+    assert.equal(output.includes('CustomCssJS'),false);
 });
-test('retirement rejects missing, duplicate and unrecognized registrations', () => {
-    assert.throws(() => overlays.retireCustomCssJs(output), /contract mismatch/);
-    assert.throws(() => overlays.retireCustomCssJs(before + '\n                list.push("./modules/CustomCssJS.js"),\n'), /contract mismatch/);
-    assert.throws(() => overlays.retireCustomCssJs(before.replace('list.push("./modules/CustomCssJS.js")', 'list.push("modules/CustomCssJS.js")')), /contract mismatch/);
-    assert.throws(() => overlays.retireCustomCssJs(before + '\n// CustomCssJS unknown second entry'), /remains/);
+test('historical retirement generator still requires exactly its known registration anchor',()=>{
+    const line='                list.push("./modules/CustomCssJS.js"),\n',source='prefix\n'+line+'suffix';
+    assert.equal(overlays.retireCustomCssJs(source),'prefix\nsuffix');
+    assert.throws(()=>overlays.retireCustomCssJs(output),/contract mismatch/);
+    assert.throws(()=>overlays.retireCustomCssJs(source+'\n'+line),/contract mismatch/);
+    assert.throws(()=>overlays.retireCustomCssJs(source+'// CustomCssJS unknown'),/remains/);
 });
 
 async function mainPluginStage(endpointAvailable) {
@@ -77,9 +75,9 @@ test('Web assembly omits the approved module and logo while retaining immutable 
     const runtime = fs.mkdtempSync(path.join(root, 'dist', 'custom-css-retirement-'));
     t.after(() => fs.rmSync(runtime, {recursive: true}));
     const report = web.assemble(root, runtime);
-    assert.equal(report.fileCount, 720);
+    assert.equal(report.fileCount, 718);
     assert.equal(report.runtimeFileCount, 718);
-    assert.deepEqual(report.excludedFiles.map(x => x.path), ['www/modules/CustomCssJS.js','www/modules/themes/logo.png']);
+    assert.deepEqual(report.excludedFiles.map(x => x.path), []);
     assert.equal(fs.existsSync(path.join(runtime, 'electronapp/www/modules/CustomCssJS.js')), false);
     assert.equal(fs.existsSync(path.join(root, 'tools/patch-custom-css-js.cjs')), false);
     for (const entry of manifest.files) {

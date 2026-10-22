@@ -102,12 +102,11 @@ test('retired startup PNG has only its replaced index consumer; dynamic themes u
         const references = text.match(/\blogo\.png\b/g) || [];
         if (references.length) hits.push({path:entry.path,count:references.length});
     }
-    assert.deepEqual(hits,[{path:'www/index.html',count:1}]);
-    const image = fs.readFileSync(path.join(repoRoot,web.INPUT_ROOT,'www/modules/themes/logo.png'));
-    assert.equal(image.length,32892);
-    assert.equal(sha256(image),'624aa2425d6bee862fd5469e191a2dad928931425e45ee31d006d6e71906c064');
-    assert.equal(image.readUInt32BE(16),1238); assert.equal(image.readUInt32BE(20),377);
-    assert.equal(image[25],6,'archived PNG uses RGBA');
+    assert.deepEqual(hits,[]);
+    const history=JSON.parse(fs.readFileSync(path.join(repoRoot,'vendor/snapshot-history/web-snapshot-v1-manifest.json')));
+    const old=history.files.find(x=>x.path==='www/modules/themes/logo.png');
+    assert.equal(old.size,32892);assert.equal(old.sha256,'624aa2425d6bee862fd5469e191a2dad928931425e45ee31d006d6e71906c064');
+    assert.equal(fs.existsSync(path.join(repoRoot,web.INPUT_ROOT,old.path)),false);
     const skin = fs.readFileSync(path.join(repoRoot,web.INPUT_ROOT,'www/modules/skinmanager.js'),'utf8');
     assert.ok(skin.includes('(selectedTheme.baseThemeId || selectedTheme.id)'));
     assert.ok(skin.includes('"/theme.css"')); assert.ok(skin.includes('"/theme.json"'));
@@ -121,7 +120,7 @@ test('clean generated startup resolves the existing transparent ETE SVG and pres
     const runtime = fs.mkdtempSync(path.join(repoRoot,'dist','retired-startup-logo-'));
     t.after(()=>fs.rmSync(runtime,{recursive:true}));
     const report = web.assemble(repoRoot,runtime);
-    assert.equal(report.fileCount,720); assert.equal(report.runtimeFileCount,718);
+    assert.equal(report.fileCount,718); assert.equal(report.runtimeFileCount,718);
     overlays.apply(repoRoot,runtime);
     const svgPath=path.join(runtime,'electronapp/enhanced/startup.svg');
     fs.mkdirSync(path.dirname(svgPath),{recursive:true});

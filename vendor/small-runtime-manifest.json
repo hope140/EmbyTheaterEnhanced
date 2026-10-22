@@ -1,61 +1,88 @@
 {
   "schemaVersion": 1,
-  "version": "snapshot-v1",
-  "inputRoot": "vendor/small-runtime/snapshot-v1",
-  "fileCount": 4,
-  "bytes": 5216,
-  "treeSha256": "e4022080a54f46525af9f4540127669905820f8ea2c9a96ff48b49563708ac0e",
+  "version": "snapshot-v2",
+  "inputRoot": "vendor/small-runtime/snapshot-v2",
+  "fileCount": 2,
+  "bytes": 3330,
+  "treeSha256": "7d3ee238ca2be25533b2e28d31e64ba0c179c5a064ed7091b00c71557120ced2",
   "provenance": {
     "mode": "local-small-runtime-snapshot",
-    "source": "Four selected existing Carnival small runtime inputs only",
+    "source": "Two ETE maintained output seeds; legacy fields/defaults and 24 inherited Chinese strings remain explicitly recorded",
     "wholeOldPackageCopied": false,
     "physicalLegacyDirectoryRequired": false,
     "claimedAsOwnOriginal": false,
     "officialOnlineRecoveryEstablished": false,
     "publicBodyUpload": true,
-    "configurationTransformed": false,
-    "repositoryStorage": "Explicit user-authorized same-repository snapshot; existing source/notice uncertainties remain, no authorship reattribution"
+    "configurationTransformed": true,
+    "repositoryStorage": "Explicit user-authorized same-repository snapshot; existing source/notice uncertainties remain, no authorship reattribution",
+    "translationTransformed": "Exactly 13 approved values; 24 original values retained"
   },
   "files": [
     {
-      "path": "cec-driver/cancel",
-      "size": 0,
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "origin": {
-        "family": "Existing empty CEC marker",
-        "exactRevision": "unresolved",
-        "notice": "Existing bytes and notices preserved; not claimed as ETE original; never executed by preparation"
-      }
-    },
-    {
       "path": "config/system.xml",
-      "size": 441,
-      "sha256": "d78758f94a14cea729fa28aed7fff98b30382ec5e435ecb02f31b6583becfcb9",
+      "size": 543,
+      "sha256": "03a596810424e4b4dc0ca38280927d6b9108e5df5ed300d12c1335ebe53121e7",
       "origin": {
-        "family": "Legacy packaged configuration",
-        "exactRevision": "unresolved",
-        "notice": "Opaque unchanged packaged bytes; no settings, including auto-update, are edited or applied"
+        "family": "ETE maintained output with inherited field/default or 24-string boundary; see docs/MAINTAINED_SMALL_RUNTIME.md"
       }
     },
     {
       "path": "electronapp/plugins/mpvplayer/strings/zh-CN.json",
-      "size": 3393,
-      "sha256": "9d2b20f0863b794146d8b8989be3965ad186664e645b89ba31c6c2dcce8e3015",
+      "size": 2787,
+      "sha256": "7f8dfdeda7709cc61ab1201df0446842c2ce5034845f4f9d278e7a5b5caff329",
       "origin": {
-        "family": "Legacy Chinese language resource",
-        "exactRevision": "unresolved",
-        "notice": "Existing bytes and notices preserved; not claimed as ETE original; never executed by preparation"
-      }
-    },
-    {
-      "path": "注意事项.txt",
-      "size": 1382,
-      "sha256": "1e9e045ec2af5b77e0f7a8392ea07304ee2fc5e6cd5da2a8db3ce4d2af8da807",
-      "origin": {
-        "family": "Legacy packaged notice",
-        "exactRevision": "unresolved",
-        "notice": "Existing bytes and notices preserved; not claimed as ETE original; never executed by preparation"
+        "family": "ETE maintained output with inherited field/default or 24-string boundary; see docs/MAINTAINED_SMALL_RUNTIME.md"
       }
     }
-  ]
+  ],
+  "migration": {
+    "historicalManifestPath": "vendor/snapshot-history/small-runtime-v1-manifest.json",
+    "historicalManifestSha256": "94a80ffca629767190350e9dcb71920089f649e7c29b038cb9552365db7ab3b0",
+    "relation": "Explicit v2 selection; historical bodies live only in old Git commits/tags; no old-package fallback",
+    "translationReview": {
+      "changedKeys": [
+        "UserRefreshRateHelp",
+        "EnableVideoDisplaySyncingHelp",
+        "EnableInterpolationHelp",
+        "LabelNetworkCache",
+        "LabelNetworkCacheHelp",
+        "DefaultAudioDelay",
+        "DefaultAudioDelayHelp",
+        "EnableExclusiveAudioModeHelp",
+        "DisplayResample",
+        "DisplayVDrop",
+        "LabelGpuApiHelp",
+        "LabelHardwareAccelerationHelp",
+        "VideoOutputHelp"
+      ],
+      "retainedValueSha256": {
+        "LabelOutputRange": "a8b365f07dd3a94fa9941ac14d149849db76056227f83fbbe6a4a9fad9c76888",
+        "LabelHardwareAccelerationMode": "d8329ed8e68bcb602d0acf2f3c042955dab5f2ef12c3eb414f97004832b9afb7",
+        "Auto": "7eb336e42cb5076b0eac0305418ecd8ff2833ad84645aedbe0d315ac017c798b",
+        "None": "484d55613910eb8c0917fe308b499d474115ced993cd002a17d7cc75254330a4",
+        "UserRefreshRate": "efbfd79fbaf19490cd5e7704b04ae820a034623448aa9e61e02b2d3236718d9e",
+        "LabelSpeakerLayout": "4a5be9b764fc8e26d177c670f7a77a461750e7ddba5f23df6ac038f83b84b756",
+        "Stereo": "3acc9333db7aa28f1ffa02b51caf8d4f3f4bfe367adc19ab8ef1c06daab85963",
+        "Quadraphonic": "f52b25e8a3e8d8526a4e60c89c242ed8eb579f11b71d995c428eb5d85e0b4180",
+        "Surround": "b39f03d1c0a838a5e3651344cd17d6927d7c662d652f74fc319fa3c988b52ac2",
+        "LabelDynamicRangeCompression": "574e4eb1d08ca4a7b4ed644fcf14ee3b7149b7762b5b32dfabb18c36d292216f",
+        "LabelEnableAudioPassthroughFor": "3f261620fa17f510594111bb79d11966b1a4219a59314a7441b9f36745555f7f",
+        "LabelUpmixAudioFor": "a286bdd12e1b8b3785af134927ccaf88b6f1461becaf76c9dcd75e92604defb3",
+        "LabelUpmixAudioForHelp": "7da702912acfae478999f4e0d5be71cd121a19f9f157ac98f4d5985a1fd8fca5",
+        "EnableDeinterlacing": "2140afb33196e5fbcc270591eba376dc6e60599c075fa0cb28763292b4f7edb1",
+        "EnableOpenGlHq": "c045e8bf82ec5bbf75c2e4d5db8911164a90dcbfc124080550db5944d4f65c51",
+        "EnableVideoDisplaySyncing": "425030c899da728e493775265806bfce2ebf48db37f1ed3dd23dfd00c0b39582",
+        "EnableInterpolation": "9e3411e224f347245e511b77f5a736512460c4941c93b1a30a903e0dc14c3f8f",
+        "EnableExclusiveAudioMode": "813aacfad12d427964cd41a151c46f27042014931d412ae4042ee2de44d398ea",
+        "SettingRequiresHighEnd": "99f9b25135a26519e8e4d85b6eab29a9e52256f16fbd81f1049a8489a2d7daf2",
+        "LabelOutputRangeHelp": "e3ab9573bd56fd8d391b1eaee04e0e3b642447b5ce3f59d7848077a2b42b4b4c",
+        "AudioDelay2325": "2528de2d9f2404e34446c46621ff4fcb9bffaad3b3ecd515ffd72221bb48edb2",
+        "AudioDelay2325Help": "7bc157002ab67a8deb8536a14c27b4fdb70de6bdf199fdee7c56908a968d19fa",
+        "LabelGpuApi": "3a9d2336ef58ed01b21aca97a424fbdaf150355964d910c6004c0933a75385b2",
+        "LabelVideoOutput": "9506221d154e7b40366e890b78ec6977ef5bfcfe8abac5b940a3b89af96050ca"
+      },
+      "oldKeyCount": 37,
+      "newKeyCount": 37
+    }
+  }
 }

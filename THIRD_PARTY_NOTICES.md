@@ -1,5 +1,8 @@
 # Third-party notices
 
+Snapshot-v2 update: the fifteen reviewed old bodies are absent from the current source tree. Their original manifests/hashes, necessary notice texts and existing Git history remain preserved; earlier statements that the original snapshot bodies remain current describe the prior stage. The retired logo contained the observed lettering “by David & NoisyX”; source/permission scope remains unresolved. This removal does not establish new authorship or whole-project license clearance. See docs/SNAPSHOT_V2_MIGRATION.md.
+
+
 Small-resource maintenance: new output uses ETE maintained typed configuration defaults and thirteen selected Chinese player text revisions; the original five default values and twenty-four unchanged Chinese strings retain their existing historical source boundaries. Frozen originals, manifests and existing notices remain preserved. This is not an assertion that ETE authored the old files or that all inherited localization rights are established. See docs/MAINTAINED_SMALL_RUNTIME.md and docs/SMALL_RUNTIME_INPUT.md.
 
 CustomCssJS archive update: the optional integration is omitted from new ETE runtime packages. Its retained source snapshot matches [Shurelol/Emby.CustomCssJS at 6933b58c](https://github.com/Shurelol/Emby.CustomCssJS/tree/6933b58c62f98b0919977e953f068b1a581a7a1c) after newline conversion only. The project's [GPLv3 LICENSE](https://github.com/Shurelol/Emby.CustomCssJS/blob/6933b58c62f98b0919977e953f068b1a581a7a1c/LICENSE) is preserved in the repository's Web notice records. This is a component-specific archival record; the original snapshot remains in source distributions, and no general licensing or historical redistribution conclusion follows from runtime retirement.
