@@ -3,6 +3,27 @@
 Collected 2026-10-12. Exact bytes and extraction relationships are recorded in
 [`v030-mpv-unblock.json`](../../evidence/v030-mpv-unblock.json).
 
+Local review update, 2026-10-22: the three complete fixed source ZIPs below were
+acquired again from their normal public GitHub source endpoints. Sizes and SHA256
+match the historical receipts: mpv 8,023,071 bytes
+`e82426ff14b1c05705f9e16889bba17f28e578b6c5a0b32ed03b0f9ee050c72f`,
+FFmpeg 23,956,097 bytes
+`0fccef617d0692c50223162202ba894d8397412d5c94ea978ac528dac6775af9`,
+builder 175,497 bytes
+`770882870fd2d66411150947777147e8c7ebaa5b8b6e980b7643b79b7bc4a989`.
+They cover known source revisions and the builder's recipes/patches, not every
+actual linked cached dependency. The builder has 108 package recipes, 95 using Git;
+62 of those have no explicit GIT_TAG. Its update script pulls tracked branches and
+remote submodules. The original job transcript shows some updates and no patch
+step for mpv/FFmpeg, but no complete resolved source inventory or complete linked
+configuration. Recipe presence alone does not mean that dependency entered the DLL.
+No new complete-source delivery claim or public binary upload follows from this update.
+
+The later repository-archive change retains the unmodified original development
+archive beside explicit source/notice directions. Its storage was authorized with
+the above coverage limits disclosed. This does not create a new written source
+offer or certify complete coverage of the finished package.
+
 mpv upstream revision: `dd5d17d3285a095a0f712fa9d116e22a076492de`.
 
 - [Preferred source tree](https://github.com/mpv-player/mpv/tree/dd5d17d3285a095a0f712fa9d116e22a076492de)

@@ -11,9 +11,9 @@ The user authorized keeping necessary preserved materials in this same ETE repos
 
 Git `-text` attributes preserve every manifest-bound byte across platforms. Only enumerated files are selected; old installers, full Carnival/patch trees, login data, credentials, actual media and generated outputs are excluded. Existing notices remain. Known MIT Anime4K headers and existing Source Han Serif OFL records are retained. Exact Web revision, some manual/theme authorship, font revision/RFN and Model variant source remain unresolved. Storage authorization does not establish new authorship or complete corresponding source. The maintained seven-line preload also keeps its unresolved-origin declaration. Official Model replacement is not part of this change.
 
-External components remain fixed acquisitions instead of accumulating binary versions in Git:
+Most external components remain fixed acquisitions. The unchanged libmpv archive is explicitly identified below:
 
-- libmpv: `node tools/prepare-libmpv.cjs .`, pinned official SourceForge archive and DLL hashes; no DLL/LFS object required. See LIBMPV_INPUT.md.
+- libmpv: original 31,173,907-byte upstream archive under `vendor/archive/libmpv/20260809`, fixed archive/DLL hashes and HEAD blob validation; `node tools/prepare-libmpv.cjs .` requires no SourceForge request or Work cache. The DLL remains ignored. Finished-package source coverage and notice completeness remain unconfirmed; the adjacent notice preserves the known source and licence directions. See LIBMPV_INPUT.md.
 - Windows Host/resources: fixed official 3.0.20 ZIP, selecting 19 files; see WINDOWS_HOST_INPUT.md.
 - Inherited npm: pinned official Electron Git revision and explicit newline transform; see INHERITED_NPM_INPUT.md.
 - Electron 44.4.2: fixed official archive/hash, electron-runtime-manifest.json.

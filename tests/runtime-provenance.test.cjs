@@ -33,6 +33,10 @@ function writeFile(file, content) {
     fs.writeFileSync(file, content);
 }
 
+function createTempRoot(prefix, parent = os.tmpdir()) {
+    return fs.realpathSync.native(fs.mkdtempSync(path.join(parent, prefix)));
+}
+
 function copyRepoFile(root, relativePath) {
     const target = path.join(root, relativePath);
     fs.mkdirSync(path.dirname(target), {recursive: true});
@@ -213,8 +217,27 @@ function runProvenanceRaw(command, root, runtime) {
     return childProcess.spawnSync(process.execPath, [tool, command, root, runtime, sourceCommit], {encoding: 'utf8'});
 }
 
+test('runtime provenance fixtures normalize temporary parent aliases and retain input redirect rejection',t=>{
+    const parent=createTempRoot('ete-provenance-parent-alias-');
+    t.after(()=>fs.rmSync(parent,{recursive:true,force:true}));
+    const physical=path.join(parent,'physical'),alias=path.join(parent,'alias');
+    fs.mkdirSync(physical);
+    fs.symlinkSync(physical,alias,process.platform==='win32'?'junction':'dir');
+    const root=createTempRoot('fixture-',alias);
+    assert.equal(path.dirname(root),physical);
+    assert.equal(fs.realpathSync.native(root),root);
+    createFixture(root);
+    const runtime=createRuntime(root,'runtime-from-physical-root');
+    assert.equal(runProvenance('write',root,runtime).exitCode,0);
+    assert.equal(runProvenance('validate',root,runtime).exitCode,0);
+    const component=path.join(root,libmpvInput.INPUT_ROOT),saved=component+'-physical';
+    fs.renameSync(component,saved);
+    fs.symlinkSync(saved,component,process.platform==='win32'?'junction':'dir');
+    assert.throws(()=>libmpvInput.validate(root),/links or redirects are forbidden/);
+});
+
 test('historical Electron, Pepper and old libmpv bodies are not provenance prerequisites',()=>{
-    const root=fs.mkdtempSync(path.join(os.tmpdir(),'ete-provenance-history-only-'));
+    const root=createTempRoot('ete-provenance-history-only-');
     try {
         createFixture(root);
         for(const relative of ['x64/electron/electron.exe','x64/electron/version','electronapp/libmpv/x64/mpv-win32-x64.node','electronapp/libmpv/x64/mpv-1.dll']) {
@@ -233,7 +256,7 @@ test('historical Electron, Pepper and old libmpv bodies are not provenance prere
 });
 
 test('runtime provenance binds tracked product sources to committed Git blobs', () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-provenance-'));
+    const root = createTempRoot('ete-provenance-');
     try {
         createFixture(root);
         writeFile(path.join(root, 'src', 'electronapp', 'www', '__ignored-sentinel.js'), 'ignored\n');
@@ -279,7 +302,7 @@ test('runtime provenance binds tracked product sources to committed Git blobs', 
 });
 
 test('runtime provenance rejects prepared and source-provenance tampering', () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-provenance-tamper-'));
+    const root = createTempRoot('ete-provenance-tamper-');
     try {
         createFixture(root);
         const prewriteRuntime = createRuntime(root, 'runtime-prewrite-tamper');

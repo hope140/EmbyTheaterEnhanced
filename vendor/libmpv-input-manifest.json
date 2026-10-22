@@ -15,7 +15,7 @@
   ],
   "provenance": {
     "mode": "upstream-fixed-archive",
-    "source": "Pinned SourceForge project archive; libmpv-2.dll renamed to mpv-1.dll, unchanged SHA256",
+    "source": "Original pinned upstream archive stored as a repository input; libmpv-2.dll renamed to mpv-1.dll, unchanged SHA256.",
     "historicalPath": "vendor/patch/payload/libmpv/mpv-1.dll",
     "physicalLegacyDirectoryRequired": false,
     "claimedAsOwnOriginal": false
@@ -23,10 +23,11 @@
   "licenseRecord": {
     "existingNotices": "THIRD_PARTY_NOTICES.md and docs/SOURCE_MATERIALS.md",
     "sourceReference": "https://github.com/mpv-player/mpv/tree/dd5d17d3285a095a0f712fa9d116e22a076492de",
-    "scope": "Third-party libmpv. Existing corresponding-source, linked dependencies/build options and notice completeness limitations remain; no new authorization or full source rebuild is claimed.",
-    "publicBodyUpload": false
+    "scope": "Third-party libmpv. Finished-package source coverage and notice completeness are not independently certified. Storage authorization is not a new upstream licence grant or a full source rebuild claim.",
+    "publicBodyUpload": true
   },
   "archive": {
+    "repositoryPath": "vendor/archive/libmpv/20260809/mpv-dev-x86_64-20260809-git-dd5d17d328.7z",
     "asset": "mpv-dev-x86_64-20260809-git-dd5d17d328.7z",
     "sourceUrl": "https://sourceforge.net/projects/mpv-player-windows/files/libmpv/mpv-dev-x86_64-20260809-git-dd5d17d328.7z/download",
     "size": 31173907,
