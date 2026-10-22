@@ -19,7 +19,7 @@
 - 完整公开 CI、Windows 全量测试、全部显式材料自测、JS/PowerShell 语法、有限凭据模式及 diff 检查成功；各类实际测试数按 run 记录，不作为用户新功能。
 - 标准 build、VerifyOnly、安装器编译、固定 InnoUnp 完整性及完整解包 runtime 的路径/大小/SHA256 一致性通过；核对版本、来源及签名状态。
 - 新 annotated `v0.3.16` 只绑定最终产品 source，等待该 Tag CI；版本已存在则停止，不移动、删除或覆盖已有对象。
-- 原始 notes 附件取该 source 的 `docs/RELEASE_NOTES.md` Git blob 字节。五附件为标准 `.exe`、`.exe.provenance.json`、`.exe.sha256`、`RELEASE_NOTES.md`、`SHA256SUMS.txt`，校验表列前四项，自身 SHA 单独记录。
+- 原始 Actions artifact 保留产品 source 的 notes Git blob（2559 bytes，SHA-256 `ac2ac00eb259e36efda84dfc180a5ac71b8436312bf75574d11a98cea75a8d00`）。用户随后要求将长期未复现的音轨/字幕延迟记为已解决，批准发布前修正文档：Release 采用本次文档修正中的 notes，并只更新校验表的 notes 项。明确记录文档提交、原始/修订 notes 及校验表各自哈希，不声称修订 notes 仍是产品 source 的原始字节。安装器及两个 companion 保持；标准五附件名称和校验表列前四项、自身 SHA 单列的规则保持。
 - 核对实际文件名、全字节 SHA256 与来源绑定后，才以标题 **v0.3.16 测试版** 发布 `prerelease=true`、`make_latest=false`；公开后回读五附件和全部相关字段。保留旧 v0.3.15、全部历史 Tag/附件和 Latest v0.3.1。
 
 ## 验收边界
