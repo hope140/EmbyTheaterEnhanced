@@ -15,7 +15,7 @@
   "sourceReference": "https://github.com/MediaBrowser/emby-theater-windows/tree/708fadc068cbf66ced6aece4a32f3e12bb2c4e13",
   "excludedModel": {
     "path": "MediaBrowser.Model.dll",
-    "reason": "Official member differs from current Model; keep existing bytes and source unchanged"
+    "reason": "Model is prepared separately by model-compatibility-manifest.json from the same pinned official archive"
   },
   "redistributionReview": "No new public redistribution of binary bodies; preserve existing notices and unresolved component source/notice records",
   "files": [

@@ -148,6 +148,8 @@ test('manifest-derived assembly equals legacy assembly after the same replacemen
             'electronapp/libmpv/x64/mpv-1.dll': 'pinned mpv',
             'Emby.Theater.exe.config': 'generated config'
         })) write(runtime, name, value);
+        // The oracle applies the same intentional official Model replacement.
+        fs.copyFileSync(path.join(f.root,require('../tools/model-compatibility-input.cjs').INPUT_ROOT,'MediaBrowser.Model.dll'),path.join(runtime,'MediaBrowser.Model.dll'));
         dependencies.copyRuntimeDependencies(f.root, runtime, f.source, token);
         assert.equal(dependencies.inspectRuntime(f.root, runtime, f.commit).valid, true);
     }
@@ -301,7 +303,9 @@ test('all four old small paths may be absent while configuration and Model remai
     assembly.assemble(f.root,f.commit,f.runtime,f.token);
     assert.equal(small.validateRuntime(f.root,f.runtime).status,'passed');
     assert.deepEqual(fs.readFileSync(path.join(f.runtime,'config/system.xml')),expectedConfig);
-    assert.deepEqual(fs.readFileSync(path.join(f.runtime,'MediaBrowser.Model.dll')),fs.readFileSync(path.join(f.vendor,'MediaBrowser.Model.dll')));
+    const modelPath=require('../tools/model-compatibility-input.cjs').INPUT_ROOT+'/MediaBrowser.Model.dll';
+    assert.deepEqual(fs.readFileSync(path.join(f.runtime,'MediaBrowser.Model.dll')),fs.readFileSync(path.join(f.root,modelPath)));
+    assert.notDeepEqual(fs.readFileSync(path.join(f.runtime,'MediaBrowser.Model.dll')),fs.readFileSync(path.join(f.vendor,'MediaBrowser.Model.dll')));
     for(const name of small.SMALL_PATHS)assert.equal(fs.existsSync(path.join(f.vendor,name)),false);
 });
 

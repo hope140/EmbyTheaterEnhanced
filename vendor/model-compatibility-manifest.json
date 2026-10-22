@@ -3,31 +3,46 @@
   "version": "snapshot-v1",
   "inputRoot": "vendor/model-compatibility/snapshot-v1",
   "fileCount": 1,
-  "bytes": 424960,
-  "treeSha256": "670e214391ce8c20d61926415497cae827a496fb0a94197b9446f9d8348ac48f",
+  "bytes": 426496,
+  "treeSha256": "70ddbbd4335a850a9c730f84c48eba08268b32d0a9df645bec0d93f139082823",
+  "archive": {
+    "name": "emby-theater-x64.zip",
+    "sourceUrl": "https://github.com/MediaBrowser/emby-theater-windows/releases/download/3.0.20/emby-theater-x64.zip",
+    "releaseUrl": "https://github.com/MediaBrowser/emby-theater-windows/releases/tag/3.0.20",
+    "size": 111318728,
+    "sha256": "3bc01d288d64046483ef12a8e5a70cc31b6d8b65ed9ee1837554ab7eba797c4c"
+  },
   "provenance": {
-    "mode": "local-model-compatibility-snapshot",
-    "source": "Existing verified Carnival DLL preserved unchanged",
+    "mode": "official-windows-3.0.20-model",
+    "source": "Official Emby Theater Windows 3.0.20 release ZIP, unique root Model member",
     "physicalLegacyDirectoryRequired": false,
     "wholeOldPackageCopied": false,
     "claimedAsOwnOriginal": false,
     "officialOnlineRecoveryEstablished": false,
+    "officialArchiveRecoveryEstablished": true,
     "publicBodyUpload": true,
     "dllExecuted": false,
-    "officialReplacement": false,
-    "repositoryStorage": "Explicit user-authorized same-repository snapshot; existing source/notice uncertainties remain, no authorship reattribution"
+    "officialReplacement": true,
+    "repositoryStorage": "Pinned official release member; prior community variant remains recoverable in Git history; no authorship reattribution",
+    "historicalPredecessor": {
+      "commit": "ad14a95bfe2122d45508bbb21ea88cfc4f71ee77",
+      "path": "vendor/model-compatibility/snapshot-v1/MediaBrowser.Model.dll",
+      "size": 424960,
+      "sha256": "f2eeca1c65e56e96340dc84ff91de6e4cc25bb2e510706748606f05c1e39ebaf",
+      "physicalInputRequired": false
+    }
   },
   "files": [
     {
       "path": "MediaBrowser.Model.dll",
-      "size": 424960,
-      "sha256": "f2eeca1c65e56e96340dc84ff91de6e4cc25bb2e510706748606f05c1e39ebaf",
+      "size": 426496,
+      "sha256": "db22f8ea6cb6afdfab184f80d8b85a10d8a9f148ff4cae167db87ce9cd245153",
       "origin": {
-        "source": "Existing verified Carnival Model DLL",
-        "exactRevision": "unresolved",
-        "officialByteIdentity": false,
+        "source": "Official Windows 3.0.20 release archive member MediaBrowser.Model.dll",
+        "exactRevision": "Official binary release identity pinned; exact corresponding source rebuild not established",
+        "officialByteIdentity": true,
         "claimedAsOwnOriginal": false,
-        "notice": "Preserved current compatibility bytes; official reference comparison and A/B results do not authorize a silent replacement"
+        "notice": "Official binary replacement selected after independent compatibility acceptance; existing component notices and unresolved source-rebuild obligations remain"
       }
     }
   ]

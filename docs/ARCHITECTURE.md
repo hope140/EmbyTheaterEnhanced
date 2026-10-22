@@ -1,5 +1,7 @@
 # 架构与维护边界
 
+Current Model selection: the independent component now uses the fixed official Windows 3.0.20 Model member and can recover it from the same pinned ZIP as Host. Historical unchanged-Model statements below describe earlier stages. No playback/Host/Electron/libmpv source or configuration-default change accompanies this selection. See [current contract and acceptance limits](MODEL_COMPATIBILITY_INPUT.md).
+
 Current compatibility-resource input: 48 manual/external files now use a fixed local component with per-file origin and notice records, preserving runtime paths and bytes. Normal old input count is five Carnival files and zero patch files. Material snapshots remain external to Git. See [snapshot contract and limits](COMPATIBILITY_RESOURCES_INPUT.md).
 
 Current input update: libmpv is an independent verified local snapshot. Normal preparation/build/provenance require no vendor/patch directory or combined-patch archive. Remaining Carnival count is 53; patch count is zero. This changes acquisition paths only, with no DLL/Model/UI/version change. See [snapshot and recovery limits](LIBMPV_INPUT.md).
