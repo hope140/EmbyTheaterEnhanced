@@ -1,6 +1,6 @@
 # Fixed local compatibility-resource snapshot
 
-Current release selection: [the scoped legacy-resource audit](https://github.com/hope140/EmbyTheaterEnhanced/blob/31e18aa6e97d7e5b8976ffb21b3cdf97240adf27/docs/LEGACY_RESOURCE_RETIREMENT.md) excludes nine compatibility resources and one small notice from new runtime output. Original snapshot bytes/manifests and notices remain preserved and strictly validated; the historical byte-preservation statements below describe input storage, not the new output selection. Runtime reports carry separate output counts, bytes, tree hashes and excluded identities.
+Current release selection: [the scoped legacy-resource audit](https://github.com/hope140/EmbyTheaterEnhanced/pull/69) excludes nine compatibility resources and two small runtime resources from new runtime output. Original snapshot bytes/manifests and notices remain preserved and strictly validated; the historical byte-preservation statements below describe input storage, not the new output selection. Runtime reports carry separate output counts, bytes, tree hashes and excluded identities.
 
 48 existing manual/external resource files are independently managed under vendor/compatibility-resources/snapshot-v1. Their 29,353,185 bytes and runtime paths remain unchanged. This selection excludes Model, the four small remaining old inputs, Web, Host, npm and libmpv components. Bodies are ignored by Git and are not publicly uploaded. This is a local snapshot, not a claim of official online recovery or ETE authorship.
 

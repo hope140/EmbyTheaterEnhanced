@@ -27,15 +27,15 @@ test('four-file cold restoration preserves opaque configuration and excludes Mod
     fs.writeFileSync(path.join(f.runtime, 'MediaBrowser.Model.dll'), 'unchanged Model');
     input.assemble(f.cold, f.runtime);
     for (const entry of f.manifest.files) {
-        if (entry.path === '\u6ce8\u610f\u4e8b\u9879.txt') {
+        if (['\u6ce8\u610f\u4e8b\u9879.txt', 'cec-driver/cancel'].includes(entry.path)) {
             assert.equal(fs.existsSync(path.join(f.runtime, entry.path)), false);
             continue;
         }
         assert.deepEqual(fs.readFileSync(path.join(f.runtime, entry.path)), fs.readFileSync(path.join(f.source, entry.path)));
     }
-    assert.equal(fs.statSync(path.join(f.runtime, 'cec-driver/cancel')).size, 0);
+    assert.equal(fs.existsSync(path.join(f.runtime, 'cec-driver/cancel')), false);
     assert.equal(input.validateRuntime(f.cold, f.runtime).fileCount, 4);
-    assert.equal(input.validateRuntime(f.cold, f.runtime).runtimeFileCount, 3);
+    assert.equal(input.validateRuntime(f.cold, f.runtime).runtimeFileCount, 2);
     assert.equal(fs.readFileSync(path.join(f.runtime, 'MediaBrowser.Model.dll'), 'utf8'), 'unchanged Model');
     assert.throws(() => input.assemble(f.cold, f.runtime), /already exists/);
 });

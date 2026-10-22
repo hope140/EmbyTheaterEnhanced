@@ -16,7 +16,7 @@ const RETIRED_COMPATIBILITY_PATHS = Object.freeze([
   'Emby.Dialog.bat',
   'external/Presets/mpv.conf'
 ]);
-const RETIRED_SMALL_RUNTIME_PATHS = Object.freeze(['\u6ce8\u610f\u4e8b\u9879.txt']);
+const RETIRED_SMALL_RUNTIME_PATHS = Object.freeze(['\u6ce8\u610f\u4e8b\u9879.txt', 'cec-driver/cancel']);
 const RETIRED_RUNTIME_PATHS = Object.freeze([
   'electronapp/libmpv/x64/mpv-win32-x64.node',
   ...RETIRED_COMPATIBILITY_PATHS,

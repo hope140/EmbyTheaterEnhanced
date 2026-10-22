@@ -1,5 +1,12 @@
 # 项目状态
 
+## 2026-10-22 — CEC 包内副本与桌面 CSS 条件复核
+
+现用固定 Host IL 明确从 ProgramDataPath 读取 cec-driver/cancel；生产配置指向独立用户 profile，bootstrap 独立创建并保留该标记，不复制包内文件。因此把无消费者的包内 cancel 纳入剥离，profile 语义、CEC 启动链及用户文件保持；累计新 runtime 剥离 11 项/26,963,353 bytes，兼容/小组件输出 39/2 项。Host 先启动 Electron 再检查驱动，但没有等待 bootstrap 的握手；没有宣称首启时序或真实设备已验收。
+
+CustomCssJS 通过真实 app/pluginmanager 构造与登录事件可在无 MainActivity 的桌面环境处理服务端 forced_on CSS。没有独立客户端编辑页；普通选择依赖既存 localStorage，local CSS 也依赖服务端接口成功。多服务器桌面会跳过 Branding/Css，不能把两者视为同一入口。新增真实固定材料的 AMD/DOM 隔离回归，证据不升级为 GUI/真实服务验收。逐项依据及静态 IL 方法见[资源退役合同](LEGACY_RESOURCE_RETIREMENT.md)。原始快照、声明、三个保留文件与 Carnival 状态不改。
+
+
 ## 2026-10-22 — 14 项旧资源用途与独立剥离候选
 
 核对安装、启动、菜单和手工 BAT 后，从新装配输出剥离两份旧 BAT、四份备用 CSS、字体、全局 mpv 预设、Anime4K-off.conf 及旧注意事项，共 10 文件/26,963,353 bytes。保留 system.xml 种子、中文播放器翻译、CEC cancel 标记和 CustomCssJS CSS 定制；Carnival/MainActivity 候选保持。原始 vendor 和 manifest 只读、全部输入哈希及版权/许可声明保留；来源和许可未闭合项不会因发布包瘦身自动解决。

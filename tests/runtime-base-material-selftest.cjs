@@ -31,6 +31,7 @@ const approvedRetirements = new Set([
     'Emby.ConfigureAndUninstall.bat',
     'Emby.Dialog.bat',
     'external/Presets/mpv.conf',
+    'cec-driver/cancel',
     '注意事项.txt'
 ]);
 function sha(bytes) { return crypto.createHash('sha256').update(bytes).digest('hex'); }
