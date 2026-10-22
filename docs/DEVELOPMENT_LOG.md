@@ -1,10 +1,10 @@
 # 维护记录
 
-## 2026-10-22 — Extract historical user Web deltas through existing overlays
+## 2026-10-22 — Maintain derived ApiClient and toast sources directly
 
-从 main `6fee412` 的独立分支提取用户已确认的综合补丁增量：ApiClient 的重连及进度上报 ensure、toast 的定位块删除。复用现有固定基底、overlay 及 HEAD 输入合同，新变换器精确重建历史载体后串联原生命周期修复。两份完整载体保留为只读来源/字节对照，不再作为生产 overlay 输入；原官方精确修订仍未确认，继承正文不标为用户原创。
+ApiClient 和 toast 的现有最终字节直接纳入 `src/electronapp/www` 下两个明确开放的维护路径，由既有 Git blob 装配器复制；移除对应用户补丁、ApiClient 生命周期生成器及两个 overlay 入口，其余 overlay 保持。维护源码明确为固定历史 Web 的派生文件，保留用户原有重连/进度/toast 修复和后续 socket/注销/计时器归属修复，不将继承正文整体标作原创，不替换原上游版本。
 
-针对性 42/42、显式 ApiClient/用户增量/VideoOSD 材料集合 31/31 通过；完整 npm test 为 1429 pass / 0 fail / 10 Windows 专属 skip。相对 main `6fee412`，共同生产变换后的 720 个 Web 文件路径与 SHA256 全部相同，25 个 overlay 最终 hash 不变。HEAD 构建输入合同、386 份 JS 语法及 443 份文本有限模式检查通过。来源记录会因生成器身份变化而变化。初次完整材料门禁因缺少 `vendor/windows-host` 失败；随后按锁定官方 ZIP、固定 Git blobs 与仓库原始 libmpv 归档恢复忽略的准备输入，完整门禁及全部显式材料自测 144/144 通过，0 fail/skip。固定基底对照覆盖 822 文件及共同变换后的 937 文件。未进行 Windows 整包、GUI、登录或用户媒体验收。vendor、产品功能、remoteaudio/remotevideo、依赖和版本保持；发布分支、Tag/Release/附件不动。维护边界与复现见 [Web 输入合同](WEB_SNAPSHOT_INPUT.md)。
+原缺件已按固定官方 ZIP/Git blobs 和仓库原始归档恢复，材料门禁保持原校验。直接源码方案的完整回归、材料和720文件字节对照在本分支核验后记录；不沿用旧生成器方案的测试计数。未进行 Windows 整包、GUI、登录或用户媒体验收。vendor、remoteaudio/remotevideo、依赖和版本保持，发布分支、Tag/Release/附件不动。来源和复现见 [Web 输入合同](WEB_SNAPSHOT_INPUT.md)。
 
 ## 2026-10-22 — v0.3.16 测试版准备
 

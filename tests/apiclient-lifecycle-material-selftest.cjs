@@ -8,23 +8,17 @@ const test = require('node:test');
 const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
-const basePath = path.join(root, 'vendor/web-snapshot/www/modules/emby-apiclient/apiclient.js');
-const source = process.env.ETE_APICLIENT_SOURCE
+// Historical carrier is an independent before-lifecycle comparison, never a build input.
+const source = fs.readFileSync(path.join(root, 'vendor/web-snapshot/user-patches/apiclient.js'), 'utf8');
+assert.equal(crypto.createHash('sha256').update(source).digest('hex'),
+  'a4a901640abe6bc25188c1cf27fb53125b4f65ef2a797def033dc55165b080ae');
+const maintainedPath = path.join(root, 'src/electronapp/www/modules/emby-apiclient/apiclient.js');
+const maintainedSource = fs.readFileSync(maintainedPath, 'utf8');
+assert.equal(crypto.createHash('sha256').update(maintainedSource).digest('hex'),
+  '6342a2c809b8cd4c0e1e3e35fc49f6af8a415e4f4f8f8f0363cb769e9a7ef95e');
+const testedSource = process.env.ETE_APICLIENT_SOURCE
   ? fs.readFileSync(process.env.ETE_APICLIENT_SOURCE, 'utf8')
-  : require('../tools/patch-user-web.cjs').patchApiClient(fs.readFileSync(basePath, 'utf8'));
-const manifest = JSON.parse(fs.readFileSync(path.join(root, 'vendor/web-snapshot-manifest.json'), 'utf8'));
-const pinned = manifest.userPatches.find(entry => entry.path === 'user-patches/apiclient.js');
-assert.ok(pinned, 'manifest-pinned ApiClient material entry is required');
-const sourceSha256 = crypto.createHash('sha256').update(source).digest('hex').toUpperCase();
-assert.equal(sourceSha256, pinned.sha256.toUpperCase(), 'ApiClient source must match the runtime manifest SHA-256');
-
-let testedSource = source;
-if (process.env.ETE_APICLIENT_UNPATCHED !== '1') {
-  const {patchApiClient} = require('../tools/patch-apiclient-lifecycle.cjs');
-  assert.equal(typeof patchApiClient, 'function', 'patcher must export patchApiClient(source)');
-  testedSource = patchApiClient(source);
-  assert.equal(typeof testedSource, 'string', 'patchApiClient must return the complete AMD source');
-}
+  : process.env.ETE_APICLIENT_UNPATCHED === '1' ? source : maintainedSource;
 
 const OPEN = 1;
 const CONNECTING = 0;

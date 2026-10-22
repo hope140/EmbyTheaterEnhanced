@@ -56,14 +56,8 @@ test('generates exact Web overlays without an ignored src/electronapp/www snapsh
     try {
         const report = preparation.apply(root, runtime);
         assert.equal(report.status, 'passed');
-        const apiClient = report.entries.find(entry => entry.id === 'apiclient');
-        const apiContract = preparation.WEB_OVERLAY_CONTRACT.find(entry => entry.id === 'apiclient');
-        assert.equal(apiClient.baseSha256, apiContract.expectedBaseSha256);
-        assert.equal(apiClient.inputPath, null, 'production no longer reads the historical replacement');
-        assert.equal(apiClient.inputSha256, null, 'source relation is base plus tracked generators');
-        assert.equal(apiClient.runtimeSha256, apiContract.expectedOutputSha256);
-        assert.equal(fs.existsSync(path.join(root, 'vendor/web-snapshot/user-patches')), false,
-            'all overlays build without either archived replacement file');
+        assert.equal(report.entries.some(entry => ['apiclient', 'toast-css'].includes(entry.id)), false);
+        assert.equal(fs.existsSync(path.join(root, 'vendor/web-snapshot/user-patches')), false);
         assert.deepEqual(
             report.entries.map(entry => ({path: entry.runtimePath, hash: entry.runtimeSha256})),
             preparation.WEB_OVERLAY_CONTRACT.map(contract => ({
@@ -108,7 +102,7 @@ test('fails closed before writing when a required base is missing', () => {
     const root = createContractRoot();
     const runtime = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-web-overlay-missing-'));
     try {
-        const inputPath = preparation.WEB_OVERLAY_CONTRACT.find(entry => entry.id === 'apiclient').basePath;
+        const inputPath = preparation.WEB_OVERLAY_CONTRACT.find(entry => entry.id === 'videoosd-lifecycle').basePath;
         fs.rmSync(path.join(root, inputPath));
         assert.throws(() => preparation.apply(root, runtime), /Web overlay base missing/);
         for (const contract of preparation.WEB_OVERLAY_CONTRACT) {
