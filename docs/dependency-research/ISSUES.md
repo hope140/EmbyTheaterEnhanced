@@ -58,11 +58,34 @@
 |---|---|---|---|
 | 独立第三方候选：page.js路由 | [visionmedia/page.js 1.8.3 commit 1bc9369](https://github.com/visionmedia/page.js/tree/1bc93692b0924b686e2207a66e2e73a85e1ab058)，2018-01-22；同revision的Readme含MIT全文，package.json标MIT | 当前`modules/pagejs/page.js`经approuter调用，但与固定上游非byte/整文件AST同；路由注册、回退状态及Emby dom依赖存在差异。3个同名声明仅作比较入口，不证明具体引入版本或作者 | 固定MIT原件本身提供使用/修改/分发许可，并要求保留版权和许可通知；当前定制路由新增部分的授权仍缺，不能补MIT就宣称全文件闭合。若另选原版，须验证路由注册/返回键适配及其依赖，不能直接覆盖 |
 | 独立第三方族线索：WebVTT | [mozilla/vtt.js 0.13.0 commit f823de8](https://github.com/mozilla/vtt.js/tree/f823de834bc23d65300e58a6d391916bc00bcb75)，2016-12-01；lib/vtt.js文件头明确Apache-2.0，根LICENSE同版 | 当前`modules/webvtt/vtt.js`的解析/字幕布局接口和具名函数提供族线索；19个共同具名声明中4个AST同、15个不同（有嵌套重叠），不算整文件或版本对应。当前文件无这段上游版权/许可头 | 原版的再分发条件包括随附许可、保留相关通知、显著标明修改及适用NOTICE；当前派生链和新增部分授权未闭合。项目维护层GPL-2.0-only与Apache-2.0的组合也不能直接判可用：[GNU说明](https://www.gnu.org/licenses/license-compatibility.html)指出二者不兼容；是否构成同一组合及可选边界仍须具体核对，不改项目许可 |
-| 早期官方GPL文本与播放方式标签 | [Emby 3.5.3 commit 1d7c2ab](https://github.com/MediaBrowser/Emby/tree/1d7c2ab4bfebdae31f89fdaabd3b68782ccf495a)含Dashboard的`bower_components/emby-webcomponents/playback/playmethodhelper.js`及根GPL v2文本；webcomponents固定tip中的文件最后改于2017-07-01 | 当前helper与2018压缩源码的5种分支输出可逐项对应：无当前项→null；IsVideoDirect→DirectStream；Transcode→Transcode；DirectStream/DirectPlay→DirectPlay；其余→undefined。这是静态语义对应，封装和条件表达式不同，byte/整文件AST均不同 | 同树GPL文本是早期来源证据，不能覆盖新版整树；嵌套bower元数据又指向独立LICENSE URL，而所核对webcomponents tip无该根文件，需补准确适用范围或采用有明确许可的独立实现。当前消费者为playerstats显示标签，未发现本helper作播放地址选择；仍未执行运行验收 |
+| 早期官方GPL文本与播放方式标签 | [Emby 3.5.3 commit 1d7c2ab](https://github.com/MediaBrowser/Emby/tree/1d7c2ab4bfebdae31f89fdaabd3b68782ccf495a)含Dashboard的`bower_components/emby-webcomponents/playback/playmethodhelper.js`及根GPL v2文本；webcomponents固定tip中的文件最后改于2017-07-01 | 当前helper与2018压缩源码的5种分支输出可逐项对应：无当前项→null；IsVideoDirect→DirectStream；Transcode→Transcode；DirectStream/DirectPlay→DirectPlay；其余→undefined。这是静态语义对应，封装和条件表达式不同，byte/整文件AST均不同 | 新查webcomponents的同一2017提交同时含helper及GPL v2文本，补到了旧版许可源；当前tip缺LICENSE不再作为旧版许可缺口。单一函数编译规范化对应成立，模块封装/转换和交付范围仍另核，不扩大到新版整树。当前消费者为playerstats显示标签，未发现本helper作播放地址选择；仍未执行运行验收 |
 | Emby发行Web核心／页面（独立第三方另列） | 官方4.7.6/4.7.14字节与函数比较底稿，加同版Debian随包license.docx；历史Electron GPL文本不含另取www | app.js、AppSettings、PlaybackManager、ApiClient和多数页面可以缩小来源差异，但没有取得覆盖这些实际2022/2023修订的独立开源授权链。webcomponents的bower许可URL不是许可正文 | 尚缺准确Web版本的许可声明/授权范围，不能用早期GPL或公开下载补足。按入口初始化、API/连接、播放状态、页面/样式族分别闭合；目前不能把这大片内容认定为“小补丁即可解决” |
 | 指定CustomCssJS来源 | 上节固定revision、CRLF规范化对应、GPLv3原件 | 来源已定位；GPLv3通知/源码义务与项目组合范围另查 | 由PR #69用途退役集成处理，不重复追作者，不因有GPL文本便认定整体可组合 |
 
 “可按现成许可保留”目前能直接落实到**已固定的MIT或Apache上游原件及其许可条件**，不能直接等同当前定制文件；GPL历史源码和CustomCssJS也须分别满足适用范围、对应源码/通知及组合条件。本轮没有新增可宣称整文件授权闭合的当前剩余文件，没有认定所有公开早期内容均受同一限制。
+
+## 旧许可源到当前局部代码的定点映射
+
+本轮没有取更多Server版本。沿官方主线补查LICENSE历史：webcomponents在2016提交`8a268bdd`有MIT文本（SHA256 `bb34faf1413f7a795a10303545f433e04c95cd7b4de04311d45a72634424e4db`），2017-01-02的`308a34c3`改为GPL v2，2018-12-13的`11a4d4af`删除LICENSE.md。删除是仓库历史事实，不能单凭它推导旧授权撤销或所有后续版本沿用旧许可。原来只查tip未见文件的证据边界已补充，不能再概括为“旧组件没有许可证”。
+
+helper的[2017固定源码](https://github.com/MediaBrowser/emby-webcomponents/blob/93d3f89bd7d151d7bde09af6dffc0c627901831b/playback/playmethodhelper.js)为701 bytes，SHA256 `0221204ebc057328a6bcddfead924d9a3f96ba20738709e7930cc68a36ff41e4`，与[同commit GPL v2文本](https://github.com/MediaBrowser/emby-webcomponents/blob/93d3f89bd7d151d7bde09af6dffc0c627901831b/LICENSE.md)绑定。其单一显示函数与当前函数经同工具编译规范化后相同，整文件AMD/exports封装不因此计为byte或严格AST对应。
+
+另确认[官方JavaScript ApiClient固定源](https://github.com/MediaBrowser/Emby.ApiClient.Javascript/tree/fdd0939ac596406ab92274f30fd83d226a677424)带MIT全文；同提交apiclient.js为105,635 bytes、connectionmanager.js为47,281 bytes。前者最近源码变化为2020-10-04的`0dc3bb08`，不是2023归档说明的日期。AppSettings/PlaybackManager使用删除许可证前的固定GPL源码`cc087c2a`；page/VTT使用前述固定MIT/Apache原件。
+
+| 家族 | 当前可调用片段数 | 严格片段AST同 | 另有编译规范化同 | 规范化后仍不同 | 相对所选旧源当前独有 |
+|---|---:|---:|---:|---:|---:|
+| ApiClient | 319 | 18 | 47 | 185 | 69 |
+| ConnectionManager | 66 | 10 | 17 | 32 | 7 |
+| AppSettings | 22 | 1 | 7 | 7 | 7 |
+| PlaybackManager | 181 | 7 | 54 | 92 | 28 |
+| page.js | 19 | 1 | 0 | 10 | 8 |
+| VTT | 34 | 9 | 11 | 14 | 0 |
+
+**这些不是文件、代码覆盖率、作者归属或许可闭合数量。** 片段含嵌套重叠、简单getter和空构造函数；例如AppSettings的严格对应项是空构造函数。匹配片段未比较整个外层闭包：ConnectionManager的默认timeout仍有20秒→5秒等差异。规范化后不同也不自动证明功能不同或无许可。此处只提供采用已许可固定源、隔离未覆盖增量的可核验证据，不把整树归为GPL或MIT，也不要求找到每份同hash才可能有许可。
+
+规范化仅在研究环境使用固定Babel standalone 7.26.9、Terser 5.36.0（SRI与工具hash已核）解析/编译字符串，不执行产品片段，不改产品依赖或lock；unsafe优化关闭、变量名不混淆，3组正反例通过，最终无解析错误。完整片段名、对应状态、hash、原始源码/许可URL与方法限制见[局部映射证据](evidence/licensed-callable-mapping-20261022.json)。
+
+可执行下一步：helper可优先评审从同提交GPL源规范生成及补齐来源/源码/通知；ApiClient/ConnectionManager可按MIT固定源与导出的未覆盖方法清单核必要兼容增量；AppSettings/PlaybackManager可先固定已对应GPL片段并逐项解释剩余设置/播放增量，不能自动移植而破坏播放生命周期。page.js需核三参数注册及getRoutes/getRoute/返回历史等新增接口；VTT需核14个未覆盖解析/布局片段，CSS及组合范围单列。没有新固定授权线索的较新Web部分，停止版本扫描，保留授权依据或另定替代/独立实现边界；本PR不代替该决定。
 
 ## 组件级决定、规模与行为边界
 
@@ -72,7 +95,7 @@
 |---|---|---|---|
 | page.js：1份JS，6,028 bytes；approuter适配另计 | 固定MIT原件与当前整文件不对应。当前消费者要求三参数路由注册及getRoutes/getRoute/canGoBack/back/forward/restorePreviousState/pushState/handleAnchorClick等；不能把这些定制部分自动归入固定MIT版本 | **尚不能判定当前文件只补声明即可**。MIT覆盖的原始部分须保留版权/许可；保留当前版需补定制来源/授权依据，另一选择是明确许可的原件加独立适配。后者不是自动可用替换 | 文件小但承载广泛页面导航，行为回归范围较大。最小下一步是固定上述消费者合同和当前差异边界，再决定保留证据路线或独立适配路线；本轮停止再猜上游小版本 |
 | WebVTT：1份JS 28,470 + 1份CSS 428，共28,898 bytes | JS有Mozilla vtt.js族线索与同版Apache-2.0原文，非整文件对应；当前缺上游头。CSS的独立来源/许可没有因此绑定，不能因同目录就套Apache | **尚不能只补Apache声明就结案**。需补当前JS引入/修改链、相关通知和GPL-2.0-only组合范围；CSS另核。可比较保留当前派生版的证据路线，或另选许可与组合范围明确的解析/布局实现，不默认Apache原件可以直接纳入当前组合 | HTML播放器外部VTT的解析、cue与布局，中等规模且行为面广；没有证明所有原生播放路径依赖它。最小下一步是固定Parser/StringDecoder/parse/flush/oncue/onflush接口及CSS边界，授权/组合依据无新线索则停止该搜索，交由替代边界决定 |
-| playmethodhelper：1份JS，656 bytes | 旧官方416字节压缩底稿的5类输出与当前语义对应，wrapper/表达式不同；2018同树有GPL v2文本，嵌套组件许可范围仍需明确；不把此证据扩到新版整树 | **当前尚未认定只补GPL声明即可**。可以补旧源码对该组件的适用声明及当前变换链，或决定按已记录输入/输出合同独立实现；后者是候选，不是已经完成的独立创作 | 已定位消费者为playerstats标签，局部行为风险较低；不是播放地址选择器。最小下一步可直接就这一个显示函数作保留/独立实现决定，无须继续扫描整包年代；后续验5类输出即可开始，不能据此免除集成验证 |
+| playmethodhelper：1份JS，656 bytes | 旧官方416字节压缩底稿的5类输出与当前语义对应，wrapper/表达式不同；2018同树有GPL v2文本，嵌套组件许可范围仍需明确；不把此证据扩到新版整树 | **当前尚未认定只补GPL声明即可**。旧固定源码已有同提交GPL文本和函数对应，可优先决定以此固定源规范生成/维护并补齐源码及通知；独立实现仍是另一选择；后者是候选，不是已经完成的独立创作 | 已定位消费者为playerstats标签，局部行为风险较低；不是播放地址选择器。最小下一步可直接就这一个显示函数作保留/独立实现决定，无须继续扫描整包年代；后续验5类输出即可开始，不能据此免除集成验证 |
 | logo：1份透明PNG，1238×377，32,892 bytes | [固定原图](https://github.com/hope140/EmbyTheaterEnhanced/blob/6fee412ad68934d0194303916cfe346e6254a228/vendor/web-snapshot/www/modules/themes/logo.png)为绿色播放标志、白色emby及“by David & NoisyX”字样；署名不是已核实作者/许可。它原属通用index的启动画面，不是某个主题专属；维护overlay改用ETE startup.svg，manifest装配仍复制原图 | **没有可补的已确认声明**。选择是补该图片授权证据，或在消费者与分发边界确认后退役/换自有或明确许可资产；“画面未用”不等于“包内不发” | 正常桌面入口加载构建后的www/index.html；静态重做startup变换所得SHA256与合同18f777ee…相同，已无旧图引用。未做GUI/请求验收，仍不能只靠grep证明所有动态路径均不用；屏保用的是另一路logowhite.png。最小下一步沿装配/排除合同决定单图退役或保留证据；缺新线索就停止图片历史检索 |
 | Web核心代表4份：app.js、AppSettings、PlaybackManager、ApiClient，共388,093 bytes；外围页面/样式不包含在此规模内 | app.js仅4个指定函数体外整树与4.7.6同；AppSettings仅3个码率方法体及autoplay外同；ApiClient仅4方法体外与4.7.14同；PlaybackManager有具名方法差异和重叠外层构造函数。已匹配的大量代码仍缺实际2022/2023 Web修订的许可适用链，未明修改不因较少就变成原创 | **不能以补Electron GPL或Server下载notice闭合**。可保留路线需要对实际Web修订有效的许可/授权依据及修改边界；若选择不再依赖未确认范围，则需按功能族选明确来源前端或独立实现。没有证据证明整个Web必须删除，也没有证据保证一两个小补丁即可解决 | 初始化/登录连接、设置持久化、播放会话/队列、API兼容和大量页面联动，行为风险高。最小下一步是先决定实际Web授权依据路线还是替代前端边界评估；无新固定声明/权利证据时停止历史包搜索。替代路线需先分入口/API/播放状态/页面样式合同，不进行整体自动移植 |
 
@@ -104,6 +127,25 @@
 | `modules/genericedit/genericedit.js` | ETE维护的plugin-ui/genericui.js直接导入，调用renderForm/setFormValues/getItemValues；维护overlay增加对应配置路由 |
 
 105条精确路径/hash、分类、消费者路径/行号/身份hash及动态说明见[证据JSON](evidence/web-history-20261022.json)的`usageScreen105`。本轮没有新的整目录退役证据。下一步若考虑camera候选，先独立决定保留或生产排除，再验隔离runtime的设置/管理相机上传区分、桌面/其他支持模式路由及请求失败；本PR不执行删除。许可适用可以依可靠版本/源码变换/授权范围等证据建立，不要求每个文件先找到同hash才可能有许可。
+
+## 已定位Web用途扩展：606项有限批次
+
+复用既有114项，另固定606项：597既有联合审计byte身份、6 JS AST、1 CSS AST、1空占位、1规范化CustomCssJS；597分区由已取得精确剩余清单排除重建，未伪称重跑其来源归因。此批606项均已有分类，原先436直接/170待动态的初筛已细化为：
+
+| 606项类别 | 数量 | 证据边界 |
+|---|---:|---|
+| 有静态消费者或条件资源依据 | 594 | 包括86份注册locale、22份字体、条件主题/横向首页/用户与OSD页签、字幕worker、音效、插件兼容等；不表示当前用户桌面逐项实际请求 |
+| HTTP托管元数据 | 1 | robots.txt有托管用途，非应用模块，不以无代码import认定无用 |
+| 未判定 | 11 | 10项评审候选及1项仅有外部兼容别名的detailtable.css；不称全部可删 |
+| 确证所有支持模式未用 | 0 | 没有仅凭grep0判定无用 |
+
+全部606条路径/hash、用途类别和消费者见[用途清单CSV](evidence/known-web-usage-20261022.csv)。10项候选为：相机设置HTML；`components/directorybrowser/directorybrowser.css`、`modules/common/playback/playqueueconfirmation.js`、`modules/emby-apiclient/appstorage-cache.js`、`serviceworker-app.js`；以及`strings/es-US.json`、`et-EE.json`、`is-IS.json`、`no.json`、`th.json`。后5项不在当前core语言注册表，既可能是残留也可能是漏注册，应先决定语言支持意图；不能直接整语言或整目录删除。候选原始输入共392,467 bytes，不是已实现的安装器节省。
+
+当前可交PR #69的移动端专用核验仍仅为settings/cameraupload.js及配套HTML：本地照片目录/目标服务器/Wi‑Fi偏好与原生cameraUpload服务；当前main `7a21ca5`桌面host无cameraupload能力、只为iOS/Android注册服务，设置路由在已验证生成app中仍注释。`devices/cameraupload.js`是服务端接收目录/子目录管理，有admin路由，必须分开保留。除这两项外，本批未再确认桌面不可达的移动端专用文件；触屏、响应式、字体、gamepad、字幕与TV布局均不能据名称删。
+
+相机的最小实施验证边界：隔离runtime排除及无缺模块请求；桌面设置冷启动/重载；mock API验证服务端devices管理页仍可读写其配置；非桌面复用另核。实现归PR #69，本PR不删文件，也不把计划排除计入已删除。
+
+桌面分层审计**尚未全部完成**：Host/Model已有类型化PE/CLR依赖表证据，宿主显式引用6个Host DLL及Model，不能靠文本grep判无用；RefreshRate.exe有当前动态架构路径的spawn消费者，windowsync.js由scripts目录枚举后require，均不是因无字面文件名就可删。锁定33个npm包/1,142成员已静态解包校验：包级入口图为15个条件运行时、16个类型生成CLI、2个类型支持；图外成员仍有229项数据/入口用途未解析，未宣称可删。35份许可/notice单列保留。剩余桌面文件归类与发布装配核验仍pending，不把本606批次当作完整桌面或897总账已完成。
 
 ## 旧资源实际用途清理
 
