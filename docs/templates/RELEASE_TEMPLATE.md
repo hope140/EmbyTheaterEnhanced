@@ -1,4 +1,4 @@
-# v{{VERSION}} · {{实际更新主题}}
+# v{{VERSION}} {{测试版或正式版}}
 
 {{实际平台}} **{{正式版或 Pre-release 测试版}}**。{{测试版手动下载说明与当前正式版链接；历史版说明发布时渠道，避免误称当前 Latest。}}
 
@@ -24,4 +24,4 @@
 
 [版本变更记录](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/CHANGELOG.md) · {{仅在准确前后 Tag 存在时添加比较链接}}
 
-<!-- 本文件是模板，不是可直接发布的正文。使用前对照 RELEASE_CONVENTIONS.md 替换全部占位符；原始发行 notes 与后续网页文案的身份分别记录。 -->
+<!-- 本文件是模板，不是可直接发布的正文。Release name 使用完整原 Tag 加一个空格及“测试版”或“正式版”，与实际 prerelease 标志一致；功能主题放在“本次更新”中，不加到 Release name。使用前对照 RELEASE_CONVENTIONS.md 替换全部占位符；原始发行 notes 与后续网页文案的身份分别记录。 -->

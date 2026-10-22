@@ -225,7 +225,11 @@ function buildManifest(rootArg, runtimeArg, sourceCommit) {
     const smallRuntime=smallRuntimeInput.validateRuntime(root,runtime);
     smallRuntime.preparation={generatorPath:'tools/small-runtime-input.cjs',generatorSha256:trackedFileHash.hashTrackedTextFile(root,'tools/small-runtime-input.cjs')};
     const modelCompatibility=modelInput.validateRuntime(root,runtime);
-    modelCompatibility.preparation={generatorPath:'tools/model-compatibility-input.cjs',generatorSha256:trackedFileHash.hashTrackedTextFile(root,'tools/model-compatibility-input.cjs')};
+    modelCompatibility.preparation={generatorPath:'tools/model-compatibility-input.cjs',generatorSha256:trackedFileHash.hashTrackedTextFile(root,'tools/model-compatibility-input.cjs'),
+        acquisitionPath:'tools/prepare-model-compatibility.ps1',acquisitionSha256:trackedFileHash.hashTrackedTextFile(root,'tools/prepare-model-compatibility.ps1')};
+    const historicalModel=manifestEntry(vendorManifest,'files','MediaBrowser.Model.dll');
+    modelCompatibility.historicalPredecessor={path:'vendor/carnival/MediaBrowser.Model.dll',recordedSha256:historicalModel.sha256,
+        physicalInputRequired:false,evidence:'tracked historical manifest; intentionally replaced by official component'};
     const inheritedNpm = inheritedNpmInput.validateRuntime(root,runtime);
     inheritedNpm.preparation = {generatorPath:'tools/inherited-npm-input.cjs',
         generatorSha256:trackedFileHash.hashTrackedTextFile(root,'tools/inherited-npm-input.cjs')};

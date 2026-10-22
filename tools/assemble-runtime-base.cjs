@@ -104,7 +104,9 @@ function plan(rootArg, sourceCommit) {
     const afterSmall=afterCompatibility.filter(e=>!smallPaths.has(e.path));
     const modelInput=modelCompatibility.load(root),modelPaths=new Set(modelInput.files.map(e=>e.path));
     const oldModel=afterSmall.filter(e=>modelCompatibility.isModelCompatibility(e.path));
-    if(oldModel.length!==1||oldModel[0].action!=='copy'||oldModel[0].size!==modelInput.files[0].size||oldModel[0].sha256!==modelInput.files[0].sha256)throw Error('Model snapshot differs from historical compatibility identity.');
+    // Retire the historical path, not its bytes: the separately locked official
+    // Model intentionally differs from the old compatibility variant.
+    if(oldModel.length!==1||oldModel[0].action!=='copy')throw Error('Historical Model selection must contain exactly one replaced path.');
     const otherCandidates=afterSmall.filter(e=>!modelPaths.has(e.path));
     const required = item => item.action === 'copy' || ['generated-host-config','generated-preload'].includes(item.reason);
     const entries = otherCandidates.filter(required);

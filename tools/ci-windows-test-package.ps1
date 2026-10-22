@@ -34,6 +34,13 @@ if ($LASTEXITCODE -ne 0) { throw 'Restored repository libmpv identity is invalid
 $libmpvIdentity = $libmpvIdentity | ConvertFrom-Json
 $libmpvFileSha256 = (Get-FileHash -LiteralPath (Join-Path $root 'vendor/libmpv/20260809/mpv-1.dll') -Algorithm SHA256).Hash.ToLowerInvariant()
 if (Test-Path -LiteralPath (Join-Path $root '.work/libmpv-download')) { throw 'Repository recovery unexpectedly created a libmpv download cache.' }
+$officialModel = & node (Join-Path $PSScriptRoot 'model-compatibility-input.cjs') validate $root
+if ($LASTEXITCODE -ne 0) { throw 'Official Model component identity is invalid.' }
+$officialModel = $officialModel | ConvertFrom-Json
+$modelArchive = & node (Join-Path $PSScriptRoot 'model-compatibility-input.cjs') validate-archive $root (Join-Path $root '.work/actions-inputs/archives/emby-theater-x64.zip')
+if ($LASTEXITCODE -ne 0) { throw 'Official Model source ZIP differs from its pinned identity.' }
+$modelArchive = $modelArchive | ConvertFrom-Json
+$modelFileSha256 = (Get-FileHash -LiteralPath (Join-Path $root 'vendor/model-compatibility/snapshot-v1/MediaBrowser.Model.dll') -Algorithm SHA256).Hash.ToLowerInvariant()
 
 # Prepare generates the pinned preload before any material-dependent regression.
 $tests = @(Get-ChildItem -LiteralPath (Join-Path $root 'tests') -Filter '*.test.cjs' -File | Sort-Object Name | ForEach-Object { 'tests/' + $_.Name })
@@ -89,6 +96,11 @@ $summary = [ordered]@{
     runId=$env:GITHUB_RUN_ID; runAttempt=$env:GITHUB_RUN_ATTEMPT
     runnerOS=$env:RUNNER_OS; runnerArch=$env:RUNNER_ARCH; imageOS=$env:ImageOS; imageVersion=$env:ImageVersion
     node=([string](& node --version)); installer=[IO.Path]::GetFileName($installer)
+    officialModel=[ordered]@{
+        provenanceMode=$officialModel.provenance.mode; sourceUrl=$officialModel.archive.sourceUrl
+        archiveSha256=$modelArchive.archiveSha256; archiveBytes=$modelArchive.archiveBytes
+        member='MediaBrowser.Model.dll'; memberSha256=$modelFileSha256; memberBytes=$officialModel.bytes
+    }
     releasePublished=$false; installedOrLaunched=$false
 }
 [IO.File]::WriteAllText((Join-Path $output 'test-build-summary.json'), (($summary | ConvertTo-Json -Depth 5) + "`n"), [Text.UTF8Encoding]::new($false))

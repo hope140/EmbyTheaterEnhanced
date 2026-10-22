@@ -5328,3 +5328,14 @@ The file identities and source/notice boundaries are recorded independently
 in `vendor/windows-host-manifest.json` and `docs/WINDOWS_HOST_INPUT.md`.
 This does not replace MediaBrowser.Model.dll, select a new licensing route,
 establish a complete binary rebuild, or publish the binary bodies in Git.
+
+## Official Windows Model selection update
+
+The separate Model component now selects the unmodified MediaBrowser.Model.dll
+member from the official Windows 3.0.20 release ZIP. Its file and archive hashes,
+recovery method and historical predecessor are recorded in
+`vendor/model-compatibility-manifest.json` and `docs/MODEL_COMPATIBILITY_INPUT.md`.
+The preceding unchanged-Model statement describes the earlier Host-only stage.
+The former compatibility variant remains in Git history. Official distribution
+identity does not establish an exact corresponding-source rebuild, remove any
+third-party notice obligations or reattribute the binary to this project.

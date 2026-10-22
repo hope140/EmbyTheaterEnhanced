@@ -6,6 +6,7 @@ const web = require('./web-snapshot-input.cjs');
 const MANIFEST_PATH = 'vendor/model-compatibility-manifest.json';
 const INPUT_ROOT = 'vendor/model-compatibility/snapshot-v1';
 const MODEL_PATHS=Object.freeze(['MediaBrowser.Model.dll']);
+const OFFICIAL_SOURCE='https://github.com/MediaBrowser/emby-theater-windows/releases/download/3.0.20/emby-theater-x64.zip';
 const isModelCompatibility=name=>MODEL_PATHS.includes(name);
 const sha = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 function relative(name) {
@@ -41,7 +42,9 @@ function load(rootArg) {
         seen.add(entry.path.toLowerCase());
     }
     if(manifest.bytes!==manifest.files.reduce((n,f)=>n+f.size,0)||manifest.treeSha256!==web.treeHash(manifest.files))throw new Error('Model compatibility snapshot component summary mismatch.');
-    if(manifest.provenance?.mode!=='local-model-compatibility-snapshot')throw new Error('Invalid model-compatibility snapshot origin.');
+    if(manifest.provenance?.mode!=='official-windows-3.0.20-model'||manifest.provenance.officialReplacement!==true)throw new Error('Invalid official Model component origin.');
+    if(manifest.archive?.sourceUrl!==OFFICIAL_SOURCE||manifest.archive.name!=='emby-theater-x64.zip'||
+        !Number.isSafeInteger(manifest.archive.size)||manifest.archive.size<=0||!/^[a-f0-9]{64}$/.test(manifest.archive.sha256||''))throw new Error('Invalid official Model archive identity.');
     return manifest;
 }
 function paths(root) {return load(root).files.map(entry=>entry.path);}
@@ -49,7 +52,13 @@ function validate(rootArg) {
     const root=path.resolve(rootArg),manifest=load(root);
     web.verifyTree(path.join(root,INPUT_ROOT),manifest.files);
     return {status:'passed',manifestPath:MANIFEST_PATH,manifestSha256:sha(fs.readFileSync(path.join(root,MANIFEST_PATH))),
-        version:manifest.version,provenance:manifest.provenance,fileCount:manifest.fileCount,bytes:manifest.bytes,treeSha256:manifest.treeSha256};
+        version:manifest.version,archive:manifest.archive,provenance:manifest.provenance,fileCount:manifest.fileCount,bytes:manifest.bytes,treeSha256:manifest.treeSha256};
+}
+function validateArchive(rootArg,archiveArg) {
+    const manifest=load(rootArg),archive=path.resolve(archiveArg);physical(archive,false);
+    const bytes=fs.readFileSync(archive);
+    if(bytes.length!==manifest.archive.size||sha(bytes)!==manifest.archive.sha256)throw new Error('Official Model archive identity mismatch.');
+    return {status:'passed',archiveSha256:manifest.archive.sha256,archiveBytes:bytes.length};
 }
 function importSnapshot(rootArg,sourceArg) {
     const root=path.resolve(rootArg),manifest=load(root),source=path.resolve(sourceArg);physical(source,true);
@@ -84,10 +93,11 @@ if(require.main===module) {
         if(command==='metadata'&&root&&!argument)result=load(root);
         else if(command==='validate'&&root&&!argument)result=validate(root);
         else if(command==='import'&&root&&argument)result=importSnapshot(root,argument);
+        else if(command==='validate-archive'&&root&&argument)result=validateArchive(root,argument);
         else if(command==='assemble'&&root&&argument)result=assemble(root,argument);
         else if(command==='validate-runtime'&&root&&argument)result=validateRuntime(root,argument);
-        else throw new Error('Usage: model-compatibility-input.cjs <metadata|validate> <root> | <import|assemble|validate-runtime> <root> <path>');
+        else throw new Error('Usage: model-compatibility-input.cjs <metadata|validate> <root> | <import|validate-archive|assemble|validate-runtime> <root> <path>');
         process.stdout.write(JSON.stringify(result,null,2)+'\n');
     }catch(error){process.stderr.write(error.message+'\n');process.exitCode=1;}
 }
-module.exports={MODEL_PATHS,MANIFEST_PATH,INPUT_ROOT,isModelCompatibility,load,paths,validate,importSnapshot,validateRuntime,assemble};
+module.exports={MODEL_PATHS,MANIFEST_PATH,INPUT_ROOT,OFFICIAL_SOURCE,isModelCompatibility,load,paths,validate,validateArchive,importSnapshot,validateRuntime,assemble};

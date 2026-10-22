@@ -1,5 +1,7 @@
 # 固定Windows Host组件
 
+Current Model selection: a separate hash-locked component now selects the official Windows 3.0.20 Model member from this same ZIP. The Host whitelist remains 19 files and does not copy Model. Historical statements below about retaining community Model bytes describe earlier stages; see [current Model contract](MODEL_COMPATIBILITY_INPUT.md).
+
 Current extension: the same pinned official 3.0.20 archive now supplies 19 files (3,967,899 bytes). Added ServiceStack.Text.xml, SimpleInjector.xml, System.Configuration.xml, electronapp/scripts/windowsync.js and electronapp/plugins/mpvplayer/strings/en-US.json: all five are exact byte matches, total 440,443 bytes, without conversion. Companion XML documentation keeps the existing dependency notice/source boundaries; windowsync and language source references retain their upstream GPL v2 declarations. Model remains excluded. The prepared component stays ignored, with no public body upload. Normal old Carnival requirement is now 53 files plus one libmpv patch. Earlier 14-file/58-file counts below describe prior stages. Re-preparation uses the unchanged archive/whitelist validator into a fresh prepared directory; an existing old component is never silently overwritten.
 
 Subsequent selection update: the stage-specific 234/49 counts below are now 90/1 physical requirements after removal of gate-only predecessors. The official 14-file Host component is unchanged. See [current input selection](LEGACY_INPUT_SELECTION.md).

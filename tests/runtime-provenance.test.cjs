@@ -59,6 +59,7 @@ function createFixture(root) {
     addManifestFile(files, root, 'x64/electron/version', '18.3.15\n');
     addManifestFile(files, root, 'electronapp/libmpv/x64/mpv-win32-x64.node', 'bridge-fixture\n');
     addManifestFile(files, root, 'electronapp/libmpv/x64/mpv-1.dll', 'base-libmpv-fixture\n');
+    addManifestFile(files, root, 'MediaBrowser.Model.dll', 'historical Model fixture\n');
     const playbackFixture = Buffer.from('const playback = true;\n');
     writeFile(path.join(root,webSnapshot.WEB_ROOT,'modules/common/playback/playbackmanager.js'),playbackFixture);
     componentFiles.push({path:'www/modules/common/playback/playbackmanager.js',size:playbackFixture.length,sha256:hash(playbackFixture)});
@@ -166,7 +167,7 @@ function createFixture(root) {
         'tools/tracked-file-hash.cjs',
         'tools/runtime-exclusions.cjs',
         'tools/web-snapshot-input.cjs',
-        'tools/windows-host-input.cjs','tools/prepare-windows-host.ps1','tools/inherited-npm-input.cjs','tools/runtime-template-input.cjs','tools/libmpv-input.cjs','tools/prepare-libmpv.cjs','tools/download-libmpv.ps1','tools/compatibility-resources-input.cjs','tools/small-runtime-input.cjs','tools/model-compatibility-input.cjs'
+        'tools/windows-host-input.cjs','tools/prepare-windows-host.ps1','tools/inherited-npm-input.cjs','tools/runtime-template-input.cjs','tools/libmpv-input.cjs','tools/prepare-libmpv.cjs','tools/download-libmpv.ps1','tools/compatibility-resources-input.cjs','tools/small-runtime-input.cjs','tools/model-compatibility-input.cjs','tools/prepare-model-compatibility.ps1'
     ]) copyRepoFile(root, relativePath);
     copyRepoFile(root, 'src/electronapp/enhanced/startup.svg');
     writeFile(path.join(root, 'tools', 'patch-playbackmanager.cjs'), 'generator: playbackmanager\n');
