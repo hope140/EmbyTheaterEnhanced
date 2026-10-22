@@ -2,7 +2,7 @@
 
 ## 选择版本与校验下载
 
-当前正式版为 [v0.3.1](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.1)，当前测试版为 [v0.3.14](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.14)。两者均面向 Windows x64。测试版需要手动下载；内置检查更新读取 Stable 渠道，不自动安装更新。主分支新增功能不表示已经发布。
+当前正式版为 [v0.3.1](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.1)，当前测试版为 [v0.3.15](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.15)。两者均面向 Windows x64。测试版需要手动下载；内置检查更新读取 Stable 渠道，不自动安装更新。主分支新增功能不表示已经发布。
 
 从同一个 Release 下载 `.exe` 与对应 `.exe.sha256` 文件；`Source code` 压缩包用于源码，不是客户端安装包。将两个文件放在同一目录，在该目录打开 PowerShell。以 v0.3.12 为例：
 
