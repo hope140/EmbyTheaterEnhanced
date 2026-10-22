@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-22 — v0.3.16 云构建与发布前文档修订
+
+产品 source 固定 `6fee412ad68934d0194303916cfe346e6254a228`，[Windows Actions run 39737710070](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/39737710070) 成功，发行模式开启：全量 1439/1439、显式材料 131/131、标准构建、VerifyOnly、安装器编译和完整解包对照通过，失败/跳过/取消均为 0。独立下载回执确认原 artifact 的 CRC、13 文件集合、校验表与安装器哈希；2170 个完整 runtime 文件对照通过。本次没有新包 GUI、真实播放或安装验收。
+
+按用户长期未再遇到的反馈，将音轨/字幕切换延迟记为已解决，更新当前问题、首页说明、后续范围和发行 notes，保留历史计划事实。产品 Tag 仍绑定 6fee412，安装器及两个 companion 不变；修订 notes 与 SHA256SUMS 是后续文档材料，不冒充构建 source 的原始 notes。具体身份、哈希及发布门禁见[发行核验](V0316_RELEASE_VERIFICATION.md)。
+
 ## 2026-10-22 — CEC 包内副本与桌面 CSS 条件复核
 
 现用固定 Host IL 明确从 ProgramDataPath 读取 cec-driver/cancel；生产配置指向独立用户 profile，bootstrap 独立创建并保留该标记，不复制包内文件。因此把无消费者的包内 cancel 纳入剥离，profile 语义、CEC 启动链及用户文件保持；累计新 runtime 剥离 11 项/26,963,353 bytes，兼容/小组件输出 39/2 项。Host 先启动 Electron 再检查驱动，但没有等待 bootstrap 的握手；没有宣称首启时序或真实设备已验收。
