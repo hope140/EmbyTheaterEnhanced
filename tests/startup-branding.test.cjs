@@ -93,3 +93,59 @@ test('startup SVG embeds the exact original PNG and has no active or remote cont
         [embedded[0].match(/href="([^"]+)"/)[1]]);
     assert.equal((svg.match(/data:image\/png;base64,/g) || []).length, 1);
 });
+
+test('retired startup PNG has only its replaced index consumer; dynamic themes use their own CSS', () => {
+    const web = require('../tools/web-snapshot-input.cjs');
+    const manifest = web.load(repoRoot), hits = [];
+    for (const entry of manifest.files.filter(item => /\.(?:js|css|html|json)$/.test(item.path))) {
+        const text = fs.readFileSync(path.join(repoRoot,web.INPUT_ROOT,entry.path),'utf8');
+        const references = text.match(/\blogo\.png\b/g) || [];
+        if (references.length) hits.push({path:entry.path,count:references.length});
+    }
+    assert.deepEqual(hits,[{path:'www/index.html',count:1}]);
+    const image = fs.readFileSync(path.join(repoRoot,web.INPUT_ROOT,'www/modules/themes/logo.png'));
+    assert.equal(image.length,32892);
+    assert.equal(sha256(image),'624aa2425d6bee862fd5469e191a2dad928931425e45ee31d006d6e71906c064');
+    assert.equal(image.readUInt32BE(16),1238); assert.equal(image.readUInt32BE(20),377);
+    assert.equal(image[25],6,'archived PNG uses RGBA');
+    const skin = fs.readFileSync(path.join(repoRoot,web.INPUT_ROOT,'www/modules/skinmanager.js'),'utf8');
+    assert.ok(skin.includes('(selectedTheme.baseThemeId || selectedTheme.id)'));
+    assert.ok(skin.includes('"/theme.css"')); assert.ok(skin.includes('"/theme.json"'));
+    assert.doesNotMatch(skin,/logo\.png/);
+});
+
+test('clean generated startup resolves the existing transparent ETE SVG and preserves screensaver PNG', t => {
+    const web = require('../tools/web-snapshot-input.cjs');
+    const overlays = require('../tools/prepare-web-overlays.cjs');
+    fs.mkdirSync(path.join(repoRoot,'dist'),{recursive:true});
+    const runtime = fs.mkdtempSync(path.join(repoRoot,'dist','retired-startup-logo-'));
+    t.after(()=>fs.rmSync(runtime,{recursive:true}));
+    const report = web.assemble(repoRoot,runtime);
+    assert.equal(report.fileCount,720); assert.equal(report.runtimeFileCount,718);
+    overlays.apply(repoRoot,runtime);
+    const svgPath=path.join(runtime,'electronapp/enhanced/startup.svg');
+    fs.mkdirSync(path.dirname(svgPath),{recursive:true});
+    fs.copyFileSync(path.join(repoRoot,'src/electronapp/enhanced/startup.svg'),svgPath);
+    const indexPath=path.join(runtime,'electronapp/www/index.html'),html=fs.readFileSync(indexPath,'utf8');
+    assert.doesNotMatch(html,/modules\/themes\/logo\.png/);
+    const target=html.match(/background-image:\s*url\((\.\.\/enhanced\/startup\.svg)\)/);
+    assert.ok(target); assert.equal(path.resolve(path.dirname(indexPath),target[1]),svgPath);
+    assert.equal(fs.existsSync(svgPath),true);
+    assert.equal(fs.existsSync(path.join(runtime,'electronapp/www/modules/themes/logo.png')),false);
+    for(const value of ['background-size: contain;','background-position: center top;','width: 80%;','max-width: 560px;','height: 20%;','transform: translateX(-50%);']) assert.ok(html.includes(value),value);
+    const svg=fs.readFileSync(svgPath,'utf8');
+    assert.match(svg,/viewBox="0 0 1238 377"/);
+    assert.doesNotMatch(svg,/<rect\b|background(?:-color)?\s*:/);
+    const png=fs.readFileSync(path.join(repoRoot,'src/electronapp/logowhite.png'));
+    let transparent=false;
+    for(let at=8;at<png.length;) {
+        const size=png.readUInt32BE(at),type=png.subarray(at+4,at+8).toString('ascii');
+        if(type==='tRNS') transparent=png.subarray(at+8,at+8+size).includes(0);
+        at+=size+12;
+    }
+    assert.equal(transparent,true,'existing embedded logo retains transparent pixels');
+    const screensaver=fs.readFileSync(path.join(runtime,'electronapp/www/modules/logoscreensaver/logowhite.png'));
+    assert.equal(sha256(screensaver),'1bb70b932f1055b7f0fb5c7423539c4a7824126623ac725e1101c9691e6dc113');
+    const screenModule=fs.readFileSync(path.join(runtime,'electronapp/www/modules/logoscreensaver/plugin.js'),'utf8');
+    assert.ok(screenModule.includes('"logowhite.png"'));
+});

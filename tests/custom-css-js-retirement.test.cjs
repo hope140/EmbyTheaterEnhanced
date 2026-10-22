@@ -72,18 +72,18 @@ for (const available of [false, true]) test('main plugin stage completes without
     assert.equal(result.loaded.some(url => /CustomCssJS/i.test(url)), false);
 });
 
-test('Web assembly omits only the optional module while retaining its immutable source identity', t => {
+test('Web assembly omits the approved module and logo while retaining immutable source identities', t => {
     fs.mkdirSync(path.join(root, 'dist'), {recursive: true});
     const runtime = fs.mkdtempSync(path.join(root, 'dist', 'custom-css-retirement-'));
     t.after(() => fs.rmSync(runtime, {recursive: true}));
     const report = web.assemble(root, runtime);
     assert.equal(report.fileCount, 720);
-    assert.equal(report.runtimeFileCount, 719);
-    assert.deepEqual(report.excludedFiles.map(x => x.path), ['www/modules/CustomCssJS.js']);
+    assert.equal(report.runtimeFileCount, 718);
+    assert.deepEqual(report.excludedFiles.map(x => x.path), ['www/modules/CustomCssJS.js','www/modules/themes/logo.png']);
     assert.equal(fs.existsSync(path.join(runtime, 'electronapp/www/modules/CustomCssJS.js')), false);
     assert.equal(fs.existsSync(path.join(root, 'tools/patch-custom-css-js.cjs')), false);
     for (const entry of manifest.files) {
-        if (entry.path === 'www/modules/CustomCssJS.js') continue;
+        if (['www/modules/CustomCssJS.js','www/modules/themes/logo.png'].includes(entry.path)) continue;
         const bytes = fs.readFileSync(path.join(runtime, 'electronapp', entry.path));
         assert.equal(bytes.length, entry.size);
         assert.equal(hash(bytes).toLowerCase(), entry.sha256, entry.path);

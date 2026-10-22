@@ -1,6 +1,6 @@
 # 固定Web基底输入
 
-Current release selection: [the scoped resource retirement](LEGACY_RESOURCE_RETIREMENT.md) preserves all 720 immutable Web inputs while copying only 719 to the runtime. CustomCssJS is an explicitly retired optional third-party integration: its local app registration, runtime module and dedicated overlay generator are removed. Normal CSS/Branding paths stay unchanged. Input validation still requires every original byte; this is not deletion from the current source snapshot. The newly confirmed upstream text/GPL record is documented separately in that audit.
+Current release selection: [the scoped resource retirement](LEGACY_RESOURCE_RETIREMENT.md) preserves all 720 immutable Web inputs while copying only 718 to the runtime. The obsolete themes/logo.png is excluded after its startup reference was already replaced by the existing ETE SVG; title/screensaver images remain. CustomCssJS is an explicitly retired optional third-party integration: its local app registration, runtime module and dedicated overlay generator are removed. Normal CSS/Branding paths stay unchanged. Input validation still requires every original byte; this is not deletion from the current source snapshot. The newly confirmed upstream text/GPL record is documented separately in that audit.
 
 Web构建使用独立组件`vendor/web-snapshot/`及受版本控制的`vendor/web-snapshot-manifest.json`，不读取`vendor/carnival/electronapp/www`。这是历史页面的字节快照，不代表已恢复该版本的完整上游源码或实现了整个产品的源码重建。
 

@@ -23,6 +23,7 @@ const root = path.resolve(__dirname, '..');
 // Review-approved delta from the frozen manifests, independent of production selection.
 const approvedRetirements = new Set([
     'electronapp/www/modules/CustomCssJS.js',
+    'electronapp/www/modules/themes/logo.png',
     'external/Anime4K/Anime4K-off.conf',
     'external/emby.disable/www/modules/layout.css',
     'external/emby.disable/www/modules/themes/darkgradient/theme.css',

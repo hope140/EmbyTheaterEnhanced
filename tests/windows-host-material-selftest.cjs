@@ -36,7 +36,7 @@ test('real official Host and frozen Web preserve the complete base payload with 
     const expected=[...classified.filter(x=>x.action==='copy'&&!['config/system.xml',smallRuntime.TRANSLATION_PATH].includes(x.path)&&!web.isLegacyWeb(x.path)&&!modelInput.isModelCompatibility(x.path)).map(({path,size,sha256})=>({path,size,sha256})),
         ...['config/system.xml',smallRuntime.TRANSLATION_PATH].map(name=>{const bytes=require('./helpers/small-runtime-reference.cjs').bytes(root,name,fs.readFileSync(path.join(root,smallRuntime.INPUT_ROOT,name)));return{path:name,size:bytes.length,sha256:hash(bytes)};}),
         ...modelInput.load(root).files.map(({path,size,sha256})=>({path,size,sha256})),
-        ...snapshot.files.filter(x=>x.path!=='www/modules/CustomCssJS.js').map(x=>({path:'electronapp/'+x.path,size:x.size,sha256:x.sha256}))].sort((a,b)=>a.path.localeCompare(b.path,'en'));
+        ...snapshot.files.filter(x=>!['www/modules/CustomCssJS.js','www/modules/themes/logo.png'].includes(x.path)).map(x=>({path:'electronapp/'+x.path,size:x.size,sha256:x.sha256}))].sort((a,b)=>a.path.localeCompare(b.path,'en'));
     const dist=path.join(root,'dist');fs.mkdirSync(dist,{recursive:true});
     const runtime=fs.mkdtempSync(path.join(dist,'windows-host-base-validation-'));
     const token=dependencies.createOwner(root,runtime,commit);

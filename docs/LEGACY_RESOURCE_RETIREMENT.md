@@ -1,12 +1,12 @@
-# 14 项旧资源用途与发布选择
+# 15 项旧资源用途与发布选择
 
-本候选从 `main` 的 `6fee412ad68934d0194303916cfe346e6254a228` 独立开展，仅处理下表资源。12 项不再进入**新构建的 runtime/安装包**，2 项功能保留并由维护层生成；profile 中实际生效的 CEC 标记继续独立创建。没有修改产品版本、v0.3.16 发行源码、Tag、Release 或附件；没有合并 main。ApiClient/toast 自有补丁另行维护。
+本候选从 `main` 的 `6fee412ad68934d0194303916cfe346e6254a228` 独立开展，处理初始十四项及后来明确追加的一张旧启动 logo。13 项不再进入**新构建的 runtime/安装包**，2 项功能保留并由维护层生成；profile 中实际生效的 CEC 标记继续独立创建。没有修改产品版本、v0.3.16 发行源码、Tag、Release 或附件；没有合并 main。ApiClient/toast 自有补丁另行维护。
 
 AGENTS.md 要求 vendor 和原始归档只读，因此本候选通过既有 `tools/runtime-exclusions.cjs` 与组件装配白名单剥离发布资源，**没有删除或改写 Git 中的原始快照文件**。源码归档仍含原材料，其来源与许可边界不会因成品瘦身而消失。没有以“用途退役”作为来源已解决、作者已确认或完整许可已核实的证据。
 
 ## 逐项决定
 
-前九项路径相对 `vendor/compatibility-resources/snapshot-v1/`，第十至十三项相对 `vendor/small-runtime/snapshot-v1/`，最后一项相对 `vendor/web-snapshot/`。
+前九项路径相对 `vendor/compatibility-resources/snapshot-v1/`，第十至十三项相对 `vendor/small-runtime/snapshot-v1/`，最后两项相对 `vendor/web-snapshot/`。
 
 | 项目 | 新发布包选择 | 已核对的用途与理由 |
 | --- | --- | --- |
@@ -25,6 +25,8 @@ AGENTS.md 要求 vendor 和原始归档只读，因此本候选通过既有 `too
 | `注意事项.txt` | 删除 | UTF-16 旧用户说明指向已退役的外部播放器、旧配置/卸载菜单和权限修复，显卡建议也混用不适用于当前固定 Native 渲染路径的选项。没有当前运行读取者。原文包含旧使用限制；其原文同时保留在随包 SMALL_RUNTIME_INPUT.md 的历史声明记录中，原始文件及 manifest 也保留。仅剥离过时操作说明文件，不删除声明记录。 |
 | `www/modules/CustomCssJS.js` | 删除可选集成 | 退役前可在 Electron 登录后消费服务端插件的 forced_on CSS，并非所有桌面场景都不可执行。本候选按明确退役范围删除本地注册、运行包模块及专属禁 JS 生成器；普通 CSS、主题和原生 Branding/Css 既有逻辑保持。原始冻结脚本及已查明的上游/GPL 记录保留。 |
 
+| `www/modules/themes/logo.png` | 删除旧启动图 | 旧通用 index 的唯一字面引用已由固定 startup overlay 改为现有 ETE startup.svg；PR70 对 398 份 JS 的解码字符串、常量拼接和动态候选评估也未找到其他消费者。本候选仅剥离旧 PNG，不动标题/屏保图；原 index/PNG 仍作为冻结输入保存。尺寸、透明背景、动态主题及最终目标检查见下方。 |
+
 这里区分了“还有历史手工用途”和“当前受支持功能”。两份 BAT 及其配套资源作为一组旧手工工具退役，不能把这一变化描述为原来完全没有功能。新包不再附送背景模糊覆盖工具、全局字体/播放器预设和旧清账户/权限修复工具；该可选插件的 CSS/JS 配置消费不再提供；普通 CSS、主题、播放器字幕选择与 Native 播放链保持，不读取或删除旧 localStorage。
 
 ## 入口与依赖核对
@@ -37,17 +39,17 @@ Host 参考仅使用仓库既有固定引用 [708fadc](https://github.com/MediaB
 
 ## 装配、哈希与通知
 
-原兼容快照的 48 文件/29,353,185 bytes 和小组件的 4 文件/5,216 bytes、每项 SHA256、treeSha256 均继续校验，已退役输入也不能被篡改、缺失或夹入额外文件。输出只选 39 项兼容资源、2 项小资源和 719 项 Web 基底资源；组件运行时验证及最终 runtime 排除合同拒绝被重新放回的旧文件。plan、装配结果与 source-provenance 同时记录完整输入身份、实际 runtime 数量/字节/树哈希及排除项，避免用输入数量冒充实际分发数量。
+原兼容快照的 48 文件/29,353,185 bytes 和小组件的 4 文件/5,216 bytes、每项 SHA256、treeSha256 均继续校验，已退役输入也不能被篡改、缺失或夹入额外文件。输出只选 39 项兼容资源、2 项小资源和 718 项 Web 基底资源；组件运行时验证及最终 runtime 排除合同拒绝被重新放回的旧文件。plan、装配结果与 source-provenance 同时记录完整输入身份、实际 runtime 数量/字节/树哈希及排除项，避免用输入数量冒充实际分发数量。
 
 | 组件 | 新 runtime 文件/字节 | 新 runtime tree SHA256 |
 | --- | --- | --- |
 | compatibility-resources | 39 / 2,391,214 | `ca74d8b1bddeacc8f8e5a271ac75ad43301328f0e81be8cb350ea84110ca9ea4` |
 | small-runtime | 2 / 3,330 | `7d3ee238ca2be25533b2e28d31e64ba0c179c5a064ed7091b00c71557120ced2` |
-| web-snapshot 基底 | 719 / 22,005,120 | `e20bf1182a4b342e581dab82e6e0820230e081a931a2737b1bd7c56997ccaaa4` |
+| web-snapshot 基底 | 718 / 21,972,228 | `c6cb25eab0823a42c1a88a260c70234715bb5a122074eb23d04c200f1ef9b33b` |
 
 根 LICENSE、THIRD_PARTY_NOTICES、SOURCE_MATERIALS、LICENSING、Adobe/OFL 记录及剩余 shader 内嵌 MIT 头保持；原始 notice 文本仍存档。字体退出 runtime 不代表源码存档中的字体许可事实被消除。其它仍分发的 Web、翻译、配置、shader、libmpv、Host 等材料仍按各自现有合同和未闭合项记录，不宣布“所有遗留来源/许可已解决”。
 
-发布资源集合少 12 个文件。同一生产变换下退役业务 payload 减少 26,968,863 bytes：此前十一项 26,963,353 bytes，加上原 CustomCssJS 生成模块 5,455 bytes 及 app.js 注册行 55 bytes；随后默认 XML 增加 102 bytes、选定译文减少 606 bytes，合计业务 payload 净减少 26,969,367 bytes；来源/provenance/通知文件的变动另计。Web 基底少复制的是原始 4,548 bytes，不能将它当作旧生成模块大小。未声称最终安装器压缩体积，当前 Git 冻结快照正文仍在，源码分发没有因此被清空。旧安装目录没有新增迁移删除逻辑；用户 storage 和 profile CEC 标记均保持。
+发布资源集合少 13 个文件。同一生产变换下退役业务 payload 减少 26,968,863 bytes：此前十一项 26,963,353 bytes，加上原 CustomCssJS 生成模块 5,455 bytes 及 app.js 注册行 55 bytes；随后默认 XML 增加 102 bytes、选定译文减少 606 bytes，再剥离旧启动 PNG 的 32,892 bytes 后，合计业务 payload 净减少 27,002,259 bytes；来源/provenance/通知文件的变动另计。Web 基底少复制的是原始 4,548 bytes，不能将它当作旧生成模块大小。未声称最终安装器压缩体积，当前 Git 冻结快照正文仍在，源码分发没有因此被清空。旧安装目录没有新增迁移删除逻辑；用户 storage 和 profile CEC 标记均保持。
 
 ## 复验方法与证据边界
 
@@ -58,9 +60,9 @@ node --test tests/runtime-provenance.test.cjs tests/build-input-audit.test.cjs t
 node --test tests/runtime-base-material-selftest.cjs tests/windows-host-material-selftest.cjs tests/custom-css-js-material-selftest.cjs
 ```
 
-真实材料回归独立按未改写的组件 manifest 加上显式批准的十二项差值构造参考侧；精确比较 810 个基础文件、925 个共同生产变换后的中间文件。不能额外忽略任何文件或改变预期 hash 来放过缺失。归档 CustomCssJS 输入 SHA 保持；旧运行输出退出合同，app.js 仅删除固定注册行。测试不是 Windows GUI、安装升级、真实 Emby/CD2、音视频设备或最终安装器验收；后者须在审阅分支上另行取得，不能沿用 v0.3.16 已构建产物的结果。
+真实材料回归独立按未改写的组件 manifest 加上显式批准的十三项差值构造参考侧；精确比较 809 个基础文件、924 个共同生产变换后的中间文件。不能额外忽略任何文件或改变预期 hash 来放过缺失。归档 CustomCssJS 输入 SHA 保持；旧运行输出退出合同，app.js 仅删除固定注册行。测试不是 Windows GUI、安装升级、真实 Emby/CD2、音视频设备或最终安装器验收；后者须在审阅分支上另行取得，不能沿用 v0.3.16 已构建产物的结果。
 
-十二项退役的 Linux 公共集为 1351 项：1341 pass、0 fail、10 个 Windows 平台 skip；其排除的六个材料依赖文件另测 84/84、0 skip，三项真实材料回归 3/3。默认配置维护方案和十三项译文现已进入维护层，精确范围和回归见[维护合同](MAINTAINED_SMALL_RUNTIME.md)。完整安装包按后续整合节奏统一构建，本轮未触发。
+追加 logo 前十二项退役阶段的 Linux 公共集为 1351 项：1341 pass、0 fail、10 个 Windows 平台 skip；其排除的六个材料依赖文件另测 84/84、0 skip，三项真实材料回归 3/3。默认配置维护方案和十三项译文现已进入维护层，精确范围和回归见[维护合同](MAINTAINED_SMALL_RUNTIME.md)。完整安装包按后续整合节奏统一构建，本轮未触发。
 
 初版十项剥离阶段的 Linux 实测：针对性装配/接线/安全门禁 105/105，来源与 runtime-provenance 4/4；公共 runner 1361 项中 1351 pass、0 fail、10 个明确 Windows 平台 skip。JS/PowerShell 语法、有限凭据模式及差异空白检查通过。来源夹具首轮有 4 个失败，因为整树复制仍放入已退役 notice；修正夹具使用生产排除阶段后单独复验 4/4，不将首轮记为绿。
 
@@ -96,4 +98,15 @@ CustomCssJS 的实际执行路径为 app.js 的 loadPlugin → 当前 pluginmana
 
 上游 [LICENSE](https://github.com/Shurelol/Emby.CustomCssJS/blob/6933b58c62f98b0919977e953f068b1a581a7a1c/LICENSE) 为 GPLv3 文本；完整原文保存在 [来源记录](redistribution-notices/web/Emby-CustomCssJS-GPL-3.0.txt)，SHA256 `3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986`。存档输入仍在当前 Git tree，因此保留其来源/许可材料；不能把退出 runtime 写成源文件已删除、旧分发已解决或整个项目的许可结论。
 
-若后续获准从当前源码树删除原始正文，除兼容资源 39 项、小组件 2 项的新快照迁移，还需单独迁移 Web 活动快照到不含该模块的 719 项集合。不能保留旧 Web 正文目录又宣称完成源码删除；原 manifest/hash、必要声明与旧 Git/tag 保留用于历史输入恢复，不能重写历史或改 v0.3.16。此处仅评估，未执行该迁移。
+若后续获准从当前源码树删除原始正文，除兼容资源 39 项、小组件 2 项的新快照迁移，还需单独迁移 Web 活动快照到不含该模块及旧启动 PNG 的 718 项集合。不能保留旧 Web 正文目录又宣称完成源码删除；原 manifest/hash、必要声明与旧 Git/tag 保留用于历史输入恢复，不能重写历史或改 v0.3.16。此处仅评估，未执行该迁移。
+
+
+## 追加旧启动 PNG 的最小退役
+
+旧图为 32,892 bytes、1238×377 RGBA PNG，SHA256 `624aa2425d6bee862fd5469e191a2dad928931425e45ee31d006d6e71906c064`，本地只读解码确认实际 alpha 范围 0–255。沿用 [PR70 的来源/引用评估](https://github.com/hope140/EmbyTheaterEnhanced/pull/70)，不重新追溯其它图片。固定输入的 JS/CSS/HTML/JSON 复核只在原 index 找到此文件名字面引用；skinmanager 的动态主题路径指向 theme.json/theme.css。
+
+生产 main 的本地入口为 www/index.html；正常构建强制走固定 index overlay，并按既有合同替换到 ../enhanced/startup.svg。现有 SVG viewBox 同为 1238×377，其嵌入 PNG 保留透明度；原 contain、居中、80%/560px 上限与20%高度规则保持，没有新增图像或改样式。冷启动、同一入口的重载和登录/主题页面的静态引用检查未发现另一个消费者；这不是实际 GUI/登录/重载验收。
+
+隔离真实 Web 装配/overlay 验证旧图缺席、生成 index 不再引用旧路径、自有 SVG 目标存在，逐项保留其余资源。明暗标题图、屏保自己的 logowhite.png（SHA256 `1bb70b932f1055b7f0fb5c7423539c4a7824126623ac725e1101c9691e6dc113`）、splash.html 和媒体 Logo API 不改。单独的预变换基底是中间材料，不是可启动产品；最终 overlay 失败会拒绝构建，不能拿未变换原 index 配上被删除的旧图发布。
+
+原 PNG 与原 index 继续存在当前冻结源码树，源码 zip 仍包含图中文字/署名及原有来源边界。若要从当前 tree 也移除，仍需明确的新快照迁移：Web 活动集合迁为718项、旧正文退出当前 tree，保留历史 manifest/hash/声明和旧 commit/tag；本轮未执行迁移。
