@@ -11,9 +11,13 @@ const NOTICE_PATHS = Object.freeze([
     'LICENSE', 'THIRD_PARTY_NOTICES.md', 'docs/LICENSING.md', 'docs/SOURCE_MATERIALS.md', 'docs/WINDOWS_HOST_INPUT.md', 'docs/INHERITED_NPM_INPUT.md', 'docs/RUNTIME_TEMPLATES.md', 'docs/LIBMPV_INPUT.md', 'docs/COMPATIBILITY_RESOURCES_INPUT.md', 'docs/SMALL_RUNTIME_INPUT.md', 'docs/MODEL_COMPATIBILITY_INPUT.md'
 ]);
 const INPUT_PATHS = Object.freeze([
-    'package.json', 'package-lock.json',
+    'package.json', 'package-lock.json', 'src/config/system-defaults.json',
+    'src/localization/mpvplayer/zh-CN.json',
     'vendor/runtime-manifest.json', 'vendor/electron-runtime-manifest.json',
     'vendor/web-snapshot-manifest.json',
+    'vendor/snapshot-history/web-snapshot-v1-manifest.json',
+    'vendor/snapshot-history/compatibility-resources-v1-manifest.json',
+    'vendor/snapshot-history/small-runtime-v1-manifest.json',
     'vendor/windows-host-manifest.json', 'vendor/inherited-npm-manifest.json', 'vendor/runtime-templates-manifest.json', 'vendor/libmpv-input-manifest.json', 'vendor/compatibility-resources-manifest.json', 'vendor/small-runtime-manifest.json', 'vendor/model-compatibility-manifest.json',
     'tools/templates/runtime/package.json','tools/templates/runtime/preload.js','tools/templates/runtime/Emby.Theater.exe.config',
     'vendor/native-helper-manifest.json', 'vendor/toolchain-manifest.json',
@@ -26,7 +30,7 @@ const INPUT_PATHS = Object.freeze([
     'tools/build-toolchains.cjs', 'tools/build-toolchains.lock.json',
     'tools/tracked-file-hash.cjs', 'tools/prepare-preload.cjs',
     'tools/prepare-web-overlays.cjs', 'tools/patch-videoosd-lifecycle.cjs',
-    'tools/patch-custom-css-js.cjs', 'tools/patch-externalplayer-residue.cjs', 'tools/patch-item-controls.cjs',
+    'tools/patch-externalplayer-residue.cjs', 'tools/patch-item-controls.cjs',
     'tools/patch-content-width.cjs',
     'tools/patch-actionsheet-layout.cjs',
     'tools/patch-item-lifecycle.cjs',

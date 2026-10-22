@@ -10,6 +10,110 @@ const OWNER_FILE = '.ete-build-owner.json';
 const PROVENANCE_FILE = 'runtime-dependencies.json';
 const CONTRACT_NAME = 'ete-runtime-dependencies';
 const SCHEMA_VERSION = 1;
+const NPM_PROJECTION_VERSIONS = Object.freeze({'@grpc/grpc-js': '1.14.6', protobufjs: '7.6.6'});
+// Only the reviewed runtime projection; locked npm inputs and their notices remain complete.
+const NPM_PROJECTION_EXCLUSIONS = Object.freeze([
+    {
+        "path": "node_modules/@grpc/grpc-js/build/src/generated/grpc/channelz/v1/ChannelConnectivityState.js",
+        "sha256": "40330f4b4f43d9c8226138ceb5747e4227573a061951e013792e418eccdb697f",
+        "size": 500
+    },
+    {
+        "path": "node_modules/@grpc/grpc-js/build/src/generated/grpc/channelz/v1/ChannelTraceEvent.js",
+        "sha256": "9acf1a3c25c4020035b5dfabc8c3e87ad5a18eb59d1e92ff6cb1bb120a18dc42",
+        "size": 491
+    },
+    {
+        "path": "node_modules/@grpc/grpc-js/build/src/generated/google/protobuf/Edition.js",
+        "sha256": "4d93fbe9063d4ec4092d6166ca6244d713898e7c6ed84ba011c945c41d42e865",
+        "size": 702
+    },
+    {
+        "path": "node_modules/@grpc/grpc-js/build/src/generated/google/protobuf/ExtensionRangeOptions.js",
+        "sha256": "e4661934504f1ad2ed8409ae232d2ad80bc8fdf907aae5679c6fea6c6a8a16fc",
+        "size": 381
+    },
+    {
+        "path": "node_modules/@grpc/grpc-js/build/src/generated/google/protobuf/FeatureSet.js",
+        "sha256": "f44d2b106c7aa7244c1ede455298e962b6ee7b10103a582845ce9852dea415e8",
+        "size": 2286
+    },
+    {
+        "path": "node_modules/@grpc/grpc-js/build/src/generated/google/protobuf/FieldDescriptorProto.js",
+        "sha256": "e4b7b5ed298f5f7d0ecf7adc128c04e649a10c057ac9901b0bb0b885e3691009",
+        "size": 1112
+    },
+    {
+        "path": "node_modules/@grpc/grpc-js/build/src/generated/google/protobuf/FieldOptions.js",
+        "sha256": "924d8839d8ed33509c97ad6f3a1803bf93c5369544f0e66ae7f318df4cbbce6c",
+        "size": 1440
+    },
+    {
+        "path": "node_modules/@grpc/grpc-js/build/src/generated/google/protobuf/FileOptions.js",
+        "sha256": "ab18461b202bbec5bcb84be613eadeadafad0a309075a9db5bfd9ded9dac9d13",
+        "size": 361
+    },
+    {
+        "path": "node_modules/@grpc/grpc-js/build/src/generated/google/protobuf/GeneratedCodeInfo.js",
+        "sha256": "6c7aa0f0f35e7085e3e3ae68a951545813bd01b583a7685ffe26b3bc6c463b63",
+        "size": 365
+    },
+    {
+        "path": "node_modules/@grpc/grpc-js/build/src/generated/validate/KnownRegex.js",
+        "sha256": "f5ba1f1a9f409dcb34650413bc2bb0619eefd330a68b35a253d3a8800477d06a",
+        "size": 537
+    },
+    {
+        "path": "node_modules/@grpc/grpc-js/build/src/generated/google/protobuf/MethodOptions.js",
+        "sha256": "54951b483d4446908f8b164dea0a655d05b73deb690c6989ef5ecc720a77ddd6",
+        "size": 411
+    },
+    {
+        "path": "node_modules/@grpc/grpc-js/build/src/generated/google/protobuf/SymbolVisibility.js",
+        "sha256": "911ba4b19f8e068695af1fd827948277f04f1ee8236465a82aaf85ab3f493a14",
+        "size": 339
+    },
+    {
+        "path": "node_modules/protobufjs/google/api/annotations.json",
+        "sha256": "87bbf6275532afc56ed997cab8399c38a138ae7d65e7e88e1ab6686f728eee3e",
+        "size": 1987
+    },
+    {
+        "path": "node_modules/protobufjs/google/api/http.json",
+        "sha256": "170d4e8c54a54f14b209e612473a8d15468d114f7f7d8e779b93ef3503bb293d",
+        "size": 2087
+    },
+    {
+        "path": "node_modules/protobufjs/google/api/annotations.proto",
+        "sha256": "e6b649083c6b414b2368a1562308f0a9fdaa71e8f932a6b32efc623fdef3a6c7",
+        "size": 188
+    },
+    {
+        "path": "node_modules/protobufjs/google/protobuf/api.proto",
+        "sha256": "d706f909f2f115f4a18c6e64e38dd6c98ad647dba70c7a88f35e0b28414dab83",
+        "size": 642
+    },
+    {
+        "path": "node_modules/protobufjs/google/protobuf/descriptor.proto",
+        "sha256": "e79074e7bddefd24d589baef2627c9d039b807933ca0c1fb37e8fffc63df0e1c",
+        "size": 14464
+    },
+    {
+        "path": "node_modules/protobufjs/google/api/http.proto",
+        "sha256": "f052d98111aec06cd47c4082a9265cb05f51a94bb1553229d299f99ac8ba4e8b",
+        "size": 474
+    },
+    {
+        "path": "node_modules/protobufjs/google/protobuf/source_context.proto",
+        "sha256": "992d3a7a0e8f79ccd4dc8da161376219aa7294408386fa6d65e130a45d31bff8",
+        "size": 98
+    },
+    {
+        "path": "node_modules/protobufjs/google/protobuf/type.proto",
+        "sha256": "8bb73f0bb286c2725880abe204e2a5168b084fcf851eb493c5ee90a85f270abd",
+        "size": 1675
+    }
+].map(Object.freeze));
 
 const RETAINED_PACKAGES = Object.freeze([
     Object.freeze({packagePath: 'node_modules/detect-rpi', version: '1.4.0'}),
@@ -191,7 +295,7 @@ function collectTree(directory, relativePrefix = '') {
 
 function treeIdentity(files) {
     const canonical = files.map(entry => `${entry.path}\0${entry.size}\0${entry.sha256}\n`).join('');
-    return {fileCount: files.length, treeSha256: sha256(Buffer.from(canonical)), files};
+    return {fileCount: files.length, bytes: files.reduce((sum, file) => sum + file.size, 0), treeSha256: sha256(Buffer.from(canonical)), files};
 }
 
 function sameFiles(actual, expected, label) {
@@ -336,6 +440,26 @@ function combineFiles(selected, retained) {
     return files;
 }
 
+function projectNpmFiles(sourceFiles, selectedPackages) {
+    const selected = new Map(selectedPackages.map(entry => [entry.name, entry.version]));
+    // Generic fixture/tool projects without either package have no applicable projection.
+    if (!Object.keys(NPM_PROJECTION_VERSIONS).some(name => selected.has(name))) {
+        return {files: sourceFiles, excludedFiles: []};
+    }
+    for (const [name, version] of Object.entries(NPM_PROJECTION_VERSIONS)) {
+        if (selected.get(name) !== version) fail('Unreviewed npm projection package version: ' + name);
+    }
+    const byPath = new Map(sourceFiles.map(file => [file.path, file]));
+    if (byPath.size !== sourceFiles.length) fail('Duplicate npm projection source path.');
+    const excludedFiles = NPM_PROJECTION_EXCLUSIONS.map(expected => {
+        const entry = byPath.get(expected.path);
+        if (!entry || entry.size !== expected.size || entry.sha256 !== expected.sha256) fail('Npm projection identity mismatch: ' + expected.path);
+        return entry;
+    }).sort((left, right) => left.path.localeCompare(right.path, 'en'));
+    const excluded = new Set(excludedFiles.map(entry => entry.path));
+    return {files: sourceFiles.filter(entry => !excluded.has(entry.path)), excludedFiles};
+}
+
 function writeProvenance(runtimeRoot, record) {
     const target = path.join(runtimeRoot, PROVENANCE_FILE);
     if (fs.existsSync(target)) fail(`Dependency provenance already exists: ${PROVENANCE_FILE}`);
@@ -351,6 +475,8 @@ function copyRuntimeDependencies(repoRoot, runtimeRoot, sourceProjectRoot, token
     assertSourceProject(root, source);
     const selectedContract = loadSelectedPackages(root);
     const sourceSelected = collectSelected(source, selectedContract.packages, 'Fresh npm source');
+    const projection = projectNpmFiles(sourceSelected, selectedContract.packages);
+    const excluded = new Set(projection.excludedFiles.map(entry => entry.path));
     const vendorProject = path.join(root, inheritedNpm.INPUT_ROOT, 'electronapp');
     assertPhysicalPath(root, vendorProject, 'Carnival dependency source');
     const retainedContract = verifiedRetained(root, vendorProject);
@@ -372,11 +498,14 @@ function copyRuntimeDependencies(repoRoot, runtimeRoot, sourceProjectRoot, token
         const sourcePackage = path.join(source, ...entry.packagePath.split('/'));
         const target = path.join(runtime, 'electronapp', ...entry.packagePath.split('/'));
         fs.mkdirSync(path.dirname(target), {recursive: true});
-        fs.cpSync(sourcePackage, target, {recursive: true, force: false, errorOnExist: true});
+        fs.cpSync(sourcePackage, target, {recursive: true, force: false, errorOnExist: true,
+            filter: file => !excluded.has(path.relative(source, file).split(path.sep).join('/'))});
     }
 
     const runtimeSelected = collectSelected(path.join(runtime, 'electronapp'), selectedContract.packages, 'Runtime');
-    sameFiles(runtimeSelected, sourceSelected, 'Fresh npm source to runtime dependency copy');
+    sameFiles(collectSelected(source, selectedContract.packages, 'Fresh npm source after copy'), sourceSelected,
+        'Fresh npm source changed during dependency copy');
+    sameFiles(runtimeSelected, projection.files, 'Fresh npm source to runtime dependency projection');
     const runtimeRetained = collectRetained(path.join(runtime, 'electronapp'), 'Runtime retained dependency');
     sameFiles(runtimeRetained, retained, 'Runtime retained Carnival dependency bytes');
     const combined = combineFiles(runtimeSelected, runtimeRetained);
@@ -397,7 +526,9 @@ function copyRuntimeDependencies(repoRoot, runtimeRoot, sourceProjectRoot, token
         },
         selectedPackages: selectedContract.packages,
         retainedPackages: RETAINED_PACKAGES,
-        selected: {...selectedIdentity, sourceTreeSha256: treeIdentity(sourceSelected).treeSha256},
+        selected: {...selectedIdentity, sourceTreeSha256: treeIdentity(sourceSelected).treeSha256,
+            sourceFileCount: sourceSelected.length, sourceBytes: sourceSelected.reduce((sum, file) => sum + file.size, 0),
+            excludedFiles: projection.excludedFiles},
         retained: retainedIdentity,
         combined: combinedIdentity
     };
@@ -409,6 +540,9 @@ function copyRuntimeDependencies(repoRoot, runtimeRoot, sourceProjectRoot, token
         packageCount: record.selectedPackages.length,
         selectedFileCount: record.selected.fileCount,
         selectedTreeSha256: record.selected.treeSha256,
+        sourceSelectedFileCount: record.selected.sourceFileCount,
+        sourceSelectedTreeSha256: record.selected.sourceTreeSha256,
+        excludedFileCount: record.selected.excludedFiles.length,
         retainedPackageCount: record.retainedPackages.length,
         retainedFileCount: record.retained.fileCount,
         retainedTreeSha256: record.retained.treeSha256,
@@ -449,10 +583,15 @@ function inspectRuntime(repoRoot, runtimeRoot, expectedSourceCommit) {
     const runtimeRetained = collectRetained(runtimeProject, 'Runtime retained dependency');
     sameFiles(runtimeSelected, record.selected.files, 'Runtime selected dependency provenance');
     sameFiles(runtimeRetained, expectedRetained, 'Runtime retained dependency provenance');
-    if (record.selected.sourceTreeSha256 !== record.selected.treeSha256 ||
-        record.selected.treeSha256 !== treeIdentity(runtimeSelected).treeSha256) {
-        fail('Selected source/runtime tree identity mismatch.');
-    }
+    const sourceFiles = combineFiles(record.selected.files, record.selected.excludedFiles || []);
+    const sourceIdentity = treeIdentity(sourceFiles);
+    const projection = projectNpmFiles(sourceFiles, selectedContract.packages);
+    sameFiles(projection.files, runtimeSelected, 'Selected source/runtime projection');
+    sameFiles(projection.excludedFiles, record.selected.excludedFiles || [], 'Selected exact projection exclusions');
+    if (record.selected.sourceTreeSha256 !== sourceIdentity.treeSha256 ||
+        record.selected.sourceFileCount !== sourceIdentity.fileCount || record.selected.sourceBytes !== sourceIdentity.bytes ||
+        record.selected.fileCount !== runtimeSelected.length || record.selected.bytes !== treeIdentity(runtimeSelected).bytes ||
+        record.selected.treeSha256 !== treeIdentity(runtimeSelected).treeSha256) fail('Selected source/runtime tree identity mismatch.');
     const combined = combineFiles(runtimeSelected, runtimeRetained);
     sameFiles(collectTree(path.join(runtimeProject, 'node_modules'), 'node_modules'), combined, 'Runtime exact dependency closure');
     sameFiles(record.combined.files, combined, 'Recorded combined dependency closure');
@@ -463,6 +602,9 @@ function inspectRuntime(repoRoot, runtimeRoot, expectedSourceCommit) {
         packageCount: selectedContract.packages.length,
         selectedFileCount: runtimeSelected.length,
         selectedTreeSha256: record.selected.treeSha256,
+        sourceSelectedFileCount: record.selected.sourceFileCount,
+        sourceSelectedTreeSha256: record.selected.sourceTreeSha256,
+        excludedFileCount: record.selected.excludedFiles.length,
         retainedPackageCount: RETAINED_PACKAGES.length,
         retainedFileCount: runtimeRetained.length,
         retainedTreeSha256: record.retained.treeSha256,
@@ -504,6 +646,9 @@ function main(args) {
 }
 
 module.exports = {
+    NPM_PROJECTION_EXCLUSIONS,
+    NPM_PROJECTION_VERSIONS,
+    projectNpmFiles,
     assertRepoLayout,
     loadOwner,
     CONTRACT_NAME,

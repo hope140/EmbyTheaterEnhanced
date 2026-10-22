@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "version": "snapshot-v1",
-  "inputRoot": "vendor/compatibility-resources/snapshot-v1",
-  "fileCount": 48,
-  "bytes": 29353185,
-  "treeSha256": "301437050af10f4f5db863777c5824bdd01a429cd406d2c0a3d888e58090c445",
+  "version": "snapshot-v2",
+  "inputRoot": "vendor/compatibility-resources/snapshot-v2",
+  "fileCount": 39,
+  "bytes": 2391214,
+  "treeSha256": "ca74d8b1bddeacc8f8e5a271ac75ad43301328f0e81be8cb350ea84110ca9ea4",
   "provenance": {
     "mode": "local-compatibility-snapshot",
     "source": "Selected existing Carnival manual/external resource bytes only",
@@ -23,37 +23,6 @@
     "fontFiles": 1
   },
   "files": [
-    {
-      "path": "Emby.ConfigureAndUninstall.bat",
-      "size": 11504,
-      "sha256": "ce3db8b5f498243a04b4a5699f5b6fcf8366cf70b4fad99b12192eae0fa91fca",
-      "origin": {
-        "family": "Legacy manual compatibility script",
-        "exactRevision": "unresolved",
-        "notice": "Author/source not established; not claimed as ETE original; never executed by preparation"
-      }
-    },
-    {
-      "path": "Emby.Dialog.bat",
-      "size": 2365,
-      "sha256": "6f243e10cfe2234be014c0c690d1918d3f1ad356846b22a63cb83cf51a223ba0",
-      "origin": {
-        "family": "Legacy manual compatibility script",
-        "exactRevision": "unresolved",
-        "notice": "Author/source not established; not claimed as ETE original; never executed by preparation"
-      }
-    },
-    {
-      "path": "external/Anime4K/Anime4K-off.conf",
-      "size": 4173,
-      "sha256": "8147f4dabc5e1216711be57f1252db3877924cfedd5eb51dfafdfce3c4019691",
-      "origin": {
-        "family": "Anime4K",
-        "upstreamReference": "https://github.com/bloc97/Anime4K",
-        "exactRevision": "unresolved",
-        "notice": "Associated project/config file; no per-file license header established here"
-      }
-    },
     {
       "path": "external/Anime4K/shaders/Anime4K_AutoDownscalePre_x2.glsl",
       "size": 1596,
@@ -482,66 +451,11 @@
         "exactRevision": "unresolved",
         "notice": "Embedded MIT notice preserved"
       }
-    },
-    {
-      "path": "external/emby.disable/www/modules/layout.css",
-      "size": 22403,
-      "sha256": "93fc5c8974f8f2188e6f70b002a0477911f185b361955fb2d31cfa5a49aed74f",
-      "origin": {
-        "family": "Legacy Emby theme compatibility copy",
-        "exactRevision": "unresolved",
-        "notice": "Retain current bytes and embedded notices; exact official/community changes not attributed"
-      }
-    },
-    {
-      "path": "external/emby.disable/www/modules/themes/darkgradient/theme.css",
-      "size": 38329,
-      "sha256": "af5eb9749182e90577d64815278b7c5ddac9a729d7189dcfde22be90aaed3e1a",
-      "origin": {
-        "family": "Legacy Emby theme compatibility copy",
-        "exactRevision": "unresolved",
-        "notice": "Retain current bytes and embedded notices; exact official/community changes not attributed"
-      }
-    },
-    {
-      "path": "external/emby.enable/www/modules/layout.css",
-      "size": 22942,
-      "sha256": "d6eb9a45859d776806b7b7078c4763c452dada04834b3f461797dee1fe80dc8c",
-      "origin": {
-        "family": "Legacy Emby theme compatibility copy",
-        "exactRevision": "unresolved",
-        "notice": "Retain current bytes and embedded notices; exact official/community changes not attributed"
-      }
-    },
-    {
-      "path": "external/emby.enable/www/modules/themes/darkgradient/theme.css",
-      "size": 38723,
-      "sha256": "d8a7104966af90053348eee164f7ad2715e95dee06fa7d84f0f4515958e76cc9",
-      "origin": {
-        "family": "Legacy Emby theme compatibility copy",
-        "exactRevision": "unresolved",
-        "notice": "Retain current bytes and embedded notices; exact official/community changes not attributed"
-      }
-    },
-    {
-      "path": "external/Presets/fonts/Source Han Serif SC-Bold.ttf",
-      "size": 26821400,
-      "sha256": "8cc4d2cfccf84293ba0317bf77752dd453da79dc9ec5823d0792d8058bc1be0c",
-      "origin": {
-        "family": "Source Han Serif font as named",
-        "exactRevision": "unresolved",
-        "notice": "Existing Source Han Serif OFL text and Adobe copyright record retained; exact font identity/RFN review remains open"
-      }
-    },
-    {
-      "path": "external/Presets/mpv.conf",
-      "size": 132,
-      "sha256": "e8895c1c8902e6ad2d8e1bdebde6a9ab94065ff95e1c31af936c12748fa623c3",
-      "origin": {
-        "family": "Legacy manual preset",
-        "exactRevision": "unresolved",
-        "notice": "Author/source not established; packaged unchanged and never applied to user settings by preparation"
-      }
     }
-  ]
+  ],
+  "migration": {
+    "historicalManifestPath": "vendor/snapshot-history/compatibility-resources-v1-manifest.json",
+    "historicalManifestSha256": "46f53395b12d5652a3b9d40b38ce11f1ea956319a99e2acdafae408c65447b3c",
+    "relation": "Explicit v2 selection; historical bodies live only in old Git commits/tags; no old-package fallback"
+  }
 }

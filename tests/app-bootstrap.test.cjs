@@ -18,9 +18,10 @@ function makeFixture() {
     return {root, runtimeRoot, appDataPath, seedPath, profileRoot: path.join(appDataPath, 'EmbyTheaterEnhanced')};
 }
 
-test('bootstrap creates profile directories and seeds missing files from packaged runtime root', () => {
+test('bootstrap seeds config and independently creates the profile CEC marker without a packaged marker', () => {
     const fixture = makeFixture();
     try {
+        assert.equal(fs.existsSync(path.join(fixture.runtimeRoot, 'cec-driver', 'cancel')), false);
         const result = bootstrap.bootstrap({appDataPath: fixture.appDataPath, runtimeRoot: fixture.runtimeRoot});
         assert.equal(result.seedPath, fixture.seedPath);
         assert.equal(bootstrap.resolveSeedPath(fixture.runtimeRoot), fixture.seedPath);

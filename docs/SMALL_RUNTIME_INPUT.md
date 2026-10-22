@@ -1,5 +1,12 @@
 # Fixed small runtime input snapshot
 
+Current v2 selection: only two maintained output seeds remain at vendor/small-runtime/snapshot-v2 (3330 bytes). All four old v1 bodies are removed from the current tree; the unchanged old manifest/hash is retained under vendor/snapshot-history. The complete 37-key src/localization/mpvplayer/zh-CN.json retains exactly 24 old values and the 13 selected revisions; typed default generation and first-run/existing-profile behavior remain. Existing source/notice uncertainty is not reattributed. See [v2 migration](SNAPSHOT_V2_MIGRATION.md). Earlier four-file/original-body statements below are historical.
+
+
+Current maintained outputs: the immutable four-file snapshot remains exact and fully checked. `src/config/system-defaults.json` generates the first-run XML with the same five fields/defaults, root and namespaces; existing profile configuration is never replaced. `src/localization/mpvplayer/zh-CN.json` supplies thirteen maintained Chinese text revisions over the original 37-key file, retaining the other twenty-four strings and their historical source boundary. The small runtime output is two files / 3330 bytes; provenance records both original and generated identities. This does not attribute old files to ETE, remove the snapshot or establish that all inherited licensing is resolved. See [the maintained output contract](MAINTAINED_SMALL_RUNTIME.md).
+
+Current release selection: [the scoped legacy-resource audit](https://github.com/hope140/EmbyTheaterEnhanced/pull/69) excludes nine compatibility resources and two small runtime resources from new runtime output. Original snapshot bytes/manifests and notices remain preserved and strictly validated; the historical byte-preservation statements below describe input storage, not the new output selection. Runtime reports carry separate output counts, bytes, tree hashes and excluded identities.
+
 Four packaged inputs are independently preserved under `vendor/small-runtime/snapshot-v1`: `cec-driver/cancel`, `config/system.xml`, `electronapp/plugins/mpvplayer/strings/zh-CN.json` and the legacy Chinese notice text file named in the manifest. Their combined 5,216 bytes and runtime paths are unchanged. Model is excluded.
 
 `vendor/small-runtime-manifest.json` locks the exact four paths, sizes, SHA256 identities, tree identity and source boundaries. These are preserved historical packaged bytes, not a claim of ETE authorship or newly recovered official sources. The Chinese translation and notice retain their existing bytes without an invented license. Existing project source/notice records remain applicable; source and public redistribution questions remain open where marked.
@@ -26,3 +33,11 @@ The final Model removal can use a separate original-byte snapshot of the existin
 ## Current repository restoration update (2026-10-21)
 
 The user authorized tracking the exact required Web, compatibility-resource, small-runtime and original Model snapshots in this same repository. The 775 manifest-listed files (51,953,202 bytes) use ordinary Git with `-text` attributes to preserve bytes. Historical local-only/ignored-storage statements below describe earlier stages and are superseded for these four roots. Source attribution and unresolved exact revisions remain unchanged; storage permission is not a claim of new third-party authorship or complete corresponding source. libmpv stays ignored and is restored from the pinned archive via `node tools/prepare-libmpv.cjs .`; see [repository inputs](REPOSITORY_INPUTS.md). No old full installer/patch or real user profile is included.
+
+## Retired notice text retained in delivered source records
+
+The removed runtime `注意事项.txt` also contains the following historical restriction, preserved here verbatim rather than discarded with its obsolete installation instructions:
+
+> 仅供学习测试，严禁用于商业用途，下载后请在24小时内删除！
+
+This records what that old packaged text says. Its author, authority and component scope remain unresolved; it is not presented as a newly established project-wide license. The exact UTF-16 identity remains in the historical manifest and old Git tree; its body is removed from the current tree. Other copyright and license records continue to apply independently.

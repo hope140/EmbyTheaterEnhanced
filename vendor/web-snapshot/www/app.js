@@ -688,20 +688,6 @@
                   adjustHeaderForEmbeddedScroll: !0,
                   hideDrawerWithOtherUserIdParam: !0,
                 }),
-                /*appHost.supports("cameraupload") &&
-                  appRouter.addRoute({
-                    path: "/settings/cameraupload.html",
-                    autoFocus: !1,
-                    transition: "slide",
-                    controller: "settings/cameraupload",
-                    type: "settings",
-                    icon: "photo",
-                    title: "HeaderCameraUpload",
-                    clearBackdrop: !0,
-                    settingsTheme: !0,
-                    helpUrl: "https://support.emby.media/support/solutions/articles/44001159382-camera-upload",
-                    adjustHeaderForEmbeddedScroll: !0,
-                  }),*/
                 appHost.supports("sync") &&
                   (appRouter.addRoute({
                     path: "/settings/download.html",
@@ -2101,7 +2087,6 @@
               return (
                 responses.electron && list.push("modules/externalplayer/plugin"),
                 list.push("./modules/confirmstillplaying/plugin.js"),
-                list.push("./modules/CustomCssJS.js"),
                 Promise.all(list.map(loadPlugin))
               );
             });

@@ -1,5 +1,14 @@
 # 固定Web基底输入
 
+Latest v2 addition removes only directorybrowser.css, appstorage-cache.js and serviceworker-app.js. The active picker, localStorage/memory adapters, registered empty worker, playqueueconfirmation.js and all unapproved resources remain; see [projection contract](SCOPED_RUNTIME_PROJECTION.md).
+
+Latest scoped addition: only the native settings/cameraupload.js/.html pair leaves source/runtime; the devices administrator page and shared/touch code remain. Current Web selection is716; prior051f990 and its718-file selection remain historical. See [evidence and regression boundary](MOBILE_CAMERA_SETTINGS_RETIREMENT.md).
+
+Current v2 selection: the active manifest explicitly versions the existing vendor/web-snapshot root as snapshot-v2 with 713 resources and unchanged historical patch carriers. CustomCssJS.js and themes/logo.png leave the current tree, and the active app/index inputs already remove their obsolete references. The exact 720-entry v1 manifest/hash is preserved separately; index retains its approved identity; app additionally drops only the previously commented camera settings route. See [v2 migration](SNAPSHOT_V2_MIGRATION.md). Earlier 720-input/body-preservation statements below are historical.
+
+
+Historical release-selection stage: [the scoped resource retirement](LEGACY_RESOURCE_RETIREMENT.md) preserves all 720 immutable Web inputs while copying only 718 to the runtime. The obsolete themes/logo.png is excluded after its startup reference was already replaced by the existing ETE SVG; title/screensaver images remain. CustomCssJS is an explicitly retired optional third-party integration: its local app registration, runtime module and dedicated overlay generator are removed. Normal CSS/Branding paths stay unchanged. Input validation still requires every original byte; this is not deletion from the current source snapshot. The newly confirmed upstream text/GPL record is documented separately in that audit.
+
 Web构建使用独立组件`vendor/web-snapshot/`及受版本控制的`vendor/web-snapshot-manifest.json`，不读取`vendor/carnival/electronapp/www`。这是历史页面的字节快照，不代表已恢复该版本的完整上游源码或实现了整个产品的源码重建。
 
 ## 身份与归属

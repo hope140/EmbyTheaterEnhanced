@@ -38,13 +38,9 @@ function main() {
 
     const result = childProcess.spawnSync(process.execPath, ['--test', '--test-concurrency=1', ...selected], {
         cwd: root,
-        encoding: 'utf8',
-        maxBuffer: 16 * 1024 * 1024,
-        stdio: ['ignore', 'pipe', 'pipe']
+        stdio: ['ignore', 'inherit', 'inherit']
     });
     if (result.error) throw result.error;
-    if (result.stdout) process.stdout.write(result.stdout);
-    if (result.stderr) process.stderr.write(result.stderr);
     process.exitCode = result.status === null ? 1 : result.status;
 }
 

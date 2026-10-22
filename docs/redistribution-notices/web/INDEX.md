@@ -30,3 +30,8 @@ License files are preserved without text edits. Their retrieval URLs, byte
 sizes and SHA256 values are recorded in the evidence. Mutable upstream URLs
 are retrieval locations; the saved bytes and hashes define these snapshots.
 Parent review determines the combination and final distribution decision.
+
+
+## Retired CustomCssJS source input
+
+The historical ETE Web snapshot contained CustomCssJS.js. Snapshot-v2 removes its body and registration from the current tree while preserving the old manifest/hash, Git history and this notice record. The source matches [Shurelol/Emby.CustomCssJS, commit 6933b58c](https://github.com/Shurelol/Emby.CustomCssJS/tree/6933b58c62f98b0919977e953f068b1a581a7a1c) after CRLF-to-LF conversion only. [Emby-CustomCssJS-GPL-3.0.txt](Emby-CustomCssJS-GPL-3.0.txt) is the exact upstream LICENSE, SHA256 `3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986`. See [the scoped evidence and limits](../../LEGACY_RESOURCE_RETIREMENT.md); this record is not a claim that the whole legacy package has established source or license compliance.

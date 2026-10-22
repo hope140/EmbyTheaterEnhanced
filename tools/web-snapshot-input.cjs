@@ -3,6 +3,14 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const {RETIRED_WEB_PATHS} = require('./runtime-exclusions.cjs');
+const retiredWeb = new Set(RETIRED_WEB_PATHS.map(name => name.slice('electronapp/'.length)));
+function runtimeFiles(manifest) { return manifest.files.filter(entry => !retiredWeb.has(entry.path)); }
+function runtimeSelection(manifest) {
+    const files = runtimeFiles(manifest);
+    return {runtimeFileCount: files.length, runtimeBytes: files.reduce((sum, entry) => sum + entry.size, 0),
+        runtimeTreeSha256: treeHash(files), excludedFiles: manifest.files.filter(entry => retiredWeb.has(entry.path))};
+}
 
 const MANIFEST_PATH = 'vendor/web-snapshot-manifest.json';
 const INPUT_ROOT = 'vendor/web-snapshot';
@@ -41,6 +49,29 @@ function treeHash(files) {
     return sha(files.slice().sort((a,b) => a.path.localeCompare(b.path, 'en'))
         .map(file => file.path + '\0' + file.size + '\0' + file.sha256 + '\n').join(''));
 }
+function migrationHistory(root, manifest, retired, replacements = []) {
+    const migration = manifest.migration;
+    if (manifest.version !== 'snapshot-v2' || !migration ||
+        !/^vendor\/snapshot-history\/[a-z-]+-v1-manifest\.json$/.test(migration.historicalManifestPath || '')) throw Error('Invalid snapshot v2 migration record.');
+    const file = path.join(root, relative(migration.historicalManifestPath));
+    physical(file, false);
+    const bytes = fs.readFileSync(file);
+    if (sha(bytes) !== migration.historicalManifestSha256) throw Error('Historical snapshot manifest identity mismatch.');
+    const previous = JSON.parse(bytes);
+    if (!Array.isArray(previous.files) || previous.fileCount !== previous.files.length ||
+        previous.bytes !== previous.files.reduce((n,f)=>n+f.size,0) || previous.treeSha256 !== treeHash(previous.files)) throw Error('Historical snapshot manifest summary mismatch.');
+    const old = new Map(previous.files.map(entry=>[entry.path,entry]));
+    const active = new Map(manifest.files.map(entry=>[entry.path,entry]));
+    if (old.size !== previous.files.length || active.size !== manifest.files.length) throw Error('Duplicate snapshot migration identity.');
+    for (const entry of manifest.files) {
+        const before = old.get(entry.path);
+        if (!before || retired.includes(entry.path) || (!replacements.includes(entry.path) &&
+            (before.size !== entry.size || before.sha256 !== entry.sha256))) throw Error('Unapproved snapshot migration change: ' + entry.path);
+    }
+    for (const entry of previous.files) if (!active.has(entry.path) && !retired.includes(entry.path)) throw Error('Unapproved snapshot migration removal: ' + entry.path);
+    if (JSON.stringify(previous.userPatches || []) !== JSON.stringify(manifest.userPatches || [])) throw Error('Snapshot user-patch history changed.');
+    return previous;
+}
 function load(root) {
     physical(path.join(root, MANIFEST_PATH), false);
     const manifest = JSON.parse(fs.readFileSync(path.join(root, MANIFEST_PATH), 'utf8'));
@@ -59,6 +90,7 @@ function load(root) {
         manifest.userPatches.some(entry => !entry.path.startsWith('user-patches/')) ||
         manifest.fileCount !== manifest.files.length || manifest.bytes !== manifest.files.reduce((n,f) => n+f.size,0) ||
         manifest.treeSha256 !== treeHash(manifest.files)) throw new Error('Web snapshot manifest summary mismatch.');
+    migrationHistory(root, manifest, [...retiredWeb], ['www/app.js','www/index.html']);
     return manifest;
 }
 function verifyTree(directory, entries) {
@@ -85,7 +117,7 @@ function verifyTree(directory, entries) {
 function validate(rootArg) {
     const root = path.resolve(rootArg), manifest = load(root);
     verifyTree(path.join(root, INPUT_ROOT), [...manifest.files, ...manifest.userPatches]);
-    return {status:'passed',manifestPath:MANIFEST_PATH,manifestSha256:sha(fs.readFileSync(path.join(root,MANIFEST_PATH))),fileCount:manifest.fileCount,bytes:manifest.bytes,treeSha256:manifest.treeSha256,userPatchCount:manifest.userPatches.length};
+    return {status:'passed',manifestPath:MANIFEST_PATH,manifestSha256:sha(fs.readFileSync(path.join(root,MANIFEST_PATH))),version:manifest.version,migration:manifest.migration,fileCount:manifest.fileCount,bytes:manifest.bytes,treeSha256:manifest.treeSha256,userPatchCount:manifest.userPatches.length};
 }
 function assemble(rootArg, runtimeArg) {
     const root = path.resolve(rootArg), runtime = path.resolve(runtimeArg);
@@ -95,14 +127,14 @@ function assemble(rootArg, runtimeArg) {
     const target = path.join(runtime, 'electronapp/www');
     if (fs.existsSync(target)) throw new Error('Web assembly requires an absent www output.');
     mkdirPhysical(target);
-    for (const entry of manifest.files) {
+    for (const entry of runtimeFiles(manifest)) {
         const bytes = fs.readFileSync(path.join(root,INPUT_ROOT,entry.path));
         if (bytes.length !== entry.size || sha(bytes) !== entry.sha256) throw new Error('Web snapshot changed during assembly.');
         const destination = path.join(target,entry.path.slice('www/'.length));
         mkdirPhysical(path.dirname(destination));
         fs.writeFileSync(destination,bytes,{flag:'wx'});
     }
-    return report;
+    return {...report,...runtimeSelection(manifest)};
 }
 // Restore an already independent snapshot without any original package layout.
 function restoreSnapshot(rootArg, sourceArg) {
@@ -154,4 +186,4 @@ if (require.main === module) {
         process.stdout.write(JSON.stringify(result,null,2)+'\n');
     } catch(error) { process.stderr.write(error.message+'\n');process.exitCode=1; }
 }
-module.exports = {MANIFEST_PATH,INPUT_ROOT,WEB_ROOT,LEGACY_WEB_PREFIX,isLegacyWeb,treeHash,load,verifyTree,validate,assemble,restoreSnapshot,importSnapshot};
+module.exports = {migrationHistory,runtimeSelection,MANIFEST_PATH,INPUT_ROOT,WEB_ROOT,LEGACY_WEB_PREFIX,isLegacyWeb,treeHash,load,verifyTree,validate,assemble,restoreSnapshot,importSnapshot};
