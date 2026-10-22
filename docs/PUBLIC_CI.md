@@ -1,8 +1,33 @@
 # Public offline CI
 
-The workflow in `.github/workflows/public-ci.yml` runs on pull requests and pushes using a Windows runner. It grants `contents: read`, disables persisted checkout credentials, pins Actions to full commit SHAs, and installs the locked JavaScript dependencies with `npm ci --ignore-scripts`. It requires no repository secrets, external runtime archives, or built binaries. Node.js is pinned to 24.18.1.
+The workflow in `.github/workflows/public-ci.yml` runs on pull requests and pushes using a Windows runner. It grants `contents: read`, disables persisted checkout credentials, and pins Actions to full commit SHAs. The full route installs the locked JavaScript dependencies with `npm ci --ignore-scripts`; the documentation route uses Node built-ins without installing dependencies. It requires no repository secrets, external runtime archives, or built binaries. Node.js is pinned to 24.18.1.
 
 Pinned actions are `actions/checkout` v4.4.0 (`11d5960a326750d5838078e36cf38b85af677262`) and `actions/setup-node` v4.4.0 (`49933ea5288caeca8642d1e84afbd3f7d6820020`).
+
+## Conservative documentation routing
+
+`tools/ci-change-scope.cjs` permits the lightweight route only for this audited prose allowlist:
+
+- Root `README.md`, `CHANGELOG.md`, `TODO.md`.
+- Under `docs/`: `README.md`, `USER_GUIDE.md`, `KNOWN_ISSUES.md`, `CONTRIBUTING.md`, `PUBLIC_CI.md`, `PROJECT_STATUS.md`, `DEVELOPMENT_LOG.md`, `ROADMAP.md`, `NEXT_RELEASE_SCOPE.md`, `RELEASE_CONVENTIONS.md`, and `templates/RELEASE_TEMPLATE.md`.
+
+All other paths require the existing full public regression, including new/unknown Markdown documents, code, tests and fixtures, workflows, dependencies/lockfiles, build configuration, vendor inputs, installer and native paths. Markdown extension alone grants no exemption. `tools/build-input-contract.cjs` consumes Markdown notices and component/source contracts such as `THIRD_PARTY_NOTICES.md`, `docs/LICENSING.md` and `docs/LIBMPV_INPUT.md`; they stay on the full route. The routing test asserts that the allowlist never overlaps declared build inputs. Audit consumers before expanding the list.
+
+PR classification compares the event's exact `pull_request.base.sha` to `pull_request.head.sha`, covering the whole PR rather than its final commit or the synthetic merge commit's last parent. The checkout must include the event head. Push classification compares exact `before` to `after`, including force pushes. Both rename endpoints and deleted paths are classified. A new-branch zero `before`, missing/invalid/unavailable commit, empty change list, shallow history, unexpected status, truncated diff, unknown event or mismatched checkout selects **full regression**. There is no path-filtered workflow trigger or API file-list pagination.
+
+`tools/ci-docs-check.cjs` checks patch whitespace, valid UTF-8 text/final newline, finite credential patterns, and newly added/changed local Markdown file destinations (inline links/images and reference definitions). It also rejects links from audited prose to documents removed by the change. Fenced/inline code examples are ignored. Existing unrelated archive-link debt is preserved; HTTP availability, heading anchors and a complete Markdown grammar are outside this finite offline check. Broken new links or failed format/pattern checks fail the job.
+
+The existing workflow/job identity `Public offline CI / windows-public-offline` remains present on every push/PR. On the documentation route its result represents the actual lightweight checks; the regression step is skipped and the summary explicitly says **NOT EXECUTED**. On the full route all previous gates remain required in that job. Failures/cancellation are not converted into success by the reporting step; no `continue-on-error` or synthetic passing test status is used. Repository protection settings remain unchanged.
+
+`workflow_dispatch` still runs the unchanged complete `manual-windows-test-package` job; documentation routing does not apply to manual packaging. No Actions, permissions, secrets, dependency upgrades or additional services are introduced.
+
+Routing and lightweight-check fixtures can be tested without vendor inputs or npm installation:
+
+```powershell
+node --test tests/ci-change-scope.test.cjs tests/ci-diff-check.test.cjs tests/ci-public-tests.test.cjs tests/ci-secret-scan.test.cjs
+```
+
+For a local routing dry run, supply `CI_EVENT_NAME` and the full exact SHAs in `CI_PULL_REQUEST_BASE` / `CI_PULL_REQUEST_HEAD`, or `CI_PUSH_BEFORE` / `CI_PUSH_HEAD`, then run `node tools/ci-change-scope.cjs`. Missing values safely print `mode: full`. With a documentation-only result, `node tools/ci-docs-check.cjs` runs the lightweight gate against the checked-out files.
 
 ## Checks
 
@@ -37,7 +62,7 @@ Mount tests use Windows client path identities on every host. They retain real f
 
 Linux source tests do not validate Windows playback, Host, installation, hardware, or the unavailable material contracts. A Linux pass does not replace the Windows CI job or material validation.
 
-Plugin Alameda identity and actual frozen app/view-manager alias-order checks are explicit material tests in `tests/plugin-amd-identity-material-selftest.cjs` and `tests/plugin-dialogclose-material-selftest.cjs`. They retain the original assertions and require the unavailable Carnival Web inputs; they are not discovered by the public `tests/*.test.cjs` runner. The synthetic close-button tests remain in the public set. A prepared local checkout runs both explicitly:
+Plugin Alameda identity and actual frozen app/view-manager alias-order checks are explicit material tests in `tests/plugin-amd-identity-material-selftest.cjs` and `tests/plugin-dialogclose-material-selftest.cjs`. They retain the original assertions and read the fixed `vendor/web-snapshot/www` inputs; they are not discovered by the public `tests/*.test.cjs` runner. Other historical material selftests still contain old Carnival-tree assumptions; their previously reported 1 failure / 39 skips remain a separate fixture-cleanup item, not an all-pass result and not part of this routing change. The synthetic close-button tests remain in the public set. A prepared local checkout runs both explicitly:
 
 ```powershell
 node --test tests/plugin-amd-identity-material-selftest.cjs tests/plugin-dialogclose-material-selftest.cjs
