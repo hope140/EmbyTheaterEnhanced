@@ -8,7 +8,16 @@
 /vendor/electron/
 /vendor/official-reference/
 /vendor/native-helper-inputs/
-/src/electronapp/www/
+# Only these two upstream-derived Web files are directly maintained product sources.
+/src/electronapp/www/*
+!/src/electronapp/www/modules/
+/src/electronapp/www/modules/*
+!/src/electronapp/www/modules/emby-apiclient/
+!/src/electronapp/www/modules/toast/
+/src/electronapp/www/modules/emby-apiclient/*
+!/src/electronapp/www/modules/emby-apiclient/apiclient.js
+/src/electronapp/www/modules/toast/*
+!/src/electronapp/www/modules/toast/toast.css
 # Generated from locked runtime templates by tools/prepare-preload.cjs; never hand-copy.
 /src/electronapp/preload.js
 /src/electronapp/scripts/windowsync.js

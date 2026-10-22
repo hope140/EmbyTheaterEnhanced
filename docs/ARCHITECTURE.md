@@ -46,7 +46,7 @@ M02 内核候选管理保持 Native Helper 为唯一生产 bridge。包由 main 
 
 内核状态分开显示包内哈希、静态兼容、来源/notice 声明、当前进程 ready 握手和下次启动选择。Helper/DLL映像SHA、来源独立核验、许可审查与可发行性分别保持UNKNOWN或NOT_ASSESSED；静态PE通过和握手通过不等于加载映像哈希证据或许可结论。
 
-构建由 tools/build.ps1 从固定 sourceCommit 的 Git blob、生成器和锁定外部输入组装。基础 payload 通过 assemble-runtime-base.cjs 从 manifest/合同推导文件清单，按文件复制仍保留的非Web旧输入，跳过后续替换及退役项；Web改用独立固定快照及用户Web补丁，生产组装和来源记录不读取旧www。14份原样Host/辅助二进制改读官方Windows 3.0.20组件白名单，Model不替换。剩余非Web prepared Carnival 输入与历史来源校验继续保留。source-provenance、runtime-provenance 和 build-manifest 分层记录；完整运行时仍依赖仓库外输入。Electron 使用固定 44.4.2 Windows x64 完整树。边界见[文件级组装](RUNTIME_BASE_ASSEMBLY.md)、[固定Web输入](WEB_SNAPSHOT_INPUT.md)与[固定Host输入](WINDOWS_HOST_INPUT.md)。
+构建由 tools/build.ps1 从固定 sourceCommit 的 Git blob、生成器和锁定外部输入组装。基础 payload 通过 assemble-runtime-base.cjs 从 manifest/合同推导文件清单，按文件复制仍保留的非Web旧输入，跳过后续替换及退役项；Web使用独立固定快照；ApiClient与toast为明确上游派生的两份直接维护源码，由已有Git blob装配器覆盖同名基底路径，其余Web overlay保持。生产不再应用这两份用户补丁及ApiClient生命周期补丁，不读取旧www。14份原样Host/辅助二进制改读官方Windows 3.0.20组件白名单，Model不替换。剩余非Web prepared Carnival 输入与历史来源校验继续保留。source-provenance、runtime-provenance 和 build-manifest 分层记录；完整运行时仍依赖仓库外输入。Electron 使用固定 44.4.2 Windows x64 完整树。边界见[文件级组装](RUNTIME_BASE_ASSEMBLY.md)、[固定Web输入](WEB_SNAPSHOT_INPUT.md)与[固定Host输入](WINDOWS_HOST_INPUT.md)。
 
 CustomCssJS 可选第三方集成已退役：固定 app.js 生成变换仅删除其插件注册，Web 装配不再输出该模块，旧专属禁 JS 生成器及其合同已移除。普通 CSS、主题、原生 Branding/Css 条件和个人 storage 保持。原始 Web 快照及其新核对的上游/GPLv3 记录仍保存，不能据此声称源码已清；见[退役范围和证据](LEGACY_RESOURCE_RETIREMENT.md)。
 

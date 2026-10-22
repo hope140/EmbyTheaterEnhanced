@@ -45,3 +45,7 @@
 "/vendor/web-snapshot/www/startup/connectlogin.html" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
 "/vendor/web-snapshot/www/strings/zh-CN.json" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
 "/vendor/web-snapshot/www/users/user.html" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
+
+# Upstream-derived maintained sources retain the exact accepted runtime bytes.
+/src/electronapp/www/modules/emby-apiclient/apiclient.js -text whitespace=cr-at-eol
+/src/electronapp/www/modules/toast/toast.css -text

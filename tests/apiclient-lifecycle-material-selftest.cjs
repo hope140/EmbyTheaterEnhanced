@@ -8,22 +8,17 @@ const test = require('node:test');
 const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
-const defaultSourcePath = path.join(root, 'vendor/web-snapshot/user-patches/apiclient.js');
-const sourcePath = process.env.ETE_APICLIENT_SOURCE || defaultSourcePath;
-const source = fs.readFileSync(sourcePath, 'utf8');
-const manifest = JSON.parse(fs.readFileSync(path.join(root, 'vendor/web-snapshot-manifest.json'), 'utf8'));
-const pinned = manifest.userPatches.find(entry => entry.path === 'user-patches/apiclient.js');
-assert.ok(pinned, 'manifest-pinned ApiClient material entry is required');
-const sourceSha256 = crypto.createHash('sha256').update(source).digest('hex').toUpperCase();
-assert.equal(sourceSha256, pinned.sha256.toUpperCase(), 'ApiClient source must match the runtime manifest SHA-256');
-
-let testedSource = source;
-if (process.env.ETE_APICLIENT_UNPATCHED !== '1') {
-  const {patchApiClient} = require('../tools/patch-apiclient-lifecycle.cjs');
-  assert.equal(typeof patchApiClient, 'function', 'patcher must export patchApiClient(source)');
-  testedSource = patchApiClient(source);
-  assert.equal(typeof testedSource, 'string', 'patchApiClient must return the complete AMD source');
-}
+// Historical carrier is an independent before-lifecycle comparison, never a build input.
+const source = fs.readFileSync(path.join(root, 'vendor/web-snapshot/user-patches/apiclient.js'), 'utf8');
+assert.equal(crypto.createHash('sha256').update(source).digest('hex'),
+  'a4a901640abe6bc25188c1cf27fb53125b4f65ef2a797def033dc55165b080ae');
+const maintainedPath = path.join(root, 'src/electronapp/www/modules/emby-apiclient/apiclient.js');
+const maintainedSource = fs.readFileSync(maintainedPath, 'utf8');
+assert.equal(crypto.createHash('sha256').update(maintainedSource).digest('hex'),
+  '6342a2c809b8cd4c0e1e3e35fc49f6af8a415e4f4f8f8f0363cb769e9a7ef95e');
+const testedSource = process.env.ETE_APICLIENT_SOURCE
+  ? fs.readFileSync(process.env.ETE_APICLIENT_SOURCE, 'utf8')
+  : process.env.ETE_APICLIENT_UNPATCHED === '1' ? source : maintainedSource;
 
 const OPEN = 1;
 const CONNECTING = 0;
@@ -402,4 +397,29 @@ test('current message delivery and listener replay each happen once', () => {
     'current message data is delivered unchanged');
   assert.equal(current.sent.length, 1, 'one registered message listener replays once');
   assert.equal(JSON.parse(current.sent[0]).MessageType, 'SessionStart');
+});
+
+test('progress reporting ensures the socket before the unchanged HTTP POST and respects throttling', async () => {
+  const h = createHarness();
+  const calls = [];
+  const ensure = h.client.ensureWebSocket.bind(h.client);
+  h.client.ensureWebSocket = () => { calls.push('ensure'); ensure(); };
+  const response = {synthetic: 'progress-ack'};
+  h.client.ajax = request => { calls.push(request); return Promise.resolve(response); };
+  const options = {EventName: 'pause', PositionTicks: 123456789, ItemId: 'synthetic-item'};
+  assert.equal(await h.client.reportPlaybackProgress(options), response);
+  assert.equal(calls[0], 'ensure');
+  assert.equal(h.sockets.length, 1);
+  assert.equal(JSON.stringify(calls[1]), JSON.stringify({
+    type: 'POST', data: JSON.stringify(options), contentType: 'application/json',
+    url: 'http://server.test/emby/Sessions/Playing/Progress'
+  }));
+  assert.equal(h.client.lastPlaybackProgressReport, 0);
+  assert.equal(h.client.lastPlaybackProgressReportTicks, options.PositionTicks);
+
+  calls.length = 0;
+  h.client.lastPlaybackProgressReport = Date.now() + 10000;
+  await h.client.reportPlaybackProgress({EventName: 'timeupdate', PositionTicks: 0});
+  assert.equal(calls.length, 0, 'throttled reports neither ensure nor POST');
+  assert.throws(() => h.client.reportPlaybackProgress(null), /null options/);
 });
