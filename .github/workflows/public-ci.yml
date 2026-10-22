@@ -34,6 +34,9 @@ jobs:
       - name: Verify exact repository snapshot bytes
         run: node -e "for (const name of ['web-snapshot','compatibility-resources','small-runtime','model-compatibility']) require('./tools/'+name+'-input.cjs').validate(process.cwd()); console.log('All four repository snapshots match their manifests.');"
 
+      - name: Verify committed original libmpv archive
+        run: node tools/libmpv-input.cjs validate-archive .
+
       - name: Run public offline test set
         run: node tools/ci-public-tests.cjs
 

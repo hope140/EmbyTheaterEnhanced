@@ -3,6 +3,8 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $root = Split-Path -Parent $PSScriptRoot
 if (-not $IsWindows) { throw 'The manual package preparation requires Windows.' }
+& node (Join-Path $PSScriptRoot 'libmpv-input.cjs') validate-archive $root
+if ($LASTEXITCODE -ne 0) { throw 'Committed repository libmpv archive validation failed; no network fallback.' }
 $planTool = Join-Path $PSScriptRoot 'ci-build-input-plan.cjs'
 $planJson = & node $planTool plan $root
 if ($LASTEXITCODE -ne 0) { throw 'Locked acquisition plan validation failed.' }

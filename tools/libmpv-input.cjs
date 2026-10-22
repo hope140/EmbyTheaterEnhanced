@@ -2,10 +2,12 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const cp = require('node:child_process');
 const web = require('./web-snapshot-input.cjs');
 const MANIFEST_PATH = 'vendor/libmpv-input-manifest.json';
 const INPUT_ROOT = 'vendor/libmpv/20260809';
 const RUNTIME_PATH='electronapp/libmpv/x64/mpv-1.dll';
+const ARCHIVE_PATH='vendor/archive/libmpv/20260809/mpv-dev-x86_64-20260809-git-dd5d17d328.7z';
 const sha = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 function relative(name) {
     if (typeof name !== 'string' || !name || /[\\:\x00-\x1f\x7f]/.test(name) ||
@@ -44,11 +46,44 @@ function load(rootArg) {
     return manifest;
 }
 function paths(root) {return load(root).files.map(entry=>entry.path);}
+function verifyArchive(file, expected) {
+    physical(file,false);
+    const stat=fs.statSync(file);
+    if(stat.size!==expected.size)throw Error('libmpv archive size mismatch (HTML/error pages are not archives).');
+    const bytes=fs.readFileSync(file);
+    if(!bytes.subarray(0,6).equals(Buffer.from('377abcaf271c','hex')))throw Error('libmpv archive is not 7z (HTML/error pages refused).');
+    if(sha(bytes)!==expected.sha256)throw Error('libmpv archive SHA256 mismatch.');
+}
+function validateRepositoryArchive(rootArg, manifestArg) {
+    const root=path.resolve(rootArg),manifest=manifestArg||load(root),a=manifest.archive;
+    if(!a?.repositoryPath)return null;
+    const asset='mpv-dev-x86_64-20260809-git-dd5d17d328.7z';
+    if(a.repositoryPath!==ARCHIVE_PATH||a.asset!==asset||a.member!=='libmpv-2.dll'||
+        a.sourceUrl!==`https://sourceforge.net/projects/mpv-player-windows/files/libmpv/${asset}/download`||
+        a.sourceCommit!=='dd5d17d3285a095a0f712fa9d116e22a076492de'||
+        !Number.isSafeInteger(a.size)||a.size<6||!/^[a-f0-9]{64}$/.test(a.sha256||'')) {
+        throw Error('Invalid repository libmpv archive declaration.');
+    }
+    const file=path.join(root,ARCHIVE_PATH);
+    if(!fs.existsSync(file))throw Error('Repository libmpv archive is missing; no network fallback.');
+    verifyArchive(file,a);
+    function git(args) {
+        const result=cp.spawnSync('git',['-C',root,...args],{encoding:'utf8',stdio:['ignore','pipe','pipe']});
+        if(result.status!==0)throw Error('Repository libmpv archive must be committed at HEAD.');
+        return result.stdout.trim();
+    }
+    const blob=git(['rev-parse','HEAD:'+ARCHIVE_PATH]);
+    if(!/^[a-f0-9]{40,64}$/.test(blob)||git(['hash-object','--no-filters','--',ARCHIVE_PATH])!==blob) {
+        throw Error('Repository libmpv archive differs from HEAD.');
+    }
+    return {path:ARCHIVE_PATH,size:a.size,sha256:a.sha256,gitBlobObjectId:blob,sourceUrl:a.sourceUrl};
+}
 function validate(rootArg) {
     const root=path.resolve(rootArg),manifest=load(root);
+    const repositoryArchive=validateRepositoryArchive(root,manifest);
     web.verifyTree(path.join(root,INPUT_ROOT),manifest.files);
     return {status:'passed',manifestPath:MANIFEST_PATH,manifestSha256:sha(fs.readFileSync(path.join(root,MANIFEST_PATH))),
-        version:manifest.version,provenance:manifest.provenance,archive:manifest.archive,upstreamCandidate:manifest.upstreamCandidate,fileCount:manifest.fileCount,bytes:manifest.bytes,treeSha256:manifest.treeSha256};
+        version:manifest.version,provenance:manifest.provenance,archive:manifest.archive,repositoryArchive:repositoryArchive||undefined,upstreamCandidate:manifest.upstreamCandidate,fileCount:manifest.fileCount,bytes:manifest.bytes,treeSha256:manifest.treeSha256};
 }
 function importSnapshot(rootArg,sourceArg) {
     const root=path.resolve(rootArg),manifest=load(root),source=path.resolve(sourceArg);physical(source,false);
@@ -82,12 +117,13 @@ if(require.main===module) {
     try {
         const [command,root,argument]=process.argv.slice(2);let result;
         if(command==='metadata'&&root&&!argument)result=load(root);
+        else if(command==='validate-archive'&&root&&!argument){result=validateRepositoryArchive(root);if(!result)throw Error('Repository libmpv archive is not declared.');}
         else if(command==='validate'&&root&&!argument)result=validate(root);
         else if(command==='import'&&root&&argument)result=importSnapshot(root,argument);
         else if(command==='assemble'&&root&&argument)result=assemble(root,argument);
         else if(command==='validate-runtime'&&root&&argument)result=validateRuntime(root,argument);
-        else throw new Error('Usage: libmpv-input.cjs <metadata|validate> <root> | <import|assemble|validate-runtime> <root> <path>');
+        else throw new Error('Usage: libmpv-input.cjs <metadata|validate-archive|validate> <root> | <import|assemble|validate-runtime> <root> <path>');
         process.stdout.write(JSON.stringify(result,null,2)+'\n');
     }catch(error){process.stderr.write(error.message+'\n');process.exitCode=1;}
 }
-module.exports={MANIFEST_PATH,INPUT_ROOT,RUNTIME_PATH,load,paths,validate,importSnapshot,validateRuntime,assemble,physical,mkdirPhysical};
+module.exports={MANIFEST_PATH,INPUT_ROOT,RUNTIME_PATH,ARCHIVE_PATH,load,paths,validate,importSnapshot,validateRuntime,assemble,physical,mkdirPhysical,verifyArchive,validateRepositoryArchive};

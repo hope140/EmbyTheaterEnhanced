@@ -13,7 +13,7 @@ Git `-text` attributes preserve every manifest-bound byte across platforms. Only
 
 External components remain fixed acquisitions instead of accumulating binary versions in Git:
 
-- libmpv: `node tools/prepare-libmpv.cjs .`, pinned official SourceForge archive and DLL hashes; no DLL/LFS object required. See LIBMPV_INPUT.md.
+- libmpv local review branch: original 31,173,907-byte upstream archive under `vendor/archive/libmpv/20260809`, fixed archive/DLL hashes and HEAD blob validation; `node tools/prepare-libmpv.cjs .` requires no SourceForge request or Work cache. The DLL remains ignored. Public archive upload is pending corresponding-source and linked-component notice review. See LIBMPV_INPUT.md.
 - Windows Host/resources: fixed official 3.0.20 ZIP, selecting 19 files; see WINDOWS_HOST_INPUT.md.
 - Inherited npm: pinned official Electron Git revision and explicit newline transform; see INHERITED_NPM_INPUT.md.
 - Electron 44.4.2: fixed official archive/hash, electron-runtime-manifest.json.

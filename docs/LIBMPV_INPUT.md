@@ -1,6 +1,6 @@
 # Pinned libmpv archive recovery
 
-`node tools/prepare-libmpv.cjs .` restores the current DLL without Carnival, the combined patch, or a preserved DLL snapshot. It downloads one fixed SourceForge project archive, validates it, and statically extracts one member. No downloaded executable or DLL is run. `tools/prepare.ps1` invokes this entry when absent; explicit `-LibmpvSnapshotFile` remains an optional exact-hash offline import, never an automatic fallback.
+Local review prototype: the original archive is committed only in the local review branch; public upload is pending corresponding-source and linked-component notice review. `node tools/prepare-libmpv.cjs .` restores the current DLL from `vendor/archive/libmpv/20260809` without Carnival, the combined patch, a preserved DLL snapshot, or a SourceForge request. It verifies the original archive against its size/SHA256 and the HEAD Git blob, then statically extracts one member. No executable or DLL is run. `tools/prepare.ps1` invokes this entry when absent; explicit `-LibmpvSnapshotFile` remains an optional exact-hash offline import.
 
 ## Fixed identities
 
@@ -16,14 +16,14 @@ The DLL is byte-identical to the former patch input. Future upgrades require del
 
 ## Cache and failure rules
 
-Requirements: Node, PowerShell 7 (`pwsh`) and trusted libarchive bsdtar. Windows uses existing `C:\Windows\System32\tar.exe`; Linux requires `bsdtar` (GNU tar alone cannot extract this 7z). No new downloader or extractor is installed by this tool.
+Requirements: Node, Git and trusted libarchive bsdtar. Windows uses existing `C:\Windows\System32\tar.exe`; Linux requires `bsdtar` (GNU tar alone cannot extract this 7z). No downloader or extractor is installed by this entry.
 
-Archive cache `.work/libmpv-download/<asset>` and prepared DLL `vendor/libmpv/20260809/mpv-1.dll` remain ignored; no Git/LFS DLL history. Existing components and archives are checked. A missing archive downloads once to an exclusive temporary file, verifies 7z magic/size/SHA256, then promotes without replacing an occupied cache. Corrupt caches fail rather than silently refresh. Inspect and quarantine the identified corrupt cache before an explicit retry.
+The complete original archive uses ordinary Git with `-text`; the 119 MB prepared DLL remains ignored. Missing, corrupt, uncommitted, changed or redirected repository archive paths fail before cache use. A valid prepared DLL cannot hide a bad archive. There is no automatic network fallback or old archive-cache fallback for this manifest. Only the named DLL member is extracted to memory, verified, and written to the ignored component directory.
 
-The HTTP transport allows HTTPS only, at most five redirects, and only the fixed SourceForge project path and official mirrors. It does not emulate a browser, bypass challenges, retry denials, or fall back to another source/version. Non-200, HTML/download pages, wrong lengths/hashes, unsafe redirects, links and bad extracted bytes stop preparation. Only the named DLL member is extracted to memory and verified before writing.
+The older HTTP diagnostic transport is retained for controlled regression fixtures. The production restoration CLI does not invoke it. No denied URL is retried and no alternative source/version is selected.
 
-Work cold recovery from an empty isolated directory succeeded: project URL -> downloads.sourceforge.net -> twds.dl.sourceforge.net, HTTP 200/application/x-7z-compressed, exact identities above. Earlier failed saved responses were normal HTML download instruction pages; their exact historical cause is unknown. Target cloud/Linux network and bsdtar execution remain unverified and require separate evidence.
+Historical Work cold download succeeded with the exact identities above. A later GitHub-hosted runner received HTTP 403; the old log did not identify the refusing hop. This local archive route removes the download requirement. It is not yet a successful GitHub-hosted full package result.
 
 ## Source and notice limits
 
-The [mpv source reference](https://github.com/mpv-player/mpv/tree/dd5d17d3285a095a0f712fa9d116e22a076492de), THIRD_PARTY_NOTICES and SOURCE_MATERIALS records remain. Successful acquisition is not a full source rebuild: exact winbuild revision, linked dependencies/patches/options and complete corresponding-source/notice closure remain separate review items. The component is third-party. Acquisition scripts and identities are bound into build/source provenance; historical patch/predecessor paths are metadata only, without physical old-directory requirements.
+The [archive notice](../vendor/archive/libmpv/20260809/README.md), THIRD_PARTY_NOTICES and SOURCE_MATERIALS records remain. The fixed builder revision and known mpv/FFmpeg source references are recorded, but actual linked cached dependency revisions, complete notice inventory and a complete corresponding-source delivery arrangement remain unresolved. The component is third-party. Acquisition scripts and identities are bound into build/source provenance; historical patch/predecessor paths are metadata only, without physical old-directory requirements.
