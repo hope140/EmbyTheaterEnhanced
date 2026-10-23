@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-23 — 独立原生预览试验包门禁
+
+`feature/windows-native-preview` 已重基 v0.4.0 发布点 `88578c91ab19d44eecddcfae096d37dc917ef1f4`，保持默认关闭和原两按钮。手动构建新增默认 false 的 `native_preview_trial`，禁止与 release 模式同时启用。标准载荷通过原完整门禁后，另复制出独立 ZIP；Koffi 3.3.3 两个官方注册表归档按 SRI／归档及 92 个成员 SHA-256 验证，无安装脚本。新 manifest、自检、显式隔离 profile 启动器和包内红／绿 owner 探针绑定同一提交，新增字节不冒充标准 provenance。
+
+Linux 公开离线回归1583项：1573 pass、0 fail、10项既有 Windows skip；随后补齐 wire BGR24／BGRA 诊断保护，相关最终定向31/31通过。428份JS／49份PowerShell语法、有限凭据模式与diff检查通过；真实官方归档92文件核验／物化、便携C++核心25项和彩色字节回读通过。Windows helper／Koffi自检／A/B及ZIP生成尚未运行；CI必须从真实ZIP解包执行这些门禁，Work另验DWM／Peek可见效果，不把占位当修复通过。EWT的helper restart、service转发及libmpv重叠点已列明，未合并其他候选；详见[当前协议和最小复验](WINDOWS_PREVIEW_SNAPSHOT_PROTOCOL.md)。
+
 ## 2026-10-23 — owner绑定原生视频快照与产品接线候选
 
 新增可选preview-snapshot-v1：helper在唯一媒体映射／FILE_LOADED／PLAYBACK_RESTART后取得libmpv video快照，异步回复复核owner及期限，最多160×90 BGR24且不提高64KiB envelope限制。main服务、v3 renderer／只读libmpv owner和DWM适配器已接线，老能力／旧回复／结束保持中性；默认关闭、原播放／hold策略、两按钮和依赖版本不变。controller仅新增预览像素不入history／timeline的保护；共享文件按独立提交协调审查分支。

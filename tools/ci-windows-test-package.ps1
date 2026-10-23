@@ -1,4 +1,5 @@
-param([switch]$ReleasePackage)
+param([switch]$ReleasePackage, [switch]$NativePreviewTrial)
+if ($ReleasePackage -and $NativePreviewTrial) { throw 'Native preview trial cannot be a release package.' }
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $root = Split-Path -Parent $PSScriptRoot
@@ -83,8 +84,47 @@ if ($LASTEXITCODE -ne 0) { throw 'Installer extraction failed.' }
 $verification = & node (Join-Path $PSScriptRoot 'verify-installer-runtime.cjs') $runtime (Join-Path $extract '{app}') $source
 if ($LASTEXITCODE -ne 0) { throw 'Extracted installer differs from the verified runtime.' }
 
+# A separate, opt-in test overlay; never mutate the verified standard payload.
+$previewZip = $null
+$previewReceipt = $null
+if ($NativePreviewTrial) {
+    $previewArchives = Join-Path $root ('.work/native-preview-archives-' + $run)
+    $previewDependencies = Join-Path $root ('.work/native-preview-dependencies-' + $run)
+    & python (Join-Path $PSScriptRoot 'download-native-preview-deps.py') $root $previewArchives
+    if ($LASTEXITCODE -ne 0) { throw 'Pinned official FFI acquisition failed.' }
+    RunNode @('tools/windows-native-preview-deps.cjs','prepare',$root,$previewArchives,$previewDependencies)
+    $preview = Join-Path $root ('dist/ETE-native-preview-' + $source.Substring(0,12) + '-' + $run)
+    RunNode @('tools/windows-native-preview-trial.cjs',$root,$runtime,$previewDependencies,$preview,$source)
+    $previewZip = $preview + '.zip'
+    if (Test-Path -LiteralPath $previewZip) { throw 'Preserve existing preview ZIP.' }
+    [IO.Compression.ZipFile]::CreateFromDirectory($preview,$previewZip)
+    $previewExtract = Join-Path $root ('.work/native-preview-extracted-' + $run)
+    if (Test-Path -LiteralPath $previewExtract) { throw 'Preserve existing preview extraction.' }
+    [IO.Compression.ZipFile]::ExtractToDirectory($previewZip,$previewExtract)
+    $ownerOutput = Join-Path $root ('test-output/native-owner-' + $run)
+    $priorRunAsNode = $env:ELECTRON_RUN_AS_NODE
+    try {
+        $env:ELECTRON_RUN_AS_NODE = '1'
+        $previewReceipt = & (Join-Path $previewExtract 'x64/electron/electron.exe') (Join-Path $previewExtract 'trial/verify.cjs') $source
+        if ($LASTEXITCODE -ne 0) { throw 'Extracted trial selfcheck failed.' }
+        $env:ELECTRON_RUN_AS_NODE = $null
+        & (Join-Path $previewExtract 'x64/electron/electron.exe') (Join-Path $previewExtract 'trial/owner-probe.cjs') $previewExtract $ownerOutput $source
+        if ($LASTEXITCODE -ne 0) { throw 'Source-bound production owner probe failed.' }
+    } finally { $env:ELECTRON_RUN_AS_NODE = $priorRunAsNode }
+    $ownerLines = @(Get-Content -LiteralPath (Join-Path $ownerOutput 'owner-probe.jsonl') | ForEach-Object { $_ | ConvertFrom-Json })
+    $ownerEnd = @($ownerLines | Where-Object { $_.event -eq 'end' })
+    if ($ownerEnd.Count -ne 1 -or $ownerEnd[0].result -ne 'PASS' -or -not $ownerEnd[0].ownedExitConfirmed) { throw 'Owner probe did not confirm completion and exit.' }
+}
+
 # Only explicitly selected distributable files enter the Actions artifact.
 New-Item -ItemType Directory -Path $output | Out-Null
+if ($NativePreviewTrial) {
+    Copy-Item -LiteralPath $previewZip -Destination $output
+    Copy-Item -LiteralPath (Join-Path $preview 'native-preview-trial.json') -Destination $output
+    Copy-Item -LiteralPath (Join-Path $ownerOutput 'owner-probe.jsonl') -Destination $output
+    [IO.File]::WriteAllText((Join-Path $output 'native-preview-selfcheck.json'), ($previewReceipt | Out-String), [Text.UTF8Encoding]::new($false))
+    [IO.File]::WriteAllText((Join-Path $output 'native-preview-zip.sha256'), ((Get-FileHash -LiteralPath $previewZip -Algorithm SHA256).Hash.ToLowerInvariant() + '  ' + [IO.Path]::GetFileName($previewZip) + "`n"), [Text.UTF8Encoding]::new($false))
+}
 foreach ($suffix in @('', '.provenance.json', '.sha256')) {
     Copy-Item -LiteralPath ($installer + $suffix) -Destination $output
 }
@@ -114,7 +154,7 @@ $summary = [ordered]@{
     runId=$env:GITHUB_RUN_ID; runAttempt=$env:GITHUB_RUN_ATTEMPT
     runnerOS=$env:RUNNER_OS; runnerArch=$env:RUNNER_ARCH; imageOS=$env:ImageOS; imageVersion=$env:ImageVersion
     node=([string](& node --version)); installer=[IO.Path]::GetFileName($installer)
-    releasePackage=[bool]$ReleasePackage; version=$version
+    releasePackage=[bool]$ReleasePackage; nativePreviewTrial=[bool]$NativePreviewTrial; version=$version
     installerFileVersion=(Get-Item -LiteralPath $installer).VersionInfo.FileVersion
     installerProductVersion=(Get-Item -LiteralPath $installer).VersionInfo.ProductVersion
     installerSignatureStatus=[string](Get-AuthenticodeSignature -LiteralPath $installer).Status
@@ -123,7 +163,7 @@ $summary = [ordered]@{
         archiveSha256=$modelArchive.archiveSha256; archiveBytes=$modelArchive.archiveBytes
         member='MediaBrowser.Model.dll'; memberSha256=$modelFileSha256; memberBytes=$officialModel.bytes
     }
-    releasePublished=$false; installedOrLaunched=$false
+    releasePublished=$false; installedOrLaunched=[bool]$NativePreviewTrial; fullClientLaunched=$false; installed=$false; nativeOwnerProbeLaunched=[bool]$NativePreviewTrial
 }
 [IO.File]::WriteAllText((Join-Path $output 'test-build-summary.json'), (($summary | ConvertTo-Json -Depth 5) + "`n"), [Text.UTF8Encoding]::new($false))
 if ($ReleasePackage) {

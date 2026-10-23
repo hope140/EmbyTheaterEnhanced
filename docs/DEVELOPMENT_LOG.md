@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-23 — 独立原生预览试验包门禁
+
+候选安全重基 v0.4.0 发布点88578c91，保留发布内容和独立功能提交。官方注册表锁定 Koffi 3.3.3 两归档／92成员，不运行安装脚本。默认关闭的手动 trial 开关在标准构建及安装器解包验证后生成独立 ZIP和新增来源manifest；包内固定Electron自检FFI绑定，再以生产helper本地红／绿素材验owner、退休、自然结束和退出，失败不上传。显式启动器仅接受bundle外全新profile，普通入口、播放策略和两按钮保持。
+
+恢复后9项包检查先通过；补LF／CRLF源码检出、真实controller generation守卫后公开离线1583项／1573pass／0fail／10 Windows skip。自审发现探针在generation创建前设keep-open，已改为每个探针所属generation激活后设置，未改产品策略。另修正诊断guard不应比较wire BGR24和解码BGRA的不同base64，新增真实字段拒绝断言；最终相关31项通过。428 JS／49 PowerShell语法、有限模式及diff检查、真实归档92文件物化、便携C++25项通过。没有Windows编译、GUI／DWM或试验ZIP完成证据；新增CI门禁和Work复验步骤准备完成，仍待真实运行。原生helper/service/libmpv与EWT候选交点逐块列于[协议交接](WINDOWS_PREVIEW_SNAPSHOT_PROTOCOL.md)，本次未合并其他分支。
+
 ## 2026-10-23 — owner绑定原生视频快照与产品接线候选
 
 新增可选preview-snapshot-v1：helper在唯一媒体映射／FILE_LOADED／PLAYBACK_RESTART后取得libmpv video快照，异步回复复核owner及期限，最多160×90 BGR24且不提高64KiB envelope限制。main服务、v3 renderer／只读libmpv owner和DWM适配器已接线，老能力／旧回复／结束保持中性；默认关闭、原播放／hold策略、两按钮和依赖版本不变。controller仅新增预览像素不入history／timeline的保护；共享文件按独立提交协调审查分支。

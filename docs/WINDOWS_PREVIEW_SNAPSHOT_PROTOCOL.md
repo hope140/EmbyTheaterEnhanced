@@ -1,6 +1,6 @@
 # 原生预览 owner 快照候选
 
-这是 v0.4.0 之后的独立候选，默认仍关闭，不合入正式版。此前中性保护只是失败路径；当前新增真正的视频像素来源与产品接线，Windows helper 编译／D3D11／DWM 可见验收尚未执行。
+这是 v0.4.0 之后的独立候选，默认仍关闭，不合入正式版。独立分支已重基正式发布点 `88578c91ab19d44eecddcfae096d37dc917ef1f4`。此前中性保护只是失败路径；当前已有视频像素来源、产品接线和独立试验包装配源码，Windows helper 编译／D3D11／DWM 可见验收仍须分别执行。
 
 ## 合成路径与必要影响面
 
@@ -49,7 +49,7 @@ helper 每次最多一个物理截图，约1Hz上限、1500ms逻辑期限；退�
 
 Linux 的 `node tools/test-preview-owner-core.cjs` 用宿主 g++ 编译**从当前 C++ 实际提取**的 owner／pending-slot／缩图函数：25项状态／实际video track守卫检查及320×180彩色帧→160×90字节回读。此工具不是 Windows helper 编译，不执行 libmpv。公开 Node 回归覆盖严格 DTO、真实 controller framing／历史不留像素、service 同步失败／代次／结束／单请求、renderer owner 接线、libmpv Item/Server 和 Play 退休、adapter 旧回复／黑首帧／最小化／资源等待。不得用这些替代 Windows 结果。
 
-准备了 `tools/windows-native-owner-probe.cjs`：只在固定 Windows Electron 44.4.2 x64 下显式运行，核验 checkout、生产 helper provenance／源码 SHA／EXE SHA、固定 libmpv DLL SHA，生成自身本地红／绿 Y4M，不用服务器、Koffi、账户或 NAS。它读取真实生产方法，自动检验 A/B、旧请求退休和 END_FILE 后 unavailable；只在探针自有实例把 keep-open 设false以测试自然结束，不改产品策略。结果文件只记固定阶段及哈希，只有 end/PASS 且 ownedExitConfirmed 才算此 helper 范围完成，DWM 可见结果始终 NOT_ASSESSED。
+准备了 `tools/windows-native-owner-probe.cjs`：只在固定 Windows Electron 44.4.2 x64 下显式运行，核验 checkout、生产 helper provenance／源码 SHA／EXE SHA、固定 libmpv DLL SHA，生成自身本地红／绿 Y4M，不用服务器、账户或 NAS。快照本身不依赖Koffi；包内模式会先执行含Koffi实际加载的装配自检。它读取真实生产方法，自动检验 A/B、旧请求退休和 END_FILE 后 unavailable；仅在探针自有generation激活后把 keep-open 设false以测试自然结束，不改产品策略。诊断检查拒绝保留wire BGR24或解码BGRA的pixels字段，不比较两种不同编码。结果文件只记固定阶段及哈希，失败仅记固定stage；只有 end/PASS 且 ownedExitConfirmed 才算此 helper 范围完成，DWM 可见结果始终 NOT_ASSESSED。
 
 ```powershell
 $previewCommit = (git rev-parse HEAD).Trim()
@@ -65,4 +65,38 @@ $previewCommit = (git rev-parse HEAD).Trim()
 
 ## 测试包状态
 
-当前已具备真实产品 owner 快照接线，能力缺失仍中性；**尚未完成 Windows编译／运行，也未补齐常规构建的 Koffi物化／来源合同**。因此没有发布“已修复”包，也不将旧普通包或纯FFI合成窗口当新功能包。父线程可先用精确独立分支提交走现有 `ci-windows-test-package.ps1 -ReleasePackage:$false` 编译／标准包门禁；该标准载荷本身不装Koffi，不能据此宣称 taskbar视频可验收。后续全功能trial装配需独立来源回执和隔离profile／入口，由父线程协调云UI；不碰已拒入口、不覆盖正式安装或已有artifact、不合main或发正式Release。真实v0.4.0发布点确定后另重基。
+手动 `public-ci.yml` 支持 `native_preview_trial=true`，同时必须 `release_package=false`；两个开关不能同时打开。保持固定 GCC 16.1.0、C++17、固定 mpv 2.5 header／DLL 和原 flags／链接库。新增快照调用使用既有动态加载的 libmpv 导出及 C++17 标准库，没有新增 Windows SDK 或链接依赖；源码／便携提取编译检查不能替代锁定 Windows 工具链实编。
+
+构建先完成原来的全部 Windows 回归、源码 Host／生产 helper 编译、标准 runtime 验证、安装器完整性及解包对比。随后从官方 `registry.npmjs.org` 精确获取 Koffi 3.3.3 与 `@koromix/koffi-win32-x64` 3.3.3；版本元数据、锁文件 SRI、归档 SHA-256、92 个归档成员及 PE32+ x64 标识均需通过，不执行安装脚本。完整 MIT 与所含 Node API 许可随包保留。
+
+`tools/windows-native-preview-trial.cjs` 只读当前提交 Git blob，在全新独立目录复制标准载荷，再添加 native-media 模块／依赖、显式入口、探针和来源文件。标准文件字节与默认入口保持原样；独立 `native-preview-trial.json` 绑定源提交、标准 build-manifest、生成器、依赖与完整文件集合。它是额外覆盖来源合同，不将新文件冒充为标准构建输入。试验 ZIP 使用提交和 run 唯一名称，不覆盖正式安装或已有 artifact。
+
+CI 必须重新解包该 ZIP，用**包内固定 Electron 44.4.2 x64** 执行自检：完整文件与生产 helper 来源、固定 DLL、Koffi 实际载入／系统函数调用和 DWM／WinRT FFI 签名绑定。之后从解包副本执行本地红／绿 owner 探针，必须得到唯一 `end/PASS` 且 `ownedExitConfirmed=true`，否则不上传。外部回执包含 ZIP SHA-256、独立 manifest、自检 JSON 与 owner JSONL；探针 profile／媒体留在 artifact 外。自检和 helper A/B 不证明 DWM 可见效果。
+
+Linux 可验证官方归档／装配来源、合成包正反例和便携 C++ 核心；本轮没有运行 Windows 编译、自检、helper A/B 或生成 Windows 试验 ZIP。该源码具备上述独立构建门禁，不宣称包已生成或视频问题已解决。不自行触发 workflow，不合 main，不发布正式 Release。
+
+## 解包后的最小 Windows 复验
+
+先核对 artifact 的 sourceCommit 与 ZIP SHA-256，再将 ZIP 解到新的普通目录。保留现用正式安装；不导入已有 profile，不预置账户。下列父目录先手动建好，传入的 profile／output 子目录必须不存在且位于 bundle 外：
+
+```powershell
+# 单独执行包内自检（不启动完整客户端）
+$previewCommit = (Get-Content -Raw .\native-preview-trial.json | ConvertFrom-Json).sourceCommit
+$env:ELECTRON_RUN_AS_NODE = '1'
+try { & .\x64\electron\electron.exe .\trial\verify.cjs $previewCommit }
+finally { Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue }
+# 可重复的生产 helper 本地 A/B；每次换一个全新输出目录
+.\Test-Owner.ps1 -OutputDirectory C:\ETE-Probe\runs\owner-001
+# 完整产品显式 trial；每次换一个全新 profile
+.\Launch-Trial.ps1 -ProfileRoot C:\ETE-Probe\profiles\trial-001
+```
+
+启动器先自检，设置独立 appData／userData／sessionData／temp 和试验 AppUserModelID，然后才启用环境开关。profile、认证信息和日志不入分发 ZIP；完整产品体验如需登录，由使用者在隔离 profile 自行操作。自检仅允许额外 `debug.log` 或 `x64/electron/debug.log`（各最多 8 MiB），其余新增／篡改文件均拒绝；测试输出放 bundle 外。
+
+Work 需分别记录普通包对照与 trial 的 thumbnail／Peek：A→B 不残留旧帧、黑片头、Stop／结束、同片重播、快速 Next、首次即最小化、最小化换片再恢复、pending 退出与 GDI 资源。首帧未获证明时的中性占位只是保护，不能算视频修复通过；两按钮行为、WinRT 及原播放／Session 链另验。预览目前是最多 160×90 的纯视频图，不含页面／字幕／OSD，画面比例和放大清晰度必须人工评价。
+
+## 独立分支兼容点
+
+EWT 独立实现与本候选均改动 `native/mpv-helper/ete-mpv-helper.cpp` 的 `MPV_EVENT_PLAYBACK_RESTART`：后续协调必须同时保留本候选 `previewOwner.restart(uniqueOpenMedia())`、EWT seek landing／time-pos 采样、一次当前 generation 的 restart 转发，以及原 auto-hold 决策。不能用整块覆盖取代合并审查。
+
+`src/electronapp/native-helper/service.js` 中 EWT 的 restart 特例需维持 currentGenerationId 检查，其他事件仍经过 observed 白名单；本候选增加 main-only capturePreview/isPreviewOwner。`src/electronapp/plugins/libmpv.js` 的 EWT seek/restart 消费与本候选只读 owner getter／previewItem 退休应分别保留。`controller.js`／`client.js` 也需逐块复核。本候选保持 protocolVersion=1，`preview-snapshot-v1` 是可选能力，旧 helper 不收到新方法；不要求 EWT 或旧端启用 native trial。本次未合并其他候选分支，真实集成需另跑 Windows 回归。

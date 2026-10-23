@@ -68,4 +68,20 @@ if (!app.requestSingleInstanceLock()) {
 `;
 }
 
-module.exports = {build};
+function buildPortable() {
+    const sentinel = '__ETE_PORTABLE_PROFILE__';
+    const expression = `(function () {
+        const value = process.argv[2], runtime = path.resolve(__dirname, '..');
+        if (!value || !path.isAbsolute(value)) throw Error('Absolute new trial profile required');
+        const directory = path.resolve(value), relative = path.relative(runtime, directory);
+        if (!relative || (!relative.startsWith('..' + path.sep) && !path.isAbsolute(relative))) throw Error('Profile must be outside bundle');
+        let parent = path.dirname(directory);
+        if (fs.realpathSync.native(parent).toLowerCase() !== parent.toLowerCase()) throw Error('Physical profile parent required');
+        fs.mkdirSync(directory); return directory;
+    }())`;
+    return build(sentinel).replace(JSON.stringify(sentinel), expression).replace("app.setPath('appData', profileRoot);", "fs.mkdirSync(profile, {recursive: true});\napp.setPath('appData', profileRoot);").replace("app.setPath('userData', profile);", `app.setPath('userData', profile);
+for (const name of ['sessionData', 'temp']) {
+    const directory = path.join(profileRoot, name); fs.mkdirSync(directory, {recursive: true}); app.setPath(name, directory);
+}`);
+}
+module.exports = {build, buildPortable};
