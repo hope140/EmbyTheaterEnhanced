@@ -14,7 +14,7 @@ permissions and endpoint addresses are unknown; none are assumed by this scaffol
 socket name and prefix are reserved design values, not an installed NAS mapping.
 `activateMock: true` only enables an injected in-memory upstream. The
 `gatewayAuthorized` flag is a synthetic test input, not production access control.
-There is no network client, listener, socket, system API, media filesystem access
+The in-memory mock has no network client, listener, socket, system API, media filesystem access
 or credential store. Production configs and installable package targets fail.
 
 The mock strips the candidate prefix, preserves the request method/query/body and
@@ -43,3 +43,21 @@ permissions, license/source notices, and tested install/rollback behavior.
 
 See the repository's `docs/FN_CONNECT_COMPANION_PLAN.md` for evidence, the design
 comparison, remaining gates and the complete minimum real-test authorization.
+
+## Post-v0.4.0 local Unix transport validation
+
+`local-unix-harness.cjs` is a separate Linux development adapter, disabled by
+default. Its only upstream is `upstream.sock` in an owned, physical, mode-0700
+`ete-fn-harness-*` directory directly under the physical OS temporary directory.
+It refuses arbitrary server addresses and does not open TCP ports. An injected
+fixture function models authorization; this is not a deployable fnOS identity
+check. The review document contains this source for inspection, but the FPK
+startup stub still starts nothing.
+
+`tests/fn-connect-unix-harness.test.cjs` starts and closes both local fixture
+servers. It verifies actual Unix HTTP Range/206/416, retained Emby denial, route
+and fixture access denial, streamed-response cancellation and an HTTP 101 relay
+with fixed RFC 6455 example handshake and synthetic masked/unmasked binary frames.
+It does not validate every WebSocket rule, fragmentation, TLS, a real fnOS
+gateway, Emby, libmpv or FNConnect. The Linux tests are explicitly skipped on
+Windows; Linux results cannot be relabeled as Windows or NAS acceptance.

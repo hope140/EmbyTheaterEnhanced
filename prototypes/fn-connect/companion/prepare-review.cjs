@@ -8,7 +8,7 @@ const {validateConfig} = require('./bridge-mock.cjs');
 function prepareReview({config, target = 'mock-review'} = {}) {
     if (target !== 'mock-review') throw new Error('INSTALLABLE_PACKAGE_NOT_AVAILABLE');
     const selected = validateConfig(config);
-    const files = ['bridge-mock.cjs', 'fpk-templates/manifest.in', 'fpk-templates/ui-config.json.in',
+    const files = ['bridge-mock.cjs', 'local-unix-harness.cjs', 'fpk-templates/manifest.in', 'fpk-templates/ui-config.json.in',
         'fpk-templates/privilege.json.in', 'fpk-templates/main.sh.in', 'README.md'];
     const entries = [{path: 'config.mock.json', content: JSON.stringify(selected, null, 2) + '\n'},
         ...files.map(name => ({path: name, content: fs.readFileSync(path.join(__dirname, name), 'utf8')})),

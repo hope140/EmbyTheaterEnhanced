@@ -100,4 +100,4 @@ function createMockBridge({config, activateMock = false, upstream} = {}) {
     });
 }
 
-module.exports = {validateConfig, createMockBridge};
+module.exports = {validateConfig, createMockBridge, targetPath, upstreamHeaders};
