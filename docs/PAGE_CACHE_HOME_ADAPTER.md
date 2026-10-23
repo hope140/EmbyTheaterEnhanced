@@ -75,4 +75,4 @@ node --test tests/page-data-cache.test.cjs tests/home-layout-cache-integration.t
 
 Home controller 测试运行真实维护 controller、provider、adapter、cache，document/itemscontainer/卡片为测试替身；另有固定 HomeTab overlay 与原动态导入别名合同、维护 AMD 图加载测试。它们不是完整 Alameda/客户端 GUI 运行、真实服务端登录/通知或原生滚动视觉证据。没有实际播放器、用户账户数据、NAS、安装器或系统配置操作，没有性能提升数字或命中率结论。
 
-后续：确认 TTL/容量和首批功能范围；在真实 v0.4.0 发布点重基、复核全部来源/overlay与上述认证代次合同；当前已实现并获授权的显式测试CLI见[隔离启动合同](PAGE_CACHE_TEST_ENTRY.md)，后续做独立新包的Windows完整runtime、真实返回滚动及请求计数验收，不把测试参数认作产品设置。媒体列表、详情与内容 DTO 缓存继续未接入。
+后续：确认 TTL/容量和首批功能范围；当前已重基v0.4.0 main `88578c91ab19d44eecddcfae096d37dc917ef1f4`，最终发布点变化时复核全部来源/overlay与上述认证代次合同；当前已实现并获授权的显式测试CLI见[隔离启动合同](PAGE_CACHE_TEST_ENTRY.md)，后续做独立新包的Windows完整runtime、真实返回滚动及请求计数验收，不把测试参数认作产品设置。媒体列表、详情与内容 DTO 缓存继续未接入。

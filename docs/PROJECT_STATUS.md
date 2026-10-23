@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-23 — 页面缓存重基v0.4.0并准备独立测试分支
+
+feature/page-cache已重基main `88578c91ab19d44eecddcfae096d37dc917ef1f4`；仅两份日志顶部冲突，保留双方记录。src/native、页面缓存测试及preload生成器相对重基前功能来源b3da2bee逐字节一致，保留main的0.4.0元数据、来源/许可材料与发布文件证据门禁。271项缓存/入口/相邻页面及v0.4.0构建/发行合同复验全部通过、0失败/取消/跳过，JS423/PS7语法47及有限模式510文件通过；不借此宣称新Windows包或GUI通过。缺配置仍默认关闭，显式测试CLI强制新临时profile，命令与范围见[测试入口](PAGE_CACHE_TEST_ENTRY.md)。按授权正常推送独立分支并回读SHA，结果以最终交付为准；不force push、不合main、不手动dispatch。父待正式构建结束后安排release_package=false及独立解包/profile验证。
+
 ## 2026-10-23 — 页面缓存显式测试入口与强制新profile
 
 补齐可用于新测试包的真实启动参数→main→prepared preload→Home工厂入口，普通启动继续关闭；enabled/disabled对照均要求显式测试TTL、容量及全新profile，不新增产品默认。Windows且app未ready时先验证当前runtime路径、关键源码/预加载包内来源身份和物理目录，再于bootstrap/身份/日志写入前分配独立临时根，设置Electron数据/session/logs/temp/crash目录和当前进程环境；旧位置参数不能覆盖测试userData。绕开Host/普通安装入口，无新IPC、安全/系统环境更改或凭据传输。来源自检是有限关键文件绑定，不代替新包完整VerifyOnly。命令、拒绝边界及Windows验收步骤见[测试启动合同](PAGE_CACHE_TEST_ENTRY.md)。

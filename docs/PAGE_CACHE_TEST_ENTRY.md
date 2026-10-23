@@ -1,10 +1,10 @@
 # 页面缓存：隔离测试启动入口
 
-独立分支 `feature/page-cache` 现有真实的命令行→main→prepared preload→原首页工厂测试接线。普通 Host/客户端启动不带参数，缓存仍默认关闭；没有设置页、持久化开关或产品 TTL。只缓存 HomeSections 安全投影，Items、用户资料、图片、播放和认证请求仍不缓存。
+独立分支 `feature/page-cache` 已重基当前 v0.4.0 main `88578c91ab19d44eecddcfae096d37dc917ef1f4`，现有真实的命令行→main→prepared preload→原首页工厂测试接线。普通 Host/客户端启动不带参数，缓存仍默认关闭；没有设置页、持久化开关或产品 TTL。只缓存 HomeSections 安全投影，Items、用户资料、图片、播放和认证请求仍不缓存。
 
 ## 构建与运行
 
-父线程在正式 v0.4.0 任务之后协调独立分支云UI构建：现有 `.github/workflows/public-ci.yml`、ref=`feature/page-cache`、`release_package=false`。触发前核对远端实际40位来源；本任务没有推送/触发workflow。构建/VerifyOnly/完整安装器解包对照按原门禁执行，不能把本地Node夹具当成Windows包通过。
+父线程在正式 v0.4.0 任务之后协调独立分支云UI构建：现有 `.github/workflows/public-ci.yml`、ref=`feature/page-cache`、`release_package=false`。触发前核对远端实际40位来源；正常推送及exact SHA由最终交付回读确认；不手动触发打包workflow。构建/VerifyOnly/完整安装器解包对照按原门禁执行，不能把本地Node夹具当成Windows包通过。
 
 使用该**精确提交新构建并已验证解包的 runtime**，保留全部文件及runtime-provenance.json。测试时不执行普通安装器，不覆盖当前应用目录、不改Host配置；不要对旧包补文件或手改preload/manifest。父/测试runner可沿既有固定innounp解包流程取得独立runtime；当前手动artifact仍以带commit/run的测试安装器为容器，没有宣称新增便携ZIP。空白Windows VM仍为首轮自动验收环境。
 

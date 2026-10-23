@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-23 — 页面缓存安全重基与分支交接
+
+先核对远端main准确为88578c91ab19d44eecddcfae096d37dc917ef1f4且无feature/page-cache，再保留本地b3da2bee备份并重放四项功能提交。冲突仅PROJECT_STATUS/DEVELOPMENT_LOG顶部，双方完整保留；重基前后全部src/native、专属测试和prepare-preload无差异，main发布材料/版本及新release-file-evidence测试保持。原19文件247项集合增加发行文件、版本、组件和手动作业合同，重基后271/271、0失败/取消/跳过。JS423文件及有限模式510文件通过；PS7语法首次在检查前因默认home缓存只读退出134，改用本次进程专属/tmp XDG缓存后47文件通过，没有写用户/系统缓存；这不是Windows/PS5.1执行证据。当前只做独立分支推送准备与回读，正式任务优先，不触发打包或触及Work/NAS；包/Windows运行/视觉仍交父后续分层验证。准确启动参数与profile规则见[测试入口](PAGE_CACHE_TEST_ENTRY.md)。
+
 ## 2026-10-23 — 默认关闭的页面缓存测试CLI落地
 
 新增test-options有限配置解析与test-session启动隔离模块；只有四项显式参数同时合法才启用测试模式，拒绝内部renderer配置直接作为应用参数、额外profile/调试/安全参数及未知字段。main在bootstrap前调用，要求Windows/未ready/当前runtime的Electron和app目录，通过包内关键source/preload身份自检后仅分配全新临时根，不接受复用路径或读取账户。当前进程appData/userData/sessionData/logs/temp/crashDumps及相关环境指向新根；晚期userData处理保持测试归属。原BrowserWindow仅在测试模式追加有限renderer参数，prepared preload立即验证并冻结选项，Home工厂消费；普通路径不创建测试目录或设置窗口选项。生成器沿既有build-input/prepared-artifact合同进入来源，原模板与vendor只读，无Host/安装器/API/播放所有权改动。

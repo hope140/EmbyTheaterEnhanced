@@ -1,6 +1,6 @@
 # 页面缓存测试包准备评估
 
-第二阶段历史功能来源为 `ed5713384bc709b32d1f1d11a0edfd6ef9874aa1`；新增测试入口以本分支最终commit及新artifact.sourceCommit为准，独立分支 `feature/page-cache`，基线 `6858c71103605ff66c630f1cd7e1e9fdbdeab000`。后续文档提交不改变这次功能实现身份。正式 v0.4.0 仍优先，真实发布点确定后再重基和重新验证；不把其他功能或正式发布任务混入本分支。
+当前独立分支 `feature/page-cache` 已重基 v0.4.0 main `88578c91ab19d44eecddcfae096d37dc917ef1f4`。最初开发基线6858c711与历史本地提交ed571338等保留为阶段记录；当前功能来源以正常推送后回读的最终40位SHA为准。正式v0.4.0构建优先；本分支不混入其他新功能、不合main、不自行dispatch打包。
 
 **更新：源码级安全测试入口现已补齐。** 本页保留上一轮包准备评估和既有构建参数；“无包内入口”的缺口由[隔离启动合同](PAGE_CACHE_TEST_ENTRY.md)中的显式参数与全新profile接线取代。当前可以准备独立新测试包，但尚未运行Windows Electron/完整GUI，不能将代码回归称为包验收。
 
@@ -9,7 +9,7 @@
 | 项目 | 当前事实 |
 | --- | --- |
 | 页面接线 | HomeTab → home controller → provider → 安全投影布局缓存已接，源码默认关闭。内容 Items、图片、播放及认证请求不缓存。 |
-| 测试 | 第二阶段历史功能版本有170/170定向/相邻回归；新增入口与相邻合同247/247、0失败/跳过，静态检查另按最终提交记录；精确提交物化的4个home/cache文件逐字节一致。实际API/CM与合成Fetch、DOM/事件替身的范围见[适配合同](PAGE_CACHE_HOME_ADAPTER.md)。没有Windows整包/GUI/真实性能证据。 |
+| 测试 | 重基后的页面缓存/入口、来源及v0.4.0版本/发行构建合同271/271、0失败/跳过；此前阶段170/247项保持历史范围，静态检查按最终提交记录；精确提交物化的4个home/cache文件逐字节一致。实际API/CM与合成Fetch、DOM/事件替身的范围见[适配合同](PAGE_CACHE_HOME_ADAPTER.md)。没有Windows整包/GUI/真实性能证据。 |
 | 可开启入口 | [`home-tab.js`](../src/electronapp/enhanced/home/home-tab.js) 接受 dependencies.pageCacheOptions；[`patch-server-home.cjs`](../tools/patch-server-home.cjs) 的实际调用只传legacy/loading/focus/connection，未传缓存配置。适配器需要显式enabled和TTL；原评估时没有CLI入口；现新增main启动参数→prepared preload→Home工厂接线，正常启动继续关闭，见隔离启动合同。 |
 | 默认与未定规格 | 不新增产品TTL/容量选择；现有工程限额、测试TTL不能当产品默认。不能靠篡改生成runtime、跳过provenance或临时改已验包文件启用。 |
 | 隔离 | [`ci-windows-test-package.ps1`](../tools/ci-windows-test-package.ps1) 生成含commit/run的独立安装器名，并拒绝已有输出。独立文件名不等于安装隔离：[`installer`](../installer/EmbyTheaterEnhanced.iss) 仍使用同一AppId、默认目录和UsePreviousAppDir。 |
