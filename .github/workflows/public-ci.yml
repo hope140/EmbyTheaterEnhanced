@@ -122,7 +122,7 @@ jobs:
         with:
           node-version: 24.18.1
 
-      - name: Build and verify test package from locked components
+      - name: Compile and verify source Host, then build test package from locked components
         shell: pwsh
         env:
           ETE_RELEASE_PACKAGE: ${{ inputs.release_package }}

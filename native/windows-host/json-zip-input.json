@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "sourceArchiveSHA256": "8b54b66287639a383b7399960b45b617021b4eb7e365245aa25e89824d4150ff",
+  "members": [
+    {
+      "path": "Emby.Theater/Archiving/FrameworkZipExtractor.cs",
+      "workSHA256": "30436b6d7b4772dd66fa0fdf893e2237764c784fc5b72178240e67c70e0c185c",
+      "workBytes": 11389
+    },
+    {
+      "path": "Emby.Theater/Archiving/ZipClient.cs",
+      "workSHA256": "1f68aae3bc5bb6b53597e7437cc4507abf9839706dbb4892a5feed7b01db0027",
+      "workBytes": 6867
+    },
+    {
+      "path": "Emby.Theater/Serialization/CompatibleJsonCodec.cs",
+      "workSHA256": "a96164d347982b5a590bf7f929d03d0cde28b71e928c327bb3522ce7cafe538c",
+      "workBytes": 12614
+    },
+    {
+      "path": "Emby.Theater/Serialization/JsonSerializer.cs",
+      "workSHA256": "8f7852b80b4d31cd6859fc56184776d58dff091c2e463d57f24c5879b4b19f0c",
+      "workBytes": 7610
+    }
+  ],
+  "dependencyBuildManifestSHA256": "aded08b80ed0422ed22a81d2169433bd41ad8fe41c90431fd20f7336ee8bcecc",
+  "scope": "Source identities from reviewed Work handoff, not final unified binary acceptance."
+}

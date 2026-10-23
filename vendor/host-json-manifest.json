@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "version": "13.0.4",
+  "inputRoot": "vendor/host-json/snapshot-v1",
+  "package": {
+    "url": "https://api.nuget.org/v3-flatcontainer/newtonsoft.json/13.0.4/newtonsoft.json.13.0.4.nupkg",
+    "sha256": "f09081d457405baf35a973fa0c50d6bf272ed683f2568c5a620a49da952f6529",
+    "selectedMember": "lib/net45/Newtonsoft.Json.dll"
+  },
+  "source": {
+    "url": "https://codeload.github.com/JamesNK/Newtonsoft.Json/zip/4e13299d4b0ec96bd4df9954ef646bd2d1b5bf2a",
+    "sha256": "afb2e4ed357e7ded7d186564b9d471b97ba09530b2715d73227504193c4c32e6"
+  },
+  "file": {
+    "path": "Newtonsoft.Json.dll",
+    "size": 721320,
+    "sha256": "f0c07af0e84d4dd4da4bd7823ba4535bc0481b3bf623ed40b659b68147a6bb75"
+  },
+  "licensePath": "native/windows-host/LICENSE-Newtonsoft-MIT.md"
+}

@@ -302,7 +302,7 @@ test('Closing minimized fullscreen saves the original normal bounds and Minimize
     assert.deepEqual(result.saved, {...normalBounds, state: 'Minimized'});
     assert.equal(result.filePath, 'windowstate.json');
     assert.equal(result.shortcutUnregisters, 1);
-    assert.equal(result.cecKills, 1);
+    assert.equal(result.cecKills, 0, 'retired CEC process cleanup is absent');
 });
 
 test('Closing a normal window saves its latest resized bounds', () => {
@@ -317,5 +317,5 @@ test('Closing a normal window saves its latest resized bounds', () => {
     assert.deepEqual(result.saved, {...resizedBounds, state: 'Normal'});
     assert.equal(result.filePath, 'windowstate.json');
     assert.equal(result.shortcutUnregisters, 1);
-    assert.equal(result.cecKills, 1);
+    assert.equal(result.cecKills, 0, 'retired CEC process cleanup is absent');
 });

@@ -33,10 +33,13 @@ test('real official Host and frozen Web preserve the complete base payload with 
     for(const name of Object.keys(require('../tools/runtime-template-input.cjs').FILES))assert.equal(fs.existsSync(path.join(root,'vendor/carnival',name)),false,'Old templates must be absent in this isolated proof');
     const classified=assembly.classify(legacy.files,product.listTrackedProductSources(root,commit).map(x=>x.runtimePath),
         overlays.WEB_OVERLAY_CONTRACT.map(x=>x.runtimePath),dependencies.loadSelectedPackages(root).packages.map(x=>x.packagePath));
-    const expected=[...classified.filter(x=>x.action==='copy'&&!['config/system.xml',smallRuntime.TRANSLATION_PATH].includes(x.path)&&!web.isLegacyWeb(x.path)&&!modelInput.isModelCompatibility(x.path)).map(({path,size,sha256})=>({path,size,sha256})),
+    const reference=[...classified.filter(x=>x.action==='copy'&&!['config/system.xml',smallRuntime.TRANSLATION_PATH].includes(x.path)&&!web.isLegacyWeb(x.path)&&!modelInput.isModelCompatibility(x.path)).map(({path,size,sha256})=>({path,size,sha256})),
         ...['config/system.xml',smallRuntime.TRANSLATION_PATH].map(name=>{const bytes=require('./helpers/small-runtime-reference.cjs').bytes(root,name,fs.readFileSync(path.join(root,smallRuntime.INPUT_ROOT,name)));return{path:name,size:bytes.length,sha256:hash(bytes)};}),
         ...modelInput.load(root).files.map(({path,size,sha256})=>({path,size,sha256})),
         ...snapshot.files.filter(x=>!['www/modules/CustomCssJS.js','www/modules/themes/logo.png'].includes(x.path)).map(x=>({path:'electronapp/'+x.path,size:x.size,sha256:x.sha256}))].sort((a,b)=>a.path.localeCompare(b.path,'en'));
+    const omitted=reference.filter(entry=>entry.path==='System.Configuration.dll');
+    assert.deepEqual(omitted,[{path:'System.Configuration.dll',size:93200,sha256:'3dba0c61e075728780723d7e517f6276674e29f6e9d5942c0b95a240f1e8f1bf'}]);
+    const expected=reference.filter(entry=>entry.path!=='System.Configuration.dll');
     const dist=path.join(root,'dist');fs.mkdirSync(dist,{recursive:true});
     const runtime=fs.mkdtempSync(path.join(dist,'windows-host-base-validation-'));
     const token=dependencies.createOwner(root,runtime,commit);
@@ -46,7 +49,7 @@ test('real official Host and frozen Web preserve the complete base payload with 
     assert.equal(hash(fs.readFileSync(path.join(runtime,model.path))),model.sha256.toLowerCase());
     host.validateRuntime(root,runtime);
     const report={schemaVersion:1,status:'passed',sourceCommit:commit,sourceComparison:'Frozen original copy-entry manifest plus independent raw Web manifest',
-        filesCompared:expected.length,treeSha256:web.treeHash(expected),hostFiles:component.fileCount,hostBytes:component.bytes,
+        filesCompared:expected.length,treeSha256:web.treeHash(expected),hostFiles:component.fileCount,hostBytes:component.bytes,hostRuntimeProjection:host.runtimeSelection(component),
         wholeOldCarnivalAbsent:true,modelCompatibility:result.modelCompatibility,oldHostPathsAbsent:true,oldWwwAbsent:true,oldCompatibilityResourcesAbsent:true,compatibilityResources:result.compatibilityResources,oldSmallRuntimePathsAbsent:true,smallRuntime:result.smallRuntime,oldPatchAbsent:true,libmpvInput,oldNpmAbsent:true,oldTemplatesAbsent:true,runtimeTemplates:result.runtimeTemplates,inheritedNpm:result.inheritedNpm,modelSha256:model.sha256.toLowerCase(),modelUnchanged:false,
         buildInputCount:inputs.files.length,runtimePath:path.relative(root,runtime).replaceAll(path.sep,'/'),
         notExecuted:['full npm/Electron/Native assembly','installer','application','driver installation','display or media playback']};
@@ -54,4 +57,41 @@ test('real official Host and frozen Web preserve the complete base payload with 
     const receipt=path.join(directory,path.basename(runtime)+'.json');fs.writeFileSync(receipt,JSON.stringify(report,null,2)+'\n',{flag:'wx'});
     t.diagnostic('receipt: '+path.relative(root,receipt).replaceAll(path.sep,'/'));
     t.diagnostic('compared base files: '+expected.length);
+});
+
+test('real official Host projection omits private DLL and five CEC files while validating all nineteen source files',t=>{
+    const manifest=host.load(root),sourceBefore=host.validate(root);
+    const expectedExcluded={path:'System.Configuration.dll',size:93200,
+        sha256:'3dba0c61e075728780723d7e517f6276674e29f6e9d5942c0b95a240f1e8f1bf'};
+    assert.equal(manifest.fileCount,19);
+    assert.deepEqual(manifest.files.filter(x=>x.path===expectedExcluded.path).map(({path,size,sha256})=>({path,size,sha256})),[expectedExcluded]);
+    const dist=path.join(root,'dist');fs.mkdirSync(dist,{recursive:true});
+    const output=fs.mkdtempSync(path.join(dist,'host-projection-validation-'));
+    const result=host.assemble(root,output);
+    const expected=manifest.files.filter(x=>!host.EXCLUDED_FILES.some(entry=>entry.path===x.path)).map(({path,size,sha256})=>({path,size,sha256})).sort((a,b)=>a.path.localeCompare(b.path,'en'));
+    assert.deepEqual(inventory(output),expected);assert.equal(expected.length,10);
+    assert.equal(result.runtimeBytes,manifest.bytes-host.EXCLUDED_FILES.reduce((n,item)=>n+item.size,0));assert.equal(result.fileCount,19);
+    assert.deepEqual(host.validateRuntime(root,output).excludedFiles,host.runtimeSelection(manifest).excludedFiles);
+    assert.ok(fs.existsSync(path.join(output,'System.Configuration.xml')));
+    const injected=path.join(output,'System.Configuration.dll');fs.writeFileSync(injected,'synthetic reintroduction');
+    assert.throws(()=>host.validateRuntime(root,output),/Excluded Windows Host test resource/);fs.unlinkSync(injected);
+    assert.deepEqual(inventory(output),expected);
+    assert.deepEqual(host.validate(root),sourceBefore,'complete official source stays byte-identical');
+    for(const mutation of ['missing','changed']) {
+        const sandbox=fs.mkdtempSync(path.join(dist,'host-source-negative-'));
+        t.after(()=>fs.rmSync(sandbox,{recursive:true,force:true}));
+        fs.mkdirSync(path.join(sandbox,'vendor'),{recursive:true});
+        fs.copyFileSync(path.join(root,host.MANIFEST_PATH),path.join(sandbox,host.MANIFEST_PATH));
+        fs.cpSync(path.join(root,host.INPUT_ROOT),path.join(sandbox,host.INPUT_ROOT),{recursive:true});
+        const file=path.join(sandbox,host.INPUT_ROOT,expectedExcluded.path),runtime=path.join(sandbox,'dist/candidate');
+        if(mutation==='missing')fs.unlinkSync(file);else fs.appendFileSync(file,'changed');
+        assert.throws(()=>host.assemble(sandbox,runtime),/snapshot input|snapshot identity/);
+        assert.equal(fs.existsSync(runtime),false);
+    }
+    const report={status:'passed',scope:'Host component only; no application, system, GAC or user data accessed',
+        source:sourceBefore,projection:result,filesCompared:expected.length,runtimePath:path.relative(root,output).replaceAll(path.sep,'/'),
+        notExecuted:['Electron','login','media playback','CEC','installer','system configuration changes']};
+    const directory=path.join(root,'.work/verification');fs.mkdirSync(directory,{recursive:true});
+    fs.writeFileSync(path.join(directory,path.basename(output)+'.json'),JSON.stringify(report,null,2)+'\n',{flag:'wx'});
+    t.diagnostic('retained official files compared: '+expected.length);
 });

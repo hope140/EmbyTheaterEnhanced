@@ -1,5 +1,48 @@
 # 维护记录
 
+## 2026-10-23 — Unified source integration, final Windows artifacts pending
+
+The two exact API and JSON/ZIP transfer archives are hash-verified. The API selection uses four maintained AMD modules and a complete MIT notice; CM changes are restricted to transport in the original module, with original local text/reset ownership retained. A listener representation difference found by existing lifecycle assertions is corrected without relaxing those assertions. API/CM integration24/24 and assembly/provenance12/12 passed before the native JSON/ZIP integration; subsequent final checks are recorded separately.
+
+The Host candidate now has6 replaced and2 added source files,57 source/resource/license inputs and46 Compile items. The exact four reviewed JSON/ZIP source bodies are retained, Newtonsoft13.0.4 net45 input is hash-verified, and ServiceStack/Sharp references and runtime paths are removed. Full official19-file recovery input and notices remain; the retained official projection is10 files, plus the separately pinned new dependency and source-built EXE/PDB selection. Existing ETE updates, ordinary tasks, user profiles/pending files and system drivers remain outside the cleanup.
+
+Work is offline. Final source fingerprint: `81b18ab1264941b7121967770d9b791af7fd4436b6cf910da443c92f967eea45`; a new source-only Windows handoff is prepared. No earlier EXE/PDB or receipt may be relabeled as a matching unified artifact. Linux full regression first ran1538 cases (1523 pass,5 failures,10 existing Windows skips); the five observed failures are resolved in36 targeted cases and14 isolated staged-commit gate cases, all passing. The product branch remains uncommitted and its HEAD gates remain strict. Full-client/Windows installer acceptance and exact new compiler outputs remain pending. No commit, push, PR, package or release has been made.
+
+
+## 2026-10-23 — 认证区域保留决定（后续整合边界）
+
+用户决定保留当前已指定的两处认证／注册相关局部区域，本轮不再处理；新增改动的许可覆盖未核实。此记录既不认定已确定侵权，也不认定许可已经通过。后续非注册API／CM候选只先做接线边界计划，不整文件覆盖，保护现有入口、注册区域、缓存／reset调用和模块归属，不新增或重做授权旁路；整合后需做使用流程回归，当前完整产品未验收。此决定仅记开发文档，不加入README或Release说明，原本必须保留的第三方版权／许可文本保持。
+
+## 2026-10-23 — CEC投影、首启及升级候选收尾
+
+Windows纠正历史社区Model混入后，官方db22下原版/v1/v2/组合合同及六例启动保存退出范围已获通过摘要；选择v1无更新结果，撤销不必要的同步异常变化，不改Model。统一分支继续将官方Host19项投影为13项，五CEC二进制及五产品源码退出runtime；bootstrap/可选入口不再新写cancel，已有profile配置/标记保持。
+
+新增源码派生Host输入门禁和EXE/PDB来源绑定：缺已验证锁与真实产物时，build在创建输出前失败，绝不回退旧Host。当前仍需接收Windows核验产物及构建回执。十一项升级旧程序文件以精确hash/注册归属/物理路径及锁检查处理，新载荷成功安装后才删除，不递归、不卸系统驱动、不触碰用户数据；Windows执行负例尚待验收。JSON替换的null数组修正已通过摘要核验，损坏/截断输入已选择明确报错，消费者边界验证及源码交接待完成，未称组合全部通过，未推送或发布。
+
+## 2026-10-23 — 退休检查接口修订，等待 Windows 复验
+
+Work首版候选构建和启动/保存/退出等范围通过，但旧CheckForApplicationUpdate构造结果时依赖加载失败；该项失败保留。当前最小修订只让检查方法同步抛NotSupportedException，明确区别于原先“成功返回无更新”的约定；保留锁定接口签名，未改Model/框架或添加垫片。唯一源码调用方SystemUpdateTask已退出编译；Host HTTP/ETE更新路径无此调用，六依赖未发现静态MemberRef，不宣称所有动态消费者不存在。
+
+修订的直接/接口/反射调用必须实际得到预期NotSupportedException，FileNotFoundException/TypeLoadException仍为失败；还需重新验证8154/XML/退出、无cancel屏蔽与pending文件保持。当前只做本地源改/材料验证，未推送或替换正式runtime。
+
+## 2026-10-23 — Host 源码退役候选，等待 Windows 对照
+
+固定708fadc官方源码基线Windows构建/隔离运行已获通过回执；当前同一未提交分支新增native/windows-host四文件源码候选及精确输入/输出manifest。删除CEC安装入口/参数、pending更新处理，旧自更新检查返回无更新、安装明确不支持；两旧更新类退出编译（46→44），原工程九项CEC/更新helper Content退出。其它任务、共享InstallationManager及六份现有DLL保留，ETE发行/服务器更新路径不改。校验脚本先验证55份原始文件与四份候选，任何身份不符在创建输出前退出；不执行Host或安装器。
+
+候选Windows编译/运行仍待Work对照，现有runtime Host和五CEC二进制暂保持；cancel写入及精确应用目录升级迁移待候选闭合。未提交推送/发布、未变更正式安装/profile/系统驱动。此前IL只读提案未采用，当前明确走源码维护，不将基线成功外推为候选或整机GUI验证。详见[源码合同](../native/windows-host/README.md)。
+
+## 2026-10-23 — CEC退役前端阶段
+
+同一未提交分支移除CEC插件/设置三文件和client/provider两文件，退役electroncec协议、自动spawn、参数消费与进程owner；仅在插件发现处阻止旧CEC模块残留，其它输入插件和视频事件脚本照常。更新被新规格替代的CEC保留断言，保持窗口状态、键盘快捷键、libmpv等既有断言；源函数VM回归覆盖空目录、旧插件及Windowsprofile参数不移位。46/46范围测试通过；Node24.18.1/Linux串行全套1492项：1482 pass、0 fail、10个既有Windows平台skip，仍不是完整客户端验收。
+
+当前Host SHA和只读PE/CLI字段核对，参考708fadc的安装任务与Electron参数接线已读；研究侧七方法摘要已交接，另直接解析当前wrapper、唯一调用点及StartProcess参数槽，在内存形成58-byte协调差异方案，没有写出/执行新Host。官方输入与派生输出身份需分开，维护方式先确认，不擅重写Host或删驱动二进制留下提示；外部cancel仍不能保证所有Host前置。升级hash门禁与十一项程序文件迁移待Host闭合，不操作系统驱动、GAC、profile或登录；ADL/RefreshRate和共享VC++消费者边界保持。Source/notice历史保留，具体边界见[CEC候选方案](CEC_RETIREMENT.md)。
+
+## 2026-10-23 — 私有框架DLL测试候选投影
+
+Host输入保持完整19文件，装配仅省略固定System.Configuration.dll（93,200 bytes、3dba0c61…e8f1bf）；来源验证仍读取并校验被省略的输入。计划和provenance记录来源/产物不同集合以及排除差集，投影代码SHA进入source provenance，最终验证拒绝重新夹入DLL，任何错误版本/路径/大小/hash不静默跳过。保留System.Configuration.xml与现有许可声明、历史来源记录，不写系统/GAC或现用安装。
+
+保留现有回归，新增精确投影、未知身份、别名/目录/悬空链接拒绝、计划防旧输入复活和最终provenance负例。局部44/44及真实组件材料投影1/1通过；原main工具与候选工具隔离装配的804/803基础文件逐项比较，仅固定DLL差异，其余字节相同。Node24.18.1/Linux串行全套1486项：1476 pass、0 fail、10个既有Windows平台skip。原材料完整性通过；单元、组件和基础payload证据不升级为完整Electron/登录/实播及CEC零客户端/零安装路径验收。未提交候选继续受HEAD构建输入守卫限制，完整测试包及验证方案见[Host输入合同](WINDOWS_HOST_INPUT.md)，原始回执留仓库外。
+
 ## 2026-10-22 — 构建合同读取批量化
 
 仅在一次inspect内复用固定Git提交数据：单次ls-tree -z加cat-file --batch替代逐文件重复进程，严格核对blob身份、类型、长度与分隔；工作区存在性、物理路径/链接、HEAD绑定、规范化文本比较及原始blob SHA仍由既有顺序验证。缺失对象按原路径读取以兑现原错误；批量失败/异常输出丢弃批量字节并回退，不能把不完整帧当成功，也不缓存上次工作区状态。独立hasher的两参数调用保持原行为。
@@ -1054,3 +1097,10 @@ Current libmpv is recovered from the fixed SourceForge asset using standard HTTP
 ## 2026-10-21 - Public CI path and snapshot-format regression
 
 GitHub Windows public CI exposed one preload fixture using a nonphysical TEMP alias. The fixture now canonicalizes its root, with a junction regression proving redirected product callers remain rejected; production validators are unchanged. Snapshot bytes must remain exact, including existing CRLF/trailing formatting: narrow per-file attributes describe inherited formatting, while a new CI step strictly validates all four snapshot trees against their manifests before tests/lint. Maintained source whitespace rules and all content/path/hash gates remain intact. No runtime, Model, playback or dependency-version change.
+
+
+## 2026-10-23 - Runner source-built Host integration preparation
+
+The manual Windows package route now calls `tools/ci-source-built-host.ps1` after the existing independent component recovery. It recovers the fixed official 55 source files as raw Git blobs, verifies their recorded SHA256 values, and acquires only the two pinned NuGet inputs without installation. Repository build tools materialize the current unified source kit; a new Framework/x86 process must compile and run its own matching-byte verification before a generated lock can enter assembly. Runner evidence binds the checkout, run identity, source, compiler receipt, probe receipt and EXE/PDB. External Work receipts and original-Host fallback are not substitutes.
+
+This is local integration preparation, not a successful GitHub run. Work's exact validated builder delta has now been applied:16941 bytes, SHA256 ad98235870d72c4e5ce48227fcae6b8f01d8a0500dadc3e69cd55ae2deb926ed. It moves the search-path property into generated XML, adds compile-only references from the already pinned net462 pack, and corrects metadata enumeration initialization; business source identity is unchanged. Work reported MSB3277 separately; pure net462 runtime compatibility is not established by this transfer. `tools/Test-SourceBuiltHost.ps1` is still pending the verified portable harness handoff. Its absence stops before compilation/acceptance, so the current skeleton cannot produce a package or claim runner acceptance. Local checks cover recovery/receipt contracts and syntax only. Full README/project-document consolidation remains deferred until test-package user acceptance.

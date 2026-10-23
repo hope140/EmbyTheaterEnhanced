@@ -18,7 +18,7 @@ function makeFixture() {
     return {root, runtimeRoot, appDataPath, seedPath, profileRoot: path.join(appDataPath, 'EmbyTheaterEnhanced')};
 }
 
-test('bootstrap seeds config and independently creates the profile CEC marker without a packaged marker', () => {
+test('bootstrap seeds config without creating any CEC directory or marker', () => {
     const fixture = makeFixture();
     try {
         assert.equal(fs.existsSync(path.join(fixture.runtimeRoot, 'cec-driver', 'cancel')), false);
@@ -26,9 +26,9 @@ test('bootstrap seeds config and independently creates the profile CEC marker wi
         assert.equal(result.seedPath, fixture.seedPath);
         assert.equal(bootstrap.resolveSeedPath(fixture.runtimeRoot), fixture.seedPath);
         assert.equal(fs.existsSync(path.join(fixture.profileRoot, 'config')), true);
-        assert.equal(fs.existsSync(path.join(fixture.profileRoot, 'cec-driver')), true);
+        assert.equal(fs.existsSync(path.join(fixture.profileRoot, 'cec-driver')), false);
         assert.equal(fs.readFileSync(path.join(fixture.profileRoot, 'config', 'system.xml'), 'utf8'), 'seed-system-config\n');
-        assert.equal(fs.readFileSync(path.join(fixture.profileRoot, 'cec-driver', 'cancel'), 'utf8'), '');
+        assert.equal(Object.hasOwn(result, 'cancelFile'), false);
     } finally {
         fs.rmSync(fixture.root, {recursive: true, force: true});
     }
@@ -39,13 +39,15 @@ test('bootstrap is idempotent and preserves existing user files', () => {
     try {
         const first = bootstrap.bootstrap({appDataPath: fixture.appDataPath, runtimeRoot: fixture.runtimeRoot});
         fs.writeFileSync(first.systemConfig, 'user-system-config\n', 'utf8');
-        fs.writeFileSync(first.cancelFile, 'user-cancel-marker\n', 'utf8');
+        const cancelFile = path.join(first.profileRoot, 'cec-driver', 'cancel');
+        fs.mkdirSync(path.dirname(cancelFile));
+        fs.writeFileSync(cancelFile, 'user-cancel-marker\n', 'utf8');
         fs.writeFileSync(path.join(first.configDirectory, 'user-settings.json'), '{"keep":true}\n', 'utf8');
 
         const second = bootstrap.bootstrap({appDataPath: fixture.appDataPath, runtimeRoot: fixture.runtimeRoot});
         assert.equal(second.systemConfig, first.systemConfig);
         assert.equal(fs.readFileSync(first.systemConfig, 'utf8'), 'user-system-config\n');
-        assert.equal(fs.readFileSync(first.cancelFile, 'utf8'), 'user-cancel-marker\n');
+        assert.equal(fs.readFileSync(cancelFile, 'utf8'), 'user-cancel-marker\n');
         assert.equal(fs.readFileSync(path.join(first.configDirectory, 'user-settings.json'), 'utf8'), '{"keep":true}\n');
     } finally {
         fs.rmSync(fixture.root, {recursive: true, force: true});

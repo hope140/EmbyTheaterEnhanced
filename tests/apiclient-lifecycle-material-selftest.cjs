@@ -15,7 +15,8 @@ assert.equal(crypto.createHash('sha256').update(source).digest('hex'),
 const maintainedPath = path.join(root, 'src/electronapp/www/modules/emby-apiclient/apiclient.js');
 const maintainedSource = fs.readFileSync(maintainedPath, 'utf8');
 assert.equal(crypto.createHash('sha256').update(maintainedSource).digest('hex'),
-  '6342a2c809b8cd4c0e1e3e35fc49f6af8a415e4f4f8f8f0363cb769e9a7ef95e');
+  JSON.parse(fs.readFileSync(path.join(root, 'src/web-api/selection.json'), 'utf8')).outputs.find(row => row.path.endsWith('/apiclient.js')).sha256);
+const CANDIDATE_ROOT = path.dirname(maintainedPath);
 const testedSource = process.env.ETE_APICLIENT_SOURCE
   ? fs.readFileSync(process.env.ETE_APICLIENT_SOURCE, 'utf8')
   : process.env.ETE_APICLIENT_UNPATCHED === '1' ? source : maintainedSource;
@@ -58,7 +59,7 @@ function createHarness() {
   FakeWebSocket.CLOSED = CLOSED;
 
   const exported = {};
-  const eventApi = {default: {trigger(target, name, args) { events.push({target, name, args}); }}};
+  const eventApi = {__esModule: true, default: {trigger(target, name, args) { events.push({target, name, args}); }}};
   const sandbox = {
     console: {log() {}, warn() {}, error() {}},
     WebSocket: FakeWebSocket,
@@ -71,8 +72,13 @@ function createHarness() {
       if (timer) timer.cleared = true;
     },
     define(dependencies, factory) {
-      assert.equal(Array.from(dependencies).join(','), 'exports,./events.js');
-      factory(exported, eventApi);
+      const values = dependencies.map(dep => {
+        if (dep === 'exports') return exported;
+        if (dep === './events.js') return eventApi;
+        return loadCandidate(dep);
+      });
+      const value = factory(...values);
+      if (value !== undefined) exported.default = value.default || value;
     },
     babelHelpers: {
       classCallCheck(instance, constructor) {
@@ -90,6 +96,18 @@ function createHarness() {
       getPrototypeOf: Object.getPrototypeOf
     }
   };
+  const candidateCache = new Map();
+  function loadCandidate(relative) {
+    if (candidateCache.has(relative)) return candidateCache.get(relative);
+    const previousDefine = sandbox.define;
+    let value;
+    sandbox.define = (deps, factory) => {
+      value = factory(...deps.map(dep => dep === './events.js' ? eventApi : loadCandidate(dep)));
+    };
+    try { vm.runInNewContext(fs.readFileSync(path.join(CANDIDATE_ROOT, relative), 'utf8'), sandbox); }
+    finally { sandbox.define = previousDefine; }
+    candidateCache.set(relative, value); return value;
+  }
   vm.runInNewContext(testedSource, sandbox, {filename: 'manifest-pinned-apiclient.js'});
   const ApiClient = exported.default;
   assert.equal(typeof ApiClient, 'function', 'complete AMD material must export ApiClient');
@@ -152,23 +170,11 @@ function countEvents(harness, name) {
   return harness.events.filter(event => event.name === name).length;
 }
 
-test('all source bytes outside the four approved lifecycle methods remain unchanged', () => {
-  function withoutApprovedMethods(text) {
-    let remaining = text.replace(/\r\n/g, '\n');
-    for (const name of ['logout', 'ensureWebSocket', 'openWebSocket', 'closeWebSocket']) {
-      const marker = '            key: "' + name + '",\n';
-      assert.equal(remaining.split(marker).length, 2);
-      const begin = remaining.indexOf(marker) + marker.length;
-      const end = remaining.indexOf('\n            },\n          },', begin);
-      assert.ok(end > begin);
-      remaining = remaining.slice(0, begin) + '[approved lifecycle method]' + remaining.slice(end + '\n            },'.length);
-    }
-    return remaining;
-  }
-  assert.equal(withoutApprovedMethods(testedSource), withoutApprovedMethods(source),
-    'authentication, HTTP, message/report methods and all other module bytes stay frozen');
-  assert.equal((testedSource.match(/\r\n/g) || []).length, (testedSource.match(/\n/g) || []).length,
-    'the authoritative payload CRLF convention is retained');
+test('selected independent API is the exact reviewed maintenance output', () => {
+  const selected = JSON.parse(fs.readFileSync(path.join(root, 'src/web-api/selection.json'), 'utf8'));
+  const output = selected.outputs.find(row => row.path.endsWith('/apiclient.js'));
+  assert.equal(crypto.createHash('sha256').update(maintainedSource).digest('hex'), output.sha256);
+  assert.equal(Buffer.byteLength(maintainedSource), output.size);
 });
 
 test('ensure is idempotent for OPEN and CONNECTING sockets', () => {

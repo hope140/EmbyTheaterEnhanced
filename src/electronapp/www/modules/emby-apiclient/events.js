@@ -1,0 +1,73 @@
+define([], function() {
+'use strict';
+
+/* Copyright (c) Emby https://emby.media
+ * Derived solely from fixed MIT commit fdd0939ac596406ab92274f30fd83d226a677424.
+ * Contract adaptations, 2026. Full MIT license: ./LICENSE.md. */
+/* jshint module: true */
+
+function getCallbacks(obj, name) {
+
+    if (!obj) {
+        throw new Error("obj cannot be null!");
+    }
+
+    obj._callbacks = obj._callbacks || {};
+
+    let list = obj._callbacks[name];
+
+    if (!list) {
+        obj._callbacks[name] = [];
+        list = obj._callbacks[name];
+    }
+
+    return list;
+}
+
+
+const result = {
+
+    on(obj, eventName, fn) {
+
+        const list = getCallbacks(obj, eventName);
+
+        list.push(fn);
+    },
+
+    off(obj, eventName, fn) {
+
+        const list = getCallbacks(obj, eventName);
+
+        const i = list.indexOf(fn);
+        if (i !== -1) {
+            list.splice(i, 1);
+        }
+    },
+
+    trigger(obj, eventName) {
+
+        const eventObject = {
+            type: eventName
+        };
+
+        const eventArgs = [];
+        eventArgs.push(eventObject);
+
+        const additionalArgs = arguments[2] || [];
+        let i, length;
+        for (i = 0, length = additionalArgs.length; i < length; i++) {
+            eventArgs.push(additionalArgs[i]);
+        }
+
+        const callbacks = getCallbacks(obj, eventName).slice(0);
+
+        for (i = 0, length = callbacks.length; i < length; i++) {
+
+            callbacks[i].apply(obj, eventArgs);
+        }
+    }
+};
+Object.defineProperty(result, '__esModule', { value: true });
+Object.defineProperty(result, 'default', { value: result });
+return result;
+});

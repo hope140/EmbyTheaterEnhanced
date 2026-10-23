@@ -69,6 +69,9 @@ chinesesimplified.FileBusy=现有程序文件无法打开以进行替换（Windo
 english.RecoveryAdvice=If installation fails, keep the error details, close the client normally and retry. If needed, reinstall the previous trusted installer in the same directory. Automatic rollback is not provided. Personal settings are kept.
 chinesesimplified.RecoveryAdvice=若安装失败，请保留错误信息，正常关闭客户端后重试。必要时可使用之前可信的安装包在原目录重新安装。本安装器不提供自动回滚，个人设置会保留。
 
+english.RetiredFileUnsafe=Setup cannot safely retire an old program file. Its contents, ownership, path or access differs from the expected version. No unknown file will be removed. Close the client normally and retry; if needed, reinstall the previous trusted installer. Personal settings and system drivers are kept.
+chinesesimplified.RetiredFileUnsafe=安装程序无法安全移除旧程序文件：内容、归属、路径或访问状态与预期版本不同。不会删除未知文件。请正常关闭客户端后重试；必要时重新安装之前可信的安装包。个人设置和系统驱动会保留。
+
 [Tasks]
 Name: "desktopicon"; Description: "{cm:DesktopShortcut}"; Flags: unchecked
 
@@ -85,6 +88,7 @@ Filename: "{app}\Emby.Theater.exe"; WorkingDir: "{app}"; Description: "{cm:Launc
 
 [Code]
 #include "installer-guard.iss"
+#include "retired-runtime.iss"
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
@@ -103,6 +107,13 @@ begin
     else if CompareText(AddBackslash(PreviousDir), AddBackslash(ExpandConstant('{app}'))) <> 0 then
       Result := GuardTarget(PreviousDir);
   end;
+  if Result = '' then Result := CheckRetiredRuntime(ExpandConstant('{app}'));
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  { Cleanup runs only after the new verified payload has been installed. }
+  if CurStep = ssPostInstall then RetireKnownRuntime(ExpandConstant('{app}'));
 end;
 
 function UpdateReadyMemo(Space, NewLine, MemoUserInfoInfo, MemoDirInfo,

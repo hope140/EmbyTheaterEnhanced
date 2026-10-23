@@ -1,6 +1,14 @@
 # 固定Windows Host组件
 
-Current Model selection: a separate hash-locked component now selects the official Windows 3.0.20 Model member from this same ZIP. The Host whitelist remains 19 files and does not copy Model. Historical statements below about retaining community Model bytes describe earlier stages; see [current Model contract](MODEL_COMPATIBILITY_INPUT.md).
+本地测试候选：完整官方 Host 输入仍为19文件/3,967,899 bytes，manifest、归档身份、恢复输入和必要声明保持；仅此候选分支的 runtime 投影省略根目录 `System.Configuration.dll`，输出18文件/3,874,699 bytes。目标固定为93,200 bytes、SHA256 `3dba0c61e075728780723d7e517f6276674e29f6e9d5942c0b95a240f1e8f1bf`。`System.Configuration.xml` 和其余十八项不变；没有修改系统/GAC、正式安装或用户配置，也不据此宣称其它材料的许可问题已解决。
+
+投影在 Windows Host 装配器内按精确路径/大小/hash核对，不按通配符删除。完整19文件仍全部验证，源 DLL 缺失/变更继续失败；输出中重新出现同名文件、大小写别名、目录或悬空链接都拒绝，保留现场。装配计划及 source provenance 分开记录完整来源与 runtime 数量/字节/树hash、单项 `excludedFiles`，并绑定投影生成器SHA；最终 runtime provenance 和 package VerifyOnly 复核该来源记录与排除状态。回滚应从原main重新生成完整、正确绑定的新测试包，不向已验证包手工夹回DLL后沿用旧manifest。
+
+局部验证可运行 `node --test --test-concurrency=1 tests/windows-host-input.test.cjs tests/runtime-base-assembly.test.cjs tests/runtime-provenance.test.cjs`；真实组件投影用 `node --test --test-name-pattern="real official Host projection omits one DLL" tests/windows-host-material-selftest.cjs`。组件/基础payload对照不等于完整客户端。未提交候选继续受现有HEAD输入门禁限制，不能将本地工作区混入固定sourceCommit构建。
+
+完整客户端验收仍需另行批准提交后的固定Windows构建：保留现有全测试、材料门禁、`build.ps1`、`package.ps1 -VerifyOnly`和安装器解包对照，测试包采用默认 `release_package=false`。交付带 `-test-<source>-<run>` 身份的安装器及 `.sha256`/`.provenance.json`、五份构建/provenance JSON、`installer-verification.json`和`test-build-summary.json`。在隔离测试环境/专用账号中运行解包后的测试副本，检查Electron启动/重载、登录、配置保存与重启、普通媒体/字幕音轨/停止退出及CEC零客户端/零安装路径（不做已退役CEC设备功能验收）。默认Host配置使用 `%ApplicationData%\EmbyTheaterEnhanced`，不能直接拿同账号正式profile做隔离验收。以上完整客户端项目尚未在本候选验收，不改正式安装、不发布。
+
+Current Model selection: a separate hash-locked component now selects the official Windows 3.0.20 Model member from this same ZIP. The Host source whitelist remains 19 files and does not copy Model; the test runtime projection above selects 18. Historical statements below about retaining community Model bytes describe earlier stages; see [current Model contract](MODEL_COMPATIBILITY_INPUT.md).
 
 Current extension: the same pinned official 3.0.20 archive now supplies 19 files (3,967,899 bytes). Added ServiceStack.Text.xml, SimpleInjector.xml, System.Configuration.xml, electronapp/scripts/windowsync.js and electronapp/plugins/mpvplayer/strings/en-US.json: all five are exact byte matches, total 440,443 bytes, without conversion. Companion XML documentation keeps the existing dependency notice/source boundaries; windowsync and language source references retain their upstream GPL v2 declarations. Model remains excluded. The prepared component stays ignored, with no public body upload. Normal old Carnival requirement is now 53 files plus one libmpv patch. Earlier 14-file/58-file counts below describe prior stages. Re-preparation uses the unchanged archive/whitelist validator into a fresh prepared directory; an existing old component is never silently overwritten.
 
@@ -53,3 +61,7 @@ node --test tests/windows-host-material-selftest.cjs
 回归涵盖不提供旧Host文件的材料门禁/组装、精确字节、归档身份、缺失/篡改/额外文件、Model禁止进入白名单、路径重定向及runtime篡改。真实材料验证应在旧目录省去这14文件后执行基础组装，并与独立的冻结manifest预期路径和SHA集合对照；这属于静态中间组装证据，不替代完整安装器构建或硬件播放验收。
 
 其余234份非Web Carnival和49份旧补丁的门禁暂保留。已识别的历史Electron、退役bridge、已被源码/npm替代输入和未消费补丁可继续按小组拆除；本步不顺带改变这些门禁、不移动整个旧包，也不宣称全部去依赖或云恢复已完成。
+
+## Source-derived Host and retired CEC projection candidate
+
+The complete official19-file input and its archive/hash remain intact. Runtime projection now omits the private configuration DLL plus five exact CEC binary identities (19→13). The two Host EXE/PDB leaves must then be replaced by verified ETE source-built outputs, leaving eleven unchanged official members plus two derived files. The source-built lock records source/Model/toolchain/build-receipt/output identities; final provenance must validate them. Missing verified input blocks normal build before dist creation, with no original-Host fallback. No new Host/PDB hash or complete package-size saving is asserted before receiving actual verified artifacts. See [retirement and acceptance boundaries](CEC_RETIREMENT.md).

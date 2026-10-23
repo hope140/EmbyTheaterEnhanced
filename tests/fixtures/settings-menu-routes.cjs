@@ -29,7 +29,6 @@ function namedFunction(source, name) {
 
 function pluginRoutes(root) {
     return [
-        ['cecinput', 'src/electronapp/plugins/cec.js'],
         ['libmpvmediaplayer', 'src/electronapp/plugins/libmpv.js']
     ].flatMap(([id, file]) => {
         const source = fs.readFileSync(path.join(root, file), 'utf8');

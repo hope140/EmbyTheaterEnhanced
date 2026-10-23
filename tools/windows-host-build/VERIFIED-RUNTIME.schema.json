@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Verified CEC/legacy-update v1-only Host input",
+  "type": "object",
+  "required": ["schemaVersion", "mode", "sourceIdentitySha256", "framework", "platform", "modelSha256", "toolchainSnapshotSha256", "buildReceiptSha256", "files"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "mode": {"const": "source-built-host"},
+    "sourceIdentitySha256": {"const": "1b278f3aff5331a1d5490147dc86cfc5949d132601f62dcfa62700f2c380f668"},
+    "framework": {"const": "net462"},
+    "platform": {"const": "x86"},
+    "modelSha256": {"const": "db22f8ea6cb6afdfab184f80d8b85a10d8a9f148ff4cae167db87ce9cd245153"},
+    "toolchainSnapshotSha256": {"$ref": "#/$defs/sha"},
+    "buildReceiptSha256": {"$ref": "#/$defs/sha"},
+    "verificationReceiptSha256": {"$ref": "#/$defs/sha"},
+    "files": {
+      "type": "array", "minItems": 2, "maxItems": 2,
+      "prefixItems": [
+        {"allOf": [{"$ref": "#/$defs/output"}, {"properties": {"path": {"const": "Emby.Theater.exe"}}}]},
+        {"allOf": [{"$ref": "#/$defs/output"}, {"properties": {"path": {"const": "Emby.Theater.pdb"}}}]}
+      ], "items": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "sha": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "output": {"type": "object", "required": ["path", "size", "sha256"], "properties": {"path": {"type": "string"}, "size": {"type": "integer", "minimum": 1}, "sha256": {"$ref": "#/$defs/sha"}}, "additionalProperties": false}
+  }
+}

@@ -9,6 +9,7 @@ const nativeHelperProvenance = require('./native-helper-provenance.cjs');
 const runtimeExclusions = require('./runtime-exclusions.cjs');
 const electronRuntimeInput = require('./electron-runtime-input.cjs');
 const windowsHostInput = require('./windows-host-input.cjs');
+const sourceBuiltHostInput = require('./source-built-host-input.cjs');
 const inheritedNpmInput = require('./inherited-npm-input.cjs');
 const runtimeTemplates=require('./runtime-template-input.cjs');
 const libmpvInput=require('./libmpv-input.cjs');
@@ -219,7 +220,9 @@ function buildManifest(rootArg, runtimeArg, sourceCommit) {
     const baseWebRoot = path.join(root, 'vendor', 'web-snapshot', 'www');
     const runtimeWebRoot = path.join(runtime, 'electronapp', 'www');
     const overlayReport = webOverlays.inspect(root, runtime);
-    const windowsHost = windowsHostInput.validateRuntime(root,runtime);
+    const sourceBuiltHost = sourceBuiltHostInput.selected(root) ? sourceBuiltHostInput.validateRuntime(root,runtime) : null;
+    const windowsHost = windowsHostInput.validateRuntime(root,runtime,sourceBuiltHost ? sourceBuiltHost.files : []);
+    if(sourceBuiltHost)windowsHost.sourceBuilt=sourceBuiltHost;
     const compatibilityResources=compatibilityInput.validateRuntime(root,runtime);
     compatibilityResources.preparation={generatorPath:'tools/compatibility-resources-input.cjs',generatorSha256:trackedFileHash.hashTrackedTextFile(root,'tools/compatibility-resources-input.cjs')};
     const smallRuntime=smallRuntimeInput.validateRuntime(root,runtime);
@@ -235,6 +238,8 @@ function buildManifest(rootArg, runtimeArg, sourceCommit) {
         generatorSha256:trackedFileHash.hashTrackedTextFile(root,'tools/inherited-npm-input.cjs')};
     windowsHost.preparation = {generatorPath:'tools/prepare-windows-host.ps1',
         generatorSha256:trackedFileHash.hashTrackedTextFile(root,'tools/prepare-windows-host.ps1')};
+    windowsHost.projection = {generatorPath:'tools/windows-host-input.cjs',
+        generatorSha256:trackedFileHash.hashTrackedTextFile(root,'tools/windows-host-input.cjs')};
     const retiredRuntimeInputs = runtimeExclusions.RETIRED_RUNTIME_PATHS.map(runtimePath =>
         historicalRetiredRuntimeInput(manifestEntry(vendorManifest, 'files', runtimePath), runtimePath));
     let nativeHelper = null;

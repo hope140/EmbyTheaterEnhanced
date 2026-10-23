@@ -24,11 +24,19 @@ const RETIRED_WEB_PATHS = Object.freeze(['electronapp/www/modules/CustomCssJS.js
   'electronapp/www/components/directorybrowser/directorybrowser.css',
   'electronapp/www/modules/emby-apiclient/appstorage-cache.js',
   'electronapp/www/serviceworker-app.js']);
+const RETIRED_CEC_RUNTIME_PATHS = Object.freeze([
+  'cec/cec-client.exe', 'cec/cec-client.x64.exe', 'cec/cec.dll', 'cec/cec.x64.dll',
+  'cec/p8-usbcec-driver-installer.exe', 'electronapp/cec/cec.js',
+  'electronapp/cec/command-map.js', 'electronapp/plugins/cec.js',
+  'electronapp/plugins/cec/cec.js', 'electronapp/plugins/cec/cec.html'
+]);
 const RETIRED_RUNTIME_PATHS = Object.freeze([
   'electronapp/libmpv/x64/mpv-win32-x64.node',
   ...RETIRED_COMPATIBILITY_PATHS,
   ...RETIRED_SMALL_RUNTIME_PATHS,
-  ...RETIRED_WEB_PATHS
+  ...RETIRED_WEB_PATHS,
+  ...RETIRED_CEC_RUNTIME_PATHS,
+  'ServiceStack.Text.dll', 'ServiceStack.Text.xml', 'SharpCompress.dll'
 ]);
 
 function runtimeFile(root, relativePath) {
@@ -44,7 +52,10 @@ function runtimeFile(root, relativePath) {
 }
 
 function verify(root) {
-  const present = RETIRED_RUNTIME_PATHS.filter(relativePath => fs.existsSync(runtimeFile(root, relativePath)));
+  const present = RETIRED_RUNTIME_PATHS.filter(relativePath => {
+    try { fs.lstatSync(runtimeFile(root, relativePath)); return true; }
+    catch (error) { if (error.code === 'ENOENT') return false; throw error; }
+  });
   return {
     schemaVersion: 1,
     status: present.length === 0 ? 'passed' : 'failed',
@@ -58,6 +69,7 @@ function remove(root) {
   for (const relativePath of RETIRED_RUNTIME_PATHS) {
     const target = runtimeFile(root, relativePath);
     if (!fs.existsSync(target)) continue;
+    if (RETIRED_CEC_RUNTIME_PATHS.includes(relativePath)) throw new Error('CEC must be omitted by assembly, not deleted after copying: '+relativePath);
     if (!fs.statSync(target).isFile()) throw new Error('Runtime exclusion target is not a file: ' + relativePath);
     fs.rmSync(target);
     removed.push(relativePath);
@@ -77,4 +89,4 @@ if (require.main === module) {
   if (result.status !== 'passed') process.exitCode = 1;
 }
 
-module.exports = {RETIRED_RUNTIME_PATHS, RETIRED_COMPATIBILITY_PATHS, RETIRED_SMALL_RUNTIME_PATHS, RETIRED_WEB_PATHS, remove, runtimeFile, verify};
+module.exports = {RETIRED_RUNTIME_PATHS, RETIRED_CEC_RUNTIME_PATHS, RETIRED_COMPATIBILITY_PATHS, RETIRED_SMALL_RUNTIME_PATHS, RETIRED_WEB_PATHS, remove, runtimeFile, verify};

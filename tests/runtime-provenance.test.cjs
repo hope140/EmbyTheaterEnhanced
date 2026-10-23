@@ -65,6 +65,8 @@ function createFixture(root) {
         'electronapp/www/modules/emby-apiclient/appstorage-cache.js','electronapp/www/serviceworker-app.js']) {
         addManifestFile(files,root,name,'synthetic retired Web residue');
     }
+    for(const retired of require('../tools/runtime-exclusions.cjs').RETIRED_CEC_RUNTIME_PATHS) addManifestFile(files,root,retired,'synthetic retired CEC fixture');
+    for(const retired of windowsHost.RETIRED_SERIALIZATION) addManifestFile(files,root,retired.path,'synthetic retired serialization fixture');
     addManifestFile(files, root, 'electronapp/libmpv/x64/mpv-1.dll', 'base-libmpv-fixture\n');
     addManifestFile(files, root, 'MediaBrowser.Model.dll', 'historical Model fixture\n');
     const playbackFixture = Buffer.from('const playback = true;\n');
@@ -160,6 +162,7 @@ function createFixture(root) {
         'tools/prepare-preload.cjs',
         'tools/prepare-web-overlays.cjs',
         'tools/patch-videoosd-lifecycle.cjs',
+        'tools/patch-connectionmanager-transport.cjs',
         'tools/patch-externalplayer-residue.cjs',
         'tools/patch-item-controls.cjs',
         'tools/patch-content-width.cjs',
@@ -177,7 +180,7 @@ function createFixture(root) {
         'tools/tracked-file-hash.cjs',
         'tools/runtime-exclusions.cjs',
         'tools/web-snapshot-input.cjs',
-        'tools/windows-host-input.cjs','tools/prepare-windows-host.ps1','tools/inherited-npm-input.cjs','tools/runtime-template-input.cjs','tools/libmpv-input.cjs','tools/prepare-libmpv.cjs','tools/download-libmpv.ps1','tools/compatibility-resources-input.cjs','tools/small-runtime-input.cjs','tools/model-compatibility-input.cjs','tools/prepare-model-compatibility.ps1'
+        'tools/source-built-host-input.cjs','tools/host-json-input.cjs','tools/windows-host-input.cjs','tools/prepare-windows-host.ps1','tools/inherited-npm-input.cjs','tools/runtime-template-input.cjs','tools/libmpv-input.cjs','tools/prepare-libmpv.cjs','tools/download-libmpv.ps1','tools/compatibility-resources-input.cjs','tools/small-runtime-input.cjs','tools/model-compatibility-input.cjs','tools/prepare-model-compatibility.ps1'
     ]) copyRepoFile(root, relativePath);
     copyRepoFile(root, 'src/electronapp/enhanced/startup.svg');
     writeFile(path.join(root, 'tools', 'patch-playbackmanager.cjs'), 'generator: playbackmanager\n');
@@ -351,4 +354,26 @@ test('runtime provenance rejects prepared and source-provenance tampering', () =
     } finally {
         fs.rmSync(root, {recursive: true, force: true});
     }
+});
+
+test('Host projection is source-bound and reintroduced private DLLs fail final provenance',t=>{
+    const root=createTempRoot('ete-host-projection-provenance-');t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+    createFixture(root);const runtime=createRuntime(root,'runtime-host-projection');
+    const commit=childProcess.execFileSync('git',['-C',root,'rev-parse','HEAD'],{encoding:'utf8'}).trim();
+    const sourceFile=path.join(runtime,'source-provenance.json'),source=JSON.parse(fs.readFileSync(sourceFile));
+    const identity=source.runtimeIdentities.windowsHost;
+    assert.equal(identity.fileCount,1);assert.equal(identity.runtimeFileCount,1);
+    assert.deepEqual(identity.excludedFiles,[]);
+    assert.equal(identity.projection.generatorPath,'tools/windows-host-input.cjs');
+    assert.equal(identity.projection.generatorSha256,hash(fs.readFileSync(path.join(root,identity.projection.generatorPath))).toUpperCase());
+    assert.equal(runProvenance('write',root,runtime).exitCode,0);
+    const dll=path.join(runtime,'System.Configuration.dll');fs.writeFileSync(dll,'synthetic reintroduced file');
+    assert.equal(sourceProvenance.validateManifest(root,runtime,commit).status,'failed');
+    const bad=runProvenance('validate',root,runtime);assert.equal(bad.exitCode,1);
+    assert.ok(bad.report.errors.includes('source-provenance-invalid'));
+    assert.equal(fs.readFileSync(dll,'utf8'),'synthetic reintroduced file');
+    fs.unlinkSync(dll);
+    source.runtimeIdentities.windowsHost.excludedFiles=[{...windowsHost.PRIVATE_CONFIGURATION}];
+    fs.writeFileSync(sourceFile,JSON.stringify(source));
+    assert.deepEqual(sourceProvenance.validateManifest(root,runtime,commit).errors,['source-provenance-content-mismatch']);
 });

@@ -183,6 +183,22 @@ test('plan identifies retained inputs, templates, replacements and retired files
     assert.equal(overlays.WEB_OVERLAY_CONTRACT.some(item => item.runtimePath === 'electronapp/www/index.html'), true);
 });
 
+test('base plan records the exact Host projection without reviving a historical DLL copy',t=>{
+    const f=fixture(t),host=require('../tools/windows-host-input.cjs'),component=host.load(f.root);
+    const entry={...host.PRIVATE_CONFIGURATION};component.files.push(entry);component.fileCount++;
+    component.bytes+=entry.size;component.treeSha256=require('../tools/web-snapshot-input.cjs').treeHash(component.files);
+    json(f.root,host.MANIFEST_PATH,component);
+    const legacy=JSON.parse(fs.readFileSync(path.join(f.root,'vendor/runtime-manifest.json')));
+    legacy.files.push(entry);json(f.root,'vendor/runtime-manifest.json',legacy);
+    git(f.root,['add',host.MANIFEST_PATH,'vendor/runtime-manifest.json']);git(f.root,['commit','-q','-m','projection plan fixture']);
+    const plan=assembly.plan(f.root,git(f.root,['rev-parse','HEAD']));
+    assert.equal(plan.windowsHost.fileCount,2);assert.equal(plan.windowsHost.runtimeFileCount,1);
+    assert.deepEqual(plan.windowsHost.excludedFiles,[entry]);
+    assert.equal(plan.entries.some(item=>item.path===entry.path),false);
+    assert.ok(plan.ignoredInputPaths.includes(entry.path));
+    assert.deepEqual(fs.readdirSync(f.runtime),[dependencies.OWNER_FILE]);
+});
+
 test('production material gate and base assembly work when old www is absent',t=>{
     const f=fixture(t);
     fs.rmSync(path.join(f.vendor,'electronapp/www'),{recursive:true});
@@ -226,7 +242,7 @@ test('maintained templates replace all three absent old template inputs',t=>{
 test('official resource whitelist replaces old XML, sync and English language inputs without changing bytes',t=>{
     const f=fixture(t),host=require('../tools/windows-host-input.cjs');
     const manifest=JSON.parse(fs.readFileSync(path.join(f.root,'vendor/runtime-manifest.json')));
-    const component=host.load(f.root),added=['ServiceStack.Text.xml','SimpleInjector.xml','System.Configuration.xml','electronapp/scripts/windowsync.js','electronapp/plugins/mpvplayer/strings/en-US.json'];
+    const component=host.load(f.root),added=['SimpleInjector.xml','System.Configuration.xml','electronapp/scripts/windowsync.js','electronapp/plugins/mpvplayer/strings/en-US.json'];
     for(const name of added){const bytes=Buffer.from('synthetic official resource: '+name),entry={path:name,size:bytes.length,sha256:sha(bytes)};
         manifest.files.push(entry);component.files.push(entry);write(f.root,host.INPUT_ROOT+'/'+name,bytes);
     }
@@ -234,9 +250,9 @@ test('official resource whitelist replaces old XML, sync and English language in
     json(f.root,'vendor/runtime-manifest.json',manifest);json(f.root,host.MANIFEST_PATH,component);
     git(f.root,['add','vendor/runtime-manifest.json',host.MANIFEST_PATH]);git(f.root,['commit','-q','-m','synthetic official resource whitelist']);
     const commit=git(f.root,['rev-parse','HEAD']),runtime=path.join(f.root,'dist/resources-candidate');fs.mkdirSync(runtime);const token=dependencies.createOwner(f.root,runtime,commit);
-    assert.equal(require('../tools/validate-build-materials.cjs').validate(f.root).hostInput.fileCount,6);
+    assert.equal(require('../tools/validate-build-materials.cjs').validate(f.root).hostInput.fileCount,5);
     assembly.assemble(f.root,commit,runtime,token);
-    for(const name of added){assert.equal(fs.existsSync(path.join(f.vendor,name)),false);assert.deepEqual(fs.readFileSync(path.join(runtime,name)),fs.readFileSync(path.join(f.root,host.INPUT_ROOT,name)));}
+    for(const name of added){assert.equal(fs.existsSync(path.join(f.vendor,name)),false);if(name==='ServiceStack.Text.xml')assert.equal(fs.existsSync(path.join(runtime,name)),false);else assert.deepEqual(fs.readFileSync(path.join(runtime,name)),fs.readFileSync(path.join(f.root,host.INPUT_ROOT,name)));}
 });
 
 for (const mutation of ['changed-retained', 'extra', 'missing']) {

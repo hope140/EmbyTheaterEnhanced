@@ -8,8 +8,7 @@
         'electronfs',
         'electronserverdiscovery',
         'electronwakeonlan',
-        'electronrefreshrate',
-        'electroncec'
+        'electronrefreshrate'
     ].map(function (scheme) {
         return { scheme: scheme, privileges: { standard: true, supportFetchAPI: true, corsEnabled: true } };
     }));
@@ -95,7 +94,6 @@
     var enableDevToolsOnStartup = false;
     var initialShowEventsComplete = false;
     var previousBounds;
-    var cecProcess;
     var playbackPowerOwner = require('./enhanced/playback-power-owner').createOwner(powerSaveBlocker);
     var { ipcMain } = require('electron')
     // Quit when all windows are closed.
@@ -663,30 +661,6 @@
         };
     }
 
-    function registerCec() {
-
-        var protocol = electron.protocol;
-        var customProtocol = 'electroncec';
-
-        protocol.registerStringProtocol(customProtocol, function (request, callback) {
-
-            // Add 3 to account for ://
-            var url = request.url.substr(customProtocol.length + 3).split('?')[0];
-
-            switch (url) {
-
-                case 'start':
-                    var hdmiPort = request.url.split('=')[1]
-                    initCec(hdmiPort);
-                    callback("");
-                    break;
-                default:
-                    callback("");
-                    break;
-            }
-        });
-    }
-
     function registerFile() {
 
         var protocol = electron.protocol;
@@ -760,8 +734,8 @@
                         deviceName: os.hostname(),
                         deviceId: persistentDeviceId,
                         plugins: pluginFiles.filter(function (f) {
-
-                            return f.indexOf('.js') != -1;
+                            // Ignore the retired plugin if an older install left it behind.
+                            return f.toLowerCase() !== 'cec.js' && f.indexOf('.js') != -1;
 
                         }).map(function (f) {
 
@@ -1001,10 +975,6 @@
         // Unregister all shortcuts.
         electron.globalShortcut.unregisterAll();
 
-        if (cecProcess) {
-            cecProcess.kill();
-        }
-
     }
 
     function parseCommandLine() {
@@ -1023,9 +993,6 @@
             result.userDataPath = commandLineArguments[index];
             index++;
         }
-
-        result.cecExePath = commandLineArguments[index] || 'cec-client';
-        index++;
 
         return result;
     }
@@ -1176,34 +1143,6 @@
         }
     });
 
-    function onCecCommand(cmd) {
-        console.log("Command received: " + cmd);
-        sendCommand(cmd);
-    }
-
-    /* CEC Module */
-    function initCec(cecHdmiPort) {
-
-        try {
-            const cec = require('./cec/cec');
-            var cecExePath = commandLineOptions.cecExePath;
-            // create the cec event
-            const EventEmitter = require("events").EventEmitter;
-            var cecEmitter = new EventEmitter();
-            var cecOpts = {
-                cecExePath: cecExePath,
-                cecEmitter: cecEmitter,
-                cecHdmiPort: cecHdmiPort
-            };
-            cecProcess = cec.init(cecOpts);
-
-            cecEmitter.on("receive-cmd", onCecCommand);
-
-        } catch (err) {
-            console.log('error initializing cec: ' + err);
-        }
-    }
-
     function getWindowId(win) {
 
         var Long = require("long");
@@ -1351,7 +1290,6 @@
             registerServerdiscovery();
             registerWakeOnLan();
             unregisterRefreshRate = registerFreshRate();
-            registerCec();
             registerFile();
 
             var kernelPrewarm = await nativeHelperService.prewarm();

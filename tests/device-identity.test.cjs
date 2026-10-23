@@ -90,7 +90,7 @@ test('startup resolves the persistent id before loadStartInfo without coupling i
     assert.match(main, /deviceId:\s*persistentDeviceId/);
 });
 
-test('HTTP and WebSocket identity chains consume the same appStartInfo device id', () => {
+test('HTTP and WebSocket identity chains consume the same appStartInfo device id', async () => {
     const appHost = fs.readFileSync(path.join(repoRoot, 'src/electronapp/apphost.js'), 'utf8');
     assert.match(appHost, /deviceId:\s*function\s*\(\)\s*\{[\s\S]*?return appStartInfo\.deviceId;/);
 
@@ -100,7 +100,26 @@ test('HTTP and WebSocket identity chains consume the same appStartInfo device id
     const apiClient = fs.readFileSync(path.join(repoRoot, 'src/electronapp/www/modules/emby-apiclient/apiclient.js'), 'utf8');
     assert.match(app, /apphost\.deviceId\(\)/);
     assert.match(connectionManager, /deviceId:\s*this\.deviceId\(\)/);
-    assert.match(apiClient, /&deviceId=" \+ this\.deviceId\(\)/);
+    const {harness,storage}=require('./helpers/api-client-amd.cjs');
+    const socketUrls=[];
+    class Socket {
+        static OPEN=1; static CONNECTING=0;
+        constructor(url){this.readyState=0;socketUrls.push(url);}
+        close(){this.readyState=3;}
+    }
+    const h=harness(()=>({status:204,headers:{get:()=>null},text:async()=>''}),{WebSocket:Socket});
+    const Api=h.load('apiclient.js').default,deviceId='synthetic-persistent-device-id';
+    const client=new Api(storage(),{isSupported:()=>false},'http://synthetic.invalid','ETE','test','Synthetic device',deviceId,1);
+    client.serverInfo({Id:'synthetic-server',UserId:'synthetic-user',AccessToken:'synthetic-token'});
+    client.enableAutomaticNetworking=false;
+    await client.ajax({type:'GET',url:client.getUrl('System/Info')});
+    client.openWebSocket();
+    assert.equal(client.deviceId(),deviceId);
+    assert.equal(h.requests.length,1);
+    assert.ok(h.requests[0].options.headers['X-Emby-Authorization'].includes('DeviceId="'+deviceId+'"'));
+    assert.equal(new URL(socketUrls[0]).searchParams.get('deviceId'),deviceId);
+    client.closeWebSocket();for(const timer of h.timers)clearTimeout(timer);
+
 });
 
 test('identity helper has no token, user, server, or hostname dependency', () => {

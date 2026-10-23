@@ -5348,3 +5348,19 @@ The preceding unchanged-Model statement describes the earlier Host-only stage.
 The former compatibility variant remains in Git history. Official distribution
 identity does not establish an exact corresponding-source rebuild, remove any
 third-party notice obligations or reattribute the binary to this project.
+
+## ETE source-derived Host and CEC retirement candidate
+
+This scoped selection supersedes earlier unchanged-Host descriptions for the new candidate only. The Host EXE/PDB must be verified source-derived outputs from the pinned Windows Host source revision `708fadc068cbf66ced6aece4a32f3e12bb2c4e13` plus the maintained ETE changes under `native/windows-host/`; they are not unchanged official or Carnival binaries. The original GPLv2 text remains in `native/windows-host/LICENSE.md` and the existing Host notice snapshot. The build records the fixed source identities, modifications, binary dependencies and verified output identities; it does not claim a byte-identical reconstruction of the official original EXE.
+
+The five CEC binaries and private System.Configuration reference DLL leave the new runtime projection, and CEC product source/settings/installation paths are retired. Their historical source inventory and notices are retained. The complete official19-file input remains a recovery/audit input, not a claim that all nineteen are shipped. These changes neither reattribute upstream code to ETE nor settle the separate source/license obligations of Common, Model, SharpCompress, ServiceStack or other retained dependencies. New distribution remains subject to the unified verification and outstanding license/source review.
+
+## Fixed MIT API maintenance candidate
+
+The selected ApiClient, MIT base, transport and events modules are maintained from the fixed `MediaBrowser/Emby.ApiClient.Javascript` commit `fdd0939ac596406ab92274f30fd83d226a677424` and the reviewed ETE contract adaptations. The complete Emby MIT notice is retained next to the runtime modules in `electronapp/www/modules/emby-apiclient/LICENSE.md`; exact source inputs and generation identities are recorded in `src/web-api/selection.json`. The existing connection-manager module is retained with a narrow transport transform; this does not attribute its remaining inherited source to the independent candidate or establish broader source/license clearance.
+
+## Source-derived Host JSON and ZIP adapters
+
+The unified source candidate additionally replaces the Host JSON serializer backend and active ZIP extractor. The two wrapper files retain their original Host GPLv2 terms, and the independently maintained compatibility helpers retain the MIT notice in `native/windows-host/LICENSE-Helpers-MIT.txt`. `Newtonsoft.Json`13.0.4 is a separately pinned MIT dependency by James Newton-King; its net45 DLL identity and recovery input are recorded in `vendor/host-json-manifest.json`, with the complete notice in `native/windows-host/LICENSE-Newtonsoft-MIT.md`.
+
+The new runtime projection excludes `ServiceStack.Text.dll`, its companion XML, and `SharpCompress.dll`. Their original archive inventories and required historical notices remain. The fixed original Host inputs and prior validation receipts are not new unified artifacts. The unified EXE/PDB and matching verification receipt remain pending; no complete client, installation or general license-closure claim follows from component tests.

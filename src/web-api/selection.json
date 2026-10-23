@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "upstreamCommit": "fdd0939ac596406ab92274f30fd83d226a677424",
+  "handoffArchiveSha256": "e237fd6bc36637b29b527e456e0d930b37fbf556917d210408ed0faa7ed4c997",
+  "selectedModules": [
+    "apiclient.js",
+    "mit-apiclient.js",
+    "transport.js",
+    "events.js"
+  ],
+  "scope": "ApiClient nonregistration adaptation; current CM is retained with narrow transport overlay; candidate CM is build-only and is not selected for runtime.",
+  "integrationAdaptations": [
+    "Preserve existing {name, options} messageListeners representation and replay."
+  ],
+  "inputs": [
+    {
+      "path": "src/web-api/INPUT_MANIFEST.json",
+      "size": 1667,
+      "sha256": "50b26d14c8438c6ba7352ebef879c1aef9f7628e850ab2968521955d2951f5bc"
+    },
+    {
+      "path": "src/web-api/LICENSE.md",
+      "size": 1080,
+      "sha256": "bb34faf1413f7a795a10303545f433e04c95cd7b4de04311d45a72634424e4db"
+    },
+    {
+      "path": "src/web-api/licensed/LICENSE.md",
+      "size": 1080,
+      "sha256": "bb34faf1413f7a795a10303545f433e04c95cd7b4de04311d45a72634424e4db"
+    },
+    {
+      "path": "src/web-api/licensed/apiclient.js",
+      "size": 105635,
+      "sha256": "7621f273fd7986e1d8c8520aa9b0116c4d05ff6f139d0f336ce81fda7f06b34a"
+    },
+    {
+      "path": "src/web-api/licensed/connectionmanager.js",
+      "size": 47281,
+      "sha256": "1c9b5e2bb855f3fbb5fb0594e4e74aad5a1d3cb4d65c1640062ae970a2c3432e"
+    },
+    {
+      "path": "src/web-api/licensed/events.js",
+      "size": 1230,
+      "sha256": "ad3387c1d3c30af20f585b5f6ff3b2ee6534c60f84f154d16295c449ed4ebe42"
+    },
+    {
+      "path": "src/web-api/src/apiclient.js",
+      "size": 26681,
+      "sha256": "f06c6660c9b56e9f00716711a2e54a61ef29f33e83627b75a3b5e0613a860632"
+    },
+    {
+      "path": "src/web-api/src/connectionmanager.js",
+      "size": 2484,
+      "sha256": "3c9a5af1851b92d3cc57048b1f811af911022b466d07afe30826c6170995e523"
+    },
+    {
+      "path": "src/web-api/src/events.js",
+      "size": 1417,
+      "sha256": "9a46142b62a2cd14992a6f95c8a5701b179c6326db6c0df3e2caefeec81eae39"
+    },
+    {
+      "path": "src/web-api/src/mit-apiclient.js",
+      "size": 104892,
+      "sha256": "877ef8232c336561f4eece1d3df1519ee383871aeec1becd3115f33438e532f4"
+    },
+    {
+      "path": "src/web-api/src/mit-connectionmanager.js",
+      "size": 45497,
+      "sha256": "af73c01190acf0b696197a956fd7ffbddf115aeebfbe23c1e667734dc7f4fc8c"
+    },
+    {
+      "path": "src/web-api/src/transport.js",
+      "size": 5777,
+      "sha256": "beb8627e5134118c7ad20375abe6a824248cd61a317fd476c631cd0e2d42bf16"
+    },
+    {
+      "path": "src/web-api/tools/build-amd.mjs",
+      "size": 1885,
+      "sha256": "678b3ff7fc3142a1a886d904338c742df3a9bb82c9fd9de95df4e5fe7c174625"
+    },
+    {
+      "path": "src/web-api/tools/prepare-base.py",
+      "size": 4517,
+      "sha256": "b33c77f830ef2ffb6322b3318c522bf4a4d4539f49ce236649dd99d336b9b454"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "src/electronapp/www/modules/emby-apiclient/apiclient.js",
+      "size": 27003,
+      "sha256": "ea41be4e570e5cca0bd11d90bca18ff40d5dcb06a8045e5b4d300b583eafbab9"
+    },
+    {
+      "path": "src/electronapp/www/modules/emby-apiclient/mit-apiclient.js",
+      "size": 105167,
+      "sha256": "a0c63654081723be24a9baed406c4d0ea1f6bc4ef409cd1aabfe758948899526"
+    },
+    {
+      "path": "src/electronapp/www/modules/emby-apiclient/transport.js",
+      "size": 5958,
+      "sha256": "78b9f7ee229b78a27ca1c8175c8a47105b2867dc72ee94d201f6442043b638d9"
+    },
+    {
+      "path": "src/electronapp/www/modules/emby-apiclient/events.js",
+      "size": 1598,
+      "sha256": "48c702010cbfd0f7aba927b589a15c0e50725ddc35d59a4158fc7a4c24618119"
+    }
+  ]
+}

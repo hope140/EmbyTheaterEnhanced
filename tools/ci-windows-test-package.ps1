@@ -29,6 +29,8 @@ function RunNode([string[]]$Arguments) {
 if ($LASTEXITCODE -ne 0) { throw 'Locked JavaScript dependency installation failed.' }
 & (Join-Path $PSScriptRoot 'prepare-ci-build-inputs.ps1')
 if (-not $?) { throw 'Independent CI input preparation failed.' }
+& (Join-Path $PSScriptRoot 'ci-source-built-host.ps1')
+if (-not $?) { throw 'This runner must compile and verify its own source-built Host before packaging.' }
 $libmpvIdentity = & node (Join-Path $PSScriptRoot 'libmpv-input.cjs') validate $root
 if ($LASTEXITCODE -ne 0) { throw 'Restored repository libmpv identity is invalid.' }
 $libmpvIdentity = $libmpvIdentity | ConvertFrom-Json
@@ -97,6 +99,7 @@ if ($ReleasePackage) {
 foreach ($file in @('build-manifest.json','build-input-provenance.json','source-provenance.json','runtime-provenance.json','native-helper-provenance.json')) {
     Copy-Item -LiteralPath (Join-Path $runtime $file) -Destination $output
 }
+Copy-Item -LiteralPath (Join-Path $root '.work/source-built-host') -Destination (Join-Path $output 'host-build-evidence') -Recurse
 [IO.File]::WriteAllText((Join-Path $output 'installer-verification.json'), ($verification | Out-String), [Text.UTF8Encoding]::new($false))
 $libmpvReceipt = [ordered]@{
     schemaVersion=1; sourceCommit=$source; acquisition='repository-archive'

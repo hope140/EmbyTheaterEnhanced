@@ -16,16 +16,6 @@ function seedFileIfMissing(source, destination) {
     }
 }
 
-function createEmptyFileIfMissing(file) {
-    if (fs.existsSync(file)) return;
-    try {
-        const handle = fs.openSync(file, 'wx');
-        fs.closeSync(handle);
-    } catch (error) {
-        if (!fs.existsSync(file) || error.code !== 'EEXIST') throw error;
-    }
-}
-
 function bootstrap(options) {
     const settings = options || {};
     const appDataPath = settings.appDataPath;
@@ -34,17 +24,13 @@ function bootstrap(options) {
 
     const profileRoot = path.join(appDataPath, 'EmbyTheaterEnhanced');
     const configDirectory = path.join(profileRoot, 'config');
-    const cecDirectory = path.join(profileRoot, 'cec-driver');
     const systemConfig = path.join(configDirectory, 'system.xml');
-    const cancelFile = path.join(cecDirectory, 'cancel');
     const seedPath = resolveSeedPath(runtimeRoot);
 
     fs.mkdirSync(configDirectory, {recursive: true});
-    fs.mkdirSync(cecDirectory, {recursive: true});
     seedFileIfMissing(seedPath, systemConfig);
-    createEmptyFileIfMissing(cancelFile);
 
-    return {profileRoot, configDirectory, cecDirectory, systemConfig, cancelFile, seedPath};
+    return {profileRoot, configDirectory, systemConfig, seedPath};
 }
 
 module.exports = {bootstrap, resolveSeedPath};
