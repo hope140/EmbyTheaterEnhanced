@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-23 — 播放缓存第二阶段：受控预加载调度
+
+在第一阶段提交 `c1ea2e0` 之后单独增加 `prefetch.cjs` 与专属回归。默认关闭、显式限额；无内建 HTTP/IPC/队列访问。确认丢失/换代/前台优先立即 Abort，直到旧 job 实际结算前不启动下一个；budget 同步检查 owner/期限后才能向阶段一 writer 提交，worker 迟到结果不进入缓存。token bucket 从零授予读取额度并限制任务累计字节，同时处理并发 claim；deadline timer 与绝对时间双检查。取消不冒充物理结束，close 等待所属 job，异常只有固定 outcome。
+
+Node24.18.1/Linux 的最终范围命令：`node --test tests/playback-cache-store.test.cjs tests/playback-cache-prefetch.test.cjs tests/native-helper-protocol.test.cjs tests/native-helper-service.test.cjs tests/strm-resolver.test.cjs tests/nexttrack-transition.test.cjs`，103/103通过、0跳过，其中原型26项。涵盖合成下一集 Buffer 经 budget→磁盘 store→下一次授权 reader 的链路；没有网络传输、真实用户数据、mpv/Windows或安装验收。worker 必须遵守先 claim 再读取和 finally 释放 writer 的合同，原型不声称可限流任意外部请求或生产接线已经完成。策略及大规模传输/代理方案保持未决，等待真实 v0.4.0 发布点再重基。
+
 ## 2026-10-23 — 播放缓存第一阶段：字节存储合同
 
 读取协作、架构、状态和维护教训并核对远端指定基线后，在无同名本地/远端分支的前提下建立 `feature/playback-cache`。范围限定 `tools/prototypes/playback-cache`、专属测试与技术文档；产品、Native Helper、STRM/会话及构建默认值保持。当前 helper 只有 loadfile 和实例内 demuxer 缓存观测，没有可导出的持久媒体正文。

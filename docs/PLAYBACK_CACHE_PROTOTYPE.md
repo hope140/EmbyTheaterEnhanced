@@ -27,6 +27,16 @@
 
 同步磁盘 I/O 和每次追加重新 hash 前缀用于小型受控试验，性能不适合完整影片和生产 main 线程。迁入产品前需异步 worker、增量完整性校验及故障注入验证；现在不引入服务、代理或运行时依赖。
 
+## 阶段二：下一集预加载调度原型
+
+`prefetch.cjs` 同样默认关闭。显式启用须提供 `bytesPerSecond`、`burstBytes`、`maxBytes`、`maxDurationMs` 全部参数；burst 每次最多 64 KiB，这只是原型的有界单块限制，不是用户默认带宽策略。它不调用 Emby/CD2，不推测集号、不取 URL；调用者必须传入所属当前播放 owner、明确下一集 key、确认有效期及受信任的合成 `run` 任务。尚无产品 owner/队列事件接线，代码中的 `confirmed:true` 是合同输入，不能当真实服务返回的证据。
+
+- 同时只运行一个任务；新确认取消旧任务，等待旧任务实际结算后仅执行最新 pending。旧任务即使忽略 AbortSignal，既不能通过 budget 写盘，也不能让新任务并发启动。相同 owner/key/有效期去重；确认消失、Stop/换代/退出等应由未来 owner 调用 `update(null)`/`cancel`/`close`。
+- `setForegroundBusy(true)` 取消任务并清除旧确认；解除 busy 不会自动恢复该旧任务。busy 期间收到的新明确确认可等空闲槽，但启动时再次检查确认有效期。实际何时认为播放已稳定、缓冲是否充足、何时允许用户带宽做预加载，尚无产品策略，当前接口仅提供调用合同。
+- token bucket 从零开始，任务要在读取前 `await budget.claim(bytes)`，总 claim 不超过任务 `maxBytes`；`budget.append` 再检查未消费额度、owner、取消和绝对期限，然后同步提交阶段一 writer。并发 claim 也不能超额。速率合同允许显式 burst 上限内的突发，不是任意网络流量的硬限速器；注入任务必须遵守先 claim 再有限读取，未受约束的网络调用不能被此模块限流。真实 transport、响应校验和当前播放网络竞争监测尚未实现。
+- 任务最长执行时间及确认期限共同限定 deadline；timer 发出 AbortSignal，同时在授予额度/写盘时检查绝对时间，防止事件循环延迟导致过期提交。未来下载实现必须响应 signal、终止所属请求，并在 finally 释放 writer。关闭会等待实际任务结算；对于忽略取消且永不结算的注入任务，不谎称已停止，也不擅自强杀进程。
+- 完成结果只留下固定 outcome，不保存 run 返回的 URL、原始异常或媒体身份。合成集成测试演示同一 store 的下一集字节写入后，由下一次显式、有效授权的读取 lease 续用；没有实际自动播放、Session 创建或播放器 source 替换。
+
 ## 后续集成方案与决策门槛
 
 可先评估只对已授权 direct-file 做有限完整对象下载，再提供本地只读 source 的窄方案；这仍不能保留当前 mpv 已经读过的字节。若要边播边存并对部分缓存做 seek，需要本地 Range 代理或 helper 传输接口：必须独立设计绑定地址/访问控制、精确 Content-Range/If-Range 校验、重定向与鉴权更新、错误回退、worker/子进程退出归属、超时和带宽竞争。新增这种服务超出当前原型，未实现或启动。
@@ -37,6 +47,6 @@
 
 ## 可复现验证与范围
 
-运行 `node --test tests/playback-cache-store.test.cjs`。所有正文均为临时目录中的短合成 Buffer；注入时钟/磁盘失败，不访问 NAS、CD2、Emby、真实媒体或外部网络。测试覆盖真实字节续写、完整/部分边界、身份隔离、授权到期/续期、无原始敏感元数据、配额/pin/TTL、孤儿/尾部恢复、损坏、空闲空间/ENOSPC、checkpoint 失败及归属守卫。
+运行 `node --test tests/playback-cache-store.test.cjs tests/playback-cache-prefetch.test.cjs`。所有正文均为临时目录中的短合成 Buffer；注入时钟/磁盘失败，不访问 NAS、CD2、Emby、真实媒体或外部网络。测试覆盖真实字节续写、完整/部分边界、身份隔离、授权到期/续期、无原始敏感元数据、配额/pin/TTL、孤儿/尾部恢复、损坏、空闲空间/ENOSPC、checkpoint 失败及归属守卫；调度覆盖下一集确认/去重、并发额度、速率等待、当前播放优先、换代串行、迟到写入、截止期限、取消/关闭归属、错误收敛、真实可取消等待及同一字节 store 的离线消费。
 
 这是 Node/Linux 离线单元及本地磁盘证据；不是 Windows 文件系统/ACL、mpv 实播、真实 Range 服务、CD2、跨进程缓存消费、性能、客户端视觉或安装验收。现有播放回归的执行范围单独记录。
