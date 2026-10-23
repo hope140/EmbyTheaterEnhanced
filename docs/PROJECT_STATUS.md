@@ -6,6 +6,11 @@
 
 保留Web后期独立表达、428-byte VTT CSS、Sharp/ServiceStack组合交付、DPInst/ADL材料和真实Host验证的具体边界；不将来源/方法匹配比例当许可完成率。完整事实、固定URL/hash和局部测试限制见[统一索引](DEPENDENCY_RESEARCH.md)及[证据](dependency-research/evidence/license-closure-20261023.json)。本次未替换组件、打包或发布，未将文档补齐称整体许可清零。
 
+## 2026-10-22 — 构建输入 Git 批量读取本地候选
+
+构建合同每次调用批量读取固定提交的 tree 与 blob，正常完整检查的 Git 子进程由177降为3；88个输入、输出结构、原始字节SHA与CRLF规则保持。HEAD、工作文件和物理路径仍逐次重查，不跨调用缓存成功结果；批量读取失败、超限或帧异常回到原逐文件读取，保留拒绝顺序和原单文件限制。其它使用 tracked-file-hash 的调用仍走原默认读取路径，不改产品、测试选择、并发、docs-only规则或40分钟时限。
+
+原19项合同测试正文/断言完整保留，新增6项覆盖批量身份/字节、修改后重查、未跟踪替代/非普通模式、缺失对象和优先报错、异常协议及读取回退。固定材料校验与原preload生成后，本地Node24.18.1/Linux串行全套1476项：1466 pass、0 fail、10项既有Windows平台skip。Windows CI和实际端到端收益尚未验证，不把Linux测量外推为Windows节省时间。
 
 ## 2026-10-22 — 三份 Web 残留与二十份 npm 产物投影
 
