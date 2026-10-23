@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-23 — 手动作业映像与MSBuild17合同匹配
+
+手动run `39957149782` 在恢复固定材料、55份官方源码、来源指纹和32份验证器输入后，于MSBuild定位阶段报 `Existing MSBuild17 unavailable.`，未进入编译且无产物。日志映像为 `windows-2025-vs2026`；官方当前标签与Windows2022工具清单仍提供VS2022／MSBuild17路线。仅将手动job改为 `windows-2022` 并同步原工作流回归及说明；定位范围 `[17.0,18.0)`、builder版本拒绝检查、PS5.1／PS7分工、net462／x86和所有验证保持。没有升级编译器、安装软件、修改业务源码、借用回执或再次dispatch；新runner实际版本与完整结果待后续运行。
+
 ## 2026-10-23 — 固定Host输入的Windows checkout回归
 
 公开CI `39952554306` 完成1491项：1487通过、4失败、0跳过，测试耗时665973ms；失败是来源指纹守卫阻断，未触及时限。`core.autocrlf=true` 的Git过滤复现表明，Apply-SourceChanges.ps1、change-manifest.json、upstream-source-manifest.json和host-json-manifest.json原始LF字节未受属性保护。仅为4条精确路径增加 `-text`，不规范化被验字节、不重算预期指纹、不改源码或测试标准。新增对全部13份指纹输入的真实Git checkout过滤回归，修前失败、修后38项Host runner测试及26项构建输入合同通过；原始Windows失败保留，新Windows结果另行记录。手动workflow读取Forbidden未重试，未据此扩大作业权限。

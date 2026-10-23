@@ -1,6 +1,8 @@
 # 手动 Windows 测试包
 
-在 GitHub Actions 的 `Public offline CI` 工作流选择目标分支并手动运行。手动作业使用标准 `windows-2025`，只读仓库权限，不创建 Release、不安装或启动完整Electron客户端，也不接触自托管 runner。日常 push/PR 仍只执行公开离线检查。
+在 GitHub Actions 的 `Public offline CI` 工作流选择目标分支并手动运行。手动作业使用标准 `windows-2022`，只读仓库权限，不创建 Release、不安装或启动完整Electron客户端，也不接触自托管 runner。日常 push/PR 仍只执行公开离线检查。
+
+2026-10-23的首次统一Host手动运行 `39957149782` 因 `windows-2025` 实际分配VS2026映像而在MSBuild17定位阶段停止，尚未编译。GitHub的[当前映像标签](https://github.com/actions/runner-images#available-images)与[Windows2022工具清单](https://github.com/actions/runner-images/blob/main/images/windows/Windows2022-Readme.md)列有受支持的 `windows-2022`／VS2022 17.14及MSBuild17组件，因此仅调整手动作业映像；定位器仍限定 `[17.0,18.0)`，builder仍拒绝非17版本，不安装编译器或回退旧Host。OS标签不锁定不可变映像，实际映像和工具链身份仍由每次run与构建回执记录；新映像上的完整构建验证结果须以新run为准。
 
 ## 当前 Host 编译与验证前置条件
 

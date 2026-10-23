@@ -8,10 +8,10 @@ const test = require('node:test');
 const workflow = fs.readFileSync(path.join(__dirname, '../.github/workflows/public-ci.yml'), 'utf8').replace(/\r\n/g, '\n');
 const manual = workflow.slice(workflow.indexOf('\n  manual-windows-test-package:'));
 
-test('package job requires an explicit manual event and the standard Windows x64 runner', () => {
+test('package job requires an explicit manual event and the MSBuild17-compatible Windows x64 runner', () => {
     assert.match(workflow, /^  workflow_dispatch:\s*$/m);
     assert.match(manual, /^    if: github\.event_name == 'workflow_dispatch'$/m);
-    assert.match(manual, /^    runs-on: windows-2025$/m);
+    assert.match(manual, /^    runs-on: windows-2022$/m);
     assert.doesNotMatch(manual, /self-hosted|windows-latest|larger|workflow_run|pull_request_target/);
     assert.match(manual, /cancel-in-progress: false/);
 });

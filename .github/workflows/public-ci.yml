@@ -104,7 +104,8 @@ jobs:
 
   manual-windows-test-package:
     if: github.event_name == 'workflow_dispatch'
-    runs-on: windows-2025
+    # Keep the existing VS2022/MSBuild17 contract; windows-2025 now selects VS2026.
+    runs-on: windows-2022
     timeout-minutes: 60
     concurrency:
       group: ete-manual-windows-test-package
