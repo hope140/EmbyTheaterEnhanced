@@ -1,0 +1,4 @@
+#!/bin/sh
+# Review stub only. No fnOS installation, socket, listener or service startup.
+# No credentials or network permission changes may be added by substitution.
+exit 78

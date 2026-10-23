@@ -1,0 +1,5 @@
+{
+  "defaults": {"run-as": "package"},
+  "username": "{{APP_SCOPED_SERVICE_USER}}",
+  "groupname": "{{REVIEWED_GATEWAY_SOCKET_GROUP}}"
+}

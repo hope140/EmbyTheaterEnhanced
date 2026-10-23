@@ -1,0 +1,11 @@
+{
+  ".url": {
+    "ete-fn-transport.main": {
+      "type": "url",
+      "gatewaySocket": "ete-fn-transport.sock",
+      "gatewayPrefix": "/app/ete-fn-transport",
+      "url": "/app/ete-fn-transport/",
+      "allUsers": "{{REVIEWED_GATEWAY_ACCESS_POLICY}}"
+    }
+  }
+}

@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-23 — FNConnect companion 本地可审阅骨架
+
+比较独立 fnOS FPK/服务桥与 Emby 插件，选取单一 Emby 上游的私有 Unix socket 映射候选；保留既有映射可复用分支。固定 Ting Reader 两端源码及许可声明仅作流程证据，新的配置、内存 mock、模板和审阅生成器为 ETE 本地实现，无第三方代码、签名材料或安装脚本复制。
+
+严格配置拒绝实际 URL、凭据及权限扩张，默认 disabled；mock 路径/头处理保留 Emby 认证和 Range，删除网关 Cookie/头与 hop-by-hop 头，取消/关闭不提交迟到结果。模板保留部署未决字段，启动 stub 退出78，CLI仅生成带逐文件 SHA256 的不可安装 JSON，不调用 fnpack。新增11项初轮10过/1项绝对URL错误分类不符；明确拒绝非origin-form路径后，与原25项共36项通过。未执行网络/NAS/真实媒体，完整最小后续授权及产品接线门禁见[方案](FN_CONNECT_COMPANION_PLAN.md)。
+
 ## 2026-10-23 — 第三方 FNID 公开实现调查与真实验证准备
 
 固定三份客户端与 Ting Reader 服务端源码身份，分别记录产品说明、签名接入条件、fnOS/应用双层认证及 FPK gatewaySocket/gatewayPrefix 证据；未执行上游项目、复制协议实现或签名材料。开发者站既有 403 路径未重试，未进行真实 NAS、认证或配置操作。

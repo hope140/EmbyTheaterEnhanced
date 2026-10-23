@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "enabled": false,
+  "mode": "mock",
+  "mapping": {
+    "appId": "ete-fn-transport",
+    "prefix": "/app/ete-fn-transport",
+    "socketName": "ete-fn-transport.sock",
+    "registrationStatus": "unverified"
+  },
+  "upstream": {"kind": "mock", "reference": "emby-fixture"},
+  "identity": {"gateway": "external-fnos-session", "application": "original-emby"},
+  "permissions": {
+    "tcpListener": false,
+    "systemApi": false,
+    "mediaFilesystem": false,
+    "credentialStorage": false
+  }
+}

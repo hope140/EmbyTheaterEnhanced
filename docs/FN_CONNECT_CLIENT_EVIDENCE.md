@@ -1,5 +1,7 @@
 # FNID 第三方客户端证据与真实验证路线
 
+后续已核对许可和服务端流程，选择最小伴随 FPK 候选并提供默认关闭的 mock 配置/打包骨架；见[伴随组件方案与一份最小授权清单](FN_CONNECT_COMPANION_PLAN.md)。该审阅骨架不可安装，真实连通状态保持未验证。
+
 核查日期：2026-10-23。状态为 `PUBLIC_IMPLEMENTATIONS_FOUND / ETE_CONNECTIVITY_NOT_VERIFIED`。第三方客户端支持 FNID 的线索成立，不能再把开发者站不可达作为唯一停点。本文基于项目自己的 README、发行记录、许可证和源码，不把论坛转述当接口合同。
 
 ## 有界候选清单

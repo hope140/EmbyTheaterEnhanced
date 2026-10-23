@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-23 — FNConnect 最小伴随方案与 mock 打包骨架
+
+核对 Ting Reader 客户端/服务端的 AGPL-3.0-only 声明、双层登录及 FPK Unix socket/prefix 映射流程；未复制其实现、签名或启停脚本。缺少既有 Emby 映射时选择独立伴随 FPK 候选，Emby 插件不能单独注册 fnOS 网关；若已有合法映射则复用，不新增组件。
+
+提供默认关闭、严格 mock-only 的配置、内存桥接与不可安装打包审阅件；所有网关准入、socket 权限、平台 schema 保留真实验证门禁。36 项本地合成测试通过，产品源码/构建/依赖保持，无 listener、NAS 登录、持久凭据、网络权限或安装动作。平台合同与隔离 NAS 会话仍待确认；[方案及明天的一份最小授权清单](FN_CONNECT_COMPANION_PLAN.md)明确条件、测试与回退，不称 FNConnect 已打通。
+
 ## 2026-10-23 — 第三方 FNID 客户端证据与网关验证入口
 
 已核对回声台、FeiNiuMusic、Ting Reader 的固定源码，确认第三方 FNID 实现存在；Ting Reader 的 fnOS 会话与应用登录分离，FPK 通过 Unix socket/prefix 注册应用入口，为最有希望的 Emby 接入参照。原生 FNID 发现仍有签名授权条件，不复制其他应用签名材料；Emby 是否已有对应网关映射未知。
