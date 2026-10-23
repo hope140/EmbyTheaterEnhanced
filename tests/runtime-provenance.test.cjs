@@ -356,16 +356,22 @@ test('runtime provenance rejects prepared and source-provenance tampering', () =
     }
 });
 
-test('Host projection is source-bound and reintroduced private DLLs fail final provenance',t=>{
+for (const checkout of ['lf', 'crlf']) test('Host projection is source-bound and reintroduced private DLLs fail final provenance: '+checkout,t=>{
     const root=createTempRoot('ete-host-projection-provenance-');t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
-    createFixture(root);const runtime=createRuntime(root,'runtime-host-projection');
+    createFixture(root);
     const commit=childProcess.execFileSync('git',['-C',root,'rev-parse','HEAD'],{encoding:'utf8'}).trim();
-    const sourceFile=path.join(runtime,'source-provenance.json'),source=JSON.parse(fs.readFileSync(sourceFile));
+    const generatorPath='tools/windows-host-input.cjs';
+    const generatorBlob=childProcess.execFileSync('git',['-C',root,'show',commit+':'+generatorPath]);
+    const canonicalGenerator=generatorBlob.toString('utf8').replace(/\r\n/g,'\n');
+    const checkoutBytes=Buffer.from(checkout==='crlf'?canonicalGenerator.replace(/\n/g,'\r\n'):canonicalGenerator);
+    fs.writeFileSync(path.join(root,generatorPath),checkoutBytes);
+    const runtime=createRuntime(root,'runtime-host-projection');
+    const sourceFile=path.join(runtime,'source-provenance.json'),sourceBytes=fs.readFileSync(sourceFile),source=JSON.parse(sourceBytes);
     const identity=source.runtimeIdentities.windowsHost;
     assert.equal(identity.fileCount,1);assert.equal(identity.runtimeFileCount,1);
     assert.deepEqual(identity.excludedFiles,[]);
-    assert.equal(identity.projection.generatorPath,'tools/windows-host-input.cjs');
-    assert.equal(identity.projection.generatorSha256,hash(fs.readFileSync(path.join(root,identity.projection.generatorPath))).toUpperCase());
+    assert.equal(identity.projection.generatorPath,generatorPath);
+    assert.equal(identity.projection.generatorSha256,hash(generatorBlob).toUpperCase());
     assert.equal(runProvenance('write',root,runtime).exitCode,0);
     const dll=path.join(runtime,'System.Configuration.dll');fs.writeFileSync(dll,'synthetic reintroduced file');
     assert.equal(sourceProvenance.validateManifest(root,runtime,commit).status,'failed');
@@ -376,4 +382,13 @@ test('Host projection is source-bound and reintroduced private DLLs fail final p
     source.runtimeIdentities.windowsHost.excludedFiles=[{...windowsHost.PRIVATE_CONFIGURATION}];
     fs.writeFileSync(sourceFile,JSON.stringify(source));
     assert.deepEqual(sourceProvenance.validateManifest(root,runtime,commit).errors,['source-provenance-content-mismatch']);
+    fs.writeFileSync(sourceFile,sourceBytes);
+    fs.appendFileSync(path.join(root,generatorPath),'\n// synthetic uncommitted content change\n');
+    const changed=sourceProvenance.validateManifest(root,runtime,commit);
+    assert.equal(changed.status,'failed');
+    assert.deepEqual(changed.errors,['Tracked generator differs from HEAD: '+generatorPath]);
+    const changedRuntime=runProvenance('validate',root,runtime);
+    assert.equal(changedRuntime.exitCode,1);
+    assert.ok(changedRuntime.report.errors.includes('source-provenance-invalid'));
+    assert.equal(fs.readFileSync(path.join(root,generatorPath),'utf8'),checkoutBytes.toString()+'\n// synthetic uncommitted content change\n');
 });

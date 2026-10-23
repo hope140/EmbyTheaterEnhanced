@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-23 — provenance断言独立绑定夹具Git blob
+
+run `39967786650` 于14:27:14 UTC结束（manual job13分45秒），本次镜像20261021.343.1；14:18:41 Host真实验证PASSED，本次生成锁、接入及preflight继续成功。原Framework固定门禁未修改，本轮不触发其失败诊断；不能据此补出上轮旧镜像的实际GAC/path/hash。完整测试1605／1604通过／1失败／0跳过，用时507208ms，未打包上传。
+
+唯一失败为runtime-provenance.test.cjs原368行：生成器tools/windows-host-input.cjs的Git blob SHA为50730AF013A7978482C59F346294538DB47A9D604091B9CEF522B030A9978400，CRLF工作树SHA为3446258485A87DB75395F9DAA022CEB4D1A15EAEE98B0627C88DC0F3A7FC3F76，与CI actual／expected完全一致。生产tracked-file-hash检查工作树canonical文本与HEAD后返回原Git blob身份，测试却用原工作树字节作预期；与Work或runner Host产物hash无关。
+
+新增LF／CRLF参数化夹具先复现原CRLF失败，再将测试预期改为独立git show读取精确夹具提交的blob。两种换行均保留私有DLL回流拒绝、错误projection清单拒绝，并追加真实生成器内容篡改被source及runtime provenance拒绝且不覆盖现场的检查。完整provenance文件6项通过（0失败、0跳过），没有修改生产代码或放宽门禁，未重复已经通过的全套Windows测试；下一次云run仍需重新构建、验证并运行全部回归。
+
 ## 2026-10-23 — 保留固定Framework门禁并输出拒绝证据
 
 `39965790277` 在14:05:10 UTC结束，manual job用时5分45秒；MSBuild编译成功，最终验证器第42行拒绝System.Configuration的GAC／固定SHA256条件。artifact为空，尚未接入锁或整包构建。映像为20261012.333.1，与前次该门禁通过的20261021.343.1不同；现有错误没有实际绑定字段，原因不能进一步确定。

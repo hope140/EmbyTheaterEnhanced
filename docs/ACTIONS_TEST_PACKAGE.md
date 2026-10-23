@@ -12,6 +12,8 @@
 
 运行 `39965790277` 在Host编译后被System.Configuration的固定GAC／SHA256门禁阻断，没有artifact。映像与前次通过检查的run不同，但原错误缺实际字段，不能直接归因为系统补丁。现仅给原拒绝增加期望／实际绑定证据，门禁不放宽；未知实现仍停止，待新的实际诊断再核对。
 
+后续诊断run `39967786650` 的Host验证和本次锁接入通过；完整回归1605项仅1项失败，为provenance测试将CRLF工作树哈希与生成器Git blob身份比较。现仅修正该测试的独立Git预期并覆盖LF／CRLF、DLL回流及真实内容篡改拒绝；生产门禁保持。该run没有安装包或artifact，完整云包仍须下一run。
+
 ## 当前 Host 编译与验证前置条件
 
 当前手动作业在独立材料准备后调用 `tools/ci-source-built-host.ps1`，恢复固定55份官方源码和两个NuGet输入，使用Windows PowerShell5.1／MSBuild17编译net462/x86 Host。随后必须由本次runner的可移植探针验证实际EXE/PDB，生成锁及构建／验证／工具链／工程回执，再进入装配。生成锁位于 `.work/source-built-host/`，绑定当前HEAD与Actions运行；不能导入外部测试机的旧回执或回退原版Host。
