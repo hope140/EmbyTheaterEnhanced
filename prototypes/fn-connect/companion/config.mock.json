@@ -8,7 +8,8 @@
     "socketName": "ete-fn-transport.sock",
     "registrationStatus": "unverified"
   },
-  "upstream": {"kind": "mock", "reference": "emby-fixture"},
+  "upstream": {"kind": "mock", "reference": "dian115-fixture", "role": "dian115-emby-proxy", "preserveChain": true},
+  "responsePolicy": {"redirects": "manual-unverified", "absoluteMediaUrls": "unverified", "directEmbyFallback": false},
   "identity": {"gateway": "external-fnos-session", "application": "original-emby"},
   "permissions": {
     "tcpListener": false,

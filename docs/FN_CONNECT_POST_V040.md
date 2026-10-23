@@ -1,5 +1,7 @@
 # v0.4.0 基线后的 FNConnect 准备结果
 
+**上游边界已修正**：当前采用 `ETE → FNConnect/伴随应用 → dian115 的 Emby 代理 → Emby`，禁止直连 Emby 回退。下文早期单上游/授权描述中的连接目标统一收窄为该 dian115 代理入口；最新[协议矩阵、最少确认字段与授权顺序](FN_CONNECT_DIAN115.md)为准，端口不猜测。
+
 本功能分支已保全原 `511b00d72f65438a654ae79f3bd349dab7dbc22e`，并重基到用户指定的正式 v0.4.0 main 来源 `88578c91ab19d44eecddcfae096d37dc917ef1f4`。重基仅在两份状态文档出现冲突，双方有效内容保留；原功能的三项提交保持，生产 `src/native/tools/vendor/installer` 与版本/依赖相对该 main 来源没有功能差异。本分支不修改正式发行、main 或发布分支。
 
 ## 公开资料复核与准确边界

@@ -5,7 +5,9 @@ not include Ting Reader source, authentication/signing material or upstream
 launch scripts. The repository's license applies to these original files.
 
 Candidate route: an fnOS-registered app gateway reaches an app-owned Unix socket;
-a small companion would forward to one explicitly configured local Emby service.
+a small companion would forward only to one explicitly configured dian115 Emby
+proxy endpoint, which retains the existing onward Emby chain. Its management UI
+is not the media upstream. No direct-Emby fallback or port inference is allowed.
 The gateway authorizes access; Emby continues to authenticate its own users.
 An Emby plugin cannot by itself register that fnOS route. Existing NAS mappings,
 permissions and endpoint addresses are unknown; none are assumed by this scaffold.
@@ -14,6 +16,8 @@ permissions and endpoint addresses are unknown; none are assumed by this scaffol
 socket name and prefix are reserved design values, not an installed NAS mapping.
 `activateMock: true` only enables an injected in-memory upstream. The
 `gatewayAuthorized` flag is a synthetic test input, not production access control.
+Redirect and absolute-media-URL compatibility is explicitly unverified; relaying
+a Location header unchanged does not establish that a client may safely follow it.
 The in-memory mock has no network client, listener, socket, system API, media filesystem access
 or credential store. Production configs and installable package targets fail.
 
@@ -43,6 +47,8 @@ permissions, license/source notices, and tested install/rollback behavior.
 
 See the repository's `docs/FN_CONNECT_COMPANION_PLAN.md` for evidence, the design
 comparison, remaining gates and the complete minimum real-test authorization.
+The current upstream topology and minimum confirmation fields are specified in
+`docs/FN_CONNECT_DIAN115.md`; it supersedes earlier direct-Emby design wording.
 
 ## Post-v0.4.0 local Unix transport validation
 

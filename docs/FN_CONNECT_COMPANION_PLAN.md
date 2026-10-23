@@ -1,5 +1,7 @@
 # FNConnect 最小伴随组件方案与 mock 打包骨架
 
+最新上游约束为 **dian115 Emby 代理**，不是直接 Emby；不配置直连回退。本文保留方案选择历史，[dian115 链路合同](FN_CONNECT_DIAN115.md)覆盖其中早期“单一 Emby 上游”表述及相关授权目标。
+
 最新阶段已重基到正式 v0.4.0 来源并增加私有临时 Unix socket 的实际传输测试；见[发布点后的结果与最小授权清单](FN_CONNECT_POST_V040.md)。本页的36项和纯内存范围是前一阶段记录，不替代新阶段证据。
 
 状态：`DESIGN_SELECTED / MOCK_ONLY / NOT_INSTALLABLE`。本轮完成不需要 NAS 权限的准备；没有真实连通、fnOS 打包器、安装包、服务端部署或 ETE 产品接线。独立范围仍为 v0.4.0 发布后的 FNConnect 连接认证，不改变 Emby 登录/权限，不实现缓存。

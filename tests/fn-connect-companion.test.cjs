@@ -22,6 +22,8 @@ test('configuration stays disabled and rejects production endpoints, permissions
     assert.equal(validateConfig().enabled, false);
     for (const mutate of [value => { value.enabled = true; }, value => { value.mode = 'production'; },
         value => { value.upstream.url = 'http://127.0.0.1:8096'; },
+        value => { value.upstream.role = 'direct-emby'; },
+        value => { value.responsePolicy.directEmbyFallback = true; },
         value => { value.permissions.tcpListener = true; },
         value => { value.token = 'synthetic-never-package-marker'; }]) {
         const input = structuredClone(config);
@@ -138,6 +140,8 @@ test('review package is reproducible, binds every entry and retains unresolved d
     assert.ok(files.get('fpk-templates/ui-config.json.in').includes('{{REVIEWED_GATEWAY_ACCESS_POLICY}}'));
     assert.ok(files.get('fpk-templates/main.sh.in').endsWith('exit 78\n'));
     assert.equal(JSON.parse(files.get('config.mock.json')).enabled, false);
+    assert.equal(JSON.parse(files.get('config.mock.json')).upstream.role, 'dian115-emby-proxy');
+    assert.equal(JSON.parse(files.get('config.mock.json')).responsePolicy.directEmbyFallback, false);
     assert.equal(files.has('manifest'), false);
     assert.throws(() => prepareReview({target: 'fpk'}), /INSTALLABLE_PACKAGE_NOT_AVAILABLE/);
 });

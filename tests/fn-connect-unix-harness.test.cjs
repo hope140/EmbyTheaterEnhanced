@@ -25,7 +25,7 @@ async function fixture(t, handler, upgrade) {
         fs.rmSync(root, {recursive: true});
     });
     harness = await startLocalHarness({enabled: true, root, authorizeFixture: request => request.headers['x-fixture-allow'] === 'yes'});
-    return harness;
+    return {...harness, root};
 }
 
 function request(socketPath, url, {headers = {}, method = 'GET', body} = {}) {
@@ -133,4 +133,50 @@ test('real client disconnect cancels a streaming Unix upstream', linuxOnly, asyn
         client.on('error', reject);
     });
     await upstreamClosed;
+});
+
+test('dian115 proxy fixture remains in the route for API, subtitle and transcode; redirects are not followed', linuxOnly, async t => {
+    const proxyRequests = [], originRequests = [];
+    const originSockets = new Set();
+    const origin = http.createServer((incoming, outgoing) => {
+        originRequests.push(incoming.url);
+        assert.equal(incoming.headers['x-fixture-proxy-visited'], 'yes');
+        if (incoming.url.endsWith('.vtt')) {
+            outgoing.setHeader('Content-Type', 'text/vtt'); outgoing.end('WEBVTT\n');
+        } else if (incoming.url.endsWith('.ts')) {
+            outgoing.writeHead(206, {'Content-Range': 'bytes 0-3/4'}); outgoing.end('test');
+        } else { outgoing.setHeader('Content-Type', 'application/json'); outgoing.end('{"Id":"synthetic"}'); }
+    });
+    origin.on('connection', socket => { originSockets.add(socket); socket.on('close', () => originSockets.delete(socket)); });
+    let originSocket;
+    const redirect = 'https://media.example.invalid/synthetic?signature=fixture';
+    const harness = await fixture(t, (incoming, outgoing) => {
+        proxyRequests.push(incoming.url);
+        if (incoming.url.endsWith('/redirect')) {
+            outgoing.writeHead(302, {Location: redirect}); outgoing.end(); return;
+        }
+        const downstream = http.request({socketPath: originSocket, path: incoming.url, agent: false,
+            method: incoming.method, headers: {...incoming.headers, 'X-Fixture-Proxy-Visited': 'yes'}}, response => {
+            outgoing.writeHead(response.statusCode, response.headers); response.pipe(outgoing);
+        });
+        downstream.on('error', () => outgoing.destroy());
+        incoming.pipe(downstream);
+    });
+    originSocket = path.join(harness.root, 'emby-origin.sock');
+    await new Promise(resolve => origin.listen(originSocket, resolve));
+    try {
+        assert.equal((await request(harness.socketPath, prefix + '/emby/System/Info/Public')).status, 200);
+        const subtitle = await request(harness.socketPath, prefix + '/emby/subtitle.vtt');
+        assert.equal(subtitle.body.toString(), 'WEBVTT\n');
+        const segment = await request(harness.socketPath, prefix + '/emby/transcode/segment.ts', {headers: {Range: 'bytes=0-3'}});
+        assert.equal(segment.status, 206);
+        assert.equal(segment.headers['content-range'], 'bytes 0-3/4');
+        const relocated = await request(harness.socketPath, prefix + '/emby/redirect');
+        assert.equal(relocated.status, 302);
+        assert.equal(relocated.headers.location, redirect);
+        assert.deepEqual(proxyRequests, ['/emby/System/Info/Public', '/emby/subtitle.vtt', '/emby/transcode/segment.ts', '/emby/redirect']);
+        assert.deepEqual(originRequests, proxyRequests.slice(0, 3));
+    } finally {
+        await new Promise(resolve => { origin.close(resolve); for (const socket of originSockets) socket.destroy(); });
+    }
 });
