@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-23 — 原生预览媒体像素证明缺口关闭为中性保护
+
+现有file-loaded／core-idle只证明所属加载状态，surface-status无呈现代次；独立PrintWindow即使成功且非零也可能拿到旧持帧。按未证明即中性的边界，产品适配器移除raw capture、媒体图像缓存／封面IO与首帧重试，只提交不透明黑色占位；status明确neutral-unverified与blocked reason，captured／previewReady保持0／false。保留元数据、原命令、两按钮及默认关闭，不改Native协议或播放策略。
+
+定向73/73通过；公开离线1541项：1531 pass、0 fail、10项既有Windows skip。同一“成功非零旧图仍须中性”断言修前ff7b338失败、修后通过。独立FFI合成探针仍保留，Windows未运行。当前不具备视频预览功能包条件：普通build未装FFI，产品安全接线仅为中性保护，不为凑包宣称可验收。证明表、恢复能力的最小合同、共享controller／libmpv潜在冲突与复验清单见[源码交接](WINDOWS_NATIVE_PREVIEW_HANDOFF.md)。
+
 ## 2026-10-23 — 原生预览有界自审与源码交接
 
 native试验增加v2播放代次与同片重播／Next过渡退休、封面文件按播放范围隔离、首帧10次／15秒预算及restore重试；不透明BGRX转换明确限制来源，已有premultiplied BGRA提交保持字节。GDI部分申请失败、清理异常、消息注册失败及窗口销毁／重入提交均补回归。保持默认关闭及两按钮，不装配依赖或改发行线。

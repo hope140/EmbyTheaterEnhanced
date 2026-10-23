@@ -5,244 +5,167 @@ const {pathToFileURL} = require('node:url');
 const adapter = require('../src/electronapp/enhanced/windows-native-media');
 const {NATIVE_CHANNEL, NATIVE_SESSION_CHANNEL} = require('../src/electronapp/enhanced/windows-media-renderer');
 const drain = () => new Promise(resolve => setImmediate(resolve));
-function frame(color = 48) {
-    const pixels = Buffer.alloc(800, color);
-    for (let offset = 3; offset < pixels.length; offset += 4) pixels[offset] = 255;
-    return {accepted: true, pixels};
-}
 function fixture(t, overrides = {}) {
-    const window = new EventEmitter(), ipc = new EventEmitter(), handlers = new Map(), calls = [];
+    const window = new EventEmitter(), ipc = new EventEmitter(), handlers = new Map(), calls = [], commands = [];
     window.webContents = new EventEmitter();
     window.webContents.mainFrame = {url: pathToFileURL(path.resolve(__dirname, '../src/electronapp/www/index.html')).href};
-    window.webContents.isDestroyed = () => false;
-    window.isDestroyed = () => false;
-    window.getNativeWindowHandle = () => { const b = Buffer.alloc(8); b.writeBigUInt64LE(1n); return b; };
+    window.webContents.isDestroyed = () => false; window.isDestroyed = () => false;
+    window.getNativeWindowHandle = () => {const b = Buffer.alloc(8); b.writeBigUInt64LE(1n); return b;};
     ipc.handle = (name, callback) => handlers.set(name, callback); ipc.removeHandler = name => handlers.delete(name);
-    const video = {webContents: {}, isDestroyed: () => false, getNativeWindowHandle: window.getNativeWindowHandle};
-    let minimized = false, visible = true, time = 0, tick, request, currentVideo = video;
-    window.isMinimized = () => minimized; video.isVisible = () => visible;
+    let minimized = false, sourceReads = 0, captures = 0, artworkWrites = 0, updates = 0, clears = 0, time = 0, scheduled;
+    const video = {webContents: {}, isDestroyed: () => false, isVisible: () => !minimized, getNativeWindowHandle: window.getNativeWindowHandle};
+    window.isMinimized = () => minimized;
     const event = {sender: window.webContents, senderFrame: window.webContents.mainFrame};
-    let command, updates = 0, clears = 0;
-    const commands = [];
-    const controller = adapter.attach({window, ipcMain: ipc, koffi: {}, getVideoWindow: () => currentVideo,
-        clock: {now: () => time, setInterval(callback) { tick = callback; return 1; }, clearInterval() { tick = null; }},
-        createBindings: () => ({}), createDwm: () => ({clientSize: () => ({width: 20, height: 10}),
-            capture: overrides.capture || (async () => frame())}),
+    const opaqueOldPixels = Buffer.alloc(800);
+    for (let offset = 0; offset < opaqueOldPixels.length; offset += 4) opaqueOldPixels.set([19, 67, 213, 255], offset);
+    let request, imageReader;
+    const controller = adapter.attach({window, ipcMain: ipc, koffi: {},
+        getVideoWindow() {sourceReads++; return video;},
+        // Deliberately offer successful nonzero pixels without a presentation
+        // fence. Accepting these pixels would reproduce the old-media leak.
+        createDwm: () => ({clientSize: () => ({width:20, height:10}), async capture() {captures++; return {accepted:true, pixels:opaqueOldPixels};}}),
+        createBindings: () => ({}),
+        createSmtc: overrides.create || (async (_bindings, _hwnd, options) => {
+            commands.push(options.onCommand); return {
+                update() {updates++;calls.push('update');}, clearArtwork() {calls.push('clear-artwork');},
+                async setArtwork() {artworkWrites++;}, async dispose() {calls.push('dispose');}
+            };
+        }),
+        attachThumbnail: (_window, _dwm, getImage, _onError, onRequest = () => {}) => {
+            imageReader = getImage; request = onRequest;
+            return {clear() {clears++;}, refresh() {calls.push('preview');}, dispose() {calls.push('preview-dispose');},
+                requestedRecently: () => true, submitted:0};
+        },
+        clock: {now: () => time, setInterval(callback) {scheduled=callback;return 1;}, clearInterval() {scheduled=null;}},
+        nativeImage: {createFromBitmap: (pixels, size) => ({pixels:Buffer.from(pixels), size,
+            resize() {return this;}, getSize() {return size;}, isEmpty() {return false;}, toPNG() {return this.pixels;}})},
+        // A legacy artwork option must not revive disk-cache reads/writes.
         artworkDirectory: overrides.artworkDirectory,
-        createSmtc: overrides.create || (async (_b, _h, options) => { command = options.onCommand; commands.push(command); return {
-            update(value) { updates++; calls.push(value.active ? 'update' : 'inactive'); }, async dispose() { calls.push('dispose'); }}; }),
-        attachThumbnail: (_window, _dwm, _getImage, _onError, onRequest) => { request = onRequest; return {clear() { clears++; }, refresh() { calls.push('preview'); }, dispose() { calls.push('preview-dispose'); }, submitted: 0, requestedRecently: () => overrides.demand !== false}; },
-        nativeImage: {createFromBitmap: (pixels, size) => ({pixels: Buffer.from(pixels), size, toPNG() { return this.pixels; }, resize() { return this; }})}, sendCommand: value => calls.push('command:' + value)});
+        sendCommand: value => calls.push('command:' + value)});
     t.after(() => controller.dispose());
-    function token() { return handlers.get(NATIVE_SESSION_CHANNEL)(event).token; }
-    const make = (extra = {}) => ({version: 2, playbackEpoch: 1, active: true, paused: false, title: 'Fixture', mediaKey: 'a'.repeat(64), mediaType: 'Video',
-        duration: 100, position: 1, rate: 1, sequence: 1, sessionToken: token(), ...extra});
-    return {controller, window, ipc, handlers, calls, event, make, token, commands, minimize() {minimized=true;}, restore() {minimized=false;window.emit('restore');}, hide() {visible=false;}, show() {visible=true;},
-        replaceVideo() { currentVideo = {...video}; }, useMainAsSource() {currentVideo=window;}, request() { request(); },
-        async tick(ms = 1000) { time += ms; if (tick) tick(); await drain(); }, get updates() { return updates; }, get clears() { return clears; },
-        send(value, source = event) { ipc.emit(NATIVE_CHANNEL, source, value); }, command(value) { command(value); }};
+    function token() {return handlers.get(NATIVE_SESSION_CHANNEL)(event).token;}
+    const make = (extra = {}) => ({version:2, playbackEpoch:1, active:true, paused:false, title:'Fixture', mediaKey:'a'.repeat(64), mediaType:'Video',
+        duration:100, position:1, rate:1, sequence:1, sessionToken:token(), ...extra});
+    return {controller, window, ipc, handlers, event, make, token, calls, commands,
+        get updates() {return updates;}, get clears() {return clears;},
+        get captureCalls() {return captures;}, get sourceReads() {return sourceReads;}, get artworkWrites() {return artworkWrites;},
+        get timerScheduled() {return !!scheduled;}, readPreview() {return imageReader();}, request() {request();},
+        minimize() {minimized=true;window.emit('minimize');}, restore() {minimized=false;window.emit('restore');},
+        async tick(ms = 1000) {time+=ms;if (scheduled) scheduled();await drain();},
+        send(value, source = event) {ipc.emit(NATIVE_CHANNEL, source, value);}};
 }
-
-test('native snapshots reject untrusted senders, additional fields and invalid ranges', async t => {
-    const f = fixture(t);
-    for (const extra of [{version: 1}, {playbackEpoch: 0}, {title: 'a\nprivate'}, {mediaKey: '../file'}, {position: Infinity}, {position: 101}, {rate: 0}, {command: 'arbitrary'}, {sequence: 0}]) {
-        assert.equal(adapter.valid(f.make(extra)), false);
-        f.send(f.make(extra));
+function assertNeutral(image) {
+    assert.ok(image);
+    for (let offset = 0; offset < image.pixels.length; offset += 4) {
+        assert.equal(image.pixels.readUInt32LE(offset), 0xff000000);
     }
-    f.send(f.make(), {sender: {}, senderFrame: f.event.senderFrame});
-    f.send(f.make(), {sender: f.event.sender, senderFrame: {url: 'https://example.invalid'}});
+    assert.deepEqual(image.size, {width:640, height:360});
+}
+const stopped = {active:false, paused:false, title:'', mediaKey:'', mediaType:'', duration:0, position:0};
+
+test('native snapshots reject untrusted senders, extra fields and invalid ranges', async t => {
+    const f = fixture(t);
+    for (const extra of [{version:1}, {playbackEpoch:0}, {title:'a\nprivate'}, {mediaKey:'../file'}, {position:Infinity}, {position:101}, {rate:0}, {command:'arbitrary'}, {sequence:0}]) {
+        assert.equal(adapter.valid(f.make(extra)), false); f.send(f.make(extra));
+    }
+    f.send(f.make(), {sender:{}, senderFrame:f.event.senderFrame});
+    f.send(f.make(), {sender:f.event.sender, senderFrame:{url:'https://example.invalid'}});
     await drain(); assert.equal(f.updates, 0);
 });
 
-test('current native snapshots publish and commands stay with the original fixed input route', async t => {
+test('unproven successful colored PrintWindow pixels cannot become a current-media preview or artwork', async t => {
     const f = fixture(t); f.send(f.make()); await drain();
-    assert.equal(f.updates, 1); assert.equal(f.controller.status().captured, 1);
-    f.command('pause'); f.command('arbitrary');
+    assertNeutral(f.controller.previewImage()); assertNeutral(f.readPreview());
+    assert.equal(f.sourceReads, 0); assert.equal(f.captureCalls, 0); assert.equal(f.artworkWrites, 0);
+    assert.equal(f.controller.status().captured, 0); assert.equal(f.controller.status().previewReady, false);
+    assert.equal(f.controller.status().previewMode, 'neutral-unverified');
+    assert.equal(f.controller.status().captureBlockedReason, 'native-frame-ownership-unproven');
+});
+
+test('current metadata and native commands keep the original input route without enabling pixel capture', async t => {
+    const f = fixture(t); f.send(f.make()); await drain(); assert.equal(f.updates, 1);
+    assert.ok(f.calls.indexOf('clear-artwork') < f.calls.indexOf('update'));
+    f.commands[0]('pause'); f.commands[0]('arbitrary');
     assert.ok(f.calls.includes('command:pause')); assert.ok(!f.calls.includes('command:arbitrary'));
-    f.send(f.make({active: false, paused: false, title: '', mediaKey: '', mediaType: '', duration: 0, position: 0, sequence: 2}));
-    await drain(); f.command('play');
-    assert.equal(f.controller.status().active, false); assert.equal(f.controller.status().ready, false);
+    f.send(f.make({...stopped, sequence:2})); await drain(); f.commands[0]('play');
+    assert.equal(f.controller.previewImage(), null); assert.equal(f.controller.status().ready, false);
     assert.ok(!f.calls.includes('command:play'));
 });
 
-test('document reset rotates the session token so queued old-document snapshots are rejected', async t => {
-    const f = fixture(t), old = f.make();
-    f.send(old); await drain(); const count = f.updates;
-    f.window.webContents.emit('did-start-navigation', {}, 'file:///fixture', false, true); await drain();
-    assert.notEqual(f.token(), old.sessionToken);
-    f.send({...old, sequence: 100}); await drain(); assert.equal(f.updates, count);
-    f.send(f.make()); await drain(); assert.equal(f.updates, count + 1);
+test('document reset rotates session token and rejects old-document snapshots and callbacks', async t => {
+    const f = fixture(t), old = f.make(); f.send(old); await drain(); const command = f.commands[0];
+    f.window.webContents.emit('did-start-navigation', {}, 'file:///fixture', false, true);
+    assert.equal(f.controller.previewImage(), null); assert.notEqual(f.token(), old.sessionToken);
+    f.send({...old, sequence:100}); await drain(); const before = f.updates;
+    f.send(f.make()); command('pause'); await drain();
+    assert.equal(f.updates, before + 1); assert.equal(f.calls.includes('command:pause'), false);
+    f.commands.at(-1)('play'); assert.ok(f.calls.includes('command:play'));
 });
 
-test('late capture from retired media cannot publish into the new preview', async t => {
-    let complete;
-    const pending = new Promise(resolve => { complete = resolve; });
-    const f = fixture(t, {capture: () => pending});
-    f.send(f.make()); await drain();
-    const refreshes = f.calls.filter(x => x === 'preview').length;
-    f.send(f.make({active: false, paused: false, title: '', mediaKey: '', mediaType: '', duration: 0, position: 0, sequence: 2}));
-    complete(frame()); await drain(); await drain();
-    assert.equal(f.controller.status().captured, 0); assert.equal(f.calls.filter(x => x === 'preview').length, refreshes);
+test('same item replay and media switches stay neutral even when only old colored pixels are available', async t => {
+    const f = fixture(t); f.send(f.make()); await drain(); assertNeutral(f.controller.previewImage());
+    f.send(f.make({playbackEpoch:2, sequence:2})); await drain(); assertNeutral(f.controller.previewImage());
+    f.send(f.make({mediaKey:'b'.repeat(64), playbackEpoch:3, sequence:3})); await drain(); assertNeutral(f.controller.previewImage());
+    assert.equal(f.captureCalls, 0); assert.equal(f.controller.status().artworkReady, false);
+    assert.ok(f.calls.includes('clear-artwork'));
 });
 
-test('shutdown waits for owned capture and SMTC release and removes IPC ownership immediately', async t => {
-    let complete;
-    const f = fixture(t, {capture: () => new Promise(resolve => { complete = resolve; })});
-    f.send(f.make()); await drain();
-    let settled = false; const close = f.controller.dispose().then(() => { settled = true; });
-    assert.equal(f.ipc.listenerCount(NATIVE_CHANNEL), 0); assert.equal(f.handlers.size, 0);
-    await drain(); assert.equal(settled, false);
-    complete(frame()); await close;
-    assert.equal(settled, true); assert.equal(f.calls.filter(x => x === 'dispose').length, 1);
-    await f.controller.dispose();
+test('DWM demand, arbitrary time and minimize/restore cannot open an unproven capture path', async t => {
+    const f = fixture(t); f.minimize(); f.send(f.make()); await drain();
+    assertNeutral(f.readPreview()); f.restore();
+    for (let i = 0; i < 30; i++) {f.request();await f.tick(100000);}
+    assertNeutral(f.readPreview());
+    assert.equal(f.timerScheduled, false); assert.equal(f.sourceReads, 0); assert.equal(f.captureCalls, 0);
+    assert.equal(f.controller.status().firstFrameAttempts, 0);
 });
 
-test('capture completed after minimization cannot replace the retained preview', async t => {
-    let complete;
-    const f=fixture(t,{capture:()=>new Promise(resolve=>{complete=resolve;})});
-    f.send(f.make());await drain();f.minimize();complete(frame());
-    await drain();assert.equal(f.controller.status().captured,0);assert.equal(f.controller.status().previewReady,false);assert.ok(f.controller.previewImage());
+test('stop and audio remove neutral preview and the next active video only restores neutral content', async t => {
+    const f = fixture(t); f.send(f.make()); await drain();
+    f.send(f.make({...stopped, sequence:2})); assert.equal(f.controller.previewImage(), null); await drain();
+    f.send(f.make({mediaType:'Audio', playbackEpoch:2, sequence:3})); await drain(); assert.equal(f.readPreview(), null);
+    f.send(f.make({playbackEpoch:3, sequence:4})); await drain(); assertNeutral(f.readPreview());
 });
 
-test('an old document cannot issue native commands when reset and new state coalesce', async t => {
-    const f=fixture(t);f.send(f.make());await drain();const old=f.commands[0];
-    f.window.webContents.emit('did-start-navigation', {}, 'file:///fixture', false, true);f.send(f.make());old('pause');await drain();await drain();
-    assert.equal(f.calls.includes('command:pause'),false);assert.equal(f.commands.length,2);
-    f.commands[1]('play');assert.equal(f.calls.includes('command:play'),true);
+test('late state from a retired playback epoch is rejected even with a higher IPC sequence', async t => {
+    const f = fixture(t); f.send(f.make({playbackEpoch:2})); await drain(); const before = f.updates;
+    f.send(f.make({playbackEpoch:1, sequence:2})); await drain(); assert.equal(f.updates, before);
+    assert.equal(f.controller.status().sequence, 1); assertNeutral(f.readPreview());
 });
 
 test('subframe navigation and same-document routes do not retire the native session', async t => {
-    const f=fixture(t);f.send(f.make());await drain();const token=f.token();
-    f.window.webContents.emit('did-start-navigation',{},'https://example.invalid',false,false);
-    f.window.webContents.emit('did-start-navigation',{},'file:///fixture#!/videoosd',true,true);
-    await drain();assert.equal(f.token(),token);assert.equal(f.controller.status().active,true);
+    const f = fixture(t); f.send(f.make()); await drain(); const token = f.token();
+    f.window.webContents.emit('did-start-navigation', {}, 'https://example.invalid', false, false);
+    f.window.webContents.emit('did-start-navigation', {}, 'file:///fixture#!/videoosd', true, true);
+    await drain(); assert.equal(f.token(), token); assert.equal(f.controller.status().active, true);
 });
 
-test('blank first capture retries without counting placeholder as a captured video frame', async t => {
-    let captures = 0;
-    const f = fixture(t, {capture: async () => ++captures === 1 ? frame(0) : frame(72)});
-    f.send(f.make()); await drain();
-    const placeholder = f.controller.previewImage();
-    assert.equal(f.controller.status().captured, 0);
-    assert.equal(f.controller.status().blankFirstFrames, 1);
-    assert.equal(f.controller.status().previewReady, false);
-    assert.deepEqual([...placeholder.pixels.subarray(0, 8)], [0, 0, 0, 255, 0, 0, 0, 255]);
-    await f.tick();
-    assert.equal(f.controller.status().captured, 1);
-    assert.equal(f.controller.status().previewReady, true);
-    assert.notEqual(f.controller.previewImage(), placeholder);
-    assert.equal(f.controller.previewImage().pixels[0], 72);
+test('crash and disposal retire preview immediately and detach every IPC listener', async t => {
+    const f = fixture(t); f.send(f.make()); await drain(); f.window.webContents.emit('render-process-gone');
+    assert.equal(f.readPreview(), null); await drain(); await f.controller.dispose();
+    assert.equal(f.handlers.size, 0); assert.equal(f.ipc.listenerCount(NATIVE_CHANNEL), 0);
+    f.request(); await f.tick(); assert.equal(f.readPreview(), null);
+    assert.equal(f.controller.status().previewMode, 'inactive'); assert.equal(f.controller.status().ready, false);
 });
 
-test('no pre-minimize frame and a minimized media switch keep an opaque current-media fallback', async t => {
-    let captures = 0;
-    const f = fixture(t, {capture: async () => { captures++; return frame(); }});
-    f.minimize(); f.send(f.make()); await drain(); await f.tick();
-    assert.equal(captures, 0); assert.ok(f.controller.previewImage());
-    assert.equal(f.controller.status().previewReady, false);
-    f.restore(); await f.tick();
-    const first = f.controller.previewImage(); assert.equal(captures, 1);
-    f.minimize(); await f.tick(); assert.equal(f.controller.previewImage(), first);
-    f.send(f.make({mediaKey: 'b'.repeat(64), sequence: 2})); await drain();
-    assert.notEqual(f.controller.previewImage(), first); assert.equal(f.controller.status().previewReady, false);
-    await f.tick(); assert.equal(captures, 1);
-    f.restore(); await f.tick();
-    assert.equal(captures, 2); assert.equal(f.controller.status().previewReady, true);
+test('shutdown drains pending SMTC startup without starting a video capture', async t => {
+    let complete, releases = 0;
+    const f = fixture(t, {create: () => new Promise(resolve => {complete=resolve;})});
+    f.send(f.make()); await drain(); let settled = false;
+    const closing = f.controller.dispose().then(() => {settled=true;});
+    await drain(); assert.equal(settled, false); assert.equal(f.readPreview(), null); assert.equal(f.handlers.size, 0);
+    complete({update() {throw Error('late update');}, async dispose() {releases++;}});
+    await closing; assert.equal(releases, 1); assert.equal(f.captureCalls, 0);
+    await f.controller.dispose(); assert.equal(releases, 1);
 });
 
-test('media switch can capture immediately despite the previous media throttle', async t => {
-    const f = fixture(t); f.send(f.make()); await drain();
-    const first = f.controller.previewImage();
-    f.send(f.make({mediaKey: 'b'.repeat(64), sequence: 2})); await drain();
-    assert.equal(f.controller.status().captured, 2); assert.notEqual(f.controller.previewImage(), first);
-});
-
-test('rejected and hidden captures preserve the last frame, but later genuine black frames are allowed', async t => {
-    let captures = 0;
-    const f = fixture(t, {capture: async () => ++captures === 2 ? {accepted: false} : frame(captures === 3 ? 0 : 48)});
-    f.send(f.make()); await drain(); const first = f.controller.previewImage();
-    await f.tick(); assert.equal(f.controller.previewImage(), first);
-    f.hide(); await f.tick(); assert.equal(captures, 2); assert.equal(f.controller.previewImage(), first);
-    f.show(); await f.tick();
-    assert.equal(f.controller.status().captured, 2); assert.equal(f.controller.previewImage().pixels[0], 0);
-});
-
-test('a replaced source window cannot publish its in-flight frame', async t => {
-    let complete;
-    const f = fixture(t, {capture: () => new Promise(resolve => { complete = resolve; })});
-    f.send(f.make()); await drain(); const placeholder = f.controller.previewImage();
-    f.replaceVideo(); complete(frame()); await drain();
-    assert.equal(f.controller.previewImage(), placeholder); assert.equal(f.controller.status().captured, 0);
-});
-
-test('audio, stop and navigation remove both the video frame and placeholder', async t => {
-    const f = fixture(t); f.send(f.make()); await drain();
-    f.send(f.make({mediaType: 'Audio', sequence: 2})); await drain();
-    assert.equal(f.controller.previewImage(), null);
-    f.send(f.make({mediaKey: 'b'.repeat(64), sequence: 3})); await drain();
-    f.window.webContents.emit('render-process-gone'); await drain();
-    assert.equal(f.controller.previewImage(), null);
-    await f.controller.dispose(); assert.equal(f.controller.previewImage(), null);
-});
-
-
-test('same media replay has a new playback owner and cannot retain its previous cached frame', async t => {
-    const f = fixture(t); f.send(f.make()); await drain(); const previous = f.controller.previewImage();
-    f.minimize(); f.send(f.make({playbackEpoch: 2, sequence: 2})); await drain();
-    assert.equal(f.controller.status().previewReady, false); assert.notEqual(f.controller.previewImage(), previous);
-    f.send(f.make({active: false, paused: false, title: '', mediaKey: '', mediaType: '', duration: 0, position: 0, playbackEpoch: 2, sequence: 3}));
-    assert.equal(f.controller.previewImage(), null);
-});
-
-test('first frame attempts and absolute time are bounded; restore grants a fresh bounded budget', async t => {
-    let captures = 0;
-    const f = fixture(t, {capture: async () => {captures++; return frame(0);}});
-    f.send(f.make()); await drain();
-    for (let i = 0; i < 30; i++) await f.tick();
-    assert.equal(captures, 10); assert.equal(f.controller.status().firstFrameExhausted, true);
-    f.restore(); await f.tick(); assert.equal(captures, 11);
-    await f.tick(16000); assert.equal(captures, 11);
-    assert.equal(f.controller.status().firstFrameExhausted, true);
-});
-
-test('deadline and restore retire a pending capture without freeing its native resources early', async t => {
-    let complete;
-    const f = fixture(t, {capture: () => new Promise(resolve => { complete = resolve; })});
-    f.send(f.make()); await drain(); await f.tick(16000); f.restore();
-    complete(frame()); await drain();
-    assert.equal(f.controller.status().captured, 0); assert.equal(f.controller.status().previewReady, false);
-});
-
-test('main UI cannot be used as an opaque native capture source', async t => {
-    let captures = 0;
-    const f = fixture(t, {capture: async () => {captures++; return frame();}});
-    f.useMainAsSource(); f.send(f.make()); await drain(); await f.tick();
-    assert.equal(captures, 0);
-});
-
-test('same item artwork is scoped to the playback session and never reuses a prior session PNG', async t => {
+test('legacy artwork directory with old-media pixels is never read or rewritten', async t => {
     const fs = require('node:fs'), os = require('node:os');
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-preview-artwork-'));
-    const files = [], images = [];
-    let color = 48, artworkClears = 0;
-    const f = fixture(t, {artworkDirectory: root, capture: async () => frame(color), create: async () => ({
-        update() {}, clearArtwork() {artworkClears++;}, async dispose() {},
-        async setArtwork(file, current) {if (current()) {files.push(file); images.push(fs.readFileSync(file));}}
-    })});
-    t.after(async () => { await f.controller.dispose(); fs.rmSync(root, {recursive: true, force: true}); });
-    f.send(f.make());
-    for (let i = 0; i < 50 && !files.length; i++) await new Promise(resolve => setTimeout(resolve, 2));
-    assert.equal(files.length, 1); color = 96;
-    f.send(f.make({playbackEpoch: 2, sequence: 2}));
-    for (let i = 0; i < 50 && files.length < 2; i++) await new Promise(resolve => setTimeout(resolve, 2));
-    assert.equal(files.length, 2); assert.notEqual(files[0], files[1]); assert.equal(images[0][0], 48); assert.equal(images[1][0], 96);
-    assert.ok(artworkClears >= 1);
-});
-
-
-test('late state from a retired playback epoch is rejected even with a higher IPC sequence', async t => {
-    const f = fixture(t); f.send(f.make({playbackEpoch: 2})); await drain();
-    const frame = f.controller.previewImage(), before = f.updates;
-    f.send(f.make({playbackEpoch: 1, sequence: 2})); await drain();
-    assert.equal(f.controller.previewImage(), frame); assert.equal(f.updates, before);
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-unproven-artwork-'));
+    const file = path.join(root, 'a'.repeat(64) + '.png'), canary = Buffer.from('old-user-frame-canary');
+    fs.writeFileSync(file, canary);
+    const f = fixture(t, {artworkDirectory:root});
+    t.after(async () => {await f.controller.dispose();fs.rmSync(root, {recursive:true, force:true});});
+    f.send(f.make()); await drain(); f.send(f.make({playbackEpoch:2, sequence:2})); await drain();
+    assert.deepEqual(fs.readdirSync(root), [path.basename(file)]); assert.deepEqual(fs.readFileSync(file), canary);
+    assert.equal(f.artworkWrites, 0); assertNeutral(f.readPreview());
 });
