@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-10-23 — Windows 原生预览可靠性候选
+
+显式 native 试验入口补齐 DIB 清零与不透明 alpha 转换、无首帧/最小化换片的黑色占位、首帧空图重试及独立 Peek 消息；旧媒体/窗口捕获仍按所属代次退休。保持现有两按钮与试验默认关闭，普通构建不增加 FFI 装配、不改产品版本或发布路径。正式版 v0.4.0 的真实发布点确定后另行重基，此候选不替代发行任务。
+
+Linux / Node24.18.1 定向68/68通过；同断言七项DWM测试修前2/7、修后7/7。公开离线回归1536项：1526 pass、0 fail、10项既有Windows平台skip。测试包含非零彩色BGRA字节和明确FFI内存，但不证明真实Windows视频、透明度或DWM可见效果。当前未生成安装包或运行真实服务，实机thumbnail／Peek／无首帧最小化／持帧换片／恢复／GDI及退出仍待复验；详细合同与检查见[Windows媒体控制](WINDOWS_MEDIA_CONTROLS.md)。
+
+
+
 ## 2026-10-23 — v0.4.0整合PR70来源与必要声明
 
 将PR70固定提交6576f5d的16份来源／声明材料整合到既有发布分支，四处文档冲突采用保留双方有效内容。API／page完整MIT、Sizzle原文、VTT版权／固定源／实际差异、Material Icons来源、Socket组件与集成范围及npm36许可命名口径保留；原JSON／CSV证据字节及analysisRef不改。旧“尚未替换Host／仍运行Sharp和ServiceStack”等仅作为研究时点，不恢复旧链；当前源码Host／JSON／ZIP、CEC退役、API维护与业务来源指纹均不变。

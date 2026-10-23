@@ -6,6 +6,7 @@ function createDwm(koffi) {
     const dwm = load('dwmapi.dll'), gdi = load('gdi32.dll'), user = load('user32.dll'), memory = load('ntdll.dll');
     const setAttribute = dwm.func('int32_t DwmSetWindowAttribute(void *window, uint32_t attribute, void *value, uint32_t size)');
     const setThumbnail = dwm.func('int32_t DwmSetIconicThumbnail(void *window, void *bitmap, uint32_t flags)');
+    const setLivePreview = dwm.func('int32_t DwmSetIconicLivePreviewBitmap(void *window, void *bitmap, void *offset, uint32_t flags)');
     const invalidate = dwm.func('int32_t DwmInvalidateIconicBitmaps(void *window)');
     const createBitmap = gdi.func('void *CreateDIBSection(void *dc, void *info, uint32_t usage, _Out_ void **bits, void *section, uint32_t offset)');
     const deleteObject = gdi.func('int DeleteObject(void *object)');
@@ -28,13 +29,13 @@ function createDwm(koffi) {
         const value = Buffer.alloc(4); value.writeInt32LE(enabled ? 1 : 0);
         for (const attribute of [7, 10]) { const code = setAttribute(hwnd, attribute, value, 4); if (code < 0) throw Error('DwmSetWindowAttribute:0x' + (code >>> 0).toString(16)); }
     }
-    function thumbnail(hwnd, image) {
+    function submitBitmap(hwnd, image, submit) {
         const {width, height} = image.getSize(), buffer = image.toBitmap(), dib = bitmap(width, height);
         try {
             if (buffer.length !== dib.length) throw Error('Bitmap byte count mismatch');
             copy(dib.bits, buffer, buffer.length);
-            const code = setThumbnail(hwnd, dib.handle, 0);
-            if (code < 0) throw Error('DwmSetIconicThumbnail:0x' + (code >>> 0).toString(16));
+            const code = submit(hwnd, dib.handle);
+            if (code < 0) throw Error('DWM bitmap submission failed');
         } finally { deleteObject(dib.handle); }
     }
     function clientSize(hwnd) {
@@ -48,35 +49,58 @@ function createDwm(koffi) {
         let previous;
         try {
             previous = selectObject(dc, dib.handle);
+            // PrintWindow may succeed without painting every pixel. Never expose
+            // uninitialized DIB memory to Electron, DWM or the artwork cache.
+            copy(dib.bits, Buffer.alloc(dib.length), dib.length);
             const accepted = await new Promise((resolve, reject) => printWindow.async(hwnd, dc, 2, (error, value) => error ? reject(error) : resolve(!!value)));
             const pixels = Buffer.alloc(dib.length); copy(pixels, dib.bits, dib.length);
+            // BI_RGB's fourth byte is reserved, not premultiplied alpha. Native
+            // video is opaque; preserve BGR and define alpha before NativeImage.
+            for (let offset = 3; offset < pixels.length; offset += 4) pixels[offset] = 255;
             return {accepted, pixels};
         } finally { if (previous) selectObject(dc, previous); deleteDc(dc); deleteObject(dib.handle); }
     }
-    return {configure, thumbnail, invalidate, capture, clientSize};
+    return {configure, invalidate, capture, clientSize,
+        thumbnail(hwnd, image) { submitBitmap(hwnd, image, (target, handle) => setThumbnail(target, handle, 0)); },
+        livePreview(hwnd, image) { submitBitmap(hwnd, image, (target, handle) => setLivePreview(target, handle, null, 0)); }};
 }
 
 function attachThumbnail(window, dwm, getImage, onError = function () {}, onRequest = function () {}) {
     const hwnd = window.getNativeWindowHandle().readBigUInt64LE();
     let enabled = false, disposed = false, submitted = 0, lastRequest = -Infinity;
-    function message(_wparam, lparam) {
+    function request(size, submit) {
         if (disposed || !enabled) return;
+        // Record demand even before a usable frame exists. Refresh/capture can
+        // then satisfy the next DWM request instead of losing first-frame demand.
+        lastRequest = performance.now();
         try {
-        const packed = Number(lparam.readBigUInt64LE() & 0xffffffffn);
-        const width = Math.min(1024, packed >>> 16), height = Math.min(1024, packed & 65535), image = getImage();
-        if (!image || image.isEmpty() || width < 1 || height < 1) return;
-        const size = image.getSize(), scale = Math.min(width / size.width, height / size.height);
-        const resized = image.resize({width: Math.max(1, Math.floor(size.width * scale)), height: Math.max(1, Math.floor(size.height * scale))});
-        dwm.thumbnail(hwnd, resized); submitted++;
-        lastRequest = performance.now(); onRequest();
+            const {width, height} = size(), image = getImage();
+            if (!image || image.isEmpty() || width < 1 || height < 1) return;
+            const source = image.getSize(), scale = Math.min(width / source.width, height / source.height);
+            const resized = image.resize({width: Math.max(1, Math.floor(source.width * scale)), height: Math.max(1, Math.floor(source.height * scale))});
+            submit(hwnd, resized); submitted++;
         } catch (_) { onError(); }
+        finally { onRequest(); }
     }
-    window.hookWindowMessage(0x323, message);
+    function thumbnailMessage(_wparam, lparam) {
+        request(() => {
+            const packed = Number(lparam.readBigUInt64LE() & 0xffffffffn);
+            return {width: Math.min(1024, packed >>> 16), height: Math.min(1024, packed & 65535)};
+        }, dwm.thumbnail);
+    }
+    function livePreviewMessage() {
+        request(() => {
+            const size = dwm.clientSize(hwnd);
+            return {width: Math.min(4096, size.width), height: Math.min(2160, size.height)};
+        }, dwm.livePreview);
+    }
+    window.hookWindowMessage(0x323, thumbnailMessage);
+    window.hookWindowMessage(0x326, livePreviewMessage);
     return {refresh() { if (disposed || window.isDestroyed()) return; if (!enabled) { dwm.configure(hwnd, true); enabled = true; } dwm.invalidate(hwnd); },
         clear() { if (!disposed && enabled && !window.isDestroyed()) { try { dwm.configure(hwnd, false); enabled = false; dwm.invalidate(hwnd); } catch (_) { onError(); } } },
         get submitted() { return submitted; },
         requestedRecently() { return performance.now() - lastRequest < 2500; },
-        dispose() { if (disposed) return; disposed = true; if (!window.isDestroyed()) { window.unhookWindowMessage(0x323); if (enabled) { try { dwm.configure(hwnd, false); } catch (_) { onError(); } } } }};
+        dispose() { if (disposed) return; disposed = true; if (!window.isDestroyed()) { window.unhookWindowMessage(0x323); window.unhookWindowMessage(0x326); if (enabled) { try { dwm.configure(hwnd, false); } catch (_) { onError(); } } } }};
 }
 
 module.exports = {createDwm, attachThumbnail};

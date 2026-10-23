@@ -26,16 +26,31 @@ function attach(options) {
     const bindings = createBindings(koffi), dwm = createDwm(koffi);
     const emit = createRecorder(options.log || function () {}, 'windows-media', 10);
     let disposed = false, latest = null, session = null, queue = Promise.resolve(), sequence = 0, epoch = 0, sessionToken = randomUUID(), sessionRequests = 0;
+    const clock = options.clock || {now: () => performance.now(), setInterval, clearInterval};
+    let fallbackImage = null, blankFirstFrames = 0;
     let image = null, imageEpoch = 0, timer = null, capturing = null, errors = 0, captured = 0, totalCaptureMs = 0;
     let artworkKey = null, appliedKey = null;
     let documentEpoch = 0, sessionDocumentEpoch = -1;
     let lastCaptureStarted = -Infinity;
-    const thumbnail = attachThumbnail(window, dwm, () => imageEpoch === epoch ? image : null, () => logFailure('thumbnail'), () => { captureFrame().catch(() => {}); });
+    const thumbnail = attachThumbnail(window, dwm, previewImage, () => logFailure('thumbnail'), () => { captureFrame().catch(() => {}); });
+    function previewImage() {
+        if (disposed || !latest || !latest.active || latest.mediaType !== 'Video') return null;
+        if (imageEpoch === epoch && image) return image;
+        // A new media item may start while minimized, when PrintWindow is unsafe.
+        // An opaque neutral image avoids both old-media leakage and transparent
+        // shell fallback. It is never counted as a capture or used as artwork.
+        if (!fallbackImage) {
+            const pixels = Buffer.alloc(640 * 360 * 4);
+            for (let offset = 3; offset < pixels.length; offset += 4) pixels[offset] = 255;
+            fallbackImage = nativeImage.createFromBitmap(pixels, {width: 640, height: 360});
+        }
+        return fallbackImage;
+    }
     function clearImage() { image = null; imageEpoch = 0; thumbnail.clear(); }
     function logFailure(stage) { errors++; emit('integration-unavailable', {stage}); }
     async function captureFrame() {
         if (disposed || capturing || !latest || !latest.active || latest.mediaType !== 'Video') return;
-        if (performance.now() - lastCaptureStarted < 950) return;
+        if (clock.now() - lastCaptureStarted < 950) return;
         if (image && imageEpoch === epoch && artworkKey && typeof thumbnail.requestedRecently === 'function' && !thumbnail.requestedRecently()) return;
         const video = getVideoWindow();
         if (!video || video.isDestroyed()) return;
@@ -47,11 +62,22 @@ function attach(options) {
         try {
             const hwnd = video.getNativeWindowHandle().readBigUInt64LE(), {width, height} = dwm.clientSize(hwnd);
             const started = Date.now();
-            lastCaptureStarted = performance.now();
+            lastCaptureStarted = clock.now();
             work = dwm.capture(hwnd, width, height); capturing = work;
             const frame = await work;
             if (disposed || ownedEpoch !== epoch || ownedWindow !== getVideoWindow() || video.isDestroyed() || !frame.accepted ||
                 typeof video.isVisible === 'function' && !video.isVisible() || typeof window.isMinimized === 'function' && window.isMinimized()) return;
+            if (!Buffer.isBuffer(frame.pixels) || frame.pixels.length !== width * height * 4) throw Error('Invalid captured bitmap');
+            // A successful PrintWindow with only zero BGR bytes cannot establish
+            // a first video frame. Retry on the timer; legitimate black scenes
+            // still display black via the fallback, and later black frames are kept.
+            if (!image) {
+                let hasColor = false;
+                for (let offset = 0; offset < frame.pixels.length; offset += 4) {
+                    if (frame.pixels[offset] || frame.pixels[offset + 1] || frame.pixels[offset + 2]) { hasColor = true; break; }
+                }
+                if (!hasColor) { blankFirstFrames++; return; }
+            }
             image = nativeImage.createFromBitmap(frame.pixels, {width, height}).resize({width: 640});
             imageEpoch = ownedEpoch; captured++; totalCaptureMs += Date.now() - started;
             thumbnail.refresh();
@@ -105,8 +131,12 @@ function attach(options) {
     function receive(event, snapshot) {
         if (disposed || !boundary.isTrusted(event, window.webContents) || !valid(snapshot) || snapshot.sessionToken !== sessionToken || snapshot.sequence <= sequence) return;
         sequence = snapshot.sequence;
-        if (!latest || latest.mediaKey !== snapshot.mediaKey || latest.active !== snapshot.active) { epoch++; clearImage(); }
+        const changed = !latest || latest.mediaKey !== snapshot.mediaKey || latest.active !== snapshot.active || latest.mediaType !== snapshot.mediaType;
+        if (changed) { epoch++; lastCaptureStarted = -Infinity; clearImage(); }
         enqueue({...snapshot});
+        if (changed && snapshot.active && snapshot.mediaType === 'Video') {
+            try { thumbnail.refresh(); } catch (_) { logFailure('thumbnail'); }
+        }
     }
     function reset() {
         epoch++; documentEpoch++; sequence = 0; sessionToken = randomUUID(); clearImage();
@@ -116,7 +146,7 @@ function attach(options) {
     let cleanup = null;
     function dispose() {
         if (cleanup) return cleanup;
-        disposed = true; epoch++; clearInterval(timer); timer = null; clearImage();
+        disposed = true; epoch++; clock.clearInterval(timer); timer = null; clearImage();
         ipcMain.removeListener(NATIVE_CHANNEL, receive);
         ipcMain.removeHandler(NATIVE_SESSION_CHANNEL);
         window.webContents.removeListener('did-start-navigation', navigation);
@@ -139,10 +169,10 @@ function attach(options) {
     window.webContents.on('did-start-navigation', navigation);
     window.webContents.on('render-process-gone', reset);
     window.once('closed', close);
-    timer = setInterval(() => { captureFrame().catch(() => {}); }, 1000);
-    return {dispose, previewImage() { return !disposed && latest && latest.active && imageEpoch === epoch ? image : null; },
+    timer = clock.setInterval(() => { captureFrame().catch(() => {}); }, 1000);
+    return {dispose, previewImage,
         status() { return {active: !!(latest && latest.active), ready: !!session,
-        captured, submitted: thumbnail.submitted, averageCaptureMs: captured ? totalCaptureMs / captured : 0, errors, sessionRequests, sequence,
+        previewReady: !!image && imageEpoch === epoch, blankFirstFrames, captured, submitted: thumbnail.submitted, averageCaptureMs: captured ? totalCaptureMs / captured : 0, errors, sessionRequests, sequence,
         artworkReady: !!artworkKey && artworkKey === latest?.mediaKey}; }};
 }
 

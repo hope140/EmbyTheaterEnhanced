@@ -21,7 +21,37 @@ Native Helper 二进制、libmpv、窗口 owner、Native 协议、认证和 Reso
 
 本地验收版使用独立 AUMID；Windows shell 通过一份专用的当前用户开始菜单快捷方式读取名称和图标，生成/回读工具见 `tools/windows-media-trial-identity.cjs`。只维护该试验入口，不改变原客户端入口或安装记录。清理试验时只移除此自有 `.lnk`，不要删除整个开始菜单目录。unpackaged SMTC 名称识别限制见 [Microsoft 讨论](https://github.com/microsoft/WindowsAppSDK/issues/127)。
 
-## 验证与复现
+## 预览可靠性候选
+
+本修订仅作用于显式启用 `ETE_WINDOWS_NATIVE_TRIAL=1` 且独立装配固定 Koffi 的试验入口。普通构建仍只有现有任务栏播放/暂停、停止两按钮；透明主窗口与独立 `skipTaskbar` video host 的原生合成不因本修订改变。普通包看到控件但看不到视频，与试验入口的 DWM 捕获问题须分别记录，不能以本候选声称普通包已修复。
+
+- 捕获的 top-down 32-bit BI_RGB DIB 在 `PrintWindow` 前清零，完成后保留 BGR 并将第四字节明确设为 255，再交给 Electron，避免把未定义的 alpha 当透明度。测试用非零彩色像素及不同第四字节检查实际转换代码；这是字节合同证据，不是 D3D 捕获成功证据。
+- active Video 一到达就启用自定义预览。无缓存帧时使用不透明黑色占位，最小化前没有首帧、最小化期间换片均不再依赖透明窗口的默认图像。占位不计入 `captured`、不用于 SMTC artwork；`previewReady` 单独表示缓存帧已建立。
+- 只有零 BGR 的首次捕获保持等待，并按原约 1Hz 定时器重试；`blankFirstFrames` 单列次数。合法纯黑片头同样显示黑色占位，直到出现非零 BGR。建立缓存后的纯黑帧仍允许更新。不以颜色启发式证明视频有效：有颜色的旧持帧/非视频内容也可能通过，仍须真实换片复验。
+- 隐藏/最小化禁止开始捕获，完成时再次检查媒体代次、所属窗口和可见状态；本媒体的已有缓存继续保留。换片清缓存并重置节流，使新媒体可以立即尝试首帧；音频、Stop、主文档换代和退出移除预览。renderer 媒体身份校验不等于 Native Helper 当前画面已属于新媒体，原生持帧过渡仍待 Windows 对照。
+- 同时处理 thumbnail `0x0323` 和 Peek/live-preview `0x0326`；后者使用独立的 `DwmSetIconicLivePreviewBitmap`，图像按客户端边界等比缩放，释放临时 DIB。两类请求在没有图像时也记录需求并请求捕获；退出注销两种消息。当前预览只展示 video host 图像，不合成主页面控件，Peek 由最多 640px 宽缓存放大，清晰度和布局待实机评估。
+
+接口依据：[BI_RGB 格式](https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-bitmapinfoheader)、[Electron bitmap](https://www.electronjs.org/docs/latest/api/native-image#nativeimagecreatefrombitmapbuffer-options)、[Peek 消息](https://learn.microsoft.com/en-us/windows/win32/dwm/wm-dwmsendiconiclivepreviewbitmap)、[Peek bitmap](https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/nf-dwmapi-dwmseticoniclivepreviewbitmap)。
+
+### 本修订离线验证
+
+`node --test tests/windows-dwm.test.cjs tests/windows-native-media.test.cjs tests/windows-media-controls.test.cjs tests/windows-media-trial-bootstrap.test.cjs tests/windows-media-trial-identity.test.cjs tests/preload-preparation.test.cjs tests/app-shutdown-drain.test.cjs`：Linux / Node 24.18.1，68/68 通过，无跳过。相同的七个 DWM 测试在修前源码为 2 pass / 5 fail，修后 7/7；新增底层 FFI 替身模拟明确内存、彩色像素和返回值，执行真实转换/提交/释放代码，不加载 Windows DLL。控制器测试覆盖空首帧重试、最小化前无首帧、最小化换片/恢复、节流换代、失败及隐藏保帧、后续纯黑帧、所属窗口更换、导航及退出。
+
+公开离线入口 `node tools/ci-public-tests.cjs`：1536项，1526 pass / 0 fail / 10项既有 Windows 平台 skip；固定六个材料测试文件按原入口排除，没有新增排除。JavaScript／PowerShell 语法与有限凭据模式检查通过。
+
+### Windows 待复验
+
+本修订未在云 Linux 复现用户的真实任务栏现象，未运行 Windows DWM、Electron GUI、Native 播放、安装或真实服务器。以下检查须使用来源可核验的独立试验 payload，并保存源码、覆盖文件和固定依赖身份；不能借旧包行为替代本修订源码或完整 provenance。
+
+1. 普通包与显式 native 试验入口分别确认开关、FFI 装配、两按钮、窗口透明与 surface 归属。普通包只作对照，不声称获得本候选修复。
+2. 可见彩色视频下分别实际 hover thumbnail、Peek、Alt+Tab：同时记录可见结果、BGRA alpha、`previewReady`/`captured`/`submitted`；API 返回成功不能替代可见视频。
+3. 播放后立即最小化（尚无首帧）、缓存建立后最小化、最小化换片后恢复：无首帧显示黑色占位，有缓存保本媒体帧，换片不重新显示已退休缓存，恢复后建立新帧。包含纯黑片头、暂停启动、seek、快速 Next/Stop、原生持帧过渡；确认新捕获没有把旧持帧标成新媒体。
+4. 隐藏/恢复、全屏、DPI、多屏与高分辨率下检查 Peek 大小、缩放、视频纵横比和两按钮命令；不要求最小化持续直播，不增加新按钮。
+5. 连续至少 30 次两类 DWM 请求记录图像变化、耗时、GDI 对象变化与错误；退出时在捕获 pending 状态关闭真实主 BrowserWindow，确认进程退出、两种 hook 退休和缓存不迟到发布。SMTC 会话/封面另核，黑色占位不得成为封面。
+
+## 既有版本的验证与复现
+
+本节为此前试验的历史证据，不是本预览可靠性修订的 Windows 验收结果。
 
 `node --test tests/windows-media-controls.test.cjs tests/windows-native-media.test.cjs tests/windows-media-trial-bootstrap.test.cjs tests/windows-media-trial-identity.test.cjs tests/app-shutdown-drain.test.cjs` 覆盖 sender/字段限制、文档换代、队列合并、旧事件/捕获退休、暂停 seek 末次同步、原实例绑定、有限重试、单实例唤回及退出等待，47/47 通过。preload 生成关系另由 `tests/preload-preparation.test.cjs` 验证。
 
