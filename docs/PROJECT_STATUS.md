@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-23 — 页面缓存显式测试入口与强制新profile
+
+补齐可用于新测试包的真实启动参数→main→prepared preload→Home工厂入口，普通启动继续关闭；enabled/disabled对照均要求显式测试TTL、容量及全新profile，不新增产品默认。Windows且app未ready时先验证当前runtime路径、关键源码/预加载包内来源身份和物理目录，再于bootstrap/身份/日志写入前分配独立临时根，设置Electron数据/session/logs/temp/crash目录和当前进程环境；旧位置参数不能覆盖测试userData。绕开Host/普通安装入口，无新IPC、安全/系统环境更改或凭据传输。来源自检是有限关键文件绑定，不代替新包完整VerifyOnly。命令、拒绝边界及Windows验收步骤见[测试启动合同](PAGE_CACHE_TEST_ENTRY.md)。
+
+19个文件定向集合247/247，0失败/取消/跳过；含配置缺失/重复/越界/额外参数拒绝、链接/来源篡改拒绝、真实文件系统新profile与正式配置sentinel保持、实际启动代码片段/生成preload块、启用/关闭Home工厂与账号/session隔离、来源及相邻页面回归。Electron对象/Windows执行文件/DOM/网络仍为夹具，未运行Windows整包或GUI，不宣称性能提升。当前可交父协调独立新测试包及Windows自动验收，之后仅需可见焦点/滚动等人工体验；未推送/触发工作流、安装、合main或发布。
+
 ## 2026-10-23 — 页面缓存功能包准备评估
 
 核对独立分支功能提交ed571338及现有云打包入口：真实首页布局适配已完成且170项定向回归通过，但生产工厂未传pageCacheOptions，没有可开启该功能的包内安全测试入口。现阶段不申请功能验收包，不用关闭状态包冒充开启路径验收；不新增未定TTL/容量或启动IPC。现有测试安装器仍共用AppId/部分profile，独立文件名不等于可与正式安装共存，后续须空白Windows VM隔离。父线程可用的精确功能来源、release_package=false参数、artifact不覆盖约束、正式任务优先顺序和最短验收清单见[测试包准备评估](PAGE_CACHE_PACKAGE_READINESS.md)。本轮只读核对与文档交接，未触发workflow、推送、安装、访问真实数据或尝试已拒入口；未出现本任务审批拒绝。

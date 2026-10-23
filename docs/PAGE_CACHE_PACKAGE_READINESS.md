@@ -1,20 +1,20 @@
 # 页面缓存测试包准备评估
 
-当前功能来源为 `ed5713384bc709b32d1f1d11a0edfd6ef9874aa1`，独立分支 `feature/page-cache`，基线 `6858c71103605ff66c630f1cd7e1e9fdbdeab000`。后续文档提交不改变这次功能实现身份。正式 v0.4.0 仍优先，真实发布点确定后再重基和重新验证；不把其他功能或正式发布任务混入本分支。
+第二阶段历史功能来源为 `ed5713384bc709b32d1f1d11a0edfd6ef9874aa1`；新增测试入口以本分支最终commit及新artifact.sourceCommit为准，独立分支 `feature/page-cache`，基线 `6858c71103605ff66c630f1cd7e1e9fdbdeab000`。后续文档提交不改变这次功能实现身份。正式 v0.4.0 仍优先，真实发布点确定后再重基和重新验证；不把其他功能或正式发布任务混入本分支。
 
-**结论：具备默认关闭的真实源码接线和隔离合成集成测试，但暂不具备可开启该功能的包内安全测试开关。当前不申请功能验收包构建；不能用关闭状态安装包冒充缓存功能验收。**
+**更新：源码级安全测试入口现已补齐。** 本页保留上一轮包准备评估和既有构建参数；“无包内入口”的缺口由[隔离启动合同](PAGE_CACHE_TEST_ENTRY.md)中的显式参数与全新profile接线取代。当前可以准备独立新测试包，但尚未运行Windows Electron/完整GUI，不能将代码回归称为包验收。
 
 ## 证据和缺口
 
 | 项目 | 当前事实 |
 | --- | --- |
 | 页面接线 | HomeTab → home controller → provider → 安全投影布局缓存已接，源码默认关闭。内容 Items、图片、播放及认证请求不缓存。 |
-| 测试 | 精确功能版本有170/170定向/相邻回归、419个JS语法和有限凭据模式检查；精确提交物化的4个home/cache文件逐字节一致。实际API/CM与合成Fetch、DOM/事件替身的范围见[适配合同](PAGE_CACHE_HOME_ADAPTER.md)。没有Windows整包/GUI/真实性能证据。 |
-| 可开启入口 | [`home-tab.js`](../src/electronapp/enhanced/home/home-tab.js) 接受 dependencies.pageCacheOptions；[`patch-server-home.cjs`](../tools/patch-server-home.cjs) 的实际调用只传legacy/loading/focus/connection，未传缓存配置。适配器需要显式enabled和TTL；没有设置、CLI、环境变量或包内测试配置入口。 |
+| 测试 | 第二阶段历史功能版本有170/170定向/相邻回归；新增入口与相邻合同247/247、0失败/跳过，静态检查另按最终提交记录；精确提交物化的4个home/cache文件逐字节一致。实际API/CM与合成Fetch、DOM/事件替身的范围见[适配合同](PAGE_CACHE_HOME_ADAPTER.md)。没有Windows整包/GUI/真实性能证据。 |
+| 可开启入口 | [`home-tab.js`](../src/electronapp/enhanced/home/home-tab.js) 接受 dependencies.pageCacheOptions；[`patch-server-home.cjs`](../tools/patch-server-home.cjs) 的实际调用只传legacy/loading/focus/connection，未传缓存配置。适配器需要显式enabled和TTL；原评估时没有CLI入口；现新增main启动参数→prepared preload→Home工厂接线，正常启动继续关闭，见隔离启动合同。 |
 | 默认与未定规格 | 不新增产品TTL/容量选择；现有工程限额、测试TTL不能当产品默认。不能靠篡改生成runtime、跳过provenance或临时改已验包文件启用。 |
 | 隔离 | [`ci-windows-test-package.ps1`](../tools/ci-windows-test-package.ps1) 生成含commit/run的独立安装器名，并拒绝已有输出。独立文件名不等于安装隔离：[`installer`](../installer/EmbyTheaterEnhanced.iss) 仍使用同一AppId、默认目录和UsePreviousAppDir。 |
-| profile | [`bootstrap.js`](../src/electronapp/enhanced/bootstrap.js) 在appData/EmbyTheaterEnhanced下创建配置/身份；生成Host配置使用相同ApplicationData根。main稍后接受userData参数，不能据此宣称早期bootstrap/Host也被隔离。修改普通启动参数或仅换安装目录不足以证明全部隔离。 |
-| 当前操作 | 没有触发workflow、上传分支、安装/启动程序、访问真实NAS或账户；没有尝试任何被拒入口。这是工程准备条件不足，不是本任务发生了审批拒绝。 |
+| profile | [`bootstrap.js`](../src/electronapp/enhanced/bootstrap.js) 在appData/EmbyTheaterEnhanced下创建配置/身份；生成Host配置使用相同ApplicationData根。普通main稍后接受userData参数，不足以隔离早期bootstrap/Host。新显式测试入口在bootstrap之前设置独立Electron路径与进程环境，并直接启动Electron避开Host，具体边界见隔离启动合同。 |
+| 当前操作 | 没有触发workflow、上传分支、安装/启动程序、访问真实NAS或账户；没有尝试任何被拒入口。本次未发生审批拒绝；Windows包/运行与性能尚未执行。 |
 
 ## 给父线程的构建参数（条件满足后）
 
@@ -25,9 +25,9 @@
 - job：`manual-windows-test-package`，Windows2022、Node24.18.1；入口为 `tools/ci-windows-test-package.ps1 -ReleasePackage:$false`，从干净checkout按当前提交准备固定输入、构建并验证本runner Host，再跑回归、构建、VerifyOnly与安装器解包逐文件比对。
 - 唯一产物名：`ete-test-win-x64-<github.sha>-<run_id>-<attempt>`；安装器含`-test-<sha前12位>-<run>-win-x64-setup`，输出路径`test-output/manual-windows-package`必须全新。保留原artifact/run，不覆盖任何既有附件或正式包。
 - 现有手动job与正式手动构建共用concurrency group；由父协调排在正式v0.4.0任务之后，不取消或抢占正式run。
-- 当前版本直接跑上述入口最多只能得到**关闭状态组装冒烟包**，不能验证缓存命中分支。只有补齐并审阅安全测试入口、绑定新的来源commit并完成其回归后，才改为功能验收候选。这里仅交接参数，没有实际触发或宣称云构建成功。
+- 本分支新增的测试入口必须随精确来源新构建；完整包验证后按隔离启动合同在独立解包runtime运行显式参数。这里仅交接参数，没有实际触发或宣称云构建成功。
 
-最小后续方案：若要验收开启分支，应由独立测试启动器在可确认的空白隔离环境中给原Home工厂提供显式、有限的验收配置，正常启动保持关闭；所有新增受消费输入必须进入来源/生成合同。先明确该入口及包身份方案，不为本轮打包评估扩展设置页、持久化偏好或产品TTL。本轮没有实现或批准某种IPC/环境变量/调试注入方案。
+已实施方案：只读验证显式有限参数与包内关键身份，在bootstrap之前分配全新临时profile并设置Electron路径及当前进程环境，原preload把有限选项送到Home工厂；没有新增IPC或修改安装器。启动命令、拒绝范围及Windows未验项见[隔离启动合同](PAGE_CACHE_TEST_ENTRY.md)。
 
 ## 自动与人工验收清单（尚未执行）
 

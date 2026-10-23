@@ -7,13 +7,13 @@
 | 接线 | 源码中的实际行为 | 本轮验证 |
 | --- | --- | --- |
 | HomeTab 入口 | 现有固定 overlay 仍加载 `enhanced/home/home-tab.js`，该维护模块新增对 `page-cache/home-layout-cache.js` 的相对 AMD 依赖。原 CardBuilder/router/connection 依赖与 owner 保留。 | 固定 HomeTab/app overlay 材料回归；维护 AMD 依赖图及 canonical events 单例检查。 |
-| 开关 | Home controller 的 `dependencies.pageCacheOptions` 可注入 `{enabled:true, ttlMs, ...limits}`。正式调用点没有传此参数，因此默认关闭；即使 enabled=true，未给 TTL 也不启用。关闭时不实例化数据缓存、不订阅事件、不改 API 方法。 | 默认关闭和无 TTL 的两次读取都实际走两次合成 GET；无新增监听器。 |
+| 开关 | Home controller 的 `dependencies.pageCacheOptions` 可注入 `{enabled:true, ttlMs, ...limits}`。普通调用点没有传此参数，因此默认关闭；显式隔离测试启动可经prepared preload传入选项；即使 enabled=true，未给 TTL 也不启用。关闭时不实例化数据缓存、不订阅事件、不改 API 方法。 | 默认关闭和无 TTL 的两次读取都实际走两次合成 GET；无新增监听器。 |
 | 布局读取 | enabled 时 provider 只把 `prepareSections` 投影交给缓存，命中后再校验、冻结并分配本轮 WeakMap owner/随机种子；原始响应中的任意扩展、令牌、URL、Path、QueryOptions、UserData 不进入缓存。 | 原始合成响应带独立 canary，首次/命中输出和 stats 无 canary；未知/错误 schema 不缓存。 |
 | 返回与刷新 | 同一个 HomeTab 的 pause/resume 保留成功布局、取消在途订阅；内容分区照常重新 GET。显式 refresh、resume({refresh:true}) 和外部 clear 先 invalidate；dispose 清数据和移除本适配器监听器。HomeTab 被销毁后不会跨实例复用。 | controller + provider + cache 的返回、显式刷新、过期、旧导航、销毁测试。DOM 与 itemscontainer 为测试替身。 |
 | 身份 | 每次读取/交付核对当前 API 对象、server、user、isLoggedIn、既有 `_identityEpoch`；locale/服务端版本也分界。切换后创建新的空 session 绑定。启用路径的 provider section owner、Home 页面票据和已提交 stage 同样核对认证代次。 | 真正维护版 AMD ApiClient 的 setAuthenticationInfo/serverInfo、真实 CM logout、同用户重登、切用户/服务器/client；合成传输。 |
 | 事件 | 原 CM 的 localusersignedin/localusersignedout/connected 清身份和缓存；原 API 的 message(UserDataChanged/LibraryChanged/UserUpdated/UserConfigurationUpdated) 与 websocketopen/websocketclose 失效。只读 MessageType，不读取或保留 Data。 | 真 ApiClient 收藏/已看/未看成功写发出的 UserDataChanged；其余事件通过真 events 模块合成派发。 |
 
-开关只是源码级依赖注入接口，**没有新增可见设置页、持久化偏好、环境变量入口或默认开启策略**。测试使用 100ms/10000ms 等 TTL；产品 TTL、容量和正式启用方式仍待用户确认。工程容量护栏沿用[首版方案](PAGE_DATA_CACHE.md)，本阶段没有将其认定为产品预算。
+最初开关只有源码级依赖注入；现补齐[显式隔离测试启动参数](PAGE_CACHE_TEST_ENTRY.md)，正常启动仍关闭，**没有新增可见设置页、持久化偏好或默认开启策略**。测试使用 100ms/10000ms 等 TTL；产品 TTL、容量和正式启用方式仍待用户确认。工程容量护栏沿用[首版方案](PAGE_DATA_CACHE.md)，本阶段没有将其认定为产品预算。
 
 ## 认证和写后失效的准确边界
 
@@ -75,4 +75,4 @@ node --test tests/page-data-cache.test.cjs tests/home-layout-cache-integration.t
 
 Home controller 测试运行真实维护 controller、provider、adapter、cache，document/itemscontainer/卡片为测试替身；另有固定 HomeTab overlay 与原动态导入别名合同、维护 AMD 图加载测试。它们不是完整 Alameda/客户端 GUI 运行、真实服务端登录/通知或原生滚动视觉证据。没有实际播放器、用户账户数据、NAS、安装器或系统配置操作，没有性能提升数字或命中率结论。
 
-后续：确认 TTL/容量和首批功能范围；在真实 v0.4.0 发布点重基、复核全部来源/overlay与上述认证代次合同；有明确启用授权后再做隔离完整 runtime 的设置入口、真实返回滚动及请求计数验收。媒体列表、详情与内容 DTO 缓存继续未接入。
+后续：确认 TTL/容量和首批功能范围；在真实 v0.4.0 发布点重基、复核全部来源/overlay与上述认证代次合同；当前已实现并获授权的显式测试CLI见[隔离启动合同](PAGE_CACHE_TEST_ENTRY.md)，后续做独立新包的Windows完整runtime、真实返回滚动及请求计数验收，不把测试参数认作产品设置。媒体列表、详情与内容 DTO 缓存继续未接入。

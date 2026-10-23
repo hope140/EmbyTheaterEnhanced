@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-23 — 默认关闭的页面缓存测试CLI落地
+
+新增test-options有限配置解析与test-session启动隔离模块；只有四项显式参数同时合法才启用测试模式，拒绝内部renderer配置直接作为应用参数、额外profile/调试/安全参数及未知字段。main在bootstrap前调用，要求Windows/未ready/当前runtime的Electron和app目录，通过包内关键source/preload身份自检后仅分配全新临时根，不接受复用路径或读取账户。当前进程appData/userData/sessionData/logs/temp/crashDumps及相关环境指向新根；晚期userData处理保持测试归属。原BrowserWindow仅在测试模式追加有限renderer参数，prepared preload立即验证并冻结选项，Home工厂消费；普通路径不创建测试目录或设置窗口选项。生成器沿既有build-input/prepared-artifact合同进入来源，原模板与vendor只读，无Host/安装器/API/播放所有权改动。
+
+最终19文件回归247/247、0失败/取消/跳过。真实Node文件/hash/路径检查与bootstrap、提取的实际main片段、生成preload块及真实Home/API/cache执行，Electron/Windows文件身份和DOM/Fetch替身边界明确；另验证两测试renderer相同账号字符串不共享数据。文档提供独立解包runtime的enabled/disabled命令、显式测试参数、包内PREPARED回执不等于GUI/命中通过、父协调Windows自动验收与最短人工体验清单。未触发打包、启动/安装程序或接触用户服务，未用旧包补丁绕过来源校验。详见[隔离测试入口](PAGE_CACHE_TEST_ENTRY.md)。
+
 ## 2026-10-23 — 页面缓存独立测试包就绪度核对
 
 按新测试包授权核对Home工厂实参、适配器双门槛、手动workflow输入/并发组、固定构建脚本、安装器AppId及bootstrap/Host/userData时序。当前只有源码依赖注入开关，打出的普通包保持关闭；安装器名含sha/run但AppId/profile仍沿产品合同。故不把已有源码集成称为可开启的功能测试包，不触发或排队共享打包作业。交接现有ref/精确commit核对、release_package=false、fresh-checkout/不覆盖artifact以及隔离VM和人工四项清单，具体见[评估](PAGE_CACHE_PACKAGE_READINESS.md)。本次没有产品/构建脚本变更或重新执行先前170项测试；文档检查单独记录，真实包、运行及性能仍未执行。

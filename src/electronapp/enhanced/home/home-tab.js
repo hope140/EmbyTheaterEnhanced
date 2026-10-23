@@ -28,7 +28,8 @@
         var document = dependencies.document || owner.view.ownerDocument;
         var renderer = dependencies.cards || cards, layoutManager = dependencies.layout || layout, locale = dependencies.globalize || globalize;
         var navigation = dependencies.router || router;
-        var layoutCache = cacheModule.create(connection, dependencies.pageCacheOptions, dependencies.events);
+        var testOptions = typeof window === 'object' && window.__etePageCacheTestOptions;
+        var layoutCache = cacheModule.create(connection, dependencies.pageCacheOptions || testOptions, dependencies.events);
         var provider = serverSections.createProvider(function() { return connection.currentApiClient(); }, {layoutCache: layoutCache.enabled ? layoutCache : null});
         var identityClock = dependencies.identityClock || {now: Date.now, setTimeout: setTimeout, clearTimeout: clearTimeout};
         var waits = new Set();

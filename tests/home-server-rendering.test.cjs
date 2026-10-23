@@ -50,7 +50,7 @@ class Items extends Element {
 }
 function sections() { return [{Id: 'first', SectionType: 'resume', Name: '<unsafe>', Monitor: ['videoplayback', 'markplayed']},
     {Id: 'second', SectionType: 'latestmedia', Name: 'Recent', CollectionType: 'movies'}]; }
-function fixture(handler, identityClock, cacheOptions) {
+function fixture(handler, identityClock, cacheOptions, rendererWindow) {
     const document = {activeElement: null, createElement(tag, options) { const element = new Element(document, tag); element.customType = options && options.is; if (element.customType) element.classList.add('native-constructor-class'); return element; }};
     const view = new Element(document), root = document.createElement('div'); root.className = 'sections'; view.appendChild(root);
     const cards = Object.freeze({id: 'original-cards'}), calls = [], legacy = [], focus = [], loading = [], routes = [];
@@ -70,11 +70,18 @@ function fixture(handler, identityClock, cacheOptions) {
         focus: {autoFocus: () => focus.push('auto'), focus: element => focus.push(element)},
         connection: {currentApiClient: () => client}};
     if (identityClock) deps.identityClock = identityClock;
-    if (cacheOptions) {
-        deps.pageCacheOptions = cacheOptions;
+    if (cacheOptions || rendererWindow) {
+        if (cacheOptions) deps.pageCacheOptions = cacheOptions;
         deps.events = require('./helpers/api-client-amd.cjs').harness().load('events.js').default;
     }
-    const controller = bridge.create(owner, deps);
+    let controller;
+    const previousWindow = global.window;
+    try {
+        if (rendererWindow) global.window = rendererWindow;
+        controller = bridge.create(owner, deps);
+    } finally {
+        if (previousWindow === undefined) delete global.window; else global.window = previousWindow;
+    }
     return {owner, root, api, document, cards, calls, legacy, focus, loading, routes, deps, controller,
         version(value) { version = value; }, user(value) { user = value; }, switchClient() { client = {...api}; }};
 }
@@ -448,4 +455,38 @@ test('opt-in active HomeTab does not reuse a committed stage across locale/versi
     f.version('4.10.0.41'); await f.controller.resume();
     assert.equal(f.calls.filter(c => c.request.route.endsWith('/HomeSections')).length, 3);
     f.controller.dispose();
+});
+
+
+test('test preload options reach the real Home factory with no injected cache dependency option', async () => {
+    const options = require('../src/electronapp/enhanced/page-cache/test-options');
+    for (const enabled of [true, false]) {
+        const window = {};
+        options.install(window, [options.rendererArgument({enabled, ttlMs: 10000, maxEntries: 2, maxBytes: 4096})]);
+        const f = fixture(null, null, null, window);
+        assert.equal(f.deps.pageCacheOptions, undefined);
+        await f.controller.resume(); f.controller.pause(); await f.controller.resume();
+        assert.equal(f.calls.filter(c => c.request.route.endsWith('/HomeSections')).length, enabled ? 1 : 2);
+        if (enabled) {
+            f.user('new-user'); await f.controller.resume();
+            assert.equal(f.calls.filter(c => c.request.route.endsWith('/HomeSections')).length, 2, 'test entry rejects the prior account');
+        }
+        f.controller.dispose();
+    }
+});
+test('two test renderer sessions never share layout data even with identical account/server strings', async () => {
+    const options = require('../src/electronapp/enhanced/page-cache/test-options');
+    function start() {
+        const window = {}; options.install(window, [options.rendererArgument({enabled: true, ttlMs: 10000, maxEntries: 2, maxBytes: 4096})]);
+        return fixture(null, null, null, window);
+    }
+    const a = start(), b = start(); await a.controller.resume(); await b.controller.resume();
+    a.controller.pause(); await a.controller.resume(); b.controller.pause(); await b.controller.resume();
+    assert.equal(a.calls.filter(c => c.request.route.endsWith('/HomeSections')).length, 1);
+    assert.equal(b.calls.filter(c => c.request.route.endsWith('/HomeSections')).length, 1);
+    a.user('other-user'); await a.controller.resume();
+    b.controller.pause(); await b.controller.resume();
+    assert.equal(a.calls.filter(c => c.request.route.endsWith('/HomeSections')).length, 2);
+    assert.equal(b.calls.filter(c => c.request.route.endsWith('/HomeSections')).length, 1);
+    a.controller.dispose(); b.controller.dispose();
 });
