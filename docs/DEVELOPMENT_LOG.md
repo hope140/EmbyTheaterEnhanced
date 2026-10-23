@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-23 — 缓存服务器origin及资源表示隔离
+
+复核补齐真实存储命名空间：服务器ID和API origin组合，资源路径及未知查询的原编码/重复顺序参与表示身份；只忽略已知Emby认证与会话参数。这样复制serverId的另一origin，或不同URI复用同ETag，不能混用缓存。已过期token必须被真实HTTP响应拒绝，续期token新验证后才可消费原完整对象。新增2项origin/URI隔离验证，当前相关223/223通过、0跳过（应用运行链路23项）；前一221项结果保留。未增加真实服务访问或默认开启。
+
 ## 2026-10-23 — 缓存试验进程路径隔离补齐
 
 复核发现preload会读取APPDATA、helper会继承MPV_HOME；现仅在合法显式试验启动时、Electron ready/bootstrap前，将appData/userData/sessionData及本进程APPDATA/LOCALAPPDATA/MPV_HOME统一指向已创建并验证归属的试验目录。普通关闭路径不改值，不写系统环境、不复制个人配置。新增1项激活/关闭对照，当前回归221/221通过、0跳过（运行链路21项）；此前220项是前一提交结果。Windows固定Electron启动和真实播放继续待独立产物验收。

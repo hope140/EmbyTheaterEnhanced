@@ -17,12 +17,12 @@ function createRuntime(options) {
     const approved = new Set(), controllers = new Set(), leases = new Set(), watched = new WeakSet(), used = new WeakMap();
     let context = null, closed = false, state = 'idle', downloading = false;
     function cancelPending() { for (const c of controllers) c.abort(); scheduler.cancel(); if (downloading) state = 'cancelled'; }
-    function key(c) { return hash([c.serverId, c.accountId, c.itemId, c.mediaSourceId, c.origin]); }
+    function key(c) { return hash([c.serverId, c.accountId, c.itemId, c.mediaSourceId, c.origin, c.resource]); }
     function current(c) { return !closed && context === c && !c.helper.exited && !c.helper.transportTerminated && c.helper.currentGenerationId === c.generationId; }
     function release(record) { if (!record.released) { record.released = true; record.lease.release(); leases.delete(record); } }
     function bind(c, probe) {
-        return {identity: {serverId: c.serverId, accountId: c.accountId, itemId: c.itemId, mediaSourceId: c.mediaSourceId,
-            versionId: probe.strongETag, representationId: 'direct-file/identity'},
+        return {identity: {serverId: hash([c.serverId, c.origin]), accountId: c.accountId, itemId: c.itemId, mediaSourceId: c.mediaSourceId,
+            versionId: probe.strongETag, representationId: 'direct-file/identity:' + c.resource},
         proof: {authorized: true, mode: 'direct-file', rangeSupported: true, contentLength: probe.total,
             strongETag: probe.strongETag, validUntil: Date.now() + download.authorizationMaxAgeMs}};
     }
@@ -44,8 +44,17 @@ function createRuntime(options) {
             const url = new URL(value.source), origin = new URL(value.serverOrigin).origin;
             if (!['http:', 'https:'].includes(url.protocol) || url.origin !== origin || url.username || url.password || url.hash ||
                 value.source.length > 8192 || !helper.exitPromise) return false;
+            // Only known Emby authentication/session parameters are equivalent.
+            // Unknown signing/representation fields stay distinct, conservatively.
+            const transient = new Set(['api_key', 'x-emby-token', 'playsessionid']);
+            const query = url.search.slice(1).split('&').filter(part => {
+                try { return !transient.has(decodeURIComponent(part.split('=')[0]).toLowerCase()); }
+                catch { return true; }
+            }).join('&');
+            // Preserve unknown fields' raw encoding and repeated-field order.
+            const resource = hash([url.pathname, query]);
             context = Object.freeze({serverId: value.serverId, accountId: value.accountId, itemId: value.itemId, mediaSourceId: value.mediaSourceId,
-                playSessionId: value.playSessionId, source: value.source, origin, helper, generationId});
+                playSessionId: value.playSessionId, source: value.source, origin, resource, helper, generationId});
             if (!watched.has(helper)) {
                 watched.add(helper); helper.exitPromise.then(() => { for (const record of [...leases]) if (record.helper === helper) release(record); }, () => {});
             }

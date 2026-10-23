@@ -23,17 +23,17 @@
 
 下载与命中都要求精确206、Content-Range/总长、Content-Length、identity编码及强ETag。拒绝200/416、未知/超额长度、弱/仅日期validator、multipart、no-store及未知Vary；只接受无Vary或仅Accept-Encoding。所有chunk完整验证后才提交；中断只保留此前checkpoint，须再次显式确认才能续写。遵守no-store并保守限制Vary的依据见 [RFC 9111](https://www.rfc-editor.org/rfc/rfc9111.html#section-5.2.2.5)。
 
-每个chunk使用刚完成的真实响应产生短期proof，再复用相同ETag/长度/身份的writer；这没有伪造服务器授权期限。版本ID来自强ETag，服务器/账号/Item/MediaSource/representation均参与磁盘hash索引。原始URL、token、账号ID、session和ETag不进入缓存元数据；媒体正文是明文。当前进程只有用户确认过的对象才允许自动尝试命中。重启后需再次确认以新授权重新认可既有完整对象，可以复用磁盘字节但不会自动扫描/下载媒体。
+每个chunk使用刚完成的真实响应产生短期proof，再复用相同ETag/长度/身份的writer；这没有伪造服务器授权期限。版本ID来自强ETag，服务器ID与API origin组合隔离；账号、Item、MediaSource及资源路径/查询表示均参与磁盘hash索引。只移除已知api_key、X-Emby-Token、PlaySessionId，未知查询参数保留原编码及重复字段顺序；不把不同URI的相同ETag当同一对象。原始URL、token、账号ID、session和ETag不进入缓存元数据；媒体正文是明文。当前进程只有用户确认过的对象才允许自动尝试命中。重启后需再次确认以新授权重新认可既有完整对象，可以复用磁盘字节但不会自动扫描/下载媒体。
 
 TTL控制新命中与有归属的机会清理（启动、后续写入/配额回收）；不承诺闲置关闭应用时按秒删除。实际活动lease继续按helper/generation/mediaIdentity和exitPromise释放。同步磁盘/hash仍仅适合上述小型试验上限，不能宣称已完成大影片生产缓存或无抖动性能验证。下一集调度基础仍是前期原型，没有增加自动下一集下载。
 
 ## 自动证据
 
-`tests/playback-cache-runtime.test.cjs` 的21项含：启动缺项/隔离、现有ApiClient身份捕获与切账号失效、真实确认快捷键/取消快捷键、原生暂停属性/确认门禁、完整下载、换签URL后完整本地源消费、跨账号/服务器/版本拒绝、Range/长度/缓存指令拒绝、中断与重确认续传、恢复/取消/Stop/Next/退出回收、对话框目标换代。全部HTTP由本测试进程的 `127.0.0.1` 临时端口提供，正文为60-byte合成PCM WAV，模拟helper实际从命中路径读出完全相同字节；无真实账号/媒体/NAS或外部目标下载。
+`tests/playback-cache-runtime.test.cjs` 的23项含：启动缺项/隔离、现有ApiClient身份捕获与切账号失效、真实确认快捷键/取消快捷键、原生暂停属性/确认门禁、完整下载、已知认证URL续期后完整本地源消费、跨账号/服务器/版本拒绝、复制serverId的不同origin及同ETag不同URI隔离、Range/长度/缓存指令拒绝、中断与重确认续传、恢复/取消/Stop/Next/退出回收、对话框目标换代。全部HTTP由本测试进程的 `127.0.0.1` 临时端口提供，正文为60-byte合成PCM WAV，模拟helper实际从命中路径读出完全相同字节；无真实账号/媒体/NAS或外部目标下载。
 
 端到端正常路径首先恰好传输60字节正文，下次播放只再读1字节校验，再由维护service分派本地对象。它证明网络字节与完整source链路，**不是Windows固定DLL解码、可见帧、声音、字幕、Session服务器回报或缓冲延迟实测**。status使用固定值 `ready`、`local-source-selected`、`local-media-opened`、`original-source-fallback`，不报告媒体标识/URL；`local-media-opened`也不等于已显示视频帧。
 
-本阶段Node24.18.1/Linux相关回归221/221通过、0跳过；此前189及120项属于之前阶段，不能复用作本次Windows产物证据。测试命令：
+本阶段Node24.18.1/Linux相关回归223/223通过、0跳过；此前189及120项属于之前阶段，不能复用作本次Windows产物证据。测试命令：
 
 ```sh
 node --test tests/playback-cache-*.test.cjs tests/native-helper-*.test.cjs tests/strm-resolver.test.cjs tests/nexttrack-transition.test.cjs tests/mpv-kernel-service.test.cjs tests/mpv-kernel-bootstrap.test.cjs tests/libmpv-stats.test.cjs tests/renderer-boundary.test.cjs

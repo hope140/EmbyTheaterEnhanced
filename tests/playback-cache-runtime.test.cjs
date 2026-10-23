@@ -101,7 +101,7 @@ async function setup(t, change = {}) {
     let mode = 'valid', tag = '"file-one"', bytesSent = 0, confirms = 0, confirm = async () => true;
     const server = http.createServer((req, res) => {
         requests.push({url: req.url, headers: req.headers});
-        if (new URL(req.url, 'http://fixture').searchParams.get('api_key') !== 'synthetic-only') { res.writeHead(403); res.end(); return; }
+        if (!['synthetic-only', 'synthetic-renewed'].includes(new URL(req.url, 'http://fixture').searchParams.get('api_key'))) { res.writeHead(403); res.end(); return; }
         if (mode === 'redirect') { res.writeHead(302, {Location: 'http://192.0.2.1/must-not-follow'}); res.end(); return; }
         const m = /^bytes=(\d+)-(\d+)$/.exec(req.headers.range || ''), start = m && Number(m[1]), end = m && Number(m[2]);
         if (!m || mode === 'ignore' || (req.headers['if-range'] && req.headers['if-range'] !== tag)) { res.writeHead(200); res.end(media()); return; }
@@ -112,12 +112,14 @@ async function setup(t, change = {}) {
         res.writeHead(206, headers);
         if (mode === 'stall') { res.flushHeaders(); entered.resolve(); return; }
         if (mode === 'interrupt' && start > 0) { res.write(media().subarray(start, start + 2)); setImmediate(() => res.destroy()); return; }
-        const bytes = media().subarray(start, end + 1); bytesSent += bytes.length; res.end(bytes);
+        const representation = media(); if (req.url.startsWith('/variant')) representation[44] = 1;
+        const bytes = representation.subarray(start, end + 1); bytesSent += bytes.length; res.end(bytes);
     });
     server.on('connection', socket => { sockets.add(socket); socket.once('close', () => sockets.delete(socket)); });
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     f.cleanup(async () => { const exits = [...sockets].map(s => new Promise(r => s.once('close', r))); const closed = new Promise(r => server.close(r)); server.closeAllConnections(); await Promise.all([closed, ...exits]); assert.equal(sockets.size, 0); });
     const origin = `http://127.0.0.1:${server.address().port}`;
+    let apiOrigin = origin;
     const runtime = createRuntime({enabled: true, parent: f.parent, config: change.config || config()});
     const main = new Window(); let owned;
     class Client extends Helper { constructor(options) { super(options); owned = this; } }
@@ -127,9 +129,9 @@ async function setup(t, change = {}) {
     f.cleanup(() => service.destroy());
     const created = await service.call('create'); let gen, epoch = 0;
     function context(extra = {}) {
-        const api = {serverId: () => 'fixture-server', getCurrentUserId: () => 'fixture-account', serverAddress: () => origin};
+        const api = {serverId: () => 'fixture-server', getCurrentUserId: () => 'fixture-account', serverAddress: () => apiOrigin};
         const capture = contextProvider.capture({getApiClient: () => api}, {ServerId: 'fixture-server', Id: 'fixture-item'}, {Id: 'source-version'},
-            {playMethod: 'DirectPlay', playSessionId: 'actual-mock-session'}, origin + '/video?api_key=synthetic-only');
+            {playMethod: 'DirectPlay', playSessionId: 'actual-mock-session'}, apiOrigin + '/video?api_key=synthetic-only');
         return {...capture(), ...extra};
     }
     async function play(extra) {
@@ -139,6 +141,7 @@ async function setup(t, change = {}) {
     }
     return {...f, runtime, service, owned, created, origin, requests, entered, context,
         play, current: () => gen, mode: value => { mode = value; }, tag: value => { tag = value; },
+        switchOrigin: value => { apiOrigin = value; },
         confirms: () => confirms, confirm: fn => { confirm = fn; }, bytesSent: () => bytesSent,
         download: () => service.call('cache-download', {generationId: gen}, created.endpointId),
         pause: value => service.call('set-property', {generationId: gen, name: 'pause', value}, created.endpointId)};
@@ -149,7 +152,8 @@ test('explicit confirmation and actual paused property gate download; complete d
     assert.equal((await f.download()).state, 'unavailable'); assert.equal(f.confirms(), 0);
     await f.pause(true); f.confirm(async () => false); assert.equal((await f.download()).state, 'cancelled'); assert.equal(f.requests.length, 0);
     f.confirm(async () => true); assert.equal((await f.download()).state, 'ready'); assert.equal(f.bytesSent(), media().length);
-    await f.play({source: f.origin + '/video?api_key=synthetic-only&signed=renewed', playSessionId: 'new-current-session'});
+    await f.play({source: f.origin + '/video?api_key=expired-token'}); assert.equal(f.owned.loads.at(-1).bytes, null);
+    await f.play({source: f.origin + '/video?api_key=synthetic-renewed', playSessionId: 'new-current-session'});
     const hit = f.owned.loads.at(-1); assert.match(hit.args[1], /[a-f0-9]{64}\.bytes$/); assert.equal(hit.bytes.equals(media()), true);
     assert.equal(f.service.status().cacheTrial.state, 'local-media-opened');
     assert.equal(f.bytesSent(), media().length + 1); assert.equal(f.runtime.status().activeRequests, 0);
@@ -164,6 +168,32 @@ test('other account/server or changed validator cannot consume the approved prio
     await f.play({accountId: 'different-user'}); assert.equal(f.owned.loads.at(-1).bytes, null); assert.equal(f.requests.length, before);
     await f.play({serverId: 'different-server'}); assert.equal(f.owned.loads.at(-1).bytes, null); assert.equal(f.requests.length, before);
     f.tag('"new-version"'); await f.play(); assert.equal(f.owned.loads.at(-1).bytes, null);
+});
+
+test('same server/account IDs and ETag at another API origin cannot reuse the previous server bytes', async t => {
+    const f = await setup(t); await f.play(); await f.pause(true); await f.download();
+    let sent = 0; const payload = media(); payload[44] = 2;
+    const sockets = new Set(); const server = http.createServer((req, res) => {
+        const range = /^bytes=(\d+)-(\d+)$/.exec(req.headers.range), start = Number(range[1]), end = Number(range[2]);
+        const bytes = payload.subarray(start, end + 1); sent += bytes.length;
+        res.writeHead(206, {'Content-Range': `bytes ${start}-${end}/60`, 'Content-Length': bytes.length, ETag: '"file-one"'}); res.end(bytes);
+    });
+    server.on('connection', s => { sockets.add(s); s.once('close', () => sockets.delete(s)); });
+    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+    f.cleanup(async () => { const exits = [...sockets].map(s => new Promise(r => s.once('close', r))); const closing = new Promise(r => server.close(r)); server.closeAllConnections(); await Promise.all([closing, ...exits]); });
+    f.switchOrigin(`http://127.0.0.1:${server.address().port}`);
+    await f.play(); assert.equal(f.owned.loads.at(-1).bytes, null); assert.equal(sent, 0);
+    await f.pause(true); assert.equal((await f.download()).state, 'ready'); assert.equal(sent, 60);
+    await f.play(); assert.equal(f.owned.loads.at(-1).bytes.equals(payload), true);
+});
+
+test('different resource paths or unknown query parameters are distinct even with identical ETag and item/source IDs', async t => {
+    const f = await setup(t); await f.play(); await f.pause(true); await f.download();
+    await f.play({source: f.origin + '/variant?api_key=synthetic-only'}); assert.equal(f.owned.loads.at(-1).bytes, null);
+    await f.pause(true); assert.equal((await f.download()).state, 'ready'); await f.play({source: f.origin + '/variant?api_key=synthetic-only'});
+    const expected = media(); expected[44] = 1; assert.equal(f.owned.loads.at(-1).bytes.equals(expected), true);
+    await f.play({source: f.origin + '/variant?api_key=synthetic-only&unknown-format=different'});
+    assert.equal(f.owned.loads.at(-1).bytes, null);
 });
 
 test('redirect, ignored Range, unknown/oversize length, no-store and date-only validators stay ineligible', async t => {
