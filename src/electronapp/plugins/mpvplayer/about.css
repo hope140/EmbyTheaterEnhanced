@@ -14,7 +14,7 @@
 .about-settings-page .aboutDownloadProgress { display: block; width: 100%; margin-block: .8em; }
 .about-settings-page .aboutDownloadProgress[hidden] { display: none; }
 
-.about-settings-page .about-update .ete-settings-button {
+.about-settings-page .about-update .aboutReleaseLink {
     margin-top: .45em;
     padding-inline: 0;
 }
