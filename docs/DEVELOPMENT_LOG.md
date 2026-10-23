@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-23 — EWT 完整普通／显式材料验证闭环
+
+在 9491909 上普通全套 1629 项为 1619 pass／0 fail／10 个既有 Linux 平台 skip。21 文件显式材料初跑为 113 pass／193 fail：171 个嵌套新增用例错误与 19 个父用例失败源于新增 EWT 测试被 observer fixture 截取并重复注册，另 3 个失败为固定 Host／libmpv 材料未准备；保留原始日志。将新增用例移到原 fixture 截断边界之后，86 项受影响检查通过；按锁恢复官方 Host、继承 npm 与原仓库 7z 的 libmpv（宿主已有 libarchive 静态解包，未执行 DLL），显式 135／135 通过。c0839dd 上再次完整普通回归为 1619 pass／0 fail／10 skip，88863ms。
+
+构建输入 173 项、Native 合同 8 项、七组组件身份、固定 header／源码 blob、418 JS／47 PowerShell 语法、有限模式和差异检查通过；新增“接受但缺失完成事件”通过，不增加定时等待。最终仅做文档回执收尾，产品源码相对 f8a2755 不再变化。独立分支获准正常推送，远端检查无同名分支；后续提交带 `[skip ci]`，遵守不手动 dispatch 或启动工作流的要求。未编译完整 Windows Host／Helper 或测试包；当前 Linux 环境不能执行固定 Windows 工具链。实际服务器、安装及双端播放仍未验收，正式包、main、会员认证和现用配置保持。
+
 ## 2026-10-23 — EWT 客户端的本地缺陷与最小修正
 
 以实际 fetch 的 main `88578c91ab19d44eecddcfae096d37dc917ef1f4` 建独立 `fix/ewt-client-sync`，保留其它任务隔离。核查 input/api → PlaybackManager → libmpv → Native 及原 ApiClient 进度路径。零值在接收／setter 中保留、ticks／毫秒比例正确；明确缺陷是向下取整秒值，以及 manager 缺少 Seek 完成监听、零位置普通 timeupdate 被原 10 秒节流跳过。原命令拒绝还会留下未处理 rejection。

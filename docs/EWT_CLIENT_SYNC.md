@@ -18,16 +18,19 @@
 从已准备固定 Web 材料的仓库运行：
 
 ```sh
-node --test tests/ewt-native-completion.test.cjs tests/native-helper-client.test.cjs tests/native-helper-service.test.cjs tests/playbackmanager-request-session.test.cjs tests/native-helper-lifecycle.test.cjs tests/native-helper-protocol.test.cjs tests/libmpv-stats.test.cjs tests/mpv-settings-assembly.test.cjs tests/playback-lifecycle-patchers.test.cjs
-node --test tests/build-input-contract.test.cjs tests/runtime-provenance.test.cjs tests/web-overlay-preparation.test.cjs tests/native-helper-version-metadata.test.cjs tests/native-helper-thread-construction.test.cjs tests/native-helper-compiler-environment.test.cjs tests/client-diagnostics.test.cjs
+node tools/prepare-preload.cjs .
+node --test --test-reporter=tap --test-concurrency=1 tests/*.test.cjs
+node --test --test-reporter=tap --test-concurrency=1 tests/*-material-selftest.cjs
 ```
 
-两组分别为 148／148 和 62／62 通过，合计 210 项、0 失败、0 跳过。Native 采样分支随后增加限定 Seek 的守卫，相关源码合同／线程构造 4 项复验通过；同一实际 C++ 分支在独立 Linux stub 中用 `g++ -std=c++17 -Wall -Wextra -Werror` 编译执行通过，覆盖零值、小数、无 Seek、重复完成、无效位置、读失败及媒体变换。它不等于 Windows Helper 编译或实际 mpv 播放证据。
+完整普通回归覆盖 176 份测试文件、1629 项：1619 通过、0 失败、10 项既有 Windows 平台限制跳过。显式材料回归覆盖全部 21 份文件、135 项，全部通过且无跳过。构建输入 173 项、Native 合同 8 项及七组固定组件身份通过；418 份 JavaScript、47 份 PowerShell 语法、有限凭据模式和差异检查通过。固定 Native client.h 哈希与提交源码物化身份另行核对。
 
-关键回归使用真实 input/api、生成后的 PlaybackManager、维护 ApiClient 节流、libmpv AMD 模块与 renderer endpoint，IPC／Native 完成事件为内存替身，不启动进程或访问服务器。覆盖暂停 Seek 0、真实落点、小数秒、命令应答先后、相继命令及反序应答、旧 generation、Stop 和拒绝脱敏。可通过 `ETE_EWT_LIBMPV_SOURCE` 与 `ETE_PLAYBACKMANAGER_PATCH_TOOL` 分别指定基线源码，保持同一断言比较；基线 8 项中 2 通过、6 失败，修正后 8／8 通过。新夹具接线期间的缺失替身方法已经补齐，未把这些接线错误算作产品缺陷证据。
+关键回归使用真实 input/api、生成后的 PlaybackManager、维护 ApiClient 节流、libmpv AMD 模块与 renderer endpoint，IPC／Native 完成事件为内存替身，不启动播放器进程或访问服务器。覆盖暂停 Seek 0、真实落点、小数秒、命令应答先后、相继命令及反序应答、旧 generation、Stop、拒绝脱敏，以及命令已接受但无完成事件时不伪造位置、不阻塞下一命令。原 8 项断言通过 `ETE_EWT_LIBMPV_SOURCE` 与 `ETE_PLAYBACKMANAGER_PATCH_TOOL` 指定基线源码比较，为 2 通过、6 失败；修正及缺失事件用例共 9／9 通过。
+
+Native 采样／重复完成／失败／媒体变换的实际 C++ 分支在独立 Linux stub 中用 `g++ -std=c++17 -Wall -Wextra -Werror` 编译执行通过。它不等于 Windows Helper 编译或实际 mpv 播放证据。显式材料初跑暴露新增用例越过原 observer 夹具截取边界，已将新用例移到原边界后，86 项受影响回归及全部材料／普通回归复验通过；固定 Host、继承 npm 与 libmpv 缺失材料按原来源／哈希恢复，没有放宽输入守卫。
 
 ## 验收边界
 
-未执行全量回归、Windows 完整 Helper 编译／runtime 构建、真实服务器或双端 EWT 验收。Windows 验收使用独立构建及隔离测试设备，在人工选定的测试媒体上暂停后 Seek 到 0、小数秒和连续两个目标，核对暂停保持、实际位置及原 Session 进度；不向现用设备或用户正在播放的媒体发命令。正常播放、Stop／换集与无 Seek 的启动也需保持原行为。
+剩余未执行项是 Linux 无法执行的 Windows PowerShell／安装集成、Windows 完整 Helper／Host 编译及 runtime／测试包构建、真实服务器或双端 EWT 验收。Windows 验收使用独立构建及隔离测试设备，在人工选定的测试媒体上暂停后 Seek 到 0、小数秒和连续两个目标，核对暂停保持、实际位置及原 Session 进度；不向现用设备或用户正在播放的媒体发命令。正常播放、Stop／换集与无 Seek 的启动也需保持原行为。
 
-本分支不包含其它并行修复。后续整合时重点复核 `src/electronapp/plugins/libmpv.js`（stop/create、pause intent）和 `native/mpv-helper/ete-mpv-helper.cpp`；`tools/patch-playbackmanager.cjs`、其会话测试和状态／开发日志也可能产生上下文冲突。`native-helper/controller.js` 未修改。版本、会员认证、NAS 凭据、个人配置与服务端数据未改；未推送、合并或发布。
+本分支不包含其它并行修复。后续整合时重点复核 `src/electronapp/plugins/libmpv.js`（stop/create、pause intent）和 `native/mpv-helper/ete-mpv-helper.cpp`；`tools/patch-playbackmanager.cjs`、其会话测试和状态／开发日志也可能产生上下文冲突。`native-helper/controller.js` 未修改。版本、会员认证、NAS 凭据、个人配置与服务端数据未改。候选仅正常推送独立分支供后续测试包使用，提交包含 `[skip ci]` 以遵守本轮不启动工作流的限制；不合 main、不发布、不执行 workflow dispatch。
