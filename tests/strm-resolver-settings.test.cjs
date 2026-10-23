@@ -174,6 +174,103 @@ test('persistent config stores rules and token separately without returning toke
     assert.deepEqual(restarted.getPublicConfig().rules, store.getPublicConfig().rules);
 });
 
+test('a Token saved independently on a fresh profile survives restart and can be cleared', () => {
+    const root = temporaryRoot('ete-strm-token-only-');
+    const store = configStore.createStore({rootDir: root, environment: {}});
+    const paths = store.getConfigPaths();
+    const saved = store.setToken('Bearer synthetic-token-only');
+    const secretBytes = fs.readFileSync(paths.secretsPath);
+
+    assert.equal(fs.existsSync(paths.configPath), false);
+    assert.equal(saved.cd2.tokenConfigured, true);
+    const restarted = configStore.createStore({rootDir: root, environment: {}});
+    assert.equal(restarted.getPublicConfig().cd2.tokenConfigured, true);
+    assert.equal(restarted.getRuntimeConfig().token, 'synthetic-token-only');
+    assert.doesNotMatch(JSON.stringify(restarted.getPublicConfig()), /synthetic-token-only|cd2Token/);
+    assert.deepEqual(fs.readFileSync(paths.secretsPath), secretBytes);
+    assert.equal(fs.existsSync(paths.configPath), false);
+
+    restarted.clearToken();
+    const cleared = configStore.createStore({rootDir: root, environment: {}});
+    assert.equal(cleared.getPublicConfig().cd2.tokenConfigured, false);
+    assert.equal(cleared.getRuntimeConfig().token, '');
+    assert.deepEqual(JSON.parse(fs.readFileSync(paths.secretsPath, 'utf8')), {version: 1});
+});
+
+test('missing config restores only a valid independent secrets file', async t => {
+    for (const [name, text, expected] of [
+        ['missing', null, ''],
+        ['malformed JSON', '{', ''],
+        ['empty object', '{}', ''],
+        ['non-string Token', '{"version":1,"cd2Token":12}', ''],
+        ['empty Token', '{"version":1,"cd2Token":""}', ''],
+        ['control character', JSON.stringify({version: 1, cd2Token: 'invalid\nvalue'}), ''],
+        ['valid Token', '{"version":1,"cd2Token":"synthetic-independent"}', 'synthetic-independent']
+    ]) {
+        await t.test(name, () => {
+            const root = temporaryRoot('ete-strm-independent-secrets-');
+            const secretsPath = path.join(root, 'strm-resolver-secrets.json');
+            if (text !== null) fs.writeFileSync(secretsPath, text);
+            const store = configStore.createStore({rootDir: root, environment: {}});
+            assert.equal(store.getRuntimeConfig().token, expected);
+            assert.equal(store.getPublicConfig().cd2.tokenConfigured, !!expected);
+            assert.doesNotMatch(JSON.stringify(store.getPublicConfig()), /synthetic-independent|cd2Token/);
+            assert.equal(fs.existsSync(store.getConfigPaths().configPath), false);
+            if (text !== null) assert.equal(fs.readFileSync(secretsPath, 'utf8'), text);
+        });
+    }
+});
+
+test('defaulting an invalid config still restores independently saved secrets without rewriting files', async t => {
+    for (const configText of ['{', '{"version":99}']) {
+        await t.test(configText, () => {
+            const root = temporaryRoot('ete-strm-invalid-config-secret-');
+            const configPath = path.join(root, 'strm-resolver.json');
+            fs.writeFileSync(configPath, configText);
+            fs.writeFileSync(path.join(root, 'strm-resolver-secrets.json'),
+                JSON.stringify({version: 1, cd2Token: 'synthetic-recovered'}));
+            const store = configStore.createStore({rootDir: root, environment: {}});
+            assert.equal(store.getRuntimeConfig().token, 'synthetic-recovered');
+            assert.equal(store.getPublicConfig().cd2.tokenConfigured, true);
+            assert.deepEqual(store.getPublicConfig().rules, []);
+            assert.equal(fs.readFileSync(configPath, 'utf8'), configText);
+        });
+    }
+});
+
+test('legacy bootstrap retains its Token precedence while existing config keeps persisted secrets', () => {
+    const root = temporaryRoot('ete-strm-secret-legacy-precedence-');
+    const first = configStore.createStore({rootDir: root, environment: {}});
+    first.setToken('synthetic-before-migration');
+    const migrated = configStore.createStore({rootDir: root, environment: {ETE_CD2_TOKEN: 'synthetic-legacy'}});
+    assert.equal(migrated.getRuntimeConfig().token, 'synthetic-legacy');
+    assert.equal(migrated.getPublicConfig().cd2.tokenConfigured, true);
+
+    const restarted = configStore.createStore({rootDir: root, environment: {ETE_CD2_TOKEN: 'synthetic-ignored'}});
+    assert.equal(restarted.getRuntimeConfig().token, 'synthetic-legacy');
+    assert.deepEqual(restarted.getPublicConfig(), migrated.getPublicConfig());
+    restarted.clearToken();
+    const cleared = configStore.createStore({rootDir: root, environment: {ETE_CD2_TOKEN: 'synthetic-ignored'}});
+    assert.equal(cleared.getRuntimeConfig().token, '');
+    assert.equal(cleared.getPublicConfig().cd2.tokenConfigured, false);
+});
+
+test('a legacy migration with no valid Token does not adopt an older independent secret', () => {
+    for (const token of [undefined, 'invalid\nlegacy']) {
+        const root = temporaryRoot('ete-strm-legacy-incomplete-secret-');
+        const first = configStore.createStore({rootDir: root, environment: {}});
+        first.setToken('synthetic-independent');
+        const secretBytes = fs.readFileSync(first.getConfigPaths().secretsPath);
+        const migrated = configStore.createStore({
+            rootDir: root,
+            environment: {ETE_CD2_ENABLED: '1', ETE_CD2_TOKEN: token}
+        });
+        assert.equal(migrated.getRuntimeConfig().token, '');
+        assert.equal(migrated.getPublicConfig().cd2.tokenConfigured, false);
+        assert.deepEqual(fs.readFileSync(first.getConfigPaths().secretsPath), secretBytes);
+    }
+});
+
 test('failed atomic writes preserve the public and runtime config snapshots', () => {
     const root = temporaryRoot('ete-strm-failed-save-');
     let failRename = false;

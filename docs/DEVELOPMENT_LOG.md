@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-23 — 独立后续修复：STRM secrets 恢复
+
+补齐空 profile 单独 setToken 后的重启恢复，不改变保存方式、schema、认证或 legacy 优先级。回归覆盖有效/缺失/损坏 secrets、损坏配置、clearToken、既有配置与首次迁移的优先级；修前功能断言失败，修后相关157项全部通过。尚无 Windows/真实服务验收，不纳入 v0.4.0 产物。
+
 ## 2026-10-23 — v0.4.0整合PR70来源与必要声明
 
 将PR70固定提交6576f5d的16份来源／声明材料整合到既有发布分支，四处文档冲突采用保留双方有效内容。API／page完整MIT、Sizzle原文、VTT版权／固定源／实际差异、Material Icons来源、Socket组件与集成范围及npm36许可命名口径保留；原JSON／CSV证据字节及analysisRef不改。旧“尚未替换Host／仍运行Sharp和ServiceStack”等仅作为研究时点，不恢复旧链；当前源码Host／JSON／ZIP、CEC退役、API维护与业务来源指纹均不变。
