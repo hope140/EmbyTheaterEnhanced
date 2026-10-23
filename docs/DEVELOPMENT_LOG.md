@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-23 — HomeSections投影的可选缓存接线
+
+维护Home controller新增相对AMD适配依赖，默认不传开关；独立适配器仅在enabled和显式TTL同时具备时创建缓存/订阅canonical events。provider在原GET后复用prepareSections投影，命中后再校验冻结并重建WeakMap分区owner及随机种子；Items读取、原CardBuilder、focus/scroller和播放归属保持。pause/刷新退休本轮订阅，显式refresh/clear失效成功数据，dispose移除本适配器监听器。身份轮换使用原API的认证代次和空session，不读取/复制token；旧请求结束不能退休新身份binding。启用路径的provider及Home票据另核认证代次，活动stage的语言/版本改变也重新读取。
+
+实际维护AMD ApiClient/ApiClientEx/events/Credentials和保留CM在合成Fetch下执行布局GET、收藏POST、已看POST/DELETE和原CM退出；验证写成功通知清缓存/在途请求、退出和同用户重登、身份变化、错误/坏schema拒绝、投影canary无残留、TTL/键分界和监听清理。其他连接/库变化/WebSocket消息为真events的合成派发；Home controller的DOM/itemscontainer为替身，未把它们记为真实服务或完整GUI。最终12文件定向集合170/170，0失败/取消/跳过（完整命令见[适配合同](PAGE_CACHE_HOME_ADAPTER.md)）；没有性能提升结论。新文件走普通Git blob物化，固定overlay输出及共享API源码/选择清单不变。通用内容缓存的写前/写后双失效、播放上报、逐页TTL/容量/设置入口继续未接；本阶段只对无用户状态的布局实施已有成功写通知失效。
+
 ## 2026-10-23 — 页面缓存现状与未启用基础
 
 静态追踪维护 HomeTab/provider、固定 ListController/VirtualScroller、ItemPage 生命周期 overlay 和 Fetch/API 局部缓存；区分页面数据、DOM/滚动/焦点和图片缓存。新增独立 AMD/CommonJS 模块，不注册别名、不拦截 API、不新增依赖或产品功能入口。只有显式 enabled 与资源策略同时具备时才保留 DTO/共享读；始终要求当前认证上下文，非法替换也清空旧身份。loader取得调用时捕获的params副本；使用JSON快照隔离消费者修改，限制保留条目/序列化字节和在途请求/订阅者。写 owner 可在开始前及结算后invalidate，退休待回包；认证、通知和写生命周期实际接线列为启用前置，未冒充已完成。
