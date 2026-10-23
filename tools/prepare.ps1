@@ -34,14 +34,14 @@ if (-not (Test-Path -LiteralPath (Join-Path $root 'vendor/libmpv/20260809'))) {
 }
 & node (Join-Path $PSScriptRoot 'libmpv-input.cjs') validate $root
 if ($LASTEXITCODE -ne 0) { throw 'libmpv snapshot validation failed.' }
-if (-not (Test-Path -LiteralPath (Join-Path $root 'vendor/compatibility-resources/snapshot-v1'))) {
+if (-not (Test-Path -LiteralPath (Join-Path $root 'vendor/compatibility-resources/snapshot-v2'))) {
     if (-not $CompatibilitySnapshotRoot) { throw 'Provide -CompatibilitySnapshotRoot with the exact preserved compatibility resources; no automatic legacy fallback.' }
     & node (Join-Path $PSScriptRoot 'compatibility-resources-input.cjs') import $root $CompatibilitySnapshotRoot
     if ($LASTEXITCODE -ne 0) { throw 'Compatibility resource snapshot preparation failed.' }
 }
 & node (Join-Path $PSScriptRoot 'compatibility-resources-input.cjs') validate $root
 if ($LASTEXITCODE -ne 0) { throw 'Compatibility resource snapshot validation failed.' }
-if (-not (Test-Path -LiteralPath (Join-Path $root 'vendor/small-runtime/snapshot-v1'))) {
+if (-not (Test-Path -LiteralPath (Join-Path $root 'vendor/small-runtime/snapshot-v2'))) {
     if (-not $SmallRuntimeSnapshotRoot) { throw 'Provide -SmallRuntimeSnapshotRoot with the exact four preserved small runtime files; no automatic legacy fallback.' }
     & node (Join-Path $PSScriptRoot 'small-runtime-input.cjs') import $root $SmallRuntimeSnapshotRoot
     if ($LASTEXITCODE -ne 0) { throw 'Small runtime snapshot preparation failed.' }

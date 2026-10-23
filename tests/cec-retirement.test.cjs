@@ -16,7 +16,7 @@ for(const files of [['libmpv.js'],['cec.js','CEC.js','libmpv.js','testinput.js']
             app:{name:'Synthetic',getVersion:()=>'fixture'},startInfoJson:null,
             replaceAll:(value,search,replacement)=>value.split(search).join(replacement),
             require:name=>name==='os'?{hostname:()=>'synthetic-host'}:name==='path'?path:name==='fs'?{
-                readdir:(dir,callback)=>dir.endsWith('/plugins')?callback(files?null:new Error('synthetic missing directory'),files):callback(null,['videohandler.js'])
+                readdir:(dir,callback)=>path.basename(dir)==='plugins'?callback(files?null:new Error('synthetic missing directory'),files):callback(null,['videohandler.js'])
             }:(()=>{throw Error('Unexpected dependency '+name);})()};
         vm.createContext(context);vm.runInContext(namedFunction(source,'loadStartInfo'),context);
         await context.loadStartInfo();const info=JSON.parse(context.startInfoJson);

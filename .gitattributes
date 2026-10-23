@@ -66,3 +66,13 @@
 /src/electronapp/www/modules/emby-apiclient/LICENSE.md whitespace=-blank-at-eof
 /src/web-api/src/mit-apiclient.js whitespace=-blank-at-eol
 /src/electronapp/www/modules/emby-apiclient/mit-apiclient.js whitespace=-blank-at-eol
+
+# Portable verifier manifests bind exact source and fixture bytes on every platform.
+/tools/windows-host-verifier/** -text whitespace=cr-at-eol
+
+# Preserve existing manifest-bound terminal blank lines in the reviewed verifier.
+/tools/windows-host-verifier/Finalize-Evidence.ps1 whitespace=cr-at-eol,-blank-at-eof
+/tools/windows-host-verifier/Prepare-HostPair.ps1 whitespace=cr-at-eol,-blank-at-eof
+/tools/windows-host-verifier/README.txt whitespace=cr-at-eol,-blank-at-eof
+/tools/windows-host-verifier/Run-Components.ps1 whitespace=cr-at-eol,-blank-at-eof
+/tools/windows-host-verifier/Verify-UnifiedHost.ps1 whitespace=cr-at-eol,-blank-at-eof

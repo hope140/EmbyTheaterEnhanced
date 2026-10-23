@@ -75,7 +75,10 @@ test('manual package route requires runner compiler/probe before assembly and ne
 function stagedRunner(t) {
     const dir = temp(t), r = path.join(dir, 'repo'), build = path.join(dir, 'build'); fs.mkdirSync(r); fs.mkdirSync(build);
     const write = (base, p, b) => {fs.mkdirSync(path.dirname(path.join(base, p)), {recursive: true}); fs.writeFileSync(path.join(base, p), b);};
-    for (const p of ['native/windows-host', 'tools/windows-host-build']) fs.cpSync(path.join(root, p), path.join(r, p), {recursive: true});
+    for (const p of ['native/windows-host', 'tools/windows-host-build']) fs.cpSync(path.join(root, p), path.join(r, p), {
+        recursive: true,
+        filter: source => path.relative(root, source).replaceAll(path.sep, '/') !== 'native/windows-host/verified-runtime.json'
+    });
     for (const p of ['vendor/windows-host-manifest.json', 'vendor/model-compatibility-manifest.json', 'vendor/host-json-manifest.json']) write(r, p, fs.readFileSync(path.join(root, p)));
     write(r, 'tools/Test-SourceBuiltHost.ps1', '# synthetic probe bytes for receipt/staging tests; never executed\n');
     const jsonBytes = Buffer.from('synthetic JSON dependency'), m = JSON.parse(fs.readFileSync(path.join(r, 'vendor/host-json-manifest.json')));

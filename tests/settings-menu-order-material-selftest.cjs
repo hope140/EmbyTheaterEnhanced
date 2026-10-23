@@ -39,14 +39,15 @@ test('actual pinned app settings owner orders only the Enhanced section and reta
         vm.runInNewContext(['sortRoutes', 'mapRouteToMenuItem', 'getAppSettingsMenuItems'].map(name => namedFunction(source, name)).join('\n'), context, {timeout: 1000});
         const items = await context.getAppSettingsMenuItems({home: false, user: {Name: 'Fixture User', Id: 'fixture', ServerId: 'fixture'}});
         assert.equal(items[1].Name, 'Emby Theater Enhanced');
+        assert.equal(Array.from(items.slice(2)).some(item => item.href === '/plugins/cecinput/cec/cec.html'), false);
         const targetPaths = [
-            '/settings/keyboard.html', '/plugins/cecinput/cec/cec.html',
+            '/settings/keyboard.html',
             '/plugins/libmpvmediaplayer/mpvplayer/video.html', '/plugins/libmpvmediaplayer/mpvplayer/audio.html',
             '/plugins/libmpvmediaplayer/mpvplayer/strm.html', '/plugins/libmpvmediaplayer/mpvplayer/diagnostics.html',
             '/plugins/libmpvmediaplayer/mpvplayer/about.html'
         ];
         const targetItems = Array.from(items.slice(2)).filter(item => targetPaths.includes(item.href));
-        assert.deepEqual(targetItems.map(item => item.Name), ['操作快捷键', 'HDMI-CEC', '视频设置', '音频设置', 'STRM 智能解析', '诊断与日志', '关于 Enhanced']);
+        assert.deepEqual(targetItems.map(item => item.Name), ['操作快捷键', '视频设置', '音频设置', 'STRM 智能解析', '诊断与日志', '关于 Enhanced']);
         assert.deepEqual(targetItems.map(item => item.href), targetPaths);
         assert.deepEqual(Array.from(items.slice(2)).filter(item => !targetPaths.includes(item.href)).map(item => item.href),
             sync ? ['/settings/download.html', '/settings/managedownloads.html'] : []);
