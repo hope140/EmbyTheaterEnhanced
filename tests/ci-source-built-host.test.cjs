@@ -5,6 +5,13 @@ const receipt = require('../tools/runner-host-receipt.cjs');
 const verifier = require('../tools/host-verifier-input.cjs');
 const root = path.resolve(__dirname, '..'), sha = b => crypto.createHash('sha256').update(b).digest('hex');
 function temp(t) {const d = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-runner-host-'))); t.after(() => fs.rmSync(d, {recursive: true, force: true})); return d;}
+test('Windows autocrlf checkout preserves all fixed Host source identity bytes', () => {
+    const expected = JSON.parse(fs.readFileSync(path.join(root, 'tools/windows-host-build/EXPECTED-SOURCE-IDENTITY.json')));
+    for (const f of expected.files) {
+        const checkoutBytes = cp.execFileSync('git', ['-c', 'core.autocrlf=true', 'cat-file', '--filters', 'HEAD:' + f.path], {cwd: root});
+        assert.equal(sha(checkoutBytes), f.sha256, 'checkout changed fixed source input: ' + f.path);
+    }
+});
 test('runner acquisition pins exact official commit, all55 raw source members and two package identities', () => {
     const p = plan.createPlan(root);
     assert.equal(p.repository, 'https://github.com/MediaBrowser/emby-theater-windows');

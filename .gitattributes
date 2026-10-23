@@ -53,6 +53,11 @@
 /native/windows-host/changes/** -text
 /tools/windows-host-build/** -text
 /native/windows-host/host-retirement.patch -text whitespace=-blank-at-eol
+# These four original LF inputs also participate in the fixed Host source identity.
+/native/windows-host/Apply-SourceChanges.ps1 -text
+/native/windows-host/change-manifest.json -text
+/native/windows-host/upstream-source-manifest.json -text
+/vendor/host-json-manifest.json -text
 
 # Exact reviewed GPL wrappers retain inherited whitespace; full byte identities are verified.
 /native/windows-host/changes/Emby.Theater/Archiving/ZipClient.cs whitespace=-blank-at-eol,-space-before-tab

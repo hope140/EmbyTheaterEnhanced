@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-23 — 固定Host输入的Windows checkout回归
+
+公开CI `39952554306` 完成1491项：1487通过、4失败、0跳过，测试耗时665973ms；失败是来源指纹守卫阻断，未触及时限。`core.autocrlf=true` 的Git过滤复现表明，Apply-SourceChanges.ps1、change-manifest.json、upstream-source-manifest.json和host-json-manifest.json原始LF字节未受属性保护。仅为4条精确路径增加 `-text`，不规范化被验字节、不重算预期指纹、不改源码或测试标准。新增对全部13份指纹输入的真实Git checkout过滤回归，修前失败、修后38项Host runner测试及26项构建输入合同通过；原始Windows失败保留，新Windows结果另行记录。手动workflow读取Forbidden未重试，未据此扩大作业权限。
+
 ## 2026-10-23 — 候选验收后的文档与构建合同收尾
 
 本轮候选 `ad77308cd83bd629a7b75349d727044f9fa1d86b` 已获用户验收确认；对应 Windows 构建、安装器、升级、副本 STRM 播放及正常 Host 入口检查由独立验证环境执行。来源与当前公开交接提交分开记录，未将局部实机结果外推为所有环境或全部许可通过。
