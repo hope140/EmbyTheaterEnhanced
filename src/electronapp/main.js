@@ -30,6 +30,12 @@
     var disposeWindowsNativeMedia = function () { return Promise.resolve(); };
     var bundledVersions = require('./enhanced/bundled-versions');
 
+    // Explicit trial CLI is validated and isolated before bootstrap/identity/log writes.
+    var pageCacheTest = require('./enhanced/page-cache/test-session').prepare({
+        app: app, argv: process.argv, execPath: process.execPath, platform: process.platform,
+        environment: process.env, runtimeRoot: path.resolve(__dirname, '..')
+    });
+
     var appBootstrapState = appBootstrap.bootstrap({
         appDataPath: app.getPath('appData'),
         runtimeRoot: path.resolve(__dirname, '..')
@@ -999,7 +1005,7 @@
 
     var commandLineOptions = parseCommandLine();
 
-    var userDataPath = commandLineOptions.userDataPath;
+    var userDataPath = pageCacheTest ? pageCacheTest.userDataPath : commandLineOptions.userDataPath;
     if (userDataPath) {
         app.setPath('userData', userDataPath);
     }
@@ -1228,6 +1234,8 @@
 
             icon: nativeImage.createFromPath(path.join(__dirname, icon))
         };
+
+        if (pageCacheTest) windowOptions.webPreferences.additionalArguments = [pageCacheTest.rendererArgument];
 
         windowOptions.width = previousWindowInfo.width || 1280;
         windowOptions.height = previousWindowInfo.height || 720;

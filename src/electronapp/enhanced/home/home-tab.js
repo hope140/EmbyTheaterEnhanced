@@ -1,11 +1,11 @@
 (function(factory) {
     if (typeof define === 'function') define(['exports', './server-sections.js', 'modules/cardbuilder/cardbuilder.js',
         'modules/layoutmanager.js', 'modules/common/globalize.js', 'modules/approuter.js',
-        'modules/emby-elements/emby-button/emby-button.js'], function(exports, provider, cards, layout, globalize, router) {
-        exports.default = factory(provider.default, cards.default, layout.default, globalize.default, router.default);
+        'modules/emby-elements/emby-button/emby-button.js', '../page-cache/home-layout-cache.js'], function(exports, provider, cards, layout, globalize, router, button, cache) {
+        exports.default = factory(provider.default, cards.default, layout.default, globalize.default, router.default, cache.default);
     });
-    else if (typeof module === 'object' && module.exports) module.exports = factory(require('./server-sections.js'));
-})(function(serverSections, cards, layout, globalize, router) {
+    else if (typeof module === 'object' && module.exports) module.exports = factory(require('./server-sections.js'), null, null, null, null, require('../page-cache/home-layout-cache.js'));
+})(function(serverSections, cards, layout, globalize, router, cacheModule) {
     'use strict';
     function abort() { var error = new Error('Home request cancelled'); error.name = 'AbortError'; return error; }
     function listOptions(section, renderer) {
@@ -28,15 +28,19 @@
         var document = dependencies.document || owner.view.ownerDocument;
         var renderer = dependencies.cards || cards, layoutManager = dependencies.layout || layout, locale = dependencies.globalize || globalize;
         var navigation = dependencies.router || router;
-        var provider = serverSections.createProvider(function() { return connection.currentApiClient(); });
+        var testOptions = typeof window === 'object' && window.__etePageCacheTestOptions;
+        var layoutCache = cacheModule.create(connection, dependencies.pageCacheOptions || testOptions, dependencies.events);
+        var provider = serverSections.createProvider(function() { return connection.currentApiClient(); }, {layoutCache: layoutCache.enabled ? layoutCache : null});
         var identityClock = dependencies.identityClock || {now: Date.now, setTimeout: setTimeout, clearTimeout: clearTimeout};
         var waits = new Set();
         var active = false, disposed = false, epoch = 0, stage = null, stageMode = null, pending = null;
-        var focusedItemId = null;
+        var focusedItemId = null, committedTicket = null;
         var focusedTitleId = null, focusedSeeAll = false;
         function current(ticket) {
             if (disposed || !active || ticket.epoch !== epoch || !owner.view) return false;
-            try { return connection.currentApiClient() === ticket.client && ticket.client.serverId() === ticket.server && ticket.client.getCurrentUserId() === ticket.user; }
+            try { return connection.currentApiClient() === ticket.client && ticket.client.serverId() === ticket.server && ticket.client.getCurrentUserId() === ticket.user &&
+                (!layoutCache.enabled || (ticket.client._identityEpoch || 0) === ticket.auth &&
+                    (ticket.client.getCurrentLocale() || '') === ticket.locale && ticket.client.serverVersion() === ticket.version); }
             catch (_) { return false; }
         }
         function getItems(root) { return root ? Array.from(root.querySelectorAll('.itemsContainer')) : []; }
@@ -49,7 +53,10 @@
                 if (!client) return null;
                 var server = client.serverId(), user = client.getCurrentUserId();
                 if (typeof server !== 'string' || !server || typeof user !== 'string' || !user) return null;
-                return {epoch: value, client: client, server: server, user: user, fallback: null};
+                return {epoch: value, client: client, server: server, user: user,
+                    auth: layoutCache.enabled ? client._identityEpoch || 0 : null,
+                    locale: layoutCache.enabled ? client.getCurrentLocale() || '' : null,
+                    version: layoutCache.enabled ? client.serverVersion() : null, fallback: null};
             } catch (_) { return null; }
         }
         function waitForIdentity(value, deadline) {
@@ -114,6 +121,7 @@
             stageMode = null;
             if (owner.sectionsContainer) owner.sectionsContainer.replaceChildren();
             owner.sectionsRendered = false;
+            committedTicket = null;
         }
         function attach(next, mode) {
             pauseItems(stage);
@@ -130,6 +138,7 @@
         function ready(ticket, options) {
             if (!current(ticket)) return;
             owner.sectionsRendered = true;
+            committedTicket = ticket;
             getItems(stage).forEach(function(items) { owner.addFocusBehavior(items); });
             var match = focusedItemId && Array.from(stage.querySelectorAll('[data-id]')).find(function(element) {
                 return element.getAttribute('data-id') === focusedItemId;
@@ -279,15 +288,17 @@
             return work;
         }
         return {
-            refresh: start,
+            refresh: function(options) { layoutCache.invalidate(); return start(options); },
             resume: function(options) {
                 options = options || {};
                 if (disposed) return Promise.resolve({status: 'cancelled'});
+                if (layoutCache.enabled) layoutCache.revalidate();
                 if (active && !options.refresh) {
                     if (pending && pending.epoch === epoch) return pending.promise;
-                    if (owner.sectionsRendered) return Promise.resolve({status: stageMode});
+                    if (owner.sectionsRendered && (!layoutCache.enabled || committedTicket && current(committedTicket))) return Promise.resolve({status: stageMode});
                 }
                 active = true;
+                if (options.refresh) layoutCache.invalidate();
                 return start(options);
             },
             pause: function() {
@@ -309,8 +320,8 @@
                 pauseItems(stage);
                 loading.hide();
             },
-            clear: clear,
-            dispose: function() { disposed = true; active = false; clear(); provider.dispose(); loading.hide(); }
+            clear: function() { layoutCache.invalidate(); clear(); },
+            dispose: function() { disposed = true; active = false; clear(); provider.dispose(); layoutCache.dispose(); loading.hide(); }
         };
     }
     return Object.freeze({create: create, listOptions: listOptions});

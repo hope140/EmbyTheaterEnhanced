@@ -50,12 +50,13 @@ class Items extends Element {
 }
 function sections() { return [{Id: 'first', SectionType: 'resume', Name: '<unsafe>', Monitor: ['videoplayback', 'markplayed']},
     {Id: 'second', SectionType: 'latestmedia', Name: 'Recent', CollectionType: 'movies'}]; }
-function fixture(handler, identityClock) {
+function fixture(handler, identityClock, cacheOptions, rendererWindow) {
     const document = {activeElement: null, createElement(tag, options) { const element = new Element(document, tag); element.customType = options && options.is; if (element.customType) element.classList.add('native-constructor-class'); return element; }};
     const view = new Element(document), root = document.createElement('div'); root.className = 'sections'; view.appendChild(root);
     const cards = Object.freeze({id: 'original-cards'}), calls = [], legacy = [], focus = [], loading = [], routes = [];
     let version = '4.10.0.40', user = 'user-1', client;
     const api = {serverVersion: () => version, serverId: () => 'server-1', getCurrentUserId: () => user,
+        isLoggedIn: () => !!user, getCurrentLocale: () => 'zh-CN', _identityEpoch: 0,
         getCurrentUser: () => Promise.resolve({Id: user}), getUrl(route, query) { return {route, query}; },
         getJSON(request, signal) { calls.push({request, signal});
             if (handler) return handler(request, signal, calls.length);
@@ -69,7 +70,18 @@ function fixture(handler, identityClock) {
         focus: {autoFocus: () => focus.push('auto'), focus: element => focus.push(element)},
         connection: {currentApiClient: () => client}};
     if (identityClock) deps.identityClock = identityClock;
-    const controller = bridge.create(owner, deps);
+    if (cacheOptions || rendererWindow) {
+        if (cacheOptions) deps.pageCacheOptions = cacheOptions;
+        deps.events = require('./helpers/api-client-amd.cjs').harness().load('events.js').default;
+    }
+    let controller;
+    const previousWindow = global.window;
+    try {
+        if (rendererWindow) global.window = rendererWindow;
+        controller = bridge.create(owner, deps);
+    } finally {
+        if (previousWindow === undefined) delete global.window; else global.window = previousWindow;
+    }
     return {owner, root, api, document, cards, calls, legacy, focus, loading, routes, deps, controller,
         version(value) { version = value; }, user(value) { user = value; }, switchClient() { client = {...api}; }};
 }
@@ -372,4 +384,109 @@ test('a transient identity revalidation exception still recovers during startup'
     assert.equal((await work).status, 'server');
     assert.equal(f.calls.length, 3);
     f.controller.dispose();
+});
+
+
+test('opt-in HomeTab return reuses layout while rereading card data; explicit refresh and clear invalidate', async () => {
+    const f = fixture(null, null, {enabled: true, ttlMs: 10000});
+    const count = () => f.calls.filter(c => c.request.route.endsWith('/HomeSections')).length;
+    assert.equal((await f.controller.resume()).status, 'server'); assert.equal(count(), 1);
+    const firstItems = f.root.querySelectorAll('.itemsContainer')[0].result;
+    f.controller.pause(); assert.equal((await f.controller.resume({refresh: false})).status, 'server');
+    assert.equal(count(), 1); assert.notEqual(f.root.querySelectorAll('.itemsContainer')[0].result, firstItems);
+    assert.equal(f.calls.length, 5, 'layout hit retains two fresh section-content GETs on return');
+    await f.controller.refresh(); assert.equal(count(), 2);
+    f.controller.pause(); await f.controller.resume({refresh: true}); assert.equal(count(), 3);
+    f.controller.clear(); await f.controller.refresh(); assert.equal(count(), 4); f.controller.dispose();
+});
+test('opt-in HomeTab pause while loading rejects old response and allows a new navigation stage', async () => {
+    let resolveOld;
+    const f = fixture((request, signal, count) => request.route.endsWith('/HomeSections') && count === 1 ?
+        new Promise(resolve => { resolveOld = resolve; }) : Promise.resolve(request.route.endsWith('/HomeSections') ?
+            [{Id: 'new', Name: 'New navigation', SectionType: 'latestmedia'}] : {Items: []}), null, {enabled: true, ttlMs: 10000});
+    const old = f.controller.resume(); for (let i = 0; i < 20; i++) await Promise.resolve();
+    assert.equal(typeof resolveOld, 'function'); f.controller.pause();
+    assert.equal((await f.controller.resume()).status, 'server');
+    resolveOld([{Id: 'old', Name: 'Retired navigation', SectionType: 'latestmedia'}]);
+    assert.equal((await old).status, 'cancelled');
+    assert.equal(f.root.querySelectorAll('h2')[0].textContent, 'New navigation');
+    f.controller.pause(); await f.controller.resume();
+    assert.equal(f.calls.filter(c => c.request.route.endsWith('/HomeSections')).length, 2); f.controller.dispose();
+});
+test('opt-in HomeTab current stage guard rejects same-user reauthentication and user/client replacement', async () => {
+    const f = fixture(null, null, {enabled: true, ttlMs: 10000}); await f.controller.resume();
+    f.api._identityEpoch++; await f.controller.resume();
+    assert.equal(f.calls.filter(c => c.request.route.endsWith('/HomeSections')).length, 2);
+    f.user('other-user'); await f.controller.resume();
+    assert.equal(f.calls.filter(c => c.request.route.endsWith('/HomeSections')).length, 3);
+    f.switchClient(); await f.controller.resume();
+    assert.equal(f.calls.filter(c => c.request.route.endsWith('/HomeSections')).length, 4); f.controller.dispose();
+});
+test('opt-in HomeTab post-write UserDataChanged listener invalidates layout before return', async () => {
+    const f = fixture(null, null, {enabled: true, ttlMs: 10000}); await f.controller.resume();
+    f.controller.pause(); f.deps.events.trigger(f.api, 'message', [{MessageType: 'UserDataChanged', Data: {}}]);
+    await f.controller.resume();
+    assert.equal(f.calls.filter(c => c.request.route.endsWith('/HomeSections')).length, 2); f.controller.dispose();
+    assert.equal(f.api._callbacks.message.length, 0); assert.equal(f.deps.connection._callbacks.localusersignedout.length, 0);
+});
+
+
+test('expired cached layout starts a fresh read; its late result cannot replace the next navigation', async () => {
+    const clock = startupClock(); let layouts = 0, resolveExpired;
+    const f = fixture(request => {
+        if (!request.route.endsWith('/HomeSections')) return Promise.resolve({Items: []});
+        layouts++;
+        if (layouts === 2) return new Promise(resolve => { resolveExpired = resolve; });
+        return Promise.resolve([{Id: 'layout-' + layouts, Name: 'Navigation ' + layouts, SectionType: 'latestmedia'}]);
+    }, null, {enabled: true, ttlMs: 100, clock});
+    await f.controller.resume(); f.controller.pause(); clock.advance(100);
+    const expired = f.controller.resume(); for (let i = 0; i < 20; i++) await Promise.resolve();
+    assert.equal(typeof resolveExpired, 'function'); f.controller.pause();
+    await f.controller.resume(); resolveExpired([{Id: 'expired', Name: 'Expired navigation', SectionType: 'latestmedia'}]);
+    assert.equal((await expired).status, 'cancelled');
+    assert.equal(f.root.querySelectorAll('h2')[0].textContent, 'Navigation 3'); assert.equal(layouts, 3);
+    f.controller.dispose();
+});
+
+
+test('opt-in active HomeTab does not reuse a committed stage across locale/version changes', async () => {
+    const f = fixture(null, null, {enabled: true, ttlMs: 10000}); await f.controller.resume();
+    f.api.getCurrentLocale = () => 'en-US'; await f.controller.resume();
+    f.version('4.10.0.41'); await f.controller.resume();
+    assert.equal(f.calls.filter(c => c.request.route.endsWith('/HomeSections')).length, 3);
+    f.controller.dispose();
+});
+
+
+test('test preload options reach the real Home factory with no injected cache dependency option', async () => {
+    const options = require('../src/electronapp/enhanced/page-cache/test-options');
+    for (const enabled of [true, false]) {
+        const window = {};
+        options.install(window, [options.rendererArgument({enabled, ttlMs: 10000, maxEntries: 2, maxBytes: 4096})]);
+        const f = fixture(null, null, null, window);
+        assert.equal(f.deps.pageCacheOptions, undefined);
+        await f.controller.resume(); f.controller.pause(); await f.controller.resume();
+        assert.equal(f.calls.filter(c => c.request.route.endsWith('/HomeSections')).length, enabled ? 1 : 2);
+        if (enabled) {
+            f.user('new-user'); await f.controller.resume();
+            assert.equal(f.calls.filter(c => c.request.route.endsWith('/HomeSections')).length, 2, 'test entry rejects the prior account');
+        }
+        f.controller.dispose();
+    }
+});
+test('two test renderer sessions never share layout data even with identical account/server strings', async () => {
+    const options = require('../src/electronapp/enhanced/page-cache/test-options');
+    function start() {
+        const window = {}; options.install(window, [options.rendererArgument({enabled: true, ttlMs: 10000, maxEntries: 2, maxBytes: 4096})]);
+        return fixture(null, null, null, window);
+    }
+    const a = start(), b = start(); await a.controller.resume(); await b.controller.resume();
+    a.controller.pause(); await a.controller.resume(); b.controller.pause(); await b.controller.resume();
+    assert.equal(a.calls.filter(c => c.request.route.endsWith('/HomeSections')).length, 1);
+    assert.equal(b.calls.filter(c => c.request.route.endsWith('/HomeSections')).length, 1);
+    a.user('other-user'); await a.controller.resume();
+    b.controller.pause(); await b.controller.resume();
+    assert.equal(a.calls.filter(c => c.request.route.endsWith('/HomeSections')).length, 2);
+    assert.equal(b.calls.filter(c => c.request.route.endsWith('/HomeSections')).length, 1);
+    a.controller.dispose(); b.controller.dispose();
 });

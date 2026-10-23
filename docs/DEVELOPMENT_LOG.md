@@ -1,5 +1,35 @@
 # 维护记录
 
+## 2026-10-23 — 页面缓存＋四项审查修复本地组合
+
+新建本地integration/page-cache-audit，固定两父来源2570c32/4f3ecee和共同88578c9；不移动原分支。PROJECT_STATUS和本文件仅在顶部新增记录冲突，按保留页面缓存块、保留全部审查修复块、公共基线正文一次的方式解决；ARCHITECTURE自动合并保留双方合同。没有额外源码修改、默认开启或新增规格。最终组合回归须绑定本地集成提交，独立Windows任务及后续整合包均由父协调核对；本轮不推送/构建、不混入其他功能。
+
+## 2026-10-23 — 页面缓存安全重基与分支交接
+
+先核对远端main准确为88578c91ab19d44eecddcfae096d37dc917ef1f4且无feature/page-cache，再保留本地b3da2bee备份并重放四项功能提交。冲突仅PROJECT_STATUS/DEVELOPMENT_LOG顶部，双方完整保留；重基前后全部src/native、专属测试和prepare-preload无差异，main发布材料/版本及新release-file-evidence测试保持。原19文件247项集合增加发行文件、版本、组件和手动作业合同，重基后271/271、0失败/取消/跳过。JS423文件及有限模式510文件通过；PS7语法首次在检查前因默认home缓存只读退出134，改用本次进程专属/tmp XDG缓存后47文件通过，没有写用户/系统缓存；这不是Windows/PS5.1执行证据。当前只做独立分支推送准备与回读，正式任务优先，不触发打包或触及Work/NAS；包/Windows运行/视觉仍交父后续分层验证。准确启动参数与profile规则见[测试入口](PAGE_CACHE_TEST_ENTRY.md)。
+
+## 2026-10-23 — 默认关闭的页面缓存测试CLI落地
+
+新增test-options有限配置解析与test-session启动隔离模块；只有四项显式参数同时合法才启用测试模式，拒绝内部renderer配置直接作为应用参数、额外profile/调试/安全参数及未知字段。main在bootstrap前调用，要求Windows/未ready/当前runtime的Electron和app目录，通过包内关键source/preload身份自检后仅分配全新临时根，不接受复用路径或读取账户。当前进程appData/userData/sessionData/logs/temp/crashDumps及相关环境指向新根；晚期userData处理保持测试归属。原BrowserWindow仅在测试模式追加有限renderer参数，prepared preload立即验证并冻结选项，Home工厂消费；普通路径不创建测试目录或设置窗口选项。生成器沿既有build-input/prepared-artifact合同进入来源，原模板与vendor只读，无Host/安装器/API/播放所有权改动。
+
+最终19文件回归247/247、0失败/取消/跳过。真实Node文件/hash/路径检查与bootstrap、提取的实际main片段、生成preload块及真实Home/API/cache执行，Electron/Windows文件身份和DOM/Fetch替身边界明确；另验证两测试renderer相同账号字符串不共享数据。文档提供独立解包runtime的enabled/disabled命令、显式测试参数、包内PREPARED回执不等于GUI/命中通过、父协调Windows自动验收与最短人工体验清单。未触发打包、启动/安装程序或接触用户服务，未用旧包补丁绕过来源校验。详见[隔离测试入口](PAGE_CACHE_TEST_ENTRY.md)。
+
+## 2026-10-23 — 页面缓存独立测试包就绪度核对
+
+按新测试包授权核对Home工厂实参、适配器双门槛、手动workflow输入/并发组、固定构建脚本、安装器AppId及bootstrap/Host/userData时序。当前只有源码依赖注入开关，打出的普通包保持关闭；安装器名含sha/run但AppId/profile仍沿产品合同。故不把已有源码集成称为可开启的功能测试包，不触发或排队共享打包作业。交接现有ref/精确commit核对、release_package=false、fresh-checkout/不覆盖artifact以及隔离VM和人工四项清单，具体见[评估](PAGE_CACHE_PACKAGE_READINESS.md)。本次没有产品/构建脚本变更或重新执行先前170项测试；文档检查单独记录，真实包、运行及性能仍未执行。
+
+## 2026-10-23 — HomeSections投影的可选缓存接线
+
+维护Home controller新增相对AMD适配依赖，默认不传开关；独立适配器仅在enabled和显式TTL同时具备时创建缓存/订阅canonical events。provider在原GET后复用prepareSections投影，命中后再校验冻结并重建WeakMap分区owner及随机种子；Items读取、原CardBuilder、focus/scroller和播放归属保持。pause/刷新退休本轮订阅，显式refresh/clear失效成功数据，dispose移除本适配器监听器。身份轮换使用原API的认证代次和空session，不读取/复制token；旧请求结束不能退休新身份binding。启用路径的provider及Home票据另核认证代次，活动stage的语言/版本改变也重新读取。
+
+实际维护AMD ApiClient/ApiClientEx/events/Credentials和保留CM在合成Fetch下执行布局GET、收藏POST、已看POST/DELETE和原CM退出；验证写成功通知清缓存/在途请求、退出和同用户重登、身份变化、错误/坏schema拒绝、投影canary无残留、TTL/键分界和监听清理。其他连接/库变化/WebSocket消息为真events的合成派发；Home controller的DOM/itemscontainer为替身，未把它们记为真实服务或完整GUI。最终12文件定向集合170/170，0失败/取消/跳过（完整命令见[适配合同](PAGE_CACHE_HOME_ADAPTER.md)）；没有性能提升结论。新文件走普通Git blob物化，固定overlay输出及共享API源码/选择清单不变。通用内容缓存的写前/写后双失效、播放上报、逐页TTL/容量/设置入口继续未接；本阶段只对无用户状态的布局实施已有成功写通知失效。
+
+## 2026-10-23 — 页面缓存现状与未启用基础
+
+静态追踪维护 HomeTab/provider、固定 ListController/VirtualScroller、ItemPage 生命周期 overlay 和 Fetch/API 局部缓存；区分页面数据、DOM/滚动/焦点和图片缓存。新增独立 AMD/CommonJS 模块，不注册别名、不拦截 API、不新增依赖或产品功能入口。只有显式 enabled 与资源策略同时具备时才保留 DTO/共享读；始终要求当前认证上下文，非法替换也清空旧身份。loader取得调用时捕获的params副本；使用JSON快照隔离消费者修改，限制保留条目/序列化字节和在途请求/订阅者。写 owner 可在开始前及结算后invalidate，退休待回包；认证、通知和写生命周期实际接线列为启用前置，未冒充已完成。
+
+`node --test tests/page-data-cache.test.cjs`覆盖36项；连同首页接口/渲染、详情生命周期、电影浏览、搜索、Git物化、Web overlay及build-input合同最终132/132通过（0失败/取消/跳过）。缓存回归涵盖同身份重登/切用户/切服/切client/退出、getter/凭据/来源拒绝、TTL边界和队列到期、pending去重/单人取消/最后取消、忽略abort的旧成功/失败、同步abort重入、写前后失效、容量和克隆隔离。完整复现命令及静态来源图见[页面缓存方案](PAGE_DATA_CACHE.md)。本轮仅离线单元与材料合同，不代表真实应用接入、HTTP命中率、返回滚动视觉或Windows整包验收；图片、视频缓存和FNConnect没有改动。
+
 ## 2026-10-23 — 独立后续修复：FPS 临时暂停恢复
 
 将辅助任务暂停与显式用户意图分开，恢复同时核对 request/work 和用户命令 revision。保留原 native cycle；不以旧同值属性回报推断显式命令已确认，cycle 后保守不再取得任务暂停归属。新增矩阵覆盖已暂停、等待中暂停、失败/恢复、连续 toggle、迟到旧回报、三次显式命令及 Stop/Next；最终修前13/30、修后30/30，相关227/227。既有正常播放、合并和3000ms流程断言保持；未执行 Windows 实机或安装测试。

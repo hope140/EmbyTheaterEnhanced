@@ -48,6 +48,8 @@ Native Helper 的 transport 终态与 owned process 退出分别确认。有 PID
 
 服务端首页接线候选仍以原 HomeTab/BaseTab 为生命周期 owner，通过固定 HomeTab/app.js overlay 加载一个维护 controller。它复用现有 ApiClient 只读 HomeSections 和 Section Items，服务能力或布局不支持时回完整旧 homesections。renderer 保留原 CardBuilder、itemscontainer、focus/input、播放与Session归属；暂停/刷新/销毁取消请求，旧页面 stage 与迟到响应不能重新提交。接口、布局首批支持范围和验证边界见[服务端首页合同](SERVER_HOME_SECTIONS.md)。
 
+首页布局增加默认关闭的独立缓存适配：仅接在HomeSections安全投影之后，Section Items仍沿原GET；原CM/API事件、认证代次和页面票据检查控制隔离/失效，未包装共享API或接入内容/播放缓存。普通生产调用不传开关及TTL，实际保持关闭；显式测试CLI在bootstrap之前验证包内身份、分配全新临时profile并经prepared preload传入有限选项，不改Host/安装器或新增IPC。见[隔离测试启动](PAGE_CACHE_TEST_ENTRY.md)；页面真接线与合成验证边界见[首页布局缓存](PAGE_CACHE_HOME_ADAPTER.md)。
+
 冷启动首页在同一 refresh epoch 内等待既有连接身份就绪，最长 3 秒；暂停/清理/销毁取消探测。失败状态显示通用文字，pending 仅去重所属进行中请求，成功 active 状态保留原去重。
 
 Windows 本地试验由 preload 提前捕获模块，原 play 入口传入原 PlaybackManager/events 幂等绑定。任务栏按钮、Web MediaSession 展示和可选 SMTC/DWM 共用原状态，命令仍经原 inputmanager。main-only 适配器校验 mainFrame、文档 token、sequence 与媒体代次，只捕获所属 video host，按需更新、最小化保帧、退出等待退休。固定 FFI 尚未进入正式构建，不改变 Native、Session 和窗口归属；见[当前记录](WINDOWS_MEDIA_CONTROLS.md)。
