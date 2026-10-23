@@ -214,7 +214,9 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 abortListener: null,
                 bridgeErrorListener: null,
                 corePlayingLogged: false,
-                nativeFallbackToastRequested: false
+                nativeFallbackToastRequested: false,
+                pauseIntent: null,
+                pauseIntentSequence: 0
             };
             activePlayRequest = request;
             if (enhancedRouteState) enhancedRouteState.begin(request);
@@ -1230,16 +1232,35 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             return destroyInternal()
         };
 
-        self.playPause = function () {
+        function recordPauseIntent(paused) {
+            if (!activePlayRequest) return;
+            // Native property echoes have no command identity; retain the last
+            // explicit intent until another UI command or a new Play owns it.
+            activePlayRequest.pauseIntent = paused;
+            activePlayRequest.pauseIntentSequence++;
+        }
 
+        function currentPauseIntent() {
+            if (activePlayRequest && activePlayRequest.pauseIntent != null) return activePlayRequest.pauseIntent;
+            if (fpsDisplayWork && fpsDisplayWork.request === activePlayRequest) return fpsDisplayWork.pauseState;
+            return self.paused();
+        }
+
+        self.playPause = function () {
+            // Native owns cycle ordering. Property replies do not identify
+            // individual cycles, so only explicit pause/unpause or a new Play
+            // can return automatic display-pause ownership to this adapter.
+            recordPauseIntent('toggle');
             sendCommand(['cycle', 'pause']);
         };
 
         self.pause = function () {
+            recordPauseIntent(true);
             setProperty({ pause: true });
         };
 
         self.unpause = function () {
+            recordPauseIntent(false);
             setProperty({ pause: false });
         };
 
@@ -1478,7 +1499,8 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 fpsDisplayWork.pendingFps = fps;
                 return fpsDisplayWork.promise;
             }
-            var work = {request: ownerRequest, pendingFps: fps, promise: null, waitTimer: null, releaseWait: null};
+            var work = {request: ownerRequest, pendingFps: fps, promise: null, waitTimer: null, releaseWait: null,
+                pauseState: currentPauseIntent()};
             fpsDisplayWork = work;
             work.promise = Promise.resolve().then(async function () {
                 try {
@@ -1497,7 +1519,14 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                         }
                         var newRate = pos[0] ? pos[0] : calc[0];
                         if (!newRate || newRate == curRefreshRate) continue;
-                        self.pause();
+                        var pauseSequence = ownerRequest.pauseIntentSequence;
+                        var resumeAfterChange = currentPauseIntent() === false;
+                        // This pause belongs to display work, not a user command.
+                        if (resumeAfterChange) setProperty({pause: true});
+                        function restoreDisplayPause() {
+                            if (resumeAfterChange && fpsDisplayWork === work && isCurrentPlayRequest(ownerRequest) &&
+                                ownerRequest.pauseIntentSequence === pauseSequence) setProperty({pause: false});
+                        }
                         try {
                             var appliedRate = await setRefreshRate(newRate, {signal: ownerRequest.controller.signal});
                             if (!Number.isFinite(Number(appliedRate)) || Number(appliedRate) <= 0) {
@@ -1510,7 +1539,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                                 ownerRequest.displaySyncReady = false;
                                 curRefreshRate = undefined;
                                 emitClientDiagnostic('warn', 'display', 'display-change-unavailable', requestDiagnosticDetails(ownerRequest));
-                                self.unpause();
+                                restoreDisplayPause();
                             }
                             return;
                         }
@@ -1522,7 +1551,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                                 resolve();
                             }, 3000);
                         });
-                        if (fpsDisplayWork === work && isCurrentPlayRequest(ownerRequest)) self.unpause();
+                        restoreDisplayPause();
                     }
                 } finally {
                     // Release before the drain settles so a new FPS cannot join

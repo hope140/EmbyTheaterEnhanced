@@ -20,6 +20,8 @@ STRM 按持久化 rules 的 cloud-first、mount-first 或 custom 顺序尝试 Di
 
 原恢复仍为fire-and-forget且不延迟Native销毁；先在共8000ms预算内观察current，同实例generation已变则跳过，第三值或不可观测不做补偿写。同值才沿原change恢复original，无效/不符回包只记固定unavailable，不重试也不声明硬件成功。该观察守卫不是原子事务或全局持有权，跨renderer同值及TOCTOU限制保持。
 
+后续独立修复将FPS任务临时暂停与显式用户意图分开：恢复只释放本任务取得且未被新显式命令接管的暂停。pause/unpause/playPause的最新意图归本次Play，未关联命令的属性回报只更新观测。native cycle仍由原生命令排序；cycle后FPS继续切率和原稳定等待，但在明确pause/unpause或新Play之前不再插入临时暂停/恢复。该请求级边界不改变原生实际状态事件，也不增加显示硬件事务或跨renderer持有权。
+
 About 校验固定 provenance/manifest 与二进制身份，实时运行状态独立读取；缺失信息保留 UNKNOWN/NOT AVAILABLE。诊断旁路复用 logger 与 sender 校验，不改变 source 或播放时序。
 
 About 的 M01 状态模型分别展示已校验包内 libmpv 文件 SHA、编译期预期版本/API/SHA 和 ready Helper 握手报告的运行版本/API/受限能力子集。包内文件 SHA 不表示当前加载映像 SHA；当前映像哈希与 Native 属性回读仍为 UNKNOWN。固定 Native render path 为 gpu-next/D3D11，mpv-vo/mpv-gpuapi 设置页值不作为 Native property 应用。
