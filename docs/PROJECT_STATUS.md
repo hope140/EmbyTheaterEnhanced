@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-23 — 默认关闭的完整缓存source主进程适配候选
+
+维护store移至src，tools入口兼容转引；真实Native Helper service新增仅由可信主进程harness显式配置启用的离线候选。容量/TTL/网络/活动租约策略不齐全即关闭；只选择已完整核验且经本次mock新授权的合成本地对象，不增加下载器/代理、renderer权限或Native线协议。最终source命中与一次回原source保持原endpoint/generation；Stop/Next取消迟到选择。租约直到匹配实际end-file或所属helper确认exit才释放，不以逻辑退休或transport失效冒充文件已关闭。
+
+新增16项受控适配验证；Native Helper/缓存/STRM/切集/kernel范围Node24.18.1/Linux共189/189通过、0跳过。初次夹具清理和I/O状态问题已修复并保留历史结果说明。没有Windows固定DLL/完整客户端/真实服务/安装验收；应用main未添加试验入口，普通包仍不能验收缓存功能。与auditfix潜在重叠仅本轮service/controller及共享文档，逐段整合；见 [试验配置、证据与冲突清单](PLAYBACK_CACHE_TRIAL.md)。
+
 ## 2026-10-23 — 最小缓存接线评估与回环HTTP验证
 
 新增默认关闭、仅固定回环同源且单对象不超过4096 bytes的测试客户端，未加入产品下载器或服务。12项真实HTTP小夹具覆盖206/强ETag、Range不支持、仅Last-Modified/弱校验器拒绝、URL换签、401/403、鉴权代次退休、跨账号store隔离、中断续传、重定向拒绝及超时/取消归属。首次11/12，失败为夹具误把server.close回调等同于所属socket.close；分开等待后12/12。最终缓存/调度/HTTP43项及原helper/STRM/切集范围共120/120通过、0跳过（Node24.18.1/Linux）。

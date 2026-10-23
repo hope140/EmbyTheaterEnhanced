@@ -1,6 +1,7 @@
 'use strict';
 
 const rendererBoundary = require('../enhanced/renderer-boundary');
+const {createTrial: createPlaybackCacheTrial} = require('../enhanced/playback-cache-trial');
 
 const fs = require('fs');
 const path = require('path');
@@ -174,6 +175,9 @@ function createService(options) {
   let placementChild = null;
   const observed = new Set();
   const fixedSettingLogged = new Set();
+  const playbackCacheTrial = createPlaybackCacheTrial(settings.playbackCacheTrial);
+  const cacheLoads = new WeakMap();
+  let cacheLoadEpoch = 0;
   const boundWindowEvents = [];
   const diagnostic = createNativeDiagnostics(logger);
   const helperRuns = new WeakMap();
@@ -507,10 +511,22 @@ function createService(options) {
       parentWindowHandle: decimalWindowHandle(host),
       expectedLibmpvVersion: target.expectedLibmpvVersion,
       onDiagnostic: function (record) { diagnostic(Object.assign({}, record, {helperRun})); },
+      onMediaClosed: playbackCacheTrial.enabled ? function (message) {
+        playbackCacheTrial.mediaClosed(owned, message.generationId, message.mediaIdentity);
+      } : undefined,
       onEvent: function (message) {
         if (client !== owned) return;
+        const cached = playbackCacheTrial.enabled && cacheLoads.get(owned);
+        if (cached && cached.generationId === message.generationId && message.name === 'start-file' && !cached.fallbackStarted) {
+          cached.mediaIdentity = message.mediaIdentity;
+          cached.selection.started(message.mediaIdentity);
+        }
         if (message.name === 'end-file' && message.value && message.value.reason === 4) {
           if (message.generationId !== owned.currentGenerationId) return;
+          if (cached && cached.generationId === message.generationId &&
+              (!cached.fallbackStarted || cached.mediaIdentity === message.mediaIdentity)) {
+            if (cached.fallbackStarted || cached.retry()) return;
+          }
           clearPresentation(presentation);
           surfaceWanted = false;
           syncSurfaceVisibility('media-error');
@@ -523,6 +539,7 @@ function createService(options) {
       },
       onTerminal: function (terminal) {
         if (client !== owned) return;
+        if (playbackCacheTrial.enabled) playbackCacheTrial.cancelPending();
         crashCount += terminal.name === 'process-exit-terminal' || terminal.name === 'stdout-end' ? 1 : 0;
         clearPresentation(presentation);
         lastVisibleMedia = null;
@@ -697,6 +714,7 @@ function createService(options) {
     let beginEpoch;
     if (operation === 'begin-generation') {
       acceptRendererEpoch(payload);
+      if (playbackCacheTrial.enabled) { ++cacheLoadEpoch; playbackCacheTrial.cancelPending(); }
       beginEpoch = ++generationEpoch;
     }
     const active = operation === 'begin-generation' ? await ensureClient() : client;
@@ -785,19 +803,53 @@ function createService(options) {
       }
       requireGeneration(active, payload);
       if (args[0] === 'loadfile') {
-        const load = active.load(args);
-        load.promise.catch(function (error) {
+        let selection = null;
+        const generationId = active.currentGenerationId;
+        const selectionEpoch = playbackCacheTrial.enabled ? ++cacheLoadEpoch : null;
+        const current = () => !destroyed && client === active && endpointId === activeEndpointId &&
+          !active.transportTerminated && !active.exited && generationId === active.currentGenerationId && selectionEpoch === cacheLoadEpoch;
+        if (playbackCacheTrial.enabled) {
+          playbackCacheTrial.cancelPending();
+          cacheLoads.delete(active);
+          selection = await playbackCacheTrial.select(args[1], active, generationId, current);
+          if (selection && !selection.canDispatch()) { selection.cancelBeforeDispatch(); selection = null; }
+          if (!current()) { if (selection) selection.cancelBeforeDispatch(); throw new Error('generation-superseded'); }
+        }
+        const cached = selection ? {generationId, selection, mediaIdentity: null, fallbackStarted: false} : null;
+        if (cached) cacheLoads.set(active, cached);
+        const loadArgs = selection ? ['loadfile', selection.source] : args;
+        const onFailure = function (error, cacheAttempt) {
+          if (cacheAttempt && cached && cached.fallbackStarted) return;
+          if (playbackCacheTrial.enabled && !current()) return;
+          const load = {generationId};
           if (client !== active || endpointId !== activeEndpointId || load.generationId !== active.currentGenerationId ||
               !error || error.state === 'GENERATION_RETIRED') return;
+          if (cacheAttempt && cached && cached.retry()) return;
           clearPresentation(presentation);
           surfaceWanted = false;
           syncSurfaceVisibility('load-failed');
           sendEvent({type: 'bridge_error', reason: 'load-failed'});
           log('load-failed', {reason: String(error.message || 'load-failed').slice(0, 128)});
-        });
+        };
+        if (cached) cached.retry = function () {
+          if (cached.fallbackStarted || !current() || !selection.contextCurrent() || !current()) return false;
+          cached.fallbackStarted = true;
+          try { active.load(args).promise.catch(error => onFailure(error, false)); }
+          catch (error) { onFailure(error, false); }
+          return true;
+        };
+        try {
+          const load = active.load(loadArgs);
+          load.promise.then(result => {
+            if (selection && result && Number.isSafeInteger(result.mediaIdentity)) selection.started(result.mediaIdentity);
+          }, error => onFailure(error, !!selection));
+        } catch (error) {
+          if (!cached || !cached.retry()) throw error;
+        }
         return {status: 'accepted'};
       }
       if (args[0] === 'stop') {
+        if (playbackCacheTrial.enabled) { ++cacheLoadEpoch; playbackCacheTrial.cancelPending(); }
         const retain = ownsPresentation(presentation) && presentation.token === payload.presentationToken &&
           validToken(presentation.holdId) && active.currentGenerationId === null;
         if (!retain) {
@@ -830,6 +882,7 @@ function createService(options) {
     if (!activeEndpointId || endpointId !== activeEndpointId) return;
     if (operation === 'retire-generation' && request) {
       acceptRendererEpoch(request);
+      if (playbackCacheTrial.enabled) { ++cacheLoadEpoch; playbackCacheTrial.cancelPending(); }
       ++generationEpoch;
       // A newer endpoint epoch also cancels a begin whose ID has not returned to the renderer yet.
       if (client && (validToken(request.requestEpoch) || request.generationId === null || request.generationId === client.currentGenerationId)) {
@@ -845,6 +898,7 @@ function createService(options) {
   }
 
   async function destroyClient(reason) {
+    if (playbackCacheTrial.enabled) { ++cacheLoadEpoch; playbackCacheTrial.cancelPending(); }
     ++generationEpoch;
     clearPresentation(presentation);
     lastVisibleMedia = null;
@@ -893,6 +947,9 @@ function createService(options) {
         if (!cleanupFailure) cleanupFailure = {reason: error};
       } finally {
         surfaceWindow = null;
+      }
+      if (playbackCacheTrial.enabled) {
+        try { playbackCacheTrial.close(); } catch (error) { if (!cleanupFailure) cleanupFailure = {reason: error}; }
       }
       if (failure) throw failure.reason;
       if (cleanupFailure) throw cleanupFailure.reason;

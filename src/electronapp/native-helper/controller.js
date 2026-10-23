@@ -137,6 +137,7 @@ class NativeHelperClient {
     this.protocolFailure = null;
     this.handshake = null;
     this.onEvent = typeof options.onEvent === 'function' ? options.onEvent : () => {};
+    this.onMediaClosed = typeof options.onMediaClosed === 'function' ? options.onMediaClosed : null;
     this.onDiagnostic = typeof options.onDiagnostic === 'function' ? options.onDiagnostic : () => {};
     this.onTerminal = typeof options.onTerminal === 'function' ? options.onTerminal : () => {};
     this.outboundQueue = [];
@@ -301,6 +302,13 @@ class NativeHelperClient {
       return;
     }
     if (message.type === 'event') {
+      // Resource retirement is independent of renderer playback authority.
+      // Called only after helper identity/transport checks, including old media.
+      if (this.onMediaClosed && message.scope === 'generation' && message.name === 'end-file' &&
+          Number.isSafeInteger(message.generationId) && message.generationId > 0 &&
+          message.rawEventId === 7 && Number.isSafeInteger(message.mediaIdentity) && message.mediaIdentity >= 0) {
+        try { this.onMediaClosed(message); } catch (_) { /* Keep transport delivery independent. */ }
+      }
       if (message.generationId !== this.currentGenerationId) {
         this.timeline.push({ ...base, action: 'DROP_STALE_GENERATION', value: message.value });
         this.diagnose(message.name, message.generationId, 'DROP_STALE_GENERATION');

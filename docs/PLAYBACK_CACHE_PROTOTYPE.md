@@ -1,6 +1,6 @@
 # 播放缓存与下一集预加载准备
 
-这是正式版之后的离线原型，不是已启用的用户功能。代码仅在 `tools/prototypes/playback-cache`，没有被产品源码、IPC、构建输入或播放器引用；配置缺省为关闭。缓存容量、过期时间、启用条件和下一集策略尚未决定；试验启用须显式提供全部策略参数。它不使用页面缓存数据层。
+这是正式版之后的默认关闭候选，不是已启用的用户功能。前期代码仅在 `tools/prototypes/playback-cache`；后续store已移至维护src，并加入仅主进程显式离线配置可启用的service适配。当前范围以 [完整source试验合同](PLAYBACK_CACHE_TRIAL.md) 为准；没有新增产品UI/IPC/启动开关。缓存容量、过期时间、启用条件和下一集策略尚未决定；试验启用须显式提供全部策略参数。它不使用页面缓存数据层。
 
 ## 现有链路与可保留数据
 
@@ -14,7 +14,7 @@
 
 ## 阶段一：磁盘字节与生命周期
 
-`store.cjs` 的 `createStore()` 默认返回 `{enabled:false}`，不会读取文件系统。显式启用要求独占、物理父目录，以及 `maxBytes`、`maxEntries`、`ttlMs`、`minFreeBytes` 全部参数；没有产品默认策略。它创建专属 `playback-cache-prototype-v1` 目录和 owner 标记，拒绝无归属目录、未知成员、符号链接、硬链接和并发打开。文件权限在支持的系统上为目录 0700、文件 0600；这不代表 Windows ACL 加固。
+`store.cjs`（当前转引维护src）的 `createStore()` 默认返回 `{enabled:false}`，不会读取文件系统。显式启用要求独占、物理父目录，以及 `maxBytes`、`maxEntries`、`ttlMs`、`minFreeBytes` 全部参数；没有产品默认策略。它创建专属 `playback-cache-prototype-v1` 目录和 owner 标记，拒绝无归属目录、未知成员、符号链接、硬链接和并发打开。文件权限在支持的系统上为目录 0700、文件 0600；这不代表 Windows ACL 加固。
 
 - 身份覆盖 server/account/item/MediaSource/version/representation。必须使用能区分服务器实例、账号和真实对象版本的身份，不能只用路径或临时 URL；每个字段均参与复合 SHA256。长度和原始强 ETag 也参与身份。盘上仅保留复合 hash、字节 digest、长度和生命周期数值；不保留 URL、headers、账号 ID 原文、ETag 原文或凭据。hash 是隔离索引，不是匿名化或加密；磁盘媒体正文仍是明文。
 - 调用者必须提供刚刚验证的授权、direct-file、Range 支持、完整长度、强 ETag 和授权有效期限。原型严格拒绝未知字段、弱 ETag、转码、HLS 和未知长度。该 proof 是调用合同，**本模块不验证 HTTP 或真实授权**；不能把测试输入当服务验证证据。
