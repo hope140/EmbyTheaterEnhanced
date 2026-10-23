@@ -29,9 +29,21 @@ function parseLaunch(argv) {
         if (names.length && (!fs.existsSync(marker) || fs.lstatSync(marker).isSymbolicLink() || fs.readFileSync(marker, 'utf8') !== 'ETE isolated cache trial v1\n')) return off;
         if (!names.length) fs.writeFileSync(marker, 'ETE isolated cache trial v1\n', {flag: 'wx', mode: 0o600});
         const storage = path.join(profile, 'cache'), userData = path.join(profile, 'electron');
-        fs.mkdirSync(storage, {recursive: true, mode: 0o700}); fs.mkdirSync(userData, {recursive: true, mode: 0o700});
-        if (fs.realpathSync(storage) !== storage || fs.realpathSync(userData) !== userData) return off;
-        return Object.freeze({enabled: true, profileRoot: profile, parent: storage, userData, config});
+        const localData = path.join(profile, 'local'), mpvHome = path.join(profile, 'mpv');
+        for (const directory of [storage, userData, localData, mpvHome]) {
+            fs.mkdirSync(directory, {recursive: true, mode: 0o700});
+            if (fs.realpathSync(directory) !== directory) return off;
+        }
+        return Object.freeze({enabled: true, profileRoot: profile, parent: storage, userData, localData, mpvHome, config});
     } catch { return off; }
 }
-module.exports = {parseLaunch, valid};
+function activateProfile(app, launch, environment) {
+    if (!launch || launch.enabled !== true) return;
+    app.setPath('appData', launch.profileRoot);
+    app.setPath('userData', launch.userData);
+    app.setPath('sessionData', launch.userData);
+    environment.APPDATA = launch.profileRoot;
+    environment.LOCALAPPDATA = launch.localData;
+    environment.MPV_HOME = launch.mpvHome;
+}
+module.exports = {parseLaunch, valid, activateProfile};

@@ -6,7 +6,7 @@
 
 必须同时传入三个参数：`--ete-cache-trial`、`--ete-cache-trial-config=<绝对JSON路径>`、`--ete-cache-trial-profile=<绝对隔离目录>`。策略所有字段均需明确提供，未知/缺失字段、非法值、符号路径或已有普通profile均拒绝。试验profile须为空或带本试验owner标记；JSON放在profile外，否则非空目录不能首次认领。没有参数时普通应用保持关闭；参数不完整时在bootstrap打开任何应用profile之前退出，不回到正式profile。
 
-开启后，应用bootstrap数据和Electron userData都位于该隔离根。不会复制正式profile、账号数据或mpv个人配置，也不启动安装器。账号通过现有登录界面在隔离profile内正常使用；缓存模块不另存凭据，不改变原认证/注册流程。不要把此试验目录指向现有应用数据目录。
+开启后，应用bootstrap数据和Electron appData/userData/sessionData都位于该隔离根；仅本次进程的APPDATA、LOCALAPPDATA和MPV_HOME也指向自有试验子目录，避免preload/helper继承个人路径。不会修改系统环境或复制个人mpv配置。不会复制正式profile、账号数据或mpv个人配置，也不启动安装器。账号通过现有登录界面在隔离profile内正常使用；缓存模块不另存凭据，不改变原认证/注册流程。不要把此试验目录指向现有应用数据目录。
 
 [示例策略](templates/PLAYBACK_CACHE_TRIAL_CONFIG.json) 所有值都是操作者显式选择的试验例子，**不是正式默认策略**。示例为32MiB逻辑容量、4条目、1小时TTL、1GiB最低空闲、单文件8MiB、256KiB/s、32KiB块、120秒任务上限及2000ms新验证交接窗口。实现试验硬上限：总逻辑媒体64MiB、16条目、单文件16MiB、块64KiB、任务1小时。超过用户限额或实现上限直接跳过，不读取整片再决定。
 
@@ -29,11 +29,11 @@ TTL控制新命中与有归属的机会清理（启动、后续写入/配额回�
 
 ## 自动证据
 
-`tests/playback-cache-runtime.test.cjs` 的20项含：启动缺项/隔离、现有ApiClient身份捕获与切账号失效、真实确认快捷键/取消快捷键、原生暂停属性/确认门禁、完整下载、换签URL后完整本地源消费、跨账号/服务器/版本拒绝、Range/长度/缓存指令拒绝、中断与重确认续传、恢复/取消/Stop/Next/退出回收、对话框目标换代。全部HTTP由本测试进程的 `127.0.0.1` 临时端口提供，正文为60-byte合成PCM WAV，模拟helper实际从命中路径读出完全相同字节；无真实账号/媒体/NAS或外部目标下载。
+`tests/playback-cache-runtime.test.cjs` 的21项含：启动缺项/隔离、现有ApiClient身份捕获与切账号失效、真实确认快捷键/取消快捷键、原生暂停属性/确认门禁、完整下载、换签URL后完整本地源消费、跨账号/服务器/版本拒绝、Range/长度/缓存指令拒绝、中断与重确认续传、恢复/取消/Stop/Next/退出回收、对话框目标换代。全部HTTP由本测试进程的 `127.0.0.1` 临时端口提供，正文为60-byte合成PCM WAV，模拟helper实际从命中路径读出完全相同字节；无真实账号/媒体/NAS或外部目标下载。
 
 端到端正常路径首先恰好传输60字节正文，下次播放只再读1字节校验，再由维护service分派本地对象。它证明网络字节与完整source链路，**不是Windows固定DLL解码、可见帧、声音、字幕、Session服务器回报或缓冲延迟实测**。status使用固定值 `ready`、`local-source-selected`、`local-media-opened`、`original-source-fallback`，不报告媒体标识/URL；`local-media-opened`也不等于已显示视频帧。
 
-本阶段Node24.18.1/Linux相关回归220/220通过、0跳过；此前189及120项属于之前阶段，不能复用作本次Windows产物证据。测试命令：
+本阶段Node24.18.1/Linux相关回归221/221通过、0跳过；此前189及120项属于之前阶段，不能复用作本次Windows产物证据。测试命令：
 
 ```sh
 node --test tests/playback-cache-*.test.cjs tests/native-helper-*.test.cjs tests/strm-resolver.test.cjs tests/nexttrack-transition.test.cjs tests/mpv-kernel-service.test.cjs tests/mpv-kernel-bootstrap.test.cjs tests/libmpv-stats.test.cjs tests/renderer-boundary.test.cjs
@@ -58,3 +58,5 @@ Copy-Item '<feature-checkout>\docs\templates\PLAYBACK_CACHE_TRIAL_CONFIG.json' $
 只需验收：确认新隔离profile；用户选有权访问且满足限额的短DirectPlay媒体；暂停/快捷键/确认/结果；Stop再播放验证命中及原Session/音字幕行为；下载中恢复或取消；关闭后所属进程和连接退出。真实服务器不满足强ETag/Range等应安全回原source，不能改策略绕过。需要用户账号、真实服务器/NAS或体验的步骤留给用户明确操作；本环境未执行这些步骤。
 
 本轮与auditfix潜在冲突扩大为：`main.js`、`plugins/libmpv.js`、`native-helper/client.js`、`native-helper/service.js`，以及前期 `native-helper/controller.js` 和共享状态文档。均需逐段合并，不能整文件覆盖对方；Native C++、认证实现、构建workflow、版本和正式安装逻辑不改。
+
+隔离路径需在Electron ready之前设置；实现采用官方app.setPath支持的appData/userData/sessionData，并在目录创建/物理归属检查后激活。[Electron路径合同](https://www.electronjs.org/docs/latest/api/app#appsetpathname-path)。这是源码合同与受控app/env替身验证，固定Electron实际启动仍按测试包单独验收。

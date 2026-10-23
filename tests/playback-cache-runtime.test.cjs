@@ -6,7 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const http = require('node:http');
 const {EventEmitter} = require('node:events');
-const {parseLaunch, valid} = require('../src/electronapp/enhanced/playback-cache-launch');
+const {parseLaunch, valid, activateProfile} = require('../src/electronapp/enhanced/playback-cache-launch');
 const {createRuntime} = require('../src/electronapp/enhanced/playback-cache-runtime');
 const {createService} = require('../src/electronapp/native-helper/service');
 const nativeClient = require('../src/electronapp/native-helper/client');
@@ -51,6 +51,17 @@ test('context comes from the existing ApiClient and PlaybackManager identities, 
         {playMethod: 'DirectPlay', playSessionId: 'session-from-playbackinfo'}, 'http://127.0.0.1:1234/stream?api_key=current-token');
     assert.equal(captured().accountId, 'current-user'); assert.equal(captured().playSessionId, 'session-from-playbackinfo');
     assert.equal(Object.hasOwn(captured(), 'authorized'), false); account = 'different-user'; assert.equal(captured(), null);
+});
+
+test('trial activation isolates renderer/preload/mpv process paths; disabled launch leaves them unchanged', t => {
+    const f = files(t), profile = path.join(f.parent, 'profile'), cfg = path.join(f.parent, 'policy.json'); fs.mkdirSync(profile); fs.writeFileSync(cfg, JSON.stringify(config()));
+    const launch = parseLaunch(['--ete-cache-trial', '--ete-cache-trial-config=' + cfg, '--ete-cache-trial-profile=' + profile]);
+    const paths = {}, env = {APPDATA: 'ordinary', LOCALAPPDATA: 'ordinary-local', MPV_HOME: 'personal-mpv'};
+    activateProfile({setPath: (key, value) => { paths[key] = value; }}, {enabled: false}, env);
+    assert.deepEqual(paths, {}); assert.equal(env.APPDATA, 'ordinary');
+    activateProfile({setPath: (key, value) => { paths[key] = value; }}, launch, env);
+    assert.deepEqual(paths, {appData: profile, userData: launch.userData, sessionData: launch.userData});
+    assert.deepEqual(env, {APPDATA: profile, LOCALAPPDATA: launch.localData, MPV_HOME: launch.mpvHome});
 });
 
 test('missing session/server identity or transcoding yields no fabricated cache context', () => {

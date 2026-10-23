@@ -25,6 +25,7 @@
         console.error('Cache trial configuration invalid; no application profile opened.');
         app.exit(2); return;
     }
+    require('./enhanced/playback-cache-launch').activateProfile(app, cacheLaunch, process.env);
     var appBootstrap = require('./enhanced/bootstrap');
     var deviceIdentity = require('./device-identity');
     var enhancedDiagnostics = require('./enhanced/diagnostics');

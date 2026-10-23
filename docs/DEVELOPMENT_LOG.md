@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-23 — 缓存试验进程路径隔离补齐
+
+复核发现preload会读取APPDATA、helper会继承MPV_HOME；现仅在合法显式试验启动时、Electron ready/bootstrap前，将appData/userData/sessionData及本进程APPDATA/LOCALAPPDATA/MPV_HOME统一指向已创建并验证归属的试验目录。普通关闭路径不改值，不写系统环境、不复制个人配置。新增1项激活/关闭对照，当前回归221/221通过、0跳过（运行链路21项）；此前220项是前一提交结果。Windows固定Electron启动和真实播放继续待独立产物验收。
+
 ## 2026-10-23 — 隔离启动、当前会话身份与完整HTTP缓存试验
 
 独立feature/playback-cache正常重基到正式main 88578c91ab19d44eecddcfae096d37dc917ef1f4，保留两份文档冲突双方内容；不修改main/发布分支。应用增加显式试验开关、完整策略JSON和空/自有隔离profile入口，缺项在打开profile前退出；普通无参仍关闭。当前身份来自原ApiClient/PlaybackManager的服务器、用户、Item、MediaSource及PlaySession，授权与文件版本由实际同源206/强ETag响应重新验证，不接受renderer伪造authorized。
