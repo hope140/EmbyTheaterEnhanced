@@ -2,6 +2,7 @@
 const test = require('node:test'), assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path'), os = require('node:os'), crypto = require('node:crypto'), cp = require('node:child_process');
 const plan = require('../tools/ci-source-built-host-plan.cjs');
 const receipt = require('../tools/runner-host-receipt.cjs');
+const verifier = require('../tools/host-verifier-input.cjs');
 const root = path.resolve(__dirname, '..'), sha = b => crypto.createHash('sha256').update(b).digest('hex');
 function temp(t) {const d = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-runner-host-'))); t.after(() => fs.rmSync(d, {recursive: true, force: true})); return d;}
 test('runner acquisition pins exact official commit, all55 raw source members and two package identities', () => {
@@ -14,6 +15,14 @@ test('runner acquisition pins exact official commit, all55 raw source members an
         ['newtonsoft', 'f09081d457405baf35a973fa0c50d6bf272ed683f2568c5a620a49da952f6529'],
         ['net462', 'ee692a845743500910855d4c330ca6e9ef87c16e16f740e4474d187185d66e21']]);
     assert.equal(p.sourceIdentitySha256, require('../tools/source-built-host-input.cjs').sourceIdentity(root).sha256);
+});
+test('published Host lock schema and build identity describe the same unified source selection', () => {
+    const schema = JSON.parse(fs.readFileSync(path.join(root, 'tools/windows-host-build/VERIFIED-RUNTIME.schema.json')));
+    const expected = JSON.parse(fs.readFileSync(path.join(root, 'tools/windows-host-build/EXPECTED-SOURCE-IDENTITY.json')));
+    assert.equal(schema.properties.sourceIdentitySha256.const, expected.sha256);
+    assert.equal(schema.properties.sourceIdentitySha256.const, plan.createPlan(root).sourceIdentitySha256);
+    assert.equal(schema.properties.framework.const, 'net462');
+    assert.equal(schema.properties.platform.const, 'x86');
 });
 test('runner materializes a byte-bound current kit without importing any binary or acceptance envelope', t => {
     const out = path.join(temp(t), 'kit'), m = plan.materializeKit(root, out);
@@ -29,6 +38,31 @@ test('runner builder exactly matches the Work-validated parameter/facade/metadat
     const s = b.toString('utf8'); assert.match(s, /AssemblySearchPaths='\{HintPathFromItem\};\{TargetFrameworkDirectory\}'/);
     assert.match(s, /NoStdLib='true'/); assert.doesNotMatch(s, /'\/p:AssemblySearchPaths=/);
     assert.match(s, /\$machine=\[Reflection\.ImageFileMachine\]::I386/);
+});
+test('reviewed portable verifier retains all32 Git-delivered inputs and every input is source-bound', () => {
+    assert.deepEqual(verifier.validate(root), {files: 32, bytes: 196010});
+    const inputs = require('../tools/build-input-contract.cjs').INPUT_PATHS;
+    for (const p of verifier.PATHS) {
+        assert.ok(inputs.includes(p), 'missing build input ' + p);
+        assert.ok(receipt.GENERATOR_PATHS.includes(p), 'missing runner generator ' + p);
+    }
+    assert.ok(inputs.includes('tools/Test-SourceBuiltHost.ps1'));
+    assert.ok(inputs.includes('tools/host-verifier-input.cjs'));
+});
+for (const mutation of ['changed-script', 'changed-zip', 'extra-file', 'redirect']) test('portable verifier rejects unreviewed input: ' + mutation, t => {
+    const r = temp(t);
+    fs.cpSync(path.join(root, 'tools/windows-host-verifier'), path.join(r, 'tools/windows-host-verifier'), {recursive: true});
+    const file = path.join(r, mutation === 'changed-zip' ? verifier.BINARY_PATHS[0] : 'tools/windows-host-verifier/Verify-UnifiedHost.ps1');
+    if (mutation === 'extra-file') fs.writeFileSync(path.join(r, 'tools/windows-host-verifier/unreviewed.ps1'), 'unreviewed');
+    else if (mutation === 'redirect') {fs.renameSync(file, file + '.original'); fs.symlinkSync(file + '.original', file, 'file');}
+    else fs.appendFileSync(file, 'changed');
+    assert.throws(() => verifier.validate(r), /Host verifier/);
+});
+test('private configuration probe input rejects a different build scope before creating output', t => {
+    const build = path.join(temp(t), 'actual-build'); fs.mkdirSync(build);
+    fs.writeFileSync(path.join(build, 'build-receipt.json'), JSON.stringify({scope: 'cec-update-json-zip-unified', sourceIdentitySha256: '0'.repeat(64)}));
+    assert.throws(() => plan.prepareVerificationInput(root, build), /scope mismatch/);
+    assert.equal(fs.existsSync(path.join(build, 'verification-inputs')), false);
 });
 for (const p of ['../x', '/x', 'x\\y', 'x:y', 'x//y', 'x/./y', 'x/NUL.dll', 'x/name.', 'x/a\0b']) test('runner recovery rejects unsafe member path: ' + JSON.stringify(p), () => assert.throws(() => plan.safeRelative(p), /Unsafe/));
 test('runner package recovery rejects wrong bytes and redirects before extraction', t => {
@@ -71,14 +105,24 @@ test('manual package route requires runner compiler/probe before assembly and ne
     assert.match(runner, /Test-SourceBuiltHost\.ps1/); assert.match(runner, /runner-verification\.json/);
     assert.doesNotMatch(runner, /ExecutionPolicy|download-artifact|libfile_|Invoke-Expression/);
     assert.ok(runner.indexOf('if (-not (Test-Path -LiteralPath $probe))') < runner.indexOf("-File (Join-Path $kit 'Build-UnifiedHost.ps1')"));
+    assert.match(runner, /& \$windowsPowerShell .*?-File \(Join-Path \$kit 'Build-UnifiedHost.ps1'\)/);
+    assert.match(runner, /& \$verifierPowerShell .*?-File \$probe/);
+    assert.match(runner, /Get-Command pwsh\.exe -ErrorAction Stop/);
+    assert.ok(runner.indexOf('verification-input $root $buildRoot') < runner.indexOf('-File $probe'));
+    const wrapper = fs.readFileSync(path.join(root, 'tools/Test-SourceBuiltHost.ps1'), 'utf8');
+    assert.match(wrapper, /host-verifier-input\.cjs/);
+    assert.match(wrapper, /windows-host-verifier\/Verify-UnifiedHost\.ps1/);
+    assert.match(wrapper, /\$receipt\.result -cne 'passed'/);
+    assert.doesNotMatch(wrapper, /ExecutionPolicy|Invoke-Expression|download-artifact/);
 });
 function stagedRunner(t) {
     const dir = temp(t), r = path.join(dir, 'repo'), build = path.join(dir, 'build'); fs.mkdirSync(r); fs.mkdirSync(build);
     const write = (base, p, b) => {fs.mkdirSync(path.dirname(path.join(base, p)), {recursive: true}); fs.writeFileSync(path.join(base, p), b);};
-    for (const p of ['native/windows-host', 'tools/windows-host-build']) fs.cpSync(path.join(root, p), path.join(r, p), {
+    for (const p of ['native/windows-host', 'tools/windows-host-build', 'tools/windows-host-verifier']) fs.cpSync(path.join(root, p), path.join(r, p), {
         recursive: true,
         filter: source => path.relative(root, source).replaceAll(path.sep, '/') !== 'native/windows-host/verified-runtime.json'
     });
+    write(r, 'tools/host-verifier-input.cjs', fs.readFileSync(path.join(root, 'tools/host-verifier-input.cjs')));
     for (const p of ['vendor/windows-host-manifest.json', 'vendor/model-compatibility-manifest.json', 'vendor/host-json-manifest.json']) write(r, p, fs.readFileSync(path.join(root, p)));
     write(r, 'tools/Test-SourceBuiltHost.ps1', '# synthetic probe bytes for receipt/staging tests; never executed\n');
     const jsonBytes = Buffer.from('synthetic JSON dependency'), m = JSON.parse(fs.readFileSync(path.join(r, 'vendor/host-json-manifest.json')));

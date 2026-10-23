@@ -72,10 +72,14 @@ try {
 } finally { $zip.Dispose() }
 if ($PrepareOnly) { Write-Output 'Prepared exact source/packages/kit only; no Host compilation, execution or verified lock.'; return }
 
-# A real runner-side probe must be supplied and validated before enabling this path.
-# Never import the external Work verification envelope or synthesize a passed one.
+# Validate the reviewed probe before compilation; never import an external envelope.
 $probe = Join-Path $PSScriptRoot 'Test-SourceBuiltHost.ps1'
-if (-not (Test-Path -LiteralPath $probe)) { throw 'Runner Host verification harness is pending Work handoff; no compiled/accepted runtime or package is produced.' }
+if (-not (Test-Path -LiteralPath $probe)) { throw 'Runner Host verification harness is missing; no compiled/accepted runtime or package is produced.' }
+& node $tool verify-verifier $root
+if ($LASTEXITCODE -ne 0) { throw 'Reviewed Host verifier inputs failed validation.' }
+$verifierPowerShell = (Get-Command pwsh.exe -ErrorAction Stop).Source
+& $verifierPowerShell -NoProfile -NonInteractive -Command 'if ($PSVersionTable.PSVersion.Major -lt 7) { exit 1 }'
+if ($LASTEXITCODE -ne 0) { throw 'Existing PowerShell7 verifier host unavailable; no install/fallback.' }
 $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
 if (-not (Test-Path -LiteralPath $vswhere)) { throw 'Existing VS2022 locator unavailable; no compiler install/fallback.' }
 $msbuild = @(& $vswhere -version '[17.0,18.0)' -products '*' -requires Microsoft.Component.MSBuild -find 'MSBuild\**\Bin\MSBuild.exe')
@@ -84,8 +88,10 @@ $buildRoot = Join-Path ([IO.Path]::GetTempPath()) ('ete-host-unified-' + [guid]:
 $windowsPowerShell = Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe'
 & $windowsPowerShell -NoProfile -NonInteractive -File (Join-Path $kit 'Build-UnifiedHost.ps1') -SourceRoot $source -OfficialHostRoot (Join-Path $root 'vendor/windows-host/3.0.20') -ModelPath (Join-Path $root 'vendor/model-compatibility/snapshot-v1/MediaBrowser.Model.dll') -NewtonsoftDllPath $jsonDll -NewtonsoftPackage $jsonPackage -MSBuildPath $msbuild[0] -ReferenceAssembliesPackage $referencePackage -ReferenceAssembliesPath $framework -OutputRoot $buildRoot
 if ($LASTEXITCODE -ne 0) { throw 'Runner Host compilation failed; no old Host fallback.' }
+& node $tool verification-input $root $buildRoot
+if ($LASTEXITCODE -ne 0) { throw 'Official private-versus-omitted probe input failed validation.' }
 $receipt = Join-Path $buildRoot 'runner-verification.json'
-& $windowsPowerShell -NoProfile -NonInteractive -File $probe -BuildRoot $buildRoot -OutputReceipt $receipt
+& $verifierPowerShell -NoProfile -NonInteractive -File $probe -BuildRoot $buildRoot -OutputReceipt $receipt
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $receipt)) { throw 'This runner has not verified these exact Host bytes.' }
 & $windowsPowerShell -NoProfile -NonInteractive -File (Join-Path $kit 'New-VerifiedRuntime.ps1') -BuildRoot $buildRoot -VerificationReceipt $receipt
 if ($LASTEXITCODE -ne 0) { throw 'Runner verification envelope rejected.' }

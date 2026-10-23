@@ -5,6 +5,7 @@ const path = require('node:path');
 const cp = require('node:child_process');
 const crypto = require('node:crypto');
 const host = require('./source-built-host-input.cjs');
+const verifier = require('./host-verifier-input.cjs');
 const sha = b => crypto.createHash('sha256').update(b).digest('hex');
 const COMMIT = '708fadc068cbf66ced6aece4a32f3e12bb2c4e13';
 const REPOSITORY = 'https://github.com/MediaBrowser/emby-theater-windows';
@@ -91,6 +92,18 @@ function materializeKit(root, out) {
         sourceIdentitySha256: plan.sourceIdentitySha256, files: buffers.map(f => ({path: f.path, size: f.bytes.length, sha256: sha(f.bytes)}))};
     write(out, 'HANDOFF-MANIFEST.json', Buffer.from(JSON.stringify(manifest, null, 2) + '\n')); return manifest;
 }
+function prepareVerificationInput(root, buildRoot) {
+    verifier.validate(root);
+    physical(buildRoot);
+    const record = JSON.parse(bytes(buildRoot, 'build-receipt.json'));
+    if (record.scope !== 'cec-update-json-zip-unified' || record.sourceIdentitySha256 !== host.sourceIdentity(root).sha256) throw Error('Host verification input build scope mismatch.');
+    const contract = JSON.parse(bytes(root, 'tools/windows-host-verifier/expected-build-contract.json'));
+    const value = bytes(root, 'vendor/windows-host/3.0.20/System.Configuration.dll');
+    if (value.length !== 93200 || sha(value) !== contract.privateConfigSha256) throw Error('Private configuration verification input mismatch.');
+    const out = newDirectory(path.join(buildRoot, 'verification-inputs'));
+    write(out, 'System.Configuration.dll', value);
+    return {purpose: 'controlled private-versus-omitted probe only; never product runtime', sha256: sha(value)};
+}
 if (require.main === module) {
     try {
         const [command, root, a, b] = process.argv.slice(2);
@@ -99,6 +112,8 @@ if (require.main === module) {
         else if (command === 'verify-package') result = verifyPackage(root, a, b);
         else if (command === 'source') result = restoreSource(root, a, b);
         else if (command === 'kit') result = materializeKit(root, a);
+        else if (command === 'verify-verifier') result = verifier.validate(root);
+        else if (command === 'verification-input') result = prepareVerificationInput(root, a);
         else if (command === 'install-runner') result = require('./runner-host-receipt.cjs').install(root, a);
         else if (command === 'new-work') {
             if (path.resolve(a) !== path.resolve(root, '.work/actions-host-build')) throw Error('Unexpected Host runner work path.');
@@ -108,4 +123,4 @@ if (require.main === module) {
         process.stdout.write(JSON.stringify(result, null, 2) + '\n');
     } catch (e) { process.stderr.write(e.message + '\n'); process.exitCode = 1; }
 }
-module.exports = {COMMIT, REPOSITORY, KIT_FILES, KIT_INPUTS, safeRelative, physical, createPlan, verifyPackage, restoreSource, materializeKit};
+module.exports = {COMMIT, REPOSITORY, KIT_FILES, KIT_INPUTS, safeRelative, physical, createPlan, verifyPackage, restoreSource, materializeKit, prepareVerificationInput};

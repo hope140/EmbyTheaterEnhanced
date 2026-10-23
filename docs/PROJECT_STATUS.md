@@ -1,5 +1,17 @@
 # 项目状态
 
+## 2026-10-23 — 候选包验收通过，统一收尾中
+
+本轮隔离候选包实际来源提交为 `ad77308cd83bd629a7b75349d727044f9fa1d86b`。Windows 构建、安装器核验、升级、测试副本实际 STRM 播放和正常 Host 入口检查已获通过回报，用户确认本轮验收通过。该结论限定于此候选及实际执行范围，不表示全部环境、硬件或许可核验完成。
+
+已公开交接的源码提交为 `d0ea97369e52dccacbb1e6bbf5dbd9419a0733cd`，其 tree 为 `54107e55fdbc4904df0dcda1815c892a250b8392`。后续38文件构建／测试修正及已验证Windows验证器已通过 `0a8bf15c25df507fe4c7b55431bb3bbd8e67f09f` 同步；不能把两次提交当成同一产品来源。来源指纹仍为 `81b18ab1264941b7121967770d9b791af7fd4436b6cf910da443c92f967eea45`。
+
+当前整理 README、构建入口、Host 输入和退役范围说明，并纠正锁 schema 的历史指纹。runner 继续沿既有恢复／编译／验证／生成锁方案收尾；薄包装及PS7验证调度已在本地接入，缺失／篡改验证器仍明确失败，不导入外部回执冒充当前runner验证。未完成干净 GitHub Windows 构建；未合 main、未改版本号或发布新 Release。详见[本轮收尾与验证清单](SOURCE_CLEANUP_CLOSEOUT.md)。
+
+## 历史阶段记录
+
+以下条目保留其当时状态与验证边界；当前状态以上文为准。
+
 ## 2026-10-23 — Unified source integration, final Windows artifacts pending
 
 The two exact API and JSON/ZIP transfer archives are hash-verified. The API selection uses four maintained AMD modules and a complete MIT notice; CM changes are restricted to transport in the original module, with original local text/reset ownership retained. A listener representation difference found by existing lifecycle assertions is corrected without relaxing those assertions. API/CM integration24/24 and assembly/provenance12/12 passed before the native JSON/ZIP integration; subsequent final checks are recorded separately.

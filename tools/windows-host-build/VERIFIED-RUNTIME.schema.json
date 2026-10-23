@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Verified CEC/legacy-update v1-only Host input",
+  "title": "Verified unified CEC/update/JSON/ZIP Host input",
   "type": "object",
   "required": ["schemaVersion", "mode", "sourceIdentitySha256", "framework", "platform", "modelSha256", "toolchainSnapshotSha256", "buildReceiptSha256", "files"],
   "properties": {
     "schemaVersion": {"const": 1},
     "mode": {"const": "source-built-host"},
-    "sourceIdentitySha256": {"const": "1b278f3aff5331a1d5490147dc86cfc5949d132601f62dcfa62700f2c380f668"},
+    "sourceIdentitySha256": {"const": "81b18ab1264941b7121967770d9b791af7fd4436b6cf910da443c92f967eea45"},
     "framework": {"const": "net462"},
     "platform": {"const": "x86"},
     "modelSha256": {"const": "db22f8ea6cb6afdfab184f80d8b85a10d8a9f148ff4cae167db87ce9cd245153"},

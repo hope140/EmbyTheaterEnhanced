@@ -6,6 +6,8 @@ const RECEIPTS = '.work/source-built-host';
 const LOCK_PATH = RECEIPTS + '/verified-runtime.json';
 const OUTPUTS = ['Emby.Theater.exe', 'Emby.Theater.pdb'];
 const BUILD_TOOLS = ['Build-UnifiedHost.ps1', 'Get-SourceIdentity.ps1', 'New-VerifiedRuntime.ps1'];
+const VERIFIER = require('./host-verifier-input.cjs');
+const GENERATOR_PATHS = Object.freeze(BUILD_TOOLS.map(p => 'tools/windows-host-build/' + p).concat('tools/Test-SourceBuiltHost.ps1', 'tools/host-verifier-input.cjs', VERIFIER.PATHS));
 const read = p => {physical(p); if (!fs.lstatSync(p).isFile()) throw Error('Runner Host ordinary receipt required.'); return fs.readFileSync(p);};
 const json = p => JSON.parse(read(p));
 function verifyEnvelope(root, lock, record, v, toolBytes, projectBytes, receiptBytes) {
@@ -28,6 +30,7 @@ function verifyEnvelope(root, lock, record, v, toolBytes, projectBytes, receiptB
 }
 function head(root) {return cp.execFileSync('git', ['-C', root, 'rev-parse', 'HEAD'], {encoding: 'utf8'}).trim();}
 function load(root) {
+    VERIFIER.validate(root);
     const base = path.join(root, RECEIPTS), provenance = json(path.join(base, 'runner-provenance.json'));
     if (provenance.schemaVersion !== 1 || provenance.sourceCommit !== head(root) || provenance.mode !== 'compiled-and-verified-on-this-runner') throw Error('Runner Host checkout ownership mismatch.');
     if (process.env.GITHUB_ACTIONS === 'true' && (provenance.runId !== process.env.GITHUB_RUN_ID || provenance.runAttempt !== process.env.GITHUB_RUN_ATTEMPT)) throw Error('Runner Host run ownership mismatch.');
@@ -37,8 +40,7 @@ function load(root) {
         const f = provenance.files[i], b = read(path.join(base, p));
         if (f.path !== p || f.size !== b.length || f.sha256 !== sha(b)) throw Error('Runner Host provenance identity mismatch.');
     }
-    for (const name of BUILD_TOOLS.concat('Test-SourceBuiltHost.ps1')) {
-        const p = name === 'Test-SourceBuiltHost.ps1' ? 'tools/' + name : 'tools/windows-host-build/' + name;
+    for (const p of GENERATOR_PATHS) {
         if (provenance.generators[p] !== sha(read(path.join(root, p)))) throw Error('Runner Host generator changed.');
     }
     const record = read(path.join(base, 'build-receipt.json')), verification = read(path.join(base, 'runner-verification.json'));
@@ -46,6 +48,7 @@ function load(root) {
     return {...lock,runnerProvenance:{path:RECEIPTS+'/runner-provenance.json',sha256:sha(read(path.join(base,'runner-provenance.json'))),sourceCommit:provenance.sourceCommit,runId:provenance.runId,runAttempt:provenance.runAttempt}};
 }
 function install(root, buildRoot) {
+    VERIFIER.validate(root);
     // Only called by the runner orchestrator after its own compiler and probe exit successfully.
     const sourceFiles = ['verified-runtime.json', 'build-receipt.json', 'runner-verification.json', 'toolchain-snapshot.json', 'build/Host.Unified.csproj'];
     const buffers = sourceFiles.map(p => read(path.join(buildRoot, p)));
@@ -56,7 +59,7 @@ function install(root, buildRoot) {
     const targets = [RECEIPTS, 'vendor/source-built-host', 'vendor/host-json'];
     for (const rel of targets) {physical(path.dirname(path.join(root, rel))); if (fs.existsSync(path.join(root, rel))) throw Error('Runner Host output already exists; preserve evidence.');}
     const provenance = {schemaVersion: 1, sourceCommit: head(root), mode: 'compiled-and-verified-on-this-runner', runId: process.env.GITHUB_RUN_ID || null, runAttempt: process.env.GITHUB_RUN_ATTEMPT || null, generators: {}, files: []};
-    for (const name of BUILD_TOOLS.concat('Test-SourceBuiltHost.ps1')) {const p = name === 'Test-SourceBuiltHost.ps1' ? 'tools/' + name : 'tools/windows-host-build/' + name; provenance.generators[p] = sha(read(path.join(root, p)));}
+    for (const p of GENERATOR_PATHS) provenance.generators[p] = sha(read(path.join(root, p)));
     fs.mkdirSync(path.join(root, RECEIPTS));
     const names = ['verified-runtime.json', 'build-receipt.json', 'runner-verification.json', 'toolchain-snapshot.json', 'generated-host.csproj'];
     for (const [i, p] of names.entries()) {fs.writeFileSync(path.join(root, RECEIPTS, p), buffers[i], {flag: 'wx'}); provenance.files.push({path: p, size: buffers[i].length, sha256: sha(buffers[i])});}
@@ -66,4 +69,4 @@ function install(root, buildRoot) {
     fs.writeFileSync(path.join(root, jsonManifest.inputRoot, jsonManifest.file.path), jsonBytes, {flag: 'wx'});
     load(root); return {lockPath: LOCK_PATH, sourceIdentitySha256: lock.sourceIdentitySha256};
 }
-module.exports = {LOCK_PATH, RECEIPTS, verifyEnvelope, load, install};
+module.exports = {LOCK_PATH, RECEIPTS, GENERATOR_PATHS, verifyEnvelope, load, install};

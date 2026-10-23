@@ -1,11 +1,11 @@
 # Vendor 输入
 
-`runtime-manifest.json` 记录 1009 个 Carnival 文件、51 个补丁文件、两个归档及关键二进制的来源、角色、版本、SHA256 和维护状态。
+当前准备和构建按独立组件 manifest 恢复并核验材料，不读取 `vendor/carnival/` 或 `vendor/patch/`，也不靠旧安装包补文件。`runtime-manifest.json` 的1009个 Carnival／51个补丁记录保留为历史来源和校验依据，不表示当前必须恢复这些正文。
 
-原归档保留在项目根目录，解包内容位于 `vendor/carnival/`、`vendor/patch/`，均被 .gitignore 排除。不得编辑这些目录。`tools/prepare.ps1` 验证原归档后提取；`tools/build.ps1` 每次验证全部 vendor 文件。
+活动快照为兼容资源39项、小组件2项、Web713项，版本由各 manifest 明示。冻结输入与原始归档只读；需要变更活动集合时遵循既有快照迁移流程。完整 npm 来源保持33包／1142文件，发布投影仅精确排除20项，保留必要 LICENSE／NOTICE。
 
-`src/electronapp/` 保存可编辑应用与 Web 资源；它覆盖 vendor 中同名文件。libmpv 从综合补丁的 `payload/libmpv/mpv-1.dll` 单独选取。综合补丁的 mpv.conf、字体和 shader 作为参考输入保留，不自动写入个人配置。
+官方 Windows3.0.20 完整来源仍为19项；runtime 精确排除9项，余下10项中的 Host EXE/PDB替换为已验证的 ETE 源码构建产物，另加入固定 Newtonsoft DLL。官方 Model 独立校验，Electron 使用固定44.4.2 Windows x64完整树，libmpv使用仓库记录的固定归档恢复。源码派生 Host、第三方原件和生成器分别记录身份，不能互相冒充。
 
-分类 A 表示与官方参考逐字节相同；B 表示可辨识的明文定制/差异，但并不自动证明每行修改者；C 是第三方依赖；D 是 native/managed binary；E 是暂不能确认精确上游来源。完整分类和证据在 [审计文档](../docs/CARNIVAL_BASELINE.md)。
+维护源码位于 `src/`、`native/`；Web只复制合同明确选择的 overlay。默认配置和中文维护源按各自合同生成，构建不覆盖用户已有配置，不安装字体或预设，不运行旧 BAT／驱动安装器。
 
-源码可用不等于精确二进制可复现。当前构建是已锁定 vendor 的可重复组装，尚不是全部 native binary 从源码构建。保留随包许可证；各组件再分发条件及 E 类来源没有全面核验，当前产物用于本地开发验收。
+入口见[构建与打包](../docs/PACKAGING.md)、[Host输入](../docs/WINDOWS_HOST_INPUT.md)及[来源材料](../docs/SOURCE_MATERIALS.md)。历史分类A至E及其证据见[基线审计](../docs/CARNIVAL_BASELINE.md)。已固定来源或源码可用不等于所有第三方许可、完整对应源码及二进制重建义务已经核验完成；必要声明保持。

@@ -1,5 +1,21 @@
 # 维护记录
 
+## 2026-10-23 — 候选验收后的文档与构建合同收尾
+
+本轮候选 `ad77308cd83bd629a7b75349d727044f9fa1d86b` 已获用户验收确认；对应 Windows 构建、安装器、升级、副本 STRM 播放及正常 Host 入口检查由独立验证环境执行。来源与当前公开交接提交分开记录，未将局部实机结果外推为所有环境或全部许可通过。
+
+文档当前说明集中到 SOURCE_CLEANUP_CLOSEOUT、PACKAGING、WINDOWS_HOST_INPUT 与 CEC_RETIREMENT，旧来源计数和阶段性待办不再作为当前构建说明。必要第三方声明及历史发行核验记录保留；认证区域的用户保留决定仍仅在本开发文档记录，不转入 README 或发行说明。
+
+锁 schema 从旧 CEC-only 来源指纹纠正为当前统一 CEC／旧更新／JSON／ZIP 指纹，新增与 EXPECTED-SOURCE-IDENTITY 和实际生成计划一致的断言。未修改业务源码或 Work 负责的路径／测试修正，未采用失败的 Base64 输入。已通过正常Git取得 `0a8bf15c25df507fe4c7b55431bb3bbd8e67f09f` 的38文件交付；验证器32文件共196010字节保持原样，薄包装和PowerShell7调度已在本地接入，builder保持Windows PowerShell5.1、net462/x86。对照用私有配置DLL只进入verification-inputs；验证器全文件纳入输入／回执生成器合同，合成ZIP增加原字节比较，防UTF-8及换行归一掩盖差异。当前差量未提交或推送。
+
+
+
+本地整合核验补记：已在隔离提交快照 `7e95be4e051ca596c9fc8e2a3954945f04428a81` 执行172份普通测试文件，共1576项／1566通过／0失败／10项既有平台skip；另21份显式材料自测共135项全部通过。413份JavaScript和47份PowerShell语法、构建输入合同、32文件验证器精确身份以及新增文档链接检查通过。Host首项材料预期差集的静态疑点未在执行中复现，其它退役项已由分类步骤排除，无需改测试。该快照只是本地回归证据，不是Windows编译／完整客户端新验收，也不是远端发布提交；本补记仅更新文档。
+
+## 历史阶段记录
+
+以下条目保留其当时状态与验证边界；当前状态以上文为准。
+
 ## 2026-10-23 — Unified source integration, final Windows artifacts pending
 
 The two exact API and JSON/ZIP transfer archives are hash-verified. The API selection uses four maintained AMD modules and a complete MIT notice; CM changes are restricted to transport in the original module, with original local text/reset ownership retained. A listener representation difference found by existing lifecycle assertions is corrected without relaxing those assertions. API/CM integration24/24 and assembly/provenance12/12 passed before the native JSON/ZIP integration; subsequent final checks are recorded separately.

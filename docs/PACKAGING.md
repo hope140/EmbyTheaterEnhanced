@@ -1,20 +1,52 @@
 # 构建与打包
 
-Compatibility snapshot update: restore the fixed local 48-file component explicitly, then assemble identical runtime resources without their old directory. Remaining old inputs are five Carnival files, zero patch files. Final package validation must first synchronize the separate 0.3.15 exit fix; no application acceptance is part of this static component step. See [input contract](COMPATIBILITY_RESOURCES_INPUT.md).
+本文说明当前源码候选的构建合同。已发布安装包保持原 tag、附件和 provenance；本轮已验收的本地候选与当前公开交接提交并非同一提交，准确边界见[收尾清单](SOURCE_CLEANUP_CLOSEOUT.md)。正式发布、版本号和 main 合并尚未执行。
 
-Current libmpv input: use the verified independent local snapshot component. Normal prepare/build do not read or recreate the old patch directory or combined-patch ZIP. Keep existing DLL bytes/version; online snapshot recovery is not yet established. See [libmpv preparation](LIBMPV_INPUT.md).
+## 输入与输出
 
-Template follow-up: normal build reads maintained, hash-locked package/preload/Host-config templates and preserves existing generators/versions. Old input requirement is 58 assets plus one libmpv patch. See [exact source and output relations](RUNTIME_TEMPLATES.md).
+- `tools/prepare.ps1` 和独立恢复工具按 manifest／固定 Git 对象准备材料。正常构建不依赖 Carnival／综合补丁目录，也不从旧安装包取回组件。被冻结的来源正文不在准备后手工修改。
+- 官方 Host完整输入保留19文件，runtime排除9个已退役身份，保留10项。两份 EXE/PDB随后替换为已验证的 ETE源码构建产物，并加入固定 Newtonsoft13.0.4 net45 DLL；官方 Model继续独立校验。[Host合同](WINDOWS_HOST_INPUT.md)区分完整来源和运行投影。
+- Electron固定44.4.2 Windows x64完整树。libmpv按固定仓库归档离线恢复；Native Helper读取固定 mpv头文件并从所选提交构建。编译器、解包器及安装器工具按现有锁核验，不自动升级系统工具。
+- 兼容资源39项、小组件2项和Web713项使用当前快照。生产npm依赖从锁文件新建安装树，完整来源1142文件与运行投影1122文件分别验证；LICENSE／NOTICE保留。
+- 普通产品源码从 `sourceCommit` 的 Git blob物化；preload、Web overlay、模板和Host配置使用固定生成合同。dirty／仅暂存的源码不能冒充所选提交。
 
-Inherited npm follow-up: prepare the fixed 29-file component from the official pinned Git commit; assembly and dependency provenance do not use old npm bodies. Physical old Carnival count is 61. See [preparation and validation](INHERITED_NPM_INPUT.md).
+## 两条 Host 准备路径
 
-Current material gate: normal assembly does not require retired Electron, Pepper, old base libmpv, replaced source/npm inputs or unused patch bodies. It still validates the actual 90 Carnival and one libmpv inputs plus independent components. See [current input selection](LEGACY_INPUT_SELECTION.md).
+**已审核产物的本地测试路径**：使用真实验证锁 `native/windows-host/verified-runtime.json`，锁必须在当前 HEAD中；EXE/PDB放入忽略的 `vendor/source-built-host/snapshot-v1/`，固定 JSON依赖位于 `vendor/host-json/snapshot-v1/`。锁绑定来源、Model、框架／平台、产物大小与哈希及回执身份。仅本地测试 fixture提交与公开候选提交分开记录，不把外部回执移植成 runner验收。
 
-## 当前发行
+**runner从源码生成路径**：`tools/ci-source-built-host.ps1` 恢复固定官方55份源码／资源／声明和两个固定 NuGet输入，使用仓库构建工具编译，在本次 runner验证实际产物，再生成 `.work/source-built-host/verified-runtime.json`及完整回执／provenance。该锁不需要成为Git源码，但必须绑定当前HEAD和Actions运行。两套锁同时存在、缺验证器、回执或产物不符均失败；禁止原Host回退。可移植验证器已通过正常Git交接并接入32文件精确身份合同，当前没有干净GitHub构建成功的结论。
 
-当前测试版为 [v0.3.15](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.15) Pre-release，产品 sourceCommit 为 [e150981](https://github.com/hope140/EmbyTheaterEnhanced/commit/e150981d85369b9e61559ee53978a25cdad6f7ad)。Stable/Latest 保持 v0.3.1；来源、五附件及验收边界见[V0315 发行核验](V0315_RELEASE_VERIFICATION.md)。
+builder使用Windows PowerShell5.1、既有MSBuild17、net462参考包和x86目标；验证入口需要PowerShell7，不能因此把builder改成Core运行时。参考包只解压作编译输入，不安装运行时。Host声明net462不等于已验证纯net462运行环境；安装器当前没有显式最低.NET检查。
+
+## 本地验证与打包
+
+先恢复对应manifest要求的全部材料及既有工具链，取得上述任一有效Host输入，再执行既有准备／回归／构建流程。使用环境正常允许的PowerShell入口；不修改执行策略或绕过审批。
+
+```powershell
+npm ci --ignore-scripts
+# 按组件合同完成输入恢复；先生成测试需要的固定 preload。
+node tools/prepare-preload.cjs .
+node tools/source-built-host-input.cjs preflight .
+# 运行全部适用回归、材料、源码语法及工具链检查后：
+./tools/build.ps1 -OutputName ETE-review
+./tools/package.ps1 -RuntimeName ETE-review -VerifyOnly
+./tools/package.ps1 -RuntimeName ETE-review -OutputBaseFilename ETE-review-setup
+```
+
+输出目录必须新建，构建不覆盖旧产物。`build.ps1`先校验当前HEAD输入和Host材料再创建dist；基础组装后替换派生Host、验证退役文件缺席、生成源码与运行provenance。`source-provenance.json`、`runtime-provenance.json`和schema3 `build-manifest.json`分别记录来源、生成关系及最终完整集合；安装器解包必须与该runtime逐路径／大小／SHA一致。不能手工改包后沿用旧清单。
+
+GitHub手动作业与本地已审核产物路线不同，具体参数及产物见[Actions测试包](ACTIONS_TEST_PACKAGE.md)。`release_package=true`仅暂存标准发行附件，不等于发布授权。
+
+## 安装、升级和验收
+
+安装器正常入口为 `{app}\Emby.Theater.exe`。CEC专属链与旧Host自更新已退役；本项目发行版检查／浏览器下载、服务器更新、刷新率和普通播放保留。升级仅按[14项精确名单](../installer/retired-runtime.json)处理注册应用目录旧文件，未知内容或重定向失败，不递归清目录、不卸载系统驱动、不删除profile、登录态、既有配置或pending归档。
+
+本轮用户已确认候选包验收通过；新runner／最终整合提交仍须独立验证。安装器封装可能含时间字段，未宣称setup位级可重复。必要第三方声明继续按输入合同进入包；本轮清理不代表全库来源／许可审查全部通过。
 
 ## 历史发行记录
+
+以下保留各版当时的来源、计数和验收边界，不作为当前候选构建输入或新验证结果。
+
 
 以下保留各版当时的来源、计数、工具输入及验收边界，不作为当前候选来源或新测试结果。
 
@@ -54,47 +86,3 @@ v0.3.7 已作为 Pre-release 发布，产品Tag/sourceCommit 为 `v0.3.7` / `bf6
 [v0.3.5发行](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.5)已完成，Tag固定`b0234c8a0e8d4fb264b21cf39f8ce68c9146d115`。标准安装器`EmbyTheaterEnhanced-0.3.5-win-x64-setup.exe`，175741577 bytes，SHA-256 `03f8cf5f2b18f854cc6548a7fe2d60cd641a8187479c4fd2e3ad22c8dfd87414`。2158个{app}解包文件与来源runtime逐项一致；五个附件匿名完整回读通过。安装器未签名，解包验证不等于系统安装验收；后续文档HEAD不改变该来源。详见[发行核验](V035_RELEASE_VERIFICATION.md)。
 
 [v0.3.4发行](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.4)已完成，Tag固定`98c26e4a123f0b8c623451ee7603fc431b28bddf`。标准安装器为`EmbyTheaterEnhanced-0.3.4-win-x64-setup.exe`，175753774 bytes，SHA-256 `eedf03e83b0f4b2b2ef674134af4fefc5068573b5bb82466e3ad4191c46d0c3d`。2157项解包文件与来源runtime逐项一致，五项公开附件匿名完整回读通过。安装器未签名；解包验证不代表系统安装验收。此后文档提交与该产品来源分开。
-
-当前正式产品版本为 v0.3.1，准确 `sourceCommit` 由同名 Tag 与 Release 安装包 provenance 固定。构建流程和输入约束由 [BUILD_HARDENING.md](BUILD_HARDENING.md)、[BUILD_TOOLCHAINS.md](BUILD_TOOLCHAINS.md)、[NODE_DEPENDENCY_BOUNDARY.md](NODE_DEPENDENCY_BOUNDARY.md)、vendor manifests 与 package lock 定义。公开仓库不含 Carnival、综合补丁、完整离线 Web、外部 Electron/libmpv 归档及所有预编译输入，因此单独克隆不能完成产品构建；来源及对应源码状态见 [BUILD_INPUT_AUDIT.md](BUILD_INPUT_AUDIT.md) 和 [SOURCE_MATERIALS.md](SOURCE_MATERIALS.md)。
-
-## 固定运行时与输入
-
-- Electron 使用 vendor manifest 固定的官方 44.4.2 Stable Windows x64 完整目录。构建核对归档、解包树、版本文件、`electron.exe` 和最终 `x64/electron`；缺失或哈希不符时停止。Carnival Electron 18.3.15 只作为历史输入身份保留。
-- 生产播放器 bridge 为 Native Helper。旧 Pepper Node bridge 可作为归档来源清单输入，但由 `tools/runtime-exclusions.cjs` 在 runtime 中排除，package verify 与 provenance 再次确认其不存在。
-- Native Helper 从所选 `sourceCommit` 的 Git blob 构建，固定 header、compiler、libmpv、源码、helper 和 contract hash 写入 provenance。需要先用 `tools/prepare-native-helper-inputs.ps1` 获取并验证 mpv `client.h`。
-- Node、UCRT64、Inno/InnoUnp 与解包器版本和目录身份分别由 `package-lock.json`、`tools/build-toolchains.lock.json` 及 `vendor/*-manifest.json` 固定。构建不自动安装或升级系统工具，也不接受同版本但哈希不同的编译器。
-- 根 `LICENSE`、`THIRD_PARTY_NOTICES.md`、`docs/LICENSING.md` 与 `docs/SOURCE_MATERIALS.md` 按提交字节纳入输入及 provenance。该通知边界不证明其它材料具有授权或完整对应源码。
-
-## 文件级基线组装
-
-`tools/assemble-runtime-base.cjs` 依据原 vendor manifest、产品 Git tree、Web overlay 合同及 npm lock 逐文件组装基础 payload，跳过将被后续步骤替换或排除的 Carnival 副本。完整 prepared 输入与来源校验仍保留；这不表示已解除 Carnival/Web/Host 依赖。清单查询、失败边界与验证方法见[文件级组装](RUNTIME_BASE_ASSEMBLY.md)。
-
-## 构建命令
-
-需预备三个固定输入归档（Carnival、综合补丁、Electron 44.4.2）和已验证的项目内工具链。`prepare.ps1` 使用 `-ArchiveRoot` 读取归档目录并核验 SHA256；缺少输入时流程不能完成。
-
-```powershell
-npm ci --ignore-scripts
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/prepare.ps1 -ArchiveRoot <archive-directory>
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/prepare-native-helper-inputs.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/build.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/package.ps1
-```
-
-构建从已验证的 vendor 输入生成 runtime，物化官方 Electron 目录，从 `<sourceCommit>` 读取 `src/electronapp` 的 Git blobs，再按各自 contract 生成 preload/Web overlay、复制 production dependencies、应用 PlaybackManager overlay、替换固定 libmpv 并写 provenance 与 payload manifest。普通源码直接写 Git blob bytes，不把 dirty/staged checkout 内容当作所选提交源码。Web overlay 只接受 manifest 中固定的 base、payload 与 generator；任一 hash 或锚点不匹配即停止。
-
-插件设置兼容候选串联 app 路由/别名变换，并新增 viewmanager 与 approuter 的窄取消/事务 overlay。维护模块从 `src/electronapp/enhanced/plugin-ui` 的 Git blobs 进入 runtime，完整 ignored Web snapshot 仍不作为输入。候选未提交时 build-input 门禁拒绝组装；材料 fixture 和隐藏实验不能替代新 sourceCommit 的正式构建。详见 [兼容合同](PLUGIN_SETTINGS_COMPATIBILITY.md)。
-
-`source-provenance.json` 记录外部归档、manifest、runtime/Web 输入、Electron、Native Helper、libmpv 与 production dependencies；`runtime-provenance.json` 绑定 Git 源码和生成 overlay；`build-manifest.json` schema 3 绑定 source commit、输入与 provenance 及 canonical payload-set digest。打包前校验路径、重复项、完整 file set、逐文件 SHA256 和 provenance binding。Inno 递归复制已验证 runtime；`-RuntimeName` 选择目标，`-OutputBaseFilename` 只设安装包文件名。
-
-## 安装和可重复性边界
-
-安装入口启动 `{app}\Emby.Theater.exe`。卸载保留 Enhanced 用户数据和个人 mpv 配置；构建、打包不会写入用户的 mpv 配置、shader 或字体目录。
-
-可重复性只在固定的源码提交、外部输入、工具链与命令范围内成立。runtime manifest 可逐文件核对；安装器封装可能包含时间字段，项目不宣称 setup.exe 位级可重复，也不把第三方预编译组件描述为由本仓库源码完整重建。
-
-
-The four small runtime inputs use [an independent fixed snapshot](SMALL_RUNTIME_INPUT.md), not their old Carnival paths. Preserve configuration bytes and auto-update behavior. This material branch needs the separately released 0.3.15 exit fix before final full-package validation; snapshot tests are not installer/playback acceptance.
-
-
-Normal preparation/build/provenance require zero old Carnival/combined-patch physical inputs. Restore the fixed components as documented in [zero-input contract](MODEL_COMPATIBILITY_INPUT.md). Local ignored snapshots are still required materials; this is independent packaging input management, not a full source rebuild. Retain the 0.3.15 exit fix before a final package candidate.

@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const cp = require('node:child_process');
 const {hashTrackedTextFile} = require('./tracked-file-hash.cjs');
+const verifier = require('./host-verifier-input.cjs');
 
 // Only consumed metadata, generators, validators and delivered notices belong
 // here. Ordinary product source is already materialized from commit blobs.
@@ -43,6 +44,7 @@ const INPUT_PATHS = Object.freeze([
     'native/windows-host/changes/Emby.Theater/App/ApplicationHost.cs', 'native/windows-host/changes/Emby.Theater/App/ElectronApp.cs',
     'tools/source-built-host-input.cjs', 'tools/host-json-input.cjs', 'tools/prepare-host-json.py', 'vendor/host-json-manifest.json', 'native/windows-host/json-zip-input.json',
     'tools/ci-source-built-host-plan.cjs', 'tools/ci-source-built-host.ps1', 'tools/runner-host-receipt.cjs',
+    'tools/Test-SourceBuiltHost.ps1', 'tools/host-verifier-input.cjs', ...verifier.PATHS,
     'tools/windows-host-build/Build-UnifiedHost.ps1', 'tools/windows-host-build/Get-SourceIdentity.ps1',
     'tools/windows-host-build/New-VerifiedRuntime.ps1', 'tools/windows-host-build/EXPECTED-ASSEMBLY-REFERENCES.json',
     'tools/windows-host-build/EXPECTED-SOURCE-IDENTITY.json', 'tools/windows-host-build/REFERENCES.json',
@@ -159,8 +161,17 @@ function inspect(rootArg, sourceCommit) {
         const match = /^(100644|100755) blob ([0-9a-f]{40})\t(.+)$/.exec(line);
         if (!match || match[3] !== relativePath) throw new Error('Build input must be a committed regular blob: ' + relativePath);
         physicalInput(root, relativePath);
+        let blob = committed?.blobs.get(relativePath);
+        if (verifier.BINARY_PATHS.includes(relativePath)) {
+            if (blob === undefined) {
+                const result = cp.spawnSync('git', ['-C', root, 'show', 'HEAD:' + relativePath], {encoding: null, maxBuffer: 16 * 1024 * 1024});
+                if (result.error || result.status !== 0) throw new Error('Unable to read committed build inputs.');
+                blob = result.stdout;
+            }
+            if (!fs.readFileSync(path.join(root, relativePath)).equals(blob)) throw new Error('Tracked generator differs from HEAD: ' + relativePath);
+        }
         return {path: relativePath, gitBlobObjectId: match[2],
-            sha256: hashTrackedTextFile(root, relativePath, committed?.blobs.get(relativePath)).toLowerCase()};
+            sha256: hashTrackedTextFile(root, relativePath, blob).toLowerCase()};
     });
     return {schemaVersion: 1, sourceCommit: sourceCommit.toLowerCase(),
         relation: 'HEAD Git blobs; working text must match after CRLF-to-LF normalization', files};
