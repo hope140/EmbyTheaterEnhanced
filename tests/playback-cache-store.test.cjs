@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const {spawnSync} = require('node:child_process');
 const {createStore} = require('../tools/prototypes/playback-cache/store.cjs');
 
 const identity = {serverId: 'server-canary', accountId: 'account-canary', itemId: 'episode-canary',
@@ -179,4 +180,36 @@ test('exclusive lock, unknown files, symlinks and hard links fail closed without
     fs.linkSync(outside, target); code(() => createStore(f.config), 'store-open-failed'); fs.unlinkSync(target);
     assert.equal(fs.readFileSync(outside, 'utf8'), 'keep');
     f.reopen();
+});
+
+test('synthetic bytes survive distinct processes; an exited writer lock requires explicit verified recovery', t => {
+    const f = fixture(t); f.store.close();
+    const source = `
+        const {createStore} = require(process.argv[1]);
+        const store = createStore({enabled: true, parent: process.argv[2],
+            policy: ${JSON.stringify(policy)}, now: () => 1000});
+        const writer = store.begin(${JSON.stringify(identity)}, ${JSON.stringify(proof())});
+        writer.append(writer.offset, Buffer.from(process.argv[3] === 'close' ? 'abcd' : 'efgh'));
+        writer.release();
+        if (process.argv[3] === 'close') store.close();
+        process.exit(0);
+    `;
+    function run(mode) {
+        const child = spawnSync(process.execPath, ['-e', source,
+            require.resolve('../tools/prototypes/playback-cache/store.cjs'), f.parent, mode], {encoding: 'utf8', timeout: 5000});
+        assert.equal(child.error, undefined); assert.equal(child.status, 0, child.stderr);
+        return child;
+    }
+    run('close'); f.reopen();
+    assert.deepEqual(f.store.inspect(identity, proof()), {committed: 4, length: 8, complete: false});
+    f.store.close();
+    const exited = run('crash');
+    code(() => createStore(f.config), 'store-busy');
+    // spawnSync has confirmed this exact owned child's exit. This explicit test
+    // cleanup is not an automatic stale-lock policy in the prototype.
+    assert.equal(fs.readFileSync(path.join(f.root, 'lock'), 'utf8'), String(exited.pid));
+    fs.unlinkSync(path.join(f.root, 'lock'));
+    f.reopen();
+    const reader = f.store.acquireComplete(identity, proof());
+    assert.equal(reader.read(0, 8).toString(), 'abcdefgh'); reader.release();
 });
