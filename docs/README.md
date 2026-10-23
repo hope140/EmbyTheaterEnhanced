@@ -19,12 +19,14 @@ v0.4.0 正式版正在准备，当前构建与发布状态见[本轮核验](V040
 
 - [贡献指南](CONTRIBUTING.md)、[架构与维护边界](ARCHITECTURE.md)
 - [公开离线 CI](PUBLIC_CI.md)、[测试说明](TESTING.md)
-- [构建与打包](PACKAGING.md)、[源码材料索引](SOURCE_MATERIALS.md)
+- [构建与打包](PACKAGING.md)、[源码材料索引](SOURCE_MATERIALS.md)、[来源与许可研究](DEPENDENCY_RESEARCH.md)
 - [Release 编写与维护规范](RELEASE_CONVENTIONS.md)、[发行说明模板](templates/RELEASE_TEMPLATE.md)
 
 公开离线测试与完整产品构建需要的材料不同。克隆仓库并通过公开 CI 不代表已取得全部第三方输入或完成安装、播放和硬件验收。
 
 ## 发行证据与后续方向
+
+- [v0.4.0 发行准备与核验](V040_RELEASE_VERIFICATION.md)：来源整合、干净云端构建与正式五附件发布门槛。
 
 - [v0.3.16 发行核验](V0316_RELEASE_VERIFICATION.md)：独立组件及官方 Model 的历史测试发行。
 - [v0.3.15 发行核验](V0315_RELEASE_VERIFICATION.md)：播放后退出修复、准确来源、五附件与生命周期验收边界。

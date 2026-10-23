@@ -1,5 +1,12 @@
 # 项目状态
 
+## 2026-10-23 — v0.4.0整合PR70来源与必要声明
+
+将PR70固定提交6576f5d的16份来源／声明材料整合到既有发布分支，四处文档冲突采用保留双方有效内容。API／page完整MIT、Sizzle原文、VTT版权／固定源／实际差异、Material Icons来源、Socket组件与集成范围及npm36许可命名口径保留；原JSON／CSV证据字节及analysisRef不改。旧“尚未替换Host／仍运行Sharp和ServiceStack”等仅作为研究时点，不恢复旧链；当前源码Host／JSON／ZIP、CEC退役、API维护与业务来源指纹均不变。
+
+本次只整合文档与必要notice，不新增功能、不改认证区域，不将用户保留决定写入README或Release。研究证据与许可覆盖仍分开；v0.4.0尚待正常PR检查／main集成、最终提交正式五附件构建及发布回读，未复用旧0.3.16测试产物。详见[研究索引](DEPENDENCY_RESEARCH.md)与[发行核验](V040_RELEASE_VERIFICATION.md)。
+
+
 ## 2026-10-23 — 云端测试包闭环通过，v0.4.0准备中
 
 run39974691780在准确6858c711上15分52秒成功：Host实际验证、1609/1609回归（0跳过）、Native编译、runtime与安装器完整性／解包比对及artifact上传通过。独立下载内容复核尚待完成；该产物版本仍是0.3.16测试包。不同镜像Framework固定门禁问题保留，不称所有环境通过。
@@ -88,6 +95,12 @@ Work首版候选构建和启动/保存/退出等范围通过，但旧CheckForApp
 仅独立本地候选分支省略官方Host 3.0.20中93,200-byte的System.Configuration.dll；完整19文件来源、hash、恢复输入及声明保留，runtime为18项，XML与其它文件保持。装配、精确身份守卫、source provenance生成器绑定及最终验证同步；不改GAC/系统、正式安装、产品功能或现有构建门禁。范围与完整客户端验收产物见[Host输入合同](WINDOWS_HOST_INPUT.md)。
 
 局部回归44/44通过，真实官方Host组件18项对照通过；以main原工具和候选工具分别装配的基础payload从804降至803项，唯一差集为该DLL，少93,200 bytes，其余803项路径/大小/SHA逐项相同。完整19项源输入前后保持。Node24.18.1/Linux串行全套1486项：1476 pass、0 fail、10项既有Windows平台skip。当前产物只是组件/基础payload，不可冒充包含Electron/Native Helper的完整客户端；未提交、推送或构建Windows整包，登录/实播与CEC零客户端/零安装路径等待固定提交的测试包验收。
+
+## 2026-10-23 — PR70历史研究快照：明确许可组件通知与有限剩余项
+
+以下段落保留PR70在当前Host/API清理之前的研究状态；现行退役、替换与Windows验证见本页上方及发行核验。仅更新声明和文档：补API/page完整MIT、Sizzle原通知及VTT版权/来源/真实差异；核对现有11个notice入口、33个npm包36许可成员、shader37MIT＋2Unlicense。统一Socket组件MIT/集成边界、Sharp当前DLL及专项条款、Common的Updater范围；helper和七AppSettings访问器已有明确底稿，不再因旧编译器未知列必需替换。当前main0a1dd65只比材料基线a33多CI40分钟调整，研究分支相对main没有运行代码或工作流改动。
+
+保留Web后期独立表达、428-byte VTT CSS、Sharp/ServiceStack组合交付、DPInst/ADL材料和真实Host验证的具体边界；不将来源/方法匹配比例当许可完成率。完整事实、固定URL/hash和局部测试限制见[统一索引](DEPENDENCY_RESEARCH.md)及[证据](dependency-research/evidence/license-closure-20261023.json)。本次未替换组件、打包或发布，未将文档补齐称整体许可清零。
 
 ## 2026-10-22 — 构建输入 Git 批量读取本地候选
 

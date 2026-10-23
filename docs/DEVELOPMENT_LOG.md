@@ -1,5 +1,12 @@
 # 维护记录
 
+## 2026-10-23 — v0.4.0整合PR70来源与必要声明
+
+将PR70固定提交6576f5d的16份来源／声明材料整合到既有发布分支，四处文档冲突采用保留双方有效内容。API／page完整MIT、Sizzle原文、VTT版权／固定源／实际差异、Material Icons来源、Socket组件与集成范围及npm36许可命名口径保留；原JSON／CSV证据字节及analysisRef不改。旧“尚未替换Host／仍运行Sharp和ServiceStack”等仅作为研究时点，不恢复旧链；当前源码Host／JSON／ZIP、CEC退役、API维护与业务来源指纹均不变。
+
+17份文档UTF-8／末行／新增链接、冲突标记与有限凭据模式检查通过，六份PR70 JSON／CSV证据与6576f5d字节完全一致；构建输入、快照迁移、维护Web材料及文档检查相关37项全部通过／0跳过。本次只整合文档与必要notice，不新增功能、不改认证区域，不将用户保留决定写入README或Release。研究证据与许可覆盖仍分开；v0.4.0尚待正常PR检查／main集成、最终提交正式五附件构建及发布回读，未复用旧0.3.16测试产物。详见[研究索引](DEPENDENCY_RESEARCH.md)与[发行核验](V040_RELEASE_VERIFICATION.md)。
+
+
 ## 2026-10-23 — 干净云端测试包成功，准备v0.4.0正式版
 
 run39974691780对6858c711完成Host实际验证、1609项普通测试、Native Helper实际编译及安装器完整性／完整解包比较，manual job15分52秒成功。原工具链依赖PATH局部接线在新runner兑现，未改变GCC／树／flags；它证明修正后的本次构建成功，不补出此前无stderr退出1的具体DLL证据。415 JS／47 PowerShell及有限模式检查通过，平台skip0；显式全部材料需正式构建另跑。
@@ -114,6 +121,12 @@ Work首版候选构建和启动/保存/退出等范围通过，但旧CheckForApp
 Host输入保持完整19文件，装配仅省略固定System.Configuration.dll（93,200 bytes、3dba0c61…e8f1bf）；来源验证仍读取并校验被省略的输入。计划和provenance记录来源/产物不同集合以及排除差集，投影代码SHA进入source provenance，最终验证拒绝重新夹入DLL，任何错误版本/路径/大小/hash不静默跳过。保留System.Configuration.xml与现有许可声明、历史来源记录，不写系统/GAC或现用安装。
 
 保留现有回归，新增精确投影、未知身份、别名/目录/悬空链接拒绝、计划防旧输入复活和最终provenance负例。局部44/44及真实组件材料投影1/1通过；原main工具与候选工具隔离装配的804/803基础文件逐项比较，仅固定DLL差异，其余字节相同。Node24.18.1/Linux串行全套1486项：1476 pass、0 fail、10个既有Windows平台skip。原材料完整性通过；单元、组件和基础payload证据不升级为完整Electron/登录/实播及CEC零客户端/零安装路径验收。未提交候选继续受HEAD构建输入守卫限制，完整测试包及验证方案见[Host输入合同](WINDOWS_HOST_INPUT.md)，原始回执留仓库外。
+
+## 2026-10-23 — PR70历史研究快照：明确许可组件通知与有限剩余项
+
+以下段落保留PR70在当前Host/API清理之前的研究状态；现行退役、替换与Windows验证见本页上方及发行核验。仅更新声明和文档：补API/page完整MIT、Sizzle原通知及VTT版权/来源/真实差异；核对现有11个notice入口、33个npm包36许可成员、shader37MIT＋2Unlicense。统一Socket组件MIT/集成边界、Sharp当前DLL及专项条款、Common的Updater范围；helper和七AppSettings访问器已有明确底稿，不再因旧编译器未知列必需替换。当前main0a1dd65只比材料基线a33多CI40分钟调整，研究分支相对main没有运行代码或工作流改动。
+
+保留Web后期独立表达、428-byte VTT CSS、Sharp/ServiceStack组合交付、DPInst/ADL材料和真实Host验证的具体边界；不将来源/方法匹配比例当许可完成率。完整事实、固定URL/hash和局部测试限制见[统一索引](DEPENDENCY_RESEARCH.md)及[证据](dependency-research/evidence/license-closure-20261023.json)。本次未替换组件、打包或发布，未将文档补齐称整体许可清零。
 
 ## 2026-10-22 — 构建合同读取批量化
 
