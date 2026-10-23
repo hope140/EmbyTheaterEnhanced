@@ -213,3 +213,14 @@ test('synthetic bytes survive distinct processes; an exited writer lock requires
     const reader = f.store.acquireComplete(identity, proof());
     assert.equal(reader.read(0, 8).toString(), 'abcdefgh'); reader.release();
 });
+
+test('failure while syncing a newly owned lock closes its descriptor and removes only that lock', t => {
+    const f = fixture(t); f.store.close();
+    const io = Object.create(fs), descriptors = new Set();
+    io.openSync = (...args) => { const fd = fs.openSync(...args); descriptors.add(fd); return fd; };
+    io.closeSync = fd => { fs.closeSync(fd); descriptors.delete(fd); };
+    io.fsyncSync = () => { const error = Error('synthetic fsync failure'); error.code = 'EIO'; throw error; };
+    code(() => createStore({...f.config, fs: io}), 'store-open-failed');
+    assert.equal(descriptors.size, 0); assert.equal(fs.existsSync(path.join(f.root, 'lock')), false);
+    f.reopen(); assert.equal(f.store.status().entries, 0);
+});

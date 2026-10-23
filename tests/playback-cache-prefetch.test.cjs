@@ -162,6 +162,36 @@ test('an update at the task completion boundary is drained without losing the la
     await scheduler.whenIdle(); assert.deepEqual(calls, ['A', 'B']);
 });
 
+test('a completed task cannot retain a budget that writes after its ownership ends', async t => {
+    const {scheduler} = fixture(t); let retained, writes = 0;
+    scheduler.update(candidate(async budget => { retained = budget; await budget.claim(1); }));
+    await scheduler.whenIdle();
+    expectCode(() => retained.append({append() { writes++; }}, 0, Buffer.from('a')), 'prefetch-cancelled');
+    await assert.rejects(retained.claim(1), {code: 'prefetch-cancelled'});
+    assert.equal(writes, 0); assert.equal(retained.signal.aborted, true);
+});
+
+test('job completion cancels an abandoned claim and its real wait timer', async t => {
+    const scheduler = createScheduler({enabled: true, policy: {...policy, bytesPerSecond: 1}});
+    t.after(() => scheduler.close()); let abandoned;
+    scheduler.update(candidate(budget => { abandoned = budget.claim(1); }, {confirmedUntil: Date.now() + 20000}));
+    await scheduler.whenIdle();
+    await assert.rejects(abandoned, {code: 'prefetch-cancelled'});
+    assert.equal(scheduler.status().lastOutcome, 'completed');
+});
+
+test('a newer confirmation submitted from an abort listener wins over the outer update', async t => {
+    const {scheduler} = fixture(t); const entered = gate(), paused = gate(), calls = [];
+    scheduler.update(candidate(async budget => {
+        calls.push('A');
+        budget.signal.addEventListener('abort', () => scheduler.update(candidate(() => calls.push('C'), {nextKey: 'C'})), {once: true});
+        entered.resolve(); await paused.promise;
+    }));
+    await entered.promise;
+    assert.equal(scheduler.update(candidate(() => calls.push('B'), {nextKey: 'B'})), 'superseded');
+    paused.resolve(); await scheduler.whenIdle(); assert.deepEqual(calls, ['A', 'C']);
+});
+
 test('offline prefetch can populate the same byte store; the following explicit authorized reader reuses it', async t => {
     const f = fixture(t);
     const parent = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-prefetch-test-')));

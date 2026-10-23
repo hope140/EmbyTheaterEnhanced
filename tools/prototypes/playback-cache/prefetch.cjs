@@ -36,8 +36,9 @@ function createScheduler(options = {}) {
     let lastOutcome = 'idle';
 
     function cancel() {
-        epoch++; pending = null; selected = null;
+        const retiredEpoch = ++epoch; pending = null; selected = null;
         if (active) active.controller.abort();
+        return retiredEpoch;
     }
     function makeBudget(task, deadline) {
         let claimed = 0;
@@ -45,26 +46,33 @@ function createScheduler(options = {}) {
         let tokens = 0;
         let lastRefill = now();
         function check() {
-            if (closed || foregroundBusy || task.epoch !== epoch || task.controller.signal.aborted) fail('prefetch-cancelled');
+            if (closed || foregroundBusy || active !== task || task.done || task.epoch !== epoch || task.controller.signal.aborted) fail('prefetch-cancelled');
             if (now() >= deadline) { task.controller.abort(); fail('prefetch-expired'); }
+        }
+        async function claim(bytes) {
+            if (!positive(bytes) || bytes > limits.burstBytes) fail('prefetch-claim-invalid');
+            while (true) {
+                check();
+                if (bytes > limits.maxBytes - claimed) fail('prefetch-byte-limit');
+                const time = now();
+                if (time < lastRefill) fail('prefetch-clock-invalid');
+                tokens = Math.min(limits.burstBytes, tokens + (time - lastRefill) * limits.bytesPerSecond / 1000);
+                lastRefill = time;
+                if (tokens >= bytes) { tokens -= bytes; claimed += bytes; return bytes; }
+                const wait = Math.ceil((bytes - tokens) * 1000 / limits.bytesPerSecond);
+                // Never start a read that cannot obtain its grant before expiry.
+                if (wait >= deadline - time) fail('prefetch-expired');
+                await delay(wait, task.controller.signal);
+            }
         }
         return Object.freeze({
             signal: task.controller.signal,
-            async claim(bytes) {
-                if (!positive(bytes) || bytes > limits.burstBytes) fail('prefetch-claim-invalid');
-                while (true) {
-                    check();
-                    if (bytes > limits.maxBytes - claimed) fail('prefetch-byte-limit');
-                    const time = now();
-                    if (time < lastRefill) fail('prefetch-clock-invalid');
-                    tokens = Math.min(limits.burstBytes, tokens + (time - lastRefill) * limits.bytesPerSecond / 1000);
-                    lastRefill = time;
-                    if (tokens >= bytes) { tokens -= bytes; claimed += bytes; return bytes; }
-                    const wait = Math.ceil((bytes - tokens) * 1000 / limits.bytesPerSecond);
-                    // Never start a read that cannot obtain its grant before expiry.
-                    if (wait >= deadline - time) fail('prefetch-expired');
-                    await delay(wait, task.controller.signal);
-                }
+            claim(bytes) {
+                const promise = claim(bytes);
+                // A completed job may abandon a pending claim; still return the
+                // original rejection to callers that await it.
+                promise.catch(() => {});
+                return promise;
             },
             append(writer, offset, bytes) {
                 check();
@@ -84,11 +92,12 @@ function createScheduler(options = {}) {
                 if (start >= candidate.confirmedUntil) { lastOutcome = 'expired'; continue; }
                 const deadline = Math.min(candidate.confirmedUntil, start + limits.maxDurationMs);
                 if (!Number.isSafeInteger(deadline)) { lastOutcome = 'failed'; continue; }
-                const task = {epoch, controller: new AbortController()}; active = task;
+                const task = {epoch, done: false, controller: new AbortController()}; active = task;
                 let timer;
                 try {
                     timer = setTimer(() => task.controller.abort(), deadline - start);
                     const budget = makeBudget(task, deadline);
+                    budget.assertCurrent();
                     await candidate.run(budget);
                     budget.assertCurrent(); lastOutcome = 'completed';
                 } catch {
@@ -96,7 +105,9 @@ function createScheduler(options = {}) {
                 } finally {
                     clearTimer(timer);
                     // Release ownership before this drain's Promise can settle.
+                    task.done = true;
                     if (active === task) active = null;
+                    task.controller.abort();
                 }
             }
         } finally {
@@ -119,7 +130,9 @@ function createScheduler(options = {}) {
             typeof candidate.run !== 'function') { cancel(); fail('prefetch-candidate-invalid'); }
         if (selected && selected.owner === candidate.owner && selected.nextKey === candidate.nextKey &&
             selected.confirmedUntil === candidate.confirmedUntil) return 'duplicate';
-        cancel();
+        const updateEpoch = cancel();
+        // Abort listeners can synchronously submit a newer confirmation.
+        if (updateEpoch !== epoch || closed) return 'superseded';
         // Retain only the latest explicit confirmation, no queue/episode inference.
         selected = {owner: candidate.owner, nextKey: candidate.nextKey, confirmedUntil: candidate.confirmedUntil};
         pending = {...selected, run: candidate.run}; kick(); return 'queued';

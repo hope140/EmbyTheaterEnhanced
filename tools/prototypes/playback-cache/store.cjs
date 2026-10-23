@@ -61,9 +61,9 @@ function createStore(options = {}) {
         const stat = io.lstatSync(root);
         if (!stat.isDirectory() || stat.isSymbolicLink() || io.realpathSync(root) !== root) fail('root-unsafe');
     }
-    function writeNew(name, data) {
+    function writeNew(name, data, onCreated) {
         const fd = io.openSync(file(name), 'wx', 0o600);
-        try { io.writeFileSync(fd, data); io.fsyncSync(fd); } finally { io.closeSync(fd); }
+        try { if (onCreated) onCreated(); io.writeFileSync(fd, data); io.fsyncSync(fd); } finally { io.closeSync(fd); }
     }
     function checkpoint(record) {
         const temp = record.id + '.json.tmp';
@@ -126,7 +126,7 @@ function createStore(options = {}) {
         if (regular('owner').size !== Buffer.byteLength(OWNER) || io.readFileSync(file('owner'), 'utf8') !== OWNER) fail('owner-invalid');
         // Never guess that a lock is stale or terminate another process. A crash
         // lock needs explicit operator verification/removal before recovery.
-        writeNew('lock', String(process.pid)); locked = true;
+        writeNew('lock', String(process.pid), () => { locked = true; });
         const names = io.readdirSync(root);
         for (const name of names) {
             if (!['owner', 'lock'].includes(name) && !/^[a-f0-9]{64}\.(bytes|json|json\.tmp)$/.test(name)) fail('root-unknown-file');
