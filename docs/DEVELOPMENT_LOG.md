@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-23 — 页面缓存独立测试包就绪度核对
+
+按新测试包授权核对Home工厂实参、适配器双门槛、手动workflow输入/并发组、固定构建脚本、安装器AppId及bootstrap/Host/userData时序。当前只有源码依赖注入开关，打出的普通包保持关闭；安装器名含sha/run但AppId/profile仍沿产品合同。故不把已有源码集成称为可开启的功能测试包，不触发或排队共享打包作业。交接现有ref/精确commit核对、release_package=false、fresh-checkout/不覆盖artifact以及隔离VM和人工四项清单，具体见[评估](PAGE_CACHE_PACKAGE_READINESS.md)。本次没有产品/构建脚本变更或重新执行先前170项测试；文档检查单独记录，真实包、运行及性能仍未执行。
+
 ## 2026-10-23 — HomeSections投影的可选缓存接线
 
 维护Home controller新增相对AMD适配依赖，默认不传开关；独立适配器仅在enabled和显式TTL同时具备时创建缓存/订阅canonical events。provider在原GET后复用prepareSections投影，命中后再校验冻结并重建WeakMap分区owner及随机种子；Items读取、原CardBuilder、focus/scroller和播放归属保持。pause/刷新退休本轮订阅，显式refresh/clear失效成功数据，dispose移除本适配器监听器。身份轮换使用原API的认证代次和空session，不读取/复制token；旧请求结束不能退休新身份binding。启用路径的provider及Home票据另核认证代次，活动stage的语言/版本改变也重新读取。
