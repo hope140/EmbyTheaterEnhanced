@@ -16,7 +16,9 @@ The DLL is byte-identical to the former patch input. Future upgrades require del
 
 ## Cache and failure rules
 
-Requirements: Node, Git and trusted libarchive bsdtar. Windows uses existing `C:\Windows\System32\tar.exe`; Linux requires `bsdtar` (GNU tar alone cannot extract this 7z). No downloader or extractor is installed by this entry.
+Requirements: Node, Git and a trusted preinstalled extractor. Windows first uses `C:\Program Files\7-Zip\7z.exe` when present, checking its physical file/parent paths; otherwise it retains `C:\Windows\System32\tar.exe` with the same physical-path check. Windows2022's system tar failed this archive with `LZMA codec is unsupported` in run `39958180700`; its [official deployed image inventory](https://github.com/actions/runner-images/blob/win22/20261012.333/images/windows/Windows2022-Readme.md) lists preinstalled 7zip. A selected tool failure stops without retrying a different extractor, changing the archive or installing software. Missing tools fail explicitly. Linux keeps `bsdtar` (GNU tar alone cannot extract this 7z).
+
+7-Zip lists technical member paths and must find exactly one case-sensitive root `libmpv-2.dll`; nested, wrong-case and duplicate names are refused. Extraction uses stdout with wildcard matching disabled, never archive-directed disk paths. The same existing archive/HEAD verification and exact output size/SHA256 gates remain before component creation. Local selection/parser regressions use controlled process responses; actual Windows7-Zip recovery still requires the next hosted run.
 
 The complete original archive uses ordinary Git with `-text`; the 119 MB prepared DLL remains ignored. Missing, corrupt, uncommitted, changed or redirected repository archive paths fail before cache use. A valid prepared DLL cannot hide a bad archive. There is no automatic network fallback or old archive-cache fallback for this manifest. Only the named DLL member is extracted to memory, verified, and written to the ignored component directory.
 

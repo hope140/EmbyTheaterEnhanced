@@ -4,6 +4,8 @@
 
 2026-10-23的首次统一Host手动运行 `39957149782` 因 `windows-2025` 实际分配VS2026映像而在MSBuild17定位阶段停止，尚未编译。GitHub的[当前映像标签](https://github.com/actions/runner-images#available-images)与[Windows2022工具清单](https://github.com/actions/runner-images/blob/main/images/windows/Windows2022-Readme.md)列有受支持的 `windows-2022`／VS2022 17.14及MSBuild17组件，因此仅调整手动作业映像；定位器仍限定 `[17.0,18.0)`，builder仍拒绝非17版本，不安装编译器或回退旧Host。OS标签不锁定不可变映像，实际映像和工具链身份仍由每次run与构建回执记录；新映像上的完整构建验证结果须以新run为准。
 
+后续运行 `39958180700` 已分配Windows2022，但在更早的libmpv恢复阶段被系统tar的LZMA能力阻断，未进入Host编译。恢复入口现优先使用该映像已有的固定安装位置7-Zip，只列举并将指定成员解至内存，再按原始归档与输出身份核验；不安装工具、不换libmpv、不跳校验，详见[libmpv恢复合同](LIBMPV_INPUT.md)。下一次运行仍须验证整个流程，不能把材料修正视为MSBuild或完整构建通过。
+
 ## 当前 Host 编译与验证前置条件
 
 当前手动作业在独立材料准备后调用 `tools/ci-source-built-host.ps1`，恢复固定55份官方源码和两个NuGet输入，使用Windows PowerShell5.1／MSBuild17编译net462/x86 Host。随后必须由本次runner的可移植探针验证实际EXE/PDB，生成锁及构建／验证／工具链／工程回执，再进入装配。生成锁位于 `.work/source-built-host/`，绑定当前HEAD与Actions运行；不能导入外部测试机的旧回执或回退原版Host。
