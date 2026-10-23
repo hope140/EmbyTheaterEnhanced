@@ -21,6 +21,14 @@ if ($run -notmatch '^[a-zA-Z0-9-]+$') { throw 'Invalid run identity.' }
 $runtimeName = 'ETE-test-' + $source.Substring(0,12) + '-' + $run
 $runtime = Join-Path $root ('dist/' + $runtimeName)
 
+# Fail before dependency acquisition on an unknown/unsigned Framework; do not
+# repeatedly allocate full builds hoping for a different hosted image.
+& node (Join-Path $PSScriptRoot 'host-verifier-input.cjs') $root
+if ($LASTEXITCODE -ne 0) { throw 'Reviewed Framework preflight source identity mismatch.' }
+. (Join-Path $PSScriptRoot 'windows-host-verifier/Framework-Implementation.ps1')
+$entryFramework = Get-RunnerFrameworkPreflight
+Write-Output ('FRAMEWORK_PREFLIGHT ' + ($entryFramework | ConvertTo-Json -Depth 8 -Compress))
+
 function RunNode([string[]]$Arguments) {
     & node @Arguments
     if ($LASTEXITCODE -ne 0) { throw ('Node validation failed: ' + $Arguments[0]) }
@@ -100,6 +108,10 @@ foreach ($file in @('build-manifest.json','build-input-provenance.json','source-
     Copy-Item -LiteralPath (Join-Path $runtime $file) -Destination $output
 }
 Copy-Item -LiteralPath (Join-Path $root '.work/source-built-host') -Destination (Join-Path $output 'host-build-evidence') -Recurse
+$frameworkReceipt = Join-Path $root '.work/runner-framework-profile.json'
+$frameworkFile = Get-Item -LiteralPath $frameworkReceipt -ErrorAction Stop
+if ($frameworkFile.PSIsContainer -or ($frameworkFile.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Physical Framework preflight receipt required.' }
+Copy-Item -LiteralPath $frameworkReceipt -Destination (Join-Path $output 'runner-framework-profile.json')
 [IO.File]::WriteAllText((Join-Path $output 'installer-verification.json'), ($verification | Out-String), [Text.UTF8Encoding]::new($false))
 $libmpvReceipt = [ordered]@{
     schemaVersion=1; sourceCommit=$source; acquisition='repository-archive'

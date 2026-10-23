@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-23 — 页面缓存独立包的 Framework 来源预检
+
+Windows 测试包尚未通过 System.Configuration 固定实现门禁，未生成成功 artifact。现限定新增一条已观察候选的来源检查：精确文件 SHA、GitHub 镜像/OS build、规范物理系统路径、微软有效签名及重新计算的文件哈希必须同时满足；原固定实现条件和完整 Host 双场景行为验收保持。依赖下载前先只读预检，未知实现立即失败；不安装系统更新、不回流私有 DLL、不自动重试。成功 artifact 增加预检回执，准确边界见[Framework 来源配置](FRAMEWORK_SERVICING_PROFILES.md)。
+
+组合回归 348/348、0失败/取消/跳过，含页面缓存、隔离入口、来源/构建及新增生产分类器和 finalizer 分支的合成来源负例。该结果不是 Windows 实际签名或 Host 兼容证明；独立新提交仍待一次 Windows 构建及整包/GUI验证。缓存缺配置默认关闭、显式测试参数与新 profile 隔离保持；正式 v0.4.0、main 和其他新功能不改。
+
 ## 2026-10-23 — 页面缓存重基v0.4.0并准备独立测试分支
 
 feature/page-cache已重基main `88578c91ab19d44eecddcfae096d37dc917ef1f4`；仅两份日志顶部冲突，保留双方记录。src/native、页面缓存测试及preload生成器相对重基前功能来源b3da2bee逐字节一致，保留main的0.4.0元数据、来源/许可材料与发布文件证据门禁。271项缓存/入口/相邻页面及v0.4.0构建/发行合同复验全部通过、0失败/取消/跳过，JS423/PS7语法47及有限模式510文件通过；不借此宣称新Windows包或GUI通过。缺配置仍默认关闭，显式测试CLI强制新临时profile，命令与范围见[测试入口](PAGE_CACHE_TEST_ENTRY.md)。按授权正常推送独立分支并回读SHA，结果以最终交付为准；不force push、不合main、不手动dispatch。父待正式构建结束后安排release_package=false及独立解包/profile验证。

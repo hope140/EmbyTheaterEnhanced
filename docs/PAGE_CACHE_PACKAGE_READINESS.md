@@ -4,6 +4,8 @@
 
 **更新：源码级安全测试入口现已补齐。** 本页保留上一轮包准备评估和既有构建参数；“无包内入口”的缺口由[隔离启动合同](PAGE_CACHE_TEST_ENTRY.md)中的显式参数与全新profile接线取代。当前可以准备独立新测试包，但尚未运行Windows Electron/完整GUI，不能将代码回归称为包验收。
 
+**构建阻碍更新：** 首次 Windows 包尚未通过 Framework 固定实现门禁，没有成功 artifact。独立分支现新增[精确来源预检和候选合同](FRAMEWORK_SERVICING_PROFILES.md)，保留原固定实现和完整 Host 行为验收；新候选的实际 Windows 签名、兼容性及包产出待精确新提交构建验证，不重复运行旧提交。成功后先核对伴随 runner-framework-profile.json、Host 与 runtime 来源材料，再执行本页验收。
+
 ## 证据和缺口
 
 | 项目 | 当前事实 |

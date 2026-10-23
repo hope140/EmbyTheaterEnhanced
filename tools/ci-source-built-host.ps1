@@ -4,6 +4,16 @@ Set-StrictMode -Version Latest
 $root = Split-Path -Parent $PSScriptRoot
 if (-not $IsWindows) { throw 'Source-built Host runner preparation requires Windows.' }
 $tool = Join-Path $PSScriptRoot 'ci-source-built-host-plan.cjs'
+# Resolve the two reviewed servicing profiles before acquiring/building anything.
+# This reads OS metadata only; it never installs an update or changes the GAC.
+& node $tool verify-verifier $root
+if ($LASTEXITCODE -ne 0) { throw 'Reviewed Framework preflight source identity mismatch.' }
+. (Join-Path $PSScriptRoot 'windows-host-verifier/Framework-Implementation.ps1')
+$frameworkProfile = Get-RunnerFrameworkPreflight
+$frameworkReceipt = Join-Path $root '.work/runner-framework-profile.json'
+if (Test-Path -LiteralPath $frameworkReceipt) { throw 'Preserve existing Framework preflight receipt.' }
+[void][IO.Directory]::CreateDirectory((Split-Path -Parent $frameworkReceipt))
+[IO.File]::WriteAllText($frameworkReceipt, (($frameworkProfile | ConvertTo-Json -Depth 8) + "`n"), [Text.UTF8Encoding]::new($false))
 $planJson = & node $tool plan $root
 if ($LASTEXITCODE -ne 0) { throw 'Source-built Host acquisition plan mismatch.' }
 $plan = $planJson | ConvertFrom-Json

@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-23 — 页面缓存测试包的只读 Framework 来源预检
+
+补充 Framework-Implementation.ps1，保留原固定实现，并把已观察的另一 SHA 限定到精确旧镜像和 OS build、Framework 4.8 系列、规范 GAC 物理路径、Windows 验证的微软有效签名及检查后重新计算的文件哈希。入口在依赖下载前拒绝未知实现；Host 准备记录独立预检回执，finalizer 对实际进程观察值再次执行来源检查，所有既有 Host 行为检查继续保留。没有下载/替换框架文件、修改系统/GAC/安全设置、自动升级或重复盲跑。33份验证器输入清单重新绑定；业务 Host 源码/指纹、目标框架、编译器和产品缓存链路不改。
+
+新增4项定向回归执行生产分类器和生产 finalizer 分支，来源读取边界使用合成元数据，覆盖精确候选、签名/发布者/镜像/路径/哈希拒绝及原固定行为。构建与缓存27文件组合348/348、0失败/取消/跳过；不能当实际微软签名、Windows Host或GUI证据。新 Windows 构建仍需在精确独立分支提交上获取来源回执并完成完整验收。实现合同、官方镜像/服务更新参考和未验边界见[Framework 来源配置](FRAMEWORK_SERVICING_PROFILES.md)。
+
 ## 2026-10-23 — 页面缓存安全重基与分支交接
 
 先核对远端main准确为88578c91ab19d44eecddcfae096d37dc917ef1f4且无feature/page-cache，再保留本地b3da2bee备份并重放四项功能提交。冲突仅PROJECT_STATUS/DEVELOPMENT_LOG顶部，双方完整保留；重基前后全部src/native、专属测试和prepare-preload无差异，main发布材料/版本及新release-file-evidence测试保持。原19文件247项集合增加发行文件、版本、组件和手动作业合同，重基后271/271、0失败/取消/跳过。JS423文件及有限模式510文件通过；PS7语法首次在检查前因默认home缓存只读退出134，改用本次进程专属/tmp XDG缓存后47文件通过，没有写用户/系统缓存；这不是Windows/PS5.1执行证据。当前只做独立分支推送准备与回读，正式任务优先，不触发打包或触及Work/NAS；包/Windows运行/视觉仍交父后续分层验证。准确启动参数与profile规则见[测试入口](PAGE_CACHE_TEST_ENTRY.md)。

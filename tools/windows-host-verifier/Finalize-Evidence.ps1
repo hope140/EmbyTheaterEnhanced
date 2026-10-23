@@ -2,6 +2,7 @@ param([Parameter(Mandatory=$true)][string]$EvidenceRoot,[Parameter(Mandatory=$tr
 $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
 $b=$EvidenceRoot
 $r=$PSScriptRoot
+. (Join-Path $r 'Framework-Implementation.ps1')
 function Get-EvidenceHash([string]$p){(Get-FileHash -LiteralPath $p -Algorithm SHA256).Hash.ToLowerInvariant()}
 $build=Get-Content -LiteralPath (Join-Path $b 'build-receipt.json') -Raw|ConvertFrom-Json
 $comp=Get-Content -LiteralPath (Join-Path $b 'component-verification.json') -Raw|ConvertFrom-Json
@@ -39,10 +40,18 @@ foreach($c in $summary.Cases){
   if(-not $match.Success){throw ('Observed assembly missing '+$name)}
   $f=@{};foreach($line in ($match.Groups[1].Value -split '\r?\n')){if($line.Contains('=')){$p=$line.IndexOf('=');$f[$line.Substring(0,$p)]=$line.Substring($p+1)}}
   if((Get-EvidenceHash $f.Location) -cne $f.SHA256 -or $f.ReferenceAssembly -cne 'False'){throw 'Observed file/reference mismatch'}
-  if($name -eq 'System.Configuration'){if($f.GAC -cne 'True' -or $f.SHA256 -cne '5a3d35a9a0db4f075cc073ea8e875ef6b3533e88ec610621ac400efcc7c8e663'){throw ('Framework implementation mismatch: '+([ordered]@{expectedGac='True';expectedSha256='5a3d35a9a0db4f075cc073ea8e875ef6b3533e88ec610621ac400efcc7c8e663';observedGac=$f.GAC;observedSha256=$f.SHA256;identity=$f.Identity;location=$f.Location;referenceAssembly=$f.ReferenceAssembly}|ConvertTo-Json -Compress))}}
+  if($name -eq 'System.Configuration'){
+   $approved=$f.SHA256 -ceq '5a3d35a9a0db4f075cc073ea8e875ef6b3533e88ec610621ac400efcc7c8e663'
+   if($f.SHA256 -ceq '04a0018561b48efe2a4d56aff686783fd7f8b7f395f4c88c58ba2eb8e8118d41'){
+    $servicing=Read-ReviewedFrameworkEvidence $f
+    Write-Output ('FRAMEWORK_SERVICING_EVIDENCE '+($servicing|ConvertTo-Json -Depth 4 -Compress))
+    $approved=Test-ReviewedFrameworkEvidence $servicing
+   }
+   if($f.GAC -cne 'True' -or -not $approved){throw ('Framework implementation mismatch: '+([ordered]@{expectedGac='True';expectedSha256='5a3d35a9a0db4f075cc073ea8e875ef6b3533e88ec610621ac400efcc7c8e663';observedGac=$f.GAC;observedSha256=$f.SHA256;identity=$f.Identity;location=$f.Location;referenceAssembly=$f.ReferenceAssembly}|ConvertTo-Json -Compress))}
+  }
   elseif($name -eq 'Emby.Theater'){$want=$build.files[0].sha256;if($f.SHA256 -cne $want){throw 'Observed Host mismatch'}}
   else{$want=@($build.references|Where-Object{[IO.Path]::GetFileNameWithoutExtension($_.path) -ceq $name})[0].sha256;if($f.SHA256 -cne $want){throw 'Observed dependency mismatch'}}
-  $bindingRows+=[ordered]@{case=$c.Variant;assembly=$name;location=$f.Location;sha256=$f.SHA256;gac=$f.GAC;referenceAssembly=$f.ReferenceAssembly}
+  $bindingRows+=[ordered]@{case=$c.Variant;assembly=$name;location=$f.Location;sha256=$f.SHA256;gac=$f.GAC;referenceAssembly=$f.ReferenceAssembly;frameworkProfile=if($name -eq 'System.Configuration' -and $f.SHA256 -ceq '04a0018561b48efe2a4d56aff686783fd7f8b7f395f4c88c58ba2eb8e8118d41'){$servicing}else{$null}}
  }
  $caseRows+=[ordered]@{name=$c.Variant;passed=$true;local8154=$true;xmlSave=$true;exitCode=$c.ExitCode;pendingPreserved=$true;argumentShape='app/data/mpv';usesCancelMask=$false;usesTaskSuppression=$false;summary=$summaryPath;observer=$c.AssemblyObserverLog;childArguments=$child}
 }
