@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-23 — 第三方 FNID 公开实现调查与真实验证准备
+
+固定三份客户端与 Ting Reader 服务端源码身份，分别记录产品说明、签名接入条件、fnOS/应用双层认证及 FPK gatewaySocket/gatewayPrefix 证据；未执行上游项目、复制协议实现或签名材料。开发者站既有 403 路径未重试，未进行真实 NAS、认证或配置操作。
+
+新增显式启用的 mapped-emby-probe 浏览器脚本，仅在正常同源会话内 GET 已注册映射下的公开身份接口；限制路径、跳转、响应大小和时间，固定报告无身份正文。初轮取消测试发现 reader 获取前的响应 body 未清理，修复后原16项与探针9项合计25项通过。此为合成证据，不表示生产 transport 或功能测试包已就绪；[证据与停点](FN_CONNECT_CLIENT_EVIDENCE.md)列明后续所需映射、会话及最短人工清单。
+
 ## 2026-10-23 — FNConnect transport 契约准备
 
 新增 `prototypes/fn-connect/transport-contract.cjs` 与独立全内存测试，保持普通产品来源、Emby 登录/权限和播放 Session 归属。默认 disabled，生产模式拒绝；mock lease 的绝对到期、取消、连接隔离、幂等 close/drain 与错误收口均在本地验证。provider 不遵守取消时仍待其结算，不把本地取消等同于物理隧道中断；无主动续期、重连、缓存或路由切换。16 项单元测试通过（0失败/取消/跳过）。

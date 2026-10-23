@@ -1,5 +1,7 @@
 # FNConnect transport 可行性与本地契约
 
+后续研究已找到第三方 FNID 实现及应用网关注册代码，并提供真实验证用的同源只读探针；见[客户端证据与真实验证路线](FN_CONNECT_CLIENT_EVIDENCE.md)。下表保留官方公开说明层，第三方实现证据另列，不能将两类证据互相替代。
+
 状态：`PROTOCOL_UNKNOWN / MOCK_ONLY`。本项是 v0.4.0 正式版之后的独立准备；不进入当前发布包。后续集成必须先对齐真实 v0.4.0 发布点，不能把开发基线或发布工作分支当作最终 Tag 来源。
 
 目标是借飞牛服务的认证与连接授权，让客户端远程连接 NAS 上的 Emby。FNID、飞牛云账号、fnOS 本地账号、Emby 账号分别保有各自身份；Emby 登录、媒体权限、Session、PlaybackManager 和远控沿用原流程，不做用户映射。
