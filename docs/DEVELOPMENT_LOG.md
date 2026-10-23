@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-23 — 固定Native工具链的子进程依赖环境
+
+run `39970619136` 完整回归1606／1606通过、0失败／0跳过，耗时662749ms；Host真实验证及锁接入、语法／固定输入检查继续通过。实际runtime构建在build-native-helper.ps1原48行收到GCC exit1，14:54:24 UTC结束（21分04秒），无安装器／artifact。终态日志没有C++编译或链接stderr，不能用泛化exit1代替已证实根因。
+
+静态检查发现GCC完整6990文件工具链已锁定验证，但实际编译没有把其ucrt64/bin前置到进程PATH；驱动版本探针成功不能证明位于其他目录的cc1plus子程序能解析同树DLL。MSYS2官方环境说明要求UCRT64 bin优先，项目维护方记录过子编译器因PATH中的其他winpthreads DLL导致启动失败。这支持环境缺口推断，尚不能证明该run的实际失败DLL。依据：[官方环境](https://www.msys2.org/docs/environments/)及[维护方问题记录](https://github.com/msys2/MINGW-packages/issues/24355)。
+
+仅将实际编译调用置于局部函数：调用前仍完成源提交／header／libmpv／完整工具链／编译器身份检查，当前进程PATH临时前置经验证编译器的bin，finally恢复原值；异常继续阻止provenance记录，未安装软件或改变系统环境。固定GCC／库／flags、C++源码和Host指纹不变。回归从实际PowerShell AST提取生产函数，以真实外部Node子进程作编译驱动替身，覆盖环境前缀、含空格参数、exit0／exit23及恢复；不是GCC或Windows DLL加载实测。连同工具链身份／环境拒绝、源版本物化和workflow测试14项通过（0失败、0跳过），下一次新runner仍需独立编译和验证。
+
 ## 2026-10-23 — provenance断言独立绑定夹具Git blob
 
 run `39967786650` 于14:27:14 UTC结束（manual job13分45秒），本次镜像20261021.343.1；14:18:41 Host真实验证PASSED，本次生成锁、接入及preflight继续成功。原Framework固定门禁未修改，本轮不触发其失败诊断；不能据此补出上轮旧镜像的实际GAC/path/hash。完整测试1605／1604通过／1失败／0跳过，用时507208ms，未打包上传。

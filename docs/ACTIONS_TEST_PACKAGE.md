@@ -14,6 +14,8 @@
 
 后续诊断run `39967786650` 的Host验证和本次锁接入通过；完整回归1605项仅1项失败，为provenance测试将CRLF工作树哈希与生成器Git blob身份比较。现仅修正该测试的独立Git预期并覆盖LF／CRLF、DLL回流及真实内容篡改拒绝；生产门禁保持。该run没有安装包或artifact，完整云包仍须下一run。
 
+运行 `39970619136` 已通过全部1606项Windows回归及Host实际验证，随后在runtime的Native Helper编译返回1；日志缺C++stderr，无安装器。构建调用现仅在完整工具链身份验证后临时前置固定ucrt64/bin，并在finally恢复进程PATH，保持编译器／flags／源码不变。该缺口与子编译器依赖解析相符，但实际GCC修复效果仍待新runner，不能将本地子进程环境回归代替云包通过。
+
 ## 当前 Host 编译与验证前置条件
 
 当前手动作业在独立材料准备后调用 `tools/ci-source-built-host.ps1`，恢复固定55份官方源码和两个NuGet输入，使用Windows PowerShell5.1／MSBuild17编译net462/x86 Host。随后必须由本次runner的可移植探针验证实际EXE/PDB，生成锁及构建／验证／工具链／工程回执，再进入装配。生成锁位于 `.work/source-built-host/`，绑定当前HEAD与Actions运行；不能导入外部测试机的旧回执或回退原版Host。
