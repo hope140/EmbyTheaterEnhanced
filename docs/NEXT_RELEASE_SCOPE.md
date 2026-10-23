@@ -1,5 +1,14 @@
 # 后续范围与启动条件
 
+## 当前发布与后续功能边界
+
+本轮只准备 v0.4.0 正式版：既有来源清理、完整CEC／旧Host自更新退休、构建闭环和文档。当前公开正式版仍为v0.3.1，旧v0.3.16 prerelease保留；新版本未发布，见[本版核验](V040_RELEASE_VERIFICATION.md)。已验收候选无需重复功能验收，准确正式产物仍须重新构建并核验。
+
+原生Windows控制透明／按钮、页面缓存、播放缓存暂存、预加载和FNConnect属于正式版之后的独立功能分支，只有只读排查，没有在本发布分支实施，也不作为此次发布的额外阻塞。独立功能不自动合入或发布。
+
+以下各版本和日期条目保留当时范围；旧CEC盘点已由[退休合同](CEC_RETIREMENT.md)替代，不再指向已删除的产品入口。
+
+
 [v0.3.15 播放后退出修复测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.15) 已作为 Pre-release 发布，仅修复任务栏媒体控制在窗口销毁后的清理与幂等性。最终来源和五附件见[发行核验](V0315_RELEASE_VERIFICATION.md)；正式版/Latest仍为v0.3.1。整体退出期限、强退策略与后续条件保持原状。
 
 
@@ -12,7 +21,7 @@
 
 v0.3.10 的四项有限维护已作为 Pre-release 发布，为历史批次；产品来源固定 `73a5379983e2be2a2bc0bdc8aec8f0fcb5f07d63`，验收范围见[发行核验](V0310_RELEASE_VERIFICATION.md)。这些修正已移出待发布项，真实设备、播放、Helper 运行及完整安装缺口仍按原边界保留。
 
-下面的显示归属、系统集成和安装条件继续作为候选，实施前按具体需求确定合同。尚未确定下一产品版本。以下日期段落保留当时基线与计划，其中“尚未发布”“之后执行夜间维护”等不代表当前待办。
+下面的显示归属、系统集成和安装条件继续作为候选，实施前按具体需求确定合同。本轮已确定准备v0.4.0；尚未确定后续功能版本。以下日期段落保留当时基线与计划，其中“尚未发布”“之后执行夜间维护”等不代表当前待办。
 
 ## 2026-10-18 — 有限维护增量
 
@@ -54,7 +63,7 @@ v0.3.10 的四项有限维护已作为 Pre-release 发布，为历史批次；�
 
 | 能力 | 当前静态事实与源码入口 | 需要先明确的条件 |
 | --- | --- | --- |
-| CEC | [input插件](../src/electronapp/plugins/cec.js)构造末尾调用`startClient()`，发送`electroncec://start`，未见关闭态guard；[main](../src/electronapp/main.js)的`registerCec/initCec`收到请求后才require模块，[CEC模块](../src/electronapp/cec/cec.js)仅在有`cecExePath`时spawn | 不能宣称关闭态零load/spawn，也不能宣称本机已spawn。若需要总开关/惰性加载，先明确默认值、配置保留、插件构造、客户端路径、唯一进程与退出归属，以及实际适配器/端口；不因缺设备删入口 |
+| CEC（已退休） | 当前候选已删除专属插件／设置、协议和spawn链，Host驱动提示及运行二进制亦退出；见[退休合同](CEC_RETIREMENT.md) | 旧盘点和设备条件只保留历史范围；不再安排CEC硬件验收，不卸系统驱动或删除profile |
 | WOL | [main](../src/electronapp/main.js)注册`electronwakeonlan`；[renderer helper](../src/electronapp/wakeonlan/wakeonlan.js)和[UDP helper](../src/electronapp/wakeonlan/wakeonlan-native.js)已有MAC/address/port入口 | 未观察调用或发包，不能说已唤醒。先明确目标服务器、参数来源、广播网络边界、失败提示与重复请求行为，再决定维护范围 |
 | 服务器发现 | [main](../src/electronapp/main.js)注册`electronserverdiscovery`，请求时调用[findServers](../src/electronapp/serverdiscovery/serverdiscovery-native.js)，已有UDP4广播到7359端口、timeout返回收集结果的代码 | 未观察真实消费者/发现结果。先明确用户触发点、网络边界、超时输入、坏/重复响应、socket退出和隐私合同，不把注册等同于成功发现 |
 | 开机启动 | [apphost](../src/electronapp/apphost.js)广告`runatstartup`；当前[命令白名单](../src/electronapp/apphost-command.js)无该命令，维护源码盘点未见系统启动项写入处理；启动URL中的`autostart=false`本身不能证明Windows登录项状态 | 只确认广告存在，完整实现/可达和宿主是否另有行为均未证实。需要需求时先明确当前用户/全机范围、登录触发、启停持久化、安装/卸载/升级回滚与读回；本次不读取或写入真实启动项 |

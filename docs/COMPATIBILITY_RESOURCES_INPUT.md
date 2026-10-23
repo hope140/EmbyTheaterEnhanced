@@ -3,7 +3,11 @@
 Current v2 selection: thirty-nine original shader resources remain at vendor/compatibility-resources/snapshot-v2. The nine reviewed retired bodies leave the current tree; the exact v1 manifest/hash and necessary notices remain. Kept bytes are unchanged, and normal build has no v1/old-package fallback. See [v2 migration](SNAPSHOT_V2_MIGRATION.md). Earlier 48-file/local-only/body-preservation statements below are historical.
 
 
-Current release selection: [the scoped legacy-resource audit](https://github.com/hope140/EmbyTheaterEnhanced/pull/69) excludes nine compatibility resources and two small runtime resources from new runtime output. Original snapshot bytes/manifests and notices remain preserved and strictly validated; the historical byte-preservation statements below describe input storage, not the new output selection. Runtime reports carry separate output counts, bytes, tree hashes and excluded identities.
+## Historical implementation stages
+
+The remaining dated descriptions retain their original scope. Current input counts and storage are defined by [repository inputs](REPOSITORY_INPUTS.md); earlier v1/body-preservation/old-package requirements below are not current build prerequisites.
+
+Historical release-selection stage: [the scoped legacy-resource audit](https://github.com/hope140/EmbyTheaterEnhanced/pull/69) excludes nine compatibility resources and two small runtime resources from new runtime output. Original snapshot bytes/manifests and notices remain preserved and strictly validated; the historical byte-preservation statements below describe input storage, not the new output selection. Runtime reports carry separate output counts, bytes, tree hashes and excluded identities.
 
 48 existing manual/external resource files are independently managed under vendor/compatibility-resources/snapshot-v1. Their 29,353,185 bytes and runtime paths remain unchanged. This selection excludes Model, the four small remaining old inputs, Web, Host, npm and libmpv components. Bodies are ignored by Git and are not publicly uploaded. This is a local snapshot, not a claim of official online recovery or ETE authorship.
 
@@ -32,6 +36,6 @@ The old Carnival requirement falls from 53 to five inputs: Model plus four small
 
 Validation compares 822 base files, 937 transformed intermediate files and final Web against the material baseline. This does not constitute full-package or playback acceptance. The isolated material branch still needs the separately released 0.3.15 exit fix before any final package candidate; this component change does not cherry-pick that fix, change Model/UI/version or run the app.
 
-## Current repository restoration update (2026-10-21)
+## Historical repository restoration update (2026-10-21)
 
 The user authorized tracking the exact required Web, compatibility-resource, small-runtime and original Model snapshots in this same repository. The 775 manifest-listed files (51,953,202 bytes) use ordinary Git with `-text` attributes to preserve bytes. Historical local-only/ignored-storage statements below describe earlier stages and are superseded for these four roots. Source attribution and unresolved exact revisions remain unchanged; storage permission is not a claim of new third-party authorship or complete corresponding source. libmpv stays ignored and is restored from the pinned archive via `node tools/prepare-libmpv.cjs .`; see [repository inputs](REPOSITORY_INPUTS.md). No old full installer/patch or real user profile is included.

@@ -19,7 +19,7 @@ PR classification compares the event's exact `pull_request.base.sha` to `pull_re
 
 The existing workflow/job identity `Public offline CI / windows-public-offline` remains present on every push/PR. On the documentation route its result represents the actual lightweight checks; the regression step is skipped and the summary explicitly says **NOT EXECUTED**. On the full route all previous gates remain required in that job. Failures/cancellation are not converted into success by the reporting step; no `continue-on-error` or synthetic passing test status is used. Repository protection settings remain unchanged.
 
-`workflow_dispatch` still runs the unchanged complete `manual-windows-test-package` job; documentation routing does not apply to manual packaging. No Actions, permissions, secrets, dependency upgrades or additional services are introduced.
+`workflow_dispatch` runs the separately documented complete `manual-windows-test-package` job; documentation routing does not apply to manual packaging. No Actions, permissions, secrets, dependency upgrades or additional services are introduced.
 
 Routing and lightweight-check fixtures can be tested without vendor inputs or npm installation:
 
@@ -31,16 +31,16 @@ For a local routing dry run, supply `CI_EVENT_NAME` and the full exact SHAs in `
 
 ## Checks
 
-The public runner discovers `tests/*.test.cjs` and excludes only these six tests because their required vendor inputs are not in the public checkout. They are reported as `material-required` / `NOT EXECUTED`, not as passing:
+The public runner discovers `tests/*.test.cjs` and retains the following six exclusions. Their old missing-Carnival explanations are historical: current contracts use fixed components and generated artifacts. This documentation update does not change the exclusion list or claim those tests execute on the public route. They remain reported as `material-required` / `NOT EXECUTED`; the prepared manual Windows route separately executes all test files.
 
-| Excluded test | Required material |
+| Excluded test | Current contract / prepared input |
 | --- | --- |
-| `tests/device-identity.test.cjs` | Carnival `app.js` and `connectionmanager.js`, plus patched `apiclient.js`. |
-| `tests/external-player-process-chain.test.cjs` | Generated `src/electronapp/preload.js`, prepared from the unavailable Carnival preload. |
-| `tests/playback-route-stats.test.cjs` | Carnival `modules/playerstats/playerstats.js`. |
-| `tests/playbackmanager-request-session.test.cjs` | Carnival `modules/common/playback/playbackmanager.js`. |
-| `tests/runtime-provenance.test.cjs` | Vendor manifests, canonical Carnival files, patch payloads, and generated preload contract. |
-| `tests/web-overlay-preparation.test.cjs` | Frozen Web overlay bases and payloads from `vendor/carnival` and `vendor/patch`. |
+| `tests/device-identity.test.cjs` | Fixed Web app/CM bodies and the generated maintained ApiClient selection. |
+| `tests/external-player-process-chain.test.cjs` | Generated `src/electronapp/preload.js` from its maintained template and generator. |
+| `tests/playback-route-stats.test.cjs` | Fixed Web `modules/playerstats/playerstats.js` and maintained consumer source. |
+| `tests/playbackmanager-request-session.test.cjs` | Fixed Web playback template materialized through its production overlay. |
+| `tests/runtime-provenance.test.cjs` | Independent fixture manifests, fixed components and generated preload/provenance. |
+| `tests/web-overlay-preparation.test.cjs` | Fixed Web bases, explicit patch inputs and maintained overlay generators. |
 
 ### Linux source development
 
@@ -62,7 +62,7 @@ Mount tests use Windows client path identities on every host. They retain real f
 
 Linux source tests do not validate Windows playback, Host, installation, hardware, or the unavailable material contracts. A Linux pass does not replace the Windows CI job or material validation.
 
-Plugin Alameda identity and actual frozen app/view-manager alias-order checks are explicit material tests in `tests/plugin-amd-identity-material-selftest.cjs` and `tests/plugin-dialogclose-material-selftest.cjs`. They retain the original assertions and read the fixed `vendor/web-snapshot/www` inputs; they are not discovered by the public `tests/*.test.cjs` runner. Other historical material selftests still contain old Carnival-tree assumptions; their previously reported 1 failure / 39 skips remain a separate fixture-cleanup item, not an all-pass result and not part of this routing change. The synthetic close-button tests remain in the public set. A prepared local checkout runs both explicitly:
+Plugin Alameda identity and actual frozen app/view-manager alias-order checks are explicit material tests in `tests/plugin-amd-identity-material-selftest.cjs` and `tests/plugin-dialogclose-material-selftest.cjs`. They retain the original assertions and read the fixed `vendor/web-snapshot/www` inputs; they are not discovered by the public `tests/*.test.cjs` runner. The historical 1-failure/39-skip material result belongs to an earlier fixture stage. Later independent-component fixtures have a separate local21-file/135-case all-pass record; that does not convert the six public exclusions into passes or establish a new release package. The successful manual test build `39974691780` ran all1609 ordinary tests plus its explicit Host material check. A `release_package=true` run additionally executes all explicit material selftests and must record its own result. The synthetic close-button tests remain in the public set. A prepared local checkout runs both explicitly:
 
 ```powershell
 node --test tests/plugin-amd-identity-material-selftest.cjs tests/plugin-dialogclose-material-selftest.cjs

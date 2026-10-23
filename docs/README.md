@@ -11,7 +11,9 @@
 | 各版更新内容 | [变更记录](../CHANGELOG.md) |
 | 项目许可与第三方来源 | [许可说明](LICENSING.md) · [第三方通知](../THIRD_PARTY_NOTICES.md) |
 
-当前正式版为 v0.3.1，当前测试版为 [v0.3.15](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.15) Pre-release。主分支文档会继续维护；某项功能是否已发布，请以对应版本的 Release 和 Tag 为准。
+当前正式版为 v0.3.1，当前测试版为 [v0.3.16](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.16) Pre-release。主分支文档会继续维护；某项功能是否已发布，请以对应版本的 Release 和 Tag 为准。
+
+v0.4.0 正式版正在准备，当前构建与发布状态见[本轮核验](V040_RELEASE_VERIFICATION.md)。
 
 ## 开发与验证
 
@@ -24,6 +26,7 @@
 
 ## 发行证据与后续方向
 
+- [v0.3.16 发行核验](V0316_RELEASE_VERIFICATION.md)：独立组件及官方 Model 的历史测试发行。
 - [v0.3.15 发行核验](V0315_RELEASE_VERIFICATION.md)：播放后退出修复、准确来源、五附件与生命周期验收边界。
 - [v0.3.14 发行核验](V0314_RELEASE_VERIFICATION.md)：菜单与首页恢复、准确产品来源、五附件与验收边界。
 - [v0.3.13 发行核验](V0313_RELEASE_VERIFICATION.md)：退出清理维护、准确来源与验收边界。

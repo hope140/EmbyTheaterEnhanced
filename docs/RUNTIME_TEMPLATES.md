@@ -1,5 +1,9 @@
 # Maintained runtime templates
 
+Current template selection is unchanged; normal builds now use independent fixed components and no old Carnival/patch body. Earlier remaining-input counts and local-only storage statements below are historical stages; see [current repository inputs](REPOSITORY_INPUTS.md). Template bodies are tracked with their existing source and unresolved-origin declarations, which does not establish new authorship or complete licence coverage.
+
+## Historical template extraction stage
+
 Three small templates replace the physical package/preload/Host-configuration inputs previously read from Carnival. vendor/runtime-templates-manifest.json records LF source identities, exact generated CRLF identities and per-file origin/differences. The normal old Carnival requirement is reduced from 61 to 58 files; current libmpv remains one patch input. This does not complete removal of the old material bootstrap.
 
 | Template | Origin and retained difference |
@@ -24,6 +28,6 @@ Public tests cover generation, newline checkout differences, hashes, links, extr
 
 Remaining old inputs are 58 assets: Model one, manual/external resources 48 and other assets nine. Keep Model unchanged. The next independent sources should preserve existing bytes: small known official config/language/helper resources first, then pinned libmpv acquisition; unresolved retained assets require documented unchanged snapshots or a separately approved replacement.
 
-## Current repository restoration update (2026-10-21)
+## Historical repository restoration update (2026-10-21)
 
 The user authorized tracking the exact required Web, compatibility-resource, small-runtime and original Model snapshots in this same repository. The 775 manifest-listed files (51,953,202 bytes) use ordinary Git with `-text` attributes to preserve bytes. Historical local-only/ignored-storage statements below describe earlier stages and are superseded for these four roots. Source attribution and unresolved exact revisions remain unchanged; storage permission is not a claim of new third-party authorship or complete corresponding source. libmpv stays ignored and is restored from the pinned archive via `node tools/prepare-libmpv.cjs .`; see [repository inputs](REPOSITORY_INPUTS.md). No old full installer/patch or real user profile is included.

@@ -1,5 +1,18 @@
 # Runtime source and notice materials
 
+## Current source-built Host and runtime projection
+
+The active source-built Host is maintained from official Windows commit `708fadc068cbf66ced6aece4a32f3e12bb2c4e13`, with the selected CEC/update retirement and JSON/ZIP replacements. Source fingerprint `81b18ab1264941b7121967770d9b791af7fd4436b6cf910da443c92f967eea45` identifies these business inputs; EXE/PDB are ETE-derived outputs, not untouched official binaries. [Host inputs](WINDOWS_HOST_INPUT.md) distinguish the complete official recovery input, retained projection and independently compiled outputs.
+
+[Newtonsoft.Json 13.0.4 net45](WINDOWS_HOST_INPUT.md) is separately pinned by package/member hashes and retains its MIT notice. SharpCompress, ServiceStack, private System.Configuration and CEC binaries are absent from the active runtime. Their historical identities, necessary notices and source limitations remain records; removal does not certify unrelated licence obligations. RefreshRate, ordinary HDMI output and retained Host dependencies remain separate consumers.
+
+The four tracked restoration selections now contain 757 files / 24,943,281 bytes, including Web713 plus two retained patches, compatibility39, small2 and Model1. See [repository inputs](REPOSITORY_INPUTS.md). Current normal builds do not read the old Carnival/patch trees. The complete fixed libmpv archive is tracked and its DLL is restored locally. A clean Windows Actions [test build](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/39974691780) compiled/verified its own Host and Native Helper, passed1609 regressions and compared the test installer against runtime. It neither rebuilds every external library nor proves complete corresponding-source/notice coverage.
+
+## Component records and historical investigation
+
+The dated original investigations below retain their original binary/source observations. References to local-only bodies, 48/four/v1 selections and old physical Carnival requirements describe those historical stages; current inputs follow the contracts above.
+
+
 The npm runtime projection omits20 reviewed artifacts only during owned copying; all33 locked packages/1142 source files, SRI and35 identified notice files stay complete. Runtime1122 and Web713 identities are [recorded separately](SCOPED_RUNTIME_PROJECTION.md).
 
 Current v2 source selection removes twenty reviewed old bodies from the current tree while preserving exact v1 manifests/hashes, necessary notices and old Git history. Active component counts are 39/2/713; the complete Chinese maintained file still inherits 24 strings, so this is not new authorship or general license clearance. See [migration boundaries](SNAPSHOT_V2_MIGRATION.md); earlier current-tree archival statements below describe the preceding stage.
@@ -9,9 +22,9 @@ Maintained small outputs: [typed configuration defaults and thirteen Chinese tex
 
 Current Model selection: the separate [Model component](MODEL_COMPATIBILITY_INPUT.md) now locks the official Windows 3.0.20 release member, SHA-256 `db22f8ea6cb6afdfab184f80d8b85a10d8a9f148ff4cae167db87ce9cd245153`, and the complete official ZIP identity. Its former community variant remains in Git history; no community snapshot is a normal build dependency. Historical unchanged-Model statements below describe earlier stages. Exact binary source-rebuild and third-party notice boundaries remain separate from official release-byte identity.
 
-Compatibility resources: 48 unchanged local snapshot files retain per-file source/unknown distinctions in vendor/compatibility-resources-manifest.json. Anime4K MIT headers and the existing named Source Han Serif OFL record remain; exact revisions/unknown manual/theme authorship are not invented. No public body upload or official recovery is claimed. See [component provenance](COMPATIBILITY_RESOURCES_INPUT.md).
+Historical compatibility investigation: 48 unchanged local snapshot files retain per-file source/unknown distinctions in vendor/compatibility-resources-manifest.json. Anime4K MIT headers and the existing named Source Han Serif OFL record remain; exact revisions/unknown manual/theme authorship are not invented. No public body upload or official recovery is claimed. See [component provenance](COMPATIBILITY_RESOURCES_INPUT.md).
 
-Current libmpv acquisition: a pinned official SourceForge project archive now restores the identical current DLL on Work Windows, checked by full archive and DLL SHA256. This is acquisition, not a full source rebuild or completed cloud validation. See [download contract](LIBMPV_INPUT.md).
+Current libmpv acquisition: the pinned official archive stored in the repository restores the identical current DLL with full archive and DLL SHA256 checks. Clean Actions recovery has passed; this is acquisition, not a full source rebuild. See [download contract](LIBMPV_INPUT.md).
 
 Official resource extension: five additional same-byte members of the already pinned Windows 3.0.20 ZIP now have independent acquisition: three companion XML documentation files, windowsync and English player strings. Existing dependency notices/source limitations remain applicable to XML companions; the two Emby resource references retain upstream repository GPL v2 declarations. This is fixed release acquisition, not proof of rebuilding every component from source. See [component record](WINDOWS_HOST_INPUT.md).
 
@@ -19,7 +32,7 @@ Small template supplement: package matches official Electron e897adda except the
 
 Inherited npm acquisition update: all 29 selected files can be recovered from official Electron commit e897adda583b2339f077cb67113e71326a806de0 with the locked LF-to-CRLF conversion. The registry differences described below remain historical comparisons; no community code patch is needed against this official commit. Seven package declarations and unchanged notice files are individually pinned. See [component source and scope](INHERITED_NPM_INPUT.md).
 
-Current input/provenance boundary: [legacy input selection](LEGACY_INPUT_SELECTION.md) distinguishes 90 consumed Carnival files and one current libmpv patch from historical manifest-only records. Removing physical predecessor gates does not establish new source or redistribution claims.
+Historical input/provenance boundary: [legacy input selection](LEGACY_INPUT_SELECTION.md) distinguishes 90 consumed Carnival files and one current libmpv patch from historical manifest-only records. Removing physical predecessor gates does not establish new source or redistribution claims.
 
 The v0.3.0 release source is `sourceCommit=20e42511b54989550165511a7604aa1b73519ff2`. The root `LICENSE`, `THIRD_PARTY_NOTICES.md`, `docs/LICENSING.md` and this index are source-controlled materials; build provenance binds their committed bytes. Maintainer risk acceptance for the release does not establish legal compliance or resolve unknown source, permission or notice obligations.
 
@@ -107,7 +120,7 @@ The [small runtime snapshot](SMALL_RUNTIME_INPUT.md) preserves four historical p
 
 The [Model compatibility snapshot](MODEL_COMPATIBILITY_INPUT.md) is the unchanged existing Carnival DLL, not official-byte or ETE-original content. The old full directories/archives are no longer normal build inputs. Exact origin remains marked unresolved, notices retained, and bodies local/ignored pending approved restorable storage.
 
-## Current repository restoration update (2026-10-21)
+## Historical repository restoration update (2026-10-21)
 
 The user authorized tracking the exact required Web, compatibility-resource, small-runtime and original Model snapshots in this same repository. The 775 manifest-listed files (51,953,202 bytes) use ordinary Git with `-text` attributes to preserve bytes. Historical local-only/ignored-storage statements below describe earlier stages and are superseded for these four roots. Source attribution and unresolved exact revisions remain unchanged; storage permission is not a claim of new third-party authorship or complete corresponding source. libmpv stays ignored and is restored from the pinned archive via `node tools/prepare-libmpv.cjs .`; see [repository inputs](REPOSITORY_INPUTS.md). No old full installer/patch or real user profile is included.
 
