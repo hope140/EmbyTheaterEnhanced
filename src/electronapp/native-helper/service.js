@@ -684,14 +684,18 @@ function createService(options) {
         rendererEpoch = 0;
         presentationTokenHighWater = 0;
       }
+      const createdEndpointId = activeEndpointId;
       const active = await ensureClient();
-      return {status: 'ok', mode, endpointId: activeEndpointId, protocolVersion: PROTOCOL_VERSION, helperVersion: active.handshake.helperVersion, libmpvVersion: active.handshake.libmpvVersion};
+      requireEndpoint(createdEndpointId);
+      return {status: 'ok', mode, endpointId: createdEndpointId, protocolVersion: PROTOCOL_VERSION, helperVersion: active.handshake.helperVersion, libmpvVersion: active.handshake.libmpvVersion};
     }
     if (operation === 'status') return status();
     requireEndpoint(endpointId);
     if (operation === 'destroy') {
-      await destroyClient('renderer-destroy');
+      // Retire this endpoint before awaiting its process. A new create owns a
+      // different ID, and this completion must never revoke the replacement.
       activeEndpointId = null;
+      await destroyClient('renderer-destroy');
       return {status: 'ok'};
     }
     let beginEpoch;

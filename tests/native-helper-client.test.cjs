@@ -273,3 +273,20 @@ test('presentation operations validate tokens and use their narrow request paylo
     {label: 'normal-null-token', requestEpoch: 2}, 'null means the optional presentation token is omitted');
   await created.endpoint.destroy();
 });
+
+test('renderer endpoint destroy shares the owned pending completion and error', async function () {
+  const pending = deferred();
+  const ipc = new FakeIpc((_channel, request) => request.operation === 'destroy' ? pending.promise : undefined);
+  const {endpoint} = await clientModule.create({ipc});
+  const first = endpoint.destroy();
+  const second = endpoint.destroy();
+  assert.strictEqual(first, second);
+  let settled = false;
+  first.catch(() => { settled = true; });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(settled, false);
+  assert.equal(operationCalls(ipc, 'destroy').length, 1);
+  pending.resolve({status: 'error', reason: 'fixture-exit-failed'});
+  await assert.rejects(first, /fixture-exit-failed/);
+  assert.strictEqual(endpoint.destroy(), first);
+});

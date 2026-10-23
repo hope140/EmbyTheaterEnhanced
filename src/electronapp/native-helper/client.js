@@ -22,6 +22,7 @@
         var self = this;
         var listeners = [];
         var destroyed = false;
+        var destroyPromise = null;
         var visible = false;
         var endpointId = metadata.endpointId;
         var currentGenerationId = null;
@@ -170,14 +171,15 @@
             }
         };
         this.destroy = function () {
-            if (destroyed) return Promise.resolve();
+            if (destroyPromise) return destroyPromise;
             destroyed = true;
             generationEpoch++;
             visible = false;
             try { ipc.removeListener(EVENT_CHANNEL, self._onIpcEvent); } catch (_) { }
             listeners = [];
             currentGenerationId = null;
-            return invoke(ipc, 'destroy', {}, endpointId);
+            destroyPromise = Promise.resolve().then(function () { return invoke(ipc, 'destroy', {}, endpointId); });
+            return destroyPromise;
         };
     }
 

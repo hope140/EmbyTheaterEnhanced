@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-23 — 独立后续修复：Native Helper endpoint owner
+
+为创建/销毁加入共享收尾屏障、捕获的 endpoint 身份与等待后请求检查，防止旧创建清理销毁新播放及重复 Stop 后资源复活。保留实际 owned child 退出等待；两个旧测试只将重用 ID 预期改为新 ID，原 drain 断言保持。新增受控回归修前失败，修后相邻115项全部通过；未改变 Session、认证或 FPS 流程，未进行 Windows 实机验收。
+
 ## 2026-10-23 — 独立后续修复：STRM secrets 恢复
 
 补齐空 profile 单独 setToken 后的重启恢复，不改变保存方式、schema、认证或 legacy 优先级。回归覆盖有效/缺失/损坏 secrets、损坏配置、clearToken、既有配置与首次迁移的优先级；修前功能断言失败，修后相关157项全部通过。尚无 Windows/真实服务验收，不纳入 v0.4.0 产物。

@@ -124,6 +124,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         var videoDialog;
         var libmpv;
         var mediaElementPromise;
+        var mediaElementDestroyPromise;
         var mediaElementEpoch = 0;
         var currentAspectRatio = 'auto';
 
@@ -653,7 +654,13 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             }
         }
 
-        function createMediaElement(options) {
+        function createMediaElement(options, request) {
+            if (mediaElementDestroyPromise) {
+                return mediaElementDestroyPromise.then(function () {
+                    assertCurrentPlayRequest(request);
+                    return createMediaElement(options, request);
+                });
+            }
             if (libmpv) return Promise.resolve();
             if (mediaElementPromise) return mediaElementPromise;
             var creationEpoch = ++mediaElementEpoch;
@@ -661,16 +668,18 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 var dlg = document.querySelector('.mpv-videoPlayerContainer');
                 var createdEndpoint = null;
                 function fail(error) {
+                    var cleanup;
                     if (createdEndpoint && typeof createdEndpoint.destroy === 'function') {
                         try {
-                            var destroyed = createdEndpoint.destroy();
-                            if (destroyed && typeof destroyed.catch === 'function') destroyed.catch(function () {});
+                            cleanup = createdEndpoint.destroy();
                         } catch (_) { }
                     }
                     if (libmpv === createdEndpoint) libmpv = null;
                     if (videoDialog === dlg) videoDialog = null;
                     if (dlg && dlg.parentNode) dlg.parentNode.removeChild(dlg);
-                    reject(error);
+                    // A stopped creation keeps its cleanup ownership until the
+                    // old helper exits; a replacement must not share that lease.
+                    Promise.resolve(cleanup).then(function () { reject(error); }, function () { reject(error); });
                 }
                 if (dlg && !libmpv) {
                     if (dlg.parentNode) dlg.parentNode.removeChild(dlg);
@@ -679,6 +688,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 }
                 if (!dlg) {
                     require(['css!./libmpv'], function () {
+                        if (creationEpoch !== mediaElementEpoch) { fail(supersededError()); return; }
                         dlg = document.createElement('div');
 
                         dlg.classList.add('mpv-videoPlayerContainer');
@@ -814,7 +824,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 }
                 await displaySync(request);
                 assertCurrentPlayRequest(request);
-                await createMediaElement(options);
+                await createMediaElement(options, request);
                 assertCurrentPlayRequest(request);
                 corePlaying = waitForCorePlaying(request);
                 corePlaying.catch(function () { /* Awaited below; suppress early unhandled reporting on cancellation. */ });
@@ -1578,8 +1588,12 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         async function destroyInternal() {
 
             invalidatePlayRequest();
+            if (mediaElementDestroyPromise) return mediaElementDestroyPromise;
             mediaElementEpoch++;
+            var pendingCreation = mediaElementPromise;
+            var ownedEndpoint = libmpv;
             mediaElementPromise = null;
+            libmpv = null;
 
             embyRouter.setTransparency('none');
 
@@ -1594,14 +1608,22 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 videoDialog = null;
                 if (dlg.parentNode) dlg.parentNode.removeChild(dlg);
             }
-            if (libmpv) {
-                if (typeof libmpv.destroy === 'function') {
-                    try { await libmpv.destroy(); } catch (_) { }
+            // Publish one barrier before starting cleanup. New Play waits for
+            // the captured creation/endpoint; old completion cannot clear it.
+            var completion = Promise.resolve().then(async function () {
+                try {
+                    if (ownedEndpoint && typeof ownedEndpoint.destroy === 'function') {
+                        try { await ownedEndpoint.destroy(); } catch (_) { }
+                    }
+                    if (pendingCreation) {
+                        try { await pendingCreation; } catch (_) { }
+                    }
+                } finally {
+                    if (mediaElementDestroyPromise === completion) mediaElementDestroyPromise = null;
                 }
-                libmpv = null
-            }
-
-            return Promise.resolve()
+            });
+            mediaElementDestroyPromise = completion;
+            return completion;
         }
 
         function createClosedCaptionTrack(mediaSource, isVideo) {

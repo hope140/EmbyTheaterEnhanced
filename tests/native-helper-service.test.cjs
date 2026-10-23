@@ -415,7 +415,7 @@ test('full destroy waits for a second renderer-owned client after the first clie
   assert.equal(killCallsA, 1);
 
   const createdB = await service.call('create');
-  assert.equal(createdB.endpointId, createdA.endpointId, 'A and B must share the renderer endpoint');
+  assert.notEqual(createdB.endpointId, createdA.endpointId, 'a replacement owns a fresh renderer endpoint');
   const clientB = ClientClass.clients[1];
   assert.equal(ClientClass.clients.length, 2);
   assert.notStrictEqual(clientB, clientA, 'B must be a distinct owned FakeClient instance');
@@ -465,7 +465,7 @@ test('full destroy waits for the current second client after a prior renderer de
   assert.equal(killCallsA, 1);
 
   const createdB = await service.call('create');
-  assert.equal(createdB.endpointId, createdA.endpointId);
+  assert.notEqual(createdB.endpointId, createdA.endpointId, 'old pending destroy must not own the replacement endpoint');
   const clientB = ClientClass.clients[1];
   assert.equal(ClientClass.clients.length, 2);
   assert.notStrictEqual(clientB, clientA, 'B must be a distinct current FakeClient instance');
