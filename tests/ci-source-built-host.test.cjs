@@ -122,7 +122,7 @@ test('manual package route requires runner compiler/probe before assembly and ne
     assert.match(wrapper, /\$receipt\.result -cne 'passed'/);
     assert.doesNotMatch(wrapper, /ExecutionPolicy|Invoke-Expression|download-artifact/);
 });
-function stagedRunner(t) {
+function stagedRunner(t, install = true) {
     const dir = temp(t), r = path.join(dir, 'repo'), build = path.join(dir, 'build'); fs.mkdirSync(r); fs.mkdirSync(build);
     const write = (base, p, b) => {fs.mkdirSync(path.dirname(path.join(base, p)), {recursive: true}); fs.writeFileSync(path.join(base, p), b);};
     for (const p of ['native/windows-host', 'tools/windows-host-build', 'tools/windows-host-verifier']) fs.cpSync(path.join(root, p), path.join(r, p), {
@@ -142,8 +142,44 @@ function stagedRunner(t) {
     write(r, '.gitignore', '.work/\nvendor/source-built-host/\nvendor/host-json/\n');
     const git = args => cp.execFileSync('git', ['-C', r, ...args], {stdio: 'pipe'});
     git(['init', '-q']); git(['config', 'user.name', 'Runner fixture']); git(['config', 'user.email', 'runner@example.invalid']); git(['config', 'core.autocrlf', 'false']); git(['add', '.']); git(['commit', '-qm', 'synthetic receipt fixture']);
-    fs.mkdirSync(path.join(r, '.work')); receipt.install(r, build); return {root: r, build, git};
+    fs.mkdirSync(path.join(r, '.work')); if (install) receipt.install(r, build); return {root: r, build, git};
 }
+function runnerCli(f) {
+    return cp.spawnSync(process.execPath, ['--trace-warnings', path.join(root, 'tools/ci-source-built-host-plan.cjs'), 'install-runner', f.root, f.build], {encoding: 'utf8'});
+}
+test('runner CLI stages matching synthetic receipts in a fresh process without circular initialization warnings', t => {
+    const f = stagedRunner(t, false), result = runnerCli(f);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stderr, '');
+    assert.equal(JSON.parse(result.stdout).lockPath, receipt.LOCK_PATH);
+    const p = require('../tools/source-built-host-input.cjs').validatePrepared(f.root);
+    assert.equal(p.runnerProvenance.sourceCommit, f.git(['rev-parse', 'HEAD']).toString().trim());
+});
+test('runner CLI rejects mismatched receipt bytes before creating outputs', t => {
+    const f = stagedRunner(t, false);
+    fs.appendFileSync(path.join(f.build, 'runner-verification.json'), ' ');
+    const result = runnerCli(f);
+    assert.equal(result.status, 1); assert.match(result.stderr, /Runner Host lock\/receipts mismatch/);
+    assert.doesNotMatch(result.stderr, /circular dependency|physical is not a function/);
+    assert.equal(fs.existsSync(path.join(f.root, receipt.RECEIPTS)), false);
+});
+test('runner CLI rejects redirected receipt paths before creating outputs', t => {
+    const f = stagedRunner(t, false), file = path.join(f.build, 'toolchain-snapshot.json');
+    fs.renameSync(file, file + '.original'); fs.symlinkSync(file + '.original', file, 'file');
+    const result = runnerCli(f);
+    assert.equal(result.status, 1); assert.match(result.stderr, /Host recovery redirects forbidden/);
+    assert.doesNotMatch(result.stderr, /circular dependency|physical is not a function/);
+    assert.equal(fs.existsSync(path.join(f.root, receipt.RECEIPTS)), false);
+});
+test('runner CLI preserves an existing output directory and its evidence', t => {
+    const f = stagedRunner(t, false), output = path.join(f.root, receipt.RECEIPTS);
+    fs.mkdirSync(output); fs.writeFileSync(path.join(output, 'existing-evidence.txt'), 'preserve');
+    const result = runnerCli(f);
+    assert.equal(result.status, 1); assert.match(result.stderr, /Runner Host output already exists; preserve evidence/);
+    assert.doesNotMatch(result.stderr, /circular dependency|physical is not a function/);
+    assert.deepEqual(fs.readdirSync(output), ['existing-evidence.txt']);
+    assert.equal(fs.readFileSync(path.join(output, 'existing-evidence.txt'), 'utf8'), 'preserve');
+});
 test('generated runner receipt stages exact outputs and contributes runtime provenance without a committed lock', t => {
     const f = stagedRunner(t), c = require('../tools/source-built-host-input.cjs');
     assert.equal(fs.existsSync(path.join(f.root, c.LOCK_PATH)), false);

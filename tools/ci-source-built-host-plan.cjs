@@ -104,6 +104,8 @@ function prepareVerificationInput(root, buildRoot) {
     write(out, 'System.Configuration.dll', value);
     return {purpose: 'controlled private-versus-omitted probe only; never product runtime', sha256: sha(value)};
 }
+// The CLI loads receipt staging, which imports these guards back from this module.
+module.exports = {COMMIT, REPOSITORY, KIT_FILES, KIT_INPUTS, safeRelative, physical, createPlan, verifyPackage, restoreSource, materializeKit, prepareVerificationInput};
 if (require.main === module) {
     try {
         const [command, root, a, b] = process.argv.slice(2);
@@ -123,4 +125,3 @@ if (require.main === module) {
         process.stdout.write(JSON.stringify(result, null, 2) + '\n');
     } catch (e) { process.stderr.write(e.message + '\n'); process.exitCode = 1; }
 }
-module.exports = {COMMIT, REPOSITORY, KIT_FILES, KIT_INPUTS, safeRelative, physical, createPlan, verifyPackage, restoreSource, materializeKit, prepareVerificationInput};
