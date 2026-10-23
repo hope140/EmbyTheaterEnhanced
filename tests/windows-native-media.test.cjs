@@ -21,6 +21,7 @@ function fixture(t, overrides = {}) {
     let request, imageReader;
     const controller = adapter.attach({window, ipcMain: ipc, koffi: {},
         getVideoWindow() {sourceReads++; return video;},
+        capturePreview: overrides.capturePreview, isPreviewOwner: overrides.isPreviewOwner,
         // Deliberately offer successful nonzero pixels without a presentation
         // fence. Accepting these pixels would reproduce the old-media leak.
         createDwm: () => ({clientSize: () => ({width:20, height:10}), async capture() {captures++; return {accepted:true, pixels:opaqueOldPixels};}}),
@@ -44,7 +45,7 @@ function fixture(t, overrides = {}) {
         sendCommand: value => calls.push('command:' + value)});
     t.after(() => controller.dispose());
     function token() {return handlers.get(NATIVE_SESSION_CHANNEL)(event).token;}
-    const make = (extra = {}) => ({version:2, playbackEpoch:1, active:true, paused:false, title:'Fixture', mediaKey:'a'.repeat(64), mediaType:'Video',
+    const make = (extra = {}) => ({version:3, nativeOwner:null, playbackEpoch:1, active:true, paused:false, title:'Fixture', mediaKey:'a'.repeat(64), mediaType:'Video',
         duration:100, position:1, rate:1, sequence:1, sessionToken:token(), ...extra});
     return {controller, window, ipc, handlers, event, make, token, calls, commands,
         get updates() {return updates;}, get clears() {return clears;},
@@ -168,4 +169,63 @@ test('legacy artwork directory with old-media pixels is never read or rewritten'
     f.send(f.make()); await drain(); f.send(f.make({playbackEpoch:2, sequence:2})); await drain();
     assert.deepEqual(fs.readdirSync(root), [path.basename(file)]); assert.deepEqual(fs.readFileSync(file), canary);
     assert.equal(f.artworkWrites, 0); assertNeutral(f.readPreview());
+});
+
+
+const nativeOwner = generationId => ({endpointId:'12345678-1234-1234-1234-123456789abc',generationId});
+function ownedFrame(owner, color=64) {return {owner:{...owner},width:2,height:1,pixels:Buffer.from([color,0,0,255,color,0,0,255])};}
+
+test('owner-bound pixels become the thumbnail image, including a valid pure-black first frame', async t => {
+    const owner=nativeOwner(10);
+    const f=fixture(t,{isPreviewOwner:value=>value.generationId===10,capturePreview:async()=>ownedFrame(owner,0)});
+    f.send(f.make({nativeOwner:owner}));await drain();
+    assert.equal(f.controller.status().previewMode,'owner-frame');assert.equal(f.controller.status().captured,1);
+    assert.equal(f.controller.status().previewReady,true);assert.deepEqual([...f.readPreview().pixels],[0,0,0,255,0,0,0,255]);
+    assert.equal(f.captureCalls,0,'PrintWindow must never be the product pixel source');
+});
+
+test('generation switch rejects old pending pixels, then publishes only the new owner reply', async t => {
+    let complete, active=10;
+    const f=fixture(t,{isPreviewOwner:owner=>owner.generationId===active,capturePreview:owner=>owner.generationId===10?
+        new Promise(resolve=>{complete=resolve;}):Promise.resolve(ownedFrame(owner,96))});
+    f.send(f.make({nativeOwner:nativeOwner(10)}));await drain();active=11;
+    f.send(f.make({nativeOwner:nativeOwner(11),playbackEpoch:2,sequence:2}));
+    complete(ownedFrame(nativeOwner(10),32));await drain();assertNeutral(f.readPreview());
+    assert.equal(f.controller.status().captured,0);await f.tick();
+    assert.equal(f.controller.status().captured,1);assert.equal(f.readPreview().pixels[0],96);
+});
+
+test('Native retirement and media end invalidate cached pixels even before renderer Stop arrives', async t => {
+    let current=true;const owner=nativeOwner(10);
+    const f=fixture(t,{isPreviewOwner:()=>current,capturePreview:async()=>ownedFrame(owner)});
+    f.send(f.make({nativeOwner:owner}));await drain();assert.equal(f.controller.status().previewReady,true);
+    current=false;assertNeutral(f.readPreview());assert.equal(f.controller.status().previewReady,false);
+    f.send(f.make({...stopped,nativeOwner:null,sequence:2}));assert.equal(f.readPreview(),null);
+});
+
+test('minimize preserves the last owner frame and suppresses new requests; switch while minimized is neutral', async t => {
+    let requests=0;const owner=nativeOwner(10);
+    const f=fixture(t,{isPreviewOwner:()=>true,capturePreview:async value=>{requests++;return ownedFrame(value);}});
+    f.send(f.make({nativeOwner:owner}));await drain();const first=f.readPreview();
+    f.minimize();await f.tick();assert.equal(f.readPreview(),first);assert.equal(requests,1);
+    f.send(f.make({nativeOwner:nativeOwner(11),playbackEpoch:2,sequence:2}));await drain();assertNeutral(f.readPreview());
+    f.restore();await f.tick();assert.equal(f.controller.status().previewReady,true);assert.equal(requests,2);
+});
+
+test('minimize during a pending snapshot drops its result and shutdown drains owned work', async t => {
+    let complete;const owner=nativeOwner(10);
+    const f=fixture(t,{isPreviewOwner:()=>true,capturePreview:()=>new Promise(resolve=>{complete=resolve;})});
+    f.send(f.make({nativeOwner:owner}));await drain();f.minimize();
+    let closed=false;const closing=f.controller.dispose().then(()=>{closed=true;});await drain();assert.equal(closed,false);
+    assert.equal(f.handlers.size,0);complete(ownedFrame(owner));await closing;
+    assert.equal(f.readPreview(),null);assert.equal(f.controller.status().captured,0);
+});
+
+test('wrong-owner, malformed and unavailable snapshot responses stay neutral within a bounded first-frame budget', async t => {
+    let attempts=0;const owner=nativeOwner(10);
+    const f=fixture(t,{isPreviewOwner:()=>true,capturePreview:async()=>{
+        attempts++;return attempts%2?ownedFrame(nativeOwner(11)):{...ownedFrame(owner),width:161};}});
+    f.send(f.make({nativeOwner:owner}));await drain();for(let i=0;i<30;i++)await f.tick();
+    assert.equal(attempts,10);assertNeutral(f.readPreview());assert.equal(f.controller.status().captured,0);
+    f.restore();await f.tick();assert.equal(attempts,11);
 });

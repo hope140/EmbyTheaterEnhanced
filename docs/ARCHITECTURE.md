@@ -48,7 +48,7 @@ Native Helper 的 transport 终态与 owned process 退出分别确认。有 PID
 
 冷启动首页在同一 refresh epoch 内等待既有连接身份就绪，最长 3 秒；暂停/清理/销毁取消探测。失败状态显示通用文字，pending 仅去重所属进行中请求，成功 active 状态保留原去重。
 
-Windows 本地试验由 preload 提前捕获模块，原 play 入口传入原 PlaybackManager/events 幂等绑定。任务栏按钮、Web MediaSession 展示和可选 SMTC/DWM 共用原状态，命令仍经原 inputmanager。main-only 适配器校验 mainFrame、文档 token、sequence 与媒体代次，只捕获所属 video host，按需更新、最小化保帧、退出等待退休。固定 FFI 尚未进入正式构建，不改变 Native、Session 和窗口归属；见[当前记录](WINDOWS_MEDIA_CONTROLS.md)。
+Windows 本地试验由 preload 提前捕获模块，原 play 入口传入原 PlaybackManager/events 幂等绑定。任务栏按钮、Web MediaSession 展示和可选 SMTC/DWM 共用原状态，命令仍经原 inputmanager。main-only 适配器校验 mainFrame、文档 token、sequence 与媒体代次，仅消费Native Helper返回的owner绑定视频快照，按需更新、最小化保帧、退出等待退休；不以独立PrintWindow作为产品像素源。固定 FFI 尚未进入正式构建，不改变 Native、Session 和窗口归属；见[当前记录](WINDOWS_MEDIA_CONTROLS.md)。
 
 详情页选择器保持原Item controller与EmbySelect/ActionSheet归属。固定HTML overlay补全版本/视频的custom菜单声明；固定layout.css overlay追加详情区域的宽屏选择区宽度/对齐纠正，并精确拆分旧通用内容限宽规则。50em以上的 `.readOnlyContent, form` 继续默认90ch；通用 `.readOnlyContent` 不再强制90ch，使插件及页面自有上限生效。三行折叠与焦点简介自身的90ch重要声明保留，原始vendor只读；变换进入同一layout输出合同。版本、视频、音轨和字幕值及change事件仍由原链路消费，不改PlaybackManager、媒体来源标识或切轨逻辑。
 

@@ -2,7 +2,7 @@
 
 ## 当前本地试验
 
-本地试验提供 Windows 系统媒体卡片的数据与命令、任务栏播放/暂停和停止按钮、中性 DWM 占位。原生视频像素尚无可证明的媒体归属，产品适配器已停止该采集／发布路径；当前保存源码及独立合成复现工具，尚未纳入正式构建或发行合同。
+本地试验提供 Windows 系统媒体卡片的数据与命令、任务栏播放/暂停和停止按钮、可选 DWM 视频预览。当前候选由 Native Helper 交付 owner 绑定的 libmpv 视频快照；缺少能力、owner或新帧时显示中性占位。Windows编译／真实可见验收仍待执行；当前保存源码及独立复现工具，尚未纳入正式构建或发行合同。
 
 首页在同一 refresh epoch 内等待原 connection 的 client/server/user 就绪，绝对期限 3 秒、100ms 探测；pause/clear/dispose 取消等待。超时保留通用错误文字，失败或取消后的普通 resume 可以重新尝试，成功 active 状态继续去重。仍沿用原分区顺序与整页 fallback。启动身份竞态和失败 pending 锁存有离线复现；单个分区慢仍可能延迟整页，不能将修正解释为消除全部网络延迟。
 
@@ -13,8 +13,8 @@
 - 注册只在窗口已显示且有真实按钮时首次执行；失败返回值与异常进入最多 3 次短重试，恢复可重新提交，退出取消等待。任务栏图标使用系统集成 UI 的主题，避免应用与 shell 主题不同步。
 - `windows-native-media.js` 与 `native/windows-media/` 使用固定 Koffi 3.3.3 的 Windows x64 FFI，在 main 内通过 HWND interop 取得 SMTC；play/pause/stop 送回原 inputmanager。没有新增播放器、媒体源或 Session/WebSocket 链。
 - 原生状态严格限制字段、长度与数值。main 发放文档 token 并校验单调 sequence；主文档导航/crash 旋转 token，子框架/同文档路由不重置。旧事件、旧媒体捕获和退出后的回调不能重新发布。
-- 产品 DWM 预览只提交自己生成的 640×360 不透明黑色占位，不调用 video host getter、PrintWindow 或媒体图像缓存；没有捕获轮询、重试或环境开关旁路。独立合成探针仍可测试 FFI 捕获，但不是产品取帧通道。
-- active Video 在最小化、恢复和换片时均为中性占位；Audio、Stop、导航／crash 和退出撤销所属预览。SMTC 保留元数据与原命令，换代清旧封面，不从磁盘或 video surface 读取／设置媒体帧，也不把占位设为封面。
+- 产品 DWM 预览只接收main服务验证的owner视频快照，不调用video host getter或PrintWindow。helper在原生FILE_LOADED／PLAYBACK_RESTART及唯一媒体映射后采集screenshot-raw video，回复时再验证generation；无法取得同owner像素时提交640×360中性占位。
+- 同owner的已验证帧在最小化时保留，不在隐藏／最小化期间更新；换owner立刻清图，尚无该owner帧则中性。Audio、Stop、导航／crash 和退出撤销所属预览。SMTC 保留元数据与原命令，换代清旧封面，不从磁盘或 video surface 读取／设置媒体帧，也不把占位设为封面。
 - 退出立即移除 IPC/图像请求并退休事件，等待所属队列与 WinRT 清理；按归属释放 GDI bitmap/DC、COM 与 callback。可选集成失败仅记录有限固定阶段，不输出异常负载，不使原 play 初始化失败。
 
 Native Helper 二进制、libmpv、窗口 owner、Native 协议、认证和 Resolver 保持既有实现。模块通过本地试验开关启用，普通正式构建尚不装配 FFI 依赖。固定依赖、许可与复现见[原生模块说明](../native/windows-media/README.md)。
@@ -25,12 +25,12 @@ Native Helper 二进制、libmpv、窗口 owner、Native 协议、认证和 Reso
 
 本修订仅作用于显式启用 `ETE_WINDOWS_NATIVE_TRIAL=1` 且独立装配固定 Koffi 的试验入口。普通构建仍只有现有任务栏播放/暂停、停止两按钮；透明主窗口与独立 `skipTaskbar` video host 的原生合成不因本修订改变。普通包看到控件但看不到视频，与试验入口的 DWM 捕获问题须分别记录，不能以本候选声称普通包已修复。
 
-- 目前不能把 renderer playbackEpoch、`file-loaded`、`core-idle`、非零像素或等待一定时间当作新媒体像素证明。`PrintWindow` 采集的是独立窗口，原持帧层／D3D surface 可在状态换代后仍显示旧内容；清 main 缓存不清这些层。
-- 因此移除了产品适配器的 raw capture、媒体帧缓存、首帧重试和图片封面 IO。active Video 仅提交不透明黑色占位；thumbnail／Peek 都不会收到上个媒体的采集图像。`previewMode=neutral-unverified`、`captureBlockedReason=native-frame-ownership-unproven`，`previewReady=false`、`captured=0`、`firstFrameAttempts=0`、`artworkReady=false`，明确区别于已验收的视频预览。
-- 同时处理 thumbnail `0x0323` 和 Peek `0x0326`，后者调用独立 `DwmSetIconicLivePreviewBitmap`。两个出口都只取当前中性图，退出退休两种消息；DWM 提交返回成功仍不代表实际可见验收。
-- `native/windows-media/dwm.cjs` 的 BGRX→opaque BGRA 和 GDI 捕获资源代码仍保留供独立合成探针使用；已有 premultiplied BGRA 提交保留原字节。该探针不加载 ETE／Native Helper，不可将其彩色结果归为产品新媒体画面证明。
+- metadata采用v3，增加只读endpointId／Native generation owner；renderer播放代次不是像素证明。helper把同一请求的owner和不可变视频快照一起返回，main／adapter在回复和DWM读缓存时复核归属；旧helper或迟到／结束响应仍中性。
+- 视频快照来自libmpv而非窗口合成，最多160×90 BGR24，转为不透明BGRA。黑色但归属有效的首帧正常接受。它不含主页面、字幕或OSD；Peek放大的清晰度／比例／HDR仍需实机评价。
+- 同时处理thumbnail `0x0323`与Peek `0x0326`，后者调用独立DwmSetIconicLivePreviewBitmap。保留两按钮和试验默认关闭，未变更播放命令／hold决策。
+- 仅在显式trial中按需约1Hz请求，只允许一个所属物理快照；无首帧最多10次，restore／owner变化可以重试。退出等待所属请求，不把逻辑超时当物理释放。封面IO仍关闭，不把预览像素写磁盘或控制器history。
 
-当前证明边界、后续最小设计条件、与 controller/libmpv 审查分支的潜在冲突及测试包就绪判断见[源码交接](WINDOWS_NATIVE_PREVIEW_HANDOFF.md)。本轮不新增 Native 协议、不改播放策略。此前首帧预算与媒体帧缓存的回归仅为历史候选证据，当前产品路径已移除，不把它们列为仍启用的功能。
+完整证据链、固定mpv源码依据、边界、独立提交冲突文件、自动Windows探针及测试包状态见[当前快照合同](WINDOWS_PREVIEW_SNAPSHOT_PROTOCOL.md)。此前中性保护与首帧预算记录均为对应历史阶段，不以占位宣称视频问题已修复完成。
 
 接口依据：[BI_RGB 格式](https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-bitmapinfoheader)、[Electron bitmap](https://www.electronjs.org/docs/latest/api/native-image#nativeimagecreatefrombitmapbuffer-options)、[Peek 消息](https://learn.microsoft.com/en-us/windows/win32/dwm/wm-dwmsendiconiclivepreviewbitmap)、[Peek bitmap](https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/nf-dwmapi-dwmseticoniclivepreviewbitmap)。
 
@@ -42,12 +42,9 @@ Native Helper 二进制、libmpv、窗口 owner、Native 协议、认证和 Reso
 
 ### Windows 待复验
 
-当前 Linux 定向73/73通过；相同“提供成功非零旧图也必须中性”断言在 ff7b338 修前失败、修后通过。该结果是合成控制流／字节证据，不是 Windows 画面、播放或安装验收。
+按[当前快照合同](WINDOWS_PREVIEW_SNAPSHOT_PROTOCOL.md#分层验证与集中-windows-清单)集中执行：先使用精确提交的生产helper与固定libmpv运行本地红／绿Y4M owner探针，再在完整隔离trial检查thumbnail／Peek及原两按钮。A→B、旧回复、同片重播、结束、最小化保帧／换片、恢复及pending退出必须分别核验。owner有效的预期是正确A/B视频，能力缺失或归属失效才是中性；不得把中性记作修复成功。
 
-1. 普通构建不装配 Koffi；仅设置 trial 环境变量不能自动补依赖。普通包仍保留原两按钮，不宣称修复普通包视频预览。
-2. 在来源可核验的隔离 trial 入口，使用允许的本地合成 A/B 媒体，分别 hover thumbnail／Peek／Alt+Tab；当前期望始终为 BLACK，`previewReady=false`、`captured=0`。出现 A/B 或透明均须记录失败／未知，不把黑色占位叫作视频通过。
-3. 同片重播、快速 Next／Stop、首次即最小化、最小化换片恢复、暂停 seek、导航和退出都不得出现采集帧或图片封面；两按钮和 SMTC 原命令另验。
-4. 连续两类 DWM 请求检查 GDI、错误与退出；独立合成探针可测 raw FFI，但其 pending PrintWindow／GDI 结果不替代产品路径证据。真实 Native 视频预览须先满足[后续设计条件](WINDOWS_NATIVE_PREVIEW_HANDOFF.md#重新开放视频像素的最小前提)，再另行验收。
+普通构建不装配Koffi，只作对照；Windows编译、真实D3D11、DWM可见效果、性能与安装本轮均未执行。合成／portable／程序返回／人工所见各自列证据，不使用旧包行为替代当前源码。
 
 ## 既有版本的验证与复现
 

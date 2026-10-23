@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-23 — owner绑定原生视频快照与产品接线候选
+
+新增可选preview-snapshot-v1：helper在唯一媒体映射／FILE_LOADED／PLAYBACK_RESTART后取得libmpv video快照，异步回复复核owner及期限，最多160×90 BGR24且不提高64KiB envelope限制。main服务、v3 renderer／只读libmpv owner和DWM适配器已接线，老能力／旧回复／结束保持中性；默认关闭、原播放／hold策略、两按钮和依赖版本不变。controller仅新增预览像素不入history／timeline的保护；共享文件按独立提交协调审查分支。
+
+定向158/158通过。Linux从实际C++提取的状态机／缩图编译执行25项检查及彩色字节回读通过，不是Windows helper构建。新生产helper红／绿本地Y4M自动探针仅准备源码／门禁，未在Windows运行。完整Windows编译、D3D11／DWM可见效果与Koffi装配仍待集中验证，不把中性或纯FFI探针当修复成功。详见[当前协议、冲突点和验收](WINDOWS_PREVIEW_SNAPSHOT_PROTOCOL.md)。
+
 ## 2026-10-23 — 原生预览媒体像素证明缺口关闭为中性保护
 
 现有file-loaded／core-idle只证明所属加载状态，surface-status无呈现代次；独立PrintWindow即使成功且非零也可能拿到旧持帧。按未证明即中性的边界，产品适配器移除raw capture、媒体图像缓存／封面IO与首帧重试，只提交不透明黑色占位；status明确neutral-unverified与blocked reason，captured／previewReady保持0／false。保留元数据、原命令、两按钮及默认关闭，不改Native协议或播放策略。

@@ -41,7 +41,15 @@ function install(window, send, options = {}) {
         const duration = native && Number.isFinite(Number(item.RunTimeTicks)) ? Math.max(0, Math.min(31622400, Number(item.RunTimeTicks) / 10000000)) : 0;
         const position = native && state.PlayState ? Math.max(0, Math.min(duration, Number(state.PlayState.PositionTicks) / 10000000 || 0)) : 0;
         const nativeRate = native && state.PlayState ? Number(state.PlayState.PlaybackRate) : 1;
-        const nativeState = {version: 2, playbackEpoch, active: !!native, paused: !!native && paused,
+        let nativeOwner = null;
+        if (nativeSessionToken && native && typeof player.getNativePreviewOwner === 'function') {
+            try {
+                const value = player.getNativePreviewOwner(item);
+                if (value && Object.keys(value).length === 2 && typeof value.endpointId === 'string' && /^[a-f0-9-]{36}$/.test(value.endpointId) &&
+                    Number.isSafeInteger(value.generationId) && value.generationId > 0) nativeOwner = {endpointId:value.endpointId,generationId:value.generationId};
+            } catch (_) { }
+        }
+        const nativeState = {version: 3, nativeOwner, playbackEpoch, active: !!native, paused: !!native && paused,
             title: native ? String(item.Name || '').replace(/[\x00-\x1f\x7f]/g, '').slice(0, 512) : '',
             mediaKey: native ? crypto.createHash('sha256').update(String(item.ServerId || '') + ':' + String(item.Id || '')).digest('hex') : '',
             mediaType: native ? item.MediaType : '', duration, position,

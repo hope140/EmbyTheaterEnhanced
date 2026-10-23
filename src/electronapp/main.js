@@ -1258,7 +1258,8 @@
                     var dwmMedia = require(path.join(nativeMediaPath, 'dwm.cjs'));
                     windowsNativeMedia = require('./enhanced/windows-native-media').attach({
                         window: mainWindow, ipcMain: ipcMain, nativeImage: nativeImage,
-                        getVideoWindow: function () { return nativeHelperService && nativeHelperService.getVideoWindow(); },
+                        capturePreview: function (owner) { return nativeHelperService ? nativeHelperService.capturePreview(owner) : Promise.resolve(null); },
+                        isPreviewOwner: function (owner) { return !!nativeHelperService && nativeHelperService.isPreviewOwner(owner); },
                         sendCommand: function (command) { if (!appIsShuttingDown) sendCommand(command); },
                         koffi: require(path.join(nativeMediaPath, 'node_modules', 'koffi')),
                         createBindings: winrtMedia.createBindings, createSmtc: winrtMedia.createSmtc,

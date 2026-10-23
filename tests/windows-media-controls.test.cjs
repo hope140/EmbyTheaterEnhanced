@@ -302,7 +302,7 @@ test('native playback epochs rotate for same-item replay and stop retires pixels
     for (let i = 0; i < 5; i++) await Promise.resolve();
     const packets = () => f.emitted.filter(value => value.channel === renderer.NATIVE_CHANNEL);
     const first = packets().at(-1).value;
-    assert.equal(first.version, 2);
+    assert.equal(first.version, 3);
     f.fire('playbackstart'); const second = packets().at(-1).value;
     assert.equal(second.mediaKey, first.mediaKey); assert.ok(second.playbackEpoch > first.playbackEpoch);
     const toolbarBefore = f.emitted.filter(value => value.channel === renderer.CHANNEL).at(-1), positionsBefore = f.positions.length;
@@ -315,4 +315,25 @@ test('native playback epochs rotate for same-item replay and stop retires pixels
     f.setState({NowPlayingItem: {MediaType: 'Video', RunTimeTicks: 1000000000}, PlayState: {IsPaused: false, PositionTicks: 0}});
     f.fire('playbackstart'); assert.equal(packets().at(-1).value.active, true);
     f.dispose();
+});
+
+
+test('native metadata binds the original player read-only owner, and owner changes publish despite position throttle', async () => {
+    const f=rendererFixture({direct:true,requestNativeSession:()=>Promise.resolve({token:'12345678-1234-1234-1234-123456789abc'})});
+    f.player.id='libmpvmediaplayer';let generationId=10;
+    f.player.getNativePreviewOwner=item=>{assert.equal(item.MediaType,'Video');return {endpointId:'12345678-1234-1234-1234-123456789abc',generationId};};
+    for(let i=0;i<5;i++)await Promise.resolve();
+    const packets=()=>f.emitted.filter(row=>row.channel===renderer.NATIVE_CHANNEL);
+    assert.equal(packets().at(-1).value.nativeOwner.generationId,10);const count=packets().length;
+    generationId=11;f.fire('statechange');assert.equal(packets().length,count+1);
+    assert.equal(packets().at(-1).value.nativeOwner.generationId,11);f.dispose();
+});
+
+
+test('malformed optional preview owner cannot make a playback state publication throw', async () => {
+    const f=rendererFixture({direct:true,requestNativeSession:()=>Promise.resolve({token:'12345678-1234-1234-1234-123456789abc'})});
+    f.player.id='libmpvmediaplayer';const bad={};bad.self=bad;f.player.getNativePreviewOwner=()=>bad;
+    for(let i=0;i<5;i++)await Promise.resolve();
+    assert.equal(f.emitted.filter(row=>row.channel===renderer.NATIVE_CHANNEL).at(-1).value.nativeOwner,null);
+    assert.doesNotThrow(()=>f.fire('statechange'));f.dispose();
 });

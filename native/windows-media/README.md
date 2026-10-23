@@ -1,6 +1,6 @@
 # Windows 原生媒体试验模块
 
-此目录是 Windows x64 本地试验，调用系统 WinRT/SMTC 与 DWM，不安装服务或 Windows SDK。三个 `.cjs` 接受调用方注入的 Koffi，系统 DLL 只从操作系统目录加载。播放器与 Session 仍由既有链路拥有。当前产品适配器因无法证明像素媒体归属，仅提交中性 DWM 占位，不调用本目录的 raw capture，也不读写图片封面；raw capture 只供独立合成探针。
+此目录是 Windows x64 本地试验，调用系统 WinRT/SMTC 与 DWM，不安装服务或 Windows SDK。三个 `.cjs` 接受调用方注入的 Koffi，系统 DLL 只从操作系统目录加载。播放器与 Session 仍由既有链路拥有。当前产品候选使用 Native Helper 的 owner 绑定视频快照，缺失证明时提交中性占位；不调用本目录的 PrintWindow raw capture，也不读写图片封面。raw capture 只供独立合成探针，当前协议与Windows边界见[快照合同](../../docs/WINDOWS_PREVIEW_SNAPSHOT_PROTOCOL.md)。
 
 依赖固定 Koffi 3.3.3（MIT），npm integrity 见 `package-lock.json`。Windows x64 实际需要 `koffi` 与 `@koromix/koffi-win32-x64`，其 LICENSE 必须随 runtime 保留。未升级根目录依赖或 Electron。
 
