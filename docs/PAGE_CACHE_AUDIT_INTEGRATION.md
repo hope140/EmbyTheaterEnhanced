@@ -1,5 +1,13 @@
 # 页面布局缓存与四项审查修复：本地测试整合
 
+## 当前接续：限定的 Framework 构建来源增量
+
+本次在原组合提交c29286feb67293c1f3bd39671d95018d84485baf上合入确定的页面缓存提交6dc6c270723209b36499a5cb9a8e28de5cc4bbab，其父为下方记录的4f3eceee。只增加测试构建预检、完整验证器清单及定向测试/说明，不改任何src/native或既定四项修复。两份顶部文档冲突保留双方全部记录。原固定Framework哈希行为保持；额外候选仅在精确哈希与实际来源/微软有效签名同时通过时接受，条件见[Framework来源配置](FRAMEWORK_SERVICING_PROFILES.md)。
+
+当前允许普通推送独立integration/page-cache-audit分支保全，先检查远端同名ref，不force或覆盖他人；不改源分支、main或正式v0.4.0，不在本轮重复排Windows包。精确整合提交上的离线回归结果单独交付，不借页面单分支CI或预检回执称组合包通过。待页面自身Windows验证结论后由父协调统一安排新组合包，绑定新sourceCommit/run/artifact并按下方隔离入口与跨模块合同验收。下方“不推送”等范围描述是初始c292阶段的历史记录，以本节接续状态为准。
+
+## 初始本地整合记录（c292）
+
 此为可回退的测试集成，未批准正式合并。分支`integration/page-cache-audit`，共同base为发布main `88578c91ab19d44eecddcfae096d37dc917ef1f4`，只接受以下两个准确父来源：
 
 - `fix/post-v040-audit-findings`：`2570c3263bf2dc3fe43168edcf6b64c9f2eacda5`，四个审查修复提交。
