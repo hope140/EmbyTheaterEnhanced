@@ -180,6 +180,24 @@ test('replaced temporary pathname is refused without deleting its foreign replac
     assert.ok(!fs.readdirSync(root).some(n => n.endsWith('.exe')));
 });
 
+test('directory identities above the number safe-integer limit do not alias during commit checks', async t => {
+    const root = temp(t), mock = transport([{}]), original = fs.lstatSync;
+    let exchanged = false;
+    t.mock.method(fs, 'lstatSync', function (file, options) {
+        const stat = original(file, options);
+        if (file !== root) return stat;
+        const identity = 9007199254740992n + (exchanged ? 1n : 0n);
+        return new Proxy(stat, {get(target, key) {
+            if (key === 'ino') return options && options.bigint ? identity : Number(identity);
+            return target[key];
+        }});
+    });
+    await assert.rejects(update.downloadInstaller(update.installerFromRelease(release()), root, {
+        get: mock.get, onProgress() { exchanged = true; }
+    }), /directory-invalid/);
+    assert.ok(!fs.readdirSync(root).some(name => name.endsWith('.exe')));
+});
+
 for (const [name, route, reason] of [
     ['HTTP denial', {status: 403}, 'http-rejected'],
     ['rate limit', {status: 429}, 'http-rejected'],

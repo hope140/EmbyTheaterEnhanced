@@ -42,7 +42,7 @@
 - 独立 HTTPS 客户端只发送固定 UA、Accept 和 identity encoding，保留默认 TLS 校验，不接收 renderer 的 URL、请求头、路径或 checksum。IPC 继续验证当前 main frame 与打包应用文档。
 - 元数据总期限 8 秒、正文上限 256 KiB；安装器上限 512 MiB、下载总期限 10 分钟、每个连接空闲上限 15 秒。每次数据与最终提交还核对绝对 deadline。
 - 最多 4 次重定向；只接受准确资产 URL、当前固定代理包装 URL，或官方 `release-assets.githubusercontent.com` / `objects.githubusercontent.com` HTTPS 资产主机。拒绝 HTTP 降级、用户信息、端口、fragment、未知主机；不跨元数据端点跟随跳转。来源详情记录发起此次完整下载的源，不记录带签名的 CDN 跳转 URL。
-- 从官方精确长度约束流，逐块 SHA-256。临时文件在选定绝对物理目录中以随机 `.part`、独占创建；保存目录和临时文件的设备／文件身份，在写 Internet zone 和最终提交前复核。最终使用原子 no-replace hard link 提交，同名已存在或提交时竞争均不覆盖已有文件。finally 仅尝试删除身份仍相符的本次临时文件，不清扫其它文件；路径被交换时拒绝提交并保留不再能安全定位的文件，不猜新路径删除。目录不支持所需文件系统操作时失败，不降级为覆盖写入。这些检查不等于对同权限恶意进程的完整原子文件系统隔离。
+- 从官方精确长度约束流，逐块 SHA-256。临时文件在选定绝对物理目录中以随机 `.part`、独占创建；保存目录和临时文件的设备／文件身份采用 BigInt，在写 Internet zone 和最终提交前复核，避免64位文件ID被Number舍入合并。最终使用原子 no-replace hard link 提交，同名已存在或提交时竞争均不覆盖已有文件。finally 仅尝试删除身份仍相符的本次临时文件，不清扫其它文件；路径被交换时拒绝提交并保留不再能安全定位的文件，不猜新路径删除。目录不支持所需文件系统操作时失败，不降级为覆盖写入。这些检查不等于对同权限恶意进程的完整原子文件系统隔离。
 - Windows 下载提交前写入并回读 `Zone.Identifier` 的 Internet Zone 3，保留固定公开来源；本机路径必须为磁盘路径，不接受 UNC 或重定向目录。ADS 不支持或被拒绝则不产出最终安装器。此步骤不关闭 Attachment Manager、SmartScreen 或浏览器警告；真实 Windows 文件系统与警告行为需单独验收。格式依据：[Microsoft Zone.Identifier](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/6e3f7352-d11c-4d76-8c39-2516a9df36e8)。
 - main 只持有一个检查/下载操作；重复请求返回 busy，不排队创建额外下载。取消中断网络，页面暂停退休代次、移除进度监听，迟到结果不得修改新页面。应用退出中断并等待所属网络/文件操作；原生目录对话框不能程序关闭，但退出不等待其 UI Promise，迟到选择不能重新下载。
 - maintenance 的读取／复制／检查／下载／取消 IPC 均拒绝附加 payload；外链 IPC 只接受单字段字符串 `{url}`，安全出口仅为固定仓库的 releases 根页、latest 或合法版本 Tag 页面，不允许资产执行路径、认证信息、query 或 fragment。页面直接 destroy 即使未经 pause，也会取消更新并移除进度监听。

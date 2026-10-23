@@ -131,10 +131,10 @@ function physicalDirectory(directory) {
 
 function sameFile(left, right) { return left.dev === right.dev && left.ino === right.ino; }
 function ownedDirectory(root, identity) {
-    return physicalDirectory(root) === root && sameFile(fs.lstatSync(root), identity);
+    return physicalDirectory(root) === root && sameFile(fs.lstatSync(root, {bigint: true}), identity);
 }
 function ownedTemporary(file, identity) {
-    const stat = fs.lstatSync(file);
+    const stat = fs.lstatSync(file, {bigint: true});
     return stat.isFile() && !stat.isSymbolicLink() && sameFile(stat, identity);
 }
 
@@ -166,7 +166,7 @@ async function downloadInstaller(installer, directory, options) {
     const signal = settings.signal ? AbortSignal.any([settings.signal, controller.signal]) : controller.signal;
     const deadline = settings.deadline || Date.now() + 10 * 60 * 1000;
     const root = physicalDirectory(directory);
-    const rootIdentity = fs.lstatSync(root);
+    const rootIdentity = fs.lstatSync(root, {bigint: true});
     const destination = path.join(root, installer.name);
     // link() below is the atomic no-replace commit; this check merely avoids needless traffic.
     try { fs.lstatSync(destination); throw failure('file-exists'); }
@@ -178,7 +178,7 @@ async function downloadInstaller(installer, directory, options) {
     let temporaryIdentity;
     try {
         handle = await fs.promises.open(temporary, 'wx', 0o600);
-        temporaryIdentity = await handle.stat();
+        temporaryIdentity = await handle.stat({bigint: true});
         for (let index = 0; index < SOURCES.length; index++) {
             const source = SOURCES[index];
             check(signal, deadline);
