@@ -10,12 +10,14 @@ const DEFAULT_REQUEST_TIMEOUT_MS = 8000;
 
 function parseVersion(value) {
     if (typeof value !== 'string') return null;
-    const match = value.trim().match(/^v?(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/i);
+    const match = value.trim().match(/^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/);
     if (!match) return null;
-    const major = Number(match[1]);
-    const minor = Number(match[2]);
-    const patch = Number(match[3]);
-    if (![major, minor, patch].every(Number.isSafeInteger)) return null;
+    // Keep canonical decimal strings: SemVer does not limit core identifiers to
+    // JavaScript's safe-integer range.
+    const major = match[1];
+    const minor = match[2];
+    const patch = match[3];
+    if (match[4] && match[4].split('.').some(part => /^\d+$/.test(part) && part.length > 1 && part[0] === '0')) return null;
     return {major, minor, patch, prerelease: match[4] ? match[4].split('.') : []};
 }
 
@@ -47,6 +49,7 @@ function comparePrerelease(left, right) {
 
 function compareParsedVersions(left, right) {
     for (const key of ['major', 'minor', 'patch']) {
+        if (left[key].length !== right[key].length) return left[key].length < right[key].length ? -1 : 1;
         if (left[key] !== right[key]) return left[key] < right[key] ? -1 : 1;
     }
     return comparePrerelease(left.prerelease, right.prerelease);
@@ -171,18 +174,26 @@ function checkLatestRelease(options) {
     const settings = options || {};
     const current = parseVersion(settings.currentVersion);
     if (!current) return Promise.resolve({status: 'error', reason: 'invalid-current-version'});
-    const requestJson = typeof settings.requestJson === 'function' ? settings.requestJson : requestLatestJson;
+    const requestJson = typeof settings.requestJson === 'function' ? settings.requestJson : require('./manual-app-update').requestJson;
     return Promise.resolve().then(function () {
         return requestJson(LATEST_RELEASE_API_URL);
     }).then(function (release) {
         const latest = parseVersion(release && release.tag_name);
         if (!latest) return {status: 'error', reason: 'invalid-release-version'};
+        if (release.draft !== false || release.prerelease !== false || latest.prerelease.length) {
+            return {status: 'error', reason: 'not-stable-release'};
+        }
+        const expectedUrl = 'https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/' + release.tag_name;
+        if (release.html_url !== expectedUrl) return {status: 'error', reason: 'invalid-release-identity'};
         const comparison = compareParsedVersions(current, latest);
         return {
-            status: comparison < 0 ? 'update-available' : 'latest',
+            status: comparison < 0 ? 'update-available' : comparison > 0 ? 'ahead' : 'latest',
             currentVersion: formatVersion(current),
             latestVersion: formatVersion(latest),
-            releaseUrl: safeReleaseUrl(release && release.html_url)
+            releaseUrl: expectedUrl,
+            releaseTag: release.tag_name,
+            notes: typeof release.body === 'string' ? release.body.slice(0, 65536) : '',
+            installer: require('./manual-app-update').installerFromRelease(release)
         };
     }).catch(function () {
         return {status: 'error', reason: 'network-error'};

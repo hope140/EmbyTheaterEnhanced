@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-23 — ETE 主动检查与手动下载最小候选
+
+在固定基线的独立功能分支复用 About、maintenance IPC、源码复制与 provenance 范围，不改 Host、vendor、版本或五附件发布合同。修正原版本解析的数值前导零与大整数边界，正式渠道必须同时满足 GitHub 标志、Tag 和准确仓库 URL；当前更高版本单独呈现。notes 仅 textContent，下载动作先按官方 Tag 重取附件 ID／URL／size／digest，离线或漂移明确失败。
+
+独立下载模块固定源与重定向白名单、TLS、长度／哈希、连接／总期限、随机临时文件和 no-replace 提交；Windows 提交前保留 Zone.Identifier。只在网络连接失败后串行换源，HTTP 拒绝／TLS／校验／写入失败立即停止；没有安装执行或公开源输入。页面与 main 分别退休迟到 UI 和取消所属传输，退出不被原生选择框阻塞。新增33项回归使用合成文本和网络替身，Linux 通过；旧版一项允许数值 prerelease 前导零的断言改为 SemVer 拒绝，旧 release 夹具补正式标志并保留恶意仓库身份拒绝。真实 Windows ADS、GUI、代理传输和安装不由这些结果代替。完整验证后补记精确提交结果，交接见[合同](MANUAL_APP_UPDATE.md)。
+
 ## 2026-10-23 — v0.4.0整合PR70来源与必要声明
 
 将PR70固定提交6576f5d的16份来源／声明材料整合到既有发布分支，四处文档冲突采用保留双方有效内容。API／page完整MIT、Sizzle原文、VTT版权／固定源／实际差异、Material Icons来源、Socket组件与集成范围及npm36许可命名口径保留；原JSON／CSV证据字节及analysisRef不改。旧“尚未替换Host／仍运行Sharp和ServiceStack”等仅作为研究时点，不恢复旧链；当前源码Host／JSON／ZIP、CEC退役、API维护与业务来源指纹均不变。

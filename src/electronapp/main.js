@@ -1046,6 +1046,8 @@
     unregisterMaintenanceIpc = maintenanceIpc.register({
         ipcMain: ipcMain,
         getWebContents: getWebContents,
+        getBrowserWindow: function () { return mainWindow; },
+        dialog: electron.dialog,
         getAppInfo: getCurrentEnhancedAppInfo,
         getPlatformInfo: getPlatformInfo,
         getDisplayInfo: getDisplayInfo,

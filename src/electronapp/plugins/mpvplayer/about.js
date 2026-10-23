@@ -6,6 +6,9 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!modules/list
         copy: 'enhanced-maintenance-copy-environment',
         checkUpdate: 'enhanced-maintenance-check-update',
         releases: 'enhanced-maintenance-open-releases',
+        download: 'enhanced-maintenance-download-update',
+        cancel: 'enhanced-maintenance-cancel-update',
+        progress: 'enhanced-maintenance-update-progress',
         kernelStatus: 'enhanced-mpv-kernel-status',
         kernelImport: 'enhanced-mpv-kernel-import',
         kernelSelect: 'enhanced-mpv-kernel-select'
@@ -31,7 +34,12 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!modules/list
         this.info = null;
         this.infoRequestId = 0;
         this.kernelRequestId = 0;
+        this.updateRequestId = 0;
+        this.updating = false;
+        this.progressListener = null;
         view.querySelector('.btnCheckUpdates').addEventListener('click', this.checkUpdates.bind(this));
+        view.querySelector('.btnDownloadUpdate').addEventListener('click', this.downloadUpdate.bind(this));
+        view.querySelector('.btnCancelUpdate').addEventListener('click', this.cancelUpdate.bind(this));
         view.querySelector('.btnCopyEnvironment').addEventListener('click', this.copyEnvironment.bind(this));
         view.querySelector('.btnOpenReleases').addEventListener('click', this.openReleases.bind(this));
         view.querySelector('.btnImportKernel').addEventListener('click', this.importKernel.bind(this));
@@ -82,32 +90,112 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!modules/list
     };
 
     AboutView.prototype.checkUpdates = function () {
+        if (this.updating) return Promise.resolve();
         var view = this.view;
         var button = view.querySelector('.btnCheckUpdates');
         var state = view.querySelector('.aboutUpdateState');
         var update = view.querySelector('.about-update');
         button.disabled = true;
+        this.updating = true;
+        var requestId = ++this.updateRequestId;
+        view.querySelector('.btnCancelUpdate').disabled = false;
+        view.querySelector('.btnDownloadUpdate').disabled = true;
+        view.querySelector('.aboutDownloadProgress').hidden = true;
+        view.querySelector('.aboutDownloadDetails').textContent = '';
         update.hidden = true;
         setStatus(state, '正在检查…', false);
-        request(CHANNELS.checkUpdate).then(function (response) {
-            if (response && response.status === 'latest') {
-                setStatus(state, '已是最新版本（' + response.currentVersion + '）。', false);
-                return;
-            }
-            if (response && response.status === 'update-available') {
+        return request(CHANNELS.checkUpdate).then(function (response) {
+            if (requestId !== this.updateRequestId) return;
+            if (response && ['latest', 'ahead', 'update-available'].indexOf(response.status) !== -1) {
                 setValue(view, '.aboutCurrentVersion', response.currentVersion);
                 setValue(view, '.aboutLatestVersion', response.latestVersion);
                 view.querySelector('.aboutReleaseLink').setAttribute('data-release-url', response.releaseUrl || '');
+                view.querySelector('.aboutReleaseNotes').textContent = response.notes || '此版本没有更新说明。';
+                view.querySelector('.btnDownloadUpdate').disabled = response.status !== 'update-available' || !response.installer;
                 update.hidden = false;
-                setStatus(state, '发现新版本：' + response.latestVersion + '。', false);
+                var message = response.status === 'latest' ? '已是当前正式版本（' + response.currentVersion + '）。' :
+                    response.status === 'ahead' ? '当前版本高于正式渠道版本（' + response.latestVersion + '），不提供降级下载。' :
+                    '发现新版本：' + response.latestVersion + '。';
+                if (response.status === 'update-available' && !response.installer) message += ' 官方安装附件或独立校验信息不可用，请查看发布页。';
+                setStatus(state, message, false);
                 return;
             }
+            if (response && response.status === 'cancelled') { setStatus(state, '已取消检查。', false); return; }
+            setStatus(state, '检查失败：无法从 GitHub 官方源确认正式版本，请稍后重试。', true);
+        }.bind(this)).catch(function () {
+            if (requestId !== this.updateRequestId) return;
             setStatus(state, '检查失败，请稍后重试。', true);
-        }).catch(function () {
-            setStatus(state, '检查失败，请稍后重试。', true);
-        }).then(function () {
+        }.bind(this)).then(function () {
+            if (requestId !== this.updateRequestId) return;
+            this.updating = false;
             button.disabled = false;
-        });
+            view.querySelector('.btnCancelUpdate').disabled = true;
+        }.bind(this));
+    };
+
+    AboutView.prototype.removeUpdateProgress = function () {
+        if (this.progressListener && window.ipc && typeof window.ipc.removeListener === 'function') {
+            window.ipc.removeListener(CHANNELS.progress, this.progressListener);
+        }
+        this.progressListener = null;
+    };
+
+    AboutView.prototype.cancelUpdate = function () {
+        if (!this.updating) return;
+        this.view.querySelector('.btnCancelUpdate').disabled = true;
+        return request(CHANNELS.cancel).catch(function () {});
+    };
+
+    AboutView.prototype.downloadUpdate = function () {
+        if (this.updating) return Promise.resolve();
+        var view = this.view;
+        var state = view.querySelector('.aboutUpdateState');
+        var requestId = ++this.updateRequestId;
+        this.updating = true;
+        view.querySelector('.btnCheckUpdates').disabled = true;
+        view.querySelector('.btnDownloadUpdate').disabled = true;
+        view.querySelector('.btnCancelUpdate').disabled = false;
+        view.querySelector('.aboutDownloadProgress').hidden = false;
+        view.querySelector('.aboutDownloadProgress').value = 0;
+        view.querySelector('.aboutDownloadDetails').textContent = '';
+        setStatus(state, '正在向 GitHub 官方源重新确认附件和校验值…', false);
+        this.progressListener = function (_event, progress) {
+            if (requestId !== this.updateRequestId || !progress || !progress.total) return;
+            view.querySelector('.aboutDownloadProgress').value = Math.min(1, progress.bytes / progress.total);
+            view.querySelector('.aboutDownloadDetails').textContent = '来源：' + progress.source + '；' + progress.bytes + ' / ' + progress.total + ' bytes';
+            setStatus(state, '正在下载… ' + Math.floor(100 * progress.bytes / progress.total) + '%', false);
+        }.bind(this);
+        if (window.ipc && typeof window.ipc.on === 'function') window.ipc.on(CHANNELS.progress, this.progressListener);
+        return request(CHANNELS.download).then(function (result) {
+            if (requestId !== this.updateRequestId) return;
+            if (result && result.status === 'downloaded') {
+                view.querySelector('.aboutDownloadProgress').value = 1;
+                view.querySelector('.aboutDownloadDetails').textContent = '来源：' + result.source + '\n目录：' + result.directory + '\n文件：' + result.fileName + '\nSHA-256：' + result.sha256;
+                setStatus(state, '下载完成，SHA-256 与 GitHub 官方发布值一致。请正常退出客户端，再自行打开下载目录中的安装程序。此校验不代表数字签名；请保留系统与浏览器安全检查。', false);
+            } else if (result && result.status === 'cancelled') {
+                setStatus(state, '已取消下载。', false);
+            } else {
+                var reasons = {
+                    'verification-unavailable': '官方源不可达或缺少校验值，无法独立验证。',
+                    'release-changed': '官方发布身份已改变，请重新检查更新。',
+                    'file-exists': '目标目录已有同名文件，请选择其他目录；已有文件未覆盖。',
+                    'hash-mismatch': 'SHA-256 不匹配，下载已拒绝。',
+                    'http-rejected': '服务器拒绝请求，已停止下载。',
+                    'unsafe-redirect': '下载跳转不符合安全规则，已停止。',
+                    'size-mismatch': '下载大小不符合官方发布信息。'
+                };
+                setStatus(state, '下载失败：' + (reasons[result && result.reason] || '请稍后重试或查看发布页。'), true);
+            }
+        }.bind(this)).catch(function () {
+            if (requestId === this.updateRequestId) setStatus(state, '下载失败，请稍后重试。', true);
+        }.bind(this)).then(function () {
+            if (requestId !== this.updateRequestId) return;
+            this.removeUpdateProgress();
+            this.updating = false;
+            view.querySelector('.btnCheckUpdates').disabled = false;
+            view.querySelector('.btnDownloadUpdate').disabled = false;
+            view.querySelector('.btnCancelUpdate').disabled = true;
+        }.bind(this));
     };
 
     AboutView.prototype.copyEnvironment = function () {
@@ -301,6 +389,12 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!modules/list
     };
 
     AboutView.prototype.onPause = function () {
+        this.cancelUpdate();
+        ++this.updateRequestId;
+        this.updating = false;
+        this.removeUpdateProgress();
+        this.view.querySelector('.btnCheckUpdates').disabled = false;
+        this.view.querySelector('.btnCancelUpdate').disabled = true;
         BaseView.prototype.onPause.apply(this, arguments);
     };
 

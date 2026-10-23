@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-23 — 正式版之后的手动软件更新候选
+
+独立 `feature/manual-app-update` 基于固定 `6858c71103605ff66c630f1cd7e1e9fdbdeab000`，不改当前版本或正式发布分支。About 主动检查增加严格 SemVer／正式渠道与仓库身份核对、纯文本 notes、手动下载／取消与来源详情。默认官方，连接失败串行尝试有第一方资料的备用候选；HTTP／TLS／校验拒绝不换源。下载前必须官方重核验 digest，校验后无覆盖保存，Windows 保留 Internet zone；不执行安装，不恢复旧 Host 更新，不改变 mpv 管理。设计、代理列表待确认项、mock 与 Windows 实测边界及独立测试包参数见[更新合同](MANUAL_APP_UPDATE.md)。
+
+新增33项受控网络／文件／IPC／UI回归通过，相关既有设置测试通过；完整回归及静态核验另行记录，不将此单元结果外推为整包或安装验收。
+
 ## 2026-10-23 — v0.4.0整合PR70来源与必要声明
 
 将PR70固定提交6576f5d的16份来源／声明材料整合到既有发布分支，四处文档冲突采用保留双方有效内容。API／page完整MIT、Sizzle原文、VTT版权／固定源／实际差异、Material Icons来源、Socket组件与集成范围及npm36许可命名口径保留；原JSON／CSV证据字节及analysisRef不改。旧“尚未替换Host／仍运行Sharp和ServiceStack”等仅作为研究时点，不恢复旧链；当前源码Host／JSON／ZIP、CEC退役、API维护与业务来源指纹均不变。

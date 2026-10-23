@@ -54,6 +54,7 @@ test('maintenance version ordering and update states use injected release fixtur
             requested.push(url);
             return {
                 tag_name: 'v0.2.3',
+                draft: false, prerelease: false,
                 html_url: 'https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.3'
             };
         }
@@ -63,11 +64,13 @@ test('maintenance version ordering and update states use injected release fixtur
         status: 'update-available',
         currentVersion: '0.2.2',
         latestVersion: '0.2.3',
-        releaseUrl: 'https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.3'
+        releaseUrl: 'https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.3',
+        releaseTag: 'v0.2.3', notes: '', installer: null
     });
     assert.equal((await maintenance.checkLatestRelease({
         currentVersion: '0.2.3',
-        requestJson: async function () { return {tag_name: '0.2.3'}; }
+        requestJson: async function () { return {tag_name: '0.2.3', draft: false, prerelease: false,
+            html_url: 'https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/0.2.3'}; }
     })).status, 'latest');
     assert.deepEqual(await maintenance.checkLatestRelease({
         currentVersion: '0.2.2',
@@ -146,7 +149,7 @@ test('maintenance IPC checks sender trust, supports unregister and limits clipbo
         shell: {openExternal: function (url) { opened.push(url); }},
         requestJson: async function () {
             fixtureCalls++;
-            return {tag_name: '0.2.3', html_url: 'https://attacker.example/releases/tag/0.2.3'};
+            return {tag_name: '0.2.3', draft: false, prerelease: false, html_url: 'https://attacker.example/releases/tag/0.2.3'};
         }
     });
 
@@ -168,7 +171,8 @@ test('maintenance IPC checks sender trust, supports unregister and limits clipbo
     assert.match(copiedText, /Emby Theater Enhanced: 0\.2\.3/);
     assert.match(copiedText, /Native Helper: helper-bundled/);
     assert.match(copiedText, /Running Native Helper: helper-running/);
-    assert.equal((await ipcMain.handlers.get(maintenanceIpc.CHANNELS.CHECK_UPDATE)(eventFor(trusted))).status, 'update-available');
+    assert.deepEqual(await ipcMain.handlers.get(maintenanceIpc.CHANNELS.CHECK_UPDATE)(eventFor(trusted)),
+        {status: 'error', reason: 'invalid-release-identity'});
     assert.equal(fixtureCalls, 1);
     assert.equal((await ipcMain.handlers.get(maintenanceIpc.CHANNELS.OPEN_RELEASES)(eventFor(trusted), {
         url: 'https://github.com.evil.example/hope140/EmbyTheaterEnhanced/releases/tag/v9'
