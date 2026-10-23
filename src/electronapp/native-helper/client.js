@@ -38,6 +38,20 @@
         this.protocolVersion = metadata.protocolVersion;
         this.helperVersion = metadata.helperVersion;
         this.libmpvVersion = metadata.libmpvVersion;
+        this.cacheTrialEnabled = metadata.cacheTrialEnabled === true;
+        this.setCacheContext = function (context) {
+            if (destroyed) return Promise.reject(new Error('native-helper-destroyed'));
+            return call('cache-context', {context: context, generationId: currentGenerationId});
+        };
+        function cacheKey(event) {
+            if (!destroyed && self.cacheTrialEnabled && event.ctrlKey && event.shiftKey && ['KeyD', 'KeyX'].indexOf(event.code) >= 0 && !event.repeat) {
+                event.preventDefault(); event.stopPropagation();
+                if (event.code === 'KeyX') { call('cache-cancel', {generationId: currentGenerationId}).catch(function () {}); return; }
+                var refresh = typeof self.refreshCacheContext === 'function' ? self.refreshCacheContext() : Promise.resolve();
+                Promise.resolve(refresh).then(function () { if (!destroyed) return call('cache-download', {generationId: currentGenerationId}); }).catch(function () {});
+            }
+        }
+        if (this.cacheTrialEnabled && typeof document !== 'undefined' && document.addEventListener) document.addEventListener('keydown', cacheKey, true);
         this.style = {};
 
         function emit(data) {
@@ -173,6 +187,7 @@
             if (destroyed) return Promise.resolve();
             destroyed = true;
             generationEpoch++;
+            if (self.cacheTrialEnabled && typeof document !== 'undefined' && document.removeEventListener) document.removeEventListener('keydown', cacheKey, true);
             visible = false;
             try { ipc.removeListener(EVENT_CHANNEL, self._onIpcEvent); } catch (_) { }
             listeners = [];

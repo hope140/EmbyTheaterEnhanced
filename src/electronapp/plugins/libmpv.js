@@ -1,4 +1,4 @@
-define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter', 'appSettings', 'userSettings', 'require', 'connectionManager', '../resolvers/strm-resolver.js', '../resolvers/strm-config-client.js', '../resolvers/strm-identity-recovery.js', '../enhanced/playback-route-stats.js', '../enhanced/nexttrack-transition.js', '../native-helper/client.js'], function (globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, require, connectionManager, strmResolver, strmConfigClient, strmIdentityRecovery, playbackRouteStats, nextTrackTransition, nativeHelperClient) {
+define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter', 'appSettings', 'userSettings', 'require', 'connectionManager', '../resolvers/strm-resolver.js', '../resolvers/strm-config-client.js', '../resolvers/strm-identity-recovery.js', '../enhanced/playback-route-stats.js', '../enhanced/nexttrack-transition.js', '../native-helper/client.js', '../enhanced/playback-cache-context.js'], function (globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, require, connectionManager, strmResolver, strmConfigClient, strmIdentityRecovery, playbackRouteStats, nextTrackTransition, nativeHelperClient, playbackCacheContext) {
     'use strict';
 
     function getTextTrackUrl(subtitleStream, serverId) {
@@ -1090,6 +1090,18 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             }
             await setProperty(Object.assign(playerOptions, audioDelay(), interlace(), createClosedCaptionTrack(mediaSource, isVideo), getMpvAudioOptions(mediaType)))
             assertCurrentPlayRequest(request);
+            if (libmpv && libmpv.cacheTrialEnabled && typeof libmpv.setCacheContext === 'function') {
+                var cacheEndpoint = libmpv;
+                var currentCacheContext = playbackCacheContext.capture(connectionManager, item, mediaSource, options, url);
+                try {
+                    await cacheEndpoint.setCacheContext(currentCacheContext());
+                    assertCurrentPlayRequest(request);
+                    if (libmpv === cacheEndpoint) cacheEndpoint.refreshCacheContext = function () {
+                        return cacheEndpoint.setCacheContext(request.controller.signal.aborted || libmpv !== cacheEndpoint ? null : currentCacheContext());
+                    };
+                } catch (_) { /* Cache preparation preserves original playback ownership. */ }
+                assertCurrentPlayRequest(request);
+            }
             emitClientDiagnostic('info', 'playback', 'loadfile-requested', Object.assign(requestDiagnosticDetails(request), {
                 route: resolverObservation.route,
                 sourceKind: resolverResult && resolverResult.sourceKind,

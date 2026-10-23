@@ -1,5 +1,7 @@
 # 完整本地对象的主进程适配候选
 
+后续已补应用显式隔离启动、现有会话身份路径及有限完整下载器，当前范围见 [运行试验合同](PLAYBACK_CACHE_RUNTIME.md)。本文保留当时内部适配/路线评估的历史证据，不再作为缺少应用入口的当前结论。
+
 这是 `feature/playback-cache` 的下一阶段：此前只在 tools 中运行的字节 store 移至维护源码 `enhanced/playback-cache-store.js`，旧 `tools/prototypes/playback-cache/store.cjs` 仅作兼容入口。新 `enhanced/playback-cache-trial.js` 已接入真实 `native-helper/service.js` 的最终 loadfile 分派点。它仍不是默认启用的用户功能，也没有部分缓存播放或真实预加载。
 
 ## 开启范围与运行方式

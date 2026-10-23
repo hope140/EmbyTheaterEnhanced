@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-10-23 — 隔离启动、当前会话身份与完整HTTP缓存试验
+
+独立feature/playback-cache正常重基到正式main 88578c91ab19d44eecddcfae096d37dc917ef1f4，保留两份文档冲突双方内容；不修改main/发布分支。应用增加显式试验开关、完整策略JSON和空/自有隔离profile入口，缺项在打开profile前退出；普通无参仍关闭。当前身份来自原ApiClient/PlaybackManager的服务器、用户、Item、MediaSource及PlaySession，授权与文件版本由实际同源206/强ETag响应重新验证，不接受renderer伪造authorized。
+
+新增有限HTTP(S)完整下载器：暂停并经原生对话框明确确认后才下载；用户显式速率/容量/TTL/期限，拒绝重定向、未知/超额长度和不可验证响应，不跨域转发凭据。恢复、明确取消、Stop/Next和退出回收所属请求；完整对象才进入原helper source选择和物理播放lease，部分对象只能重确认后续写。没有自动下一集、后台扫库、NAS访问、认证替代或正式默认策略。当前新入口可用于独立Windows分支包，不再仅限内部注入。
+
+Node24.18.1/Linux相关220/220通过、0跳过；其中新运行链路20项用真实回环HTTP/60-byte WAV跑通确认下载→新会话1-byte重新验证→维护service分派完整本地源→mock helper读出同字节。不是固定WindowsDLL、声音/画面、真实服务器/账号或安装实测。父协调云UI按精确feature commit运行release_package=false，不替换正式安装或既有artifact。配置、构建参数、人工最短清单及auditfix冲突文件见 [当前运行试验合同](PLAYBACK_CACHE_RUNTIME.md)。
+
 ## 2026-10-23 — 默认关闭的完整缓存source主进程适配候选
 
 维护store移至src，tools入口兼容转引；真实Native Helper service新增仅由可信主进程harness显式配置启用的离线候选。容量/TTL/网络/活动租约策略不齐全即关闭；只选择已完整核验且经本次mock新授权的合成本地对象，不增加下载器/代理、renderer权限或Native线协议。最终source命中与一次回原source保持原endpoint/generation；Stop/Next取消迟到选择。租约直到匹配实际end-file或所属helper确认exit才释放，不以逻辑退休或transport失效冒充文件已关闭。

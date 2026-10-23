@@ -4,6 +4,8 @@
 
 普通媒体链路为 Emby Web → PlaybackManager → libmpv adapter → Electron main Native Helper supervisor → Windows helper → 内嵌 libmpv。Native Helper 是唯一生产 bridge；旧 Pepper/PPAPI 不进入 runtime。
 
+默认关闭的缓存试验仅在显式开关、完整策略和独立profile下接入：原ApiClient/播放会话提供身份，暂停并经用户确认才做同源有限完整下载；每次命中新验证后仅替换最终source，物理媒体关闭/所属进程exit释放lease。普通播放、Session/队列和Native协议归属保持；详见 [运行试验合同](PLAYBACK_CACHE_RUNTIME.md)。
+
 PlaybackManager 拥有 Item、MediaSource、MediaSourceId、PlaySessionId、Session/WebSocket、进度、远控与 Together 生命周期。STRM Resolver 只决定最终 loadfile source，不重建播放会话。Item.Path 是 sidecar identity，MediaSource.Path 是 source identity，options.url 是原生播放 source；普通媒体和 Transcode 保持原生链路。
 
 STRM 按持久化 rules 的 cloud-first、mount-first 或 custom 顺序尝试 DirectUrl、CD2 同源 HTTP、Mount 和 Native。main 持有 Token、gRPC 与映射；renderer 只通过窄 IPC 请求结果。source/cloud/mount 三个前缀分开，严格路径边界、最长前缀匹配和拒绝路径穿越。DirectUrl 只开放经过校验的 file-local User-Agent，未知 additionalHeaders 回退同源 HTTP。

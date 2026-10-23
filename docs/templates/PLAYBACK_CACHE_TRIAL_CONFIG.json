@@ -1,0 +1,17 @@
+{
+  "policy": {
+    "maxBytes": 33554432,
+    "maxEntries": 4,
+    "ttlMs": 3600000,
+    "minFreeBytes": 1073741824
+  },
+  "download": {
+    "maxFileBytes": 8388608,
+    "bytesPerSecond": 262144,
+    "chunkBytes": 32768,
+    "maxDurationMs": 120000,
+    "authorizationMaxAgeMs": 2000
+  },
+  "networkPolicy": "same-origin-paused-only",
+  "activeLeasePolicy": "retain-until-media-close"
+}

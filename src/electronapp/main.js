@@ -20,6 +20,11 @@
     var productMetadata = require('./package.json');
     productIdentity.setAppName(app, productMetadata);
     var path = require('path');
+    var cacheLaunch = require('./enhanced/playback-cache-launch').parseLaunch(process.argv.slice(2));
+    if (process.argv.some(function (arg) { return arg.indexOf('--ete-cache-trial') === 0; }) && !cacheLaunch.enabled) {
+        console.error('Cache trial configuration invalid; no application profile opened.');
+        app.exit(2); return;
+    }
     var appBootstrap = require('./enhanced/bootstrap');
     var deviceIdentity = require('./device-identity');
     var enhancedDiagnostics = require('./enhanced/diagnostics');
@@ -31,7 +36,7 @@
     var bundledVersions = require('./enhanced/bundled-versions');
 
     var appBootstrapState = appBootstrap.bootstrap({
-        appDataPath: app.getPath('appData'),
+        appDataPath: cacheLaunch.enabled ? cacheLaunch.profileRoot : app.getPath('appData'),
         runtimeRoot: path.resolve(__dirname, '..')
     });
     var persistentDeviceId = deviceIdentity.getOrCreateDeviceId(
@@ -999,7 +1004,7 @@
 
     var commandLineOptions = parseCommandLine();
 
-    var userDataPath = commandLineOptions.userDataPath;
+    var userDataPath = cacheLaunch.enabled ? cacheLaunch.userData : commandLineOptions.userDataPath;
     if (userDataPath) {
         app.setPath('userData', userDataPath);
     }
@@ -1086,7 +1091,19 @@
             runtimeRoot: path.resolve(__dirname, '..'),
             mode: nativeHelperMode,
             kernelStore: mpvKernelStore,
-            startupKernelSelection: startupSelection
+            startupKernelSelection: startupSelection,
+            playbackCacheRuntime: cacheLaunch.enabled ? require('./enhanced/playback-cache-runtime').createRuntime(cacheLaunch) : null,
+            confirmCacheDownload: async function () {
+                var result = await electron.dialog.showMessageBox(mainWindow, {type: 'question', buttons: ['取消', '确认下载'],
+                    defaultId: 0, cancelId: 0, message: '缓存试验：下载当前暂停的直接播放文件？',
+                    detail: '仅写入本隔离试验目录；恢复播放、切换媒体或退出会取消。不会自动下载下一集。'});
+                return result.response === 1;
+            },
+            showCacheResult: function (state) {
+                if (mainWindow && !mainWindow.isDestroyed()) return electron.dialog.showMessageBox(mainWindow,
+                    {type: 'info', message: '缓存试验：' + ({ready: '完整文件已就绪；下次播放将重新验证后尝试命中。',
+                        cancelled: '已取消。', unavailable: '当前来源不满足试验条件，仍使用原播放源。'}[state] || '当前不可用。')});
+            }
         });
         unregisterNativeHelperIpc = nativeHelperServiceModule.register({
             ipcMain: ipcMain,
