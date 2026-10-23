@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-23 — 关闭runner到build消费链路的同类CLI初始化缺口
+
+运行 `39961791456` 已完成Host编译、实际验证与接入，独立source-built-input preflight随后以未初始化sourceIdentity失败。审查限定于runner接入和build Host消费控制链：9个根入口可达44个本地require控制模块，两组循环分别为plan／receipt／source-built-input和build-input-contract／build-input-provenance。plan已提前导出；本轮将source-built-input和后两模块的原导出赋值移至CLI分派前。receipt无CLI分派，其余检查到的组件、装配和provenance入口无回到自身的加载边，不做无关批量改写；runtime-provenance保持仅CLI消费形态。
+
+真实子进程覆盖plan的install-runner、source-built-input的identity／preflight／stage（含stage返回的validateRuntime）、copy-runtime-dependencies的create-owner、windows-host-input的assemble，以及build-input-contract检查、build-input-provenance write／validate。后续Host消费的派生文件及JSON依赖身份逐项验证；拒绝回执／产物篡改、双锁、不同run、源码／回执／runtime重定向、dist外输出和错误owner，保留原字节不覆盖。有效runner链路修前复现循环错误，修后相关98项通过；夹具使用合成非执行字节，不冒充新Host编译或完整客户端验收。业务源码、固定指纹、编译器和验证器标准不变，新云run必须重新编译验证，失败run锁不外部复用。
+
 ## 2026-10-23 — plan CLI先导出安全工具再调用receipt模块
 
 手动run `39959947978` 已完成Host云编译和实际验证，失败发生在随后 `install-runner` 接入阶段。plan原先在CLI执行后才赋值module.exports；receipt加载时反向解构physical，读到循环依赖中的未初始化导出。仅把原导出赋值移到CLI分派前，不改函数或回执验证。新增4项真实Node子进程回归，修前均以同一错误失败，修后正常接入、错误回执、路径重定向和已有证据保护均兑现原合同，连同既有runner／workflow共45项通过。夹具均为合成字节，不冒充产品执行；原云验证回执不搬运复用，新run必须重建并重新验证，完整包闭环仍待后续运行。

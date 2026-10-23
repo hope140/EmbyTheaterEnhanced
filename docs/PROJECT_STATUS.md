@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-23 — runner接入到build消费的CLI链路复验
+
+手动run `39961791456` 的Host编译、实际验证和输出接入通过，后续独立preflight CLI暴露sourceIdentity未初始化循环。现修正source-built-input及另一组build-input-contract／provenance循环的导出顺序，安全函数和验证标准不变。有界审查覆盖构建链44个可达控制模块；真实子进程串起接入、preflight、owner、原Host装配、stage和runtime身份核对，并验证篡改、双锁、路径与run归属拒绝。相关98项定向测试通过；原失败run的锁不复用，完整云包仍需新run重建验证。
+
 ## 2026-10-23 — Host云编译验证已通过，修正CLI接入顺序
 
 手动run `39959947978` 已在Windows2022恢复固定libmpv，使用MSBuild17.14.60成功编译Host（0错误、6警告），实际验证器报告PASSED并生成本次证据绑定锁。随后接入已验证输出时被Node模块循环依赖的未初始化 `physical` 导出阻断，未进入整包回归／打包且无artifact。现仅将plan模块导出提前到CLI分派前，真实子进程回归覆盖正常接入与回执、重定向、已存证据拒绝；相关45项本地通过。业务源码、指纹、验证器与门禁不变，失败run的锁不复用，下一run仍须自行重建验证。

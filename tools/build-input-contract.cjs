@@ -183,8 +183,8 @@ function materializeNotices(root, runtime, contract) {
     return require('./build-input-provenance.cjs').materializeNotices(root, runtime, contract);
 }
 
+module.exports = {INPUT_PATHS, NOTICE_PATHS, inspect, materializeNotices};
 if (require.main === module) {
     const [root, sourceCommit] = process.argv.slice(2);
     process.stdout.write(JSON.stringify(inspect(root, sourceCommit)) + '\n');
 }
-module.exports = {INPUT_PATHS, NOTICE_PATHS, inspect, materializeNotices};

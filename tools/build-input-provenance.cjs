@@ -253,8 +253,8 @@ function materializeNotices(root, runtime, contractInputs) {
     for (const notice of notices) ensureParentDirectories(runtime, notice.path);
     for (const notice of notices) writeNewFile(runtime, notice.path, notice.bytes);
 }
+module.exports = {run, record, configOutput, materializeNotices, NAME};
 if (require.main === module) {
     const [command, root, runtime, sourceCommit] = process.argv.slice(2);
     process.stdout.write(JSON.stringify(run(command, root, runtime, sourceCommit)) + '\n');
 }
-module.exports = {run, record, configOutput, materializeNotices, NAME};

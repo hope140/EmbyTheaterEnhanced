@@ -217,6 +217,19 @@ test('config transform requires exactly one canonical anchor and preserves surro
     assert.throws(() => provenance.configOutput(Buffer.from(CONFIG_ANCHOR + '\n' + CONFIG_ANCHOR)), /exactly one canonical anchor/);
 });
 
+test('build input and provenance CLIs consume the same committed inputs in fresh processes', t => {
+    const fixture = setup(t);
+    function cli(name, args) {
+        const result = spawnSync(process.execPath, ['--trace-warnings', path.resolve(__dirname, '../tools/' + name), ...args], {encoding: 'utf8'});
+        assert.equal(result.status, 0, result.stderr); assert.equal(result.stderr, ''); return JSON.parse(result.stdout);
+    }
+    const inputs = cli('build-input-contract.cjs', [fixture.repo, fixture.sourceCommit]);
+    assert.equal(inputs.sourceCommit, fixture.sourceCommit); assert.equal(inputs.files.length, contract.INPUT_PATHS.length);
+    const written = cli('build-input-provenance.cjs', ['write', fixture.repo, fixture.runtime, fixture.sourceCommit]);
+    assert.equal(written.status, 'passed');
+    assert.deepEqual(cli('build-input-provenance.cjs', ['validate', fixture.repo, fixture.runtime, fixture.sourceCommit]), written);
+});
+
 test('provenance write and validate bind inputs, transformed config and notices', t => {
     const fixture = setup(t);
     const written = provenance.run('write', fixture.repo, fixture.runtime, fixture.sourceCommit);

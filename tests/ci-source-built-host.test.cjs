@@ -147,6 +147,84 @@ function stagedRunner(t, install = true) {
 function runnerCli(f) {
     return cp.spawnSync(process.execPath, ['--trace-warnings', path.join(root, 'tools/ci-source-built-host-plan.cjs'), 'install-runner', f.root, f.build], {encoding: 'utf8'});
 }
+function inputCli(f, command, ...args) {
+    return cp.spawnSync(process.execPath, ['--trace-warnings', path.join(root, 'tools/source-built-host-input.cjs'), command, f.root, ...args], {encoding: 'utf8'});
+}
+test('all CLI modules in the reviewed dependency cycles publish exports before dispatch', () => {
+    for (const name of ['ci-source-built-host-plan.cjs', 'source-built-host-input.cjs', 'build-input-contract.cjs', 'build-input-provenance.cjs']) {
+        const source = fs.readFileSync(path.join(root, 'tools', name), 'utf8');
+        const main = source.search(/if\s*\(\s*require\.main\s*===\s*module\s*\)/);
+        assert.ok(source.indexOf('module.exports') >= 0 && source.indexOf('module.exports') < main, name);
+    }
+});
+function cliSuccess(result) {assert.equal(result.status, 0, result.stderr); assert.equal(result.stderr, ''); return JSON.parse(result.stdout);}
+function runnerBuildChain(t) {
+    const f = stagedRunner(t, false), host = require('../tools/windows-host-input.cjs');
+    const originals = ['Emby.Theater.exe', 'Emby.Theater.pdb'].map(p => ({path: p, bytes: Buffer.from('synthetic original ' + p)}));
+    const files = originals.map(f => ({path: f.path, size: f.bytes.length, sha256: sha(f.bytes)}));
+    fs.writeFileSync(path.join(f.root, host.MANIFEST_PATH), JSON.stringify({schemaVersion: 1, version: '3.0.20', inputRoot: host.INPUT_ROOT, files, fileCount: files.length, bytes: files.reduce((n, x) => n + x.size, 0), treeSha256: require('../tools/web-snapshot-input.cjs').treeHash(files), archive: {size: 1, sha256: '0'.repeat(64)}}));
+    fs.mkdirSync(path.join(f.root, host.INPUT_ROOT), {recursive: true});
+    for (const file of originals) fs.writeFileSync(path.join(f.root, host.INPUT_ROOT, file.path), file.bytes);
+    fs.appendFileSync(path.join(f.root, '.gitignore'), 'vendor/windows-host/\ndist/\n');
+    f.git(['add', '.gitignore', host.MANIFEST_PATH]); f.git(['commit', '-qm', 'synthetic fresh build base']);
+    cliSuccess(runnerCli(f));
+    return {...f, originals, sourceCommit: f.git(['rev-parse', 'HEAD']).toString().trim()};
+}
+function freshHostRuntime(f) {
+    const runtime = path.join(f.root, 'dist/candidate'); fs.mkdirSync(runtime, {recursive: true});
+    const owner = cp.spawnSync(process.execPath, [path.join(root, 'tools/copy-runtime-dependencies.cjs'), 'create-owner', f.root, runtime, f.sourceCommit], {encoding: 'utf8'});
+    assert.equal(owner.status, 0, owner.stderr); assert.equal(owner.stderr, ''); const token = owner.stdout.trim();
+    assert.match(token, /^[a-f0-9]{64}$/);
+    cliSuccess(cp.spawnSync(process.execPath, ['--trace-warnings', path.join(root, 'tools/windows-host-input.cjs'), 'assemble', f.root, runtime], {encoding: 'utf8'}));
+    return {runtime, token};
+}
+test('production CLI order installs, preflights and stages the current runner Host in a fresh owned build', t => {
+    const f = runnerBuildChain(t), preflight = cliSuccess(inputCli(f, 'preflight'));
+    assert.equal(cliSuccess(inputCli(f, 'identity')).sha256, preflight.sourceIdentity.sha256);
+    assert.equal(preflight.runnerProvenance.sourceCommit, f.sourceCommit);
+    const {runtime, token} = freshHostRuntime(f), report = cliSuccess(inputCli(f, 'stage', runtime, f.sourceCommit, token));
+    assert.equal(report.runnerProvenance.sourceCommit, f.sourceCommit);
+    assert.equal(report.manifestPath, receipt.LOCK_PATH); assert.equal(report.newtonsoft.version, '13.0.4');
+    for (const file of preflight.files) assert.equal(sha(fs.readFileSync(path.join(runtime, file.path))), file.sha256);
+    const c = require('../tools/source-built-host-input.cjs');
+    assert.deepEqual(c.validateRuntime(f.root, runtime), report);
+    assert.equal(require('../tools/windows-host-input.cjs').validateRuntime(f.root, runtime, report.files).runtimeFiles.length, 2);
+    assert.throws(() => cliSuccess(inputCli(f, 'stage', runtime, f.sourceCommit, token)), /not the original fresh assembly/);
+});
+for (const mutation of ['receipt-bytes', 'dual-lock', 'prepared-bytes', 'source-redirect', 'receipt-redirect']) test('production preflight CLI refuses runner input: ' + mutation, t => {
+    const f = runnerBuildChain(t), c = require('../tools/source-built-host-input.cjs');
+    if (mutation === 'receipt-bytes') fs.appendFileSync(path.join(f.root, receipt.RECEIPTS, 'runner-verification.json'), ' ');
+    if (mutation === 'dual-lock') fs.copyFileSync(path.join(f.root, receipt.LOCK_PATH), path.join(f.root, c.LOCK_PATH));
+    if (mutation === 'prepared-bytes') fs.appendFileSync(path.join(f.root, c.INPUT_ROOT, 'Emby.Theater.exe'), 'changed');
+    if (mutation.endsWith('redirect')) {
+        const p = path.join(f.root, mutation === 'source-redirect' ? 'native/windows-host/changes/Emby.Theater/Program.cs' : receipt.RECEIPTS + '/toolchain-snapshot.json');
+        fs.renameSync(p, p + '.original'); fs.symlinkSync(p + '.original', p, 'file');
+    }
+    const result = inputCli(f, 'preflight'); assert.equal(result.status, 1);
+    const expected = {'receipt-bytes': /Runner Host provenance identity mismatch/, 'dual-lock': /Ambiguous committed and runner-generated Host locks/, 'prepared-bytes': /Source-built Host prepared identity mismatch/, 'source-redirect': /Source-built Host redirects forbidden/, 'receipt-redirect': /Host recovery redirects forbidden/};
+    assert.match(result.stderr, expected[mutation]);
+    assert.doesNotMatch(result.stderr, /circular dependency|is not a function/);
+    assert.equal(fs.existsSync(path.join(f.root, 'dist')), false);
+});
+test('production preflight CLI refuses a different Actions run identity', t => {
+    const f = runnerBuildChain(t);
+    const result = cp.spawnSync(process.execPath, ['--trace-warnings', path.join(root, 'tools/source-built-host-input.cjs'), 'preflight', f.root], {encoding: 'utf8', env: {...process.env, GITHUB_ACTIONS: 'true', GITHUB_RUN_ID: 'not-this-run', GITHUB_RUN_ATTEMPT: '99'}});
+    assert.equal(result.status, 1); assert.match(result.stderr, /Runner Host run ownership mismatch/);
+    assert.doesNotMatch(result.stderr, /circular dependency|is not a function/);
+});
+for (const mutation of ['outside-dist', 'runtime-redirect', 'wrong-owner']) test('production stage CLI refuses output path/owner without replacing Host: ' + mutation, t => {
+    const f = runnerBuildChain(t); cliSuccess(inputCli(f, 'preflight'));
+    let {runtime, token} = freshHostRuntime(f);
+    if (mutation === 'outside-dist') {runtime = path.join(f.root, 'outside'); fs.mkdirSync(runtime); fs.writeFileSync(path.join(runtime, 'preserve.txt'), 'preserve');}
+    if (mutation === 'runtime-redirect') {fs.renameSync(runtime, runtime + '.original'); fs.symlinkSync(runtime + '.original', runtime, process.platform === 'win32' ? 'junction' : 'dir');}
+    if (mutation === 'wrong-owner') token = '0'.repeat(64);
+    const result = inputCli(f, 'stage', runtime, f.sourceCommit, token); assert.equal(result.status, 1);
+    const expected = {'outside-dist': /Source-built Host needs dedicated dist output/, 'runtime-redirect': /Runtime root contains a symlink or junction/, 'wrong-owner': /Build ownership marker does not match/};
+    assert.match(result.stderr, expected[mutation]);
+    assert.doesNotMatch(result.stderr, /circular dependency|is not a function/);
+    if (mutation === 'outside-dist') assert.equal(fs.readFileSync(path.join(runtime, 'preserve.txt'), 'utf8'), 'preserve');
+    else for (const f0 of f.originals) assert.deepEqual(fs.readFileSync(path.join(runtime, f0.path)), f0.bytes);
+});
 test('runner CLI stages matching synthetic receipts in a fresh process without circular initialization warnings', t => {
     const f = stagedRunner(t, false), result = runnerCli(f);
     assert.equal(result.status, 0, result.stderr);
