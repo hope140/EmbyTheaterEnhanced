@@ -70,6 +70,14 @@ node .\electronapp\enhanced\manual-app-update-selftest.js
 
 本分支的 `ci-windows-test-package.ps1` 已在完整runtime验证后、安装器编译前，用现有锁定 Node 自动调用此包内入口，要求 sourceCommit匹配、8项成功、零网络／profile／安装执行及临时文件清理；失败不继续打包。结果存为测试 artifact 的 `manual-app-update-selftest.json`，不增加用户 Release 的五附件合同。此接线尚待集中安排的真实Windows构建执行；Linux源文件或合成manifest试验不冒充已打出的Windows包。
 
+可复现的离线打包门禁回归：
+
+```sh
+node --test tests/manual-app-update-package.test.cjs tests/manual-app-update-package-gate.test.cjs
+```
+
+需要现有 Node 和 PowerShell 7（`pwsh`），不安装工具或获取网络材料。后一个回归从当前 HEAD 的 Git blobs 物化临时源码投影，以合成 manifest 执行打包脚本 AST 中原有的 Node 调用、回执条件及 JSON 写入语句；验证正常保存回执，以及 sourceCommit 不符、模块漂移和 manifest 缺失时不保存成功回执。此项覆盖 PowerShell／Node 接线，未执行完整 builder，不替代 Windows NTFS ADS、原生对话框、GUI 或安装器构建。
+
 最短人工范围（隔离 Windows 测试账户或 VM）：
 
 1. 核对 artifact/sourceCommit/provenance；先只解包核对，不安装到正式客户端目录。现有 profile 基于 `appData`，不能仅凭 Electron `--user-data-dir` 宣称已隔离真实配置。

@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-23 — 手动更新打包接线的可复现离线回归
+
+新增 `manual-app-update-package-gate.test.cjs`，执行 `ci-windows-test-package.ps1` AST 中实际包内 Node 调用、回执校验和 JSON 保存语句，不复制门禁条件。临时产品源码来自准确 HEAD 的 Git blobs，manifest 明确为合成；四项覆盖成功和源码身份／模块字节／manifest 三种拒绝，失败不生成成功回执。新回归4／4、相关完整定向99／99通过，无网络、应用启动、profile或安装执行；使用既有Node24.18.1与PowerShell7.4.13。产品代码和Windows打包脚本未修改，真实Windows整包仍待准确分支与协调构建。
+
 ## 2026-10-23 — 手动更新候选更新到指定发布基线
 
 远端main已只读核对为 `88578c91ab19d44eecddcfae096d37dc917ef1f4`，同名功能分支在重基前不存在。按该准确提交正常重放五项功能提交；PROJECT_STATUS和本页的追加记录发生冲突，均保留双方有效段落，产品源码无冲突且与原候选b399ea5保持字节一致。main新增Release五附件证据块与本功能包内自测块位于不同阶段，自动组合后均保留；package／lock／workflow／正式notes相对指定main不变。原基线／提交测试记录保留历史身份，不冒充新基线结果。后续只正常推送功能分支，不force、不触发workflow、不合main或发布；Windows独立测试包参数仍为release_package=false，等待集中协调。
