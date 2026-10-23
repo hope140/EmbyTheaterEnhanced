@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-23 — FNConnect transport 契约准备
+
+新增 `prototypes/fn-connect/transport-contract.cjs` 与独立全内存测试，保持普通产品来源、Emby 登录/权限和播放 Session 归属。默认 disabled，生产模式拒绝；mock lease 的绝对到期、取消、连接隔离、幂等 close/drain 与错误收口均在本地验证。provider 不遵守取消时仍待其结算，不把本地取消等同于物理隧道中断；无主动续期、重连、缓存或路由切换。16 项单元测试通过（0失败/取消/跳过）。
+
+[技术合同](FN_CONNECT_TRANSPORT.md)逐项记录官方公开能力、第三方协议未知项和继续接入所需资料。Range/206/416 与 WebSocket 等仅验证内存消息传递，真实授权、NAS/Emby、媒体播放、Windows/runtime、安装与网络协议均未执行。接口不明时不构造 URL、不实现生产 adapter、不添加用户功能。
+
 ## 2026-10-23 — v0.4.0整合PR70来源与必要声明
 
 将PR70固定提交6576f5d的16份来源／声明材料整合到既有发布分支，四处文档冲突采用保留双方有效内容。API／page完整MIT、Sizzle原文、VTT版权／固定源／实际差异、Material Icons来源、Socket组件与集成范围及npm36许可命名口径保留；原JSON／CSV证据字节及analysisRef不改。旧“尚未替换Host／仍运行Sharp和ServiceStack”等仅作为研究时点，不恢复旧链；当前源码Host／JSON／ZIP、CEC退役、API维护与业务来源指纹均不变。
