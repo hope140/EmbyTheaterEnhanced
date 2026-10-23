@@ -1,6 +1,6 @@
 # Third-party notices
 
-The runtime-only npm projection preserves all locked source/recovery inputs and35 identified LICENSE/NOTICE/COPYING files. The three additional retired Web files have no in-file notice header; necessary existing notices and historical identities remain. See docs/SCOPED_RUNTIME_PROJECTION.md.
+The runtime-only npm projection preserves all locked source/recovery inputs and36 license-named members (35 under the earlier receipt naming rule, plus the retained emoji-regex/LICENSE-MIT.txt). The three additional retired Web files have no in-file notice header; necessary existing notices and historical identities remain. See docs/SCOPED_RUNTIME_PROJECTION.md.
 
 Snapshot-v2 update: the twenty reviewed old bodies are absent from the current source tree. Their original manifests/hashes, necessary notice texts and existing Git history remain preserved; earlier statements that the original snapshot bodies remain current describe the prior stage. The retired logo contained the observed lettering “by David & NoisyX”; source/permission scope remains unresolved. This removal does not establish new authorship or whole-project license clearance. See docs/SNAPSHOT_V2_MIGRATION.md.
 
@@ -64,6 +64,8 @@ when importing or changing identifiable upstream files.
   download was checked and the V1 fields were unchanged.
 
 ## Runtime components and material gaps
+
+Dated source/notice research update (2026-10-23, before the Host/API retirement and replacement selections below): official Host3.0.20 and its fixed GPL source are identified; Common and Socket have specific integrated-source mappings. Socket’s explicit component MIT attribution is preserved as its own layer, not overwritten by the Emby repository-root GPL. The researched historical Sharp DLL matches later explicitly MIT source behavior and Emby’s declared dependency increments; its Apache/MsPL/UnRAR and other applicable specific terms remain separately scoped. The older observations below retain their historical audit scope. See docs/dependency-research/LICENSE_DECISIONS.md for the dated delivery conditions; exact historical builds are not a new permission condition by themselves.
 
 Three Carnival managed DLLs now match exact official NuGet entries:
 MediaBrowser.Common 3.3.10, ServiceStack.Text 4.5.14 and SimpleInjector 4.0.11.
@@ -348,6 +350,9 @@ Snapshot: docs/redistribution-notices/web/Roboto-LICENSE.txt
 
 Snapshot: docs/redistribution-notices/web/jquery-3.6.0-LICENSE.txt
 
+Source identity: official [jQuery 3.6.0 registry record](https://registry.npmjs.org/jquery/3.6.0), [3.6.0 source package](https://registry.npmjs.org/jquery/-/jquery-3.6.0.tgz), `gitHead=e786e3d9707ffd9b0dd330ca135b66344dcef85a`; package SHA256 `81aba42cff61ab4f21ddf493eb1873dd9702a685eca9a8a182c9d4002846f0f8` and registry SHA512 SRI verified. The selected component is the 3.6.0 slim build, with an inherited re-optimized representation at `electronapp/www/bower_components/jquery/jquery-slim.js` (SHA256 `64aacb8c6c867a1b36fb44d2ce7428c38fc59f5ee6f281c141b39ca719407f90`). The exact old optimizer/import recipe is not claimed. The complete official MIT copyright, permission and warranty notice is retained below without changes.
+
+
 Copyright OpenJS Foundation and other contributors, https://openjsf.org/
 
 Permission is hereby granted, free of charge, to any person obtaining
@@ -369,9 +374,75 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-### Material Icons: official reference text; target import grant still pending
+### Sizzle 2.3.6 bundled inside jQuery 3.6.0 slim: complete upstream MIT notice
 
-Snapshot: docs/redistribution-notices/web/Material-Icons-LICENSE.txt
+Source: official `jquery@3.6.0` package, member `external/sizzle/LICENSE.txt`. The supplied slim distribution identifies Sizzle 2.3.6 (2021-02-16). The archived notice is 1,605 bytes, SHA256 `a078a8f80016416042c2e5f04dbb7f499f0f6deebb086511f3a3b72633a2d761`. This attribution applies to the Sizzle code included in the jQuery slim component; it does not assert that every development-only external directory in the upstream archive is shipped.
+
+Copyright JS Foundation and other contributors, https://js.foundation/
+
+This software consists of voluntary contributions made by many
+individuals. For exact contribution history, see the revision history
+available at https://github.com/jquery/sizzle
+
+The following license applies to all parts of this software except as
+documented below:
+
+====
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+====
+
+All files located in the node_modules and external directories are
+externally maintained libraries used by this software which have their
+own licenses; we recommend you read them, as their terms may differ from
+the terms above.
+
+
+### Mozilla vtt.js-derived code: Apache-2.0 attribution; current extensions separately scoped
+
+Copyright 2013 vtt.js Contributors
+
+Inherited code in `electronapp/www/modules/webvtt/vtt.js` is derived from [Mozilla vtt.js 0.13.0, fixed revision f823de834bc23d65300e58a6d391916bc00bcb75, lib/vtt.js](https://github.com/mozilla/vtt.js/blob/f823de834bc23d65300e58a6d391916bc00bcb75/lib/vtt.js). That source SHA256 is `ef7e920645a51b61f61ca475cd03c2308ed814ff402952e89b9e9e358095bc0b`; its file header licenses that code under Apache License, Version 2.0 and states the absence of warranty.
+
+The exact [same-revision LICENSE](https://github.com/mozilla/vtt.js/blob/f823de834bc23d65300e58a6d391916bc00bcb75/LICENSE) is SHA256 `809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0`. All of its terms already occur verbatim in this file's **“Collected Apache official complete text snapshot; component-specific notices retained above”** section. That complete Apache text is retained for this component as well; no additional duplicate full license is required. The corresponding repository snapshot is `docs/redistribution-notices/web/Apache-2.0.txt` (SHA256 `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30`).
+
+The [fixed upstream AUTHORS](https://github.com/mozilla/vtt.js/blob/f823de834bc23d65300e58a6d391916bc00bcb75/AUTHORS), SHA256 `5dfdc6804033fcdd497f75d73583e0e76e7918a6291452a383e116864e8c382d`, is an explicitly incomplete list of contributors to the Mozilla codebase. It is retained as a source-credit reference, not a claim that those contributors authored every change in the current Web snapshot. The inspected fixed Mozilla tree has no separate NOTICE file.
+
+The current snapshot includes changed cue defaults, native/plain cue conversion, textStyle/forceLTR rendering, layout and AMD/CSS integration. This attribution covers the identified Mozilla-derived expression. It does not represent that Mozilla licensed every later addition, establish authorship or dates for those additions, apply Apache automatically to `vtt.css`, or resolve the GPL-2.0-only/Apache combination scope. Those source/authorization questions remain separately recorded. Existing copyright and license notices must remain with any preferred source distributed for the identified inherited code; actual further changes must be marked accurately with their dates.
+
+
+### Material Icons Round: identified Google font content; Apache-2.0
+
+Snapshot: `docs/redistribution-notices/web/Material-Icons-LICENSE.txt` — full text retained immediately below this entry without changes.
+
+Copyright 2019 Google LLC. All Rights Reserved.
+
+Source identification updated 2026-10-22. The two redistributed font inputs are:
+
+- `electronapp/www/modules/fonts/material-icons/LDItaoyNOAY6Uewc665JcIzCKsKc_M9flwmJ_3.woff`, SHA256 `722f90c26efc5f81c02a3c1294d08f05750e34bd6661e79052aa974ad2f19cd7`.
+- `electronapp/www/modules/fonts/material-icons/LDItaoyNOAY6Uewc665JcIzCKsKc_M9flwmP_3.woff2`, SHA256 `39be4941df6c90be1efba77cc30a01d7daf83e72d32b0f4b79ba257ab4883d65`.
+
+The embedded family is Material Icons Round, build `2022-04-11T03:57:28.928963`. Its complete target glyph outlines, metrics and ligature mappings are covered by the [fixed official Google font](https://github.com/google/material-design-icons/blob/9c7b48a33157fd849c275d05fcf93d0b981f7083/font/MaterialIconsRound-Regular.otf). The [same-revision README](https://github.com/google/material-design-icons/blob/9c7b48a33157fd849c275d05fcf93d0b981f7083/README.md) expressly makes these icons available for incorporation in products under Apache-2.0; the [same-revision LICENSE](https://github.com/google/material-design-icons/blob/9c7b48a33157fd849c275d05fcf93d0b981f7083/LICENSE) is the full text preserved below, SHA256 `58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd`.
+
+These WOFF/WOFF2 inputs are redistributed with their existing bytes. They are not claimed to be byte-identical to the official OTF or to be ETE-created glyphs. The exact historical webfont export/packaging recipe and initial importer have not been reconstructed. This source-identification update does not alter previously released packages.
 
 
                                  Apache License
@@ -5348,3 +5419,154 @@ The preceding unchanged-Model statement describes the earlier Host-only stage.
 The former compatibility variant remains in Git history. Official distribution
 identity does not establish an exact corresponding-source rebuild, remove any
 third-party notice obligations or reattribute the binary to this project.
+
+## ETE source-derived Host and CEC retirement candidate
+
+This scoped selection supersedes earlier unchanged-Host descriptions for the new candidate only. The Host EXE/PDB must be verified source-derived outputs from the pinned Windows Host source revision `708fadc068cbf66ced6aece4a32f3e12bb2c4e13` plus the maintained ETE changes under `native/windows-host/`; they are not unchanged official or Carnival binaries. The original GPLv2 text remains in `native/windows-host/LICENSE.md` and the existing Host notice snapshot. The build records the fixed source identities, modifications, binary dependencies and verified output identities; it does not claim a byte-identical reconstruction of the official original EXE.
+
+The five CEC binaries and private System.Configuration reference DLL leave the new runtime projection, and CEC product source/settings/installation paths are retired. Their historical source inventory and notices are retained. The complete official19-file input remains a recovery/audit input, not a claim that all nineteen are shipped. These changes neither reattribute upstream code to ETE nor settle the separate source/license obligations of Common, Model, SharpCompress, ServiceStack or other retained dependencies. New distribution remains subject to the unified verification and outstanding license/source review.
+
+## Fixed MIT API maintenance candidate
+
+The selected ApiClient, MIT base, transport and events modules are maintained from the fixed `MediaBrowser/Emby.ApiClient.Javascript` commit `fdd0939ac596406ab92274f30fd83d226a677424` and the reviewed ETE contract adaptations. The complete Emby MIT notice is retained next to the runtime modules in `electronapp/www/modules/emby-apiclient/LICENSE.md`; exact source inputs and generation identities are recorded in `src/web-api/selection.json`. The existing connection-manager module is retained with a narrow transport transform; this does not attribute its remaining inherited source to the independent candidate or establish broader source/license clearance.
+
+## Source-derived Host JSON and ZIP adapters
+
+The unified source candidate additionally replaces the Host JSON serializer backend and active ZIP extractor. The two wrapper files retain their original Host GPLv2 terms, and the independently maintained compatibility helpers retain the MIT notice in `native/windows-host/LICENSE-Helpers-MIT.txt`. `Newtonsoft.Json`13.0.4 is a separately pinned MIT dependency by James Newton-King; its net45 DLL identity and recovery input are recorded in `vendor/host-json-manifest.json`, with the complete notice in `native/windows-host/LICENSE-Newtonsoft-MIT.md`.
+
+The new runtime projection excludes `ServiceStack.Text.dll`, its companion XML, and `SharpCompress.dll`. Their original archive inventories and required historical notices remain. The fixed original Host inputs and prior validation receipts are not new unified artifacts. The source-built Host and matching run-bound receipt passed the clean Windows test build at commit 6858c71103605ff66c630f1cd7e1e9fdbdeab000 (run39974691780). The new v0.4.0 release must build and verify its own exact final source; historical component tests or the older test package do not replace that verification or establish general license closure.
+
+## Component-source clarification prepared 2026-10-22
+
+This dated component record supersedes older broad descriptions of an unidentified Carnival Host and wholly untraced player Chinese source. Historical audit observations retain their dates. It does not clear later Web increments, corresponding-source fulfillment or combined-work permissions.
+
+### Historical Emby ApiClient JavaScript source: MIT notice and scope
+
+The official historical source is MediaBrowser/Emby.ApiClient.Javascript at commit `fdd0939ac596406ab92274f30fd83d226a677424`: [apiclient.js](https://github.com/MediaBrowser/Emby.ApiClient.Javascript/blob/fdd0939ac596406ab92274f30fd83d226a677424/apiclient.js), [connectionmanager.js](https://github.com/MediaBrowser/Emby.ApiClient.Javascript/blob/fdd0939ac596406ab92274f30fd83d226a677424/connectionmanager.js), and [the actual LICENSE.md](https://github.com/MediaBrowser/Emby.ApiClient.Javascript/blob/fdd0939ac596406ab92274f30fd83d226a677424/LICENSE.md). The source files' last changes are dated 2020-10-04 and 2020-08-29 respectively; the fixed tree ref's 2023 metadata merge does not date the implementation.
+
+The following exact 1,080-byte notice (SHA256 `bb34faf1413f7a795a10303545f433e04c95cd7b4de04311d45a72634424e4db`) records the MIT basis for that fixed source and identifiable inherited portions. It does not establish MIT applicability to every newer compiled ApiClient/ConnectionManager increment. ETE's current maintenance and the older upstream-derived portions retain their respective attribution; the containing project's GPL declaration does not erase this MIT notice requirement.
+
+The MIT License
+
+Copyright (c) Emby https://emby.media
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+## playmethodhelper: identified official GPL-derived source
+
+Source publisher: MediaBrowser / Emby. Fixed source:
+https://github.com/MediaBrowser/emby-webcomponents/blob/93d3f89bd7d151d7bde09af6dffc0c627901831b/playback/playmethodhelper.js
+Same-commit license:
+https://github.com/MediaBrowser/emby-webcomponents/blob/93d3f89bd7d151d7bde09af6dffc0c627901831b/LICENSE.md
+
+The fixed source package supplies the GNU General Public License, version 2.
+The file has no separate copyright header; no historical author or year is invented here.
+The current selected file is a mechanically transformed derived representation:
+conditional/return expression folding, AMD exports/default initialization and an
+__esModule marker. The original function is strict; the current representation is
+non-strict. The function's conditions, values and ordered reads are accounted for
+by the fixed source; arbitrary JavaScript reflection equivalence is not asserted.
+The historical transformer, modifier and modification date are not known.
+The research preparation date of this notice is not assigned as the historical
+code-modification date. Any future actual edit needs its own truthful change notice.
+
+The paired source representations, difference record and full GPL text are prepared
+locally. Retaining this component does not assign GPL to unrelated newer Web code.
+Current source is retained unchanged; this notice is a draft and is not yet delivered
+in a released package. It does not certify full-work source fulfillment or resolve
+other component permissions/combination questions.
+
+## Official Emby Theater Windows 3.0.20 Host and RefreshRate
+
+The selected Host is the exact official Windows 3.0.20 release member, not a
+newly identified private Carnival modification. Official fixed source/tag:
+https://github.com/MediaBrowser/emby-theater-windows/tree/708fadc068cbf66ced6aece4a32f3e12bb2c4e13
+Official release:
+https://github.com/MediaBrowser/emby-theater-windows/releases/tag/3.0.20
+Same-tree license:
+https://github.com/MediaBrowser/emby-theater-windows/blob/708fadc068cbf66ced6aece4a32f3e12bb2c4e13/LICENSE.md
+
+The fixed source package supplies GNU GPL version 2. Use its actual retained
+copyright notices; this notice does not invent file authors or license all
+bundled third-party libraries under GPL. Separate components retain their terms.
+The full source archive and license have been collected and hash-verified locally.
+Source/build/install and actual distribution arrangements remain component-specific;
+this notice is a draft, not proof that a released package supplies every material.
+
+RefreshRate's fixed source project is Emby.Theater.RefreshRate in that same tree.
+Its current selected binary exactly matches the tree's precompiled RefreshRate.exe.
+The CLR assembly name is RefreshRate; Display Changer is its Win32 resource text.
+The checked source AssemblyInfo resource wording differs; that build/metadata
+history has not been reconstructed. No binary modification by ETE is claimed.
+Source/package relationships, exact hashes and verification limits are recorded
+separately; no product or source file was changed by this notice preparation.
+
+## Player Chinese localization: fixed official source relationships
+
+Official source publisher: MediaBrowser / Emby.
+https://github.com/MediaBrowser/emby-theater-electron/blob/e897adda583b2339f077cb67113e71326a806de0/plugins/mpvplayer/strings/zh-CN.json
+Same fixed source package license (GPL version 2):
+https://github.com/MediaBrowser/emby-theater-electron/blob/e897adda583b2339f077cb67113e71326a806de0/LICENSE.md
+
+Ten of the twenty-four retained inherited values exactly match this official
+source; two others differ only in punctuation. Eleven have different wording
+and LabelGpuApi is absent from this source. These relationships are recorded
+per key; this notice does not assign the old GPL grant to all later wording or
+claim every short label necessarily needs an additional copyright permission.
+Thirteen previously selected maintained revisions remain identified separately.
+The exact official source, full license and current maintained JSON/generator
+inputs have been collected locally. They are not yet a new released notice.
+
+The configuration generator preserves five functional field/type/default
+contracts, while maintained source controls formatting and the first-run comment.
+It does not claim ETE authored the old configuration or localization bodies.
+Existing user profiles are preserved by the missing-profile-only seed contract.
+
+Material Icons NOTICE inventory boundary: the fixed root/font directory membership could not be fully checked because the official tree metadata request was denied. No extra applicable font NOTICE was supplied by the already acquired font, LICENSE or README artifacts; absence from the entire fixed repository is not asserted. The identified Apache source/grant and the exact copyright/license records remain separately established.
+
+### page.js 1.8.3: original MIT copyright and permission
+
+Fixed original source: https://github.com/visionmedia/page.js/tree/1bc93692b0924b686e2207a66e2e73a85e1ab058
+The exact supplied license section is in the fixed Readme.md, not a separately invented LICENSE file:
+https://github.com/visionmedia/page.js/blob/1bc93692b0924b686e2207a66e2e73a85e1ab058/Readme.md#license
+
+This notice preserves the identified original page.js-derived portions. Emby's separately identified GPL-era modifications have their own source/license relation; the notice does not relicense every later route implementation as MIT. The current three-argument registration, metadata, forward/back and query behavior are not established by the original MIT source alone. Provider package declarations are retained as supplied; this is not a new full audit of all upstream development dependencies.
+
+(The MIT License)
+
+Copyright (c) 2012 TJ Holowaychuk &lt;tj@vision-media.ca&gt;
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+'Software'), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

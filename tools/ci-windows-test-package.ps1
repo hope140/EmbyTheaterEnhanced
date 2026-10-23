@@ -29,6 +29,8 @@ function RunNode([string[]]$Arguments) {
 if ($LASTEXITCODE -ne 0) { throw 'Locked JavaScript dependency installation failed.' }
 & (Join-Path $PSScriptRoot 'prepare-ci-build-inputs.ps1')
 if (-not $?) { throw 'Independent CI input preparation failed.' }
+& (Join-Path $PSScriptRoot 'ci-source-built-host.ps1')
+if (-not $?) { throw 'This runner must compile and verify its own source-built Host before packaging.' }
 $libmpvIdentity = & node (Join-Path $PSScriptRoot 'libmpv-input.cjs') validate $root
 if ($LASTEXITCODE -ne 0) { throw 'Restored repository libmpv identity is invalid.' }
 $libmpvIdentity = $libmpvIdentity | ConvertFrom-Json
@@ -97,6 +99,7 @@ if ($ReleasePackage) {
 foreach ($file in @('build-manifest.json','build-input-provenance.json','source-provenance.json','runtime-provenance.json','native-helper-provenance.json')) {
     Copy-Item -LiteralPath (Join-Path $runtime $file) -Destination $output
 }
+Copy-Item -LiteralPath (Join-Path $root '.work/source-built-host') -Destination (Join-Path $output 'host-build-evidence') -Recurse
 [IO.File]::WriteAllText((Join-Path $output 'installer-verification.json'), ($verification | Out-String), [Text.UTF8Encoding]::new($false))
 $libmpvReceipt = [ordered]@{
     schemaVersion=1; sourceCommit=$source; acquisition='repository-archive'
@@ -123,4 +126,20 @@ $summary = [ordered]@{
     releasePublished=$false; installedOrLaunched=$false
 }
 [IO.File]::WriteAllText((Join-Path $output 'test-build-summary.json'), (($summary | ConvertTo-Json -Depth 5) + "`n"), [Text.UTF8Encoding]::new($false))
+if ($ReleasePackage) {
+    $releaseRows = @(@($releaseFiles) + @('SHA256SUMS.txt') | ForEach-Object {
+        $file = Get-Item -LiteralPath (Join-Path $output $_) -ErrorAction Stop
+        if ($file.PSIsContainer -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Ordinary release attachment required.' }
+        [ordered]@{name=$_.ToString();size=[int64]$file.Length;sha256=(Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()}
+    })
+    $expectedSums = (($releaseRows[0..3] | ForEach-Object { $_.sha256 + '  ' + $_.name }) -join "`n") + "`n"
+    if ([IO.File]::ReadAllText((Join-Path $output 'SHA256SUMS.txt')) -cne $expectedSums) { throw 'Release attachment checksum list changed.' }
+    $packageReceipt = Get-Content -LiteralPath (Join-Path $output $releaseRows[1].name) -Raw | ConvertFrom-Json
+    if ($packageReceipt.sourceCommit -cne $source -or $packageReceipt.version -cne $version -or $packageReceipt.installer.fileName -cne $releaseRows[0].name -or $packageReceipt.installer.size -ne $releaseRows[0].size -or $packageReceipt.installer.sha256 -cne $releaseRows[0].sha256) { throw 'Release installer source/identity mismatch.' }
+    if ([IO.File]::ReadAllText((Join-Path $output $releaseRows[2].name)) -cne ($releaseRows[0].sha256 + '  ' + $releaseRows[0].name + "`n")) { throw 'Release installer checksum changed.' }
+    $notesHash = & node -e "process.stdout.write(require('node:crypto').createHash('sha256').update(require('node:child_process').execFileSync('git',['show',process.argv[1]+':docs/RELEASE_NOTES.md'])).digest('hex'));" $source
+    if ($LASTEXITCODE -ne 0 -or $notesHash -cne $releaseRows[3].sha256) { throw 'Release notes differ from the source Git blob.' }
+    $releaseEvidence = [ordered]@{schemaVersion=1;status='passed';sourceCommit=$source;version=$version;runId=$env:GITHUB_RUN_ID;runAttempt=$env:GITHUB_RUN_ATTEMPT;files=$releaseRows;releasePublished=$false}
+    Write-Output ('RELEASE_FILE_EVIDENCE ' + ($releaseEvidence | ConvertTo-Json -Depth 6 -Compress))
+}
 Write-Output ('Verified manual test package ready: ' + [IO.Path]::GetFileName($installer))

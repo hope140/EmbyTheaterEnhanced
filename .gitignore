@@ -8,7 +8,7 @@
 /vendor/electron/
 /vendor/official-reference/
 /vendor/native-helper-inputs/
-# Only these two upstream-derived Web files are directly maintained product sources.
+# Only the explicit maintained Web modules below are product sources.
 /src/electronapp/www/*
 !/src/electronapp/www/modules/
 /src/electronapp/www/modules/*
@@ -16,6 +16,10 @@
 !/src/electronapp/www/modules/toast/
 /src/electronapp/www/modules/emby-apiclient/*
 !/src/electronapp/www/modules/emby-apiclient/apiclient.js
+!/src/electronapp/www/modules/emby-apiclient/mit-apiclient.js
+!/src/electronapp/www/modules/emby-apiclient/transport.js
+!/src/electronapp/www/modules/emby-apiclient/events.js
+!/src/electronapp/www/modules/emby-apiclient/LICENSE.md
 /src/electronapp/www/modules/toast/*
 !/src/electronapp/www/modules/toast/toast.css
 # Generated from locked runtime templates by tools/prepare-preload.cjs; never hand-copy.
@@ -63,3 +67,8 @@ Desktop.ini
 /vendor/inherited-npm/
 
 /vendor/libmpv/
+
+# Verified source-built Host artifacts are restored from the recorded build receipt.
+/vendor/source-built-host/
+
+/vendor/host-json/

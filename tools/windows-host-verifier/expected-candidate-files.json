@@ -1,0 +1,287 @@
+[
+  {
+    "path": "Emby.Theater/App.config",
+    "size": 2057,
+    "sha256": "3b012466f0fae68940ea37700954cb91cacca043513b1d3113807bde0372db36"
+  },
+  {
+    "path": "Emby.Theater/App/ApplicationHost.cs",
+    "size": 34388,
+    "sha256": "63fafeabbab7ee954c93d69761aef38158e4d1d1bdb85cb1831cb0bab59f42e7"
+  },
+  {
+    "path": "Emby.Theater/App/ApplicationPaths.cs",
+    "size": 325,
+    "sha256": "233976055e7008190b5535e461a1f7f2a7f70214b835df4b064870a04a0ff086"
+  },
+  {
+    "path": "Emby.Theater/App/ApplicationUpdater.cs",
+    "size": 2594,
+    "sha256": "237122ee2ef2cec53a36a0dbdd7396328f42fbd30bcefac52fdd6a22b0adc9bc"
+  },
+  {
+    "path": "Emby.Theater/App/DeviceId.cs",
+    "size": 2596,
+    "sha256": "45844251c155bdcdc832e8482555111de3ea7edac41c9933ac51ea1f86f0d376"
+  },
+  {
+    "path": "Emby.Theater/App/ElectronApp.cs",
+    "size": 8808,
+    "sha256": "72e101b2997b78be221043c1628e2aaac8e67da364f12b416117e4a3fd2e73bc"
+  },
+  {
+    "path": "Emby.Theater/App/EnvironmentInfo.cs",
+    "size": 2745,
+    "sha256": "28711ee12c2db694600a2aae8cc3ee60ec1480a1277769748408755b0430c760"
+  },
+  {
+    "path": "Emby.Theater/App/MutexHandle.cs",
+    "size": 780,
+    "sha256": "53c31577562823767c63988240925546cb923cf9b6e94b8982daff28fe929b70"
+  },
+  {
+    "path": "Emby.Theater/App/StartupOptions.cs",
+    "size": 732,
+    "sha256": "1f85eb2a36b7343038fb245addc2d2210fd615027c3b58eae103a737d3e47264"
+  },
+  {
+    "path": "Emby.Theater/App/SystemEvents.cs",
+    "size": 1819,
+    "sha256": "8e56392f992a94e5e4819ab7c62d6778f21ae06be1b813a75d0628287622fc52"
+  },
+  {
+    "path": "Emby.Theater/App/SystemUpdateTask.cs",
+    "size": 5085,
+    "sha256": "60de269e7ea8df219f2840b3ed329f71992e1db71ef3c82acf2facd1ec7b2d97"
+  },
+  {
+    "path": "Emby.Theater/AppBase/BaseApplicationPaths.cs",
+    "size": 4899,
+    "sha256": "77dc2d3b33066f5da49fcf11fc49bc8763b2834615073cca84f73c434a126f0f"
+  },
+  {
+    "path": "Emby.Theater/AppBase/BaseConfigurationManager.cs",
+    "size": 11334,
+    "sha256": "08bebce247b39046e83b38afac768fc7d689a6da66471073debed32e23e2c5a5"
+  },
+  {
+    "path": "Emby.Theater/AppBase/ConfigurationHelper.cs",
+    "size": 2061,
+    "sha256": "7cb49d420a9c756bd97f1af01cb6d3503fba2a58a3e3f3d2c8a4639947b88fde"
+  },
+  {
+    "path": "Emby.Theater/AppContext.cs",
+    "size": 361,
+    "sha256": "e0da1f29fe440113f0dcc1421d52fbcae6730ba96059d5f50d8c32e86ad84cd7"
+  },
+  {
+    "path": "Emby.Theater/Archiving/ZipClient.cs",
+    "size": 6867,
+    "sha256": "1f68aae3bc5bb6b53597e7437cc4507abf9839706dbb4892a5feed7b01db0027"
+  },
+  {
+    "path": "Emby.Theater/Configuration/ConfigurationManager.cs",
+    "size": 1493,
+    "sha256": "97fd533dc35df61a4cabb3ff988e7a79522acfaa718826003e41a0e7934afe32"
+  },
+  {
+    "path": "Emby.Theater/Configuration/ITheaterConfigurationManager.cs",
+    "size": 272,
+    "sha256": "06858b3bc615d8d4ba11c5b8c2ba190289764e5f3f70be7181727353b89d5e4f"
+  },
+  {
+    "path": "Emby.Theater/Cryptography/CryptographyProvider.cs",
+    "size": 955,
+    "sha256": "228ea98a8ba39a70a7e357b85b70615e06b20fd96c47e5ab7471d9f10acb6fa2"
+  },
+  {
+    "path": "Emby.Theater/Emby.Theater.csproj",
+    "size": 13988,
+    "sha256": "77be4d8bbb0633cf538bca08b9f9cda67e40f65b1a10fbbbaeddc2d5a38abfcb"
+  },
+  {
+    "path": "Emby.Theater/HttpClientManager/HttpClientInfo.cs",
+    "size": 356,
+    "sha256": "09256b5a5fb096c55e8cd9f82782455c3ac0562884fe630683288aded08b407c"
+  },
+  {
+    "path": "Emby.Theater/HttpClientManager/HttpClientManager.cs",
+    "size": 33514,
+    "sha256": "e6023bfc0b9fa53c9cbc632d59eb306975e574039bbc805f01573f4cc9c3a878"
+  },
+  {
+    "path": "Emby.Theater/IO/ManagedFileSystem.cs",
+    "size": 36117,
+    "sha256": "bf784776c077037e72785edd0f2790b4e11fc5e38b71e20dfd8a0adfa62f551a"
+  },
+  {
+    "path": "Emby.Theater/IO/MemoryStreamProvider.cs",
+    "size": 651,
+    "sha256": "60724b0c9d024a9587601ecd67de953ff71e8caa39d09f65297dbf0c93ee7a79"
+  },
+  {
+    "path": "Emby.Theater/IO/SharpCifsFileSystem.cs",
+    "size": 9280,
+    "sha256": "fa2a7c1e2cabb755f9cf184cfe46404dfdc182b7c98ed7465329e43eafe708d9"
+  },
+  {
+    "path": "Emby.Theater/Icon.ico",
+    "size": 26694,
+    "sha256": "fec468a54cb59dd5b30a8679c717919b1d29782be5a2089378f666b5e95a9477"
+  },
+  {
+    "path": "Emby.Theater/Logging/ConsoleLogger.cs",
+    "size": 253,
+    "sha256": "bdb2d6ed869a73a5c8d3c40e791a3ac14dc45b10082adb6d30eb633dac93517e"
+  },
+  {
+    "path": "Emby.Theater/Logging/SimpleLogManager.cs",
+    "size": 8385,
+    "sha256": "771a5642e2e356174bd05070823b96bf6760fbf878f471104d70c849d02911fd"
+  },
+  {
+    "path": "Emby.Theater/Logging/UnhandledExceptionWriter.cs",
+    "size": 1486,
+    "sha256": "ccde5717593f346021b962fa099e1ef22d037856ee85ee8839e0576a5e352f82"
+  },
+  {
+    "path": "Emby.Theater/Net/DisposableManagedObjectBase.cs",
+    "size": 2385,
+    "sha256": "5771a5431c2a052102535a787be1c98697a331afa3edeb590920757921eba52e"
+  },
+  {
+    "path": "Emby.Theater/Net/NetAcceptSocket.cs",
+    "size": 2318,
+    "sha256": "4fb99d17139eeaeca3478972048111a2230151745051df3e57b0e069fc5cf2b6"
+  },
+  {
+    "path": "Emby.Theater/Net/SocketFactory.cs",
+    "size": 11159,
+    "sha256": "3399a694bc90ace774624c68e2e99dbb13bde7207cc5d600317b6453c6b1aa78"
+  },
+  {
+    "path": "Emby.Theater/Net/UdpSocket.cs",
+    "size": 8428,
+    "sha256": "f5112994a84c2135ab6d9e174bc4e7b95da9d1c7c1c6b81a86b1ccc0362019d7"
+  },
+  {
+    "path": "Emby.Theater/Networking/NetworkManager.cs",
+    "size": 18345,
+    "sha256": "8fd3d9577b454c1ba2348b15dd8451eae0bcb1747d03776ac71e5f9b32b75e1f"
+  },
+  {
+    "path": "Emby.Theater/Program.cs",
+    "size": 15471,
+    "sha256": "bbff261ac026ba55e39ebb91b767e7cc9ab237dc85538c1c8306ef06b30a2b36"
+  },
+  {
+    "path": "Emby.Theater/Properties/AssemblyInfo.cs",
+    "size": 1356,
+    "sha256": "4e31b882a63c0ae329f811a3dd087fa00414ca108dfe809d62a1915dcc2c96ab"
+  },
+  {
+    "path": "Emby.Theater/Properties/Resources.Designer.cs",
+    "size": 2789,
+    "sha256": "3bcab75a635ee5b6e5c97f33168d5fa432d60e4e6d1594b967f7c3d35af2675b"
+  },
+  {
+    "path": "Emby.Theater/Properties/Resources.resx",
+    "size": 5496,
+    "sha256": "4e124f5a7694ffe813c60601b1b73c53e47536b1f1c0e798d4d55bfc2ca3774f"
+  },
+  {
+    "path": "Emby.Theater/Properties/Settings.Designer.cs",
+    "size": 1069,
+    "sha256": "70cc67a6e942442d1e6bbc9cfeba7cb80556d82476d948071ac13d2f0c54055b"
+  },
+  {
+    "path": "Emby.Theater/Properties/Settings.settings",
+    "size": 242,
+    "sha256": "baba99193fc1787141063b135424b476ff4151beb833883fcb594631f17c0147"
+  },
+  {
+    "path": "Emby.Theater/ScheduledTasks/DailyTrigger.cs",
+    "size": 2772,
+    "sha256": "cbe5505b93f3914f10298da785befde24c0c78ef31d4658f6e48298fa1a49d59"
+  },
+  {
+    "path": "Emby.Theater/ScheduledTasks/IntervalTrigger.cs",
+    "size": 3164,
+    "sha256": "990e09c0165f5817d73c707487f5c3d9c31ebe8e2c261bf4736cf641a70204b1"
+  },
+  {
+    "path": "Emby.Theater/ScheduledTasks/ScheduledTaskWorker.cs",
+    "size": 26110,
+    "sha256": "c01ec22789b449c181567c053bdf4d4487b21db17f467e1050343e57f96b9b2e"
+  },
+  {
+    "path": "Emby.Theater/ScheduledTasks/StartupTrigger.cs",
+    "size": 1855,
+    "sha256": "ec7627fb04f5e302eb3f8b9617cdb69f643836fc5b3c3cfecfe0d78ce42e357f"
+  },
+  {
+    "path": "Emby.Theater/ScheduledTasks/SystemEventTrigger.cs",
+    "size": 2649,
+    "sha256": "82c3a6531f5b10d4d442c78f89fe034d941637398dda6f187980de409616595a"
+  },
+  {
+    "path": "Emby.Theater/ScheduledTasks/TaskManager.cs",
+    "size": 11075,
+    "sha256": "9c8a6920a5576253b8bb85939026a6ec6ce1fd2114312a420c8ab577b03a9a2e"
+  },
+  {
+    "path": "Emby.Theater/ScheduledTasks/WeeklyTrigger.cs",
+    "size": 3468,
+    "sha256": "441997e73df32bcaf46e4b38d953912c86b64ceb6718d6bc9d03945295362495"
+  },
+  {
+    "path": "Emby.Theater/Serialization/JsonSerializer.cs",
+    "size": 7610,
+    "sha256": "8f7852b80b4d31cd6859fc56184776d58dff091c2e463d57f24c5879b4b19f0c"
+  },
+  {
+    "path": "Emby.Theater/Serialization/XmlSerializer.cs",
+    "size": 4208,
+    "sha256": "7c732c65876dc49b4b3aa03acb2df76dc4bcabaae91ba6b35c4ad4f048726da8"
+  },
+  {
+    "path": "Emby.Theater/TheaterServer.cs",
+    "size": 5141,
+    "sha256": "f7decd047951adb578d4b2982e80f15ae7a495334e2dde5d9062139cd7313043"
+  },
+  {
+    "path": "Emby.Theater/Updates/InstallationManager.cs",
+    "size": 28915,
+    "sha256": "d1ef08a9a3163813eb3d55b4f00e4b56c026dd7b41258f726e03fbeb17491090"
+  },
+  {
+    "path": "Emby.Theater/app.manifest",
+    "size": 3200,
+    "sha256": "0b338c45a96b3b3567e0d2fcb50f969d9f4e9df2a4f4f21c57615a841aa0869c"
+  },
+  {
+    "path": "Emby.Theater/packages.config",
+    "size": 300,
+    "sha256": "5775a0e475005542180b1e7de6c9251b961b9a3733013f8a809482a3e0b81f17"
+  },
+  {
+    "path": "LICENSE.md",
+    "size": 18014,
+    "sha256": "f371b80469fb235bc500ec29e0e85b682d4a6157a158567d828ff0be544d4f1d"
+  },
+  {
+    "path": "README.md",
+    "size": 323,
+    "sha256": "bbb39e190eaa36c8c2ce718bbf8d6ac6bad7c344c099a34da4dd196e63d2c54b"
+  },
+  {
+    "path": "Emby.Theater/Archiving/FrameworkZipExtractor.cs",
+    "size": 11389,
+    "sha256": "30436b6d7b4772dd66fa0fdf893e2237764c784fc5b72178240e67c70e0c185c"
+  },
+  {
+    "path": "Emby.Theater/Serialization/CompatibleJsonCodec.cs",
+    "size": 12614,
+    "sha256": "a96164d347982b5a590bf7f929d03d0cde28b71e928c327bb3522ce7cafe538c"
+  }
+]

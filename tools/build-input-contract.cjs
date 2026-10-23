@@ -4,15 +4,30 @@ const fs = require('node:fs');
 const path = require('node:path');
 const cp = require('node:child_process');
 const {hashTrackedTextFile} = require('./tracked-file-hash.cjs');
+const verifier = require('./host-verifier-input.cjs');
 
 // Only consumed metadata, generators, validators and delivered notices belong
 // here. Ordinary product source is already materialized from commit blobs.
 const NOTICE_PATHS = Object.freeze([
-    'LICENSE', 'THIRD_PARTY_NOTICES.md', 'docs/LICENSING.md', 'docs/SOURCE_MATERIALS.md', 'docs/WINDOWS_HOST_INPUT.md', 'docs/INHERITED_NPM_INPUT.md', 'docs/RUNTIME_TEMPLATES.md', 'docs/LIBMPV_INPUT.md', 'docs/COMPATIBILITY_RESOURCES_INPUT.md', 'docs/SMALL_RUNTIME_INPUT.md', 'docs/MODEL_COMPATIBILITY_INPUT.md'
+    'LICENSE', 'THIRD_PARTY_NOTICES.md', 'src/electronapp/www/modules/emby-apiclient/LICENSE.md', 'native/windows-host/LICENSE.md', 'native/windows-host/LICENSE-Helpers-MIT.txt', 'native/windows-host/LICENSE-Newtonsoft-MIT.md', 'native/windows-host/README.md', 'docs/LICENSING.md', 'docs/SOURCE_MATERIALS.md', 'docs/WINDOWS_HOST_INPUT.md', 'docs/INHERITED_NPM_INPUT.md', 'docs/RUNTIME_TEMPLATES.md', 'docs/LIBMPV_INPUT.md', 'docs/COMPATIBILITY_RESOURCES_INPUT.md', 'docs/SMALL_RUNTIME_INPUT.md', 'docs/MODEL_COMPATIBILITY_INPUT.md'
 ]);
 const INPUT_PATHS = Object.freeze([
-    'package.json', 'package-lock.json', 'src/config/system-defaults.json',
+    'package.json', 'package-lock.json', 'src/web-api/selection.json', 'src/config/system-defaults.json',
     'src/localization/mpvplayer/zh-CN.json',
+    'src/web-api/INPUT_MANIFEST.json',
+    'src/web-api/LICENSE.md',
+    'src/web-api/licensed/LICENSE.md',
+    'src/web-api/licensed/apiclient.js',
+    'src/web-api/licensed/connectionmanager.js',
+    'src/web-api/licensed/events.js',
+    'src/web-api/src/apiclient.js',
+    'src/web-api/src/connectionmanager.js',
+    'src/web-api/src/events.js',
+    'src/web-api/src/mit-apiclient.js',
+    'src/web-api/src/mit-connectionmanager.js',
+    'src/web-api/src/transport.js',
+    'src/web-api/tools/build-amd.mjs',
+    'src/web-api/tools/prepare-base.py',
     'vendor/runtime-manifest.json', 'vendor/electron-runtime-manifest.json',
     'vendor/web-snapshot-manifest.json',
     'vendor/snapshot-history/web-snapshot-v1-manifest.json',
@@ -22,6 +37,22 @@ const INPUT_PATHS = Object.freeze([
     'tools/templates/runtime/package.json','tools/templates/runtime/preload.js','tools/templates/runtime/Emby.Theater.exe.config',
     'vendor/native-helper-manifest.json', 'vendor/toolchain-manifest.json',
     'installer/EmbyTheaterEnhanced.iss', 'installer/installer-guard.iss',
+    'installer/retired-runtime.iss', 'installer/retired-runtime-identities.iss', 'installer/retired-runtime.json',
+    'native/windows-host/change-manifest.json', 'native/windows-host/upstream-source-manifest.json',
+    'native/windows-host/host-retirement.patch', 'native/windows-host/Apply-SourceChanges.ps1',
+    'native/windows-host/changes/Emby.Theater/Program.cs', 'native/windows-host/changes/Emby.Theater/Emby.Theater.csproj',
+    'native/windows-host/changes/Emby.Theater/App/ApplicationHost.cs', 'native/windows-host/changes/Emby.Theater/App/ElectronApp.cs',
+    'tools/source-built-host-input.cjs', 'tools/host-json-input.cjs', 'tools/prepare-host-json.py', 'vendor/host-json-manifest.json', 'native/windows-host/json-zip-input.json',
+    'tools/ci-source-built-host-plan.cjs', 'tools/ci-source-built-host.ps1', 'tools/runner-host-receipt.cjs',
+    'tools/Test-SourceBuiltHost.ps1', 'tools/host-verifier-input.cjs', ...verifier.PATHS,
+    'tools/windows-host-build/Build-UnifiedHost.ps1', 'tools/windows-host-build/Get-SourceIdentity.ps1',
+    'tools/windows-host-build/New-VerifiedRuntime.ps1', 'tools/windows-host-build/EXPECTED-ASSEMBLY-REFERENCES.json',
+    'tools/windows-host-build/EXPECTED-SOURCE-IDENTITY.json', 'tools/windows-host-build/REFERENCES.json',
+    'tools/windows-host-build/VERIFIED-RUNTIME.schema.json',
+    'native/windows-host/changes/Emby.Theater/Serialization/JsonSerializer.cs',
+    'native/windows-host/changes/Emby.Theater/Serialization/CompatibleJsonCodec.cs',
+    'native/windows-host/changes/Emby.Theater/Archiving/ZipClient.cs',
+    'native/windows-host/changes/Emby.Theater/Archiving/FrameworkZipExtractor.cs',
     'installer/languages/ChineseSimplified.isl',
     'installer/languages/LICENSE.txt', 'installer/languages/SOURCE.md',
     'installer/languages/SHA256SUMS.txt',
@@ -29,7 +60,7 @@ const INPUT_PATHS = Object.freeze([
     'tools/build-input-provenance.cjs', 'tools/copy-tracked-product-sources.cjs',
     'tools/build-toolchains.cjs', 'tools/build-toolchains.lock.json',
     'tools/tracked-file-hash.cjs', 'tools/prepare-preload.cjs',
-    'tools/prepare-web-overlays.cjs', 'tools/patch-videoosd-lifecycle.cjs',
+    'tools/prepare-web-overlays.cjs', 'tools/patch-videoosd-lifecycle.cjs', 'tools/patch-connectionmanager-transport.cjs',
     'tools/patch-externalplayer-residue.cjs', 'tools/patch-item-controls.cjs',
     'tools/patch-content-width.cjs',
     'tools/patch-actionsheet-layout.cjs',
@@ -130,8 +161,17 @@ function inspect(rootArg, sourceCommit) {
         const match = /^(100644|100755) blob ([0-9a-f]{40})\t(.+)$/.exec(line);
         if (!match || match[3] !== relativePath) throw new Error('Build input must be a committed regular blob: ' + relativePath);
         physicalInput(root, relativePath);
+        let blob = committed?.blobs.get(relativePath);
+        if (verifier.BINARY_PATHS.includes(relativePath)) {
+            if (blob === undefined) {
+                const result = cp.spawnSync('git', ['-C', root, 'show', 'HEAD:' + relativePath], {encoding: null, maxBuffer: 16 * 1024 * 1024});
+                if (result.error || result.status !== 0) throw new Error('Unable to read committed build inputs.');
+                blob = result.stdout;
+            }
+            if (!fs.readFileSync(path.join(root, relativePath)).equals(blob)) throw new Error('Tracked generator differs from HEAD: ' + relativePath);
+        }
         return {path: relativePath, gitBlobObjectId: match[2],
-            sha256: hashTrackedTextFile(root, relativePath, committed?.blobs.get(relativePath)).toLowerCase()};
+            sha256: hashTrackedTextFile(root, relativePath, blob).toLowerCase()};
     });
     return {schemaVersion: 1, sourceCommit: sourceCommit.toLowerCase(),
         relation: 'HEAD Git blobs; working text must match after CRLF-to-LF normalization', files};
@@ -143,8 +183,8 @@ function materializeNotices(root, runtime, contract) {
     return require('./build-input-provenance.cjs').materializeNotices(root, runtime, contract);
 }
 
+module.exports = {INPUT_PATHS, NOTICE_PATHS, inspect, materializeNotices};
 if (require.main === module) {
     const [root, sourceCommit] = process.argv.slice(2);
     process.stdout.write(JSON.stringify(inspect(root, sourceCommit)) + '\n');
 }
-module.exports = {INPUT_PATHS, NOTICE_PATHS, inspect, materializeNotices};

@@ -1,0 +1,1005 @@
+diff --git a/Emby.Theater/App/ApplicationHost.cs b/Emby.Theater/App/ApplicationHost.cs
+index 496624f..09c3241 100644
+--- a/Emby.Theater/App/ApplicationHost.cs
++++ b/Emby.Theater/App/ApplicationHost.cs
+@@ -56,7 +56,6 @@ using Emby.Theater.Networking;
+ using Emby.Theater.ScheduledTasks;
+ using Emby.Theater.Serialization;
+ using Emby.Theater.Updates;
+-using ServiceStack;
+ 
+ namespace Emby.Theater.App
+ {
+@@ -76,13 +75,7 @@ namespace Emby.Theater.App
+         /// <value><c>true</c> if this instance can self update; otherwise, <c>false</c>.</value>
+         public bool CanSelfUpdate
+         {
+-            get
+-            {
+-#if DEBUG
+-                return false;
+-#endif
+-                return true;
+-            }
++            get { return false; }
+         }
+ 
+         /// <summary>
+@@ -533,16 +526,6 @@ namespace Emby.Theater.App
+ 
+         private IJsonSerializer CreateJsonSerializer()
+         {
+-            try
+-            {
+-                // https://github.com/ServiceStack/ServiceStack/blob/master/tests/ServiceStack.WebHost.IntegrationTests/Web.config#L4
+-                Licensing.RegisterLicense("1001-e1JlZjoxMDAxLE5hbWU6VGVzdCBCdXNpbmVzcyxUeXBlOkJ1c2luZXNzLEhhc2g6UHVNTVRPclhvT2ZIbjQ5MG5LZE1mUTd5RUMzQnBucTFEbTE3TDczVEF4QUNMT1FhNXJMOWkzVjFGL2ZkVTE3Q2pDNENqTkQyUktRWmhvUVBhYTBiekJGUUZ3ZE5aZHFDYm9hL3lydGlwUHI5K1JsaTBYbzNsUC85cjVJNHE5QVhldDN6QkE4aTlvdldrdTgyTk1relY2eis2dFFqTThYN2lmc0JveHgycFdjPSxFeHBpcnk6MjAxMy0wMS0wMX0=");
+-            }
+-            catch
+-            {
+-                // Failing under mono
+-            }
+-
+             return new JsonSerializer(FileSystemManager, LogManager.GetLogger("JsonSerializer"));
+         }
+ 
+@@ -847,10 +830,10 @@ namespace Emby.Theater.App
+         /// <returns>IEnumerable{Assembly}.</returns>
+         protected IEnumerable<Assembly> GetComposablePartAssemblies()
+         {
+-            // Include composable parts in the Model assembly 
++            // Include composable parts in the Model assembly
+             yield return typeof(SystemInfo).Assembly;
+ 
+-            // Include composable parts in the Common assembly 
++            // Include composable parts in the Common assembly
+             yield return typeof(IApplicationPaths).Assembly;
+ 
+             // Include composable parts in the running assembly
+@@ -910,9 +893,7 @@ namespace Emby.Theater.App
+         /// <returns>Task{CheckForUpdateResult}.</returns>
+         public Task<CheckForUpdateResult> CheckForApplicationUpdate(CancellationToken cancellationToken, IProgress<double> progress)
+         {
+-            var updateLevel = SystemUpdateLevel;
+-            return new GithubUpdater(HttpClient, JsonSerializer)
+-                .CheckForUpdateResult("MediaBrowser", "Emby.Theater.Windows", ApplicationVersion, updateLevel, Program.UpdatePackageName, "emby.theater", Program.DownloadedPackageFilename, TimeSpan.FromTicks(0), cancellationToken);
++            return Task.FromResult(new CheckForUpdateResult { IsUpdateAvailable = false });
+         }
+ 
+         /// <summary>
+@@ -922,11 +903,9 @@ namespace Emby.Theater.App
+         /// <param name="cancellationToken">The cancellation token.</param>
+         /// <param name="progress">The progress.</param>
+         /// <returns>Task.</returns>
+-        public async Task UpdateApplication(PackageVersionInfo package, CancellationToken cancellationToken, IProgress<double> progress)
++        public Task UpdateApplication(PackageVersionInfo package, CancellationToken cancellationToken, IProgress<double> progress)
+         {
+-            await InstallationManager.InstallPackage(package, false, progress, cancellationToken).ConfigureAwait(false);
+-
+-            OnApplicationUpdated(package);
++            return Task.FromException(new NotSupportedException("Legacy Host self-update is disabled in ETE."));
+         }
+ 
+         protected void ConfigureAutoRunAtStartup(bool autorun)
+diff --git a/Emby.Theater/App/ElectronApp.cs b/Emby.Theater/App/ElectronApp.cs
+index eccfa60..c1d7c00 100644
+--- a/Emby.Theater/App/ElectronApp.cs
++++ b/Emby.Theater/App/ElectronApp.cs
+@@ -51,16 +51,6 @@ namespace Emby.Theater.App
+ 
+             var dataPath = Path.Combine(_appPaths.DataPath, "electron");
+ 
+-            var cecPath = Path.Combine(Path.GetDirectoryName(Program.ApplicationPath), "cec");
+-            if (is64BitElectron)
+-            {
+-                cecPath = Path.Combine(cecPath, "cec-client.x64.exe");
+-            }
+-            else
+-            {
+-                cecPath = Path.Combine(cecPath, "cec-client.exe");
+-            }
+-
+             var process = new Process
+             {
+                 StartInfo = new ProcessStartInfo
+@@ -68,7 +58,7 @@ namespace Emby.Theater.App
+                     UseShellExecute = false,
+ 
+                     FileName = electronExePath,
+-                    Arguments = string.Format("\"{0}\" \"{1}\" \"{2}\" \"{3}\"", electronAppPath, dataPath, cecPath, mpvExePath)
++                    Arguments = string.Format("\"{0}\" \"{1}\" \"{2}\"", electronAppPath, dataPath, mpvExePath)
+                 },
+ 
+                 EnableRaisingEvents = true,
+@@ -222,8 +212,8 @@ namespace Emby.Theater.App
+     /// </summary>
+     public class Win32
+     {
+-        // The WM_COMMAND message is sent when the user selects a command item from 
+-        // a menu, when a control sends a notification message to its parent window, 
++        // The WM_COMMAND message is sent when the user selects a command item from
++        // a menu, when a control sends a notification message to its parent window,
+         // or when an accelerator keystroke is translated.
+         public const int WM_KEYDOWN = 0x100;
+         public const int WM_KEYUP = 0x101;
+@@ -242,7 +232,7 @@ namespace Emby.Theater.App
+         [DllImport("User32.dll")]
+         public static extern int FindWindow(string strClassName, string strWindowName);
+ 
+-        // The FindWindowEx function retrieves a handle to a window whose class name 
++        // The FindWindowEx function retrieves a handle to a window whose class name
+         // and window name match the specified strings.
+         // The function searches child windows, beginning with the one following the
+         // specified child window.
+@@ -255,9 +245,9 @@ namespace Emby.Theater.App
+             string strWindowName);
+ 
+ 
+-        // The SendMessage function sends the specified message to a window or windows. 
++        // The SendMessage function sends the specified message to a window or windows.
+         // It calls the window procedure for the specified window and does not return
+-        // until the window procedure has processed the message. 
++        // until the window procedure has processed the message.
+         [DllImport("User32.dll")]
+         public static extern Int32 SendMessage(
+             int hWnd,               // handle to destination window
+diff --git a/Emby.Theater/Archiving/FrameworkZipExtractor.cs b/Emby.Theater/Archiving/FrameworkZipExtractor.cs
+new file mode 100644
+index 0000000..da27ed9
+--- /dev/null
++++ b/Emby.Theater/Archiving/FrameworkZipExtractor.cs
+@@ -0,0 +1,211 @@
++// SPDX-License-Identifier: MIT
++// New isolated ETE maintenance candidate. See LICENSE-MIT.txt.
++using System;
++using System.Collections.Generic;
++using System.Globalization;
++using System.IO;
++using System.IO.Compression;
++using System.Text;
++
++namespace Emby.Theater.Archiving
++{
++    // ZIP32, unencrypted Stored/Deflate only. This is not the old multi-format factory.
++    internal static class FrameworkZipExtractor
++    {
++        private sealed class Record
++        {
++            internal int Index;
++            internal long Offset;
++            internal string Name;
++        }
++
++        internal static void Extract(Stream source, string targetPath, bool overwrite)
++        {
++            if (source == null) throw new ArgumentNullException("source");
++            if (targetPath == null) throw new ArgumentNullException("targetPath");
++            // The caller retains ownership. Buffering also supports a non-seekable input.
++            // Unlike the old forward reader, this consumes the remaining stream to EOF.
++            using (var buffered = new MemoryStream())
++            {
++                source.CopyTo(buffered);
++                buffered.Position = 0;
++                var records = ReadRecords(buffered);
++                var root = Path.GetFullPath(targetPath);
++                var prefix = root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
++                    + Path.DirectorySeparatorChar;
++                var destinations = new List<string>();
++                // Validate every destination before creating output, including Unicode overrides.
++                foreach (var record in records)
++                {
++                    var destination = Destination(root, prefix, record.Name);
++                    RejectExistingReparsePoints(destination);
++                    destinations.Add(destination);
++                }
++                buffered.Position = 0;
++                var encoding = Encoding.GetEncoding(CultureInfo.CurrentCulture.TextInfo.OEMCodePage);
++                using (var archive = new ZipArchive(buffered, ZipArchiveMode.Read, true, encoding))
++                {
++                    if (archive.Entries.Count != records.Count)
++                        throw new InvalidDataException("ZIP entry count mismatch.");
++                    for (int i = 0; i < records.Count; i++)
++                    {
++                        var record = records[i];
++                        var path = destinations[i];
++                        RejectExistingReparsePoints(path);
++                        // Match the old local-header reader's directory convention.
++                        if (record.Name.EndsWith("/", StringComparison.Ordinal))
++                        {
++                            Directory.CreateDirectory(path);
++                            continue;
++                        }
++                        Directory.CreateDirectory(Path.GetDirectoryName(path));
++                        using (var input = archive.Entries[record.Index].Open())
++                        using (var output = new FileStream(path, overwrite ? FileMode.Create : FileMode.CreateNew,
++                            FileAccess.Write, FileShare.None))
++                            input.CopyTo(output);
++                    }
++                }
++            }
++        }
++
++        private static string Destination(string root, string prefix, string name)
++        {
++            // Treat both separators as Windows separators even in isolated Linux tests.
++            var portable = name.Replace('\\', '/');
++            if (portable.Length == 0 || portable.StartsWith("/", StringComparison.Ordinal)
++                || portable.IndexOf(':') >= 0)
++                throw new InvalidDataException("Unsupported rooted or empty ZIP entry path.");
++            var path = Path.GetFullPath(Path.Combine(root, portable.Replace('/', Path.DirectorySeparatorChar)));
++            if (!path.StartsWith(prefix, Path.DirectorySeparatorChar == '\\'
++                ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
++                throw new InvalidDataException("ZIP entry leaves the destination directory.");
++            return path;
++        }
++
++        private static void RejectExistingReparsePoints(string path)
++        {
++            // Reject existing symlinks/junctions, including destination ancestors.
++            // This is an observation, not a race-free filesystem transaction.
++            for (string current = path; !string.IsNullOrEmpty(current); current = Path.GetDirectoryName(current))
++            {
++                try
++                {
++                    if ((File.GetAttributes(current) & FileAttributes.ReparsePoint) != 0)
++                        throw new InvalidDataException("ZIP destination crosses an existing reparse point.");
++                }
++                catch (FileNotFoundException) { }
++                catch (DirectoryNotFoundException) { }
++            }
++        }
++
++        private static List<Record> ReadRecords(Stream stream)
++        {
++            using (var reader = new BinaryReader(stream, Encoding.UTF8, true))
++            {
++                long end = FindEnd(reader);
++                stream.Position = end + 4;
++                ushort disk = reader.ReadUInt16(), centralDisk = reader.ReadUInt16();
++                ushort diskCount = reader.ReadUInt16(), count = reader.ReadUInt16();
++                uint size = reader.ReadUInt32(), offset = reader.ReadUInt32();
++                if (disk != 0 || centralDisk != 0 || diskCount != count)
++                    throw new NotSupportedException("Split ZIP archives are outside this candidate.");
++                if (count == ushort.MaxValue || size == uint.MaxValue || offset == uint.MaxValue)
++                    throw new NotSupportedException("ZIP64 is outside this candidate.");
++                long centralEnd = (long)offset + size;
++                if (centralEnd > end) throw new InvalidDataException("Invalid ZIP central directory bounds.");
++                stream.Position = offset;
++                var records = new List<Record>();
++                var usedOffsets = new HashSet<long>();
++                for (int index = 0; index < count; index++)
++                {
++                    Require(reader, centralEnd, 46);
++                    if (reader.ReadUInt32() != 0x02014b50)
++                        throw new InvalidDataException("Invalid ZIP central record.");
++                    stream.Position += 4;
++                    ushort flags = reader.ReadUInt16(), method = reader.ReadUInt16();
++                    stream.Position += 8;
++                    uint compressed = reader.ReadUInt32(), uncompressed = reader.ReadUInt32();
++                    ushort nameLength = reader.ReadUInt16(), extraLength = reader.ReadUInt16();
++                    ushort commentLength = reader.ReadUInt16(), startDisk = reader.ReadUInt16();
++                    stream.Position += 6;
++                    uint local = reader.ReadUInt32();
++                    if (compressed == uint.MaxValue || uncompressed == uint.MaxValue || local == uint.MaxValue)
++                        throw new NotSupportedException("ZIP64 is outside this candidate.");
++                    if (startDisk != 0 || (flags & 1) != 0 || (flags & 0x40) != 0)
++                        throw new NotSupportedException("Encrypted or split ZIP is outside this candidate.");
++                    if (method != 0 && method != 8)
++                        throw new NotSupportedException("ZIP method " + method + " is outside Stored/Deflate.");
++                    Require(reader, centralEnd, (long)nameLength + extraLength + commentLength);
++                    stream.Position += (long)nameLength + extraLength + commentLength;
++                    long next = stream.Position;
++                    if (!usedOffsets.Add(local)) throw new InvalidDataException("Duplicate ZIP local-header offset.");
++                    var name = LocalName(reader, local, offset, flags, method);
++                    records.Add(new Record { Index = index, Offset = local, Name = name });
++                    stream.Position = next;
++                }
++                if (stream.Position != centralEnd)
++                    throw new NotSupportedException("Extra central-directory records are outside this candidate.");
++                // Sharp's forward reader visits local headers, not central-directory order.
++                records.Sort((a, b) => a.Offset.CompareTo(b.Offset));
++                return records;
++            }
++        }
++
++        private static string LocalName(BinaryReader reader, long offset, long centralOffset,
++            ushort centralFlags, ushort centralMethod)
++        {
++            var stream = reader.BaseStream;
++            stream.Position = offset;
++            Require(reader, centralOffset, 30);
++            if (reader.ReadUInt32() != 0x04034b50) throw new InvalidDataException("Invalid ZIP local header.");
++            stream.Position += 2;
++            ushort flags = reader.ReadUInt16(), method = reader.ReadUInt16();
++            if (flags != centralFlags || method != centralMethod)
++                throw new InvalidDataException("Conflicting local/central ZIP flags or method.");
++            stream.Position += 16;
++            ushort nameLength = reader.ReadUInt16(), extraLength = reader.ReadUInt16();
++            Require(reader, centralOffset, (long)nameLength + extraLength);
++            byte[] name = reader.ReadBytes(nameLength), extra = reader.ReadBytes(extraLength);
++            var encoding = (flags & 0x800) != 0 ? Encoding.UTF8
++                : Encoding.GetEncoding(CultureInfo.CurrentCulture.TextInfo.OEMCodePage);
++            string result = encoding.GetString(name);
++            // Original target uses the first local 0x7075 field, without version/CRC validation.
++            // This is independently written metadata glue, not copied Sharp decompression code.
++            for (int i = 0; i < extra.Length;)
++            {
++                if (extra.Length - i < 4) throw new InvalidDataException("Truncated ZIP extra header.");
++                int tag = extra[i] | extra[i + 1] << 8;
++                int length = extra[i + 2] | extra[i + 3] << 8;
++                i += 4;
++                if (length > extra.Length - i) throw new InvalidDataException("Truncated ZIP extra body.");
++                if (tag == 0x7075)
++                {
++                    if (length < 5) throw new InvalidDataException("Truncated Unicode ZIP path.");
++                    return Encoding.UTF8.GetString(extra, i + 5, length - 5);
++                }
++                i += length;
++            }
++            return result;
++        }
++
++        private static long FindEnd(BinaryReader reader)
++        {
++            var stream = reader.BaseStream;
++            long minimum = Math.Max(0, stream.Length - 65557);
++            for (long i = stream.Length - 22; i >= minimum; i--)
++            {
++                stream.Position = i;
++                if (reader.ReadUInt32() != 0x06054b50) continue;
++                stream.Position = i + 20;
++                if (i + 22 + reader.ReadUInt16() == stream.Length) return i;
++            }
++            throw new InvalidDataException("ZIP end record not found.");
++        }
++
++        private static void Require(BinaryReader reader, long end, long length)
++        {
++            if (length < 0 || reader.BaseStream.Position > end - length)
++                throw new InvalidDataException("Truncated ZIP metadata.");
++        }
++    }
++}
+diff --git a/Emby.Theater/Archiving/ZipClient.cs b/Emby.Theater/Archiving/ZipClient.cs
+index a671234..4a69ccf 100644
+--- a/Emby.Theater/Archiving/ZipClient.cs
++++ b/Emby.Theater/Archiving/ZipClient.cs
+@@ -1,11 +1,8 @@
+-﻿using System.IO;
++// Derived from official Host 708fadc068cbf66ced6aece4a32f3e12bb2c4e13.
++// Original Host GPL-2.0 terms remain; new changes offered under MIT as well.
++// Isolated ZIP-only candidate: not equivalent to the old multi-format ExtractAll.
++using System.IO;
+ using MediaBrowser.Model.IO;
+-using SharpCompress.Archive.Rar;
+-using SharpCompress.Archive.SevenZip;
+-using SharpCompress.Archive.Tar;
+-using SharpCompress.Common;
+-using SharpCompress.Reader;
+-using SharpCompress.Reader.Zip;
+ 
+ namespace Emby.Theater.Archiving
+ {
+@@ -43,17 +40,7 @@ namespace Emby.Theater.Archiving
+         /// <param name="overwriteExistingFiles">if set to <c>true</c> [overwrite existing files].</param>
+         public void ExtractAll(Stream source, string targetPath, bool overwriteExistingFiles)
+         {
+-            using (var reader = ReaderFactory.Open(source))
+-            {
+-                var options = ExtractOptions.ExtractFullPath;
+-
+-                if (overwriteExistingFiles)
+-                {
+-                    options |= ExtractOptions.Overwrite;
+-                }
+-
+-                reader.WriteAllToDirectory(targetPath, options);
+-            }
++            FrameworkZipExtractor.Extract(source, targetPath, overwriteExistingFiles);
+         }
+ 
+         public void ExtractAllFromZip(Stream source, string targetPath, bool overwriteExistingFiles)
+diff --git a/Emby.Theater/Emby.Theater.csproj b/Emby.Theater/Emby.Theater.csproj
+index 0f74faf..5e3b6f9 100644
+--- a/Emby.Theater/Emby.Theater.csproj
++++ b/Emby.Theater/Emby.Theater.csproj
+@@ -73,14 +73,6 @@
+       <HintPath>..\packages\MediaBrowser.Common.3.3.10\lib\netstandard1.3\MediaBrowser.Model.dll</HintPath>
+       <Private>True</Private>
+     </Reference>
+-    <Reference Include="ServiceStack.Text, Version=4.5.14.0, Culture=neutral, processorArchitecture=MSIL">
+-      <HintPath>..\packages\ServiceStack.Text.4.5.14\lib\net45\ServiceStack.Text.dll</HintPath>
+-      <Private>True</Private>
+-    </Reference>
+-    <Reference Include="SharpCompress, Version=0.10.3.0, Culture=neutral, PublicKeyToken=beaf6f427e128133, processorArchitecture=MSIL">
+-      <SpecificVersion>False</SpecificVersion>
+-      <HintPath>..\ThirdParty\SharpCompress\SharpCompress.dll</HintPath>
+-    </Reference>
+     <Reference Include="SimpleInjector, Version=4.0.11.0, Culture=neutral, PublicKeyToken=984cb50dea722e99, processorArchitecture=MSIL">
+       <HintPath>..\packages\SimpleInjector.4.0.11\lib\net45\SimpleInjector.dll</HintPath>
+       <Private>True</Private>
+@@ -89,6 +81,11 @@
+       <SpecificVersion>False</SpecificVersion>
+       <HintPath>..\ThirdParty\emby\SocketHttpListener.dll</HintPath>
+     </Reference>
++    <Reference Include="Newtonsoft.Json">
++      <HintPath>$(NewtonsoftJsonReferencePath)</HintPath>
++      <Private>True</Private>
++    </Reference>
++    <Reference Include="System.IO.Compression"><Private>False</Private></Reference>
+     <Reference Include="System" />
+     <Reference Include="System.Configuration">
+       <HintPath>..\..\..\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\System.Configuration.dll</HintPath>
+@@ -111,13 +108,11 @@
+     <Compile Include="AppContext.cs" />
+     <Compile Include="App\ApplicationHost.cs" />
+     <Compile Include="App\ApplicationPaths.cs" />
+-    <Compile Include="App\ApplicationUpdater.cs" />
+     <Compile Include="App\DeviceId.cs" />
+     <Compile Include="App\EnvironmentInfo.cs" />
+     <Compile Include="App\MutexHandle.cs" />
+     <Compile Include="App\StartupOptions.cs" />
+     <Compile Include="App\SystemEvents.cs" />
+-    <Compile Include="App\SystemUpdateTask.cs" />
+     <Compile Include="App\ElectronApp.cs" />
+     <Compile Include="Archiving\ZipClient.cs" />
+     <Compile Include="Configuration\ConfigurationManager.cs" />
+@@ -139,6 +134,8 @@
+     <Compile Include="Program.cs" />
+     <Compile Include="Properties\AssemblyInfo.cs" />
+     <Compile Include="Serialization\JsonSerializer.cs" />
++    <Compile Include="Serialization\CompatibleJsonCodec.cs" />
++    <Compile Include="Archiving\FrameworkZipExtractor.cs" />
+     <Compile Include="Serialization\XmlSerializer.cs" />
+     <Compile Include="ScheduledTasks\DailyTrigger.cs" />
+     <Compile Include="ScheduledTasks\IntervalTrigger.cs" />
+@@ -189,14 +186,6 @@
+       <Link>electronapp\apphost.js</Link>
+       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+     </Content>
+-    <Content Include="..\..\emby-theater-electron\cec\cec.js">
+-      <Link>electronapp\cec\cec.js</Link>
+-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+-    </Content>
+-    <Content Include="..\..\emby-theater-electron\cec\command-map.js">
+-      <Link>electronapp\cec\command-map.js</Link>
+-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+-    </Content>
+     <Content Include="..\..\emby-theater-electron\fullscreenmanager.js">
+       <Link>electronapp\fullscreenmanager.js</Link>
+       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+@@ -253,38 +242,10 @@
+       <Link>electronapp\wakeonlan\wakeonlan-native.js</Link>
+       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+     </Content>
+-    <Content Include="..\ThirdParty\cec\cec-client.exe">
+-      <Link>cec\cec-client.exe</Link>
+-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+-    </Content>
+-    <Content Include="..\ThirdParty\cec\cec-client.x64.exe">
+-      <Link>cec\cec-client.x64.exe</Link>
+-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+-    </Content>
+-    <Content Include="..\ThirdParty\cec\cec.dll">
+-      <Link>cec\cec.dll</Link>
+-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+-    </Content>
+-    <Content Include="..\ThirdParty\cec\cec.x64.dll">
+-      <Link>cec\cec.x64.dll</Link>
+-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+-    </Content>
+-    <Content Include="..\ThirdParty\cec\p8-usbcec-driver-installer.exe">
+-      <Link>cec\p8-usbcec-driver-installer.exe</Link>
+-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+-    </Content>
+-    <Content Include="..\Tools\Installation\MediaBrowser.InstallUtil.dll">
+-      <Link>MediaBrowser.InstallUtil.dll</Link>
+-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+-    </Content>
+     <Content Include="..\Tools\Installation\MediaBrowser.Uninstaller.exe">
+       <Link>MediaBrowser.Uninstaller.exe</Link>
+       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+     </Content>
+-    <Content Include="..\Tools\Installation\MediaBrowser.Updater.exe">
+-      <Link>MediaBrowser.Updater.exe</Link>
+-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+-    </Content>
+     <Content Include="electronapp\filesystem.js">
+       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+     </Content>
+@@ -321,7 +282,7 @@
+     <PreBuildEvent>
+     </PreBuildEvent>
+   </PropertyGroup>
+-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
++  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
+        Other similar extension points exist, see Microsoft.Common.targets.
+   <Target Name="BeforeBuild">
+   </Target>
+diff --git a/Emby.Theater/Program.cs b/Emby.Theater/Program.cs
+index 2e41a76..46b3172 100644
+--- a/Emby.Theater/Program.cs
++++ b/Emby.Theater/Program.cs
+@@ -112,12 +112,6 @@ namespace Emby.Theater
+ 
+                     using (new MutexHandle(mutex, hasHandle, _logger))
+                     {
+-                        if (PerformUpdateIfNeeded(appPaths, environmentInfo, logger))
+-                        {
+-                            logger.Info("Exiting to perform application update.");
+-                            return;
+-                        }
+-
+                         RunApplication(appPaths, logManager, environmentInfo, new StartupOptions(Environment.GetCommandLineArgs()));
+                     }
+                 }
+@@ -182,9 +176,6 @@ namespace Emby.Theater
+                     //task = InstallVcredist2015IfNeeded(appHost.HttpClient, _logger);
+                     //Task.WaitAll(task);
+ 
+-                    task = InstallCecDriver(appPaths, appHost.HttpClient);
+-                    Task.WaitAll(task);
+-
+                     using (var server = new TheaterServer(_logger, appHost))
+                     {
+                         task = appHost.RunStartupTasks();
+@@ -211,38 +202,9 @@ namespace Emby.Theater
+             return info;
+         }
+ 
+-        /// <summary>
+-        /// Performs the update if needed.
+-        /// </summary>
+-        private static bool PerformUpdateIfNeeded(IApplicationPaths appPaths, IEnvironmentInfo environmentInfo, ILogger logger)
+-        {
+-            //// Look for the existence of an update archive
+-            var updateArchive = Path.Combine(appPaths.TempUpdatePath, DownloadedPackageFilename);
+-
+-            if (File.Exists(updateArchive))
+-            {
+-                logger.Info("An update is available from {0}", updateArchive);
+-
+-                // Update is there - execute update
+-                try
+-                {
+-                    new ApplicationUpdater().UpdateApplication(appPaths, updateArchive, logger);
+-
+-                    // And just let the app exit so it can update
+-                    return true;
+-                }
+-                catch (Exception e)
+-                {
+-                    logger.ErrorException("Error running updater.", e);
+-                }
+-            }
+-
+-            return false;
+-        }
+-
+         private static async Task InstallVcredist2013IfNeeded(IHttpClient httpClient, ILogger logger)
+         {
+-            // Reference 
++            // Reference
+             // http://stackoverflow.com/questions/12206314/detect-if-visual-c-redistributable-for-visual-studio-2012-is-installed
+ 
+             bool is64Bit = Is64BitElectron;
+@@ -296,7 +258,7 @@ namespace Emby.Theater
+ 
+         private static async Task InstallVcredist2015IfNeeded(IHttpClient httpClient, ILogger logger)
+         {
+-            // Reference 
++            // Reference
+             // http://stackoverflow.com/questions/12206314/detect-if-visual-c-redistributable-for-visual-studio-2012-is-installed
+ 
+             var is64Bit = Is64BitElectron;
+@@ -402,66 +364,6 @@ namespace Emby.Theater
+             }
+         }
+ 
+-        private static async Task InstallCecDriver(IApplicationPaths appPaths, IHttpClient httpClient)
+-        {
+-            var path = Path.Combine(appPaths.ProgramDataPath, "cec-driver");
+-            Directory.CreateDirectory(path);
+-
+-            var cancelPath = Path.Combine(path, "cancel");
+-            if (File.Exists(cancelPath))
+-            {
+-                _logger.Info("HDMI CEC driver installation was previously cancelled.");
+-                return;
+-            }
+-
+-            if (File.Exists(Path.Combine(path, "p8usb-cec.inf")))
+-            {
+-                _logger.Info("HDMI CEC driver already installed.");
+-
+-                // Needed by CEC
+-                await InstallVcredist2013IfNeeded(httpClient, _logger).ConfigureAwait(false);
+-
+-                return;
+-            }
+-
+-            var result = MessageBox.Show("Click OK to install the PulseEight HDMI CEC driver, which allows you to control Emby Theater with your HDTV remote control (compatible hardware required).", "HDMI CEC Driver", MessageBoxButtons.OKCancel);
+-
+-            if (result == DialogResult.Cancel)
+-            {
+-                File.Create(cancelPath);
+-                return;
+-            }
+-
+-            // Needed by CEC
+-            await InstallVcredist2013IfNeeded(httpClient, _logger).ConfigureAwait(false);
+-
+-            try
+-            {
+-                var installerPath = Path.Combine(Path.GetDirectoryName(ApplicationPath), "cec", "p8-usbcec-driver-installer.exe");
+-
+-                using (var process = new Process
+-                {
+-                    StartInfo = new ProcessStartInfo
+-                    {
+-                        Arguments = " /S /D=" + path,
+-                        FileName = installerPath,
+-                        CreateNoWindow = true,
+-                        WindowStyle = ProcessWindowStyle.Hidden,
+-                        Verb = "runas",
+-                        ErrorDialog = false
+-                    }
+-                })
+-                {
+-                    process.Start();
+-                    process.WaitForExit();
+-                }
+-            }
+-            catch (Exception ex)
+-            {
+-                _logger.ErrorException("Error installing cec driver", ex);
+-            }
+-        }
+-
+         public static string GetProgramDataPath(string applicationPath)
+         {
+             var programDataPath = System.Configuration.ConfigurationManager.AppSettings["ProgramDataPath"];
+diff --git a/Emby.Theater/Serialization/CompatibleJsonCodec.cs b/Emby.Theater/Serialization/CompatibleJsonCodec.cs
+new file mode 100644
+index 0000000..bba1f99
+--- /dev/null
++++ b/Emby.Theater/Serialization/CompatibleJsonCodec.cs
+@@ -0,0 +1,239 @@
++// SPDX-License-Identifier: MIT
++// Copyright (c) 2026 EmbyTheaterEnhanced contributors.
++// Independently written compatibility adapter; no ServiceStack implementation copied.
++using System;
++using System.Collections;
++using System.Collections.Generic;
++using System.Globalization;
++using System.IO;
++using System.Linq;
++using System.Reflection;
++using System.Text.RegularExpressions;
++using Newtonsoft.Json;
++using Newtonsoft.Json.Linq;
++using Newtonsoft.Json.Serialization;
++
++namespace Emby.Theater.Serialization
++{
++    internal static class CompatibleJsonCodec
++    {
++        private static readonly HostContractResolver Resolver = new HostContractResolver();
++
++        private static Newtonsoft.Json.JsonSerializer CreateSerializer(bool tolerateMemberErrors = false)
++        {
++            var result = Newtonsoft.Json.JsonSerializer.Create(new JsonSerializerSettings
++            {
++                ContractResolver = Resolver,
++                TypeNameHandling = TypeNameHandling.None,
++                MetadataPropertyHandling = MetadataPropertyHandling.Ignore,
++                MissingMemberHandling = MissingMemberHandling.Ignore,
++                NullValueHandling = NullValueHandling.Include,
++                DefaultValueHandling = DefaultValueHandling.Include,
++                ObjectCreationHandling = ObjectCreationHandling.Replace,
++                DateParseHandling = DateParseHandling.None,
++                Culture = CultureInfo.InvariantCulture,
++                Formatting = Formatting.None
++            });
++            result.Converters.Add(new HostDateConverter());
++            result.Converters.Add(new HostEnumConverter());
++            // Preserve DTO member conversion tolerance separately from the approved document policy.
++            // Syntax is parsed before this handler is attached to a materialization operation.
++            if (tolerateMemberErrors) result.Error += (sender, args) =>
++            {
++                if (args.CurrentObject != null && args.ErrorContext.Member is string &&
++                    !(args.ErrorContext.Error is NotSupportedException))
++                    args.ErrorContext.Handled = true;
++            };
++            return result;
++        }
++
++        internal static void Write(object value, TextWriter writer)
++        {
++            using (var json = new JsonTextWriter(writer) { CloseOutput = false, AutoCompleteOnClose = false })
++            {
++                CreateSerializer().Serialize(json, value, value.GetType());
++                json.Flush();
++            }
++        }
++
++        internal static object Read(string text, Type type)
++        {
++            if (string.IsNullOrEmpty(text))
++                return type.IsValueType ? Activator.CreateInstance(type) : null;
++            // Approved 2026-10-23: reject incomplete documents and appended content instead of
++            // restoring the old default-object success. Keep parsing outside member-error handling.
++            // Consumers retain their own existing logging, cache-refresh and failure boundaries.
++            using (var input = new StringReader(text))
++            using (var json = new JsonTextReader(input) { DateParseHandling = DateParseHandling.None })
++            {
++                var token = JToken.Load(json);
++                while (json.Read())
++                    if (json.TokenType != JsonToken.Comment)
++                        throw new JsonSerializationException("Additional content after JSON document.");
++                return token.ToObject(type, CreateSerializer(true));
++            }
++        }
++
++        private sealed class HostContractResolver : DefaultContractResolver
++        {
++            protected override List<MemberInfo> GetSerializableMembers(Type objectType)
++            {
++                return objectType.GetProperties(BindingFlags.Instance | BindingFlags.Public)
++                    .Where(p => p.GetIndexParameters().Length == 0 && p.GetGetMethod() != null)
++                    .Cast<MemberInfo>().ToList();
++            }
++
++            protected override JsonArrayContract CreateArrayContract(Type objectType)
++            {
++                var contract = base.CreateArrayContract(objectType);
++                var itemType = contract.CollectionItemType;
++                // The legacy typed-POCO collection writer emits {} for a null slot.
++                // It does not use that rule for object/string/scalar/dictionary slots.
++                // Leave multidimensional and non-generic collections outside this fix.
++                if (itemType != null && itemType != typeof(object) && !itemType.IsValueType &&
++                    (!objectType.IsArray || objectType.GetArrayRank() == 1) &&
++                    ResolveContract(itemType) is JsonObjectContract && contract.Converter == null)
++                    contract.Converter = new HostPocoCollectionWriter(itemType);
++                return contract;
++            }
++
++            protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization mode)
++            {
++                var property = base.CreateProperty(member, mode);
++                // Model uses its own attribute, not System.Runtime.Serialization's attribute.
++                if (CustomAttributeData.GetCustomAttributes(member).Any(a =>
++                    a.AttributeType.Name == "IgnoreDataMemberAttribute" ||
++                    a.AttributeType.Name == "JsonIgnoreAttribute"))
++                    property.Ignored = true;
++
++                var previous = property.ShouldSerialize;
++                property.ShouldSerialize = value =>
++                    (previous == null || previous(value)) && property.ValueProvider.GetValue(value) != null;
++                return property;
++            }
++        }
++
++        private sealed class HostPocoCollectionWriter : JsonConverter
++        {
++            private readonly Type itemType;
++            internal HostPocoCollectionWriter(Type itemType) { this.itemType = itemType; }
++            public override bool CanRead { get { return false; } }
++            public override bool CanConvert(Type type) { return typeof(IEnumerable).IsAssignableFrom(type); }
++
++            public override void WriteJson(JsonWriter writer, object value, Newtonsoft.Json.JsonSerializer serializer)
++            {
++                if (value == null) { writer.WriteNull(); return; }
++                writer.WriteStartArray();
++                foreach (var item in (IEnumerable)value)
++                {
++                    if (item == null) { writer.WriteStartObject(); writer.WriteEndObject(); }
++                    else serializer.Serialize(writer, item, itemType);
++                }
++                writer.WriteEndArray();
++            }
++
++            public override object ReadJson(JsonReader reader, Type type, object existingValue, Newtonsoft.Json.JsonSerializer serializer)
++            {
++                throw new NotSupportedException("Write-only collection compatibility converter.");
++            }
++        }
++
++        private sealed class HostEnumConverter : JsonConverter
++        {
++            public override bool CanConvert(Type type)
++            {
++                return (Nullable.GetUnderlyingType(type) ?? type).IsEnum;
++            }
++
++            public override void WriteJson(JsonWriter writer, object value, Newtonsoft.Json.JsonSerializer serializer)
++            {
++                if (value == null) { writer.WriteNull(); return; }
++                var type = value.GetType();
++                if (type.IsDefined(typeof(FlagsAttribute), false))
++                    writer.WriteValue(Convert.ChangeType(value, Enum.GetUnderlyingType(type), CultureInfo.InvariantCulture));
++                else
++                    writer.WriteValue(value.ToString());
++            }
++
++            public override object ReadJson(JsonReader reader, Type type, object existingValue, Newtonsoft.Json.JsonSerializer serializer)
++            {
++                var underlying = Nullable.GetUnderlyingType(type);
++                var enumType = underlying ?? type;
++                if (reader.TokenType == JsonToken.Null)
++                    return null;
++                if (reader.TokenType == JsonToken.String)
++                    return Enum.Parse(enumType, (string)reader.Value, true);
++                if (reader.TokenType == JsonToken.Integer)
++                    return Enum.ToObject(enumType, Convert.ChangeType(reader.Value, Enum.GetUnderlyingType(enumType), CultureInfo.InvariantCulture));
++                throw new JsonSerializationException("Expected enum name or integer.");
++            }
++        }
++
++        private sealed class HostDateConverter : JsonConverter
++        {
++            private static readonly DateTime Epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
++            private static readonly Regex MicrosoftDate = new Regex(@"^/Date\((-?\d+)([+-]\d{4})?\)/$", RegexOptions.CultureInvariant);
++
++            public override bool CanConvert(Type type)
++            {
++                type = Nullable.GetUnderlyingType(type) ?? type;
++                return type == typeof(DateTime) || type == typeof(DateTimeOffset);
++            }
++
++            public override void WriteJson(JsonWriter writer, object value, Newtonsoft.Json.JsonSerializer serializer)
++            {
++                if (value == null) { writer.WriteNull(); return; }
++                if (value is DateTime)
++                {
++                    var date = (DateTime)value;
++                    if (date.Kind == DateTimeKind.Unspecified) date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
++                    // Existing ISO writer keeps Local offset; AlwaysUseUtc applies on reads.
++                    writer.WriteValue(date.ToString("o", CultureInfo.InvariantCulture));
++                }
++                else writer.WriteValue(((DateTimeOffset)value).ToString("o", CultureInfo.InvariantCulture));
++            }
++
++            public override object ReadJson(JsonReader reader, Type type, object existingValue, Newtonsoft.Json.JsonSerializer serializer)
++            {
++                var nullable = Nullable.GetUnderlyingType(type);
++                var valueType = nullable ?? type;
++                if (reader.TokenType == JsonToken.Null)
++                    return nullable != null ? null : Activator.CreateInstance(valueType);
++                if (reader.TokenType != JsonToken.String) throw new JsonSerializationException("Expected date string.");
++                var text = (string)reader.Value;
++                if (string.IsNullOrEmpty(text)) return nullable != null ? null : Activator.CreateInstance(valueType);
++                var match = MicrosoftDate.Match(text);
++                if (match.Success)
++                {
++                    var utc = Epoch.AddMilliseconds(long.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture));
++                    var offsetText = match.Groups[2].Value;
++                    if (valueType == typeof(DateTimeOffset))
++                    {
++                        if (offsetText.Length == 0) return new DateTimeOffset(utc);
++                        if (offsetText == "-0000") return new DateTimeOffset(utc.ToLocalTime());
++                        return new DateTimeOffset(DateTime.SpecifyKind(utc, DateTimeKind.Unspecified), ParseOffset(offsetText));
++                    }
++                    if (offsetText.Length == 0 || offsetText == "-0000") return utc;
++                    // Preserve the original host's WCF non-zero offset behavior, even when the
++                    // sender offset differs from the machine zone. Do not silently modernize it.
++                    return DateTime.SpecifyKind(utc.Add(ParseOffset(offsetText)), DateTimeKind.Local).ToUniversalTime();
++                }
++                if (valueType == typeof(DateTimeOffset))
++                    return DateTimeOffset.Parse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
++                // The legacy condensed-date branch uniquely returns Unspecified.
++                if (text.Length == 8 && text.All(char.IsDigit))
++                    return DateTime.ParseExact(text, "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.None);
++                return DateTime.Parse(text, CultureInfo.InvariantCulture,
++                    DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
++            }
++
++            private static TimeSpan ParseOffset(string value)
++            {
++                var hours = int.Parse(value.Substring(1, 2), CultureInfo.InvariantCulture);
++                var minutes = int.Parse(value.Substring(3, 2), CultureInfo.InvariantCulture);
++                var offset = new TimeSpan(hours, minutes, 0);
++                return value[0] == '-' ? -offset : offset;
++            }
++        }
++    }
++}
+diff --git a/Emby.Theater/Serialization/JsonSerializer.cs b/Emby.Theater/Serialization/JsonSerializer.cs
+index 2335170..e490c51 100644
+--- a/Emby.Theater/Serialization/JsonSerializer.cs
++++ b/Emby.Theater/Serialization/JsonSerializer.cs
+@@ -1,5 +1,9 @@
+-﻿using System;
++// Derived from official Host 708fadc Serialization/JsonSerializer.cs; original GPL terms retained.
++// Local candidate modification 2026-10-23: independent Newtonsoft codec and explicit stream behavior.
++using System;
+ using System.IO;
++using System.Text;
++using System.Globalization;
+ using MediaBrowser.Model.IO;
+ using MediaBrowser.Model.Logging;
+ using MediaBrowser.Model.Serialization;
+@@ -18,7 +22,7 @@ namespace Emby.Theater.Serialization
+         {
+             _fileSystem = fileSystem;
+             _logger = logger;
+-            Configure();
++
+         }
+ 
+         /// <summary>
+@@ -39,7 +43,10 @@ namespace Emby.Theater.Serialization
+                 throw new ArgumentNullException("stream");
+             }
+ 
+-            ServiceStack.Text.JsonSerializer.SerializeToStream(obj, obj.GetType(), stream);
++            // Like the old writer, flush only after serialization succeeds. Do not flush a
++            // partially serialized object on exception by disposing a caller-owned writer.
++            var writer = new StreamWriter(stream, new UTF8Encoding(false), 1024, true);
++            CompatibleJsonCodec.Write(obj, writer);
+         }
+ 
+         /// <summary>
+@@ -132,7 +139,9 @@ namespace Emby.Theater.Serialization
+                 throw new ArgumentNullException("stream");
+             }
+ 
+-            return ServiceStack.Text.JsonSerializer.DeserializeFromStream<T>(stream);
++            // The old reader closes its input stream, including on conversion errors.
++            using (var reader = new StreamReader(stream, new UTF8Encoding(false), true))
++                return (T)CompatibleJsonCodec.Read(reader.ReadToEnd(), typeof(T));
+         }
+ 
+         /// <summary>
+@@ -149,7 +158,7 @@ namespace Emby.Theater.Serialization
+                 throw new ArgumentNullException("text");
+             }
+ 
+-            return ServiceStack.Text.JsonSerializer.DeserializeFromString<T>(text);
++            return (T)CompatibleJsonCodec.Read(text, typeof(T));
+         }
+ 
+         /// <summary>
+@@ -171,19 +180,8 @@ namespace Emby.Theater.Serialization
+                 throw new ArgumentNullException("type");
+             }
+ 
+-            return ServiceStack.Text.JsonSerializer.DeserializeFromStream(type, stream);
+-        }
+-
+-        /// <summary>
+-        /// Configures this instance.
+-        /// </summary>
+-        private void Configure()
+-        {
+-            ServiceStack.Text.JsConfig.DateHandler = ServiceStack.Text.DateHandler.ISO8601;
+-            ServiceStack.Text.JsConfig.ExcludeTypeInfo = true;
+-            ServiceStack.Text.JsConfig.IncludeNullValues = false;
+-            ServiceStack.Text.JsConfig.AlwaysUseUtc = true;
+-            ServiceStack.Text.JsConfig.AssumeUtc = true;
++            using (var reader = new StreamReader(stream, new UTF8Encoding(false), true))
++                return CompatibleJsonCodec.Read(reader.ReadToEnd(), type);
+         }
+ 
+         /// <summary>
+@@ -205,7 +203,7 @@ namespace Emby.Theater.Serialization
+                 throw new ArgumentNullException("type");
+             }
+ 
+-            return ServiceStack.Text.JsonSerializer.DeserializeFromString(json, type);
++            return CompatibleJsonCodec.Read(json, type);
+         }
+ 
+         /// <summary>
+@@ -221,7 +219,11 @@ namespace Emby.Theater.Serialization
+                 throw new ArgumentNullException("obj");
+             }
+ 
+-            return ServiceStack.Text.JsonSerializer.SerializeToString(obj, obj.GetType());
++            using (var writer = new StringWriter(CultureInfo.InvariantCulture))
++            {
++                CompatibleJsonCodec.Write(obj, writer);
++                return writer.ToString();
++            }
+         }
+     }
+ }

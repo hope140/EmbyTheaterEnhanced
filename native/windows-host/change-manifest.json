@@ -1,0 +1,121 @@
+{
+  "upstreamCommit": "708fadc068cbf66ced6aece4a32f3e12bb2c4e13",
+  "scope": "Source-maintained CEC and legacy Host update retirement, exact reviewed JSON/ZIP replacement integration; not official unchanged binary.",
+  "changes": [
+    {
+      "path": "Emby.Theater/App/ApplicationHost.cs",
+      "candidateSize": 34388,
+      "candidateSHA256": "63fafeabbab7ee954c93d69761aef38158e4d1d1bdb85cb1831cb0bab59f42e7",
+      "originalSize": 35443,
+      "originalSHA256": "ee6f6bd7aa5210122915a8089a1aa85e82b009e193e9dd2fbff13e8c2d499766",
+      "originalGitBlob": "496624f7892b20fdf19bbbddafa29dae172111a0"
+    },
+    {
+      "path": "Emby.Theater/App/ElectronApp.cs",
+      "candidateSize": 8808,
+      "candidateSHA256": "72e101b2997b78be221043c1628e2aaac8e67da364f12b416117e4a3fd2e73bc",
+      "originalSize": 9170,
+      "originalSHA256": "6a6bda5284f9b500d3cf7d572f62fef2809d37d33eac7b3e3d26d3f8d591247e",
+      "originalGitBlob": "eccfa60296b6dd028bbbabaa50be58f847c0cc0b"
+    },
+    {
+      "path": "Emby.Theater/Archiving/ZipClient.cs",
+      "candidateSize": 6867,
+      "candidateSHA256": "1f68aae3bc5bb6b53597e7437cc4507abf9839706dbb4892a5feed7b01db0027",
+      "originalSize": 7096,
+      "originalSHA256": "438e054773c3a80ac5e3c734c4408d6f80c1569e66ef450370abff2db51695e1",
+      "originalGitBlob": "a6712345b5de674a45e907e2c9f1aa64701ccb53"
+    },
+    {
+      "path": "Emby.Theater/Emby.Theater.csproj",
+      "candidateSize": 13988,
+      "candidateSHA256": "77be4d8bbb0633cf538bca08b9f9cda67e40f65b1a10fbbbaeddc2d5a38abfcb",
+      "originalSize": 15965,
+      "originalSHA256": "288bf2623eeb6280bf932d64ddde3b3f4afaadfad916964767cdc47ce75c4855",
+      "originalGitBlob": "0f74faffe411e560f4be216812bae696606c12d7"
+    },
+    {
+      "path": "Emby.Theater/Program.cs",
+      "candidateSize": 15471,
+      "candidateSHA256": "bbff261ac026ba55e39ebb91b767e7cc9ab237dc85538c1c8306ef06b30a2b36",
+      "originalSize": 19096,
+      "originalSHA256": "94449b341c4848ba52eed299c5bee60e3a79542535092b0168d5686ab9d2e1c8",
+      "originalGitBlob": "2e41a760897f7d0a67d21429f667fb00476e620e"
+    },
+    {
+      "path": "Emby.Theater/Serialization/JsonSerializer.cs",
+      "candidateSize": 7610,
+      "candidateSHA256": "8f7852b80b4d31cd6859fc56184776d58dff091c2e463d57f24c5879b4b19f0c",
+      "originalSize": 7316,
+      "originalSHA256": "51fdfa25d4ded8afeb6fe0f164d565090beda8fe3263028506225e497301c498",
+      "originalGitBlob": "2335170b81a3b1550ae170e0ad57ee1260b98a4d"
+    }
+  ],
+  "removedCompile": [
+    "App/ApplicationUpdater.cs",
+    "App/SystemUpdateTask.cs"
+  ],
+  "compileInputCount": 46,
+  "removedContent": [
+    "..\\..\\emby-theater-electron\\cec\\cec.js",
+    "..\\..\\emby-theater-electron\\cec\\command-map.js",
+    "..\\ThirdParty\\cec\\cec-client.exe",
+    "..\\ThirdParty\\cec\\cec-client.x64.exe",
+    "..\\ThirdParty\\cec\\cec.dll",
+    "..\\ThirdParty\\cec\\cec.x64.dll",
+    "..\\ThirdParty\\cec\\p8-usbcec-driver-installer.exe",
+    "..\\Tools\\Installation\\MediaBrowser.InstallUtil.dll",
+    "..\\Tools\\Installation\\MediaBrowser.Updater.exe"
+  ],
+  "patchSHA256": "0e3813bceb0c41602c6336c9bd147ade501c38978bac205e48c3a627e3fc9111",
+  "baselineEvidence": "Parent confirmed Work original source baseline net462/x86, six locked DLLs; baseline EXE SHA256 d13b9951e48399c9c33b3811ee814e5f423d8fe59da1f137c059b4e0110f7b70. Linux/Work input ZIP equality is not asserted.",
+  "formatOnly": "Ten inherited comment/XML-comment trailing spaces removed so imported maintained C# and project pass normal whitespace checks. Original final-newline state preserved.",
+  "patchFormat": "Standard unified diff; original whitespace in removed/context lines is patch data, covered by a narrow Git attribute for this patch only. C# whitespace checks remain enabled.",
+  "retiredCheckContract": "v1 successful Task with IsUpdateAvailable=false, no network. Official db22 Model enforced; earlier CoreLib7 failures traced by Work to historical f2eeca input mixing. No Model edits.",
+  "candidateRuntimeStatus": "Exact JSON/ZIP source members were verified against the Work handoff. Prior component checks remain scoped evidence only; final unified Host build, acceptance and matched EXE/PDB/receipt are pending while Work is offline.",
+  "addedSources": [
+    {
+      "path": "Emby.Theater/Archiving/FrameworkZipExtractor.cs",
+      "candidateSize": 11389,
+      "candidateSHA256": "30436b6d7b4772dd66fa0fdf893e2237764c784fc5b72178240e67c70e0c185c"
+    },
+    {
+      "path": "Emby.Theater/Serialization/CompatibleJsonCodec.cs",
+      "candidateSize": 12614,
+      "candidateSHA256": "a96164d347982b5a590bf7f929d03d0cde28b71e928c327bb3522ce7cafe538c"
+    }
+  ],
+  "schemaVersion": 2,
+  "candidateSourceFileCount": 57,
+  "jsonZipSourceArchiveSHA256": "8b54b66287639a383b7399960b45b617021b4eb7e365245aa25e89824d4150ff",
+  "workSourceMembers": [
+    {
+      "path": "Emby.Theater/Archiving/FrameworkZipExtractor.cs",
+      "workSHA256": "30436b6d7b4772dd66fa0fdf893e2237764c784fc5b72178240e67c70e0c185c",
+      "workBytes": 11389
+    },
+    {
+      "path": "Emby.Theater/Archiving/ZipClient.cs",
+      "workSHA256": "1f68aae3bc5bb6b53597e7437cc4507abf9839706dbb4892a5feed7b01db0027",
+      "workBytes": 6867
+    },
+    {
+      "path": "Emby.Theater/Serialization/CompatibleJsonCodec.cs",
+      "workSHA256": "a96164d347982b5a590bf7f929d03d0cde28b71e928c327bb3522ce7cafe538c",
+      "workBytes": 12614
+    },
+    {
+      "path": "Emby.Theater/Serialization/JsonSerializer.cs",
+      "workSHA256": "8f7852b80b4d31cd6859fc56184776d58dff091c2e463d57f24c5879b4b19f0c",
+      "workBytes": 7610
+    }
+  ],
+  "removedReferences": [
+    "ServiceStack.Text",
+    "SharpCompress"
+  ],
+  "addedReferences": [
+    "Newtonsoft.Json",
+    "System.IO.Compression"
+  ]
+}

@@ -5,7 +5,6 @@ const path = require('node:path');
 const {pluginRoutes} = require('./fixtures/settings-menu-routes.cjs');
 const root = path.resolve(__dirname, '..');
 const expected = [
-    ['cec/cec.html', 3, 'HDMI-CEC', 'Playback', 'tv'],
     ['mpvplayer/video.html', 4, '视频设置', 'Playback', 'tv'],
     ['mpvplayer/audio.html', 5, '音频设置', 'Playback', 'audiotrack'],
     ['mpvplayer/strm.html', 6, 'STRM 智能解析', 'Playback', 'folder_open'],
@@ -13,9 +12,10 @@ const expected = [
     ['mpvplayer/about.html', 8, '关于 Enhanced', 'General', 'info']
 ];
 
-test('Enhanced settings declare the six native sort ranks after keyboard rank two', () => {
+test('Enhanced settings retain the five non-CEC native sort ranks after keyboard rank two', () => {
     const routes = pluginRoutes(root);
     assert.equal(routes.length, expected.length);
+    assert.equal(routes.some(route=>route.path.startsWith('cec/')),false);
     for (const [routePath, order] of expected) assert.equal(routes.find(route => route.path === routePath).order, order, routePath);
 });
 
@@ -23,7 +23,7 @@ test('Enhanced route identities, native controllers and presentation metadata st
     const routes = pluginRoutes(root);
     for (const [routePath, , title, category, icon] of expected) {
         const route = routes.find(value => value.path === routePath);
-        const pluginId = routePath.startsWith('cec/') ? 'cecinput' : 'libmpvmediaplayer';
+        const pluginId = 'libmpvmediaplayer';
         assert.equal(route.pluginId, pluginId);
         assert.equal(route.type, 'settings');
         assert.equal(route.title, title);

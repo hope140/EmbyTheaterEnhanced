@@ -16,6 +16,7 @@ const selectCancel = require('./patch-select-cancel.cjs');
 const actionSheetLayout = require('./patch-actionsheet-layout.cjs');
 const startup = require('./patch-startup.cjs');
 const videoOsdLifecycle = require('./patch-videoosd-lifecycle.cjs');
+const connectionManagerTransport = require('./patch-connectionmanager-transport.cjs');
 const trackedFileHash = require('./tracked-file-hash.cjs');
 
 const GENERATOR_PATH = 'tools/prepare-web-overlays.cjs';
@@ -34,6 +35,17 @@ const STARTUP_GENERATOR_PATH = 'tools/patch-startup.cjs';
 const OSD_LIFECYCLE_GENERATOR_PATH = 'tools/patch-videoosd-lifecycle.cjs';
 
 const WEB_OVERLAY_CONTRACT = Object.freeze([
+    Object.freeze({
+        id: 'connectionmanager-transport',
+        mode: 'tracked-canonical-transform',
+        basePath: 'vendor/web-snapshot/www/modules/emby-apiclient/connectionmanager.js',
+        inputPath: null,
+        runtimePath: 'electronapp/www/modules/emby-apiclient/connectionmanager.js',
+        expectedBaseSha256: 'BEAE6AD4A2D386FB6D3553974C0AA3BA7C7E1BC25C1098944F508FE497A08F09',
+        expectedInputSha256: null,
+        expectedOutputSha256: '383559B6AA874180A2250E02DB46D9ABFEEB185BEFB2B87D79753DED0F1AD632',
+        generatorPaths: Object.freeze([GENERATOR_PATH, 'tools/patch-connectionmanager-transport.cjs'])
+    }),
     Object.freeze({
         id: 'actionsheet-layout',
         mode: 'tracked-canonical-transform',
@@ -320,6 +332,7 @@ function retireCustomCssJs(text) {
 
 function outputFor(root, contract) {
     const base = readChecked(root, contract.basePath, contract.expectedBaseSha256, 'Web overlay base');
+    if (contract.id === 'connectionmanager-transport') return {base, input: Buffer.from(connectionManagerTransport.patchConnectionManager(base.toString('utf8')), 'utf8')};
     if (contract.id === 'videoosd-lifecycle') return {base, input: Buffer.from(videoOsdLifecycle.patchVideoOsd(base.toString('utf8')), 'utf8')};
     if (contract.id === 'startup-index') return {base, input: base};
     if (contract.id === 'actionsheet-layout') return {base, input: Buffer.from(actionSheetLayout.patchActionSheetCss(base.toString('utf8')), 'utf8')};

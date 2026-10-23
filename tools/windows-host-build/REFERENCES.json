@@ -1,0 +1,35 @@
+{
+  "scope": "Five locked dependencies: official Common/Model/SimpleInjector/SocketHttpListener unchanged; pinned Newtonsoft13.0.4 replaces ServiceStack/Sharp. Runtime acceptance pending.",
+  "files": [
+    {
+      "path": "references/MediaBrowser.Common.dll",
+      "source": "vendor/windows-host/3.0.20/MediaBrowser.Common.dll",
+      "size": 44032,
+      "sha256": "8fc955a5215e862f5bde882cedbe2be52e6a242d89d03406844993595d72657f"
+    },
+    {
+      "path": "references/MediaBrowser.Model.dll",
+      "source": "vendor/model-compatibility/snapshot-v1/MediaBrowser.Model.dll",
+      "size": 426496,
+      "sha256": "db22f8ea6cb6afdfab184f80d8b85a10d8a9f148ff4cae167db87ce9cd245153"
+    },
+    {
+      "path": "references/SimpleInjector.dll",
+      "source": "vendor/windows-host/3.0.20/SimpleInjector.dll",
+      "size": 382464,
+      "sha256": "6a8e55d1f114fb579f4b92169af71dc197d86dd13a79199a4f047dc4b22bf0bc"
+    },
+    {
+      "path": "references/SocketHttpListener.dll",
+      "source": "vendor/windows-host/3.0.20/SocketHttpListener.dll",
+      "size": 115200,
+      "sha256": "7d1e347f1cb6ff10b011547665bcf13bb734306e8977e572021161f52a43f852"
+    },
+    {
+      "path": "references/Newtonsoft.Json.dll",
+      "source": "fixed NuGet13.0.4 lib/net45/Newtonsoft.Json.dll",
+      "size": 721320,
+      "sha256": "f0c07af0e84d4dd4da4bd7823ba4535bc0481b3bf623ed40b659b68147a6bb75"
+    }
+  ]
+}

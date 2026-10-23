@@ -104,7 +104,8 @@ jobs:
 
   manual-windows-test-package:
     if: github.event_name == 'workflow_dispatch'
-    runs-on: windows-2025
+    # Keep the existing VS2022/MSBuild17 contract; windows-2025 now selects VS2026.
+    runs-on: windows-2022
     timeout-minutes: 60
     concurrency:
       group: ete-manual-windows-test-package
@@ -122,7 +123,7 @@ jobs:
         with:
           node-version: 24.18.1
 
-      - name: Build and verify test package from locked components
+      - name: Compile and verify source Host, then build test package from locked components
         shell: pwsh
         env:
           ETE_RELEASE_PACKAGE: ${{ inputs.release_package }}

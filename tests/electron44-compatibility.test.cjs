@@ -44,8 +44,9 @@ test('legacy internal XHR schemes receive only the privileges required by Electr
     const source = fs.readFileSync(mainPath, 'utf8');
     for (const scheme of [
         'electronapphost', 'electronfs', 'electronserverdiscovery',
-        'electronwakeonlan', 'electronrefreshrate', 'electroncec'
+        'electronwakeonlan', 'electronrefreshrate'
     ]) assert.match(source, new RegExp("'" + scheme + "'"));
     assert.match(source, /privileges: \{ standard: true, supportFetchAPI: true, corsEnabled: true \}/);
+    assert.doesNotMatch(source,/electroncec/);
     assert.doesNotMatch(source, /bypassCSP:\s*true|allowServiceWorkers:\s*true|secure:\s*true/);
 });

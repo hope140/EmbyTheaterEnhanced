@@ -8,6 +8,9 @@ if ($sourceCommit -notmatch '^[0-9a-fA-F]{40}$') { throw 'Unable to resolve sour
 $inputContractJson = & node (Join-Path $root 'tools/build-input-contract.cjs') $root $sourceCommit
 if ($LASTEXITCODE -ne 0) { throw 'Build inputs differ from sourceCommit.' }
 $inputContract = $inputContractJson | ConvertFrom-Json
+# Never assemble the retired CEC projection with the old prompting Host.
+& node (Join-Path $root 'tools/source-built-host-input.cjs') preflight $root
+if ($LASTEXITCODE -ne 0) { throw 'Verified source-built Host input is required; official Host fallback is forbidden.' }
 $destination = Join-Path (Join-Path $root 'dist') $OutputName
 if (Test-Path -LiteralPath $destination) { throw 'Output already exists. Choose a new -OutputName; builds never overwrite prior artifacts.' }
 $manifest = Get-Content -LiteralPath (Join-Path $root 'vendor/runtime-manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -20,6 +23,8 @@ $dependencyOwner = & node (Join-Path $root 'tools/copy-runtime-dependencies.cjs'
 if ($LASTEXITCODE -ne 0) { throw 'Fresh build output ownership failed.' }
 & node (Join-Path $root 'tools/assemble-runtime-base.cjs') assemble $root $sourceCommit $destination $dependencyOwner
 if ($LASTEXITCODE -ne 0) { throw 'Explicit runtime base assembly failed.' }
+& node (Join-Path $root 'tools/source-built-host-input.cjs') stage $root $destination $sourceCommit $dependencyOwner
+if ($LASTEXITCODE -ne 0) { throw 'Source-built Host replacement failed.' }
 & node (Join-Path $root 'tools/runtime-exclusions.cjs') verify $destination
 if ($LASTEXITCODE -ne 0) { throw 'Retired runtime exclusion verification failed.' }
 # Carnival Electron is historical metadata only. Production uses the

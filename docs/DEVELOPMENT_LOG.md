@@ -1,5 +1,133 @@
 # 维护记录
 
+## 2026-10-23 — v0.4.0整合PR70来源与必要声明
+
+将PR70固定提交6576f5d的16份来源／声明材料整合到既有发布分支，四处文档冲突采用保留双方有效内容。API／page完整MIT、Sizzle原文、VTT版权／固定源／实际差异、Material Icons来源、Socket组件与集成范围及npm36许可命名口径保留；原JSON／CSV证据字节及analysisRef不改。旧“尚未替换Host／仍运行Sharp和ServiceStack”等仅作为研究时点，不恢复旧链；当前源码Host／JSON／ZIP、CEC退役、API维护与业务来源指纹均不变。
+
+17份文档UTF-8／末行／新增链接、冲突标记与有限凭据模式检查通过，六份PR70 JSON／CSV证据与6576f5d字节完全一致；构建输入、快照迁移、维护Web材料及文档检查相关37项全部通过／0跳过。本次只整合文档与必要notice，不新增功能、不改认证区域，不将用户保留决定写入README或Release。研究证据与许可覆盖仍分开；v0.4.0尚待正常PR检查／main集成、最终提交正式五附件构建及发布回读，未复用旧0.3.16测试产物。详见[研究索引](DEPENDENCY_RESEARCH.md)与[发行核验](V040_RELEASE_VERIFICATION.md)。
+
+
+## 2026-10-23 — 干净云端测试包成功，准备v0.4.0正式版
+
+run39974691780对6858c711完成Host实际验证、1609项普通测试、Native Helper实际编译及安装器完整性／完整解包比较，manual job15分52秒成功。原工具链依赖PATH局部接线在新runner兑现，未改变GCC／树／flags；它证明修正后的本次构建成功，不补出此前无stderr退出1的具体DLL证据。415 JS／47 PowerShell及有限模式检查通过，平台skip0；显式全部材料需正式构建另跑。
+
+artifact服务端大小164336955、摘要227e63055c4396bb007e64c283b74d4da092564c17a7ae1e415cd61efccbd51f与来源6858一致，上传17文件；独立下载内容核验仍待完成，未将其写为通过。该包仍为0.3.16测试身份，不作为新正式资产复用。
+
+最终版本经用户确定为v0.4.0，先前0.3.17计划撤回且未写入。仅更新根package及lock两个根版本字段、正式notes草稿和当前文档事实，保留旧v0.3.16。当前公开Latest3.1／prerelease3.16与待发4.0分开；输入数量按活动manifest重算757／24943281，历史阶段说明、已退役CEC入口及来源／许可存储表述同步纠正。两处用户决定保留的局部认证逻辑未触及，原决定及核验边界继续只在开发文档记录，不转入README／Release。后续Windows控制、缓存／预加载和FNConnect等独立分支不进入本版。
+
+正式构建入口补充五文件来源／哈希日志：所有既有门禁后重读实际五附件，检查installer receipt、单文件SHA、四项SUMS和精确Git notes，再输出RELEASE_FILE_EVIDENCE供发布核对，不增加上传路径或权限。源码AST生产块的合成正负例覆盖错误source／version、改安装器／notes／校验、缺件，保留原文件；相关15项通过，先前版本／输入／模板／Host／路由合同125项通过，新／变更链接32个目的地通过；最终七文件联合定向136项全部通过（0失败、0跳过）。一次初版新测试存在括号笔误，在执行前解析失败后修正并完整复验，未将该失败计为通过。
+
+新正式source、五附件、Tag／main／Release均尚未产生；后续必须真实release_package=true重建并完整来源核验，不借用旧回执或重命名旧测试包。常规可回退工作已有授权；具体保护／审批阻塞按实际证据报告，不绕过。
+
+## 2026-10-23 — 固定Native工具链的子进程依赖环境
+
+run `39970619136` 完整回归1606／1606通过、0失败／0跳过，耗时662749ms；Host真实验证及锁接入、语法／固定输入检查继续通过。实际runtime构建在build-native-helper.ps1原48行收到GCC exit1，14:54:24 UTC结束（21分04秒），无安装器／artifact。终态日志没有C++编译或链接stderr，不能用泛化exit1代替已证实根因。
+
+静态检查发现GCC完整6990文件工具链已锁定验证，但实际编译没有把其ucrt64/bin前置到进程PATH；驱动版本探针成功不能证明位于其他目录的cc1plus子程序能解析同树DLL。MSYS2官方环境说明要求UCRT64 bin优先，项目维护方记录过子编译器因PATH中的其他winpthreads DLL导致启动失败。这支持环境缺口推断，尚不能证明该run的实际失败DLL。依据：[官方环境](https://www.msys2.org/docs/environments/)及[维护方问题记录](https://github.com/msys2/MINGW-packages/issues/24355)。
+
+仅将实际编译调用置于局部函数：调用前仍完成源提交／header／libmpv／完整工具链／编译器身份检查，当前进程PATH临时前置经验证编译器的bin，finally恢复原值；异常继续阻止provenance记录，未安装软件或改变系统环境。固定GCC／库／flags、C++源码和Host指纹不变。回归从实际PowerShell AST提取生产函数，以真实外部Node子进程作编译驱动替身，覆盖环境前缀、含空格参数、exit0／exit23及恢复；不是GCC或Windows DLL加载实测。连同工具链身份／环境拒绝、源版本物化和workflow测试14项通过（0失败、0跳过），下一次新runner仍需独立编译和验证。
+
+## 2026-10-23 — provenance断言独立绑定夹具Git blob
+
+run `39967786650` 于14:27:14 UTC结束（manual job13分45秒），本次镜像20261021.343.1；14:18:41 Host真实验证PASSED，本次生成锁、接入及preflight继续成功。原Framework固定门禁未修改，本轮不触发其失败诊断；不能据此补出上轮旧镜像的实际GAC/path/hash。完整测试1605／1604通过／1失败／0跳过，用时507208ms，未打包上传。
+
+唯一失败为runtime-provenance.test.cjs原368行：生成器tools/windows-host-input.cjs的Git blob SHA为50730AF013A7978482C59F346294538DB47A9D604091B9CEF522B030A9978400，CRLF工作树SHA为3446258485A87DB75395F9DAA022CEB4D1A15EAEE98B0627C88DC0F3A7FC3F76，与CI actual／expected完全一致。生产tracked-file-hash检查工作树canonical文本与HEAD后返回原Git blob身份，测试却用原工作树字节作预期；与Work或runner Host产物hash无关。
+
+新增LF／CRLF参数化夹具先复现原CRLF失败，再将测试预期改为独立git show读取精确夹具提交的blob。两种换行均保留私有DLL回流拒绝、错误projection清单拒绝，并追加真实生成器内容篡改被source及runtime provenance拒绝且不覆盖现场的检查。完整provenance文件6项通过（0失败、0跳过），没有修改生产代码或放宽门禁，未重复已经通过的全套Windows测试；下一次云run仍需重新构建、验证并运行全部回归。
+
+## 2026-10-23 — 保留固定Framework门禁并输出拒绝证据
+
+`39965790277` 在14:05:10 UTC结束，manual job用时5分45秒；MSBuild编译成功，最终验证器第42行拒绝System.Configuration的GAC／固定SHA256条件。artifact为空，尚未接入锁或整包构建。映像为20261012.333.1，与前次该门禁通过的20261021.343.1不同；现有错误没有实际绑定字段，原因不能进一步确定。
+
+本轮只增强原throw的诊断，明确期望与实际GAC、SHA256、identity、location和referenceAssembly。条件表达式、固定允许hash及前置实际文件hash／非reference验证不变；不增加允许hash、不从当前未知输出自动生成信任。Finalize-Evidence及内外manifest更新精确身份，32文件现196279字节；业务源码／来源指纹及builder不变。新增回归经PowerShell AST选取实际生产分支，在合成元数据上验证原通过值与四种拒绝（错误hash、非GAC、GAC大小写、hash大小写）及准确诊断；不冒充真实Framework或Host验证。相关四文件99项通过（0失败、0跳过），32文件精确清单、来源指纹、builder哈希和diff检查通过。后续run若同条件不满足仍会失败，必须先取得并核对新实现证据，不能将诊断修正当构建问题已解决。
+
+## 2026-10-23 — 关闭runner到build消费链路的同类CLI初始化缺口
+
+运行 `39961791456` 已完成Host编译、实际验证与接入，独立source-built-input preflight随后以未初始化sourceIdentity失败。审查限定于runner接入和build Host消费控制链：9个根入口可达44个本地require控制模块，两组循环分别为plan／receipt／source-built-input和build-input-contract／build-input-provenance。plan已提前导出；本轮将source-built-input和后两模块的原导出赋值移至CLI分派前。receipt无CLI分派，其余检查到的组件、装配和provenance入口无回到自身的加载边，不做无关批量改写；runtime-provenance保持仅CLI消费形态。
+
+真实子进程覆盖plan的install-runner、source-built-input的identity／preflight／stage（含stage返回的validateRuntime）、copy-runtime-dependencies的create-owner、windows-host-input的assemble，以及build-input-contract检查、build-input-provenance write／validate。后续Host消费的派生文件及JSON依赖身份逐项验证；拒绝回执／产物篡改、双锁、不同run、源码／回执／runtime重定向、dist外输出和错误owner，保留原字节不覆盖。有效runner链路修前复现循环错误，修后相关98项通过；夹具使用合成非执行字节，不冒充新Host编译或完整客户端验收。业务源码、固定指纹、编译器和验证器标准不变，新云run必须重新编译验证，失败run锁不外部复用。
+
+## 2026-10-23 — plan CLI先导出安全工具再调用receipt模块
+
+手动run `39959947978` 已完成Host云编译和实际验证，失败发生在随后 `install-runner` 接入阶段。plan原先在CLI执行后才赋值module.exports；receipt加载时反向解构physical，读到循环依赖中的未初始化导出。仅把原导出赋值移到CLI分派前，不改函数或回执验证。新增4项真实Node子进程回归，修前均以同一错误失败，修后正常接入、错误回执、路径重定向和已有证据保护均兑现原合同，连同既有runner／workflow共45项通过。夹具均为合成字节，不冒充产品执行；原云验证回执不搬运复用，新run必须重建并重新验证，完整包闭环仍待后续运行。
+
+## 2026-10-23 — 使用映像已有7-Zip恢复固定libmpv归档
+
+Windows2022手动run `39958180700` 在MSBuild定位前被系统tar的 `LZMA codec is unsupported` 阻断，失败与原版／派生Host均无关。官方部署映像清单列有7zip；恢复器仅在固定Program Files位置选择已有7-Zip并拒绝重定向，缺失时保留受信系统tar路线，所选工具失败不更换工具重试、不安装或更换输入。技术列表要求唯一精确根DLL成员，stdout提取禁用通配符，原归档／Git blob与输出长度／SHA256验证保持。新增11项选择／列表回归，连同原libmpv下载与仓库归档负例共32项通过；这些使用受控进程响应，不冒充真实Windows7-Zip执行。产品字节、来源指纹和编译器／验证门禁未改，完整云端结果仍待下一次手动运行。
+
+## 2026-10-23 — 手动作业映像与MSBuild17合同匹配
+
+手动run `39957149782` 在恢复固定材料、55份官方源码、来源指纹和32份验证器输入后，于MSBuild定位阶段报 `Existing MSBuild17 unavailable.`，未进入编译且无产物。日志映像为 `windows-2025-vs2026`；官方当前标签与Windows2022工具清单仍提供VS2022／MSBuild17路线。仅将手动job改为 `windows-2022` 并同步原工作流回归及说明；定位范围 `[17.0,18.0)`、builder版本拒绝检查、PS5.1／PS7分工、net462／x86和所有验证保持。没有升级编译器、安装软件、修改业务源码、借用回执或再次dispatch；新runner实际版本与完整结果待后续运行。
+
+## 2026-10-23 — 固定Host输入的Windows checkout回归
+
+公开CI `39952554306` 完成1491项：1487通过、4失败、0跳过，测试耗时665973ms；失败是来源指纹守卫阻断，未触及时限。`core.autocrlf=true` 的Git过滤复现表明，Apply-SourceChanges.ps1、change-manifest.json、upstream-source-manifest.json和host-json-manifest.json原始LF字节未受属性保护。仅为4条精确路径增加 `-text`，不规范化被验字节、不重算预期指纹、不改源码或测试标准。新增对全部13份指纹输入的真实Git checkout过滤回归，修前失败、修后38项Host runner测试及26项构建输入合同通过；原始Windows失败保留，新Windows结果另行记录。手动workflow读取Forbidden未重试，未据此扩大作业权限。
+
+## 2026-10-23 — 候选验收后的文档与构建合同收尾
+
+本轮候选 `ad77308cd83bd629a7b75349d727044f9fa1d86b` 已获用户验收确认；对应 Windows 构建、安装器、升级、副本 STRM 播放及正常 Host 入口检查由独立验证环境执行。来源与当前公开交接提交分开记录，未将局部实机结果外推为所有环境或全部许可通过。
+
+文档当前说明集中到 SOURCE_CLEANUP_CLOSEOUT、PACKAGING、WINDOWS_HOST_INPUT 与 CEC_RETIREMENT，旧来源计数和阶段性待办不再作为当前构建说明。必要第三方声明及历史发行核验记录保留；认证区域的用户保留决定仍仅在本开发文档记录，不转入 README 或发行说明。
+
+锁 schema 从旧 CEC-only 来源指纹纠正为当前统一 CEC／旧更新／JSON／ZIP 指纹，新增与 EXPECTED-SOURCE-IDENTITY 和实际生成计划一致的断言。未修改业务源码或 Work 负责的路径／测试修正，未采用失败的 Base64 输入。已通过正常Git取得 `0a8bf15c25df507fe4c7b55431bb3bbd8e67f09f` 的38文件交付；验证器32文件共196010字节保持原样，薄包装和PowerShell7调度已在本地接入，builder保持Windows PowerShell5.1、net462/x86。对照用私有配置DLL只进入verification-inputs；验证器全文件纳入输入／回执生成器合同，合成ZIP增加原字节比较，防UTF-8及换行归一掩盖差异。当前差量未提交或推送。
+
+
+
+本地整合核验补记：已在隔离提交快照 `7e95be4e051ca596c9fc8e2a3954945f04428a81` 执行172份普通测试文件，共1576项／1566通过／0失败／10项既有平台skip；另21份显式材料自测共135项全部通过。413份JavaScript和47份PowerShell语法、构建输入合同、32文件验证器精确身份以及新增文档链接检查通过。Host首项材料预期差集的静态疑点未在执行中复现，其它退役项已由分类步骤排除，无需改测试。该快照只是本地回归证据，不是Windows编译／完整客户端新验收，也不是远端发布提交；本补记仅更新文档。
+
+## 历史阶段记录
+
+以下条目保留其当时状态与验证边界；当前状态以上文为准。
+
+## 2026-10-23 — Unified source integration, final Windows artifacts pending
+
+The two exact API and JSON/ZIP transfer archives are hash-verified. The API selection uses four maintained AMD modules and a complete MIT notice; CM changes are restricted to transport in the original module, with original local text/reset ownership retained. A listener representation difference found by existing lifecycle assertions is corrected without relaxing those assertions. API/CM integration24/24 and assembly/provenance12/12 passed before the native JSON/ZIP integration; subsequent final checks are recorded separately.
+
+The Host candidate now has6 replaced and2 added source files,57 source/resource/license inputs and46 Compile items. The exact four reviewed JSON/ZIP source bodies are retained, Newtonsoft13.0.4 net45 input is hash-verified, and ServiceStack/Sharp references and runtime paths are removed. Full official19-file recovery input and notices remain; the retained official projection is10 files, plus the separately pinned new dependency and source-built EXE/PDB selection. Existing ETE updates, ordinary tasks, user profiles/pending files and system drivers remain outside the cleanup.
+
+Work is offline. Final source fingerprint: `81b18ab1264941b7121967770d9b791af7fd4436b6cf910da443c92f967eea45`; a new source-only Windows handoff is prepared. No earlier EXE/PDB or receipt may be relabeled as a matching unified artifact. Linux full regression first ran1538 cases (1523 pass,5 failures,10 existing Windows skips); the five observed failures are resolved in36 targeted cases and14 isolated staged-commit gate cases, all passing. The product branch remains uncommitted and its HEAD gates remain strict. Full-client/Windows installer acceptance and exact new compiler outputs remain pending. No commit, push, PR, package or release has been made.
+
+
+## 2026-10-23 — 认证区域保留决定（后续整合边界）
+
+用户决定保留当前已指定的两处认证／注册相关局部区域，本轮不再处理；新增改动的许可覆盖未核实。此记录既不认定已确定侵权，也不认定许可已经通过。后续非注册API／CM候选只先做接线边界计划，不整文件覆盖，保护现有入口、注册区域、缓存／reset调用和模块归属，不新增或重做授权旁路；整合后需做使用流程回归，当前完整产品未验收。此决定仅记开发文档，不加入README或Release说明，原本必须保留的第三方版权／许可文本保持。
+
+## 2026-10-23 — CEC投影、首启及升级候选收尾
+
+Windows纠正历史社区Model混入后，官方db22下原版/v1/v2/组合合同及六例启动保存退出范围已获通过摘要；选择v1无更新结果，撤销不必要的同步异常变化，不改Model。统一分支继续将官方Host19项投影为13项，五CEC二进制及五产品源码退出runtime；bootstrap/可选入口不再新写cancel，已有profile配置/标记保持。
+
+新增源码派生Host输入门禁和EXE/PDB来源绑定：缺已验证锁与真实产物时，build在创建输出前失败，绝不回退旧Host。当前仍需接收Windows核验产物及构建回执。十一项升级旧程序文件以精确hash/注册归属/物理路径及锁检查处理，新载荷成功安装后才删除，不递归、不卸系统驱动、不触碰用户数据；Windows执行负例尚待验收。JSON替换的null数组修正已通过摘要核验，损坏/截断输入已选择明确报错，消费者边界验证及源码交接待完成，未称组合全部通过，未推送或发布。
+
+## 2026-10-23 — 退休检查接口修订，等待 Windows 复验
+
+Work首版候选构建和启动/保存/退出等范围通过，但旧CheckForApplicationUpdate构造结果时依赖加载失败；该项失败保留。当前最小修订只让检查方法同步抛NotSupportedException，明确区别于原先“成功返回无更新”的约定；保留锁定接口签名，未改Model/框架或添加垫片。唯一源码调用方SystemUpdateTask已退出编译；Host HTTP/ETE更新路径无此调用，六依赖未发现静态MemberRef，不宣称所有动态消费者不存在。
+
+修订的直接/接口/反射调用必须实际得到预期NotSupportedException，FileNotFoundException/TypeLoadException仍为失败；还需重新验证8154/XML/退出、无cancel屏蔽与pending文件保持。当前只做本地源改/材料验证，未推送或替换正式runtime。
+
+## 2026-10-23 — Host 源码退役候选，等待 Windows 对照
+
+固定708fadc官方源码基线Windows构建/隔离运行已获通过回执；当前同一未提交分支新增native/windows-host四文件源码候选及精确输入/输出manifest。删除CEC安装入口/参数、pending更新处理，旧自更新检查返回无更新、安装明确不支持；两旧更新类退出编译（46→44），原工程九项CEC/更新helper Content退出。其它任务、共享InstallationManager及六份现有DLL保留，ETE发行/服务器更新路径不改。校验脚本先验证55份原始文件与四份候选，任何身份不符在创建输出前退出；不执行Host或安装器。
+
+候选Windows编译/运行仍待Work对照，现有runtime Host和五CEC二进制暂保持；cancel写入及精确应用目录升级迁移待候选闭合。未提交推送/发布、未变更正式安装/profile/系统驱动。此前IL只读提案未采用，当前明确走源码维护，不将基线成功外推为候选或整机GUI验证。详见[源码合同](../native/windows-host/README.md)。
+
+## 2026-10-23 — CEC退役前端阶段
+
+同一未提交分支移除CEC插件/设置三文件和client/provider两文件，退役electroncec协议、自动spawn、参数消费与进程owner；仅在插件发现处阻止旧CEC模块残留，其它输入插件和视频事件脚本照常。更新被新规格替代的CEC保留断言，保持窗口状态、键盘快捷键、libmpv等既有断言；源函数VM回归覆盖空目录、旧插件及Windowsprofile参数不移位。46/46范围测试通过；Node24.18.1/Linux串行全套1492项：1482 pass、0 fail、10个既有Windows平台skip，仍不是完整客户端验收。
+
+当前Host SHA和只读PE/CLI字段核对，参考708fadc的安装任务与Electron参数接线已读；研究侧七方法摘要已交接，另直接解析当前wrapper、唯一调用点及StartProcess参数槽，在内存形成58-byte协调差异方案，没有写出/执行新Host。官方输入与派生输出身份需分开，维护方式先确认，不擅重写Host或删驱动二进制留下提示；外部cancel仍不能保证所有Host前置。升级hash门禁与十一项程序文件迁移待Host闭合，不操作系统驱动、GAC、profile或登录；ADL/RefreshRate和共享VC++消费者边界保持。Source/notice历史保留，具体边界见[CEC候选方案](CEC_RETIREMENT.md)。
+
+## 2026-10-23 — 私有框架DLL测试候选投影
+
+Host输入保持完整19文件，装配仅省略固定System.Configuration.dll（93,200 bytes、3dba0c61…e8f1bf）；来源验证仍读取并校验被省略的输入。计划和provenance记录来源/产物不同集合以及排除差集，投影代码SHA进入source provenance，最终验证拒绝重新夹入DLL，任何错误版本/路径/大小/hash不静默跳过。保留System.Configuration.xml与现有许可声明、历史来源记录，不写系统/GAC或现用安装。
+
+保留现有回归，新增精确投影、未知身份、别名/目录/悬空链接拒绝、计划防旧输入复活和最终provenance负例。局部44/44及真实组件材料投影1/1通过；原main工具与候选工具隔离装配的804/803基础文件逐项比较，仅固定DLL差异，其余字节相同。Node24.18.1/Linux串行全套1486项：1476 pass、0 fail、10个既有Windows平台skip。原材料完整性通过；单元、组件和基础payload证据不升级为完整Electron/登录/实播及CEC零客户端/零安装路径验收。未提交候选继续受HEAD构建输入守卫限制，完整测试包及验证方案见[Host输入合同](WINDOWS_HOST_INPUT.md)，原始回执留仓库外。
+
+## 2026-10-23 — PR70历史研究快照：明确许可组件通知与有限剩余项
+
+以下段落保留PR70在当前Host/API清理之前的研究状态；现行退役、替换与Windows验证见本页上方及发行核验。仅更新声明和文档：补API/page完整MIT、Sizzle原通知及VTT版权/来源/真实差异；核对现有11个notice入口、33个npm包36许可成员、shader37MIT＋2Unlicense。统一Socket组件MIT/集成边界、Sharp当前DLL及专项条款、Common的Updater范围；helper和七AppSettings访问器已有明确底稿，不再因旧编译器未知列必需替换。当前main0a1dd65只比材料基线a33多CI40分钟调整，研究分支相对main没有运行代码或工作流改动。
+
+保留Web后期独立表达、428-byte VTT CSS、Sharp/ServiceStack组合交付、DPInst/ADL材料和真实Host验证的具体边界；不将来源/方法匹配比例当许可完成率。完整事实、固定URL/hash和局部测试限制见[统一索引](DEPENDENCY_RESEARCH.md)及[证据](dependency-research/evidence/license-closure-20261023.json)。本次未替换组件、打包或发布，未将文档补齐称整体许可清零。
+
 ## 2026-10-22 — 构建合同读取批量化
 
 仅在一次inspect内复用固定Git提交数据：单次ls-tree -z加cat-file --batch替代逐文件重复进程，严格核对blob身份、类型、长度与分隔；工作区存在性、物理路径/链接、HEAD绑定、规范化文本比较及原始blob SHA仍由既有顺序验证。缺失对象按原路径读取以兑现原错误；批量失败/异常输出丢弃批量字节并回退，不能把不完整帧当成功，也不缓存上次工作区状态。独立hasher的两参数调用保持原行为。
@@ -1054,3 +1182,10 @@ Current libmpv is recovered from the fixed SourceForge asset using standard HTTP
 ## 2026-10-21 - Public CI path and snapshot-format regression
 
 GitHub Windows public CI exposed one preload fixture using a nonphysical TEMP alias. The fixture now canonicalizes its root, with a junction regression proving redirected product callers remain rejected; production validators are unchanged. Snapshot bytes must remain exact, including existing CRLF/trailing formatting: narrow per-file attributes describe inherited formatting, while a new CI step strictly validates all four snapshot trees against their manifests before tests/lint. Maintained source whitespace rules and all content/path/hash gates remain intact. No runtime, Model, playback or dependency-version change.
+
+
+## 2026-10-23 - Runner source-built Host integration preparation
+
+The manual Windows package route now calls `tools/ci-source-built-host.ps1` after the existing independent component recovery. It recovers the fixed official 55 source files as raw Git blobs, verifies their recorded SHA256 values, and acquires only the two pinned NuGet inputs without installation. Repository build tools materialize the current unified source kit; a new Framework/x86 process must compile and run its own matching-byte verification before a generated lock can enter assembly. Runner evidence binds the checkout, run identity, source, compiler receipt, probe receipt and EXE/PDB. External Work receipts and original-Host fallback are not substitutes.
+
+This is local integration preparation, not a successful GitHub run. Work's exact validated builder delta has now been applied:16941 bytes, SHA256 ad98235870d72c4e5ce48227fcae6b8f01d8a0500dadc3e69cd55ae2deb926ed. It moves the search-path property into generated XML, adds compile-only references from the already pinned net462 pack, and corrects metadata enumeration initialization; business source identity is unchanged. Work reported MSB3277 separately; pure net462 runtime compatibility is not established by this transfer. `tools/Test-SourceBuiltHost.ps1` is still pending the verified portable harness handoff. Its absence stops before compilation/acceptance, so the current skeleton cannot produce a package or claim runner acceptance. Local checks cover recovery/receipt contracts and syntax only. Full README/project-document consolidation remains deferred until test-package user acceptance.

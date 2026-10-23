@@ -9,12 +9,18 @@ Emby Theater Enhanced 是面向 Windows x64 的 Emby Theater 社区增强版，�
 - **CD2 新资源重查**：新入库文件首次找不到时，自动尝试刷新对应父目录并重新查询。
 - **诊断日志导出**：集中导出播放与错误信息，并对已知格式的敏感内容脱敏，方便排查和反馈问题。
 
-当前测试版还包含：
+现有测试版包含：
 
 - **mpv 内核管理**：手动导入内核包，选择后在下次启动时生效。
 - **插件设置适配**：改善神医助手、Madby GenericUI 等插件设置页的控件、页签和滚动显示。
 - **首页分区同步**：按 Emby 服务器配置的分区和顺序显示首页内容。
 - **退出清理维护**：Helper 的实际进程退出单独确认，应用关闭时各清理步骤分别处理异常。
+
+## v0.4.0 正式版准备
+
+本轮来源清理候选已完成用户验收，干净 GitHub Windows 构建已生成核验通过的测试包；正在以 v0.4.0 准备正式发行，尚未发布。维护源码移除 CEC 功能和旧 Host 自更新链，改用可核对来源的 Host 源码构建及维护的 JSON／ZIP 实现；普通 HDMI 音视频、刷新率功能及本项目发行版更新入口保留。
+
+这不改变下面已有发行包的内容。候选与云端构建进度见[收尾记录](docs/SOURCE_CLEANUP_CLOSEOUT.md)，必要的组件来源和许可说明继续保留。
 
 ## 下载
 
@@ -23,7 +29,7 @@ Emby Theater Enhanced 是面向 Windows x64 的 Emby Theater 社区增强版，�
 | 渠道 | 下载 | 校验 |
 | --- | --- | --- |
 | 正式版 · [v0.3.1](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.1) | [Windows x64](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.1/EmbyTheaterEnhanced-0.3.1-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.1/EmbyTheaterEnhanced-0.3.1-win-x64-setup.exe.sha256) |
-| 测试版 · [v0.3.15](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.15) | [Windows x64](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.15/EmbyTheaterEnhanced-0.3.15-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.15/EmbyTheaterEnhanced-0.3.15-win-x64-setup.exe.sha256) |
+| 测试版 · [v0.3.16](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.3.16) | [Windows x64](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.16/EmbyTheaterEnhanced-0.3.15-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.3.16/EmbyTheaterEnhanced-0.3.15-win-x64-setup.exe.sha256) |
 
 内置更新检查读取正式版渠道，测试版需手动下载。各版具体变化见[变更记录](CHANGELOG.md)。
 

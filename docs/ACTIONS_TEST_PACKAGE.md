@@ -1,12 +1,34 @@
 # 手动 Windows 测试包
 
-在 GitHub Actions 的 `Public offline CI` 工作流选择目标分支并手动运行。手动作业使用标准 `windows-2025`，只读仓库权限，不创建 Release、不安装或启动客户端，也不接触自托管 runner。日常 push/PR 仍只执行公开离线检查。
+在 GitHub Actions 的 `Public offline CI` 工作流选择目标分支并手动运行。手动作业使用标准 `windows-2022`，只读仓库权限，不创建 Release、不安装或启动完整Electron客户端，也不接触自托管 runner。日常 push/PR 仍只执行公开离线检查。
+
+2026-10-23的首次统一Host手动运行 `39957149782` 因 `windows-2025` 实际分配VS2026映像而在MSBuild17定位阶段停止，尚未编译。GitHub的[当前映像标签](https://github.com/actions/runner-images#available-images)与[Windows2022工具清单](https://github.com/actions/runner-images/blob/main/images/windows/Windows2022-Readme.md)列有受支持的 `windows-2022`／VS2022 17.14及MSBuild17组件，因此仅调整手动作业映像；定位器仍限定 `[17.0,18.0)`，builder仍拒绝非17版本，不安装编译器或回退旧Host。OS标签不锁定不可变映像，实际映像和工具链身份仍由每次run与构建回执记录；新映像上的完整构建验证结果须以新run为准。
+
+后续运行 `39958180700` 已分配Windows2022，但在更早的libmpv恢复阶段被系统tar的LZMA能力阻断，未进入Host编译。恢复入口现优先使用该映像已有的固定安装位置7-Zip，只列举并将指定成员解至内存，再按原始归档与输出身份核验；不安装工具、不换libmpv、不跳校验，详见[libmpv恢复合同](LIBMPV_INPUT.md)。下一次运行仍须验证整个流程，不能把材料修正视为MSBuild或完整构建通过。
+
+运行 `39959947978` 随后已完成固定libmpv恢复、MSBuild17.14.60编译和实际Host验证；接入输出阶段暴露Node循环依赖，尚无整包artifact。plan现于CLI分派前初始化导出，保留全部回执／路径门禁，并增加真实CLI进程回归。此修正不复用失败运行的锁，必须由新run重新构建验证；组件成功仍不等于整包闭环。
+
+后续 `39961791456` 已完成接入，独立preflight暴露同类sourceIdentity导出循环；本轮同时检查runner到build消费依赖并提前初始化循环模块的导出，真实CLI回归覆盖接入→preflight→owner／原Host装配→stage及runtime身份，另覆盖build-input provenance的write／validate。任何新run仍从空工作区重新构建和验证，不能导入这些历史运行的锁。
+
+运行 `39965790277` 在Host编译后被System.Configuration的固定GAC／SHA256门禁阻断，没有artifact。映像与前次通过检查的run不同，但原错误缺实际字段，不能直接归因为系统补丁。现仅给原拒绝增加期望／实际绑定证据，门禁不放宽；未知实现仍停止，待新的实际诊断再核对。
+
+后续诊断run `39967786650` 的Host验证和本次锁接入通过；完整回归1605项仅1项失败，为provenance测试将CRLF工作树哈希与生成器Git blob身份比较。现仅修正该测试的独立Git预期并覆盖LF／CRLF、DLL回流及真实内容篡改拒绝；生产门禁保持。该run没有安装包或artifact，完整云包仍须下一run。
+
+运行 `39970619136` 已通过全部1606项Windows回归及Host实际验证，随后在runtime的Native Helper编译返回1；日志缺C++stderr，无安装器。构建调用现仅在完整工具链身份验证后临时前置固定ucrt64/bin，并在finally恢复进程PATH，保持编译器／flags／源码不变。该缺口与子编译器依赖解析相符，但实际GCC修复效果仍待新runner，不能将本地子进程环境回归代替云包通过。
+
+## 当前 Host 编译与验证前置条件
+
+当前手动作业在独立材料准备后调用 `tools/ci-source-built-host.ps1`，恢复固定55份官方源码和两个NuGet输入，使用Windows PowerShell5.1／MSBuild17编译net462/x86 Host。随后必须由本次runner的可移植探针验证实际EXE/PDB，生成锁及构建／验证／工具链／工程回执，再进入装配。生成锁位于 `.work/source-built-host/`，绑定当前HEAD与Actions运行；不能导入外部测试机的旧回执或回退原版Host。
+
+完整验证器已通过正常Git交接，32文件按精确字节固定；薄包装使用已有PowerShell7，builder保持Windows PowerShell5.1。官方私有System.Configuration只复制到本次构建的verification-inputs作有／无对照，不进入产品runtime。缺失、篡改或额外验证输入均停止；本文不表示该统一Host路线已在干净GitHub runner成功。探针执行受控临时Host合同测试，完整Electron／登录／播放及用户验收属于独立层次。
+
+## 固定材料和产物
 
 输入来自仓库的组件快照及固定官方源。`tools/prepare-ci-build-inputs.ps1` 按现有清单下载 Host、Electron、mpv 头文件、17 个 MSYS2 包、Inno 和解包器；每个文件验证 SHA256，工具链还验证完整树。官方 Electron 源只取固定 Git 对象。先验证仓库内固定 libmpv 原始 7z 的 size、SHA256 和 HEAD blob，随后离线恢复相同 DLL，不调用 SourceForge。手动作业拒绝已有 .work、dist、node_modules 或 libmpv 准备目录，归档回执记录 Git blob 和准备前后缓存状态。完整干净云构建结果仍须按实际 run 核验。禁止 `vendor/carnival` 和 `vendor/patch`，不使用旧安装包恢复。
 
 准备固定 preload 后运行全部 `tests/*.test.cjs`、维护源码语法检查和独立 Host 材料自测，再执行现有 build/package 验证。安装包静态测试、解包后与 runtime 全部路径、大小、SHA256 一致才进入上传步骤。输出文件名含版本、源提交和运行编号；客户端版本不变，文件名中的 test 不代表新发行版。
 
-Actions 产物只含安装包、校验值、来源回执、五份构建清单、仓库归档恢复回执及精简测试总结，保留 1 天。不会上传工作目录、输入缓存、配置或完整测试日志。安装包未签名；自动构建不代替实际播放、退出和安装验收。
+Actions 产物只含安装包、校验值、来源回执、五份构建清单、仓库归档恢复回执、Host构建验证证据及精简测试总结，保留 1 天。不会上传工作目录、输入缓存、配置或完整测试日志。安装包未签名；自动构建不代替实际播放、退出和安装验收。
 
 首次手动派发可能要求默认分支先具备 `workflow_dispatch`。若 GitHub 拒绝分支派发，保持本 PR 未合并并报告该前置条件；不得自动合并、改权限或替换为自动发布。此流程不需要新增 secrets。标准公开仓库 runner 与产物存储使用仓库现有配额，不启用付费容量。
 

@@ -6,6 +6,18 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+function Invoke-LockedNativeCompiler([string]$CompilerPath, [string[]]$CompilerArguments) {
+    # The caller first validates the complete locked tree. GCC's subprocesses
+    # live outside bin and must resolve that tree's DLLs before ambient tools.
+    $previousPath = $env:PATH
+    try {
+        $env:PATH = (Split-Path -Parent $CompilerPath) + [IO.Path]::PathSeparator + $previousPath
+        & $CompilerPath @CompilerArguments
+        if ($LASTEXITCODE -ne 0) { throw "Native helper compiler failed with exit code $LASTEXITCODE" }
+    } finally {
+        $env:PATH = $previousPath
+    }
+}
 $root = Split-Path -Parent $PSScriptRoot
 if ($SourceCommit -notmatch '^[0-9a-fA-F]{40}$') { throw 'SourceCommit must be a 40-character Git commit.' }
 $manifestPath = Join-Path $root 'vendor/native-helper-manifest.json'
@@ -44,8 +56,7 @@ if ($Testing) { $flags += '-DETE_HELPER_TESTING'; $linkerFlags += '-lgdi32' }
 $includeArgument = '-I' + (Split-Path -Parent (Split-Path -Parent $header))
 $arguments = @($flags) + @($includeArgument, $source) + $linkerFlags + @('-o', $output)
 try {
-    & $compiler @arguments
-    if ($LASTEXITCODE -ne 0) { throw "Native helper compiler failed with exit code $LASTEXITCODE" }
+    Invoke-LockedNativeCompiler -CompilerPath $compiler -CompilerArguments $arguments
     $record = [ordered]@{
         schemaVersion = 1
         protocolVersion = [int]$manifest.protocolVersion

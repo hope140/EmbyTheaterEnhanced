@@ -55,10 +55,13 @@ test('generated seed is copied once and existing synthetic user config and CEC m
     const first=bootstrap.bootstrap({runtimeRoot:runtime,appDataPath:appData});
     assert.deepEqual(fs.readFileSync(first.systemConfig),reference.CONFIGURATION);
     fs.writeFileSync(first.systemConfig,'<user-config keep="true"/>');
-    fs.writeFileSync(first.cancelFile,'preserved marker');
+    const cancelFile=path.join(first.profileRoot,'cec-driver','cancel');
+    assert.equal(fs.existsSync(path.dirname(cancelFile)),false);
+    fs.mkdirSync(path.dirname(cancelFile));
+    fs.writeFileSync(cancelFile,'preserved marker');
     bootstrap.bootstrap({runtimeRoot:runtime,appDataPath:appData});
     assert.equal(fs.readFileSync(first.systemConfig,'utf8'),'<user-config keep="true"/>');
-    assert.equal(fs.readFileSync(first.cancelFile,'utf8'),'preserved marker');
+    assert.equal(fs.readFileSync(cancelFile,'utf8'),'preserved marker');
 });
 test('actual player translation registration resolves the assembled zh-CN resource', t => {
     const directory=fixture(t),runtime=path.join(directory,'dist/candidate');

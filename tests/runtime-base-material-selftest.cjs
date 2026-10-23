@@ -38,6 +38,15 @@ const approvedRetirements = new Set([
     'Emby.ConfigureAndUninstall.bat',
     'Emby.Dialog.bat',
     'external/Presets/mpv.conf',
+    'System.Configuration.dll',
+    'cec/cec-client.exe',
+    'cec/cec-client.x64.exe',
+    'cec/cec.dll',
+    'cec/cec.x64.dll',
+    'cec/p8-usbcec-driver-installer.exe',
+    'ServiceStack.Text.dll',
+    'ServiceStack.Text.xml',
+    'SharpCompress.dll',
     'cec-driver/cancel',
     '注意事项.txt'
 ]);

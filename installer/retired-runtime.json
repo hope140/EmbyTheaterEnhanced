@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "scope": "Only exact old ETE application files; never user profile/system drivers. Unknown bytes block upgrade. Existing configuration/markers/pending updates retained.",
+  "files": [
+    {
+      "path": "System.Configuration.dll",
+      "size": 93200,
+      "sha256": "3dba0c61e075728780723d7e517f6276674e29f6e9d5942c0b95a240f1e8f1bf"
+    },
+    {
+      "path": "cec/cec-client.exe",
+      "size": 89536,
+      "sha256": "42f601278f82c37d0cc26460d4ac80e62f6cec5b84b2efb0ee8ed75c1cbc4519"
+    },
+    {
+      "path": "cec/cec-client.x64.exe",
+      "size": 89536,
+      "sha256": "42f601278f82c37d0cc26460d4ac80e62f6cec5b84b2efb0ee8ed75c1cbc4519"
+    },
+    {
+      "path": "cec/cec.dll",
+      "size": 325568,
+      "sha256": "6e2932ab53f4d05d5f815499786a48c3ccb8a60c527aa2f34e4abbf14dc66d04"
+    },
+    {
+      "path": "cec/cec.x64.dll",
+      "size": 325568,
+      "sha256": "6e2932ab53f4d05d5f815499786a48c3ccb8a60c527aa2f34e4abbf14dc66d04"
+    },
+    {
+      "path": "cec/p8-usbcec-driver-installer.exe",
+      "size": 619536,
+      "sha256": "6e4d5a091720cf5ad727896bbf3766e5529468e24849183439506130bde3546a"
+    },
+    {
+      "path": "electronapp/cec/cec.js",
+      "size": 4479,
+      "sha256": "d937ab39ef534e8cf1fafcc7784d864521e1d2cc48514c342f981a1889558795",
+      "predecessor": {
+        "commit": "1e276bdf01ffd94eccf6a98b2d677c3e782d6db1",
+        "path": "src/electronapp/cec/cec.js",
+        "gitBlob": "642bd666ec1f6ff6d9e18bc6a0839f187df955c8",
+        "identity": "last committed maintained ETE source, not unchanged original Carnival bytes"
+      }
+    },
+    {
+      "path": "electronapp/cec/command-map.js",
+      "size": 7450,
+      "sha256": "3e81363821638657aaa7c907a0dad8adda5b29e3d150ecb55c19636bc3cdfebc",
+      "predecessor": {
+        "commit": "1e276bdf01ffd94eccf6a98b2d677c3e782d6db1",
+        "path": "src/electronapp/cec/command-map.js",
+        "gitBlob": "1e8a3148576d979ee9222ad5a73470aab75d163d",
+        "identity": "last committed maintained ETE source, not unchanged original Carnival bytes"
+      }
+    },
+    {
+      "path": "electronapp/plugins/cec.js",
+      "size": 1605,
+      "sha256": "cf0832b015500550ef3ceaa5c92ed4bcfb0672272785e7b18c07612d2432754d",
+      "predecessor": {
+        "commit": "1e276bdf01ffd94eccf6a98b2d677c3e782d6db1",
+        "path": "src/electronapp/plugins/cec.js",
+        "gitBlob": "5e8d6f0ab982bc658a7cc9b11547d24ae7d56ed6",
+        "identity": "last committed maintained ETE source, not unchanged original Carnival bytes"
+      }
+    },
+    {
+      "path": "electronapp/plugins/cec/cec.html",
+      "size": 1259,
+      "sha256": "ab535fbda8863307160503a60a8398b6783648a4f9c40f0c0bc9bd0591031117",
+      "predecessor": {
+        "commit": "1e276bdf01ffd94eccf6a98b2d677c3e782d6db1",
+        "path": "src/electronapp/plugins/cec/cec.html",
+        "gitBlob": "032ab6461b7125393463b012363015f6c651c6c6",
+        "identity": "last committed maintained ETE source, not unchanged original Carnival bytes"
+      }
+    },
+    {
+      "path": "electronapp/plugins/cec/cec.js",
+      "size": 1272,
+      "sha256": "cfaf792731a54a04470da37cc6029f87b11ce77d2ebe263958ace189a4b45a73",
+      "predecessor": {
+        "commit": "1e276bdf01ffd94eccf6a98b2d677c3e782d6db1",
+        "path": "src/electronapp/plugins/cec/cec.js",
+        "gitBlob": "22cdb8cfe9c02a012d6e3d60cc66acd4a0b6e1aa",
+        "identity": "last committed maintained ETE source, not unchanged original Carnival bytes"
+      }
+    },
+    {
+      "path": "ServiceStack.Text.dll",
+      "size": 411648,
+      "sha256": "2cc4fc93be82d4818dc81beb9f5cd0e4f995c77e1725c129e4918e8aeaeb39c1"
+    },
+    {
+      "path": "ServiceStack.Text.xml",
+      "size": 88835,
+      "sha256": "19b2a3730eb32f402888a58df9c6704cde19c0e38138dbad4fef000750669c0d"
+    },
+    {
+      "path": "SharpCompress.dll",
+      "size": 420864,
+      "sha256": "3c34138417974ce215e5d1b5bdbb7abd578ce77420073ea9de3f46ccebe42b55"
+    }
+  ]
+}

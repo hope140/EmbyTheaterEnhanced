@@ -2,11 +2,15 @@
 
 当前材料自测从仓库固定 Web、Host、继承 npm、模板、兼容资源、小型 runtime 和官方 Model 组件独立构造参考基底，不再要求完整旧 Carnival 树。保留逐文件基底与共同生产变换后的中间产物比较；完整历史包等价性另由显式外部参考审计验证。下方阶段一说明和计数保留其历史范围；当前输入见 [固定组件](REPOSITORY_INPUTS.md)。
 
-Current follow-up: three maintained templates remove the old package/preload/config physical reads. Base output remains unchanged; 58 old assets and one libmpv patch remain. See [runtime templates](RUNTIME_TEMPLATES.md).
+## Historical implementation stages
 
-Current selection follow-up: inherited npm is now an independent 29-file component, leaving 61 physical old Carnival inputs and one current libmpv patch. See [fixed inherited npm](INHERITED_NPM_INPUT.md).
+The remaining dated descriptions retain their original scope. Current input counts and storage are defined by [repository inputs](REPOSITORY_INPUTS.md); earlier v1/body-preservation/old-package requirements below are not current build prerequisites.
 
-Current contract update: the historical stage-one full-input gate described below has been superseded. Normal builds require 90 consumed Carnival inputs and one libmpv patch; 144/48 predecessor records remain metadata only. See [current input selection](LEGACY_INPUT_SELECTION.md). Historical counts below describe their named baseline, not current physical requirements.
+Historical follow-up: three maintained templates remove the old package/preload/config physical reads. Base output remains unchanged; 58 old assets and one libmpv patch remain. See [runtime templates](RUNTIME_TEMPLATES.md).
+
+Historical selection follow-up: inherited npm is now an independent 29-file component, leaving 61 physical old Carnival inputs and one current libmpv patch. See [fixed inherited npm](INHERITED_NPM_INPUT.md).
+
+Historical contract update: the historical stage-one full-input gate described below has been superseded. Normal builds require 90 consumed Carnival inputs and one libmpv patch; 144/48 predecessor records remain metadata only. See [current input selection](LEGACY_INPUT_SELECTION.md). Historical counts below describe their named baseline, not current physical requirements.
 
 `tools/assemble-runtime-base.cjs` 从已有权威输入推导文件清单，替代
 `build.ps1` 的 Carnival 整树复制。它不建立第二份 vendor manifest，

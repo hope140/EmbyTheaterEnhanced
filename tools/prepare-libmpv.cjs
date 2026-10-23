@@ -20,13 +20,25 @@ function download(url,destination,size) {
             '-SourceUrl',url,'-Destination',destination,'-MaximumBytes',String(size)],{encoding:'utf8',timeout:330000,maxBuffer:65536,stdio:['ignore','pipe','pipe']}).trim());
     }catch(error){throw Error('Pinned libmpv download failed; no retry/latest fallback. '+String(error.stderr||'Downloader process failed without safe diagnostics.').slice(0,12000));}
 }
-function extract(file,a,entry) {
-    const tar=process.platform==='win32'?'C:\\Windows\\System32\\tar.exe':'bsdtar';
+function selectExtractor(platform=process.platform) {
+    if(platform!=='win32')return {kind:'tar',file:'bsdtar'};
+    // Existing OS-image tools only: never search the checkout/PATH or install an extractor.
+    const sevenZip='C:\\Program Files\\7-Zip\\7z.exe',tar='C:\\Windows\\System32\\tar.exe';
+    const tool=fs.existsSync(sevenZip)?{kind:'7zip',file:sevenZip}:fs.existsSync(tar)?{kind:'tar',file:tar}:null;
+    if(!tool)throw Error('Preinstalled trusted 7-Zip or LZMA-capable system tar is required.');
+    input.physical(tool.file,false);
+    return tool;
+}
+function extract(file,a,entry,platform=process.platform) {
     try {
-        const members=cp.execFileSync(tar,['-tf',file],{encoding:'utf8',maxBuffer:1048576}).split(/\r?\n/);
+        const tool=selectExtractor(platform);
+        const listArgs=tool.kind==='7zip'?['l','-slt','-ba','-sccUTF-8','--',file]:['-tf',file];
+        const listing=cp.execFileSync(tool.file,listArgs,{encoding:'utf8',maxBuffer:1048576});
+        const members=tool.kind==='7zip'?listing.split(/\r?\n/).filter(x=>x.startsWith('Path = ')).map(x=>x.slice(7)):listing.split(/\r?\n/);
         if(members.filter(x=>x===a.member).length!==1)throw Error('Expected exactly one pinned DLL member.');
-        return cp.execFileSync(tar,['-xOf',file,a.member],{maxBuffer:entry.size+65536});
-    }catch(error){throw Error('Static libmpv extraction failed; requires trusted libarchive bsdtar (Windows system tar is supported). '+error.message);}
+        const extractArgs=tool.kind==='7zip'?['x','-so','-spd','-ssc','--',file,a.member]:['-xOf',file,a.member];
+        return cp.execFileSync(tool.file,extractArgs,{maxBuffer:entry.size+65536});
+    }catch(error){throw Error('Static libmpv extraction failed; requires preinstalled trusted 7-Zip or LZMA-capable libarchive bsdtar. '+error.message);}
 }
 function prepare(rootArg,options={}) {
     const root=path.resolve(rootArg),{manifest:m,archive:a}=lock(root);
@@ -59,4 +71,4 @@ function prepare(rootArg,options={}) {
     return {...input.validate(root),acquisition,archive:{asset:a.asset,sha256:a.sha256,size:a.size,sourceCommit:a.sourceCommit,repositoryPath:a.repositoryPath},transport};
 }
 if(require.main===module){try{if(process.argv.length!==3)throw Error('Usage: node tools/prepare-libmpv.cjs <root>');console.log(JSON.stringify(prepare(process.argv[2]),null,2));}catch(e){console.error(e.message);process.exitCode=1;}}
-module.exports={lock,verifyArchive,prepare};
+module.exports={lock,verifyArchive,prepare,selectExtractor,extract};

@@ -1,0 +1,997 @@
+{
+  "schemaVersion": 1,
+  "observedDate": "2026-10-22",
+  "scopeRef": "a33bd03685eb62b66c3c994cc3c4dfcfc89f5c49",
+  "historicalAnalysisRef": "6fee412ad68934d0194303916cfe346e6254a228",
+  "scopeMeaning": "Current main selections and existing research identities only; not a complete file-level license audit or a newly built installer.",
+  "web": {
+    "version": "snapshot-v2",
+    "fileCount": 713,
+    "bytes": 21962068,
+    "treeSha256": "794e8a8f2a214fec70124eeade77b30242b5e0b000951bb744477b63a1ee454e",
+    "removedV1Paths": [
+      {
+        "path": "www/components/directorybrowser/directorybrowser.css",
+        "sha256": "124ba078fd930fd0bb7835465e58cfaa671f6e131dce2cf417fd037c50b8cebb"
+      },
+      {
+        "path": "www/modules/CustomCssJS.js",
+        "sha256": "2177de28dcc4e715f07c63329dc361c5b4ddd37eb7e59f273830b22acea37912"
+      },
+      {
+        "path": "www/modules/emby-apiclient/appstorage-cache.js",
+        "sha256": "74f671613b0478c523667feb3889a3ff417fc044ab1bde5904ff7374bc1cfdcc"
+      },
+      {
+        "path": "www/modules/themes/logo.png",
+        "sha256": "624aa2425d6bee862fd5469e191a2dad928931425e45ee31d006d6e71906c064"
+      },
+      {
+        "path": "www/serviceworker-app.js",
+        "sha256": "adb28561d0e263fe2b6530263aed218d67ff1bfeb1070f2015c6297eb375290f"
+      },
+      {
+        "path": "www/settings/cameraupload.html",
+        "sha256": "35883b422fe36e31323463ecd413265342e8b4f82ab6919e73574a27728a0b3e"
+      },
+      {
+        "path": "www/settings/cameraupload.js",
+        "sha256": "cab95e4f266d16c250930d6bb76fd07de18212f2bb777e141396ebdf3f3b6ea8"
+      }
+    ],
+    "changedV1Paths": [
+      {
+        "path": "www/app.js",
+        "oldSha256": "3ef3102567458359a02e2fe8f79a8700cfe9c223347abe5ab6ecb8bd93be89d2",
+        "currentSha256": "3b058d1f40f5d863f1a1220dc36c52b187cb5ae0c8073dc4527573de294fc0a2"
+      },
+      {
+        "path": "www/index.html",
+        "oldSha256": "ca05a9a26de19e16bb89c3595d29c95e3a56876439e968e3f464b218a101053a",
+        "currentSha256": "18f777ee20f9829f3e7e4ab53a3442e7d4bd1532689e7ece0b874281e0bb305d"
+      }
+    ],
+    "retainedFromReviewed12": [
+      "www/css/detailtable.css",
+      "www/modules/common/playback/playqueueconfirmation.js",
+      "www/strings/es-US.json",
+      "www/strings/et-EE.json",
+      "www/strings/is-IS.json",
+      "www/strings/no.json",
+      "www/strings/th.json",
+      "www/robots.txt"
+    ],
+    "retiredFromReviewed12": [
+      "www/components/directorybrowser/directorybrowser.css",
+      "www/modules/emby-apiclient/appstorage-cache.js",
+      "www/serviceworker-app.js",
+      "www/settings/cameraupload.html"
+    ],
+    "v1AttributionCountsRemainHistorical": true
+  },
+  "compatibility": {
+    "version": "snapshot-v2",
+    "fileCount": 39,
+    "bytes": 2391214,
+    "treeSha256": "ca74d8b1bddeacc8f8e5a271ac75ad43301328f0e81be8cb350ea84110ca9ea4",
+    "MIT": 37,
+    "Unlicense": 2,
+    "files": [
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_AutoDownscalePre_x2.glsl",
+        "bytes": 1596,
+        "sha256": "9141668ced0b26512253e6396e805820716f35b57c92950d9da489f8b96a7ba4",
+        "license": "Unlicense",
+        "copyrightLines": []
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_AutoDownscalePre_x4.glsl",
+        "bytes": 1604,
+        "sha256": "dadb7b713cfa1d810c55b5deff616072f3390e546fed1e6a54f80ea555f7b95d",
+        "license": "Unlicense",
+        "copyrightLines": []
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Clamp_Highlights.glsl",
+        "bytes": 2884,
+        "sha256": "8c5fb67c76bed3021f8a27b050c3b97a6ac1b284f9ce91c04189015c354c0217",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Darken_Fast.glsl",
+        "bytes": 6594,
+        "sha256": "e48e560a2dd7fc3267e0494bbedb540600378eabaf8da74da605b0bdf5899a93",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Darken_HQ.glsl",
+        "bytes": 6179,
+        "sha256": "e50a89ce7c4c8e8c2487faa3a0a5950af0384c51a440482e5f2540c0fa39c7bd",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Darken_VeryFast.glsl",
+        "bytes": 6660,
+        "sha256": "1d8ea6bdc53b733f5be293b3177069e7be16f4bdc8b182854d2b344cc8f19339",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Deblur_DoG.glsl",
+        "bytes": 4705,
+        "sha256": "d24499348ed515a9abd3efd6afd4849d3c952aac69e3bf4c03b6dc0559d5471f",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Deblur_Original.glsl",
+        "bytes": 6695,
+        "sha256": "8fd49d93f2079617fcf121b30877bd49094a4e1b0609c1c3038873b80752fb03",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Denoise_Bilateral_Mean.glsl",
+        "bytes": 2848,
+        "sha256": "48ec0cb087afaf0d2b92b848f45841aa152476f31cd3cf116f1381a087fcc70f",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Denoise_Bilateral_Median.glsl",
+        "bytes": 4340,
+        "sha256": "836d8ea1635088435f56db7837f000481afe185ca5955adc6ea5641679a2d69e",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Denoise_Bilateral_Mode.glsl",
+        "bytes": 3923,
+        "sha256": "9067c543a5bd2220c28a05022085ef511402ccc114a76112eabe4e3f7d350285",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Restore_CNN_L.glsl",
+        "bytes": 69921,
+        "sha256": "d6efe215e6ee8af1ec560478a91afc1df83fac4ba43b2c806ee61ca2267ed674",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Restore_CNN_M.glsl",
+        "bytes": 35916,
+        "sha256": "67ea3ed26539e8de3b7d307688535d2ff17e8d147e11dda0247da7770dbecf41",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Restore_CNN_S.glsl",
+        "bytes": 17136,
+        "sha256": "97c24dc370ab300c108bfaa09db7f175aeff343674842c299cf3940a3d330427",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Restore_CNN_Soft_L.glsl",
+        "bytes": 70020,
+        "sha256": "8f2a5c73b526c6e4c67bce0366f7dcd7410bfa4a31e718240d86f53660788e63",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Restore_CNN_Soft_M.glsl",
+        "bytes": 36016,
+        "sha256": "a78a2c76898e08e09e442a9628c64208c26e8e15789649b8755223f009794c02",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Restore_CNN_Soft_S.glsl",
+        "bytes": 17198,
+        "sha256": "9f6867f2ef42786729522d86fe24147cb4ea145418e3974df70496acf52dc392",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Restore_CNN_Soft_UL.glsl",
+        "bytes": 308873,
+        "sha256": "41d71cad7b2f3af9086852fca70046f763272d2cb49dd83de9647d942866cac8",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Restore_CNN_Soft_VL.glsl",
+        "bytes": 144204,
+        "sha256": "094334b0e20c1a201fe4941c7c68de72451e5aee9efb5524d7fb82b12dca64b9",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Restore_CNN_UL.glsl",
+        "bytes": 308660,
+        "sha256": "81ec48ff700108c8e1571ed82d4527006ee200c05e94f8b7f836c02179169b40",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Restore_CNN_VL.glsl",
+        "bytes": 144075,
+        "sha256": "35036722733305cd4d4e57660b883bbe2569ba2914033c254327107d7b77e35e",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Thin_Fast.glsl",
+        "bytes": 6482,
+        "sha256": "d725d210e3fbcc9c85202ef8df7e3ae405969ccde53454035dd927cde19ccf9b",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Thin_HQ.glsl",
+        "bytes": 6184,
+        "sha256": "4decfd6626cf5830630fa7b08dfc96df0f199b600937df7de8c6cbda059e7ab6",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Thin_VeryFast.glsl",
+        "bytes": 6571,
+        "sha256": "5dbdefeb7254daee261391dde8a5e5bea0c94bc9fa017444be89dbe79da2bdb4",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Upscale_CNN_x2_L.glsl",
+        "bytes": 73443,
+        "sha256": "db1fedf7be82f6fd9034e6bf39b64daf2b7576988bb584ec38f24f5236b1cd97",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Upscale_CNN_x2_M.glsl",
+        "bytes": 37685,
+        "sha256": "716e02098a68f0d648761f2b96b4dd139e1cb09b174bb369fca3aa34328fff7e",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Upscale_CNN_x2_S.glsl",
+        "bytes": 18638,
+        "sha256": "4c53ec2e287908f7ee7bcb266b0170421626d663576468b7d7dafc62962649a4",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Upscale_CNN_x2_UL.glsl",
+        "bytes": 290257,
+        "sha256": "fa7cf0ecc1cca84d8291bbff5a42b60f5816d57b4e97d42bc377235ac8db02e8",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Upscale_CNN_x2_VL.glsl",
+        "bytes": 146743,
+        "sha256": "5638fe31c37c151a3443fea3451a3ef91af073f4dbb9615f6c0d1e29db11493d",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Upscale_Deblur_DoG_x2.glsl",
+        "bytes": 4988,
+        "sha256": "5646f119f497f4c2c91267794f8b807823dc5833c233694e3c0a13916264066f",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Upscale_Deblur_Original_x2.glsl",
+        "bytes": 6590,
+        "sha256": "8eeea23f935d525ab3dced29c9a44e47c702d0c56c9258d3cda701285213b15b",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Upscale_Denoise_CNN_x2_L.glsl",
+        "bytes": 73584,
+        "sha256": "6cc4604c9544fd4fd9e3a75fd797511bf5fe1e626e9e1dbcee03302823a63207",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Upscale_Denoise_CNN_x2_M.glsl",
+        "bytes": 37714,
+        "sha256": "8c72b042e2301fe66a45c3089720459148e2504cd72af16f9c0d5017ff14181e",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Upscale_Denoise_CNN_x2_S.glsl",
+        "bytes": 18667,
+        "sha256": "1a45ad3aa20d8368399f2fd46791deed957c2fd0a4afd131cc92516827abab93",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Upscale_Denoise_CNN_x2_UL.glsl",
+        "bytes": 290040,
+        "sha256": "38bd11e7e92ff1a615a274be912d6f2cfe67f5b43771f0383a91c6ab3d0f8cb6",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Upscale_Denoise_CNN_x2_VL.glsl",
+        "bytes": 146811,
+        "sha256": "359c48fe5a317fbc6b706ce368401eef496e84ed98abac7a43efebca2b65d79b",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Upscale_DoG_x2.glsl",
+        "bytes": 4159,
+        "sha256": "13e204278f400c850e7a9f4df8bc9956e979ae01bf7a3d55d86c3f9debecb39d",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Upscale_DTD_x2.glsl",
+        "bytes": 16063,
+        "sha256": "3affea16ff7700d42c25f27fba4e85015ed4d985c7f773f968837e6ad4748d4c",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      },
+      {
+        "path": "vendor/compatibility-resources/snapshot-v2/external/Anime4K/shaders/Anime4K_Upscale_Original_x2.glsl",
+        "bytes": 6548,
+        "sha256": "5f126010bc7c67924dcc2f590b794f9afb7cf4d1fd3ecfb38eeb17542bb236e4",
+        "license": "MIT",
+        "copyrightLines": [
+          "Copyright (c) 2019-2021 bloc97"
+        ]
+      }
+    ],
+    "meaning": "Actual preserved file-header grants/notices. Unknown exact upstream revision alone is not a permission gap; no new legacy source census."
+  },
+  "smallRuntime": {
+    "version": "snapshot-v2",
+    "fileCount": 2,
+    "bytes": 3330,
+    "treeSha256": "7d3ee238ca2be25533b2e28d31e64ba0c179c5a064ed7091b00c71557120ced2",
+    "maintainedSourcePaths": [
+      "src/config/system-defaults.json",
+      "src/localization/mpvplayer/zh-CN.json"
+    ],
+    "inheritedLocalizationValues": 24,
+    "selectedLocalizationRevisions": 13,
+    "meaning": "Maintained config generation does not reattribute historical XML; complete maintained localization retains24 inherited values."
+  },
+  "npm": {
+    "packageCount": 33,
+    "source": {
+      "fileCount": 1142,
+      "bytes": 9625032,
+      "treeSha256": "3d01be3560278303043d5513b4956162a397c0af91f981cfcca50a915c1528a5"
+    },
+    "runtime": {
+      "fileCount": 1122,
+      "bytes": 9594492,
+      "treeSha256": "1566aa5b74aeb7162ef8a316120efa2378a6b29f7f7667271a28816288d91b56"
+    },
+    "excludedCount": 20,
+    "sourceInputPreserved": true,
+    "packages": [
+      {
+        "name": "@grpc/grpc-js",
+        "version": "1.14.6",
+        "license": "Apache-2.0",
+        "sourceURL": "https://registry.npmjs.org/@grpc/grpc-js/-/grpc-js-1.14.6.tgz",
+        "archiveSha256": "40ee123d883f7f786d298cd9abc1729d8b3e165d1817bb5df0dc1245ccb5b29d"
+      },
+      {
+        "name": "@grpc/proto-loader",
+        "version": "0.8.1",
+        "license": "Apache-2.0",
+        "sourceURL": "https://registry.npmjs.org/@grpc/proto-loader/-/proto-loader-0.8.1.tgz",
+        "archiveSha256": "c2705546b20de630bf0d81545012ca4602302eef070f3c655bdf0bc55bab24f7"
+      },
+      {
+        "name": "@js-sdsl/ordered-map",
+        "version": "4.4.2",
+        "license": "MIT",
+        "sourceURL": "https://registry.npmjs.org/@js-sdsl/ordered-map/-/ordered-map-4.4.2.tgz",
+        "archiveSha256": "445977543e62c08dbeb285a177b05d484485bcd4fda80ad5014d29c454f47476"
+      },
+      {
+        "name": "@protobufjs/aspromise",
+        "version": "1.1.2",
+        "license": "BSD-3-Clause",
+        "sourceURL": "https://registry.npmjs.org/@protobufjs/aspromise/-/aspromise-1.1.2.tgz",
+        "archiveSha256": "0041878b8209f2fa4bcc5e0666355ebc96ff97f360c3054ffe83dbb78ee1c119"
+      },
+      {
+        "name": "@protobufjs/base64",
+        "version": "1.1.2",
+        "license": "BSD-3-Clause",
+        "sourceURL": "https://registry.npmjs.org/@protobufjs/base64/-/base64-1.1.2.tgz",
+        "archiveSha256": "d67e6ee6e1445512478cdfc34c12144f579bdd9f06529eef3ef8d88f84031a6a"
+      },
+      {
+        "name": "@protobufjs/codegen",
+        "version": "2.0.5",
+        "license": "BSD-3-Clause",
+        "sourceURL": "https://registry.npmjs.org/@protobufjs/codegen/-/codegen-2.0.5.tgz",
+        "archiveSha256": "20bafed1221bcba23a2450a841998edaef9a56bc2101d6e38c2117dd58a13a01"
+      },
+      {
+        "name": "@protobufjs/eventemitter",
+        "version": "1.1.1",
+        "license": "BSD-3-Clause",
+        "sourceURL": "https://registry.npmjs.org/@protobufjs/eventemitter/-/eventemitter-1.1.1.tgz",
+        "archiveSha256": "5536b98cb7062e771c1dadd1828e352ebe40034f1480836f21c776ec372a797c"
+      },
+      {
+        "name": "@protobufjs/fetch",
+        "version": "1.1.1",
+        "license": "BSD-3-Clause",
+        "sourceURL": "https://registry.npmjs.org/@protobufjs/fetch/-/fetch-1.1.1.tgz",
+        "archiveSha256": "54481d9c62debce1c38b0239f2358eeb3b73f7bb1ba3105bd6123fd81b8b7268"
+      },
+      {
+        "name": "@protobufjs/float",
+        "version": "1.0.2",
+        "license": "BSD-3-Clause",
+        "sourceURL": "https://registry.npmjs.org/@protobufjs/float/-/float-1.0.2.tgz",
+        "archiveSha256": "20b3d612d53281b754602d52a8e6a6e09032169d5399e515f6f5e8b7d3de712d"
+      },
+      {
+        "name": "@protobufjs/path",
+        "version": "1.1.2",
+        "license": "BSD-3-Clause",
+        "sourceURL": "https://registry.npmjs.org/@protobufjs/path/-/path-1.1.2.tgz",
+        "archiveSha256": "cc364ee910173c36d5734535a2bb53b8e7e86d2d219f27218158ab3f3dca328c"
+      },
+      {
+        "name": "@protobufjs/pool",
+        "version": "1.1.0",
+        "license": "BSD-3-Clause",
+        "sourceURL": "https://registry.npmjs.org/@protobufjs/pool/-/pool-1.1.0.tgz",
+        "archiveSha256": "f721dbd27282d2c7d1c2bf1ae9f7a03cc3ef9cf882fe469a32c14d1dae732703"
+      },
+      {
+        "name": "@protobufjs/utf8",
+        "version": "1.1.2",
+        "license": "BSD-3-Clause",
+        "sourceURL": "https://registry.npmjs.org/@protobufjs/utf8/-/utf8-1.1.2.tgz",
+        "archiveSha256": "512bce48e5bb53d4351a415be21c6430e33103ecca831439e7e6cfb7aa3fca7d"
+      },
+      {
+        "name": "@types/node",
+        "version": "22.20.2",
+        "license": "MIT",
+        "sourceURL": "https://registry.npmjs.org/@types/node/-/node-22.20.2.tgz",
+        "archiveSha256": "64921eb9b6caae379f2f3a6f00b6e42b21bde747f167d386d3b25c10bd6ba5c5"
+      },
+      {
+        "name": "ansi-regex",
+        "version": "5.0.1",
+        "license": "MIT",
+        "sourceURL": "https://registry.npmjs.org/ansi-regex/-/ansi-regex-5.0.1.tgz",
+        "archiveSha256": "0e0eadcdaada805db5d85b53ad5cdca0760b996ee199ec9658e7b34aa6c8e0d9"
+      },
+      {
+        "name": "ansi-styles",
+        "version": "4.3.0",
+        "license": "MIT",
+        "sourceURL": "https://registry.npmjs.org/ansi-styles/-/ansi-styles-4.3.0.tgz",
+        "archiveSha256": "2c539a46d85ab6033183997434d2d9a5ca2ceefc12b4db9022f564784cd7987f"
+      },
+      {
+        "name": "cliui",
+        "version": "8.0.1",
+        "license": "ISC",
+        "sourceURL": "https://registry.npmjs.org/cliui/-/cliui-8.0.1.tgz",
+        "archiveSha256": "defad1e25e8a349ea9cdd1066abf5e1e762f7f909de72bdca67bb35f77468c8d"
+      },
+      {
+        "name": "color-convert",
+        "version": "2.0.1",
+        "license": "MIT",
+        "sourceURL": "https://registry.npmjs.org/color-convert/-/color-convert-2.0.1.tgz",
+        "archiveSha256": "920fa43538c019a085dbbf04cb6f72cc337624e5f5217519f0e7b2ef784e7ce1"
+      },
+      {
+        "name": "color-name",
+        "version": "1.1.4",
+        "license": "MIT",
+        "sourceURL": "https://registry.npmjs.org/color-name/-/color-name-1.1.4.tgz",
+        "archiveSha256": "507b7c4461e8eb941355af9a59e9a7e02cd0e7c6176b48d1809766344f3f1708"
+      },
+      {
+        "name": "emoji-regex",
+        "version": "8.0.0",
+        "license": "MIT",
+        "sourceURL": "https://registry.npmjs.org/emoji-regex/-/emoji-regex-8.0.0.tgz",
+        "archiveSha256": "b5ccd9fbfb08098eefbeb6b6b4b40db6db3acf9243e327e039925aa8661cb107"
+      },
+      {
+        "name": "escalade",
+        "version": "3.2.0",
+        "license": "MIT",
+        "sourceURL": "https://registry.npmjs.org/escalade/-/escalade-3.2.0.tgz",
+        "archiveSha256": "ba2755afc0e6c6705326711fd218ebe107a527eccbd6485155fde98ed000bee7"
+      },
+      {
+        "name": "get-caller-file",
+        "version": "2.0.5",
+        "license": "ISC",
+        "sourceURL": "https://registry.npmjs.org/get-caller-file/-/get-caller-file-2.0.5.tgz",
+        "archiveSha256": "7b13e1c81949ff4c1baae4ac4e34990492d5e8a86dab7e3b90027b1f5126935f"
+      },
+      {
+        "name": "is-fullwidth-code-point",
+        "version": "3.0.0",
+        "license": "MIT",
+        "sourceURL": "https://registry.npmjs.org/is-fullwidth-code-point/-/is-fullwidth-code-point-3.0.0.tgz",
+        "archiveSha256": "6f415dae5dc6070f1b42daee6165eab941a97101982305facc8bafdaf300bc4a"
+      },
+      {
+        "name": "lodash.camelcase",
+        "version": "4.3.0",
+        "license": "MIT",
+        "sourceURL": "https://registry.npmjs.org/lodash.camelcase/-/lodash.camelcase-4.3.0.tgz",
+        "archiveSha256": "5062d835a19e11cf61e255b6476f232e874238dc87dbe68cd2cc2dd88be0674d"
+      },
+      {
+        "name": "long",
+        "version": "5.3.2",
+        "license": "Apache-2.0",
+        "sourceURL": "https://registry.npmjs.org/long/-/long-5.3.2.tgz",
+        "archiveSha256": "68033e466773df7d52c9e59341bb729d83716cd920c56460395724456d646b26"
+      },
+      {
+        "name": "protobufjs",
+        "version": "7.6.6",
+        "license": "BSD-3-Clause",
+        "sourceURL": "https://registry.npmjs.org/protobufjs/-/protobufjs-7.6.6.tgz",
+        "archiveSha256": "df0241b3046b505d27396da6eef107f14dffb108f77aa89cfd9611a928eb6dfe"
+      },
+      {
+        "name": "require-directory",
+        "version": "2.1.1",
+        "license": "MIT",
+        "sourceURL": "https://registry.npmjs.org/require-directory/-/require-directory-2.1.1.tgz",
+        "archiveSha256": "703bee0844360383fe4a8792d4a5a562647426a053e7597a1d272ac554f386c8"
+      },
+      {
+        "name": "string-width",
+        "version": "4.2.3",
+        "license": "MIT",
+        "sourceURL": "https://registry.npmjs.org/string-width/-/string-width-4.2.3.tgz",
+        "archiveSha256": "adbb4fb1b26e8069af99adff0079369c93f17cf887b91086691d671ddbd52934"
+      },
+      {
+        "name": "strip-ansi",
+        "version": "6.0.1",
+        "license": "MIT",
+        "sourceURL": "https://registry.npmjs.org/strip-ansi/-/strip-ansi-6.0.1.tgz",
+        "archiveSha256": "9bdb75d0bff49f156dd8c3bcb0e06b3fa96c3d88ddd4c342a4345866a40c08ca"
+      },
+      {
+        "name": "undici-types",
+        "version": "6.21.0",
+        "license": "MIT",
+        "sourceURL": "https://registry.npmjs.org/undici-types/-/undici-types-6.21.0.tgz",
+        "archiveSha256": "cfa1a9a5e18988850e548f4f6b629c58da32dc32bebb116e58ea301e516fd16d"
+      },
+      {
+        "name": "wrap-ansi",
+        "version": "7.0.0",
+        "license": "MIT",
+        "sourceURL": "https://registry.npmjs.org/wrap-ansi/-/wrap-ansi-7.0.0.tgz",
+        "archiveSha256": "0795b3510bd2e938f6a415396de3d4f58fd76ef1f8249a07196444eaf85ca42f"
+      },
+      {
+        "name": "y18n",
+        "version": "5.0.8",
+        "license": "ISC",
+        "sourceURL": "https://registry.npmjs.org/y18n/-/y18n-5.0.8.tgz",
+        "archiveSha256": "d43743bad3a7cb3af5d3b6bf70fd32fe3923ea86e4148109c6dd0126deada769"
+      },
+      {
+        "name": "yargs",
+        "version": "17.7.3",
+        "license": "MIT",
+        "sourceURL": "https://registry.npmjs.org/yargs/-/yargs-17.7.3.tgz",
+        "archiveSha256": "76ac30834674f0d8da9c7bfedb175f6ada260420e6475edfdcc551c601f8717e"
+      },
+      {
+        "name": "yargs-parser",
+        "version": "21.1.1",
+        "license": "ISC",
+        "sourceURL": "https://registry.npmjs.org/yargs-parser/-/yargs-parser-21.1.1.tgz",
+        "archiveSha256": "342b7d527d4a72265b64f27711517349c3c05ee302ab3b8c7452f0bfbe709151"
+      }
+    ],
+    "noticeRecordCountInMainEvidence": 35,
+    "actualLicenseNamedMembers": 36,
+    "additionalPreservedNotice": [
+      {
+        "path": "node_modules/emoji-regex/LICENSE-MIT.txt",
+        "bytes": 1077,
+        "sha256": "483acb265f182907d1caf6cff9c16c96f31325ed23792832cc5d8b12d5f88c8a"
+      }
+    ],
+    "noticeFiles": [
+      {
+        "path": "node_modules/@grpc/grpc-js/LICENSE",
+        "bytes": 11558,
+        "sha256": "e03ba41d7fab20700769fe4118bab50d800cb74f990353a05d2f5fff1c228363"
+      },
+      {
+        "path": "node_modules/@grpc/grpc-js/proto/protoc-gen-validate/LICENSE",
+        "bytes": 11560,
+        "sha256": "3ddf9be5c28fe27dad143a5dc76eea25222ad1dd68934a047064e56ed2fa40c5"
+      },
+      {
+        "path": "node_modules/@grpc/grpc-js/proto/xds/LICENSE",
+        "bytes": 11558,
+        "sha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6"
+      },
+      {
+        "path": "node_modules/@grpc/proto-loader/LICENSE",
+        "bytes": 11357,
+        "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1"
+      },
+      {
+        "path": "node_modules/@js-sdsl/ordered-map/LICENSE",
+        "bytes": 1067,
+        "sha256": "787684b2059945f845f404340e20c4c8e3f325f4ab7aaeaf8e985f38c8d84658"
+      },
+      {
+        "path": "node_modules/@protobufjs/aspromise/LICENSE",
+        "bytes": 1505,
+        "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+      },
+      {
+        "path": "node_modules/@protobufjs/base64/LICENSE",
+        "bytes": 1505,
+        "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+      },
+      {
+        "path": "node_modules/@protobufjs/codegen/LICENSE",
+        "bytes": 1505,
+        "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+      },
+      {
+        "path": "node_modules/@protobufjs/eventemitter/LICENSE",
+        "bytes": 1505,
+        "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+      },
+      {
+        "path": "node_modules/@protobufjs/fetch/LICENSE",
+        "bytes": 1505,
+        "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+      },
+      {
+        "path": "node_modules/@protobufjs/float/LICENSE",
+        "bytes": 1505,
+        "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+      },
+      {
+        "path": "node_modules/@protobufjs/path/LICENSE",
+        "bytes": 1505,
+        "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+      },
+      {
+        "path": "node_modules/@protobufjs/pool/LICENSE",
+        "bytes": 1505,
+        "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+      },
+      {
+        "path": "node_modules/@protobufjs/utf8/LICENSE",
+        "bytes": 1505,
+        "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+      },
+      {
+        "path": "node_modules/@types/node/LICENSE",
+        "bytes": 1141,
+        "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+      },
+      {
+        "path": "node_modules/ansi-regex/license",
+        "bytes": 1109,
+        "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
+      },
+      {
+        "path": "node_modules/ansi-styles/license",
+        "bytes": 1109,
+        "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
+      },
+      {
+        "path": "node_modules/cliui/LICENSE.txt",
+        "bytes": 731,
+        "sha256": "2dc0465729366c3a7890dfa9e972a1ba7048a26c02116fb8b419a6a1ac110149"
+      },
+      {
+        "path": "node_modules/color-convert/LICENSE",
+        "bytes": 1087,
+        "sha256": "693866fc419c6f61c8570438ec00659d156ec2b4d4a4d04091711f5f11a365d4"
+      },
+      {
+        "path": "node_modules/color-name/LICENSE",
+        "bytes": 1085,
+        "sha256": "c064f7a3e353bc1bc977f3c897941c75ef763f44f41677e0a15370ca0853d6e2"
+      },
+      {
+        "path": "node_modules/emoji-regex/LICENSE-MIT.txt",
+        "bytes": 1077,
+        "sha256": "483acb265f182907d1caf6cff9c16c96f31325ed23792832cc5d8b12d5f88c8a"
+      },
+      {
+        "path": "node_modules/escalade/license",
+        "bytes": 1104,
+        "sha256": "9a9edad7baae52622bddf3c15b2ef8a33d2c89f2d25408ad13e8a7481c6b0c97"
+      },
+      {
+        "path": "node_modules/get-caller-file/LICENSE.md",
+        "bytes": 745,
+        "sha256": "902dbb4154679fb2b8d7c33878183f45b268d01eae5e5033dddaa8852d45f213"
+      },
+      {
+        "path": "node_modules/is-fullwidth-code-point/license",
+        "bytes": 1109,
+        "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
+      },
+      {
+        "path": "node_modules/lodash.camelcase/LICENSE",
+        "bytes": 1951,
+        "sha256": "ffd8b33b354585f4ce119f19c53728281e48a97b074491eb6bf6d5c5ff305272"
+      },
+      {
+        "path": "node_modules/long/LICENSE",
+        "bytes": 11358,
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      },
+      {
+        "path": "node_modules/protobufjs/LICENSE",
+        "bytes": 1937,
+        "sha256": "49d6a1c9a623784c61c6cb70f773f3457faceb1914a13c8560a9823b7631950c"
+      },
+      {
+        "path": "node_modules/protobufjs/google/LICENSE",
+        "bytes": 1476,
+        "sha256": "4ab87e6e3c0c0b78e47c77d49ec10c048f8a519fb8062e6e3217e3e6e9b0c6e9"
+      },
+      {
+        "path": "node_modules/require-directory/LICENSE",
+        "bytes": 1099,
+        "sha256": "a92e52eb1fa7cd746e3827bf01d3a3589bbc8e1e51348b1da042aad165525ad1"
+      },
+      {
+        "path": "node_modules/string-width/license",
+        "bytes": 1109,
+        "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
+      },
+      {
+        "path": "node_modules/strip-ansi/license",
+        "bytes": 1109,
+        "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
+      },
+      {
+        "path": "node_modules/undici-types/LICENSE",
+        "bytes": 1090,
+        "sha256": "a6db8096b2707bc0102d256917d4d33f298ba36d8c3f25de067a2b5bb379db27"
+      },
+      {
+        "path": "node_modules/wrap-ansi/license",
+        "bytes": 1117,
+        "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
+      },
+      {
+        "path": "node_modules/y18n/LICENSE",
+        "bytes": 731,
+        "sha256": "2034cce3b6fafcddd642c4175e01d3ddfc332a53b9f20fdc46b1466dc89ac469"
+      },
+      {
+        "path": "node_modules/yargs-parser/LICENSE.txt",
+        "bytes": 731,
+        "sha256": "365496ca1f56da40b23c9815fc40fa9005847b2f8f8fd1c1a4929ef25ec8cd1d"
+      },
+      {
+        "path": "node_modules/yargs/LICENSE",
+        "bytes": 1146,
+        "sha256": "2f1a503bfab84b3ba7393627308b3274501e459e3b5185bbb56bbf16cb1602d4"
+      }
+    ],
+    "noticeMeaning": "Existing35-entry record excludes LICENSE-MIT.txt from its naming pattern; the additional1077-byte MIT notice is retained, not an observed missing payload file.",
+    "currentProbeReference": "docs/evidence/npm-runtime-projection.json"
+  },
+  "helperProposal": {
+    "upstream": {
+      "ref": "93d3f89bd7d151d7bde09af6dffc0c627901831b",
+      "path": "playback/playmethodhelper.js",
+      "url": "https://github.com/MediaBrowser/emby-webcomponents/blob/93d3f89bd7d151d7bde09af6dffc0c627901831b/playback/playmethodhelper.js",
+      "sha256": "0221204ebc057328a6bcddfead924d9a3f96ba20738709e7930cc68a36ff41e4",
+      "licenseURL": "https://github.com/MediaBrowser/emby-webcomponents/blob/93d3f89bd7d151d7bde09af6dffc0c627901831b/LICENSE.md",
+      "licenseSha256": "f371b80469fb235bc500ec29e0e85b682d4a6157a158567d828ff0be544d4f1d"
+    },
+    "currentSha256": "b9a6c50f3a8da2f7d29cff8a12aef9e57868124f085d787aacdd97c633763eb7",
+    "proposalSha256": "fbfde447c4858eab572c2ccf02280d0767282bbfdc04deb5514ee62e3c3dc2ef",
+    "copiedOriginalFunction": true,
+    "bridge": "AMD exports.default.getDisplayPlayMethod",
+    "cases": [
+      {
+        "case": 0,
+        "result": {
+          "value": null,
+          "undefined": false
+        }
+      },
+      {
+        "case": 1,
+        "result": {
+          "value": null,
+          "undefined": false
+        }
+      },
+      {
+        "case": 2,
+        "result": {
+          "value": "DirectStream",
+          "undefined": false
+        }
+      },
+      {
+        "case": 3,
+        "result": {
+          "value": "DirectStream",
+          "undefined": false
+        }
+      },
+      {
+        "case": 4,
+        "result": {
+          "value": "Transcode",
+          "undefined": false
+        }
+      },
+      {
+        "case": 5,
+        "result": {
+          "value": "DirectPlay",
+          "undefined": false
+        }
+      },
+      {
+        "case": 6,
+        "result": {
+          "value": "DirectPlay",
+          "undefined": false
+        }
+      },
+      {
+        "case": 7,
+        "result": {
+          "value": null,
+          "undefined": true
+        }
+      },
+      {
+        "case": 8,
+        "result": {
+          "value": null,
+          "undefined": true
+        }
+      },
+      {
+        "case": 9,
+        "result": {
+          "value": null,
+          "undefined": true
+        }
+      },
+      {
+        "case": 10,
+        "result": {
+          "error": "TypeError"
+        }
+      }
+    ],
+    "allThreeImplementationsEqual": true,
+    "status": "local research proposal; no runtime replacement or current-file license-clearance claim",
+    "limits": "Ordinary data-object cases including missing PlayState errors; not arbitrary getters/proxies, playerstats integration, whole-project distribution or licence compatibility review."
+  },
+  "maintainedWebSources": [
+    {
+      "path": "src/electronapp/www/modules/emby-apiclient/apiclient.js",
+      "sha256": "6342a2c809b8cd4c0e1e3e35fc49f6af8a415e4f4f8f8f0363cb769e9a7ef95e",
+      "meaning": "Upstream-derived maintained source with PR67 owned deltas; not wholly ETE original."
+    },
+    {
+      "path": "src/electronapp/www/modules/toast/toast.css",
+      "sha256": "654aeb05c1b89ca625cc6bd9145f1966a780c0e80fe1197f619800c5f1894743",
+      "meaning": "Upstream-derived maintained source with PR67 owned deltas; not wholly ETE original."
+    }
+  ],
+  "boundaries": {
+    "Model": "Existing closed component selection/task not reopened.",
+    "libmpv": "Cancelled corresponding-source specialty not reopened.",
+    "retiredResources": "Historical identity/license records retained; not active permission backlogs.",
+    "replacement": "No product/dependency/lock change; helper proposal or broad Web replacement require separate decisions."
+  }
+}

@@ -1,0 +1,1059 @@
+{
+  "schemaVersion": 1,
+  "observedUTC": "2026-10-22",
+  "analysisRef": "6fee412ad68934d0194303916cfe346e6254a228",
+  "scope": "720 files in vendor/web-snapshot-manifest.json; excludes two user-patch carriers and generated runtime overlays",
+  "methods": {
+    "rawExact": "same relative dashboard-ui path, size and SHA256; 160-file CSV additionally compared bytes directly",
+    "formatOnly": "text extensions only: remove one leading UTF-8 BOM, replace CRLF with LF; no other rewrites",
+    "strictAST": "Acorn 8.15.0: remove start/end/raw; retain identifiers, literals, operators and control flow",
+    "executedDownloadedProduct": false,
+    "uiAcceptancePerformed": false
+  },
+  "samples": [
+    {"version":"4.6.7.0","publishedUTC":"2021-11-21T21:22:58Z","archiveURL":"https://github.com/MediaBrowser/Emby.Releases/releases/download/4.6.7.0/embyserver-netcore_4.6.7.0.zip","archiveBytes":46438930,"archiveSha256":"c9418fb3e583a01dccb4951abd1a468408d338f50f71dc0856a64c91d050984e","rawExact":29,"BOM_CRLF_only":10,"normalizedTotal":39,"rawUnionAddedChronologically":29,"normalizedUnionAddedChronologically":39,"containsEmptyServiceworker":false},
+    {"version":"4.7.0.60","publishedUTC":"2022-05-17T17:43:26Z","archiveURL":"https://github.com/MediaBrowser/Emby.Releases/releases/download/4.7.0.60/embyserver-netcore_4.7.0.60.zip","archiveBytes":44938993,"archiveSha256":"480228f3adea6ed75eb8bf7917a4b3baadf51231a413cef46daad366fb43e649","rawExact":177,"BOM_CRLF_only":13,"normalizedTotal":190,"rawUnionAddedChronologically":148,"normalizedUnionAddedChronologically":151,"containsEmptyServiceworker":true},
+    {"version":"4.7.2.0","publishedUTC":"2022-06-03T15:12:16Z","archiveURL":"https://github.com/MediaBrowser/Emby.Releases/releases/download/4.7.2.0/embyserver-netcore_4.7.2.0.zip","archiveBytes":44917073,"archiveSha256":"366f24b7f27792060b4b17d2d0653f0383cb1f79d83091a3021970393a457a37","rawExact":181,"BOM_CRLF_only":56,"normalizedTotal":237,"rawUnionAddedChronologically":4,"normalizedUnionAddedChronologically":47,"containsEmptyServiceworker":true},
+    {"version":"4.7.4.0","publishedUTC":"2022-06-20T06:46:02Z","archiveURL":"https://github.com/MediaBrowser/Emby.Releases/releases/download/4.7.4.0/embyserver-netcore_4.7.4.0.zip","archiveBytes":44934300,"archiveSha256":"281ec41573395b5469794719debc1ef3876047c7d74106a8990e7daf70c4ca22","rawExact":220,"BOM_CRLF_only":69,"normalizedTotal":289,"rawUnionAddedChronologically":39,"normalizedUnionAddedChronologically":52,"containsEmptyServiceworker":true},
+    {"version":"4.7.5.0","publishedUTC":"2022-06-26T02:09:15Z","archiveURL":"https://github.com/MediaBrowser/Emby.Releases/releases/download/4.7.5.0/embyserver-netcore_4.7.5.0.zip","archiveBytes":44809566,"archiveSha256":"bca5d244ef347cc7de22e0d3eadb438730cbdba3c3289c9442117e6e22c0deb8","rawExact":220,"BOM_CRLF_only":72,"normalizedTotal":292,"rawUnionAddedChronologically":0,"normalizedUnionAddedChronologically":3,"containsEmptyServiceworker":true},
+    {"version":"4.7.6.0","publishedUTC":"2022-08-01T06:02:28Z","archiveURL":"https://github.com/MediaBrowser/Emby.Releases/releases/download/4.7.6.0/embyserver-netcore_4.7.6.0.zip","archiveBytes":44849375,"archiveSha256":"fcdd8b5d0c177bc8601ebdde33b953c7d728afd3367caba6ae34ec427b6f6074","rawExact":409,"BOM_CRLF_only":178,"normalizedTotal":587,"rawUnionAddedChronologically":189,"normalizedUnionAddedChronologically":295,"containsEmptyServiceworker":true},
+    {"version":"4.7.14.0","role":"previous-source-baseline-only","publishedUTC":"2023-08-24T03:29:14Z","archiveURL":"https://github.com/MediaBrowser/Emby.Releases/releases/download/4.7.14.0/embyserver-netcore_4.7.14.0.zip","archiveBytes":41299962,"archiveSha256":"ff5c412fb9f4faeb0f0d9da6c70e962205c29ff0483f161b85e9db05eb941804","samePathRawExact":253},
+    {"version":"4.8.0.80","role":"previous-source-baseline-only","publishedUTC":"2024-02-01T22:05:23Z","archiveURL":"https://github.com/MediaBrowser/Emby.Releases/releases/download/4.8.0.80/embyserver-netcore_4.8.0.80.zip","archiveBytes":48474402,"archiveSha256":"b8a2cea8aebb9c50c1f416e002fb77c326ec41af7785982e1046261d1997534b","samePathRawExact":69}
+  ],
+  "new160": {
+    "count": 160,
+    "bytes": 940396,
+    "allMatchVersion": "4.7.6.0",
+    "priorRawServerUnionWithin720": 256,
+    "overlapOf476WithPriorUnion": 248,
+    "outsidePriorUnion": 161,
+    "excludedOldDashboardPath": "www/components/directorybrowser/directorybrowser.css",
+    "csv": "web-476-byte-matches-20261022.csv",
+    "note": "Already incorporated by prior union audit; never add again to aggregate counts"
+  },
+  "oldSourceDedup": {
+    "webcomponents": {
+      "repo": "MediaBrowser/emby-webcomponents",
+      "head": "69877ad3319a7b422d0e1f8289dc5ca234c4040d",
+      "scope": "all reachable blobs from saved refs",
+      "matches": 7
+    },
+    "defaultskin": {
+      "repo": "MediaBrowser/emby-web-defaultskin",
+      "head": "822273018b82a4c63c2df7618020fb837656868d",
+      "master": "4165145cfe0055c1847fd5a00de564bf23a48676",
+      "scope": "all reachable blobs from saved refs",
+      "matches": 4
+    },
+    "dashboard": {
+      "repo": "MediaBrowser/Emby",
+      "commit": "1d7c2ab4bfebdae31f89fdaabd3b68782ccf495a",
+      "tree": "fb6d8a5d2d02de87bd51ef1971f09baaae8ac4fb",
+      "matches": 10
+    }
+  },
+  "coreComparisons": {
+    "app.js": [{"version":"4.6.7.0","sameNamedMembers":8,"wholeFileASTEqual":false,"changedNamedMembersCount":14,"currentOnlyNamedMembersCount":9,"officialOnlyNamedMembersCount":12},{"version":"4.7.0.60","sameNamedMembers":25,"wholeFileASTEqual":false,"changedNamedMembersCount":6,"currentOnlyNamedMembersCount":0,"officialOnlyNamedMembersCount":0},{"version":"4.7.2.0","sameNamedMembers":26,"wholeFileASTEqual":false,"changedNamedMembersCount":5,"currentOnlyNamedMembersCount":0,"officialOnlyNamedMembersCount":0},{"version":"4.7.4.0","sameNamedMembers":27,"wholeFileASTEqual":false,"changedNamedMembersCount":4,"currentOnlyNamedMembersCount":0,"officialOnlyNamedMembersCount":0},{"version":"4.7.5.0","sameNamedMembers":27,"wholeFileASTEqual":false,"changedNamedMembersCount":4,"currentOnlyNamedMembersCount":0,"officialOnlyNamedMembersCount":0},{"version":"4.7.6.0","sameNamedMembers":27,"wholeFileASTEqual":false,"changedNamedMembersCount":4,"currentOnlyNamedMembersCount":0,"officialOnlyNamedMembersCount":0}],
+    "modules/common/playback/playbackmanager.js": [{"version":"4.6.7.0","sameNamedMembers":32,"wholeFileASTEqual":false,"changedNamedMembersCount":34,"currentOnlyNamedMembersCount":8,"officialOnlyNamedMembersCount":2},{"version":"4.7.0.60","sameNamedMembers":53,"wholeFileASTEqual":false,"changedNamedMembersCount":19,"currentOnlyNamedMembersCount":2,"officialOnlyNamedMembersCount":0},{"version":"4.7.2.0","sameNamedMembers":54,"wholeFileASTEqual":false,"changedNamedMembersCount":18,"currentOnlyNamedMembersCount":2,"officialOnlyNamedMembersCount":0},{"version":"4.7.4.0","sameNamedMembers":54,"wholeFileASTEqual":false,"changedNamedMembersCount":18,"currentOnlyNamedMembersCount":2,"officialOnlyNamedMembersCount":0},{"version":"4.7.5.0","sameNamedMembers":54,"wholeFileASTEqual":false,"changedNamedMembersCount":18,"currentOnlyNamedMembersCount":2,"officialOnlyNamedMembersCount":0},{"version":"4.7.6.0","sameNamedMembers":65,"wholeFileASTEqual":false,"changedNamedMembersCount":8,"currentOnlyNamedMembersCount":1,"officialOnlyNamedMembersCount":0}],
+    "modules/common/appsettings.js": [{"version":"4.6.7.0","sameNamedMembers":12,"wholeFileASTEqual":false,"changedNamedMembersCount":6,"currentOnlyNamedMembersCount":2,"officialOnlyNamedMembersCount":0},{"version":"4.7.0.60","sameNamedMembers":16,"wholeFileASTEqual":false,"changedNamedMembersCount":3,"currentOnlyNamedMembersCount":1,"officialOnlyNamedMembersCount":0},{"version":"4.7.2.0","sameNamedMembers":16,"wholeFileASTEqual":false,"changedNamedMembersCount":3,"currentOnlyNamedMembersCount":1,"officialOnlyNamedMembersCount":0},{"version":"4.7.4.0","sameNamedMembers":16,"wholeFileASTEqual":false,"changedNamedMembersCount":3,"currentOnlyNamedMembersCount":1,"officialOnlyNamedMembersCount":0},{"version":"4.7.5.0","sameNamedMembers":16,"wholeFileASTEqual":false,"changedNamedMembersCount":3,"currentOnlyNamedMembersCount":1,"officialOnlyNamedMembersCount":0},{"version":"4.7.6.0","sameNamedMembers":16,"wholeFileASTEqual":false,"changedNamedMembersCount":3,"currentOnlyNamedMembersCount":1,"officialOnlyNamedMembersCount":0}],
+    "modules/emby-apiclient/apiclient.js": [{"version":"4.6.7.0","sameNamedMembers":72,"wholeFileASTEqual":false,"changedNamedMembersCount":176,"currentOnlyNamedMembersCount":36,"officialOnlyNamedMembersCount":9},{"version":"4.7.0.60","sameNamedMembers":226,"wholeFileASTEqual":false,"changedNamedMembersCount":39,"currentOnlyNamedMembersCount":19,"officialOnlyNamedMembersCount":6},{"version":"4.7.2.0","sameNamedMembers":227,"wholeFileASTEqual":false,"changedNamedMembersCount":38,"currentOnlyNamedMembersCount":19,"officialOnlyNamedMembersCount":6},{"version":"4.7.4.0","sameNamedMembers":227,"wholeFileASTEqual":false,"changedNamedMembersCount":38,"currentOnlyNamedMembersCount":19,"officialOnlyNamedMembersCount":6},{"version":"4.7.5.0","sameNamedMembers":227,"wholeFileASTEqual":false,"changedNamedMembersCount":38,"currentOnlyNamedMembersCount":19,"officialOnlyNamedMembersCount":6},{"version":"4.7.6.0","sameNamedMembers":243,"wholeFileASTEqual":false,"changedNamedMembersCount":23,"currentOnlyNamedMembersCount":18,"officialOnlyNamedMembersCount":3}]
+  },
+  "embedded476": {
+    "archiveMember": "system/Emby.Web.dll",
+    "assemblySha256": "71f4ceb87353a096943ad0457a01be9f1ccc8184bcf282525cde04e30ed42af0",
+    "resources": [
+      {
+        "webPath": "www/modules/apphost.js",
+        "currentBytes": 15851,
+        "currentSha256": "d5cb1e9715ad7255f8e93be78c4c0c079d5f69b3100d86996b5c1e2a35aad305",
+        "resourceOffset": 32192,
+        "resourceBytes": 11533,
+        "resourceSha256": "4397711dd61a5ede2ca2452a46e17d5e3dbf75ed591db85d7f6bfbaa80aabb75",
+        "comparison": "strict-AST-equal, not byte-equal"
+      },
+      {
+        "webPath": "www/modules/virtual-scroller/virtual-scroller.js",
+        "currentBytes": 40006,
+        "currentSha256": "d2982a619fdf3dc7f9ed13910d0cab3723e7122440b02214057d2fc6a592a5b9",
+        "resourceOffset": 76088,
+        "resourceBytes": 27670,
+        "resourceSha256": "6ad099b11b183d1e4939a3dd3092af307122b7112e26465be4d2c3308d836dba",
+        "comparison": "strict-AST-equal, not byte-equal"
+      }
+    ]
+  },
+  "electronSourceTags": [
+    {"tag":"3.0.2","sha":"6197e2e3c617e34719007ab66e4944a4a244ea0e","commitDate":"2018-08-24T02:04:18-04:00","urlLines":["var url = 'https://tv.emby.media';"],"wwwFileCount":0,"sourceURL":"https://github.com/MediaBrowser/emby-theater-electron/tree/6197e2e3c617e34719007ab66e4944a4a244ea0e"},
+    {"tag":"3.0.10","sha":"3ec71cf6255cdb4f2e2d71dd792edb8a0475641c","commitDate":"2019-10-31T14:08:02-04:00","urlLines":["var url = 'https://tv.emby.media';"],"wwwFileCount":0,"sourceURL":"https://github.com/MediaBrowser/emby-theater-electron/tree/3ec71cf6255cdb4f2e2d71dd792edb8a0475641c"},
+    {"tag":"3.0.15","sha":"aeaab148c71414f5b6c29cfc0f7cf4eac0f95c55","commitDate":"2021-03-29T12:53:14-04:00","urlLines":["var url = 'https://tv.emby.media';"],"wwwFileCount":0,"sourceURL":"https://github.com/MediaBrowser/emby-theater-electron/tree/aeaab148c71414f5b6c29cfc0f7cf4eac0f95c55"},
+    {"tag":"3.0.16","sha":"f573a9fa74766d6be5ceeec2a842e8bca80c5a4c","commitDate":"2022-08-10T15:48:31-04:00","urlLines":["var url = 'https://tv.emby.media';"],"wwwFileCount":0,"sourceURL":"https://github.com/MediaBrowser/emby-theater-electron/tree/f573a9fa74766d6be5ceeec2a842e8bca80c5a4c"},
+    {"tag":"3.0.19","sha":"915af80eeba533e3014192708ca3b722046fad03","commitDate":"2022-12-08T17:04:10-05:00","urlLines":["var url = 'https://tv.emby.media';"],"wwwFileCount":0,"sourceURL":"https://github.com/MediaBrowser/emby-theater-electron/tree/915af80eeba533e3014192708ca3b722046fad03"},
+    {"tag":"3.0.21","sha":"db0f4c814ee1e7d9b5f50010065c5cb64a20357e","commitDate":"2023-09-13T16:59:19-04:00","urlLines":["var url = 'https://tv.emby.media';"],"wwwFileCount":0,"sourceURL":"https://github.com/MediaBrowser/emby-theater-electron/tree/db0f4c814ee1e7d9b5f50010065c5cb64a20357e"}
+  ],
+  "uiMarkers": [
+    {"feature":"OSD分区标签","path":"videoosd/videoosd.html","marker":"videoOsdBottom-tabs","samples":[{"version":"4.6.7.0","markerPresent":false,"sha256":"4700bdd75f2d9244b0bde67b634a4e4837075e727a749d634747c2234f73c972","bytes":7137},{"version":"4.7.0.60","markerPresent":true,"sha256":"4fe5063721e33821c9762f9c8ca7fe0a5a735af9959815cdf6c919780031da42","bytes":11153},{"version":"4.7.2.0","markerPresent":true,"sha256":"45395a183fe3b14937159528bf5054832b8318b51515b45e98379840222091a2","bytes":11151},{"version":"4.7.4.0","markerPresent":true,"sha256":"45395a183fe3b14937159528bf5054832b8318b51515b45e98379840222091a2","bytes":11151},{"version":"4.7.5.0","markerPresent":true,"sha256":"45395a183fe3b14937159528bf5054832b8318b51515b45e98379840222091a2","bytes":11151},{"version":"4.7.6.0","markerPresent":true,"sha256":"18ab21c94230e8e00da73b9c56b1e2dc7d788633f75e827de7172ec36ed4606c","bytes":11155}]},
+    {"feature":"跳片头设置","path":"settings/playback.html","marker":"selectIntroSkip","samples":[{"version":"4.6.7.0","markerPresent":false,"sha256":"f8b8948abae1abd009fb39163a7e607ff7db27c70ad633b496c67a0fdfa1eb85","bytes":7037},{"version":"4.7.0.60","markerPresent":false,"sha256":"d5c240e5a05c3dc150679d4dc17b42f3bf8ee1d9a503e7b6cc7bf4b7dbfa809e","bytes":7372},{"version":"4.7.2.0","markerPresent":true,"sha256":"88dbf7a431517f119255a6296a4d05107087d372b507b8cb1678199f9a5a3474","bytes":7913},{"version":"4.7.4.0","markerPresent":true,"sha256":"88dbf7a431517f119255a6296a4d05107087d372b507b8cb1678199f9a5a3474","bytes":7913},{"version":"4.7.5.0","markerPresent":true,"sha256":"88dbf7a431517f119255a6296a4d05107087d372b507b8cb1678199f9a5a3474","bytes":7913},{"version":"4.7.6.0","markerPresent":true,"sha256":"751f236e1a9f27fa3d32de4503c8743926dc9a211f49933fc91b380a7dd148f6","bytes":7908}]},
+    {"feature":"表格视图选项","path":"modules/viewsettings/viewsettings.template.html","marker":"value=\"datagrid\"","samples":[{"version":"4.6.7.0","markerPresent":false,"sha256":"74272bdfd2d9eb7124ad1a74ca412557bf8066c68b8de61e2a27c7751c17f206","bytes":4006},{"version":"4.7.0.60","markerPresent":false,"sha256":"74272bdfd2d9eb7124ad1a74ca412557bf8066c68b8de61e2a27c7751c17f206","bytes":4006},{"version":"4.7.2.0","markerPresent":false,"sha256":"8e43a75481e7ff4af9215aadbf3e959fe0adf8d6e78bae764c7ba399c6d5896f","bytes":4033},{"version":"4.7.4.0","markerPresent":true,"sha256":"d6f00d1c8b21372ec514a72c491fd371c34baea750d442fb7394ce3daaf10aa7","bytes":2859},{"version":"4.7.5.0","markerPresent":true,"sha256":"d6f00d1c8b21372ec514a72c491fd371c34baea750d442fb7394ce3daaf10aa7","bytes":2859},{"version":"4.7.6.0","markerPresent":true,"sha256":"d6f00d1c8b21372ec514a72c491fd371c34baea750d442fb7394ce3daaf10aa7","bytes":2859}]},
+    {"feature":"Shift范围选择","path":"modules/multiselect/multiselect.js","marker":"e.shiftKey","samples":[{"version":"4.6.7.0","markerPresent":false,"sha256":"ad7032d36216d29f89670eeacd2068cb3d92e39a3c87f70511941a2ff3e2f850","bytes":15898},{"version":"4.7.0.60","markerPresent":false,"sha256":"9f4babe4f30438049eaca3f3d371a68b0bbd4cfdd074b5ba41c35d871bdd344d","bytes":17989},{"version":"4.7.2.0","markerPresent":false,"sha256":"9f4babe4f30438049eaca3f3d371a68b0bbd4cfdd074b5ba41c35d871bdd344d","bytes":17989},{"version":"4.7.4.0","markerPresent":false,"sha256":"1c2452091540d77d487157f45fba43afd2b44a573fb82f3e59b12dbef6621fd6","bytes":18152},{"version":"4.7.5.0","markerPresent":false,"sha256":"1c2452091540d77d487157f45fba43afd2b44a573fb82f3e59b12dbef6621fd6","bytes":18152},{"version":"4.7.6.0","markerPresent":true,"sha256":"7d86d1a163c8fd41174a1a298d1050fef5e89b6abbed9ffca5d659a2fcd874f4","bytes":19743}]},
+    {"feature":"全不选按钮","path":"modules/actionsheet/actionsheet.js","marker":"btnActionSheetSelectNone","samples":[{"version":"4.6.7.0","markerPresent":false,"sha256":"024a3ade8ca466355bcbb9bf174f1af0ed575d6bc2e138577a2d5f191ae1d528","bytes":12700},{"version":"4.7.0.60","markerPresent":false,"sha256":"21aedc94fa79936f819fd476b3531bae8e18a9129b794bb7636303d6bd2ccfbe","bytes":14015},{"version":"4.7.2.0","markerPresent":false,"sha256":"21aedc94fa79936f819fd476b3531bae8e18a9129b794bb7636303d6bd2ccfbe","bytes":14015},{"version":"4.7.4.0","markerPresent":false,"sha256":"87fcf8925453be0375199ce0e0c0c045e3a9831debebf49e1286b969fe07f950","bytes":16480},{"version":"4.7.5.0","markerPresent":false,"sha256":"87fcf8925453be0375199ce0e0c0c045e3a9831debebf49e1286b969fe07f950","bytes":16480},{"version":"4.7.6.0","markerPresent":true,"sha256":"0ad2bfad1ad2b694ec07c693a44f0edfbd4eb76121c8939f0e5de27e0abefe67","bytes":16933}]},
+    {"feature":"RTL语言选择","path":"modules/common/globalize.js","marker":"rtlLocales","samples":[{"version":"4.6.7.0","markerPresent":false,"sha256":"2bc1e138705668aa4e686725c3c4afc4d8d3d75f0e91a8de3745ec5138aa90ae","bytes":3724},{"version":"4.7.0.60","markerPresent":false,"sha256":"3dd22987bb1ca481504259b2fcbb9e016834938ae9908b016594149c7fed60a7","bytes":4190},{"version":"4.7.2.0","markerPresent":false,"sha256":"3dd22987bb1ca481504259b2fcbb9e016834938ae9908b016594149c7fed60a7","bytes":4190},{"version":"4.7.4.0","markerPresent":false,"sha256":"3dd22987bb1ca481504259b2fcbb9e016834938ae9908b016594149c7fed60a7","bytes":4190},{"version":"4.7.5.0","markerPresent":false,"sha256":"3dd22987bb1ca481504259b2fcbb9e016834938ae9908b016594149c7fed60a7","bytes":4190},{"version":"4.7.6.0","markerPresent":true,"sha256":"12edb7922a40167ada7add0e4af089d0eb4e2d010e1e9368585b3bb4dc0689f3","bytes":4400}]},
+    {"feature":"字幕背景不透明度","path":"settings/subtitles.html","marker":"${LabelBackgroundOpacity}","samples":[{"version":"4.6.7.0","markerPresent":false,"sha256":"c5557ee3880827d949384d0915f1faff7a480ba9746d856df9cc65e3b1d6d12c","bytes":6085},{"version":"4.7.0.60","markerPresent":true,"sha256":"ee2b29e67704f09b46be297b3cef03fa33d11a5856e65e3c8d002258d3a8cfc5","bytes":7955},{"version":"4.7.2.0","markerPresent":true,"sha256":"d2beb31afb2087068b94b4904fa3873966dbc9c8b49220c31919369eb3fe6db8","bytes":8047},{"version":"4.7.4.0","markerPresent":true,"sha256":"d2beb31afb2087068b94b4904fa3873966dbc9c8b49220c31919369eb3fe6db8","bytes":8047},{"version":"4.7.5.0","markerPresent":true,"sha256":"d2beb31afb2087068b94b4904fa3873966dbc9c8b49220c31919369eb3fe6db8","bytes":8047},{"version":"4.7.6.0","markerPresent":true,"sha256":"0d793e3a5ce9fb7b7ea5f2744acd861231b7927df69d5ac841443af39f13be9a","bytes":8042}]}
+  ],
+  "licenseObservations": {
+    "476ArchiveNoticeNameMatchCount": 0,
+    "noticeNamePattern": "license|copying|notice, case-insensitive; entry names only, not a full license-content audit",
+    "electron319": {
+      "repo": "MediaBrowser/emby-theater-electron",
+      "commit": "915af80eeba533e3014192708ca3b722046fad03",
+      "path": "LICENSE.md",
+      "sha256": "f371b80469fb235bc500ec29e0e85b682d4a6157a158567d828ff0be544d4f1d",
+      "declaredText": "GNU GPL Version 2",
+      "scopeLimit": "Does not assign a license to the separate 2022 Web snapshot"
+    },
+    "webcomponentsAndDefaultskin": "No root license/copying/notice-named file in inspected tips; no blanket license inferred"
+  },
+  "aggregateReference": {
+    "sourceTitle": "ROUND5-FINAL-UNION, existing file-level source union audit",
+    "date": "2026-10-22",
+    "referenceOnly": true,
+    "fullLedgerRecomputedInThisReport": false,
+    "fullLedgerIncluded": false,
+    "web720": {
+      "officialByte": 597,
+      "strictASTOnly": 6,
+      "emptyServiceworker": 1,
+      "nonemptyUnresolved": 116
+    },
+    "historicalPhysical897": {
+      "fixedUpstream": 758,
+      "other": 139,
+      "includesSupersededModel": true
+    },
+    "currentPhysical897": {
+      "fixedUpstream": 759,
+      "other": 138,
+      "basis": "one Model identity reclassification against current manifest and physical file; not a full 897-file rerun"
+    }
+  },
+  "currentModelIdentityCheck": {
+    "path": "vendor/model-compatibility/snapshot-v1/MediaBrowser.Model.dll",
+    "bytes": 426496,
+    "sha256": "db22f8ea6cb6afdfab184f80d8b85a10d8a9f148ff4cae167db87ce9cd245153",
+    "manifest": "vendor/model-compatibility-manifest.json",
+    "archiveIndependentlyDownloadedForThisCheck": false
+  },
+  "coreResidues476": {
+    "app.js": {"changedNamedMembers":["validateServerAddressWithEndpoint","validateServerAddress","onAppReady","start"],"currentOnlyNamedMembers":[],"officialOnlyNamedMembers":[]},
+    "modules/common/playback/playbackmanager.js": {"changedNamedMembers":["PlaybackManager","updateResultSetStartingPoint","playWithIntrosInternal","playAfterBitrateDetect","createStreamInfo","getTextTracks","onPlaybackStarted","onPlaybackStopped"],"currentOnlyNamedMembers":["onPlaybackRequested"],"officialOnlyNamedMembers":[]},
+    "modules/common/appsettings.js": {"changedNamedMembers":["AppSettings.prototype.maxStreamingBitrate","AppSettings.prototype.maxStaticMusicBitrate","AppSettings.prototype.maxChromecastBitrate"],"currentOnlyNamedMembers":["AppSettings.prototype.autoplay"],"officialOnlyNamedMembers":[]},
+    "modules/emby-apiclient/apiclient.js": {"changedNamedMembers":["setAuthorizationInfoIntoRequest","ajax","detectBitrate","getItem","updateLiveTvSeriesTimer","getEpisodes","getPlaybackInfo","getIntros","getVirtualFolders","getNextUpAudioBookItems","getNextUpEpisodes","uninstallPlugin","deleteUser","uploadUserImage","uploadItemImage","getPublicUsers","getLogoImageUrl","createUser","getEndpointInfo","getLatestItems","getPlayQueue","getSearchResults","deleteDevice"],"currentOnlyNamedMembers":["getCurrentLocale","setCurrentLocale","getNotificationTypes","sendTestUserNotification","saveUserNotification","getFeatures","uninstallPluginSingle","uninstallPlugins","deleteUserSingle","deleteUsers","getPublicUsersQueryResult","getDefaultImageSizes","getImageUrls","getTypedUserSettings","updateTypedUserSettings","deleteDeviceSingle","deleteDevices","getConfigurationPages"],"officialOnlyNamedMembers":["getNotificationSummary","getNotifications","markNotificationsRead"]}
+  },
+  "followup20261022": {
+    "inputLedger": {
+      "files": 116,
+      "bytes": 11521,
+      "encoding": "UTF-8 without BOM, LF, final newline",
+      "sha256": "004481f14afde067c6a5ea398da23e855bb57b8d497f28b38de747746121bc09",
+      "source": "exact transferred path/hash list from prior file-level union audit; all hashes checked against the frozen tree"
+    },
+    "scope": {
+      "activeCompared": 115,
+      "deferredCustomCssJs": 1,
+      "known597NotResearchedAgain": true,
+      "userPatchCarriersExcluded": true
+    },
+    "samples": [
+      {
+        "version": "4.7.8.0",
+        "publishedUTC": "2022-10-01T06:15:27Z",
+        "url": "https://github.com/MediaBrowser/Emby.Releases/releases/download/4.7.8.0/embyserver-netcore_4.7.8.0.zip",
+        "archiveBytes": 44893726,
+        "archiveSha256": "7154876a4d727e96edac920985ca8360a2621fcc686f061ca5272cf4174cc7ec",
+        "scope": 115,
+        "customCssJsExcluded": true
+      },
+      {
+        "version": "4.7.11.0",
+        "publishedUTC": "2022-12-15T18:38:41Z",
+        "url": "https://github.com/MediaBrowser/Emby.Releases/releases/download/4.7.11.0/embyserver-netcore_4.7.11.0.zip",
+        "archiveBytes": 40997777,
+        "archiveSha256": "ed3bf963091723e90d16bdd804a9deb7a5679f88fb7a2bd93b964ca8a95f06dc",
+        "scope": 115,
+        "customCssJsExcluded": true
+      }
+    ],
+    "increment": {
+      "newByte": 0,
+      "newBOM_CRLF_only": 0,
+      "newWholeJSAST": 0,
+      "newCSSAST": 1,
+      "nonemptyUnexplainedBefore": 116,
+      "nonemptyUnexplainedAfter": 114,
+      "current897Fixed": 759,
+      "current897Other": 138,
+      "note": "1 CSS AST and 1 fixed-revision normalized source identified. Official byte count is unchanged; no deletion or 897-wide rerun claimed.",
+      "newFixedRevisionNormalizedSource": 1
+    },
+    "newCSSAST": {
+      "path": "www/modules/virtual-scroller/virtual-scroller.css",
+      "currentSha256": "90d352ce5cbb0fa94414e838b5299d4668a11159d963ffeea259c4999697538c",
+      "parser": {
+        "package": "css-tree",
+        "version": "2.3.1",
+        "metadataURL": "https://registry.npmjs.org/css-tree/2.3.1",
+        "tarballURL": "https://registry.npmjs.org/css-tree/-/css-tree-2.3.1.tgz",
+        "integrity": "sha512-6Fv1DV/TYw//QF5IzQdqsNDjx/wc8TrMBZsqjL9eW01tWb7R7k/mq+/VXfJCl7SoD5emsJop9cOByJZfs8hYIw==",
+        "tarballSha256": "097d010f1a3c9d61950656509b0b9e3eba27bf34f3ec2faeb3fee8967789deac",
+        "toolMember": "package/dist/csstree.js",
+        "toolSha256": "03af24f01f8cbb54e29e7015aa117a3d15a0e5588ab8b9746ab44336613e9cf6",
+        "license": "MIT",
+        "lifecycleScriptsExecuted": false
+      },
+      "method": "css-tree full stylesheet AST, no positions; selector combinators, declaration order, important flags and values retained; fail closed on parse errors",
+      "comparisonControlsPassed": 5,
+      "sources": [
+        {
+          "version": "4.7.6.0",
+          "archiveMember": "system/Emby.Web.dll",
+          "assemblySha256": "71f4ceb87353a096943ad0457a01be9f1ccc8184bcf282525cde04e30ed42af0",
+          "resourceOffset": 103768,
+          "resourceBytes": 321,
+          "resourceSha256": "e56a36f09b9049072d18c55d7c062ad4bf5c974d84a05defaf753bacebf13095"
+        },
+        {
+          "version": "4.7.8.0",
+          "archiveMember": "system/Emby.Web.dll",
+          "assemblySha256": "388ac6106a720d6e23dfe6a9a1b5ac0b6ed42166643f387cd268fcacd46f9a14",
+          "resourceOffset": 104096,
+          "resourceBytes": 321,
+          "resourceSha256": "e56a36f09b9049072d18c55d7c062ad4bf5c974d84a05defaf753bacebf13095"
+        }
+      ]
+    },
+    "refinedBoundaries": {
+      "web720": {
+        "officialByte": 597,
+        "JS_AST_only": 6,
+        "CSS_AST_only": 1,
+        "empty": 1,
+        "fixedRevisionNormalizedCustomCssJs": 1,
+        "nonemptyUnexplained": 114
+      },
+      "webPending122": {
+        "JS_AST_only": 6,
+        "CSS_AST_only": 1,
+        "empty": 1,
+        "otherNonempty": 114
+      },
+      "notOfficialByteMatched123": "122 Web-pending plus normalized-source CustomCssJS",
+      "remaining114": "112 sampled Server comparands plus 1 early official helper semantic comparand; logo still lacks a selected-source baseline. All 114 remain unclosed; exact/AST source counts unchanged.",
+      "carriers": "Two user-patch carriers remain outside the 720-file scope",
+      "aggregate897": "759/138 remains the dated prior-audit/current-Model reference. This report does not silently recalculate that ledger or subtract unmerged retirement work."
+    },
+    "knownFunctionBoundaries": [
+      {
+        "rel": "app.js",
+        "v": "4.7.6.0",
+        "mode": "declarations",
+        "names": [
+          "validateServerAddressWithEndpoint",
+          "validateServerAddress",
+          "onAppReady",
+          "start"
+        ],
+        "entireRemainingASTEqual": true
+      },
+      {
+        "rel": "modules/emby-apiclient/apiclient.js",
+        "v": "4.7.14.0",
+        "mode": "class",
+        "names": [
+          "uploadUserImage",
+          "uploadItemImage",
+          "getLatestItems",
+          "getSearchResults"
+        ],
+        "entireRemainingASTEqual": true
+      },
+      {
+        "rel": "modules/common/appsettings.js",
+        "v": "4.7.6.0",
+        "mode": "prototype",
+        "names": [
+          "maxStreamingBitrate",
+          "maxStaticMusicBitrate",
+          "maxChromecastBitrate"
+        ],
+        "removeCurrentOnly": "autoplay",
+        "entireRemainingASTEqual": true
+      }
+    ],
+    "missingBaselinesInSelectedSources": [
+      "www/modules/common/playback/playmethodhelper.js",
+      "www/modules/themes/logo.png"
+    ],
+    "comparisonLimits": "75 JS files have parsed whole-AST differences; 22 CSS differ structurally in the 4.7 samples; 13 HTML lack DOM/visible-equivalence proof; 2 JSON differ in keys or values. AST differences can include compiler rewrites and do not prove user-visible changes or authorship."
+  },
+  "fixedVersionLicenseEvidence": {
+    "version": "4.7.6.0",
+    "platformScope": "official arm64 Debian Server distribution; no automatic applicability conclusion for separate Theater/Web or independently licensed components",
+    "archive": {
+      "url": "https://github.com/MediaBrowser/Emby.Releases/releases/download/4.7.6.0/emby-server-deb_4.7.6.0_arm64.deb",
+      "bytes": 76094120,
+      "sha256": "2a75311bb9c9e44fd2cb7d6e2fb1d7d55de8927213a7c30fa12d92fa196c0efe",
+      "releasePublishedUTC": "2022-08-01T06:02:28Z"
+    },
+    "originalLicenseDocument": {
+      "container": "data.tar.xz",
+      "member": "./opt/emby-server/licenses/license.docx",
+      "bytes": 18373,
+      "sha256": "a6d7ea65dcb06392479a85e1a10a7aeb872d803da6f784f6935fcd4ee63008c6",
+      "textStatedUpdateDate": "2018-04-11",
+      "extractedTextSha256": "5a13e7885b7591a0b0315d9934351f26c1f0a4969099500c35de9685f9168736"
+    },
+    "namedComponentIndex": {
+      "container": "data.tar.xz",
+      "member": "./opt/emby-server/licenses/licenses",
+      "bytes": 8273,
+      "sha256": "f930ad6942fc722b09ef14b5ab9cc0d85b5fa4072e874256f4bad54cf081ee91",
+      "lines": 95,
+      "webFileLevelMappingEstablished": false
+    },
+    "noticeNamedFiles": 51,
+    "observation": "The shipped document grants limited personal use and a conditional whole-Server copying exception, and restricts modification/distribution and public download offerings. This is not evidence authorizing extraction, modification and public redistribution of the Web snapshot. Component-specific licenses and scope remain to be established.",
+    "currentTermsReference": {
+      "url": "https://emby.media/terms.html",
+      "pageStatedUpdated": "2026-08-16",
+      "observedDate": "2026-10-22",
+      "source": "allowed web reader",
+      "rawHtmlHashEstablished": false,
+      "rawHttpError": "Tunnel connection failed: 403 Forbidden",
+      "historical2022ApplicabilityEstablished": false
+    },
+    "downloadedProductOrInstallerExecuted": false
+  },
+  "remainingAfterFollowup": [
+    {"path":"www/app.js","sha256":"3ef3102567458359a02e2fe8f79a8700cfe9c223347abe5ab6ecb8bd93be89d2","bytes":102397,"group":"core-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"135d08b7bc504c6ab3e21a9aaa4d3f460f07de43f650e7b17023897af69df3fb","officialBytes":67797,"archiveMember":"system/dashboard-ui/app.js"}},
+    {"path":"www/components/accessschedule/accessschedule.template.html","sha256":"b2ae39691199c9d2578d3c4886efc8a2046337192b6a108acfd24ce6ea2dac35","bytes":1737,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"raw-and-BOM-CRLF-different; DOM and visible equivalence not established","comparisonReference":{"version":"4.7.6.0","officialSha256":"037315164d8b008837c557bc19ebeef69885915be8cc97bfb25fdb2d83e3997b","officialBytes":1689,"archiveMember":"system/dashboard-ui/components/accessschedule/accessschedule.template.html"}},
+    {"path":"www/components/directorybrowser/directorybrowser.js","sha256":"21cf26564d36124f0efecffdec69e97816898657f5e5d93a9c73411e3087cfc5","bytes":13525,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"848dd80ec977b988ea42fc04e84333d458d4da69041ea07066e3bacc34678b38","officialBytes":8374,"archiveMember":"system/dashboard-ui/components/directorybrowser/directorybrowser.js"}},
+    {"path":"www/components/libraryoptionseditor/libraryoptionseditor.js","sha256":"b6931b38d5422262606efdba06bc868d0979ae84b99c2a61541188b54b4b9aaa","bytes":53424,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"44afd92f40fb6e939bf40ebe156ea154db757b5fc60dee686cab220fbc6d8a79","officialBytes":39139,"archiveMember":"system/dashboard-ui/components/libraryoptionseditor/libraryoptionseditor.js"}},
+    {"path":"www/dashboard/dashboard.js","sha256":"869440877607a96aac8c723b6faf60a0602a87be6daf63d8ce90d50ae6ea9be5","bytes":27824,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"e3bd4446343e75cfb5f616879673d7509a81416dbfea0ed67f4d1e16e95cb7e3","officialBytes":20523,"archiveMember":"system/dashboard-ui/dashboard/dashboard.js"}},
+    {"path":"www/devices/cameraupload.js","sha256":"bbd038cc8c4244ce1393aba17950852527321afb52cebfd24fca5fea4dea3218","bytes":2762,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"d1c6ef27d82f5ee6ae00b6adc861c0c4866645f6cb5ddc222c2f66346f9dda11","officialBytes":2215,"archiveMember":"system/dashboard-ui/devices/cameraupload.js"}},
+    {"path":"www/embypremiere/embypremiere.js","sha256":"61ada78c134a9482f952457b14325898c7f97a323549515296f664ec7d7cdf11","bytes":33501,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"7772175ae57066957e7db17a60f2854a40da251be5cbab3e3126316fde604c44","officialBytes":7463,"archiveMember":"system/dashboard-ui/embypremiere/embypremiere.js"}},
+    {"path":"www/home/favorites.js","sha256":"f7cedac04dcf36edf50c805d75a37f440702829930d63872f0c4c6a4c05a1c55","bytes":7103,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"ac02df0683bf7090dfdd0b22a8d29c0e20e0ec09cf03fba91d55ee9e88c8d540","officialBytes":7102,"archiveMember":"system/dashboard-ui/home/favorites.js"}},
+    {"path":"www/index.html","sha256":"ca05a9a26de19e16bb89c3595d29c95e3a56876439e968e3f464b218a101053a","bytes":3991,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"raw-and-BOM-CRLF-different; DOM and visible equivalence not established","comparisonReference":{"version":"4.7.6.0","officialSha256":"b2ed5d1887f4de9cb5bb4f4d735f4621ebfa1ecc54e9a752de120a50839509bb","officialBytes":3661,"archiveMember":"system/dashboard-ui/index.html"}},
+    {"path":"www/item/item.css","sha256":"6cef345654844e0d270694688ca02e080ab21bd01f58feadfaeb99e4556bad62","bytes":16295,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"CSS-AST-different-from-476-through-4714; three 48080 comparisons recover with parse errors and are not equated","comparisonReference":{"version":"4.7.6.0","officialSha256":"d3f7300d2e00e7d9f3a886a52603cac44ee407a42ee69bc79712241070da08f9","officialBytes":11558,"archiveMember":"system/dashboard-ui/item/item.css"}},
+    {"path":"www/item/item.html","sha256":"a11d00bb58f83a9f56a16f137342d5c3b62df03ae83436527d426b56b160a6b5","bytes":24093,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"raw-and-BOM-CRLF-different; DOM and visible equivalence not established","comparisonReference":{"version":"4.7.6.0","officialSha256":"226925decef1c825e5909fb0c8903f96900a31b8e2e9f91d203ea11d5b22f8b2","officialBytes":22489,"archiveMember":"system/dashboard-ui/item/item.html"}},
+    {"path":"www/item/item.js","sha256":"c8f51119365ecd2881b0a33f1f9e9dd6da90e305572621188fb31a15fdcb4623","bytes":142916,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"fe5347c3d92fa156cc0bb774f8ae32ea3d44fb42652080b05461f421916a9199","officialBytes":90067,"archiveMember":"system/dashboard-ui/item/item.js"}},
+    {"path":"www/librarysetup/library.js","sha256":"4ac5dd0c3897067f72d974f150a1e38ebaefdbac72b4bdde21bbecf374499d3f","bytes":5985,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"44ae35576f6c76cb0507840e9aacec0ba0f700806e3e35b628aaf04871f876b7","officialBytes":5984,"archiveMember":"system/dashboard-ui/librarysetup/library.js"}},
+    {"path":"www/livetv/livetv.js","sha256":"2dd489a37f981205488d3a3e3899b7e149b883d5d9ddde0172e853f631c782bf","bytes":4079,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"663782a9ada1b86c098c1a5b78f26345858159c666b9812080f74bc14acd703d","officialBytes":3181,"archiveMember":"system/dashboard-ui/livetv/livetv.js"}},
+    {"path":"www/livetvsetup/livetvstatus.js","sha256":"be81d58883a067494299e0bfed24099d53279cd30105dedbded651fd84d2b147","bytes":7689,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"145f3ffe4470c4a9d18ffe4ab43835ca5641111167d6bf1ea85d7dfba49079da","officialBytes":5605,"archiveMember":"system/dashboard-ui/livetvsetup/livetvstatus.js"}},
+    {"path":"www/modules/actionsheet/actionsheet.css","sha256":"5a4d6a7c89f9cf86ff3d5fb4dbb4ed4b53982df0883caa19c2e29f164ac7e39d","bytes":9259,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"CSS-AST-different-from-476-through-4714; three 48080 comparisons recover with parse errors and are not equated","comparisonReference":{"version":"4.7.6.0","officialSha256":"74ed079987cb6d0115fa359beccdc5ffbea0464402467bda57b6bcf86cbe919a","officialBytes":7451,"archiveMember":"system/dashboard-ui/modules/actionsheet/actionsheet.css"}},
+    {"path":"www/modules/appfooter/appfooter.css","sha256":"29fd442f55202fa952f77e674aadb71a139eea4f76c43affef6d2c784a025da6","bytes":707,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"CSS-AST-different-from-476-through-4714; three 48080 comparisons recover with parse errors and are not equated","comparisonReference":{"version":"4.7.6.0","officialSha256":"54310827dc2a07e50da0800f1bfa37673b07f0980199889d895368a23306d215","officialBytes":568,"archiveMember":"system/dashboard-ui/modules/appfooter/appfooter.css"}},
+    {"path":"www/modules/appheader/appheader.css","sha256":"3615beb7c72c8568a54c8566d66a57c394cf7d784d050d60bfe80d9ff37b97de","bytes":6555,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"CSS-AST-different-from-476-through-4714; three 48080 comparisons recover with parse errors and are not equated","comparisonReference":{"version":"4.7.6.0","officialSha256":"7aded0de437ca7b1708a5cdb739dd7ae5e17c40c409371a8aa60a9b6cd46ff4e","officialBytes":4700,"archiveMember":"system/dashboard-ui/modules/appheader/appheader.css"}},
+    {"path":"www/modules/appheader/appheader.js","sha256":"96ac8c85c6c22d5d227ae5de6df60cca2abff3983f0758a3847929ff82bf7a98","bytes":24321,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"1cd1d07a18e13e0bc99bc320e4268d3938f775b7c6a2b5390d140c1831947e53","officialBytes":19916,"archiveMember":"system/dashboard-ui/modules/appheader/appheader.js"}},
+    {"path":"www/modules/approuter.js","sha256":"cf4621bf3865bde1ecb77befb2bea67a0b4b505fc285bc83b743a880c4306aa1","bytes":31414,"group":"core-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"022b3880b531e42451d7b5a1e7721ad99f44b94caed88994fc535819368a598c","officialBytes":23805,"archiveMember":"system/dashboard-ui/modules/approuter.js"}},
+    {"path":"www/modules/backmenu/backmenu.js","sha256":"76de6d5ebfd91c4ef9aebe9692e69dae757c4e663dea82dd6731761c796107da","bytes":5382,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"3d44d7053b6ca930dd37cccaad750a4854929b796f0ac0aec108851e2a96622a","officialBytes":3299,"archiveMember":"system/dashboard-ui/modules/backmenu/backmenu.js"}},
+    {"path":"www/modules/cardbuilder/card.css","sha256":"81669ddf0340fb1871ed6115baf74111467e22b640cb4e4988e3912cd1a5d3c6","bytes":30725,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"CSS-AST-different-from-476-through-4714; three 48080 comparisons recover with parse errors and are not equated","comparisonReference":{"version":"4.7.6.0","officialSha256":"6cb4fe93466d766190857df9f95792c3cedfebe531665600148620dee4f3a488","officialBytes":23274,"archiveMember":"system/dashboard-ui/modules/cardbuilder/card.css"}},
+    {"path":"www/modules/cardbuilder/cardbuilder.js","sha256":"eb5c7eb15dcf7d505e25ba571eff5ffb898e460c8797d78459a810c7beba0fbe","bytes":87837,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"96675fa4643482b1a5ce8f16defc0ffa91127791b8e095619032ffda26671061","officialBytes":60324,"archiveMember":"system/dashboard-ui/modules/cardbuilder/cardbuilder.js"}},
+    {"path":"www/modules/commandprocessor.js","sha256":"10ed682d5897e8c065925ef6071e914cb04537067a14c4d869f3eb14f724276f","bytes":15990,"group":"core-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"9943a819468d5688f79f640d998d34d82a1a8334970c21a18dd0e240ec5c776f","officialBytes":15990,"archiveMember":"system/dashboard-ui/modules/commandprocessor.js"}},
+    {"path":"www/modules/common/appsettings.js","sha256":"5c5f0e9d4ae508d9f4157d26ebbfd71885f91eaaa16ff6c40388c161feb06582","bytes":5007,"group":"core-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"2314a604a6d0d03306fc0da00cd59132b62792d4f6d24edf930b293330e06273","officialBytes":3694,"archiveMember":"system/dashboard-ui/modules/common/appsettings.js"}},
+    {"path":"www/modules/common/datetime.js","sha256":"30133c5fabcb97731f18c81bf95a1852cab9460626a767f11acab7da332724e9","bytes":5222,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"13275cd730a3d438831a15d3f53e4728b3a510080f8195e4f9f871c62fd82e8c","officialBytes":3689,"archiveMember":"system/dashboard-ui/modules/common/datetime.js"}},
+    {"path":"www/modules/common/inputmanager.js","sha256":"aedc007222d868585d4c4b4afe729a17cda34b97fea54e67353bd29eada84cb5","bytes":6516,"group":"core-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"b9784314e50328640016cf8613e201f787d464889cae92e2d245e64dddbc2178","officialBytes":4841,"archiveMember":"system/dashboard-ui/modules/common/inputmanager.js"}},
+    {"path":"www/modules/common/playback/experimentalwarnings.js","sha256":"3bb3d038d721edc444789acc61b693a6bfa43ad1eca6ba48a6e27b7aca7d6fbb","bytes":3384,"group":"core-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"95b0da89c7f8838b2721a1a2377e5b0cc243671202dba449464d1510983bb03e","officialBytes":2510,"archiveMember":"system/dashboard-ui/modules/common/playback/experimentalwarnings.js"}},
+    {"path":"www/modules/common/playback/playbackmanager.js","sha256":"8df9ea6f1be13f355925b2fd1b9bf7539c5a624d8731be484959a4ec861a1ebd","bytes":125181,"group":"core-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"a9445c4bf16537a7a1edeede4af8f9cc64a6b1e69387205724e0d1e3210fd62b","officialBytes":84237,"archiveMember":"system/dashboard-ui/modules/common/playback/playbackmanager.js"}},
+    {"path":"www/modules/common/playback/playmethodhelper.js","sha256":"b9a6c50f3a8da2f7d29cff8a12aef9e57868124f085d787aacdd97c633763eb7","bytes":656,"group":"core-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"no-baseline-in-selected-archives"},
+    {"path":"www/modules/common/qualityoptions.js","sha256":"ce0312e5cb6abe93f837445e3a7f902acb8fdb6e70e0398b9d1ef7b93cf4a639","bytes":4690,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"442a1e359f29310ad8c1005821d253b0bdd42a39eade56ee89675ef7d355f0ca","officialBytes":4989,"archiveMember":"system/dashboard-ui/modules/common/qualityoptions.js"}},
+    {"path":"www/modules/common/strings/zh-CN.json","sha256":"16331e9f5754f545fcff964b60d95217c7827f6c8f2b17490c01490d760f0e89","bytes":63180,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"parsed-JSON-key-or-value-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"d0dbd478c67058e158de565bf62cb81620cd154be7fe835ee2241ab8c3c1a9db","officialBytes":81912,"archiveMember":"system/dashboard-ui/modules/common/strings/zh-CN.json"}},
+    {"path":"www/modules/common/subtitleappearancehelper.js","sha256":"c8bb683bca38ed1869819d290a269e0f0d46c0a548f463eafb44b75ca9a6cecb","bytes":3916,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"8b299c9b0c4fc109f43b7f06c545dc503214698ed40dcbaa223d972ac9898d72","officialBytes":2714,"archiveMember":"system/dashboard-ui/modules/common/subtitleappearancehelper.js"}},
+    {"path":"www/modules/common/usersettings/usersettingsbuilder.js","sha256":"92e398d2db43ae3c8eea2aecc42599f2399b56ae70145893433f5dafaca5a0a5","bytes":12060,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"c9b639f615d22d757a9f740ef4e93958b4e6bb10ed673433aab7f9f91a52a6ed","officialBytes":8933,"archiveMember":"system/dashboard-ui/modules/common/usersettings/usersettingsbuilder.js"}},
+    {"path":"www/modules/datagrid/datagrid.js","sha256":"6184e92af105b3d7d1a0b3685088c28dcbf159601678504770f91435f004221c","bytes":21766,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"419b913b7a2e7ec66b3d131ff60b475d8b367f4fe1408a13ff15f169a54f91cb","officialBytes":16303,"archiveMember":"system/dashboard-ui/modules/datagrid/datagrid.js"}},
+    {"path":"www/modules/dialog/dialog.js","sha256":"e9a7fc782a415542c1f96cc3d9396d2c1293d2fc72cff1f34ab11629b3e0390c","bytes":5077,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"78c8db8e13392bac9e7dfb6e8821240a336aa4c5cdddcbba3193ece4a9eaa13a","officialBytes":5076,"archiveMember":"system/dashboard-ui/modules/dialog/dialog.js"}},
+    {"path":"www/modules/dialoghelper/dialoghelper.css","sha256":"528818e0d877b3cc090d94f8ef37a7763ddb300ee1a2523a8653fca5cddb62bd","bytes":7848,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"CSS-AST-different-from-476-through-4714; three 48080 comparisons recover with parse errors and are not equated","comparisonReference":{"version":"4.7.6.0","officialSha256":"bbb46bd6266fe99e9c5c63d3dc5126e0099b294b29235c6b8eaa4bad0ce61a5c","officialBytes":5941,"archiveMember":"system/dashboard-ui/modules/dialoghelper/dialoghelper.css"}},
+    {"path":"www/modules/dockedtabs/dockedtabs.css","sha256":"1024cd6a6d99235cb1cc14fbf3040afce8f232345a486f93a236722734ebe7c7","bytes":1710,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"CSS-AST-different-from-476-through-4714; three 48080 comparisons recover with parse errors and are not equated","comparisonReference":{"version":"4.7.6.0","officialSha256":"ba0860c827a48c6c249fe1d1db8a98fe97fd640965ef088c4b58130578e326c8","officialBytes":1165,"archiveMember":"system/dashboard-ui/modules/dockedtabs/dockedtabs.css"}},
+    {"path":"www/modules/dockedtabs/dockedtabs.js","sha256":"6c9ad1b874383065888d7d70b78fff8af62f6f2dc20351b9f68d1466757bccc2","bytes":6067,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"20ec2c343da3b07ca4fb4ee180287fb1688c976ba850096d5eba1f5b4f94e126","officialBytes":4264,"archiveMember":"system/dashboard-ui/modules/dockedtabs/dockedtabs.js"}},
+    {"path":"www/modules/emby-apiclient/apiclient.js","sha256":"f3516c72784e5bc8782abbce021f22a7f939034e5b8b70639672ae682e18acc0","bytes":155508,"group":"core-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.11.0","officialSha256":"6a5340dc6b52c69fb966d382630d1d68bd856d1bb67c6c7d8bab976a3980b8ff","officialBytes":90685,"archiveMember":"system/dashboard-ui/modules/emby-apiclient/apiclient.js"}},
+    {"path":"www/modules/emby-apiclient/apiclientex.js","sha256":"53d95de33c8c3ca4cdfa4f0491774b73638ec98f3c2abf71d0eb318a863e2f81","bytes":32812,"group":"core-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"2523a041f3a4337a9f9b123000bcc4881e639b6da8d31724e1359dd6c461fc1a","officialBytes":18418,"archiveMember":"system/dashboard-ui/modules/emby-apiclient/apiclientex.js"}},
+    {"path":"www/modules/emby-apiclient/connectionmanager.js","sha256":"beae6ad4a2d386fb6d3553974c0aa3ba7c7e1bc25c1098944f508fe497a08f09","bytes":52838,"group":"core-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.11.0","officialSha256":"e5888099e4b1a67866fb89e9a09921ffee3da39d4a438db2de641af6d61d91db","officialBytes":32463,"archiveMember":"system/dashboard-ui/modules/emby-apiclient/connectionmanager.js"}},
+    {"path":"www/modules/emby-elements/emby-button/emby-button.css","sha256":"227e01cfc5de381c38725a52bdd58370ac626473048813a17dc2e19b858641e4","bytes":4786,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"CSS-AST-different-from-476-through-4714; three 48080 comparisons recover with parse errors and are not equated","comparisonReference":{"version":"4.7.6.0","officialSha256":"5609f87362b70277a1fb78c68b931d1785653598f2f216e0b95c3229edab69eb","officialBytes":3894,"archiveMember":"system/dashboard-ui/modules/emby-elements/emby-button/emby-button.css"}},
+    {"path":"www/modules/emby-elements/emby-checkbox/emby-checkbox.css","sha256":"b5dd70b67358ff42c99e7c173067d30672cf0a0bc57c8f935399232c2b8c46c6","bytes":4277,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"CSS-AST-different-from-476-through-4714; three 48080 comparisons recover with parse errors and are not equated","comparisonReference":{"version":"4.7.6.0","officialSha256":"f9f413a74afea604f557b55bc6c5016270d79a4d34ed5cd9b889e3682acee68f","officialBytes":2811,"archiveMember":"system/dashboard-ui/modules/emby-elements/emby-checkbox/emby-checkbox.css"}},
+    {"path":"www/modules/emby-elements/emby-itemscontainer/emby-itemscontainer.js","sha256":"46670ce92adf5a46ba6f7689481e89cd39a5d423a9f97d9d78f45e49f1e86e49","bytes":39778,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"5715f3c471d5826598e4631267258f7d18514135c85d74f4e6249e2ce4d2f473","officialBytes":27416,"archiveMember":"system/dashboard-ui/modules/emby-elements/emby-itemscontainer/emby-itemscontainer.js"}},
+    {"path":"www/modules/emby-elements/emby-slider/emby-slider.css","sha256":"0ed7028c6e27fc99def6ff207cce36d2ef34670310ee7fe28d16c1d0c98292ee","bytes":4513,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"CSS-AST-different-from-476-through-4714; three 48080 comparisons recover with parse errors and are not equated","comparisonReference":{"version":"4.7.6.0","officialSha256":"f53b009f97ab5e07e42afdff3919cb121e8f6d1dd0250fd008c7833434f4de38","officialBytes":3535,"archiveMember":"system/dashboard-ui/modules/emby-elements/emby-slider/emby-slider.css"}},
+    {"path":"www/modules/filtermenu/filtermenu.template.html","sha256":"fc2ba64a5173c1f9aa75557b46f282065adb073625b6e3df6f995b44da6181a5","bytes":10057,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"raw-and-BOM-CRLF-different; DOM and visible equivalence not established","comparisonReference":{"version":"4.7.6.0","officialSha256":"697aa48fcf51674b714c4817d342aef1756abaad1c2e6a9f61da1b13b926d1f3","officialBytes":9857,"archiveMember":"system/dashboard-ui/modules/filtermenu/filtermenu.template.html"}},
+    {"path":"www/modules/focusmanager.js","sha256":"00df8dcea711adad7df82aabc17bcfc7b045c856266fec9acc8213dff20ff053","bytes":12871,"group":"core-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.8.0.80","officialSha256":"69aa851a9022cf47a761d432bc221ae028550a023e79de407e9106454abc0e5c","officialBytes":9562,"archiveMember":"system/dashboard-ui/modules/focusmanager.js"}},
+    {"path":"www/modules/fonts/fonts.css","sha256":"ac55cca0be3507c122af1d99f46bf87df5c781409ea40277aaf924a918e3f0b4","bytes":7666,"group":"asset-or-library-name-candidate","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"CSS-AST-different-from-476-through-4714; three 48080 comparisons recover with parse errors and are not equated","comparisonReference":{"version":"4.7.6.0","officialSha256":"9cb1a1d0c71005075a93918ddfd88b6269dc9d2fa8860dc906a7db8c06d5ec4f","officialBytes":6410,"archiveMember":"system/dashboard-ui/modules/fonts/fonts.css"}},
+    {"path":"www/modules/formdialog.css","sha256":"5a552a9b94646e4c207226e9ce77f1dd4e630dd144068369f3664d69db9323a0","bytes":3093,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"CSS-AST-different-from-476-through-4714; three 48080 comparisons recover with parse errors and are not equated","comparisonReference":{"version":"4.7.6.0","officialSha256":"5876343e16601b34c32ad7efabbf83490e8ad6d47c1c5c9ae677abf8b03305d8","officialBytes":2315,"archiveMember":"system/dashboard-ui/modules/formdialog.css"}},
+    {"path":"www/modules/genericedit/genericedit.js","sha256":"0c917add58a60965e07f3110ed349feb3e0b0f3e34caabb02fca1089f4a54408","bytes":35856,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"e231fd9451ec5427d4746d07f796128213793fc33468c15fc3e47056802f0c24","officialBytes":35855,"archiveMember":"system/dashboard-ui/modules/genericedit/genericedit.js"}},
+    {"path":"www/modules/homesections/homesections.js","sha256":"db6e730034a51806e7dcab6284ca5e01879bd105ebb6709e3c3099b49bfe58a5","bytes":44723,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"a7e9d28cff027de8ecddf69894c66f8f5be95a64a800d3a76109a5e9e31402bf","officialBytes":25255,"archiveMember":"system/dashboard-ui/modules/homesections/homesections.js"}},
+    {"path":"www/modules/htmlvideoplayer/plugin.js","sha256":"59416607c034100a9f198d425386efeb44bf04b4426f23a7697f0fbf7d9f6b76","bytes":50171,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"0f2d9ac706a4d0ed18b2a5a56ad1bd4b18187c8577d4a47fc437f08ee38a58a8","officialBytes":31632,"archiveMember":"system/dashboard-ui/modules/htmlvideoplayer/plugin.js"}},
+    {"path":"www/modules/humanedate/humanedate.js","sha256":"e3dc632d700730e9afc14037ee55cbfbde42057cc4b165fcc15bd393284ce6eb","bytes":2191,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"ad7c8463832fd03a581863bfbfc94539443cc5b07a80230a6537afeb8233e65c","officialBytes":1424,"archiveMember":"system/dashboard-ui/modules/humanedate/humanedate.js"}},
+    {"path":"www/modules/imageuploader/imageuploader.js","sha256":"92964aa357b421fac31c22db81ca8b5b110ef341bf6ef44eff3f27d52b26b12f","bytes":5457,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"f681786fff83059c7e489213b784e8bd146eff19a6621c40305469c78b879503","officialBytes":4091,"archiveMember":"system/dashboard-ui/modules/imageuploader/imageuploader.js"}},
+    {"path":"www/modules/input/keyboard.js","sha256":"6be8054ec2f7289b93871c7b9b5edf70a375e0911bfb5b5b6778c7d46b87cc15","bytes":25318,"group":"core-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.8.0.80","officialSha256":"b94e00b8bc7b6661010a9c5a0857561b628970ed386d9bf718a690f7112ff161","officialBytes":16620,"archiveMember":"system/Emby.Web.dll","assemblySha256":"037788c725d488a35bc3984f96bf2f6927b81cd430a030c05725292a5822f80c","resourceOffset":50992}},
+    {"path":"www/modules/itemcontextmenu.js","sha256":"23946853eb776414f36372529dbb64fa1607fcd991281d18ab806599ff50cacb","bytes":24561,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"7072eff8d937190a8121148a6834720447d51baa5858a2db47552dc6c38dd330","officialBytes":17310,"archiveMember":"system/dashboard-ui/modules/itemcontextmenu.js"}},
+    {"path":"www/modules/layout.css","sha256":"d6eb9a45859d776806b7b7078c4763c452dada04834b3f461797dee1fe80dc8c","bytes":22942,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"CSS-AST-different-from-476-through-4714; three 48080 comparisons recover with parse errors and are not equated","comparisonReference":{"version":"4.7.6.0","officialSha256":"f0a652b9f53c4d8359704b0686ac06f71220a01fad19aab2aec3fec88be66397","officialBytes":6474,"archiveMember":"system/dashboard-ui/modules/layout.css"}},
+    {"path":"www/modules/layoutmanager.js","sha256":"519b43dceb52306f32a2a673f3c7cb480cf767f82059890be9156ee921141e6f","bytes":2210,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"8a0c917ce0bfc3a30cd45d793d1dedd789b474fc5cc7991bad7a384c28402b3b","officialBytes":1698,"archiveMember":"system/dashboard-ui/modules/layoutmanager.js"}},
+    {"path":"www/modules/listview/listview.css","sha256":"f55f3c9353625b3ae40f6b8fe945fb135da933a1f2d862b4bce0677dae6d64d4","bytes":17096,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"CSS-AST-different-from-476-through-4714; three 48080 comparisons recover with parse errors and are not equated","comparisonReference":{"version":"4.7.6.0","officialSha256":"41a9f9e9024c115e8960eb7517fc68240efaafa4695d77779bd948af55af11b3","officialBytes":13598,"archiveMember":"system/dashboard-ui/modules/listview/listview.css"}},
+    {"path":"www/modules/listview/listview.js","sha256":"88bcbc6bfd6f0bda23671757a10f6b86ac651a715dffd6478d4a907e375a4d2f","bytes":30702,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"55c3867a5a52d74dde8a0b8ca2aa2022bde03b8b21b37b0810ab3aaf486f5fa1","officialBytes":30701,"archiveMember":"system/dashboard-ui/modules/listview/listview.js"}},
+    {"path":"www/modules/mediainfo/mediainfo.css","sha256":"f1f4b758474fcea6af4fb4b9db15c2f6ba1642def6b1fbcfde2ffbd5870628f8","bytes":2419,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"CSS-AST-different-from-476-through-4714; three 48080 comparisons recover with parse errors and are not equated","comparisonReference":{"version":"4.7.6.0","officialSha256":"35f5989167462f0998c044408d14029c242c03781d4defa7ca01d7099f8906ae","officialBytes":1673,"archiveMember":"system/dashboard-ui/modules/mediainfo/mediainfo.css"}},
+    {"path":"www/modules/mediainfo/mediainfo.js","sha256":"553d9874d35f8ad1c6b62ca7657cc493486c20e0a5bc395ee9618caa99a9fa0e","bytes":23989,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"84b328d62baf935100df03b692b5dc0a019791b22ac44423694fd98942e976a3","officialBytes":17385,"archiveMember":"system/dashboard-ui/modules/mediainfo/mediainfo.js"}},
+    {"path":"www/modules/metadataeditor/metadataeditor.js","sha256":"1a514ae463c63fdcc2ac4a4f799db59551752f18b5867ac0698b3089a302850f","bytes":39528,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"9880484494432eca1d18339238bcc056c6e2fe4f8b51ba66cef7eaab9bc22d35","officialBytes":28852,"archiveMember":"system/dashboard-ui/modules/metadataeditor/metadataeditor.js"}},
+    {"path":"www/modules/multiselect/multiselect.js","sha256":"75b83638e8db293d3327719783eddca81f6d88e2ac077678b10a41be30d7f656","bytes":29281,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"7d86d1a163c8fd41174a1a298d1050fef5e89b6abbed9ffca5d659a2fcd874f4","officialBytes":19743,"archiveMember":"system/dashboard-ui/modules/multiselect/multiselect.js"}},
+    {"path":"www/modules/navdrawer/navdrawer.css","sha256":"572a934ae9075dcde35e86f40e8d092cb79798a6a1b50c780f1fed6ef747e68a","bytes":5320,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"CSS-AST-different-from-476-through-4714; three 48080 comparisons recover with parse errors and are not equated","comparisonReference":{"version":"4.7.6.0","officialSha256":"84642bf30acdd7fc56a517b5afe51ab3d49b98b0585ce9a348101d1e3680cd11","officialBytes":4209,"archiveMember":"system/dashboard-ui/modules/navdrawer/navdrawer.css"}},
+    {"path":"www/modules/navdrawer/navdrawer.js","sha256":"8dbcbfab0843cfab0d010df785458c8cd03d9d7f253c29c460f7bc0278fb3ae3","bytes":5422,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"e2dfb73f42f39dcc08c294c193230523c8ade6ee8b4c79e0eb2280d2a09c2bb7","officialBytes":4209,"archiveMember":"system/dashboard-ui/modules/navdrawer/navdrawer.js"}},
+    {"path":"www/modules/navdrawer/navdrawercontent.js","sha256":"c235a30e0523abfddcd8050da004e20ae2ea0f7cb42a44189f12f4c827dfae18","bytes":32605,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.11.0","officialSha256":"3940e213ccd38268a7f7df107724035e3451450b15f0ef3ce9c00fcfa73ac778","officialBytes":22465,"archiveMember":"system/dashboard-ui/modules/navdrawer/navdrawercontent.js"}},
+    {"path":"www/modules/pagejs/page.js","sha256":"bfdcf96ec474538e14b7e57495e8e0d5c607a20252d7110d57ad6323653425a9","bytes":6028,"group":"asset-or-library-name-candidate","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"c3eaa8c8f4696113c667703871c3664673f8bf642ae945d5368968d85ff242b4","officialBytes":4122,"archiveMember":"system/dashboard-ui/modules/pagejs/page.js"}},
+    {"path":"www/modules/playback/playersettingsmenu.js","sha256":"a9c89d7246bf1bde18655488d0f82a8409b5a28b04669ae263c12ab7215d69b5","bytes":13589,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"097c3c11a5da256f1919c772483ba9e94995df89bf130ddf28efc92edf645a6d","officialBytes":8216,"archiveMember":"system/dashboard-ui/modules/playback/playersettingsmenu.js"}},
+    {"path":"www/modules/playerstats/playerstats.js","sha256":"db0286f12520001c0701dc80abe8a622245cfee576be6fc17dc172c0e84dde79","bytes":17715,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"e1d56f808333fe4a6c39ef2c939ae4c230d7e22606a2d9175334a43327816af5","officialBytes":10755,"archiveMember":"system/dashboard-ui/modules/playerstats/playerstats.js"}},
+    {"path":"www/modules/registrationservices/registrationservices.js","sha256":"d388a585be285a862391a991b2d7f2fc9fa9ab48589771aac33f833f9fe4db70","bytes":27657,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"dbe06c80d230fdf9c03c11876b2db5cef6b61799eb29d32ba17a0ecb3cb22619","officialBytes":17350,"archiveMember":"system/dashboard-ui/modules/registrationservices/registrationservices.js"}},
+    {"path":"www/modules/sections.css","sha256":"17722862fadc65dabfdff134819294d20dfba504df0355eb361d6c5ca89186af","bytes":6607,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"CSS-AST-different-from-476-through-4714; three 48080 comparisons recover with parse errors and are not equated","comparisonReference":{"version":"4.7.6.0","officialSha256":"f294e20f07148aa1920c3aa635b298132d1decb7a46b5bc2b3f65024d55e0500","officialBytes":5079,"archiveMember":"system/dashboard-ui/modules/sections.css"}},
+    {"path":"www/modules/shortcuts.js","sha256":"0c1a6493131153920fd3ea80f9b3d40cfa1e8c0f94fb85b2275f7db27d7b66f4","bytes":13606,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"caeca96653627896f0382d36f05cc3be41c09b0ec82ef4334bcaf68ee33d4735","officialBytes":9664,"archiveMember":"system/dashboard-ui/modules/shortcuts.js"}},
+    {"path":"www/modules/skinmanager.js","sha256":"57ded567150ffdb3e718bb75f10d1487e498bdff2ad7a177c3d1a40712212fe6","bytes":14846,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"5a9f3040c11f8e7c6be33e83de73084792bd66cc75b9aac46d57e57948561024","officialBytes":9169,"archiveMember":"system/dashboard-ui/modules/skinmanager.js"}},
+    {"path":"www/modules/soundeffects/defaultsoundeffects/plugin.js","sha256":"d1d90aec88528a3f97cb62088eb7798e2fd9f80d36f95ea0be5cd969444debef","bytes":360,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"96de2d583a80caa3ce044f4542fe5014394b5b39c93780a38f56eddddce2ed9d","officialBytes":292,"archiveMember":"system/dashboard-ui/modules/soundeffects/defaultsoundeffects/plugin.js"}},
+    {"path":"www/modules/subtitleoffsetoverlay/subtitleoffsetoverlay.js","sha256":"e25b0b0a07a36434f5b2e61a6f9e8cd98a7145a74a28c92fdca96c7531639c98","bytes":5817,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"be98fed98e10c7fdfa8be9a40d07484f697358093adc807674cf2661a5512311","officialBytes":4543,"archiveMember":"system/dashboard-ui/modules/subtitleoffsetoverlay/subtitleoffsetoverlay.js"}},
+    {"path":"www/modules/sync/syncjoblist.js","sha256":"8a3b470d281ea4ef0a7edb0cd401c7bb072c5af339410dfe936432db86e6e8cb","bytes":12070,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"bf54848c02be887ddcc5f81620fe333ba7546205854a4f150447573f1d20fde6","officialBytes":8164,"archiveMember":"system/dashboard-ui/modules/sync/syncjoblist.js"}},
+    {"path":"www/modules/tabbedview/folderstab.js","sha256":"4f0400fb615cf08cbc30588f864af1f3e5743205ce17faa40d30e164a71370cf","bytes":1816,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"954341d33c9f77703f5a8bc65c32b6c8307d0ec960321036f7a0f241c24bfbd5","officialBytes":1350,"archiveMember":"system/dashboard-ui/modules/tabbedview/folderstab.js"}},
+    {"path":"www/modules/tabbedview/itemstab.js","sha256":"1b3e4d45bf73ca5ef748e88ee9a1a8366969fa1c0f55f29e4a01540fe1197d82","bytes":12382,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"f49a96e75e9af37bd52d7fafd0a133944b1ac5868c5fd35f00e8e6d2b2472209","officialBytes":9297,"archiveMember":"system/dashboard-ui/modules/tabbedview/itemstab.js"}},
+    {"path":"www/modules/tabbedview/listcontroller.js","sha256":"a8776ff47b4811a68ac177722fa3cd5ff7c7de2b760b50ee9fb5acf8c16d92d1","bytes":73532,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"1f06377f8a1c32560b4a52e7d46e7b3dea24561a509a257256426732c0ade616","officialBytes":53610,"archiveMember":"system/dashboard-ui/modules/tabbedview/listcontroller.js"}},
+    {"path":"www/modules/tabbedview/seriestab.js","sha256":"b94b7395c73c53c040af232124f2b6950515274365a558b3fc021711d735ed9b","bytes":2896,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"b2dd27632bcc0c178311ad2d1106d7a309a1f882886aa5391dfa967219831901","officialBytes":2058,"archiveMember":"system/dashboard-ui/modules/tabbedview/seriestab.js"}},
+    {"path":"www/modules/themes/darkgradient/theme.css","sha256":"d8a7104966af90053348eee164f7ad2715e95dee06fa7d84f0f4515958e76cc9","bytes":38723,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"CSS-AST-different-from-476-through-4714; three 48080 comparisons recover with parse errors and are not equated","comparisonReference":{"version":"4.7.6.0","officialSha256":"7affb5ec5de49fbc02faae97839a0fadc665423a54c85984c20beb83c0db4ace","officialBytes":32698,"archiveMember":"system/dashboard-ui/modules/themes/darkgradient/theme.css"}},
+    {"path":"www/modules/themes/logo.png","sha256":"624aa2425d6bee862fd5469e191a2dad928931425e45ee31d006d6e71906c064","bytes":32892,"group":"asset-or-library-name-candidate","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"no-baseline-in-selected-archives"},
+    {"path":"www/modules/toast/toast.css","sha256":"e4e8efcdfbe4841fd05b6cfe6b2a94393474899f3977416077d99b4f8cad0e39","bytes":4234,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"CSS-AST-different-from-476-through-4714; three 48080 comparisons recover with parse errors and are not equated","comparisonReference":{"version":"4.7.6.0","officialSha256":"a1e0748734de725bfecd79d00dbe4c73d409284e878fea29da2eaf5e854eced9","officialBytes":3142,"archiveMember":"system/dashboard-ui/modules/toast/toast.css"}},
+    {"path":"www/modules/webvtt/vtt.css","sha256":"8c5c30ea886110fde45511a37f9435fc2355b7c812e6dceb3cf98fa67f6b8317","bytes":428,"group":"asset-or-library-name-candidate","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"CSS-AST-different-from-476-through-4714; three 48080 comparisons recover with parse errors and are not equated","comparisonReference":{"version":"4.7.6.0","officialSha256":"731f83180ca37993818b09269fb82cfa8c845de84e6a3e6dbbe14ed5dc77ec8b","officialBytes":327,"archiveMember":"system/dashboard-ui/modules/webvtt/vtt.css"}},
+    {"path":"www/modules/webvtt/vtt.js","sha256":"97bda9c48cf440809d6453c8e36229f2384ca706dc46fe562d73963fb02c6aee","bytes":28470,"group":"asset-or-library-name-candidate","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"110428d66e6b0319f23f428bc52646dd4aca699a4dc3b41f95cf9e4c1113ceaa","officialBytes":18750,"archiveMember":"system/dashboard-ui/modules/webvtt/vtt.js"}},
+    {"path":"www/network/network.js","sha256":"bd4b227c1a8a7021042caed0637d395cdcf06c58c634b8c82320bdefe2f63182","bytes":12007,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"3f8d18a106dfaabb6504643bae8b02be41a8661cfbf3f50b346e3b97748c5f0d","officialBytes":9112,"archiveMember":"system/dashboard-ui/network/network.js"}},
+    {"path":"www/plugins/addplugin.html","sha256":"46c4c8772c78297939db310eecc83a82e51dc3e5af0a9fbc371154cb21103e1c","bytes":5159,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"raw-and-BOM-CRLF-different; DOM and visible equivalence not established","comparisonReference":{"version":"4.7.6.0","officialSha256":"90cea2af5671ebe86f0b104da83fb70f60b72d67d25346caf2667a000d84e7bc","officialBytes":5066,"archiveMember":"system/dashboard-ui/plugins/addplugin.html"}},
+    {"path":"www/search/searchfields.js","sha256":"7f051fea8519df0233723cae1635bf13d3aecaa194846b73befe3ffa95a82acc","bytes":7957,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"dc246c3795bc56869f035af3ae2e15fa90e97517a443bfba4a9b4e9ba002588c","officialBytes":5965,"archiveMember":"system/dashboard-ui/search/searchfields.js"}},
+    {"path":"www/search/searchfields.template.html","sha256":"e55874a43f1ce0b3e7ee0e7deee97969b1b1a4001275a3e4de66e18e1ad47bbb","bytes":1053,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"raw-and-BOM-CRLF-different; DOM and visible equivalence not established","comparisonReference":{"version":"4.7.6.0","officialSha256":"11a480817b064e84f461dd979d91baa3bc955b9ad5d95ca2757ae87bcde66add","officialBytes":1036,"archiveMember":"system/dashboard-ui/search/searchfields.template.html"}},
+    {"path":"www/settings/cameraupload.js","sha256":"cab95e4f266d16c250930d6bb76fd07de18212f2bb777e141396ebdf3f3b6ea8","bytes":4814,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"739d7200494fb82f26effe1133f3a5855171827d3d664885d77c9cb712072060","officialBytes":3609,"archiveMember":"system/dashboard-ui/settings/cameraupload.js"}},
+    {"path":"www/settings/display.html","sha256":"9bba74908fab88a6264b2279588bc69f125f02435b50fe9f69824a5cf4bec319","bytes":13163,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"raw-and-BOM-CRLF-different; DOM and visible equivalence not established","comparisonReference":{"version":"4.7.6.0","officialSha256":"0b850233ed737453b65b7ea32f37cef8c3edc49de11ee0106663607e46f16247","officialBytes":12895,"archiveMember":"system/dashboard-ui/settings/display.html"}},
+    {"path":"www/settings/display.js","sha256":"b628ba2344fb4edee5f9ac82201daa4f5575f5f2e2af93ab4eb6b729f90fe1a4","bytes":14372,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"f2285d5d9f38365691e155e0dc6a524fc835a3c10607baa6b3967de9a3f74d9f","officialBytes":11464,"archiveMember":"system/dashboard-ui/settings/display.js"}},
+    {"path":"www/settings/homescreen.html","sha256":"f96eb4f6083bae8c4a678d41ef98d0ec6ad13f9d8124d85017f051bb3c528a74","bytes":8373,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"raw-and-BOM-CRLF-different; DOM and visible equivalence not established","comparisonReference":{"version":"4.7.6.0","officialSha256":"6bb49ebff0ace51c0c6ca5182ffbbce3b12fad933cf886a9c35f8f4e579dfe3e","officialBytes":8248,"archiveMember":"system/dashboard-ui/settings/homescreen.html"}},
+    {"path":"www/settings/homescreensettings.js","sha256":"d0334860843b4de000b6290e8bcb0b603ff385b12bb90589decc055d84f8920c","bytes":16531,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"1eb75fce2fde48f375422053f4876ded7baf64fd799132bc5f2a4a940c5228fe","officialBytes":12337,"archiveMember":"system/dashboard-ui/settings/homescreensettings.js"}},
+    {"path":"www/settings/keyboard.html","sha256":"8019681a718c2441ba19865d4087ebe4e63e3d7c0b1da5797d48c1cca78a1675","bytes":4705,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"raw-and-BOM-CRLF-different; DOM and visible equivalence not established","comparisonReference":{"version":"4.7.6.0","officialSha256":"53b64ef0fc517f8a2535b83c7d89f3973ed3880fb19c70a755ee2752695e952a","officialBytes":3654,"archiveMember":"system/dashboard-ui/settings/keyboard.html"}},
+    {"path":"www/settings/playback.js","sha256":"b7f2cadcd158b2956b4e6997a010ac9a193bfda7597e79dbbb8b575c43b1d75b","bytes":17746,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"2ad8b135ce99436045dccfddb94d2ab81060c74243144c711380f7f4355e51c0","officialBytes":13808,"archiveMember":"system/dashboard-ui/settings/playback.js"}},
+    {"path":"www/settings/profile.js","sha256":"07662f43677a8b87a582354f51adb191ed46f0dc71cbeeaabb34beff6829e92d","bytes":6617,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"2099bc336fbe13afde2dd7038708c42d50b29909e98616d61a2f581d3f5708fa","officialBytes":5152,"archiveMember":"system/dashboard-ui/settings/profile.js"}},
+    {"path":"www/settings/subtitles.html","sha256":"70018e65b8fbfdef3128f93683cb2bf424dbe4ba38a7f0b7577f529002ebe536","bytes":8197,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"raw-and-BOM-CRLF-different; DOM and visible equivalence not established","comparisonReference":{"version":"4.7.6.0","officialSha256":"0d793e3a5ce9fb7b7ea5f2744acd861231b7927df69d5ac841443af39f13be9a","officialBytes":8042,"archiveMember":"system/dashboard-ui/settings/subtitles.html"}},
+    {"path":"www/startup/login.js","sha256":"9f8f23d08ee85e7f033125f1a452850570c0f1c85c0dc3fd0a61c6f89c146286","bytes":4262,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"1e3d1354361c69f811a0947ab3edb2de68bccb1bb3ba259e457da22936d26c03","officialBytes":3112,"archiveMember":"system/dashboard-ui/startup/login.js"}},
+    {"path":"www/startup/manuallogin.html","sha256":"3a62998877d859bf0adc6869ae7103b9113bdc4c4ef17eec9f49761de7e45a23","bytes":1941,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"raw-and-BOM-CRLF-different; DOM and visible equivalence not established","comparisonReference":{"version":"4.7.6.0","officialSha256":"8b06fc09078b0a035819e45abb0b46e39f8a3f8ffdf2c41ba013f5a6062ede91","officialBytes":1895,"archiveMember":"system/dashboard-ui/startup/manuallogin.html"}},
+    {"path":"www/startup/manuallogin.js","sha256":"bb0ebc06d81995b2a525a3524b40151c1613b3388de6d37d9d419eb84f01ab04","bytes":3528,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"51feff9a5eeecaf379f7efd85cdc5cd7414fde5856f0e91773eca40e9cfb91c9","officialBytes":2834,"archiveMember":"system/dashboard-ui/startup/manuallogin.js"}},
+    {"path":"www/strings/zh-CN.json","sha256":"86a88346e75c13b3d18f14e0b1c9ace6586bfbe3adbd67dfa860bbe2f22d2a23","bytes":74233,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"parsed-JSON-key-or-value-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"3d3e7a59359f19525a8dad5f00bbbeca684e642bb9f59cbfe3724dbff537a666","officialBytes":104892,"archiveMember":"system/dashboard-ui/strings/zh-CN.json"}},
+    {"path":"www/transcoding/transcoding.html","sha256":"9c40de6c650c2d6e81343031dea4e9b3b9643391c554950aa5df0bb134a18613","bytes":7492,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"raw-and-BOM-CRLF-different; DOM and visible equivalence not established","comparisonReference":{"version":"4.7.6.0","officialSha256":"9b07e60c593d761d13ca10b732310b9a819c6e0c9446aea5ba87533411cddb2e","officialBytes":7352,"archiveMember":"system/dashboard-ui/transcoding/transcoding.html"}},
+    {"path":"www/transcoding/transcoding.js","sha256":"08949a397fa29f24c00d009aa4e6b4154feea5ee3d9b2ba85f0be26ddfe78a26","bytes":16727,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"8f4ccde3840107ecc8c8effa2a0004532222a5901acf210517a177124e40bde1","officialBytes":12812,"archiveMember":"system/dashboard-ui/transcoding/transcoding.js"}},
+    {"path":"www/users/profiletab.js","sha256":"477320df4f2e0ab1298dd4c46c25ed3c64b9d3dcaafcd09b2b29546be904c2fa","bytes":15247,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.11.0","officialSha256":"87b204b73ea51f32e7a6c785c896227f2ab0d87032e68ce5c0c5b6e2fba3c610","officialBytes":11524,"archiveMember":"system/dashboard-ui/users/profiletab.js"}},
+    {"path":"www/users/usernew.js","sha256":"d9b8654d90edf34989ce97a46337fbd0f1e56bc3dc6a8bcde2649c2f44f11769","bytes":8623,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.11.0","officialSha256":"db71d5dbf09f2a26db00da297e61ebe746a5006838de2504e7f576b67ebdb7de","officialBytes":6364,"archiveMember":"system/dashboard-ui/users/usernew.js"}},
+    {"path":"www/videoosd/lyrics.css","sha256":"c0d276e7c465f23699dc7660fc9a5df3b5d92b93da5f09bca55e5d6e2514c7e3","bytes":2986,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"CSS-AST-different-from-476-through-4714; three 48080 comparisons recover with parse errors and are not equated","comparisonReference":{"version":"4.7.6.0","officialSha256":"a525d179bd98498ec9f8fcb61370371fefc7f77ba184a8b0b3cba7cca580021a","officialBytes":1765,"archiveMember":"system/dashboard-ui/videoosd/lyrics.css"}},
+    {"path":"www/videoosd/lyrics.js","sha256":"16905394ad99267e855b5c304ccb881c847ee15481db6265a583db6b268ef450","bytes":9764,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"45eeca87e8e5f5bd65c66d7382208140b8738a0ebf01622c1486c8fe07a351fd","officialBytes":5978,"archiveMember":"system/dashboard-ui/videoosd/lyrics.js"}},
+    {"path":"www/videoosd/videoosd.css","sha256":"9caaff9d0afa0775f3ff3635bb3f71570c5153e44bbae7a9f246f2b9436094f3","bytes":35832,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"CSS-AST-different-from-476-through-4714; three 48080 comparisons recover with parse errors and are not equated","comparisonReference":{"version":"4.7.6.0","officialSha256":"c7da69c0ad352eda16b8b3eff89fbfa35065c7f36d068ead41dc052db03f74b3","officialBytes":27496,"archiveMember":"system/dashboard-ui/videoosd/videoosd.css"}},
+    {"path":"www/videoosd/videoosd.html","sha256":"7bdeaf8bb153853f9aa9cfe58fe92ca5121f77f0e641daedc6a9fb18310dece3","bytes":13072,"group":"ui-style-template-or-locale","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"raw-and-BOM-CRLF-different; DOM and visible equivalence not established","comparisonReference":{"version":"4.7.6.0","officialSha256":"18ab21c94230e8e00da73b9c56b1e2dc7d788633f75e827de7172ec36ed4606c","officialBytes":11155,"archiveMember":"system/dashboard-ui/videoosd/videoosd.html"}},
+    {"path":"www/videoosd/videoosd.js","sha256":"86ab60c897e827b5152435350fe7b3801d8afd6b8889eef96e9996e71bb5eeab","bytes":125357,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"b458d1f78e5ace6782bb4141b1824c3398160c3035d72b7a2824dac6dd684210","officialBytes":80398,"archiveMember":"system/dashboard-ui/videoosd/videoosd.js"}},
+    {"path":"www/videos/trailers.js","sha256":"2b62a97996cda0a80ed5d84dad7f371c9e1856545a8be2c6e448f5e6ee0d5f0b","bytes":1303,"group":"ui-script","author":"unconfirmed","licenseApplicability":"unclosed","comparisonStatus":"whole-JS-AST-different","comparisonReference":{"version":"4.7.6.0","officialSha256":"d951e7faec927554f53632387898fcf99c8bb11a15c04406bc11d8b1dc5e3eee","officialBytes":1302,"archiveMember":"system/dashboard-ui/videos/trailers.js"}}
+  ],
+  "namedFunctionDifferences": [
+    {"path":"www/app.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":30,"changedNamed":["fn:validateServerAddressWithEndpoint","fn:validateServerAddress","fn:onAppReady","fn:start"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/components/directorybrowser/directorybrowser.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":7,"changedNamed":[],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/components/libraryoptionseditor/libraryoptionseditor.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":20,"changedNamed":["fn:renderMetadataFetchers"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/dashboard/dashboard.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":25,"changedNamed":["fn:showServerInfo","fn:renderHasPendingRestart","fn:ServerDashboardView"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/devices/cameraupload.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0","4.7.11.0","4.7.14.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":3,"changedNamed":["fn:View"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/embypremiere/embypremiere.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0","4.7.11.0","4.7.14.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":0,"changedNamed":[],"currentOnlyNamed":["fn:_0x5bd598","fn:_0x1202","assign:_0x135f80.atob","fn:_0x3703d0","fn:_0x3bcf84","fn:_0x4a40d2","fn:_0x13725e","fn:_0x179164","fn:_0x246ec1","fn:_0xb32ef1","fn:_0x4a9b0b","assign:_0x4a9b0b.prototype."],"officialOnlyNamed":["fn:load","fn:cancelSub","fn:retrieveSupporterKey","fn:alertText","fn:updateSupporterKey","fn:onSupporterLinkClick","fn:View","assign:View.prototype.onResume"]},
+    {"path":"www/home/favorites.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":4,"changedNamed":["fn:FavoritesTab"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/item/item.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":65,"changedNamed":["fn:renderMediaSources","fn:getArtistLinksHtml","fn:renderDetails","fn:onDataFetched","fn:startDataLoad","fn:onReadMoreClick","fn:onSplitVersionsClick","fn:ItemPage","assign:ItemPage.prototype.onResume"],"currentOnlyNamed":["fn:renderFloatingLogo","fn:onAutoPlayClick","fn:updateAutoplayButton","fn:setReadMoreText","fn:getNextUpItems","fn:getNextUpListOptions"],"officialOnlyNamed":[]},
+    {"path":"www/librarysetup/library.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":16,"changedNamed":["fn:getLink"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/livetv/livetv.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0","4.7.11.0","4.7.14.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":10,"changedNamed":["fn:LiveTVView"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/livetvsetup/livetvstatus.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":6,"changedNamed":["fn:LiveTVSetupView"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/appheader/appheader.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":40,"changedNamed":["fn:resetPremiereButton"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/approuter.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":37,"changedNamed":["fn:handleConnectionResult","assign:appRouter.canGoBack"],"currentOnlyNamed":["assign:appRouter.forward"],"officialOnlyNamed":[]},
+    {"path":"www/modules/backmenu/backmenu.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0","4.7.11.0","4.7.14.0","4.8.0.80"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":0,"changedNamed":["assign:_exports.default"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/cardbuilder/cardbuilder.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":10,"changedNamed":["fn:getCardFooterText","fn:getActiveSessionFooterHtml","fn:getCardHtml"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/commandprocessor.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":20,"changedNamed":[],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/common/appsettings.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":18,"changedNamed":["assign:AppSettings.prototype.maxStreamingBitrate","assign:AppSettings.prototype.maxStaticMusicBitrate","assign:AppSettings.prototype.maxChromecastBitrate"],"currentOnlyNamed":["assign:AppSettings.prototype.autoplay"],"officialOnlyNamed":[]},
+    {"path":"www/modules/common/datetime.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0","4.7.11.0","4.7.14.0","4.8.0.80"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":2,"changedNamed":[],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/common/inputmanager.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":1,"changedNamed":["fn:handleCommand"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/common/playback/experimentalwarnings.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0","4.7.11.0","4.7.14.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":4,"changedNamed":["assign:ExpirementalPlaybackWarnings.prototype.intercept"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/common/playback/playbackmanager.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":170,"changedNamed":["fn:PlaybackManager","fn:updateResultSetStartingPoint","fn:playWithIntrosInternal","fn:playAfterBitrateDetect","fn:createStreamInfo","fn:getTextTracks","fn:onPlaybackStarted","fn:onPlaybackStopped","assign:self.isPlayingMediaType","assign:self.isAudioStreamSupported"],"currentOnlyNamed":["fn:onPlaybackRequested"],"officialOnlyNamed":[]},
+    {"path":"www/modules/common/qualityoptions.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0","4.7.11.0","4.7.14.0","4.8.0.80"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":0,"changedNamed":[],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/common/subtitleappearancehelper.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0","4.7.11.0","4.7.14.0","4.8.0.80"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":3,"changedNamed":["fn:getTextStyles"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/common/usersettings/usersettingsbuilder.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":34,"changedNamed":["assign:UserSettings.prototype.enableThemeVideos","assign:UserSettings.prototype.enableBackdrops","assign:UserSettings.prototype.skipBackLength","assign:UserSettings.prototype.skipForwardLength","assign:UserSettings.prototype.soundEffects","assign:UserSettings.prototype.setFilter","assign:UserSettings.prototype.getFilter"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/datagrid/datagrid.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0","4.7.11.0","4.7.14.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":6,"changedNamed":["fn:getTextLinks"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/dialog/dialog.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":2,"changedNamed":["assign:_exports.default"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/dockedtabs/dockedtabs.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0","4.7.11.0","4.7.14.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":11,"changedNamed":["fn:setMode"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/emby-apiclient/apiclient.js","closestNamedMemberSamples":["4.7.11.0","4.7.14.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":318,"changedNamed":["class:uploadUserImage","class:uploadItemImage","class:getLatestItems","class:getSearchResults"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/emby-apiclient/apiclientex.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0","4.7.11.0","4.7.14.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":35,"changedNamed":["class:getPlaybackInfo","class:getAudioStreamUrl","class:getLocalFolders"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/emby-apiclient/connectionmanager.js","closestNamedMemberSamples":["4.7.11.0","4.7.14.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":64,"changedNamed":["fn:ConnectionManager","class:getRegistrationInfo"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/emby-elements/emby-itemscontainer/emby-itemscontainer.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":51,"changedNamed":["fn:onContextMenu","fn:updateVirtualElement","fn:onDataFetched"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/focusmanager.js","closestNamedMemberSamples":["4.8.0.80"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":4,"changedNamed":["fn:isAutoFocusEnabled","fn:getElementToAutoFocus","fn:focusInternal","fn:focusableParent","fn:isCurrentlyFocusableInternal","fn:getFocusableElements","fn:getFocusContainer","fn:navOuter"],"currentOnlyNamed":["fn:getCurrentScope"],"officialOnlyNamed":[]},
+    {"path":"www/modules/genericedit/genericedit.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":25,"changedNamed":["fn:renderItemListItem"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/homesections/homesections.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":11,"changedNamed":[],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/htmlvideoplayer/plugin.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":59,"changedNamed":["assign:HtmlVideoPlayer.prototype.getBrightness","assign:HtmlVideoPlayer.prototype.getStats"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/humanedate/humanedate.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0","4.7.11.0","4.7.14.0","4.8.0.80"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":0,"changedNamed":[],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/imageuploader/imageuploader.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0","4.7.11.0","4.7.14.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":8,"changedNamed":[],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/input/keyboard.js","closestNamedMemberSamples":["4.8.0.80"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":4,"changedNamed":["fn:sendCommandFromEvent"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/itemcontextmenu.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":2,"changedNamed":["fn:getCommands"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/layoutmanager.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0","4.7.11.0","4.7.14.0","4.8.0.80"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":5,"changedNamed":["assign:LayoutManager.prototype.getDefaultLayout"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/listview/listview.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":5,"changedNamed":["fn:getListItemHtml"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/mediainfo/mediainfo.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":10,"changedNamed":["fn:getProgramInfoHtml","fn:bitrateToString","fn:getMediaInfoHtml","fn:getEndsAt"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/metadataeditor/metadataeditor.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":22,"changedNamed":["fn:onEditorClick"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/multiselect/multiselect.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":22,"changedNamed":["fn:showMenuForSelectedItems"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/navdrawer/navdrawer.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":11,"changedNamed":["assign:NavDrawer.prototype.open"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/navdrawer/navdrawercontent.js","closestNamedMemberSamples":["4.7.11.0","4.7.14.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":15,"changedNamed":["fn:getAdminMenuItems","fn:getUserSettingsRoutes","fn:getAppSettingsMenuItems","fn:getItemsHtml","fn:getDrawerHtml","fn:getListOptions","fn:getNavMenuListOptions"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/pagejs/page.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":18,"changedNamed":[],"currentOnlyNamed":["assign:page.forward"],"officialOnlyNamed":[]},
+    {"path":"www/modules/playback/playersettingsmenu.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0","4.7.11.0","4.7.14.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":2,"changedNamed":["fn:showWithUser"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/playerstats/playerstats.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0","4.7.11.0","4.7.14.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":3,"changedNamed":["fn:init","fn:getStats","fn:renderPlayerStats","fn:unbindEvents","fn:PlayerStats","assign:PlayerStats.prototype.enabled","assign:PlayerStats.prototype.destroy"],"currentOnlyNamed":["fn:translateReason","fn:getDisplayBitrate"],"officialOnlyNamed":[]},
+    {"path":"www/modules/registrationservices/registrationservices.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":12,"changedNamed":[],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/shortcuts.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":8,"changedNamed":["fn:onCommand"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/skinmanager.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":9,"changedNamed":["assign:skinManager.setTheme"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/soundeffects/defaultsoundeffects/plugin.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0","4.7.11.0","4.7.14.0","4.8.0.80"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":1,"changedNamed":["fn:DefaultSoundEffects"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/subtitleoffsetoverlay/subtitleoffsetoverlay.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0","4.7.11.0","4.7.14.0","4.8.0.80"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":7,"changedNamed":["assign:SubtitleOffsetDialog.prototype.show"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/sync/syncjoblist.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0","4.7.11.0","4.7.14.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":9,"changedNamed":["fn:fetchData"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/tabbedview/folderstab.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":9,"changedNamed":["assign:FoldersTab.prototype.getVisibleViewSettings"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/tabbedview/itemstab.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":11,"changedNamed":["assign:ItemsTab.prototype.getBaseQuery","assign:ItemsTab.prototype.getViewSettingDefaults"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/tabbedview/listcontroller.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":106,"changedNamed":["assign:ListController.prototype.getNumberSortOption","assign:ListController.prototype.getAirDateSortOption","assign:ListController.prototype.getSeriesSortOption"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/modules/tabbedview/seriestab.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":8,"changedNamed":["assign:SeriesTab.prototype.getViewSettingDefaults"],"currentOnlyNamed":[],"officialOnlyNamed":["assign:SeriesTab.prototype.getSortMenuOptions"]},
+    {"path":"www/modules/webvtt/vtt.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":32,"changedNamed":["fn:parseOptions","fn:CueStyleBox"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/network/network.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0","4.7.11.0","4.7.14.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":6,"changedNamed":["fn:View"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/search/searchfields.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0","4.7.11.0","4.7.14.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":11,"changedNamed":["fn:onSearchTimeout","fn:embed"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/settings/cameraupload.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0","4.7.11.0","4.7.14.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":3,"changedNamed":[],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/settings/display.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":8,"changedNamed":["fn:View"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/settings/homescreensettings.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":11,"changedNamed":["assign:HomeScreenSettings.prototype.loadData"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/settings/playback.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":10,"changedNamed":["fn:View"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/settings/profile.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":10,"changedNamed":[],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/startup/login.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0","4.7.11.0","4.7.14.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":5,"changedNamed":["fn:LoginPage","assign:LoginPage.prototype.getItems"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/startup/manuallogin.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0","4.7.11.0","4.7.14.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":1,"changedNamed":["fn:View"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/transcoding/transcoding.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":13,"changedNamed":["fn:View"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/users/profiletab.js","closestNamedMemberSamples":["4.7.11.0","4.7.14.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":9,"changedNamed":["fn:InfoTab"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/users/usernew.js","closestNamedMemberSamples":["4.7.11.0","4.7.14.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":4,"changedNamed":["fn:saveUser","fn:View"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/videoosd/lyrics.js","closestNamedMemberSamples":["4.7.6.0","4.7.8.0","4.7.11.0","4.7.14.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":8,"changedNamed":["fn:LyricsRenderer","assign:LyricsRenderer.prototype.getItemsInternal","assign:LyricsRenderer.prototype.onTimeUpdate"],"currentOnlyNamed":[],"officialOnlyNamed":[]},
+    {"path":"www/videoosd/videoosd.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":79,"changedNamed":["fn:startOsdHideTimer","fn:VideoOsd","fn:startEndEditTimeoutForPositionSlider","fn:updateTransparency","fn:onStateChanged","fn:onTimeUpdate","fn:updatePlayPauseState","assign:VideoOsd.prototype.showOsd","assign:VideoOsd.prototype.resume","assign:VideoOsd.prototype.pause"],"currentOnlyNamed":["fn:onRewindInputCommand","fn:onFastForwardInputCommand","fn:clearEndEditTimeoutForPositionSlider","fn:cancelPositionSliderEditing","fn:my_touches_func"],"officialOnlyNamed":[]},
+    {"path":"www/videos/trailers.js","closestNamedMemberSamples":["4.7.6.0"],"selectionRule":"minimum changed+current-only+official-only named members, not authorship or functional equivalence","sameNamedCount":6,"changedNamed":["assign:TrailersTab.prototype.getEmptyListMessage"],"currentOnlyNamed":[],"officialOnlyNamed":[]}
+  ],
+  "fixedNormalizedSources": [
+    {"repo":"Shurelol/Emby.CustomCssJS","commit":"6933b58c62f98b0919977e953f068b1a581a7a1c","path":"Emby.CustomCssJS/CustomCssJS.js","sourceBytes":4416,"sourceSha256":"3eaec19e8a27ef2894d262d2b8569bb6b1275baca249b1457f6679474c856009","frozenBytes":4548,"frozenSha256":"2177de28dcc4e715f07c63329dc361c5b4ddd37eb7e59f273830b22acea37912","onlyTransformation":"CRLF to LF; upstream no final newline preserved","licensePath":"LICENSE","licenseBytes":35149,"licenseSha256":"3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986","licenseText":"GNU GPL Version 3","version":"1.0.0.2 (component worker version observation)","historicalSameTextRef":"0fee38fa (component worker observation, not re-searched)","retirementPR":69,"retirementMerged":false,"wholeProductLicenseClosed":false,"sourceURL":"https://github.com/Shurelol/Emby.CustomCssJS/blob/6933b58c62f98b0919977e953f068b1a581a7a1c/Emby.CustomCssJS/CustomCssJS.js","licenseURL":"https://github.com/Shurelol/Emby.CustomCssJS/blob/6933b58c62f98b0919977e953f068b1a581a7a1c/LICENSE","comparison":"fixed-revision normalized source correspondence, NOT official byte equality","licenseScopeConclusion":"GPLv3 text established at fixed repo commit; whole-product compatibility and distribution closure not established; no product code change","retirementStatus":"PR69 open and not merged when checked; not counted as deleted"}
+  ],
+  "licenseApplicabilityFollowup": {
+    "dateUTC": "2026-10-22",
+    "scope": "representative source/license families, two missing-baseline items; no new Server versions, no product changes",
+    "fixedThirdPartyReferences": [
+      {
+        "repository": "mozilla/vtt.js",
+        "tag": "v0.13.0",
+        "commit": "f823de834bc23d65300e58a6d391916bc00bcb75",
+        "date": "2016-12-01T11:03:29-08:00",
+        "path": "LICENSE",
+        "sha256": "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0",
+        "bytes": 10175,
+        "url": "https://github.com/mozilla/vtt.js/blob/f823de834bc23d65300e58a6d391916bc00bcb75/LICENSE"
+      },
+      {
+        "repository": "mozilla/vtt.js",
+        "tag": "v0.13.0",
+        "commit": "f823de834bc23d65300e58a6d391916bc00bcb75",
+        "date": "2016-12-01T11:03:29-08:00",
+        "path": "lib/vtt.js",
+        "sha256": "ef7e920645a51b61f61ca475cd03c2308ed814ff402952e89b9e9e358095bc0b",
+        "bytes": 45012,
+        "url": "https://github.com/mozilla/vtt.js/blob/f823de834bc23d65300e58a6d391916bc00bcb75/lib/vtt.js"
+      },
+      {
+        "repository": "mozilla/vtt.js",
+        "tag": "v0.13.0",
+        "commit": "f823de834bc23d65300e58a6d391916bc00bcb75",
+        "date": "2016-12-01T11:03:29-08:00",
+        "path": "package.json",
+        "sha256": "b6c80b18c062e20d99fc692c85f08f32616929fa0a192dc81280ca0df28f42eb",
+        "bytes": 1254,
+        "url": "https://github.com/mozilla/vtt.js/blob/f823de834bc23d65300e58a6d391916bc00bcb75/package.json"
+      },
+      {
+        "repository": "visionmedia/page.js",
+        "tag": "1.8.3",
+        "commit": "1bc93692b0924b686e2207a66e2e73a85e1ab058",
+        "date": "2018-01-22T17:41:30-05:00",
+        "path": "Readme.md",
+        "sha256": "5bf6708cc812be64931122608f4b29d2d3de286672f14789f8e2e116fb3c496a",
+        "bytes": 17623,
+        "url": "https://github.com/visionmedia/page.js/blob/1bc93692b0924b686e2207a66e2e73a85e1ab058/Readme.md"
+      },
+      {
+        "repository": "visionmedia/page.js",
+        "tag": "1.8.3",
+        "commit": "1bc93692b0924b686e2207a66e2e73a85e1ab058",
+        "date": "2018-01-22T17:41:30-05:00",
+        "path": "index.js",
+        "sha256": "8952ba1d36a5fd0372b62df1c97fe2a21b61a1e6b60251d1ef0de8bb214de704",
+        "bytes": 17627,
+        "url": "https://github.com/visionmedia/page.js/blob/1bc93692b0924b686e2207a66e2e73a85e1ab058/index.js"
+      },
+      {
+        "repository": "visionmedia/page.js",
+        "tag": "1.8.3",
+        "commit": "1bc93692b0924b686e2207a66e2e73a85e1ab058",
+        "date": "2018-01-22T17:41:30-05:00",
+        "path": "package.json",
+        "sha256": "ebf21b70b849f8092445043f47e8ac87b3249f8587935d7d659e30929d048bf3",
+        "bytes": 1284,
+        "url": "https://github.com/visionmedia/page.js/blob/1bc93692b0924b686e2207a66e2e73a85e1ab058/package.json"
+      }
+    ],
+    "wholeFileAndNamedDeclarationComparisons": [
+      {
+        "path": "www/modules/webvtt/vtt.js",
+        "currentSha256": "97bda9c48cf440809d6453c8e36229f2384ca706dc46fe562d73963fb02c6aee",
+        "candidateSha256": "ef7e920645a51b61f61ca475cd03c2308ed814ff402952e89b9e9e358095bc0b",
+        "byteEqual": false,
+        "strictWholeASTEqual": false,
+        "namedDeclarationSame": [
+          "skipWhitespace",
+          "unescape1",
+          "StyleBox",
+          "WebVTT"
+        ],
+        "namedDeclarationDifferent": [
+          "ParsingError",
+          "parseTimeStamp",
+          "computeSeconds",
+          "Settings",
+          "parseOptions",
+          "parseCue",
+          "consumeTimeStamp",
+          "parseContent",
+          "pushNodes",
+          "determineBidi",
+          "CueStyleBox",
+          "BoxPosition",
+          "moveBoxToLinePosition",
+          "collectNextLine",
+          "parseHeader"
+        ],
+        "currentOnly": []
+      },
+      {
+        "path": "www/modules/pagejs/page.js",
+        "currentSha256": "bfdcf96ec474538e14b7e57495e8e0d5c607a20252d7110d57ad6323653425a9",
+        "candidateSha256": "8952ba1d36a5fd0372b62df1c97fe2a21b61a1e6b60251d1ef0de8bb214de704",
+        "byteEqual": false,
+        "strictWholeASTEqual": false,
+        "namedDeclarationSame": [],
+        "namedDeclarationDifferent": [
+          "page",
+          "decodeURLEncodedURIComponent",
+          "Context"
+        ],
+        "currentOnly": [
+          "onpopstate"
+        ]
+      },
+      {
+        "path": "www/modules/common/playback/playmethodhelper.js",
+        "currentSha256": "b9a6c50f3a8da2f7d29cff8a12aef9e57868124f085d787aacdd97c633763eb7",
+        "candidateSha256": "039703d02b802ad5f8aa6058aa23a5ba4f7389bbe03cefec21c06c571cd8fa81",
+        "byteEqual": false,
+        "strictWholeASTEqual": false,
+        "namedDeclarationSame": [],
+        "namedDeclarationDifferent": [],
+        "currentOnly": []
+      }
+    ],
+    "helperEarlyOfficial": {
+      "commit": "1d7c2ab4bfebdae31f89fdaabd3b68782ccf495a",
+      "path": "MediaBrowser.WebDashboard/dashboard-ui/bower_components/emby-webcomponents/playback/playmethodhelper.js",
+      "blobSha1": "a2d05f8096fc78c61707ba7e5139c9393cffa24b",
+      "sha256": "039703d02b802ad5f8aa6058aa23a5ba4f7389bbe03cefec21c06c571cd8fa81",
+      "bytes": 416,
+      "url": "https://github.com/MediaBrowser/Emby/blob/1d7c2ab4bfebdae31f89fdaabd3b68782ccf495a/MediaBrowser.WebDashboard/dashboard-ui/bower_components/emby-webcomponents/playback/playmethodhelper.js",
+      "rootLicense": {
+        "path": "LICENSE.md",
+        "sha256": "f371b80469fb235bc500ec29e0e85b682d4a6157a158567d828ff0be544d4f1d",
+        "bytes": 18014,
+        "text": "GNU GPL version 2; exact applicability to nested component/current revisions remains unclosed"
+      },
+      "webcomponentsTip": "69877ad3319a7b422d0e1f8289dc5ca234c4040d",
+      "lastFileChange": "93d3f89bd7d151d7bde09af6dffc0c627901831b",
+      "lastFileChangeDate": "2017-07-01T00:47:20-04:00",
+      "comparison": "manually compared five ordered branches; same outputs on valid session objects; no execution, no byte or whole-AST equality",
+      "scopeGap": "nested bower.json refers to a separate root LICENSE URL; inspected webcomponents tip has no such file; root GPL text is not treated as licensing all later Web"
+    },
+    "logo": {
+      "path": "www/modules/themes/logo.png",
+      "sha256": "624aa2425d6bee862fd5469e191a2dad928931425e45ee31d006d6e71906c064",
+      "baseline": "not located in selected official sources; no wider asset scan",
+      "consumer": "frozen index.html; maintained patch-startup changes to enhanced/startup.svg; web-snapshot-input assemble still copies manifest image",
+      "license": "unconfirmed"
+    },
+    "counters": {
+      "newByte": 0,
+      "newWholeAST": 0,
+      "newManuallyComparedSemanticBaseline": 1,
+      "currentWholeFileLicenseClosures": 0,
+      "remainingContentDifferences": 114,
+      "serverComparands": 112,
+      "earlySemanticComparands": 1,
+      "noComparand": 1
+    },
+    "licenseConditionBoundary": {
+      "pageJS": "MIT copyright/permission preservation applies to fixed original; custom current additions and introduction version not established",
+      "vttJS": "Apache-2.0 fixed original and file header; modification/notice duties, exact derived version and project GPL-2.0-only combination remain separate issues",
+      "EmbyWeb": "actual 2022/2023 revisions lack established independent grant; early repo GPL and public download do not fill this gap",
+      "CustomCssJS": "fixed normalized source and GPLv3 recorded separately; no whole-project compatibility or retirement completion claimed"
+    },
+    "readFailures": [
+      {
+        "action": "github_fetch tags collection",
+        "targets": [
+          "https://api.github.com/repos/visionmedia/page.js/tags?per_page=10",
+          "https://api.github.com/repos/mozilla/vtt.js/tags?per_page=10"
+        ],
+        "state": "denied by endpoint allowlist",
+        "error": "HTTP 400 INVALID_ARGUMENT: URL is not an allowed public GitHub repository or search endpoint",
+        "fallback": "read-only bare git clones of the same official public repositories; no downloaded product or build scripts executed"
+      },
+      {
+        "action": "web open GNU license-list",
+        "target": "https://www.gnu.org/licenses/license-list.html#apache2",
+        "state": "failed",
+        "error": "400 Timeout fetching",
+        "fallback": "official GNU license-compatibility page located through allowed web search"
+      }
+    ],
+    "compatibilityReference": "https://www.gnu.org/licenses/license-compatibility.html"
+  },
+  "componentDecisions": {
+    "dateUTC": "2026-10-22",
+    "analysisRef": "6fee412ad68934d0194303916cfe346e6254a228",
+    "counterSemantics": {
+      "114": "unexplained content/origin differences; NOT a license-problem count",
+      "597": "official-byte source identity; exact per-file license/application mapping not completed in this PR; licensed/unlicensed counts unknown",
+      "6_JS_AST_and_1_CSS_AST": "structural source correspondences, not demonstrated independent grants for the actual Web revisions",
+      "licenseUnclosedFileCount": null,
+      "unknownDoesNotMeanUnlicensed": true,
+      "noWholeTreeCertification": true,
+      "noImplicit720Minus114Calculation": true
+    },
+    "families": [
+      {
+        "family": "pageJS",
+      "sourceAndLicenseReferences": {
+        "fixedSourceURL": "https://github.com/visionmedia/page.js/blob/1bc93692b0924b686e2207a66e2e73a85e1ab058/index.js",
+        "fixedLicenseURL": "https://github.com/visionmedia/page.js/blob/1bc93692b0924b686e2207a66e2e73a85e1ab058/Readme.md#license"
+      },
+        "files": [
+          {
+            "path": "www/modules/pagejs/page.js",
+            "bytes": 6028,
+            "sha256": "bfdcf96ec474538e14b7e57495e8e0d5c607a20252d7110d57ad6323653425a9"
+          }
+        ],
+        "fileCount": 1,
+        "frozenBytes": 6028,
+        "licenseApplicability": "MIT applies to pinned upstream original; current custom version not established",
+        "behaviorRiskInference": "broad navigation and back/history behavior",
+        "noticeOnlyEstablished": false,
+        "nextDecision": "preserve current implementation with evidence, or choose explicitly licensed original plus independent adapter",
+        "searchBranch": "closed absent a new fixed source/license lead or an implementation decision",
+        "sourceEvidence": "licenseApplicabilityFollowup and fixedVersionLicenseEvidence in this document; source URLs are fixed to recorded revisions/archives"
+      },
+      {
+        "family": "WebVTT",
+      "sourceAndLicenseReferences": {
+        "fixedSourceURL": "https://github.com/mozilla/vtt.js/blob/f823de834bc23d65300e58a6d391916bc00bcb75/lib/vtt.js",
+        "fixedLicenseURL": "https://github.com/mozilla/vtt.js/blob/f823de834bc23d65300e58a6d391916bc00bcb75/LICENSE",
+        "cssUpstreamAndLicenseURL": null
+      },
+        "files": [
+          {
+            "path": "www/modules/webvtt/vtt.js",
+            "bytes": 28470,
+            "sha256": "97bda9c48cf440809d6453c8e36229f2384ca706dc46fe562d73963fb02c6aee"
+          },
+          {
+            "path": "www/modules/webvtt/vtt.css",
+            "bytes": 428,
+            "sha256": "8c5c30ea886110fde45511a37f9435fc2355b7c812e6dceb3cf98fa67f6b8317"
+          }
+        ],
+        "fileCount": 2,
+        "frozenBytes": 28898,
+        "licenseApplicability": "Apache-2.0 pinned JS original; current derivation and combination unresolved; CSS not covered by directory association",
+        "behaviorRiskInference": "HTML external VTT parsing/cues/layout; not all native playback proven",
+        "noticeOnlyEstablished": false,
+        "nextDecision": "resolve derivation/combination evidence or decide alternative implementation; CSS separately scoped",
+        "searchBranch": "closed absent a new fixed source/license lead or an implementation decision",
+        "sourceEvidence": "licenseApplicabilityFollowup and fixedVersionLicenseEvidence in this document; source URLs are fixed to recorded revisions/archives"
+      },
+      {
+        "family": "playmethodhelper",
+      "sourceAndLicenseReferences": {
+        "fixedSourceURL": "https://github.com/MediaBrowser/Emby/blob/1d7c2ab4bfebdae31f89fdaabd3b68782ccf495a/MediaBrowser.WebDashboard/dashboard-ui/bower_components/emby-webcomponents/playback/playmethodhelper.js",
+        "sameTreeLicenseURL": "https://github.com/MediaBrowser/Emby/blob/1d7c2ab4bfebdae31f89fdaabd3b68782ccf495a/LICENSE.md"
+      },
+        "files": [
+          {
+            "path": "www/modules/common/playback/playmethodhelper.js",
+            "bytes": 656,
+            "sha256": "b9a6c50f3a8da2f7d29cff8a12aef9e57868124f085d787aacdd97c633763eb7"
+          }
+        ],
+        "fileCount": 1,
+        "frozenBytes": 656,
+        "licenseApplicability": "old same-tree GPL v2 text and semantic baseline; current chain/component scope unresolved",
+        "behaviorRiskInference": "playerstats display labels; no media-source selection found",
+        "noticeOnlyEstablished": false,
+        "nextDecision": "decide evidence-based retention or independently implemented single display function",
+        "searchBranch": "closed absent a new fixed source/license lead or an implementation decision",
+        "sourceEvidence": "licenseApplicabilityFollowup and fixedVersionLicenseEvidence in this document; source URLs are fixed to recorded revisions/archives"
+      },
+      {
+        "family": "logo",
+      "sourceAndLicenseReferences": {
+        "frozenInputURL": "https://github.com/hope140/EmbyTheaterEnhanced/blob/6fee412ad68934d0194303916cfe346e6254a228/vendor/web-snapshot/www/modules/themes/logo.png",
+        "upstreamAndLicenseURL": null
+      },
+        "files": [
+          {
+            "path": "www/modules/themes/logo.png",
+            "bytes": 32892,
+            "sha256": "624aa2425d6bee862fd5469e191a2dad928931425e45ee31d006d6e71906c064"
+          }
+        ],
+        "fileCount": 1,
+        "frozenBytes": 32892,
+        "licenseApplicability": "no located fixed origin or applicable image grant",
+        "behaviorRiskInference": "startup visual replaced by maintained overlay, original still copied by manifest assembler",
+        "noticeOnlyEstablished": false,
+        "nextDecision": "confirm consumers/distribution then decide permission evidence or single-asset retirement/replacement",
+        "searchBranch": "closed absent a new fixed source/license lead or an implementation decision",
+        "sourceEvidence": "licenseApplicabilityFollowup and fixedVersionLicenseEvidence in this document; source URLs are fixed to recorded revisions/archives"
+      },
+      {
+        "family": "WebCoreRepresentatives",
+      "sourceAndLicenseReferences": {
+        "fixedComparandURLs": [
+          "https://github.com/MediaBrowser/Emby.Releases/releases/download/4.7.6.0/embyserver-netcore_4.7.6.0.zip",
+          "https://github.com/MediaBrowser/Emby.Releases/releases/download/4.7.14.0/embyserver-netcore_4.7.14.0.zip"
+        ],
+        "fixedShippedTermsPackageURL": "https://github.com/MediaBrowser/Emby.Releases/releases/download/4.7.6.0/emby-server-deb_4.7.6.0_arm64.deb",
+        "fixedShippedTermsMember": "data.tar.xz: ./opt/emby-server/licenses/license.docx",
+        "independentGrantForActualWebRevisionURL": null
+      },
+        "files": [
+          {
+            "path": "www/app.js",
+            "bytes": 102397,
+            "sha256": "3ef3102567458359a02e2fe8f79a8700cfe9c223347abe5ab6ecb8bd93be89d2"
+          },
+          {
+            "path": "www/modules/common/appsettings.js",
+            "bytes": 5007,
+            "sha256": "5c5f0e9d4ae508d9f4157d26ebbfd71885f91eaaa16ff6c40388c161feb06582"
+          },
+          {
+            "path": "www/modules/common/playback/playbackmanager.js",
+            "bytes": 125181,
+            "sha256": "8df9ea6f1be13f355925b2fd1b9bf7539c5a624d8731be484959a4ec861a1ebd"
+          },
+          {
+            "path": "www/modules/emby-apiclient/apiclient.js",
+            "bytes": 155508,
+            "sha256": "f3516c72784e5bc8782abbce021f22a7f939034e5b8b70639672ae682e18acc0"
+          }
+        ],
+        "fileCount": 4,
+        "frozenBytes": 388093,
+        "licenseApplicability": "actual 2022/2023 revision grant not established by early GPL or official download",
+        "behaviorRiskInference": "high coupling: initialization/settings/playback state/API; other UI files excluded from this size",
+        "noticeOnlyEstablished": false,
+        "nextDecision": "decide actual-version authorization evidence route or bounded alternative-frontend contracts; stop blind archive search",
+        "searchBranch": "closed absent a new fixed source/license lead or an implementation decision",
+        "sourceEvidence": "licenseApplicabilityFollowup and fixedVersionLicenseEvidence in this document; source URLs are fixed to recorded revisions/archives"
+      }
+    ],
+    "prefixHeaderCheck": {
+      "manifestFiles": 720,
+      "extensions": [
+        ".js",
+        ".css",
+        ".html",
+        ".json"
+      ],
+      "bytesPerFileAtMost": 5000,
+      "pattern": "word-boundary copyright, licensed under, SPDX-, MIT license, Apache license, GNU General/Lesser",
+      "candidateFiles": 0,
+      "boundary": "prefix-only static metadata lead check; not a full-content license audit or proof of missing permissions; no source re-attribution or known597 history rescan"
+    },
+    "factualVsInferred": {
+      "facts": "frozen sizes/hashes, fixed source/license originals, AST comparisons, observed static consumers",
+      "engineeringInference": "relative behavior impact and minimal module boundaries; not runtime acceptance",
+      "legalConclusion": "no absolute legal guarantee, infringement determination, or assertion all current files require replacement"
+    },
+    "scope": "documentation and static read-only classification only; no product replacement, rights-holder contact, new version sampling or removed source-coverage task"
+  },
+  "logoInspection": {
+    "path": "www/modules/themes/logo.png",
+    "fixedImageURL": "https://github.com/hope140/EmbyTheaterEnhanced/blob/6fee412ad68934d0194303916cfe346e6254a228/vendor/web-snapshot/www/modules/themes/logo.png",
+    "gitBlobSha1": "ad853d1c842be9d54c1739a5ce823694e4175b41",
+    "width": 1238,
+    "height": 377,
+    "pngBitDepth": 8,
+    "pngColorType": 6,
+    "appearance": "green play mark, white emby wordmark, visible by David & NoisyX credit; viewed directly",
+    "attributionBoundary": "visible credit is not verified authorship or applicable permission; not an unknown ETE app icon",
+    "originalConsumer": "www/index.html .app-splash background-image; general startup, not selected-theme-specific",
+    "desktopEntry": "src/electronapp/main.js loads file://.../www/index.html?autostart=false",
+    "maintainedStartupTransform": "tools/patch-startup.cjs replaces modules/themes/logo.png with ../enhanced/startup.svg; tools/prepare-web-overlays.cjs startup-index contract is applied by tools/build.ps1",
+    "transformedIndexSha256": "18f777ee20f9829f3e7e4ab53a3442e7d4bd1532689e7ece0b874281e0bb305d",
+    "transformedIndexOldReferencePresent": false,
+    "transformedIndexNewReferencePresent": true,
+    "separateScreensaver": "modules/logoscreensaver/plugin.js maps its own logowhite.png; not this PNG",
+    "distribution": "web-snapshot-input.cjs assemble copies manifest.files; original PNG not in inspected retired runtime exclusions",
+    "validation": "direct image inspection, PNG IHDR, bytes/hash, source/consumer inspection and maintained pure startup transformation only; no downloaded product, desktop GUI or request-trace execution",
+    "limitations": "normal maintained entry does not reference this PNG through startup style; static evidence does not rule out all dynamic/custom use or prove final installer contents independently"
+  },
+  "usageScreen105": {
+    "summary": {
+      "analysisRef": "6fee412ad68934d0194303916cfe346e6254a228",
+      "scope": "114 content-difference targets minus nine previously reviewed files; consumers indexed within fixed 720 Web files plus directed maintained plugin-UI/assembly contracts; no whole-repository disuse audit",
+      "counts": {
+        "targets": 105,
+        "hasStaticConsumersIncludingConditionalModes": 104,
+        "undetermined": 1,
+        "cleanupCandidatesWithinUndetermined": 1,
+        "confirmedUnusedAcrossSupportedModes": 0,
+        "newCandidateUncompressedBytes": 4814,
+        "combined114HistoricalCounts": {
+          "hasStaticConsumersIncludingConditionalModes": 112,
+          "possibleResidueOrUndetermined": 2,
+          "confirmedUnused": 0,
+          "note": "includes previously evaluated old logo; no planned PR69 deletion credited; not a license-count ledger"
+        }
+      },
+      "method": {
+        "parsedJS": 398,
+        "parseErrors": 0,
+        "aliasDefinitionsAloneNotCountedAsUse": true,
+        "JSReferences": "decoded AST strings, constant concatenations, relative AMD paths, root paths, extension and css/text-loader resolution, alias consumers; comments excluded",
+        "manualDynamicChecks": 5,
+        "generatedOverlayContractsValidated": 25,
+        "generatedAppSha256": "e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c",
+        "runtimeExecuted": false,
+        "notRootReachabilityProof": "a recorded static consumer/conditional route is not proof that normal desktop or this user actually loaded the resource"
+      },
+      "candidate": {
+        "path": "www/settings/cameraupload.js",
+        "bytes": 4814,
+        "sha256": "cab95e4f266d16c250930d6bb76fd07de18212f2bb777e141396ebdf3f3b6ea8",
+        "sourceURL": "https://github.com/hope140/EmbyTheaterEnhanced/blob/6fee412ad68934d0194303916cfe346e6254a228/vendor/web-snapshot/www/settings/cameraupload.js",
+        "routeEvidenceURL": "https://github.com/hope140/EmbyTheaterEnhanced/blob/6fee412ad68934d0194303916cfe346e6254a228/vendor/web-snapshot/www/app.js#L691",
+        "status": "candidate only; no deletion requested or performed; not added to PR69 approved cleanup",
+        "next": "separate decision and isolated supported-mode/route/request checks before production exclusion; do not retire settings folder or device camera-upload admin controller"
+      },
+      "assembly": "manifest Web copy includes all targets before authoritative overlays; Inno recursively includes runtime; released EXE not independently extracted",
+      "licenseBoundary": "usage/source identity is not authorization; license-unclosed file count remains uncounted; exact whole-file hashes are evidence tools, not a universal prerequisite for an applicable license",
+      "stoppingRule": "bounded 105-target consumer review complete; no further version search or whole-directory retirement inferred"
+    },
+    "files": [
+      {"path":"www/components/accessschedule/accessschedule.template.html","sha256":"b2ae39691199c9d2578d3c4886efc8a2046337192b6a108acfd24ce6ea2dac35","bytes":1737,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"components/accessschedule/accessschedule.js","kind":"literal-path","value":"components/accessschedule/accessschedule.template.html","line":1,"origin":"frozen-Web-input","sha256":"4a430c1f11ed0a3af9043a138876fd373a5ca6edb020eaf1ace5364d11445db7"}},
+      {"path":"www/components/directorybrowser/directorybrowser.js","sha256":"21cf26564d36124f0efecffdec69e97816898657f5e5d93a9c73411e3087cfc5","bytes":13525,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"components/medialibrarycreator/medialibrarycreator.js","kind":"AMD-alias-consumer","value":"directorybrowser","line":1,"origin":"frozen-Web-input","sha256":"905939761c3b7813025453a598a7683db4a1368dd6b2c7085f0400f84e6c16ad"}},
+      {"path":"www/components/libraryoptionseditor/libraryoptionseditor.js","sha256":"b6931b38d5422262606efdba06bc868d0979ae84b99c2a61541188b54b4b9aaa","bytes":53424,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"components/medialibrarycreator/medialibrarycreator.js","kind":"literal-path","value":"components/libraryoptionseditor/libraryoptionseditor","line":1,"origin":"frozen-Web-input","sha256":"905939761c3b7813025453a598a7683db4a1368dd6b2c7085f0400f84e6c16ad"}},
+      {"path":"www/dashboard/dashboard.js","sha256":"869440877607a96aac8c723b6faf60a0602a87be6daf63d8ce90d50ae6ea9be5","bytes":27824,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"dashboard/dashboard","line":804,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/devices/cameraupload.js","sha256":"bbd038cc8c4244ce1393aba17950852527321afb52cebfd24fca5fea4dea3218","bytes":2762,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"devices/cameraupload.js","line":877,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/embypremiere/embypremiere.js","sha256":"61ada78c134a9482f952457b14325898c7f97a323549515296f664ec7d7cdf11","bytes":33501,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"embypremiere/embypremiere.js","line":1167,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/home/favorites.js","sha256":"f7cedac04dcf36edf50c805d75a37f440702829930d63872f0c4c6a4c05a1c55","bytes":7103,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"home/home.js","kind":"literal-path","value":"./home/favorites.js","line":1,"origin":"frozen-Web-input","sha256":"6b90990cf39a20bc3b3c10ac1956b5cd6cc8a7c0152b33f6771b35e5be27b2fb"}},
+      {"path":"www/index.html","sha256":"ca05a9a26de19e16bb89c3595d29c95e3a56876439e968e3f464b218a101053a","bytes":3991,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"index.html","line":231,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/item/item.css","sha256":"6cef345654844e0d270694688ca02e080ab21bd01f58feadfaeb99e4556bad62","bytes":16295,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"item/item.js","kind":"literal-path","value":"css!./item","line":37,"origin":"verified-generated-overlay","sha256":"72311eb4fd8e2a151b280366218a44de802db1083bd71da99f9ef1cb8cc3ab11"}},
+      {"path":"www/item/item.html","sha256":"a11d00bb58f83a9f56a16f137342d5c3b62df03ae83436527d426b56b160a6b5","bytes":24093,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"/item/item.html","line":465,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/item/item.js","sha256":"c8f51119365ecd2881b0a33f1f9e9dd6da90e305572621188fb31a15fdcb4623","bytes":142916,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"item/item","line":469,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/librarysetup/library.js","sha256":"4ac5dd0c3897067f72d974f150a1e38ebaefdbac72b4bdde21bbecf374499d3f","bytes":5985,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"librarysetup/library.js","line":914,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/livetv/livetv.js","sha256":"2dd489a37f981205488d3a3e3899b7e149b883d5d9ddde0172e853f631c782bf","bytes":4079,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"livetv/livetv","line":488,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/livetvsetup/livetvstatus.js","sha256":"be81d58883a067494299e0bfed24099d53279cd30105dedbded651fd84d2b147","bytes":7689,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"livetvsetup/livetvstatus.js","line":987,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/modules/actionsheet/actionsheet.css","sha256":"5a4d6a7c89f9cf86ff3d5fb4dbb4ed4b53982df0883caa19c2e29f164ac7e39d","bytes":9259,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"modules/actionsheet/actionsheet.js","kind":"literal-path","value":"css!modules/actionsheet/actionsheet.css","line":1,"origin":"verified-generated-overlay","sha256":"948f67d423647cc5d354dccc2707d06c43e34cb42965d69a41c5a3c436d2511e"}},
+      {"path":"www/modules/appfooter/appfooter.css","sha256":"29fd442f55202fa952f77e674aadb71a139eea4f76c43affef6d2c784a025da6","bytes":707,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"modules/appfooter/appfooter.js","kind":"literal-path","value":"css!modules/appfooter/appfooter.css","line":1,"origin":"frozen-Web-input","sha256":"a2dfb3126e89051b2c98f6307567951f172fc6a5653f278115a45bd0b74e1a08"}},
+      {"path":"www/modules/appheader/appheader.css","sha256":"3615beb7c72c8568a54c8566d66a57c394cf7d784d050d60bfe80d9ff37b97de","bytes":6555,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"modules/appheader/appheader.js","kind":"literal-path","value":"css!modules/appheader/appheader.css","line":48,"origin":"frozen-Web-input","sha256":"96ac8c85c6c22d5d227ae5de6df60cca2abff3983f0758a3847929ff82bf7a98"}},
+      {"path":"www/modules/appheader/appheader.js","sha256":"96ac8c85c6c22d5d227ae5de6df60cca2abff3983f0758a3847929ff82bf7a98","bytes":24321,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"./modules/appheader/appheader.js","line":322,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/modules/approuter.js","sha256":"cf4621bf3865bde1ecb77befb2bea67a0b4b505fc285bc83b743a880c4306aa1","bytes":31414,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"./modules/approuter.js","line":331,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/modules/backmenu/backmenu.js","sha256":"76de6d5ebfd91c4ef9aebe9692e69dae757c4e663dea82dd6731761c796107da","bytes":5382,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"modules/approuter.js","kind":"AMD-alias-consumer","value":"backMenu","line":392,"origin":"verified-generated-overlay","sha256":"3a2a73970aea9156c79bcf5545693904b69a4c448854fa3baaf4eeb6dd621691"}},
+      {"path":"www/modules/cardbuilder/card.css","sha256":"81669ddf0340fb1871ed6115baf74111467e22b640cb4e4988e3912cd1a5d3c6","bytes":30725,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"components/tunerpicker.js","kind":"AMD-alias-consumer","value":"cardStyle","line":1,"origin":"frozen-Web-input","sha256":"0ef59b5964d1e6dfc86a45027dfbe82bc4fcedd88ce2babed1e6e8887c9a8ce2"}},
+      {"path":"www/modules/cardbuilder/cardbuilder.js","sha256":"eb5c7eb15dcf7d505e25ba571eff5ffb898e460c8797d78459a810c7beba0fbe","bytes":87837,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"dashboard/dashboard.js","kind":"AMD-alias-consumer","value":"cardBuilder","line":12,"origin":"frozen-Web-input","sha256":"869440877607a96aac8c723b6faf60a0602a87be6daf63d8ce90d50ae6ea9be5"}},
+      {"path":"www/modules/commandprocessor.js","sha256":"10ed682d5897e8c065925ef6071e914cb04537067a14c4d869f3eb14f724276f","bytes":15990,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"item/item.js","kind":"AMD-alias-consumer","value":"commandProcessor","line":1089,"origin":"verified-generated-overlay","sha256":"72311eb4fd8e2a151b280366218a44de802db1083bd71da99f9ef1cb8cc3ab11"}},
+      {"path":"www/modules/common/datetime.js","sha256":"30133c5fabcb97731f18c81bf95a1852cab9460626a767f11acab7da332724e9","bytes":5222,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"components/accessschedule/accessschedule.js","kind":"AMD-alias-consumer","value":"datetime","line":1,"origin":"frozen-Web-input","sha256":"4a430c1f11ed0a3af9043a138876fd373a5ca6edb020eaf1ace5364d11445db7"}},
+      {"path":"www/modules/common/inputmanager.js","sha256":"aedc007222d868585d4c4b4afe729a17cda34b97fea54e67353bd29eada84cb5","bytes":6516,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"AMD-alias-consumer","value":"inputManager","line":1749,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/modules/common/playback/experimentalwarnings.js","sha256":"3bb3d038d721edc444789acc61b693a6bfa43ad1eca6ba48a6e27b7aca7d6fbb","bytes":3384,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"./modules/common/playback/experimentalwarnings.js","line":2081,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/modules/common/qualityoptions.js","sha256":"ce0312e5cb6abe93f837445e3a7f902acb8fdb6e70e0398b9d1ef7b93cf4a639","bytes":4690,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"modules/playback/playersettingsmenu.js","kind":"literal-path","value":"./../common/qualityoptions.js","line":7,"origin":"frozen-Web-input","sha256":"a9c89d7246bf1bde18655488d0f82a8409b5a28b04669ae263c12ab7215d69b5"}},
+      {"path":"www/modules/common/strings/zh-CN.json","sha256":"16331e9f5754f545fcff964b60d95217c7827f6c8f2b17490c01490d760f0e89","bytes":63180,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"dynamic-locale","value":"modules/common/strings/","line":1588,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c","note":"sharedcomponents translations list includes zh-CN; locale selector loads path"}},
+      {"path":"www/modules/common/subtitleappearancehelper.js","sha256":"c8bb683bca38ed1869819d290a269e0f0d46c0a548f463eafb44b75ca9a6cecb","bytes":3916,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"modules/htmlvideoplayer/plugin.js","kind":"AMD-alias-consumer","value":"subtitleAppearanceHelper","line":444,"origin":"frozen-Web-input","sha256":"59416607c034100a9f198d425386efeb44bf04b4426f23a7697f0fbf7d9f6b76"}},
+      {"path":"www/modules/common/usersettings/usersettingsbuilder.js","sha256":"92e398d2db43ae3c8eea2aecc42599f2399b56ae70145893433f5dafaca5a0a5","bytes":12060,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"modules/common/usersettings/usersettings.js","kind":"literal-path","value":"./usersettingsbuilder.js","line":1,"origin":"frozen-Web-input","sha256":"1f221cb5109d7c8982bc86edc922331d9cf5dd48893b07281c886278cfa69b94"}},
+      {"path":"www/modules/datagrid/datagrid.js","sha256":"6184e92af105b3d7d1a0b3685088c28dcbf159601678504770f91435f004221c","bytes":21766,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"modules/tabbedview/listcontroller.js","kind":"literal-path","value":"./../datagrid/datagrid.js","line":17,"origin":"verified-generated-overlay","sha256":"70a5c1c43de73732d2511fb768f4b77eaad31155b7cc8ea2e2c7d0ccedf402fd"}},
+      {"path":"www/modules/dialog/dialog.js","sha256":"e9a7fc782a415542c1f96cc3d9396d2c1293d2fc72cff1f34ab11629b3e0390c","bytes":5077,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"modules/common/deletehelper.js","kind":"literal-path","value":"./../dialog/dialog.js","line":1,"origin":"frozen-Web-input","sha256":"98aaee2556727a06338dfc82be51b77bc7d5655690634024062da9ddb45b0a31"}},
+      {"path":"www/modules/dialoghelper/dialoghelper.css","sha256":"528818e0d877b3cc090d94f8ef37a7763ddb300ee1a2523a8653fca5cddb62bd","bytes":7848,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"modules/dialoghelper/dialoghelper.js","kind":"literal-path","value":"css!modules/dialoghelper/dialoghelper.css","line":1,"origin":"frozen-Web-input","sha256":"ae5b23648dc3ef19b3a7e17c3fbb82608f21ca81c25f85b762fc519d5aa57337"}},
+      {"path":"www/modules/dockedtabs/dockedtabs.css","sha256":"1024cd6a6d99235cb1cc14fbf3040afce8f232345a486f93a236722734ebe7c7","bytes":1710,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"modules/dockedtabs/dockedtabs.js","kind":"literal-path","value":"css!modules/dockedtabs/dockedtabs.css","line":26,"origin":"frozen-Web-input","sha256":"6c9ad1b874383065888d7d70b78fff8af62f6f2dc20351b9f68d1466757bccc2"}},
+      {"path":"www/modules/dockedtabs/dockedtabs.js","sha256":"6c9ad1b874383065888d7d70b78fff8af62f6f2dc20351b9f68d1466757bccc2","bytes":6067,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"./modules/dockedtabs/dockedtabs.js","line":1423,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/modules/emby-apiclient/apiclientex.js","sha256":"53d95de33c8c3ca4cdfa4f0491774b73638ec98f3c2abf71d0eb318a863e2f81","bytes":32812,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"AMD-alias-consumer","value":"apiclient","line":134,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/modules/emby-apiclient/connectionmanager.js","sha256":"beae6ad4a2d386fb6d3553974c0aa3ba7c7e1bc25c1098944f508fe497a08f09","bytes":52838,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"apikeys/apikeys.js","kind":"AMD-alias-consumer","value":"connectionManager","line":1,"origin":"frozen-Web-input","sha256":"2b7cd0734c5985bcc2664b0c0be77c658cdc72a155c7c8f7d6b5fb8abcfd2c91"}},
+      {"path":"www/modules/emby-elements/emby-button/emby-button.css","sha256":"227e01cfc5de381c38725a52bdd58370ac626473048813a17dc2e19b858641e4","bytes":4786,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"modules/emby-elements/emby-button/emby-button.js","kind":"literal-path","value":"css!modules/emby-elements/emby-button/emby-button.css","line":1,"origin":"frozen-Web-input","sha256":"710a27e97c35c38265bb4e17b2f8bdf1dbbbe5d2cf78b8f13060e6dabd88eef9"}},
+      {"path":"www/modules/emby-elements/emby-checkbox/emby-checkbox.css","sha256":"b5dd70b67358ff42c99e7c173067d30672cf0a0bc57c8f935399232c2b8c46c6","bytes":4277,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"modules/emby-elements/emby-checkbox/emby-checkbox.js","kind":"literal-path","value":"css!modules/emby-elements/emby-checkbox/emby-checkbox.css","line":1,"origin":"frozen-Web-input","sha256":"6398ad9b61b5881b0de9e7970dc1a98c57e2c62868fb177729e7a9f9802bdef6"}},
+      {"path":"www/modules/emby-elements/emby-itemscontainer/emby-itemscontainer.js","sha256":"46670ce92adf5a46ba6f7689481e89cd39a5d423a9f97d9d78f45e49f1e86e49","bytes":39778,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"components/tunerpicker.js","kind":"AMD-alias-consumer","value":"emby-itemscontainer","line":1,"origin":"frozen-Web-input","sha256":"0ef59b5964d1e6dfc86a45027dfbe82bc4fcedd88ce2babed1e6e8887c9a8ce2"}},
+      {"path":"www/modules/emby-elements/emby-slider/emby-slider.css","sha256":"0ed7028c6e27fc99def6ff207cce36d2ef34670310ee7fe28d16c1d0c98292ee","bytes":4513,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"modules/emby-elements/emby-slider/emby-slider.js","kind":"literal-path","value":"css!modules/emby-elements/emby-slider/emby-slider.css","line":1,"origin":"frozen-Web-input","sha256":"6c10d7e34eddebf896ab67f9ea5796c9fde06affabf38006b3e9e47e9551acfe"}},
+      {"path":"www/modules/filtermenu/filtermenu.template.html","sha256":"fc2ba64a5173c1f9aa75557b46f282065adb073625b6e3df6f995b44da6181a5","bytes":10057,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"modules/filtermenu/filtermenu.js","kind":"literal-path","value":"text!./modules/filtermenu/filtermenu.template.html","line":1,"origin":"frozen-Web-input","sha256":"5f05157fd0aa9ef01a8085da92e6e6f35765720beed25f090521220148b50d0b"}},
+      {"path":"www/modules/focusmanager.js","sha256":"00df8dcea711adad7df82aabc17bcfc7b045c856266fec9acc8213dff20ff053","bytes":12871,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"components/tunerpicker.js","kind":"AMD-alias-consumer","value":"focusManager","line":1,"origin":"frozen-Web-input","sha256":"0ef59b5964d1e6dfc86a45027dfbe82bc4fcedd88ce2babed1e6e8887c9a8ce2"}},
+      {"path":"www/modules/fonts/fonts.css","sha256":"ac55cca0be3507c122af1d99f46bf87df5c781409ea40277aaf924a918e3f0b4","bytes":7666,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"AMD-alias-consumer","value":"systemFontsCss","line":1471,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/modules/formdialog.css","sha256":"5a552a9b94646e4c207226e9ce77f1dd4e630dd144068369f3664d69db9323a0","bytes":3093,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"components/accessschedule/accessschedule.js","kind":"AMD-alias-consumer","value":"formDialogStyle","line":1,"origin":"frozen-Web-input","sha256":"4a430c1f11ed0a3af9043a138876fd373a5ca6edb020eaf1ace5364d11445db7"}},
+      {"path":"www/modules/genericedit/genericedit.js","sha256":"0c917add58a60965e07f3110ed349feb3e0b0f3e34caabb02fca1089f4a54408","bytes":35856,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"src/electronapp/enhanced/plugin-ui/genericui.js","kind":"maintained-AMD-consumer","value":"modules/genericedit/genericedit.js","line":3,"origin":"tracked-maintained-source","sha256":"ebe88208f7d13f10c40894eb00ae97674d89439e4caf21391960939e7cd485b9","note":"maintained plugin UI imports and calls renderForm/setFormValues/getItemValues; generated /genericui route points to maintained controller"}},
+      {"path":"www/modules/homesections/homesections.js","sha256":"db6e730034a51806e7dcab6284ca5e01879bd105ebb6709e3c3099b49bfe58a5","bytes":44723,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"home/hometab.js","kind":"literal-path","value":"./../modules/homesections/homesections.js","line":1,"origin":"verified-generated-overlay","sha256":"ee30d819de898154d8d6727ce31fe86418f79761368fa4b7075f071df56635cb"}},
+      {"path":"www/modules/htmlvideoplayer/plugin.js","sha256":"59416607c034100a9f198d425386efeb44bf04b4426f23a7697f0fbf7d9f6b76","bytes":50171,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"./modules/htmlvideoplayer/plugin.js","line":2100,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/modules/humanedate/humanedate.js","sha256":"e3dc632d700730e9afc14037ee55cbfbde42057cc4b165fcc15bd393284ce6eb","bytes":2191,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"dashboard/dashboard.js","kind":"AMD-alias-consumer","value":"humanedate","line":14,"origin":"frozen-Web-input","sha256":"869440877607a96aac8c723b6faf60a0602a87be6daf63d8ce90d50ae6ea9be5"}},
+      {"path":"www/modules/imageuploader/imageuploader.js","sha256":"92964aa357b421fac31c22db81ca8b5b110ef341bf6ef44eff3f27d52b26b12f","bytes":5457,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"modules/commandprocessor.js","kind":"AMD-alias-consumer","value":"imageUploader","line":1,"origin":"frozen-Web-input","sha256":"10ed682d5897e8c065925ef6071e914cb04537067a14c4d869f3eb14f724276f"}},
+      {"path":"www/modules/input/keyboard.js","sha256":"6be8054ec2f7289b93871c7b9b5edf70a375e0911bfb5b5b6778c7d46b87cc15","bytes":25318,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"./modules/input/keyboard.js","line":1429,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/modules/itemcontextmenu.js","sha256":"23946853eb776414f36372529dbb64fa1607fcd991281d18ab806599ff50cacb","bytes":24561,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"item/item.js","kind":"AMD-alias-consumer","value":"itemContextMenu","line":14,"origin":"verified-generated-overlay","sha256":"72311eb4fd8e2a151b280366218a44de802db1083bd71da99f9ef1cb8cc3ab11"}},
+      {"path":"www/modules/layout.css","sha256":"d6eb9a45859d776806b7b7078c4763c452dada04834b3f461797dee1fe80dc8c","bytes":22942,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"AMD-alias-consumer","value":"layoutStyle","line":1468,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/modules/layoutmanager.js","sha256":"519b43dceb52306f32a2a673f3c7cb480cf767f82059890be9156ee921141e6f","bytes":2210,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"components/tunerpicker.js","kind":"AMD-alias-consumer","value":"layoutManager","line":1,"origin":"frozen-Web-input","sha256":"0ef59b5964d1e6dfc86a45027dfbe82bc4fcedd88ce2babed1e6e8887c9a8ce2"}},
+      {"path":"www/modules/listview/listview.css","sha256":"f55f3c9353625b3ae40f6b8fe945fb135da933a1f2d862b4bce0677dae6d64d4","bytes":17096,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"components/directorybrowser/directorybrowser.js","kind":"AMD-alias-consumer","value":"listViewStyle","line":6,"origin":"frozen-Web-input","sha256":"21cf26564d36124f0efecffdec69e97816898657f5e5d93a9c73411e3087cfc5"}},
+      {"path":"www/modules/listview/listview.js","sha256":"88bcbc6bfd6f0bda23671757a10f6b86ac651a715dffd6478d4a907e375a4d2f","bytes":30702,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"components/activitylog.js","kind":"AMD-alias-consumer","value":"listView","line":1,"origin":"frozen-Web-input","sha256":"f05fe1aa6b16c5418c0283ce11524c7266a5d0c218b3d3f20355c9806141756e"}},
+      {"path":"www/modules/mediainfo/mediainfo.css","sha256":"f1f4b758474fcea6af4fb4b9db15c2f6ba1642def6b1fbcfde2ffbd5870628f8","bytes":2419,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"modules/mediainfo/mediainfo.js","kind":"literal-path","value":"css!modules/mediainfo/mediainfo.css","line":395,"origin":"frozen-Web-input","sha256":"553d9874d35f8ad1c6b62ca7657cc493486c20e0a5bc395ee9618caa99a9fa0e"}},
+      {"path":"www/modules/mediainfo/mediainfo.js","sha256":"553d9874d35f8ad1c6b62ca7657cc493486c20e0a5bc395ee9618caa99a9fa0e","bytes":23989,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"home_horiz/focushandler.js","kind":"AMD-alias-consumer","value":"mediaInfo","line":1,"origin":"frozen-Web-input","sha256":"1b8f534de4c85540072965f3ff9d06ead76e01885ac47a2e2e361efe73c93a5c"}},
+      {"path":"www/modules/metadataeditor/metadataeditor.js","sha256":"1a514ae463c63fdcc2ac4a4f799db59551752f18b5867ac0698b3089a302850f","bytes":39528,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"item/item.js","kind":"AMD-alias-consumer","value":"metadataEditor","line":2350,"origin":"verified-generated-overlay","sha256":"72311eb4fd8e2a151b280366218a44de802db1083bd71da99f9ef1cb8cc3ab11"}},
+      {"path":"www/modules/multiselect/multiselect.js","sha256":"75b83638e8db293d3327719783eddca81f6d88e2ac077678b10a41be30d7f656","bytes":29281,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"item/item.js","kind":"AMD-alias-consumer","value":"multiSelect","line":8,"origin":"verified-generated-overlay","sha256":"72311eb4fd8e2a151b280366218a44de802db1083bd71da99f9ef1cb8cc3ab11"}},
+      {"path":"www/modules/navdrawer/navdrawer.css","sha256":"572a934ae9075dcde35e86f40e8d092cb79798a6a1b50c780f1fed6ef747e68a","bytes":5320,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"modules/navdrawer/navdrawer.js","kind":"literal-path","value":"css!modules/navdrawer/navdrawer.css","line":12,"origin":"frozen-Web-input","sha256":"8dbcbfab0843cfab0d010df785458c8cd03d9d7f253c29c460f7bc0278fb3ae3"}},
+      {"path":"www/modules/navdrawer/navdrawer.js","sha256":"8dbcbfab0843cfab0d010df785458c8cd03d9d7f253c29c460f7bc0278fb3ae3","bytes":5422,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"modules/appheader/appheader.js","kind":"literal-path","value":"./../navdrawer/navdrawer.js","line":18,"origin":"frozen-Web-input","sha256":"96ac8c85c6c22d5d227ae5de6df60cca2abff3983f0758a3847929ff82bf7a98"}},
+      {"path":"www/modules/navdrawer/navdrawercontent.js","sha256":"c235a30e0523abfddcd8050da004e20ae2ea0f7cb42a44189f12f4c827dfae18","bytes":32605,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"modules/appheader/appheader.js","kind":"literal-path","value":"./../navdrawer/navdrawercontent.js","line":19,"origin":"frozen-Web-input","sha256":"96ac8c85c6c22d5d227ae5de6df60cca2abff3983f0758a3847929ff82bf7a98"}},
+      {"path":"www/modules/playback/playersettingsmenu.js","sha256":"a9c89d7246bf1bde18655488d0f82a8409b5a28b04669ae263c12ab7215d69b5","bytes":13589,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"videoosd/videoosd.js","kind":"AMD-alias-consumer","value":"playerSettingsMenu","line":1513,"origin":"verified-generated-overlay","sha256":"76a677196c2d85891407bc94b6c3d0b74d981be6ff552db81be6dc28a7ec549b"}},
+      {"path":"www/modules/playerstats/playerstats.js","sha256":"db0286f12520001c0701dc80abe8a622245cfee576be6fc17dc172c0e84dde79","bytes":17715,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"videoosd/videoosd.js","kind":"AMD-alias-consumer","value":"playerStats","line":245,"origin":"verified-generated-overlay","sha256":"76a677196c2d85891407bc94b6c3d0b74d981be6ff552db81be6dc28a7ec549b"}},
+      {"path":"www/modules/registrationservices/registrationservices.js","sha256":"d388a585be285a862391a991b2d7f2fc9fa9ab48589771aac33f833f9fe4db70","bytes":27657,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"./modules/registrationservices/registrationservices.js","line":336,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/modules/sections.css","sha256":"17722862fadc65dabfdff134819294d20dfba504df0355eb361d6c5ca89186af","bytes":6607,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"AMD-alias-consumer","value":"sectionsStyle","line":1470,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/modules/shortcuts.js","sha256":"0c1a6493131153920fd3ea80f9b3d40cfa1e8c0f94fb85b2275f7db27d7b66f4","bytes":13606,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"home_horiz/focushandler.js","kind":"AMD-alias-consumer","value":"itemShortcuts","line":1,"origin":"frozen-Web-input","sha256":"1b8f534de4c85540072965f3ff9d06ead76e01885ac47a2e2e361efe73c93a5c"}},
+      {"path":"www/modules/skinmanager.js","sha256":"57ded567150ffdb3e718bb75f10d1487e498bdff2ad7a177c3d1a40712212fe6","bytes":14846,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"home_horiz/focushandler.js","kind":"AMD-alias-consumer","value":"skinManager","line":1,"origin":"frozen-Web-input","sha256":"1b8f534de4c85540072965f3ff9d06ead76e01885ac47a2e2e361efe73c93a5c"}},
+      {"path":"www/modules/soundeffects/defaultsoundeffects/plugin.js","sha256":"d1d90aec88528a3f97cb62088eb7798e2fd9f80d36f95ea0be5cd969444debef","bytes":360,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"modules/soundeffects/defaultsoundeffects/plugin","line":2083,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/modules/subtitleoffsetoverlay/subtitleoffsetoverlay.js","sha256":"e25b0b0a07a36434f5b2e61a6f9e8cd98a7145a74a28c92fdca96c7531639c98","bytes":5817,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"videoosd/videoosd.js","kind":"AMD-alias-consumer","value":"subtitleOffsetOverlay","line":1529,"origin":"verified-generated-overlay","sha256":"76a677196c2d85891407bc94b6c3d0b74d981be6ff552db81be6dc28a7ec549b"}},
+      {"path":"www/modules/sync/syncjoblist.js","sha256":"8a3b470d281ea4ef0a7edb0cd401c7bb072c5af339410dfe936432db86e6e8cb","bytes":12070,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"server/downloads/activity.js","kind":"literal-path","value":"./../../modules/sync/syncjoblist.js","line":1,"origin":"frozen-Web-input","sha256":"f6c246535e935ce00a2451f920eec89d348bd579d5ba2383795fe517b721b9de"}},
+      {"path":"www/modules/tabbedview/folderstab.js","sha256":"4f0400fb615cf08cbc30588f864af1f3e5743205ce17faa40d30e164a71370cf","bytes":1816,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"games/games.js","kind":"AMD-alias-consumer","value":"foldersTab","line":1,"origin":"frozen-Web-input","sha256":"72a33ecb4b6dfc255c191b3ee9dd2caee78dd59a1841822b63c9b3cd9aaa9c68"}},
+      {"path":"www/modules/tabbedview/itemstab.js","sha256":"1b3e4d45bf73ca5ef748e88ee9a1a8366969fa1c0f55f29e4a01540fe1197d82","bytes":12382,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"games/gamestab.js","kind":"AMD-alias-consumer","value":"itemsTab","line":1,"origin":"frozen-Web-input","sha256":"24d199bbc60ff9550e4647a74eef5349c5bf377e5564f2de38a8545d93bdc804"}},
+      {"path":"www/modules/tabbedview/listcontroller.js","sha256":"a8776ff47b4811a68ac177722fa3cd5ff7c7de2b760b50ee9fb5acf8c16d92d1","bytes":73532,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"list/list.js","kind":"literal-path","value":"./../modules/tabbedview/listcontroller.js","line":1,"origin":"verified-generated-overlay","sha256":"2d24cf3abdbbd643daf35aa2bca0c07350950030df564690372c0958f24f1fa5"}},
+      {"path":"www/modules/tabbedview/seriestab.js","sha256":"b94b7395c73c53c040af232124f2b6950515274365a558b3fc021711d735ed9b","bytes":2896,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"tv/tv.js","kind":"literal-path","value":"./modules/tabbedview/seriestab.js","line":1,"origin":"frozen-Web-input","sha256":"34416152c77b4083bf35bf2a2e7000da38ac79cb391f19c1768bfe8c346c745a"}},
+      {"path":"www/modules/themes/darkgradient/theme.css","sha256":"d8a7104966af90053348eee164f7ad2715e95dee06fa7d84f0f4515958e76cc9","bytes":38723,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"modules/skinmanager.js","kind":"dynamic-theme-id","value":"\"/modules/themes/\"","line":228,"origin":"frozen-Web-input","sha256":"57ded567150ffdb3e718bb75f10d1487e498bdff2ad7a177c3d1a40712212fe6","note":"selectedTheme.baseThemeId/id constructs theme.css; darkgradient is registered and is a base for aliases"}},
+      {"path":"www/modules/toast/toast.css","sha256":"e4e8efcdfbe4841fd05b6cfe6b2a94393474899f3977416077d99b4f8cad0e39","bytes":4234,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"modules/toast/toast.js","kind":"literal-path","value":"css!modules/toast/toast","line":1,"origin":"frozen-Web-input","sha256":"9c89555aaa6405f5664f3109ec2b58316b938de89d305fa5b33fb22426bad1e1"}},
+      {"path":"www/network/network.js","sha256":"bd4b227c1a8a7021042caed0637d395cdcf06c58c634b8c82320bdefe2f63182","bytes":12007,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"network/network.js","line":852,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/plugins/addplugin.html","sha256":"46c4c8772c78297939db310eecc83a82e51dc3e5af0a9fbc371154cb21103e1c","bytes":5159,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"/plugins/addplugin.html","line":775,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/search/searchfields.js","sha256":"7f051fea8519df0233723cae1635bf13d3aecaa194846b73befe3ffa95a82acc","bytes":7957,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"list/list.js","kind":"literal-path","value":"./../search/searchfields.js","line":1,"origin":"verified-generated-overlay","sha256":"2d24cf3abdbbd643daf35aa2bca0c07350950030df564690372c0958f24f1fa5"}},
+      {"path":"www/search/searchfields.template.html","sha256":"e55874a43f1ce0b3e7ee0e7deee97969b1b1a4001275a3e4de66e18e1ad47bbb","bytes":1053,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"search/searchfields.js","kind":"literal-path","value":"text!search/searchfields.template.html","line":126,"origin":"verified-generated-overlay","sha256":"5b1e7f37fedf9522374b5cb641534e3f5457ef1465a845e5d6ddf8b688d4a739"}},
+      {"path":"www/settings/cameraupload.js","sha256":"cab95e4f266d16c250930d6bb76fd07de18212f2bb777e141396ebdf3f3b6ea8","bytes":4814,"usage":"undetermined-cleanup-candidate","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","evidence":"Only corresponding settings camera route/controller strings occur in a commented app.js block, retained in verified generated app; no active resolved consumer found in fixed Web or directed maintained consumers. Companion settings/cameraupload.html exists outside this 114-target scope; devices/cameraupload.js has a separate live admin route. Arbitrary imports/custom modes not ruled out."},
+      {"path":"www/settings/display.html","sha256":"9bba74908fab88a6264b2279588bc69f125f02435b50fe9f69824a5cf4bec319","bytes":13163,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"/settings/display.html","line":626,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/settings/display.js","sha256":"b628ba2344fb4edee5f9ac82201daa4f5575f5f2e2af93ab4eb6b729f90fe1a4","bytes":14372,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"settings/display.js","line":628,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/settings/homescreen.html","sha256":"f96eb4f6083bae8c4a678d41ef98d0ec6ad13f9d8124d85017f051bb3c528a74","bytes":8373,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"/settings/homescreen.html","line":643,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/settings/homescreensettings.js","sha256":"d0334860843b4de000b6290e8bcb0b603ff385b12bb90589decc055d84f8920c","bytes":16531,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"settings/homescreen.js","kind":"literal-path","value":"./homescreensettings.js","line":1,"origin":"frozen-Web-input","sha256":"23a50c7d23e0e1d851209b0c57cddc4d0d807bc8afba8099c4b68d66600ef77f"}},
+      {"path":"www/settings/keyboard.html","sha256":"8019681a718c2441ba19865d4087ebe4e63e3d7c0b1da5797d48c1cca78a1675","bytes":4705,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"/settings/keyboard.html","line":578,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/settings/playback.js","sha256":"b7f2cadcd158b2956b4e6997a010ac9a193bfda7597e79dbbb8b575c43b1d75b","bytes":17746,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"settings/playback.js","line":594,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/settings/profile.js","sha256":"07662f43677a8b87a582354f51adb191ed46f0dc71cbeeaabb34beff6829e92d","bytes":6617,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"settings/profile.js","line":663,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/settings/subtitles.html","sha256":"70018e65b8fbfdef3128f93683cb2bf424dbe4ba38a7f0b7577f529002ebe536","bytes":8197,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"/settings/subtitles.html","line":609,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/startup/login.js","sha256":"9f8f23d08ee85e7f033125f1a452850570c0f1c85c0dc3fd0a61c6f89c146286","bytes":4262,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"startup/login.js","line":496,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/startup/manuallogin.html","sha256":"3a62998877d859bf0adc6869ae7103b9113bdc4c4ef17eec9f49761de7e45a23","bytes":1941,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"/startup/manuallogin.html","line":505,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/startup/manuallogin.js","sha256":"bb0ebc06d81995b2a525a3524b40151c1613b3388de6d37d9d419eb84f01ab04","bytes":3528,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"startup/manuallogin.js","line":507,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/strings/zh-CN.json","sha256":"86a88346e75c13b3d18f14e0b1c9ace6586bfbe3adbd67dfa860bbe2f22d2a23","bytes":74233,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"dynamic-locale","value":"path: \"strings/\"","line":1536,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c","note":"core translations list includes zh-CN; locale selector loads path"}},
+      {"path":"www/transcoding/transcoding.html","sha256":"9c40de6c650c2d6e81343031dea4e9b3b9643391c554950aa5df0bb134a18613","bytes":7492,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"/transcoding/transcoding.html","line":896,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/transcoding/transcoding.js","sha256":"08949a397fa29f24c00d009aa4e6b4154feea5ee3d9b2ba85f0be26ddfe78a26","bytes":16727,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"transcoding/transcoding.js","line":900,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/users/profiletab.js","sha256":"477320df4f2e0ab1298dd4c46c25ed3c64b9d3dcaafcd09b2b29546be904c2fa","bytes":15247,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"users/user.js","kind":"dynamic-tab-id","value":"\"./users/\"","line":1,"origin":"frozen-Web-input","sha256":"6f0f3c00e1ca40aea8129240646c1a89e2ee1340c10b1f582730ac43b3b35c17","note":"getTabs includes profile; loadTabController constructs ./users/<id>tab.js"}},
+      {"path":"www/users/usernew.js","sha256":"d9b8654d90edf34989ce97a46337fbd0f1e56bc3dc6a8bcde2649c2f44f11769","bytes":8623,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"users/usernew.js","line":1226,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/videoosd/lyrics.css","sha256":"c0d276e7c465f23699dc7660fc9a5df3b5d92b93da5f09bca55e5d6e2514c7e3","bytes":2986,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"videoosd/lyrics.js","kind":"literal-path","value":"css!videoosd/lyrics.css","line":97,"origin":"frozen-Web-input","sha256":"16905394ad99267e855b5c304ccb881c847ee15481db6265a583db6b268ef450"}},
+      {"path":"www/videoosd/lyrics.js","sha256":"16905394ad99267e855b5c304ccb881c847ee15481db6265a583db6b268ef450","bytes":9764,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"videoosd/videoosd.js","kind":"literal-path","value":"./lyrics.js","line":19,"origin":"verified-generated-overlay","sha256":"76a677196c2d85891407bc94b6c3d0b74d981be6ff552db81be6dc28a7ec549b"}},
+      {"path":"www/videoosd/videoosd.css","sha256":"9caaff9d0afa0775f3ff3635bb3f71570c5153e44bbae7a9f246f2b9436094f3","bytes":35832,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"videoosd/videoosd.js","kind":"literal-path","value":"css!videoosd/videoosd.css","line":66,"origin":"verified-generated-overlay","sha256":"76a677196c2d85891407bc94b6c3d0b74d981be6ff552db81be6dc28a7ec549b"}},
+      {"path":"www/videoosd/videoosd.html","sha256":"7bdeaf8bb153853f9aa9cfe58fe92ca5121f77f0e641daedc6a9fb18310dece3","bytes":13072,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"app.js","kind":"literal-path","value":"/videoosd/videoosd.html","line":547,"origin":"verified-generated-overlay","sha256":"e3a883851255a196231266b5060d28e637a538db3337cd12d47f060c6820cd5c"}},
+      {"path":"www/videoosd/videoosd.js","sha256":"86ab60c897e827b5152435350fe7b3801d8afd6b8889eef96e9996e71bb5eeab","bytes":125357,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"home/nowplaying.js","kind":"literal-path","value":"./../videoosd/videoosd.js","line":1,"origin":"frozen-Web-input","sha256":"f1e5cb4317f9e49382f235293c85fc878ae0235ce3eafd530dcbdb3c95d578de"}},
+      {"path":"www/videos/trailers.js","sha256":"2b62a97996cda0a80ed5d84dad7f371c9e1856545a8be2c6e448f5e6ee0d5f0b","bytes":1303,"usage":"static-consumer-retained","productionAssembly":"Web manifest copy; no per-target exclusion in inspected source; overlays may transform output","licenseCountEffect":"none","consumer":{"path":"videos/videos.js","kind":"literal-path","value":"./trailers","line":1,"origin":"frozen-Web-input","sha256":"4fad4fd414f4d98c2c02c7780ff4699292115220802fd003ca558b689a773290"}}
+    ]
+  }
+}

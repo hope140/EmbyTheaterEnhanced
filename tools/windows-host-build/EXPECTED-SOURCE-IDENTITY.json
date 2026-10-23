@@ -1,0 +1,59 @@
+{
+  "upstreamCommit": "708fadc068cbf66ced6aece4a32f3e12bb2c4e13",
+  "compileInputCount": 46,
+  "files": [
+    {
+      "path": "native/windows-host/Apply-SourceChanges.ps1",
+      "sha256": "21b61d1131fd685577a16bbc8ab1c14c8c52c0a2bcc536efd6a73994f90228c4"
+    },
+    {
+      "path": "native/windows-host/change-manifest.json",
+      "sha256": "53acd2d502cc6bb867ddac3137487f8e6752872a1699608988c0b01951e467e7"
+    },
+    {
+      "path": "native/windows-host/changes/Emby.Theater/App/ApplicationHost.cs",
+      "sha256": "63fafeabbab7ee954c93d69761aef38158e4d1d1bdb85cb1831cb0bab59f42e7"
+    },
+    {
+      "path": "native/windows-host/changes/Emby.Theater/App/ElectronApp.cs",
+      "sha256": "72e101b2997b78be221043c1628e2aaac8e67da364f12b416117e4a3fd2e73bc"
+    },
+    {
+      "path": "native/windows-host/changes/Emby.Theater/Archiving/FrameworkZipExtractor.cs",
+      "sha256": "30436b6d7b4772dd66fa0fdf893e2237764c784fc5b72178240e67c70e0c185c"
+    },
+    {
+      "path": "native/windows-host/changes/Emby.Theater/Archiving/ZipClient.cs",
+      "sha256": "1f68aae3bc5bb6b53597e7437cc4507abf9839706dbb4892a5feed7b01db0027"
+    },
+    {
+      "path": "native/windows-host/changes/Emby.Theater/Emby.Theater.csproj",
+      "sha256": "77be4d8bbb0633cf538bca08b9f9cda67e40f65b1a10fbbbaeddc2d5a38abfcb"
+    },
+    {
+      "path": "native/windows-host/changes/Emby.Theater/Program.cs",
+      "sha256": "bbff261ac026ba55e39ebb91b767e7cc9ab237dc85538c1c8306ef06b30a2b36"
+    },
+    {
+      "path": "native/windows-host/changes/Emby.Theater/Serialization/CompatibleJsonCodec.cs",
+      "sha256": "a96164d347982b5a590bf7f929d03d0cde28b71e928c327bb3522ce7cafe538c"
+    },
+    {
+      "path": "native/windows-host/changes/Emby.Theater/Serialization/JsonSerializer.cs",
+      "sha256": "8f7852b80b4d31cd6859fc56184776d58dff091c2e463d57f24c5879b4b19f0c"
+    },
+    {
+      "path": "native/windows-host/host-retirement.patch",
+      "sha256": "0e3813bceb0c41602c6336c9bd147ade501c38978bac205e48c3a627e3fc9111"
+    },
+    {
+      "path": "native/windows-host/upstream-source-manifest.json",
+      "sha256": "059d4d2d921ddb7bab9a631c9f9c19d78ea0865cd86d5c615f9e7eab131d32b4"
+    },
+    {
+      "path": "vendor/host-json-manifest.json",
+      "sha256": "509c47db131abf3f5065fc0a387ba65f002c4561768d349bd270fbe21b7689c8"
+    }
+  ],
+  "sha256": "81b18ab1264941b7121967770d9b791af7fd4436b6cf910da443c92f967eea45"
+}

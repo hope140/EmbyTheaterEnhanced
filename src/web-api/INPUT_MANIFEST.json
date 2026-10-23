@@ -1,0 +1,35 @@
+{
+  "commit": "fdd0939ac596406ab92274f30fd83d226a677424",
+  "repository": "https://github.com/MediaBrowser/Emby.ApiClient.Javascript",
+  "files": [
+    {
+      "path": "licensed/apiclient.js",
+      "sha256": "7621f273fd7986e1d8c8520aa9b0116c4d05ff6f139d0f336ce81fda7f06b34a",
+      "git_blob_sha1": "1e9132c6fbebe68297953c14ed3eba26f7935b73",
+      "bytes": 105635,
+      "url": "https://raw.githubusercontent.com/MediaBrowser/Emby.ApiClient.Javascript/fdd0939ac596406ab92274f30fd83d226a677424/apiclient.js"
+    },
+    {
+      "path": "licensed/connectionmanager.js",
+      "sha256": "1c9b5e2bb855f3fbb5fb0594e4e74aad5a1d3cb4d65c1640062ae970a2c3432e",
+      "git_blob_sha1": "9b97020cbcd94f6a745095bd4bd17fca44c08f48",
+      "bytes": 47281,
+      "url": "https://raw.githubusercontent.com/MediaBrowser/Emby.ApiClient.Javascript/fdd0939ac596406ab92274f30fd83d226a677424/connectionmanager.js"
+    },
+    {
+      "path": "licensed/events.js",
+      "sha256": "ad3387c1d3c30af20f585b5f6ff3b2ee6534c60f84f154d16295c449ed4ebe42",
+      "git_blob_sha1": "5a028ecfac04072d1cb0390d6ed2655afa57f869",
+      "bytes": 1230,
+      "url": "https://raw.githubusercontent.com/MediaBrowser/Emby.ApiClient.Javascript/fdd0939ac596406ab92274f30fd83d226a677424/events.js"
+    },
+    {
+      "path": "licensed/LICENSE.md",
+      "sha256": "bb34faf1413f7a795a10303545f433e04c95cd7b4de04311d45a72634424e4db",
+      "git_blob_sha1": "8f5a547ed2f913d46862b8d6d0106df6e3f119c7",
+      "bytes": 1080,
+      "url": "https://raw.githubusercontent.com/MediaBrowser/Emby.ApiClient.Javascript/fdd0939ac596406ab92274f30fd83d226a677424/LICENSE.md"
+    }
+  ],
+  "registration": "EXCLUDED_THIS_ROUND"
+}

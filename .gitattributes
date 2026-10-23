@@ -45,5 +45,39 @@
 "/vendor/web-snapshot/www/users/user.html" whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof,-space-before-tab
 
 # Upstream-derived maintained sources retain the exact accepted runtime bytes.
-/src/electronapp/www/modules/emby-apiclient/apiclient.js -text whitespace=cr-at-eol
+/src/electronapp/www/modules/emby-apiclient/* -text
+/src/web-api/** -text
 /src/electronapp/www/modules/toast/toast.css -text
+
+# Host replacements are byte-bound source inputs; only diff data preserves old whitespace.
+/native/windows-host/changes/** -text
+/tools/windows-host-build/** -text
+/native/windows-host/host-retirement.patch -text whitespace=-blank-at-eol
+# These four original LF inputs also participate in the fixed Host source identity.
+/native/windows-host/Apply-SourceChanges.ps1 -text
+/native/windows-host/change-manifest.json -text
+/native/windows-host/upstream-source-manifest.json -text
+/vendor/host-json-manifest.json -text
+
+# Exact reviewed GPL wrappers retain inherited whitespace; full byte identities are verified.
+/native/windows-host/changes/Emby.Theater/Archiving/ZipClient.cs whitespace=-blank-at-eol,-space-before-tab
+/native/windows-host/changes/Emby.Theater/Serialization/JsonSerializer.cs whitespace=-blank-at-eol,-space-before-tab
+
+# Byte-preserved third-party input/notice formatting; hashes validate these exact bytes.
+/native/windows-host/LICENSE-Newtonsoft-MIT.md -text whitespace=cr-at-eol
+/src/web-api/licensed/apiclient.js whitespace=-blank-at-eol
+/src/web-api/licensed/LICENSE.md whitespace=-blank-at-eof
+/src/web-api/LICENSE.md whitespace=-blank-at-eof
+/src/electronapp/www/modules/emby-apiclient/LICENSE.md whitespace=-blank-at-eof
+/src/web-api/src/mit-apiclient.js whitespace=-blank-at-eol
+/src/electronapp/www/modules/emby-apiclient/mit-apiclient.js whitespace=-blank-at-eol
+
+# Portable verifier manifests bind exact source and fixture bytes on every platform.
+/tools/windows-host-verifier/** -text whitespace=cr-at-eol
+
+# Preserve existing manifest-bound terminal blank lines in the reviewed verifier.
+/tools/windows-host-verifier/Finalize-Evidence.ps1 whitespace=cr-at-eol,-blank-at-eof
+/tools/windows-host-verifier/Prepare-HostPair.ps1 whitespace=cr-at-eol,-blank-at-eof
+/tools/windows-host-verifier/README.txt whitespace=cr-at-eol,-blank-at-eof
+/tools/windows-host-verifier/Run-Components.ps1 whitespace=cr-at-eol,-blank-at-eof
+/tools/windows-host-verifier/Verify-UnifiedHost.ps1 whitespace=cr-at-eol,-blank-at-eof
