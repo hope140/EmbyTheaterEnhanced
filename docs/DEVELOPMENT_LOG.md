@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-23 — 页面缓存现状与未启用基础
+
+静态追踪维护 HomeTab/provider、固定 ListController/VirtualScroller、ItemPage 生命周期 overlay 和 Fetch/API 局部缓存；区分页面数据、DOM/滚动/焦点和图片缓存。新增独立 AMD/CommonJS 模块，不注册别名、不拦截 API、不新增依赖或产品功能入口。只有显式 enabled 与资源策略同时具备时才保留 DTO/共享读；始终要求当前认证上下文，非法替换也清空旧身份。loader取得调用时捕获的params副本；使用JSON快照隔离消费者修改，限制保留条目/序列化字节和在途请求/订阅者。写 owner 可在开始前及结算后invalidate，退休待回包；认证、通知和写生命周期实际接线列为启用前置，未冒充已完成。
+
+`node --test tests/page-data-cache.test.cjs`覆盖36项；连同首页接口/渲染、详情生命周期、电影浏览、搜索、Git物化、Web overlay及build-input合同最终132/132通过（0失败/取消/跳过）。缓存回归涵盖同身份重登/切用户/切服/切client/退出、getter/凭据/来源拒绝、TTL边界和队列到期、pending去重/单人取消/最后取消、忽略abort的旧成功/失败、同步abort重入、写前后失效、容量和克隆隔离。完整复现命令及静态来源图见[页面缓存方案](PAGE_DATA_CACHE.md)。本轮仅离线单元与材料合同，不代表真实应用接入、HTTP命中率、返回滚动视觉或Windows整包验收；图片、视频缓存和FNConnect没有改动。
+
 ## 2026-10-23 — v0.4.0整合PR70来源与必要声明
 
 将PR70固定提交6576f5d的16份来源／声明材料整合到既有发布分支，四处文档冲突采用保留双方有效内容。API／page完整MIT、Sizzle原文、VTT版权／固定源／实际差异、Material Icons来源、Socket组件与集成范围及npm36许可命名口径保留；原JSON／CSV证据字节及analysisRef不改。旧“尚未替换Host／仍运行Sharp和ServiceStack”等仅作为研究时点，不恢复旧链；当前源码Host／JSON／ZIP、CEC退役、API维护与业务来源指纹均不变。
