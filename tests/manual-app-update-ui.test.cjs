@@ -17,6 +17,7 @@ function harness() {
     function BaseView() {}
     BaseView.prototype.onResume = function () {};
     BaseView.prototype.onPause = function () {};
+    BaseView.prototype.destroy = function () { this.view = null; };
     let AboutView;
     vm.runInNewContext(fs.readFileSync(path.resolve(__dirname, '../src/electronapp/plugins/mpvplayer/about.js'), 'utf8'), {
         define(_deps, factory) { AboutView = factory({show() {}, hide() {}}, BaseView); },
@@ -95,4 +96,15 @@ test('UI has no source chooser, custom address or install action', () => {
     const html = fs.readFileSync(path.resolve(__dirname, '../src/electronapp/plugins/mpvplayer/about.html'), 'utf8');
     assert.match(html, /btnCheckUpdates/); assert.match(html, /btnDownloadUpdate/); assert.match(html, /btnCancelUpdate/);
     assert.doesNotMatch(html, /<select|<input[^>]+(?:url|source)|btnInstall/);
+});
+
+test('direct destruction retires the update even without a preceding pause', async () => {
+    const h = harness(), work = h.controller.downloadUpdate();
+    const oldProgress = h.listeners.get('enhanced-maintenance-update-progress');
+    h.controller.destroy();
+    assert.equal(h.controller.view, null); assert.equal(h.listeners.size, 0);
+    assert.equal(h.pending[1].channel, 'enhanced-maintenance-cancel-update');
+    oldProgress({}, {bytes: 1, total: 1, source: 'old-source'});
+    h.pending[0].resolve({status: 'downloaded'}); h.pending[1].resolve({status: 'cancelled'}); await work;
+    assert.equal(h.view.querySelector('.aboutDownloadProgress').value, 0);
 });

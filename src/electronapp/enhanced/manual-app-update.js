@@ -11,7 +11,6 @@ const MAX_INSTALLER_BYTES = 512 * 1024 * 1024;
 // Maintained candidates, never a user supplied URL. Evidence and limits: docs/MANUAL_APP_UPDATE.md.
 const SOURCES = Object.freeze([
     Object.freeze({id: 'github', prefix: ''}),
-    Object.freeze({id: 'ghfast.top', prefix: 'https://ghfast.top/'}),
     Object.freeze({id: 'gh-proxy.com', prefix: 'https://gh-proxy.com/'})
 ]);
 const CONNECTION_ERRORS = new Set(['ENOTFOUND', 'EAI_AGAIN', 'ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'EHOSTUNREACH', 'ENETUNREACH', 'timeout']);
@@ -121,12 +120,22 @@ async function requestJson(url, options) {
 }
 
 function physicalDirectory(directory) {
+    if (typeof directory !== 'string' || !path.isAbsolute(directory)) throw failure('directory-invalid');
     const resolved = path.resolve(directory);
     if (process.platform === 'win32' && !/^[A-Za-z]:\\/.test(resolved)) throw failure('directory-invalid');
     const actual = fs.realpathSync.native(resolved);
     const same = process.platform === 'win32' ? actual.toLowerCase() === resolved.toLowerCase() : actual === resolved;
     if (!same || !fs.lstatSync(resolved).isDirectory() || fs.lstatSync(resolved).isSymbolicLink()) throw failure('directory-invalid');
     return actual;
+}
+
+function sameFile(left, right) { return left.dev === right.dev && left.ino === right.ino; }
+function ownedDirectory(root, identity) {
+    return physicalDirectory(root) === root && sameFile(fs.lstatSync(root), identity);
+}
+function ownedTemporary(file, identity) {
+    const stat = fs.lstatSync(file);
+    return stat.isFile() && !stat.isSymbolicLink() && sameFile(stat, identity);
 }
 
 function internetZone(assetUrl) {
@@ -157,6 +166,7 @@ async function downloadInstaller(installer, directory, options) {
     const signal = settings.signal ? AbortSignal.any([settings.signal, controller.signal]) : controller.signal;
     const deadline = settings.deadline || Date.now() + 10 * 60 * 1000;
     const root = physicalDirectory(directory);
+    const rootIdentity = fs.lstatSync(root);
     const destination = path.join(root, installer.name);
     // link() below is the atomic no-replace commit; this check merely avoids needless traffic.
     try { fs.lstatSync(destination); throw failure('file-exists'); }
@@ -165,8 +175,10 @@ async function downloadInstaller(installer, directory, options) {
     const agent = new https.Agent({keepAlive: false});
     const timer = setTimeout(() => controller.abort(failure('timeout')), Math.max(1, deadline - Date.now()));
     let handle;
+    let temporaryIdentity;
     try {
         handle = await fs.promises.open(temporary, 'wx', 0o600);
+        temporaryIdentity = await handle.stat();
         for (let index = 0; index < SOURCES.length; index++) {
             const source = SOURCES[index];
             check(signal, deadline);
@@ -195,12 +207,13 @@ async function downloadInstaller(installer, directory, options) {
                 check(signal, deadline);
                 if (bytes !== installer.size) throw failure('size-mismatch');
                 if (hash.digest('hex') !== installer.sha256) throw failure('hash-mismatch');
+                if (!ownedDirectory(root, rootIdentity) || !ownedTemporary(temporary, temporaryIdentity)) throw failure('directory-invalid');
                 await markInternetDownload(temporary, source.prefix + installer.url);
                 await handle.sync();
                 await handle.close();
                 handle = null;
                 check(signal, deadline);
-                if (physicalDirectory(root) !== root) throw failure('directory-invalid');
+                if (!ownedDirectory(root, rootIdentity) || !ownedTemporary(temporary, temporaryIdentity)) throw failure('directory-invalid');
                 try { await fs.promises.link(temporary, destination); }
                 catch (error) { if (error.code === 'EEXIST') throw failure('file-exists'); throw error; }
                 return {status: 'downloaded', fileName: installer.name, directory: root, sha256: installer.sha256, source: source.id};
@@ -220,7 +233,12 @@ async function downloadInstaller(installer, directory, options) {
         clearTimeout(timer);
         agent.destroy();
         try { if (handle) await handle.close(); }
-        finally { await fs.promises.unlink(temporary).catch(() => {}); }
+        finally {
+            // An exchanged directory/temp path is no longer ours to delete.
+            try {
+                if (temporaryIdentity && ownedDirectory(root, rootIdentity) && ownedTemporary(temporary, temporaryIdentity)) await fs.promises.unlink(temporary);
+            } catch (_) {}
+        }
     }
 }
 

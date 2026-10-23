@@ -71,11 +71,13 @@ function register(options) {
         registered.push(channel);
     }
 
-    registerHandler(CHANNELS.GET_INFO, async function () {
+    registerHandler(CHANNELS.GET_INFO, async function (request) {
+        if (request !== undefined) return {status: 'error', reason: 'invalid-request'};
         return {status: 'ok', info: await appInfo()};
     });
 
-    registerHandler(CHANNELS.COPY_ENVIRONMENT, async function () {
+    registerHandler(CHANNELS.COPY_ENVIRONMENT, async function (request) {
+        if (request !== undefined) return {status: 'error', reason: 'invalid-request'};
         if (!clipboard || typeof clipboard.writeText !== 'function') return {status: 'error', reason: 'clipboard_unavailable'};
         const info = await appInfo();
         const text = maintenance.formatEnvironmentText(info);
@@ -148,6 +150,10 @@ function register(options) {
     });
 
     registerHandler(CHANNELS.OPEN_RELEASES, async function (request) {
+        if (!request || typeof request !== 'object' || Array.isArray(request) ||
+            Object.keys(request).length !== 1 || !Object.hasOwn(request, 'url') || typeof request.url !== 'string' || request.url.length > 2048) {
+            return {status: 'error', reason: 'invalid-request'};
+        }
         if (!shell || typeof shell.openExternal !== 'function') return {status: 'error', reason: 'shell_unavailable'};
         await Promise.resolve(shell.openExternal(maintenance.safeReleaseUrl(request && request.url)));
         return {status: 'opened'};

@@ -133,7 +133,6 @@ test('connection failures try maintained sources serially and restart partial by
     let active = 0, peak = 0;
     const mock = transport([
         {produce(response) { active++; peak = Math.max(peak, active); response.write(bytes.subarray(0, 8)); setImmediate(() => { active--; response.destroy(Object.assign(new Error('reset'), {code: 'ECONNRESET'})); }); }},
-        {error: 'ENOTFOUND'},
         {body: bytes}
     ]);
     const progress = [];
@@ -141,7 +140,44 @@ test('connection failures try maintained sources serially and restart partial by
     assert.equal(result.source, 'gh-proxy.com'); assert.equal(peak, 1);
     assert.deepEqual(mock.calls.map(c => c.url), update.SOURCES.map(s => s.prefix + asset.url));
     assert.deepEqual(fs.readFileSync(path.join(root, asset.name)), bytes);
-    assert.ok(progress.some(p => p.bytes === 0 && p.source === 'ghfast.top'));
+    assert.ok(progress.some(p => p.bytes === 0 && p.source === 'gh-proxy.com'));
+    for (const call of mock.calls) assert.deepEqual(Object.keys(call.options.headers).sort(), ['Accept', 'Accept-Encoding', 'User-Agent']);
+});
+
+test('all maintained connection failures stop after one request per source and clean temporary files', async t => {
+    const root = temp(t), mock = transport(update.SOURCES.map(() => ({error: 'ENOTFOUND'})));
+    await assert.rejects(update.downloadInstaller(update.installerFromRelease(release()), root, {get: mock.get}), /ENOTFOUND/);
+    assert.equal(mock.calls.length, update.SOURCES.length); assert.deepEqual(fs.readdirSync(root), []);
+});
+
+test('replaced physical directory is refused and cleanup never deletes from its replacement', async t => {
+    const root = temp(t), selected = path.join(root, 'selected'), moved = path.join(root, 'moved'); fs.mkdirSync(selected);
+    const mock = transport([{}]);
+    let replacement, exchangeError;
+    await assert.rejects(update.downloadInstaller(update.installerFromRelease(release()), selected, {get: mock.get, onProgress() {
+        const temporary = fs.readdirSync(selected).find(n => n.endsWith('.part'));
+        try { fs.renameSync(selected, moved); }
+        catch (error) { exchangeError = error; throw error; }
+        fs.mkdirSync(selected);
+        replacement = path.join(selected, temporary); fs.writeFileSync(replacement, 'foreign file');
+    }}), error => error.code === 'directory-invalid' || (process.platform === 'win32' && error === exchangeError && ['EPERM', 'EACCES', 'EBUSY'].includes(error.code)));
+    if (exchangeError) { assert.deepEqual(fs.readdirSync(selected), []); return; }
+    assert.equal(fs.readFileSync(replacement, 'utf8'), 'foreign file');
+    assert.ok(fs.readdirSync(moved).some(n => n.endsWith('.part')), 'displaced original is preserved instead of guessing its new path');
+});
+
+test('replaced temporary pathname is refused without deleting its foreign replacement', async t => {
+    const root = temp(t), mock = transport([{}]); let replacement, exchangeError;
+    await assert.rejects(update.downloadInstaller(update.installerFromRelease(release()), root, {get: mock.get, onProgress() {
+        const temporary = fs.readdirSync(root).find(n => n.endsWith('.part'));
+        replacement = path.join(root, temporary);
+        try { fs.renameSync(replacement, replacement + '.displaced'); }
+        catch (error) { exchangeError = error; throw error; }
+        fs.writeFileSync(replacement, 'foreign file');
+    }}), error => error.code === 'directory-invalid' || (process.platform === 'win32' && error === exchangeError && ['EPERM', 'EACCES', 'EBUSY'].includes(error.code)));
+    if (exchangeError) { assert.deepEqual(fs.readdirSync(root), []); return; }
+    assert.equal(fs.readFileSync(replacement, 'utf8'), 'foreign file');
+    assert.ok(!fs.readdirSync(root).some(n => n.endsWith('.exe')));
 });
 
 for (const [name, route, reason] of [
@@ -195,6 +231,7 @@ test('existing files and a final-commit race never overwrite good bytes', async 
 test('installer path escape and redirected download directories are refused before traffic', async t => {
     const root = temp(t), mock = transport([{}]), asset = update.installerFromRelease(release());
     await assert.rejects(update.downloadInstaller({...asset, name: '../escape.exe'}, root, {get: mock.get}), /invalid-installer/);
+    await assert.rejects(update.downloadInstaller(asset, 'relative-directory', {get: mock.get}), /directory-invalid/);
     const alias = path.join(root, 'alias');
     fs.symlinkSync(root, alias, process.platform === 'win32' ? 'junction' : 'dir');
     await assert.rejects(update.downloadInstaller(asset, alias, {get: mock.get}), /directory-invalid/);
@@ -221,7 +258,7 @@ function ipcHarness(overrides = {}) {
 test('IPC checks only on request, pins official revalidation and accepts no renderer URLs or paths', async () => {
     const h = ipcHarness();
     assert.deepEqual(h.counts(), {jsonCalls: 0, pickerCalls: 0, downloads: 0});
-    for (const channel of [ipc.CHANNELS.CHECK_UPDATE, ipc.CHANNELS.DOWNLOAD, ipc.CHANNELS.CANCEL]) {
+    for (const channel of [ipc.CHANNELS.GET_INFO, ipc.CHANNELS.COPY_ENVIRONMENT, ipc.CHANNELS.CHECK_UPDATE, ipc.CHANNELS.DOWNLOAD, ipc.CHANNELS.CANCEL]) {
         assert.equal((await h.handlers.get(channel)({sender: {}})).reason, 'untrusted_sender');
         assert.equal((await h.invoke(channel, {url: 'https://evil.example/', directory: '/tmp'})).reason, 'invalid-request');
     }
@@ -231,6 +268,20 @@ test('IPC checks only on request, pins official revalidation and accepts no rend
     assert.deepEqual(h.counts(), {jsonCalls: 2, pickerCalls: 1, downloads: 1});
     assert.equal(h.sent.length, 1);
     await h.unregister(); assert.equal(h.handlers.size, 0);
+});
+
+test('external release IPC validates its complete schema and cannot open an installer or credential URL', async () => {
+    const opened = [], h = ipcHarness({shell: {openExternal: async url => opened.push(url)}});
+    for (const request of [undefined, null, [], 'url', {}, {url: 42}, {url: '', extra: 1}, {url: 'a'.repeat(2049)}]) {
+        assert.equal((await h.invoke(ipc.CHANNELS.OPEN_RELEASES, request)).reason, 'invalid-request');
+    }
+    assert.equal(opened.length, 0);
+    for (const url of [release().assets[0].browser_download_url, release().html_url + '?token=canary', 'https://user:secret@github.com/hope140/EmbyTheaterEnhanced/releases/latest']) {
+        await h.invoke(ipc.CHANNELS.OPEN_RELEASES, {url});
+        assert.equal(opened.at(-1), maintenance.RELEASES_URL);
+    }
+    await h.invoke(ipc.CHANNELS.OPEN_RELEASES, {url: release().html_url}); assert.equal(opened.at(-1), release().html_url);
+    await h.unregister();
 });
 
 test('official revalidation outage, changed digest or prerelease never enter picker/download', async () => {

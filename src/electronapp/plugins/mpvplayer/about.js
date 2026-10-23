@@ -388,13 +388,23 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!modules/list
         this.loadKernelStatus();
     };
 
-    AboutView.prototype.onPause = function () {
+    AboutView.prototype.retireUpdate = function () {
+        if (!this.view) return;
         this.cancelUpdate();
         ++this.updateRequestId;
         this.updating = false;
         this.removeUpdateProgress();
         this.view.querySelector('.btnCheckUpdates').disabled = false;
         this.view.querySelector('.btnCancelUpdate').disabled = true;
+    };
+
+    AboutView.prototype.destroy = function () {
+        this.retireUpdate();
+        if (typeof BaseView.prototype.destroy === 'function') BaseView.prototype.destroy.apply(this, arguments);
+    };
+
+    AboutView.prototype.onPause = function () {
+        this.retireUpdate();
         BaseView.prototype.onPause.apply(this, arguments);
     };
 

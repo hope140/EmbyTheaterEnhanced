@@ -85,8 +85,11 @@ function safeReleaseUrl(value) {
     const releasePath = '/hope140/EmbyTheaterEnhanced/releases';
     const normalizedPathname = target.pathname.toLowerCase();
     const normalizedReleasePath = releasePath.toLowerCase();
+    const suffix = target.pathname.slice(releasePath.length);
+    const allowedPage = normalizedPathname === normalizedReleasePath || suffix === '/latest' ||
+        (suffix.startsWith('/tag/') && !!parseVersion(suffix.slice(5)) && !suffix.slice(5).includes('/'));
     if (target.protocol !== 'https:' || target.hostname !== 'github.com' || target.username || target.password || target.port ||
-        (normalizedPathname !== normalizedReleasePath && !normalizedPathname.startsWith(normalizedReleasePath + '/'))) {
+        target.search || target.hash || !normalizedPathname.startsWith(normalizedReleasePath) || !allowedPage) {
         return RELEASES_URL;
     }
     return target.href;

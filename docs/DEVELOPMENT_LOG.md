@@ -1,5 +1,15 @@
 # 维护记录
 
+## 2026-10-23 — 手动更新安全复核及包内检查接线
+
+补充核对代理第一方资料，保留可读说明与隐私条款的 `gh-proxy.com`，撤去当前正文仅JS壳、无法充分复核的 `ghfast.top` 启用项。只代理准确公开安装URL，固定匿名请求头；官方元数据不代理。源策略与未签名／隐私／稳定性证据边界不升级为可信供应商认证。
+
+maintenance读取／复制等全部输入明确拒绝额外payload，外链仅允许该repo发布页面；页面直接destroy退休所属更新。下载目录必须绝对物理路径，记录目录与临时文件身份，在Zone写入和提交前核对；取消正常关闭handle并删除所属文件，目录或临时名交换后不猜测删除外来对象。新增交换与所有源失败负例，Windows若由OS提前拒绝交换同样要求无最终文件与临时文件正常清理。
+
+包内 `manual-app-update-selftest.js` 使用8项受控合成检查，不暴露给renderer，也不接受命令行覆盖；真实网络、应用bootstrap、profile、安装器执行均为零。缺build-manifest如实UNKNOWN；包内模块与manifest字节匹配才记录对应sourceCommit。测试打包脚本在runtime验证后使用原Node运行入口，失败阻止安装器编译，成功追加测试回执；不启动或更改正式安装，也未dispatch工作流。相关83项定向及47份PS语法已通过，包内入口源运行与合成manifest／篡改拒绝通过；这些不是已生成的Windows整包验收。
+
+本轮经官方公共Release接口实际回读Latest `v0.3.1` 的正式标志、五附件、安装器size／digest，再以当前生产解析器本地解析，正确将基线产品 `0.3.16` 判为ahead，不提供降级。该证据是公共接口取回加本地解析，独立于客户端Node直接HTTPS网络路径；后者正常DNS诊断和一次API重试仍未取得响应，未改网络／TLS配置。未将旧版本、Latest或本基线标作尚未确定的v0.4.0发布提交。
+
 ## 2026-10-23 — ETE 主动检查与手动下载最小候选
 
 在固定基线的独立功能分支复用 About、maintenance IPC、源码复制与 provenance 范围，不改 Host、vendor、版本或五附件发布合同。修正原版本解析的数值前导零与大整数边界，正式渠道必须同时满足 GitHub 标志、Tag 和准确仓库 URL；当前更高版本单独呈现。notes 仅 textContent，下载动作先按官方 Tag 重取附件 ID／URL／size／digest，离线或漂移明确失败。

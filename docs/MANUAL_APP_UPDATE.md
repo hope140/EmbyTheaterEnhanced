@@ -28,10 +28,12 @@
 | 顺序 | 候选 | 2026-10-23 查阅的第一方资料 | 证据边界 |
 | --- | --- | --- | --- |
 | 1 | GitHub 官方 | 固定仓库 Release API | 唯一版本与校验身份来源，默认首次下载来源 |
-| 2 | `ghfast.top` | [服务站](https://ghfast.top/)、[站点地址发布页](https://ghproxy.link/) | 站点说明 GitHub 文件/Release 代理，发布页将此地址列为当前可用；不代表各地区或未来可用 |
-| 3 | `gh-proxy.com` | [第一方使用文档](https://gh-proxy.com/en/docs/github-accelerator/) | 文档说明在公开 GitHub Release URL 前添加服务域名；服务自述不构成独立可靠性或隐私审计 |
+| 2 | `gh-proxy.com` | [第一方使用文档](https://gh-proxy.com/en/docs/github-accelerator/)、[隐私政策](https://gh-proxy.com/privacy)、[服务条款](https://gh-proxy.com/terms) | 可读文档明确给出公开 Release URL 前缀；服务自述不构成独立可靠性或隐私审计 |
+| 未启用 | `ghfast.top` | [服务站](https://ghfast.top/)、[站点地址发布页](https://ghproxy.link/) | 搜索摘要曾列此地址，但本轮正文仅得到依赖 JavaScript 的页面壳，未充分复核当前服务说明与隐私边界，已从启用列表移除 |
 
 未采用旧示例域名或第三方“可用大全”。没有提交账号、Token、Cookie、认证头或私人 URL；仅访问公开资料。没有实际下载软件或验证代理大文件性能，不能声称上述服务的长期稳定性已实测通过。源选择留在 main 模块，后续确认列表仅需改内部固定条目。
+
+隐私边界：代理必然接收用户发起连接的网络信息以及公开仓库／Tag／文件名路径。`gh-proxy.com` 的隐私政策自述会记录有限技术日志，包括脱敏 IP、请求路径、UA、状态和时间；这里不把“无账号”解释为“无日志”。其使用文档提及 CDN 缓存，而隐私页称不落盘持久化，两者不是独立审计证据，不作无缓存或无留存保证。ETE 不发送来源页 Referer、Cookie、Authorization、用户 Token 或带认证 query 的 URL；固定代理请求只能是准确的公开资产包装 URL。只向官方 CDN 跟随合法 HTTPS 签名下载跳转，不把 CDN query 再包装给代理，不自动信任服务方宣称的其它节点域名。若后续可核验清单为空，`SOURCES` 仅留官方项，原顺序接口与失败停止规则仍成立。
 
 只有 DNS、连接不可达、连接重置及连接超时可以前往下一个条目，各源至多一次、串行、重新从零开始，不并发、不断点续传。HTTP 403/429 等任何非 200、证书/TLS 失败、未知跳转、校验失败、文件系统错误与用户取消均停止，不通过换源绕过拒绝。元数据和校验身份永远不代理。
 
@@ -40,9 +42,10 @@
 - 独立 HTTPS 客户端只发送固定 UA、Accept 和 identity encoding，保留默认 TLS 校验，不接收 renderer 的 URL、请求头、路径或 checksum。IPC 继续验证当前 main frame 与打包应用文档。
 - 元数据总期限 8 秒、正文上限 256 KiB；安装器上限 512 MiB、下载总期限 10 分钟、每个连接空闲上限 15 秒。每次数据与最终提交还核对绝对 deadline。
 - 最多 4 次重定向；只接受准确资产 URL、当前固定代理包装 URL，或官方 `release-assets.githubusercontent.com` / `objects.githubusercontent.com` HTTPS 资产主机。拒绝 HTTP 降级、用户信息、端口、fragment、未知主机；不跨元数据端点跟随跳转。来源详情记录发起此次完整下载的源，不记录带签名的 CDN 跳转 URL。
-- 从官方精确长度约束流，逐块 SHA-256。临时文件在选定物理目录中以随机 `.part`、独占创建；最终使用原子 no-replace hard link 提交，同名已存在或提交时竞争均不覆盖已有文件。finally 尝试删除本次临时文件，不清扫其它文件。目录不支持所需文件系统操作时失败，不降级为覆盖写入。
-- Windows 下载提交前写入并回读 `Zone.Identifier` 的 Internet Zone 3，保留固定公开来源；本机路径必须为磁盘路径，不接受 UNC 或重定向目录。ADS 不支持或被拒绝则不产出最终安装器。此步骤不关闭 Attachment Manager、SmartScreen 或浏览器警告；真实 Windows 文件系统与警告行为需单独验收。
+- 从官方精确长度约束流，逐块 SHA-256。临时文件在选定绝对物理目录中以随机 `.part`、独占创建；保存目录和临时文件的设备／文件身份，在写 Internet zone 和最终提交前复核。最终使用原子 no-replace hard link 提交，同名已存在或提交时竞争均不覆盖已有文件。finally 仅尝试删除身份仍相符的本次临时文件，不清扫其它文件；路径被交换时拒绝提交并保留不再能安全定位的文件，不猜新路径删除。目录不支持所需文件系统操作时失败，不降级为覆盖写入。这些检查不等于对同权限恶意进程的完整原子文件系统隔离。
+- Windows 下载提交前写入并回读 `Zone.Identifier` 的 Internet Zone 3，保留固定公开来源；本机路径必须为磁盘路径，不接受 UNC 或重定向目录。ADS 不支持或被拒绝则不产出最终安装器。此步骤不关闭 Attachment Manager、SmartScreen 或浏览器警告；真实 Windows 文件系统与警告行为需单独验收。格式依据：[Microsoft Zone.Identifier](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/6e3f7352-d11c-4d76-8c39-2516a9df36e8)。
 - main 只持有一个检查/下载操作；重复请求返回 busy，不排队创建额外下载。取消中断网络，页面暂停退休代次、移除进度监听，迟到结果不得修改新页面。应用退出中断并等待所属网络/文件操作；原生目录对话框不能程序关闭，但退出不等待其 UI Promise，迟到选择不能重新下载。
+- maintenance 的读取／复制／检查／下载／取消 IPC 均拒绝附加 payload；外链 IPC 只接受单字段字符串 `{url}`，安全出口仅为固定仓库的 releases 根页、latest 或合法版本 Tag 页面，不允许资产执行路径、认证信息、query 或 fragment。页面直接 destroy 即使未经 pause，也会取消更新并移除进度监听。
 - 不持久化更新偏好，不增加后台定时器、自动检查/下载、TTL、安装调度或内核管理功能。操作期限和进度节流仅属于用户点击后的请求。
 
 ## 验证与待验收
@@ -56,6 +59,16 @@
 产品接线为 About → maintenance IPC → 固定官方元数据/独立下载模块；`main.js` 已传入 Electron 目录选择器，新增维护模块由既有 `src/electronapp` Git blob 复制与 provenance 范围自动纳入，不需改 vendor 或扩大发布附件。没有产品环境的 mock URL/跳过 TLS/跳过校验开关；网络和 UI 的注入只存在于 Node 测试调用参数中，renderer 无权提供。
 
 协调者在独立分支准确提交上使用现有 `.github/workflows/public-ci.yml` 的 `workflow_dispatch`，**`release_package=false`**。原工作流会用 `github.sha` 精确 checkout、独立编译/验证 Host、全回归，再构建测试名安装器并只上传 artifact；不运行安装器、不发布 Release。runtime、安装器和 artifact 名含 sourceCommit/run/attempt，保留原不可覆盖门禁。无需修改工作流或版本号。
+
+包内离线入口为 `electronapp/enhanced/manual-app-update-selftest.js`，不由 main／preload／renderer 导入，不接收任何参数，不提供 mock URL、凭据或安全绕过开关。使用已有、获准的 Node 可运行：
+
+```powershell
+node .\electronapp\enhanced\manual-app-update-selftest.js
+```
+
+此入口只加载包内更新模块、生成不可执行的合成文本、在新建临时目录验证下载写入／校验／同名保护／取消／清理及匿名顺序源／IPC 拒绝，8项检查结束删除所属临时目录；真实网络请求为零，无应用 bootstrap、profile、Host、Electron GUI 或安装器执行。在 Windows 会实际写／回读该合成文件的 Zone 3。输出 `packageManifestBinding` 核对5份实际模块与本包 build-manifest，并记录 sourceCommit；这是包内字节绑定，不是独立签名。仓库直接运行缺 manifest 时明确 `not-present / UNKNOWN`。
+
+本分支的 `ci-windows-test-package.ps1` 已在完整runtime验证后、安装器编译前，用现有锁定 Node 自动调用此包内入口，要求 sourceCommit匹配、8项成功、零网络／profile／安装执行及临时文件清理；失败不继续打包。结果存为测试 artifact 的 `manual-app-update-selftest.json`，不增加用户 Release 的五附件合同。此接线尚待集中安排的真实Windows构建执行；Linux源文件或合成manifest试验不冒充已打出的Windows包。
 
 最短人工范围（隔离 Windows 测试账户或 VM）：
 
