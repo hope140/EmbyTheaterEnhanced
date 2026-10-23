@@ -257,3 +257,15 @@ test('getStats rejects non-property-unavailable errors from an optional stats lo
     await assert.rejects(loaded.player.getStats(), error => error === transportFailure);
     await loaded.player.stop(true);
 });
+
+test('preview owner accessor matches the active Play item and never mutates the Native endpoint', async () => {
+    const loaded=loadPlayer(), options=playOptions(), owner={endpointId:'12345678-1234-1234-1234-123456789abc',generationId:10};
+    options.item.Id='item-a';options.item.ServerId='server-a';
+    loaded.native.endpoint.getPreviewOwner=()=>({...owner});
+    assert.equal(loaded.player.getNativePreviewOwner(options.item),null);
+    await loaded.player.play(options);
+    assert.deepEqual(loaded.player.getNativePreviewOwner({...options.item}),owner);
+    assert.equal(loaded.player.getNativePreviewOwner({...options.item,Id:'item-b'}),null);
+    assert.equal(loaded.player.getNativePreviewOwner({...options.item,ServerId:'server-b'}),null);
+    await loaded.player.stop(true);assert.equal(loaded.player.getNativePreviewOwner(options.item),null);
+});

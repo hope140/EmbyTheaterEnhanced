@@ -290,7 +290,7 @@ class NativeHelperClient {
       clearTimeout(pending.timer);
       const state = message.type === 'response' ? 'RESOLVED' : 'FAILED';
       this.finishRequest(pending, state, message.type === 'response' ? message.result : message.code);
-      this.timeline.push({ ...base, action: message.type === 'response' ? 'RESOLVE_REQUEST' : 'REJECT_REQUEST' });
+      if (pending.method !== 'preview-snapshot') this.timeline.push({ ...base, action: message.type === 'response' ? 'RESOLVE_REQUEST' : 'REJECT_REQUEST' });
       return;
     }
     if (message.type === 'lifecycle' || message.scope === 'helper') {
@@ -467,7 +467,8 @@ class NativeHelperClient {
     if (pending.terminalTransitions) return;
     pending.terminalTransitions++;
     pending.state = state;
-    this.requestHistory.push({ requestId: pending.requestId, generationId: pending.generationId, method: pending.method, state, detail, terminalTransitions: pending.terminalTransitions });
+    // Preview pixel payloads are ephemeral, never diagnostic/history content.
+    if (pending.method !== 'preview-snapshot') this.requestHistory.push({ requestId: pending.requestId, generationId: pending.generationId, method: pending.method, state, detail, terminalTransitions: pending.terminalTransitions });
     if (state === 'RESOLVED') pending.resolve(detail);
     else { const error = new Error(String(detail || state)); error.state = state; pending.reject(error); }
   }

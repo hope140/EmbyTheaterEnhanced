@@ -407,6 +407,36 @@ struct LoadCommand {
 struct AsyncCommand { uint64_t generationId; uint64_t requestId; std::string method; };
 struct NativeRecord { int eventId; std::string eventName; int64_t mediaIdentity; std::string name; std::string valueJson; uint64_t replyUserdata; uint64_t timestamp; };
 
+// BEGIN PREVIEW_OWNER_CORE (compiled independently by the portable regression)
+class PreviewOwner {
+    uint64_t current = 0;
+    int64_t media = -1;
+    bool loaded = false, restarted = false;
+public:
+    void activate(uint64_t generation) { if (current == generation) return; current = generation; media = -1; loaded = false; restarted = false; }
+    void start(uint64_t generation, int64_t identity) {
+        if (generation != current) return;
+        media = identity; loaded = false; restarted = false;
+    }
+    void fileLoaded(int64_t identity) { if (identity == media && media >= 0) loaded = true; }
+    void restart(int64_t identity) { if (identity == media && loaded) restarted = true; }
+    void end(int64_t identity) { if (identity < 0 || identity == media) { media = -1; loaded = false; restarted = false; } }
+    void retire(uint64_t through) { if (current <= through) { media = -1; loaded = false; restarted = false; } }
+    bool owns(uint64_t generation, int64_t identity) const {
+        return current == generation && media >= 0 && media == identity && loaded && restarted;
+    }
+};
+struct PreviewCapture {
+    uint64_t userdata = 0, generation = 0, request = 0, deadline = 0;
+    int64_t media = -1;
+    bool finished = false;
+    bool finish() { if (!userdata || finished) return false; finished = true; return true; }
+    bool accepts(const PreviewOwner& owner, uint64_t now) const {
+        return userdata && !finished && now < deadline && owner.owns(generation, media);
+    }
+};
+// END PREVIEW_OWNER_CORE
+
 class Helper {
     std::string helperId; HMODULE library = nullptr; mpv_handle* mpv = nullptr; WriterQueue& writer;
 #define FIELD(name) decltype(&name) p_##name = nullptr;
@@ -414,6 +444,9 @@ class Helper {
 #undef FIELD
     std::deque<LoadCommand> loadQueue; bool loadInFlight = false; uint64_t nextReplyUserdata = 1;
     std::map<uint64_t, LoadCommand> loadReplies; std::map<uint64_t, AsyncCommand> commandReplies;
+    PreviewOwner previewOwner;
+    PreviewCapture previewCapture;
+    uint64_t lastPreviewStarted = 0;
     std::map<int64_t, uint64_t> mediaToGeneration; std::map<uint64_t, int64_t> generationToMedia;
     std::map<int64_t, std::vector<NativeRecord>> quarantined;
     size_t quarantinedBytes = 0;
@@ -938,6 +971,42 @@ class Helper {
         p_mpv_free_node_contents(&result);
         return frame;
     }
+    bool ownsPreview(uint64_t generation, int64_t media) const {
+        auto mapped = mediaToGeneration.find(media);
+        return generation == latestActivatedGeneration && generation > retiredThroughGeneration &&
+            uniqueOpenMedia() == media && mapped != mediaToGeneration.end() && mapped->second == generation &&
+            previewOwner.owns(generation, media);
+    }
+    void finishPreview(const std::string& reason) {
+        if (!previewCapture.finish()) return;
+        emitResponse(previewCapture.generation, previewCapture.request, frameUnavailable(reason));
+        // Keep the physical async slot until its reply. A timeout/retire must
+        // not permit an unbounded queue of still-owned libmpv screenshots.
+    }
+    std::string previewPixels(const HeldFrame& frame, uint64_t generation) {
+        const double scale = std::min(1.0, std::min(160.0 / frame.width, 90.0 / frame.height));
+        const int width = std::max(1, static_cast<int>(frame.width * scale));
+        const int height = std::max(1, static_cast<int>(frame.height * scale));
+        std::vector<uint8_t> bytes(static_cast<size_t>(width * height * 3));
+        for (int y = 0; y < height; ++y) for (int x = 0; x < width; ++x) {
+            const size_t source = (static_cast<size_t>(y * frame.height / height) * frame.width + x * frame.width / width) * 4;
+            const size_t target = static_cast<size_t>(y * width + x) * 3;
+            for (size_t channel = 0; channel < 3; ++channel) bytes[target + channel] = (*frame.pixels)[source + channel];
+        }
+        static constexpr char alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+        std::string encoded; encoded.reserve((bytes.size() + 2) / 3 * 4);
+        for (size_t offset = 0; offset < bytes.size(); offset += 3) {
+            const uint32_t value = (uint32_t(bytes[offset]) << 16) |
+                (offset + 1 < bytes.size() ? uint32_t(bytes[offset + 1]) << 8 : 0) |
+                (offset + 2 < bytes.size() ? bytes[offset + 2] : 0);
+            encoded += alphabet[(value >> 18) & 63]; encoded += alphabet[(value >> 12) & 63];
+            encoded += offset + 1 < bytes.size() ? alphabet[(value >> 6) & 63] : '=';
+            encoded += offset + 2 < bytes.size() ? alphabet[value & 63] : '=';
+        }
+        return "{\"ready\":true,\"generationId\":" + std::to_string(generation) +
+            ",\"format\":\"bgr24\",\"width\":" + std::to_string(width) + ",\"height\":" + std::to_string(height) +
+            ",\"pixels\":" + quote(encoded) + '}';
+    }
     static const char* autoStageText(AutoStage value) {
         switch (value) {
             case AutoStage::Idle: return "idle";
@@ -1167,6 +1236,7 @@ class Helper {
         }
     }
     void mapMedia(int64_t mediaIdentity, uint64_t generation) {
+        previewOwner.start(generation, mediaIdentity);
         auto existing = mediaToGeneration.find(mediaIdentity);
         if (existing != mediaToGeneration.end() && existing->second != generation) throw std::runtime_error("media-identity-reused");
         if (existing == mediaToGeneration.end() && mediaToGeneration.size() >= MAX_TRACKED_MEDIA) throw std::runtime_error("tracked-media-limit");
@@ -1206,6 +1276,20 @@ class Helper {
         submitNextLoad();
     }
     void handleCommandReply(mpv_event* event) {
+        if (previewCapture.userdata && event->reply_userdata == previewCapture.userdata) {
+            const auto capture = previewCapture; previewCapture = {};
+            if (capture.finished) return;
+            auto* reply = static_cast<mpv_event_command*>(event->data);
+            if (!capture.accepts(previewOwner, monotonicMicros()) || !ownsPreview(capture.generation, capture.media) || event->error < 0 || !reply) {
+                emitResponse(capture.generation, capture.request, frameUnavailable("preview-owner-unavailable")); return;
+            }
+            std::string reason;
+            auto frame = frameFromScreenshotNode(reply->result, capture.generation, 0, reason);
+            if (!frame || !ownsPreview(capture.generation, capture.media)) {
+                emitResponse(capture.generation, capture.request, frameUnavailable("preview-frame-unavailable")); return;
+            }
+            emitResponse(capture.generation, capture.request, previewPixels(*frame, capture.generation)); return;
+        }
         if (autoScreenshotReplyId && event->reply_userdata == autoScreenshotReplyId) {
             autoScreenshotReplyId = 0;
             if (autoStage.load() != AutoStage::CapturePending || !autoLeaseOwnsTarget()) {
@@ -1267,6 +1351,7 @@ class Helper {
     void handleEvent(mpv_event* event) {
         if (event->event_id == MPV_EVENT_COMMAND_REPLY) { handleCommandReply(event); return; }
         if (event->event_id == MPV_EVENT_START_FILE) {
+            previewOwner.end(-1); finishPreview("preview-start-file");
             auto* data = static_cast<mpv_event_start_file*>(event->data); int64_t id = data ? data->playlist_entry_id : -1;
             if (id >= 0 && openMedia.find(id) == openMedia.end() && openMedia.size() >= MAX_TRACKED_MEDIA) throw std::runtime_error("open-media-limit");
             if (id >= 0) openMedia.insert(id);
@@ -1282,6 +1367,8 @@ class Helper {
         if (event->event_id == MPV_EVENT_END_FILE) {
             auto* data = static_cast<mpv_event_end_file*>(event->data); int64_t id = data ? data->playlist_entry_id : -1;
             int reason = data ? int(data->reason) : -1; int error = data ? data->error : event->error;
+            previewOwner.end(id);
+            if (!ownsPreview(previewCapture.generation, previewCapture.media)) finishPreview("preview-media-ended");
             routeRecord({int(event->event_id), eventName(event->event_id), id, "end-file", "{\"reason\":" + std::to_string(reason) + ",\"error\":" + std::to_string(error) + '}', event->reply_userdata, monotonicMicros()});
             if (autoTargetGeneration && autoTargetGeneration == latestActivatedGeneration &&
                 autoTargetGeneration > retiredThroughGeneration &&
@@ -1315,9 +1402,11 @@ class Helper {
                 autoTargetGeneration == latestActivatedGeneration && autoTargetGeneration > retiredThroughGeneration) {
                 autoFileLoaded = true;
             }
+            previewOwner.fileLoaded(media);
             routeRecord({int(event->event_id), eventName(event->event_id), media, "file-loaded", "null", event->reply_userdata, monotonicMicros()}); return;
         }
         if (event->event_id == MPV_EVENT_PLAYBACK_RESTART) {
+            previewOwner.restart(uniqueOpenMedia());
             if (autoStage.load() == AutoStage::Armed && !autoOneShotConsumed && autoLeaseOwnsTarget()) {
                 autoOneShotConsumed = true;
                 uint64_t userdata = nextReplyUserdata++;
@@ -1395,7 +1484,7 @@ public:
         if (version) p_mpv_free(version);
         emitGlobal("ready", "{\"protocolVersion\":1,\"mpvClientApiVersion\":" + std::to_string(api) +
             ",\"helperVersion\":" + quote(HELPER_VERSION) + ",\"libmpvVersion\":" + versionJson +
-            ",\"surfaceAttached\":true,\"capabilities\":[\"private-inherited-pipe\",\"native-child-hwnd\",\"gpu-next\",\"d3d11\",\"generation-attribution\"],\"queueLimits\":" + writer.metricsJson() + '}');
+            ",\"surfaceAttached\":true,\"capabilities\":[\"private-inherited-pipe\",\"native-child-hwnd\",\"gpu-next\",\"d3d11\",\"generation-attribution\",\"preview-snapshot-v1\"],\"queueLimits\":" + writer.metricsJson() + '}');
         } catch (...) {
             if (mpv) { p_mpv_terminate_destroy(mpv); mpv = nullptr; }
             closing = true;
@@ -1430,6 +1519,7 @@ public:
                 observedProperties.insert(property.string);
             }
             if (autoTargetGeneration && autoTargetGeneration != generation) cancelAutoLease();
+            previewOwner.activate(generation); finishPreview("preview-generation-changed");
             latestActivatedGeneration = generation;
             return;
         }
@@ -1443,6 +1533,8 @@ public:
         if (method == "retire-generation") {
             if (type != "command") throw std::runtime_error("retire-generation-requires-command");
             retiredThroughGeneration = std::max(retiredThroughGeneration, generation);
+            previewOwner.retire(retiredThroughGeneration);
+            if (!ownsPreview(previewCapture.generation, previewCapture.media)) finishPreview("preview-generation-retired");
             if (autoTargetGeneration && autoTargetGeneration <= retiredThroughGeneration) cancelAutoLease();
             loadQueue.erase(std::remove_if(loadQueue.begin(), loadQueue.end(), [&](const LoadCommand& load) {
                 return load.generationId <= retiredThroughGeneration;
@@ -1451,6 +1543,7 @@ public:
         }
         if (method == "stop") {
             if (type != "request") throw std::runtime_error("stop-requires-request");
+            previewOwner.retire(generation); finishPreview("preview-stopped");
             uint64_t userdata = nextReplyUserdata++;
             int rc = commandAsync(userdata, {"stop"}); if (rc < 0) { emitError(generation, request, "stop-queue-failed"); return; }
             commandReplies.emplace(userdata, AsyncCommand{generation, request, method}); return;
@@ -1758,6 +1851,20 @@ public:
         if (method == "crash") { RaiseException(EXCEPTION_ACCESS_VIOLATION, EXCEPTION_NONCONTINUABLE, 0, nullptr); return; }
         if (method == "command-noop") return;
 #endif
+        if (method == "preview-snapshot") {
+            if (type != "request") throw std::runtime_error("preview-snapshot-requires-request");
+            const int64_t media = uniqueOpenMedia();
+            const uint64_t now = monotonicMicros();
+            if (previewCapture.userdata || !ownsPreview(generation, media) || (lastPreviewStarted && now - lastPreviewStarted < 950000)) {
+                emitResponse(generation, request, frameUnavailable("preview-not-ready-or-busy")); return;
+            }
+            const uint64_t userdata = nextReplyUserdata++;
+            const char* args[] = {"screenshot-raw", "video", "bgr0", nullptr};
+            const int rc = p_mpv_command_async(mpv, userdata, args);
+            if (rc < 0) { emitResponse(generation, request, frameUnavailable("preview-queue-failed")); return; }
+            lastPreviewStarted = now;
+            previewCapture = {userdata, generation, request, now + 1500000, media, false}; return;
+        }
         if (method == "surface-status") {
             if (type != "request") throw std::runtime_error("surface-status-requires-request");
             RECT bounds{};
@@ -1771,6 +1878,7 @@ public:
         throw std::runtime_error("unknown-method");
     }
     void poll() {
+        if (previewCapture.userdata && !previewCapture.finished && monotonicMicros() >= previewCapture.deadline) finishPreview("preview-deadline");
         submitNextLoad();
         for (int index = 0; index < 256; ++index) { mpv_event* event = p_mpv_wait_event(mpv, 0); if (!event || event->event_id == MPV_EVENT_NONE) break; handleEvent(event); }
         AutoStage stage = autoStage.load();
