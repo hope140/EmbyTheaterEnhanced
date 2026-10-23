@@ -10,6 +10,8 @@
 
 后续 `39961791456` 已完成接入，独立preflight暴露同类sourceIdentity导出循环；本轮同时检查runner到build消费依赖并提前初始化循环模块的导出，真实CLI回归覆盖接入→preflight→owner／原Host装配→stage及runtime身份，另覆盖build-input provenance的write／validate。任何新run仍从空工作区重新构建和验证，不能导入这些历史运行的锁。
 
+运行 `39965790277` 在Host编译后被System.Configuration的固定GAC／SHA256门禁阻断，没有artifact。映像与前次通过检查的run不同，但原错误缺实际字段，不能直接归因为系统补丁。现仅给原拒绝增加期望／实际绑定证据，门禁不放宽；未知实现仍停止，待新的实际诊断再核对。
+
 ## 当前 Host 编译与验证前置条件
 
 当前手动作业在独立材料准备后调用 `tools/ci-source-built-host.ps1`，恢复固定55份官方源码和两个NuGet输入，使用Windows PowerShell5.1／MSBuild17编译net462/x86 Host。随后必须由本次runner的可移植探针验证实际EXE/PDB，生成锁及构建／验证／工具链／工程回执，再进入装配。生成锁位于 `.work/source-built-host/`，绑定当前HEAD与Actions运行；不能导入外部测试机的旧回执或回退原版Host。

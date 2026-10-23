@@ -38,8 +38,8 @@
     },
     {
       "path": "Finalize-Evidence.ps1",
-      "size": 7694,
-      "sha256": "a9d855e98cf53d8b28636aae558e541a85d24de75f5273aecc70735fd0426a43"
+      "size": 7963,
+      "sha256": "1e7f8cb70a4fb425199e02855ab9ce54dcfa622b59ae6032900b114b69760a15"
     },
     {
       "path": "Framework-BuildHelpers.ps1",

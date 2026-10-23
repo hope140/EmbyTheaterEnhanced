@@ -29,8 +29,8 @@ const FILES = Object.freeze([
     },
     {
         "path": "tools/windows-host-verifier/Finalize-Evidence.ps1",
-        "size": 7694,
-        "sha256": "a9d855e98cf53d8b28636aae558e541a85d24de75f5273aecc70735fd0426a43"
+        "size": 7963,
+        "sha256": "1e7f8cb70a4fb425199e02855ab9ce54dcfa622b59ae6032900b114b69760a15"
     },
     {
         "path": "tools/windows-host-verifier/Framework-BuildHelpers.ps1",
@@ -160,7 +160,7 @@ const FILES = Object.freeze([
     {
         "path": "tools/windows-host-verifier/verifier-manifest.json",
         "size": 4444,
-        "sha256": "6569db5a87f673d566f293dc7807f53608d6fda1d53a79b2882729f250caabb1"
+        "sha256": "b1b8411155ad16d95fb51fe57d04c49badb5fd2115e677addddbabb948d91795"
     }
 ].map(Object.freeze));
 const PATHS = Object.freeze(FILES.map(f => f.path));

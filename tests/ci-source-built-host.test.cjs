@@ -47,7 +47,7 @@ test('runner builder exactly matches the Work-validated parameter/facade/metadat
     assert.match(s, /\$machine=\[Reflection\.ImageFileMachine\]::I386/);
 });
 test('reviewed portable verifier retains all32 Git-delivered inputs and every input is source-bound', () => {
-    assert.deepEqual(verifier.validate(root), {files: 32, bytes: 196010});
+    assert.deepEqual(verifier.validate(root), {files: 32, bytes: 196279});
     const inputs = require('../tools/build-input-contract.cjs').INPUT_PATHS;
     for (const p of verifier.PATHS) {
         assert.ok(inputs.includes(p), 'missing build input ' + p);
@@ -55,6 +55,42 @@ test('reviewed portable verifier retains all32 Git-delivered inputs and every in
     }
     assert.ok(inputs.includes('tools/Test-SourceBuiltHost.ps1'));
     assert.ok(inputs.includes('tools/host-verifier-input.cjs'));
+});
+test('Framework mismatch diagnostics retain the exact GAC/hash gate and expose only assembly evidence', () => {
+    // Execute the actual finalizer branch with synthetic metadata; no Framework/Host execution.
+    const script = String.raw`
+        $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
+        $tokens=$null;$errors=$null
+        $ast=[Management.Automation.Language.Parser]::ParseFile($env:ETE_FINALIZER,[ref]$tokens,[ref]$errors)
+        if($errors.Count){throw 'Finalizer parse error'}
+        $branches=@($ast.FindAll({param($node) $node -is [Management.Automation.Language.IfStatementAst] -and $node.Extent.Text.StartsWith("if("+[char]36+"name -eq 'System.Configuration')")},$true))
+        if($branches.Count -ne 1){throw 'One production Framework branch required'}
+        $branch=[scriptblock]::Create($branches[0].Extent.Text)
+        $rows=@([Console]::In.ReadToEnd()|ConvertFrom-Json)
+        $results=@(foreach($row in $rows){
+            $name='System.Configuration';$f=@{GAC=$row.gac;SHA256=$row.sha;Identity='synthetic assembly';Location='synthetic OS assembly path';ReferenceAssembly='False'}
+            try { . $branch; [ordered]@{passed=$true;error=$null} }
+            catch { [ordered]@{passed=$false;error=$_.Exception.Message} }
+        })
+        ConvertTo-Json -InputObject $results -Compress
+    `;
+    const expected = '5a3d35a9a0db4f075cc073ea8e875ef6b3533e88ec610621ac400efcc7c8e663';
+    const rows = [{gac:'True',sha:expected}, {gac:'True',sha:'0'.repeat(64)}, {gac:'False',sha:expected}, {gac:'true',sha:expected}, {gac:'True',sha:expected.toUpperCase()}];
+    const result = cp.spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-Command', script], {
+        encoding:'utf8', input:JSON.stringify(rows), env:{...process.env,ETE_FINALIZER:path.join(root,'tools/windows-host-verifier/Finalize-Evidence.ps1')}
+    });
+    assert.equal(result.status, 0, result.error?.message || result.stderr);
+    const actual = JSON.parse(result.stdout);
+    assert.equal(actual[0].passed, true);
+    for (let i=1;i<rows.length;i++) {
+        assert.equal(actual[i].passed, false);
+        const prefix = 'Framework implementation mismatch: ';
+        assert.ok(actual[i].error.startsWith(prefix));
+        assert.deepEqual(JSON.parse(actual[i].error.slice(prefix.length)), {
+            expectedGac:'True',expectedSha256:expected,observedGac:rows[i].gac,observedSha256:rows[i].sha,
+            identity:'synthetic assembly',location:'synthetic OS assembly path',referenceAssembly:'False'
+        });
+    }
 });
 for (const mutation of ['changed-script', 'changed-zip', 'extra-file', 'redirect']) test('portable verifier rejects unreviewed input: ' + mutation, t => {
     const r = temp(t);

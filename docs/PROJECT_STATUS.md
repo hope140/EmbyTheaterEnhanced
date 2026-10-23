@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-23 — runner框架绑定失败诊断
+
+手动run `39965790277` 的Host编译成功（0错误、6警告），随后最终绑定检查报 `Framework implementation mismatch`，任务5分45秒失败，未生成成功验证锁／整包artifact。本次映像20261012.333.1，前次通过此检查的是20261021.343.1；日志未给实际GAC/hash，不能据此认定仅为补丁差异。仅补充该拒绝的期望／实际GAC、SHA256、程序集身份、加载位置及reference标记，原固定GAC／hash条件和之前的文件／reference检查保持；不接受未知实现、不自动重试或回退。验证器清单同步绑定诊断字节，业务来源指纹不变；需新run获取实际拒绝证据后再判断兼容路线。
+
 ## 2026-10-23 — runner接入到build消费的CLI链路复验
 
 手动run `39961791456` 的Host编译、实际验证和输出接入通过，后续独立preflight CLI暴露sourceIdentity未初始化循环。现修正source-built-input及另一组build-input-contract／provenance循环的导出顺序，安全函数和验证标准不变。有界审查覆盖构建链44个可达控制模块；真实子进程串起接入、preflight、owner、原Host装配、stage和runtime身份核对，并验证篡改、双锁、路径与run归属拒绝。相关98项定向测试通过；原失败run的锁不复用，完整云包仍需新run重建验证。

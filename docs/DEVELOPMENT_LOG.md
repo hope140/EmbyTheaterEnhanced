@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-23 — 保留固定Framework门禁并输出拒绝证据
+
+`39965790277` 在14:05:10 UTC结束，manual job用时5分45秒；MSBuild编译成功，最终验证器第42行拒绝System.Configuration的GAC／固定SHA256条件。artifact为空，尚未接入锁或整包构建。映像为20261012.333.1，与前次该门禁通过的20261021.343.1不同；现有错误没有实际绑定字段，原因不能进一步确定。
+
+本轮只增强原throw的诊断，明确期望与实际GAC、SHA256、identity、location和referenceAssembly。条件表达式、固定允许hash及前置实际文件hash／非reference验证不变；不增加允许hash、不从当前未知输出自动生成信任。Finalize-Evidence及内外manifest更新精确身份，32文件现196279字节；业务源码／来源指纹及builder不变。新增回归经PowerShell AST选取实际生产分支，在合成元数据上验证原通过值与四种拒绝（错误hash、非GAC、GAC大小写、hash大小写）及准确诊断；不冒充真实Framework或Host验证。相关四文件99项通过（0失败、0跳过），32文件精确清单、来源指纹、builder哈希和diff检查通过。后续run若同条件不满足仍会失败，必须先取得并核对新实现证据，不能将诊断修正当构建问题已解决。
+
 ## 2026-10-23 — 关闭runner到build消费链路的同类CLI初始化缺口
 
 运行 `39961791456` 已完成Host编译、实际验证与接入，独立source-built-input preflight随后以未初始化sourceIdentity失败。审查限定于runner接入和build Host消费控制链：9个根入口可达44个本地require控制模块，两组循环分别为plan／receipt／source-built-input和build-input-contract／build-input-provenance。plan已提前导出；本轮将source-built-input和后两模块的原导出赋值移至CLI分派前。receipt无CLI分派，其余检查到的组件、装配和provenance入口无回到自身的加载边，不做无关批量改写；runtime-provenance保持仅CLI消费形态。

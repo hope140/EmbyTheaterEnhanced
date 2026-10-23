@@ -39,7 +39,7 @@ foreach($c in $summary.Cases){
   if(-not $match.Success){throw ('Observed assembly missing '+$name)}
   $f=@{};foreach($line in ($match.Groups[1].Value -split '\r?\n')){if($line.Contains('=')){$p=$line.IndexOf('=');$f[$line.Substring(0,$p)]=$line.Substring($p+1)}}
   if((Get-EvidenceHash $f.Location) -cne $f.SHA256 -or $f.ReferenceAssembly -cne 'False'){throw 'Observed file/reference mismatch'}
-  if($name -eq 'System.Configuration'){if($f.GAC -cne 'True' -or $f.SHA256 -cne '5a3d35a9a0db4f075cc073ea8e875ef6b3533e88ec610621ac400efcc7c8e663'){throw 'Framework implementation mismatch'}}
+  if($name -eq 'System.Configuration'){if($f.GAC -cne 'True' -or $f.SHA256 -cne '5a3d35a9a0db4f075cc073ea8e875ef6b3533e88ec610621ac400efcc7c8e663'){throw ('Framework implementation mismatch: '+([ordered]@{expectedGac='True';expectedSha256='5a3d35a9a0db4f075cc073ea8e875ef6b3533e88ec610621ac400efcc7c8e663';observedGac=$f.GAC;observedSha256=$f.SHA256;identity=$f.Identity;location=$f.Location;referenceAssembly=$f.ReferenceAssembly}|ConvertTo-Json -Compress))}}
   elseif($name -eq 'Emby.Theater'){$want=$build.files[0].sha256;if($f.SHA256 -cne $want){throw 'Observed Host mismatch'}}
   else{$want=@($build.references|Where-Object{[IO.Path]::GetFileNameWithoutExtension($_.path) -ceq $name})[0].sha256;if($f.SHA256 -cne $want){throw 'Observed dependency mismatch'}}
   $bindingRows+=[ordered]@{case=$c.Variant;assembly=$name;location=$f.Location;sha256=$f.SHA256;gac=$f.GAC;referenceAssembly=$f.ReferenceAssembly}
