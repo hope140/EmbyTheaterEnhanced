@@ -34,6 +34,140 @@ function materializePatchedSource() {
 
 const playbackManagerSource = materializePatchedSource();
 
+async function ewtFixture() {
+    let native;
+    const fixture = makeFixture({decoratePlayer(player, events) {
+        native = require('./fixtures/ewt-player.cjs').decorate(player, events);
+    }});
+    const ApiClient = require('./helpers/api-client-amd.cjs').harness().load('apiclient.js');
+    const posts = [];
+    fixture.apiClient.ensureWebSocket = () => {};
+    fixture.apiClient.ajax = request => { posts.push(JSON.parse(request.data)); return Promise.resolve(); };
+    fixture.apiClient.reportPlaybackProgress = ApiClient.prototype.reportPlaybackProgress;
+    fixture.apiClient.getCurrentUser = async () => ({Policy: {}});
+    await startPublicItem(fixture, 'A');
+    let inputFactory;
+    vm.runInNewContext(fs.readFileSync(path.join(repoRoot, 'vendor/web-snapshot/www/modules/common/input/api.js'), 'utf8'), {
+        define: (_deps, factory) => { inputFactory = factory; }
+    });
+    inputFactory({}, {default: fixture.events}, {default: {getApiClients: () => [fixture.apiClient]}}, {},
+        {default: fixture.manager}, {appHost: {supports: () => false}}, {}, {default: {notify() {}, trigger() {}}}, {});
+    const send = ticks => fixture.events.trigger(fixture.apiClient, 'message', [null,
+        {MessageType: 'Playstate', Data: {Command: 'Seek', SeekPositionTicks: ticks}}]);
+    native.property('time-pos', 3.8);
+    native.property('pause', true);
+    native.property('time-pos', 3.8); // Seed the real API's 10 s throttle window after pause.
+    posts.length = 0;
+    return {...fixture, native, posts, send};
+}
+
+test('EWT paused Seek zero is dispatched, acknowledged separately, and promptly reports the observed position', async () => {
+    const f = await ewtFixture();
+    f.send(0);
+    assert.deepEqual(Array.from(f.native.commands.at(-1).data), ['seek', '0', 'absolute', 'exact']);
+    f.native.acknowledge();
+    await settle();
+    assert.equal(f.posts.length, 0, 'command acceptance cannot report an unobserved target');
+    f.native.property('time-pos', 0);
+    assert.equal(f.posts.length, 0, 'the existing ordinary timeupdate throttle still suppresses zero');
+    f.native.restart(0);
+    assert.equal(f.posts.length, 1, 'native completion must send without waiting for a 10 s timer');
+    assert.equal(f.posts[0].EventName, 'seek');
+    assert.equal(f.posts[0].PositionTicks, 0);
+    assert.equal(f.posts[0].IsPaused, true);
+    assert.equal(f.posts[0].ItemId, 'A');
+    assert.equal(f.posts[0].PlaySessionId, 'session-A');
+    assert.equal(f.posts[0].MediaSourceId, 'media-A');
+});
+
+test('EWT Seek retains decimal seconds and reports the actual landing position rather than the requested target', async () => {
+    const f = await ewtFixture();
+    f.send(123456789);
+    assert.equal(Number(f.native.commands.at(-1).data[1]), 12.345, 'manager retains milliseconds; adapter must not truncate to whole seconds');
+    f.native.acknowledge();
+    await settle();
+    f.native.restart(12.32);
+    assert.equal(f.posts.at(-1).EventName, 'seek');
+    assert.equal(f.posts.at(-1).PositionTicks, 123200000);
+    assert.equal(f.player.currentTime(), 12320);
+    assert.equal(f.player.paused(), true);
+});
+
+test('native completion before command response reports once; late acceptance cannot overwrite the observed state', async () => {
+    const f = await ewtFixture();
+    f.send(0);
+    f.native.restart(0);
+    f.native.acknowledge();
+    await settle();
+    assert.equal(f.posts.filter(post => post.EventName === 'seek').length, 1);
+    assert.equal(f.posts.at(-1).PositionTicks, 0);
+});
+
+test('EWT stale-generation completion and retired command acceptance cannot report into the replacement item', async () => {
+    const f = await ewtFixture();
+    f.send(0);
+    const oldGeneration = f.native.generation();
+    await startPublicItem(f, 'B');
+    f.posts.length = 0;
+    f.native.restart(0, oldGeneration);
+    f.native.acknowledge();
+    await settle();
+    assert.equal(f.posts.length, 0);
+    assert.equal(f.native.diagnostics.filter(row => row.event === 'seek-command-accepted').length, 0);
+});
+
+test('relative Seek preserves fractional sign; invalid completion positions do not fabricate reports', async () => {
+    const f = await ewtFixture();
+    f.player.rewind(250);
+    assert.equal(f.native.commands.at(-1).data[1], '-0.25');
+    f.native.acknowledge();
+    await settle();
+    for (const value of [null, undefined, -1, NaN, Infinity, '0']) f.native.restart(value);
+    assert.equal(f.posts.length, 0);
+    f.native.restart(3.55);
+    assert.equal(f.posts.at(-1).PositionTicks, 35500000);
+    assert.equal(f.posts.at(-1).IsPaused, true);
+});
+
+test('failed Seek is contained and diagnostic payloads never copy the raw bridge error', async () => {
+    const f = await ewtFixture();
+    f.native.failSeek();
+    f.send(0);
+    await settle();
+    assert.equal(f.posts.length, 0);
+    assert.equal(f.native.diagnostics.at(-1).event, 'seek-command-failed');
+    assert.doesNotMatch(JSON.stringify(f.native.diagnostics), /fixture-private-token/);
+});
+
+test('successive EWT commands and reversed acknowledgements cannot publish requested positions', async () => {
+    const f = await ewtFixture();
+    f.send(0);
+    f.send(201250000);
+    f.native.acknowledge(1);
+    f.native.acknowledge(0);
+    await settle();
+    assert.equal(f.posts.length, 0);
+    f.native.restart(20.12);
+    const completion = f.posts.filter(post => post.EventName === 'seek');
+    assert.equal(completion.length, 1);
+    assert.equal(completion[0].PositionTicks, 201200000);
+    assert.equal(f.player.currentTime(), 20120);
+    assert.ok(f.native.commands.slice(-2).every(command => command.generationId === f.native.generation()));
+});
+
+test('Stop retires an EWT Seek before a late response or completion can report', async () => {
+    const f = await ewtFixture();
+    f.send(0);
+    const generation = f.native.generation();
+    await f.player.stop(false);
+    f.posts.length = 0;
+    f.native.acknowledge();
+    f.native.restart(0, generation);
+    await settle();
+    assert.equal(f.posts.length, 0);
+    assert.equal(f.native.diagnostics.filter(row => row.event === 'seek-command-accepted').length, 0);
+});
+
 function deferred() {
     let resolve;
     let reject;
@@ -229,6 +363,7 @@ function makeFixture(options = {}) {
             PlaylistLength: playerPlaylist.length
         }) : undefined
     };
+    if (options.decoratePlayer) options.decoratePlayer(player, events);
     const apiClient = {
         deviceId() { return 'device-1'; },
         accessToken() { return ''; },

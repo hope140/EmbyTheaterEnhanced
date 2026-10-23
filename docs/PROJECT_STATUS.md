@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-23 — 独立 EWT 客户端 Seek 修正候选
+
+从最新 main `88578c91` 创建 `fix/ewt-client-sync`。受控协议／播放器 fixture 证明暂停 Seek 到 0 的完成位置会被普通进度节流遗漏，且适配器将小数秒向下取整。现保留小数秒，并在 Native 实际 Seek 完成后沿原 PlaybackManager／Session 上报真实位置，旧 generation／Stop／迟到应答保持隔离。远控能力路径未发现写 false 的证据，声明保持；不归因真实环境历史事故。
+
+关键 8 项基线 2 通过／6 失败，修后 8／8；相关播放／Native 与构建／诊断回归共 210 项通过，Native 窄分支另经源码合同与独立 C++ stub 验证。未执行 Windows 完整构建、真实 mpv／服务器或双端 EWT 验收，不推送／合并／发布。详见[范围、复现与验收边界](EWT_CLIENT_SYNC.md)。
+
 ## 2026-10-23 — v0.4.0整合PR70来源与必要声明
 
 将PR70固定提交6576f5d的16份来源／声明材料整合到既有发布分支，四处文档冲突采用保留双方有效内容。API／page完整MIT、Sizzle原文、VTT版权／固定源／实际差异、Material Icons来源、Socket组件与集成范围及npm36许可命名口径保留；原JSON／CSV证据字节及analysisRef不改。旧“尚未替换Host／仍运行Sharp和ServiceStack”等仅作为研究时点，不恢复旧链；当前源码Host／JSON／ZIP、CEC退役、API维护与业务来源指纹均不变。

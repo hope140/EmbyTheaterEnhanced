@@ -49,6 +49,8 @@
         this._onIpcEvent = function (event, message) {
             if (destroyed || !message || typeof message !== 'object') return;
             if (message.type === 'property_change' && message.data && typeof message.data.name === 'string') {
+                if (message.data.name === 'playback-restart' &&
+                    (currentGenerationId == null || message.generationId !== currentGenerationId)) return;
                 emit({type: 'property_change', data: {name: message.data.name, value: message.data.value}});
             } else if (message.type === 'bridge_error') {
                 emit({type: 'bridge_error', data: {reason: message.reason || 'helper-terminated'}});

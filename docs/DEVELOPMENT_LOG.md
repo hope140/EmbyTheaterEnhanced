@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-23 — EWT 客户端的本地缺陷与最小修正
+
+以实际 fetch 的 main `88578c91ab19d44eecddcfae096d37dc917ef1f4` 建独立 `fix/ewt-client-sync`，保留其它任务隔离。核查 input/api → PlaybackManager → libmpv → Native 及原 ApiClient 进度路径。零值在接收／setter 中保留、ticks／毫秒比例正确；明确缺陷是向下取整秒值，以及 manager 缺少 Seek 完成监听、零位置普通 timeupdate 被原 10 秒节流跳过。原命令拒绝还会留下未处理 rejection。
+
+Native 仅对已有唯一媒体的 Seek／playback-restart 配对读取真实 time-pos，复用媒体 attribution 与 generation；renderer 校验当前 generation／有效数值后更新状态，由原 manager 发 seek 进度。应答只表示接受，既有诊断增加固定接受／失败标签，不复制原始错误或 URL。未改 API 节流、暂停意图、controller history、会员认证或服务端超时；能力声明没有写 false 的本地证据，保持不变。
+
+同一关键 8 项在基线 2 pass／6 fail，修后 8 pass；原有播放、Native、构建来源与诊断共 210 项通过／0 skip。Native 采样守卫的后续 4 项复验与实际提取 C++ 分支的 Linux stub 编译执行通过。接线初版缺失 getCurrentUser／transition／settings 替身导致的失败已区分，不作产品缺陷计数。原始日志留在仓库外；[技术合同](EWT_CLIENT_SYNC.md)给出复现入口与证据层级。Windows 完整 Helper／runtime、真实播放／Session 和双端 EWT 尚未验收；无现用设备、NAS 或媒体命令，无 push／merge／publish。
+
 ## 2026-10-23 — v0.4.0整合PR70来源与必要声明
 
 将PR70固定提交6576f5d的16份来源／声明材料整合到既有发布分支，四处文档冲突采用保留双方有效内容。API／page完整MIT、Sizzle原文、VTT版权／固定源／实际差异、Material Icons来源、Socket组件与集成范围及npm36许可命名口径保留；原JSON／CSV证据字节及analysisRef不改。旧“尚未替换Host／仍运行Sharp和ServiceStack”等仅作为研究时点，不恢复旧链；当前源码Host／JSON／ZIP、CEC退役、API维护与业务来源指纹均不变。

@@ -217,6 +217,23 @@ async function showSurface(service) {
   return {created, begun};
 }
 
+test('native restart position bypasses property subscriptions and remains scoped to the current generation', async () => {
+  const ClientClass = makeClientClass();
+  const {main, service} = makeService(ClientClass);
+  const {begun} = await showSurface(service);
+  const active = ClientClass.clients[0];
+  const restart = {name: 'playback-restart', generationId: begun.generationId, value: 0};
+  active.options.onEvent(restart);
+  assert.deepEqual(main.sent.at(-1), ['enhanced-native-helper-event', {
+    type: 'property_change', generationId: begun.generationId, data: {name: 'playback-restart', value: 0}
+  }]);
+  const count = main.sent.length;
+  active.options.onEvent({...restart, generationId: begun.generationId + 10});
+  active.options.onEvent({name: 'private-unobserved-property', generationId: begun.generationId, value: 20});
+  assert.equal(main.sent.length, count);
+  await service.destroy();
+});
+
 function deferred() {
   let resolve, reject;
   const promise = new Promise((yes, no) => { resolve = yes; reject = no; });
