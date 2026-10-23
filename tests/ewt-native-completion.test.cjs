@@ -14,6 +14,8 @@ test('native seek completion samples time-pos at playback-restart under the exis
     assert.match(restart, /p_mpv_get_property\(mpv, "time-pos", MPV_FORMAT_DOUBLE, &position\) >= 0/);
     assert.match(restart, /std::isfinite\(position\) && position >= 0/);
     assert.match(restart, /seekMedia >= 0 && pendingSeekMedia == seekMedia/);
+    assert.ok(restart.indexOf('pendingSeekMedia = -1') < restart.indexOf('p_mpv_get_property'),
+        'consume completion before the read, so failure or a duplicate restart cannot replay it');
     assert.match(source, /MPV_EVENT_SEEK\) \{\s*pendingSeekMedia = uniqueOpenMedia\(\)/);
     assert.match(restart, /routeRecord\(\{int\(event->event_id\), eventName\(event->event_id\), seekMedia,\s*"playback-restart", std::to_string\(position\)/);
     assert.ok(restart.indexOf('routeRecord') < restart.indexOf('if (autoStage.load()'), 'presentation capture cannot gate the position notification');

@@ -168,6 +168,23 @@ test('Stop retires an EWT Seek before a late response or completion can report',
     assert.equal(f.native.diagnostics.filter(row => row.event === 'seek-command-accepted').length, 0);
 });
 
+test('EWT accepted Seek without completion neither invents a position nor blocks the next command', async () => {
+    const f = await ewtFixture();
+    f.send(0);
+    f.native.acknowledge();
+    await settle();
+    assert.equal(f.posts.length, 0);
+    assert.equal(f.player.currentTime(), 3800);
+    f.send(71250000);
+    assert.equal(f.native.commands.at(-1).data[1], '7.125');
+    f.native.acknowledge();
+    await settle();
+    assert.equal(f.posts.length, 0);
+    f.native.restart(7.12);
+    assert.equal(f.posts.at(-1).PositionTicks, 71200000);
+    assert.equal(f.posts.at(-1).EventName, 'seek');
+});
+
 function deferred() {
     let resolve;
     let reject;
