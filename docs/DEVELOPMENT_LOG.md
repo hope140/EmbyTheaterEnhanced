@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-23 — 播放缓存第一阶段：字节存储合同
+
+读取协作、架构、状态和维护教训并核对远端指定基线后，在无同名本地/远端分支的前提下建立 `feature/playback-cache`。范围限定 `tools/prototypes/playback-cache`、专属测试与技术文档；产品、Native Helper、STRM/会话及构建默认值保持。当前 helper 只有 loadfile 和实例内 demuxer 缓存观测，没有可导出的持久媒体正文。
+
+原型要求显式策略和新授权 proof；媒体身份/版本/representation/强 ETag 参与复合哈希。实际合成 Buffer 分段写盘，fsync 后 rename 元数据，恢复只信 checkpoint/digest；完整对象才有有界测试读取 lease。逻辑配额按完整对象预留，活动 lease 禁止清理；空间预检与真实 I/O 失败分别处理，后者要求重新打开。独占 lock、归属标记、未知文件及链接拒绝保护局部试验目录；崩溃遗留 lock 不自动回收。同步 I/O/全前缀 hash、物理预分配、断电持久性及 Windows ACL/性能均明确为原型边界。
+
+验证命令：`node --test tests/playback-cache-store.test.cjs tests/native-helper-protocol.test.cjs tests/native-helper-service.test.cjs tests/strm-resolver.test.cjs tests/nexttrack-transition.test.cjs`。Node24.18.1/Linux，89/89通过，0跳过，其中新原型12项。没有访问用户媒体/NAS/账号或网络、没有安装/发布/合并或启用运行时功能。阶段二仅继续下一集调度的注入任务测试，实际下载和产品接线仍未实现。
+
 ## 2026-10-23 — v0.4.0整合PR70来源与必要声明
 
 将PR70固定提交6576f5d的16份来源／声明材料整合到既有发布分支，四处文档冲突采用保留双方有效内容。API／page完整MIT、Sizzle原文、VTT版权／固定源／实际差异、Material Icons来源、Socket组件与集成范围及npm36许可命名口径保留；原JSON／CSV证据字节及analysisRef不改。旧“尚未替换Host／仍运行Sharp和ServiceStack”等仅作为研究时点，不恢复旧链；当前源码Host／JSON／ZIP、CEC退役、API维护与业务来源指纹均不变。
