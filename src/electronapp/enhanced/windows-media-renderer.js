@@ -11,7 +11,7 @@ function install(window, send, options = {}) {
     if (!window || window.top !== window || !window.document) return function () {};
     let disposed = false, manager, events, player, lastState, bound = false;
     let lastNativeState, lastNativePositionAt = 0, nativeSequence = 0, nativeSessionToken = null;
-    let nativeFlushTimer = null, lastNativePosition = null;
+    let nativeFlushTimer = null, lastNativePosition = null, playbackEpoch = 0, nativeStopped = false;
     const nativeClock = options.clock || {now: window.performance && typeof window.performance.now === 'function' ? window.performance.now.bind(window.performance) : Date.now,
         setTimeout: typeof window.setTimeout === 'function' ? window.setTimeout.bind(window) : setTimeout,
         clearTimeout: typeof window.clearTimeout === 'function' ? window.clearTimeout.bind(window) : clearTimeout};
@@ -23,8 +23,8 @@ function install(window, send, options = {}) {
         if (disposed || bound || readyTimer || Date.now() >= readinessDeadline) return;
         readyTimer = setTimeout(function() { readyTimer = null; ready(); }, 100);
     }
-    const eventNames = ['playbackstart', 'pause', 'unpause', 'statechange', 'timeupdate', 'playbackratechange'];
-    function publish(inactive) {
+    const eventNames = ['pause', 'unpause', 'statechange', 'timeupdate', 'playbackratechange'];
+    function publish(inactive, nativeInactive) {
         if (disposed) return;
         let state;
         try { state = !inactive && player && manager.getPlayerState(player); } catch (_) { }
@@ -37,11 +37,11 @@ function install(window, send, options = {}) {
             lastState = key;
             try { send(CHANNEL, snapshot); } catch (_) { }
         }
-        const native = active && player && player.id === 'libmpvmediaplayer';
+        const native = !nativeInactive && !nativeStopped && active && player && player.id === 'libmpvmediaplayer';
         const duration = native && Number.isFinite(Number(item.RunTimeTicks)) ? Math.max(0, Math.min(31622400, Number(item.RunTimeTicks) / 10000000)) : 0;
         const position = native && state.PlayState ? Math.max(0, Math.min(duration, Number(state.PlayState.PositionTicks) / 10000000 || 0)) : 0;
         const nativeRate = native && state.PlayState ? Number(state.PlayState.PlaybackRate) : 1;
-        const nativeState = {version: 1, active: !!native, paused: !!native && paused,
+        const nativeState = {version: 2, playbackEpoch, active: !!native, paused: !!native && paused,
             title: native ? String(item.Name || '').replace(/[\x00-\x1f\x7f]/g, '').slice(0, 512) : '',
             mediaKey: native ? crypto.createHash('sha256').update(String(item.ServerId || '') + ':' + String(item.Id || '')).digest('hex') : '',
             mediaType: native ? item.MediaType : '', duration, position,
@@ -71,20 +71,29 @@ function install(window, send, options = {}) {
         } catch (_) { /* Optional OS presentation must never fail playback. */ }
     }
     function update() { publish(false); }
-    function stop(_event, state) { if (!state || !state.NextMediaType) publish(true); }
+    function start() { playbackEpoch++; nativeStopped = false; publish(false); }
+    function stop(_event, state) {
+        // Preserve the existing toolbar transition while retiring native pixels
+        // even when PlaybackManager already knows the next media type.
+        nativeStopped = true;
+        publish(!state || !state.NextMediaType, true);
+    }
     function unbind() {
         if (!player || !events) return;
         for (const name of eventNames) events.off(player, name, update);
         events.off(player, 'playbackstop', stop);
+        events.off(player, 'playbackstart', start);
         player = null;
     }
     function bindPlayer() {
         if (disposed) return;
         unbind();
+        playbackEpoch++; nativeStopped = false;
         try { player = manager.getCurrentPlayer(); } catch (_) { player = null; }
         if (player) {
             for (const name of eventNames) events.on(player, name, update);
             events.on(player, 'playbackstop', stop);
+            events.on(player, 'playbackstart', start);
         }
         publish(false);
     }

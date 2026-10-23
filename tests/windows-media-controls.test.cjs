@@ -294,3 +294,20 @@ test('paused position updates flush after throttling even without another timeup
     assert.equal(packets().at(-1).value.position,30);
     f.dispose();assert.equal(timers.size,0);
 });
+
+
+test('native playback epochs rotate for same-item replay and stop retires pixels during Next transition', async () => {
+    const f = rendererFixture({direct:true, requestNativeSession: () => Promise.resolve({token:'12345678-1234-1234-1234-123456789abc'})});
+    f.player.id = 'libmpvmediaplayer';
+    for (let i = 0; i < 5; i++) await Promise.resolve();
+    const packets = () => f.emitted.filter(value => value.channel === renderer.NATIVE_CHANNEL);
+    const first = packets().at(-1).value;
+    assert.equal(first.version, 2);
+    f.fire('playbackstart'); const second = packets().at(-1).value;
+    assert.equal(second.mediaKey, first.mediaKey); assert.ok(second.playbackEpoch > first.playbackEpoch);
+    f.fire('playbackstop', f.player, {}, {NextMediaType: 'Video'});
+    assert.equal(packets().at(-1).value.active, false);
+    f.fire('timeupdate'); assert.equal(packets().at(-1).value.active, false);
+    f.fire('playbackstart'); assert.equal(packets().at(-1).value.active, true);
+    f.dispose();
+});

@@ -1,16 +1,16 @@
 'use strict';
 
 const boundary = require('./renderer-boundary');
-const {randomUUID} = require('crypto');
+const {randomUUID, createHash} = require('crypto');
 const fs = require('fs'), path = require('path');
 const {performance} = require('perf_hooks');
 const {createRecorder} = require('./bounded-diagnostics');
 const {NATIVE_CHANNEL, NATIVE_SESSION_CHANNEL} = require('./windows-media-renderer');
-const KEYS = ['version', 'active', 'paused', 'title', 'mediaKey', 'mediaType', 'duration', 'position', 'rate', 'sequence', 'sessionToken'];
+const KEYS = ['version', 'playbackEpoch', 'active', 'paused', 'title', 'mediaKey', 'mediaType', 'duration', 'position', 'rate', 'sequence', 'sessionToken'];
 
 function valid(value) {
     return !!value && Object.keys(value).length === KEYS.length && KEYS.every(key => Object.hasOwn(value, key)) &&
-        value.version === 1 && typeof value.active === 'boolean' && typeof value.paused === 'boolean' &&
+        value.version === 2 && Number.isSafeInteger(value.playbackEpoch) && value.playbackEpoch > 0 && typeof value.active === 'boolean' && typeof value.paused === 'boolean' &&
         typeof value.title === 'string' && value.title.length <= 512 && !/[\x00-\x1f\x7f]/.test(value.title) &&
         typeof value.mediaKey === 'string' && (value.active ? /^[a-f0-9]{64}$/.test(value.mediaKey) : value.mediaKey === '') &&
         (value.active ? ['Video', 'Audio'].includes(value.mediaType) : value.mediaType === '') &&
@@ -27,7 +27,8 @@ function attach(options) {
     const emit = createRecorder(options.log || function () {}, 'windows-media', 10);
     let disposed = false, latest = null, session = null, queue = Promise.resolve(), sequence = 0, epoch = 0, sessionToken = randomUUID(), sessionRequests = 0;
     const clock = options.clock || {now: () => performance.now(), setInterval, clearInterval};
-    let fallbackImage = null, blankFirstFrames = 0;
+    let fallbackImage = null, blankFirstFrames = 0, firstFrameAttempts = 0, firstFrameDeadline = null, captureAttemptEpoch = 0;
+    const firstFrameLimit = 10, firstFrameBudgetMs = 15000;
     let image = null, imageEpoch = 0, timer = null, capturing = null, errors = 0, captured = 0, totalCaptureMs = 0;
     let artworkKey = null, appliedKey = null;
     let documentEpoch = 0, sessionDocumentEpoch = -1;
@@ -46,26 +47,42 @@ function attach(options) {
         }
         return fallbackImage;
     }
-    function clearImage() { image = null; imageEpoch = 0; thumbnail.clear(); }
+    function clearImage() {
+        image = null; imageEpoch = 0; firstFrameAttempts = 0; firstFrameDeadline = null; captureAttemptEpoch++; thumbnail.clear();
+        artworkKey = null; appliedKey = null;
+        if (session && session.clearArtwork) { try { session.clearArtwork(); } catch (_) { logFailure('state'); } }
+    }
+    function firstFrameExhausted() {
+        return !image && (firstFrameAttempts >= firstFrameLimit || firstFrameDeadline !== null && clock.now() >= firstFrameDeadline);
+    }
+    function restore() {
+        if (disposed || !firstFrameExhausted()) return;
+        firstFrameAttempts = 0; firstFrameDeadline = null; captureAttemptEpoch++;
+    }
     function logFailure(stage) { errors++; emit('integration-unavailable', {stage}); }
     async function captureFrame() {
-        if (disposed || capturing || !latest || !latest.active || latest.mediaType !== 'Video') return;
+        if (disposed || capturing || firstFrameExhausted() || !latest || !latest.active || latest.mediaType !== 'Video') return;
         if (clock.now() - lastCaptureStarted < 950) return;
-        if (image && imageEpoch === epoch && artworkKey && typeof thumbnail.requestedRecently === 'function' && !thumbnail.requestedRecently()) return;
+        if (image && imageEpoch === epoch && typeof thumbnail.requestedRecently === 'function' && !thumbnail.requestedRecently()) return;
         const video = getVideoWindow();
-        if (!video || video.isDestroyed()) return;
+        if (!video || video === window || video.webContents === window.webContents || video.isDestroyed()) return;
         // Hidden/minimized native surfaces can return an all-black PrintWindow
         // image. Preserve the last owned frame rather than replacing it.
         if (typeof video.isVisible === 'function' && !video.isVisible() || typeof window.isMinimized === 'function' && window.isMinimized()) return;
-        const ownedEpoch = epoch, ownedWindow = video;
+        const ownedEpoch = epoch, ownedWindow = video, ownedAttemptEpoch = captureAttemptEpoch;
         let work;
         try {
             const hwnd = video.getNativeWindowHandle().readBigUInt64LE(), {width, height} = dwm.clientSize(hwnd);
             const started = Date.now();
             lastCaptureStarted = clock.now();
-            work = dwm.capture(hwnd, width, height); capturing = work;
+            if (!image) {
+                if (firstFrameDeadline === null) firstFrameDeadline = clock.now() + firstFrameBudgetMs;
+                firstFrameAttempts++;
+            }
+            const ownedDeadline = !image ? firstFrameDeadline : null;
+            work = dwm.capture(hwnd, width, height, {pixelFormat: 'opaque-video-bgrx'}); capturing = work;
             const frame = await work;
-            if (disposed || ownedEpoch !== epoch || ownedWindow !== getVideoWindow() || video.isDestroyed() || !frame.accepted ||
+            if (disposed || ownedAttemptEpoch !== captureAttemptEpoch || (ownedDeadline !== null && clock.now() >= ownedDeadline) || ownedEpoch !== epoch || ownedWindow !== getVideoWindow() || video.isDestroyed() || !frame.accepted ||
                 typeof video.isVisible === 'function' && !video.isVisible() || typeof window.isMinimized === 'function' && window.isMinimized()) return;
             if (!Buffer.isBuffer(frame.pixels) || frame.pixels.length !== width * height * 4) throw Error('Invalid captured bitmap');
             // A successful PrintWindow with only zero BGR bytes cannot establish
@@ -104,19 +121,20 @@ function attach(options) {
                 sessionDocumentEpoch = ownerDocument;
             }
             if (disposed || latest !== snapshot) return;
-            if (appliedKey && appliedKey !== snapshot.mediaKey && session.clearArtwork) { session.clearArtwork(); artworkKey = null; }
+            if (appliedKey && appliedKey !== epoch && session.clearArtwork) { session.clearArtwork(); artworkKey = null; }
             session.update(snapshot);
-            appliedKey = snapshot.mediaKey;
+            appliedKey = epoch;
             await captureFrame();
-            if (!disposed && latest === snapshot && artworkKey !== snapshot.mediaKey && imageEpoch === epoch && image && options.artworkDirectory && session.setArtwork) {
-                const ownedEpoch = epoch, key = snapshot.mediaKey;
+            if (!disposed && latest === snapshot && artworkKey !== epoch && imageEpoch === epoch && image && options.artworkDirectory && session.setArtwork) {
+                const ownedEpoch = epoch, ownedImage = image, key = createHash('sha256').update(sessionToken + ':' + epoch).digest('hex');
                 await fs.promises.mkdir(options.artworkDirectory, {recursive: true});
+                if (disposed || epoch !== ownedEpoch) return;
                 const file = path.join(options.artworkDirectory, key + '.png');
-                try { await fs.promises.writeFile(file, image.toPNG(), {flag: 'wx'}); } catch (error) { if (error.code !== 'EEXIST') throw error; }
+                try { await fs.promises.writeFile(file, ownedImage.toPNG(), {flag: 'wx'}); } catch (error) { if (error.code !== 'EEXIST') throw error; }
                 const stat = await fs.promises.lstat(file);
                 if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 2097152) throw Error('Artwork cache file invalid');
-                await session.setArtwork(file, () => !disposed && epoch === ownedEpoch && latest && latest.mediaKey === key);
-                if (!disposed && epoch === ownedEpoch) artworkKey = key;
+                await session.setArtwork(file, () => !disposed && epoch === ownedEpoch && latest && latest.playbackEpoch === snapshot.playbackEpoch);
+                if (!disposed && epoch === ownedEpoch) artworkKey = ownedEpoch;
                 const entries = await fs.promises.readdir(options.artworkDirectory, {withFileTypes: true});
                 const files = [];
                 for (const entry of entries) if (entry.isFile() && /^[a-f0-9]{64}\.png$/.test(entry.name) && entry.name !== key + '.png') {
@@ -129,9 +147,9 @@ function attach(options) {
         }).catch(() => { if (!disposed) logFailure('state'); });
     }
     function receive(event, snapshot) {
-        if (disposed || !boundary.isTrusted(event, window.webContents) || !valid(snapshot) || snapshot.sessionToken !== sessionToken || snapshot.sequence <= sequence) return;
+        if (disposed || !boundary.isTrusted(event, window.webContents) || !valid(snapshot) || snapshot.sessionToken !== sessionToken || snapshot.sequence <= sequence || latest && snapshot.playbackEpoch < latest.playbackEpoch) return;
         sequence = snapshot.sequence;
-        const changed = !latest || latest.mediaKey !== snapshot.mediaKey || latest.active !== snapshot.active || latest.mediaType !== snapshot.mediaType;
+        const changed = !latest || latest.mediaKey !== snapshot.mediaKey || latest.active !== snapshot.active || latest.mediaType !== snapshot.mediaType || latest.playbackEpoch !== snapshot.playbackEpoch;
         if (changed) { epoch++; lastCaptureStarted = -Infinity; clearImage(); }
         enqueue({...snapshot});
         if (changed && snapshot.active && snapshot.mediaType === 'Video') {
@@ -152,6 +170,7 @@ function attach(options) {
         window.webContents.removeListener('did-start-navigation', navigation);
         window.webContents.removeListener('render-process-gone', reset);
         window.removeListener('closed', close);
+        window.removeListener('restore', restore);
         thumbnail.dispose();
         cleanup = (async () => {
             await queue.catch(() => {});
@@ -169,11 +188,12 @@ function attach(options) {
     window.webContents.on('did-start-navigation', navigation);
     window.webContents.on('render-process-gone', reset);
     window.once('closed', close);
+    window.on('restore', restore);
     timer = clock.setInterval(() => { captureFrame().catch(() => {}); }, 1000);
     return {dispose, previewImage,
         status() { return {active: !!(latest && latest.active), ready: !!session,
-        previewReady: !!image && imageEpoch === epoch, blankFirstFrames, captured, submitted: thumbnail.submitted, averageCaptureMs: captured ? totalCaptureMs / captured : 0, errors, sessionRequests, sequence,
-        artworkReady: !!artworkKey && artworkKey === latest?.mediaKey}; }};
+        previewReady: !!image && imageEpoch === epoch, firstFrameAttempts, firstFrameExhausted: firstFrameExhausted(), blankFirstFrames, captured, submitted: thumbnail.submitted, averageCaptureMs: captured ? totalCaptureMs / captured : 0, errors, sessionRequests, sequence,
+        artworkReady: !!artworkKey && artworkKey === epoch}; }};
 }
 
 module.exports = {valid, attach};

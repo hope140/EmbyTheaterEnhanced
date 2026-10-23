@@ -27,13 +27,15 @@ Native Helper 二进制、libmpv、窗口 owner、Native 协议、认证和 Reso
 
 - 捕获的 top-down 32-bit BI_RGB DIB 在 `PrintWindow` 前清零，完成后保留 BGR 并将第四字节明确设为 255，再交给 Electron，避免把未定义的 alpha 当透明度。测试用非零彩色像素及不同第四字节检查实际转换代码；这是字节合同证据，不是 D3D 捕获成功证据。
 - active Video 一到达就启用自定义预览。无缓存帧时使用不透明黑色占位，最小化前没有首帧、最小化期间换片均不再依赖透明窗口的默认图像。占位不计入 `captured`、不用于 SMTC artwork；`previewReady` 单独表示缓存帧已建立。
-- 只有零 BGR 的首次捕获保持等待，并按原约 1Hz 定时器重试；`blankFirstFrames` 单列次数。合法纯黑片头同样显示黑色占位，直到出现非零 BGR。建立缓存后的纯黑帧仍允许更新。不以颜色启发式证明视频有效：有颜色的旧持帧/非视频内容也可能通过，仍须真实换片复验。
+- 只有零 BGR 的首次捕获保持等待，并按原约 1Hz 定时器在最多10次／15秒内重试；预算从实际可见捕获开始，耗尽后保持占位，restore可启动新一轮有界预算。`blankFirstFrames` 单列次数。合法纯黑片头同样显示黑色占位，直到出现非零 BGR。建立缓存后的纯黑帧仍允许更新。不以颜色启发式证明视频有效：有颜色的旧持帧/非视频内容也可能通过，仍须真实换片复验。
 - 隐藏/最小化禁止开始捕获，完成时再次检查媒体代次、所属窗口和可见状态；本媒体的已有缓存继续保留。换片清缓存并重置节流，使新媒体可以立即尝试首帧；音频、Stop、主文档换代和退出移除预览。renderer 媒体身份校验不等于 Native Helper 当前画面已属于新媒体，原生持帧过渡仍待 Windows 对照。
 - 同时处理 thumbnail `0x0323` 和 Peek/live-preview `0x0326`；后者使用独立的 `DwmSetIconicLivePreviewBitmap`，图像按客户端边界等比缩放，释放临时 DIB。两类请求在没有图像时也记录需求并请求捕获；退出注销两种消息。当前预览只展示 video host 图像，不合成主页面控件，Peek 由最多 640px 宽缓存放大，清晰度和布局待实机评估。
 
+播放代次／封面隔离、alpha来源限制、GDI失败与销毁收尾、首帧预算及最小合成探针的当前补充合同见[源码交接](WINDOWS_NATIVE_PREVIEW_HANDOFF.md)。严格的新媒体实帧身份仍缺原生呈现fence证据，尚未声明闭合。
+
 接口依据：[BI_RGB 格式](https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-bitmapinfoheader)、[Electron bitmap](https://www.electronjs.org/docs/latest/api/native-image#nativeimagecreatefrombitmapbuffer-options)、[Peek 消息](https://learn.microsoft.com/en-us/windows/win32/dwm/wm-dwmsendiconiclivepreviewbitmap)、[Peek bitmap](https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/nf-dwmapi-dwmseticoniclivepreviewbitmap)。
 
-### 本修订离线验证
+### 首版候选离线验证
 
 `node --test tests/windows-dwm.test.cjs tests/windows-native-media.test.cjs tests/windows-media-controls.test.cjs tests/windows-media-trial-bootstrap.test.cjs tests/windows-media-trial-identity.test.cjs tests/preload-preparation.test.cjs tests/app-shutdown-drain.test.cjs`：Linux / Node 24.18.1，68/68 通过，无跳过。相同的七个 DWM 测试在修前源码为 2 pass / 5 fail，修后 7/7；新增底层 FFI 替身模拟明确内存、彩色像素和返回值，执行真实转换/提交/释放代码，不加载 Windows DLL。控制器测试覆盖空首帧重试、最小化前无首帧、最小化换片/恢复、节流换代、失败及隐藏保帧、后续纯黑帧、所属窗口更换、导航及退出。
 

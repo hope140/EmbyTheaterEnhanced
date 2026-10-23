@@ -22,7 +22,7 @@ function createDwm(koffi) {
         const info = Buffer.alloc(44); info.writeUInt32LE(40); info.writeInt32LE(width, 4); info.writeInt32LE(-height, 8);
         info.writeUInt16LE(1, 12); info.writeUInt16LE(32, 14);
         const bits = [null], handle = createBitmap(null, info, 0, bits, null, 0);
-        if (!handle || !bits[0]) throw Error('CreateDIBSection failed');
+        if (!handle || !bits[0]) { if (handle) deleteObject(handle); throw Error('CreateDIBSection failed'); }
         return {handle, bits: bits[0], length: width * height * 4};
     }
     function configure(hwnd, enabled) {
@@ -43,12 +43,17 @@ function createDwm(koffi) {
         if (!getClientRect(hwnd, rect) || !getWindowThreadProcessId(hwnd, pid) || pid[0] !== process.pid) throw Error('Capture source is not an owned window');
         return {width: rect.readInt32LE(8), height: rect.readInt32LE(12)};
     }
-    async function capture(hwnd, width, height) {
-        const dib = bitmap(width, height), dc = createDc(null);
-        if (!dc) { deleteObject(dib.handle); throw Error('CreateCompatibleDC failed'); }
-        let previous;
+    async function capture(hwnd, width, height, options) {
+        // This is a BGRX conversion for the service-owned opaque video carrier,
+        // never an alpha repair for BrowserWindow UI or arbitrary BGRA images.
+        if (!options || options.pixelFormat !== 'opaque-video-bgrx') throw Error('Opaque video format required');
+        const dib = bitmap(width, height);
+        let dc, previous;
         try {
+            dc = createDc(null);
+            if (!dc) throw Error('CreateCompatibleDC failed');
             previous = selectObject(dc, dib.handle);
+            if (!previous) throw Error('SelectObject failed');
             // PrintWindow may succeed without painting every pixel. Never expose
             // uninitialized DIB memory to Electron, DWM or the artwork cache.
             copy(dib.bits, Buffer.alloc(dib.length), dib.length);
@@ -58,7 +63,10 @@ function createDwm(koffi) {
             // video is opaque; preserve BGR and define alpha before NativeImage.
             for (let offset = 3; offset < pixels.length; offset += 4) pixels[offset] = 255;
             return {accepted, pixels};
-        } finally { if (previous) selectObject(dc, previous); deleteDc(dc); deleteObject(dib.handle); }
+        } finally {
+            try { if (previous) selectObject(dc, previous); }
+            finally { try { if (dc) deleteDc(dc); } finally { deleteObject(dib.handle); } }
+        }
     }
     return {configure, invalidate, capture, clientSize,
         thumbnail(hwnd, image) { submitBitmap(hwnd, image, (target, handle) => setThumbnail(target, handle, 0)); },
@@ -67,9 +75,14 @@ function createDwm(koffi) {
 
 function attachThumbnail(window, dwm, getImage, onError = function () {}, onRequest = function () {}) {
     const hwnd = window.getNativeWindowHandle().readBigUInt64LE();
-    let enabled = false, disposed = false, submitted = 0, lastRequest = -Infinity;
+    let enabled = false, disposed = false, submitted = 0, lastRequest = -Infinity, revision = 0;
+    function currentWindow() {
+        try { return !disposed && !window.isDestroyed() && window.getNativeWindowHandle().readBigUInt64LE() === hwnd; }
+        catch (_) { return false; }
+    }
     function request(size, submit) {
-        if (disposed || !enabled) return;
+        if (!enabled || !currentWindow()) return;
+        const ownedRevision = revision;
         // Record demand even before a usable frame exists. Refresh/capture can
         // then satisfy the next DWM request instead of losing first-frame demand.
         lastRequest = performance.now();
@@ -78,9 +91,10 @@ function attachThumbnail(window, dwm, getImage, onError = function () {}, onRequ
             if (!image || image.isEmpty() || width < 1 || height < 1) return;
             const source = image.getSize(), scale = Math.min(width / source.width, height / source.height);
             const resized = image.resize({width: Math.max(1, Math.floor(source.width * scale)), height: Math.max(1, Math.floor(source.height * scale))});
+            if (!enabled || revision !== ownedRevision || !currentWindow()) return;
             submit(hwnd, resized); submitted++;
         } catch (_) { onError(); }
-        finally { onRequest(); }
+        finally { if (revision === ownedRevision && currentWindow()) onRequest(); }
     }
     function thumbnailMessage(_wparam, lparam) {
         request(() => {
@@ -94,13 +108,37 @@ function attachThumbnail(window, dwm, getImage, onError = function () {}, onRequ
             return {width: Math.min(4096, size.width), height: Math.min(2160, size.height)};
         }, dwm.livePreview);
     }
-    window.hookWindowMessage(0x323, thumbnailMessage);
-    window.hookWindowMessage(0x326, livePreviewMessage);
-    return {refresh() { if (disposed || window.isDestroyed()) return; if (!enabled) { dwm.configure(hwnd, true); enabled = true; } dwm.invalidate(hwnd); },
-        clear() { if (!disposed && enabled && !window.isDestroyed()) { try { dwm.configure(hwnd, false); enabled = false; dwm.invalidate(hwnd); } catch (_) { onError(); } } },
+    const messages = [0x323, 0x326];
+    try {
+        window.hookWindowMessage(messages[0], thumbnailMessage);
+        window.hookWindowMessage(messages[1], livePreviewMessage);
+    } catch (error) {
+        for (const id of messages) { try { if (!window.isDestroyed()) window.unhookWindowMessage(id); } catch (_) { } }
+        throw error;
+    }
+    return {
+        refresh() {
+            if (!currentWindow()) return;
+            if (!enabled) { dwm.configure(hwnd, true); enabled = true; }
+            dwm.invalidate(hwnd);
+        },
+        clear() {
+            revision++;
+            if (!enabled) return;
+            enabled = false;
+            if (!currentWindow()) return;
+            try { dwm.configure(hwnd, false); dwm.invalidate(hwnd); } catch (_) { onError(); }
+        },
         get submitted() { return submitted; },
         requestedRecently() { return performance.now() - lastRequest < 2500; },
-        dispose() { if (disposed) return; disposed = true; if (!window.isDestroyed()) { window.unhookWindowMessage(0x323); window.unhookWindowMessage(0x326); if (enabled) { try { dwm.configure(hwnd, false); } catch (_) { onError(); } } } }};
+        dispose() {
+            if (disposed) return;
+            const owned = currentWindow(); disposed = true; revision++;
+            if (!owned) return;
+            for (const id of messages) { try { window.unhookWindowMessage(id); } catch (_) { onError(); } }
+            if (enabled) { enabled = false; try { dwm.configure(hwnd, false); } catch (_) { onError(); } }
+        }
+    };
 }
 
 module.exports = {createDwm, attachThumbnail};
