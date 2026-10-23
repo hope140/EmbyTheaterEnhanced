@@ -24,16 +24,16 @@ function install(window, send, options = {}) {
         readyTimer = setTimeout(function() { readyTimer = null; ready(); }, 100);
     }
     const eventNames = ['pause', 'unpause', 'statechange', 'timeupdate', 'playbackratechange'];
-    function publish(inactive, nativeInactive) {
+    function publish(inactive, nativeInactive, nativeOnly) {
         if (disposed) return;
         let state;
-        try { state = !inactive && player && manager.getPlayerState(player); } catch (_) { }
+        try { state = !inactive && !nativeOnly && player && manager.getPlayerState(player); } catch (_) { }
         const item = state && state.NowPlayingItem;
         const active = !!(item && (item.MediaType === 'Video' || item.MediaType === 'Audio'));
         const paused = !!(state && state.PlayState && state.PlayState.IsPaused);
         const snapshot = {active, paused: active && paused};
         const key = JSON.stringify(snapshot);
-        if (key !== lastState) {
+        if (!nativeOnly && key !== lastState) {
             lastState = key;
             try { send(CHANNEL, snapshot); } catch (_) { }
         }
@@ -57,6 +57,7 @@ function install(window, send, options = {}) {
         } else if (nativeSessionToken && native && position !== lastNativePosition && !nativeFlushTimer) {
             nativeFlushTimer = nativeClock.setTimeout(function() { nativeFlushTimer = null; publish(false); }, Math.max(1, 1000 - (now - lastNativePositionAt)));
         }
+        if (nativeOnly) return;
         const session = window.navigator && window.navigator.mediaSession;
         if (!session) return;
         try { session.playbackState = active ? paused ? 'paused' : 'playing' : 'none'; } catch (_) { }
@@ -76,7 +77,8 @@ function install(window, send, options = {}) {
         // Preserve the existing toolbar transition while retiring native pixels
         // even when PlaybackManager already knows the next media type.
         nativeStopped = true;
-        publish(!state || !state.NextMediaType, true);
+        const hasNext = !!(state && state.NextMediaType);
+        publish(!hasNext, true, hasNext);
     }
     function unbind() {
         if (!player || !events) return;

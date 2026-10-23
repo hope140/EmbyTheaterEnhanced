@@ -305,9 +305,14 @@ test('native playback epochs rotate for same-item replay and stop retires pixels
     assert.equal(first.version, 2);
     f.fire('playbackstart'); const second = packets().at(-1).value;
     assert.equal(second.mediaKey, first.mediaKey); assert.ok(second.playbackEpoch > first.playbackEpoch);
+    const toolbarBefore = f.emitted.filter(value => value.channel === renderer.CHANNEL).at(-1), positionsBefore = f.positions.length;
+    f.setState({});
     f.fire('playbackstop', f.player, {}, {NextMediaType: 'Video'});
+    assert.equal(f.emitted.filter(value => value.channel === renderer.CHANNEL).at(-1), toolbarBefore);
+    assert.equal(f.positions.length, positionsBefore);
     assert.equal(packets().at(-1).value.active, false);
     f.fire('timeupdate'); assert.equal(packets().at(-1).value.active, false);
+    f.setState({NowPlayingItem: {MediaType: 'Video', RunTimeTicks: 1000000000}, PlayState: {IsPaused: false, PositionTicks: 0}});
     f.fire('playbackstart'); assert.equal(packets().at(-1).value.active, true);
     f.dispose();
 });
