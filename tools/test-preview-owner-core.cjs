@@ -4,6 +4,7 @@
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{execFileSync}=require('node:child_process');
 const source=fs.readFileSync(path.join(__dirname,'../native/mpv-helper/ete-mpv-helper.cpp'),'utf8');
 const core=source.split('// BEGIN PREVIEW_OWNER_CORE')[1].split('// END PREVIEW_OWNER_CORE')[0].replace(/^[^\n]*\n/,'');
+const videoGuard=source.slice(source.indexOf('    bool hasPreviewVideo()'),source.indexOf('    bool ownsPreview('));
 const output=source.slice(source.indexOf('    std::string previewPixels('),source.indexOf('    static const char* autoStageText('));
 const program=`#include <algorithm>
 #include <cmath>
@@ -13,12 +14,28 @@ const program=`#include <algorithm>
 #include <string>
 #include <stdexcept>
 #include <iostream>
+#include <cstring>
+#include <cstdlib>
 ${core}
 std::string quote(const std::string& value) { return "\\\""+value+"\\\""; }
 struct HeldFrame { int width, height; std::shared_ptr<std::vector<uint8_t>> pixels; };
-struct Output { ${output} };
+struct Output {
+ const char* track = nullptr; void* mpv = nullptr;
+ static char* copyTrack(void* instance, const char*) {
+   const char* value = static_cast<Output*>(instance)->track;
+   if (!value) return nullptr;
+   char* copied = static_cast<char*>(std::malloc(std::strlen(value)+1)); std::strcpy(copied,value); return copied;
+ }
+ char* (*p_mpv_get_property_string)(void*, const char*) = copyTrack;
+ void (*p_mpv_free)(void*) = std::free;
+ ${videoGuard}
+ ${output}
+};
 int main() {
  int checks=0; auto check=[&](bool value){if(!value)throw std::runtime_error("owner-core-check-failed");++checks;};
+ Output guard; guard.mpv=&guard;
+ guard.track="1";check(guard.hasPreviewVideo());guard.track=nullptr;check(!guard.hasPreviewVideo());
+ guard.track="no";check(!guard.hasPreviewVideo());guard.track="";check(!guard.hasPreviewVideo());
  PreviewOwner owner;
  owner.activate(10);owner.start(10,1);check(!owner.owns(10,1));
  owner.restart(1);check(!owner.owns(10,1));owner.fileLoaded(1);check(!owner.owns(10,1));

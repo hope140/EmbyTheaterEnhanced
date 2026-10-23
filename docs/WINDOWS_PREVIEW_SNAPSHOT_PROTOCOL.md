@@ -22,7 +22,7 @@ controller／libmpv／service／client／helper 均可能与审查 fix 分支相
 ## 像素归属合同
 
 1. renderer 的只读 owner 为 `{endpointId,generationId}`，来自当前 libmpv endpoint；Item/Server 不匹配或 Play 已退休则 null。它不是由媒体标题、延时或任意布尔值产生的证明。v3 状态仍校验 canonical mainFrame、文档 token、sequence 与 playbackEpoch。
-2. helper 仅在唯一 open media 已映射至当前未退休 Native generation、同一 media 已 FILE_LOADED 并收到 PLAYBACK_RESTART 后接受请求。START_FILE、activate 新 generation、retire、Stop、对应 END_FILE 均使旧 owner 失效；相同 generation 的重复 observe 不重置就绪。
+2. helper 仅在唯一 open media 已映射至当前未退休 Native generation、同一 media 已 FILE_LOADED 并收到 PLAYBACK_RESTART，且当前实际选中了 video track 后接受请求。START_FILE、activate 新 generation、retire、Stop、对应 END_FILE 均使旧 owner 失效；相同 generation 的重复 observe 不重置就绪。
 3. 请求在 helper 内发 `screenshot-raw video bgr0`。固定 mpv 源的 video 模式从 VO 当前帧生成内存截图，不含 ETE 外部持帧 HWND、OSD 或字幕；截图实现等待 VO 帧，播放 restart 在音／视频就绪后通知。这是与独立 HWND 截屏不同的来源。推断前提是固定 libmpv 符合其源合同，真实驱动／DLL仍待实测，不能将源分析冒充 loaded-image 哈希证明。
 4. 异步回复时再次检查 helper instance（既有 envelope）、generation、唯一 media 映射、就绪 owner 和绝对期限；像素从该回复节点复制，缩图和归属一起返回。迟到、结束、换代、失败或无视频均 unavailable，不以时间让未知帧“转正”。纯黑但 owner 有效的帧是有效视频帧。
 5. main 在发送及收到响应时检查同一个 client 对象、endpoint、generationEpoch／Native generation 和 ended 状态；helper restart／退休后旧回复不能发布。adapter 还检查当前 renderer owner／playbackEpoch、自己的退休 revision 及可见状态。DWM 每次取缓存时再问 main owner；Native 结束／退休即使早于 renderer Stop，也只给中性图。
@@ -47,7 +47,7 @@ helper 每次最多一个物理截图，约1Hz上限、1500ms逻辑期限；退�
 
 ## 分层验证与集中 Windows 清单
 
-Linux 的 `node tools/test-preview-owner-core.cjs` 用宿主 g++ 编译**从当前 C++ 实际提取**的 owner／pending-slot／缩图函数：21项状态检查及320×180彩色帧→160×90字节回读。此工具不是 Windows helper 编译，不执行 libmpv。公开 Node 回归覆盖严格 DTO、真实 controller framing／历史不留像素、service 同步失败／代次／结束／单请求、renderer owner 接线、libmpv Item/Server 和 Play 退休、adapter 旧回复／黑首帧／最小化／资源等待。不得用这些替代 Windows 结果。
+Linux 的 `node tools/test-preview-owner-core.cjs` 用宿主 g++ 编译**从当前 C++ 实际提取**的 owner／pending-slot／缩图函数：25项状态／实际video track守卫检查及320×180彩色帧→160×90字节回读。此工具不是 Windows helper 编译，不执行 libmpv。公开 Node 回归覆盖严格 DTO、真实 controller framing／历史不留像素、service 同步失败／代次／结束／单请求、renderer owner 接线、libmpv Item/Server 和 Play 退休、adapter 旧回复／黑首帧／最小化／资源等待。不得用这些替代 Windows 结果。
 
 准备了 `tools/windows-native-owner-probe.cjs`：只在固定 Windows Electron 44.4.2 x64 下显式运行，核验 checkout、生产 helper provenance／源码 SHA／EXE SHA、固定 libmpv DLL SHA，生成自身本地红／绿 Y4M，不用服务器、Koffi、账户或 NAS。它读取真实生产方法，自动检验 A/B、旧请求退休和 END_FILE 后 unavailable；只在探针自有实例把 keep-open 设false以测试自然结束，不改产品策略。结果文件只记固定阶段及哈希，只有 end/PASS 且 ownedExitConfirmed 才算此 helper 范围完成，DWM 可见结果始终 NOT_ASSESSED。
 

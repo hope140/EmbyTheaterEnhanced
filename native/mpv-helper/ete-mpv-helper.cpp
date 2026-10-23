@@ -971,6 +971,15 @@ class Helper {
         p_mpv_free_node_contents(&result);
         return frame;
     }
+    bool hasPreviewVideo() {
+        char* track = p_mpv_get_property_string(mpv, "current-tracks/video/id");
+        bool available = track && *track;
+        if (available) for (const char* cursor = track; *cursor; ++cursor) {
+            if (*cursor < '0' || *cursor > '9') { available = false; break; }
+        }
+        if (track) p_mpv_free(track);
+        return available;
+    }
     bool ownsPreview(uint64_t generation, int64_t media) const {
         auto mapped = mediaToGeneration.find(media);
         return generation == latestActivatedGeneration && generation > retiredThroughGeneration &&
@@ -1280,12 +1289,12 @@ class Helper {
             const auto capture = previewCapture; previewCapture = {};
             if (capture.finished) return;
             auto* reply = static_cast<mpv_event_command*>(event->data);
-            if (!capture.accepts(previewOwner, monotonicMicros()) || !ownsPreview(capture.generation, capture.media) || event->error < 0 || !reply) {
+            if (!capture.accepts(previewOwner, monotonicMicros()) || !ownsPreview(capture.generation, capture.media) || !hasPreviewVideo() || event->error < 0 || !reply) {
                 emitResponse(capture.generation, capture.request, frameUnavailable("preview-owner-unavailable")); return;
             }
             std::string reason;
             auto frame = frameFromScreenshotNode(reply->result, capture.generation, 0, reason);
-            if (!frame || !ownsPreview(capture.generation, capture.media)) {
+            if (!frame || !ownsPreview(capture.generation, capture.media) || !hasPreviewVideo()) {
                 emitResponse(capture.generation, capture.request, frameUnavailable("preview-frame-unavailable")); return;
             }
             emitResponse(capture.generation, capture.request, previewPixels(*frame, capture.generation)); return;
@@ -1855,7 +1864,7 @@ public:
             if (type != "request") throw std::runtime_error("preview-snapshot-requires-request");
             const int64_t media = uniqueOpenMedia();
             const uint64_t now = monotonicMicros();
-            if (previewCapture.userdata || !ownsPreview(generation, media) || (lastPreviewStarted && now - lastPreviewStarted < 950000)) {
+            if (previewCapture.userdata || !ownsPreview(generation, media) || !hasPreviewVideo() || (lastPreviewStarted && now - lastPreviewStarted < 950000)) {
                 emitResponse(generation, request, frameUnavailable("preview-not-ready-or-busy")); return;
             }
             const uint64_t userdata = nextReplyUserdata++;
