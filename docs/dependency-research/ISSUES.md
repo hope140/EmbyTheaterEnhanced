@@ -2,7 +2,7 @@
 
 [研究索引](../DEPENDENCY_RESEARCH.md) · [三类许可决定](LICENSE_DECISIONS.md) · [当前身份回执](evidence/license-checkpoint-20261022.json)
 
-本页校准日期2026-10-22，主线为`a33bd03685eb62b66c3c994cc3c4dfcfc89f5c49`。PR69已合并；旧研究里的“尚未删除／未合并／桌面用途pending”只描述当时阶段，不再作为现存范围。本文汇总证据和待决定项，不替换运行代码、不宣称整体许可完成。
+本页校准日期2026-10-23，主线为`0a1dd6541d1327a19e7aed35d493b5e69b194b51`；其产品材料与a33bd03相同。PR69已合并；旧研究里的“尚未删除／未合并／桌面用途pending”只描述当时阶段，不再作为现存范围。本文汇总证据和待决定项，不替换运行代码、不宣称整体许可完成。
 
 ## 先分清内容统计与许可审计
 
@@ -46,13 +46,13 @@
 
 [片段证据JSON](evidence/licensed-callable-mapping-20261022.json)保留ApiClient、ConnectionManager、AppSettings、PlaybackManager、page.js、VTT的具名片段、hash及严格/规范化区别，基准为6fee412。片段包含嵌套重叠、简单getter和空constructor，不是代码覆盖率、作者或授权缺口计数；规范化不同也不自动证明行为不同。
 
-helper的同提交GPL原函数与当前显示逻辑有明确对应。本轮研究草稿逐字保留该函数，只加AMD exports桥接；11个普通对象输入的输出/异常类别一致。当前main该函数输入hash仍相同，见[回执](evidence/license-checkpoint-20261022.json)。**草稿没有纳入runtime**，也不是已取得整个Web的新授权。
+helper的同提交GPL原函数与当前显示逻辑有完整机械映射，后续226组getter/read-trace用例对应；11个普通对象桥接用例是较早记录。未发现仅为取得明确许可而必须替换该函数的具体未知片段。本次补来源/表示说明，**没有替换runtime**。七AppSettings访问器的旧GPL完整骨架、Common/Socket完整声明及Sharp实际增量也已收窄，见[统一回执](evidence/license-closure-20261023.json)。
 
 ## 组件级决定、规模与行为边界
 
-当前推荐顺序和最小接口范围见[决定表](LICENSE_DECISIONS.md#推荐次序)：先维护已有明确许可组件的说明，再评审helper小候选；page/API/settings按消费合同评估，PlaybackManager与较新Web整体授权路线一起决定。大范围替换不是本PR行为。
+当前推荐顺序和最小接口范围见[决定表](LICENSE_DECISIONS.md#推荐次序)：先补已有明确许可组件的实际通知/源码交付；helper不再是必需替换项。page/API/settings的独立增量按消费合同处理，PlaybackManager和具体组合范围另列。大范围替换不是本PR行为。
 
-较新Web的历史归档/文件头/现有许可元数据分支已收束；没有新的一手grant就不继续猜版本。Host支持DLL、Material Icons、ServiceStack履行及CEC/driver各留一条有限一手核验线；无有效依据则转可比较的源构建、适配替代或授权确认决定。没有替用户选择联系权利人或商业路线。
+较新Web的历史归档/文件头/现有许可元数据分支已收束；没有新的一手grant就不继续猜版本。Host和已许可外围组件不再因未复现旧build重复调查；具体剩余为Common源码交付/Updater差异、Sharp/ServiceStack混合条件、DPInst/ADL条款、Web后期增量与完整Host验证。无新材料则转具体选择，不扩大成整库欠授权。没有替用户选择联系权利人或商业路线。
 
 ## 当前114差异清单的用途筛查
 

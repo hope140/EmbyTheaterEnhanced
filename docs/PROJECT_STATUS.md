@@ -1,5 +1,12 @@
 # 项目状态
 
+## 2026-10-23 — 明确许可组件通知与有限剩余项
+
+仅更新声明和文档：补API/page完整MIT、Sizzle原通知及VTT版权/来源/真实差异；核对现有11个notice入口、33个npm包36许可成员、shader37MIT＋2Unlicense。统一Socket组件MIT/集成边界、Sharp当前DLL及专项条款、Common的Updater范围；helper和七AppSettings访问器已有明确底稿，不再因旧编译器未知列必需替换。当前main0a1dd65只比材料基线a33多CI40分钟调整，研究分支相对main没有运行代码或工作流改动。
+
+保留Web后期独立表达、428-byte VTT CSS、Sharp/ServiceStack组合交付、DPInst/ADL材料和真实Host验证的具体边界；不将来源/方法匹配比例当许可完成率。完整事实、固定URL/hash和局部测试限制见[统一索引](DEPENDENCY_RESEARCH.md)及[证据](dependency-research/evidence/license-closure-20261023.json)。本次未替换组件、打包或发布，未将文档补齐称整体许可清零。
+
+
 ## 2026-10-22 — 三份 Web 残留与二十份 npm 产物投影
 
 按精确批准范围将三份无引用 Web 正文退出当前 v2 候选树/装配，Web713，兼容39/小组件2不变；保留实际目录选择器、localStorage/memory、空worker注册、playqueueconfirmation及语言/兼容入口。npm完整33包/1142文件与SRI/恢复输入保持，仅在新建有归属runtime复制时省略20个固定版本/路径/大小/hash产物，投影1122。provenance同时校验完整来源树、排除差集及其余字节，35份许可/notice不变。新增逐项负向、真实依赖复制、descriptor.json负对照、实际loader/存储初始化和Web装配回归；[完整范围与验收边界](SCOPED_RUNTIME_PROJECTION.md)。不改播放路径、CEC DLL、旧电源包，不合并、不打安装器或发布。

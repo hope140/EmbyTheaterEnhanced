@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "recordDate": "2026-10-23",
+  "analysisRef": "0a1dd6541d1327a19e7aed35d493b5e69b194b51",
+  "materialComparisonRef": "a33bd03685eb62b66c3c994cc3c4dfcfc89f5c49",
+  "scope": "Selected current materials and bounded component evidence; not a whole-project permission count or final installer inspection",
+  "changeScope": {
+    "runtimeCode": false,
+    "dependencyOrLock": false,
+    "workflow": false,
+    "packageOrRelease": false,
+    "noticesAndDocumentationOnly": true
+  },
+  "currentSelection": {
+    "web": 713,
+    "compatibilityShaders": 39,
+    "maintainedSmallSnapshot": 2,
+    "npmPackages": 33,
+    "npmSourceFiles": 1142,
+    "npmProjectedFiles": 1122,
+    "noticeDeliveryPaths": 11
+  },
+  "officialNoticeChecks": {
+    "npmPackageCount": 33,
+    "npmNoticeMembers": 36,
+    "projectionExcludedNoticeCount": 0,
+    "runtimeProjectionCount": 20
+  },
+  "noticeAdditions": [
+    {
+      "component": "Emby ApiClient/ConnectionManager identified original expression",
+      "source": "https://github.com/MediaBrowser/Emby.ApiClient.Javascript/blob/fdd0939ac596406ab92274f30fd83d226a677424/LICENSE.md",
+      "license": "MIT",
+      "bytes": 1080,
+      "sha256": "bb34faf1413f7a795a10303545f433e04c95cd7b4de04311d45a72634424e4db",
+      "destination": "THIRD_PARTY_NOTICES.md"
+    },
+    {
+      "component": "page.js original expression",
+      "source": "https://github.com/visionmedia/page.js/blob/1bc93692b0924b686e2207a66e2e73a85e1ab058/Readme.md#license",
+      "license": "MIT",
+      "bytes": 1104,
+      "sha256": "0aa29d723615efbc39b6f2e8042023980bfd95f0ff82e7e3dfd0b11d6e22904c",
+      "destination": "THIRD_PARTY_NOTICES.md"
+    },
+    {
+      "component": "Sizzle2.3.6 bundled inside jquery3.6.0 slim",
+      "source": "https://registry.npmjs.org/jquery/-/jquery-3.6.0.tgz",
+      "member": "external/sizzle/LICENSE.txt",
+      "bytes": 1605,
+      "sha256": "a078a8f80016416042c2e5f04dbb7f499f0f6deebb086511f3a3b72633a2d761",
+      "destination": "THIRD_PARTY_NOTICES.md"
+    },
+    {
+      "component": "VTT identified Mozilla-derived expression",
+      "source": "https://github.com/mozilla/vtt.js/tree/f823de834bc23d65300e58a6d391916bc00bcb75",
+      "license": "Apache-2.0",
+      "addition": "Copyright2013 vtt.js Contributors, fixed source and observed current differences; existing complete Apache text retained",
+      "fixedTreeNOTICE": false,
+      "destination": "THIRD_PARTY_NOTICES.md"
+    }
+  ],
+  "boundedFindings": {
+    "helper": {
+      "source": "https://github.com/MediaBrowser/emby-webcomponents/blob/93d3f89bd7d151d7bde09af6dffc0c627901831b/playback/playmethodhelper.js",
+      "sourceSHA256": "0221204ebc057328a6bcddfead924d9a3f96ba20738709e7930cc68a36ff41e4",
+      "licenseSource": "https://github.com/MediaBrowser/emby-webcomponents/blob/93d3f89bd7d151d7bde09af6dffc0c627901831b/LICENSE.md",
+      "getterReadTraceCases": 226,
+      "unexplainedImplementationMakingReplacementNecessaryIdentified": false,
+      "fullPlayerValidation": false
+    },
+    "settings": {
+      "source": "https://github.com/MediaBrowser/emby-webcomponents/blob/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/appsettings.js",
+      "sourceSHA256": "c1bc465ac5f9357096a4b06698628343f054507c7e9ef41753cd4f8e9f5dcbcb",
+      "allSevenAccessorBodiesMappedWithExplicitKeyDefaultDelimiterChanges": true,
+      "controlledTraces": 630,
+      "mutationNegativeControls": 3,
+      "remainingModulePolicies": [
+        "set/event name-value payload",
+        "bitrate and Chromecast read/write policy",
+        "AMD/serviceLocator export integration"
+      ]
+    },
+    "vtt": {
+      "source": "https://github.com/mozilla/vtt.js/blob/f823de834bc23d65300e58a6d391916bc00bcb75/lib/vtt.js",
+      "sourceSHA256": "ef7e920645a51b61f61ca475cd03c2308ed814ff402952e89b9e9e358095bc0b",
+      "coreEqualCases": 28,
+      "fullObjectsEqualAfterExplicitVocabularyProjection": 26,
+      "totalCases": 28,
+      "outerStateMachineMapping": "AST correspondence after explicit cue-construction/dispatch substitution and region-header exclusions; not strict full-function AST",
+      "remaining": [
+        "modern cue defaults/vocabulary",
+        "plain-native cue conversion",
+        "entity and Bidi/style policy",
+        "geometry/track policy",
+        "428-byte CSS terms"
+      ],
+      "realBrowserGUIValidation": false
+    },
+    "commonSocket": {
+      "source": "https://github.com/MediaBrowser/Emby/tree/a304b3cd0a330bb34fd3606a6afb9cd3d80176e4",
+      "sourceArchiveSHA256": "04fca76426f17864e574d970318dc3750bfc1610f43c27d2017d85c55ad0533b",
+      "commonCompileInputs": 26,
+      "socketCompileInputs": 53,
+      "commonMappedMethodSymbols": 421,
+      "socketMappedMethodSymbols": 674,
+      "symbolCountsAreRawMethodDefCounts": false,
+      "commonActualMethodDefs": 446,
+      "commonBodyless": 135,
+      "commonSymbolizedILEqual": 297,
+      "commonDifferent": 10,
+      "commonWithoutExactGeneratedKey": 4,
+      "commonConcreteBusinessDifference": "GithubUpdater.IsAsset prefix-or-exact versus Contains, plus bounded release-filtering/generated-control-flow records",
+      "socketLicenseBoundary": "Retain component MIT; integrated-source contract mapping does not relicense every addition and root GPL does not erase MIT",
+      "offlineAnalysisOutputsExecuted": false
+    },
+    "sharp": {
+      "actualDLLSHA256": "3c34138417974ce215e5d1b5bdbb7abd578ce77420073ea9de3f46ccebe42b55",
+      "source": "https://github.com/adamhathcock/sharpcompress/tree/6d69791db191fc401752be2f4df66683a5f65723",
+      "rootMITLicenseSHA256": "b7ca2b6174cee11afe41d78b48527e3d7659a4435c25019a4a5e072299a2f8ed",
+      "keyMethodsSymbolizedILEqual": 14,
+      "keyMethodsCompared": 17,
+      "laterDeclaredDependency": "https://github.com/MediaBrowser/Emby/blob/a304b3cd0a330bb34fd3606a6afb9cd3d80176e4/packages/SharpCompress.0.14.0/SharpCompress.0.14.0.nupkg",
+      "packageSHA256": "4f1082900254fb56d236e16bbee30311c845a786b6f8aa627aa3c40ec66edfbc",
+      "readerEventDeclarations": 15,
+      "unicodePathMethods": 5,
+      "currentDLLIsByteIdenticalTo014Package": false,
+      "applicableSpecificTermsInclude": [
+        "Apache",
+        "Ms-PL",
+        "UnRAR"
+      ],
+      "old59FileDifferenceListIsCurrentPermissionGapList": false
+    },
+    "serviceStack": {
+      "source": "https://github.com/ServiceStack/ServiceStack.Text/tree/e5819a8de75a8bae64ddc7a64008613067893e32",
+      "sourceArchiveSHA256": "97ed2dfa327dc5d2827c373205df551d5fdb595b0ac6e7f925d0c1f118364dd9",
+      "license": "AGPL plus FOSS exception; conditional GPL2 independent Additions route",
+      "remaining": "Actual source delivery and defined Additions/mixed-term work scope"
+    },
+    "configurationWindows": {
+      "reportedPassed": [
+        "x86-omitted",
+        "x86-private-target",
+        "x64-omitted",
+        "x64-private-target"
+      ],
+      "actualBinding": "Installed GAC System.Configuration4.0.0.0/b03f5f7f11d50a3a; not reference assembly",
+      "loadedILSHA256": "5a3d35a9a0db4f075cc073ea8e875ef6b3533e88ec610621ac400efcc7c8e663",
+      "privateInputSHA256": "3dba0c61e075728780723d7e517f6276674e29f6e9d5942c0b95a240f1e8f1bf",
+      "candidateCases": "not-run-candidate-not-local",
+      "scope": "Synthetic configuration contract, not full Host/8154/serialization/shutdown/removal acceptance",
+      "cloudRepeatedWindowsExperiment": false
+    }
+  },
+  "remainingDecisions": [
+    "Specific later Web expression and428-byte VTT CSS applicable terms",
+    "Common publication/source delivery and bounded Updater differences",
+    "Sharp mixed-term and ServiceStack Additions/source delivery scope",
+    "DPInst WinDDK7600.16385.1 EULA/REDIST",
+    "Old ADL header/source distribution terms",
+    "Full Host isolation/actual binding evidence before private reference omission",
+    "Selected final distribution source availability and notice/payload verification"
+  ],
+  "permissionOrAuthorshipCountsDerivedFromDiffOrMethodCounts": false,
+  "cancelledOrClosedComponentTasksReopened": false
+}
