@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-24 — 据真实加载A/B修复试验副本依赖放置
+
+31372083的短云A/B表明仅libmpv不可加载、并置原Electron Vulkan loader后可加载，实际成员SHA7611034f…db99fd1，helper／visible仍NOT_ASSESSED。据此只在试验副本新增同字节依赖，不改生产加载flags、系统搜索路径或GPU驱动。原标准载荷的Electron文件按已审核44.4.2归档及成员SHA复用，新增loader-input源锁和runtimeCopies关系，校验器同时核对标准源、复制目标、清单／大小和原归档。源缺失、源漂移或已有目标在创建输出前拒绝；即使重写trial inventory，也不能隐藏目标漂移或来源伪造。原标准文件、默认入口及两个按钮保持。
+
+为避免下一次先完整打包再遇启动失败，新增cloud native_helper_only路线。准备脚本NativeOnly只选择原锁定MSYS输入并提前返回，完整路线保留原选择；编译同一生产helper且绑定Git源码／工具链provenance，再用owner脚本的handshake-only模式只验ready和退出。它使用真实窗口／helper，不是零窗口后台命令，不在Work运行。握手回执校验协议1、固定版本／API2.5、surface及六能力、P2退出合同；scope与owner严格区分。完整trial仍在FFI／入口校验后先握手再执行原owner，未用小验证替代像素／DWM。
+
+定向65项／64pass／0fail／1平台skip，公开离线1636项／1625pass／0fail／11平台skip，436 JS／52 PowerShell语法、有限模式及diff检查通过。新增NativeOnly真实AST选择测试、握手回执拒绝矩阵、复制关系与漂移回归；无Windows helper实编或新启动／owner通过声明。只读正式v0.4.1源44d524e4确认同libmpv及受限加载flags；缺可用Vulkan loader的同类布局存在相同风险，但本次不改发布线，须在独立验证后协调正式修复。见[交接合同](WINDOWS_PREVIEW_SNAPSHOT_PROTOCOL.md)。
+
 ## 2026-10-24 — 将预握手故障收窄为可验证的DLL加载诊断
 
 实际Windows新诊断确认helper-fatal:dll-load-failed、exit23、handshake null；此前丢失具体Win32码，不能把组件版本修复当作首因。核对同一controller、owner／service绝对DLL路径及加载flags，未见确定argv或路径区别；从原固定7z读取DLL并核对965efde4…，两种静态PE检查均确认47项普通导入含vulkan-1.dll，无延迟导入目录。独立helper的受限加载不搜索Electron目录，可形成依赖放置问题，但尚无该CI系统目录／真实加载错误码证据，保留为待验证假设。

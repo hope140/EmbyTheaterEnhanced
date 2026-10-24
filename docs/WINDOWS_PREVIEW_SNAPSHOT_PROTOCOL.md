@@ -101,6 +101,16 @@ manifest的`libmpv.version`是组件版本（v0.41…），生产`service.EXPECT
 
 ### 预握手DLL加载与短云诊断
 
+**依赖放置修复候选已据A/B接线。** 31372083的真实云诊断中A不可加载、B并置已验证Electron loader后可加载，成员SHA为`7611034fc1bc24fa103b4c6bf923974cdec46fa506952d6f82cfef836db99fd1`；此结果仍不是生产helper／DWM验收。试验组装新增`native/windows-media/loader-input.json`，绑定固定官方Electron44.4.2／原归档SHA／成员SHA。只从已验证标准载荷的`x64/electron/vulkan-1.dll`复制到`electronapp/libmpv/x64/vulkan-1.dll`；不改标准文件或主入口，不下载替代Vulkan、不安装驱动、不扩大搜索目录。原Electron许可／notice文件保留。
+
+试验manifest的`runtimeCopies`严格记录源／目标／SHA／大小／归档和byte-identical关系；包内保留源锁及Electron源manifest。组装先拒绝源缺失／漂移及目标碰撞，验证同时要求源属于原standard build-manifest、目标与源及锁完全相同，重写trial inventory不能掩盖关系错误。原standard payload字节不变；新增条目按实际manifest计数，不使用历史2234硬编码。复制件是Vulkan loader，未改变固定D3D11呈现策略，也不等于安装Vulkan GPU驱动。
+
+接下来的短验证只选择`native_helper_only=true`，其余release／trial／loader开关均false；默认关闭且不能混选。它先复用原加载A/B，再仅准备原锁定MSYS完整编译器前缀／mpv头和固定Electron，跳过Host、完整回归和安装器。实际编译非Testing生产helper，记录原source／compiler／helper provenance及独立loader-copy provenance，以45秒所属Electron进程执行`--handshake-only`。这会创建真实窗口／helper，仅限云Windows；不在Work后台／前台执行，不加载媒体。回执要求真实ready的协议1、固定runtime版本／API2.5、surface及完整六能力，随后确认所属退出及流close。独立scope为`production-helper-handshake-only`、snapshot／visible NOT_ASSESSED，不能作为owner PASS。
+
+小验证成功后再安排完整trial：包内固定FFI、自检、入口smoke、生产helper握手、完整A/B／退休／EOF owner，最后真实DWM／Peek。完整流程现在也先做一次独立握手并记录其物理清单，再执行原90秒owner；两个scope及退出门禁均保留。新`ete-native-helper-startup-<sha>-<run>-<attempt>` artifact仅保留启动JSON、helper／loader provenance和有界日志，profile／媒体／DLL不进入artifact，保留1天。父统一排准确提交；当前修后真实编译／握手及最终owner尚未执行。
+
+**正式产品影响单独处理。** 只读[v0.4.1 helper源](https://github.com/hope140/EmbyTheaterEnhanced/blob/44d524e4b5cfdd018e0da80cfa1e667e7f6751c7/native/mpv-helper/ete-mpv-helper.cpp)及其manifest可见相同固定libmpv和0x1100受限加载。系统没有可用loader且helper／libmpv相邻目录也无副本时，同类包也有启动风险；不能只按GPU驱动是否存在判断，D3D11选项不消除PE普通导入。这里不修改正式安装、main或Release；正式修复应在独立验证后协调。以下保留诊断引入时的证据状态和方法，不表示新A/B仍未完成。
+
 edc58c76的实际helper stderr已给出dll-load-failed及exit23，handshake null；具体Win32码原未保存，不能将版本修复或FFI自检成功当加载首因证明。owner与生产service都用绝对DLL路径、同一controller和helper的`LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS`（0x1100）。owner在已验证文件SHA后记录absolute／physicalPathMatch／productionBaselinePathMatch及字符数；helper在加载失败的第一步保存GetLastError，再记录target-file／absolute／chars／forward-slashes固定投影，不写真实路径或本地化错误原文。依据为[LoadLibraryExW官方合同](https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibraryexw)：依赖加载失败也会使调用失败，当前目录和任意PATH不属于该受限搜索集合；本轮不改变搜索策略。
 
 固定7z原SHA验证后读取的DLL为119725568字节、SHA256 `965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c`。objdump及独立PE32+解析均发现47项普通导入，含`vulkan-1.dll`；延迟导入RVA／size均为零。因此D3D11选项不会消除启动时Vulkan loader依赖。独立helper的应用目录及DLL目录与Electron目录不同；但缺少此CI的实际系统依赖与Win32码时，仍不能断言这就是当前首因或擅自安装Vulkan。

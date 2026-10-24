@@ -1,6 +1,7 @@
-param([switch]$ReleasePackage, [switch]$NativePreviewTrial, [switch]$NativeLoaderOnly)
+param([switch]$ReleasePackage, [switch]$NativePreviewTrial, [switch]$NativeLoaderOnly, [switch]$NativeHelperOnly)
 if ($ReleasePackage -and $NativePreviewTrial) { throw 'Native preview trial cannot be a release package.' }
-if ($NativeLoaderOnly -and ($ReleasePackage -or $NativePreviewTrial)) { throw 'Loader diagnostic must be selected alone.' }
+if ($NativeLoaderOnly -and ($ReleasePackage -or $NativePreviewTrial -or $NativeHelperOnly)) { throw 'Loader diagnostic must be selected alone.' }
+if ($NativeHelperOnly -and ($ReleasePackage -or $NativePreviewTrial -or $NativeLoaderOnly)) { throw 'Helper startup must be selected alone.' }
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $root = Split-Path -Parent $PSScriptRoot
@@ -29,6 +30,11 @@ $runtime = Join-Path $root ('dist/' + $runtimeName)
 if ($NativeLoaderOnly) {
     & (Join-Path $PSScriptRoot 'prepare-native-loader-probe.ps1')
     if (-not $?) { throw 'Native loader diagnostic failed.' }
+    return
+}
+if ($NativeHelperOnly) {
+    & (Join-Path $PSScriptRoot 'prepare-native-loader-probe.ps1') -HelperStartup
+    if (-not $?) { throw 'Native helper startup verification failed.' }
     return
 }
 

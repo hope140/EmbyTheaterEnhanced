@@ -1,4 +1,4 @@
-param()
+param([switch]$NativeOnly)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $root = Split-Path -Parent $PSScriptRoot
@@ -25,7 +25,8 @@ function VerifyInput($entry,[string]$file) {
 foreach ($legacy in @('vendor/carnival','vendor/patch')) {
     if (Test-Path -LiteralPath (WorkspacePath $legacy)) { throw 'Old package input directories must be absent from this build.' }
 }
-foreach ($entry in $plan.files) {
+$selectedFiles = if ($NativeOnly) { @($plan.files | Where-Object { $_.id.StartsWith('msys2-') }) } else { $plan.files }
+foreach ($entry in $selectedFiles) {
     $target = WorkspacePath $entry.destination
     New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force | Out-Null
     if (Test-Path -LiteralPath $target) { VerifyInput $entry $target; continue }
@@ -55,6 +56,11 @@ if (-not (Test-Path -LiteralPath $prefix)) {
 }
 & node (Join-Path $PSScriptRoot 'build-toolchains.cjs') native $root (Join-Path $prefix 'bin/g++.exe')
 if ($LASTEXITCODE -ne 0) { throw 'Prepared Native compiler validation failed.' }
+if ($NativeOnly) {
+    & (Join-Path $PSScriptRoot 'prepare-native-helper-inputs.ps1')
+    if (-not $?) { throw 'Pinned Native header preparation failed.' }
+    return
+}
 
 $unpackerRoot = WorkspacePath $plan.unpackerRoot
 if (-not (Test-Path -LiteralPath $unpackerRoot)) {

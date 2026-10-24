@@ -42,6 +42,8 @@ function run(rootArg){
     const input=require('./libmpv-input.cjs'),electron=require('./electron-runtime-input.cjs');input.validate(root);electron.validatePrepared(root);
     const mpv=path.join(root,input.INPUT_ROOT,'mpv-1.dll'),manifest=electron.readManifest(root),vulkan=path.join(root,manifest.runtime.preparedPath,'vulkan-1.dll');
     const imports=peImports(fs.readFileSync(mpv)),vulkanSha=sha(fs.readFileSync(vulkan));
+    const lock=require('./templates/native-preview/verify.cjs').loaderContract(JSON.parse(fs.readFileSync(path.join(root,'native/windows-media/loader-input.json'))),manifest);
+    if(vulkanSha!==lock.sha256)throw Error('Pinned Electron loader identity mismatch');
     if(!imports.some(name=>name.toLowerCase()==='vulkan-1.dll'))throw Error('Pinned import contract differs');
     const output=path.join(root,'test-output','native-loader-diagnostic'),staging=path.join(root,'.work','native-loader-diagnostic');
     if(fs.existsSync(output)||fs.existsSync(staging))throw Error('Preserve existing loader diagnostic');

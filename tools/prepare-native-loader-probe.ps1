@@ -1,4 +1,4 @@
-param()
+param([switch]$HelperStartup)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 if (-not $IsWindows -or $env:GITHUB_ACTIONS -ne 'true') { throw 'Explicit cloud Windows diagnostic required.' }
@@ -17,3 +17,14 @@ if (-not $?) { throw 'Pinned Electron validation failed.' }
 if ($LASTEXITCODE -ne 0) { throw 'Pinned libmpv recovery failed.' }
 & node (Join-Path $PSScriptRoot 'windows-native-loader-probe.cjs') $root
 if ($LASTEXITCODE -ne 0) { throw 'Loader diagnostic failed; retain its bounded records.' }
+if ($HelperStartup) {
+    & node (Join-Path $PSScriptRoot 'windows-native-helper-startup.cjs') prepare $root
+    if ($LASTEXITCODE -ne 0) { throw 'Isolated helper runtime preparation failed.' }
+    & (Join-Path $PSScriptRoot 'prepare-ci-build-inputs.ps1') -NativeOnly
+    if (-not $?) { throw 'Pinned Native toolchain preparation failed.' }
+    $runtime = Join-Path $root '.work/native-helper-startup/runtime'
+    & (Join-Path $PSScriptRoot 'build-native-helper.ps1') -SourceCommit $env:GITHUB_SHA -RuntimeRoot $runtime
+    if (-not $?) { throw 'Production helper compilation failed.' }
+    & node (Join-Path $PSScriptRoot 'windows-native-helper-startup.cjs') run $root
+    if ($LASTEXITCODE -ne 0) { throw 'Production helper startup failed; inspect its isolated records.' }
+}

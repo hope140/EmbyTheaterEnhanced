@@ -1,10 +1,10 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os'),cp=require('node:child_process');
-const {runChild,readOwnerReport,preserveOwnerStages}=require('../tools/windows-native-preview-process.cjs');
+const {runChild,readOwnerReport,readHandshakeReport,preserveOwnerStages}=require('../tools/windows-native-preview-process.cjs');
 const commit='a'.repeat(40);
 function fixture(t){const directory=fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(),'ete-preview process ')));t.after(()=>fs.rmSync(directory,{recursive:true,force:true}));return directory;}
 function nativeExit(){return {policy:'owned-shutdown-v1',requested:true,exited:true,streamsClosed:true,code:0,signal:null,errorPresent:false,protocolFailure:null,unexpectedTerminal:false,terminalErrors:[],controllerTermination:{attempted:false,succeeded:false,signal:null,error:null},kind:'graceful'};}
-function records(){return [{event:'begin',sourceCommit:commit},{event:'end',result:'PASS',ownedExitConfirmed:true,nativeExitAccepted:true,nativeExit:nativeExit(),visibleDwmAcceptance:'NOT_ASSESSED'}];}
+function records(){return [{event:'begin',sourceCommit:commit,scope:'production-helper-owner-snapshot'},{event:'end',scope:'production-helper-owner-snapshot',result:'PASS',ownedExitConfirmed:true,nativeExitAccepted:true,nativeExit:nativeExit(),visibleDwmAcceptance:'NOT_ASSESSED'}];}
 test('acceptance waits for actual close and captures late stdout/stderr before reading a delayed report',async t=>{
  const directory=fixture(t),file=path.join(directory,'owner-probe.jsonl');
  const script=`const fs=require('node:fs');console.log('started');setTimeout(()=>{fs.writeFileSync(process.argv[1],${JSON.stringify(records().map(row=>JSON.stringify(row)).join('\n'))});console.log('late stdout');console.error('late stderr');},120);`;
@@ -52,6 +52,16 @@ test('new policy accepts graceful EOF and separately proved controller SIGTERM e
  for(const value of [nativeExit(),{...nativeExit(),code:null,signal:'SIGTERM',kind:'controller-terminated',controllerTermination:{attempted:true,succeeded:true,signal:'SIGTERM',error:null}}]){
   const rows=records();rows[1].nativeExit=value;fs.writeFileSync(file,rows.map(row=>JSON.stringify(row)).join('\n'));assert.equal(readOwnerReport(directory,commit).result,'PASS');
  }
+});
+test('handshake-only receipt verifies the real ready contract and cannot satisfy owner acceptance',t=>{
+ const directory=fixture(t),file=path.join(directory,'owner-probe.jsonl'),rows=records();
+ for(const row of rows)row.scope='production-helper-handshake-only';
+ Object.assign(rows[1],{handshakeVerified:true,snapshotAcceptance:'NOT_ASSESSED',handshake:{protocolVersion:1,libmpvVersion:require('../src/electronapp/native-helper/service').EXPECTED_LIBMPV_VERSION,mpvClientApiVersion:131077,surfaceAttached:true,capabilities:['private-inherited-pipe','native-child-hwnd','gpu-next','d3d11','generation-attribution','preview-snapshot-v1']}});
+ fs.writeFileSync(file,rows.map(row=>JSON.stringify(row)).join('\n'));assert.equal(readHandshakeReport(directory,commit).handshakeVerified,true);assert.throws(()=>readOwnerReport(directory,commit),/OWNER_REPORT_NOT_ACCEPTED/);
+ for(const change of [{protocolVersion:2},{libmpvVersion:'v0.41.0'},{mpvClientApiVersion:0},{surfaceAttached:false},{capabilities:'preview-snapshot-v1'},{capabilities:[]}]){
+  const invalid=structuredClone(rows);Object.assign(invalid[1].handshake,change);fs.writeFileSync(file,invalid.map(row=>JSON.stringify(row)).join('\n'));assert.throws(()=>readHandshakeReport(directory,commit),/HANDSHAKE_REPORT_NOT_ACCEPTED/);
+ }
+ fs.writeFileSync(file,records().map(row=>JSON.stringify(row)).join('\n'));assert.throws(()=>readHandshakeReport(directory,commit),/OWNER_REPORT_NOT_ACCEPTED/);
 });
 test('Windows GUI-subsystem process is awaited using its actual exit rather than shell LASTEXITCODE',{skip:process.platform!=='win32'},async t=>{
  const directory=fixture(t),source=path.join(directory,'delayed.cs'),executable=path.join(directory,'delayed.exe'),file=path.join(directory,'gui-report.json');

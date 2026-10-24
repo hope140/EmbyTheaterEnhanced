@@ -25,6 +25,7 @@ function fixture(t,crlf=false){
  const registry=JSON.parse(fs.readFileSync(path.join(root,'native/windows-media/registry-input.json'))),dependencyRoot=path.join(root,'deps');
  for(const entry of registry.packages){const name=entry.name==='koffi'?'LICENSE.txt':'win32_x64/koffi.node';let bytes=Buffer.from('synthetic MIT fixture');if(name.endsWith('.node')){bytes=Buffer.alloc(256);bytes.write('MZ');bytes.writeUInt32LE(128,60);bytes.write('PE\0\0',128);bytes.writeUInt16LE(0x8664,132);bytes.writeUInt16LE(0x20b,152);}entry.files=[{path:name,size:bytes.length,sha256:hash(bytes)}];put('deps/node_modules/'+entry.name+'/'+name,bytes);}
  put('native/windows-media/registry-input.json',JSON.stringify(registry));
+ const loader=JSON.parse(fs.readFileSync(path.join(root,'native/windows-media/loader-input.json'))),loaderBytes=Buffer.from('synthetic Vulkan loader; never loaded');loader.sha256=hash(loaderBytes);put('native/windows-media/loader-input.json',JSON.stringify(loader));
  const native=JSON.parse(fs.readFileSync(path.join(root,'vendor/native-helper-manifest.json'))),dll=Buffer.from('synthetic DLL; never execute'),exe=Buffer.from('synthetic helper; never execute');native.libmpv.sha256=hash(dll);put('vendor/native-helper-manifest.json',JSON.stringify(native));
  const git=args=>cp.execFileSync('git',['-C',root,...args],{encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
  git(['init','-q']);git(['config','core.autocrlf',String(crlf)]);git(['config','core.eol',crlf?'crlf':'lf']);git(['config','user.name','Synthetic test']);git(['config','user.email','fixture@example.invalid']);git(['add','.gitattributes','tools','native','vendor']);git(['commit','-qm','synthetic source']);const commit=git(['rev-parse','HEAD']);
@@ -33,6 +34,7 @@ function fixture(t,crlf=false){
  git(['checkout-index','--all']);
  put('runtime/'+native.runtimePath,exe);put('runtime/'+native.libmpv.runtimePath,dll);put('runtime/electronapp/package.json','{"main":"main.js"}');
  put('runtime/x64/electron/resources/default_app.asar','Opaque physical archive fixture; never executed.');
+ put('runtime/'+loader.sourcePath,loaderBytes);
  put('runtime/exact-line-endings.txt',Buffer.from('LF\nCRLF\r\nlone-CR\rno-final-LF'));
  const cpp=cp.execFileSync('git',['-C',root,'show',commit+':'+native.sourcePath]);put('runtime/native-helper-provenance.json',JSON.stringify({sourceCommit:commit,source:{sha256:hash(cpp)},helper:{testing:false,sha256:hash(exe)}}));
  const files=[...check.inventory(path.join(root,'runtime'))].map(([name,file])=>({path:name,...file}));put('runtime/build-manifest.json',JSON.stringify({schemaVersion:3,sourceCommit:commit,files}));
@@ -47,6 +49,7 @@ for(const crlf of [false,true])test('trial assembly keeps the standard payload u
  if(crlf)assert.notDeepEqual(workingPolicy,policyBlob);
  const before=check.inventory(f.runtime),result=trial.create(f.root,f.runtime,f.dependencies,f.destination,f.commit);
  assert.equal(result.standardPayloadUnchanged,true);assert.equal(result.defaultEnabled,false);assert.equal(result.ffiLoaded,false);
+ assert.equal(result.loaderColocated,true);assert.deepEqual(fs.readFileSync(path.join(f.destination,'electronapp/libmpv/x64/vulkan-1.dll')),fs.readFileSync(path.join(f.runtime,'x64/electron/vulkan-1.dll')));
  assert.deepEqual(check.inventory(f.runtime),before);assert.equal(fs.readFileSync(path.join(f.destination,'electronapp/package.json'),'utf8'),'{"main":"main.js"}');
  // Output and source records must match exact committed bytes. Do not normalize
  // either side of this assertion to hide a materialization or hash mismatch.
@@ -69,6 +72,22 @@ test('newline-only output drift is rejected rather than normalized during verifi
 test('CRLF checkout permits only EOL conversion and rejects a substantive policy source edit',t=>{
  const f=fixture(t,true),source=trial.SOURCES['trial/exit-policy.cjs'];f.put(source,fs.readFileSync(path.join(f.root,source),'utf8').replace('owned-shutdown-v1','owned-shutdown-v2'));
  assert.throws(()=>trial.create(f.root,f.runtime,f.dependencies,f.destination,f.commit),/Trial input differs from HEAD/);assert.equal(fs.existsSync(f.destination),false);
+});
+for(const mode of ['missing','wrong-hash','target-collision'])test('trial refuses '+mode+' loader input even when base inventory is internally consistent',t=>{
+ const f=fixture(t),source='x64/electron/vulkan-1.dll',target='electronapp/libmpv/x64/vulkan-1.dll';
+ if(mode==='missing')fs.unlinkSync(path.join(f.runtime,source));
+ if(mode==='wrong-hash')f.put('runtime/'+source,'changed source loader');
+ if(mode==='target-collision')f.put('runtime/'+target,fs.readFileSync(path.join(f.runtime,source)));
+ const files=[...check.inventory(f.runtime)].filter(([name])=>name!=='build-manifest.json').map(([name,value])=>({path:name,...value}));f.put('runtime/build-manifest.json',JSON.stringify({schemaVersion:3,sourceCommit:f.commit,files}));
+ assert.throws(()=>trial.create(f.root,f.runtime,f.dependencies,f.destination,f.commit),/Pinned base loader/);assert.equal(fs.existsSync(f.destination),false);
+});
+test('rehashing trial inventory cannot hide copied loader drift or a forged source relation',t=>{
+ for(const mode of ['bytes','relation']){
+  const f=fixture(t);trial.create(f.root,f.runtime,f.dependencies,f.destination,f.commit);const manifest=path.join(f.destination,'native-preview-trial.json'),report=JSON.parse(fs.readFileSync(manifest));
+  if(mode==='bytes'){const bytes=Buffer.from('changed target loader');fs.writeFileSync(path.join(f.destination,'electronapp/libmpv/x64/vulkan-1.dll'),bytes);const item=report.files.find(file=>file.path==='electronapp/libmpv/x64/vulkan-1.dll');item.size=bytes.length;item.sha256=hash(bytes);}
+  else report.runtimeCopies[0].sourcePath='x64/electron/other.dll';
+  fs.writeFileSync(manifest,JSON.stringify(report));assert.throws(()=>check.verify(f.destination,f.commit,{loadNative:false}),/Trial loader source\/copy mismatch/);
+ }
 });
 for(const mode of ['base','ffi','extra','source','exit-policy'])test('bundle rejects '+mode+' drift',t=>{
  const f=fixture(t);trial.create(f.root,f.runtime,f.dependencies,f.destination,f.commit);

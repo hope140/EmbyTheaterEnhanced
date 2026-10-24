@@ -105,10 +105,12 @@ function assertNoSnapshotDiagnostics(snapshot) {
     // encodings would miss retained DTOs; reject the pixel field itself.
     if (/"pixels"\s*:/.test(JSON.stringify(snapshot)))throw Error('Pixels retained in diagnostics');
 }
-async function run(runtimeArg,outputArg,commit) {
+async function run(runtimeArg,outputArg,commit,mode) {
     if(process.platform!=='win32'||process.arch!=='x64'||process.versions.electron!==PLAN.electron)throw Error('Pinned Windows Electron required');
     if(process.type!=='browser')throw probeFailure('OWNER_GUI_MODE_REQUIRED');
     if(!runtimeArg||!outputArg||!/^[a-f0-9]{40}$/.test(commit||''))throw Error('Invalid probe arguments');
+    if(mode!==undefined&&mode!=='--handshake-only')throw Error('Unknown probe mode');
+    const handshakeOnly=mode==='--handshake-only',scope=handshakeOnly?'production-helper-handshake-only':PLAN.scope;
     const repository=path.resolve(__dirname,'..'),runtime=path.resolve(runtimeArg),output=path.resolve(outputArg);
     const packaged=fs.existsSync(path.join(__dirname,'registry-input.json'));
     trace('preflight-start',{packaged});
@@ -131,7 +133,7 @@ async function run(runtimeArg,outputArg,commit) {
     const {app,BrowserWindow}=require('electron');
     for(const name of ['appData','userData','sessionData']) {const target=path.join(output,name);fs.mkdirSync(target);app.setPath(name,target);}
     trace('profile-configured');
-    log({event:'begin',...PLAN,packagedSelfcheck:packaged,sourceCommit:commit,helperSha256:provenance.helper.sha256,sourceSha256:sha(cpp)});
+    log({event:'begin',...PLAN,scope,packagedSelfcheck:packaged,sourceCommit:commit,helperSha256:provenance.helper.sha256,sourceSha256:sha(cpp)});
     trace('app-ready-wait',{alreadyReady:app.isReady()});
     await app.whenReady();trace('app-ready');
     trace('window-create');
@@ -147,6 +149,7 @@ async function run(runtimeArg,outputArg,commit) {
     try {
         trace('helper-start');
         await startProbeHelper(client);
+        if(handshakeOnly){stage='owned-exit';log({...await finishOwnerProbe(client,exitState),scope,handshakeVerified:true,handshake:startupEvidence(client,null).handshake,snapshotAcceptance:'NOT_ASSESSED'});return;}
         const files=[path.join(output,'A.y4m'),path.join(output,'B.y4m')];fs.writeFileSync(files[0],clip(81,90,240));fs.writeFileSync(files[1],clip(145,54,34));
         async function load(index) {
             return loadProbeClip(client,index?'B':'A',files[index]);

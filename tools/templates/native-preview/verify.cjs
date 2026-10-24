@@ -7,6 +7,13 @@ function inventory(root){const files=new Map();function walk(dir,prefix){for(con
 function difference(actual,files){const expected=new Map(files.map(file=>[file.path,file]));return {expectedFiles:expected.size,actualFiles:actual.size,
     added:[...actual.keys()].filter(name=>!expected.has(name)).sort(),missing:[...expected.keys()].filter(name=>!actual.has(name)).sort(),
     changed:[...actual].filter(([name,file])=>expected.has(name)&&(expected.get(name).sha256!==file.sha256||expected.get(name).size!==file.size)).map(([name])=>name).sort()};}
+function loaderContract(lock,electron){
+    if(lock.schemaVersion!==1||lock.component!=='Electron'||lock.version!=='44.4.2'||lock.platform!=='win32'||lock.arch!=='x64'||
+        lock.archiveSha256!==electron.archive.sha256||electron.version!==lock.version||electron.platform!==lock.platform||electron.arch!==lock.arch||
+        lock.sourcePath!=='x64/electron/vulkan-1.dll'||lock.targetPath!=='electronapp/libmpv/x64/vulkan-1.dll'||
+        !/^[a-f0-9]{64}$/.test(lock.sha256||'')||lock.relation!=='byte-identical-standard-payload-copy')throw Error('Pinned loader contract mismatch');
+    return lock;
+}
 function verify(root,expectedCommit,options={}) {
     const report=JSON.parse(fs.readFileSync(path.join(root,'native-preview-trial.json')));
     if(!/^[a-f0-9]{40}$/.test(expectedCommit||'')||report.sourceCommit!==expectedCommit||report.schemaVersion!==1||report.defaultEnabled!==false)throw Error('Trial source/default mismatch');
@@ -18,6 +25,10 @@ function verify(root,expectedCommit,options={}) {
     const base=JSON.parse(fs.readFileSync(path.join(root,'build-manifest.json')));
     if(base.sourceCommit!==expectedCommit||hash(fs.readFileSync(path.join(root,'build-manifest.json')))!==report.baseBuildManifestSha256)throw Error('Base build identity mismatch');
     for(const file of base.files)if(actual.get(file.path)?.sha256!==file.sha256)throw Error('Standard payload changed');
+    const loader=loaderContract(JSON.parse(fs.readFileSync(path.join(root,'trial/loader-input.json'))),JSON.parse(fs.readFileSync(path.join(root,'trial/electron-runtime-manifest.json'))));
+    const source=actual.get(loader.sourcePath),target=actual.get(loader.targetPath),baseSource=base.files.find(file=>file.path===loader.sourcePath),copies=report.runtimeCopies;
+    if(!baseSource||baseSource.sha256!==loader.sha256||!source||!target||source.sha256!==loader.sha256||target.sha256!==source.sha256||target.size!==source.size||base.files.some(file=>file.path===loader.targetPath)||
+        !Array.isArray(copies)||copies.length!==1||copies[0].sourcePath!==loader.sourcePath||copies[0].targetPath!==loader.targetPath||copies[0].sha256!==source.sha256||copies[0].size!==source.size||copies[0].archiveSha256!==loader.archiveSha256||copies[0].relation!==loader.relation)throw Error('Trial loader source/copy mismatch');
     const provenance=JSON.parse(fs.readFileSync(path.join(root,'native-helper-provenance.json')));
     const native=JSON.parse(fs.readFileSync(path.join(root,'trial/native-helper-manifest.json')));
     if(provenance.sourceCommit!==expectedCommit||provenance.helper.testing||hash(fs.readFileSync(path.join(root,native.runtimePath)))!==provenance.helper.sha256||hash(fs.readFileSync(path.join(root,'trial/helper-source.cpp')))!==provenance.source.sha256||hash(fs.readFileSync(path.join(root,native.libmpv.runtimePath)))!==native.libmpv.sha256)throw Error('Production helper binding mismatch');
@@ -33,7 +44,7 @@ function verify(root,expectedCommit,options={}) {
         const pid=koffi.load('kernel32.dll').func('uint32_t GetCurrentProcessId()')();if(!pid)throw Error('FFI selfcheck failed');
         require(path.join(directory,'dwm.cjs')).createDwm(koffi);require(path.join(directory,'winrt.cjs')).createBindings(koffi);ffiLoaded=true;
     }
-    return {status:'passed',sourceCommit:expectedCommit,files:actual.size,standardPayloadUnchanged:true,defaultEnabled:false,ffiLoaded,windowsVisibleAcceptance:'NOT_ASSESSED'};
+    return {status:'passed',sourceCommit:expectedCommit,files:actual.size,standardPayloadUnchanged:true,loaderColocated:true,loaderSha256:source.sha256,defaultEnabled:false,ffiLoaded,windowsVisibleAcceptance:'NOT_ASSESSED'};
 }
-module.exports={verify,inventory,difference};
+module.exports={verify,inventory,difference,loaderContract};
 if(require.main===module){try{console.log(JSON.stringify(verify(path.resolve(__dirname,'..'),process.argv[2])));}catch(error){console.error(JSON.stringify({error:error.code||'TRIAL_SELFCHECK_FAILED',message:error.message,details:error.details||null}));process.exitCode=1;}}

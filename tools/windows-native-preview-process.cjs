@@ -40,21 +40,30 @@ async function runChild(executable,args,{directory,name,nodeMode=false,timeoutMs
     if(record.spawnError||record.timedOut||record.outputLimit||!record.closed||record.exitCode!==0){const error=failure('TRIAL_CHILD_FAILED');error.details=record;throw error;}
     return record;
 }
-function readOwnerReport(directory,commit){
+function readProbeReport(directory,commit,scope){
     const file=path.join(directory,'owner-probe.jsonl');if(!fs.existsSync(file))throw failure('OWNER_REPORT_MISSING_AFTER_CLOSE');
     const bytes=fs.readFileSync(file);if(bytes.length>1024*1024)throw failure('OWNER_REPORT_LIMIT');
     const rows=bytes.toString().trim().split(/\r?\n/).map(line=>JSON.parse(line)),begin=rows.filter(row=>row.event==='begin'),end=rows.filter(row=>row.event==='end');
-    if(begin.length!==1||begin[0].sourceCommit!==commit||end.length!==1||rows.at(-1)!==end[0]||end[0].result!=='PASS'||end[0].ownedExitConfirmed!==true||end[0].nativeExitAccepted!==true||!acceptsNativeExit(end[0].nativeExit)||end[0].visibleDwmAcceptance!=='NOT_ASSESSED'||rows.some(row=>row.event==='failure'))throw failure('OWNER_REPORT_NOT_ACCEPTED');
+    if(begin.length!==1||begin[0].sourceCommit!==commit||begin[0].scope!==scope||end.length!==1||rows.at(-1)!==end[0]||end[0].scope!==scope||end[0].result!=='PASS'||end[0].ownedExitConfirmed!==true||end[0].nativeExitAccepted!==true||!acceptsNativeExit(end[0].nativeExit)||end[0].visibleDwmAcceptance!=='NOT_ASSESSED'||rows.some(row=>row.event==='failure'))throw failure('OWNER_REPORT_NOT_ACCEPTED');
     return end[0];
 }
-function preserveOwnerStages(ownerOutput,directory){
+function readOwnerReport(directory,commit){return readProbeReport(directory,commit,'production-helper-owner-snapshot');}
+function readHandshakeReport(directory,commit){
+    const end=readProbeReport(directory,commit,'production-helper-handshake-only'),baseline=require('../src/electronapp/native-helper/service');
+    const handshake=end.handshake,required=['private-inherited-pipe','native-child-hwnd','gpu-next','d3d11','generation-attribution','preview-snapshot-v1'];
+    if(end.handshakeVerified!==true||end.snapshotAcceptance!=='NOT_ASSESSED'||handshake?.protocolVersion!==1||handshake?.libmpvVersion!==baseline.EXPECTED_LIBMPV_VERSION||handshake?.mpvClientApiVersion!==131077||handshake?.surfaceAttached!==true||!Array.isArray(handshake.capabilities)||!required.every(value=>handshake.capabilities.includes(value)))throw failure('HANDSHAKE_REPORT_NOT_ACCEPTED');
+    return end;
+}
+function preserveOwnerStages(ownerOutput,directory,name='owner-stages.jsonl'){
+    if(!['owner-stages.jsonl','helper-startup-stages.jsonl'].includes(name))throw failure('STAGE_REPORT_NAME_INVALID');
     const file=path.join(ownerOutput,'owner-probe.jsonl');if(!fs.existsSync(file))return false;
     const stat=fs.lstatSync(file);if(!stat.isFile()||stat.isSymbolicLink()||stat.size>1024*1024)throw failure('OWNER_STAGE_REPORT_NOT_PHYSICAL');
-    fs.copyFileSync(file,path.join(directory,'owner-stages.jsonl'),fs.constants.COPYFILE_EXCL);return true;
+    fs.copyFileSync(file,path.join(directory,name),fs.constants.COPYFILE_EXCL);return true;
 }
 async function accept(runtime,ownerOutput,commit,directory){
     runtime=path.resolve(runtime);ownerOutput=path.resolve(ownerOutput);directory=path.resolve(directory);
-    for(const target of [ownerOutput,directory]){
+    const startupOutput=ownerOutput+'-startup';
+    for(const target of [ownerOutput,startupOutput,directory]){
         const relative=path.relative(runtime,target),parent=path.dirname(target);
         if(!relative||(!relative.startsWith('..'+path.sep)&&!path.isAbsolute(relative))||fs.realpathSync.native(parent).toLowerCase()!==parent.toLowerCase()||fs.existsSync(target))throw failure('NEW_EXTERNAL_PROBE_PATH_REQUIRED');
     }
@@ -78,17 +87,22 @@ async function accept(runtime,ownerOutput,commit,directory){
         check.verify(runtime,commit,{loadNative:false});
         const entry=JSON.parse(fs.readFileSync(path.join(directory,'entry-smoke.stdout.log'),'utf8').trim());
         if(entry.electron!=='44.4.2'||entry.scope!=='production-helper-owner-snapshot'||entry.visibleDwmAcceptance!=='NOT_ASSESSED')throw failure('GUI_ENTRY_RECEIPT_NOT_ACCEPTED');
+        stage='helper-startup';
+        try{await runChild(electron,[path.join(runtime,'trial/owner-probe.cjs'),runtime,startupOutput,commit,'--handshake-only'],{directory,name:stage,timeoutMs:45000});}
+        finally{snapshot('after-helper-startup');preserveOwnerStages(startupOutput,directory,'helper-startup-stages.jsonl');}
+        check.verify(runtime,commit,{loadNative:false});
+        const helperStartup=readHandshakeReport(startupOutput,commit);
         stage='owner';
         try{await runChild(electron,[path.join(runtime,'trial/owner-probe.cjs'),runtime,ownerOutput,commit],{directory,name:stage,timeoutMs:90000});}
         finally{snapshot('after-owner');preserveOwnerStages(ownerOutput,directory);}
         check.verify(runtime,commit,{loadNative:false});
         const owner=readOwnerReport(ownerOutput,commit);
-        fs.writeFileSync(path.join(directory,'acceptance.json'),JSON.stringify({status:'passed',sourceCommit:commit,selfcheck:receipt,guiEntry:entry,owner,visibleDwmAcceptance:'NOT_ASSESSED'},null,2)+'\n',{flag:'wx'});
+        fs.writeFileSync(path.join(directory,'acceptance.json'),JSON.stringify({status:'passed',sourceCommit:commit,selfcheck:receipt,guiEntry:entry,helperStartup,owner,visibleDwmAcceptance:'NOT_ASSESSED'},null,2)+'\n',{flag:'wx'});
         return receipt;
     }catch(error){
         const record={status:'failed',stage,code:error.code||'TRIAL_ACCEPTANCE_FAILED',message:error.message,details:error.details||null};
         fs.writeFileSync(path.join(directory,'failure.json'),JSON.stringify(record,null,2)+'\n',{flag:'wx'});throw error;
     }
 }
-module.exports={runChild,readOwnerReport,preserveOwnerStages,accept};
+module.exports={runChild,readOwnerReport,readHandshakeReport,preserveOwnerStages,accept};
 if(require.main===module)accept(...process.argv.slice(2)).then(receipt=>console.log(JSON.stringify(receipt))).catch(error=>{console.error(JSON.stringify({code:error.code||'TRIAL_ACCEPTANCE_FAILED',details:error.details||null}));process.exitCode=1;});

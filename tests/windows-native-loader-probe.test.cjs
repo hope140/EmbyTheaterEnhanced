@@ -32,7 +32,7 @@ test('malformed or failed-cleanup reports cannot support any acceptance',()=>{
 });
 test('short workflow route remains explicit and returns before full build or package upload',()=>{
  const root=path.resolve(__dirname,'..'),workflow=fs.readFileSync(path.join(root,'.github/workflows/public-ci.yml'),'utf8'),ci=fs.readFileSync(path.join(root,'tools/ci-windows-test-package.ps1'),'utf8');
- assert.match(workflow,/native_loader_only:[\s\S]*?default: false/);assert.match(workflow,/Upload verified test package\s+if: \$\{\{ !inputs.native_loader_only \}\}/);
+ assert.match(workflow,/native_loader_only:[\s\S]*?default: false/);assert.match(workflow,/Upload verified test package\s+if: \$\{\{ !inputs.native_loader_only && !inputs.native_helper_only \}\}/);
  const route=ci.indexOf('if ($NativeLoaderOnly) {'),end=ci.indexOf('\n}',route);assert.ok(route>0&&end>route&&end<ci.indexOf('& npm ci'));
  assert.match(ci.slice(route,end),/prepare-native-loader-probe\.ps1[\s\S]*return/);assert.match(ci,/Loader diagnostic must be selected alone/);
  const powershell=fs.readFileSync(path.join(root,'tools/Test-NativeDllLoad.ps1'),'utf8');
@@ -54,4 +54,15 @@ test('actual embedded C# compiles and retains Unicode, last-error and out-int co
  const command=String.raw`$ErrorActionPreference='Stop';$tokens=$null;$errors=$null;$ast=[Management.Automation.Language.Parser]::ParseFile($env:ETE_LOADER_SOURCE,[ref]$tokens,[ref]$errors);if($errors.Count){throw 'Source parse failed'};$strings=@($ast.FindAll({param($n) $n -is [Management.Automation.Language.StringConstantExpressionAst] -and $n.Value.StartsWith('using System;')},$true));if($strings.Count -ne 1){throw 'One actual CSharp definition required'};Add-Type -TypeDefinition $strings[0].Value;$load=[EteLoaderProbe].GetMethod('LoadWithError');$pinvoke=[EteLoaderProbe].GetMethod('LoadLibraryExW').GetCustomAttributes([Runtime.InteropServices.DllImportAttribute],$false)[0];ConvertTo-Json -Compress -InputObject @{returnType=$load.ReturnType.FullName;outType=$load.GetParameters()[1].ParameterType.FullName;unicode=($pinvoke.CharSet -eq [Runtime.InteropServices.CharSet]::Unicode);setLastError=$pinvoke.SetLastError;library=$pinvoke.Value}`;
  const result=cp.spawnSync('pwsh',['-NoProfile','-NonInteractive','-Command',command],{encoding:'utf8',env:{...process.env,ETE_LOADER_SOURCE:file}});assert.equal(result.status,0,result.stderr);
  assert.deepEqual(JSON.parse(result.stdout),{returnType:'System.IntPtr',outType:'System.Int32&',unicode:true,setLastError:true,library:'kernel32.dll'});
+});
+test('helper startup route is cloud-only, default-off and cannot upload a standard package',()=>{
+ const root=path.resolve(__dirname,'..'),workflow=fs.readFileSync(path.join(root,'.github/workflows/public-ci.yml'),'utf8'),ci=fs.readFileSync(path.join(root,'tools/ci-windows-test-package.ps1'),'utf8'),startup=fs.readFileSync(path.join(root,'tools/windows-native-helper-startup.cjs'),'utf8');
+ assert.match(workflow,/native_helper_only:[\s\S]*?default: false/);assert.match(ci,/Helper startup must be selected alone/);
+ const begin=ci.indexOf('if ($NativeHelperOnly) {'),end=ci.indexOf('\n}',begin);assert.ok(begin>0&&end<ci.indexOf('& npm ci'));assert.match(ci.slice(begin,end),/-HelperStartup[\s\S]*return/);
+ assert.match(startup,/GITHUB_ACTIONS!=='true'/);assert.match(startup,/'--handshake-only'/);assert.match(startup,/readHandshakeReport\(probeOutput,c.source\)/);assert.doesNotMatch(startup,/native-helper-electron-smoke|capture-screen|loadfile|\.y4m/);
+});
+test('actual NativeOnly acquisition selection retains only locked MSYS packages and preserves normal selection',()=>{
+ const cp=require('node:child_process'),file=path.resolve(__dirname,'../tools/prepare-ci-build-inputs.ps1');
+ const command=String.raw`$ErrorActionPreference='Stop';$tokens=$null;$errors=$null;$ast=[Management.Automation.Language.Parser]::ParseFile($env:ETE_PREPARE_SOURCE,[ref]$tokens,[ref]$errors);if($errors.Count){throw 'Parse failed'};$assignment=@($ast.FindAll({param($n) $n -is [Management.Automation.Language.AssignmentStatementAst] -and $n.Left.VariablePath.UserPath -eq 'selectedFiles'},$true));if($assignment.Count -ne 1){throw 'One production selection required'};$plan=@{files=@(@{id='msys2-gcc'},@{id='inno'},@{id='msys2-runtime'},@{id='official-host'})};$result=@();foreach($NativeOnly in @($true,$false)){. ([scriptblock]::Create($assignment[0].Extent.Text));$result+=,@($selectedFiles | ForEach-Object { $_.id })};ConvertTo-Json -Compress -InputObject $result`;
+ const r=cp.spawnSync('pwsh',['-NoProfile','-NonInteractive','-Command',command],{encoding:'utf8',env:{...process.env,ETE_PREPARE_SOURCE:file}});assert.equal(r.status,0,r.stderr);assert.deepEqual(JSON.parse(r.stdout),[['msys2-gcc','msys2-runtime'],['msys2-gcc','inno','msys2-runtime','official-host']]);
 });

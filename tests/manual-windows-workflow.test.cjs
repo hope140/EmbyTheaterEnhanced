@@ -27,7 +27,7 @@ test('manual build keeps read-only token permissions and binds checkout to its e
     assert.deepEqual(uses,[
         ['actions/checkout','11d5960a326750d5838078e36cf38b85af677262'],
         ['actions/setup-node','49933ea5288caeca8642d1e84afbd3f7d6820020'],
-        ...Array(3).fill(['actions/upload-artifact','cf430e030ddbb5b0abf93d22962f4752f3646cd9'])
+        ...Array(4).fill(['actions/upload-artifact','cf430e030ddbb5b0abf93d22962f4752f3646cd9'])
     ]);
 });
 

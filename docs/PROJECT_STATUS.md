@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-10-24 — 试验包并置已验证Vulkan loader及生产helper小验证
+
+31372083的真实云加载A/B已成功收集：固定libmpv在A不可加载，并置固定Electron44.4.2的Vulkan loader后B可加载，来源SHA为7611034f…db99fd1；该结果只支持依赖可达性，不是生产helper或画面验收。本次最小修复只在Native试验副本复制标准载荷中的同一DLL到libmpv旁，新增锁文件绑定44.4.2／原归档／成员SHA，runtimeCopies逐项记录源、目标、大小和字节关系。标准文件不覆盖，源缺失／变更、目标碰撞、复制件漂移或伪造关系均拒绝；不安装驱动、不改PATH或加载搜索范围。
+
+新增默认false且互斥的native_helper_only：复用锁定材料准备，仅获取原MSYS编译器及mpv头，编译非Testing生产helper，再用固定Electron／真实controller验证ready、版本／API／能力及所属退出。它创建真实helper窗口，故只在云端执行，不操作Work；不加载媒体、不生成安装器。握手回执有独立scope，不能满足owner验收；完整试验流程也先做同一握手，再做原A/B／退休／EOF owner。新增helper与loader provenance及有界失败记录，不上传profile或二进制。
+
+定向65项／64pass／0fail／1 Linux平台skip，公开离线1636项／1625pass／0fail／11平台skip，436 JS／52 PowerShell语法、有限模式检查通过。LF／真实CRLF工作树都验证全部源物化和标准载荷逐字节保持；单元夹具DLL为合成字节，不冒充Windows加载。修后真实helper小验证、最终试验包owner及DWM仍待父按精确提交安排，见[依赖修复及验证顺序](WINDOWS_PREVIEW_SNAPSHOT_PROTOCOL.md)。只读v0.4.1源44d524e4可见相同固定libmpv与0x1100加载合同；系统无可用loader且相邻目录无副本时也有同类风险，不能用D3D11选项消除。此处只修改试验分支，不改正式发布版。
+
 ## 2026-10-24 — 保留DLL加载首错并准备短加载A/B
 
 edc58c76实际Windows完整回归、安装器、2234物理文件清单与入口smoke通过；owner在ready前收到helper-fatal:dll-load-failed并exit23，没有握手。版本字符串不是这次已确认首因。owner与生产service都通过同一controller传绝对DLL路径，helper使用相同0x1100加载flags；目前未见确定路径错配。原固定7z经原SHA验证后提取DLL，119725568字节及SHA965efde4…一致；objdump与独立PE解析均得到47项普通导入，含vulkan-1.dll，延迟导入目录为零。D3D11选项不消除这一加载依赖；helper搜索目录不包含独立Electron目录，但该CI是否缺可用Vulkan依赖仍未实测，不能宣称已证实根因。

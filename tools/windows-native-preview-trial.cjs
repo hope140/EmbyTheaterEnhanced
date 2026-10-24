@@ -6,6 +6,8 @@ const hash=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
 const SOURCES={
  'trial/verify.cjs':'tools/templates/native-preview/verify.cjs',
  'trial/exit-policy.cjs':'tools/templates/native-preview/exit-policy.cjs',
+ 'trial/loader-input.json':'native/windows-media/loader-input.json',
+ 'trial/electron-runtime-manifest.json':'vendor/electron-runtime-manifest.json',
  'Launch-Trial.ps1':'tools/templates/native-preview/Launch-Trial.ps1',
  'Test-Owner.ps1':'tools/templates/native-preview/Test-Owner.ps1',
  'trial/NOTICE.md':'tools/templates/native-preview/NOTICE.md',
@@ -36,6 +38,8 @@ function create(root,runtime,dependencies,destination,commit) {
     const baseBytes=fs.readFileSync(path.join(runtime,'build-manifest.json')),base=JSON.parse(baseBytes),baseFiles=verifier.inventory(runtime);
     if(base.schemaVersion!==3||base.sourceCommit!==commit||baseFiles.size!==base.files.length+1)throw Error('Base payload identity mismatch');
     const names=new Set();for(const file of base.files){const value=baseFiles.get(file.path);if(names.has(file.path)||!value||value.sha256!==file.sha256)throw Error('Base payload mismatch');names.add(file.path);}
+    const loader=verifier.loaderContract(JSON.parse(inputs.get('native/windows-media/loader-input.json')),JSON.parse(inputs.get('vendor/electron-runtime-manifest.json'))),loaderSource=baseFiles.get(loader.sourcePath);
+    if(!loaderSource||loaderSource.sha256!==loader.sha256||baseFiles.has(loader.targetPath))throw Error('Pinned base loader missing, changed or already colocated');
     if([...Object.keys(SOURCES),'electronapp/native-preview-trial.cjs','native-preview-trial.json'].some(name=>baseFiles.has(name)))throw Error('Base already contains trial paths');
     const records=[...inputs].map(([name,bytes])=>({path:name,sha256:hash(bytes)}));
     const additions=new Map(Object.entries(SOURCES).map(([target,name])=>[target,inputs.get(name)]));
@@ -47,9 +51,11 @@ function create(root,runtime,dependencies,destination,commit) {
     additions.set('electronapp/native-preview-trial.cjs',Buffer.from(generatedModule.exports.buildPortable()));
     fs.mkdirSync(destination);
     for(const name of baseFiles.keys()){const target=path.join(destination,name);fs.mkdirSync(path.dirname(target),{recursive:true});fs.copyFileSync(path.join(runtime,name),target,fs.constants.COPYFILE_EXCL);}
+    const loaderTarget=path.join(destination,loader.targetPath);fs.mkdirSync(path.dirname(loaderTarget),{recursive:true});fs.copyFileSync(path.join(runtime,loader.sourcePath),loaderTarget,fs.constants.COPYFILE_EXCL);
     for(const [name,bytes] of additions){const target=path.join(destination,name);fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,bytes,{flag:'wx'});}
     for(const name of verifier.inventory(dependencies).keys()){const target=path.join(destination,'electronapp/enhanced/native-media',name);fs.mkdirSync(path.dirname(target),{recursive:true});fs.copyFileSync(path.join(dependencies,name),target,fs.constants.COPYFILE_EXCL);}
     const report={schemaVersion:1,sourceCommit:commit,defaultEnabled:false,baseBuildManifestSha256:hash(baseBytes),sources:records,
+        runtimeCopies:[{sourcePath:loader.sourcePath,targetPath:loader.targetPath,sha256:loaderSource.sha256,size:loaderSource.size,archiveSha256:loader.archiveSha256,relation:loader.relation}],
         registry:{registry:'https://registry.npmjs.org',version:'3.3.3',scriptsExecuted:false},
         files:[...verifier.inventory(destination)].map(([name,record])=>({path:name,...record})).sort((a,b)=>a.path.localeCompare(b.path))};
     fs.writeFileSync(path.join(destination,'native-preview-trial.json'),JSON.stringify(report,null,2)+'\n',{flag:'wx'});
