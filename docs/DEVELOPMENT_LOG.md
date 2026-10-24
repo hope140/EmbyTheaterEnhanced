@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-24 — 第一批验收后 v0.4.2 测试版准备
+
+从main 3efd8c55整合已验收详情最终39863517及其首页／缓存管理／手动更新祖先，保留v0.4.1修复和main构建提速／正常release路由。唯一代码冲突同时保留runtime assemble/verify计时与包内更新器8项离线门禁，Framework来源预检保持。产品版本三个根字段一致准备0.4.2；用户发布说明只述已完成变化和测试提醒，不加入后续Native／视频缓存等功能。
+
+用户已确认第一批及实际覆盖安装通过，不要求重复验整套；最终整合准确来源仍执行自动组合回归和新Windows发布门禁。当前只准备独立分支代码与说明，公开push／PR／合main／Tag／构建及Release由发布协调者执行，详见[v0.4.2来源与发布顺序](V042_RELEASE_VERIFICATION.md)。
+
 ## 2026-10-24 — 恢复main正常手动打包默认值
 
 修复旧实验分支互锁：benchmark默认false，普通test／release按原入口运行；显式benchmark才skip包并进入短job，去掉两个job的分支硬编码。原权限／concurrency／固定SHA／release输入与完整包门禁均保持，release+benchmark冲突仍fail closed。相关测试从实际default取值，覆盖main／perf／其它ref和test／release而不是预期普通包被禁；旧配置在新测试复现3处红例。没有重做性能实验或完整包，未合main或引入详情／Native／Range功能。
