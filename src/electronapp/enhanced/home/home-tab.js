@@ -521,6 +521,12 @@
             return work;
         }
         return {
+            flowEnabled: flowing,
+            hasManagedResources: flowing || layoutCache.enabled,
+            canRestore: function() {
+                return flowing && !disposed && !!owner.view && stageMode === 'server' && flowLayout !== null &&
+                    sameIdentity(flowTicket, identity(epoch));
+            },
             refresh: function(options) { layoutCache.invalidate(); return start(options); },
             resume: function(options) {
                 options = options || {};

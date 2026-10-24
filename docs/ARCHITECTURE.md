@@ -62,6 +62,8 @@ v0.3.5合批搜索保留两条原路由：标准ItemsView/ListController与电�
 
 ActionSheet 空列表排版使用单独的固定源 `actionsheet.css` overlay；只清除空、非虚拟列表残留的末尾间距。原 ActionSheet JS、列表加载、按钮锚定、全屏、多选、选择/取消与播放远控归属保持。CSS 生成器和最终输出进入既有 build-input 与 provenance 合同，冻结输入只读。
 
-“关于”页的[缓存管理](CACHE_MANAGEMENT.md)分别委托现有布局缓存 owner 和当前主窗口 session，不建立数据池。renderer 只汇总序列化计数并调用 owner 失效；main 的两个 HTTP IPC 复用包内主 frame 校验，仅允许 getCacheSize／clearCache，并把已开始的操作纳入 before-quit 收尾。登录／设置、保留 DOM、下载、播放及未知解码内存保持各自归属。
+客户端设置独立页的[缓存管理](CACHE_MANAGEMENT.md)分别委托现有布局缓存 owner 和当前主窗口 session，不建立数据池。renderer 只汇总序列化计数并调用 owner 失效；main 的两个 HTTP IPC 复用包内主 frame 校验，仅允许 getCacheSize／clearCache，并把已开始的操作纳入 before-quit 收尾。登录／设置、保留 DOM、下载、播放及未知解码内存保持各自归属。
 
 首页流畅度候选对同身份返回保留卡片几何，仅暂遮易变进度／节目状态并禁交互；未知首批内容用同 scroller 的比例占位。原 native commit guard 继续检查身份、代次及请求归属，策略变更立即退休旧内容。真实组件与 CSS 的截图／帧序列证据同完整客户端体验分开，见[视觉回归合同](HOME_FLOW.md#返回闪空的视觉回归)。
+
+首页跨 route 实验只复用原 viewmanager 三 slot 内已有 owner，完整 URL 与首页身份／代次 guard 均通过后才恢复，不增加全局数据池；异步提交再核对，淘汰／原恢复失效仍冷加载。实验 HomeView 销毁链补到原 TabbedView，释放对应 tab。独立缓存管理沿原客户端插件设置路由，分别委托布局与 HTTP owner，组合操作保留逐项结果及离页边界。

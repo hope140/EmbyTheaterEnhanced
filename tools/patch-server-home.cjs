@@ -35,6 +35,51 @@ function patchApp(text) {
         'define("ete-server-home", [], getDynamicImport("./../enhanced/home/home-tab.js")),\n' +
         '      define("baseView", [], getDynamicImport("./modules/viewmanager/baseview.js")),');
 }
+function patchHomeView(text) {
+    if (text.includes('eteHomeRestoreState')) throw new Error('Home view anchor mismatch.');
+    text = once(text, 'HomeView.prototype.onPause=',
+        'HomeView.prototype.eteHomeRestoreState=function(){var tab=this.tabControllers&&this.tabControllers[0],owner=tab&&tab.eteHome;return owner&&owner.flowEnabled?{enabled:true,allowed:this.currentTabController===tab&&owner.canRestore()}:null},HomeView.prototype.onPause=');
+    text = once(text, 'HomeView.prototype.destroy=function(){',
+        'HomeView.prototype.destroy=function(){var eteManaged=this.tabControllers&&this.tabControllers.some(function(tab){return tab&&tab.eteHome&&tab.eteHome.hasManagedResources});');
+    return once(text, 'this.boundOnPlaybackStop=null)},HomeView.prototype.loadTabController=',
+        'this.boundOnPlaybackStop=null),eteManaged&&_tabbedview.default.prototype.destroy.call(this)},HomeView.prototype.loadTabController=');
+}
+// Select only from the native three-slot owner. No pinned view, copied DOM or data pool.
+function homeRestoreHelpers() {
+    function eteHomeRestoreIndex(options) {
+        if (!options || options.type !== 'home') return null;
+        var managed = false;
+        for (var index = allPages.length - 1; index >= 0; index--) {
+            var view = allPages[index];
+            if (!view || currentUrls[index] !== options.url || !view.controller || typeof view.controller.eteHomeRestoreState !== 'function') continue;
+            var state;
+            try { state = view.controller.eteHomeRestoreState(); }
+            catch (_) { state = {enabled: true, allowed: false}; }
+            if (!state || !state.enabled) continue;
+            managed = true;
+            if (view.allowRestore !== false && state.allowed) return index;
+        }
+        return managed ? -1 : null;
+    }
+    function eteHomeRestoreCheck(options, view) {
+        var index = eteHomeRestoreIndex(options);
+        if (index !== null && (index < 0 || allPages[index] !== view)) throw new Error('Home restore unavailable.');
+    }
+}
+function patchViewManager(text) {
+    if (text.includes('eteHomeRestoreIndex')) throw new Error('Home view manager anchor mismatch.');
+    text = once(text, 'function ViewManager(){}', homeRestoreHelpers.toString().replace(/\r\n/g, '\n').replace(/^function homeRestoreHelpers\(\) \{/, '').replace(/\}$/, '') +
+        'function ViewManager(){}ViewManager.prototype.canRestoreHome=function(options){var index=eteHomeRestoreIndex(options);return index!==null&&index>=0};');
+    text = once(text, 'index=currentUrls.indexOf(url);if(-1!==index)',
+        'index=eteHomeRestoreIndex(options);if(index===null)index=currentUrls.indexOf(url);if(-1!==index)');
+    return once(text, 'return setControllerClass(view,options).then(function(){eteCheck(epoch,signal);console.log',
+        'return setControllerClass(view,options).then(function(){eteCheck(epoch,signal);eteHomeRestoreCheck(options,view);console.log');
+}
+function patchRouter(text) {
+    if (text.includes('canRestoreHome(currentRequest)')) throw new Error('Home router anchor mismatch.');
+    return once(text, '              isBackNav\n                ? _viewmanager.default.tryRestoreView',
+        '              (isBackNav || route.type === "home" && typeof _viewmanager.default.canRestoreHome === "function" && _viewmanager.default.canRestoreHome(currentRequest))\n                ? _viewmanager.default.tryRestoreView');
+}
 function patchItemsContainer(text) {
     if (text.includes('eteHomeFlowOwns')) throw new Error('Home flow anchor mismatch.');
     // This opt-in hook belongs to the Home controller, not a transport/global
@@ -49,4 +94,4 @@ function patchVirtualScroller(text) {
     return once(text, '                var items = result.Items || result,',
         '                if (instance.eteHomeFlowOwns && !instance.eteHomeFlowOwns(result)) return;\n                var items = result.Items || result,');
 }
-module.exports = {patchHomeTab, patchApp, patchItemsContainer, patchVirtualScroller};
+module.exports = {patchHomeView, patchViewManager, patchRouter, patchHomeTab, patchApp, patchItemsContainer, patchVirtualScroller};

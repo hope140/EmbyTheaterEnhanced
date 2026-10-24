@@ -25,10 +25,15 @@ const SOURCE_FILES = Object.freeze(['electronapp/main.js', 'electronapp/enhanced
     'electronapp/enhanced/home/server-sections.js', 'electronapp/enhanced/page-cache/page-data-cache.js',
     'electronapp/enhanced/page-cache/home-layout-cache.js', 'electronapp/enhanced/page-cache/test-options.js',
     'electronapp/enhanced/page-cache/test-session.js', 'electronapp/enhanced/cache-management-ipc.js',
-    'electronapp/plugins/mpvplayer/cache-settings.js', 'electronapp/plugins/mpvplayer/about.js', 'electronapp/plugins/mpvplayer/about.html', 'electronapp/enhanced/home/home-flow.css']);
+    'electronapp/plugins/mpvplayer/cache-settings.js', 'electronapp/plugins/mpvplayer/about.js', 'electronapp/plugins/mpvplayer/about.html', 'electronapp/enhanced/home/home-flow.css', 'electronapp/plugins/libmpv.js',
+    'electronapp/plugins/mpvplayer/cache-management.js', 'electronapp/plugins/mpvplayer/cache-management.html', 'electronapp/plugins/mpvplayer/cache-management.css']);
 const FLOW_OVERLAYS = Object.freeze([
     Object.freeze({path: 'electronapp/www/modules/emby-elements/emby-itemscontainer/emby-itemscontainer.js', sha256: '4F3633D1B23CA2B15B6ACDF6AD013B0F704733D8BB17B37F4527EF310D52DFDA'}),
-    Object.freeze({path: 'electronapp/www/modules/virtual-scroller/virtual-scroller.js', sha256: '4F7F014519217712350B156F86C710654CE1D48F39DA98B2811C8314BAB63DEC'})
+    Object.freeze({path: 'electronapp/www/modules/virtual-scroller/virtual-scroller.js', sha256: '4F7F014519217712350B156F86C710654CE1D48F39DA98B2811C8314BAB63DEC'}),
+    Object.freeze({path: 'electronapp/www/home/home.js', sha256: 'CFCC04C56EDF0D467B4C4D9B21D3317F645646C5B9FDC08C122E915109D512B3'}),
+    Object.freeze({path: 'electronapp/www/home/hometab.js', sha256: 'EE30D819DE898154D8D6727CE31FE86418F79761368FA4B7075F071DF56635CB'}),
+    Object.freeze({path: 'electronapp/www/modules/viewmanager/viewmanager.js', sha256: 'AFAC86446F43B599A75E6AD7D619A3BFF0BB513105334A23EFF4C63FE237D4F4'}),
+    Object.freeze({path: 'electronapp/www/modules/approuter.js', sha256: '364CF6818BA4D92D237943FFD1D59FDB8B533E944BE7E4AB06588F203A1E66C5'})
 ]);
 function identity(runtimeRoot, homeFlow) {
     const manifestPath = physical(path.join(runtimeRoot, 'runtime-provenance.json'), false);

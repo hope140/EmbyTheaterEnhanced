@@ -271,6 +271,17 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         generatorPaths: Object.freeze([SEARCH_GENERATOR_PATH, GENERATOR_PATH, APP_GENERATOR_PATH, PLUGIN_GENERATOR_PATH, HOME_GENERATOR_PATH, MOVIE_GENERATOR_PATH])
     }),
     Object.freeze({
+        id: 'server-home-view',
+        mode: 'tracked-canonical-transform',
+        basePath: 'vendor/web-snapshot/www/home/home.js',
+        inputPath: null,
+        runtimePath: 'electronapp/www/home/home.js',
+        expectedBaseSha256: '6B90990CF39A20BC3B3C10AC1956B5CD6CC8A7C0152B33F6771B35E5BE27B2FB',
+        expectedInputSha256: null,
+        expectedOutputSha256: 'CFCC04C56EDF0D467B4C4D9B21D3317F645646C5B9FDC08C122E915109D512B3',
+        generatorPaths: Object.freeze([GENERATOR_PATH, HOME_GENERATOR_PATH])
+    }),
+    Object.freeze({
         id: 'server-home-tab',
         mode: 'tracked-canonical-transform',
         basePath: 'vendor/web-snapshot/www/home/hometab.js',
@@ -289,8 +300,8 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/modules/viewmanager/viewmanager.js',
         expectedBaseSha256: 'A15C0615FB7B2F69A0EAAF7052B9CDD6317E6A58D9D2B2D2C5B407ED4A95E1E3',
         expectedInputSha256: null,
-        expectedOutputSha256: '6C6A7315C74984F96171149AA2993ED9B276B9E92CBFFC6E1F78DBB8955513E6',
-        generatorPaths: Object.freeze([GENERATOR_PATH, PLUGIN_GENERATOR_PATH])
+        expectedOutputSha256: "AFAC86446F43B599A75E6AD7D619A3BFF0BB513105334A23EFF4C63FE237D4F4",
+        generatorPaths: Object.freeze([GENERATOR_PATH, PLUGIN_GENERATOR_PATH, HOME_GENERATOR_PATH])
     }),
     Object.freeze({
         id: 'plugin-router',
@@ -300,8 +311,8 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/modules/approuter.js',
         expectedBaseSha256: 'CF4621BF3865BDE1ECB77BEFB2BEA67A0B4B505FC285BC83B743A880C4306AA1',
         expectedInputSha256: null,
-        expectedOutputSha256: '3A2A73970AEA9156C79BCF5545693904B69A4C448854FA3BAAF4EEB6DD621691',
-        generatorPaths: Object.freeze([GENERATOR_PATH, PLUGIN_GENERATOR_PATH])
+        expectedOutputSha256: "364CF6818BA4D92D237943FFD1D59FDB8B533E944BE7E4AB06588F203A1E66C5",
+        generatorPaths: Object.freeze([GENERATOR_PATH, PLUGIN_GENERATOR_PATH, HOME_GENERATOR_PATH])
     })
 ]);
 
@@ -358,6 +369,9 @@ function outputFor(root, contract) {
         }
         return {base, input: Buffer.from(searchUi.patchApp(movieBrowser.patchApp(serverHome.patchApp(pluginSettings.patchApp(transformed.text)))), 'utf8')};
     }
+    if (contract.id === 'server-home-view' && contract.mode === 'tracked-canonical-transform') {
+        return {base, input: Buffer.from(serverHome.patchHomeView(base.toString('utf8')), 'utf8')};
+    }
     if (contract.id === 'server-home-tab' && contract.mode === 'tracked-canonical-transform') {
         return {base, input: Buffer.from(serverHome.patchHomeTab(base.toString('utf8')), 'utf8')};
     }
@@ -368,10 +382,10 @@ function outputFor(root, contract) {
         return {base, input: Buffer.from(contract.homeTransform ? serverHome[contract.homeTransform](output) : output, 'utf8')};
     }
     if (contract.id === 'plugin-viewmanager' && contract.mode === 'tracked-canonical-transform') {
-        return {base, input: Buffer.from(pluginSettings.patchViewManager(base.toString('utf8')), 'utf8')};
+        return {base, input: Buffer.from(serverHome.patchViewManager(pluginSettings.patchViewManager(base.toString('utf8'))), 'utf8')};
     }
     if (contract.id === 'plugin-router' && contract.mode === 'tracked-canonical-transform') {
-        return {base, input: Buffer.from(pluginSettings.patchRouter(base.toString('utf8')), 'utf8')};
+        return {base, input: Buffer.from(serverHome.patchRouter(pluginSettings.patchRouter(base.toString('utf8'))), 'utf8')};
     }
     throw new Error('Unsupported Web overlay contract: ' + contract.id);
 }

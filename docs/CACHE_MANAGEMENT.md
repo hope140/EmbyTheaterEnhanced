@@ -1,6 +1,6 @@
 # 缓存管理的范围与生命周期
 
-现有“关于”设置页增加手动缓存管理，沿用原设置卡片、按钮和页内状态。进入页面读取一次统计，手动刷新或清理后更新；没有后台定时清理、容量策略设置或弹窗。首页流畅度实验仍默认 baseline，布局数据缓存仍缺显式配置关闭，管理入口不会启用缓存或改变 TTL。
+客户端设置增加独立“缓存管理”入口，使用原 pluginManager 的 mapPath／mapRoute 注册页面和 controller，沿用原设置卡片、按钮和页内状态。原 About 的“缓存管理”只是区块标题，没有独立点击路由；About 现在只说明独立入口位置。进入页面读取一次统计，手动刷新或清理后更新；没有后台定时清理、容量策略设置或弹窗。首页流畅度实验仍默认 baseline，布局数据缓存仍缺显式配置关闭，管理入口不会启用缓存或改变 TTL。
 
 ## 两个独立对象
 
@@ -19,7 +19,7 @@ Electron 固定版本 [Session API](https://github.com/electron/electron/blob/v4
 
 ## 交互和进程归属
 
-- renderer 管理模块复用现有 AboutView 的 resume、pause、destroy。页内一次只允许一个管理操作，等待时禁用三个按钮；重复 DOM 点击不会再发出操作。离页或销毁使旧 UI 票据失效，迟到回复不改新一轮状态，销毁移除监听。
+- renderer 管理模块由独立 CacheManagementView 通过原 BaseView 的 resume、pause、destroy 持有。页内一次只允许一个管理操作，等待时禁用四个按钮；重复 DOM 点击不会再发出操作。离页或销毁使旧 UI 票据失效，迟到回复不改新一轮状态，销毁移除监听。
 - 页面数据清理留在 renderer 的实际 owner，不通过 main 传递 DTO 或认证信息。同步失效后，原缓存 epoch 和请求订阅继续阻止旧结果入库；它不清当前可见界面，下一次读取沿原 owner 重取。
 - HTTP main 只注册状态／清理两个窄 IPC，无任意路径、session、脚本或存储类型参数。每次校验当前应用主窗口、原包内 index 主 frame 和空载荷，取该窗口所属 session，不使用任意默认／外部 session。
 - main 合并同 session 的重复读取／清理，清理排在已有读取之后；不同 session 的旧操作不会当成新 session 的结果。主进程退出时停止受理并移除 handler，未开始的排队清理停止，已经开始的不可取消操作归原 owner 等待结算，不假装已物理取消。
@@ -28,15 +28,19 @@ Electron 固定版本 [Session API](https://github.com/electron/electron/blob/v4
 ## 可重复验证与限制
 
 ```bash
-node --test tests/cache-management.test.cjs tests/app-shutdown-drain.test.cjs tests/page-cache-test-entry.test.cjs tests/home-layout-cache-integration.test.cjs tests/page-data-cache.test.cjs tests/mpv-kernel-ui.test.cjs
+node --test tests/cache-management-page.test.cjs tests/cache-management.test.cjs tests/app-shutdown-drain.test.cjs tests/page-cache-test-entry.test.cjs tests/home-layout-cache-integration.test.cjs tests/page-data-cache.test.cjs tests/mpv-kernel-ui.test.cjs
 node tools/check-cache-settings-renderer.cjs /absolute/path/to/installed/chromium
 node tools/check-home-flow-renderer.cjs /absolute/path/to/installed/chromium
 ```
 
+“清理以上缓存”按原 owner 分别执行布局失效和 HTTP 清理，每项保留成功／失败／未知统计结果，布局失败不阻断独立 HTTP owner。离页使未开始的后续清理停止；已经开始的 HTTP 工作仍归 main 等待结算，不假装取消或把部分完成说成全部完成。
+
 Node 执行真实管理 IPC、原 sender boundary、布局／数据缓存以及原 main 退出块；Electron session／app 对象为替身。缓存清理回归覆盖多 owner、身份变更、期限、在途取消、迟到回复、销毁、重复点击、异常、清理后无法测量及退出归属。HTTP session 替身只允许调用 getCacheSize／clearCache，其他接口触碰即失败。
 
-可选已安装 Chromium 工具执行真实 About HTML/controller、原 BaseView、管理 UI、缓存、Events 和 DOM，另用原 Alameda 加载完整 About 工厂及真实管理依赖、原设置 CSS 和首页相对样式，并验证共享同一缓存 owner；网络、IPC 和 session 为受控替身。它不安装浏览器、不读取个人 profile、不连接实际 Emby，也不代替 Electron/Windows 的整包存储保留、焦点、主题和视觉验收。
+可选已安装 Chromium 工具执行真实独立页 HTML/controller、原 BaseView、管理 UI、缓存、Events 和 DOM，另用原 Alameda 加载独立缓存页工厂及真实管理依赖、原设置 CSS 和首页相对样式，并验证共享同一缓存 owner；网络、IPC 和 session 为受控替身。它不安装浏览器、不读取个人 profile、不连接实际 Emby，也不代替 Electron/Windows 的整包存储保留、焦点、主题和视觉验收。
 
-后续精确独立包先按[隔离入口](PAGE_CACHE_TEST_ENTRY.md)在全新测试 profile 验证：进入关于可读取两项；手动清理后重读；登录和设置以及 embydata 保持；请求／清理未结算时离页、返回、退出不出现迟到覆盖或遗留在途 owner。需使用合成数据／获准测试身份，用户工作期间不执行前台验证。这里不承诺清理后的性能收益或所有页面优化完成。
+后续精确独立包先按[隔离入口](PAGE_CACHE_TEST_ENTRY.md)在全新测试 profile 验证：从客户端设置点击缓存管理可读取两项；手动清理后重读；登录和设置以及 embydata 保持；请求／清理未结算时离页、返回、退出不出现迟到覆盖或遗留在途 owner。需使用合成数据／获准测试身份，用户工作期间不执行前台验证。这里不承诺清理后的性能收益或所有页面优化完成。
 
-完整离线回归须先用 `node tools/prepare-preload.cjs .` 从锁定源码模板生成被忽略的 preload，再运行 `node --test --test-concurrency=1 tests/*.test.cjs`。About 的既有版本／更新／复制快照测试也必须装配真实缓存管理依赖，不能只保留旧的两个工厂参数或跳过新入口；进入时的 HTTP 统计是只读请求，检查更新和清理仍只由对应用户动作触发。平台专属测试按实际宿主单独列出，Linux 结果不替代 Windows PowerShell／进程集成证据。
+完整离线回归须先用 `node tools/prepare-preload.cjs .` 从锁定源码模板生成被忽略的 preload，再运行 `node --test --test-concurrency=1 tests/*.test.cjs`。独立缓存页必须在实际设置列表和插件路由中验证；进入时的 HTTP 统计是只读请求，检查更新和清理仍只由对应用户动作触发。平台专属测试按实际宿主单独列出，Linux 结果不替代 Windows PowerShell／进程集成证据。
+
+原生点击链的受控复现还运行原设置 controller／navdrawercontent／listview／Shortcuts，通过真实 getRoutes、mapRoute 和 router／viewmanager 打开独立页并操作按钮，见 `tools/check-home-route-renderer.cjs`。该工具的 API、文本／模块载入和宿主 IPC 为明确边界替身；实际 Alameda 加载独立页和原 CSS 另行验证，不等于 Windows 整包已验收。

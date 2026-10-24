@@ -81,6 +81,7 @@ async function openTrial(browser, input, mode = 'baseline', settings = {}) {
         const connection = {currentApiClient: () => api};
         function load(id) {
             if (id.startsWith('css!')) return {};
+            if (!modules.has(id) && !Object.hasOwn(input, id) && Object.hasOwn(input, id + '.js')) id += '.js';
             if (modules.has(id)) return modules.get(id);
             let result; const exports = {};
             window.define = (deps, factory) => { result = factory(...deps.map(dep => {
@@ -144,6 +145,7 @@ async function openTrial(browser, input, mode = 'baseline', settings = {}) {
                     final: this.snapshot(), requests: calls.slice(beforeCalls).map(x => ({kind: x.kind, index: x.index}))};
             }
         };
+        window.trial.runtime = {load, modules, input, view, root, mode};
     }, {input, mode, settings});
     return page;
 }

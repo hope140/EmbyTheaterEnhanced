@@ -344,6 +344,20 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             });
 
             routes.push({
+                path: 'mpvplayer/cache-management.html',
+                transition: 'slide',
+                controller: pluginManager.mapPath(self, 'mpvplayer/cache-management.js'),
+                type: 'settings',
+                title: '缓存管理',
+                category: 'General',
+                order: 7,
+                thumbImage: '',
+                icon: 'storage',
+                settingsTheme: true,
+                adjustHeaderForEmbeddedScroll: true
+            });
+
+            routes.push({
                 path: 'mpvplayer/about.html',
                 transition: 'slide',
                 controller: pluginManager.mapPath(self, 'mpvplayer/about.js'),

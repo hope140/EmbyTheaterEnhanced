@@ -1,7 +1,7 @@
 <div is="emby-scroller" class="view flex flex-direction-column scrollFrameY flex-grow" data-mousewheel="true" data-horizontal="false" data-forcescrollbar="true" data-centerfocus="card" data-bindheader="true">
     <div class="scrollSlider flex-grow flex-direction-column padded-left padded-left-page padded-right padded-top-page padded-bottom-page settingsContainer ete-settings-page about-settings-page ete-about-settings">
         <header class="ete-settings-header" aria-label="关于 Emby Theater Enhanced 说明">
-            <p>查看版本、管理缓存和播放内核、检查更新。</p>
+            <p>查看版本、管理播放内核和检查更新。</p>
             <span class="aboutHeaderVersion hide" aria-hidden="true">UNKNOWN</span>
         </header>
 
@@ -47,22 +47,7 @@
             </div>
         </section>
 
-        <section class="ete-settings-section verticalSection aboutCacheManagement" aria-labelledby="ete-cache-title">
-            <div class="ete-settings-section-header"><div><h2 id="ete-cache-title" class="sectionTitle">缓存管理</h2></div></div>
-            <div class="ete-settings-card">
-                <div class="ete-settings-info-row"><span>首页布局数据</span><span class="cachePageValue">尚未读取</span></div>
-                <p>仅统计当前窗口各首页实例中已启用的布局缓存。序列化预算不是实际内存占用，不包含保留界面、列表数据或图片解码内存。</p>
-                <button type="button" is="emby-button" class="raised ete-settings-button btnClearPageCache">清理首页布局数据</button>
-                <div class="ete-settings-info-row"><span>图片与网络 HTTP 缓存</span><span class="cacheHttpValue">尚未读取</span></div>
-                <p>当前应用 session 的 HTTP 缓存总量，无法单独统计海报。清理后图片和网络资源可能需要重新加载。</p>
-                <div class="ete-settings-actions">
-                    <button type="button" is="emby-button" class="raised ete-settings-button btnClearHttpCache">清理 HTTP 缓存</button>
-                    <button type="button" is="emby-button" class="raised ete-settings-button btnRefreshCache">刷新统计</button>
-                </div>
-                <p>清理不删除登录、设置或下载，不操作播放暂存。图片解码内存无法准确统计；播放暂存管理尚未提供。</p>
-                <div class="ete-settings-status cacheOperationState" role="status" aria-live="polite"></div>
-            </div>
-        </section>
+        <p class="fieldDescription">缓存管理已移至客户端设置 → 缓存管理。</p>
 
         <section class="ete-settings-section verticalSection" aria-labelledby="ete-about-platform-title">
             <div class="ete-settings-section-header"><div><h2 id="ete-about-platform-title" class="sectionTitle">运行环境</h2></div></div>

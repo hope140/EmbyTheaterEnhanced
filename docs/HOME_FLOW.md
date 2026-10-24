@@ -82,3 +82,20 @@ node tools/check-home-flow-visual.cjs /absolute/path/to/installed/chromium /abso
 ```
 
 该工具使用固定旧提交 778b1ef 作可失败对照；运行原 ItemsContainer、VirtualScroller、CardBuilder、ItemsRefresher、ImageLoader、indicators 和 CSS，比较 baseline／retain／sections 及普通／虚拟列表。保存首次占位、返回前、返回瞬间、布局／内容请求等待中、响应后截图及逐 rAF 可见性／几何记录；校验返回期间海报连续可见、进度暂遮而新结果更新、错误重试、身份切换与晚到回复、空行返回。API、海报、scroller／输入／元数据辅助依赖仍为明确受控替身，不连接真实服务，不代替完整 Windows 或用户视觉验收；帧数量是本轮样本，不是可外推的性能百分比。
+
+## 跨 route 的首页恢复
+
+喜欢是同一 HomeView 内的 TabbedView 切换；设置属于跨 route。原 router 只在 ctx.isBack 时尝试 viewmanager 恢复，普通点击首页直接 loadView；已有 HomeView 仍在三 slot 内也会重新创建，因此不能用同一个 controller 的 pause／resume 测试代替设置往返。
+
+实验模式现在只在原 viewmanager 已持有的三个 slot 中查找完全相同 URL、允许恢复且当前 Home tab 的有效视图。Home owner 检查 client／server／user／认证代次／locale／服务端版本／查询及可用 stage，在异步恢复提交前再检查；失效或不存在则沿原流程重新加载，不新增页面池、固定保留 slot 或内存／TTL 产品默认。恢复仍每轮重新读取 HomeSections／Items，旧动态状态暂遮。三 slot 真正淘汰后冷加载和骨架仍是预期行为，不能宣称任意深层设置往返都保留页面。
+
+原 HomeView 的 destroy 没有链到 TabbedView，实验 owner 在 slot 淘汰后可能仍存活。仅对已启用首页流畅度或布局缓存的 HomeView 补齐原父类销毁，释放对应 tab/controller、监听和请求；不改变普通 baseline 的页面容量或其他页面生命周期。
+
+```bash
+node --test tests/home-route-restore.test.cjs
+node tools/check-home-route-renderer.cjs /absolute/path/to/installed/chromium /absolute/path/to/new-evidence-directory
+```
+
+该探针执行原 router 的 init/content 函数、完整组合 viewmanager、HomeView／TabbedView／BaseView／HomeTab 与原卡片、设置列表、Shortcuts 点击；记录实例创建、slot、DOM stage、骨架、进度和失效／淘汰。服务、模块／模板载入和宿主输入仍受控，非真实 NAS／Windows 验收。
+
+02 retain 与 03 sections 的有效返回复用相同；区别在首次加载：retain 等全部首批分区完成后统一揭示，sections 可先显示已完成区，慢／错误区独立处理。产品方向更适合分区首载加返回复用，仍需整包体验决定；当前保留两个测试模式，普通默认仍 baseline，不擅自删除或把实验开关变成产品设置。

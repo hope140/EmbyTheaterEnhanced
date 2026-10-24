@@ -24,11 +24,11 @@ $trialRuntime = 'C:\ETE-PageCache-Test\verified-runtime'
 
 四项测试参数必须恰好各出现一次，不接受缺参、重复、别名、负数、0、小数、科学计数、未知选项或额外位置参数。TTL范围1–300000ms，条目1–1024，序列化预算1–33554432bytes；工程内部pending/期限护栏沿[基础合同](PAGE_DATA_CACHE.md)。不允许在这条应用参数链中另外指定profile、调试端口或安全选项；测试入口不修改既有webPreferences安全策略、代理、防火墙、ACL或系统环境。
 
-界面流畅度实验可额外显式传入唯一的 `--ete-page-cache-home-flow=baseline|retain|sections`，缺省仍 baseline；它独立于布局缓存 enabled/disabled。retain／sections 还要求两份原生列表组件的精确组合哈希，创建profile前验证；不接受任意扩展配置。比较时建议保持布局缓存disabled，参数和证据边界见[实验合同](HOME_FLOW.md)。上述原四项仍必填，不新增产品TTL／容量默认。
+界面流畅度实验可额外显式传入唯一的 `--ete-page-cache-home-flow=baseline|retain|sections`，缺省仍 baseline；它独立于布局缓存 enabled/disabled。retain／sections 还要求六份原生首页、导航和列表组件的精确组合哈希，创建profile前验证；不接受任意扩展配置。比较时建议保持布局缓存disabled，参数和证据边界见[实验合同](HOME_FLOW.md)。上述原四项仍必填，不新增产品TTL／容量默认。
 
 ## 隔离和拒绝
 
-`main.js`在bootstrap、设备身份和日志创建之前调用 `page-cache/test-session.js`，要求Windows、app尚未ready、实际execPath为当前runtime的x64/electron/electron.exe且argv应用目录为该runtime/electronapp。缺来源清单、十二份关键维护源码、样式与界面材料与Git blob来源记录不一致、prepared preload不一致、输入/临时目录为链接或重定向均拒绝。这里的包内哈希自检是有限启动绑定，**不是独立完整来源或全runtime验证**；完整验证仍由构建与父线程核对执行。
+`main.js`在bootstrap、设备身份和日志创建之前调用 `page-cache/test-session.js`，要求Windows、app尚未ready、实际execPath为当前runtime的x64/electron/electron.exe且argv应用目录为该runtime/electronapp。缺来源清单、十六份关键维护源码、样式与界面材料与Git blob来源记录不一致、prepared preload不一致、输入/临时目录为链接或重定向均拒绝。这里的包内哈希自检是有限启动绑定，**不是独立完整来源或全runtime验证**；完整验证仍由构建与父线程核对执行。
 
 全部参数及包内身份检查通过后，只在物理临时父目录创建全新 `ETE-page-cache-test-*` 根目录；不能选择/复用已有profile。拒绝临时父目录位于当前runtime、普通userData或appData/EmbyTheaterEnhanced之内。每次生成独立的appdata、userdata、session、logs、temp、crashes、localappdata和mpv目录，不复制账户、存储或原配置。
 
@@ -53,4 +53,4 @@ main仅在该模式给原应用BrowserWindow添加一个内部renderer参数；p
 
 需要Windows人工的最短补充是一次首页→详情→返回、刷新/过期后恢复，以及焦点/滚动/加载遮罩可见体验。先完成自动启动/路径检查再交给用户；若真实服务体验仍需用户，则只读测试等后续明确安排，不复制已登录profile、不要求上传账户信息。真实播放、安装、覆盖升级、真实NAS写与性能收益不在本轮已验收范围。
 
-“关于”页另提供[最小缓存管理](CACHE_MANAGEMENT.md)，不启用缓存或改变实验默认值；后续测试包还将该入口的 main IPC、UI controller 和模板纳入启动来源绑定。现有历史包不能据此宣称带有该入口。
+客户端设置另提供[最小缓存管理](CACHE_MANAGEMENT.md)，不启用缓存或改变实验默认值；后续测试包还将该入口的 main IPC、UI controller 和模板纳入启动来源绑定。现有历史包不能据此宣称带有该入口。

@@ -1,5 +1,11 @@
 # 维护记录
 
+## 首页跨设置返回与独立缓存管理
+
+原 router 的前向首页跳转跳过 viewmanager restore，旧首页尚在 slot 内也新建实例，因而再次显示首次骨架；同页喜欢切换不走这条分支。实验候选新增原 slot 查找与 Home owner 身份／查询／代次 guard，并在恢复提交前再核对；保留 native 三 slot 容量与冷加载边界。仅实验 HomeView 补齐父 TabbedView 的销毁链，避免淘汰后的 tab owner 残留。
+
+缓存管理迁入真实客户端设置独立路由，旧 About 标题不再冒充入口。统计 HTTP session 总量和首页布局 DTO，支持单独／组合清理和逐项结果；一项失败不阻断独立 owner，离页不启动尚未开始的后续清理。原生设置列表、Shortcuts、router／viewmanager 点击与实际 Alameda 加载分别覆盖；不调用存储／profile／登录／设置／下载或视频清理。完整来源／offline 回归保持，真实 Windows／服务体验仍独立验收。
+
 ## About 全套测试装配收尾
 
 旧设置测试只向 About 工厂传入 loading／BaseView，遗漏新增的缓存管理依赖。夹具现使用真实管理模块与子节点／监听生命周期，检查只读 HTTP 统计和关闭；不跳过测试或给产品加入静默缺依赖兜底。可选 Chromium 检查进一步通过原 Alameda 加载 About、管理依赖及原样式，检查首页相对样式生效和 owner 共享。完整 tests/*.test.cjs 在锁定源码模板准备 preload 后运行；平台专属集成按宿主结果标明，不外推为 Windows 整包验收。

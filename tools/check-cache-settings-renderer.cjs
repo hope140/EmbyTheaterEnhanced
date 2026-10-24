@@ -3,7 +3,7 @@ const fs = require('node:fs'), path = require('node:path'), assert = require('no
 async function main(args = process.argv.slice(2)) {
     if (args.length !== 1 || !path.isAbsolute(args[0])) throw Error('Usage: node tools/check-cache-settings-renderer.cjs <absolute installed Chromium executable>');
     const root = path.resolve(__dirname, '..'), files = {
-        html: 'src/electronapp/plugins/mpvplayer/about.html', about: 'src/electronapp/plugins/mpvplayer/about.js',
+        html: 'src/electronapp/plugins/mpvplayer/cache-management.html', controller: 'src/electronapp/plugins/mpvplayer/cache-management.js',
         ui: 'src/electronapp/plugins/mpvplayer/cache-settings.js', adapter: 'src/electronapp/enhanced/page-cache/home-layout-cache.js',
         cache: 'src/electronapp/enhanced/page-cache/page-data-cache.js', events: 'src/electronapp/www/modules/emby-apiclient/events.js',
         base: 'vendor/web-snapshot/www/modules/viewmanager/baseview.js'
@@ -38,8 +38,8 @@ async function main(args = process.argv.slice(2)) {
                         if (t.config.hold) t.held.push(done); else done();
                     });
                 }};
-                t.About = amd(input.about, {loading: {show() {}, hide() {}}, baseView: Base, './cache-settings': t.ui});
-                t.view = document.querySelector('.view'); t.about = new t.About(t.view);
+                t.CacheView = amd(input.controller, {loading: {show() {}, hide() {}}, baseView: Base, './cache-settings': t.ui});
+                t.view = document.querySelector('.view'); t.controller = new t.CacheView(t.view);
                 t.addOwner = async () => {
                     let user = 'synthetic-user'; const api = {isLoggedIn: () => !!user, serverId: () => 'synthetic-server', getCurrentUserId: () => user,
                         _identityEpoch: 1, getCurrentLocale: () => 'zh-CN', serverVersion: () => '4.10.0.40'};
@@ -51,78 +51,79 @@ async function main(args = process.argv.slice(2)) {
                 t.httpCalls = () => t.calls.filter(x => x.channel.startsWith('enhanced-http-cache-'));
             }, input);
             await run(page); assert.deepEqual(errors, []); passed.push(name);
-        } finally { await page.evaluate(() => { t.about.destroy(); t.owners.forEach(owner => owner.dispose()); }).catch(() => {}); await page.close(); }
+        } finally { await page.evaluate(() => { t.controller.destroy(); t.owners.forEach(owner => owner.dispose()); }).catch(() => {}); await page.close(); }
     }
     try {
-        await scenario('actual About onResume wires the management section; defaults show disabled DTO cache and total HTTP bytes', async p => {
-            await p.evaluate(() => t.about.onResume({}));
+        await scenario('actual independent cache page onResume loads its two owners; defaults show disabled DTO cache and total HTTP bytes', async p => {
+            await p.evaluate(() => t.controller.onResume({}));
             await p.waitForFunction(() => document.querySelector('.cacheHttpValue').textContent.includes('512'));
-            assert.match(await p.locator('.cachePageValue').textContent(), /未启用（0 条）/);
+            assert.match(await p.locator('.cachePageValue').textContent(), /0 条/);
             assert.match(await p.locator('.cacheHttpValue').textContent(), /session HTTP 总量/);
+            assert.match(await p.locator('.cachePageBudget').textContent(), /未启用/);
             assert.equal(await p.locator('.btnClearHttpCache').isDisabled(), false);
         });
         await scenario('page clear uses the real layout owner, preserves retained stage and never sends HTTP clear', async p => {
-            await p.evaluate(async () => {await t.addOwner();t.about.onResume({});});
+            await p.evaluate(async () => {await t.addOwner();t.controller.onResume({});});
             await p.waitForFunction(() => !document.querySelector('.btnClearPageCache').disabled);
-            assert.match(await p.locator('.cachePageValue').textContent(), /1 \/ 2 条/);
+            assert.match(await p.locator('.cachePageValue').textContent(), /1 条/);
             const result = await p.evaluate(async () => {
-                await t.about.cacheManagement.resume(); document.querySelector('.btnClearPageCache').click();
+                await t.controller.cacheManagement.resume(); document.querySelector('.btnClearPageCache').click();
                 for(let i=0;i<20;i++)await Promise.resolve();
                 return {snapshot:t.adapter.management.snapshot(),stage:t.domStage.textContent,httpClears:t.calls.filter(x=>x.channel==='enhanced-http-cache-clear').length};
             });
             assert.equal(result.snapshot.entries,0);assert.equal(result.stage,'retained Home stage');assert.equal(result.httpClears,0);
-            assert.match(await p.locator('.cacheOperationState').textContent(), /当前界面保留/);
+            assert.match(await p.locator('.cachePageState').textContent(), /当前界面保留/);
         });
         await scenario('duplicate DOM clicks share one clear and controls recover on success', async p => {
-            await p.evaluate(async () => {await t.about.cacheManagement.resume();t.config.hold=true;const b=document.querySelector('.btnClearHttpCache');b.click();b.click();});
+            await p.evaluate(async () => {await t.controller.cacheManagement.resume();t.config.hold=true;const b=document.querySelector('.btnClearHttpCache');b.click();b.click();});
             await p.waitForFunction(() => t.held.length === 1);assert.equal(await p.locator('.btnClearPageCache').isDisabled(),true);
             assert.equal(await p.evaluate(() => t.calls.filter(x=>x.channel==='enhanced-http-cache-clear').length),1);
             await p.evaluate(() => t.release());await p.waitForFunction(() => !document.querySelector('.btnClearHttpCache').disabled);
-            assert.match(await p.locator('.cacheOperationState').textContent(), /清理完成/);
+            assert.match(await p.locator('.cacheOperationState').textContent(), /清理已完成/);
         });
         await scenario('pause ignores a late response; resume during pending work avoids another operation and settles explicitly', async p => {
-            await p.evaluate(async () => {await t.about.cacheManagement.resume();t.config.hold=true;document.querySelector('.btnClearHttpCache').click();});
+            await p.evaluate(async () => {await t.controller.cacheManagement.resume();t.config.hold=true;document.querySelector('.btnClearHttpCache').click();});
             await p.waitForFunction(() => t.held.length === 1);
-            const count=await p.evaluate(() => {t.about.onPause();t.about.cacheManagement.resume();return t.httpCalls().length;});
+            const count=await p.evaluate(() => {t.controller.onPause();t.controller.cacheManagement.resume();return t.httpCalls().length;});
             assert.match(await p.locator('.cacheOperationState').textContent(), /收尾/);
             await p.evaluate(() => t.release());await p.waitForFunction(() => !document.querySelector('.btnRefreshCache').disabled);
             assert.match(await p.locator('.cacheOperationState').textContent(), /已结束，请刷新/);
             assert.equal(await p.evaluate(() => t.httpCalls().length),count);
         });
         await scenario('destroy through native BaseView viewdestroy prevents late UI mutation and removes handlers', async p => {
-            await p.evaluate(async () => {await t.about.cacheManagement.resume();t.config.hold=true;document.querySelector('.btnClearHttpCache').click();});
+            await p.evaluate(async () => {await t.controller.cacheManagement.resume();t.config.hold=true;document.querySelector('.btnClearHttpCache').click();});
             await p.waitForFunction(() => t.held.length === 1);
             const result=await p.evaluate(async () => {
                 t.view.dispatchEvent(new Event('viewdestroy'));const text=t.view.textContent,count=t.httpCalls().length;
                 t.release();for(let i=0;i<20;i++)await Promise.resolve();document.querySelector('.btnRefreshCache').click();
-                return {same:t.view.textContent===text,calls:t.httpCalls().length,count,destroyed:t.about.isDestroyed()};
+                return {same:t.view.textContent===text,calls:t.httpCalls().length,count,destroyed:t.controller.isDestroyed()};
             });assert.equal(result.same,true);assert.equal(result.calls,result.count);assert.equal(result.destroyed,true);
         });
         await scenario('IPC failure uses a fixed inline error and explicit retry recovers', async p => {
-            await p.evaluate(async () => {t.config.fail=true;await t.about.cacheManagement.resume();});
-            assert.equal(await p.locator('.cacheOperationState').getAttribute('role'),'alert');assert.match(await p.locator('.cacheOperationState').textContent(),/操作失败/);
+            await p.evaluate(async () => {t.config.fail=true;await t.controller.cacheManagement.resume();});
+            assert.equal(await p.locator('.cacheOperationState').getAttribute('role'),'alert');assert.match(await p.locator('.cacheOperationState').textContent(),/未能全部完成/);
             assert.equal((await p.locator('.cacheOperationState').textContent()).includes('PRIVATE'),false);
             await p.evaluate(() => {t.config.fail=false;document.querySelector('.btnRefreshCache').click();});
             await p.waitForFunction(() => document.querySelector('.cacheHttpValue').textContent.includes('512'));
         });
         await scenario('a completed clear with unavailable size remains success without a false zero-byte total', async p => {
-            await p.evaluate(async () => {await t.about.cacheManagement.resume();t.config.measurementUnavailable=true;document.querySelector('.btnClearHttpCache').click();});
+            await p.evaluate(async () => {await t.controller.cacheManagement.resume();t.config.measurementUnavailable=true;document.querySelector('.btnClearHttpCache').click();});
             await p.waitForFunction(() => !document.querySelector('.btnClearHttpCache').disabled);
-            assert.match(await p.locator('.cacheOperationState').textContent(),/清理完成；统计暂不可用/);
+            assert.match(await p.locator('.cacheHttpState').textContent(),/清理完成；统计暂不可用/);
             assert.equal(await p.locator('.cacheHttpValue').textContent(),'无法读取');
         });
         await scenario('identity changes are retired before displaying counts; unknown/busy HTTP data is not fabricated as zero', async p => {
-            await p.evaluate(async () => {await t.addOwner();t.user(null);t.config.busy=true;await t.about.cacheManagement.resume();});
-            assert.match(await p.locator('.cachePageValue').textContent(), /0 \/ 2 条/);assert.equal(await p.locator('.cacheHttpValue').textContent(),'正在清理');
-            assert.match(await p.locator('.aboutCacheManagement').textContent(), /图片解码内存无法准确统计/);
+            await p.evaluate(async () => {await t.addOwner();t.user(null);t.config.busy=true;await t.controller.cacheManagement.resume();});
+            assert.match(await p.locator('.cachePageValue').textContent(), /0 条/);assert.equal(await p.locator('.cacheHttpValue').textContent(),'操作进行中');
+            assert.match(await p.locator('.cacheManagementPage').textContent(), /图片解码内存无法准确分项统计/);
         });
         // Exercise actual loader normalization too: Home and the plugin must share one AMD cache owner module.
         const loaderPage = await browser.newPage(), loaderErrors = [];
         loaderPage.on('pageerror', error => loaderErrors.push(error.name));
         try {
-            const routes = {'/plugins/mpvplayer/cache-settings.js': input.ui, '/plugins/mpvplayer/about.js': input.about,
+            const routes = {'/plugins/mpvplayer/cache-settings.js': input.ui, '/plugins/mpvplayer/cache-management.js': input.controller,
                 '/modules/viewmanager/baseview.js': input.base,
-                '/plugins/mpvplayer/about.css':fs.readFileSync(path.join(root,'src/electronapp/plugins/mpvplayer/about.css'),'utf8'),
+                '/plugins/mpvplayer/cache-management.css':fs.readFileSync(path.join(root,'src/electronapp/plugins/mpvplayer/cache-management.css'),'utf8'),
                 '/plugins/mpvplayer/enhanced-settings.css':fs.readFileSync(path.join(root,'src/electronapp/plugins/mpvplayer/enhanced-settings.css'),'utf8'),
                 '/modules/listview/listview.css':fs.readFileSync(path.join(root,'vendor/web-snapshot/www/modules/listview/listview.css'),'utf8'),
                 '/enhanced/home/home-flow.css':fs.readFileSync(path.join(root,'src/electronapp/enhanced/home/home-flow.css'),'utf8'),
@@ -146,27 +147,27 @@ async function main(args = process.argv.slice(2)) {
                 define('baseView',['modules/viewmanager/baseview.js'],base=>base.default);
                 define('enhanced/home/sheet-probe.js',['css!./home-flow.css'],()=>true);
                 window.ipc={invoke:channel=>Promise.resolve(channel==='enhanced-http-cache-status'?{status:'ok',bytes:128}:channel==='enhanced-maintenance-info'?{status:'ok',info:{}}:{status:'unavailable'})};
-                const [adapter,About,events] = await new Promise((resolve,reject) => {
+                const [adapter,CacheView,events] = await new Promise((resolve,reject) => {
                     const timer=setTimeout(()=>reject(Error('AMD loading deadline exceeded')),5000);
-                    require(['enhanced/page-cache/home-layout-cache.js','plugins/mpvplayer/about','modules/emby-apiclient/events.js','enhanced/home/sheet-probe.js'],(...loaded)=>{clearTimeout(timer);resolve(loaded);},error=>{clearTimeout(timer);reject(error);});
+                    require(['enhanced/page-cache/home-layout-cache.js','plugins/mpvplayer/cache-management','modules/emby-apiclient/events.js','enhanced/home/sheet-probe.js'],(...loaded)=>{clearTimeout(timer);resolve(loaded);},error=>{clearTimeout(timer);reject(error);});
                 });
                 const api={isLoggedIn:()=>true,serverId:()=> 'synthetic-server',getCurrentUserId:()=> 'synthetic-user',_identityEpoch:1,getCurrentLocale:()=> 'zh-CN',serverVersion:()=> '4.10.0.40'};
                 const owner=adapter.default.create({currentApiClient:()=>api},{enabled:true,ttlMs:10000,maxEntries:2,maxBytes:4096},events.default);
                 try {
                     await owner.load({displayMode:'desktop'},()=>Promise.resolve([{Id:'safe'}]));
-                    const about=new About(document.querySelector('.view')); about.onResume({});
+                    const cacheView=new CacheView(document.querySelector('.view')); cacheView.onResume({});
                     for(let i=0;i<30;i++)await Promise.resolve();
                     const before=document.querySelector('.cachePageValue').textContent, http=document.querySelector('.cacheHttpValue').textContent;
                     const pending=document.createElement('div');pending.className='eteHomeFlowPending';pending.innerHTML='<div class="itemProgressBar">stale</div>';document.body.append(pending);const masked=getComputedStyle(pending.firstChild).visibility;
                     document.querySelector('.btnClearPageCache').click();for(let i=0;i<20;i++)await Promise.resolve();
-                    const remaining=adapter.default.management.snapshot().entries;about.destroy();return {before,http,remaining,masked};
+                    const remaining=adapter.default.management.snapshot().entries;cacheView.destroy();return {before,http,remaining,masked};
                 } finally {owner.dispose();}
             }).catch(error => {throw Error(error.message + '; synthetic requested paths=' + requested.join(','));});
-            assert.match(result.before,/1 \/ 2 条/);assert.equal(result.remaining,0);assert.match(result.http,/128 bytes/);assert.equal(result.masked,'hidden');assert.deepEqual(loaderErrors,[]);
-            passed.push('actual Alameda loads About with its real management dependency and shared Home owner');
+            assert.match(result.before,/1 条/);assert.equal(result.remaining,0);assert.match(result.http,/128 bytes/);assert.equal(result.masked,'hidden');assert.deepEqual(loaderErrors,[]);
+            passed.push('actual Alameda loads the independent cache page, its real management dependency and shared Home owner');
         } finally {await loaderPage.close();}
         console.log(JSON.stringify({status:'passed',browser:browser.version(),scenarios:passed.length,passed,
-            scope:'real About/controller/HTML, native BaseView, layout/cache/events and DOM in Chromium; main session IPC modeled, no Electron or Windows/full GUI acceptance'}));
+            scope:'real independent cache controller/HTML, native BaseView, layout/cache/events and DOM in Chromium; main session IPC modeled, no Electron or Windows/full GUI acceptance'}));
     } finally {await browser.close();}
 }
 if(require.main===module)main().catch(error=>{console.error(error);process.exitCode=1;});

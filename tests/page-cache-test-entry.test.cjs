@@ -23,12 +23,20 @@ function fixture(t) {
     write('electronapp/preload.js', preload.buildPreparedPreload("window.appdata = process.env.APPDATA;\n"));
     write('x64/electron/electron.exe', 'synthetic-identity-only-not-executable');
     write('config/system.xml', 'test-seed');
-    for (const [index, overlay] of session.FLOW_OVERLAYS.entries()) {
-        const method = index === 0 ? 'patchItemsContainer' : 'patchVirtualScroller';
-        const base = fs.readFileSync(path.join(__dirname, '../vendor/web-snapshot/www', overlay.path.slice('electronapp/www/'.length)), 'utf8');
-        const movie = require('../tools/patch-movie-browser.cjs')[method](base);
-        const search = require('../tools/patch-search-ui.cjs').patchBrowseGuard(movie);
-        write(overlay.path, require('../tools/patch-server-home.cjs')[method](search));
+    for (const overlay of session.FLOW_OVERLAYS) {
+        const relative = overlay.path.slice('electronapp/www/'.length);
+        const base = fs.readFileSync(path.join(__dirname, '../vendor/web-snapshot/www', relative), 'utf8');
+        const home = require('../tools/patch-server-home.cjs'), plugins = require('../tools/patch-plugin-settings.cjs');
+        let output;
+        if (relative === 'home/home.js') output = home.patchHomeView(base);
+        else if (relative === 'home/hometab.js') output = home.patchHomeTab(base);
+        else if (relative === 'modules/viewmanager/viewmanager.js') output = home.patchViewManager(plugins.patchViewManager(base));
+        else if (relative === 'modules/approuter.js') output = home.patchRouter(plugins.patchRouter(base));
+        else {
+            const method = relative.includes('emby-itemscontainer') ? 'patchItemsContainer' : 'patchVirtualScroller';
+            output = home[method](require('../tools/patch-search-ui.cjs').patchBrowseGuard(require('../tools/patch-movie-browser.cjs')[method](base)));
+        }
+        write(overlay.path, output);
     }
     const manifest = {sourceCommit: 'a'.repeat(40), validatedProductScope: {sourceCommit: 'a'.repeat(40), sourceSelection: 'git-commit-blobs', files},
         preparedArtifacts: [{runtimePath: 'electronapp/preload.js', runtimeSha256: digest(fs.readFileSync(path.join(runtime, 'electronapp/preload.js')))}]};
@@ -159,7 +167,7 @@ test('actual main startup snippet isolates before bootstrap and late positional 
     assert.match(source, /if \(pageCacheTest\) windowOptions\.webPreferences\.additionalArguments = \[pageCacheTest\.rendererArgument\]/);
 });
 
-for (const relative of ['enhanced/cache-management-ipc.js', 'plugins/mpvplayer/cache-settings.js', 'plugins/mpvplayer/about.js', 'plugins/mpvplayer/about.html', 'enhanced/home/home-flow.css']) test('management startup source binding rejects tampering before profile allocation: ' + relative, t => {
+for (const relative of ['enhanced/cache-management-ipc.js', 'plugins/mpvplayer/cache-settings.js', 'plugins/mpvplayer/about.js', 'plugins/mpvplayer/about.html', 'enhanced/home/home-flow.css', 'plugins/libmpv.js', 'plugins/mpvplayer/cache-management.js', 'plugins/mpvplayer/cache-management.html', 'plugins/mpvplayer/cache-management.css']) test('management startup source binding rejects tampering before profile allocation: ' + relative, t => {
     const f = fixture(t); f.write('electronapp/' + relative, 'tampered');
     assert.throws(f.prepare); assert.deepEqual(f.sets, []); assert.deepEqual(fs.readdirSync(f.temp), []);
 });

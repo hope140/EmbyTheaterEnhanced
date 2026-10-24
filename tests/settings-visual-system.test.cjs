@@ -11,7 +11,6 @@ const repoRoot = path.resolve(__dirname, '..');
 const pluginRoot = path.join(repoRoot, 'src', 'electronapp', 'plugins', 'mpvplayer');
 const maintenance = require('../src/electronapp/enhanced/maintenance');
 const maintenanceIpc = require('../src/electronapp/enhanced/maintenance-ipc');
-const cacheSettings = require('../src/electronapp/plugins/mpvplayer/cache-settings');
 
 function readPluginFile(name) {
     return fs.readFileSync(path.join(pluginRoot, name), 'utf8');
@@ -258,13 +257,12 @@ test('About loads environment on entry and checks updates only after a user clic
     const source = readPluginFile('about.js');
     const context = {
         define: function (_dependencies, factory) {
-            AboutView = factory({show: function () { loadingCalls.push('show'); }, hide: function () { loadingCalls.push('hide'); }}, BaseView, cacheSettings);
+            AboutView = factory({show: function () { loadingCalls.push('show'); }, hide: function () { loadingCalls.push('hide'); }}, BaseView);
         },
         window: {
             ipc: {
                 invoke: function (channel) {
                     invoked.push(channel);
-                    if (channel === 'enhanced-http-cache-status') return Promise.resolve({status: 'ok', bytes: 128});
                     if (channel === 'enhanced-maintenance-info') {
                         infoCalls++;
                         return Promise.resolve({
@@ -307,9 +305,7 @@ test('About loads environment on entry and checks updates only after a user clic
     await new Promise(function (resolve) { setImmediate(resolve); });
     assert.equal(infoCalls, 2, 'each resume refreshes environment information');
     assert.equal(view.querySelector('.aboutAppVersion').textContent, '0.2.4');
-    assert.deepEqual(invoked, ['enhanced-maintenance-info', 'enhanced-maintenance-check-update', 'enhanced-maintenance-info', 'enhanced-mpv-kernel-status', 'enhanced-http-cache-status']);
-    assert.equal(view.querySelector('.cacheHttpValue').textContent, '128 bytes（session HTTP 总量）');
-    assert.equal(view.querySelector('.cachePageValue').textContent, '未启用（0 条）');
+    assert.deepEqual(invoked, ['enhanced-maintenance-info', 'enhanced-maintenance-check-update', 'enhanced-maintenance-info', 'enhanced-mpv-kernel-status']);
     controller.destroy();
 });
 
@@ -334,7 +330,7 @@ test('About renders the exact trusted copy snapshot and ignores an older pending
     BaseView.prototype.onPause = function () {};
     let AboutView;
     const context = {
-        define(_dependencies, factory) { AboutView = factory({show() { loadingCalls.push('show'); }, hide() { loadingCalls.push('hide'); }}, BaseView, cacheSettings); },
+        define(_dependencies, factory) { AboutView = factory({show() { loadingCalls.push('show'); }, hide() { loadingCalls.push('hide'); }}, BaseView); },
         window: {ipc: {invoke(channel) {
             return new Promise(resolve => pending.push({channel, resolve}));
         }}}
@@ -383,7 +379,7 @@ test('About ignores an older copy rejection and keeps the current load loading s
     BaseView.prototype.onPause = function () {};
     let AboutView;
     const context = {
-        define(_dependencies, factory) { AboutView = factory({show() { loadingCalls.push('show'); }, hide() { loadingCalls.push('hide'); }}, BaseView, cacheSettings); },
+        define(_dependencies, factory) { AboutView = factory({show() { loadingCalls.push('show'); }, hide() { loadingCalls.push('hide'); }}, BaseView); },
         window: {ipc: {invoke(channel) {
             return new Promise((resolve, reject) => pending.push({channel, resolve, reject}));
         }}}

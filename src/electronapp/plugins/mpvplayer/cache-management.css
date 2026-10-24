@@ -1,0 +1,8 @@
+.cacheManagementPage .ete-settings-info-row > span:last-child {
+    overflow-wrap: anywhere;
+}
+.cacheManagementPage .cachePageState,
+.cacheManagementPage .cacheHttpState,
+.cacheManagementPage .cacheOperationState {
+    min-height: 1.5em;
+}
