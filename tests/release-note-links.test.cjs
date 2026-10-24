@@ -59,6 +59,40 @@ test('CommonJS and the actual AMD factory use the same parser and URL policy', (
     assert.deepEqual(commonJs.exports, {}, 'AMD takes priority in a renderer that also exposes a CommonJS global');
 });
 
+test('frozen Alameda resolves the helper from relative and absolute plugin-manager controller URLs', async () => {
+    const root = path.resolve(__dirname, '..'), pageUrl = 'file:///synthetic/electronapp/www/index.html';
+    for (const controllerId of ['../plugins/mpvplayer/about.js', 'file:///synthetic/electronapp/plugins/mpvplayer/about.js']) {
+        const requested = [], nodes = new Map();
+        const view = {querySelector(selector) {
+            if (!nodes.has(selector)) nodes.set(selector, {textContent: '', addEventListener() {}, setAttribute() {}, getAttribute() { return null; }});
+            return nodes.get(selector);
+        }};
+        const context = vm.createContext({URL, Promise, console, setTimeout, clearTimeout,
+            window: {ipc: {invoke: async () => ({status: 'latest', notes: 'safe text', currentVersion: '0.4.0', latestVersion: '0.4.0'})}},
+            document: {createElement(tag) {
+                assert.equal(tag, 'script'); const listeners = new Map();
+                return {addEventListener(type, callback) { listeners.set(type, callback); }, fire() { listeners.get('load')(); }};
+            }, head: {appendChild(script) {
+                const filename = new URL(script.src, pageUrl).pathname;
+                assert.ok(['/synthetic/electronapp/plugins/mpvplayer/about.js', '/synthetic/electronapp/enhanced/release-note-links.js'].includes(filename), filename);
+                requested.push(filename);
+                vm.runInContext(fs.readFileSync(path.join(root, 'src', filename.slice('/synthetic/'.length)), 'utf8'), context, {filename});
+                queueMicrotask(() => script.fire());
+            }}}});
+        vm.runInContext(fs.readFileSync(path.join(root, 'vendor/web-snapshot/www/modules/alameda/alameda.js'), 'utf8'), context);
+        function BaseView() {}
+        context.define('baseView', [], () => BaseView);
+        context.define('loading', [], () => ({show() {}, hide() {}}));
+        context.define('emby-button', [], () => ({})); context.define('emby-scroller', [], () => ({}));
+        context.require.config({baseUrl: 'file:///synthetic/electronapp/www/', noRequireCss: true});
+        const About = await context.require([controllerId], value => value);
+        const controller = new About(view); await controller.checkUpdates();
+        assert.equal(view.querySelector('.aboutReleaseNotes').textContent, 'safe text');
+        assert.equal(requested.length, 2);
+        assert.equal(requested[1], '/synthetic/electronapp/enhanced/release-note-links.js');
+    }
+});
+
 test('rendering creates only text nodes and explicit anchors, never HTML or image elements', () => {
     function element(tag) {
         const node = {tag, children: [], attributes: {}, setAttribute(k, v) { this.attributes[k] = v; },

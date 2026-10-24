@@ -1,4 +1,4 @@
-define(['loading', 'baseView', '../../enhanced/release-note-links', 'emby-button', 'emby-scroller', 'css!modules/listview/listview', 'css!./enhanced-settings', 'css!./about'], function (loading, BaseView, noteLinks) {
+define(['loading', 'baseView', '../../enhanced/release-note-links.js', 'emby-button', 'emby-scroller', 'css!modules/listview/listview', 'css!./enhanced-settings', 'css!./about'], function (loading, BaseView, noteLinks) {
     'use strict';
 
     var CHANNELS = {
