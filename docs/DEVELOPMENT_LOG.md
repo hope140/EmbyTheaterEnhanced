@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-24 — 短基准UI入口准备
+
+复用默认分支已有的public-ci.yml手动入口，在perf/build-inputs增加独立短基准job与明确输入，默认4轮／3次热调用；checkout绑定github.sha，可显式填审核SHA拒绝分支移动。模式冲突失败，perf分支无全包回退；原打包concurrency block及公共回归不变。基准仅运行已审plan／host／fixture-prep，0项单元测试，原始结果和完整身份验收仍保留，artifact缺失即错误。没有扩大权限／接触secret／缓存改动或自行dispatch。UI复现与未实测边界见[方案](CI_WINDOWS_AB.md)。
+
 ## 2026-10-24 — Windows输入性能验证准备
 
 新增Windows PowerShell／Node定向基准协调器，核精确SHA、全仓干净、固定工具和物理独立输出；默认每臂4轮first＋3warm，顺序AB／BA。Host固定commit获取在计时外，测量禁止lazy fetch；每份来源／完整集合／哈希校验保留，诊断产物白名单排除对象库与源码恢复树。原28个测试主体未变，提取私有夹具工厂以保证短基准量同一准备路径，并补4项边界／隔离回归。Windows正确性run40085107715已通过；Windows性能尚未执行，不用完整CI跨机器时长推断收益。复现见[WindowsA/B](CI_WINDOWS_AB.md)。

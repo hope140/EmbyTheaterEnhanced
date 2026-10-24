@@ -41,4 +41,17 @@ node tools/benchmark-build-inputs.cjs fixtures <new-output-directory> --trials 4
 
 报告分别给first、warm的原始值、n、median、min／max、mean、总体variance和standard deviation，以及每次Git进程数、验收成本和进程墙钟；同时检查首次成本与热复用收益。Git spawn减少是机制证据，不能代替Windows实际耗时。夹具短基准只量准备，不量完整回归；不能将局部差值相加外推整包／合并等待百分比。收益不确定、方差覆盖差值或没有收益时保留原结果。
 
-若安排临时workflow，应只调用上述精确SHA入口，选择现手动打包同标签 `windows-2022`、固定现有checkout／Node action SHA，`fetch-depth: 0`、`persist-credentials: false`、只读contents权限，不引入cache或改全局concurrency。上传仅上述artifact子目录并用 `if: always()` 保存失败诊断。workflow创建／调度需另行安排，本分支不包含该workflow。
+## GitHub UI单次运行
+
+本实验分支在既有 [.github/workflows/public-ci.yml](../.github/workflows/public-ci.yml) 增加独立 `windows-build-input-benchmark` job。复用默认分支已存在的workflow路径，避免仅在非默认分支新建workflow没有正常UI手动按钮的问题；GitHub官方[手动运行说明](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)支持从按钮选择分支。本分支的完整打包job明确排除 `perf/build-inputs`，无效／漏填基准输入会失败，不能回退为全包。
+
+1. 打开 [Public offline CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/workflows/public-ci.yml)，点击 `Run workflow`。
+2. 在 `Use workflow from / Branch` 选择 **perf/build-inputs**，确认分支后检查下列字段。
+3. `release_package=false`；`build_input_benchmark=true`；`benchmark_trials=4`；`benchmark_warm_calls=3`；将已审核的精确40位SHA填入 `benchmark_expected_sha`，必须与分支当前dispatch SHA完全相等。
+4. 只点击运行一次。目标job显示 **Windows build input A/B (0 unit tests)**；完整打包job应skipped。输出artifact名为 `build-input-ab-<sourceSHA>-<runID>-<attempt>`。
+
+`build_input_benchmark` 在此实验分支默认true，默认4／3。expected SHA留空时仍绑定本次dispatch的精确 `github.sha`，不会改用浮动ref，但审阅后安排建议显式填SHA以拒绝分支意外移动。新字段的登录UI显示尚未实测；若切分支后字段未更新，刷新页面再重新选择分支，仍缺字段则停止并报告UI限制，不伪造事件或改main绕过。
+
+基准job固定runner标签 `windows-2022` 和Node24.18.1，checkout固定 `github.sha`，完整历史、`persist-credentials: false`；actions仍为原固定SHA，权限仅 `contents: read`，不读取secret或扩大token。GitHub托管镜像具体构建版本仍可能轮换，session记录实际ImageOS／ImageVersion；只在同job内配对，不把跨镜像完整CI时长当收益。
+
+现有完整打包concurrency block原样保留；基准job不加入其group，不替换其pending包。不引入cache／新concurrency设置；每次只运行3个短套件，不安装npm依赖或构建产物。上传仅上述artifact子目录，`if: always()` 保留失败诊断，缺artifact返回错误。该入口仅在独立实验分支准备，未自动dispatch；0单元测试的短基准不能代替原公共CI回归。

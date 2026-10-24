@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-24 — 短基准UI入口准备
+
+仅实验分支的既有public-ci.yml增加明确build_input_benchmark输入及Windows短job，默认Trials4／WarmCalls3，同dispatch精确SHA／同job交替AB／BA，0项单元测试。perf/build-inputs不会进入完整打包job；现有包并发block、权限contents只读、固定actions／Node及所有来源／哈希／输出门禁保持。artifact仅白名单诊断子目录，不能替代公共CI回归。新字段的登录UI尚未实测，触发须选择该分支并核对SHA与输入；未自动dispatch或改main。详见[UI步骤及安全边界](CI_WINDOWS_AB.md)。
+
 ## 2026-10-24 — Windows输入性能验证准备
 
 [Windows正确性CI40085107715](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40085107715)在2e310f47通过。增加独立Windows定向入口，同一精确SHA／干净输入／同job交替测旧与批读Git算法、fresh与seed夹具；默认每臂16次操作，0项单元测试，逐份验收、首次与热调用及验收／进程成本分别记录。原28个测试主体保留，夹具工厂共享至短基准；另补4项参数／路径／归档／隔离回归。workflow、并发、缓存、runner规格和生产门禁未改，未调度新的Windows基准；性能收益仍待实测。见[参数与复现](CI_WINDOWS_AB.md)。
