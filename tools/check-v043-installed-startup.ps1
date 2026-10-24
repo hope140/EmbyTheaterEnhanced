@@ -34,7 +34,7 @@ function ProjectHostText([string]$Text, [string]$InstallRoot = '') {
         } elseif ($name -cmatch '^[.@A-Za-z0-9_/-]{1,160}$' -and -not $name.StartsWith('/')) { $name }
         else { 'OMITTED' }
     })
-    return [ordered]@{fatalKinds=@($kinds | Where-Object { $Text.Contains($_) });missingModules=$missing;electronLaunchMentioned=$Text.Contains('x64\electron\electron.exe')}
+    return [ordered]@{fatalKinds=@($kinds | Where-Object { $Text.Contains($_) });missingModules=$missing;electronLaunchMentioned=$Text.Contains('x64\electron\electron.exe');applicationVersionSeen=$Text.Contains('Application version:');configurationSeen=$Text.Contains('Application configuration:');coreStartupComplete=$Text.Contains('Core startup complete');shutdownComplete=$Text.Contains('Shutdown complete')}
 
 }
 function ReadBoundedText([string]$File) {
@@ -42,6 +42,12 @@ function ReadBoundedText([string]$File) {
     $stream = [IO.File]::Open($File,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::ReadWrite)
     try { $null=$stream.Seek([Math]::Max(0,$stream.Length-65536),[IO.SeekOrigin]::Begin);$reader=[IO.StreamReader]::new($stream);return $reader.ReadToEnd() }
     finally { $stream.Dispose() }
+}
+function HostMilestones([string]$ProfileRoot) {
+    $directory=Join-Path $ProfileRoot 'logs'
+    $files=@(Get-ChildItem -LiteralPath $directory -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'ete-client.jsonl' } | Select-Object -First 4)
+    $text=($files | ForEach-Object { ReadBoundedText $_.FullName }) -join "`n"
+    return ProjectHostText $text
 }
 function InitializeWindowsApi {
     Add-Type @'
@@ -90,6 +96,8 @@ if ($ContractSelfTest) {
     $env:ETE_ENV_REMOVAL_FIXTURE='1';RemoveProcessVariable 'ETE_ENV_REMOVAL_FIXTURE'
     $envCheck=& node -p 'Object.hasOwn(process.env,"ETE_ENV_REMOVAL_FIXTURE")'
     Require ($LASTEXITCODE -eq 0 -and $envCheck -ceq 'false') 'SELFTEST_CHILD_ENVIRONMENT_NOT_REMOVED'
+    $milestones=ProjectHostText 'Application version: fixture Application configuration: fixture Core startup complete Shutdown complete'
+    Require ($milestones.applicationVersionSeen -and $milestones.configurationSeen -and $milestones.coreStartupComplete -and $milestones.shutdownComplete) 'SELFTEST_HOST_MARKERS'
     Write-Output 'CONTRACT_SELFTEST_PASSED (no install, launch or network)'
     return
 }
@@ -223,7 +231,21 @@ if(app)app.exit(0);
     } while ([DateTime]::UtcNow -lt $deadline)
     Require ($null -ne $mainElectron -and $windows.Count -eq 1) 'VISIBLE_WINDOW_NOT_CONFIRMED'
     $result.electronParentVerified = $true; $result.visibleWindow = $true
-    Start-Sleep -Seconds 2
+    $result.stage='host-ready'
+    $result.hostReadiness=[ordered]@{atVisibleWindow=(HostMilestones $profile);beforeClose=$null;afterClose=$null;coreMarkerWaitMs=0;applicationRun='NOT_DIRECTLY_OBSERVED'}
+    $readyClock=[Diagnostics.Stopwatch]::StartNew();$deadline=[DateTime]::UtcNow.AddSeconds(60)
+    do {
+        $milestones=HostMilestones $profile
+        if ($milestones.coreStartupComplete) { break }
+        Require (-not $launcher.HasExited -and -not $mainElectron.HasExited) 'EXIT_BEFORE_HOST_READY'
+        Start-Sleep -Milliseconds 250
+    } while ([DateTime]::UtcNow -lt $deadline)
+    $result.hostReadiness.coreMarkerWaitMs=$readyClock.ElapsedMilliseconds;$result.hostReadiness.beforeClose=$milestones
+    Require $milestones.coreStartupComplete 'HOST_CORE_READY_NOT_OBSERVED'
+    $cimHost=Get-CimInstance Win32_Process -Filter ('ProcessId=' + $launcher.Id)
+    $sameHost=[Diagnostics.Process]::GetProcessById($launcher.Id)
+    $result.hostIdentity=[ordered]@{sameStartTime=($sameHost.StartTime -eq $launcher.StartTime);sameImage=($sameHost.MainModule.FileName -ieq $hostExe);parentIsChecker=($cimHost.ParentProcessId -eq $PID);singleOwnedHost=(@(OwnedProcesses | Where-Object { $_.Name -ieq 'Emby.Theater.exe' }).Count -eq 1)}
+    Require ($result.hostIdentity.sameStartTime -and $result.hostIdentity.sameImage -and $result.hostIdentity.parentIsChecker -and $result.hostIdentity.singleOwnedHost) 'HOST_PROCESS_IDENTITY_MISMATCH'
     $diag = Join-Path $profile 'logs/ete-client.jsonl'
     Require (Test-Path -LiteralPath $diag -PathType Leaf) 'DIAGNOSTIC_LOG_MISSING'
     $events = @(Get-Content -LiteralPath $diag | ForEach-Object { $_ | ConvertFrom-Json })
@@ -234,6 +256,9 @@ if(app)app.exit(0);
     $deadline = [DateTime]::UtcNow.AddSeconds(25)
     while ([DateTime]::UtcNow -lt $deadline -and (@(OwnedProcesses).Count -gt 0 -or -not $launcher.HasExited -or -not $mainElectron.HasExited)) { Start-Sleep -Milliseconds 250 }
     $result.ownedRemainingCount = @(OwnedProcesses).Count
+    $result.hostReadiness.afterClose=HostMilestones $profile
+    if ($launcher.HasExited) { $result.hostExitCode=$launcher.ExitCode }
+    if ($mainElectron.HasExited) { $result.electronExitCode=$mainElectron.ExitCode }
     Require ($launcher.HasExited -and $mainElectron.HasExited -and $result.ownedRemainingCount -eq 0) 'OWNED_EXIT_NOT_CONFIRMED'
     $result.hostExitCode = $launcher.ExitCode; $result.electronExitCode = $mainElectron.ExitCode
     Require ($launcher.ExitCode -eq 0 -and $mainElectron.ExitCode -eq 0) 'NONZERO_EXIT'
