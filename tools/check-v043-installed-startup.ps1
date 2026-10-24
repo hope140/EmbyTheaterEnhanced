@@ -2,12 +2,15 @@ param(
     [string]$ArtifactId,
     [string]$ArtifactZipSha256,
     [string]$InstallerSha256,
+    [string]$ExpectedSourceCommit,
+    [string]$BuildRunId,
+    [string]$InstallerFileName,
     [switch]$ContractSelfTest
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
-$source = 'abe1c7426f0c8d0b5d1f7febadd0d39fb9a80a1d'
-$buildRun = '40110950621'
+$source = $ExpectedSourceCommit
+$buildRun = $BuildRunId
 $repository = 'hope140/EmbyTheaterEnhanced'
 $version = '0.4.3'
 function Require([bool]$Condition, [string]$Code) { if (-not $Condition) { throw $Code } }
@@ -34,7 +37,7 @@ function ProjectHostText([string]$Text, [string]$InstallRoot = '') {
         } elseif ($name -cmatch '^[.@A-Za-z0-9_/-]{1,160}$' -and -not $name.StartsWith('/')) { $name }
         else { 'OMITTED' }
     })
-    return [ordered]@{fatalKinds=@($kinds | Where-Object { $Text.Contains($_) });missingModules=$missing;electronLaunchMentioned=$Text.Contains('x64\electron\electron.exe');applicationVersionSeen=$Text.Contains('Application version:');configurationSeen=$Text.Contains('Application configuration:');coreStartupComplete=$Text.Contains('Core startup complete');shutdownComplete=$Text.Contains('Shutdown complete')}
+    return [ordered]@{fatalKinds=@($kinds | Where-Object { $Text.Contains($_) });missingModules=$missing;electronLaunchMentioned=$Text.Contains('x64\electron\electron.exe');applicationVersionSeen=$Text.Contains('Application version:');configurationSeen=$Text.Contains('Application configuration:');coreStartupComplete=$Text.Contains('Core startup complete');shutdownComplete=$Text.Contains('Shutdown complete');applicationLoopStarting=$Text.Contains('Host application loop starting');applicationLoopReturned=$Text.Contains('Host application loop returned')}
 
 }
 function ReadBoundedText([string]$File) {
@@ -103,12 +106,16 @@ if ($ContractSelfTest) {
 }
 Require ($IsWindows -and $env:GITHUB_ACTIONS -ceq 'true' -and $env:RUNNER_ENVIRONMENT -ceq 'github-hosted') 'HOSTED_WINDOWS_REQUIRED'
 Require ($env:GITHUB_REPOSITORY -ceq $repository) 'REPOSITORY_MISMATCH'
-Require ($ArtifactId -match '^[1-9][0-9]{0,15}$' -and $ArtifactZipSha256 -cmatch '^[a-f0-9]{64}$' -and $InstallerSha256 -cmatch '^[a-f0-9]{64}$') 'EXACT_INPUTS_REQUIRED'
+Require ($source -cin @('abe1c7426f0c8d0b5d1f7febadd0d39fb9a80a1d','3a02339ab5011f2544df5b24b1da9b22d0df8d4a') -and $buildRun -match '^[1-9][0-9]{0,15}$' -and $ArtifactId -match '^[1-9][0-9]{0,15}$' -and $ArtifactZipSha256 -cmatch '^[a-f0-9]{64}$' -and $InstallerSha256 -cmatch '^[a-f0-9]{64}$') 'EXACT_INPUTS_REQUIRED'
+$testPackage=$source -ceq '3a02339ab5011f2544df5b24b1da9b22d0df8d4a'
+$setupName=$InstallerFileName
+if($testPackage){Require ($setupName -cmatch ('^EmbyTheaterEnhanced-0\.4\.3-test-'+$source.Substring(0,12)+'-'+$buildRun+'-[1-9][0-9]*-win-x64-setup\.exe$')) 'INSTALLER_NAME_MISMATCH'}
+else{Require ($buildRun -ceq '40110950621' -and $setupName -ceq ('EmbyTheaterEnhanced-'+$version+'-win-x64-setup.exe')) 'ORIGINAL_BINDING_MISMATCH'}
 $work = Join-Path $env:RUNNER_TEMP ('v043-installed-' + $env:GITHUB_RUN_ID + '-' + $env:GITHUB_RUN_ATTEMPT)
 Require (-not (Test-Path -LiteralPath $work)) 'PRESERVE_EXISTING_OUTPUT'
 $reportDir = Join-Path $work 'report'
 New-Item -ItemType Directory -Path $reportDir | Out-Null
-$result = [ordered]@{schemaVersion=1;scope='ordinary-installed-startup-close-only';sourceCommit=$source;version=$version;buildRun=$buildRun;artifactId=$ArtifactId;artifactZipSha256=$ArtifactZipSha256;installerSha256=$InstallerSha256;status='failed';stage='preflight';installed=$false;shortcutVerified=$false;hostStarted=$false;electronParentVerified=$false;visibleWindow=$false;normalCloseRequested=$false;ownedExitConfirmed=$false;hostExitCode=$null;electronExitCode=$null;realSmtcPlayback='NOT_ASSESSED';visibleDwmPlayback='NOT_ASSESSED';rendererDomReady='NOT_ASSESSED';forcedTermination=$false;installerExitCode=$null;ownedElectronCandidates=0;visibleWindowCount=0;ownedRemainingCount=$null}
+$result = [ordered]@{schemaVersion=1;scope='ordinary-installed-startup-close-only';sourceCommit=$source;version=$version;buildRun=$buildRun;artifactId=$ArtifactId;installerFileName=$setupName;testPackage=$testPackage;artifactZipSha256=$ArtifactZipSha256;installerSha256=$InstallerSha256;status='failed';stage='preflight';installed=$false;shortcutVerified=$false;hostStarted=$false;electronParentVerified=$false;visibleWindow=$false;normalCloseRequested=$false;ownedExitConfirmed=$false;hostExitCode=$null;electronExitCode=$null;realSmtcPlayback='NOT_ASSESSED';visibleDwmPlayback='NOT_ASSESSED';rendererDomReady='NOT_ASSESSED';forcedTermination=$false;installerExitCode=$null;ownedElectronCandidates=0;visibleWindowCount=0;ownedRemainingCount=$null}
 $launcher=$null; $target=$null; $profile=$null; $windowsApiReady=$false
 try {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -132,8 +139,8 @@ try {
     $headers.Clear(); RemoveProcessVariable 'GH_TOKEN'; RemoveProcessVariable 'GITHUB_TOKEN'
     Require (HashMatches $archive $ArtifactZipSha256) 'ARTIFACT_DIGEST_MISMATCH'
     $payload = Join-Path $work 'attachments'; New-Item -ItemType Directory -Path $payload | Out-Null
-    $setupName = 'EmbyTheaterEnhanced-' + $version + '-win-x64-setup.exe'
-    $wanted = @($setupName,($setupName + '.provenance.json'),($setupName + '.sha256'),'SHA256SUMS.txt','RELEASE_NOTES.md')
+    $wanted = @($setupName,($setupName + '.provenance.json'),($setupName + '.sha256'))
+    if(-not $testPackage){$wanted+=@('SHA256SUMS.txt','RELEASE_NOTES.md')}
     $zip = [IO.Compression.ZipFile]::OpenRead($archive)
     try {
         Require ($zip.Entries.Count -le 128) 'ARTIFACT_ENTRY_LIMIT'
@@ -150,6 +157,7 @@ try {
     $setup = Join-Path $payload $setupName
     $receipt = Get-Content -LiteralPath ($setup + '.provenance.json') -Raw | ConvertFrom-Json
     Require (HashMatches $setup $InstallerSha256) 'INSTALLER_DIGEST_MISMATCH'
+    Require ((Get-Content -LiteralPath ($setup+'.sha256') -Raw).TrimEnd([char[]]@([char]13,[char]10)) -ceq ($InstallerSha256+'  '+$setupName)) 'INSTALLER_COMPANION_MISMATCH'
     Require ($receipt.sourceCommit -ceq $source -and $receipt.version -ceq $version -and $receipt.installer.fileName -ceq $setupName -and $receipt.installer.sha256 -ceq $InstallerSha256 -and $receipt.installer.size -eq (Get-Item -LiteralPath $setup).Length) 'INSTALLER_PROVENANCE_MISMATCH'
     $result.stage = 'install'
     $target = Join-Path $work 'installed'
@@ -257,6 +265,7 @@ if(app)app.exit(0);
     while ([DateTime]::UtcNow -lt $deadline -and (@(OwnedProcesses).Count -gt 0 -or -not $launcher.HasExited -or -not $mainElectron.HasExited)) { Start-Sleep -Milliseconds 250 }
     $result.ownedRemainingCount = @(OwnedProcesses).Count
     $result.hostReadiness.afterClose=HostMilestones $profile
+    if($result.hostReadiness.afterClose.applicationLoopReturned){$result.hostReadiness.applicationRun='RETURN_OBSERVED'}
     if ($launcher.HasExited) { $result.hostExitCode=$launcher.ExitCode }
     if ($mainElectron.HasExited) { $result.electronExitCode=$mainElectron.ExitCode }
     Require ($launcher.HasExited -and $mainElectron.HasExited -and $result.ownedRemainingCount -eq 0) 'OWNED_EXIT_NOT_CONFIRMED'

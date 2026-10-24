@@ -1,6 +1,6 @@
 # v0.4.3 普通安装启动核验
 
-独立验证入口只消费成功构建 run `40110950621` 的原始 artifact，固定产品提交 `abe1c7426f0c8d0b5d1f7febadd0d39fb9a80a1d`，不重新构建、修改标签或发行物。
+原基线固定成功构建 run `40110950621` 与产品提交 `abe1c7426f0c8d0b5d1f7febadd0d39fb9a80a1d`；另允许下节明确列出的 Host 退出候选。两种模式都只消费各自审核绑定的原始 artifact，不重新构建、修改标签或发行物。
 
 入口为独立工作流 `v0.4.3 existing installer startup check`。初始 `tools/v043-installed-startup-input.json` 的 `enabled=false`，只做纯合同自检。原构建成功且 artifact 未过期后，在本验证分支把该文件的 `artifactId`、`artifactZipSha256`、`installerSha256` 绑定为审核过的附件身份并设置 `enabled=true`，普通推送该文件即可触发安装检查；也可在工作流已注册后选择本分支手动运行。所有摘要使用完整小写 SHA256。普通产品CI及构建入口保持原字节；本入口没有重包或发布步骤。
 
@@ -11,3 +11,12 @@
 工作流仅上传有限 JSON 结果。原始安装日志、客户端日志、profile 留在一次性 runner，不作为公开附件上传。失败时保留现场直到 runner 正常销毁；不把强制清理当退出成功。安装数据和卸载注册项只影响这台一次性机器。
 
 检查器在普通Host之前用原包内固定Electron做无窗口环境语义对照，分别观察旧null调用与显式删除后的变量存在性、子进程模式及Electron内建模块。正式启动前要求Node模式变量实际不存在；不以空字符串代替删除，不修改产品或系统环境。该对照不能代替SMTC/DWM播放验收。
+
+
+## 独立 Host 退出候选
+
+允许的来源只增加精确候选 `3a02339ab5011f2544df5b24b1da9b22d0df8d4a`。该候选的 selected-methods 真实 Framework 红绿见 run `40117964806` / job `120943146678`：旧代码两个循环前场景需 watchdog，候选四场均正常退出；这不证明完整 Host 残留的唯一根因，也不是安装验收。对应 artifact `12570485777` 的 ZIP SHA256 为 `502d471e21b1b45a858c1c9dafe8b9b5bed60c75a7d2b14275afdc3f535bbf0b`。
+
+构建选择 `fix/host-electron-exit-v043`，确认 head 为上述 SHA，`release_package=false`、`build_input_benchmark=false`。使用原普通构建门禁重新源码构建 Host、组装并校验测试安装器；不能拿原 v0.4.3 附件替代。构建成功后在本验证分支填写 `sourceCommit`、`buildRunId`、`installerFileName`、artifact ID 及两个摘要，再启用。初始绑定保持 disabled，不触发旧包重复安装。
+
+测试附件文件名必须精确匹配 `EmbyTheaterEnhanced-0.4.3-test-3a02339ab501-<run>-<attempt>-win-x64-setup.exe`。测试模式只要求安装器及其 provenance／sha256 三附件，因为非 release 构建不生成发布说明／SHA256SUMS；artifact 摘要、安装器摘要、原 run/source 身份、provenance、安装后完整逐文件载荷和普通启动／退出门禁全部保留，并核对 sha256 伴随文件。原固定 v0.4.3 模式仍要求原五附件。

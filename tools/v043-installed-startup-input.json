@@ -1,6 +1,9 @@
 {
-  "enabled": true,
-  "artifactId": "12566997332",
-  "artifactZipSha256": "13f676aae47ed07babd64639c5244135c0d811725ed87230a34b2809407aae14",
-  "installerSha256": "d5b66d4203a42b03e54333c9a0301a6f098e37d88950b6e69ebe4a8a920e50c9"
+  "enabled": false,
+  "sourceCommit": "3a02339ab5011f2544df5b24b1da9b22d0df8d4a",
+  "buildRunId": null,
+  "installerFileName": null,
+  "artifactId": null,
+  "artifactZipSha256": null,
+  "installerSha256": null
 }
