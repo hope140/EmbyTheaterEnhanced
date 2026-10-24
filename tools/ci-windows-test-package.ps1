@@ -1,5 +1,6 @@
-param([switch]$ReleasePackage, [switch]$NativePreviewTrial)
+param([switch]$ReleasePackage, [switch]$NativePreviewTrial, [switch]$NativeLoaderOnly)
 if ($ReleasePackage -and $NativePreviewTrial) { throw 'Native preview trial cannot be a release package.' }
+if ($NativeLoaderOnly -and ($ReleasePackage -or $NativePreviewTrial)) { throw 'Loader diagnostic must be selected alone.' }
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $root = Split-Path -Parent $PSScriptRoot
@@ -21,6 +22,15 @@ $run = if ($env:GITHUB_RUN_ID) { $env:GITHUB_RUN_ID + '-' + $env:GITHUB_RUN_ATTE
 if ($run -notmatch '^[a-zA-Z0-9-]+$') { throw 'Invalid run identity.' }
 $runtimeName = 'ETE-test-' + $source.Substring(0,12) + '-' + $run
 $runtime = Join-Path $root ('dist/' + $runtimeName)
+
+# A short, separately selected cloud diagnostic. It does not invoke helper or
+# window construction and stops before Host, regression or assembly. DLL DllMain
+# code does execute; this mode is never a Work/background-client entry point.
+if ($NativeLoaderOnly) {
+    & (Join-Path $PSScriptRoot 'prepare-native-loader-probe.ps1')
+    if (-not $?) { throw 'Native loader diagnostic failed.' }
+    return
+}
 
 # Fail before dependency acquisition on an unknown/unsigned Framework; do not
 # repeatedly allocate full builds hoping for a different hosted image.

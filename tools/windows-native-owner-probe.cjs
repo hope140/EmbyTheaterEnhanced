@@ -15,6 +15,10 @@ function probeConfiguration(manifest,baseline) {
     if(manifest.libmpv.sha256!==baseline.EXPECTED_LIBMPV_SHA256||manifest.libmpv.clientApi!=='2.5'||baseline.EXPECTED_LIBMPV_VERSION!=='mpv '+manifest.libmpv.version)throw probeFailure('OWNER_BASELINE_CONTRACT_MISMATCH');
     return {expectedLibmpvVersion:baseline.EXPECTED_LIBMPV_VERSION};
 }
+function targetEvidence(runtime,dll){
+    const normalize=value=>process.platform==='win32'?value.toLowerCase():value;
+    return {absolute:path.isAbsolute(dll),physicalPathMatch:normalize(fs.realpathSync.native(dll))===normalize(path.resolve(dll)),productionBaselinePathMatch:normalize(dll)===normalize(path.join(runtime,'electronapp','libmpv','x64','mpv-1.dll')),characters:dll.length};
+}
 function auditSourceContract() {
     const packaged=fs.existsSync(path.join(__dirname,'registry-input.json'));
     const manifest=packaged?require('./native-helper-manifest.json'):require('../vendor/native-helper-manifest.json');
@@ -121,7 +125,7 @@ async function run(runtimeArg,outputArg,commit) {
     const cpp=packaged?fs.readFileSync(path.join(__dirname,'helper-source.cpp')):execFileSync('git',['-C',repository,'show',commit+':'+manifest.sourcePath]);
     if(provenance.sourceCommit!==commit||provenance.helper.testing||provenance.source.sha256!==sha(cpp)||
        provenance.helper.sha256!==sha(fs.readFileSync(helper))||manifest.libmpv.sha256!==sha(fs.readFileSync(dll)))throw Error('Source-bound production runtime required');
-    trace('source-bound');
+    trace('source-bound',{dllTarget:targetEvidence(runtime,dll)});
     fs.mkdirSync(output);
     const log=value=>fs.appendFileSync(path.join(output,'owner-probe.jsonl'),JSON.stringify(value)+'\n');
     const {app,BrowserWindow}=require('electron');
@@ -176,7 +180,7 @@ async function run(runtimeArg,outputArg,commit) {
         trace('cleanup-start');await client.kill();trace('helper-exit-confirmed',{exited:client.exited});finished=true;if(!host.isDestroyed())host.destroy();trace('app-quit');app.quit();
     }
 }
-module.exports={PLAN,clip,loadProbeClip,assertNoSnapshotDiagnostics,probeConfiguration,auditSourceContract,startupEvidence,startProbeHelper,noteProbeTerminal,finishOwnerProbe,stageErrorProjection};
+module.exports={PLAN,clip,loadProbeClip,assertNoSnapshotDiagnostics,probeConfiguration,targetEvidence,auditSourceContract,startupEvidence,startProbeHelper,noteProbeTerminal,finishOwnerProbe,stageErrorProjection};
 const directInvocation=isDirectInvocation();
 if(process.versions.electron&&process.defaultApp&&process.type==='browser')trace('module-evaluated',{directInvocation,argv1Basename:process.argv[1]?path.basename(process.argv[1]):null});
 if(directInvocation) {

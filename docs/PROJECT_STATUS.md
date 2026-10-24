@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-10-24 — 保留DLL加载首错并准备短加载A/B
+
+edc58c76实际Windows完整回归、安装器、2234物理文件清单与入口smoke通过；owner在ready前收到helper-fatal:dll-load-failed并exit23，没有握手。版本字符串不是这次已确认首因。owner与生产service都通过同一controller传绝对DLL路径，helper使用相同0x1100加载flags；目前未见确定路径错配。原固定7z经原SHA验证后提取DLL，119725568字节及SHA965efde4…一致；objdump与独立PE解析均得到47项普通导入，含vulkan-1.dll，延迟导入目录为零。D3D11选项不消除这一加载依赖；helper搜索目录不包含独立Electron目录，但该CI是否缺可用Vulkan依赖仍未实测，不能宣称已证实根因。
+
+helper现立即保留GetLastError，再查询目标文件／绝对路径／字符数／正斜杠布尔证据，不写原路径。owner补同生产基线路径及物理路径匹配投影。新增默认false的native_loader_only，与release／trial互斥；短路线在Host、完整回归及打包前返回，只从原提交7z和固定官方Electron44.4.2归档准备材料，73文件树及原哈希门禁保持。两个新PowerShell进程比较仅libmpv与并置原Electron Vulkan loader，沿0x1100加载；不启动helper或客户端，但DLL初始化代码会执行，因此仅云Windows且不在Work运行。诊断完成不等于helper／视频通过；产品包尚未并置依赖，须先取得真实A/B再决定最小修复。
+
+公开离线1629项／1618pass／0fail／11平台skip，435 JS／52 PowerShell语法及有限模式检查通过。实际嵌入C#在宿主.NET编译并回读Unicode／last-error／out-int声明，通过但未调用Windows DLL；实际C++ loader提取编译24项、原预览核心37项通过，均不代替Windows helper编译。新短模式、Win32码和真实A/B未运行；操作参数和证据边界见[加载诊断](WINDOWS_PREVIEW_SNAPSHOT_PROTOCOL.md)。
+
 ## 2026-10-24 — 明确trial物化的Git blob换行合同
 
 d0dcb7d实际Windows完整回归1705项／1703pass／2fail，均为组装用例将blob物化的LF policy与CRLF工作树直接比较；未到生产owner，未生成诊断或验收包。此前Linux的CRLF标签只显式转换C++，未证明新CJS输入的真实CRLF checkout。现夹具保留仓库字节绑定属性，显式配置LF／CRLF并强制重新检出全部输入，断言policy实际工作树换行不同于提交blob；在Linux临时整仓CRLF检出、进程范围Git autocrlf=true配置下复现旧两项全失败，修后同环境17/17通过。所有trial源输出及来源哈希逐项精确匹配Git blob，不在断言或包校验时归一化。

@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-24 — 将预握手故障收窄为可验证的DLL加载诊断
+
+实际Windows新诊断确认helper-fatal:dll-load-failed、exit23、handshake null；此前丢失具体Win32码，不能把组件版本修复当作首因。核对同一controller、owner／service绝对DLL路径及加载flags，未见确定argv或路径区别；从原固定7z读取DLL并核对965efde4…，两种静态PE检查均确认47项普通导入含vulkan-1.dll，无延迟导入目录。独立helper的受限加载不搜索Electron目录，可形成依赖放置问题，但尚无该CI系统目录／真实加载错误码证据，保留为待验证假设。
+
+生产helper只修诊断丢失：立即保存GetLastError再作文件属性查询，固定数值／布尔标记不会泄露文件名或路径；原加载flags、失败exit23、窗口及播放策略保持。owner只增安全target投影。另加手动默认关闭、与release／trial互斥的loader-only短路线，跳过Host／回归／安装器组装并仅上传独立有界诊断。原固定libmpv及官方固定Electron归档、完整73文件树验证后，两新进程沿相同加载flags做A/B，仅B并置原Vulkan loader。实际执行DLL初始化，故显式限云Windows，不提供Work执行路径；不安装驱动、不改系统搜索策略、不调用mpv初始化或创建helper／客户端。完整收集的exit0不是视频验收，也未因此修改产品包依赖。
+
+公开离线1629项／1618pass／0fail／11平台skip，435 JS／52 PowerShell语法、有限模式及diff检查通过。首轮唯一回归失败为原workflow固定四action数量；增加独立artifact后现精确核对五项名称与原锁定SHA，不放宽权限或来源。实际C#用宿主.NET编译、反射核对PInvoke声明，实际C++ loader提取编译24项验证flags／error捕获顺序及隐私，原预览核心37项通过；Windows加载、锁定工具链实编、新短模式和owner／DWM仍待父统一安排，不自行dispatch。详见[最小云诊断](WINDOWS_PREVIEW_SNAPSHOT_PROTOCOL.md)。
+
 ## 2026-10-24 — 修正组装测试的换行来源与CRLF覆盖
 
 读取d0dcb7d实际Windows完整日志：1705项中1703pass、2fail，LF／CRLF两个组装用例都停在新增policy的工作树字节比较，未进入生产owner或生成诊断。两者实际输出LF、原期望CRLF；生产组装器从固定Git blob取字节的行为正确。旧Linux CRLF夹具仅转换C++，不能支持新CJS已覆盖真实CRLF检出的说法。

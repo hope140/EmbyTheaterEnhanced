@@ -56,6 +56,21 @@ std::string wideToUtf8(const std::wstring& value) {
     return result;
 }
 
+HMODULE loadMpvLibrary(const std::wstring& dllPath) {
+    HMODULE module = LoadLibraryExW(dllPath.c_str(), nullptr, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+    if (module) return module;
+    // Preserve the loader error before even the diagnostic filesystem query.
+    const DWORD error = GetLastError();
+    const DWORD attributes = GetFileAttributesW(dllPath.c_str());
+    const bool file = attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
+    const bool absolute = (dllPath.size() >= 3 && dllPath[1] == L':' && dllPath[2] == L'\\') ||
+        (dllPath.size() >= 2 && dllPath[0] == L'\\' && dllPath[1] == L'\\');
+    throw std::runtime_error("dll-load-failed:win32-" + std::to_string(error) +
+        ":target-file-" + (file ? "1" : "0") + ":absolute-" + (absolute ? "1" : "0") +
+        ":chars-" + std::to_string(dllPath.size()) +
+        ":forward-slashes-" + (dllPath.find(L'/') == std::wstring::npos ? "0" : "1"));
+}
+
 bool parseWindowHandle(const wchar_t* text, HWND& window) {
     if (!text || !*text) return false;
     uintptr_t value = 0;
@@ -1469,8 +1484,7 @@ public:
         for (int attempt = 0; surfaceState == 0 && attempt < 5000; ++attempt) Sleep(1);
         HWND attachedSurface = surfaceWindow.load(std::memory_order_acquire);
         if (surfaceState.load(std::memory_order_acquire) != 1 || !attachedSurface) throw std::runtime_error("surface-create-failed");
-        library = LoadLibraryExW(dllPath.c_str(), nullptr, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
-        if (!library) throw std::runtime_error("dll-load-failed");
+        library = loadMpvLibrary(dllPath);
 #define LOAD(name) p_##name = reinterpret_cast<decltype(p_##name)>(GetProcAddress(library, #name)); if (!p_##name) throw std::runtime_error("missing-export:" #name);
         MPV_FUNCTIONS(LOAD)
 #undef LOAD

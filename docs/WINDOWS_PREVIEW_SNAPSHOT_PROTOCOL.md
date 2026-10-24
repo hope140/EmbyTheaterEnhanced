@@ -99,6 +99,18 @@ manifest的`libmpv.version`是组件版本（v0.41…），生产`service.EXPECT
 
 **零窗口的生产helper握手不可行。** 当前C++构造器先验证parent HWND，启动surface线程并调用CreateWindowExW建立两个子窗口，再加载／初始化mpv并发送ready。WS_EX_NOACTIVATE不等于没有窗口；不提供隐藏该事实的后台执行命令，不借桌面HWND或旧包替代。真实复现还必须有准确源提交绑定的helper／固定DLL／provenance；不能假定现有正式安装含相同SHA，当前失败artifact也不是完整trial。
 
+### 预握手DLL加载与短云诊断
+
+edc58c76的实际helper stderr已给出dll-load-failed及exit23，handshake null；具体Win32码原未保存，不能将版本修复或FFI自检成功当加载首因证明。owner与生产service都用绝对DLL路径、同一controller和helper的`LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS`（0x1100）。owner在已验证文件SHA后记录absolute／physicalPathMatch／productionBaselinePathMatch及字符数；helper在加载失败的第一步保存GetLastError，再记录target-file／absolute／chars／forward-slashes固定投影，不写真实路径或本地化错误原文。依据为[LoadLibraryExW官方合同](https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibraryexw)：依赖加载失败也会使调用失败，当前目录和任意PATH不属于该受限搜索集合；本轮不改变搜索策略。
+
+固定7z原SHA验证后读取的DLL为119725568字节、SHA256 `965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c`。objdump及独立PE32+解析均发现47项普通导入，含`vulkan-1.dll`；延迟导入RVA／size均为零。因此D3D11选项不会消除启动时Vulkan loader依赖。独立helper的应用目录及DLL目录与Electron目录不同；但缺少此CI的实际系统依赖与Win32码时，仍不能断言这就是当前首因或擅自安装Vulkan。
+
+手动workflow新增默认false的`native_loader_only`。只选此项，保持`release_package=false`、`native_preview_trial=false`；父统一安排准确最终SHA，不自行dispatch。此路线在原提交归档验证后分流，跳过Host、完整回归、Native编译、runtime／安装器及owner组装；不会生成验收包。它只恢复原固定libmpv和官方锁定Electron44.4.2 ZIP，验证归档／73文件树后，在全新私有A／B目录复制材料，分别用两个新PowerShell7进程加载。A仅libmpv；B额外并置该已验证Electron中的Vulkan loader。两者均使用0x1100，不改PATH／全局DLL搜索或驱动，不调用mpv_create／mpv_initialize、不创建helper或完整客户端。LoadLibrary本身执行DLL初始化代码；这个模式仅限云Windows x64，不应在前台暂停的Work执行，也不将其称作生产helper握手。
+
+每进程最多15秒，超时或退出失败保留状态且整次失败；实际加载模块须FreeLibrary成功，原进程error mode恢复。报告只含源SHA、材料SHA、导入名、Win32数值及存在性／来源类别，不含原始模块路径。仅在A失败126、两个进程均未预加载Vulkan、B成功且实际加载自并置位置、哈希等于原Electron成员时，assessment才标记`vulkanDependencyCauseSupported=true`。该字段支持依赖放置假设，仍不证明生产helper／D3D11／DWM通过；两边都成功、都失败、其他错误、未知来源或错误哈希均不能支持该结论。短job exit0只表示诊断已收集，完整源及视频验收仍须独立进行。
+
+独立artifact名为`ete-native-loader-diagnostic-<sha>-<run>-<attempt>`，保存A／B JSON、有限stdout／stderr和summary，保留1天，不上传DLL、媒体或profile。此修订未将并置方案加入产品包；真实短A/B、Win32码及后续最小修复须先闭合，再重跑完整Windows生产helper及owner，最后集中验DWM／Peek。宿主C#实际编译及C++提取编译分别只验证声明／调用顺序，不是Windows加载证据。
+
 可以在后台做以下**纯源合同核对**，所需输入是本分支精确源码checkout及已有Node.js；无需helper、DLL、服务器、profile或账户。代码只读manifest和生产常量，不启动子进程、不加载Electron／FFI／addon、不调用窗口API，不生成文件：
 
 ```powershell
