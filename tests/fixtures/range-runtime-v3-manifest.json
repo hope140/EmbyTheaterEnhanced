@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 3,
+  "sourceCommit": "162dc69f9c3438d99508c90321a889b693b6b10a",
+  "version": "0.4.0",
+  "baseline": "Carnival 3.0 / application 3.0.20-3.0 + combined patch",
+  "sourceManifestSha256": "ab502262c0c615944856369513a8ce3d06c160217098e0abfa733aff8ace9eb8",
+  "packageLockSha256": "05da3db2037d535d4c1a95d4ccc36ee023d84d89c51ed97fe8e9b61c47f7befd",
+  "provenance": {
+    "inputs": {
+      "path": "build-input-provenance.json",
+      "sha256": "21cb1ab39b1c8d10ffed76db6bffe91e0e86c7825e60ecc7d4ba146ea7fcf8c1"
+    },
+    "source": {
+      "path": "source-provenance.json",
+      "sha256": "cf282054ec8ebc1bc07f91544b8a4821c8526ab9346d549c2d65b9d7191b0ec2"
+    },
+    "runtime": {
+      "path": "runtime-provenance.json",
+      "sha256": "8e2c14d32419eb967fc0914c058844e02c68cb7e72e6e85bbdccb6a67a04e88c"
+    }
+  },
+  "payload": {
+    "fileCount": 5,
+    "payloadSetSha256": "e831b11bde16e300c3297339239573473b17a24c9263e009796d73cddef5eacd"
+  },
+  "files": [
+    {
+      "path": "build-input-provenance.json",
+      "sha256": "21cb1ab39b1c8d10ffed76db6bffe91e0e86c7825e60ecc7d4ba146ea7fcf8c1"
+    },
+    {
+      "path": "electronapp/fixture.txt",
+      "sha256": "3320bafd82571852faab7e58ffec3e5e61fe740a56d15993330632c8f79f2d5d"
+    },
+    {
+      "path": "LICENSE.txt",
+      "sha256": "837faf67540389802293c852367b54dc560498e5367e05773a62ea068b23acd0"
+    },
+    {
+      "path": "runtime-provenance.json",
+      "sha256": "8e2c14d32419eb967fc0914c058844e02c68cb7e72e6e85bbdccb6a67a04e88c"
+    },
+    {
+      "path": "source-provenance.json",
+      "sha256": "cf282054ec8ebc1bc07f91544b8a4821c8526ab9346d549c2d65b9d7191b0ec2"
+    }
+  ]
+}

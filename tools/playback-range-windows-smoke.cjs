@@ -58,23 +58,32 @@ function zipReceipts(file) {
     } finally {fs.closeSync(fd);}
 }
 function source(repo, relative) {return execFileSync('git', ['show', CANDIDATE.commit + ':' + relative], {cwd: repo, maxBuffer: 4 * 1048576, windowsHide: true});}
+// Schema v3's producer emits path/hash rows. Optional size is an additional
+// assertion, never a prerequisite for the archive-bound hash/set/source checks.
+function verifyPayload(runtime, expectedManifestSha256) {
+    const manifestFile = regular(path.join(runtime, 'build-manifest.json')), manifestSha256 = hashFile(manifestFile);
+    if (manifestSha256 !== expectedManifestSha256) throw Error('candidate-runtime-manifest');
+    const manifest = JSON.parse(fs.readFileSync(manifestFile));
+    if (manifest.schemaVersion !== 3 || manifest.sourceCommit !== CANDIDATE.commit || !Array.isArray(manifest.files)) throw Error('candidate-runtime-source');
+    const inventory = require('./verify-installer-runtime.cjs').inventory(runtime), expected = new Set(['build-manifest.json']); let digest = '';
+    for (const row of manifest.files) {
+        if (!row || typeof row.path !== 'string' || row.path.includes('\\') || row.path.split('/').some(p => !p || p === '.' || p === '..') || row.path.includes(':') ||
+            expected.has(row.path.toLowerCase()) || !/^[a-f0-9]{64}$/.test(row.sha256 || '')) throw Error('candidate-runtime-path');
+        expected.add(row.path.toLowerCase()); const actual = inventory.get(row.path);
+        if (!actual || actual.sha256 !== row.sha256 || Object.hasOwn(row, 'size') &&
+            (!Number.isSafeInteger(row.size) || row.size < 0 || actual.size !== row.size)) throw Error('candidate-runtime-file');
+        digest += row.path + '\0' + row.sha256 + '\n';
+    }
+    if (inventory.size !== expected.size || [...inventory.keys()].some(k => !expected.has(k.toLowerCase())) ||
+        !manifest.payload || manifest.payload.fileCount !== manifest.files.length || manifest.payload.payloadSetSha256 !== sha(digest)) throw Error('candidate-runtime-set');
+    return {inventory, manifestSha256};
+}
 function verifyRuntime(repo, runtime, zip) {
     regular(zip);
     if (fs.statSync(zip).size !== CANDIDATE.zipSize || hashFile(zip) !== CANDIDATE.zipSha256) throw Error('candidate-zip-identity');
     const receipts = zipReceipts(zip).filter(r => r.sourceCommit === CANDIDATE.commit && r.installer && r.installer.sha256 === CANDIDATE.installerSha256);
     if (receipts.length !== 1) throw Error('candidate-installer-receipt');
-    const manifestFile = regular(path.join(runtime, 'build-manifest.json'));
-    if (hashFile(manifestFile) !== receipts[0].runtimeManifestSha256) throw Error('candidate-runtime-manifest');
-    const manifest = JSON.parse(fs.readFileSync(manifestFile));
-    if (manifest.schemaVersion !== 3 || manifest.sourceCommit !== CANDIDATE.commit || !Array.isArray(manifest.files)) throw Error('candidate-runtime-source');
-    const inventory = require('./verify-installer-runtime.cjs').inventory(runtime), expected = new Set(['build-manifest.json']); let digest = '';
-    for (const row of manifest.files) {
-        if (!row || typeof row.path !== 'string' || row.path.includes('\\') || row.path.split('/').some(p => !p || p === '.' || p === '..') || row.path.includes(':') || expected.has(row.path)) throw Error('candidate-runtime-path');
-        expected.add(row.path); const actual = inventory.get(row.path);
-        if (!actual || actual.size !== row.size || actual.sha256 !== row.sha256) throw Error('candidate-runtime-file');
-        digest += row.path + '\0' + row.sha256 + '\n';
-    }
-    if (inventory.size !== expected.size || [...inventory.keys()].some(k => !expected.has(k)) || manifest.payload.fileCount !== manifest.files.length || manifest.payload.payloadSetSha256 !== sha(digest)) throw Error('candidate-runtime-set');
+    const {inventory, manifestSha256} = verifyPayload(runtime, receipts[0].runtimeManifestSha256);
     for (const relative of [...inventory.keys()].filter(k => /^electronapp\/(enhanced\/playback-range[^/]*\.js|native-helper\/(service|controller)\.js)$/.test(k))) {
         if (inventory.get(relative).sha256 !== sha(source(repo, 'src/' + relative))) throw Error('candidate-maintained-source');
     }
@@ -86,7 +95,7 @@ function verifyRuntime(repo, runtime, zip) {
         nativeRecord.helper.sha256 !== inventory.get(native.runtimePath)?.sha256 ||
         inventory.get(native.libmpv.runtimePath)?.sha256 !== native.libmpv.sha256 ||
         inventory.get(electron.runtime.runtimePath + '/' + electron.runtime.electronPath)?.sha256 !== electron.runtime.electronExeSha256) throw Error('candidate-fixed-native-identity');
-    return {sourceCommit: CANDIDATE.commit, manifestSha256: hashFile(manifestFile), zipSha256: CANDIDATE.zipSha256,
+    return {sourceCommit: CANDIDATE.commit, manifestSha256, zipSha256: CANDIDATE.zipSha256,
         helperSha256: nativeRecord.helper.sha256, libmpvSha256: native.libmpv.sha256, electronSha256: electron.runtime.electronExeSha256};
 }
 function chunk(id, body) {const size = Buffer.alloc(4); size.writeUInt32LE(body.length); return Buffer.concat([Buffer.from(id), size, body, body.length % 2 ? Buffer.alloc(1) : Buffer.alloc(0)]);}
@@ -180,4 +189,4 @@ async function main(argv) {
     } else throw Error('Usage: prepare --runtime=PATH --zip=PATH --out=NEW_PATH | run --plan=PATH --execute-hidden-native');
 }
 if (require.main === module) main(process.argv.slice(2)).catch(error => {console.error(error.message); process.exitCode = 1;});
-module.exports = {CANDIDATE, LIMITS, sha, hashFile, regular, writeNew, argumentsOf, zipReceipts, verifyRuntime, avi, prepare, readPlan, childEnvironment, run};
+module.exports = {CANDIDATE, LIMITS, sha, hashFile, regular, writeNew, argumentsOf, zipReceipts, verifyPayload, verifyRuntime, avi, prepare, readPlan, childEnvironment, run};

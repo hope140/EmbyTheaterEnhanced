@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "generator": {
+    "commit": "162dc69f9c3438d99508c90321a889b693b6b10a",
+    "path": "tools/build.ps1",
+    "blockSha256": "6aa9a0ad2b120751b6acff221bb3111966ab7d5d61b87f7968123b9be5845463"
+  },
+  "payload": {
+    "LICENSE.txt": "U3ludGhldGljIHB1YmxpYyBmaXh0dXJlLgo=",
+    "electronapp/fixture.txt": "UmFuZ2UgcGF5bG9hZCB2ZXJpZmllciBmaXh0dXJlLgo=",
+    "build-input-provenance.json": "eyJmaXh0dXJlIjoiaW5wdXRzIn0K",
+    "source-provenance.json": "eyJmaXh0dXJlIjoic291cmNlIn0K",
+    "runtime-provenance.json": "eyJmaXh0dXJlIjoicnVudGltZSJ9Cg=="
+  }
+}
