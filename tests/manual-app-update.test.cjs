@@ -105,6 +105,26 @@ test('metadata is HTTPS, anonymous, bounded, cancellable and refuses redirects',
     await assert.rejects(update.requestJson(update.API + 'latest', {get: stall.get, timeoutMs: 25}));
 });
 
+test('testing metadata accepts only fixed official page queries with the same anonymous transport', async () => {
+    const mock = transport([{body: JSON.stringify([release()])}, {body: '[]'}]);
+    assert.equal((await update.requestJson(maintenance.RELEASE_LIST_API_URL + '1', {get: mock.get})).length, 1);
+    assert.deepEqual(await update.requestJson(maintenance.RELEASE_LIST_API_URL + '100', {get: mock.get}), []);
+    for (const target of [maintenance.RELEASE_LIST_API_URL + '0', maintenance.RELEASE_LIST_API_URL + '101',
+        maintenance.RELEASE_LIST_API_URL + '1&token=synthetic', maintenance.RELEASE_LIST_API_URL.replace('per_page=5', 'per_page=100') + '1']) {
+        await assert.rejects(update.requestJson(target, {get: mock.get}), /invalid-release-identity/);
+    }
+    assert.equal(mock.calls.length, 2);
+    for (const call of mock.calls) assert.deepEqual(Object.keys(call.options.headers).sort(), ['Accept', 'Accept-Encoding', 'User-Agent']);
+});
+
+test('a full prerelease filename can save only verified synthetic bytes and never execute them', async t => {
+    const root = temp(t), item = {...release('0.4.2-rc.1+build.2'), prerelease: true};
+    const asset = update.installerFromRelease(item), mock = transport([{}]);
+    assert.equal((await update.downloadInstaller(asset, root, {get: mock.get})).status, 'downloaded');
+    assert.deepEqual(fs.readFileSync(path.join(root, asset.name)), bytes);
+    assert.deepEqual(fs.readdirSync(root), [asset.name]);
+});
+
 test('official redirect download verifies bytes, emits progress and commits without execution', async t => {
     const root = temp(t), asset = update.installerFromRelease(release());
     const mock = transport([{status: 302, headers: {location: 'https://release-assets.githubusercontent.com/synthetic/file?sig=public'}},

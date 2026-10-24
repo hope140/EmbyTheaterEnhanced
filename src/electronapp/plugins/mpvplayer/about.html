@@ -15,8 +15,15 @@
         <section class="ete-settings-section verticalSection" aria-labelledby="ete-about-maintenance-title">
             <div class="ete-settings-section-header"><div><h2 id="ete-about-maintenance-title" class="sectionTitle">维护</h2><p>更新检查仅在你主动点击时执行，不会自动下载或安装。</p></div></div>
             <div class="ete-settings-card about-maintenance-card">
+                <div class="selectContainer about-update-channel-select">
+                    <select is="emby-select" class="selectUpdateChannel" label="更新通道" disabled>
+                        <option value="stable" selected>正式通道</option>
+                        <option value="testing">测试通道</option>
+                    </select>
+                    <div class="fieldDescription">仅手动检查。测试通道包含正式版和测试版；下载期间请先取消或等待完成后再切换。</div>
+                </div>
                 <div class="ete-settings-actions">
-                    <button type="button" is="emby-button" class="raised button-submit ete-settings-button btnCheckUpdates">检查更新</button>
+                    <button type="button" is="emby-button" class="raised button-submit ete-settings-button btnCheckUpdates" disabled>检查更新</button>
                     <button type="button" is="emby-button" class="raised ete-settings-button btnCancelUpdate" hidden disabled>取消检查</button>
                     <button type="button" is="emby-button" class="raised ete-settings-button ete-settings-button--secondary btnCopyEnvironment">复制环境信息</button>
                     <button type="button" is="emby-button" class="button-link ete-settings-button ete-settings-button--text btnOpenReleases">GitHub / Releases</button>
@@ -25,7 +32,7 @@
                 <div class="ete-settings-subcard about-update ete-about-update" hidden>
                     <div class="ete-settings-info-row"><span>当前版本</span><code class="aboutCurrentVersion">UNKNOWN</code></div>
                     <div class="ete-settings-info-row"><span>最新版本</span><code class="aboutLatestVersion">UNKNOWN</code></div>
-                    <p class="about-update-channel">正式渠道 · Windows x64</p>
+                    <p class="about-update-channel">正式通道 · Windows x64</p>
                     <details class="about-update-disclosure"><summary>更新说明</summary><pre class="aboutReleaseNotes"></pre><div class="ete-settings-status aboutNoteLinkState" role="status" aria-live="polite"></div></details>
                     <button type="button" is="emby-button" class="raised ete-settings-button btnDownloadUpdate" disabled>下载更新</button>
                     <progress class="aboutDownloadProgress" max="1" value="0" aria-label="软件下载进度" hidden></progress>

@@ -38,7 +38,7 @@ test('entry performs no version check/download; notes render as inert text after
     const h = harness();
     assert.equal(h.view.querySelector('.btnCancelUpdate').hidden, true);
     assert.equal(h.view.querySelector('.btnCancelUpdate').disabled, true);
-    h.controller.loadInfo = () => {}; h.controller.loadKernelStatus = () => {};
+    h.controller.loadInfo = () => {}; h.controller.loadKernelStatus = () => {}; h.controller.loadChannel = () => {};
     h.controller.onResume(); assert.equal(h.pending.length, 0);
     const work = h.controller.checkUpdates();
     assert.equal(h.pending[0].channel, 'enhanced-maintenance-check-update');
@@ -116,7 +116,9 @@ test('pause cancels the owner, removes progress and prevents late response chang
 test('UI has no source chooser, custom address or install action', () => {
     const html = fs.readFileSync(path.resolve(__dirname, '../src/electronapp/plugins/mpvplayer/about.html'), 'utf8');
     assert.match(html, /btnCheckUpdates/); assert.match(html, /btnDownloadUpdate/); assert.match(html, /btnCancelUpdate/);
-    assert.doesNotMatch(html, /<select|<input[^>]+(?:url|source)|btnInstall/);
+    assert.doesNotMatch(html, /<input[^>]+(?:url|source)|btnInstall/);
+    assert.equal((html.match(/<select\b/g) || []).length, 1);
+    assert.match(html, /class="selectUpdateChannel" label="更新通道"/);
     assert.match(html, /class="[^"]*btnCancelUpdate" hidden disabled/);
     assert.equal((html.match(/<details class="about-update-disclosure"><summary>/g) || []).length, 2);
 });
@@ -212,4 +214,56 @@ test('note link failures are inline and stale replies cannot change a resumed or
     assert.equal(h.view.querySelector('.aboutNoteLinkState').textContent, 'new page');
     h.controller.destroy(); await h.controller.openNoteLink('https://example.invalid/');
     assert.equal(h.pending.length, 2);
+});
+
+test('reading the saved channel is local only and does not start a check', async () => {
+    const h = harness(), reading = h.controller.loadChannel();
+    assert.equal(h.pending[0].channel, 'enhanced-maintenance-get-channel');
+    assert.equal(h.view.querySelector('.btnCheckUpdates').disabled, true);
+    h.pending[0].resolve({status: 'ok', channel: 'testing'}); await reading;
+    assert.equal(h.controller.updateChannel, 'testing');
+    assert.equal(h.view.querySelector('.selectUpdateChannel').value, 'testing');
+    assert.equal(h.pending.length, 1);
+});
+
+test('switching while checking retires old results, saves the channel and requires another manual click', async () => {
+    const h = harness(), old = h.controller.checkUpdates();
+    h.view.querySelector('.selectUpdateChannel').value = 'testing';
+    const changing = h.controller.changeChannel();
+    assert.equal(h.pending[1].channel, 'enhanced-maintenance-cancel-update');
+    assert.equal(h.pending[2].channel, 'enhanced-maintenance-set-channel');
+    await h.controller.checkUpdates(); assert.equal(h.pending.length, 3);
+    h.pending[0].resolve(update); h.pending[1].resolve({status: 'cancelled'}); await old;
+    assert.equal(h.view.querySelector('.about-update').hidden, true);
+    assert.equal(h.view.querySelector('.btnDownloadUpdate').disabled, true);
+    h.pending[2].resolve({status: 'saved', channel: 'testing'}); await changing;
+    assert.equal(h.controller.updateChannel, 'testing'); assert.equal(h.pending.length, 3);
+    const next = h.controller.checkUpdates();
+    h.pending[3].resolve({...update, latestVersion: '0.4.1', channel: 'testing', prerelease: true}); await next;
+    assert.match(h.view.querySelector('.aboutUpdateState').textContent, /测试版/);
+    assert.match(h.view.querySelector('.about-update-channel').textContent, /测试通道/);
+});
+
+test('download keeps the selector disabled; cancellation then failed save leaves the original channel', async () => {
+    const h = harness(), downloading = h.controller.downloadUpdate();
+    assert.equal(h.view.querySelector('.selectUpdateChannel').disabled, true);
+    h.view.querySelector('.selectUpdateChannel').value = 'testing'; await h.controller.changeChannel();
+    assert.equal(h.pending.length, 1); assert.equal(h.controller.updateChannel, 'stable');
+    h.pending[0].resolve({status: 'cancelled'}); await downloading;
+    assert.equal(h.view.querySelector('.selectUpdateChannel').disabled, false);
+    h.view.querySelector('.selectUpdateChannel').value = 'testing'; const changing = h.controller.changeChannel();
+    h.pending[1].resolve({status: 'error'}); await changing;
+    assert.equal(h.view.querySelector('.selectUpdateChannel').value, 'stable');
+    assert.equal(h.view.querySelector('.btnDownloadUpdate').disabled, true);
+    assert.match(h.view.querySelector('.aboutUpdateState').textContent, /仍使用原通道/);
+});
+
+test('a retired channel-save reply cannot change the channel read after reentry', async () => {
+    const h = harness(); h.view.querySelector('.selectUpdateChannel').value = 'testing';
+    const changing = h.controller.changeChannel(); h.controller.onPause();
+    const reading = h.controller.loadChannel();
+    h.pending[0].resolve({status: 'saved', channel: 'testing'}); await changing;
+    assert.equal(h.controller.updateChannel, 'stable');
+    h.pending[1].resolve({status: 'ok', channel: 'testing'}); await reading;
+    assert.equal(h.controller.updateChannel, 'testing'); assert.equal(h.pending.length, 2);
 });

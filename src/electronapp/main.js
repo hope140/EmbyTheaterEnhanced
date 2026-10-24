@@ -1044,6 +1044,7 @@
         shell: electron.shell
     });
     unregisterMaintenanceIpc = maintenanceIpc.register({
+        preferences: require('./enhanced/app-update-preferences').createStore(appBootstrapState.configDirectory),
         ipcMain: ipcMain,
         getWebContents: getWebContents,
         getBrowserWindow: function () { return mainWindow; },

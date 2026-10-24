@@ -83,7 +83,7 @@ test('frozen Alameda resolves the helper from relative and absolute plugin-manag
         function BaseView() {}
         context.define('baseView', [], () => BaseView);
         context.define('loading', [], () => ({show() {}, hide() {}}));
-        context.define('emby-button', [], () => ({})); context.define('emby-scroller', [], () => ({}));
+        context.define('emby-button', [], () => ({})); context.define('emby-select', [], () => ({})); context.define('emby-scroller', [], () => ({}));
         context.require.config({baseUrl: 'file:///synthetic/electronapp/www/', noRequireCss: true});
         const About = await context.require([controllerId], value => value);
         const controller = new About(view); await controller.checkUpdates();

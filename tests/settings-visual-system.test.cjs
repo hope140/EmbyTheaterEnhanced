@@ -65,7 +65,7 @@ test('maintenance version ordering and update states use injected release fixtur
         currentVersion: '0.2.2',
         latestVersion: '0.2.3',
         releaseUrl: 'https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.3',
-        releaseTag: 'v0.2.3', notes: '', installer: null
+        releaseTag: 'v0.2.3', channel: 'stable', prerelease: false, notes: '', installer: null
     });
     assert.equal((await maintenance.checkLatestRelease({
         currentVersion: '0.2.3',
@@ -272,6 +272,7 @@ test('About loads environment on entry and checks updates only after a user clic
                             info: {appVersion: infoCalls === 1 ? '0.2.3' : '0.2.4', electron: '44.4.2', chromium: '152', node: '24', nativeHelper: 'helper 0.2.1', libmpv: 'mpv v0.41.0', sourceCommit: 'abc', windows: 'Windows', displayDpi: 'NOT AVAILABLE', nativeHelperState: 'idle', runningNativeHelper: 'NOT AVAILABLE', runningLibmpv: 'NOT AVAILABLE'}
                         });
                     }
+                    if (channel === 'enhanced-maintenance-get-channel') return Promise.resolve({status: 'ok', channel: 'stable'});
                     if (channel === 'enhanced-maintenance-check-update') {
                         return new Promise(function (resolve) { finishUpdate = resolve; });
                     }
@@ -307,7 +308,7 @@ test('About loads environment on entry and checks updates only after a user clic
     await new Promise(function (resolve) { setImmediate(resolve); });
     assert.equal(infoCalls, 2, 'each resume refreshes environment information');
     assert.equal(view.querySelector('.aboutAppVersion').textContent, '0.2.4');
-    assert.deepEqual(invoked, ['enhanced-maintenance-info', 'enhanced-maintenance-check-update', 'enhanced-maintenance-info', 'enhanced-mpv-kernel-status']);
+    assert.deepEqual(invoked, ['enhanced-maintenance-info', 'enhanced-maintenance-check-update', 'enhanced-maintenance-info', 'enhanced-mpv-kernel-status', 'enhanced-maintenance-get-channel']);
 });
 
 test('About renders the exact trusted copy snapshot and ignores an older pending load response', async () => {

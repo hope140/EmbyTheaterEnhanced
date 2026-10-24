@@ -16,11 +16,19 @@
 
 正文链接仅用户点击或Enter激活，经单独 IPC 请求系统浏览器；中键／Ctrl点击同样拦截客户端默认导航。main 校验当前打包主frame、完整单字段参数，并要求地址属于本次官方检查正文识别出的集合；新检查及关闭退休旧集合。原固定仓库发布页 IPC 白名单保持。文档、compare及安装附件URL均可作为正文链接在系统浏览器打开；浏览器下载不计入应用“校验完成”状态，不在客户端启动安装。打开失败只在说明下原位反馈，离页后的迟到结果不改写页面。
 
+## 更新通道
+
+原生 EmbySelect 提供“正式通道”和“测试通道”，默认正式。选择保存在 ETE profile 的 config/app-update.json（schemaVersion=1，channel=stable/testing）；进入页面只读取本地选择，不发起版本请求。只有用户改变选择时才以同目录临时文件、原子替换保存；写入失败保留旧文件及原通道，未知配置格式／重定向路径拒绝，不静默覆盖。只持久化通道，不持久化查询结果、候选、URL、下载或凭据。
+
+检查期间切换通道会先退休页面代次，main 中止并等待旧检查收尾，清空旧候选及说明链接集合，再保存新选择；保存成功也须再次主动点击检查。下载期间（包括官方重核验与目录选择）禁用选择器，main 同样拒绝切换；先取消或完成下载后再更改。页面重入等待进行中的通道保存完成再读取，不让迟到查询／保存回复改写新状态。
+
 ## 正式渠道与五附件
 
 - 仓库固定 `hope140/EmbyTheaterEnhanced`，检查固定 `/releases/latest`，并要求 `draft=false`、`prerelease=false`、Tag 为无 prerelease 的合法 SemVer。Latest 是维护者指定的正式渠道，不扫描所有 Tag 来猜最高版本。
+- 测试通道只读同仓库 `/releases?per_page=5&page=N`，包含非draft的正式版及prerelease；要求明确布尔标志、合法SemVer及准确仓库Tag页面，按SemVer选最高，等优先级时优先非prerelease。分页必须完整结束，最多100页／500条，达到上限或任一页失败不宣称“最新”；整次用户检查30秒预算，每页仍受原8秒／256KiB限制。页面顺序、发布时间和字符串字典序不作版本顺序。
 - 采用 SemVer 2.0.0 顺序：核心十进制和数值 prerelease 均无浮点精度损失；禁止数值标识前导零；正式版高于同核心 prerelease；build metadata 不参与比较。项目允许 Tag 的小写 `v` 前缀。
-- 下载目前只接受三段稳定版本的 Windows x64 标准安装器名 `EmbyTheaterEnhanced-<version>-win-x64-setup.exe`。历史带提交号名称、缺附件、重名、未上传完成、大小不合法或无官方 `sha256:` digest 均禁用应用内下载，可查看官方发布页。合法但采用其它命名合同的 Tag 不猜测附件路径。
+- 与当前版本相同（含build metadata差异）不提供更新，切回正式通道若版本更低只提示高于该通道，不提供降级；同版本由测试版标志转正式也不触发重装。下载前若发布标志或附件身份已变，要求重新检查。
+- 下载只接受准确SemVer（含测试通道的prerelease后缀）对应的 Windows x64 标准安装器名 `EmbyTheaterEnhanced-<version>-win-x64-setup.exe`。历史带提交号名称、缺附件、重名、未上传完成、大小不合法或无官方 `sha256:` digest 均禁用应用内下载，可查看发布页。合法但采用其它命名合同的 Tag 不猜测附件路径。
 - 沿用现有安装器、`.provenance.json`、`.sha256`、`RELEASE_NOTES.md`、`SHA256SUMS.txt` 五附件，不要求新建 updater manifest、签名服务或自动更新框架。说明展示官方网页 `body`；原始 notes 附件可以与维护后的网页正文不同，见[发行规范](RELEASE_CONVENTIONS.md)。
 - 下载校验基准来自官方 HTTPS Release API 的具体安装附件 ID、名称、URL、精确 size 和 SHA-256 digest。下载前按已检查 Tag 再取一次；身份变化要求重新点击检查，不偷偷换成新附件。官方不可达时明确“无法独立验证”，不从代理取 checksum 来冒充独立信任，也不允许无校验下载。
 - API digest 表示下载字节与当次官方发布身份一致，不等于数字签名、不可变 Tag、已验证构建源码或许可认证。
@@ -52,11 +60,11 @@
 - Windows 下载提交前写入并回读 `Zone.Identifier` 的 Internet Zone 3，保留固定公开来源；本机路径必须为磁盘路径，不接受 UNC 或重定向目录。ADS 不支持或被拒绝则不产出最终安装器。此步骤不关闭 Attachment Manager、SmartScreen 或浏览器警告；真实 Windows 文件系统与警告行为需单独验收。格式依据：[Microsoft Zone.Identifier](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/6e3f7352-d11c-4d76-8c39-2516a9df36e8)。
 - main 只持有一个检查/下载操作；重复请求返回 busy，不排队创建额外下载。取消中断网络，页面暂停退休代次、移除进度监听，迟到结果不得修改新页面。应用退出中断并等待所属网络/文件操作；原生目录对话框不能程序关闭，但退出不等待其 UI Promise，迟到选择不能重新下载。
 - maintenance 的读取／复制／检查／下载／取消 IPC 均拒绝附加 payload；外链 IPC 只接受单字段字符串 `{url}`，安全出口仅为固定仓库的 releases 根页、latest 或合法版本 Tag 页面，不允许资产执行路径、认证信息、query 或 fragment。页面直接 destroy 即使未经 pause，也会取消更新并移除进度监听。
-- 不持久化更新偏好，不增加后台定时器、自动检查/下载、TTL、安装调度或内核管理功能。操作期限和进度节流仅属于用户点击后的请求。
+- 仅保存用户选择的更新通道，不增加后台检查定时器、自动检查/下载、TTL、安装调度或内核管理功能。操作期限和进度节流仅属于用户点击后的请求。
 
 ## 验证与待验收
 
-`node --test tests/release-note-links.test.cjs tests/manual-app-update*.test.cjs tests/settings-visual-system.test.cjs tests/settings-night-audit.test.cjs` 使用注入的受控 HTTPS 响应、合成非可执行文本、临时文件和 AMD 控制器模拟，覆盖 SemVer、稳定渠道、官方重核验、错误大小/哈希、危险重定向、证书失败、HTTP 拒绝不回退、串行备用、进度取消、同名保护、退出与迟到回复、受限说明链接及恶意内容、无自动安装。Windows 条件分支会在 Windows 测试中回读最终文件的 Internet-zone ADS；Linux 结果不替代该分支。
+`node --test tests/app-update-preferences.test.cjs tests/release-note-links.test.cjs tests/manual-app-update*.test.cjs tests/settings-visual-system.test.cjs tests/settings-night-audit.test.cjs` 使用注入的受控 HTTPS 响应、合成非可执行文本、临时文件和 AMD 控制器模拟，覆盖通道持久化／切换竞态、draft及prerelease过滤、SemVer／分页、官方重核验、错误大小/哈希、危险重定向、证书失败、HTTP 拒绝不回退、串行备用、进度取消、同名保护、退出与迟到回复、受限说明链接及恶意内容、无自动安装。Windows 条件分支会在 Windows 测试中回读最终文件的 Internet-zone ADS；Linux 结果不替代该分支。
 
 真实在线证据、Windows 整包构建、GUI、系统安装、代理大文件与长期稳定性分别记录。单元测试成功不代表这些范围已通过。待完成：候选代理名单最终确认、Windows ADS/no-replace/目录对话框及实际 Electron UI 验证；不访问真实 NAS 或正式安装目录。
 
@@ -72,7 +80,7 @@
 node .\electronapp\enhanced\manual-app-update-selftest.js
 ```
 
-此入口只加载包内更新模块、生成不可执行的合成文本、在新建临时目录验证下载写入／校验／同名保护／取消／清理及匿名顺序源／IPC 拒绝，8项检查结束删除所属临时目录；真实网络请求为零，无应用 bootstrap、profile、Host、Electron GUI 或安装器执行。在 Windows 会实际写／回读该合成文件的 Zone 3。输出 `packageManifestBinding` 核对6份实际模块（含共享说明链接解析器）与本包 build-manifest，并记录 sourceCommit；这是包内字节绑定，不是独立签名。仓库直接运行缺 manifest 时明确 `not-present / UNKNOWN`。
+此入口只加载包内更新模块、生成不可执行的合成文本、在新建临时目录验证下载写入／校验／同名保护／取消／清理及匿名顺序源／IPC 拒绝，8项检查结束删除所属临时目录；真实网络请求为零，无应用 bootstrap、profile、Host、Electron GUI 或安装器执行。在 Windows 会实际写／回读该合成文件的 Zone 3。输出 `packageManifestBinding` 核对7份实际模块（含共享说明链接解析器及通道存储）与本包 build-manifest，并记录 sourceCommit；这是包内字节绑定，不是独立签名。仓库直接运行缺 manifest 时明确 `not-present / UNKNOWN`。
 
 本分支的 `ci-windows-test-package.ps1` 已在完整runtime验证后、安装器编译前，用现有锁定 Node 自动调用此包内入口，要求 sourceCommit匹配、8项成功、零网络／profile／安装执行及临时文件清理；失败不继续打包。结果存为测试 artifact 的 `manual-app-update-selftest.json`，不增加用户 Release 的五附件合同。此接线尚待集中安排的真实Windows构建执行；Linux源文件或合成manifest试验不冒充已打出的Windows包。
 

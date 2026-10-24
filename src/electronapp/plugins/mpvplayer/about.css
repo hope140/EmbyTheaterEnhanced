@@ -17,6 +17,7 @@
 }
 
 .about-settings-page .about-update-channel { margin-block: .9em .4em; }
+.about-settings-page .about-update-channel-select { max-width: 28em; margin-bottom: .85em; }
 .about-settings-page .about-update-disclosure {
     border-top: 1px solid var(--line-background, rgba(127, 127, 127, .25));
     margin-block: .65em;

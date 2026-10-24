@@ -11,6 +11,8 @@ const CHANNELS = Object.freeze({
     CHECK_UPDATE: 'enhanced-maintenance-check-update',
     OPEN_RELEASES: 'enhanced-maintenance-open-releases',
     OPEN_NOTE_LINK: 'enhanced-maintenance-open-note-link',
+    GET_CHANNEL: 'enhanced-maintenance-get-channel',
+    SET_CHANNEL: 'enhanced-maintenance-set-channel',
     DOWNLOAD: 'enhanced-maintenance-download-update',
     CANCEL: 'enhanced-maintenance-cancel-update',
     PROGRESS: 'enhanced-maintenance-update-progress'
@@ -27,20 +29,35 @@ function register(options) {
     let active = null;
     let candidate = null;
     let checkedNoteUrls = new Set();
+    let channel = null, channelLoad = null, channelChange = null, channelRevision = 0;
     let unregisterPromise = null;
 
-    function operation(work) {
-        if (closing || active) return Promise.resolve({status: 'error', reason: closing ? 'closed' : 'busy'});
+    function currentChannel() {
+        if (channel !== null) return Promise.resolve(channel);
+        if (!channelLoad) channelLoad = Promise.resolve().then(() => settings.preferences ? settings.preferences.read() : 'stable').then(value => {
+            if (!['stable', 'testing'].includes(value)) throw Error('invalid-update-channel');
+            channel = value;
+            return value;
+        }).finally(() => { channelLoad = null; });
+        return channelLoad;
+    }
+
+    function operation(kind, work) {
+        if (closing || active || channelChange) return Promise.resolve({status: 'error', reason: closing ? 'closed' : 'busy'});
         const controller = new AbortController();
-        const record = {controller, done: null};
+        const record = {kind, controller, done: null};
+        const timer = kind === 'check' ? setTimeout(() => { record.timedOut = true; controller.abort(); }, settings.checkTimeoutMs || 30000) : null;
         active = record;
         record.done = (async function () {
-            try { return await work(controller.signal); }
+            try {
+                const result = await work(controller.signal);
+                return record.timedOut ? {status: 'error', reason: 'timeout'} : result;
+            }
             catch (error) {
                 const reasons = new Set(['file-exists', 'directory-invalid', 'unsafe-redirect', 'http-rejected', 'encoding-rejected', 'size-mismatch', 'hash-mismatch', 'timeout']);
                 return record.timedOut ? {status: 'error', reason: 'timeout'} : controller.signal.aborted ? {status: 'cancelled'} :
                     {status: 'error', reason: reasons.has(error.code) ? error.code : 'maintenance_operation_failed'};
-            } finally { if (active === record) active = null; }
+            } finally { if (timer) clearTimeout(timer); if (active === record) active = null; }
         })();
         return record.done;
     }
@@ -88,22 +105,51 @@ function register(options) {
         return {status: 'copied', info};
     });
 
+    registerHandler(CHANNELS.GET_CHANNEL, async function (request) {
+        if (request !== undefined) return {status: 'error', reason: 'invalid-request'};
+        if (channelChange) await channelChange.catch(() => {});
+        if (closing) return {status: 'error', reason: 'closed'};
+        return {status: 'ok', channel: await currentChannel()};
+    });
+
+    registerHandler(CHANNELS.SET_CHANNEL, function (request) {
+        if (!request || typeof request !== 'object' || Array.isArray(request) || Object.keys(request).length !== 1 ||
+            !Object.hasOwn(request, 'channel') || !['stable', 'testing'].includes(request.channel)) return {status: 'error', reason: 'invalid-request'};
+        if (channelChange || (active && active.kind === 'download')) return {status: 'error', reason: 'busy'};
+        channelRevision++;
+        candidate = null; checkedNoteUrls.clear();
+        const previous = active;
+        if (previous) previous.controller.abort();
+        const change = (async function () {
+            await currentChannel();
+            if (previous) await previous.done;
+            if (closing) return {status: 'error', reason: 'closed'};
+            if (settings.preferences) await settings.preferences.save(request.channel);
+            channel = request.channel;
+            return {status: 'saved', channel};
+        })();
+        channelChange = change;
+        return change.finally(() => { if (channelChange === change) channelChange = null; });
+    });
+
     registerHandler(CHANNELS.CHECK_UPDATE, function (request) {
         if (request !== undefined) return {status: 'error', reason: 'invalid-request'};
-        return operation(async function (signal) {
+        return operation('check', async function (signal) {
             candidate = null;
             checkedNoteUrls.clear();
+            const revision = channelRevision, selectedChannel = await currentChannel();
             const info = await appInfo();
             if (signal.aborted) return {status: 'cancelled'};
             const result = await maintenance.checkLatestRelease({
                 currentVersion: info.appVersion,
+                channel: selectedChannel,
                 requestJson: url => (settings.requestJson || appUpdate.requestJson)(url, {signal})
             });
-            if (signal.aborted) return {status: 'cancelled'};
+            if (signal.aborted || revision !== channelRevision) return {status: 'cancelled'};
             if (['latest', 'ahead', 'update-available'].includes(result.status)) {
                 checkedNoteUrls = new Set(noteLinks.parse(result.notes).filter(part => part.url).map(part => part.url));
             }
-            if (result.status === 'update-available') candidate = result;
+            if (result.status === 'update-available') candidate = {...result, channel: selectedChannel, revision};
             return result;
         });
     });
@@ -116,17 +162,19 @@ function register(options) {
 
     registerHandler(CHANNELS.DOWNLOAD, function (request) {
         if (request !== undefined) return {status: 'error', reason: 'invalid-request'};
-        return operation(async function (signal) {
+        return operation('download', async function (signal) {
             const selected = candidate;
-            if (!selected || !selected.installer) return {status: 'error', reason: 'verification-unavailable'};
+            const selectedChannel = await currentChannel();
+            if (!selected || !selected.installer || selected.channel !== selectedChannel || selected.revision !== channelRevision) return {status: 'error', reason: 'verification-unavailable'};
             // Refresh the exact official tag, never through a download proxy. Changed identity
             // requires another explicit check; cached or proxy supplied checksums are not trust.
             let release;
             try { release = await (settings.requestJson || appUpdate.requestJson)(appUpdate.API + 'tags/' + selected.releaseTag, {signal}); }
             catch (_) { return signal.aborted ? {status: 'cancelled'} : {status: 'error', reason: 'verification-unavailable'}; }
-            const fresh = await maintenance.checkLatestRelease({currentVersion: selected.currentVersion, requestJson: async () => release});
+            const fresh = maintenance.describeRelease(release, {currentVersion: selected.currentVersion, channel: selectedChannel});
             if (signal.aborted) return {status: 'cancelled'};
             if (fresh.status !== 'update-available' || fresh.releaseTag !== selected.releaseTag ||
+                fresh.prerelease !== selected.prerelease ||
                 JSON.stringify(fresh.installer) !== JSON.stringify(selected.installer)) {
                 candidate = null;
                 return {status: 'error', reason: 'release-changed'};
@@ -182,7 +230,7 @@ function register(options) {
         checkedNoteUrls.clear();
         if (active) active.controller.abort();
         if (typeof ipcMain.removeHandler === 'function') registered.forEach(function (channel) { ipcMain.removeHandler(channel); });
-        unregisterPromise = active ? active.done.then(() => undefined) : Promise.resolve();
+        unregisterPromise = Promise.allSettled([active && active.done, channelChange, channelLoad]).then(() => undefined);
         return unregisterPromise;
     };
 }

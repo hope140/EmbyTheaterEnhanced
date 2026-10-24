@@ -32,7 +32,7 @@ function check(signal, deadline) {
 
 function installerFromRelease(release) {
     const tag = release.tag_name;
-    if (!/^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(tag || '')) return null;
+    if (!require('./maintenance').parseVersion(tag) || tag !== tag.trim()) return null;
     const version = tag.replace(/^v/, '');
     const name = 'EmbyTheaterEnhanced-' + version + '-win-x64-setup.exe';
     const assets = Array.isArray(release.assets) ? release.assets.filter(asset => asset.name === name) : [];
@@ -96,7 +96,8 @@ async function responseFor(url, context, options) {
 
 async function requestJson(url, options) {
     const settings = options || {};
-    if (!(url === API + 'latest' || /^https:\/\/api\.github\.com\/repos\/hope140\/EmbyTheaterEnhanced\/releases\/tags\/v?[0-9A-Za-z.+-]+$/.test(url))) throw failure('invalid-release-identity');
+    if (!(url === API + 'latest' || /^https:\/\/api\.github\.com\/repos\/hope140\/EmbyTheaterEnhanced\/releases\/tags\/v?[0-9A-Za-z.+-]+$/.test(url) ||
+        /^https:\/\/api\.github\.com\/repos\/hope140\/EmbyTheaterEnhanced\/releases\?per_page=5&page=(?:[1-9]\d?|100)$/.test(url))) throw failure('invalid-release-identity');
     const controller = new AbortController();
     const signal = settings.signal ? AbortSignal.any([settings.signal, controller.signal]) : controller.signal;
     const deadline = Date.now() + (settings.timeoutMs || 8000);
@@ -157,7 +158,8 @@ async function downloadInstaller(installer, directory, options) {
     const settings = options || {};
     // This entry point only accepts the fixed current installer contract, even when
     // called outside IPC. The renderer never supplies one of these objects.
-    if (!installer || !/^EmbyTheaterEnhanced-(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)-win-x64-setup\.exe$/.test(installer.name || '') ||
+    const name = installer && /^EmbyTheaterEnhanced-([0-9A-Za-z.+-]+)-win-x64-setup\.exe$/.exec(installer.name || '');
+    if (!name || !require('./maintenance').parseVersion(name[1]) ||
         !/^[0-9a-f]{64}$/.test(installer.sha256 || '') || !Number.isSafeInteger(installer.size) ||
         installer.size <= 0 || installer.size > MAX_INSTALLER_BYTES) throw failure('invalid-installer');
     const version = installer.name.slice('EmbyTheaterEnhanced-'.length, -'-win-x64-setup.exe'.length);
