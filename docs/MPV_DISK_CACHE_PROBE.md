@@ -18,7 +18,15 @@
 
 ## 固定输入与执行边界
 
-使用 `playback-buffer-disk-probe.cjs`，复用此前已验证的原 `162dc69` 加唯一锁定 Vulkan loader 的**独立派生** plan。原ZIP、manifest和完整原文件集合仍逐项校验，loader来源/哈希/唯一新增关系仍逐项校验。原包不包含该loader，不能省略派生校验直接把原包启动失败23解释为磁盘选项问题。
+推荐由独立 GitHub Windows 短入口执行：`Public offline CI`（`public-ci.yml`），选择本分支，`range_smoke=disk-probe`、`release_package=false`。控制源码取本次精确workflow提交；基线工具仍固定c9，源候选仍固定162、artifact `12551020498`、原ZIP/installer哈希不变。下载前重新检查artifact未过期、成功来源run、源SHA及精确字节；缺失/过期/拒绝即停止，不取latest或重打包。
+
+此路线在当前精确且干净的controls checkout下，通过原严格 `derive` 与 `prepare` API创建新的loader派生和source plan；不复用上次runner绝对路径，不更改旧manifest，不需要下面手动兼容流程的未跟踪工具复制。短入口实际app-ready/完整摘要通过后，按 RAM→whendone→no→immediate顺序运行，模式各用全新目录和原120秒停止请求上限。任何失败/不完整/退出不明即停止后续模式；汇总将未执行项明确标记NOT_STARTED。最后再次验证基线和派生完整性。
+
+权限仍为该job的contents/actions只读，token仍仅进入下载步骤；现有并发组、cancel策略、Windows映像及15分钟job上限保持。预计正常3–6分钟，输入下载和hash速度会影响耗时。workflow成功只表示四组规定观察齐全，`restoreAssessment`始终NOT_ASSESSED；下一集自动链不在此范围。
+
+上传仍使用既有一日留存的 `ete-range-smoke-*` artifact。`disk-*-observations.json`、`disk-*-run.json`、模式plan、entry和唯一loader关系等原始语义JSON仅做路径/URL/敏感字段脱敏，collection记录原件及上传件SHA；不截断JSON。媒体、`.dat`、profile、环境和worker原始stderr不上传，helper仅保留安全标签/数值退出诊断。超限/重定向回执拒绝完整采集，不静默当作通过。
+
+手动单模式工具 `playback-buffer-disk-probe.cjs` 也可复用此前已验证的原 `162dc69` 加唯一锁定 Vulkan loader 的**独立派生** plan。原ZIP、manifest和完整原文件集合仍逐项校验，loader来源/哈希/唯一新增关系仍逐项校验。原包不包含该loader，不能省略派生校验直接把原包启动失败23解释为磁盘选项问题。
 
 旧 plan 绑定绝对 driver 路径、工具SHA和 `controlsCommit`。须保留其原兼容 checkout，不将 plan 随意搬到新目录，也不放宽完整性检查。将本次已提交的独立探针文件按精确SHA物化为该 checkout 的新增未跟踪工具（不覆盖任何旧工具），核对文件SHA；原门禁对受跟踪文件和HEAD的要求保持。新增探针的实际文件SHA再绑定到自己的 `probe.json`。旧候选/plan不可用或artifact过期则先报告输入缺口，不能用另一个包假代。
 

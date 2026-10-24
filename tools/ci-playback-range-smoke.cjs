@@ -25,7 +25,7 @@ function toolsAt(root) {
 }
 function validateDispatch(mode, workflowCommit, repository, releasePackage, ref) {
     if (ref !== 'refs/heads/feature/playback-range-cache') fail('invalid-range-branch');
-    if (!['entry', 'native', 'loader-trial'].includes(mode) || releasePackage !== 'false' || repository !== PIN.repository || !/^[a-f0-9]{40}$/.test(workflowCommit || '')) fail('invalid-range-dispatch');
+    if (!['entry', 'native', 'loader-trial', 'disk-probe'].includes(mode) || releasePackage !== 'false' || repository !== PIN.repository || !/^[a-f0-9]{40}$/.test(workflowCommit || '')) fail('invalid-range-dispatch');
 }
 function createPlan(toolsRoot, root, mode, workflowCommit, repository, releasePackage) {
     validateDispatch(mode, workflowCommit, repository, releasePackage, process.env.GITHUB_REF);
@@ -44,7 +44,7 @@ function createPlan(toolsRoot, root, mode, workflowCommit, repository, releasePa
 function readPlan(file) {
     if (fs.realpathSync(file) !== path.resolve(file)) fail('redirected-control-plan');
     const plan = json(file);
-    if (plan.schema !== 1 || JSON.stringify(plan.pin) !== JSON.stringify(PIN) || !['entry', 'native', 'loader-trial'].includes(plan.mode) ||
+    if (plan.schema !== 1 || JSON.stringify(plan.pin) !== JSON.stringify(PIN) || !['entry', 'native', 'loader-trial', 'disk-probe'].includes(plan.mode) ||
         fs.realpathSync(plan.root) !== plan.root || path.resolve(file) !== path.join(plan.root, 'control-plan.json') || fs.readFileSync(path.join(plan.root, 'owner'), 'utf8') !== OWNER) fail('invalid-control-plan');
     toolsAt(plan.toolsRoot);
     if (JSON.stringify(plan.paths) !== JSON.stringify(pathsFor(plan.root))) fail('invalid-control-path');
@@ -142,6 +142,11 @@ function execute(plan) {
     const inputs = expandedInputs(plan), smoke = toolsAt(plan.toolsRoot);
     const identity = smoke.verifyRuntime(plan.toolsRoot, inputs.runtime, plan.paths.artifact);
     writeNew(path.join(plan.root, 'unpack.json'), {status: 'passed', pin: PIN, identity});
+    if (plan.mode === 'disk-probe') {
+        runTool(plan, ['--control-plan=' + path.join(plan.root, 'control-plan.json')], 'disk-probe-driver', path.join(__dirname, 'ci-mpv-disk-probe.cjs'));
+        writeNew(path.join(plan.root, 'execution.json'), {status: 'observed', mode: plan.mode, baseToolsCommit: PIN.toolsCommit, controlsCommit: plan.workflowCommit,
+            sourceCommit: PIN.sourceCommit, evidence: 'stock-mpv-disk-options-observation-only', restoreAssessment: 'NOT_ASSESSED', originalPackageModified: false}); return;
+    }
     if (plan.mode === 'loader-trial') {
         runTool(plan, ['--control-plan=' + path.join(plan.root, 'control-plan.json')], 'loader-trial-driver', path.join(__dirname, 'playback-range-loader-trial.cjs'));
         writeNew(path.join(plan.root, 'execution.json'), {status: 'passed', mode: plan.mode, baseToolsCommit: PIN.toolsCommit, controlsCommit: plan.workflowCommit,
@@ -181,6 +186,7 @@ function collect(plan, destination) {
             copy(path.join(root, variant, phase + suffix), 'loader-' + variant + '-' + phase + suffix);
         }
     }
+    if (plan.mode === 'disk-probe') copied.push(...require('./ci-mpv-disk-probe.cjs').collect(plan, destination));
     const complete = !copied.some(row => row.action === 'omitted-too-large');
     writeNew(path.join(destination, 'collection.json'), {complete, files: copied}); if (!complete) fail('artifact-evidence-size-refused'); return copied;
 }
@@ -203,9 +209,9 @@ async function main(argv) {
         else if (command === 'collect') console.log(JSON.stringify(collect(plan, args['--out'])));
         else fail('invalid-command');
     } catch (error) {
-        if (plan && !fs.existsSync(path.join(plan.root, 'failure.json'))) writeNew(path.join(plan.root, 'failure.json'), {status: 'failed', command, code: safeCode(error), nativeOutcome: /:(?:native|loader-trial)-driver$/.test(String(error.message)) ? 'UNCERTAIN' : 'NOT_ESTABLISHED'});
+        if (plan && !fs.existsSync(path.join(plan.root, 'failure.json'))) writeNew(path.join(plan.root, 'failure.json'), {status: 'failed', command, code: safeCode(error), nativeOutcome: /:(?:native|loader-trial|disk-probe)-driver$/.test(String(error.message)) ? 'UNCERTAIN' : 'NOT_ESTABLISHED'});
         throw error;
     }
 }
 if (require.main === module) main(process.argv.slice(2)).catch(error => {console.error(safeCode(error)); process.exitCode = 1;});
-module.exports = {PIN, tokenNames, cleanEnvironment, validateDispatch, validateMetadata, responseStatus, secureLocation, api, downloaded, acquire, createPlan, readPlan, expandedInputs, collect, EVIDENCE, safeCode};
+module.exports = {PIN, tokenNames, cleanEnvironment, noCredentials, validateDispatch, validateMetadata, responseStatus, secureLocation, api, downloaded, acquire, createPlan, readPlan, expandedInputs, collect, EVIDENCE, safeCode};

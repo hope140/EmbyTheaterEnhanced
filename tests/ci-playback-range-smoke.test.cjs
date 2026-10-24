@@ -13,7 +13,7 @@ function metadata() {return {id: ci.PIN.artifactId, expired: false, expires_at: 
 function run() {return {id: ci.PIN.runId, head_sha: ci.PIN.sourceCommit, status: 'completed', conclusion: 'success'};}
 test('manual range route keeps the exact tool commit and leaves public/package routes and old concurrency independent', () => {
     assert.match(workflow, /range_smoke:\n[\s\S]*?type: choice\n        default: 'off'/);
-    assert.match(job, /if: github.event_name == 'workflow_dispatch' && \(inputs.range_smoke == 'entry' \|\| inputs.range_smoke == 'native' \|\| inputs.range_smoke == 'loader-trial'\)/);
+    assert.match(job, /if: github.event_name == 'workflow_dispatch' && \(inputs.range_smoke == 'entry' \|\| inputs.range_smoke == 'native' \|\| inputs.range_smoke == 'loader-trial' \|\| inputs.range_smoke == 'disk-probe'\)/);
     assert.match(job, /runs-on: windows-2022/); assert.match(job, /ref: c9cd9bacf81445c9c10befd121951b1c63c86faa/);
     assert.match(job, /group: ete-manual-playback-range-smoke/); assert.match(job, /cancel-in-progress: false/); assert.match(job, /timeout-minutes: 15/);
     assert.match(workflow, /group: ete-manual-windows-test-package/); assert.match(workflow, /^permissions:\n  contents: read$/m);
@@ -28,7 +28,7 @@ test('only the acquisition step receives the standard token, with job-local read
     assert.deepEqual(ci.cleanEnvironment(input), {PATH: 'system'}); assert.equal(input.GITHUB_TOKEN, 'synthetic-inert');
 });
 test('new route requires explicit scope, task branch, own repository and no release staging', () => {
-    for (const mode of ['entry', 'native', 'loader-trial']) ci.validateDispatch(mode, 'a'.repeat(40), ci.PIN.repository, 'false', 'refs/heads/feature/playback-range-cache');
+    for (const mode of ['entry', 'native', 'loader-trial', 'disk-probe']) ci.validateDispatch(mode, 'a'.repeat(40), ci.PIN.repository, 'false', 'refs/heads/feature/playback-range-cache');
     for (const [mode, commit, repo, release, ref] of [
         ['off', 'a'.repeat(40), ci.PIN.repository, 'false', 'refs/heads/feature/playback-range-cache'],
         ['entry', 'branch-name', ci.PIN.repository, 'false', 'refs/heads/feature/playback-range-cache'],
