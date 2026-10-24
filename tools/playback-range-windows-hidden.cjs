@@ -29,7 +29,26 @@ function protectHiddenWindow(window) {
     for (const method of ['show', 'showInactive', 'focus']) window[method] = () => {throw Error('visible-window-operation-forbidden:' + method);};
     return window;
 }
-async function fixtureServer(plan, requestedPort = 0) {
+function measureWrites(response, row) {
+    row.writeMeasurement = true; row.bytesSubmitted = 0; row.pendingWriteCallbacks = 0; row.failedWriteCallbacks = 0; row.flushedRanges = []; row.writeMeasurementOverflow = false;
+    const original = response.write;
+    response.write = function(chunk, encoding, callback) {
+        if (typeof encoding === 'function') {callback = encoding; encoding = undefined;}
+        const size = typeof chunk === 'string' ? Buffer.byteLength(chunk, encoding) : chunk.byteLength;
+        const start = row.bytesSubmitted; row.bytesSubmitted += size; row.pendingWriteCallbacks++;
+        let settled = false;
+        const complete = error => {
+            if (settled) return; settled = true; row.pendingWriteCallbacks--;
+            if (error) row.failedWriteCallbacks++;
+            else if (size > 0) {
+                if (row.flushedRanges.length < 4096) row.flushedRanges.push([start, start + size]); else row.writeMeasurementOverflow = true;
+            }
+            if (typeof callback === 'function') callback(error);
+        };
+        try {return original.call(this, chunk, encoding, complete);} catch (error) {complete(error); throw error;}
+    };
+}
+async function fixtureServer(plan, requestedPort = 0, observation = {}) {
     const rows = [], sockets = new Set(), active = new Set(); let holdRule = null, held = null, closing = false;
     const server = http.createServer((req, res) => {
         if (closing || req.headers.authorization || req.headers.cookie || req.headers['x-emby-token']) {res.writeHead(403).end(); return;}
@@ -44,6 +63,7 @@ async function fixtureServer(plan, requestedPort = 0) {
             start = +match[1]; end = match[2] ? Math.min(+match[2], end) : end;
         }
         const row = {item, start, end, method: req.method, status: match ? 206 : 200, closed: false, finished: false, held: false, bytesScheduled: 0}; rows.push(row); active.add(res);
+        if (observation.measureWrites === true) measureWrites(res, row);
         const close = new Promise(resolve => res.once('close', () => {row.closed = true; active.delete(res); resolve();}));
         res.once('finish', () => {row.finished = true;});
         function send() {
@@ -61,6 +81,7 @@ async function fixtureServer(plan, requestedPort = 0) {
     server.on('connection', socket => {sockets.add(socket); socket.once('close', () => sockets.delete(socket));});
     await new Promise((resolve, reject) => {server.once('error', reject); server.listen({host: '127.0.0.1', port: requestedPort, exclusive: true}, resolve);});
     return {rows, active, origin: 'http://127.0.0.1:' + server.address().port, port: server.address().port,
+        pendingWrites: () => rows.reduce((n, row) => n + (row.pendingWriteCallbacks || 0), 0),
         hold(rule) {if (held || holdRule) throw Error('fixture-already-holding'); holdRule = rule;}, held: () => held,
         async close() {
             closing = true;
@@ -269,4 +290,4 @@ if (isEntrypoint(require.main === module)) main(process.argv.slice(2)).catch(err
     if (phaseContext && !fs.existsSync(phaseContext.output)) support.writeNew(phaseContext.output, {schema: 1, phase: phaseContext.phase, status: 'failed', error: String(error.message).slice(0, 300), integrity: support.integrityDiagnostic(error), lastStage: stageHistory.at(-1).stage, pid: process.pid, nativeOutcome: 'NOT_ESTABLISHED'});
     if (process.versions.electron && process.type === 'browser') require('electron').app.exit(1);
 });
-module.exports = {protectHiddenWindow, fixtureServer, cacheSnapshot, isEntrypoint};
+module.exports = {protectHiddenWindow, fixtureServer, cacheSnapshot, isEntrypoint, measureWrites};

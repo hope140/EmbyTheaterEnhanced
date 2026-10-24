@@ -46,12 +46,25 @@ function network(rows, saved, total) {
         return [r.start, r.start + r.bytesScheduled];
     });
     const scheduled = union(prefixes(false)), completed = union(prefixes(true)), savedBytes = bytes(saved), scheduledOverlap = overlap(scheduled, saved), completedOverlap = overlap(completed, saved);
+    const measured = rows.every(r => r.writeMeasurement === true);
+    if (measured && rows.some(r => r.pendingWriteCallbacks !== 0 || r.writeMeasurementOverflow)) throw Error('export-edl-input');
+    const flushed = measured ? union(rows.flatMap(r => (r.flushedRanges || []).map(([a, b]) => {
+        if (a < 0 || b < a || b > r.bytesSubmitted || r.start + b > total) throw Error('export-edl-input');
+        return [r.start + a, r.start + b];
+    }))) : [];
+    const flushedOverlap = measured ? overlap(flushed, saved) : null;
     return {requests: rows.length, sourceFileBytes: total, savedPayloadBytes: savedBytes,
         scheduledSourceBytes: rows.reduce((n, r) => n + r.bytesScheduled, 0), scheduledUniqueSourceBytes: bytes(scheduled), completedUniqueSourceBytes: bytes(completed),
         scheduledSavedPayloadBytes: scheduledOverlap, completedSavedPayloadBytes: completedOverlap,
         scheduledAllSavedPayloadReread: savedBytes > 0 && scheduledOverlap >= savedBytes,
         completedAllSavedPayloadReread: savedBytes > 0 && completedOverlap >= savedBytes,
         completedWholeSourceRead: bytes(completed) === total,
+        writeCallbacksMeasured: measured, callbackFlushedUniqueSourceBytes: measured ? bytes(flushed) : null,
+        callbackFlushedSavedPayloadBytes: flushedOverlap,
+        callbackFlushedAllSavedPayload: measured ? savedBytes > 0 && flushedOverlap >= savedBytes : null,
+        failedWriteCallbacks: measured ? rows.reduce((n, r) => n + r.failedWriteCallbacks, 0) : null,
+        transferAssessment: !measured ? 'NOT_MEASURED' : flushedOverlap > 0 ? 'SAVED_PAYLOAD_FLUSHED_TO_UNDERLYING_SYSTEM' : 'NO_SAVED_PAYLOAD_SUCCESSFUL_CALLBACK_OBSERVED',
+        clientConsumption: 'NOT_MEASURED',
         assessment: completedOverlap > 0 ? 'COMPLETED_SAVED_PAYLOAD_REREAD' : scheduledOverlap > 0 ? 'SCHEDULED_SAVED_PAYLOAD_REREAD_DELIVERY_UNCERTAIN' : 'NO_SAVED_PAYLOAD_REREAD_OBSERVED'};
 }
 async function run({client, property, until, delay, server, fixture, original, video, audio, duration, output, directory, checkpoint}) {
@@ -82,7 +95,7 @@ async function run({client, property, until, delay, server, fixture, original, v
     result.maxBackstepSeconds = Math.max(0, ...result.samples.slice(1).map((x, n) => result.samples[n] - x));
     result.startFiles = client.timeline.filter(e => e.action === 'ACCEPT' && e.name === 'start-file').length;
     if (result.maxBackstepSeconds > 1 / 24 || result.startFiles !== 1) throw Error('export-edl-observation');
-    checkpoint('edl-stop', result); await client.stop(); await until(() => server.active.size === 0);
+    checkpoint('edl-stop', result); await client.stop(); await until(() => server.active.size === 0 && (!server.pendingWrites || server.pendingWrites() === 0));
     result.network = network(server.rows.slice(firstRequest), saved, fixture.size); result.timelineAndTracksPassed = true; checkpoint('edl-stop', result);
     return result;
 }

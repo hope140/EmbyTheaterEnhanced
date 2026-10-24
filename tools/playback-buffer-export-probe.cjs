@@ -247,7 +247,7 @@ async function worker(file) {
         window = new BrowserWindow({show: false, focusable: false, skipTaskbar: true, width: 320, height: 180, webPreferences: {sandbox: true, contextIsolation: true, nodeIntegration: false}});
         require('./playback-range-windows-hidden.cjs').protectHiddenWindow(window);
         const handle = window.getNativeWindowHandle(), hwnd = handle.length === 8 ? handle.readBigUInt64LE().toString() : String(handle.readUInt32LE());
-        server = await require('./playback-range-windows-hidden.cjs').fixtureServer({out: plan.out, fixtures: [plan.fixture]});
+        server = await require('./playback-range-windows-hidden.cjs').fixtureServer({out: plan.out, fixtures: [plan.fixture]}, 0, {measureWrites: plan.variant === 'edl'});
         const {NativeHelperClient} = require(path.join(source.runtime, 'electronapp/native-helper/controller.js'));
         async function start(label) {
             stage(label); readProbe(file);

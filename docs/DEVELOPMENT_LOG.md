@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-24 — Bound EDL transfer uncertainty without changing product transport
+
+Read run40112880704/job120928092858 normal logs:8sec/0backstep/one start-file/19samples and3normal exits establish basic synthetic timeline/track handoff.8requests scheduled16,920,584B(unique15,079,756), completedunique6,152B; saved4,066,400B has scheduled overlap1,647,032B/completedoverlap0. Preserve delivery uncertainty; neither infer whole-file download nor treat unfinished responses as zero transfer or seamless sound.
+
+Only EDL fixture responses receive a bounded body write-callback tap; original pipe/backpressure and other modes stay unchanged. Record successful ranges and failed/pending callbacks, wait for closure+callback settlement, and keep clientConsumptionNOT_MEASURED. Local Node24.18.1 loopback cancellation actually receives262,144B while327,680B have successful flush callbacks despite finishedfalse; full128KiB Range count also passes. This validates the observer's boundary and refutes zero-transfer inference, not actual mpv consumption. Prepare at most one same-scope short supplement; no core/network-system/credential/proxy/product modifications or dispatch. Archive a clear recommendation against production automatic transparent retention with the present evidence and maintenance matrix.
+
+Validation:101 related tests passed, including the real owned HTTP abort/full response, failed/pending/old unmeasured write records and unchanged fixture/candidate/process gates. Public offline1976 tests:1966 passed,0 failed,10 platform skips. JavaScript472 tracked files plus the new test's explicit syntax, final UTF-8/links/finite-secret/no-private-path/whitespace checks passed. The fixed-native write supplement has not been executed; existing EDL scheduled-versus-completed uncertainty stays intact until that optional final observation.
+
 ## 2026-10-24 — Archive native AV success; prepare one EDL edge observation
 
 Read normal logs for run40110840330/job120922033457: fixed DLL AV export33ms/4,268,642B, zero new source counters,24 video payloads/48,000 PCM samples with source offset0.7083333/delta0, paused seek0.5->source1.2083333, EOF/file consistency and both helper exits0/stdio-closed; ao native object-list confirmed. Retain scope as synthetic null audio, not physical sound, Session or transparent recovery.
