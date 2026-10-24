@@ -21,6 +21,8 @@ $guard=@($ast.FindAll({param($n)$n -is [Management.Automation.Language.CommandAs
 $branch=@($ast.FindAll({param($n)$n -is [Management.Automation.Language.IfStatementAst] -and $n.Extent.Text.StartsWith('if($testPackage)')},$true))
 if($guard.Count -ne 1 -or $branch.Count -ne 1){throw 'BINDING_GUARD_MISSING'}
 $cases=@(
+ @('0fbb6f9c78320e83f2919c0324dc5db940310166','40131038400','EmbyTheaterEnhanced-0.4.3-test-0fbb6f9c7832-40131038400-1-win-x64-setup.exe',$true),
+ @('0fbb6f9c78320e83f2919c0324dc5db940310166','40131038400','EmbyTheaterEnhanced-0.4.3-test-b8938f4ba914-40131038400-1-win-x64-setup.exe',$false),
  @('b8938f4ba9149e700ea1437b3f5fbe3535a2f5e5','123','EmbyTheaterEnhanced-0.4.3-test-b8938f4ba914-123-1-win-x64-setup.exe',$true),
  @('b8938f4ba9149e700ea1437b3f5fbe3535a2f5e5','124','EmbyTheaterEnhanced-0.4.3-test-b8938f4ba914-123-1-win-x64-setup.exe',$false),
  @('b8938f4ba9149e700ea1437b3f5fbe3535a2f5e5','123','EmbyTheaterEnhanced-0.4.3-test-ca7ae841af87-123-1-win-x64-setup.exe',$false),
@@ -42,4 +44,43 @@ Write-Output 'EXACT_BINDING_GUARDS_PASSED'
 `;
  const r=cp.spawnSync('pwsh',['-NoProfile','-Command',code],{encoding:'utf8',timeout:30000,env:{...process.env,CHECK_BINDING_SCRIPT:script}});
  assert.equal(r.error,undefined);assert.equal(r.status,0,r.stderr);assert.match(r.stdout,/EXACT_BINDING_GUARDS_PASSED/);
+});
+test('actual final acceptance separates diagnostic persistence but still rejects failed exits, remaining processes and app errors', {skip:!!available.error},()=>{
+ const code=String.raw`
+$ErrorActionPreference='Stop';Set-StrictMode -Version Latest
+$text=[IO.File]::ReadAllText($env:CHECK_BINDING_SCRIPT)
+$tokens=$null;$errors=$null;$ast=[Management.Automation.Language.Parser]::ParseInput($text,[ref]$tokens,[ref]$errors)
+if($errors.Count){throw 'PARSE_FAILED'}
+$require=@($ast.FindAll({param($n)$n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Require'},$true))[0]
+. ([scriptblock]::Create($require.Extent.Text))
+$begin=$text.IndexOf('    Require ($launcher.HasExited -and $mainElectron.HasExited')
+$end=$text.IndexOf('} catch {',$begin)
+Require ($begin -gt 0 -and $end -gt $begin) 'FINAL_ACCEPTANCE_FRAGMENT_MISSING'
+$fragment=[scriptblock]::Create($text.Substring($begin,$end-$begin))
+$directory=Join-Path ([IO.Path]::GetTempPath()) ('ete-exit-contract-'+[guid]::NewGuid().ToString('N'))
+[void][IO.Directory]::CreateDirectory($directory)
+try {
+ foreach($case in @(
+  @{host=$true;code=0;remaining=0;records=0;appError=$false;error=$null;functional=$true;persisted=$false},
+  @{host=$true;code=0;remaining=0;records=1;appError=$false;error=$null;functional=$true;persisted=$true},
+  @{host=$true;code=0;remaining=0;records=2;appError=$false;error=$null;functional=$true;persisted=$false},
+  @{host=$false;code=0;remaining=0;records=1;appError=$false;error='OWNED_EXIT_NOT_CONFIRMED';functional=$false;persisted=$null},
+  @{host=$true;code=1;remaining=0;records=1;appError=$false;error='NONZERO_EXIT';functional=$false;persisted=$null},
+  @{host=$true;code=0;remaining=1;records=1;appError=$false;error='OWNED_EXIT_NOT_CONFIRMED';functional=$false;persisted=$null},
+  @{host=$true;code=0;remaining=0;records=1;appError=$true;error='APP_FAILURE_EVENT';functional=$false;persisted=$null}
+ )) {
+  $launcher=[pscustomobject]@{HasExited=$case.host;ExitCode=$case.code};$mainElectron=[pscustomobject]@{HasExited=$true;ExitCode=0}
+  $result=[ordered]@{ownedRemainingCount=$case.remaining;functionalExitPassed=$false;diagnosticLogPersisted=$null;shutdownEventCount=$null}
+  $diag=Join-Path $directory 'synthetic.jsonl';$lines=@(for($i=0;$i -lt $case.records;$i++){'{"category":"app","event":"shutdown"}'})
+  if($case.appError){$lines+='{"category":"renderer","event":"global-error"}'}
+  [IO.File]::WriteAllText($diag,($lines -join [char]10),[Text.UTF8Encoding]::new($false))
+  $failure=$null;try{. $fragment}catch{$failure=$_.Exception.Message}
+  Require ($failure -ceq $case.error -and $result.functionalExitPassed -eq $case.functional -and $result.diagnosticLogPersisted -eq $case.persisted) 'FUNCTIONAL_DIAGNOSTIC_CONTRACT_MISMATCH'
+  if($null -eq $failure){Require ($result.status -ceq 'passed' -and $result.stage -ceq 'complete' -and $result.shutdownEventCount -eq $case.records) 'FINAL_REPORT_MISMATCH'}
+ }
+} finally {Remove-Item -LiteralPath $directory -Recurse -Force}
+Write-Output 'FUNCTIONAL_DIAGNOSTIC_CONTRACT_PASSED'
+`;
+ const r=cp.spawnSync('pwsh',['-NoProfile','-Command',code],{encoding:'utf8',timeout:30000,env:{...process.env,CHECK_BINDING_SCRIPT:script}});
+ assert.equal(r.error,undefined);assert.equal(r.status,0,r.stderr);assert.match(r.stdout,/FUNCTIONAL_DIAGNOSTIC_CONTRACT_PASSED/);
 });

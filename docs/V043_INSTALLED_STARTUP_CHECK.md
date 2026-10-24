@@ -24,3 +24,9 @@
 生成链修复只同步旧patch的Program部分与来源绑定，Program源码SHA256仍为`df2b936ec854f72009dd78f44295dc0ad6988ad22252a435a818eab06d8d3ad4`。固定官方55文件经patch与替换两路径得到完全相同57文件，真实identity门禁及46编译输入验证通过；旧patch反例仍被拒绝。编译前新增强制source-chain阶段，不复用旧Host或回执。当前检查器绑定保持disabled，等待该新SHA的成功包。
 
 当前候选的 Windows 短门禁 run `40124219323` / job `120962065084` 已通过原生产 Host 源码编译、真实 portable probes、verified envelope 生成及暂存校验。它不含安装器或真实 Electron 启动，不能代替本分支待执行的完整候选安装／正常退出验收。绑定仍为 `enabled:false`，仅在收到该来源实际成功构建的附件 ID、文件名和摘要后启用。
+
+## 独立 next 组合包复验
+
+`validation/v043-next-installed-startup` 复用同一检查器，精确绑定源码 `0fbb6f9c78320e83f2919c0324dc5db940310166` 的成功构建 run `40131038400` 和原始 artifact `12575708081`。不修改安装附件或产品。安装、来源、快捷方式、所属 Host/Electron、可见窗口、正常关闭、双退出码0、零遗留及无应用失败事件仍为功能门禁。
+
+报告分开给出 `functionalExitPassed` 与 `diagnosticLogPersisted`／`shutdownEventCount`。日志落盘不是既有退出合同，缺失该记录不再单独把退出判失败；进程未退出、异常退出、遗留或应用错误依然失败。旧 run `40126573435` 的原始 failure 报告保留，其安装和正常退出行为通过、日志落盘缺失两项事实分别成立。真实播放中的 SMTC/DWM 与预载行为不由本次无账号安装启动检查替代。

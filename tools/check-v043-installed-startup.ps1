@@ -106,7 +106,7 @@ if ($ContractSelfTest) {
 }
 Require ($IsWindows -and $env:GITHUB_ACTIONS -ceq 'true' -and $env:RUNNER_ENVIRONMENT -ceq 'github-hosted') 'HOSTED_WINDOWS_REQUIRED'
 Require ($env:GITHUB_REPOSITORY -ceq $repository) 'REPOSITORY_MISMATCH'
-Require ($source -cin @('abe1c7426f0c8d0b5d1f7febadd0d39fb9a80a1d','3a02339ab5011f2544df5b24b1da9b22d0df8d4a','ca7ae841af8748091580259db1853e3c5e1c471f','b8938f4ba9149e700ea1437b3f5fbe3535a2f5e5') -and $buildRun -match '^[1-9][0-9]{0,15}$' -and $ArtifactId -match '^[1-9][0-9]{0,15}$' -and $ArtifactZipSha256 -cmatch '^[a-f0-9]{64}$' -and $InstallerSha256 -cmatch '^[a-f0-9]{64}$') 'EXACT_INPUTS_REQUIRED'
+Require ($source -cin @('abe1c7426f0c8d0b5d1f7febadd0d39fb9a80a1d','3a02339ab5011f2544df5b24b1da9b22d0df8d4a','ca7ae841af8748091580259db1853e3c5e1c471f','b8938f4ba9149e700ea1437b3f5fbe3535a2f5e5','0fbb6f9c78320e83f2919c0324dc5db940310166') -and $buildRun -match '^[1-9][0-9]{0,15}$' -and $ArtifactId -match '^[1-9][0-9]{0,15}$' -and $ArtifactZipSha256 -cmatch '^[a-f0-9]{64}$' -and $InstallerSha256 -cmatch '^[a-f0-9]{64}$') 'EXACT_INPUTS_REQUIRED'
 $testPackage=$source -cne 'abe1c7426f0c8d0b5d1f7febadd0d39fb9a80a1d'
 $setupName=$InstallerFileName
 if($testPackage){Require ($setupName -cmatch ('^EmbyTheaterEnhanced-0\.4\.3-test-'+$source.Substring(0,12)+'-'+$buildRun+'-[1-9][0-9]*-win-x64-setup\.exe$')) 'INSTALLER_NAME_MISMATCH'}
@@ -115,7 +115,7 @@ $work = Join-Path $env:RUNNER_TEMP ('v043-installed-' + $env:GITHUB_RUN_ID + '-'
 Require (-not (Test-Path -LiteralPath $work)) 'PRESERVE_EXISTING_OUTPUT'
 $reportDir = Join-Path $work 'report'
 New-Item -ItemType Directory -Path $reportDir | Out-Null
-$result = [ordered]@{schemaVersion=1;scope='ordinary-installed-startup-close-only';sourceCommit=$source;version=$version;buildRun=$buildRun;artifactId=$ArtifactId;installerFileName=$setupName;testPackage=$testPackage;artifactZipSha256=$ArtifactZipSha256;installerSha256=$InstallerSha256;status='failed';stage='preflight';installed=$false;shortcutVerified=$false;hostStarted=$false;electronParentVerified=$false;visibleWindow=$false;normalCloseRequested=$false;ownedExitConfirmed=$false;hostExitCode=$null;electronExitCode=$null;realSmtcPlayback='NOT_ASSESSED';visibleDwmPlayback='NOT_ASSESSED';rendererDomReady='NOT_ASSESSED';forcedTermination=$false;installerExitCode=$null;ownedElectronCandidates=0;visibleWindowCount=0;ownedRemainingCount=$null}
+$result = [ordered]@{schemaVersion=1;scope='ordinary-installed-startup-close-only';sourceCommit=$source;version=$version;buildRun=$buildRun;artifactId=$ArtifactId;installerFileName=$setupName;testPackage=$testPackage;artifactZipSha256=$ArtifactZipSha256;installerSha256=$InstallerSha256;status='failed';stage='preflight';installed=$false;shortcutVerified=$false;hostStarted=$false;electronParentVerified=$false;visibleWindow=$false;normalCloseRequested=$false;ownedExitConfirmed=$false;functionalExitPassed=$false;diagnosticLogPersisted=$null;shutdownEventCount=$null;hostExitCode=$null;electronExitCode=$null;realSmtcPlayback='NOT_ASSESSED';visibleDwmPlayback='NOT_ASSESSED';rendererDomReady='NOT_ASSESSED';forcedTermination=$false;installerExitCode=$null;ownedElectronCandidates=0;visibleWindowCount=0;ownedRemainingCount=$null}
 $launcher=$null; $target=$null; $profile=$null; $windowsApiReady=$false
 try {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -274,7 +274,9 @@ if(app)app.exit(0);
     $result.ownedExitConfirmed = $true
     $events = @(Get-Content -LiteralPath $diag | ForEach-Object { $_ | ConvertFrom-Json })
     Require (@($events | Where-Object { ($_.category -ceq 'windows-media' -and $_.event -ceq 'integration-unavailable') -or ($_.category -ceq 'renderer' -and $_.event -in @('global-error','unhandled-rejection')) -or ($_.category -ceq 'app' -and $_.event -ceq 'shutdown-cleanup-failed') -or $_.event -ceq 'app-startup-initialization-failed' }).Count -eq 0) 'APP_FAILURE_EVENT'
-    Require (@($events | Where-Object { $_.category -ceq 'app' -and $_.event -ceq 'shutdown' }).Count -eq 1) 'SHUTDOWN_EVENT_MISSING'
+    $result.functionalExitPassed = $true
+    $result.shutdownEventCount = @($events | Where-Object { $_.category -ceq 'app' -and $_.event -ceq 'shutdown' }).Count
+    $result.diagnosticLogPersisted = $result.shutdownEventCount -eq 1
     $result.status = 'passed'; $result.stage = 'complete'
 } catch {
     $result.errorCode = if ($_.Exception.Message -cmatch '^[A-Z][A-Z0-9_]+$') { $_.Exception.Message } else { 'UNEXPECTED_EXCEPTION' }

@@ -1,7 +1,7 @@
 name: v0.4.3 existing installer startup check
 on:
   push:
-    branches: [validation/v043-installed-startup]
+    branches: [validation/v043-next-installed-startup]
     paths: [tools/v043-installed-startup-input.json, tools/check-v043-installed-startup.ps1]
   workflow_dispatch:
 permissions:
