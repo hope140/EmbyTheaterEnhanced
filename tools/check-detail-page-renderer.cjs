@@ -36,6 +36,9 @@ async function main(args=process.argv.slice(2)){
   await trial('uncacheable-query-preserves-native-error',true,async p=>{
    await p.evaluate(()=>{detail.create();detail.owner.params.mediaSourceId='synthetic-source';detail.config.error={status:503};detail.pending=detail.begin().catch(()=>{});});await p.evaluate(()=>detail.pending);assert.equal(await p.evaluate(()=>detail.inspect().missing),true);
   });
+  await trial('visible-content-rejects-an-occluding-layer',true,async p=>{
+   await initial(p);assert.equal(await p.evaluate(()=>detail.inspect().visibleTitle),true);await p.evaluate(()=>{const layer=document.createElement('div');layer.id='synthetic-occluder';layer.style.cssText='position:fixed;inset:0;z-index:99999;background:#222';document.body.append(layer);});const blocked=await p.evaluate(()=>detail.inspect());assert.equal(blocked.visibleTitle,false);assert.equal(blocked.visibleImage,false);await p.evaluate(()=>document.querySelector('#synthetic-occluder').remove());assert.equal(await p.evaluate(()=>detail.inspect().visibleTitle),true);
+  });
   await trial('settings-resident-return',true,async p=>{
    await p.evaluate(()=>detail.route('item'));await p.evaluate(()=>detail.owner.dataPromise);await p.evaluate(()=>{detail.original=detail.view;return detail.route('settings');});await p.evaluate(()=>{detail.config.holdItem=true;return detail.route('item',true);});assert.equal(await p.evaluate(()=>detail.view===detail.original),true);assert.equal(await p.evaluate(()=>detail.inspect().visibleTitle),true);await p.screenshot({path:path.join(out,'settings-return.png')});await p.evaluate(()=>{detail.config.holdItem=false;detail.release('item');});await p.evaluate(()=>detail.owner.dataPromise);
   });

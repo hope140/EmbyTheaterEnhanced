@@ -22,7 +22,7 @@ async function openTrial(browser, input, mode = 'baseline', settings = {}) {
     // The fixture has no external service, accounts, or asset requests.
     await page.route('**/*', route => settings.origin && route.request().url()===settings.origin ? route.fulfill({contentType:'text/html',body:'<!doctype html>'}) : route.abort());
     if(settings.origin) await page.goto(settings.origin);
-    await page.setContent(`<!doctype html><style>${input.flowCss || ''}${settings.native ? input.nativeCss + '\nhtml{font-size:16px;background:#101820;color:#eee}body{margin:0}.view{height:100vh;overflow:auto}.hide{display:none!important}.emby-scroller{overflow:auto}.scrollSlider{display:flex}.itemsContainer{min-height:1px}' : `
+    await page.setContent(`<!doctype html><style>${input.flowCss || ''}${settings.native ? input.nativeCss + '\nhtml{font-size:16px;background:#101820;color:#eee}body{margin:0}.view{height:100vh;overflow:auto}.hide{display:none!important}.emby-scroller{overflow:auto}.scrollSlider:not(.itemMainScrollSlider){display:flex}.itemsContainer{min-height:1px}' : `
         .hide {display:none!important} .view {height:380px;overflow:auto}
         .verticalSection {position:relative;min-height:240px} .itemsContainer {display:flex;gap:12px;overflow:auto}
         .card {flex:0 0 170px;height:180px} .homeFlowPlaceholder {height:180px}

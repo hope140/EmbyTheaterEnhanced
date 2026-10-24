@@ -47,7 +47,7 @@ node tools/check-detail-page-renderer.cjs /absolute/path/to/chromium /new/absolu
 node tools/check-home-cache-update-renderer.cjs /absolute/path/to/chromium /new/absolute/integration-evidence
 ```
 
-存储检查使用实际 Alameda／IndexedDB、独立临时 browser profile，覆盖浏览器重启、LRU／容量、坏行、同键旧写／删除、全部表示删除、事务 abort 后重启隔离和仅 owner 清理。详情检查执行原 ItemPage／BaseView、组合 viewmanager、CardBuilder／ItemsContainer／ImageLoader／ListView／按钮、维护 ApiClient／transport与实际 Fetch；HTTP 在合成 origin 拦截，设备／PlaybackManager 交接、辅助元信息、select／userdata 控件及 scroller 有明确替身。保留旧生成源码对照、等待／响应截图与 rAF 可见性；代理首显、可见帧和请求数不等于 GPU 绘制、Windows 完整客户端或 NAS 性能。
+存储检查使用实际 Alameda／IndexedDB、独立临时 browser profile，覆盖浏览器重启、LRU／容量、坏行、同键旧写／删除、全部表示删除、事务 abort 后重启隔离和仅 owner 清理。详情检查执行原 ItemPage／BaseView、组合 viewmanager、CardBuilder／ItemsContainer／ImageLoader／ListView／按钮、维护 ApiClient／transport与实际 Fetch；HTTP 在合成 origin 拦截，设备／PlaybackManager 交接、辅助元信息、select／userdata 控件及 scroller 有明确替身。保留旧生成源码对照、等待／响应截图与 rAF 可见性；夹具保留原生 page 层级，可见性另检查实际命中层并用遮挡对照验证；代理首显、可见帧和请求数不等于 GPU 绘制、Windows 完整客户端或 NAS 性能。
 
 完整离线、材料／来源及打包语法检查须绑定最终来源，不能用旧包、仅 DOM 存在或单元通过代替整包验收。Windows／真实 Emby 服务后续需要核对：退出重开后主动打开旧详情、四类型、图片实际命中与解码、原生选择／播放、临时失败和确切删除恢复、认证／权限变化、清理后登录和设置保持。本任务不操作用户工作前台、不发布或自行触发测试包。
 
