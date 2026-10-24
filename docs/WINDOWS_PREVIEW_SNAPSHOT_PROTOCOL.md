@@ -1,6 +1,6 @@
 # 原生预览 owner 快照候选
 
-这是 v0.4.0 之后的独立候选，默认仍关闭，不合入正式版。独立分支已重基正式发布点 `88578c91ab19d44eecddcfae096d37dc917ef1f4`。此前中性保护只是失败路径；当前已有视频像素来源、产品接线和独立试验包装配源码。首轮 Windows helper 编译因预览终态参数类型错误失败，本次已修正，但修后完整编译／D3D11／DWM 可见验收仍须分别执行；4a9d4ee没有成功试验包，不可供验收。
+这是 v0.4.0 之后的独立候选，默认仍关闭，不合入正式版。独立分支已重基正式发布点 `88578c91ab19d44eecddcfae096d37dc917ef1f4`。此前中性保护只是失败路径；当前已有视频像素来源、产品接线和独立试验包装配源码。首轮Native类型错误已修正，d4f9d6b的真实Windows运行已通过Host／生产Native编译及1674项回归；试验包自检／owner阶段失败，仍无验收包，D3D11／DWM可见结果未通过。4a9d4ee与d4f9d6b均不可作为已成功预览包供验收。
 
 ## 合成路径与必要影响面
 
@@ -65,7 +65,7 @@ $previewCommit = (git rev-parse HEAD).Trim()
 
 ## 测试包状态
 
-旧镜像的System.Configuration构建阻碍按[Framework来源合同](FRAMEWORK_SERVICING_PROFILES.md)处理：原固定SHA保持，另一个精确候选须通过镜像／OS／程序集／物理系统路径／微软有效签名及复算哈希全部条件。只读预检在依赖下载前执行，成功包附runner-framework-profile.json，最终Host实际绑定与行为门禁保持。最近一次构建停在此门禁，尚未验证修后的Native；移植通用构建兼容不包含页面缓存产品功能，也不证明DWM可见效果。
+旧镜像的System.Configuration构建阻碍按[Framework来源合同](FRAMEWORK_SERVICING_PROFILES.md)处理：原固定SHA保持，另一个精确候选须通过镜像／OS／程序集／物理系统路径／微软有效签名及复算哈希全部条件。只读预检在依赖下载前执行，成功包附runner-framework-profile.json，最终Host实际绑定与行为门禁保持。后续d4f9d6b已推进通过Host／Native和基础安装器，失败转至试验自检／owner；不包含页面缓存产品功能，也不证明DWM可见效果。
 
 手动 `public-ci.yml` 支持 `native_preview_trial=true`，同时必须 `release_package=false`；两个开关不能同时打开。保持固定 GCC 16.1.0、C++17、固定 mpv 2.5 header／DLL 和原 flags／链接库。新增快照调用使用既有动态加载的 libmpv 导出及 C++17 标准库，没有新增 Windows SDK 或链接依赖；源码／便携提取编译检查不能替代锁定 Windows 工具链实编。
 
@@ -73,9 +73,13 @@ $previewCommit = (git rev-parse HEAD).Trim()
 
 `tools/windows-native-preview-trial.cjs` 只读当前提交 Git blob，在全新独立目录复制标准载荷，再添加 native-media 模块／依赖、显式入口、探针和来源文件。标准文件字节与默认入口保持原样；独立 `native-preview-trial.json` 绑定源提交、标准 build-manifest、生成器、依赖与完整文件集合。它是额外覆盖来源合同，不将新文件冒充为标准构建输入。试验 ZIP 使用提交和 run 唯一名称，不覆盖正式安装或已有 artifact。
 
-CI 必须重新解包该 ZIP，用**包内固定 Electron 44.4.2 x64** 执行自检：完整文件与生产 helper 来源、固定 DLL、Koffi 实际载入／系统函数调用和 DWM／WinRT FFI 签名绑定。之后从解包副本执行本地红／绿 owner 探针，必须得到唯一 `end/PASS` 且 `ownedExitConfirmed=true`，否则不上传。外部回执包含 ZIP SHA-256、独立 manifest、自检 JSON 与 owner JSONL；探针 profile／媒体留在 artifact 外。自检和 helper A/B 不证明 DWM 可见效果。
+CI必须重新解包该ZIP，用**包内固定Electron44.4.2 x64**执行自检：完整文件与生产helper来源、固定DLL、Koffi实际载入／系统函数调用和DWM／WinRT FFI签名绑定。`windows-native-preview-process.cjs`逐个持有子进程，明确继承Node／GUI模式，等待真实close与输出排空后才读报告；自检45秒、owner90秒，超时仅终止所属子进程并记录结果。exit0、自检回执的ffiLoaded=true／sourceCommit及后续唯一final end/PASS／ownedExitConfirmed必须全部满足；提前写PASS后进程exit非零仍失败，不用PowerShell旧LASTEXITCODE判定GUI进程完成。成功外部回执包含ZIP SHA-256、独立manifest、自检JSON、进程完成后的acceptance JSON及owner JSONL；profile／媒体不进入分发包。
 
-Linux 可验证官方归档／装配来源、合成包正反例和便携C++调用边界。首次Windows helper编译已经失败，修后完整编译、自检、helper A/B及试验ZIP尚待重跑；原候选无成功包。该源码具备上述独立构建门禁，不宣称包已生成或视频问题已解决。不自行触发workflow，不合main，不发布正式Release。
+在解包后、自检后、owner后分别保存物理文件清单、SHA及新增／缺失／改变的相对文件名，也记录与上一阶段的差异。每阶段重新运行原完整性检查；原固定两处小debug.log例外保持，原始诊断差异仍显示这些日志。stdout／stderr各最多8MiB，PID／exit／close／timeout另存；超限同样失败。失败时只上传独立diagnostics artifact（1天），不上传验收包，不生成替代owner PASS，不上传profile／Y4M。
+
+Electron会把ASAR暴露成虚拟目录，连其Node模式也启用此wrapper；普通Node构建清单和Electron的node:fs遍历因此可能看到不同集合。校验器只用Electron内置`original-fs`读取物理payload及归档字节，不全局关闭应用ASAR，不增加归档豁免。依据：[官方ASAR／original-fs说明](https://electronjs.org/docs/latest/tutorial/asar-archives)、[固定Node初始化](https://github.com/electron/electron/blob/v44.4.2/lib/node/init.ts)、[固定wrapper](https://github.com/electron/electron/blob/v44.4.2/lib/node/asar-fs-wrapper.ts)。同版官方LinuxElectron经发行SHA验证的真实复现为物理1个default_app.asar、旧视图13个虚拟成员，归档SHA不变，修后清单稳定；这是FS验证，不是Windows原生验收。旧Windows失败日志未保留逐项差异，不能宣称排除其他物理变化，新三阶段诊断用于确认。
+
+d4f9d6b的Host／Native和初始静态载荷通过不等于其试验包通过；修后的Windows自检／owner A/B及最终ZIP仍须重跑，DWM／Peek另验。不自行触发workflow，不合main，不发布正式Release。
 
 ## 解包后的最小 Windows 复验
 
@@ -84,9 +88,13 @@ Linux 可验证官方归档／装配来源、合成包正反例和便携C++调�
 ```powershell
 # 单独执行包内自检（不启动完整客户端）
 $previewCommit = (Get-Content -Raw .\native-preview-trial.json | ConvertFrom-Json).sourceCommit
+$priorNode = $env:ELECTRON_RUN_AS_NODE
 $env:ELECTRON_RUN_AS_NODE = '1'
-try { & .\x64\electron\electron.exe .\trial\verify.cjs $previewCommit }
-finally { Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue }
+$selfcheckArgs = @(('"' + (Join-Path $PWD 'trial/verify.cjs') + '"'), $previewCommit)
+try {
+    $check = Start-Process -FilePath (Join-Path $PWD 'x64/electron/electron.exe') -ArgumentList $selfcheckArgs -Wait -PassThru -NoNewWindow
+    if ($check.ExitCode -ne 0) { throw 'Trial selfcheck failed.' }
+} finally { $env:ELECTRON_RUN_AS_NODE = $priorNode }
 # 可重复的生产 helper 本地 A/B；每次换一个全新输出目录
 .\Test-Owner.ps1 -OutputDirectory C:\ETE-Probe\runs\owner-001
 # 完整产品显式 trial；每次换一个全新 profile

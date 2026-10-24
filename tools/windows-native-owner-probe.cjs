@@ -88,5 +88,5 @@ async function run(runtimeArg,outputArg,commit) {
 module.exports={PLAN,clip,loadProbeClip,assertNoSnapshotDiagnostics};
 if(require.main===module) {
     if(process.argv[2]==='--describe')process.stdout.write(JSON.stringify(PLAN)+'\n');
-    else run(...process.argv.slice(2)).catch(()=>{process.stderr.write('Owner snapshot probe failed; inspect completed fixed-stage records.\n');process.exitCode=1;if(process.versions.electron)require('electron').app.quit();});
+    else run(...process.argv.slice(2)).catch(error=>{process.stderr.write(JSON.stringify({event:'probe-failed',code:error.code||'OWNER_PROBE_FAILED',details:error.details||null})+'\n');process.exitCode=1;if(process.versions.electron)require('electron').app.exit(1);});
 }

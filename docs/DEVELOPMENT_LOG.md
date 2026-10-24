@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-24 — 修复ASAR清单视图并等待实际探针退出
+
+读取d4f9d6b的真实Windows失败日志：Host／生产Native来源校验和1674项测试通过，Koffi92文件及试验2233文件静态检查通过，但父脚本在Electron输出完整性失败前读取缺失的报告。没有成功试验包，FFI loaded=true及owner成功均未获得；旧日志未保存子PID或逐项文件差异，不能据此排除其他物理变化。
+
+核对固定Electron44.4.2源：lib/node/init.ts也启用ASAR wrapper，fs.lstatSync可把default_app.asar根当目录。用官方同版Linux ZIP（SHA256 ad71063e…）真实Node-mode复现旧遍历13个虚拟成员、物理仅1归档且SHA始终相同，现用original-fs物理遍历稳定，并保留所有文件／哈希检查。CI验收器声明来源，持有所属Electron子进程、限时等待close、保存有界stdout／stderr与退出记录；在解包后／自检后／owner后留物理清单及增删改差异，再验证exit0、FFI回执、匹配源提交和唯一final PASS／helper退出，不能用早到报告掩盖后续失败。失败仅另存诊断artifact，profile／Y4M不上传，失败不上传验收包；便携启动器改为显式Start-Process -Wait，探针早期错误输出固定诊断并返回非零。
+
+相关45项／44pass／0fail／1 Linux跳过的Windows GUI子进程用例；新增真实Node子进程的延迟报告、晚到stdout／stderr、报告先PASS后exit7、超时及spawn失败检查，ASAR物理FS选择、精确文件差异和phase失败记录回归通过。公开离线1599项／1588pass／0fail／11平台skip，431 JS／50 PowerShell语法、有限模式及diff检查通过。真实LinuxElectron只验证FS缺陷，不证明Windows Koffi／owner／DWM；Windows专属GUI-subsystem夹具已注册待云端执行。本次不改src/native、不操作Work、不自行dispatch，详见[当前验收](WINDOWS_PREVIEW_SNAPSHOT_PROTOCOL.md)。
+
 ## 2026-10-24 — 只移植已审查的 Framework 构建兼容增量
 
 核对6dc6c270723209b36499a5cb9a8e28de5cc4bbab相对4f3eceee69855f9254d1de706e6fd3ee6be7fb95；非预览装配器的既有目标文件与来源基线一致。精确应用构建脚本、33输入来源合同、实际Host终验分支及合成来源回归；在本分支装配器保留独立trial逻辑，只加入原增量的前置只读检查与预检回执。未移入Home／页面缓存产品源码或缓存专属文档；通用Framework合同改为链接本分支隔离预览验收。

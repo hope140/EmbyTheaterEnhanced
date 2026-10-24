@@ -24,8 +24,17 @@ test('manual build keeps read-only token permissions and binds checkout to its e
     assert.match(manual, /node-version: 24\.18\.1/);
     assert.doesNotMatch(manual, /gh release|release\/|releases|git (?:push|tag)|npm publish/);
     const uses = [...manual.matchAll(/uses: [^@\n]+@([^\s]+)/g)].map(match => match[1]);
-    assert.equal(uses.length, 3);
+    assert.equal(uses.length, 4);
     assert.ok(uses.every(ref => /^[0-9a-f]{40}$/.test(ref)));
+});
+
+test('native preview failure diagnostics are separate, explicitly scoped and never an acceptance package', () => {
+    const diagnostics=manual.slice(manual.indexOf('      - name: Preserve native preview failure diagnostics'));
+    assert.match(diagnostics,/if: failure\(\) && inputs.native_preview_trial/);
+    assert.match(diagnostics,/path: test-output\/native-preview-diagnostics-\*\/\*/);
+    assert.match(diagnostics,/name: ete-native-preview-diagnostics-\$\{\{ github.sha \}\}-\$\{\{ github.run_id \}\}-\$\{\{ github.run_attempt \}\}/);
+    assert.match(diagnostics,/retention-days: 1/);assert.match(diagnostics,/if-no-files-found: warn/);
+    assert.doesNotMatch(diagnostics,/native-owner-|manual-windows-package|profiles|\.work|dist\//);
 });
 
 test('artifact upload is restricted to the staged package and the shortest supported retention', () => {

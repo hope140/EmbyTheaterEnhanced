@@ -26,6 +26,7 @@ function fixture(t,crlf=false){
  const git=args=>cp.execFileSync('git',['-C',root,...args],{encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
  git(['init','-q']);if(crlf)git(['config','core.autocrlf','true']);git(['config','user.name','Synthetic test']);git(['config','user.email','fixture@example.invalid']);git(['add','tools','native','vendor']);git(['commit','-qm','synthetic source']);const commit=git(['rev-parse','HEAD']);
  put('runtime/'+native.runtimePath,exe);put('runtime/'+native.libmpv.runtimePath,dll);put('runtime/electronapp/package.json','{"main":"main.js"}');
+ put('runtime/x64/electron/resources/default_app.asar','Opaque physical archive fixture; never executed.');
  const cpp=cp.execFileSync('git',['-C',root,'show',commit+':'+native.sourcePath]);put('runtime/native-helper-provenance.json',JSON.stringify({sourceCommit:commit,source:{sha256:hash(cpp)},helper:{testing:false,sha256:hash(exe)}}));
  const files=[...check.inventory(path.join(root,'runtime'))].map(([name,file])=>({path:name,...file}));put('runtime/build-manifest.json',JSON.stringify({schemaVersion:3,sourceCommit:commit,files}));
  return {root,commit,runtime:path.join(root,'runtime'),dependencies:dependencyRoot,destination:path.join(root,'trial-output'),put};
@@ -41,6 +42,35 @@ for(const mode of ['base','ffi','extra','source'])test('bundle rejects '+mode+' 
  const f=fixture(t);trial.create(f.root,f.runtime,f.dependencies,f.destination,f.commit);
  const target=mode==='base'?'electronapp/package.json':mode==='ffi'?'electronapp/enhanced/native-media/node_modules/koffi/LICENSE.txt':mode==='source'?'trial/helper-source.cpp':'unexpected-file';
  fs.writeFileSync(path.join(f.destination,target),'tampered');assert.throws(()=>check.verify(f.destination,f.commit,{loadNative:false}),/mismatch/);
+});
+test('Electron verification selects original-fs and keeps ASAR as a physical payload file',t=>{
+ const vm=require('node:vm'),f=fixture(t);trial.create(f.root,f.runtime,f.dependencies,f.destination,f.commit);
+ const module={exports:{}},source=fs.readFileSync(path.join(__dirname,'../tools/templates/native-preview/verify.cjs'),'utf8');
+ const requirePhysical=name=>{if(name==='original-fs')return fs;if(name==='node:fs')throw Error('ASAR virtual fs must not inspect payload');return require(name);};
+ vm.runInNewContext(source,{module,require:requirePhysical,process:{versions:{electron:'44.4.2'}}});
+ assert.equal(module.exports.verify(f.destination,f.commit,{loadNative:false}).status,'passed');
+ assert.ok(module.exports.inventory(f.destination).has('x64/electron/resources/default_app.asar'));
+});
+test('file mismatch reports added, missing and changed relative names without allowing them',t=>{
+ const f=fixture(t);trial.create(f.root,f.runtime,f.dependencies,f.destination,f.commit);
+ fs.writeFileSync(path.join(f.destination,'extra.txt'),'unexpected');fs.unlinkSync(path.join(f.destination,'trial/NOTICE.md'));fs.writeFileSync(path.join(f.destination,'electronapp/package.json'),'changed');
+ assert.throws(()=>check.verify(f.destination,f.commit,{loadNative:false}),error=>{
+  assert.equal(error.code,'TRIAL_INVENTORY_MISMATCH');assert.deepEqual(error.details.added,['extra.txt']);assert.deepEqual(error.details.missing,['trial/NOTICE.md']);assert.deepEqual(error.details.changed,['electronapp/package.json']);return true;
+ });
+});
+test('acceptance records extracted inventory corruption before starting a child',async t=>{
+ const {accept}=require('../tools/windows-native-preview-process.cjs'),f=fixture(t);trial.create(f.root,f.runtime,f.dependencies,f.destination,f.commit);
+ fs.writeFileSync(path.join(f.destination,'unexpected.txt'),'drift');const diagnostics=path.join(f.root,'diagnostics');
+ await assert.rejects(accept(f.destination,path.join(f.root,'owner'),f.commit,diagnostics),error=>error.code==='TRIAL_INVENTORY_MISMATCH');
+ const recorded=JSON.parse(fs.readFileSync(path.join(diagnostics,'failure.json')));assert.equal(recorded.stage,'extracted');assert.deepEqual(recorded.details.added,['unexpected.txt']);
+ assert.equal(fs.existsSync(path.join(diagnostics,'selfcheck.process.json')),false);
+});
+test('selfcheck spawn failure records close and after-phase inventory before any owner-report read',async t=>{
+ const {accept}=require('../tools/windows-native-preview-process.cjs'),f=fixture(t);trial.create(f.root,f.runtime,f.dependencies,f.destination,f.commit);
+ const diagnostics=path.join(f.root,'diagnostics');await assert.rejects(accept(f.destination,path.join(f.root,'owner'),f.commit,diagnostics),error=>error.code==='TRIAL_CHILD_FAILED');
+ const processRecord=JSON.parse(fs.readFileSync(path.join(diagnostics,'selfcheck.process.json'))),phase=JSON.parse(fs.readFileSync(path.join(diagnostics,'after-selfcheck.inventory.json')));
+ assert.equal(processRecord.closed,true);assert.equal(processRecord.spawnError,'ENOENT');assert.deepEqual(phase.previousDelta.added,[]);assert.deepEqual(phase.previousDelta.missing,[]);assert.deepEqual(phase.previousDelta.changed,[]);
+ assert.equal(JSON.parse(fs.readFileSync(path.join(diagnostics,'failure.json'))).stage,'selfcheck');assert.equal(fs.existsSync(path.join(diagnostics,'owner.process.json')),false);
 });
 test('trial cannot be emitted into the base runtime or from dirty generator sources',t=>{
  const f=fixture(t);assert.throws(()=>trial.create(f.root,f.runtime,f.dependencies,path.join(f.runtime,'nested'),f.commit),/separate/);
@@ -64,6 +94,7 @@ test('workflow trial option is default-off, incompatible with release mode and c
  const workflow=fs.readFileSync(path.join(__dirname,'../.github/workflows/public-ci.yml'),'utf8');
  const build=fs.readFileSync(path.join(__dirname,'../tools/ci-windows-test-package.ps1'),'utf8');
  assert.match(workflow,/native_preview_trial:[\s\S]*?default: false/);assert.match(build,/\$ReleasePackage -and \$NativePreviewTrial/);
- for(const required of ['download-native-preview-deps.py','windows-native-preview-trial.cjs','ExtractToDirectory','trial/verify.cjs','trial/owner-probe.cjs','ownedExitConfirmed'])assert.ok(build.includes(required));
+ for(const required of ['download-native-preview-deps.py','windows-native-preview-trial.cjs','ExtractToDirectory','windows-native-preview-process.cjs','ownedExitConfirmed'])assert.ok(build.includes(required));
+ assert.match(workflow,/Preserve native preview failure diagnostics[\s\S]*?if: failure\(\) && inputs.native_preview_trial/);
  assert.doesNotMatch(build,/gh workflow run|gh release|git push|Invoke-Expression/);
 });

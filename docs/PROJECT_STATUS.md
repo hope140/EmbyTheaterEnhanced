@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-24 — 试验包物理清单与进程完成顺序
+
+d4f9d6b的真实Windows运行已通过Host、固定GCC16.1生产Native编译、1674项回归、基础安装器和官方Koffi92文件，试验副本初始2233文件静态校验通过；包内自检／owner阶段失败，无验收包。日志中父脚本先读不存在的owner报告，Electron稍后才输出file set mismatch，旧实现没有保存实际子进程完成状态或逐项差异。
+
+定位并修正两条边界：Electron44.4.2在Node模式仍给fs启用ASAR虚拟视图，原清单把default_app.asar当目录；现用original-fs核对完整物理字节，不豁免归档。官方同版本Linux资产经发行SHA256验证后真实复现：一个物理归档变成13个虚拟成员且文件SHA不变，修后清单稳定；这不是Windows／DWM验收。另以Node持有GUI子进程，等待close和stdout／stderr排空，再要求实际exit0、自检FFI回执及唯一所属owner PASS／helper退出报告；新增三阶段物理清单、差异和失败诊断，门禁不减。相关45项：44pass／0fail／1 Windows GUI子进程用例仅Linux跳过，真实延迟写报告／晚到stderr／非零退出／超时／spawn失败均覆盖。公开离线1599项：1588pass／0fail／11平台skip，431 JS／50 PowerShell语法、有限模式及diff检查通过。默认关闭、两按钮、产品播放源码保持，修后Windows自检／A/B及DWM仍须重跑，见[验收合同](WINDOWS_PREVIEW_SNAPSHOT_PROTOCOL.md)。
+
 ## 2026-10-24 — 独立预览构建移植精确 Framework 来源配置
 
 最近一次Windows构建在旧镜像System.Configuration固定SHA门禁失败，尚未到修后的Native编译，没有成功预览包。仅移植6dc6c270相对4f3ecee的构建兼容增量：保留原固定SHA，额外候选须同时通过精确镜像／OS、Framework及程序集身份、物理系统GAC路径、Microsoft有效Authenticode或Catalog签名和检查后复算哈希。入口在依赖获取前只读预检，Host最终仍检查实际绑定和完整行为；未知实现拒绝，不改系统或自动盲重跑。

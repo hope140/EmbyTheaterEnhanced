@@ -110,15 +110,11 @@ if ($NativePreviewTrial) {
     if (Test-Path -LiteralPath $previewExtract) { throw 'Preserve existing preview extraction.' }
     [IO.Compression.ZipFile]::ExtractToDirectory($previewZip,$previewExtract)
     $ownerOutput = Join-Path $root ('test-output/native-owner-' + $run)
-    $priorRunAsNode = $env:ELECTRON_RUN_AS_NODE
-    try {
-        $env:ELECTRON_RUN_AS_NODE = '1'
-        $previewReceipt = & (Join-Path $previewExtract 'x64/electron/electron.exe') (Join-Path $previewExtract 'trial/verify.cjs') $source
-        if ($LASTEXITCODE -ne 0) { throw 'Extracted trial selfcheck failed.' }
-        $env:ELECTRON_RUN_AS_NODE = $null
-        & (Join-Path $previewExtract 'x64/electron/electron.exe') (Join-Path $previewExtract 'trial/owner-probe.cjs') $previewExtract $ownerOutput $source
-        if ($LASTEXITCODE -ne 0) { throw 'Source-bound production owner probe failed.' }
-    } finally { $env:ELECTRON_RUN_AS_NODE = $priorRunAsNode }
+    $previewDiagnostics = Join-Path $root ('test-output/native-preview-diagnostics-' + $run)
+    # Node owns and waits for child close/stdout/stderr; GUI-subsystem Electron
+    # must not be accepted using a stale PowerShell LASTEXITCODE.
+    $previewReceipt = & node (Join-Path $PSScriptRoot 'windows-native-preview-process.cjs') $previewExtract $ownerOutput $source $previewDiagnostics
+    if ($LASTEXITCODE -ne 0) { throw 'Trial acceptance failed; preserve native-preview-diagnostics files.' }
     $ownerLines = @(Get-Content -LiteralPath (Join-Path $ownerOutput 'owner-probe.jsonl') | ForEach-Object { $_ | ConvertFrom-Json })
     $ownerEnd = @($ownerLines | Where-Object { $_.event -eq 'end' })
     if ($ownerEnd.Count -ne 1 -or $ownerEnd[0].result -ne 'PASS' -or -not $ownerEnd[0].ownedExitConfirmed) { throw 'Owner probe did not confirm completion and exit.' }
@@ -130,6 +126,7 @@ if ($NativePreviewTrial) {
     Copy-Item -LiteralPath $previewZip -Destination $output
     Copy-Item -LiteralPath (Join-Path $preview 'native-preview-trial.json') -Destination $output
     Copy-Item -LiteralPath (Join-Path $ownerOutput 'owner-probe.jsonl') -Destination $output
+    Copy-Item -LiteralPath (Join-Path $previewDiagnostics 'acceptance.json') -Destination (Join-Path $output 'native-preview-acceptance.json')
     [IO.File]::WriteAllText((Join-Path $output 'native-preview-selfcheck.json'), ($previewReceipt | Out-String), [Text.UTF8Encoding]::new($false))
     [IO.File]::WriteAllText((Join-Path $output 'native-preview-zip.sha256'), ((Get-FileHash -LiteralPath $previewZip -Algorithm SHA256).Hash.ToLowerInvariant() + '  ' + [IO.Path]::GetFileName($previewZip) + "`n"), [Text.UTF8Encoding]::new($false))
 }
