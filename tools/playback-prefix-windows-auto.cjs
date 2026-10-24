@@ -10,6 +10,7 @@ const TOOLS_COMMIT = 'c9cd9bacf81445c9c10befd121951b1c63c86faa';
 const FIXTURE_SIZES = Object.freeze([33182440, 104194304]);
 const OWNER = 'ETE next-prefix automatic-chain experiment v1\n';
 const MATRIX_PHASES = Object.freeze(['matrix-cancel', 'matrix-preempt', 'matrix-replace', 'matrix-exit', 'matrix-unsupported']);
+const MATRIX_REMAINING = Object.freeze(MATRIX_PHASES.slice(1));
 const CONFIG = Object.freeze({kind: 'next-prefix', progressPercent: 70, preloadMB: 100, timeoutMs: 30000});
 const LOADER = Object.freeze({schemaVersion: 1, component: 'Electron', version: '44.4.2', platform: 'win32', arch: 'x64',
     archiveSha256: '6aae435b6cd5c0eedf9fd38824bae4045ffdaecd029f0b8c8328bac3f5b71f03', sourcePath: 'x64/electron/vulkan-1.dll',
@@ -282,6 +283,8 @@ async function rendererBoot(input) {
         window.prefixAction = async operation => {
             report('matrix-action', {operation});
             if (operation === 'pause') manager.pause();
+            else if (operation === 'unpause') manager.unpause();
+            else if (operation === 'seek-back') await manager.seek(20000000);
             else if (operation === 'cancel') await manager.stop();
             else if (operation === 'replace') await manager.queueNext({items: [await api.getItem('anonymous', 'C')]});
             else throw Error('matrix-action-invalid');
@@ -346,7 +349,7 @@ async function fixtureServer(plan, record, options = {}) {
 }
 const MATRIX_CODES = Object.freeze(['matrix-budget-contract', 'matrix-A-load-missing', 'matrix-ineligible-deadline',
     'matrix-ineligible-fallback-missing', 'matrix-held-deadline', 'matrix-real-threshold-missing', 'matrix-preempt-deadline',
-    'matrix-preempt-close-order', 'matrix-native-cache-readback', 'matrix-A-progress-stalled', 'matrix-pause-unobserved', 'matrix-replace-deadline',
+    'matrix-preempt-close-order', 'matrix-A-ended-before-miss', 'matrix-native-cache-state-unavailable', 'matrix-seek-target-cached', 'matrix-foreground-miss-not-observed', 'matrix-seek-changed-generation', 'matrix-seek-position-unobserved', 'matrix-native-cache-readback', 'matrix-A-progress-stalled', 'matrix-pause-unobserved', 'matrix-replace-deadline',
     'matrix-replace-close-order', 'matrix-replace-shared-budget', 'matrix-source-close-missing', 'matrix-late-byte-accepted',
     'matrix-client-close-missing', 'matrix-held-not-active', 'matrix-background-concurrency', 'matrix-unrequested-next', 'matrix-cancel-state-restored', 'matrix-action-invalid']);
 function observeOriginRequests(origin, record) {
@@ -367,11 +370,20 @@ function observeOriginRequests(origin, record) {
     http.request = observed;
     return () => {if (http.request === observed) http.request = original;};
 }
+function uncachedSeekTarget(cache, position, target = 2) {
+    const ranges = cache && cache['seekable-ranges'];
+    need(Array.isArray(ranges) && ranges.every(row => Number.isFinite(row.start) && Number.isFinite(row.end)), 'matrix-native-cache-state-unavailable');
+    need(Number.isFinite(position) && position > target + 1 && !ranges.some(row => target >= row.start && target <= row.end), 'matrix-seek-target-cached');
+    return target;
+}
 async function matrixCase({phase, service, origin, trace, record, action, client, fatal}) {
-    const deadline = Date.now() + 35000; let peak = 0;
-    async function until(predicate, code) {
-        while (Date.now() < deadline) {
+    const deadline = Date.now() + 35000; let peak = 0, preemptPending = phase === 'matrix-preempt';
+    async function until(predicate, code, limitMs = 35000) {
+        const stageDeadline = Math.min(deadline, Date.now() + limitMs);
+        while (Date.now() < stageDeadline) {
             if (fatal()) throw Error('renderer-chain-failed');
+            if (preemptPending) need(!trace.some(row => row.type === 'manager-next-track' || row.type === 'load' && row.item !== 'A' ||
+                row.type === 'native-property' && row.generation === a.generation && row.name === 'eof-reached' && row.value === true), 'matrix-A-ended-before-miss');
             const state = service.rangeStatus(); peak = Math.max(peak, state.diskBytes || 0);
             need(state.kind === 'next-prefix' && state.maxBytes === 300000000 && state.diskBytes <= 300000000, 'matrix-budget-contract');
             if (predicate()) return;
@@ -396,14 +408,33 @@ async function matrixCase({phase, service, origin, trace, record, action, client
     const isHeldClose = row => row.type === 'origin-client-closed' && row.clientRequest === heldClient.clientRequest;
     const before = service.rangeStatus().diskBytes;
     if (phase === 'matrix-preempt') {
-        need(Number(await client().getProperty('demuxer-max-bytes', 2000)) === 1048576, 'matrix-native-cache-readback');
-        await until(() => trace.some(isHeldClose) &&
-            trace.some(row => row.type === 'origin-client-open' && row.item === 'A' && row.seq > held.seq), 'matrix-preempt-deadline');
+        const stage = (label, data = {}) => record('matrix-preempt-stage', {stage: label, generation: a.generation, heldClosed: trace.some(isHeldClose),
+            foregroundOpenCount: trace.filter(row => row.type === 'origin-client-open' && row.item === 'A' && row.seq > held.seq).length, ...data});
+        stage('held-observed');
+        await action('pause');
+        await until(() => trace.some(row => row.type === 'native-property' && row.generation === a.generation && row.name === 'pause' && row.value === true), 'matrix-pause-unobserved');
+        need(!origin.held.response.destroyed && !trace.some(isHeldClose), 'matrix-held-not-active');
+        const forward = Number(await client().getProperty('demuxer-max-bytes', 2000)), backward = Number(await client().getProperty('demuxer-max-back-bytes', 2000));
+        need(forward === 1048576 && backward === 0, 'matrix-native-cache-readback');
+        const position = await client().getProperty('time-pos', 2000), cache = await client().getProperty('demuxer-cache-state', 2000);
+        const ranges = Array.isArray(cache?.['seekable-ranges']) ? cache['seekable-ranges'].filter(row => Number.isFinite(row.start) && Number.isFinite(row.end)).slice(0, 4).map(row => ({start: row.start, end: row.end})) : [];
+        stage('cache-observed', {position, forwardCacheBytes: forward, backwardCacheBytes: backward, ranges});
+        const target = uncachedSeekTarget(cache, position);
+        stage('seek-requested', {position, target}); const seekSequence = trace.at(-1).seq;
+        await action('seek-back');
+        await until(() => trace.some(isHeldClose) && trace.some(row => row.type === 'origin-client-open' && row.item === 'A' && row.seq > seekSequence), 'matrix-foreground-miss-not-observed', 5000);
         const closed = trace.find(isHeldClose);
-        need(closed.seq > held.seq, 'matrix-held-not-active');
+        need(client().currentGenerationId === a.generation, 'matrix-seek-changed-generation');
+        need(closed.seq > seekSequence, 'matrix-held-not-active');
         need(trace.some(row => row.type === 'origin-client-open' && row.item === 'A' && row.seq > closed.seq), 'matrix-preempt-close-order');
-        const position = trace.filter(row => row.type === 'native-property' && row.generation === a.generation && row.name === 'time-pos').at(-1)?.value;
-        await until(() => trace.some(row => row.type === 'native-property' && row.generation === a.generation && row.name === 'time-pos' && row.value > position), 'matrix-A-progress-stalled');
+        stage('foreground-miss-observed', {target});
+        await until(() => trace.some(row => row.type === 'native-property' && row.generation === a.generation && row.seq > seekSequence && row.name === 'time-pos' && row.value >= target - 0.1 && row.value <= target + 1), 'matrix-seek-position-unobserved', 5000);
+        const seekPosition = Number(await client().getProperty('time-pos', 2000));
+        const resumeSequence = trace.at(-1).seq;
+        await action('unpause');
+        await until(() => trace.some(row => row.type === 'native-property' && row.generation === a.generation && row.seq > resumeSequence && row.name === 'time-pos' && row.value > seekPosition), 'matrix-A-progress-stalled', 5000);
+        stage('playback-resumed', {target});
+        preemptPending = false;
         await action('cancel');
     } else {
         await action('pause');
@@ -430,7 +461,7 @@ async function matrixCase({phase, service, origin, trace, record, action, client
     const peakBackgroundRequests = Math.max(0, ...trace.filter(row => row.type === 'origin-client-open' && row.item !== 'A').map(row => row.backgroundActive));
     need(peakBackgroundRequests <= 1, 'matrix-background-concurrency');
     record('matrix-checked', {diskBytes: service.rangeStatus().diskBytes});
-    return {defaultPreloadMB: 300, actualThreshold: true, foregroundCacheBytes: phase === 'matrix-preempt' ? 1048576 : 0, peakBackgroundRequests, candidateBytes: phase === 'matrix-replace' ? service.rangeStatus().next.bytes : 0, heldRequestClosed: true, lateBytes: 0, beforeActionBytes: before, diskPeak: peak,
+    return {defaultPreloadMB: 300, actualThreshold: true, foregroundCacheBytes: phase === 'matrix-preempt' ? 1048576 : 0, backwardCacheBytes: 0, seekTargetSeconds: phase === 'matrix-preempt' ? 2 : 0, explicitNativeSeek: phase === 'matrix-preempt', peakBackgroundRequests, candidateBytes: phase === 'matrix-replace' ? service.rangeStatus().next.bytes : 0, heldRequestClosed: true, lateBytes: 0, beforeActionBytes: before, diskPeak: peak,
         foregroundPreempted: phase === 'matrix-preempt', candidateReplaced: phase === 'matrix-replace', exitDuringUnplayedNext: phase === 'matrix-exit', noBLoad: true};
 }
 async function electronMain(file, phase) {
@@ -470,7 +501,7 @@ async function electronMain(file, phase) {
         class TracedClient extends NativeHelperClient {
             constructor(options) {const onEvent = options.onEvent; super({...options, onEvent: event => {record('native-property', {generation: event.generationId, name: event.name, value: event.value}); onEvent(event);}}); clients.push(this);}
             async start() {const pending = super.start(); this.smokeClosePromise = this.child ? new Promise(resolve => this.child.once('close', resolve)) : Promise.resolve(); checkpoint(); const result = await pending; record('helper-ready'); checkpoint(); return result;}
-            load(args) {record('load', {item: contexts.get(this.currentGenerationId), generation: this.currentGenerationId, direct: args[1].startsWith(origin.origin + '/Videos/')}); return super.load(args);}
+            load(args) {if (phase === 'matrix-preempt') this.setProperty('demuxer-max-back-bytes', 0); record('load', {item: contexts.get(this.currentGenerationId), generation: this.currentGenerationId, direct: args[1].startsWith(origin.origin + '/Videos/')}); return super.load(args);}
         }
         origin = await fixtureServer(plan, record, {holdNext: matrix && phase !== 'matrix-unsupported', unsupported: phase === 'matrix-unsupported'});
         if (matrix) restoreRequests = observeOriginRequests(origin.origin, record);
@@ -575,7 +606,7 @@ async function coordinate(file, phase, explicit) {
 }
 function argumentsOf(argv) {
     const [command, ...rest] = argv, values = {};
-    const allowed = {prepare: ['tools', 'source', 'source-commit', 'runtime', 'zip', 'out'], 'entry-smoke': ['plan', 'execute-electron-entry'], run: ['plan', 'execute-native'], 'run-matrix': ['plan', 'execute-native-matrix'], electron: ['plan', 'phase']}[command];
+    const allowed = {prepare: ['tools', 'source', 'source-commit', 'runtime', 'zip', 'out'], 'entry-smoke': ['plan', 'execute-electron-entry'], run: ['plan', 'execute-native'], 'run-matrix': ['plan', 'execute-native-matrix'], 'run-matrix-remaining': ['plan', 'execute-native-matrix'], electron: ['plan', 'phase']}[command];
     need(allowed, 'invalid-command');
     for (const arg of rest) {const match = /^--([a-z-]+)(?:=(.+))?$/.exec(arg); need(match && allowed.includes(match[1]) && !Object.hasOwn(values, match[1]), 'invalid-argument'); values[match[1]] = match[2] ?? true;}
     need(allowed.every(key => Object.hasOwn(values, key)), 'missing-argument'); return {command, values};
@@ -584,7 +615,7 @@ async function main(argv) {
     const {command, values: a} = argumentsOf(argv);
     if (command === 'prepare') {const plan = prepare({tools: a.tools, source: a.source, sourceCommit: a['source-commit'], runtime: a.runtime, zip: a.zip, out: a.out, report: row => console.log(JSON.stringify(row))}); console.log(JSON.stringify({status: 'prepared-NOT-RUN', plan: path.join(plan.out, 'auto-plan.json'), evidence: plan.evidence}));}
     else if (command === 'entry-smoke') await coordinate(a.plan, 'entry', a['execute-electron-entry']);
-    else if (command === 'run-matrix') {for (const phase of MATRIX_PHASES) await coordinate(a.plan, phase, a['execute-native-matrix']);}
+    else if (command === 'run-matrix' || command === 'run-matrix-remaining') {for (const phase of command === 'run-matrix-remaining' ? MATRIX_REMAINING : MATRIX_PHASES) await coordinate(a.plan, phase, a['execute-native-matrix']);}
     else if (command === 'run') await coordinate(a.plan, 'native', a['execute-native']);
     else {need(process.versions.electron && process.type === 'browser', 'real-Electron-browser-required'); await electronMain(a.plan, a.phase);}
 }
@@ -595,4 +626,4 @@ else if (require.main === module || process.versions.electron && process.type ==
     process.exitCode = 1;
     if (process.versions.electron && process.type === 'browser') require('electron').app.exit(1);
 });
-module.exports = {TOOLS_COMMIT, CONFIG, LOADER, OVERLAY, BOUNDARIES, cleanEnvironment, overlayRows, verifyDerivedInventory, verifyOverlaySource, argumentsOf, validateTrace, rendererBoot, fixtureServer, automaticFixtures, FIXTURE_SIZES, MATRIX_PHASES, MATRIX_CODES, observeOriginRequests, matrixCase, driverSource, PREPARE_STAGES, PREPARE_CODES, prepareFailure, prepare, readPlan};
+module.exports = {TOOLS_COMMIT, CONFIG, LOADER, OVERLAY, BOUNDARIES, cleanEnvironment, overlayRows, verifyDerivedInventory, verifyOverlaySource, argumentsOf, validateTrace, rendererBoot, fixtureServer, automaticFixtures, FIXTURE_SIZES, MATRIX_PHASES, MATRIX_REMAINING, MATRIX_CODES, observeOriginRequests, uncachedSeekTarget, matrixCase, driverSource, PREPARE_STAGES, PREPARE_CODES, prepareFailure, prepare, readPlan};

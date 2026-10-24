@@ -101,3 +101,12 @@ prepare 从输入解析到 driver/plan 写出逐步记录固定阶段；受限�
 请求观察器只包装原 http.request 并监听实际 close，不替换请求/响应。首块先提交、第二块保持未完成，迟到写尝试必须为 0；后台 probe/media 的实际客户端并发峰值必须 ≤1。每项安全标量结果直接打印 `next-prefix-matrix-case-result`，失败阶段/错误/事件仍直接可读。任何失败或不确定退出会停止后续实际用例，不重试或绕过门禁。
 
 普通设置另有真实 Alameda + 原 BaseView/controller + 实际设置 IPC/store/service 的 Node 集成：页面 70%/300 MB；保存不改当前代次；下次显式播放实际预算 300,000,000。helper 与 DOM 仍为替身，不是 Windows 可见 UI 验收。单集入口禁用服务端连播时不扩队列；明确 `[A,B]` 队列继续遵循原 manager 的前进语义，不改其设置或 owner。
+
+
+## 活跃矩阵首次结果与剩余四项入口
+
+run `40104947923` / job `120904605594`、source `78fdfb114bb42d926101109b29253bb888b66335` 的 entry/cancel 通过：默认 P=300,000,000，已提交/采样峰值 262,144，后台并发 1，held 请求实际关闭、迟到字节 0、未播放 B、helper/Electron 正常退出。preempt 旧被动等待没有建立 A 前台缺块，A 自然结束后 B 也到 EOF，最终 `matrix-preempt-deadline`。旧运行没有读取缓存范围，不能将缓存覆盖推断写成实测，也不能据此宣布产品抢占失效；后三项未运行。
+
+修正后的 preempt 在 held B 时暂停 A；仅读回隔离实验的前向 1 MiB、后向 0 字节内存设置和实际 `demuxer-cache-state.seekable-ranges`。2 秒目标必须位于缓存范围之外，再通过原 manager.seek 发起原生缺块。严格要求原代次、B 实际 close → A 新来源请求 → seek 后新进度 → unpause 后新进度；历史事件不能满足后两项。总时限仍为 35 秒，缺块阶段最多 5 秒，不延长原等待。若自然 EOF 抢先、目标仍缓存或未出现缺块，给出不同的固定失败码；cache/seek 阶段和最近 load 代次直接输出安全日志。
+
+`range_smoke=next-matrix-remaining`、`release_package=false` 只顺序运行 preempt/replace/exit/unsupported；显式本机命令为 `run-matrix-remaining --plan=<owned-auto-plan> --execute-native-matrix`。仍必须通过 prepare、实际 entry、固定 artifact/loader/完整派生身份与所属进程退出门禁。已通过的 cancel 和主自动链不重复。新四项在精确来源 hosted 结果出现前均为待实测，普通默认设置的 Node 集成与真实 NAS/auth/302 的证据边界不变。

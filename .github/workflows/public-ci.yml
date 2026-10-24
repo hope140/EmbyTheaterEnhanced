@@ -16,6 +16,7 @@ on:
           - loader-trial
           - next-auto
           - next-matrix
+          - next-matrix-remaining
           - next-auto-report
       release_package:
         description: Stage the standard installer name and five release files (does not publish)
@@ -138,14 +139,14 @@ jobs:
         run: node tools/read-next-prefix-result.cjs
 
   manual-playback-range-smoke:
-    if: github.event_name == 'workflow_dispatch' && (inputs.range_smoke == 'entry' || inputs.range_smoke == 'native' || inputs.range_smoke == 'loader-trial' || inputs.range_smoke == 'next-auto' || inputs.range_smoke == 'next-matrix')
+    if: github.event_name == 'workflow_dispatch' && (inputs.range_smoke == 'entry' || inputs.range_smoke == 'native' || inputs.range_smoke == 'loader-trial' || inputs.range_smoke == 'next-auto' || inputs.range_smoke == 'next-matrix' || inputs.range_smoke == 'next-matrix-remaining')
     runs-on: windows-2022
     timeout-minutes: 15
     permissions:
       contents: read
       actions: read
     concurrency:
-      group: ${{ (inputs.range_smoke == 'next-auto' || inputs.range_smoke == 'next-matrix') && 'ete-manual-next-prefix-auto' || 'ete-manual-playback-range-smoke' }}
+      group: ${{ (inputs.range_smoke == 'next-auto' || inputs.range_smoke == 'next-matrix' || inputs.range_smoke == 'next-matrix-remaining') && 'ete-manual-next-prefix-auto' || 'ete-manual-playback-range-smoke' }}
       cancel-in-progress: false
     steps:
       - name: Check out exact workflow controls

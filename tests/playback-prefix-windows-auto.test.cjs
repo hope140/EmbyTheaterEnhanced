@@ -230,19 +230,36 @@ for (const phase of ['matrix-cancel', 'matrix-preempt', 'matrix-replace', 'matri
     const record = (type, data = {}) => trace.push({seq: trace.length, type, ...data});
     const origin = {held: {response: {destroyed: false}}, releaseHeld: () => 0};
     const close = () => {origin.held.response.destroyed = true; record('origin-client-closed', {requestId: 1, clientRequest: 11});};
-    let position = 11.4;
-    const service = {rangeStatus() {if (phase === 'matrix-preempt') record('native-property', {generation: 1, name: 'time-pos', value: position += 0.2}); return state;},
+    let position = 11.4, resumed = false, resumePolls = 0;
+    const service = {rangeStatus() {if (phase === 'matrix-preempt' && resumed && ++resumePolls >= 2) record('native-property', {generation: 1, name: 'time-pos', value: position += 0.2}); return state;},
         async destroy() {close(); state.diskBytes = 0;}};
-    if (phase === 'matrix-preempt') {close(); record('origin-client-open', {item: 'A'});}
-    const checks = await tool.matrixCase({phase, service, origin, trace, record, fatal: () => false, client: () => ({getProperty: async () => 1048576}), action: async operation => {
+    const checks = await tool.matrixCase({phase, service, origin, trace, record, fatal: () => false, client: () => ({currentGenerationId: 1, getProperty: async name => name === 'demuxer-max-bytes' ? 1048576 : name === 'demuxer-max-back-bytes' ? 0 : name === 'time-pos' ? position : {'seekable-ranges': [{start: 10, end: 12}]}}), action: async operation => {
+        if (operation === 'seek-back') {position = 2; record('native-property', {generation: 1, name: 'time-pos', value: 2}); close(); record('origin-client-open', {item: 'A'});}
+        if (operation === 'unpause') resumed = true;
         if (operation === 'pause') record('native-property', {generation: 1, name: 'pause', value: true});
         if (operation === 'cancel') {if (!origin.held.response.destroyed) close(); state.next.state = 'idle';}
         if (operation === 'replace') {close(); record('origin-client-open', {item: 'C', backgroundActive: 1}); record('origin-media', {item: 'C'}); state.next = {state: 'ready', bytes: tool.FIXTURE_SIZES[1]}; state.diskBytes = tool.FIXTURE_SIZES[1];}
     }});
     assert.equal(checks.defaultPreloadMB, 300); assert.equal(checks.heldRequestClosed, true); assert.equal(checks.lateBytes, 0); assert.equal(checks.noBLoad, true);
     assert.equal(checks.foregroundPreempted, phase === 'matrix-preempt'); assert.equal(checks.candidateReplaced, phase === 'matrix-replace');
+    if (phase === 'matrix-preempt') assert.ok(trace.find(row => row.type === 'matrix-preempt-stage' && row.stage === 'playback-resumed').seq > trace.find(row => row.type === 'native-property' && row.name === 'time-pos' && row.value > 2 && row.seq > 3).seq, 'resumed proof requires a fresh post-seek property, not historical A progress');
 });
 test('matrix rejects a held prefix without the real-progress threshold in its synthetic validator fixture', async () => {
     await assert.rejects(tool.matrixCase({phase: 'matrix-cancel', service: {rangeStatus: () => ({kind: 'next-prefix', maxBytes: 300000000, diskBytes: 0})}, origin: {held: {}},
         trace: [{seq: 0, type: 'load', item: 'A', generation: 1}, {seq: 1, type: 'matrix-held'}], record() {}, fatal: () => false}), /matrix-real-threshold-missing/);
+});
+
+test('preempt seek selection refuses cached targets and unavailable native cache state', () => {
+    assert.throws(() => tool.uncachedSeekTarget({'seekable-ranges': [{start: 0, end: 16}]}, 11.25), /matrix-seek-target-cached/);
+    assert.equal(tool.uncachedSeekTarget({'seekable-ranges': [{start: 10.5, end: 11.75}]}, 11.25), 2);
+    assert.throws(() => tool.uncachedSeekTarget(null, 11.25), /matrix-native-cache-state-unavailable/);
+    assert.deepEqual(tool.MATRIX_REMAINING, ['matrix-preempt', 'matrix-replace', 'matrix-exit', 'matrix-unsupported']);
+    assert.equal(tool.argumentsOf(['run-matrix-remaining', '--plan=a', '--execute-native-matrix']).command, 'run-matrix-remaining');
+});
+test('preempt detects natural EOF/next before any miss instead of waiting through B playback (synthetic historical sequence)', async () => {
+    const trace = [{seq: 0, type: 'load', item: 'A', generation: 1}, {seq: 1, type: 'native-property', generation: 1, name: 'time-pos', value: 11.25},
+        {seq: 2, type: 'matrix-held'}, {seq: 3, type: 'native-property', generation: 1, name: 'eof-reached', value: true},
+        {seq: 4, type: 'manager-next-track'}, {seq: 5, type: 'load', item: 'B', generation: 2}, {seq: 6, type: 'native-property', generation: 2, name: 'eof-reached', value: true}];
+    assert.equal(trace.some(row => row.type === 'origin-client-open' && row.item === 'A' && row.seq > 2), false, 'preceding passive-wait predicate never obtained its foreground miss');
+    await assert.rejects(tool.matrixCase({phase: 'matrix-preempt', trace, origin: {held: {}}, fatal: () => false, service: {rangeStatus: () => ({kind: 'next-prefix', maxBytes: 300000000, diskBytes: 262144})}}), /matrix-A-ended-before-miss/);
 });
