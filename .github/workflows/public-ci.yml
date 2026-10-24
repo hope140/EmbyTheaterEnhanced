@@ -17,6 +17,7 @@ on:
           - disk-probe
           - disk-results
           - buffer-export
+          - buffer-export-av
       release_package:
         description: Stage the standard installer name and five release files (does not publish)
         type: boolean
@@ -115,7 +116,7 @@ jobs:
         run: node tools/ci-change-scope.cjs summary
 
   manual-playback-range-smoke:
-    if: github.event_name == 'workflow_dispatch' && (inputs.range_smoke == 'entry' || inputs.range_smoke == 'native' || inputs.range_smoke == 'loader-trial' || inputs.range_smoke == 'disk-probe' || inputs.range_smoke == 'buffer-export')
+    if: github.event_name == 'workflow_dispatch' && (inputs.range_smoke == 'entry' || inputs.range_smoke == 'native' || inputs.range_smoke == 'loader-trial' || inputs.range_smoke == 'disk-probe' || inputs.range_smoke == 'buffer-export' || inputs.range_smoke == 'buffer-export-av')
     runs-on: windows-2022
     timeout-minutes: 15
     permissions:

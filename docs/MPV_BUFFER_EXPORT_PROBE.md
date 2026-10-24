@@ -4,7 +4,7 @@
 
 检验生产 DLL 已有的 `dump-cache` 是否能把**已经在 RAM 缓冲内的一小段**写成可独立解码的文件：不补抓、Stop/退出后文件不变、新 helper 可以读取，并能给出限定合成源的时间轴映射。它不是恢复 `.dat`、原始 HTTP Range 或完整播放会话；不接普通用户播放，不修改生产 helper、内核、缓冲设置或下一集实现。
 
-当前状态：首次固定 Windows DLL 已执行，停在输出检查；后续 Stop/退出一致性和第二 helper 解码尚未执行。只有 `mpv-buffer-export-summary` 的实际字段及两个 helper 退出回执可支持后续结论，不能只凭 workflow success。
+当前状态：[修正后的真实结果](MPV_BUFFER_EXPORT_RESULT.md)已经完成有限无音片段的导出、Stop/退出文件一致性及新 helper 解码；带音轨和原来源衔接另行验证。下面保留首次失败及修正过程，不能只凭 workflow success 扩大结论。
 
 首次 run `40106411567` / job `120908912553` 的正常 GitHub 日志已读取：`exportMs=27`、`clipBytes=4340662`，新增请求/新增 scheduled source bytes/完成字节变化均为 0。失败为 `export-inspect/export-packets-invalid`；原 helper 正常退出 0、streams closed，无 timeout。帧映射和三项文件一致性标记尚未测，不能称为可恢复或完整可解码。
 
@@ -19,8 +19,8 @@
 | 轮次 | 假设 / 输入 | 观测与否决条件 |
 | --- | --- | --- |
 | 本地解析器对照，已执行 | 现有 FFmpeg 7.1.5，192 帧、320×180、24fps、无音频 raw AVI。每帧一个独特标记；有限 stream-copy 一秒 | 实际输出 4,153,462 字节、24 帧，对应源第 25–48 帧（0 起算），逐帧 payload SHA 相同，全部可解码；源范围 1.0416667–2.0416667 秒。只证明解析/映射方法，可重封装帧不等于 mpv 导出通过 |
-| 固定 DLL 单轮，待协调执行 | 原候选 `162dc69`、唯一锁定 loader 派生运行时；RAM 前 4 MiB / 后 2 MiB、donate=false，仅测试值。相同 192 帧标记 AVI 由 loopback 提供 | 播放至少 1 秒、暂停后连续源计数稳定，只选单个现存缓存范围内约 1 秒，有限 `dump-cache`。任何新请求或新增 scheduled source bytes 都否决“不补抓”；未知/多段/过短范围不猜测，停止并给固定原因 |
-| 同轮 Stop / 新 helper，待执行 | 导出 AVI 的文件摘要、逐帧源索引及原缓存范围 | Stop、原 helper 退出、新 helper 播放后 SHA/大小均须不变；源 helper 和新 helper 均须实际退出 0 且 stdio closed。新 helper 须报告 320×180、gpu-next、播放时间推进及匹配帧数的 duration；任一缺失不记 PASS |
+| 固定 DLL 单轮，已执行 | 原候选 `162dc69`、唯一锁定 loader 派生运行时；RAM 前 4 MiB / 后 2 MiB、donate=false，仅测试值。相同 192 帧标记 AVI 由 loopback 提供 | 有限导出 33ms、4,340,662 字节，观测期间新增来源请求/字节均 0；仅一段已有缓冲 |
+| 同轮 Stop / 新 helper，已执行 | 导出 AVI 的文件摘要、逐帧源索引及原缓存范围 | 三次文件一致性、新 helper 解码及两个 helper 正常退出/stdio 关闭通过；只证明此无音合成输入，不是原来源透明恢复 |
 
 新 AVI 是探针独占目录里的合成输入：先调用现有 raw AVI 生成器，再写唯一帧标记，形成独立 fixture SHA/ETag 和生成关系。原候选、原派生清单、source plan 及其中原始 A/B 夹具均不修改。只有单视频轨、全关键帧、24fps 的这个输入允许按帧号建立 `sourceTime = localTime + sourceMinusLocalSeconds`；不外推到 B 帧、多轨、字幕、转码、变帧率或不连续时间轴。
 

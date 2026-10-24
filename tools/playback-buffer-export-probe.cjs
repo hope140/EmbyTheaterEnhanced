@@ -16,8 +16,16 @@ const CODES = new Set(['export-input-invalid', 'export-file-limit', 'export-avi-
     'export-mapping-invalid', 'export-native-deadline', 'export-stage-timeout', 'export-result-invalid', 'export-owned-path',
     'export-fresh-root', 'export-owner-drift', 'export-receipt-invalid', 'export-explicit-Windows-required', 'export-fixed-Electron-required',
     'export-helper-exit', 'export-native-not-established']);
+CODES.add('export-av-format'); CODES.add('export-av-audio-mapping'); CODES.add('export-av-timeline-mismatch');
 const OPTIONS = Object.freeze({'cache': 'yes', 'cache-on-disk': false, 'demuxer-max-bytes': 4 * 1048576,
     'demuxer-max-back-bytes': 2 * 1048576, 'demuxer-donate-buffer': false, 'pause': false, 'volume': 0}); // Probe only, not product defaults.
+function optionsFor(variant) {
+    if (!['video', 'av'].includes(variant)) throw Error('export-input-invalid');
+    return variant === 'av' ? {...OPTIONS, ao: 'null'} : OPTIONS;
+}
+function optionMatches(name, actual, expected) {
+    return name === 'ao' ? expected === 'null' && (actual === 'null' || Array.isArray(actual) && actual.length === 1 && actual[0] === 'null') : disk.sameOption(actual, expected);
+}
 function safeFailure(error, stage) {
     const old = disk.safeFailure(error);
     const format = formatDiagnostic(error?.avi);
@@ -117,7 +125,8 @@ function noExtraSource(before, after) {
     if (before.requests !== after.requests || before.scheduledBytes !== after.scheduledBytes) throw Error('export-extra-source-read');
     return {newRequests: 0, newScheduledSourceBytes: 0, completedBytesDelta: after.completedBytes - before.completedBytes};
 }
-function prepare(sourceFile, out) {
+function prepare(sourceFile, out, variant = 'video') {
+    optionsFor(variant);
     sourceFile = fs.realpathSync(sourceFile);
     const source = support.readPlan(sourceFile);
     assert.deepEqual(support.verifyPlanRuntime(source, path.resolve(__dirname, '..')), source.identity);
@@ -127,26 +136,29 @@ function prepare(sourceFile, out) {
     if (!relative || !relative.startsWith('..' + path.sep) && !path.isAbsolute(relative)) throw Error('export-owned-path');
     fs.mkdirSync(out); out = fs.realpathSync(out); fs.writeFileSync(path.join(out, 'owner'), OWNER, {flag: 'wx'});
     for (const dir of ['profile', 'local', 'mpv', 'tmp']) fs.mkdirSync(path.join(out, dir));
-    const fixture = markedFixture(path.join(out, 'A.avi'));
-    const plan = {schema: 1, scope: SCOPE, out, sourceFile, sourcePlanSha256: support.hashFile(sourceFile),
+    const fixture = variant === 'av' ? require('./playback-buffer-av-fixture.cjs').fixture(path.join(out, 'A.avi')) : markedFixture(path.join(out, 'A.avi'));
+    const plan = {schema: 1, scope: SCOPE, variant, out, sourceFile, sourcePlanSha256: support.hashFile(sourceFile),
         toolSha256: support.hashFile(__filename), identity: source.identity, fixture};
     support.writeNew(path.join(out, 'probe.json'), plan); return plan;
 }
 function readProbe(file) {
     const plan = disk.boundedJson(file, 65536);
+    optionsFor(plan.variant);
     if (plan.schema !== 1 || plan.scope !== SCOPE || path.resolve(file) !== path.join(plan.out, 'probe.json') || plan.toolSha256 !== support.hashFile(__filename)) throw Error('export-input-invalid');
     physical(plan.out);
     if (fs.readFileSync(support.regular(path.join(plan.out, 'owner')), 'utf8') !== OWNER || support.hashFile(support.regular(plan.sourceFile)) !== plan.sourcePlanSha256) throw Error('export-owner-drift');
     for (const dir of ['profile', 'local', 'mpv', 'tmp']) physical(path.join(plan.out, dir));
-    if (plan.fixture?.file !== 'A.avi' || plan.fixture.generator !== 'stock-AVI-plus-unique-frame-marker-v1' || plan.fixture.size > MAX_FILE ||
+    const generator = plan.variant === 'av' ? 'marked-raw-AVI-PCM48k-v1' : 'stock-AVI-plus-unique-frame-marker-v1';
+    if (plan.fixture?.file !== 'A.avi' || plan.fixture.generator !== generator || plan.fixture.size > MAX_FILE ||
         support.hashFile(support.regular(path.join(plan.out, 'A.avi'))) !== plan.fixture.sha256 || fs.statSync(path.join(plan.out, 'A.avi')).size !== plan.fixture.size || plan.fixture.etag !== '"' + plan.fixture.sha256 + '"') throw Error('export-input-invalid');
     const source = support.readPlan(plan.sourceFile);
     assert.deepEqual(support.verifyPlanRuntime(source, path.resolve(__dirname, '..')), plan.identity);
     return {plan, source};
 }
 function validateReport(report, plan, exit) {
+    const expectedOptions = optionsFor(plan.variant);
     if (!exit.processExited || !exit.streamsClosed || exit.code !== 0 || exit.signal || exit.spawnError || exit.transportError ||
-        report.schema !== 1 || report.scope !== SCOPE || report.status !== 'PASS' || report.workerPid !== exit.pid ||
+        report.schema !== 1 || report.scope !== SCOPE || report.variant !== plan.variant || report.status !== 'PASS' || report.workerPid !== exit.pid ||
         report.helpers?.length !== 2 || report.helpers[0].pid === report.helpers[1].pid || report.helpers.some(h => !Number.isInteger(h.pid) || h.pid <= 0 || !h.exited || !h.handshake ||
             h.outcome !== 'EXIT_AND_CLOSE_CONFIRMED' || h.cleanupError || !diagnostics.normalExit(h.diagnostics)) ||
         report.checks?.newRequests !== 0 || report.checks?.newScheduledSourceBytes !== 0 || report.checks?.clipDecoded !== true ||
@@ -156,7 +168,9 @@ function validateReport(report, plan, exit) {
         report.mapping.lastSourceFrame !== report.mapping.firstSourceFrame + report.mapping.packets - 1 || report.mapping.lastSourceFrame >= 192 ||
         !Number.isFinite(report.mapping.sourceMinusLocalSeconds) || report.decoded?.width !== 320 || report.decoded?.height !== 180 || report.decoded?.vo !== 'gpu-next' ||
         !/^[a-f0-9]{64}$/.test(report.clip?.sha256 || '') || !Number.isSafeInteger(report.clip?.bytes) || report.clip.bytes <= 0 || report.clip.bytes > MAX_FILE ||
-        report.helpers.some(h => !h.options || Object.keys(h.options).length !== Object.keys(OPTIONS).length || Object.entries(OPTIONS).some(([k, v]) => !disk.sameOption(h.options[k], v)))) throw Error('export-result-invalid');
+        report.helpers.some(h => !h.options || Object.keys(h.options).length !== Object.keys(expectedOptions).length || Object.entries(expectedOptions).some(([k, v]) => !optionMatches(k, h.options[k], v)))) throw Error('export-result-invalid');
+    if (plan.variant === 'av' && (report.checks.audioDecoded !== true || report.checks.seekMappingVerified !== true || report.checks.clipReachedEOF !== true ||
+        report.audioMapping?.commonMappingWithinOneSample !== true)) throw Error('export-result-invalid');
     assert.deepEqual(report.identity, plan.identity);
 }
 async function worker(file) {
@@ -165,7 +179,7 @@ async function worker(file) {
     for (const name of ['appData', 'userData', 'sessionData']) app.setPath(name, path.join(plan.out, 'profile'));
     app.setAppLogsPath(path.join(plan.out, 'profile', 'logs'));
     Object.assign(process.env, {APPDATA: path.join(plan.out, 'profile'), LOCALAPPDATA: path.join(plan.out, 'local'), MPV_HOME: path.join(plan.out, 'mpv'), TEMP: path.join(plan.out, 'tmp'), TMP: path.join(plan.out, 'tmp')});
-    const report = {schema: 1, scope: SCOPE, status: 'UNKNOWN', stage: 'preflight', workerPid: process.pid,
+    const report = {schema: 1, scope: SCOPE, variant: plan.variant, status: 'UNKNOWN', stage: 'preflight', workerPid: process.pid,
         identity: plan.identity, helpers: [], checks: {}, transparentRestore: 'NOT_ASSESSED', mapping: null};
     const save = () => fs.writeFileSync(path.join(plan.out, 'observations.json'), JSON.stringify(report, null, 2) + '\n');
     const stage = name => {report.stage = name; save();};
@@ -197,9 +211,13 @@ async function worker(file) {
             await ready; record.handshake = client.handshake;
             assert.equal(client.handshake.libmpvVersion, require(path.join(source.runtime, 'electronapp/native-helper/service.js')).EXPECTED_LIBMPV_VERSION); save();
             client.beginGeneration(label, ['core-idle', 'time-pos', 'duration']);
-            const expected = OPTIONS;
+            const expected = optionsFor(plan.variant);
             record.options = {};
-            for (const [name, value] of Object.entries(expected)) {client.setProperty(name, value); const actual = await property(name); if (!disk.sameOption(actual, value)) throw Error('export-command-failed'); record.options[name] = actual;}
+            for (const [name, value] of Object.entries(expected)) {
+                report.pendingOption = name; save(); client.setProperty(name, value); const actual = await property(name);
+                if (!optionMatches(name, actual, value)) throw Error('export-command-failed'); record.options[name] = actual;
+            }
+            delete report.pendingOption; save();
         }
         await start('source-helper'); stage('source-load');
         await client.load(['loadfile', server.origin + '/Videos/A/stream.avi']).promise;
@@ -216,9 +234,12 @@ async function worker(file) {
         report.exportMs = Date.now() - started; report.completion = 'synchronous-mpv-command-followed-by-ordered-property-reply';
         await delay(150); report.sourceAfter = sourceCounts(server); Object.assign(report.checks, noExtraSource(before, report.sourceAfter));
         stage('export-inspect'); report.clip = fingerprint();
-        const originalAVI = aviPackets(path.join(plan.out, 'A.avi')), exportedAVI = aviPackets(output);
+        const av = plan.variant === 'av' ? require('./playback-buffer-av-fixture.cjs') : null;
+        const sourceAV = av?.inspect(path.join(plan.out, 'A.avi')), clipAV = av?.inspect(output);
+        const originalAVI = av ? sourceAV.video : aviPackets(path.join(plan.out, 'A.avi')), exportedAVI = av ? clipAV.video : aviPackets(output);
         report.clipFormat = {ticksPerSecond: exportedAVI.fps, nonemptyPackets: exportedAVI.packets.length, emptyVideoSlots: exportedAVI.emptyPackets, containerSlots: exportedAVI.slots};
         report.mapping = mapping(originalAVI, exportedAVI);
+        if (av) report.audioMapping = av.audioMapping(sourceAV, clipAV, report.mapping);
         if (report.mapping.sourceStartSeconds < report.window.cacheStart - 1 / 24 || report.mapping.sourceEndExclusiveSeconds > report.window.cacheEnd + 1 / 24) throw Error('export-mapping-invalid');
         stage('source-stop'); await client.stop(); await until(() => server.active.size === 0); assert.deepEqual(fingerprint(), report.clip); report.checks.unchangedAfterStop = true;
         stage('source-exit'); await finish(client); assert.deepEqual(fingerprint(), report.clip); report.checks.unchangedAfterExit = true;
@@ -229,10 +250,29 @@ async function worker(file) {
         assert(video && video.w === 320 && video.h === 180); assert.equal(vo, 'gpu-next');
         assert(Math.abs(duration - report.mapping.packets / 24) <= 2 / 24);
         report.decoded = {width: video.w, height: video.h, vo, duration, clipStartTime: await property('demuxer-start-time')};
+        if (plan.variant === 'av') {
+            const audio = await property('audio-out-params'), ao = await property('current-ao'), tracks = await property('track-list');
+            assert(audio && audio.samplerate === 48000 && audio['channel-count'] === 1); assert.equal(ao, 'null');
+            assert(Array.isArray(tracks) && tracks.filter(t => t.type === 'audio' && t.selected).length === 1);
+            report.decoded.audio = {samplerate: audio.samplerate, channels: audio['channel-count'], output: ao}; report.checks.audioDecoded = true;
+        }
         assert(Number.isFinite(report.decoded.clipStartTime)); report.mapping.localStartSeconds = report.decoded.clipStartTime;
         report.mapping.sourceMinusLocalSeconds = report.mapping.sourceStartSeconds - report.decoded.clipStartTime; report.checks.clipDecoded = true;
+        if (plan.variant === 'av') {
+            client.setProperty('pause', true); assert.equal(await property('pause'), true);
+            const target = duration / 2; client.submitCommand(['seek', String(target), 'absolute+exact']);
+            await until(async () => await property('seeking') === false && Math.abs(await property('time-pos') - target) <= 1 / 24);
+            const landed = await property('time-pos');
+            report.seek = {targetLocalSeconds: target, landedLocalSeconds: landed, mappedSourceSeconds: landed + report.mapping.sourceMinusLocalSeconds};
+            report.checks.seekMappingVerified = true; client.setProperty('pause', false); assert.equal(await property('pause'), false);
+            await until(async () => await property('eof-reached') === true);
+            report.decoded.finalTime = await property('time-pos'); assert(report.decoded.finalTime >= duration - 2 / 24);
+            report.checks.clipReachedEOF = true;
+        }
         stage('clip-stop'); await client.stop(); await finish(client); assert.deepEqual(fingerprint(), report.clip); report.checks.unchangedAfterReopen = true;
-        readProbe(file); report.status = 'PASS'; stage('complete');
+        readProbe(file);
+        if (plan.variant === 'av' && !report.audioMapping.commonMappingWithinOneSample) throw Error('export-av-timeline-mismatch');
+        report.status = 'PASS'; stage('complete');
     } catch (error) {report.status = 'UNKNOWN'; report.failure = safeFailure(error, report.stage); console.error('mpv-buffer-export-failure:' + JSON.stringify(report.failure));}
     finally {
         for (const thing of [...owned.keys()]) {try {await finish(thing);} catch (_) {report.status = 'UNKNOWN'; report.cleanupFailure = 'export-helper-exit';}}
@@ -267,4 +307,4 @@ if (isWorker) {
     console.error('mpv-buffer-export-failure:' + JSON.stringify(safeFailure(error, 'preflight'))); require('electron').app.exit(1);
     });
 }
-module.exports = {SCOPE, MAX_FILE, MAX_SLOTS, STAGES, OPTIONS, safeFailure, formatDiagnostic, physical, aviPackets, markedFixture, mapping, chooseWindow, sourceCounts, noExtraSource, prepare, readProbe, validateReport, run};
+module.exports = {SCOPE, MAX_FILE, MAX_SLOTS, STAGES, OPTIONS, optionsFor, optionMatches, safeFailure, formatDiagnostic, physical, aviPackets, markedFixture, mapping, chooseWindow, sourceCounts, noExtraSource, prepare, readProbe, validateReport, run};

@@ -20,16 +20,21 @@ function summary(plan) {
     const root = path.join(plan.root, 'buffer-export'), observation = read(path.join(root, 'probe/observations.json')), receipt = read(path.join(root, 'probe/run.json'));
     const n = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
     const boolean = value => typeof value === 'boolean' ? value : null;
-    return {scope: probe.SCOPE, status: observation?.status === 'PASS' && receipt?.status === 'PASS' ? 'PASS' : 'UNKNOWN',
+    return {scope: probe.SCOPE, variant: ['video', 'av'].includes(observation?.variant) ? observation.variant : null,
+        status: observation?.status === 'PASS' && receipt?.status === 'PASS' ? 'PASS' : 'UNKNOWN',
         stage: probe.STAGES.has(observation?.stage) ? observation.stage : 'preflight',
         failure: observation?.failure ? probe.safeFailure({message: observation.failure.code, code: observation.failure.systemCode, avi: observation.failure.format}, observation.failure.stage) :
             receipt?.failure ? probe.safeFailure({message: receipt.failure.code, code: receipt.failure.systemCode, avi: receipt.failure.format}, receipt.failure.stage) :
                 readFailure(path.join(root, 'probe/worker.log')) || readFailure(path.join(plan.root, 'buffer-export-driver.stdout')),
         workerPid: n(receipt?.pid), exitCode: n(receipt?.code), streamsClosed: boolean(receipt?.streamsClosed), timedOut: boolean(receipt?.timedOut),
         exportMs: n(observation?.exportMs), clipBytes: n(observation?.clip?.bytes),
+        pendingOption: Object.hasOwn(probe.optionsFor('av'), observation?.pendingOption) ? observation.pendingOption : null,
         clipFormat: Object.fromEntries(['ticksPerSecond', 'nonemptyPackets', 'emptyVideoSlots', 'containerSlots'].map(k => [k, n(observation?.clipFormat?.[k])])),
         checks: Object.fromEntries(['newRequests', 'newScheduledSourceBytes', 'completedBytesDelta'].map(k => [k, n(observation?.checks?.[k])]).concat(
-            ['clipDecoded', 'unchangedAfterStop', 'unchangedAfterExit', 'unchangedAfterReopen'].map(k => [k, boolean(observation?.checks?.[k])]))),
+            ['clipDecoded', 'audioDecoded', 'seekMappingVerified', 'clipReachedEOF', 'unchangedAfterStop', 'unchangedAfterExit', 'unchangedAfterReopen'].map(k => [k, boolean(observation?.checks?.[k])]))),
+        seek: Object.fromEntries(['targetLocalSeconds', 'landedLocalSeconds', 'mappedSourceSeconds'].map(k => [k, n(observation?.seek?.[k])])),
+        audioMapping: {commonMappingWithinOneSample: boolean(observation?.audioMapping?.commonMappingWithinOneSample),
+            ...Object.fromEntries(['samples', 'sourceStartSeconds', 'sourceEndSeconds', 'localStartSeconds', 'sourceMinusLocalSeconds', 'videoMinusLocalSeconds', 'offsetDeltaSeconds'].map(k => [k, n(observation?.audioMapping?.[k])]))},
         mapping: Object.fromEntries(['packets', 'firstSourceFrame', 'lastSourceFrame', 'sourceStartSeconds', 'sourceEndExclusiveSeconds', 'localStartSeconds', 'sourceMinusLocalSeconds', 'containerTicksPerSecond', 'emptyVideoSlots', 'containerSlots'].map(k => [k, n(observation?.mapping?.[k])])),
         helpers: Array.isArray(observation?.helpers) ? observation.helpers.slice(0, 2).map(h => ({pid: n(h.pid), exited: boolean(h.exited),
             exitCode: n(h.diagnostics?.processExitCode), streamsClosed: boolean(h.diagnostics?.streamsClosed)})) : [],
@@ -39,7 +44,7 @@ function printSummary(plan) {console.log('mpv-buffer-export-summary:' + JSON.str
 async function run(file) {
     if (process.platform !== 'win32' || process.arch !== 'x64') throw Error('export-explicit-Windows-required');
     const ci = require('./ci-playback-range-smoke.cjs'), plan = ci.readPlan(file), repo = path.resolve(__dirname, '..');
-    if (plan.mode !== 'buffer-export') throw Error('export-input-invalid');
+    if (!['buffer-export', 'buffer-export-av'].includes(plan.mode)) throw Error('export-input-invalid');
     ci.noCredentials(process.env);
     const inputs = ci.expandedInputs(plan), root = path.join(plan.root, 'buffer-export');
     if (fs.existsSync(root)) throw Error('export-fresh-root'); fs.mkdirSync(root);
@@ -51,7 +56,7 @@ async function run(file) {
         baseToolsCommit: ci.PIN.toolsCommit, baseSourceCommit: ci.PIN.sourceCommit, identity: derived.identity,
         loader: derived.identity.derivation.addition, originalPackageModified: false, transparentRestore: 'NOT_ASSESSED'});
     await support.entrySmoke(sourceFile, true);
-    probe.prepare(sourceFile, path.join(root, 'probe'));
+    probe.prepare(sourceFile, path.join(root, 'probe'), plan.mode === 'buffer-export-av' ? 'av' : 'video');
     await probe.run(path.join(root, 'probe/probe.json'), true);
     trial.verifyRuntime(repo, derived.runtime, plan.paths.artifact, derived.descriptor); return summary(plan);
 }

@@ -88,9 +88,9 @@ test('new requests and late scheduled source bytes invalidate export even if no 
     for (const after of [{...before, requests: 3}, {...before, scheduledBytes: 101}]) assert.throws(() => probe.noExtraSource(before, after), /export-extra-source-read/);
 });
 function reportFixture() {
-    const identity = {synthetic: true}, plan = {identity};
+    const identity = {synthetic: true}, plan = {identity, variant: 'video'};
     const exit = {pid: 101, processExited: true, streamsClosed: true, code: 0, signal: null};
-    const report = {schema: 1, scope: probe.SCOPE, status: 'PASS', workerPid: 101, identity,
+    const report = {schema: 1, scope: probe.SCOPE, variant: 'video', status: 'PASS', workerPid: 101, identity,
         helpers: [102, 103].map(pid => ({pid, handshake: {synthetic: true}, exited: true, outcome: 'EXIT_AND_CLOSE_CONFIRMED', options: {...probe.OPTIONS},
             diagnostics: {processExitCode: 0, streamsClosed: true, processSignaled: false, processSignal: null}})),
         checks: {newRequests: 0, newScheduledSourceBytes: 0, clipDecoded: true, unchangedAfterStop: true, unchangedAfterExit: true, unchangedAfterReopen: true},
@@ -107,6 +107,17 @@ test('parent acceptance requires two actual exits, stdio close, native decode, b
         x => x.report.mapping.lastSourceFrame = 999, x => x.report.decoded.width = 1, x => x.report.clip.bytes = probe.MAX_FILE + 1]) {
         const bad = reportFixture(); mutate(bad); assert.throws(() => probe.validateReport(bad.report, bad.plan, bad.exit));
     }
+});
+test('AV acceptance additionally requires audio decode and a common source/local mapping', () => {
+    const {report, plan, exit} = reportFixture(); plan.variant = 'av'; report.variant = 'av';
+    for (const h of report.helpers) h.options.ao = ['null'];
+    report.checks.audioDecoded = true; report.checks.seekMappingVerified = true; report.checks.clipReachedEOF = true;
+    report.audioMapping = {commonMappingWithinOneSample: true};
+    probe.validateReport(report, plan, exit);
+    report.audioMapping.commonMappingWithinOneSample = false; assert.throws(() => probe.validateReport(report, plan, exit));
+    report.audioMapping.commonMappingWithinOneSample = true; report.checks.audioDecoded = false; assert.throws(() => probe.validateReport(report, plan, exit));
+    report.checks.audioDecoded = true; report.checks.seekMappingVerified = false; assert.throws(() => probe.validateReport(report, plan, exit));
+    report.checks.seekMappingVerified = true; report.checks.clipReachedEOF = false; assert.throws(() => probe.validateReport(report, plan, exit));
 });
 test('only the isolated retention branch can run export; old branch modes keep their existing boundary', () => {
     route.validateDispatch('buffer-export', 'a'.repeat(40), route.PIN.repository, 'false', 'refs/heads/experiment/playback-buffer-retention');

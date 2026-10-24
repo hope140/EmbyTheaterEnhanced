@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-24 — Archive fixed-DLL success and isolate the next audio test
+
+Read actual normal logs for run40107582483/job120912370474 atd7002d4: finite export33ms/4,340,662B; no new observed source reads;600Hz/25 nonempty/599 empty/624slots; sourceframes16–40 at0.6666667–1.7083333sec, local0; Stop/exit/reopen hashes unchanged; two helper exit0/stdio-closed and native video decode passed. Preserve the earlier failure separately and keep transparentRestoreNOT_ASSESSED. Whole Electron/app/Emby session, audio/subtitles and real-server acceptance are not inferred.
+
+Prepare a separate explicit buffer-export-av scope reusing the original runtime/loader/input/exit gates. Pure Node creates an independently hashed8sec marked raw-video+mono48kPCM AVI; source-plan/original fixtures stay intact. Sample identity and independent track offsets must agree; two-track native decode uses ao=null only inside the probe. Any offset mismatch remains failure after cleanup, not an automatic original-source handoff. Add half-open common-range arithmetic without an authorization claim. Local existing-FFmpeg control actually preserved25 frames and50,000 PCM samples, common offset0.6666667sec and zero A/V offset delta; this remains auxiliary evidence. Audit fixed recorder selected-stream behavior and official EDL limitations; do not yet implement source stitching, credentials or ordinary app entry.
+
+Validation:90 relevant tests passed, including exact/changed/ambiguous PCM, mismatched A/V offsets, unknown metadata, half-open edges, null-output readback, strict variant/branch/release and AV acceptance gates. Public offline1965 tests:1955 passed,0 failed,10 explicit platform skips; final null-metadata arithmetic and mandatory paused-seek/EOF acceptance refinements are additionally checked by the targeted selection. Tracked468-file syntax plus the two new scripts' explicit checks, UTF-8/newlines/links/finite-secret/YAML read-permission/concurrency and diff checks passed. No AV native workflow was dispatched; the next proposed scope is one120sec two-helper buffer-export-av run, not EDL, real account authentication or a product package.
+
 ## 2026-10-24 — Correct AVI timing-slot checks after first finite export
 
 Read the first native job through the normal GitHub log path: finite export27ms/4,340,662B and no new observed source requests/scheduled bytes, then export-inspect/export-packets-invalid; helper exit0/stdio closed. Preserve the incomplete result, with Stop/exit hashes, mapping and second-helper decode untested. Do not classify the generic parser failure as a core-export failure.
