@@ -43,10 +43,10 @@ function fixture(t, overrides = {}) {
             resize() {return this;}, getSize() {return size;}, isEmpty() {return false;}, toPNG() {return this.pixels;}})},
         // A legacy artwork option must not revive disk-cache reads/writes.
         artworkDirectory: overrides.artworkDirectory,
-        sendCommand: value => calls.push('command:' + value)});
+        sendCommand: value => calls.push('command:' + value.command)});
     t.after(() => controller.dispose().catch(error => {if(!overrides.cleanupError || !error.errors.includes(overrides.cleanupError))throw error;}));
     function token() {return handlers.get(NATIVE_SESSION_CHANNEL)(event).token;}
-    const make = (extra = {}) => ({version:3, nativeOwner:null, playbackEpoch:1, active:true, paused:false, title:'Fixture', mediaKey:'a'.repeat(64), mediaType:'Video',
+    const make = (extra = {}) => ({version:4, canPrevious:false, canNext:false, nativeOwner:null, playbackEpoch:1, active:true, paused:false, title:'Fixture', mediaKey:'a'.repeat(64), mediaType:'Video',
         duration:100, position:1, rate:1, sequence:1, sessionToken:token(), ...extra});
     return {controller, window, webContents, ipc, handlers, event, make, token, calls, commands,
         destroy() {destroyed=true;window.emit('closed');},
@@ -102,7 +102,7 @@ test('document reset rotates session token and rejects old-document snapshots an
     f.send({...old, sequence:100}); await drain(); const before = f.updates;
     f.send(f.make()); command('pause'); await drain();
     assert.equal(f.updates, before + 1); assert.equal(f.calls.includes('command:pause'), false);
-    f.commands.at(-1)('play'); assert.ok(f.calls.includes('command:play'));
+    f.commands.at(-1)('pause'); assert.ok(f.calls.includes('command:pause'));
 });
 
 test('same item replay and media switches stay neutral even when only old colored pixels are available', async t => {
@@ -297,4 +297,26 @@ test('a synchronous cleanup failure is reported after other listeners and resour
     assert.equal(f.webContents.listenerCount('did-start-navigation'),0);
     assert.equal(f.calls.filter(value=>value==='preview-dispose').length,1);
     assert.equal(f.calls.filter(value=>value==='dispose').length,1);
+});
+
+test('SMTC callback identity retires on playback generation switch before its async disposal',async t=>{
+    const f=fixture(t);f.send(f.make({canNext:true}));await drain();const stale=f.commands[0];
+    stale('next');assert.equal(f.calls.filter(value=>value==='command:next').length,1);
+    f.send(f.make({canNext:true,playbackEpoch:2,sequence:2}));stale('next');
+    assert.equal(f.calls.filter(value=>value==='command:next').length,1);await drain();
+    assert.equal(f.commands.length,2);f.commands[1]('next');assert.equal(f.calls.filter(value=>value==='command:next').length,2);
+    f.send(f.make({...stopped,sequence:3,playbackEpoch:2}));f.commands[1]('stop');await drain();
+    assert.equal(f.calls.filter(value=>value==='command:stop').length,0);
+});
+
+test('main SMTC commands enforce current pause state and actual queue capability fields',async t=>{
+    const f=fixture(t);f.send(f.make());await drain();
+    for(const command of ['play','previous','next','volumeup'])f.commands[0](command);
+    assert.equal(f.calls.filter(value=>value.startsWith('command:')).length,0);
+    f.commands[0]('pause');assert.ok(f.calls.includes('command:pause'));
+    f.send(f.make({paused:true,canPrevious:true,canNext:true,sequence:2}));await drain();
+    for(const command of ['play','previous','next'])f.commands[0](command);
+    assert.ok(f.calls.includes('command:play'));assert.ok(f.calls.includes('command:previous'));assert.ok(f.calls.includes('command:next'));
+    assert.equal(adapter.valid(f.make({...stopped,canNext:true,sequence:3})),false);
+    assert.equal(adapter.valid(f.make({canNext:1})),false);
 });

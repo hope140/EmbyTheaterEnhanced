@@ -6,11 +6,12 @@ const previewSnapshot = require('../native-helper/preview-snapshot');
 const {performance} = require('perf_hooks');
 const {createRecorder} = require('./bounded-diagnostics');
 const {NATIVE_CHANNEL, NATIVE_SESSION_CHANNEL} = require('./windows-media-renderer');
-const KEYS = ['version', 'nativeOwner', 'playbackEpoch', 'active', 'paused', 'title', 'mediaKey', 'mediaType', 'duration', 'position', 'rate', 'sequence', 'sessionToken'];
+const KEYS = ['version', 'nativeOwner', 'playbackEpoch', 'active', 'paused', 'title', 'mediaKey', 'mediaType', 'duration', 'position', 'rate', 'sequence', 'sessionToken', 'canPrevious', 'canNext'];
 
 function valid(value) {
     return !!value && Object.keys(value).length === KEYS.length && KEYS.every(key => Object.hasOwn(value, key)) &&
-        value.version === 3 && (value.nativeOwner === null || previewSnapshot.validOwner(value.nativeOwner)) && Number.isSafeInteger(value.playbackEpoch) && value.playbackEpoch > 0 && typeof value.active === 'boolean' && typeof value.paused === 'boolean' &&
+        value.version === 4 && typeof value.canPrevious === 'boolean' && typeof value.canNext === 'boolean' && (value.active || !value.canPrevious && !value.canNext) &&
+        (value.nativeOwner === null || previewSnapshot.validOwner(value.nativeOwner)) && Number.isSafeInteger(value.playbackEpoch) && value.playbackEpoch > 0 && typeof value.active === 'boolean' && typeof value.paused === 'boolean' &&
         typeof value.title === 'string' && value.title.length <= 512 && !/[\x00-\x1f\x7f]/.test(value.title) &&
         typeof value.mediaKey === 'string' && (value.active ? /^[a-f0-9]{64}$/.test(value.mediaKey) : value.mediaKey === '') &&
         (value.active ? ['Video', 'Audio'].includes(value.mediaType) : value.mediaType === '') &&
@@ -33,7 +34,7 @@ function attach(options) {
     let captured = 0, frameAttempts = 0, frameRevision = 0, lastFrameStarted = -Infinity;
     const clock = options.clock || {now: () => performance.now(), setInterval, clearInterval};
     let errors = 0;
-    let documentEpoch = 0, sessionDocumentEpoch = -1;
+    let documentEpoch = 0, sessionIdentity = null, commandSequence = 0;
     const thumbnail = attachThumbnail(window, dwm, previewImage, () => logFailure('thumbnail'), () => { requestFrame().catch(() => {}); });
     function current(owner) {
         try { return !disposed && latest && latest.active && latest.mediaType === 'Video' &&
@@ -94,8 +95,12 @@ function attach(options) {
         requestFrame().catch(() => {});
     }
     function logFailure(stage) { errors++; emit('integration-unavailable', {stage}); }
-    function command(value, ownerDocument) {
-        if (!disposed && documentEpoch === ownerDocument && latest && latest.active && ['play', 'pause', 'stop'].includes(value)) sendCommand(value);
+    function identity(snapshot) { return JSON.stringify([documentEpoch, snapshot.playbackEpoch, snapshot.mediaKey, snapshot.nativeOwner]); }
+    function command(value, ownerIdentity) {
+        if (disposed || !latest || !latest.active || identity(latest) !== ownerIdentity || !['play', 'pause', 'stop', 'previous', 'next'].includes(value)) return;
+        if (value === 'play' && !latest.paused || value === 'pause' && latest.paused || value === 'previous' && !latest.canPrevious || value === 'next' && !latest.canNext) return;
+        sendCommand({version:1, command:value, sequence:++commandSequence, nativeOwner:latest.nativeOwner,
+            mediaKey:latest.mediaKey, playbackEpoch:latest.playbackEpoch, sessionToken});
     }
     function enqueue(snapshot) {
         latest = snapshot;
@@ -105,12 +110,12 @@ function attach(options) {
                 if (session) { const old = session; session = null; await old.dispose(); }
                 return;
             }
-            const ownerDocument = documentEpoch;
-            if (session && sessionDocumentEpoch !== ownerDocument) { const old = session; session = null; await old.dispose(); }
+            const ownerIdentity = identity(snapshot);
+            if (session && sessionIdentity !== ownerIdentity) { const old = session; session = null; await old.dispose(); }
             if (disposed || latest !== snapshot) return;
             if (!session) {
-                session = await createSmtc(bindings, window.getNativeWindowHandle().readBigUInt64LE(), {onCommand: value => command(value, ownerDocument)});
-                sessionDocumentEpoch = ownerDocument;
+                session = await createSmtc(bindings, window.getNativeWindowHandle().readBigUInt64LE(), {onCommand: value => command(value, ownerIdentity)});
+                sessionIdentity = ownerIdentity;
                 clearArtwork();
             }
             if (disposed || latest !== snapshot) return;

@@ -1,5 +1,15 @@
 # 项目状态
 
+## 2026-10-24 — 控制集中到SMTC并退役任务栏按钮
+
+按当前规格删除thumbar实现、main注册和两布尔renderer IPC，不改变透明主窗口、独立video surface或thumbnail／Peek owner取帧。SMTC仅暴露Play／Pause／Stop／Previous／Next；Play／Pause按实际暂停状态互斥，Previous／Next从原PlaybackManager同步队列索引／长度／repeat mode推导并在队列事件更新，空／无效队列禁用。Next遵守原RepeatOne重播、RepeatAll绕回行为，Previous首项不绕回，不改播放策略或新增控件。
+
+renderer metadata升v4，Native Helper协议保持1。SMTC delegate绑定文档／播放epoch／媒体key／Native owner，身份变化重新退休所属WinRT session；main单向IPC传七字段命令，renderer使用已捕获的原AMD inputmanager，并在真正trigger前复核当前player、token／epoch／owner、能力和单调序列。重复envelope、迟到AMD、Stop及换代旧delegate均拒绝。官方SDK头文件交叉核对确认Play13／Stop15／Pause17、Previous25／Next27，枚举Next6／Previous7；只依赖实现镜像的初始断言不能证明ABI，已更正并补独立顺序说明。
+
+[Microsoft Stop合同](https://learn.microsoft.com/en-us/uwp/api/windows.media.systemmediatransportcontrols.isstopenabled)只承诺支持命令，卡片是否显示独立Stop图标由系统决定，不自建卡片或补任务栏按钮。新退出修复和SMTC的真实Windows隐藏窗口、卡片五命令、原队列／暂停／停止及用户退出仍待集中复验；不能把Linux合成、FFI装载或新脚本视为视觉成功。默认trial仍关闭，不修改已交付包、main或Release。具体方法见[媒体控制](WINDOWS_MEDIA_CONTROLS.md)。
+
+最终ABI修正后重跑定向52／52、试验组装22／22；完整公开离线1647项／1636pass／0fail／11既有平台skip。438份JS与52份PowerShell语法、有限凭据模式及diff检查通过；新增／修改内容逐项审查，只含工程源码、合成夹具和公开技术记录，原始诊断、profile、媒体及凭据未入提交。真实Windows隐藏窗口／卡片／用户退出仍待复验，不将脚本／Linux结果视为验收完成。
+
 ## 2026-10-24 — 修复试验预览关闭后的原生对象访问
 
 窗口closed后重新读取BrowserWindow.webContents会同步抛错，旧dispose尚未返回Promise且尚未创建cleanup，因而绕过close的.catch并跳过后续释放。适配器现于attach保存存活WebContents引用，退出前发布共享cleanup Promise并立即退休预览；重复／重入关闭共用同一结果，独立同步清理失败仍继续释放监听／thumbnail并等待所属SMTC队列与pending capture，最终明确拒绝而非吞掉失败。不改变播放、捕获周期或两个原按钮；新SMTC控件规格另作独立提交。

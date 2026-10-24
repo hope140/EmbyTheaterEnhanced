@@ -9,3 +9,7 @@
 main/preload 的 `ETE_WINDOWS_NATIVE_TRIAL=1` 仅为试验开关。常规 `tools/build.ps1` 不装配这些原生依赖。独立试验 ZIP 在通过原构建／安装器解包检查的标准载荷副本上增加明确入口、固定依赖与独立 `native-preview-trial.json`，不修改标准 Host／main 入口，不把新增字节归于标准 provenance。`Launch-Trial.ps1` 自检后显式启用，要求 bundle 外全新 profile；普通启动仍默认关闭。完整步骤和 Windows 待验范围见[测试包合同](../../docs/WINDOWS_PREVIEW_SNAPSHOT_PROTOCOL.md)。
 
 单元检查：`node --test tests/windows-native-media.test.cjs tests/windows-media-controls.test.cjs tests/preload-preparation.test.cjs tests/app-shutdown-drain.test.cjs`。真实检查分系统媒体会话/命令、任务栏 hover、最小化/恢复、换媒体和退出；详见[实现与验证边界](../../docs/WINDOWS_MEDIA_CONTROLS.md)。
+
+当前候选只通过SMTC暴露play／pause／stop／previous／next，原thumbar按钮实现已退役。播放／暂停按真实状态互斥，previous／next按原队列能力启用；Stop是否显示独立图标由Windows决定，接口仅承诺命令支持。不启用其它传输按钮。renderer metadata v4及文档／播放／Native owner命令fence不改变helper协议1或DWM取帧路线。
+
+ABI按[Microsoft SDK windows.media.h](https://github.com/microsoft/win32metadata/blob/main/generation/WinSDK/RecompiledIdlHeaders/winrt/windows.media.h)的ISystemMediaTransportControls固定接口顺序核对：Play／Stop／Pause setter13／15／17，Previous25、Next27，ButtonPressed32／33；Next枚举6、Previous7。相关有状态测试验证支持集合与禁用事件，仍不能替代真实Windows FFI调用。

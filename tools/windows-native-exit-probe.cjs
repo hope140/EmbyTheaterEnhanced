@@ -34,7 +34,7 @@ async function run(electron,adapterFile,report){
             createSmtc:async()=>{const session={update(){updates++;},dispose(){releases++;}};
                 return name==='pending-startup'?new Promise(resolve=>{completeStartup=()=>resolve(session);}):session;}});
         const event={sender:webContents},token=handlers.get(keys.NATIVE_SESSION_CHANNEL)(event).token;
-        const state={version:3,nativeOwner:owner,playbackEpoch:1,active:true,paused:false,title:'Lifecycle fixture',mediaKey:'a'.repeat(64),mediaType:'Video',duration:1,position:0,rate:1,sequence:1,sessionToken:token};
+        const state={version:4,canPrevious:false,canNext:false,nativeOwner:owner,playbackEpoch:1,active:true,paused:false,title:'Lifecycle fixture',mediaKey:'a'.repeat(64),mediaType:'Video',duration:1,position:0,rate:1,sequence:1,sessionToken:token};
         ipc.emit(keys.NATIVE_CHANNEL,event,state);await drain();
         assert.equal(typeof completeFrame,'function');
         if(!['pending-frame','rejected-frame'].includes(name)){completeFrame({owner,width:1,height:1,pixels:Buffer.from([1,2,3,255])});await drain();}

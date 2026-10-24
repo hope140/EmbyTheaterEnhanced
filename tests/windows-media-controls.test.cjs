@@ -2,191 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {EventEmitter} = require('node:events');
-const path = require('node:path');
-const {pathToFileURL} = require('node:url');
-const main = require('../src/electronapp/enhanced/windows-media-controls');
 const renderer = require('../src/electronapp/enhanced/windows-media-renderer');
-
-function mainFixture(overrides = {}) {
-    const window = new EventEmitter(), ipcMain = new EventEmitter(), nativeTheme = new EventEmitter(), app = new EventEmitter();
-    const toolbars = [], commands = [];
-    const webContents = new EventEmitter();
-    let destroyed = false;
-    Object.defineProperty(window, 'webContents', {get() {
-        if (destroyed) throw new TypeError('Object has been destroyed');
-        return webContents;
-    }});
-    webContents.mainFrame = {url: pathToFileURL(path.resolve(__dirname, '../src/electronapp/www/index.html')).href};
-    webContents.isDestroyed = () => destroyed;
-    window.isDestroyed = () => destroyed;
-    let visible = overrides.visible !== false, remainingFailures = overrides.failures || 0;
-    window.isVisible = () => visible;
-    window.setThumbarButtons = value => {
-        assert.equal(destroyed, false, 'cannot update a destroyed window');
-        toolbars.push(value);
-        if (overrides.onToolbar) overrides.onToolbar(value);
-        return remainingFailures-- > 0 ? false : true;
-    };
-    const options = {platform: 'win32', window, ipcMain, nativeTheme, app,
-        nativeImage: {createFromBitmap(bitmap, size) { assert.equal(bitmap.length, 4096); return {bitmap, size}; }},
-        sendCommand: command => commands.push(command), clock: overrides.clock};
-    const dispose = main.attach(options);
-    const event = {sender: window.webContents, senderFrame: window.webContents.mainFrame};
-    return {window, webContents, ipcMain, nativeTheme, app, toolbars, commands, dispose,
-        destroy() { destroyed = true; window.emit('closed'); },
-        markDestroyed() { destroyed = true; },
-        show() {visible=true;window.emit('show');},
-        send(value, receivedEvent = event) { ipcMain.emit(renderer.CHANNEL, receivedEvent, value); }};
-}
-
-test('native toolbar follows current play pause stop state and uses only existing command names', () => {
-    const f = mainFixture();
-    assert.equal(f.toolbars.length, 0);
-    f.send({active: true, paused: false});
-    assert.equal(f.toolbars.at(-1)[0].tooltip, '暂停');
-    f.toolbars.at(-1)[0].click(); f.toolbars.at(-1)[1].click();
-    assert.deepEqual(f.commands, ['playpause', 'stop']);
-    f.send({active: true, paused: true});
-    assert.equal(f.toolbars.at(-1)[0].tooltip, '播放');
-    const stale = f.toolbars.at(-1)[0];
-    f.send({active: false, paused: false}); stale.click();
-    assert.equal(f.commands.length, 2);
-    assert.deepEqual(f.toolbars.at(-1), []);
-    f.dispose();
-});
-
-test('foreign frames invalid payloads and unchanged updates cannot affect the toolbar', () => {
-    const f = mainFixture(), baseline = f.toolbars.length;
-    for (const value of [null, {}, {active: true, paused: 'yes'}, {active: false, paused: true}, {active: true, paused: false, command: 'arbitrary'}]) f.send(value);
-    f.send({active: true, paused: false}, {sender: f.window.webContents, senderFrame: {url: 'https://example.invalid'}});
-    f.send({active: true, paused: false}, {sender: {}, senderFrame: f.window.webContents.mainFrame});
-    f.send({active: false, paused: false});
-    assert.equal(f.toolbars.length, baseline);
-    f.dispose();
-});
-
-test('navigation reset shutdown and closed cleanup remove buttons and listener ownership', () => {
-    for (const action of ['navigation', 'crash', 'shutdown', 'closed']) {
-        const f = mainFixture(); f.send({active: true, paused: false});
-        const stale = f.toolbars.at(-1)[0];
-        if (action === 'navigation') f.window.webContents.emit('did-start-navigation',{},'file:///fixture',false,true);
-        else if (action === 'crash') f.window.webContents.emit('render-process-gone');
-        else if (action === 'shutdown') f.app.emit('before-quit');
-        else f.destroy();
-        stale.click(); assert.equal(f.commands.length, 0);
-        if (action !== 'navigation' && action !== 'crash') {
-            assert.equal(f.ipcMain.listenerCount(renderer.CHANNEL), 0);
-            assert.equal(f.nativeTheme.listenerCount('updated'), 0);
-            assert.equal(f.app.listenerCount('before-quit'), 0);
-        }
-        f.dispose(); f.dispose();
-    }
-});
-
-test('playback then destroyed-window closed event retires every owned listener without accessing webContents', () => {
-    for (const paused of [false, true]) {
-        const f = mainFixture();
-        f.send({active: true, paused});
-        const stale = f.toolbars.at(-1), count = f.toolbars.length;
-        assert.doesNotThrow(() => f.destroy());
-        assert.doesNotThrow(() => { f.dispose(); f.app.emit('before-quit'); f.dispose(); });
-        stale.forEach(button => button.click());
-        assert.deepEqual(f.commands, []);
-        assert.equal(f.dispose.status().active, false);
-        assert.equal(f.toolbars.length, count);
-        for (const [owner, event] of [[f.ipcMain, renderer.CHANNEL], [f.nativeTheme, 'updated'],
-            [f.webContents, 'did-start-navigation'], [f.webContents, 'render-process-gone'],
-            [f.window, 'closed'], [f.window, 'show'], [f.window, 'restore'], [f.app, 'before-quit']]) {
-            assert.equal(owner.listenerCount(event), 0, event);
-        }
-    }
-});
-
-test('before-quit clears a live toolbar once and remains safe when closed follows', () => {
-    const f = mainFixture(); f.send({active: true, paused: false});
-    const count = f.toolbars.length;
-    f.app.emit('before-quit');
-    assert.deepEqual(f.toolbars.at(-1), []);
-    assert.equal(f.toolbars.length, count + 1);
-    assert.doesNotThrow(() => { f.destroy(); f.dispose(); });
-    assert.equal(f.toolbars.length, count + 1);
-});
-
-test('destroyed window before closed ignores late IPC and cancels pending toolbar retry', () => {
-    const timers = new Map(); let next = 0;
-    const clock = {setTimeout(fn) {timers.set(++next, fn);return next;}, clearTimeout(id) {timers.delete(id);}};
-    const f = mainFixture({failures: 10, clock}); f.send({active: true, paused: false});
-    const lateReceive = f.ipcMain.listeners(renderer.CHANNEL)[0], lateRetry = [...timers.values()][0];
-    f.markDestroyed();
-    assert.doesNotThrow(() => f.send({active: true, paused: true}));
-    assert.doesNotThrow(() => f.dispose());
-    assert.equal(timers.size, 0);
-    assert.equal(f.dispose.status().retries, 0);
-    const count = f.toolbars.length;
-    assert.doesNotThrow(() => { lateRetry(); lateReceive({}, {active: true, paused: false}); f.destroy(); f.dispose(); });
-    assert.equal(f.toolbars.length, count);
-});
-
-test('dispose retires callbacks before clearing a live toolbar, including reentrant cleanup and shell failure', () => {
-    let cleanup, stale, clearCount = 0;
-    const f = mainFixture({onToolbar(value) {
-        if (value.length === 0 && cleanup) { clearCount++; cleanup(); stale.click(); throw Error('shell unavailable'); }
-    }});
-    f.send({active: true, paused: false});
-    cleanup = f.dispose; stale = f.toolbars.at(-1)[0];
-    assert.doesNotThrow(() => { f.dispose(); f.dispose(); });
-    assert.equal(clearCount, 1);
-    assert.deepEqual(f.commands, []);
-    assert.equal(f.ipcMain.listenerCount(renderer.CHANNEL), 0);
-    assert.equal(f.dispose.status().active, false);
-    assert.equal(f.dispose.status().applied, false);
-});
-
-test('theme changes regenerate native icons and platform capability absence is harmless', () => {
-    const f = mainFixture(); f.send({active: true, paused: false});
-    const light = f.toolbars.at(-1)[0].icon.bitmap;
-    f.nativeTheme.shouldUseDarkColors = true; f.nativeTheme.emit('updated');
-    assert.notDeepEqual(light, f.toolbars.at(-1)[0].icon.bitmap);
-    assert.doesNotThrow(() => main.attach({platform: 'linux'})());
-    assert.doesNotThrow(() => main.attach({platform: 'win32', window: {}})());
-    f.dispose();
-});
-
-test('first toolbar registration waits for a shown window and contains real buttons', () => {
-    const f=mainFixture({visible:false});
-    f.send({active:true,paused:false});assert.equal(f.toolbars.length,0);
-    f.show();assert.equal(f.toolbars.length,1);assert.equal(f.toolbars[0].length,2);
-    f.dispose();
-});
-
-test('a rejected toolbar submission retries and shutdown cancels pending retries', () => {
-    const timers=new Map();let next=0;
-    const clock={setTimeout(fn){timers.set(++next,fn);return next;},clearTimeout(id){timers.delete(id);}};
-    const f=mainFixture({failures:1,clock});f.send({active:true,paused:false});
-    assert.equal(f.dispose.status().applied,false);assert.equal(timers.size,1);
-    const [id,fn]=[...timers][0];timers.delete(id);fn();
-    assert.equal(f.dispose.status().applied,true);assert.equal(timers.size,0);f.dispose();
-    const g=mainFixture({failures:10,clock});g.send({active:true,paused:false});
-    assert.equal(timers.size,1);g.dispose();assert.equal(timers.size,0);
-});
-
-test('toolbar icons use the Windows shell theme when it differs from the application theme', () => {
-    const f=mainFixture();f.nativeTheme.shouldUseDarkColors=false;f.nativeTheme.shouldUseDarkColorsForSystemIntegratedUI=true;
-    f.send({active:true,paused:false});
-    assert.deepEqual(f.toolbars.at(-1)[0].icon.bitmap,main.iconBitmap('pause',true));
-    f.nativeTheme.shouldUseDarkColors=true;f.nativeTheme.shouldUseDarkColorsForSystemIntegratedUI=false;f.nativeTheme.emit('updated');
-    assert.deepEqual(f.toolbars.at(-1)[0].icon.bitmap,main.iconBitmap('pause',false));f.dispose();
-});
-
-test('toolbar failures stop after a bounded retry budget and resume can try again', () => {
-    const timers=new Map();let next=0;
-    const clock={setTimeout(fn){timers.set(++next,fn);return next;},clearTimeout(id){timers.delete(id);}};
-    const f=mainFixture({failures:100,clock});f.send({active:true,paused:false});
-    while(timers.size){const [id,fn]=[...timers][0];timers.delete(id);fn();}
-    assert.equal(f.toolbars.length,4);assert.equal(f.dispose.status().applied,false);
-    f.window.emit('restore');assert.equal(f.toolbars.length,5);assert.equal(timers.size,1);
-    f.dispose();assert.equal(timers.size,0);
-});
 
 function rendererFixture(options = {}) {
     const document = new EventEmitter(), window = new EventEmitter(), subscriptions = [];
@@ -201,7 +17,9 @@ function rendererFixture(options = {}) {
     const manager = {getCurrentPlayer: () => player, getPlayerState: () => state};
     const events = {on(object, name, callback) { subscriptions.push({object, name, callback}); },
         off(object, name, callback) { const i = subscriptions.findIndex(s => s.object === object && s.name === name && s.callback === callback); if (i >= 0) subscriptions.splice(i, 1); }};
-    window.require = (names, ready) => { assert.deepEqual(names, ['modules/common/playback/playbackmanager.js', 'modules/emby-apiclient/events.js']); ready({default: manager}, {default: events}); };
+    window.require = (names, ready) => {
+        if (options.inputManager && names.length === 1 && names[0] === 'inputmanager') return ready({default:options.inputManager});
+        assert.deepEqual(names, ['modules/common/playback/playbackmanager.js', 'modules/emby-apiclient/events.js']); ready({default: manager}, {default: events}); };
     const dispose = renderer.install(window, (channel, value) => emitted.push({channel, value}),
         options.direct ? {...options, playbackManager: manager, events} : options);
     function fire(name, object = player, ...args) { for (const s of [...subscriptions]) if (s.object === object && s.name === name) s.callback(...args); }
@@ -213,10 +31,10 @@ test('renderer binds original AMD singletons and supplements MediaSession withou
     const f = rendererFixture();
     assert.equal(f.emitted.length, 0);
     f.document.emit('appready');
-    assert.deepEqual(f.emitted.at(-1), {channel: renderer.CHANNEL, value: {active: true, paused: false}});
+    assert.equal(f.emitted.length,0);
     assert.equal(f.window.navigator.mediaSession.playbackState, 'playing');
     assert.deepEqual(f.positions.at(-1), {duration: 100, position: 20, playbackRate: 1});
-    f.fire('timeupdate'); assert.equal(f.emitted.length, 1);
+    f.fire('timeupdate'); assert.equal(f.emitted.length, 0);
     f.setState({NowPlayingItem: {MediaType: 'Audio', RunTimeTicks: 100000000}, PlayState: {IsPaused: true, PositionTicks: 200000000}});
     f.fire('pause');
     assert.equal(f.window.navigator.mediaSession.playbackState, 'paused');
@@ -255,7 +73,7 @@ test('preload can bind when AMD becomes ready after the appready observation', a
     f.window.define = define;
     await new Promise(resolve => setTimeout(resolve, 150));
     assert.equal(f.dispose.status().bound, true);
-    assert.equal(f.emitted.length, 1);
+    assert.equal(f.emitted.length, 0);
     f.dispose();
 });
 
@@ -270,7 +88,7 @@ test('direct player binding works without renderer AMD access and owns one subsc
     assert.equal(f.subscriptions.length, count);
     f.setState({NowPlayingItem: {MediaType: 'Video', RunTimeTicks: 1000000000}, PlayState: {IsPaused: true, PositionTicks: 100000000}});
     f.fire('pause');
-    assert.deepEqual(f.emitted.at(-1).value, {active: true, paused: true});
+    assert.equal(f.window.navigator.mediaSession.playbackState, 'paused');
     f.dispose();
     assert.equal(f.subscriptions.length, 0);
 });
@@ -302,13 +120,12 @@ test('native playback epochs rotate for same-item replay and stop retires pixels
     for (let i = 0; i < 5; i++) await Promise.resolve();
     const packets = () => f.emitted.filter(value => value.channel === renderer.NATIVE_CHANNEL);
     const first = packets().at(-1).value;
-    assert.equal(first.version, 3);
+    assert.equal(first.version, 4);
     f.fire('playbackstart'); const second = packets().at(-1).value;
     assert.equal(second.mediaKey, first.mediaKey); assert.ok(second.playbackEpoch > first.playbackEpoch);
-    const toolbarBefore = f.emitted.filter(value => value.channel === renderer.CHANNEL).at(-1), positionsBefore = f.positions.length;
+    const positionsBefore = f.positions.length;
     f.setState({});
     f.fire('playbackstop', f.player, {}, {NextMediaType: 'Video'});
-    assert.equal(f.emitted.filter(value => value.channel === renderer.CHANNEL).at(-1), toolbarBefore);
     assert.equal(f.positions.length, positionsBefore);
     assert.equal(packets().at(-1).value.active, false);
     f.fire('timeupdate'); assert.equal(packets().at(-1).value.active, false);
@@ -336,4 +153,75 @@ test('malformed optional preview owner cannot make a playback state publication 
     for(let i=0;i<5;i++)await Promise.resolve();
     assert.equal(f.emitted.filter(row=>row.channel===renderer.NATIVE_CHANNEL).at(-1).value.nativeOwner,null);
     assert.doesNotThrow(()=>f.fire('statechange'));f.dispose();
+});
+
+test('taskbar buttons and their renderer state route are retired',()=>{
+    const fs=require('node:fs'),path=require('node:path'),source=fs.readFileSync(path.resolve(__dirname,'../src/electronapp/main.js'),'utf8');
+    assert.doesNotMatch(source,/windowsMediaControls|setThumbarButtons/);
+    assert.equal(fs.existsSync(path.resolve(__dirname,'../src/electronapp/enhanced/windows-media-controls.js')),false);
+    assert.equal(Object.hasOwn(renderer,'CHANNEL'),false);
+});
+
+async function nativeFixture(options={}){
+    const commands=[],pending=[];
+    const f=rendererFixture({direct:true,requestNativeSession:()=>Promise.resolve({token:'12345678-1234-1234-1234-123456789abc'}),
+        requireInput(_names,callback){pending.push(()=>callback({trigger:command=>commands.push(command)}));},...options});
+    f.player.id='libmpvmediaplayer';
+    let index=0,length=3,repeat='RepeatNone';
+    f.manager.getCurrentPlaylistIndex=()=>index;f.manager.getCurrentPlaylistLength=()=>length;f.manager.getRepeatMode=()=>repeat;
+    for(let i=0;i<5;i++)await Promise.resolve();
+    const latest=()=>f.emitted.filter(row=>row.channel===renderer.NATIVE_CHANNEL).at(-1).value;
+    let sequence=0;
+    return Object.assign(f,{commands,pending,latest,
+        queue(i,n,r='RepeatNone',event='playlistitemmove'){index=i;length=n;repeat=r;f.fire(event);},
+        packet(command,extra={}){const s=latest();return {version:1,command,sequence:++sequence,sessionToken:s.sessionToken,playbackEpoch:s.playbackEpoch,mediaKey:s.mediaKey,nativeOwner:s.nativeOwner,...extra};}});
+}
+
+test('queue controls reflect actual first middle last and repeat semantics, including paused updates',async()=>{
+    const f=await nativeFixture();
+    const cases=[[0,3,'RepeatNone',false,true],[1,3,'RepeatNone',true,true],[2,3,'RepeatNone',true,false],
+        [0,1,'RepeatNone',false,false],[0,1,'RepeatAll',false,true],[0,1,'RepeatOne',false,true],
+        [-1,0,'RepeatAll',false,false],[3,3,'RepeatNone',false,false],[0,1.2,'RepeatNone',false,false]];
+    for(const [index,length,repeat,previous,next]of cases){f.queue(index,length,repeat);assert.equal(f.latest().canPrevious,previous);assert.equal(f.latest().canNext,next);}
+    f.setState({NowPlayingItem:{MediaType:'Video',RunTimeTicks:1000000000},PlayState:{IsPaused:true}});
+    f.queue(0,2,'RepeatNone','playlistitemadd');assert.equal(f.latest().paused,true);assert.equal(f.latest().canNext,true);
+    f.queue(0,1,'RepeatNone','playlistitemremove');assert.equal(f.latest().canNext,false);
+    f.queue(0,1,'RepeatAll','repeatmodechange');assert.equal(f.latest().canNext,true);f.dispose();
+});
+
+test('only current enabled SMTC commands reach original inputmanager and duplicates are rejected',async()=>{
+    const f=await nativeFixture();f.queue(1,3);
+    for(const command of ['pause','previous','next','stop']){const packet=f.packet(command);assert.equal(f.dispose.command(packet),true);assert.equal(f.dispose.command(packet),false);f.pending.shift()();}
+    assert.deepEqual(f.commands,['pause','previous','next','stop']);
+    for(const command of ['play','seek','volumeup','fullscreen'])assert.equal(f.dispose.command(f.packet(command)),false);
+    f.queue(0,1);assert.equal(f.dispose.command(f.packet('previous')),false);assert.equal(f.dispose.command(f.packet('next')),false);
+    f.setState({NowPlayingItem:{MediaType:'Video',RunTimeTicks:1000000000},PlayState:{IsPaused:true}});f.fire('pause');
+    assert.equal(f.dispose.command(f.packet('pause')),false);assert.equal(f.dispose.command(f.packet('play')),true);f.pending.shift()();
+    assert.equal(f.commands.at(-1),'play');f.dispose();
+});
+
+for(const retirement of ['replay','stop','switch','dispose','owner','queue'])test('late AMD command cannot control retired '+retirement,async()=>{
+    const f=await nativeFixture();f.queue(1,3);const packet=f.packet('next');assert.equal(f.dispose.command(packet),true);
+    if(retirement==='replay')f.fire('playbackstart');
+    if(retirement==='stop')f.fire('playbackstop',f.player,{}, {NextMediaType:'Video'});
+    if(retirement==='switch')f.switchPlayer();
+    if(retirement==='dispose')f.dispose();
+    if(retirement==='owner')f.player.getNativePreviewOwner=()=>({endpointId:'12345678-1234-1234-1234-123456789abc',generationId:20});
+    if(retirement==='queue')f.queue(0,1);
+    f.pending.shift()();assert.deepEqual(f.commands,[]);assert.equal(f.dispose.command(packet),false);f.dispose();
+});
+
+test('late and malformed command envelopes fail closed without changing playback',async()=>{
+    const f=await nativeFixture();
+    for(const extra of [{version:2},{sessionToken:'retired'},{playbackEpoch:0},{mediaKey:'foreign'},{nativeOwner:{}},{sequence:0},{extra:true}]){
+        assert.equal(f.dispose.command(f.packet('pause',extra)),false);
+    }
+    assert.equal(f.pending.length,0);assert.deepEqual(f.commands,[]);f.dispose();
+});
+
+test('production command path retains the original AMD require when later global access is revoked',async()=>{
+    const received=[],f=await nativeFixture({requireInput:undefined,inputManager:{trigger:value=>received.push(value)}});
+    f.window.require=()=>{throw Error('later preload access revoked');};
+    assert.equal(f.dispose.command(f.packet('pause')),true);assert.deepEqual(received,['pause']);
+    f.dispose();assert.equal(f.subscriptions.length,0);assert.equal(f.dispose.command(f.packet('stop')),false);
 });

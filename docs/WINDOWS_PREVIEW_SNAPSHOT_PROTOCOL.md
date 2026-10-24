@@ -1,10 +1,12 @@
 # 原生预览 owner 快照候选
 
-这是 v0.4.0 之后的独立候选，默认仍关闭，不合入正式版。独立分支已重基正式发布点 `88578c91ab19d44eecddcfae096d37dc917ef1f4`。e8e7f50的真实Windows运行已通过Host／生产Native编译、1689项回归、包内自检（ffiLoaded=true）和GUI入口smoke，2233文件四阶段全同。owner进入ready／窗口后在handshake阶段约1.5秒exit1；旧generic报告未保留helper首错，确切原因尚未证实。仍无验收包，D3D11／DWM可见结果未通过。
+这是 v0.4.0 之后的独立候选，默认仍关闭，不合入正式版。独立分支已重基正式发布点 `88578c91ab19d44eecddcfae096d37dc917ef1f4`。e8e7f50的真实Windows运行已通过Host／生产Native编译、1689项回归、包内自检（ffiLoaded=true）和GUI入口smoke，2233文件四阶段全同。owner进入ready／窗口后在handshake阶段约1.5秒exit1；旧generic报告未保留helper首错，确切原因尚未证实。这段是e8e7f50阶段的历史结果，不表示后续候选仍无可用试验包。
+
+当前控件规格已更新为SMTC五命令（play／pause／stop／previous／next），thumbar两按钮退役；renderer metadata v4增加canPrevious／canNext，原Native Helper协议仍为1。以下早期构建／失败记录为历史阶段：后来并置锁定loader已通过真实云helper／owner并获用户视频可见反馈；退出异常修复与新控件尚待精确修订Windows复验。
 
 ## 合成路径与必要影响面
 
-普通主 BrowserWindow 透明，原生视频由独立 skipTaskbar carrier 内的 helper child HWND 绘制。Windows 对主窗口的默认缩略图不会自动把另一窗口的视频层合成进来。显式 trial 通过 DWM iconic thumbnail／Peek 自定义 bitmap 补足该层；现有两按钮独立保持。普通 build 仍未装配 Koffi，设置一个环境变量不能自动生成此能力。
+普通主 BrowserWindow 透明，原生视频由独立 skipTaskbar carrier 内的 helper child HWND 绘制。Windows 对主窗口的默认缩略图不会自动把另一窗口的视频层合成进来。显式 trial 通过 DWM iconic thumbnail／Peek 自定义 bitmap 补足该层；原thumbar两按钮已退役，视频预览路线保持。普通 build 仍未装配 Koffi，设置一个环境变量不能自动生成此能力。
 
 PrintWindow 读取可变 HWND，可能取得旧持帧，即使之后附上新 generation 也不能证明图像归属。新方法由 **libmpv 当前视频帧的生产者** 返回不可变像素，不再用 PrintWindow 作产品源，也不清屏、seek、pause、重放 loadfile 或改变原呈现策略。
 
@@ -61,7 +63,7 @@ $previewCommit = (git rev-parse HEAD).Trim()
 集中验收分两层：
 
 1. 固定最终提交用原锁定 Windows 编译器编译生产 helper；运行上述本地 A/B 探针，确认非 Testing 二进制、capability、自然结束和进程退出。
-2. 完整独立 trial（另有固定 Koffi 与明确覆盖/provenance）分别检查 taskbar thumbnail／Peek，A→B、同片重播、快速 Next/Stop、黑片头、首次即最小化、最小化切集恢复、pending snapshot退出。人工所见须与 owner-frame／captured／submitted、有限 stage 日志分开；普通包是对照。WinRT、两按钮和原播放／会话归属另验。
+2. 完整独立 trial（另有固定 Koffi 与明确覆盖/provenance）分别检查 taskbar thumbnail／Peek，A→B、同片重播、快速 Next/Stop、黑片头、首次即最小化、最小化切集恢复、pending snapshot退出。人工所见须与 owner-frame／captured／submitted、有限 stage 日志分开；普通包是对照。WinRT、SMTC五命令和原播放／会话归属另验。
 
 ## 测试包状态
 
@@ -161,7 +163,7 @@ try {
 
 启动器先自检，设置独立 appData／userData／sessionData／temp 和试验 AppUserModelID，然后才启用环境开关。profile、认证信息和日志不入分发 ZIP；完整产品体验如需登录，由使用者在隔离 profile 自行操作。自检仅允许额外 `debug.log` 或 `x64/electron/debug.log`（各最多 8 MiB），其余新增／篡改文件均拒绝；测试输出放 bundle 外。
 
-Work 需分别记录普通包对照与 trial 的 thumbnail／Peek：A→B 不残留旧帧、黑片头、Stop／结束、同片重播、快速 Next、首次即最小化、最小化换片再恢复、pending 退出与 GDI 资源。首帧未获证明时的中性占位只是保护，不能算视频修复通过；两按钮行为、WinRT 及原播放／Session 链另验。预览目前是最多 160×90 的纯视频图，不含页面／字幕／OSD，画面比例和放大清晰度必须人工评价。
+Work 需分别记录普通包对照与 trial 的 thumbnail／Peek：A→B 不残留旧帧、黑片头、Stop／结束、同片重播、快速 Next、首次即最小化、最小化换片再恢复、pending 退出与 GDI 资源。首帧未获证明时的中性占位只是保护，不能算视频修复通过；SMTC队列／暂停／停止命令、WinRT 及原播放／Session 链另验。预览目前是最多 160×90 的纯视频图，不含页面／字幕／OSD，画面比例和放大清晰度必须人工评价。
 
 ## 独立分支兼容点
 
@@ -175,7 +177,7 @@ EWT 独立实现与本候选均改动 `native/mpv-helper/ete-mpv-helper.cpp` 的
 
 ```powershell
 # 精确源码checkout，使用已验证的固定Electron44.4.2；输出目录必须不存在。
-node .	ools\windows-native-exit-probe.cjs C:\ETE-Probe\electron44\electron.exe C:\ETE-Probe\source\src\electronapp\enhanced\windows-native-media.js C:\ETE-Probeuns\exit-001
+node .\tools\windows-native-exit-probe.cjs C:\ETE-Probe\electron44\electron.exe C:\ETE-Probe\source\src\electronapp\enhanced\windows-native-media.js C:\ETE-Probe\runs\exit-001
 ```
 
 完整trial和native_helper_only都在生产owner前执行该回归。输出仅含受控fixture报告及其stdout／stderr／process记录，profile位于系统临时目录而非artifact树；不能从脚本存在、合成harness或Linux启动失败推断Windows结果。真实用户复验仍包括播放中退出、Stop后退出与捕获pending退出，确认没有JS弹窗且所属helper实际结束。

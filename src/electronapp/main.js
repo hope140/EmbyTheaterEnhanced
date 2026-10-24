@@ -25,7 +25,6 @@
     var enhancedDiagnostics = require('./enhanced/diagnostics');
     var maintenanceIpc = require('./enhanced/maintenance-ipc');
     var rendererBoundary = require('./enhanced/renderer-boundary');
-    var windowsMediaControls = require('./enhanced/windows-media-controls');
     var windowsNativeMedia = null;
     var disposeWindowsNativeMedia = function () { return Promise.resolve(); };
     var bundledVersions = require('./enhanced/bundled-versions');
@@ -1245,12 +1244,6 @@
             if (appIsShuttingDown || !nativeHelperService) return;
 
             mainWindow = new BrowserWindow(windowOptions);
-            windowsMediaControls.attach({
-                platform: process.platform, window: mainWindow, ipcMain: ipcMain,
-                app: app, nativeImage: nativeImage, nativeTheme: electron.nativeTheme,
-                log: enhancedLog,
-                sendCommand: function (command) { if (!appIsShuttingDown) sendCommand(command); }
-            });
             if (process.platform === 'win32' && process.env.ETE_WINDOWS_NATIVE_TRIAL === '1') {
                 try {
                     var nativeMediaPath = path.join(__dirname, 'enhanced', 'native-media');
@@ -1260,7 +1253,10 @@
                         window: mainWindow, ipcMain: ipcMain, nativeImage: nativeImage,
                         capturePreview: function (owner) { return nativeHelperService ? nativeHelperService.capturePreview(owner) : Promise.resolve(null); },
                         isPreviewOwner: function (owner) { return !!nativeHelperService && nativeHelperService.isPreviewOwner(owner); },
-                        sendCommand: function (command) { if (!appIsShuttingDown) sendCommand(command); },
+                        sendCommand: function (packet) {
+                            if (appIsShuttingDown || !mainWindow || mainWindow.isDestroyed()) return;
+                            mainWindow.webContents.send('enhanced-windows-native-media-command', packet);
+                        },
                         koffi: require(path.join(nativeMediaPath, 'node_modules', 'koffi')),
                         createBindings: winrtMedia.createBindings, createSmtc: winrtMedia.createSmtc,
                         createDwm: dwmMedia.createDwm, attachThumbnail: dwmMedia.attachThumbnail, log: enhancedLog,
