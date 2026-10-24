@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-24 — 强化owner退出验收并保留后续阶段错误
+
+按P2验收强化处理旧end/PASS只检查exited的边界，不将其描述为旧退出码合同违规或handshake首因。修前从实际旧producer块以合成exit23复现仍写PASS，旧reader对新增拒绝断言失败；新探针记录原controller实际关闭调用与退出／close结果，共用owned-shutdown-v1判据。允许EOF0以及有自身成功SIGTERM调用证据的原2秒升级关闭，并分别标记；Native20–23、意外终态、未请求signal、协议／transport错误及缺失状态拒绝。生产controller、helper、播放及两按钮未改。
+
+实际controller与受控Node生产者／OS管道验证EOF0、20–23、强制SIGTERM、提前exit0、外部signal和错误路径；同版官方LinuxElectron44.4.2／Node24.21.0 Node模式另跑6项退出／诊断通过。Windows libuv源码上signal返回null code的分析附原始官方链接；本次真实Windows映射尚未执行，不把Linux或源码当实测。新合同按Git blob装配并纳入完整清单，LF／CRLF包内入口及篡改拒绝覆盖，历史2233文件数不作为新包豁免或固定期望。
+
+后续sample-A／B、retire-A、end-file、owned-exit错误保存固定reason／code／state及未知消息摘要，原cause留在进程内；小名单拒绝原型属性及未知stage，不记录原始URL／路径／像素。公开离线1619项／1608pass／0fail／11平台skip，432 JS／50 PowerShell语法、有限模式与diff检查通过；源合同audit仍无子进程／Electron／FFI加载。确切旧Native首错、真实Windows A/B、ZIP及DWM验收未完成，不自行排workflow或操作Work，保持试验默认关闭，见[验收合同](WINDOWS_PREVIEW_SNAPSHOT_PROTOCOL.md)。
+
 ## 2026-10-24 — 区分组件版本并保留helper启动首错
 
 核对e8e7f50实际Windows日志及只读阶段文本，确认selfcheck、GUI入口、四份2233文件清单和1689测试通过；owner已有ready／窗口，失败收窄到helper-start至handshake，退出1且不超时。原generic错误丢失controller内的helper首错；旧进程已退出，不能从产物追溯具体DLL／协议根因。本次不修改已证实通过的入口、FFI或清单，也不推断GPU／DWM。

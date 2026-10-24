@@ -3,7 +3,8 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const {runChild,readOwnerReport,preserveOwnerStages}=require('../tools/windows-native-preview-process.cjs');
 const commit='a'.repeat(40);
 function fixture(t){const directory=fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(),'ete-preview process ')));t.after(()=>fs.rmSync(directory,{recursive:true,force:true}));return directory;}
-function records(){return [{event:'begin',sourceCommit:commit},{event:'end',result:'PASS',ownedExitConfirmed:true,visibleDwmAcceptance:'NOT_ASSESSED'}];}
+function nativeExit(){return {policy:'owned-shutdown-v1',requested:true,exited:true,streamsClosed:true,code:0,signal:null,errorPresent:false,protocolFailure:null,unexpectedTerminal:false,terminalErrors:[],controllerTermination:{attempted:false,succeeded:false,signal:null,error:null},kind:'graceful'};}
+function records(){return [{event:'begin',sourceCommit:commit},{event:'end',result:'PASS',ownedExitConfirmed:true,nativeExitAccepted:true,nativeExit:nativeExit(),visibleDwmAcceptance:'NOT_ASSESSED'}];}
 test('acceptance waits for actual close and captures late stdout/stderr before reading a delayed report',async t=>{
  const directory=fixture(t),file=path.join(directory,'owner-probe.jsonl');
  const script=`const fs=require('node:fs');console.log('started');setTimeout(()=>{fs.writeFileSync(process.argv[1],${JSON.stringify(records().map(row=>JSON.stringify(row)).join('\n'))});console.log('late stdout');console.error('late stderr');},120);`;
@@ -37,6 +38,19 @@ test('reports require one matching begin and final PASS, confirmed helper exit, 
  assert.throws(()=>readOwnerReport(directory,commit),/OWNER_REPORT_MISSING_AFTER_CLOSE/);
  for(const rows of [[...records(),{event:'failure'}],[records()[0]],records().map(row=>row.event==='end'?{...row,ownedExitConfirmed:false}:row),[{...records()[0],sourceCommit:'b'.repeat(40)},records()[1]]]){
   fs.writeFileSync(file,rows.map(row=>JSON.stringify(row)).join('\n'));assert.throws(()=>readOwnerReport(directory,commit),/OWNER_REPORT_NOT_ACCEPTED/);
+ }
+});
+test('new owned-shutdown policy rejects Native errors, unowned signals and incomplete evidence despite PASS',t=>{
+ const directory=fixture(t),file=path.join(directory,'owner-probe.jsonl');
+ for(const change of [{code:20},{code:21},{code:22},{code:23},{code:0,signal:'SIGTERM'},{code:null,signal:'SIGTERM',kind:'controller-terminated'},{streamsClosed:false},{unexpectedTerminal:true},{errorPresent:true},{protocolFailure:'invalid-json'},{terminalErrors:['stdin-error']},{policy:'unknown'},{requested:false},{exited:false},{controllerTermination:{attempted:false,succeeded:false,signal:'SIGTERM',error:null}},null]){
+  const rows=records();rows[1].nativeExit=change?{...nativeExit(),...change}:null;fs.writeFileSync(file,rows.map(row=>JSON.stringify(row)).join('\n'));
+  assert.throws(()=>readOwnerReport(directory,commit),/OWNER_REPORT_NOT_ACCEPTED/);
+ }
+});
+test('new policy accepts graceful EOF and separately proved controller SIGTERM escalation',t=>{
+ const directory=fixture(t),file=path.join(directory,'owner-probe.jsonl');
+ for(const value of [nativeExit(),{...nativeExit(),code:null,signal:'SIGTERM',kind:'controller-terminated',controllerTermination:{attempted:true,succeeded:true,signal:'SIGTERM',error:null}}]){
+  const rows=records();rows[1].nativeExit=value;fs.writeFileSync(file,rows.map(row=>JSON.stringify(row)).join('\n'));assert.equal(readOwnerReport(directory,commit).result,'PASS');
  }
 });
 test('Windows GUI-subsystem process is awaited using its actual exit rather than shell LASTEXITCODE',{skip:process.platform!=='win32'},async t=>{

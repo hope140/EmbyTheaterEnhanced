@@ -49,7 +49,7 @@ helper 每次最多一个物理截图，约1Hz上限、1500ms逻辑期限；退�
 
 Linux 的 `node tools/test-preview-owner-core.cjs` 用宿主 g++ 以 C++17／Wall／Wextra／Werror 编译**从当前 C++ 实际提取**的 owner／pending-slot、JSON quote、frameUnavailable、hasPreviewVideo、ownsPreview、finishPreview、uniqueOpenMedia及缩图函数：37项状态／终态调用边界检查、两条unavailable JSON解码及320×180彩色帧→160×90字节回读。扩展编译在修前复现了std::string不能传const char*的错误；修后显式c_str转换通过，重复finish不重复响应、物理slot仍保留，动态reason正确转义。提取上下文的transport／属性提供者为替身，此工具仍不是完整Windows helper编译，不执行libmpv。公开Node回归覆盖严格DTO、真实controller framing／历史不留像素、service同步失败／代次／结束／单请求、renderer owner接线、libmpv Item/Server和Play退休、adapter旧回复／黑首帧／最小化／资源等待。不得用这些替代Windows结果。
 
-准备了 `tools/windows-native-owner-probe.cjs`：只在固定 Windows Electron 44.4.2 x64 下显式运行，核验 checkout、生产 helper provenance／源码 SHA／EXE SHA、固定 libmpv DLL SHA，生成自身本地红／绿 Y4M，不用服务器、账户或 NAS。快照本身不依赖Koffi；包内模式会先执行含Koffi实际加载的装配自检。它读取真实生产方法，自动检验 A/B、旧请求退休和 END_FILE 后 unavailable；仅在探针自有generation激活后把 keep-open 设false以测试自然结束，不改产品策略。诊断检查拒绝保留wire BGR24或解码BGRA的pixels字段，不比较两种不同编码。结果文件只记固定阶段及哈希，失败仅记固定stage；只有 end/PASS 且 ownedExitConfirmed 才算此 helper 范围完成，DWM 可见结果始终 NOT_ASSESSED。
+准备了 `tools/windows-native-owner-probe.cjs`：只在固定 Windows Electron 44.4.2 x64 下显式运行，核验 checkout、生产 helper provenance／源码 SHA／EXE SHA、固定 libmpv DLL SHA，生成自身本地红／绿 Y4M，不用服务器、账户或 NAS。快照本身不依赖Koffi；包内模式会先执行含Koffi实际加载的装配自检。它读取真实生产方法，自动检验 A/B、旧请求退休和 END_FILE 后 unavailable；仅在探针自有generation激活后把 keep-open 设false以测试自然结束，不改产品策略。诊断检查拒绝保留wire BGR24或解码BGRA的pixels字段，不比较两种不同编码。结果文件只记固定阶段及哈希，失败保留下述受限错误投影；end/PASS还必须满足新增的owned-shutdown-v1退出验收合同，DWM 可见结果始终 NOT_ASSESSED。
 
 ```powershell
 $previewCommit = (git rev-parse HEAD).Trim()
@@ -73,7 +73,7 @@ $previewCommit = (git rev-parse HEAD).Trim()
 
 `tools/windows-native-preview-trial.cjs` 只读当前提交 Git blob，在全新独立目录复制标准载荷，再添加 native-media 模块／依赖、显式入口、探针和来源文件。标准文件字节与默认入口保持原样；独立 `native-preview-trial.json` 绑定源提交、标准 build-manifest、生成器、依赖与完整文件集合。它是额外覆盖来源合同，不将新文件冒充为标准构建输入。试验 ZIP 使用提交和 run 唯一名称，不覆盖正式安装或已有 artifact。
 
-CI必须重新解包该ZIP，用**包内固定Electron44.4.2 x64**执行自检：完整文件与生产helper来源、固定DLL、Koffi实际载入／系统函数调用和DWM／WinRT FFI签名绑定。`windows-native-preview-process.cjs`逐个持有子进程，记录实际executable／argv及Node／GUI模式，等待真实close与输出排空后才读报告；自检45秒、GUI入口smoke15秒、完整owner90秒，超时仅终止所属子进程并记录结果。exit0、自检回执的ffiLoaded=true／sourceCommit、GUI描述scope及后续唯一final end/PASS／ownedExitConfirmed必须全部满足；描述通过不代替owner A/B，提前写PASS后进程exit非零仍失败。成功外部回执包含ZIP SHA-256、独立manifest、自检JSON、GUI入口描述、进程完成后的acceptance JSON及owner JSONL；profile／媒体不进入分发包。
+CI必须重新解包该ZIP，用**包内固定Electron44.4.2 x64**执行自检：完整文件与生产helper来源、固定DLL、Koffi实际载入／系统函数调用和DWM／WinRT FFI签名绑定。`windows-native-preview-process.cjs`逐个持有子进程，记录实际executable／argv及Node／GUI模式，等待真实close与输出排空后才读报告；自检45秒、GUI入口smoke15秒、完整owner90秒，超时仅终止所属子进程并记录结果。外层Electron exit0、自检回执的ffiLoaded=true／sourceCommit、GUI描述scope及后续唯一final end/PASS／ownedExitConfirmed／nativeExitAccepted和owned-shutdown-v1记录必须全部满足；描述通过不代替owner A/B，提前写PASS后Electron exit非零仍失败。成功外部回执包含ZIP SHA-256、独立manifest、自检JSON、GUI入口描述、进程完成后的acceptance JSON及owner JSONL；profile／媒体不进入分发包。
 
 在解包后、自检后、入口smoke后、owner后分别保存物理文件清单、SHA及新增／缺失／改变的相对文件名，也记录与上一阶段的差异。每阶段重新运行原完整性检查；原固定两处小debug.log例外保持，原始诊断差异仍显示这些日志。stdout／stderr各最多8MiB，实际命令／PID／启动／exit／close／timeout另存；命令仅为受控本地探针，不记录产品播放URL或账户。若已有owner-probe.jsonl，则在成功或失败后额外保存其有界物理文件为owner-stages.jsonl（最多1MiB），不复制输出目录其他内容。失败仅上传独立diagnostics artifact（1天），不上传验收包，不生成替代owner PASS，不上传profile／Y4M。
 
@@ -104,6 +104,16 @@ node .\tools\windows-native-owner-probe.cjs --audit-contract
 ```
 
 输出明确标为`scope=static-source-contract-only`、`nativeHelperStarted=false`、`dllLoaded=false`和DWM NOT_ASSESSED。这不是握手或二进制兼容验收；此命令通过不能解释本次丢失的Native首错，也不能替代需要另协调的实际窗口／视频验证。
+
+## 退出验收强化与后续阶段诊断
+
+这是P2验收强化，不是旧handshake失败的首因。旧合同只要求end/PASS和ownedExitConfirmed，并未承诺Native exit0；生产controller.kill也对任意已退出状态结算。新增独立`owned-shutdown-v1`报告合同，由探针和外部报告读取器共用同一源文件，随trial按源码哈希装配；原生产controller／helper关闭行为不变。
+
+所有情形均须在探针主动关闭前没有意外transport终态，主动关闭后确认进程已退出、流已close、没有spawn／协议／transport错误。接受两种分别标记的结果：`graceful`为stdin EOF后的code=0、signal=null；`controller-terminated`为原controller等待2秒后确实调用所属child.kill(SIGTERM)成功，且得到code=null、signal=SIGTERM。探针仅在关闭期间透明记录该已有方法的调用／结果并恢复方法，不新增强退策略。未请求的signal、提前exit0、Native错误码20–23、错误／缺失状态、未关闭的流均失败；Native错误退出不能被末次有效snapshot或PASS文字掩盖。强制结束获接受仅说明原controller已完成所属关闭，不等于优雅退出或DWM成功。
+
+固定Electron44.4.2实际携带Node24.21.0／libuv1.52.1。源码依据为[Node Windows process](https://github.com/nodejs/node/blob/v24.21.0/deps/uv/src/win/process.c)中成功kill设置exit_signal，以及[child_process](https://github.com/nodejs/node/blob/v24.21.0/lib/internal/child_process.js)在signal存在时上报null code／signal；不把底层TerminateProcess的退出值1当成JS code。Linux真实controller／受控进程和管道已覆盖EOF0、20–23、controller升级SIGTERM、未请求信号、提前exit0及错误，Windows同一回归已注册但尚未在本次提交运行；它仍需验证真实Windows映射，不能用源码或Linux结果替代。
+
+sample-A／sample-B、retire-A、end-file及owned-exit失败统一保留`stageError`：小型固定reason名单区分快照不可用、A／B颜色不符、旧请求未退休、诊断残留pixels、结束后仍有快照、load归属失败和end-file超时；固定controller／探针code和请求state另投影。未知消息仅保留SHA256，不输出原始路径、URL、媒体标识或Token；原cause仍保留在进程内。handshake已保存的有界启动证据继续附在evidence中，后续错误不再全部退化为details:null／generic。该诊断不放宽采样、颜色、退休、EOF、退出或包完整性门禁。
 
 ## 解包后的最小 Windows 复验
 

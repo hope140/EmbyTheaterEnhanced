@@ -5,6 +5,7 @@ const verifier=require('./templates/native-preview/verify.cjs');
 const hash=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
 const SOURCES={
  'trial/verify.cjs':'tools/templates/native-preview/verify.cjs',
+ 'trial/exit-policy.cjs':'tools/templates/native-preview/exit-policy.cjs',
  'Launch-Trial.ps1':'tools/templates/native-preview/Launch-Trial.ps1',
  'Test-Owner.ps1':'tools/templates/native-preview/Test-Owner.ps1',
  'trial/NOTICE.md':'tools/templates/native-preview/NOTICE.md',

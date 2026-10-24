@@ -1,6 +1,6 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),{execFileSync}=require('node:child_process'),path=require('node:path');
-const {PLAN,clip,loadProbeClip,assertNoSnapshotDiagnostics,probeConfiguration,auditSourceContract,startProbeHelper,startupEvidence}=require('../tools/windows-native-owner-probe.cjs');
+const {PLAN,clip,loadProbeClip,assertNoSnapshotDiagnostics,probeConfiguration,auditSourceContract,startProbeHelper,startupEvidence,noteProbeTerminal,finishOwnerProbe,stageErrorProjection}=require('../tools/windows-native-owner-probe.cjs');
 test('production owner probe is explicit, local-only and does not imply DWM visible acceptance',()=>{
     assert.deepEqual(JSON.parse(execFileSync(process.execPath,[path.join(__dirname,'../tools/windows-native-owner-probe.cjs'),'--describe'],{encoding:'utf8'})),PLAN);
     assert.equal(PLAN.usesServer,false);assert.equal(PLAN.snapshotUsesKoffi,false);assert.equal(PLAN.packagedSelfcheckUsesKoffi,true);assert.equal(PLAN.visibleDwmAcceptance,'NOT_ASSESSED');
@@ -20,7 +20,7 @@ test('ordinary ESM library import cannot start a probe by changing argv alone',(
 });
 test('GUI describe entry flushes its scope and exits without waiting for app.ready or creating a player',()=>{
     const fs=require('node:fs'),vm=require('node:vm'),file=path.join(__dirname,'../tools/windows-native-owner-probe.cjs'),exits=[],output=[];
-    const module={exports:{}},load=name=>name==='electron'?{app:{exit:code=>exits.push(code)}}:require(name);
+    const module={exports:{}},localRequire=require('node:module').createRequire(file),load=name=>name==='electron'?{app:{exit:code=>exits.push(code)}}:localRequire(name);
     vm.runInNewContext(fs.readFileSync(file,'utf8'),{module,require:load,__filename:file,__dirname:path.dirname(file),process:{versions:{electron:'44.4.2'},platform:process.platform,defaultApp:true,type:'browser',argv:['electron',file,'--describe'],stdout:{write(text,callback){output.push(text);callback?.();}},stderr:{write(){}}}});
     assert.deepEqual(JSON.parse(output.join('')),PLAN);assert.deepEqual(exits,[0]);
 });
@@ -52,14 +52,14 @@ test('diagnostic guard detects wire BGR24 payloads as well as decoded BGRA',()=>
     for(const pixels of [Buffer.from([19,67,213]).toString('base64'),Buffer.from([19,67,213,255])])
         assert.throws(()=>assertNoSnapshotDiagnostics({requests:[{detail:{pixels}}]}),/Pixels retained/);
 });
-function handshakeFixture(t,{fatal=false,preview=true,readyOverrides={}}={}){
+function handshakeFixture(t,{fatal=false,preview=true,readyOverrides={},exitCode=0,ignoreEof=false}={}){
     const fs=require('node:fs'),os=require('node:os'),directory=fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(),'ete-probe-handshake-')));
     t.after(()=>fs.rmSync(directory,{recursive:true,force:true}));const file=path.join(directory,'pipe-fixture.cjs'),controller=require.resolve('../src/electronapp/native-helper/controller');
     const baseline=require('../src/electronapp/native-helper/service'),ready={protocolVersion:1,mpvClientApiVersion:131077,helperVersion:'1.0.0',libmpvVersion:baseline.EXPECTED_LIBMPV_VERSION,surfaceAttached:true,capabilities:['private-inherited-pipe','native-child-hwnd','gpu-next','d3d11','generation-attribution',...(preview?['preview-snapshot-v1']:[])],queueLimits:{maxPendingFrames:128,maxPendingBytes:262144}};
     // Real controller and OS pipes, synthetic producer. No native DLL/helper,
     // window or actual libmpv startup is exercised by this fixture.
     const code=fatal?`process.stderr.write('helper-fatal:dll-load-failed\\n',()=>process.exit(23));`:
-        `const {encodeFrame}=require(${JSON.stringify(controller)});process.stdout.write(encodeFrame({protocolVersion:1,type:'lifecycle',scope:'helper',helperInstanceId:process.argv[2],name:'ready',detail:${JSON.stringify({...ready,...readyOverrides})}}));process.stdin.resume();process.stdin.on('end',()=>process.exit(0));`;
+        `const {encodeFrame}=require(${JSON.stringify(controller)});process.stdout.write(encodeFrame({protocolVersion:1,type:'lifecycle',scope:'helper',helperInstanceId:process.argv[2],name:'ready',detail:${JSON.stringify({...ready,...readyOverrides})}}));process.stdin.resume();${ignoreEof?'setInterval(()=>{},1000);':`process.stdin.on('end',()=>process.exit(${exitCode}));`}`;
     fs.writeFileSync(file,code);return {helperPath:process.execPath,libmpvPath:file,parentWindowHandle:'1'};
 }
 test('production runtime version contract rejects the old component version and accepts the service identity over real pipes',async t=>{
@@ -99,4 +99,48 @@ test('static source audit loads no Electron/FFI/DLL and starts no child process'
     const file=path.resolve(__dirname,'../tools/windows-native-owner-probe.cjs');
     const driver=`const cp=require('node:child_process'),Module=require('node:module');for(const key of ['spawn','spawnSync','execFile','execFileSync','exec','execSync','fork'])cp[key]=()=>{throw Error('process-start-forbidden');};const load=Module._load;Module._load=function(name,...args){if(['electron','koffi','original-fs'].includes(name))throw Error('native-load-forbidden');return load.call(this,name,...args);};Module._extensions['.node']=()=>{throw Error('addon-load-forbidden');};process.stdout.write(JSON.stringify(require(${JSON.stringify(file)}).auditSourceContract()));`;
     const report=JSON.parse(execFileSync(process.execPath,['-e',driver],{encoding:'utf8'}));assert.equal(report.scope,'static-source-contract-only');assert.equal(report.nativeHelperStarted,false);assert.equal(report.dllLoaded,false);assert.deepEqual(report,auditSourceContract());
+});
+async function exitFixture(t,options={}){
+    const {NativeHelperClient}=require('../src/electronapp/native-helper/controller'),state={shutdownRequested:false,unexpectedTerminal:null};
+    const client=new NativeHelperClient({...handshakeFixture(t,options),expectedLibmpvVersion:require('../src/electronapp/native-helper/service').EXPECTED_LIBMPV_VERSION,onTerminal:record=>noteProbeTerminal(state,record)});
+    t.after(()=>client.kill());await startProbeHelper(client);return {client,state};
+}
+test('new exit acceptance uses real controller EOF and waits for stream close',async t=>{
+    const {client,state}=await exitFixture(t),report=await finishOwnerProbe(client,state);
+    assert.equal(report.result,'PASS');assert.equal(report.nativeExit.kind,'graceful');assert.equal(report.nativeExit.code,0);assert.equal(report.nativeExit.signal,null);assert.equal(report.nativeExit.streamsClosed,true);assert.equal(report.nativeExit.controllerTermination.attempted,false);
+});
+test('Native error exits 20 through 23 are rejected after actual controller shutdown',async t=>{
+    for(const exitCode of [20,21,22,23]){
+        const {client,state}=await exitFixture(t,{exitCode});
+        await assert.rejects(finishOwnerProbe(client,state),error=>error.code==='OWNER_NATIVE_EXIT_NOT_ACCEPTED'&&error.details.nativeExit.code===exitCode&&error.details.nativeExit.exited&&error.details.nativeExit.streamsClosed);
+    }
+});
+test('production controller escalation is accepted only with the observed owned SIGTERM call',async t=>{
+    const {client,state}=await exitFixture(t,{ignoreEof:true}),originalKill=client.child.kill,report=await finishOwnerProbe(client,state);
+    assert.equal(client.child.kill,originalKill);assert.equal(report.nativeExit.kind,'controller-terminated');assert.equal(report.nativeExit.code,null);assert.equal(report.nativeExit.signal,'SIGTERM');
+    assert.deepEqual(report.nativeExit.controllerTermination,{attempted:true,succeeded:true,signal:'SIGTERM',error:null});
+});
+test('unsolicited signal and early zero exit cannot masquerade as requested shutdown',async t=>{
+    for(const signalled of [true,false]){
+        const {client,state}=await exitFixture(t);
+        if(signalled)client.child.kill();else client.child.stdin.end();
+        await client.exitPromise;
+        await assert.rejects(finishOwnerProbe(client,state),error=>error.code==='OWNER_NATIVE_EXIT_NOT_ACCEPTED'&&error.details.nativeExit.unexpectedTerminal===true);
+    }
+});
+test('exit zero with a protocol or transport error cannot pass',async t=>{
+    for(const protocol of [true,false]){
+        const {client,state}=await exitFixture(t);
+        if(protocol)client.protocolFailure='invalid-json';else client.closeOrdering.push({name:'stdin-error'});
+        await assert.rejects(finishOwnerProbe(client,state),error=>error.code==='OWNER_NATIVE_EXIT_NOT_ACCEPTED'&&(protocol?error.details.nativeExit.protocolFailure==='invalid-json':error.details.nativeExit.terminalErrors.includes('stdin-error')));
+    }
+});
+test('later stage errors preserve only allowlisted reasons, codes and states',()=>{
+    const cases=[['Snapshot unavailable','snapshot-unavailable'],['A frame mismatch','a-color-mismatch'],['B frame mismatch','b-color-mismatch'],['Old request not retired','old-request-not-retired'],['Pixels retained in diagnostics','pixels-in-diagnostics'],['Ended media still produces snapshot','ended-snapshot-available'],['load-command-failed-or-unattributed','load-command-failed-or-unattributed'],['timeout:42:end-file','end-file-timeout']];
+    for(const [message,reason]of cases)assert.equal(stageErrorProjection(Error(message),'sample-A').reason,reason);
+    const known=Object.assign(Error('unknown'),{code:'OWNER_NATIVE_EXIT_NOT_ACCEPTED',state:'GENERATION_RETIRED'});assert.equal(stageErrorProjection(known,'owned-exit').code,known.code);assert.equal(stageErrorProjection(known,'owned-exit').state,known.state);
+    const secret='https://user:secret@example.invalid/private/media',projection=stageErrorProjection(Object.assign(Error(secret),{code:secret,state:secret}),'sample-B');
+    assert.equal(projection.reason,null);assert.equal(projection.code,null);assert.equal(projection.state,null);assert.match(projection.messageSha256,/^[a-f0-9]{64}$/);assert.equal(JSON.stringify(projection).includes(secret),false);
+    for(const message of ['constructor','toString','__proto__'])assert.equal(stageErrorProjection(Error(message),secret).reason,null);
+    assert.equal(stageErrorProjection(Error(secret),secret).stage,null);
 });

@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-24 — 预览探针退出验收强化与阶段错误投影
+
+独立候选新增P2 owned-shutdown-v1验收合同：旧PASS／ownedExitConfirmed只证明进程已退出，并未承诺exit0。本次探针与外部报告读取器共用固定源码合同，区分EOF code0与原controller等待2秒后成功调用所属SIGTERM的强制关闭；20–23、意外终态／signal、协议或transport错误、缺状态／流close均失败，不改变生产kill行为。该强化不是旧handshake首因；旧Native首错仍未知，未放宽owner90秒或任何包门禁。
+
+sample／颜色、retirement、EOF及退出错误增加固定reason／code／state投影，未知文本仅摘要；不再一律details:null，不输出路径／URL／媒体秘密。LF／CRLF试验装配、包内入口和新合同篡改拒绝回归通过，新增文件进入原精确来源及清单，不将历史2233文件数硬编码为新包要求。公开离线1619项／1608pass／0fail／11平台skip，432 JS／50 PowerShell语法、有限模式与diff检查通过。真实controller＋受控进程／管道覆盖EOF0、20–23、controller强制SIGTERM、外部signal、提前exit0及协议／transport错误；同版官方LinuxElectron44.4.2 Node模式的6项退出／诊断回归亦通过。真实Windows状态映射／Native握手／生产A/B／ZIP和DWM仍待验证；不把Linux、源码分析或FFI通过当实际视频修复，见[合同及复验](WINDOWS_PREVIEW_SNAPSHOT_PROTOCOL.md)。
+
 ## 2026-10-24 — 握手身份合同与有界启动错误证据
 
 e8e7f50的真实Windows入口smoke、自检及四阶段2233文件清单均通过，1689项测试通过；owner进入app ready／窗口创建后在helper handshake阶段约1.5秒exit1，helper退出已确认，没有成功试验包。旧报告未保存controller中的helper stderr、退出码或ready内容，不能追溯本次确切Native首错，也不能归因为DWM／桌面或已通过的FFI／文件集合。

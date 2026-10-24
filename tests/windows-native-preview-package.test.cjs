@@ -35,12 +35,14 @@ for(const crlf of [false,true])test('trial assembly keeps the standard payload u
  const f=fixture(t,crlf),before=check.inventory(f.runtime),result=trial.create(f.root,f.runtime,f.dependencies,f.destination,f.commit);
  assert.equal(result.standardPayloadUnchanged,true);assert.equal(result.defaultEnabled,false);assert.equal(result.ffiLoaded,false);
  assert.deepEqual(check.inventory(f.runtime),before);assert.equal(fs.readFileSync(path.join(f.destination,'electronapp/package.json'),'utf8'),'{"main":"main.js"}');
+ assert.equal(fs.readFileSync(path.join(f.destination,'trial/exit-policy.cjs'),'utf8'),fs.readFileSync(path.join(f.root,trial.SOURCES['trial/exit-policy.cjs']),'utf8'));
+ const description=JSON.parse(cp.execFileSync(process.execPath,[path.join(f.destination,'trial/owner-probe.cjs'),'--describe'],{encoding:'utf8'}));assert.equal(description.scope,'production-helper-owner-snapshot');
  const entry=fs.readFileSync(path.join(f.destination,'electronapp/native-preview-trial.cjs'),'utf8');assert.match(entry,/ETE_WINDOWS_NATIVE_TRIAL = '1'/);assert.match(entry,/fs\.mkdirSync\(directory\)/);assert.match(entry,/Profile must be outside bundle/);
  assert.throws(()=>trial.create(f.root,f.runtime,f.dependencies,f.destination,f.commit),/Preserve/);
 });
-for(const mode of ['base','ffi','extra','source'])test('bundle rejects '+mode+' drift',t=>{
+for(const mode of ['base','ffi','extra','source','exit-policy'])test('bundle rejects '+mode+' drift',t=>{
  const f=fixture(t);trial.create(f.root,f.runtime,f.dependencies,f.destination,f.commit);
- const target=mode==='base'?'electronapp/package.json':mode==='ffi'?'electronapp/enhanced/native-media/node_modules/koffi/LICENSE.txt':mode==='source'?'trial/helper-source.cpp':'unexpected-file';
+ const target=mode==='base'?'electronapp/package.json':mode==='ffi'?'electronapp/enhanced/native-media/node_modules/koffi/LICENSE.txt':mode==='source'?'trial/helper-source.cpp':mode==='exit-policy'?'trial/exit-policy.cjs':'unexpected-file';
  fs.writeFileSync(path.join(f.destination,target),'tampered');assert.throws(()=>check.verify(f.destination,f.commit,{loadNative:false}),/mismatch/);
 });
 test('Electron verification selects original-fs and keeps ASAR as a physical payload file',t=>{

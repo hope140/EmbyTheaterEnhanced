@@ -2,6 +2,7 @@
 // Explicit process ownership for test acceptance, not a product launcher.
 const fs=require('node:fs'),path=require('node:path'),{spawn}=require('node:child_process');
 const check=require('./templates/native-preview/verify.cjs');
+const {acceptsNativeExit}=require('./templates/native-preview/exit-policy.cjs');
 function failure(code){const error=Error(code);error.code=code;return error;}
 async function runChild(executable,args,{directory,name,nodeMode=false,timeoutMs=60000,closeMs=5000}={}){
     const env={...process.env};if(nodeMode)env.ELECTRON_RUN_AS_NODE='1';else delete env.ELECTRON_RUN_AS_NODE;
@@ -43,7 +44,7 @@ function readOwnerReport(directory,commit){
     const file=path.join(directory,'owner-probe.jsonl');if(!fs.existsSync(file))throw failure('OWNER_REPORT_MISSING_AFTER_CLOSE');
     const bytes=fs.readFileSync(file);if(bytes.length>1024*1024)throw failure('OWNER_REPORT_LIMIT');
     const rows=bytes.toString().trim().split(/\r?\n/).map(line=>JSON.parse(line)),begin=rows.filter(row=>row.event==='begin'),end=rows.filter(row=>row.event==='end');
-    if(begin.length!==1||begin[0].sourceCommit!==commit||end.length!==1||rows.at(-1)!==end[0]||end[0].result!=='PASS'||end[0].ownedExitConfirmed!==true||end[0].visibleDwmAcceptance!=='NOT_ASSESSED'||rows.some(row=>row.event==='failure'))throw failure('OWNER_REPORT_NOT_ACCEPTED');
+    if(begin.length!==1||begin[0].sourceCommit!==commit||end.length!==1||rows.at(-1)!==end[0]||end[0].result!=='PASS'||end[0].ownedExitConfirmed!==true||end[0].nativeExitAccepted!==true||!acceptsNativeExit(end[0].nativeExit)||end[0].visibleDwmAcceptance!=='NOT_ASSESSED'||rows.some(row=>row.event==='failure'))throw failure('OWNER_REPORT_NOT_ACCEPTED');
     return end[0];
 }
 function preserveOwnerStages(ownerOutput,directory){

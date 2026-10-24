@@ -8,6 +8,7 @@ function clip(y,u,v) {
     return Buffer.concat([Buffer.from('YUV4MPEG2 W32 H18 F2:1 Ip A1:1 C420jpeg\n'),...Array(12).fill(frame)]);
 }
 const sha=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
+const {POLICY,acceptsNativeExit}=require(fs.existsSync(path.join(__dirname,'registry-input.json'))?'./exit-policy.cjs':'./templates/native-preview/exit-policy.cjs');
 function trace(stage,fields={}) {process.stderr.write(JSON.stringify({event:'owner-probe-stage',stage,at:new Date().toISOString(),...fields})+'\n');}
 function probeFailure(code) {const error=Error(code);error.code=code;return error;}
 function probeConfiguration(manifest,baseline) {
@@ -35,6 +36,34 @@ function startupEvidence(client,error) {
         stderr:{observedBytes:number(client.stderrObservedBytes),retainedBytes:number(client.stderrRetainedBytes),inspectedTailBytes:stderr.length,tailSha256:sha(stderr),fatalTags:text.split(/\r?\n/).filter(line=>/^helper-fatal:[A-Za-z0-9_.: -]{1,160}$/.test(line)).slice(-4)},
         closeOrdering:(client.closeOrdering||[]).slice(-16).map(row=>({name:scalar(row.name,/^[a-z0-9-]{1,80}$/),code:number(row.detail?.code),signal:scalar(row.detail?.signal,/^[A-Z0-9]{1,16}$/)}))};
 }
+async function waitForHelperClose(client){
+    if(client.closeOrdering?.some(row=>row.name==='process-close'))return true;
+    if(!client.child)return false;
+    return new Promise(resolve=>{const child=client.child;let timer;const done=()=>{clearTimeout(timer);child.removeListener('close',closed);resolve(client.closeOrdering?.some(row=>row.name==='process-close')===true);};const closed=()=>done();child.once('close',closed);timer=setTimeout(done,1000);});
+}
+function noteProbeTerminal(state,record){if(!state.shutdownRequested&&!state.unexpectedTerminal)state.unexpectedTerminal=/^[a-z0-9-]{1,80}$/.test(record.name)?record.name:'unknown-terminal';}
+async function finishOwnerProbe(client,state){
+    const early=state.unexpectedTerminal||(client.exited||client.transportTerminated?'already-terminal':null),child=client.child,originalKill=child?.kill;
+    const termination={attempted:false,succeeded:false,signal:null,error:null};
+    state.shutdownRequested=true;
+    if(child&&typeof originalKill==='function')child.kill=function(signal){termination.attempted=true;termination.signal=signal||'SIGTERM';try{const result=originalKill.call(this,signal);termination.succeeded=result===true;return result;}catch(error){termination.error=startupEvidence(client,error).error;throw error;}};
+    let result,killError=null;
+    try{result=await client.kill();}catch(error){killError=error;}finally{if(child&&typeof originalKill==='function')child.kill=originalKill;}
+    const streamsClosed=await waitForHelperClose(client),terminalErrors=[...new Set((client.closeOrdering||[]).map(row=>row.name).filter(name=>['stdin-error','stdout-error','process-error','protocol-failure','outbound-queue-limit'].includes(name)))];
+    const code=Number.isInteger(result?.code)?result.code:null,signal=typeof result?.signal==='string'?result.signal:null;
+    const exit={policy:POLICY,requested:true,exited:client.exited===true,streamsClosed,code,signal,errorPresent:result?.error!=null||killError!==null,protocolFailure:client.protocolFailure??null,unexpectedTerminal:Boolean(early||state.unexpectedTerminal),terminalErrors,controllerTermination:termination,
+        kind:code===0&&signal===null&&!termination.succeeded?'graceful':code===null&&signal==='SIGTERM'&&termination.succeeded?'controller-terminated':'rejected'};
+    if(!acceptsNativeExit(exit)){const error=probeFailure('OWNER_NATIVE_EXIT_NOT_ACCEPTED');if(killError)error.cause=killError;error.details={nativeExit:exit,earlyTerminal:early,startup:startupEvidence(client,killError)};throw error;}
+    return {event:'end',result:'PASS',scope:PLAN.scope,ownedExitConfirmed:true,nativeExitAccepted:true,nativeExit:exit,visibleDwmAcceptance:'NOT_ASSESSED'};
+}
+function stageErrorProjection(error,stage){
+    const messages={'Snapshot unavailable':'snapshot-unavailable','A frame mismatch':'a-color-mismatch','B frame mismatch':'b-color-mismatch','Old request not retired':'old-request-not-retired','Pixels retained in diagnostics':'pixels-in-diagnostics','Ended media still produces snapshot':'ended-snapshot-available','load-command-failed-or-unattributed':'load-command-failed-or-unattributed'};
+    const codes=new Set(['OWNER_NATIVE_EXIT_NOT_ACCEPTED','OWNER_HELPER_START_FAILED','OWNER_SNAPSHOT_CAPABILITY_MISSING','OWNER_BASELINE_CONTRACT_MISMATCH','OWNER_GUI_MODE_REQUIRED','invalid-helper-handshake','missing-helper-capability','unexpected-libmpv-version']);
+    const states=new Set(['FAILED','HELPER_DIED','TIMED_OUT','GENERATION_RETIRED','CANCELLED']);
+    const stages=new Set(['handshake','sample-A','retire-A','sample-B','end-file','owned-exit']);
+    const message=String(error?.message||'').slice(0,4096);
+    return {stage:stages.has(stage)?stage:null,reason:Object.hasOwn(messages,message)?messages[message]:(/^timeout:[1-9][0-9]*:end-file$/.test(message)?'end-file-timeout':null),code:codes.has(error?.code)?error.code:null,state:states.has(error?.state)?error.state:null,messageSha256:sha(message)};
+}
 async function startProbeHelper(client) {
     let step='controller-start';
     try {
@@ -47,11 +76,7 @@ async function startProbeHelper(client) {
         try{await client.kill();}catch(failure){cleanupError=startupEvidence(client,failure).error;}
         // exitPromise settles on exit, earlier than stdout/stderr close. Allow
         // a bounded drain before projecting native fatal tags and final status.
-        if(client.child&&!client.closeOrdering.some(row=>row.name==='process-close'))await new Promise(resolve=>{
-            const child=client.child;let timer;
-            const done=()=>{clearTimeout(timer);child.removeListener('close',done);resolve();};
-            child.once('close',done);timer=setTimeout(done,1000);
-        });
+        await waitForHelperClose(client);
         const wrapped=probeFailure(error.code||'OWNER_HELPER_START_FAILED');wrapped.cause=error;wrapped.details={step,startup:startupEvidence(client,error),cleanupError};throw wrapped;
     }
 }
@@ -111,7 +136,8 @@ async function run(runtimeArg,outputArg,commit) {
     const {NativeHelperClient}=require(packaged?'../electronapp/native-helper/controller':'../src/electronapp/native-helper/controller');
     const baseline=require(packaged?'../electronapp/native-helper/service':'../src/electronapp/native-helper/service');
     const decode=require(packaged?'../electronapp/native-helper/preview-snapshot':'../src/electronapp/native-helper/preview-snapshot').decode;
-    const client=new NativeHelperClient({helperPath:helper,libmpvPath:dll,parentWindowHandle:host.getNativeWindowHandle().readBigUInt64LE().toString(),...probeConfiguration(manifest,baseline),onTerminal:record=>trace('helper-terminal',{name:record.name,startup:startupEvidence(client,null)})});
+    const exitState={shutdownRequested:false,unexpectedTerminal:null};
+    const client=new NativeHelperClient({helperPath:helper,libmpvPath:dll,parentWindowHandle:host.getNativeWindowHandle().readBigUInt64LE().toString(),...probeConfiguration(manifest,baseline),onTerminal:record=>{noteProbeTerminal(exitState,record);trace('helper-terminal',{name:record.name,startup:startupEvidence(client,null)});}});
     let finished=false,stage='handshake';
     host.on('close',event=>{if(!finished)event.preventDefault();});
     try {
@@ -141,15 +167,16 @@ async function run(runtimeArg,outputArg,commit) {
         stage='end-file';trace(stage);await client.waitForGenerationEvent(b,'end-file',10000);
         if((await client.request('preview-snapshot',{}, {generationId:b})).ready!==false)throw Error('Ended media still produces snapshot');
         log({event:'ended',snapshotUnavailable:true});
-        stage='owned-exit';trace(stage);await client.kill();
-        log({event:'end',result:'PASS',scope:PLAN.scope,ownedExitConfirmed:client.exited,visibleDwmAcceptance:'NOT_ASSESSED'});
+        stage='owned-exit';trace(stage);log(await finishOwnerProbe(client,exitState));
     } catch(error) {
-        trace('failure',{failedStage:stage,details:error.details||null});log({event:'failure',stage,details:error.details||null});throw error;
+        const projection=stageErrorProjection(error,stage),details={stageError:projection,evidence:error.details||null};
+        trace('failure',{failedStage:stage,details});log({event:'failure',stage,details});
+        const wrapped=probeFailure(projection.code||'OWNER_STAGE_FAILED');wrapped.cause=error;wrapped.details=details;throw wrapped;
     } finally {
         trace('cleanup-start');await client.kill();trace('helper-exit-confirmed',{exited:client.exited});finished=true;if(!host.isDestroyed())host.destroy();trace('app-quit');app.quit();
     }
 }
-module.exports={PLAN,clip,loadProbeClip,assertNoSnapshotDiagnostics,probeConfiguration,auditSourceContract,startupEvidence,startProbeHelper};
+module.exports={PLAN,clip,loadProbeClip,assertNoSnapshotDiagnostics,probeConfiguration,auditSourceContract,startupEvidence,startProbeHelper,noteProbeTerminal,finishOwnerProbe,stageErrorProjection};
 const directInvocation=isDirectInvocation();
 if(process.versions.electron&&process.defaultApp&&process.type==='browser')trace('module-evaluated',{directInvocation,argv1Basename:process.argv[1]?path.basename(process.argv[1]):null});
 if(directInvocation) {
