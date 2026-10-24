@@ -151,42 +151,92 @@ function childEnvironment(plan, inherited = process.env) {
     environment.APPDATA = path.join(plan.out, 'profile'); environment.LOCALAPPDATA = path.join(plan.out, 'profile', 'local'); environment.MPV_HOME = path.join(plan.out, 'profile', 'mpv');
     environment.TEMP = path.join(plan.out, 'tmp'); environment.TMP = environment.TEMP; return environment;
 }
-async function run(file, explicit) {
+function validatePhase(plan, phase, exit) {
+    let receipt, stages;
+    try {
+        receipt = JSON.parse(fs.readFileSync(path.join(plan.out, phase + '.json')));
+        stages = fs.readFileSync(path.join(plan.out, phase + '.stages.ndjson'), 'utf8').trim().split('\n').map(line => JSON.parse(line));
+    } catch (_) {throw Error('missing-or-invalid-phase-evidence:' + phase);}
+    if (receipt.status !== 'passed' || receipt.phase !== phase || receipt.pid !== exit.pid || exit.code !== 0 || exit.timedOut ||
+        JSON.stringify(receipt.identity) !== JSON.stringify(plan.identity)) throw Error('native-phase-failed:' + phase);
+    const required = phase === 'entry' ? ['module-evaluated', 'main-enter', 'profile-isolated', 'app-ready', 'entry-complete'] :
+        ['module-evaluated', 'main-enter', 'profile-isolated', 'app-ready', 'helper-child-start', 'helper-ready', 'phase-complete'];
+    let previous = -1;
+    for (const name of required) {
+        const index = stages.findIndex((row, i) => i > previous && row.stage === name && row.pid === exit.pid);
+        if (index < 0) throw Error('missing-phase-stage:' + name); previous = index;
+    }
+    if (phase === 'entry' && (receipt.evidence !== 'fixed-Electron-entry-only' || receipt.checks?.appReady !== true ||
+        receipt.checks.windowsCreated !== 0 || receipt.checks.helperStarted !== false || receipt.helpers?.length !== 0)) throw Error('entry-only-contract-failed');
+    return receipt;
+}
+async function executePhase(plan, file, phase) {
+    const entry = phase === 'entry', milliseconds = entry ? 20000 : 120000;
+    for (const suffix of ['.stdout', '.json', '.running.json', '.stages.ndjson', '.launch.json']) if (fs.existsSync(path.join(plan.out, phase + suffix))) throw Error('previous-receipt-exists-use-fresh-output');
+    const output = fs.openSync(path.join(plan.out, phase + '.stdout'), 'wx');
+    let timedOut = false, child, timer, exit, launchError;
+    try {
+        child = spawn(path.join(plan.runtime, 'x64', 'electron', 'electron.exe'), [plan.harness, entry ? '--execute-electron-entry-smoke' : '--execute-hidden-native', '--plan=' + file, '--phase=' + phase],
+            {cwd: plan.out, env: childEnvironment(plan), windowsHide: true, shell: false, stdio: ['ignore', output, output]});
+        const done = new Promise((resolve, reject) => {
+            child.once('error', error => {if (!child.pid) reject(error); else {launchError = error; child.kill();}});
+            child.once('exit', (code, signal) => resolve({code, signal}));
+        }); done.catch(() => {});
+        timer = setTimeout(() => {timedOut = true; child.kill();}, milliseconds);
+        try {
+            writeNew(path.join(plan.out, phase + '.launch.json'), {schema: 1, stage: 'electron-child-start', phase, pid: child.pid || null,
+                deadlineMs: milliseconds, imageSha256: plan.identity.electronSha256, entryOnly: entry});
+            exit = {phase, pid: child.pid, ...await done, timedOut};
+        } catch (error) {if (child.pid && child.exitCode === null) {child.kill(); await done.catch(() => {});} throw error;}
+        if (launchError) throw launchError;
+        if (timedOut) throw Error(entry ? 'entry-deadline-no-native-requested' : 'outer-deadline-owned-helper-exit-UNCERTAIN-inspect-running-receipt');
+        validatePhase(plan, phase, exit); return exit;
+    } catch (error) {error.phaseExit = exit; throw error;}
+    finally {clearTimeout(timer); fs.closeSync(output);}
+}
+function validatedRun(file, explicit) {
     if (explicit !== true || process.platform !== 'win32' || process.arch !== 'x64') throw Error('explicit-Windows-x64-hidden-execution-required');
-    const plan = readPlan(file);
-    // Recheck the source-bound payload just before starting a process. No installer/Host/main.js is executed.
-    const identity = verifyRuntime(path.resolve(__dirname, '..'), plan.runtime, plan.zip);
+    const plan = readPlan(file), identity = verifyRuntime(path.resolve(__dirname, '..'), plan.runtime, plan.zip);
     if (JSON.stringify(identity) !== JSON.stringify(plan.identity)) throw Error('candidate-changed-after-preparation');
-    for (const phase of plan.phases) if (fs.existsSync(path.join(plan.out, phase + '.json')) || fs.existsSync(path.join(plan.out, phase + '.stdout'))) throw Error('previous-receipt-exists-use-fresh-output');
-    const environment = childEnvironment(plan);
+    return {plan, identity};
+}
+async function entrySmoke(file, explicit) {
+    const {plan, identity} = validatedRun(file, explicit);
+    if (fs.existsSync(path.join(plan.out, 'entry-coordinator.json'))) throw Error('previous-receipt-exists-use-fresh-output');
+    try {
+        const exit = await executePhase(plan, file, 'entry');
+        writeNew(path.join(plan.out, 'entry-coordinator.json'), {status: 'passed', identity, exit, evidence: 'fixed-Electron-entry-only'}); return exit;
+    } catch (error) {
+        writeNew(path.join(plan.out, 'entry-coordinator.json'), {status: 'failed', identity, exit: error.phaseExit || null, error: error.message, native: 'NOT_REQUESTED'}); throw error;
+    }
+}
+async function run(file, explicit) {
+    const {plan, identity} = validatedRun(file, explicit);
+    // A short actual-Electron entry proof precedes the longer native phases.
+    let entry;
+    try {entry = JSON.parse(fs.readFileSync(path.join(plan.out, 'entry-coordinator.json')));} catch (_) {throw Error('entry-smoke-required');}
+    if (entry.status !== 'passed' || JSON.stringify(entry.identity) !== JSON.stringify(identity)) throw Error('entry-smoke-required');
+    validatePhase(plan, 'entry', entry.exit);
+    for (const phase of plan.phases) for (const suffix of ['.stdout', '.json', '.running.json', '.stages.ndjson', '.launch.json']) if (fs.existsSync(path.join(plan.out, phase + suffix))) throw Error('previous-receipt-exists-use-fresh-output');
     const exits = [];
     try {
-    for (const phase of plan.phases) {
-        const output = fs.openSync(path.join(plan.out, phase + '.stdout'), 'wx');
-        let timedOut = false;
-        try {
-            const child = spawn(path.join(plan.runtime, 'x64', 'electron', 'electron.exe'), [plan.harness, '--execute-hidden-native', '--plan=' + file, '--phase=' + phase],
-                {cwd: plan.out, env: environment, windowsHide: true, shell: false, stdio: ['ignore', output, output]});
-            const timer = setTimeout(() => {timedOut = true; child.kill();}, 120000);
-            let exit;
-            try {exit = await new Promise((resolve, reject) => {child.once('error', reject); child.once('exit', (code, signal) => resolve({code, signal}));});}
-            finally {clearTimeout(timer);}
-            exits.push({phase, ...exit, timedOut});
-            if (timedOut) throw Error('outer-deadline-owned-helper-exit-UNCERTAIN-inspect-running-receipt');
-            if (exit.code !== 0 || JSON.parse(fs.readFileSync(path.join(plan.out, phase + '.json'))).status !== 'passed') throw Error('native-phase-failed:' + phase);
-        } finally {fs.closeSync(output);}
+        for (const phase of plan.phases) exits.push(await executePhase(plan, file, phase));
+        writeNew(path.join(plan.out, 'coordinator.json'), {status: 'passed', identity, exits, evidence: plan.evidence}); return exits;
+    } catch (error) {
+        if (error.phaseExit) exits.push(error.phaseExit);
+        writeNew(path.join(plan.out, 'coordinator.json'), {status: 'failed', identity, exits, error: error.message, helperExit: exits.some(e => e.timedOut) ? 'UNCERTAIN' : 'inspect-phase-receipt'}); throw error;
     }
-    writeNew(path.join(plan.out, 'coordinator.json'), {status: 'passed', identity, exits, evidence: plan.evidence}); return exits;
-    } catch (error) {writeNew(path.join(plan.out, 'coordinator.json'), {status: 'failed', identity, exits, error: error.message, helperExit: exits.some(e => e.timedOut) ? 'UNCERTAIN' : 'inspect-phase-receipt'}); throw error;}
 }
 async function main(argv) {
     const [mode, ...rest] = argv;
     if (mode === 'prepare') {
         const a = argumentsOf(rest, ['--runtime', '--zip', '--out']); if (Object.values(a).some(v => typeof v !== 'string') || Object.keys(a).length !== 3) throw Error('prepare-needs-runtime-zip-out');
         const p = prepare({repo: path.resolve(__dirname, '..'), runtime: a['--runtime'], zip: a['--zip'], out: a['--out']}); console.log(JSON.stringify({status: 'prepared-NOT-RUN', plan: path.join(p.out, 'plan.json')}));
+    } else if (mode === 'entry-smoke') {
+        const a = argumentsOf(rest, ['--plan', '--execute-electron-entry-smoke']); await entrySmoke(a['--plan'], a['--execute-electron-entry-smoke']);
     } else if (mode === 'run') {
         const a = argumentsOf(rest, ['--plan', '--execute-hidden-native']); await run(a['--plan'], a['--execute-hidden-native']);
-    } else throw Error('Usage: prepare --runtime=PATH --zip=PATH --out=NEW_PATH | run --plan=PATH --execute-hidden-native');
+    } else throw Error('Usage: prepare --runtime=PATH --zip=PATH --out=NEW_PATH | entry-smoke --plan=PATH --execute-electron-entry-smoke | run --plan=PATH --execute-hidden-native');
 }
 if (require.main === module) main(process.argv.slice(2)).catch(error => {console.error(error.message); process.exitCode = 1;});
-module.exports = {CANDIDATE, LIMITS, sha, hashFile, regular, writeNew, argumentsOf, zipReceipts, verifyPayload, verifyRuntime, avi, prepare, readPlan, childEnvironment, run};
+module.exports = {CANDIDATE, LIMITS, sha, hashFile, regular, writeNew, argumentsOf, zipReceipts, verifyPayload, verifyRuntime, avi, prepare, readPlan, childEnvironment, validatePhase, entrySmoke, run};

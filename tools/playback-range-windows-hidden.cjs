@@ -2,6 +2,23 @@
 // This file never imports Electron or starts a process when required by Node tests.
 const fs = require('node:fs');
 const path = require('node:path');
+let stageFile = null, phaseContext = null;
+const stageHistory = [];
+function stage(name, details = {}) {
+    const row = {schema: 1, stage: name, pid: process.pid, at: new Date().toISOString(), ...details};
+    stageHistory.push(row); const line = JSON.stringify(row) + '\n'; process.stdout.write(line);
+    if (stageFile) {const fd = fs.openSync(stageFile, 'a'); try {fs.writeSync(fd, line); fs.fsyncSync(fd);} finally {fs.closeSync(fd);}}
+}
+function isEntrypoint(commonJsMain, runtime = process, filename = __filename) {
+    if (commonJsMain) return true;
+    if (!runtime.versions.electron || runtime.type !== 'browser' || typeof runtime.argv[1] !== 'string') return false;
+    const normalize = value => runtime.platform === 'win32' ? path.resolve(value).toLowerCase() : path.resolve(value);
+    return normalize(runtime.argv[1]) === normalize(filename) && runtime.argv.some(arg => ['--execute-hidden-native', '--execute-electron-entry-smoke'].includes(arg));
+}
+// Before loading support, validating the payload, or awaiting app readiness.
+if (process.versions.electron && process.type === 'browser' && process.argv.some(arg => ['--execute-hidden-native', '--execute-electron-entry-smoke'].includes(arg))) {
+    stage('module-evaluated', {electron: process.versions.electron, processType: process.type, commonJsMain: require.main === module});
+}
 const http = require('node:http');
 const assert = require('node:assert/strict');
 const support = require('./playback-range-windows-smoke.cjs');
@@ -62,25 +79,47 @@ function cacheSnapshot(root, maxBytes) {
     return {index, bytes, physicalBytes};
 }
 async function main(argv) {
-    const args = support.argumentsOf(argv, ['--execute-hidden-native', '--plan', '--phase']);
-    if (process.platform !== 'win32' || process.arch !== 'x64' || !process.versions.electron || args['--execute-hidden-native'] !== true || !['populate', 'reopen'].includes(args['--phase'])) throw Error('explicit-fixed-Windows-Electron-required');
+    stage('main-enter');
+    const args = support.argumentsOf(argv, ['--execute-hidden-native', '--execute-electron-entry-smoke', '--plan', '--phase']);
+    const entryOnly = args['--execute-electron-entry-smoke'] === true && args['--execute-hidden-native'] === undefined && args['--phase'] === 'entry';
+    const native = args['--execute-hidden-native'] === true && args['--execute-electron-entry-smoke'] === undefined && ['populate', 'reopen'].includes(args['--phase']);
+    if (process.platform !== 'win32' || process.arch !== 'x64' || !process.versions.electron || process.type !== 'browser' || !entryOnly && !native) throw Error('explicit-fixed-Windows-Electron-required');
     const phase = args['--phase'], plan = support.readPlan(args['--plan']);
-    if (support.hashFile(process.execPath) !== plan.identity.electronSha256) throw Error('wrong-Electron-image');
     const output = path.join(plan.out, phase + '.json');
-    if (fs.existsSync(output) || fs.existsSync(path.join(plan.out, phase + '.running.json'))) throw Error('receipt-already-exists');
+    if (['.json', '.running.json', '.stages.ndjson'].some(suffix => fs.existsSync(path.join(plan.out, phase + suffix)))) throw Error('receipt-already-exists');
+    stageFile = path.join(plan.out, phase + '.stages.ndjson');
+    support.writeNew(stageFile, stageHistory.map(row => JSON.stringify(row) + '\n').join(''));
+    phaseContext = {plan, phase, output}; stage('plan-validated');
+    if (support.hashFile(process.execPath) !== plan.identity.electronSha256) throw Error('wrong-Electron-image');
     if (phase === 'reopen' && JSON.parse(fs.readFileSync(path.join(plan.out, 'populate.json'))).status !== 'passed') throw Error('populate-required');
-    // Verify the full candidate again before importing any bundled runtime JS.
-    support.verifyRuntime(path.resolve(__dirname, '..'), plan.runtime, plan.zip);
     const {app, BrowserWindow} = require('electron');
+    // Own physical paths before the expensive repeated payload check. No product
+    // code is imported yet; the coordinator already verified the candidate.
+    const profile = path.join(plan.out, 'profile');
+    for (const name of ['electron', 'local', 'mpv', 'logs']) {
+        const directory = path.join(profile, name); fs.mkdirSync(directory, {recursive: true});
+        if (fs.realpathSync(directory) !== directory) throw Error('redirected-owned-directory');
+    }
+    app.setPath('appData', profile); app.setPath('userData', path.join(profile, 'electron')); app.setPath('sessionData', path.join(profile, 'electron'));
+    process.env.APPDATA = profile; process.env.LOCALAPPDATA = path.join(profile, 'local'); process.env.MPV_HOME = path.join(profile, 'mpv');
+    app.setAppLogsPath(path.join(profile, 'logs')); stage('profile-isolated', {appAlreadyReady: app.isReady()});
+    stage('candidate-validation-start');
+    support.verifyRuntime(path.resolve(__dirname, '..'), plan.runtime, plan.zip);
+    stage('candidate-validation-complete');
     const launch = require(path.join(plan.runtime, 'electronapp', 'enhanced', 'playback-range-launch.js'));
-    const selected = launch.prepareLaunch(['--ete-range-cache-trial', '--ete-range-cache-config=' + path.join(plan.out, 'config.json'), '--ete-range-cache-profile=' + path.join(plan.out, 'profile')]);
-    assert(selected.enabled); assert.deepEqual({...selected.config, root: undefined}, {...support.LIMITS, root: undefined});
-    launch.activateProfile(app, selected, process.env); // Before app.ready, any window, service or helper.
-    app.setAppLogsPath(path.join(plan.out, 'profile', 'logs'));
+    const selected = launch.prepareLaunch(['--ete-range-cache-trial', '--ete-range-cache-config=' + path.join(plan.out, 'config.json'), '--ete-range-cache-profile=' + profile]);
+    assert(selected.enabled); assert.deepEqual({...selected.config}, {...support.LIMITS, prefetchBytes: support.LIMITS.preloadMB * 1000000, root: path.join(profile, 'cache')});
+    launch.activateProfile(app, selected, process.env);
     const result = {schema: 1, phase, status: 'running', identity: plan.identity, limits: support.LIMITS, pid: process.pid,
         environment: {APPDATA: process.env.APPDATA, LOCALAPPDATA: process.env.LOCALAPPDATA, MPV_HOME: process.env.MPV_HOME, TEMP: process.env.TEMP, TMP: process.env.TMP}, helpers: [], checks: {}};
     const running = path.join(plan.out, phase + '.running.json');
-    const checkpoint = () => fs.writeFileSync(running, JSON.stringify(result, null, 2) + '\n'); checkpoint();
+    const checkpoint = () => fs.writeFileSync(running, JSON.stringify({...result, lastStage: stageHistory.at(-1).stage}, null, 2) + '\n'); checkpoint();
+    if (entryOnly) {
+        stage('waiting-app-ready'); await app.whenReady(); stage('app-ready');
+        assert(app.isReady()); assert.equal(BrowserWindow.getAllWindows().length, 0, 'entry smoke creates no BrowserWindow');
+        result.status = 'passed'; result.evidence = 'fixed-Electron-entry-only'; result.checks = {appReady: true, windowsCreated: 0, helperStarted: false};
+        stage('entry-complete'); checkpoint(); support.writeNew(output, result); app.exit(0); return;
+    }
     let service, mainWindow, origin, fatal = null, endpoint, generation, visibilityTimer;
     const clients = [], windows = [], loads = [], stagedKeys = new Map();
     const deadline = setTimeout(() => {fatal = Error('owned-run-deadline');}, 90000);
@@ -95,7 +134,7 @@ async function main(argv) {
         if (op === 'begin-generation') generation = response.generationId; return response;
     }
     const snapshot = () => cacheSnapshot(selected.directories.cache, support.LIMITS.maxBytes);
-    async function stage(item, label) {
+    async function prepareMedia(item, label) {
         await call('begin-generation', {label});
         const source = origin.origin + '/Videos/' + item + '/stream.avi?Static=true&PlaySessionId=' + phase + '-' + label;
         const context = {source, serverOrigin: origin.origin, serverId: 'synthetic-loopback-server', accountId: 'anonymous-fixture', itemId: item,
@@ -124,7 +163,7 @@ async function main(argv) {
         await until(() => clients.at(-1).currentGenerationId === null, 'native-stop-generation');
     }
     try {
-        await app.whenReady();
+        stage('waiting-app-ready'); await app.whenReady(); stage('app-ready'); checkpoint();
         class HiddenWindow extends BrowserWindow {
             constructor(options) {assert.equal(options.show, false, 'all constructors require hidden windows'); super(options); protectHiddenWindow(this); windows.push(this);}
         }
@@ -140,20 +179,20 @@ async function main(argv) {
         const {NativeHelperClient} = require(path.join(bundled, 'controller.js'));
         class TracedClient extends NativeHelperClient {
             constructor(options) {super(options); clients.push(this); this.smokeRecord = {pid: null, exited: false, handshake: null}; result.helpers.push(this.smokeRecord);}
-            async start() {const started = super.start(); this.smokeRecord.pid = this.child && this.child.pid; checkpoint(); const value = await started; this.smokeRecord.handshake = this.handshake; checkpoint(); return value;}
+            async start() {stage('helper-start-request'); const started = super.start(); this.smokeRecord.pid = this.child && this.child.pid; stage('helper-child-start', {helperPid: this.smokeRecord.pid || null}); checkpoint(); const value = await started; this.smokeRecord.handshake = this.handshake; stage('helper-ready', {helperPid: this.smokeRecord.pid}); checkpoint(); return value;}
             load(args) {loads.push({source: args[1], generation: this.currentGenerationId}); return super.load(args);}
         }
         const {createService} = require(path.join(bundled, 'service.js'));
         service = createService({electron: {BrowserWindow: HiddenWindow}, NativeHelperClient: TracedClient, getMainWindow: () => mainWindow,
             getWebContents: () => mainWindow.webContents, runtimeRoot: plan.runtime, rangeCache: selected.config});
-        const created = await service.call('create'); endpoint = created.endpointId; result.handshake = created;
+        stage('service-create-start'); const created = await service.call('create'); endpoint = created.endpointId; result.handshake = created; stage('service-ready'); checkpoint();
         await call('observe', {properties: ['core-idle', 'time-pos', 'duration', 'pause']});
         if (old) {
             const before = snapshot(); assert.equal(before.index.lastKey, old.lastKey);
             assert.deepEqual(before.index.entries[old.lastKey].blocks, old.blocks, 'cross-process disk bytes unchanged');
             assert(before.index.entries[old.lastKey].blocks['0'], 'prefix block required for deterministic reuse proof');
         }
-        const a = await stage('A', phase + '-A'), startRow = origin.rows.length;
+        const a = await prepareMedia('A', phase + '-A'), startRow = origin.rows.length;
         result.checks.nativeA = await play(a, 'A');
         await stop();
         const stoppedA = snapshot(), keyA = stoppedA.index.lastKey;
@@ -166,21 +205,21 @@ async function main(argv) {
             assert(requests.some(row => row.start === 0 && row.end === 0), 'fresh version/authorization eligibility probe');
             assert(!requests.some(row => row.start === 0 && row.end > 0), 'helper consumed the retained first block without fetching it again');
             result.checks.crossProcessRangeReuse = {retainedPrefixBlock: true, freshProbe: true, refetchedPrefixBlock: false};
-            const b = await stage('B', 'prepare-only-B');
+            const b = await prepareMedia('B', 'prepare-only-B');
             assert.equal(snapshot().index.lastKey, keyA, 'context/browsing preparation does not clear last');
             result.checks.preparationPreservesLast = true;
             result.checks.nativeB = await play(b, 'B');
             await until(() => {const s = snapshot(); return s.index.lastKey !== keyA && !s.index.entries[keyA];}, 'other-actual-play-clears-A');
             const keyB = snapshot().index.lastKey; result.checks.otherActualPlayClears = true;
             // Stall a missing raw block before any A playback; probes still complete.
-            const cancelledSource = await stage('A', 'cancel-held-A'); origin.hold(row => row.item === 'A' && row.end > row.start);
+            const cancelledSource = await prepareMedia('A', 'cancel-held-A'); origin.hold(row => row.item === 'A' && row.end > row.start);
             const retiredGeneration = generation;
             await call('command', {data: ['loadfile', cancelledSource]});
             await until(() => !!origin.held(), 'origin-held-range');
             await stop();
             await until(() => origin.held().row.closed, 'origin-request-physically-cancelled', 6000);
             assert.equal(origin.held().row.bytesScheduled, 0);
-            const replacement = await stage('B', 'after-cancel-B'); result.checks.afterCancelNativeB = await play(replacement, 'B');
+            const replacement = await prepareMedia('B', 'after-cancel-B'); result.checks.afterCancelNativeB = await play(replacement, 'B');
             await until(() => !!snapshot().index.entries[keyB].blocks['0'], 'replacement-B-prefix-committed');
             origin.held().release(); await delay(100);
             assert.equal(snapshot().index.lastKey, keyB); assert.equal(generation, clients.at(-1).currentGenerationId); assert.notEqual(generation, retiredGeneration);
@@ -198,7 +237,7 @@ async function main(argv) {
         result.checks.ownedHelperExitAndCacheClose = true;
         assert(windows.every(w => w.isDestroyed() || !w.isVisible())); assert(!fatal);
         result.status = 'passed';
-    } catch (error) {result.status = 'failed'; result.error = String(error.message).slice(0, 300);}
+    } catch (error) {result.status = 'failed'; result.error = String(error.message).slice(0, 300); stage('native-phase-failed', {error: result.error});}
     finally {
         clearInterval(visibilityTimer); clearTimeout(deadline);
         // Keep ownership even on failure; teardown errors prevent PASS and are retained.
@@ -211,8 +250,12 @@ async function main(argv) {
         if (origin) {result.originRequests = origin.rows; try {await origin.close();} catch (error) {errors.push('origin:' + error.message);}}
         for (const window of windows) if (!window.isDestroyed()) window.destroy();
         if (errors.length) {result.status = 'failed'; result.cleanupErrors = errors;}
-        checkpoint(); support.writeNew(output, result); app.exit(result.status === 'passed' ? 0 : 1);
+        stage('phase-complete', {status: result.status}); checkpoint(); support.writeNew(output, result); app.exit(result.status === 'passed' ? 0 : 1);
     }
 }
-if (require.main === module) main(process.argv.slice(2)).catch(error => {console.error(error.message); process.exitCode = 1; if (process.versions.electron) require('electron').app.exit(1);});
-module.exports = {protectHiddenWindow, fixtureServer, cacheSnapshot};
+if (isEntrypoint(require.main === module)) main(process.argv.slice(2)).catch(error => {
+    stage('entry-failed', {error: String(error.message).slice(0, 300)}); console.error(error.message); process.exitCode = 1;
+    if (phaseContext && !fs.existsSync(phaseContext.output)) support.writeNew(phaseContext.output, {schema: 1, phase: phaseContext.phase, status: 'failed', error: String(error.message).slice(0, 300), lastStage: stageHistory.at(-1).stage, pid: process.pid, nativeOutcome: 'NOT_ESTABLISHED'});
+    if (process.versions.electron && process.type === 'browser') require('electron').app.exit(1);
+});
+module.exports = {protectHiddenWindow, fixtureServer, cacheSnapshot, isEntrypoint};

@@ -31,6 +31,17 @@ node tools/playback-range-windows-smoke.cjs prepare "--zip=$zip" "--runtime=$run
 if ($LASTEXITCODE -ne 0) { throw 'Preparation failed; do not execute.' }
 ```
 
+First have the coordinating operator run the short **actual fixed-Electron entry check**. It calls the verified candidate's `electron.exe` with the same CJS-file argument shape as the native run. It creates no BrowserWindow, helper or HTTP fixture, waits for app-ready and writes an entry receipt. It has a 20-second outer deadline and never automatically continues into native playback:
+
+```powershell
+node tools/playback-range-windows-smoke.cjs entry-smoke "--plan=$out\plan.json" --execute-electron-entry-smoke
+if ($LASTEXITCODE -ne 0) { throw 'Entry check failed; preserve evidence and stop.' }
+Get-Content -LiteralPath "$out\entry-coordinator.json"
+Get-Content -LiteralPath "$out\entry.stages.ndjson"
+```
+
+A pass requires an actual observed Electron child exit, matching process/image identity, ordered module/main/profile/app-ready/completion stages and a successful entry-only receipt. Calling the harness with Node, an exit code alone, or substituted loader tests cannot establish this result. Full native execution refuses a missing/failed entry proof. Keep the same prepared output for the later native phases; after failure use a fresh preparation, preserving the previous evidence.
+
 Only when the coordinating operator authorizes the hidden native run, execute this separate command on Windows x64. It starts hidden HWNDs; it is not a literal windowless command:
 
 ```powershell
@@ -43,7 +54,7 @@ The script never starts the installer, Host or product `main.js`; it imports the
 
 Each AVI is exactly 33,182,440 bytes (8 seconds, 24 fps, silent raw 320×180), generated without an encoder dependency. The test uses a **16 MiB committed-media cap**, a **64 MiB free-space floor** and **1 MiB/s background limit**. These are fixture values, not product defaults. The selected 70%/300 MB schema stays unchanged; this short native method does not attempt a 300 MB next preload or certify its rate limit. The cap applies to indexed media bytes (plus bounded index/atomic-write overhead); fixtures, runtime binaries and Electron profile/logs are outside that cap. Existing mpv memory-cache settings are not changed or interpreted as disk persistence.
 
-Receipts are `populate.json`, `reopen.json`, per-phase `.running.json` / `.stdout`, and `coordinator.json`. A pass requires both successful phase receipts and observed separate process exits. Running receipts retain owned PIDs and the isolated environment on failure. Never rerun over evidence; prepare a new output. The outer 120-second deadline terminates only its own Electron child, stops subsequent phases and records helper exit as **UNCERTAIN**; inspect that run's owned-helper PID rather than declaring cleanup. Ordinary failure cleanup awaits each owned helper's exit. A port collision or unavailable D3D11 session is a failure to execute this method, not permission to use an ordinary profile or relax a validator.
+Receipts include `entry.json` / `entry-coordinator.json`, `populate.json`, `reopen.json`, per-phase `.launch.json`, `.stages.ndjson`, `.running.json` / `.stdout`, and `coordinator.json`. The launch record is written by the Node coordinator immediately after spawning; the harness emits a module-evaluated stdout record before loading support code, then persists it and subsequent stages once the owned plan is validated. Profile isolation precedes the expensive repeated candidate check. App-ready, helper-start-request, actual child PID and helper-ready are distinct stages. A pass requires both successful phase receipts and observed separate process exits. Running receipts retain owned PIDs and the isolated environment on failure. Never rerun over evidence; prepare a new output. The outer 120-second deadline terminates only its own Electron child, stops subsequent phases and records helper exit as **UNCERTAIN**; inspect that run's owned-helper PID rather than declaring cleanup. Ordinary failure cleanup awaits each owned helper's exit. A port collision or unavailable D3D11 session is a failure to execute this method, not permission to use an ordinary profile or relax a validator.
 
 ## Resource choices still requiring product agreement
 
@@ -54,3 +65,5 @@ A compact proposal is a **1 / 2 / 5 GB shared disk limit**, with **2 GB recommen
 For background access, propose **non-metered networks only, current playback first, at most 2 MB/s**; offer **manual-only/off** and **all networks with an explicit limit** as alternatives. A 300 MB prefix needs at least about 150 seconds at 2 MB/s, longer with foreground preemption. Reliable Windows metered-network detection and an unknown-network refusal rule would need product integration before claiming that policy; they do not exist in this smoke tool. The user should choose the shared capacity and background access policy. Block sizes, request deadlines and atomic/index details remain engineering controls, not additional user settings.
 
 The minimized `tests/fixtures/range-runtime-v3-manifest.json` was emitted by the exact manifest-generation PowerShell block in candidate `162dc69`, with synthetic input files; it is not a copy of the complete Windows artifact. Its companion records the block hash and payload bytes. Regenerate explicitly with `node tests/helpers/range-runtime-v3-fixture.cjs --generate` (requires an existing PowerShell 7); ordinary regressions consume the checked-in fixture without launching PowerShell. `tests/playback-range-runtime-manifest.test.cjs` checks its pinned generator identity and both valid hash-only rows and refusal cases.
+
+Electron v44.4.2's [default launcher](https://github.com/electron/electron/blob/v44.4.2/default_app/main.ts) loads the resolved file with dynamic `import(fileURL)`. The harness therefore recognizes its explicit browser-process script entry even when `require.main !== module`, while imports by another script or renderer stay inert. A real Node ESM/CJS check and substituted whole-entry regressions reproduce the preceding guard's missing main dispatch and test staged success/failure; these remain loader-contract evidence, not fixed Windows Electron/native execution. A no-stage historical timeout alone leaves its actual first cause unknown. The short actual-Electron check must be executed separately before attributing or accepting the Windows behavior.
