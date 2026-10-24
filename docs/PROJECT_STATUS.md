@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-24 — 握手身份合同与有界启动错误证据
+
+e8e7f50的真实Windows入口smoke、自检及四阶段2233文件清单均通过，1689项测试通过；owner进入app ready／窗口创建后在helper handshake阶段约1.5秒exit1，helper退出已确认，没有成功试验包。旧报告未保存controller中的helper stderr、退出码或ready内容，不能追溯本次确切Native首错，也不能归因为DWM／桌面或已通过的FFI／文件集合。
+
+本地真实controller＋受控OS管道回归证实另一项身份错误：manifest的组件版本v0.41…直接作为握手版本会被拒绝，生产service要求mpv v0.41…。探针现复用生产service固定版本与SHA合同，检查与manifest／API2.5一致，不从机器学习允许值；这项已证实修复不冒充当前首因已定位。启动失败现保留controller错误码、可公开的固定消息、预期／实际ready投影、原退出状态、协议故障、关闭顺序和有界stderr fatal标签／摘要，清理后再等最多1秒流close，不伪造退出或放宽90秒owner。相关50项：49pass／0fail／1 Linux跳过的Windows GUI用例；公开离线1610项／1599pass／0fail／11平台skip。另有纯只读--audit-contract，不加载目标libmpv／helper／Electron；生产helper本身必须创建子窗口，因此没有符合零窗口约束的真实握手执行命令。当前实测边界及最小只读命令见[握手诊断](WINDOWS_PREVIEW_SNAPSHOT_PROTOCOL.md)。
+
 ## 2026-10-24 — 修正Electron默认启动器下的owner入口
 
 d028f77的真实Windows构建已通过1685项测试／生产Native编译，自检进程exit0且ffiLoaded=true，2233文件在三阶段逐项size／SHA完全一致；当前阻碍为owner子进程90秒超时、无独立报告，未生成验收包。不能继续把已通过的FFI或文件集合当作失败原因，也没有GPU／DWM根因证据。

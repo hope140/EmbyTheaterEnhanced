@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-24 — 区分组件版本并保留helper启动首错
+
+核对e8e7f50实际Windows日志及只读阶段文本，确认selfcheck、GUI入口、四份2233文件清单和1689测试通过；owner已有ready／窗口，失败收窄到helper-start至handshake，退出1且不超时。原generic错误丢失controller内的helper首错；旧进程已退出，不能从产物追溯具体DLL／协议根因。本次不修改已证实通过的入口、FFI或清单，也不推断GPU／DWM。
+
+代码比较发现manifest组件版本v0.41…与生产service的mpv v0.41…不同。用实际controller及生成的受控进程／帧管道复现旧expected值unexpected-libmpv-version，新配置通过；这不是当前generic首因的证明。探针直接消费生产固定SHA／runtime version，并拒绝manifest不符。另覆盖退出23＋helper-fatal、缺预览能力、API／surface／required capability拒绝、spawn ENOENT及流close；所有原错及退出状态进入有界投影，未知文本只存摘要，不存URL／账户路径／像素。相关50项／49pass／0fail／1 Linux平台跳过，公开离线1610项／1599pass／0fail／11平台skip；新静态audit在禁止子进程／Electron／FFI／addon加载的独立Node进程验证通过。
+
+生产helper的ready前置有效parent HWND和CreateWindowExW，不能在“不创建窗口”的约束下做真实握手，未提供或执行伪称无窗口的Work命令，也不假定有同SHA helper。安全替代--audit-contract只读源合同，不运行二进制，不能充当Native验收。完整owner门禁和90秒上限保持，不自行排包；确切Native启动首错仍待受控Windows补证，见[当前命令与边界](WINDOWS_PREVIEW_SNAPSHOT_PROTOCOL.md)。
+
 ## 2026-10-24 — owner CJS入口适配ESM默认启动器
 
 读取真实Windows失败日志并结合只读诊断回报：d028f77的1685项测试与生产Native通过，包内selfcheck exit0／ffiLoaded=true，三份物理清单2233文件size／SHA全同。owner进程90秒后才被所属等待器终止、stdout仅换行／stderr空，无owner报告；旧诊断没有argv或module入口记录，无法仅靠无输出判定桌面／GPU原因。

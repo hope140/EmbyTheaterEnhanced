@@ -10,6 +10,51 @@ function clip(y,u,v) {
 const sha=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
 function trace(stage,fields={}) {process.stderr.write(JSON.stringify({event:'owner-probe-stage',stage,at:new Date().toISOString(),...fields})+'\n');}
 function probeFailure(code) {const error=Error(code);error.code=code;return error;}
+function probeConfiguration(manifest,baseline) {
+    if(manifest.libmpv.sha256!==baseline.EXPECTED_LIBMPV_SHA256||manifest.libmpv.clientApi!=='2.5'||baseline.EXPECTED_LIBMPV_VERSION!=='mpv '+manifest.libmpv.version)throw probeFailure('OWNER_BASELINE_CONTRACT_MISMATCH');
+    return {expectedLibmpvVersion:baseline.EXPECTED_LIBMPV_VERSION};
+}
+function auditSourceContract() {
+    const packaged=fs.existsSync(path.join(__dirname,'registry-input.json'));
+    const manifest=packaged?require('./native-helper-manifest.json'):require('../vendor/native-helper-manifest.json');
+    const baseline=require(packaged?'../electronapp/native-helper/service':'../src/electronapp/native-helper/service');
+    const configuration=probeConfiguration(manifest,baseline);
+    return {scope:'static-source-contract-only',status:'passed',componentVersion:manifest.libmpv.version,expectedRuntimeVersion:configuration.expectedLibmpvVersion,expectedDllSha256:baseline.EXPECTED_LIBMPV_SHA256,nativeHelperStarted:false,dllLoaded:false,visibleDwmAcceptance:'NOT_ASSESSED'};
+}
+function startupEvidence(client,error) {
+    const scalar=(value,pattern)=>typeof value==='string'&&pattern.test(value)?value:null,number=value=>Number.isSafeInteger(value)?value:null;
+    const knownCapabilities=['private-inherited-pipe','native-child-hwnd','gpu-next','d3d11','generation-attribution','preview-snapshot-v1'];
+    const ready=client.handshake,stderr=Buffer.concat((client.stderrChunks||[]).filter(Buffer.isBuffer)).subarray(-8192),text=stderr.toString('utf8');
+    const message=String(error?.message||'').slice(0,4096);
+    const safeMessage=scalar(message,/^(?:helper-start-failed:[A-Za-z0-9_.:-]{1,160}|timeout:helper-ready|invalid-helper-handshake|missing-helper-capability|unexpected-libmpv-version|OWNER_SNAPSHOT_CAPABILITY_MISSING)$/);
+    const systemError=['ENOENT','EACCES','EPERM','EINVAL','ENOMEM','ENOTDIR','EIO','EPIPE'].find(code=>new RegExp('\\b'+code+'\\b').test(message))||null;
+    return {error:{name:scalar(error?.name,/^[A-Za-z0-9_]{1,64}$/),code:scalar(error?.code,/^[A-Za-z0-9_-]{1,80}$/),state:scalar(error?.state,/^[A-Z_]{1,64}$/),systemError,message:safeMessage,messageSha256:sha(message)},
+        expectedRuntimeVersion:client.expectedLibmpvVersion,pid:number(client.child?.pid),exitCode:number(client.child?.exitCode),signal:scalar(client.child?.signalCode,/^[A-Z0-9]{1,16}$/),exited:client.exited===true,transportTerminated:client.transportTerminated===true,
+        protocolFailure:scalar(client.protocolFailure,/^[a-z0-9-]{1,80}$/),
+        handshake:ready?{protocolVersion:number(ready.protocolVersion),helperVersion:scalar(ready.helperVersion,/^[A-Za-z0-9._+-]{1,64}$/),libmpvVersion:scalar(ready.libmpvVersion,/^mpv v[A-Za-z0-9._+-]{1,128}$/),mpvClientApiVersion:number(ready.mpvClientApiVersion),surfaceAttached:ready.surfaceAttached===true,capabilities:knownCapabilities.filter(value=>Array.isArray(ready.capabilities)&&ready.capabilities.includes(value)),queueLimits:{maxPendingFrames:number(ready.queueLimits?.maxPendingFrames),maxPendingBytes:number(ready.queueLimits?.maxPendingBytes)}}:null,
+        stderr:{observedBytes:number(client.stderrObservedBytes),retainedBytes:number(client.stderrRetainedBytes),inspectedTailBytes:stderr.length,tailSha256:sha(stderr),fatalTags:text.split(/\r?\n/).filter(line=>/^helper-fatal:[A-Za-z0-9_.: -]{1,160}$/.test(line)).slice(-4)},
+        closeOrdering:(client.closeOrdering||[]).slice(-16).map(row=>({name:scalar(row.name,/^[a-z0-9-]{1,80}$/),code:number(row.detail?.code),signal:scalar(row.detail?.signal,/^[A-Z0-9]{1,16}$/)}))};
+}
+async function startProbeHelper(client) {
+    let step='controller-start';
+    try {
+        await client.start();trace('controller-ready');step='preview-capability';
+        if(!client.handshake.capabilities.includes('preview-snapshot-v1'))throw probeFailure('OWNER_SNAPSHOT_CAPABILITY_MISSING');
+        trace('helper-ready',{snapshotCapability:true});
+    } catch(error) {
+        trace('helper-start-rejected',{step,startup:startupEvidence(client,error)});
+        let cleanupError=null;
+        try{await client.kill();}catch(failure){cleanupError=startupEvidence(client,failure).error;}
+        // exitPromise settles on exit, earlier than stdout/stderr close. Allow
+        // a bounded drain before projecting native fatal tags and final status.
+        if(client.child&&!client.closeOrdering.some(row=>row.name==='process-close'))await new Promise(resolve=>{
+            const child=client.child;let timer;
+            const done=()=>{clearTimeout(timer);child.removeListener('close',done);resolve();};
+            child.once('close',done);timer=setTimeout(done,1000);
+        });
+        const wrapped=probeFailure(error.code||'OWNER_HELPER_START_FAILED');wrapped.cause=error;wrapped.details={step,startup:startupEvidence(client,error),cleanupError};throw wrapped;
+    }
+}
 function isDirectInvocation() {
     if(require.main===module)return true;
     // Electron 44 default_app imports the CJS entry through the ESM loader.
@@ -64,15 +109,14 @@ async function run(runtimeArg,outputArg,commit) {
     const host=new BrowserWindow({width:640,height:360,show:true,webPreferences:{sandbox:true,contextIsolation:true,nodeIntegration:false}});
     trace('window-created');
     const {NativeHelperClient}=require(packaged?'../electronapp/native-helper/controller':'../src/electronapp/native-helper/controller');
+    const baseline=require(packaged?'../electronapp/native-helper/service':'../src/electronapp/native-helper/service');
     const decode=require(packaged?'../electronapp/native-helper/preview-snapshot':'../src/electronapp/native-helper/preview-snapshot').decode;
-    const client=new NativeHelperClient({helperPath:helper,libmpvPath:dll,parentWindowHandle:host.getNativeWindowHandle().readBigUInt64LE().toString(),expectedLibmpvVersion:manifest.libmpv.version});
+    const client=new NativeHelperClient({helperPath:helper,libmpvPath:dll,parentWindowHandle:host.getNativeWindowHandle().readBigUInt64LE().toString(),...probeConfiguration(manifest,baseline),onTerminal:record=>trace('helper-terminal',{name:record.name,startup:startupEvidence(client,null)})});
     let finished=false,stage='handshake';
     host.on('close',event=>{if(!finished)event.preventDefault();});
     try {
         trace('helper-start');
-        await client.start();
-        if(!client.handshake.capabilities.includes('preview-snapshot-v1'))throw Error('Missing production snapshot capability');
-        trace('helper-ready',{snapshotCapability:true});
+        await startProbeHelper(client);
         const files=[path.join(output,'A.y4m'),path.join(output,'B.y4m')];fs.writeFileSync(files[0],clip(81,90,240));fs.writeFileSync(files[1],clip(145,54,34));
         async function load(index) {
             return loadProbeClip(client,index?'B':'A',files[index]);
@@ -100,15 +144,16 @@ async function run(runtimeArg,outputArg,commit) {
         stage='owned-exit';trace(stage);await client.kill();
         log({event:'end',result:'PASS',scope:PLAN.scope,ownedExitConfirmed:client.exited,visibleDwmAcceptance:'NOT_ASSESSED'});
     } catch(error) {
-        trace('failure',{failedStage:stage,state:['FAILED','HELPER_DIED','TIMED_OUT','GENERATION_RETIRED'].includes(error.state)?error.state:null});log({event:'failure',stage});throw error;
+        trace('failure',{failedStage:stage,details:error.details||null});log({event:'failure',stage,details:error.details||null});throw error;
     } finally {
         trace('cleanup-start');await client.kill();trace('helper-exit-confirmed',{exited:client.exited});finished=true;if(!host.isDestroyed())host.destroy();trace('app-quit');app.quit();
     }
 }
-module.exports={PLAN,clip,loadProbeClip,assertNoSnapshotDiagnostics};
+module.exports={PLAN,clip,loadProbeClip,assertNoSnapshotDiagnostics,probeConfiguration,auditSourceContract,startupEvidence,startProbeHelper};
 const directInvocation=isDirectInvocation();
 if(process.versions.electron&&process.defaultApp&&process.type==='browser')trace('module-evaluated',{directInvocation,argv1Basename:process.argv[1]?path.basename(process.argv[1]):null});
 if(directInvocation) {
-    if(process.argv[2]==='--describe'){trace('entry-describe',{defaultApp:process.defaultApp===true,processType:process.type||null,electron:process.versions.electron||null});process.stdout.write(JSON.stringify(PLAN)+'\n',()=>{if(process.type==='browser')require('electron').app.exit(0);});}
+    if(process.argv[2]==='--audit-contract'){try{process.stdout.write(JSON.stringify(auditSourceContract())+'\n',()=>{if(process.type==='browser')require('electron').app.exit(0);});}catch(error){console.error(JSON.stringify({code:error.code||'SOURCE_CONTRACT_AUDIT_FAILED'}));process.exitCode=1;if(process.type==='browser')require('electron').app.exit(1);}}
+    else if(process.argv[2]==='--describe'){trace('entry-describe',{defaultApp:process.defaultApp===true,processType:process.type||null,electron:process.versions.electron||null});process.stdout.write(JSON.stringify(PLAN)+'\n',()=>{if(process.type==='browser')require('electron').app.exit(0);});}
     else {trace('entry',{argumentCount:process.argv.length-2,sourceCommitValid:/^[a-f0-9]{40}$/.test(process.argv[4]||''),defaultApp:process.defaultApp===true,processType:process.type||null,electron:process.versions.electron||null});run(...process.argv.slice(2)).catch(error=>{process.stderr.write(JSON.stringify({event:'probe-failed',code:error.code||'OWNER_PROBE_FAILED',details:error.details||null})+'\n');process.exitCode=1;if(process.type==='browser')require('electron').app.exit(1);});}
 }

@@ -1,6 +1,6 @@
 # 原生预览 owner 快照候选
 
-这是 v0.4.0 之后的独立候选，默认仍关闭，不合入正式版。独立分支已重基正式发布点 `88578c91ab19d44eecddcfae096d37dc917ef1f4`。当前已有视频像素来源、产品接线和独立试验包装配源码。d028f77的真实Windows运行已通过Host／生产Native编译、1685项回归及包内自检（ffiLoaded=true）；2233文件三阶段全同，但owner90秒超时且无报告，仍无验收包，D3D11／DWM可见结果未通过。此前候选均不能作为成功预览包供验收。
+这是 v0.4.0 之后的独立候选，默认仍关闭，不合入正式版。独立分支已重基正式发布点 `88578c91ab19d44eecddcfae096d37dc917ef1f4`。e8e7f50的真实Windows运行已通过Host／生产Native编译、1689项回归、包内自检（ffiLoaded=true）和GUI入口smoke，2233文件四阶段全同。owner进入ready／窗口后在handshake阶段约1.5秒exit1；旧generic报告未保留helper首错，确切原因尚未证实。仍无验收包，D3D11／DWM可见结果未通过。
 
 ## 合成路径与必要影响面
 
@@ -88,6 +88,22 @@ d028f77的真实Windows自检和三阶段清单已确认通过；它的owner90�
 当前仅补认Electron defaultApp且argv[1]的物理路径等于当前脚本的直接调用；普通ESM库导入、argv不符均不执行。--describe在GUI模式先排空输出再明确exit0，不创建窗口或播放器。实际CI使用同一GUI默认启动路径先做该smoke，再执行完整owner；owner仍要求Windows x64固定Electron与browser进程。
 
 stderr在入口分派前记录module-evaluated及判断结果，在调用run前记录entry及参数形状，随后依次记录预检、source-bound、profile-configured、app-ready-wait／app-ready、窗口、helper、采样、end-file和cleanup。日志不含像素／媒体身份／账户。结合实际argv和部分owner阶段报告，可以区分入口未触发、预检失败、ready未完成、helper启动／事件或退出等待；不得单凭无输出判定无交互桌面、GPU或DWM原因。修后Windows实际阶段尚待观察。
+
+## 握手身份与最小后台核对
+
+manifest的`libmpv.version`是组件版本（v0.41…），生产`service.EXPECTED_LIBMPV_VERSION`是ready消息的完整runtime版本（mpv v0.41…）。探针复用后者，同时核对固定DLL SHA及API2.5与manifest一致；保持严格比较，不接受未知版本或从观察值扩充名单。真实controller／受控管道回归证明旧组件值被拒绝、正确runtime值被接受；这不证明e8e7f50的generic错误就是版本问题。
+
+启动诊断区分controller-start和preview-capability。保留固定错误码／已知消息及原cause；unknown文本只留摘要。ready只投影版本／API／surface／已知capability及队列上限，保留进程PID／退出码／signal／transport／protocol failure和末16条关闭事件。stderr仅检查末8192字节，保留已观察／保留长度、摘要及最多4条受限helper-fatal标签，不写原始URL／账户路径／像素。清理后最多等待1秒close，避免仅exit已发生却漏掉尾部stderr；流未确认或原启动失败仍失败，不能因此生成PASS。controller-ready与preview能力广告分开记录，完整A/B和退出门禁保持。
+
+**零窗口的生产helper握手不可行。** 当前C++构造器先验证parent HWND，启动surface线程并调用CreateWindowExW建立两个子窗口，再加载／初始化mpv并发送ready。WS_EX_NOACTIVATE不等于没有窗口；不提供隐藏该事实的后台执行命令，不借桌面HWND或旧包替代。真实复现还必须有准确源提交绑定的helper／固定DLL／provenance；不能假定现有正式安装含相同SHA，当前失败artifact也不是完整trial。
+
+可以在后台做以下**纯源合同核对**，所需输入是本分支精确源码checkout及已有Node.js；无需helper、DLL、服务器、profile或账户。代码只读manifest和生产常量，不启动子进程、不加载Electron／FFI／addon、不调用窗口API，不生成文件：
+
+```powershell
+node .\tools\windows-native-owner-probe.cjs --audit-contract
+```
+
+输出明确标为`scope=static-source-contract-only`、`nativeHelperStarted=false`、`dllLoaded=false`和DWM NOT_ASSESSED。这不是握手或二进制兼容验收；此命令通过不能解释本次丢失的Native首错，也不能替代需要另协调的实际窗口／视频验证。
 
 ## 解包后的最小 Windows 复验
 
