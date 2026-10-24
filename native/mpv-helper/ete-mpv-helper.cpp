@@ -988,7 +988,7 @@ class Helper {
     }
     void finishPreview(const std::string& reason) {
         if (!previewCapture.finish()) return;
-        emitResponse(previewCapture.generation, previewCapture.request, frameUnavailable(reason));
+        emitResponse(previewCapture.generation, previewCapture.request, frameUnavailable(reason.c_str()));
         // Keep the physical async slot until its reply. A timeout/retire must
         // not permit an unbounded queue of still-owned libmpv screenshots.
     }

@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-24 — 修正预览终态的原生编译类型错误
+
+首轮 Windows 原生编译拒绝 `finishPreview(const std::string&)` 将 reason 直接传给接收 `const char*` 的 `frameUnavailable`；原候选4a9d4ee没有成功试验包，不可验收。本次只将该同步调用改为 `reason.c_str()`，不改变协议、owner归属、默认关闭或两按钮；相邻及其余同名调用已检查，动态字符串的其他路径已有显式转换，另外三处reason参数为const char*。
+
+便携回归现在从维护源码提取真实JSON quote、frameUnavailable、hasPreviewVideo、ownsPreview、finishPreview、uniqueOpenMedia及缩图函数，不再只编译纯状态机。相同扩展检查修前实际复现转换错误，修后宿主g++以C++17／Wall／Wextra／Werror编译运行37项，另回读两条unavailable JSON及彩色像素；定向Node109/109通过。公开离线1584项：1574pass、0fail、10项既有Windows skip；428 JS／49 PowerShell语法、有限模式与diff检查通过。它仍不是完整Windows helper编译；固定Windows工具链的修后编译、Koffi／A/B与ZIP门禁须重跑，DWM／Peek仍待实机。不自行dispatch、不改发布线，详见[当前交接](WINDOWS_PREVIEW_SNAPSHOT_PROTOCOL.md)。
+
 ## 2026-10-23 — 独立原生预览试验包门禁
 
 `feature/windows-native-preview` 已重基 v0.4.0 发布点 `88578c91ab19d44eecddcfae096d37dc917ef1f4`，保持默认关闭和原两按钮。手动构建新增默认 false 的 `native_preview_trial`，禁止与 release 模式同时启用。标准载荷通过原完整门禁后，另复制出独立 ZIP；Koffi 3.3.3 两个官方注册表归档按 SRI／归档及 92 个成员 SHA-256 验证，无安装脚本。新 manifest、自检、显式隔离 profile 启动器和包内红／绿 owner 探针绑定同一提交，新增字节不冒充标准 provenance。

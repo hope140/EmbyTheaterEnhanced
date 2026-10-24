@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-24 — 补齐预览终态调用边界的编译回归
+
+真实Windows编译暴露finishPreview的std::string到const char*转换错误，旧便携检查未包含此成员调用。先扩展提取并编译真实frameUnavailable／finishPreview及相邻owner方法，同样失败；再将产品调用显式转换为reason.c_str()，37项严格C++17检查、两条真实JSON终态解码和彩色缩图字节回读通过。覆盖无pending、重复finish、逻辑结束仍保留物理slot、清空／新slot及generation／request响应归属；其余同名调用逐项核对类型，没有发现第二处同类缺口。相关Node109项通过；公开离线1584项／1574pass／0fail／10 Windows skip，428 JS／49 PowerShell语法、有限模式与diff检查通过。
+
+本机仅有宿主Linux g++14.2，无锁定Windows GCC16.1／Windows运行环境，未将提取编译称为完整helper编译。4a9d4ee未产生成功试验包；修后仍须重新执行Windows生产helper构建及独立ZIP自检／A/B门禁，再由实机验证DWM／Peek。默认关闭、两按钮、协议和发布线保持，未触发工作流。当前合同见[预览验证](WINDOWS_PREVIEW_SNAPSHOT_PROTOCOL.md)。
+
 ## 2026-10-23 — 独立原生预览试验包门禁
 
 候选安全重基 v0.4.0 发布点88578c91，保留发布内容和独立功能提交。官方注册表锁定 Koffi 3.3.3 两归档／92成员，不运行安装脚本。默认关闭的手动 trial 开关在标准构建及安装器解包验证后生成独立 ZIP和新增来源manifest；包内固定Electron自检FFI绑定，再以生产helper本地红／绿素材验owner、退休、自然结束和退出，失败不上传。显式启动器仅接受bundle外全新profile，普通入口、播放策略和两按钮保持。

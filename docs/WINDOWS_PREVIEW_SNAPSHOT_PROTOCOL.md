@@ -1,6 +1,6 @@
 # 原生预览 owner 快照候选
 
-这是 v0.4.0 之后的独立候选，默认仍关闭，不合入正式版。独立分支已重基正式发布点 `88578c91ab19d44eecddcfae096d37dc917ef1f4`。此前中性保护只是失败路径；当前已有视频像素来源、产品接线和独立试验包装配源码，Windows helper 编译／D3D11／DWM 可见验收仍须分别执行。
+这是 v0.4.0 之后的独立候选，默认仍关闭，不合入正式版。独立分支已重基正式发布点 `88578c91ab19d44eecddcfae096d37dc917ef1f4`。此前中性保护只是失败路径；当前已有视频像素来源、产品接线和独立试验包装配源码。首轮 Windows helper 编译因预览终态参数类型错误失败，本次已修正，但修后完整编译／D3D11／DWM 可见验收仍须分别执行；4a9d4ee没有成功试验包，不可供验收。
 
 ## 合成路径与必要影响面
 
@@ -47,7 +47,7 @@ helper 每次最多一个物理截图，约1Hz上限、1500ms逻辑期限；退�
 
 ## 分层验证与集中 Windows 清单
 
-Linux 的 `node tools/test-preview-owner-core.cjs` 用宿主 g++ 编译**从当前 C++ 实际提取**的 owner／pending-slot／缩图函数：25项状态／实际video track守卫检查及320×180彩色帧→160×90字节回读。此工具不是 Windows helper 编译，不执行 libmpv。公开 Node 回归覆盖严格 DTO、真实 controller framing／历史不留像素、service 同步失败／代次／结束／单请求、renderer owner 接线、libmpv Item/Server 和 Play 退休、adapter 旧回复／黑首帧／最小化／资源等待。不得用这些替代 Windows 结果。
+Linux 的 `node tools/test-preview-owner-core.cjs` 用宿主 g++ 以 C++17／Wall／Wextra／Werror 编译**从当前 C++ 实际提取**的 owner／pending-slot、JSON quote、frameUnavailable、hasPreviewVideo、ownsPreview、finishPreview、uniqueOpenMedia及缩图函数：37项状态／终态调用边界检查、两条unavailable JSON解码及320×180彩色帧→160×90字节回读。扩展编译在修前复现了std::string不能传const char*的错误；修后显式c_str转换通过，重复finish不重复响应、物理slot仍保留，动态reason正确转义。提取上下文的transport／属性提供者为替身，此工具仍不是完整Windows helper编译，不执行libmpv。公开Node回归覆盖严格DTO、真实controller framing／历史不留像素、service同步失败／代次／结束／单请求、renderer owner接线、libmpv Item/Server和Play退休、adapter旧回复／黑首帧／最小化／资源等待。不得用这些替代Windows结果。
 
 准备了 `tools/windows-native-owner-probe.cjs`：只在固定 Windows Electron 44.4.2 x64 下显式运行，核验 checkout、生产 helper provenance／源码 SHA／EXE SHA、固定 libmpv DLL SHA，生成自身本地红／绿 Y4M，不用服务器、账户或 NAS。快照本身不依赖Koffi；包内模式会先执行含Koffi实际加载的装配自检。它读取真实生产方法，自动检验 A/B、旧请求退休和 END_FILE 后 unavailable；仅在探针自有generation激活后把 keep-open 设false以测试自然结束，不改产品策略。诊断检查拒绝保留wire BGR24或解码BGRA的pixels字段，不比较两种不同编码。结果文件只记固定阶段及哈希，失败仅记固定stage；只有 end/PASS 且 ownedExitConfirmed 才算此 helper 范围完成，DWM 可见结果始终 NOT_ASSESSED。
 
@@ -73,7 +73,7 @@ $previewCommit = (git rev-parse HEAD).Trim()
 
 CI 必须重新解包该 ZIP，用**包内固定 Electron 44.4.2 x64** 执行自检：完整文件与生产 helper 来源、固定 DLL、Koffi 实际载入／系统函数调用和 DWM／WinRT FFI 签名绑定。之后从解包副本执行本地红／绿 owner 探针，必须得到唯一 `end/PASS` 且 `ownedExitConfirmed=true`，否则不上传。外部回执包含 ZIP SHA-256、独立 manifest、自检 JSON 与 owner JSONL；探针 profile／媒体留在 artifact 外。自检和 helper A/B 不证明 DWM 可见效果。
 
-Linux 可验证官方归档／装配来源、合成包正反例和便携 C++ 核心；本轮没有运行 Windows 编译、自检、helper A/B 或生成 Windows 试验 ZIP。该源码具备上述独立构建门禁，不宣称包已生成或视频问题已解决。不自行触发 workflow，不合 main，不发布正式 Release。
+Linux 可验证官方归档／装配来源、合成包正反例和便携C++调用边界。首次Windows helper编译已经失败，修后完整编译、自检、helper A/B及试验ZIP尚待重跑；原候选无成功包。该源码具备上述独立构建门禁，不宣称包已生成或视频问题已解决。不自行触发workflow，不合main，不发布正式Release。
 
 ## 解包后的最小 Windows 复验
 
