@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-24 — 明确trial物化的Git blob换行合同
+
+d0dcb7d实际Windows完整回归1705项／1703pass／2fail，均为组装用例将blob物化的LF policy与CRLF工作树直接比较；未到生产owner，未生成诊断或验收包。此前Linux的CRLF标签只显式转换C++，未证明新CJS输入的真实CRLF checkout。现夹具保留仓库字节绑定属性，显式配置LF／CRLF并强制重新检出全部输入，断言policy实际工作树换行不同于提交blob；在Linux临时整仓CRLF检出、进程范围Git autocrlf=true配置下复现旧两项全失败，修后同环境17/17通过。所有trial源输出及来源哈希逐项精确匹配Git blob，不在断言或包校验时归一化。
+
+固定普通Node24.18.1组装17项通过，覆盖混合LF／CRLF／单CR载荷逐字节保持、包内仅换行漂移拒绝、CRLF工作树实质源码修改拒绝。公开离线1621项／1610pass／0fail／11平台skip，432 JS／50 PowerShell语法、有限模式及diff检查通过。组装回归与构建使用普通Node；额外Electron Node模式实验不能替代此入口，其ASAR wrapper拒绝不透明归档夹具（5pass／12fail），未因此修改产品工具。生产组装器、完整性门禁、Native源码及默认关闭保持；旧handshake首因未知，新精确提交的Windows完整回归、owner A/B／ZIP和DWM仍需验证，见[物化合同](WINDOWS_PREVIEW_SNAPSHOT_PROTOCOL.md)。
+
 ## 2026-10-24 — 预览探针退出验收强化与阶段错误投影
 
 独立候选新增P2 owned-shutdown-v1验收合同：旧PASS／ownedExitConfirmed只证明进程已退出，并未承诺exit0。本次探针与外部报告读取器共用固定源码合同，区分EOF code0与原controller等待2秒后成功调用所属SIGTERM的强制关闭；20–23、意外终态／signal、协议或transport错误、缺状态／流close均失败，不改变生产kill行为。该强化不是旧handshake首因；旧Native首错仍未知，未放宽owner90秒或任何包门禁。

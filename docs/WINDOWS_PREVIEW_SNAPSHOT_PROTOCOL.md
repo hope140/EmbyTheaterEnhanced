@@ -73,6 +73,8 @@ $previewCommit = (git rev-parse HEAD).Trim()
 
 `tools/windows-native-preview-trial.cjs` 只读当前提交 Git blob，在全新独立目录复制标准载荷，再添加 native-media 模块／依赖、显式入口、探针和来源文件。标准文件字节与默认入口保持原样；独立 `native-preview-trial.json` 绑定源提交、标准 build-manifest、生成器、依赖与完整文件集合。它是额外覆盖来源合同，不将新文件冒充为标准构建输入。试验 ZIP 使用提交和 run 唯一名称，不覆盖正式安装或已有 artifact。
 
+工作树的文本输入可有Git允许的CRLF转换；组装对照提交内容后，**输出和来源哈希一律绑定原Git blob字节**，不从工作树复制文本或在包校验时忽略换行。registry／lock的既有`-text`属性仍保持精确输入。跨平台夹具先用同一组文本输入及仓库属性创建临时提交，显式设本地LF或CRLF并真实重新checkout全部输入，再断言policy工作树换行、每个trial源输出及source hash、每个标准载荷副本的精确字节。标准载荷包含混合LF／CRLF／单CR及无末尾换行；输出仅换行漂移仍须触发原完整性拒绝，工作树的实质源码修改也须在组装前拒绝。d0dcb7d的两个Windows失败为测试误将blob LF与工作树CRLF相比；修后Linux覆盖不代替真实Windows重跑，也不解释旧Native handshake首错。
+
 CI必须重新解包该ZIP，用**包内固定Electron44.4.2 x64**执行自检：完整文件与生产helper来源、固定DLL、Koffi实际载入／系统函数调用和DWM／WinRT FFI签名绑定。`windows-native-preview-process.cjs`逐个持有子进程，记录实际executable／argv及Node／GUI模式，等待真实close与输出排空后才读报告；自检45秒、GUI入口smoke15秒、完整owner90秒，超时仅终止所属子进程并记录结果。外层Electron exit0、自检回执的ffiLoaded=true／sourceCommit、GUI描述scope及后续唯一final end/PASS／ownedExitConfirmed／nativeExitAccepted和owned-shutdown-v1记录必须全部满足；描述通过不代替owner A/B，提前写PASS后Electron exit非零仍失败。成功外部回执包含ZIP SHA-256、独立manifest、自检JSON、GUI入口描述、进程完成后的acceptance JSON及owner JSONL；profile／媒体不进入分发包。
 
 在解包后、自检后、入口smoke后、owner后分别保存物理文件清单、SHA及新增／缺失／改变的相对文件名，也记录与上一阶段的差异。每阶段重新运行原完整性检查；原固定两处小debug.log例外保持，原始诊断差异仍显示这些日志。stdout／stderr各最多8MiB，实际命令／PID／启动／exit／close／timeout另存；命令仅为受控本地探针，不记录产品播放URL或账户。若已有owner-probe.jsonl，则在成功或失败后额外保存其有界物理文件为owner-stages.jsonl（最多1MiB），不复制输出目录其他内容。失败仅上传独立diagnostics artifact（1天），不上传验收包，不生成替代owner PASS，不上传profile／Y4M。

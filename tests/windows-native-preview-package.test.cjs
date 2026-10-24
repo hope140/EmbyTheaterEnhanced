@@ -15,8 +15,11 @@ test('archive parser checks exact SRI/member bytes and refuses links/traversal/e
 function fixture(t,crlf=false){
  const root=fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(),'ete-native-package-')));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
  const put=(name,bytes)=>{const file=path.join(root,name);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,bytes);};
- for(const name of new Set([...Object.values(trial.SOURCES),...trial.GENERATORS]))put(name,fs.readFileSync(path.resolve(__dirname,'..',name)));
- if(crlf){const name='native/mpv-helper/ete-mpv-helper.cpp';put(name,fs.readFileSync(path.join(root,name),'utf8').replace(/\r\n/g,'\n').replace(/\n/g,'\r\n'));}
+ // Fixture inputs are text. Seed identical LF blobs on either host; the real
+ // Git checkout below, not this test runner's own checkout, selects worktree EOL.
+ for(const name of new Set([...Object.values(trial.SOURCES),...trial.GENERATORS]))put(name,fs.readFileSync(path.resolve(__dirname,'..',name),'utf8').replace(/\r\n/g,'\n'));
+ // Preserve the repository's byte-bound registry/lock attributes during checkout.
+ put('.gitattributes',fs.readFileSync(path.resolve(__dirname,'../.gitattributes')));
  // Synthetic dependency bytes are never loaded; only package/identity behavior
  // is tested. Real pinned archives are independently verified outside this fixture.
  const registry=JSON.parse(fs.readFileSync(path.join(root,'native/windows-media/registry-input.json'))),dependencyRoot=path.join(root,'deps');
@@ -24,21 +27,48 @@ function fixture(t,crlf=false){
  put('native/windows-media/registry-input.json',JSON.stringify(registry));
  const native=JSON.parse(fs.readFileSync(path.join(root,'vendor/native-helper-manifest.json'))),dll=Buffer.from('synthetic DLL; never execute'),exe=Buffer.from('synthetic helper; never execute');native.libmpv.sha256=hash(dll);put('vendor/native-helper-manifest.json',JSON.stringify(native));
  const git=args=>cp.execFileSync('git',['-C',root,...args],{encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
- git(['init','-q']);if(crlf)git(['config','core.autocrlf','true']);git(['config','user.name','Synthetic test']);git(['config','user.email','fixture@example.invalid']);git(['add','tools','native','vendor']);git(['commit','-qm','synthetic source']);const commit=git(['rev-parse','HEAD']);
+ git(['init','-q']);git(['config','core.autocrlf',String(crlf)]);git(['config','core.eol',crlf?'crlf':'lf']);git(['config','user.name','Synthetic test']);git(['config','user.email','fixture@example.invalid']);git(['add','.gitattributes','tools','native','vendor']);git(['commit','-qm','synthetic source']);const commit=git(['rev-parse','HEAD']);
+ // Remove cached-stat matches so checkout-index must actually materialize EOL.
+ for(const name of cp.execFileSync('git',['-C',root,'ls-files','-z']).toString().split('\0').filter(Boolean))fs.unlinkSync(path.join(root,name));
+ git(['checkout-index','--all']);
  put('runtime/'+native.runtimePath,exe);put('runtime/'+native.libmpv.runtimePath,dll);put('runtime/electronapp/package.json','{"main":"main.js"}');
  put('runtime/x64/electron/resources/default_app.asar','Opaque physical archive fixture; never executed.');
+ put('runtime/exact-line-endings.txt',Buffer.from('LF\nCRLF\r\nlone-CR\rno-final-LF'));
  const cpp=cp.execFileSync('git',['-C',root,'show',commit+':'+native.sourcePath]);put('runtime/native-helper-provenance.json',JSON.stringify({sourceCommit:commit,source:{sha256:hash(cpp)},helper:{testing:false,sha256:hash(exe)}}));
  const files=[...check.inventory(path.join(root,'runtime'))].map(([name,file])=>({path:name,...file}));put('runtime/build-manifest.json',JSON.stringify({schemaVersion:3,sourceCommit:commit,files}));
- return {root,commit,runtime:path.join(root,'runtime'),dependencies:dependencyRoot,destination:path.join(root,'trial-output'),put};
+ const blob=name=>cp.execFileSync('git',['-C',root,'show',commit+':'+name]);
+ return {root,commit,runtime:path.join(root,'runtime'),dependencies:dependencyRoot,destination:path.join(root,'trial-output'),put,blob};
 }
 for(const crlf of [false,true])test('trial assembly keeps the standard payload unchanged with '+(crlf?'CRLF':'LF')+' source checkout',t=>{
- const f=fixture(t,crlf),before=check.inventory(f.runtime),result=trial.create(f.root,f.runtime,f.dependencies,f.destination,f.commit);
+ const f=fixture(t,crlf),policy=trial.SOURCES['trial/exit-policy.cjs'],policyBlob=f.blob(policy),workingPolicy=fs.readFileSync(path.join(f.root,policy));
+ // Assert the requested checkout was actually produced, including the new CJS
+ // input; merely setting core.autocrlf or converting only C++ cannot prove it.
+ assert.deepEqual(workingPolicy,crlf?Buffer.from(policyBlob.toString('utf8').replace(/\n/g,'\r\n')):policyBlob);
+ if(crlf)assert.notDeepEqual(workingPolicy,policyBlob);
+ const before=check.inventory(f.runtime),result=trial.create(f.root,f.runtime,f.dependencies,f.destination,f.commit);
  assert.equal(result.standardPayloadUnchanged,true);assert.equal(result.defaultEnabled,false);assert.equal(result.ffiLoaded,false);
  assert.deepEqual(check.inventory(f.runtime),before);assert.equal(fs.readFileSync(path.join(f.destination,'electronapp/package.json'),'utf8'),'{"main":"main.js"}');
- assert.equal(fs.readFileSync(path.join(f.destination,'trial/exit-policy.cjs'),'utf8'),fs.readFileSync(path.join(f.root,trial.SOURCES['trial/exit-policy.cjs']),'utf8'));
+ // Output and source records must match exact committed bytes. Do not normalize
+ // either side of this assertion to hide a materialization or hash mismatch.
+ const report=JSON.parse(fs.readFileSync(path.join(f.destination,'native-preview-trial.json')));
+ for(const [target,source]of Object.entries(trial.SOURCES)){
+  const expected=f.blob(source);assert.deepEqual(fs.readFileSync(path.join(f.destination,target)),expected,target);
+  assert.equal(report.sources.find(record=>record.path===source)?.sha256,hash(expected),source);
+ }
+ for(const name of before.keys())assert.deepEqual(fs.readFileSync(path.join(f.destination,name)),fs.readFileSync(path.join(f.runtime,name)),name);
  const description=JSON.parse(cp.execFileSync(process.execPath,[path.join(f.destination,'trial/owner-probe.cjs'),'--describe'],{encoding:'utf8'}));assert.equal(description.scope,'production-helper-owner-snapshot');
  const entry=fs.readFileSync(path.join(f.destination,'electronapp/native-preview-trial.cjs'),'utf8');assert.match(entry,/ETE_WINDOWS_NATIVE_TRIAL = '1'/);assert.match(entry,/fs\.mkdirSync\(directory\)/);assert.match(entry,/Profile must be outside bundle/);
  assert.throws(()=>trial.create(f.root,f.runtime,f.dependencies,f.destination,f.commit),/Preserve/);
+});
+test('newline-only output drift is rejected rather than normalized during verification',t=>{
+ const f=fixture(t,true);trial.create(f.root,f.runtime,f.dependencies,f.destination,f.commit);
+ const target=path.join(f.destination,'trial/exit-policy.cjs'),bytes=fs.readFileSync(target);assert.equal(bytes.includes(Buffer.from('\r\n')),false);
+ fs.writeFileSync(target,bytes.toString('utf8').replace(/\n/g,'\r\n'));
+ assert.throws(()=>check.verify(f.destination,f.commit,{loadNative:false}),error=>error.code==='TRIAL_INVENTORY_MISMATCH'&&error.details.changed.includes('trial/exit-policy.cjs'));
+});
+test('CRLF checkout permits only EOL conversion and rejects a substantive policy source edit',t=>{
+ const f=fixture(t,true),source=trial.SOURCES['trial/exit-policy.cjs'];f.put(source,fs.readFileSync(path.join(f.root,source),'utf8').replace('owned-shutdown-v1','owned-shutdown-v2'));
+ assert.throws(()=>trial.create(f.root,f.runtime,f.dependencies,f.destination,f.commit),/Trial input differs from HEAD/);assert.equal(fs.existsSync(f.destination),false);
 });
 for(const mode of ['base','ffi','extra','source','exit-policy'])test('bundle rejects '+mode+' drift',t=>{
  const f=fixture(t);trial.create(f.root,f.runtime,f.dependencies,f.destination,f.commit);

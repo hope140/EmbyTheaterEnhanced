@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-24 — 修正组装测试的换行来源与CRLF覆盖
+
+读取d0dcb7d实际Windows完整日志：1705项中1703pass、2fail，LF／CRLF两个组装用例都停在新增policy的工作树字节比较，未进入生产owner或生成诊断。两者实际输出LF、原期望CRLF；生产组装器从固定Git blob取字节的行为正确。旧Linux CRLF夹具仅转换C++，不能支持新CJS已覆盖真实CRLF检出的说法。
+
+夹具现固定本地autocrlf／eol，保留仓库.gitattributes的精确registry／lock字节属性，并移除临时夹具已跟踪文件后真实checkout-index，避免仅设配置但命中缓存stat而未重写。Linux临时整仓真实CRLF检出，并只为该实验子进程指定临时Git全局autocrlf=true文件，旧LF／CRLF两项均复现失败，替换修后测试源码（也为CRLF）后17/17通过；没有修改现用或系统Git配置。每个SOURCES输出Buffer及source hash精确等于提交blob，所有标准载荷副本逐字节比较，并增加混合换行载荷、仅换行篡改仍拒绝、CRLF实质policy修改在输出前拒绝。不改变产品组装器或放宽哈希。
+
+固定普通Node24.18.1相关17/17，公开离线1621项／1610pass／0fail／11平台skip，432 JS／50 PowerShell语法、有限模式及diff检查通过。另试同版官方LinuxElectron44.4.2 Node模式运行组装套件为5pass／12fail：该模式的ASAR wrapper在copyFileSync解释不透明default_app.asar夹具而拒绝；它不是CI固定普通Node组装入口，未为此扩改产品或将其计为通过。跨平台物化回归不是修后真实Windows包或视频验收；新Windows完整回归、生产owner／ZIP及DWM待另排，旧handshake首因仍未确证，详见[合同](WINDOWS_PREVIEW_SNAPSHOT_PROTOCOL.md)。
+
 ## 2026-10-24 — 强化owner退出验收并保留后续阶段错误
 
 按P2验收强化处理旧end/PASS只检查exited的边界，不将其描述为旧退出码合同违规或handshake首因。修前从实际旧producer块以合成exit23复现仍写PASS，旧reader对新增拒绝断言失败；新探针记录原controller实际关闭调用与退出／close结果，共用owned-shutdown-v1判据。允许EOF0以及有自身成功SIGTERM调用证据的原2秒升级关闭，并分别标记；Native20–23、意外终态、未请求signal、协议／transport错误及缺失状态拒绝。生产controller、helper、播放及两按钮未改。
