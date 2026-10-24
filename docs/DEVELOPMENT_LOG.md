@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-24 — Windows短基准结果归档
+
+归档c1c6e7dc的成功Windows run40087708509／job120853913867、artifact12557687964的177152字节／SHA256及88项已核验清单摘要；三套输入身份及每对digest一致，夹具逐次核174文件，27份process记录无异常。Git调用plan8→4、Host111→3；fixture首次7→7／热7→1。批读首次和热操作均下降；seed首次多551.530ms，后续每次少1676.471ms，以中位数模型第二次可摊销。文档区分候选正常入口、仅对照算法和仍未验证的完整回归／整包收益，保留首次慢22.763%／热快75.976%的准备成本证据及OS缓存／29.768秒预准备／0单测边界。仅改文档，无新增实验或main合并。见[归档](CI_BUILD_PERFORMANCE.md)。
+
+只读核对发现同SHA公共CI40087539201已1543 pass／2 fail；两处为新增workflow job后的结构断言不匹配，相关验证前轮遗漏。已记录失败日志与合并阻断，未把短基准成功当全CI通过；此文档收尾不改测试或workflow、不跳失败。
+
 ## 2026-10-24 — 短基准UI入口准备
 
 复用默认分支已有的public-ci.yml手动入口，在perf/build-inputs增加独立短基准job与明确输入，默认4轮／3次热调用；checkout绑定github.sha，可显式填审核SHA拒绝分支移动。模式冲突失败，perf分支无全包回退；原打包concurrency block及公共回归不变。基准仅运行已审plan／host／fixture-prep，0项单元测试，原始结果和完整身份验收仍保留，artifact缺失即错误。没有扩大权限／接触secret／缓存改动或自行dispatch。UI复现与未实测边界见[方案](CI_WINDOWS_AB.md)。

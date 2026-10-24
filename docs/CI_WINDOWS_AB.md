@@ -2,6 +2,8 @@
 
 目的：在同一精确候选、同一台runner的同一个job里，分别比较固定Git输入的旧／批读算法和夹具的fresh／seed准备。已有[Windows正确性run40085107715](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40085107715)通过；完整CI跨机器的总时间不作为性能因果证据。此入口不会触发Actions、安装依赖、构建Host／Native、打包或改workflow。
 
+已执行一次成功的[Windows短A/B40087708509](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40087708509)，精确c1c6e7dc，结果、artifact摘要、生产路径接入与首次摊销分析见[实验归档](CI_BUILD_PERFORMANCE.md)。只量局部操作，0项单元测试；同SHA公共CI另有2项workflow结构断言失败，短基准不覆盖该红灯。本轮收尾不增加实验。
+
 ## 复现
 
 使用完整历史的干净checkout，精确HEAD须与参数一致，含未跟踪文件的工作树须干净。Windows、Node **24.18.1**、PowerShell **7**、Git必须预先可用；不需要npm install。输出父目录必须已存在且物理路径无junction／symlink，输出目录必须全新并与checkout不相交。
@@ -15,7 +17,7 @@ pwsh -NoProfile -File tools/benchmark-build-inputs-windows.ps1 `
 
 默认在测量前单独fetch固定官方Host commit `708fadc068cbf66ced6aece4a32f3e12bb2c4e13`，fetch与对象库验证耗时分别记入session，排除出A/B。可传 `-HostObjectStore <existing-physical-bare-store>` 只读复用已含该commit的本地bare仓库；不改其配置、不写缓存，拒绝alternates。Git子进程清除继承的全部GIT_*覆盖变量，重新固定 `GIT_NO_LAZY_FETCH=1` 和 `GIT_NO_REPLACE_OBJECTS=1`；缺对象即失败，禁用replace refs。来源固定为[官方仓库](https://github.com/MediaBrowser/emby-theater-windows)；不checkout或执行上游源码。
 
-三个套件顺序运行，每套件4轮，每轮每臂一个新Node进程，顺序AB／BA／AB／BA。每进程首次1次、后续3次，两臂均16次操作（first n=4、warm n=12，后者来自4个进程，非12次独立CI）。可选2／4／6／8轮、1–10次热调用；不得按结果选删样本或自动重试失败。一次测量不足以证明稳定收益，可另在相同runner标签安排第二个有限job，同job内部配对比较并分别保留全部结果。
+三个套件顺序运行，每套件4轮，每轮每臂一个新Node进程，顺序AB／BA／AB／BA。每进程首次1次、后续3次，两臂均16次操作（first n=4、warm n=12，后者来自4个进程，非12次独立CI）。可选2／4／6／8轮、1–10次热调用；不得按结果选删样本或自动重试失败。当前已核验结果仅一个Windows job，不能证明跨runner长期稳定收益，本轮不增加样本。
 
 | 套件 | 两臂 | 每次计时工作 | 每次相同验收 |
 |---|---|---|---|
@@ -50,8 +52,8 @@ node tools/benchmark-build-inputs.cjs fixtures <new-output-directory> --trials 4
 3. `release_package=false`；`build_input_benchmark=true`；`benchmark_trials=4`；`benchmark_warm_calls=3`；将已审核的精确40位SHA填入 `benchmark_expected_sha`，必须与分支当前dispatch SHA完全相等。
 4. 只点击运行一次。目标job显示 **Windows build input A/B (0 unit tests)**；完整打包job应skipped。输出artifact名为 `build-input-ab-<sourceSHA>-<runID>-<attempt>`。
 
-`build_input_benchmark` 在此实验分支默认true，默认4／3。expected SHA留空时仍绑定本次dispatch的精确 `github.sha`，不会改用浮动ref，但审阅后安排建议显式填SHA以拒绝分支意外移动。新字段的登录UI显示尚未实测；若切分支后字段未更新，刷新页面再重新选择分支，仍缺字段则停止并报告UI限制，不伪造事件或改main绕过。
+`build_input_benchmark` 在此实验分支默认true，默认4／3。expected SHA留空时仍绑定本次dispatch的精确 `github.sha`，不会改用浮动ref，但安排时应显式填审核SHA以拒绝分支意外移动。上述成功run证明已执行该分支的真实workflow_dispatch；本记录不另声称登录UI表单的逐项视觉验收。若切分支后字段未更新，刷新页面再重新选择分支，仍缺字段则停止并报告UI限制，不伪造事件或改main绕过。
 
 基准job固定runner标签 `windows-2022` 和Node24.18.1，checkout固定 `github.sha`，完整历史、`persist-credentials: false`；actions仍为原固定SHA，权限仅 `contents: read`，不读取secret或扩大token。GitHub托管镜像具体构建版本仍可能轮换，session记录实际ImageOS／ImageVersion；只在同job内配对，不把跨镜像完整CI时长当收益。
 
-现有完整打包concurrency block原样保留；基准job不加入其group，不替换其pending包。不引入cache／新concurrency设置；每次只运行3个短套件，不安装npm依赖或构建产物。上传仅上述artifact子目录，`if: always()` 保留失败诊断，缺artifact返回错误。该入口仅在独立实验分支准备，未自动dispatch；0单元测试的短基准不能代替原公共CI回归。
+现有完整打包concurrency block原样保留；基准job不加入其group，不替换其pending包。不引入cache／新concurrency设置；每次只运行3个短套件，不安装npm依赖或构建产物。上传仅上述artifact子目录，`if: always()` 保留失败诊断，缺artifact返回错误。该入口仅在独立实验分支，脚本不自行dispatch；0单元测试的短基准不能代替原公共CI回归。

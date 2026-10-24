@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-24 — Windows短基准结果归档
+
+[40087708509](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40087708509)在c1c6e7dc成功，已核验artifact12557687964／88项清单。每套件每臂16操作、同job交替AB／BA、输入及输出身份一致：plan首次／热中位260.974／255.949→137.118／129.214ms；Host恢复3400.071／3424.941→134.905／125.319ms。夹具首次2422.970→2974.500ms更慢，热2206.576→530.105ms更快，按中位数成本模型第二次构造可摊销，非完整回归实测。建议保留候选Git批读及文件内seed，单次诊断可用既有fresh；不扩大共享缓存。Windows2022／4逻辑CPU，OS缓存未清，Host预准备29.768秒不计入操作。短基准0单元测试，不宣称整包／合并等待百分比；main仍88578，未新增实验或合并。见[结果、接入路径与边界](CI_BUILD_PERFORMANCE.md)。
+
+同SHA公共CI40087539201实际1543 pass／2 fail／0 skip，两处为新增job后仍按旧if整行及旧job到文件尾范围判断的workflow断言；前轮漏跑相关验证，当前候选不能称全CI通过。短A/B不覆盖此红灯，本轮只记录阻断，不改测试／workflow或重跑。
+
 ## 2026-10-24 — 短基准UI入口准备
 
 仅实验分支的既有public-ci.yml增加明确build_input_benchmark输入及Windows短job，默认Trials4／WarmCalls3，同dispatch精确SHA／同job交替AB／BA，0项单元测试。perf/build-inputs不会进入完整打包job；现有包并发block、权限contents只读、固定actions／Node及所有来源／哈希／输出门禁保持。artifact仅白名单诊断子目录，不能替代公共CI回归。新字段的登录UI尚未实测，触发须选择该分支并核对SHA与输入；未自动dispatch或改main。详见[UI步骤及安全边界](CI_WINDOWS_AB.md)。
