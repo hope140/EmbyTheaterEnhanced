@@ -28,6 +28,8 @@ test('benchmark bounds preserve balanced A/B and reject ambiguous CLI input', ()
         GIT_INDEX_FILE: 'other', GIT_CONFIG_COUNT: '1', GIT_NO_REPLACE_OBJECTS: '0'}),
     {PATH: 'kept', GIT_NO_LAZY_FETCH: '1', GIT_NO_REPLACE_OBJECTS: '1'});
     assert.throws(() => checkProcess({status: 7}, 'failed'), error => error.exitCode === 7);
+    const diagnostic = coordinator.diagnosticText('https://example:credential@example.invalid/repo?token=value Authorization: Bearer sample\npassword=value');
+    for (const value of ['credential', 'token=value', 'Bearer sample', 'password=value']) assert.equal(diagnostic.includes(value), false);
 });
 test('benchmark output must be new, outside checkout and on physical directories', t => {
     const base = temporary(t), source = path.join(base, 'source'), sibling = path.join(base, 'output');fs.mkdirSync(source);

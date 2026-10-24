@@ -7,6 +7,7 @@ param(
     [ValidateRange(1,10)][int]$WarmCalls = 3
 )
 $ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $false
 if (-not $IsWindows -or $PSVersionTable.PSVersion.Major -ne 7) {
     throw 'Windows and PowerShell 7 required.'
 }

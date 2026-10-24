@@ -15,6 +15,13 @@ const HOST = '708fadc068cbf66ced6aece4a32f3e12bb2c4e13';
 const HOST_URL = 'https://github.com/MediaBrowser/emby-theater-windows';
 const sha = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 const json = (file, data) => fs.writeFileSync(file, JSON.stringify(data, null, 2) + '\n');
+function diagnosticText(value) {
+    return String(value).replace(/https?:\/\/[^\s'"<>]+/g, match => {
+        try {const url = new URL(match);url.username = '';url.password = '';url.search = '';url.hash = '';return url.toString();}
+        catch {return '<redacted-url>';}
+    }).replace(/(authorization:\s*)[^\r\n]+/gi, '$1<redacted>')
+        .replace(/([\w-]*(?:token|password|secret)[\w-]*=)[^\s]+/gi, '$1<redacted>');
+}
 function options(args) {
     const parsed = {}, names = new Set(['--source-sha', '--output', '--host-store', '--trials', '--warm-calls', '--powershell-version']);
     while (args.length) {
@@ -57,6 +64,7 @@ function outputPath(sourceRoot, output) {
 function git(args, env = benchmarkEnvironment()) {
     try {return cp.execFileSync('git', args, {encoding: 'utf8', env, maxBuffer: 16 * 1024 * 1024}).trim();}
     catch (error) {
+        error.benchmarkCommand = ['git', ...args].map(diagnosticText);
         error.exitCode = Number.isInteger(error.status) && error.status > 0 && error.status <= 255 ? error.status : 1;throw error;
     }
 }
@@ -104,14 +112,15 @@ function main(args = process.argv.slice(2)) {
     const session = {schemaVersion: 1, sourceCommit: config.sourceCommit, baselineAlgorithmCommit: BASE,
         startedUtc: new Date().toISOString(), node: process.version, platform: process.platform, arch: process.arch,
         osRelease: os.release(), osVersion: os.version(), cpu: os.cpus()[0]?.model, logicalCpus: os.cpus().length,
-        git: git(['--version']), powershell: config.powershell,
+        powershell: config.powershell,
         imageOS: process.env.ImageOS?.slice(0, 100), imageVersion: process.env.ImageVersion?.slice(0, 100),
         trialsPerArm: config.trials, warmCallsPerProcess: config.warmCalls, operationsPerArm: config.trials * (config.warmCalls + 1),
         unitTestsExecuted: 0, order: 'AB/BA alternating; suites serial on this machine',
         cacheScope: 'fresh process first call / warm in same process; OS cache not flushed',
         hostCommit: HOST, hostStoreMode: config.hostStore ? 'provided-read-only' : 'private-fetch-before-measurement', suites: []};
-    let failure, stage = 'host-fetch';
+    let failure, stage = 'tool-probes';
     try {
+        session.git = git(['--version']);stage = 'host-fetch';
         const acquireStart = performance.now();
         if (!config.hostStore) {
             fs.mkdirSync(path.dirname(store));
@@ -151,7 +160,9 @@ function main(args = process.argv.slice(2)) {
         session.conclusion = 'passed';
     } catch (error) {
         failure = error;session.conclusion = 'failed';
-        session.failure = {stage, message: error.message, status: error.status, signal: error.signal, code: error.code};
+        session.failure = {stage, message: diagnosticText(error.message), status: error.status, signal: error.signal, code: error.code,
+            exitCode: error.exitCode || 1, command: error.benchmarkCommand,
+            stderr: error.stderr === undefined ? undefined : diagnosticText(error.stderr)};
     }
     finally {
         session.completedUtc = new Date().toISOString();json(path.join(output, 'session.json'), session);
@@ -170,7 +181,7 @@ function main(args = process.argv.slice(2)) {
     }
     if (failure) throw failure;
 }
-module.exports = {options, contains, outputPath, physicalDirectory, stageArtifacts};
+module.exports = {options, contains, outputPath, physicalDirectory, stageArtifacts, diagnosticText};
 if (require.main === module) {
     try {main();} catch (error) {console.error(error.stack);process.exitCode = error.exitCode || 1;}
 }
