@@ -81,3 +81,6 @@
 /tools/windows-host-verifier/README.txt whitespace=cr-at-eol,-blank-at-eof
 /tools/windows-host-verifier/Run-Components.ps1 whitespace=cr-at-eol,-blank-at-eof
 /tools/windows-host-verifier/Verify-UnifiedHost.ps1 whitespace=cr-at-eol,-blank-at-eof
+# Native preview registry contract pins these exact lock bytes on Windows too.
+/native/windows-media/package-lock.json -text
+/native/windows-media/registry-input.json -text

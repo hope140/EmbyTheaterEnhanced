@@ -1,0 +1,19 @@
+# v0.4.3 原生预览整合核验
+
+基线为v0.4.2的ff92bead401a458f3cc83f3e450f48be97af31b2；功能取自已验收的4dea85f5158e20d18058be1d7e03c81e51e01da4。保留页面缓存、独立缓存管理、更新通道及原构建提速。不带550ms性能候选、额外预载、暂存或FN功能。另仅整合01512ffe631e142ef6fd80fca208b7ddee0f9a23的“智能解析”展示名及d9e017d2dba9c0c87f44f9d40b27fd58af321d82的缓存清理按钮居中；原说明与功能保持。
+
+普通Windows安装即启用SMTC及任务栏视频预览，无需trial变量、独立入口或新profile。双窗口及原播放管线保持；截图由原Native helper按当前generation确认归属，输出160×90，JS定时1000ms及Native最短950ms保持。没有字幕合成或视频帧率承诺。
+
+SMTC只暴露播放、暂停、停止、上一项、下一项。播放/暂停按真实状态切换，上一/下一按原队列能力启用；停止沿原语义。Windows决定媒体卡片布局，停止不一定显示为独立图标。旧任务栏两个控制按钮退役，不增加新任务栏按钮。
+
+正式接线增加main及preload的Windows默认启用；窗口closed后进入原before-quit drain，避免隐藏视频载体留下进程。页面缓存beforeClose的flush/等待/取消仍先于closed；隐藏载体随后触发window-all-closed时，不重复quit越过已经进行中的清理。预览dispose保存WebContents引用，重复退出共享清理Promise，等待所属pending capture及SMTC工作。
+
+与main的重叠保留两侧合同：Native playback-restart同时确认seek实际落点和预览首帧；controller沿main有界历史容器记录非像素请求，preview-snapshot结果不进入历史。官方Model、原缓冲配置和原Helper协议版本不变。
+
+普通构建从官方注册表锁定Koffi3.3.3及Windows x64成员，验证tarball SHA256、SHA512 integrity及完整92文件；不运行安装脚本。三个系统绑定模块从Git blob物化，保留包内许可证。固定Electron原Vulkan loader逐字节复制到原libmpv旁，不改系统搜索路径或驱动。
+
+windows-native-media-provenance.json绑定提交、模块源、锁文件、完整依赖文件及loader关系；普通package在既有来源门禁之外强制复核。额外/缺失文件、锁/源/载荷变化、复制关系漂移均拒绝。
+
+Windows CI正常打包路线追加包内固定Electron的FFI/绑定自检和原六场真实窗口生命周期检查；不启动真实服务器、读取个人profile或安装软件。单元及合成材料检查不代替Windows helper编译、完整客户端或DWM呈现；新组合普通安装的卡片、预览、关闭与既有页面缓存仍须在候选包验收。旧10的画面、按钮与退出验收只作为功能来源证据。
+
+历史开发记录与v0.4.2发布文件不改，本文件仅记录本批公开技术合同。最终合并、标签、发布和Windows构建由发布流程单独协调。

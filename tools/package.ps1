@@ -23,6 +23,8 @@ $versionCheck = & node (Join-Path $root 'tools/verify-product-version.cjs') `
     (Join-Path $runtime 'electronapp/package.json') `
     (Join-Path $runtime 'build-manifest.json')
 if ($LASTEXITCODE -ne 0) { throw 'Product version consistency validation failed before packaging.' }
+& node (Join-Path $root 'tools/windows-native-media-input.cjs') verify $root $runtime $sourceCommit
+if ($LASTEXITCODE -ne 0) { throw 'Windows native media source/dependency verification failed.' }
 & node (Join-Path $root 'tools/runtime-exclusions.cjs') verify $runtime
 if ($LASTEXITCODE -ne 0) { throw 'Retired runtime artifact is present.' }
 $sourceProvenanceText = (& node (Join-Path $root 'tools/source-provenance.cjs') validate $root $runtime $sourceCommit 2>$null | Out-String)

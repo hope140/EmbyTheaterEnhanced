@@ -26,6 +26,7 @@
 .cacheManagementPage .cacheRow .ete-settings-button {
     margin: 0;
     min-width: 5em;
+    justify-content: center;
 }
 .cacheManagementPage .cachePageState,
 .cacheManagementPage .cacheHttpState {

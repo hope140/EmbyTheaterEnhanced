@@ -7,7 +7,7 @@ const root = path.resolve(__dirname, '..');
 const expected = [
     ['mpvplayer/video.html', 4, '视频设置', 'Playback', 'tv'],
     ['mpvplayer/audio.html', 5, '音频设置', 'Playback', 'audiotrack'],
-    ['mpvplayer/strm.html', 6, 'STRM 智能解析', 'Playback', 'folder_open'],
+    ['mpvplayer/strm.html', 6, '智能解析', 'Playback', 'folder_open'],
     ['mpvplayer/diagnostics.html', 7, '诊断与日志', 'Playback', 'description'],
     ['mpvplayer/cache-management.html', 7, '缓存管理', 'General', 'storage'],
     ['mpvplayer/about.html', 8, '关于 Enhanced', 'General', 'info']

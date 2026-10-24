@@ -49,10 +49,10 @@ test('prepare writes and reuses the same generated artifact without external fil
 });
 
 test('media binding captures preload modules before access is revoked and is idempotent', () => {
-    let preloadOpen = true, installs = 0;
+    let preloadOpen = true, installs = 0, receiveCommand, received;
     const playbackManager = {}, events = {}, rendererWindow = {}, window = {};
-    const context = {window, process: {env: {ETE_WINDOWS_NATIVE_TRIAL: '1'}},
-        ipcRenderer: {send() {}, invoke() { return Promise.resolve({token: 'fixture'}); }},
+    const context = {window, process: {platform:'win32',env: {}},
+        ipcRenderer: {send() {}, on(_channel, listener) {receiveCommand=listener;}, invoke() { return Promise.resolve({token: 'fixture'}); }},
         require(name) {
             if (!preloadOpen) throw Error('require access revoked');
             if (name === './enhanced/diagnostics') return {hashPath() {}};
@@ -64,6 +64,7 @@ test('media binding captures preload modules before access is revoked and is ide
                 assert.equal(options.events, events);
                 assert.equal(typeof options.requestNativeSession, 'function');
                 const dispose = () => {};
+                dispose.command = packet => {received=packet;};
                 dispose.status = () => ({bound: true, disposed: false});
                 return dispose;
             }};
@@ -74,6 +75,7 @@ test('media binding captures preload modules before access is revoked and is ide
     window.__eteBindWindowsMedia(playbackManager, events, rendererWindow);
     window.__eteBindWindowsMedia(playbackManager, events, rendererWindow);
     assert.equal(installs, 1);
+    const packet={version:1,command:'stop'};receiveCommand({},packet);assert.equal(received,packet);
     assert.equal(window.__eteWindowsMediaDiagnostics().bindError, null);
 });
 
