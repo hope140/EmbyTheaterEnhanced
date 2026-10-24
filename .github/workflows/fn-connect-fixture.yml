@@ -1,0 +1,47 @@
+name: FN isolated Electron fixture
+
+# A new workflow is not dispatchable from the UI until present on the default
+# branch. This exact feature-branch push route permits review without main edits.
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/fn-connect-transport]
+    paths:
+      - .github/workflows/fn-connect-fixture.yml
+      - prototypes/fn-connect/client/**
+      - tests/fn-connect-*.test.cjs
+
+permissions:
+  contents: read
+
+jobs:
+  windows-electron-loopback:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    concurrency:
+      group: fn-connect-fixture-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - name: Check out exact feature source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Set up locked Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.18.1
+      - name: Run local transport regressions
+        shell: pwsh
+        run: node --test tests/fn-connect-client.test.cjs tests/fn-connect-electron-smoke.test.cjs tests/fn-connect-smoke-report.test.cjs
+      - name: Verify official Electron and run sandboxed synthetic session
+        shell: pwsh
+        run: ./prototypes/fn-connect/client/run-windows-smoke.ps1
+      - name: Upload only normalized synthetic evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: fn-connect-fixture-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-output/fn-connect-fixture/result.json
+          if-no-files-found: warn
+          retention-days: 1

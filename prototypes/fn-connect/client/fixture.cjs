@@ -18,7 +18,8 @@ async function listen(server) {
 }
 async function createFixture() {
     const state = {expired: false, ambiguous: false, networkError: false, slowClosed: false,
-        seen: [], externalRequests: [], redirectSecret: null};
+        seen: [], externalRequests: [], redirectSecret: null, wsClosed: 0,
+        streamSequence: 0, closedStreams: new Set(), wsSequence: 0, closedWebSockets: new Set(), endedWebSockets: new Set()};
     const bytes = Buffer.from('ETE-FN-SYNTHETIC-MEDIA\n'.repeat(8192));
     const externalServer = http.createServer((req, res) => {
         state.externalRequests.push({...req.headers});
@@ -69,11 +70,15 @@ async function createFixture() {
             res.writeHead(200, {'Content-Type': 'application/vnd.apple.mpegurl'}); res.end('#EXTM3U\nsegment.ts\n'); return;
         }
         if (path === '/emby/slow') {
+            const streamId = ++state.streamSequence;
             res.writeHead(200, {'Content-Type': 'application/octet-stream'});
             const timer = setInterval(() => res.write(Buffer.alloc(1024, 42)), 10);
-            res.once('close', () => { clearInterval(timer); state.slowClosed = true; }); return;
+            res.once('close', () => { clearInterval(timer); state.slowClosed = true; state.closedStreams.add(streamId); }); return;
         }
-        if (path === '/emby/headers-slow') { req.once('close', () => { state.slowClosed = true; }); return; }
+        if (path === '/emby/headers-slow') {
+            state.headersPendingEntered = true;
+            req.once('close', () => { state.slowClosed = true; state.headersPendingClosed = true; }); return;
+        }
         if (path === '/emby/media.bin') {
             const range = req.headers.range?.match(/^bytes=(\d+)-(\d*)$/);
             if (range) {
@@ -91,13 +96,15 @@ async function createFixture() {
         res.writeHead(200, {'Content-Type': 'application/json'}); res.end('{"fixture":true}');
     });
     server.on('upgrade', (req, socket) => {
-        state.seen.push({path: '/emby/ws', headers: {...req.headers}});
+        const connectionId = ++state.wsSequence;
+        socket.once('close', () => { state.wsClosed++; state.closedWebSockets.add(connectionId); });
+        socket.once('end', () => { state.endedWebSockets.add(connectionId); socket.destroy(); });
+        state.seen.push({path: '/emby/ws', connectionId, headers: {...req.headers}});
         if (!authorized(req)) {
             socket.end('HTTP/1.1 401 Unauthorized\r\nX-ETE-FN-Fixture-Auth: required\r\nConnection: close\r\nContent-Length: 0\r\n\r\n'); return;
         }
         if (req.url.startsWith('/emby/ws-pending')) {
             state.wsPendingEntered = true;
-            socket.once('end', () => socket.destroy());
             socket.once('close', () => { state.wsPendingClosed = true; });
             return;
         }

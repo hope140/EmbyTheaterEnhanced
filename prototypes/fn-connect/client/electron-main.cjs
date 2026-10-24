@@ -18,12 +18,27 @@ if (!process.argv.includes('--fn-connect-prototype')) {
     process.stderr.write('FN_PROTOTYPE_DISABLED\n');
     app.exit(2);
 } else {
-    const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-fn-client-'));
+    const fixtureMode = process.argv.includes('--fixture') || process.argv.includes('--fixture-smoke');
+    const smoke = process.argv.includes('--fixture-smoke');
+    const runnerProfileRoot = smoke && process.env.ETE_FN_FIXTURE_PROFILE_ROOT;
+    if (runnerProfileRoot && (!path.isAbsolute(runnerProfileRoot) || path.basename(runnerProfileRoot) !== 'profiles' ||
+        !/^ete-fn-runner-[a-f0-9]{32}$/.test(path.basename(path.dirname(runnerProfileRoot))) ||
+        !fs.lstatSync(runnerProfileRoot).isDirectory() || fs.lstatSync(runnerProfileRoot).isSymbolicLink())) {
+        throw new Error('INVALID_FIXTURE_PROFILE_ROOT');
+    }
+    const temporary = fs.mkdtempSync(runnerProfileRoot ? path.join(runnerProfileRoot, 'profile-') : path.join(os.tmpdir(), 'ete-fn-client-'));
     fs.chmodSync(temporary, 0o700);
     app.setPath('userData', temporary);
     app.setPath('sessionData', temporary);
-    const fixtureMode = process.argv.includes('--fixture') || process.argv.includes('--fixture-smoke');
-    const smoke = process.argv.includes('--fixture-smoke');
+    let smokeOutcome = null;
+    function report(kind, value) {
+        // quit handlers cannot await stdout callbacks; write the small fixed
+        // evidence record synchronously to the runner's redirected pipe.
+        if (smoke) fs.writeSync(1, 'ETE_FN_FIXTURE ' + JSON.stringify({kind, ...value}) + '\n');
+    }
+    function stage(value) { report('stage', {stage: value}); }
+    stage('APP_CODE_STARTED');
+    report('runtime', {electronVersion: process.versions?.electron || 'UNKNOWN'});
     let fixture, controller, bridge, panel, closing;
     let stopping = false, startupDone;
     const startupSettled = new Promise(resolve => { startupDone = resolve; });
@@ -74,40 +89,34 @@ if (!process.argv.includes('--fn-connect-prototype')) {
         })();
         return closing;
     }
-    async function waitFor(check) {
-        const deadline = Date.now() + 5000;
-        while (!await check()) {
-            if (Date.now() >= deadline) throw new Error('FIXTURE_DEADLINE');
-            await new Promise(resolve => setTimeout(resolve, 10));
-        }
-    }
     async function smokeFixture() {
-        const added = await action('add', defaults), id = added.id;
-        const login = BrowserWindow.getAllWindows().find(win => win !== panel);
-        await waitFor(() => !login.webContents.isLoading() && login.webContents.getURL() === defaults.bootstrapUrl);
-        // Synthetic page only; no script is injected into a real NAS page.
-        if (new URL(login.webContents.getURL()).hostname !== '127.0.0.1') throw new Error('FIXTURE_ONLY');
-        await login.webContents.executeJavaScript('document.querySelector("form").requestSubmit()');
-        const ownSession = login.webContents.session;
-        await waitFor(async () => (await ownSession.cookies.get({url: defaults.embyUrl})).length > 0);
-        await action('target', {id});
-        await action('verify', {id});
-        const range = await action('fixture-media', {id});
-        if (range.state !== 'fixture-range-passed') throw new Error('RANGE_FAILED');
-        const isolated = await action('add', defaults);
-        let denied = false;
-        try { await action('verify', isolated); } catch (error) { denied = error.code === 'FN_AUTH_REQUIRED'; }
-        if (!denied) throw new Error('SESSION_ISOLATION_FAILED');
-        const lease = bridge.lease(id, {path: 'direct', headers: {'X-Emby-Token': 'synthetic-electron-canary'}});
-        await (await fetch(lease.url)).arrayBuffer(); lease.revoke();
-        if (fixture.state.externalRequests.some(headers => headers.cookie || headers['x-emby-token'] || headers.authorization)) throw new Error('REDIRECT_LEAK');
-        process.stdout.write(JSON.stringify({test: 'electron-synthetic-session', result: 'PASSED',
-            bootstrap: true, isolatedSessions: true, range206: true, externalRedirectCredentialSeparation: true,
-            realFNConnect: 'NOT_TESTED', nativeHelperPlayback: 'NOT_TESTED'}) + '\n');
+        const {runElectronSmoke, waitFor} = require('./electron-smoke.cjs');
+        const security = await panel.webContents.executeJavaScript('window.fnExperiment.security');
+        if (security?.sandboxed !== true || security.contextIsolated !== true) throw new Error('FIXTURE_RENDERER_SECURITY_FAILED');
+        const result = await runElectronSmoke({controller, bridge, fixture, stage,
+            async addProfile() {
+                const previous = new Set(BrowserWindow.getAllWindows());
+                const added = await action('add', defaults);
+                const window = BrowserWindow.getAllWindows().find(value => !previous.has(value));
+                if (!window) throw new Error('FIXTURE_WINDOW_MISSING');
+                return {id: added.id, window, session: window.webContents.session};
+            },
+            async authorizeProfile(profile) {
+                // Synthetic page only: no script is injected into real NAS pages.
+                if (new URL(defaults.bootstrapUrl).hostname !== '127.0.0.1') throw new Error('FIXTURE_ONLY');
+                await waitFor(() => !profile.window.webContents.isLoading() && profile.window.webContents.getURL() === defaults.bootstrapUrl);
+                await profile.window.webContents.executeJavaScript('document.querySelector("form").requestSubmit()');
+                await waitFor(async () => (await profile.session.cookies.get({url: defaults.embyUrl})).length > 0);
+                await action('target', {id: profile.id});
+            },
+            removeProfile: id => action('remove', {id})
+        });
+        return {...result, sandboxedControlRenderer: true, isolatedControlRenderer: true};
     }
     app.whenReady().then(async () => {
         try {
         if (stopping) return;
+        stage('APP_READY');
         if (fixtureMode) { fixture = await createFixture(); defaults = fixture.profile; }
         else {
             const at = process.argv.indexOf('--profile-config');
@@ -136,17 +145,20 @@ if (!process.argv.includes('--fn-connect-prototype')) {
         });
         panel.on('closed', () => app.quit());
         await panel.loadURL(panelUrl);
+        stage('PANEL_READY');
         } finally { startupDone(); }
         if (smoke && !stopping) {
-            try { await smokeFixture(); }
-            catch (error) { process.exitCode = 1; process.stdout.write(JSON.stringify({test: 'electron-synthetic-session', result: 'FAILED', reason: code(error)}) + '\n'); }
+            try { smokeOutcome = {result: 'PASSED', checks: await smokeFixture()}; }
+            catch (error) { process.exitCode = 1; smokeOutcome = {result: 'FAILED', reason: code(error)}; }
             await shutdown();
+            stage('DRAINED');
             app.quit();
         }
     }).catch(async () => {
         startupDone();
         if (stopping) { await shutdown().catch(() => {}); app.quit(); return; }
         process.exitCode = 1;
+        if (smoke) smokeOutcome = {result: 'FAILED', reason: 'STARTUP_FAILED'};
         process.stderr.write('FN_PROTOTYPE_START_FAILED\n');
         await shutdown().catch(() => {}); app.quit();
     });
@@ -156,5 +168,15 @@ if (!process.argv.includes('--fn-connect-prototype')) {
         event.preventDefault();
         shutdown().then(() => { drained = true; app.quit(); }, () => { process.stderr.write('FN_PROTOTYPE_DRAIN_FAILED\n'); });
     });
-    app.on('quit', () => { try { fs.rmSync(temporary, {recursive: true, force: true}); } catch { /* Reported as temporary profile cleanup only. */ } });
+    app.on('quit', () => {
+        let removed = false;
+        if (!runnerProfileRoot) {
+            try { fs.rmSync(temporary, {recursive: true, force: true}); removed = !fs.existsSync(temporary); } catch { /* No paths in diagnostics. */ }
+        }
+        if (smoke) {
+            if (!runnerProfileRoot && !removed) { process.exitCode = 1; smokeOutcome = {result: 'FAILED', reason: 'TEMP_PROFILE_CLEANUP_FAILED'}; }
+            report('result', {test: 'electron-synthetic-session', ...(smokeOutcome || {result: 'FAILED', reason: 'INCOMPLETE'}),
+                profileCleanupOwner: runnerProfileRoot ? 'runner' : 'application', temporaryProfileRemoved: removed});
+        }
+    });
 }

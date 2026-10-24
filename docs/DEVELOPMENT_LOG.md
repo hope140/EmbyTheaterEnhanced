@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-24 — FN Windows真实Session合成验收入口
+
+准备功能分支限定的Windows2022任务、官方Electron44.4.2 win32-x64固定输入和脚本；保持沙箱，不改生产入口、依赖或NAS。将合成验收独立成可测试编排，逐stream/WS连接确认取消和关闭；runner有界等待主进程与输出管道，退出后核验删除自有profile。控制面板回读沙箱/上下文隔离布尔；白名单回执不收原始日志或认证信息，重复/缺失结果和未清理均失败。
+
+77项本机FN测试通过，含4项新增编排/回执回归；PS/YAML/JS语法与真实非Windows平台拒绝路径验证。编排仍用合成Jar，Windows/Chromium尚未运行；准确待办是维护者审阅后push本分支触发独立任务。GitHub新workflow默认分支登记限制已说明，未改main、公开push、dispatch或安装服务器组件。
+
 ## 2026-10-24 — FN认证独立客户端与传输实验
 
 提供默认关闭的独立Electron入口、无NAS密码字段的本地面板与内存Session owner。主动添加后加载正常登录页，再访问既有Emby映射；不注册映射、创建OAuth客户端或替代Emby登录。新增限定同源API、真实回环Range/206/416和WS字节桥，第三方302由不持有FN/Emby头的消费者跟随；固定错误、认证代次、body deadline、关闭drain、取消和过期边界独立验证。

@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-24 — FN Windows合成Session验收准备
+
+新增独立功能分支专用windows-2022 workflow及固定Electron44.4.2官方ZIP/SHA输入；不调度主应用打包或Release。真实Session合成验收入口覆盖HTTP、WS原始字节桥、Range、外链认证隔离、逐连接取消/关闭及profile清理，回执要求完整阶段、版本/哈希、沙箱布尔和退出/删除核验。runner使用自有临时profile，等待有界；仅上传归一JSON。
+
+本机77项FN Node测试、PowerShell/YAML/JS语法与非Windows拒绝门禁通过；编排测试使用合成Session，不是Chromium证据。Windows workflow尚未push/执行，真实FN、Native和HLS/DASH边界保持。新workflow不能仅凭功能分支获得UI手动入口；使用精确分支push触发，由维护者协调，不改main登记。见[运行说明](../prototypes/fn-connect/client/README.md)。
+
 ## 2026-10-24 — FN认证独立客户端实验
 
 新增产品树外、显式opt-in的[独立Electron/本机传输原型](../prototypes/fn-connect/client/README.md)：主动添加连接→隔离内存Session正常网页登录→已有Emby映射→公开信息验证；Emby账号与原播放归属保持。HTTP请求绑定Session，API/WS和本机媒体lease限制上游范围，跨源302不携带FN/Emby认证；未知网关错误不自动判过期，多连接隔离、取消排空与迟到verify退休。
