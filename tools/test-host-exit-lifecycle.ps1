@@ -13,10 +13,20 @@ $forms=[Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms').Locati
 $wpf=[Reflection.Assembly]::LoadWithPartialName('WindowsBase').Location
 $signature=Get-AuthenticodeSignature -LiteralPath $compiler
 if($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch 'Microsoft'){throw 'Microsoft Framework compiler signature required.'}
+# Disable csc.rsp: it already references Forms from the Framework directory,
+# which duplicates the explicit GAC Forms identity below.
+$framework=Split-Path -Parent $compiler
+$rsp=Join-Path $framework 'csc.rsp'
+$defaultRspHasForms=(Get-Content -LiteralPath $rsp -Raw) -match '(?im)/r(?:eference)?:System\.Windows\.Forms\.dll(?:\s|$)'
+$references=@((Join-Path $framework 'System.dll'),(Join-Path $framework 'System.Core.dll'),(Join-Path $framework 'System.Drawing.dll'),$forms,$wpf)
+$referenceIdentities=@($references|ForEach-Object{[Reflection.AssemblyName]::GetAssemblyName($_).FullName})
+if(@($referenceIdentities|Sort-Object -Unique).Count -ne $references.Count){throw 'Duplicate explicit Framework reference identity.'}
+$referenceArguments=@($references|ForEach-Object{'/reference:'+$_})
+[ordered]@{defaultResponseFileDisabled=$true;defaultRspReferencesForms=$defaultRspHasForms;explicitReferenceIdentities=$referenceIdentities}|ConvertTo-Json -Compress|Write-Output
 $rows=@()
 foreach($variant in @('baseline','candidate')){
  $exe=Join-Path $sourceRoot ($variant+'.exe')
- & $compiler /nologo /target:exe /platform:x86 ('/reference:'+$forms) ('/reference:'+$wpf) ('/out:'+$exe) (Join-Path $sourceRoot ($variant+'.cs'))
+ & $compiler /noconfig /nologo /target:exe /platform:x86 @referenceArguments ('/out:'+$exe) (Join-Path $sourceRoot ($variant+'.cs'))
  if($LASTEXITCODE -ne 0){throw 'Framework harness compilation failed.'}
  foreach($caseName in @('before-loop','before-loop-nested-pump','after-loop','repeated-after-loop')){
   $report=Join-Path $OutputRoot ($variant+'-'+$caseName+'.json')
@@ -31,7 +41,7 @@ $baselineEarly=@($rows|Where-Object{$_.variant -eq 'baseline' -and $_.case -like
 $candidate=@($rows|Where-Object{$_.variant -eq 'candidate'})
 $reproduced=@($baselineEarly|Where-Object{-not $_.result.normalLoopExit -and $_.result.watchdogCleanup -and $_.result.callbackObserved -and $_.result.childExitCode -eq 0}).Count -eq 2
 $passed=@($candidate|Where-Object{$_.exitCode -ne 0 -or -not $_.result.normalLoopExit -or $_.result.watchdogCleanup -or -not $_.result.callbackOnWorker -or -not $_.result.applicationExitOnMain}).Count -eq 0
-$summary=[ordered]@{scope='selected-production-exit-methods-real-framework-loop';baselineEarlyReproduced=$reproduced;candidatePassed=$passed;fullHostAcceptance='NOT_ASSESSED';fullHostLaunched=$false;installerExecuted=$false;compilerSha256=(Get-FileHash -LiteralPath $compiler).Hash.ToLowerInvariant();compilerSignature=[string]$signature.Status;formsSha256=(Get-FileHash -LiteralPath $forms).Hash.ToLowerInvariant();windowsBaseSha256=(Get-FileHash -LiteralPath $wpf).Hash.ToLowerInvariant();cases=$rows}
+$summary=[ordered]@{scope='selected-production-exit-methods-real-framework-loop';baselineEarlyReproduced=$reproduced;candidatePassed=$passed;fullHostAcceptance='NOT_ASSESSED';fullHostLaunched=$false;installerExecuted=$false;defaultResponseFileDisabled=$true;defaultRspReferencesForms=$defaultRspHasForms;explicitReferenceIdentities=$referenceIdentities;compilerSha256=(Get-FileHash -LiteralPath $compiler).Hash.ToLowerInvariant();compilerSignature=[string]$signature.Status;formsSha256=(Get-FileHash -LiteralPath $forms).Hash.ToLowerInvariant();windowsBaseSha256=(Get-FileHash -LiteralPath $wpf).Hash.ToLowerInvariant();cases=$rows}
 $summary|ConvertTo-Json -Depth 7|Set-Content -LiteralPath (Join-Path $OutputRoot 'summary.json') -Encoding UTF8
 $summary|ConvertTo-Json -Depth 7 -Compress|Write-Output
 if(-not $reproduced -or -not $passed){throw 'Real Framework lifecycle contract did not pass; no full Host claim.'}
