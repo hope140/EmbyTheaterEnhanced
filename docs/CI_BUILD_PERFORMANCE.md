@@ -66,3 +66,11 @@ Linux通过不代表Windows Host编译／真实验证、安装器或云端时长
 定向计时／Git负例／相邻合同37项通过；Host／Release附件／计时相邻65项通过。主要提交的完整公共集1541项：1531 pass、0 fail、10个既有Linux平台skip；另跑runtime来源组6/6、0 skip。精确HEAD构建输入合同及获取计划通过，原27个构建输入测试主体保留，新增隔离及批读／诊断负测。语法与有限凭据模式检查通过；并非完整秘密扫描。
 
 没有编译／执行Windows Host、Native或安装器，没有测试真实签名／GUI；Windows注册及材料门禁保留，不能由Linux skip或合成回归替代。未改变src/native/vendor、package与锁文件或workflow。普通push触发的公共CI须另读结果，不冒充本地结果；这些本地实验不运行Actions或产物，Windows A/B尚未执行。
+
+## Windows公共CI换行夹具修正
+
+[40083575146](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40083575146) 在c16208a上实际运行1541项：1540 pass、1 fail、0 skip。唯一失败为新增CI authority测试的最后一次换行准备；已有CRLF又直接按LF→CRLF展开，变成CRCRLF，原工作树／HEAD校验正确拒绝vendor/windows-host-manifest.json。
+
+仅修正测试数据准备：先CRLF→LF，再LF→CRLF；连续执行两次仍断言输出身份不变，随后显式制造CRCRLF，继续断言门禁拒绝。Linux保留原5 pass／1 fail的同错误复现；修复后相关38项、0 skip通过，core.autocrlf=true的独立checkout验证该组6/6通过。这是换行行为模拟，不是新的真实Windows通过证据。
+
+生产hash／blob／路径校验、workflow、测试发现和串行参数均未改；测试数不减少。既有同输入A/B原始数据保留，计时算法及28项性能对照文件未改，不重标或外推Windows收益。新push的Windows公共结果须另核。

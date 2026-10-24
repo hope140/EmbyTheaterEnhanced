@@ -42,10 +42,19 @@ test('CI authority batch has identical output with four Git calls and raw commit
         assert.throws(() => plan.createPlan(repo), /differs from HEAD/);
         fs.writeFileSync(path.join(repo, file), bytes);
     }
-    for (const file of plan.AUTHORITIES) {
-        const p = path.join(repo, file);fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace(/\n/g, '\r\n'));
+    // Windows checkouts can already contain CRLF. Repeating this preparation
+    // must not turn CRLF into CRCRLF or change the committed input identity.
+    for (let round = 0; round < 2; round++) {
+        for (const file of plan.AUTHORITIES) {
+            const p = path.join(repo, file);
+            fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace(/\r\n/g, '\n').replace(/\n/g, '\r\n'));
+        }
+        assert.deepEqual(plan.createPlan(repo), expected);
     }
-    assert.deepEqual(plan.createPlan(repo), expected);
+    const target = path.join(repo, plan.AUTHORITIES[0]), correct = fs.readFileSync(target);
+    fs.writeFileSync(target, correct.toString('utf8').replace(/\n/g, '\r\n'));
+    assert.throws(() => plan.createPlan(repo), /differs from HEAD/);
+    fs.writeFileSync(target, correct);
 });
 
 test('CI authorities recheck HEAD, ordinary committed mode and physical paths on every call', t => {

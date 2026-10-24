@@ -1,5 +1,10 @@
 # 维护记录
 
+## 2026-10-24 — 修正性能实验Windows换行夹具
+
+实际Windows公共run40083575146在c16208a得到1540 pass／1 fail／0 skip，唯一失败在新增authority测试：将已有CRLF再次直接扩为CRLF，造成CRCRLF，原HEAD字节校验正确拒绝。只修测试转换为先规范LF再生成CRLF，重复两轮并新增CRCRLF仍拒绝断言；不改生产校验、测试选择／数量、workflow或并发。原红例在Linux同错误复现，修后相关38项／0跳过和core.autocrlf=true checkout该组6项／0跳过通过；新Windows结果仍需单独核验。原同输入A/B数据与边界保留，不能由换行修正声称Windows性能收益。详见[实验记录](CI_BUILD_PERFORMANCE.md)。
+
+
 ## 2026-10-24 — 构建输入提速实验：本地对照完成
 
 独立perf/build-inputs候选基于main 88578c91，新增分阶段／测试热点日志，将固定Git读取扩到获取authority和55份Host来源；每次仍验证精确commit／blob／size／SHA、当前物理路径及工作树字节，没有跨调用缓存成功结果。原27项构建输入用例主体完整保留，种子只复用文件内不可变输入，每用例物理独立.git／工作树及新runtime；增加隔离和损坏输入负测。workflow、缓存、并发、runner规格、产品源码与材料版本保持。
