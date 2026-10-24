@@ -1,10 +1,10 @@
 # 项目状态
 
-## 2026-10-24 — 第一批验收后 v0.4.2 测试版准备
+## 2026-10-24 — v0.4.2 第一批测试版准备
 
-从main 3efd8c55整合已验收详情最终39863517及其首页／缓存管理／手动更新祖先，保留v0.4.1修复和main构建提速／正常release路由。唯一代码冲突同时保留runtime assemble/verify计时与包内更新器8项离线门禁，Framework来源预检保持。产品版本三个根字段一致准备0.4.2；用户发布说明只述已完成变化和测试提醒，不加入后续Native／视频缓存等功能。
+整合详情静态内容持久缓存、独立缓存管理和手动更新／正式测试通道，保留v0.4.1修复及main构建输入提速。详情数据按身份隔离，缓存不替代授权、最新进度或播放数据；首页布局试验默认保持，登录与设置不随缓存清理。
 
-用户已确认第一批及实际覆盖安装通过，不要求重复验整套；最终整合准确来源仍执行自动组合回归和新Windows发布门禁。当前只准备独立分支代码与说明，公开push／PR／合main／Tag／构建及Release由发布协调者执行，详见[v0.4.2来源与发布顺序](V042_RELEASE_VERIFICATION.md)。
+根产品版本一致为0.4.2；正常release路由、Framework来源预检、包内更新器自检和五附件来源校验保持。全仓／材料及受控浏览器回归与实际Windows包核验分别记录，不把旧包反馈当作新来源构建结果。来源与发布参数见[v0.4.2核验说明](V042_RELEASE_VERIFICATION.md)。
 
 ## 2026-10-24 — 恢复main正常手动打包默认值
 
@@ -39,174 +39,6 @@
 
 同e8be676输入、每臂3次交替本地A/B：Git调用8→4、111→3；夹具组fresh／seed均28/28、0跳过，中位13.370／12.294秒，初次种子准备更慢、后续复用更快。完整范围、方差和首次／热调用见[性能实验](CI_BUILD_PERFORMANCE.md)，不把Linux局部差值称Windows整包收益。公共完整集1531 pass／0 fail／10既有Linux skip，runtime来源6/6及Host／Release／计时相邻65项通过；精确HEAD输入合同、语法和有限凭据模式检查通过。未手动触发Actions或打包；普通push后的CI另核，Windows A/B及端到端收益尚未验证，不将局部结果当发布或安装证据。
 
-
-## 2026-10-24 — 详情真实入口 AMD 修复候选
-
-实际测试包的电影／剧集标题点击仅改变 URL、仍停首页，详情入口未通过用户验收。受控真实 Home 卡片经 Shortcuts／CommandProcessor、生产 router init/load、Alameda 与原 ItemPage 复现：app 的默认导出解包别名与 ItemPage 的 namespace 消费合同错配，构造器在 viewmanager 隐藏首页之前抛错。最小修复仅让详情别名保留 namespace；不改缓存隔离、READY／flush、页面显示策略或播放流程。旧别名失败对照与修正后首次进入／缓存再次进入均检查可见内容，原辅助夹具改用生产别名，新增无浏览器 Alameda 合同检查。受控验证不能代替 Windows／真实服务验收；保留旧包，父线程统一排候选，不在本分支发布。见[详情合同](DETAIL_PAGE_CACHE.md)。
-
-独立详情持久缓存候选基于组合 d8870fbd，保留首页／更新／v0.4.1 修复；只持久四类详情的静态 DTO，原网络和播放 owner 保持。自动 LRU 200、4 MiB／64 KiB 工程试验限额，无新参数设置；管理页为资源／页面两行，分别委托真实 owner，HTTP 总量不冒充纯图片，页面仅统计序列化数据。完整离线、受控原生 renderer 和真实服务／Windows 验收分开记录，既有首页未因此整项标通过。见[详情缓存合同](DETAIL_PAGE_CACHE.md)。
-
-## 2026-10-24 — 首页、独立缓存管理与手动更新测试集成
-
-从已发布v0.4.1准确44d524e创建独立整合候选，合入首页来源4ebde919与手动更新来源cb51c887，保留九项修复及两个固定渲染控件隐藏；版本仍为0.4.1开发候选，不修改原分支/main/已发布包。About保留说明链接依赖、缓存继续独立页；单一destroy同时退休信息/内核请求及更新工作，BaseView只销毁一次。主进程维护与HTTP缓存两组清理均保留。原材料菜单回归补列实际新增缓存路由及原生排序，组合浏览器检查使用固定Alameda加载真实插件与相对依赖；该检查暴露并最小修正独立缓存页的扩展名及绝对URL重复owner问题，单一app别名复用原Home布局模块，准确app overlay输出SHA同步，vendor不改。
-
-普通启动仍关闭布局缓存、编排baseline；更新默认正式、无自动检查，缓存管理不清认证/设置/embydata/视频。Windows整包、实际HTTP缓存/下载及真实服务尚待协调者安排，离线与Chromium替身证据不冒充实测；见[组合合同与验收](HOME_CACHE_UPDATE_INTEGRATION.md)。
-
-## 2026-10-23 — v0.4.1测试版准备与固定渲染设置收尾
-
-用户对415ddf88九项候选反馈除两处固定无效下拉外其余通过，按反馈仅隐藏当前Native Helper固定gpu-next/D3D11时的视频渲染、图形接口整行及说明；复用只读status，未播放也可识别，不启动helper。未确认能力或固定模式不保存这两个历史键，保留其他有效设置；非固定模式保留原控件与保存行为，迟到回复不能重新激活离开页面的控件。没有改后端/媒体/认证/缓存代码。
-
-读取现有tag未发现v0.4.1占用，按授权将真实根版本三个字段准备为0.4.1，运行时包/build manifest/installer沿原生成关系；不改固定上游模板或组件版本。Release标题拟“v0.4.1 测试版”，prerelease=true且不标Latest，代码/说明准备不等于发布。原九项有限验收与未测双端边界分别保留；最终Windows包由父另排，不创建PR、合main或发布，详见[本版准备与核验](V041_RELEASE_VERIFICATION.md)。
-
-## 2026-10-23 — 六项纯修复接入三项缩略图边界修复
-
-保留61dc318六项检查点，在同一独立候选合入缩略图来源66c6a32d。增量只修复无章节预览、实际MediaSourceId绑定及多播放/身份代次取消隔离；沿现有VideoOSD overlay，原始vendor、许可输入及声明保持，维护ApiClient/AMD输出与清单同步，不新增图片库/缓存策略、更新器或原生预览改动。六项播放器owner、暂停意图及真实Seek完成上报保留。
-
-新增两个组件交叉回归连接真实adapter/endpoint与固定OSD片段：暂停Seek完成不退休当前版本缩略图或解除显式暂停；Stop与替换同时退休旧seek及旧图片元数据。PlaybackManager/DOM仍有夹具，完整Session另由EWT矩阵覆盖。九项全量/材料结果按准确组合提交单独记录；61dc既有Windows包只代表六项，不能冒充九项通过。不创建PR、不合main/发Release、不在本轮排包或占用户前台；父统一新包与简验。新增检查见[九项组合验收](NINE_FIX_ACCEPTANCE.md)。
-
-## 2026-10-23 — 四项审查修复与两项EWT修复组合候选
-
-按独立发布基线88578，组合四项审查保全源2570c326与EWT源cb0ebf78，必要构建来源预检693d5257单独保留。service/client/libmpv及其测试自动合并，逐项复核须同时保留create/Stop/Play资源owner、显式暂停意图和真实seek完成后原Session上报；不以命令接受伪造目标位置。两份文档顶部冲突保留双方完整记录。
-
-不包含Home/图片/播放缓存、手动更新或原生预览新改动；版本、依赖、installer与原发布main不变。候选仅供本轮云端回归、后续独立Windows测试包与简单体验，难复现问题仍待真实环境观察，不声称彻底解决。纯源分支保留，验收前draft、不合main或发布Release，不占当前用户前台。当前组合范围及最短验收见[六项修复组合](AUDIT_EWT_ACCEPTANCE.md)，下方各单分支说明保留历史范围。
-
-## 2026-10-23 — 四项修复独立验收矩阵
-
-按原生产基线88578与候选同一测试文件重跑受控复现：helper owner 3/8、暂停意图13/30、独立secrets44/49、有界历史2/6通过，失败均落在原缺陷断言，0跳过/取消。仅临时复现工作树复制最终测试，基线生产源码未改；候选绿色结果按最终SHA单独记录。新验收清单明确云端自动、Windows实际进程与需要GUI的暂停/显示层，不把所有单元通过当Windows包通过。
-
-四项修复可独立于新功能先验收；纯修复候选包含独立构建预检移植但不带缓存功能，保持draft、不合main或改已发布v0.4.0。准确最小测试、行为合同及尚待范围见[四项修复验收](AUDIT_FIX_ACCEPTANCE.md)。
-
-## 2026-10-23 — 纯四项修复候选的独立构建准备
-
-从四项审查修复保全点2570c326建立独立验收候选，仅单独移植已复核来源6dc6c270的Framework预检、验证器清单及定向测试。原固定哈希路径保持，额外候选仍要求精确文件/镜像/OS、规范物理GAC路径、微软有效签名及复算哈希；业务源码、版本、依赖及安装器不变。不携带任何Home/图片/播放缓存功能或测试开关，不改原修复源分支或正式v0.4.0。
-
-新Windows构建与实际helper/显示体验仍须按准确候选单独验证，来源预检或Node夹具不能冒充包验收。四项原提交保持独立；验收完成前保持draft、不合main，不在本轮触发包或占用当前用户前台。
-
-## 2026-10-23 — 后续独立修复：自动切率尊重暂停意图
-
-显式 pause/unpause/playPause 意图按本次 Play 记录，FPS 内部临时暂停不再伪造用户命令；任务只恢复自己取得且未被新显式命令接管的暂停。未经命令关联的原生属性继续更新原观测/事件，但不能改写已有显式意图。native cycle 保持原命令和顺序；cycle 后本次 Play 的 FPS 仍切率并保留成功后的3000ms等待，暂不再插入临时暂停/恢复，直到明确 pause/unpause 或新 Play 重建已知归属。最终同一30项矩阵修前13通过/17失败、修后30/30，相关227项及独立迟到回报复核通过；尚无 Windows 硬件/实际声画验收。四项修复均在独立后续分支，不混入 v0.4.0 发布候选，也不自动阻塞其发布。
-
-## 2026-10-23 — 后续独立修复：Native Helper 有界历史
-
-timeline 保留最近4096条、requestHistory保留最近1024条，固定容量环形写入，快照增加容量及丢弃计数。ready和注册期间已匹配的事件不依赖可淘汰历史；迟注册只查询仍保留的历史。读取接口仍返回按时间顺序的普通数组，数组结构修改不写回内部历史。真实 controller 回归修前2/6、修后6/6，相邻94/94通过；20万条合成属性事件GC后堆增由约32.5MB降至约0.72MB。该测量不代表真实播放速率、Windows长时或安装验收；保持独立后续修复范围，不纳入 v0.4.0。
-
-## 2026-10-23 — 后续独立修复：播放创建与销毁归属
-
-首次 Native Helper 创建尚未完成时，终端 Stop/Destroy 等待所属创建和清理完成；后续 Play 经同一销毁屏障继续，退休的等待请求不能再创建 helper。renderer endpoint 的销毁共享完成 Promise，main 在等待旧进程退出前退休旧 ID，新 create 获得独立 ID，旧收尾不再撤销新 owner。真实 adapter、Endpoint、service 的受控组件回归先暴露失败，再验证 Stop→Play、第二次 Stop、Next、迟到销毁和退出等待；相关115项通过、0跳过。Windows 窗口/进程仍用夹具，未宣称实机播放或安装验收；保持在 v0.4.0 之后的独立修复范围。
-
-## 2026-10-23 — 后续独立修复：首次 STRM Token 恢复
-
-独立后续修复以发布候选 `e57fcb5` 为基线，不纳入 v0.4.0 发布工作。首次仅保存 Token 后，即使普通设置尚未保存，重启也恢复独立 secrets；首次 legacy 迁移及已有配置优先级、JSON 保存格式、认证用法和公开只返回配置状态保持。新增回归先在原实现失败，修后六个相关文件157/157通过、0跳过；未进行 Windows 前台、真实服务或安装验收。该修复等待与后续已验收功能另行集成，不自动改变当前发布计划。
-
-## 2026-10-23 — EWT 全量云端回归完成，独立测试分支准备
-
-普通 176 文件／1629 项为 1619 pass、0 fail、10 项既有 Windows 平台 skip；显式材料 21 文件／135 项全部通过。observer 材料夹具的新增用例截取边界已修正并复验；固定组件、173 项构建输入、8 项 Native 合同、固定 header／源码身份、418 JS／47 PowerShell 与有限模式检查通过。产品实现仍是前述两处 Seek 修正，缺失完成事件不会伪造落点或等待下一命令。独立分支可正常推送供测试包准备，使用 skip 标记避免启动工作流；不合 main、不改现有正式包。Windows 构建／安装及真实双端验收仍须在相应环境执行，详见[技术合同](EWT_CLIENT_SYNC.md)。
-
-## 2026-10-23 — 独立 EWT 客户端 Seek 修正候选
-
-从最新 main `88578c91` 创建 `fix/ewt-client-sync`。受控协议／播放器 fixture 证明暂停 Seek 到 0 的完成位置会被普通进度节流遗漏，且适配器将小数秒向下取整。现保留小数秒，并在 Native 实际 Seek 完成后沿原 PlaybackManager／Session 上报真实位置，旧 generation／Stop／迟到应答保持隔离。远控能力路径未发现写 false 的证据，声明保持；不归因真实环境历史事故。
-
-关键 8 项基线 2 通过／6 失败，修后 8／8；相关播放／Native 与构建／诊断回归共 210 项通过，Native 窄分支另经源码合同与独立 C++ stub 验证。未执行 Windows 完整构建、真实 mpv／服务器或双端 EWT 验收，不推送／合并／发布。详见[范围、复现与验收边界](EWT_CLIENT_SYNC.md)。
-
-首页跨设置返回候选已接原 router／viewmanager：只恢复原三 slot 中同身份、同查询且有效的 HomeView，普通前向首页导航不再无条件重建；真正淘汰、权限／身份或原恢复失效仍冷加载。保留原 HomeView→TabbedView 销毁与已通过的同页喜欢切换。客户端设置新增独立缓存管理路由、两项统计／单独清理及逐 owner 组合清理；About 仅保留入口位置说明。原生导航／设置列表点击、实际 Alameda 和完整离线回归分开验证，不改 main／正式版，不代表新 Windows 包验收完成。见[首页恢复](HOME_FLOW.md#跨-route-的首页恢复)与[缓存管理](CACHE_MANAGEMENT.md)。
-
-此前 About 缓存区的完整设置回归已补齐 AMD 装配；本轮迁为独立页后，About 恢复自身版本／内核依赖，管理页单独覆盖原 Alameda／BaseView、真实管理模块和设置／首页 CSS。完整离线回归与 Windows 专属运行分别记录，见[验证范围](CACHE_MANAGEMENT.md#可重复验证与限制)。
-
-首页实验的旧首显代理不足以验收真实视觉：旧 retain／sections 在返回时遮住整个动态行，且额外占位／加载段落导致空白与高度变化。新增同身份卡片外壳保留、易变字段暂遮和同 rail 首次占位候选，仍每轮取新 Items，错误明确重试，策略／身份变化退休内容。原组件与 CSS 的截图／rAF 回归见[视觉合同](HOME_FLOW.md#返回闪空的视觉回归)，完整 Windows／用户视觉验收仍待进行；P4 管理保全，未合正式版。
-
-首页独立分支新增最小手动[缓存管理](CACHE_MANAGEMENT.md)：分别统计／清理已启用的首页布局 DTO 和当前 session HTTP 总缓存，不开启缓存、不添加产品 TTL 或容量默认，不清登录／设置／下载／播放。owner 失效／身份检查阻止旧数据重新入库；HTTP 入口验证包内主 frame、合并重复请求，退出等待已开始操作。真实 DOM 与主进程 owner 的受控检查和 Windows 完整 session 行为分开记录；尚未宣称新包或实机验收通过。
-
-## 2026-10-24 — 首页界面流畅度 P0/P1/P2 隔离实验
-
-从保全的bcf9453继续独立feature/page-cache，目标由单一布局缓存扩为可验证的首页返回／首屏流畅度；未混入其他问题组合或功能。新增同条件无界面基线工具，原Home owner内实现同身份／查询stage复用、位置／焦点恢复、重新读取内容及逐区呈现／错误／重试。动态行在新数据到达前遮住旧内容；原生DOM、延迟焦点和分块提交有窄归属检查，用户已经重新输入时不抢焦点且刷新登记仍完成。未知布局仍完整旧首页fallback。
-
-普通启动保持baseline，原布局缓存缺配置仍关闭；可在既有强制新profile入口额外选择retain／sections，独立于数据缓存开关。启动前检查两份组合原生组件的精确哈希，不改已验包或放宽来源。没有产品TTL／容量默认、全局缓存池、海报库、列表淘汰或清理UI；图片／长列表须先有实证再推进。合同、明确范围和复现命令见[首页界面流畅度](HOME_FLOW.md)。
-
-最终31文件组合403/403，0失败/取消/跳过；JS428及有限模式516文件通过，来源／overlay和原Movie/Search行为回归保持。无界面Chromium16场景覆盖切用户／服务器、认证／查询、通知、旧响应、重试、焦点和退出；API与Items/CardBuilder仍是替身，原生提交钩子另执行精确生产函数。受控首次／返回计时只属合成条件下的DOM／帧代理，不代表Windows、原生完整组件或NAS性能。未触发新Windows包／安装／前台试验，未改main或发布。
-
-## 2026-10-24 — 补充实际 WebSocket 失效链回归
-
-补充栈的起点是维护ApiClient延后发出的websocketclose，经原Events触发首页缓存失效，再到缓存完成阶段；不能据此把顶部“喜欢→主页”导航描述为收藏写入，也不能把没有请求轨迹描述为零请求。实际记录只有TypeError和栈，没有保存原始message；Illegal invocation仅属于独立云端受控复现。
-
-新增合成socket关闭驱动真实API异步回调、原Events及真实AMD provider/cache的回归，采用混合host setTimeout与有Window接收者约束的clearTimeout；在途布局应结算cancelled，下一导航恢复，迟到旧响应不得覆盖。产品修复字节与a8f1ce22一致，本轮只补测试及证据口径；Windows精确新包仍待父复验。
-
-将旧提交缓存原字节放入同一回归后，准确重现139→69→18→Events66→ApiClient450调用链；最终修复分支27文件组合353/353通过，0失败/取消/跳过。该合成事件证据不补全原实测缺失的message或请求轨迹。
-
-## 2026-10-24 — 首页缓存渲染器定时器调用修复候选
-
-开启缓存的 Windows 包返回首页出现持续加载及 page-data-cache 完成阶段 TypeError，关闭对照正常；该包不能视为功能验收通过。默认时钟把 Window 定时器作为对象方法调用，改变接收者；Node 定时器及此前虚拟时钟未捕获这一约束。现仅将缓存默认时钟及同类首页等待身份时钟改为直接调用全局定时器的薄包装，取消/期限/身份/DTO策略保持。
-
-新增接收者约束回归及真实 AMD 组合覆盖；Linux 无界面 Chromium 的真实 Window clearTimeout 在混合 host setTimeout 夹具中复现旧139:27异常和持续pending，修复后读取/命中/失效/错误均可完成且无未处理异常。它不是相同版本 Windows Electron、完整客户端或真实服务验收；精确新提交仍须新包复验，旧包不补文件。无前台测试、安装、NAS/账户操作，图片及统一清理仍仅方案评估。
-
-最终27文件组合352/352通过，失败/取消/跳过均0；JS424文件语法、有限凭据模式512文件及差异空白检查通过。测试入口保持缺配置默认关闭，不新增用户功能。
-
-## 2026-10-23 — 页面缓存独立包的 Framework 来源预检
-
-Windows 测试包尚未通过 System.Configuration 固定实现门禁，未生成成功 artifact。现限定新增一条已观察候选的来源检查：精确文件 SHA、GitHub 镜像/OS build、规范物理系统路径、微软有效签名及重新计算的文件哈希必须同时满足；原固定实现条件和完整 Host 双场景行为验收保持。依赖下载前先只读预检，未知实现立即失败；不安装系统更新、不回流私有 DLL、不自动重试。成功 artifact 增加预检回执，准确边界见[Framework 来源配置](FRAMEWORK_SERVICING_PROFILES.md)。
-
-组合回归 348/348、0失败/取消/跳过，含页面缓存、隔离入口、来源/构建及新增生产分类器和 finalizer 分支的合成来源负例。该结果不是 Windows 实际签名或 Host 兼容证明；独立新提交仍待一次 Windows 构建及整包/GUI验证。缓存缺配置默认关闭、显式测试参数与新 profile 隔离保持；正式 v0.4.0、main 和其他新功能不改。
-
-## 2026-10-23 — 页面缓存重基v0.4.0并准备独立测试分支
-
-feature/page-cache已重基main `88578c91ab19d44eecddcfae096d37dc917ef1f4`；仅两份日志顶部冲突，保留双方记录。src/native、页面缓存测试及preload生成器相对重基前功能来源b3da2bee逐字节一致，保留main的0.4.0元数据、来源/许可材料与发布文件证据门禁。271项缓存/入口/相邻页面及v0.4.0构建/发行合同复验全部通过、0失败/取消/跳过，JS423/PS7语法47及有限模式510文件通过；不借此宣称新Windows包或GUI通过。缺配置仍默认关闭，显式测试CLI强制新临时profile，命令与范围见[测试入口](PAGE_CACHE_TEST_ENTRY.md)。按授权正常推送独立分支并回读SHA，结果以最终交付为准；不force push、不合main、不手动dispatch。父待正式构建结束后安排release_package=false及独立解包/profile验证。
-
-## 2026-10-23 — 页面缓存显式测试入口与强制新profile
-
-补齐可用于新测试包的真实启动参数→main→prepared preload→Home工厂入口，普通启动继续关闭；enabled/disabled对照均要求显式测试TTL、容量及全新profile，不新增产品默认。Windows且app未ready时先验证当前runtime路径、关键源码/预加载包内来源身份和物理目录，再于bootstrap/身份/日志写入前分配独立临时根，设置Electron数据/session/logs/temp/crash目录和当前进程环境；旧位置参数不能覆盖测试userData。绕开Host/普通安装入口，无新IPC、安全/系统环境更改或凭据传输。来源自检是有限关键文件绑定，不代替新包完整VerifyOnly。命令、拒绝边界及Windows验收步骤见[测试启动合同](PAGE_CACHE_TEST_ENTRY.md)。
-
-19个文件定向集合247/247，0失败/取消/跳过；含配置缺失/重复/越界/额外参数拒绝、链接/来源篡改拒绝、真实文件系统新profile与正式配置sentinel保持、实际启动代码片段/生成preload块、启用/关闭Home工厂与账号/session隔离、来源及相邻页面回归。Electron对象/Windows执行文件/DOM/网络仍为夹具，未运行Windows整包或GUI，不宣称性能提升。当前可交父协调独立新测试包及Windows自动验收，之后仅需可见焦点/滚动等人工体验；未推送/触发工作流、安装、合main或发布。
-
-## 2026-10-23 — 页面缓存功能包准备评估
-
-核对独立分支功能提交ed571338及现有云打包入口：真实首页布局适配已完成且170项定向回归通过，但生产工厂未传pageCacheOptions，没有可开启该功能的包内安全测试入口。现阶段不申请功能验收包，不用关闭状态包冒充开启路径验收；不新增未定TTL/容量或启动IPC。现有测试安装器仍共用AppId/部分profile，独立文件名不等于可与正式安装共存，后续须空白Windows VM隔离。父线程可用的精确功能来源、release_package=false参数、artifact不覆盖约束、正式任务优先顺序和最短验收清单见[测试包准备评估](PAGE_CACHE_PACKAGE_READINESS.md)。本轮只读核对与文档交接，未触发workflow、推送、安装、访问真实数据或尝试已拒入口；未出现本任务审批拒绝。
-
-## 2026-10-23 — 默认关闭的首页布局缓存适配
-
-首版缓存基础现接入Home controller/provider的一条可选只读路径：只保留HomeSections安全投影，返回时内容分区仍重新读取。真实源码已接原CM登录/退出/连接与API用户数据/媒体库/重连通知，读/交付/页面提交核对client、server、user和已有认证代次，语言及版本也分界；原API、认证及播放方法没有包装或替换。正式调用点不传pageCacheOptions，无默认TTL和设置UI，因此仍关闭。失败/取消/过期回复不入缓存，旧导航/旧身份不能覆盖或清理新归属；认证和写后失效的准确时点见[适配合同](PAGE_CACHE_HOME_ADAPTER.md)。
-
-定向及相邻合同170/170通过，0失败/取消/跳过；其中缓存基础36项、真实AMD API/CM与provider适配的合成集成24项，另含Home controller返回/过期/导航/切换保护及固定overlay/物化回归。Fetch、部分事件、DOM与itemscontainer仍是隔离夹具，未运行完整客户端、真实服务/账户切换GUI或性能/滚动视觉；不宣称加速。写后钩子落实在原收藏/已看成功发出的UserDataChanged，未拦截所有写的开始/finally或播放上报，用户状态内容未缓存。TTL/容量、产品启用入口和v0.4.0真实发布点重基仍待后续；未推送/合并/发布。
-
-## 2026-10-23 — 发布后页面数据缓存实验基础
-
-新增独立、未注册的页面数据缓存模块，默认关闭，资源 TTL 必须显式配置。支持当前 server/user/client/登录 session 隔离、上下文切换清空、有限 TTL/LRU/序列化预算、并发去重、独立订阅取消、pending/fanout 上限与绝对期限；失效同时退休在途工作，拒绝迟到回复、错误和含凭据/URL/播放来源的 DTO。保持既有首页、列表、详情、图片和播放链路，没有给所有 API 加缓存或新增设置 UI。现状图、逐页清点、写与认证生命周期接入门槛、工程默认值及未决 TTL/容量见[页面缓存方案](PAGE_DATA_CACHE.md)。
-
-缓存单元36项及相邻页面/源码物化/overlay/build-input合同合计132项通过，0失败、0跳过。证据限合成 DTO、可控 Promise、虚拟时钟及既有离线材料；未执行真实服务、GUI、性能/命中率、Windows整包或安装播放验收。生产认证与写后失效钩子尚未安装，模块继续未接线；正式版v0.4.0完成后再核对真实发布点重基，不能把首版基础描述成所有页面优化已完成。
-
-## 2026-10-24 — 正式／测试更新通道
-
-原手动更新分支增加原生“正式通道／测试通道”，默认正式，仅用户选择持久化到profile config。正式严格核Latest非draft正式版，测试完整分页并按SemVer选择非draft最高版本，处理后缀、build metadata、同版本晋级及切回较低正式版，均不自动降级。切换先中止／收尾旧检查并失效候选，下载及目录选择期间前后端共同锁定通道；保存不触发网络。相关136项通过，冻结Alameda及真实EmbySelect在隔离Chromium的明暗／窄宽与两种插件URL模式通过，IPC／偏好和浏览器为受控边界；不是完整客户端验收。公开官方30条元数据回读加生产离线筛选确认正式0.4.0、测试0.4.1 prerelease及准确Tag附件一致，未下载或执行软件。与首页／独立缓存管理的第一批组合由父任务另行安排，不自行打包或合主线。
-
-## 2026-10-24 — 更新说明的受限链接验收修正
-
-原候选以textContent显示原始Markdown，正文链接不可点击。现仅支持内联Markdown链接和裸HTTP(S)，短文字／长裸URL缩略，其他格式保持文本；仅创建安全文本及anchor，不加载图片或执行HTML。独立正文外链IPC要求当前主frame、完整URL参数及本次官方说明集合，调用系统浏览器；原发布页白名单与安装器校验不变。相关113项回归通过；实际冻结Alameda的插件相对／绝对URL加载链及隔离Chromium明暗／窄宽共4组验证点击、Enter、中键／Ctrl、焦点和不跳页，系统浏览器调用为mock。包内字节绑定补齐共享解析器，8项离线自测合同保留；真实Electron／系统浏览器仍待新包，不自行打包或发布。
-
-## 2026-10-24 — 手动更新测试构建的精确 Framework 来源配置
-
-从构建修复 `6dc6c270723209b36499a5cb9a8e28de5cc4bbab` 仅选择验证器、预检、测试及相关合同；不引入页面缓存功能。本轮失败runner的 `20261012.333.1` 镜像及 `04a00185…18d41` 实现哈希匹配该既有候选；原固定实现仍保留，额外候选必须再次满足精确镜像／OS／UBR、GAC与非reference绑定、规范物理系统路径、有效微软签名及重新哈希。未知输入仍在依赖准备前拒绝，不安装或更新系统。33份验证器输入身份通过，相关223项回归、423份JS／48份PS语法及有限模式检查通过；实际Windows来源／Host／整包尚待新构建，不从合成证据推断通过。手动更新UI与下载代码、包内自测、版本及发布五附件保持。
-
-## 2026-10-24 — 手动更新验收后的局部界面修正
-
-在原 `feature/manual-app-update` 上调整 About 更新区：仅进行中显示“取消检查／取消下载”，完成或闲置隐藏；重复取消去重，原取消、离页清理与迟到回复退休保持。仅更新区两个原生折叠项统一箭头、间距、正文换行和焦点，维护区文字使用继承颜色以适配明暗主题。相关102项回归通过；隔离Chromium的两主题、390／1100宽度及放大文字共6组检查通过，包括Tab／Enter／Space、取消阶段和离页重入。该视觉证据使用受控IPC及按钮样式类，非完整Electron／原生Emby组件或用户安装包验收；不改主线、发布版本、下载信任边界或打包流程。
-
-## 2026-10-23 — 手动更新离线打包门禁回归
-
-在已重基的独立候选上补充可复现的生产 PowerShell 门禁回归：由 Git blobs 源码投影和合成 manifest 实际运行包内 Node 自测、原门禁及回执写入，覆盖正常、sourceCommit 不符、模块漂移、manifest 缺失四种情况；相关99项定向全部通过。产品源码、版本、正式发布五附件及工作流不变；这是离线接线验证，真实 Windows 包／ADS／GUI 尚未执行。原本地提交及 bundle 保持，推送问题等待独立诊断证据，不以重复推送试探。
-
-## 2026-10-23 — 手动更新候选重基到指定v0.4.0 main
-
-`feature/manual-app-update` 已从原6858开发基线正常重基到指定 `88578c91ab19d44eecddcfae096d37dc917ef1f4`，保留main的0.4.0版本／lock及五附件证据检查，不另改发布内容。冲突仅为本页和DEVELOPMENT_LOG的新增记录，双方内容均保留；产品源码与此前已测候选逐字节相同。功能分支的离线包内检查接线保留，测试包待正式构建空闲后集中安排，不触发workflow或合main；后续auditfix测试集成独立协调。重基后检查结果另按准确提交记录。
-
-## 2026-10-23 — 手动更新复核与包内离线验收入口
-
-固定功能基线保持，尚未以旧main替代真实v0.4.0发布点。启用源收敛为官方加有可读第一方说明／隐私／条款的 `gh-proxy.com`；`ghfast.top` 当前正文不能充分核验，移出启用列表。复核披露公共代理可见公开请求路径与网络技术日志，官方API仍为唯一校验基准。补齐所有maintenance IPC参数合同、仅发布页面外链、直接destroy取消及目录／临时文件身份检查，路径被交换不删除外来替换文件。
-
-新增包内离线JS入口及测试打包脚本接线：现有Node运行8项合成文件／模块检查并绑定本包sourceCommit，不启动应用或访问profile；输出单独测试回执。最终代码提交 `cbf78eaf0c44abd8bde8ef56891a18743e5d6f4d` 的公开离线回归1565项／1555通过／0失败／10项既有Windows平台skip；定向84项全部通过，420份JS、507份维护文本有限模式及47份PS语法通过。文件归属dev／ino采用BigInt，保留大整数精确身份。真实Windows包／GUI、ADS和客户端直连网络仍待集中构建与后续现场执行；官方公共元数据回读加本地生产解析已通过，不能替代客户端直连。代理证据及隔离profile方法见[合同](MANUAL_APP_UPDATE.md)。
-
-## 2026-10-23 — 正式版之后的手动软件更新候选
-
-独立 `feature/manual-app-update` 基于固定 `6858c71103605ff66c630f1cd7e1e9fdbdeab000`，不改当前版本或正式发布分支。About 主动检查增加严格 SemVer／正式渠道与仓库身份核对、纯文本 notes、手动下载／取消与来源详情。默认官方，连接失败串行尝试有第一方资料的备用候选；HTTP／TLS／校验拒绝不换源。下载前必须官方重核验 digest，校验后无覆盖保存，Windows 保留 Internet zone；不执行安装，不恢复旧 Host 更新，不改变 mpv 管理。设计、代理列表待确认项、mock 与 Windows 实测边界及独立测试包参数见[更新合同](MANUAL_APP_UPDATE.md)。
-
-新增33项受控网络／文件／IPC／UI回归通过。实现提交 `0ab364b9a678b61c98be284a15323e5808a71219` 的公开离线测试集1556项／1546通过／0失败／10项既有Windows平台skip；相关定向75项全部通过，418份JS语法与505份维护文本有限凭据模式检查通过。7份更新源码已逐字节核对既有Git blob复制投影。随后仅收窄旧文字链接padding规则以保持新下载按钮原生内边距，按相关UI／设置测试复核；上述结果不代表完整runtime、Windows ADS／GUI或实际安装验收。
 
 ## 2026-10-23 — v0.4.0整合PR70来源与必要声明
 
@@ -969,7 +801,3 @@ GitHub Windows public CI exposed one preload fixture using a nonphysical TEMP al
 
 
 2026-10-23 candidate: manual Windows packaging has a source-built Host recovery/compile/verification entry point, with pinned 55-file source and NuGet acquisition and generated per-run evidence. GitHub execution remains unverified. Work's validated builder argument delta has been synchronized exactly; a portable runner-side Host verification harness is still required; the missing harness fails closed before compilation/packaging. No external Work binary/verification receipt is imported by this path.
-
-## Seek-thumbnail boundary repair
-
-An isolated VideoOSD overlay candidate permits existing Emby thumbnail data without chapters, binds metadata and image URLs to the actual playing MediaSource, and isolates late results by playback/account/server ownership. The selected ApiClient now forwards optional thumbnail cancellation to its existing transport. Existing in-memory metadata reuse and HTTP image caching remain; no media-buffer feature, disk image store or cache policy is added. Locked-source DOM/player and loopback transport checks are documented in [the API input contract](INDEPENDENT_API_INPUT.md#emby-seek-thumbnail-preview-boundaries). Windows visuals and real-server version behavior still require acceptance; no package or release is implied.
