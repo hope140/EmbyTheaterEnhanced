@@ -32,7 +32,7 @@ test('malformed or failed-cleanup reports cannot support any acceptance',()=>{
 });
 test('short workflow route remains explicit and returns before full build or package upload',()=>{
  const root=path.resolve(__dirname,'..'),workflow=fs.readFileSync(path.join(root,'.github/workflows/public-ci.yml'),'utf8'),ci=fs.readFileSync(path.join(root,'tools/ci-windows-test-package.ps1'),'utf8');
- assert.match(workflow,/native_loader_only:[\s\S]*?default: false/);assert.match(workflow,/Upload verified test package\s+if: \$\{\{ !inputs.native_loader_only && !inputs.native_helper_only \}\}/);
+ assert.match(workflow,/native_loader_only:[\s\S]*?default: false/);assert.match(workflow,/Upload verified test package\s+if: \$\{\{ !inputs.native_loader_only && !inputs.native_helper_only && !inputs.native_preview_pacing_only \}\}/);
  const route=ci.indexOf('if ($NativeLoaderOnly) {'),end=ci.indexOf('\n}',route);assert.ok(route>0&&end>route&&end<ci.indexOf('& npm ci'));
  assert.match(ci.slice(route,end),/prepare-native-loader-probe\.ps1[\s\S]*return/);assert.match(ci,/Loader diagnostic must be selected alone/);
  const powershell=fs.readFileSync(path.join(root,'tools/Test-NativeDllLoad.ps1'),'utf8');

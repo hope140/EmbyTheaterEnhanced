@@ -1,4 +1,5 @@
-param([switch]$HelperStartup)
+param([switch]$HelperStartup, [switch]$PreviewPacing)
+if ($PreviewPacing -and -not $HelperStartup) { throw 'Preview pacing requires helper startup.' }
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 if (-not $IsWindows -or $env:GITHUB_ACTIONS -ne 'true') { throw 'Explicit cloud Windows diagnostic required.' }
@@ -27,4 +28,9 @@ if ($HelperStartup) {
     if (-not $?) { throw 'Production helper compilation failed.' }
     & node (Join-Path $PSScriptRoot 'windows-native-helper-startup.cjs') run $root
     if ($LASTEXITCODE -ne 0) { throw 'Production helper startup failed; inspect its isolated records.' }
+}
+
+if ($PreviewPacing) {
+    & node (Join-Path $PSScriptRoot 'windows-native-helper-startup.cjs') pacing $root
+    if ($LASTEXITCODE -ne 0) { throw 'Production helper pacing comparison failed; inspect isolated records.' }
 }

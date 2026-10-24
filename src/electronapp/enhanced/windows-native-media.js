@@ -36,12 +36,22 @@ function attach(options) {
     let framePixels = null, frameSize = null, frameState = null;
     let captured = 0, frameAttempts = 0, frameRevision = 0, lastFrameStarted = -Infinity;
     const clock = options.clock || {now: () => performance.now(), setInterval, clearInterval};
+    const requestedIntervalMs=savings&&options.captureIntervalMs===550?550:1000;
+    let backoffUntil=0,lastRoundTripMs=null,backoffs=0;
     const metrics = previewPerformance.create(['captureRoundTrip','nativeImage','frameCompare'],clock.now);
     const dwmMetrics = previewPerformance.create(['resize','submitTotal','invalidate'],clock.now);
     const counters={timerTicks:0,requests:0,valid:0,changed:0,duplicates:0,pausedSkipped:0,busySkipped:0,hiddenSkipped:0,throttled:0,noDemandSkipped:0,unavailable:0};
     let errors = 0;
     let documentEpoch = 0, sessionIdentity = null, commandSequence = 0;
-    const thumbnail = attachThumbnail(window, dwm, previewImage, () => logFailure('thumbnail'), () => { requestFrame(true).catch(() => {}); }, {metrics:dwmMetrics,cacheEnabled:savings});
+    const thumbnail = attachThumbnail(window, dwm, previewImage, () => logFailure('thumbnail'), info => {
+        if(info&&Number.isFinite(info.requestMs)&&info.requestMs>20)slowPreview();
+        requestFrame(true).catch(() => {});
+    }, {metrics:dwmMetrics,cacheEnabled:savings});
+    function slowPreview(){if(requestedIntervalMs!==550)return;if(clock.now()>=backoffUntil)backoffs++;backoffUntil=clock.now()+30000;}
+    function captureInterval(){
+        return requestedIntervalMs===550&&hasFrame()&&latest&&!latest.paused&&lastRoundTripMs!==null&&clock.now()>=backoffUntil&&
+            typeof thumbnail.requestedRecently==='function'&&thumbnail.requestedRecently()?550:1000;
+    }
     function current(owner) {
         try { return !disposed && latest && latest.active && latest.mediaType === 'Video' &&
             previewSnapshot.sameOwner(owner, latest.nativeOwner) && typeof options.isPreviewOwner === 'function' && options.isPreviewOwner(owner); }
@@ -68,6 +78,7 @@ function attach(options) {
         if (frameImage) emit('preview-frame-retired', {stage:'owner-snapshot'});
         frameRevision++; frameImage = null; frameOwner = null; framePixels = null; frameSize = null; frameState = null;
         frameAttempts = 0; lastFrameStarted = -Infinity;
+        backoffUntil=0;lastRoundTripMs=null;
         if (timer) clock.clearInterval(timer); timer = null;
         thumbnail.clear(); clearArtwork();
     }
@@ -80,7 +91,7 @@ function attach(options) {
         // seek/owner change and restore bypass this saving. The owner fence is
         // still required for every returned frame; time is only a work budget.
         if(savings&&!demand&&hasFrame()&&latest.paused&&frameState&&frameState.paused&&frameState.position===latest.position&&clock.now()-lastFrameStarted<2000){counters.pausedSkipped++;return;}
-        if(clock.now()-lastFrameStarted<950){counters.throttled++;return;}
+        if(clock.now()-lastFrameStarted<(captureInterval()===550?500:950)){counters.throttled++;return;}
         if (hasFrame() && typeof thumbnail.requestedRecently === 'function' && !thumbnail.requestedRecently()) {counters.noDemandSkipped++;return;}
         const owner = {...latest.nativeOwner}, revision = frameRevision, record = {};
         const observedState={paused:latest.paused,position:latest.position};
@@ -89,7 +100,10 @@ function attach(options) {
         record.promise = (async () => {
             try {
                 const started=clock.now();let frame;
-                try{frame=await options.capturePreview(owner);}finally{metrics.record('captureRoundTrip',Math.max(0,clock.now()-started));}
+                try{frame=await options.capturePreview(owner);}finally{
+                    const elapsed=Math.max(0,clock.now()-started);metrics.record('captureRoundTrip',elapsed);
+                    if(revision===frameRevision&&current(owner)){lastRoundTripMs=elapsed;if(elapsed>100)slowPreview();}
+                }
                 if (revision !== frameRevision || !current(owner) || !visible() || !frame ||
                     !previewSnapshot.sameOwner(frame.owner, owner) || !Number.isInteger(frame.width) || !Number.isInteger(frame.height) ||
                     frame.width < 1 || frame.width > 160 || frame.height < 1 || frame.height > 90 ||
@@ -103,7 +117,9 @@ function attach(options) {
                     thumbnail.refresh();return;
                 }
                 const firstFrame = !frameImage || !previewSnapshot.sameOwner(frameOwner, owner);
+                const imageStarted=clock.now();
                 frameImage = metrics.measure('nativeImage',()=>nativeImage.createFromBitmap(frame.pixels, {width:frame.width, height:frame.height}));
+                if(clock.now()-imageStarted>8)slowPreview();
                 frameOwner = owner; framePixels=savings?Buffer.from(frame.pixels):null;frameSize={width:frame.width,height:frame.height};frameState=observedState;counters.changed++;
                 if (firstFrame) emit('preview-frame-ready', {width:frame.width, height:frame.height});
                 thumbnail.refresh();
@@ -115,7 +131,7 @@ function attach(options) {
     function restore() { if (!disposed) {frameAttempts = 0; frameRevision++;frameState=null;} }
     function ensureFrameTimer() {
         if (timer || typeof options.capturePreview !== 'function' || !latest || !current(latest.nativeOwner)) return;
-        timer = clock.setInterval(() => {counters.timerTicks++;requestFrame().catch(() => {});}, 1000);
+        timer = clock.setInterval(() => {counters.timerTicks++;requestFrame().catch(() => {});}, requestedIntervalMs);
         requestFrame().catch(() => {});
     }
     function logFailure(stage) { errors++; emit('integration-unavailable', {stage}); }
@@ -209,7 +225,9 @@ function attach(options) {
         previewReady: hasFrame(), firstFrameAttempts: frameAttempts, firstFrameExhausted: !hasFrame() && frameAttempts >= 10, blankFirstFrames: 0,
         captured, submitted: thumbnail.submitted, averageCaptureMs: metrics.snapshot().stages.captureRoundTrip.averageMs, errors, sessionRequests, sequence,
         performance:{capture:metrics.snapshot(),dwm:typeof thumbnail.performance==='function'?thumbnail.performance():null,
-            counters:{...counters},savingsEnabled:savings,configuredIntervalMs:1000,minimumIntervalMs:950,pausedVerificationMs:savings?2000:1000,outputMaximum:{width:160,height:90},inFlight:!!frameWork},
+            counters:{...counters},savingsEnabled:savings,configuredIntervalMs:requestedIntervalMs,activeIntervalMs:captureInterval(),minimumIntervalMs:captureInterval()===550?500:950,
+            backoffs,backoffRemainingMs:Math.max(0,backoffUntil-clock.now()),latencyGuardrails:{captureMs:100,nativeImageMs:8,dwmRequestMs:20,backoffMs:30000},
+            pausedVerificationMs:savings?2000:1000,outputMaximum:{width:160,height:90},inFlight:!!frameWork},
         artworkReady: false}; }};
 }
 

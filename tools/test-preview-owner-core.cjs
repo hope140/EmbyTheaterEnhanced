@@ -29,8 +29,8 @@ const program=`#include <algorithm>
 ${core}
 ${quoteSource}
 uint64_t monotonicMicros() { static uint64_t ticks=1000000; return ticks+=10; } // deterministic clock, not a native timing measurement
-bool profileEnabled=false;
-unsigned long GetEnvironmentVariableW(const wchar_t* name,wchar_t* result,unsigned long size) { if(std::wstring(name)!=L"ETE_WINDOWS_PREVIEW_PROFILE"||size!=2)throw std::runtime_error("profile-env-contract");result[0]=profileEnabled?L'1':L'0';return 1; }
+bool profileEnabled=false; std::string intervalValue,baselineValue;
+unsigned long GetEnvironmentVariableW(const wchar_t* name,wchar_t* result,unsigned long size) { std::string value;if(std::wstring(name)==L"ETE_WINDOWS_PREVIEW_PROFILE")value=profileEnabled?"1":"0";else if(std::wstring(name)==L"ETE_WINDOWS_PREVIEW_INTERVAL_MS")value=intervalValue;else if(std::wstring(name)==L"ETE_WINDOWS_PREVIEW_BASELINE")value=baselineValue;else throw std::runtime_error("env-contract");if(value.size()>=size)return value.size()+1;for(size_t i=0;i<value.size();i++)result[i]=value[i];result[value.size()]=0;return value.size(); }
 struct mpv_node {}; struct mpv_event_command { mpv_node result; }; struct mpv_event { uint64_t reply_userdata; int error; void* data; };
 struct HeldFrame { int width, height; std::shared_ptr<std::vector<uint8_t>> pixels; };
 struct Output {
@@ -54,10 +54,10 @@ struct Output {
  std::shared_ptr<HeldFrame> frameFromScreenshotNode(const mpv_node&,uint64_t,uint64_t,std::string&) { return std::make_shared<HeldFrame>(HeldFrame{2,1,std::make_shared<std::vector<uint8_t>>(8,17)}); }
  ${previewReply}
 };
-int main(int argc,char**) {
- profileEnabled=argc>1;
+int main(int argc,char** argv) {
+ profileEnabled=argc>1;intervalValue=argc>2?argv[2]:"";baselineValue=argc>3?argv[3]:"";
  int checks=0; auto check=[&](bool value){if(!value)throw std::runtime_error("owner-core-check-failed");++checks;};
- Output guard; guard.mpv=&guard;
+ Output guard; guard.mpv=&guard;check(guard.previewMinimumIntervalMicros()==((intervalValue=="550"&&baselineValue!="1")?500000:950000));
  guard.track="1";check(guard.hasPreviewVideo());guard.track=nullptr;check(!guard.hasPreviewVideo());
  guard.track="no";check(!guard.hasPreviewVideo());guard.track="";check(!guard.hasPreviewVideo());
  PreviewOwner owner;
@@ -105,6 +105,7 @@ try {
  const assert=require('node:assert/strict');
  assert.ok(!Object.hasOwn(result.profileReply,'timing'));
  const profiled=JSON.parse(execFileSync(binary,['profile'],{encoding:'utf8'}));
+ for(const args of [['profile','550'],['profile','550','1'],['profile','500'],['profile','5500']])JSON.parse(execFileSync(binary,args,{encoding:'utf8'}));
  const profileFrame=require('../src/electronapp/native-helper/preview-snapshot').decode(profiled.profileReply,12);
  assert.ok(profileFrame&&profileFrame.timing,JSON.stringify(profiled.profileReply));
  assert.deepEqual(Object.keys(profileFrame.timing),['waitMicros','copyMicros','resizeMicros','encodeMicros']);

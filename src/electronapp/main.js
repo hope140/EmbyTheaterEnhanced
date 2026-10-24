@@ -1255,6 +1255,7 @@
                     windowsNativeMedia = require('./enhanced/windows-native-media').attach({
                         window: mainWindow, ipcMain: ipcMain, nativeImage: nativeImage,
                         previewSavings: process.env.ETE_WINDOWS_PREVIEW_BASELINE !== '1',
+                        captureIntervalMs: process.env.ETE_WINDOWS_PREVIEW_INTERVAL_MS === '550' ? 550 : 1000,
                         capturePreview: function (owner) { return nativeHelperService ? nativeHelperService.capturePreview(owner) : Promise.resolve(null); },
                         isPreviewOwner: function (owner) { return !!nativeHelperService && nativeHelperService.isPreviewOwner(owner); },
                         sendCommand: function (packet) {

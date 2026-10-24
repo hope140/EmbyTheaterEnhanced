@@ -1,4 +1,5 @@
-param([switch]$ReleasePackage, [switch]$NativePreviewTrial, [switch]$NativeLoaderOnly, [switch]$NativeHelperOnly)
+param([switch]$ReleasePackage, [switch]$NativePreviewTrial, [switch]$NativeLoaderOnly, [switch]$NativeHelperOnly, [switch]$NativePreviewPacingOnly)
+if ($NativePreviewPacingOnly -and ($ReleasePackage -or $NativePreviewTrial -or $NativeLoaderOnly -or $NativeHelperOnly)) { throw 'Preview pacing must be selected alone.' }
 if ($ReleasePackage -and $NativePreviewTrial) { throw 'Native preview trial cannot be a release package.' }
 if ($NativeLoaderOnly -and ($ReleasePackage -or $NativePreviewTrial -or $NativeHelperOnly)) { throw 'Loader diagnostic must be selected alone.' }
 if ($NativeHelperOnly -and ($ReleasePackage -or $NativePreviewTrial -or $NativeLoaderOnly)) { throw 'Helper startup must be selected alone.' }
@@ -30,6 +31,11 @@ $runtime = Join-Path $root ('dist/' + $runtimeName)
 if ($NativeLoaderOnly) {
     & (Join-Path $PSScriptRoot 'prepare-native-loader-probe.ps1')
     if (-not $?) { throw 'Native loader diagnostic failed.' }
+    return
+}
+if ($NativePreviewPacingOnly) {
+    & (Join-Path $PSScriptRoot 'prepare-native-loader-probe.ps1') -HelperStartup -PreviewPacing
+    if (-not $?) { throw 'Native preview pacing comparison failed.' }
     return
 }
 if ($NativeHelperOnly) {

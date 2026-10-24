@@ -91,6 +91,7 @@ function attachThumbnail(window, dwm, getImage, onError = function () {}, onRequ
     }
     function request(size, submit, kind) {
         if (!enabled || !currentWindow()) return;
+        const requestStarted=performance.now();
         messagesCount[kind+'Requests']++;
         const ownedRevision = revision;
         // Record demand even before a usable frame exists. Refresh/capture can
@@ -118,7 +119,7 @@ function attachThumbnail(window, dwm, getImage, onError = function () {}, onRequ
             messagesCount[kind+'Submissions']++;
             if(lastSubmitted[kind]!==image){messagesCount[kind+'Changes']++;lastSubmitted[kind]=image;}
         } catch (_) { onError(); }
-        finally { if (revision === ownedRevision && currentWindow()) onRequest(); }
+        finally { if (revision === ownedRevision && currentWindow()) onRequest({requestMs:Math.max(0,performance.now()-requestStarted)}); }
     }
     function thumbnailMessage(_wparam, lparam) {
         request(() => {

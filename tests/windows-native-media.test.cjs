@@ -21,7 +21,7 @@ function fixture(t, overrides = {}) {
     for (let offset = 0; offset < opaqueOldPixels.length; offset += 4) opaqueOldPixels.set([19, 67, 213, 255], offset);
     let request, imageReader;
     const controller = adapter.attach({window, ipcMain: ipc, koffi: {},
-        previewSavings: overrides.previewSavings,
+        previewSavings: overrides.previewSavings, captureIntervalMs:overrides.captureIntervalMs,
         getVideoWindow() {sourceReads++; return video;},
         capturePreview: overrides.capturePreview, isPreviewOwner: overrides.isPreviewOwner,
         // Deliberately offer successful nonzero pixels without a presentation
@@ -37,11 +37,11 @@ function fixture(t, overrides = {}) {
         attachThumbnail: (_window, _dwm, getImage, _onError, onRequest = () => {}) => {
             imageReader = getImage; request = onRequest;
             return {clear() {clears++;if(overrides.onClear)overrides.onClear();}, refresh() {calls.push('preview');}, dispose() {calls.push('preview-dispose');},
-                requestedRecently: () => true, submitted:0};
+                requestedRecently: () => overrides.demand !== false, submitted:0};
         },
         clock: {now: () => time, setInterval(callback) {scheduled=callback;return 1;}, clearInterval() {scheduled=null;}},
-        nativeImage: {createFromBitmap: (pixels, size) => ({pixels:Buffer.from(pixels), size,
-            resize() {return this;}, getSize() {return size;}, isEmpty() {return false;}, toPNG() {return this.pixels;}})},
+        nativeImage: {createFromBitmap: (pixels, size) => {if(size.width<=160)time+=overrides.imageMs||0;return {pixels:Buffer.from(pixels), size,
+            resize() {return this;}, getSize() {return size;}, isEmpty() {return false;}, toPNG() {return this.pixels;}};}},
         // A legacy artwork option must not revive disk-cache reads/writes.
         artworkDirectory: overrides.artworkDirectory,
         sendCommand: value => calls.push('command:' + value.command)});
@@ -53,7 +53,7 @@ function fixture(t, overrides = {}) {
         destroy() {destroyed=true;window.emit('closed');},
         get updates() {return updates;}, get clears() {return clears;},
         get captureCalls() {return captures;}, get sourceReads() {return sourceReads;}, get artworkWrites() {return artworkWrites;},
-        get timerScheduled() {return !!scheduled;}, readPreview() {return imageReader();}, request() {request();},
+        get timerScheduled() {return !!scheduled;}, readPreview() {return imageReader();}, advance(ms) {time+=ms;}, request(info) {request(info);},
         minimize() {minimized=true;window.emit('minimize');}, restore() {minimized=false;window.emit('restore');},
         async tick(ms = 1000) {time+=ms;if (scheduled) scheduled();await drain();},
         send(value, source = event) {ipc.emit(NATIVE_CHANNEL, source, value);}};
@@ -358,4 +358,53 @@ test('explicit diagnostic baseline restores original paused captures and NativeI
     f.send(f.make({nativeOwner:owner,paused:true}));await drain();const first=f.readPreview();
     await f.tick();assert.equal(captures,2);assert.notEqual(f.readPreview(),first);
     assert.equal(f.controller.status().performance.savingsEnabled,false);assert.equal(f.controller.status().performance.counters.duplicates,0);
+});
+
+
+test('550ms cadence requires an explicit preset and active verified demand; baseline remains 1Hz',async t=>{
+    const owner=nativeOwner(10);
+    for(const value of [undefined,500,550,551]){
+        const f=fixture(t,{captureIntervalMs:value,isPreviewOwner:()=>true,capturePreview:async()=>ownedFrame(owner)});
+        f.send(f.make({nativeOwner:owner}));await drain();
+        assert.equal(f.controller.status().performance.configuredIntervalMs,value===550?550:1000);
+        await f.tick(550);assert.equal(f.controller.status().captured,value===550?2:1);
+    }
+    const options={captureIntervalMs:550,previewSavings:false,isPreviewOwner:()=>true,capturePreview:async()=>ownedFrame(owner)};
+    const baseline=fixture(t,options);baseline.send(baseline.make({nativeOwner:owner}));await drain();
+    assert.equal(baseline.controller.status().performance.configuredIntervalMs,1000);
+    const absent=fixture(t,{...options,previewSavings:true,demand:false});absent.send(absent.make({nativeOwner:owner}));await drain();
+    assert.equal(absent.controller.status().performance.activeIntervalMs,1000);await absent.tick();assert.equal(absent.controller.status().captured,1);
+});
+
+test('slow capture and expensive DWM request back off for 30s, without overlapping capture or stale-owner attribution',async t=>{
+    const owner=nativeOwner(10);let f,slow=false,resolve;
+    f=fixture(t,{captureIntervalMs:550,isPreviewOwner:()=>true,capturePreview:async()=>{if(slow)f.advance(101);return ownedFrame(owner);}});
+    f.send(f.make({nativeOwner:owner}));await drain();slow=true;await f.tick(550);slow=false;
+    let status=f.controller.status().performance;assert.equal(status.activeIntervalMs,1000);assert.equal(status.backoffs,1);
+    await f.tick(550);assert.equal(f.controller.status().captured,2);
+    await f.tick(30000);assert.equal(f.controller.status().performance.activeIntervalMs,550);
+    f.request({requestMs:21});await drain();assert.equal(f.controller.status().performance.activeIntervalMs,1000);
+    f.send(f.make({...stopped,sequence:2}));await drain();assert.equal(f.controller.status().performance.backoffRemainingMs,0);
+    const pending=fixture(t,{captureIntervalMs:550,isPreviewOwner:()=>true,capturePreview:()=>new Promise(done=>{resolve=done;})});
+    pending.send(pending.make({nativeOwner:owner}));await drain();await pending.tick(550);
+    assert.equal(pending.controller.status().performance.counters.requests,1);
+    pending.send(pending.make({nativeOwner:nativeOwner(11),playbackEpoch:2,sequence:2}));pending.advance(101);resolve(ownedFrame(owner));await drain();
+    assert.equal(pending.controller.status().performance.backoffs,0);assert.equal(pending.controller.status().captured,0);
+});
+
+test('faster cadence still skips hidden windows and keeps paused verification at the lower budget',async t=>{
+    const owner=nativeOwner(10),f=fixture(t,{captureIntervalMs:550,isPreviewOwner:()=>true,capturePreview:async()=>ownedFrame(owner)});
+    f.send(f.make({nativeOwner:owner,paused:true}));await drain();
+    for(let i=0;i<3;i++)await f.tick(550);assert.equal(f.controller.status().captured,1);
+    await f.tick(550);assert.equal(f.controller.status().captured,2);
+    assert.equal(f.controller.status().performance.activeIntervalMs,1000);
+    f.minimize();await f.tick(550);assert.equal(f.controller.status().captured,2);
+});
+
+
+test('expensive NativeImage creation returns the opt-in cadence to low frequency',async t=>{
+    const owner=nativeOwner(10),f=fixture(t,{captureIntervalMs:550,imageMs:9,isPreviewOwner:()=>true,capturePreview:async()=>ownedFrame(owner)});
+    f.send(f.make({nativeOwner:owner}));await drain();
+    assert.equal(f.controller.status().performance.activeIntervalMs,1000);assert.equal(f.controller.status().performance.backoffs,1);
+    assert.equal(f.controller.status().performance.capture.stages.nativeImage.maxMs,9);
 });

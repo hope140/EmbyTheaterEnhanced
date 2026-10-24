@@ -995,6 +995,14 @@ class Helper {
         if (track) p_mpv_free(track);
         return available;
     }
+    uint64_t previewMinimumIntervalMicros() {
+        static const uint64_t value=[](){
+            wchar_t baseline[2]{},interval[4]{};
+            if(GetEnvironmentVariableW(L"ETE_WINDOWS_PREVIEW_BASELINE",baseline,2)==1&&baseline[0]==L'1')return uint64_t(950000);
+            return GetEnvironmentVariableW(L"ETE_WINDOWS_PREVIEW_INTERVAL_MS",interval,4)==3&&std::wstring(interval)==L"550"?uint64_t(500000):uint64_t(950000);
+        }();
+        return value;
+    }
     bool ownsPreview(uint64_t generation, int64_t media) const {
         auto mapped = mediaToGeneration.find(media);
         return generation == latestActivatedGeneration && generation > retiredThroughGeneration &&
@@ -1893,7 +1901,7 @@ public:
             if (type != "request") throw std::runtime_error("preview-snapshot-requires-request");
             const int64_t media = uniqueOpenMedia();
             const uint64_t now = monotonicMicros();
-            if (previewCapture.userdata || !ownsPreview(generation, media) || !hasPreviewVideo() || (lastPreviewStarted && now - lastPreviewStarted < 950000)) {
+            if (previewCapture.userdata || !ownsPreview(generation, media) || !hasPreviewVideo() || (lastPreviewStarted && now - lastPreviewStarted < previewMinimumIntervalMicros())) {
                 emitResponse(generation, request, frameUnavailable("preview-not-ready-or-busy")); return;
             }
             const uint64_t userdata = nextReplyUserdata++;

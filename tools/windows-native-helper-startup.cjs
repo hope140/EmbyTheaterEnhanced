@@ -3,7 +3,7 @@
 // server is loaded; real helper windows are created, so never run this on Work.
 const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process'),crypto=require('node:crypto');
 const input=require('./libmpv-input.cjs'),electron=require('./electron-runtime-input.cjs'),check=require('./templates/native-preview/verify.cjs');
-const {runChild,readHandshakeReport,preserveOwnerStages}=require('./windows-native-preview-process.cjs');
+const {runChild,readHandshakeReport,preserveOwnerStages,readProbeReport}=require('./windows-native-preview-process.cjs');
 const sha=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
 function context(rootArg){
     if(process.platform!=='win32'||process.arch!=='x64'||process.env.GITHUB_ACTIONS!=='true')throw Error('Explicit cloud Windows x64 helper startup required');
@@ -39,5 +39,27 @@ async function run(rootArg){
         fs.writeFileSync(path.join(c.output,'startup.json'),JSON.stringify(result,null,2)+'\n',{flag:'wx'});return result;
     }finally{preserveOwnerStages(probeOutput,c.output,'helper-startup-stages.jsonl');}
 }
-module.exports={prepare,run};
-if(require.main===module){const action=process.argv[2];Promise.resolve().then(()=>{if(action==='prepare')return prepare(process.argv[3]);if(action==='run')return run(process.argv[3]);throw Error('Unknown helper startup command');}).then(result=>console.log(JSON.stringify(result))).catch(error=>{console.error(error.message);process.exitCode=1;});}
+async function pacing(rootArg){
+    const c=context(rootArg),startup=JSON.parse(fs.readFileSync(path.join(c.output,'startup.json')));
+    if(startup.status!=='passed'||startup.sourceCommit!==c.source||startup.scope!=='production-helper-handshake-only')throw Error('Verified startup required before pacing');
+    const tool=require('./windows-native-preview-pacing.cjs'),measurements=[];
+    for(const intervalMs of [1000,550]){
+        const directory=path.join(c.output,'pacing-'+intervalMs),output=path.join(c.root,'.work/native-helper-startup/pacing-'+intervalMs);
+        fs.mkdirSync(directory);
+        try{
+            await runChild(path.join(c.root,c.manifest.runtime.preparedPath,'electron.exe'),[path.join(c.root,'tools/windows-native-owner-probe.cjs'),c.runtime,output,c.source,'--preview-pacing'],{directory,name:'capture',timeoutMs:60000,previewPreset:intervalMs});
+            const end=readProbeReport(output,c.source,tool.SCOPE),measurement=JSON.parse(fs.readFileSync(path.join(output,'pacing.json')));
+            measurements.push(tool.validateReport(end,measurement,intervalMs));
+            fs.copyFileSync(path.join(output,'pacing.json'),path.join(directory,'measurement.json'),fs.constants.COPYFILE_EXCL);
+        }finally{preserveOwnerStages(output,directory);}
+    }
+    const [baseline,candidate]=measurements;
+    if(baseline.fixture.sha256!==candidate.fixture.sha256)throw Error('Pacing fixture differs between modes');
+    const result={status:'passed',scope:tool.SCOPE,sourceCommit:c.source,helperSha256:startup.helperSha256,vulkanSha256:c.lock.sha256,
+        fixture:baseline.fixture,measurements,gainObserved:candidate.captures.validPerSecond>baseline.captures.validPerSecond,
+        intervalRatio:candidate.captures.averageValidIntervalMs/baseline.captures.averageValidIntervalMs,
+        ordering:'1000-then-550-single-run-not-statistical',dwmPresentation:'NOT_ASSESSED',mainCpu:'NOT_ASSESSED',gpuCost:'NOT_ASSESSED',userSmoothness:'NOT_ASSESSED'};
+    fs.writeFileSync(path.join(c.output,'pacing-comparison.json'),JSON.stringify(result,null,2)+'\n',{flag:'wx'});return result;
+}
+module.exports={prepare,run,pacing};
+if(require.main===module){const action=process.argv[2];Promise.resolve().then(()=>{if(action==='prepare')return prepare(process.argv[3]);if(action==='run')return run(process.argv[3]);if(action==='pacing')return pacing(process.argv[3]);throw Error('Unknown helper startup command');}).then(result=>console.log(JSON.stringify(result))).catch(error=>{console.error(error.message);process.exitCode=1;});}

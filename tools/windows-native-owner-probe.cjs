@@ -61,10 +61,10 @@ async function finishOwnerProbe(client,state){
     return {event:'end',result:'PASS',scope:PLAN.scope,ownedExitConfirmed:true,nativeExitAccepted:true,nativeExit:exit,visibleDwmAcceptance:'NOT_ASSESSED'};
 }
 function stageErrorProjection(error,stage){
-    const messages={'Snapshot unavailable':'snapshot-unavailable','A frame mismatch':'a-color-mismatch','B frame mismatch':'b-color-mismatch','Old request not retired':'old-request-not-retired','Pixels retained in diagnostics':'pixels-in-diagnostics','Ended media still produces snapshot':'ended-snapshot-available','load-command-failed-or-unattributed':'load-command-failed-or-unattributed'};
+    const messages={'Snapshot unavailable':'snapshot-unavailable','A frame mismatch':'a-color-mismatch','B frame mismatch':'b-color-mismatch','Old request not retired':'old-request-not-retired','Pixels retained in diagnostics':'pixels-in-diagnostics','Ended media still produces snapshot':'ended-snapshot-available','load-command-failed-or-unattributed':'load-command-failed-or-unattributed',...Object.fromEntries(['PACING_ARGUMENTS','PACING_OWNER_MISMATCH','PACING_TIMING_REQUIRED','PACING_VALID_SAMPLES_REQUIRED','PACING_FIRST_FRAME_REQUIRED','CLOUD_OWNED_CPU_REQUIRED'].map(value=>[value,value.toLowerCase().replaceAll('_','-')]))};
     const codes=new Set(['OWNER_NATIVE_EXIT_NOT_ACCEPTED','OWNER_HELPER_START_FAILED','OWNER_SNAPSHOT_CAPABILITY_MISSING','OWNER_BASELINE_CONTRACT_MISMATCH','OWNER_GUI_MODE_REQUIRED','invalid-helper-handshake','missing-helper-capability','unexpected-libmpv-version']);
     const states=new Set(['FAILED','HELPER_DIED','TIMED_OUT','GENERATION_RETIRED','CANCELLED']);
-    const stages=new Set(['handshake','sample-A','retire-A','sample-B','end-file','owned-exit']);
+    const stages=new Set(['handshake','sample-A','retire-A','sample-B','end-file','owned-exit','preview-pacing']);
     const message=String(error?.message||'').slice(0,4096);
     return {stage:stages.has(stage)?stage:null,reason:Object.hasOwn(messages,message)?messages[message]:(/^timeout:[1-9][0-9]*:end-file$/.test(message)?'end-file-timeout':null),code:codes.has(error?.code)?error.code:null,state:states.has(error?.state)?error.state:null,messageSha256:sha(message)};
 }
@@ -109,10 +109,11 @@ async function run(runtimeArg,outputArg,commit,mode) {
     if(process.platform!=='win32'||process.arch!=='x64'||process.versions.electron!==PLAN.electron)throw Error('Pinned Windows Electron required');
     if(process.type!=='browser')throw probeFailure('OWNER_GUI_MODE_REQUIRED');
     if(!runtimeArg||!outputArg||!/^[a-f0-9]{40}$/.test(commit||''))throw Error('Invalid probe arguments');
-    if(mode!==undefined&&mode!=='--handshake-only')throw Error('Unknown probe mode');
-    const handshakeOnly=mode==='--handshake-only',scope=handshakeOnly?'production-helper-handshake-only':PLAN.scope;
+    if(mode!==undefined&&mode!=='--handshake-only'&&mode!=='--preview-pacing')throw Error('Unknown probe mode');
+    const handshakeOnly=mode==='--handshake-only',pacing=mode==='--preview-pacing',scope=pacing?'production-helper-preview-pacing':handshakeOnly?'production-helper-handshake-only':PLAN.scope;
     const repository=path.resolve(__dirname,'..'),runtime=path.resolve(runtimeArg),output=path.resolve(outputArg);
     const packaged=fs.existsSync(path.join(__dirname,'registry-input.json'));
+    if(pacing&&(packaged||process.env.GITHUB_ACTIONS!=='true'||process.env.ETE_WINDOWS_PREVIEW_PROFILE!=='1'||!['550','1000'].includes(process.env.ETE_WINDOWS_PREVIEW_INTERVAL_MS)))throw Error('Explicit source checkout cloud pacing required');
     trace('preflight-start',{packaged});
     if(packaged) {
         require('./verify.cjs').verify(runtime,commit);
@@ -150,6 +151,13 @@ async function run(runtimeArg,outputArg,commit,mode) {
         trace('helper-start');
         await startProbeHelper(client);
         if(handshakeOnly){stage='owned-exit';log({...await finishOwnerProbe(client,exitState),scope,handshakeVerified:true,handshake:startupEvidence(client,null).handshake,snapshotAcceptance:'NOT_ASSESSED'});return;}
+        if(pacing){
+            stage='preview-pacing';trace(stage);
+            const tool=require('./windows-native-preview-pacing.cjs'),file=path.join(output,'synthetic.y4m'),fixture=tool.writeFixture(file);
+            const generation=await loadProbeClip(client,'pacing-synthetic',file);
+            const result=await tool.measure({client,generation,decode,output,intervalMs:Number(process.env.ETE_WINDOWS_PREVIEW_INTERVAL_MS),fixture});
+            stage='owned-exit';log({...await finishOwnerProbe(client,exitState),scope,pacing:result});return;
+        }
         const files=[path.join(output,'A.y4m'),path.join(output,'B.y4m')];fs.writeFileSync(files[0],clip(81,90,240));fs.writeFileSync(files[1],clip(145,54,34));
         async function load(index) {
             return loadProbeClip(client,index?'B':'A',files[index]);

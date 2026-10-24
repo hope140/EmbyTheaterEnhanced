@@ -71,3 +71,16 @@ test('Windows GUI-subsystem process is awaited using its actual exit rather than
  await assert.rejects(runChild(executable,[file],{directory,name:'gui'}),error=>error.details.closed&&error.details.exitCode===7);
  assert.equal(fs.readFileSync(file,'utf8'),'completed');
 });
+
+
+test('pacing child gets only fixed diagnostic presets and does not mutate the parent environment',async t=>{
+ const directory=fixture(t),prior={profile:process.env.ETE_WINDOWS_PREVIEW_PROFILE,interval:process.env.ETE_WINDOWS_PREVIEW_INTERVAL_MS,baseline:process.env.ETE_WINDOWS_PREVIEW_BASELINE};
+ const script="console.log(JSON.stringify([process.env.ETE_WINDOWS_PREVIEW_PROFILE,process.env.ETE_WINDOWS_PREVIEW_INTERVAL_MS,process.env.ETE_WINDOWS_PREVIEW_BASELINE||null]))";
+ for(const preset of [1000,550]){
+  await runChild(process.execPath,['-e',script],{directory,name:'preset-'+preset,previewPreset:preset});
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(directory,'preset-'+preset+'.stdout.log'))),['1',String(preset),preset===1000?'1':null]);
+ }
+ assert.deepEqual({profile:process.env.ETE_WINDOWS_PREVIEW_PROFILE,interval:process.env.ETE_WINDOWS_PREVIEW_INTERVAL_MS,baseline:process.env.ETE_WINDOWS_PREVIEW_BASELINE},prior);
+ await assert.rejects(runChild(process.execPath,['-e',script],{directory,name:'invalid',previewPreset:500}),{code:'PREVIEW_PRESET_INVALID'});
+ assert.equal(fs.existsSync(path.join(directory,'invalid.stdout.log')),false);
+});

@@ -25,6 +25,11 @@ on:
         type: boolean
         default: false
 
+      native_preview_pacing_only:
+        description: Cloud synthetic 1000ms/550ms capture and helper CPU comparison only (no package)
+        type: boolean
+        default: false
+
 permissions:
   contents: read
 
@@ -145,10 +150,11 @@ jobs:
           ETE_NATIVE_PREVIEW_PACKAGE: ${{ inputs.native_preview_trial }}
           ETE_NATIVE_LOADER_ONLY: ${{ inputs.native_loader_only }}
           ETE_NATIVE_HELPER_ONLY: ${{ inputs.native_helper_only }}
-        run: ./tools/ci-windows-test-package.ps1 -ReleasePackage:($env:ETE_RELEASE_PACKAGE -eq 'true') -NativePreviewTrial:($env:ETE_NATIVE_PREVIEW_PACKAGE -eq 'true') -NativeLoaderOnly:($env:ETE_NATIVE_LOADER_ONLY -eq 'true') -NativeHelperOnly:($env:ETE_NATIVE_HELPER_ONLY -eq 'true')
+          ETE_NATIVE_PREVIEW_PACING_ONLY: ${{ inputs.native_preview_pacing_only }}
+        run: ./tools/ci-windows-test-package.ps1 -ReleasePackage:($env:ETE_RELEASE_PACKAGE -eq 'true') -NativePreviewTrial:($env:ETE_NATIVE_PREVIEW_PACKAGE -eq 'true') -NativeLoaderOnly:($env:ETE_NATIVE_LOADER_ONLY -eq 'true') -NativeHelperOnly:($env:ETE_NATIVE_HELPER_ONLY -eq 'true') -NativePreviewPacingOnly:($env:ETE_NATIVE_PREVIEW_PACING_ONLY -eq 'true')
 
       - name: Upload verified test package
-        if: ${{ !inputs.native_loader_only && !inputs.native_helper_only }}
+        if: ${{ !inputs.native_loader_only && !inputs.native_helper_only && !inputs.native_preview_pacing_only }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: ete-test-win-x64-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -159,7 +165,7 @@ jobs:
           include-hidden-files: false
 
       - name: Preserve cloud native loader diagnostic
-        if: always() && (inputs.native_loader_only || inputs.native_helper_only)
+        if: always() && (inputs.native_loader_only || inputs.native_helper_only || inputs.native_preview_pacing_only)
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: ete-native-loader-diagnostic-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -169,7 +175,7 @@ jobs:
           include-hidden-files: false
 
       - name: Preserve cloud native helper startup
-        if: always() && inputs.native_helper_only
+        if: always() && (inputs.native_helper_only || inputs.native_preview_pacing_only)
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: ete-native-helper-startup-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}

@@ -4,8 +4,9 @@ const fs=require('node:fs'),path=require('node:path'),{spawn}=require('node:chil
 const check=require('./templates/native-preview/verify.cjs');
 const {acceptsNativeExit}=require('./templates/native-preview/exit-policy.cjs');
 function failure(code){const error=Error(code);error.code=code;return error;}
-async function runChild(executable,args,{directory,name,nodeMode=false,timeoutMs=60000,closeMs=5000}={}){
+async function runChild(executable,args,{directory,name,nodeMode=false,timeoutMs=60000,closeMs=5000,previewPreset=null}={}){
     const env={...process.env};if(nodeMode)env.ELECTRON_RUN_AS_NODE='1';else delete env.ELECTRON_RUN_AS_NODE;
+    if(previewPreset!==null){if(![550,1000].includes(previewPreset))throw failure('PREVIEW_PRESET_INVALID');env.ETE_WINDOWS_PREVIEW_PROFILE='1';env.ETE_WINDOWS_PREVIEW_INTERVAL_MS=String(previewPreset);if(previewPreset===1000)env.ETE_WINDOWS_PREVIEW_BASELINE='1';else delete env.ETE_WINDOWS_PREVIEW_BASELINE;}
     const streams=['stdout','stderr'].map(kind=>fs.openSync(path.join(directory,name+'.'+kind+'.log'),'wx'));
     // These are only source-bound local probe arguments, never playback URLs,
     // account data or an existing user's profile.
@@ -107,5 +108,5 @@ async function accept(runtime,ownerOutput,commit,directory){
         fs.writeFileSync(path.join(directory,'failure.json'),JSON.stringify(record,null,2)+'\n',{flag:'wx'});throw error;
     }
 }
-module.exports={runChild,readOwnerReport,readHandshakeReport,preserveOwnerStages,accept};
+module.exports={readProbeReport,runChild,readOwnerReport,readHandshakeReport,preserveOwnerStages,accept};
 if(require.main===module)accept(...process.argv.slice(2)).then(receipt=>console.log(JSON.stringify(receipt))).catch(error=>{console.error(JSON.stringify({code:error.code||'TRIAL_ACCEPTANCE_FAILED',details:error.details||null}));process.exitCode=1;});
