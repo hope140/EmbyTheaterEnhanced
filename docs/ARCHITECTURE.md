@@ -66,4 +66,4 @@ ActionSheet 空列表排版使用单独的固定源 `actionsheet.css` overlay；
 
 首页流畅度候选对同身份返回保留卡片几何，仅暂遮易变进度／节目状态并禁交互；未知首批内容用同 scroller 的比例占位。原 native commit guard 继续检查身份、代次及请求归属，策略变更立即退休旧内容。真实组件与 CSS 的截图／帧序列证据同完整客户端体验分开，见[视觉回归合同](HOME_FLOW.md#返回闪空的视觉回归)。
 
-首页跨 route 实验只复用原 viewmanager 三 slot 内已有 owner，完整 URL 与首页身份／代次 guard 均通过后才恢复，不增加全局数据池；异步提交再核对，淘汰／原恢复失效仍冷加载。实验 HomeView 销毁链补到原 TabbedView，释放对应 tab。独立缓存管理沿原客户端插件设置路由，分别委托布局与 HTTP owner，组合操作保留逐项结果及离页边界。
+首页跨 route 实验只复用原 viewmanager 三 slot 内已有 owner，完整 URL 与首页身份／代次 guard 均通过后才恢复，不增加全局数据池；异步提交再核对，淘汰／原恢复失效仍冷加载。保留原 HomeView→TabbedView 销毁链，淘汰时由原 owner 释放对应 tab。独立缓存管理沿原客户端插件设置路由，分别委托布局与 HTTP owner，组合操作保留逐项结果及离页边界。

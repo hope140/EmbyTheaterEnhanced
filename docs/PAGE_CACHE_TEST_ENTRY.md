@@ -1,6 +1,6 @@
 # 页面缓存：隔离测试启动入口
 
-独立分支 `feature/page-cache` 已重基当前 v0.4.0 main `88578c91ab19d44eecddcfae096d37dc917ef1f4`，现有真实的命令行→main→prepared preload→原首页工厂测试接线。普通 Host/客户端启动不带参数，缓存仍默认关闭；没有设置页、持久化开关或产品 TTL。只缓存 HomeSections 安全投影，Items、用户资料、图片、播放和认证请求仍不缓存。
+独立分支 `feature/page-cache` 已重基当前 v0.4.0 main `88578c91ab19d44eecddcfae096d37dc917ef1f4`，现有真实的命令行→main→prepared preload→原首页工厂测试接线。普通 Host/客户端启动不带参数，缓存仍默认关闭；没有启用／策略设置页、持久化开关或产品 TTL。只缓存 HomeSections 安全投影，Items、用户资料、图片、播放和认证请求仍不缓存。
 
 ## 构建与运行
 

@@ -89,7 +89,7 @@ node tools/check-home-flow-visual.cjs /absolute/path/to/installed/chromium /abso
 
 实验模式现在只在原 viewmanager 已持有的三个 slot 中查找完全相同 URL、允许恢复且当前 Home tab 的有效视图。Home owner 检查 client／server／user／认证代次／locale／服务端版本／查询及可用 stage，在异步恢复提交前再检查；失效或不存在则沿原流程重新加载，不新增页面池、固定保留 slot 或内存／TTL 产品默认。恢复仍每轮重新读取 HomeSections／Items，旧动态状态暂遮。三 slot 真正淘汰后冷加载和骨架仍是预期行为，不能宣称任意深层设置往返都保留页面。
 
-原 HomeView 的 destroy 没有链到 TabbedView，实验 owner 在 slot 淘汰后可能仍存活。仅对已启用首页流畅度或布局缓存的 HomeView 补齐原父类销毁，释放对应 tab/controller、监听和请求；不改变普通 baseline 的页面容量或其他页面生命周期。
+原 HomeView 的 destroy 已链到 TabbedView，淘汰时由原生命周期释放 tab/controller、监听和请求。变换保留这条链且不重复销毁；不改变普通 baseline 的页面容量或其他页面生命周期。
 
 ```bash
 node --test tests/home-route-restore.test.cjs

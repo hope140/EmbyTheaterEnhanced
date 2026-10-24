@@ -24,3 +24,9 @@ test('navigation transforms require the pinned input anchors and refuse repeated
  const vm=plugin.patchViewManager(fs.readFileSync('vendor/web-snapshot/www/modules/viewmanager/viewmanager.js','utf8')),router=plugin.patchRouter(fs.readFileSync('vendor/web-snapshot/www/modules/approuter.js','utf8')),view=fs.readFileSync('vendor/web-snapshot/www/home/home.js','utf8');
  assert.throws(()=>home.patchViewManager(home.patchViewManager(vm)));assert.throws(()=>home.patchRouter(home.patchRouter(router)));assert.throws(()=>home.patchHomeView(home.patchHomeView(view)));
 });
+
+test('Home transform preserves the original single parent destruction chain',()=>{
+ const source=fs.readFileSync('vendor/web-snapshot/www/home/home.js','utf8'),patched=home.patchHomeView(source);
+ const destroy=text=>text.slice(text.indexOf('HomeView.prototype.destroy='),text.indexOf('HomeView.prototype.loadTabController='));
+ assert.equal(destroy(patched),destroy(source));assert.equal(destroy(patched).split('_tabbedview.default.prototype.destroy').length,2);
+});

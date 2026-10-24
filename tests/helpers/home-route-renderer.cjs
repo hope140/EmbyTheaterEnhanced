@@ -9,7 +9,7 @@ function augment(root,input,candidate=false){
  let router=plugin.patchRouter(fs.readFileSync(path.join(root,'vendor/web-snapshot/www/modules/approuter.js'),'utf8'));
  if(candidate){manager=home.patchViewManager(manager);router=home.patchRouter(router);result['home/home.js']=home.patchHomeView(result['home/home.js']);}
  result['modules/viewmanager/viewmanager.js']=manager;
- result.routerFunctions=extract(router,'function loadContentUrl(ctx, request, signal)')+'\n'+extract(router,'function initRoute(ctx, route, routeEpoch)');
+ result.routerFunctions=extract(router,'function getHomeRoute()')+'\n'+extract(router,'function getRouteUrl(item, options)')+'\n'+extract(router,'function loadContentUrl(ctx, request, signal)')+'\n'+extract(router,'function initRoute(ctx, route, routeEpoch)');
  result.pluginRoot=fs.readFileSync(path.join(root,'src/electronapp/plugins/libmpv.js'),'utf8');
  for(const file of ['cache-management.js','cache-management.html','cache-management.css','cache-settings.js','about.js','about.html','enhanced-settings.css'])result['plugins/mpvplayer/'+file]=fs.readFileSync(path.join(root,'src/electronapp/plugins/mpvplayer',file),'utf8');
  result.nativeCss += '\n'+['modules/flexstyles.css','modules/listview/listview.css','modules/emby-elements/emby-button/emby-button.css'].map(file=>fs.readFileSync(path.join(root,'vendor/web-snapshot/www',file),'utf8')).join('\n')+'\n'+result['plugins/mpvplayer/enhanced-settings.css']+'\n'+result['plugins/mpvplayer/cache-management.css'];
@@ -31,10 +31,11 @@ function install(trial){
  const loading={show(){document.body.dataset.loading='true';},hide(){document.body.dataset.loading='false';}};set('modules/loading/loading.js',loading);
  modules.set('ete-server-home',load('enhanced/home/home-tab.js').default);
  set('modules/homesections/homesections.js',{loadSections:()=>Promise.resolve()});
- const route={created:0,destroyed:0,homes:[],tabs:[],promises:[]};trial.route=route;
+ const route={created:0,destroyed:0,tabbedDestroys:0,homes:[],tabs:[],promises:[]};trial.route=route;
  window.__etePageCacheTestOptions=Object.freeze({enabled:false,ttlMs:10000,maxEntries:2,maxBytes:1048576,homeFlow:trial.runtime.mode});
  const HomeTab=load('home/hometab.js').default,originalResume=HomeTab.prototype.onResume;
  HomeTab.prototype.onResume=function(...args){const work=originalResume.apply(this,args);route.homePending=work;route.tabs.push(this);return work;};
+ const Tabbed=load('modules/tabbedview/tabbedview.js').default,tabbedDestroy=Tabbed.prototype.destroy;Tabbed.prototype.destroy=function(...args){route.tabbedDestroys++;return tabbedDestroy.apply(this,args);};
  const ActualHome=load('home/home.js').default;
  function Home(view,params){route.created++;ActualHome.call(this,view,params);route.homes.push(this);view.addEventListener('viewdestroy',()=>route.destroyed++);}
  Home.prototype=Object.create(ActualHome.prototype);Home.prototype.constructor=Home;
@@ -53,11 +54,11 @@ function install(trial){
  window.require=(ids,callback)=>{const values=ids.map(id=>{if(id.startsWith('css!'))return{};if(id.startsWith('text!')){const p=id.slice(5).replace(/^\//,'').split('?')[0];if(p==='home.html')return input['home/home.html'];if(p==='settings/settings.html')return input[p];if(p.startsWith('plugins/libmpvmediaplayer/'))return input[p.replace('plugins/libmpvmediaplayer/','plugins/')];return '<div class="view" data-name="settings"><p>Controlled settings route</p></div>';}return load(id.replace('file:///synthetic/runtime/electronapp/',''));});const result=Promise.resolve(values);if(callback)result.then(v=>callback(...v));return result;};
  const manager=load('modules/viewmanager/viewmanager.js').default;route.manager=manager;
  for(const method of ['loadView','tryRestoreView']){const original=manager[method];manager[method]=function(...args){const work=original.apply(this,args);route.promises.push(work);work.catch(()=>{});return work;};}
- const createRouter=new Function('_viewmanager','_globalize','Emby','require','console','AbortController',
-  'var currentViewLoadRequest=null,baseRoute="",isDummyBackToHome=false,eteRouteEpoch=0;'+input.routerFunctions+';return function(ctx,route){initRoute(ctx,route,++eteRouteEpoch);};');
- const init=createRouter({default:manager},{default:globalize},Emby,window.require,console,AbortController);
- route.navigate=async function(name,isBack=false){const configured=pluginRoutes.find(r=>r.path===name),target=configured?name:name==='home'?'/home.html?tab=home':'/settings/'+name+'.html',start=route.promises.length;
-  init({path:target,querystring:name==='home'?'tab=home':'',isBack,state:{}},configured||{path:name==='home'?'home.html':'settings/'+name+'.html',controller:name==='home'?'home/home.js':'settings/'+name+'.js',controllerType:'module',type:name==='home'?'home':'settings'});
+ const createRouter=new Function('_viewmanager','_globalize','Emby','require','console','AbortController','_layoutmanager','_usersettings',
+  'var currentViewLoadRequest=null,baseRoute="",isDummyBackToHome=false,eteRouteEpoch=0;'+input.routerFunctions+';return {init:function(ctx,route){initRoute(ctx,route,++eteRouteEpoch);},home:function(){return getRouteUrl(\"home\");}};');
+ const init=createRouter({default:manager},{default:globalize},Emby,window.require,console,AbortController,modules.get('modules/layoutmanager.js'),modules.get('modules/common/usersettings/usersettings.js'));
+ route.navigate=async function(name,isBack=false){const configured=pluginRoutes.find(r=>r.path===name),target=configured?name:name==='home'?init.home():'/settings/'+name+'.html',start=route.promises.length;
+  init.init({path:target,querystring:'',isBack,state:{}},configured||{path:name==='home'?'home.html':'settings/'+name+'.html',controller:name==='home'?'home/home.js':'settings/'+name+'.js',controllerType:'module',type:name==='home'?'home':'settings'});
   for(let attempts=0;attempts<200;attempts++){await Promise.resolve();if(route.promises.length>start){await Promise.allSettled(route.promises.slice(start));if(manager.currentViewInfo()?.url===target)return manager.currentView();}await new Promise(r=>setTimeout(r,0));}throw Error('Controlled route did not settle');};
  const user=()=>({Id:trial.api.getCurrentUserId(),ServerId:trial.api.serverId(),Name:'Synthetic user',Policy:{IsAdministrator:false,EnableUserPreferenceAccess:true,RestrictedFeatures:[]}});trial.api.getCurrentUser=()=>Promise.resolve(user());trial.api.getUser=()=>Promise.resolve(user());
  const oldShortcuts=modules.get('modules/shortcuts.js').default;modules.delete('modules/shortcuts.js');set('modules/commandprocessor.js',{executeCommand(){throw Error('Media command forbidden in settings probe');}});Object.assign(oldShortcuts,load('modules/shortcuts.js').default);set('modules/shortcuts.js',oldShortcuts);
@@ -75,6 +76,6 @@ function install(trial){
   function visible(element){const rect=element.getBoundingClientRect();if(rect.width<1||rect.height<1||rect.bottom<=0||rect.top>=innerHeight||rect.right<=0||rect.left>=innerWidth)return false;for(let node=element;node;node=node.parentElement){const style=getComputedStyle(node);if(style.display==='none'||style.visibility==='hidden'||Number(style.opacity)===0)return false;}return true;}
   return {home:manager.currentViewInfo()?.type==='home',rows:[...(view?.querySelectorAll('.verticalSection')||[])].map(row=>{const rect=row.getBoundingClientRect();return {top:rect.top,height:rect.height,cards:[...row.querySelectorAll('.itemsContainer .card')].filter(visible).length};})};
  };
- route.state=()=>({created:route.created,destroyed:route.destroyed,pages:document.querySelectorAll('.mainAnimatedPages>.page').length,liveTabOwners:route.homes.filter(h=>h.tabControllers?.[0]?.eteHome).length,current:manager.currentViewInfo()?.url,stage:route.homeTab()?.sectionsContainer?.firstChild?.getAttribute('data-ete-home-source'),cards:manager.currentView()?.querySelectorAll('.itemsContainer .card').length||0,skeletons:manager.currentView()?.querySelectorAll('.homeFlowPlaceholder:not(.hide)').length||0});
+ route.state=()=>({created:route.created,destroyed:route.destroyed,tabbedDestroys:route.tabbedDestroys,pages:document.querySelectorAll('.mainAnimatedPages>.page').length,liveTabOwners:route.homes.filter(h=>h.tabControllers?.[0]?.eteHome).length,current:manager.currentViewInfo()?.url,stage:route.homeTab()?.sectionsContainer?.firstChild?.getAttribute('data-ete-home-source'),cards:manager.currentView()?.querySelectorAll('.itemsContainer .card').length||0,skeletons:manager.currentView()?.querySelectorAll('.homeFlowPlaceholder:not(.hide)').length||0});
 }
 module.exports={augment};

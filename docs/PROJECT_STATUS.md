@@ -1,6 +1,6 @@
 # 项目状态
 
-首页跨设置返回候选已接原 router／viewmanager：只恢复原三 slot 中同身份、同查询且有效的 HomeView，普通前向首页导航不再无条件重建；真正淘汰、权限／身份或原恢复失效仍冷加载。实验模式补齐 HomeView→TabbedView 销毁，保留已通过的同页喜欢切换。客户端设置新增独立缓存管理路由、两项统计／单独清理及逐 owner 组合清理；About 仅保留入口位置说明。原生导航／设置列表点击、实际 Alameda 和完整离线回归分开验证，不改 main／正式版，不代表新 Windows 包验收完成。见[首页恢复](HOME_FLOW.md#跨-route-的首页恢复)与[缓存管理](CACHE_MANAGEMENT.md)。
+首页跨设置返回候选已接原 router／viewmanager：只恢复原三 slot 中同身份、同查询且有效的 HomeView，普通前向首页导航不再无条件重建；真正淘汰、权限／身份或原恢复失效仍冷加载。保留原 HomeView→TabbedView 销毁与已通过的同页喜欢切换。客户端设置新增独立缓存管理路由、两项统计／单独清理及逐 owner 组合清理；About 仅保留入口位置说明。原生导航／设置列表点击、实际 Alameda 和完整离线回归分开验证，不改 main／正式版，不代表新 Windows 包验收完成。见[首页恢复](HOME_FLOW.md#跨-route-的首页恢复)与[缓存管理](CACHE_MANAGEMENT.md)。
 
 此前 About 缓存区的完整设置回归已补齐 AMD 装配；本轮迁为独立页后，About 恢复自身版本／内核依赖，管理页单独覆盖原 Alameda／BaseView、真实管理模块和设置／首页 CSS。完整离线回归与 Windows 专属运行分别记录，见[验证范围](CACHE_MANAGEMENT.md#可重复验证与限制)。
 

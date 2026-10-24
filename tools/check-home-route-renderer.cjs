@@ -43,7 +43,7 @@ async function main(args=process.argv.slice(2)){
   for(const reason of ['evicted','identity','native-invalidated']){
    const {p,errors}=await page('sections',true);try{
     await p.evaluate(()=>trial.route.navigate('home'));await p.evaluate(()=>trial.route.settleHome());
-    if(reason==='evicted'){for(const target of ['one','two','three'])await p.evaluate(target=>trial.route.navigate(target),target);const removed=await p.evaluate(()=>({state:trial.route.state(),oldTabs:trial.route.homes[0].tabControllers}));assert.equal(removed.state.destroyed,1);assert.equal(removed.oldTabs,null);}
+    if(reason==='evicted'){for(const target of ['one','two','three'])await p.evaluate(target=>trial.route.navigate(target),target);const removed=await p.evaluate(()=>({state:trial.route.state(),oldTabs:trial.route.homes[0].tabControllers}));assert.equal(removed.state.destroyed,1);assert.equal(removed.state.tabbedDestroys,1);assert.equal(removed.oldTabs,null);}
     else {await p.evaluate(()=>trial.route.navigate('settings'));if(reason==='identity')await p.evaluate(()=>trial.setUser('other-synthetic-user'));else await p.evaluate(()=>trial.route.homes[0].view.allowRestore=false);}
     await p.evaluate(()=>{trial.config.holdAllItems=true;return trial.route.navigate('home');});await p.waitForTimeout(30);const state=await p.evaluate(()=>trial.route.state());assert.equal(state.created,2);assert.equal(state.skeletons,2);assert.ok(state.pages<=3);
     await p.evaluate(()=>{trial.config.holdAllItems=false;trial.release();});await p.evaluate(()=>trial.route.settleHome());passed.push({name:'cold-after-'+reason,state});

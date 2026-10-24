@@ -278,7 +278,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/home/home.js',
         expectedBaseSha256: '6B90990CF39A20BC3B3C10AC1956B5CD6CC8A7C0152B33F6771B35E5BE27B2FB',
         expectedInputSha256: null,
-        expectedOutputSha256: 'CFCC04C56EDF0D467B4C4D9B21D3317F645646C5B9FDC08C122E915109D512B3',
+        expectedOutputSha256: 'DA1F8BFF7BCC32C889018259A6D8DC14596FE9C45628E12A47DB185844FAD375',
         generatorPaths: Object.freeze([GENERATOR_PATH, HOME_GENERATOR_PATH])
     }),
     Object.freeze({

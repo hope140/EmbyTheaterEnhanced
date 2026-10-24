@@ -522,7 +522,6 @@
         }
         return {
             flowEnabled: flowing,
-            hasManagedResources: flowing || layoutCache.enabled,
             canRestore: function() {
                 return flowing && !disposed && !!owner.view && stageMode === 'server' && flowLayout !== null &&
                     sameIdentity(flowTicket, identity(epoch));
