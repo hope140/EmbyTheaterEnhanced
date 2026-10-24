@@ -126,6 +126,7 @@
     var unregisterStrmConfigIpc = function () {};
     var unregisterDiagnosticsIpc = function () {};
     var unregisterMaintenanceIpc = function () {};
+    var unregisterCacheManagementIpc = function () { return Promise.resolve(); };
     var unregisterRefreshRate = function () { return Promise.resolve(); };
     var unregisterNativeHelperIpc = function () { return Promise.resolve(); };
     var unregisterMpvKernelIpc = function () {
@@ -1049,6 +1050,9 @@
         dialog: electron.dialog,
         shell: electron.shell
     });
+    unregisterCacheManagementIpc = require('./enhanced/cache-management-ipc').register({
+        ipcMain: ipcMain, getWebContents: getWebContents
+    });
     unregisterMaintenanceIpc = maintenanceIpc.register({
         ipcMain: ipcMain,
         getWebContents: getWebContents,
@@ -1134,6 +1138,7 @@
         Promise.allSettled([
             runCleanup('diagnostics', function () { return unregisterDiagnosticsIpc(); }),
             runCleanup('maintenance', function () { return unregisterMaintenanceIpc(); }),
+            runCleanup('http-cache', function () { return unregisterCacheManagementIpc(); }),
             runCleanup('strm-config', function () { return unregisterStrmConfigIpc(); }),
             runCleanup('cd2', function () { return unregisterCd2Ipc(); }),
             runCleanup('refresh-rate', function () { return unregisterRefreshRate(); }),

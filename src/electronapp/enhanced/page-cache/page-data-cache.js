@@ -180,6 +180,7 @@
             // Call BEFORE a write starts (and again after it settles) or an external user/library event.
             invalidate: clear,
             dispose: function () { disposed = true; clear(); context = null; },
+            limits: function () { return {maxEntries: maxEntries, maxBytes: maxBytes}; },
             stats: function () { sweep(); return {enabled: enabled, entries: entries.size, retainedBytes: bytes, pending: pending.size}; }
         };
     }

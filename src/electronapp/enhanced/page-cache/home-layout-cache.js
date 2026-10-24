@@ -4,6 +4,25 @@
     else if (typeof module === 'object' && module.exports) module.exports = factory(require('./page-data-cache.js'));
 }(function (cacheModule, defaultEvents) {
     'use strict';
+    // Live owner handles only: no copied DTOs, keys, identity or global cache pool.
+    var owners = new Set();
+    function snapshot() {
+        var result = {status: 'ok', enabledOwners: 0, entries: 0, serializedBytes: 0, maxEntries: 0, maxSerializedBytes: 0, pending: 0};
+        try {
+            owners.forEach(function (owner) {
+                var value = owner.inspect();
+                result.enabledOwners++;
+                result.entries += value.stats.entries; result.serializedBytes += value.stats.retainedBytes;
+                result.pending += value.stats.pending; result.maxEntries += value.limits.maxEntries;
+                result.maxSerializedBytes += value.limits.maxBytes;
+            });
+            return result;
+        } catch (_) { return {status: 'unavailable'}; }
+    }
+    function clearManaged() {
+        try { owners.forEach(function (owner) { owner.clear(); }); return snapshot(); }
+        catch (_) { return {status: 'unavailable'}; }
+    }
     function aborted() { var error = new Error('Home layout request cancelled.'); error.name = 'AbortError'; return error; }
     function create(connection, options, events) {
         options = options || {};
@@ -82,15 +101,21 @@
         }
         var connectionEvents = ['localusersignedin', 'localusersignedout', 'connected'];
         connectionEvents.forEach(function (name) { events.on(connection, name, retire); });
+        var management = {clear: invalidate, inspect: function () {
+            // Stats must retire any silently switched auth context before counting it.
+            try { sync(); } catch (_) { /* Retire has already cleared absent/invalid identity. */ }
+            return {stats: cache.stats(), limits: cache.limits()};
+        }};
+        owners.add(management);
         return {enabled: true, load: load, invalidate: invalidate,
             revalidate: function () { try { sync(); return true; } catch (_) { return false; } },
             stats: function () { return cache.stats(); },
             dispose: function () {
                 if (disposed) return;
-                disposed = true;
+                disposed = true; owners.delete(management);
                 connectionEvents.forEach(function (name) { events.off(connection, name, retire); });
                 detach(); binding = null; cache.dispose();
             }};
     }
-    return {create: create};
+    return {create: create, management: Object.freeze({snapshot: snapshot, clear: clearManaged})};
 }));

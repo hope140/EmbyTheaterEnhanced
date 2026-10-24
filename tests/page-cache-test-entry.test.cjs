@@ -158,3 +158,8 @@ test('actual main startup snippet isolates before bootstrap and late positional 
     assert.equal(f.paths.userData, context.pageCacheTest.userDataPath);
     assert.match(source, /if \(pageCacheTest\) windowOptions\.webPreferences\.additionalArguments = \[pageCacheTest\.rendererArgument\]/);
 });
+
+for (const relative of ['enhanced/cache-management-ipc.js', 'plugins/mpvplayer/cache-settings.js', 'plugins/mpvplayer/about.js', 'plugins/mpvplayer/about.html']) test('management startup source binding rejects tampering before profile allocation: ' + relative, t => {
+    const f = fixture(t); f.write('electronapp/' + relative, 'tampered');
+    assert.throws(f.prepare); assert.deepEqual(f.sets, []); assert.deepEqual(fs.readdirSync(f.temp), []);
+});

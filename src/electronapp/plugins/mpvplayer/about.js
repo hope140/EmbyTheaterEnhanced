@@ -1,4 +1,4 @@
-define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!modules/listview/listview', 'css!./enhanced-settings', 'css!./about'], function (loading, BaseView) {
+define(['loading', 'baseView', './cache-settings', 'emby-button', 'emby-scroller', 'css!modules/listview/listview', 'css!./enhanced-settings', 'css!./about'], function (loading, BaseView, cacheSettings) {
     'use strict';
 
     var CHANNELS = {
@@ -31,6 +31,7 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!modules/list
         this.info = null;
         this.infoRequestId = 0;
         this.kernelRequestId = 0;
+        this.cacheManagement = cacheSettings.create(view, request);
         view.querySelector('.btnCheckUpdates').addEventListener('click', this.checkUpdates.bind(this));
         view.querySelector('.btnCopyEnvironment').addEventListener('click', this.copyEnvironment.bind(this));
         view.querySelector('.btnOpenReleases').addEventListener('click', this.openReleases.bind(this));
@@ -298,10 +299,18 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!modules/list
         BaseView.prototype.onResume.apply(this, arguments);
         this.loadInfo();
         this.loadKernelStatus();
+        this.cacheManagement.resume();
     };
 
     AboutView.prototype.onPause = function () {
+        this.cacheManagement.pause();
         BaseView.prototype.onPause.apply(this, arguments);
+    };
+
+    AboutView.prototype.destroy = function () {
+        this.cacheManagement.dispose();
+        this.infoRequestId++; this.kernelRequestId++;
+        if (BaseView.prototype.destroy) return BaseView.prototype.destroy.apply(this, arguments);
     };
 
     return AboutView;

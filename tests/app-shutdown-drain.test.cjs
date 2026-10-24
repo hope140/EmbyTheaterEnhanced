@@ -6,11 +6,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const stages = ['diagnostics', 'maintenance', 'strm', 'cd2', 'refresh', 'native', 'kernel', 'startup'];
-const callbackStages = stages.slice(0, 7);
+const stages = ['diagnostics', 'maintenance', 'http-cache', 'strm', 'cd2', 'refresh', 'native', 'kernel', 'startup'];
+const callbackStages = stages.slice(0, -1);
 const diagnosticSteps = {
     diagnostics: 'diagnostics',
     maintenance: 'maintenance',
+    'http-cache': 'http-cache',
     strm: 'strm-config',
     cd2: 'cd2',
     refresh: 'refresh-rate',
@@ -80,6 +81,7 @@ function fixture(failure = null) {
         playbackPowerOwner: {shutdown() { calls.push('power'); }},
         unregisterDiagnosticsIpc() { return runStage('diagnostics'); },
         unregisterMaintenanceIpc() { return runStage('maintenance'); },
+        unregisterCacheManagementIpc() { return runStage('http-cache'); },
         unregisterStrmConfigIpc() { return runStage('strm'); },
         unregisterCd2Ipc() { return runStage('cd2'); },
         unregisterRefreshRate() { return runStage('refresh'); },
