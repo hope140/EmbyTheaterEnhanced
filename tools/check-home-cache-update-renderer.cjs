@@ -20,7 +20,7 @@ async function main(args = process.argv.slice(2)) {
             // HTTP is entirely intercepted. The plugin manager still supplies the real mapped controller URL.
             input.routeSetup = input.routeSetup.replace('window.require=(ids,callback)=>{const values=ids.map', 'window.require=(ids,callback)=>{if(trial.route.amdNavigate && ids.some(id=>/plugins\\/.*\\.js$/.test(id)))return trial.route.amdNavigate(ids,callback);const values=ids.map');
             input.routeSetup = input.routeSetup.replaceAll('file:///synthetic/runtime/electronapp/', 'http://synthetic.invalid/').replace('enabled:false,ttlMs', 'enabled:true,ttlMs');
-            const page = await openTrial(browser, input, mode, {native: true, nativeItems: 8});
+            const page = await openTrial(browser, input, mode, {native: true, nativeItems: 8, origin: 'http://synthetic.invalid/'});
             page.setDefaultTimeout(5000);
             const errors = [], requested = [];
             page.on('pageerror', error => errors.push(error.message));
@@ -35,12 +35,13 @@ async function main(args = process.argv.slice(2)) {
                         '/plugins/mpvplayer/about.js': 'src/electronapp/plugins/mpvplayer/about.js',
                         '/plugins/mpvplayer/cache-management.js': 'src/electronapp/plugins/mpvplayer/cache-management.js',
                         '/plugins/mpvplayer/cache-settings.js': 'src/electronapp/plugins/mpvplayer/cache-settings.js',
+                        '/enhanced/detail-cache/store.js': 'src/electronapp/enhanced/detail-cache/store.js',
                         '/enhanced/release-note-links.js': 'src/electronapp/enhanced/release-note-links.js'
                     };
                     if (!allowed[file]) return route.abort();
                     return route.fulfill({contentType: 'application/javascript', body: '(function(define){\n' + fs.readFileSync(path.join(root, allowed[file]), 'utf8') + '\n})(trial.route.amdDefine);'});
                 });
-                await page.evaluate(() => {
+                await page.evaluate(alias => {
                     const r = trial.route, runtime = trial.runtime;
                     r.amdRequire = window.require; r.amdDefine = window.define;
                     r.amdRequire.config({baseUrl: 'http://synthetic.invalid/', noRequireCss: true});
@@ -48,6 +49,7 @@ async function main(args = process.argv.slice(2)) {
                     r.amdDefine('loading', [], () => runtime.load('loading'));
                     for (const id of ['emby-button', 'emby-select', 'emby-scroller']) r.amdDefine(id, [], () => ({}));
                     r.amdDefine('ete-home-layout-cache', [], () => runtime.load('enhanced/page-cache/home-layout-cache.js'));
+                    new Function('define',alias)(r.amdDefine);
                     r.amdNavigate = (ids, callback) => {
                         if (!ids.some(id => /plugins\/.*\.js$/.test(id))) return r.fixtureRequire(ids, callback);
                         return new Promise((resolve, reject) => {
@@ -80,7 +82,7 @@ async function main(args = process.argv.slice(2)) {
                         on(channel, listener) { r.progress.set(channel, listener); },
                         removeListener(channel, listener) { if (r.progress.get(channel) === listener) r.progress.delete(channel); }
                     };
-                });
+                }, require('./patch-server-home.cjs').DETAIL_CACHE_ALIAS);
                 await page.evaluate(() => trial.route.navigate('home'));
                 await page.evaluate(() => trial.route.settleHome());
                 await page.evaluate(() => { trial.route.original = trial.route.manager.currentView(); return trial.route.navigate('settings'); });
@@ -93,10 +95,12 @@ async function main(args = process.argv.slice(2)) {
                 await page.evaluate(() => trial.route.navigate('settings'));
                 await page.locator('.navMenuOption-settings:visible').filter({hasText: '缓存管理'}).click();
                 await page.waitForFunction(() => document.querySelector('.cacheHttpValue')?.textContent.includes('128 bytes'));
-                assert.match(await page.locator('.cachePageValue').textContent(), /1 条/);
+                const pageCache=await page.evaluate(async()=>{const r=trial.route,[module]=await new Promise((resolve,reject)=>r.amdRequire(['ete-detail-cache-store'],(...values)=>resolve(values),reject));r.detailStore=module.default.shared();const snapshot=await r.detailStore.snapshot();return {layout:trial.runtime.load('enhanced/page-cache/home-layout-cache.js').default.management.snapshot(),detail:snapshot};});
+                assert.equal(pageCache.detail.status,'ok');assert.equal(pageCache.layout.entries,1);assert.ok(pageCache.layout.serializedBytes>0);assert.match(await page.locator('.cachePageValue').textContent(),new RegExp((pageCache.layout.serializedBytes+pageCache.detail.serializedBytes)+' bytes'));
                 await page.locator('.btnClearAllCaches').click();
                 await page.waitForFunction(() => document.querySelector('.cacheOperationState')?.textContent === '以上缓存已清理。');
                 assert.equal(await page.evaluate(() => trial.runtime.load('enhanced/page-cache/home-layout-cache.js').default.management.snapshot().entries), 0);
+                assert.deepEqual(await page.evaluate(() => trial.route.detailStore.snapshot()),{status:'ok',entries:0,serializedBytes:0});
                 await page.evaluate(() => trial.route.navigate('settings'));
                 await page.locator('.navMenuOption-settings:visible').filter({hasText: '关于 Enhanced'}).click();
                 await page.waitForFunction(() => document.querySelector('.selectUpdateChannel')?.disabled === false);
@@ -130,6 +134,7 @@ async function main(args = process.argv.slice(2)) {
                 assert.deepEqual(errors, []);
                 assert.ok(requested.includes('/enhanced/release-note-links.js'));
                 assert.ok(requested.includes('/plugins/mpvplayer/cache-settings.js'));
+                assert.equal(requested.filter(file=>file==='/enhanced/detail-cache/store.js').length,1);
                 await page.screenshot({path: path.join(output, mode + '-return.png')});
                 passed.push({mode, requested, ipc: await page.evaluate(() => trial.route.ipcCalls)});
             } catch (error) {

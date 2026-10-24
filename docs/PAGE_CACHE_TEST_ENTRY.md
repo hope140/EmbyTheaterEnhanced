@@ -28,7 +28,7 @@ $trialRuntime = 'C:\ETE-PageCache-Test\verified-runtime'
 
 ## 隔离和拒绝
 
-`main.js`在bootstrap、设备身份和日志创建之前调用 `page-cache/test-session.js`，要求Windows、app尚未ready、实际execPath为当前runtime的x64/electron/electron.exe且argv应用目录为该runtime/electronapp。缺来源清单、十六份关键维护源码、样式与界面材料与Git blob来源记录不一致、prepared preload不一致、输入/临时目录为链接或重定向均拒绝。这里的包内哈希自检是有限启动绑定，**不是独立完整来源或全runtime验证**；完整验证仍由构建与父线程核对执行。
+`main.js`在bootstrap、设备身份和日志创建之前调用 `page-cache/test-session.js`，要求Windows、app尚未ready、实际execPath为当前runtime的x64/electron/electron.exe且argv应用目录为该runtime/electronapp。缺来源清单、二十份关键维护源码、样式与界面材料与Git blob来源记录不一致、prepared preload不一致、输入/临时目录为链接或重定向均拒绝。这里的包内哈希自检是有限启动绑定，**不是独立完整来源或全runtime验证**；完整验证仍由构建与父线程核对执行。
 
 全部参数及包内身份检查通过后，只在物理临时父目录创建全新 `ETE-page-cache-test-*` 根目录；不能选择/复用已有profile。拒绝临时父目录位于当前runtime、普通userData或appData/EmbyTheaterEnhanced之内。每次生成独立的appdata、userdata、session、logs、temp、crashes、localappdata和mpv目录，不复制账户、存储或原配置。
 
@@ -54,3 +54,5 @@ main仅在该模式给原应用BrowserWindow添加一个内部renderer参数；p
 需要Windows人工的最短补充是一次首页→详情→返回、刷新/过期后恢复，以及焦点/滚动/加载遮罩可见体验。先完成自动启动/路径检查再交给用户；若真实服务体验仍需用户，则只读测试等后续明确安排，不复制已登录profile、不要求上传账户信息。真实播放、安装、覆盖升级、真实NAS写与性能收益不在本轮已验收范围。
 
 客户端设置另提供[最小缓存管理](CACHE_MANAGEMENT.md)，不启用缓存或改变实验默认值；后续测试包还将该入口的 main IPC、UI controller 和模板纳入启动来源绑定。现有历史包不能据此宣称带有该入口。
+
+详情缓存独立候选另固定 app／Item 两份原生输出哈希，任何实验模式在创建 profile 前均验证；四份 detail-cache 源码／样式进入关键来源绑定。详情自动持久策略独立于原 Home 布局开关，原四参数只控制 Home 布局；新测试仍强制新 profile，不复用普通账户。跨重启持久性先由独立合成 browser profile 验证；Windows 同 profile 重启体验须在隔离测试安排下补验，不能通过复制登录 profile 验收。见[合同](DETAIL_PAGE_CACHE.md)。

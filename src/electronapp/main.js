@@ -127,6 +127,7 @@
     var unregisterDiagnosticsIpc = function () {};
     var unregisterMaintenanceIpc = function () {};
     var unregisterCacheManagementIpc = function () { return Promise.resolve(); };
+    var detailCacheCloseOwner = null;
     var unregisterRefreshRate = function () { return Promise.resolve(); };
     var unregisterNativeHelperIpc = function () { return Promise.resolve(); };
     var unregisterMpvKernelIpc = function () {
@@ -966,7 +967,12 @@
         }
     }
 
-    function onWindowClose() {
+    function onWindowClose(event) {
+        var closingWindow = mainWindow;
+        if (detailCacheCloseOwner && detailCacheCloseOwner.beforeClose(event, function (status) {
+            enhancedLog({level: status === 'flushed' ? 'info' : 'warn', category: 'app', event: 'detail-cache-flush', details: {status: status}});
+            if (closingWindow && !closingWindow.isDestroyed()) closingWindow.close();
+        })) return;
 
         if (hasAppLoaded) {
             var data = previousBounds
@@ -1050,6 +1056,8 @@
         dialog: electron.dialog,
         shell: electron.shell
     });
+    detailCacheCloseOwner = require('./enhanced/detail-cache/close-owner').register({ipcMain: ipcMain, getWebContents: getWebContents});
+    app.once('will-quit', function () { detailCacheCloseOwner.dispose(); });
     unregisterCacheManagementIpc = require('./enhanced/cache-management-ipc').register({
         ipcMain: ipcMain, getWebContents: getWebContents
     });

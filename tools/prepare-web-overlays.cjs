@@ -234,7 +234,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/item/item.js',
         expectedBaseSha256: 'C8F51119365ECD2881B0A33F1F9E9DD6DA90E305572621188FB31A15FDCB4623',
         expectedInputSha256: null,
-        expectedOutputSha256: '72311EB4FD8E2A151B280366218A44DE802DB1083BD71DA99F9EF1CB8CC3AB11',
+        expectedOutputSha256: '208A314D6992ED3DA1C094563772087814A8B235FB507E4DD17A74B3A2EEADFE',
         generatorPaths: Object.freeze([GENERATOR_PATH, EXTERNAL_PLAYER_RESIDUE_GENERATOR_PATH, ITEM_LIFECYCLE_GENERATOR_PATH])
     }),
     Object.freeze({
@@ -267,7 +267,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/app.js',
         expectedBaseSha256: '3B058D1F40F5D863F1A1220DC36C52B187CB5AE0C8073DC4527573DE294FC0A2',
         expectedInputSha256: null,
-        expectedOutputSha256: 'EC7C71C209D847B1BFE38D650D2BC80B933DD4DF855689EA608FF2A36FEED703',
+        expectedOutputSha256: 'DA2FC53822AF7BA78455866148A91AEDC2E024802DD0A4C92832887CEE088924',
         generatorPaths: Object.freeze([SEARCH_GENERATOR_PATH, GENERATOR_PATH, APP_GENERATOR_PATH, PLUGIN_GENERATOR_PATH, HOME_GENERATOR_PATH, MOVIE_GENERATOR_PATH])
     }),
     Object.freeze({
@@ -352,7 +352,7 @@ function outputFor(root, contract) {
     if (contract.searchTransform) return {base, input: Buffer.from(searchUi[contract.searchTransform](base.toString('utf8')), 'utf8')};
     if (contract.menuTransform) return {base, input: Buffer.from(selectCancel[contract.menuTransform](base.toString('utf8')), 'utf8')};
     if (contract.id === 'item-externalplayer-residue' && contract.mode === 'tracked-canonical-transform') {
-        return {base, input: Buffer.from(itemLifecycle.patchItemLifecycle(externalPlayerResidue.patchItemText(base.toString('utf8'))), 'utf8')};
+        return {base, input: Buffer.from(itemLifecycle.patchDetailCache(itemLifecycle.patchItemLifecycle(externalPlayerResidue.patchItemText(base.toString('utf8')))), 'utf8')};
     }
     if (contract.id === 'item-externalplayer-residue-template' && contract.mode === 'tracked-canonical-transform') {
         const withoutLegacyButton = externalPlayerResidue.patchItemHtmlText(base.toString('utf8'));

@@ -20,7 +20,8 @@ function sources(root, revision) {
 async function openTrial(browser, input, mode = 'baseline', settings = {}) {
     const page = await browser.newPage({viewport: settings.viewport || {width: 1000, height: 700}});
     // The fixture has no external service, accounts, or asset requests.
-    await page.route('**/*', route => route.abort());
+    await page.route('**/*', route => settings.origin && route.request().url()===settings.origin ? route.fulfill({contentType:'text/html',body:'<!doctype html>'}) : route.abort());
+    if(settings.origin) await page.goto(settings.origin);
     await page.setContent(`<!doctype html><style>${input.flowCss || ''}${settings.native ? input.nativeCss + '\nhtml{font-size:16px;background:#101820;color:#eee}body{margin:0}.view{height:100vh;overflow:auto}.hide{display:none!important}.emby-scroller{overflow:auto}.scrollSlider{display:flex}.itemsContainer{min-height:1px}' : `
         .hide {display:none!important} .view {height:380px;overflow:auto}
         .verticalSection {position:relative;min-height:240px} .itemsContainer {display:flex;gap:12px;overflow:auto}

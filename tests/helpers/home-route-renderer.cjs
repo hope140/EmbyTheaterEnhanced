@@ -12,6 +12,7 @@ function augment(root,input,candidate=false){
  result.routerFunctions=extract(router,'function getHomeRoute()')+'\n'+extract(router,'function getRouteUrl(item, options)')+'\n'+extract(router,'function loadContentUrl(ctx, request, signal)')+'\n'+extract(router,'function initRoute(ctx, route, routeEpoch)');
  result.pluginRoot=fs.readFileSync(path.join(root,'src/electronapp/plugins/libmpv.js'),'utf8');
  for(const file of ['cache-management.js','cache-management.html','cache-management.css','cache-settings.js','about.js','about.html','enhanced-settings.css'])result['plugins/mpvplayer/'+file]=fs.readFileSync(path.join(root,'src/electronapp/plugins/mpvplayer',file),'utf8');
+ result['enhanced/detail-cache/store.js']=fs.readFileSync(path.join(root,'src/electronapp/enhanced/detail-cache/store.js'),'utf8');
  result.nativeCss += '\n'+['modules/flexstyles.css','modules/listview/listview.css','modules/emby-elements/emby-button/emby-button.css'].map(file=>fs.readFileSync(path.join(root,'vendor/web-snapshot/www',file),'utf8')).join('\n')+'\n'+result['plugins/mpvplayer/enhanced-settings.css']+'\n'+result['plugins/mpvplayer/cache-management.css'];
  result.routeSetup='('+install.toString()+')';return result;
 }
@@ -62,7 +63,7 @@ function install(trial){
   for(let attempts=0;attempts<200;attempts++){await Promise.resolve();if(route.promises.length>start){await Promise.allSettled(route.promises.slice(start));if(manager.currentViewInfo()?.url===target)return manager.currentView();}await new Promise(r=>setTimeout(r,0));}throw Error('Controlled route did not settle');};
  const user=()=>({Id:trial.api.getCurrentUserId(),ServerId:trial.api.serverId(),Name:'Synthetic user',Policy:{IsAdministrator:false,EnableUserPreferenceAccess:true,RestrictedFeatures:[]}});trial.api.getCurrentUser=()=>Promise.resolve(user());trial.api.getUser=()=>Promise.resolve(user());
  const oldShortcuts=modules.get('modules/shortcuts.js').default;modules.delete('modules/shortcuts.js');set('modules/commandprocessor.js',{executeCommand(){throw Error('Media command forbidden in settings probe');}});Object.assign(oldShortcuts,load('modules/shortcuts.js').default);set('modules/shortcuts.js',oldShortcuts);
- modules.set('ete-home-layout-cache',load('enhanced/page-cache/home-layout-cache.js'));modules.set('baseView',Base);modules.set('loading',loading);modules.set('emby-button',{});modules.set('emby-scroller',{});
+ modules.set('ete-home-layout-cache',load('enhanced/page-cache/home-layout-cache.js'));modules.set('ete-detail-cache-store',load('enhanced/detail-cache/store.js'));modules.set('baseView',Base);modules.set('loading',loading);modules.set('emby-button',{});modules.set('emby-scroller',{});
  modules.set('modules/common/servicelocator.js',{appHost:{supports:()=>false,appName:()=> 'ETE test',appVersion:()=> '0.4.0'}});
  set('modules/emby-elements/emby-collapse/emby-collapse.js',{});modules.delete('modules/listview/listview.js');load('modules/listview/listview.js');
  set('modules/approuter.js',{getRoutes:()=>pluginRoutes,getRouteInfo:()=>null,getRouteUrl:t=>'/'+t,validateUserAccessToRoute:()=>true,show:target=>{route.clickedNavigation=route.navigate(target);return route.clickedNavigation;}});

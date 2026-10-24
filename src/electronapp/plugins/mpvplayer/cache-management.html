@@ -1,36 +1,26 @@
 <div is="emby-scroller" class="view flex flex-direction-column scrollFrameY flex-grow" data-mousewheel="true" data-horizontal="false" data-forcescrollbar="true" data-centerfocus="card" data-bindheader="true">
     <div class="scrollSlider flex-grow flex-direction-column padded-left padded-left-page padded-right padded-top-page padded-bottom-page settingsContainer ete-settings-page cacheManagementPage">
-        <header class="ete-settings-header"><p>查看或手动清理图片等网络资源缓存与首页布局缓存。</p></header>
-        <section class="ete-settings-section verticalSection" aria-labelledby="ete-cache-http-title">
-            <div class="ete-settings-section-header"><div><h2 id="ete-cache-http-title" class="sectionTitle">图片等网络资源缓存</h2></div></div>
-            <div class="ete-settings-card">
-                <div class="ete-settings-info-row"><span>当前占用</span><span class="cacheHttpValue">尚未读取</span></div>
-                <p>这是当前应用 session 的 HTTP 缓存总量，包含图片和其他网络资源，无法单独统计海报。清理后资源可能需要重新加载。</p>
-                <button type="button" is="emby-button" class="raised ete-settings-button btnClearHttpCache">清理网络资源缓存</button>
+        <section class="ete-settings-card cacheRows" aria-label="缓存分类">
+            <div class="cacheRow cacheRowHead" aria-hidden="true"><span>名称</span><span>大小</span><span>操作</span></div>
+            <div class="cacheRow" role="group" aria-labelledby="ete-cache-http-title">
+                <h2 id="ete-cache-http-title" class="cacheName">资源缓存</h2>
+                <span class="cacheHttpValue">尚未读取</span>
+                <button type="button" is="emby-button" class="raised ete-settings-button btnClearHttpCache" aria-label="清理资源缓存">清理</button>
                 <div class="ete-settings-status cacheHttpState" role="status" aria-live="polite"></div>
             </div>
-        </section>
-        <section class="ete-settings-section verticalSection" aria-labelledby="ete-cache-layout-title">
-            <div class="ete-settings-section-header"><div><h2 id="ete-cache-layout-title" class="sectionTitle">首页布局缓存</h2></div></div>
-            <div class="ete-settings-card">
-                <div class="ete-settings-info-row"><span>当前条目与占用</span><span class="cachePageValue">尚未读取</span></div>
-                <p class="cachePageBudget"></p>
-                <p>仅统计当前窗口已启用的首页布局数据。序列化占用不是实际进程内存，不包含保留界面、列表数据或图片解码内存。清理保留当前界面，下次读取重新获取布局。</p>
-                <button type="button" is="emby-button" class="raised ete-settings-button btnClearPageCache">清理首页布局缓存</button>
+            <div class="cacheRow" role="group" aria-labelledby="ete-cache-layout-title">
+                <h2 id="ete-cache-layout-title" class="cacheName">页面缓存</h2>
+                <span class="cachePageValue">尚未读取</span>
+                <button type="button" is="emby-button" class="raised ete-settings-button btnClearPageCache" aria-label="清理页面缓存">清理</button>
+                <p class="cachePageBudget" hidden></p>
                 <div class="ete-settings-status cachePageState" role="status" aria-live="polite"></div>
             </div>
         </section>
-        <section class="ete-settings-section verticalSection" aria-labelledby="ete-cache-actions-title">
-            <div class="ete-settings-section-header"><div><h2 id="ete-cache-actions-title" class="sectionTitle">缓存操作</h2></div></div>
-            <div class="ete-settings-card">
-                <p>仅清理以上两类缓存，不清除登录、服务器配置、个人设置、embydata 或整个 profile，不删除下载，也不操作播放缓冲或视频暂存。</p>
-                <div class="ete-settings-actions">
-                    <button type="button" is="emby-button" class="raised ete-settings-button btnClearAllCaches">清理以上缓存</button>
-                    <button type="button" is="emby-button" class="raised ete-settings-button btnRefreshCache">刷新统计</button>
-                </div>
-                <p>图片解码内存无法准确分项统计；播放缓冲和视频暂存不在本页管理。</p>
-                <div class="ete-settings-status cacheOperationState" role="status" aria-live="polite"></div>
-            </div>
-        </section>
+        <div class="ete-settings-actions cacheActions">
+            <button type="button" is="emby-button" class="raised ete-settings-button btnClearAllCaches">清理全部</button>
+            <button type="button" is="emby-button" class="raised ete-settings-button btnRefreshCache">刷新</button>
+        </div>
+        <p class="cacheSafetyNote">资源为 HTTP 总量，页面为数据大小。不清登录和设置。</p>
+        <div class="ete-settings-status cacheOperationState" role="status" aria-live="polite"></div>
     </div>
 </div>

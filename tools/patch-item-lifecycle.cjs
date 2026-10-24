@@ -68,4 +68,46 @@ function patchItemLifecycle(value) {
     return output;
 }
 
-module.exports = {patchItemLifecycle};
+// Applied after the existing lifecycle transform; the frozen input remains read-only.
+function patchDetailCache(value) {
+    const eol = value.includes('\r\n') ? '\r\n' : '\n';
+    let output = value;
+    function once(before, after) {
+        before=before.replace(/\n/g,eol);after=after.replace(/\n/g,eol);
+        if(output.split(before).length!==2)throw Error('Detail cache source anchor mismatch: '+before.slice(0,60));
+        output=output.replace(before,after);
+    }
+    once('  "baseView",','  "baseView",\n  "ete-detail-page-cache",');
+    once('  BaseView\n) {','  BaseView,\n  detailCache\n) {');
+    once('    BaseView.apply(this, arguments),', `    BaseView.apply(this, arguments),
+      (this.eteDetail = detailCache.default.create(this, {
+        play: function(mode) { playCurrentItem(this, mode); }.bind(this),
+        retry: function() { startDataLoad(this); consumeDetailReload(this, true); }.bind(this),
+        canPlay: function(item) { return playbackManager.canPlay(item); },
+        clearBackdrop: function() { backdrop.clear(); }
+      })),`);
+    once('instance.view === view && !!view;', 'instance.view === view && !!view && (!instance.eteDetail || instance.eteDetail.isCurrent());');
+    once('    instance.dataPromise = Promise.all(', '    instance.eteDetail.begin(apiClient);\n    instance.dataPromise = Promise.all(');
+    once('apiClient.getCurrentUser()]).then(', 'apiClient.getCurrentUser().then(function(user) { if (isCurrentDetail(instance, epoch, view)) instance.eteDetail.user(user); return user; })]).then(');
+    once('    var detailOwner = this, detailEpoch = this._eteDetailEpoch, detailView = this.view;', '    var detailOwner = this, detailEpoch = this._eteDetailEpoch, detailView = this.view;\n    this.eteDetail.ownsBackground();');
+    once('      return playbackMediaSourcesPromise.then(function (mediaSources) {', '      return playbackMediaSourcesPromise.then(function (mediaSources) {\n        if (!isCurrentDetail(instance, epoch, detailView)) throw retiredDetail();\n        instance.eteDetail.sources();');
+    once('      var playbackMediaSourcesPromise', '      instance.eteDetail.item(item);\n      var playbackMediaSourcesPromise');
+    once('      function (err) {\n        if (!isCurrentDetail(instance, epoch, view)) throw retiredDetail();',
+        '      async function (err) {\n        if (!isCurrentDetail(instance, epoch, view)) throw retiredDetail();\n        if (await instance.eteDetail.error(err)) throw err;\n        if (!instance._eteDetailActive || instance._eteDetailEpoch !== epoch || instance.view !== view) throw retiredDetail();');
+    once('        if (!isCurrentDetail(detailOwner, detailEpoch, detailView)) throw retiredDetail();',
+        '        if (!isCurrentDetail(detailOwner, detailEpoch, detailView)) throw retiredDetail();\n        detailOwner.eteDetail.complete();');
+    once('  function setNextUpButtonText(instance, page) {', '  function setNextUpButtonText(instance, page) {\n    var nextEpoch=instance._eteDetailEpoch,nextRevision=instance._eteNextUpRevision=(instance._eteNextUpRevision||0)+1;');
+    once('      .then(function (result) {\n        var resumeName,', '      .then(function (result) {\n        if(!isCurrentDetail(instance,nextEpoch,page)||instance._eteNextUpRevision!==nextRevision)return;\n        var resumeName,');
+    once('resumeInfo.classList.add("hide"));\n      });\n  }\n  function reloadPlayButtons', 'resumeInfo.classList.add("hide"));\n      }, onPromiseFailure);\n  }\n  function reloadPlayButtons');
+    once('  function playCurrentItem(instance, mode) {', `  function playCurrentItem(instance, mode) {
+    if (MultiSelect.canPlay()) { MultiSelect.play(); return; }
+    if (instance.eteDetail && instance.eteDetail.requestPlay(mode, function(item, requestedMode) {
+      playbackManager.play({items: [item], startPositionTicks: item.UserData && requestedMode === "resume" ? null : 0});
+    })) return;`);
+    once('      this._eteDetailActive = false;\n      this._eteDetailEpoch = (this._eteDetailEpoch || 0) + 1;\n      BaseView.prototype.onPause',
+        '      this.eteDetail.pause();\n      this._eteDetailActive = false;\n      this._eteDetailEpoch = (this._eteDetailEpoch || 0) + 1;\n      BaseView.prototype.onPause');
+    once('    (ItemPage.prototype.destroy = function () {', '    (ItemPage.prototype.destroy = function () {\n      this.eteDetail.dispose();');
+    once('        onPlayerChangeFn ||\n          (renderTrackSelectionsWithoutUser', '        onPlayerChangeFn || !this.currentItem ||\n          (renderTrackSelectionsWithoutUser');
+    return output;
+}
+module.exports = {patchItemLifecycle, patchDetailCache};

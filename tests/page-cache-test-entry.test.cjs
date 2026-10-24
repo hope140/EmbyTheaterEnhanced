@@ -23,12 +23,14 @@ function fixture(t) {
     write('electronapp/preload.js', preload.buildPreparedPreload("window.appdata = process.env.APPDATA;\n"));
     write('x64/electron/electron.exe', 'synthetic-identity-only-not-executable');
     write('config/system.xml', 'test-seed');
-    for (const overlay of session.FLOW_OVERLAYS) {
+    for (const overlay of session.FLOW_OVERLAYS.concat(session.DETAIL_OVERLAYS)) {
         const relative = overlay.path.slice('electronapp/www/'.length);
         const base = fs.readFileSync(path.join(__dirname, '../vendor/web-snapshot/www', relative), 'utf8');
         const home = require('../tools/patch-server-home.cjs'), plugins = require('../tools/patch-plugin-settings.cjs');
         let output;
-        if (relative === 'home/home.js') output = home.patchHomeView(base);
+        if (relative === 'app.js') output = require('../tools/patch-search-ui.cjs').patchApp(require('../tools/patch-movie-browser.cjs').patchApp(home.patchApp(plugins.patchApp(require('../tools/patch-external-player-registration.cjs').patchText(base).text))));
+        else if (relative === 'item/item.js') { const lifecycle=require('../tools/patch-item-lifecycle.cjs'); output=lifecycle.patchDetailCache(lifecycle.patchItemLifecycle(require('../tools/patch-externalplayer-residue.cjs').patchItemText(base))); }
+        else if (relative === 'home/home.js') output = home.patchHomeView(base);
         else if (relative === 'home/hometab.js') output = home.patchHomeTab(base);
         else if (relative === 'modules/viewmanager/viewmanager.js') output = home.patchViewManager(plugins.patchViewManager(base));
         else if (relative === 'modules/approuter.js') output = home.patchRouter(plugins.patchRouter(base));
@@ -171,3 +173,5 @@ for (const relative of ['enhanced/cache-management-ipc.js', 'plugins/mpvplayer/c
     const f = fixture(t); f.write('electronapp/' + relative, 'tampered');
     assert.throws(f.prepare); assert.deepEqual(f.sets, []); assert.deepEqual(fs.readdirSync(f.temp), []);
 });
+
+for(const overlay of session.DETAIL_OVERLAYS)test('detail native binding refuses tampering before allocating a profile: '+overlay.path,t=>{const f=fixture(t);f.write(overlay.path,'tampered');assert.throws(f.prepare);assert.deepEqual(f.sets,[]);assert.deepEqual(fs.readdirSync(f.temp),[]);});

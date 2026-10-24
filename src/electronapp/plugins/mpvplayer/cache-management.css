@@ -1,8 +1,45 @@
-.cacheManagementPage .ete-settings-info-row > span:last-child {
+.cacheManagementPage .cacheRows {
+    padding: 0 1.25em;
+}
+.cacheManagementPage .cacheRow {
+    display: grid;
+    grid-template-columns: minmax(7em, 1fr) minmax(0, 1.5fr) 5.5em;
+    align-items: center;
+    gap: .5em 1.25em;
+    padding: 1em 0;
+    border-bottom: 1px solid rgba(128, 128, 128, .2);
+}
+.cacheManagementPage .cacheRow:last-child { border-bottom: 0; }
+.cacheManagementPage .cacheRowHead {
+    opacity: .65;
+    padding-bottom: .65em;
+    font-size: 1em;
+}
+.cacheManagementPage .cacheName {
+    margin: 0;
+    font-size: 1em;
+    font-weight: 500;
+}
+.cacheManagementPage .cacheRow > span {
     overflow-wrap: anywhere;
 }
+.cacheManagementPage .cacheRow .ete-settings-button {
+    margin: 0;
+    min-width: 5em;
+}
 .cacheManagementPage .cachePageState,
-.cacheManagementPage .cacheHttpState,
-.cacheManagementPage .cacheOperationState {
-    min-height: 1.5em;
+.cacheManagementPage .cacheHttpState {
+    grid-column: 1 / -1;
+    margin: 0;
+}
+.cacheManagementPage .cachePageState:empty,
+.cacheManagementPage .cacheHttpState:empty { display: none; }
+.cacheManagementPage .cacheActions { margin-top: 1.25em; }
+.cacheManagementPage .cacheSafetyNote { opacity: .7; font-size: .9em; }
+.cacheManagementPage .cacheOperationState { min-height: 1.5em; }
+@media (max-width: 34em) {
+    .cacheManagementPage .cacheRow { grid-template-columns: minmax(0, 1fr) auto; }
+    .cacheManagementPage .cacheRowHead { display: none; }
+    .cacheManagementPage .cacheRow > span { grid-column: 1; }
+    .cacheManagementPage .cacheRow .ete-settings-button { grid-column: 2; grid-row: 1 / 3; }
 }

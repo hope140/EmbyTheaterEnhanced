@@ -1,0 +1,10 @@
+.eteDetailPoster { width:100%; height:auto; max-height:28em; object-fit:contain; }
+.eteDetailHasPreview .details-additionalContent { display:none !important; }
+.eteDetailCachePreview :is(.mediaInfo,.trackSelections,.detailLogoContainer,.detailResumeInfo),
+.eteDetailCachePreview .mainDetailButtons > :not(.eteDetailPreviewPlay) { display:none !important; }
+.eteDetailRefreshing :is(.detailResumeInfo,.btnResume,.btnPlaystate,.btnUserRating,.trackSelections,.audioVideoMediaInfo) { visibility:hidden; }
+.eteDetailRetired .itemMainScrollSlider { visibility:hidden; }
+.eteDetailRetired :is(.eteDetailCachePreview,.eteDetailCacheStatus) { visibility:visible; }
+.eteDetailMissing .itemBackdropContainer { display:none !important; }
+.eteDetailCacheStatus { padding:.75em 1em; }
+.eteDetailCacheStatus button { margin-inline-start:1em; }

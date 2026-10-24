@@ -27,7 +27,7 @@ for (const controllerId of ['../plugins/mpvplayer/cache-management.js', 'file://
                     const relative = 'src/' + filename.slice('/synthetic/'.length);
                     if (![
                         'src/electronapp/plugins/mpvplayer/cache-management.js', 'src/electronapp/plugins/mpvplayer/cache-settings.js',
-                        'src/electronapp/enhanced/page-cache/home-layout-cache.js', 'src/electronapp/enhanced/page-cache/page-data-cache.js'
+                        'src/electronapp/enhanced/detail-cache/store.js', 'src/electronapp/enhanced/page-cache/home-layout-cache.js', 'src/electronapp/enhanced/page-cache/page-data-cache.js'
                     ].includes(relative)) { queueMicrotask(() => script.fire('error')); return; }
                     requested.push(relative);
                     vm.runInContext(fs.readFileSync(path.join(root, relative), 'utf8'), context, {filename});
@@ -44,7 +44,7 @@ for (const controllerId of ['../plugins/mpvplayer/cache-management.js', 'file://
         context.define('baseView', [], () => Base);
         for (const id of ['emby-button', 'emby-scroller']) context.define(id, [], () => ({}));
         context.require.config({baseUrl: 'file:///synthetic/electronapp/www/', noRequireCss: true});
-        vm.runInContext(require('../tools/patch-server-home.cjs').CACHE_ALIAS, context);
+        vm.runInContext(require('../tools/patch-server-home.cjs').CACHE_ALIAS+';'+require('../tools/patch-server-home.cjs').DETAIL_CACHE_ALIAS, context);
         const home = await context.require(['../enhanced/page-cache/home-layout-cache.js'], value => value);
         const client = {isLoggedIn: () => true, serverId: () => 'synthetic-server', getCurrentUserId: () => 'synthetic-user', _identityEpoch: 1, getCurrentLocale: () => 'zh-CN', serverVersion: () => '4.10.0.40'};
         const owner = home.default.create({currentApiClient: () => client}, {enabled: true, ttlMs: 10000, maxEntries: 2, maxBytes: 4096});
@@ -53,13 +53,13 @@ for (const controllerId of ['../plugins/mpvplayer/cache-management.js', 'file://
             const Controller = await context.require([controllerId], value => value);
             const controller = new Controller(view);
             await controller.onResume();
-            assert.match(node('.cachePageValue').textContent, /1 条/);
+            assert.match(node('.cachePageValue').textContent, /bytes（部分可读）/);
             assert.match(node('.cacheHttpValue').textContent, /128 bytes/);
             assert.equal(requested.filter(file => file.endsWith('/home-layout-cache.js')).length, 1);
             node('.btnClearAllCaches').handlers.get('click')();
             for (let i = 0; i < 35; i++) await Promise.resolve();
             assert.equal(home.default.management.snapshot().entries, 0);
-            assert.match(node('.cacheOperationState').textContent, /以上缓存已清理/);
+            assert.match(node('.cacheOperationState').textContent, /部分清理完成/);
             controller.destroy(); assert.equal(controller.destroyCount, 1);
         } finally { owner.dispose(); }
     });
