@@ -66,3 +66,52 @@ test('actual NativeOnly acquisition selection retains only locked MSYS packages 
  const command=String.raw`$ErrorActionPreference='Stop';$tokens=$null;$errors=$null;$ast=[Management.Automation.Language.Parser]::ParseFile($env:ETE_PREPARE_SOURCE,[ref]$tokens,[ref]$errors);if($errors.Count){throw 'Parse failed'};$assignment=@($ast.FindAll({param($n) $n -is [Management.Automation.Language.AssignmentStatementAst] -and $n.Left.VariablePath.UserPath -eq 'selectedFiles'},$true));if($assignment.Count -ne 1){throw 'One production selection required'};$plan=@{files=@(@{id='msys2-gcc'},@{id='inno'},@{id='msys2-runtime'},@{id='official-host'})};$result=@();foreach($NativeOnly in @($true,$false)){. ([scriptblock]::Create($assignment[0].Extent.Text));$result+=,@($selectedFiles | ForEach-Object { $_.id })};ConvertTo-Json -Compress -InputObject $result`;
  const r=cp.spawnSync('pwsh',['-NoProfile','-NonInteractive','-Command',command],{encoding:'utf8',env:{...process.env,ETE_PREPARE_SOURCE:file}});assert.equal(r.status,0,r.stderr);assert.deepEqual(JSON.parse(r.stdout),[['msys2-gcc','msys2-runtime'],['msys2-gcc','inno','msys2-runtime','official-host']]);
 });
+
+function stage(stage='entry',extra={}){return {event:'loader-stage',phase:'A',stage,elapsedMs:1.25,flags:4352,code:null,win32Error:null,loaded:null,freed:null,...extra};}
+const line=row=>'ETE_LOADER_STAGE '+JSON.stringify(row)+'\n';
+test('loader child evidence projects only fixed stage enums and scalar facts, without replaying raw output',()=>{
+ const {childStages,childEvidence,loadFacts}=require('../tools/windows-native-loader-probe.cjs');
+ const secret='synthetic-private-path-not-for-public-output';
+ const good=stage('load-returned',{loaded:false,win32Error:126});
+ const stdout=secret+'\n'+line(stage())+line(good)+line(stage('failed',{code:'SCRIPT_ERROR'}));
+ const value=childEvidence({status:1,signal:null,stdout,stderr:secret,error:null},'A',{reportExists:true,loadReport:record('A'),elapsedMs:120});
+ assert.equal(value.lastStage,'failed');assert.equal(value.failedAt,'load-returned');assert.equal(value.timedOut,false);
+ assert.equal(value.reportExists,true);assert.equal(value.loadFacts.win32Error,126);assert.equal(value.stages.length,3);
+ assert.equal(JSON.stringify(value).includes(secret),false);assert.equal(value.stderrBytes,Buffer.byteLength(secret));
+ for(const mutate of [r=>r.path=secret,r=>r.phase='B',r=>r.stage=secret,r=>r.code=secret,r=>r.elapsedMs=secret,r=>r.loaded=secret,r=>r.freed=secret,r=>r.flags=0,r=>r.win32Error=-1]){
+  const bad=stage();mutate(bad);assert.deepEqual(childStages(line(bad),'A'),[]);
+ }
+ assert.deepEqual(childStages('ETE_LOADER_STAGE {invalid}\n'+'x'.repeat(3000),'A'),[]);
+ assert.equal(childStages(Array(100).fill(line(stage())).join(''),'A').length,32);
+ assert.equal(loadFacts({...record('A'),vulkanLoadedFrom:secret},'A'),null);
+ assert.equal(JSON.stringify(loadFacts({...record('A'),untrustedPath:secret},'A')).includes(secret),false);
+ assert.throws(()=>childEvidence({},'private'),/phase invalid/);
+});
+test('real subprocess timeout, launch failure and script failure remain failures with distinct bounded evidence',()=>{
+ const cp=require('node:child_process'),os=require('node:os'),{childEvidence}=require('../tools/windows-native-loader-probe.cjs');
+ const first=line(stage('interop-start'));
+ const timed=cp.spawnSync(process.execPath,['-e',`process.stdout.write(${JSON.stringify(first)});setInterval(()=>{},1000);`],{encoding:'utf8',timeout:250,windowsHide:true});
+ assert.equal(timed.error.code,'ETIMEDOUT');const timeout=childEvidence(timed,'A');
+ assert.equal(timeout.timedOut,true);assert.equal(timeout.timeoutMs,15000,'production deadline is unchanged');assert.equal(timeout.lastStage,'interop-start');assert.equal(timeout.reportExists,false);
+ const missing=cp.spawnSync(path.join(os.tmpdir(),'ete-loader-no-such-executable-83f64','missing.exe'),[],{encoding:'utf8',timeout:250});
+ assert.equal(childEvidence(missing,'A').errorCode,'ENOENT');assert.equal(childEvidence(missing,'A').lastStage,'NO_STAGE');
+ const failed=cp.spawnSync(process.execPath,['-e',`process.stdout.write(${JSON.stringify(first+line(stage('failed',{code:'SCRIPT_ERROR'})))});process.stderr.write('synthetic-private');process.exitCode=1;`],{encoding:'utf8',timeout:2000});
+ const value=childEvidence(failed,'A');assert.equal(value.exitCode,1);assert.equal(value.timedOut,false);assert.equal(value.failedAt,'interop-start');assert.equal(JSON.stringify(value).includes('synthetic-private'),false);
+});
+test('actual PowerShell stage writer emits strict null/false/int fields accepted by the public projection',()=>{
+ const cp=require('node:child_process'),{childStages}=require('../tools/windows-native-loader-probe.cjs'),file=path.resolve(__dirname,'../tools/Test-NativeDllLoad.ps1');
+ const command=String.raw`$ErrorActionPreference='Stop';$tokens=$null;$errors=$null;$ast=[Management.Automation.Language.Parser]::ParseFile($env:ETE_LOADER_SOURCE,[ref]$tokens,[ref]$errors);if($errors.Count){throw 'Parse failed'};$f=@($ast.FindAll({param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Write-LoaderStage'},$true));if($f.Count -ne 1){throw 'One stage writer required'};. ([scriptblock]::Create($f[0].Extent.Text));$Phase='A';$probeClock=[Diagnostics.Stopwatch]::StartNew();Write-LoaderStage 'entry';Write-LoaderStage 'load-returned' -Win32Error 126 -Loaded $false;Write-LoaderStage 'free-returned' -Freed $true;Write-LoaderStage 'failed' -Code 'SCRIPT_ERROR'`;
+ const result=cp.spawnSync('pwsh',['-NoProfile','-NonInteractive','-Command',command],{encoding:'utf8',env:{...process.env,ETE_LOADER_SOURCE:file}});assert.equal(result.status,0,result.stderr);
+ const rows=childStages(result.stdout,'A');assert.equal(rows.length,4,result.stdout);assert.equal(rows[0].loaded,null);assert.equal(rows[1].loaded,false);assert.equal(rows[1].win32Error,126);assert.equal(rows[2].freed,true);assert.equal(rows[3].code,'SCRIPT_ERROR');
+ const sink=cp.spawnSync('pwsh',['-NoProfile','-NonInteractive','-Command',command+";function Write-Output {throw 'synthetic sink failure'};Write-LoaderStage 'free-start';[Console]::WriteLine('cleanup-not-skipped')"],{encoding:'utf8',env:{...process.env,ETE_LOADER_SOURCE:file}});assert.equal(sink.status,0,sink.stderr);assert.ok(sink.stdout.includes('cleanup-not-skipped'));
+});
+test('loader deadline, load flags and strict assessment remain while CLI emits only fixed failure codes',()=>{
+ const source=fs.readFileSync(path.resolve(__dirname,'../tools/windows-native-loader-probe.cjs'),'utf8');
+ assert.match(source,/timeout:15000,maxBuffer:65536,windowsHide:true,shell:false/);
+ assert.match(source,/if\(result.error\|\|result.status!==0\)/);assert.match(source,/report.assessment=assess\(a,b,vulkanSha\)/);
+ assert.match(source,/event:'NATIVE_LOADER_CHILD'/);assert.match(source,/event:'NATIVE_LOADER_FAILED'/);
+ assert.doesNotMatch(source,/console\.(?:log|error)\((?:error.message|result.stderr|result.stdout)/);
+ const ps=fs.readFileSync(path.resolve(__dirname,'../tools/Test-NativeDllLoad.ps1'),'utf8');
+ for(const step of ['target-hash-start','interop-start','interop-ready','load-start','load-returned','free-start','free-returned','report-written'])assert.ok(ps.includes("Write-LoaderStage '"+step+"'"));
+ assert.match(ps,/Write-LoaderStage 'failed' -Code 'SCRIPT_ERROR'[\s\S]*throw/);
+});
