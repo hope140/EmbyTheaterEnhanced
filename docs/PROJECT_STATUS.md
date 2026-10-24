@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-24 — FN认证独立客户端实验
+
+新增产品树外、显式opt-in的[独立Electron/本机传输原型](../prototypes/fn-connect/client/README.md)：主动添加连接→隔离内存Session正常网页登录→已有Emby映射→公开信息验证；Emby账号与原播放归属保持。HTTP请求绑定Session，API/WS和本机媒体lease限制上游范围，跨源302不携带FN/Emby认证；未知网关错误不自动判过期，多连接隔离、取消排空与迟到verify退休。
+
+新增31项合成/本机真实HTTP及WS测试通过，不能代替ChromiumCookieJar或真实FN认证。固定Electron44.4.2 Linux已按官方SHA准备，但正常沙箱启动在应用代码前中止；未改系统权限或禁用沙箱，窗口及真实入口未验收。研究环境真实入口CONNECT403保持不绕过。HLS/DASH明确不支持，Native Helper/libmpv实播、真实授权/撤销及正式添加服务器UI均未接入；不打功能验收包、不改NAS、生产src、构建或依赖。
+
 ## 2026-10-24 — FNConnect 只读现场证据后的检查收窄
 
 依据已获授权的独立只读检查，将已确认字段与未确认业务行为分开；个人设备/端口/版本及原始检查细节仅存仓库外，不进入产品配置。保留dian115唯一代理上游和原Emby登录，Connect服务运行不视为业务启用/映射/接通，设置版本不视为实际程序版本。

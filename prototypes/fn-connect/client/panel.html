@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'">
+<title>FN 认证独立实验</title><link rel="stylesheet" href="panel.css"></head>
+<body><main><h1>FN 认证独立实验</h1>
+<p>这是独立客户端原型，不代表真实 FNConnect 已通过。NAS 转发与 Emby 登录保持原样。</p>
+<form id="add"><label>NAS 正常登录入口<input id="bootstrap" type="url" required autocomplete="off"></label>
+<label>已映射的 Emby 地址<input id="emby" type="url" required autocomplete="off"></label>
+<label>Emby 公开信息路径（相对地址）<input id="probe" value="System/Info/Public" autocomplete="off"></label>
+<button>添加连接并打开认证窗口</button></form>
+<p>请在认证窗口内自行完成正常登录。然后点“进入 Emby 网页”，再点“验证连接”。本页不收取账号、密码或 Cookie。</p>
+<div id="profiles"></div><p id="status" role="status"></p>
+<p>当前仅支持公开信息验证及受控请求层。HLS/DASH、Native Helper 播放和真实 NAS 会话仍待验收。</p>
+</main><script src="panel.js"></script></body></html>

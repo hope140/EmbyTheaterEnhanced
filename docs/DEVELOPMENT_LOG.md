@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-24 — FN认证独立客户端与传输实验
+
+提供默认关闭的独立Electron入口、无NAS密码字段的本地面板与内存Session owner。主动添加后加载正常登录页，再访问既有Emby映射；不注册映射、创建OAuth客户端或替代Emby登录。新增限定同源API、真实回环Range/206/416和WS字节桥，第三方302由不持有FN/Emby头的消费者跟随；固定错误、认证代次、body deadline、关闭drain、取消和过期边界独立验证。
+
+31项新测试通过，包含初始query凭据跨重定向、旧verify覆盖needs-auth、Electron abort/close未settle、WS握手期断连及Cookie元信息读取期间响应体提前关闭回归。GPT-6 Astra只读末轮复核未发现新增可复现P1/P2；其12项无网络回归通过。Electron44.4.2 Linux官方SHA校验完成，沙箱未配置导致正常启动在应用代码前中止，未禁用沙箱或改setuid；GUI/ChromiumCookieJar、真实FN/NAS及Native播放未验收。HLS/DASH明确拒绝，不改生产main、API、Native Helper、vendor、依赖锁或打包清单。复现见[独立原型](../prototypes/fn-connect/client/README.md)。
+
 ## 2026-10-24 — FNConnect UI交接与证据分层
 
 将独立只读检查摘要记入仓库外私有交接，公开合同仅补观察类别的解释与后续管理UI/正常媒体验证范围。系统/网络与代理配置事实不等于FNConnect业务接通；保存的客户端HTTPS入口不是已确认管理地址，设置记录不是进程版本证据。
