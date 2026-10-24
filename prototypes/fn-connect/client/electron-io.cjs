@@ -4,14 +4,18 @@ const http = require('node:http');
 const https = require('node:https');
 const {PassThrough} = require('node:stream');
 const {fail} = require('./policy.cjs');
+const {errorCode, normalizeDiagnostic} = require('./diagnostics.cjs');
 
-function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, environment = process.env} = {}) {
+function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, onDiagnostic = () => {}, environment = process.env} = {}) {
+    let requestSequence = 0;
+    const diagnostic = value => { try { onDiagnostic(normalizeDiagnostic(value)); } catch { /* Diagnostics cannot change transport ownership. */ } };
     return {
         createSession(id) {
             // No persist: prefix; do not open any existing browser profile.
             const ses = session.fromPartition('ete-fn-experiment-' + id, {cache: false});
             ses.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
             ses.setPermissionCheckHandler(() => false);
+            diagnostic({event: 'SESSION_CREATED', sessionMode: 'MEMORY'});
             return ses;
         },
         async openLogin(ses, profile, {signal, onCancel}) {
@@ -37,18 +41,30 @@ function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, e
         request(ses, {url, method, headers, signal}) {
             return new Promise((resolve, reject) => {
                 if (signal.aborted) return reject(fail('CANCELLED'));
-                const req = net.request({url, method, session: ses, credentials: 'include', redirect: 'manual'});
+                const requestId = ++requestSequence;
+                let req;
+                try { req = net.request({url, method, session: ses, credentials: 'include', redirect: 'manual'}); }
+                catch (error) { diagnostic({event: 'REQUEST_SETUP_ERROR', requestId, errorCode: errorCode(error)}); return reject(fail('NETWORK_ERROR')); }
+                diagnostic({event: 'REQUEST_CREATED', requestId});
                 let responseSeen = false, body, ended = false;
                 const detach = () => signal.removeEventListener('abort', abort);
                 const rejectPending = () => { if (!responseSeen) { responseSeen = true; reject(fail(signal.aborted ? 'CANCELLED' : 'NETWORK_ERROR')); } };
-                const abort = () => { rejectPending(); req.abort(); body?.destroy(); };
+                const abort = () => { rejectPending(); req.abort(); body?.destroy(); detach(); };
                 signal.addEventListener('abort', abort, {once: true});
-                req.once('abort', rejectPending);
-                req.once('close', () => { rejectPending(); if (!body || ended || body.destroyed) detach(); });
-                for (const [key, value] of Object.entries(headers)) req.setHeader(key, value);
+                req.once('abort', () => { rejectPending(); if (body && !ended) body.destroy(); detach(); });
+                req.once('close', () => {
+                    // Electron 44.4.2 inherits autoDestroy Writable: upload
+                    // finish can emit close before the URLLoader response.
+                    // An ordinary close is neither an error nor cancellation.
+                    if (!responseSeen) diagnostic({event: 'REQUEST_CLOSE_BEFORE_RESPONSE', requestId});
+                    if (signal.aborted) { rejectPending(); detach(); }
+                    else if (body && (ended || body.destroyed)) detach();
+                });
                 // Manual redirect event is returned as an inspectable response;
                 // never follow it with Chromium's automatic cookie propagation.
                 req.once('redirect', (statusCode, _method, location, responseHeaders = {}) => {
+                    diagnostic({event: 'REDIRECT', requestId, status: statusCode});
+                    if (signal.aborted || responseSeen) { req.abort(); detach(); return; }
                     responseSeen = true;
                     body = new PassThrough();
                     body.on('error', () => {});
@@ -56,8 +72,11 @@ function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, e
                     ended = true;
                     resolve({statusCode, headers: {...Object.fromEntries(Object.entries(responseHeaders).map(([key, value]) => [key.toLowerCase(), value])), location}, body});
                     req.abort();
+                    detach();
                 });
                 req.once('response', response => {
+                    diagnostic({event: 'RESPONSE', requestId, status: response.statusCode});
+                    if (signal.aborted || responseSeen) { response.destroy(); detach(); return; }
                     responseSeen = true;
                     body = new PassThrough();
                     body.on('error', () => {});
@@ -69,8 +88,9 @@ function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, e
                     body.once('close', () => { detach(); if (!ended) req.abort(); });
                     resolve({statusCode: response.statusCode, headers: response.headers, body});
                 });
-                req.once('error', () => { rejectPending(); if (body && !ended) body.destroy(fail('UPSTREAM_STREAM_FAILED')); detach(); });
-                req.end();
+                req.once('error', error => { diagnostic({event: 'REQUEST_ERROR', requestId, errorCode: errorCode(error)}); rejectPending(); if (body && !ended) body.destroy(fail('UPSTREAM_STREAM_FAILED')); detach(); });
+                try { for (const [key, value] of Object.entries(headers)) req.setHeader(key, value); req.end(); }
+                catch (error) { diagnostic({event: 'REQUEST_SETUP_ERROR', requestId, errorCode: errorCode(error)}); rejectPending(); req.abort(); detach(); }
             });
         },
         async cookieValues(ses, url) {

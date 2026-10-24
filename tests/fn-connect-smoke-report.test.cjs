@@ -38,6 +38,8 @@ test('normalization never copies raw diagnostics, extra fields, untrusted stages
     const secret = 'PRIVATE_DIAGNOSTIC_CANARY';
     const events = evidence();
     events.unshift({kind: 'stage', stage: secret, cookie: secret});
+    events.unshift({kind: 'diagnostic', event: 'REQUEST_ERROR', requestId: 1, errorCode: secret, cookie: secret, url: secret});
+    events.unshift({kind: 'diagnostic', event: secret, message: secret});
     events.at(-1).result = 'FAILED'; events.at(-1).reason = secret; events.at(-1).private = secret;
     const result = normalize(secret + '\n' + raw(events), meta);
     assert.equal(JSON.stringify(result).includes(secret), false);

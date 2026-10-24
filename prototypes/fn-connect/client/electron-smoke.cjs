@@ -62,10 +62,13 @@ async function runElectronSmoke({controller, bridge, fixture, addProfile, author
         stage('BOOTSTRAP');
         const first = await addProfile();
         await authorizeProfile(first);
+        stage('PRIMARY_PAGE_AUTHORIZED');
         await controller.verify(first.id);
+        stage('PRIMARY_API_VERIFIED');
         const isolated = await addProfile();
         await assert.rejects(controller.verify(isolated.id), error => error.code === 'FN_AUTH_REQUIRED');
         assert.equal((await isolated.session.cookies.get({url: fixture.profile.embyUrl})).length, 0);
+        stage('ISOLATED_API_DENIED');
         stage('HTTP_SESSION');
         const api = await controller.request(first.id, {path: 'api', headers: {'X-Emby-Token': 'synthetic-electron-canary'}});
         assert.deepEqual(JSON.parse((await read(api)).toString()), {fixture: true});

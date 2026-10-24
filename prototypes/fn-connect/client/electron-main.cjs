@@ -104,6 +104,8 @@ if (!process.argv.includes('--fn-connect-prototype')) {
             async authorizeProfile(profile) {
                 // Synthetic page only: no script is injected into real NAS pages.
                 if (new URL(defaults.bootstrapUrl).hostname !== '127.0.0.1') throw new Error('FIXTURE_ONLY');
+                const proxy = await profile.session.resolveProxy(defaults.embyUrl);
+                report('diagnostic', {event: 'PROXY_ROUTE', proxyRoute: proxy === 'DIRECT' ? 'DIRECT' : typeof proxy === 'string' ? 'PROXY' : 'UNKNOWN'});
                 await waitFor(() => !profile.window.webContents.isLoading() && profile.window.webContents.getURL() === defaults.bootstrapUrl);
                 await profile.window.webContents.executeJavaScript('document.querySelector("form").requestSubmit()');
                 await waitFor(async () => (await profile.session.cookies.get({url: defaults.embyUrl})).length > 0);
@@ -129,7 +131,8 @@ if (!process.argv.includes('--fn-connect-prototype')) {
         }
         if (stopping) return;
         controller = createController({enabled: true, mode: fixtureMode ? 'fixture' : 'live',
-            io: createElectronIO(electron, {onStatus: reason => publish({state: 'notice', reason})})});
+            io: createElectronIO(electron, {onStatus: reason => publish({state: 'notice', reason}),
+                onDiagnostic: value => { if (smoke) report('diagnostic', value); }})});
         bridge = await createBridge(controller, {enabled: true});
         if (stopping) return;
         controller.onState(publish);
@@ -150,6 +153,7 @@ if (!process.argv.includes('--fn-connect-prototype')) {
         if (smoke && !stopping) {
             try { smokeOutcome = {result: 'PASSED', checks: await smokeFixture()}; }
             catch (error) { process.exitCode = 1; smokeOutcome = {result: 'FAILED', reason: code(error)}; }
+            report('diagnostic', fixture.diagnostics());
             await shutdown();
             stage('DRAINED');
             app.quit();

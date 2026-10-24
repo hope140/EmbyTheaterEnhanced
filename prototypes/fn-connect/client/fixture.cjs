@@ -19,7 +19,8 @@ async function listen(server) {
 async function createFixture() {
     const state = {expired: false, ambiguous: false, networkError: false, slowClosed: false,
         seen: [], externalRequests: [], redirectSecret: null, wsClosed: 0,
-        streamSequence: 0, closedStreams: new Set(), wsSequence: 0, closedWebSockets: new Set(), endedWebSockets: new Set()};
+        streamSequence: 0, closedStreams: new Set(), wsSequence: 0, closedWebSockets: new Set(), endedWebSockets: new Set(),
+        nasPageHits: 0, authorizationHits: 0, publicInfoHits: 0, publicInfoSuccess: 0, publicInfoDenied: 0};
     const bytes = Buffer.from('ETE-FN-SYNTHETIC-MEDIA\n'.repeat(8192));
     const externalServer = http.createServer((req, res) => {
         state.externalRequests.push({...req.headers});
@@ -33,24 +34,30 @@ async function createFixture() {
     const server = http.createServer((req, res) => {
         const path = new URL(req.url, 'http://fixture.invalid').pathname;
         if (path === '/nas/') {
+            state.nasPageHits++;
             res.writeHead(200, {'Content-Type': 'text/html'});
             res.end('<!doctype html><title>Synthetic NAS</title><h1>Local fixture, not fnOS</h1><form action="/nas/authorize" method="get"><button>Authorize synthetic session</button></form>');
             return;
         }
         if (path === '/nas/authorize') {
+            state.authorizationHits++;
             state.expired = false;
             res.writeHead(302, {'Set-Cookie': 'FNFixture=' + cookie + '; Path=/; HttpOnly; SameSite=Lax; Max-Age=60', location: '/nas/'});
             res.end(); return;
         }
         if (!path.startsWith('/emby/')) { res.writeHead(404); res.end(); return; }
         state.seen.push({path, headers: {...req.headers}});
+        const isPublicInfo = path === '/emby/System/Info/Public';
+        if (isPublicInfo) state.publicInfoHits++;
         if (state.networkError) { req.socket.destroy(); return; }
         if (!authorized(req)) {
+            if (isPublicInfo) state.publicInfoDenied++;
             res.writeHead(state.ambiguous ? 200 : 401, {'Content-Type': 'text/html',
                 ...(state.ambiguous ? {} : {'X-ETE-FN-Fixture-Auth': 'required'})});
             res.end('<title>Synthetic authorization required</title>'); return;
         }
         if (path === '/emby/System/Info/Public') {
+            state.publicInfoSuccess++;
             res.writeHead(200, {'Content-Type': 'application/json'});
             res.end(JSON.stringify({Id: 'synthetic-emby', Version: '4.10.0.0'})); return;
         }
@@ -117,6 +124,12 @@ async function createFixture() {
     nas = await listen(server);
     return {state, bytes, cookie, profile: {bootstrapUrl: nas.origin + '/nas/', embyUrl: nas.origin + '/emby/',
         expectedServerId: 'synthetic-emby', externalMediaOrigins: [external.origin]},
+        diagnostics() {
+            const address = server.address();
+            return {event: 'FIXTURE_SNAPSHOT', scheme: 'HTTP', family: address?.family === 'IPv4' ? 'IPv4' : undefined,
+                loopback: address?.address === '127.0.0.1', listening: server.listening && externalServer.listening,
+                ...Object.fromEntries(['nasPageHits', 'authorizationHits', 'publicInfoHits', 'publicInfoSuccess', 'publicInfoDenied'].map(key => [key, state[key]]))};
+        },
         async close() { await Promise.all([nas.close(), external.close()]); }};
 }
 

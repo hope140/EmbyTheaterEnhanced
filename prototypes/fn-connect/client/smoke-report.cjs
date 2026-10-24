@@ -1,9 +1,11 @@
 'use strict';
 
 const fs = require('node:fs');
+const {normalizeDiagnostic} = require('./diagnostics.cjs');
 const expectedVersion = '44.4.2';
 const expectedHash = '6aae435b6cd5c0eedf9fd38824bae4045ffdaecd029f0b8c8328bac3f5b71f03';
-const stages = ['APP_CODE_STARTED', 'APP_READY', 'PANEL_READY', 'BOOTSTRAP', 'HTTP_SESSION',
+const stages = ['APP_CODE_STARTED', 'APP_READY', 'PANEL_READY', 'BOOTSTRAP',
+    'PRIMARY_PAGE_AUTHORIZED', 'PRIMARY_API_VERIFIED', 'ISOLATED_API_DENIED', 'HTTP_SESSION',
     'REDIRECT_SEPARATION', 'WEBSOCKET_SESSION', 'CANCELLATION', 'PROFILE_CLOSE', 'EXPIRY', 'DRAINED'];
 const checks = ['bootstrap', 'isolatedSessions', 'httpSessionCookie', 'range206', 'range416',
     'externalRedirectCredentialSeparation', 'credentialLocationRejected', 'websocketSessionCookie',
@@ -25,6 +27,7 @@ function normalize(raw, {sourceCommit, archiveHash, launchState, exitCode, proce
     const foundStages = events.filter(e => e?.kind === 'stage').map(e => e.stage);
     const runtimes = events.filter(e => e?.kind === 'runtime');
     const results = events.filter(e => e?.kind === 'result');
+    const diagnostics = events.filter(e => e?.kind === 'diagnostic').map(normalizeDiagnostic).filter(Boolean).slice(-128);
     const last = results.length === 1 ? results[0] : null;
     const safeState = launchStates.has(launchState) ? launchState : 'HARNESS_FAILED';
     const exactStages = JSON.stringify(foundStages) === JSON.stringify(stages);
@@ -42,7 +45,7 @@ function normalize(raw, {sourceCommit, archiveHash, launchState, exitCode, proce
         launchState: safeState, exitCode: Number.isInteger(exitCode) ? exitCode : null,
         stages: foundStages.filter(value => stages.includes(value)), result: passed ? 'PASSED' : 'FAILED',
         reason: passed ? null : safeState !== 'COMPLETED' ? safeState : safeReasons.has(last?.reason) ? last.reason : 'EVIDENCE_INCOMPLETE',
-        checks: safeChecks, processExited: processExited === true, temporaryProfileRemoved: cleaned,
+        checks: safeChecks, diagnostics, processExited: processExited === true, temporaryProfileRemoved: cleaned,
         realFNConnect: 'NOT_TESTED', nativeHelperPlayback: 'NOT_TESTED', hlsDash: 'NOT_SUPPORTED'};
 }
 if (require.main === module) {
@@ -52,6 +55,7 @@ if (require.main === module) {
         processExited: processExited === 'true', profileCleanupVerified: profileCleanupVerified === 'true'});
     fs.writeFileSync(output, JSON.stringify(result, null, 2) + '\n', {flag: 'wx'});
     for (const value of result.stages) process.stdout.write('FN_FIXTURE_STAGE ' + value + '\n');
+    for (const value of result.diagnostics) process.stdout.write('FN_FIXTURE_DIAGNOSTIC ' + JSON.stringify(value) + '\n');
     process.stdout.write('FN_FIXTURE_RESULT ' + result.result + (result.reason ? ' ' + result.reason : '') + '\n');
     process.exitCode = result.result === 'PASSED' ? 0 : 1;
 }

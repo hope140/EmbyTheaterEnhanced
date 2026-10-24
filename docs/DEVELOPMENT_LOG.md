@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-24 — FN Windows首轮失败后的最小修正
+
+首轮fixture run40109272968/job120917394561真实运行：Node回归成功，Electron在BOOTSTRAP后NETWORK_ERROR并排空。根据固定Electron源码构造真实Node Writable复现finish→close→response，修复adapter将上传close误作事务失败；取消监听保持到响应/明确失败，迟到取消响应销毁，重定向仍手动判界。
+
+新增四项回归及诊断白名单抗泄漏断言，81项本地FN测试通过；原77证据保持。合成监听HTTP/IPv4、到达计数、固定错误码与代理分类直接归一输出，不含URL、Cookie、账户或原日志；未修改沙箱/证书/代理/防火墙，未访问NAS或重试受拒artifact读取。新Windows运行用于确认根因，当前仍不声明真Session通过。
+
 ## 2026-10-24 — FN Windows真实Session合成验收入口
 
 准备功能分支限定的Windows2022任务、官方Electron44.4.2 win32-x64固定输入和脚本；保持沙箱，不改生产入口、依赖或NAS。将合成验收独立成可测试编排，逐stream/WS连接确认取消和关闭；runner有界等待主进程与输出管道，退出后核验删除自有profile。控制面板回读沙箱/上下文隔离布尔；白名单回执不收原始日志或认证信息，重复/缺失结果和未清理均失败。

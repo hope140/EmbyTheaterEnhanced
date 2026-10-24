@@ -3,7 +3,7 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const net = require('node:net');
-const {PassThrough, Readable} = require('node:stream');
+const {PassThrough, Readable, Writable} = require('node:stream');
 const {EventEmitter} = require('node:events');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -53,6 +53,73 @@ test('default-disabled controller creates no session, window, request or listene
     assert.throws(() => controller.add({}), code('FEATURE_DISABLED'));
     await assert.rejects(createBridge(controller), code('FEATURE_DISABLED'));
     assert.equal(calls, 0);
+});
+
+test('Electron 44 Writable finish/close before URLLoader response is not a network error', async () => {
+    class ElectronUpload extends Writable {
+        constructor() { super({autoDestroy: true}); }
+        _write(_chunk, _encoding, callback) { callback(); }
+        _final(callback) {
+            callback();
+            setImmediate(() => {
+                const response = Readable.from(['{"fixture":true}']);
+                Object.assign(response, {statusCode: 200, headers: {'content-type': 'application/json'}});
+                this.emit('response', response);
+            });
+        }
+        setHeader() {}
+        abort() { this.emit('abort'); }
+    }
+    const req = new ElectronUpload(), lifecycle = [], diagnostics = [];
+    for (const event of ['finish', 'close', 'response']) req.on(event, () => lifecycle.push(event));
+    const io = createElectronIO({net: {request: () => req}}, {onDiagnostic: value => diagnostics.push(value)});
+    const response = await io.request({}, {url: 'http://127.0.0.1/synthetic-not-contacted', method: 'GET', headers: {}, signal: new AbortController().signal});
+    assert.deepEqual(JSON.parse((await bytes(response)).toString()), {fixture: true});
+    assert.deepEqual(lifecycle, ['finish', 'close', 'response']);
+    assert.equal(diagnostics.some(e => e.event === 'REQUEST_CLOSE_BEFORE_RESPONSE'), true);
+});
+
+test('cancellation after early upload close still aborts and destroys a late response', async () => {
+    class ElectronUpload extends Writable {
+        constructor() { super({autoDestroy: true}); this.aborted = false; }
+        _write(_chunk, _encoding, callback) { callback(); }
+        _final(callback) { callback(); }
+        setHeader() {}
+        abort() { this.aborted = true; this.emit('abort'); }
+    }
+    const req = new ElectronUpload(), signal = new AbortController();
+    const closed = new Promise(resolve => req.once('close', resolve));
+    const io = createElectronIO({net: {request: () => req}});
+    const pending = io.request({}, {url: 'http://127.0.0.1/synthetic-not-contacted', method: 'GET', headers: {}, signal: signal.signal});
+    const rejected = assert.rejects(pending, code('CANCELLED'));
+    await closed;
+    assert.equal(require('node:events').getEventListeners(signal.signal, 'abort').length, 1);
+    signal.abort(); await rejected;
+    assert.equal(req.aborted, true);
+    const response = new PassThrough(); Object.assign(response, {statusCode: 200, headers: {}});
+    req.emit('response', response);
+    assert.equal(response.destroyed, true);
+    assert.equal(require('node:events').getEventListeners(signal.signal, 'abort').length, 0);
+});
+
+for (const phase of ['setup', 'network']) test('a ' + phase + ' failure destroys late response and refuses late redirect', async () => {
+    const req = new EventEmitter(), diagnostics = [], cancel = new AbortController();
+    let aborts = 0;
+    req.abort = () => { aborts++; req.emit('abort'); };
+    req.setHeader = () => { if (phase === 'setup') throw Object.assign(new Error('private-message-canary'), {code: 'ERR_INVALID_ARG_VALUE'}); };
+    req.end = () => queueMicrotask(() => req.emit('error', new Error('net::ERR_CONNECTION_REFUSED')));
+    const io = createElectronIO({net: {request: () => req}}, {onDiagnostic: value => diagnostics.push(value)});
+    await assert.rejects(io.request({}, {url: 'http://127.0.0.1/synthetic-not-contacted', method: 'GET',
+        headers: {accept: 'application/json'}, signal: cancel.signal}), code('NETWORK_ERROR'));
+    const late = new PassThrough(); Object.assign(late, {statusCode: 200, headers: {}});
+    req.emit('response', late);
+    assert.equal(late.destroyed, true);
+    req.emit('redirect', 302, 'GET', 'https://synthetic.example.test/?token=private-message-canary', {});
+    assert.ok(aborts > 0);
+    cancel.abort();
+    assert.equal(require('node:events').getEventListeners(cancel.signal, 'abort').length, 0);
+    assert.equal(JSON.stringify(diagnostics).includes('private-message-canary'), false);
+    assert.equal(diagnostics.some(value => value.errorCode === (phase === 'setup' ? 'ERR_INVALID_ARG_VALUE' : 'ERR_CONNECTION_REFUSED')), true);
 });
 
 test('live profiles require HTTPS, explicit addresses and separate non-secret configuration', () => {

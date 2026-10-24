@@ -29,5 +29,6 @@ test('Windows smoke scenario completes against actual local I/O with a synthetic
     assert.equal(outcome.hlsDash, 'NOT_SUPPORTED');
     assert.equal(outcome.profileCloseClearsCookies, true);
     assert.equal(outcome.websocketSessionCookie, true);
-    assert.deepEqual(stages, ['BOOTSTRAP', 'HTTP_SESSION', 'REDIRECT_SEPARATION', 'WEBSOCKET_SESSION', 'CANCELLATION', 'PROFILE_CLOSE', 'EXPIRY']);
+    assert.deepEqual(stages, ['BOOTSTRAP', 'PRIMARY_PAGE_AUTHORIZED', 'PRIMARY_API_VERIFIED', 'ISOLATED_API_DENIED',
+        'HTTP_SESSION', 'REDIRECT_SEPARATION', 'WEBSOCKET_SESSION', 'CANCELLATION', 'PROFILE_CLOSE', 'EXPIRY']);
 });

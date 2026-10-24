@@ -27,7 +27,7 @@ node --test tests/fn-connect-*.test.cjs
 
 输出明确保留 `realFNConnect: NOT_TESTED`、`nativeHelperPlayback: NOT_TESTED`；只有合成网关实验，不是fnOS实证。
 
-## Windows固定运行时验收（已准备，尚未调度）
+## Windows固定运行时验收（首轮已启动，修复待复验）
 
 在干净的Windows工作副本运行，保留正常沙箱：
 
@@ -45,11 +45,13 @@ node --test tests/fn-connect-*.test.cjs
 
 真实Electron验收覆盖：正常表单建立HttpOnly Cookie、同地址不同Session隔离、绑定Session的HTTP请求、Range/206/416、本机媒体桥、外链302不带认证、携带同源Cookie的WS升级和原始字节桥、握手期/请求头期/媒体流取消、逐连接关闭、Cookie清除与合成过期挑战。WS字节回显不是Emby应用协议或浏览器WebSocket规范验收。控制面板preload还回读实际 `process.sandboxed` 与 `process.contextIsolated`；不禁用沙箱、证书校验或webSecurity。
 
-结果仅写 `test-output/fn-connect-fixture/result.json`：白名单阶段、布尔检查、源码commit、固定运行时哈希与版本、进程退出和profile删除核验。原始stdout/stderr、Cookie值、URL及系统路径均不进入回执；已有输出目录时拒绝覆盖。缺任意阶段/检查、失败退出、超时或未清理都不能PASSED。
+结果仅写 `test-output/fn-connect-fixture/result.json`：白名单阶段、布尔检查、源码commit、固定运行时哈希与版本、进程退出和profile删除核验。有限诊断事件另直接输出到日志：HTTP/IPv4回环监听、请求到达计数、响应状态、预定义Chromium错误码和代理路由分类；不输出代理地址，也不修改路由。原始stdout/stderr、Cookie值、URL及系统路径均不进入回执；已有输出目录时拒绝覆盖。缺任意阶段/检查、失败退出、超时或未清理都不能PASSED。
 
 独立 [workflow](../../../.github/workflows/fn-connect-fixture.yml) 使用 `windows-2022`、固定Node和Actions commit，只读仓库权限，10分钟上限；artifact名称包含源码SHA/run/attempt，仅上传归一JSON并保留1天。只匹配本功能分支及实验相关路径的push；push与运行由维护者统一执行。仓库原有push CI仍按原规则运行，本workflow不调度安装包或Release。
 
-该新workflow未进入默认分支；GitHub要求默认分支已存在workflow才能从UI手动运行，所以本次通过精确功能分支push启动，不为登记而修改main。参见[GitHub手动运行说明](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)。Windows任务尚未执行，不能将以下Node验证改写成真实Electron通过。
+该新workflow未进入默认分支；GitHub要求默认分支已存在workflow才能从UI手动运行，所以本次通过精确功能分支push启动，不为登记而修改main。参见[GitHub手动运行说明](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)。
+
+[首轮Windows任务](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40109272968)中Node回归通过，真实Electron进入BOOTSTRAP后报NETWORK_ERROR并排空；没有通过完整Session验收。已用真实Node Writable复现适配器缺陷：固定[Electron44.4.2源码](https://github.com/electron/electron/blob/v44.4.2/lib/common/api/net-client-request.ts)的ClientRequest采用autoDestroy Writable，其上传finish可能先触发close、之后URLLoader才给response；原型不应把这个close当作网络失败或提前移除取消监听。已修正并加入迟到响应/取消回归；是否解释Windows首轮失败，仍由新增阶段和诊断的下一轮实跑确认，不能将Node复现视为Chromium通过。
 
 ## 已实现的接口与边界
 
@@ -95,9 +97,9 @@ node --test tests/fn-connect-*.test.cjs
 
 ## 当前证据与阻塞
 
-77项FN相关Node测试通过：客户端31项、Windows场景编排1项、回执3项、既有42项。Windows编排在本机真实HTTP/WS I/O与合成Session适配器上验证；合成Jar不是ChromiumJar或fnOS，回执门禁测试也不证明Electron启动。
+81项FN相关Node测试通过：客户端35项、Windows场景编排1项、回执3项、既有42项。Windows编排在本机真实HTTP/WS I/O与合成Session适配器上验证；合成Jar不是ChromiumJar或fnOS，回执门禁测试也不证明Electron启动。
 
-官方固定Electron44.4.2 Linux包SHA256为 `ad71063e77da29a647f872b090478f9fa9ccffd67de7b2ae6315409cf1f13436`，已核对。正常沙箱启动在应用代码前因SUID helper未配置中止；未改setuid、使用--no-sandbox或安装系统组件，所以GUI/ChromiumCookieJar/自动窗口验收未通过、未执行。
+官方固定Electron44.4.2 Linux包SHA256为 `ad71063e77da29a647f872b090478f9fa9ccffd67de7b2ae6315409cf1f13436`，已核对。正常沙箱启动在应用代码前因SUID helper未配置中止；未改setuid、使用--no-sandbox或安装系统组件，该Linux尝试未进入GUI/ChromiumCookieJar验收。Windows首轮实际启动结果单独记录如上。
 
 真实FN入口此前被研究环境HTTPS代理CONNECT403阻断，未取得NAS认证响应；不是NAS返回403。未绕过或真实登录。当前不打功能验收包，不宣传FNConnect打通。
 

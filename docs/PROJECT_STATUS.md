@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-24 — FN Electron提前close诊断与修正
+
+功能分支已普通push；首轮Windows fixture的Node回归通过，Electron真实启动到BOOTSTRAP后以NETWORK_ERROR失败并DRAINED，不能计为Session通过。固定Electron44.4.2源码与真实Node Writable复现支持适配器缺陷：上传finish触发close可早于响应，原型过早拒绝并移除取消监听。修正为只由error/abort/owner期限终结未决请求，普通早close继续等待，迟到取消响应销毁。
+
+增加不含URL/认证值的有限错误码、响应状态、回环监听/到达计数及代理路由分类；不修改代理或安全边界，不重试受拒artifact通道。81项本机FN测试通过（原77证据保留），下一轮限定Windows push复验仍待执行。真实FN/NAS、Native及HLS/DASH范围保持未验收/不支持。
+
 ## 2026-10-24 — FN Windows合成Session验收准备
 
 新增独立功能分支专用windows-2022 workflow及固定Electron44.4.2官方ZIP/SHA输入；不调度主应用打包或Release。真实Session合成验收入口覆盖HTTP、WS原始字节桥、Range、外链认证隔离、逐连接取消/关闭及profile清理，回执要求完整阶段、版本/哈希、沙箱布尔和退出/删除核验。runner使用自有临时profile，等待有界；仅上传归一JSON。
