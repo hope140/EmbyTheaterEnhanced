@@ -28,7 +28,7 @@ async function main(args = process.argv.slice(2)) {
                 t.events = amd(input.events, {}).default;
                 t.cache = amd(input.cache, {}).default;
                 t.adapter = amd(input.adapter, {'./page-data-cache.js': {default: t.cache}, 'modules/emby-apiclient/events.js': {default: t.events}}).default;
-                t.ui = amd(input.ui, {'../../enhanced/page-cache/home-layout-cache.js': {default: t.adapter}});
+                t.ui = amd(input.ui, {'ete-home-layout-cache': {default: t.adapter}});
                 const Base = amd(input.base, {'./../dom.js': {default: {supportsEventListenerOnce: () => false}}, './../layoutmanager.js': {default: {tv: false}}, './../browser.js': {default: {}}}).default;
                 window.ipc = {invoke: (channel, payload) => {
                     t.calls.push({channel, payload});
@@ -38,7 +38,7 @@ async function main(args = process.argv.slice(2)) {
                         if (t.config.hold) t.held.push(done); else done();
                     });
                 }};
-                t.CacheView = amd(input.controller, {loading: {show() {}, hide() {}}, baseView: Base, './cache-settings': t.ui});
+                t.CacheView = amd(input.controller, {loading: {show() {}, hide() {}}, baseView: Base, './cache-settings.js': t.ui});
                 t.view = document.querySelector('.view'); t.controller = new t.CacheView(t.view);
                 t.addOwner = async () => {
                     let user = 'synthetic-user'; const api = {isLoggedIn: () => !!user, serverId: () => 'synthetic-server', getCurrentUserId: () => user,
@@ -137,8 +137,9 @@ async function main(args = process.argv.slice(2)) {
             });
             await loaderPage.setContent('<base href="http://synthetic.invalid/">' + input.html);
             await loaderPage.addScriptTag({content:fs.readFileSync(path.join(root,'vendor/web-snapshot/www/modules/alameda/alameda.js'),'utf8')});
-            const result = await loaderPage.evaluate(async () => {
+            const result = await loaderPage.evaluate(async alias => {
                 require.config({baseUrl:'http://synthetic.invalid/'});
+                (0,eval)(alias);
                 define('loading',[],()=>({show(){},hide(){}}));
                 define('emby-button',[],()=>({})); define('emby-scroller',[],()=>({}));
                 define('modules/dom.js',[],()=>({default:{supportsEventListenerOnce:()=>false}}));
@@ -149,7 +150,7 @@ async function main(args = process.argv.slice(2)) {
                 window.ipc={invoke:channel=>Promise.resolve(channel==='enhanced-http-cache-status'?{status:'ok',bytes:128}:channel==='enhanced-maintenance-info'?{status:'ok',info:{}}:{status:'unavailable'})};
                 const [adapter,CacheView,events] = await new Promise((resolve,reject) => {
                     const timer=setTimeout(()=>reject(Error('AMD loading deadline exceeded')),5000);
-                    require(['enhanced/page-cache/home-layout-cache.js','plugins/mpvplayer/cache-management','modules/emby-apiclient/events.js','enhanced/home/sheet-probe.js'],(...loaded)=>{clearTimeout(timer);resolve(loaded);},error=>{clearTimeout(timer);reject(error);});
+                    require(['ete-home-layout-cache','plugins/mpvplayer/cache-management','modules/emby-apiclient/events.js','enhanced/home/sheet-probe.js'],(...loaded)=>{clearTimeout(timer);resolve(loaded);},error=>{clearTimeout(timer);reject(error);});
                 });
                 const api={isLoggedIn:()=>true,serverId:()=> 'synthetic-server',getCurrentUserId:()=> 'synthetic-user',_identityEpoch:1,getCurrentLocale:()=> 'zh-CN',serverVersion:()=> '4.10.0.40'};
                 const owner=adapter.default.create({currentApiClient:()=>api},{enabled:true,ttlMs:10000,maxEntries:2,maxBytes:4096},events.default);
@@ -162,7 +163,7 @@ async function main(args = process.argv.slice(2)) {
                     document.querySelector('.btnClearPageCache').click();for(let i=0;i<20;i++)await Promise.resolve();
                     const remaining=adapter.default.management.snapshot().entries;cacheView.destroy();return {before,http,remaining,masked};
                 } finally {owner.dispose();}
-            }).catch(error => {throw Error(error.message + '; synthetic requested paths=' + requested.join(','));});
+            }, require('./patch-server-home.cjs').CACHE_ALIAS).catch(error => {throw Error(error.message + '; synthetic requested paths=' + requested.join(','));});
             assert.match(result.before,/1 条/);assert.equal(result.remaining,0);assert.match(result.http,/128 bytes/);assert.equal(result.masked,'hidden');assert.deepEqual(loaderErrors,[]);
             passed.push('actual Alameda loads the independent cache page, its real management dependency and shared Home owner');
         } finally {await loaderPage.close();}

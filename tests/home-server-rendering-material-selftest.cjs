@@ -88,6 +88,7 @@ test('app transform preserves plugin registrations and adds exactly one home mod
     const plugin = require('../tools/patch-plugin-settings.cjs');
     const input = plugin.patchApp(external.patchText(app).text), output = patcher.patchApp(input);
     assert.equal(output.split('define("ete-server-home",').length - 1, 1);
+    assert.equal(output.split(patcher.CACHE_ALIAS).length - 1, 1);
     for (const name of ['responseHelper', 'emby-premierecontainer', 'emby-dialogclosebutton', 'baseView']) {
         assert.equal(output.split('define("' + name + '",').length, input.split('define("' + name + '",').length);
     }

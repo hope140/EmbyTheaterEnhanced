@@ -1,5 +1,7 @@
 'use strict';
 
+const CACHE_ALIAS = 'define("ete-home-layout-cache", ["./../enhanced/page-cache/home-layout-cache.js"], function(cache) { return cache; })';
+
 function once(text, anchor, replacement) {
     if (text.split(anchor).length !== 2) throw new Error('Server home anchor mismatch.');
     return text.replace(anchor, replacement);
@@ -32,7 +34,7 @@ function patchHomeTab(text) {
 function patchApp(text) {
     if (text.includes('define("ete-server-home",')) throw new Error('Server home anchor mismatch.');
     return once(text, 'define("baseView", [], getDynamicImport("./modules/viewmanager/baseview.js")),',
-        'define("ete-server-home", [], getDynamicImport("./../enhanced/home/home-tab.js")),\n' +
+        CACHE_ALIAS + ',\n      define("ete-server-home", [], getDynamicImport("./../enhanced/home/home-tab.js")),\n' +
         '      define("baseView", [], getDynamicImport("./modules/viewmanager/baseview.js")),');
 }
 function patchHomeView(text) {
@@ -91,4 +93,4 @@ function patchVirtualScroller(text) {
     return once(text, '                var items = result.Items || result,',
         '                if (instance.eteHomeFlowOwns && !instance.eteHomeFlowOwns(result)) return;\n                var items = result.Items || result,');
 }
-module.exports = {patchHomeView, patchViewManager, patchRouter, patchHomeTab, patchApp, patchItemsContainer, patchVirtualScroller};
+module.exports = {CACHE_ALIAS, patchHomeView, patchViewManager, patchRouter, patchHomeTab, patchApp, patchItemsContainer, patchVirtualScroller};

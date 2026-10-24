@@ -1,4 +1,4 @@
-define(['baseView', './cache-settings', 'emby-button', 'emby-scroller', 'css!./enhanced-settings', 'css!./cache-management'], function (BaseView, cacheSettings) {
+define(['baseView', './cache-settings.js', 'emby-button', 'emby-scroller', 'css!./enhanced-settings', 'css!./cache-management'], function (BaseView, cacheSettings) {
     'use strict';
     function request(channel) {
         if (!window.ipc || typeof window.ipc.invoke !== 'function') return Promise.reject(new Error('cache_api_unavailable'));

@@ -1,5 +1,5 @@
 (function (factory) {
-    if (typeof define === 'function' && define.amd) define(['../../enhanced/page-cache/home-layout-cache.js'], function (cache) { return factory(cache.default.management); });
+    if (typeof define === 'function' && define.amd) define(['ete-home-layout-cache'], function (cache) { return factory(cache.default.management); });
     else if (typeof module === 'object' && module.exports) module.exports = factory(require('../../enhanced/page-cache/home-layout-cache').management);
 }(function (pages) {
     'use strict';
