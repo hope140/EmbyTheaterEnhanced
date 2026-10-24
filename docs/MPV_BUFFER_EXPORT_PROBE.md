@@ -37,7 +37,7 @@
 - 保持现有 windows-2022、只读 contents/actions 权限、同一个串行组、cancel-in-progress=false，不创建另一并发组。
 - 预计取得 runner 后约 3–5 分钟；整个 job 上限仍为 15 分钟，native coordinator 仍为 120 秒，worker 100 秒开始收尾。先跑固定 Electron entry，再只跑本探针，不跑四模式矩阵、不重新打安装包。
 
-这是实验控件的分支入口，主线/default workflow 尚不新增产品能力。本分支没有自行 push 或 dispatch。
+这是实验控件的分支入口，主线/default workflow 尚不新增产品能力。实验提交按授权通过普通分支推送交付；探针不包含 dispatch 动作，Windows 执行由父统一协调。
 
 ## 完成、失败与观察性
 
