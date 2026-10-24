@@ -16,6 +16,10 @@ function argument(name) {
     if (values.length !== 1) throw Error('required-smoke-argument'); return values[0].slice(name.length + 3);
 }
 async function main() {
+    const repository = path.resolve(__dirname, '..');
+    const git = args => cp.execFileSync('git', args, {cwd: repository, encoding: 'utf8'}).trim();
+    if (git(['status', '--porcelain', '--untracked-files=no'])) throw Error('smoke-requires-committed-source');
+    const sourceCommit = git(['rev-parse', 'HEAD']);
     const out = path.resolve(argument('out'));
     if (fs.existsSync(out) && fs.readdirSync(out).length) throw Error('preserve-existing-evidence');
     fs.mkdirSync(out, {recursive: true, mode: 0o700});
@@ -87,13 +91,14 @@ async function main() {
         player = null;
         if (playerExit.code !== 0) throw Error('local-player-failed');
         await runtime.close();
-        const receipt = {status: 'passed', sourceCommit: cp.execFileSync('git', ['rev-parse', 'HEAD'], {cwd: path.resolve(__dirname, '..'), encoding: 'utf8'}).trim(),
+        const receipt = {status: 'passed', sourceCommit, workingTreeClean: true,
             node: process.version, bodyBytes: bytes.length, transferredBytes: transferred, requests, authenticatedRequests: authenticated,
             originalSha256: sha(bytes), cachedSha256: sha(cached), decodedFrameMd5Sha256: sha(originalFrames), playerExit,
             player: 'independent existing FFplay; dummy SDL audio/video, no audible or visible output',
             ffmpeg: {sha256: sha(fs.readFileSync(ffmpeg)), version: execute(ffmpeg, ['-version']).split('\n')[0]},
             ffplay: {sha256: sha(fs.readFileSync(ffplay)), version: execute(ffplay, ['-version']).split('\n')[0]},
-            appPaths, runtimeState: runtime.status(), fixedWindowsLibmpvVerified: false,
+            appPaths, processPaths: {APPDATA: environment.APPDATA, LOCALAPPDATA: environment.LOCALAPPDATA, MPV_HOME: environment.MPV_HOME,
+                XDG_CACHE_HOME: environment.XDG_CACHE_HOME, XDG_CONFIG_HOME: environment.XDG_CONFIG_HOME, XDG_DATA_HOME: environment.XDG_DATA_HOME}, runtimeState: runtime.status(), fixedWindowsLibmpvVerified: false,
             boundary: 'Runtime cache and real authorized loopback bytes, independent real decoder/player; not Electron GUI or Windows Native Helper acceptance'};
         fs.writeFileSync(path.join(out, 'receipt.json'), JSON.stringify(receipt, null, 2) + '\n');
         fs.writeFileSync(path.join(out, 'decoded.framemd5'), originalFrames);

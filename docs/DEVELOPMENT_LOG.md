@@ -4,7 +4,7 @@
 
 隔离缓存入口增加Ctrl+Shift+N：只从原PlayQueueManager取得同剧集/服务器的下一集，先原生确认，再以维护ApiClient现有授权提供者读取有限同源信息；唯一MediaSource/可验证完整静态文件才下载。任务归当前真实PlaySession，不伪造下一集Session或改变队列；正常切集时新授权验证后才消费完整source。Static=true的原DirectStream文件路由可用，动态流/转码/HLS不加入。ApiClient对象替换使旧上下文失效。
 
-partialPolicy必填，显式选择取消删除所属半成品或保留checkpoint至TTL机会清理；不能删除后续writer、完整对象或活动lease。网络中断保留已核验前缀，再次确认才能恢复。当前Node24.18.1/Linux相关236/236通过、0跳过，其中运行链路31项包含维护ApiClient两种真实授权方法、原队列、重定向拒绝/取消和60-byte合成WAV完整下载→正常下一集本地source命中。新增独立ffmpeg/ffplay合成本地媒体脚本供真实解码/进程验收，实际结果另存来源回执；固定Windows包/界面/NativeDLL/真实NAS未验收。普通使用仍默认关闭，无正式容量/TTL/网络默认值。详见[运行试验合同](PLAYBACK_CACHE_RUNTIME.md)。
+partialPolicy必填，显式选择取消删除所属半成品或保留checkpoint至TTL机会清理；不能删除后续writer、完整对象或活动lease。网络中断保留已核验前缀，再次确认才能恢复。当前Node24.18.1/Linux相关236/236通过、0跳过，其中运行链路31项包含维护ApiClient两种真实授权方法、原队列、重定向拒绝/取消和60-byte合成WAV完整下载→正常下一集本地source命中。新增独立ffmpeg/ffplay合成本地媒体脚本并通过：6406-byte MP4完整下载后只再取1-byte校验，完整音视频frame MD5相同，真实播放器正常退出，连接归零/lease随所属进程退出释放；独立来源回执保留。另有组装/启动合同50/50、433文件JS语法及520文件有限凭据模式扫描通过（不称完整secret审计）。固定Windows包/界面/NativeDLL/真实NAS未验收。普通使用仍默认关闭，无正式容量/TTL/网络默认值。详见[运行试验合同](PLAYBACK_CACHE_RUNTIME.md)。
 
 
 ## 2026-10-23 — 缓存服务器origin及资源表示隔离

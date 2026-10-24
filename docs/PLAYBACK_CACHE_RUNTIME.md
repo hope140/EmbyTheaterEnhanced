@@ -47,7 +47,7 @@ node --test tests/playback-cache-*.test.cjs tests/native-helper-*.test.cjs tests
 node tools/playback-cache-local-smoke.cjs --ffmpeg=/absolute/ffmpeg --ffplay=/absolute/ffplay --policy=/absolute/PLAYBACK_CACHE_TRIAL_CONFIG.json --out=/absolute/new-empty-evidence-directory
 ```
 
-脚本生成半秒合成MP4，以维护ApiClient生成的同源URL经真实Range下载、重新验证并选择完整本地source，比较原文件/缓存的完整解码frame MD5，再启动真实FFplay消费缓存，等待所属进程退出及lease/socket回收。所有child的APPDATA、LOCALAPPDATA、MPV_HOME和XDG路径在独立profile，SDL dummy使其无声、无可见窗口。回执含精确源码commit、工具hash、网络字节及解码hash；它是独立解码器/播放器证据，不能替代固定Windows Native Helper/libmpv、Electron界面、字幕或真实Session服务器回报验收。既有证据目录拒绝覆盖。
+脚本生成半秒合成MP4，以维护ApiClient生成的同源URL经真实Range下载、重新验证并选择完整本地source，比较原文件/缓存的完整解码frame MD5，再启动真实FFplay消费缓存，等待所属进程退出及lease/socket回收。所有child的APPDATA、LOCALAPPDATA、MPV_HOME和XDG路径在独立profile，SDL dummy使其无声、无可见窗口。回执含精确源码commit、工具hash、网络字节及解码hash；它是独立解码器/播放器证据，不能替代固定Windows Native Helper/libmpv、Electron界面、字幕或真实Session服务器回报验收。仅允许已提交且tracked工作区干净的源码运行，既有证据目录拒绝覆盖。本轮既有ffmpeg/ffplay 7.1.5的6406-byte合成MP4通过：传输6406+1字节、原/缓存音视频解码frame MD5相同、真实播放器exit 0、活动连接归零且store在进程退出后正常关闭；未输出可见画面或可听声音。另有启动/组装合同50/50、433文件JS语法及520文件有限模式扫描通过；有限模式扫描不是完整secret审计。
 
 ## 父协调构建与最短人工验收
 

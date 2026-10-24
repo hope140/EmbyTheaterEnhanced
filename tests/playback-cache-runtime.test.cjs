@@ -376,7 +376,7 @@ test('exit cancels download and waits for socket teardown before closing the own
 });
 
 test('the real Endpoint trial shortcut refreshes context and invokes the main confirmation operation, then unregisters on destroy', async t => {
-    let listener, removed = false, refreshed = 0; const calls = [];
+    let listener, removed = false, refreshed = 0, nextRequests = 0, preparationCancels = 0; const calls = [];
     const previous = global.document;
     global.document = {addEventListener(_name, fn) { listener = fn; }, removeEventListener(_name, fn) { removed = fn === listener; }};
     t.after(() => { if (previous === undefined) delete global.document; else global.document = previous; });
@@ -387,7 +387,11 @@ test('the real Endpoint trial shortcut refreshes context and invokes the main co
     const {endpoint} = await nativeClient.create({ipc}); await endpoint.beginGeneration('test'); endpoint.refreshCacheContext = async () => { refreshed++; };
     listener({ctrlKey: true, shiftKey: true, code: 'KeyD', repeat: false, preventDefault() {}, stopPropagation() {}}); await flush();
     assert.equal(refreshed, 1); assert.equal(calls.at(-1).operation, 'cache-download');
+    endpoint.requestNextCache = async () => { nextRequests++; };
+    endpoint.cancelCachePreparation = () => { preparationCancels++; };
+    listener({ctrlKey: true, shiftKey: true, code: 'KeyN', repeat: false, preventDefault() {}, stopPropagation() {}}); await flush();
+    assert.equal(refreshed, 2); assert.equal(nextRequests, 1);
     listener({ctrlKey: true, shiftKey: true, code: 'KeyX', repeat: false, preventDefault() {}, stopPropagation() {}}); await flush();
-    assert.equal(calls.at(-1).operation, 'cache-cancel');
-    await endpoint.destroy(); assert.equal(removed, true);
+    assert.equal(calls.at(-1).operation, 'cache-cancel'); assert.equal(preparationCancels, 1);
+    await endpoint.destroy(); assert.equal(removed, true); assert.equal(preparationCancels, 2);
 });
