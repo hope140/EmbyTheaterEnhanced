@@ -13,7 +13,7 @@ function metadata() {return {id: ci.PIN.artifactId, expired: false, expires_at: 
 function run() {return {id: ci.PIN.runId, head_sha: ci.PIN.sourceCommit, status: 'completed', conclusion: 'success'};}
 test('manual range route keeps the exact tool commit and leaves public/package routes and old concurrency independent', () => {
     assert.match(workflow, /range_smoke:\n[\s\S]*?type: choice\n        default: 'off'/);
-    assert.match(job, /if: github.event_name == 'workflow_dispatch' && \(inputs.range_smoke == 'entry' \|\| inputs.range_smoke == 'native' \|\| inputs.range_smoke == 'loader-trial' \|\| inputs.range_smoke == 'next-auto'\)/);
+    assert.match(job, /if: github.event_name == 'workflow_dispatch' && \(inputs.range_smoke == 'entry' \|\| inputs.range_smoke == 'native' \|\| inputs.range_smoke == 'loader-trial' \|\| inputs.range_smoke == 'next-auto' \|\| inputs.range_smoke == 'next-matrix'\)/);
     assert.match(job, /runs-on: windows-2022/); assert.match(job, /ref: c9cd9bacf81445c9c10befd121951b1c63c86faa/);
     assert.match(job, /'ete-manual-next-prefix-auto' \|\| 'ete-manual-playback-range-smoke'/); assert.match(job, /cancel-in-progress: false/); assert.match(job, /timeout-minutes: 15/);
     assert.match(workflow, /group: ete-manual-windows-test-package/); assert.match(workflow, /^permissions:\n  contents: read$/m);
@@ -88,7 +88,7 @@ test('workflow and static extraction retain hash gates, bounded receipts and no 
 test('automatic next route is scoped to the independent verification branch', () => {
     assert.doesNotThrow(() => ci.validateDispatch('next-auto', 'a'.repeat(40), ci.PIN.repository, 'false', 'refs/heads/verify/next-episode-auto-20261024'));
     for (const ref of ['refs/heads/main', 'refs/heads/feature/playback-range-cache']) assert.throws(() => ci.validateDispatch('next-auto', 'a'.repeat(40), ci.PIN.repository, 'false', ref));
-    assert.match(source, /if \(plan.mode === 'next-auto'\)/);
+    assert.match(source, /\['next-auto', 'next-matrix'\]\.includes\(plan.mode\)/);
     assert.match(source, /--source-commit=' \+ plan.workflowCommit/);
     assert.match(source, /baseSourceCommit: PIN.sourceCommit, overlaySourceCommit: plan.workflowCommit/);
     assert.match(source, /'--execute-electron-entry'/); assert.match(source, /'--execute-native'/);
@@ -127,7 +127,7 @@ test('missing, malformed and oversize phase evidence stays unrecorded and bounde
     fs.writeFileSync(path.join(directory, 'native.trace.ndjson'), Buffer.alloc(1048577));
     const summary = ci.automaticFailureSummary(directory);
     assert(summary.phases.every(row => row.status === 'not-recorded' && row.exitCode === null));
-    assert.deepEqual(summary.events, []); assert(JSON.stringify(summary).length < 2000);
+    assert.deepEqual(summary.events, []); assert(JSON.stringify(summary).length < 4000);
 });
 
 test('prepare failure is surfaced from command stdout even before owned output or Electron receipts exist', t => {
@@ -140,5 +140,17 @@ test('prepare failure is surfaced from command stdout even before owned output o
         JSON.stringify({type: 'next-auto-prepare-failure', stage: 'loader-validation', code: 'prepare-filesystem-error', systemCode: 'ENOENT', gitExitCode: null, message: canary}), canary].join('\n'));
     summary = ci.automaticFailureSummary(path.join(directory, 'uncreated-output'), file);
     assert.equal(summary.prepare.stage, 'loader-validation'); assert.equal(summary.prepare.code, 'prepare-filesystem-error'); assert.equal(summary.prepare.systemCode, 'ENOENT');
+    assert(!JSON.stringify(summary).includes(canary));
+});
+
+test('next-matrix stays on the independent branch, uses separate entry and exposes scalar case results directly', t => {
+    assert.doesNotThrow(() => ci.validateDispatch('next-matrix', 'a'.repeat(40), ci.PIN.repository, 'false', 'refs/heads/verify/next-episode-auto-20261024'));
+    assert.throws(() => ci.validateDispatch('next-matrix', 'a'.repeat(40), ci.PIN.repository, 'false', 'refs/heads/main'));
+    assert.match(source, /\['run-matrix', '--plan=' \+ file, '--execute-native-matrix'\]/);
+    const directory = root(t), canary = 'synthetic-private-matrix-canary';
+    fs.writeFileSync(path.join(directory, 'matrix-cancel.json'), JSON.stringify({status: 'passed', code: canary, helpers: [{exited: true, diagnostics: {processExitCode: 0, streamsClosed: true}}], checks: {defaultPreloadMB: 300, heldRequestClosed: true, lateBytes: 0, private: canary}}));
+    fs.writeFileSync(path.join(directory, 'matrix-cancel-coordinator.json'), JSON.stringify({status: 'passed', exit: {code: 0, streamsClosed: true}}));
+    const summary = ci.automaticCaseSummary(directory, 'matrix-cancel');
+    assert.equal(summary.status, 'passed'); assert.equal(summary.checks.defaultPreloadMB, 300); assert.equal(summary.payloadClearGatePassed, true);
     assert(!JSON.stringify(summary).includes(canary));
 });

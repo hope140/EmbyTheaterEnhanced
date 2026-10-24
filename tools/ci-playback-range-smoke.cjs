@@ -24,8 +24,8 @@ function toolsAt(root) {
     return smoke;
 }
 function validateDispatch(mode, workflowCommit, repository, releasePackage, ref) {
-    if (ref !== (mode === 'next-auto' ? 'refs/heads/verify/next-episode-auto-20261024' : 'refs/heads/feature/playback-range-cache')) fail('invalid-range-branch');
-    if (!['entry', 'native', 'loader-trial', 'next-auto'].includes(mode) || releasePackage !== 'false' || repository !== PIN.repository || !/^[a-f0-9]{40}$/.test(workflowCommit || '')) fail('invalid-range-dispatch');
+    if (ref !== (['next-auto', 'next-matrix'].includes(mode) ? 'refs/heads/verify/next-episode-auto-20261024' : 'refs/heads/feature/playback-range-cache')) fail('invalid-range-branch');
+    if (!['entry', 'native', 'loader-trial', 'next-auto', 'next-matrix'].includes(mode) || releasePackage !== 'false' || repository !== PIN.repository || !/^[a-f0-9]{40}$/.test(workflowCommit || '')) fail('invalid-range-dispatch');
 }
 function createPlan(toolsRoot, root, mode, workflowCommit, repository, releasePackage) {
     validateDispatch(mode, workflowCommit, repository, releasePackage, process.env.GITHUB_REF);
@@ -44,7 +44,7 @@ function createPlan(toolsRoot, root, mode, workflowCommit, repository, releasePa
 function readPlan(file) {
     if (fs.realpathSync(file) !== path.resolve(file)) fail('redirected-control-plan');
     const plan = json(file);
-    if (plan.schema !== 1 || JSON.stringify(plan.pin) !== JSON.stringify(PIN) || !['entry', 'native', 'loader-trial', 'next-auto'].includes(plan.mode) ||
+    if (plan.schema !== 1 || JSON.stringify(plan.pin) !== JSON.stringify(PIN) || !['entry', 'native', 'loader-trial', 'next-auto', 'next-matrix'].includes(plan.mode) ||
         fs.realpathSync(plan.root) !== plan.root || path.resolve(file) !== path.join(plan.root, 'control-plan.json') || fs.readFileSync(path.join(plan.root, 'owner'), 'utf8') !== OWNER) fail('invalid-control-plan');
     toolsAt(plan.toolsRoot);
     if (JSON.stringify(plan.paths) !== JSON.stringify(pathsFor(plan.root))) fail('invalid-control-path');
@@ -133,10 +133,10 @@ const AUTO_CODES = new Set(['actual-source-chain-missing', 'automatic-chain-orde
     'B-native-decode-not-proven', 'B-prefix-read-not-observed', 'B-prefix-hit-or-native-miss-not-proven', 'unexpected-play-count',
     'renderer-failed', 'renderer-chain-failed', 'unexpected-visible-window', 'next-prefix-status-contract', 'automatic-native-deadline',
     'service-destroy-failed', 'helper-exit-UNCERTAIN', 'origin-close-failed', 'temporary-prefix-cleanup-failed',
-    'owned-Electron-exit-failed', 'phase-receipt-invalid', 'native-helper-exit-receipt-invalid', 'actual-entry-required']);
+    'owned-Electron-exit-failed', 'phase-receipt-invalid', 'native-helper-exit-receipt-invalid', 'actual-entry-required', ...require('./playback-prefix-windows-auto.cjs').MATRIX_CODES]);
 const AUTO_EVENTS = new Set(['profile-isolated', 'app-ready', 'helper-ready', 'module-loaded', 'manager-play-invocation',
     'initial-play-resolved', 'native-property', 'load', 'range-preload', 'prefix-ready', 'manager-next-track', 'origin-media',
-    'prefix-read', 'decoded-B', 'renderer-failure']);
+    'prefix-read', 'decoded-B', 'renderer-failure', 'matrix-held', 'matrix-action', 'matrix-checked', 'matrix-exit-request', 'matrix-policy', 'origin-client-open', 'origin-client-closed']);
 function preparationFailureSummary(file) {
     const {PREPARE_STAGES, PREPARE_CODES, prepareFailure} = require('./playback-prefix-windows-auto.cjs');
     let text;
@@ -171,9 +171,9 @@ function automaticFailureSummary(root, commandLog) {
     }
     const code = value => AUTO_CODES.has(value) ? value : 'unclassified';
     const exitCode = value => Number.isSafeInteger(value) && value >= -2147483648 && value <= 0xffffffff ? value : null;
-    const phases = ['entry', 'native'].map(phase => {
+    const phases = ['entry', 'native', ...require('./playback-prefix-windows-auto.cjs').MATRIX_PHASES].map(phase => {
         const coordinator = read(phase + '-coordinator.json', 65536, JSON.parse), receipt = read(phase + '.json', 65536, JSON.parse);
-        return {phase, status: ['passed', 'failed'].includes(receipt?.status) ? receipt.status : 'not-recorded',
+        return {phase, coordinatorStatus: ['passed', 'failed'].includes(coordinator?.status) ? coordinator.status : 'not-recorded', status: ['passed', 'failed'].includes(receipt?.status) ? receipt.status : 'not-recorded',
             code: code(receipt?.code || coordinator?.code), timedOut: coordinator?.exit?.timedOut === true,
             exitCode: exitCode(coordinator?.exit?.code), streamsClosed: coordinator?.exit?.streamsClosed === true,
             cleanup: Array.isArray(receipt?.cleanup) ? receipt.cleanup.map(code).slice(0, 8) : [],
@@ -183,12 +183,27 @@ function automaticFailureSummary(root, commandLog) {
                     ['invalid-parent-window', 'surface-create-failed', 'dll-load-failed', 'mpv-create-failed', 'mpv-initialize-failed', 'missing-export', 'option-failed'].includes(label)).slice(0, 8),
                 systemCodes: (Array.isArray(helper.diagnostics?.systemCodes) ? helper.diagnostics.systemCodes : []).filter(value => exitCode(value) !== null).slice(0, 8)})) : []};
     });
-    const trace = read('native.trace.ndjson', 1048576, text => text.trim().split(/\r?\n/).filter(Boolean).map(JSON.parse));
+    const activePhase = phases.findLast(row => row.status === 'failed')?.phase || 'native';
+    const trace = read(activePhase + '.trace.ndjson', 1048576, text => text.trim().split(/\r?\n/).filter(Boolean).map(JSON.parse));
     const events = (trace || []).filter(row => row && AUTO_EVENTS.has(row.type)).slice(-16).map(row => ({type: row.type,
-        seq: Number.isSafeInteger(row.seq) ? row.seq : null, item: ['A', 'B'].includes(row.item) ? row.item : null,
+        seq: Number.isSafeInteger(row.seq) ? row.seq : null, item: ['A', 'B', 'C'].includes(row.item) ? row.item : null,
         property: ['duration', 'time-pos', 'core-idle', 'eof-reached', 'file-loaded'].includes(row.name) ? row.name : null,
-        value: typeof row.value === 'boolean' || Number.isFinite(row.value) ? row.value : null}));
+        value: typeof row.value === 'boolean' || Number.isFinite(row.value) ? row.value : null,
+        operation: ['pause', 'cancel', 'replace'].includes(row.operation) ? row.operation : null,
+        ...Object.fromEntries(['clientRequest', 'requestId', 'start', 'end', 'backgroundActive'].filter(key => Number.isSafeInteger(row[key])).map(key => [key, row[key]]))}));
     return {type: 'next-auto-failure-summary', prepare: preparationFailureSummary(commandLog), phases, events};
+}
+function automaticCaseSummary(root, phase) {
+    const file = path.join(root, phase + '.json'), state = automaticFailureSummary(root).phases.find(row => row.phase === phase);
+    let checks = {};
+    try {
+        const stat = fs.lstatSync(file); if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 65536) throw Error('bounded-receipt-required');
+        const receipt = json(file), allowed = new Set(['defaultPreloadMB', 'actualThreshold', 'foregroundCacheBytes', 'peakBackgroundRequests', 'candidateBytes', 'heldRequestClosed', 'lateBytes', 'beforeActionBytes', 'diskPeak',
+            'foregroundPreempted', 'candidateReplaced', 'exitDuringUnplayedNext', 'noBLoad', 'unsupportedOriginalSource', 'weakEtagDeclined', 'originalSourceDecoded', 'nextUnavailable']);
+        checks = Object.fromEntries(Object.entries(receipt.checks || {}).filter(([key, value]) => allowed.has(key) && (typeof value === 'boolean' || Number.isFinite(value))));
+    } catch (_) {}
+    const complete = state?.status === 'passed' && state.coordinatorStatus === 'passed' && state.exitCode === 0 && state.streamsClosed && !state.timedOut && state.helpers.length > 0 && state.helpers.every(helper => helper.exited && helper.exitCode === 0 && helper.streamsClosed);
+    return {type: 'next-prefix-matrix-case-result', ...state, status: complete ? 'passed' : state?.status === 'not-recorded' ? 'not-recorded' : 'failed', code: complete ? 'passed' : state?.code, checks, payloadClearGatePassed: complete};
 }
 function runTool(plan, arguments_, label, script = path.join(plan.toolsRoot, 'tools/playback-range-windows-smoke.cjs')) {
     const environment = cleanEnvironment(); noCredentials(environment); const file = path.join(plan.root, label + '.stdout'), fd = fs.openSync(file, 'wx');
@@ -196,7 +211,7 @@ function runTool(plan, arguments_, label, script = path.join(plan.toolsRoot, 'to
         const result = spawnSync(process.execPath, [script, ...arguments_],
             {cwd: plan.toolsRoot, env: environment, windowsHide: true, shell: false, stdio: ['ignore', fd, fd], timeout: 600000});
         if (result.error || result.status !== 0) {
-            if (plan.mode === 'next-auto') console.error(JSON.stringify(automaticFailureSummary(plan.paths.smoke, file)));
+            if (['next-auto', 'next-matrix'].includes(plan.mode)) console.error(JSON.stringify(automaticFailureSummary(plan.paths.smoke, file)));
             fail('controlled-smoke-command-failed:' + label);
         }
     } finally {fs.closeSync(fd);}
@@ -206,16 +221,19 @@ function execute(plan) {
     const inputs = expandedInputs(plan), smoke = toolsAt(plan.toolsRoot);
     const identity = smoke.verifyRuntime(plan.toolsRoot, inputs.runtime, plan.paths.artifact);
     writeNew(path.join(plan.root, 'unpack.json'), {status: 'passed', pin: PIN, identity});
-    if (plan.mode === 'next-auto') {
+    if (['next-auto', 'next-matrix'].includes(plan.mode)) {
         const script = path.join(__dirname, 'playback-prefix-windows-auto.cjs'), source = path.resolve(__dirname, '..');
         runTool(plan, ['prepare', '--tools=' + plan.toolsRoot, '--source=' + source, '--source-commit=' + plan.workflowCommit,
             '--runtime=' + inputs.runtime, '--zip=' + plan.paths.artifact, '--out=' + plan.paths.smoke], 'prepare', script);
         const file = path.join(plan.paths.smoke, 'auto-plan.json');
         runTool(plan, ['entry-smoke', '--plan=' + file, '--execute-electron-entry'], 'entry-driver', script);
-        runTool(plan, ['run', '--plan=' + file, '--execute-native'], 'native-driver', script);
+        if (plan.mode === 'next-matrix') {
+            try {runTool(plan, ['run-matrix', '--plan=' + file, '--execute-native-matrix'], 'matrix-driver', script);}
+            finally {for (const phase of require('./playback-prefix-windows-auto.cjs').MATRIX_PHASES) console.log(JSON.stringify(automaticCaseSummary(plan.paths.smoke, phase)));}
+        } else runTool(plan, ['run', '--plan=' + file, '--execute-native'], 'native-driver', script);
         writeNew(path.join(plan.root, 'execution.json'), {status: 'passed', mode: plan.mode, toolsCommit: PIN.toolsCommit,
             baseSourceCommit: PIN.sourceCommit, overlaySourceCommit: plan.workflowCommit,
-            evidence: 'derived-runtime-fixed-Alameda-automatic-next-prefix-not-visual-or-Emby-or-NAS'}); return;
+            evidence: plan.mode === 'next-matrix' ? 'fixed-helper-active-prefix-matrix-default-300MB-not-NAS-or-settings-visual' : 'derived-runtime-fixed-Alameda-automatic-next-prefix-not-visual-or-Emby-or-NAS'}); return;
     }
     if (plan.mode === 'loader-trial') {
         runTool(plan, ['--control-plan=' + path.join(plan.root, 'control-plan.json')], 'loader-trial-driver', path.join(__dirname, 'playback-range-loader-trial.cjs'));
@@ -229,7 +247,7 @@ function execute(plan) {
     writeNew(path.join(plan.root, 'execution.json'), {status: 'passed', mode: plan.mode, toolsCommit: PIN.toolsCommit, sourceCommit: PIN.sourceCommit,
         evidence: plan.mode === 'entry' ? 'actual-fixed-Electron-entry-only' : 'actual-fixed-native-synthetic-transport-not-visual-or-NAS'});
 }
-const EVIDENCE = ['extraction-failure.json', 'acquire.json', 'unpack.json', 'execution.json', 'failure.json', 'prepare.stdout', 'entry-driver.stdout', 'native-driver.stdout', 'loader-trial-driver.stdout'];
+const EVIDENCE = ['extraction-failure.json', 'acquire.json', 'unpack.json', 'execution.json', 'failure.json', 'prepare.stdout', 'entry-driver.stdout', 'native-driver.stdout', 'loader-trial-driver.stdout', 'matrix-driver.stdout'];
 function collect(plan, destination) {
     if (fs.existsSync(destination)) fail('fresh-evidence-output-required'); fs.mkdirSync(destination, {recursive: true});
     writeNew(path.join(destination, 'control.json'), {schema: 1, pin: PIN, mode: plan.mode, workflowCommit: plan.workflowCommit});
@@ -248,8 +266,8 @@ function collect(plan, destination) {
     const names = ['entry-coordinator.json', 'coordinator.json', 'config.json'];
     for (const phase of ['entry', 'populate', 'reopen']) for (const suffix of ['.json', '.running.json', '.launch.json', '.stages.ndjson', '.stdout']) names.push(phase + suffix);
     for (const name of names) copy(path.join(plan.paths.smoke, name), name);
-    if (plan.mode === 'next-auto') {
-        for (const phase of ['entry', 'native']) for (const suffix of ['.json', '.running.json', '.launch.json', '.trace.ndjson', '.stdout', '-coordinator.json']) copy(path.join(plan.paths.smoke, phase + suffix), 'auto-' + phase + suffix);
+    if (['next-auto', 'next-matrix'].includes(plan.mode)) {
+        for (const phase of ['entry', 'native', ...require('./playback-prefix-windows-auto.cjs').MATRIX_PHASES]) for (const suffix of ['.json', '.running.json', '.launch.json', '.trace.ndjson', '.stdout', '-coordinator.json']) copy(path.join(plan.paths.smoke, phase + suffix), 'auto-' + phase + suffix);
     }
     if (plan.mode === 'loader-trial') {
         const root = path.join(plan.root, 'loader-trial');
@@ -281,9 +299,9 @@ async function main(argv) {
         else if (command === 'collect') console.log(JSON.stringify(collect(plan, args['--out'])));
         else fail('invalid-command');
     } catch (error) {
-        if (plan && !fs.existsSync(path.join(plan.root, 'failure.json'))) writeNew(path.join(plan.root, 'failure.json'), {status: 'failed', command, code: safeCode(error), nativeOutcome: /:(?:native|loader-trial)-driver$/.test(String(error.message)) ? 'UNCERTAIN' : 'NOT_ESTABLISHED'});
+        if (plan && !fs.existsSync(path.join(plan.root, 'failure.json'))) writeNew(path.join(plan.root, 'failure.json'), {status: 'failed', command, code: safeCode(error), nativeOutcome: /:(?:native|loader-trial|matrix)-driver$/.test(String(error.message)) ? 'UNCERTAIN' : 'NOT_ESTABLISHED'});
         throw error;
     }
 }
 if (require.main === module) main(process.argv.slice(2)).catch(error => {console.error(safeCode(error)); process.exitCode = 1;});
-module.exports = {PIN, tokenNames, cleanEnvironment, validateDispatch, validateMetadata, responseStatus, secureLocation, api, downloaded, acquire, createPlan, readPlan, expandedInputs, collect, EVIDENCE, safeCode, preparationFailureSummary, automaticFailureSummary};
+module.exports = {PIN, tokenNames, cleanEnvironment, validateDispatch, validateMetadata, responseStatus, secureLocation, api, downloaded, acquire, createPlan, readPlan, expandedInputs, collect, EVIDENCE, safeCode, preparationFailureSummary, automaticFailureSummary, automaticCaseSummary};

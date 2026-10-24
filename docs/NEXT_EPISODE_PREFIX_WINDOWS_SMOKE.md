@@ -67,3 +67,37 @@ prepare 从输入解析到 driver/plan 写出逐步记录固定阶段；受限�
 工具只读八个 allowlisted 成员，重核 trace 的原自动链判据、entry/native coordinator 与 helper 退出，然后在 job 日志打印 `existing-next-prefix-success-result`。包含实际阈值时间、事件顺序、320×180 gpu-next、预载/命中/源范围/占用、退出与身份字段；不输出任意 receipt detail、URL、profile 或环境值。下载先校验原运行/SHA/expiry 和整个 ZIP 字节身份，不解包/启动 runtime，不构建或运行 helper。
 
 该成功运行只选 100 MB；原 occupancy 门禁按约 25 ms 状态采样检查包含预留的逻辑占用，没有连续物理峰值测量。原退出守卫检查媒体残留为空，但没有测试在未播下一集下载中退出。活跃取消/抢占、换候选与普通设置/真实源仍是明确待验收项。
+
+
+## 已完成的固定 100 MB 自动链结果
+
+精确 source `cfb597b741a3741ed266fc08ea0d29cf1218e5d8`，native run `40100795549` / job `120892348048`；只读结果 run `40102420145` / job `120897117931`。以下为既有 artifact 的明文结果，不是新的播放运行。
+
+| 项目 | 实际结果 |
+| --- | --- |
+| 阈值 | 11.25 / 16 秒，达到 70% |
+| 顺序 | preload 391 → ready 807 → natural EOF 836 → original nextTrack 838 → B load 840 |
+| 代次与输出 | A 101、B 103；B 320×180，gpu-next |
+| P / 已提交 / 报告占用 | 均为 100,000,000 字节 |
+| 命中 | 154 reads，首块 0–262143；首块重复回源 0 |
+| 来源 | EOF 前媒体预载 100,000,000 字节；EOF 后 probe 1、miss 3 |
+| 缺块范围 | 三次均为 104071168–104194303，位于 P 之外 |
+| 退出 | helper/Electron exit0、stdio close，清空门禁通过 |
+
+缺块不累积写盘，重复尾部来源读取符合透传合同；现有记录没有逐次归因到 seek，不增加额外缓存优化。此结果仅覆盖 100 MB 选择，不代替普通默认 300 MB 验收。
+
+## 活跃生命周期短验入口（准备态）
+
+`range_smoke=next-matrix`、`release_package=false` 复用同一固定包、loader、七份维护 overlay、Alameda/manager/service/helper 和 A/B 合成源。prepare 与实际 entry 后，每项在新的所属 Electron/helper 进程运行；不重复已经通过的 A→B 自动链。显式本机入口为 `run-matrix --plan=<owned-auto-plan> --execute-native-matrix`，仍要求 Windows x64、实际 entry、原身份和退出门禁。
+
+每项通过普通设置 store 的默认配置只保存 enabled=true，实际读取 70%/300 MB，P=300,000,000；不使用 100 MB 替代默认。预热 C 仍受源文件 104,194,304 字节限制，不声称已拉满 300 MB。当前视频不写盘、所有前缀/租约/预留继续使用同一个 P。最后缓冲暂存属于独立实验，不是这些检查的依赖。
+
+- cancel：真实进度/renderer 定时器触发 B，第二块仅发出一字节后等待；用原 manager.stop 取消，核对真实请求 close、无迟到字节和无主动切集。原 Stop 的交接前缀归属保持，最终应用退出清空。
+- preempt：该项仅将既有 mpv 内存缓冲选项设为 1 MiB 并读回；A 的真实原生缺块读取抢占 held B，核对 B 的客户端实际 close 先于 A 的新来源请求及 A 持续推进。不是用外部 fetch 代替 native 缺块。
+- replace：用原 pause 保持 A，再用原 manager.queueNext 插入明确同系列 C；旧 B 关闭后原 renderer 自动预载 C，共享 P，B/C 均不被测试主动播放。
+- exit：B 下载仍 pending、B 从未 load 时直接执行生产 service.destroy；核对实际取消、helper/Electron 退出及媒体清空。
+- unsupported：合成弱 ETag 使缓存资格失败，核对 helper 仍使用原 A 来源并真实解码、下一集 unavailable、没有 B 媒体请求与缓存写入。302/auth/cross-origin 另有 Node 来源矩阵；真实 NAS/302/dian115 未验证。
+
+请求观察器只包装原 http.request 并监听实际 close，不替换请求/响应。首块先提交、第二块保持未完成，迟到写尝试必须为 0；后台 probe/media 的实际客户端并发峰值必须 ≤1。每项安全标量结果直接打印 `next-prefix-matrix-case-result`，失败阶段/错误/事件仍直接可读。任何失败或不确定退出会停止后续实际用例，不重试或绕过门禁。
+
+普通设置另有真实 Alameda + 原 BaseView/controller + 实际设置 IPC/store/service 的 Node 集成：页面 70%/300 MB；保存不改当前代次；下次显式播放实际预算 300,000,000。helper 与 DOM 仍为替身，不是 Windows 可见 UI 验收。单集入口禁用服务端连播时不扩队列；明确 `[A,B]` 队列继续遵循原 manager 的前进语义，不改其设置或 owner。

@@ -16,12 +16,17 @@ async function automaticCase(t, scenario) {
     const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-alameda-next-'))), trace = [], timers = new Set();
     const record = (type, data = {}) => trace.push({seq: trace.length, type, ...data});
     const fixtures = ['A', 'B'].map(id => {const file = id + '.avi'; fs.writeFileSync(path.join(root, file), Buffer.from(id.repeat(40))); return {file, size: 40, etag: '"synthetic-' + id + '"'};});
-    const origin = await tool.fixtureServer({out: root, fixtures}, record);
+    const holding = scenario.startsWith('hold-');
+    const origin = await tool.fixtureServer({out: root, fixtures, autoPlay: !['autoplay-off', 'explicit-queue-autoplay-off'].includes(scenario)}, record, {holdNext: holding, holdStart: 8, unsupported: scenario === 'unsupported'});
+    const restoreRequests = holding ? tool.observeOriginRequests(origin.origin, record) : null;
     const managerFile = path.join(root, 'playbackmanager.js');
     fs.copyFileSync(path.join(repo, 'vendor/web-snapshot/www/modules/common/playback/playbackmanager.js'), managerFile);
     execFileSync(process.execPath, [path.join(repo, 'tools/patch-playbackmanager.cjs'), managerFile]);
     let listener, generation = 0, service;
-    const contexts = new Map(), clients = [], documentTimers = new Set();
+    const contexts = new Map(), clients = [], documentTimers = new Set(), settingsHandlers = new Map();
+    const settingsCase = scenario === 'settings-next-play';
+    const settings = require('../src/electronapp/enhanced/playback-range-user-settings');
+    const preferences = settingsCase ? settings.createStore({profileRoot: root}) : null;
     class Window extends EventEmitter {
         constructor() {super(); this.webContents = {isDestroyed: () => false, send: (_channel, value) => listener?.(value)}; this.destroyed = false;}
         getBounds() {return {x: 0, y: 0, width: 320, height: 180};} setBounds() {} setMenu() {} loadURL() {return Promise.resolve();}
@@ -40,7 +45,7 @@ async function automaticCase(t, scenario) {
         async request() {return {attached: true};}
         emit(name, value) {this.properties[name] = value; const event = {generationId: this.currentGenerationId, name, value}; record('synthetic-property', event); this.options.onEvent(event);}
         load(args) {
-            const id = contexts.get(this.currentGenerationId), gen = this.currentGenerationId;
+            const id = contexts.get(this.currentGenerationId) || /\/Videos\/([ABC])\//.exec(new URL(args[1]).pathname)?.[1], gen = this.currentGenerationId;
             record('load', {item: id, generation: gen, source: args[1]});
             const promise = (async () => {
                 const before = trace.length;
@@ -51,7 +56,7 @@ async function automaticCase(t, scenario) {
                 let position = 0;
                 this.clock = setInterval(() => {
                     if (this.currentGenerationId !== gen) {clearInterval(this.clock); return;}
-                    position = Math.min(scenario === 'natural' ? 8 : 7.6, position + 0.2); this.emit('time-pos', position);
+                    position = Math.min(['natural', 'autoplay-off', 'explicit-queue-autoplay-off'].includes(scenario) ? 8 : 7.6, position + 0.2); this.emit('time-pos', position);
                     if (position >= 8) {clearInterval(this.clock); this.emit('eof-reached', true);}
                 }, 10); timers.add(this.clock);
             })();
@@ -63,7 +68,12 @@ async function automaticCase(t, scenario) {
     const main = new Window();
     service = createService({electron: {BrowserWindow: Window}, NativeHelperClient: SyntheticClient, fs: {existsSync: () => true},
         getMainWindow: () => main, getWebContents: () => main.webContents, execFile: (_file, _args, _options, callback) => {callback(null); return {kill() {}};},
-        runtimeRoot: root, rangeCache: {...tool.CONFIG, blockBytes: 8, root: path.join(root, 'prefix'), onPrefixRead: value => record('prefix-read', value)}});
+        runtimeRoot: root, getRangeCacheConfig: settingsCase ? () => preferences.runtimeConfig() : undefined,
+        rangeCache: settingsCase ? undefined : {...tool.CONFIG, blockBytes: 8, root: path.join(root, 'prefix'), onPrefixRead: value => record('prefix-read', value)}});
+    const trusted = require('./helpers/trusted-renderer.cjs');
+    main.webContents.mainFrame = {url: trusted.appUrl};
+    if (settingsCase) settings.register({ipcMain: {handle: (name, fn) => settingsHandlers.set(name, fn), removeHandler: name => settingsHandlers.delete(name)},
+        store: preferences, getWebContents: () => main.webContents, getRuntimeStatus: () => service.rangeStatus()});
     const eventTarget = new EventTarget();
     const body = {insertBefore(element) {element.parentNode = body;}, removeChild(element) {element.parentNode = null;}, firstChild: null};
     const document = {body, querySelector: () => null};
@@ -75,6 +85,7 @@ async function automaticCase(t, scenario) {
             if (member === 'www/modules/common/playback/playbackmanager.js') return fs.readFileSync(managerFile, 'utf8');
             return fs.readFileSync(path.join(repo, member.startsWith('www/') ? 'vendor/web-snapshot' : 'src/electronapp', member), 'utf8');
         }, async invoke(_channel, request) {
+            if (settingsHandlers.has(_channel)) return settingsHandlers.get(_channel)(trusted.eventFor(main.webContents), request);
             record('ipc', {operation: request.operation});
             if (request.operation === 'range-context' && request.payload.context) contexts.set(request.payload.generationId, request.payload.context.itemId);
             const result = await service.call(request.operation, request.payload, request.endpointId);
@@ -96,13 +107,86 @@ async function automaticCase(t, scenario) {
     }};
     t.after(async () => {
         for (const timer of [...timers, ...documentTimers]) clearInterval(timer);
-        if (window.prefixStop) await window.prefixStop(); await service.destroy(); await origin.close();
-        assert.deepEqual(fs.readdirSync(path.join(root, 'prefix')), ['owner']); fs.rmSync(root, {recursive: true, force: true});
+        if (window.prefixStop && scenario !== 'hold-exit') await window.prefixStop(); await service.destroy(); if (restoreRequests) restoreRequests(); await origin.close();
+        assert.deepEqual(fs.readdirSync(path.join(root, settingsCase ? 'next-episode-prefix-v1' : 'prefix')), ['owner']); fs.rmSync(root, {recursive: true, force: true});
     });
-    await vm.runInContext('(' + tool.rendererBoot.toString() + ')(' + JSON.stringify({origin: origin.origin, windowId: '1', moduleBaseUrl: 'file:///fixture/electronapp/www/'}) + ')', window);
+    await vm.runInContext('(' + tool.rendererBoot.toString() + ')(' + JSON.stringify({origin: origin.origin, windowId: '1', singleItem: scenario === 'autoplay-off', moduleBaseUrl: 'file:///fixture/electronapp/www/'}) + ')', window);
     const details = () => JSON.stringify(trace.slice(-30));
     assert(!trace.some(row => row.type === 'renderer-failure'), details());
-    if (scenario !== 'natural') {
+    if (settingsCase) {
+        window.navigator = {hardwareConcurrency: 4, deviceMemory: 1}; window.CSS = {supports: () => false};
+        for (const id of ['modules/dom.js', 'modules/layoutmanager.js', 'modules/browser.js']) window.define(id, [], () => ({default: {tv: false}}));
+        window.define('loading', [], () => ({hide() {}}));
+        window.define('baseView', [], () => window.require(['modules/viewmanager/baseview.js']).then(values => values[0].default));
+        for (const id of ['emby-select', 'emby-checkbox', 'emby-input', 'emby-button', 'emby-scroller']) window.define(id, [], () => ({}));
+        const Controller = (await window.require(['../plugins/mpvplayer/cache.js']))[0];
+        class Node extends EventTarget {constructor() {super(); this.value = ''; this.checked = false; this.disabled = false; this.textContent = '';}}
+        const nodes = Object.fromEntries(['form', '.chkRangeEnabled', '.selectRangeProgress', '.selectRangePreload', '.rangeSettingsState', '.rangeRuntimeState'].map(name => [name, new Node()]));
+        const view = new Node(); view.getAttribute = () => null;
+        view.querySelector = name => nodes[name] || null; view.querySelectorAll = () => [nodes['.chkRangeEnabled'], nodes['.selectRangeProgress'], nodes['.selectRangePreload']];
+        const page = new Controller(view); page.onResume();
+        await waitFor(() => page.loaded, details);
+        assert.equal(nodes['.selectRangeProgress'].value, '70'); assert.equal(nodes['.selectRangePreload'].value, '300'); assert.equal(nodes['.chkRangeEnabled'].checked, false);
+        assert(trace.some(row => row.type === 'synthetic-property' && row.name === 'core-idle' && row.value === false), details());
+        const before = clients[0].currentGenerationId, userBefore = await (await fetch(origin.origin + '/Users/anonymous')).json();
+        nodes['.chkRangeEnabled'].checked = true; nodes.form.dispatchEvent(new Event('submit', {cancelable: true}));
+        await waitFor(() => nodes['.rangeSettingsState'].textContent.startsWith('已保存'), details);
+        assert.deepEqual(preferences.get(), {schema: 1, enabled: true, progressPercent: 70, preloadMB: 300});
+        assert.equal(service.rangeStatus().enabled, false); assert.equal(clients[0].currentGenerationId, before, 'Save does not retire the active native generation'); assert.equal(clients.length, 1); assert.equal(clients[0].exited, false);
+        const manager = (await window.require(['playbackManager']))[0];
+        await manager.stop(); record('manual-next-play');
+        const items = await Promise.all(['A', 'B'].map(id => fetch(origin.origin + '/Users/anonymous/Items/' + id).then(response => response.json())));
+        await manager.play({items, startIndex: 0, startPositionTicks: 0, fullscreen: false});
+        assert.equal(service.rangeStatus().enabled, true); assert.equal(service.rangeStatus().maxBytes, 300000000);
+        assert.equal(service.rangeStatus().preloadMB, 300); assert.equal(service.rangeStatus().progressPercent, 70);
+        assert.notEqual(clients.at(-1).currentGenerationId, before);
+        const userAfter = await (await fetch(origin.origin + '/Users/anonymous')).json();
+        assert.equal(userAfter.Configuration.EnableNextEpisodeAutoPlay, userBefore.Configuration.EnableNextEpisodeAutoPlay);
+        assert.deepEqual(fs.readdirSync(path.join(root, 'config')), ['playback-range.json']);
+        assert(trace.some(row => row.type === 'module-loaded' && row.member === 'electronapp/www/modules/viewmanager/baseview.js'));
+        page.onPause(); page.destroy(); return;
+    }
+    if (holding) {
+        await waitFor(() => !!origin.held, details);
+        assert.equal(service.rangeStatus().diskBytes, 8, 'the preceding block commits before a held partial second block');
+        if (scenario === 'hold-replace') {
+            await window.prefixAction('replace');
+            await waitFor(() => service.rangeStatus().next.state === 'ready' && origin.held.response.destroyed, details);
+            assert.equal(service.rangeStatus().diskBytes, 40);
+            const closed = trace.find(row => row.type === 'origin-client-closed' && row.requestId === origin.held.requestId);
+            assert(trace.some(row => row.type === 'origin-client-open' && row.item === 'C' && row.seq > closed.seq), details());
+        } else if (scenario === 'hold-preempt') {
+            const a = trace.find(row => row.type === 'load' && row.item === 'A');
+            const response = await fetch(a.source, {headers: {Range: 'bytes=16-23'}}); assert.equal(await response.text(), 'A'.repeat(8));
+            await waitFor(() => origin.held.response.destroyed, details);
+            const closed = trace.find(row => row.type === 'origin-client-closed' && row.requestId === origin.held.requestId);
+            assert(trace.some(row => row.type === 'origin-client-open' && row.item === 'A' && row.seq > closed.seq), details());
+            await window.prefixAction('cancel');
+        } else if (scenario === 'hold-exit') await service.destroy();
+        else await window.prefixAction('cancel');
+        await waitFor(() => origin.held.response.destroyed, details);
+        assert.equal(origin.releaseHeld(), 0);
+        assert(trace.filter(row => row.type === 'origin-client-open' && row.item !== 'A').every(row => row.backgroundActive <= 1), details());
+        assert.equal(trace.filter(row => row.type === 'load').length, 1);
+        assert(!trace.some(row => row.type === 'manager-next-track'), details());
+        return;
+    }
+    if (scenario === 'unsupported') {
+        await waitFor(() => trace.some(row => row.type === 'preload-result' && row.state === 'unavailable'), details);
+        assert(trace.find(row => row.type === 'load' && row.item === 'A').source.startsWith(origin.origin + '/Videos/A/'));
+        assert.equal(service.rangeStatus().current.state, 'original'); assert.equal(service.rangeStatus().diskBytes, 0);
+        assert(!trace.some(row => row.type === 'origin-media' && row.item === 'B'), details());
+        return;
+    }
+    if (scenario === 'autoplay-off') {
+        await waitFor(() => trace.some(row => row.type === 'synthetic-property' && row.name === 'eof-reached'), details);
+        await new Promise(resolve => setImmediate(resolve));
+        assert(!trace.some(row => row.type === 'preload-result'), details());
+        assert.equal(trace.filter(row => row.type === 'load').length, 1);
+        assert(!trace.some(row => row.type === 'manager-next-track'), details());
+        return;
+    }
+    if (!['natural', 'explicit-queue-autoplay-off'].includes(scenario)) {
         await waitFor(() => trace.some(row => row.type === 'preload-result' && row.state === 'ready'), details);
         assert.equal(service.rangeStatus().diskBytes, 40);
         if (scenario === 'remove-candidate') {
@@ -133,4 +217,4 @@ async function automaticCase(t, scenario) {
     assert(fresh.length > 0 && fresh.every(row => row.start === 0 && row.end === 0), details());
     assert(service.rangeStatus().diskBytes <= 100000000);
 }
-for (const scenario of ['natural', 'remove-candidate', 'app-exit-before-next']) test('real Alameda automatic next-prefix with synthetic helper/document: ' + scenario, {timeout: 8000}, t => automaticCase(t, scenario));
+for (const scenario of ['natural', 'remove-candidate', 'app-exit-before-next', 'hold-cancel', 'hold-preempt', 'hold-replace', 'hold-exit', 'unsupported', 'autoplay-off', 'explicit-queue-autoplay-off', 'settings-next-play']) test('real Alameda automatic next-prefix with synthetic helper/document: ' + scenario, {timeout: 8000}, t => automaticCase(t, scenario));

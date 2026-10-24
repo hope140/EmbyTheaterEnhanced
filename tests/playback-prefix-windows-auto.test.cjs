@@ -209,3 +209,40 @@ test('prepare diagnostic preserves exact fixed reasons but removes arbitrary exc
     const diagnostic = tool.prepareFailure({message: canary, stack: canary, prepareStage: canary, code: canary});
     assert.equal(diagnostic.code, 'prepare-unexpected-error'); assert(!JSON.stringify(diagnostic).includes(canary));
 });
+
+test('matrix entry uses original user actions and real request-close observation, with no direct preload/tick/EOF driver', () => {
+    assert.deepEqual(tool.MATRIX_PHASES, ['matrix-cancel', 'matrix-preempt', 'matrix-replace', 'matrix-exit', 'matrix-unsupported']);
+    assert.deepEqual(tool.argumentsOf(['run-matrix', '--plan=a', '--execute-native-matrix']).values, {plan: 'a', 'execute-native-matrix': true});
+    assert.throws(() => tool.argumentsOf(['run-matrix', '--plan=a']));
+    const body = tool.matrixCase.toString();
+    for (const forbidden of [/\.preload\s*\(/, /\.tick\s*\(/, /\.nextTrack\s*\(/, /_onStopped\s*\(/]) assert.doesNotMatch(body, forbidden);
+    assert.match(body, /state.maxBytes === 300000000/); assert.match(body, /origin-client-closed/);
+    const source = fs.readFileSync(path.join(__dirname, '../tools/playback-prefix-windows-auto.cjs'), 'utf8');
+    assert.match(source, /writeNew\(path.join\(plan.out, phase \+ '\.json'\)/);
+    assert.match(source, /preferences\.runtimeConfig\(\)/); assert.match(source, /if \(phase !== 'entry'\)/);
+});
+for (const phase of ['matrix-cancel', 'matrix-preempt', 'matrix-replace', 'matrix-exit']) test('matrix orchestration validates lifecycle with explicit synthetic event fixture: ' + phase, async () => {
+    const trace = [{seq: 0, type: 'load', item: 'A', generation: 1, direct: false},
+        {seq: 1, type: 'native-property', generation: 1, name: 'time-pos', value: 11.3},
+        {seq: 2, type: 'origin-client-open', clientRequest: 11, item: 'B', start: 262144, end: 524287, backgroundActive: 1},
+        {seq: 3, type: 'matrix-held', requestId: 1, start: 262144, end: 524287}];
+    const state = {kind: 'next-prefix', maxBytes: 300000000, diskBytes: 262144, next: {state: 'warming', bytes: 262144}};
+    const record = (type, data = {}) => trace.push({seq: trace.length, type, ...data});
+    const origin = {held: {response: {destroyed: false}}, releaseHeld: () => 0};
+    const close = () => {origin.held.response.destroyed = true; record('origin-client-closed', {requestId: 1, clientRequest: 11});};
+    let position = 11.4;
+    const service = {rangeStatus() {if (phase === 'matrix-preempt') record('native-property', {generation: 1, name: 'time-pos', value: position += 0.2}); return state;},
+        async destroy() {close(); state.diskBytes = 0;}};
+    if (phase === 'matrix-preempt') {close(); record('origin-client-open', {item: 'A'});}
+    const checks = await tool.matrixCase({phase, service, origin, trace, record, fatal: () => false, client: () => ({getProperty: async () => 1048576}), action: async operation => {
+        if (operation === 'pause') record('native-property', {generation: 1, name: 'pause', value: true});
+        if (operation === 'cancel') {if (!origin.held.response.destroyed) close(); state.next.state = 'idle';}
+        if (operation === 'replace') {close(); record('origin-client-open', {item: 'C', backgroundActive: 1}); record('origin-media', {item: 'C'}); state.next = {state: 'ready', bytes: tool.FIXTURE_SIZES[1]}; state.diskBytes = tool.FIXTURE_SIZES[1];}
+    }});
+    assert.equal(checks.defaultPreloadMB, 300); assert.equal(checks.heldRequestClosed, true); assert.equal(checks.lateBytes, 0); assert.equal(checks.noBLoad, true);
+    assert.equal(checks.foregroundPreempted, phase === 'matrix-preempt'); assert.equal(checks.candidateReplaced, phase === 'matrix-replace');
+});
+test('matrix rejects a held prefix without the real-progress threshold in its synthetic validator fixture', async () => {
+    await assert.rejects(tool.matrixCase({phase: 'matrix-cancel', service: {rangeStatus: () => ({kind: 'next-prefix', maxBytes: 300000000, diskBytes: 0})}, origin: {held: {}},
+        trace: [{seq: 0, type: 'load', item: 'A', generation: 1}, {seq: 1, type: 'matrix-held'}], record() {}, fatal: () => false}), /matrix-real-threshold-missing/);
+});

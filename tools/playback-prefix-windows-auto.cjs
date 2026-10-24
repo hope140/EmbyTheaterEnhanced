@@ -9,6 +9,7 @@ const {pathToFileURL} = require('node:url');
 const TOOLS_COMMIT = 'c9cd9bacf81445c9c10befd121951b1c63c86faa';
 const FIXTURE_SIZES = Object.freeze([33182440, 104194304]);
 const OWNER = 'ETE next-prefix automatic-chain experiment v1\n';
+const MATRIX_PHASES = Object.freeze(['matrix-cancel', 'matrix-preempt', 'matrix-replace', 'matrix-exit', 'matrix-unsupported']);
 const CONFIG = Object.freeze({kind: 'next-prefix', progressPercent: 70, preloadMB: 100, timeoutMs: 30000});
 const LOADER = Object.freeze({schemaVersion: 1, component: 'Electron', version: '44.4.2', platform: 'win32', arch: 'x64',
     archiveSha256: '6aae435b6cd5c0eedf9fd38824bae4045ffdaecd029f0b8c8328bac3f5b71f03', sourcePath: 'x64/electron/vulkan-1.dll',
@@ -246,13 +247,13 @@ async function rendererBoot(input) {
     const get = async relative => {const r = await fetch(url(relative), {redirect: 'error'}); if (!r.ok) throw Error('fixture-api-failed'); return r.json();};
     const api = {serverAddress: () => input.origin, serverId: () => 'prefix-server', getCurrentUserId: () => 'anonymous', deviceId: () => 'prefix-device', accessToken: () => '',
         getUrl: url, getCurrentUser: () => get('Users/anonymous'), getItem: (_user, id) => get('Users/anonymous/Items/' + id),
-        getPlaybackInfo: id => get('Items/' + id + '/PlaybackInfo'), getEndpointInfo: () => Promise.resolve({IsLocal: true, IsInNetwork: true}),
+        getPlaybackInfo: id => get('Items/' + id + '/PlaybackInfo'), getEpisodes: series => get('Shows/' + series + '/Episodes'), getEndpointInfo: () => Promise.resolve({IsLocal: true, IsInNetwork: true}),
         getSavedEndpointInfo: () => ({IsLocal: true, IsInNetwork: true}), isMinServerVersion: () => false,
         setAuthorizationInfoIntoRequest: () => {}, stopActiveEncodings: () => Promise.resolve(),
         reportPlaybackStart: info => (report('server-report', {method: 'start', item: info.ItemId}), Promise.resolve()),
         reportPlaybackProgress: info => (report('server-report', {method: 'progress', item: info.ItemId}), Promise.resolve()),
         reportPlaybackStopped: info => (report('server-report', {method: 'stop', item: info.ItemId}), Promise.resolve())};
-    const appSettings = {get: key => key === 'mpv-volume' ? '0' : null, set: () => {}, maxStreamingBitrate: () => 200000000, enableAutomaticBitrateDetection: () => false};
+    const appSettings = {get: key => key === 'mpv-volume' ? '0' : key === 'mpv-demuxermaxbytes' && input.scenario === 'matrix-preempt' ? '1048576' : null, set: () => {}, maxStreamingBitrate: () => 200000000, enableAutomaticBitrateDetection: () => false};
     const plugins = {ofType: type => registered.filter(plugin => plugin.type === type), mapPath: (_plugin, file) => file};
     stubs[aliases.appSettings] = {default: appSettings}; stubs[aliases.pluginManager] = {default: plugins};
     stubs[aliases.userSettings] = {default: {getSubtitleAppearanceSettings: () => ({}), enableCinemaMode: () => false, skipForwardLength: () => 30, skipBackLength: () => 10}};
@@ -276,8 +277,15 @@ async function rendererBoot(input) {
         const originalNextTrack = manager.nextTrack;
         manager.nextTrack = function () {report('manager-next-track'); return originalNextTrack.apply(this, arguments);};
         registered.push(player); events.trigger(plugins, 'registered', [player]);
-        const items = await Promise.all(['A', 'B'].map(id => api.getItem('anonymous', id)));
+        const items = await Promise.all((input.singleItem ? ['A'] : ['A', 'B']).map(id => api.getItem('anonymous', id)));
         window.prefixStop = async () => {await manager.stop(); await player.destroy();};
+        window.prefixAction = async operation => {
+            report('matrix-action', {operation});
+            if (operation === 'pause') manager.pause();
+            else if (operation === 'cancel') await manager.stop();
+            else if (operation === 'replace') await manager.queueNext({items: [await api.getItem('anonymous', 'C')]});
+            else throw Error('matrix-action-invalid');
+        };
         report('manager-play-invocation');
         await manager.play({items, startIndex: 0, startPositionTicks: 0, fullscreen: false});
         if (manager.getCurrentPlayer() !== player || !player.currentSrc()) throw Error('initial-play-not-established');
@@ -293,8 +301,8 @@ function preload() {
         unlisten: () => {if (listener) ipcRenderer.removeListener('enhanced-native-helper-event', listener); listener = null;}
     });
 }
-async function fixtureServer(plan, record) {
-    const http = require('node:http'), active = new Set(), sockets = new Set();
+async function fixtureServer(plan, record, options = {}) {
+    const http = require('node:http'), active = new Set(), sockets = new Set(); let held = null, sequence = 0;
     function item(id) {return {Id: id, ServerId: 'prefix-server', Name: 'Synthetic ' + id, Type: 'Episode', MediaType: 'Video', SeriesId: 'synthetic-series',
         Path: id + '.avi', RunTimeTicks: id === 'A' ? 160000000 : 80000000, MediaSources: [media(id)]};}
     function media(id) {return {Id: id + '-avi', Container: 'avi', Protocol: 'Http', Path: id + '.avi', RunTimeTicks: id === 'A' ? 160000000 : 80000000, SupportsDirectPlay: false,
@@ -305,25 +313,125 @@ async function fixtureServer(plan, record) {
         const u = new URL(req.url, 'http://127.0.0.1');
         if (req.method !== 'GET' || Object.keys(req.headers).some(key => /authorization|cookie|emby-token/i.test(key)) || u.searchParams.get('api_key')) {res.writeHead(403); res.end(); return;}
         let value;
-        if (u.pathname === '/Users/anonymous') value = {Id: 'anonymous', Configuration: {EnableNextEpisodeAutoPlay: true, ResumeRewindSeconds: 0}};
-        const metadata = /^\/Users\/anonymous\/Items\/([AB])$/.exec(u.pathname), playback = /^\/Items\/([AB])\/PlaybackInfo$/.exec(u.pathname);
+        if (u.pathname === '/Users/anonymous') value = {Id: 'anonymous', Configuration: {EnableNextEpisodeAutoPlay: plan.autoPlay !== false, ResumeRewindSeconds: 0}};
+        const metadata = /^\/Users\/anonymous\/Items\/([ABC])$/.exec(u.pathname), playback = /^\/Items\/([ABC])\/PlaybackInfo$/.exec(u.pathname);
         if (metadata) value = item(metadata[1]);
+        if (u.pathname === '/Shows/synthetic-series/Episodes') value = {Items: ['A', 'B', 'C'].map(item)};
         if (playback) value = {MediaSources: [media(playback[1])], PlaySessionId: 'synthetic-session-' + playback[1]};
         res.setHeader('Access-Control-Allow-Origin', '*');
         if (value) {res.writeHead(200, {'Content-Type': 'application/json'}); res.end(JSON.stringify(value)); return;}
-        const match = /^\/Videos\/([AB])\/stream\.avi$/.exec(u.pathname); if (!match) {res.writeHead(404); res.end(); return;}
+        const match = /^\/Videos\/([ABC])\/stream\.avi$/.exec(u.pathname); if (!match) {res.writeHead(404); res.end(); return;}
         const proof = plan.fixtures[match[1] === 'A' ? 0 : 1], range = /^bytes=(\d+)-(\d*)$/.exec(req.headers.range || '');
         if (req.headers.range && !range) {res.writeHead(416); res.end(); return;}
         const start = range ? Number(range[1]) : 0, end = range && range[2] ? Number(range[2]) : proof.size - 1;
         if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || start > end || end >= proof.size) {res.writeHead(416); res.end(); return;}
-        record('origin-media', {item: match[1], start, end});
-        res.writeHead(range ? 206 : 200, {'Content-Type': 'video/x-msvideo', 'Content-Length': end - start + 1, ETag: proof.etag,
+        const requestId = ++sequence; record('origin-media', {requestId, item: match[1], start, end});
+        res.setHeader('X-Fixture-Request', String(requestId));
+        res.once('close', () => record('origin-closed', {requestId, item: match[1], start, end, complete: res.writableEnded}));
+        if (options.unsupported && match[1] === 'A' && start === 0 && end === 0) {
+            record('origin-ineligible', {requestId, status: 206, weakETag: true});
+        }
+        res.writeHead(range ? 206 : 200, {'Content-Type': 'video/x-msvideo', 'Content-Length': end - start + 1, ETag: options.unsupported && match[1] === 'A' ? 'W/' + proof.etag : proof.etag,
             'Accept-Ranges': 'bytes', ...(range ? {'Content-Range': `bytes ${start}-${end}/${proof.size}`} : {})});
+        if (options.holdNext && match[1] === 'B' && start === (options.holdStart ?? 262144) && end > start && !held) {
+            held = {requestId, response: res}; const byte = Buffer.alloc(1), fd = fs.openSync(path.join(plan.out, proof.file), 'r');
+            try {fs.readSync(fd, byte, 0, 1, start);} finally {fs.closeSync(fd);} res.write(byte);
+            record('matrix-held', {requestId, item: 'B', start, end}); return;
+        }
         const stream = fs.createReadStream(path.join(plan.out, proof.file), {start, end}); stream.on('error', () => res.destroy()); res.once('close', () => stream.destroy()); stream.pipe(res);
     });
     server.on('connection', socket => {sockets.add(socket); socket.once('close', () => sockets.delete(socket));});
     await new Promise((resolve, reject) => {server.once('error', reject); server.listen(0, '127.0.0.1', resolve);});
-    return {origin: 'http://127.0.0.1:' + server.address().port, active, async close() {const done = new Promise(resolve => server.close(resolve)); for (const socket of sockets) socket.destroy(); await done; need(active.size === 0, 'live-origin-response');}};
+    return {origin: 'http://127.0.0.1:' + server.address().port, active, get held() {return held;}, releaseHeld() {const bytes = held && !held.response.destroyed ? 1 : 0; if (bytes) held.response.write(Buffer.from([0])); record('matrix-late-release', {bytes}); return bytes;}, async close() {const done = new Promise(resolve => server.close(resolve)); for (const socket of sockets) socket.destroy(); await done; need(active.size === 0, 'live-origin-response');}};
+}
+const MATRIX_CODES = Object.freeze(['matrix-budget-contract', 'matrix-A-load-missing', 'matrix-ineligible-deadline',
+    'matrix-ineligible-fallback-missing', 'matrix-held-deadline', 'matrix-real-threshold-missing', 'matrix-preempt-deadline',
+    'matrix-preempt-close-order', 'matrix-native-cache-readback', 'matrix-A-progress-stalled', 'matrix-pause-unobserved', 'matrix-replace-deadline',
+    'matrix-replace-close-order', 'matrix-replace-shared-budget', 'matrix-source-close-missing', 'matrix-late-byte-accepted',
+    'matrix-client-close-missing', 'matrix-held-not-active', 'matrix-background-concurrency', 'matrix-unrequested-next', 'matrix-cancel-state-restored', 'matrix-action-invalid']);
+function observeOriginRequests(origin, record) {
+    const http = require('node:http'), original = http.request, background = new Set(); let sequence = 0;
+    function observed(...args) {
+        const request = original.apply(this, args), url = args[0];
+        const item = url && url.origin === origin && /^\/Videos\/([ABC])\/stream\.avi$/.exec(url.pathname);
+        const range = /^bytes=(\d+)-(\d+)$/.exec(args[1]?.headers?.Range || '');
+        if (item && range) {
+            const data = {clientRequest: ++sequence, item: item[1], start: +range[1], end: +range[2]}; let requestId = null;
+            if (item[1] !== 'A') background.add(request);
+            record('origin-client-open', {...data, backgroundActive: background.size});
+            request.once('response', response => {const n = Number(response.headers['x-fixture-request']); if (Number.isSafeInteger(n) && n > 0) requestId = n;});
+            request.once('close', () => {background.delete(request); record('origin-client-closed', {...data, requestId, backgroundActive: background.size});});
+        }
+        return request;
+    }
+    http.request = observed;
+    return () => {if (http.request === observed) http.request = original;};
+}
+async function matrixCase({phase, service, origin, trace, record, action, client, fatal}) {
+    const deadline = Date.now() + 35000; let peak = 0;
+    async function until(predicate, code) {
+        while (Date.now() < deadline) {
+            if (fatal()) throw Error('renderer-chain-failed');
+            const state = service.rangeStatus(); peak = Math.max(peak, state.diskBytes || 0);
+            need(state.kind === 'next-prefix' && state.maxBytes === 300000000 && state.diskBytes <= 300000000, 'matrix-budget-contract');
+            if (predicate()) return;
+            await new Promise(resolve => setTimeout(resolve, 20));
+        }
+        throw Error(code);
+    }
+    const a = trace.find(row => row.type === 'load' && row.item === 'A'); need(a, 'matrix-A-load-missing');
+    const threshold = () => trace.find(row => row.type === 'native-property' && row.generation === a.generation && row.name === 'time-pos' && row.value >= 11.2);
+    if (phase === 'matrix-unsupported') {
+        await until(() => threshold() && trace.some(row => row.type === 'range-preload-result' && row.state === 'unavailable'), 'matrix-ineligible-deadline');
+        const video = await client().getProperty('video-out-params', 2000), vo = await client().getProperty('current-vo', 2000);
+        need(a.direct && video?.w === 320 && video?.h === 180 && vo === 'gpu-next' && trace.some(row => row.type === 'origin-ineligible' && row.weakETag === true) &&
+            !trace.some(row => row.type === 'origin-media' && row.item === 'B') && service.rangeStatus().current.state === 'original' && peak === 0, 'matrix-ineligible-fallback-missing');
+        await action('cancel');
+        return {defaultPreloadMB: 300, unsupportedOriginalSource: true, weakEtagDeclined: true, originalSourceDecoded: true, nextUnavailable: true, diskPeak: peak, noBLoad: true};
+    }
+    await until(() => !!origin.held, 'matrix-held-deadline');
+    const held = trace.find(row => row.type === 'matrix-held'); need(threshold() && held && threshold().seq < held.seq, 'matrix-real-threshold-missing');
+    const heldClient = trace.filter(row => row.type === 'origin-client-open' && row.item === 'B' && row.start === held.start && row.end === held.end && row.seq < held.seq).at(-1);
+    need(heldClient, 'matrix-client-close-missing');
+    const isHeldClose = row => row.type === 'origin-client-closed' && row.clientRequest === heldClient.clientRequest;
+    const before = service.rangeStatus().diskBytes;
+    if (phase === 'matrix-preempt') {
+        need(Number(await client().getProperty('demuxer-max-bytes', 2000)) === 1048576, 'matrix-native-cache-readback');
+        await until(() => trace.some(isHeldClose) &&
+            trace.some(row => row.type === 'origin-client-open' && row.item === 'A' && row.seq > held.seq), 'matrix-preempt-deadline');
+        const closed = trace.find(isHeldClose);
+        need(closed.seq > held.seq, 'matrix-held-not-active');
+        need(trace.some(row => row.type === 'origin-client-open' && row.item === 'A' && row.seq > closed.seq), 'matrix-preempt-close-order');
+        const position = trace.filter(row => row.type === 'native-property' && row.generation === a.generation && row.name === 'time-pos').at(-1)?.value;
+        await until(() => trace.some(row => row.type === 'native-property' && row.generation === a.generation && row.name === 'time-pos' && row.value > position), 'matrix-A-progress-stalled');
+        await action('cancel');
+    } else {
+        await action('pause');
+        await until(() => trace.some(row => row.type === 'native-property' && row.generation === a.generation && row.name === 'pause' && row.value === true), 'matrix-pause-unobserved');
+        need(!origin.held.response.destroyed && !trace.some(isHeldClose), 'matrix-held-not-active');
+        if (phase === 'matrix-replace') {
+            await action('replace');
+            await until(() => trace.some(isHeldClose) &&
+                trace.some(row => row.type === 'origin-media' && row.item === 'C') && service.rangeStatus().next.state === 'ready', 'matrix-replace-deadline');
+            const closed = trace.find(isHeldClose);
+            need(trace.some(row => row.type === 'origin-client-open' && row.item === 'C' && row.seq > closed.seq), 'matrix-replace-close-order');
+            need(service.rangeStatus().next.bytes === FIXTURE_SIZES[1] && service.rangeStatus().diskBytes === FIXTURE_SIZES[1], 'matrix-replace-shared-budget');
+        } else if (phase === 'matrix-exit') {record('matrix-exit-request'); await service.destroy();}
+        else await action('cancel');
+    }
+    // Source close is separately observed; the physical client close precedes
+    // foreground dispatch. Attempting a late server byte must write nothing.
+    if (phase !== 'matrix-exit') await until(() => origin.held.response.destroyed, 'matrix-source-close-missing');
+    else {while (!origin.held.response.destroyed && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 20));}
+    need(origin.held.response.destroyed && origin.releaseHeld() === 0, 'matrix-late-byte-accepted');
+    need(trace.some(isHeldClose), 'matrix-client-close-missing');
+    need(!trace.some(row => row.type === 'load' && row.item !== 'A') && !trace.some(row => row.type === 'manager-next-track'), 'matrix-unrequested-next');
+    if (phase !== 'matrix-replace' && phase !== 'matrix-exit') need(service.rangeStatus().next.state === 'idle', 'matrix-cancel-state-restored');
+    const peakBackgroundRequests = Math.max(0, ...trace.filter(row => row.type === 'origin-client-open' && row.item !== 'A').map(row => row.backgroundActive));
+    need(peakBackgroundRequests <= 1, 'matrix-background-concurrency');
+    record('matrix-checked', {diskBytes: service.rangeStatus().diskBytes});
+    return {defaultPreloadMB: 300, actualThreshold: true, foregroundCacheBytes: phase === 'matrix-preempt' ? 1048576 : 0, peakBackgroundRequests, candidateBytes: phase === 'matrix-replace' ? service.rangeStatus().next.bytes : 0, heldRequestClosed: true, lateBytes: 0, beforeActionBytes: before, diskPeak: peak,
+        foregroundPreempted: phase === 'matrix-preempt', candidateReplaced: phase === 'matrix-replace', exitDuringUnplayedNext: phase === 'matrix-exit', noBLoad: true};
 }
 async function electronMain(file, phase) {
     const {app, BrowserWindow, ipcMain} = require('electron');
@@ -336,10 +444,11 @@ async function electronMain(file, phase) {
     Object.assign(process.env, environment);
     app.setPath('appData', path.join(bootstrap.out, 'profile')); app.setPath('userData', path.join(bootstrap.out, 'profile/electron'));
     app.setPath('sessionData', path.join(bootstrap.out, 'profile/electron')); app.setPath('temp', path.join(bootstrap.out, 'tmp')); app.setAppLogsPath(path.join(bootstrap.out, 'profile/logs'));
-    const plan = readPlan(file), trace = [], windows = [], clients = [], contexts = new Map(); let service, origin, visibilityTimer, fatal, outcome;
+    const plan = readPlan(file), trace = [], windows = [], clients = [], contexts = new Map(); let service, origin, visibilityTimer, fatal, outcome, restoreRequests; let prefixRoot = path.join(plan.out, 'profile/prefix');
+    const matrix = MATRIX_PHASES.includes(phase);
     const record = (type, data = {}) => {const row = {seq: trace.length, type, ...data}; trace.push(row); fs.appendFileSync(path.join(plan.out, phase + '.trace.ndjson'), JSON.stringify(row) + '\n');};
     const checkpoint = () => fs.writeFileSync(path.join(plan.out, phase + '.running.json'), JSON.stringify({pid: process.pid, phase, helpers: clients.map(client => ({pid: client.child?.pid, exited: client.exited})), last: trace.at(-1)?.type}));
-    need(['entry', 'native'].includes(phase), 'invalid-electron-phase');
+    need(['entry', 'native', ...MATRIX_PHASES].includes(phase), 'invalid-electron-phase');
     for (const name of ['trace.ndjson', 'json', 'running.json']) need(!fs.existsSync(path.join(plan.out, phase + '.' + name)), 'fresh-phase-required');
     record('profile-isolated'); checkpoint(); await app.whenReady(); record('app-ready');
     if (phase === 'entry') {writeNew(path.join(plan.out, 'entry.json'), {status: 'passed', pid: process.pid, phase, windows: BrowserWindow.getAllWindows().length, helpers: 0, derivedProof: plan.derivedProof}); app.exit(0); return;}
@@ -353,7 +462,7 @@ async function electronMain(file, phase) {
         }
         const mainWindow = new HiddenWindow({show: false, focusable: false, skipTaskbar: true, width: 320, height: 180,
             webPreferences: {sandbox: false, nodeIntegration: false, contextIsolation: true, preload: plan.driver, additionalArguments: ['--prefix-auto-preload']}});
-        const html = path.join(plan.out, 'renderer.html'); fs.writeFileSync(html, '<!doctype html><meta charset="utf-8"><base href="' + pathToFileURL(path.join(plan.derived, 'electronapp/www')).href + '/"><title>Owned prefix fixture</title><body></body>', {flag: 'wx'});
+        const html = path.join(plan.out, phase + '-renderer.html'); fs.writeFileSync(html, '<!doctype html><meta charset="utf-8"><base href="' + pathToFileURL(path.join(plan.derived, 'electronapp/www')).href + '/"><title>Owned prefix fixture</title><body></body>', {flag: 'wx'});
         const documentUrl = pathToFileURL(html).href;
         mainWindow.webContents.on('will-navigate', event => event.preventDefault());
         const trusted = event => event.sender === mainWindow.webContents && event.senderFrame === mainWindow.webContents.mainFrame && event.senderFrame.url === documentUrl;
@@ -363,16 +472,24 @@ async function electronMain(file, phase) {
             async start() {const pending = super.start(); this.smokeClosePromise = this.child ? new Promise(resolve => this.child.once('close', resolve)) : Promise.resolve(); checkpoint(); const result = await pending; record('helper-ready'); checkpoint(); return result;}
             load(args) {record('load', {item: contexts.get(this.currentGenerationId), generation: this.currentGenerationId, direct: args[1].startsWith(origin.origin + '/Videos/')}); return super.load(args);}
         }
-        origin = await fixtureServer(plan, record);
+        origin = await fixtureServer(plan, record, {holdNext: matrix && phase !== 'matrix-unsupported', unsupported: phase === 'matrix-unsupported'});
+        if (matrix) restoreRequests = observeOriginRequests(origin.origin, record);
+        let rangeConfig = {...CONFIG, root: prefixRoot, onPrefixRead: row => record('prefix-read', row)};
+        if (matrix) {
+            const preferences = require(path.join(plan.source, 'src/electronapp/enhanced/playback-range-user-settings.js')).createStore({profileRoot: path.join(plan.out, 'profile')});
+            preferences.save({...preferences.get(), enabled: true});
+            rangeConfig = {...preferences.runtimeConfig(), onPrefixRead: row => record('prefix-read', row)}; prefixRoot = rangeConfig.root;
+            record('matrix-policy', {progressPercent: rangeConfig.progressPercent, preloadMB: rangeConfig.preloadMB, maxBytes: rangeConfig.prefetchBytes});
+        }
         service = require(path.join(plan.derived, 'electronapp/native-helper/service.js')).createService({electron: {BrowserWindow: HiddenWindow}, NativeHelperClient: TracedClient,
             getMainWindow: () => mainWindow, getWebContents: () => mainWindow.webContents, runtimeRoot: plan.derived,
-            rangeCache: {...CONFIG, root: path.join(plan.out, 'profile/prefix'), onPrefixRead: row => record('prefix-read', row)}});
+            rangeCache: rangeConfig});
         ipcMain.on('prefix-source', (event, member) => {
             if (!trusted(event) || typeof member !== 'string' || !/^(?:www\/modules|plugins|enhanced|resolvers|native-helper)\/[A-Za-z0-9_./-]+\.js$/.test(member) || member.split('/').some(part => part === '..' || part === '.')) {event.returnValue = null; return;}
             try {event.returnValue = fs.readFileSync(physical(path.join(plan.derived, 'electronapp', member)), 'utf8');} catch (_) {event.returnValue = null;}
         });
         ipcMain.on('prefix-report', (event, row) => {
-            if (!trusted(event) || !row || !['presentation-stub', 'module-loaded', 'server-report', 'manager-play-invocation', 'manager-next-track', 'initial-play-resolved', 'renderer-failure'].includes(row.type)) return;
+            if (!trusted(event) || !row || !['presentation-stub', 'module-loaded', 'server-report', 'manager-play-invocation', 'manager-next-track', 'initial-play-resolved', 'matrix-action', 'renderer-failure'].includes(row.type)) return;
             record(row.type, Object.fromEntries(Object.entries(row).filter(([key]) => ['operation', 'member', 'method', 'item', 'code', 'detail'].includes(key))));
             if (row.type === 'renderer-failure') fatal = Error('renderer-chain-failed');
         });
@@ -380,15 +497,21 @@ async function electronMain(file, phase) {
             need(trusted(event), 'untrusted-renderer');
             if (request.operation === 'range-context' && request.payload?.context) contexts.set(request.payload.generationId, request.payload.context.itemId);
             if (request.operation === 'range-preload') record('range-preload', {diskBefore: service.rangeStatus().diskBytes});
-            return service.call(request.operation, request.payload, request.endpointId);
+            const result = await service.call(request.operation, request.payload, request.endpointId);
+            if (request.operation === 'range-preload') record('range-preload-result', {state: result.value?.state, bytes: result.value?.bytes});
+            return result;
         });
         ipcMain.on('enhanced-native-helper-notify', (event, request) => {if (trusted(event)) service.notify(request.operation, request.payload, request.endpointId);});
         ipcMain.handle('enhanced-strm-config-get', event => {need(trusted(event), 'untrusted-renderer'); return {version: 1, enabled: false, cd2: {}, rules: []};});
         visibilityTimer = setInterval(() => {for (const window of windows) if (!window.isDestroyed() && window.isVisible()) {window.hide(); fatal = Error('unexpected-visible-window');}}, 25);
         await mainWindow.loadFile(html);
         const windowId = require(path.join(plan.derived, 'electronapp/native-helper/service.js')).decimalWindowHandle(mainWindow);
-        await mainWindow.webContents.executeJavaScript('(' + rendererBoot.toString() + ')(' + JSON.stringify({origin: origin.origin, windowId, moduleBaseUrl: pathToFileURL(path.join(plan.derived, 'electronapp/www')).href + '/'}) + ')');
-        const deadline = Date.now() + 95000; let checks;
+        await mainWindow.webContents.executeJavaScript('(' + rendererBoot.toString() + ')(' + JSON.stringify({origin: origin.origin, windowId, scenario: phase, moduleBaseUrl: pathToFileURL(path.join(plan.derived, 'electronapp/www')).href + '/'}) + ')');
+        let checks;
+        if (matrix) checks = await matrixCase({phase, service, origin, trace, record,
+            action: operation => mainWindow.webContents.executeJavaScript('window.prefixAction(' + JSON.stringify(operation) + ')'), client: () => clients.at(-1), fatal: () => fatal});
+        else {
+        const deadline = Date.now() + 95000;
         while (Date.now() < deadline) {
             if (fatal) throw fatal;
             const status = service.rangeStatus();
@@ -405,7 +528,8 @@ async function electronMain(file, phase) {
             await new Promise(resolve => setTimeout(resolve, 25));
         }
         need(checks, 'automatic-native-deadline');
-        await mainWindow.webContents.executeJavaScript('window.prefixStop()');
+        }
+        if (phase !== 'matrix-exit') await mainWindow.webContents.executeJavaScript('window.prefixStop()');
         outcome = {status: 'passed', checks};
     } catch (error) {outcome = {status: 'failed', code: String(error.message).slice(0, 200)};}
     finally {
@@ -417,19 +541,20 @@ async function electronMain(file, phase) {
             client.safeDiagnostics = await diagnostics.capture(client);
             need(client.exited && diagnostics.normalExit(client.safeDiagnostics), 'helper-normal-exit-unobserved');
         } catch (_) {cleanup.push('helper-exit-UNCERTAIN');}
+        if (restoreRequests) restoreRequests();
         if (origin) try {await origin.close();} catch (_) {cleanup.push('origin-close-failed');}
-        try {const root = path.join(plan.out, 'profile/prefix'); if (fs.existsSync(root)) need(!fs.readdirSync(root).some(name => /(?:\.bytes|\.pending)$/.test(name) || name === 'index.json' || name === 'lock'), 'prefix-payload-survived-exit');}
+        try {const root = prefixRoot; if (fs.existsSync(root)) need(!fs.readdirSync(root).some(name => /(?:\.bytes|\.pending)$/.test(name) || name === 'index.json' || name === 'lock'), 'prefix-payload-survived-exit');}
         catch (_) {cleanup.push('temporary-prefix-cleanup-failed');}
         for (const window of windows) if (!window.isDestroyed()) window.destroy();
         if (cleanup.length) outcome = {...outcome, status: 'failed', cleanup};
-        checkpoint(); writeNew(path.join(plan.out, 'native.json'), {...outcome, phase, pid: process.pid, derivedProof: plan.derivedProof, boundaries: BOUNDARIES,
+        checkpoint(); writeNew(path.join(plan.out, phase + '.json'), {...outcome, phase, pid: process.pid, derivedProof: plan.derivedProof, boundaries: BOUNDARIES,
             helpers: clients.map(client => ({pid: client.child?.pid, exited: client.exited, diagnostics: client.safeDiagnostics || null})), evidence: plan.evidence}); app.exit(outcome.status === 'passed' ? 0 : 1);
     }
 }
 async function coordinate(file, phase, explicit) {
     need(explicit === true && process.platform === 'win32' && process.arch === 'x64', 'explicit-Windows-x64-execution-required');
     const plan = readPlan(file), receiptFile = path.join(plan.out, phase + '-coordinator.json'); need(!fs.existsSync(receiptFile), 'fresh-coordinator-required');
-    if (phase === 'native') {const entry = readJson(path.join(plan.out, 'entry-coordinator.json')), receipt = readJson(path.join(plan.out, 'entry.json'));
+    if (phase !== 'entry') {const entry = readJson(path.join(plan.out, 'entry-coordinator.json')), receipt = readJson(path.join(plan.out, 'entry.json'));
         need(entry.status === 'passed' && entry.exit.code === 0 && !entry.exit.timedOut && receipt.pid === entry.exit.pid && receipt.windows === 0 && receipt.helpers === 0 && JSON.stringify(receipt.derivedProof) === JSON.stringify(plan.derivedProof), 'actual-entry-required');}
     const fd = fs.openSync(path.join(plan.out, phase + '.stdout'), 'wx'); let child, timer, timedOut = false, exit, launchError;
     try {
@@ -442,15 +567,15 @@ async function coordinate(file, phase, explicit) {
         exit = await done; await closed; exit.streamsClosed = true;
         need(!timedOut && !launchError && exit.code === 0 && !exit.signal, 'owned-Electron-exit-failed');
         const receipt = readJson(path.join(plan.out, phase + '.json')); need(receipt.status === 'passed' && receipt.pid === exit.pid && JSON.stringify(receipt.derivedProof) === JSON.stringify(plan.derivedProof), 'phase-receipt-invalid');
-        if (phase === 'native') {const diagnostics = require(path.join(plan.source, 'tools/playback-range-helper-diagnostics.cjs')); need(receipt.helpers?.length > 0 && receipt.helpers.every(helper => helper.exited && diagnostics.normalExit(helper.diagnostics)), 'native-helper-exit-receipt-invalid');}
+        if (phase !== 'entry') {const diagnostics = require(path.join(plan.source, 'tools/playback-range-helper-diagnostics.cjs')); need(receipt.helpers?.length > 0 && receipt.helpers.every(helper => helper.exited && diagnostics.normalExit(helper.diagnostics)), 'native-helper-exit-receipt-invalid');}
         readPlan(file);
         writeNew(receiptFile, {status: 'passed', exit, evidence: plan.evidence});
-    } catch (error) {writeNew(receiptFile, {status: 'failed', exit: exit || null, helperExit: phase === 'native' ? 'UNCERTAIN' : 'NOT_STARTED', code: String(error.message).slice(0, 200)}); throw error;}
+    } catch (error) {writeNew(receiptFile, {status: 'failed', exit: exit || null, helperExit: phase !== 'entry' ? 'UNCERTAIN' : 'NOT_STARTED', code: String(error.message).slice(0, 200)}); throw error;}
     finally {clearTimeout(timer); fs.closeSync(fd);}
 }
 function argumentsOf(argv) {
     const [command, ...rest] = argv, values = {};
-    const allowed = {prepare: ['tools', 'source', 'source-commit', 'runtime', 'zip', 'out'], 'entry-smoke': ['plan', 'execute-electron-entry'], run: ['plan', 'execute-native'], electron: ['plan', 'phase']}[command];
+    const allowed = {prepare: ['tools', 'source', 'source-commit', 'runtime', 'zip', 'out'], 'entry-smoke': ['plan', 'execute-electron-entry'], run: ['plan', 'execute-native'], 'run-matrix': ['plan', 'execute-native-matrix'], electron: ['plan', 'phase']}[command];
     need(allowed, 'invalid-command');
     for (const arg of rest) {const match = /^--([a-z-]+)(?:=(.+))?$/.exec(arg); need(match && allowed.includes(match[1]) && !Object.hasOwn(values, match[1]), 'invalid-argument'); values[match[1]] = match[2] ?? true;}
     need(allowed.every(key => Object.hasOwn(values, key)), 'missing-argument'); return {command, values};
@@ -459,6 +584,7 @@ async function main(argv) {
     const {command, values: a} = argumentsOf(argv);
     if (command === 'prepare') {const plan = prepare({tools: a.tools, source: a.source, sourceCommit: a['source-commit'], runtime: a.runtime, zip: a.zip, out: a.out, report: row => console.log(JSON.stringify(row))}); console.log(JSON.stringify({status: 'prepared-NOT-RUN', plan: path.join(plan.out, 'auto-plan.json'), evidence: plan.evidence}));}
     else if (command === 'entry-smoke') await coordinate(a.plan, 'entry', a['execute-electron-entry']);
+    else if (command === 'run-matrix') {for (const phase of MATRIX_PHASES) await coordinate(a.plan, phase, a['execute-native-matrix']);}
     else if (command === 'run') await coordinate(a.plan, 'native', a['execute-native']);
     else {need(process.versions.electron && process.type === 'browser', 'real-Electron-browser-required'); await electronMain(a.plan, a.phase);}
 }
@@ -469,4 +595,4 @@ else if (require.main === module || process.versions.electron && process.type ==
     process.exitCode = 1;
     if (process.versions.electron && process.type === 'browser') require('electron').app.exit(1);
 });
-module.exports = {TOOLS_COMMIT, CONFIG, LOADER, OVERLAY, BOUNDARIES, cleanEnvironment, overlayRows, verifyDerivedInventory, verifyOverlaySource, argumentsOf, validateTrace, rendererBoot, fixtureServer, automaticFixtures, FIXTURE_SIZES, driverSource, PREPARE_STAGES, PREPARE_CODES, prepareFailure, prepare, readPlan};
+module.exports = {TOOLS_COMMIT, CONFIG, LOADER, OVERLAY, BOUNDARIES, cleanEnvironment, overlayRows, verifyDerivedInventory, verifyOverlaySource, argumentsOf, validateTrace, rendererBoot, fixtureServer, automaticFixtures, FIXTURE_SIZES, MATRIX_PHASES, MATRIX_CODES, observeOriginRequests, matrixCase, driverSource, PREPARE_STAGES, PREPARE_CODES, prepareFailure, prepare, readPlan};
