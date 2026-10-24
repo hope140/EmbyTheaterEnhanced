@@ -15,8 +15,10 @@
 
 ## 独立 Host 退出候选
 
-允许的来源只增加精确候选 `3a02339ab5011f2544df5b24b1da9b22d0df8d4a`。该候选的 selected-methods 真实 Framework 红绿见 run `40117964806` / job `120943146678`：旧代码两个循环前场景需 watchdog，候选四场均正常退出；这不证明完整 Host 残留的唯一根因，也不是安装验收。对应 artifact `12570485777` 的 ZIP SHA256 为 `502d471e21b1b45a858c1c9dafe8b9b5bed60c75a7d2b14275afdc3f535bbf0b`。
+原始基线之外，明确允许旧验证候选 `3a02339ab5011f2544df5b24b1da9b22d0df8d4a` 及当前生成链修复候选 `ca7ae841af8748091580259db1853e3c5e1c471f`；当前构建／安装应选择后者。该候选的 selected-methods 真实 Framework 红绿见 run `40117964806` / job `120943146678`：旧代码两个循环前场景需 watchdog，候选四场均正常退出；这不证明完整 Host 残留的唯一根因，也不是安装验收。对应 artifact `12570485777` 的 ZIP SHA256 为 `502d471e21b1b45a858c1c9dafe8b9b5bed60c75a7d2b14275afdc3f535bbf0b`。
 
-构建选择 `fix/host-electron-exit-v043`，确认 head 为上述 SHA，`release_package=false`、`build_input_benchmark=false`。使用原普通构建门禁重新源码构建 Host、组装并校验测试安装器；不能拿原 v0.4.3 附件替代。构建成功后在本验证分支填写 `sourceCommit`、`buildRunId`、`installerFileName`、artifact ID 及两个摘要，再启用。初始绑定保持 disabled，不触发旧包重复安装。
+构建选择 `fix/host-electron-exit-v043`，确认 head 为 `ca7ae841af8748091580259db1853e3c5e1c471f`，`release_package=false`、`build_input_benchmark=false`。使用原普通构建门禁重新源码构建 Host、组装并校验测试安装器；不能拿原 v0.4.3 附件替代。构建成功后在本验证分支填写 `sourceCommit`、`buildRunId`、`installerFileName`、artifact ID 及两个摘要，再启用。初始绑定保持 disabled，不触发旧包重复安装。
 
-测试附件文件名必须精确匹配 `EmbyTheaterEnhanced-0.4.3-test-3a02339ab501-<run>-<attempt>-win-x64-setup.exe`。测试模式只要求安装器及其 provenance／sha256 三附件，因为非 release 构建不生成发布说明／SHA256SUMS；artifact 摘要、安装器摘要、原 run/source 身份、provenance、安装后完整逐文件载荷和普通启动／退出门禁全部保留，并核对 sha256 伴随文件。原固定 v0.4.3 模式仍要求原五附件。
+当前测试附件文件名必须精确匹配 `EmbyTheaterEnhanced-0.4.3-test-ca7ae841af87-<run>-<attempt>-win-x64-setup.exe`。测试模式只要求安装器及其 provenance／sha256 三附件，因为非 release 构建不生成发布说明／SHA256SUMS；artifact 摘要、安装器摘要、原 run/source 身份、provenance、安装后完整逐文件载荷和普通启动／退出门禁全部保留，并核对 sha256 伴随文件。原固定 v0.4.3 模式仍要求原五附件。
+
+生成链修复只同步旧patch的Program部分与来源绑定，Program源码SHA256仍为`df2b936ec854f72009dd78f44295dc0ad6988ad22252a435a818eab06d8d3ad4`。固定官方55文件经patch与替换两路径得到完全相同57文件，真实identity门禁及46编译输入验证通过；旧patch反例仍被拒绝。编译前新增强制source-chain阶段，不复用旧Host或回执。当前检查器绑定保持disabled，等待该新SHA的成功包。

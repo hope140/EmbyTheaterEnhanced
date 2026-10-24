@@ -21,6 +21,7 @@ $guard=@($ast.FindAll({param($n)$n -is [Management.Automation.Language.CommandAs
 $branch=@($ast.FindAll({param($n)$n -is [Management.Automation.Language.IfStatementAst] -and $n.Extent.Text.StartsWith('if($testPackage)')},$true))
 if($guard.Count -ne 1 -or $branch.Count -ne 1){throw 'BINDING_GUARD_MISSING'}
 $cases=@(
+ @('ca7ae841af8748091580259db1853e3c5e1c471f','123','EmbyTheaterEnhanced-0.4.3-test-ca7ae841af87-123-1-win-x64-setup.exe',$true),
  @('3a02339ab5011f2544df5b24b1da9b22d0df8d4a','123','EmbyTheaterEnhanced-0.4.3-test-3a02339ab501-123-1-win-x64-setup.exe',$true),
  @('3a02339ab5011f2544df5b24b1da9b22d0df8d4a','124','EmbyTheaterEnhanced-0.4.3-test-3a02339ab501-123-1-win-x64-setup.exe',$false),
  @('3a02339ab5011f2544df5b24b1da9b22d0df8d4a','123','C:\synthetic.exe',$false),
@@ -30,7 +31,7 @@ $cases=@(
  @('0000000000000000000000000000000000000000','123','EmbyTheaterEnhanced-0.4.3-win-x64-setup.exe',$false))
 foreach($case in $cases){
  $source=$case[0];$buildRun=$case[1];$setupName=$case[2];$version='0.4.3';$ArtifactId='1';$ArtifactZipSha256='0'*64;$InstallerSha256='0'*64
- $testPackage=$source -ceq '3a02339ab5011f2544df5b24b1da9b22d0df8d4a';$accepted=$true
+ $testPackage=$source -cne 'abe1c7426f0c8d0b5d1f7febadd0d39fb9a80a1d';$accepted=$true
  try{. ([scriptblock]::Create($guard[0].Extent.Text));. ([scriptblock]::Create($branch[0].Extent.Text))}catch{$accepted=$false}
  if($accepted -ne $case[3]){throw 'BINDING_ACCEPTANCE_MISMATCH'}
 }

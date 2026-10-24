@@ -106,8 +106,8 @@ if ($ContractSelfTest) {
 }
 Require ($IsWindows -and $env:GITHUB_ACTIONS -ceq 'true' -and $env:RUNNER_ENVIRONMENT -ceq 'github-hosted') 'HOSTED_WINDOWS_REQUIRED'
 Require ($env:GITHUB_REPOSITORY -ceq $repository) 'REPOSITORY_MISMATCH'
-Require ($source -cin @('abe1c7426f0c8d0b5d1f7febadd0d39fb9a80a1d','3a02339ab5011f2544df5b24b1da9b22d0df8d4a') -and $buildRun -match '^[1-9][0-9]{0,15}$' -and $ArtifactId -match '^[1-9][0-9]{0,15}$' -and $ArtifactZipSha256 -cmatch '^[a-f0-9]{64}$' -and $InstallerSha256 -cmatch '^[a-f0-9]{64}$') 'EXACT_INPUTS_REQUIRED'
-$testPackage=$source -ceq '3a02339ab5011f2544df5b24b1da9b22d0df8d4a'
+Require ($source -cin @('abe1c7426f0c8d0b5d1f7febadd0d39fb9a80a1d','3a02339ab5011f2544df5b24b1da9b22d0df8d4a','ca7ae841af8748091580259db1853e3c5e1c471f') -and $buildRun -match '^[1-9][0-9]{0,15}$' -and $ArtifactId -match '^[1-9][0-9]{0,15}$' -and $ArtifactZipSha256 -cmatch '^[a-f0-9]{64}$' -and $InstallerSha256 -cmatch '^[a-f0-9]{64}$') 'EXACT_INPUTS_REQUIRED'
+$testPackage=$source -cne 'abe1c7426f0c8d0b5d1f7febadd0d39fb9a80a1d'
 $setupName=$InstallerFileName
 if($testPackage){Require ($setupName -cmatch ('^EmbyTheaterEnhanced-0\.4\.3-test-'+$source.Substring(0,12)+'-'+$buildRun+'-[1-9][0-9]*-win-x64-setup\.exe$')) 'INSTALLER_NAME_MISMATCH'}
 else{Require ($buildRun -ceq '40110950621' -and $setupName -ceq ('EmbyTheaterEnhanced-'+$version+'-win-x64-setup.exe')) 'ORIGINAL_BINDING_MISMATCH'}
