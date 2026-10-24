@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-24 — Close retention experiment after final stop-observer failure
+
+Read normal logs for run40114362940/job120932483392: edl-stop/export-stage-timeout, workerexit1/stdio-closed/no outertimeout,3helper exit0/stdio-closed. Prior export/AV/seek/EOF/file consistency remains true, EDL pre-stop8sec/0backstep/18samples is intermediate, and every network/write metric remainsnull/NOT_MEASURED. Static control flow locates the failure after resolved Stop at the10sec active-response plus all-history write-callback condition. The separate counts were not captured; do not guess which predicate or declare a native Stop/core instability, successful transfer measurement or zero traffic.
+
+No source/timeout/instrumentation correction or new runtime/media experiment is performed. Archive the earlier complete EDL positive result alongside this failed supplement, preserve the independent branch, and recommend keeping transparent retention out of release. List minimal future observation/net-benefit, full buffer snapshot lifecycle and real media/auth/Session work with qualitative complexity instead of an invented ETA. Documentation-only UTF-8/newline/local-link/finite-credential/private-path/diff checks are separate from prior1976-test offline evidence and the final native failure.
+
 ## 2026-10-24 — Bound EDL transfer uncertainty without changing product transport
 
 Read run40112880704/job120928092858 normal logs:8sec/0backstep/one start-file/19samples and3normal exits establish basic synthetic timeline/track handoff.8requests scheduled16,920,584B(unique15,079,756), completedunique6,152B; saved4,066,400B has scheduled overlap1,647,032B/completedoverlap0. Preserve delivery uncertainty; neither infer whole-file download nor treat unfinished responses as zero transfer or seamless sound.

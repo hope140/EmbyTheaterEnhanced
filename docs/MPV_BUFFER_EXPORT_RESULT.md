@@ -1,5 +1,7 @@
 # 固定 DLL 有限缓冲导出：实测结果与下一步边界
 
+本轮实验已停止：[收尾结论](PLAYBACK_BUFFER_RETENTION_CLOSEOUT.md)保留基础导出/合成AV与一次基本接续通过，最后传输补证失败归档；不作为透明暂存功能并入发行，不继续排包或Native实验。
+
 ## 已读回的真实结果
 
 普通 GitHub job 日志已核对：run `40107582483` / job `120912370474`，controls `d7002d43e2fec6f17969ae227a7d8d8ff185d99c`；固定原候选 `162dc69` 加唯一锁定 loader 的派生运行时，原包清单不改。
@@ -58,6 +60,6 @@ node tools/playback-buffer-av-fixture.cjs --control
 | 权限/账号改变 | 不能凭文件、旧 token、旧 URL 或自行传入的布尔值授权。正常产品必须先走现有可信 PlaybackManager/ApiClient 来源与权限路径；权限未知/失败、账号或服务器切换、版本变化时不加载片段，继续原链允许的行为。尚未给正常 app 加入口，因此没有假造认证提供者来声称通过 |
 | 转码/直播/302 | 不能拼接不同表示或把签名 URL 固化为长期索引；本探针不覆盖，正常播放保持原路径 |
 
-最低成本接续候选是固定 mpv 已有 [EDL](https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/DOCS/edl-mpv.rst)虚拟时间轴，源码 Git blob `aeec4b7b4689679df42d274cda8f51166eab3d06`：原源前段 + 本地片段 + 原源后段。带音轨导出通过后，[受控接续探针](MPV_BUFFER_EDL_PROBE.md)已证实简单源的8秒时间轴/轨道接回，但有已存 payload 的调度重叠，实际消费及声音无缝未证明；一项小写回调补证已准备。它不是 packet restore，可能提前打开其他段，轨道兼容/媒体身份和 Session 接线仍需验证；不用不稳定的 `no_clip`/`delay_open` 特例去绕过。
+最低成本接续候选是固定 mpv 已有 [EDL](https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/DOCS/edl-mpv.rst)虚拟时间轴，源码 Git blob `aeec4b7b4689679df42d274cda8f51166eab3d06`：原源前段 + 本地片段 + 原源后段。带音轨导出通过后，[受控接续探针](MPV_BUFFER_EDL_PROBE.md)已证实简单源的8秒时间轴/轨道接回，但有已存 payload 的调度重叠，实际消费及声音无缝未证明；最后写回调补证已执行但未成功测量，现已停止。它不是 packet restore，可能提前打开其他段，轨道兼容/媒体身份和 Session 接线仍需验证；不用不稳定的 `no_clip`/`delay_open` 特例去绕过。
 
 目前推荐：不将有限片段路径当作正常用户透明缓存恢复交付。可研究的替代体验是明确显示可用片段范围，再在边界回原源，但这改变体验，未经确认不增加入口。若要求无差别支持所有轨道/任意 seek/原 Session，现有命令并未提供这些保证；继续会产生每种容器/codec/切轨和版本的维护矩阵。无需因此修改正式内核或累计下载整片。
