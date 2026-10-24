@@ -1,0 +1,9 @@
+# Bounded shutdown log persistence
+
+The installed Host candidate `b8938f4ba9149e700ea1437b3f5fbe3535a2f5e5` passed ordinary installation, shortcut identity, Host-to-Electron startup, a visible window and normal close in run `40126573435` / job `120969196881`. Both processes exited with code zero, no owned process remained, no forced termination occurred and the Host application loop returned. Real SMTC playback and DWM video were outside this check.
+
+That check remains recorded as failed because its additional `SHUTDOWN_EVENT_MISSING` assertion did not observe the Electron shutdown record on disk. This assertion first appeared in the independent installed-startup checker; the prior exit tests and accepted native trial required owner cleanup and process exit, not durable logging. The observed logging gap does not negate the recorded exit behavior or establish a new lifecycle failure.
+
+This separate optional patch waits for the existing logger queue after all owned cleanup work settles, for at most 250ms of timer time. An earlier success, rejection or synchronous logging error releases the wait and clears the timer. A timeout also releases it; late completion cannot issue a second quit. No further logging is queued on the failure path. This is best-effort persistence, not a guaranteed durable-write contract; a blocked event loop or failed disk cannot be made reliable by a JavaScript timer.
+
+Regression uses the actual shutdown callback, deterministic deadline control and the actual asynchronous logger with a held file write. It covers successful persistence, cleanup ordering, thrown/rejected writes, a never-finishing write and late rejection. It does not constitute a new Windows installer acceptance. The already tested Host candidate and original failed checker report are preserved; this patch is not required to claim their ordinary close behavior passed.

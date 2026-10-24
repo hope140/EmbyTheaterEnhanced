@@ -53,7 +53,9 @@ function fixture(refreshShutdown = () => Promise.resolve()) {
         unregisterNativeHelperIpc() {calls.push('native'); return native.promise;},
         unregisterMpvKernelIpc() {calls.push('kernel'); return kernel.promise;},
         readyStartupPromise: ready.promise,
-        Promise
+        Promise,
+        setTimeout,
+        clearTimeout
     };
     vm.createContext(context);
     vm.runInContext(excerpt('    function registerAppHost()', '    function onLoaded()') + '\nregisterAppHost();', context);

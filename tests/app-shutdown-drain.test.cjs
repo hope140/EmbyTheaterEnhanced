@@ -47,7 +47,7 @@ function deferred() {
     return {promise, resolve, reject};
 }
 
-function fixture(failure = null) {
+function fixture(failure = null, settings = {}) {
     const calls = [];
     const logs = [];
     const gates = Object.fromEntries(stages.map(stage => [stage, deferred()]));
@@ -87,8 +87,11 @@ function fixture(failure = null) {
         unregisterRefreshRate() { return runStage('refresh'); },
         unregisterNativeHelperIpc() { return runStage('native'); },
         unregisterMpvKernelIpc() { return runStage('kernel'); },
-        Promise
+        Promise,
+        setTimeout: settings.setTimeout || setTimeout,
+        clearTimeout: settings.clearTimeout || clearTimeout
     };
+    context.enhancedLog.flush = settings.flush || (() => Promise.resolve());
     Object.defineProperty(context, 'readyStartupPromise', {
         get() {
             return runStage('startup');
@@ -201,4 +204,75 @@ test('before-quit also drains the optional native Windows media owner', async ()
     for(const stage of stages)f.gates[stage].resolve();
     await turn();assert.equal(f.quitCount,0);
     media.resolve();await turn();assert.equal(f.quitCount,1);
+});
+
+function logDeadline(flush) {
+    const timers = new Map();
+    let next = 0;
+    const f = fixture(null, {
+        flush,
+        setTimeout(fn, ms) { const id = ++next; timers.set(id, {fn, ms}); return id; },
+        clearTimeout(id) { timers.delete(id); }
+    });
+    return {f, timers, expire() {
+        for (const [id, timer] of [...timers]) {
+            assert.ok(timer.ms > 0 && timer.ms <= 250, 'logging wait has a finite 250ms maximum');
+            timers.delete(id); timer.fn();
+        }
+    }};
+}
+
+test('shutdown log flush starts after all owned cleanups and delays quit only until its completion', async () => {
+    const log = deferred(); let flushCalls = 0;
+    const {f, timers} = logDeadline(() => { flushCalls++; return log.promise; });
+    f.emitBeforeQuit(); await turn(); assert.equal(flushCalls, 0);
+    for (const stage of stages.filter(stage => stage !== 'native')) f.gates[stage].resolve();
+    await turn(); assert.equal(flushCalls, 0, 'pending native ownership still drains first');
+    f.gates.native.resolve(); await turn();
+    assert.equal(flushCalls, 1); assert.equal(f.quitCount, 0); assert.equal(timers.size, 1);
+    log.resolve(); await turn(); assert.equal(f.quitCount, 1); assert.equal(timers.size, 0);
+    assert.equal(f.emitBeforeQuit().registered, false);
+});
+
+for (const mode of ['throw', 'reject']) test('shutdown log flush '+mode+' cannot block or repeat quit', async () => {
+    const {f, timers} = logDeadline(() => {
+        const error = new Error('PRIVATE filesystem failure');
+        if (mode === 'throw') throw error;
+        return Promise.reject(error);
+    });
+    f.emitBeforeQuit(); for (const stage of stages) f.gates[stage].resolve();
+    await turn(); assert.equal(f.quitCount, 1); assert.equal(timers.size, 0);
+    assert.equal(JSON.stringify(f.logs).includes('PRIVATE filesystem failure'), false);
+});
+
+test('shutdown log flush timeout releases quit and ignores a late rejection', async () => {
+    const log = deferred(); const {f, timers, expire} = logDeadline(() => log.promise);
+    f.emitBeforeQuit(); for (const stage of stages) f.gates[stage].resolve();
+    await turn(); assert.equal(f.quitCount, 0); assert.equal(timers.size, 1);
+    expire(); await turn(); assert.equal(f.quitCount, 1); assert.equal(timers.size, 0);
+    log.reject(new Error('PRIVATE late filesystem failure')); await turn();
+    assert.equal(f.quitCount, 1); assert.equal(JSON.stringify(f.logs).includes('PRIVATE late filesystem failure'), false);
+});
+
+test('shutdown log using the actual asynchronous logger reaches disk before quit when the write completes in budget', async t => {
+    const os = require('node:os');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-shutdown-log-test-'));
+    t.after(() => fs.rmSync(dir, {recursive: true, force: true}));
+    const write = deferred(), entered = deferred();
+    const logger = require('../src/electronapp/enhanced/diagnostics').createLogger(dir, {fs: {promises: {
+        ...fs.promises,
+        async appendFile(...args) { entered.resolve(); await write.promise; return fs.promises.appendFile(...args); }
+    }}});
+    const {f, timers} = logDeadline(() => logger.flush());
+    f.context.enhancedLog = logger;
+    try {
+        f.emitBeforeQuit(); for (const stage of stages) f.gates[stage].resolve();
+        await entered.promise;
+        assert.equal(f.quitCount, 0, 'actual shutdown append is still pending');
+        assert.equal(timers.size, 1);
+        write.resolve(); await logger.flush(); await turn();
+        assert.equal(f.quitCount, 1); assert.equal(timers.size, 0);
+        const events = (await logger.readRecords()).records;
+        assert.equal(events.filter(e => e.category === 'app' && e.event === 'shutdown').length, 1);
+    } finally { write.resolve(); await logger.flush(); }
 });

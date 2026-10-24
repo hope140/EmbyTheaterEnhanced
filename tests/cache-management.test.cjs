@@ -74,7 +74,7 @@ test('real main shutdown drain waits for a real registered HTTP clear even when 
     const start=source.indexOf("    app.once('before-quit'"),end=source.indexOf("    ipcMain.on('enhanced-diagnostics'",start);
     const held=gate(),f=fixture({clearCache:()=>held.promise,getCacheSize:async()=>0});const request=f.invoke(ipc.CHANNELS.CLEAR);await flush();
     let handler,quit=0;const noop=()=>Promise.resolve();
-    const context={app:{once(n,h){handler=h;},quit(){quit++;}},appIsShuttingDown:false,playbackPowerOwner:{shutdown(){}},enhancedLog(){},
+    const context={app:{once(n,h){handler=h;},quit(){quit++;}},appIsShuttingDown:false,playbackPowerOwner:{shutdown(){}},enhancedLog(){},setTimeout,clearTimeout,
         unregisterDiagnosticsIpc:()=>Promise.reject(Error('synthetic failure')),unregisterMaintenanceIpc:noop,unregisterCacheManagementIpc:f.close,
         unregisterStrmConfigIpc:noop,unregisterCd2Ipc:noop,unregisterRefreshRate:noop,unregisterNativeHelperIpc:noop,unregisterMpvKernelIpc:noop,readyStartupPromise:Promise.resolve()};
     vm.runInNewContext(source.slice(start,end),context);handler({preventDefault(){}});await flush();assert.equal(quit,0);assert.equal(f.handlers.size,0);

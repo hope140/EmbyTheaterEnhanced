@@ -1156,7 +1156,22 @@
             runCleanup('mpv-kernel', function () { return unregisterMpvKernelIpc(); }),
             runCleanup('windows-media', function () { if (typeof disposeWindowsNativeMedia === 'function') return disposeWindowsNativeMedia(); }),
             runCleanup('startup', function () { return readyStartupPromise; })
-        ]).then(function () { app.quit(); });
+        ]).then(function () {
+            // Logging is best effort; never let a slow or failed disk hold quit.
+            return new Promise(function (resolve) {
+                var finished = false;
+                var timer;
+                function finish() {
+                    if (finished) return;
+                    finished = true;
+                    clearTimeout(timer);
+                    resolve();
+                }
+                timer = setTimeout(finish, 250);
+                try { Promise.resolve(enhancedLog.flush()).then(finish, finish); }
+                catch (_) { finish(); }
+            });
+        }).then(function () { app.quit(); });
     });
     ipcMain.on('enhanced-diagnostics', function (event, snapshot) {
         if (rendererBoundary.isTrusted(event, getWebContents())) {
