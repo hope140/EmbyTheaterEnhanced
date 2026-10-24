@@ -4,6 +4,7 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const sha = value => crypto.createHash('sha256').update(value).digest('hex');
+const mediaKey = identity => sha(JSON.stringify(['serverOrigin', 'serverId', 'accountId', 'itemId', 'mediaSourceId'].map(k => identity[k])));
 const strongTag = value => typeof value === 'string' && /^"[\x21\x23-\x7e]{1,255}"$/.test(value);
 const integer = value => Number.isSafeInteger(value) && value > 0;
 function identityKey(identity, proof) {
@@ -86,7 +87,7 @@ async function createStore({root, maxBytes, minFreeBytes, blockBytes = 262144}) 
             if (!index.entries[key]) {
                 for (const k of Object.keys(index.entries)) if (k !== index.lastKey && !refs.get(k) && index.entries[k].role !== 'next') await drop(k);
                 if (Object.keys(index.entries).length >= 8) throw Error('range-object-limit');
-                index.entries[key] = {etag: proof.etag, total: proof.total, blockBytes, role, blocks: {}};
+                index.entries[key] = {etag: proof.etag, total: proof.total, blockBytes, role, mediaKey: mediaKey(identity), blocks: {}};
                 await save();
             }
             refs.set(key, (refs.get(key) || 0) + 1);
@@ -127,6 +128,10 @@ async function createStore({root, maxBytes, minFreeBytes, blockBytes = 262144}) 
     }
     return {
         acquire,
+        discardLastUnless: key => serial(async () => {
+            const old = index.lastKey;
+            if (old && index.entries[old].mediaKey !== key) {index.lastKey = null; await save(); if (!refs.get(old)) await drop(old);}
+        }),
         discardNext: () => serial(async () => {for (const [key, e] of Object.entries(index.entries)) if (key !== index.lastKey && e.role === 'next') {e.role = 'candidate'; if (!refs.get(key)) await drop(key);}}),
         status: () => ({bytes, leases: [...refs.values()].reduce((a, b) => a + b, 0), maxBytes}),
         async close() {
@@ -139,4 +144,4 @@ async function createStore({root, maxBytes, minFreeBytes, blockBytes = 262144}) 
         }
     };
 }
-module.exports = {createStore, identityKey, strongTag};
+module.exports = {createStore, identityKey, mediaKey, strongTag};

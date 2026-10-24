@@ -163,3 +163,16 @@ test('confirmed progress/prefix choices default to 70 percent and 300 MB', () =>
     for (const progressPercent of [50, 60, 70, 80, 90]) for (const preloadMB of [100, 300, 500]) assert.equal(policy.selection({progressPercent, preloadMB}).prefetchBytes, preloadMB * 1000000);
     assert.throws(() => policy.selection({progressPercent: 30}), /invalid/); assert.throws(() => policy.selection({preloadMB: 1000}), /invalid/);
 });
+test('closing during an owned origin open cancels it and leaves no store lease or upstream request', {timeout: 5000}, async t => {
+    const f = await network(t); f.behavior.hold = true;
+    // Closing must also drain an open that has not yet produced a route.
+    f.behavior.mode = 'interrupted';
+    const opening = f.cache.open({source: f.source, identity: f.id, isCurrent: () => true}); opening.catch(() => {});
+    await f.cache.close(); await assert.rejects(opening);
+    assert.equal(f.cache.status().leases, 0); assert.equal(f.cache.status().upstream, 0);
+});
+test('an actual account change while a cached origin source is still open cannot serve another context', async t => {
+    const f = await network(t); let current = true;
+    const handle = await f.cache.open({source: f.source, identity: f.id, isCurrent: () => current}); await get(handle.source, 'bytes=0-3');
+    current = false; assert.equal((await get(handle.source, 'bytes=0-3')).status, 410); await handle.stop();
+});

@@ -75,7 +75,7 @@ async function createCache(options) {
         route.jobs.add(job); job.finally(() => route.jobs.delete(job)).catch(() => {});
     }
     async function performOpen({source, identity, isCurrent, signal, role = 'candidate'}) {
-        if (closed || typeof isCurrent !== 'function' || !isCurrent()) throw abortError();
+        if (closed || routes.size >= 8 || typeof isCurrent !== 'function' || !isCurrent()) throw abortError();
         const controller = new AbortController(); opens.add(controller);
         const abort = () => controller.abort();
         if (signal) {signal.addEventListener('abort', abort, {once: true}); if (signal.aborted) abort();}
@@ -86,15 +86,19 @@ async function createCache(options) {
             if (closed || controller.signal.aborted || !isCurrent()) throw abortError();
             lease = await store.acquire(identity, proof, role);
             await listen();
-            if (closed || controller.signal.aborted || !isCurrent()) throw abortError();
+            if (closed || routes.size >= 8 || controller.signal.aborted || !isCurrent()) throw abortError();
             const routePath = '/range/' + crypto.randomUUID();
             const active = {lease, jobs: new Set(), controllers: new Set(), retired: false};
             active.current = () => !closed && !active.retired && !controller.signal.aborted && isCurrent();
-            let backgroundSpent = 1;
+            let backgroundSpent = 1, cacheFailed = false;
             active.block = async (n, signal, lowPriority, budget) => {
                 if (!active.current() || signal.aborted) throw abortError();
-                const hit = await lease.readBlock(n);
+                let hit = null;
+                if (!cacheFailed) {
+                    try {hit = await lease.readBlock(n);} catch (_) {cacheFailed = true;}
+                }
                 if (hit) return hit;
+                if (cacheFailed && lowPriority) throw Error('range-cache-unavailable');
                 const offset = n * lease.blockBytes, length = Math.min(lease.blockBytes, lease.total - offset);
                 if (lowPriority) {
                     if (backgroundSpent + length > budget) throw Error('range-prefetch-budget');
@@ -105,8 +109,8 @@ async function createCache(options) {
                         expected: proof, signal});
                     if (!active.current() || signal.aborted) throw abortError();
                     // Disk failure/pressure must not prevent valid foreground bytes from playing.
-                    try {const written = await lease.writeBlock(n, result.bytes); if (!written && lowPriority) throw Error('range-quota');}
-                    catch (_) {if (lowPriority) throw Error('range-cache-unavailable');}
+                    try {if (!cacheFailed) {const written = await lease.writeBlock(n, result.bytes); if (!written && lowPriority) throw Error('range-quota');}}
+                    catch (_) {cacheFailed = true; if (lowPriority) throw Error('range-cache-unavailable');}
                     return result.bytes;
                 } finally {if (!lowPriority) foreground--;}
             };
@@ -168,7 +172,7 @@ async function createCache(options) {
     function open(options) {
         const job = performOpen(options); openJobs.add(job); job.finally(() => openJobs.delete(job)).catch(() => {}); return job;
     }
-    return {open, discardNext: () => store.discardNext(), status: () => ({...store.status(), routes: routes.size, requests, upstream: reader.status().requests}),
+    return {open, discardLastUnless: key => store.discardLastUnless(key), discardNext: () => store.discardNext(), status: () => ({...store.status(), routes: routes.size, requests, upstream: reader.status().requests}),
         close() {
             if (closing) return closing;
             closed = true; for (const c of opens) c.abort(); preempt();

@@ -20,6 +20,9 @@
     var productMetadata = require('./package.json');
     productIdentity.setAppName(app, productMetadata);
     var path = require('path');
+    var rangeCacheLaunchModule = require('./enhanced/playback-range-launch');
+    var rangeCacheLaunch = rangeCacheLaunchModule.parseLaunch(process.argv);
+    rangeCacheLaunchModule.activateProfile(app, rangeCacheLaunch, process.env);
     var appBootstrap = require('./enhanced/bootstrap');
     var deviceIdentity = require('./device-identity');
     var enhancedDiagnostics = require('./enhanced/diagnostics');
@@ -1086,7 +1089,8 @@
             runtimeRoot: path.resolve(__dirname, '..'),
             mode: nativeHelperMode,
             kernelStore: mpvKernelStore,
-            startupKernelSelection: startupSelection
+            startupKernelSelection: startupSelection,
+            rangeCache: rangeCacheLaunch.enabled ? rangeCacheLaunch.config : null
         });
         unregisterNativeHelperIpc = nativeHelperServiceModule.register({
             ipcMain: ipcMain,
