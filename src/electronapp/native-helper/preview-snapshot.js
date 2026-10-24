@@ -11,16 +11,21 @@ function sameOwner(left, right) {
 function decode(value, generationId) {
     if (!value || value.ready !== true) return null;
     const keys = ['ready','generationId','format','width','height','pixels'];
+    if(Object.hasOwn(value,'timing'))keys.push('timing');
     if (Object.keys(value).length !== keys.length || !keys.every(key => Object.hasOwn(value,key)) || value.generationId !== generationId ||
         value.format !== 'bgr24' || !Number.isInteger(value.width) || !Number.isInteger(value.height) ||
         value.width < 1 || value.width > 160 || value.height < 1 || value.height > 90 ||
         typeof value.pixels !== 'string' || value.pixels.length > 57600) return null;
+    if(Object.hasOwn(value,'timing')){
+        const timing=value.timing,names=['waitMicros','copyMicros','resizeMicros','encodeMicros'];
+        if(!timing||Object.keys(timing).length!==names.length||names.some(name=>!Object.hasOwn(timing,name)||!Number.isSafeInteger(timing[name])||timing[name]<0||timing[name]>60000000))return null;
+    }
     const bytes = Buffer.from(value.pixels, 'base64');
     if (bytes.length !== value.width * value.height * 3 || bytes.toString('base64') !== value.pixels) return null;
     const pixels = Buffer.alloc(value.width * value.height * 4);
     for (let source = 0, target = 0; source < bytes.length; source += 3, target += 4) {
         pixels[target]=bytes[source]; pixels[target+1]=bytes[source+1]; pixels[target+2]=bytes[source+2]; pixels[target+3]=255;
     }
-    return {width:value.width, height:value.height, pixels};
+    return {width:value.width, height:value.height, pixels,...(value.timing?{timing:{...value.timing}}:{})};
 }
 module.exports = {validOwner, sameOwner, decode};

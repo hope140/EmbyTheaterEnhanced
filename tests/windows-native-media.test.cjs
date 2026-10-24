@@ -21,6 +21,7 @@ function fixture(t, overrides = {}) {
     for (let offset = 0; offset < opaqueOldPixels.length; offset += 4) opaqueOldPixels.set([19, 67, 213, 255], offset);
     let request, imageReader;
     const controller = adapter.attach({window, ipcMain: ipc, koffi: {},
+        previewSavings: overrides.previewSavings,
         getVideoWindow() {sourceReads++; return video;},
         capturePreview: overrides.capturePreview, isPreviewOwner: overrides.isPreviewOwner,
         // Deliberately offer successful nonzero pixels without a presentation
@@ -319,4 +320,42 @@ test('main SMTC commands enforce current pause state and actual queue capability
     assert.ok(f.calls.includes('command:play'));assert.ok(f.calls.includes('command:previous'));assert.ok(f.calls.includes('command:next'));
     assert.equal(adapter.valid(f.make({...stopped,canNext:true,sequence:3})),false);
     assert.equal(adapter.valid(f.make({canNext:1})),false);
+});
+
+test('identical owner pixels reuse NativeImage while retaining DWM feedback for later moving frames',async t=>{
+    const owner=nativeOwner(10);let color=50,requests=0;
+    const f=fixture(t,{isPreviewOwner:()=>true,capturePreview:async()=>{requests++;return ownedFrame(owner,color);}});
+    f.send(f.make({nativeOwner:owner}));await drain();const first=f.readPreview(),previews=f.calls.filter(value=>value==='preview').length;
+    await f.tick();assert.equal(f.readPreview(),first);assert.equal(requests,2);
+    assert.equal(f.controller.status().performance.counters.duplicates,1);assert.equal(f.controller.status().performance.capture.stages.nativeImage.count,1);
+    assert.equal(f.calls.filter(value=>value==='preview').length,previews+1,'duplicate still renews DWM demand feedback');
+    color=80;await f.tick();assert.notEqual(f.readPreview(),first);assert.equal(f.readPreview().pixels[0],80);
+    assert.equal(f.controller.status().performance.counters.changed,2);
+});
+
+test('paused savings are bounded, and seek, fresh DWM demand and restore refresh the verified frame',async t=>{
+    const owner=nativeOwner(10);let requests=0;
+    const f=fixture(t,{isPreviewOwner:()=>true,capturePreview:async()=>{requests++;return ownedFrame(owner);}});
+    f.send(f.make({nativeOwner:owner,paused:true}));await drain();assert.equal(requests,1);
+    await f.tick();assert.equal(requests,1);f.request();await drain();assert.equal(requests,2,'new DWM demand bypasses paused saving');
+    await f.tick();assert.equal(requests,2);await f.tick();assert.equal(requests,3,'periodic verification remains bounded');
+    f.send(f.make({nativeOwner:owner,paused:true,position:10,sequence:2}));await f.tick();assert.equal(requests,4);
+    f.restore();await f.tick();assert.equal(requests,5);
+    f.send(f.make({nativeOwner:owner,paused:false,position:10,sequence:3}));await f.tick();assert.equal(requests,6);
+    assert.equal(f.controller.status().performance.counters.pausedSkipped,2);
+});
+
+test('mutable capture input cannot make changed pixels appear identical to the cached NativeImage',async t=>{
+    const owner=nativeOwner(10),frame=ownedFrame(owner,10);
+    const f=fixture(t,{isPreviewOwner:()=>true,capturePreview:async()=>frame});f.send(f.make({nativeOwner:owner}));await drain();
+    const image=f.readPreview();frame.pixels[0]=70;await f.tick();assert.notEqual(f.readPreview(),image);assert.equal(f.readPreview().pixels[0],70);
+    f.send(f.make({nativeOwner:nativeOwner(11),playbackEpoch:2,sequence:2}));await drain();assertNeutral(f.readPreview());
+});
+
+test('explicit diagnostic baseline restores original paused captures and NativeImage churn',async t=>{
+    const owner=nativeOwner(10);let captures=0;
+    const f=fixture(t,{previewSavings:false,isPreviewOwner:()=>true,capturePreview:async()=>{captures++;return ownedFrame(owner);}});
+    f.send(f.make({nativeOwner:owner,paused:true}));await drain();const first=f.readPreview();
+    await f.tick();assert.equal(captures,2);assert.notEqual(f.readPreview(),first);
+    assert.equal(f.controller.status().performance.savingsEnabled,false);assert.equal(f.controller.status().performance.counters.duplicates,0);
 });

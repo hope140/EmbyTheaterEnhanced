@@ -71,7 +71,7 @@ function register(options) {
         if (!logger || typeof logger.status !== 'function') return {status: 'error', reason: 'diagnostics_unavailable'};
         return Object.assign({status: 'ok'}, await logger.status(), {
             nativeHelper: typeof settings.getNativeHelperStatus === 'function' ? settings.getNativeHelperStatus() : null
-        });
+        }, typeof settings.getWindowsNativeMediaStatus === 'function' ? {windowsNativePreview:settings.getWindowsNativeMediaStatus()} : {});
     });
 
     registerHandler(CHANNELS.EXPORT, async function () {

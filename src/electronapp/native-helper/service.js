@@ -1,6 +1,7 @@
 'use strict';
 
 const previewSnapshot = require('./preview-snapshot');
+const previewPerformance = require('../enhanced/preview-performance');
 
 const rendererBoundary = require('../enhanced/renderer-boundary');
 
@@ -8,6 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const childProcess = require('node:child_process');
+const {performance} = require('perf_hooks');
 const {NativeHelperClient, PROTOCOL_VERSION} = require('./controller');
 const {createNativeDiagnostics} = require('../enhanced/native-diagnostics');
 
@@ -946,6 +948,7 @@ function createService(options) {
       !!client && !client.transportTerminated && !client.exited && client.currentGenerationId === owner.generationId &&
       (!client.state || client.state.status !== 'ended');
   }
+  const previewMetrics = previewPerformance.create(['rpc','decode','nativeWait','nativeCopy','nativeResize','nativeEncode']);
   let previewWork = null;
   function capturePreview(owner) {
     if (previewWork || !isPreviewOwner(owner) || !client.handshake ||
@@ -954,16 +957,20 @@ function createService(options) {
     const record = {}; previewWork = record;
     record.promise = (async function () {
       try {
-        const result = await active.request('preview-snapshot', {}, {generationId:owned.generationId, timeoutMs:1800});
+        const started = performance.now();
+        let result;
+        try{result=await active.request('preview-snapshot', {}, {generationId:owned.generationId, timeoutMs:1800});}
+        finally{previewMetrics.record('rpc',performance.now()-started);}
         if (active !== client || generationEpoch !== ownedEpoch || !isPreviewOwner(owned)) return null;
-        const frame = previewSnapshot.decode(result, owned.generationId);
+        const frame = previewMetrics.measure('decode',()=>previewSnapshot.decode(result, owned.generationId));
+        if(frame && frame.timing)for(const [stage,key]of [['nativeWait','waitMicros'],['nativeCopy','copyMicros'],['nativeResize','resizeMicros'],['nativeEncode','encodeMicros']])previewMetrics.record(stage,frame.timing[key]/1000);
         return frame && {...frame, owner:owned};
       } catch (_) { return null; }
       finally { if (previewWork === record) previewWork = null; }
     }());
     return record.promise;
   }
-  return {call, destroy, mode, notify, prewarm, status, capturePreview, isPreviewOwner, kernelStatus: function () { return status().kernel; },
+  return {call, destroy, mode, notify, prewarm, status, capturePreview, isPreviewOwner, previewPerformance:()=>previewMetrics.snapshot(), kernelStatus: function () { return status().kernel; },
     getVideoWindow: function () { return !destroyed && surfaceWindow && !surfaceWindow.isDestroyed() ? surfaceWindow : null; }};
 }
 

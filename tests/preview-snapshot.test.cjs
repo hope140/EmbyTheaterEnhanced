@@ -18,3 +18,11 @@ test('owner equality requires endpoint and Native generation rather than media t
     assert.equal(sameOwner(owner,{...owner,endpointId:'b'.repeat(36)}),false);
     assert.equal(validOwner({...owner,path:'arbitrary'}),false);
 });
+
+test('optional profiling fields are strictly bounded, copied, and do not change decoded pixels',()=>{
+    const timing={waitMicros:10000,copyMicros:2000,resizeMicros:100,encodeMicros:200};
+    const result=decode(frame({timing}),12);assert.deepEqual([...result.pixels],[19,67,213,255,0,0,0,255]);
+    assert.deepEqual(result.timing,timing);timing.waitMicros=99;assert.equal(result.timing.waitMicros,10000);
+    for(const value of [null,{}, {...timing,extra:0},{...timing,waitMicros:-1},{...timing,copyMicros:Infinity},{...timing,resizeMicros:1.5},{...timing,encodeMicros:60000001}])assert.equal(decode(frame({timing:value}),12),null);
+    assert.equal(Object.hasOwn(decode(frame(),12),'timing'),false);
+});

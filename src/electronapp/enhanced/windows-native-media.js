@@ -4,6 +4,7 @@ const boundary = require('./renderer-boundary');
 const {randomUUID} = require('crypto');
 const previewSnapshot = require('../native-helper/preview-snapshot');
 const {performance} = require('perf_hooks');
+const previewPerformance = require('./preview-performance');
 const {createRecorder} = require('./bounded-diagnostics');
 const {NATIVE_CHANNEL, NATIVE_SESSION_CHANNEL} = require('./windows-media-renderer');
 const KEYS = ['version', 'nativeOwner', 'playbackEpoch', 'active', 'paused', 'title', 'mediaKey', 'mediaType', 'duration', 'position', 'rate', 'sequence', 'sessionToken', 'canPrevious', 'canNext'];
@@ -24,6 +25,7 @@ function valid(value) {
 
 function attach(options) {
     const {window, ipcMain, nativeImage, sendCommand, createBindings, createSmtc, createDwm, attachThumbnail, koffi} = options;
+    const savings = options.previewSavings !== false;
     // BrowserWindow.webContents throws after the native window is destroyed.
     // Keep the live EventEmitter reference for IPC checks and closed cleanup.
     const webContents = window.webContents;
@@ -31,11 +33,15 @@ function attach(options) {
     const emit = createRecorder(options.log || function () {}, 'windows-media', 10);
     let disposed = false, latest = null, session = null, queue = Promise.resolve(), sequence = 0, sessionToken = randomUUID(), sessionRequests = 0;
     let fallbackImage = null, frameImage = null, frameOwner = null, frameWork = null, timer = null;
+    let framePixels = null, frameSize = null, frameState = null;
     let captured = 0, frameAttempts = 0, frameRevision = 0, lastFrameStarted = -Infinity;
     const clock = options.clock || {now: () => performance.now(), setInterval, clearInterval};
+    const metrics = previewPerformance.create(['captureRoundTrip','nativeImage','frameCompare'],clock.now);
+    const dwmMetrics = previewPerformance.create(['resize','submitTotal','invalidate'],clock.now);
+    const counters={timerTicks:0,requests:0,valid:0,changed:0,duplicates:0,pausedSkipped:0,busySkipped:0,hiddenSkipped:0,throttled:0,noDemandSkipped:0,unavailable:0};
     let errors = 0;
     let documentEpoch = 0, sessionIdentity = null, commandSequence = 0;
-    const thumbnail = attachThumbnail(window, dwm, previewImage, () => logFailure('thumbnail'), () => { requestFrame().catch(() => {}); });
+    const thumbnail = attachThumbnail(window, dwm, previewImage, () => logFailure('thumbnail'), () => { requestFrame(true).catch(() => {}); }, {metrics:dwmMetrics,cacheEnabled:savings});
     function current(owner) {
         try { return !disposed && latest && latest.active && latest.mediaType === 'Video' &&
             previewSnapshot.sameOwner(owner, latest.nativeOwner) && typeof options.isPreviewOwner === 'function' && options.isPreviewOwner(owner); }
@@ -45,7 +51,7 @@ function attach(options) {
     function previewImage() {
         if (disposed || !latest || !latest.active || latest.mediaType !== 'Video') return null;
         if (hasFrame()) return frameImage;
-        frameImage = null; frameOwner = null;
+        frameImage = null; frameOwner = null; framePixels = null; frameSize = null; frameState = null;
         // Neutral content has no media identity and can safely survive minimize
         // or same-item replay. It is never counted as a capture or artwork.
         if (!fallbackImage) {
@@ -60,27 +66,45 @@ function attach(options) {
     }
     function clearPreview() {
         if (frameImage) emit('preview-frame-retired', {stage:'owner-snapshot'});
-        frameRevision++; frameImage = null; frameOwner = null; frameAttempts = 0; lastFrameStarted = -Infinity;
+        frameRevision++; frameImage = null; frameOwner = null; framePixels = null; frameSize = null; frameState = null;
+        frameAttempts = 0; lastFrameStarted = -Infinity;
         if (timer) clock.clearInterval(timer); timer = null;
         thumbnail.clear(); clearArtwork();
     }
     function visible() { return !window.isDestroyed() && !window.isMinimized() && (typeof window.isVisible !== 'function' || window.isVisible()); }
-    async function requestFrame() {
-        if (frameWork || !latest || !current(latest.nativeOwner) || typeof options.capturePreview !== 'function' ||
-            !visible() || !frameImage && frameAttempts >= 10 || clock.now() - lastFrameStarted < 950) return;
-        if (hasFrame() && typeof thumbnail.requestedRecently === 'function' && !thumbnail.requestedRecently()) return;
+    async function requestFrame(demand = false) {
+        if (frameWork) {counters.busySkipped++;return;}
+        if (!latest || !current(latest.nativeOwner) || typeof options.capturePreview !== 'function' || !frameImage && frameAttempts >= 10) return;
+        if (!visible()) {counters.hiddenSkipped++;return;}
+        // Unchanged paused state verifies at most every 2s; fresh DWM demand,
+        // seek/owner change and restore bypass this saving. The owner fence is
+        // still required for every returned frame; time is only a work budget.
+        if(savings&&!demand&&hasFrame()&&latest.paused&&frameState&&frameState.paused&&frameState.position===latest.position&&clock.now()-lastFrameStarted<2000){counters.pausedSkipped++;return;}
+        if(clock.now()-lastFrameStarted<950){counters.throttled++;return;}
+        if (hasFrame() && typeof thumbnail.requestedRecently === 'function' && !thumbnail.requestedRecently()) {counters.noDemandSkipped++;return;}
         const owner = {...latest.nativeOwner}, revision = frameRevision, record = {};
+        const observedState={paused:latest.paused,position:latest.position};
         frameWork = record; lastFrameStarted = clock.now(); if (!hasFrame()) frameAttempts++;
+        counters.requests++;
         record.promise = (async () => {
             try {
-                const frame = await options.capturePreview(owner);
+                const started=clock.now();let frame;
+                try{frame=await options.capturePreview(owner);}finally{metrics.record('captureRoundTrip',Math.max(0,clock.now()-started));}
                 if (revision !== frameRevision || !current(owner) || !visible() || !frame ||
                     !previewSnapshot.sameOwner(frame.owner, owner) || !Number.isInteger(frame.width) || !Number.isInteger(frame.height) ||
                     frame.width < 1 || frame.width > 160 || frame.height < 1 || frame.height > 90 ||
-                    !Buffer.isBuffer(frame.pixels) || frame.pixels.length !== frame.width * frame.height * 4) return;
+                    !Buffer.isBuffer(frame.pixels) || frame.pixels.length !== frame.width * frame.height * 4) {counters.unavailable++;return;}
+                counters.valid++;captured++;
+                if(savings&&hasFrame()&&framePixels&&frameSize.width===frame.width&&frameSize.height===frame.height&&
+                    metrics.measure('frameCompare',()=>framePixels.equals(frame.pixels))){
+                    counters.duplicates++;frameState=observedState;
+                    // Preserve DWM's request/invalidate feedback: stopping it
+                    // on a static scene would strand the lastRequest lease.
+                    thumbnail.refresh();return;
+                }
                 const firstFrame = !frameImage || !previewSnapshot.sameOwner(frameOwner, owner);
-                frameImage = nativeImage.createFromBitmap(frame.pixels, {width:frame.width, height:frame.height});
-                frameOwner = owner; captured++;
+                frameImage = metrics.measure('nativeImage',()=>nativeImage.createFromBitmap(frame.pixels, {width:frame.width, height:frame.height}));
+                frameOwner = owner; framePixels=savings?Buffer.from(frame.pixels):null;frameSize={width:frame.width,height:frame.height};frameState=observedState;counters.changed++;
                 if (firstFrame) emit('preview-frame-ready', {width:frame.width, height:frame.height});
                 thumbnail.refresh();
             } catch (_) { if (revision === frameRevision && !disposed) logFailure('capture'); }
@@ -88,10 +112,10 @@ function attach(options) {
         })();
         await record.promise;
     }
-    function restore() { if (!disposed) {frameAttempts = 0; frameRevision++;} }
+    function restore() { if (!disposed) {frameAttempts = 0; frameRevision++;frameState=null;} }
     function ensureFrameTimer() {
         if (timer || typeof options.capturePreview !== 'function' || !latest || !current(latest.nativeOwner)) return;
-        timer = clock.setInterval(() => {requestFrame().catch(() => {});}, 1000);
+        timer = clock.setInterval(() => {counters.timerTicks++;requestFrame().catch(() => {});}, 1000);
         requestFrame().catch(() => {});
     }
     function logFailure(stage) { errors++; emit('integration-unavailable', {stage}); }
@@ -183,7 +207,9 @@ function attach(options) {
         previewMode: !disposed && latest && latest.active && latest.mediaType === 'Video' ? (hasFrame() ? 'owner-frame' : 'neutral-unverified') : 'inactive',
         captureBlockedReason: hasFrame() ? null : 'native-frame-ownership-unproven',
         previewReady: hasFrame(), firstFrameAttempts: frameAttempts, firstFrameExhausted: !hasFrame() && frameAttempts >= 10, blankFirstFrames: 0,
-        captured, submitted: thumbnail.submitted, averageCaptureMs: 0, errors, sessionRequests, sequence,
+        captured, submitted: thumbnail.submitted, averageCaptureMs: metrics.snapshot().stages.captureRoundTrip.averageMs, errors, sessionRequests, sequence,
+        performance:{capture:metrics.snapshot(),dwm:typeof thumbnail.performance==='function'?thumbnail.performance():null,
+            counters:{...counters},savingsEnabled:savings,configuredIntervalMs:1000,minimumIntervalMs:950,pausedVerificationMs:savings?2000:1000,outputMaximum:{width:160,height:90},inFlight:!!frameWork},
         artworkReady: false}; }};
 }
 

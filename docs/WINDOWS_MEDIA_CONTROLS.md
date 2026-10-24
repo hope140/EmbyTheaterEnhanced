@@ -73,3 +73,6 @@ Native Helper 二进制、libmpv、窗口 owner、Native 协议、认证和 Reso
 [Microsoft IsStopEnabled合同](https://learn.microsoft.com/en-us/uwp/api/windows.media.systemmediatransportcontrols.isstopenabled)只定义支持Stop命令，未保证当前Windows卡片显示独立Stop图标；不自建卡片或补任务栏按钮。三可见图标的排列与尺寸由Windows决定。其他按钮setter（record／fast-forward／rewind／channel up/down）保持false，不新增seek、音量或全屏入口。
 
 Windows按精确新候选分别复验：首／中／尾队列、单项／空队列、RepeatNone／One／All、暂停恢复、队列增删移动与换项、Stop卡片退役、播放中和Stop后退出无JS弹窗且所属helper退出。另核对旧文档／同片重播／延迟AMD／重复命令不能误控新owner。隐藏窗口回归明确是生命周期证据，不等于真实SMTC按钮或DWM视觉通过；旧47项及两按钮行为属于上文历史证据。
+
+
+独立性能候选在原snapshot路线增加阶段计时、重复帧与有界缩放缓存；不提高采样上限，真实Windows耗时／FPS及成本待测，见[性能测量合同](WINDOWS_PREVIEW_PERFORMANCE.md)。前版用户反馈按钮通过，退出仍未确认；不能以此推断性能候选已验收。

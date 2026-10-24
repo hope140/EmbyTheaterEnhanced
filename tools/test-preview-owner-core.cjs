@@ -10,6 +10,7 @@ const unavailable=between('    std::string frameUnavailable(', '    bool release
 // Include the real method-call boundary as well as the pure state machine:
 // finishPreview -> frameUnavailable previously escaped this compilation.
 const previewMethods=between('    bool hasPreviewVideo()', '    static const char* autoStageText(');
+const previewReply=between('    void handleCommandReply(mpv_event* event) {','        if (autoScreenshotReplyId')+'    }\n';
 const uniqueMedia=between('    int64_t uniqueOpenMedia()', '    void submitNextLoad(');
 const program=`#include <algorithm>
 #include <cmath>
@@ -27,6 +28,10 @@ const program=`#include <algorithm>
 #include <iomanip>
 ${core}
 ${quoteSource}
+uint64_t monotonicMicros() { static uint64_t ticks=1000000; return ticks+=10; } // deterministic clock, not a native timing measurement
+bool profileEnabled=false;
+unsigned long GetEnvironmentVariableW(const wchar_t* name,wchar_t* result,unsigned long size) { if(std::wstring(name)!=L"ETE_WINDOWS_PREVIEW_PROFILE"||size!=2)throw std::runtime_error("profile-env-contract");result[0]=profileEnabled?L'1':L'0';return 1; }
+struct mpv_node {}; struct mpv_event_command { mpv_node result; }; struct mpv_event { uint64_t reply_userdata; int error; void* data; };
 struct HeldFrame { int width, height; std::shared_ptr<std::vector<uint8_t>> pixels; };
 struct Output {
  struct Reply { uint64_t generation, request; std::string payload; };
@@ -46,8 +51,11 @@ struct Output {
  ${unavailable}
  ${uniqueMedia}
  ${previewMethods}
+ std::shared_ptr<HeldFrame> frameFromScreenshotNode(const mpv_node&,uint64_t,uint64_t,std::string&) { return std::make_shared<HeldFrame>(HeldFrame{2,1,std::make_shared<std::vector<uint8_t>>(8,17)}); }
+ ${previewReply}
 };
-int main() {
+int main(int argc,char**) {
+ profileEnabled=argc>1;
  int checks=0; auto check=[&](bool value){if(!value)throw std::runtime_error("owner-core-check-failed");++checks;};
  Output guard; guard.mpv=&guard;
  guard.track="1";check(guard.hasPreviewVideo());guard.track=nullptr;check(!guard.hasPreviewVideo());
@@ -81,9 +89,12 @@ int main() {
  helper.previewCapture={};helper.finishPreview("cleared-slot");check(helper.replies.size()==1);
  helper.previewCapture={10,13,6,2000,4,false};helper.finishPreview("preview-deadline");
  check(helper.replies.size()==2&&helper.replies[1].generation==13&&helper.replies[1].request==6);
+ helper.previewOwner.start(12,3);helper.previewOwner.fileLoaded(3);helper.previewOwner.restart(3);helper.track="1";helper.mpv=&helper;
+ helper.previewCapture={11,12,7,2000000,3,false};mpv_event_command command{};mpv_event event{11,0,&command};helper.handleCommandReply(&event);
+ check(helper.replies.size()==3);check(helper.previewCapture.userdata==0);
  HeldFrame frame{320,180,std::make_shared<std::vector<uint8_t>>(320*180*4,0)};
  for(size_t i=0;i<frame.pixels->size();i+=4) {(*frame.pixels)[i]=19;(*frame.pixels)[i+1]=67;(*frame.pixels)[i+2]=213;(*frame.pixels)[i+3]=17;}
- std::cout<<"{\\\"checks\\\":"<<checks<<",\\\"unavailable\\\":["<<helper.replies[0].payload<<","<<helper.replies[1].payload<<"],\\\"snapshot\\\":"<<Output{}.previewPixels(frame,12)<<"}";
+ std::cout<<"{\\\"checks\\\":"<<checks<<",\\\"unavailable\\\":["<<helper.replies[0].payload<<","<<helper.replies[1].payload<<"],\\\"snapshot\\\":"<<Output{}.previewPixels(frame,12)<<",\\\"profileReply\\\":"<<helper.replies[2].payload<<"}";
 }`;
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'ete-preview-core-'));
 try {
@@ -92,6 +103,11 @@ try {
  execFileSync(compiler,['-std=c++17','-Wall','-Wextra','-Werror',input,'-o',binary],{stdio:'pipe'});
  const result=JSON.parse(execFileSync(binary,[],{encoding:'utf8'}));
  const assert=require('node:assert/strict');
+ assert.ok(!Object.hasOwn(result.profileReply,'timing'));
+ const profiled=JSON.parse(execFileSync(binary,['profile'],{encoding:'utf8'}));
+ const profileFrame=require('../src/electronapp/native-helper/preview-snapshot').decode(profiled.profileReply,12);
+ assert.ok(profileFrame&&profileFrame.timing,JSON.stringify(profiled.profileReply));
+ assert.deepEqual(Object.keys(profileFrame.timing),['waitMicros','copyMicros','resizeMicros','encodeMicros']);
  assert.deepEqual(result.unavailable,[{ready:false,status:'unavailable',reason:'preview-"retired"\n'},{ready:false,status:'unavailable',reason:'preview-deadline'}]);
  const decoded=require('../src/electronapp/native-helper/preview-snapshot').decode(result.snapshot,12);
  if(!decoded||decoded.width!==160||decoded.height!==90||decoded.pixels.length!==57600)throw Error('core-output-invalid');

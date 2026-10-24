@@ -33,6 +33,7 @@ const DIAGNOSTICS_BLOCK = [
     'if (eteWindowsNativeEnabled) ipcRenderer.on(eteWindowsMediaRenderer.NATIVE_COMMAND_CHANNEL, function (_event, packet) {',
     '    if (eteWindowsMediaState && typeof eteWindowsMediaState.command === "function") eteWindowsMediaState.command(packet);',
     '});',
+    "if (eteWindowsNativeEnabled) window.__etePreviewPerformance = function () { return ipcRenderer.invoke('enhanced-diagnostics-status').then(function (result) { return {schemaVersion:1, native:result && result.nativeHelper && result.nativeHelper.previewPerformance || null, preview:result && result.windowsNativePreview && result.windowsNativePreview.performance || null}; }); };",
     'window.__eteWindowsMediaDiagnostics = function () { return Object.assign({bindCalls: eteWindowsMediaBindCalls, bindError: eteWindowsMediaBindError}, eteWindowsMediaState && eteWindowsMediaState.status ? eteWindowsMediaState.status() : {bound: false}); };',
     'window.__eteDiagnosticHash = diagnostics.hashPath;',
     'window.__eteBridgeReadiness = window.__eteBridgeReadiness || (function () {',

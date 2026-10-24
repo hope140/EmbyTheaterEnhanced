@@ -48,11 +48,13 @@ test('prepare writes and reuses the same generated artifact without external fil
     }
 });
 
-test('media binding captures preload modules before access is revoked and is idempotent', () => {
+test('media binding captures preload modules before access is revoked and is idempotent', async () => {
     let preloadOpen = true, installs = 0, receiveCommand, received;
     const playbackManager = {}, events = {}, rendererWindow = {}, window = {};
     const context = {window, process: {env: {ETE_WINDOWS_NATIVE_TRIAL: '1'}},
-        ipcRenderer: {send() {}, on(_channel, listener) {receiveCommand=listener;}, invoke() { return Promise.resolve({token: 'fixture'}); }},
+        ipcRenderer: {send() {}, on(_channel, listener) {receiveCommand=listener;}, invoke(channel) {
+            if(channel==='enhanced-diagnostics-status')return Promise.resolve({nativeHelper:{previewPerformance:{count:2},account:'fixture-private'},windowsNativePreview:{performance:{count:3}},token:'fixture-private'});
+            return Promise.resolve({token: 'fixture'}); }},
         require(name) {
             if (!preloadOpen) throw Error('require access revoked');
             if (name === './enhanced/diagnostics') return {hashPath() {}};
@@ -77,6 +79,9 @@ test('media binding captures preload modules before access is revoked and is ide
     assert.equal(installs, 1);
     const packet={version:1,command:'stop'};receiveCommand({},packet);assert.equal(received,packet);
     assert.equal(window.__eteWindowsMediaDiagnostics().bindError, null);
+    const metrics=await window.__etePreviewPerformance();
+    assert.deepEqual(JSON.parse(JSON.stringify(metrics)),{schemaVersion:1,native:{count:2},preview:{count:3}});
+    assert.doesNotMatch(JSON.stringify(metrics),/fixture-private|account|token/);
 });
 
 // CI TEMP can be an 8.3 alias; canonicalize fixtures, never relax product validation.

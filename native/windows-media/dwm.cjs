@@ -1,7 +1,8 @@
 'use strict';
 const {performance} = require('node:perf_hooks');
 
-function createDwm(koffi) {
+function createDwm(koffi, options = {}) {
+    const measure = options.metrics ? options.metrics.measure : (_stage,work)=>work();
     const load = require('./system-libraries.cjs').systemLibraries(koffi);
     const dwm = load('dwmapi.dll'), gdi = load('gdi32.dll'), user = load('user32.dll'), memory = load('ntdll.dll');
     const setAttribute = dwm.func('int32_t DwmSetWindowAttribute(void *window, uint32_t attribute, void *value, uint32_t size)');
@@ -30,13 +31,13 @@ function createDwm(koffi) {
         for (const attribute of [7, 10]) { const code = setAttribute(hwnd, attribute, value, 4); if (code < 0) throw Error('DwmSetWindowAttribute:0x' + (code >>> 0).toString(16)); }
     }
     function submitBitmap(hwnd, image, submit) {
-        const {width, height} = image.getSize(), buffer = image.toBitmap(), dib = bitmap(width, height);
+        const {width, height} = image.getSize(), buffer = measure('bitmapRead',()=>image.toBitmap()), dib = measure('dibCreate',()=>bitmap(width, height));
         try {
             if (buffer.length !== dib.length) throw Error('Bitmap byte count mismatch');
-            copy(dib.bits, buffer, buffer.length);
-            const code = submit(hwnd, dib.handle);
+            measure('dibCopy',()=>copy(dib.bits, buffer, buffer.length));
+            const code = measure('dwmSubmit',()=>submit(hwnd, dib.handle));
             if (code < 0) throw Error('DWM bitmap submission failed');
-        } finally { deleteObject(dib.handle); }
+        } finally { measure('dibDelete',()=>deleteObject(dib.handle)); }
     }
     function clientSize(hwnd) {
         const rect = Buffer.alloc(16), pid = [0];
@@ -68,20 +69,29 @@ function createDwm(koffi) {
             finally { try { if (dc) deleteDc(dc); } finally { deleteObject(dib.handle); } }
         }
     }
-    return {configure, invalidate, capture, clientSize,
+    return {configure, invalidate, capture, clientSize, performance:()=>options.metrics?options.metrics.snapshot():null,
         thumbnail(hwnd, image) { submitBitmap(hwnd, image, (target, handle) => setThumbnail(target, handle, 0)); },
         livePreview(hwnd, image) { submitBitmap(hwnd, image, (target, handle) => setLivePreview(target, handle, null, 0)); }};
 }
 
-function attachThumbnail(window, dwm, getImage, onError = function () {}, onRequest = function () {}) {
+function attachThumbnail(window, dwm, getImage, onError = function () {}, onRequest = function () {}, options = {}) {
+    const measure = options.metrics ? options.metrics.measure : (_stage,work)=>work();
+    // NativeImage only: GDI handles keep their original per-call ownership.
+    // At most two exact-size entries and 8 MiB combined; oversized Peek output
+    // still uses the original path without retaining another full-size copy.
+    const cacheLimit=8*1024*1024, cache=new Map();let cacheImage=null,cacheBytes=0,cacheHits=0,cacheMisses=0;
+    function clearCache(){cache.clear();cacheImage=null;cacheBytes=0;}
+    const messagesCount={thumbnailRequests:0,peekRequests:0,thumbnailSubmissions:0,peekSubmissions:0,thumbnailChanges:0,peekChanges:0};
+    const lastSubmitted={thumbnail:null,peek:null};
     const hwnd = window.getNativeWindowHandle().readBigUInt64LE();
     let enabled = false, disposed = false, submitted = 0, lastRequest = -Infinity, revision = 0;
     function currentWindow() {
         try { return !disposed && !window.isDestroyed() && window.getNativeWindowHandle().readBigUInt64LE() === hwnd; }
         catch (_) { return false; }
     }
-    function request(size, submit) {
+    function request(size, submit, kind) {
         if (!enabled || !currentWindow()) return;
+        messagesCount[kind+'Requests']++;
         const ownedRevision = revision;
         // Record demand even before a usable frame exists. Refresh/capture can
         // then satisfy the next DWM request instead of losing first-frame demand.
@@ -90,9 +100,23 @@ function attachThumbnail(window, dwm, getImage, onError = function () {}, onRequ
             const {width, height} = size(), image = getImage();
             if (!image || image.isEmpty() || width < 1 || height < 1) return;
             const source = image.getSize(), scale = Math.min(width / source.width, height / source.height);
-            const resized = image.resize({width: Math.max(1, Math.floor(source.width * scale)), height: Math.max(1, Math.floor(source.height * scale))});
+            const target={width:Math.max(1,Math.floor(source.width*scale)),height:Math.max(1,Math.floor(source.height*scale))};
+            if(cacheImage!==image){clearCache();cacheImage=image;}
+            const key=target.width+'x'+target.height,bytes=target.width*target.height*4;
+            const cached=options.cacheEnabled===false?null:cache.get(key);let resized;
+            if(cached){resized=cached.image;cacheHits++;cache.delete(key);cache.set(key,cached);}
+            else{
+                cacheMisses++;resized=measure('resize',()=>image.resize(target));
+                if (!enabled || revision !== ownedRevision || !currentWindow()) return;
+                if(options.cacheEnabled!==false&&bytes<=cacheLimit){
+                    while(cache.size>=2||cacheBytes+bytes>cacheLimit){const first=cache.keys().next().value;cacheBytes-=cache.get(first).bytes;cache.delete(first);}
+                    cache.set(key,{image:resized,bytes});cacheBytes+=bytes;
+                }
+            }
             if (!enabled || revision !== ownedRevision || !currentWindow()) return;
-            submit(hwnd, resized); submitted++;
+            measure('submitTotal',()=>submit(hwnd, resized)); submitted++;
+            messagesCount[kind+'Submissions']++;
+            if(lastSubmitted[kind]!==image){messagesCount[kind+'Changes']++;lastSubmitted[kind]=image;}
         } catch (_) { onError(); }
         finally { if (revision === ownedRevision && currentWindow()) onRequest(); }
     }
@@ -100,13 +124,13 @@ function attachThumbnail(window, dwm, getImage, onError = function () {}, onRequ
         request(() => {
             const packed = Number(lparam.readBigUInt64LE() & 0xffffffffn);
             return {width: Math.min(1024, packed >>> 16), height: Math.min(1024, packed & 65535)};
-        }, dwm.thumbnail);
+        }, dwm.thumbnail, 'thumbnail');
     }
     function livePreviewMessage() {
         request(() => {
             const size = dwm.clientSize(hwnd);
             return {width: Math.min(4096, size.width), height: Math.min(2160, size.height)};
-        }, dwm.livePreview);
+        }, dwm.livePreview, 'peek');
     }
     const messages = [0x323, 0x326];
     try {
@@ -120,20 +144,22 @@ function attachThumbnail(window, dwm, getImage, onError = function () {}, onRequ
         refresh() {
             if (!currentWindow()) return;
             if (!enabled) { dwm.configure(hwnd, true); enabled = true; }
-            dwm.invalidate(hwnd);
+            measure('invalidate',()=>dwm.invalidate(hwnd));
         },
         clear() {
-            revision++;
+            revision++;clearCache();lastSubmitted.thumbnail=null;lastSubmitted.peek=null;
             if (!enabled) return;
             enabled = false;
             if (!currentWindow()) return;
             try { dwm.configure(hwnd, false); dwm.invalidate(hwnd); } catch (_) { onError(); }
         },
         get submitted() { return submitted; },
+        performance:()=>({resize:options.metrics?options.metrics.snapshot():null,native:typeof dwm.performance==='function'?dwm.performance():null,
+            cache:{hits:cacheHits,misses:cacheMisses,bytes:cacheBytes,entries:cache.size,limitBytes:cacheLimit},messages:{...messagesCount}}),
         requestedRecently() { return performance.now() - lastRequest < 2500; },
         dispose() {
             if (disposed) return;
-            const owned = currentWindow(); disposed = true; revision++;
+            const owned = currentWindow(); disposed = true; revision++;clearCache();lastSubmitted.thumbnail=null;lastSubmitted.peek=null;
             if (!owned) return;
             for (const id of messages) { try { window.unhookWindowMessage(id); } catch (_) { onError(); } }
             if (enabled) { enabled = false; try { dwm.configure(hwnd, false); } catch (_) { onError(); } }

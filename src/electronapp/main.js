@@ -1036,8 +1036,11 @@
         getBrowserWindow: function () { return mainWindow; },
         getAppInfo: getCurrentEnhancedAppInfo,
         getNativeHelperStatus: function () {
-            return nativeHelperService && typeof nativeHelperService.status === 'function' ? nativeHelperService.status() : null;
+            return nativeHelperService && typeof nativeHelperService.status === 'function' ? Object.assign({},nativeHelperService.status(),{
+                previewPerformance:typeof nativeHelperService.previewPerformance === 'function' ? nativeHelperService.previewPerformance() : null
+            }) : null;
         },
+        getWindowsNativeMediaStatus: function () { return windowsNativeMedia ? windowsNativeMedia.status() : null; },
         app: app,
         dialog: electron.dialog,
         shell: electron.shell
@@ -1251,6 +1254,7 @@
                     var dwmMedia = require(path.join(nativeMediaPath, 'dwm.cjs'));
                     windowsNativeMedia = require('./enhanced/windows-native-media').attach({
                         window: mainWindow, ipcMain: ipcMain, nativeImage: nativeImage,
+                        previewSavings: process.env.ETE_WINDOWS_PREVIEW_BASELINE !== '1',
                         capturePreview: function (owner) { return nativeHelperService ? nativeHelperService.capturePreview(owner) : Promise.resolve(null); },
                         isPreviewOwner: function (owner) { return !!nativeHelperService && nativeHelperService.isPreviewOwner(owner); },
                         sendCommand: function (packet) {
@@ -1259,7 +1263,8 @@
                         },
                         koffi: require(path.join(nativeMediaPath, 'node_modules', 'koffi')),
                         createBindings: winrtMedia.createBindings, createSmtc: winrtMedia.createSmtc,
-                        createDwm: dwmMedia.createDwm, attachThumbnail: dwmMedia.attachThumbnail, log: enhancedLog,
+                        createDwm: function (koffi) {return dwmMedia.createDwm(koffi,{metrics:require('./enhanced/preview-performance').create(['bitmapRead','dibCreate','dibCopy','dwmSubmit','dibDelete'])});},
+                        attachThumbnail: dwmMedia.attachThumbnail, log: enhancedLog,
                         artworkDirectory: path.join(app.getPath('userData'), 'windows-media-artwork')
                     });
                     disposeWindowsNativeMedia = windowsNativeMedia.dispose;

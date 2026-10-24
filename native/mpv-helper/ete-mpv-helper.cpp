@@ -1007,7 +1007,8 @@ class Helper {
         // Keep the physical async slot until its reply. A timeout/retire must
         // not permit an unbounded queue of still-owned libmpv screenshots.
     }
-    std::string previewPixels(const HeldFrame& frame, uint64_t generation) {
+    std::string previewPixels(const HeldFrame& frame, uint64_t generation, uint64_t* timings = nullptr) {
+        const uint64_t resizeStarted = timings ? monotonicMicros() : 0;
         const double scale = std::min(1.0, std::min(160.0 / frame.width, 90.0 / frame.height));
         const int width = std::max(1, static_cast<int>(frame.width * scale));
         const int height = std::max(1, static_cast<int>(frame.height * scale));
@@ -1017,6 +1018,8 @@ class Helper {
             const size_t target = static_cast<size_t>(y * width + x) * 3;
             for (size_t channel = 0; channel < 3; ++channel) bytes[target + channel] = (*frame.pixels)[source + channel];
         }
+        if (timings) timings[2] = monotonicMicros() - resizeStarted;
+        const uint64_t encodeStarted = timings ? monotonicMicros() : 0;
         static constexpr char alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
         std::string encoded; encoded.reserve((bytes.size() + 2) / 3 * 4);
         for (size_t offset = 0; offset < bytes.size(); offset += 3) {
@@ -1027,6 +1030,7 @@ class Helper {
             encoded += offset + 1 < bytes.size() ? alphabet[(value >> 6) & 63] : '=';
             encoded += offset + 2 < bytes.size() ? alphabet[value & 63] : '=';
         }
+        if (timings) timings[3] = monotonicMicros() - encodeStarted;
         return "{\"ready\":true,\"generationId\":" + std::to_string(generation) +
             ",\"format\":\"bgr24\",\"width\":" + std::to_string(width) + ",\"height\":" + std::to_string(height) +
             ",\"pixels\":" + quote(encoded) + '}';
@@ -1308,11 +1312,22 @@ class Helper {
                 emitResponse(capture.generation, capture.request, frameUnavailable("preview-owner-unavailable")); return;
             }
             std::string reason;
+            // Explicit diagnostic launch only. No media identity or pixels are
+            // logged, and ordinary replies retain their original field set.
+            static const bool profiling = []() { wchar_t flag[2]{}; return GetEnvironmentVariableW(L"ETE_WINDOWS_PREVIEW_PROFILE", flag, 2) == 1 && flag[0] == L'1'; }();
+            uint64_t timings[4]{};
+            const uint64_t copyStarted = profiling ? monotonicMicros() : 0;
+            if (profiling) timings[0] = copyStarted - (capture.deadline - 1500000);
             auto frame = frameFromScreenshotNode(reply->result, capture.generation, 0, reason);
+            if (profiling) timings[1] = monotonicMicros() - copyStarted;
             if (!frame || !ownsPreview(capture.generation, capture.media) || !hasPreviewVideo()) {
                 emitResponse(capture.generation, capture.request, frameUnavailable("preview-frame-unavailable")); return;
             }
-            emitResponse(capture.generation, capture.request, previewPixels(*frame, capture.generation)); return;
+            auto payload = previewPixels(*frame, capture.generation, profiling ? timings : nullptr);
+            if (profiling) payload.insert(payload.size()-1, ",\"timing\":{\"waitMicros\":" + std::to_string(timings[0]) +
+                ",\"copyMicros\":" + std::to_string(timings[1]) + ",\"resizeMicros\":" + std::to_string(timings[2]) +
+                ",\"encodeMicros\":" + std::to_string(timings[3]) + '}');
+            emitResponse(capture.generation, capture.request, payload); return;
         }
         if (autoScreenshotReplyId && event->reply_userdata == autoScreenshotReplyId) {
             autoScreenshotReplyId = 0;

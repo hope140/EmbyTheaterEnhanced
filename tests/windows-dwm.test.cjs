@@ -78,18 +78,18 @@ test('thumbnail and Peek submission copy the real image bytes and free the DIB o
 
 function thumbnailFixture(options = {}) {
     const hooks = new Map(), calls = [], hwnd = Buffer.alloc(8); hwnd.writeBigUInt64LE(4n);
-    let image = null, destroyed = false;
+    let image = null, destroyed = false, resizes = 0;
     function makeImage(width, height) {
-        return {isEmpty: () => false, getSize: () => ({width, height}), resize: size => { if (options.onResize) options.onResize(); return makeImage(size.width, size.height); }};
+        return {isEmpty: () => false, getSize: () => ({width, height}), resize: size => {resizes++; if (options.onResize) options.onResize(); return makeImage(size.width, size.height); }};
     }
     const window = {getNativeWindowHandle: () => hwnd, isDestroyed: () => destroyed,
         hookWindowMessage: (id, callback) => { if (options.hookFails && id === 0x326) throw Error('fixture-hook'); hooks.set(id, callback); }, unhookWindowMessage: id => hooks.delete(id)};
     const dwm = {configure: (_hwnd, enabled) => calls.push(['configure', enabled]), invalidate: () => calls.push('invalidate'),
-        clientSize: () => ({width: 1200, height: 800}),
+        clientSize: () => options.clientSize || ({width: 1200, height: 800}),
         thumbnail: (_hwnd, bitmap) => calls.push(['thumbnail', bitmap.getSize()]),
         livePreview: (_hwnd, bitmap) => calls.push(['peek', bitmap.getSize()])};
-    const controller = attachThumbnail(window, dwm, () => image, () => calls.push('error'), () => calls.push('request'));
-    return {controller, hooks, calls, destroy() {destroyed=true;}, setImage: () => { image = makeImage(640, 360); },
+    const controller = attachThumbnail(window, dwm, () => image, () => calls.push('error'), () => calls.push('request'),{cacheEnabled:options.cacheEnabled});
+    return {controller, hooks, calls, get resizes(){return resizes;}, destroy() {destroyed=true;}, setImage: () => { image = makeImage(640, 360); },
         thumbnail(width = 160, height = 100) { const size = Buffer.alloc(8); size.writeBigUInt64LE(BigInt(width << 16 | height)); hooks.get(0x323)(null, size); }};
 }
 
@@ -142,4 +142,35 @@ test('failed second hook registration unwinds the first hook', () => {
         hookWindowMessage(id, callback) { if (id === 0x326) throw Error('fixture-hook'); hooks.set(id, callback); },
         unhookWindowMessage: id => hooks.delete(id)}, {}, () => null), /fixture-hook/);
     assert.equal(hooks.size, 0);
+});
+
+test('repeated DWM requests reuse exact-size NativeImages while still answering every request',()=>{
+    const f=thumbnailFixture();f.setImage();f.controller.refresh();
+    for(let i=0;i<50;i++){f.thumbnail();f.hooks.get(0x326)();}
+    assert.equal(f.resizes,2);assert.equal(f.controller.submitted,100);
+    assert.deepEqual(f.controller.performance().cache,{hits:98,misses:2,bytes:160*90*4+1200*675*4,entries:2,limitBytes:8*1024*1024});
+    f.setImage();f.thumbnail();assert.equal(f.resizes,3);assert.equal(f.controller.performance().cache.entries,1);
+    f.controller.clear();assert.equal(f.controller.performance().cache.bytes,0);
+    f.controller.refresh();f.thumbnail();assert.equal(f.resizes,4);f.controller.dispose();assert.equal(f.controller.performance().cache.bytes,0);
+});
+
+test('resize cache is bounded by both two entries and 8MiB; oversized Peek outputs are not retained',()=>{
+    const dimensions={width:1920,height:1080},f=thumbnailFixture({clientSize:dimensions});f.setImage();f.controller.refresh();
+    for(let i=0;i<30;i++)f.thumbnail(100+i,100+i);
+    assert.ok(f.controller.performance().cache.entries<=2);assert.ok(f.controller.performance().cache.bytes<=8*1024*1024);
+    f.hooks.get(0x326)();assert.ok(f.controller.performance().cache.bytes<=8*1024*1024);
+    dimensions.width=4096;dimensions.height=2160;const before=f.resizes;
+    f.hooks.get(0x326)();f.hooks.get(0x326)();assert.equal(f.resizes,before+2);
+    assert.ok(f.controller.performance().cache.bytes<=8*1024*1024);f.controller.dispose();
+});
+
+test('reentrant retirement cannot retain a resized image in the cache',()=>{
+    let f;f=thumbnailFixture({onResize(){f.controller.clear();}});f.setImage();f.controller.refresh();f.thumbnail();
+    assert.equal(f.controller.submitted,0);assert.equal(f.controller.performance().cache.bytes,0);assert.equal(f.controller.performance().cache.entries,0);f.controller.dispose();
+});
+
+test('explicit diagnostic baseline disables resize caching without suppressing DWM replies',()=>{
+    const f=thumbnailFixture({cacheEnabled:false});f.setImage();f.controller.refresh();
+    for(let i=0;i<10;i++)f.thumbnail();assert.equal(f.resizes,10);assert.equal(f.controller.submitted,10);
+    assert.equal(f.controller.performance().cache.bytes,0);f.controller.dispose();
 });

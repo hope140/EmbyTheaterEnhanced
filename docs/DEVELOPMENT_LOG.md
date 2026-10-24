@@ -1,5 +1,19 @@
 # 维护记录
 
+## 2026-10-24 — 原生预览最小节省候选（保持采样上限）
+
+计量基线后叠加可回退的小改：相同owner像素复用NativeImage；暂停同位置最多2秒验证，新DWM请求／seek／restore等仍刷新；缩放按源图像与精确尺寸缓存最多两项／8MiB，GDI句柄仍逐调用释放。保留静止画面的invalidate反馈，避免需求租约过期导致后续运动冻结。单包通过显式ETE_WINDOWS_PREVIEW_BASELINE=1恢复原路径，A/B共用相同源、内核、计时与profile规则，避免两次完整构建。
+
+同源合成30秒／同内容及1200×800窗口，移动capture31→31、resize320→64；静止NativeImage32→2，暂停capture31→16。都是工作次数，不是Windows耗时或流畅度证据。真实捕获／DWM／GPU成本及FPS仍UNKNOWN，本轮不提采样率、不操作Work、不覆盖前版或发布。只读统计／同条件Work复验及边界见[性能合同](WINDOWS_PREVIEW_PERFORMANCE.md)。
+
+## 2026-10-24 — 原生预览性能计量基线（独立候选）
+
+独立候选从已验证tree对应的4dea85f5建立，不覆盖前版。用户反馈前版SMTC按钮通过；退出尚未确认。当前main的1000ms定时／950ms冷却及helper的950000us限速共同约束采样上限，不能只改JS timer就宣称提帧。原Native截图路径仍先取得完整screenshot-raw video并复制BGRX，再缩到160×90并base64编码；Peek会再次放大到窗口尺寸。真实Windows耗时／呈现FPS及GPU成本当前UNKNOWN，未操作正在验收的Work。
+
+本提交只增加计量：固定聚合count／total／max／p95桶上界、有效／请求／节流等计数；空样本均值为null，不再伪报averageCaptureMs=0。显式ETE_WINDOWS_PREVIEW_PROFILE=1时helper附加四个有界微秒字段，普通回复保持原字段集，旧无timing回复继续接受。wait包含异步截图／消息分派及前置检查，不是纯GPU读回；copy含验证／分配／整帧拷贝，resize为160×90采样，encode为base64。main测RPC和解码，DWM拆分resize／invalidate／toBitmap／DIB建立／复制／提交／释放，全部只保留数值，不记录像素、媒体或账户。
+
+沿用可信诊断IPC，在显式trial中提供只返回preview计量的__etePreviewPerformance读取函数，无新界面或播放控制。定向95／95；精确维护C++方法／新计时回复路径的移植编译39项通过（WinAPI环境读取及截图节点为替身），不等于真实Windows编译或时间测量。普通1Hz上限、双窗口、owner／并发／退休合同及固定mpv内核保持。
+
 ## 2026-10-24 — 按真实Electron监听归属修正生命周期契约
 
 精确前版在固定Electron44.4.2的真实窗口中确认首场crash-listener-removed为actual1／expected0，attach前crash基线也是1；对应内建监听仍在，不是适配器泄漏，也不应移除系统监听。探针现按函数引用记录attach前列表与新增所属回调；每类必须恰有一个所属监听，退出后所属引用须全部消失，原列表的身份、数量与顺序均须保留。不是改为宽松总数阈值，等数量替换、漏自己同时删外部、外部重排和重复回调缺失均拒绝。
