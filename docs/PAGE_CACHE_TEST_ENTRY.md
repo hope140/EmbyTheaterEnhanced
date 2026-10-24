@@ -24,6 +24,8 @@ $trialRuntime = 'C:\ETE-PageCache-Test\verified-runtime'
 
 四项测试参数必须恰好各出现一次，不接受缺参、重复、别名、负数、0、小数、科学计数、未知选项或额外位置参数。TTL范围1–300000ms，条目1–1024，序列化预算1–33554432bytes；工程内部pending/期限护栏沿[基础合同](PAGE_DATA_CACHE.md)。不允许在这条应用参数链中另外指定profile、调试端口或安全选项；测试入口不修改既有webPreferences安全策略、代理、防火墙、ACL或系统环境。
 
+界面流畅度实验可额外显式传入唯一的 `--ete-page-cache-home-flow=baseline|retain|sections`，缺省仍 baseline；它独立于布局缓存 enabled/disabled。retain／sections 还要求两份原生列表组件的精确组合哈希，创建profile前验证；不接受任意扩展配置。比较时建议保持布局缓存disabled，参数和证据边界见[实验合同](HOME_FLOW.md)。上述原四项仍必填，不新增产品TTL／容量默认。
+
 ## 隔离和拒绝
 
 `main.js`在bootstrap、设备身份和日志创建之前调用 `page-cache/test-session.js`，要求Windows、app尚未ready、实际execPath为当前runtime的x64/electron/electron.exe且argv应用目录为该runtime/electronapp。缺来源清单、七份关键维护脚本与Git blob来源记录不一致、prepared preload不一致、输入/临时目录为链接或重定向均拒绝。这里的包内哈希自检是有限启动绑定，**不是独立完整来源或全runtime验证**；完整验证仍由构建与父线程核对执行。

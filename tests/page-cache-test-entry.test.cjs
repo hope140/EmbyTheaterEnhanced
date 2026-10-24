@@ -23,6 +23,13 @@ function fixture(t) {
     write('electronapp/preload.js', preload.buildPreparedPreload("window.appdata = process.env.APPDATA;\n"));
     write('x64/electron/electron.exe', 'synthetic-identity-only-not-executable');
     write('config/system.xml', 'test-seed');
+    for (const [index, overlay] of session.FLOW_OVERLAYS.entries()) {
+        const method = index === 0 ? 'patchItemsContainer' : 'patchVirtualScroller';
+        const base = fs.readFileSync(path.join(__dirname, '../vendor/web-snapshot/www', overlay.path.slice('electronapp/www/'.length)), 'utf8');
+        const movie = require('../tools/patch-movie-browser.cjs')[method](base);
+        const search = require('../tools/patch-search-ui.cjs').patchBrowseGuard(movie);
+        write(overlay.path, require('../tools/patch-server-home.cjs')[method](search));
+    }
     const manifest = {sourceCommit: 'a'.repeat(40), validatedProductScope: {sourceCommit: 'a'.repeat(40), sourceSelection: 'git-commit-blobs', files},
         preparedArtifacts: [{runtimePath: 'electronapp/preload.js', runtimeSha256: digest(fs.readFileSync(path.join(runtime, 'electronapp/preload.js')))}]};
     write('runtime-provenance.json', JSON.stringify(manifest));
@@ -41,6 +48,31 @@ test('normal startup performs no trial path, app, environment or filesystem acce
 test('enabled and disabled comparison configurations require explicit TTL and capacities', () => {
     assert.deepEqual(options.parse(enabled), {enabled: true, ttlMs: 100, maxEntries: 2, maxBytes: 4096});
     assert.equal(options.parse(enabled.map(a => a.replace('=enabled', '=disabled'))).enabled, false);
+});
+test('Home flow is an independent explicit isolated-test option, absent by default', t => {
+    assert.equal(Object.hasOwn(options.parse(enabled), 'homeFlow'), false);
+    for (const homeFlow of ['baseline', 'retain', 'sections']) {
+        const value = options.parse([...enabled.map(arg => arg.replace('=enabled', '=disabled')), '--ete-page-cache-home-flow=' + homeFlow]);
+        assert.equal(value.enabled, false); assert.equal(value.homeFlow, homeFlow);
+        const target = {}; options.install(target, [options.rendererArgument(value)]);
+        assert.equal(target.__etePageCacheTestOptions.homeFlow, homeFlow);
+        assert.equal(Object.isFrozen(target.__etePageCacheTestOptions), true);
+    }
+    for (const value of ['enabled', 'all', 'false']) assert.throws(() => options.parse([...enabled, '--ete-page-cache-home-flow=' + value]));
+    assert.throws(() => options.parse([...enabled, '--ete-page-cache-home-flow=retain', '--ete-page-cache-home-flow=sections']));
+    const f = fixture(t); f.settings.argv.push('--ete-page-cache-home-flow=sections');
+    assert.equal(f.prepare().options.homeFlow, 'sections');
+});
+test('Home flow requires both exact composed native commit guards before allocating a profile', t => {
+    const f = fixture(t), contract = require('../tools/prepare-web-overlays.cjs').WEB_OVERLAY_CONTRACT;
+    for (const overlay of session.FLOW_OVERLAYS) {
+        const row = contract.find(item => item.runtimePath === overlay.path);
+        assert.equal(row.expectedOutputSha256, overlay.sha256);
+        assert.ok(row.generatorPaths.includes('tools/patch-server-home.cjs'));
+        assert.equal(digest(fs.readFileSync(path.join(f.runtime, overlay.path))), overlay.sha256);
+    }
+    f.settings.argv.push('--ete-page-cache-home-flow=sections'); f.write(session.FLOW_OVERLAYS[1].path, 'old or tampered native component');
+    assert.throws(f.prepare); assert.deepEqual(fs.readdirSync(f.temp), []); assert.deepEqual(f.sets, []);
 });
 const invalidArgs = [enabled.slice(0, -1), [...enabled, enabled[0]], [...enabled, '--user-data-dir=/existing'],
     [...enabled, '--no-sandbox'], [...enabled, '--remote-debugging-port=9222'], ['--ete-page-cache-renderer={}'],

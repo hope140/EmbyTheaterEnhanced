@@ -159,9 +159,10 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/modules/emby-elements/emby-itemscontainer/emby-itemscontainer.js',
         expectedBaseSha256: '46670CE92ADF5A46BA6F7689481E89CD39A5D423A9F97D9D78F45E49F1E86E49',
         expectedInputSha256: null,
-        expectedOutputSha256: '674DDFDC2FB23743878D0724EA57E09209165F296EEB0835DB91BCAC4D09988C',
+        expectedOutputSha256: '4F3633D1B23CA2B15B6ACDF6AD013B0F704733D8BB17B37F4527EF310D52DFDA',
         transform: 'patchItemsContainer',
-        generatorPaths: Object.freeze([SEARCH_GENERATOR_PATH, GENERATOR_PATH, MOVIE_GENERATOR_PATH])
+        homeTransform: 'patchItemsContainer',
+        generatorPaths: Object.freeze([SEARCH_GENERATOR_PATH, GENERATOR_PATH, MOVIE_GENERATOR_PATH, HOME_GENERATOR_PATH])
     }),
     Object.freeze({
         id: 'movie-browse-virtual-scroller',
@@ -171,9 +172,10 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/modules/virtual-scroller/virtual-scroller.js',
         expectedBaseSha256: 'D2982A619FDF3DC7F9ED13910D0CAB3723E7122440B02214057D2FC6A592A5B9',
         expectedInputSha256: null,
-        expectedOutputSha256: '54537E38237C5DDD5B0B087249E7B29BCFF5C409DEA4A4867FF607CAAAC3802F',
+        expectedOutputSha256: '4F7F014519217712350B156F86C710654CE1D48F39DA98B2811C8314BAB63DEC',
         transform: 'patchVirtualScroller',
-        generatorPaths: Object.freeze([SEARCH_GENERATOR_PATH, GENERATOR_PATH, MOVIE_GENERATOR_PATH])
+        homeTransform: 'patchVirtualScroller',
+        generatorPaths: Object.freeze([SEARCH_GENERATOR_PATH, GENERATOR_PATH, MOVIE_GENERATOR_PATH, HOME_GENERATOR_PATH])
     }),
 
     Object.freeze({
@@ -363,7 +365,7 @@ function outputFor(root, contract) {
         const movie = movieBrowser[contract.transform](base.toString('utf8'));
         const output = contract.id === 'movie-browse-list-controller' ? searchUi.patchListController(movie) :
             ['movie-browse-items-container', 'movie-browse-virtual-scroller'].includes(contract.id) ? searchUi.patchBrowseGuard(movie) : movie;
-        return {base, input: Buffer.from(output, 'utf8')};
+        return {base, input: Buffer.from(contract.homeTransform ? serverHome[contract.homeTransform](output) : output, 'utf8')};
     }
     if (contract.id === 'plugin-viewmanager' && contract.mode === 'tracked-canonical-transform') {
         return {base, input: Buffer.from(pluginSettings.patchViewManager(base.toString('utf8')), 'utf8')};

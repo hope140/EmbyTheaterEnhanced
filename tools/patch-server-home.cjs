@@ -35,4 +35,18 @@ function patchApp(text) {
         'define("ete-server-home", [], getDynamicImport("./../enhanced/home/home-tab.js")),\n' +
         '      define("baseView", [], getDynamicImport("./modules/viewmanager/baseview.js")),');
 }
-module.exports = {patchHomeTab, patchApp};
+function patchItemsContainer(text) {
+    if (text.includes('eteHomeFlowOwns')) throw new Error('Home flow anchor mismatch.');
+    // This opt-in hook belongs to the Home controller, not a transport/global
+    // cache. Other pages have no hook and retain their existing behavior.
+    text = once(text, 'function onDataFetched(result) {',
+        'function onDataFetched(result) {\n    if (this.eteHomeFlowOwns && !this.eteHomeFlowOwns(result)) return;');
+    return once(text, '          hasActiveElement &&',
+        '          if (this.eteHomeFlowOwns && !this.eteHomeFlowOwns(result)) return;\n          hasActiveElement && (!this.eteHomeFlowCanRestore || this.eteHomeFlowCanRestore(result)) &&');
+}
+function patchVirtualScroller(text) {
+    if (text.includes('eteHomeFlowOwns')) throw new Error('Home flow anchor mismatch.');
+    return once(text, '                var items = result.Items || result,',
+        '                if (instance.eteHomeFlowOwns && !instance.eteHomeFlowOwns(result)) return;\n                var items = result.Items || result,');
+}
+module.exports = {patchHomeTab, patchApp, patchItemsContainer, patchVirtualScroller};

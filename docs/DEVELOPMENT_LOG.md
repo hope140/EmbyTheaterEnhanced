@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-24 — 首页返回复用与独立分区实验闭环
+
+保留bcf9453备份，从已验证默认关闭路径增加显式baseline／retain／sections模式。先采集固定两区、15/25/220ms合成延迟基线；再在同一Home controller保存stage和滚动／焦点，返回仍读取布局和各区内容；sections首屏按区交付，单区错误和重试不拆成功区。账号／服务／查询／认证代次／locale／版本边界、CM事件退休、通知失效和微任务合并均有归属检查。用户输入后取消旧恢复意图，冷身份超时保留可重试错误。
+
+原生refreshItemsInternal会消费失败，故以本轮实际读取结果控制揭示，避免旧数据被当作成功；Home结果弱引用表绑定票据／请求，原生列表DOM提交、延迟焦点／刷新登记及分块写入分别检查。新增钩子仅Home安装，原Movie/Search变换保持，两个完整组合输出SHA及generatorPaths同步纳入来源与隔离测试入口。显式附加home-flow参数经原main→prepared preload→Home工厂接线，强制新profile，普通启动不变；不新增IPC、持久DTO缓存或产品TTL／容量。
+
+最终31文件403/403通过，0失败/取消/跳过，JS428及有限模式516文件通过。独立无界面Chromium16场景通过，生产controller/provider/Events/cache真实执行，网络和Items/CardBuilder为替身；真实原生函数另以材料回归覆盖。原生完整加载器、图片解码、真实服务、Windows整包和视觉未验，不报性能百分比。计时工具记录精确Git来源和controller SHA、同条件逻辑请求、可见／可交互代理、完成时间及空白帧，方法见[实验合同](HOME_FLOW.md)。未触发workflow、安装、合并或发布，图片、列表淘汰和统一清理保持未实现。
+
 ## 2026-10-24 — 按补充栈覆盖 API 延后关闭事件
 
 按补充调用链核对ApiClient450为websocketclose延后通知，经Events66、home-layout-cache.invalidate及page-data-cache清理在途工作到clearTimeout。原始实测message缺失，保留TypeError事实，云端受控Illegal invocation不反填实测；顶部“喜欢”仅作导航动作，不推断收藏写或零API请求。

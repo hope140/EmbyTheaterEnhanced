@@ -75,13 +75,13 @@
             var userId = client.getCurrentUserId(), serverId = client.serverId();
             if (!text(userId, 256, false) || ['.', '..'].includes(userId) || !text(serverId, 256, false)) return null;
             return {client: client, userId: userId, serverId: serverId, epoch: epoch,
-                auth: options.layoutCache ? client._identityEpoch || 0 : null};
+                auth: options.layoutCache || options.strictIdentity ? client._identityEpoch || 0 : null};
         }
         function current(bound) {
             if (disposed || !bound || bound.epoch !== epoch) return false;
             try {
                 return getCurrentClient() === bound.client && bound.client.getCurrentUserId() === bound.userId && bound.client.serverId() === bound.serverId &&
-                    (!options.layoutCache || (bound.client._identityEpoch || 0) === bound.auth);
+                    (!(options.layoutCache || options.strictIdentity) || (bound.client._identityEpoch || 0) === bound.auth);
             } catch (_) { return false; }
         }
         function cancelled() { var error = new Error('home-cancelled'); error.code = 'home-cancelled'; return error; }

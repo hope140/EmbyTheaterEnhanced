@@ -48,6 +48,8 @@ Native Helper 的 transport 终态与 owned process 退出分别确认。有 PID
 
 首页布局增加默认关闭的独立缓存适配：仅接在HomeSections安全投影之后，Section Items仍沿原GET；原CM/API事件、认证代次和页面票据检查控制隔离/失效，未包装共享API或接入内容/播放缓存。普通生产调用不传开关及TTL，实际保持关闭；显式测试CLI在bootstrap之前验证包内身份、分配全新临时profile并经prepared preload传入有限选项，不改Host/安装器或新增IPC。见[隔离测试启动](PAGE_CACHE_TEST_ENTRY.md)；页面真接线与合成验证边界见[首页布局缓存](PAGE_CACHE_HOME_ADAPTER.md)。
 
+同一独立分支另有默认 baseline 的界面流畅度实验，显式测试参数选择 retain／sections。它在原 Home owner 中复用同身份／查询 stage、重新读取内容，并逐区呈现；不新增全局缓存池。原生列表的窄提交钩子只对该 owner 生效，账号、导航、请求及延迟回调再次核对；精确组合哈希进入来源和隔离启动检查。范围、基线方法、未验视觉与原生组件边界见[首页界面流畅度](HOME_FLOW.md)。
+
 冷启动首页在同一 refresh epoch 内等待既有连接身份就绪，最长 3 秒；暂停/清理/销毁取消探测。失败状态显示通用文字，pending 仅去重所属进行中请求，成功 active 状态保留原去重。
 
 Windows 本地试验由 preload 提前捕获模块，原 play 入口传入原 PlaybackManager/events 幂等绑定。任务栏按钮、Web MediaSession 展示和可选 SMTC/DWM 共用原状态，命令仍经原 inputmanager。main-only 适配器校验 mainFrame、文档 token、sequence 与媒体代次，只捕获所属 video host，按需更新、最小化保帧、退出等待退休。固定 FFI 尚未进入正式构建，不改变 Native、Session 和窗口归属；见[当前记录](WINDOWS_MEDIA_CONTROLS.md)。

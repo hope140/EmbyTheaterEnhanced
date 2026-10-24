@@ -25,7 +25,11 @@ const SOURCE_FILES = Object.freeze(['electronapp/main.js', 'electronapp/enhanced
     'electronapp/enhanced/home/server-sections.js', 'electronapp/enhanced/page-cache/page-data-cache.js',
     'electronapp/enhanced/page-cache/home-layout-cache.js', 'electronapp/enhanced/page-cache/test-options.js',
     'electronapp/enhanced/page-cache/test-session.js']);
-function identity(runtimeRoot) {
+const FLOW_OVERLAYS = Object.freeze([
+    Object.freeze({path: 'electronapp/www/modules/emby-elements/emby-itemscontainer/emby-itemscontainer.js', sha256: '4F3633D1B23CA2B15B6ACDF6AD013B0F704733D8BB17B37F4527EF310D52DFDA'}),
+    Object.freeze({path: 'electronapp/www/modules/virtual-scroller/virtual-scroller.js', sha256: '4F7F014519217712350B156F86C710654CE1D48F39DA98B2811C8314BAB63DEC'})
+]);
+function identity(runtimeRoot, homeFlow) {
     const manifestPath = physical(path.join(runtimeRoot, 'runtime-provenance.json'), false);
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
     const scope = manifest.validatedProductScope;
@@ -39,6 +43,7 @@ function identity(runtimeRoot) {
     }
     const prepared = (manifest.preparedArtifacts || []).filter(row => row.runtimePath === 'electronapp/preload.js');
     if (prepared.length !== 1 || prepared[0].runtimeSha256 !== digest('electronapp/preload.js')) fail();
+    if (homeFlow && homeFlow !== 'baseline') for (const overlay of FLOW_OVERLAYS) if (digest(overlay.path) !== overlay.sha256) fail();
     return manifest.sourceCommit;
 }
 function prepare(options) {
@@ -49,7 +54,7 @@ function prepare(options) {
     const runtimeRoot = physical(options.runtimeRoot, true);
     if (normalized(physical(options.execPath, false)) !== normalized(path.join(runtimeRoot, 'x64/electron/electron.exe')) ||
         normalized(physical(options.argv[1], true)) !== normalized(path.join(runtimeRoot, 'electronapp'))) fail();
-    const sourceCommit = identity(runtimeRoot);
+    const sourceCommit = identity(runtimeRoot, testOptions.homeFlow);
     const parent = physical(options.tempParent || os.tmpdir(), true);
     const originalAppData = app.getPath('appData'), originalUserData = app.getPath('userData');
     const forbidden = [runtimeRoot, path.join(originalAppData, 'EmbyTheaterEnhanced'), originalUserData];
@@ -72,4 +77,4 @@ function prepare(options) {
     return Object.freeze({root, userDataPath: paths.userData, options: testOptions,
         rendererArgument: config.rendererArgument(testOptions), sourceCommit});
 }
-module.exports = {prepare, identity, SOURCE_FILES};
+module.exports = {prepare, identity, SOURCE_FILES, FLOW_OVERLAYS};
