@@ -35,6 +35,8 @@ node tools/check-home-flow-renderer.cjs /absolute/path/to/installed/chromium
 
 Node 执行真实管理 IPC、原 sender boundary、布局／数据缓存以及原 main 退出块；Electron session／app 对象为替身。缓存清理回归覆盖多 owner、身份变更、期限、在途取消、迟到回复、销毁、重复点击、异常、清理后无法测量及退出归属。HTTP session 替身只允许调用 getCacheSize／clearCache，其他接口触碰即失败。
 
-可选已安装 Chromium 工具执行真实 About HTML/controller、原 BaseView、管理 UI、缓存、Events 和 DOM，另用原 Alameda 验证设置页与首页的相对依赖共享同一缓存 owner；网络、IPC 和 session 为受控替身。它不安装浏览器、不读取个人 profile、不连接实际 Emby，也不代替 Electron/Windows 的整包存储保留、焦点、主题和视觉验收。
+可选已安装 Chromium 工具执行真实 About HTML/controller、原 BaseView、管理 UI、缓存、Events 和 DOM，另用原 Alameda 加载完整 About 工厂及真实管理依赖、原设置 CSS 和首页相对样式，并验证共享同一缓存 owner；网络、IPC 和 session 为受控替身。它不安装浏览器、不读取个人 profile、不连接实际 Emby，也不代替 Electron/Windows 的整包存储保留、焦点、主题和视觉验收。
 
 后续精确独立包先按[隔离入口](PAGE_CACHE_TEST_ENTRY.md)在全新测试 profile 验证：进入关于可读取两项；手动清理后重读；登录和设置以及 embydata 保持；请求／清理未结算时离页、返回、退出不出现迟到覆盖或遗留在途 owner。需使用合成数据／获准测试身份，用户工作期间不执行前台验证。这里不承诺清理后的性能收益或所有页面优化完成。
+
+完整离线回归须先用 `node tools/prepare-preload.cjs .` 从锁定源码模板生成被忽略的 preload，再运行 `node --test --test-concurrency=1 tests/*.test.cjs`。About 的既有版本／更新／复制快照测试也必须装配真实缓存管理依赖，不能只保留旧的两个工厂参数或跳过新入口；进入时的 HTTP 统计是只读请求，检查更新和清理仍只由对应用户动作触发。平台专属测试按实际宿主单独列出，Linux 结果不替代 Windows PowerShell／进程集成证据。

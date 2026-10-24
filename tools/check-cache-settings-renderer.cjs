@@ -120,35 +120,50 @@ async function main(args = process.argv.slice(2)) {
         const loaderPage = await browser.newPage(), loaderErrors = [];
         loaderPage.on('pageerror', error => loaderErrors.push(error.name));
         try {
-            const routes = {'/plugins/mpvplayer/cache-settings.js': input.ui,
+            const routes = {'/plugins/mpvplayer/cache-settings.js': input.ui, '/plugins/mpvplayer/about.js': input.about,
+                '/modules/viewmanager/baseview.js': input.base,
+                '/plugins/mpvplayer/about.css':fs.readFileSync(path.join(root,'src/electronapp/plugins/mpvplayer/about.css'),'utf8'),
+                '/plugins/mpvplayer/enhanced-settings.css':fs.readFileSync(path.join(root,'src/electronapp/plugins/mpvplayer/enhanced-settings.css'),'utf8'),
+                '/modules/listview/listview.css':fs.readFileSync(path.join(root,'vendor/web-snapshot/www/modules/listview/listview.css'),'utf8'),
+                '/enhanced/home/home-flow.css':fs.readFileSync(path.join(root,'src/electronapp/enhanced/home/home-flow.css'),'utf8'),
                 '/enhanced/page-cache/home-layout-cache.js': input.adapter, '/enhanced/page-cache/page-data-cache.js': input.cache,
                 '/modules/emby-apiclient/events.js': input.events};
             const requested = [];
             await loaderPage.route('**/*', route => {
                 requested.push(new URL(route.request().url()).pathname);
                 const text = routes[new URL(route.request().url()).pathname];
-                return text ? route.fulfill({status:200,contentType:'application/javascript',body:text}) : route.abort();
+                return text ? route.fulfill({status:200,contentType:new URL(route.request().url()).pathname.endsWith('.css')?'text/css':'application/javascript',body:text}) : route.abort();
             });
             await loaderPage.setContent('<base href="http://synthetic.invalid/">' + input.html);
             await loaderPage.addScriptTag({content:fs.readFileSync(path.join(root,'vendor/web-snapshot/www/modules/alameda/alameda.js'),'utf8')});
             const result = await loaderPage.evaluate(async () => {
                 require.config({baseUrl:'http://synthetic.invalid/'});
-                const [adapter,ui,events] = await new Promise((resolve,reject) => {
+                define('loading',[],()=>({show(){},hide(){}}));
+                define('emby-button',[],()=>({})); define('emby-scroller',[],()=>({}));
+                define('modules/dom.js',[],()=>({default:{supportsEventListenerOnce:()=>false}}));
+                define('modules/layoutmanager.js',[],()=>({default:{tv:false}}));
+                define('modules/browser.js',[],()=>({default:{}}));
+                define('baseView',['modules/viewmanager/baseview.js'],base=>base.default);
+                define('enhanced/home/sheet-probe.js',['css!./home-flow.css'],()=>true);
+                window.ipc={invoke:channel=>Promise.resolve(channel==='enhanced-http-cache-status'?{status:'ok',bytes:128}:channel==='enhanced-maintenance-info'?{status:'ok',info:{}}:{status:'unavailable'})};
+                const [adapter,About,events] = await new Promise((resolve,reject) => {
                     const timer=setTimeout(()=>reject(Error('AMD loading deadline exceeded')),5000);
-                    require(['enhanced/page-cache/home-layout-cache.js','plugins/mpvplayer/cache-settings','modules/emby-apiclient/events.js'],(...loaded)=>{clearTimeout(timer);resolve(loaded);},error=>{clearTimeout(timer);reject(error);});
+                    require(['enhanced/page-cache/home-layout-cache.js','plugins/mpvplayer/about','modules/emby-apiclient/events.js','enhanced/home/sheet-probe.js'],(...loaded)=>{clearTimeout(timer);resolve(loaded);},error=>{clearTimeout(timer);reject(error);});
                 });
                 const api={isLoggedIn:()=>true,serverId:()=> 'synthetic-server',getCurrentUserId:()=> 'synthetic-user',_identityEpoch:1,getCurrentLocale:()=> 'zh-CN',serverVersion:()=> '4.10.0.40'};
                 const owner=adapter.default.create({currentApiClient:()=>api},{enabled:true,ttlMs:10000,maxEntries:2,maxBytes:4096},events.default);
                 try {
                     await owner.load({displayMode:'desktop'},()=>Promise.resolve([{Id:'safe'}]));
-                    const manager=ui.create(document.querySelector('.view'),()=>Promise.resolve({status:'ok',bytes:128}));
-                    await manager.resume(); const before=document.querySelector('.cachePageValue').textContent;
+                    const about=new About(document.querySelector('.view')); about.onResume({});
+                    for(let i=0;i<30;i++)await Promise.resolve();
+                    const before=document.querySelector('.cachePageValue').textContent, http=document.querySelector('.cacheHttpValue').textContent;
+                    const pending=document.createElement('div');pending.className='eteHomeFlowPending';pending.innerHTML='<div class="itemProgressBar">stale</div>';document.body.append(pending);const masked=getComputedStyle(pending.firstChild).visibility;
                     document.querySelector('.btnClearPageCache').click();for(let i=0;i<20;i++)await Promise.resolve();
-                    const remaining=adapter.default.management.snapshot().entries;manager.dispose();return {before,remaining};
+                    const remaining=adapter.default.management.snapshot().entries;about.destroy();return {before,http,remaining,masked};
                 } finally {owner.dispose();}
             }).catch(error => {throw Error(error.message + '; synthetic requested paths=' + requested.join(','));});
-            assert.match(result.before,/1 \/ 2 条/);assert.equal(result.remaining,0);assert.deepEqual(loaderErrors,[]);
-            passed.push('actual Alameda resolves plugin and Home relative paths to the same managed layout owner');
+            assert.match(result.before,/1 \/ 2 条/);assert.equal(result.remaining,0);assert.match(result.http,/128 bytes/);assert.equal(result.masked,'hidden');assert.deepEqual(loaderErrors,[]);
+            passed.push('actual Alameda loads About with its real management dependency and shared Home owner');
         } finally {await loaderPage.close();}
         console.log(JSON.stringify({status:'passed',browser:browser.version(),scenarios:passed.length,passed,
             scope:'real About/controller/HTML, native BaseView, layout/cache/events and DOM in Chromium; main session IPC modeled, no Electron or Windows/full GUI acceptance'}));
