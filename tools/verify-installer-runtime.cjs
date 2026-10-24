@@ -1,26 +1,37 @@
 'use strict';
 
-const fs = require('node:fs');
+// Integrity checks must see physical ASAR bytes, not Electron's virtual archive tree.
+const fileSystemBackend = process.versions.electron ? 'original-fs' : 'node:fs';
+const fs = require(fileSystemBackend);
 const path = require('node:path');
 const crypto = require('node:crypto');
 
 function inventory(root) {
     const files = new Map();
+    function failure(member, operation, cause, facts) {
+        const error = Error('Physical package inventory failed.');
+        error.member = member; error.operation = operation; error.fileSystemFacts = facts; error.fileSystemCode = /^[A-Z0-9_]{1,32}$/.test(cause?.code || '') ? cause.code : null;
+        return error;
+    }
     function walk(directory, prefix) {
-        for (const entry of fs.readdirSync(directory, {withFileTypes: true})) {
-            const file = path.join(directory, entry.name);
-            const relative = prefix + entry.name;
-            const stat = fs.lstatSync(file);
-            if (stat.isSymbolicLink()) throw new Error('Links are forbidden in package verification.');
+        let entries;
+        try {entries = fs.readdirSync(directory, {withFileTypes: true});} catch (error) {throw failure(prefix.slice(0, -1), 'readdir', error);}
+        for (const entry of entries) {
+            const file = path.join(directory, entry.name), relative = prefix + entry.name;
+            let stat;
+            try {stat = fs.lstatSync(file);} catch (error) {throw failure(relative, 'lstat', error);}
+            if (stat.isSymbolicLink()) throw failure(relative, 'reject-link');
             if (stat.isDirectory()) walk(file, relative + '/');
-            else if (stat.isFile()) files.set(relative, {size: stat.size,
-                sha256: crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex')});
-            else throw new Error('Nonregular package input.');
+            else if (stat.isFile()) {
+                let bytes;
+                try {bytes = fs.readFileSync(file);} catch (error) {throw failure(relative, 'read-file', error);}
+                if (bytes.length !== stat.size) throw failure(relative, 'stat-read-length-mismatch', null, {size: stat.size, readBytes: bytes.length, sha256: crypto.createHash('sha256').update(bytes).digest('hex')});
+                files.set(relative, {size: stat.size, sha256: crypto.createHash('sha256').update(bytes).digest('hex')});
+            } else throw failure(relative, 'reject-nonregular');
         }
     }
-    if (fs.lstatSync(root).isSymbolicLink()) throw new Error('Linked package root is forbidden.');
-    walk(root, '');
-    return files;
+    if (fs.lstatSync(root).isSymbolicLink()) throw failure('', 'reject-root-link');
+    walk(root, ''); return files;
 }
 
 function verify(runtime, extracted, sourceCommit) {
@@ -43,4 +54,4 @@ if (require.main === module) {
     try { console.log(JSON.stringify(verify(...process.argv.slice(2)))); }
     catch (error) { console.error(error.message); process.exitCode = 1; }
 }
-module.exports = {inventory, verify};
+module.exports = {inventory, verify, fileSystemBackend};

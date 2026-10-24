@@ -1,6 +1,7 @@
 'use strict';
 // Preparation is Node-only. Native execution requires a separate, explicit Windows command.
-const fs = require('node:fs');
+const fileSystemBackend = process.versions.electron ? 'original-fs' : 'node:fs';
+const fs = require(fileSystemBackend); // Fail closed if original-fs is unavailable in Electron.
 const path = require('node:path');
 const crypto = require('node:crypto');
 const zlib = require('node:zlib');
@@ -58,25 +59,51 @@ function zipReceipts(file) {
     } finally {fs.closeSync(fd);}
 }
 function source(repo, relative) {return execFileSync('git', ['show', CANDIDATE.commit + ':' + relative], {cwd: repo, maxBuffer: 4 * 1048576, windowsHide: true});}
+function safeMember(value) {
+    return typeof value === 'string' && value.length > 0 && value.length <= 1024 && !/[\\:\x00-\x1f\x7f?#]/.test(value) &&
+        !value.split('/').some(part => !part || part === '.' || part === '..') ? value : '[invalid-member]';
+}
+function integrityError(code, member, expected, actual, operation = 'compare') {
+    const validHash = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value) ? value : null;
+    const validSize = value => Number.isSafeInteger(value) && value >= 0 ? value : null;
+    const diagnostic = {code, member: safeMember(member), fileSystemBackend, operation,
+        expectedSha256: validHash(expected?.sha256), actualSha256: validHash(actual?.sha256),
+        sizeDeclared: !!expected && Object.hasOwn(expected, 'size'), expectedBytes: validSize(expected?.size), actualBytes: validSize(actual?.size), actualReadBytes: validSize(actual?.readBytes ?? actual?.size)};
+    const error = Error(code + ':' + diagnostic.member); error.integrity = diagnostic; return error;
+}
+// Never serialize an arbitrary filesystem Error, absolute root, URL or contents.
+function integrityDiagnostic(error) {
+    const data = error && error.integrity;
+    if (!data || !/^candidate-[a-z-]+$/.test(data.code || '') || !['node:fs', 'original-fs'].includes(data.fileSystemBackend)) return null;
+    return {...integrityError(data.code, data.member, {sha256: data.expectedSha256, ...(data.sizeDeclared ? {size: data.expectedBytes} : {})},
+        {sha256: data.actualSha256, size: data.actualBytes, readBytes: data.actualReadBytes}, /^[a-z-]{1,48}$/.test(data.operation || '') ? data.operation : 'compare').integrity, fileSystemBackend: data.fileSystemBackend};
+}
 // Schema v3's producer emits path/hash rows. Optional size is an additional
 // assertion, never a prerequisite for the archive-bound hash/set/source checks.
 function verifyPayload(runtime, expectedManifestSha256) {
     const manifestFile = regular(path.join(runtime, 'build-manifest.json')), manifestSha256 = hashFile(manifestFile);
-    if (manifestSha256 !== expectedManifestSha256) throw Error('candidate-runtime-manifest');
+    if (manifestSha256 !== expectedManifestSha256) throw integrityError('candidate-runtime-manifest', 'build-manifest.json', {sha256: expectedManifestSha256}, {sha256: manifestSha256, size: fs.statSync(manifestFile).size});
     const manifest = JSON.parse(fs.readFileSync(manifestFile));
     if (manifest.schemaVersion !== 3 || manifest.sourceCommit !== CANDIDATE.commit || !Array.isArray(manifest.files)) throw Error('candidate-runtime-source');
-    const inventory = require('./verify-installer-runtime.cjs').inventory(runtime), expected = new Set(['build-manifest.json']); let digest = '';
+    let inventory;
+    try {inventory = require('./verify-installer-runtime.cjs').inventory(runtime);} catch (error) {throw integrityError('candidate-runtime-inventory', error.member, manifest.files.find(row => row?.path === error.member), error.fileSystemFacts, error.operation || 'inventory');}
+    const expected = new Set(['build-manifest.json']); let digest = '';
     for (const row of manifest.files) {
         if (!row || typeof row.path !== 'string' || row.path.includes('\\') || row.path.split('/').some(p => !p || p === '.' || p === '..') || row.path.includes(':') ||
             expected.has(row.path.toLowerCase()) || !/^[a-f0-9]{64}$/.test(row.sha256 || '')) throw Error('candidate-runtime-path');
         expected.add(row.path.toLowerCase()); const actual = inventory.get(row.path);
         if (!actual || actual.sha256 !== row.sha256 || Object.hasOwn(row, 'size') &&
-            (!Number.isSafeInteger(row.size) || row.size < 0 || actual.size !== row.size)) throw Error('candidate-runtime-file');
+            (!Number.isSafeInteger(row.size) || row.size < 0 || actual.size !== row.size)) throw integrityError('candidate-runtime-file', row.path, row, actual);
         digest += row.path + '\0' + row.sha256 + '\n';
     }
     if (inventory.size !== expected.size || [...inventory.keys()].some(k => !expected.has(k.toLowerCase())) ||
         !manifest.payload || manifest.payload.fileCount !== manifest.files.length || manifest.payload.payloadSetSha256 !== sha(digest)) throw Error('candidate-runtime-set');
     return {inventory, manifestSha256};
+}
+function physicalPayloadProof(inventory) {
+    const ordered = [...inventory].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
+    return {files: inventory.size, sha256: sha(ordered.map(([name, row]) => name + '\0' + row.sha256 + '\0' + row.size + '\n').join('')),
+        asarFiles: ordered.filter(([name]) => name.endsWith('.asar')).map(([member, row]) => ({member, sha256: row.sha256, bytes: row.size}))};
 }
 function verifyRuntime(repo, runtime, zip) {
     regular(zip);
@@ -85,7 +112,8 @@ function verifyRuntime(repo, runtime, zip) {
     if (receipts.length !== 1) throw Error('candidate-installer-receipt');
     const {inventory, manifestSha256} = verifyPayload(runtime, receipts[0].runtimeManifestSha256);
     for (const relative of [...inventory.keys()].filter(k => /^electronapp\/(enhanced\/playback-range[^/]*\.js|native-helper\/(service|controller)\.js)$/.test(k))) {
-        if (inventory.get(relative).sha256 !== sha(source(repo, 'src/' + relative))) throw Error('candidate-maintained-source');
+        const expectedHash = sha(source(repo, 'src/' + relative));
+        if (inventory.get(relative).sha256 !== expectedHash) throw integrityError('candidate-maintained-source', relative, {sha256: expectedHash}, inventory.get(relative));
     }
     const native = JSON.parse(source(repo, 'vendor/native-helper-manifest.json'));
     const electron = JSON.parse(source(repo, 'vendor/electron-runtime-manifest.json'));
@@ -95,7 +123,8 @@ function verifyRuntime(repo, runtime, zip) {
         nativeRecord.helper.sha256 !== inventory.get(native.runtimePath)?.sha256 ||
         inventory.get(native.libmpv.runtimePath)?.sha256 !== native.libmpv.sha256 ||
         inventory.get(electron.runtime.runtimePath + '/' + electron.runtime.electronPath)?.sha256 !== electron.runtime.electronExeSha256) throw Error('candidate-fixed-native-identity');
-    return {sourceCommit: CANDIDATE.commit, manifestSha256, zipSha256: CANDIDATE.zipSha256,
+    const physicalPayload = physicalPayloadProof(inventory);
+    return {sourceCommit: CANDIDATE.commit, manifestSha256, zipSha256: CANDIDATE.zipSha256, physicalPayload,
         helperSha256: nativeRecord.helper.sha256, libmpvSha256: native.libmpv.sha256, electronSha256: electron.runtime.electronExeSha256};
 }
 function chunk(id, body) {const size = Buffer.alloc(4); size.writeUInt32LE(body.length); return Buffer.concat([Buffer.from(id), size, body, body.length % 2 ? Buffer.alloc(1) : Buffer.alloc(0)]);}
@@ -158,7 +187,7 @@ function validatePhase(plan, phase, exit) {
         stages = fs.readFileSync(path.join(plan.out, phase + '.stages.ndjson'), 'utf8').trim().split('\n').map(line => JSON.parse(line));
     } catch (_) {throw Error('missing-or-invalid-phase-evidence:' + phase);}
     if (receipt.status !== 'passed' || receipt.phase !== phase || receipt.pid !== exit.pid || exit.code !== 0 || exit.timedOut ||
-        JSON.stringify(receipt.identity) !== JSON.stringify(plan.identity)) throw Error('native-phase-failed:' + phase);
+        JSON.stringify(receipt.identity) !== JSON.stringify(plan.identity)) {const error = Error('native-phase-failed:' + phase); error.integrity = integrityDiagnostic({integrity: receipt.integrity}); throw error;}
     const required = phase === 'entry' ? ['module-evaluated', 'main-enter', 'profile-isolated', 'app-ready', 'entry-complete'] :
         ['module-evaluated', 'main-enter', 'profile-isolated', 'app-ready', 'helper-child-start', 'helper-ready', 'phase-complete'];
     let previous = -1;
@@ -207,7 +236,7 @@ async function entrySmoke(file, explicit) {
         const exit = await executePhase(plan, file, 'entry');
         writeNew(path.join(plan.out, 'entry-coordinator.json'), {status: 'passed', identity, exit, evidence: 'fixed-Electron-entry-only'}); return exit;
     } catch (error) {
-        writeNew(path.join(plan.out, 'entry-coordinator.json'), {status: 'failed', identity, exit: error.phaseExit || null, error: error.message, native: 'NOT_REQUESTED'}); throw error;
+        writeNew(path.join(plan.out, 'entry-coordinator.json'), {status: 'failed', identity, exit: error.phaseExit || null, error: error.message, integrity: integrityDiagnostic(error), native: 'NOT_REQUESTED'}); throw error;
     }
 }
 async function run(file, explicit) {
@@ -224,19 +253,19 @@ async function run(file, explicit) {
         writeNew(path.join(plan.out, 'coordinator.json'), {status: 'passed', identity, exits, evidence: plan.evidence}); return exits;
     } catch (error) {
         if (error.phaseExit) exits.push(error.phaseExit);
-        writeNew(path.join(plan.out, 'coordinator.json'), {status: 'failed', identity, exits, error: error.message, helperExit: exits.some(e => e.timedOut) ? 'UNCERTAIN' : 'inspect-phase-receipt'}); throw error;
+        writeNew(path.join(plan.out, 'coordinator.json'), {status: 'failed', identity, exits, error: error.message, integrity: integrityDiagnostic(error), helperExit: exits.some(e => e.timedOut) ? 'UNCERTAIN' : 'inspect-phase-receipt'}); throw error;
     }
 }
 async function main(argv) {
     const [mode, ...rest] = argv;
     if (mode === 'prepare') {
         const a = argumentsOf(rest, ['--runtime', '--zip', '--out']); if (Object.values(a).some(v => typeof v !== 'string') || Object.keys(a).length !== 3) throw Error('prepare-needs-runtime-zip-out');
-        const p = prepare({repo: path.resolve(__dirname, '..'), runtime: a['--runtime'], zip: a['--zip'], out: a['--out']}); console.log(JSON.stringify({status: 'prepared-NOT-RUN', plan: path.join(p.out, 'plan.json')}));
+        const p = prepare({repo: path.resolve(__dirname, '..'), runtime: a['--runtime'], zip: a['--zip'], out: a['--out']}); console.log(JSON.stringify({status: 'prepared-NOT-RUN', plan: path.join(p.out, 'plan.json'), fileSystemBackend, physicalPayload: p.identity.physicalPayload}));
     } else if (mode === 'entry-smoke') {
         const a = argumentsOf(rest, ['--plan', '--execute-electron-entry-smoke']); await entrySmoke(a['--plan'], a['--execute-electron-entry-smoke']);
     } else if (mode === 'run') {
         const a = argumentsOf(rest, ['--plan', '--execute-hidden-native']); await run(a['--plan'], a['--execute-hidden-native']);
     } else throw Error('Usage: prepare --runtime=PATH --zip=PATH --out=NEW_PATH | entry-smoke --plan=PATH --execute-electron-entry-smoke | run --plan=PATH --execute-hidden-native');
 }
-if (require.main === module) main(process.argv.slice(2)).catch(error => {console.error(error.message); process.exitCode = 1;});
-module.exports = {CANDIDATE, LIMITS, sha, hashFile, regular, writeNew, argumentsOf, zipReceipts, verifyPayload, verifyRuntime, avi, prepare, readPlan, childEnvironment, validatePhase, entrySmoke, run};
+if (require.main === module) main(process.argv.slice(2)).catch(error => {console.error(error.message); const integrity = integrityDiagnostic(error); if (integrity) console.error(JSON.stringify({integrity})); process.exitCode = 1;});
+module.exports = {CANDIDATE, LIMITS, fileSystemBackend, integrityDiagnostic, physicalPayloadProof, sha, hashFile, regular, writeNew, argumentsOf, zipReceipts, verifyPayload, verifyRuntime, avi, prepare, readPlan, childEnvironment, validatePhase, entrySmoke, run};

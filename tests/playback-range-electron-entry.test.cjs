@@ -29,7 +29,9 @@ function fixture(t, options = {}) {
     const localRequire = name => {
         imports.push(name);
         if (name === './playback-range-windows-smoke.cjs') return {...support, readPlan: () => plan, hashFile: () => 'fixture-image-only', verifyRuntime() {
-            if (options.validationFailure) throw Error('fixture-candidate-validation-failed'); return plan.identity;
+            if (options.validationError) throw options.validationError;
+            if (options.validationFailure) throw Error('fixture-candidate-validation-failed');
+            return options.physicalProofMismatch ? {...plan.identity, physicalPayload: {files: 999, sha256: 'mismatch'}} : plan.identity;
         }};
         if (name === 'electron') return {app, BrowserWindow};
         if (name === path.join(plan.runtime, 'electronapp', 'enhanced', 'playback-range-launch.js')) {
@@ -143,4 +145,20 @@ test('longer native deadline is unchanged and no ordinary Node branch claims an 
     assert.equal(f.args()[1][1], '--execute-hidden-native');
     f.child.exitCode = 0; f.child.emit('exit', 0, null); await assert.rejects(run, /missing-or-invalid-phase-evidence/);
     await assert.rejects(support.entrySmoke('not-a-plan', false), /explicit-Windows/);
+});
+
+test('entry failure and coordinator preserve bounded originating physical-file diagnostics', async t => {
+    const validationError = Error('candidate-runtime-file:resources/fixture.asar');
+    validationError.integrity = {code: 'candidate-runtime-file', member: 'resources/fixture.asar', fileSystemBackend: 'original-fs', operation: 'compare',
+        expectedSha256: 'a'.repeat(64), actualSha256: 'b'.repeat(64), sizeDeclared: false, expectedBytes: null, actualBytes: 100, actualReadBytes: 100};
+    const f = fixture(t, {validationError}); assert.equal(await f.exitPromise, 1);
+    const result = JSON.parse(fs.readFileSync(path.join(f.out, 'entry.json')));
+    assert.equal(result.integrity.member, 'resources/fixture.asar'); assert.equal(result.integrity.expectedSha256, 'a'.repeat(64)); assert.equal(result.integrity.actualBytes, 100);
+    assert.equal(result.integrity.fileSystemBackend, 'original-fs');
+    assert.throws(() => support.validatePhase(f.plan, 'entry', {pid: 12345, code: 1}), error => error.integrity?.member === 'resources/fixture.asar' && error.integrity.fileSystemBackend === 'original-fs');
+});
+test('entry cannot pass when its physical payload identity differs from the prepared Node identity', async t => {
+    const f = fixture(t, {physicalProofMismatch: true}); assert.equal(await f.exitPromise, 1);
+    const result = JSON.parse(fs.readFileSync(path.join(f.out, 'entry.json'))); assert.equal(result.status, 'failed'); assert.match(result.error, /same physical payload proof/);
+    assert(!f.rows.some(row => row.stage === 'app-ready'));
 });

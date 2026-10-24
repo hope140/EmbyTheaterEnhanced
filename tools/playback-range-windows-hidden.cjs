@@ -103,14 +103,16 @@ async function main(argv) {
     app.setPath('appData', profile); app.setPath('userData', path.join(profile, 'electron')); app.setPath('sessionData', path.join(profile, 'electron'));
     process.env.APPDATA = profile; process.env.LOCALAPPDATA = path.join(profile, 'local'); process.env.MPV_HOME = path.join(profile, 'mpv');
     app.setAppLogsPath(path.join(profile, 'logs')); stage('profile-isolated', {appAlreadyReady: app.isReady()});
-    stage('candidate-validation-start');
-    support.verifyRuntime(path.resolve(__dirname, '..'), plan.runtime, plan.zip);
-    stage('candidate-validation-complete');
+    stage('candidate-validation-start', {fileSystemBackend: support.fileSystemBackend});
+    const verifiedIdentity = support.verifyRuntime(path.resolve(__dirname, '..'), plan.runtime, plan.zip);
+    assert.deepEqual(verifiedIdentity, plan.identity, 'same physical payload proof in Node and Electron');
+    stage('candidate-validation-complete', {fileSystemBackend: support.fileSystemBackend, physicalPayload: verifiedIdentity.physicalPayload || null});
     const launch = require(path.join(plan.runtime, 'electronapp', 'enhanced', 'playback-range-launch.js'));
     const selected = launch.prepareLaunch(['--ete-range-cache-trial', '--ete-range-cache-config=' + path.join(plan.out, 'config.json'), '--ete-range-cache-profile=' + profile]);
     assert(selected.enabled); assert.deepEqual({...selected.config}, {...support.LIMITS, prefetchBytes: support.LIMITS.preloadMB * 1000000, root: path.join(profile, 'cache')});
     launch.activateProfile(app, selected, process.env);
     const result = {schema: 1, phase, status: 'running', identity: plan.identity, limits: support.LIMITS, pid: process.pid,
+        payloadVerification: {fileSystemBackend: support.fileSystemBackend, physicalPayload: verifiedIdentity.physicalPayload || null},
         environment: {APPDATA: process.env.APPDATA, LOCALAPPDATA: process.env.LOCALAPPDATA, MPV_HOME: process.env.MPV_HOME, TEMP: process.env.TEMP, TMP: process.env.TMP}, helpers: [], checks: {}};
     const running = path.join(plan.out, phase + '.running.json');
     const checkpoint = () => fs.writeFileSync(running, JSON.stringify({...result, lastStage: stageHistory.at(-1).stage}, null, 2) + '\n'); checkpoint();
@@ -237,7 +239,7 @@ async function main(argv) {
         result.checks.ownedHelperExitAndCacheClose = true;
         assert(windows.every(w => w.isDestroyed() || !w.isVisible())); assert(!fatal);
         result.status = 'passed';
-    } catch (error) {result.status = 'failed'; result.error = String(error.message).slice(0, 300); stage('native-phase-failed', {error: result.error});}
+    } catch (error) {result.status = 'failed'; result.error = String(error.message).slice(0, 300); result.integrity = support.integrityDiagnostic(error); stage('native-phase-failed', {error: result.error, integrity: result.integrity});}
     finally {
         clearInterval(visibilityTimer); clearTimeout(deadline);
         // Keep ownership even on failure; teardown errors prevent PASS and are retained.
@@ -254,8 +256,8 @@ async function main(argv) {
     }
 }
 if (isEntrypoint(require.main === module)) main(process.argv.slice(2)).catch(error => {
-    stage('entry-failed', {error: String(error.message).slice(0, 300)}); console.error(error.message); process.exitCode = 1;
-    if (phaseContext && !fs.existsSync(phaseContext.output)) support.writeNew(phaseContext.output, {schema: 1, phase: phaseContext.phase, status: 'failed', error: String(error.message).slice(0, 300), lastStage: stageHistory.at(-1).stage, pid: process.pid, nativeOutcome: 'NOT_ESTABLISHED'});
+    stage('entry-failed', {error: String(error.message).slice(0, 300), integrity: support.integrityDiagnostic(error)}); console.error(error.message); process.exitCode = 1;
+    if (phaseContext && !fs.existsSync(phaseContext.output)) support.writeNew(phaseContext.output, {schema: 1, phase: phaseContext.phase, status: 'failed', error: String(error.message).slice(0, 300), integrity: support.integrityDiagnostic(error), lastStage: stageHistory.at(-1).stage, pid: process.pid, nativeOutcome: 'NOT_ESTABLISHED'});
     if (process.versions.electron && process.type === 'browser') require('electron').app.exit(1);
 });
 module.exports = {protectHiddenWindow, fixtureServer, cacheSnapshot, isEntrypoint};
