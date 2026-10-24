@@ -60,6 +60,84 @@ Native 仅对已有唯一媒体的 Seek／playback-restart 配对读取真实 ti
 
 同一关键 8 项在基线 2 pass／6 fail，修后 8 pass；原有播放、Native、构建来源与诊断共 210 项通过／0 skip。Native 采样守卫的后续 4 项复验与实际提取 C++ 分支的 Linux stub 编译执行通过。接线初版缺失 getCurrentUser／transition／settings 替身导致的失败已区分，不作产品缺陷计数。原始日志留在仓库外；[技术合同](EWT_CLIENT_SYNC.md)给出复现入口与证据层级。Windows 完整 Helper／runtime、真实播放／Session 和双端 EWT 尚未验收；无现用设备、NAS 或媒体命令，无 push／merge／publish。
 
+## 首页跨设置返回与独立缓存管理
+
+原 router 的前向首页跳转跳过 viewmanager restore，旧首页尚在 slot 内也新建实例，因而再次显示首次骨架；同页喜欢切换不走这条分支。实验候选新增原 slot 查找与 Home owner 身份／查询／代次 guard，并在恢复提交前再核对；保留 native 三 slot 容量与冷加载边界。原 HomeView 已有 TabbedView 销毁链，变换保持原链，slot 淘汰仅销毁一次。
+
+缓存管理迁入真实客户端设置独立路由，旧 About 标题不再冒充入口。统计 HTTP session 总量和首页布局 DTO，支持单独／组合清理和逐项结果；一项失败不阻断独立 owner，离页不启动尚未开始的后续清理。原生设置列表、Shortcuts、router／viewmanager 点击与实际 Alameda 加载分别覆盖；跨 route 逐帧检查可见卡片与几何，设置页面加载原按钮构造器及真实 flex／按钮／设置样式；不调用存储／profile／登录／设置／下载或视频清理。完整来源／offline 回归保持，真实 Windows／服务体验仍独立验收。
+
+## About 全套测试装配收尾
+
+旧设置测试只向 About 工厂传入 loading／BaseView，遗漏新增的缓存管理依赖。夹具现使用真实管理模块与子节点／监听生命周期，检查只读 HTTP 统计和关闭；不跳过测试或给产品加入静默缺依赖兜底。可选 Chromium 检查进一步通过原 Alameda 加载 About、管理依赖及原样式，检查首页相对样式生效和 owner 共享。完整 tests/*.test.cjs 在锁定源码模板准备 preload 后运行；平台专属集成按宿主结果标明，不外推为 Windows 整包验收。
+
+## 首页返回视觉连续性修复候选
+
+旧实验将动态卡片整行 visibility 设为 hidden，并在卡片容器之外追加占位及加载段落；即使 stage 被复用，真实画面仍闪成标题与空白。候选保留同身份卡片外壳、暂禁交互并仅遮易变进度／节目状态；首次未知内容使用同 scroller 内原生比例占位，返回不再加高度和可见加载文字。错误仍明确显示本区重试；策略变化同步移除旧内容，新代次可取代旧排队刷新。
+
+新增真实 ItemsContainer／VirtualScroller／CardBuilder／ItemsRefresher／图片加载／CSS 的无界面截图与帧序列探针，旧来源作为可失败对照，覆盖普通及虚拟列表、布局等待、响应前后、失败重试、身份迟到回复及空行。辅助服务／scroller／元数据仍受控，不能称 Windows／真实服务体验通过。保留 P4、timer 修复及缺配置默认关闭，不更改视频／图片缓存策略。
+
+## 首页缓存的最小手动管理
+
+沿用关于页卡片和 BaseView 生命周期，分别显示现有首页布局 owner 的条目／序列化预算，以及当前应用主窗口 session HTTP 总缓存。页面失效由原 owner 执行，统计前退休无效身份；owner 销毁移除管理句柄。HTTP main 入口只允许空载荷及包内应用主 frame，合并重复操作并在退出时等待不可取消的已开始清理。清理完成但重读统计失败单独呈现，不伪造零占用。
+
+增加 owner／IPC／原退出块回归和可选无界面 Chromium About/DOM 工具，覆盖重入、离页、销毁、错误、身份、晚到数据与收尾。普通流畅度实验及布局缓存默认保持；不修改图片 URL／懒加载／列表淘汰，不统计未知解码内存，也不调用存储／profile／播放清理。精确 Windows 包与真实 session 的登录／设置保留、视觉体验仍需独立验证。
+
+## 2026-10-24 — 首页返回复用与独立分区实验闭环
+
+保留bcf9453备份，从已验证默认关闭路径增加显式baseline／retain／sections模式。先采集固定两区、15/25/220ms合成延迟基线；再在同一Home controller保存stage和滚动／焦点，返回仍读取布局和各区内容；sections首屏按区交付，单区错误和重试不拆成功区。账号／服务／查询／认证代次／locale／版本边界、CM事件退休、通知失效和微任务合并均有归属检查。用户输入后取消旧恢复意图，冷身份超时保留可重试错误。
+
+原生refreshItemsInternal会消费失败，故以本轮实际读取结果控制揭示，避免旧数据被当作成功；Home结果弱引用表绑定票据／请求，原生列表DOM提交、延迟焦点／刷新登记及分块写入分别检查。新增钩子仅Home安装，原Movie/Search变换保持，两个完整组合输出SHA及generatorPaths同步纳入来源与隔离测试入口。显式附加home-flow参数经原main→prepared preload→Home工厂接线，强制新profile，普通启动不变；不新增IPC、持久DTO缓存或产品TTL／容量。
+
+最终31文件403/403通过，0失败/取消/跳过，JS428及有限模式516文件通过。独立无界面Chromium16场景通过，生产controller/provider/Events/cache真实执行，网络和Items/CardBuilder为替身；真实原生函数另以材料回归覆盖。原生完整加载器、图片解码、真实服务、Windows整包和视觉未验，不报性能百分比。计时工具记录精确Git来源和controller SHA、同条件逻辑请求、可见／可交互代理、完成时间及空白帧，方法见[实验合同](HOME_FLOW.md)。未触发workflow、安装、合并或发布，图片、列表淘汰和统一清理保持未实现。
+
+## 2026-10-24 — 按补充栈覆盖 API 延后关闭事件
+
+按补充调用链核对ApiClient450为websocketclose延后通知，经Events66、home-layout-cache.invalidate及page-data-cache清理在途工作到clearTimeout。原始实测message缺失，保留TypeError事实，云端受控Illegal invocation不反填实测；顶部“喜欢”仅作导航动作，不推断收藏写或零API请求。
+
+复用AMD渲染器接收者测试图，新增合成WebSocket驱动真实ApiClient.openWebSocket/onclose及延后0ms回调，检查在途布局取消、pending归零、恢复导航及旧回复不覆盖。网络/socket/身份均为合成且API事件代码真实执行；不使用实际账户或服务，不安排前台测试。产品代码相对a8f1ce22未改，后续Windows包验收仍独立记录。
+
+同一新增用例对旧6dc6c270缓存Git字节失败，并准确重现原调用链；修复分支最终27文件353/353通过，0失败/取消/跳过，定向三文件97/97。原实测message和网络请求数依旧未知，不据此扩写原记录。
+
+## 2026-10-24 — 补齐 Window 定时器接收者回归
+
+定位缓存完成时 clock.clearTimeout 使用了普通clock对象作为接收者。原Node/注入时钟允许该调用，浏览器Window方法可以拒绝，导致done已置位但pending和订阅未结算。默认时钟现用薄函数直接调用全局setTimeout/clearTimeout，首页冷启动等待身份的同类默认时钟一并修正；没有更改缓存开关、TTL、容量、认证、失效或播放所有权。
+
+新增3项缓存接收者回归及1项冷启动/取消回归，既有真实AMD adapter/cache/provider集成改用有Window接收者约束的默认时钟。修前源码在最终缓存新回归中3/3失败，混合定时器路径准确定位139:27；修后覆盖成功/错误/命中、失效、超时、退出和迟到回复。另以已安装Linux Chromium154无界面执行真实Window定时器，旧混合host夹具持续pending并报同栈，修复后两种定时器场景正常完成且无未处理异常。来源数据和身份均为合成，未执行Windows Electron或完整GUI；后续新包必须自行复验，不沿用旧包通过结论，不修改旧runtime文件。
+
+最后27文件组合352/352通过，0失败/取消/跳过；JS424及有限模式512文件通过，差异空白与修改文档链接核对。只正常推送本任务feature分支，main和正式包保持，后续打包由父线程安排。
+
+## 2026-10-23 — 页面缓存测试包的只读 Framework 来源预检
+
+补充 Framework-Implementation.ps1，保留原固定实现，并把已观察的另一 SHA 限定到精确旧镜像和 OS build、Framework 4.8 系列、规范 GAC 物理路径、Windows 验证的微软有效签名及检查后重新计算的文件哈希。入口在依赖下载前拒绝未知实现；Host 准备记录独立预检回执，finalizer 对实际进程观察值再次执行来源检查，所有既有 Host 行为检查继续保留。没有下载/替换框架文件、修改系统/GAC/安全设置、自动升级或重复盲跑。33份验证器输入清单重新绑定；业务 Host 源码/指纹、目标框架、编译器和产品缓存链路不改。
+
+新增4项定向回归执行生产分类器和生产 finalizer 分支，来源读取边界使用合成元数据，覆盖精确候选、签名/发布者/镜像/路径/哈希拒绝及原固定行为。构建与缓存27文件组合348/348、0失败/取消/跳过；不能当实际微软签名、Windows Host或GUI证据。新 Windows 构建仍需在精确独立分支提交上获取来源回执并完成完整验收。实现合同、官方镜像/服务更新参考和未验边界见[Framework 来源配置](FRAMEWORK_SERVICING_PROFILES.md)。
+
+## 2026-10-23 — 页面缓存安全重基与分支交接
+
+先核对远端main准确为88578c91ab19d44eecddcfae096d37dc917ef1f4且无feature/page-cache，再保留本地b3da2bee备份并重放四项功能提交。冲突仅PROJECT_STATUS/DEVELOPMENT_LOG顶部，双方完整保留；重基前后全部src/native、专属测试和prepare-preload无差异，main发布材料/版本及新release-file-evidence测试保持。原19文件247项集合增加发行文件、版本、组件和手动作业合同，重基后271/271、0失败/取消/跳过。JS423文件及有限模式510文件通过；PS7语法首次在检查前因默认home缓存只读退出134，改用本次进程专属/tmp XDG缓存后47文件通过，没有写用户/系统缓存；这不是Windows/PS5.1执行证据。当前只做独立分支推送准备与回读，正式任务优先，不触发打包或触及Work/NAS；包/Windows运行/视觉仍交父后续分层验证。准确启动参数与profile规则见[测试入口](PAGE_CACHE_TEST_ENTRY.md)。
+
+## 2026-10-23 — 默认关闭的页面缓存测试CLI落地
+
+新增test-options有限配置解析与test-session启动隔离模块；只有四项显式参数同时合法才启用测试模式，拒绝内部renderer配置直接作为应用参数、额外profile/调试/安全参数及未知字段。main在bootstrap前调用，要求Windows/未ready/当前runtime的Electron和app目录，通过包内关键source/preload身份自检后仅分配全新临时根，不接受复用路径或读取账户。当前进程appData/userData/sessionData/logs/temp/crashDumps及相关环境指向新根；晚期userData处理保持测试归属。原BrowserWindow仅在测试模式追加有限renderer参数，prepared preload立即验证并冻结选项，Home工厂消费；普通路径不创建测试目录或设置窗口选项。生成器沿既有build-input/prepared-artifact合同进入来源，原模板与vendor只读，无Host/安装器/API/播放所有权改动。
+
+最终19文件回归247/247、0失败/取消/跳过。真实Node文件/hash/路径检查与bootstrap、提取的实际main片段、生成preload块及真实Home/API/cache执行，Electron/Windows文件身份和DOM/Fetch替身边界明确；另验证两测试renderer相同账号字符串不共享数据。文档提供独立解包runtime的enabled/disabled命令、显式测试参数、包内PREPARED回执不等于GUI/命中通过、父协调Windows自动验收与最短人工体验清单。未触发打包、启动/安装程序或接触用户服务，未用旧包补丁绕过来源校验。详见[隔离测试入口](PAGE_CACHE_TEST_ENTRY.md)。
+
+## 2026-10-23 — 页面缓存独立测试包就绪度核对
+
+按新测试包授权核对Home工厂实参、适配器双门槛、手动workflow输入/并发组、固定构建脚本、安装器AppId及bootstrap/Host/userData时序。当前只有源码依赖注入开关，打出的普通包保持关闭；安装器名含sha/run但AppId/profile仍沿产品合同。故不把已有源码集成称为可开启的功能测试包，不触发或排队共享打包作业。交接现有ref/精确commit核对、release_package=false、fresh-checkout/不覆盖artifact以及隔离VM和人工四项清单，具体见[评估](PAGE_CACHE_PACKAGE_READINESS.md)。本次没有产品/构建脚本变更或重新执行先前170项测试；文档检查单独记录，真实包、运行及性能仍未执行。
+
+## 2026-10-23 — HomeSections投影的可选缓存接线
+
+维护Home controller新增相对AMD适配依赖，默认不传开关；独立适配器仅在enabled和显式TTL同时具备时创建缓存/订阅canonical events。provider在原GET后复用prepareSections投影，命中后再校验冻结并重建WeakMap分区owner及随机种子；Items读取、原CardBuilder、focus/scroller和播放归属保持。pause/刷新退休本轮订阅，显式refresh/clear失效成功数据，dispose移除本适配器监听器。身份轮换使用原API的认证代次和空session，不读取/复制token；旧请求结束不能退休新身份binding。启用路径的provider及Home票据另核认证代次，活动stage的语言/版本改变也重新读取。
+
+实际维护AMD ApiClient/ApiClientEx/events/Credentials和保留CM在合成Fetch下执行布局GET、收藏POST、已看POST/DELETE和原CM退出；验证写成功通知清缓存/在途请求、退出和同用户重登、身份变化、错误/坏schema拒绝、投影canary无残留、TTL/键分界和监听清理。其他连接/库变化/WebSocket消息为真events的合成派发；Home controller的DOM/itemscontainer为替身，未把它们记为真实服务或完整GUI。最终12文件定向集合170/170，0失败/取消/跳过（完整命令见[适配合同](PAGE_CACHE_HOME_ADAPTER.md)）；没有性能提升结论。新文件走普通Git blob物化，固定overlay输出及共享API源码/选择清单不变。通用内容缓存的写前/写后双失效、播放上报、逐页TTL/容量/设置入口继续未接；本阶段只对无用户状态的布局实施已有成功写通知失效。
+
+## 2026-10-23 — 页面缓存现状与未启用基础
+
+静态追踪维护 HomeTab/provider、固定 ListController/VirtualScroller、ItemPage 生命周期 overlay 和 Fetch/API 局部缓存；区分页面数据、DOM/滚动/焦点和图片缓存。新增独立 AMD/CommonJS 模块，不注册别名、不拦截 API、不新增依赖或产品功能入口。只有显式 enabled 与资源策略同时具备时才保留 DTO/共享读；始终要求当前认证上下文，非法替换也清空旧身份。loader取得调用时捕获的params副本；使用JSON快照隔离消费者修改，限制保留条目/序列化字节和在途请求/订阅者。写 owner 可在开始前及结算后invalidate，退休待回包；认证、通知和写生命周期实际接线列为启用前置，未冒充已完成。
+
+`node --test tests/page-data-cache.test.cjs`覆盖36项；连同首页接口/渲染、详情生命周期、电影浏览、搜索、Git物化、Web overlay及build-input合同最终132/132通过（0失败/取消/跳过）。缓存回归涵盖同身份重登/切用户/切服/切client/退出、getter/凭据/来源拒绝、TTL边界和队列到期、pending去重/单人取消/最后取消、忽略abort的旧成功/失败、同步abort重入、写前后失效、容量和克隆隔离。完整复现命令及静态来源图见[页面缓存方案](PAGE_DATA_CACHE.md)。本轮仅离线单元与材料合同，不代表真实应用接入、HTTP命中率、返回滚动视觉或Windows整包验收；图片、视频缓存和FNConnect没有改动。
+
 ## 2026-10-23 — v0.4.0整合PR70来源与必要声明
 
 将PR70固定提交6576f5d的16份来源／声明材料整合到既有发布分支，四处文档冲突采用保留双方有效内容。API／page完整MIT、Sizzle原文、VTT版权／固定源／实际差异、Material Icons来源、Socket组件与集成范围及npm36许可命名口径保留；原JSON／CSV证据字节及analysisRef不改。旧“尚未替换Host／仍运行Sharp和ServiceStack”等仅作为研究时点，不恢复旧链；当前源码Host／JSON／ZIP、CEC退役、API维护与业务来源指纹均不变。

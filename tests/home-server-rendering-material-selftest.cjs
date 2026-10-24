@@ -45,9 +45,11 @@ test('home module loads the native title registration and router through canonic
     vm.runInNewContext(source, {define(dependencies, factory) {
         const ids = Array.from(dependencies); assert.ok(ids.includes('modules/approuter.js'));
         assert.ok(ids.includes('modules/emby-elements/emby-button/emby-button.js'));
+        assert.ok(ids.includes('modules/emby-apiclient/events.js'));
         assert.equal(ids.some(id => id.includes('../www/')), false);
         const exports = {}; factory(exports, {default: provider}, {default: {}}, {default: {tv: false}}, {default: {}},
-            {default: {getRouteUrl: nativeRouteUrl()}}, {default: {}}); exported = exports.default;
+            {default: {getRouteUrl: nativeRouteUrl()}}, {default: {}},
+            {default: require('../src/electronapp/enhanced/page-cache/home-layout-cache.js')}, {default: {on() {}, off() {}}}); exported = exports.default;
     }});
     assert.equal(typeof exported.create, 'function');
 });

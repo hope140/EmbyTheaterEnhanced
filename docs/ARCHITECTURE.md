@@ -48,6 +48,10 @@ Native Helper 的 transport 终态与 owned process 退出分别确认。有 PID
 
 服务端首页接线候选仍以原 HomeTab/BaseTab 为生命周期 owner，通过固定 HomeTab/app.js overlay 加载一个维护 controller。它复用现有 ApiClient 只读 HomeSections 和 Section Items，服务能力或布局不支持时回完整旧 homesections。renderer 保留原 CardBuilder、itemscontainer、focus/input、播放与Session归属；暂停/刷新/销毁取消请求，旧页面 stage 与迟到响应不能重新提交。接口、布局首批支持范围和验证边界见[服务端首页合同](SERVER_HOME_SECTIONS.md)。
 
+首页布局增加默认关闭的独立缓存适配：仅接在HomeSections安全投影之后，Section Items仍沿原GET；原CM/API事件、认证代次和页面票据检查控制隔离/失效，未包装共享API或接入内容/播放缓存。普通生产调用不传开关及TTL，实际保持关闭；显式测试CLI在bootstrap之前验证包内身份、分配全新临时profile并经prepared preload传入有限选项，不改Host/安装器或新增IPC。见[隔离测试启动](PAGE_CACHE_TEST_ENTRY.md)；页面真接线与合成验证边界见[首页布局缓存](PAGE_CACHE_HOME_ADAPTER.md)。
+
+同一独立分支另有默认 baseline 的界面流畅度实验，显式测试参数选择 retain／sections。它在原 Home owner 中复用同身份／查询 stage、重新读取内容，并逐区呈现；不新增全局缓存池。原生列表的窄提交钩子只对该 owner 生效，账号、导航、请求及延迟回调再次核对；精确组合哈希进入来源和隔离启动检查。范围、基线方法、未验视觉与原生组件边界见[首页界面流畅度](HOME_FLOW.md)。
+
 冷启动首页在同一 refresh epoch 内等待既有连接身份就绪，最长 3 秒；暂停/清理/销毁取消探测。失败状态显示通用文字，pending 仅去重所属进行中请求，成功 active 状态保留原去重。
 
 Windows 本地试验由 preload 提前捕获模块，原 play 入口传入原 PlaybackManager/events 幂等绑定。任务栏按钮、Web MediaSession 展示和可选 SMTC/DWM 共用原状态，命令仍经原 inputmanager。main-only 适配器校验 mainFrame、文档 token、sequence 与媒体代次，只捕获所属 video host，按需更新、最小化保帧、退出等待退休。固定 FFI 尚未进入正式构建，不改变 Native、Session 和窗口归属；见[当前记录](WINDOWS_MEDIA_CONTROLS.md)。
@@ -59,3 +63,9 @@ v0.3.5详情生命周期overlay仍由原ItemPage/BaseView拥有页面；加载�
 v0.3.5合批搜索保留两条原路由：标准ItemsView/ListController与电视SearchView/SearchResults。SearchFields保留500ms防抖并在输入、暂停及销毁时退休旧提交；标准列表仅在type=search安装维护helper，复用既有itemscontainer/virtual-scroller归属检查，电视结果按代次提交。ActionSheet仅给原无选择关闭拒绝加明确标记，EmbySelect只处理该标记；真实错误、多选关闭提交与原视频禁用展示保持。见[搜索与菜单合同](SEARCH_AND_MENU.md)。
 
 ActionSheet 空列表排版使用单独的固定源 `actionsheet.css` overlay；只清除空、非虚拟列表残留的末尾间距。原 ActionSheet JS、列表加载、按钮锚定、全屏、多选、选择/取消与播放远控归属保持。CSS 生成器和最终输出进入既有 build-input 与 provenance 合同，冻结输入只读。
+
+客户端设置独立页的[缓存管理](CACHE_MANAGEMENT.md)分别委托现有布局缓存 owner 和当前主窗口 session，不建立数据池。renderer 只汇总序列化计数并调用 owner 失效；main 的两个 HTTP IPC 复用包内主 frame 校验，仅允许 getCacheSize／clearCache，并把已开始的操作纳入 before-quit 收尾。登录／设置、保留 DOM、下载、播放及未知解码内存保持各自归属。
+
+首页流畅度候选对同身份返回保留卡片几何，仅暂遮易变进度／节目状态并禁交互；未知首批内容用同 scroller 的比例占位。原 native commit guard 继续检查身份、代次及请求归属，策略变更立即退休旧内容。真实组件与 CSS 的截图／帧序列证据同完整客户端体验分开，见[视觉回归合同](HOME_FLOW.md#返回闪空的视觉回归)。
+
+首页跨 route 实验只复用原 viewmanager 三 slot 内已有 owner，完整 URL 与首页身份／代次 guard 均通过后才恢复，不增加全局数据池；异步提交再核对，淘汰／原恢复失效仍冷加载。保留原 HomeView→TabbedView 销毁链，淘汰时由原 owner 释放对应 tab。独立缓存管理沿原客户端插件设置路由，分别委托布局与 HTTP owner，组合操作保留逐项结果及离页边界。

@@ -304,5 +304,10 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!modules/list
         BaseView.prototype.onPause.apply(this, arguments);
     };
 
+    AboutView.prototype.destroy = function () {
+        this.infoRequestId++; this.kernelRequestId++;
+        if (BaseView.prototype.destroy) return BaseView.prototype.destroy.apply(this, arguments);
+    };
+
     return AboutView;
 });

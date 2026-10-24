@@ -237,6 +237,8 @@ test('About loads environment on entry and checks updates only after a user clic
     function fakeNode() {
         return {
             textContent: '', disabled: false, hidden: false, attributes: {}, listeners: {},
+            querySelector: function (selector) { return view.querySelector(selector); },
+            removeEventListener: function (type) { delete this.listeners[type]; },
             addEventListener: function (type, listener) { this.listeners[type] = listener; },
             setAttribute: function (name, value) { this.attributes[name] = value; },
             getAttribute: function (name) { return this.attributes[name] || null; }
@@ -304,6 +306,7 @@ test('About loads environment on entry and checks updates only after a user clic
     assert.equal(infoCalls, 2, 'each resume refreshes environment information');
     assert.equal(view.querySelector('.aboutAppVersion').textContent, '0.2.4');
     assert.deepEqual(invoked, ['enhanced-maintenance-info', 'enhanced-maintenance-check-update', 'enhanced-maintenance-info', 'enhanced-mpv-kernel-status']);
+    controller.destroy();
 });
 
 test('About renders the exact trusted copy snapshot and ignores an older pending load response', async () => {
@@ -312,6 +315,8 @@ test('About renders the exact trusted copy snapshot and ignores an older pending
     const loadingCalls = [];
     function fakeNode() {
         return {textContent: '', disabled: false, hidden: false, attributes: {}, listeners: {},
+            querySelector(selector) { return view.querySelector(selector); },
+            removeEventListener(type) { delete this.listeners[type]; },
             addEventListener(type, listener) { this.listeners[type] = listener; },
             setAttribute(name, value) { this.attributes[name] = value; },
             getAttribute(name) { return this.attributes[name] || null; }};
@@ -359,6 +364,8 @@ test('About ignores an older copy rejection and keeps the current load loading s
     const loadingCalls = [];
     function fakeNode() {
         return {textContent: '', disabled: false, hidden: false, attributes: {}, listeners: {},
+            querySelector(selector) { return view.querySelector(selector); },
+            removeEventListener(type) { delete this.listeners[type]; },
             addEventListener(type, listener) { this.listeners[type] = listener; },
             setAttribute(name, value) { this.attributes[name] = value; },
             getAttribute(name) { return this.attributes[name] || null; }};
