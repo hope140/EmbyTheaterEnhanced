@@ -9,20 +9,24 @@ const paths = {
 };
 function sources(root, revision) {
     if (revision && !/^[a-f0-9]{40}$/.test(revision)) throw Error('Exact source SHA required.');
-    return Object.fromEntries(Object.entries(paths).map(([id, file]) => [id, revision
+    const result = Object.fromEntries(Object.entries(paths).map(([id, file]) => [id, revision
         ? cp.execFileSync('git', ['show', revision + ':' + file], {cwd: root, encoding: 'utf8'})
         : fs.readFileSync(path.join(root, file), 'utf8')]));
+    const css = 'src/electronapp/enhanced/home/home-flow.css';
+    const exists = !revision || cp.execFileSync('git', ['ls-tree', '--name-only', revision, '--', css], {cwd: root, encoding: 'utf8'}).trim();
+    result.flowCss = exists ? revision ? cp.execFileSync('git', ['show', revision + ':' + css], {cwd: root, encoding: 'utf8'}) : fs.readFileSync(path.join(root, css), 'utf8') : '';
+    return result;
 }
 async function openTrial(browser, input, mode = 'baseline', settings = {}) {
-    const page = await browser.newPage({viewport: {width: 1000, height: 700}});
+    const page = await browser.newPage({viewport: settings.viewport || {width: 1000, height: 700}});
     // The fixture has no external service, accounts, or asset requests.
     await page.route('**/*', route => route.abort());
-    await page.setContent(`<!doctype html><style>
+    await page.setContent(`<!doctype html><style>${input.flowCss || ''}${settings.native ? input.nativeCss + '\nhtml{font-size:16px;background:#101820;color:#eee}body{margin:0}.view{height:100vh;overflow:auto}.hide{display:none!important}.emby-scroller{overflow:auto}.scrollSlider{display:flex}.itemsContainer{min-height:1px}' : `
         .hide {display:none!important} .view {height:380px;overflow:auto}
         .verticalSection {position:relative;min-height:240px} .itemsContainer {display:flex;gap:12px;overflow:auto}
         .card {flex:0 0 170px;height:180px} .homeFlowPlaceholder {height:180px}
         [data-home-flow-status] {min-height:24px}
-    </style><div class="view"><div class="sections"></div></div>`);
+    `}</style><div class="view"><div class="sections"></div></div>`);
     await page.evaluate(({input, mode, settings}) => {
         class Items extends HTMLDivElement {
             constructor() { super(); this.paused = true; this.sequence = 0; }
@@ -44,7 +48,7 @@ async function openTrial(browser, input, mode = 'baseline', settings = {}) {
                 return result;
             }
         }
-        customElements.define('emby-itemscontainer', Items, {extends: 'div'});
+        if (!settings.native) customElements.define('emby-itemscontainer', Items, {extends: 'div'});
         const view = document.querySelector('.view'), root = view.querySelector('.sections');
         const config = Object.assign({layoutMs: 15, fastMs: 25, slowMs: 220, count: 2, ignoreAbort: false}, settings);
         const calls = [], held = [], modules = new Map(); let user = 'synthetic-user', generation = 1;
@@ -62,18 +66,21 @@ async function openTrial(browser, input, mode = 'baseline', settings = {}) {
                         signal?.removeEventListener('abort', cancel);
                         if (!layout && config.errorRow === index) return reject(Error('synthetic row failure'));
                         if (layout) return resolve(Array.from({length: config.count}, (_, i) => ({Id: String(i), Name: 'Section ' + i,
-                            SectionType: i === 1 ? 'resume' : 'latestmedia', Monitor: ['videoplayback', 'markplayed']})));
-                        resolve({Items: Array.from({length: 8}, (_, i) => ({Id: index + '-' + i, Name: 'Synthetic ' + index + '-' + i,
-                            UserData: {PlaybackPositionTicks: ownedGeneration}})), TotalRecordCount: 8});
+                            SectionType: config.sectionTypes?.[i] || (i === 1 ? 'resume' : 'latestmedia'), Monitor: ['videoplayback', 'markplayed']})));
+                        resolve({Items: Array.from({length: config.native ? (config.nativeItems ?? 3) : 8}, (_, i) => ({Id: index + '-' + i, Name: 'Synthetic ' + index + '-' + i, ServerId: 'synthetic-server',
+                            Type: 'Movie', MediaType: 'Video', PrimaryImageAspectRatio: 16/9, RunTimeTicks: 1000,
+                            ImageUrl: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180"><rect width="320" height="180" fill="#386a83"/><circle cx="160" cy="90" r="35" fill="#cda76d"/></svg>'),
+                            UserData: {PlaybackPositionTicks: ownedGeneration * (config.native ? 100 : 1), PlayedPercentage: ownedGeneration * 10}})), TotalRecordCount: config.native ? (config.nativeItems ?? 3) : 8});
                     }
                     function cancel() { if (config.ignoreAbort) return; if (settled) return; settled = true; clearTimeout(timer); reject(new DOMException('retired', 'AbortError')); }
                     signal?.addEventListener('abort', cancel, {once: true});
-                    if (!layout && config.holdRow === index) held.push(finish);
+                    if (layout && config.holdLayout || !layout && (config.holdAllItems || config.holdRow === index)) held.push(finish);
                     else timer = setTimeout(finish, layout ? config.layoutMs : index === 0 ? config.fastMs : config.slowMs);
                 });
             }};
         const connection = {currentApiClient: () => api};
         function load(id) {
+            if (id.startsWith('css!')) return {};
             if (modules.has(id)) return modules.get(id);
             let result; const exports = {};
             window.define = (deps, factory) => { result = factory(...deps.map(dep => {
@@ -90,9 +97,10 @@ async function openTrial(browser, input, mode = 'baseline', settings = {}) {
         for (const id of ['modules/cardbuilder/cardbuilder.js', 'modules/layoutmanager.js', 'modules/common/globalize.js',
             'modules/approuter.js', 'modules/emby-elements/emby-button/emby-button.js']) modules.set(id, {default: {}});
         const events = load('modules/emby-apiclient/events.js').default;
+        if (settings.native) (0,eval)(input.nativeSetup)({modules,load,api,connection,input});
         const owner = {view, sectionsContainer: root, params: {tab: 'home'}, addFocusBehavior() {}};
         const controller = load('enhanced/home/home-tab.js').default.create(owner, {
-            document, connection, events, layout: {tv: true}, cards: {}, globalize: {getCurrentLocale: () => 'zh-CN'},
+            document, connection, events, layout: {tv: true}, cards: settings.native ? load('modules/cardbuilder/cardbuilder.js').default : {}, globalize: {getCurrentLocale: () => 'zh-CN'},
             homeFlowOptions: {mode},
             pageCacheOptions: settings.cache ? {enabled: true, ttlMs: 10000, maxEntries: 2, maxBytes: 1048576} : undefined,
             loading: {show() { root.dataset.loading = 'true'; }, hide() { root.dataset.loading = 'false'; }},
@@ -104,20 +112,20 @@ async function openTrial(browser, input, mode = 'baseline', settings = {}) {
         window.trial = {controller, owner, api, events, connection, config, calls,
             bump() { generation++; }, release() { held.splice(0).forEach(fn => fn()); },
             setUser(value) { user = value; api._identityEpoch++; events.trigger(connection, value ? 'localusersignedin' : 'localusersignedout'); },
-            snapshot() { const cards = [...root.querySelectorAll('.card')].filter(visible); return {
-                cards: cards.length, readyRows: [...root.querySelectorAll('.itemsContainer')].filter(x => x.querySelector('.card') && visible(x.querySelector('.card'))).length,
+            snapshot() { const cards = [...root.querySelectorAll('.itemsContainer .card')].filter(visible); return {
+                cards: cards.length, readyRows: [...root.querySelectorAll('.itemsContainer')].filter(x => !x.inert && x.querySelector('.card') && visible(x.querySelector('.card'))).length,
                 loading: root.dataset.loading, rows: root.querySelectorAll('.verticalSection').length,
-                progress: cards.map(x => x.dataset.progress), scroll: view.scrollTop, focused: document.activeElement?.dataset.id || null,
+                progress: cards.filter(x => !x.closest('[inert]')).map(x => x.dataset.progress), scroll: view.scrollTop, focused: document.activeElement?.dataset.id || null,
                 pendingRows: root.querySelectorAll('[aria-busy="true"]').length
             }; },
             async measure(returning) {
-                if (returning) { view.scrollTop = 140; root.querySelector('.card')?.focus({preventScroll: true}); controller.pause(); }
+                if (returning) { view.scrollTop = 140; root.querySelector('.itemsContainer .card')?.focus({preventScroll: true}); controller.pause(); }
                 const before = root.firstChild, started = performance.now(), beforeCalls = calls.length;
                 let firstVisible = null, firstInteractive = null, frames = 0, blankFrames = 0, keep = true;
                 const tick = () => {
                     if (!keep) return; frames++;
                     const bounds = view.getBoundingClientRect();
-                    const candidates = [...root.querySelectorAll('.card')].filter(card => {
+                    const candidates = [...root.querySelectorAll('.itemsContainer .card')].filter(card => {
                         const box = card.getBoundingClientRect();
                         return visible(card) && box.bottom > bounds.top && box.top < bounds.bottom && box.right > bounds.left && box.left < bounds.right;
                     });

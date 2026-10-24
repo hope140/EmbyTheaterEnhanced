@@ -558,7 +558,9 @@ test('retained Home revalidates all data, keeps stage/scroll/focus and masks old
     f.controller.pause(); assert.equal(currentItems.eteHomeFlowOwns(oldResult), false);
     returning = true; generation = 2; const pending = f.controller.resume({autoFocus: true}); await flowFlush();
     assert.equal(f.root.children[0], stage); assert.equal(f.owner.view.scrollTop, 120);
-    assert.equal(rows[1].querySelector('.itemsContainer').style.visibility, 'hidden');
+    assert.equal(rows[1].querySelector('.itemsContainer').style.visibility, '');
+    assert.equal(rows[1].querySelector('.itemsContainer').classList.contains('eteHomeFlowPending'), true);
+    assert.equal(rows[1].querySelector('.itemsContainer').inert, true);
     assert.equal(currentItems.inert, true); assert.equal(currentItems.eteHomeFlowOwns(oldResult), false);
     layout.resolve(flowRows()); await pending;
     assert.equal(f.root.children[0], stage); assert.equal(rows[0].scrollLeft, 48);
@@ -652,7 +654,8 @@ test('Home flow treats swallowed native fetch errors as a failed row and keeps s
     const row = f.root.children[0].children[1], items = row.querySelector('.itemsContainer');
     items.resume = function() { this.paused = false; return refresh.call(this); };
     fail = true; const outcome = await f.controller.refresh();
-    assert.equal(outcome.failedSections, 1); assert.equal(items.style.visibility, 'hidden'); assert.equal(items.inert, true);
+    assert.equal(outcome.failedSections, 1); assert.equal(items.style.visibility, ''); assert.equal(items.inert, true);
+    assert.equal(items.classList.contains('eteHomeFlowPending'), true);
     assert.ok(row.querySelector('button')); f.controller.dispose();
 });
 
@@ -701,4 +704,15 @@ test('input during layout revalidation also suppresses later native restoration 
     }
     returning = true; const pending = f.controller.resume(); f.owner.view.events.wheel(); layout.resolve(flowRows());
     await pending; assert.deepEqual(restored, [false, false]); f.controller.dispose();
+});
+
+test('policy invalidation immediately retires retained content and supersedes an already queued ordinary notification', async () => {
+    const f = controlledFlow(request => Promise.resolve(request.route.endsWith('/HomeSections') ? flowRows() : flowData(1)));
+    await f.controller.resume();
+    f.deps.events.trigger(f.api, 'message', [{MessageType: 'UserDataChanged'}]);
+    f.deps.events.trigger(f.api, 'message', [{MessageType: 'UserPolicyUpdated'}]);
+    assert.equal(f.root.children.length, 0);
+    await flowFlush();
+    assert.equal(f.root.children.length, 1); assert.equal(f.root.children[0].getAttribute('data-ete-home-source'), 'server');
+    f.controller.dispose();
 });

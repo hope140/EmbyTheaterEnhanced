@@ -31,7 +31,7 @@ async function main(args = process.argv.slice(2)) {
             await page.evaluate(() => trial.controller.resume());
             await page.evaluate(() => trial.bump());
             const value = await page.evaluate(() => trial.measure(true));
-            assert.equal(value.reusedStage, true); assert.equal(value.immediate.cards, 8);
+            assert.equal(value.reusedStage, true); assert.equal(value.immediate.cards, 16);
             assert.ok(value.immediate.scroll > 0); assert.equal(value.final.scroll, value.immediate.scroll);
             assert.equal(value.final.focused, '0-0'); assert.ok(value.final.progress.every(x => x === '2'));
             assert.equal(value.requests.filter(x => x.kind === 'items').length, 2);
@@ -67,9 +67,9 @@ async function main(args = process.argv.slice(2)) {
                 trial.bump(); const message = {MessageType: 'UserDataChanged'};
                 Object.defineProperty(message, 'Data', {get() { throw Error('must not inspect data'); }});
                 trial.events.trigger(trial.api, 'message', [message]); trial.events.trigger(trial.api, 'message', [message]);
-                return trial.snapshot().cards;
+                return {cards: trial.snapshot().cards, progress: trial.snapshot().progress};
             });
-            assert.equal(visible, 0);
+            assert.equal(visible.cards, 16); assert.deepEqual(visible.progress, []);
             await page.waitForFunction(() => trial.snapshot().readyRows === 2 && trial.snapshot().progress.every(x => x === '2'));
             assert.equal(await page.evaluate(() => trial.calls.filter(x => x.kind === 'layout').length), 2);
         });

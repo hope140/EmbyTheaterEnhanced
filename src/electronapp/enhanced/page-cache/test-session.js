@@ -25,7 +25,7 @@ const SOURCE_FILES = Object.freeze(['electronapp/main.js', 'electronapp/enhanced
     'electronapp/enhanced/home/server-sections.js', 'electronapp/enhanced/page-cache/page-data-cache.js',
     'electronapp/enhanced/page-cache/home-layout-cache.js', 'electronapp/enhanced/page-cache/test-options.js',
     'electronapp/enhanced/page-cache/test-session.js', 'electronapp/enhanced/cache-management-ipc.js',
-    'electronapp/plugins/mpvplayer/cache-settings.js', 'electronapp/plugins/mpvplayer/about.js', 'electronapp/plugins/mpvplayer/about.html']);
+    'electronapp/plugins/mpvplayer/cache-settings.js', 'electronapp/plugins/mpvplayer/about.js', 'electronapp/plugins/mpvplayer/about.html', 'electronapp/enhanced/home/home-flow.css']);
 const FLOW_OVERLAYS = Object.freeze([
     Object.freeze({path: 'electronapp/www/modules/emby-elements/emby-itemscontainer/emby-itemscontainer.js', sha256: '4F3633D1B23CA2B15B6ACDF6AD013B0F704733D8BB17B37F4527EF310D52DFDA'}),
     Object.freeze({path: 'electronapp/www/modules/virtual-scroller/virtual-scroller.js', sha256: '4F7F014519217712350B156F86C710654CE1D48F39DA98B2811C8314BAB63DEC'})

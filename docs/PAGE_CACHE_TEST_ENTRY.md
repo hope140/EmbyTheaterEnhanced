@@ -28,7 +28,7 @@ $trialRuntime = 'C:\ETE-PageCache-Test\verified-runtime'
 
 ## 隔离和拒绝
 
-`main.js`在bootstrap、设备身份和日志创建之前调用 `page-cache/test-session.js`，要求Windows、app尚未ready、实际execPath为当前runtime的x64/electron/electron.exe且argv应用目录为该runtime/electronapp。缺来源清单、十一份关键维护源码与界面材料与Git blob来源记录不一致、prepared preload不一致、输入/临时目录为链接或重定向均拒绝。这里的包内哈希自检是有限启动绑定，**不是独立完整来源或全runtime验证**；完整验证仍由构建与父线程核对执行。
+`main.js`在bootstrap、设备身份和日志创建之前调用 `page-cache/test-session.js`，要求Windows、app尚未ready、实际execPath为当前runtime的x64/electron/electron.exe且argv应用目录为该runtime/electronapp。缺来源清单、十二份关键维护源码、样式与界面材料与Git blob来源记录不一致、prepared preload不一致、输入/临时目录为链接或重定向均拒绝。这里的包内哈希自检是有限启动绑定，**不是独立完整来源或全runtime验证**；完整验证仍由构建与父线程核对执行。
 
 全部参数及包内身份检查通过后，只在物理临时父目录创建全新 `ETE-page-cache-test-*` 根目录；不能选择/复用已有profile。拒绝临时父目录位于当前runtime、普通userData或appData/EmbyTheaterEnhanced之内。每次生成独立的appdata、userdata、session、logs、temp、crashes、localappdata和mpv目录，不复制账户、存储或原配置。
 

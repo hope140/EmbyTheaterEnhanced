@@ -1,7 +1,7 @@
 (function(factory) {
     if (typeof define === 'function') define(['exports', './server-sections.js', 'modules/cardbuilder/cardbuilder.js',
         'modules/layoutmanager.js', 'modules/common/globalize.js', 'modules/approuter.js',
-        'modules/emby-elements/emby-button/emby-button.js', '../page-cache/home-layout-cache.js', 'modules/emby-apiclient/events.js'], function(exports, provider, cards, layout, globalize, router, button, cache, events) {
+        'modules/emby-elements/emby-button/emby-button.js', '../page-cache/home-layout-cache.js', 'modules/emby-apiclient/events.js', 'css!./home-flow.css'], function(exports, provider, cards, layout, globalize, router, button, cache, events) {
         exports.default = factory(provider.default, cards.default, layout.default, globalize.default, router.default, cache.default, events.default);
     });
     else if (typeof module === 'object' && module.exports) module.exports = factory(require('./server-sections.js'), null, null, null, null, require('../page-cache/home-layout-cache.js'));
@@ -43,7 +43,7 @@
         var active = false, disposed = false, epoch = 0, stage = null, stageMode = null, pending = null;
         var focusedItemId = null, committedTicket = null;
         var focusedTitleId = null, focusedSeeAll = false;
-        var flowRows = [], flowTicket = null, flowLayout = null, eventClient = null, eventQueued = false, dirty = false;
+        var flowRows = [], flowTicket = null, flowLayout = null, eventClient = null, eventQueued = null;
         var savedScroll = null, flowFocus = null, flowRevision = 0, inputRevision = 0;
         function current(ticket) {
             if (!ticket || disposed || !active || ticket.epoch !== epoch || !owner.view || flowing && ticket.flowRevision !== flowRevision) return false;
@@ -90,14 +90,19 @@
             if (value.position !== null && typeof value.element.scrollToPosition === 'function') value.element.scrollToPosition({position: value.position, behavior: 'instant'});
             else { value.element.scrollLeft = value.left; value.element.scrollTop = value.top; }
         }
-        function sensitiveRow(row) { return ['resume', 'resumeaudio', 'nextup', 'onnow', 'activerecordings'].includes(row.section.SectionType); }
-        function rowBusy(row, mask) {
+        function rowBusy(row) {
             if (!row.status) return;
-            row.block.classList.remove('hide'); row.block.setAttribute('aria-busy', 'true');
+            if (row.rendered && !row.readCount) row.block.classList.add('hide');
+            else row.block.classList.remove('hide');
+            row.block.setAttribute('aria-busy', 'true');
             row.items.inert = true; row.allowed = false;
-            if (mask) row.items.style.visibility = 'hidden';
-            if (mask && row.placeholder) row.placeholder.classList.remove('hide');
-            row.status.textContent = /^zh/i.test(locale.getCurrentLocale()) ? '正在加载…' : 'Loading…';
+            // Keep same-identity artwork/card geometry; only volatile fields are stale.
+            row.items.style.visibility = '';
+            row.items.classList.add('eteHomeFlowPending');
+            if (['onnow', 'activerecordings'].includes(row.section.SectionType)) row.items.classList.add('eteHomeFlowProgramPending');
+            if (row.placeholder) row.placeholder.classList[row.rendered ? 'add' : 'remove']('hide');
+            row.status.textContent = /^zh/i.test(locale.getCurrentLocale()) ? '正在更新…' : 'Updating…';
+            row.status.classList.add('homeFlowStatus-loading');
             row.status.classList.remove('hide');
         }
         function unwatchClient() {
@@ -115,23 +120,26 @@
         }
         function flowRetire() {
             if (disposed) return;
-            unwatchClient(); clear(); loading.hide(); dirty = true;
+            unwatchClient(); clear(); loading.hide();
             focusedItemId = focusedTitleId = null; focusedSeeAll = false; flowFocus = null;
         }
         function flowMessage(event, message) {
+            if (message && message.MessageType === 'UserPolicyUpdated') {
+                // A policy change may revoke visibility even when the auth string is unchanged.
+                clear(); flowChanged(); return;
+            }
             if (message && ['UserDataChanged', 'LibraryChanged', 'UserUpdated', 'UserConfigurationUpdated', 'UserPolicyUpdated'].includes(message.MessageType)) flowChanged();
         }
         function flowChanged() {
             if (disposed) return;
-            dirty = true; flowRevision++;
-            flowRows.forEach(function(row) { rowBusy(row, true); });
+            flowRevision++;
+            flowRows.forEach(function(row) { rowBusy(row); });
             // Coalesce synchronous notifications. No polling or repeated retry:
             // normal GETs do not produce another invalidation event.
-            if (!active || eventQueued) return;
-            eventQueued = true;
-            var queuedEpoch = epoch;
+            if (!active || eventQueued === epoch) return;
+            var queuedEpoch = epoch; eventQueued = queuedEpoch;
             Promise.resolve().then(function() {
-                eventQueued = false;
+                if (eventQueued === queuedEpoch) eventQueued = null;
                 if (!active || disposed || epoch !== queuedEpoch) return;
                 layoutCache.invalidate();
                 return start({refresh: true});
@@ -281,13 +289,19 @@
                 var items = block.querySelector('.itemsContainer'), lease = {ticket: ticket, section: section, cached: initial[index], block: block, items: items};
                 if (flowing) {
                     lease.results = new WeakMap();
-                    lease.status = document.createElement('p'); lease.status.setAttribute('data-home-flow-status', ''); lease.status.setAttribute('role', 'status');
+                    lease.status = document.createElement('p'); lease.status.className = 'homeFlowStatus padded-left padded-right'; lease.status.setAttribute('data-home-flow-status', ''); lease.status.setAttribute('role', 'status');
                     block.appendChild(lease.status); flowRows.push(lease);
-                    lease.placeholder = document.createElement('div'); lease.placeholder.className = 'homeFlowPlaceholder';
-                    lease.placeholder.style.width = '12em'; lease.placeholder.setAttribute('aria-hidden', 'true');
-                    var padder = document.createElement('div');
-                    padder.className = 'cardScalable ' + (['resume', 'nextup', 'onnow'].includes(section.SectionType) ? 'cardPadder-backdrop' : 'cardPadder-portrait');
-                    lease.placeholder.appendChild(padder); block.appendChild(lease.placeholder);
+                    lease.placeholder = document.createElement('div'); lease.placeholder.className = 'homeFlowPlaceholder' + (layoutManager.tv ? ' itemsContainer-tv' : '');
+                    lease.placeholder.setAttribute('aria-hidden', 'true');
+                    var shape = listOptions(section, renderer).options;
+                    shape = shape.shape === 'backdrop' || shape.preferThumb === true ? 'backdrop' : shape.defaultShape || 'portrait';
+                    for (var placeholderIndex = 0; placeholderIndex < 6; placeholderIndex++) {
+                        var card = document.createElement('div'), box = document.createElement('div'), padder = document.createElement('div');
+                        card.className = 'card card-horiz ' + shape + 'Card-horiz'; box.className = 'cardBox';
+                        padder.className = 'cardScalable cardPadder-' + shape + ' homeFlowPlaceholderImage';
+                        box.appendChild(padder); card.appendChild(box); lease.placeholder.appendChild(card);
+                    }
+                    items.parentElement.appendChild(lease.placeholder);
                     items.eteHomeFlowOwns = function(result) { var bound = lease.results.get(result); return bound && current(bound.ticket) &&
                         bound.ticket === lease.ticket && bound.sequence === lease.readSequence && bound.work === lease.work && stage === next; };
                     items.eteHomeFlowCanRestore = function(result) { var bound = lease.results.get(result); return items.eteHomeFlowOwns(result) &&
@@ -302,7 +316,7 @@
                     function delivered(result) {
                         if (flowing) {
                             lease.results.set(result, {ticket: ticket, sequence: sequence, work: work, input: input});
-                            if (lease.readSequence === sequence && lease.work === work) lease.readSucceeded = true;
+                            if (lease.readSequence === sequence && lease.work === work) { lease.readSucceeded = true; if (start === 0) lease.readCount = result.Items.length; }
                         }
                         return result;
                     }
@@ -336,7 +350,8 @@
             });
         }
         function revealRow(row) {
-            row.items.style.visibility = ''; row.items.inert = false; row.allowed = true;
+            row.items.style.visibility = ''; row.items.inert = false; row.allowed = true; row.rendered = true;
+            row.items.classList.remove('eteHomeFlowPending'); row.items.classList.remove('eteHomeFlowProgramPending');
             row.block.setAttribute('aria-busy', 'false'); row.status.classList.add('hide');
             row.placeholder.classList.add('hide'); row.block.style.minHeight = '';
             if (!row.focusBound) { owner.addFocusBehavior(row.items); row.focusBound = true; }
@@ -373,8 +388,9 @@
                 }
             } catch (_) {
                 if (!current(ticket) || row.ticket !== ticket || row.work !== stamp) return;
-                row.failed = true; row.items.style.visibility = 'hidden'; row.items.inert = true;
+                row.failed = true; row.items.inert = true;
                 row.block.classList.remove('hide'); row.block.setAttribute('aria-busy', 'false');
+                row.status.classList.remove('homeFlowStatus-loading');
                 row.status.textContent = /^zh/i.test(locale.getCurrentLocale()) ? '此分区暂时无法加载。' : 'This section could not be loaded.';
                 row.status.classList.remove('hide');
                 var retry = document.createElement('button', {is: 'emby-button'});
@@ -382,7 +398,7 @@
                 retry.textContent = /^zh/i.test(locale.getCurrentLocale()) ? '重试' : 'Retry';
                 retry.addEventListener('click', function() {
                     if (!current(ticket) || row.ticket !== ticket) return;
-                    rowBusy(row, true); updateRow(row, ticket, false);
+                    rowBusy(row); updateRow(row, ticket, false);
                 });
                 row.status.appendChild(retry);
             }
@@ -399,7 +415,7 @@
             var loadEpoch = epoch, ticket = identity(epoch), deadline = identityClock.now() + 3000;
             flowFocus = {started: document.activeElement, autoFocus: options.autoFocus, done: false};
             if (reuse) {
-                flowRows.forEach(function(row) { row.ticket = ticket; rowBusy(row, dirty || sensitiveRow(row)); });
+                flowRows.forEach(function(row) { row.ticket = ticket; rowBusy(row); });
                 restoreScroll(savedScroll); loading.hide();
             } else loading.show();
             try {
@@ -419,8 +435,8 @@
                     flowRows = []; var next = newStage();
                     render(next, result.sections, [], ticket, options); attach(next, 'server');
                 } else flowRows.forEach(function(row, index) { row.section = result.sections[index]; });
-                flowTicket = ticket; flowLayout = signature; dirty = false;
-                flowRows.forEach(function(row) { row.ticket = ticket; rowBusy(row, !keep || row.items.style.visibility === 'hidden'); });
+                flowTicket = ticket; flowLayout = signature;
+                flowRows.forEach(function(row) { row.ticket = ticket; rowBusy(row); });
                 var deferReveal = !keep && flowMode === 'retain';
                 await Promise.all(flowRows.map(function(row) { return updateRow(row, ticket, deferReveal); }));
                 if (!current(ticket)) return {status: 'cancelled'};
