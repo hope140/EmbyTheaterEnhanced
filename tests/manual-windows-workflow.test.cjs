@@ -10,7 +10,7 @@ const manual = workflow.slice(workflow.indexOf('\n  manual-windows-test-package:
 
 test('package job requires an explicit manual event and the MSBuild17-compatible Windows x64 runner', () => {
     assert.match(workflow, /^  workflow_dispatch:\s*$/m);
-    assert.match(manual, /^    if: github\.event_name == 'workflow_dispatch'$/m);
+    assert.match(manual, /^    if: github\.event_name == 'workflow_dispatch' && \(inputs\.range_smoke == 'off' \|\| inputs\.range_smoke == ''\)$/m);
     assert.match(manual, /^    runs-on: windows-2022$/m);
     assert.doesNotMatch(manual, /self-hosted|windows-latest|larger|workflow_run|pull_request_target/);
     assert.match(manual, /cancel-in-progress: false/);

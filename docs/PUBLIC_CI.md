@@ -93,3 +93,5 @@ node tools/ci-diff-check.cjs
 ```
 
 For a pull request, set `CI_EVENT_NAME` to `pull_request` and `CI_PULL_REQUEST_BASE` to the base commit SHA. GitHub Actions supplies these values automatically. On a new-branch push, the checker compares the branch contribution after its merge-base with the default branch.
+
+The independent range-cache branch also offers an explicit manual `range_smoke` input (`off`, `entry`, `native`). The separate Windows job reuses a hash-locked existing artifact and immutable smoke tools without rebuilding. It adds only job-local Actions read permission for the standard token, keeps existing jobs/concurrency unchanged, fails closed on expired/unavailable inputs and uploads bounded receipts. It is not a release route and is not dispatched by source changes. See [the fixed runner method](PLAYBACK_RANGE_WINDOWS_RUNNER.md).
