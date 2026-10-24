@@ -102,3 +102,30 @@ test('automatic collection includes natural chain receipts while omitting plan/p
     for (const name of ['auto-native.trace.ndjson', 'auto-native.json', 'auto-entry-coordinator.json', 'auto-native-coordinator.json']) assert(names.includes(name));
     assert(!names.some(name => /plan|avi|profile/.test(name)));
 });
+
+
+test('job-visible automatic failure summary preserves fixed native reasons and excludes arbitrary receipt data', t => {
+    const directory = root(t), canary = 'synthetic-sensitive-canary-no-real-data';
+    fs.writeFileSync(path.join(directory, 'native-coordinator.json'), JSON.stringify({status: 'failed', code: 'owned-Electron-exit-failed', exit: {code: 1, timedOut: false, streamsClosed: true}, private: canary}));
+    fs.writeFileSync(path.join(directory, 'native.json'), JSON.stringify({status: 'failed', code: 'automatic-native-deadline', detail: canary,
+        cleanup: ['helper-exit-UNCERTAIN', canary], helpers: [null, {exited: true, path: canary, diagnostics: {
+            processExitCode: 23, streamsClosed: true, labels: ['dll-load-failed', canary], systemCodes: [126, canary], stderr: canary}}]}));
+    fs.writeFileSync(path.join(directory, 'native.trace.ndjson'), [null, {seq: 1, type: 'load', item: 'A', source: canary},
+        {seq: 2, type: 'native-property', name: 'time-pos', value: 11.3, detail: canary},
+        {seq: 3, type: 'renderer-failure', name: canary, value: canary, detail: canary}, {seq: 4, type: canary}].map(row => JSON.stringify(row)).join('\n'));
+    const summary = ci.automaticFailureSummary(directory), native = summary.phases.find(row => row.phase === 'native');
+    assert.equal(native.code, 'automatic-native-deadline'); assert.equal(native.exitCode, 1); assert.equal(native.streamsClosed, true);
+    assert.deepEqual(native.helpers[0].labels, ['dll-load-failed']); assert.deepEqual(native.helpers[0].systemCodes, [126]);
+    assert.equal(summary.events.length, 3); assert.equal(summary.events[1].value, 11.3);
+    assert(!JSON.stringify(summary).includes(canary));
+    assert.match(source, /console\.error\(JSON\.stringify\(automaticFailureSummary\(plan\.paths\.smoke\)\)\)/);
+});
+test('missing, malformed and oversize phase evidence stays unrecorded and bounded in job logs', t => {
+    const directory = root(t);
+    fs.writeFileSync(path.join(directory, 'native.json'), '{malformed');
+    fs.writeFileSync(path.join(directory, 'entry.json'), Buffer.alloc(65537));
+    fs.writeFileSync(path.join(directory, 'native.trace.ndjson'), Buffer.alloc(1048577));
+    const summary = ci.automaticFailureSummary(directory);
+    assert(summary.phases.every(row => row.status === 'not-recorded' && row.exitCode === null));
+    assert.deepEqual(summary.events, []); assert(JSON.stringify(summary).length < 2000);
+});

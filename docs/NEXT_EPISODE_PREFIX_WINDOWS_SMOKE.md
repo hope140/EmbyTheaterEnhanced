@@ -50,3 +50,6 @@ node --test tests/playback-prefix*.test.cjs tests/playback-range*.test.cjs tests
 ```
 
 Node 集成自然合成时钟验证阈值 → 自动 renderer 定时器 → 生产 service 二次门禁 → 真实 HTTP/store → 合成 EOF → 原 stopped/nextTrack → B 首块命中；另测原队列移除候选清空、应用关闭清空。合成时钟与压缩的 renderer 间隔不能计作真实 helper 进度或解码。低层回归覆盖共享 P（含写入预留）、租约、缺块不累计、物理抢占、取消及换候选；Windows 工具要求真实 B 解码、原生触发的预算外缺块与退出清空，尚未执行。Windows 活跃下载取消/换候选矩阵仍须补独立实测，不得将 Node 生命周期覆盖当作 Windows 通过。匿名同源合成媒体不证明 Emby 鉴权、302/dian115、真实 Session 或可见 UI。
+
+
+执行失败时，控制脚本直接向 Actions 作业日志输出 `next-auto-failure-summary`：entry/native 阶段、允许列表原因、退出码/超时/stdio-close、固定 helper 错误标签与系统码，以及最后 16 条经过字段投影的事件。读取回执限 64 KiB、trace 限 1 MiB；缺失/损坏保持 not-recorded。摘要不打印原始 stderr、异常 detail、媒体 URL、profile 路径或环境变量；完整有界回执仍保存在 artifact，便于对照进一步定位。

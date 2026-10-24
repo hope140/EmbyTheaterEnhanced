@@ -129,12 +129,51 @@ function expandedInputs(plan) {
     return {unpacker, installer: matches[0], extracted: plan.paths.extracted, runtime: path.join(plan.paths.extracted, '{app}')};
 }
 function noCredentials(environment) {if (Object.keys(environment).some(name => tokenNames.test(name) && environment[name])) fail('credential-present-in-execution-step');}
+const AUTO_CODES = new Set(['actual-source-chain-missing', 'automatic-chain-order-missing', 'prefix-target-not-proven',
+    'B-native-decode-not-proven', 'B-prefix-read-not-observed', 'B-prefix-hit-or-native-miss-not-proven', 'unexpected-play-count',
+    'renderer-failed', 'renderer-chain-failed', 'unexpected-visible-window', 'next-prefix-status-contract', 'automatic-native-deadline',
+    'service-destroy-failed', 'helper-exit-UNCERTAIN', 'origin-close-failed', 'temporary-prefix-cleanup-failed',
+    'owned-Electron-exit-failed', 'phase-receipt-invalid', 'native-helper-exit-receipt-invalid', 'actual-entry-required']);
+const AUTO_EVENTS = new Set(['profile-isolated', 'app-ready', 'helper-ready', 'module-loaded', 'manager-play-invocation',
+    'initial-play-resolved', 'native-property', 'load', 'range-preload', 'prefix-ready', 'manager-next-track', 'origin-media',
+    'prefix-read', 'decoded-B', 'renderer-failure']);
+function automaticFailureSummary(root) {
+    function read(name, limit, parse) {
+        try {const file = path.join(root, name), stat = fs.lstatSync(file);
+            if (!stat.isFile() || stat.isSymbolicLink() || stat.size > limit) return null;
+            return parse(fs.readFileSync(file, 'utf8'));
+        } catch (_) {return null;}
+    }
+    const code = value => AUTO_CODES.has(value) ? value : 'unclassified';
+    const exitCode = value => Number.isSafeInteger(value) && value >= -2147483648 && value <= 0xffffffff ? value : null;
+    const phases = ['entry', 'native'].map(phase => {
+        const coordinator = read(phase + '-coordinator.json', 65536, JSON.parse), receipt = read(phase + '.json', 65536, JSON.parse);
+        return {phase, status: ['passed', 'failed'].includes(receipt?.status) ? receipt.status : 'not-recorded',
+            code: code(receipt?.code || coordinator?.code), timedOut: coordinator?.exit?.timedOut === true,
+            exitCode: exitCode(coordinator?.exit?.code), streamsClosed: coordinator?.exit?.streamsClosed === true,
+            cleanup: Array.isArray(receipt?.cleanup) ? receipt.cleanup.map(code).slice(0, 8) : [],
+            helpers: Array.isArray(receipt?.helpers) ? receipt.helpers.filter(helper => helper && typeof helper === 'object').slice(0, 4).map(helper => ({exited: helper.exited === true,
+                exitCode: exitCode(helper.diagnostics?.processExitCode), streamsClosed: helper.diagnostics?.streamsClosed === true,
+                labels: (Array.isArray(helper.diagnostics?.labels) ? helper.diagnostics.labels : []).filter(label =>
+                    ['invalid-parent-window', 'surface-create-failed', 'dll-load-failed', 'mpv-create-failed', 'mpv-initialize-failed', 'missing-export', 'option-failed'].includes(label)).slice(0, 8),
+                systemCodes: (Array.isArray(helper.diagnostics?.systemCodes) ? helper.diagnostics.systemCodes : []).filter(value => exitCode(value) !== null).slice(0, 8)})) : []};
+    });
+    const trace = read('native.trace.ndjson', 1048576, text => text.trim().split(/\r?\n/).filter(Boolean).map(JSON.parse));
+    const events = (trace || []).filter(row => row && AUTO_EVENTS.has(row.type)).slice(-16).map(row => ({type: row.type,
+        seq: Number.isSafeInteger(row.seq) ? row.seq : null, item: ['A', 'B'].includes(row.item) ? row.item : null,
+        property: ['duration', 'time-pos', 'core-idle', 'eof-reached', 'file-loaded'].includes(row.name) ? row.name : null,
+        value: typeof row.value === 'boolean' || Number.isFinite(row.value) ? row.value : null}));
+    return {type: 'next-auto-failure-summary', phases, events};
+}
 function runTool(plan, arguments_, label, script = path.join(plan.toolsRoot, 'tools/playback-range-windows-smoke.cjs')) {
     const environment = cleanEnvironment(); noCredentials(environment); const file = path.join(plan.root, label + '.stdout'), fd = fs.openSync(file, 'wx');
     try {
         const result = spawnSync(process.execPath, [script, ...arguments_],
             {cwd: plan.toolsRoot, env: environment, windowsHide: true, shell: false, stdio: ['ignore', fd, fd], timeout: 600000});
-        if (result.error || result.status !== 0) fail('controlled-smoke-command-failed:' + label);
+        if (result.error || result.status !== 0) {
+            if (plan.mode === 'next-auto') console.error(JSON.stringify(automaticFailureSummary(plan.paths.smoke)));
+            fail('controlled-smoke-command-failed:' + label);
+        }
     } finally {fs.closeSync(fd);}
 }
 function execute(plan) {
@@ -222,4 +261,4 @@ async function main(argv) {
     }
 }
 if (require.main === module) main(process.argv.slice(2)).catch(error => {console.error(safeCode(error)); process.exitCode = 1;});
-module.exports = {PIN, tokenNames, cleanEnvironment, validateDispatch, validateMetadata, responseStatus, secureLocation, api, downloaded, acquire, createPlan, readPlan, expandedInputs, collect, EVIDENCE, safeCode};
+module.exports = {PIN, tokenNames, cleanEnvironment, validateDispatch, validateMetadata, responseStatus, secureLocation, api, downloaded, acquire, createPlan, readPlan, expandedInputs, collect, EVIDENCE, safeCode, automaticFailureSummary};
