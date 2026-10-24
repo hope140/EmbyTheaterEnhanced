@@ -818,3 +818,10 @@ Automatic-route failure summaries are now readable directly in job logs, with al
 
 
 The first hosted next-auto attempt stopped during prepare, before Electron entry/helper execution; normal job logs exposed only the generic prepare failure. A clean Git checkout with core.autocrlf=true reproduces the driver's raw-worktree-versus-Git hash rejection. The preparation gate now accepts only the repository's narrow CRLF/LF text equivalence and writes the private driver from exact committed bytes, retaining later strict byte hashes and every package/source/loader gate. Fixed-stage preparation diagnostics are surfaced directly in job logs even before the output directory exists. Hosted preparation and real native automatic playback still require a new exact-source run.
+
+
+## 2026-10-24 — Fixed-helper automatic-chain hosted evidence
+
+Exact native source cfb597b741a3741ed266fc08ea0d29cf1218e5d8 completed hosted run 40100795549 / job 120892348048 through the strict entry/native/coordinator gates. The enforced chain uses real helper progress, production renderer timer, A natural EOF, original manager nextTrack, B real new-generation decode with gpu-next output, 100 MB prefix hits without first-prefix re-fetch, origin misses and normal owned exits/payload cleanup. Anonymous same-origin synthetic media and hidden presentation stubs remain; this is not ordinary settings/installation, NAS/auth/302 or active native cancellation/replacement acceptance. Logical occupancy was sampled by the harness, not continuously measured on physical disk.
+
+The standard read-only next-auto-report route reads only the immutable 19,823-byte result artifact 12562503770 and prints trace/exit/identity fields after revalidation. It does not prepare a package or rerun native. Direct job logs previously exposed the successful exit and collected receipt inventory but not the receipt numeric fields; the reader supplies that missing visibility. No product source is changed.

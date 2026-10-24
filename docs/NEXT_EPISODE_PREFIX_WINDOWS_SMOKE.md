@@ -1,6 +1,6 @@
 # 下一集真实自动链短验准备
 
-`tools/playback-prefix-windows-auto.cjs` 是显式派生runtime实验，不是普通应用或安装验收。当前已有真实固定 Alameda、生产 PlaybackManager/PlayQueue/adapter/service 的 Node 集成回归，helper 时钟和 document 仍为明确替身；**未运行 Windows/native**。磁盘选项实验优先使用[独立探针](MPV_DISK_CACHE_PROBE.md)，不依赖此自动链。
+`tools/playback-prefix-windows-auto.cjs` 是显式派生runtime实验，不是普通应用或安装验收。固定 Windows helper 自动链已在精确 `cfb597b741a3741ed266fc08ea0d29cf1218e5d8` 的 [受控运行](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40100795549)通过入口、native 与退出门禁。该运行使用真实 Alameda/renderer、原 PlaybackManager/队列与固定 helper；匿名合成媒体、隐藏展示层和 ApiClient facade 仍是明确边界。普通设置页、真实服务与活跃取消矩阵没有因此通过。磁盘选项实验优先使用[独立探针](MPV_DISK_CACHE_PROBE.md)，不依赖此自动链。
 
 ## 身份与派生
 
@@ -49,7 +49,7 @@ Node 可复现命令：
 node --test tests/playback-prefix*.test.cjs tests/playback-range*.test.cjs tests/ci-playback-range-smoke.test.cjs tests/manual-windows-workflow.test.cjs
 ```
 
-Node 集成自然合成时钟验证阈值 → 自动 renderer 定时器 → 生产 service 二次门禁 → 真实 HTTP/store → 合成 EOF → 原 stopped/nextTrack → B 首块命中；另测原队列移除候选清空、应用关闭清空。合成时钟与压缩的 renderer 间隔不能计作真实 helper 进度或解码。低层回归覆盖共享 P（含写入预留）、租约、缺块不累计、物理抢占、取消及换候选；Windows 工具要求真实 B 解码、原生触发的预算外缺块与退出清空，尚未执行。Windows 活跃下载取消/换候选矩阵仍须补独立实测，不得将 Node 生命周期覆盖当作 Windows 通过。匿名同源合成媒体不证明 Emby 鉴权、302/dian115、真实 Session 或可见 UI。
+Node 集成自然合成时钟验证阈值 → 自动 renderer 定时器 → 生产 service 二次门禁 → 真实 HTTP/store → 合成 EOF → 原 stopped/nextTrack → B 首块命中；另测原队列移除候选清空、应用关闭清空。合成时钟与压缩的 renderer 间隔不能计作真实 helper 进度或解码。低层回归覆盖共享 P（含写入预留）、租约、缺块不累计、物理抢占、取消及换候选；Windows 工具要求真实 B 解码、原生触发的预算外缺块与退出清空；精确 cfb597b 的上述受控运行已通过这些门禁，原始数值可用下述只读入口核对。Windows 活跃下载取消/换候选矩阵仍须补独立实测，不得将 Node 生命周期覆盖当作 Windows 通过。匿名同源合成媒体不证明 Emby 鉴权、302/dian115、真实 Session 或可见 UI。
 
 
 执行失败时，控制脚本直接向 Actions 作业日志输出 `next-auto-failure-summary`：entry/native 阶段、允许列表原因、退出码/超时/stdio-close、固定 helper 错误标签与系统码，以及最后 16 条经过字段投影的事件。读取回执限 64 KiB、trace 限 1 MiB；缺失/损坏保持 not-recorded。摘要不打印原始 stderr、异常 detail、媒体 URL、profile 路径或环境变量；完整有界回执仍保存在 artifact，便于对照进一步定位。
@@ -58,3 +58,12 @@ Node 集成自然合成时钟验证阈值 → 自动 renderer 定时器 → 生�
 prepare 的 driver 身份遵循仓库既有 tracked-text 合同：只允许工作树 CRLF/LF checkout 等价，实际源码改动、BOM 与额外内容仍拒绝。私有 `auto-driver.cjs` 直接写精确来源提交的 Git blob 字节，后续 plan/driver SHA 继续严格逐字节校验；不把 CRLF 工作树副本当成最终 driver。固定包、loader、来源、完整派生集合和退出门禁均保持。
 
 prepare 从输入解析到 driver/plan 写出逐步记录固定阶段；受限错误分类覆盖来源不符、固定包/loader 校验、文件系统、依赖与 Git 子命令。控制脚本在输出目录尚未建立时也读取有界 prepare stdout，把安全分类直接打印到 job 日志，不转发路径、URL、堆栈或任意原始异常。旧版仅包含一行固定错误码的 stdout 也可分类。干净 `core.autocrlf=true` checkout 已复现旧 raw-byte guard 的 `driver-source-mismatch`，修复后的同一身份检查返回精确 Git 字节；这不代表 hosted prepare 或 native 已通过。
+
+
+## 读取既有成功结果，不重跑播放
+
+`range_smoke=next-auto-report`、`release_package=false` 只启动 5 分钟上限的标准 runner 读取作业。固定输入为 run `40100795549` / artifact `12562503770` / native source `cfb597b741a3741ed266fc08ea0d29cf1218e5d8`；ZIP 19,823 字节，SHA-256 `31fd3af11f29013aaadb773b30a56df9bec85fe0edb53dcde57b33b7165d7d9e`。不存在 latest 替代、安装或播放动作。
+
+工具只读八个 allowlisted 成员，重核 trace 的原自动链判据、entry/native coordinator 与 helper 退出，然后在 job 日志打印 `existing-next-prefix-success-result`。包含实际阈值时间、事件顺序、320×180 gpu-next、预载/命中/源范围/占用、退出与身份字段；不输出任意 receipt detail、URL、profile 或环境值。下载先校验原运行/SHA/expiry 和整个 ZIP 字节身份，不解包/启动 runtime，不构建或运行 helper。
+
+该成功运行只选 100 MB；原 occupancy 门禁按约 25 ms 状态采样检查包含预留的逻辑占用，没有连续物理峰值测量。原退出守卫检查媒体残留为空，但没有测试在未播下一集下载中退出。活跃取消/抢占、换候选与普通设置/真实源仍是明确待验收项。

@@ -15,6 +15,7 @@ on:
           - native
           - loader-trial
           - next-auto
+          - next-auto-report
       release_package:
         description: Stage the standard installer name and five release files (does not publish)
         type: boolean
@@ -111,6 +112,29 @@ jobs:
           CI_DOCS_OUTCOME: ${{ steps.docs.outcome }}
           CI_TEST_OUTCOME: ${{ steps.regression.outcome }}
         run: node tools/ci-change-scope.cjs summary
+
+  manual-next-prefix-result:
+    if: github.event_name == 'workflow_dispatch' && inputs.range_smoke == 'next-auto-report'
+    runs-on: windows-2022
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Check out exact read-only result tool
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Set up locked Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.18.1
+      - name: Read only the fixed existing success artifact
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ETE_RELEASE_PACKAGE: ${{ inputs.release_package }}
+        run: node tools/read-next-prefix-result.cjs
 
   manual-playback-range-smoke:
     if: github.event_name == 'workflow_dispatch' && (inputs.range_smoke == 'entry' || inputs.range_smoke == 'native' || inputs.range_smoke == 'loader-trial' || inputs.range_smoke == 'next-auto')
