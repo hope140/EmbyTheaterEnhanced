@@ -36,13 +36,13 @@ Only redacted response capabilities are needed to decide whether a real source f
 | `preloadMB` | Confirmed choices 100/300/500 MB; default 300; this is a prefix budget, not a total disk quota |
 | Last actual video lifetime | Confirmed: no TTL; retain until another video actually starts; readers release before deletion |
 | Unplayed next prefix at exit | Confirmed: discard; browsing/preloading does not promote it |
-| `maxBytes` | Explicit trial hard media-byte limit across last, next and retiring readers. Bounded test/store input only. Ordinary activation is unavailable until the independent last-cache capacity/allocation is confirmed; no normal required input or default is added |
+| `maxBytes` | Explicit trial hard raw-media-byte limit across last, next and retiring readers. Bounded test/store input only; not the existing mpv packet-buffer budget or an additional product preference |
 | `bytesPerSecond` | Explicit background-preload trial limit; foreground reads are not throttled by it. Optional diagnostic limit. Normal automatic scheduling has no numeric MB/s default or required rate input; it uses one media/probe request, foreground preemption and cancellation |
-| `minFreeBytes` | Explicit engineering free-space safety reserve in the trial. Explicit bounded diagnostic/engineering input; ordinary capacity wiring is pending. No additional user-facing reserve setting or default is selected |
+| `minFreeBytes` | Explicit engineering free-space safety reserve in the bounded raw-byte trial. No additional user-facing reserve setting or default is selected |
 | `timeoutMs` | Explicit engineering per-origin-request deadline, bounded by 30000 ms; no new user-facing timeout choice is implied |
 | Block size, outstanding-work bounds, index bound and ownership guard | Engineering constraints, not additional product cache preferences |
 
-No production disk quota, free-space reserve, bandwidth or network policy is inferred from the existing mpv memory-buffer setting. No new defaults for these fields are introduced here. At capacity, this trial continues foreground playback without writing additional blocks and stops preloading. It does not reserve a hidden slice for the next episode, evict the retained last object early or promise that the chosen prefix target can always fit. How to divide a formal total budget between retained last ranges and next-prefix capacity is a remaining resource-policy decision, not a reason to use complete-file downloading.
+No production disk quota, free-space reserve, bandwidth or network policy is inferred from the existing mpv memory-buffer setting. No new defaults for these fields are introduced here. At capacity, this trial continues foreground playback without writing additional blocks and stops preloading. It does not reserve a hidden slice for the next episode, evict the retained last object early or promise that the chosen prefix target can always fit. The corrected product requirement is to retain only mpv's existing bounded buffer, with the next-prefix budget independent; it does not await a separate last-cache capacity or total-budget split. This raw-byte matrix remains useful transport evidence, but is not evidence of packet snapshot/restore. See [the fixed-source audit](PLAYBACK_BUFFER_RETENTION_DESIGN.md).
 
 ## Reproduce
 
