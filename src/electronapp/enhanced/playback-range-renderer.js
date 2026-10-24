@@ -82,7 +82,8 @@
                         var url = source.DirectStreamUrl ? api.getUrl(source.DirectStreamUrl) : api.getUrl('Videos/' + encodeURIComponent(item.Id) + '/stream.' + source.Container.toLowerCase().replace('m4v', 'mp4'), params);
                         if (new URL(url).origin !== context.serverOrigin || !owns()) return;
                         clearTimeout(deadline); deadline = null;
-                        await binding.preload(Object.assign({}, context, {source: url, itemId: item.Id, mediaSourceId: source.Id, mode: 'DirectStream', container: source.Container, live: false}));
+                        var result = await binding.preload(Object.assign({}, context, {source: url, itemId: item.Id, mediaSourceId: source.Id, mode: 'DirectStream', container: source.Container, live: false}));
+                        if (owns() && result && result.value && result.value.state === 'progress-pending') attemptId = null;
                     } catch (_) { /* Unsupported next metadata does not affect current playback. */ }
                     finally {if (deadline) clearTimeout(deadline);}
                 })();

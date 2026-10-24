@@ -33,6 +33,9 @@ async function network(t, extra = {}) {
             'Content-Length': data.length, 'Content-Type': 'application/octet-stream'};
         if (behavior.mode === 'encoded') headers['Content-Encoding'] = 'gzip';
         if (behavior.mode === 'unknown-length') delete headers['Content-Length'];
+        if (behavior.mode === 'missing-validator') delete headers.ETag;
+        if (behavior.mode === 'weak-validator') headers.ETag = 'W/\"weak\"';
+        if (behavior.mode === 'wrong-range') headers['Content-Range'] = `bytes ${row.start + 1}-${row.end}/${behavior.total}`;
         res.writeHead(behavior.mode === 'ignores-range' ? 200 : 206, headers);
         if (behavior.mode === 'interrupted') {res.write(data.subarray(0, 1)); res.destroy();} else res.end(data);
     });
@@ -83,7 +86,7 @@ test('quota is a hard media-byte bound and corruption becomes a miss', async t =
     assert.equal(await a.readBlock(0), null); assert.equal(store.status().bytes, 0); await a.release(); await store.close();
 });
 test('orphan interrupted writes are cleaned; redirected roots and concurrent writers fail closed', async t => {
-    const f = await storeFixture(t); await assert.rejects(createStore(f.options), {code: 'EEXIST'}); await f.store.close();
+    const f = await storeFixture(t); await assert.rejects(createStore(f.options), {code: 'EADDRINUSE'}); await f.store.close();
     await fs.writeFile(path.join(f.root, '11111111-1111-1111-1111-111111111111.pending'), 'half');
     const reopened = await createStore(f.options); assert.equal((await fs.readdir(f.root)).some(n => n.endsWith('.pending')), false); await reopened.close();
     const alias = f.root + '-alias'; await fs.symlink(f.root, alias, process.platform === 'win32' ? 'junction' : 'dir'); t.after(() => fs.unlink(alias));
@@ -115,7 +118,7 @@ test('a fresh signed URL probe permits same-version bytes after exit; no credent
     assert.match(f.rows.at(-1).path, /synthetic-new/); await handle.stop();
     assert.doesNotMatch(await fs.readFile(path.join(f.root, 'index.json'), 'utf8'), /api_key|synthetic|account|http:/);
 });
-for (const mode of ['ignores-range', 'redirect', 'unauthorized', 'encoded', 'unknown-length', 'interrupted']) test('unsupported origin response falls back before source selection: ' + mode, async t => {
+for (const mode of ['ignores-range', 'redirect', 'unauthorized', 'encoded', 'unknown-length', 'interrupted', 'missing-validator', 'weak-validator', 'wrong-range']) test('unsupported origin response falls back before source selection: ' + mode, async t => {
     const f = await network(t); f.behavior.mode = mode;
     await assert.rejects(f.cache.open({source: f.source, identity: f.id, isCurrent: () => true})); assert.equal(f.cache.status().routes, 0); assert.equal(f.cache.status().upstream, 0);
 });
@@ -175,4 +178,49 @@ test('an actual account change while a cached origin source is still open cannot
     const f = await network(t); let current = true;
     const handle = await f.cache.open({source: f.source, identity: f.id, isCurrent: () => current}); await get(handle.source, 'bytes=0-3');
     current = false; assert.equal((await get(handle.source, 'bytes=0-3')).status, 410); await handle.stop();
+});
+
+test('If-Range matches produce 206; mismatches ignore Range and return the full current representation', async t => {
+    const f = await network(t), handle = await f.cache.open({source: f.source, identity: f.id, isCurrent: () => true});
+    let response = await fetch(handle.source, {headers: {Range: 'bytes=4-7', 'If-Range': '"v1"'}});
+    assert.equal(response.status, 206); assert.deepEqual(Buffer.from(await response.arrayBuffer()), f.body.subarray(4, 8));
+    response = await fetch(handle.source, {headers: {Range: 'bytes=4-7', 'If-Range': '"old"'}});
+    assert.equal(response.status, 200); assert.equal(response.headers.get('content-range'), null); assert.deepEqual(Buffer.from(await response.arrayBuffer()), f.body);
+    await handle.stop();
+});
+
+test('OS ownership excludes another process, then recovers committed bytes and interrupted writes after its actual exit', {timeout: 10000}, async t => {
+    const {spawn} = require('node:child_process'), {once} = require('node:events');
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-range-crash-'));
+    let child, exited;
+    t.after(async () => {if (child && child.exitCode === null && child.signalCode === null) child.kill('SIGKILL'); if (exited) await exited; await fs.rm(root, {recursive: true, force: true});});
+    const modulePath = require.resolve('../src/electronapp/enhanced/playback-range-store');
+    const config = {root, blockBytes: 4, maxBytes: 32, minFreeBytes: 0};
+    const script = `const fs=require('fs/promises'); const path=require('path');
+        const {createStore}=require(process.argv[1]);
+        (async()=>{const store=await createStore(JSON.parse(process.argv[2]));
+        const lease=await store.acquire(JSON.parse(process.argv[3]),JSON.parse(process.argv[4]));
+        await lease.writeBlock(0,Buffer.from('live')); await lease.markPlaying(); await lease.release();
+        await fs.writeFile(path.join(JSON.parse(process.argv[2]).root,'11111111-1111-1111-1111-111111111111.pending'),'partial');
+        process.stdout.write('READY\\n'); setInterval(()=>{},1000);})().catch(()=>process.exit(1));`;
+    child = spawn(process.execPath, ['-e', script, modulePath, JSON.stringify(config), JSON.stringify(identity()), JSON.stringify(proof)], {stdio: ['ignore', 'pipe', 'pipe']});
+    let output = ''; const ready = new Promise((resolve, reject) => {child.stdout.on('data', chunk => {output += chunk; if (output.includes('READY')) resolve();}); child.once('error', reject); child.once('exit', code => {if (!output.includes('READY')) reject(Error('owned fixture exited: ' + code));});});
+    exited = once(child, 'exit');
+    await ready; await assert.rejects(createStore(config), {code: 'EADDRINUSE'});
+    child.kill('SIGKILL'); await exited;
+    const recovered = await createStore(config);
+    const lease = await recovered.acquire(identity(), proof); assert.equal((await lease.readBlock(0)).toString(), 'live');
+    assert.equal((await fs.readdir(root)).some(n => n.endsWith('.pending')), false);
+    await lease.release(); await recovered.close();
+});
+
+test('concurrent close callers share completion and a live-lease rejection can be retried after release', async t => {
+    const {store} = await storeFixture(t); const lease = await store.acquire(identity(), proof);
+    const first = store.close(), second = store.close(); assert.equal(first, second); await assert.rejects(first, /live-leases/);
+    await lease.release(); const next = store.close(); assert.equal(next, store.close()); await next;
+});
+
+test('once close begins a new acquisition cannot slip behind its zero-lease check', async t => {
+    const {store} = await storeFixture(t); const closing = store.close();
+    await assert.rejects(store.acquire(identity(), proof), /store-closing/); await closing;
 });

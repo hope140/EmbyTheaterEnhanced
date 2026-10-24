@@ -166,7 +166,7 @@ test('actual native service dispatches the range source, gates preload on real h
         assert.notEqual(helper.args[1], f.sourceUrl); assert.deepEqual(helper.bytes, f.body.subarray(0, 8));
         const next = {...f.context, itemId: 'next', mediaSourceId: 'next-source-0', source: f.url('next', 'next-source-0')};
         const count = f.rows.length; const result = await service.call('range-preload', {generationId, context: next}, id);
-        assert.equal(result.value.state, 'unavailable'); assert.equal(f.rows.length, count);
+        assert.equal(result.value.state, 'progress-pending'); assert.equal(f.rows.length, count);
         helper.position = 70; assert.equal((await service.call('range-preload', {generationId, context: next}, id)).value.state, 'ready');
         await service.call('command', {generationId, data: 'stop'}, id);
         await assert.rejects(service.call('range-context', {generationId, context: f.context}, id), /stale-generation/);

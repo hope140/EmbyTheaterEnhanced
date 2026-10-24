@@ -43,9 +43,10 @@ async function createCache(options) {
         if (closed || !route || req.headers.host !== host || req.headers.origin || req.headers.referer || !['GET', 'HEAD'].includes(req.method)) {res.writeHead(403); res.end(); return;}
         if (!route.current()) {res.writeHead(410); res.end(); return;}
         if (requests >= 4) {res.writeHead(503); res.end(); return;}
-        const range = parseRange(req.headers.range, route.lease.total);
+        // RFC 9110 If-Range mismatch means ignore Range and send this full representation.
+        const rangeHeader = req.headers['if-range'] && req.headers['if-range'] !== route.lease.etag ? null : req.headers.range;
+        const range = parseRange(rangeHeader, route.lease.total);
         if (!range) {res.writeHead(416, {'Content-Range': 'bytes */' + route.lease.total}); res.end(); return;}
-        if (req.headers['if-range'] && req.headers['if-range'] !== route.lease.etag) {res.writeHead(412); res.end(); return;}
         const controller = new AbortController(), abort = () => controller.abort();
         req.once('aborted', abort); res.once('close', abort);
         requests++; route.controllers.add(controller);

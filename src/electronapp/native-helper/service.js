@@ -748,8 +748,9 @@ function createService(options) {
       if (!rangeSession) return {status: 'ok', value: {state: 'unavailable'}};
       const generationId = active.currentGenerationId;
       const values = await Promise.all([active.getProperty('time-pos', 2000), active.getProperty('duration', 2000)]);
-      if (active !== client || active.currentGenerationId !== generationId || !Number.isFinite(values[0]) || !Number.isFinite(values[1]) || values[1] <= 0 ||
-          values[0] / values[1] * 100 < rangeSession.status().progressPercent) return {status: 'ok', value: {state: 'unavailable'}};
+      if (active !== client || active.currentGenerationId !== generationId) return {status: 'ok', value: {state: 'unavailable'}};
+      if (!Number.isFinite(values[0]) || !Number.isFinite(values[1]) || values[1] <= 0 ||
+          values[0] / values[1] * 100 < rangeSession.status().progressPercent) return {status: 'ok', value: {state: 'progress-pending'}};
       return {status: 'ok', value: await rangeSession.preload(payload.context, active, generationId)};
     }
     if (operation === 'prepare-presentation') return preparePresentation(active, endpointId, payload.token);
