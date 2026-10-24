@@ -17,13 +17,21 @@
 
 首次 run `40106411567` 在同级大小导出后被旧 AVI 检查器误拒；当前实测的 600Hz/空时间槽证实修正方向。首次结果仍保留为未完成，不追认为解码通过。详见[原探针及红绿对照](MPV_BUFFER_EXPORT_PROBE.md)。
 
-## 最小带音轨实验，已准备但尚未跑固定 DLL
+## 最小带音轨实验，尚未完成固定 DLL 验证
 
 增加明确的 `range_smoke=buffer-export-av`，仍只允许 `experiment/playback-buffer-retention`，`release_package=false`，相同原包、loader、只读权限、串行组、隔离 profile 和 120 秒 native 上限。原 `buffer-export` 无音模式保持。预计取得 runner 后仍约 3–5 分钟，不重新打包、不运行四模式矩阵。
 
 新输入为 8 秒、320×180/24fps raw 视频 + 单轨单声道 48kHz/16bit PCM 的本地合成 AVI，33,955,148 字节；视频逐帧唯一，音频使用可定位的合成 chirp。只在所属目录生成，不修改原 source plan/原 A/B 夹具，不下载媒体。设置 `ao=null` 只用于该隐藏探针：验证音频解码参数而不依赖云 runner 的物理声卡，不修改系统音频配置。
 
 新增观测：音频全部 PCM 必须是原输入连续样本；分别求音频/视频 source-local 偏移，并检查是否共用同一个偏移（仅允许一个音频样本的量化误差）。新 helper 须同时报告正确的视频及 48kHz 单声道音频解码/选轨；暂停后做一次片段内精确 seek，验证落点和源时间换算，再继续播放到 `eof-reached`，末位置须接近片段末端。偏移不一致、音频样本改变、轨道缺失或解码失败，都不能记成此窄范围成功。先完成文件一致性和新 helper 观测，再把偏移不一致记录为 `export-av-timeline-mismatch`。无音首轮只证实了解码启动和时间推进，未追加“整段 EOF”声称。
+
+首次 AV run `40109620834` / job `120918421295` 的正常日志已读：在 `source-helper`、pendingOption=`ao` 处报 `export-command-failed`，helper 正常退出 0、stdio 关闭，无 timeout；尚未 loadfile、导出或解码，不能作为 dump-cache 失败的证据。旧诊断没有记录属性实际形状或原生错误码，不能反推它究竟是 setter 错误还是比较失败。
+
+固定 [ao.c](https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/audio/out/ao.c#L143-L154)声明 `ao` 为 `OPT_SETTINGSLIST`、带 `UPDATE_AUDIO`；[command.c](https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/player/command.c#L8292-L8293)处理更新。当前 helper 初始化后、空闲且首次 loadfile 前，通过现有 set-property 设置是可支持的时机，不需新启动协议、用户配置或生产白名单。[m_option.c 的原生 getter](https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/options/m_option.c#L3836-L3862)回传的是对象列表：`[{name:"null",enabled:true,params:{}}]`；旧字符串列表比较器必然拒绝这个合法形状，已做修前失败/修后通过对照。
+
+现有 `ete-mpv-helper` 普通启动只接收 DLL、helperId、HWND 三个位置参数，初始化选项在 helper 内固定；controller 没有开放通用 mpv 启动参数。因此不追加 `--ao=null` 到 argv、不开启用户配置或改 argc 门禁来解决探针问题。继续使用上面的现有运行时属性路径，并以真正的 `current-ao=null`、音频参数和 EOF 验证其效果。
+
+修正只接受恰好一个 enabled 的 null driver 且无额外参数/label，仍拒绝其他输出、禁用项或 fallback 列表。新的 `optionStatus` 在普通 summary 直接区分 `set-property`、`get-property`、`readback-validation`、`confirmed`，给出实际类型、条目数、观察到的原生负错误码及固定请求码；未观察到原生码时写 null，不伪造成功 0。原生音频参数、共同时间偏移、seek、EOF 和完整退出门禁均保留，固定 DLL AV 仍待重新执行。
 
 本地**辅助**对照已经执行，可复现：
 

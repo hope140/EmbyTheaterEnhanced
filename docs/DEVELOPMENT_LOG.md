@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-24 — Correct typed ao readback without changing helper initialization
+
+Read AV attempt40109620834/job120918421295: source-helper/pendingao/export-command-failed before any media load/export; helper exited0 with stdio closed, no timeout. Do not infer a media-cache failure or invent the missing native error code. Fixed ao_conf uses OPT_SETTINGSLIST/UPDATE_AUDIO and command update reloads audio; the current idle pre-load property timing is supported. Fixed get_obj_settings_list returns maps with name/enabled/params, which reproduces failure in the old string-only comparator.
+
+Accept only the canonical single enabled null output with empty params (plus prior exact-null string forms); reject unknown keys, labels, parameters, disabled or multiple drivers. Preserve current production helper, all option timing and every audio/seek/EOF/identity/process gate. Add safe option-phase telemetry, actual structural type/count, observed negative mpv code and fixed request code without raw values/errors. Ordered option application distinguishes a setter operation-error, failed getter and strict comparison failure; matching readback cannot mask an observed setter failure. No dispatch occurs here.
+
+Validation:92 relevant tests passed, including the fixed upstream object-list red/green fixture, setter failure despite matching readback, getter rejection, unknown-value mismatch and safe numeric projection. Public offline1967 tests:1957 passed,0 failed,10 platform skips. JavaScript470-file syntax, final UTF-8/newline/local-link/finite-secret/private-path and whitespace checks passed. There is no new native result; the next run must still demonstrate ao output, PCM/video decode, common timing, seek/EOF and owned exits.
+
 ## 2026-10-24 — Archive fixed-DLL success and isolate the next audio test
 
 Read actual normal logs for run40107582483/job120912370474 atd7002d4: finite export33ms/4,340,662B; no new observed source reads;600Hz/25 nonempty/599 empty/624slots; sourceframes16–40 at0.6666667–1.7083333sec, local0; Stop/exit/reopen hashes unchanged; two helper exit0/stdio-closed and native video decode passed. Preserve the earlier failure separately and keep transparentRestoreNOT_ASSESSED. Whole Electron/app/Emby session, audio/subtitles and real-server acceptance are not inferred.

@@ -29,6 +29,7 @@ function summary(plan) {
         workerPid: n(receipt?.pid), exitCode: n(receipt?.code), streamsClosed: boolean(receipt?.streamsClosed), timedOut: boolean(receipt?.timedOut),
         exportMs: n(observation?.exportMs), clipBytes: n(observation?.clip?.bytes),
         pendingOption: Object.hasOwn(probe.optionsFor('av'), observation?.pendingOption) ? observation.pendingOption : null,
+        optionStatus: probe.projectOptionStatus(observation?.optionStatus),
         clipFormat: Object.fromEntries(['ticksPerSecond', 'nonemptyPackets', 'emptyVideoSlots', 'containerSlots'].map(k => [k, n(observation?.clipFormat?.[k])])),
         checks: Object.fromEntries(['newRequests', 'newScheduledSourceBytes', 'completedBytesDelta'].map(k => [k, n(observation?.checks?.[k])]).concat(
             ['clipDecoded', 'audioDecoded', 'seekMappingVerified', 'clipReachedEOF', 'unchangedAfterStop', 'unchangedAfterExit', 'unchangedAfterReopen'].map(k => [k, boolean(observation?.checks?.[k])]))),

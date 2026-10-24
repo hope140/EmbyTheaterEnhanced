@@ -39,8 +39,37 @@ test('audio timestamp mismatch, changed samples and ambiguous repeats never beco
 test('headless audio probe uses only null output and leaves normal video probe options unchanged', () => {
     assert.equal(probe.optionsFor('av').ao, 'null'); assert.equal(Object.hasOwn(probe.optionsFor('video'), 'ao'), false);
     assert(probe.optionMatches('ao', ['null'], 'null')); assert(probe.optionMatches('ao', 'null', 'null'));
+    const native = [{name: 'null', enabled: true, params: {}}];
+    const oldMatcher = value => value === 'null' || Array.isArray(value) && value.length === 1 && value[0] === 'null';
+    assert.equal(oldMatcher(native), false, 'fixed get_obj_settings_list contract reproduces old comparison failure');
+    assert(probe.optionMatches('ao', JSON.parse(JSON.stringify(native)), 'null'));
+    for (const value of [[{name: 'null', enabled: false, params: {}}], [{name: 'null', enabled: true, params: {unknown: 'private-canary'}}],
+        [{name: 'null', enabled: true, params: {}, label: 'private-canary'}], [...native, {name: 'wasapi', enabled: true, params: {}}]]) assert.equal(probe.optionMatches('ao', value, 'null'), false);
     for (const value of [['wasapi'], ['null', 'wasapi'], [], 'auto']) assert.equal(probe.optionMatches('ao', value, 'null'), false);
     assert.throws(() => probe.optionsFor('unconfirmed'), /export-input-invalid/);
+});
+test('option application distinguishes actual setter error, getter failure and typed readback mismatch', async () => {
+    const response = [{name: 'null', enabled: true, params: {}}], calls = [], report = {};
+    const client = {currentGenerationId: 7, operationErrors: [], setProperty(name, value) {calls.push(['set', name, value]);}, async getProperty(name) {calls.push(['get', name]); return response;}};
+    assert.deepEqual(await probe.applyOption(client, 'ao', 'null', report, () => {}), response);
+    assert.deepEqual(calls, [['set', 'ao', 'null'], ['get', 'ao']]); assert.equal(report.optionStatus.phase, 'confirmed'); assert.equal(report.optionStatus.actualType, 'object-list');
+    const failed = {...client, operationErrors: [], async getProperty() {this.operationErrors.push({generationId: 7, operation: 'set-property', property: 'ao', errorCode: -8, error: 'private-canary'}); return response;}};
+    await assert.rejects(probe.applyOption(failed, 'ao', 'null', report, () => {}), /export-option-set-failed/);
+    assert.equal(report.optionStatus.phase, 'set-property'); assert.equal(report.optionStatus.mpvErrorCode, -8);
+    const getter = {...client, operationErrors: [], async getProperty() {throw Error('property-unavailable');}};
+    await assert.rejects(probe.applyOption(getter, 'ao', 'null', report, () => {}), /export-option-get-failed/);
+    assert.equal(report.optionStatus.phase, 'get-property'); assert.equal(report.optionStatus.requestCode, 'property-unavailable');
+    const mismatch = {...client, operationErrors: [], async getProperty() {return [{name: 'private-canary', enabled: true, params: {}}];}};
+    await assert.rejects(probe.applyOption(mismatch, 'ao', 'null', report, () => {}), /export-option-readback-mismatch/);
+    assert.equal(report.optionStatus.phase, 'readback-validation'); assert.equal(report.optionStatus.mpvErrorCode, null);
+    assert(!JSON.stringify(report).includes('private-canary'));
+});
+test('option diagnostics keep fixed phases and numeric mpv codes without raw native errors or values', () => {
+    const projected = probe.projectOptionStatus({name: 'ao', phase: 'set-property', actualType: 'object-list', entries: 1, mpvErrorCode: -8,
+        requestCode: 'property-unavailable', matches: false, error: '/private-canary', raw: 'https://private.invalid'});
+    assert.equal(projected.mpvErrorCode, -8); assert(!JSON.stringify(projected).includes('private'));
+    const unknown = probe.projectOptionStatus({name: '/private-canary', phase: 'private-canary', mpvErrorCode: '/private-canary', requestCode: 'private-canary'});
+    assert.equal(unknown.name, 'unavailable'); assert.equal(unknown.phase, 'unavailable'); assert.equal(unknown.mpvErrorCode, null); assert.equal(unknown.requestCode, null);
 });
 test('AV short scope stays on retention branch with no release staging or automatic invocation', () => {
     const route = require('../tools/ci-playback-range-smoke.cjs');

@@ -17,6 +17,7 @@ const CODES = new Set(['export-input-invalid', 'export-file-limit', 'export-avi-
     'export-fresh-root', 'export-owner-drift', 'export-receipt-invalid', 'export-explicit-Windows-required', 'export-fixed-Electron-required',
     'export-helper-exit', 'export-native-not-established']);
 CODES.add('export-av-format'); CODES.add('export-av-audio-mapping'); CODES.add('export-av-timeline-mismatch');
+CODES.add('export-option-set-failed'); CODES.add('export-option-get-failed'); CODES.add('export-option-readback-mismatch');
 const OPTIONS = Object.freeze({'cache': 'yes', 'cache-on-disk': false, 'demuxer-max-bytes': 4 * 1048576,
     'demuxer-max-back-bytes': 2 * 1048576, 'demuxer-donate-buffer': false, 'pause': false, 'volume': 0}); // Probe only, not product defaults.
 function optionsFor(variant) {
@@ -24,7 +25,48 @@ function optionsFor(variant) {
     return variant === 'av' ? {...OPTIONS, ao: 'null'} : OPTIONS;
 }
 function optionMatches(name, actual, expected) {
-    return name === 'ao' ? expected === 'null' && (actual === 'null' || Array.isArray(actual) && actual.length === 1 && actual[0] === 'null') : disk.sameOption(actual, expected);
+    if (name !== 'ao') return disk.sameOption(actual, expected);
+    if (expected !== 'null') return false;
+    if (actual === 'null') return true;
+    if (!Array.isArray(actual) || actual.length !== 1) return false;
+    const row = actual[0];
+    if (row === 'null') return true;
+    // Fixed mpv get_obj_settings_list returns ARRAY<MAP>, not ARRAY<STRING>.
+    return !!row && typeof row === 'object' && !Array.isArray(row) &&
+        Object.keys(row).sort().join(',') === 'enabled,name,params' && row.name === 'null' && row.enabled === true &&
+        !!row.params && typeof row.params === 'object' && !Array.isArray(row.params) && Object.keys(row.params).length === 0;
+}
+function projectOptionStatus(row) {
+    const types = ['unread', 'null', 'string', 'boolean', 'number', 'object', 'string-list', 'object-list', 'array'];
+    return {name: Object.hasOwn(optionsFor('av'), row?.name) ? row.name : 'unavailable',
+        phase: ['set-property', 'get-property', 'readback-validation', 'confirmed'].includes(row?.phase) ? row.phase : 'unavailable',
+        actualType: types.includes(row?.actualType) ? row.actualType : 'unread',
+        entries: Number.isSafeInteger(row?.entries) && row.entries >= 0 ? row.entries : null,
+        mpvErrorCode: Number.isSafeInteger(row?.mpvErrorCode) && row.mpvErrorCode < 0 && row.mpvErrorCode >= -2147483648 ? row.mpvErrorCode : null,
+        requestCode: ['property-unavailable', 'property-value-limit', 'generation-required', 'TIMEOUT', 'FAILED', 'HELPER_DIED'].includes(row?.requestCode) ? row.requestCode : null,
+        matches: typeof row?.matches === 'boolean' ? row.matches : null};
+}
+async function applyOption(client, name, expected, report, save) {
+    const before = new Set(client.operationErrors);
+    const row = report.optionStatus = {name, phase: 'set-property', actualType: 'unread', entries: null, mpvErrorCode: null, requestCode: null, matches: null};
+    report.pendingOption = name; save();
+    const setterError = () => client.operationErrors.find(e => !before.has(e) && e.operation === 'set-property' && e.property === name && e.generationId === client.currentGenerationId);
+    const nativeCode = error => Number.isSafeInteger(error?.errorCode) && error.errorCode < 0 && error.errorCode >= -2147483648 ? error.errorCode : null;
+    const failureCode = error => ['property-unavailable', 'property-value-limit', 'generation-required'].includes(error?.message) ? error.message :
+        ['TIMEOUT', 'FAILED', 'HELPER_DIED'].includes(error?.state) ? error.state : null;
+    try {client.setProperty(name, expected);} catch (error) {row.requestCode = failureCode(error); save(); throw Error('export-option-set-failed');}
+    row.phase = 'get-property'; save(); let actual;
+    try {actual = await client.getProperty(name, 3000);} catch (error) {
+        const failed = setterError(); if (failed) {row.phase = 'set-property'; row.mpvErrorCode = nativeCode(failed);}
+        row.requestCode = failureCode(error); save(); throw Error(failed ? 'export-option-set-failed' : 'export-option-get-failed');
+    }
+    row.actualType = actual === null ? 'null' : Array.isArray(actual) ? actual.every(v => typeof v === 'string') ? 'string-list' : actual.every(v => v && typeof v === 'object' && !Array.isArray(v)) ? 'object-list' : 'array' : typeof actual;
+    row.entries = Array.isArray(actual) ? actual.length : null;
+    const failed = setterError();
+    if (failed) {row.phase = 'set-property'; row.mpvErrorCode = nativeCode(failed); save(); throw Error('export-option-set-failed');}
+    row.phase = 'readback-validation'; row.matches = optionMatches(name, actual, expected); save();
+    if (!row.matches) throw Error('export-option-readback-mismatch');
+    row.phase = 'confirmed'; save(); return actual;
 }
 function safeFailure(error, stage) {
     const old = disk.safeFailure(error);
@@ -214,8 +256,7 @@ async function worker(file) {
             const expected = optionsFor(plan.variant);
             record.options = {};
             for (const [name, value] of Object.entries(expected)) {
-                report.pendingOption = name; save(); client.setProperty(name, value); const actual = await property(name);
-                if (!optionMatches(name, actual, value)) throw Error('export-command-failed'); record.options[name] = actual;
+                record.options[name] = await applyOption(client, name, value, report, save);
             }
             delete report.pendingOption; save();
         }
@@ -307,4 +348,4 @@ if (isWorker) {
     console.error('mpv-buffer-export-failure:' + JSON.stringify(safeFailure(error, 'preflight'))); require('electron').app.exit(1);
     });
 }
-module.exports = {SCOPE, MAX_FILE, MAX_SLOTS, STAGES, OPTIONS, optionsFor, optionMatches, safeFailure, formatDiagnostic, physical, aviPackets, markedFixture, mapping, chooseWindow, sourceCounts, noExtraSource, prepare, readProbe, validateReport, run};
+module.exports = {SCOPE, MAX_FILE, MAX_SLOTS, STAGES, OPTIONS, optionsFor, optionMatches, projectOptionStatus, applyOption, safeFailure, formatDiagnostic, physical, aviPackets, markedFixture, mapping, chooseWindow, sourceCounts, noExtraSource, prepare, readProbe, validateReport, run};
