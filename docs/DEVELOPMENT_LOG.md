@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-24 — 按补充栈覆盖 API 延后关闭事件
+
+按补充调用链核对ApiClient450为websocketclose延后通知，经Events66、home-layout-cache.invalidate及page-data-cache清理在途工作到clearTimeout。原始实测message缺失，保留TypeError事实，云端受控Illegal invocation不反填实测；顶部“喜欢”仅作导航动作，不推断收藏写或零API请求。
+
+复用AMD渲染器接收者测试图，新增合成WebSocket驱动真实ApiClient.openWebSocket/onclose及延后0ms回调，检查在途布局取消、pending归零、恢复导航及旧回复不覆盖。网络/socket/身份均为合成且API事件代码真实执行；不使用实际账户或服务，不安排前台测试。产品代码相对a8f1ce22未改，后续Windows包验收仍独立记录。
+
+同一新增用例对旧6dc6c270缓存Git字节失败，并准确重现原调用链；修复分支最终27文件353/353通过，0失败/取消/跳过，定向三文件97/97。原实测message和网络请求数依旧未知，不据此扩写原记录。
+
 ## 2026-10-24 — 补齐 Window 定时器接收者回归
 
 定位缓存完成时 clock.clearTimeout 使用了普通clock对象作为接收者。原Node/注入时钟允许该调用，浏览器Window方法可以拒绝，导致done已置位但pending和订阅未结算。默认时钟现用薄函数直接调用全局setTimeout/clearTimeout，首页冷启动等待身份的同类默认时钟一并修正；没有更改缓存开关、TTL、容量、认证、失效或播放所有权。

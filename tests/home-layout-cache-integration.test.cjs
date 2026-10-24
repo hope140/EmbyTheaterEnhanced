@@ -14,14 +14,14 @@ function clock() {
     return {now: () => now, setTimeout(fn, ms) { timers.set(++id, {fn, at: now + ms}); return id; },
         clearTimeout: id => timers.delete(id), jump: ms => { now += ms; }};
 }
-function fixture(handler, options = {}) {
+function fixture(handler, options = {}, globals = {}) {
     const calls = [], h = harness(async (url, fetchOptions) => {
         calls.push({path: new URL(url).pathname, method: fetchOptions.method});
         if (handler) return handler(url, fetchOptions, calls.length);
         if (url.includes('/HomeSections')) return response(safeRows());
         if (url.includes('/Sections/')) return response({Items: [{Id: 'item-one', UserData: {PlaybackPositionTicks: calls.length}}]});
         return response({Played: true});
-    });
+    }, globals);
     const events = h.load('events.js').default, Api = h.load('apiclient.js').default;
     const Credentials = h.load('credentials.js').default, Ex = h.load('apiclientex.js').default, cm = h.load('connectionmanager.js').default;
     const store = storage();
@@ -193,16 +193,16 @@ test('a cancelled external layout subscriber does not seed a hit for the next pr
     old.resolve(response(safeRows('Cancelled navigation'))); await flush();
     assert.equal((await f.load('tv')).sections[0].Name, 'Next navigation'); assert.equal(layouts, 2);
 });
-test('enhanced AMD graph uses the default clock with renderer timer receivers and one canonical events identity', async t => {
+function rendererGraph(f, {nodeSetTimeout = false} = {}) {
     const fs = require('node:fs'), path = require('node:path'), vm = require('node:vm');
-    const f = fixture(); t.after(() => f.dispose()); f.cache.dispose();
+    f.cache.dispose();
     const modules = new Map([['modules/emby-apiclient/events.js', {default: f.events}]]);
     const context = vm.createContext({AbortController, hostSetTimeout: setTimeout, hostClearTimeout: clearTimeout});
     vm.runInContext(`
         function receiver(value) {
             if (value !== undefined && value !== null && value !== globalThis) throw new TypeError('Illegal invocation');
         }
-        globalThis.setTimeout = function(fn, ms) { 'use strict'; receiver(this); return hostSetTimeout(fn, ms); };
+        globalThis.setTimeout = function(fn, ms) { 'use strict'; ${nodeSetTimeout ? '' : 'receiver(this);'} return hostSetTimeout(fn, ms); };
         globalThis.clearTimeout = function(id) { 'use strict'; receiver(this); return hostClearTimeout(id); };
     `, context);
     function load(name) {
@@ -218,11 +218,51 @@ test('enhanced AMD graph uses the default clock with renderer timer receivers an
     }
     const adapter = load('enhanced/page-cache/home-layout-cache.js').default.create(f.cm, {enabled: true, ttlMs: 100});
     const provider = load('enhanced/home/server-sections.js').default.createProvider(() => f.api, {layoutCache: adapter});
+    return {adapter, provider, modules};
+}
+
+test('enhanced AMD graph uses the default clock with renderer timer receivers and one canonical events identity', async t => {
+    const f = fixture(); t.after(() => f.dispose());
+    const {adapter, provider, modules} = rendererGraph(f);
     t.after(() => { provider.dispose(); adapter.dispose(); });
     assert.equal((await provider.loadSections({displayMode: 'tv'})).status, 'server');
     assert.equal((await provider.loadSections({displayMode: 'tv'})).status, 'server');
     assert.equal(f.calls.length, 1); assert.equal(modules.size, 4);
     assert.equal(modules.get('modules/emby-apiclient/events.js').default, f.events);
+});
+
+test('actual API deferred websocketclose cancels an in-flight renderer layout without a stuck completion', async t => {
+    const old = gate(), sockets = [], apiTimers = new Map(); let timerId = 0, reads = 0;
+    class Socket {
+        constructor() { this.readyState = 1; sockets.push(this); }
+        close() { this.readyState = 3; }
+        send() {}
+    }
+    Object.assign(Socket, {OPEN: 1, CONNECTING: 0, CLOSING: 2, CLOSED: 3});
+    const f = fixture(() => ++reads === 1 ? old.promise : response(safeRows('Recovered layout')), {}, {
+        WebSocket: Socket,
+        setTimeout(fn, delay) { apiTimers.set(++timerId, {fn, delay}); return timerId; },
+        clearTimeout(id) { apiTimers.delete(id); }
+    });
+    t.after(() => { f.api.closeWebSocket(); f.dispose(); });
+    // The reported renderer permits host setTimeout but rejects a foreign
+    // receiver for Window clearTimeout. Keep that distinction in this fixture.
+    const {adapter, provider} = rendererGraph(f, {nodeSetTimeout: true});
+    t.after(() => { provider.dispose(); adapter.dispose(); });
+    f.api.openWebSocket(); const socket = sockets[0];
+    const pending = provider.loadSections({displayMode: 'tv'}); await flush();
+    assert.equal(adapter.stats().pending, 1); assert.equal(f.calls.length, 1);
+    socket.readyState = Socket.CLOSED; socket.onclose({code: 1006});
+    const closeEvent = [...apiTimers.entries()].find(([, timer]) => timer.delay === 0);
+    assert.ok(closeEvent, 'execute the real API deferred websocketclose notification');
+    apiTimers.delete(closeEvent[0]);
+    assert.doesNotThrow(() => closeEvent[1].fn());
+    assert.equal((await pending).status, 'cancelled');
+    assert.equal(adapter.stats().pending, 0); assert.equal(adapter.stats().entries, 0);
+    assert.equal((await provider.loadSections({displayMode: 'tv'})).sections[0].Name, 'Recovered layout');
+    old.resolve(response(safeRows('Late old layout'))); await flush();
+    assert.equal((await provider.loadSections({displayMode: 'tv'})).sections[0].Name, 'Recovered layout');
+    assert.equal(f.calls.length, 2);
 });
 
 
