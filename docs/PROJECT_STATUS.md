@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-24 — FN实验收尾与真实授权边界
+
+两轮Windows真实Electron合成通过后停止重复跑测。提供[短决策结论](FN_CONNECT_DECISION.md)、仓库外无凭据配置模板及[正常桌面只读检查说明](../prototypes/fn-connect/desktop-check/README.md)，复用已验非fixture入口，不改运行代码或产品默认。当前未启动真实入口、要求用户登录或访问NAS。
+
+建议在主动添加FN服务器时先正规认证，每连接/账号隔离Session，明确挑战才重登；Emby登录和媒体权限独立。Native后续最小接线为main认证请求到回环opaque lease，保持PlaybackManager原归属，不引入缓存。HLS/DASH、未知外链/私有签名来源不支持；真实认证、媒体/字幕/转码/Native及中继流量仍未验。真实FN验证停在用户以后自行官方认证的边界。
+
 ## 2026-10-24 — FN Windows真实Electron合成链通过
 
 修正代码提交29c05e89577eb384d56b0c30fe68a512c396dff1的[Windows run40110209174](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40110209174)/job120920160298成功。固定Electron44.4.2正常沙箱实际运行；归一日志完整经过页面授权、API/Session隔离、206/416、302凭据隔离、WS字节桥、取消、关闭、过期及DRAINED并PASSED。日志实证upload close早于response，支持已修根因；门禁包含版本/哈希、沙箱、进程退出和profile清理。
