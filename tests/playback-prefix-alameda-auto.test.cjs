@@ -13,17 +13,33 @@ const waitFor = async (predicate, detail) => {
     assert(predicate(), detail());
 };
 async function automaticCase(t, scenario) {
-    const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-alameda-next-'))), trace = [], timers = new Set();
+    const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-alameda-next-'))), trace = [], timers = new Set(), documentTimers = new Set();
+    let origin, restoreRequests, service, window;
+    // Own cleanup before server/settings setup: one failed path check must not
+    // leave HTTP/timers alive or hide the first error behind a later hook.
+    t.after(async () => {
+        const failures = [];
+        const settle = async action => {try {await action();} catch (error) {failures.push(error);}};
+        for (const timer of [...timers, ...documentTimers]) clearInterval(timer);
+        if (window?.prefixStop && scenario !== 'hold-exit') await settle(() => window.prefixStop());
+        if (service) await settle(() => service.destroy());
+        if (restoreRequests) restoreRequests();
+        if (origin) await settle(() => origin.close());
+        const payload = path.join(root, scenario === 'settings-next-play' ? 'next-episode-prefix-v1' : 'prefix');
+        if (fs.existsSync(payload)) await settle(() => assert.deepEqual(fs.readdirSync(payload), ['owner']));
+        await settle(() => fs.rmSync(root, {recursive: true, force: true}));
+        if (failures.length) throw new AggregateError(failures, 'owned Alameda fixture cleanup failed');
+    });
     const record = (type, data = {}) => trace.push({seq: trace.length, type, ...data});
     const fixtures = ['A', 'B'].map(id => {const file = id + '.avi'; fs.writeFileSync(path.join(root, file), Buffer.from(id.repeat(40))); return {file, size: 40, etag: '"synthetic-' + id + '"'};});
     const holding = scenario.startsWith('hold-');
-    const origin = await tool.fixtureServer({out: root, fixtures, autoPlay: !['autoplay-off', 'explicit-queue-autoplay-off'].includes(scenario)}, record, {holdNext: holding, holdStart: 8, unsupported: scenario === 'unsupported'});
-    const restoreRequests = holding ? tool.observeOriginRequests(origin.origin, record) : null;
+    origin = await tool.fixtureServer({out: root, fixtures, autoPlay: !['autoplay-off', 'explicit-queue-autoplay-off'].includes(scenario)}, record, {holdNext: holding, holdStart: 8, unsupported: scenario === 'unsupported'});
+    restoreRequests = holding ? tool.observeOriginRequests(origin.origin, record) : null;
     const managerFile = path.join(root, 'playbackmanager.js');
     fs.copyFileSync(path.join(repo, 'vendor/web-snapshot/www/modules/common/playback/playbackmanager.js'), managerFile);
     execFileSync(process.execPath, [path.join(repo, 'tools/patch-playbackmanager.cjs'), managerFile]);
-    let listener, generation = 0, service;
-    const contexts = new Map(), clients = [], documentTimers = new Set(), settingsHandlers = new Map();
+    let listener, generation = 0;
+    const contexts = new Map(), clients = [], settingsHandlers = new Map();
     const settingsCase = scenario === 'settings-next-play';
     const settings = require('../src/electronapp/enhanced/playback-range-user-settings');
     const preferences = settingsCase ? settings.createStore({profileRoot: root}) : null;
@@ -77,7 +93,7 @@ async function automaticCase(t, scenario) {
     const eventTarget = new EventTarget();
     const body = {insertBefore(element) {element.parentNode = body;}, removeChild(element) {element.parentNode = null;}, firstChild: null};
     const document = {body, querySelector: () => null};
-    const window = {document, console: {log() {}, warn() {}, error() {}}, URL, AbortController, TextDecoder, Event, CustomEvent,
+    window = {document, console: {log() {}, warn() {}, error() {}}, URL, AbortController, TextDecoder, Event, CustomEvent,
         setTimeout, clearTimeout, setInterval(callback, ms) {const timer = setInterval(callback, ms === 500 ? 20 : ms); documentTimers.add(timer); return timer;}, clearInterval,
         addEventListener: eventTarget.addEventListener.bind(eventTarget), removeEventListener: eventTarget.removeEventListener.bind(eventTarget), dispatchEvent: eventTarget.dispatchEvent.bind(eventTarget), localStorage: {getItem: () => null, setItem() {}},
         innerWidth: 320, innerHeight: 180, MutationObserver: class {observe() {} disconnect() {}}, screen: {width: 640, height: 480}, fetch,
@@ -105,11 +121,6 @@ async function automaticCase(t, scenario) {
         const member = new URL(script.src).pathname.split('/electronapp/')[1];
         queueMicrotask(() => {try {vm.runInContext(window.prefixHarness.source(member), window, {filename: member}); script.fire('load');} catch (error) {record('script-error', {member, error: error.message}); script.fire('error');}});
     }};
-    t.after(async () => {
-        for (const timer of [...timers, ...documentTimers]) clearInterval(timer);
-        if (window.prefixStop && scenario !== 'hold-exit') await window.prefixStop(); await service.destroy(); if (restoreRequests) restoreRequests(); await origin.close();
-        assert.deepEqual(fs.readdirSync(path.join(root, settingsCase ? 'next-episode-prefix-v1' : 'prefix')), ['owner']); fs.rmSync(root, {recursive: true, force: true});
-    });
     await vm.runInContext('(' + tool.rendererBoot.toString() + ')(' + JSON.stringify({origin: origin.origin, windowId: '1', singleItem: scenario === 'autoplay-off', moduleBaseUrl: 'file:///fixture/electronapp/www/'}) + ')', window);
     const details = () => JSON.stringify(trace.slice(-30));
     assert(!trace.some(row => row.type === 'renderer-failure'), details());

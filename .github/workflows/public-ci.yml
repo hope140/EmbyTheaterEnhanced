@@ -18,6 +18,7 @@ on:
           - next-matrix
           - next-matrix-remaining
           - next-auto-report
+          - next-settings-check
       release_package:
         description: Stage the standard installer name and five release files (does not publish)
         type: boolean
@@ -114,6 +115,27 @@ jobs:
           CI_DOCS_OUTCOME: ${{ steps.docs.outcome }}
           CI_TEST_OUTCOME: ${{ steps.regression.outcome }}
         run: node tools/ci-change-scope.cjs summary
+
+  manual-next-prefix-settings:
+    if: github.event_name == 'workflow_dispatch' && inputs.range_smoke == 'next-settings-check' && !inputs.release_package && github.ref == 'refs/heads/verify/next-episode-auto-20261024'
+    runs-on: windows-2022
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Check out exact settings validation source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Set up locked Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.18.1
+      - name: Inspect Windows temporary identity without publishing paths
+        run: node tools/ci-windows-path-diagnostics.cjs
+      - name: Run serial temporary-path and real Alameda settings regressions without packaging
+        run: node --test --test-concurrency=1 tests/ci-windows-path-diagnostics.test.cjs tests/playback-prefix-alameda-auto.test.cjs tests/playback-range-user-settings.test.cjs tests/playback-range-prefix-settings.test.cjs tests/playback-range-settings-view.test.cjs tests/settings-menu-order.test.cjs
 
   manual-next-prefix-result:
     if: github.event_name == 'workflow_dispatch' && inputs.range_smoke == 'next-auto-report'

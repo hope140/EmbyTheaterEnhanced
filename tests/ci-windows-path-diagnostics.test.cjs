@@ -41,3 +41,29 @@ test('diagnostic distinguishes a real junction from a physical directory', () =>
         fs.rmSync(root, {recursive: true, force: true});
     }
 });
+
+
+test('native temporary identity opens normal prefix/settings roots while junctions remain refused', async () => {
+    const settings = require('../src/electronapp/enhanced/playback-range-user-settings');
+    const prefix = require('../src/electronapp/enhanced/playback-prefix-store');
+    const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-prefix-path-')));
+    let store;
+    try {
+        assert.equal(diagnostic.inspectPath(root).resolvedEqualsNative, true);
+        const preferences = settings.createStore({profileRoot: root});
+        preferences.save({...preferences.get(), enabled: true});
+        assert.equal(preferences.runtimeConfig().kind, 'next-prefix');
+        assert.equal(preferences.runtimeConfig().prefetchBytes, 300000000);
+        store = await prefix.createStore(preferences.runtimeConfig());
+        await store.close(); store = null;
+        const alias = path.join(root, 'redirected');
+        const target = path.join(root, 'physical'); fs.mkdirSync(target);
+        fs.symlinkSync(target, alias, process.platform === 'win32' ? 'junction' : 'dir');
+        assert.throws(() => settings.createStore({profileRoot: alias}), /profile-unavailable/);
+        await assert.rejects(prefix.createStore({root: alias, preloadMB: 300}), /prefix-root-redirected/);
+        assert.deepEqual(fs.readdirSync(target), [], 'refusal does not create owner/config/media in the redirect target');
+    } finally {
+        if (store) await store.close();
+        fs.rmSync(root, {recursive: true, force: true});
+    }
+});

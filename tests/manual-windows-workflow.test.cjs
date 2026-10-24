@@ -36,3 +36,15 @@ test('artifact upload is restricted to the staged package and the shortest suppo
     assert.match(manual, /include-hidden-files: false/);
     assert.doesNotMatch(manual, /path: (?:\.|dist|vendor|\.work)(?:\/\*\*|$)/m);
 });
+
+
+test('next settings check is a short exact-source Windows serial regression with no package or helper launch', () => {
+    const job = workflow.slice(workflow.indexOf('  manual-next-prefix-settings:'), workflow.indexOf('  manual-next-prefix-result:'));
+    assert.match(job, /inputs.range_smoke == 'next-settings-check' && !inputs.release_package/);
+    assert.match(job, /github.ref == 'refs\/heads\/verify\/next-episode-auto-20261024'/);
+    assert.match(job, /runs-on: windows-2022/);
+    assert.match(job, /timeout-minutes: 5/);
+    assert.match(job, /ref: \$\{\{ github.sha \}\}/);
+    assert.match(job, /node --test --test-concurrency=1 tests\/ci-windows-path-diagnostics.test.cjs tests\/playback-prefix-alameda-auto.test.cjs/);
+    assert.doesNotMatch(job, /npm ci|build.ps1|package.ps1|execute-native|actions: write|secrets\.|GITHUB_TOKEN|upload-artifact/);
+});

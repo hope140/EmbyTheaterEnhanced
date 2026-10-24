@@ -110,3 +110,8 @@ run `40104947923` / job `120904605594`、source `78fdfb114bb42d926101109b29253bb
 修正后的 preempt 在 held B 时暂停 A；仅读回隔离实验的前向 1 MiB、后向 0 字节内存设置和实际 `demuxer-cache-state.seekable-ranges`。2 秒目标必须位于缓存范围之外，再通过原 manager.seek 发起原生缺块。严格要求原代次、B 实际 close → A 新来源请求 → seek 后新进度 → unpause 后新进度；历史事件不能满足后两项。总时限仍为 35 秒，缺块阶段最多 5 秒，不延长原等待。若自然 EOF 抢先、目标仍缓存或未出现缺块，给出不同的固定失败码；cache/seek 阶段和最近 load 代次直接输出安全日志。
 
 `range_smoke=next-matrix-remaining`、`release_package=false` 只顺序运行 preempt/replace/exit/unsupported；显式本机命令为 `run-matrix-remaining --plan=<owned-auto-plan> --execute-native-matrix`。仍必须通过 prepare、实际 entry、固定 artifact/loader/完整派生身份与所属进程退出门禁。已通过的 cancel 和主自动链不重复。新四项在精确来源 hosted 结果出现前均为待实测，普通默认设置的 Node 集成与真实 NAS/auth/302 的证据边界不变。
+
+
+## 普通包回归前的 Windows 路径短检查
+
+`range_smoke=next-settings-check`、`release_package=false` 在精确 verify 分支运行5分钟上限的 Windows 2022/Node 24.18.1 串行检查；包含安全路径诊断、真实 Alameda 设置链、普通设置/菜单及实际 junction 拒绝，不获取 runtime、不启动 helper、不重打包。临时根使用 realpathSync.native；生产路径安全门禁保持。该检查通过后再安排普通 `range_smoke=off` 测试包，不能用 Linux 的别名表示替换红绿替代 Windows 结果。
