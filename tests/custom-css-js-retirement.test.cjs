@@ -21,8 +21,10 @@ const before = require('../tools/patch-search-ui.cjs').patchApp(
                 require('../tools/patch-external-player-registration.cjs').patchText(original).text))));
 const output = before;
 
-test('v2 app output preserves the previously approved final identity and all other CSS/plugins',()=>{
-    assert.equal(hash(output),'1F518BE3FFA0E59780AC68E468FEAC105C696DF468CFA9C90E88B9F6792E8EB6');
+test('app cache owner alias is the only change to the approved retired CSS/plugin output',()=>{
+    const alias = require('../tools/patch-server-home.cjs').CACHE_ALIAS + ',\n      ';
+    assert.equal(output.split(alias).length, 2);
+    assert.equal(hash(output.replace(alias, '')),'1F518BE3FFA0E59780AC68E468FEAC105C696DF468CFA9C90E88B9F6792E8EB6');
     assert.equal(hash(output),overlays.WEB_OVERLAY_CONTRACT.find(x=>x.id==='app-js').expectedOutputSha256);
     assert.ok(output.includes('self.ApiClient.getUrl("Branding/Css")'));
     assert.ok(output.includes('"css!modules/windowdrag.css"'));
