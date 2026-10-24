@@ -28,69 +28,18 @@ function git(root, args) {
     assert.equal(result.status, 0, result.stderr || result.error && result.error.message);
     return result.stdout.trim();
 }
+const fixtureFactory = require('./helpers/build-input-fixture.cjs').createFactory(process.env.ETE_BUILD_INPUT_FIXTURE_MODE || 'seed');
+let fixturePreparations = 0;
 function setup(t, temporaryRoot = os.tmpdir()) {
     const started = performance.now();
     const state = fixturePreparations++ === 0 ? 'first-in-process' : 'warm-in-process';
-    // Windows TEMP may use an 8.3 alias; fixtures must start at their physical path.
-    const base = fs.realpathSync.native(fs.mkdtempSync(path.join(temporaryRoot, 'build-input-contract-')));
-    t.after(() => fs.rmSync(base, {recursive: true, force: true}));
-    const repo = path.join(base, 'repo');
-    const runtime = path.join(base, 'runtime');
-    fs.mkdirSync(repo, {recursive: true});
-    fs.mkdirSync(runtime, {recursive: true});
-    const mode = process.env.ETE_BUILD_INPUT_FIXTURE_MODE || 'seed';
-    if (!['seed', 'fresh'].includes(mode)) throw new Error('Unknown build input fixture preparation mode.');
-    const configBase = mode === 'fresh' ? populate(repo) : copySeed(repo);
-    const sourceCommit = git(repo, ['rev-parse', 'HEAD']);
-    t.diagnostic('CI_FIXTURE_PREP ' + JSON.stringify({mode, state, elapsedMs: performance.now() - started}));
-    return {base, repo, runtime, sourceCommit, configBase};
+    const fixture = fixtureFactory.create(temporaryRoot);
+    t.after(fixture.cleanup);
+    t.diagnostic('CI_FIXTURE_PREP ' + JSON.stringify({mode: process.env.ETE_BUILD_INPUT_FIXTURE_MODE || 'seed',
+        state, elapsedMs: performance.now() - started}));
+    return fixture;
 }
-
-// Reuse only this file's pristine, committed synthetic inputs. Every test gets
-// physical copies of both the worktree and .git; runtime and results stay fresh.
-let fixtureSeed;
-let fixturePreparations = 0;
-function populate(repo) {
-    git(repo, ['init', '-q']);
-    git(repo, ['config', 'user.name', 'Build Input Test']);
-    git(repo, ['config', 'user.email', 'build-input@example.invalid']);
-    git(repo, ['config', 'core.autocrlf', 'false']);
-
-    for (const relativePath of contract.INPUT_PATHS) write(repo, relativePath, 'fixture input: ' + relativePath + '\n');
-    json(repo, 'package.json', {name: 'build-input-fixture', version: '1.0.0'});
-    json(repo, 'package-lock.json', {name: 'build-input-fixture', version: '1.0.0', lockfileVersion: 3, packages: {'': {version: '1.0.0'}}});
-    const configBase = Buffer.from('<configuration>\n  ' + CONFIG_ANCHOR + '\n</configuration>\n', 'utf8');
-    json(repo, 'vendor/runtime-manifest.json', {schemaVersion: 1, files: [{path: CONFIG_PATH, sha256: sha(configBase)}]});
-    write(repo, 'vendor/carnival/' + CONFIG_PATH, configBase);
-    require('./helpers/runtime-template-fixture.cjs').create(repo,{[CONFIG_PATH]:configBase});
-    write(repo, 'docs/UNRELATED.md', 'unrelated committed documentation\n');
-    git(repo, ['add', '--all']);
-    git(repo, ['commit', '-q', '-m', 'fixture']);
-    return configBase;
-}
-function copySeed(repo) {
-    if (!fixtureSeed) {
-        const base = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'build-input-seed-')));
-        const source = path.join(base, 'repo');
-        try {
-            fs.mkdirSync(source);
-            const configBase = populate(source);
-            fixtureSeed = {base, source, configBase};
-        } catch (error) {
-            fs.rmSync(base, {recursive: true, force: true});
-            throw error;
-        }
-    }
-    fs.cpSync(fixtureSeed.source, repo, {recursive: true, force: false, errorOnExist: true,
-        filter(source) {
-            if (fs.lstatSync(source).isSymbolicLink()) throw new Error('Fixture seed redirects forbidden.');
-            return true;
-        }});
-    return Buffer.from(fixtureSeed.configBase);
-}
-test.after(() => {
-    if (fixtureSeed) fs.rmSync(fixtureSeed.base, {recursive: true, force: true});
-});
+test.after(() => fixtureFactory.dispose());
 
 test('temporary parent aliases produce a physical build input fixture', t => {
     const parent = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'build-input-temp-alias-')));

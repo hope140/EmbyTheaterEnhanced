@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-24 — Windows输入性能验证准备
+
+新增Windows PowerShell／Node定向基准协调器，核精确SHA、全仓干净、固定工具和物理独立输出；默认每臂4轮first＋3warm，顺序AB／BA。Host固定commit获取在计时外，测量禁止lazy fetch；每份来源／完整集合／哈希校验保留，诊断产物白名单排除对象库与源码恢复树。原28个测试主体未变，提取私有夹具工厂以保证短基准量同一准备路径，并补4项边界／隔离回归。Windows正确性run40085107715已通过；Windows性能尚未执行，不用完整CI跨机器时长推断收益。复现见[WindowsA/B](CI_WINDOWS_AB.md)。
+
 ## 2026-10-24 — 修正性能实验Windows换行夹具
 
 实际Windows公共run40083575146在c16208a得到1540 pass／1 fail／0 skip，唯一失败在新增authority测试：将已有CRLF再次直接扩为CRLF，造成CRCRLF，原HEAD字节校验正确拒绝。只修测试转换为先规范LF再生成CRLF，重复两轮并新增CRCRLF仍拒绝断言；不改生产校验、测试选择／数量、workflow或并发。原红例在Linux同错误复现，修后相关38项／0跳过和core.autocrlf=true checkout该组6项／0跳过通过；新Windows结果仍需单独核验。原同输入A/B数据与边界保留，不能由换行修正声称Windows性能收益。详见[实验记录](CI_BUILD_PERFORMANCE.md)。

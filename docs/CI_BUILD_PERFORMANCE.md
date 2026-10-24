@@ -1,6 +1,6 @@
 # 构建输入性能实验
 
-候选基于main `88578c91ab19d44eecddcfae096d37dc917ef1f4`，仅调整构建工具和测试准备；已完成下述同候选输入的本地对照；Windows结果仍待单独执行。workflow、测试发现规则／原集合／串行参数、runner、并发、缓存策略和发布行为保持。另加隔离与损坏输入负测。产品源码、固定材料与工具链版本未改。
+候选基于main `88578c91ab19d44eecddcfae096d37dc917ef1f4`，仅调整构建工具和测试准备；已完成下述同候选输入的本地对照。Windows正确性CI已通过，Windows性能仍未测量；新的[定向A/B入口](CI_WINDOWS_AB.md)供独立安排。workflow、测试发现规则／原集合／串行参数、runner、并发、缓存策略和发布行为保持。另加隔离与损坏输入负测。产品源码、固定材料与工具链版本未改。
 
 ## 计时与等待
 
@@ -20,12 +20,13 @@ node tools/ci-build-timing-report.cjs run.json job.json job.log
 
 ## 本地A/B方法
 
-先提交完整候选，确保全仓相对HEAD干净（含未跟踪文件）。`benchmark-build-inputs.cjs`对相同候选输入加载固定基线中的旧算法与候选算法，核每份输出；fixture两模式执行相同28测试。每组3次交替AB／BA，记录原始时间、median、range、mean、总体variance和standard deviation。报告保存完整tree、Host source identity、上游manifest SHA及authority OID／工作树SHA，开始与结束均核HEAD及整仓干净。每个新进程第一次测量与后续热调用分开；不清理系统页缓存，因此不是OS冷盘基准。
+先提交完整候选，确保全仓相对HEAD干净（含未跟踪文件）。`benchmark-build-inputs.cjs`对相同候选输入加载固定基线中的旧算法与候选算法，核每份输出；fixtures两模式执行相同28测试，fixture-prep只测同一工厂的准备并逐份验收。历史结果每组3次；当前脚本默认4次平衡AB／BA，允许2–8次偶数轮和1–10次热调用。记录原始时间、median、range、mean、总体variance和standard deviation。报告保存完整tree、Host source identity、上游manifest SHA、authority及夹具实现OID／工作树SHA，开始与结束均核HEAD及整仓干净。每个新进程第一次测量与后续热调用分开；不清理系统页缓存，因此不是OS冷盘基准。
 
 ```sh
 node tools/benchmark-build-inputs.cjs plan <new-output-directory>
 node tools/benchmark-build-inputs.cjs host <new-output-directory> <existing-fixed-Host-object-store>
 node tools/benchmark-build-inputs.cjs fixtures <new-output-directory>
+node tools/benchmark-build-inputs.cjs fixture-prep <new-output-directory> --trials 4 --warm-calls 3
 ```
 
 基准不拉网络、不创建Actions或安装器；Host object store须预先具有锁定commit。原始日志保存在指定新目录，不覆盖历史结果。plan的候选比基线多校验批读实现的authority，并增加普通mode／物理路径／前后HEAD保护，输出结构仍须相同。Host输出逐文件重核锁定manifest的size和SHA256。
@@ -73,4 +74,6 @@ Linux通过不代表Windows Host编译／真实验证、安装器或云端时长
 
 仅修正测试数据准备：先CRLF→LF，再LF→CRLF；连续执行两次仍断言输出身份不变，随后显式制造CRCRLF，继续断言门禁拒绝。Linux保留原5 pass／1 fail的同错误复现；修复后相关38项、0 skip通过，core.autocrlf=true的独立checkout验证该组6/6通过。这是换行行为模拟，不是新的真实Windows通过证据。
 
-生产hash／blob／路径校验、workflow、测试发现和串行参数均未改；测试数不减少。既有同输入A/B原始数据保留，计时算法及28项性能对照文件未改，不重标或外推Windows收益。新push的Windows公共结果须另核。
+生产hash／blob／路径校验、workflow、测试发现和串行参数均未改；测试数不减少。既有同输入A/B原始数据保留，不重标或外推Windows收益。后续[Windows公共run40085107715](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40085107715)在修复提交2e310f47通过；这是正确性证据，不是性能A/B。
+
+新增Windows定向入口只运行plan／host／fixture-prep，默认每臂相同16次操作、0项单元测试，逐次独立验收并保存原始数据。共享夹具工厂保留原28个测试主体，使用私有seed和物理独立副本；补充4项脚本边界／隔离测试。完整回归可独立执行；短基准不把合同验收次数当测试数，也不以不同runner的完整CI总时长宣称收益。复现、参数、产物和失效条件见[WindowsA/B方案](CI_WINDOWS_AB.md)。

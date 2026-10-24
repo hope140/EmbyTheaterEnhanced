@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-24 — Windows输入性能验证准备
+
+[Windows正确性CI40085107715](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40085107715)在2e310f47通过。增加独立Windows定向入口，同一精确SHA／干净输入／同job交替测旧与批读Git算法、fresh与seed夹具；默认每臂16次操作，0项单元测试，逐份验收、首次与热调用及验收／进程成本分别记录。原28个测试主体保留，夹具工厂共享至短基准；另补4项参数／路径／归档／隔离回归。workflow、并发、缓存、runner规格和生产门禁未改，未调度新的Windows基准；性能收益仍待实测。见[参数与复现](CI_WINDOWS_AB.md)。
+
 ## 2026-10-24 — 修正性能实验Windows换行夹具
 
 实际Windows公共run40083575146在c16208a得到1540 pass／1 fail／0 skip，唯一失败在新增authority测试：将已有CRLF再次直接扩为CRLF，造成CRCRLF，原HEAD字节校验正确拒绝。只修测试转换为先规范LF再生成CRLF，重复两轮并新增CRCRLF仍拒绝断言；不改生产校验、测试选择／数量、workflow或并发。原红例在Linux同错误复现，修后相关38项／0跳过和core.autocrlf=true checkout该组6项／0跳过通过；新Windows结果仍需单独核验。原同输入A/B数据与边界保留，不能由换行修正声称Windows性能收益。详见[实验记录](CI_BUILD_PERFORMANCE.md)。
