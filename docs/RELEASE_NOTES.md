@@ -1,29 +1,22 @@
-# v0.4.0 正式版
+# v0.4.2 测试版
 
-Windows x64 正式版。本次整理已经验收的维护范围、来源输入与可恢复云端构建，保留旧 v0.3.16 测试版。
+Windows x64 **Pre-release 测试版**。可从本页附件手动下载，也可在“关于 Enhanced”中主动选择测试通道并检查更新；应用不会自动检查或安装。当前正式版仍为 [v0.4.0](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.0)，本版不设为 Latest。
 
 ## 本次更新
 
-- 完整移除 CEC 功能、相关设置和驱动安装提示；普通 HDMI 音视频、刷新率、键鼠及服务器远控保持。
-- 退役旧 Emby Theater Host 自更新检查和安装链，保留本项目发行版更新入口。升级只清理身份可核对的旧应用文件，保留用户资料，不卸载系统驱动。
-- Host 从固定官方源码维护构建，JSON／ZIP 实现及普通 API 传输使用可追溯维护源；损坏或截断的 JSON 明确报错。
-- 清理已批准的旧资源与运行依赖，保留必要第三方通知和历史来源；GitHub Windows runner 独立恢复固定输入、编译验证 Host 和 Native Helper，再核验安装器。
+- 增加详情页静态内容持久缓存：再次主动打开近期电影、剧集、季或单集时，可先显示缓存的标题、简介和海报信息，再更新服务器数据；播放进度和播放操作仍使用本次真实数据。
+- 增加独立缓存管理页，可查看、分别清理或一并清理资源缓存与页面缓存，保留登录和设置。
+- 增加手动更新检查与下载，以及可保存的正式／测试通道。测试通道包含预发布版本，不提供降级下载；更新说明中的网页链接使用系统浏览器打开。
+- 包含 v0.4.1 的播放清理、暂停保持、Seek、缩略图等修复。
 
-## 已知问题与验证范围
+## 使用提醒
 
-本轮候选已获用户验收，有限安装、升级、STRM 播放和正常 Host 入口结果按其准确来源单独记录。云端构建与包体检查不等于所有服务器、媒体、硬件或干净 .NET Framework 环境验收。最终来源、CI、五附件和已执行范围见[本版发行核验](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/V040_RELEASE_VERIFICATION.md)。
-
-多显示器目标选择、显示恢复等既有限制保持，详见[已知问题](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/KNOWN_ISSUES.md)。
+本版已完成第一批功能的有限实际环境验收，仍建议按测试版试用。静态缓存不能代替服务器授权或最新进度；网络失败时不会从旧缓存直接播放。资源缓存显示 HTTP 总量，清理后可能随使用重新增长。不同服务器版本、媒体类型和使用环境仍需持续观察。
 
 ## 下载安装
 
-- [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.0/EmbyTheaterEnhanced-0.4.0-win-x64-setup.exe)
-- [SHA-256 校验文件](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.0/EmbyTheaterEnhanced-0.4.0-win-x64-setup.exe.sha256)
-- [安装包来源记录](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.0/EmbyTheaterEnhanced-0.4.0-win-x64-setup.exe.provenance.json) · [附件校验表](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.0/SHA256SUMS.txt)
-- 关闭正在运行的客户端，校验后安装；步骤见[用户指南](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/USER_GUIDE.md)。安装程序未签名，SHA-256用于核对下载字节，不等于数字签名或许可认证。
+从本 Release 的实际附件区下载 Windows x64 安装包及对应 SHA-256 校验文件，勿将源码压缩包当作安装包。先关闭客户端，核对下载后按[用户指南](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/USER_GUIDE.md)操作；应用内下载完成也需自行退出并安装。SHA-256 用于核对文件字节，不等同于数字签名或许可认证。
 
 ## 项目说明
 
-非官方社区维护项目，与 Emby 官方无隶属或认可关系。现有未决第三方来源、对应源码和许可事项保持未决；见[许可与来源说明](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/LICENSING.md)。
-
-[版本变更记录](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/CHANGELOG.md) · [与旧测试版比较](https://github.com/hope140/EmbyTheaterEnhanced/compare/v0.3.16...v0.4.0)
+非官方社区维护项目，与 Emby 官方无隶属或认可关系。许可及第三方来源情况见[许可与来源说明](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/LICENSING.md)。

@@ -9,10 +9,11 @@ const expected = [
     ['mpvplayer/audio.html', 5, '音频设置', 'Playback', 'audiotrack'],
     ['mpvplayer/strm.html', 6, 'STRM 智能解析', 'Playback', 'folder_open'],
     ['mpvplayer/diagnostics.html', 7, '诊断与日志', 'Playback', 'description'],
+    ['mpvplayer/cache-management.html', 7, '缓存管理', 'General', 'storage'],
     ['mpvplayer/about.html', 8, '关于 Enhanced', 'General', 'info']
 ];
 
-test('Enhanced settings retain the five non-CEC native sort ranks after keyboard rank two', () => {
+test('Enhanced settings retain native sort ranks and include the independent cache route', () => {
     const routes = pluginRoutes(root);
     assert.equal(routes.length, expected.length);
     assert.equal(routes.some(route=>route.path.startsWith('cec/')),false);

@@ -5,17 +5,21 @@ const http = require('http');
 
 const RELEASES_URL = 'https://github.com/hope140/EmbyTheaterEnhanced/releases/latest';
 const LATEST_RELEASE_API_URL = 'https://api.github.com/repos/hope140/EmbyTheaterEnhanced/releases/latest';
+const RELEASE_LIST_API_URL = 'https://api.github.com/repos/hope140/EmbyTheaterEnhanced/releases?per_page=5&page=';
+const MAX_RELEASE_PAGES = 100;
 const MAX_RELEASE_RESPONSE_BYTES = 256 * 1024;
 const DEFAULT_REQUEST_TIMEOUT_MS = 8000;
 
 function parseVersion(value) {
     if (typeof value !== 'string') return null;
-    const match = value.trim().match(/^v?(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/i);
+    const match = value.trim().match(/^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/);
     if (!match) return null;
-    const major = Number(match[1]);
-    const minor = Number(match[2]);
-    const patch = Number(match[3]);
-    if (![major, minor, patch].every(Number.isSafeInteger)) return null;
+    // Keep canonical decimal strings: SemVer does not limit core identifiers to
+    // JavaScript's safe-integer range.
+    const major = match[1];
+    const minor = match[2];
+    const patch = match[3];
+    if (match[4] && match[4].split('.').some(part => /^\d+$/.test(part) && part.length > 1 && part[0] === '0')) return null;
     return {major, minor, patch, prerelease: match[4] ? match[4].split('.') : []};
 }
 
@@ -47,6 +51,7 @@ function comparePrerelease(left, right) {
 
 function compareParsedVersions(left, right) {
     for (const key of ['major', 'minor', 'patch']) {
+        if (left[key].length !== right[key].length) return left[key].length < right[key].length ? -1 : 1;
         if (left[key] !== right[key]) return left[key] < right[key] ? -1 : 1;
     }
     return comparePrerelease(left.prerelease, right.prerelease);
@@ -82,8 +87,11 @@ function safeReleaseUrl(value) {
     const releasePath = '/hope140/EmbyTheaterEnhanced/releases';
     const normalizedPathname = target.pathname.toLowerCase();
     const normalizedReleasePath = releasePath.toLowerCase();
+    const suffix = target.pathname.slice(releasePath.length);
+    const allowedPage = normalizedPathname === normalizedReleasePath || suffix === '/latest' ||
+        (suffix.startsWith('/tag/') && !!parseVersion(suffix.slice(5)) && !suffix.slice(5).includes('/'));
     if (target.protocol !== 'https:' || target.hostname !== 'github.com' || target.username || target.password || target.port ||
-        (normalizedPathname !== normalizedReleasePath && !normalizedPathname.startsWith(normalizedReleasePath + '/'))) {
+        target.search || target.hash || !normalizedPathname.startsWith(normalizedReleasePath) || !allowedPage) {
         return RELEASES_URL;
     }
     return target.href;
@@ -167,23 +175,55 @@ function requestLatestJson(url, options) {
     });
 }
 
-function checkLatestRelease(options) {
+function describeRelease(release, options) {
     const settings = options || {};
     const current = parseVersion(settings.currentVersion);
-    if (!current) return Promise.resolve({status: 'error', reason: 'invalid-current-version'});
-    const requestJson = typeof settings.requestJson === 'function' ? settings.requestJson : requestLatestJson;
-    return Promise.resolve().then(function () {
-        return requestJson(LATEST_RELEASE_API_URL);
-    }).then(function (release) {
-        const latest = parseVersion(release && release.tag_name);
-        if (!latest) return {status: 'error', reason: 'invalid-release-version'};
-        const comparison = compareParsedVersions(current, latest);
-        return {
-            status: comparison < 0 ? 'update-available' : 'latest',
-            currentVersion: formatVersion(current),
-            latestVersion: formatVersion(latest),
-            releaseUrl: safeReleaseUrl(release && release.html_url)
-        };
+    if (!current) return {status: 'error', reason: 'invalid-current-version'};
+    const channel = settings.channel || 'stable';
+    if (!['stable', 'testing'].includes(channel)) return {status: 'error', reason: 'invalid-channel'};
+    const latest = parseVersion(release && release.tag_name);
+    if (!latest) return {status: 'error', reason: 'invalid-release-version'};
+    if (release.draft !== false || typeof release.prerelease !== 'boolean' ||
+        (channel === 'stable' && (release.prerelease || latest.prerelease.length))) {
+        return {status: 'error', reason: 'not-stable-release'};
+    }
+    const expectedUrl = 'https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/' + release.tag_name;
+    if (release.html_url !== expectedUrl) return {status: 'error', reason: 'invalid-release-identity'};
+    const comparison = compareParsedVersions(current, latest);
+    return {
+        status: comparison < 0 ? 'update-available' : comparison > 0 ? 'ahead' : 'latest',
+        currentVersion: formatVersion(current),
+        latestVersion: formatVersion(latest),
+        releaseUrl: expectedUrl,
+        releaseTag: release.tag_name,
+        channel,
+        prerelease: release.prerelease,
+        notes: typeof release.body === 'string' ? release.body.slice(0, 65536) : '',
+        installer: require('./manual-app-update').installerFromRelease(release)
+    };
+}
+
+function checkLatestRelease(options) {
+    const settings = options || {};
+    if (!parseVersion(settings.currentVersion)) return Promise.resolve({status: 'error', reason: 'invalid-current-version'});
+    const channel = settings.channel || 'stable';
+    if (!['stable', 'testing'].includes(channel)) return Promise.resolve({status: 'error', reason: 'invalid-channel'});
+    const requestJson = typeof settings.requestJson === 'function' ? settings.requestJson : require('./manual-app-update').requestJson;
+    return Promise.resolve().then(async function () {
+        if (channel === 'stable') return describeRelease(await requestJson(LATEST_RELEASE_API_URL), settings);
+        let best = null;
+        for (let page = 1; page <= MAX_RELEASE_PAGES; page++) {
+            const releases = await requestJson(RELEASE_LIST_API_URL + page);
+            if (!Array.isArray(releases) || releases.length > 5) return {status: 'error', reason: 'invalid-release-list'};
+            for (const release of releases) {
+                if (describeRelease(release, settings).status === 'error') continue;
+                const order = best ? compareVersions(release.tag_name, best.tag_name) : 1;
+                if (order > 0 || (order === 0 && best.prerelease && !release.prerelease)) best = release;
+            }
+            if (releases.length < 5) return best ? describeRelease(best, settings) : {status: 'error', reason: 'no-channel-release'};
+        }
+        // Never call a partial enumeration "latest".
+        return {status: 'error', reason: 'pagination-limit'};
     }).catch(function () {
         return {status: 'error', reason: 'network-error'};
     });
@@ -256,12 +296,15 @@ function formatEnvironmentText(info) {
 module.exports = {
     RELEASES_URL,
     LATEST_RELEASE_API_URL,
+    RELEASE_LIST_API_URL,
+    MAX_RELEASE_PAGES,
     DEFAULT_REQUEST_TIMEOUT_MS,
     parseVersion,
     compareVersions,
     formatVersion,
     requestLatestJson,
     checkLatestRelease,
+    describeRelease,
     buildEnvironmentInfo,
     formatEnvironmentText,
     safeReleaseUrl

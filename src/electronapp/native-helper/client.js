@@ -22,6 +22,7 @@
         var self = this;
         var listeners = [];
         var destroyed = false;
+        var destroyPromise = null;
         var visible = false;
         var endpointId = metadata.endpointId;
         var currentGenerationId = null;
@@ -49,6 +50,8 @@
         this._onIpcEvent = function (event, message) {
             if (destroyed || !message || typeof message !== 'object') return;
             if (message.type === 'property_change' && message.data && typeof message.data.name === 'string') {
+                if (message.data.name === 'playback-restart' &&
+                    (currentGenerationId == null || message.generationId !== currentGenerationId)) return;
                 emit({type: 'property_change', data: {name: message.data.name, value: message.data.value}});
             } else if (message.type === 'bridge_error') {
                 emit({type: 'bridge_error', data: {reason: message.reason || 'helper-terminated'}});
@@ -170,14 +173,15 @@
             }
         };
         this.destroy = function () {
-            if (destroyed) return Promise.resolve();
+            if (destroyPromise) return destroyPromise;
             destroyed = true;
             generationEpoch++;
             visible = false;
             try { ipc.removeListener(EVENT_CHANNEL, self._onIpcEvent); } catch (_) { }
             listeners = [];
             currentGenerationId = null;
-            return invoke(ipc, 'destroy', {}, endpointId);
+            destroyPromise = Promise.resolve().then(function () { return invoke(ipc, 'destroy', {}, endpointId); });
+            return destroyPromise;
         };
     }
 

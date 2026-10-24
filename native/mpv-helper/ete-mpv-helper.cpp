@@ -421,6 +421,7 @@ class Helper {
     std::vector<uint64_t> activeObserverTokens;
     std::set<std::string> observedProperties;
     std::set<int64_t> openMedia; uint64_t retiredThroughGeneration = 0; std::atomic<bool> requestedExit{false};
+    int64_t pendingSeekMedia = -1;
     HWND parent = nullptr;
     std::atomic<HWND> surfaceWindow{nullptr};
     std::thread surfaceThread;
@@ -1296,6 +1297,7 @@ class Helper {
             }
             if (id >= 0) {
                 openMedia.erase(id);
+                if (pendingSeekMedia == id) pendingSeekMedia = -1;
                 auto pending = quarantined.find(id);
                 if (pending != quarantined.end()) {
                     for (const auto& record : pending->second) {
@@ -1317,7 +1319,23 @@ class Helper {
             }
             routeRecord({int(event->event_id), eventName(event->event_id), media, "file-loaded", "null", event->reply_userdata, monotonicMicros()}); return;
         }
+        if (event->event_id == MPV_EVENT_SEEK) {
+            pendingSeekMedia = uniqueOpenMedia();
+            return;
+        }
         if (event->event_id == MPV_EVENT_PLAYBACK_RESTART) {
+            // Command acceptance is earlier than seek completion. Sample the
+            // actual landing position here, including while playback is paused.
+            int64_t seekMedia = uniqueOpenMedia();
+            if (seekMedia >= 0 && pendingSeekMedia == seekMedia) {
+                pendingSeekMedia = -1;
+                double position = 0;
+                if (p_mpv_get_property(mpv, "time-pos", MPV_FORMAT_DOUBLE, &position) >= 0 &&
+                    std::isfinite(position) && position >= 0) {
+                    routeRecord({int(event->event_id), eventName(event->event_id), seekMedia,
+                        "playback-restart", std::to_string(position), event->reply_userdata, monotonicMicros()});
+                }
+            }
             if (autoStage.load() == AutoStage::Armed && !autoOneShotConsumed && autoLeaseOwnsTarget()) {
                 autoOneShotConsumed = true;
                 uint64_t userdata = nextReplyUserdata++;

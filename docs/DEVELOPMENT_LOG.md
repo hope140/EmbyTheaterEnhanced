@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-24 — v0.4.2 第一批测试版准备
+
+整合详情静态内容持久缓存、独立缓存管理和手动更新／正式测试通道，保留v0.4.1修复及main构建输入提速。详情数据按身份隔离，缓存不替代授权、最新进度或播放数据；首页布局试验默认保持，登录与设置不随缓存清理。
+
+根产品版本一致为0.4.2；正常release路由、Framework来源预检、包内更新器自检和五附件来源校验保持。全仓／材料及受控浏览器回归与实际Windows包核验分别记录，不把旧包反馈当作新来源构建结果。来源与发布参数见[v0.4.2核验说明](V042_RELEASE_VERIFICATION.md)。
+
 ## 2026-10-24 — 恢复main正常手动打包默认值
 
 修复旧实验分支互锁：benchmark默认false，普通test／release按原入口运行；显式benchmark才skip包并进入短job，去掉两个job的分支硬编码。原权限／concurrency／固定SHA／release输入与完整包门禁均保持，release+benchmark冲突仍fail closed。相关测试从实际default取值，覆盖main／perf／其它ref和test／release而不是预期普通包被禁；旧配置在新测试复现3处红例。没有重做性能实验或完整包，未合main或引入详情／Native／Range功能。

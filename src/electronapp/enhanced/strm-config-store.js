@@ -297,7 +297,9 @@ function createStore(options) {
         config = defaultConfig();
     }
 
-    if (configFile) {
+    // Legacy migration owns its Token for that startup; defaults can restore
+    // independently saved secrets even before ordinary settings were saved.
+    if (configFile || !hasLegacyEnvironment(environment)) {
         const secrets = parseJsonFile(secretsPath, fileSystem);
         if (secrets && typeof secrets.cd2Token === 'string') {
             try { token = validateToken(secrets.cd2Token); } catch (_) { token = ''; }

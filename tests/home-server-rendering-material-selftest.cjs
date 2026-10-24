@@ -45,9 +45,11 @@ test('home module loads the native title registration and router through canonic
     vm.runInNewContext(source, {define(dependencies, factory) {
         const ids = Array.from(dependencies); assert.ok(ids.includes('modules/approuter.js'));
         assert.ok(ids.includes('modules/emby-elements/emby-button/emby-button.js'));
+        assert.ok(ids.includes('modules/emby-apiclient/events.js'));
         assert.equal(ids.some(id => id.includes('../www/')), false);
         const exports = {}; factory(exports, {default: provider}, {default: {}}, {default: {tv: false}}, {default: {}},
-            {default: {getRouteUrl: nativeRouteUrl()}}, {default: {}}); exported = exports.default;
+            {default: {getRouteUrl: nativeRouteUrl()}}, {default: {}},
+            {default: require('../src/electronapp/enhanced/page-cache/home-layout-cache.js')}, {default: {on() {}, off() {}}}); exported = exports.default;
     }});
     assert.equal(typeof exported.create, 'function');
 });
@@ -86,6 +88,7 @@ test('app transform preserves plugin registrations and adds exactly one home mod
     const plugin = require('../tools/patch-plugin-settings.cjs');
     const input = plugin.patchApp(external.patchText(app).text), output = patcher.patchApp(input);
     assert.equal(output.split('define("ete-server-home",').length - 1, 1);
+    assert.equal(output.split(patcher.CACHE_ALIAS).length - 1, 1);
     for (const name of ['responseHelper', 'emby-premierecontainer', 'emby-dialogclosebutton', 'baseView']) {
         assert.equal(output.split('define("' + name + '",').length, input.split('define("' + name + '",').length);
     }

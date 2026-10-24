@@ -14,7 +14,7 @@ const end = mainSource.indexOf(endMarker, start);
 assert.notEqual(start, -1, 'main.js window state section start must exist');
 assert.notEqual(end, -1, 'main.js window state section end must exist');
 const windowStateSource = mainSource.slice(start, end);
-const closeStartMarker = '    function onWindowClose() {';
+const closeStartMarker = '    function onWindowClose(event) {';
 const closeEndMarker = '    function parseCommandLine() {';
 const closeStart = mainSource.indexOf(closeStartMarker);
 const closeEnd = mainSource.indexOf(closeEndMarker, closeStart);
@@ -131,6 +131,7 @@ function runWindowClose({state, isFullscreen, bounds, previousBounds}) {
     let shortcutUnregisters = 0;
     let cecKills = 0;
     const context = {
+        detailCacheCloseOwner: null,
         hasAppLoaded: true,
         currentWindowState: state,
         fullscreenActive: isFullscreen,

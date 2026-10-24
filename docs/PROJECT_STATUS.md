@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-24 — v0.4.2 第一批测试版准备
+
+整合详情静态内容持久缓存、独立缓存管理和手动更新／正式测试通道，保留v0.4.1修复及main构建输入提速。详情数据按身份隔离，缓存不替代授权、最新进度或播放数据；首页布局试验默认保持，登录与设置不随缓存清理。
+
+根产品版本一致为0.4.2；正常release路由、Framework来源预检、包内更新器自检和五附件来源校验保持。全仓／材料及受控浏览器回归与实际Windows包核验分别记录，不把旧包反馈当作新来源构建结果。来源与发布参数见[v0.4.2核验说明](V042_RELEASE_VERIFICATION.md)。
+
 ## 2026-10-24 — 恢复main正常手动打包默认值
 
 合并就绪审查发现旧实验互锁会让main的默认普通／release dispatch跳过所有job。将build_input_benchmark默认改false，手动package仅在非benchmark模式运行，benchmark仅在显式模式运行，不再按perf ref禁包。release冲突和预期SHA不符仍在checkout前拒绝；原release输入转发、门禁、只读权限、固定工具和package并发保持。测试读取实际默认值验证main／perf／其它ref与release false／true，防止绿CI固化“普通包恒skip”。仅workflow／相关测试／文档改变，没有新性能实验、完整打包或客户端功能；合并由最终候选公共门禁及审核结果协调。

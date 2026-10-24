@@ -1,0 +1,30 @@
+/* Only the experimental Home owner uses these classes. No global loading/route styles. */
+.eteHomeFlowPending .itemProgressBar,
+.eteHomeFlowPending .playedIndicator,
+.eteHomeFlowPending .countIndicator,
+.eteHomeFlowPending .timerIndicator,
+.eteHomeFlowPending .cardRefreshIndicator,
+.eteHomeFlowPending .cardUserDataButtons,
+.eteHomeFlowProgramPending .cardText,
+.eteHomeFlowProgramPending .cardProgramIndicator {
+    visibility: hidden !important;
+}
+.homeSectionsContainer .homeFlowStatus.homeFlowStatus-loading {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+.homeFlowPlaceholder {
+    display: flex;
+    overflow: hidden;
+    pointer-events: none;
+}
+.homeFlowPlaceholderImage {
+    background: rgba(128, 128, 128, 0.18);
+    border-radius: 0.2em;
+}

@@ -74,12 +74,14 @@
                 typeof client.getCurrentUserId !== 'function' || typeof client.serverId !== 'function' || typeof client.serverVersion !== 'function') return null;
             var userId = client.getCurrentUserId(), serverId = client.serverId();
             if (!text(userId, 256, false) || ['.', '..'].includes(userId) || !text(serverId, 256, false)) return null;
-            return {client: client, userId: userId, serverId: serverId, epoch: epoch};
+            return {client: client, userId: userId, serverId: serverId, epoch: epoch,
+                auth: options.layoutCache || options.strictIdentity ? client._identityEpoch || 0 : null};
         }
         function current(bound) {
             if (disposed || !bound || bound.epoch !== epoch) return false;
             try {
-                return getCurrentClient() === bound.client && bound.client.getCurrentUserId() === bound.userId && bound.client.serverId() === bound.serverId;
+                return getCurrentClient() === bound.client && bound.client.getCurrentUserId() === bound.userId && bound.client.serverId() === bound.serverId &&
+                    (!(options.layoutCache || options.strictIdentity) || (bound.client._identityEpoch || 0) === bound.auth);
             } catch (_) { return false; }
         }
         function cancelled() { var error = new Error('home-cancelled'); error.code = 'home-cancelled'; return error; }
@@ -107,21 +109,43 @@
                 }).then(function(data) { if (!current(bound)) done(cancelled()); else done(null, data); }, done);
             });
         }
+        function readLayout(bound, displayMode, externalSignal) {
+            var route = 'Users/' + encodeURIComponent(bound.userId) + '/HomeSections';
+            if (!options.layoutCache) return read(bound, route, {displayMode: displayMode}, externalSignal)
+                .then(function(data) { return prepareSections(data, bound.serverId); });
+            // The cache only sees the existing safe projection, never raw API response fields.
+            var controller = new AbortController(), request = {abort: function() { controller.abort(); }};
+            pending.add(request);
+            if (externalSignal) {
+                externalSignal.addEventListener('abort', request.abort, {once: true});
+                if (externalSignal.aborted) request.abort();
+            }
+            return options.layoutCache.load({displayMode: displayMode, signal: controller.signal}, function(signal) {
+                return read(bound, route, {displayMode: displayMode}, signal)
+                    .then(function(data) { return prepareSections(data, bound.serverId); });
+            }).then(function(data) {
+                // Recreate frozen sections and request-bound WeakMap ownership after a hit.
+                return prepareSections(data, bound.serverId);
+            }).finally(function() {
+                pending.delete(request);
+                if (externalSignal) externalSignal.removeEventListener('abort', request.abort);
+            });
+        }
         function failure(error, bound) {
-            if (!current(bound) || error && error.code === 'home-cancelled') return {status: 'cancelled'};
+            if (!current(bound) || error && (error.code === 'home-cancelled' || options.layoutCache && error.name === 'AbortError')) return {status: 'cancelled'};
             return {status: 'fallback', reason: error && error.code === 'home-timeout' ? 'timeout' : 'request-or-schema-failed'};
         }
         async function loadSections(settings) {
             settings = settings || {};
             cancel();
             if (disposed || settings.signal && settings.signal.aborted) return {status: 'cancelled'};
+            if (options.layoutCache && !options.layoutCache.revalidate()) return {status: 'cancelled'};
             var bound;
             try {
                 bound = owner();
                 if (!bound || !supportedVersion(bound.client.serverVersion())) return {status: 'fallback', reason: 'unsupported-server'};
                 if (!['tv', 'mobile,desktop'].includes(settings.displayMode)) return {status: 'fallback', reason: 'display-mode-invalid'};
-                var data = await read(bound, 'Users/' + encodeURIComponent(bound.userId) + '/HomeSections', {displayMode: settings.displayMode}, settings.signal);
-                var sections = prepareSections(data, bound.serverId);
+                var sections = await readLayout(bound, settings.displayMode, settings.signal);
                 if (!current(bound) || settings.signal && settings.signal.aborted) return {status: 'cancelled'};
                 sections.forEach(function(section) {
                     sectionOwners.set(section, {bound: bound, seed: section.RandomSeed || Math.floor(Math.random() * 10000000) + 1});

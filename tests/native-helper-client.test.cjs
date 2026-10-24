@@ -23,6 +23,23 @@ class FakeIpc extends EventEmitter {
 
 const CACHE_PROPERTY = 'user-data/emby-theater-enhanced/diagnostics/cache-bytes';
 
+test('restart completion retains zero and rejects missing, stale and retired generations at the renderer boundary', async () => {
+  const ipc = new FakeIpc();
+  const {endpoint} = await clientModule.create({ipc});
+  const messages = [];
+  endpoint.addEventListener('message', event => messages.push(event.data));
+  const {generationId} = await endpoint.beginGeneration('A');
+  const emit = id => ipc.emit(clientModule.EVENT_CHANNEL, {}, {
+    type: 'property_change', generationId: id, data: {name: 'playback-restart', value: 0}
+  });
+  emit(); emit(generationId - 1); emit(generationId);
+  assert.deepEqual(messages, [{type: 'property_change', data: {name: 'playback-restart', value: 0}}]);
+  endpoint.retireGeneration('stop');
+  emit(generationId);
+  assert.equal(messages.length, 1);
+  await endpoint.destroy();
+});
+
 function operationCalls(ipc, operation) {
   return ipc.calls.filter(call => call.request.operation === operation);
 }
@@ -272,4 +289,21 @@ test('presentation operations validate tokens and use their narrow request paylo
   assert.deepEqual(operationCalls(ipc, 'begin-generation').at(-1).request.payload,
     {label: 'normal-null-token', requestEpoch: 2}, 'null means the optional presentation token is omitted');
   await created.endpoint.destroy();
+});
+
+test('renderer endpoint destroy shares the owned pending completion and error', async function () {
+  const pending = deferred();
+  const ipc = new FakeIpc((_channel, request) => request.operation === 'destroy' ? pending.promise : undefined);
+  const {endpoint} = await clientModule.create({ipc});
+  const first = endpoint.destroy();
+  const second = endpoint.destroy();
+  assert.strictEqual(first, second);
+  let settled = false;
+  first.catch(() => { settled = true; });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(settled, false);
+  assert.equal(operationCalls(ipc, 'destroy').length, 1);
+  pending.resolve({status: 'error', reason: 'fixture-exit-failed'});
+  await assert.rejects(first, /fixture-exit-failed/);
+  assert.strictEqual(endpoint.destroy(), first);
 });
