@@ -62,7 +62,7 @@ function outputPath(sourceRoot, output) {
     return resolved;
 }
 function git(args, env = benchmarkEnvironment()) {
-    try {return cp.execFileSync('git', args, {encoding: 'utf8', env, maxBuffer: 16 * 1024 * 1024}).trim();}
+    try {return cp.execFileSync('git', args, {encoding: 'utf8', env, stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 16 * 1024 * 1024}).trim();}
     catch (error) {
         error.benchmarkCommand = ['git', ...args].map(diagnosticText);
         error.exitCode = Number.isInteger(error.status) && error.status > 0 && error.status <= 255 ? error.status : 1;throw error;
@@ -183,5 +183,5 @@ function main(args = process.argv.slice(2)) {
 }
 module.exports = {options, contains, outputPath, physicalDirectory, stageArtifacts, diagnosticText};
 if (require.main === module) {
-    try {main();} catch (error) {console.error(error.stack);process.exitCode = error.exitCode || 1;}
+    try {main();} catch (error) {console.error(diagnosticText(error.stack));process.exitCode = error.exitCode || 1;}
 }
