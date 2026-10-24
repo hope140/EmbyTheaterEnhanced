@@ -5,6 +5,11 @@ on:
   push:
   workflow_dispatch:
     inputs:
+      range_smoke:
+        description: Controlled derived 043 next-prefix automatic chain and joint exit only
+        type: choice
+        default: 'off'
+        options: ['off', 'next-auto']
       release_package:
         description: Stage the standard installer name and five release files (does not publish)
         type: boolean
@@ -120,8 +125,107 @@ jobs:
           CI_TEST_OUTCOME: ${{ steps.regression.outcome }}
         run: node tools/ci-change-scope.cjs summary
 
+  manual-playback-range-smoke:
+    if: github.event_name == 'workflow_dispatch' && inputs.range_smoke == 'next-auto' && !inputs.release_package && !inputs.build_input_benchmark && github.ref == 'refs/heads/verify/next-prefix-v043-native-20261024'
+    runs-on: windows-2022
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    concurrency:
+      group: ete-manual-next-prefix-auto
+      cancel-in-progress: false
+    steps:
+      - name: Check out exact workflow controls
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.sha }}
+          path: range-controls
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check out immutable validated smoke tools
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: c9cd9bacf81445c9c10befd121951b1c63c86faa
+          path: range-tools
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up locked Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.18.1
+
+      - name: Create owned fixed-candidate control plan
+        shell: pwsh
+        env:
+          ETE_RANGE_MODE: ${{ inputs.range_smoke }}
+          ETE_RELEASE_PACKAGE: ${{ inputs.release_package }}
+        run: |
+          $temporaryRoot = ([string](& node -e "process.stdout.write(require('fs').realpathSync.native(process.env.RUNNER_TEMP))")).Trim()
+          if ($LASTEXITCODE -ne 0 -or -not $temporaryRoot) { throw 'Canonical owned temporary parent unavailable.' }
+          $root = Join-Path $temporaryRoot "ete-range-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          node range-controls/tools/ci-playback-range-smoke.cjs plan "--tools=$env:GITHUB_WORKSPACE/range-tools" "--root=$root" "--mode=$env:ETE_RANGE_MODE"
+          if ($LASTEXITCODE -ne 0) { throw 'Range control preflight failed.' }
+
+      - name: Download only exact candidate ZIP and fixed unpacker
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          $temporaryRoot = ([string](& node -e "process.stdout.write(require('fs').realpathSync.native(process.env.RUNNER_TEMP))")).Trim()
+          if ($LASTEXITCODE -ne 0 -or -not $temporaryRoot) { throw 'Canonical owned temporary parent unavailable.' }
+          $root = Join-Path $temporaryRoot "ete-range-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          node range-controls/tools/ci-playback-range-smoke.cjs acquire "--plan=$root/control-plan.json"
+          if ($LASTEXITCODE -ne 0) { throw 'Fixed input unavailable or refused; no substitute/rebuild.' }
+
+      - name: Statically extract verified installer with locked unpacker
+        shell: pwsh
+        run: |
+          $temporaryRoot = ([string](& node -e "process.stdout.write(require('fs').realpathSync.native(process.env.RUNNER_TEMP))")).Trim()
+          if ($LASTEXITCODE -ne 0 -or -not $temporaryRoot) { throw 'Canonical owned temporary parent unavailable.' }
+          $root = Join-Path $temporaryRoot "ete-range-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          ./range-controls/tools/ci-playback-range-unpack.ps1 -PlanPath "$root/control-plan.json"
+          if (-not $?) { throw 'Controlled static extraction failed.' }
+
+      - name: Run explicit entry and selected synthetic native scope
+        shell: pwsh
+        run: |
+          $temporaryRoot = ([string](& node -e "process.stdout.write(require('fs').realpathSync.native(process.env.RUNNER_TEMP))")).Trim()
+          if ($LASTEXITCODE -ne 0 -or -not $temporaryRoot) { throw 'Canonical owned temporary parent unavailable.' }
+          $root = Join-Path $temporaryRoot "ete-range-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          node range-controls/tools/ci-playback-range-smoke.cjs execute "--plan=$root/control-plan.json"
+          if ($LASTEXITCODE -ne 0) { throw 'Range evidence failed; inspect receipts.' }
+
+      - name: Collect only bounded owned receipts
+        if: always()
+        shell: pwsh
+        run: |
+          $temporaryRoot = ([string](& node -e "process.stdout.write(require('fs').realpathSync.native(process.env.RUNNER_TEMP))")).Trim()
+          if ($LASTEXITCODE -ne 0 -or -not $temporaryRoot) { throw 'Canonical owned temporary parent unavailable.' }
+          $root = Join-Path $temporaryRoot "ete-range-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          $out = Join-Path $env:GITHUB_WORKSPACE 'range-smoke-evidence'
+          if (Test-Path -LiteralPath "$root/control-plan.json") {
+            node range-controls/tools/ci-playback-range-smoke.cjs collect "--plan=$root/control-plan.json" "--out=$out"
+            if ($LASTEXITCODE -ne 0) { throw 'Receipt collection failed.' }
+          } else {
+            New-Item -ItemType Directory -Path $out | Out-Null
+            [IO.File]::WriteAllText((Join-Path $out 'not-started.json'), '{"status":"not-started","reason":"control-plan-unavailable"}')
+          }
+
+      - name: Upload isolated range receipts
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: ete-range-smoke-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: range-smoke-evidence/*
+          if-no-files-found: error
+          retention-days: 1
+          include-hidden-files: false
+
   manual-windows-test-package:
-    if: github.event_name == 'workflow_dispatch' && !inputs.build_input_benchmark
+    if: github.event_name == 'workflow_dispatch' && !inputs.build_input_benchmark && inputs.range_smoke != 'next-auto'
     # Keep the existing VS2022/MSBuild17 contract; windows-2025 now selects VS2026.
     runs-on: windows-2022
     timeout-minutes: 60
@@ -159,7 +263,7 @@ jobs:
 
   windows-build-input-benchmark:
     name: Windows build input A/B (0 unit tests)
-    if: github.event_name == 'workflow_dispatch' && inputs.build_input_benchmark
+    if: github.event_name == 'workflow_dispatch' && inputs.build_input_benchmark && inputs.range_smoke != 'next-auto'
     runs-on: windows-2022
     timeout-minutes: 15
     steps:

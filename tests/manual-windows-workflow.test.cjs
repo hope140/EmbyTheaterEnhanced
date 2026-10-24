@@ -20,7 +20,7 @@ const benchmark = jobBlock('windows-build-input-benchmark');
 
 // Evaluate only this workflow's simple AND/string/boolean route clauses.
 // Unknown syntax fails rather than silently treating a broader route as safe.
-function routes(job, event, ref, benchmarkMode) {
+function routes(job, event, ref, benchmarkMode, rangeMode = 'off') {
     const conditions = [...job.matchAll(/^    if: (.+)$/gm)];
     assert.equal(conditions.length, 1, 'one top-level job condition required');
     return conditions[0][1].split(/\s+&&\s+/).map(clause => {
@@ -29,6 +29,8 @@ function routes(job, event, ref, benchmarkMode) {
             const equal = (compare[1] === 'event_name' ? event : ref) === compare[3];
             return compare[2] === '==' ? equal : !equal;
         }
+        const range = /^inputs\.range_smoke (==|!=) '([^']+)'$/.exec(clause);
+        if (range) return range[1] === '==' ? rangeMode === range[2] : rangeMode !== range[2];
         assert.ok(['inputs.build_input_benchmark', '!inputs.build_input_benchmark'].includes(clause), 'unsupported route clause');
         return clause.startsWith('!') ? !benchmarkMode : benchmarkMode;
     }).every(Boolean);
@@ -140,4 +142,11 @@ test('benchmark retains pinned read-only inputs and uploads only bounded diagnos
     assert.match(benchmark, /retention-days: 1/);
     assert.match(benchmark, /include-hidden-files: false/);
     assert.doesNotMatch(benchmark, /path: (?:\.|dist|vendor|\.work)(?:\/\*\*|$)/m);
+});
+
+test('explicit next-auto scope excludes package and benchmark without changing their ordinary default routes',()=>{
+    for(const event of ['push','pull_request','workflow_dispatch']) for(const mode of [false,true]) {
+        assert.equal(routes(manual,event,'refs/heads/verify/next-prefix-v043-native-20261024',mode,'next-auto'),false);
+        assert.equal(routes(benchmark,event,'refs/heads/verify/next-prefix-v043-native-20261024',mode,'next-auto'),false);
+    }
 });
