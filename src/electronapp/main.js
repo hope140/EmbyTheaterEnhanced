@@ -21,7 +21,7 @@
     productIdentity.setAppName(app, productMetadata);
     var path = require('path');
     var rangeCacheLaunchModule = require('./enhanced/playback-range-launch');
-    var rangeCacheLaunch = rangeCacheLaunchModule.parseLaunch(process.argv);
+    var rangeCacheLaunch = rangeCacheLaunchModule.prepareLaunch(process.argv);
     rangeCacheLaunchModule.activateProfile(app, rangeCacheLaunch, process.env);
     var appBootstrap = require('./enhanced/bootstrap');
     var deviceIdentity = require('./device-identity');
@@ -1000,7 +1000,8 @@
         return result;
     }
 
-    var commandLineOptions = parseCommandLine();
+    // The explicit trial profile already owns every path before bootstrap.
+    var commandLineOptions = rangeCacheLaunch.enabled ? {} : parseCommandLine();
 
     var userDataPath = commandLineOptions.userDataPath;
     if (userDataPath) {

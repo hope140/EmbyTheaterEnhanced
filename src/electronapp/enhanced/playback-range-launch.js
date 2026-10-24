@@ -4,7 +4,7 @@ const path = require('node:path');
 const {selection} = require('./playback-range-policy');
 function parseLaunch(argv) {
     const off = Object.freeze({enabled: false});
-    if (!argv.includes('--ete-range-cache-trial')) return off;
+    if (argv.filter(arg => arg === '--ete-range-cache-trial').length !== 1) return off;
     const value = name => {const values = argv.filter(v => v.startsWith(name + '=')); return values.length === 1 ? values[0].slice(name.length + 1) : null;};
     try {
         const file = value('--ete-range-cache-config'), profile = value('--ete-range-cache-profile');
@@ -28,9 +28,15 @@ function parseLaunch(argv) {
         return Object.freeze({enabled: true, profile, directories, config: Object.freeze({...config, ...policy, root: directories.cache})});
     } catch (_) {return off;}
 }
+// A rejected explicit trial must never become an ordinary-profile launch.
+function prepareLaunch(argv) {
+    const launch = parseLaunch(argv);
+    if (argv.some(arg => /^--ete-range-cache(?:-|=|$)/i.test(arg)) && !launch.enabled) throw Error('range-cache-trial-launch-invalid');
+    return launch;
+}
 function activateProfile(app, launch, environment) {
     if (!launch.enabled) return;
     app.setPath('appData', launch.profile); app.setPath('userData', launch.directories.electron); app.setPath('sessionData', launch.directories.electron);
     environment.APPDATA = launch.profile; environment.LOCALAPPDATA = launch.directories.local; environment.MPV_HOME = launch.directories.mpv;
 }
-module.exports = {parseLaunch, activateProfile};
+module.exports = {parseLaunch, prepareLaunch, activateProfile};
