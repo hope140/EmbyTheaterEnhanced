@@ -8,7 +8,7 @@
     },
     {
       "path": "native/windows-host/change-manifest.json",
-      "sha256": "aee34e8ac5b5c80d989fb24edbf9bc534306165830b45a7b3e84562318485e6a"
+      "sha256": "ab4fdb395e45734336eec5721246a0962a81c22c8685b9bb3be5acb08bcae93c"
     },
     {
       "path": "native/windows-host/changes/Emby.Theater/App/ApplicationHost.cs",
@@ -44,7 +44,7 @@
     },
     {
       "path": "native/windows-host/host-retirement.patch",
-      "sha256": "0e3813bceb0c41602c6336c9bd147ade501c38978bac205e48c3a627e3fc9111"
+      "sha256": "c906f97fffc2d5bab7ba71a0d680f39680357b3c0bf35844c2bd30738bbca1e0"
     },
     {
       "path": "native/windows-host/upstream-source-manifest.json",
@@ -55,5 +55,5 @@
       "sha256": "509c47db131abf3f5065fc0a387ba65f002c4561768d349bd270fbe21b7689c8"
     }
   ],
-  "sha256": "fef4cbfdb15a52b32a21edb33039833b5fc523ac594fcf3b871b78080dc8be9b"
+  "sha256": "3f3b051394eef6cde25aab078a6f4ba622447fedd34783707cd590c551850fb6"
 }

@@ -89,7 +89,7 @@
     {
       "path": "README.txt",
       "size": 3523,
-      "sha256": "7b88b21fd191e5c3a46a2707578bb41efa68c1ed90777907a53463d138c71b65"
+      "sha256": "80ac27b26ab1cc5c4de37e01b2d6aae5199a6a0950d172783cecadddf5b6a172"
     },
     {
       "path": "Read-ExePdbMatch.ps1",
@@ -109,7 +109,7 @@
     {
       "path": "Run-Components.ps1",
       "size": 4443,
-      "sha256": "28da841f7eb147fbc565876b06cb073c7ed8ced71a2bf2a22e1d8a265cf6c880"
+      "sha256": "34ee792daf1e6c4912bc8a0659777e7bbb5b3477e8544fa891be441622598d89"
     },
     {
       "path": "Run-Transport.ps1",
@@ -144,7 +144,7 @@
     {
       "path": "expected-build-contract.json",
       "size": 1618,
-      "sha256": "51b7c50c09ce6d6112e67e5ef38ca8fe8f9430ce60f5ec9025ce8519cac4c90d"
+      "sha256": "4d78666dd51fb92796fc0771507d52bed27ce3f812ddccb79373b0c7f677f0e5"
     },
     {
       "path": "expected-candidate-files.json",

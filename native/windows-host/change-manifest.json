@@ -67,7 +67,7 @@
     "..\\Tools\\Installation\\MediaBrowser.InstallUtil.dll",
     "..\\Tools\\Installation\\MediaBrowser.Updater.exe"
   ],
-  "patchSHA256": "0e3813bceb0c41602c6336c9bd147ade501c38978bac205e48c3a627e3fc9111",
+  "patchSHA256": "c906f97fffc2d5bab7ba71a0d680f39680357b3c0bf35844c2bd30738bbca1e0",
   "baselineEvidence": "Parent confirmed Work original source baseline net462/x86, six locked DLLs; baseline EXE SHA256 d13b9951e48399c9c33b3811ee814e5f423d8fe59da1f137c059b4e0110f7b70. Linux/Work input ZIP equality is not asserted.",
   "formatOnly": "Ten inherited comment/XML-comment trailing spaces removed so imported maintained C# and project pass normal whitespace checks. Original final-newline state preserved.",
   "patchFormat": "Standard unified diff; original whitespace in removed/context lines is patch data, covered by a narrow Git attribute for this patch only. C# whitespace checks remain enabled.",

@@ -91,7 +91,7 @@ const FILES = Object.freeze([
     {
         "path": "tools/windows-host-verifier/README.txt",
         "size": 3523,
-        "sha256": "7b88b21fd191e5c3a46a2707578bb41efa68c1ed90777907a53463d138c71b65"
+        "sha256": "80ac27b26ab1cc5c4de37e01b2d6aae5199a6a0950d172783cecadddf5b6a172"
     },
     {
         "path": "tools/windows-host-verifier/Read-ExePdbMatch.ps1",
@@ -111,7 +111,7 @@ const FILES = Object.freeze([
     {
         "path": "tools/windows-host-verifier/Run-Components.ps1",
         "size": 4443,
-        "sha256": "28da841f7eb147fbc565876b06cb073c7ed8ced71a2bf2a22e1d8a265cf6c880"
+        "sha256": "34ee792daf1e6c4912bc8a0659777e7bbb5b3477e8544fa891be441622598d89"
     },
     {
         "path": "tools/windows-host-verifier/Run-Transport.ps1",
@@ -146,7 +146,7 @@ const FILES = Object.freeze([
     {
         "path": "tools/windows-host-verifier/expected-build-contract.json",
         "size": 1618,
-        "sha256": "51b7c50c09ce6d6112e67e5ef38ca8fe8f9430ce60f5ec9025ce8519cac4c90d"
+        "sha256": "4d78666dd51fb92796fc0771507d52bed27ce3f812ddccb79373b0c7f677f0e5"
     },
     {
         "path": "tools/windows-host-verifier/expected-candidate-files.json",
@@ -166,7 +166,7 @@ const FILES = Object.freeze([
     {
         "path": "tools/windows-host-verifier/verifier-manifest.json",
         "size": 5237,
-        "sha256": "9b16b3d75f3e44abff37a9c276742600dd0b33d825daec8842b71eb84bf63c0a"
+        "sha256": "3d0d09a4e17f41729b98fcbd6cfa570ccf6be6bb33808fb65a4afdc2ec20658d"
     }
 ].map(Object.freeze));
 const PATHS = Object.freeze(FILES.map(f => f.path));

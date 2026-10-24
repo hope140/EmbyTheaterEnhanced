@@ -516,10 +516,28 @@ index 0f74faf..5e3b6f9 100644
    <Target Name="BeforeBuild">
    </Target>
 diff --git a/Emby.Theater/Program.cs b/Emby.Theater/Program.cs
-index 2e41a76..46b3172 100644
+index 2e41a760897f7d0a67d21429f667fb00476e620e..1723d477a8e060fa3caf92876d04336939164279 100644
 --- a/Emby.Theater/Program.cs
 +++ b/Emby.Theater/Program.cs
-@@ -112,12 +112,6 @@ namespace Emby.Theater
+@@ -50,6 +50,9 @@ namespace Emby.Theater
+ 
+         private static IFileSystem FileSystem;
+         private static bool _restartOnShutdown;
++        private static Dispatcher _exitDispatcher;
++        private static int _exitRequested;
++        private static int _exitLoopStarted;
+ 
+         /// <summary>
+         /// /// The main entry point for the application.
+@@ -57,6 +60,7 @@ namespace Emby.Theater
+         [STAThread]
+         static void Main()
+         {
++            InitializeExitDispatcher();
+             ApplicationPath = Assembly.GetEntryAssembly().Location;
+ 
+             var environmentInfo = GetEnvironmentInfo();
+@@ -112,12 +116,6 @@ namespace Emby.Theater
  
                      using (new MutexHandle(mutex, hasHandle, _logger))
                      {
@@ -532,7 +550,7 @@ index 2e41a76..46b3172 100644
                          RunApplication(appPaths, logManager, environmentInfo, new StartupOptions(Environment.GetCommandLineArgs()));
                      }
                  }
-@@ -182,9 +176,6 @@ namespace Emby.Theater
+@@ -182,9 +180,6 @@ namespace Emby.Theater
                      //task = InstallVcredist2015IfNeeded(appHost.HttpClient, _logger);
                      //Task.WaitAll(task);
  
@@ -542,27 +560,69 @@ index 2e41a76..46b3172 100644
                      using (var server = new TheaterServer(_logger, appHost))
                      {
                          task = appHost.RunStartupTasks();
-@@ -211,38 +202,9 @@ namespace Emby.Theater
-             return info;
+@@ -193,56 +188,63 @@ namespace Emby.Theater
+                         Application.EnableVisualStyles();
+                         Application.SetCompatibleTextRenderingDefault(false);
+ 
+-                        Application.Run(new AppContext(server));
++                        var applicationContext = new AppContext(server);
++                        _logger.Info("Host application loop starting");
++                        RunApplicationLoop(applicationContext);
++                        _logger.Info("Host application loop returned");
+                     }
+                 }
+             }
+         }
+ 
+-        public static void Exit()
++        private static void InitializeExitDispatcher()
+         {
+-            Application.Exit();
++            _exitDispatcher = Dispatcher.CurrentDispatcher;
++            Application.Idle += OnExitIdle;
+         }
+ 
+-        private static IEnvironmentInfo GetEnvironmentInfo()
++        private static void RunApplicationLoop(ApplicationContext context)
+         {
+-            var info = new EnvironmentInfo();
+-
+-            return info;
++            Volatile.Write(ref _exitLoopStarted, 1);
++            try { Application.Run(context); }
++            finally { Volatile.Write(ref _exitLoopStarted, 0); }
          }
  
 -        /// <summary>
 -        /// Performs the update if needed.
 -        /// </summary>
 -        private static bool PerformUpdateIfNeeded(IApplicationPaths appPaths, IEnvironmentInfo environmentInfo, ILogger logger)
--        {
++        private static void OnExitIdle(object sender, EventArgs e)
+         {
 -            //// Look for the existence of an update archive
 -            var updateArchive = Path.Combine(appPaths.TempUpdatePath, DownloadedPackageFilename);
 -
 -            if (File.Exists(updateArchive))
--            {
++            if (Volatile.Read(ref _exitLoopStarted) != 0 && _exitDispatcher.CheckAccess() && Application.MessageLoop)
+             {
 -                logger.Info("An update is available from {0}", updateArchive);
--
++                Application.Idle -= OnExitIdle;
++                ExitWhenMessageLoopReady();
++            }
++        }
+ 
 -                // Update is there - execute update
 -                try
 -                {
 -                    new ApplicationUpdater().UpdateApplication(appPaths, updateArchive, logger);
--
++        private static void ExitWhenMessageLoopReady()
++        {
++            if (Volatile.Read(ref _exitLoopStarted) != 0 && _exitDispatcher.CheckAccess() && Application.MessageLoop && Volatile.Read(ref _exitRequested) != 0)
++            {
++                Application.Exit();
++            }
++        }
+ 
 -                    // And just let the app exit so it can update
 -                    return true;
 -                }
@@ -570,11 +630,22 @@ index 2e41a76..46b3172 100644
 -                {
 -                    logger.ErrorException("Error running updater.", e);
 -                }
--            }
--
++        public static void Exit()
++        {
++            if (Interlocked.Exchange(ref _exitRequested, 1) == 0)
++            {
++                _exitDispatcher.BeginInvoke(new Action(ExitWhenMessageLoopReady));
+             }
++        }
++
++        private static IEnvironmentInfo GetEnvironmentInfo()
++        {
++            var info = new EnvironmentInfo();
+ 
 -            return false;
--        }
--
++            return info;
+         }
+ 
          private static async Task InstallVcredist2013IfNeeded(IHttpClient httpClient, ILogger logger)
          {
 -            // Reference 
@@ -582,7 +653,7 @@ index 2e41a76..46b3172 100644
              // http://stackoverflow.com/questions/12206314/detect-if-visual-c-redistributable-for-visual-studio-2012-is-installed
  
              bool is64Bit = Is64BitElectron;
-@@ -296,7 +258,7 @@ namespace Emby.Theater
+@@ -296,7 +298,7 @@ namespace Emby.Theater
  
          private static async Task InstallVcredist2015IfNeeded(IHttpClient httpClient, ILogger logger)
          {
@@ -591,7 +662,7 @@ index 2e41a76..46b3172 100644
              // http://stackoverflow.com/questions/12206314/detect-if-visual-c-redistributable-for-visual-studio-2012-is-installed
  
              var is64Bit = Is64BitElectron;
-@@ -402,66 +364,6 @@ namespace Emby.Theater
+@@ -402,66 +404,6 @@ namespace Emby.Theater
              }
          }
  

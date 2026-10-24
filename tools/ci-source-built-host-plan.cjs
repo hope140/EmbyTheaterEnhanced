@@ -1,5 +1,5 @@
 'use strict';
-// Exact input recovery and kit projection only. Never accepts a Work binary/receipt.
+// Exact source recovery, kit projection and source-chain checks; no external binary/receipt.
 const fs = require('node:fs');
 const path = require('node:path');
 const cp = require('node:child_process');
@@ -102,6 +102,32 @@ function materializeKit(root, out) {
         sourceIdentitySha256: plan.sourceIdentitySha256, files: buffers.map(f => ({path: f.path, size: f.bytes.length, sha256: sha(f.bytes)}))};
     write(out, 'HANDOFF-MANIFEST.json', Buffer.from(JSON.stringify(manifest, null, 2) + '\n')); return manifest;
 }
+function verifySourceChain(root, source, kit, out) {
+    const plan=createPlan(root),changes=JSON.parse(bytes(root,'native/windows-host/change-manifest.json'));
+    physical(source);physical(kit);
+    const originals=plan.sourceFiles.map(f=>{const b=bytes(source,f.path);if(b.length!==f.size||sha(b)!==f.sha256||blobObjectId(b)!==f.gitBlob)throw Error('Original55 source chain identity mismatch: '+f.path);return {f,b};});
+    for(const f of KIT_FILES)if(!bytes(root,'tools/windows-host-build/'+f).equals(bytes(kit,f)))throw Error('Source chain kit differs: '+f);
+    for(const f of KIT_INPUTS)if(!bytes(root,f).equals(bytes(kit,f)))throw Error('Source chain kit differs: '+f);
+    out=newDirectory(out);
+    const inside=cp.spawnSync('git',['-C',out,'rev-parse','--is-inside-work-tree'],{encoding:'utf8'});
+    if(inside.status===0)throw Error('Source chain output must be outside a Git worktree, matching the production builder.');
+    const patched=path.join(out,'patched'),overlay=path.join(out,'replacements');fs.mkdirSync(patched);
+    for(const {f,b}of originals)write(patched,f.path,b);
+    const patch=path.join(kit,'native/windows-host/host-retirement.patch');
+    const run=(exe,args,cwd)=>cp.execFileSync(exe,args,{cwd,encoding:'utf8',stdio:['ignore','pipe','pipe'],timeout:30000,maxBuffer:4*1024*1024});
+    run('git',['-c','core.autocrlf=false','apply','--check',patch],patched);run('git',['-c','core.autocrlf=false','apply',patch],patched);
+    const ps=process.platform==='win32'?'pwsh.exe':'pwsh';
+    run(ps,['-NoProfile','-NonInteractive','-File',path.join(root,'native/windows-host/Apply-SourceChanges.ps1'),'-SourceRoot',source,'-DestinationRoot',overlay]);
+    const identity=JSON.parse(run(ps,['-NoProfile','-NonInteractive','-File',path.join(kit,'Get-SourceIdentity.ps1'),'-CandidateSourceRoot',patched]));
+    const selected=[...plan.sourceFiles.map(f=>f.path),...changes.addedSources.map(f=>f.path)];
+    for(const f of selected)if(!bytes(patched,f).equals(bytes(overlay,f)))throw Error('Patch/replacement byte divergence: '+f);
+    function names(dir,base=dir){return fs.readdirSync(dir,{withFileTypes:true}).flatMap(e=>{const p=path.join(dir,e.name);if(e.isSymbolicLink())throw Error('Source chain redirect forbidden.');return e.isDirectory()?names(p,base):[path.relative(base,p).split(path.sep).join('/')];});}
+    if(JSON.stringify(names(patched).sort())!==JSON.stringify(selected.sort()))throw Error('Patched57 source file set mismatch.');
+    const project=bytes(patched,'Emby.Theater/Emby.Theater.csproj').toString('utf8').replace(/<!--[\s\S]*?-->/g,'');
+    if((project.match(/<Compile\s+Include=/g)||[]).length!==46||identity.sha256!==plan.sourceIdentitySha256)throw Error('Source chain compile count/fingerprint mismatch.');
+    const result={status:'passed',originalFiles:55,candidateFiles:57,compileInputs:46,sourceIdentitySha256:identity.sha256,patchSha256:sha(bytes(root,'native/windows-host/host-retirement.patch')),programSha256:sha(bytes(patched,'Emby.Theater/Program.cs')),byteEquivalentRoutes:true,hostCompiled:false,hostExecuted:false};
+    write(out,'source-chain.json',Buffer.from(JSON.stringify(result,null,2)+'\n'));return result;
+}
 function prepareVerificationInput(root, buildRoot) {
     verifier.validate(root);
     physical(buildRoot);
@@ -115,15 +141,16 @@ function prepareVerificationInput(root, buildRoot) {
     return {purpose: 'controlled private-versus-omitted probe only; never product runtime', sha256: sha(value)};
 }
 // The CLI loads receipt staging, which imports these guards back from this module.
-module.exports = {COMMIT, REPOSITORY, KIT_FILES, KIT_INPUTS, safeRelative, physical, createPlan, verifyPackage, readSourceBuffers, restoreSource, materializeKit, prepareVerificationInput};
+module.exports = {COMMIT, REPOSITORY, KIT_FILES, KIT_INPUTS, safeRelative, physical, createPlan, verifyPackage, readSourceBuffers, restoreSource, materializeKit, verifySourceChain, prepareVerificationInput};
 if (require.main === module) {
     try {
-        const [command, root, a, b] = process.argv.slice(2);
+        const [command, root, a, b, c] = process.argv.slice(2);
         let result;
         if (command === 'plan') result = createPlan(root);
         else if (command === 'verify-package') result = verifyPackage(root, a, b);
         else if (command === 'source') result = restoreSource(root, a, b);
         else if (command === 'kit') result = materializeKit(root, a);
+        else if (command === 'source-chain') result = verifySourceChain(root, a, b, c);
         else if (command === 'verify-verifier') result = verifier.validate(root);
         else if (command === 'verification-input') result = prepareVerificationInput(root, a);
         else if (command === 'install-runner') result = require('./runner-host-receipt.cjs').install(root, a);
@@ -131,7 +158,7 @@ if (require.main === module) {
             if (path.resolve(a) !== path.resolve(root, '.work/actions-host-build')) throw Error('Unexpected Host runner work path.');
             result = {path: newDirectory(a)};
         }
-        else throw Error('Usage: ci-source-built-host-plan.cjs <plan|verify-package|source|kit> root [input] [output/id]');
+        else throw Error('Usage: ci-source-built-host-plan.cjs <plan|verify-package|source|kit|source-chain> root [input] [output/id/kit] [chain-output]');
         process.stdout.write(JSON.stringify(result, null, 2) + '\n');
     } catch (e) { process.stderr.write(e.message + '\n'); process.exitCode = 1; }
 }

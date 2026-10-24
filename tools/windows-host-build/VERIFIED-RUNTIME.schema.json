@@ -6,7 +6,7 @@
   "properties": {
     "schemaVersion": {"const": 1},
     "mode": {"const": "source-built-host"},
-    "sourceIdentitySha256": {"const": "fef4cbfdb15a52b32a21edb33039833b5fc523ac594fcf3b871b78080dc8be9b"},
+    "sourceIdentitySha256": {"const": "3f3b051394eef6cde25aab078a6f4ba622447fedd34783707cd590c551850fb6"},
     "framework": {"const": "net462"},
     "platform": {"const": "x86"},
     "modelSha256": {"const": "db22f8ea6cb6afdfab184f80d8b85a10d8a9f148ff4cae167db87ce9cd245153"},
