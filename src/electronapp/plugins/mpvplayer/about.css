@@ -10,7 +10,57 @@
     margin-top: .8em;
 }
 
-.about-settings-page .about-update pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
+.about-settings-page .about-update .ete-settings-info-row > :first-child,
+.about-settings-page .about-maintenance-card > .aboutUpdateState:not([role="alert"]) {
+    color: inherit;
+    opacity: .72;
+}
+
+.about-settings-page .about-update-channel { margin-block: .9em .4em; }
+.about-settings-page .about-update-disclosure {
+    border-top: 1px solid var(--line-background, rgba(127, 127, 127, .25));
+    margin-block: .65em;
+    min-width: 0;
+}
+.about-settings-page .about-update-disclosure > summary {
+    align-items: center;
+    border-radius: .25em;
+    box-sizing: border-box;
+    color: var(--theme-accent-text-color, inherit);
+    cursor: pointer;
+    display: flex;
+    font-weight: 500;
+    gap: .7em;
+    list-style: none;
+    min-height: 2.75em;
+    padding: .65em .25em;
+}
+.about-settings-page .about-update-disclosure > summary::-webkit-details-marker { display: none; }
+.about-settings-page .about-update-disclosure > summary::before {
+    border-bottom: .12em solid currentColor;
+    border-right: .12em solid currentColor;
+    content: '';
+    flex: 0 0 .45em;
+    height: .45em;
+    margin-inline: .15em .2em;
+    transform: rotate(-45deg);
+}
+.about-settings-page .about-update-disclosure[open] > summary::before { transform: rotate(45deg); }
+.about-settings-page .about-update-disclosure > summary:focus-visible {
+    outline: 2px solid var(--theme-accent-text-color, currentColor) !important;
+    outline-offset: 2px;
+}
+.about-settings-page .about-update-disclosure > pre {
+    border-inline-start: 2px solid var(--line-background, rgba(127, 127, 127, .25));
+    font: inherit;
+    line-height: 1.6;
+    margin: .15em 0 .8em;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    padding: .65em .85em;
+    white-space: pre-wrap;
+}
+.about-settings-page .about-update > .btnDownloadUpdate { margin-block: .4em; }
 .about-settings-page .aboutDownloadProgress { display: block; width: 100%; margin-block: .8em; }
 .about-settings-page .aboutDownloadProgress[hidden] { display: none; }
 

@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-24 — 手动更新取消按钮与折叠区验收修正
+
+原取消按钮在checking／downloading启用，idle／latest／error／done只disabled而始终显示。本次复用原cancel IPC与operation owner，增加隐藏和动作文字；点击后去重，等待原操作结算，pause／destroy仍取消并退休旧回复。两个更新折叠项保留原生键盘行为，用局部CSS补箭头、标题点击区、正文层级、长文本换行与focus-visible；仅维护区普通文字继承主题颜色，不改变其它About分区。
+
+定向102／102通过，补充检查／下载／取消完成与异常、重复点击、旧操作完成不得隐藏新操作取消按钮及取消IPC失败后离页／销毁仍发出原清理等回归。隔离Chromium使用当前HTML／CSS／AMD controller和受控IPC，在明暗主题、窄窗口和放大文字共6组验证Tab跳过闲置取消、两折叠项键盘可达及Enter／Space切换、焦点轮廓、换行与离页重入；真实Emby按钮构造与完整Electron生命周期仍待新测试包，未操作真实安装或前台。
+
 ## 2026-10-23 — 手动更新打包接线的可复现离线回归
 
 新增 `manual-app-update-package-gate.test.cjs`，执行 `ci-windows-test-package.ps1` AST 中实际包内 Node 调用、回执校验和 JSON 保存语句，不复制门禁条件。临时产品源码来自准确 HEAD 的 Git blobs，manifest 明确为合成；四项覆盖成功和源码身份／模块字节／manifest 三种拒绝，失败不生成成功回执。新回归4／4、相关完整定向99／99通过，无网络、应用启动、profile或安装执行；使用既有Node24.18.1与PowerShell7.4.13。产品代码和Windows打包脚本未修改，真实Windows整包仍待准确分支与协调构建。

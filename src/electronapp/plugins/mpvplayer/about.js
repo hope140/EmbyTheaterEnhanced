@@ -28,6 +28,13 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!modules/list
         view.querySelector(selector).textContent = value || fallback || 'UNKNOWN';
     }
 
+    function setUpdateCancel(view, action) {
+        var button = view.querySelector('.btnCancelUpdate');
+        button.hidden = !action;
+        button.disabled = !action;
+        if (action) button.textContent = action === 'check' ? '取消检查' : '取消下载';
+    }
+
     function AboutView(view) {
         BaseView.apply(this, arguments);
         this.view = view;
@@ -37,6 +44,7 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!modules/list
         this.updateRequestId = 0;
         this.updating = false;
         this.progressListener = null;
+        setUpdateCancel(view, null);
         view.querySelector('.btnCheckUpdates').addEventListener('click', this.checkUpdates.bind(this));
         view.querySelector('.btnDownloadUpdate').addEventListener('click', this.downloadUpdate.bind(this));
         view.querySelector('.btnCancelUpdate').addEventListener('click', this.cancelUpdate.bind(this));
@@ -98,10 +106,10 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!modules/list
         button.disabled = true;
         this.updating = true;
         var requestId = ++this.updateRequestId;
-        view.querySelector('.btnCancelUpdate').disabled = false;
+        setUpdateCancel(view, 'check');
         view.querySelector('.btnDownloadUpdate').disabled = true;
         view.querySelector('.aboutDownloadProgress').hidden = true;
-        view.querySelector('.aboutDownloadDetails').textContent = '';
+        view.querySelector('.aboutDownloadDetails').textContent = '尚未开始下载。';
         update.hidden = true;
         setStatus(state, '正在检查…', false);
         return request(CHANNELS.checkUpdate).then(function (response) {
@@ -129,7 +137,7 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!modules/list
             if (requestId !== this.updateRequestId) return;
             this.updating = false;
             button.disabled = false;
-            view.querySelector('.btnCancelUpdate').disabled = true;
+            setUpdateCancel(view, null);
         }.bind(this));
     };
 
@@ -140,9 +148,11 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!modules/list
         this.progressListener = null;
     };
 
-    AboutView.prototype.cancelUpdate = function () {
-        if (!this.updating) return;
-        this.view.querySelector('.btnCancelUpdate').disabled = true;
+    AboutView.prototype.cancelUpdate = function (retiring) {
+        var button = this.view && this.view.querySelector('.btnCancelUpdate');
+        // Deduplicate button clicks; page retirement still sends its cleanup.
+        if (!this.updating || !button || (button.disabled && retiring !== true)) return;
+        button.disabled = true;
         return request(CHANNELS.cancel).catch(function () {});
     };
 
@@ -154,7 +164,7 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!modules/list
         this.updating = true;
         view.querySelector('.btnCheckUpdates').disabled = true;
         view.querySelector('.btnDownloadUpdate').disabled = true;
-        view.querySelector('.btnCancelUpdate').disabled = false;
+        setUpdateCancel(view, 'download');
         view.querySelector('.aboutDownloadProgress').hidden = false;
         view.querySelector('.aboutDownloadProgress').value = 0;
         view.querySelector('.aboutDownloadDetails').textContent = '';
@@ -194,7 +204,7 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!modules/list
             this.updating = false;
             view.querySelector('.btnCheckUpdates').disabled = false;
             view.querySelector('.btnDownloadUpdate').disabled = false;
-            view.querySelector('.btnCancelUpdate').disabled = true;
+            setUpdateCancel(view, null);
         }.bind(this));
     };
 
@@ -390,12 +400,12 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!modules/list
 
     AboutView.prototype.retireUpdate = function () {
         if (!this.view) return;
-        this.cancelUpdate();
+        this.cancelUpdate(true);
         ++this.updateRequestId;
         this.updating = false;
         this.removeUpdateProgress();
         this.view.querySelector('.btnCheckUpdates').disabled = false;
-        this.view.querySelector('.btnCancelUpdate').disabled = true;
+        setUpdateCancel(this.view, null);
     };
 
     AboutView.prototype.destroy = function () {
