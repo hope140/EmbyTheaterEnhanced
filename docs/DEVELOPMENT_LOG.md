@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-24 — owner CJS入口适配ESM默认启动器
+
+读取真实Windows失败日志并结合只读诊断回报：d028f77的1685项测试与生产Native通过，包内selfcheck exit0／ffiLoaded=true，三份物理清单2233文件size／SHA全同。owner进程90秒后才被所属等待器终止、stdout仅换行／stderr空，无owner报告；旧诊断没有argv或module入口记录，无法仅靠无输出判定桌面／GPU原因。
+
+固定Electron default_app/main.ts设置defaultApp后await import(CJS入口)，原require.main判断会静默跳过探针。用同版官方LinuxElectron在Node模式按此导入合同实际运行旧源码，--describe无输出；修后得到明确scope，普通ESM库导入仍不执行，GUI描述分支输出排空后明确exit0。该实验验证加载边界，不冒充Windows GUI／DWM。仅以defaultApp及argv[1]物理文件身份补CLI入口；加入实际GUI入口smoke（15秒，无窗口／播放器）后仍执行完整owner90秒门禁。记录实际执行文件／argv／Node或GUI模式；在app ready前记模块、直接入口、预检及ready等待，随后窗口、helper、A/B、结束和cleanup各记固定阶段。失败诊断只另存有界owner-stages.jsonl，不带Y4M或profile，不伪造PASS。
+
+定向49项／48pass／0fail／1 Linux跳过的Windows GUI用例，包含真实Node ESM导入、argv不符及普通导入拒绝、GUI描述退出、实际argv记录和仅复制阶段报告。公开离线1603项／1592pass／0fail／11平台skip，431 JS／50 PowerShell语法、有限模式及diff检查通过。未改变src/native、90秒owner上限、默认关闭或两按钮；修后实际Windows smoke／owner与DWM仍需另验，不操作Work或自行dispatch。详见[入口与进程验收](WINDOWS_PREVIEW_SNAPSHOT_PROTOCOL.md)。
+
 ## 2026-10-24 — 修复ASAR清单视图并等待实际探针退出
 
 读取d4f9d6b的真实Windows失败日志：Host／生产Native来源校验和1674项测试通过，Koffi92文件及试验2233文件静态检查通过，但父脚本在Electron输出完整性失败前读取缺失的报告。没有成功试验包，FFI loaded=true及owner成功均未获得；旧日志未保存子PID或逐项文件差异，不能据此排除其他物理变化。

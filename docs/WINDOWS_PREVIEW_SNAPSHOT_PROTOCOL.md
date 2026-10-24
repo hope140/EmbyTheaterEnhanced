@@ -1,6 +1,6 @@
 # 原生预览 owner 快照候选
 
-这是 v0.4.0 之后的独立候选，默认仍关闭，不合入正式版。独立分支已重基正式发布点 `88578c91ab19d44eecddcfae096d37dc917ef1f4`。此前中性保护只是失败路径；当前已有视频像素来源、产品接线和独立试验包装配源码。首轮Native类型错误已修正，d4f9d6b的真实Windows运行已通过Host／生产Native编译及1674项回归；试验包自检／owner阶段失败，仍无验收包，D3D11／DWM可见结果未通过。4a9d4ee与d4f9d6b均不可作为已成功预览包供验收。
+这是 v0.4.0 之后的独立候选，默认仍关闭，不合入正式版。独立分支已重基正式发布点 `88578c91ab19d44eecddcfae096d37dc917ef1f4`。当前已有视频像素来源、产品接线和独立试验包装配源码。d028f77的真实Windows运行已通过Host／生产Native编译、1685项回归及包内自检（ffiLoaded=true）；2233文件三阶段全同，但owner90秒超时且无报告，仍无验收包，D3D11／DWM可见结果未通过。此前候选均不能作为成功预览包供验收。
 
 ## 合成路径与必要影响面
 
@@ -73,13 +73,21 @@ $previewCommit = (git rev-parse HEAD).Trim()
 
 `tools/windows-native-preview-trial.cjs` 只读当前提交 Git blob，在全新独立目录复制标准载荷，再添加 native-media 模块／依赖、显式入口、探针和来源文件。标准文件字节与默认入口保持原样；独立 `native-preview-trial.json` 绑定源提交、标准 build-manifest、生成器、依赖与完整文件集合。它是额外覆盖来源合同，不将新文件冒充为标准构建输入。试验 ZIP 使用提交和 run 唯一名称，不覆盖正式安装或已有 artifact。
 
-CI必须重新解包该ZIP，用**包内固定Electron44.4.2 x64**执行自检：完整文件与生产helper来源、固定DLL、Koffi实际载入／系统函数调用和DWM／WinRT FFI签名绑定。`windows-native-preview-process.cjs`逐个持有子进程，明确继承Node／GUI模式，等待真实close与输出排空后才读报告；自检45秒、owner90秒，超时仅终止所属子进程并记录结果。exit0、自检回执的ffiLoaded=true／sourceCommit及后续唯一final end/PASS／ownedExitConfirmed必须全部满足；提前写PASS后进程exit非零仍失败，不用PowerShell旧LASTEXITCODE判定GUI进程完成。成功外部回执包含ZIP SHA-256、独立manifest、自检JSON、进程完成后的acceptance JSON及owner JSONL；profile／媒体不进入分发包。
+CI必须重新解包该ZIP，用**包内固定Electron44.4.2 x64**执行自检：完整文件与生产helper来源、固定DLL、Koffi实际载入／系统函数调用和DWM／WinRT FFI签名绑定。`windows-native-preview-process.cjs`逐个持有子进程，记录实际executable／argv及Node／GUI模式，等待真实close与输出排空后才读报告；自检45秒、GUI入口smoke15秒、完整owner90秒，超时仅终止所属子进程并记录结果。exit0、自检回执的ffiLoaded=true／sourceCommit、GUI描述scope及后续唯一final end/PASS／ownedExitConfirmed必须全部满足；描述通过不代替owner A/B，提前写PASS后进程exit非零仍失败。成功外部回执包含ZIP SHA-256、独立manifest、自检JSON、GUI入口描述、进程完成后的acceptance JSON及owner JSONL；profile／媒体不进入分发包。
 
-在解包后、自检后、owner后分别保存物理文件清单、SHA及新增／缺失／改变的相对文件名，也记录与上一阶段的差异。每阶段重新运行原完整性检查；原固定两处小debug.log例外保持，原始诊断差异仍显示这些日志。stdout／stderr各最多8MiB，PID／exit／close／timeout另存；超限同样失败。失败时只上传独立diagnostics artifact（1天），不上传验收包，不生成替代owner PASS，不上传profile／Y4M。
+在解包后、自检后、入口smoke后、owner后分别保存物理文件清单、SHA及新增／缺失／改变的相对文件名，也记录与上一阶段的差异。每阶段重新运行原完整性检查；原固定两处小debug.log例外保持，原始诊断差异仍显示这些日志。stdout／stderr各最多8MiB，实际命令／PID／启动／exit／close／timeout另存；命令仅为受控本地探针，不记录产品播放URL或账户。若已有owner-probe.jsonl，则在成功或失败后额外保存其有界物理文件为owner-stages.jsonl（最多1MiB），不复制输出目录其他内容。失败仅上传独立diagnostics artifact（1天），不上传验收包，不生成替代owner PASS，不上传profile／Y4M。
 
 Electron会把ASAR暴露成虚拟目录，连其Node模式也启用此wrapper；普通Node构建清单和Electron的node:fs遍历因此可能看到不同集合。校验器只用Electron内置`original-fs`读取物理payload及归档字节，不全局关闭应用ASAR，不增加归档豁免。依据：[官方ASAR／original-fs说明](https://electronjs.org/docs/latest/tutorial/asar-archives)、[固定Node初始化](https://github.com/electron/electron/blob/v44.4.2/lib/node/init.ts)、[固定wrapper](https://github.com/electron/electron/blob/v44.4.2/lib/node/asar-fs-wrapper.ts)。同版官方LinuxElectron经发行SHA验证的真实复现为物理1个default_app.asar、旧视图13个虚拟成员，归档SHA不变，修后清单稳定；这是FS验证，不是Windows原生验收。旧Windows失败日志未保留逐项差异，不能宣称排除其他物理变化，新三阶段诊断用于确认。
 
-d4f9d6b的Host／Native和初始静态载荷通过不等于其试验包通过；修后的Windows自检／owner A/B及最终ZIP仍须重跑，DWM／Peek另验。不自行触发workflow，不合main，不发布正式Release。
+d028f77的真实Windows自检和三阶段清单已确认通过；它的owner90秒超时仍使试验包不通过。入口修复后的实际Windows smoke／owner A/B及最终ZIP须重跑，DWM／Peek另验。不自行触发workflow，不合main，不发布正式Release。
+
+## Electron默认启动器与探针入口
+
+固定[default_app/main.ts](https://github.com/electron/electron/blob/v44.4.2/default_app/main.ts)设置process.defaultApp后，用await import加载应用入口；CJS被ESM导入时require.main不等于该模块。原脚本只检查require.main===module，可能仅导出函数而不启动run，Electron仍保持主循环。受控实测用同版真实LinuxElectron Node模式、按此defaultApp／argv合同导入旧源码，--describe静默；修后输出scope。该实验不使用GUI，也不声称复现了Windows桌面超时。
+
+当前仅补认Electron defaultApp且argv[1]的物理路径等于当前脚本的直接调用；普通ESM库导入、argv不符均不执行。--describe在GUI模式先排空输出再明确exit0，不创建窗口或播放器。实际CI使用同一GUI默认启动路径先做该smoke，再执行完整owner；owner仍要求Windows x64固定Electron与browser进程。
+
+stderr在入口分派前记录module-evaluated及判断结果，在调用run前记录entry及参数形状，随后依次记录预检、source-bound、profile-configured、app-ready-wait／app-ready、窗口、helper、采样、end-file和cleanup。日志不含像素／媒体身份／账户。结合实际argv和部分owner阶段报告，可以区分入口未触发、预检失败、ready未完成、helper启动／事件或退出等待；不得单凭无输出判定无交互桌面、GPU或DWM原因。修后Windows实际阶段尚待观察。
 
 ## 解包后的最小 Windows 复验
 

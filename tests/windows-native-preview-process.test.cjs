@@ -1,6 +1,6 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os'),cp=require('node:child_process');
-const {runChild,readOwnerReport}=require('../tools/windows-native-preview-process.cjs');
+const {runChild,readOwnerReport,preserveOwnerStages}=require('../tools/windows-native-preview-process.cjs');
 const commit='a'.repeat(40);
 function fixture(t){const directory=fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(),'ete-preview process ')));t.after(()=>fs.rmSync(directory,{recursive:true,force:true}));return directory;}
 function records(){return [{event:'begin',sourceCommit:commit},{event:'end',result:'PASS',ownedExitConfirmed:true,visibleDwmAcceptance:'NOT_ASSESSED'}];}
@@ -9,7 +9,14 @@ test('acceptance waits for actual close and captures late stdout/stderr before r
  const script=`const fs=require('node:fs');console.log('started');setTimeout(()=>{fs.writeFileSync(process.argv[1],${JSON.stringify(records().map(row=>JSON.stringify(row)).join('\n'))});console.log('late stdout');console.error('late stderr');},120);`;
  const result=await runChild(process.execPath,['-e',script,file],{directory,name:'late'});
  assert.equal(result.closed,true);assert.equal(result.exitCode,0);assert.equal(readOwnerReport(directory,commit).result,'PASS');
+ assert.equal(result.executable,process.execPath);assert.deepEqual(result.argv,['-e',script,file]);assert.equal(result.mode,'gui');
  assert.match(fs.readFileSync(path.join(directory,'late.stdout.log'),'utf8'),/late stdout/);assert.match(fs.readFileSync(path.join(directory,'late.stderr.log'),'utf8'),/late stderr/);
+});
+test('failure diagnostics retain only the bounded owner stage report, never its media or profile',t=>{
+ const directory=fixture(t),output=path.join(directory,'owner'),diagnostics=path.join(directory,'diagnostics');fs.mkdirSync(output);fs.mkdirSync(diagnostics);
+ assert.equal(preserveOwnerStages(output,diagnostics),false);
+ const body=JSON.stringify({event:'begin',sourceCommit:commit})+'\n';fs.writeFileSync(path.join(output,'owner-probe.jsonl'),body);fs.writeFileSync(path.join(output,'A.y4m'),'synthetic');fs.mkdirSync(path.join(output,'userData'));
+ assert.equal(preserveOwnerStages(output,diagnostics),true);assert.deepEqual(fs.readdirSync(diagnostics),['owner-stages.jsonl']);assert.equal(fs.readFileSync(path.join(diagnostics,'owner-stages.jsonl'),'utf8'),body);
 });
 test('an early PASS file cannot mask a later nonzero process exit',async t=>{
  const directory=fixture(t),file=path.join(directory,'owner-probe.jsonl');

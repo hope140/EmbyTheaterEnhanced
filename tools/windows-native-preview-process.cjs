@@ -6,7 +6,9 @@ function failure(code){const error=Error(code);error.code=code;return error;}
 async function runChild(executable,args,{directory,name,nodeMode=false,timeoutMs=60000,closeMs=5000}={}){
     const env={...process.env};if(nodeMode)env.ELECTRON_RUN_AS_NODE='1';else delete env.ELECTRON_RUN_AS_NODE;
     const streams=['stdout','stderr'].map(kind=>fs.openSync(path.join(directory,name+'.'+kind+'.log'),'wx'));
-    const record={stage:name,started:false,startedAt:null,pid:null,exitCode:null,signal:null,exitedAt:null,closed:false,closedAt:null,timedOut:false,outputLimit:false,spawnError:null,bytes:{stdout:0,stderr:0}};
+    // These are only source-bound local probe arguments, never playback URLs,
+    // account data or an existing user's profile.
+    const record={stage:name,executable,argv:args.slice(),mode:nodeMode?'node':'gui',started:false,startedAt:null,pid:null,exitCode:null,signal:null,exitedAt:null,closed:false,closedAt:null,timedOut:false,outputLimit:false,spawnError:null,bytes:{stdout:0,stderr:0}};
     let child,timer,closeTimer;
     try{
         await new Promise((resolve,reject)=>{
@@ -44,6 +46,11 @@ function readOwnerReport(directory,commit){
     if(begin.length!==1||begin[0].sourceCommit!==commit||end.length!==1||rows.at(-1)!==end[0]||end[0].result!=='PASS'||end[0].ownedExitConfirmed!==true||end[0].visibleDwmAcceptance!=='NOT_ASSESSED'||rows.some(row=>row.event==='failure'))throw failure('OWNER_REPORT_NOT_ACCEPTED');
     return end[0];
 }
+function preserveOwnerStages(ownerOutput,directory){
+    const file=path.join(ownerOutput,'owner-probe.jsonl');if(!fs.existsSync(file))return false;
+    const stat=fs.lstatSync(file);if(!stat.isFile()||stat.isSymbolicLink()||stat.size>1024*1024)throw failure('OWNER_STAGE_REPORT_NOT_PHYSICAL');
+    fs.copyFileSync(file,path.join(directory,'owner-stages.jsonl'),fs.constants.COPYFILE_EXCL);return true;
+}
 async function accept(runtime,ownerOutput,commit,directory){
     runtime=path.resolve(runtime);ownerOutput=path.resolve(ownerOutput);directory=path.resolve(directory);
     for(const target of [ownerOutput,directory]){
@@ -62,17 +69,25 @@ async function accept(runtime,ownerOutput,commit,directory){
         check.verify(runtime,commit,{loadNative:false});
         const receipt=JSON.parse(fs.readFileSync(path.join(directory,'selfcheck.stdout.log'),'utf8').trim());
         if(receipt.status!=='passed'||receipt.sourceCommit!==commit||receipt.ffiLoaded!==true||receipt.defaultEnabled!==false||receipt.standardPayloadUnchanged!==true)throw failure('SELFCHECK_RECEIPT_NOT_ACCEPTED');
+        // Exercise the actual GUI/default_app -> ESM-imported CJS entry before
+        // starting the full owner probe. Describing scope does not accept video.
+        stage='entry-smoke';
+        try{await runChild(electron,[path.join(runtime,'trial/owner-probe.cjs'),'--describe'],{directory,name:stage,timeoutMs:15000});}
+        finally{snapshot('after-entry-smoke');}
+        check.verify(runtime,commit,{loadNative:false});
+        const entry=JSON.parse(fs.readFileSync(path.join(directory,'entry-smoke.stdout.log'),'utf8').trim());
+        if(entry.electron!=='44.4.2'||entry.scope!=='production-helper-owner-snapshot'||entry.visibleDwmAcceptance!=='NOT_ASSESSED')throw failure('GUI_ENTRY_RECEIPT_NOT_ACCEPTED');
         stage='owner';
         try{await runChild(electron,[path.join(runtime,'trial/owner-probe.cjs'),runtime,ownerOutput,commit],{directory,name:stage,timeoutMs:90000});}
-        finally{snapshot('after-owner');}
+        finally{snapshot('after-owner');preserveOwnerStages(ownerOutput,directory);}
         check.verify(runtime,commit,{loadNative:false});
         const owner=readOwnerReport(ownerOutput,commit);
-        fs.writeFileSync(path.join(directory,'acceptance.json'),JSON.stringify({status:'passed',sourceCommit:commit,selfcheck:receipt,owner,visibleDwmAcceptance:'NOT_ASSESSED'},null,2)+'\n',{flag:'wx'});
+        fs.writeFileSync(path.join(directory,'acceptance.json'),JSON.stringify({status:'passed',sourceCommit:commit,selfcheck:receipt,guiEntry:entry,owner,visibleDwmAcceptance:'NOT_ASSESSED'},null,2)+'\n',{flag:'wx'});
         return receipt;
     }catch(error){
         const record={status:'failed',stage,code:error.code||'TRIAL_ACCEPTANCE_FAILED',message:error.message,details:error.details||null};
         fs.writeFileSync(path.join(directory,'failure.json'),JSON.stringify(record,null,2)+'\n',{flag:'wx'});throw error;
     }
 }
-module.exports={runChild,readOwnerReport,accept};
+module.exports={runChild,readOwnerReport,preserveOwnerStages,accept};
 if(require.main===module)accept(...process.argv.slice(2)).then(receipt=>console.log(JSON.stringify(receipt))).catch(error=>{console.error(JSON.stringify({code:error.code||'TRIAL_ACCEPTANCE_FAILED',details:error.details||null}));process.exitCode=1;});

@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-24 — 修正Electron默认启动器下的owner入口
+
+d028f77的真实Windows构建已通过1685项测试／生产Native编译，自检进程exit0且ffiLoaded=true，2233文件在三阶段逐项size／SHA完全一致；当前阻碍为owner子进程90秒超时、无独立报告，未生成验收包。不能继续把已通过的FFI或文件集合当作失败原因，也没有GPU／DWM根因证据。
+
+发现入口合同缺口：固定Electron44.4.2默认启动器使用ESM import加载CJS，原require.main===module不成立时探针仅导出函数而不启动。按官方loader的defaultApp／argv合同，在真实同版LinuxElectron Node模式受控导入复现旧--describe静默、修后输出描述；不是Windows GUI超时复现。现仅在Electron defaultApp且argv[1]物理路径等于当前脚本时补直接入口，普通库导入不执行。CI新增实际GUI --describe入口smoke并要求exit0／scope，随后仍必须完成原90秒owner A/B；不扩大超时、不跳过门禁。记录实际executable／argv／模式，以及module-evaluated、entry、预检、ready、窗口、helper、采样和退出阶段；失败保留仅有界owner阶段JSONL，不复制profile／媒体。定向49项：48pass／0fail／1 Linux跳过的Windows GUI用例；公开离线1603项／1592pass／0fail／11平台skip，431 JS／50 PowerShell语法、有限模式及diff检查通过。默认关闭、两按钮及产品播放源码保持，修后Windows入口／owner／DWM仍待验证，详见[当前合同](WINDOWS_PREVIEW_SNAPSHOT_PROTOCOL.md)。
+
 ## 2026-10-24 — 试验包物理清单与进程完成顺序
 
 d4f9d6b的真实Windows运行已通过Host、固定GCC16.1生产Native编译、1674项回归、基础安装器和官方Koffi92文件，试验副本初始2233文件静态校验通过；包内自检／owner阶段失败，无验收包。日志中父脚本先读不存在的owner报告，Electron稍后才输出file set mismatch，旧实现没有保存实际子进程完成状态或逐项差异。
