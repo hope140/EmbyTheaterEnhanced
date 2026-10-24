@@ -67,7 +67,7 @@ function cleanSource(expected) {
 }
 function stageArtifacts(output) {
     const destination = path.join(output, 'artifact');
-    fs.mkdirSync(destination, {recursive: true});
+    fs.mkdirSync(destination);
     const files = ['session.json'];
     for (const suite of ['plan', 'host', 'fixture-prep']) {
         for (const file of ['stdout.txt', 'stderr.txt', 'process.json']) files.push('drivers/' + suite + '/' + file);
@@ -159,9 +159,12 @@ function main(args = process.argv.slice(2)) {
             session.conclusion = 'failed';session.artifactFailure = {message: error.message, code: error.code};
             json(path.join(output, 'session.json'), session);
             const stagedSession = path.join(output, 'artifact/session.json');
-            if (fs.existsSync(stagedSession) && !fs.lstatSync(stagedSession).isSymbolicLink()) {
-                json(stagedSession, session);fs.rmSync(path.join(output, 'artifact/manifest.json'), {force: true});
-            }
+            try {
+                physicalDirectory(path.dirname(stagedSession));
+                if (fs.existsSync(stagedSession) && fs.lstatSync(stagedSession).isFile() && !fs.lstatSync(stagedSession).isSymbolicLink()) {
+                    json(stagedSession, session);fs.rmSync(path.join(output, 'artifact/manifest.json'), {force: true});
+                }
+            } catch {console.error('Failed artifact directory was not updated.');}
             if (!failure) failure = error;else console.error('Artifact staging failed: ' + error.message);
         }
     }

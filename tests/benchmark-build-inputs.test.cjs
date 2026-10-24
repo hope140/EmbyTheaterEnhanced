@@ -53,6 +53,9 @@ test('artifact whitelist keeps diagnostics but excludes source trees and object 
     fs.writeFileSync(path.join(real, 'raw.json'), '{}');fs.mkdirSync(path.join(redirected, 'runs'));
     fs.symlinkSync(real, path.join(redirected, 'runs/host'), process.platform === 'win32' ? 'junction' : 'dir');
     assert.throws(() => coordinator.stageArtifacts(redirected), /Physical|redirect/);
+    const destinationAlias = temporary(t), outside = temporary(t);
+    fs.symlinkSync(outside, path.join(destinationAlias, 'artifact'), process.platform === 'win32' ? 'junction' : 'dir');
+    assert.throws(() => coordinator.stageArtifacts(destinationAlias));assert.deepEqual(fs.readdirSync(outside), []);
 });
 test('fixture preparation benchmark compares equal trees and validates every independent copy', t => {
     const fresh = createFactory('fresh'), seed = createFactory('seed');
