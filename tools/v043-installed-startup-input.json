@@ -1,9 +1,9 @@
 {
-  "enabled": false,
+  "enabled": true,
   "sourceCommit": "b8938f4ba9149e700ea1437b3f5fbe3535a2f5e5",
-  "buildRunId": null,
-  "installerFileName": null,
-  "artifactId": null,
-  "artifactZipSha256": null,
-  "installerSha256": null
+  "buildRunId": "40124678404",
+  "installerFileName": "EmbyTheaterEnhanced-0.4.3-test-b8938f4ba914-40124678404-1-win-x64-setup.exe",
+  "artifactId": "12573411870",
+  "artifactZipSha256": "60eb9f6eb306df3e03db910f4f5af7bd05c1a9237c73b5688df12da3ed5dad94",
+  "installerSha256": "40a99cc4281c9a7d958d424902982f781c12072a183013b9002713fa24c7af62"
 }
