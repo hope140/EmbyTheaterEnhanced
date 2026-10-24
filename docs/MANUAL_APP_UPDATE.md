@@ -6,11 +6,15 @@
 
 原 About 的维护区已经有手动检查、GitHub / Releases 外链和检查结果；原 `maintenance.js` 请求固定仓库的 Latest API、比较版本，但未再次核对 draft/prerelease，也没有下载、说明正文或取消。设置导航仍沿现有 About 路由。服务端 API 中的系统更新接口属于 Emby 服务器，与本功能无关。
 
-现在仅用户点击“检查更新”请求官方元数据，原位显示当前版本、正式渠道版本和可展开的说明；不弹通知、不在进入页面或启动时检查。说明以纯文本展示，不执行 HTML/Markdown、图片或链接。当前版本高于正式渠道时明确显示“高于正式渠道”，不误称最新或提供降级下载。
+现在仅用户点击“检查更新”请求官方元数据，原位显示当前版本、正式渠道版本和可展开的说明；不弹通知、不在进入页面或启动时检查。说明默认作为文本，有限识别 HTTP/HTTPS 链接，不执行 HTML、脚本或图片。当前版本高于正式渠道时明确显示“高于正式渠道”，不误称最新或提供降级下载。
 
 发现更高正式版且安装附件身份可用后才启用“下载更新”。点击后重新向官方确认准确 Tag 的附件身份，再由 main 打开目录选择器。主界面没有下载源菜单或自定义地址。进度和取消属于这次点击启动的操作；实际来源、文件名、保存目录和 SHA-256 在下载详情中展示。下载完成只给出正常退出客户端、用户自行运行安装器的说明；没有执行、提权、重启、替换安装、管理员持久设置或凭据操作。
 
 “取消检查”仅在本次检查进行中显示，“取消下载”覆盖本次下载的官方重核验、目录选择与传输阶段。点击后禁用以去重，仍等待原操作收尾；闲置、已是最新、完成、错误及页面退休时隐藏。离页继续取消所属操作、移除进度监听并使迟到回复失效。更新说明与下载详情保留原生 `details/summary`，局部统一箭头、间距、正文换行及明暗主题焦点；键盘 Tab 可达，Enter／Space 展开或收起，不引入额外菜单或弹窗。
+
+说明中的 `[文字](http/https地址)` 显示简短可点击文字；裸 HTTP/HTTPS 链接也可点击，过长地址显示主机加省略号，完整目标保留在悬停提示及无障碍名称中。其余 Markdown（含标题）、HTML、图片语法均保持文本，不加入完整 Markdown 引擎、图片请求或网页预览。渲染仅创建文本节点及固定属性的 `a` 元素，不使用 `innerHTML`；main 与 renderer 共用同一受限解析器。正文上限仍为65536字符，URL最多2048字符，拒绝非法地址、控制／空白／反斜线、嵌入凭据和非HTTP(S)协议。
+
+正文链接仅用户点击或Enter激活，经单独 IPC 请求系统浏览器；中键／Ctrl点击同样拦截客户端默认导航。main 校验当前打包主frame、完整单字段参数，并要求地址属于本次官方检查正文识别出的集合；新检查及关闭退休旧集合。原固定仓库发布页 IPC 白名单保持。文档、compare及安装附件URL均可作为正文链接在系统浏览器打开；浏览器下载不计入应用“校验完成”状态，不在客户端启动安装。打开失败只在说明下原位反馈，离页后的迟到结果不改写页面。
 
 ## 正式渠道与五附件
 
@@ -52,7 +56,7 @@
 
 ## 验证与待验收
 
-`node --test tests/manual-app-update*.test.cjs tests/settings-visual-system.test.cjs tests/settings-night-audit.test.cjs` 使用注入的受控 HTTPS 响应、合成非可执行文本、临时文件和 AMD 控制器模拟，覆盖 SemVer、稳定渠道、官方重核验、错误大小/哈希、危险重定向、证书失败、HTTP 拒绝不回退、串行备用、进度取消、同名保护、退出与迟到回复、纯文本 notes 和无自动安装。Windows 条件分支会在 Windows 测试中回读最终文件的 Internet-zone ADS；Linux 结果不替代该分支。
+`node --test tests/release-note-links.test.cjs tests/manual-app-update*.test.cjs tests/settings-visual-system.test.cjs tests/settings-night-audit.test.cjs` 使用注入的受控 HTTPS 响应、合成非可执行文本、临时文件和 AMD 控制器模拟，覆盖 SemVer、稳定渠道、官方重核验、错误大小/哈希、危险重定向、证书失败、HTTP 拒绝不回退、串行备用、进度取消、同名保护、退出与迟到回复、受限说明链接及恶意内容、无自动安装。Windows 条件分支会在 Windows 测试中回读最终文件的 Internet-zone ADS；Linux 结果不替代该分支。
 
 真实在线证据、Windows 整包构建、GUI、系统安装、代理大文件与长期稳定性分别记录。单元测试成功不代表这些范围已通过。待完成：候选代理名单最终确认、Windows ADS/no-replace/目录对话框及实际 Electron UI 验证；不访问真实 NAS 或正式安装目录。
 
@@ -68,7 +72,7 @@
 node .\electronapp\enhanced\manual-app-update-selftest.js
 ```
 
-此入口只加载包内更新模块、生成不可执行的合成文本、在新建临时目录验证下载写入／校验／同名保护／取消／清理及匿名顺序源／IPC 拒绝，8项检查结束删除所属临时目录；真实网络请求为零，无应用 bootstrap、profile、Host、Electron GUI 或安装器执行。在 Windows 会实际写／回读该合成文件的 Zone 3。输出 `packageManifestBinding` 核对5份实际模块与本包 build-manifest，并记录 sourceCommit；这是包内字节绑定，不是独立签名。仓库直接运行缺 manifest 时明确 `not-present / UNKNOWN`。
+此入口只加载包内更新模块、生成不可执行的合成文本、在新建临时目录验证下载写入／校验／同名保护／取消／清理及匿名顺序源／IPC 拒绝，8项检查结束删除所属临时目录；真实网络请求为零，无应用 bootstrap、profile、Host、Electron GUI 或安装器执行。在 Windows 会实际写／回读该合成文件的 Zone 3。输出 `packageManifestBinding` 核对6份实际模块（含共享说明链接解析器）与本包 build-manifest，并记录 sourceCommit；这是包内字节绑定，不是独立签名。仓库直接运行缺 manifest 时明确 `not-present / UNKNOWN`。
 
 本分支的 `ci-windows-test-package.ps1` 已在完整runtime验证后、安装器编译前，用现有锁定 Node 自动调用此包内入口，要求 sourceCommit匹配、8项成功、零网络／profile／安装执行及临时文件清理；失败不继续打包。结果存为测试 artifact 的 `manual-app-update-selftest.json`，不增加用户 Release 的五附件合同。此接线尚待集中安排的真实Windows构建执行；Linux源文件或合成manifest试验不冒充已打出的Windows包。
 

@@ -259,7 +259,7 @@ test('About loads environment on entry and checks updates only after a user clic
     const source = readPluginFile('about.js');
     const context = {
         define: function (_dependencies, factory) {
-            AboutView = factory({show: function () { loadingCalls.push('show'); }, hide: function () { loadingCalls.push('hide'); }}, BaseView);
+            AboutView = factory({show: function () { loadingCalls.push('show'); }, hide: function () { loadingCalls.push('hide'); }}, BaseView, require('../src/electronapp/enhanced/release-note-links'));
         },
         window: {
             ipc: {
@@ -329,7 +329,7 @@ test('About renders the exact trusted copy snapshot and ignores an older pending
     BaseView.prototype.onPause = function () {};
     let AboutView;
     const context = {
-        define(_dependencies, factory) { AboutView = factory({show() { loadingCalls.push('show'); }, hide() { loadingCalls.push('hide'); }}, BaseView); },
+        define(_dependencies, factory) { AboutView = factory({show() { loadingCalls.push('show'); }, hide() { loadingCalls.push('hide'); }}, BaseView, require('../src/electronapp/enhanced/release-note-links')); },
         window: {ipc: {invoke(channel) {
             return new Promise(resolve => pending.push({channel, resolve}));
         }}}
@@ -376,7 +376,7 @@ test('About ignores an older copy rejection and keeps the current load loading s
     BaseView.prototype.onPause = function () {};
     let AboutView;
     const context = {
-        define(_dependencies, factory) { AboutView = factory({show() { loadingCalls.push('show'); }, hide() { loadingCalls.push('hide'); }}, BaseView); },
+        define(_dependencies, factory) { AboutView = factory({show() { loadingCalls.push('show'); }, hide() { loadingCalls.push('hide'); }}, BaseView, require('../src/electronapp/enhanced/release-note-links')); },
         window: {ipc: {invoke(channel) {
             return new Promise((resolve, reject) => pending.push({channel, resolve, reject}));
         }}}

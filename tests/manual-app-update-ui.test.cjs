@@ -20,7 +20,7 @@ function harness() {
     BaseView.prototype.destroy = function () { this.view = null; };
     let AboutView;
     vm.runInNewContext(fs.readFileSync(path.resolve(__dirname, '../src/electronapp/plugins/mpvplayer/about.js'), 'utf8'), {
-        define(_deps, factory) { AboutView = factory({show() {}, hide() {}}, BaseView); },
+        define(_deps, factory) { AboutView = factory({show() {}, hide() {}}, BaseView, require('../src/electronapp/enhanced/release-note-links')); },
         window: {ipc: {
             invoke(channel, payload) { return new Promise((resolve, reject) => pending.push({channel, payload, resolve, reject})); },
             on(channel, fn) { listeners.set(channel, fn); },
@@ -178,4 +178,38 @@ test('click deduplication does not suppress pause or destroy cleanup after a fai
         h.pending[2].resolve({status: 'cancelled'}); h.pending[0].resolve({status: 'cancelled'}); await work;
         assert.equal(h.controller.updating, false);
     }
+});
+
+test('note click and middle-click prevent native navigation and use only the separate link IPC', async () => {
+    const h = harness(), notes = h.view.querySelector('.aboutReleaseNotes');
+    const url = 'https://github.com/hope140/EmbyTheaterEnhanced/compare/v0.4.0...v0.4.1';
+    const anchor = {getAttribute: () => url}; notes.contains = node => node === anchor;
+    for (const type of ['click', 'auxclick']) {
+        let prevented = false, stopped = false;
+        notes.listeners[type]({type, button: type === 'auxclick' ? 1 : 0, target: {closest: () => anchor},
+            preventDefault() { prevented = true; }, stopPropagation() { stopped = true; }});
+        assert.equal(prevented, true); assert.equal(stopped, true);
+        const request = h.pending.at(-1);
+        assert.equal(request.channel, 'enhanced-maintenance-open-note-link');
+        assert.equal(request.payload.url, url);
+        request.resolve({status: 'opened'}); await tick();
+    }
+    const count = h.pending.length;
+    notes.listeners.auxclick({type: 'auxclick', button: 2, target: {closest: () => anchor}, preventDefault() {}, stopPropagation() {}});
+    await h.controller.openNoteLink('file:///C:/test');
+    assert.equal(h.pending.length, count);
+});
+
+test('note link failures are inline and stale replies cannot change a resumed or destroyed page', async () => {
+    const h = harness();
+    const opening = h.controller.openNoteLink('https://example.invalid/');
+    h.pending[0].resolve({status: 'error'}); await opening;
+    assert.match(h.view.querySelector('.aboutNoteLinkState').textContent, /无法打开/);
+    const late = h.controller.openNoteLink('https://example.invalid/');
+    h.controller.onPause();
+    h.view.querySelector('.aboutNoteLinkState').textContent = 'new page';
+    h.pending[1].resolve({status: 'error'}); await late;
+    assert.equal(h.view.querySelector('.aboutNoteLinkState').textContent, 'new page');
+    h.controller.destroy(); await h.controller.openNoteLink('https://example.invalid/');
+    assert.equal(h.pending.length, 2);
 });

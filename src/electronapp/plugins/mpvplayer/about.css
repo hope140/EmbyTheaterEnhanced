@@ -61,6 +61,7 @@
     white-space: pre-wrap;
 }
 .about-settings-page .about-update > .btnDownloadUpdate { margin-block: .4em; }
+.about-settings-page .aboutNoteLink { color: var(--theme-accent-text-color, inherit); text-decoration: underline; }
 .about-settings-page .aboutDownloadProgress { display: block; width: 100%; margin-block: .8em; }
 .about-settings-page .aboutDownloadProgress[hidden] { display: none; }
 

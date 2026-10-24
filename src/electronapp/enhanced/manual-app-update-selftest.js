@@ -21,7 +21,7 @@ function packageBinding() {
     if (!fs.existsSync(manifestPath)) return {status: 'not-present', sourceCommit: 'UNKNOWN'};
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
     assert.match(manifest.sourceCommit, /^[0-9a-f]{40}$/);
-    for (const name of ['manual-app-update.js', 'maintenance.js', 'maintenance-ipc.js', 'renderer-boundary.js', 'manual-app-update-selftest.js']) {
+    for (const name of ['manual-app-update.js', 'maintenance.js', 'maintenance-ipc.js', 'renderer-boundary.js', 'release-note-links.js', 'manual-app-update-selftest.js']) {
         const relative = 'electronapp/enhanced/' + name;
         const entries = manifest.files.filter(entry => entry.path === relative);
         assert.equal(entries.length, 1);

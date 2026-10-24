@@ -1,4 +1,4 @@
-define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!modules/listview/listview', 'css!./enhanced-settings', 'css!./about'], function (loading, BaseView) {
+define(['loading', 'baseView', '../../enhanced/release-note-links', 'emby-button', 'emby-scroller', 'css!modules/listview/listview', 'css!./enhanced-settings', 'css!./about'], function (loading, BaseView, noteLinks) {
     'use strict';
 
     var CHANNELS = {
@@ -6,6 +6,7 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!modules/list
         copy: 'enhanced-maintenance-copy-environment',
         checkUpdate: 'enhanced-maintenance-check-update',
         releases: 'enhanced-maintenance-open-releases',
+        noteLink: 'enhanced-maintenance-open-note-link',
         download: 'enhanced-maintenance-download-update',
         cancel: 'enhanced-maintenance-cancel-update',
         progress: 'enhanced-maintenance-update-progress',
@@ -52,6 +53,17 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!modules/list
         view.querySelector('.btnOpenReleases').addEventListener('click', this.openReleases.bind(this));
         view.querySelector('.btnImportKernel').addEventListener('click', this.importKernel.bind(this));
         view.querySelector('.btnSelectBaseline').addEventListener('click', this.selectBaseline.bind(this));
+        var notes = view.querySelector('.aboutReleaseNotes');
+        var openNote = function (event) {
+            var link = event.target && typeof event.target.closest === 'function' ? event.target.closest('a.aboutNoteLink') : null;
+            if (!link || !notes.contains(link)) return;
+            event.preventDefault();
+            event.stopPropagation();
+            if (event.type === 'auxclick' && event.button !== 1) return;
+            this.openNoteLink(link.getAttribute('href'));
+        }.bind(this);
+        notes.addEventListener('click', openNote);
+        notes.addEventListener('auxclick', openNote);
         view.querySelector('.aboutReleaseLink').addEventListener('click', function (event) {
             event.preventDefault();
             this.openReleases();
@@ -112,13 +124,14 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!modules/list
         view.querySelector('.aboutDownloadDetails').textContent = '尚未开始下载。';
         update.hidden = true;
         setStatus(state, '正在检查…', false);
+        setStatus(view.querySelector('.aboutNoteLinkState'), '', false);
         return request(CHANNELS.checkUpdate).then(function (response) {
             if (requestId !== this.updateRequestId) return;
             if (response && ['latest', 'ahead', 'update-available'].indexOf(response.status) !== -1) {
                 setValue(view, '.aboutCurrentVersion', response.currentVersion);
                 setValue(view, '.aboutLatestVersion', response.latestVersion);
                 view.querySelector('.aboutReleaseLink').setAttribute('data-release-url', response.releaseUrl || '');
-                view.querySelector('.aboutReleaseNotes').textContent = response.notes || '此版本没有更新说明。';
+                noteLinks.render(view.querySelector('.aboutReleaseNotes'), response.notes || '此版本没有更新说明。');
                 view.querySelector('.btnDownloadUpdate').disabled = response.status !== 'update-available' || !response.installer;
                 update.hidden = false;
                 var message = response.status === 'latest' ? '已是当前正式版本（' + response.currentVersion + '）。' :
@@ -225,6 +238,18 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!modules/list
     AboutView.prototype.openReleases = function () {
         var link = this.view.querySelector('.aboutReleaseLink');
         request(CHANNELS.releases, {url: link.getAttribute('data-release-url') || ''}).catch(function () {});
+    };
+
+    AboutView.prototype.openNoteLink = function (url) {
+        if (!this.view || !noteLinks.safeUrl(url)) return Promise.resolve();
+        var requestId = this.updateRequestId;
+        return request(CHANNELS.noteLink, {url: url}).catch(function () {
+            return {status: 'error'};
+        }).then(function (result) {
+            if (!this.view || requestId !== this.updateRequestId) return;
+            setStatus(this.view.querySelector('.aboutNoteLinkState'),
+                result && result.status === 'opened' ? '' : '无法打开此链接，请在官方发布页查看。', !(result && result.status === 'opened'));
+        }.bind(this));
     };
 
     AboutView.prototype.renderKernelStatus = function (result) {

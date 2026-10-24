@@ -17,11 +17,11 @@ test('standalone package entry runs offline without application bootstrap or a p
     assert.equal(result.temporaryFilesRemoved, true); assert.equal(result.checks.length, 8);
 });
 
-test('unpacked-source fixture binds its five modules to a synthetic manifest and refuses drift', t => {
+test('unpacked-source fixture binds its six modules to a synthetic manifest and refuses drift', t => {
     const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-package-entry-fixture-')));
     t.after(() => fs.rmSync(root, {recursive: true, force: true}));
     const directory = path.join(root, 'electronapp', 'enhanced'); fs.mkdirSync(directory, {recursive: true});
-    const names = ['manual-app-update.js', 'maintenance.js', 'maintenance-ipc.js', 'renderer-boundary.js', 'manual-app-update-selftest.js'];
+    const names = ['manual-app-update.js', 'maintenance.js', 'maintenance-ipc.js', 'renderer-boundary.js', 'release-note-links.js', 'manual-app-update-selftest.js'];
     const files = names.map(name => {
         const bytes = fs.readFileSync(path.resolve(__dirname, '../src/electronapp/enhanced', name));
         fs.writeFileSync(path.join(directory, name), bytes);

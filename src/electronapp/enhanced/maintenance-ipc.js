@@ -3,12 +3,14 @@
 const maintenance = require('./maintenance');
 const rendererBoundary = require('./renderer-boundary');
 const appUpdate = require('./manual-app-update');
+const noteLinks = require('./release-note-links');
 
 const CHANNELS = Object.freeze({
     GET_INFO: 'enhanced-maintenance-info',
     COPY_ENVIRONMENT: 'enhanced-maintenance-copy-environment',
     CHECK_UPDATE: 'enhanced-maintenance-check-update',
     OPEN_RELEASES: 'enhanced-maintenance-open-releases',
+    OPEN_NOTE_LINK: 'enhanced-maintenance-open-note-link',
     DOWNLOAD: 'enhanced-maintenance-download-update',
     CANCEL: 'enhanced-maintenance-cancel-update',
     PROGRESS: 'enhanced-maintenance-update-progress'
@@ -24,6 +26,7 @@ function register(options) {
     let closing = false;
     let active = null;
     let candidate = null;
+    let checkedNoteUrls = new Set();
     let unregisterPromise = null;
 
     function operation(work) {
@@ -89,6 +92,7 @@ function register(options) {
         if (request !== undefined) return {status: 'error', reason: 'invalid-request'};
         return operation(async function (signal) {
             candidate = null;
+            checkedNoteUrls.clear();
             const info = await appInfo();
             if (signal.aborted) return {status: 'cancelled'};
             const result = await maintenance.checkLatestRelease({
@@ -96,6 +100,9 @@ function register(options) {
                 requestJson: url => (settings.requestJson || appUpdate.requestJson)(url, {signal})
             });
             if (signal.aborted) return {status: 'cancelled'};
+            if (['latest', 'ahead', 'update-available'].includes(result.status)) {
+                checkedNoteUrls = new Set(noteLinks.parse(result.notes).filter(part => part.url).map(part => part.url));
+            }
             if (result.status === 'update-available') candidate = result;
             return result;
         });
@@ -149,6 +156,16 @@ function register(options) {
         });
     });
 
+    registerHandler(CHANNELS.OPEN_NOTE_LINK, async function (request) {
+        if (!request || typeof request !== 'object' || Array.isArray(request) || Object.keys(request).length !== 1 ||
+            !Object.hasOwn(request, 'url') || typeof request.url !== 'string') return {status: 'error', reason: 'invalid-request'};
+        const url = noteLinks.safeUrl(request.url);
+        if (!url || !checkedNoteUrls.has(url)) return {status: 'error', reason: 'invalid-note-link'};
+        if (!shell || typeof shell.openExternal !== 'function') return {status: 'error', reason: 'shell_unavailable'};
+        await Promise.resolve(shell.openExternal(url));
+        return {status: 'opened'};
+    });
+
     registerHandler(CHANNELS.OPEN_RELEASES, async function (request) {
         if (!request || typeof request !== 'object' || Array.isArray(request) ||
             Object.keys(request).length !== 1 || !Object.hasOwn(request, 'url') || typeof request.url !== 'string' || request.url.length > 2048) {
@@ -162,6 +179,7 @@ function register(options) {
     return function unregister() {
         if (unregisterPromise) return unregisterPromise;
         closing = true;
+        checkedNoteUrls.clear();
         if (active) active.controller.abort();
         if (typeof ipcMain.removeHandler === 'function') registered.forEach(function (channel) { ipcMain.removeHandler(channel); });
         unregisterPromise = active ? active.done.then(() => undefined) : Promise.resolve();
