@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const diagnostic = require('../tools/ci-windows-path-diagnostics.cjs');
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 
 test('path diagnostic records raw and physical temporary paths without profile names', () => {
     const report = diagnostic.collect();
@@ -46,7 +47,7 @@ test('diagnostic distinguishes a real junction from a physical directory', () =>
 test('native temporary identity opens normal prefix/settings roots while junctions remain refused', async () => {
     const settings = require('../src/electronapp/enhanced/playback-range-user-settings');
     const prefix = require('../src/electronapp/enhanced/playback-prefix-store');
-    const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-prefix-path-')));
+    const root = temporaryRoot('ete-prefix-path-', ['next-episode-prefix-v1']);
     let store;
     try {
         assert.equal(diagnostic.inspectPath(root).resolvedEqualsNative, true);

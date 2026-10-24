@@ -1,4 +1,5 @@
 'use strict';
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const test = require('node:test'), assert = require('node:assert/strict');
 const fs = require('node:fs'), path = require('node:path'), vm = require('node:vm');
 const {createSession} = require('../src/electronapp/enhanced/playback-range-session');
@@ -59,7 +60,7 @@ test('a replaced play request cannot append the prior range category while its r
 
 test('a pending atomic index write is excluded from committed byte status until it succeeds', async t => {
     const fsp = require('node:fs/promises'), os = require('node:os');
-    const root = await fsp.realpath(await fsp.mkdtemp(path.join(os.tmpdir(), 'ete-range-commit-status-')));
+    const root = temporaryRoot('ete-range-commit-status-', ['']);
     const store = await require('../src/electronapp/enhanced/playback-range-store').createStore({root, maxBytes: 8, minFreeBytes: 0, blockBytes: 4});
     const identity = {serverId: 's', serverOrigin: 'https://fixture.invalid', accountId: 'a', itemId: 'i', mediaSourceId: 'm', representation: 'r'};
     const lease = await store.acquire(identity, {etag: '"fixed"', total: 8});

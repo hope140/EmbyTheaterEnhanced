@@ -1,4 +1,5 @@
 'use strict';
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -93,7 +94,7 @@ test('new route is explicit, retains immutable c9 baseline tools and collects se
 // files/copy/hash operations; it is not an actual fixed candidate/native run.
 function imageFixture(t) {
     const os = require('node:os'), Module = require('node:module');
-    const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-loader-image-'))); t.after(() => fs.rmSync(root, {recursive: true, force: true}));
+    const root = temporaryRoot('ete-loader-image-'); t.after(() => fs.rmSync(root, {recursive: true, force: true}));
     const repo = path.join(root, 'controls'), baseTools = path.join(root, 'base-tools'), baseline = path.join(root, 'baseline');
     for (const dir of [repo, baseTools, baseline]) fs.mkdirSync(dir);
     const payload = {'build-manifest.json': Buffer.from('immutable-original-manifest'), [LOCK.sourcePath]: Buffer.from('synthetic-loader-bytes'), 'electronapp/libmpv/x64/mpv-1.dll': Buffer.from('synthetic-mpv')};

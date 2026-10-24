@@ -1,4 +1,5 @@
 'use strict';
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 // Integration evidence only: real Alameda/PM/queue/adapter/service/HTTP/store,
 // with an explicitly synthetic helper clock and document. No native decode claim.
 const test = require('node:test'), assert = require('node:assert/strict');
@@ -13,7 +14,7 @@ const waitFor = async (predicate, detail) => {
     assert(predicate(), detail());
 };
 async function automaticCase(t, scenario) {
-    const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-alameda-next-'))), trace = [], timers = new Set(), documentTimers = new Set();
+    const root = temporaryRoot('ete-alameda-next-', ['prefix', 'next-episode-prefix-v1']), trace = [], timers = new Set(), documentTimers = new Set();
     let origin, restoreRequests, service, window;
     // Own cleanup before server/settings setup: one failed path check must not
     // leave HTTP/timers alive or hide the first error behind a later hook.

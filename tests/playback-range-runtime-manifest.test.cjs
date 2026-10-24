@@ -1,4 +1,5 @@
 'use strict';
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -8,7 +9,7 @@ const {CANDIDATE, sha, hashFile, verifyPayload} = require('../tools/playback-ran
 const fixture = require('./helpers/range-runtime-v3-fixture.cjs');
 const inputs = JSON.parse(fs.readFileSync(fixture.filesPath));
 function setup(t) {
-    const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-v3-payload-')));
+    const root = temporaryRoot('ete-v3-payload-');
     t.after(() => fs.rmSync(root, {recursive: true, force: true}));
     for (const [name, encoded] of Object.entries(inputs.payload)) {const file = path.join(root, name); fs.mkdirSync(path.dirname(file), {recursive: true}); fs.writeFileSync(file, Buffer.from(encoded, 'base64'));}
     fs.copyFileSync(fixture.manifestPath, path.join(root, 'build-manifest.json'));

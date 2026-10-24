@@ -1,4 +1,5 @@
 'use strict';
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const fs = require('node:fs/promises');
@@ -12,7 +13,7 @@ const proof = {etag: '"v1"', total: 32};
 const identity = (extra = {}) => ({serverId: 'server', serverOrigin: 'http://fixture.invalid', accountId: 'account', itemId: 'video', mediaSourceId: 'edition', representation: 'static-file', ...extra});
 const deferred = () => {let resolve; const promise = new Promise(r => {resolve = r;}); return {promise, resolve};};
 async function storeFixture(t, extra = {}) {
-    const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'ete-byte-ranges-')));
+    const root = temporaryRoot('ete-byte-ranges-', ['']);
     t.after(() => fs.rm(root, {recursive: true, force: true}));
     const options = {root, blockBytes: 4, maxBytes: 32, minFreeBytes: 0, ...extra};
     const store = await createStore(options); return {store, root, options};
@@ -39,14 +40,14 @@ async function network(t, extra = {}) {
         res.writeHead(behavior.mode === 'ignores-range' ? 200 : 206, headers);
         if (behavior.mode === 'interrupted') {res.write(data.subarray(0, 1)); res.destroy();} else res.end(data);
     });
-    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-    const origin = 'http://127.0.0.1:' + server.address().port;
-    const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'ete-range-proxy-')));
+    const root = temporaryRoot('ete-range-proxy-', ['']);
     const caches = new Set();
     t.after(async () => {
         try {for (const cache of caches) await cache.close();}
         finally {server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); await fs.rm(root, {recursive: true, force: true});}
     });
+    await new Promise((resolve, reject) => {server.once('error', reject); server.listen(0, '127.0.0.1', resolve);});
+    const origin = 'http://127.0.0.1:' + server.address().port;
     const options = {root, blockBytes: 4, maxBytes: 32, minFreeBytes: 0, timeoutMs: 1000, ...extra};
     const cache = await createCache(options); caches.add(cache);
     return {cache, caches, root, options, source: origin + '/media?api_key=synthetic-only', id: identity({serverOrigin: origin}), rows, body, behavior, held, entered};
@@ -191,7 +192,7 @@ test('If-Range matches produce 206; mismatches ignore Range and return the full 
 
 test('OS ownership excludes another process, then recovers committed bytes and interrupted writes after its actual exit', {timeout: 10000}, async t => {
     const {spawn} = require('node:child_process'), {once} = require('node:events');
-    const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'ete-range-crash-')));
+    const root = temporaryRoot('ete-range-crash-', ['']);
     let child, exited;
     t.after(async () => {if (child && child.exitCode === null && child.signalCode === null) child.kill('SIGKILL'); if (exited) await exited; await fs.rm(root, {recursive: true, force: true});});
     const modulePath = require.resolve('../src/electronapp/enhanced/playback-range-store');

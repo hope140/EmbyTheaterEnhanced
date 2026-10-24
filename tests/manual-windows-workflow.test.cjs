@@ -10,7 +10,7 @@ const manual = workflow.slice(workflow.indexOf('\n  manual-windows-test-package:
 
 test('package job requires an explicit manual event and the MSBuild17-compatible Windows x64 runner', () => {
     assert.match(workflow, /^  workflow_dispatch:\s*$/m);
-    assert.match(manual, /^    if: github\.event_name == 'workflow_dispatch' && \(inputs\.range_smoke == 'off' \|\| inputs\.range_smoke == ''\)$/m);
+    assert.match(manual, /^    if: github\.event_name == 'workflow_dispatch' && \(inputs\.range_smoke == 'off' \|\| inputs\.range_smoke == '' \|\| inputs\.range_smoke == 'offline-regression'\)$/m);
     assert.match(manual, /^    runs-on: windows-2022$/m);
     assert.doesNotMatch(manual, /self-hosted|windows-latest|larger|workflow_run|pull_request_target/);
     assert.match(manual, /cancel-in-progress: false/);
@@ -47,4 +47,19 @@ test('next settings check is a short exact-source Windows serial regression with
     assert.match(job, /ref: \$\{\{ github.sha \}\}/);
     assert.match(job, /node --test --test-concurrency=1 tests\/ci-windows-path-diagnostics.test.cjs tests\/playback-prefix-alameda-auto.test.cjs/);
     assert.doesNotMatch(job, /npm ci|build.ps1|package.ps1|execute-native|actions: write|secrets\.|GITHUB_TOKEN|upload-artifact/);
+});
+
+
+test('full offline regression reuses complete prepared package tests and returns before runtime/installer build', () => {
+    const script = fs.readFileSync(path.join(__dirname, '../tools/ci-windows-test-package.ps1'), 'utf8');
+    assert.match(manual, /ETE_REGRESSION_ONLY: \$\{\{ inputs.range_smoke == 'offline-regression' \}\}/);
+    assert.match(manual, /-RegressionOnly:\(\$env:ETE_REGRESSION_ONLY -eq 'true'\)/);
+    assert.match(manual, /if: inputs.range_smoke != 'offline-regression'/);
+    const gate = script.indexOf('if ($RegressionOnly) {');
+    assert(gate > script.indexOf("RunNode @('tests/windows-host-material-selftest.cjs')"));
+    assert(gate > script.indexOf('node --test --test-reporter=tap --test-concurrency=1 @tests'));
+    assert(gate < script.indexOf("'build.ps1') -OutputName"));
+    assert.match(script.slice(gate, gate + 250), /FULL_WINDOWS_REGRESSION_PASSED[\s\S]*?return/);
+    assert.match(script, /Regression-only cannot stage release files/);
+    assert.match(script, /-Filter '\*.test.cjs'/);
 });

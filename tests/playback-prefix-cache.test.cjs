@@ -1,4 +1,5 @@
 'use strict';
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const test = require('node:test'), assert = require('node:assert/strict');
 const fs = require('node:fs/promises'), sync = require('node:fs'), http = require('node:http');
 const path = require('node:path'), os = require('node:os'), vm = require('node:vm'), {createRequire} = require('node:module');
@@ -15,7 +16,7 @@ function smallCache(fileSystem = fs) {
     return load('playback-range-cache.js', {'./playback-prefix-store': store});
 }
 async function fixture(t, hold = false, fileSystem = fs) {
-    const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'ete-prefix-'))), body = Buffer.from('0123456789abcdefghijklmnopqrstuvwxyzABCD');
+    const root = temporaryRoot('ete-prefix-', ['']), body = Buffer.from('0123456789abcdefghijklmnopqrstuvwxyzABCD');
     const requests = [], cacheReads = [], handles = [], controls = [], caches = [], sockets = new Set(); let held, resolveHeld;
     const entered = new Promise(r => {resolveHeld = r;});
     const server = http.createServer((req, res) => {
@@ -31,18 +32,19 @@ async function fixture(t, hold = false, fileSystem = fs) {
         } else res.end(body.subarray(start, end + 1));
     });
     server.on('connection', s => {sockets.add(s); s.once('close', () => sockets.delete(s));});
-    await new Promise(r => server.listen(0, '127.0.0.1', r));
+    t.after(async () => {
+        controls.forEach(c => c.abort()); await Promise.allSettled(handles.map(h => h.stop()));
+        try {for (const cache of caches) await cache.close();} finally {
+            const closed = new Promise(r => server.close(r));
+            const ended = [...sockets].map(s => new Promise(r => {s.once('close', r); s.destroy();})); await Promise.all([closed, ...ended]);
+            await fs.rm(root, {recursive: true, force: true});
+        }
+    });
+    await new Promise((resolve, reject) => {server.once('error', reject); server.listen(0, '127.0.0.1', resolve);});
     const origin = 'http://127.0.0.1:' + server.address().port, {createCache} = smallCache(fileSystem);
     async function create() {const cache = await createCache({kind: 'next-prefix', root, preloadMB: 100, timeoutMs: 1000, blockBytes: 8,
         onPrefixRead: row => cacheReads.push(row)}); caches.push(cache); return cache;}
     const cache = await create();
-    t.after(async () => {
-        controls.forEach(c => c.abort()); await Promise.allSettled(handles.map(h => h.stop()));
-        for (const cache of caches) await cache.close();
-        const closed = new Promise(r => server.close(r));
-        const ended = [...sockets].map(s => new Promise(r => {s.once('close', r); s.destroy();})); await Promise.all([closed, ...ended]);
-        await fs.rm(root, {recursive: true, force: true});
-    });
     return {cache, root, requests, cacheReads, body, entered, create,
         control() {const c = new AbortController(); controls.push(c); return c;},
         async open(name, role, selected = cache, accountId = 'a') {

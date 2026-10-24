@@ -1,4 +1,5 @@
 'use strict';
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -18,7 +19,7 @@ function asar() {
     size.writeUInt32LE(4); size.writeUInt32LE(header.length, 4); return {bytes: Buffer.concat([size, header, body]), body};
 }
 function fixture(t) {
-    const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-physical-asar-'))); t.after(() => fs.rmSync(root, {recursive: true, force: true}));
+    const root = temporaryRoot('ete-physical-asar-'); t.after(() => fs.rmSync(root, {recursive: true, force: true}));
     for (const [name, body] of Object.entries(inputs.payload)) {const file = path.join(root, name); fs.mkdirSync(path.dirname(file), {recursive: true}); fs.writeFileSync(file, Buffer.from(body, 'base64'));}
     const packed = asar(), member = 'resources/fixture.asar', archive = path.join(root, member), unpacked = member + '.unpacked/extra.bin';
     fs.mkdirSync(path.dirname(archive), {recursive: true}); fs.writeFileSync(archive, packed.bytes); fs.mkdirSync(path.dirname(path.join(root, unpacked)), {recursive: true}); fs.writeFileSync(path.join(root, unpacked), 'unpacked fixture\n');

@@ -1,4 +1,5 @@
 'use strict';
+const {temporaryRoot} = require('./range-fixture-root.cjs');
 // Regenerate a small real-format v3 manifest with the pinned production PS block.
 // This is not a full runtime/build/native acceptance fixture.
 const fs = require('node:fs');
@@ -15,7 +16,7 @@ function generator() {
     if (start < 0 || end < 0) throw Error('pinned-v3-generator-not-found'); return source.slice(start, end);
 }
 function regenerate() {
-    const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-v3-generator-'))), runtime = path.join(root, 'runtime'); fs.mkdirSync(runtime);
+    const root = temporaryRoot('ete-v3-generator-'), runtime = path.join(root, 'runtime'); fs.mkdirSync(runtime);
     const payload = {'LICENSE.txt': 'Synthetic public fixture.\n', 'electronapp/fixture.txt': 'Range payload verifier fixture.\n',
         'build-input-provenance.json': '{"fixture":"inputs"}\n', 'source-provenance.json': '{"fixture":"source"}\n', 'runtime-provenance.json': '{"fixture":"runtime"}\n'};
     try {

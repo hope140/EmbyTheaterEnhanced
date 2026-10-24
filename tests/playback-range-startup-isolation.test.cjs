@@ -1,4 +1,5 @@
 'use strict';
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -25,7 +26,7 @@ function snapshot(directory) {
     visit(directory); return rows;
 }
 function fixture(t) {
-    const base = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'ete range startup-')));
+    const base = temporaryRoot('ete range startup-');
     t.after(() => fs.rmSync(base, {recursive: true, force: true}));
     const profile = path.join(base, 'trial'), config = path.join(base, 'policy.json'), ordinary = path.join(base, 'ordinary');
     const appData = path.join(ordinary, 'appdata'), userData = path.join(ordinary, 'electron'), sessionData = path.join(ordinary, 'session'), hostData = path.join(ordinary, 'host-data');

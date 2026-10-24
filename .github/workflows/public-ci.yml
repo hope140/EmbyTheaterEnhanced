@@ -19,6 +19,7 @@ on:
           - next-matrix-remaining
           - next-auto-report
           - next-settings-check
+          - offline-regression
       release_package:
         description: Stage the standard installer name and five release files (does not publish)
         type: boolean
@@ -250,7 +251,7 @@ jobs:
           include-hidden-files: false
 
   manual-windows-test-package:
-    if: github.event_name == 'workflow_dispatch' && (inputs.range_smoke == 'off' || inputs.range_smoke == '')
+    if: github.event_name == 'workflow_dispatch' && (inputs.range_smoke == 'off' || inputs.range_smoke == '' || inputs.range_smoke == 'offline-regression')
     # Keep the existing VS2022/MSBuild17 contract; windows-2025 now selects VS2026.
     runs-on: windows-2022
     timeout-minutes: 60
@@ -270,13 +271,15 @@ jobs:
         with:
           node-version: 24.18.1
 
-      - name: Compile and verify source Host, then build test package from locked components
+      - name: Compile source Host, run complete regressions, then optionally build test package
         shell: pwsh
         env:
           ETE_RELEASE_PACKAGE: ${{ inputs.release_package }}
-        run: ./tools/ci-windows-test-package.ps1 -ReleasePackage:($env:ETE_RELEASE_PACKAGE -eq 'true')
+          ETE_REGRESSION_ONLY: ${{ inputs.range_smoke == 'offline-regression' }}
+        run: ./tools/ci-windows-test-package.ps1 -ReleasePackage:($env:ETE_RELEASE_PACKAGE -eq 'true') -RegressionOnly:($env:ETE_REGRESSION_ONLY -eq 'true')
 
       - name: Upload verified test package
+        if: inputs.range_smoke != 'offline-regression'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: ete-test-win-x64-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}

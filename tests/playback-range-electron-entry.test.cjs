@@ -1,4 +1,5 @@
 'use strict';
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -12,7 +13,7 @@ const {isEntrypoint} = require('../tools/playback-range-windows-hidden.cjs');
 const entryFile = path.resolve(__dirname, '../tools/playback-range-windows-hidden.cjs');
 const requireActual = createRequire(entryFile);
 function fixture(t, options = {}) {
-    const out = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-entry-contract-'))); t.after(() => fs.rmSync(out, {recursive: true, force: true}));
+    const out = temporaryRoot('ete-entry-contract-'); t.after(() => fs.rmSync(out, {recursive: true, force: true}));
     const profile = path.join(out, 'profile'); fs.mkdirSync(profile); fs.mkdirSync(path.join(out, 'tmp'));
     fs.writeFileSync(path.join(profile, 'ete-range-cache-trial-owner'), 'ETE range trial v1\n'); fs.writeFileSync(path.join(out, 'config.json'), JSON.stringify(support.LIMITS));
     const plan = {out, runtime: path.resolve(__dirname, '..'), zip: 'not-used-in-loader-contract-substitute', identity: {electronSha256: 'fixture-image-only'}};
@@ -72,7 +73,7 @@ function fixture(t, options = {}) {
     return {out, plan, rows, imports, paths, exits, errors, runtime, exitPromise, ready: resolveReady};
 }
 test('real Node ESM import does not mark a CJS fixture as require.main', t => {
-    const out = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-cjs-esm-'))); t.after(() => fs.rmSync(out, {recursive: true, force: true}));
+    const out = temporaryRoot('ete-cjs-esm-'); t.after(() => fs.rmSync(out, {recursive: true, force: true}));
     const file = path.join(out, 'entry.cjs'); fs.writeFileSync(file, 'module.exports = {commonJsMain: require.main === module};');
     const code = "import {pathToFileURL} from 'node:url'; console.log((await import(pathToFileURL(process.argv[1]))).default.commonJsMain);";
     const result = spawnSync(process.execPath, ['--input-type=module', '-e', code, file], {encoding: 'utf8', windowsHide: true});
@@ -141,7 +142,7 @@ for (const change of ['missing-stage', 'wrong-stage-pid', 'nonzero-exit', 'timeo
     assert.throws(() => support.validatePhase(f.plan, 'entry', exit));
 });
 function coordinator(t, pid = 24680) {
-    const {EventEmitter} = require('node:events'), out = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-entry-owner-')));
+    const {EventEmitter} = require('node:events'), out = temporaryRoot('ete-entry-owner-');
     t.after(() => fs.rmSync(out, {recursive: true, force: true}));
     const child = new EventEmitter(); child.pid = pid; child.exitCode = null; child.kills = 0; child.kill = () => {child.kills++;};
     let deadline, timeout, argumentsSeen;

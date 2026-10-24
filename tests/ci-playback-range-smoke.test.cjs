@@ -1,4 +1,5 @@
 'use strict';
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -8,7 +9,7 @@ const ci = require('../tools/ci-playback-range-smoke.cjs');
 const source = fs.readFileSync(path.join(__dirname, '../tools/ci-playback-range-smoke.cjs'), 'utf8');
 const workflow = fs.readFileSync(path.join(__dirname, '../.github/workflows/public-ci.yml'), 'utf8').replace(/\r\n/g, '\n');
 const job = workflow.slice(workflow.indexOf('\n  manual-playback-range-smoke:'), workflow.indexOf('\n  manual-windows-test-package:'));
-function root(t) {const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-ci-range-'))); t.after(() => fs.rmSync(dir, {recursive: true, force: true})); return dir;}
+function root(t) {const dir = temporaryRoot('ete-ci-range-'); t.after(() => fs.rmSync(dir, {recursive: true, force: true})); return dir;}
 function metadata() {return {id: ci.PIN.artifactId, expired: false, expires_at: '2099-01-01T00:00:00Z', digest: 'sha256:' + ci.PIN.zipSha256, workflow_run: {id: ci.PIN.runId, head_sha: ci.PIN.sourceCommit}};}
 function run() {return {id: ci.PIN.runId, head_sha: ci.PIN.sourceCommit, status: 'completed', conclusion: 'success'};}
 test('manual range route keeps the exact tool commit and leaves public/package routes and old concurrency independent', () => {

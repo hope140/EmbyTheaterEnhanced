@@ -95,3 +95,10 @@ node tools/ci-diff-check.cjs
 For a pull request, set `CI_EVENT_NAME` to `pull_request` and `CI_PULL_REQUEST_BASE` to the base commit SHA. GitHub Actions supplies these values automatically. On a new-branch push, the checker compares the branch contribution after its merge-base with the default branch.
 
 The independent range-cache branch also offers an explicit manual `range_smoke` input (`off`, `entry`, `native`, `loader-trial`). The separate Windows job reuses a hash-locked existing artifact and immutable smoke tools without rebuilding. It adds only job-local Actions read permission for the standard token, keeps existing jobs/concurrency unchanged, fails closed on expired/unavailable inputs and uploads bounded receipts. It is not a release route and is not dispatched by source changes. See [the fixed runner method](PLAYBACK_RANGE_WINDOWS_RUNNER.md).
+
+
+## Complete Windows regression without packaging
+
+Manual `range_smoke=offline-regression`, `release_package=false` selects the existing standard Windows 2022 package job in regression-only mode. It uses the exact event SHA, locked preparation and source Host verification, runs every `tests/*.test.cjs` serially (including material-dependent tests), and retains syntax, finite credential-pattern and Windows material checks. This route does not use the six public-test exclusions. After `FULL_WINDOWS_REGRESSION_PASSED source=<SHA> files=<count> runtimeBuilt=false installerBuilt=false`, it returns before production runtime assembly or installer build; package upload is skipped. It cannot be combined with release staging. No successful installer is implied.
+
+The range/prefix fixture helper uses native physical temporary roots. Windows guard fixtures inspect TCP excluded/occupied-port snapshots through read-only `netsh ... show excludedportrange` and `netstat -ano -p tcp`, choose a fresh root before the first bind, and exercise the unchanged real root-hash guard. Actual bind errors fail immediately without retry or network-setting changes. Media HTTP fixtures use loopback `listen(0)`. This host-sensitive setup must pass on Windows; Linux tests do not establish Windows availability.

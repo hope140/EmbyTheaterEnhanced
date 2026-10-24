@@ -1,10 +1,11 @@
 'use strict';
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const test = require('node:test'), assert = require('node:assert/strict'), http = require('node:http');
 const fs = require('node:fs/promises'), path = require('node:path'), os = require('node:os');
 const {createCache} = require('../src/electronapp/enhanced/playback-range-cache');
 function deferred() {let resolve; const promise = new Promise(r => {resolve = r;}); return {promise, resolve};}
 async function fixture(t) {
-    const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'ete-range-weak-'))), body = Buffer.from('abcdefghijklmnopqrstuvwxyz012345');
+    const root = temporaryRoot('ete-range-weak-', ['']), body = Buffer.from('abcdefghijklmnopqrstuvwxyz012345');
     const rows = [], sockets = new Set(), handles = [], controls = [], entered = deferred(); let activeBackground = 0, peakBackground = 0, sequence = 0;
     const server = http.createServer((req, res) => {
         const match = /^bytes=(\d+)-(\d+)$/.exec(req.headers.range || ''), start = +(match && match[1]), end = +(match && match[2]);
@@ -21,15 +22,18 @@ async function fixture(t) {
         } else res.end(body.subarray(start, end + 1));
     });
     server.on('connection', socket => {sockets.add(socket); socket.once('close', () => sockets.delete(socket));});
-    await new Promise(r => server.listen(0, '127.0.0.1', r));
-    const origin = 'http://127.0.0.1:' + server.address().port;
-    const cache = await createCache({root, maxBytes: 128, minFreeBytes: 0, blockBytes: 4, timeoutMs: 1000});
+    let cache;
     t.after(async () => {
         for (const controller of controls) controller.abort();
-        await Promise.allSettled(handles.map(handle => handle.stop())); await cache.close();
-        const closing = [...sockets].map(socket => new Promise(r => {socket.once('close', r); socket.destroy();}));
-        await new Promise(r => server.close(r)); await Promise.all(closing); await fs.rm(root, {recursive: true, force: true});
+        await Promise.allSettled(handles.map(handle => handle.stop()));
+        try {if (cache) await cache.close();} finally {
+            const closing = [...sockets].map(socket => new Promise(r => {socket.once('close', r); socket.destroy();}));
+            await new Promise(r => server.close(r)); await Promise.all(closing); await fs.rm(root, {recursive: true, force: true});
+        }
     });
+    await new Promise((resolve, reject) => {server.once('error', reject); server.listen(0, '127.0.0.1', resolve);});
+    const origin = 'http://127.0.0.1:' + server.address().port;
+    cache = await createCache({root, maxBytes: 128, minFreeBytes: 0, blockBytes: 4, timeoutMs: 1000});
     return {cache, rows, entered, body, origin, peak: () => peakBackground,
         control() {const c = new AbortController(); controls.push(c); return c;},
         async open(name, role) {

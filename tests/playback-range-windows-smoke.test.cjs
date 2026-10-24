@@ -1,4 +1,5 @@
 'use strict';
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -12,7 +13,7 @@ const hidden = require('../tools/playback-range-windows-hidden.cjs');
 const {createCache} = require('../src/electronapp/enhanced/playback-range-cache');
 const {parseContext} = require('../src/electronapp/enhanced/playback-range-session');
 async function temporary(t) {
-    const dir = fs.realpathSync(await fsp.mkdtemp(path.join(os.tmpdir(), 'ete-hidden-prep-')));
+    const dir = temporaryRoot('ete-hidden-prep-', ['cache']);
     if (t) t.after(() => fsp.rm(dir, {recursive: true, force: true})); return dir;
 }
 function zip(body, method = 8, flags = 0) {

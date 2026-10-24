@@ -1,4 +1,5 @@
 'use strict';
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const fs = require('node:fs/promises');
@@ -13,8 +14,8 @@ const {harness, storage} = require('./helpers/api-client-amd.cjs');
 const {create: createEndpoint} = require('../src/electronapp/native-helper/client');
 const flush = async () => {for (let i = 0; i < 20; i++) await new Promise(resolve => setImmediate(resolve));};
 async function fixture(t, userConfig) {
-    const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'ete-range-integration-'))), rows = [], body = Buffer.from('abcdefghijklmnopqrstuvwxyz012345');
-    let editions = 1, holdMetadata = false, metadataResponse;
+    const root = temporaryRoot('ete-range-integration-', ['']), rows = [], body = Buffer.from('abcdefghijklmnopqrstuvwxyz012345');
+    let editions = 1, holdMetadata = false, metadataResponse, session, control;
     const server = http.createServer((req, res) => {
         const url = new URL(req.url, 'http://fixture.invalid'); rows.push(req.url);
         if (url.searchParams.get('api_key') !== 'synthetic-token' && url.searchParams.get('X-Emby-Token') !== 'synthetic-token' && req.headers['x-emby-token'] !== 'synthetic-token') {res.writeHead(401); res.end(); return;}
@@ -28,7 +29,8 @@ async function fixture(t, userConfig) {
         const start = +match[1], end = +match[2];
         res.writeHead(206, {ETag: '"fixed"', 'Content-Range': `bytes ${start}-${end}/${body.length}`, 'Content-Length': end - start + 1}); res.end(body.subarray(start, end + 1));
     });
-    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+    t.after(async () => {try {if (control) await control.close(); if (session) await session.close();} finally {server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); await fs.rm(root, {recursive: true, force: true});}});
+    await new Promise((resolve, reject) => {server.once('error', reject); server.listen(0, '127.0.0.1', resolve);});
     const origin = 'http://127.0.0.1:' + server.address().port;
     const h = harness(), Api = h.load('apiclient.js').default;
     const api = new Api(storage(), () => Promise.resolve(), origin, 'ETE', 'fixture', 'fixture', 'fixture', 1);
@@ -36,7 +38,8 @@ async function fixture(t, userConfig) {
     let config = {root, maxBytes: 128, minFreeBytes: 0, blockBytes: 4, timeoutMs: 1000, bytesPerSecond: 1000000};
     if (userConfig === 'automatic-network') delete config.bytesPerSecond;
     if (userConfig === 'prefix') config = {kind: 'next-prefix', root, timeoutMs: 1000, blockBytes: 4, preloadMB: 100};
-    const session = createSession({config}), helper = {currentGenerationId: 1, state: {playing: false}}, connectionManager = {getApiClient: () => api};
+    session = createSession({config});
+    const helper = {currentGenerationId: 1, state: {playing: false}}, connectionManager = {getApiClient: () => api};
     const item = {Id: 'current', ServerId: 'server', Type: 'Episode', MediaType: 'Video', SeriesId: 'series'}, source = {Id: 'current-source', Container: 'mp4'};
     const options = {playMethod: 'DirectStream', playSessionId: 'play-1'};
     function url(id, sourceId) {return api.getUrl('Videos/' + id + '/stream.mp4', {Static: true, mediaSourceId: sourceId, deviceId: api.deviceId(), api_key: api.accessToken()});}
@@ -50,8 +53,7 @@ async function fixture(t, userConfig) {
         status: async () => ({status: 'ok', value: session.status()}),
         cancelNext: () => session.cancelNext(), retire: () => session.retire()};
     const endpoint = {rangeCache: session.status(), createRangeBinding: () => binding}, controller = new AbortController();
-    let control;
-    t.after(async () => {try {if (control) await control.close(); await session.close();} finally {server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); await fs.rm(root, {recursive: true, force: true});}});
+
     return {root, rows, body, session, helper, api, context, config, calls, preloads, queue, url, sourceUrl,
         editions(value) {editions = value;}, hold() {holdMetadata = true;}, metadataResponse: () => metadataResponse,
         position(value) {position = value;}, async bind() {
@@ -129,7 +131,7 @@ test('source parsing preserves representation fields and rejects transcode/cross
     for (const value of [{...c, container: 'm3u8'}, {...c, mode: 'Transcode'}, {...c, source: c.source.replace('Static=true', 'Static=false')}, {...c, source: c.source.replace('fixture.invalid', 'other.invalid')}]) assert.equal(parseContext(value), null);
 });
 test('trial launch is disabled without complete explicit limits and isolates child/application profile paths', async t => {
-    const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'ete-range-launch-'))); t.after(() => fs.rm(root, {recursive: true, force: true}));
+    const root = temporaryRoot('ete-range-launch-'); t.after(() => fs.rm(root, {recursive: true, force: true}));
     const profile = path.join(root, 'profile'), file = path.join(root, 'config.json'); await fs.mkdir(profile);
     assert.equal(launch.parseLaunch([]).enabled, false);
     const args = ['--ete-range-cache-trial', '--ete-range-cache-config=' + file, '--ete-range-cache-profile=' + profile];

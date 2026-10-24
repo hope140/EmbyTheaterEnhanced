@@ -1,10 +1,11 @@
 'use strict';
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const test = require('node:test'), assert = require('node:assert/strict');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
 const {EventEmitter} = require('node:events');
 const probe = require('../tools/playback-buffer-disk-probe.cjs');
 const support = require('../tools/playback-range-windows-smoke.cjs');
-function directory(t) {const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-disk-probe-test-'))); t.after(() => fs.rmSync(root, {recursive: true, force: true})); return root;}
+function directory(t) {const root = temporaryRoot('ete-disk-probe-test-'); t.after(() => fs.rmSync(root, {recursive: true, force: true})); return root;}
 test('finite option matrix uses experiment values without production config', t => {
     const root = directory(t);
     for (const mode of probe.MODES) {

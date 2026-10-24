@@ -1,9 +1,10 @@
-param([switch]$ReleasePackage)
+param([switch]$ReleasePackage, [switch]$RegressionOnly)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $root
 if (-not $IsWindows) { throw 'This test package job requires Windows.' }
+if ($RegressionOnly -and $ReleasePackage) { throw 'Regression-only cannot stage release files.' }
 $source = ([string](& git rev-parse HEAD)).Trim()
 if ($LASTEXITCODE -ne 0 -or $source -notmatch '^[a-f0-9]{40}$') { throw 'Cannot resolve exact source commit.' }
 if ($env:GITHUB_SHA -and $source -ne $env:GITHUB_SHA) { throw 'Checkout differs from workflow source commit.' }
@@ -64,6 +65,10 @@ RunNode @('tools/ci-syntax.cjs')
 if (-not $?) { throw 'PowerShell syntax validation failed.' }
 RunNode @('tools/ci-secret-scan.cjs')
 RunNode @('tests/windows-host-material-selftest.cjs')
+if ($RegressionOnly) {
+    Write-Output ('FULL_WINDOWS_REGRESSION_PASSED source=' + $source + ' files=' + $tests.Count + ' runtimeBuilt=false installerBuilt=false')
+    return
+}
 if ($ReleasePackage) {
     $materialTests = @(Get-ChildItem -LiteralPath (Join-Path $root 'tests') -Filter '*-material-selftest.cjs' -File | Sort-Object Name | ForEach-Object { 'tests/' + $_.Name })
     if ($materialTests.Count -eq 0) { throw 'No explicit material regressions found.' }

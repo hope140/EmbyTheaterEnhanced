@@ -1,4 +1,5 @@
 'use strict';
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const http = require('node:http');
@@ -13,7 +14,7 @@ const {parseContext} = require('../src/electronapp/enhanced/playback-range-sessi
 const deferred = () => {let resolve; const promise = new Promise(r => {resolve = r;}); return {promise, resolve};};
 const canary = {authorization: 'Bearer fixture-authorization-only', cookie: 'fixture-session=synthetic-cookie', token: 'fixture-token-header', query: 'fixture-url-grant'};
 async function fixture(t) {
-    const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'ete-range-matrix-')));
+    const root = temporaryRoot('ete-range-matrix-', ['cache']);
     const body = Buffer.from('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-');
     const rows = [], targetRows = [], peers = new Set(), held = deferred(), heldClosed = deferred();
     const mode = {value: 'direct', header: 'none', changed: false};
@@ -47,18 +48,10 @@ async function fixture(t) {
         }
         reply(req, res);
     });
-    for (const server of [source, target]) {
-        server.on('connection', socket => {peers.add(socket); socket.on('close', () => peers.delete(socket));});
-        await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-    }
-    const origin = 'http://127.0.0.1:' + source.address().port, targetOrigin = 'http://127.0.0.1:' + target.address().port;
-    const config = {root: path.join(root, 'cache'), maxBytes: 128, blockBytes: 4, minFreeBytes: 0, timeoutMs: 500, bytesPerSecond: 1000000};
-    const url = origin + '/media?Static=true&api_key=' + canary.query;
-    const context = {source: url, serverOrigin: origin, serverId: 'fixture-server', accountId: 'fixture-user', itemId: 'fixture-video',
-        mediaSourceId: 'fixture-source', playSessionId: 'fixture-play', mediaType: 'Video', container: 'mp4', mode: 'DirectStream', live: false};
     const cleanups = [];
     t.after(async () => {
-        try {for (const close of cleanups.reverse()) await close();}
+        const errors = [];
+        try {for (const close of cleanups.reverse()) {try {await close();} catch (error) {errors.push(error);}}}
         finally {
             const socketCloses = [...peers].map(socket => new Promise(resolve => socket.once('close', resolve)));
             for (const server of [source, target]) server.closeAllConnections();
@@ -66,7 +59,17 @@ async function fixture(t) {
             await fs.rm(root, {recursive: true, force: true});
         }
         assert.equal(peers.size, 0, 'both explicitly owned fixture servers released their sockets');
+        if (errors.length) throw new AggregateError(errors, 'owned source-matrix cleanup failed');
     });
+    for (const server of [source, target]) {
+        server.on('connection', socket => {peers.add(socket); socket.on('close', () => peers.delete(socket));});
+        await new Promise((resolve, reject) => {server.once('error', reject); server.listen(0, '127.0.0.1', resolve);});
+    }
+    const origin = 'http://127.0.0.1:' + source.address().port, targetOrigin = 'http://127.0.0.1:' + target.address().port;
+    const config = {root: path.join(root, 'cache'), maxBytes: 128, blockBytes: 4, minFreeBytes: 0, timeoutMs: 500, bytesPerSecond: 1000000};
+    const url = origin + '/media?Static=true&api_key=' + canary.query;
+    const context = {source: url, serverOrigin: origin, serverId: 'fixture-server', accountId: 'fixture-user', itemId: 'fixture-video',
+        mediaSourceId: 'fixture-source', playSessionId: 'fixture-play', mediaType: 'Video', container: 'mp4', mode: 'DirectStream', live: false};
     return {root, config, context, mode, origin, targetOrigin, url, body, rows, targetRows, held, heldClosed,
         reader() {const reader = createReader(config); cleanups.push(() => reader.close()); return reader;},
         async cache() {const cache = await createCache(config); cleanups.push(() => cache.close()); return cache;},
