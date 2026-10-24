@@ -50,7 +50,7 @@ class Items extends Element {
 }
 function sections() { return [{Id: 'first', SectionType: 'resume', Name: '<unsafe>', Monitor: ['videoplayback', 'markplayed']},
     {Id: 'second', SectionType: 'latestmedia', Name: 'Recent', CollectionType: 'movies'}]; }
-function fixture(handler, identityClock, cacheOptions, rendererWindow) {
+function fixture(handler, identityClock, cacheOptions, rendererWindow, actualBridge = bridge) {
     const document = {activeElement: null, createElement(tag, options) { const element = new Element(document, tag); element.customType = options && options.is; if (element.customType) element.classList.add('native-constructor-class'); return element; }};
     const view = new Element(document), root = document.createElement('div'); root.className = 'sections'; view.appendChild(root);
     const cards = Object.freeze({id: 'original-cards'}), calls = [], legacy = [], focus = [], loading = [], routes = [];
@@ -78,13 +78,44 @@ function fixture(handler, identityClock, cacheOptions, rendererWindow) {
     const previousWindow = global.window;
     try {
         if (rendererWindow) global.window = rendererWindow;
-        controller = bridge.create(owner, deps);
+        controller = actualBridge.create(owner, deps);
     } finally {
         if (previousWindow === undefined) delete global.window; else global.window = previousWindow;
     }
     return {owner, root, api, document, cards, calls, legacy, focus, loading, routes, deps, controller,
         version(value) { version = value; }, user(value) { user = value; }, switchClient() { client = {...api}; }};
 }
+
+test('cold identity startup and cancellation use Window timers with their valid receiver', async () => {
+    const vm = require('node:vm'), fs = require('node:fs');
+    const flush = async () => { for (let i = 0; i < 10; i++) await Promise.resolve(); };
+    const module = {exports: {}};
+    const context = vm.createContext({module, AbortController, require(name) {
+        if (name === './server-sections.js') return provider;
+        if (name === '../page-cache/home-layout-cache.js') return require('../src/electronapp/enhanced/page-cache/home-layout-cache.js');
+        throw new Error('Unexpected test dependency');
+    }});
+    vm.runInContext(`
+        let now = 1000, next = 0; const timers = new Map(); Date.now = () => now;
+        function receiver(value) { if (value !== undefined && value !== null && value !== globalThis) throw new TypeError('Illegal invocation'); }
+        globalThis.setTimeout = function(fn, ms) { 'use strict'; receiver(this); timers.set(++next, {fn, at: now + ms}); return next; };
+        globalThis.clearTimeout = function(id) { 'use strict'; receiver(this); timers.delete(id); };
+        globalThis.advance = ms => { now += ms; for (const [id, timer] of timers) if (timer.at <= now) { timers.delete(id); timer.fn(); } };
+        globalThis.timerCount = () => timers.size;
+    `, context);
+    vm.runInContext(fs.readFileSync(require.resolve('../src/electronapp/enhanced/home/home-tab.js'), 'utf8'), context);
+    const run = code => vm.runInContext(code, context);
+    const f = fixture(undefined, undefined, undefined, undefined, module.exports);
+    f.user(null); const initial = f.controller.resume(); await flush();
+    assert.equal(run('timerCount()'), 1); assert.equal(f.calls.length, 0);
+    f.user('user-1'); run('advance(100)');
+    assert.equal((await initial).status, 'server'); assert.equal(run('timerCount()'), 0);
+    f.controller.pause(); f.user(null);
+    const cancelled = f.controller.resume(); await flush();
+    assert.equal(run('timerCount()'), 1);
+    f.controller.pause(); assert.equal((await cancelled).status, 'cancelled');
+    assert.equal(run('timerCount()'), 0); f.controller.dispose();
+});
 test('server layout renders ordered safe headings with original cards and no new playback owner', async () => {
     const f = fixture(); assert.equal((await f.controller.resume({autoFocus: true})).status, 'server');
     const stage = f.root.children[0];

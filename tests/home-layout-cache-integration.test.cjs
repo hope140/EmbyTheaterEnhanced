@@ -193,11 +193,18 @@ test('a cancelled external layout subscriber does not seed a hit for the next pr
     old.resolve(response(safeRows('Cancelled navigation'))); await flush();
     assert.equal((await f.load('tv')).sections[0].Name, 'Next navigation'); assert.equal(layouts, 2);
 });
-test('enhanced AMD dependency graph loads the real adapter/cache/provider with one canonical events identity', async t => {
+test('enhanced AMD graph uses the default clock with renderer timer receivers and one canonical events identity', async t => {
     const fs = require('node:fs'), path = require('node:path'), vm = require('node:vm');
     const f = fixture(); t.after(() => f.dispose()); f.cache.dispose();
     const modules = new Map([['modules/emby-apiclient/events.js', {default: f.events}]]);
-    const context = vm.createContext({AbortController, setTimeout, clearTimeout});
+    const context = vm.createContext({AbortController, hostSetTimeout: setTimeout, hostClearTimeout: clearTimeout});
+    vm.runInContext(`
+        function receiver(value) {
+            if (value !== undefined && value !== null && value !== globalThis) throw new TypeError('Illegal invocation');
+        }
+        globalThis.setTimeout = function(fn, ms) { 'use strict'; receiver(this); return hostSetTimeout(fn, ms); };
+        globalThis.clearTimeout = function(id) { 'use strict'; receiver(this); return hostClearTimeout(id); };
+    `, context);
     function load(name) {
         if (modules.has(name)) return modules.get(name);
         const exports = {}; let result;

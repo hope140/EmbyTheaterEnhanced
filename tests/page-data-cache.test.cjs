@@ -26,6 +26,73 @@ function fixture(options = {}) {
 }
 const aborted = promise => assert.rejects(promise, {name: 'AbortError'});
 
+// A renderer host may reject Window timers called with an arbitrary receiver.
+// Node timers and the injected clock above accept it, hiding this production bug.
+function rendererTimers({nodeSetTimeout = false} = {}) {
+    const context = vm.createContext({AbortController});
+    vm.runInContext(`
+        let nextTimer = 0, now = 1000; const timers = new Map();
+        Date.now = () => now;
+        function checkWindowReceiver(receiver) {
+            if (receiver !== undefined && receiver !== null && receiver !== globalThis) throw new TypeError('Illegal invocation');
+        }
+        globalThis.setTimeout = function (fn, ms) {
+            'use strict';
+            ${nodeSetTimeout ? '' : 'checkWindowReceiver(this);'}
+            timers.set(++nextTimer, {fn, at: now + ms}); return nextTimer;
+        };
+        globalThis.clearTimeout = function (id) { 'use strict'; checkWindowReceiver(this); timers.delete(id); };
+        globalThis.advance = ms => {
+            now += ms;
+            for (const [id, timer] of timers) if (timer.at <= now) { timers.delete(id); timer.fn(); }
+        };
+        globalThis.timerCount = () => timers.size;
+        globalThis.define = (dependencies, factory) => { const exports = {}; factory(exports); globalThis.cacheModule = exports.default; };
+        define.amd = {};
+    `, context);
+    vm.runInContext(fs.readFileSync(source, 'utf8'), context, {filename: source});
+    const run = script => vm.runInContext(script, context);
+    run(`const cache = cacheModule.create({enabled: true, policies: {'home-layout': {ttlMs: 100}}, requestTimeoutMs: 50});
+        cache.bindContext({client: {}, session: {}, serverId: 'synthetic-server', userId: 'synthetic-user'});`);
+    return run;
+}
+
+test('default clock calls renderer Window timers with a valid receiver on success, error and a cache hit', async () => {
+    const run = rendererTimers();
+    assert.equal(await run(`cache.load({resource: 'home-layout', load: () => ({Name: 'First'})}).then(value => value.Name)`), 'First');
+    assert.equal(await run(`cache.load({resource: 'home-layout', load: () => { throw Error('must hit'); }}).then(value => value.Name)`), 'First');
+    run('advance(100)');
+    await assert.rejects(run(`cache.load({resource: 'home-layout', load: () => { throw Error('synthetic failure'); }})`), /synthetic failure/);
+    assert.equal(run('timerCount()'), 0);
+    assert.equal(run('cache.stats().pending'), 0);
+    assert.equal(run('cache.stats().entries'), 0);
+    run('cache.dispose()');
+});
+
+test('mixed Node setTimeout and Window clearTimeout settle invalidation instead of throwing at completion', async () => {
+    const run = rendererTimers({nodeSetTimeout: true});
+    const pending = run(`let late; const pending = cache.load({resource: 'home-layout', load: () => new Promise(resolve => { late = resolve; })}); pending`);
+    await flush();
+    assert.doesNotThrow(() => run('cache.invalidate()'));
+    await aborted(pending);
+    assert.equal(run('timerCount()'), 0); assert.equal(run('cache.stats().pending'), 0);
+    assert.equal(await run(`cache.load({resource: 'home-layout', load: () => 'new'})`), 'new');
+    run(`late('old')`); await flush();
+    assert.equal(await run(`cache.load({resource: 'home-layout', load: () => 'wrong'})`), 'new');
+    run('cache.dispose()');
+});
+
+test('default renderer clock timeout and logout retire work and late replies without timer receiver failures', async () => {
+    const run = rendererTimers();
+    const expired = run(`const expired = cache.load({resource: 'home-layout', load: () => new Promise(() => {})}); expired`);
+    await flush(); run('advance(50)');
+    await assert.rejects(expired, {name: 'TimeoutError'});
+    const logout = run(`const logout = cache.load({resource: 'home-layout', load: () => new Promise(() => {})}); logout`);
+    await flush(); run('cache.bindContext(null)'); await aborted(logout);
+    assert.equal(run('timerCount()'), 0); assert.equal(run('cache.stats().pending'), 0);
+    assert.equal(run('cache.stats().entries'), 0); run('cache.dispose()');
+});
+
 test('defaults bypass storage and deduplication even with an explicit policy', async () => {
     const f = fixture({enabled: undefined}); let calls = 0;
     await Promise.all([f.request(() => ++calls), f.request(() => ++calls)]);

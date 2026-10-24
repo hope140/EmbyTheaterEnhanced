@@ -39,6 +39,8 @@ main仅在该模式给原应用BrowserWindow添加一个内部renderer参数；p
 
 ## 自动证据与Windows验收
 
+后续包实测曾发现enabled完成阶段的Window定时器接收者TypeError，disabled正常；源码修复使用直接调用全局定时器的包装，新增可控Window接收者与无界面Chromium复现/对照。该代码修复尚须精确新包验证，旧包或含旧代码的组合包不能当缓存验收通过。后续不得在用户工作时安排前台测试；离线/无界面与完整Windows GUI结果分别记录。
+
 本次19个文件的定向及相邻合同247/247通过，失败/取消/跳过均为0。离线回归执行真实配置解析/拒绝、实际文件哈希与物理路径检查、真实临时目录分配、原bootstrap及main启动片段、生成preload块、真实Home controller/provider/cache与维护AMD API/CM；app Electron对象、Windows可执行文件身份、Fetch、DOM及部分事件仍为夹具。测试检查正式配置sentinel不变、每轮profile新建无账户复制、disabled对照、preload选项进入原Home工厂、同账号字符串的两测试renderer不共享缓存、账号切换及迟到响应。不得把这些称为Windows Electron实际setPath或完整GUI已运行。
 
 完整自动验收仍需在父协调的新Windows测试包上：

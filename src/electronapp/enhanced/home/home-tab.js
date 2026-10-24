@@ -31,7 +31,9 @@
         var testOptions = typeof window === 'object' && window.__etePageCacheTestOptions;
         var layoutCache = cacheModule.create(connection, dependencies.pageCacheOptions || testOptions, dependencies.events);
         var provider = serverSections.createProvider(function() { return connection.currentApiClient(); }, {layoutCache: layoutCache.enabled ? layoutCache : null});
-        var identityClock = dependencies.identityClock || {now: Date.now, setTimeout: setTimeout, clearTimeout: clearTimeout};
+        var identityClock = dependencies.identityClock || {now: function() { return Date.now(); },
+            setTimeout: function(fn, delay) { return setTimeout(fn, delay); },
+            clearTimeout: function(timer) { clearTimeout(timer); }};
         var waits = new Set();
         var active = false, disposed = false, epoch = 0, stage = null, stageMode = null, pending = null;
         var focusedItemId = null, committedTicket = null;

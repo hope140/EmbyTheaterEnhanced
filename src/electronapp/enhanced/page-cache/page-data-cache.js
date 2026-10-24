@@ -48,7 +48,11 @@
         var maxPending = integer(options.maxPending, 8, 128);
         var maxSubscribers = integer(options.maxSubscribers, 64, 1024);
         var timeoutMs = integer(options.requestTimeoutMs, 5000, 60000);
-        var clock = options.clock || {now: Date.now, setTimeout: setTimeout, clearTimeout: clearTimeout};
+        // Window timers can reject an arbitrary receiver (unlike Node timers).
+        // Call the host globals directly rather than rebinding them to clock.
+        var clock = options.clock || {now: function () { return Date.now(); },
+            setTimeout: function (fn, delay) { return setTimeout(fn, delay); },
+            clearTimeout: function (timer) { clearTimeout(timer); }};
         var policies = Object.create(null);
         Object.keys(options.policies || {}).forEach(function (resource) {
             if (resources.indexOf(resource) < 0) throw new TypeError('Unknown page data resource.');
