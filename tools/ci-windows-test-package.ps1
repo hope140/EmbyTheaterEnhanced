@@ -2,6 +2,7 @@ param([switch]$ReleasePackage)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $root = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot 'ci-phase-timing.ps1')
 Set-Location -LiteralPath $root
 if (-not $IsWindows) { throw 'This test package job requires Windows.' }
 $source = ([string](& git rev-parse HEAD)).Trim()
@@ -25,63 +26,136 @@ function RunNode([string[]]$Arguments) {
     & node @Arguments
     if ($LASTEXITCODE -ne 0) { throw ('Node validation failed: ' + $Arguments[0]) }
 }
-& npm ci --ignore-scripts
-if ($LASTEXITCODE -ne 0) { throw 'Locked JavaScript dependency installation failed.' }
-& (Join-Path $PSScriptRoot 'prepare-ci-build-inputs.ps1')
-if (-not $?) { throw 'Independent CI input preparation failed.' }
-& (Join-Path $PSScriptRoot 'ci-source-built-host.ps1')
-if (-not $?) { throw 'This runner must compile and verify its own source-built Host before packaging.' }
-$libmpvIdentity = & node (Join-Path $PSScriptRoot 'libmpv-input.cjs') validate $root
-if ($LASTEXITCODE -ne 0) { throw 'Restored repository libmpv identity is invalid.' }
-$libmpvIdentity = $libmpvIdentity | ConvertFrom-Json
-$libmpvFileSha256 = (Get-FileHash -LiteralPath (Join-Path $root 'vendor/libmpv/20260809/mpv-1.dll') -Algorithm SHA256).Hash.ToLowerInvariant()
-if (Test-Path -LiteralPath (Join-Path $root '.work/libmpv-download')) { throw 'Repository recovery unexpectedly created a libmpv download cache.' }
-$officialModel = & node (Join-Path $PSScriptRoot 'model-compatibility-input.cjs') validate $root
-if ($LASTEXITCODE -ne 0) { throw 'Official Model component identity is invalid.' }
-$officialModel = $officialModel | ConvertFrom-Json
-$modelArchive = & node (Join-Path $PSScriptRoot 'model-compatibility-input.cjs') validate-archive $root (Join-Path $root '.work/actions-inputs/archives/emby-theater-x64.zip')
-if ($LASTEXITCODE -ne 0) { throw 'Official Model source ZIP differs from its pinned identity.' }
-$modelArchive = $modelArchive | ConvertFrom-Json
-$modelFileSha256 = (Get-FileHash -LiteralPath (Join-Path $root 'vendor/model-compatibility/snapshot-v1/MediaBrowser.Model.dll') -Algorithm SHA256).Hash.ToLowerInvariant()
+$phase = Start-CIPhase 'dependencies.install'
+$phaseSucceeded = $false
+try {
+    & npm ci --ignore-scripts
+    if ($LASTEXITCODE -ne 0) { throw 'Locked JavaScript dependency installation failed.' }
+    $phaseSucceeded = $true
+} finally { Complete-CIPhase $phase $phaseSucceeded }
+$phase = Start-CIPhase 'inputs.prepare'
+$phaseSucceeded = $false
+try {
+    & (Join-Path $PSScriptRoot 'prepare-ci-build-inputs.ps1')
+    if (-not $?) { throw 'Independent CI input preparation failed.' }
+    $phaseSucceeded = $true
+} finally { Complete-CIPhase $phase $phaseSucceeded }
+$phase = Start-CIPhase 'host.compile-verify'
+$phaseSucceeded = $false
+try {
+    & (Join-Path $PSScriptRoot 'ci-source-built-host.ps1')
+    if (-not $?) { throw 'This runner must compile and verify its own source-built Host before packaging.' }
+    $phaseSucceeded = $true
+} finally { Complete-CIPhase $phase $phaseSucceeded }
+$phase = Start-CIPhase 'inputs.recheck'
+$phaseSucceeded = $false
+try {
+    $libmpvIdentity = & node (Join-Path $PSScriptRoot 'libmpv-input.cjs') validate $root
+    if ($LASTEXITCODE -ne 0) { throw 'Restored repository libmpv identity is invalid.' }
+    $libmpvIdentity = $libmpvIdentity | ConvertFrom-Json
+    $libmpvFileSha256 = (Get-FileHash -LiteralPath (Join-Path $root 'vendor/libmpv/20260809/mpv-1.dll') -Algorithm SHA256).Hash.ToLowerInvariant()
+    if (Test-Path -LiteralPath (Join-Path $root '.work/libmpv-download')) { throw 'Repository recovery unexpectedly created a libmpv download cache.' }
+    $officialModel = & node (Join-Path $PSScriptRoot 'model-compatibility-input.cjs') validate $root
+    if ($LASTEXITCODE -ne 0) { throw 'Official Model component identity is invalid.' }
+    $officialModel = $officialModel | ConvertFrom-Json
+    $modelArchive = & node (Join-Path $PSScriptRoot 'model-compatibility-input.cjs') validate-archive $root (Join-Path $root '.work/actions-inputs/archives/emby-theater-x64.zip')
+    if ($LASTEXITCODE -ne 0) { throw 'Official Model source ZIP differs from its pinned identity.' }
+    $modelArchive = $modelArchive | ConvertFrom-Json
+    $modelFileSha256 = (Get-FileHash -LiteralPath (Join-Path $root 'vendor/model-compatibility/snapshot-v1/MediaBrowser.Model.dll') -Algorithm SHA256).Hash.ToLowerInvariant()
+    $phaseSucceeded = $true
+} finally { Complete-CIPhase $phase $phaseSucceeded }
 
 # Prepare generates the pinned preload before any material-dependent regression.
 $tests = @(Get-ChildItem -LiteralPath (Join-Path $root 'tests') -Filter '*.test.cjs' -File | Sort-Object Name | ForEach-Object { 'tests/' + $_.Name })
 if ($tests.Count -eq 0) { throw 'No regression tests found.' }
 $testLog = Join-Path $root ('test-output/manual-tests-' + $run + '.tap')
 New-Item -ItemType Directory -Path (Split-Path -Parent $testLog) -Force | Out-Null
-& node --test --test-reporter=tap --test-concurrency=1 @tests | Tee-Object -FilePath $testLog
-if ($LASTEXITCODE -ne 0) { throw 'Full regression failed; no package will be uploaded.' }
-RunNode @('tools/ci-syntax.cjs')
-& (Join-Path $PSScriptRoot 'ci-powershell-syntax.ps1')
-if (-not $?) { throw 'PowerShell syntax validation failed.' }
-RunNode @('tools/ci-secret-scan.cjs')
-RunNode @('tests/windows-host-material-selftest.cjs')
+$phase = Start-CIPhase 'tests.regression'
+$phaseSucceeded = $false
+try {
+    & node --test --test-reporter=tap --test-concurrency=1 @tests | Tee-Object -FilePath $testLog
+    if ($LASTEXITCODE -ne 0) { throw 'Full regression failed; no package will be uploaded.' }
+    $phaseSucceeded = $true
+} finally {
+    Complete-CIPhase $phase $phaseSucceeded
+    Write-CITestTiming (Join-Path $PSScriptRoot 'ci-test-timing-summary.cjs') $testLog
+}
+$phase = Start-CIPhase 'checks.static'
+$phaseSucceeded = $false
+try {
+    RunNode @('tools/ci-syntax.cjs')
+    & (Join-Path $PSScriptRoot 'ci-powershell-syntax.ps1')
+    if (-not $?) { throw 'PowerShell syntax validation failed.' }
+    RunNode @('tools/ci-secret-scan.cjs')
+    $phaseSucceeded = $true
+} finally { Complete-CIPhase $phase $phaseSucceeded }
+$phase = Start-CIPhase 'tests.host-material'
+$phaseSucceeded = $false
+try {
+    RunNode @('tests/windows-host-material-selftest.cjs')
+    $phaseSucceeded = $true
+} finally { Complete-CIPhase $phase $phaseSucceeded }
 if ($ReleasePackage) {
     $materialTests = @(Get-ChildItem -LiteralPath (Join-Path $root 'tests') -Filter '*-material-selftest.cjs' -File | Sort-Object Name | ForEach-Object { 'tests/' + $_.Name })
     if ($materialTests.Count -eq 0) { throw 'No explicit material regressions found.' }
-    & node --test --test-reporter=tap --test-concurrency=1 @materialTests
-    if ($LASTEXITCODE -ne 0) { throw 'Explicit material regressions failed; no release package will be uploaded.' }
+    $phase = Start-CIPhase 'tests.release-material'
+    $phaseSucceeded = $false
+    try {
+        & node --test --test-reporter=tap --test-concurrency=1 @materialTests
+        if ($LASTEXITCODE -ne 0) { throw 'Explicit material regressions failed; no release package will be uploaded.' }
+        $phaseSucceeded = $true
+    } finally { Complete-CIPhase $phase $phaseSucceeded }
 }
 
-& (Join-Path $PSScriptRoot 'build.ps1') -OutputName $runtimeName
-if (-not $?) { throw 'Runtime build failed.' }
-& (Join-Path $PSScriptRoot 'package.ps1') -RuntimeName $runtimeName -VerifyOnly
-if (-not $?) { throw 'Runtime verification failed.' }
+$phase = Start-CIPhase 'runtime.assemble'
+$phaseSucceeded = $false
+try {
+    & (Join-Path $PSScriptRoot 'build.ps1') -OutputName $runtimeName
+    if (-not $?) { throw 'Runtime build failed.' }
+    $phaseSucceeded = $true
+} finally { Complete-CIPhase $phase $phaseSucceeded }
+$phase = Start-CIPhase 'runtime.verify'
+$phaseSucceeded = $false
+try {
+    & (Join-Path $PSScriptRoot 'package.ps1') -RuntimeName $runtimeName -VerifyOnly
+    if (-not $?) { throw 'Runtime verification failed.' }
+    $phaseSucceeded = $true
+} finally { Complete-CIPhase $phase $phaseSucceeded }
 $version = (Get-Content -LiteralPath (Join-Path $root 'package.json') -Raw -Encoding UTF8 | ConvertFrom-Json).version
 $installerName = 'EmbyTheaterEnhanced-' + $version + '-test-' + $source.Substring(0,12) + '-' + $run + '-win-x64-setup'
 if ($ReleasePackage) { $installerName = 'EmbyTheaterEnhanced-' + $version + '-win-x64-setup' }
-& (Join-Path $PSScriptRoot 'package.ps1') -RuntimeName $runtimeName -OutputBaseFilename $installerName
-if (-not $?) { throw 'Installer compilation failed.' }
+$phase = Start-CIPhase 'installer.compile'
+$phaseSucceeded = $false
+try {
+    & (Join-Path $PSScriptRoot 'package.ps1') -RuntimeName $runtimeName -OutputBaseFilename $installerName
+    if (-not $?) { throw 'Installer compilation failed.' }
+    $phaseSucceeded = $true
+} finally { Complete-CIPhase $phase $phaseSucceeded }
 $installer = Join-Path $root ('dist/' + $installerName + '.exe')
 $unpacker = Join-Path $root '.work/toolchain/innounp/innounp.exe'
-& $unpacker -t $installer
-if ($LASTEXITCODE -ne 0) { throw 'Installer archive integrity test failed.' }
+$phase = Start-CIPhase 'installer.test'
+$phaseSucceeded = $false
+try {
+    & $unpacker -t $installer
+    if ($LASTEXITCODE -ne 0) { throw 'Installer archive integrity test failed.' }
+    $phaseSucceeded = $true
+} finally { Complete-CIPhase $phase $phaseSucceeded }
 $extract = Join-Path $root ('.work/actions-installer-check-' + $run)
 if (Test-Path -LiteralPath $extract) { throw 'Extraction target already exists.' }
-& $unpacker -x -b ('-d' + $extract) $installer | Out-Null
-if ($LASTEXITCODE -ne 0) { throw 'Installer extraction failed.' }
-$verification = & node (Join-Path $PSScriptRoot 'verify-installer-runtime.cjs') $runtime (Join-Path $extract '{app}') $source
-if ($LASTEXITCODE -ne 0) { throw 'Extracted installer differs from the verified runtime.' }
+$phase = Start-CIPhase 'installer.extract'
+$phaseSucceeded = $false
+try {
+    & $unpacker -x -b ('-d' + $extract) $installer | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'Installer extraction failed.' }
+    $phaseSucceeded = $true
+} finally { Complete-CIPhase $phase $phaseSucceeded }
+$phase = Start-CIPhase 'installer.compare'
+$phaseSucceeded = $false
+try {
+    $verification = & node (Join-Path $PSScriptRoot 'verify-installer-runtime.cjs') $runtime (Join-Path $extract '{app}') $source
+    if ($LASTEXITCODE -ne 0) { throw 'Extracted installer differs from the verified runtime.' }
+    $phaseSucceeded = $true
+} finally { Complete-CIPhase $phase $phaseSucceeded }
 
 # Only explicitly selected distributable files enter the Actions artifact.
 New-Item -ItemType Directory -Path $output | Out-Null

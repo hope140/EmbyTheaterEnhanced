@@ -1,5 +1,39 @@
 # 维护记录
 
+## 2026-10-24 — 恢复main正常手动打包默认值
+
+修复旧实验分支互锁：benchmark默认false，普通test／release按原入口运行；显式benchmark才skip包并进入短job，去掉两个job的分支硬编码。原权限／concurrency／固定SHA／release输入与完整包门禁均保持，release+benchmark冲突仍fail closed。相关测试从实际default取值，覆盖main／perf／其它ref和test／release而不是预期普通包被禁；旧配置在新测试复现3处红例。没有重做性能实验或完整包，未合main或引入详情／Native／Range功能。
+
+## 2026-10-24 — 恢复workflow结构回归
+
+依据40087539201的两条精确失败日志，将原manual块截取改为按顶层job边界定位。原3项测试和3个action计数保留并加严到原精确pin；路由矩阵覆盖自动事件、目标／其它ref及benchmark模式，新增2项检查短基准的mode／SHA拒绝发生在checkout前、固定输入与诊断artifact边界。仅修改测试和文档，不改workflow／构建／缓存／并发。相关43项、零跳过；实际工作流与重排安全job通过，16个不安全／默认偏移变体拒绝；独立只读复审通过。正常push后的完整公共CI独立确认，未新增性能样本、打包、PR或main合并。
+
+## 2026-10-24 — Windows短基准结果归档
+
+归档c1c6e7dc的成功Windows run40087708509／job120853913867、artifact12557687964的177152字节／SHA256及88项已核验清单摘要；三套输入身份及每对digest一致，夹具逐次核174文件，27份process记录无异常。Git调用plan8→4、Host111→3；fixture首次7→7／热7→1。批读首次和热操作均下降；seed首次多551.530ms，后续每次少1676.471ms，以中位数模型第二次可摊销。文档区分候选正常入口、仅对照算法和仍未验证的完整回归／整包收益，保留首次慢22.763%／热快75.976%的准备成本证据及OS缓存／29.768秒预准备／0单测边界。仅改文档，无新增实验或main合并。见[归档](CI_BUILD_PERFORMANCE.md)。
+
+只读核对发现同SHA公共CI40087539201已1543 pass／2 fail；两处为新增workflow job后的结构断言不匹配，相关验证前轮遗漏。已记录失败日志与合并阻断，未把短基准成功当全CI通过；此文档收尾不改测试或workflow、不跳失败。
+
+## 2026-10-24 — 短基准UI入口准备
+
+复用默认分支已有的public-ci.yml手动入口，在perf/build-inputs增加独立短基准job与明确输入，默认4轮／3次热调用；checkout绑定github.sha，可显式填审核SHA拒绝分支移动。模式冲突失败，perf分支无全包回退；原打包concurrency block及公共回归不变。基准仅运行已审plan／host／fixture-prep，0项单元测试，原始结果和完整身份验收仍保留，artifact缺失即错误。没有扩大权限／接触secret／缓存改动或自行dispatch。UI复现与未实测边界见[方案](CI_WINDOWS_AB.md)。
+
+## 2026-10-24 — Windows输入性能验证准备
+
+新增Windows PowerShell／Node定向基准协调器，核精确SHA、全仓干净、固定工具和物理独立输出；默认每臂4轮first＋3warm，顺序AB／BA。Host固定commit获取在计时外，测量禁止lazy fetch；每份来源／完整集合／哈希校验保留，诊断产物白名单排除对象库与源码恢复树。原28个测试主体未变，提取私有夹具工厂以保证短基准量同一准备路径，并补4项边界／隔离回归。Windows正确性run40085107715已通过；Windows性能尚未执行，不用完整CI跨机器时长推断收益。复现见[WindowsA/B](CI_WINDOWS_AB.md)。
+
+## 2026-10-24 — 修正性能实验Windows换行夹具
+
+实际Windows公共run40083575146在c16208a得到1540 pass／1 fail／0 skip，唯一失败在新增authority测试：将已有CRLF再次直接扩为CRLF，造成CRCRLF，原HEAD字节校验正确拒绝。只修测试转换为先规范LF再生成CRLF，重复两轮并新增CRCRLF仍拒绝断言；不改生产校验、测试选择／数量、workflow或并发。原红例在Linux同错误复现，修后相关38项／0跳过和core.autocrlf=true checkout该组6项／0跳过通过；新Windows结果仍需单独核验。原同输入A/B数据与边界保留，不能由换行修正声称Windows性能收益。详见[实验记录](CI_BUILD_PERFORMANCE.md)。
+
+
+## 2026-10-24 — 构建输入提速实验：本地对照完成
+
+独立perf/build-inputs候选基于main 88578c91，新增分阶段／测试热点日志，将固定Git读取扩到获取authority和55份Host来源；每次仍验证精确commit／blob／size／SHA、当前物理路径及工作树字节，没有跨调用缓存成功结果。原27项构建输入用例主体完整保留，种子只复用文件内不可变输入，每用例物理独立.git／工作树及新runtime；增加隔离和损坏输入负测。workflow、缓存、并发、runner规格、产品源码与材料版本保持。
+
+同e8be676输入、每臂3次交替本地A/B：Git调用8→4、111→3；夹具组fresh／seed均28/28、0跳过，中位13.370／12.294秒，初次种子准备更慢、后续复用更快。完整范围、方差和首次／热调用见[性能实验](CI_BUILD_PERFORMANCE.md)，不把Linux局部差值称Windows整包收益。公共完整集1531 pass／0 fail／10既有Linux skip，runtime来源6/6及Host／Release／计时相邻65项通过；精确HEAD输入合同、语法和有限凭据模式检查通过。未手动触发Actions或打包；普通push后的CI另核，Windows A/B及端到端收益尚未验证，不将局部结果当发布或安装证据。
+
+
 ## 2026-10-23 — v0.4.0整合PR70来源与必要声明
 
 将PR70固定提交6576f5d的16份来源／声明材料整合到既有发布分支，四处文档冲突采用保留双方有效内容。API／page完整MIT、Sizzle原文、VTT版权／固定源／实际差异、Material Icons来源、Socket组件与集成范围及npm36许可命名口径保留；原JSON／CSV证据字节及analysisRef不改。旧“尚未替换Host／仍运行Sharp和ServiceStack”等仅作为研究时点，不恢复旧链；当前源码Host／JSON／ZIP、CEC退役、API维护与业务来源指纹均不变。

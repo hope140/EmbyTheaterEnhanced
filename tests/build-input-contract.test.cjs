@@ -28,31 +28,18 @@ function git(root, args) {
     assert.equal(result.status, 0, result.stderr || result.error && result.error.message);
     return result.stdout.trim();
 }
+const fixtureFactory = require('./helpers/build-input-fixture.cjs').createFactory(process.env.ETE_BUILD_INPUT_FIXTURE_MODE || 'seed');
+let fixturePreparations = 0;
 function setup(t, temporaryRoot = os.tmpdir()) {
-    // Windows TEMP may use an 8.3 alias; fixtures must start at their physical path.
-    const base = fs.realpathSync.native(fs.mkdtempSync(path.join(temporaryRoot, 'build-input-contract-')));
-    t.after(() => fs.rmSync(base, {recursive: true, force: true}));
-    const repo = path.join(base, 'repo');
-    const runtime = path.join(base, 'runtime');
-    fs.mkdirSync(repo, {recursive: true});
-    fs.mkdirSync(runtime, {recursive: true});
-    git(repo, ['init', '-q']);
-    git(repo, ['config', 'user.name', 'Build Input Test']);
-    git(repo, ['config', 'user.email', 'build-input@example.invalid']);
-    git(repo, ['config', 'core.autocrlf', 'false']);
-
-    for (const relativePath of contract.INPUT_PATHS) write(repo, relativePath, 'fixture input: ' + relativePath + '\n');
-    json(repo, 'package.json', {name: 'build-input-fixture', version: '1.0.0'});
-    json(repo, 'package-lock.json', {name: 'build-input-fixture', version: '1.0.0', lockfileVersion: 3, packages: {'': {version: '1.0.0'}}});
-    const configBase = Buffer.from('<configuration>\n  ' + CONFIG_ANCHOR + '\n</configuration>\n', 'utf8');
-    json(repo, 'vendor/runtime-manifest.json', {schemaVersion: 1, files: [{path: CONFIG_PATH, sha256: sha(configBase)}]});
-    write(repo, 'vendor/carnival/' + CONFIG_PATH, configBase);
-    require('./helpers/runtime-template-fixture.cjs').create(repo,{[CONFIG_PATH]:configBase});
-    write(repo, 'docs/UNRELATED.md', 'unrelated committed documentation\n');
-    git(repo, ['add', '--all']);
-    git(repo, ['commit', '-q', '-m', 'fixture']);
-    return {base, repo, runtime, sourceCommit: git(repo, ['rev-parse', 'HEAD']), configBase};
+    const started = performance.now();
+    const state = fixturePreparations++ === 0 ? 'first-in-process' : 'warm-in-process';
+    const fixture = fixtureFactory.create(temporaryRoot);
+    t.after(fixture.cleanup);
+    t.diagnostic('CI_FIXTURE_PREP ' + JSON.stringify({mode: process.env.ETE_BUILD_INPUT_FIXTURE_MODE || 'seed',
+        state, elapsedMs: performance.now() - started}));
+    return fixture;
 }
+test.after(() => fixtureFactory.dispose());
 
 test('temporary parent aliases produce a physical build input fixture', t => {
     const parent = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'build-input-temp-alias-')));
@@ -523,4 +510,37 @@ test('failed combined tree read keeps the original per-path checks and errors', 
         assert.throws(() => contract.inspect(fixture.repo, fixture.sourceCommit),
             {message: 'Tracked generator differs from HEAD: ' + first});
     } finally { mock.mock.restore(); }
+});
+
+
+test('fixture seeds remain isolated from dirty files, new commits and runtime output', t => {
+    const a = setup(t), b = setup(t);
+    const file = contract.INPUT_PATHS[0];
+    const original = fs.readFileSync(path.join(b.repo, file));
+    const head = b.sourceCommit;
+    const tree = git(b.repo, ['rev-parse', 'HEAD^{tree}']);
+    const blob = git(b.repo, ['rev-parse', 'HEAD:' + file]);
+    fs.appendFileSync(path.join(a.repo, file), 'dirty isolation canary\n');
+    assert.throws(() => contract.inspect(a.repo, a.sourceCommit), /differs from HEAD/);
+    git(a.repo, ['add', file]);
+    git(a.repo, ['commit', '-qm', 'advance isolated copy']);
+    fs.unlinkSync(path.join(a.repo, 'docs/UNRELATED.md'));
+    write(a.runtime, 'canary', 'private runtime');
+    const c = setup(t);
+    for (const copy of [b, c]) {
+        assert.deepEqual(fs.readFileSync(path.join(copy.repo, file)), original);
+        assert.equal(git(copy.repo, ['rev-parse', 'HEAD']), copy.sourceCommit);
+        assert.equal(git(copy.repo, ['rev-parse', 'HEAD^{tree}']), tree);
+        assert.equal(git(copy.repo, ['rev-parse', 'HEAD:' + file]), blob);
+        assert.deepEqual(fs.readdirSync(copy.runtime), []);
+        assert.equal(fs.existsSync(path.join(copy.repo, '.git/objects/info/alternates')), false);
+        assert.equal(fs.existsSync(path.join(copy.repo, 'docs/UNRELATED.md')), true);
+        for (const relative of [file, '.git/HEAD', '.git/index', '.git/objects/' + blob.slice(0, 2) + '/' + blob.slice(2)]) {
+            const target = path.join(copy.repo, relative), stat = fs.lstatSync(target);
+            assert.equal(stat.isSymbolicLink(), false);
+            assert.equal(stat.nlink, 1);
+            assert.equal(fs.realpathSync.native(target), target);
+        }
+    }
+    assert.equal(git(b.repo, ['rev-parse', 'HEAD']), head);
 });

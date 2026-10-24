@@ -1,5 +1,39 @@
 # 项目状态
 
+## 2026-10-24 — 恢复main正常手动打包默认值
+
+合并就绪审查发现旧实验互锁会让main的默认普通／release dispatch跳过所有job。将build_input_benchmark默认改false，手动package仅在非benchmark模式运行，benchmark仅在显式模式运行，不再按perf ref禁包。release冲突和预期SHA不符仍在checkout前拒绝；原release输入转发、门禁、只读权限、固定工具和package并发保持。测试读取实际默认值验证main／perf／其它ref与release false／true，防止绿CI固化“普通包恒skip”。仅workflow／相关测试／文档改变，没有新性能实验、完整打包或客户端功能；合并由最终候选公共门禁及审核结果协调。
+
+## 2026-10-24 — 恢复workflow结构回归
+
+修复 `tests/manual-windows-workflow.test.cjs` 的job范围：按同级job头截取，不再把后续benchmark算入package。保留原3项测试及权限／精确SHA／固定Node／artifact断言，每job仍3个固定action；用事件／分支／模式矩阵验证手动路由，新增checkout前mode／SHA拒绝、4／3默认值和独立诊断上传检查。原workflow与构建实现未改。本地相关43/43、零跳过；两个安全正例通过，16个保护删除／权限／来源／上传变体均拒绝，独立只读复审通过。完整公共门禁以最终提交的CI结果为准；没有新增性能实验或完整打包，未合main。
+
+## 2026-10-24 — Windows短基准结果归档
+
+[40087708509](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40087708509)在c1c6e7dc成功，已核验artifact12557687964／88项清单。每套件每臂16操作、同job交替AB／BA、输入及输出身份一致：plan首次／热中位260.974／255.949→137.118／129.214ms；Host恢复3400.071／3424.941→134.905／125.319ms。夹具首次2422.970→2974.500ms更慢，热2206.576→530.105ms更快，按中位数成本模型第二次构造可摊销，非完整回归实测。建议保留候选Git批读及文件内seed，单次诊断可用既有fresh；不扩大共享缓存。Windows2022／4逻辑CPU，OS缓存未清，Host预准备29.768秒不计入操作。短基准0单元测试，不宣称整包／合并等待百分比；main仍88578，未新增实验或合并。见[结果、接入路径与边界](CI_BUILD_PERFORMANCE.md)。
+
+同SHA公共CI40087539201实际1543 pass／2 fail／0 skip，两处为新增job后仍按旧if整行及旧job到文件尾范围判断的workflow断言；前轮漏跑相关验证。该归档轮当时只记录阻断，后续已恢复结构测试，见最新记录；短A/B成功始终不替代公共CI。
+
+## 2026-10-24 — 短基准UI入口准备
+
+仅实验分支的既有public-ci.yml增加明确build_input_benchmark输入及Windows短job，默认Trials4／WarmCalls3，同dispatch精确SHA／同job交替AB／BA，0项单元测试。perf/build-inputs不会进入完整打包job；现有包并发block、权限contents只读、固定actions／Node及所有来源／哈希／输出门禁保持。artifact仅白名单诊断子目录，不能替代公共CI回归。新字段的登录UI尚未实测，触发须选择该分支并核对SHA与输入；未自动dispatch或改main。详见[UI步骤及安全边界](CI_WINDOWS_AB.md)。
+
+## 2026-10-24 — Windows输入性能验证准备
+
+[Windows正确性CI40085107715](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40085107715)在2e310f47通过。增加独立Windows定向入口，同一精确SHA／干净输入／同job交替测旧与批读Git算法、fresh与seed夹具；默认每臂16次操作，0项单元测试，逐份验收、首次与热调用及验收／进程成本分别记录。原28个测试主体保留，夹具工厂共享至短基准；另补4项参数／路径／归档／隔离回归。workflow、并发、缓存、runner规格和生产门禁未改，未调度新的Windows基准；性能收益仍待实测。见[参数与复现](CI_WINDOWS_AB.md)。
+
+## 2026-10-24 — 修正性能实验Windows换行夹具
+
+实际Windows公共run40083575146在c16208a得到1540 pass／1 fail／0 skip，唯一失败在新增authority测试：将已有CRLF再次直接扩为CRLF，造成CRCRLF，原HEAD字节校验正确拒绝。只修测试转换为先规范LF再生成CRLF，重复两轮并新增CRCRLF仍拒绝断言；不改生产校验、测试选择／数量、workflow或并发。原红例在Linux同错误复现，修后相关38项／0跳过和core.autocrlf=true checkout该组6项／0跳过通过；新Windows结果仍需单独核验。原同输入A/B数据与边界保留，不能由换行修正声称Windows性能收益。详见[实验记录](CI_BUILD_PERFORMANCE.md)。
+
+
+## 2026-10-24 — 构建输入提速实验：本地对照完成
+
+独立perf/build-inputs候选基于main 88578c91，新增分阶段／测试热点日志，将固定Git读取扩到获取authority和55份Host来源；每次仍验证精确commit／blob／size／SHA、当前物理路径及工作树字节，没有跨调用缓存成功结果。原27项构建输入用例主体完整保留，种子只复用文件内不可变输入，每用例物理独立.git／工作树及新runtime；增加隔离和损坏输入负测。workflow、缓存、并发、runner规格、产品源码与材料版本保持。
+
+同e8be676输入、每臂3次交替本地A/B：Git调用8→4、111→3；夹具组fresh／seed均28/28、0跳过，中位13.370／12.294秒，初次种子准备更慢、后续复用更快。完整范围、方差和首次／热调用见[性能实验](CI_BUILD_PERFORMANCE.md)，不把Linux局部差值称Windows整包收益。公共完整集1531 pass／0 fail／10既有Linux skip，runtime来源6/6及Host／Release／计时相邻65项通过；精确HEAD输入合同、语法和有限凭据模式检查通过。未手动触发Actions或打包；普通push后的CI另核，Windows A/B及端到端收益尚未验证，不将局部结果当发布或安装证据。
+
+
 ## 2026-10-23 — v0.4.0整合PR70来源与必要声明
 
 将PR70固定提交6576f5d的16份来源／声明材料整合到既有发布分支，四处文档冲突采用保留双方有效内容。API／page完整MIT、Sizzle原文、VTT版权／固定源／实际差异、Material Icons来源、Socket组件与集成范围及npm36许可命名口径保留；原JSON／CSV证据字节及analysisRef不改。旧“尚未替换Host／仍运行Sharp和ServiceStack”等仅作为研究时点，不恢复旧链；当前源码Host／JSON／ZIP、CEC退役、API维护与业务来源指纹均不变。
