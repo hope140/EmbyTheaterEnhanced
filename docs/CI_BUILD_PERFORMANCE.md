@@ -28,7 +28,9 @@ Windows2022、4逻辑CPU、固定Node24.18.1；同job串行AB／BA／AB／BA，�
 
 上表“已接入”只指perf分支候选的正常构建／测试路径，**不表示已合main或进入已发布包**；main仍为88578c91。所有来源／hash／签名／完整集合门禁保留，本次只归档结果，不新增实验或合并。
 
-合并前还存在独立红灯：同SHA的[公共CI40087539201／job120853432011](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40087539201/job/120853432011)实际1545项、1543 pass／2 fail／0 skip。两处均在 `tests/manual-windows-workflow.test.cjs`：原断言要求manual job的if整行只有workflow_dispatch；原manual块从该job截取到文件尾，加入后续benchmark job后又计入其3个action，变为6而断言仍为3。新增workflow时漏跑这组相关验证；短A/B成功不能覆盖此失败，也不能称当前候选全CI通过。最小后续范围是按job边界验证既有和新增路径、保持权限／精确SHA／无全包回退等语义断言，再接受原公共CI；本次仅文档收尾，不改断言、workflow或跳失败。
+该测量SHA还曾有独立红灯：[公共CI40087539201／job120853432011](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40087539201/job/120853432011)实际1545项、1543 pass／2 fail／0 skip。两处均在 `tests/manual-windows-workflow.test.cjs`：原断言要求manual job的if整行只有workflow_dispatch；原manual块从该job截取到文件尾，加入后续benchmark job后又计入其3个action，变为6而断言仍为3。新增workflow时漏跑这组相关验证，短A/B成功不能覆盖该失败。
+
+后续修复仅调整结构测试及文档：按同级job边界分别验证package／benchmark，保留原3项测试、每job仍3个action并核精确pin／只读权限／精确SHA／artifact边界；用路由矩阵保留显式手动与无全包fallback语义，另核checkout前mode／SHA拒绝和4／3默认值。workflow及生产实现未改。本地相关43/43，16个不安全／默认偏移变体均拒绝、2个安全正例通过；完整公共CI以修复提交的check为准，不跳失败或将短基准当全CI。本次修复不新增性能样本，旧测量仍只绑定c1c6e7dc。
 
 OS页缓存未清，first只表示新进程首次调用，不能称冷盘。Host预准备29.768秒在测量外，不把它计作批读收益；模块加载、后验验证、cleanup及进程墙钟的边界按原协议分别保留。原始时间／范围／方差仍在artifact，不用本摘要的中位数冒称跨runner稳定比例。此证据只有一个Windows job；不将局部差值相加，也不从不同runner／不同测试数的完整CI时间推出整包百分比。完整包、安装器、真实签名与运行验收仍是独立证据层。
 

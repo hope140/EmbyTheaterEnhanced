@@ -2,7 +2,7 @@
 
 目的：在同一精确候选、同一台runner的同一个job里，分别比较固定Git输入的旧／批读算法和夹具的fresh／seed准备。已有[Windows正确性run40085107715](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40085107715)通过；完整CI跨机器的总时间不作为性能因果证据。此入口不会触发Actions、安装依赖、构建Host／Native、打包或改workflow。
 
-已执行一次成功的[Windows短A/B40087708509](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40087708509)，精确c1c6e7dc，结果、artifact摘要、生产路径接入与首次摊销分析见[实验归档](CI_BUILD_PERFORMANCE.md)。只量局部操作，0项单元测试；同SHA公共CI另有2项workflow结构断言失败，短基准不覆盖该红灯。本轮收尾不增加实验。
+已执行一次成功的[Windows短A/B40087708509](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40087708509)，精确c1c6e7dc，结果、artifact摘要、生产路径接入与首次摊销分析见[实验归档](CI_BUILD_PERFORMANCE.md)。只量局部操作，0项单元测试；同测量SHA公共CI曾有2项workflow结构断言失败，后续已按job边界和原安全语义恢复测试。短基准不替代最终提交的公共CI；本轮收尾不增加实验。
 
 ## 复现
 
