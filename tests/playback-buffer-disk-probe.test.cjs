@@ -2,6 +2,8 @@
 const test = require('node:test'), assert = require('node:assert/strict');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
 const {EventEmitter} = require('node:events');
+const {execFileSync} = require('node:child_process');
+const vm = require('node:vm');
 const probe = require('../tools/playback-buffer-disk-probe.cjs');
 const support = require('../tools/playback-range-windows-smoke.cjs');
 function directory(t) {const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-disk-probe-test-'))); t.after(() => fs.rmSync(root, {recursive: true, force: true})); return root;}
@@ -27,6 +29,33 @@ test('readback accepts typed mpv booleans but refuses unsupported/missing/change
     assert(probe.sameOption('yes', true)); assert(probe.sameOption(false, false)); assert(probe.sameOption('1048576', 1048576));
     for (const value of [null, undefined, 'unknown', 0, 'no']) assert(!probe.sameOption(value, true));
     assert(!probe.sameOption(524288, 1048576));
+});
+test('fixed mpv choice yes/no node flags reproduce the preceding comparator failure', () => {
+    const before = execFileSync('git', ['show', 'c086c02097236dace00f2ae37aba4fdb586f3b99:tools/playback-buffer-disk-probe.cjs'],
+        {cwd: path.resolve(__dirname, '..'), encoding: 'utf8'});
+    const comparator = before.slice(before.indexOf('function sameOption('), before.indexOf('function cacheState('));
+    const previous = vm.runInNewContext('(' + comparator + ')');
+    assert.equal(previous(true, 'yes'), false); assert.equal(previous(false, 'no'), false);
+    assert.equal(probe.sameOption(true, 'yes'), true); assert.equal(probe.sameOption(false, 'no'), true);
+    assert.equal(probe.sameOption('yes', true), true); assert.equal(probe.sameOption('no', false), true);
+    for (const [actual, expected] of [[false, 'yes'], [true, 'no'], [1, 'yes'], [0, 'no'], ['true', 'yes'], [null, 'no'], ['unknown', 'yes']]) assert.equal(probe.sameOption(actual, expected), false);
+});
+test('safe diagnostics retain fixed stage/error/types while rejecting paths, URLs and unknown fields', () => {
+    const sensitive = 'synthetic-private-unknown';
+    assert.deepEqual(probe.safeFailure({message: 'probe-option-readback-mismatch'}), {code: 'probe-option-readback-mismatch', systemCode: null});
+    assert.deepEqual(probe.safeFailure({message: sensitive, code: 'EACCES'}), {code: 'unclassified', systemCode: 'EACCES'});
+    assert.equal(probe.safeFailure({code: 'ERR_ASSERTION'}).code, 'assertion-failed');
+    const row = probe.safeReadback('demuxer-cache-dir', 'C:\\' + sensitive, '/tmp/' + sensitive);
+    assert.equal(row.actualType, 'string'); assert.equal(row.actualValue, null); assert.equal(row.expectedValue, null);
+    assert(!JSON.stringify(probe.projectReadback({...row, actualType: sensitive, secret: sensitive})).includes(sensitive));
+    assert.equal(probe.safeStage('option-readback'), 'option-readback'); assert.equal(probe.safeStage(sensitive), 'unavailable');
+});
+test('worker log extraction publishes only the fixed diagnostic prefix and whitelisted fields', t => {
+    const dir = directory(t), file = path.join(dir, 'worker.log'), sensitive = 'synthetic-private-unknown';
+    fs.writeFileSync(file, 'raw stderr ' + sensitive + '\nmpv-disk-probe-failure:' + JSON.stringify({stage: 'option-readback', code: 'probe-option-readback-mismatch', secret: sensitive}) + '\n');
+    assert.deepEqual(probe.readWorkerDiagnostic(file), {stage: 'option-readback', code: 'probe-option-readback-mismatch', systemCode: null});
+    fs.appendFileSync(file, 'mpv-disk-probe-failure:' + JSON.stringify({stage: sensitive, code: sensitive, systemCode: sensitive}) + '\n');
+    assert(!JSON.stringify(probe.readWorkerDiagnostic(file)).includes(sensitive));
 });
 test('cache-state projection carries numeric cache facts without raw URLs or paths', () => {
     assert.deepEqual(probe.cacheState({'fw-bytes': 4, 'seekable-ranges': [{start: 1, end: 2}, {start: 'bad', end: 3}], secret: 'https://example.invalid/token'}),

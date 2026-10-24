@@ -134,6 +134,7 @@ function runTool(plan, arguments_, label, script = path.join(plan.toolsRoot, 'to
     try {
         const result = spawnSync(process.execPath, [script, ...arguments_],
             {cwd: plan.toolsRoot, env: environment, windowsHide: true, shell: false, stdio: ['ignore', fd, fd], timeout: 600000});
+        if (label === 'disk-probe-driver') require('./ci-mpv-disk-probe.cjs').printSummary(plan);
         if (result.error || result.status !== 0) fail('controlled-smoke-command-failed:' + label);
     } finally {fs.closeSync(fd);}
 }
@@ -186,7 +187,9 @@ function collect(plan, destination) {
             copy(path.join(root, variant, phase + suffix), 'loader-' + variant + '-' + phase + suffix);
         }
     }
-    if (plan.mode === 'disk-probe') copied.push(...require('./ci-mpv-disk-probe.cjs').collect(plan, destination));
+    if (plan.mode === 'disk-probe') {
+        const disk = require('./ci-mpv-disk-probe.cjs'); disk.printSummary(plan); copied.push(...disk.collect(plan, destination));
+    }
     const complete = !copied.some(row => row.action === 'omitted-too-large');
     writeNew(path.join(destination, 'collection.json'), {complete, files: copied}); if (!complete) fail('artifact-evidence-size-refused'); return copied;
 }

@@ -50,6 +50,10 @@ Electron appData/userData/sessionData及 APPDATA、LOCALAPPDATA、MPV_HOME、TEM
 
 输出 `observations.json`、`run.json`、`worker.log`。`observed`仅表示规定观察和正常资源收尾齐全；不等于恢复成功。协调器复核worker PID、mode、输入身份、选项回读、两个helper不同PID及正常退出/stdio关闭，不能只看Electron code0。
 
+探针的回读比较严格支持固定mpv的类型：`choice_get()` 会把 `yes/no` 选项返回为 `MPV_FORMAT_FLAG`，因此 `cache=yes` 可能回读 `true`，unlink的 `no` 可能回读 `false`；仅做该双向等价，未知值、数字0/1代替布尔以及错值仍拒绝。依据：[固定m_option.c L780–810](https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/options/m_option.c#L780-L810)。这属于探针类型兼容，不是绕过选项检查。
+
+CI执行和始终采集步骤打印 `mpv-disk-probe-summary:` 固定投影：driver/worker阶段、封闭error代码、OS代码枚举、PID/退出/流关闭和回读类型。选项目录等路径不输出值；未知错误文字、URL/token、raw stderr及扩展字段不打印。早期worker失败只解析固定诊断前缀，checkout/prepare/完整性失败仍保留门禁和UNKNOWN，不靠放宽校验重跑。
+
 重点比较 `no` 模式：旧文件是否保留且hash不变；后续load是否新增.dat，是否仍请求已有媒体区间。只有保留文件不证明索引恢复；重新播放成功也不证明使用旧缓存。请求重新出现是本次来源回读证据，不能泛化成所有容器均无其他可能。支持未知、文件采样失败、退出异常或证据不全均为UNKNOWN。新进程指新Native helper，Electron宿主仍是同一个隔离隐藏窗口；本工具不声称已验证整个应用重启。
 
 ## 当前验证

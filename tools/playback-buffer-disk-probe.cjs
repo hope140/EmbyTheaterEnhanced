@@ -76,8 +76,56 @@ function readProbe(file) {
     return {plan, source};
 }
 function sameOption(actual, expected) {
-    if (typeof expected === 'boolean') return actual === expected || actual === (expected ? 'yes' : 'no');
+    // Fixed mpv choice_get() returns MPV_FORMAT_FLAG for the yes/no alternatives,
+    // including cache=yes and demuxer-cache-unlink-files=no, not just flag options.
+    const flag = value => value === 'yes' ? true : value === 'no' ? false : value;
+    actual = flag(actual); expected = flag(expected);
     return actual === expected || typeof expected === 'number' && actual === String(expected);
+}
+const OPTION_NAMES = new Set(Object.keys(options('ram', path.resolve('synthetic-isolated-disk'))));
+const ERROR_CODES = new Set(['probe-invalid-mode', 'probe-redirected-path', 'probe-cache-entry-invalid', 'probe-cache-size-limit', 'probe-fixture-size-limit',
+    'probe-fresh-output-required', 'probe-output-outside-runtime-required', 'probe-plan-invalid', 'probe-owner-or-source-drift', 'probe-json-limit',
+    'probe-cache-state-unavailable', 'probe-fw-bytes-unavailable', 'probe-deadline', 'probe-option-or-command-failed', 'probe-observation-timeout',
+    'probe-helper-exit-unconfirmed', 'probe-fixed-Windows-Electron-required', 'probe-option-readback-mismatch', 'probe-observations-not-accepted',
+    'probe-readback-not-accepted', 'probe-samples-incomplete', 'probe-not-established', 'property-unavailable', 'generation-required',
+    'invalid-owned-plan', 'fixture-config-mutated', 'fixture-mutated', 'profile-owner-mismatch', 'redirected-owned-directory', 'nonphysical-file',
+    'candidate-runtime-source', 'candidate-runtime-path', 'candidate-runtime-set', 'candidate-zip-identity', 'candidate-installer-receipt',
+    'candidate-fixed-native-identity', 'candidate-changed-after-preparation', 'candidate-runtime-file', 'candidate-runtime-manifest',
+    'candidate-runtime-inventory', 'candidate-maintained-source', 'entry-only-contract-failed', 'native-phase-failed:entry',
+    'entry-deadline-no-native-requested', 'previous-receipt-exists-use-fresh-output', 'trial-physical-root-required', 'trial-controls-drift',
+    'trial-base-tools-drift', 'trial-loader-source-or-target-invalid', 'trial-derived-file-set', 'trial-base-member-changed', 'trial-loader-copy-mismatch',
+    'trial-descriptor-invalid', 'trial-sidecar-root-invalid', 'trial-loader-archive-lock', 'trial-fresh-root-required',
+    'assertion-failed', 'unclassified']);
+const SYSTEM_CODES = new Set(['EACCES', 'EPERM', 'ENOENT', 'ENOSPC', 'EIO', 'ETIMEDOUT']);
+function safeFailure(error) {
+    return {code: ERROR_CODES.has(error?.integrity?.code) ? error.integrity.code : ERROR_CODES.has(error?.message) ? error.message : ERROR_CODES.has(error?.code) ? error.code : error?.code === 'ERR_ASSERTION' ? 'assertion-failed' : 'unclassified',
+        systemCode: SYSTEM_CODES.has(error?.code) ? error.code : null};
+}
+function safeStage(stage) {
+    return typeof stage === 'string' && /^(?:worker-preflight|initialization|helper-start|helper-ready|option-readback|(?:first|same-helper-reopen|new-helper-reopen)-(?:load|loaded|forward|seek|stopped)|first-helper-exited)$/.test(stage) ? stage : 'unavailable';
+}
+function safeReadback(option, actual, expected) {
+    const value = row => typeof row === 'boolean' || typeof row === 'number' && Number.isFinite(row) ? row : ['yes', 'no', 'auto', 'whendone', 'immediate'].includes(row) ? row : null;
+    return {option: OPTION_NAMES.has(option) ? option : 'unavailable', actualType: actual === null ? 'null' : Array.isArray(actual) ? 'array' : typeof actual,
+        expectedType: typeof expected, actualValue: value(actual), expectedValue: value(expected)};
+}
+function projectReadback(row) {
+    const result = safeReadback(row?.option, row?.actualValue, row?.expectedValue);
+    const types = ['undefined', 'null', 'array', 'object', 'string', 'boolean', 'number'];
+    result.actualType = types.includes(row?.actualType) ? row.actualType : 'unavailable';
+    result.expectedType = types.includes(row?.expectedType) ? row.expectedType : 'unavailable'; return result;
+}
+function workerDiagnostic(error, stage = 'worker-preflight') {return {stage: safeStage(stage), ...safeFailure(error)};}
+function readWorkerDiagnostic(file) {
+    if (!fs.existsSync(file)) return null;
+    const stat = fs.lstatSync(file);
+    if (!stat.isFile() || stat.isSymbolicLink()) return null;
+    const size = Math.min(stat.size, 65536), tail = Buffer.alloc(size), fd = fs.openSync(file, 'r');
+    try {fs.readSync(fd, tail, 0, size, stat.size - size);} finally {fs.closeSync(fd);}
+    for (const line of tail.toString('utf8').split(/\r?\n/).reverse()) if (line.startsWith('mpv-disk-probe-failure:')) {
+        try {const row = JSON.parse(line.slice('mpv-disk-probe-failure:'.length)); return workerDiagnostic({message: row.code, code: row.systemCode}, row.stage);} catch (_) {}
+    }
+    return null;
 }
 function cacheState(value) {
     if (!value || typeof value !== 'object') throw Error('probe-cache-state-unavailable');
@@ -198,11 +246,13 @@ async function worker(file) {
             record.options = actual;
             for (const [key, value] of Object.entries(expected)) {
                 report.stage = 'option-readback'; report.pendingOption = key; checkpoint();
+                report.readback = safeReadback(key, undefined, value); checkpoint();
                 client.setProperty(key, value); const got = await client.getProperty(key, 2000);
+                report.readback = safeReadback(key, got, value); checkpoint();
                 if (!sameOption(got, value)) throw Error('probe-option-readback-mismatch');
                 actual[key] = key === 'demuxer-cache-dir' ? '<isolated-disk>' : got;
             }
-            delete report.pendingOption; check(); report.stage = label + '-load'; checkpoint();
+            delete report.pendingOption; delete report.readback; check(); report.stage = label + '-load'; checkpoint();
             const requestStart = server.rows.length;
             await client.load(['loadfile', url]).promise;
             await until(() => client.state.fileLoaded);
@@ -219,7 +269,8 @@ async function worker(file) {
         report.retention = retentionEvidence(report.samples);
         readProbe(file);
         report.status = 'observed'; // Observations, not a claim that mpv restored a cache.
-    } catch (_) {report.status = 'UNKNOWN'; report.reason = fatal ? 'deadline' : 'probe-failed-or-option-unsupported';}
+    } catch (error) {report.status = 'UNKNOWN'; report.reason = fatal ? 'deadline' : 'probe-failed-or-option-unsupported';
+        report.failure = workerDiagnostic(error, report.stage); console.error('mpv-disk-probe-failure:' + JSON.stringify(report.failure));}
     finally {
         for (const owned of [...ownedHelpers.keys()]) {try {await finishHelper(owned);} catch (_) {report.status = 'UNKNOWN'; report.cleanupFailure = 'helper-exit';}}
         if (ownedHelpers.size) {report.status = 'UNKNOWN'; report.nativeOutcome = 'UNCERTAIN';}
@@ -246,7 +297,8 @@ async function run(file, execute) {
         if (timedOut) throw Error('probe-not-established');
         readProbe(file); validateObservations(boundedJson(path.join(plan.out, 'observations.json')), plan, exit);
         Object.assign(receipt, {status: 'observed', nativeOutcome: 'EXIT_AND_CLOSE_CONFIRMED'}); save(); return receipt;
-    } catch (_) {receipt.status = 'UNKNOWN'; receipt.reason = 'probe-not-established'; save(); throw Error('probe-not-established');
+    } catch (error) {receipt.status = 'UNKNOWN'; receipt.reason = 'probe-not-established'; receipt.failure = safeFailure(error);
+        receipt.workerFailure = readWorkerDiagnostic(path.join(plan.out, 'worker.log')); save(); throw Error('probe-not-established');
     } finally {clearTimeout(timer); fs.closeSync(fd);}
 }
 async function main(argv) {
@@ -256,6 +308,9 @@ async function main(argv) {
     throw Error('probe-invalid-command');
 }
 const workerEntry = process.versions.electron && process.type === 'browser' && process.argv.includes('--worker') && path.resolve(process.argv[1] || '') === __filename;
-if (workerEntry) worker(support.argumentsOf(process.argv.slice(2), ['--worker', '--probe'])['--probe']).catch(() => require('electron').app.exit(1));
+if (workerEntry) worker(support.argumentsOf(process.argv.slice(2), ['--worker', '--probe'])['--probe']).catch(error => {
+    console.error('mpv-disk-probe-failure:' + JSON.stringify(workerDiagnostic(error))); require('electron').app.exit(1);
+});
 else if (require.main === module) main(process.argv.slice(2)).then(r => console.log(JSON.stringify(r))).catch(() => {console.error('disk-probe-failed'); process.exitCode = 1;});
-module.exports = {MODES, options, childEnvironment, diskFiles, sameOption, cacheState, retentionEvidence, prepare, readProbe, run, boundedJson, observeChild, collectHelperExit, validateObservations};
+module.exports = {MODES, options, childEnvironment, diskFiles, sameOption, safeFailure, safeStage, safeReadback, projectReadback, workerDiagnostic, readWorkerDiagnostic,
+    cacheState, retentionEvidence, prepare, readProbe, run, boundedJson, observeChild, collectHelperExit, validateObservations};

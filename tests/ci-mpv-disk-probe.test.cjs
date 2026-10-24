@@ -75,3 +75,18 @@ test('oversized observation refuses successful complete collection rather than s
     assert.throws(() => ci.collect({root: dir, toolsRoot: dir, paths: {smoke: path.join(dir, 'unused')}, mode: 'disk-probe'}, out), /evidence-size-refused/);
     assert.equal(JSON.parse(fs.readFileSync(path.join(out, 'collection.json'))).complete, false);
 });
+test('CI summary exposes fixed failure location and typed choice values without exposing receipt contents', t => {
+    const dir = root(t), modeRoot = path.join(dir, 'disk-probe', 'ram'); fs.mkdirSync(modeRoot, {recursive: true});
+    const sensitive = 'synthetic-private-unknown';
+    fs.writeFileSync(path.join(dir, 'disk-probe-driver.stdout'), 'raw stderr ' + sensitive + '\nmpv-disk-probe-driver-failure:' + JSON.stringify({stage: 'matrix', code: 'probe-not-established', secret: sensitive}) + '\n');
+    fs.writeFileSync(path.join(modeRoot, 'observations.json'), JSON.stringify({status: 'UNKNOWN', stage: 'option-readback', secret: sensitive,
+        failure: {stage: 'option-readback', code: 'probe-option-readback-mismatch', extra: sensitive},
+        readback: {option: 'cache', actualType: 'boolean', actualValue: true, expectedType: 'string', expectedValue: 'yes', extra: sensitive},
+        helpers: [{pid: 100, exited: true, diagnostics: {processExitCode: 0, streamsClosed: true, labels: ['dll-load-failed', sensitive], systemCodes: [126, sensitive], unknownFatal: false, raw: sensitive}}]}));
+    fs.writeFileSync(path.join(modeRoot, 'run.json'), JSON.stringify({pid: 99, code: 1, processExited: true, streamsClosed: true, secret: sensitive}));
+    const rows = disk.summaries({root: dir}); assert.equal(rows.length, 5); assert.equal(rows[0].stage, 'matrix');
+    assert.equal(rows[1].readback.actualType, 'boolean'); assert.equal(rows[1].readback.actualValue, true); assert.equal(rows[1].readback.expectedValue, 'yes');
+    assert.equal(rows[2].status, 'NOT_STARTED'); assert.equal(rows[1].failure.code, 'probe-option-readback-mismatch');
+    assert.deepEqual(rows[1].helpers[0].labels, ['dll-load-failed']); assert.deepEqual(rows[1].helpers[0].systemCodes, [126]);
+    assert(!JSON.stringify(rows).includes(sensitive)); assert(!JSON.stringify(rows).includes(dir));
+});
