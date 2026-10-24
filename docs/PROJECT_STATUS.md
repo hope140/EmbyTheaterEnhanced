@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-23 — 六项纯修复接入三项缩略图边界修复
+
+保留61dc318六项检查点，在同一独立候选合入缩略图来源66c6a32d。增量只修复无章节预览、实际MediaSourceId绑定及多播放/身份代次取消隔离；沿现有VideoOSD overlay，原始vendor、许可输入及声明保持，维护ApiClient/AMD输出与清单同步，不新增图片库/缓存策略、更新器或原生预览改动。六项播放器owner、暂停意图及真实Seek完成上报保留。
+
+新增两个组件交叉回归连接真实adapter/endpoint与固定OSD片段：暂停Seek完成不退休当前版本缩略图或解除显式暂停；Stop与替换同时退休旧seek及旧图片元数据。PlaybackManager/DOM仍有夹具，完整Session另由EWT矩阵覆盖。九项全量/材料结果按准确组合提交单独记录；61dc既有Windows包只代表六项，不能冒充九项通过。不创建PR、不合main/发Release、不在本轮排包或占用户前台；父统一新包与简验。新增检查见[九项组合验收](NINE_FIX_ACCEPTANCE.md)。
+
 ## 2026-10-23 — 四项审查修复与两项EWT修复组合候选
 
 按独立发布基线88578，组合四项审查保全源2570c326与EWT源cb0ebf78，必要构建来源预检693d5257单独保留。service/client/libmpv及其测试自动合并，逐项复核须同时保留create/Stop/Play资源owner、显式暂停意图和真实seek完成后原Session上报；不以命令接受伪造目标位置。两份文档顶部冲突保留双方完整记录。
@@ -805,3 +811,7 @@ GitHub Windows public CI exposed one preload fixture using a nonphysical TEMP al
 
 
 2026-10-23 candidate: manual Windows packaging has a source-built Host recovery/compile/verification entry point, with pinned 55-file source and NuGet acquisition and generated per-run evidence. GitHub execution remains unverified. Work's validated builder argument delta has been synchronized exactly; a portable runner-side Host verification harness is still required; the missing harness fails closed before compilation/packaging. No external Work binary/verification receipt is imported by this path.
+
+## Seek-thumbnail boundary repair
+
+An isolated VideoOSD overlay candidate permits existing Emby thumbnail data without chapters, binds metadata and image URLs to the actual playing MediaSource, and isolates late results by playback/account/server ownership. The selected ApiClient now forwards optional thumbnail cancellation to its existing transport. Existing in-memory metadata reuse and HTTP image caching remain; no media-buffer feature, disk image store or cache policy is added. Locked-source DOM/player and loopback transport checks are documented in [the API input contract](INDEPENDENT_API_INPUT.md#emby-seek-thumbnail-preview-boundaries). Windows visuals and real-server version behavior still require acceptance; no package or release is implied.

@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-23 — 六项纯修复接入三项缩略图边界修复
+
+保留61dc318六项检查点，在同一独立候选合入缩略图来源66c6a32d。增量只修复无章节预览、实际MediaSourceId绑定及多播放/身份代次取消隔离；沿现有VideoOSD overlay，原始vendor、许可输入及声明保持，维护ApiClient/AMD输出与清单同步，不新增图片库/缓存策略、更新器或原生预览改动。六项播放器owner、暂停意图及真实Seek完成上报保留。
+
+新增两个组件交叉回归连接真实adapter/endpoint与固定OSD片段：暂停Seek完成不退休当前版本缩略图或解除显式暂停；Stop与替换同时退休旧seek及旧图片元数据。PlaybackManager/DOM仍有夹具，完整Session另由EWT矩阵覆盖。九项全量/材料结果按准确组合提交单独记录；61dc既有Windows包只代表六项，不能冒充九项通过。不创建PR、不合main/发Release、不在本轮排包或占用户前台；父统一新包与简验。新增检查见[九项组合验收](NINE_FIX_ACCEPTANCE.md)。
+
 ## 2026-10-23 — 四项审查修复与两项EWT修复组合候选
 
 按独立发布基线88578，组合四项审查保全源2570c326与EWT源cb0ebf78，必要构建来源预检693d5257单独保留。service/client/libmpv及其测试自动合并，逐项复核须同时保留create/Stop/Play资源owner、显式暂停意图和真实seek完成后原Session上报；不以命令接受伪造目标位置。两份文档顶部冲突保留双方完整记录。
@@ -1237,3 +1243,9 @@ GitHub Windows public CI exposed one preload fixture using a nonphysical TEMP al
 The manual Windows package route now calls `tools/ci-source-built-host.ps1` after the existing independent component recovery. It recovers the fixed official 55 source files as raw Git blobs, verifies their recorded SHA256 values, and acquires only the two pinned NuGet inputs without installation. Repository build tools materialize the current unified source kit; a new Framework/x86 process must compile and run its own matching-byte verification before a generated lock can enter assembly. Runner evidence binds the checkout, run identity, source, compiler receipt, probe receipt and EXE/PDB. External Work receipts and original-Host fallback are not substitutes.
 
 This is local integration preparation, not a successful GitHub run. Work's exact validated builder delta has now been applied:16941 bytes, SHA256 ad98235870d72c4e5ce48227fcae6b8f01d8a0500dadc3e69cd55ae2deb926ed. It moves the search-path property into generated XML, adds compile-only references from the already pinned net462 pack, and corrects metadata enumeration initialization; business source identity is unchanged. Work reported MSB3277 separately; pure net462 runtime compatibility is not established by this transfer. `tools/Test-SourceBuiltHost.ps1` is still pending the verified portable harness handoff. Its absence stops before compilation/acceptance, so the current skeleton cannot produce a package or claim runner acceptance. Local checks cover recovery/receipt contracts and syntax only. Full README/project-document consolidation remains deferred until test-package user acceptance.
+
+## 2026-10-24 - Seek-thumbnail boundaries
+
+Extend the existing traceable VideoOSD lifecycle overlay, retaining the immutable vendor input and keyboard behavior. ThumbnailSet availability no longer depends on chapter markers; both metadata and image queries carry the actual PlaybackManager source ID. Owned generations, cancellation and guarded display-item completion prevent old source/account/server/session results from populating a newer preview. Optional ThumbnailSet signals use the selected API's established transport; deterministic AMD output and selection/output hashes are updated together. Unsupported scoped endpoints keep the text fallback, without an unqualified-version retry.
+
+Regression methods cover no chapters, normal single-source and multiple-source requests, empty results, failure/retry, rapid switches, late success/failure, lifecycle cleanup and account/server changes. A small loopback HTTP fixture verifies body cancellation and timer cleanup. These are source/transport tests, not Windows visual, real Emby/NAS, installation or release evidence. Existing media buffers and cache settings are outside this repair. See [the reproducible contract](INDEPENDENT_API_INPUT.md#emby-seek-thumbnail-preview-boundaries).
