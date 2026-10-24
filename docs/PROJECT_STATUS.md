@@ -761,3 +761,7 @@ GitHub Windows public CI exposed one preload fixture using a nonphysical TEMP al
 
 
 2026-10-23 candidate: manual Windows packaging has a source-built Host recovery/compile/verification entry point, with pinned 55-file source and NuGet acquisition and generated per-run evidence. GitHub execution remains unverified. Work's validated builder argument delta has been synchronized exactly; a portable runner-side Host verification harness is still required; the missing harness fails closed before compilation/packaging. No external Work binary/verification receipt is imported by this path.
+
+## Shared byte-range cache preparation
+
+An independent post-release candidate implements raw block storage, atomic range indexing and loopback request interception with strict origin/version validation. Confirmed next-prefix choices are 50–90% progress (default 70%) and 100/300/500 MB (default 300 MB); last actual playback persists until another actual playback, while unplayed next data does not survive exit. Existing mpv RAM settings keep their meaning. This is the byte-transport stage, with explicit test quotas/bandwidth and no ordinary-playback hookup yet. Integration and crash-lock limitations are recorded in [the candidate contract](PLAYBACK_RANGE_CACHE.md).
