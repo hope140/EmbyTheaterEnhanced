@@ -21,6 +21,16 @@ function SafeRelative([string]$Name) {
 function HashMatches([string]$File, [string]$Expected) {
     return (Test-Path -LiteralPath $File -PathType Leaf) -and (Get-FileHash -LiteralPath $File -Algorithm SHA256).Hash.ToLowerInvariant() -ceq $Expected
 }
+function ProjectHostText([string]$Text) {
+    $kinds = @('FileNotFoundException','FileLoadException','BadImageFormatException','TypeInitializationException','ConfigurationErrorsException','Win32Exception','UnauthorizedAccessException','DllNotFoundException','NullReferenceException','IOException','TypeError','SyntaxError','Cannot find module')
+    return [ordered]@{fatalKinds=@($kinds | Where-Object { $Text.Contains($_) });electronLaunchMentioned=$Text.Contains('x64\electron\electron.exe')}
+}
+function ReadBoundedText([string]$File) {
+    if (-not (Test-Path -LiteralPath $File -PathType Leaf)) { return '' }
+    $stream = [IO.File]::Open($File,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::ReadWrite)
+    try { $null=$stream.Seek([Math]::Max(0,$stream.Length-65536),[IO.SeekOrigin]::Begin);$reader=[IO.StreamReader]::new($stream);return $reader.ReadToEnd() }
+    finally { $stream.Dispose() }
+}
 function InitializeWindowsApi {
     Add-Type @'
 using System;
@@ -37,6 +47,9 @@ public static class V043Window {
  [DllImport("user32.dll", SetLastError=true)] static extern IntPtr SendMessageTimeout(IntPtr h,uint message,IntPtr w,IntPtr l,uint flags,uint timeout,out IntPtr result);
  public static IntPtr[] Visible(uint wanted) {
   var list=new List<IntPtr>(); EnumWindows((h,p)=>{uint pid;GetWindowThreadProcessId(h,out pid);var kind=new StringBuilder(256);GetClassName(h,kind,kind.Capacity);if(pid==wanted&&IsWindowVisible(h)&&GetWindow(h,4)==IntPtr.Zero&&kind.ToString().StartsWith("Chrome_WidgetWin_",StringComparison.Ordinal))list.Add(h);return true;},IntPtr.Zero);return list.ToArray();
+ }
+ public static int[] VisibleKinds(uint wanted) {
+  var counts=new int[3];EnumWindows((h,p)=>{uint pid;GetWindowThreadProcessId(h,out pid);if(pid==wanted&&IsWindowVisible(h)){var kind=new StringBuilder(256);GetClassName(h,kind,kind.Capacity);var name=kind.ToString();counts[name.StartsWith("Chrome_WidgetWin_",StringComparison.Ordinal)?0:name=="#32770"?1:2]++;}return true;},IntPtr.Zero);return counts;
  }
  public static bool Close(IntPtr h) {IntPtr result;return SendMessageTimeout(h,0x10,IntPtr.Zero,IntPtr.Zero,3,2000,out result)!=IntPtr.Zero;}
 }
@@ -56,6 +69,8 @@ if ($ContractSelfTest) {
         Require (HashMatches $tempFile $digest) 'SELFTEST_HASH'
         Require (-not (HashMatches $tempFile ('0' * 64))) 'SELFTEST_DRIFT'
     } finally { Remove-Item -LiteralPath $tempFile }
+    $safe = ProjectHostText 'FileNotFoundException: C:\PRIVATE_SYNTHETIC_CANARY\account-token=PRIVATE_SYNTHETIC_CANARY'
+    Require ($safe.fatalKinds -contains 'FileNotFoundException' -and ($safe | ConvertTo-Json -Compress) -notmatch 'PRIVATE_SYNTHETIC_CANARY|account-token') 'SELFTEST_PRIVATE_PROJECTION'
     Write-Output 'CONTRACT_SELFTEST_PASSED (no install, launch or network)'
     return
 }
@@ -67,6 +82,7 @@ Require (-not (Test-Path -LiteralPath $work)) 'PRESERVE_EXISTING_OUTPUT'
 $reportDir = Join-Path $work 'report'
 New-Item -ItemType Directory -Path $reportDir | Out-Null
 $result = [ordered]@{schemaVersion=1;scope='ordinary-installed-startup-close-only';sourceCommit=$source;version=$version;buildRun=$buildRun;artifactId=$ArtifactId;artifactZipSha256=$ArtifactZipSha256;installerSha256=$InstallerSha256;status='failed';stage='preflight';installed=$false;shortcutVerified=$false;hostStarted=$false;electronParentVerified=$false;visibleWindow=$false;normalCloseRequested=$false;ownedExitConfirmed=$false;hostExitCode=$null;electronExitCode=$null;realSmtcPlayback='NOT_ASSESSED';visibleDwmPlayback='NOT_ASSESSED';rendererDomReady='NOT_ASSESSED';forcedTermination=$false;installerExitCode=$null;ownedElectronCandidates=0;visibleWindowCount=0;ownedRemainingCount=$null}
+$launcher=$null; $target=$null; $profile=$null; $windowsApiReady=$false
 try {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
     Require ([Security.Principal.WindowsPrincipal]::new($identity).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) 'RUNNER_NOT_ALREADY_ADMIN'
@@ -137,7 +153,7 @@ try {
     $launcher = Start-Process -FilePath $shortcut.TargetPath -WorkingDirectory $shortcut.WorkingDirectory -RedirectStandardOutput (Join-Path $work 'host.stdout.log') -RedirectStandardError (Join-Path $work 'host.stderr.log') -PassThru
     $result.hostStarted = $true
     function OwnedProcesses { return @(Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($target + '\',[StringComparison]::OrdinalIgnoreCase) }) }
-    InitializeWindowsApi
+    InitializeWindowsApi; $windowsApiReady=$true
     $deadline = [DateTime]::UtcNow.AddSeconds(60); $mainElectron = $null; $windows = @()
     do {
         if ($launcher.HasExited) { $result.hostExitCode = $launcher.ExitCode }
@@ -179,6 +195,28 @@ try {
     $result.errorType = $_.Exception.GetType().Name
     $result.scriptLine = $_.InvocationInfo.ScriptLineNumber
 } finally {
+    if ($result.status -cne 'passed' -and $null -ne $launcher) {
+        try {
+            $all = @(Get-CimInstance Win32_Process)
+            $owned = @($all | Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($target + '\',[StringComparison]::OrdinalIgnoreCase) })
+            $direct = @($all | Where-Object { $_.ParentProcessId -eq $launcher.Id -and $_.Name -ieq 'electron.exe' })
+            $result.processFacts = [ordered]@{hostExited=$launcher.HasExited;ownedHostCount=@($owned | Where-Object { $_.Name -ieq 'Emby.Theater.exe' }).Count;ownedElectronCount=@($owned | Where-Object { $_.Name -ieq 'electron.exe' }).Count;directElectronNameCount=$direct.Count;directElectronPathMissing=@($direct | Where-Object { -not $_.ExecutablePath }).Count}
+            if ($windowsApiReady -and -not $launcher.HasExited) { $result.hostWindowKinds = @([V043Window]::VisibleKinds($launcher.Id)) }
+            if ($launcher.HasExited) { $result.hostExitCode=$launcher.ExitCode }
+            $stdout=Join-Path $work 'host.stdout.log';$stderr=Join-Path $work 'host.stderr.log'
+            $result.hostStreamFacts=[ordered]@{stdoutBytes=if(Test-Path -LiteralPath $stdout){(Get-Item -LiteralPath $stdout).Length}else{0};stderrBytes=if(Test-Path -LiteralPath $stderr){(Get-Item -LiteralPath $stderr).Length}else{0};projection=(ProjectHostText ((ReadBoundedText $stdout) + "`n" + (ReadBoundedText $stderr)))}
+            $logDir=Join-Path $profile 'logs'
+            $hostLogs=@(Get-ChildItem -LiteralPath $logDir -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'ete-client.jsonl' } | Select-Object -First 4)
+            $text=($hostLogs | ForEach-Object { ReadBoundedText $_.FullName }) -join "`n"
+            $diag=Join-Path $logDir 'ete-client.jsonl'
+            $result.profileFacts=[ordered]@{exists=(Test-Path -LiteralPath $profile);clientLogExists=(Test-Path -LiteralPath $diag);hostLogFileCount=$hostLogs.Count;hostProjection=(ProjectHostText $text)}
+            if (Test-Path -LiteralPath $diag) {
+                $clientEvents=@((ReadBoundedText $diag) -split '\r?\n' | Where-Object { $_ } | ForEach-Object { $_ | ConvertFrom-Json })
+                $result.profileFacts.appStartCount=@($clientEvents | Where-Object { $_.category -ceq 'app' -and $_.event -ceq 'start' }).Count
+                $result.profileFacts.failureEventCount=@($clientEvents | Where-Object { $_.event -in @('global-error','unhandled-rejection','integration-unavailable','app-startup-initialization-failed') }).Count
+            }
+        } catch { $result.failureProjectionIncomplete=$true }
+    }
     # Report only fixed fields. Raw installer/client logs and profiles stay on the disposable runner.
     [IO.File]::WriteAllText((Join-Path $reportDir 'installed-startup.json'),($result | ConvertTo-Json -Depth 5) + "`n",[Text.UTF8Encoding]::new($false))
     Write-Output ($result | ConvertTo-Json -Depth 5 -Compress)
