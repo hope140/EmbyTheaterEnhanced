@@ -175,3 +175,37 @@ test('automatic AVI fixtures put B index beyond P and leave A 16 seconds for nat
     assert.equal(b.toString('ascii', index, index + 4), 'idx1'); assert.equal(b.readUInt32LE(4) + 8, b.length);
     assert.equal(hash(b), fixtures[1].sha256); assert(!fs.existsSync(path.join(root, 'B-seed.avi')));
 });
+
+test('driver identity accepts only LF/CRLF checkout equivalence and returns exact committed bytes', t => {
+    const {execFileSync} = require('node:child_process'), repo = path.resolve(__dirname, '..');
+    const commit = execFileSync('git', ['rev-parse', 'HEAD'], {cwd: repo, encoding: 'utf8'}).trim();
+    const blob = execFileSync('git', ['show', commit + ':tools/playback-prefix-windows-auto.cjs'], {cwd: repo});
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'prefix-driver-eol-')); t.after(() => fs.rmSync(directory, {recursive: true, force: true}));
+    const driver = path.join(directory, 'driver.cjs'), crlf = Buffer.from(blob.toString('utf8').replace(/\r?\n/g, '\r\n'));
+    assert.notEqual(hash(crlf), hash(blob), 'the preceding raw-byte guard rejects an ordinary CRLF checkout');
+    for (const bytes of [blob, crlf]) {
+        fs.writeFileSync(driver, bytes);
+        const selected = tool.driverSource(repo, commit, driver);
+        assert(selected.equals(blob), 'private driver is generated from exact Git bytes, preserving the later strict plan hash');
+    }
+    for (const bytes of [Buffer.concat([crlf, Buffer.from('// actual source drift\r\n')]), Buffer.concat([Buffer.from([239, 187, 191]), blob]), Buffer.from(blob.toString('utf8').replace('use strict', 'use unsafe'))]) {
+        fs.writeFileSync(driver, bytes); assert.throws(() => tool.driverSource(repo, commit, driver), /driver-source-mismatch/);
+    }
+});
+test('prepare CLI reports its bounded stage and filesystem reason before any runtime/helper execution', t => {
+    const {spawnSync} = require('node:child_process'), directory = fs.mkdtempSync(path.join(os.tmpdir(), 'prefix-prepare-error-'));
+    t.after(() => fs.rmSync(directory, {recursive: true, force: true}));
+    const absent = path.join(directory, 'absent-input'), result = spawnSync(process.execPath, [path.join(__dirname, '../tools/playback-prefix-windows-auto.cjs'), 'prepare',
+        '--tools=' + absent, '--source=' + directory, '--source-commit=' + 'a'.repeat(40), '--runtime=' + directory, '--zip=' + absent, '--out=' + path.join(directory, 'out')], {encoding: 'utf8'});
+    assert.equal(result.status, 1); assert(!fs.existsSync(path.join(directory, 'out')));
+    const receipt = JSON.parse(result.stderr.trim());
+    assert.deepEqual(receipt, {type: 'next-auto-prepare-failure', stage: 'resolve-inputs', code: 'prepare-filesystem-error', systemCode: 'ENOENT', gitExitCode: null});
+    assert(!result.stderr.includes(directory)); assert(!result.stderr.includes(absent));
+});
+test('prepare diagnostic preserves exact fixed reasons but removes arbitrary exception text', () => {
+    const canary = 'synthetic-private-error-canary';
+    assert.equal(tool.prepareFailure({message: 'driver-source-mismatch', prepareStage: 'driver-source'}).code, 'driver-source-mismatch');
+    assert.equal(tool.prepareFailure({message: 'candidate-maintained-source:' + canary, prepareStage: 'verify-base'}).code, 'candidate-maintained-source');
+    const diagnostic = tool.prepareFailure({message: canary, stack: canary, prepareStage: canary, code: canary});
+    assert.equal(diagnostic.code, 'prepare-unexpected-error'); assert(!JSON.stringify(diagnostic).includes(canary));
+});

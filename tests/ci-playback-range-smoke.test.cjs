@@ -118,7 +118,7 @@ test('job-visible automatic failure summary preserves fixed native reasons and e
     assert.deepEqual(native.helpers[0].labels, ['dll-load-failed']); assert.deepEqual(native.helpers[0].systemCodes, [126]);
     assert.equal(summary.events.length, 3); assert.equal(summary.events[1].value, 11.3);
     assert(!JSON.stringify(summary).includes(canary));
-    assert.match(source, /console\.error\(JSON\.stringify\(automaticFailureSummary\(plan\.paths\.smoke\)\)\)/);
+    assert.match(source, /console\.error\(JSON\.stringify\(automaticFailureSummary\(plan\.paths\.smoke, file\)\)\)/);
 });
 test('missing, malformed and oversize phase evidence stays unrecorded and bounded in job logs', t => {
     const directory = root(t);
@@ -128,4 +128,17 @@ test('missing, malformed and oversize phase evidence stays unrecorded and bounde
     const summary = ci.automaticFailureSummary(directory);
     assert(summary.phases.every(row => row.status === 'not-recorded' && row.exitCode === null));
     assert.deepEqual(summary.events, []); assert(JSON.stringify(summary).length < 2000);
+});
+
+test('prepare failure is surfaced from command stdout even before owned output or Electron receipts exist', t => {
+    const directory = root(t), file = path.join(directory, 'prepare.stdout'), canary = 'synthetic-private-prepare-canary';
+    fs.writeFileSync(file, 'driver-source-mismatch\n');
+    let summary = ci.automaticFailureSummary(path.join(directory, 'uncreated-output'), file);
+    assert.deepEqual(summary.prepare, {status: 'failed', stage: 'driver-source', code: 'driver-source-mismatch', systemCode: null, gitExitCode: null});
+    assert(summary.phases.every(row => row.status === 'not-recorded'));
+    fs.writeFileSync(file, [JSON.stringify({type: 'next-auto-prepare-stage', stage: 'loader-validation', private: canary}),
+        JSON.stringify({type: 'next-auto-prepare-failure', stage: 'loader-validation', code: 'prepare-filesystem-error', systemCode: 'ENOENT', gitExitCode: null, message: canary}), canary].join('\n'));
+    summary = ci.automaticFailureSummary(path.join(directory, 'uncreated-output'), file);
+    assert.equal(summary.prepare.stage, 'loader-validation'); assert.equal(summary.prepare.code, 'prepare-filesystem-error'); assert.equal(summary.prepare.systemCode, 'ENOENT');
+    assert(!JSON.stringify(summary).includes(canary));
 });

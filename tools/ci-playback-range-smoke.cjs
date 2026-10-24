@@ -137,7 +137,32 @@ const AUTO_CODES = new Set(['actual-source-chain-missing', 'automatic-chain-orde
 const AUTO_EVENTS = new Set(['profile-isolated', 'app-ready', 'helper-ready', 'module-loaded', 'manager-play-invocation',
     'initial-play-resolved', 'native-property', 'load', 'range-preload', 'prefix-ready', 'manager-next-track', 'origin-media',
     'prefix-read', 'decoded-B', 'renderer-failure']);
-function automaticFailureSummary(root) {
+function preparationFailureSummary(file) {
+    const {PREPARE_STAGES, PREPARE_CODES, prepareFailure} = require('./playback-prefix-windows-auto.cjs');
+    let text;
+    try {
+        const stat = fs.lstatSync(file);
+        if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 65536) throw Error('bounded-log-required');
+        text = fs.readFileSync(file, 'utf8');
+    } catch (_) {return {status: 'not-recorded', stage: 'not-recorded', code: 'prepare-reason-unavailable'};}
+    let stage = 'not-recorded', reason;
+    for (const line of text.split(/\r?\n/)) {
+        let row; try {row = JSON.parse(line);} catch (_) {}
+        if (row?.type === 'next-auto-prepare-stage' && PREPARE_STAGES.includes(row.stage)) stage = row.stage;
+        if (row?.type === 'next-auto-prepare-failure') {
+            const error = {message: PREPARE_CODES.includes(row.code) ? row.code : 'prepare-unexpected-error',
+                code: row.systemCode, status: row.gitExitCode, prepareStage: row.stage};
+            reason = prepareFailure(error);
+        } else if (PREPARE_CODES.includes(line.trim())) {
+            // Compatibility with a pre-stage driver: only an exact fixed reason,
+            // never a raw exception, path, URL, stdout tail or stack is echoed.
+            reason = prepareFailure({message: line.trim(), prepareStage: line.trim() === 'driver-source-mismatch' ? 'driver-source' : stage});
+        }
+    }
+    return reason ? {status: 'failed', stage: reason.stage, code: reason.code, systemCode: reason.systemCode, gitExitCode: reason.gitExitCode}
+        : {status: 'not-recorded', stage, code: 'prepare-reason-unavailable'};
+}
+function automaticFailureSummary(root, commandLog) {
     function read(name, limit, parse) {
         try {const file = path.join(root, name), stat = fs.lstatSync(file);
             if (!stat.isFile() || stat.isSymbolicLink() || stat.size > limit) return null;
@@ -163,7 +188,7 @@ function automaticFailureSummary(root) {
         seq: Number.isSafeInteger(row.seq) ? row.seq : null, item: ['A', 'B'].includes(row.item) ? row.item : null,
         property: ['duration', 'time-pos', 'core-idle', 'eof-reached', 'file-loaded'].includes(row.name) ? row.name : null,
         value: typeof row.value === 'boolean' || Number.isFinite(row.value) ? row.value : null}));
-    return {type: 'next-auto-failure-summary', phases, events};
+    return {type: 'next-auto-failure-summary', prepare: preparationFailureSummary(commandLog), phases, events};
 }
 function runTool(plan, arguments_, label, script = path.join(plan.toolsRoot, 'tools/playback-range-windows-smoke.cjs')) {
     const environment = cleanEnvironment(); noCredentials(environment); const file = path.join(plan.root, label + '.stdout'), fd = fs.openSync(file, 'wx');
@@ -171,7 +196,7 @@ function runTool(plan, arguments_, label, script = path.join(plan.toolsRoot, 'to
         const result = spawnSync(process.execPath, [script, ...arguments_],
             {cwd: plan.toolsRoot, env: environment, windowsHide: true, shell: false, stdio: ['ignore', fd, fd], timeout: 600000});
         if (result.error || result.status !== 0) {
-            if (plan.mode === 'next-auto') console.error(JSON.stringify(automaticFailureSummary(plan.paths.smoke)));
+            if (plan.mode === 'next-auto') console.error(JSON.stringify(automaticFailureSummary(plan.paths.smoke, file)));
             fail('controlled-smoke-command-failed:' + label);
         }
     } finally {fs.closeSync(fd);}
@@ -261,4 +286,4 @@ async function main(argv) {
     }
 }
 if (require.main === module) main(process.argv.slice(2)).catch(error => {console.error(safeCode(error)); process.exitCode = 1;});
-module.exports = {PIN, tokenNames, cleanEnvironment, validateDispatch, validateMetadata, responseStatus, secureLocation, api, downloaded, acquire, createPlan, readPlan, expandedInputs, collect, EVIDENCE, safeCode, automaticFailureSummary};
+module.exports = {PIN, tokenNames, cleanEnvironment, validateDispatch, validateMetadata, responseStatus, secureLocation, api, downloaded, acquire, createPlan, readPlan, expandedInputs, collect, EVIDENCE, safeCode, preparationFailureSummary, automaticFailureSummary};

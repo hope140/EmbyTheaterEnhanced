@@ -53,3 +53,8 @@ Node 集成自然合成时钟验证阈值 → 自动 renderer 定时器 → 生�
 
 
 执行失败时，控制脚本直接向 Actions 作业日志输出 `next-auto-failure-summary`：entry/native 阶段、允许列表原因、退出码/超时/stdio-close、固定 helper 错误标签与系统码，以及最后 16 条经过字段投影的事件。读取回执限 64 KiB、trace 限 1 MiB；缺失/损坏保持 not-recorded。摘要不打印原始 stderr、异常 detail、媒体 URL、profile 路径或环境变量；完整有界回执仍保存在 artifact，便于对照进一步定位。
+
+
+prepare 的 driver 身份遵循仓库既有 tracked-text 合同：只允许工作树 CRLF/LF checkout 等价，实际源码改动、BOM 与额外内容仍拒绝。私有 `auto-driver.cjs` 直接写精确来源提交的 Git blob 字节，后续 plan/driver SHA 继续严格逐字节校验；不把 CRLF 工作树副本当成最终 driver。固定包、loader、来源、完整派生集合和退出门禁均保持。
+
+prepare 从输入解析到 driver/plan 写出逐步记录固定阶段；受限错误分类覆盖来源不符、固定包/loader 校验、文件系统、依赖与 Git 子命令。控制脚本在输出目录尚未建立时也读取有界 prepare stdout，把安全分类直接打印到 job 日志，不转发路径、URL、堆栈或任意原始异常。旧版仅包含一行固定错误码的 stdout 也可分类。干净 `core.autocrlf=true` checkout 已复现旧 raw-byte guard 的 `driver-source-mismatch`，修复后的同一身份检查返回精确 Git 字节；这不代表 hosted prepare 或 native 已通过。

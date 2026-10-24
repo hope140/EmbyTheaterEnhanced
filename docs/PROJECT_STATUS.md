@@ -815,3 +815,6 @@ Targeted Node regressions: 360 pass / 0 fail / 0 skip. Local ffprobe reads all 1
 
 
 Automatic-route failure summaries are now readable directly in job logs, with allowlisted phase/helper reasons and numeric exit/system codes plus bounded event projections. Detailed receipts remain in the artifact. This improves failure diagnosis without changing playback or turning absent/native evidence into a pass.
+
+
+The first hosted next-auto attempt stopped during prepare, before Electron entry/helper execution; normal job logs exposed only the generic prepare failure. A clean Git checkout with core.autocrlf=true reproduces the driver's raw-worktree-versus-Git hash rejection. The preparation gate now accepts only the repository's narrow CRLF/LF text equivalence and writes the private driver from exact committed bytes, retaining later strict byte hashes and every package/source/loader gate. Fixed-stage preparation diagnostics are surfaced directly in job logs even before the output directory exists. Hosted preparation and real native automatic playback still require a new exact-source run.

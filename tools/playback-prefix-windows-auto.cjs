@@ -105,27 +105,73 @@ function automaticFixtures(support, out) {
         need(fs.statSync(full).size === FIXTURE_SIZES[i], 'fixture-size');
         return {file, size: FIXTURE_SIZES[i], sha256: hash, etag: '"' + hash + '"'};});
 }
-function prepare({tools, source, sourceCommit, runtime, zip, out}) {
-    tools = fs.realpathSync(tools); source = fs.realpathSync(source); runtime = fs.realpathSync(runtime); zip = fs.realpathSync(zip);
-    const support = supportAt(tools), identity = support.verifyRuntime(tools, runtime, zip), base = inventory(runtime, tools);
-    need(hashFile(__filename) === sha(git(source, ['show', sourceCommit + ':tools/playback-prefix-windows-auto.cjs'], true)), 'driver-source-mismatch');
-    const rows = overlayRows(source, sourceCommit, base), loader = loaderDescriptor(source, sourceCommit, base);
-    need(path.isAbsolute(out) && !fs.existsSync(out), 'fresh-absolute-output-required');
-    need(fs.realpathSync(path.dirname(out)) === path.resolve(path.dirname(out)), 'physical-output-parent-required');
-    for (const protectedRoot of [tools, source, runtime]) {const relative = path.relative(protectedRoot, out); need(relative.startsWith('..' + path.sep) || relative === '..' || path.isAbsolute(relative), 'output-outside-input-roots-required');}
-    fs.mkdirSync(out); out = fs.realpathSync(out); fs.writeFileSync(path.join(out, 'owner'), OWNER, {flag: 'wx'});
-    const derived = path.join(out, 'derived-runtime'); fs.cpSync(runtime, derived, {recursive: true, errorOnExist: true, force: false});
-    for (const row of rows) fs.writeFileSync(path.join(derived, row.member), row.bytes);
-    fs.copyFileSync(path.join(runtime, loader.sourcePath), path.join(derived, loader.targetPath), fs.constants.COPYFILE_EXCL);
-    need(JSON.stringify(require(path.join(source, loader.generatorPath)).validateRuntime(source, derived)) === JSON.stringify(loader), 'loader-validator-proof-mismatch');
-    verifyDerivedInventory(base, inventory(derived, tools), rows, loader);
-    for (const folder of ['profile', 'profile/local', 'profile/mpv', 'profile/electron', 'tmp']) fs.mkdirSync(path.join(out, folder), {recursive: true});
-    const fixtures = automaticFixtures(support, out);
-    const driver = path.join(out, 'auto-driver.cjs'); fs.copyFileSync(__filename, driver, fs.constants.COPYFILE_EXCL);
-    const plan = {schema: 1, toolsCommit: TOOLS_COMMIT, tools, source, sourceCommit, runtime, zip, out, derived, driver, driverSha256: hashFile(driver),
-        identity, overlay: rows.map(({bytes, ...row}) => row), loader, config: CONFIG, boundaries: BOUNDARIES, fixtures,
-        derivedProof: support.physicalPayloadProof(inventory(derived, tools)), evidence: 'derived-runtime-synthetic-automatic-next-prefix; not original-candidate, visual, Emby or NAS acceptance'};
-    writeNew(path.join(out, 'auto-plan.json'), plan); return plan;
+function driverSource(source, commit, executingFile = __filename) {
+    const bytes = git(source, ['show', commit + ':tools/playback-prefix-windows-auto.cjs'], true);
+    // Same narrow CRLF checkout equivalence as tracked-file-hash; no trimming,
+    // BOM removal or other source transformation is accepted.
+    const canonical = value => value.toString('utf8').replace(/\r\n/g, '\n');
+    need(canonical(fs.readFileSync(executingFile)) === canonical(bytes), 'driver-source-mismatch');
+    return bytes;
+}
+const PREPARE_STAGES = Object.freeze(['resolve-inputs', 'verify-tools', 'verify-base', 'base-inventory', 'driver-source',
+    'overlay-source', 'loader-descriptor', 'output-root', 'copy-runtime', 'overlay-write', 'loader-copy', 'loader-validation',
+    'derived-inventory', 'private-directories', 'fixtures', 'driver-and-plan']);
+const PREPARE_CODES = Object.freeze(['immutable-tools-required', 'driver-source-mismatch', 'source-controls-drift',
+    'fixed-loader-lock-mismatch', 'loader-validator-lock-disagreement', 'loader-base-source-or-target-mismatch', 'loader-notice-missing',
+    'exact-overlay-commit-required', 'native-loader-lock-invalid', 'native-loader-member-mismatch', 'fresh-absolute-output-required',
+    'physical-output-parent-required', 'output-outside-input-roots-required', 'loader-validator-proof-mismatch', 'derived-file-set-mismatch',
+    'derived-file-mismatch', 'overlay-set-invalid', 'overlay-row-invalid', 'loader-copy-relationship-invalid', 'fixture-index-layout',
+    'fixture-size', 'candidate-zip-identity', 'candidate-installer-receipt', 'candidate-runtime-manifest', 'candidate-runtime-source',
+    'candidate-runtime-inventory', 'candidate-maintained-source', 'candidate-fixed-native-identity', 'prepare-filesystem-error',
+    'prepare-dependency-missing', 'prepare-git-failed', 'prepare-unexpected-error']);
+function prepareFailure(error) {
+    const raw = String(error?.message || ''), fixed = raw.split(':')[0];
+    const systemCode = ['ENOENT', 'EACCES', 'EPERM', 'EEXIST', 'ENOSPC', 'EMFILE', 'ENFILE', 'EIO', 'EINVAL', 'MODULE_NOT_FOUND', 'ERR_MODULE_NOT_FOUND'].includes(error?.code) ? error.code : null;
+    const code = PREPARE_CODES.includes(fixed) ? fixed : systemCode
+        ? /MODULE_NOT_FOUND/.test(systemCode) ? 'prepare-dependency-missing' : 'prepare-filesystem-error'
+        : Number.isInteger(error?.status) ? 'prepare-git-failed' : 'prepare-unexpected-error';
+    return {type: 'next-auto-prepare-failure', stage: PREPARE_STAGES.includes(error?.prepareStage) ? error.prepareStage : 'not-recorded', code,
+        systemCode, gitExitCode: Number.isInteger(error?.status) && error.status >= 0 && error.status <= 255 ? error.status : null};
+}
+function prepare({tools, source, sourceCommit, runtime, zip, out, report}) {
+    let stage = 'resolve-inputs';
+    const step = value => {stage = value; if (report) report({type: 'next-auto-prepare-stage', stage});};
+    try {
+        step('resolve-inputs');
+        tools = fs.realpathSync(tools); source = fs.realpathSync(source); runtime = fs.realpathSync(runtime); zip = fs.realpathSync(zip);
+        step('verify-tools'); const support = supportAt(tools);
+        step('verify-base'); const identity = support.verifyRuntime(tools, runtime, zip);
+        step('base-inventory'); const base = inventory(runtime, tools);
+        step('driver-source'); const driverBytes = driverSource(source, sourceCommit);
+        step('overlay-source'); const rows = overlayRows(source, sourceCommit, base);
+        step('loader-descriptor'); const loader = loaderDescriptor(source, sourceCommit, base);
+        step('output-root');
+        need(path.isAbsolute(out) && !fs.existsSync(out), 'fresh-absolute-output-required');
+        need(fs.realpathSync(path.dirname(out)) === path.resolve(path.dirname(out)), 'physical-output-parent-required');
+        for (const protectedRoot of [tools, source, runtime]) {const relative = path.relative(protectedRoot, out); need(relative.startsWith('..' + path.sep) || relative === '..' || path.isAbsolute(relative), 'output-outside-input-roots-required');}
+        fs.mkdirSync(out); out = fs.realpathSync(out); fs.writeFileSync(path.join(out, 'owner'), OWNER, {flag: 'wx'});
+        step('copy-runtime');
+        const derived = path.join(out, 'derived-runtime'); fs.cpSync(runtime, derived, {recursive: true, errorOnExist: true, force: false});
+        step('overlay-write');
+        for (const row of rows) fs.writeFileSync(path.join(derived, row.member), row.bytes);
+        step('loader-copy');
+        fs.copyFileSync(path.join(runtime, loader.sourcePath), path.join(derived, loader.targetPath), fs.constants.COPYFILE_EXCL);
+        step('loader-validation');
+        need(JSON.stringify(require(path.join(source, loader.generatorPath)).validateRuntime(source, derived)) === JSON.stringify(loader), 'loader-validator-proof-mismatch');
+        step('derived-inventory'); verifyDerivedInventory(base, inventory(derived, tools), rows, loader);
+        step('private-directories');
+        for (const folder of ['profile', 'profile/local', 'profile/mpv', 'profile/electron', 'tmp']) fs.mkdirSync(path.join(out, folder), {recursive: true});
+        step('fixtures'); const fixtures = automaticFixtures(support, out);
+        step('driver-and-plan');
+        const driver = path.join(out, 'auto-driver.cjs'); fs.writeFileSync(driver, driverBytes, {flag: 'wx'});
+        const plan = {schema: 1, toolsCommit: TOOLS_COMMIT, tools, source, sourceCommit, runtime, zip, out, derived, driver, driverSha256: hashFile(driver),
+            identity, overlay: rows.map(({bytes, ...row}) => row), loader, config: CONFIG, boundaries: BOUNDARIES, fixtures,
+            derivedProof: support.physicalPayloadProof(inventory(derived, tools)), evidence: 'derived-runtime-synthetic-automatic-next-prefix; not original-candidate, visual, Emby or NAS acceptance'};
+        writeNew(path.join(out, 'auto-plan.json'), plan); return plan;
+    } catch (error) {
+        if (error && typeof error === 'object') error.prepareStage = stage;
+        throw error;
+    }
 }
 function readPlan(file) {
     physical(file); const plan = readJson(file);
@@ -411,14 +457,16 @@ function argumentsOf(argv) {
 }
 async function main(argv) {
     const {command, values: a} = argumentsOf(argv);
-    if (command === 'prepare') {const plan = prepare({tools: a.tools, source: a.source, sourceCommit: a['source-commit'], runtime: a.runtime, zip: a.zip, out: a.out}); console.log(JSON.stringify({status: 'prepared-NOT-RUN', plan: path.join(plan.out, 'auto-plan.json'), evidence: plan.evidence}));}
+    if (command === 'prepare') {const plan = prepare({tools: a.tools, source: a.source, sourceCommit: a['source-commit'], runtime: a.runtime, zip: a.zip, out: a.out, report: row => console.log(JSON.stringify(row))}); console.log(JSON.stringify({status: 'prepared-NOT-RUN', plan: path.join(plan.out, 'auto-plan.json'), evidence: plan.evidence}));}
     else if (command === 'entry-smoke') await coordinate(a.plan, 'entry', a['execute-electron-entry']);
     else if (command === 'run') await coordinate(a.plan, 'native', a['execute-native']);
     else {need(process.versions.electron && process.type === 'browser', 'real-Electron-browser-required'); await electronMain(a.plan, a.phase);}
 }
 if (process.versions.electron && process.type === 'renderer' && process.argv.includes('--prefix-auto-preload')) preload();
 else if (require.main === module || process.versions.electron && process.type === 'browser' && process.argv[1] && path.resolve(process.argv[1]) === __filename) main(process.argv.slice(2)).catch(error => {
-    console.error(String(error.message).slice(0, 200)); process.exitCode = 1;
+    if (error?.prepareStage) console.error(JSON.stringify(prepareFailure(error)));
+    else console.error(String(error.message).slice(0, 200));
+    process.exitCode = 1;
     if (process.versions.electron && process.type === 'browser') require('electron').app.exit(1);
 });
-module.exports = {TOOLS_COMMIT, CONFIG, LOADER, OVERLAY, BOUNDARIES, cleanEnvironment, overlayRows, verifyDerivedInventory, verifyOverlaySource, argumentsOf, validateTrace, rendererBoot, fixtureServer, automaticFixtures, FIXTURE_SIZES, prepare, readPlan};
+module.exports = {TOOLS_COMMIT, CONFIG, LOADER, OVERLAY, BOUNDARIES, cleanEnvironment, overlayRows, verifyDerivedInventory, verifyOverlaySource, argumentsOf, validateTrace, rendererBoot, fixtureServer, automaticFixtures, FIXTURE_SIZES, driverSource, PREPARE_STAGES, PREPARE_CODES, prepareFailure, prepare, readPlan};
