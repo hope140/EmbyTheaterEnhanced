@@ -47,7 +47,7 @@ test('actual pinned app settings owner orders only the Enhanced section and reta
             '/plugins/libmpvmediaplayer/mpvplayer/cache.html', '/plugins/libmpvmediaplayer/mpvplayer/about.html'
         ];
         const targetItems = Array.from(items.slice(2)).filter(item => targetPaths.includes(item.href));
-        assert.deepEqual(targetItems.map(item => item.Name), ['操作快捷键', '视频设置', '音频设置', 'STRM 智能解析', '诊断与日志', '播放缓存与预载', '关于 Enhanced']);
+        assert.deepEqual(targetItems.map(item => item.Name), ['操作快捷键', '视频设置', '音频设置', 'STRM 智能解析', '诊断与日志', '下一集预载', '关于 Enhanced']);
         assert.deepEqual(targetItems.map(item => item.href), targetPaths);
         assert.deepEqual(Array.from(items.slice(2)).filter(item => !targetPaths.includes(item.href)).map(item => item.href),
             sync ? ['/settings/download.html', '/settings/managedownloads.html'] : []);

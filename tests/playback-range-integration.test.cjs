@@ -35,6 +35,7 @@ async function fixture(t, userConfig) {
     api.serverInfo({Id: 'server', UserId: 'user', AccessToken: 'synthetic-token'}); api.setSystemInfo({Version: '4.9.0.0'});
     let config = {root, maxBytes: 128, minFreeBytes: 0, blockBytes: 4, timeoutMs: 1000, bytesPerSecond: 1000000};
     if (userConfig === 'automatic-network') delete config.bytesPerSecond;
+    if (userConfig === 'prefix') config = {kind: 'next-prefix', root, timeoutMs: 1000, blockBytes: 4, preloadMB: 100};
     const session = createSession({config}), helper = {currentGenerationId: 1, state: {playing: false}}, connectionManager = {getApiClient: () => api};
     const item = {Id: 'current', ServerId: 'server', Type: 'Episode', MediaType: 'Video', SeriesId: 'series'}, source = {Id: 'current-source', Container: 'mp4'};
     const options = {playMethod: 'DirectStream', playSessionId: 'play-1'};
@@ -77,6 +78,27 @@ test('real selected ApiClient context drives threshold -> next prefix -> native-
     const read = await fetch(hit.source, {headers: {Range: 'bytes=0-7'}}); assert.deepEqual(Buffer.from(await read.arrayBuffer()), f.body.subarray(0, 8));
     assert.equal(f.rows.length, count + 1, 'only the fresh authorization/version probe crosses the origin');
     await f.session.started(f.helper, 2);
+});
+test('next-prefix mode uses the selected API/queue threshold without accumulating current media or a last-play index', async t => {
+    const f = await fixture(t, 'prefix'), control = await f.bind();
+    const selected = await f.session.select(f.sourceUrl, f.helper, 1);
+    await (await fetch(selected.source, {headers: {Range: 'bytes=0-15'}})).arrayBuffer();
+    await f.session.started(f.helper, 1); control.started(); await control.tick(); await flush();
+    assert.equal(f.session.status().kind, 'next-prefix'); assert.equal(f.session.status().diskBytes, 0);
+    assert.equal(f.session.status().maxBytes, 100000000); assert.equal(f.calls.length, 0);
+    f.position(70); await control.tick();
+    for (let i = 0; i < 60 && !f.preloads.length; i++) await flush();
+    assert.equal((await f.preloads[0]).state, 'ready');
+    assert.equal(f.session.status().diskBytes, f.body.length);
+    assert.equal(f.session.status().next.bytes, f.body.length, 'tiny synthetic source is smaller than P');
+    await control.close(); await f.session.retire(); f.helper.currentGenerationId = 2;
+    const source = f.url('next', 'next-source-0');
+    await f.session.setContext({...f.context, source, itemId: 'next', mediaSourceId: 'next-source-0', playSessionId: 'play-2'}, f.helper, 2);
+    const count = f.rows.length, next = await f.session.select(source, f.helper, 2);
+    assert.deepEqual(Buffer.from(await (await fetch(next.source, {headers: {Range: 'bytes=0-7'}})).arrayBuffer()), f.body.subarray(0, 8));
+    assert.equal(f.rows.length, count + 1, 'new session revalidates but consumes already prefetched bytes');
+    await f.session.started(f.helper, 2); await f.session.close();
+    assert.deepEqual(await fs.readdir(f.root), ['owner'], 'no media/index survives the process-store close');
 });
 for (const editions of [0, 2]) test('unconfirmed next media version is skipped: ' + editions + ' editions', async t => {
     const f = await fixture(t); f.editions(editions); const control = await f.bind();

@@ -345,7 +345,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
             routes.push({
                 path: 'mpvplayer/cache.html', transition: 'slide', controller: pluginManager.mapPath(self, 'mpvplayer/cache.js'),
-                type: 'settings', title: '播放缓存与预载', category: 'Playback', order: 7.5, thumbImage: '', icon: 'cached',
+                type: 'settings', title: '下一集预载', category: 'Playback', order: 7.5, thumbImage: '', icon: 'cached',
                 settingsTheme: true, adjustHeaderForEmbeddedScroll: true
             });
 

@@ -104,10 +104,12 @@
                     var status = result.value, labels = {idle: '未预载', waiting: '等待进度或下一集', checking: '正在确认下一集', preparing: '正在准备', warming: '正在预载', ready: '预载完成', partial: '已预载部分', unavailable: '当前来源不可预载', cancelled: '已取消'};
                     var next = status.next || {}, state = next.state === 'idle' ? nextState : next.state;
                     var mb = function (n) {return Number.isFinite(n) && n >= 0 ? (n / 1000000).toFixed(1) + ' MB' : '未知';};
-                    return {type: 'enhanced', name: '播放缓存与预载', stats: [
+                    var stats = [
                         {label: '当前视频磁盘缓存:', value: status.current && status.current.state === 'active' ? mb(status.current.bytes) : '未使用，沿原播放'},
                         {label: '下一集预载:', value: (labels[state] || '未预载') + (next.bytes > 0 ? ' · ' + mb(next.bytes) + ' / ' + mb(next.targetBytes) : '')}
-                    ]};
+                    ];
+                    if (status.kind === 'next-prefix') stats.shift();
+                    return {type: 'enhanced', name: status.kind === 'next-prefix' ? '下一集预载' : '播放缓存与预载', stats: stats};
                 } catch (_) {return null;}
             },
             close: function () {

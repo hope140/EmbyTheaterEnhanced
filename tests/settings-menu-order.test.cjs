@@ -9,7 +9,7 @@ const expected = [
     ['mpvplayer/audio.html', 5, '音频设置', 'Playback', 'audiotrack'],
     ['mpvplayer/strm.html', 6, 'STRM 智能解析', 'Playback', 'folder_open'],
     ['mpvplayer/diagnostics.html', 7, '诊断与日志', 'Playback', 'description'],
-    ['mpvplayer/cache.html', 7.5, '播放缓存与预载', 'Playback', 'cached'],
+    ['mpvplayer/cache.html', 7.5, '下一集预载', 'Playback', 'cached'],
     ['mpvplayer/about.html', 8, '关于 Enhanced', 'General', 'info']
 ];
 

@@ -122,7 +122,7 @@ function createService(options) {
   function readRangeConfig() {
     try {const config = typeof settings.getRangeCacheConfig === 'function' ? settings.getRangeCacheConfig() : settings.rangeCache; return config ? {...config} : null;} catch (_) {return null;}
   }
-  function rangeKey(config) {return JSON.stringify(config && ['root', 'maxBytes', 'minFreeBytes', 'blockBytes', 'timeoutMs', 'progressPercent', 'preloadMB', 'bytesPerSecond'].map(key => config[key] == null ? null : config[key]));}
+  function rangeKey(config) {return JSON.stringify(config && ['kind', 'root', 'maxBytes', 'minFreeBytes', 'blockBytes', 'timeoutMs', 'progressPercent', 'preloadMB', 'bytesPerSecond'].map(key => config[key] == null ? null : config[key]));}
   const initialRangeConfig = readRangeConfig();
   let rangeSession = initialRangeConfig ? require('../enhanced/playback-range-session').createSession({config: initialRangeConfig}) : null;
   let rangeConfigKey = rangeKey(initialRangeConfig), rangeApplyTail = Promise.resolve(), rangeCloseFailure = null;

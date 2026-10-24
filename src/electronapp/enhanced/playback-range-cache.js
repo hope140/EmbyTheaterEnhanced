@@ -24,7 +24,8 @@ function wait(ms, signal) {
 async function createCache(options) {
     // No formal disk quota or bandwidth default is inferred from mpv's RAM buffer setting.
     const reader = createReader(options);
-    const store = await createStore(options);
+    const prefixOnly = options.kind === 'next-prefix';
+    const store = await (prefixOnly ? require('./playback-prefix-store').createStore(options) : createStore(options));
     const routes = new Map(), opens = new Set(), openJobs = new Set(), background = new Map(), retiring = new Set();
     let server, starting, closed = false, closing, foreground = 0, requests = 0;
     function preempt() {for (const controller of background.keys()) controller.abort();}
@@ -78,10 +79,10 @@ async function createCache(options) {
                 while (offset <= range.end) {
                     if (controller.signal.aborted || !route.current()) throw abortError();
                     const n = Math.floor(offset / route.lease.blockBytes);
-                    const data = await route.block(n, controller.signal, false);
+                    const data = await route.block(n, controller.signal, false, undefined, offset - n * route.lease.blockBytes);
                     if (controller.signal.aborted || !route.current()) throw abortError();
                     if (!res.headersSent) res.writeHead(range.partial ? 206 : 200, headers);
-                    const end = Math.min(range.end + 1, (n + 1) * route.lease.blockBytes);
+                    const end = Math.min(range.end + 1, n * route.lease.blockBytes + data.length);
                     const bytes = data.subarray(offset - n * route.lease.blockBytes, end - n * route.lease.blockBytes);
                     if (!res.write(bytes)) await once(res, 'drain', {signal: controller.signal});
                     offset = end;
@@ -110,16 +111,25 @@ async function createCache(options) {
             const routePath = '/range/' + crypto.randomUUID();
             const active = {lease, jobs: new Set(), controllers: new Set(), retired: false};
             active.current = () => !closed && !active.retired && !controller.signal.aborted && isCurrent();
-            let backgroundSpent = 1, cacheFailed = false;
-            active.block = async (n, signal, lowPriority, budget) => {
+            // The single-byte eligibility probe is control overhead. Prefix media
+            // attempts (including cancelled ones) are bounded separately by P.
+            let backgroundSpent = prefixOnly ? 0 : 1, cacheFailed = false;
+            active.block = async (n, signal, lowPriority, budget, requiredOffset = 0) => {
                 if (!active.current() || signal.aborted) throw abortError();
                 let hit = null;
                 if (!cacheFailed) {
                     try {hit = await lease.readBlock(n);} catch (_) {cacheFailed = true;}
                 }
-                if (hit) return hit;
+                if (hit && hit.length > requiredOffset) {
+                    if (prefixOnly && !lowPriority && typeof options.onPrefixRead === 'function') {
+                        try {options.onPrefixRead({itemId: identity.itemId, start: n * lease.blockBytes + requiredOffset,
+                            end: n * lease.blockBytes + hit.length - 1});} catch (_) { /* Main-owned observation never controls IO. */ }
+                    }
+                    return hit;
+                }
                 if (cacheFailed && lowPriority) throw Error('range-cache-unavailable');
-                const offset = n * lease.blockBytes, length = Math.min(lease.blockBytes, lease.total - offset);
+                const offset = n * lease.blockBytes, length = Math.min(lease.blockBytes, lease.total - offset,
+                    prefixOnly && lowPriority ? budget - offset : Infinity);
                 if (lowPriority) {
                     if (backgroundSpent + length > budget) throw Error('range-prefetch-budget');
                     backgroundSpent += length; // Charge aborted attempts too: retries cannot run without bound.
@@ -129,7 +139,7 @@ async function createCache(options) {
                     const result = lowPriority ? await read(signal) : await foregroundRead(signal, read);
                     if (!active.current() || signal.aborted) throw abortError();
                     // Disk failure/pressure must not prevent valid foreground bytes from playing.
-                    try {if (!cacheFailed) {const written = await lease.writeBlock(n, result.bytes); if (!written && lowPriority) throw Error('range-quota');}}
+                    try {if (!cacheFailed && (!prefixOnly || lowPriority)) {const written = await lease.writeBlock(n, result.bytes); if (!written && lowPriority) throw Error('range-quota');}}
                     catch (_) {cacheFailed = true; if (lowPriority) throw Error('range-cache-unavailable');}
                     return result.bytes;
                 }
@@ -144,7 +154,7 @@ async function createCache(options) {
                     let offset = 0;
                     while (offset < Math.min(maxBytes, lease.total)) {
                         if (!active.current() || signal.aborted) throw abortError();
-                        const length = Math.min(lease.blockBytes, lease.total - offset);
+                        const length = Math.min(lease.blockBytes, lease.total - offset, prefixOnly ? maxBytes - offset : Infinity);
                         if (offset + length > maxBytes) break;
                         if (foreground) {await wait(25, signal); continue;}
                         try {

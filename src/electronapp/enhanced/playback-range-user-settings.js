@@ -6,8 +6,7 @@ const CHANNELS = Object.freeze({GET: 'enhanced-playback-range-settings-get', SAV
 function normalize(value) {
     if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).some(k => !['schema', 'enabled', 'progressPercent', 'preloadMB'].includes(k)) || value.schema !== 1 || typeof value.enabled !== 'boolean') throw Error('invalid-config');
     const policy = selection(value);
-    if (value.enabled) throw Error('capacity-pending');
-    return {schema: 1, enabled: false, progressPercent: policy.progressPercent, preloadMB: policy.preloadMB};
+    return {schema: 1, enabled: value.enabled, progressPercent: policy.progressPercent, preloadMB: policy.preloadMB};
 }
 function physical(file, directory) {
     const absolute = path.resolve(file), same = value => process.platform === 'win32' ? value.toLowerCase() : value;
@@ -28,7 +27,8 @@ function createStore({profileRoot}) {
     try {
         if (fs.existsSync(file)) {physical(file, false); if (fs.statSync(file).size > 4096) throw Error('invalid-config'); const old = JSON.parse(fs.readFileSync(file));
             // The prior experimental resource fields cannot authorize a product policy.
-            config = normalize({schema: old.schema, enabled: false, progressPercent: old.progressPercent, preloadMB: old.preloadMB});}
+            const legacy = Object.keys(old).some(k => !['schema', 'enabled', 'progressPercent', 'preloadMB'].includes(k));
+            config = normalize({schema: old.schema, enabled: legacy ? false : old.enabled, progressPercent: old.progressPercent, preloadMB: old.preloadMB});}
     } catch (_) { /* Damaged settings fail closed; explicit Save may repair the owned file. */ }
     const get = () => ({...config});
     return {get,
@@ -43,14 +43,14 @@ function createStore({profileRoot}) {
             } finally {if (fd !== undefined) fs.closeSync(fd); fs.rmSync(temporary, {force: true});}
             return get();
         },
-        // Last-cache capacity is awaiting its independent product decision.
-        // Keep normal activation disabled; this is never interpreted as no quota.
-        runtimeConfig() {return null;}
+        // P is the selected next-prefix budget, not a second last-play quota.
+        runtimeConfig() {return config.enabled ? {kind: 'next-prefix', root: path.join(profileRoot, 'next-episode-prefix-v1'),
+            ...selection(config), timeoutMs: 30000} : null;}
 
     };
 }
 function register({ipcMain, store, getWebContents, getRuntimeStatus = () => ({enabled: false})}) {
-    function snapshot(status, config) {return {status, config, runtime: getRuntimeStatus(), capacityPending: true};}
+    function snapshot(status, config) {return {status, config, runtime: getRuntimeStatus()};}
     function handler(save) {return (event, request) => {
         if (!boundary.isTrusted(event, getWebContents())) return {status: 'error', reason: 'untrusted_sender'};
         if (!store) return {status: 'error', reason: 'settings-unavailable'};
@@ -60,7 +60,7 @@ function register({ipcMain, store, getWebContents, getRuntimeStatus = () => ({en
                 return {...snapshot('saved', store.save(request)), requiresRestart: false, applyMode: 'next-play'};
             }
             return snapshot('ok', store.get());
-        } catch (error) {return {status: 'error', reason: error.message === 'capacity-pending' ? error.message : 'invalid-config'};}
+        } catch (_) {return {status: 'error', reason: 'invalid-config'};}
     };}
     ipcMain.handle(CHANNELS.GET, handler(false)); ipcMain.handle(CHANNELS.SAVE, handler(true));
     return () => {ipcMain.removeHandler(CHANNELS.GET); ipcMain.removeHandler(CHANNELS.SAVE);};

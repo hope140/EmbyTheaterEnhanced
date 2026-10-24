@@ -174,4 +174,4 @@ async function createStore({root, maxBytes, minFreeBytes, blockBytes = 262144}) 
         }
     };
 }
-module.exports = {createStore, identityKey, mediaKey, strongTag};
+module.exports = {createStore, identityKey, mediaKey, strongTag, acquireGuard};

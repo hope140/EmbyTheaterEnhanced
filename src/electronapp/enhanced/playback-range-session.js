@@ -97,7 +97,7 @@ function createSession({config, create = createCache}) {
                 const result = await record.handle.prefetch({maxBytes: policy.prefetchBytes, bytesPerSecond: config.bytesPerSecond, signal: record.controller.signal,
                     onProgress(value) {if (valid()) nextProgress = {state: 'warming', bytes: value.bytes, targetBytes: value.targetBytes};}});
                 if (valid()) nextProgress = {...nextProgress, bytes: result.bytes, state: result.bytes >= nextProgress.targetBytes ? 'ready' : 'partial'};
-                return {state: 'ready', bytes: result.bytes};
+                return {state: config.kind === 'next-prefix' ? valid() ? nextProgress.state : 'cancelled' : 'ready', bytes: result.bytes};
             } catch (_) {if (valid()) nextProgress = {...nextProgress, state: 'unavailable'}; return {state: record.controller.signal.aborted ? 'cancelled' : 'unavailable'};}
         })());
     }
@@ -112,9 +112,10 @@ function createSession({config, create = createCache}) {
     return {cancelNext, setContext, select: (...args) => track(select(...args)), started, preload, retire,
         status: () => {
             let bytes = 0; try {if (current && current.handle && current.handle.status) bytes = current.handle.status().bytes;} catch (_) {}
-            return {enabled: true, ...policy, timeoutMs: config.timeoutMs,
+            return {enabled: true, ...policy, kind: config.kind === 'next-prefix' ? 'next-prefix' : 'legacy-range-trial', timeoutMs: config.timeoutMs,
                 current: {state: current ? current.handle ? current.playing ? 'active' : 'preparing' : 'original' : 'idle', bytes},
-                next: {...nextProgress}, diskBytes: cacheInstance ? cacheInstance.status().bytes : 0, maxBytes: config.maxBytes};
+                next: {...nextProgress}, diskBytes: cacheInstance ? cacheInstance.status().bytes : 0,
+                maxBytes: config.kind === 'next-prefix' ? policy.prefetchBytes : config.maxBytes};
         },
         close() {
             if (closing) return closing; closed = true;

@@ -2,7 +2,7 @@
 
 This independent candidate starts at the released `88578c91` source. It does not select the earlier complete-file download experiment. PlaybackManager still owns Item, MediaSource, PlaySession, queues, remote control and progress; the candidate changes only the final readable source when explicitly enabled and verified.
 
-**Scope correction:** last-play retention means the bounded buffer still held by mpv at Stop/exit, not all source bytes read during playback. The raw-byte implementation below does not track mpv packet eviction and therefore does not fulfill that requirement. No additional last-cache capacity is awaiting selection. See the [fixed-source buffer audit and proposed native feasibility boundary](PLAYBACK_BUFFER_RETENTION_DESIGN.md). Ordinary activation remains disabled; the historical diagnostic implementation and its identity/cancellation tests are preserved without extending its scope.
+**Scope correction:** last-play retention means the bounded buffer still held by mpv at Stop/exit, not all source bytes read during playback. The historical raw-byte implementation below does not track mpv packet eviction and therefore does not fulfill that requirement. No additional last-cache capacity is awaiting selection. See the [fixed-source buffer audit and proposed native feasibility boundary](PLAYBACK_BUFFER_RETENTION_DESIGN.md). Ordinary settings now select only the separate [disposable next-prefix candidate](NEXT_EPISODE_PREFIX.md); the legacy retention implementation remains confined to explicit diagnostics. Its identity/cancellation tests are preserved without extending its scope.
 
 ## Confirmed behavior
 
@@ -60,6 +60,8 @@ A preload candidate also has an epoch independent of the playback generation. Ca
 The [fixed Windows/native smoke procedure](PLAYBACK_RANGE_WINDOWS_SMOKE.md) supplies preparation and explicit hidden execution commands for the existing source-built candidate. It distinguishes two-process retained-range consumption from in-process memory buffering and leaves actual Windows/native, visual and server outcomes pending execution. Its small quota/bandwidth settings are test inputs only.
 
 ## Normal settings and playback information — retention architecture pending
+
+The paragraphs in this section describe the preceding disabled retention experiment. Normal user settings have since been separated into the default-off next-prefix-only mode described in [its current contract](NEXT_EPISODE_PREFIX.md). It has no `capacity-pending` gate, independent quota input or last-cache claim. Explicit legacy diagnostics remain distinct.
 
 The normal Enhanced settings route retains only the confirmed progress choices 50/60/70/80/90% (default 70%) and next-prefix budgets 100/300/500 MB (default 300 MB). It no longer asks for a total cache budget or background MB/s. **The raw-byte retention architecture does not yet satisfy existing-buffer reuse, so normal activation is unavailable.** The current code still uses the historical `capacity-pending` rejection and corresponding disabled-page text; that wording predates the scope correction and is not a request for another capacity decision. Saving the two choices keeps the feature disabled. Previously experimental settings retain legal selections but cannot restore activation or a resource policy. They are not automatically rewritten. No unlimited fallback, duplicated RAM-cap mapping or 2P policy is selected.
 
