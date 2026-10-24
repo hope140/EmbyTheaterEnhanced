@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-24 — 详情真实入口 AMD 修复候选
+
+实际测试包的电影／剧集标题点击仅改变 URL、仍停首页，详情入口未通过用户验收。受控真实 Home 卡片经 Shortcuts／CommandProcessor、生产 router init/load、Alameda 与原 ItemPage 复现：app 的默认导出解包别名与 ItemPage 的 namespace 消费合同错配，构造器在 viewmanager 隐藏首页之前抛错。最小修复仅让详情别名保留 namespace；不改缓存隔离、READY／flush、页面显示策略或播放流程。旧别名失败对照与修正后首次进入／缓存再次进入均检查可见内容，原辅助夹具改用生产别名，新增无浏览器 Alameda 合同检查。受控验证不能代替 Windows／真实服务验收；保留旧包，父线程统一排候选，不在本分支发布。见[详情合同](DETAIL_PAGE_CACHE.md)。
+
 独立详情持久缓存候选基于组合 d8870fbd，保留首页／更新／v0.4.1 修复；只持久四类详情的静态 DTO，原网络和播放 owner 保持。自动 LRU 200、4 MiB／64 KiB 工程试验限额，无新参数设置；管理页为资源／页面两行，分别委托真实 owner，HTTP 总量不冒充纯图片，页面仅统计序列化数据。完整离线、受控原生 renderer 和真实服务／Windows 验收分开记录，既有首页未因此整项标通过。见[详情缓存合同](DETAIL_PAGE_CACHE.md)。
 
 ## 2026-10-24 — 首页、独立缓存管理与手动更新测试集成

@@ -23,7 +23,7 @@ const output = before;
 
 test('declared cache aliases are the only changes to the approved retired CSS/plugin output',()=>{
     const home = require('../tools/patch-server-home.cjs');
-    const aliases = [home.CACHE_ALIAS, home.DETAIL_CACHE_ALIAS, 'define("ete-detail-page-cache", [], getDynamicImport("./../enhanced/detail-cache/page.js"))'];
+    const aliases = [home.CACHE_ALIAS, home.DETAIL_CACHE_ALIAS, home.DETAIL_PAGE_ALIAS];
     let approved = output;
     for (const definition of aliases) { const alias = definition + ',\n      '; assert.equal(approved.split(alias).length, 2); approved = approved.replace(alias, ''); }
     assert.equal(hash(approved),'1F518BE3FFA0E59780AC68E468FEAC105C696DF468CFA9C90E88B9F6792E8EB6');

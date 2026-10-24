@@ -3,6 +3,9 @@
 const CACHE_ALIAS = 'define("ete-home-layout-cache", ["./../enhanced/page-cache/home-layout-cache.js"], function(cache) { return cache; })';
 
 const DETAIL_CACHE_ALIAS='define("ete-detail-cache-store", ["./../enhanced/detail-cache/store.js"], function(cache) { return cache; })';
+// ItemPage consumes the AMD namespace (detailCache.default), unlike the Home
+// controller alias, whose consumer expects the unwrapped default directly.
+const DETAIL_PAGE_ALIAS='define("ete-detail-page-cache", ["./../enhanced/detail-cache/page.js"], function(cache) { return cache; })';
 
 function once(text, anchor, replacement) {
     if (text.split(anchor).length !== 2) throw new Error('Server home anchor mismatch.');
@@ -36,7 +39,7 @@ function patchHomeTab(text) {
 function patchApp(text) {
     if (text.includes('define("ete-server-home",')) throw new Error('Server home anchor mismatch.');
     return once(text, 'define("baseView", [], getDynamicImport("./modules/viewmanager/baseview.js")),',
-        CACHE_ALIAS + ',\n      ' + DETAIL_CACHE_ALIAS + ',\n      define("ete-detail-page-cache", [], getDynamicImport("./../enhanced/detail-cache/page.js")),\n      define("ete-server-home", [], getDynamicImport("./../enhanced/home/home-tab.js")),\n' +
+        CACHE_ALIAS + ',\n      ' + DETAIL_CACHE_ALIAS + ',\n      ' + DETAIL_PAGE_ALIAS + ',\n      define("ete-server-home", [], getDynamicImport("./../enhanced/home/home-tab.js")),\n' +
         '      define("baseView", [], getDynamicImport("./modules/viewmanager/baseview.js")),');
 }
 function patchHomeView(text) {
@@ -95,4 +98,4 @@ function patchVirtualScroller(text) {
     return once(text, '                var items = result.Items || result,',
         '                if (instance.eteHomeFlowOwns && !instance.eteHomeFlowOwns(result)) return;\n                var items = result.Items || result,');
 }
-module.exports = {CACHE_ALIAS, DETAIL_CACHE_ALIAS, patchHomeView, patchViewManager, patchRouter, patchHomeTab, patchApp, patchItemsContainer, patchVirtualScroller};
+module.exports = {CACHE_ALIAS, DETAIL_CACHE_ALIAS, DETAIL_PAGE_ALIAS, patchHomeView, patchViewManager, patchRouter, patchHomeTab, patchApp, patchItemsContainer, patchVirtualScroller};

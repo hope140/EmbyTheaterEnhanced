@@ -8,10 +8,15 @@ function sources(root,candidate=true){
  for(const name of ['page.js','page.css','store.js'])input['enhanced/detail-cache/'+name]=fs.readFileSync(path.join(root,'src/electronapp/enhanced/detail-cache',name),'utf8');
  input['modules/viewmanager/viewmanager.js']=require('../../tools/patch-server-home.cjs').patchViewManager(require('../../tools/patch-plugin-settings.cjs').patchViewManager(fs.readFileSync(path.join(root,'vendor/web-snapshot/www/modules/viewmanager/viewmanager.js'),'utf8')));
  for(const file of ['apiclient.js','mit-apiclient.js','transport.js'])input['modules/emby-apiclient/'+file]=fs.readFileSync(path.join(root,'src/electronapp/www/modules/emby-apiclient',file),'utf8');
+ const app=fs.readFileSync(path.join(root,'vendor/web-snapshot/www/app.js'),'utf8');
+ // Exercise the production alias contract, including its export shape. Handwritten
+ // aliases previously hid the app loader's default-export unwrapping from ItemPage.
+ input.detailAlias=require('../../tools/patch-server-home.cjs').patchApp(app).split('\n').filter(line=>line.includes('define("ete-detail-page-cache",')).join('\n').trim().replace(/,$/,';');
+ input.importFunctions=app.slice(app.indexOf('  function returnFirstDependencyDefault('),app.indexOf('  function enableNativeGamepadKeyMapping('))+app.slice(app.indexOf('  function getDynamicImportWithoutExport('),app.indexOf('  function loadAppStorage('));
  input.alameda=fs.readFileSync(path.join(root,'vendor/web-snapshot/www/modules/alameda/alameda.js'),'utf8');input.nativeCss+='\n'+input['modules/flexstyles.css']+'\n'+input['item/item.css']+'\n'+input['modules/emby-elements/emby-button/emby-button.css']+'\n'+input['enhanced/detail-cache/page.css']+'\n'+input['modules/listview/listview.css'];input.candidate=candidate;return input;
 }
-async function open(browser,root,candidate=true){
- const input=sources(root,candidate),page=await home.openTrial(browser,input,'baseline',{native:true,origin:'http://synthetic.invalid/',viewport:{width:1280,height:1000}});
+async function open(browser,root,candidate=true,options={}){
+ const input=options.input||sources(root,candidate),page=await home.openTrial(browser,input,'baseline',{native:true,origin:'http://synthetic.invalid/',viewport:{width:1280,height:1000}});
  await page.route('http://synthetic.invalid/**',route=>{const key=new URL(route.request().url()).pathname.slice(1);const value=input[key];return value?route.fulfill({contentType:key.endsWith('.css')?'text/css':'text/javascript',body:value}):route.abort();});
  // Change to an owned synthetic origin: real IndexedDB and no app/personal profile.
  await page.route('http://synthetic.invalid/',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><div></div>'}));
@@ -40,11 +45,12 @@ async function open(browser,root,candidate=true){
   define('modules/emby-apiclient/connectionmanager.js',[],()=>({default:aliases.connectionManager}));define('modules/emby-apiclient/events.js',[],()=>({default:aliases.events}));
   require.config({baseUrl:'http://synthetic.invalid/'});for(const [id,value]of Object.entries(aliases))define(id,[],()=>value);
   for(const id of ['emby-scroller','emby-itemscontainer','emby-linkbutton','emby-button','emby-select','emby-progressbar','emby-ratingbutton','emby-playstatebutton','emby-downloadbutton'])define(id,[],()=>({}));
-  define('ete-detail-cache-store',['enhanced/detail-cache/store.js'],value=>value);define('ete-detail-page-cache',['enhanced/detail-cache/page.js'],value=>value);
+  define('ete-detail-cache-store',['enhanced/detail-cache/store.js'],value=>value);
+  new Function('define','require',input.importFunctions+'\n'+input.detailAlias)(defineAMD,requireAMD);
   Object.assign(get('modules/focusmanager.js'),aliases.focusManager);modules.set('modules/approuter.js',{default:aliases.appRouter});modules.set('modules/common/servicelocator.js',{appHost});modules.delete('modules/emby-elements/emby-button/emby-button.js');load('modules/emby-elements/emby-button/emby-button.js');window.define=defineAMD;window.require=requireAMD;
   modules.set('modules/common/usersettings/usersettings.js',{default:{}});modules.set('modules/common/pluginmanager.js',{default:{}});modules.set('modules/querystring/querystring.js',{default:{parse:text=>Object.fromEntries(new URLSearchParams(text))}});
   const manager=load('modules/viewmanager/viewmanager.js').default;window.define=defineAMD;window.require=requireAMD;
-  const Item=await new Promise((resolve,reject)=>require(['item/item.js'],resolve,reject));
+  const Item=input.entryRouting?null:await new Promise((resolve,reject)=>require(['item/item.js'],resolve,reject));
   const ActualApi=await new Promise((resolve,reject)=>require(['modules/emby-apiclient/apiclient.js'],resolve,reject));
   const userCache=new Map(),wire=new ActualApi({getItem:key=>userCache.get(key)||null,setItem:(key,value)=>userCache.set(key,value),removeItem:key=>userCache.delete(key)},null,'https://synthetic.invalid','ETE synthetic','1','synthetic-device','synthetic-device',1);
   wire.serverInfo({Id:'synthetic-server',UserId:t.user});wire.setSystemInfo({Id:'synthetic-server',Version:'4.10.0.40'});wire._endPointInfo={IsLocal:true};wire.enableAutomaticNetworking=false;

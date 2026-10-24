@@ -52,3 +52,9 @@ node tools/check-home-cache-update-renderer.cjs /absolute/path/to/chromium /new/
 完整离线、材料／来源及打包语法检查须绑定最终来源，不能用旧包、仅 DOM 存在或单元通过代替整包验收。Windows／真实 Emby 服务后续需要核对：退出重开后主动打开旧详情、四类型、图片实际命中与解码、原生选择／播放、临时失败和确切删除恢复、认证／权限变化、清理后登录和设置保持。本任务不操作用户工作前台、不发布或自行触发测试包。
 
 导航生命周期按固定 [Electron 44.4.2 webContents 文档](https://github.com/electron/electron/blob/v44.4.2/docs/api/web-contents.md#event-did-start-navigation) 的事件 details 与保留的位置参数兼容；这份文档依据不替代 Windows 实机事件验收。
+
+## 生产入口回归
+
+原候选的 Windows 详情入口未通过用户验收。app 的 `getDynamicImport` 会解包默认导出，而 ItemPage 的 AMD 参数消费 namespace；两端错配会在视图切换前抛出构造异常，表现为 URL 已变化但仍显示首页。详情别名现直接返回原 AMD namespace，与 store 保持单一模块身份；Home 别名消费者合同不变。
+
+`node tools/check-detail-entry-renderer.cjs <Chromium绝对路径> <新证据目录>` 从真实 Home 卡片标题点击，经过原 Shortcuts／CommandProcessor、实际 router 取 URL／init／loadContent、viewmanager 和 Alameda Item 依赖。固定旧提交别名作失败对照，电影／剧集均验证首次入口和缓存再次入口的可见性；既有详情 renderer 也使用生产 app 别名，不再手写替代。HTTP／text、输入／scroller、元数据与播放设备边界仍受控，截图中的合成内容与未替换的翻译键不代表完整客户端视觉。该回归不是 Work、Electron 或真实服务验收，原包保留供对照，候选由协调者另排。
