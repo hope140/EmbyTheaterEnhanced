@@ -129,7 +129,7 @@ legacy env 不会在每次启动覆盖 USER 配置；main 启动完成 bootstrap
 ```text
 path: mpvplayer/strm.html
 controller: mpvplayer/strm.js
-title: STRM 智能解析
+title: 智能解析
 ```
 
 页面沿用现有 Emby settings view、`emby-input`、`emby-select`、`emby-checkbox` 和 `emby-button`，提供 CloudDrive2 连接测试、路径规则测试、添加规则、恢复自动配置和禁用规则。动态路径只写入 input value/textContent，不通过 HTML 字符串拼接。
