@@ -378,8 +378,8 @@ test('550ms cadence requires an explicit preset and active verified demand; base
 
 test('slow capture and expensive DWM request back off for 30s, without overlapping capture or stale-owner attribution',async t=>{
     const owner=nativeOwner(10);let f,slow=false,resolve;
-    f=fixture(t,{captureIntervalMs:550,isPreviewOwner:()=>true,capturePreview:async()=>{if(slow)f.advance(101);return ownedFrame(owner);}});
-    f.send(f.make({nativeOwner:owner}));await drain();slow=true;await f.tick(550);slow=false;
+    f=fixture(t,{captureIntervalMs:550,isPreviewOwner:()=>true,capturePreview:async()=>{f.advance(slow?201:114.4);return ownedFrame(owner);}});
+    f.send(f.make({nativeOwner:owner}));await drain();assert.equal(f.controller.status().performance.backoffs,0,'observed 114.4ms RPC must not retire the 550ms trial');assert.equal(f.controller.status().performance.activeIntervalMs,550);assert.equal(f.controller.status().performance.latencyGuardrails.captureMs,200);slow=true;await f.tick(550);slow=false;
     let status=f.controller.status().performance;assert.equal(status.activeIntervalMs,1000);assert.equal(status.backoffs,1);
     await f.tick(550);assert.equal(f.controller.status().captured,2);
     await f.tick(30000);assert.equal(f.controller.status().performance.activeIntervalMs,550);
@@ -388,7 +388,7 @@ test('slow capture and expensive DWM request back off for 30s, without overlappi
     const pending=fixture(t,{captureIntervalMs:550,isPreviewOwner:()=>true,capturePreview:()=>new Promise(done=>{resolve=done;})});
     pending.send(pending.make({nativeOwner:owner}));await drain();await pending.tick(550);
     assert.equal(pending.controller.status().performance.counters.requests,1);
-    pending.send(pending.make({nativeOwner:nativeOwner(11),playbackEpoch:2,sequence:2}));pending.advance(101);resolve(ownedFrame(owner));await drain();
+    pending.send(pending.make({nativeOwner:nativeOwner(11),playbackEpoch:2,sequence:2}));pending.advance(201);resolve(ownedFrame(owner));await drain();
     assert.equal(pending.controller.status().performance.backoffs,0);assert.equal(pending.controller.status().captured,0);
 });
 

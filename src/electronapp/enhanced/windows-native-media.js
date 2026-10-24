@@ -102,7 +102,7 @@ function attach(options) {
                 const started=clock.now();let frame;
                 try{frame=await options.capturePreview(owner);}finally{
                     const elapsed=Math.max(0,clock.now()-started);metrics.record('captureRoundTrip',elapsed);
-                    if(revision===frameRevision&&current(owner)){lastRoundTripMs=elapsed;if(elapsed>100)slowPreview();}
+                    if(revision===frameRevision&&current(owner)){lastRoundTripMs=elapsed;if(elapsed>200)slowPreview();}
                 }
                 if (revision !== frameRevision || !current(owner) || !visible() || !frame ||
                     !previewSnapshot.sameOwner(frame.owner, owner) || !Number.isInteger(frame.width) || !Number.isInteger(frame.height) ||
@@ -226,7 +226,7 @@ function attach(options) {
         captured, submitted: thumbnail.submitted, averageCaptureMs: metrics.snapshot().stages.captureRoundTrip.averageMs, errors, sessionRequests, sequence,
         performance:{capture:metrics.snapshot(),dwm:typeof thumbnail.performance==='function'?thumbnail.performance():null,
             counters:{...counters},savingsEnabled:savings,configuredIntervalMs:requestedIntervalMs,activeIntervalMs:captureInterval(),minimumIntervalMs:captureInterval()===550?500:950,
-            backoffs,backoffRemainingMs:Math.max(0,backoffUntil-clock.now()),latencyGuardrails:{captureMs:100,nativeImageMs:8,dwmRequestMs:20,backoffMs:30000},
+            backoffs,backoffRemainingMs:Math.max(0,backoffUntil-clock.now()),latencyGuardrails:{captureMs:200,nativeImageMs:8,dwmRequestMs:20,backoffMs:30000},
             pausedVerificationMs:savings?2000:1000,outputMaximum:{width:160,height:90},inFlight:!!frameWork},
         artworkReady: false}; }};
 }
