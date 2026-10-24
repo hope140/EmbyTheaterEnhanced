@@ -123,9 +123,9 @@ test('selfcheck spawn failure records close and after-phase inventory before any
  assert.equal(processRecord.closed,true);assert.equal(processRecord.spawnError,'ENOENT');assert.deepEqual(phase.previousDelta.added,[]);assert.deepEqual(phase.previousDelta.missing,[]);assert.deepEqual(phase.previousDelta.changed,[]);
  assert.equal(JSON.parse(fs.readFileSync(path.join(diagnostics,'failure.json'))).stage,'selfcheck');assert.equal(fs.existsSync(path.join(diagnostics,'owner.process.json')),false);
 });
-test('trial cannot be emitted into the base runtime or from dirty generator sources',t=>{
+for(const generator of ['tools/windows-media-trial-bootstrap.cjs','tools/windows-native-exit-probe.cjs'])test('trial cannot be emitted into the base runtime or from dirty generator '+generator,t=>{
  const f=fixture(t);assert.throws(()=>trial.create(f.root,f.runtime,f.dependencies,path.join(f.runtime,'nested'),f.commit),/separate/);
- f.put('tools/windows-media-trial-bootstrap.cjs','changed');assert.throws(()=>trial.create(f.root,f.runtime,f.dependencies,f.destination,f.commit),/differs from HEAD/);assert.equal(fs.existsSync(f.destination),false);
+ f.put(generator,'changed');assert.throws(()=>trial.create(f.root,f.runtime,f.dependencies,f.destination,f.commit),/differs from HEAD/);assert.equal(fs.existsSync(f.destination),false);
 });
 
 test('portable entry creates only a fresh outside profile and rejects existing/inside/redirected targets',t=>{

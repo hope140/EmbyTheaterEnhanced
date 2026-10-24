@@ -20,7 +20,7 @@ const SOURCES={
  'electronapp/enhanced/native-media/winrt.cjs':'native/windows-media/winrt.cjs',
  'electronapp/enhanced/native-media/system-libraries.cjs':'native/windows-media/system-libraries.cjs'
 };
-const GENERATORS=['tools/windows-native-preview-trial.cjs','tools/windows-native-preview-deps.cjs','tools/windows-native-preview-process.cjs','tools/download-native-preview-deps.py','tools/windows-media-trial-bootstrap.cjs','tools/windows-media-trial-identity.cjs','native/windows-media/package.json'];
+const GENERATORS=['tools/windows-native-preview-trial.cjs','tools/windows-native-preview-deps.cjs','tools/windows-native-preview-process.cjs','tools/windows-native-exit-probe.cjs','tools/download-native-preview-deps.py','tools/windows-media-trial-bootstrap.cjs','tools/windows-media-trial-identity.cjs','native/windows-media/package.json'];
 function git(root,args){return cp.execFileSync('git',['-C',root,...args],{maxBuffer:16*1024*1024});}
 function blob(root,commit,name){return git(root,['show',commit+':'+name]);}
 function create(root,runtime,dependencies,destination,commit) {

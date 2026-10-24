@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-10-24 — 修复试验预览关闭后的原生对象访问
+
+窗口closed后重新读取BrowserWindow.webContents会同步抛错，旧dispose尚未返回Promise且尚未创建cleanup，因而绕过close的.catch并跳过后续释放。适配器现于attach保存存活WebContents引用，退出前发布共享cleanup Promise并立即退休预览；重复／重入关闭共用同一结果，独立同步清理失败仍继续释放监听／thumbnail并等待所属SMTC队列与pending capture，最终明确拒绝而非吞掉失败。不改变播放、捕获周期或两个原按钮；新SMTC控件规格另作独立提交。
+
+新增严格销毁getter及退出竞态回归，同一新断言对修前源码确定失败、修后通过。新增独立Electron隐藏窗口生命周期工具，使用真实Window／WebContents／nativeImage，明确SMTC／DWM／capture／visibility与IPC认证为测试替身，不加载完整客户端／账户／媒体；完整trial和helper小验证都在原owner之前运行该检查，回执绑定适配器SHA且不能冒充DWM画面验收。本环境真实LinuxElectron启动在SUID sandbox配置检查退出133，未创建窗口；未改权限或关闭sandbox，真实Windows执行与用户退出复验待安排。
+
+公开离线1644项／1633pass／0fail／11平台skip；随后新增exit-probe来源登记与dirty-generator精确拒绝回归，组装套件单独重跑。历史Stop队列自身原有catch行为保持，不声称所有既有退休错误均升级为本次AggregateError。
+
 ## 2026-10-24 — 试验包并置已验证Vulkan loader及生产helper小验证
 
 31372083的真实云加载A/B已成功收集：固定libmpv在A不可加载，并置固定Electron44.4.2的Vulkan loader后B可加载，来源SHA为7611034f…db99fd1；该结果只支持依赖可达性，不是生产helper或画面验收。本次最小修复只在Native试验副本复制标准载荷中的同一DLL到libmpv旁，新增锁文件绑定44.4.2／原归档／成员SHA，runtimeCopies逐项记录源、目标、大小和字节关系。标准文件不覆盖，源缺失／变更、目标碰撞、复制件漂移或伪造关系均拒绝；不安装驱动、不改PATH或加载搜索范围。

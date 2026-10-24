@@ -26,6 +26,7 @@ function prepare(rootArg){
 async function run(rootArg){
     const c=context(rootArg);if(fs.existsSync(c.output))throw Error('Preserve existing helper startup output');fs.mkdirSync(c.output,{recursive:true});
     const probeOutput=path.join(c.root,'.work/native-helper-startup/probe-output'),exe=path.join(c.root,c.manifest.runtime.preparedPath,'electron.exe');
+    await require('./windows-native-exit-probe.cjs').accept(exe,path.join(c.root,'src/electronapp/enhanced/windows-native-media.js'),path.join(c.output,'exit-lifecycle'));
     const provenance=JSON.parse(fs.readFileSync(path.join(c.runtime,'native-helper-provenance.json')));
     if(provenance.sourceCommit!==c.source||provenance.helper.testing!==false)throw Error('Source-bound production helper required');
     const loaderProvenance=JSON.parse(fs.readFileSync(path.join(c.runtime,'loader-provenance.json')));

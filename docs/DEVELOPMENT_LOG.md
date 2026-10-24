@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-24 — 预览退出幂等释放及销毁边界回归
+
+定位并以生产适配器加严格destroyed getter复现closed→dispose同步异常，旧SMTC／thumbnail均未释放。修复缓存WebContents和共享Promise发布顺序；各同步释放独立执行，错误汇总后传播，所属晚到SMTC／capture仍等待退休。新增关闭／destroy／Stop后关闭／startup pending／capture成功与拒绝／重复及重入／同步失败回归；修前同断言和生命周期harness均exit1并含Object has been destroyed，修后定向77项76pass／0fail／1 Windows平台skip。
+
+隐藏Electron生命周期工具不加载产品页面或网络，SMTC／DWM／capture／visibility／IPC验证替身与真实Window对象明确区分；接入trial和云helper小验证，独立回执只接受六场景、固定Electron44.4.2及精确adapter SHA。Linux实际Electron因原SUID sandbox配置不符合而启动前exit133；不调整系统安全配置、不禁sandbox，不声明真实窗口或Windows退出已通过。保持原刷新率、字幕边界、主HWND及试验默认关闭，新控件产品决定与本bug拆分。
+
+公开离线1644项／1633pass／0fail／11平台skip；随后新增exit-probe来源登记与dirty-generator精确拒绝回归，组装套件单独重跑。历史Stop队列自身原有catch行为保持，不声称所有既有退休错误均升级为本次AggregateError。
+
 ## 2026-10-24 — 据真实加载A/B修复试验副本依赖放置
 
 31372083的短云A/B表明仅libmpv不可加载、并置原Electron Vulkan loader后可加载，实际成员SHA7611034f…db99fd1，helper／visible仍NOT_ASSESSED。据此只在试验副本新增同字节依赖，不改生产加载flags、系统搜索路径或GPU驱动。原标准载荷的Electron文件按已审核44.4.2归档及成员SHA复用，新增loader-input源锁和runtimeCopies关系，校验器同时核对标准源、复制目标、清单／大小和原归档。源缺失、源漂移或已有目标在创建输出前拒绝；即使重写trial inventory，也不能隐藏目标漂移或来源伪造。原标准文件、默认入口及两个按钮保持。

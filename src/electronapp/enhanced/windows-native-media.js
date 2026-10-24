@@ -23,6 +23,9 @@ function valid(value) {
 
 function attach(options) {
     const {window, ipcMain, nativeImage, sendCommand, createBindings, createSmtc, createDwm, attachThumbnail, koffi} = options;
+    // BrowserWindow.webContents throws after the native window is destroyed.
+    // Keep the live EventEmitter reference for IPC checks and closed cleanup.
+    const webContents = window.webContents;
     const bindings = createBindings(koffi), dwm = createDwm(koffi);
     const emit = createRecorder(options.log || function () {}, 'windows-media', 10);
     let disposed = false, latest = null, session = null, queue = Promise.resolve(), sequence = 0, sessionToken = randomUUID(), sessionRequests = 0;
@@ -115,7 +118,7 @@ function attach(options) {
         }).catch(() => { if (!disposed) logFailure('state'); });
     }
     function receive(event, snapshot) {
-        if (disposed || !boundary.isTrusted(event, window.webContents) || !valid(snapshot) || snapshot.sessionToken !== sessionToken || snapshot.sequence <= sequence || latest && snapshot.playbackEpoch < latest.playbackEpoch) return;
+        if (disposed || !boundary.isTrusted(event, webContents) || !valid(snapshot) || snapshot.sessionToken !== sessionToken || snapshot.sequence <= sequence || latest && snapshot.playbackEpoch < latest.playbackEpoch) return;
         sequence = snapshot.sequence;
         const changed = !latest || latest.mediaKey !== snapshot.mediaKey || latest.active !== snapshot.active || latest.mediaType !== snapshot.mediaType || latest.playbackEpoch !== snapshot.playbackEpoch || JSON.stringify(latest.nativeOwner) !== JSON.stringify(snapshot.nativeOwner);
         if (changed) clearPreview();
@@ -133,29 +136,41 @@ function attach(options) {
     let cleanup = null;
     function dispose() {
         if (cleanup) return cleanup;
-        disposed = true; clearPreview();
-        ipcMain.removeListener(NATIVE_CHANNEL, receive);
-        ipcMain.removeHandler(NATIVE_SESSION_CHANNEL);
-        window.webContents.removeListener('did-start-navigation', navigation);
-        window.webContents.removeListener('render-process-gone', reset);
-        window.removeListener('closed', close);
-        window.removeListener('restore', restore);
-        thumbnail.dispose();
-        cleanup = (async () => {
+        let resolveCleanup, rejectCleanup;
+        // Publish before invoking owned cleanup: callbacks may reenter dispose.
+        cleanup = new Promise((resolve, reject) => {resolveCleanup = resolve; rejectCleanup = reject;});
+        disposed = true;
+        const failures = [];
+        function release(action) { try { action(); } catch (error) { failures.push(error); } }
+        release(clearPreview);
+        release(() => ipcMain.removeListener(NATIVE_CHANNEL, receive));
+        release(() => ipcMain.removeHandler(NATIVE_SESSION_CHANNEL));
+        release(() => webContents.removeListener('did-start-navigation', navigation));
+        release(() => webContents.removeListener('render-process-gone', reset));
+        release(() => window.removeListener('closed', close));
+        release(() => window.removeListener('restore', restore));
+        release(() => thumbnail.dispose());
+        (async () => {
             await queue.catch(() => {});
             if (frameWork) await frameWork.promise;
             if (session) { const old = session; session = null; await old.dispose(); }
-        })();
+        })().then(() => {
+            if (failures.length) rejectCleanup(new AggregateError(failures, 'Windows media cleanup failed'));
+            else resolveCleanup();
+        }, error => {
+            failures.push(error);
+            rejectCleanup(new AggregateError(failures, 'Windows media cleanup failed'));
+        });
         return cleanup;
     }
     function close() { dispose().catch(() => { logFailure('cleanup'); }); }
     ipcMain.on(NATIVE_CHANNEL, receive);
     ipcMain.handle(NATIVE_SESSION_CHANNEL, function(event) {
-        if (disposed || !boundary.isTrusted(event, window.webContents)) return null;
+        if (disposed || !boundary.isTrusted(event, webContents)) return null;
         sessionRequests++; return {token: sessionToken};
     });
-    window.webContents.on('did-start-navigation', navigation);
-    window.webContents.on('render-process-gone', reset);
+    webContents.on('did-start-navigation', navigation);
+    webContents.on('render-process-gone', reset);
     window.once('closed', close);
     window.on('restore', restore);
     return {dispose, previewImage,

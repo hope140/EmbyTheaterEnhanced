@@ -168,3 +168,16 @@ Work 需分别记录普通包对照与 trial 的 thumbnail／Peek：A→B 不残
 EWT 独立实现与本候选均改动 `native/mpv-helper/ete-mpv-helper.cpp` 的 `MPV_EVENT_PLAYBACK_RESTART`：后续协调必须同时保留本候选 `previewOwner.restart(uniqueOpenMedia())`、EWT seek landing／time-pos 采样、一次当前 generation 的 restart 转发，以及原 auto-hold 决策。不能用整块覆盖取代合并审查。
 
 `src/electronapp/native-helper/service.js` 中 EWT 的 restart 特例需维持 currentGenerationId 检查，其他事件仍经过 observed 白名单；本候选增加 main-only capturePreview/isPreviewOwner。`src/electronapp/plugins/libmpv.js` 的 EWT seek/restart 消费与本候选只读 owner getter／previewItem 退休应分别保留。`controller.js`／`client.js` 也需逐块复核。本候选保持 protocolVersion=1，`preview-snapshot-v1` 是可选能力，旧 helper 不收到新方法；不要求 EWT 或旧端启用 native trial。本次未合并其他候选分支，真实集成需另跑 Windows 回归。
+
+## 隐藏窗口退出生命周期回归
+
+`tools/windows-native-exit-probe.cjs`接受固定Electron路径、适配器源码绝对路径及全新输出目录。Node控制进程确认真实child close／exit0，再验证报告中的六个场景、固定44.4.2、适配器SHA和独立scope。Electron创建show:false／focusable:false／skipTaskbar窗口，独立临时profile，不加载产品页面、媒体或账户；真实Window／WebContents／nativeImage验证closed后的原生对象边界。SMTC、DWM、capture、capture-visibility和IPC sender认证使用明确测试替身，因此不是真实WinRT或DWM效果验收。对已销毁窗口再次读取webContents应抛错，但产品dispose须完成监听、thumbnail与SMTC释放，并等待晚到请求。
+
+```powershell
+# 精确源码checkout，使用已验证的固定Electron44.4.2；输出目录必须不存在。
+node .	ools\windows-native-exit-probe.cjs C:\ETE-Probe\electron44\electron.exe C:\ETE-Probe\source\src\electronapp\enhanced\windows-native-media.js C:\ETE-Probeuns\exit-001
+```
+
+完整trial和native_helper_only都在生产owner前执行该回归。输出仅含受控fixture报告及其stdout／stderr／process记录，profile位于系统临时目录而非artifact树；不能从脚本存在、合成harness或Linux启动失败推断Windows结果。真实用户复验仍包括播放中退出、Stop后退出与捕获pending退出，确认没有JS弹窗且所属helper实际结束。
+
+当前画面阶梯变化的源码原因是1000ms捕获timer／950ms冷却，已有帧且2.5秒无DWM请求时暂停刷新，隐藏／最小化不捕获。只有视频像素且最大160×90，不合成字幕／OSD。低成本改善应先测hover首次请求延迟与暂停时重复采集；提高持续频率会增加libmpv screenshot／读回与CPU缩放开销，160×90只约束输出而非原始读回成本。没有CPU／GPU实测，不能声称代价可忽略；本次不改刷新率、分辨率或字幕合成。

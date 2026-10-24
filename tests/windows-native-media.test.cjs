@@ -7,9 +7,10 @@ const {NATIVE_CHANNEL, NATIVE_SESSION_CHANNEL} = require('../src/electronapp/enh
 const drain = () => new Promise(resolve => setImmediate(resolve));
 function fixture(t, overrides = {}) {
     const window = new EventEmitter(), ipc = new EventEmitter(), handlers = new Map(), calls = [], commands = [];
-    window.webContents = new EventEmitter();
-    window.webContents.mainFrame = {url: pathToFileURL(path.resolve(__dirname, '../src/electronapp/www/index.html')).href};
-    window.webContents.isDestroyed = () => false; window.isDestroyed = () => false;
+    const webContents = new EventEmitter(); let destroyed = false;
+    Object.defineProperty(window, 'webContents', {get() {if (destroyed) throw new TypeError('Object has been destroyed');return webContents;}});
+    webContents.mainFrame = {url: pathToFileURL(path.resolve(__dirname, '../src/electronapp/www/index.html')).href};
+    webContents.isDestroyed = () => destroyed; window.isDestroyed = () => destroyed;
     window.getNativeWindowHandle = () => {const b = Buffer.alloc(8); b.writeBigUInt64LE(1n); return b;};
     ipc.handle = (name, callback) => handlers.set(name, callback); ipc.removeHandler = name => handlers.delete(name);
     let minimized = false, sourceReads = 0, captures = 0, artworkWrites = 0, updates = 0, clears = 0, time = 0, scheduled;
@@ -34,7 +35,7 @@ function fixture(t, overrides = {}) {
         }),
         attachThumbnail: (_window, _dwm, getImage, _onError, onRequest = () => {}) => {
             imageReader = getImage; request = onRequest;
-            return {clear() {clears++;}, refresh() {calls.push('preview');}, dispose() {calls.push('preview-dispose');},
+            return {clear() {clears++;if(overrides.onClear)overrides.onClear();}, refresh() {calls.push('preview');}, dispose() {calls.push('preview-dispose');},
                 requestedRecently: () => true, submitted:0};
         },
         clock: {now: () => time, setInterval(callback) {scheduled=callback;return 1;}, clearInterval() {scheduled=null;}},
@@ -43,11 +44,12 @@ function fixture(t, overrides = {}) {
         // A legacy artwork option must not revive disk-cache reads/writes.
         artworkDirectory: overrides.artworkDirectory,
         sendCommand: value => calls.push('command:' + value)});
-    t.after(() => controller.dispose());
+    t.after(() => controller.dispose().catch(error => {if(!overrides.cleanupError || !error.errors.includes(overrides.cleanupError))throw error;}));
     function token() {return handlers.get(NATIVE_SESSION_CHANNEL)(event).token;}
     const make = (extra = {}) => ({version:3, nativeOwner:null, playbackEpoch:1, active:true, paused:false, title:'Fixture', mediaKey:'a'.repeat(64), mediaType:'Video',
         duration:100, position:1, rate:1, sequence:1, sessionToken:token(), ...extra});
-    return {controller, window, ipc, handlers, event, make, token, calls, commands,
+    return {controller, window, webContents, ipc, handlers, event, make, token, calls, commands,
+        destroy() {destroyed=true;window.emit('closed');},
         get updates() {return updates;}, get clears() {return clears;},
         get captureCalls() {return captures;}, get sourceReads() {return sourceReads;}, get artworkWrites() {return artworkWrites;},
         get timerScheduled() {return !!scheduled;}, readPreview() {return imageReader();}, request() {request();},
@@ -228,4 +230,71 @@ test('wrong-owner, malformed and unavailable snapshot responses stay neutral wit
     f.send(f.make({nativeOwner:owner}));await drain();for(let i=0;i<30;i++)await f.tick();
     assert.equal(attempts,10);assertNeutral(f.readPreview());assert.equal(f.controller.status().captured,0);
     f.restore();await f.tick();assert.equal(attempts,11);
+});
+
+test('closed after native destruction releases listeners, thumbnail and SMTC exactly once', async t => {
+    const f=fixture(t);f.send(f.make());await drain();
+    const lateReceive=f.ipc.listeners(NATIVE_CHANNEL)[0], lateSession=f.handlers.get(NATIVE_SESSION_CHANNEL), state=f.make({sequence:2});
+    assert.doesNotThrow(()=>f.destroy());
+    assert.throws(()=>f.window.webContents,/Object has been destroyed/);
+    const closing=f.controller.dispose();assert.equal(closing,f.controller.dispose());await closing;
+    assert.equal(f.calls.filter(value=>value==='dispose').length,1);
+    assert.equal(f.calls.filter(value=>value==='preview-dispose').length,1);
+    for(const name of ['did-start-navigation','render-process-gone'])assert.equal(f.webContents.listenerCount(name),0);
+    for(const name of ['closed','restore'])assert.equal(f.window.listenerCount(name),0);
+    assert.equal(f.handlers.size,0);assert.equal(f.ipc.listenerCount(NATIVE_CHANNEL),0);
+    assert.doesNotThrow(()=>lateReceive(f.event,state));assert.equal(lateSession(f.event),null);
+    f.request();await f.tick();assert.equal(f.readPreview(),null);assert.equal(f.updates,1);
+});
+
+test('Stop followed by destroyed close does not dispose the retired session twice', async t => {
+    const f=fixture(t);f.send(f.make());await drain();
+    f.send(f.make({...stopped,sequence:2}));await drain();
+    f.destroy();await f.controller.dispose();
+    assert.equal(f.calls.filter(value=>value==='dispose').length,1);
+    assert.equal(f.calls.filter(value=>value==='preview-dispose').length,1);
+});
+
+test('destroy while SMTC startup is pending drains its late session without update', async t => {
+    let complete,releases=0;
+    const f=fixture(t,{create:()=>new Promise(resolve=>{complete=resolve;})});
+    f.send(f.make());await drain();f.destroy();
+    const closing=f.controller.dispose();assert.equal(closing,f.controller.dispose());let settled=false;closing.then(()=>{settled=true;});
+    await drain();assert.equal(settled,false);
+    complete({update(){assert.fail('late update');},dispose(){releases++;}});
+    await closing;assert.equal(releases,1);assert.equal(f.readPreview(),null);
+});
+
+for(const rejected of [false,true])test(`destroy drains ${rejected?'rejected':'successful'} pending capture without submitting late pixels`,async t=>{
+    let complete,reject,requests=0;const owner=nativeOwner(10);
+    const f=fixture(t,{isPreviewOwner:()=>true,capturePreview:()=>{requests++;return new Promise((resolve,fail)=>{complete=resolve;reject=fail;});}});
+    f.send(f.make({nativeOwner:owner}));await drain();f.destroy();
+    const previews=f.calls.filter(value=>value==='preview').length;
+    let settled=false;const closing=f.controller.dispose();closing.then(()=>{settled=true;});await drain();assert.equal(settled,false);
+    if(rejected)reject(new Error('capture ended'));else complete(ownedFrame(owner));
+    await closing;f.request();await f.tick();
+    assert.equal(f.controller.status().captured,0);assert.equal(requests,1);assert.equal(f.readPreview(),null);
+    assert.equal(f.calls.filter(value=>value==='preview').length,previews);
+    assert.equal(f.calls.filter(value=>value==='dispose').length,1);
+});
+
+test('reentrant native retirement shares the published cleanup promise',async t=>{
+    let f,reentered,armed=false;
+    f=fixture(t,{onClear(){if(armed)reentered=f.controller.dispose();}});
+    f.send(f.make());await drain();armed=true;
+    const closing=f.controller.dispose();assert.equal(reentered,closing);await closing;
+    assert.equal(f.calls.filter(value=>value==='preview-dispose').length,1);
+    assert.equal(f.calls.filter(value=>value==='dispose').length,1);
+});
+
+test('a synchronous cleanup failure is reported after other listeners and resources drain',async t=>{
+    const failure=new Error('bounded fixture cleanup failure');let armed=false;
+    const f=fixture(t,{cleanupError:failure,onClear(){if(armed)throw failure;}});
+    f.send(f.make());await drain();armed=true;
+    let closing;assert.doesNotThrow(()=>{closing=f.controller.dispose();});
+    await assert.rejects(closing,error=>error instanceof AggregateError&&error.errors.length===1&&error.errors[0]===failure);
+    assert.equal(f.controller.dispose(),closing);assert.equal(f.handlers.size,0);
+    assert.equal(f.webContents.listenerCount('did-start-navigation'),0);
+    assert.equal(f.calls.filter(value=>value==='preview-dispose').length,1);
+    assert.equal(f.calls.filter(value=>value==='dispose').length,1);
 });

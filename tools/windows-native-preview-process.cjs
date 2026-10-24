@@ -87,6 +87,9 @@ async function accept(runtime,ownerOutput,commit,directory){
         check.verify(runtime,commit,{loadNative:false});
         const entry=JSON.parse(fs.readFileSync(path.join(directory,'entry-smoke.stdout.log'),'utf8').trim());
         if(entry.electron!=='44.4.2'||entry.scope!=='production-helper-owner-snapshot'||entry.visibleDwmAcceptance!=='NOT_ASSESSED')throw failure('GUI_ENTRY_RECEIPT_NOT_ACCEPTED');
+        stage='exit-lifecycle';
+        const exitLifecycle=await require('./windows-native-exit-probe.cjs').accept(electron,path.join(runtime,'electronapp/enhanced/windows-native-media.js'),path.join(directory,'exit-lifecycle'));
+        snapshot('after-exit-lifecycle');check.verify(runtime,commit,{loadNative:false});
         stage='helper-startup';
         try{await runChild(electron,[path.join(runtime,'trial/owner-probe.cjs'),runtime,startupOutput,commit,'--handshake-only'],{directory,name:stage,timeoutMs:45000});}
         finally{snapshot('after-helper-startup');preserveOwnerStages(startupOutput,directory,'helper-startup-stages.jsonl');}
@@ -97,7 +100,7 @@ async function accept(runtime,ownerOutput,commit,directory){
         finally{snapshot('after-owner');preserveOwnerStages(ownerOutput,directory);}
         check.verify(runtime,commit,{loadNative:false});
         const owner=readOwnerReport(ownerOutput,commit);
-        fs.writeFileSync(path.join(directory,'acceptance.json'),JSON.stringify({status:'passed',sourceCommit:commit,selfcheck:receipt,guiEntry:entry,helperStartup,owner,visibleDwmAcceptance:'NOT_ASSESSED'},null,2)+'\n',{flag:'wx'});
+        fs.writeFileSync(path.join(directory,'acceptance.json'),JSON.stringify({status:'passed',sourceCommit:commit,selfcheck:receipt,guiEntry:entry,exitLifecycle,helperStartup,owner,visibleDwmAcceptance:'NOT_ASSESSED'},null,2)+'\n',{flag:'wx'});
         return receipt;
     }catch(error){
         const record={status:'failed',stage,code:error.code||'TRIAL_ACCEPTANCE_FAILED',message:error.message,details:error.details||null};
