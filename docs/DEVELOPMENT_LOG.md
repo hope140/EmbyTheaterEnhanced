@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-24 — Correct AVI timing-slot checks after first finite export
+
+Read the first native job through the normal GitHub log path: finite export27ms/4,340,662B and no new observed source requests/scheduled bytes, then export-inspect/export-packets-invalid; helper exit0/stdio closed. Preserve the incomplete result, with Stop/exit hashes, mapping and second-helper decode untested. Do not classify the generic parser failure as a core-export failure.
+
+Fixed mpv raises coarse codec timebases; mature FFmpeg AVI writes empty timing chunks. A real local FFmpeg600Hz control contains24 full/576 empty chunks,4,167,286B, decodes correctly but fails the old full-size-only parser. Track bounded slots explicitly, allow only the two evidenced24/600Hz clock forms, and require every nonempty payload to match contiguous source frames and the corresponding slot times. Keep nonzero short/foreign/misordered packets, unknown clocks, misplaced gaps and excess slots rejected. Add fixed numeric first-failure diagnostics and safe log projection; no media or raw logs are published. The actual native file's chunk details remain unknown pending the next coordinated short run; no core, candidate, workflow scope or product change occurs.
+
+Validation: real upstream-style FFmpeg red/green decode control passed; related84 tests passed, including malformed nonempty payload, misplaced timing gaps, exact empty-slot accounting and sanitized numeric error propagation. Public offline regression1959 tests:1949 passed,0 failed,10 platform skips; final metadata-accounting refinements were then rechecked in the targeted selection. JavaScript468-file syntax plus final changed-file checks, UTF-8/newlines/local links/finite-credential and whitespace checks passed. Fixed Windows rerun is still pending; its prior failure remains preserved as incomplete evidence.
+
 ## 2026-10-24 — Prepare finite fixed-DLL packet export with real frame identity
 
 Add an isolated probe and a small adapter to the existing manual range job; only `experiment/playback-buffer-retention` accepts the new buffer-export mode. Reuse exact artifact acquisition/expiry/hash, unchanged original manifest, one-loader relation, fresh control plan and real Electron entry gates. No modified core, new dependency, normal playback/service change, public push or native dispatch occurs. Read fixed dump traversal/completion source and an upstream output-unplayable report; retain content/decode gates instead of trusting command success.

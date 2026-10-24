@@ -8,6 +8,7 @@ const diagnostics = require('./playback-range-helper-diagnostics.cjs');
 const SCOPE = 'fixed-mpv-finite-buffer-export-NOT-transparent-restore';
 const OWNER = 'ETE isolated finite buffer export v1\n';
 const MAX_FILE = 34 * 1024 * 1024;
+const MAX_SLOTS = 192 * 25;
 const STAGES = new Set(['preflight', 'app-ready', 'source-helper', 'source-load', 'source-advance', 'source-pause',
     'source-stable', 'export', 'export-inspect', 'source-stop', 'source-exit', 'clip-helper', 'clip-load', 'clip-decode', 'clip-stop', 'complete']);
 const CODES = new Set(['export-input-invalid', 'export-file-limit', 'export-avi-invalid', 'export-avi-format', 'export-packets-invalid',
@@ -19,7 +20,16 @@ const OPTIONS = Object.freeze({'cache': 'yes', 'cache-on-disk': false, 'demuxer-
     'demuxer-max-back-bytes': 2 * 1048576, 'demuxer-donate-buffer': false, 'pause': false, 'volume': 0}); // Probe only, not product defaults.
 function safeFailure(error, stage) {
     const old = disk.safeFailure(error);
-    return {stage: STAGES.has(stage) ? stage : 'preflight', code: CODES.has(error?.message) ? error.message : old.code, systemCode: old.systemCode};
+    const format = formatDiagnostic(error?.avi);
+    return {stage: STAGES.has(stage) ? stage : 'preflight', code: CODES.has(error?.message) ? error.message : old.code, systemCode: old.systemCode, ...(format ? {format} : {})};
+}
+function formatDiagnostic(value) {
+    if (!value || !['packet-size', 'packet-count', 'timeline-slots', 'timebase', 'chunk-boundary'].includes(value.reason)) return null;
+    const result = {reason: value.reason};
+    for (const key of ['offset', 'actualBytes', 'expectedBytes', 'packetCount', 'emptyPackets', 'slots', 'rate', 'scale']) {
+        if (Number.isSafeInteger(value[key]) && value[key] >= 0) result[key] = value[key];
+    }
+    return result;
 }
 function physical(directory) {
     let current = path.parse(path.resolve(directory)).root;
@@ -32,14 +42,15 @@ function aviPackets(file) {
     support.regular(file);
     const size = fs.statSync(file).size;
     if (size < 64 || size > MAX_FILE) throw Error('export-file-limit');
-    const data = fs.readFileSync(file), packets = []; let rate, scale, width, height;
+    const data = fs.readFileSync(file), packets = []; let rate, scale, width, height, emptyPackets = 0, slots = 0;
+    const fail = (code, reason, values = {}) => {const error = Error(code); error.avi = {reason, packetCount: packets.length, emptyPackets, slots, rate, scale, ...values}; throw error;};
     if (data.toString('ascii', 0, 4) !== 'RIFF' || data.toString('ascii', 8, 12) !== 'AVI ' || data.readUInt32LE(4) + 8 !== size) throw Error('export-avi-invalid');
     function walk(start, end, movie, depth) {
         if (depth > 4) throw Error('export-avi-invalid');
         for (let at = start; at < end;) {
             if (at + 8 > end) throw Error('export-avi-invalid');
             const tag = data.toString('ascii', at, at + 4), bytes = data.readUInt32LE(at + 4), body = at + 8, next = body + bytes + (bytes % 2);
-            if (next > end) throw Error('export-avi-invalid');
+            if (next > end) fail('export-avi-invalid', 'chunk-boundary', {offset: at, actualBytes: bytes});
             if (tag === 'LIST') {
                 if (bytes < 4) throw Error('export-avi-invalid');
                 walk(body + 4, body + bytes, movie || data.toString('ascii', body, body + 4) === 'movi', depth + 1);
@@ -50,15 +61,21 @@ function aviPackets(file) {
                 if (bytes < 40 || width !== undefined || data.readUInt16LE(body + 14) !== 24 || data.readUInt32LE(body + 16) !== 0) throw Error('export-avi-format');
                 width = data.readInt32LE(body + 4); height = data.readInt32LE(body + 8);
             } else if (movie && /^00d[bc]$/.test(tag)) {
-                if (bytes !== 320 * 180 * 3 || packets.length >= 192) throw Error('export-packets-invalid');
-                packets.push({offset: body, bytes, sha256: require('node:crypto').createHash('sha256').update(data.subarray(body, body + bytes)).digest('hex')});
+                if (slots >= MAX_SLOTS) fail('export-packets-invalid', 'timeline-slots', {offset: at, actualBytes: bytes});
+                if (bytes === 0) {emptyPackets++; slots++;}
+                else {
+                    if (bytes !== 320 * 180 * 3) fail('export-packets-invalid', 'packet-size', {offset: at, actualBytes: bytes, expectedBytes: 320 * 180 * 3});
+                    if (packets.length >= 192) fail('export-packets-invalid', 'packet-count', {offset: at, actualBytes: bytes});
+                    packets.push({offset: body, bytes, slot: slots++, sha256: require('node:crypto').createHash('sha256').update(data.subarray(body, body + bytes)).digest('hex')});
+                }
             } else if (movie && /^(?:[0-9]{2}(?:db|dc|wb)|LIST)$/.test(tag)) throw Error('export-avi-format');
             at = next;
         }
     }
     walk(12, size, false, 0);
-    if (width !== 320 || height !== 180 || !rate || !scale || rate / scale !== 24 || !packets.length) throw Error('export-avi-format');
-    return {width, height, fps: rate / scale, packets};
+    if (width !== 320 || height !== 180 || !rate || !scale || !packets.length) throw Error('export-avi-format');
+    if (![24, 600].includes(rate / scale)) fail('export-avi-format', 'timebase', {rate, scale});
+    return {width, height, fps: rate / scale, packets, emptyPackets, slots};
 }
 function markedFixture(file) {
     support.avi(file, 'A');
@@ -70,12 +87,19 @@ function markedFixture(file) {
 }
 function mapping(source, clip) {
     const sourceMap = new Map(source.packets.map((packet, index) => [packet.sha256, index]));
-    if (sourceMap.size !== source.packets.length || source.fps !== clip.fps) throw Error('export-mapping-invalid');
+    if (sourceMap.size !== source.packets.length || source.fps !== 24 || ![24, 600].includes(clip.fps)) throw Error('export-mapping-invalid');
     const indices = clip.packets.map(packet => sourceMap.get(packet.sha256));
     if (indices.length < 16 || indices.length >= source.packets.length || indices.some((index, n) => !Number.isInteger(index) || n > 0 && index !== indices[n - 1] + 1)) throw Error('export-mapping-invalid');
+    // AVI timebase ticks can contain empty hold/skip slots. They are not packets
+    // of raw video. Validate their actual timing rather than dropping them.
+    if (clip.packets[0].slot !== 0 || !Number.isInteger(clip.slots) || clip.slots > MAX_SLOTS ||
+        !Number.isInteger(clip.emptyPackets) || clip.emptyPackets !== clip.slots - clip.packets.length ||
+        clip.packets.some((packet, n) => !Number.isInteger(packet.slot) || Math.abs(packet.slot / clip.fps - n / source.fps) > (clip.fps === 600 ? 1 / clip.fps : 0) + 1e-9) ||
+        Math.abs(clip.slots / clip.fps - indices.length / source.fps) > 1 / source.fps + 1 / clip.fps) throw Error('export-mapping-invalid');
     return {scope: 'single-stream-all-keyframe-synthetic-AVI-only', packetPayloadsIdentical: true, packets: indices.length,
         firstSourceFrame: indices[0], lastSourceFrame: indices.at(-1), sourceStartSeconds: indices[0] / source.fps,
         sourceEndExclusiveSeconds: (indices.at(-1) + 1) / source.fps, secondsPerFrame: 1 / source.fps,
+        containerTicksPerSecond: clip.fps, emptyVideoSlots: clip.emptyPackets, containerSlots: clip.slots,
         originalRangeBytesReusable: false, generalContainerTimelineAssessed: false};
 }
 function chooseWindow(state) {
@@ -192,7 +216,9 @@ async function worker(file) {
         report.exportMs = Date.now() - started; report.completion = 'synchronous-mpv-command-followed-by-ordered-property-reply';
         await delay(150); report.sourceAfter = sourceCounts(server); Object.assign(report.checks, noExtraSource(before, report.sourceAfter));
         stage('export-inspect'); report.clip = fingerprint();
-        report.mapping = mapping(aviPackets(path.join(plan.out, 'A.avi')), aviPackets(output));
+        const originalAVI = aviPackets(path.join(plan.out, 'A.avi')), exportedAVI = aviPackets(output);
+        report.clipFormat = {ticksPerSecond: exportedAVI.fps, nonemptyPackets: exportedAVI.packets.length, emptyVideoSlots: exportedAVI.emptyPackets, containerSlots: exportedAVI.slots};
+        report.mapping = mapping(originalAVI, exportedAVI);
         if (report.mapping.sourceStartSeconds < report.window.cacheStart - 1 / 24 || report.mapping.sourceEndExclusiveSeconds > report.window.cacheEnd + 1 / 24) throw Error('export-mapping-invalid');
         stage('source-stop'); await client.stop(); await until(() => server.active.size === 0); assert.deepEqual(fingerprint(), report.clip); report.checks.unchangedAfterStop = true;
         stage('source-exit'); await finish(client); assert.deepEqual(fingerprint(), report.clip); report.checks.unchangedAfterExit = true;
@@ -241,4 +267,4 @@ if (isWorker) {
     console.error('mpv-buffer-export-failure:' + JSON.stringify(safeFailure(error, 'preflight'))); require('electron').app.exit(1);
     });
 }
-module.exports = {SCOPE, MAX_FILE, STAGES, OPTIONS, safeFailure, physical, aviPackets, markedFixture, mapping, chooseWindow, sourceCounts, noExtraSource, prepare, readProbe, validateReport, run};
+module.exports = {SCOPE, MAX_FILE, MAX_SLOTS, STAGES, OPTIONS, safeFailure, formatDiagnostic, physical, aviPackets, markedFixture, mapping, chooseWindow, sourceCounts, noExtraSource, prepare, readProbe, validateReport, run};

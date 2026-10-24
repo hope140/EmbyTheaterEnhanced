@@ -5,7 +5,7 @@ const probe = require('../tools/playback-buffer-export-probe.cjs');
 const ci = require('../tools/ci-mpv-buffer-export.cjs');
 const route = require('../tools/ci-playback-range-smoke.cjs');
 function root(t) {const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-export-test-'))); t.after(() => fs.rmSync(dir, {recursive: true, force: true})); return dir;}
-function media(packets = 32) {return {fps: 24, packets: Array.from({length: packets}, (_, n) => ({sha256: String(n)}))};}
+function media(packets = 32) {return {fps: 24, slots: packets, emptyPackets: 0, packets: Array.from({length: packets}, (_, n) => ({sha256: String(n), slot: n}))};}
 test('marked synthetic AVI has192 unique raw payloads and unchanged fixed input dimensions', t => {
     const dir = root(t), file = path.join(dir, 'A.avi'), proof = probe.markedFixture(file), parsed = probe.aviPackets(file);
     assert.equal(proof.size, 33182440); assert.equal(proof.sha256, require('../tools/playback-range-windows-smoke.cjs').hashFile(file));
@@ -25,7 +25,7 @@ test('bounded RIFF reader rejects malformed chunk boundaries, wrong container, o
     fs.truncateSync(file, probe.MAX_FILE + 1); assert.throws(() => probe.aviPackets(file), /export-file-limit/);
 });
 test('mapping follows exact payload sequence and preserves source frame identity rather than raw offsets', () => {
-    const source = media(96), clip = {...source, packets: source.packets.slice(24, 48)};
+    const source = media(96), clip = {...media(24), packets: source.packets.slice(24, 48).map((p, slot) => ({...p, slot}))};
     const result = probe.mapping(source, clip);
     assert.equal(result.firstSourceFrame, 24); assert.equal(result.lastSourceFrame, 47);
     assert.equal(result.sourceStartSeconds, 1); assert.equal(result.sourceEndExclusiveSeconds, 2);
@@ -34,6 +34,46 @@ test('mapping follows exact payload sequence and preserves source frame identity
         const bad = structuredClone(clip); mutation(bad); assert.throws(() => probe.mapping(source, bad), /export-mapping-invalid/);
     }
     assert.throws(() => probe.mapping({...source, packets: [...source.packets, source.packets[0]]}, clip), /export-mapping-invalid/);
+});
+test('AVI600Hz empty timing slots are mapped explicitly and misplaced gaps remain invalid', () => {
+    const source = media(96), clip = {fps: 600, slots: 600, emptyPackets: 576,
+        packets: source.packets.slice(24, 48).map((p, n) => ({...p, slot: n * 25}))};
+    const mapped = probe.mapping(source, clip);
+    assert.equal(mapped.firstSourceFrame, 24); assert.equal(mapped.containerTicksPerSecond, 600);
+    assert.equal(mapped.emptyVideoSlots, 576); assert.equal(mapped.containerSlots, 600);
+    for (const change of [p => p.packets[2].slot += 25, p => p.packets[0].slot = 1,
+        p => p.slots = probe.MAX_SLOTS + 1, p => p.emptyPackets = 0, p => p.packets[3].sha256 = 'wrong']) {
+        const bad = structuredClone(clip); change(bad); assert.throws(() => probe.mapping(source, bad), /export-mapping-invalid/);
+    }
+});
+test('RIFF empty video chunks retain timing slots while a short nonempty packet has safe numeric diagnostics', t => {
+    const dir = root(t), source = path.join(dir, 'source.avi'), file = path.join(dir, 'clip.avi');
+    const support = require('../tools/playback-range-windows-smoke.cjs'); support.avi(source, 'A', 24);
+    const raw = fs.readFileSync(source), parsed = probe.aviPackets(source), movi = raw.indexOf(Buffer.from('movi'));
+    const prefix = Buffer.from(raw.subarray(0, movi + 4));
+    const chunks = [], indexRows = []; let offset = 4;
+    function append(body) {
+        const header = Buffer.alloc(8); header.write('00db'); header.writeUInt32LE(body.length, 4); chunks.push(header, body);
+        const index = Buffer.alloc(16); index.write('00db'); index.writeUInt32LE(body.length ? 16 : 0, 4); index.writeUInt32LE(offset, 8); index.writeUInt32LE(body.length, 12);
+        indexRows.push(index); offset += 8 + body.length;
+    }
+    for (const packet of parsed.packets.slice(4, 20)) {
+        append(raw.subarray(packet.offset, packet.offset + packet.bytes));
+        for (let n = 0; n < 24; n++) append(Buffer.alloc(0));
+    }
+    const avih = raw.indexOf(Buffer.from('avih')) + 8, strh = raw.indexOf(Buffer.from('strh')) + 8;
+    prefix.writeUInt32LE(Math.round(1e6 / 600), avih); prefix.writeUInt32LE(400, avih + 16);
+    prefix.writeUInt32LE(600, strh + 24); prefix.writeUInt32LE(400, strh + 32);
+    const movie = Buffer.concat(chunks), indices = Buffer.concat(indexRows), idx = Buffer.alloc(8); idx.write('idx1'); idx.writeUInt32LE(indices.length, 4);
+    prefix.writeUInt32LE(4 + movie.length, movi - 4);
+    const result = Buffer.concat([prefix, movie, idx, indices]); result.writeUInt32LE(result.length - 8, 4); fs.writeFileSync(file, result);
+    const actual = probe.aviPackets(file); assert.equal(actual.packets.length, 16); assert.equal(actual.emptyPackets, 384); assert.equal(actual.slots, 400); assert.equal(actual.fps, 600);
+    const broken = Buffer.from(result); broken.writeUInt32LE(172799, movi + 8); fs.writeFileSync(file, broken);
+    let caught; try {probe.aviPackets(file);} catch (error) {caught = error;}
+    assert.equal(caught.message, 'export-packets-invalid');
+    const safe = probe.safeFailure(caught, 'export-inspect');
+    assert.equal(safe.format.reason, 'packet-size'); assert.equal(safe.format.actualBytes, 172799); assert.equal(safe.format.expectedBytes, 172800);
+    assert(!JSON.stringify(safe).includes(dir));
 });
 test('finite window stays inside one existing range and refuses gaps, unknowns or insufficient packets', () => {
     const selected = probe.chooseWindow({'seekable-ranges': [{start: 1.01, end: 2.5}]});
@@ -80,6 +120,10 @@ test('safe early failure projection and logs never publish arbitrary paths, URLs
     assert.deepEqual(ci.readFailure(file), {stage: 'export', code: 'export-extra-source-read', systemCode: 'EIO'});
     fs.writeFileSync(file, 'mpv-buffer-export-failure:' + JSON.stringify({stage: '/private-canary', code: 'https://secret.invalid', systemCode: 'hidden'}) + '\n');
     assert.deepEqual(ci.readFailure(file), {stage: 'preflight', code: 'unclassified', systemCode: null});
+    fs.writeFileSync(file, 'mpv-buffer-export-failure:' + JSON.stringify({stage: 'export-inspect', code: 'export-packets-invalid',
+        format: {reason: 'packet-size', actualBytes: 172799, expectedBytes: 172800, rate: 600, scale: 1, path: '/private-canary'}}) + '\n');
+    assert.deepEqual(ci.readFailure(file), {stage: 'export-inspect', code: 'export-packets-invalid', systemCode: null,
+        format: {reason: 'packet-size', actualBytes: 172799, expectedBytes: 172800, rate: 600, scale: 1}});
 });
 test('safe collection excludes media/profile/stderr and keeps bounded semantic receipts with hashes', t => {
     const dir = root(t), out = path.join(dir, 'published'), rootPath = path.join(dir, 'buffer-export'), sub = path.join(rootPath, 'probe');

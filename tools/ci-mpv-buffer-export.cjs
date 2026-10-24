@@ -11,7 +11,7 @@ function readFailure(file) {
         try {fs.readSync(fd, bytes, 0, bytes.length, size - bytes.length);} finally {fs.closeSync(fd);}
         for (const line of bytes.toString('utf8').split(/\r?\n/).reverse()) if (line.startsWith('mpv-buffer-export-failure:')) {
             const row = JSON.parse(line.slice('mpv-buffer-export-failure:'.length));
-            return probe.safeFailure({message: row.code, code: row.systemCode}, row.stage);
+            return probe.safeFailure({message: row.code, code: row.systemCode, avi: row.format}, row.stage);
         }
     } catch (_) {}
     return null;
@@ -22,14 +22,15 @@ function summary(plan) {
     const boolean = value => typeof value === 'boolean' ? value : null;
     return {scope: probe.SCOPE, status: observation?.status === 'PASS' && receipt?.status === 'PASS' ? 'PASS' : 'UNKNOWN',
         stage: probe.STAGES.has(observation?.stage) ? observation.stage : 'preflight',
-        failure: observation?.failure ? probe.safeFailure({message: observation.failure.code, code: observation.failure.systemCode}, observation.failure.stage) :
-            receipt?.failure ? probe.safeFailure({message: receipt.failure.code, code: receipt.failure.systemCode}, receipt.failure.stage) :
+        failure: observation?.failure ? probe.safeFailure({message: observation.failure.code, code: observation.failure.systemCode, avi: observation.failure.format}, observation.failure.stage) :
+            receipt?.failure ? probe.safeFailure({message: receipt.failure.code, code: receipt.failure.systemCode, avi: receipt.failure.format}, receipt.failure.stage) :
                 readFailure(path.join(root, 'probe/worker.log')) || readFailure(path.join(plan.root, 'buffer-export-driver.stdout')),
         workerPid: n(receipt?.pid), exitCode: n(receipt?.code), streamsClosed: boolean(receipt?.streamsClosed), timedOut: boolean(receipt?.timedOut),
         exportMs: n(observation?.exportMs), clipBytes: n(observation?.clip?.bytes),
+        clipFormat: Object.fromEntries(['ticksPerSecond', 'nonemptyPackets', 'emptyVideoSlots', 'containerSlots'].map(k => [k, n(observation?.clipFormat?.[k])])),
         checks: Object.fromEntries(['newRequests', 'newScheduledSourceBytes', 'completedBytesDelta'].map(k => [k, n(observation?.checks?.[k])]).concat(
             ['clipDecoded', 'unchangedAfterStop', 'unchangedAfterExit', 'unchangedAfterReopen'].map(k => [k, boolean(observation?.checks?.[k])]))),
-        mapping: Object.fromEntries(['packets', 'firstSourceFrame', 'lastSourceFrame', 'sourceStartSeconds', 'sourceEndExclusiveSeconds', 'localStartSeconds', 'sourceMinusLocalSeconds'].map(k => [k, n(observation?.mapping?.[k])])),
+        mapping: Object.fromEntries(['packets', 'firstSourceFrame', 'lastSourceFrame', 'sourceStartSeconds', 'sourceEndExclusiveSeconds', 'localStartSeconds', 'sourceMinusLocalSeconds', 'containerTicksPerSecond', 'emptyVideoSlots', 'containerSlots'].map(k => [k, n(observation?.mapping?.[k])])),
         helpers: Array.isArray(observation?.helpers) ? observation.helpers.slice(0, 2).map(h => ({pid: n(h.pid), exited: boolean(h.exited),
             exitCode: n(h.diagnostics?.processExitCode), streamsClosed: boolean(h.diagnostics?.streamsClosed)})) : [],
         transparentRestore: 'NOT_ASSESSED'};

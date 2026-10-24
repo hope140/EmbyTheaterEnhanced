@@ -4,7 +4,15 @@
 
 检验生产 DLL 已有的 `dump-cache` 是否能把**已经在 RAM 缓冲内的一小段**写成可独立解码的文件：不补抓、Stop/退出后文件不变、新 helper 可以读取，并能给出限定合成源的时间轴映射。它不是恢复 `.dat`、原始 HTTP Range 或完整播放会话；不接普通用户播放，不修改生产 helper、内核、缓冲设置或下一集实现。
 
-当前状态：代码、离线合同和本地 FFmpeg AVI 对照已完成；固定 Windows DLL 探针**尚未执行**。只有 `mpv-buffer-export-summary` 的实际字段及两个 helper 退出回执可支持后续结论，不能只凭 workflow success。
+当前状态：首次固定 Windows DLL 已执行，停在输出检查；后续 Stop/退出一致性和第二 helper 解码尚未执行。只有 `mpv-buffer-export-summary` 的实际字段及两个 helper 退出回执可支持后续结论，不能只凭 workflow success。
+
+首次 run `40106411567` / job `120908912553` 的正常 GitHub 日志已读取：`exportMs=27`、`clipBytes=4340662`，新增请求/新增 scheduled source bytes/完成字节变化均为 0。失败为 `export-inspect/export-packets-invalid`；原 helper 正常退出 0、streams closed，无 timeout。帧映射和三项文件一致性标记尚未测，不能称为可恢复或完整可解码。
+
+检查器的一个可复现缺口是把所有 AVI 视频块视为 24fps 的完整 raw 帧。固定 [mpv timebase 选择](https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/common/av_common.c#L126-L152)会把较粗时间基提高精度；24fps 路径可形成 1/1008。成熟上游 [FFmpeg AVI muxer](https://github.com/FFmpeg/FFmpeg/blob/n7.1.5/libavformat/avienc.c#L742-L762)会为 DTS 间隙写零长度视频块，且其 header 路径会将过细时间基限制为 600Hz。这些空块占时间刻度，不是被截短的像素帧。此 FFmpeg 来源是机制/本地对照依据，不是本 DLL 完整依赖重建证明。
+
+本地红绿对照用现有 FFmpeg 的 `-bsf:v setts=time_base=1/1008:pts=PTS*42:dts=DTS*42:duration=DURATION*42` 产生真实可解码 AVI：4,167,286 字节、24 个完整包、576 个零长度块、600 个 600Hz 时间槽。旧解析器报 `export-packets-invalid`；新解析器显式保留空槽、逐帧 payload/顺序/时间位置校验后通过，仍准确映射源第 25–48 帧。未知时间基、非零短包、错位空槽、非连续源帧和超额槽数继续拒绝，不是跳过坏包。
+
+**尚未直接取得首次 Windows 文件的空块/时间基明细，不能断言该文件必然只有这一问题。** 下一次正常日志同时输出 `clipFormat` 的刻度、非空/空块和总槽数；如仍失败，则给首个固定 reason 与数值 offset/actualBytes/expectedBytes/count/rate/scale，不输出路径、任意字符串或媒体数据。修正检查器不会把未执行的 native 解码升级为通过。
 
 ## 每轮实验合同
 
