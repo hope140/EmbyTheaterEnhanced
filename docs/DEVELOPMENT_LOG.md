@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-24 — FN Windows合成Session复验成功
+
+代码29c05e89577eb384d56b0c30fe68a512c396dff1经正常功能分支push触发run40110209174/job120920160298，全部步骤成功，安全日志回读完整阶段和PASSED；实际观察close先于response(200/401/206/416/302)，确认适配器生命周期修正有效。回读artifact元数据12566491487，未重试受拒正文通道。
+
+验证范围是固定Electron44.4.2正常沙箱、真实内存Session与本机HTTP/WS/媒体合成服务；严格门禁同时要求进程退出及runner删除profile。81项本地测试保留。未访问NAS、读取真实Cookie、改变系统网络/权限或打包发布；真实FN、Emby与Native验收仍需正规手动流程。此次后续改动只记录证据，不改变已验代码。
+
 ## 2026-10-24 — FN Windows首轮失败后的最小修正
 
 首轮fixture run40109272968/job120917394561真实运行：Node回归成功，Electron在BOOTSTRAP后NETWORK_ERROR并排空。根据固定Electron源码构造真实Node Writable复现finish→close→response，修复adapter将上传close误作事务失败；取消监听保持到响应/明确失败，迟到取消响应销毁，重定向仍手动判界。

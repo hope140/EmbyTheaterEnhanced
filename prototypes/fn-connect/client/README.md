@@ -27,7 +27,7 @@ node --test tests/fn-connect-*.test.cjs
 
 输出明确保留 `realFNConnect: NOT_TESTED`、`nativeHelperPlayback: NOT_TESTED`；只有合成网关实验，不是fnOS实证。
 
-## Windows固定运行时验收（首轮已启动，修复待复验）
+## Windows固定运行时验收（合成链已通过，真实FN未验）
 
 在干净的Windows工作副本运行，保留正常沙箱：
 
@@ -51,7 +51,11 @@ node --test tests/fn-connect-*.test.cjs
 
 该新workflow未进入默认分支；GitHub要求默认分支已存在workflow才能从UI手动运行，所以本次通过精确功能分支push启动，不为登记而修改main。参见[GitHub手动运行说明](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)。
 
-[首轮Windows任务](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40109272968)中Node回归通过，真实Electron进入BOOTSTRAP后报NETWORK_ERROR并排空；没有通过完整Session验收。已用真实Node Writable复现适配器缺陷：固定[Electron44.4.2源码](https://github.com/electron/electron/blob/v44.4.2/lib/common/api/net-client-request.ts)的ClientRequest采用autoDestroy Writable，其上传finish可能先触发close、之后URLLoader才给response；原型不应把这个close当作网络失败或提前移除取消监听。已修正并加入迟到响应/取消回归；是否解释Windows首轮失败，仍由新增阶段和诊断的下一轮实跑确认，不能将Node复现视为Chromium通过。
+[首轮Windows任务](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40109272968)中Node回归通过，真实Electron进入BOOTSTRAP后报NETWORK_ERROR并排空；没有通过完整Session验收。已用真实Node Writable复现适配器缺陷：固定[Electron44.4.2源码](https://github.com/electron/electron/blob/v44.4.2/lib/common/api/net-client-request.ts)的ClientRequest采用autoDestroy Writable，其上传finish可能先触发close、之后URLLoader才给response；原型不应把这个close当作网络失败或提前移除取消监听。
+
+修正提交 `29c05e89577eb384d56b0c30fe68a512c396dff1` 的[Windows run40110209174](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40110209174)/job120920160298通过。正常沙箱Electron44.4.2实际运行，日志完整覆盖所有阶段并由严格归一门禁回报PASSED；日志也实证请求先close、后200/401/206/416或302响应，确认上述适配缺陷。HTTP/IPv4回环监听、两次合成表单授权、公开信息2次成功与1次拒绝均在白名单计数中；Session HTTP、同源Cookie供WS字节桥使用、媒体桥、外链隔离、取消、过期和关闭清理属于本机合成实证。
+
+这不证明真实FN网关的Cookie作用域、授权协议、HTTPS/跨域部署或Emby媒体兼容性。未访问NAS、取得真实凭据、验证Native Helper/libmpv播放或实现HLS/DASH；不据此提供正式功能验收包。
 
 ## 已实现的接口与边界
 

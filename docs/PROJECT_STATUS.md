@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-24 — FN Windows真实Electron合成链通过
+
+修正代码提交29c05e89577eb384d56b0c30fe68a512c396dff1的[Windows run40110209174](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40110209174)/job120920160298成功。固定Electron44.4.2正常沙箱实际运行；归一日志完整经过页面授权、API/Session隔离、206/416、302凭据隔离、WS字节桥、取消、关闭、过期及DRAINED并PASSED。日志实证upload close早于response，支持已修根因；门禁包含版本/哈希、沙箱、进程退出和profile清理。
+
+这是合成网关配真实Electron Session的证据，非真实FN接通。81项本机FN测试通过；原77证据保留。真实NAS授权、HTTPS/跨域Cookie、Emby协议/Native播放仍未验，HLS/DASH仍不支持；默认关闭独立原型、生产main/src及NAS保持不改。详见[范围和运行方法](../prototypes/fn-connect/client/README.md)。
+
 ## 2026-10-24 — FN Electron提前close诊断与修正
 
 功能分支已普通push；首轮Windows fixture的Node回归通过，Electron真实启动到BOOTSTRAP后以NETWORK_ERROR失败并DRAINED，不能计为Session通过。固定Electron44.4.2源码与真实Node Writable复现支持适配器缺陷：上传finish触发close可早于响应，原型过早拒绝并移除取消监听。修正为只由error/abort/owner期限终结未决请求，普通早close继续等待，迟到取消响应销毁。
