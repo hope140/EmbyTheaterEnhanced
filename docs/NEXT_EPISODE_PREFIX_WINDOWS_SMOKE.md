@@ -115,3 +115,6 @@ run `40104947923` / job `120904605594`、source `78fdfb114bb42d926101109b29253bb
 ## 普通包回归前的 Windows 路径短检查
 
 `range_smoke=next-settings-check`、`release_package=false` 在精确 verify 分支运行5分钟上限的 Windows 2022/Node 24.18.1 串行检查；包含安全路径诊断、真实 Alameda 设置链、普通设置/菜单及实际 junction 拒绝，不获取 runtime、不启动 helper、不重打包。临时根使用 realpathSync.native；生产路径安全门禁保持。该检查通过后再安排普通 `range_smoke=off` 测试包，不能用 Linux 的别名表示替换红绿替代 Windows 结果。
+
+
+Node 自然链正例明确把网络就绪作为合成时钟的 EOF 前置条件：B 第二块先 held，自动进度到7.6/8秒后完成真实响应，自动 renderer/service 返回 ready 后合成时钟才继续自然 EOF；原 ready-before-EOF 断言保留。这是显式合成 helper 夹具安排，不替代已归档的真实 helper 自然链证据。另一个 hold-natural-eof 用例不释放该块，让原 nextTrack 取消后台请求，并验证 B 首块命中、未完成块回源、迟到字节0及当前媒体不累积。两条用例的安全数值摘要直接写入短检查日志。

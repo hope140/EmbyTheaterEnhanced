@@ -337,7 +337,7 @@ async function fixtureServer(plan, record, options = {}) {
         res.writeHead(range ? 206 : 200, {'Content-Type': 'video/x-msvideo', 'Content-Length': end - start + 1, ETag: options.unsupported && match[1] === 'A' ? 'W/' + proof.etag : proof.etag,
             'Accept-Ranges': 'bytes', ...(range ? {'Content-Range': `bytes ${start}-${end}/${proof.size}`} : {})});
         if (options.holdNext && match[1] === 'B' && start === (options.holdStart ?? 262144) && end > start && !held) {
-            held = {requestId, response: res}; const byte = Buffer.alloc(1), fd = fs.openSync(path.join(plan.out, proof.file), 'r');
+            held = {requestId, response: res, start, end, file: path.join(plan.out, proof.file), completed: false}; const byte = Buffer.alloc(1), fd = fs.openSync(path.join(plan.out, proof.file), 'r');
             try {fs.readSync(fd, byte, 0, 1, start);} finally {fs.closeSync(fd);} res.write(byte);
             record('matrix-held', {requestId, item: 'B', start, end}); return;
         }
@@ -345,7 +345,12 @@ async function fixtureServer(plan, record, options = {}) {
     });
     server.on('connection', socket => {sockets.add(socket); socket.once('close', () => sockets.delete(socket));});
     await new Promise((resolve, reject) => {server.once('error', reject); server.listen(0, '127.0.0.1', resolve);});
-    return {origin: 'http://127.0.0.1:' + server.address().port, active, get held() {return held;}, releaseHeld() {const bytes = held && !held.response.destroyed ? 1 : 0; if (bytes) held.response.write(Buffer.from([0])); record('matrix-late-release', {bytes}); return bytes;}, async close() {const done = new Promise(resolve => server.close(resolve)); for (const socket of sockets) socket.destroy(); await done; need(active.size === 0, 'live-origin-response');}};
+    return {origin: 'http://127.0.0.1:' + server.address().port, active, get held() {return held;}, completeHeld() {
+        need(held && !held.completed && !held.response.destroyed && held.end - held.start <= 1048576, 'fixture-held-not-completable');
+        const bytes = Buffer.alloc(held.end - held.start), fd = fs.openSync(held.file, 'r');
+        try {need(fs.readSync(fd, bytes, 0, bytes.length, held.start + 1) === bytes.length, 'fixture-short-read');} finally {fs.closeSync(fd);}
+        held.completed = true; held.response.end(bytes); record('matrix-held-completed', {requestId: held.requestId});
+    }, releaseHeld() {const bytes = held && !held.response.destroyed ? 1 : 0; if (bytes) held.response.write(Buffer.from([0])); record('matrix-late-release', {bytes}); return bytes;}, async close() {const done = new Promise(resolve => server.close(resolve)); for (const socket of sockets) socket.destroy(); await done; need(active.size === 0, 'live-origin-response');}};
 }
 const MATRIX_CODES = Object.freeze(['matrix-budget-contract', 'matrix-A-load-missing', 'matrix-ineligible-deadline',
     'matrix-ineligible-fallback-missing', 'matrix-held-deadline', 'matrix-real-threshold-missing', 'matrix-preempt-deadline',

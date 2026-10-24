@@ -32,9 +32,9 @@ async function automaticCase(t, scenario) {
     });
     const record = (type, data = {}) => trace.push({seq: trace.length, type, ...data});
     const fixtures = ['A', 'B'].map(id => {const file = id + '.avi'; fs.writeFileSync(path.join(root, file), Buffer.from(id.repeat(40))); return {file, size: 40, etag: '"synthetic-' + id + '"'};});
-    const holding = scenario.startsWith('hold-');
-    origin = await tool.fixtureServer({out: root, fixtures, autoPlay: !['autoplay-off', 'explicit-queue-autoplay-off'].includes(scenario)}, record, {holdNext: holding, holdStart: 8, unsupported: scenario === 'unsupported'});
-    restoreRequests = holding ? tool.observeOriginRequests(origin.origin, record) : null;
+    const holding = scenario.startsWith('hold-'), orderedNatural = ['natural', 'explicit-queue-autoplay-off'].includes(scenario), pendingNatural = scenario === 'hold-natural-eof';
+    origin = await tool.fixtureServer({out: root, fixtures, autoPlay: !['autoplay-off', 'explicit-queue-autoplay-off'].includes(scenario)}, record, {holdNext: holding || orderedNatural, holdStart: 8, unsupported: scenario === 'unsupported'});
+    restoreRequests = holding || orderedNatural ? tool.observeOriginRequests(origin.origin, record) : null;
     const managerFile = path.join(root, 'playbackmanager.js');
     fs.copyFileSync(path.join(repo, 'vendor/web-snapshot/www/modules/common/playback/playbackmanager.js'), managerFile);
     execFileSync(process.execPath, [path.join(repo, 'tools/patch-playbackmanager.cjs'), managerFile]);
@@ -67,12 +67,25 @@ async function automaticCase(t, scenario) {
                 const before = trace.length;
                 assert.equal(Buffer.from(await (await fetch(args[1], {headers: {Range: 'bytes=0-7'}})).arrayBuffer()).toString(), id.repeat(8));
                 record('synthetic-read', {item: id, before});
+                if (id === 'B' && pendingNatural) {
+                    assert.equal(Buffer.from(await (await fetch(args[1], {headers: {Range: 'bytes=8-15'}})).arrayBuffer()).toString(), id.repeat(8));
+                    record('synthetic-miss-read', {item: id, start: 8, end: 15});
+                }
                 this.emit('duration', 8); this.emit('time-pos', 0); this.emit('core-idle', false);
                 if (id === 'B') return;
                 let position = 0;
                 this.clock = setInterval(() => {
                     if (this.currentGenerationId !== gen) {clearInterval(this.clock); return;}
-                    position = Math.min(['natural', 'autoplay-off', 'explicit-queue-autoplay-off'].includes(scenario) ? 8 : 7.6, position + 0.2); this.emit('time-pos', position);
+                    if ((orderedNatural || pendingNatural) && position >= 7.6) {
+                        // Synthetic clock precondition only; actual renderer/service/HTTP
+                        // must still discover and warm the original queue candidate.
+                        if (!origin.held) return;
+                        if (orderedNatural) {
+                            if (!origin.held.completed) {record('synthetic-clock-boundary', {condition: 'complete-origin-before-eof'}); origin.completeHeld();}
+                            if (!trace.some(row => row.type === 'preload-result' && row.state === 'ready')) return;
+                        }
+                    }
+                    position = Math.min(orderedNatural || pendingNatural || scenario === 'autoplay-off' ? 8 : 7.6, position + 0.2); this.emit('time-pos', position);
                     if (position >= 8) {clearInterval(this.clock); this.emit('eof-reached', true);}
                 }, 10); timers.add(this.clock);
             })();
@@ -157,7 +170,7 @@ async function automaticCase(t, scenario) {
         assert(trace.some(row => row.type === 'module-loaded' && row.member === 'electronapp/www/modules/viewmanager/baseview.js'));
         page.onPause(); page.destroy(); return;
     }
-    if (holding) {
+    if (holding && !pendingNatural) {
         await waitFor(() => !!origin.held, details);
         assert.equal(service.rangeStatus().diskBytes, 8, 'the preceding block commits before a held partial second block');
         if (scenario === 'hold-replace') {
@@ -197,7 +210,7 @@ async function automaticCase(t, scenario) {
         assert(!trace.some(row => row.type === 'manager-next-track'), details());
         return;
     }
-    if (!['natural', 'explicit-queue-autoplay-off'].includes(scenario)) {
+    if (!orderedNatural && !pendingNatural) {
         await waitFor(() => trace.some(row => row.type === 'preload-result' && row.state === 'ready'), details);
         assert.equal(service.rangeStatus().diskBytes, 40);
         if (scenario === 'remove-candidate') {
@@ -221,11 +234,29 @@ async function automaticCase(t, scenario) {
     const eof = trace.find(row => row.type === 'synthetic-property' && row.name === 'eof-reached'), next = trace.find(row => row.type === 'manager-next-track');
     const b = trace.find(row => row.type === 'load' && row.item === 'B');
     assert(threshold && preload && ready && eof && next && b, JSON.stringify(trace));
+    if (pendingNatural) {
+        await waitFor(() => trace.some(row => row.type === 'synthetic-miss-read' && row.item === 'B') && origin.held.response.destroyed, details);
+        const held = trace.find(row => row.type === 'matrix-held'), closed = trace.find(row => row.type === 'origin-client-closed' && row.requestId === held.requestId);
+        assert(threshold.seq < preload.seq && preload.seq < held.seq && held.seq < eof.seq && eof.seq < next.seq && next.seq < b.seq, details());
+        assert.equal(ready.state, 'cancelled'); assert(ready.seq > eof.seq, details());
+        assert(closed && closed.seq > eof.seq, details());
+        assert(!trace.some(row => row.type === 'preload-result' && row.state === 'ready'), details());
+        assert.equal(origin.releaseHeld(), 0);
+        assert(trace.some(row => row.type === 'prefix-read' && row.itemId === 'B' && row.start === 0 && row.seq > b.seq), details());
+        assert(trace.some(row => row.type === 'origin-media' && row.item === 'B' && row.start === 8 && row.end === 15 && row.seq > b.seq), details());
+        assert(!trace.some(row => row.type === 'origin-media' && row.item === 'B' && row.start === 0 && row.end === 7 && row.seq > eof.seq), details());
+        assert.equal(service.rangeStatus().diskBytes, 8, 'fallback misses do not accumulate current media');
+        assert.equal(clients.at(-1).currentGenerationId, b.generation);
+        assert(trace.filter(row => row.type === 'origin-client-open' && row.item !== 'A').every(row => row.backgroundActive <= 1), details());
+        console.log(JSON.stringify({type: 'next-prefix-node-chain-result', scenario, syntheticHelper: true, heldBeforeEOF: true, cancelledAfterEOF: true, partialHit: true, missPassthrough: true, lateBytes: 0, currentBytes: 8}));
+        return;
+    }
     assert(threshold.seq < preload.seq && preload.seq < ready.seq && ready.seq < eof.seq && eof.seq < next.seq && next.seq < b.seq, details());
     assert.equal(ready.state, 'ready'); assert.equal(ready.bytes, 40);
     assert(trace.some(row => row.type === 'prefix-read' && row.itemId === 'B' && row.start === 0 && row.seq > b.seq), details());
     const fresh = trace.filter(row => row.type === 'origin-media' && row.item === 'B' && row.seq > eof.seq);
     assert(fresh.length > 0 && fresh.every(row => row.start === 0 && row.end === 0), details());
     assert(service.rangeStatus().diskBytes <= 100000000);
+    console.log(JSON.stringify({type: 'next-prefix-node-chain-result', scenario, syntheticHelper: true, threshold: threshold.seq, preload: preload.seq, ready: ready.seq, eof: eof.seq, next: next.seq, bLoad: b.seq, bytes: ready.bytes}));
 }
-for (const scenario of ['natural', 'remove-candidate', 'app-exit-before-next', 'hold-cancel', 'hold-preempt', 'hold-replace', 'hold-exit', 'unsupported', 'autoplay-off', 'explicit-queue-autoplay-off', 'settings-next-play']) test('real Alameda automatic next-prefix with synthetic helper/document: ' + scenario, {timeout: 8000}, t => automaticCase(t, scenario));
+for (const scenario of ['natural', 'hold-natural-eof', 'remove-candidate', 'app-exit-before-next', 'hold-cancel', 'hold-preempt', 'hold-replace', 'hold-exit', 'unsupported', 'autoplay-off', 'explicit-queue-autoplay-off', 'settings-next-play']) test('real Alameda automatic next-prefix with synthetic helper/document: ' + scenario, {timeout: 8000}, t => automaticCase(t, scenario));
