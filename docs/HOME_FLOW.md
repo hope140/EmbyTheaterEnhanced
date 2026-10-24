@@ -96,6 +96,6 @@ node --test tests/home-route-restore.test.cjs
 node tools/check-home-route-renderer.cjs /absolute/path/to/installed/chromium /absolute/path/to/new-evidence-directory
 ```
 
-该探针执行原 router 的 init/content 函数、完整组合 viewmanager、HomeView／TabbedView／BaseView／HomeTab 与原卡片、设置列表、Shortcuts 点击；记录实例创建、slot、DOM stage、骨架、进度和失效／淘汰。服务、模块／模板载入和宿主输入仍受控，非真实 NAS／Windows 验收。
+该探针执行原 router 的 init/content 函数、完整组合 viewmanager、HomeView／TabbedView／BaseView／HomeTab 与原卡片、设置列表、Shortcuts 点击；记录实例创建、slot、DOM stage、骨架、进度和失效／淘汰；逐 rAF 检查实际可见卡片及返回前后 rail 几何，保留等待中／响应后截图。设置入口另加载原 flex、设置与按钮 CSS 和原 emby-button 构造器，检查原生按钮及纵向分区，不只核对模板节点存在。服务、模块／模板载入和宿主输入仍受控，非真实 NAS／Windows 验收。
 
 02 retain 与 03 sections 的有效返回复用相同；区别在首次加载：retain 等全部首批分区完成后统一揭示，sections 可先显示已完成区，慢／错误区独立处理。产品方向更适合分区首载加返回复用，仍需整包体验决定；当前保留两个测试模式，普通默认仍 baseline，不擅自删除或把实验开关变成产品设置。

@@ -4,7 +4,7 @@
 
 原 router 的前向首页跳转跳过 viewmanager restore，旧首页尚在 slot 内也新建实例，因而再次显示首次骨架；同页喜欢切换不走这条分支。实验候选新增原 slot 查找与 Home owner 身份／查询／代次 guard，并在恢复提交前再核对；保留 native 三 slot 容量与冷加载边界。仅实验 HomeView 补齐父 TabbedView 的销毁链，避免淘汰后的 tab owner 残留。
 
-缓存管理迁入真实客户端设置独立路由，旧 About 标题不再冒充入口。统计 HTTP session 总量和首页布局 DTO，支持单独／组合清理和逐项结果；一项失败不阻断独立 owner，离页不启动尚未开始的后续清理。原生设置列表、Shortcuts、router／viewmanager 点击与实际 Alameda 加载分别覆盖；不调用存储／profile／登录／设置／下载或视频清理。完整来源／offline 回归保持，真实 Windows／服务体验仍独立验收。
+缓存管理迁入真实客户端设置独立路由，旧 About 标题不再冒充入口。统计 HTTP session 总量和首页布局 DTO，支持单独／组合清理和逐项结果；一项失败不阻断独立 owner，离页不启动尚未开始的后续清理。原生设置列表、Shortcuts、router／viewmanager 点击与实际 Alameda 加载分别覆盖；跨 route 逐帧检查可见卡片与几何，设置页面加载原按钮构造器及真实 flex／按钮／设置样式；不调用存储／profile／登录／设置／下载或视频清理。完整来源／offline 回归保持，真实 Windows／服务体验仍独立验收。
 
 ## About 全套测试装配收尾
 

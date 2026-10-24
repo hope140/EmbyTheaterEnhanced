@@ -3,7 +3,7 @@ const fs=require('node:fs'),path=require('node:path');
 function extract(text,prefix){const start=text.indexOf(prefix);if(start<0)throw Error('Missing route anchor');const open=text.indexOf('{',start);let depth=0,quote=null,escape=false;for(let i=open;i<text.length;i++){const c=text[i];if(quote){if(escape)escape=false;else if(c==='\\')escape=true;else if(c===quote)quote=null;}else if(c==='"'||c==="'"||c==='`')quote=c;else if(c==='{')depth++;else if(c==='}'&&--depth===0)return text.slice(start,i+1);}throw Error('Unclosed route function');}
 function augment(root,input,candidate=false){
  const result={...input};const home=require('../../tools/patch-server-home.cjs'),plugin=require('../../tools/patch-plugin-settings.cjs');
- for(const file of ['modules/viewmanager/baseview.js','modules/tabbedview/tabbedview.js','modules/tabbedview/basetab.js','home/home.js','home/home.html','settings/settings.js','settings/settings.html','modules/navdrawer/navdrawercontent.js','modules/listview/listview.js','modules/shortcuts.js','modules/common/pluginmanager.js'])result[file]=fs.readFileSync(path.join(root,'vendor/web-snapshot/www',file),'utf8');
+ for(const file of ['modules/viewmanager/baseview.js','modules/tabbedview/tabbedview.js','modules/tabbedview/basetab.js','home/home.js','home/home.html','settings/settings.js','settings/settings.html','modules/navdrawer/navdrawercontent.js','modules/listview/listview.js','modules/shortcuts.js','modules/common/pluginmanager.js','modules/emby-elements/emby-button/emby-button.js'])result[file]=fs.readFileSync(path.join(root,'vendor/web-snapshot/www',file),'utf8');
  result['home/hometab.js']=home.patchHomeTab(fs.readFileSync(path.join(root,'vendor/web-snapshot/www/home/hometab.js'),'utf8'));
  let manager=plugin.patchViewManager(fs.readFileSync(path.join(root,'vendor/web-snapshot/www/modules/viewmanager/viewmanager.js'),'utf8'));
  let router=plugin.patchRouter(fs.readFileSync(path.join(root,'vendor/web-snapshot/www/modules/approuter.js'),'utf8'));
@@ -12,6 +12,7 @@ function augment(root,input,candidate=false){
  result.routerFunctions=extract(router,'function loadContentUrl(ctx, request, signal)')+'\n'+extract(router,'function initRoute(ctx, route, routeEpoch)');
  result.pluginRoot=fs.readFileSync(path.join(root,'src/electronapp/plugins/libmpv.js'),'utf8');
  for(const file of ['cache-management.js','cache-management.html','cache-management.css','cache-settings.js','about.js','about.html','enhanced-settings.css'])result['plugins/mpvplayer/'+file]=fs.readFileSync(path.join(root,'src/electronapp/plugins/mpvplayer',file),'utf8');
+ result.nativeCss += '\n'+['modules/flexstyles.css','modules/listview/listview.css','modules/emby-elements/emby-button/emby-button.css'].map(file=>fs.readFileSync(path.join(root,'vendor/web-snapshot/www',file),'utf8')).join('\n')+'\n'+result['plugins/mpvplayer/enhanced-settings.css']+'\n'+result['plugins/mpvplayer/cache-management.css'];
  result.routeSetup='('+install.toString()+')';return result;
 }
 function install(trial){
@@ -64,10 +65,16 @@ function install(trial){
  modules.set('modules/common/servicelocator.js',{appHost:{supports:()=>false,appName:()=> 'ETE test',appVersion:()=> '0.4.0'}});
  set('modules/emby-elements/emby-collapse/emby-collapse.js',{});modules.delete('modules/listview/listview.js');load('modules/listview/listview.js');
  set('modules/approuter.js',{getRoutes:()=>pluginRoutes,getRouteInfo:()=>null,getRouteUrl:t=>'/'+t,validateUserAccessToRoute:()=>true,show:target=>{route.clickedNavigation=route.navigate(target);return route.clickedNavigation;}});
+ modules.delete('modules/emby-elements/emby-button/emby-button.js');modules.set('emby-button',load('modules/emby-elements/emby-button/emby-button.js').default);
  window.ipc={invoke:channel=>{route.ipcCalls||=[];route.ipcCalls.push(channel);return Promise.resolve(channel.endsWith('clear')?{status:'cleared',bytes:3}:channel==='enhanced-http-cache-status'?{status:'ok',bytes:128}:{status:'unavailable'});}};
  route.settleHome=async()=>{for(let i=0;i<30;i++)await Promise.resolve();await route.homePending;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));};
  route.homeTab=()=>manager.currentView()?.controller?.tabControllers?.[0];
  route.tab=async function(index){const home=manager.currentView().controller,previous=home.currentTabIndex;home.onTabChangeFn({detail:{selectedTabIndex:index,previousIndex:previous}});for(let i=0;i<30;i++)await Promise.resolve();if(index===0)await route.settleHome();};
+ route.visual=()=>{
+  const view=manager.currentView();
+  function visible(element){const rect=element.getBoundingClientRect();if(rect.width<1||rect.height<1||rect.bottom<=0||rect.top>=innerHeight||rect.right<=0||rect.left>=innerWidth)return false;for(let node=element;node;node=node.parentElement){const style=getComputedStyle(node);if(style.display==='none'||style.visibility==='hidden'||Number(style.opacity)===0)return false;}return true;}
+  return {home:manager.currentViewInfo()?.type==='home',rows:[...(view?.querySelectorAll('.verticalSection')||[])].map(row=>{const rect=row.getBoundingClientRect();return {top:rect.top,height:rect.height,cards:[...row.querySelectorAll('.itemsContainer .card')].filter(visible).length};})};
+ };
  route.state=()=>({created:route.created,destroyed:route.destroyed,pages:document.querySelectorAll('.mainAnimatedPages>.page').length,liveTabOwners:route.homes.filter(h=>h.tabControllers?.[0]?.eteHome).length,current:manager.currentViewInfo()?.url,stage:route.homeTab()?.sectionsContainer?.firstChild?.getAttribute('data-ete-home-source'),cards:manager.currentView()?.querySelectorAll('.itemsContainer .card').length||0,skeletons:manager.currentView()?.querySelectorAll('.homeFlowPlaceholder:not(.hide)').length||0});
 }
 module.exports={augment};
