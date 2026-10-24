@@ -94,8 +94,9 @@ function validTrace() {
 test('receipt validator checks min(P,total), actual automatic order and decoded B (synthetic validator evidence only)', () => {
     assert.equal(tool.validateTrace(validTrace(), tool.FIXTURE_SIZES[1]).targetBytes, 300000000);
 });
-for (const mutation of ['no-eof', 'threshold-too-low', 'preload-too-early', 'late-ready', 'refetch', 'same-generation', 'no-decode', 'no-prefix-read', 'second-play', 'foreground-stored', 'wrong-budget-claim', 'renderer-failed', 'no-native-miss']) test('automatic acceptance refuses ' + mutation, () => {
+for (const mutation of ['no-ready', 'no-eof', 'threshold-too-low', 'preload-too-early', 'late-ready', 'refetch', 'same-generation', 'no-decode', 'no-prefix-read', 'second-play', 'foreground-stored', 'wrong-budget-claim', 'renderer-failed', 'no-native-miss']) test('automatic acceptance refuses ' + mutation, () => {
     const trace = validTrace();
+    if (mutation === 'no-ready') trace.splice(4, 1);
     if (mutation === 'no-eof') trace.splice(5, 1);
     if (mutation === 'threshold-too-low') trace[2].value = 5.5;
     if (mutation === 'preload-too-early') trace[3].seq = 1;
@@ -166,12 +167,15 @@ test('Node substituted document loads real AMD manager/queue/adapter and refuses
     assert(!reports.some(row => row.type === 'initial-play-resolved'));
 });
 
-test('automatic AVI fixtures put B index beyond P and leave A 32 seconds for natural threshold warming', t => {
+test('automatic AVI fixtures put B index beyond P and leave A 64 seconds for natural threshold warming', t => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'prefix-avi-')); t.after(() => fs.rmSync(root, {recursive: true, force: true}));
     const support = require('../tools/playback-range-windows-smoke.cjs'), fixtures = tool.automaticFixtures(support, root);
     assert.deepEqual(fixtures.map(row => row.size), tool.FIXTURE_SIZES);
     const a = fs.readFileSync(path.join(root, 'A.avi')), b = fs.readFileSync(path.join(root, 'B.avi'));
-    assert.equal(a.readUInt32LE(a.indexOf(Buffer.from('strh')) + 8 + 24), 6);
+    assert.equal(a.readUInt32LE(a.indexOf(Buffer.from('strh')) + 8 + 24), 3);
+    const strh = a.indexOf(Buffer.from('strh')) + 8;
+    const duration = a.readUInt32LE(strh + 32) * a.readUInt32LE(strh + 20) / a.readUInt32LE(strh + 24);
+    assert.equal(duration,64); assert(Math.abs(duration * (1 - tool.CONFIG.progressPercent / 100) - 19.2) < 1e-8);
     const index = b.length - (8 + 192 * 16); assert(index > tool.CONFIG.preloadMB * 1000000);
     assert.equal(b.toString('ascii', index, index + 4), 'idx1'); assert.equal(b.readUInt32LE(4) + 8, b.length);
     assert.equal(hash(b), fixtures[1].sha256); assert(!fs.existsSync(path.join(root, 'B-seed.avi')));
@@ -269,9 +273,9 @@ for(const mutation of ['none','file-hash','source','extra','missing','manifest-h
 
 function jointFixture(failure) {
     const owner={endpointId:'11111111-1111-1111-1111-111111111111',generationId:101};
-    const trace=[{seq:0,type:'load',item:'A',generation:101},{seq:1,type:'native-property',generation:101,name:'time-pos',value:22.5},
-        {seq:2,type:'origin-client-open',item:'B',start:262144,end:524287,clientRequest:1,backgroundActive:1},
-        {seq:3,type:'matrix-held',item:'B',start:262144,end:524287}];
+    const trace=[{seq:0,type:'load',item:'A',generation:101},{seq:1,type:'native-property',generation:101,name:'duration',value:64},{seq:2,type:'native-property',generation:101,name:'time-pos',value:45},
+        {seq:3,type:'origin-client-open',item:'B',start:262144,end:524287,clientRequest:1,backgroundActive:1},
+        {seq:4,type:'matrix-held',item:'B',start:262144,end:524287}];
     let destroyed=false,captures=0,resolvePreview;const origin={held:{response:{destroyed:false}},releaseHeld:()=>origin.held.response.destroyed?0:1};
     const record=(type,data={})=>trace.push({seq:trace.length,type,...data});
     const service={rangeStatus:()=>({kind:'next-prefix',maxBytes:300000000,diskBytes:destroyed?0:262144}),
@@ -287,3 +291,12 @@ test('existing held-exit coordinator requires real-owner preview, pending work, 
 });
 for(const [failure,reason] of [['owner','joint-preview-owner-unavailable'],['frame','joint-preview-native-decode-missing'],['late','joint-late-preview-published']])
  test('held-exit acceptance refuses '+failure+' in its synthetic validator',async()=>{await assert.rejects(tool.matrixCase(jointFixture(failure)),new RegExp(reason));});
+
+test('incomplete EOF preserves original-next progress but cannot satisfy ready-before-EOF acceptance (synthetic diagnostic fixture)',()=>{
+    const trace=validTrace().filter(row=>row.type!=='prefix-ready');
+    trace.push({seq:7.5,type:'range-preload-result',state:'cancelled',source:'must-not-be-published'});
+    const order=tool.automaticOrder(trace);assert.equal(order.readySeq,null);
+    assert.equal(order.naturalEOFSeq,5);assert.equal(order.originalNextSeq,6);assert.equal(order.bLoadSeq,8);assert.equal(order.preloadCancelledSeq,7.5);
+    assert.throws(()=>tool.validateTrace(trace,tool.FIXTURE_SIZES[1]),/automatic-chain-order-missing/);
+    assert(!JSON.stringify(order).includes('must-not-be-published'));
+});

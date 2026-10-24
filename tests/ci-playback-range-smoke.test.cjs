@@ -172,3 +172,11 @@ test('preempt failure exposes bounded cache/seek stages and load generations wit
     assert.deepEqual(result.lastLoads, [{item: 'A', generation: 101, seq: 1}]);
     assert(!JSON.stringify(result).includes(canary));
 });
+
+test('job-visible order failure retains exact missing-ready and natural-next indices without arbitrary data',t=>{
+    const directory=root(t),canary='synthetic-private-order-canary';
+    fs.writeFileSync(path.join(directory,'native.json'),JSON.stringify({status:'failed',code:'automatic-chain-order-missing',orderDiagnostics:{readySeq:null,naturalEOFSeq:2455,originalNextSeq:2458,bLoadSeq:2463,preloadCancelledSeq:2460,detail:canary,thresholdSeconds:canary}}));
+    const summary=ci.automaticCaseSummary(directory,'native');
+    assert.deepEqual(summary.orderDiagnostics,{readySeq:null,naturalEOFSeq:2455,originalNextSeq:2458,bLoadSeq:2463,preloadCancelledSeq:2460});
+    assert(!JSON.stringify(summary).includes(canary));
+});

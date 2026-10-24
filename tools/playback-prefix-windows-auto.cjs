@@ -101,9 +101,10 @@ function verifyOverlaySource(rows, sources, sourceCommit) {
 }
 function automaticFixtures(support, out) {
     const a = path.join(out, 'A.avi'); support.avi(a, 'A');
-    // 32 seconds at six fps leaves 9.6 real seconds after 70% to warm the default 300 MB.
+    // 64 seconds at three fps leaves 19.2 real seconds after 70% for 300 MB.
+    // The prior 32s run warmed 237.5 MB before natural EOF; never hold back EOF.
     const bytes = fs.readFileSync(a), avih = bytes.indexOf(Buffer.from('avih')) + 8, strh = bytes.indexOf(Buffer.from('strh')) + 8;
-    bytes.writeUInt32LE(Math.round(1e6 / 6), avih); bytes.writeUInt32LE(320 * 180 * 3 * 6, avih + 4); bytes.writeUInt32LE(6, strh + 24); fs.writeFileSync(a, bytes);
+    bytes.writeUInt32LE(Math.round(1e6 / 3), avih); bytes.writeUInt32LE(320 * 180 * 3 * 3, avih + 4); bytes.writeUInt32LE(3, strh + 24); fs.writeFileSync(a, bytes);
     const seed = path.join(out, 'B-seed.avi'); support.avi(seed, 'B');
     const b = fs.readFileSync(seed), index = b.length - (8 + 192 * 16), padding = FIXTURE_SIZES[1] - b.length;
     need(b.toString('ascii', index, index + 4) === 'idx1' && padding >= 8 && padding % 2 === 0, 'fixture-index-layout');
@@ -209,6 +210,19 @@ function readPlan(file) {
     need(plan.fixtures.length === 2 && plan.fixtures.every((row, i) => row.file === ['A.avi', 'B.avi'][i] && row.size === FIXTURE_SIZES[i] &&
         hashFile(physical(path.join(plan.out, row.file))) === row.sha256 && row.etag === '"' + row.sha256 + '"'), 'fixture-changed');
     return plan;
+}
+function automaticOrder(trace) {
+    const find = (type, predicate = () => true) => trace.find(row => row.type === type && predicate(row));
+    const a = find('load', row => row.item === 'A'), b = find('load', row => row.item === 'B');
+    const duration = a && find('native-property', row => row.generation === a.generation && row.name === 'duration' && row.value > 0);
+    const threshold = duration && find('native-property', row => row.generation === a.generation && row.name === 'time-pos' && row.value / duration.value * 100 >= CONFIG.progressPercent);
+    const number = value => Number.isFinite(value) ? value : null;
+    return {aDurationSeconds: number(duration?.value), thresholdSeconds: number(threshold?.value), thresholdSeq: number(threshold?.seq),
+        preloadSeq: number(find('range-preload')?.seq), readySeq: number(find('prefix-ready')?.seq),
+        naturalEOFSeq: number(a && find('native-property', row => row.generation === a.generation && row.name === 'eof-reached' && row.value === true)?.seq),
+        originalNextSeq: number(find('manager-next-track')?.seq), bLoadSeq: number(b?.seq),
+        bFileLoadedSeq: number(b && find('native-property', row => row.generation === b.generation && row.name === 'file-loaded')?.seq),
+        preloadCancelledSeq: number(find('range-preload-result', row => row.state === 'cancelled')?.seq)};
 }
 function validateTrace(trace, total) {
     const find = (type, predicate = () => true) => trace.find(row => row.type === type && predicate(row));
@@ -325,10 +339,10 @@ function preload() {
 async function fixtureServer(plan, record, options = {}) {
     const http = require('node:http'), active = new Set(), sockets = new Set(); let held = null, sequence = 0;
     function item(id) {return {Id: id, ServerId: 'prefix-server', Name: 'Synthetic ' + id, Type: 'Episode', MediaType: 'Video', SeriesId: 'synthetic-series',
-        Path: id + '.avi', RunTimeTicks: id === 'A' ? 320000000 : 80000000, MediaSources: [media(id)]};}
-    function media(id) {return {Id: id + '-avi', Container: 'avi', Protocol: 'Http', Path: id + '.avi', RunTimeTicks: id === 'A' ? 320000000 : 80000000, SupportsDirectPlay: false,
+        Path: id + '.avi', RunTimeTicks: id === 'A' ? 640000000 : 80000000, MediaSources: [media(id)]};}
+    function media(id) {return {Id: id + '-avi', Container: 'avi', Protocol: 'Http', Path: id + '.avi', RunTimeTicks: id === 'A' ? 640000000 : 80000000, SupportsDirectPlay: false,
         SupportsDirectStream: true, SupportsTranscoding: false, DirectStreamUrl: 'Videos/' + id + '/stream.avi?Static=true&mediaSourceId=' + id + '-avi',
-        MediaStreams: [{Index: 0, Type: 'Video', Codec: 'rawvideo', Width: 320, Height: 180, RealFrameRate: id === 'A' ? 6 : 24}], DefaultSubtitleStreamIndex: -1};}
+        MediaStreams: [{Index: 0, Type: 'Video', Codec: 'rawvideo', Width: 320, Height: 180, RealFrameRate: id === 'A' ? 3 : 24}], DefaultSubtitleStreamIndex: -1};}
     const server = http.createServer((req, res) => {
         active.add(res); res.once('close', () => active.delete(res));
         const u = new URL(req.url, 'http://127.0.0.1');
@@ -415,7 +429,10 @@ async function matrixCase({phase, service, origin, trace, record, action, client
         throw Error(code);
     }
     const a = trace.find(row => row.type === 'load' && row.item === 'A'); need(a, 'matrix-A-load-missing');
-    const threshold = () => trace.find(row => row.type === 'native-property' && row.generation === a.generation && row.name === 'time-pos' && row.value >= 22.4);
+    const threshold = () => {
+        const duration = trace.find(row => row.type === 'native-property' && row.generation === a.generation && row.name === 'duration' && row.value > 0);
+        return duration && trace.find(row => row.type === 'native-property' && row.generation === a.generation && row.name === 'time-pos' && row.value / duration.value * 100 >= CONFIG.progressPercent);
+    };
     if (phase === 'matrix-unsupported') {
         await until(() => threshold() && trace.some(row => row.type === 'range-preload-result' && row.state === 'unavailable'), 'matrix-ineligible-deadline');
         const video = await client().getProperty('video-out-params', 2000), vo = await client().getProperty('current-vo', 2000);
@@ -600,7 +617,7 @@ async function electronMain(file, phase) {
         }
         if (phase !== 'matrix-exit') await mainWindow.webContents.executeJavaScript('window.prefixStop()');
         outcome = {status: 'passed', checks};
-    } catch (error) {outcome = {status: 'failed', code: String(error.message).slice(0, 200)};}
+    } catch (error) {outcome = {status: 'failed', code: String(error.message).slice(0, 200), orderDiagnostics: automaticOrder(trace)};}
     finally {
         clearInterval(visibilityTimer); const cleanup = [];
         if (service) try {await service.destroy();} catch (_) {cleanup.push('service-destroy-failed');}
@@ -664,4 +681,4 @@ else if (require.main === module || process.versions.electron && process.type ==
     process.exitCode = 1;
     if (process.versions.electron && process.type === 'browser') require('electron').app.exit(1);
 });
-module.exports = {loaderDescriptor, PRODUCT_INPUT_COMMIT, TOOLS_COMMIT, CONFIG, LOADER, OVERLAY, BOUNDARIES, cleanEnvironment, overlayRows, verifyDerivedInventory, verifyOverlaySource, argumentsOf, validateTrace, rendererBoot, fixtureServer, automaticFixtures, FIXTURE_SIZES, MATRIX_PHASES, MATRIX_REMAINING, MATRIX_CODES, observeOriginRequests, uncachedSeekTarget, matrixCase, driverSource, PREPARE_STAGES, PREPARE_CODES, prepareFailure, prepare, readPlan};
+module.exports = {automaticOrder, loaderDescriptor, PRODUCT_INPUT_COMMIT, TOOLS_COMMIT, CONFIG, LOADER, OVERLAY, BOUNDARIES, cleanEnvironment, overlayRows, verifyDerivedInventory, verifyOverlaySource, argumentsOf, validateTrace, rendererBoot, fixtureServer, automaticFixtures, FIXTURE_SIZES, MATRIX_PHASES, MATRIX_REMAINING, MATRIX_CODES, observeOriginRequests, uncachedSeekTarget, matrixCase, driverSource, PREPARE_STAGES, PREPARE_CODES, prepareFailure, prepare, readPlan};

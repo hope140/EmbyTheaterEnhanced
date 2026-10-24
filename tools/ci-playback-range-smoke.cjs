@@ -200,15 +200,17 @@ function automaticFailureSummary(root, commandLog, selectedPhase) {
 }
 function automaticCaseSummary(root, phase) {
     const file = path.join(root, phase + '.json'), summary = automaticFailureSummary(root, undefined, phase), state = summary.phases.find(row => row.phase === phase);
-    let checks = {};
+    let checks = {}, orderDiagnostics = {};
     try {
         const stat = fs.lstatSync(file); if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 65536) throw Error('bounded-receipt-required');
         const receipt = json(file), allowed = new Set(['defaultPreloadMB', 'actualThreshold', 'foregroundCacheBytes', 'backwardCacheBytes', 'seekTargetSeconds', 'explicitNativeSeek', 'peakBackgroundRequests', 'candidateBytes', 'heldRequestClosed', 'lateBytes', 'beforeActionBytes', 'diskPeak',
             'progressPercent', 'aDurationSeconds', 'thresholdSeconds', 'preloadSeq', 'readySeq', 'naturalEOFSeq', 'originalNextSeq', 'bLoadSeq', 'aGeneration', 'bGeneration', 'sampledPeakBytes', 'firstPrefixRefetches', 'prefixReadCount', 'decodedWidth', 'decodedHeight', 'targetBytes', 'observedBOriginProbeCount', 'observedBNativeMissCount', 'decoded', 'automatic', 'nativePreviewDecoded', 'previewWidth', 'previewHeight', 'previewPromisePendingAtDestroy', 'latePreviewDropped', 'jointDrainCompleted', 'foregroundPreempted', 'candidateReplaced', 'exitDuringUnplayedNext', 'noBLoad', 'unsupportedOriginalSource', 'weakEtagDeclined', 'originalSourceDecoded', 'nextUnavailable']);
+        const orderKeys = new Set(Object.keys(require('./playback-prefix-windows-auto.cjs').automaticOrder([])));
+        orderDiagnostics = Object.fromEntries(Object.entries(receipt.orderDiagnostics || {}).filter(([key, value]) => orderKeys.has(key) && (value === null || Number.isFinite(value))));
         checks = Object.fromEntries(Object.entries(receipt.checks || {}).filter(([key, value]) => allowed.has(key) && (typeof value === 'boolean' || Number.isFinite(value))));
     } catch (_) {}
     const complete = state?.status === 'passed' && state.coordinatorStatus === 'passed' && state.exitCode === 0 && state.streamsClosed && !state.timedOut && state.helpers.length > 0 && state.helpers.every(helper => helper.exited && helper.exitCode === 0 && helper.streamsClosed);
-    return {type: 'next-prefix-matrix-case-result', ...state, status: complete ? 'passed' : state?.status === 'not-recorded' ? 'not-recorded' : 'failed', code: complete ? 'passed' : state?.code, checks, ...(phase === 'matrix-preempt' ? {preemptStages: summary.preemptStages, lastLoads: summary.lastLoads} : {}), payloadClearGatePassed: complete};
+    return {type: 'next-prefix-matrix-case-result', ...state, status: complete ? 'passed' : state?.status === 'not-recorded' ? 'not-recorded' : 'failed', code: complete ? 'passed' : state?.code, checks, orderDiagnostics, ...(phase === 'matrix-preempt' ? {preemptStages: summary.preemptStages, lastLoads: summary.lastLoads} : {}), payloadClearGatePassed: complete};
 }
 function runTool(plan, arguments_, label, script = path.join(plan.toolsRoot, 'tools/playback-range-windows-smoke.cjs')) {
     const environment = cleanEnvironment(); noCredentials(environment); const file = path.join(plan.root, label + '.stdout'), fd = fs.openSync(file, 'wx');
