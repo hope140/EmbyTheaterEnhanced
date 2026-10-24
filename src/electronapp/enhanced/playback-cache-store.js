@@ -193,6 +193,7 @@ function createStore(options = {}) {
             const validUntil = proof.validUntil;
             pin(id); writers.add(id);
             let released = false;
+            let ownedRecord = record;
             return Object.freeze({
                 offset: record.committed,
                 append(offset, buffer) {
@@ -214,11 +215,20 @@ function createStore(options = {}) {
                             io.fsyncSync(fd);
                         } finally { io.closeSync(fd); }
                         const committed = offset + buffer.length;
-                        checkpoint({...current, committed, digest: hashPrefix(id + '.bytes', committed), lastUsedAt: now()});
+                        const updated = {...current, committed, digest: hashPrefix(id + '.bytes', committed), lastUsedAt: now()};
+                        checkpoint(updated); ownedRecord = updated;
                         return committed;
                     });
                 },
-                release() { if (!released) { released = true; writers.delete(id); unpin(id); } }
+                release() { if (!released) { released = true; writers.delete(id); unpin(id); } },
+                discardPartial() {
+                    return execute(() => {
+                        if (!released) fail('lease-active');
+                        const current = records.get(id);
+                        if (!current || current !== ownedRecord || current.committed === current.length || pins.has(id)) return false;
+                        remove(id); return true;
+                    });
+                }
             });
         });
     }

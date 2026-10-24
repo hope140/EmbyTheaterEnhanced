@@ -13,5 +13,6 @@
     "authorizationMaxAgeMs": 2000
   },
   "networkPolicy": "same-origin-paused-only",
-  "activeLeasePolicy": "retain-until-media-close"
+  "activeLeasePolicy": "retain-until-media-close",
+  "partialPolicy": "discard-on-cancel"
 }

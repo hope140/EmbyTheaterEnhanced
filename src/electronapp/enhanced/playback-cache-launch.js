@@ -3,8 +3,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const exact = (v, keys) => v && Object.keys(v).sort().join('|') === keys.slice().sort().join('|');
 function valid(config) {
-    return exact(config, ['policy', 'download', 'networkPolicy', 'activeLeasePolicy']) && config.networkPolicy === 'same-origin-paused-only' &&
+    return exact(config, ['policy', 'download', 'networkPolicy', 'activeLeasePolicy', 'partialPolicy']) && config.networkPolicy === 'same-origin-paused-only' &&
         config.activeLeasePolicy === 'retain-until-media-close' &&
+        ['discard-on-cancel', 'retain-checkpoint-until-ttl'].includes(config.partialPolicy) &&
         exact(config.policy, ['maxBytes', 'maxEntries', 'ttlMs', 'minFreeBytes']) &&
         Object.values(config.policy).every(v => Number.isSafeInteger(v) && v >= 0) &&
         config.policy.maxBytes > 0 && config.policy.maxBytes <= 67108864 && config.policy.maxEntries > 0 && config.policy.maxEntries <= 16 && config.policy.ttlMs > 0 &&

@@ -11,11 +11,13 @@ const {createRuntime} = require('../src/electronapp/enhanced/playback-cache-runt
 const {createService} = require('../src/electronapp/native-helper/service');
 const nativeClient = require('../src/electronapp/native-helper/client');
 const contextProvider = require('../src/electronapp/enhanced/playback-cache-context');
+const nextCache = require('../src/electronapp/enhanced/playback-cache-next');
+const {harness: apiHarness, storage: apiStorage} = require('./helpers/api-client-amd.cjs');
 const gate = () => { let resolve; const promise = new Promise(r => { resolve = r; }); return {promise, resolve}; };
 const flush = async () => { for (let i = 0; i < 16; i++) await Promise.resolve(); };
 function config() { return {policy: {maxBytes: 256, maxEntries: 2, ttlMs: 10000, minFreeBytes: 0},
     download: {maxFileBytes: 128, bytesPerSecond: 65536, chunkBytes: 32, maxDurationMs: 5000, authorizationMaxAgeMs: 2000},
-    networkPolicy: 'same-origin-paused-only', activeLeasePolicy: 'retain-until-media-close'}; }
+    networkPolicy: 'same-origin-paused-only', activeLeasePolicy: 'retain-until-media-close', partialPolicy: 'discard-on-cancel'}; }
 function media() {
     const b = Buffer.alloc(60); b.write('RIFF'); b.writeUInt32LE(52, 4); b.write('WAVEfmt ', 8);
     b.writeUInt32LE(16, 16); b.writeUInt16LE(1, 20); b.writeUInt16LE(1, 22); b.writeUInt32LE(8000, 24);
@@ -42,15 +44,18 @@ test('launch requires explicit switch, every policy and an empty or owned isolat
     assert.equal(parseLaunch([...args.slice(0, 2), '--ete-cache-trial-profile=' + occupied]).enabled, false);
     assert.deepEqual(fs.readdirSync(occupied), ['personal']);
     assert.equal(valid({...config(), networkPolicy: 'unrestricted'}), false);
+    for (const partialPolicy of [undefined, 'guessed-default']) assert.equal(valid({...config(), partialPolicy}), false);
 });
 
 test('context comes from the existing ApiClient and PlaybackManager identities, and cannot relabel an old URL after account change', () => {
     let account = 'current-user'; const api = {serverId: () => 'server', getCurrentUserId: () => account, serverAddress: () => 'http://127.0.0.1:1234/emby'};
-    const connection = {getApiClient: id => id === 'server' ? api : null};
-    const captured = contextProvider.capture(connection, {ServerId: 'server', Id: 'item'}, {Id: 'media-source'},
+    let selectedApi = api;
+    const connection = {getApiClient: id => id === 'server' ? selectedApi : null};
+    const captured = contextProvider.capture(connection, {ServerId: 'server', Id: 'item'}, {Id: 'media-source', Container: 'wav'},
         {playMethod: 'DirectPlay', playSessionId: 'session-from-playbackinfo'}, 'http://127.0.0.1:1234/stream?api_key=current-token');
     assert.equal(captured().accountId, 'current-user'); assert.equal(captured().playSessionId, 'session-from-playbackinfo');
     assert.equal(Object.hasOwn(captured(), 'authorized'), false); account = 'different-user'; assert.equal(captured(), null);
+    account = 'current-user'; selectedApi = {...api}; assert.equal(captured(), null);
 });
 
 test('trial activation isolates renderer/preload/mpv process paths; disabled launch leaves them unchanged', t => {
@@ -67,9 +72,21 @@ test('trial activation isolates renderer/preload/mpv process paths; disabled lau
 test('missing session/server identity or transcoding yields no fabricated cache context', () => {
     const connection = {getApiClient: () => ({serverId: () => 'server', getCurrentUserId: () => 'user', serverAddress: () => 'http://127.0.0.1:1234'})};
     for (const options of [{playMethod: 'DirectPlay'}, {playMethod: 'Transcode', playSessionId: 'session'}]) {
-        assert.equal(contextProvider.capture(connection, {ServerId: 'server', Id: 'item'}, {Id: 'source'}, options, 'http://127.0.0.1:1234/file')(), null);
+        assert.equal(contextProvider.capture(connection, {ServerId: 'server', Id: 'item'}, {Id: 'source', Container: 'wav'}, options, 'http://127.0.0.1:1234/file')(), null);
     }
     assert.equal(contextProvider.capture(connection, {Id: 'item'}, {Id: 'source'}, {playMethod: 'DirectPlay', playSessionId: 'session'}, 'url')(), null);
+});
+
+test('only the existing Static=true DirectStream file route is eligible; remux/transcode or ambiguous flags remain ineligible', async t => {
+    const f = await setup(t);
+    for (const query of ['', '&Static=false', '&Static=true&Static=false']) {
+        await f.play({mode: 'DirectStream', source: f.origin + '/video?api_key=synthetic-only' + query});
+        await f.pause(true); assert.equal((await f.download()).state, 'unavailable');
+    }
+    assert.equal(f.requests.length, 0);
+    const source = f.origin + '/video?api_key=synthetic-only&Static=true';
+    await f.play({mode: 'DirectStream', source}); await f.pause(true); assert.equal((await f.download()).state, 'ready');
+    await f.play({mode: 'DirectStream', source}); assert.equal(f.owned.loads.at(-1).bytes.equals(media()), true);
 });
 
 class Window extends EventEmitter {
@@ -98,9 +115,19 @@ class Helper {
 }
 async function setup(t, change = {}) {
     const f = files(t), requests = [], sockets = new Set(), entered = gate();
-    let mode = 'valid', tag = '"file-one"', bytesSent = 0, confirms = 0, confirm = async () => true;
+    let mode = 'valid', tag = '"file-one"', bytesSent = 0, confirms = 0, confirm = async () => true, metadataVersions = 1, metadataRedirect = null;
     const server = http.createServer((req, res) => {
         requests.push({url: req.url, headers: req.headers});
+        if (/^\/emby\/Users\/fixture-account\/Items\/next-item(?:\?|$)/.test(req.url)) {
+            if (!(req.headers['x-emby-authorization'] || '').includes('Token="synthetic-only"') &&
+                new URL(req.url, 'http://fixture').searchParams.get('X-Emby-Token') !== 'synthetic-only') { res.writeHead(403); res.end(); return; }
+            if (mode === 'metadata-redirect') { res.writeHead(302, {Location: metadataRedirect}); res.end(); return; }
+            if (mode === 'metadata-stall') { res.writeHead(200, {'Content-Type': 'application/json'}); res.write('{'); entered.resolve(); return; }
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({Id: 'next-item', Type: 'Episode', SeriesId: 'fixture-series', MediaType: 'Video',
+                MediaSources: Array.from({length: metadataVersions}, (_, i) => ({Id: 'next-source-' + i, Container: 'wav', Protocol: 'File'}))}));
+            return;
+        }
         if (!['synthetic-only', 'synthetic-renewed'].includes(new URL(req.url, 'http://fixture').searchParams.get('api_key'))) { res.writeHead(403); res.end(); return; }
         if (mode === 'redirect') { res.writeHead(302, {Location: 'http://192.0.2.1/must-not-follow'}); res.end(); return; }
         const m = /^bytes=(\d+)-(\d+)$/.exec(req.headers.range || ''), start = m && Number(m[1]), end = m && Number(m[2]);
@@ -110,7 +137,7 @@ async function setup(t, change = {}) {
         if (mode === 'no-store') headers['Cache-Control'] = 'no-store';
         if (mode === 'date') { delete headers.ETag; headers['Last-Modified'] = new Date().toUTCString(); }
         res.writeHead(206, headers);
-        if (mode === 'stall') { res.flushHeaders(); entered.resolve(); return; }
+        if (mode === 'stall' || mode === 'stall-after-probe' && start > 0) { res.flushHeaders(); entered.resolve(); return; }
         if (mode === 'interrupt' && start > 0) { res.write(media().subarray(start, start + 2)); setImmediate(() => res.destroy()); return; }
         const representation = media(); if (req.url.startsWith('/variant')) representation[44] = 1;
         const bytes = representation.subarray(start, end + 1); bytesSent += bytes.length; res.end(bytes);
@@ -125,12 +152,12 @@ async function setup(t, change = {}) {
     class Client extends Helper { constructor(options) { super(options); owned = this; } }
     const service = createService({electron: {BrowserWindow: Window}, NativeHelperClient: Client, runtimeRoot: f.parent, fs: {existsSync: () => true},
         getMainWindow: () => main, getWebContents: () => main.webContents, playbackCacheRuntime: runtime,
-        confirmCacheDownload: async () => { confirms++; return confirm(); }});
+        confirmCacheDownload: async target => { confirms++; return confirm(target); }});
     f.cleanup(() => service.destroy());
     const created = await service.call('create'); let gen, epoch = 0;
     function context(extra = {}) {
         const api = {serverId: () => 'fixture-server', getCurrentUserId: () => 'fixture-account', serverAddress: () => apiOrigin};
-        const capture = contextProvider.capture({getApiClient: () => api}, {ServerId: 'fixture-server', Id: 'fixture-item'}, {Id: 'source-version'},
+        const capture = contextProvider.capture({getApiClient: () => api}, {ServerId: 'fixture-server', Id: 'fixture-item'}, {Id: 'source-version', Container: 'wav'},
             {playMethod: 'DirectPlay', playSessionId: 'actual-mock-session'}, apiOrigin + '/video?api_key=synthetic-only');
         return {...capture(), ...extra};
     }
@@ -142,10 +169,97 @@ async function setup(t, change = {}) {
     return {...f, runtime, service, owned, created, origin, requests, entered, context,
         play, current: () => gen, mode: value => { mode = value; }, tag: value => { tag = value; },
         switchOrigin: value => { apiOrigin = value; },
+        metadataVersions: value => { metadataVersions = value; }, metadataRedirect: value => { metadataRedirect = value; },
         confirms: () => confirms, confirm: fn => { confirm = fn; }, bytesSent: () => bytesSent,
         download: () => service.call('cache-download', {generationId: gen}, created.endpointId),
         pause: value => service.call('set-property', {generationId: gen, name: 'pause', value}, created.endpointId)};
 }
+
+function nextOptions(f) {
+    const h = apiHarness(), Api = h.load('apiclient.js').default;
+    const api = new Api(apiStorage(), () => Promise.resolve(), f.origin, 'ETE', 'trial', 'fixture', 'fixture-device', 1);
+    api.serverInfo({Id: 'fixture-server', UserId: 'fixture-account', AccessToken: 'synthetic-only'});
+    const player = {}, next = {Id: 'next-item', Type: 'Episode', SeriesId: 'fixture-series', ServerId: 'fixture-server', Name: 'Synthetic next'};
+    let sentTarget, controller;
+    let Queue;
+    require('node:vm').runInNewContext(fs.readFileSync(path.join(__dirname, '../vendor/web-snapshot/www/modules/common/playback/playqueuemanager.js'), 'utf8'),
+        {define(_deps, factory) { const exported = {}; factory(exported); Queue = exported.default; }});
+    const queue = new Queue();
+    function select(item) { queue.setPlaylist([{Id: 'fixture-item'}, ...(item ? [item] : [])]); queue.setPlaylistIndex(0); }
+    select(next);
+    const manager = {getCurrentPlayer: () => player, _playQueueManager: queue, nextTrack() { throw Error('queue must not advance'); }};
+    const ownerGeneration = f.current(), signal = new AbortController();
+    const captured = contextProvider.capture({getApiClient: () => api}, {Id: 'fixture-item', ServerId: 'fixture-server'},
+        {Id: 'source-version', Container: 'wav'}, {playMethod: 'DirectPlay', playSessionId: 'actual-mock-session'}, f.context().source);
+    const endpoint = {
+        confirmNextCache: (itemId, title) => f.service.call('cache-next-confirm', {itemId, title, generationId: ownerGeneration}, f.created.endpointId),
+        downloadNextCache: (confirmationId, target) => { sentTarget = target; return f.service.call('cache-next-download', {confirmationId, target, generationId: ownerGeneration}, f.created.endpointId); },
+        cancelNextCache: (confirmationId, reportUnavailable) => f.service.call('cache-next-cancel', {confirmationId, reportUnavailable, generationId: f.current()}, f.created.endpointId)
+    };
+    return {api, h, signal, target: () => sentTarget, controller: () => controller, select,
+        options: {connectionManager: {getApiClient: () => api}, playbackManager: manager, player,
+            currentItem: {Id: 'fixture-item', Type: 'Episode', SeriesId: 'fixture-series'}, currentContext: captured,
+            endpoint, signal: signal.signal, isCurrent: () => f.owned.currentGenerationId === ownerGeneration,
+            onController: value => { controller = value; }}};
+}
+
+test('explicit next preload uses the maintained ApiClient authorization provider and the unchanged current session, then normal next playback hits complete bytes', async t => {
+    const f = await setup(t); await f.play(); await f.pause(true); const n = nextOptions(f);
+    assert.equal((await nextCache.prepare(n.options)).state, 'ready');
+    assert.equal(f.owned.loads.length, 1); assert.equal(f.owned.currentGenerationId, f.current());
+    assert.equal(n.target().ownerPlaySessionId, 'actual-mock-session'); assert.equal(Object.hasOwn(n.target(), 'playSessionId'), false);
+    assert.equal(f.requests.filter(row => row.url.includes('/Items/')).length, 1);
+    assert.equal(f.requests.some(row => /PlaybackInfo|Sessions\/Playing/.test(row.url)), false);
+    assert.match(f.requests.find(row => row.url.includes('/Items/')).headers['x-emby-authorization'], /Token="synthetic-only"/);
+    assert.equal(f.bytesSent(), 60);
+    await f.play({itemId: 'next-item', mediaSourceId: 'next-source-0', playSessionId: 'normal-next-session', mode: 'DirectStream', source: n.target().source});
+    assert.equal(f.owned.loads.at(-1).bytes.equals(media()), true); assert.equal(f.bytesSent(), 61);
+});
+
+test('next confirmation decline, nonmatching queue and ambiguous versions never start a media download', async t => {
+    const f = await setup(t); await f.play(); await f.pause(true); const n = nextOptions(f);
+    n.select(null); assert.equal((await nextCache.prepare(n.options)).state, 'unavailable'); assert.equal(f.confirms(), 0);
+    n.select({Id: 'next-item', Type: 'Episode', SeriesId: 'another-series', ServerId: 'fixture-server'});
+    assert.equal((await nextCache.prepare(n.options)).state, 'unavailable'); assert.equal(f.requests.length, 0);
+    n.select({Id: 'next-item', Type: 'Episode', SeriesId: 'fixture-series', ServerId: 'fixture-server'});
+    f.confirm(async () => false); assert.equal((await nextCache.prepare(n.options)).state, 'cancelled'); assert.equal(f.requests.length, 0);
+    f.confirm(async () => true); f.metadataVersions(2);
+    assert.equal((await nextCache.prepare(n.options)).state, 'unavailable'); assert.equal(f.requests.length, 1); assert.equal(f.bytesSent(), 0);
+});
+
+test('next metadata is cancelled with its real fetch body when the owning play retires', async t => {
+    const f = await setup(t); await f.play(); await f.pause(true); f.mode('metadata-stall'); const n = nextOptions(f);
+    const preparing = nextCache.prepare(n.options); await f.entered.promise; n.signal.abort();
+    assert.equal((await preparing).state, 'cancelled'); assert.equal(f.bytesSent(), 0); assert.equal(f.owned.loads.length, 1);
+});
+
+test('next metadata does not follow a redirect or forward the real provider authorization to another origin', async t => {
+    const f = await setup(t); let forwarded = 0; const server = http.createServer((_req, res) => { forwarded++; res.end('{}'); });
+    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+    f.cleanup(() => new Promise(resolve => server.close(resolve)));
+    f.metadataRedirect(`http://127.0.0.1:${server.address().port}/must-not-follow`); f.mode('metadata-redirect');
+    await f.play(); await f.pause(true); const n = nextOptions(f);
+    assert.equal((await nextCache.prepare(n.options)).state, 'unavailable'); assert.equal(forwarded, 0); assert.equal(f.bytesSent(), 0);
+});
+
+test('the maintained provider query-string authentication mode also authorizes next metadata without storing its token', async t => {
+    const f = await setup(t); await f.play(); await f.pause(true); const n = nextOptions(f);
+    n.api.setSystemInfo({Version: '4.8.0.0'});
+    assert.equal((await nextCache.prepare(n.options)).state, 'ready');
+    const request = f.requests.find(row => row.url.includes('/Items/'));
+    assert.equal(new URL(request.url, f.origin).searchParams.get('X-Emby-Token'), 'synthetic-only');
+    for (const name of fs.readdirSync(path.join(f.parent, 'playback-cache-prototype-v1')).filter(n => n.endsWith('.json'))) {
+        assert.equal(fs.readFileSync(path.join(f.parent, 'playback-cache-prototype-v1', name), 'utf8').includes('synthetic-only'), false);
+    }
+});
+
+test('explicit cancel discards only its partial checkpoint under the selected partial policy', async t => {
+    const f = await setup(t); f.mode('stall-after-probe'); await f.play(); await f.pause(true);
+    const downloading = f.download(); await f.entered.promise;
+    assert.equal(fs.readdirSync(path.join(f.parent, 'playback-cache-prototype-v1')).some(n => n.endsWith('.bytes')), true);
+    await f.service.call('cache-cancel', {generationId: f.current()}, f.created.endpointId); await downloading;
+    assert.equal(fs.readdirSync(path.join(f.parent, 'playback-cache-prototype-v1')).some(n => n.endsWith('.bytes') || n.endsWith('.json')), false);
+});
 
 test('explicit confirmation and actual paused property gate download; complete download then next session consumes verified local bytes', async t => {
     const f = await setup(t); await f.play(); assert.equal(f.requests.length, 0);
@@ -168,6 +282,14 @@ test('other account/server or changed validator cannot consume the approved prio
     await f.play({accountId: 'different-user'}); assert.equal(f.owned.loads.at(-1).bytes, null); assert.equal(f.requests.length, before);
     await f.play({serverId: 'different-server'}); assert.equal(f.owned.loads.at(-1).bytes, null); assert.equal(f.requests.length, before);
     f.tag('"new-version"'); await f.play(); assert.equal(f.owned.loads.at(-1).bytes, null);
+});
+
+test('a declared playlist/HLS or unknown container is not treated as a complete direct media file', async t => {
+    const f = await setup(t);
+    for (const container of ['m3u8', 'hls', 'strm', '', 'unknown']) {
+        await f.play({container}); await f.pause(true); assert.equal((await f.download()).state, 'unavailable');
+    }
+    assert.equal(f.requests.length, 0);
 });
 
 test('same server/account IDs and ETag at another API origin cannot reuse the previous server bytes', async t => {

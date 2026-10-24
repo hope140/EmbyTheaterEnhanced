@@ -1,4 +1,4 @@
-define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter', 'appSettings', 'userSettings', 'require', 'connectionManager', '../resolvers/strm-resolver.js', '../resolvers/strm-config-client.js', '../resolvers/strm-identity-recovery.js', '../enhanced/playback-route-stats.js', '../enhanced/nexttrack-transition.js', '../native-helper/client.js', '../enhanced/playback-cache-context.js'], function (globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, require, connectionManager, strmResolver, strmConfigClient, strmIdentityRecovery, playbackRouteStats, nextTrackTransition, nativeHelperClient, playbackCacheContext) {
+define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter', 'appSettings', 'userSettings', 'require', 'connectionManager', '../resolvers/strm-resolver.js', '../resolvers/strm-config-client.js', '../resolvers/strm-identity-recovery.js', '../enhanced/playback-route-stats.js', '../enhanced/nexttrack-transition.js', '../native-helper/client.js', '../enhanced/playback-cache-context.js', '../enhanced/playback-cache-next.js'], function (globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, require, connectionManager, strmResolver, strmConfigClient, strmIdentityRecovery, playbackRouteStats, nextTrackTransition, nativeHelperClient, playbackCacheContext, playbackCacheNext) {
     'use strict';
 
     function getTextTrackUrl(subtitleStream, serverId) {
@@ -1098,6 +1098,17 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                     assertCurrentPlayRequest(request);
                     if (libmpv === cacheEndpoint) cacheEndpoint.refreshCacheContext = function () {
                         return cacheEndpoint.setCacheContext(request.controller.signal.aborted || libmpv !== cacheEndpoint ? null : currentCacheContext());
+                    };
+                    var nextCacheJob = null;
+                    cacheEndpoint.cancelCachePreparation = function () { if (nextCacheJob && nextCacheJob.controller) nextCacheJob.controller.abort(); };
+                    cacheEndpoint.requestNextCache = function () {
+                        cacheEndpoint.cancelCachePreparation();
+                        var job = {controller: null}; nextCacheJob = job;
+                        return playbackCacheNext.prepare({connectionManager: connectionManager, playbackManager: playbackManager,
+                            player: self, currentItem: item, currentContext: currentCacheContext, endpoint: cacheEndpoint,
+                            signal: request.controller.signal,
+                            isCurrent: function () { return libmpv === cacheEndpoint && !request.controller.signal.aborted; },
+                            onController: function (controller) { if (nextCacheJob === job) job.controller = controller; }});
                     };
                 } catch (_) { /* Cache preparation preserves original playback ownership. */ }
                 assertCurrentPlayRequest(request);

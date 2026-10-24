@@ -1094,9 +1094,9 @@
             kernelStore: mpvKernelStore,
             startupKernelSelection: startupSelection,
             playbackCacheRuntime: cacheLaunch.enabled ? require('./enhanced/playback-cache-runtime').createRuntime(cacheLaunch) : null,
-            confirmCacheDownload: async function () {
+            confirmCacheDownload: async function (target) {
                 var result = await electron.dialog.showMessageBox(mainWindow, {type: 'question', buttons: ['取消', '确认下载'],
-                    defaultId: 0, cancelId: 0, message: '缓存试验：下载当前暂停的直接播放文件？',
+                    defaultId: 0, cancelId: 0, message: target && target.next ? '缓存试验：预加载已确认的下一集“' + target.title + '”？' : '缓存试验：下载当前暂停的直接播放文件？',
                     detail: '仅写入本隔离试验目录；恢复播放、切换媒体或退出会取消。不会自动下载下一集。'});
                 return result.response === 1;
             },

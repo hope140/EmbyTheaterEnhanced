@@ -179,9 +179,17 @@ function createService(options) {
     ? settings.playbackCacheRuntime : createPlaybackCacheTrial(settings.playbackCacheTrial);
   const cacheLoads = new WeakMap();
   let cacheLoadEpoch = 0;
+  let nextCacheConfirmation = null;
+  let nextCacheConfirmationEpoch = 0;
+  let nextCacheConfirmationSequence = 0;
+  function cancelCacheWork() {
+    nextCacheConfirmation = null; ++nextCacheConfirmationEpoch;
+    if (playbackCacheTrial.enabled) playbackCacheTrial.cancelPending();
+  }
   function retireCacheContext() {
     if (!playbackCacheTrial.enabled) return;
     ++cacheLoadEpoch;
+    nextCacheConfirmation = null; ++nextCacheConfirmationEpoch;
     if (playbackCacheTrial.retireContext) playbackCacheTrial.retireContext(); else playbackCacheTrial.cancelPending();
   }
   const boundWindowEvents = [];
@@ -522,7 +530,7 @@ function createService(options) {
       } : undefined,
       onEvent: function (message) {
         if (client !== owned) return;
-        if (playbackCacheTrial.enabled && message.name === 'pause' && message.value === false) playbackCacheTrial.cancelPending();
+        if (playbackCacheTrial.enabled && message.name === 'pause' && message.value === false) cancelCacheWork();
         const cached = playbackCacheTrial.enabled && cacheLoads.get(owned);
         if (cached && cached.generationId === message.generationId && message.name === 'start-file' && !cached.fallbackStarted) {
           cached.mediaIdentity = message.mediaIdentity;
@@ -755,13 +763,51 @@ function createService(options) {
     if (operation === 'prepare-presentation') return preparePresentation(active, endpointId, payload.token);
     if (operation === 'cache-context') {
       requireGeneration(active, payload);
+      nextCacheConfirmation = null; ++nextCacheConfirmationEpoch;
       return {status: 'ok', eligible: !!(playbackCacheTrial.enabled && playbackCacheTrial.setContext &&
         playbackCacheTrial.setContext(payload.context, active, active.currentGenerationId))};
     }
     if (operation === 'cache-cancel') {
       requireGeneration(active, payload);
-      if (playbackCacheTrial.enabled) playbackCacheTrial.cancelPending();
+      cancelCacheWork();
       return {status: 'ok'};
+    }
+    if (operation === 'cache-next-confirm') {
+      requireGeneration(active, payload);
+      const generationId = active.currentGenerationId;
+      const owner = playbackCacheTrial.confirmationOwner && playbackCacheTrial.confirmationOwner(active, generationId);
+      if (!owner || !playbackCacheTrial.downloadNext || typeof payload.itemId !== 'string' || !payload.itemId || payload.itemId.length > 512 ||
+          payload.itemId === owner.itemId || typeof settings.confirmCacheDownload !== 'function') return {status: 'ok'};
+      const epoch = ++nextCacheConfirmationEpoch; nextCacheConfirmation = null;
+      const current = () => !destroyed && client === active && endpointId === activeEndpointId && active.currentGenerationId === generationId &&
+        epoch === nextCacheConfirmationEpoch && playbackCacheTrial.confirmationOwner(active, generationId) === owner;
+      if (await active.getProperty('pause', 2000) !== true || !current()) return {status: 'ok'};
+      const title = typeof payload.title === 'string' ? payload.title.replace(/[\x00-\x1f]/g, ' ').slice(0, 160) : '下一集';
+      if (await settings.confirmCacheDownload({next: true, title}) !== true || !current() || await active.getProperty('pause', 2000) !== true || !current()) return {status: 'ok'};
+      nextCacheConfirmation = {id: ++nextCacheConfirmationSequence, owner, itemId: payload.itemId, helper: active, generationId};
+      return {status: 'ok', confirmationId: nextCacheConfirmation.id};
+    }
+    if (operation === 'cache-next-cancel') {
+      requireGeneration(active, payload);
+      const record = nextCacheConfirmation;
+      if (record && record.id === payload.confirmationId) {
+        nextCacheConfirmation = null;
+        if (payload.reportUnavailable === true && playbackCacheTrial.confirmationOwner(active, active.currentGenerationId) === record.owner &&
+            typeof settings.showCacheResult === 'function') await settings.showCacheResult('unavailable');
+      }
+      return {status: 'ok'};
+    }
+    if (operation === 'cache-next-download') {
+      requireGeneration(active, payload);
+      const record = nextCacheConfirmation;
+      if (!record || record.id !== payload.confirmationId || record.helper !== active || record.generationId !== active.currentGenerationId ||
+          !payload.target || payload.target.itemId !== record.itemId) return {status: 'ok', state: 'unavailable'};
+      nextCacheConfirmation = null;
+      if (await active.getProperty('pause', 2000) !== true || destroyed || client !== active || endpointId !== activeEndpointId ||
+          active.currentGenerationId !== record.generationId || playbackCacheTrial.confirmationOwner(active, record.generationId) !== record.owner) return {status: 'ok', state: 'cancelled'};
+      const result = await playbackCacheTrial.downloadNext(active, record.generationId, record.owner, payload.target);
+      if (!destroyed && client === active && active.currentGenerationId === record.generationId && typeof settings.showCacheResult === 'function') await settings.showCacheResult(result.state);
+      return {status: 'ok', state: result.state};
     }
     if (operation === 'cache-download') {
       requireGeneration(active, payload);
@@ -796,7 +842,7 @@ function createService(options) {
     if (operation === 'set-property') {
       requireGeneration(active, payload);
       const name = validatePropertyName(payload.name, SET_PROPERTIES);
-      if (playbackCacheTrial.enabled && name === 'pause' && payload.value === false) playbackCacheTrial.cancelPending();
+      if (playbackCacheTrial.enabled && name === 'pause' && payload.value === false) cancelCacheWork();
       if (name === 'wid' || name === 'fullscreen') return {status: 'ok', handledBy: 'surface'};
       if (name === 'vo' || name === 'gpu-api') {
         if (!fixedSettingLogged.has(name)) { fixedSettingLogged.add(name); log('render-setting-fixed', {property: name}); }
@@ -810,7 +856,7 @@ function createService(options) {
       if (!Array.isArray(payload.entries) || payload.entries.length > 64) throw new Error('property-batch-invalid');
       payload.entries.forEach(function (entry) {
         const name = validatePropertyName(entry && entry.name, SET_PROPERTIES);
-        if (playbackCacheTrial.enabled && name === 'pause' && entry.value === false) playbackCacheTrial.cancelPending();
+        if (playbackCacheTrial.enabled && name === 'pause' && entry.value === false) cancelCacheWork();
         if (name === 'wid' || name === 'fullscreen') return;
         if (name === 'vo' || name === 'gpu-api') {
           if (!fixedSettingLogged.has(name)) { fixedSettingLogged.add(name); log('render-setting-fixed', {property: name}); }
@@ -834,7 +880,7 @@ function createService(options) {
         }
       }
       requireGeneration(active, payload);
-      if (playbackCacheTrial.enabled && args[0] === 'cycle' && args[1] === 'pause') playbackCacheTrial.cancelPending();
+      if (playbackCacheTrial.enabled && args[0] === 'cycle' && args[1] === 'pause') cancelCacheWork();
       if (args[0] === 'loadfile') {
         let selection = null;
         const generationId = active.currentGenerationId;
@@ -842,7 +888,7 @@ function createService(options) {
         const current = () => !destroyed && client === active && endpointId === activeEndpointId &&
           !active.transportTerminated && !active.exited && generationId === active.currentGenerationId && selectionEpoch === cacheLoadEpoch;
         if (playbackCacheTrial.enabled) {
-          playbackCacheTrial.cancelPending();
+          cancelCacheWork();
           cacheLoads.delete(active);
           selection = await playbackCacheTrial.select(args[1], active, generationId, current);
           if (selection && !selection.canDispatch()) { selection.cancelBeforeDispatch(); selection = null; }

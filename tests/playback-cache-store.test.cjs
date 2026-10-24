@@ -224,3 +224,15 @@ test('failure while syncing a newly owned lock closes its descriptor and removes
     assert.equal(descriptors.size, 0); assert.equal(fs.existsSync(path.join(f.root, 'lock')), false);
     f.reopen(); assert.equal(f.store.status().entries, 0);
 });
+
+test('owned partial discard requires release and cannot delete newer checkpoints or a complete active object', t => {
+    const {store} = fixture(t);
+    const first = store.begin(identity, proof()); first.append(0, Buffer.from('ab'));
+    code(() => first.discardPartial(), 'lease-active'); first.release();
+    const second = store.begin(identity, proof()); second.append(2, Buffer.from('cd')); second.release();
+    assert.equal(first.discardPartial(), false); assert.equal(store.inspect(identity, proof()).committed, 4);
+    assert.equal(second.discardPartial(), true); assert.equal(store.inspect(identity, proof()), null);
+    const final = store.begin(identity, proof()); final.append(0, Buffer.from('abcdefgh')); final.release();
+    const reader = store.acquireComplete(identity, proof()); assert.equal(final.discardPartial(), false);
+    assert.equal(reader.read(0, 8).toString(), 'abcdefgh'); reader.release();
+});

@@ -43,12 +43,22 @@
             if (destroyed) return Promise.reject(new Error('native-helper-destroyed'));
             return call('cache-context', {context: context, generationId: currentGenerationId});
         };
+        this.confirmNextCache = function (itemId, title) { return call('cache-next-confirm', {itemId: itemId, title: title, generationId: currentGenerationId}); };
+        this.downloadNextCache = function (confirmationId, target) { return call('cache-next-download', {confirmationId: confirmationId, target: target, generationId: currentGenerationId}); };
+        this.cancelNextCache = function (confirmationId, reportUnavailable) { return call('cache-next-cancel', {confirmationId: confirmationId,
+            reportUnavailable: reportUnavailable === true, generationId: currentGenerationId}); };
+        function cancelCachePreparation() { if (typeof self.cancelCachePreparation === 'function') self.cancelCachePreparation(); }
         function cacheKey(event) {
-            if (!destroyed && self.cacheTrialEnabled && event.ctrlKey && event.shiftKey && ['KeyD', 'KeyX'].indexOf(event.code) >= 0 && !event.repeat) {
+            if (!destroyed && self.cacheTrialEnabled && event.ctrlKey && event.shiftKey && ['KeyD', 'KeyN', 'KeyX'].indexOf(event.code) >= 0 && !event.repeat) {
                 event.preventDefault(); event.stopPropagation();
-                if (event.code === 'KeyX') { call('cache-cancel', {generationId: currentGenerationId}).catch(function () {}); return; }
+                if (event.code === 'KeyX') { cancelCachePreparation(); call('cache-cancel', {generationId: currentGenerationId}).catch(function () {}); return; }
+                if (event.code === 'KeyD') cancelCachePreparation();
                 var refresh = typeof self.refreshCacheContext === 'function' ? self.refreshCacheContext() : Promise.resolve();
-                Promise.resolve(refresh).then(function () { if (!destroyed) return call('cache-download', {generationId: currentGenerationId}); }).catch(function () {});
+                Promise.resolve(refresh).then(function () {
+                    if (destroyed) return;
+                    if (event.code === 'KeyN') return typeof self.requestNextCache === 'function' ? self.requestNextCache() : null;
+                    return call('cache-download', {generationId: currentGenerationId});
+                }).catch(function () {});
             }
         }
         if (this.cacheTrialEnabled && typeof document !== 'undefined' && document.addEventListener) document.addEventListener('keydown', cacheKey, true);
@@ -63,6 +73,7 @@
         this._onIpcEvent = function (event, message) {
             if (destroyed || !message || typeof message !== 'object') return;
             if (message.type === 'property_change' && message.data && typeof message.data.name === 'string') {
+                if (message.data.name === 'pause' && message.data.value === false) cancelCachePreparation();
                 emit({type: 'property_change', data: {name: message.data.name, value: message.data.value}});
             } else if (message.type === 'bridge_error') {
                 emit({type: 'bridge_error', data: {reason: message.reason || 'helper-terminated'}});
@@ -104,6 +115,7 @@
         };
         this.retireGeneration = function (reason) {
             if (destroyed) return;
+            cancelCachePreparation();
             var requestEpoch = ++generationEpoch;
             var generationId = currentGenerationId;
             currentGenerationId = null;
@@ -127,10 +139,12 @@
             return call('observe', {properties: properties});
         };
         this.setProperties = function (properties) {
+            if (properties && properties.pause === false) cancelCachePreparation();
             var entries = Object.keys(properties || {}).map(function (name) { return {name: name, value: properties[name]}; });
             return call('set-properties', {entries: entries, generationId: currentGenerationId});
         };
         this.sendCommand = function (data) {
+            if (data === 'stop' || Array.isArray(data) && (data[0] === 'stop' || data[0] === 'cycle' && data[1] === 'pause')) cancelCachePreparation();
             return call('command', {data: data, generationId: currentGenerationId});
         };
         this.getProperty = function (name) {
@@ -185,6 +199,7 @@
         };
         this.destroy = function () {
             if (destroyed) return Promise.resolve();
+            cancelCachePreparation();
             destroyed = true;
             generationEpoch++;
             if (self.cacheTrialEnabled && typeof document !== 'undefined' && document.removeEventListener) document.removeEventListener('keydown', cacheKey, true);
