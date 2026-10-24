@@ -65,7 +65,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/videoosd/videoosd.js',
         expectedBaseSha256: '86AB60C897E827B5152435350FE7B3801D8AFD6B8889EEF96E9996E71BB5EEAB',
         expectedInputSha256: null,
-        expectedOutputSha256: '76A677196C2D85891407BC94B6C3D0B74D981BE6FF552DB81BE6DC28A7EC549B',
+        expectedOutputSha256: 'E8936A29EBDBA5DCA24514531FE1C25AD70E56F8BA572BD022C1BA16A786D5FF',
         generatorPaths: Object.freeze([GENERATOR_PATH, OSD_LIFECYCLE_GENERATOR_PATH])
     }),
     Object.freeze({

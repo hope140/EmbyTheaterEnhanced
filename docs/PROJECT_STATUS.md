@@ -761,3 +761,7 @@ GitHub Windows public CI exposed one preload fixture using a nonphysical TEMP al
 
 
 2026-10-23 candidate: manual Windows packaging has a source-built Host recovery/compile/verification entry point, with pinned 55-file source and NuGet acquisition and generated per-run evidence. GitHub execution remains unverified. Work's validated builder argument delta has been synchronized exactly; a portable runner-side Host verification harness is still required; the missing harness fails closed before compilation/packaging. No external Work binary/verification receipt is imported by this path.
+
+## Seek-thumbnail boundary repair
+
+An isolated VideoOSD overlay candidate permits existing Emby thumbnail data without chapters, binds metadata and image URLs to the actual playing MediaSource, and isolates late results by playback/account/server ownership. The selected ApiClient now forwards optional thumbnail cancellation to its existing transport. Existing in-memory metadata reuse and HTTP image caching remain; no media-buffer feature, disk image store or cache policy is added. Locked-source DOM/player and loopback transport checks are documented in [the API input contract](INDEPENDENT_API_INPUT.md#emby-seek-thumbnail-preview-boundaries). Windows visuals and real-server version behavior still require acceptance; no package or release is implied.
