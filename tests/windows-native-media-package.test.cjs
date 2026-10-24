@@ -2,6 +2,12 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),cp=require('node:child_process'),crypto=require('node:crypto');
 const tool=require('../tools/windows-native-media-input.cjs');
 const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
+// Permit only Git's whole-file LF -> CRLF checkout transform; no BOM,
+// content normalization, mixed endings or arbitrary whitespace tolerance.
+function assertCheckoutBytes(actual,blob){
+ const crlf=Buffer.from(blob.toString('utf8').replace(/(?<!\r)\n/g,'\r\n'));
+ assert.ok(actual.equals(blob)||actual.equals(crlf),'checkout must equal committed bytes or exact CRLF checkout');
+}
 function fixture(t){
  const base=fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(),'ete-native-media-package-')));t.after(()=>fs.rmSync(base,{recursive:true,force:true}));
  const root=path.join(base,'source'),runtime=path.join(base,'runtime'),prepared=path.join(base,'prepared');for(const dir of [root,runtime,prepared])fs.mkdirSync(dir);
@@ -54,8 +60,8 @@ test('formal Windows wiring uses no trial flag and keeps one-second capture, mai
  assert.match(main,/runCleanup\('windows-media'/);assert.match(adapter,/\}, 1000\)/);assert.doesNotMatch(adapter,/550|PREVIEW_INTERVAL|previewSavings|preview-performance|configuredIntervalMs/);
  for(const name of ['tools/build.ps1','tools/package.ps1'])assert.match(read(name),/windows-native-media-input.cjs/);
  const contract=require('../tools/build-input-contract.cjs');for(const name of tool.INPUTS)assert.ok(contract.INPUT_PATHS.includes(name));
- assert.equal(require('../package.json').version,'0.4.3');assert.equal(read('src/config/system-defaults.json'),cp.execFileSync('git',['-C',root,'show','ff92bead:src/config/system-defaults.json'],{encoding:'utf8'}));
- assert.equal(read('.github/workflows/public-ci.yml'),cp.execFileSync('git',['-C',root,'show','ff92bead:.github/workflows/public-ci.yml'],{encoding:'utf8'}));
+ assert.equal(require('../package.json').version,'0.4.3');assertCheckoutBytes(fs.readFileSync(path.join(root,'src/config/system-defaults.json')),cp.execFileSync('git',['-C',root,'show','ff92bead:src/config/system-defaults.json']));
+ assertCheckoutBytes(fs.readFileSync(path.join(root,'.github/workflows/public-ci.yml')),cp.execFileSync('git',['-C',root,'show','ff92bead:.github/workflows/public-ci.yml']));
 });
 
 
@@ -79,4 +85,22 @@ test('all-windows-closed cannot bypass the already pending shutdown drain when t
   const app=new EventEmitter();let calls=0;app.quit=()=>{calls++;};vm.runInNewContext(source.slice(begin,end),{app,process:{platform},appIsShuttingDown:closing});
   app.emit('window-all-closed');assert.equal(calls,wanted);
  }
+});
+
+test('formal baseline byte guard accepts an actual Git CRLF checkout and rejects BOM/content/ending drift',t=>{
+ const root=path.resolve(__dirname,'..'),checkout=fs.mkdtempSync(path.join(os.tmpdir(),'ete-baseline-crlf-'));
+ t.after(()=>fs.rmSync(checkout,{recursive:true,force:true}));
+ const git=args=>cp.execFileSync('git',['-C',checkout,...args],{stdio:['ignore','pipe','pipe']});git(['init','-q']);
+ fs.writeFileSync(path.join(checkout,'.gitattributes'),'* text eol=crlf\n');
+ const names=['src/config/system-defaults.json','.github/workflows/public-ci.yml'];
+ const blobs=names.map(name=>cp.execFileSync('git',['-C',root,'show','ff92bead:'+name]));
+ names.forEach((name,i)=>{fs.mkdirSync(path.dirname(path.join(checkout,name)),{recursive:true});fs.writeFileSync(path.join(checkout,name),blobs[i]);});
+ git(['add','.']);names.forEach(name=>fs.unlinkSync(path.join(checkout,name)));git(['checkout-index','--all','--force']);
+ names.forEach((name,i)=>{
+  const actual=fs.readFileSync(path.join(checkout,name)),blob=blobs[i];assert.ok(actual.includes(Buffer.from('\r\n')));assertCheckoutBytes(actual,blob);
+  assert.throws(()=>assertCheckoutBytes(Buffer.concat([Buffer.from([239,187,191]),actual]),blob));
+  assert.throws(()=>assertCheckoutBytes(Buffer.concat([actual,Buffer.from(' ')]),blob));
+  const text=actual.toString('utf8');assert.throws(()=>assertCheckoutBytes(Buffer.from(text.replace('\r\n','\n')),blob));
+  assert.throws(()=>assertCheckoutBytes(Buffer.from(text.replace(/\r\n/g,'\r')),blob));
+ });
 });

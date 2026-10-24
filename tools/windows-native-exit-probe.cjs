@@ -168,7 +168,7 @@ async function accept(executable,adapterFile,directory){
     if(fs.existsSync(directory))throw Error('Preserve existing lifecycle diagnostic');
     fs.mkdirSync(directory,{recursive:true});
     const output=path.join(directory,'lifecycle.json'),profile=path.join(require('node:os').tmpdir(),'ete-exit-'+crypto.randomUUID());
-    await require('./windows-native-preview-process.cjs').runChild(executable,[__filename,adapterFile,profile,output],{directory,name:'lifecycle',timeoutMs:45000});
+    await require('./owned-probe-process.cjs').runChild(executable,[__filename,adapterFile,profile,output],{directory,name:'lifecycle',timeoutMs:45000});
     const report=JSON.parse(fs.readFileSync(output,'utf8'));
     if(report.reportVersion!==3||report.listenerContract!=='owned-listeners-v1'||report.status!=='passed'||report.scope!=='electron-window-lifecycle-only'||report.electron!=='44.4.2'||
         report.toolSha256!==crypto.createHash('sha256').update(fs.readFileSync(__filename)).digest('hex')||
