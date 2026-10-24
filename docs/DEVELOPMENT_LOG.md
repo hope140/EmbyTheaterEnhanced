@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-24 — Isolate last-buffer feasibility without changing preloading
+
+Create the absent local `experiment/playback-buffer-retention` worktree at `6f76954`, preserving the original feature checkout. Verify the production mpv manifest matches the checked main input; helper seek-notification differences remain outside this experiment. Read fixed upstream recorder/stream API and FFmpeg/Kodi source cache implementations with file identities; do not import their source or introduce dependencies. Add a standalone, opt-in local synthetic remux tool with finite children, protocol restrictions, private temporary files and cleanup. The real auxiliary run passes packet-payload subsequence, changed-offset/timestamp, finite excerpt and complete-decode assertions (36 video and47 audio packets); it is explicitly not native cache export or restoration evidence.
+
+Document three paths and an undispatched fixed-DLL finite-export probe with stable-source, command-completion, file-integrity and owned-exit gates. Source-byte cache is not substituted for packet ownership; core extension/rebuild is deferred until separately scoped authorization. Preserve all product files, next-prefix work, fixed candidate manifests and existing denial boundaries. No Windows run, live server/profile access, package, public push or release occurs.
+
+Validation: real auxiliary remux/decode assertions passed; no-argument opt-in and absent-tool failure/cleanup checks passed. Related43 disk-probe/CI-reader tests passed. Initial public regression had5 missing-dependency failures in the fresh worktree; preserve that result, confirm the unchanged lock, then populate only its existing dependency tree. Final complete public offline selection:1946 tests,1936 passed,0 failed,10 explicit platform skips; its6 fixed-material-required files remain excluded by the unchanged documented runner. Tracked JavaScript syntax464 files plus the new tool's explicit syntax check, UTF-8/final-newline/local-link/finite-credential checks and diff whitespace passed. No full fixed-material, Windows helper, server, visual or installation acceptance is claimed.
+
 ## 2026-10-23 — v0.4.0整合PR70来源与必要声明
 
 将PR70固定提交6576f5d的16份来源／声明材料整合到既有发布分支，四处文档冲突采用保留双方有效内容。API／page完整MIT、Sizzle原文、VTT版权／固定源／实际差异、Material Icons来源、Socket组件与集成范围及npm36许可命名口径保留；原JSON／CSV证据字节及analysisRef不改。旧“尚未替换Host／仍运行Sharp和ServiceStack”等仅作为研究时点，不恢复旧链；当前源码Host／JSON／ZIP、CEC退役、API维护与业务来源指纹均不变。

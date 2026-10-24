@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-24 — Independent existing-buffer retention experiment
+
+Create `experiment/playback-buffer-retention` from the preserved research checkpoint, separate from next-prefix delivery. Production libmpv input remains identical to the checked main manifest; no helper/kernel/product/profile changes occur. The [experiment record](PLAYBACK_BUFFER_RETENTION_EXPERIMENT.md) compares finite packet export, mature source-byte caches and a deferred core snapshot extension. A local synthetic FFmpeg auxiliary experiment preserves 36 video/47 audio packet payloads in a decodable clip, while every retained packet changes source-file offset and timestamp. This supports only the container-export feasibility boundary, not fixed-libmpv export, original-source Range recovery or transparent restart. Fixed-DLL finite `dump-cache` and any owned Windows scheduling remain unexecuted, pending coordination; no public push or new dependency/core build is performed.
+
 ## 2026-10-23 — v0.4.0整合PR70来源与必要声明
 
 将PR70固定提交6576f5d的16份来源／声明材料整合到既有发布分支，四处文档冲突采用保留双方有效内容。API／page完整MIT、Sizzle原文、VTT版权／固定源／实际差异、Material Icons来源、Socket组件与集成范围及npm36许可命名口径保留；原JSON／CSV证据字节及analysisRef不改。旧“尚未替换Host／仍运行Sharp和ServiceStack”等仅作为研究时点，不恢复旧链；当前源码Host／JSON／ZIP、CEC退役、API维护与业务来源指纹均不变。
