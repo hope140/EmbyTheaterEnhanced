@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-24 — 只移植已审查的 Framework 构建兼容增量
+
+核对6dc6c270723209b36499a5cb9a8e28de5cc4bbab相对4f3eceee69855f9254d1de706e6fd3ee6be7fb95；非预览装配器的既有目标文件与来源基线一致。精确应用构建脚本、33输入来源合同、实际Host终验分支及合成来源回归；在本分支装配器保留独立trial逻辑，只加入原增量的前置只读检查与预检回执。未移入Home／页面缓存产品源码或缓存专属文档；通用Framework合同改为链接本分支隔离预览验收。
+
+原5a3d固定SHA门禁保持，04a0候选仍限定镜像20261012.333.1／OS20348.5622、程序集身份、规范物理GAC路径、Windows实际微软有效签名及复算哈希，未知候选／签名／路径仍拒绝。移植来源的真实Windows成功不代替本分支的新构建；最近一次本分支停在Framework门禁，不能据此判定修后Native已通过。33文件／204015字节验证和相关79项回归通过；公开离线1588项／1578pass／0fail／10 Windows skip，429 JS／50 PowerShell语法、有限模式及diff检查通过。8份移植文件与来源Git blob逐字节相同，内manifest27份原记录全部保留，新增实现及4份既有声明记录；src/native差异为空。不修改系统／GAC／网络安全设置，不自动dispatch或操作实机。当前[来源合同](FRAMEWORK_SERVICING_PROFILES.md)与[预览复验](WINDOWS_PREVIEW_SNAPSHOT_PROTOCOL.md)分别约束构建与可见结果。
+
 ## 2026-10-24 — 补齐预览终态调用边界的编译回归
 
 真实Windows编译暴露finishPreview的std::string到const char*转换错误，旧便携检查未包含此成员调用。先扩展提取并编译真实frameUnavailable／finishPreview及相邻owner方法，同样失败；再将产品调用显式转换为reason.c_str()，37项严格C++17检查、两条真实JSON终态解码和彩色缩图字节回读通过。覆盖无pending、重复finish、逻辑结束仍保留物理slot、清空／新slot及generation／request响应归属；其余同名调用逐项核对类型，没有发现第二处同类缺口。相关Node109项通过；公开离线1584项／1574pass／0fail／10 Windows skip，428 JS／49 PowerShell语法、有限模式与diff检查通过。

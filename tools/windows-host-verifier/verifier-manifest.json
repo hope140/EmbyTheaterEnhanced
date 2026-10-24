@@ -27,24 +27,19 @@
       "sha256": "872684fc6e7aa3fe3abbbfa71723ccebb4a431bca52cf73dc9e7f6cfe25eb0aa"
     },
     {
-      "path": "expected-build-contract.json",
-      "size": 1618,
-      "sha256": "7b23387ef1a4123db7826fb1c8433766c249820793ba68aef3d12ff22c3efb9c"
-    },
-    {
-      "path": "expected-candidate-files.json",
-      "size": 9522,
-      "sha256": "58b3f69adad4d1d4539cb0c9cfaa04ba6744ecdc4dca696658d27d5c29e54936"
-    },
-    {
       "path": "Finalize-Evidence.ps1",
-      "size": 7963,
-      "sha256": "1e7f8cb70a4fb425199e02855ab9ce54dcfa622b59ae6032900b114b69760a15"
+      "size": 8508,
+      "sha256": "bb6f59f93dc7e659efc5d34cdc64da453a052374e9efdac7d2b93b91494835f2"
     },
     {
       "path": "Framework-BuildHelpers.ps1",
       "size": 2461,
       "sha256": "d61fb59dbe66ae74552c04c97b9306cfc1e89b420c1793bc51735bcd415d36f5"
+    },
+    {
+      "path": "Framework-Implementation.ps1",
+      "size": 6398,
+      "sha256": "a332196e072ea4f45f336c5c926c1b65145c17eb77a2e339d166c9536094fe4b"
     },
     {
       "path": "FrameworkFixtureMaker.cs",
@@ -67,6 +62,21 @@
       "sha256": "e9d760703cc080155c16b9ae8a939aced7ec936e3e5f26fe090e0353e9c5b85d"
     },
     {
+      "path": "LICENSE-Helpers-MIT.txt",
+      "size": 1095,
+      "sha256": "9ea516699794ce62078b3cb39c45e9a94db23c3db23e3b7f03a1e90d83e5152e"
+    },
+    {
+      "path": "LICENSE-Newtonsoft-MIT.md",
+      "size": 1104,
+      "sha256": "b98a397897ff55f76cddc380041507a95a896b2946e0188703bf0496793d6516"
+    },
+    {
+      "path": "LICENSE.md",
+      "size": 18014,
+      "sha256": "f371b80469fb235bc500ec29e0e85b682d4a6157a158567d828ff0be544d4f1d"
+    },
+    {
       "path": "OfficialModelContractProbe.cs",
       "size": 6707,
       "sha256": "0b13908bd840dfa26049b1c7740f31b5dac36e65315386136745575b72cd3d07"
@@ -75,6 +85,11 @@
       "path": "Prepare-HostPair.ps1",
       "size": 3594,
       "sha256": "a4dbc749f980f312f76a4eacbc2ca8c8cd47e230a701f0d010229097928b87a5"
+    },
+    {
+      "path": "README.txt",
+      "size": 3523,
+      "sha256": "cb9625182cc0450f36aceefc45c1f77fc622bcae55c37cd41cb4b11446fa7acb"
     },
     {
       "path": "Read-ExePdbMatch.ps1",
@@ -125,6 +140,16 @@
       "path": "ZipUnitProgram.cs",
       "size": 8730,
       "sha256": "b8c40e7797c70dc1f0dad728c0c18ec3522e9866ff7528e9ac367b3cad0fd8bd"
+    },
+    {
+      "path": "expected-build-contract.json",
+      "size": 1618,
+      "sha256": "7b23387ef1a4123db7826fb1c8433766c249820793ba68aef3d12ff22c3efb9c"
+    },
+    {
+      "path": "expected-candidate-files.json",
+      "size": 9522,
+      "sha256": "58b3f69adad4d1d4539cb0c9cfaa04ba6744ecdc4dca696658d27d5c29e54936"
     },
     {
       "path": "fixtures-pending/emby-theater.zip",

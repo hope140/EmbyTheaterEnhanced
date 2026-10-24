@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-24 — 独立预览构建移植精确 Framework 来源配置
+
+最近一次Windows构建在旧镜像System.Configuration固定SHA门禁失败，尚未到修后的Native编译，没有成功预览包。仅移植6dc6c270相对4f3ecee的构建兼容增量：保留原固定SHA，额外候选须同时通过精确镜像／OS、Framework及程序集身份、物理系统GAC路径、Microsoft有效Authenticode或Catalog签名和检查后复算哈希。入口在依赖获取前只读预检，Host最终仍检查实际绑定和完整行为；未知实现拒绝，不改系统或自动盲重跑。
+
+33份验证器输入／204015字节来源校验通过，相关79项回归通过；公开离线1588项：1578pass、0fail、10项既有Windows skip，429 JS／50 PowerShell语法、有限模式及diff检查通过。仅构建工具、门禁、测试及技术说明变更，未移入页面缓存产品源码；原生预览默认关闭、两按钮和独立分发门禁保持。该增量的来源候选已获真实Windows验证回报，本分支仍须对新精确提交重跑Host／Native／包内自检／A/B；DWM／Peek须另做实机验收，不由构建结果推断。详见[Framework来源合同](FRAMEWORK_SERVICING_PROFILES.md)与[预览交接](WINDOWS_PREVIEW_SNAPSHOT_PROTOCOL.md)。
+
 ## 2026-10-24 — 修正预览终态的原生编译类型错误
 
 首轮 Windows 原生编译拒绝 `finishPreview(const std::string&)` 将 reason 直接传给接收 `const char*` 的 `frameUnavailable`；原候选4a9d4ee没有成功试验包，不可验收。本次只将该同步调用改为 `reason.c_str()`，不改变协议、owner归属、默认关闭或两按钮；相邻及其余同名调用已检查，动态字符串的其他路径已有显式转换，另外三处reason参数为const char*。

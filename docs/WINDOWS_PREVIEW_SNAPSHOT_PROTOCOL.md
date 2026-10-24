@@ -65,6 +65,8 @@ $previewCommit = (git rev-parse HEAD).Trim()
 
 ## 测试包状态
 
+旧镜像的System.Configuration构建阻碍按[Framework来源合同](FRAMEWORK_SERVICING_PROFILES.md)处理：原固定SHA保持，另一个精确候选须通过镜像／OS／程序集／物理系统路径／微软有效签名及复算哈希全部条件。只读预检在依赖下载前执行，成功包附runner-framework-profile.json，最终Host实际绑定与行为门禁保持。最近一次构建停在此门禁，尚未验证修后的Native；移植通用构建兼容不包含页面缓存产品功能，也不证明DWM可见效果。
+
 手动 `public-ci.yml` 支持 `native_preview_trial=true`，同时必须 `release_package=false`；两个开关不能同时打开。保持固定 GCC 16.1.0、C++17、固定 mpv 2.5 header／DLL 和原 flags／链接库。新增快照调用使用既有动态加载的 libmpv 导出及 C++17 标准库，没有新增 Windows SDK 或链接依赖；源码／便携提取编译检查不能替代锁定 Windows 工具链实编。
 
 构建先完成原来的全部 Windows 回归、源码 Host／生产 helper 编译、标准 runtime 验证、安装器完整性及解包对比。随后从官方 `registry.npmjs.org` 精确获取 Koffi 3.3.3 与 `@koromix/koffi-win32-x64` 3.3.3；版本元数据、锁文件 SRI、归档 SHA-256、92 个归档成员及 PE32+ x64 标识均需通过，不执行安装脚本。完整 MIT 与所含 Node API 许可随包保留。
