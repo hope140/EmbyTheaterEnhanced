@@ -1,4 +1,4 @@
-Portable unified Host verifier; fixed source identity 81b18ab1264941b7121967770d9b791af7fd4436b6cf910da443c92f967eea45.
+Portable unified Host verifier; fixed source identity fef4cbfdb15a52b32a21edb33039833b5fc523ac594fcf3b871b78080dc8be9b.
 Run in an existing Windows PowerShell7 host:
   .\Verify-UnifiedHost.ps1 -BuildRoot <actual-current-build-root> -OutputReceipt <new-absolute-receipt-path>
 Do not install tools, change execution policy, elevate Windows identity, or bypass denied execution. Obtain any required platform execution approval normally.

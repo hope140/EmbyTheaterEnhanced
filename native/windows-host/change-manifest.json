@@ -1,6 +1,6 @@
 {
   "upstreamCommit": "708fadc068cbf66ced6aece4a32f3e12bb2c4e13",
-  "scope": "Source-maintained CEC and legacy Host update retirement, exact reviewed JSON/ZIP replacement integration; not official unchanged binary.",
+  "scope": "Source-maintained CEC and legacy Host update retirement, exact reviewed JSON/ZIP replacement integration; not official unchanged binary. Host exit requests are retained and dispatched on the main message loop.",
   "changes": [
     {
       "path": "Emby.Theater/App/ApplicationHost.cs",
@@ -36,8 +36,8 @@
     },
     {
       "path": "Emby.Theater/Program.cs",
-      "candidateSize": 15471,
-      "candidateSHA256": "bbff261ac026ba55e39ebb91b767e7cc9ab237dc85538c1c8306ef06b30a2b36",
+      "candidateSize": 17077,
+      "candidateSHA256": "df2b936ec854f72009dd78f44295dc0ad6988ad22252a435a818eab06d8d3ad4",
       "originalSize": 19096,
       "originalSHA256": "94449b341c4848ba52eed299c5bee60e3a79542535092b0168d5686ab9d2e1c8",
       "originalGitBlob": "2e41a760897f7d0a67d21429f667fb00476e620e"

@@ -1,5 +1,6 @@
 'use strict';
-// Exact files delivered by reviewed Git commit 0a8bf15; no generated evidence or binaries.
+// Exact verifier inputs; source-fingerprint bindings include the Host exit candidate.
+// No generated evidence or binaries are accepted.
 const fs = require('node:fs'), path = require('node:path'), crypto = require('node:crypto');
 const FILES = Object.freeze([
     {
@@ -90,7 +91,7 @@ const FILES = Object.freeze([
     {
         "path": "tools/windows-host-verifier/README.txt",
         "size": 3523,
-        "sha256": "cb9625182cc0450f36aceefc45c1f77fc622bcae55c37cd41cb4b11446fa7acb"
+        "sha256": "7b88b21fd191e5c3a46a2707578bb41efa68c1ed90777907a53463d138c71b65"
     },
     {
         "path": "tools/windows-host-verifier/Read-ExePdbMatch.ps1",
@@ -110,7 +111,7 @@ const FILES = Object.freeze([
     {
         "path": "tools/windows-host-verifier/Run-Components.ps1",
         "size": 4443,
-        "sha256": "1831a388d95bbed7313e80f7a085efe46cd2d8ef64b62793c048041f8468b126"
+        "sha256": "28da841f7eb147fbc565876b06cb073c7ed8ced71a2bf2a22e1d8a265cf6c880"
     },
     {
         "path": "tools/windows-host-verifier/Run-Transport.ps1",
@@ -145,7 +146,7 @@ const FILES = Object.freeze([
     {
         "path": "tools/windows-host-verifier/expected-build-contract.json",
         "size": 1618,
-        "sha256": "7b23387ef1a4123db7826fb1c8433766c249820793ba68aef3d12ff22c3efb9c"
+        "sha256": "51b7c50c09ce6d6112e67e5ef38ca8fe8f9430ce60f5ec9025ce8519cac4c90d"
     },
     {
         "path": "tools/windows-host-verifier/expected-candidate-files.json",
@@ -165,7 +166,7 @@ const FILES = Object.freeze([
     {
         "path": "tools/windows-host-verifier/verifier-manifest.json",
         "size": 5237,
-        "sha256": "b1b5dfdda4287a22338039d636c985334360ebcdcf7b7058dc9d7de9091e3e6d"
+        "sha256": "9b16b3d75f3e44abff37a9c276742600dd0b33d825daec8842b71eb84bf63c0a"
     }
 ].map(Object.freeze));
 const PATHS = Object.freeze(FILES.map(f => f.path));

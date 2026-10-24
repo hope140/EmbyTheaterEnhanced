@@ -4,7 +4,7 @@ $r=$PSScriptRoot
 $root=$EvidenceRoot
 . (Join-Path $r 'Framework-BuildHelpers.ps1') -Compiler $Compiler -ReferenceRoot $ReferenceRoot
 $build=Get-Content -LiteralPath (Join-Path $root 'build-receipt.json') -Raw|ConvertFrom-Json
-if($build.sourceIdentitySha256 -cne '81b18ab1264941b7121967770d9b791af7fd4436b6cf910da443c92f967eea45'){throw 'Source identity mismatch'}
+if($build.sourceIdentitySha256 -cne 'fef4cbfdb15a52b32a21edb33039833b5fc523ac594fcf3b871b78080dc8be9b'){throw 'Source identity mismatch'}
 $out=Join-Path $root 'contracts';if(Test-Path -LiteralPath $out){throw 'Fresh contracts required'};[void][IO.Directory]::CreateDirectory($out)
 foreach($file in Get-ChildItem -LiteralPath (Join-Path $root 'bin') -File){Copy-Item -LiteralPath $file.FullName -Destination (Join-Path $out $file.Name)}
 foreach($entry in $build.references){$p=Join-Path $root $entry.path;if((Hash $p) -cne $entry.sha256){throw 'Reference changed'};Copy-Item -LiteralPath $p -Destination (Join-Path $out ([IO.Path]::GetFileName($p)))}
