@@ -184,7 +184,8 @@ function makeService(ClientClass, options) {
     getWebContents: () => main.webContents,
     execFile: placementExecutor,
     logger: typeof settings.logger === 'function' ? settings.logger : record => logs.push(record),
-    runtimeRoot: 'C:\\fixture-runtime'
+    runtimeRoot: 'C:\\fixture-runtime',
+    getRangeCacheConfig: settings.getRangeCacheConfig
   });
   return {main, service, logs, placementExecutor};
 }
@@ -1202,4 +1203,15 @@ test('service exit waits for the owned snapshot request and cannot publish after
   await new Promise(resolve=>setImmediate(resolve));assert.equal(done,false);assert.equal(service.isPreviewOwner(owner),false);
   complete({ready:true,generationId:owner.generationId,format:'bgr24',width:1,height:1,pixels:'AAAA'});
   assert.equal(await request,null);await closing;assert.equal(done,true);
+});
+
+
+test('obsolete persistent-range policy cannot activate the integrated ordinary Native service', async () => {
+  const {service} = makeService(makeClientClass(), {getRangeCacheConfig: () => ({kind: 'legacy-range-trial', root: path.resolve('unused-legacy-fixture'), maxBytes: 100000000})});
+  try {
+    const created = await service.call('create');
+    assert.equal(created.status, 'ok');
+    assert.equal(created.rangeCache, null);
+    assert.deepEqual(service.rangeStatus(), {enabled: false});
+  } finally {await service.destroy();}
 });

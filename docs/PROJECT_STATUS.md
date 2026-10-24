@@ -801,3 +801,12 @@ GitHub Windows public CI exposed one preload fixture using a nonphysical TEMP al
 
 
 2026-10-23 candidate: manual Windows packaging has a source-built Host recovery/compile/verification entry point, with pinned 55-file source and NuGet acquisition and generated per-run evidence. GitHub execution remains unverified. Work's validated builder argument delta has been synchronized exactly; a portable runner-side Host verification harness is still required; the missing harness fails closed before compilation/packaging. No external Work binary/verification receipt is imported by this path.
+
+
+## 2026-10-24 — Accepted 043 next-prefix integration preparation
+
+Create an independent integration source at exact abe1c742, preserving the complete accepted 042 page/cache/update and current 043 Native/SMTC/exit source. Port next-only modules and narrow main/client/service/libmpv/settings wiring from frozen 9559d0f rather than replacing the old branch tree. Keep version 0.4.3 and all native/installer/controller files unchanged; do not import the pending separate Host repair. Remove the old persistent range engine/trial launcher from this port; ordinary policy remains off/70%/300 MB with the confirmed options and cleanup rules. Mapping and test boundaries are in [the integration contract](NEXT_EPISODE_PREFIX_INTEGRATION.md).
+
+Initial targeted current-source checks pass: Native/ownership and feature tests 166/166; expanded next-only/source qualification 70/70; 042 page/cache/update and Seek/thumbnail preservation 232/232, each with zero skips. These runs overlap and are not an aggregate unique count. New integrated Windows/runtime/installer evidence is pending; the old 0.4.0 package must not replace the accepted daily installation. No package is started in this step.
+
+Final targeted run: 446/446 pass, zero skips across the selected current-source tests; JavaScript syntax, finite credential-pattern scan and patch whitespace checks pass. An explicit diff confirms native/installer/version/controller/preview decoder/Native media and 042 Home/detail/update/cache-management source stay identical to abe1c742. Real integrated Windows/native/visual/installer checks remain unrun.

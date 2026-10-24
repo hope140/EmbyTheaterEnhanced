@@ -1,4 +1,4 @@
-define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter', 'appSettings', 'userSettings', 'require', 'connectionManager', '../resolvers/strm-resolver.js', '../resolvers/strm-config-client.js', '../resolvers/strm-identity-recovery.js', '../enhanced/playback-route-stats.js', '../enhanced/nexttrack-transition.js', '../native-helper/client.js'], function (globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, require, connectionManager, strmResolver, strmConfigClient, strmIdentityRecovery, playbackRouteStats, nextTrackTransition, nativeHelperClient) {
+define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter', 'appSettings', 'userSettings', 'require', 'connectionManager', '../resolvers/strm-resolver.js', '../resolvers/strm-config-client.js', '../resolvers/strm-identity-recovery.js', '../enhanced/playback-route-stats.js', '../enhanced/nexttrack-transition.js', '../native-helper/client.js', '../enhanced/playback-range-renderer.js'], function (globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, require, connectionManager, strmResolver, strmConfigClient, strmIdentityRecovery, playbackRouteStats, nextTrackTransition, nativeHelperClient, playbackRangeRenderer) {
     'use strict';
 
     function getTextTrackUrl(subtitleStream, serverId) {
@@ -366,6 +366,12 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 icon: 'storage',
                 settingsTheme: true,
                 adjustHeaderForEmbeddedScroll: true
+            });
+
+            routes.push({
+                path: 'mpvplayer/cache.html', transition: 'slide', controller: pluginManager.mapPath(self, 'mpvplayer/cache.js'),
+                type: 'settings', title: '下一集预载', category: 'Playback', order: 7.5, thumbImage: '', icon: 'cached',
+                settingsTheme: true, adjustHeaderForEmbeddedScroll: true
             });
 
             routes.push({
@@ -864,6 +870,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 assertCurrentPlayRequest(request);
                 await corePlaying;
                 assertCurrentPlayRequest(request);
+                if (request.rangeCache) request.rangeCache.started();
                 if (libmpv && options.mediaType === 'Video') {
                     libmpv.style.opacity = 1;
                 }
@@ -875,6 +882,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 nextTransition.playbackReady(request.playbackRequestId);
                 if (window.enhancedDiagnostics) window.enhancedDiagnostics(libmpv, 'playing');
             } catch (error) {
+                if (request.rangeCache) await request.rangeCache.close();
                 cleanupCorePlaying(request);
                 nextTransition.playbackFailed(request.playbackRequestId);
                 if (!error || !error.playbackSuperseded) {
@@ -1132,6 +1140,15 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             }
             await setProperty(Object.assign(playerOptions, audioDelay(), interlace(), createClosedCaptionTrack(mediaSource, isVideo), getMpvAudioOptions(mediaType)))
             assertCurrentPlayRequest(request);
+            if (libmpv && libmpv.rangeCache && libmpv.rangeCache.enabled) {
+                var rangeEndpoint = libmpv;
+                request.rangeCache = await playbackRangeRenderer.bind({endpoint: rangeEndpoint, connectionManager: connectionManager,
+                    playbackManager: playbackManager, player: self, item: item, mediaSource: mediaSource, options: options, source: url,
+                    signal: request.controller.signal,
+                    isCurrent: function () {return activePlayRequest === request && libmpv === rangeEndpoint;},
+                    position: function () {return {positionTicks: playerState.positionTicks, durationTicks: playerState.durationTicks};}});
+                assertCurrentPlayRequest(request);
+            }
             emitClientDiagnostic('info', 'playback', 'loadfile-requested', Object.assign(requestDiagnosticDetails(request), {
                 route: resolverObservation.route,
                 sourceKind: resolverResult && resolverResult.sourceKind,
@@ -1339,12 +1356,17 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
         self.getStats = function () {
 
-            return Promise.all([getMediaStats(), getVideoStats(), getAudioStats()]).then(function (responses) {
+            var rangeRequest = activePlayRequest;
+            return Promise.all([getMediaStats(), getVideoStats(), getAudioStats()]).then(async function (responses) {
+                if (activePlayRequest === rangeRequest && rangeRequest && rangeRequest.rangeCache) {
+                    var rangeStats = await rangeRequest.rangeCache.category();
+                    if (activePlayRequest === rangeRequest && rangeStats) responses.push(rangeStats);
+                }
 
                 var categories = [];
 
                 for (var i = 0, length = responses.length; i < length; i++) {
-                    categories.push(responses[i]);
+                    if (responses[i] && (i !== 3 || activePlayRequest === rangeRequest)) categories.push(responses[i]);
                 }
                 var enhancedCategory = enhancedRouteState && enhancedRouteState.category();
                 if (enhancedCategory) categories.push(enhancedCategory);

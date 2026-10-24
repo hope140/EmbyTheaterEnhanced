@@ -10,6 +10,7 @@ const expected = [
     ['mpvplayer/strm.html', 6, '智能解析', 'Playback', 'folder_open'],
     ['mpvplayer/diagnostics.html', 7, '诊断与日志', 'Playback', 'description'],
     ['mpvplayer/cache-management.html', 7, '缓存管理', 'General', 'storage'],
+    ['mpvplayer/cache.html', 7.5, '下一集预载', 'Playback', 'cached'],
     ['mpvplayer/about.html', 8, '关于 Enhanced', 'General', 'info']
 ];
 
