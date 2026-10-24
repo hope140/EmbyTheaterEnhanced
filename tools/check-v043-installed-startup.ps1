@@ -21,9 +21,17 @@ function SafeRelative([string]$Name) {
 function HashMatches([string]$File, [string]$Expected) {
     return (Test-Path -LiteralPath $File -PathType Leaf) -and (Get-FileHash -LiteralPath $File -Algorithm SHA256).Hash.ToLowerInvariant() -ceq $Expected
 }
-function ProjectHostText([string]$Text) {
+function ProjectHostText([string]$Text, [string]$InstallRoot = '') {
     $kinds = @('FileNotFoundException','FileLoadException','BadImageFormatException','TypeInitializationException','ConfigurationErrorsException','Win32Exception','UnauthorizedAccessException','DllNotFoundException','NullReferenceException','IOException','TypeError','SyntaxError','Cannot find module')
-    return [ordered]@{fatalKinds=@($kinds | Where-Object { $Text.Contains($_) });electronLaunchMentioned=$Text.Contains('x64\electron\electron.exe')}
+    $missing = @([regex]::Matches($Text, "Cannot find module '([^'\r\n]{1,2048})'") | Select-Object -First 4 | ForEach-Object {
+        $name=$_.Groups[1].Value.Replace('\','/');$prefix=$InstallRoot.Replace('\','/').TrimEnd('/') + '/'
+        if ($InstallRoot -and $name.StartsWith($prefix,[StringComparison]::OrdinalIgnoreCase)) {
+            $relative=$name.Substring($prefix.Length);try{SafeRelative $relative | Out-Null;'<install>/' + $relative}catch{'OMITTED'}
+        } elseif ($name -cmatch '^[.@A-Za-z0-9_/-]{1,160}$' -and -not $name.StartsWith('/')) { $name }
+        else { 'OMITTED' }
+    })
+    return [ordered]@{fatalKinds=@($kinds | Where-Object { $Text.Contains($_) });missingModules=$missing;electronLaunchMentioned=$Text.Contains('x64\electron\electron.exe')}
+
 }
 function ReadBoundedText([string]$File) {
     if (-not (Test-Path -LiteralPath $File -PathType Leaf)) { return '' }
@@ -71,6 +79,10 @@ if ($ContractSelfTest) {
     } finally { Remove-Item -LiteralPath $tempFile }
     $safe = ProjectHostText 'FileNotFoundException: C:\PRIVATE_SYNTHETIC_CANARY\account-token=PRIVATE_SYNTHETIC_CANARY'
     Require ($safe.fatalKinds -contains 'FileNotFoundException' -and ($safe | ConvertTo-Json -Compress) -notmatch 'PRIVATE_SYNTHETIC_CANARY|account-token') 'SELFTEST_PRIVATE_PROJECTION'
+    $moduleFacts=ProjectHostText "Cannot find module 'C:\owned\electronapp\enhanced\fixture.js'" 'C:\owned'
+    Require ($moduleFacts.missingModules[0] -ceq '<install>/electronapp/enhanced/fixture.js') 'SELFTEST_MODULE_PROJECTION'
+    $privateFacts=ProjectHostText "Cannot find module 'C:\PRIVATE_SYNTHETIC_CANARY\secret.js'" 'C:\owned'
+    Require (($privateFacts | ConvertTo-Json -Compress) -notmatch 'PRIVATE_SYNTHETIC_CANARY|secret.js') 'SELFTEST_EXTERNAL_MODULE_OMITTED'
     Write-Output 'CONTRACT_SELFTEST_PASSED (no install, launch or network)'
     return
 }
@@ -204,12 +216,12 @@ try {
             if ($windowsApiReady -and -not $launcher.HasExited) { $result.hostWindowKinds = @([V043Window]::VisibleKinds($launcher.Id)) }
             if ($launcher.HasExited) { $result.hostExitCode=$launcher.ExitCode }
             $stdout=Join-Path $work 'host.stdout.log';$stderr=Join-Path $work 'host.stderr.log'
-            $result.hostStreamFacts=[ordered]@{stdoutBytes=if(Test-Path -LiteralPath $stdout){(Get-Item -LiteralPath $stdout).Length}else{0};stderrBytes=if(Test-Path -LiteralPath $stderr){(Get-Item -LiteralPath $stderr).Length}else{0};projection=(ProjectHostText ((ReadBoundedText $stdout) + "`n" + (ReadBoundedText $stderr)))}
+            $result.hostStreamFacts=[ordered]@{stdoutBytes=if(Test-Path -LiteralPath $stdout){(Get-Item -LiteralPath $stdout).Length}else{0};stderrBytes=if(Test-Path -LiteralPath $stderr){(Get-Item -LiteralPath $stderr).Length}else{0};projection=(ProjectHostText ((ReadBoundedText $stdout) + "`n" + (ReadBoundedText $stderr)) $target)}
             $logDir=Join-Path $profile 'logs'
             $hostLogs=@(Get-ChildItem -LiteralPath $logDir -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'ete-client.jsonl' } | Select-Object -First 4)
             $text=($hostLogs | ForEach-Object { ReadBoundedText $_.FullName }) -join "`n"
             $diag=Join-Path $logDir 'ete-client.jsonl'
-            $result.profileFacts=[ordered]@{exists=(Test-Path -LiteralPath $profile);clientLogExists=(Test-Path -LiteralPath $diag);hostLogFileCount=$hostLogs.Count;hostProjection=(ProjectHostText $text)}
+            $result.profileFacts=[ordered]@{exists=(Test-Path -LiteralPath $profile);clientLogExists=(Test-Path -LiteralPath $diag);hostLogFileCount=$hostLogs.Count;hostProjection=(ProjectHostText $text $target)}
             if (Test-Path -LiteralPath $diag) {
                 $clientEvents=@((ReadBoundedText $diag) -split '\r?\n' | Where-Object { $_ } | ForEach-Object { $_ | ConvertFrom-Json })
                 $result.profileFacts.appStartCount=@($clientEvents | Where-Object { $_.category -ceq 'app' -and $_.event -ceq 'start' }).Count
