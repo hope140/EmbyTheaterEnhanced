@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-24 — Archive native AV success; prepare one EDL edge observation
+
+Read normal logs for run40110840330/job120922033457: fixed DLL AV export33ms/4,268,642B, zero new source counters,24 video payloads/48,000 PCM samples with source offset0.7083333/delta0, paused seek0.5->source1.2083333, EOF/file consistency and both helper exits0/stdio-closed; ao native object-list confirmed. Retain scope as synthetic null audio, not physical sound, Session or transparent recovery.
+
+Prepare only the native EDL edge variant, reusing AV stages then a third owned helper and original8sec virtual timeline. Use a complete frame boundary inside common A/V coverage; preserve profile, immutable original candidate/one-loader, read permissions and120sec deadline. Instrument actual original video/PCM byte offsets, scheduled prefixes/completed responses/unique overlap without counting unserved tails. Timeline success and negative network-efficiency observations are separate; EDL/source text and media never enter artifacts. No unsafe-playlist/protocol override, new dependency/core, production adapter, NAS access or dispatch occurs.
+
+Validation:99 related tests pass, including the actual generated fixture's payload offsets, EDL length escaping/source bounds, correct complete-frame span, completed-versus-scheduled unions, unserved tails, third-helper/report requirements and EDL/media exclusion from artifacts. Public offline1974 tests:1964 passed,0 failed,10 explicit platform skips; the final fixture-offset/exclusion assertions were additionally rechecked in the targeted selection. Tracked470-file JavaScript syntax plus two new-file checks, final UTF-8/links/finite credentials/private paths/YAML scope and diff checks passed. Native EDL behavior and efficiency remain unexecuted, not a local mock acceptance.
+
 ## 2026-10-24 — Correct typed ao readback without changing helper initialization
 
 Read AV attempt40109620834/job120918421295: source-helper/pendingao/export-command-failed before any media load/export; helper exited0 with stdio closed, no timeout. Do not infer a media-cache failure or invent the missing native error code. Fixed ao_conf uses OPT_SETTINGSLIST/UPDATE_AUDIO and command update reloads audio; the current idle pre-load property timing is supported. Fixed get_obj_settings_list returns maps with name/enabled/params, which reproduces failure in the old string-only comparator.

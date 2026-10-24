@@ -119,6 +119,16 @@ test('AV acceptance additionally requires audio decode and a common source/local
     report.checks.audioDecoded = true; report.checks.seekMappingVerified = false; assert.throws(() => probe.validateReport(report, plan, exit));
     report.checks.seekMappingVerified = true; report.checks.clipReachedEOF = false; assert.throws(() => probe.validateReport(report, plan, exit));
 });
+test('EDL experiment requires a third normal helper and an explicit network assessment, including negative findings', () => {
+    const {report, plan, exit} = reportFixture(); plan.variant = 'edl'; report.variant = 'edl';
+    for (const h of report.helpers) h.options.ao = [{name: 'null', enabled: true, params: {}}];
+    report.helpers.push({...structuredClone(report.helpers[0]), pid: 104});
+    Object.assign(report.checks, {audioDecoded: true, seekMappingVerified: true, clipReachedEOF: true, edlTimelineAndTracks: true, unchangedAfterEDL: true});
+    report.audioMapping = {commonMappingWithinOneSample: true}; report.edl = {network: {assessment: 'COMPLETED_SAVED_PAYLOAD_REREAD'}};
+    probe.validateReport(report, plan, exit);
+    report.helpers.pop(); assert.throws(() => probe.validateReport(report, plan, exit));
+    report.helpers.push({...structuredClone(report.helpers[0]), pid: 104}); report.edl.network.assessment = 'assumed-efficient'; assert.throws(() => probe.validateReport(report, plan, exit));
+});
 test('only the isolated retention branch can run export; old branch modes keep their existing boundary', () => {
     route.validateDispatch('buffer-export', 'a'.repeat(40), route.PIN.repository, 'false', 'refs/heads/experiment/playback-buffer-retention');
     for (const ref of ['refs/heads/main', 'refs/heads/feature/playback-range-cache', 'refs/heads/verify/next-episode-auto']) assert.throws(() => route.validateDispatch('buffer-export', 'a'.repeat(40), route.PIN.repository, 'false', ref));
@@ -141,6 +151,7 @@ test('safe collection excludes media/profile/stderr and keeps bounded semantic r
     fs.mkdirSync(out); fs.mkdirSync(sub, {recursive: true});
     fs.writeFileSync(path.join(sub, 'observations.json'), JSON.stringify({stage: 'source-pause', privatePath: path.join(sub, 'profile'), url: 'http://127.0.0.1/private', token: 'private-canary'}));
     fs.writeFileSync(path.join(sub, 'excerpt.avi'), 'do not publish'); fs.writeFileSync(path.join(sub, 'worker.log'), 'private-canary');
+    fs.writeFileSync(path.join(sub, 'retained.edl'), 'http://127.0.0.1/private-canary');
     const rows = ci.collect({root: dir, toolsRoot: '/synthetic-tools'}, out);
     assert.equal(rows.length, 1); assert.equal(rows[0].name, 'export-observations.json'); assert.match(rows[0].publishedSha256, /^[a-f0-9]{64}$/);
     const content = fs.readFileSync(path.join(out, rows[0].name), 'utf8'); assert(!content.includes('private-canary')); assert(!content.includes('http://')); assert(!content.includes(dir));

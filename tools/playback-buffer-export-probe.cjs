@@ -10,7 +10,7 @@ const OWNER = 'ETE isolated finite buffer export v1\n';
 const MAX_FILE = 34 * 1024 * 1024;
 const MAX_SLOTS = 192 * 25;
 const STAGES = new Set(['preflight', 'app-ready', 'source-helper', 'source-load', 'source-advance', 'source-pause',
-    'source-stable', 'export', 'export-inspect', 'source-stop', 'source-exit', 'clip-helper', 'clip-load', 'clip-decode', 'clip-stop', 'complete']);
+    'source-stable', 'export', 'export-inspect', 'source-stop', 'source-exit', 'clip-helper', 'clip-load', 'clip-decode', 'clip-stop', 'edl-helper', 'edl-load', 'edl-cross', 'edl-stop', 'complete']);
 const CODES = new Set(['export-input-invalid', 'export-file-limit', 'export-avi-invalid', 'export-avi-format', 'export-packets-invalid',
     'export-window-unavailable', 'export-source-not-stable', 'export-extra-source-read', 'export-command-failed', 'export-file-changed',
     'export-mapping-invalid', 'export-native-deadline', 'export-stage-timeout', 'export-result-invalid', 'export-owned-path',
@@ -18,11 +18,12 @@ const CODES = new Set(['export-input-invalid', 'export-file-limit', 'export-avi-
     'export-helper-exit', 'export-native-not-established']);
 CODES.add('export-av-format'); CODES.add('export-av-audio-mapping'); CODES.add('export-av-timeline-mismatch');
 CODES.add('export-option-set-failed'); CODES.add('export-option-get-failed'); CODES.add('export-option-readback-mismatch');
+CODES.add('export-edl-input'); CODES.add('export-edl-observation');
 const OPTIONS = Object.freeze({'cache': 'yes', 'cache-on-disk': false, 'demuxer-max-bytes': 4 * 1048576,
     'demuxer-max-back-bytes': 2 * 1048576, 'demuxer-donate-buffer': false, 'pause': false, 'volume': 0}); // Probe only, not product defaults.
 function optionsFor(variant) {
-    if (!['video', 'av'].includes(variant)) throw Error('export-input-invalid');
-    return variant === 'av' ? {...OPTIONS, ao: 'null'} : OPTIONS;
+    if (!['video', 'av', 'edl'].includes(variant)) throw Error('export-input-invalid');
+    return variant !== 'video' ? {...OPTIONS, ao: 'null'} : OPTIONS;
 }
 function optionMatches(name, actual, expected) {
     if (name !== 'ao') return disk.sameOption(actual, expected);
@@ -178,7 +179,7 @@ function prepare(sourceFile, out, variant = 'video') {
     if (!relative || !relative.startsWith('..' + path.sep) && !path.isAbsolute(relative)) throw Error('export-owned-path');
     fs.mkdirSync(out); out = fs.realpathSync(out); fs.writeFileSync(path.join(out, 'owner'), OWNER, {flag: 'wx'});
     for (const dir of ['profile', 'local', 'mpv', 'tmp']) fs.mkdirSync(path.join(out, dir));
-    const fixture = variant === 'av' ? require('./playback-buffer-av-fixture.cjs').fixture(path.join(out, 'A.avi')) : markedFixture(path.join(out, 'A.avi'));
+    const fixture = variant !== 'video' ? require('./playback-buffer-av-fixture.cjs').fixture(path.join(out, 'A.avi')) : markedFixture(path.join(out, 'A.avi'));
     const plan = {schema: 1, scope: SCOPE, variant, out, sourceFile, sourcePlanSha256: support.hashFile(sourceFile),
         toolSha256: support.hashFile(__filename), identity: source.identity, fixture};
     support.writeNew(path.join(out, 'probe.json'), plan); return plan;
@@ -190,7 +191,7 @@ function readProbe(file) {
     physical(plan.out);
     if (fs.readFileSync(support.regular(path.join(plan.out, 'owner')), 'utf8') !== OWNER || support.hashFile(support.regular(plan.sourceFile)) !== plan.sourcePlanSha256) throw Error('export-owner-drift');
     for (const dir of ['profile', 'local', 'mpv', 'tmp']) physical(path.join(plan.out, dir));
-    const generator = plan.variant === 'av' ? 'marked-raw-AVI-PCM48k-v1' : 'stock-AVI-plus-unique-frame-marker-v1';
+    const generator = plan.variant !== 'video' ? 'marked-raw-AVI-PCM48k-v1' : 'stock-AVI-plus-unique-frame-marker-v1';
     if (plan.fixture?.file !== 'A.avi' || plan.fixture.generator !== generator || plan.fixture.size > MAX_FILE ||
         support.hashFile(support.regular(path.join(plan.out, 'A.avi'))) !== plan.fixture.sha256 || fs.statSync(path.join(plan.out, 'A.avi')).size !== plan.fixture.size || plan.fixture.etag !== '"' + plan.fixture.sha256 + '"') throw Error('export-input-invalid');
     const source = support.readPlan(plan.sourceFile);
@@ -199,9 +200,10 @@ function readProbe(file) {
 }
 function validateReport(report, plan, exit) {
     const expectedOptions = optionsFor(plan.variant);
+    const helperCount = plan.variant === 'edl' ? 3 : 2;
     if (!exit.processExited || !exit.streamsClosed || exit.code !== 0 || exit.signal || exit.spawnError || exit.transportError ||
         report.schema !== 1 || report.scope !== SCOPE || report.variant !== plan.variant || report.status !== 'PASS' || report.workerPid !== exit.pid ||
-        report.helpers?.length !== 2 || report.helpers[0].pid === report.helpers[1].pid || report.helpers.some(h => !Number.isInteger(h.pid) || h.pid <= 0 || !h.exited || !h.handshake ||
+        report.helpers?.length !== helperCount || new Set(report.helpers.map(h => h.pid)).size !== helperCount || report.helpers.some(h => !Number.isInteger(h.pid) || h.pid <= 0 || !h.exited || !h.handshake ||
             h.outcome !== 'EXIT_AND_CLOSE_CONFIRMED' || h.cleanupError || !diagnostics.normalExit(h.diagnostics)) ||
         report.checks?.newRequests !== 0 || report.checks?.newScheduledSourceBytes !== 0 || report.checks?.clipDecoded !== true ||
         report.checks?.unchangedAfterStop !== true || report.checks?.unchangedAfterExit !== true || report.checks?.unchangedAfterReopen !== true ||
@@ -211,8 +213,10 @@ function validateReport(report, plan, exit) {
         !Number.isFinite(report.mapping.sourceMinusLocalSeconds) || report.decoded?.width !== 320 || report.decoded?.height !== 180 || report.decoded?.vo !== 'gpu-next' ||
         !/^[a-f0-9]{64}$/.test(report.clip?.sha256 || '') || !Number.isSafeInteger(report.clip?.bytes) || report.clip.bytes <= 0 || report.clip.bytes > MAX_FILE ||
         report.helpers.some(h => !h.options || Object.keys(h.options).length !== Object.keys(expectedOptions).length || Object.entries(expectedOptions).some(([k, v]) => !optionMatches(k, h.options[k], v)))) throw Error('export-result-invalid');
-    if (plan.variant === 'av' && (report.checks.audioDecoded !== true || report.checks.seekMappingVerified !== true || report.checks.clipReachedEOF !== true ||
+    if (plan.variant !== 'video' && (report.checks.audioDecoded !== true || report.checks.seekMappingVerified !== true || report.checks.clipReachedEOF !== true ||
         report.audioMapping?.commonMappingWithinOneSample !== true)) throw Error('export-result-invalid');
+    if (plan.variant === 'edl' && (report.checks.edlTimelineAndTracks !== true || report.checks.unchangedAfterEDL !== true ||
+        !['COMPLETED_SAVED_PAYLOAD_REREAD', 'SCHEDULED_SAVED_PAYLOAD_REREAD_DELIVERY_UNCERTAIN', 'NO_SAVED_PAYLOAD_REREAD_OBSERVED'].includes(report.edl?.network?.assessment))) throw Error('export-result-invalid');
     assert.deepEqual(report.identity, plan.identity);
 }
 async function worker(file) {
@@ -275,7 +279,7 @@ async function worker(file) {
         report.exportMs = Date.now() - started; report.completion = 'synchronous-mpv-command-followed-by-ordered-property-reply';
         await delay(150); report.sourceAfter = sourceCounts(server); Object.assign(report.checks, noExtraSource(before, report.sourceAfter));
         stage('export-inspect'); report.clip = fingerprint();
-        const av = plan.variant === 'av' ? require('./playback-buffer-av-fixture.cjs') : null;
+        const av = plan.variant !== 'video' ? require('./playback-buffer-av-fixture.cjs') : null;
         const sourceAV = av?.inspect(path.join(plan.out, 'A.avi')), clipAV = av?.inspect(output);
         const originalAVI = av ? sourceAV.video : aviPackets(path.join(plan.out, 'A.avi')), exportedAVI = av ? clipAV.video : aviPackets(output);
         report.clipFormat = {ticksPerSecond: exportedAVI.fps, nonemptyPackets: exportedAVI.packets.length, emptyVideoSlots: exportedAVI.emptyPackets, containerSlots: exportedAVI.slots};
@@ -284,14 +288,14 @@ async function worker(file) {
         if (report.mapping.sourceStartSeconds < report.window.cacheStart - 1 / 24 || report.mapping.sourceEndExclusiveSeconds > report.window.cacheEnd + 1 / 24) throw Error('export-mapping-invalid');
         stage('source-stop'); await client.stop(); await until(() => server.active.size === 0); assert.deepEqual(fingerprint(), report.clip); report.checks.unchangedAfterStop = true;
         stage('source-exit'); await finish(client); assert.deepEqual(fingerprint(), report.clip); report.checks.unchangedAfterExit = true;
-        await server.close(); server = null;
+        if (plan.variant !== 'edl') {await server.close(); server = null;}
         await start('clip-helper'); stage('clip-load'); await client.load(['loadfile', output]).promise;
         stage('clip-decode'); await until(async () => client.state.fileLoaded && await property('time-pos') >= 0.1);
         const video = await property('video-out-params'), vo = await property('current-vo'), duration = await property('duration');
         assert(video && video.w === 320 && video.h === 180); assert.equal(vo, 'gpu-next');
         assert(Math.abs(duration - report.mapping.packets / 24) <= 2 / 24);
         report.decoded = {width: video.w, height: video.h, vo, duration, clipStartTime: await property('demuxer-start-time')};
-        if (plan.variant === 'av') {
+        if (plan.variant !== 'video') {
             const audio = await property('audio-out-params'), ao = await property('current-ao'), tracks = await property('track-list');
             assert(audio && audio.samplerate === 48000 && audio['channel-count'] === 1); assert.equal(ao, 'null');
             assert(Array.isArray(tracks) && tracks.filter(t => t.type === 'audio' && t.selected).length === 1);
@@ -299,7 +303,7 @@ async function worker(file) {
         }
         assert(Number.isFinite(report.decoded.clipStartTime)); report.mapping.localStartSeconds = report.decoded.clipStartTime;
         report.mapping.sourceMinusLocalSeconds = report.mapping.sourceStartSeconds - report.decoded.clipStartTime; report.checks.clipDecoded = true;
-        if (plan.variant === 'av') {
+        if (plan.variant !== 'video') {
             client.setProperty('pause', true); assert.equal(await property('pause'), true);
             const target = duration / 2; client.submitCommand(['seek', String(target), 'absolute+exact']);
             await until(async () => await property('seeking') === false && Math.abs(await property('time-pos') - target) <= 1 / 24);
@@ -312,7 +316,15 @@ async function worker(file) {
         }
         stage('clip-stop'); await client.stop(); await finish(client); assert.deepEqual(fingerprint(), report.clip); report.checks.unchangedAfterReopen = true;
         readProbe(file);
-        if (plan.variant === 'av' && !report.audioMapping.commonMappingWithinOneSample) throw Error('export-av-timeline-mismatch');
+        if (plan.variant !== 'video' && !report.audioMapping.commonMappingWithinOneSample) throw Error('export-av-timeline-mismatch');
+        if (plan.variant === 'edl') {
+            await start('edl-helper');
+            report.edl = await require('./playback-buffer-edl-probe.cjs').run({client, property, until, delay, server, fixture: plan.fixture,
+                original: sourceAV, video: report.mapping, audio: report.audioMapping, duration, output, directory: plan.out,
+                checkpoint(name, result) {report.edl = result; stage(name);}});
+            await finish(client); assert.deepEqual(fingerprint(), report.clip); report.checks.unchangedAfterEDL = true;
+            report.checks.edlTimelineAndTracks = report.edl.timelineAndTracksPassed === true; readProbe(file);
+        }
         report.status = 'PASS'; stage('complete');
     } catch (error) {report.status = 'UNKNOWN'; report.failure = safeFailure(error, report.stage); console.error('mpv-buffer-export-failure:' + JSON.stringify(report.failure));}
     finally {
@@ -325,7 +337,7 @@ async function worker(file) {
 async function run(file, execute) {
     if (execute !== true || process.platform !== 'win32' || process.arch !== 'x64') throw Error('export-explicit-Windows-required');
     const {plan, source} = readProbe(file);
-    for (const name of ['observations.json', 'worker.log', 'run.json', 'excerpt.avi']) if (fs.existsSync(path.join(plan.out, name))) throw Error('export-fresh-root');
+    for (const name of ['observations.json', 'worker.log', 'run.json', 'excerpt.avi', 'retained.edl']) if (fs.existsSync(path.join(plan.out, name))) throw Error('export-fresh-root');
     const fd = fs.openSync(path.join(plan.out, 'worker.log'), 'wx'), receipt = {scope: SCOPE, status: 'UNKNOWN', nativeOutcome: 'UNCERTAIN'};
     let timer, timedOut = false;
     const save = () => fs.writeFileSync(path.join(plan.out, 'run.json'), JSON.stringify(receipt, null, 2) + '\n');

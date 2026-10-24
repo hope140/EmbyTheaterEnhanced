@@ -17,7 +17,11 @@
 
 首次 run `40106411567` 在同级大小导出后被旧 AVI 检查器误拒；当前实测的 600Hz/空时间槽证实修正方向。首次结果仍保留为未完成，不追认为解码通过。详见[原探针及红绿对照](MPV_BUFFER_EXPORT_PROBE.md)。
 
-## 最小带音轨实验，尚未完成固定 DLL 验证
+## 带音轨固定 DLL 结果：已通过限定合成输入
+
+普通 GitHub 日志已核对 run `40110840330` / job `120922033457`（controls `4bb7c0a`）：33ms，片段 4,268,642 字节；新增请求/scheduled bytes/completed delta 均 0。600Hz、24 个非空视频包、575 个空槽、599 总槽；48,000 个原 PCM 样本连续保留。视频第 17–40 帧，音视频共同源起点 0.7083333 秒、偏移差 0；本地 seek 目标 0.4991667、落点 0.5，映射源 1.2083333 秒。两轨解码、暂停 seek、EOF、Stop/Exit/Reopen 一致性全部通过；两个 helper 均正常退出 0、stdio 关闭，`ao` 对象列表确实读回 confirmed。正常声音输出、真实影片、原来源衔接与透明恢复仍不由此成立。
+
+协调方另提供此轮 artifact `12566756821`、ZIP SHA256 `9f736d1f10c338e1eb5548a7cc61ec097b80a5754013152a32f7c4015799940b` 用于定位；本环境依据普通日志正文核对上述事实，没有下载或读取被拒路径。下列首次失败/修正过程保留为历史，最新肯定结果以上述 run 为准。
 
 增加明确的 `range_smoke=buffer-export-av`，仍只允许 `experiment/playback-buffer-retention`，`release_package=false`，相同原包、loader、只读权限、串行组、隔离 profile 和 120 秒 native 上限。原 `buffer-export` 无音模式保持。预计取得 runner 后仍约 3–5 分钟，不重新打包、不运行四模式矩阵。
 
@@ -31,7 +35,7 @@
 
 现有 `ete-mpv-helper` 普通启动只接收 DLL、helperId、HWND 三个位置参数，初始化选项在 helper 内固定；controller 没有开放通用 mpv 启动参数。因此不追加 `--ao=null` 到 argv、不开启用户配置或改 argc 门禁来解决探针问题。继续使用上面的现有运行时属性路径，并以真正的 `current-ao=null`、音频参数和 EOF 验证其效果。
 
-修正只接受恰好一个 enabled 的 null driver 且无额外参数/label，仍拒绝其他输出、禁用项或 fallback 列表。新的 `optionStatus` 在普通 summary 直接区分 `set-property`、`get-property`、`readback-validation`、`confirmed`，给出实际类型、条目数、观察到的原生负错误码及固定请求码；未观察到原生码时写 null，不伪造成功 0。原生音频参数、共同时间偏移、seek、EOF 和完整退出门禁均保留，固定 DLL AV 仍待重新执行。
+修正只接受恰好一个 enabled 的 null driver 且无额外参数/label，仍拒绝其他输出、禁用项或 fallback 列表。新的 `optionStatus` 在普通 summary 直接区分 `set-property`、`get-property`、`readback-validation`、`confirmed`，给出实际类型、条目数、观察到的原生负错误码及固定请求码；未观察到原生码时写 null，不伪造成功 0。原生音频参数、共同时间偏移、seek、EOF 和完整退出门禁均保留；后续上述 run 已证实它们通过。
 
 本地**辅助**对照已经执行，可复现：
 
@@ -54,6 +58,6 @@ node tools/playback-buffer-av-fixture.cjs --control
 | 权限/账号改变 | 不能凭文件、旧 token、旧 URL 或自行传入的布尔值授权。正常产品必须先走现有可信 PlaybackManager/ApiClient 来源与权限路径；权限未知/失败、账号或服务器切换、版本变化时不加载片段，继续原链允许的行为。尚未给正常 app 加入口，因此没有假造认证提供者来声称通过 |
 | 转码/直播/302 | 不能拼接不同表示或把签名 URL 固化为长期索引；本探针不覆盖，正常播放保持原路径 |
 
-可考虑的最低成本接续候选是固定 mpv 已有 [EDL](https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/DOCS/edl-mpv.rst)虚拟时间轴，源码 Git blob `aeec4b7b4689679df42d274cda8f51166eab3d06`：原源前段 + 本地片段 + 原源后段有机会维持源时间轴。**尚未实现/执行**。它不是 packet restore，可能提前打开其他段，轨道兼容/媒体身份和 Session 接线仍需验证；不用不稳定的 `no_clip`/`delay_open` 特例去绕过。只有带音轨有限导出先通过，才值得再做一个小的 EDL 边缘探针，记录是否重读已存区间及音画连续性；否则及时停止此路线。
+最低成本接续候选是固定 mpv 已有 [EDL](https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/DOCS/edl-mpv.rst)虚拟时间轴，源码 Git blob `aeec4b7b4689679df42d274cda8f51166eab3d06`：原源前段 + 本地片段 + 原源后段有机会维持源时间轴。带音轨导出通过后，现已准备[一个受控接续探针](MPV_BUFFER_EDL_PROBE.md)，**尚未执行**。它不是 packet restore，可能提前打开其他段，轨道兼容/媒体身份和 Session 接线仍需验证；不用不稳定的 `no_clip`/`delay_open` 特例去绕过。
 
 目前推荐：不将有限片段路径当作正常用户透明缓存恢复交付。可研究的替代体验是明确显示可用片段范围，再在边界回原源，但这改变体验，未经确认不增加入口。若要求无差别支持所有轨道/任意 seek/原 Session，现有命令并未提供这些保证；继续会产生每种容器/codec/切轨和版本的维护矩阵。无需因此修改正式内核或累计下载整片。

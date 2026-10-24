@@ -31,7 +31,7 @@ function fixture(file) {
 function inspect(file) {
     const support = require('./playback-range-windows-smoke.cjs'); support.regular(file);
     const size = fs.statSync(file).size; if (size < 64 || size > MAX_FILE) throw Error('export-av-format');
-    const data = fs.readFileSync(file), streams = [], videoPackets = [], audioChunks = []; let empty = 0, slots = 0;
+    const data = fs.readFileSync(file), streams = [], videoPackets = [], audioChunks = [], audioRanges = []; let empty = 0, slots = 0, audioSamples = 0;
     if (data.toString('ascii', 0, 4) !== 'RIFF' || data.toString('ascii', 8, 12) !== 'AVI ' || data.readUInt32LE(4) + 8 !== size) throw Error('export-av-format');
     function walk(start, end, movie, stream, depth) {
         if (depth > 4) throw Error('export-av-format');
@@ -57,10 +57,11 @@ function inspect(file) {
                 stream.format = true;
             } else if (movie && /^00d[bc]$/.test(tag)) {
                 if (slots >= 4800 || bytes !== 0 && bytes !== FRAME_BYTES || videoPackets.length >= 192) throw Error('export-av-format');
-                if (bytes) videoPackets.push({slot: slots, sha256: sha(data.subarray(body, body + bytes))}); else empty++;
+                if (bytes) videoPackets.push({slot: slots, offset: body, bytes, sha256: sha(data.subarray(body, body + bytes))}); else empty++;
                 slots++;
             } else if (movie && tag === '01wb') {
                 if (bytes % 2 || audioChunks.length >= 4096) throw Error('export-av-format'); audioChunks.push(data.subarray(body, body + bytes));
+                audioRanges.push({offset: body, bytes, sampleStart: audioSamples}); audioSamples += bytes / 2;
             } else if (movie && /^[0-9]{2}(?:db|dc|wb)$/.test(tag)) throw Error('export-av-format');
             at = next;
         }
@@ -69,7 +70,7 @@ function inspect(file) {
     if (streams.length !== 2 || streams[0].type !== 'vids' || streams[1].type !== 'auds' || streams.some(s => !s.format || !s.rate || !s.scale) || ![24, 600].includes(streams[0].rate / streams[0].scale) || streams[1].rate / streams[1].scale !== 48000 || !audioChunks.length || !videoPackets.length) throw Error('export-av-format');
     const pcm = Buffer.concat(audioChunks); if (pcm.length > 8 * 48000 * 2) throw Error('export-av-format');
     return {video: {fps: streams[0].rate / streams[0].scale, slots, emptyPackets: empty, packets: videoPackets},
-        audio: {samples: pcm.length / 2, pcm, localStart: streams[1].start * streams[1].scale / streams[1].rate},
+        audio: {samples: pcm.length / 2, pcm, ranges: audioRanges, localStart: streams[1].start * streams[1].scale / streams[1].rate},
         videoLocalStart: streams[0].start * streams[0].scale / streams[0].rate};
 }
 function audioMapping(source, clip, videoMapping) {

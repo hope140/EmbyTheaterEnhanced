@@ -8,6 +8,8 @@ test('bounded synthetic AVI contains unique video frames and exactly8sec mono48k
     assert.equal(proof.size, 33955148); assert(proof.size < probe.MAX_FILE);
     assert.equal(data.video.packets.length, 192); assert.equal(new Set(data.video.packets.map(p => p.sha256)).size, 192);
     assert.equal(data.audio.samples, 384000); assert.equal(data.audio.localStart, 0);
+    const saved = require('../tools/playback-buffer-edl-probe.cjs').savedRanges(data, {start: 17 / 24, end: 40 / 24});
+    assert.equal(saved.reduce((n, [a, b]) => n + b - a, 0), 23 * (172800 + 4000), 'real fixture offsets count only saved video/PCM payload');
     const raw = fs.readFileSync(file), audioHeader = raw.indexOf(Buffer.from('auds'));
     const damaged = Buffer.from(raw); damaged.writeUInt32LE(44100, audioHeader + 24); fs.writeFileSync(file, damaged);
     assert.throws(() => av.inspect(file), /export-av-format/);
