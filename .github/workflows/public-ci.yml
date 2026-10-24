@@ -15,6 +15,7 @@ on:
           - native
           - loader-trial
           - disk-probe
+          - disk-results
       release_package:
         description: Stage the standard installer name and five release files (does not publish)
         type: boolean
@@ -237,3 +238,46 @@ jobs:
           retention-days: 1
           compression-level: 0
           include-hidden-files: false
+
+  manual-mpv-disk-results:
+    if: github.event_name == 'workflow_dispatch' && inputs.range_smoke == 'disk-results'
+    runs-on: windows-2022
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    concurrency:
+      group: ete-manual-playback-range-smoke
+      cancel-in-progress: false
+    steps:
+      - name: Check out exact receipt reader
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Set up locked Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.18.1
+
+      - name: Read only fixed completed disk experiment artifact
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ETE_RELEASE_PACKAGE: ${{ inputs.release_package }}
+        run: |
+          $zip = Join-Path $env:RUNNER_TEMP "ete-disk-results-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT.zip"
+          node tools/ci-mpv-disk-results.cjs download "--zip=$zip"
+          if ($LASTEXITCODE -ne 0) { throw 'Fixed disk result artifact unavailable or refused.' }
+
+      - name: Print bounded file lifecycle and source range evidence
+        shell: pwsh
+        run: |
+          foreach ($name in @('GITHUB_TOKEN','GH_TOKEN','GH_ENTERPRISE_TOKEN','ACTIONS_RUNTIME_TOKEN','ACTIONS_ID_TOKEN_REQUEST_TOKEN')) {
+            Remove-Item -LiteralPath ('Env:' + $name) -ErrorAction SilentlyContinue
+          }
+          $zip = Join-Path $env:RUNNER_TEMP "ete-disk-results-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT.zip"
+          node tools/ci-mpv-disk-results.cjs summarize "--zip=$zip"
+          if ($LASTEXITCODE -ne 0) { throw 'Disk result evidence was not established.' }

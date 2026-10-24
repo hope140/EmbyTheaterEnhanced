@@ -6,7 +6,9 @@ const path = require('node:path');
 const test = require('node:test');
 
 const workflow = fs.readFileSync(path.join(__dirname, '../.github/workflows/public-ci.yml'), 'utf8').replace(/\r\n/g, '\n');
-const manual = workflow.slice(workflow.indexOf('\n  manual-windows-test-package:'));
+const manualStart = workflow.indexOf('\n  manual-windows-test-package:');
+const resultsStart = workflow.indexOf('\n  manual-mpv-disk-results:', manualStart);
+const manual = workflow.slice(manualStart, resultsStart < 0 ? undefined : resultsStart);
 
 test('package job requires an explicit manual event and the MSBuild17-compatible Windows x64 runner', () => {
     assert.match(workflow, /^  workflow_dispatch:\s*$/m);

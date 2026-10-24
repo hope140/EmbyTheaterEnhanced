@@ -58,4 +58,14 @@ CI执行和始终采集步骤打印 `mpv-disk-probe-summary:` 固定投影：dri
 
 ## 当前验证
 
-已执行Node输入/选项投影、owned-child error/exit/close、helper退出诊断、回执防伪及隔离路径回归。它们不是实际固定Windows/libmpv结果。下一步先由协调者运行RAM、whendone和no三组并读取回执，再决定是否还有低成本复用路径；不因静态资料直接推进内核改造。
+已执行Node输入/选项投影、owned-child error/exit/close、helper退出诊断、回执防伪及隔离路径回归。协调者随后实际完成四模式，但当前仅取得过程摘要；下面的只读结果入口用于补齐文件与来源事实。取得正文后再决定是否还有低成本复用路径，不因静态资料或进程成功直接推进内核改造。
+
+## 已完成实验的只读结果入口
+
+四模式已由协调者实际运行，正常日志显示均observed、8个helper均exit0且stdio关闭。原进程摘要没有输出文件及来源区间，所以它不能回答磁盘文件是否保留或是否复用。完整JSON正文尚未在当前审查环境读取，具体数值与恢复结论保持待确认。
+
+可选择独立 `range_smoke=disk-results`、`release_package=false`，仅读取成功run `40096829737` 的artifact `12560867807`（27896字节，SHA256 `3711a6c7268328a7bf85dd065b487c77de0e5c3b3d173159840f37d318f6b84f`，来源 `3801714b4e2ee178016ba87ce3304bb72a109e64`）。此5分钟上限job与原短验共享并发组，只有contents/actions只读权限；预计正常30–90秒。先核对原run成功、来源/有效期/摘要，再下载固定小ZIP；缺失或过期停止，不查latest。
+
+读取器不解压写入成员文件，不启动Electron/helper，不取原安装器、不执行native四组。只在内存中解析有界普通ZIP，核对collection中上传件hash，并按四模式打印 `mpv-disk-results:`：加载/预读/seek/Stop/helper退出各阶段的文件数、长度及稳定样本，首次来源区间，同helper及新helper重开请求区间、发送字节、与首次区间的重叠字节、旧文件hash是否保持和新增文件数。不输出文件名、URL、路径、token或扩展字段。
+
+区间中的bytesScheduled表示来源流已调度发送的连续字节；finished区间是来源完整发送的请求。它们不直接证明客户端消费或packet解码。两种重叠量分别报告，不将未发送的请求尾部算成已读；文件存在、helper成功或来源重复读取也不单独升级为透明恢复结论。`immediate`目录中没有可列文件不等于没有磁盘IO。真实结果待这次只读摘要后再判断；不为增加日志重跑native。
