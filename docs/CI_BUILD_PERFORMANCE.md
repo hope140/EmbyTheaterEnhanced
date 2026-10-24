@@ -1,10 +1,10 @@
 # 构建输入性能实验
 
-候选基于main `88578c91ab19d44eecddcfae096d37dc917ef1f4`，仅调整构建工具和测试准备；实际实验结果在后续测量完成后记录。workflow、测试发现规则／原集合／串行参数、runner、并发、缓存策略和发布行为保持。另加隔离与损坏输入负测。产品源码、固定材料与工具链版本未改。
+候选基于main `88578c91ab19d44eecddcfae096d37dc917ef1f4`，仅调整构建工具和测试准备；已完成下述同候选输入的本地对照；Windows结果仍待单独执行。workflow、测试发现规则／原集合／串行参数、runner、并发、缓存策略和发布行为保持。另加隔离与损坏输入负测。产品源码、固定材料与工具链版本未改。
 
 ## 计时与等待
 
-手动入口和输入／Host准备输出 `CI_PHASE` JSON：配对id、UTC、单调时钟毫秒、passed／failed。嵌套阶段不能相加当总耗时；未输出完整end的阶段单独标记。原命令及失败检查保留，日志走PowerShell信息流，不污染被捕获的JSON成功流。回归后另以Node内部TAP duration生成前十热点；摘要失败只报unavailable，不能改变原回归退出码或继续失败门禁。
+手动入口和输入／Host准备输出 `CI_PHASE` JSON：配对id、UTC、单调时钟毫秒、passed／failed。计时包括Start记录的格式化／写出，止于End记录格式化／写出前；观测本身有开销。嵌套阶段不能相加当总耗时；未输出完整end的阶段单独标记。原命令及失败检查保留，日志走PowerShell信息流，不污染被捕获的JSON成功流。回归后另以Node内部TAP duration生成前十热点；摘要失败只报unavailable，不能改变原回归退出码或继续失败门禁。
 
 等待必须用Actions API的run.created_at至目标job.started_at，执行用job.started_at至completed_at；等待包含concurrency、调度和provisioning，不能进一步冒称纯排队。runner自身无法观察分配前等待。把只读取得的run JSON、单个job JSON和解码日志交给：
 
@@ -20,7 +20,7 @@ node tools/ci-build-timing-report.cjs run.json job.json job.log
 
 ## 本地A/B方法
 
-先提交完整候选，确保tools/tests相对HEAD干净。`benchmark-build-inputs.cjs`对相同候选输入加载固定基线中的旧算法与候选算法，核每份输出；fixture两模式执行相同28测试。每组3次交替AB／BA，记录原始时间、median、range、mean、总体variance和standard deviation。每个新进程第一次测量与后续热调用分开；不清理系统页缓存，因此不是OS冷盘基准。
+先提交完整候选，确保全仓相对HEAD干净（含未跟踪文件）。`benchmark-build-inputs.cjs`对相同候选输入加载固定基线中的旧算法与候选算法，核每份输出；fixture两模式执行相同28测试。每组3次交替AB／BA，记录原始时间、median、range、mean、总体variance和standard deviation。报告保存完整tree、Host source identity、上游manifest SHA及authority OID／工作树SHA，开始与结束均核HEAD及整仓干净。每个新进程第一次测量与后续热调用分开；不清理系统页缓存，因此不是OS冷盘基准。
 
 ```sh
 node tools/benchmark-build-inputs.cjs plan <new-output-directory>
@@ -30,4 +30,39 @@ node tools/benchmark-build-inputs.cjs fixtures <new-output-directory>
 
 基准不拉网络、不创建Actions或安装器；Host object store须预先具有锁定commit。原始日志保存在指定新目录，不覆盖历史结果。plan的候选比基线多校验批读实现的authority，并增加普通mode／物理路径／前后HEAD保护，输出结构仍须相同。Host输出逐文件重核锁定manifest的size和SHA256。
 
-Linux通过不代表Windows Host编译／真实验证、安装器或云端时长通过；父会话统一安排有限Windows A/B，不能从本地百分比预测云端速度。若种子复制无净收益，保留原始结果并重新选择默认准备方案，不能减少断言来换时长。
+Linux通过不代表Windows Host编译／真实验证、安装器或云端时长通过；Windows须按同输入及同runner另行对照验证，不能从本地百分比预测云端速度。若种子复制无净收益，保留原始结果并重新选择默认准备方案，不能减少断言来换时长。
+
+## 本地结果与验证边界
+
+主要测量来源：e8be67667072d9ad5eece8c477e62f1337b3dc75；Linux x64、Node 24.18.1。两算法在同一候选输入运行，旧算法正文从固定88578c91加载，输出结构逐项等价；Host每次恢复55文件后均核size／SHA256。Host来源指纹保持81b18ab1264941b7121967770d9b791af7fd4436b6cf910da443c92f967eea45。
+
+| 套件 / 算法 | 首次中位 / 范围 ms（n=3） | 热调用中位 / 范围 ms | Git进程 |
+|---|---|---|---:|
+| 输入计划 / 基线算法 | 28.744 / 27.791–46.277 | 23.279 / 22.785–26.470（n=9） | 8 |
+| 输入计划 / 批读 | 18.824 / 18.719–20.771 | 12.843 / 12.384–16.086（n=9） | 4 |
+| 55份Host恢复 / 基线算法 | 281.067 / 279.825–314.246 | 295.051 / 269.644–314.373（n=9） | 111 |
+| 55份Host恢复 / 批读 | 27.961 / 25.540–30.323 | 20.489 / 18.764–25.068（n=9） | 3 |
+
+| Git套件 / 算法 / 状态 | mean ms | 总体variance ms² | standard deviation ms |
+|---|---:|---:|---:|
+| plan / legacy / first-in-process | 34.270 | 72.227 | 8.499 |
+| plan / legacy / warm-in-process | 23.841 | 1.256 | 1.121 |
+| plan / batch / first-in-process | 19.438 | 0.890 | 0.944 |
+| plan / batch / warm-in-process | 13.217 | 1.192 | 1.092 |
+| host / legacy / first-in-process | 291.712 | 254.131 | 15.941 |
+| host / legacy / warm-in-process | 291.868 | 216.428 | 14.711 |
+| host / batch / first-in-process | 27.941 | 3.814 | 1.953 |
+| host / batch / warm-in-process | 20.934 | 3.276 | 1.810 |
+
+| 28项夹具测试模式 | 三次完整测试内部秒数 | 中位秒数 | 总体方差 s² / 标准差 s |
+|---|---|---:|---:|
+| fresh | 12.958、13.370、15.951 | 13.370 | 1.755 / 1.325 |
+| seed | 12.294、11.865、12.678 | 12.294 | 0.110 / 0.332 |
+
+每次均28 tests／28 pass／0 fail／0 skip／0 cancelled，每次51次相同夹具准备。新进程首次准备中位数fresh 37.299ms、seed 65.065ms，种子首次成本更高；后续准备中位35.928ms、12.853ms。热准备每臂n=150来自3个进程各50次，不能当150次独立CI。Git热调用n=9同样来自3个进程各3次。全部均未清OS页缓存，不称冷盘。
+
+本轮完整测试组中位只观察到约1.076秒的本地差异；不把局部差值相加当整包收益，不给CI保证百分比。初轮54cae6a的fresh／seed中位13.933／12.651秒也完整保留在独立本地证据中，未剔除其样本；主要结果使用输入身份归档更完整的e8be676轮。3个进程/臂样本量有限，实际Windows和端到端收益仍未知。
+
+定向计时／Git负例／相邻合同37项通过；Host／Release附件／计时相邻65项通过。主要提交的完整公共集1541项：1531 pass、0 fail、10个既有Linux平台skip；另跑runtime来源组6/6、0 skip。精确HEAD构建输入合同及获取计划通过，原27个构建输入测试主体保留，新增隔离及批读／诊断负测。语法与有限凭据模式检查通过；并非完整秘密扫描。
+
+没有编译／执行Windows Host、Native或安装器，没有测试真实签名／GUI；Windows注册及材料门禁保留，不能由Linux skip或合成回归替代。未改变src/native/vendor、package与锁文件或workflow。普通push触发的公共CI须另读结果，不冒充本地结果；这些本地实验不运行Actions或产物，Windows A/B尚未执行。
