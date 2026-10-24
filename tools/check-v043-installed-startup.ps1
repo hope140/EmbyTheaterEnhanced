@@ -21,6 +21,10 @@ function SafeRelative([string]$Name) {
 function HashMatches([string]$File, [string]$Expected) {
     return (Test-Path -LiteralPath $File -PathType Leaf) -and (Get-FileHash -LiteralPath $File -Algorithm SHA256).Hash.ToLowerInvariant() -ceq $Expected
 }
+function RemoveProcessVariable([string]$Name) {
+    Remove-Item -LiteralPath ('Env:' + $Name) -ErrorAction SilentlyContinue
+    Require (-not [Environment]::GetEnvironmentVariables('Process').Contains($Name)) 'ENVIRONMENT_VARIABLE_STILL_PRESENT'
+}
 function ProjectHostText([string]$Text, [string]$InstallRoot = '') {
     $kinds = @('FileNotFoundException','FileLoadException','BadImageFormatException','TypeInitializationException','ConfigurationErrorsException','Win32Exception','UnauthorizedAccessException','DllNotFoundException','NullReferenceException','IOException','TypeError','SyntaxError','Cannot find module')
     $missing = @([regex]::Matches($Text, "Cannot find module '([^'\r\n]{1,2048})'") | Select-Object -First 4 | ForEach-Object {
@@ -83,6 +87,9 @@ if ($ContractSelfTest) {
     Require ($moduleFacts.missingModules[0] -ceq '<install>/electronapp/enhanced/fixture.js') 'SELFTEST_MODULE_PROJECTION'
     $privateFacts=ProjectHostText "Cannot find module 'C:\PRIVATE_SYNTHETIC_CANARY\secret.js'" 'C:\owned'
     Require (($privateFacts | ConvertTo-Json -Compress) -notmatch 'PRIVATE_SYNTHETIC_CANARY|secret.js') 'SELFTEST_EXTERNAL_MODULE_OMITTED'
+    $env:ETE_ENV_REMOVAL_FIXTURE='1';RemoveProcessVariable 'ETE_ENV_REMOVAL_FIXTURE'
+    $envCheck=& node -p 'Object.hasOwn(process.env,"ETE_ENV_REMOVAL_FIXTURE")'
+    Require ($LASTEXITCODE -eq 0 -and $envCheck -ceq 'false') 'SELFTEST_CHILD_ENVIRONMENT_NOT_REMOVED'
     Write-Output 'CONTRACT_SELFTEST_PASSED (no install, launch or network)'
     return
 }
@@ -114,7 +121,7 @@ try {
     Require (-not $artifact.expired -and [string]$artifact.workflow_run.id -ceq $buildRun -and $artifact.workflow_run.head_sha -ceq $source -and $artifact.digest -ceq ('sha256:' + $ArtifactZipSha256)) 'ARTIFACT_IDENTITY_MISMATCH'
     $archive = Join-Path $work 'original-artifact.zip'
     Invoke-WebRequest -Uri ($api + '/actions/artifacts/' + $ArtifactId + '/zip') -Headers $headers -OutFile $archive
-    $headers.Clear(); $env:GH_TOKEN = $null; $env:GITHUB_TOKEN = $null
+    $headers.Clear(); RemoveProcessVariable 'GH_TOKEN'; RemoveProcessVariable 'GITHUB_TOKEN'
     Require (HashMatches $archive $ArtifactZipSha256) 'ARTIFACT_DIGEST_MISMATCH'
     $payload = Join-Path $work 'attachments'; New-Item -ItemType Directory -Path $payload | Out-Null
     $setupName = 'EmbyTheaterEnhanced-' + $version + '-win-x64-setup.exe'
@@ -159,8 +166,41 @@ try {
     $electronExe = Join-Path $target 'x64/electron/electron.exe'
     Require ($shortcut.TargetPath -ieq $hostExe -and $shortcut.WorkingDirectory.TrimEnd('\') -ieq $target -and [string]$shortcut.Arguments -ceq '') 'SHORTCUT_MISMATCH'
     $result.shortcutVerified = $true
-    # Remove inherited probe options only in this CI process; no setx or system change.
-    foreach ($name in @('ELECTRON_RUN_AS_NODE','NODE_OPTIONS','ETE_WINDOWS_NATIVE_TRIAL','ETE_WINDOWS_PREVIEW_INTERVAL_MS','ETE_MPV_BRIDGE_MODE')) { [Environment]::SetEnvironmentVariable($name,$null,'Process') }
+    # Observe old versus explicit removal in this runner and the exact installed
+    # Electron. Both probes use a new external profile and create no windows.
+    $result.stage='electron-mode-probe'
+    $result.environmentReset=[ordered]@{powershell=$PSVersionTable.PSVersion.ToString();dotnet=[Environment]::Version.ToString();originalNodeModePresent=[Environment]::GetEnvironmentVariables('Process').Contains('ELECTRON_RUN_AS_NODE');cases=@()}
+    foreach ($name in @('NODE_OPTIONS','ETE_WINDOWS_NATIVE_TRIAL','ETE_WINDOWS_PREVIEW_INTERVAL_MS','ETE_MPV_BRIDGE_MODE')) { RemoveProcessVariable $name }
+    $modeScript=Join-Path $work 'electron-mode-probe.cjs'
+    [IO.File]::WriteAllText($modeScript,@'
+'use strict';
+const fs=require('node:fs');
+const report={electron:process.versions.electron||null,processType:process.type||'node',nodeModePresent:Object.hasOwn(process.env,'ELECTRON_RUN_AS_NODE'),nodeModeEmpty:process.env.ELECTRON_RUN_AS_NODE==='',electronBuiltin:false,moduleError:null};
+let app;
+try {app=require('electron').app;report.electronBuiltin=!!app;}catch(error){report.moduleError=error.code==='MODULE_NOT_FOUND'?'MODULE_NOT_FOUND':'OTHER';}
+fs.writeFileSync(process.env.ETE_ENV_NODE_PROBE_OUTPUT,JSON.stringify(report),{flag:'wx'});
+if(app)app.exit(0);
+'@,[Text.UTF8Encoding]::new($false))
+    try {
+        foreach ($method in @('null-call','remove-item')) {
+            RemoveProcessVariable 'ELECTRON_RUN_AS_NODE'
+            if ($method -ceq 'null-call') { [Environment]::SetEnvironmentVariable('ELECTRON_RUN_AS_NODE',$null,'Process') }
+            else { RemoveProcessVariable 'ELECTRON_RUN_AS_NODE' }
+            $parentPresent=[Environment]::GetEnvironmentVariables('Process').Contains('ELECTRON_RUN_AS_NODE')
+            $parentEmpty=[Environment]::GetEnvironmentVariable('ELECTRON_RUN_AS_NODE','Process') -ceq ''
+            $modeOutput=Join-Path $work ($method + '.mode.json');$env:ETE_ENV_NODE_PROBE_OUTPUT=$modeOutput
+            $modeProfile=Join-Path $work ($method + '.mode-profile')
+            $modeProcess=Start-Process -FilePath $electronExe -ArgumentList ('"' + $modeScript + '" "--user-data-dir=' + $modeProfile + '"') -RedirectStandardOutput (Join-Path $work ($method+'.stdout.log')) -RedirectStandardError (Join-Path $work ($method+'.stderr.log')) -PassThru
+            Require ($modeProcess.WaitForExit(10000)) 'ELECTRON_MODE_PROBE_TIMEOUT'
+            Require ($modeProcess.ExitCode -eq 0 -and (Test-Path -LiteralPath $modeOutput)) 'ELECTRON_MODE_PROBE_FAILED'
+            $observed=Get-Content -LiteralPath $modeOutput -Raw | ConvertFrom-Json
+            Require ($observed.electron -ceq '44.4.2' -and $observed.nodeModePresent -eq $parentPresent) 'ELECTRON_MODE_PROBE_IDENTITY_MISMATCH'
+            $result.environmentReset.cases+=@([ordered]@{method=$method;parentPresent=$parentPresent;parentEmpty=$parentEmpty;child=$observed;exitCode=$modeProcess.ExitCode})
+            if ($method -ceq 'remove-item') { Require (-not $observed.nodeModePresent -and $observed.processType -ceq 'browser' -and $observed.electronBuiltin) 'ELECTRON_GUI_MODE_NOT_CONFIRMED' }
+        }
+    } finally { RemoveProcessVariable 'ETE_ENV_NODE_PROBE_OUTPUT';RemoveProcessVariable 'ELECTRON_RUN_AS_NODE' }
+    $result.environmentReset.hostNodeModeAbsent=-not [Environment]::GetEnvironmentVariables('Process').Contains('ELECTRON_RUN_AS_NODE')
+    $result.environmentReset.hostNodeOptionsAbsent=-not [Environment]::GetEnvironmentVariables('Process').Contains('NODE_OPTIONS')
     $result.stage = 'ordinary-start'
     $launcher = Start-Process -FilePath $shortcut.TargetPath -WorkingDirectory $shortcut.WorkingDirectory -RedirectStandardOutput (Join-Path $work 'host.stdout.log') -RedirectStandardError (Join-Path $work 'host.stderr.log') -PassThru
     $result.hostStarted = $true
