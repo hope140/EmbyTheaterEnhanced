@@ -23,6 +23,23 @@ class FakeIpc extends EventEmitter {
 
 const CACHE_PROPERTY = 'user-data/emby-theater-enhanced/diagnostics/cache-bytes';
 
+test('restart completion retains zero and rejects missing, stale and retired generations at the renderer boundary', async () => {
+  const ipc = new FakeIpc();
+  const {endpoint} = await clientModule.create({ipc});
+  const messages = [];
+  endpoint.addEventListener('message', event => messages.push(event.data));
+  const {generationId} = await endpoint.beginGeneration('A');
+  const emit = id => ipc.emit(clientModule.EVENT_CHANNEL, {}, {
+    type: 'property_change', generationId: id, data: {name: 'playback-restart', value: 0}
+  });
+  emit(); emit(generationId - 1); emit(generationId);
+  assert.deepEqual(messages, [{type: 'property_change', data: {name: 'playback-restart', value: 0}}]);
+  endpoint.retireGeneration('stop');
+  emit(generationId);
+  assert.equal(messages.length, 1);
+  await endpoint.destroy();
+});
+
 function operationCalls(ipc, operation) {
   return ipc.calls.filter(call => call.request.operation === operation);
 }

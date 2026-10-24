@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-23 — 四项审查修复与两项EWT修复组合候选
+
+按独立发布基线88578，组合四项审查保全源2570c326与EWT源cb0ebf78，必要构建来源预检693d5257单独保留。service/client/libmpv及其测试自动合并，逐项复核须同时保留create/Stop/Play资源owner、显式暂停意图和真实seek完成后原Session上报；不以命令接受伪造目标位置。两份文档顶部冲突保留双方完整记录。
+
+不包含Home/图片/播放缓存、手动更新或原生预览新改动；版本、依赖、installer与原发布main不变。候选仅供本轮云端回归、后续独立Windows测试包与简单体验，难复现问题仍待真实环境观察，不声称彻底解决。纯源分支保留，验收前draft、不合main或发布Release，不占当前用户前台。当前组合范围及最短验收见[六项修复组合](AUDIT_EWT_ACCEPTANCE.md)，下方各单分支说明保留历史范围。
+
 ## 2026-10-23 — 四项修复独立验收矩阵
 
 按原生产基线88578与候选同一测试文件重跑受控复现：helper owner 3/8、暂停意图13/30、独立secrets44/49、有界历史2/6通过，失败均落在原缺陷断言，0跳过/取消。仅临时复现工作树复制最终测试，基线生产源码未改；候选绿色结果按最终SHA单独记录。新验收清单明确云端自动、Windows实际进程与需要GUI的暂停/显示层，不把所有单元通过当Windows包通过。
@@ -27,6 +33,20 @@
 ## 2026-10-23 — 独立后续修复：STRM secrets 恢复
 
 补齐空 profile 单独 setToken 后的重启恢复，不改变保存方式、schema、认证或 legacy 优先级。回归覆盖有效/缺失/损坏 secrets、损坏配置、clearToken、既有配置与首次迁移的优先级；修前功能断言失败，修后相关157项全部通过。尚无 Windows/真实服务验收，不纳入 v0.4.0 产物。
+
+## 2026-10-23 — EWT 完整普通／显式材料验证闭环
+
+在 9491909 上普通全套 1629 项为 1619 pass／0 fail／10 个既有 Linux 平台 skip。21 文件显式材料初跑为 113 pass／193 fail：171 个嵌套新增用例错误与 19 个父用例失败源于新增 EWT 测试被 observer fixture 截取并重复注册，另 3 个失败为固定 Host／libmpv 材料未准备；保留原始日志。将新增用例移到原 fixture 截断边界之后，86 项受影响检查通过；按锁恢复官方 Host、继承 npm 与原仓库 7z 的 libmpv（宿主已有 libarchive 静态解包，未执行 DLL），显式 135／135 通过。c0839dd 上再次完整普通回归为 1619 pass／0 fail／10 skip，88863ms。
+
+构建输入 173 项、Native 合同 8 项、七组组件身份、固定 header／源码 blob、418 JS／47 PowerShell 语法、有限模式和差异检查通过；新增“接受但缺失完成事件”通过，不增加定时等待。最终仅做文档回执收尾，产品源码相对 f8a2755 不再变化。独立分支获准正常推送，远端检查无同名分支；后续提交带 `[skip ci]`，遵守不手动 dispatch 或启动工作流的要求。未编译完整 Windows Host／Helper 或测试包；当前 Linux 环境不能执行固定 Windows 工具链。实际服务器、安装及双端播放仍未验收，正式包、main、会员认证和现用配置保持。
+
+## 2026-10-23 — EWT 客户端的本地缺陷与最小修正
+
+以实际 fetch 的 main `88578c91ab19d44eecddcfae096d37dc917ef1f4` 建独立 `fix/ewt-client-sync`，保留其它任务隔离。核查 input/api → PlaybackManager → libmpv → Native 及原 ApiClient 进度路径。零值在接收／setter 中保留、ticks／毫秒比例正确；明确缺陷是向下取整秒值，以及 manager 缺少 Seek 完成监听、零位置普通 timeupdate 被原 10 秒节流跳过。原命令拒绝还会留下未处理 rejection。
+
+Native 仅对已有唯一媒体的 Seek／playback-restart 配对读取真实 time-pos，复用媒体 attribution 与 generation；renderer 校验当前 generation／有效数值后更新状态，由原 manager 发 seek 进度。应答只表示接受，既有诊断增加固定接受／失败标签，不复制原始错误或 URL。未改 API 节流、暂停意图、controller history、会员认证或服务端超时；能力声明没有写 false 的本地证据，保持不变。
+
+同一关键 8 项在基线 2 pass／6 fail，修后 8 pass；原有播放、Native、构建来源与诊断共 210 项通过／0 skip。Native 采样守卫的后续 4 项复验与实际提取 C++ 分支的 Linux stub 编译执行通过。接线初版缺失 getCurrentUser／transition／settings 替身导致的失败已区分，不作产品缺陷计数。原始日志留在仓库外；[技术合同](EWT_CLIENT_SYNC.md)给出复现入口与证据层级。Windows 完整 Helper／runtime、真实播放／Session 和双端 EWT 尚未验收；无现用设备、NAS 或媒体命令，无 push／merge／publish。
 
 ## 2026-10-23 — v0.4.0整合PR70来源与必要声明
 

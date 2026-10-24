@@ -518,7 +518,9 @@ function createService(options) {
           log('load-failed', {reason: 'mpv-end-file-error'});
           return;
         }
-        if (!observed.has(message.name)) return;
+        if (message.name === 'playback-restart') {
+          if (message.generationId !== owned.currentGenerationId) return;
+        } else if (!observed.has(message.name)) return;
         sendEvent({type: 'property_change', generationId: message.generationId, data: {name: message.name, value: message.value}});
       },
       onTerminal: function (terminal) {

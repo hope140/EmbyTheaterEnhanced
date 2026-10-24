@@ -1,5 +1,9 @@
 # 四项审查修复：独立验收清单
 
+## 当前组合范围
+
+本页保留四项审查修复的独立复现及分层验收。当前按新安排与EWT两项客户端修复一起形成候选；准确组合来源、最短体验与待观察项见[AUDIT_EWT_ACCEPTANCE](AUDIT_EWT_ACCEPTANCE.md)。下文“纯四项”是来源阶段，不代表当前组合漏掉EWT。
+
 本候选从发布基线`88578c91ab19d44eecddcfae096d37dc917ef1f4`上的四项修复保全点`2570c3263bf2dc3fe43168edcf6b64c9f2eacda5`建立。原四提交分别为314e18ed（secrets）、c8eb8b51（helper owner）、ab51e464（有界历史）、2570c326（暂停意图），保持独立。额外构建提交693d5257只移植已复核来源6dc6c270的Framework来源预检、验证器清单及测试，合同见[Framework来源配置](FRAMEWORK_SERVICING_PROFILES.md)；没有Home、图片、播放缓存及其测试开关。
 
 此清单是验收方法及证据边界。具体最终候选SHA、全套计数和Windows包/run结论以该准确来源交接为准。验收尚未完成时保持draft、不合main；不改已发布v0.4.0包或版本。本候选可先于新功能单独验收，无须等待功能分支。

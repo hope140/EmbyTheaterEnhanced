@@ -754,6 +754,14 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
             if (recv.data.type == 'property_change') {
                 switch (recv.data.data.name) {
+                    case 'playback-restart':
+                        var position = recv.data.data.value;
+                        if (!isCurrentPlayRequest(activePlayRequest) || typeof position !== 'number' ||
+                            !Number.isFinite(position) || position < 0) break;
+                        self._onTimeUpdate(toTicks(position));
+                        emitClientDiagnostic('info', 'playback', 'seek', requestDiagnosticDetails(activePlayRequest));
+                        events.trigger(self, 'seek');
+                        break
                     case 'time-pos':
                         self._onTimeUpdate(toTicks(recv.data.data.value))
                         break
@@ -1148,25 +1156,26 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         self.currentTime = function (val) {
 
             if (val != null) {
-                var request = activePlayRequest;
-                sendCommand(['seek', `${Math.floor(val / 1000)}`, 'absolute', 'exact']).then(function () {
-
-                    emitClientDiagnostic('info', 'playback', 'seek', requestDiagnosticDetails(request));
-                    events.trigger(self, 'seek');
-                });
-                return;
+                return submitSeek(['seek', String(val / 1000), 'absolute', 'exact']);
             }
 
             return (playerState.positionTicks || 0) / 10000;
         };
 
-        function seekRelative(offsetMs) {
+        function submitSeek(command) {
             var request = activePlayRequest;
-            sendCommand(['seek', `${Math.floor(offsetMs / 1000)}`, 'relative']).then(function () {
-
-                emitClientDiagnostic('info', 'playback', 'seek', requestDiagnosticDetails(request));
-                events.trigger(self, 'seek');
+            if (!isCurrentPlayRequest(request)) return;
+            sendCommand(command).then(function () {
+                if (!isCurrentPlayRequest(request)) return;
+                emitClientDiagnostic('info', 'playback', 'seek-command-accepted', requestDiagnosticDetails(request));
+            }).catch(function () {
+                if (!isCurrentPlayRequest(request)) return;
+                emitClientDiagnostic('warn', 'playback', 'seek-command-failed', requestDiagnosticDetails(request));
             });
+        }
+
+        function seekRelative(offsetMs) {
+            return submitSeek(['seek', String(offsetMs / 1000), 'relative']);
         }
 
         self.rewind = function (offsetMs) {
