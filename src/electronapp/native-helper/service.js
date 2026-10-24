@@ -1,5 +1,7 @@
 'use strict';
 
+const previewSnapshot = require('./preview-snapshot');
+
 const rendererBoundary = require('../enhanced/renderer-boundary');
 
 const fs = require('fs');
@@ -884,7 +886,7 @@ function createService(options) {
         try { await startPromise; } catch (_) { }
       }
       // One failed child must not let before-quit outrun other owned exits.
-      const outcomes = await Promise.allSettled([destroyClient('service-destroy'), ...pendingDestructions]);
+      const outcomes = await Promise.allSettled([destroyClient('service-destroy'), ...pendingDestructions, ...(previewWork ? [previewWork.promise] : [])]);
       const failure = outcomes.find(outcome => outcome.status === 'rejected');
       // Native failure does not transfer ownership of local window resources.
       // Attempt all releases, then preserve the original owned-client error.
@@ -945,7 +947,29 @@ function createService(options) {
     };
   }
 
-  return {call, destroy, mode, notify, prewarm, status, kernelStatus: function () { return status().kernel; },
+  function isPreviewOwner(owner) {
+    return previewSnapshot.validOwner(owner) && !destroyed && activeEndpointId === owner.endpointId &&
+      !!client && !client.transportTerminated && !client.exited && client.currentGenerationId === owner.generationId &&
+      (!client.state || client.state.status !== 'ended');
+  }
+  let previewWork = null;
+  function capturePreview(owner) {
+    if (previewWork || !isPreviewOwner(owner) || !client.handshake ||
+        !Array.isArray(client.handshake.capabilities) || !client.handshake.capabilities.includes('preview-snapshot-v1')) return Promise.resolve(null);
+    const active = client, owned = {...owner}, ownedEpoch = generationEpoch;
+    const record = {}; previewWork = record;
+    record.promise = (async function () {
+      try {
+        const result = await active.request('preview-snapshot', {}, {generationId:owned.generationId, timeoutMs:1800});
+        if (active !== client || generationEpoch !== ownedEpoch || !isPreviewOwner(owned)) return null;
+        const frame = previewSnapshot.decode(result, owned.generationId);
+        return frame && {...frame, owner:owned};
+      } catch (_) { return null; }
+      finally { if (previewWork === record) previewWork = null; }
+    }());
+    return record.promise;
+  }
+  return {call, destroy, mode, notify, prewarm, status, capturePreview, isPreviewOwner, kernelStatus: function () { return status().kernel; },
     getVideoWindow: function () { return !destroyed && surfaceWindow && !surfaceWindow.isDestroyed() ? surfaceWindow : null; }};
 }
 

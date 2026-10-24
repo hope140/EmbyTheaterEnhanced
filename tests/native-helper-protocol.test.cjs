@@ -113,3 +113,15 @@ test('ready fails closed when required native surface capabilities are missing',
   await assert.rejects(client.start(), error => error.code === 'invalid-helper-handshake' || error.code === 'missing-helper-capability');
   assert.equal(client.exited, true);
 });
+
+
+test('owner snapshot packets fit existing limits and pixels never enter controller history or diagnostic timeline', async () => {
+  const client=new NativeHelperClient({helperPath:'unused',libmpvPath:'unused',parentWindowHandle:'1'});
+  client.child={stdin:{writable:true}};client.sendEnvelope=()=>{};client.currentGenerationId=12;
+  const result={ready:true,generationId:12,format:'bgr24',width:160,height:90,pixels:Buffer.alloc(43200,91).toString('base64')};
+  const work=client.request('preview-snapshot',{}, {generationId:12});
+  const packet={protocolVersion:1,type:'response',helperInstanceId:client.helperInstanceId,generationId:12,requestId:work.requestId,result};
+  assert.ok(encodeFrame(packet).length<65536);client.dispatch(packet);assert.deepEqual(await work,result);
+  assert.equal(client.requestHistory.length,0);assert.equal(client.timeline.length,0);
+  assert.equal(JSON.stringify(client.snapshot()).includes(result.pixels),false);
+});

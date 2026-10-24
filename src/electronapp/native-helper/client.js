@@ -35,6 +35,9 @@
             if (!validPresentationToken(token)) return Promise.reject(new Error('invalid-presentation-token'));
             return call(operation, Object.assign({}, payload || {}, {token: token}));
         }
+        this.getPreviewOwner = function () {
+            return !destroyed && currentGenerationId !== null ? {endpointId: endpointId, generationId: currentGenerationId} : null;
+        };
         this.mode = metadata.mode;
         this.protocolVersion = metadata.protocolVersion;
         this.helperVersion = metadata.helperVersion;

@@ -122,6 +122,7 @@ async function createSmtc(bindings, hwnd, options = {}) {
     const initialized = initialize(1);
     if (initialized < 0 && (initialized >>> 0) !== 0x80010106) check(initialized, 'RoInitialize');
     let factory, controls, updater, video, controls2, timeline, disposed = false, listener, buttonToken, lastTitle = null, displayType = 2;
+    let enabledCommands = new Set();
     try {
         factory = getFactory('Windows.Media.SystemMediaTransportControls', 'ddb0472d-c911-4a1f-86d9-dc3d71a95f5a');
         const out = [null];
@@ -136,13 +137,12 @@ async function createSmtc(bindings, hwnd, options = {}) {
         video = out[0];
         controls2 = bindings.query(controls, 'ea98d2f6-7f3c-4af2-a586-72889808efb1');
         timeline = bindings.activate('Windows.Media.SystemMediaTransportControlsTimelineProperties', '5125316a-c3a2-475b-8507-93534dc88f15');
-        for (const index of [13, 15, 17]) check(invoke(controls, index, 'int32_t', ['uint8_t'], [1]), 'SMTC.EnableButton');
-        for (const index of [19, 21, 23, 25, 27, 29, 31]) check(invoke(controls, index, 'int32_t', ['uint8_t'], [0]), 'SMTC.DisableUnsupportedButton');
+        for (const index of [13, 15, 17, 19, 21, 23, 25, 27, 29, 31]) check(invoke(controls, index, 'int32_t', ['uint8_t'], [0]), 'SMTC.DisableButton');
         check(invoke(controls, 11, 'int32_t', ['uint8_t'], [1]), 'SMTC.Enabled');
         if (typeof options.onCommand === 'function') {
             listener = bindings.buttonHandler(button => {
-                const command = {0: 'play', 1: 'pause', 2: 'stop'}[button];
-                if (command && !disposed) options.onCommand(command);
+                const command = {0: 'play', 1: 'pause', 2: 'stop', 6: 'next', 7: 'previous'}[button];
+                if (command && !disposed && enabledCommands.has(command)) options.onCommand(command);
             });
             const token = [0n];
             check(invoke(controls, 32, 'int32_t', ['void *', '_Out_ int64_t *'], [listener.object, token]), 'SMTC.AddButtonPressed');
@@ -176,6 +176,12 @@ async function createSmtc(bindings, hwnd, options = {}) {
         },
         update(state) {
             if (disposed) return;
+            enabledCommands = new Set();
+            for (const [index, name, enabled] of [[13,'play',state.active && state.paused], [15,'stop',state.active],
+                [17,'pause',state.active && !state.paused], [25,'previous',state.active && state.canPrevious], [27,'next',state.active && state.canNext]]) {
+                check(invoke(controls, index, 'int32_t', ['uint8_t'], [enabled ? 1 : 0]), 'SMTC.ButtonState');
+                if (enabled) enabledCommands.add(name);
+            }
             const title = String(state.title || '').slice(0, 512), type = state.mediaType === 'Audio' ? 1 : 2;
             if (type !== displayType) {
                 check(invoke(updater, 7, 'int32_t', ['int32_t'], [type]), 'SMTC.MediaType');
@@ -198,6 +204,7 @@ async function createSmtc(bindings, hwnd, options = {}) {
         async dispose() {
             if (disposed) return;
             disposed = true;
+            enabledCommands.clear();
             const failures = [];
             if (listener) {
                 listener.retire();

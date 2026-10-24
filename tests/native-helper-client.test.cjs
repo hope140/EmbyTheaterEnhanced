@@ -307,3 +307,14 @@ test('renderer endpoint destroy shares the owned pending completion and error', 
   await assert.rejects(first, /fixture-exit-failed/);
   assert.strictEqual(endpoint.destroy(), first);
 });
+
+test('preview owner is read-only and retires synchronously with generation authority', async () => {
+  const ipc=new FakeIpc(), {endpoint}=await clientModule.create({ipc});
+  assert.equal(endpoint.getPreviewOwner(),null);
+  const result=await endpoint.beginGeneration('preview');
+  const calls=ipc.calls.length;
+  assert.deepEqual(endpoint.getPreviewOwner(),{endpointId:'endpoint-1',generationId:result.generationId});
+  assert.equal(ipc.calls.length,calls);
+  endpoint.retireGeneration('next'); assert.equal(endpoint.getPreviewOwner(),null);
+  await endpoint.destroy(); assert.equal(endpoint.getPreviewOwner(),null);
+});

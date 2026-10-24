@@ -207,6 +207,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             invalidatePlayRequest();
             request = {
                 generation: playGeneration,
+                previewItem: options && options.item ? {Id: options.item.Id, ServerId: options.item.ServerId} : null,
                 playbackRequestId: playbackRequestId,
                 requestId: 'play-' + (playbackRequestId || 'local') + '-' + playGeneration,
                 controller: new AbortController(),
@@ -222,6 +223,13 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             if (enhancedRouteState) enhancedRouteState.begin(request);
             return request;
         }
+
+        self.getNativePreviewOwner = function (item) {
+            var request = activePlayRequest, identity = request && request.previewItem;
+            if (!isCurrentPlayRequest(request) || !identity || !item || !identity.Id ||
+                identity.Id !== item.Id || identity.ServerId !== item.ServerId || !libmpv || typeof libmpv.getPreviewOwner !== 'function') return null;
+            return libmpv.getPreviewOwner();
+        };
 
         function isCurrentPlayRequest(request) {
             return !!request && activePlayRequest === request && request.generation === playGeneration &&
@@ -323,7 +331,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 transition: 'slide',
                 controller: pluginManager.mapPath(self, 'mpvplayer/strm.js'),
                 type: 'settings',
-                title: 'STRM 智能解析',
+                title: '智能解析',
                 category: 'Playback',
                 order: 6,
                 thumbImage: '',

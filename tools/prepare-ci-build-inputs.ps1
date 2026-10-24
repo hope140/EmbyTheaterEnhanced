@@ -130,4 +130,15 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Final independent build material validation failed.' }
     $phaseSucceeded = $true
 } finally { Complete-CIPhase $phase $phaseSucceeded }
+$phase = Start-CIPhase 'inputs.windows-native-media'
+$phaseSucceeded = $false
+try {
+    $nativeArchives = WorkspacePath '.work/windows-native-media-archives'
+    $nativeDependencies = WorkspacePath '.work/windows-native-media-dependencies'
+    & python (Join-Path $PSScriptRoot 'download-native-preview-deps.py') $root $nativeArchives
+    if ($LASTEXITCODE -ne 0) { throw 'Locked official native media acquisition failed.' }
+    & node (Join-Path $PSScriptRoot 'windows-native-preview-deps.cjs') prepare $root $nativeArchives $nativeDependencies
+    if ($LASTEXITCODE -ne 0) { throw 'Locked native media preparation failed.' }
+    $phaseSucceeded = $true
+} finally { Complete-CIPhase $phase $phaseSucceeded }
 Write-Output 'Independent locked CI build inputs are ready; no old package directory was used.'

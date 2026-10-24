@@ -122,6 +122,24 @@ try {
     if (-not $?) { throw 'Runtime build failed.' }
     $phaseSucceeded = $true
 } finally { Complete-CIPhase $phase $phaseSucceeded }
+$phase = Start-CIPhase 'runtime.windows-native-media'
+$phaseSucceeded = $false
+try {
+    $electron = Join-Path $runtime 'x64/electron/electron.exe'
+    $priorNodeMode = $env:ELECTRON_RUN_AS_NODE
+    try {
+        $env:ELECTRON_RUN_AS_NODE = '1'
+        $nativeCheck = Start-Process -FilePath $electron -ArgumentList @(
+            ('"' + (Join-Path $PSScriptRoot 'windows-native-media-input.cjs') + '"'),
+            'selfcheck', ('"' + $root + '"'), ('"' + $runtime + '"'), $source
+        ) -Wait -PassThru -NoNewWindow
+        if ($nativeCheck.ExitCode -ne 0) { throw 'Packaged Windows native media selfcheck failed.' }
+    } finally { $env:ELECTRON_RUN_AS_NODE = $priorNodeMode }
+    $nativeLifecycle = Join-Path $root ('test-output/native-media-lifecycle-' + $run)
+    RunNode @('tools/windows-native-exit-probe.cjs', $electron,
+        (Join-Path $runtime 'electronapp/enhanced/windows-native-media.js'), $nativeLifecycle)
+    $phaseSucceeded = $true
+} finally { Complete-CIPhase $phase $phaseSucceeded }
 $phase = Start-CIPhase 'runtime.verify'
 $phaseSucceeded = $false
 try {

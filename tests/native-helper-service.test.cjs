@@ -1155,3 +1155,51 @@ for (const observerFailure of ['throw', 'reject']) {
     await service.destroy();
   });
 }
+
+for (const mode of ['current','retired','ended','capability-missing','wrong-bytes','synchronous-failure']) {
+  test('owner-bound preview snapshot service: '+mode, async () => {
+    let complete;
+    const ClientClass=makeClientClass({requestHandler(method) {
+      if (method==='preview-snapshot') {
+        if (mode==='synchronous-failure') throw Error('fixture');
+        return new Promise(resolve=>{complete=resolve;});
+      }
+      return Promise.resolve({attached:true,width:800,height:450});
+    }});
+    const {service}=makeService(ClientClass), created=await service.call('create');
+    const active=ClientClass.clients[0];
+    active.handshake.capabilities=mode==='capability-missing'?[]:['preview-snapshot-v1'];
+    active.state={status:'playing'};
+    const generation=await service.call('begin-generation',{label:'fixture',requestEpoch:1},created.endpointId);
+    const owner={endpointId:created.endpointId,generationId:generation.generationId};
+    assert.equal(service.isPreviewOwner(owner),true);
+    const pending=service.capturePreview(owner);
+    if (mode==='capability-missing'||mode==='synchronous-failure') {
+      assert.equal(await pending,null);
+      assert.equal(await service.capturePreview(owner),null, 'synchronous errors must release the owned slot');
+    } else {
+      assert.equal(await service.capturePreview(owner),null,'one physical request at a time');
+      if (mode==='retired') service.notify('retire-generation',{generationId:owner.generationId,requestEpoch:2},owner.endpointId);
+      if (mode==='ended') active.state.status='ended';
+      complete({ready:true,generationId:owner.generationId,format:'bgr24',width:1,height:1,pixels:mode==='wrong-bytes'?'bad':Buffer.from([11,22,33]).toString('base64')});
+      const result=await pending;
+      if(mode==='current') {assert.deepEqual(result.owner,owner);assert.deepEqual([...result.pixels],[11,22,33,255]);}
+      else assert.equal(result,null);
+    }
+    await service.destroy(); assert.equal(service.isPreviewOwner(owner),false);
+  });
+}
+
+
+test('service exit waits for the owned snapshot request and cannot publish after destroy starts', async () => {
+  let complete;
+  const ClientClass=makeClientClass({requestHandler(method) {return method==='preview-snapshot'?new Promise(resolve=>{complete=resolve;}):Promise.resolve({});}});
+  const {service}=makeService(ClientClass),created=await service.call('create'),active=ClientClass.clients[0];
+  active.handshake.capabilities=['preview-snapshot-v1'];
+  const generation=await service.call('begin-generation',{requestEpoch:1},created.endpointId);
+  const owner={endpointId:created.endpointId,generationId:generation.generationId},request=service.capturePreview(owner);
+  let done=false;const closing=service.destroy().then(()=>{done=true;});
+  await new Promise(resolve=>setImmediate(resolve));assert.equal(done,false);assert.equal(service.isPreviewOwner(owner),false);
+  complete({ready:true,generationId:owner.generationId,format:'bgr24',width:1,height:1,pixels:'AAAA'});
+  assert.equal(await request,null);await closing;assert.equal(done,true);
+});

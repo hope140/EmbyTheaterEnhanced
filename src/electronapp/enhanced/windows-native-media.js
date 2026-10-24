@@ -2,15 +2,16 @@
 
 const boundary = require('./renderer-boundary');
 const {randomUUID} = require('crypto');
-const fs = require('fs'), path = require('path');
+const previewSnapshot = require('../native-helper/preview-snapshot');
 const {performance} = require('perf_hooks');
 const {createRecorder} = require('./bounded-diagnostics');
 const {NATIVE_CHANNEL, NATIVE_SESSION_CHANNEL} = require('./windows-media-renderer');
-const KEYS = ['version', 'active', 'paused', 'title', 'mediaKey', 'mediaType', 'duration', 'position', 'rate', 'sequence', 'sessionToken'];
+const KEYS = ['version', 'nativeOwner', 'playbackEpoch', 'active', 'paused', 'title', 'mediaKey', 'mediaType', 'duration', 'position', 'rate', 'sequence', 'sessionToken', 'canPrevious', 'canNext'];
 
 function valid(value) {
     return !!value && Object.keys(value).length === KEYS.length && KEYS.every(key => Object.hasOwn(value, key)) &&
-        value.version === 1 && typeof value.active === 'boolean' && typeof value.paused === 'boolean' &&
+        value.version === 4 && typeof value.canPrevious === 'boolean' && typeof value.canNext === 'boolean' && (value.active || !value.canPrevious && !value.canNext) &&
+        (value.nativeOwner === null || previewSnapshot.validOwner(value.nativeOwner)) && Number.isSafeInteger(value.playbackEpoch) && value.playbackEpoch > 0 && typeof value.active === 'boolean' && typeof value.paused === 'boolean' &&
         typeof value.title === 'string' && value.title.length <= 512 && !/[\x00-\x1f\x7f]/.test(value.title) &&
         typeof value.mediaKey === 'string' && (value.active ? /^[a-f0-9]{64}$/.test(value.mediaKey) : value.mediaKey === '') &&
         (value.active ? ['Video', 'Audio'].includes(value.mediaType) : value.mediaType === '') &&
@@ -22,44 +23,84 @@ function valid(value) {
 }
 
 function attach(options) {
-    const {window, ipcMain, nativeImage, getVideoWindow, sendCommand, createBindings, createSmtc, createDwm, attachThumbnail, koffi} = options;
+    const {window, ipcMain, nativeImage, sendCommand, createBindings, createSmtc, createDwm, attachThumbnail, koffi} = options;
+    // BrowserWindow.webContents throws after the native window is destroyed.
+    // Keep the live EventEmitter reference for IPC checks and closed cleanup.
+    const webContents = window.webContents;
     const bindings = createBindings(koffi), dwm = createDwm(koffi);
     const emit = createRecorder(options.log || function () {}, 'windows-media', 10);
-    let disposed = false, latest = null, session = null, queue = Promise.resolve(), sequence = 0, epoch = 0, sessionToken = randomUUID(), sessionRequests = 0;
-    let image = null, imageEpoch = 0, timer = null, capturing = null, errors = 0, captured = 0, totalCaptureMs = 0;
-    let artworkKey = null, appliedKey = null;
-    let documentEpoch = 0, sessionDocumentEpoch = -1;
-    let lastCaptureStarted = -Infinity;
-    const thumbnail = attachThumbnail(window, dwm, () => imageEpoch === epoch ? image : null, () => logFailure('thumbnail'), () => { captureFrame().catch(() => {}); });
-    function clearImage() { image = null; imageEpoch = 0; thumbnail.clear(); }
-    function logFailure(stage) { errors++; emit('integration-unavailable', {stage}); }
-    async function captureFrame() {
-        if (disposed || capturing || !latest || !latest.active || latest.mediaType !== 'Video') return;
-        if (performance.now() - lastCaptureStarted < 950) return;
-        if (image && imageEpoch === epoch && artworkKey && typeof thumbnail.requestedRecently === 'function' && !thumbnail.requestedRecently()) return;
-        const video = getVideoWindow();
-        if (!video || video.isDestroyed()) return;
-        // Hidden/minimized native surfaces can return an all-black PrintWindow
-        // image. Preserve the last owned frame rather than replacing it.
-        if (typeof video.isVisible === 'function' && !video.isVisible() || typeof window.isMinimized === 'function' && window.isMinimized()) return;
-        const ownedEpoch = epoch, ownedWindow = video;
-        let work;
-        try {
-            const hwnd = video.getNativeWindowHandle().readBigUInt64LE(), {width, height} = dwm.clientSize(hwnd);
-            const started = Date.now();
-            lastCaptureStarted = performance.now();
-            work = dwm.capture(hwnd, width, height); capturing = work;
-            const frame = await work;
-            if (disposed || ownedEpoch !== epoch || ownedWindow !== getVideoWindow() || video.isDestroyed() || !frame.accepted ||
-                typeof video.isVisible === 'function' && !video.isVisible() || typeof window.isMinimized === 'function' && window.isMinimized()) return;
-            image = nativeImage.createFromBitmap(frame.pixels, {width, height}).resize({width: 640});
-            imageEpoch = ownedEpoch; captured++; totalCaptureMs += Date.now() - started;
-            thumbnail.refresh();
-        } catch (_) { if (!disposed && ownedEpoch === epoch) logFailure('capture'); }
-        finally { if (capturing === work) capturing = null; }
+    let disposed = false, latest = null, session = null, queue = Promise.resolve(), sequence = 0, sessionToken = randomUUID(), sessionRequests = 0;
+    let fallbackImage = null, frameImage = null, frameOwner = null, frameWork = null, timer = null;
+    let captured = 0, frameAttempts = 0, frameRevision = 0, lastFrameStarted = -Infinity;
+    const clock = options.clock || {now: () => performance.now(), setInterval, clearInterval};
+    let errors = 0;
+    let documentEpoch = 0, sessionIdentity = null, commandSequence = 0;
+    const thumbnail = attachThumbnail(window, dwm, previewImage, () => logFailure('thumbnail'), () => { requestFrame().catch(() => {}); });
+    function current(owner) {
+        try { return !disposed && latest && latest.active && latest.mediaType === 'Video' &&
+            previewSnapshot.sameOwner(owner, latest.nativeOwner) && typeof options.isPreviewOwner === 'function' && options.isPreviewOwner(owner); }
+        catch (_) { return false; }
     }
-    function command(value, ownerDocument) {
-        if (!disposed && documentEpoch === ownerDocument && latest && latest.active && ['play', 'pause', 'stop'].includes(value)) sendCommand(value);
+    function hasFrame() { return !!frameImage && current(frameOwner); }
+    function previewImage() {
+        if (disposed || !latest || !latest.active || latest.mediaType !== 'Video') return null;
+        if (hasFrame()) return frameImage;
+        frameImage = null; frameOwner = null;
+        // Neutral content has no media identity and can safely survive minimize
+        // or same-item replay. It is never counted as a capture or artwork.
+        if (!fallbackImage) {
+            const pixels = Buffer.alloc(640 * 360 * 4);
+            for (let offset = 3; offset < pixels.length; offset += 4) pixels[offset] = 255;
+            fallbackImage = nativeImage.createFromBitmap(pixels, {width: 640, height: 360});
+        }
+        return fallbackImage;
+    }
+    function clearArtwork() {
+        if (session && session.clearArtwork) { try { session.clearArtwork(); } catch (_) { logFailure('state'); } }
+    }
+    function clearPreview() {
+        if (frameImage) emit('preview-frame-retired', {stage:'owner-snapshot'});
+        frameRevision++; frameImage = null; frameOwner = null; frameAttempts = 0; lastFrameStarted = -Infinity;
+        if (timer) clock.clearInterval(timer); timer = null;
+        thumbnail.clear(); clearArtwork();
+    }
+    function visible() { return !window.isDestroyed() && !window.isMinimized() && (typeof window.isVisible !== 'function' || window.isVisible()); }
+    async function requestFrame() {
+        if (frameWork || !latest || !current(latest.nativeOwner) || typeof options.capturePreview !== 'function' ||
+            !visible() || !frameImage && frameAttempts >= 10 || clock.now() - lastFrameStarted < 950) return;
+        if (hasFrame() && typeof thumbnail.requestedRecently === 'function' && !thumbnail.requestedRecently()) return;
+        const owner = {...latest.nativeOwner}, revision = frameRevision, record = {};
+        frameWork = record; lastFrameStarted = clock.now(); if (!hasFrame()) frameAttempts++;
+        record.promise = (async () => {
+            try {
+                const frame = await options.capturePreview(owner);
+                if (revision !== frameRevision || !current(owner) || !visible() || !frame ||
+                    !previewSnapshot.sameOwner(frame.owner, owner) || !Number.isInteger(frame.width) || !Number.isInteger(frame.height) ||
+                    frame.width < 1 || frame.width > 160 || frame.height < 1 || frame.height > 90 ||
+                    !Buffer.isBuffer(frame.pixels) || frame.pixels.length !== frame.width * frame.height * 4) return;
+                const firstFrame = !frameImage || !previewSnapshot.sameOwner(frameOwner, owner);
+                frameImage = nativeImage.createFromBitmap(frame.pixels, {width:frame.width, height:frame.height});
+                frameOwner = owner; captured++;
+                if (firstFrame) emit('preview-frame-ready', {width:frame.width, height:frame.height});
+                thumbnail.refresh();
+            } catch (_) { if (revision === frameRevision && !disposed) logFailure('capture'); }
+            finally { if (frameWork === record) frameWork = null; }
+        })();
+        await record.promise;
+    }
+    function restore() { if (!disposed) {frameAttempts = 0; frameRevision++;} }
+    function ensureFrameTimer() {
+        if (timer || typeof options.capturePreview !== 'function' || !latest || !current(latest.nativeOwner)) return;
+        timer = clock.setInterval(() => {requestFrame().catch(() => {});}, 1000);
+        requestFrame().catch(() => {});
+    }
+    function logFailure(stage) { errors++; emit('integration-unavailable', {stage}); }
+    function identity(snapshot) { return JSON.stringify([documentEpoch, snapshot.playbackEpoch, snapshot.mediaKey, snapshot.nativeOwner]); }
+    function command(value, ownerIdentity) {
+        if (disposed || !latest || !latest.active || identity(latest) !== ownerIdentity || !['play', 'pause', 'stop', 'previous', 'next'].includes(value)) return;
+        if (value === 'play' && !latest.paused || value === 'pause' && latest.paused || value === 'previous' && !latest.canPrevious || value === 'next' && !latest.canNext) return;
+        sendCommand({version:1, command:value, sequence:++commandSequence, nativeOwner:latest.nativeOwner,
+            mediaKey:latest.mediaKey, playbackEpoch:latest.playbackEpoch, sessionToken});
     }
     function enqueue(snapshot) {
         latest = snapshot;
@@ -67,83 +108,83 @@ function attach(options) {
             if (disposed || latest !== snapshot) return;
             if (!snapshot.active) {
                 if (session) { const old = session; session = null; await old.dispose(); }
-                artworkKey = null; appliedKey = null;
                 return;
             }
-            const ownerDocument = documentEpoch;
-            if (session && sessionDocumentEpoch !== ownerDocument) { const old = session; session = null; await old.dispose(); }
+            const ownerIdentity = identity(snapshot);
+            if (session && sessionIdentity !== ownerIdentity) { const old = session; session = null; await old.dispose(); }
             if (disposed || latest !== snapshot) return;
             if (!session) {
-                session = await createSmtc(bindings, window.getNativeWindowHandle().readBigUInt64LE(), {onCommand: value => command(value, ownerDocument)});
-                sessionDocumentEpoch = ownerDocument;
+                session = await createSmtc(bindings, window.getNativeWindowHandle().readBigUInt64LE(), {onCommand: value => command(value, ownerIdentity)});
+                sessionIdentity = ownerIdentity;
+                clearArtwork();
             }
             if (disposed || latest !== snapshot) return;
-            if (appliedKey && appliedKey !== snapshot.mediaKey && session.clearArtwork) { session.clearArtwork(); artworkKey = null; }
             session.update(snapshot);
-            appliedKey = snapshot.mediaKey;
-            await captureFrame();
-            if (!disposed && latest === snapshot && artworkKey !== snapshot.mediaKey && imageEpoch === epoch && image && options.artworkDirectory && session.setArtwork) {
-                const ownedEpoch = epoch, key = snapshot.mediaKey;
-                await fs.promises.mkdir(options.artworkDirectory, {recursive: true});
-                const file = path.join(options.artworkDirectory, key + '.png');
-                try { await fs.promises.writeFile(file, image.toPNG(), {flag: 'wx'}); } catch (error) { if (error.code !== 'EEXIST') throw error; }
-                const stat = await fs.promises.lstat(file);
-                if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 2097152) throw Error('Artwork cache file invalid');
-                await session.setArtwork(file, () => !disposed && epoch === ownedEpoch && latest && latest.mediaKey === key);
-                if (!disposed && epoch === ownedEpoch) artworkKey = key;
-                const entries = await fs.promises.readdir(options.artworkDirectory, {withFileTypes: true});
-                const files = [];
-                for (const entry of entries) if (entry.isFile() && /^[a-f0-9]{64}\.png$/.test(entry.name) && entry.name !== key + '.png') {
-                    const old = path.join(options.artworkDirectory, entry.name), value = await fs.promises.stat(old);
-                    files.push({file: old, modified: value.mtimeMs});
-                }
-                files.sort((a, b) => b.modified - a.modified);
-                for (const old of files.slice(15)) { try { await fs.promises.unlink(old.file); } catch (_) { } }
-            }
         }).catch(() => { if (!disposed) logFailure('state'); });
     }
     function receive(event, snapshot) {
-        if (disposed || !boundary.isTrusted(event, window.webContents) || !valid(snapshot) || snapshot.sessionToken !== sessionToken || snapshot.sequence <= sequence) return;
+        if (disposed || !boundary.isTrusted(event, webContents) || !valid(snapshot) || snapshot.sessionToken !== sessionToken || snapshot.sequence <= sequence || latest && snapshot.playbackEpoch < latest.playbackEpoch) return;
         sequence = snapshot.sequence;
-        if (!latest || latest.mediaKey !== snapshot.mediaKey || latest.active !== snapshot.active) { epoch++; clearImage(); }
+        const changed = !latest || latest.mediaKey !== snapshot.mediaKey || latest.active !== snapshot.active || latest.mediaType !== snapshot.mediaType || latest.playbackEpoch !== snapshot.playbackEpoch || JSON.stringify(latest.nativeOwner) !== JSON.stringify(snapshot.nativeOwner);
+        if (changed) clearPreview();
         enqueue({...snapshot});
+        if (changed && snapshot.active && snapshot.mediaType === 'Video') {
+            try { thumbnail.refresh(); } catch (_) { logFailure('thumbnail'); }
+        }
+        ensureFrameTimer();
     }
     function reset() {
-        epoch++; documentEpoch++; sequence = 0; sessionToken = randomUUID(); clearImage();
+        documentEpoch++; sequence = 0; sessionToken = randomUUID(); clearPreview();
         enqueue({active: false});
     }
     function navigation(_event, _url, isInPlace, isMainFrame) { if (isMainFrame && !isInPlace) reset(); }
     let cleanup = null;
     function dispose() {
         if (cleanup) return cleanup;
-        disposed = true; epoch++; clearInterval(timer); timer = null; clearImage();
-        ipcMain.removeListener(NATIVE_CHANNEL, receive);
-        ipcMain.removeHandler(NATIVE_SESSION_CHANNEL);
-        window.webContents.removeListener('did-start-navigation', navigation);
-        window.webContents.removeListener('render-process-gone', reset);
-        window.removeListener('closed', close);
-        thumbnail.dispose();
-        cleanup = (async () => {
+        let resolveCleanup, rejectCleanup;
+        // Publish before invoking owned cleanup: callbacks may reenter dispose.
+        cleanup = new Promise((resolve, reject) => {resolveCleanup = resolve; rejectCleanup = reject;});
+        disposed = true;
+        const failures = [];
+        function release(action) { try { action(); } catch (error) { failures.push(error); } }
+        release(clearPreview);
+        release(() => ipcMain.removeListener(NATIVE_CHANNEL, receive));
+        release(() => ipcMain.removeHandler(NATIVE_SESSION_CHANNEL));
+        release(() => webContents.removeListener('did-start-navigation', navigation));
+        release(() => webContents.removeListener('render-process-gone', reset));
+        release(() => window.removeListener('closed', close));
+        release(() => window.removeListener('restore', restore));
+        release(() => thumbnail.dispose());
+        (async () => {
             await queue.catch(() => {});
-            if (capturing) await capturing.catch(() => {});
+            if (frameWork) await frameWork.promise;
             if (session) { const old = session; session = null; await old.dispose(); }
-        })();
+        })().then(() => {
+            if (failures.length) rejectCleanup(new AggregateError(failures, 'Windows media cleanup failed'));
+            else resolveCleanup();
+        }, error => {
+            failures.push(error);
+            rejectCleanup(new AggregateError(failures, 'Windows media cleanup failed'));
+        });
         return cleanup;
     }
     function close() { dispose().catch(() => { logFailure('cleanup'); }); }
     ipcMain.on(NATIVE_CHANNEL, receive);
     ipcMain.handle(NATIVE_SESSION_CHANNEL, function(event) {
-        if (disposed || !boundary.isTrusted(event, window.webContents)) return null;
+        if (disposed || !boundary.isTrusted(event, webContents)) return null;
         sessionRequests++; return {token: sessionToken};
     });
-    window.webContents.on('did-start-navigation', navigation);
-    window.webContents.on('render-process-gone', reset);
+    webContents.on('did-start-navigation', navigation);
+    webContents.on('render-process-gone', reset);
     window.once('closed', close);
-    timer = setInterval(() => { captureFrame().catch(() => {}); }, 1000);
-    return {dispose, previewImage() { return !disposed && latest && latest.active && imageEpoch === epoch ? image : null; },
-        status() { return {active: !!(latest && latest.active), ready: !!session,
-        captured, submitted: thumbnail.submitted, averageCaptureMs: captured ? totalCaptureMs / captured : 0, errors, sessionRequests, sequence,
-        artworkReady: !!artworkKey && artworkKey === latest?.mediaKey}; }};
+    window.on('restore', restore);
+    return {dispose, previewImage,
+        status() { return {active: !disposed && !!(latest && latest.active), ready: !disposed && !!session,
+        previewMode: !disposed && latest && latest.active && latest.mediaType === 'Video' ? (hasFrame() ? 'owner-frame' : 'neutral-unverified') : 'inactive',
+        captureBlockedReason: hasFrame() ? null : 'native-frame-ownership-unproven',
+        previewReady: hasFrame(), firstFrameAttempts: frameAttempts, firstFrameExhausted: !hasFrame() && frameAttempts >= 10, blankFirstFrames: 0,
+        captured, submitted: thumbnail.submitted, averageCaptureMs: 0, errors, sessionRequests, sequence,
+        artworkReady: false}; }};
 }
 
 module.exports = {valid, attach};
