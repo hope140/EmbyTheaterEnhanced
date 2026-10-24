@@ -24,6 +24,12 @@ STRM 按持久化 rules 的 cloud-first、mount-first 或 custom 顺序尝试 Di
 
 About 校验固定 provenance/manifest 与二进制身份，实时运行状态独立读取；缺失信息保留 UNKNOWN/NOT AVAILABLE。诊断旁路复用 logger 与 sender 校验，不改变 source 或播放时序。
 
+独立软件更新候选沿 About 主动点击与 main-frame IPC，只读固定 GitHub 正式渠道；下载前从官方 Tag 重核验安装附件身份，连接失败可串行使用维护备用源。取消退休所属网络与页面，SHA／大小校验后无覆盖保存，Windows 保留 Internet zone；不执行安装，不恢复旧 Host 更新或介入 mpv 内核归属。候选范围与待验收见[手动软件更新](MANUAL_APP_UPDATE.md)。
+
+说明正文仅有限识别HTTP(S)内联／裸链接，main和AMD共用零依赖解析器；DOM保持文本及固定anchor，不解析HTML或加载图片。正文外链IPC独立验证主frame、参数和本次官方说明地址集合后交系统浏览器，原发布页白名单及校验下载路径不变；页面退休使迟到打开反馈失效。
+
+更新通道由main持有并仅持久化profile内stable/testing选择，默认正式；正式仍核固定Latest，测试完整分页后按SemVer选非draft最高版本。切换退休并收尾旧检查／候选，下载与目录选择阶段锁定通道，保存不自动检查；同版本、较低版本不进入下载。元数据始终官方直连、准确Tag身份重核验及独立校验保持。
+
 About 的 M01 状态模型分别展示已校验包内 libmpv 文件 SHA、编译期预期版本/API/SHA 和 ready Helper 握手报告的运行版本/API/受限能力子集。包内文件 SHA 不表示当前加载映像 SHA；当前映像哈希与 Native 属性回读仍为 UNKNOWN。固定 Native render path 为 gpu-next/D3D11，mpv-vo/mpv-gpuapi 设置页值不作为 Native property 应用。
 
 M02 内核候选管理保持 Native Helper 为唯一生产 bridge。包由 main 独占文件选择并通过 worker_threads 对固定四条目 ZIP、元数据、完整文件哈希、x64 PE32+ 与 17 个生产 Helper 必需导出做静态验证；包不携带可执行 Helper、脚本或任意旁依赖。候选对象只存于 ETE profile 的 SHA256 内容目录，导入不自动选择；IPC select 仅记下次重启选择。

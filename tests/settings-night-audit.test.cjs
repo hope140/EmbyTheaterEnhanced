@@ -33,7 +33,7 @@ function withTestDeadline(promise, timeoutMs) {
 test('update version ordering preserves numeric prerelease identifiers beyond safe integers', () => {
     assert.equal(maintenance.compareVersions('0.2.3-9007199254740992', '0.2.3-9007199254740993'), -1);
     assert.equal(maintenance.compareVersions('0.2.3-9007199254740993', '0.2.3-9007199254740992'), 1);
-    assert.equal(maintenance.compareVersions('0.2.3-0002', '0.2.3-2'), 0);
+    assert.equal(maintenance.compareVersions('0.2.3-0002', '0.2.3-2'), null, 'SemVer rejects leading zeroes in numeric prerelease identifiers');
 });
 
 test('release request enforces a total deadline while response bytes keep arriving', async () => {

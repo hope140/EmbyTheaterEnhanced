@@ -54,6 +54,7 @@ test('maintenance version ordering and update states use injected release fixtur
             requested.push(url);
             return {
                 tag_name: 'v0.2.3',
+                draft: false, prerelease: false,
                 html_url: 'https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.3'
             };
         }
@@ -63,11 +64,13 @@ test('maintenance version ordering and update states use injected release fixtur
         status: 'update-available',
         currentVersion: '0.2.2',
         latestVersion: '0.2.3',
-        releaseUrl: 'https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.3'
+        releaseUrl: 'https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.2.3',
+        releaseTag: 'v0.2.3', channel: 'stable', prerelease: false, notes: '', installer: null
     });
     assert.equal((await maintenance.checkLatestRelease({
         currentVersion: '0.2.3',
-        requestJson: async function () { return {tag_name: '0.2.3'}; }
+        requestJson: async function () { return {tag_name: '0.2.3', draft: false, prerelease: false,
+            html_url: 'https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/0.2.3'}; }
     })).status, 'latest');
     assert.deepEqual(await maintenance.checkLatestRelease({
         currentVersion: '0.2.2',
@@ -146,7 +149,7 @@ test('maintenance IPC checks sender trust, supports unregister and limits clipbo
         shell: {openExternal: function (url) { opened.push(url); }},
         requestJson: async function () {
             fixtureCalls++;
-            return {tag_name: '0.2.3', html_url: 'https://attacker.example/releases/tag/0.2.3'};
+            return {tag_name: '0.2.3', draft: false, prerelease: false, html_url: 'https://attacker.example/releases/tag/0.2.3'};
         }
     });
 
@@ -168,7 +171,8 @@ test('maintenance IPC checks sender trust, supports unregister and limits clipbo
     assert.match(copiedText, /Emby Theater Enhanced: 0\.2\.3/);
     assert.match(copiedText, /Native Helper: helper-bundled/);
     assert.match(copiedText, /Running Native Helper: helper-running/);
-    assert.equal((await ipcMain.handlers.get(maintenanceIpc.CHANNELS.CHECK_UPDATE)(eventFor(trusted))).status, 'update-available');
+    assert.deepEqual(await ipcMain.handlers.get(maintenanceIpc.CHANNELS.CHECK_UPDATE)(eventFor(trusted)),
+        {status: 'error', reason: 'invalid-release-identity'});
     assert.equal(fixtureCalls, 1);
     assert.equal((await ipcMain.handlers.get(maintenanceIpc.CHANNELS.OPEN_RELEASES)(eventFor(trusted), {
         url: 'https://github.com.evil.example/hope140/EmbyTheaterEnhanced/releases/tag/v9'
@@ -257,7 +261,7 @@ test('About loads environment on entry and checks updates only after a user clic
     const source = readPluginFile('about.js');
     const context = {
         define: function (_dependencies, factory) {
-            AboutView = factory({show: function () { loadingCalls.push('show'); }, hide: function () { loadingCalls.push('hide'); }}, BaseView);
+            AboutView = factory({show: function () { loadingCalls.push('show'); }, hide: function () { loadingCalls.push('hide'); }}, BaseView, require('../src/electronapp/enhanced/release-note-links'));
         },
         window: {
             ipc: {
@@ -270,6 +274,7 @@ test('About loads environment on entry and checks updates only after a user clic
                             info: {appVersion: infoCalls === 1 ? '0.2.3' : '0.2.4', electron: '44.4.2', chromium: '152', node: '24', nativeHelper: 'helper 0.2.1', libmpv: 'mpv v0.41.0', sourceCommit: 'abc', windows: 'Windows', displayDpi: 'NOT AVAILABLE', nativeHelperState: 'idle', runningNativeHelper: 'NOT AVAILABLE', runningLibmpv: 'NOT AVAILABLE'}
                         });
                     }
+                    if (channel === 'enhanced-maintenance-get-channel') return Promise.resolve({status: 'ok', channel: 'stable'});
                     if (channel === 'enhanced-maintenance-check-update') {
                         return new Promise(function (resolve) { finishUpdate = resolve; });
                     }
@@ -305,7 +310,7 @@ test('About loads environment on entry and checks updates only after a user clic
     await new Promise(function (resolve) { setImmediate(resolve); });
     assert.equal(infoCalls, 2, 'each resume refreshes environment information');
     assert.equal(view.querySelector('.aboutAppVersion').textContent, '0.2.4');
-    assert.deepEqual(invoked, ['enhanced-maintenance-info', 'enhanced-maintenance-check-update', 'enhanced-maintenance-info', 'enhanced-mpv-kernel-status']);
+    assert.deepEqual(invoked, ['enhanced-maintenance-info', 'enhanced-maintenance-check-update', 'enhanced-maintenance-info', 'enhanced-mpv-kernel-status', 'enhanced-maintenance-get-channel']);
     controller.destroy();
 });
 
@@ -330,7 +335,7 @@ test('About renders the exact trusted copy snapshot and ignores an older pending
     BaseView.prototype.onPause = function () {};
     let AboutView;
     const context = {
-        define(_dependencies, factory) { AboutView = factory({show() { loadingCalls.push('show'); }, hide() { loadingCalls.push('hide'); }}, BaseView); },
+        define(_dependencies, factory) { AboutView = factory({show() { loadingCalls.push('show'); }, hide() { loadingCalls.push('hide'); }}, BaseView, require('../src/electronapp/enhanced/release-note-links')); },
         window: {ipc: {invoke(channel) {
             return new Promise(resolve => pending.push({channel, resolve}));
         }}}
@@ -379,7 +384,7 @@ test('About ignores an older copy rejection and keeps the current load loading s
     BaseView.prototype.onPause = function () {};
     let AboutView;
     const context = {
-        define(_dependencies, factory) { AboutView = factory({show() { loadingCalls.push('show'); }, hide() { loadingCalls.push('hide'); }}, BaseView); },
+        define(_dependencies, factory) { AboutView = factory({show() { loadingCalls.push('show'); }, hide() { loadingCalls.push('hide'); }}, BaseView, require('../src/electronapp/enhanced/release-note-links')); },
         window: {ipc: {invoke(channel) {
             return new Promise((resolve, reject) => pending.push({channel, resolve, reject}));
         }}}

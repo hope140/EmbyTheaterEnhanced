@@ -75,6 +75,18 @@ if ($ReleasePackage) {
 if (-not $?) { throw 'Runtime build failed.' }
 & (Join-Path $PSScriptRoot 'package.ps1') -RuntimeName $runtimeName -VerifyOnly
 if (-not $?) { throw 'Runtime verification failed.' }
+# Run only the packaged JavaScript modules with the existing locked Node runner.
+# This does not launch Electron/Host, access a profile, or fetch/execute an update.
+$updateSelftestText = & node (Join-Path $runtime 'electronapp/enhanced/manual-app-update-selftest.js')
+if ($LASTEXITCODE -ne 0) { throw 'Packaged manual update offline selftest failed.' }
+$updateSelftest = ($updateSelftestText -join "`n") | ConvertFrom-Json
+if ($updateSelftest.status -ne 'passed' -or $updateSelftest.packageManifestBinding.status -ne 'matched' -or
+    @($updateSelftest.checks).Count -ne 8 -or
+    $updateSelftest.packageManifestBinding.sourceCommit -ne $source -or $updateSelftest.realNetworkRequests -ne 0 -or
+    $updateSelftest.appBootstrap -ne $false -or $updateSelftest.profileAccess -ne $false -or
+    $updateSelftest.installerExecuted -ne $false -or $updateSelftest.temporaryFilesRemoved -ne $true) {
+    throw 'Packaged manual update selftest evidence does not match this source or isolation contract.'
+}
 $version = (Get-Content -LiteralPath (Join-Path $root 'package.json') -Raw -Encoding UTF8 | ConvertFrom-Json).version
 $installerName = 'EmbyTheaterEnhanced-' + $version + '-test-' + $source.Substring(0,12) + '-' + $run + '-win-x64-setup'
 if ($ReleasePackage) { $installerName = 'EmbyTheaterEnhanced-' + $version + '-win-x64-setup' }
@@ -113,6 +125,7 @@ $frameworkFile = Get-Item -LiteralPath $frameworkReceipt -ErrorAction Stop
 if ($frameworkFile.PSIsContainer -or ($frameworkFile.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Physical Framework preflight receipt required.' }
 Copy-Item -LiteralPath $frameworkReceipt -Destination (Join-Path $output 'runner-framework-profile.json')
 [IO.File]::WriteAllText((Join-Path $output 'installer-verification.json'), ($verification | Out-String), [Text.UTF8Encoding]::new($false))
+[IO.File]::WriteAllText((Join-Path $output 'manual-app-update-selftest.json'), (($updateSelftest | ConvertTo-Json -Depth 5) + "`n"), [Text.UTF8Encoding]::new($false))
 $libmpvReceipt = [ordered]@{
     schemaVersion=1; sourceCommit=$source; acquisition='repository-archive'
     archive=$archiveIdentity; componentTreeSha256=$libmpvIdentity.treeSha256; dllSha256=$libmpvFileSha256

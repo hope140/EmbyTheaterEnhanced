@@ -1054,8 +1054,11 @@
         ipcMain: ipcMain, getWebContents: getWebContents
     });
     unregisterMaintenanceIpc = maintenanceIpc.register({
+        preferences: require('./enhanced/app-update-preferences').createStore(appBootstrapState.configDirectory),
         ipcMain: ipcMain,
         getWebContents: getWebContents,
+        getBrowserWindow: function () { return mainWindow; },
+        dialog: electron.dialog,
         getAppInfo: getCurrentEnhancedAppInfo,
         getPlatformInfo: getPlatformInfo,
         getDisplayInfo: getDisplayInfo,
