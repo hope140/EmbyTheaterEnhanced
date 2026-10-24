@@ -32,6 +32,8 @@ node tools/windows-host-input.cjs validate .
 
 ## 验证、升级与限制
 
+runner 的 Framework 字节受独立[实现来源合同](FRAMEWORK_SERVICING_PROFILES.md)约束：原固定实现保持，已观察到的旧镜像候选另须匹配精确镜像/OS、规范系统路径、实际微软有效签名及重新计算的文件哈希。入口在下载依赖前只读预检，最终仍以实际 Host 观察和完整行为验收生成本次锁；未知实现失败，不安装更新或跳过验证。artifact 中的 runner-framework-profile.json 只是预检回执。
+
 回归覆盖完整来源身份、精确投影、缺失／篡改／额外项、重定向、未提交锁、Model及派生EXE/PDB不符、装配归属和最终provenance篡改。入口为 `tests/windows-host-input.test.cjs`、`tests/source-built-host-input.test.cjs`、`tests/ci-source-built-host.test.cjs`、`tests/runtime-base-assembly.test.cjs`、`tests/runtime-provenance.test.cjs` 及 `tests/windows-host-material-selftest.cjs`。
 
 本轮隔离候选的构建、安装器、升级、测试副本STRM播放及正常Host入口已获通过回报，用户确认验收；准确来源提交和后续待办见[收尾清单](SOURCE_CLEANUP_CLOSEOUT.md)。新runner未跑通、纯net462环境兼容及MSB3277仍分别记录，不把一次候选验收扩展为所有环境结论。

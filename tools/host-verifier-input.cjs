@@ -29,13 +29,18 @@ const FILES = Object.freeze([
     },
     {
         "path": "tools/windows-host-verifier/Finalize-Evidence.ps1",
-        "size": 7963,
-        "sha256": "1e7f8cb70a4fb425199e02855ab9ce54dcfa622b59ae6032900b114b69760a15"
+        "size": 8508,
+        "sha256": "bb6f59f93dc7e659efc5d34cdc64da453a052374e9efdac7d2b93b91494835f2"
     },
     {
         "path": "tools/windows-host-verifier/Framework-BuildHelpers.ps1",
         "size": 2461,
         "sha256": "d61fb59dbe66ae74552c04c97b9306cfc1e89b420c1793bc51735bcd415d36f5"
+    },
+    {
+        "path": "tools/windows-host-verifier/Framework-Implementation.ps1",
+        "size": 6398,
+        "sha256": "a332196e072ea4f45f336c5c926c1b65145c17eb77a2e339d166c9536094fe4b"
     },
     {
         "path": "tools/windows-host-verifier/FrameworkFixtureMaker.cs",
@@ -159,8 +164,8 @@ const FILES = Object.freeze([
     },
     {
         "path": "tools/windows-host-verifier/verifier-manifest.json",
-        "size": 4444,
-        "sha256": "b1b8411155ad16d95fb51fe57d04c49badb5fd2115e677addddbabb948d91795"
+        "size": 5237,
+        "sha256": "b1b5dfdda4287a22338039d636c985334360ebcdcf7b7058dc9d7de9091e3e6d"
     }
 ].map(Object.freeze));
 const PATHS = Object.freeze(FILES.map(f => f.path));
