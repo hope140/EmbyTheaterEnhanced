@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-24 — 按真实Electron监听归属修正生命周期契约
+
+精确前版在固定Electron44.4.2的真实窗口中确认首场crash-listener-removed为actual1／expected0，attach前crash基线也是1；对应内建监听仍在，不是适配器泄漏，也不应移除系统监听。探针现按函数引用记录attach前列表与新增所属回调；每类必须恰有一个所属监听，退出后所属引用须全部消失，原列表的身份、数量与顺序均须保留。不是改为宽松总数阈值，等数量替换、漏自己同时删外部、外部重排和重复回调缺失均拒绝。
+
+reportVersion3／owned-listeners-v1逐场记录baseline、ownedAttached、ownedRemaining、totalRemaining、externalPreserved，外部验收器强制校验六场的这些值。产品适配器、退出行为、既有08包及真实DWM均未修改。定向74项／73pass／0fail／1平台skip，包含带Electron内建监听的六场合成正例及身份负例；JS语法、有限模式和diff检查通过。没有重跑整套工具链，新六场真实Electron结果仍待Work用精确源码单独复验，不能把单元通过当Windows通过。
+
 ## 2026-10-24 — 生命周期失败保留精确断言诊断
 
 真实Windows短路线确认lifecycle在playing-close以AssertionError／ERR_ASSERTION退出1，未进入helper，原报告只保留name／code／stage，不能据此定位具体断言或归因产品。探针现在为每个断言与异步操作标记固定step，记录比较运算／安全actual与expected及允许列表内的相对工具／适配器／Node栈；未知消息仅摘要，不输出绝对profile／账户路径。保留已通过场景与closed事件内、close返回后的销毁状态，reportVersion2绑定工具和适配器SHA。

@@ -9,10 +9,27 @@ const STEPS=new Set(['adapter-load','window-create','visibility-fixture','adapte
     'initial-frame-resolve','stop-send','window-remains-hidden','window-close','await-closed','window-destroyed-after-closed',
     'closed-webcontents-getter-throws','dispose-begin','dispose-promise-shared','pending-drain-unsettled','late-work-resolve',
     'await-dispose','dispose-promise-stable','smtc-released-once','thumbnail-released-once','session-handler-removed',
-    'state-listener-removed','navigation-listener-removed','crash-listener-removed','preview-retired','no-late-refresh',
+    'state-listener-removed','navigation-listener-attached','crash-listener-attached','navigation-listener-removed','crash-listener-removed',
+    'navigation-external-listeners-preserved','crash-external-listeners-preserved','preview-retired','no-late-refresh',
     'no-late-session-update','no-late-pixels','no-windows-remain','unexpected-command','app-ready','lifecycle-timeout']);
 const NODE_FRAMES=new Set(['node:assert','node:assert/strict','node:events','node:internal/assert/assertion_error',
     'node:internal/process/task_queues','node:internal/timers']);
+function listenerOwner(emitter,event){
+    const external=emitter.listeners(event);let owned=[];
+    return {
+        attach(){
+            const extra=emitter.listeners(event).slice();
+            for(const callback of external){const index=extra.indexOf(callback);if(index!==-1)extra.splice(index,1);}
+            owned=extra;return owned.length;
+        },
+        inspect(){
+            const current=emitter.listeners(event);
+            return {baseline:external.length,ownedAttached:owned.length,totalRemaining:current.length,
+                ownedRemaining:current.filter(callback=>owned.includes(callback)).length,
+                externalPreserved:current.length===external.length&&external.every((callback,index)=>current[index]===callback)};
+        }
+    };
+}
 function scalar(value){
     if(value===null||typeof value==='boolean'||typeof value==='number'&&Number.isFinite(value))return value;
     if(typeof value==='string'&&['function','undefined','object','boolean','number'].includes(value))return value;
@@ -61,6 +78,7 @@ async function run(electron,adapterFile,report){
         report.stage=name;report.step='window-create';
         report.observations={closedEventObserved:false,destroyedDuringClosed:null,closeReturned:false,destroyedAfterCloseCall:null};
         report.listenerBaseline=null;
+        report.listenerOwnership=null;
         const window=new BrowserWindow({show:false,focusable:false,skipTaskbar:true,webPreferences:{sandbox:true,contextIsolation:true,nodeIntegration:false}});
         report.step='visibility-fixture';
         const physicallyVisible=window.isVisible.bind(window);
@@ -68,6 +86,7 @@ async function run(electron,adapterFile,report){
         window.isVisible=()=>true;
         const webContents=window.webContents,ipc=new EventEmitter(),handlers=new Map();
         report.listenerBaseline={navigation:webContents.listenerCount('did-start-navigation'),crash:webContents.listenerCount('render-process-gone')};
+        const listenerOwners={navigation:listenerOwner(webContents,'did-start-navigation'),crash:listenerOwner(webContents,'render-process-gone')};
         ipc.handle=(key,handler)=>handlers.set(key,handler);ipc.removeHandler=key=>handlers.delete(key);
         const keys=require(path.join(path.dirname(adapterFile),'windows-media-renderer'));
         let releases=0,thumbnailReleases=0,refreshes=0,updates=0,completeStartup,completeFrame,rejectFrame;
@@ -79,6 +98,7 @@ async function run(electron,adapterFile,report){
             attachThumbnail:()=>({submitted:0,clear(){},refresh(){refreshes++;},dispose(){thumbnailReleases++;},requestedRecently:()=>true}),
             createSmtc:async()=>{const session={update(){updates++;},dispose(){releases++;}};
                 return name==='pending-startup'?new Promise(resolve=>{completeStartup=()=>resolve(session);}):session;}});
+        for(const [kind,owner]of Object.entries(listenerOwners))check(kind+'-listener-attached',label=>assert.equal(owner.attach(),1,label));
         const event={sender:webContents},token=handlers.get(keys.NATIVE_SESSION_CHANNEL)(event).token;
         const state={version:4,canPrevious:false,canNext:false,nativeOwner:owner,playbackEpoch:1,active:true,paused:false,title:'Lifecycle fixture',mediaKey:'a'.repeat(64),mediaType:'Video',duration:1,position:0,rate:1,sequence:1,sessionToken:token};
         report.step='state-send';ipc.emit(keys.NATIVE_CHANNEL,event,state);await drain();
@@ -109,13 +129,17 @@ async function run(electron,adapterFile,report){
         check('thumbnail-released-once',label=>assert.equal(thumbnailReleases,1,label));
         check('session-handler-removed',label=>assert.equal(handlers.size,0,label));
         check('state-listener-removed',label=>assert.equal(ipc.listenerCount(keys.NATIVE_CHANNEL),0,label));
-        check('navigation-listener-removed',label=>assert.equal(webContents.listenerCount('did-start-navigation'),0,label));
-        check('crash-listener-removed',label=>assert.equal(webContents.listenerCount('render-process-gone'),0,label));
+        report.listenerOwnership={};
+        for(const [kind,owner]of Object.entries(listenerOwners)){
+            const state=owner.inspect();report.listenerOwnership[kind]=state;
+            check(kind+'-listener-removed',label=>assert.equal(state.ownedRemaining,0,label));
+            check(kind+'-external-listeners-preserved',label=>assert.equal(state.externalPreserved,true,label));
+        }
         check('preview-retired',label=>assert.equal(controller.previewImage(),null,label));
         check('no-late-refresh',label=>assert.equal(refreshes,before,label));
         if(name==='pending-startup')check('no-late-session-update',label=>assert.equal(updates,0,label));
         if(['pending-frame','rejected-frame'].includes(name))check('no-late-pixels',label=>assert.equal(controller.status().captured,0,label));
-        results.push({name,status:'passed',ownedResourcesReleased:true});
+        results.push({name,status:'passed',ownedResourcesReleased:true,listenerOwnership:report.listenerOwnership});
     }
     check('no-windows-remain',label=>assert.equal(BrowserWindow.getAllWindows().length,0,label));
     return results;
@@ -127,7 +151,7 @@ async function main(){
     if(fs.existsSync(profile)||fs.existsSync(output))throw Error('Preserve existing lifecycle output');
     fs.mkdirSync(profile,{recursive:true});app.setPath('userData',profile);
     app.on('window-all-closed',()=>{});
-    const report={reportVersion:2,scope:'electron-window-lifecycle-only',status:'running',stage:'app-ready',step:'app-ready',electron:process.versions.electron,platform:process.platform,
+    const report={reportVersion:3,listenerContract:'owned-listeners-v1',scope:'electron-window-lifecycle-only',status:'running',stage:'app-ready',step:'app-ready',electron:process.versions.electron,platform:process.platform,
         toolSha256:crypto.createHash('sha256').update(fs.readFileSync(__filename)).digest('hex'),
         adapterSha256:crypto.createHash('sha256').update(fs.readFileSync(adapterFile)).digest('hex'),
         doubles:['SMTC','DWM','capture','capture-visibility','IPC-sender-validation'],visibleDwmAcceptance:'NOT_ASSESSED'};
@@ -146,13 +170,15 @@ async function accept(executable,adapterFile,directory){
     const output=path.join(directory,'lifecycle.json'),profile=path.join(require('node:os').tmpdir(),'ete-exit-'+crypto.randomUUID());
     await require('./windows-native-preview-process.cjs').runChild(executable,[__filename,adapterFile,profile,output],{directory,name:'lifecycle',timeoutMs:45000});
     const report=JSON.parse(fs.readFileSync(output,'utf8'));
-    if(report.reportVersion!==2||report.status!=='passed'||report.scope!=='electron-window-lifecycle-only'||report.electron!=='44.4.2'||
+    if(report.reportVersion!==3||report.listenerContract!=='owned-listeners-v1'||report.status!=='passed'||report.scope!=='electron-window-lifecycle-only'||report.electron!=='44.4.2'||
         report.toolSha256!==crypto.createHash('sha256').update(fs.readFileSync(__filename)).digest('hex')||
         report.adapterSha256!==crypto.createHash('sha256').update(fs.readFileSync(adapterFile)).digest('hex')||
         report.visibleDwmAcceptance!=='NOT_ASSESSED'||!Array.isArray(report.cases)||report.cases.length!==CASES.length||
-        report.cases.some((row,index)=>row.name!==CASES[index]||row.status!=='passed'||row.ownedResourcesReleased!==true))throw Error('Lifecycle report not accepted');
+        report.cases.some((row,index)=>row.name!==CASES[index]||row.status!=='passed'||row.ownedResourcesReleased!==true||
+            ['navigation','crash'].some(kind=>{const value=row.listenerOwnership?.[kind];return !value||!Number.isSafeInteger(value.baseline)||value.baseline<0||
+                value.ownedAttached!==1||value.ownedRemaining!==0||value.externalPreserved!==true||value.totalRemaining!==value.baseline;})))throw Error('Lifecycle report not accepted');
     return report;
 }
-module.exports={loadAdapter,run,accept,projectError,CASES,STEPS};
+module.exports={loadAdapter,run,accept,projectError,listenerOwner,CASES,STEPS};
 if(process.versions.electron&&process.type==='browser')main().catch(()=>{require('electron').app.exit(1);});
 else if(require.main===module)accept(...process.argv.slice(2)).then(report=>console.log(JSON.stringify(report))).catch(()=>{console.error('ELECTRON_LIFECYCLE_FAILED');process.exitCode=1;});

@@ -196,3 +196,8 @@ node.exe C:/ETE-Probe/source/tools/windows-native-exit-probe.cjs C:/ETE-Probe/el
 路径为示例，需替换为已校验固定Electron及全新独立源码checkout。源码工作树须保持Git blob字节（新checkout可用本次命令范围core.autocrlf=false，不修改现有用户Git配置）；报告toolSha256／adapterSha256应与本次交接精确源字节对应。此入口只创建show:false／focusable:false合成窗口和新临时profile，不加载媒体／账户，不装载Koffi或创建SMTC／helper、不调用本项目DWM捕获API；六场景仅验证Electron对象生命周期。不得修改已交付包或使用旧输出。真实SMTC、DWM、用户退出验收继续分别执行。
 
 固定[Electron44.4.2 WebContents源码](https://github.com/electron/electron/blob/v44.4.2/lib/browser/api/web-contents.ts#L544)自带render-process-gone监听。诊断另保存listenerBaseline，不能把未建模的系统监听误认作adapter泄漏；当前仍保留零总数断言，先取得真实失败step与计数，未按假设放宽门禁。
+
+
+### 当前监听归属合同
+
+真实前版报告已确认crash总数1正是attach前的Electron监听。当前reportVersion3／owned-listeners-v1只要求本适配器新增的navigation／crash函数引用准确退休，并保持原有监听的引用、数量和顺序。每类新增数须为1，退出后ownedRemaining须0、externalPreserved须true且总数回到baseline；验收器对六场逐项强制验证，不能仅把总数改成小于等于基线或跳过检查。诊断继续保留step、actual／expected及相对栈；上节“保留零总数断言”仅属于前版定位阶段，现已由真实证据支持的所属合同替代。原产品源码不因错误测试而改动。沿用独立Node入口和全新输出目录，先取得六场真实Electron通过，再考虑整包与SMTC／DWM验收。

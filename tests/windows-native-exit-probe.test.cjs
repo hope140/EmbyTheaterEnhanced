@@ -86,7 +86,7 @@ test('a later scenario failing before close cannot inherit earlier close observa
     assert.deepEqual(report.observations,{closedEventObserved:false,destroyedDuringClosed:null,closeReturned:false,destroyedAfterCloseCall:null});
 });
 
-test('an Electron-owned crash listener exposes the global-zero assertion with its baseline',async()=>{
+test('all six lifecycle cases remove only owned listeners and preserve the Electron crash listener',async()=>{
     const windows=new Set();
     class Window extends EventEmitter{
         constructor(){super();this.contents=new EventEmitter();this.contents.isDestroyed=()=>!!this.destroyed;
@@ -95,10 +95,33 @@ test('an Electron-owned crash listener exposes the global-zero assertion with it
         getNativeWindowHandle(){return Buffer.from([1,0,0,0,0,0,0,0]);}isDestroyed(){return !!this.destroyed;}isVisible(){return false;}isMinimized(){return false;}
         destroy(){this.destroyed=true;windows.delete(this);this.emit('closed');}close(){this.destroy();}static getAllWindows(){return [...windows];}
     }
-    const report={};await assert.rejects(probe.run({app:{},BrowserWindow:Window,nativeImage:{createFromBitmap:()=>({})}},
-        path.resolve(__dirname,'../src/electronapp/enhanced/windows-native-media.js'),report),error=>{
-        const projected=probe.projectError(error,report);assert.equal(projected.step,'crash-listener-removed');
-        assert.deepEqual(projected.assertion,{operator:'strictEqual',actual:1,expected:0});return true;
-    });
-    assert.deepEqual(report.listenerBaseline,{navigation:0,crash:1});assert.equal(report.stage,'playing-close');
+    const report={};const rows=await probe.run({app:{},BrowserWindow:Window,nativeImage:{createFromBitmap:()=>({})}},
+        path.resolve(__dirname,'../src/electronapp/enhanced/windows-native-media.js'),report);
+    assert.equal(rows.length,6);
+    for(const row of rows){
+        assert.deepEqual(row.listenerOwnership.crash,{baseline:1,ownedAttached:1,totalRemaining:1,ownedRemaining:0,externalPreserved:true});
+        assert.deepEqual(row.listenerOwnership.navigation,{baseline:0,ownedAttached:1,totalRemaining:0,ownedRemaining:0,externalPreserved:true});
+    }
+    assert.deepEqual(report.listenerBaseline,{navigation:0,crash:1});
+
+});
+
+for(const fault of ['none','owned-leak','external-missing','external-replaced','leak-and-external-missing','external-reordered'])test('listener ownership detects '+fault+' by callback identity',()=>{
+    const emitter=new EventEmitter(),first=()=>{},second=()=>{},owned=()=>{};
+    emitter.on('fixture',first);emitter.on('fixture',second);
+    const owner=probe.listenerOwner(emitter,'fixture');emitter.on('fixture',owned);assert.equal(owner.attach(),1);
+    if(!['owned-leak','leak-and-external-missing'].includes(fault))emitter.removeListener('fixture',owned);
+    if(['external-missing','external-replaced','leak-and-external-missing'].includes(fault))emitter.removeListener('fixture',first);
+    if(fault==='external-replaced')emitter.prependListener('fixture',()=>{});
+    if(fault==='external-reordered'){emitter.removeListener('fixture',first);emitter.on('fixture',first);}
+    const state=owner.inspect();assert.equal(state.ownedRemaining,['owned-leak','leak-and-external-missing'].includes(fault)?1:0);
+    assert.equal(state.externalPreserved,fault==='none');
+    if(['external-replaced','leak-and-external-missing','external-reordered'].includes(fault))assert.equal(state.totalRemaining,state.baseline,'same count must not hide a changed listener');
+});
+
+test('duplicate external callbacks retain their original multiplicity and order',()=>{
+    const emitter=new EventEmitter(),external=()=>{},owned=()=>{};emitter.on('fixture',external);emitter.on('fixture',external);
+    const owner=probe.listenerOwner(emitter,'fixture');emitter.on('fixture',owned);assert.equal(owner.attach(),1);
+    emitter.removeListener('fixture',owned);assert.deepEqual(owner.inspect(),{baseline:2,ownedAttached:1,totalRemaining:2,ownedRemaining:0,externalPreserved:true});
+    emitter.removeListener('fixture',external);assert.equal(owner.inspect().externalPreserved,false);
 });
