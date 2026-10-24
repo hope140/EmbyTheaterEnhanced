@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "referenceCommit": "6aebd6595bdb9a9a4765309f3160f9a65206b7f2",
+  "referencePath": "native/windows-media/loader-input.json",
+  "component": "Electron",
+  "version": "44.4.2",
+  "platform": "win32",
+  "arch": "x64",
+  "archiveSha256": "6aae435b6cd5c0eedf9fd38824bae4045ffdaecd029f0b8c8328bac3f5b71f03",
+  "sourcePath": "x64/electron/vulkan-1.dll",
+  "targetPath": "electronapp/libmpv/x64/vulkan-1.dll",
+  "sha256": "7611034fc1bc24fa103b4c6bf923974cdec46fa506952d6f82cfef836db99fd1",
+  "relation": "byte-identical-standard-payload-copy"
+}

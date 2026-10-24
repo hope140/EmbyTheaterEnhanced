@@ -148,15 +148,15 @@ function avi(file, variant, frames = 192) {
     } finally {fs.closeSync(fd);}
     return {file: path.basename(file), size: fs.statSync(file).size, sha256: hashFile(file), etag: '"' + hashFile(file) + '"'};
 }
-function prepare({repo, runtime, zip, out}) {
+function prepare({repo, runtime, zip, out, loaderTrial}) {
     repo = fs.realpathSync(repo); runtime = fs.realpathSync(runtime); zip = fs.realpathSync(zip);
-    const identity = verifyRuntime(repo, runtime, zip); // No directory creation before the source/payload gate.
+    const identity = loaderTrial ? require('./playback-range-loader-trial.cjs').verifyRuntime(repo, runtime, zip, loaderTrial) : verifyRuntime(repo, runtime, zip); // No directory creation before the source/payload gate.
     if (!path.isAbsolute(out) || fs.existsSync(out)) throw Error('fresh-absolute-output-required');
     fs.mkdirSync(out); out = fs.realpathSync(out); fs.writeFileSync(path.join(out, 'owner'), OWNER, {flag: 'wx'});
     const fixtures = [avi(path.join(out, 'A.avi'), 'A'), avi(path.join(out, 'B.avi'), 'B')];
     fs.mkdirSync(path.join(out, 'profile')); writeNew(path.join(out, 'profile', 'ete-range-cache-trial-owner'), 'ETE range trial v1\n'); fs.mkdirSync(path.join(out, 'tmp')); writeNew(path.join(out, 'config.json'), LIMITS);
     const harness = path.join(__dirname, 'playback-range-windows-hidden.cjs');
-    const plan = {schema: 1, candidate: CANDIDATE, identity, runtime, zip, out, fixtures, limits: LIMITS,
+    const plan = {schema: 1, candidate: CANDIDATE, identity, runtime, zip, out, fixtures, limits: LIMITS, ...(loaderTrial ? {loaderTrial} : {}),
         harness, harnessSha256: hashFile(harness), driver: __filename, driverSha256: hashFile(__filename),
         phases: ['populate', 'reopen'], evidence: 'fixed Windows/native hidden transport and decode; no visual, NAS, UI or installation acceptance'};
     writeNew(path.join(out, 'plan.json'), plan); return plan;
@@ -186,7 +186,7 @@ function validatePhase(plan, phase, exit) {
         receipt = JSON.parse(fs.readFileSync(path.join(plan.out, phase + '.json')));
         stages = fs.readFileSync(path.join(plan.out, phase + '.stages.ndjson'), 'utf8').trim().split('\n').map(line => JSON.parse(line));
     } catch (_) {throw Error('missing-or-invalid-phase-evidence:' + phase);}
-    if (receipt.status !== 'passed' || receipt.phase !== phase || receipt.pid !== exit.pid || exit.code !== 0 || exit.timedOut ||
+    if (receipt.status !== 'passed' || receipt.phase !== phase || receipt.pid !== exit.pid || exit.code !== 0 || exit.timedOut || exit.streamsClosed !== true ||
         JSON.stringify(receipt.identity) !== JSON.stringify(plan.identity)) {const error = Error('native-phase-failed:' + phase); error.integrity = integrityDiagnostic({integrity: receipt.integrity}); throw error;}
     const required = phase === 'entry' ? ['module-evaluated', 'main-enter', 'profile-isolated', 'app-ready', 'entry-complete'] :
         ['module-evaluated', 'main-enter', 'profile-isolated', 'app-ready', 'helper-child-start', 'helper-ready', 'phase-complete'];
@@ -197,16 +197,18 @@ function validatePhase(plan, phase, exit) {
     }
     if (phase === 'entry' && (receipt.evidence !== 'fixed-Electron-entry-only' || receipt.checks?.appReady !== true ||
         receipt.checks.windowsCreated !== 0 || receipt.checks.helperStarted !== false || receipt.helpers?.length !== 0)) throw Error('entry-only-contract-failed');
+    if (phase === 'startup' && (receipt.checks?.helperReady !== true || receipt.checks.ownedHelperExit !== true || !receipt.helpers?.length || receipt.helpers.some(h => !h.exited || !require('./playback-range-helper-diagnostics.cjs').normalExit(h.diagnostics)))) throw Error('startup-owned-exit-not-confirmed');
     return receipt;
 }
 async function executePhase(plan, file, phase) {
-    const entry = phase === 'entry', milliseconds = entry ? 20000 : 120000;
+    const entry = phase === 'entry', startup = phase === 'startup', milliseconds = entry ? 20000 : 120000;
     for (const suffix of ['.stdout', '.json', '.running.json', '.stages.ndjson', '.launch.json']) if (fs.existsSync(path.join(plan.out, phase + suffix))) throw Error('previous-receipt-exists-use-fresh-output');
     const output = fs.openSync(path.join(plan.out, phase + '.stdout'), 'wx');
     let timedOut = false, child, timer, exit, launchError;
     try {
-        child = spawn(path.join(plan.runtime, 'x64', 'electron', 'electron.exe'), [plan.harness, entry ? '--execute-electron-entry-smoke' : '--execute-hidden-native', '--plan=' + file, '--phase=' + phase],
+        child = spawn(path.join(plan.runtime, 'x64', 'electron', 'electron.exe'), [plan.harness, entry ? '--execute-electron-entry-smoke' : startup ? '--execute-helper-start-probe' : '--execute-hidden-native', '--plan=' + file, '--phase=' + phase],
             {cwd: plan.out, env: childEnvironment(plan), windowsHide: true, shell: false, stdio: ['ignore', output, output]});
+        const closed = new Promise(resolve => child.once('close', resolve));
         const done = new Promise((resolve, reject) => {
             child.once('error', error => {if (!child.pid) reject(error); else {launchError = error; child.kill();}});
             child.once('exit', (code, signal) => resolve({code, signal}));
@@ -215,7 +217,7 @@ async function executePhase(plan, file, phase) {
         try {
             writeNew(path.join(plan.out, phase + '.launch.json'), {schema: 1, stage: 'electron-child-start', phase, pid: child.pid || null,
                 deadlineMs: milliseconds, imageSha256: plan.identity.electronSha256, entryOnly: entry});
-            exit = {phase, pid: child.pid, ...await done, timedOut};
+            const outcome = await done; await closed; exit = {phase, pid: child.pid, ...outcome, timedOut, streamsClosed: true};
         } catch (error) {if (child.pid && child.exitCode === null) {child.kill(); await done.catch(() => {});} throw error;}
         if (launchError) throw launchError;
         if (timedOut) throw Error(entry ? 'entry-deadline-no-native-requested' : 'outer-deadline-owned-helper-exit-UNCERTAIN-inspect-running-receipt');
@@ -223,9 +225,10 @@ async function executePhase(plan, file, phase) {
     } catch (error) {error.phaseExit = exit; throw error;}
     finally {clearTimeout(timer); fs.closeSync(output);}
 }
+function verifyPlanRuntime(plan, repo) {return plan.loaderTrial ? require('./playback-range-loader-trial.cjs').verifyRuntime(repo, plan.runtime, plan.zip, plan.loaderTrial) : verifyRuntime(repo, plan.runtime, plan.zip);}
 function validatedRun(file, explicit) {
     if (explicit !== true || process.platform !== 'win32' || process.arch !== 'x64') throw Error('explicit-Windows-x64-hidden-execution-required');
-    const plan = readPlan(file), identity = verifyRuntime(path.resolve(__dirname, '..'), plan.runtime, plan.zip);
+    const plan = readPlan(file), identity = verifyPlanRuntime(plan, path.resolve(__dirname, '..'));
     if (JSON.stringify(identity) !== JSON.stringify(plan.identity)) throw Error('candidate-changed-after-preparation');
     return {plan, identity};
 }
@@ -268,4 +271,4 @@ async function main(argv) {
     } else throw Error('Usage: prepare --runtime=PATH --zip=PATH --out=NEW_PATH | entry-smoke --plan=PATH --execute-electron-entry-smoke | run --plan=PATH --execute-hidden-native');
 }
 if (require.main === module) main(process.argv.slice(2)).catch(error => {console.error(error.message); const integrity = integrityDiagnostic(error); if (integrity) console.error(JSON.stringify({integrity})); process.exitCode = 1;});
-module.exports = {CANDIDATE, LIMITS, fileSystemBackend, integrityDiagnostic, physicalPayloadProof, sha, hashFile, regular, writeNew, argumentsOf, zipReceipts, verifyPayload, verifyRuntime, avi, prepare, readPlan, childEnvironment, validatePhase, entrySmoke, run};
+module.exports = {CANDIDATE, LIMITS, fileSystemBackend, integrityDiagnostic, physicalPayloadProof, sha, hashFile, regular, writeNew, argumentsOf, zipReceipts, verifyPayload, verifyRuntime, avi, prepare, readPlan, childEnvironment, validatePhase, entrySmoke, run, verifyPlanRuntime, executePhase};

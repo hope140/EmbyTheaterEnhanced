@@ -21,14 +21,17 @@ function fixture(t, options = {}) {
     const exitPromise = new Promise(resolve => {resolveExit = resolve;});
     const app = {setPath(name, value) {paths[name] = value;}, setAppLogsPath(value) {paths.logs = value;}, isReady: () => ready,
         whenReady: () => readyPromise, exit(code) {exits.push(code); resolveExit(code);}};
-    function BrowserWindow() {throw Error('window-construction-forbidden-in-entry-test');}
+    class BrowserWindow {
+        constructor() {if (!options.startup) throw Error('window-construction-forbidden-in-entry-test'); this.destroyed = false; this.webContents = {};}
+        isVisible() {return false;} isDestroyed() {return this.destroyed;} hide() {} destroy() {this.destroyed = true;}
+    }
     BrowserWindow.getAllWindows = () => options.unexpectedWindow ? [{}] : [];
     const runtime = {versions: {electron: '44.4.2'}, type: options.type || 'browser', platform: 'win32', arch: 'x64', pid: 12345,
-        argv: ['fixture-electron.exe', options.otherFile || entryFile, '--execute-electron-entry-smoke', '--plan=' + path.join(out, 'plan.json'), '--phase=entry'],
+        argv: ['fixture-electron.exe', options.otherFile || entryFile, options.startup ? '--execute-helper-start-probe' : '--execute-electron-entry-smoke', '--plan=' + path.join(out, 'plan.json'), options.startup ? '--phase=startup' : '--phase=entry'],
         execPath: 'fixture-electron.exe', env: support.childEnvironment(plan, {}), stdout: {write(line) {rows.push(JSON.parse(line));}}};
     const localRequire = name => {
         imports.push(name);
-        if (name === './playback-range-windows-smoke.cjs') return {...support, readPlan: () => plan, hashFile: () => 'fixture-image-only', verifyRuntime() {
+        if (name === './playback-range-windows-smoke.cjs') return {...support, readPlan: () => plan, hashFile: () => 'fixture-image-only', verifyPlanRuntime() {
             if (options.validationError) throw options.validationError;
             if (options.validationFailure) throw Error('fixture-candidate-validation-failed');
             return options.physicalProofMismatch ? {...plan.identity, physicalPayload: {files: 999, sha256: 'mismatch'}} : plan.identity;
@@ -38,6 +41,27 @@ function fixture(t, options = {}) {
             const launch = require('../src/electronapp/enhanced/playback-range-launch.js');
             return options.badDerivedConfig ? {...launch, prepareLaunch(argv) {const value = launch.prepareLaunch(argv); return {...value, config: {...value.config, prefetchBytes: 1}};}} : launch;
         }
+        if (options.startup && name === path.join(plan.runtime, 'electronapp', 'native-helper', 'controller.js')) {
+            const {EventEmitter} = require('node:events');
+            return {NativeHelperClient: class {
+                constructor() {this.stderrChunks = []; this.stderrObservedBytes = 0; this.handshake = null; this.exited = false; this.exitPromise = new Promise(resolve => {this.resolveExit = resolve;});}
+                start() {
+                    this.child = new EventEmitter(); this.child.pid = 24680;
+                    return Promise.resolve().then(() => {
+                        if (options.startup === 'fail') {
+                            const line = Buffer.from('helper-fatal:dll-load-failed\n'); this.stderrChunks.push(line); this.stderrObservedBytes = line.length; this.finish(23); throw Error('helper-start-failed:23');
+                        }
+                        this.handshake = {protocolVersion: 1}; return this;
+                    });
+                }
+                finish(code) {if (this.exited) return; this.exited = true; this.resolveExit({code, signal: null}); this.child.emit('exit', code, null); setImmediate(() => this.child.emit('close', code, null));}
+                async kill() {this.finish(options.abnormalHelperExit ? 23 : 0); return this.exitPromise;}
+            }};
+        }
+        if (options.startup && name === path.join(plan.runtime, 'electronapp', 'native-helper', 'service.js')) return {createService(settings) {
+            assert.equal(settings.rangeCache, null, 'startup-only probe must not create cache service'); let client;
+            return {async call(operation) {assert.equal(operation, 'create', 'startup probe must not play/observe media'); client = new settings.NativeHelperClient({}); await client.start(); return {endpointId: 'probe', helperVersion: 'test-substitute'};}, async destroy() {if (client) await client.kill();}};
+        }};
         if (/native-helper/.test(name)) throw Error('native-import-forbidden-in-entry-test');
         return requireActual(name);
     }; // Deliberately no require.main: model Electron's import()-loaded CJS.
@@ -79,7 +103,7 @@ test('substituted loader contract writes earliest/main/app-ready receipts withou
     const result = JSON.parse(fs.readFileSync(path.join(f.out, 'entry.json')));
     assert.equal(result.evidence, 'fixed-Electron-entry-only'); assert.equal(result.checks.helperStarted, false); assert.equal(result.checks.windowsCreated, 0);
     assert(!f.imports.some(name => /native-helper/.test(name)));
-    support.validatePhase(f.plan, 'entry', {pid: 12345, code: 0, timedOut: false});
+    support.validatePhase(f.plan, 'entry', {pid: 12345, code: 0, timedOut: false, streamsClosed: true});
 });
 test('substituted loader contract records pre-ready validation failure and exits without native import', async t => {
     const f = fixture(t, {validationFailure: true}); assert.equal(await f.exitPromise, 1);
@@ -99,7 +123,7 @@ test('import in another Electron script never enters this harness or writes a pr
 });
 for (const change of ['missing-stage', 'wrong-stage-pid', 'nonzero-exit', 'timeout', 'missing-receipt', 'wrong-image', 'helper-started']) test('coordinator refuses incomplete entry evidence: ' + change, async t => {
     const f = fixture(t); f.ready(); await f.exitPromise;
-    const file = path.join(f.out, 'entry.json'), stagesFile = path.join(f.out, 'entry.stages.ndjson'), exit = {pid: 12345, code: 0, timedOut: false};
+    const file = path.join(f.out, 'entry.json'), stagesFile = path.join(f.out, 'entry.stages.ndjson'), exit = {pid: 12345, code: 0, timedOut: false, streamsClosed: true};
     if (change === 'missing-stage' || change === 'wrong-stage-pid') {
         const rows = fs.readFileSync(stagesFile, 'utf8').trim().split('\n').map(line => JSON.parse(line));
         if (change === 'missing-stage') rows.splice(rows.findIndex(row => row.stage === 'app-ready'), 1);
@@ -133,17 +157,17 @@ test('coordinator preserves ownership after a live-child error until its actual 
     f.child.emit('error', Error('owned-child-error')); await new Promise(resolve => setImmediate(resolve));
     assert.equal(settled, false); assert.equal(f.child.kills, 1); assert.equal(f.milliseconds(), 20000);
     assert.equal(f.args()[1][1], '--execute-electron-entry-smoke'); assert.equal(f.args()[2].windowsHide, true);
-    f.child.exitCode = 1; f.child.emit('exit', 1, null); await assert.rejects(run, /owned-child-error/);
+    f.child.exitCode = 1; f.child.emit('exit', 1, null); f.child.emit('close', 1, null); await assert.rejects(run, /owned-child-error/);
 });
 test('short entry deadline records only its owned child and waits for actual exit', async t => {
     const f = coordinator(t), run = f.run('entry'); run.catch(() => {}); f.deadline(); assert.equal(f.child.kills, 1);
-    f.child.exitCode = 1; f.child.emit('exit', 1, 'SIGTERM');
+    f.child.exitCode = 1; f.child.emit('exit', 1, 'SIGTERM'); f.child.emit('close', 1, 'SIGTERM');
     await assert.rejects(run, error => error.message === 'entry-deadline-no-native-requested' && error.phaseExit.timedOut && error.phaseExit.pid === f.child.pid);
 });
 test('longer native deadline is unchanged and no ordinary Node branch claims an entry pass', async t => {
     const f = coordinator(t), run = f.run('populate'); run.catch(() => {}); assert.equal(f.milliseconds(), 120000);
     assert.equal(f.args()[1][1], '--execute-hidden-native');
-    f.child.exitCode = 0; f.child.emit('exit', 0, null); await assert.rejects(run, /missing-or-invalid-phase-evidence/);
+    f.child.exitCode = 0; f.child.emit('exit', 0, null); f.child.emit('close', 0, null); await assert.rejects(run, /missing-or-invalid-phase-evidence/);
     await assert.rejects(support.entrySmoke('not-a-plan', false), /explicit-Windows/);
 });
 
@@ -161,4 +185,27 @@ test('entry cannot pass when its physical payload identity differs from the prep
     const f = fixture(t, {physicalProofMismatch: true}); assert.equal(await f.exitPromise, 1);
     const result = JSON.parse(fs.readFileSync(path.join(f.out, 'entry.json'))); assert.equal(result.status, 'failed'); assert.match(result.error, /same physical payload proof/);
     assert(!f.rows.some(row => row.stage === 'app-ready'));
+});
+test('coordinator waits for Electron close after exit before reading any receipt', async t => {
+    const f = coordinator(t); let settled = false; const run = f.run('entry'); run.catch(() => {settled = true;});
+    f.child.exitCode = 0; f.child.emit('exit', 0, null); await new Promise(resolve => setImmediate(resolve)); assert.equal(settled, false);
+    f.child.emit('close', 0, null); await assert.rejects(run, /missing-or-invalid-phase-evidence/);
+});
+
+test('whole startup-probe substitute captures a tagged failure after helper close without any source request', async t => {
+    const f = fixture(t, {startup: 'fail'}); f.ready(); assert.equal(await f.exitPromise, 1);
+    const result = JSON.parse(fs.readFileSync(path.join(f.out, 'startup.json')));
+    assert.equal(result.status, 'failed'); assert.equal(result.helpers[0].diagnostics.streamsClosed, true); assert.deepEqual(result.originRequests, []);
+    assert(require('../tools/playback-range-helper-diagnostics.cjs').isLoaderFailure(result));
+});
+test('whole startup-probe substitute requires helper ready and normal exit while skipping all cache/media work', async t => {
+    const f = fixture(t, {startup: 'ready'}); f.ready(); assert.equal(await f.exitPromise, 0);
+    const result = JSON.parse(fs.readFileSync(path.join(f.out, 'startup.json')));
+    assert.equal(result.checks.helperReady, true); assert.equal(result.checks.ownedHelperExit, true); assert.deepEqual(result.originRequests, []);
+    assert.equal(result.helpers[0].diagnostics.processExitCode, 0); assert.equal(result.helpers[0].diagnostics.streamsClosed, true);
+    support.validatePhase(f.plan, 'startup', {pid: 12345, code: 0, timedOut: false, streamsClosed: true});
+});
+test('helper ready followed by abnormal exit cannot pass the whole startup probe', async t => {
+    const f = fixture(t, {startup: 'ready', abnormalHelperExit: true}); f.ready(); assert.equal(await f.exitPromise, 1);
+    const result = JSON.parse(fs.readFileSync(path.join(f.out, 'startup.json'))); assert.equal(result.status, 'failed'); assert(result.cleanupErrors.some(error => error.includes('abnormal-exit')));
 });

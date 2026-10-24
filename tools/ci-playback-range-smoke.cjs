@@ -25,7 +25,7 @@ function toolsAt(root) {
 }
 function validateDispatch(mode, workflowCommit, repository, releasePackage, ref) {
     if (ref !== 'refs/heads/feature/playback-range-cache') fail('invalid-range-branch');
-    if (!['entry', 'native'].includes(mode) || releasePackage !== 'false' || repository !== PIN.repository || !/^[a-f0-9]{40}$/.test(workflowCommit || '')) fail('invalid-range-dispatch');
+    if (!['entry', 'native', 'loader-trial'].includes(mode) || releasePackage !== 'false' || repository !== PIN.repository || !/^[a-f0-9]{40}$/.test(workflowCommit || '')) fail('invalid-range-dispatch');
 }
 function createPlan(toolsRoot, root, mode, workflowCommit, repository, releasePackage) {
     validateDispatch(mode, workflowCommit, repository, releasePackage, process.env.GITHUB_REF);
@@ -44,7 +44,7 @@ function createPlan(toolsRoot, root, mode, workflowCommit, repository, releasePa
 function readPlan(file) {
     if (fs.realpathSync(file) !== path.resolve(file)) fail('redirected-control-plan');
     const plan = json(file);
-    if (plan.schema !== 1 || JSON.stringify(plan.pin) !== JSON.stringify(PIN) || !['entry', 'native'].includes(plan.mode) ||
+    if (plan.schema !== 1 || JSON.stringify(plan.pin) !== JSON.stringify(PIN) || !['entry', 'native', 'loader-trial'].includes(plan.mode) ||
         fs.realpathSync(plan.root) !== plan.root || path.resolve(file) !== path.join(plan.root, 'control-plan.json') || fs.readFileSync(path.join(plan.root, 'owner'), 'utf8') !== OWNER) fail('invalid-control-plan');
     toolsAt(plan.toolsRoot);
     if (JSON.stringify(plan.paths) !== JSON.stringify(pathsFor(plan.root))) fail('invalid-control-path');
@@ -129,10 +129,10 @@ function expandedInputs(plan) {
     return {unpacker, installer: matches[0], extracted: plan.paths.extracted, runtime: path.join(plan.paths.extracted, '{app}')};
 }
 function noCredentials(environment) {if (Object.keys(environment).some(name => tokenNames.test(name) && environment[name])) fail('credential-present-in-execution-step');}
-function runTool(plan, arguments_, label) {
+function runTool(plan, arguments_, label, script = path.join(plan.toolsRoot, 'tools/playback-range-windows-smoke.cjs')) {
     const environment = cleanEnvironment(); noCredentials(environment); const file = path.join(plan.root, label + '.stdout'), fd = fs.openSync(file, 'wx');
     try {
-        const result = spawnSync(process.execPath, [path.join(plan.toolsRoot, 'tools/playback-range-windows-smoke.cjs'), ...arguments_],
+        const result = spawnSync(process.execPath, [script, ...arguments_],
             {cwd: plan.toolsRoot, env: environment, windowsHide: true, shell: false, stdio: ['ignore', fd, fd], timeout: 600000});
         if (result.error || result.status !== 0) fail('controlled-smoke-command-failed:' + label);
     } finally {fs.closeSync(fd);}
@@ -142,6 +142,11 @@ function execute(plan) {
     const inputs = expandedInputs(plan), smoke = toolsAt(plan.toolsRoot);
     const identity = smoke.verifyRuntime(plan.toolsRoot, inputs.runtime, plan.paths.artifact);
     writeNew(path.join(plan.root, 'unpack.json'), {status: 'passed', pin: PIN, identity});
+    if (plan.mode === 'loader-trial') {
+        runTool(plan, ['--control-plan=' + path.join(plan.root, 'control-plan.json')], 'loader-trial-driver', path.join(__dirname, 'playback-range-loader-trial.cjs'));
+        writeNew(path.join(plan.root, 'execution.json'), {status: 'passed', mode: plan.mode, baseToolsCommit: PIN.toolsCommit, controlsCommit: plan.workflowCommit,
+            sourceCommit: PIN.sourceCommit, evidence: 'derived-loader-trial-NOT-original-package', originalPackageModified: false}); return;
+    }
     runTool(plan, ['prepare', '--runtime=' + inputs.runtime, '--zip=' + plan.paths.artifact, '--out=' + plan.paths.smoke], 'prepare');
     const file = path.join(plan.paths.smoke, 'plan.json');
     runTool(plan, ['entry-smoke', '--plan=' + file, '--execute-electron-entry-smoke'], 'entry-driver');
@@ -149,7 +154,7 @@ function execute(plan) {
     writeNew(path.join(plan.root, 'execution.json'), {status: 'passed', mode: plan.mode, toolsCommit: PIN.toolsCommit, sourceCommit: PIN.sourceCommit,
         evidence: plan.mode === 'entry' ? 'actual-fixed-Electron-entry-only' : 'actual-fixed-native-synthetic-transport-not-visual-or-NAS'});
 }
-const EVIDENCE = ['extraction-failure.json', 'acquire.json', 'unpack.json', 'execution.json', 'failure.json', 'prepare.stdout', 'entry-driver.stdout', 'native-driver.stdout'];
+const EVIDENCE = ['extraction-failure.json', 'acquire.json', 'unpack.json', 'execution.json', 'failure.json', 'prepare.stdout', 'entry-driver.stdout', 'native-driver.stdout', 'loader-trial-driver.stdout'];
 function collect(plan, destination) {
     if (fs.existsSync(destination)) fail('fresh-evidence-output-required'); fs.mkdirSync(destination, {recursive: true});
     writeNew(path.join(destination, 'control.json'), {schema: 1, pin: PIN, mode: plan.mode, workflowCommit: plan.workflowCommit});
@@ -168,6 +173,14 @@ function collect(plan, destination) {
     const names = ['entry-coordinator.json', 'coordinator.json', 'config.json'];
     for (const phase of ['entry', 'populate', 'reopen']) for (const suffix of ['.json', '.running.json', '.launch.json', '.stages.ndjson', '.stdout']) names.push(phase + suffix);
     for (const name of names) copy(path.join(plan.paths.smoke, name), name);
+    if (plan.mode === 'loader-trial') {
+        const root = path.join(plan.root, 'loader-trial');
+        for (const name of ['baseline-result.json', 'derived-result.json', 'comparison.json', 'result.json']) copy(path.join(root, name), 'loader-' + name);
+        copy(path.join(root, 'derived-image/loader-derivation.json'), 'loader-derivation.json');
+        for (const variant of ['baseline', 'derived']) for (const phase of ['startup', 'populate', 'reopen']) for (const suffix of ['.json', '.running.json', '.launch.json', '.stages.ndjson', '.stdout']) {
+            copy(path.join(root, variant, phase + suffix), 'loader-' + variant + '-' + phase + suffix);
+        }
+    }
     const complete = !copied.some(row => row.action === 'omitted-too-large');
     writeNew(path.join(destination, 'collection.json'), {complete, files: copied}); if (!complete) fail('artifact-evidence-size-refused'); return copied;
 }
@@ -190,7 +203,7 @@ async function main(argv) {
         else if (command === 'collect') console.log(JSON.stringify(collect(plan, args['--out'])));
         else fail('invalid-command');
     } catch (error) {
-        if (plan && !fs.existsSync(path.join(plan.root, 'failure.json'))) writeNew(path.join(plan.root, 'failure.json'), {status: 'failed', command, code: safeCode(error), nativeOutcome: String(error.message).endsWith(':native-driver') ? 'UNCERTAIN' : 'NOT_ESTABLISHED'});
+        if (plan && !fs.existsSync(path.join(plan.root, 'failure.json'))) writeNew(path.join(plan.root, 'failure.json'), {status: 'failed', command, code: safeCode(error), nativeOutcome: /:(?:native|loader-trial)-driver$/.test(String(error.message)) ? 'UNCERTAIN' : 'NOT_ESTABLISHED'});
         throw error;
     }
 }
