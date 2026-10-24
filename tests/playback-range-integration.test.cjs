@@ -12,7 +12,7 @@ const launch = require('../src/electronapp/enhanced/playback-range-launch');
 const {harness, storage} = require('./helpers/api-client-amd.cjs');
 const {create: createEndpoint} = require('../src/electronapp/native-helper/client');
 const flush = async () => {for (let i = 0; i < 20; i++) await new Promise(resolve => setImmediate(resolve));};
-async function fixture(t) {
+async function fixture(t, userConfig) {
     const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'ete-range-integration-'))), rows = [], body = Buffer.from('abcdefghijklmnopqrstuvwxyz012345');
     let editions = 1, holdMetadata = false, metadataResponse;
     const server = http.createServer((req, res) => {
@@ -33,7 +33,8 @@ async function fixture(t) {
     const h = harness(), Api = h.load('apiclient.js').default;
     const api = new Api(storage(), () => Promise.resolve(), origin, 'ETE', 'fixture', 'fixture', 'fixture', 1);
     api.serverInfo({Id: 'server', UserId: 'user', AccessToken: 'synthetic-token'}); api.setSystemInfo({Version: '4.9.0.0'});
-    const config = {root, maxBytes: 128, minFreeBytes: 0, blockBytes: 4, timeoutMs: 1000, bytesPerSecond: 1000000};
+    let config = {root, maxBytes: 128, minFreeBytes: 0, blockBytes: 4, timeoutMs: 1000, bytesPerSecond: 1000000};
+    if (userConfig) {const store = require('../src/electronapp/enhanced/playback-range-user-settings').createStore({profileRoot: root}); store.save(userConfig); config = store.runtimeConfig();}
     const session = createSession({config}), helper = {currentGenerationId: 1, state: {playing: false}}, connectionManager = {getApiClient: () => api};
     const item = {Id: 'current', ServerId: 'server', Type: 'Episode', MediaType: 'Video', SeriesId: 'series'}, source = {Id: 'current-source', Container: 'mp4'};
     const options = {playMethod: 'DirectStream', playSessionId: 'play-1'};
@@ -44,7 +45,8 @@ async function fixture(t) {
     const player = {}, manager = {getCurrentPlayer: () => player, _playQueueManager: {getNextItemInfo: () => queue}, nextItem: () => {throw Error('must not call the async nextItem network entry');}};
     const calls = [], preloads = [];
     const binding = {setContext: value => session.setContext(value, helper, helper.currentGenerationId),
-        preload: async value => {calls.push(value); const job = session.preload(value, helper, helper.currentGenerationId); preloads.push(job); return job;},
+        preload: async value => {calls.push(value); const job = session.preload(value, helper, helper.currentGenerationId); preloads.push(job); return {status: 'ok', value: await job};},
+        status: async () => ({status: 'ok', value: session.status()}),
         cancelNext: () => session.cancelNext(), retire: () => session.retire()};
     const endpoint = {rangeCache: session.status(), createRangeBinding: () => binding}, controller = new AbortController();
     let control;
@@ -181,4 +183,20 @@ test('only the explicit same-series queue neighbor qualifies; browsing does not 
     const options = {player, item, playbackManager: {getCurrentPlayer: () => player, _playQueueManager: {getNextItemInfo: () => ({item: next})}}};
     assert.equal(renderer.nextItem(options, current).Id, 'b');
     for (const change of [null, {...next, Id: 'a'}, {...next, ServerId: 'other'}, {...next, SeriesId: 'other'}, {...next, Type: 'Movie'}]) {next = change; assert.equal(renderer.nextItem(options, current), null);}
+});
+
+test('ordinary saved settings drive automatic threshold preload and playback-info status without trial flags', async t => {
+    const f = await fixture(t, {schema: 1, enabled: true, progressPercent: 70, preloadMB: 100, maxBytes: 1000000, bytesPerSecond: 1000000});
+    assert.equal(path.basename(f.config.root), 'playback-ranges');
+    const control = await f.bind(), selected = await f.session.select(f.sourceUrl, f.helper, 1);
+    await (await fetch(selected.source, {headers: {Range: 'bytes=0-7'}})).arrayBuffer(); await f.session.started(f.helper, 1); control.started();
+    await control.tick(); assert.equal(f.calls.length, 0);
+    f.position(70); await control.tick();
+    for (let i = 0; i < 60 && !f.preloads.length; i++) await flush();
+    assert.equal((await f.preloads[0]).state, 'ready');
+    const status = f.session.status(); assert.equal(status.next.state, 'ready'); assert.equal(status.next.bytes, f.body.length); assert.equal(status.current.bytes, f.body.length);
+    const category = await control.category(); assert.equal(category.name, '播放缓存与预载'); assert.match(category.stats[1].value, /预载完成/);
+    assert(!JSON.stringify(category).includes('synthetic-token')); assert(!JSON.stringify(category).includes('/Videos/'));
+    await control.close(); await f.session.close();
+    const index = JSON.parse(await fs.readFile(path.join(f.config.root, 'index.json'))); assert.equal(Object.keys(index.entries).length, 1, 'unplayed next discarded on normal close');
 });

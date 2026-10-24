@@ -13,7 +13,7 @@
             if (value.serverId !== item.ServerId || !value.accountId || !value.mediaSourceId || !value.playSessionId) value = null;
         } catch (_) {value = null;}
         return function () {
-            try {return value && manager.getApiClient(value.serverId) === api && api.getCurrentUserId() === value.accountId &&
+            try {return value && item.Id === value.itemId && item.ServerId === value.serverId && mediaSource.Id === value.mediaSourceId && options.playSessionId === value.playSessionId && options.playMethod === value.mode && manager.getApiClient(value.serverId) === api && api.getCurrentUserId() === value.accountId &&
                 api.serverId() === value.serverId && (api._identityEpoch || 0) === epoch && api.serverAddress() === address ? value : null;
             } catch (_) {return null;}
         };
@@ -49,11 +49,14 @@
         var endpoint = options.endpoint;
         if (options.signal.aborted || !endpoint || !endpoint.rangeCache || !endpoint.rangeCache.enabled) return null;
         var binding = endpoint.createRangeBinding(), current = capture(options.connectionManager, options.item, options.mediaSource, options.options, options.source);
+        var nextState = 'waiting', stateEpoch = 0, statusSequence = 0, nextCancellation = null;
         var closed = false, closing, ticking = false, ready = false, timer, candidateId = null, attemptId = null, nextController = null, job = null;
         function valid() {return !closed && !options.signal.aborted && options.isCurrent() && current();}
         async function cancelNext() {
-            if (nextController) nextController.abort(); nextController = null;
-            await binding.cancelNext().catch(function () {});
+            stateEpoch++;
+            if (nextController) nextController.abort(); nextController = null; nextState = 'waiting';
+            var cancellation = binding.cancelNext().catch(function () {}); nextCancellation = cancellation;
+            try {await cancellation;} finally {if (nextCancellation === cancellation) nextCancellation = null;}
         }
         var controller = {
             started: function () {if (!ready && valid()) {ready = true; timer = setInterval(function () {void controller.tick();}, 500);}},
@@ -67,13 +70,15 @@
                 if (id !== candidateId) {candidateId = id; attemptId = null; await cancelNext();}
                 if (!next || attemptId === id || !state || !Number.isFinite(state.positionTicks) || !Number.isFinite(state.durationTicks) || state.durationTicks <= 0 ||
                     state.positionTicks / state.durationTicks * 100 < endpoint.rangeCache.progressPercent) return;
-                attemptId = id; var owner = new AbortController(); nextController = owner;
-                function owns() {var c = valid(), n = c && nextItem(options, c); return c && n && n.Id === id && candidateId === id && nextController === owner && !owner.signal.aborted;}
+                attemptId = id; nextState = 'checking'; var owner = new AbortController(); nextController = owner;
+                function ownsCandidate() {var c = valid(), n = c && nextItem(options, c); return c && n && n.Id === id && candidateId === id && nextController === owner;}
+                function owns() {return ownsCandidate() && !owner.signal.aborted;}
                 job = (async function () {
                     var deadline = setTimeout(function () {owner.abort();}, endpoint.rangeCache.timeoutMs);
                     try {
                         var api = options.connectionManager.getApiClient(context.serverId);
                         var item = await readItem(api, id, owner.signal, options.fetch || fetch);
+                        if (owns()) nextState = 'unavailable';
                         if (!owns() || item.ServerId && item.ServerId !== context.serverId || item.Id !== id || item.MediaType !== 'Video' || item.Type !== 'Episode' || item.SeriesId !== options.item.SeriesId || !Array.isArray(item.MediaSources) || item.MediaSources.length !== 1) return;
                         var source = item.MediaSources[0];
                         if (!source.Id || !source.SupportsDirectStream || source.LiveStreamId || !/^[a-z0-9]{1,12}$/i.test(source.Container || '')) return;
@@ -83,14 +88,30 @@
                         if (new URL(url).origin !== context.serverOrigin || !owns()) return;
                         clearTimeout(deadline); deadline = null;
                         var result = await binding.preload(Object.assign({}, context, {source: url, itemId: item.Id, mediaSourceId: source.Id, mode: 'DirectStream', container: source.Container, live: false}));
-                        if (owns() && result && result.value && result.value.state === 'progress-pending') attemptId = null;
-                    } catch (_) { /* Unsupported next metadata does not affect current playback. */ }
+                        if (owns()) {nextState = result && result.value && result.value.state || 'unavailable'; if (nextState === 'progress-pending') {attemptId = null; nextState = 'waiting';}}
+                    } catch (_) {if (ownsCandidate()) nextState = 'unavailable';}
                     finally {if (deadline) clearTimeout(deadline);}
                 })();
                 } finally {ticking = false;}
             },
+            category: async function () {
+                var context = valid(); if (!context || !binding.status) return null;
+                var queue = nextItem(options, context), nextId = queue && queue.Id, ticket = stateEpoch, sequence = ++statusSequence;
+                if (nextCancellation || nextId !== candidateId) return null;
+                try {
+                    var result = await binding.status(), now = valid(), currentNext = now && nextItem(options, now);
+                    if (!now || nextCancellation || nextId !== candidateId || ticket !== stateEpoch || sequence !== statusSequence || nextId !== (currentNext && currentNext.Id) || !result || !result.value || !result.value.enabled) return null;
+                    var status = result.value, labels = {idle: '未预载', waiting: '等待进度或下一集', checking: '正在确认下一集', preparing: '正在准备', warming: '正在预载', ready: '预载完成', partial: '已预载部分', unavailable: '当前来源不可预载', cancelled: '已取消'};
+                    var next = status.next || {}, state = next.state === 'idle' ? nextState : next.state;
+                    var mb = function (n) {return Number.isFinite(n) && n >= 0 ? (n / 1000000).toFixed(1) + ' MB' : '未知';};
+                    return {type: 'enhanced', name: '播放缓存与预载', stats: [
+                        {label: '当前视频磁盘缓存:', value: status.current && status.current.state === 'active' ? mb(status.current.bytes) : '未使用，沿原播放'},
+                        {label: '下一集预载:', value: (labels[state] || '未预载') + (next.bytes > 0 ? ' · ' + mb(next.bytes) + ' / ' + mb(next.targetBytes) : '')}
+                    ]};
+                } catch (_) {return null;}
+            },
             close: function () {
-                if (closing) return closing; closed = true; clearInterval(timer);
+                if (closing) return closing; closed = true; stateEpoch++; clearInterval(timer);
                 if (nextController) nextController.abort();
                 options.signal.removeEventListener('abort', abort);
                 closing = (async function () {await binding.retire().catch(function () {}); if (job) await job;})(); return closing;

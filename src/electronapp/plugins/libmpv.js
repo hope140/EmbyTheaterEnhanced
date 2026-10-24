@@ -344,6 +344,12 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             });
 
             routes.push({
+                path: 'mpvplayer/cache.html', transition: 'slide', controller: pluginManager.mapPath(self, 'mpvplayer/cache.js'),
+                type: 'settings', title: '播放缓存与预载', category: 'Playback', order: 7.5, thumbImage: '', icon: 'cached',
+                settingsTheme: true, adjustHeaderForEmbeddedScroll: true
+            });
+
+            routes.push({
                 path: 'mpvplayer/about.html',
                 transition: 'slide',
                 controller: pluginManager.mapPath(self, 'mpvplayer/about.js'),
@@ -1288,12 +1294,17 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
         self.getStats = function () {
 
-            return Promise.all([getMediaStats(), getVideoStats(), getAudioStats()]).then(function (responses) {
+            var rangeRequest = activePlayRequest;
+            return Promise.all([getMediaStats(), getVideoStats(), getAudioStats()]).then(async function (responses) {
+                if (activePlayRequest === rangeRequest && rangeRequest && rangeRequest.rangeCache) {
+                    var rangeStats = await rangeRequest.rangeCache.category();
+                    if (activePlayRequest === rangeRequest && rangeStats) responses.push(rangeStats);
+                }
 
                 var categories = [];
 
                 for (var i = 0, length = responses.length; i < length; i++) {
-                    categories.push(responses[i]);
+                    if (responses[i] && (i !== 3 || activePlayRequest === rangeRequest)) categories.push(responses[i]);
                 }
                 var enhancedCategory = enhancedRouteState && enhancedRouteState.category();
                 if (enhancedCategory) categories.push(enhancedCategory);

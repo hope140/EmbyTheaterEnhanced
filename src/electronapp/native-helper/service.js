@@ -751,6 +751,10 @@ function createService(options) {
       if (rangeSession) await rangeSession.cancelNext();
       return {status: 'ok'};
     }
+    if (operation === 'range-status') {
+      requireGeneration(active, payload);
+      return {status: 'ok', value: rangeSession ? rangeSession.status() : {enabled: false}};
+    }
     if (operation === 'range-preload') {
       requireGeneration(active, payload);
       if (!rangeSession) return {status: 'ok', value: {state: 'unavailable'}};
@@ -986,7 +990,7 @@ function createService(options) {
     };
   }
 
-  return {call, destroy, mode, notify, prewarm, status, kernelStatus: function () { return status().kernel; },
+  return {call, destroy, mode, notify, prewarm, status, rangeStatus: function () { return rangeSession ? rangeSession.status() : {enabled: false}; }, kernelStatus: function () { return status().kernel; },
     getVideoWindow: function () { return !destroyed && surfaceWindow && !surfaceWindow.isDestroyed() ? surfaceWindow : null; }};
 }
 

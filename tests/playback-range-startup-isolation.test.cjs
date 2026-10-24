@@ -42,7 +42,7 @@ function fixture(t) {
 }
 async function runMain(f, argv, platform = 'win32', failSetPath) {
     const app = new EventEmitter(), paths = {appData: f.appData, userData: f.userData, sessionData: f.sessionData};
-    const calls = {setPath: [], bootstrap: [], identity: [], strm: [], reads: [], kernel: [], modules: []};
+    const calls = {setPath: [], bootstrap: [], identity: [], strm: [], reads: [], kernel: [], range: [], modules: []};
     const env = {APPDATA: f.appData, LOCALAPPDATA: f.appData, MPV_HOME: path.join(f.ordinary, 'mpv')};
     app.setName = () => {}; app.getVersion = () => 'fixture'; app.quit = () => {};
     app.commandLine = {appendSwitch() {}};
@@ -53,7 +53,8 @@ async function runMain(f, argv, platform = 'win32', failSetPath) {
         if (!path.isAbsolute(value) && !path.win32.isAbsolute(value)) throw Error('fixture-electron-path-not-absolute');
         paths[name] = value;
     };
-    const ipcMain = new EventEmitter(), electron = {app, ipcMain, protocol: {registerSchemesAsPrivileged() {}},
+    const ipcMain = new EventEmitter(); ipcMain.handle = function () {}; ipcMain.removeHandler = function () {};
+    const electron = {app, ipcMain, protocol: {registerSchemesAsPrivileged() {}},
         BrowserWindow: class {constructor() {throw Error('fixture-must-stop-before-window');}}, nativeImage: {createFromPath: () => ({})}};
     const noopRegister = {register: () => () => {}};
     const mockFs = new Proxy(fs, {get(target, key) {
@@ -84,6 +85,10 @@ async function runMain(f, argv, platform = 'win32', failSetPath) {
                 fs.mkdirSync(options.rootDir, {recursive: true}); fs.writeFileSync(path.join(options.rootDir, 'synthetic-settings.json'), '{}\n');
             }
             return {getRuntimeConfig: () => ({})};
+        }},
+        './enhanced/playback-range-user-settings': {...require('../src/electronapp/enhanced/playback-range-user-settings'), createStore(options) {
+            const store = require('../src/electronapp/enhanced/playback-range-user-settings').createStore(options);
+            return {...store, runtimeConfig() {const config = store.runtimeConfig(); calls.range.push({options, config}); return config;}};
         }},
         './enhanced/cd2-service': {createService: () => ({})}, './native-helper/service': {resolveMode: () => 'native-helper'},
         './enhanced/mpv-kernel-store': {}, './enhanced/mpv-kernel-ipc': {},
@@ -155,4 +160,14 @@ test('failure while activating an isolated Electron path never falls through to 
     const f = fixture(t), before = snapshot(f.ordinary);
     const result = await runMain(f, [...f.argv, ...f.legacy, ...f.flags], 'win32', 'sessionData');
     assert.equal(result.error && result.error.message, 'fixture-setPath-failure'); assert.equal(result.calls.bootstrap.length, 0); assert.deepEqual(snapshot(f.ordinary), before);
+});
+
+test('ordinary main consumes saved cache settings only from its selected profile with no trial path override', async t => {
+    const f = fixture(t), settings = require('../src/electronapp/enhanced/playback-range-user-settings');
+    settings.createStore({profileRoot: f.userData}).save({schema: 1, enabled: true, progressPercent: 80, preloadMB: 500, maxBytes: 2000000, bytesPerSecond: 1234567});
+    const result = await runMain(f, f.argv, 'win32'); assert.equal(result.error, undefined);
+    assert.equal(result.calls.range.length, 1); const config = result.calls.range[0].config;
+    assert.equal(config.root, path.join(f.userData, 'playback-ranges')); assert.equal(config.progressPercent, 80); assert.equal(config.preloadMB, 500);
+    assert.equal(config.maxBytes, 2000000); assert.equal(config.bytesPerSecond, 1234567); assert.deepEqual(result.calls.setPath, []);
+    assert(!fs.existsSync(config.root), 'no media cache or HTTP service is opened by settings/startup alone');
 });

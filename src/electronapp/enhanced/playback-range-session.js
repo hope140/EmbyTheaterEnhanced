@@ -28,11 +28,13 @@ function playbackContext(value) {
 function createSession({config, create = createCache}) {
     if (!config) return null;
     const policy = selection(config), work = new Set();
+    let cacheInstance = null, nextProgress = {state: 'idle', bytes: 0, targetBytes: policy.prefetchBytes};
     let cachePromise, current = null, next = null, epoch = 0, playedEpoch = 0, closed = false, closing, retirement = Promise.resolve();
-    const ensure = () => cachePromise ||= create(config);
+    const ensure = () => cachePromise ||= Promise.resolve(create(config)).then(value => {cacheInstance = value; return value;});
     const track = promise => {work.add(promise); promise.finally(() => work.delete(promise)).catch(() => {}); return promise;};
     function retire(preserveNext = true) {
         ++epoch; const old = current, oldNext = next; current = next = null;
+        nextProgress = {state: 'idle', bytes: 0, targetBytes: policy.prefetchBytes};
         if (old) old.controller.abort(); if (oldNext) oldNext.controller.abort();
         const cleanup = retirement.then(async () => {
             await Promise.allSettled([old && old.handle && old.handle.stop(), oldNext && oldNext.handle && oldNext.handle.stop()]);
@@ -84,17 +86,23 @@ function createSession({config, create = createCache}) {
                 parsed.itemId === owner.value.itemId || parsed.playSessionId !== owner.value.playSessionId) return {state: 'unavailable'};
             if (next) return {state: 'already-preparing'};
             const record = {controller: new AbortController(), handle: null}; next = record;
+            nextProgress = {state: 'preparing', bytes: 0, targetBytes: policy.prefetchBytes};
             const valid = () => next === record && owns(owner) && !record.controller.signal.aborted;
             try {
                 const cache = await ensure(); if (!valid()) throw Error('range-next-retired');
                 record.handle = await cache.open({source: parsed.source, identity: parsed.identity, role: 'next', isCurrent: valid, signal: record.controller.signal});
-                const result = await record.handle.prefetch({maxBytes: policy.prefetchBytes, bytesPerSecond: config.bytesPerSecond, signal: record.controller.signal});
+                if (!valid()) throw Error('range-next-retired');
+                const size = record.handle.status ? record.handle.status().total : policy.prefetchBytes;
+                nextProgress = {state: 'warming', bytes: 0, targetBytes: Math.min(size, policy.prefetchBytes)};
+                const result = await record.handle.prefetch({maxBytes: policy.prefetchBytes, bytesPerSecond: config.bytesPerSecond, signal: record.controller.signal,
+                    onProgress(value) {if (valid()) nextProgress = {state: 'warming', bytes: value.bytes, targetBytes: value.targetBytes};}});
+                if (valid()) nextProgress = {...nextProgress, bytes: result.bytes, state: result.bytes >= nextProgress.targetBytes ? 'ready' : 'partial'};
                 return {state: 'ready', bytes: result.bytes};
-            } catch (_) {return {state: record.controller.signal.aborted ? 'cancelled' : 'unavailable'};}
+            } catch (_) {if (valid()) nextProgress = {...nextProgress, state: 'unavailable'}; return {state: record.controller.signal.aborted ? 'cancelled' : 'unavailable'};}
         })());
     }
     function cancelNext() {
-        const old = next; next = null;
+        const old = next; next = null; nextProgress = {state: 'idle', bytes: 0, targetBytes: policy.prefetchBytes};
         if (old) old.controller.abort();
         return track((async () => {
             if (old && old.handle) await old.handle.stop();
@@ -102,7 +110,12 @@ function createSession({config, create = createCache}) {
         })());
     }
     return {cancelNext, setContext, select: (...args) => track(select(...args)), started, preload, retire,
-        status: () => ({enabled: true, ...policy, timeoutMs: config.timeoutMs}),
+        status: () => {
+            let bytes = 0; try {if (current && current.handle && current.handle.status) bytes = current.handle.status().bytes;} catch (_) {}
+            return {enabled: true, ...policy, timeoutMs: config.timeoutMs,
+                current: {state: current ? current.handle ? current.playing ? 'active' : 'preparing' : 'original' : 'idle', bytes},
+                next: {...nextProgress}, diskBytes: cacheInstance ? cacheInstance.status().bytes : 0, maxBytes: config.maxBytes};
+        },
         close() {
             if (closing) return closing; closed = true;
             closing = (async () => {await retire(false); await Promise.allSettled([...work]); if (cachePromise) await (await cachePromise).close();})(); return closing;

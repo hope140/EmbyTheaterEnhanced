@@ -13,7 +13,7 @@ function deferred() {let resolve, reject; const promise = new Promise((a, b) => 
 const flush = async () => {for (let i = 0; i < 20; i++) await Promise.resolve();};
 function fixture(t) {
     const started = [], helpers = [];
-    const cache = {async open({source, identity}) {
+    const cache = {status: () => ({bytes: 0}),async open({source, identity}) {
         return {source, async markPlaying() {}, async stop() {}, async prefetch() {started.push(identity.itemId); return {bytes: 4};}};
     }, async discardNext() {}, async discardLastUnless() {}, async close() {}};
     const requireService = createRequire(servicePath), exported = {exports: {}};

@@ -126,6 +126,7 @@
             return {setContext: function (context) {return bound('range-context', context);},
                 preload: function (context) {return bound('range-preload', context);},
                 cancelNext: function () {return bound('range-cancel-next');},
+                status: function () {return bound('range-status');},
                 retire: function () {return bound('range-context', null);}};
         };
         this.sendCommand = function (data) {

@@ -121,6 +121,7 @@
     var strmConfigStore;
     var unregisterCd2Ipc = function () {};
     var unregisterStrmConfigIpc = function () {};
+    var unregisterRangeSettingsIpc = function () {};
     var unregisterDiagnosticsIpc = function () {};
     var unregisterMaintenanceIpc = function () {};
     var unregisterRefreshRate = function () { return Promise.resolve(); };
@@ -1019,6 +1020,13 @@
         rootDir: require('path').join(app.getPath('userData'), 'config'),
         environment: Object.assign({}, process.env)
     });
+    var rangeSettingsModule = require('./enhanced/playback-range-user-settings');
+    var rangeSettingsStore = null;
+    try {rangeSettingsStore = rangeSettingsModule.createStore({profileRoot: app.getPath('userData')});}
+    catch (_) {enhancedLog({category: 'range-cache', event: 'settings-unavailable', details: {}});}
+    var rangeCacheRuntimeConfig = rangeCacheLaunch.enabled ? rangeCacheLaunch.config : rangeSettingsStore && rangeSettingsStore.runtimeConfig();
+    unregisterRangeSettingsIpc = rangeSettingsModule.register({ipcMain: ipcMain, store: rangeSettingsStore, getWebContents: getWebContents,
+        getRuntimeStatus: function () {return nativeHelperService ? nativeHelperService.rangeStatus() : {enabled: !!rangeCacheRuntimeConfig};}});
     cd2Service = cd2ServiceModule.createService({config: strmConfigStore.getRuntimeConfig(), onDiagnostic: enhancedLog});
     unregisterCd2Ipc = require('./enhanced/cd2-ipc').register({
         ipcMain: ipcMain,
@@ -1091,7 +1099,7 @@
             mode: nativeHelperMode,
             kernelStore: mpvKernelStore,
             startupKernelSelection: startupSelection,
-            rangeCache: rangeCacheLaunch.enabled ? rangeCacheLaunch.config : null
+            rangeCache: rangeCacheRuntimeConfig
         });
         unregisterNativeHelperIpc = nativeHelperServiceModule.register({
             ipcMain: ipcMain,
@@ -1134,6 +1142,7 @@
             runCleanup('diagnostics', function () { return unregisterDiagnosticsIpc(); }),
             runCleanup('maintenance', function () { return unregisterMaintenanceIpc(); }),
             runCleanup('strm-config', function () { return unregisterStrmConfigIpc(); }),
+            runCleanup('range-settings', function () { return unregisterRangeSettingsIpc(); }),
             runCleanup('cd2', function () { return unregisterCd2Ipc(); }),
             runCleanup('refresh-rate', function () { return unregisterRefreshRate(); }),
             runCleanup('native-helper', function () { return unregisterNativeHelperIpc(); }),

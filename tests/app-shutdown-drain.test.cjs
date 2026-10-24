@@ -6,12 +6,13 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const stages = ['diagnostics', 'maintenance', 'strm', 'cd2', 'refresh', 'native', 'kernel', 'startup'];
-const callbackStages = stages.slice(0, 7);
+const stages = ['diagnostics', 'maintenance', 'strm', 'range', 'cd2', 'refresh', 'native', 'kernel', 'startup'];
+const callbackStages = stages.slice(0, 8);
 const diagnosticSteps = {
     diagnostics: 'diagnostics',
     maintenance: 'maintenance',
     strm: 'strm-config',
+    range: 'range-settings',
     cd2: 'cd2',
     refresh: 'refresh-rate',
     native: 'native-helper',
@@ -81,6 +82,7 @@ function fixture(failure = null) {
         unregisterDiagnosticsIpc() { return runStage('diagnostics'); },
         unregisterMaintenanceIpc() { return runStage('maintenance'); },
         unregisterStrmConfigIpc() { return runStage('strm'); },
+        unregisterRangeSettingsIpc() { return runStage('range'); },
         unregisterCd2Ipc() { return runStage('cd2'); },
         unregisterRefreshRate() { return runStage('refresh'); },
         unregisterNativeHelperIpc() { return runStage('native'); },

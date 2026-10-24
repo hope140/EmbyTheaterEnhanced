@@ -41,7 +41,8 @@ async function createStore({root, maxBytes, minFreeBytes, blockBytes = 262144}) 
         await fs.rm(lockPath, {force: true}); lock = await fs.open(lockPath, 'wx', 0o600);
     } catch (error) {await guard.close(); throw error;}
     let index = {schema: 1, lastKey: null, entries: {}}, closed = false, closing, tail = Promise.resolve(), bytes = 0;
-    const refs = new Map();
+    const refs = new Map(), pendingRows = new Set();
+    let pendingBytes = 0;
     async function atomic(name, buffer) {
         const temporary = path.join(root, crypto.randomUUID() + '.pending');
         let handle;
@@ -112,6 +113,7 @@ async function createStore({root, maxBytes, minFreeBytes, blockBytes = 262144}) 
             const assertLease = () => {if (released || !index.entries[key]) throw Error('range-lease-retired');};
             return {
                 key, total: proof.total, etag: proof.etag, blockBytes,
+                status() {assertLease(); return {bytes: Object.entries(index.entries[key].blocks).reduce((total, [n, row]) => total + (pendingRows.has(key + ':' + n) ? 0 : row.size), 0), total: proof.total};},
                 readBlock(n) {return serial(async () => {
                     assertLease(); const row = index.entries[key].blocks[n]; if (!row) return null;
                     const file = path.join(root, row.file), stat = await fs.lstat(file).catch(() => null);
@@ -128,7 +130,10 @@ async function createStore({root, maxBytes, minFreeBytes, blockBytes = 262144}) 
                     const file = crypto.randomUUID() + '.bytes';
                     await atomic(file, data);
                     e.blocks[n] = {file, size: data.length, sha256: sha(data)}; bytes += data.length;
-                    try {await save();} catch (error) {delete e.blocks[n]; bytes -= data.length; await fs.rm(path.join(root, file), {force: true}); throw error;}
+                    pendingRows.add(key + ':' + n); pendingBytes += data.length;
+                    const settled = () => {if (pendingRows.delete(key + ':' + n)) pendingBytes -= data.length;};
+                    try {await save();} catch (error) {delete e.blocks[n]; bytes -= data.length; settled(); await fs.rm(path.join(root, file), {force: true}); throw error;}
+                    finally {settled();}
                     return true;
                 });},
                 markPlaying() {return serial(async () => {
@@ -153,7 +158,7 @@ async function createStore({root, maxBytes, minFreeBytes, blockBytes = 262144}) 
             if (old && index.entries[old].mediaKey !== key) {index.lastKey = null; await save(); if (!refs.get(old)) await drop(old);}
         }),
         discardNext: () => serial(discardNext),
-        status: () => ({bytes, leases: [...refs.values()].reduce((a, b) => a + b, 0), maxBytes}),
+        status: () => ({bytes: bytes - pendingBytes, leases: [...refs.values()].reduce((a, b) => a + b, 0), maxBytes}),
         close() {
             if (closing) return closing;
             closing = (async () => {

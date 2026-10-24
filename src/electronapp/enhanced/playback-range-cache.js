@@ -118,8 +118,9 @@ async function createCache(options) {
             let stopping;
             const handle = {
                 source: 'http://127.0.0.1:' + server.address().port + routePath,
+                status: () => lease.status(),
                 markPlaying: () => {if (!active.current()) return Promise.reject(abortError()); return lease.markPlaying();},
-                async prefetch({maxBytes, bytesPerSecond, signal}) {
+                async prefetch({maxBytes, bytesPerSecond, signal, onProgress}) {
                     if (!Number.isSafeInteger(maxBytes) || maxBytes <= 0 || !Number.isSafeInteger(bytesPerSecond) || bytesPerSecond <= 0 || !signal) throw Error('range-prefetch-limits-required');
                     let offset = 0;
                     while (offset < Math.min(maxBytes, lease.total)) {
@@ -132,6 +133,7 @@ async function createCache(options) {
                         try {
                             await active.block(Math.floor(offset / lease.blockBytes), child.signal, true, maxBytes);
                             offset += length;
+                            if (typeof onProgress === 'function') {try {onProgress({bytes: offset, targetBytes: Math.min(maxBytes, lease.total)});} catch (_) {}}
                         } catch (error) {
                             if (error.message === 'range-prefetch-budget') return {bytes: offset};
                             if (!child.signal.aborted || signal.aborted || !active.current()) throw error;
