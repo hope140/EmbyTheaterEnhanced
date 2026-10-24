@@ -13,9 +13,9 @@ function metadata() {return {id: ci.PIN.artifactId, expired: false, expires_at: 
 function run() {return {id: ci.PIN.runId, head_sha: ci.PIN.sourceCommit, status: 'completed', conclusion: 'success'};}
 test('manual range route keeps the exact tool commit and leaves public/package routes and old concurrency independent', () => {
     assert.match(workflow, /range_smoke:\n[\s\S]*?type: choice\n        default: 'off'/);
-    assert.match(job, /if: github.event_name == 'workflow_dispatch' && \(inputs.range_smoke == 'entry' \|\| inputs.range_smoke == 'native' \|\| inputs.range_smoke == 'loader-trial'\)/);
+    assert.match(job, /if: github.event_name == 'workflow_dispatch' && \(inputs.range_smoke == 'entry' \|\| inputs.range_smoke == 'native' \|\| inputs.range_smoke == 'loader-trial' \|\| inputs.range_smoke == 'next-auto'\)/);
     assert.match(job, /runs-on: windows-2022/); assert.match(job, /ref: c9cd9bacf81445c9c10befd121951b1c63c86faa/);
-    assert.match(job, /group: ete-manual-playback-range-smoke/); assert.match(job, /cancel-in-progress: false/); assert.match(job, /timeout-minutes: 15/);
+    assert.match(job, /'ete-manual-next-prefix-auto' \|\| 'ete-manual-playback-range-smoke'/); assert.match(job, /cancel-in-progress: false/); assert.match(job, /timeout-minutes: 15/);
     assert.match(workflow, /group: ete-manual-windows-test-package/); assert.match(workflow, /^permissions:\n  contents: read$/m);
     assert.doesNotMatch(job, /prepare-ci-build-inputs|ci-windows-test-package|release\/|gh release|gh workflow run|createWorkflowDispatch|self-hosted|larger/);
     assert.match(job, /node-version: 24\.18\.1/); assert(job.includes('persist-credentials: false'));
@@ -83,4 +83,22 @@ test('workflow and static extraction retain hash gates, bounded receipts and no 
     assert.doesNotMatch(source + ps + job, /Get-Process|Win32_Process|Get-CimInstance|Stop-Process|taskkill|runas|DispatchWorkflow/);
     assert.match(job, /path: range-smoke-evidence\/\*/); assert.match(job, /retention-days: 1/); assert.match(job, /include-hidden-files: false/);
     assert(source.indexOf("runTool(plan, ['entry-smoke'") < source.indexOf("if (plan.mode === 'native') runTool"));
+});
+
+test('automatic next route is scoped to the independent verification branch', () => {
+    assert.doesNotThrow(() => ci.validateDispatch('next-auto', 'a'.repeat(40), ci.PIN.repository, 'false', 'refs/heads/verify/next-episode-auto-20261024'));
+    for (const ref of ['refs/heads/main', 'refs/heads/feature/playback-range-cache']) assert.throws(() => ci.validateDispatch('next-auto', 'a'.repeat(40), ci.PIN.repository, 'false', ref));
+    assert.match(source, /if \(plan.mode === 'next-auto'\)/);
+    assert.match(source, /--source-commit=' \+ plan.workflowCommit/);
+    assert.match(source, /baseSourceCommit: PIN.sourceCommit, overlaySourceCommit: plan.workflowCommit/);
+    assert.match(source, /'--execute-electron-entry'/); assert.match(source, /'--execute-native'/);
+});
+test('automatic collection includes natural chain receipts while omitting plan/profile/media', t => {
+    const directory = root(t), smoke = path.join(directory, 'smoke'); fs.mkdirSync(smoke);
+    for (const name of ['native.trace.ndjson', 'native.json', 'entry-coordinator.json', 'native-coordinator.json', 'auto-plan.json', 'B.avi']) fs.writeFileSync(path.join(smoke, name), '{}');
+    const destination = path.join(directory, 'evidence'), plan = {root: directory, paths: {smoke}, mode: 'next-auto', workflowCommit: 'a'.repeat(40)};
+    ci.collect(plan, destination);
+    const names = fs.readdirSync(destination);
+    for (const name of ['auto-native.trace.ndjson', 'auto-native.json', 'auto-entry-coordinator.json', 'auto-native-coordinator.json']) assert(names.includes(name));
+    assert(!names.some(name => /plan|avi|profile/.test(name)));
 });

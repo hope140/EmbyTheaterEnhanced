@@ -24,8 +24,8 @@ function toolsAt(root) {
     return smoke;
 }
 function validateDispatch(mode, workflowCommit, repository, releasePackage, ref) {
-    if (ref !== 'refs/heads/feature/playback-range-cache') fail('invalid-range-branch');
-    if (!['entry', 'native', 'loader-trial'].includes(mode) || releasePackage !== 'false' || repository !== PIN.repository || !/^[a-f0-9]{40}$/.test(workflowCommit || '')) fail('invalid-range-dispatch');
+    if (ref !== (mode === 'next-auto' ? 'refs/heads/verify/next-episode-auto-20261024' : 'refs/heads/feature/playback-range-cache')) fail('invalid-range-branch');
+    if (!['entry', 'native', 'loader-trial', 'next-auto'].includes(mode) || releasePackage !== 'false' || repository !== PIN.repository || !/^[a-f0-9]{40}$/.test(workflowCommit || '')) fail('invalid-range-dispatch');
 }
 function createPlan(toolsRoot, root, mode, workflowCommit, repository, releasePackage) {
     validateDispatch(mode, workflowCommit, repository, releasePackage, process.env.GITHUB_REF);
@@ -44,7 +44,7 @@ function createPlan(toolsRoot, root, mode, workflowCommit, repository, releasePa
 function readPlan(file) {
     if (fs.realpathSync(file) !== path.resolve(file)) fail('redirected-control-plan');
     const plan = json(file);
-    if (plan.schema !== 1 || JSON.stringify(plan.pin) !== JSON.stringify(PIN) || !['entry', 'native', 'loader-trial'].includes(plan.mode) ||
+    if (plan.schema !== 1 || JSON.stringify(plan.pin) !== JSON.stringify(PIN) || !['entry', 'native', 'loader-trial', 'next-auto'].includes(plan.mode) ||
         fs.realpathSync(plan.root) !== plan.root || path.resolve(file) !== path.join(plan.root, 'control-plan.json') || fs.readFileSync(path.join(plan.root, 'owner'), 'utf8') !== OWNER) fail('invalid-control-plan');
     toolsAt(plan.toolsRoot);
     if (JSON.stringify(plan.paths) !== JSON.stringify(pathsFor(plan.root))) fail('invalid-control-path');
@@ -142,6 +142,17 @@ function execute(plan) {
     const inputs = expandedInputs(plan), smoke = toolsAt(plan.toolsRoot);
     const identity = smoke.verifyRuntime(plan.toolsRoot, inputs.runtime, plan.paths.artifact);
     writeNew(path.join(plan.root, 'unpack.json'), {status: 'passed', pin: PIN, identity});
+    if (plan.mode === 'next-auto') {
+        const script = path.join(__dirname, 'playback-prefix-windows-auto.cjs'), source = path.resolve(__dirname, '..');
+        runTool(plan, ['prepare', '--tools=' + plan.toolsRoot, '--source=' + source, '--source-commit=' + plan.workflowCommit,
+            '--runtime=' + inputs.runtime, '--zip=' + plan.paths.artifact, '--out=' + plan.paths.smoke], 'prepare', script);
+        const file = path.join(plan.paths.smoke, 'auto-plan.json');
+        runTool(plan, ['entry-smoke', '--plan=' + file, '--execute-electron-entry'], 'entry-driver', script);
+        runTool(plan, ['run', '--plan=' + file, '--execute-native'], 'native-driver', script);
+        writeNew(path.join(plan.root, 'execution.json'), {status: 'passed', mode: plan.mode, toolsCommit: PIN.toolsCommit,
+            baseSourceCommit: PIN.sourceCommit, overlaySourceCommit: plan.workflowCommit,
+            evidence: 'derived-runtime-fixed-Alameda-automatic-next-prefix-not-visual-or-Emby-or-NAS'}); return;
+    }
     if (plan.mode === 'loader-trial') {
         runTool(plan, ['--control-plan=' + path.join(plan.root, 'control-plan.json')], 'loader-trial-driver', path.join(__dirname, 'playback-range-loader-trial.cjs'));
         writeNew(path.join(plan.root, 'execution.json'), {status: 'passed', mode: plan.mode, baseToolsCommit: PIN.toolsCommit, controlsCommit: plan.workflowCommit,
@@ -173,6 +184,9 @@ function collect(plan, destination) {
     const names = ['entry-coordinator.json', 'coordinator.json', 'config.json'];
     for (const phase of ['entry', 'populate', 'reopen']) for (const suffix of ['.json', '.running.json', '.launch.json', '.stages.ndjson', '.stdout']) names.push(phase + suffix);
     for (const name of names) copy(path.join(plan.paths.smoke, name), name);
+    if (plan.mode === 'next-auto') {
+        for (const phase of ['entry', 'native']) for (const suffix of ['.json', '.running.json', '.launch.json', '.trace.ndjson', '.stdout', '-coordinator.json']) copy(path.join(plan.paths.smoke, phase + suffix), 'auto-' + phase + suffix);
+    }
     if (plan.mode === 'loader-trial') {
         const root = path.join(plan.root, 'loader-trial');
         for (const name of ['baseline-result.json', 'derived-result.json', 'comparison.json', 'result.json']) copy(path.join(root, name), 'loader-' + name);

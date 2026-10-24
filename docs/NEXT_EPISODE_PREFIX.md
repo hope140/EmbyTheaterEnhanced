@@ -22,6 +22,6 @@ Stop/换代取消下载并退休路由，已提交下一集前缀可用于同进
 
 ## 验证层次
 
-Node 回归使用临时根目录、合成身份和小型 loopback 字节。设置测试验证真实 100/300/500 MB 映射；低层预算测试仅替换 policy 的结果为 17 字节，真实执行存储与 HTTP 代码，验证总占用、末块、前台不累计、跨账号不命中、抢占、物理取消和退出清空。API/队列集成仍明确使用替身 helper，不能计作 Windows 自动播放通过。
+Node 回归使用临时根目录、合成身份和小型 loopback 字节。设置测试验证真实 100/300/500 MB 映射；低层预算测试仅替换 policy 的结果为 17 字节，真实执行存储与 HTTP 代码，验证总占用、末块、前台不累计、跨账号不命中、抢占、物理取消和退出清空。API/队列集成仍明确使用替身 helper，不能计作 Windows 自动播放通过。独立真实 Alameda 回归已通过原 renderer 定时器与原 manager 的 stopped/nextTrack 自动交接，另测原队列移除候选与应用退出清空；helper 时钟、document 和定时器压缩仍为替身，未证明固定 Windows helper 解码。
 
 真实 helper 自动链须在另行协调的隔离 Windows 环境执行：真实 helper 进度→维护 renderer 定时器→阈值预载；A 自然 EOF→原 PlaybackManager stopped/nextTrack→B 真实加载解码并读取预载块。测试只能一次调用原 manager.play，不能人工调用 preload、tick、nextTrack 或伪造 EOF。隐藏显示层的替代、候选/overlay 身份、固定 DLL、来源请求、命中、解码和所属进程退出须单独记证据。脚本准备及 Node 结构检查不代表该链已运行。

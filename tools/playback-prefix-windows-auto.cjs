@@ -7,6 +7,7 @@ const crypto = require('node:crypto');
 const {execFileSync, spawn} = require('node:child_process');
 const {pathToFileURL} = require('node:url');
 const TOOLS_COMMIT = 'c9cd9bacf81445c9c10befd121951b1c63c86faa';
+const FIXTURE_SIZES = Object.freeze([33182440, 104194304]);
 const OWNER = 'ETE next-prefix automatic-chain experiment v1\n';
 const CONFIG = Object.freeze({kind: 'next-prefix', progressPercent: 70, preloadMB: 100, timeoutMs: 30000});
 const LOADER = Object.freeze({schemaVersion: 1, component: 'Electron', version: '44.4.2', platform: 'win32', arch: 'x64',
@@ -16,11 +17,11 @@ const LOADER = Object.freeze({schemaVersion: 1, component: 'Electron', version: 
 const OVERLAY = Object.freeze([
     'enhanced/playback-prefix-store.js', 'enhanced/playback-range-store.js',
     'enhanced/playback-range-cache.js', 'enhanced/playback-range-session.js',
-    'enhanced/playback-range-renderer.js', 'native-helper/service.js'
+    'enhanced/playback-range-renderer.js', 'native-helper/service.js', 'native-helper/client.js'
 ]);
 const BOUNDARIES = Object.freeze(['anonymous-loopback-ApiClient-facade', 'settings-and-plugin-registration',
     'OSD-CSS-navigation-loading-alert', 'hidden-window-show-focus-suppression', 'owned-document-IPC-relay',
-    'synchronous-AMD-source-loader-in-real-Electron-renderer']);
+    'fixed-Alameda-loader-with-production-aliases']);
 const sha = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 const hashFile = file => sha(fs.readFileSync(file));
 const readJson = file => JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -84,6 +85,26 @@ function verifyOverlaySource(rows, sources, sourceCommit) {
     need(/^[a-f0-9]{40}$/.test(sourceCommit || '') && rows.every(row => row.sourceCommit === sourceCommit) &&
         JSON.stringify(sources.map(({bytes, ...row}) => row)) === JSON.stringify(rows), 'overlay-source-relationship-changed');
 }
+function automaticFixtures(support, out) {
+    const a = path.join(out, 'A.avi'); support.avi(a, 'A');
+    // Give the unchanged real helper 4.8 seconds after the 70% gate to warm P.
+    const bytes = fs.readFileSync(a), avih = bytes.indexOf(Buffer.from('avih')) + 8, strh = bytes.indexOf(Buffer.from('strh')) + 8;
+    bytes.writeUInt32LE(Math.round(1e6 / 12), avih); bytes.writeUInt32LE(320 * 180 * 3 * 12, avih + 4); bytes.writeUInt32LE(12, strh + 24); fs.writeFileSync(a, bytes);
+    const seed = path.join(out, 'B-seed.avi'); support.avi(seed, 'B');
+    const b = fs.readFileSync(seed), index = b.length - (8 + 192 * 16), padding = FIXTURE_SIZES[1] - b.length;
+    need(b.toString('ascii', index, index + 4) === 'idx1' && padding >= 8 && padding % 2 === 0, 'fixture-index-layout');
+    b.writeUInt32LE(FIXTURE_SIZES[1] - 8, 4);
+    const fd = fs.openSync(path.join(out, 'B.avi'), 'wx'), junk = Buffer.alloc(8); junk.write('JUNK'); junk.writeUInt32LE(padding - 8, 4);
+    try {
+        fs.writeSync(fd, b.subarray(0, index)); fs.writeSync(fd, junk);
+        const zero = Buffer.alloc(1048576); for (let left = padding - 8; left > 0; left -= Math.min(left, zero.length)) fs.writeSync(fd, zero.subarray(0, Math.min(left, zero.length)));
+        fs.writeSync(fd, b.subarray(index));
+    } finally {fs.closeSync(fd);}
+    fs.unlinkSync(seed);
+    return ['A', 'B'].map((id, i) => {const file = id + '.avi', full = path.join(out, file), hash = hashFile(full);
+        need(fs.statSync(full).size === FIXTURE_SIZES[i], 'fixture-size');
+        return {file, size: FIXTURE_SIZES[i], sha256: hash, etag: '"' + hash + '"'};});
+}
 function prepare({tools, source, sourceCommit, runtime, zip, out}) {
     tools = fs.realpathSync(tools); source = fs.realpathSync(source); runtime = fs.realpathSync(runtime); zip = fs.realpathSync(zip);
     const support = supportAt(tools), identity = support.verifyRuntime(tools, runtime, zip), base = inventory(runtime, tools);
@@ -99,7 +120,7 @@ function prepare({tools, source, sourceCommit, runtime, zip, out}) {
     need(JSON.stringify(require(path.join(source, loader.generatorPath)).validateRuntime(source, derived)) === JSON.stringify(loader), 'loader-validator-proof-mismatch');
     verifyDerivedInventory(base, inventory(derived, tools), rows, loader);
     for (const folder of ['profile', 'profile/local', 'profile/mpv', 'profile/electron', 'tmp']) fs.mkdirSync(path.join(out, folder), {recursive: true});
-    const fixtures = ['A', 'B'].map(id => support.avi(path.join(out, id + '.avi'), id));
+    const fixtures = automaticFixtures(support, out);
     const driver = path.join(out, 'auto-driver.cjs'); fs.copyFileSync(__filename, driver, fs.constants.COPYFILE_EXCL);
     const plan = {schema: 1, toolsCommit: TOOLS_COMMIT, tools, source, sourceCommit, runtime, zip, out, derived, driver, driverSha256: hashFile(driver),
         identity, overlay: rows.map(({bytes, ...row}) => row), loader, config: CONFIG, boundaries: BOUNDARIES, fixtures,
@@ -125,7 +146,7 @@ function readPlan(file) {
     if (!process.versions.electron) need(JSON.stringify(require(path.join(plan.source, loader.generatorPath)).validateRuntime(plan.source, plan.derived)) === JSON.stringify(loader), 'loader-validator-proof-mismatch');
     const actual = inventory(plan.derived, plan.tools); verifyDerivedInventory(base, actual, rows, loader);
     need(JSON.stringify(support.physicalPayloadProof(actual)) === JSON.stringify(plan.derivedProof), 'derived-proof-changed');
-    need(plan.fixtures.length === 2 && plan.fixtures.every((row, i) => row.file === ['A.avi', 'B.avi'][i] && row.size === 33182440 &&
+    need(plan.fixtures.length === 2 && plan.fixtures.every((row, i) => row.file === ['A.avi', 'B.avi'][i] && row.size === FIXTURE_SIZES[i] &&
         hashFile(physical(path.join(plan.out, row.file))) === row.sha256 && row.etag === '"' + row.sha256 + '"'), 'fixture-changed');
     return plan;
 }
@@ -134,10 +155,11 @@ function validateTrace(trace, total) {
     const a = find('load', row => row.item === 'A'), b = find('load', row => row.item === 'B');
     // A also uses the production priority-observing proxy, but must store no media bytes.
     need(a && b && a.generation !== b.generation && a.direct === false && b.direct === false, 'actual-source-chain-missing');
-    const threshold = find('native-property', row => row.generation === a.generation && row.name === 'time-pos' && row.value >= 5.6);
+    const duration = find('native-property', row => row.generation === a.generation && row.name === 'duration' && row.value > 0);
+    const threshold = duration && find('native-property', row => row.generation === a.generation && row.name === 'time-pos' && row.value / duration.value * 100 >= CONFIG.progressPercent);
     const preload = find('range-preload'), ready = find('prefix-ready');
     const eof = find('native-property', row => row.generation === a.generation && row.name === 'eof-reached' && row.value === true);
-    const next = find('adapter-next'), loaded = find('native-property', row => row.generation === b.generation && row.name === 'file-loaded');
+    const next = find('manager-next-track'), loaded = find('native-property', row => row.generation === b.generation && row.name === 'file-loaded');
     need(threshold && preload && ready && eof && next && loaded && threshold.seq < preload.seq && preload.seq < ready.seq && ready.seq < eof.seq && eof.seq < next.seq && next.seq < b.seq && b.seq < loaded.seq, 'automatic-chain-order-missing');
     need(preload.diskBefore === 0 && ready.bytes === Math.min(CONFIG.preloadMB * 1000000, total) && ready.targetBytes === ready.bytes && ready.diskBytes <= CONFIG.preloadMB * 1000000, 'prefix-target-not-proven');
     need(find('native-property', row => row.generation === b.generation && row.name === 'core-idle' && row.value === false) &&
@@ -145,49 +167,35 @@ function validateTrace(trace, total) {
         find('decoded-B', row => row.width === 320 && row.height === 180 && row.vo === 'gpu-next'), 'B-native-decode-not-proven');
     need(find('prefix-read', row => row.itemId === 'B' && row.seq > b.seq && row.start === 0 && row.end > 0), 'B-prefix-read-not-observed');
     const fresh = trace.filter(row => row.type === 'origin-media' && row.item === 'B' && row.seq > eof.seq);
-    need(fresh.length >= 1 && fresh.every(row => row.start === 0 && row.end === 0), 'B-prefix-origin-hit-not-proven');
+    const probes = fresh.filter(row => row.start === 0 && row.end === 0), misses = fresh.filter(row => row.end > 0);
+    const lastPrefixBlock = Math.floor(CONFIG.preloadMB * 1000000 / 262144) * 262144;
+    need(probes.length >= 1 && misses.length >= 1 && misses.every(row => row.start >= lastPrefixBlock && row.end >= CONFIG.preloadMB * 1000000), 'B-prefix-hit-or-native-miss-not-proven');
     need(trace.filter(row => row.type === 'manager-play-invocation').length === 1 && trace.filter(row => row.type === 'load').length === 2, 'unexpected-play-count');
     need(!trace.some(row => row.type === 'renderer-failure'), 'renderer-failed');
-    return {targetBytes: ready.targetBytes, observedBOriginProbeCount: fresh.length, decoded: true, automatic: true};
+    return {targetBytes: ready.targetBytes, observedBOriginProbeCount: probes.length, observedBNativeMissCount: misses.length, decoded: true, automatic: true};
 }
 // This function runs in the actual Electron renderer; no helper/property/EOF substitute exists here.
 async function rendererBoot(input) {
-    const bridge = window.prefixHarness, records = Object.create(null), stubs = Object.create(null), registered = [];
+    const bridge = window.prefixHarness, stubs = Object.create(null), registered = [];
     const report = (type, data = {}) => bridge.report({type, ...data});
-    const common = 'www/modules/common/', managerId = common + 'playback/playbackmanager.js', eventsId = 'www/modules/emby-apiclient/events.js';
-    const aliases = {playbackManager: managerId, events: eventsId, pluginManager: common + 'pluginmanager.js', appSettings: common + 'appsettings.js',
-        userSettings: common + 'usersettings/usersettings.js', globalize: common + 'globalize.js', connectionManager: 'www/modules/emby-apiclient/connectionmanager.js'};
-    function normalize(id, from) {
-        if (aliases[id]) return aliases[id];
-        if (!id.startsWith('.')) return id;
-        const parts = from.split('/'); parts.pop();
-        for (const part of id.split('/')) {if (part === '..') {if (!parts.length) throw Error('AMD-path-escape'); parts.pop();} else if (part && part !== '.') parts.push(part);}
-        return parts.join('/');
-    }
-    function request(ids, callback, rejected, from = managerId) {
-        try {const values = ids.map(id => id.startsWith('css!') ? (report('presentation-stub', {operation: 'css'}), {}) : load(id, from)); return Promise.resolve(callback && callback(...values));}
-        catch (error) {if (rejected) rejected(error); else throw error;}
-    }
-    function load(raw, from = managerId) {
-        const id = normalize(raw, from), alias = !!aliases[raw];
-        if (!records[id]) {
-            if (Object.hasOwn(stubs, id)) records[id] = {value: stubs[id]};
-            else {
-                const exports = {}, record = records[id] = {value: exports}; let defined = false;
-                const localRequire = (ids, callback, rejected) => request(ids, callback, rejected, id);
-                const define = (dependencies, factory) => {
-                    if (defined || !Array.isArray(dependencies)) throw Error('AMD-definition-invalid'); defined = true;
-                    const args = dependencies.map(dep => dep === 'exports' ? exports : dep === 'require' ? localRequire : load(dep, id));
-                    const value = factory(...args); if (value !== undefined) record.value = value;
-                }; define.amd = {};
-                const source = bridge.source(id); if (typeof source !== 'string') throw Error('AMD-source-unavailable:' + id);
-                new Function('define', 'require', 'module', 'exports', source + '\n//# sourceURL=prefix-runtime/' + id)(define, localRequire, undefined, undefined);
-                if (!defined) throw Error('AMD-definition-missing:' + id);
-                report('module-loaded', {member: 'electronapp/' + id});
-            }
-        }
-        const value = records[id].value; return alias && value && Object.hasOwn(value, 'default') ? value.default : value;
-    }
+    const common = 'modules/common/';
+    const aliases = {playbackManager: common + 'playback/playbackmanager.js', events: 'modules/emby-apiclient/events.js',
+        pluginManager: common + 'pluginmanager.js', appSettings: common + 'appsettings.js',
+        userSettings: common + 'usersettings/usersettings.js', globalize: common + 'globalize.js', connectionManager: 'modules/emby-apiclient/connectionmanager.js'};
+    // Use the unchanged pinned Alameda implementation. Script loading and module
+    // identity stay asynchronous; aliases unwrap default exports as app.js does.
+    const loaderDocument = {createElement: name => document.createElement(name), head: {appendChild(script) {
+        script.addEventListener('load', () => {
+            const member = new URL(script.src).pathname.split('/electronapp/')[1];
+            if (member) report('module-loaded', {member: 'electronapp/' + member});
+        });
+        return document.head.appendChild(script);
+    }}};
+    const amd = new Function('document', bridge.source('www/modules/alameda/alameda.js') +
+        ';return {require:requirejs,define:define};')(loaderDocument);
+    window.define = amd.define; window.require = amd.require;
+    amd.require.config({baseUrl: input.moduleBaseUrl, noRequireCss: true});
+    const load = id => amd.require([id]).then(values => values[0]);
     function url(relative, params) {const u = new URL(relative, input.origin + '/'); for (const [key, value] of Object.entries(params || {})) if (value != null) u.searchParams.set(key, value); return u.href;}
     const get = async relative => {const r = await fetch(url(relative), {redirect: 'error'}); if (!r.ok) throw Error('fixture-api-failed'); return r.json();};
     const api = {serverAddress: () => input.origin, serverId: () => 'prefix-server', getCurrentUserId: () => 'anonymous', deviceId: () => 'prefix-device', accessToken: () => '',
@@ -205,17 +213,22 @@ async function rendererBoot(input) {
     stubs[aliases.globalize] = {default: {translate: value => value}};
     stubs[aliases.connectionManager] = {default: {getApiClient: () => api, currentApiClient: () => api}};
     stubs[common + 'servicelocator.js'] = {appHost: {supports: () => false}, fullscreenManager: {}, serverNotifications: {}};
-    stubs['www/modules/loading/loading.js'] = {default: {show: () => report('presentation-stub', {operation: 'loading'}), hide: () => {}}};
+    stubs['modules/loading/loading.js'] = {default: {show: () => report('presentation-stub', {operation: 'loading'}), hide: () => {}}};
     stubs.embyRouter = {showVideoOsd: () => Promise.resolve(), setTransparency: () => {}};
     stubs.alert = () => {report('renderer-failure', {code: 'playback-alert'}); return Promise.resolve();};
-    window.require = (ids, callback, rejected) => request(ids, callback, rejected);
+    for (const [id, value] of Object.entries(stubs)) amd.define(id, [], () => value);
+    for (const [alias, id] of Object.entries(aliases)) amd.define(alias, [], () =>
+        load(id).then(value => value && Object.hasOwn(value, 'default') ? value.default : value));
     window.platform = 'win32'; window.PlayerWindowId = input.windowId;
     window.ipc = {invoke: (channel, payload) => bridge.invoke(channel, payload), send: (channel, payload) => bridge.send(channel, payload),
         on: (_channel, listener) => bridge.listen(data => listener(null, data)), removeListener: (_channel, listener) => bridge.unlisten(listener)};
     window.addEventListener('error', () => report('renderer-failure', {code: 'window-error'}));
     window.addEventListener('unhandledrejection', () => report('renderer-failure', {code: 'unhandled-rejection'}));
     try {
-        const events = load('events'), manager = load('playbackManager'), Player = load('plugins/libmpv.js'), player = new Player();
+        const events = await load('events'), manager = await load('playbackManager'), Player = await load('../plugins/libmpv.js'), player = new Player();
+        // Observe the original manager method; EOF remains the sole caller.
+        const originalNextTrack = manager.nextTrack;
+        manager.nextTrack = function () {report('manager-next-track'); return originalNextTrack.apply(this, arguments);};
         registered.push(player); events.trigger(plugins, 'registered', [player]);
         const items = await Promise.all(['A', 'B'].map(id => api.getItem('anonymous', id)));
         window.prefixStop = async () => {await manager.stop(); await player.destroy();};
@@ -237,10 +250,10 @@ function preload() {
 async function fixtureServer(plan, record) {
     const http = require('node:http'), active = new Set(), sockets = new Set();
     function item(id) {return {Id: id, ServerId: 'prefix-server', Name: 'Synthetic ' + id, Type: 'Episode', MediaType: 'Video', SeriesId: 'synthetic-series',
-        Path: id + '.avi', RunTimeTicks: 80000000, MediaSources: [media(id)]};}
-    function media(id) {return {Id: id + '-avi', Container: 'avi', Protocol: 'Http', Path: id + '.avi', RunTimeTicks: 80000000, SupportsDirectPlay: false,
+        Path: id + '.avi', RunTimeTicks: id === 'A' ? 160000000 : 80000000, MediaSources: [media(id)]};}
+    function media(id) {return {Id: id + '-avi', Container: 'avi', Protocol: 'Http', Path: id + '.avi', RunTimeTicks: id === 'A' ? 160000000 : 80000000, SupportsDirectPlay: false,
         SupportsDirectStream: true, SupportsTranscoding: false, DirectStreamUrl: 'Videos/' + id + '/stream.avi?Static=true&mediaSourceId=' + id + '-avi',
-        MediaStreams: [{Index: 0, Type: 'Video', Codec: 'rawvideo', Width: 320, Height: 180, RealFrameRate: 24}], DefaultSubtitleStreamIndex: -1};}
+        MediaStreams: [{Index: 0, Type: 'Video', Codec: 'rawvideo', Width: 320, Height: 180, RealFrameRate: id === 'A' ? 12 : 24}], DefaultSubtitleStreamIndex: -1};}
     const server = http.createServer((req, res) => {
         active.add(res); res.once('close', () => active.delete(res));
         const u = new URL(req.url, 'http://127.0.0.1');
@@ -294,7 +307,7 @@ async function electronMain(file, phase) {
         }
         const mainWindow = new HiddenWindow({show: false, focusable: false, skipTaskbar: true, width: 320, height: 180,
             webPreferences: {sandbox: false, nodeIntegration: false, contextIsolation: true, preload: plan.driver, additionalArguments: ['--prefix-auto-preload']}});
-        const html = path.join(plan.out, 'renderer.html'); fs.writeFileSync(html, '<!doctype html><meta charset="utf-8"><title>Owned prefix fixture</title><body></body>', {flag: 'wx'});
+        const html = path.join(plan.out, 'renderer.html'); fs.writeFileSync(html, '<!doctype html><meta charset="utf-8"><base href="' + pathToFileURL(path.join(plan.derived, 'electronapp/www')).href + '/"><title>Owned prefix fixture</title><body></body>', {flag: 'wx'});
         const documentUrl = pathToFileURL(html).href;
         mainWindow.webContents.on('will-navigate', event => event.preventDefault());
         const trusted = event => event.sender === mainWindow.webContents && event.senderFrame === mainWindow.webContents.mainFrame && event.senderFrame.url === documentUrl;
@@ -313,7 +326,7 @@ async function electronMain(file, phase) {
             try {event.returnValue = fs.readFileSync(physical(path.join(plan.derived, 'electronapp', member)), 'utf8');} catch (_) {event.returnValue = null;}
         });
         ipcMain.on('prefix-report', (event, row) => {
-            if (!trusted(event) || !row || !['presentation-stub', 'module-loaded', 'server-report', 'manager-play-invocation', 'initial-play-resolved', 'renderer-failure'].includes(row.type)) return;
+            if (!trusted(event) || !row || !['presentation-stub', 'module-loaded', 'server-report', 'manager-play-invocation', 'manager-next-track', 'initial-play-resolved', 'renderer-failure'].includes(row.type)) return;
             record(row.type, Object.fromEntries(Object.entries(row).filter(([key]) => ['operation', 'member', 'method', 'item', 'code', 'detail'].includes(key))));
             if (row.type === 'renderer-failure') fatal = Error('renderer-chain-failed');
         });
@@ -324,12 +337,11 @@ async function electronMain(file, phase) {
             return service.call(request.operation, request.payload, request.endpointId);
         });
         ipcMain.on('enhanced-native-helper-notify', (event, request) => {if (trusted(event)) service.notify(request.operation, request.payload, request.endpointId);});
-        ipcMain.on('enhanced-diagnostics-log', (event, row) => {if (trusted(event) && row?.category === 'playback' && row.event === 'next') record('adapter-next');});
         ipcMain.handle('enhanced-strm-config-get', event => {need(trusted(event), 'untrusted-renderer'); return {version: 1, enabled: false, cd2: {}, rules: []};});
         visibilityTimer = setInterval(() => {for (const window of windows) if (!window.isDestroyed() && window.isVisible()) {window.hide(); fatal = Error('unexpected-visible-window');}}, 25);
         await mainWindow.loadFile(html);
         const windowId = require(path.join(plan.derived, 'electronapp/native-helper/service.js')).decimalWindowHandle(mainWindow);
-        await mainWindow.webContents.executeJavaScript('(' + rendererBoot.toString() + ')(' + JSON.stringify({origin: origin.origin, windowId}) + ')');
+        await mainWindow.webContents.executeJavaScript('(' + rendererBoot.toString() + ')(' + JSON.stringify({origin: origin.origin, windowId, moduleBaseUrl: pathToFileURL(path.join(plan.derived, 'electronapp/www')).href + '/'}) + ')');
         const deadline = Date.now() + 95000; let checks;
         while (Date.now() < deadline) {
             if (fatal) throw fatal;
@@ -339,7 +351,10 @@ async function electronMain(file, phase) {
             const b = trace.find(row => row.type === 'load' && row.item === 'B'), client = clients.at(-1);
             if (b && client?.currentGenerationId === b.generation && client.state.fileLoaded && trace.some(row => row.type === 'native-property' && row.generation === b.generation && row.name === 'time-pos' && row.value >= 0.25)) {
                 const video = await client.getProperty('video-out-params', 2000), vo = await client.getProperty('current-vo', 2000);
-                record('decoded-B', {width: video?.w, height: video?.h, vo}); checks = validateTrace(trace, plan.fixtures[1].size); break;
+                record('decoded-B', {width: video?.w, height: video?.h, vo});
+                if (trace.some(row => row.type === 'origin-media' && row.item === 'B' && row.seq > b.seq && row.end >= CONFIG.preloadMB * 1000000)) {
+                    checks = validateTrace(trace, plan.fixtures[1].size); break;
+                }
             }
             await new Promise(resolve => setTimeout(resolve, 25));
         }
@@ -406,4 +421,4 @@ else if (require.main === module || process.versions.electron && process.type ==
     console.error(String(error.message).slice(0, 200)); process.exitCode = 1;
     if (process.versions.electron && process.type === 'browser') require('electron').app.exit(1);
 });
-module.exports = {TOOLS_COMMIT, CONFIG, LOADER, OVERLAY, BOUNDARIES, cleanEnvironment, overlayRows, verifyDerivedInventory, verifyOverlaySource, argumentsOf, validateTrace, rendererBoot, prepare, readPlan};
+module.exports = {TOOLS_COMMIT, CONFIG, LOADER, OVERLAY, BOUNDARIES, cleanEnvironment, overlayRows, verifyDerivedInventory, verifyOverlaySource, argumentsOf, validateTrace, rendererBoot, fixtureServer, automaticFixtures, FIXTURE_SIZES, prepare, readPlan};

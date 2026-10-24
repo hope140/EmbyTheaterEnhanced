@@ -35,7 +35,7 @@ function inventories() {
         actual.set(member, row); return row;
     }); return {base, actual, rows};
 }
-test('derived runtime accepts only the six exact maintained overlay paths and retains every other byte', () => {
+test('derived runtime accepts only the seven exact maintained overlay paths and retains every other byte', () => {
     const f = inventories(); assert.doesNotThrow(() => tool.verifyDerivedInventory(f.base, f.actual, f.rows));
     f.actual.set('electronapp/native-helper/ete-mpv-helper.exe', {size: 6, sha256: hash('tamper')});
     assert.throws(() => tool.verifyDerivedInventory(f.base, f.actual, f.rows), /derived-file-mismatch/);
@@ -77,22 +77,23 @@ test('overlay rows bind every source hash to the exact declared source commit', 
     assert.throws(() => tool.verifyOverlaySource(changed, sources, '1'.repeat(40)), /source-relationship/);
 });
 function validTrace() {
-    const total = 33182440;
+    const total = tool.FIXTURE_SIZES[1], prefix = tool.CONFIG.preloadMB * 1000000;
     return [
         {type: 'manager-play-invocation'}, {type: 'load', item: 'A', generation: 1, direct: false},
         {type: 'native-property', generation: 1, name: 'time-pos', value: 5.7}, {type: 'range-preload', diskBefore: 0},
-        {type: 'prefix-ready', bytes: total, targetBytes: total, diskBytes: total},
-        {type: 'native-property', generation: 1, name: 'eof-reached', value: true}, {type: 'adapter-next'},
+        {type: 'prefix-ready', bytes: prefix, targetBytes: prefix, diskBytes: prefix},
+        {type: 'native-property', generation: 1, name: 'eof-reached', value: true}, {type: 'manager-next-track'},
         {type: 'origin-media', item: 'B', start: 0, end: 0}, {type: 'load', item: 'B', generation: 2, direct: false},
         {type: 'native-property', generation: 2, name: 'file-loaded'}, {type: 'native-property', generation: 2, name: 'core-idle', value: false},
         {type: 'native-property', generation: 2, name: 'time-pos', value: 0.3}, {type: 'decoded-B', width: 320, height: 180, vo: 'gpu-next'},
+        {type: 'origin-media', item: 'B', start: 103809024, end: 104071167},
         {type: 'prefix-read', itemId: 'B', start: 0, end: 262143}
-    ].map((row, seq) => ({seq, ...row}));
+    ].map((row, seq) => ({seq, ...row})).concat([{seq: 1.5, type: 'native-property', generation: 1, name: 'duration', value: 8}]);
 }
 test('receipt validator checks min(P,total), actual automatic order and decoded B (synthetic validator evidence only)', () => {
-    assert.equal(tool.validateTrace(validTrace(), 33182440).targetBytes, 33182440);
+    assert.equal(tool.validateTrace(validTrace(), tool.FIXTURE_SIZES[1]).targetBytes, 100000000);
 });
-for (const mutation of ['no-eof', 'threshold-too-low', 'preload-too-early', 'late-ready', 'refetch', 'same-generation', 'no-decode', 'no-prefix-read', 'second-play', 'foreground-stored', '300MB-claim', 'renderer-failed']) test('automatic acceptance refuses ' + mutation, () => {
+for (const mutation of ['no-eof', 'threshold-too-low', 'preload-too-early', 'late-ready', 'refetch', 'same-generation', 'no-decode', 'no-prefix-read', 'second-play', 'foreground-stored', '300MB-claim', 'renderer-failed', 'no-native-miss']) test('automatic acceptance refuses ' + mutation, () => {
     const trace = validTrace();
     if (mutation === 'no-eof') trace.splice(5, 1);
     if (mutation === 'threshold-too-low') trace[2].value = 5.5;
@@ -101,18 +102,19 @@ for (const mutation of ['no-eof', 'threshold-too-low', 'preload-too-early', 'lat
     if (mutation === 'refetch') trace.push({seq: 20, type: 'origin-media', item: 'B', start: 0, end: 262143});
     if (mutation === 'same-generation') trace[8].generation = 1;
     if (mutation === 'no-decode') trace.splice(trace.findIndex(row => row.type === 'decoded-B'), 1);
-    if (mutation === 'no-prefix-read') trace.pop();
+    if (mutation === 'no-prefix-read') trace.splice(trace.findIndex(row => row.type === 'prefix-read'), 1);
+    if (mutation === 'no-native-miss') trace.splice(trace.findIndex(row => row.type === 'origin-media' && row.start > 0), 1);
     if (mutation === 'second-play') trace.push({seq: 20, type: 'manager-play-invocation'});
     if (mutation === 'foreground-stored') trace[3].diskBefore = 262144;
     if (mutation === '300MB-claim') trace[4].targetBytes = 300000000;
     if (mutation === 'renderer-failed') trace.push({seq: 20, type: 'renderer-failure'});
-    assert.throws(() => tool.validateTrace(trace, 33182440));
+    assert.throws(() => tool.validateTrace(trace, tool.FIXTURE_SIZES[1]));
 });
 test('real-renderer boot uses production manager, adapter and queue modules without driving the protected chain', () => {
     const body = tool.rendererBoot.toString(); new Function('return (' + body + ')');
     assert.equal((body.match(/manager\.play\(/g) || []).length, 1);
     for (const forbidden of [/\.nextTrack\s*\(/, /\.tick\s*\(/, /\.preload\s*\(/, /_onStopped\s*\(/, /trigger\([^\n]*['"](?:stopped|timeupdate|core-playing)['"]/]) assert.doesNotMatch(body, forbidden);
-    assert.match(body, /load\('playbackManager'\)/); assert.match(body, /load\('plugins\/libmpv\.js'\)/);
+    assert.match(body, /load\('playbackManager'\)/); assert.match(body, /load\('\.\.\/plugins\/libmpv\.js'\)/);
     assert.doesNotMatch(body, /stubs\[[^\n]*(?:managerId|eventsId|playqueuemanager|range-renderer|native-helper)/);
     assert(tool.BOUNDARIES.includes('hidden-window-show-focus-suppression'));
 });
@@ -136,7 +138,24 @@ test('Node substituted document loads real AMD manager/queue/adapter and refuses
             if (url.pathname.endsWith('/PlaybackInfo')) return {PlaySessionId: 'fixture-' + id, MediaSources: item(id).MediaSources};
             return item(id);
         }})};
-    await vm.runInNewContext('(' + tool.rendererBoot.toString() + ')({origin:"http://127.0.0.1:1",windowId:"1"})', context);
+    Object.assign(window, context); window.window = window;
+    vm.createContext(window);
+    document.head = {appendChild(script) {
+        script.src = new URL(script.src, 'file:///fixture/electronapp/www/').href;
+        const member = new URL(script.src).pathname.split('/electronapp/')[1];
+        queueMicrotask(() => {
+            try {vm.runInContext(window.prefixHarness.source(member), window, {filename: member}); script.fire('load');}
+            catch (error) {script.fire('error');}
+        });
+    }};
+    const createElement = document.createElement;
+    document.createElement = name => {
+        if (name !== 'script') return createElement(name);
+        const listeners = new Map();
+        return {addEventListener(name, callback) {listeners.set(name, [...(listeners.get(name) || []), callback]);},
+            fire(name) {for (const callback of listeners.get(name) || []) callback();}};
+    };
+    await vm.runInContext('(' + tool.rendererBoot.toString() + ')({origin:"http://127.0.0.1:1",windowId:"1",moduleBaseUrl:"file:///fixture/electronapp/www/"})', window);
     const loaded = reports.filter(row => row.type === 'module-loaded').map(row => row.member);
     for (const member of ['electronapp/www/modules/common/playback/playbackmanager.js', 'electronapp/www/modules/common/playback/playqueuemanager.js',
         'electronapp/plugins/libmpv.js', 'electronapp/enhanced/playback-range-renderer.js', 'electronapp/native-helper/client.js']) assert(loaded.includes(member), member + ': ' + JSON.stringify(reports));
@@ -144,4 +163,15 @@ test('Node substituted document loads real AMD manager/queue/adapter and refuses
     assert(calls.some(row => row.channel === 'enhanced-native-helper-call' && row.request?.operation === 'create'), JSON.stringify(reports));
     assert(reports.some(row => row.type === 'renderer-failure'));
     assert(!reports.some(row => row.type === 'initial-play-resolved'));
+});
+
+test('automatic AVI fixtures put B index beyond P and leave A 16 seconds for natural threshold warming', t => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'prefix-avi-')); t.after(() => fs.rmSync(root, {recursive: true, force: true}));
+    const support = require('../tools/playback-range-windows-smoke.cjs'), fixtures = tool.automaticFixtures(support, root);
+    assert.deepEqual(fixtures.map(row => row.size), tool.FIXTURE_SIZES);
+    const a = fs.readFileSync(path.join(root, 'A.avi')), b = fs.readFileSync(path.join(root, 'B.avi'));
+    assert.equal(a.readUInt32LE(a.indexOf(Buffer.from('strh')) + 8 + 24), 12);
+    const index = b.length - (8 + 192 * 16); assert(index > tool.CONFIG.preloadMB * 1000000);
+    assert.equal(b.toString('ascii', index, index + 4), 'idx1'); assert.equal(b.readUInt32LE(4) + 8, b.length);
+    assert.equal(hash(b), fixtures[1].sha256); assert(!fs.existsSync(path.join(root, 'B-seed.avi')));
 });
