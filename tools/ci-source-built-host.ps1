@@ -64,6 +64,19 @@ try {
     $phaseSucceeded = $true
 } finally { Complete-CIPhase $phase $phaseSucceeded }
 
+# Exercise the same patch-only path as Build-UnifiedHost and compare it with
+# the declared replacement route before any compiler or verification receipt.
+$phase = Start-CIPhase 'host.source-chain'
+$phaseSucceeded = $false
+try {
+    $chainParent = ([string](& node -e "process.stdout.write(require('fs').realpathSync.native(require('os').tmpdir()))")).Trim()
+    if ($LASTEXITCODE -ne 0 -or -not $chainParent) { throw 'Canonical source-chain temporary directory unavailable.' }
+    $chainOutput = Join-Path $chainParent ('ete-host-source-chain-' + [guid]::NewGuid().ToString('N'))
+    & node $tool source-chain $root $source $kit $chainOutput
+    if ($LASTEXITCODE -ne 0) { throw 'Official55 -> patch -> identity source chain failed.' }
+    $phaseSucceeded = $true
+} finally { Complete-CIPhase $phase $phaseSucceeded }
+
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 function Read-Member($entry) {
     $stream = $entry.Open(); $memory = [IO.MemoryStream]::new()

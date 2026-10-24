@@ -50,6 +50,9 @@ namespace Emby.Theater
 
         private static IFileSystem FileSystem;
         private static bool _restartOnShutdown;
+        private static Dispatcher _exitDispatcher;
+        private static int _exitRequested;
+        private static int _exitLoopStarted;
 
         /// <summary>
         /// /// The main entry point for the application.
@@ -57,6 +60,7 @@ namespace Emby.Theater
         [STAThread]
         static void Main()
         {
+            InitializeExitDispatcher();
             ApplicationPath = Assembly.GetEntryAssembly().Location;
 
             var environmentInfo = GetEnvironmentInfo();
@@ -184,15 +188,51 @@ namespace Emby.Theater
                         Application.EnableVisualStyles();
                         Application.SetCompatibleTextRenderingDefault(false);
 
-                        Application.Run(new AppContext(server));
+                        var applicationContext = new AppContext(server);
+                        _logger.Info("Host application loop starting");
+                        RunApplicationLoop(applicationContext);
+                        _logger.Info("Host application loop returned");
                     }
                 }
             }
         }
 
+        private static void InitializeExitDispatcher()
+        {
+            _exitDispatcher = Dispatcher.CurrentDispatcher;
+            Application.Idle += OnExitIdle;
+        }
+
+        private static void RunApplicationLoop(ApplicationContext context)
+        {
+            Volatile.Write(ref _exitLoopStarted, 1);
+            try { Application.Run(context); }
+            finally { Volatile.Write(ref _exitLoopStarted, 0); }
+        }
+
+        private static void OnExitIdle(object sender, EventArgs e)
+        {
+            if (Volatile.Read(ref _exitLoopStarted) != 0 && _exitDispatcher.CheckAccess() && Application.MessageLoop)
+            {
+                Application.Idle -= OnExitIdle;
+                ExitWhenMessageLoopReady();
+            }
+        }
+
+        private static void ExitWhenMessageLoopReady()
+        {
+            if (Volatile.Read(ref _exitLoopStarted) != 0 && _exitDispatcher.CheckAccess() && Application.MessageLoop && Volatile.Read(ref _exitRequested) != 0)
+            {
+                Application.Exit();
+            }
+        }
+
         public static void Exit()
         {
-            Application.Exit();
+            if (Interlocked.Exchange(ref _exitRequested, 1) == 0)
+            {
+                _exitDispatcher.BeginInvoke(new Action(ExitWhenMessageLoopReady));
+            }
         }
 
         private static IEnvironmentInfo GetEnvironmentInfo()

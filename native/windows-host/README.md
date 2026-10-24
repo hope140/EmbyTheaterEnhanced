@@ -16,7 +16,7 @@ The Host no longer invokes CEC driver installation or passes a CEC argument to E
 
 The two retired classes reduce the original46 Compile items to44; the two new JSON/ZIP helpers restore the current total to46. `json-zip-input.json` binds the four reviewed JSON/ZIP source bodies. ServiceStack and Sharp references leave compilation/runtime, replaced by pinned Newtonsoft13.0.4 net45 and framework ZIP support. Null array slots retain the verified compatibility behavior; malformed/truncated JSON raises an error rather than fabricating a default object. GPL-derived wrappers and MIT helpers/dependency keep separate notices.
 
-Current source identity is `81b18ab1264941b7121967770d9b791af7fd4436b6cf910da443c92f967eea45`. Use `node tools/source-built-host-input.cjs identity .` to inspect the bound inputs. Older CEC-only, JSON-only or differently fingerprinted artifacts cannot satisfy this scope. Official Model `db22f8ea6cb6afdfab184f80d8b85a10d8a9f148ff4cae167db87ce9cd245153` remains unchanged.
+Current source identity is `3f3b051394eef6cde25aab078a6f4ba622447fedd34783707cd590c551850fb6`. Use `node tools/source-built-host-input.cjs identity .` to inspect the bound inputs. Older CEC-only, JSON-only or differently fingerprinted artifacts cannot satisfy this scope. Official Model `db22f8ea6cb6afdfab184f80d8b85a10d8a9f148ff4cae167db87ce9cd245153` remains unchanged.
 
 ## Build and runtime gate
 
