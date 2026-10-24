@@ -119,7 +119,13 @@ function normalizeStartupKernelSelection(value) {
 
 function createService(options) {
   const settings = options || {};
-  const rangeSession = settings.rangeCache ? require('../enhanced/playback-range-session').createSession({config: settings.rangeCache}) : null;
+  function readRangeConfig() {
+    try {const config = typeof settings.getRangeCacheConfig === 'function' ? settings.getRangeCacheConfig() : settings.rangeCache; return config ? {...config} : null;} catch (_) {return null;}
+  }
+  function rangeKey(config) {return JSON.stringify(config && ['root', 'maxBytes', 'minFreeBytes', 'blockBytes', 'timeoutMs', 'progressPercent', 'preloadMB', 'bytesPerSecond'].map(key => config[key] == null ? null : config[key]));}
+  const initialRangeConfig = readRangeConfig();
+  let rangeSession = initialRangeConfig ? require('../enhanced/playback-range-session').createSession({config: initialRangeConfig}) : null;
+  let rangeConfigKey = rangeKey(initialRangeConfig), rangeApplyTail = Promise.resolve(), rangeCloseFailure = null;
   const electron = settings.electron;
   const BrowserWindow = electron && electron.BrowserWindow;
   const ClientClass = settings.NativeHelperClient || NativeHelperClient;
@@ -675,7 +681,27 @@ function createService(options) {
 
   function retireRangeSession() {
     ++rangePreloadEpoch;
-    return rangeSession.retire();
+    const owned = rangeSession; return owned ? owned.retire() : Promise.resolve();
+  }
+
+  function applyRangeConfig(expectedEpoch) {
+    const job = rangeApplyTail.then(async function () {
+      if (destroyed || expectedEpoch !== generationEpoch) return;
+      const desired = readRangeConfig();
+      if (rangeKey(desired) === rangeConfigKey) return;
+      if (rangeCloseFailure) throw rangeCloseFailure;
+      ++rangePreloadEpoch;
+      const old = rangeSession; rangeSession = null; rangeConfigKey = rangeKey(null);
+      if (old) {
+        try {await old.close();} catch (error) {rangeCloseFailure = error; throw error;}
+      }
+      if (destroyed || expectedEpoch !== generationEpoch) return;
+      // Save can finish while the old readers close: publish only the latest config.
+      const latest = readRangeConfig();
+      rangeSession = latest ? require('../enhanced/playback-range-session').createSession({config: latest}) : null;
+      rangeConfigKey = rangeKey(latest);
+    });
+    rangeApplyTail = job.catch(function () {}); return job;
   }
 
   function requireEndpoint(endpointId) {
@@ -712,6 +738,7 @@ function createService(options) {
       acceptRendererEpoch(payload);
       beginEpoch = ++generationEpoch;
       if (rangeSession) await retireRangeSession();
+      try {await applyRangeConfig(beginEpoch);} catch (_) {log('range-cache-unavailable', {});}
     }
     const active = operation === 'begin-generation' ? await ensureClient() : client;
     if (!active || active.transportTerminated || active.exited) throw new Error('native-helper-unavailable');
@@ -738,7 +765,7 @@ function createService(options) {
       }
       if (beginEpoch !== generationEpoch || active !== client || endpointId !== activeEndpointId ||
           active.currentGenerationId !== generationId) throw new Error('generation-superseded');
-      return {status: 'ok', generationId};
+      return {status: 'ok', generationId, rangeCache: rangeSession ? rangeSession.status() : null};
     }
     if (operation === 'range-context') {
       requireGeneration(active, payload);
@@ -759,13 +786,13 @@ function createService(options) {
       requireGeneration(active, payload);
       if (!rangeSession) return {status: 'ok', value: {state: 'unavailable'}};
       // Queue cancellation/replacement can retire a candidate without changing generation.
-      const generationId = active.currentGenerationId, candidateEpoch = ++rangePreloadEpoch;
+      const generationId = active.currentGenerationId, candidateEpoch = ++rangePreloadEpoch, ownedRange = rangeSession;
       const values = await Promise.all([active.getProperty('time-pos', 2000), active.getProperty('duration', 2000)]);
-      if (candidateEpoch !== rangePreloadEpoch) return {status: 'ok', value: {state: 'cancelled'}};
+      if (candidateEpoch !== rangePreloadEpoch || ownedRange !== rangeSession) return {status: 'ok', value: {state: 'cancelled'}};
       if (destroyed || endpointId !== activeEndpointId || active !== client || active.currentGenerationId !== generationId) return {status: 'ok', value: {state: 'unavailable'}};
       if (!Number.isFinite(values[0]) || !Number.isFinite(values[1]) || values[1] <= 0 ||
-          values[0] / values[1] * 100 < rangeSession.status().progressPercent) return {status: 'ok', value: {state: 'progress-pending'}};
-      return {status: 'ok', value: await rangeSession.preload(payload.context, active, generationId)};
+          values[0] / values[1] * 100 < ownedRange.status().progressPercent) return {status: 'ok', value: {state: 'progress-pending'}};
+      return {status: 'ok', value: await ownedRange.preload(payload.context, active, generationId)};
     }
     if (operation === 'prepare-presentation') return preparePresentation(active, endpointId, payload.token);
     if (operation === 'cancel-presentation') {
@@ -826,8 +853,9 @@ function createService(options) {
       }
       requireGeneration(active, payload);
       if (args[0] === 'loadfile') {
+        const loadEpoch = generationEpoch;
         const selected = rangeSession && args.length === 2 ? await rangeSession.select(args[1], active, active.currentGenerationId) : null;
-        if (destroyed || active !== client || endpointId !== activeEndpointId || payload.generationId !== active.currentGenerationId) {
+        if (destroyed || loadEpoch !== generationEpoch || active !== client || endpointId !== activeEndpointId || payload.generationId !== active.currentGenerationId) {
           if (selected) await selected.cancel();
           throw new Error('stale-generation');
         }
@@ -912,7 +940,7 @@ function createService(options) {
 
   function destroy() {
     if (destroyPromise) return destroyPromise;
-    ++rangePreloadEpoch;
+    ++rangePreloadEpoch; ++generationEpoch;
     destroyed = true;
     activeEndpointId = null;
     // Renderer unload or transport death may detach client while its kill is pending.
@@ -929,8 +957,8 @@ function createService(options) {
       }
       // One failed child must not let before-quit outrun other owned exits.
       const outcomes = await Promise.allSettled([destroyClient('service-destroy'), ...pendingDestructions,
-        rangeSession ? rangeSession.close() : Promise.resolve()]);
-      const failure = outcomes.find(outcome => outcome.status === 'rejected');
+        rangeSession ? rangeSession.close() : Promise.resolve(), rangeApplyTail]);
+      const failure = outcomes.find(outcome => outcome.status === 'rejected') || (rangeCloseFailure ? {reason: rangeCloseFailure} : null);
       // Native failure does not transfer ownership of local window resources.
       // Attempt all releases, then preserve the original owned-client error.
       let cleanupFailure = null;

@@ -34,7 +34,7 @@ async function fixture(t, userConfig) {
     const api = new Api(storage(), () => Promise.resolve(), origin, 'ETE', 'fixture', 'fixture', 'fixture', 1);
     api.serverInfo({Id: 'server', UserId: 'user', AccessToken: 'synthetic-token'}); api.setSystemInfo({Version: '4.9.0.0'});
     let config = {root, maxBytes: 128, minFreeBytes: 0, blockBytes: 4, timeoutMs: 1000, bytesPerSecond: 1000000};
-    if (userConfig) {const store = require('../src/electronapp/enhanced/playback-range-user-settings').createStore({profileRoot: root}); store.save(userConfig); config = store.runtimeConfig();}
+    if (userConfig === 'automatic-network') delete config.bytesPerSecond;
     const session = createSession({config}), helper = {currentGenerationId: 1, state: {playing: false}}, connectionManager = {getApiClient: () => api};
     const item = {Id: 'current', ServerId: 'server', Type: 'Episode', MediaType: 'Video', SeriesId: 'series'}, source = {Id: 'current-source', Container: 'mp4'};
     const options = {playMethod: 'DirectStream', playSessionId: 'play-1'};
@@ -185,16 +185,16 @@ test('only the explicit same-series queue neighbor qualifies; browsing does not 
     for (const change of [null, {...next, Id: 'a'}, {...next, ServerId: 'other'}, {...next, SeriesId: 'other'}, {...next, Type: 'Movie'}]) {next = change; assert.equal(renderer.nextItem(options, current), null);}
 });
 
-test('ordinary saved settings drive automatic threshold preload and playback-info status without trial flags', async t => {
-    const f = await fixture(t, {schema: 1, enabled: true, progressPercent: 70, preloadMB: 100, maxBytes: 1000000, bytesPerSecond: 1000000});
-    assert.equal(path.basename(f.config.root), 'playback-ranges');
+test('an explicitly bounded fixture can preload automatically without a configured network rate', async t => {
+    const f = await fixture(t, 'automatic-network');
+    assert.equal(f.config.bytesPerSecond, undefined);
     const control = await f.bind(), selected = await f.session.select(f.sourceUrl, f.helper, 1);
     await (await fetch(selected.source, {headers: {Range: 'bytes=0-7'}})).arrayBuffer(); await f.session.started(f.helper, 1); control.started();
     await control.tick(); assert.equal(f.calls.length, 0);
     f.position(70); await control.tick();
     for (let i = 0; i < 60 && !f.preloads.length; i++) await flush();
     assert.equal((await f.preloads[0]).state, 'ready');
-    const status = f.session.status(); assert.equal(status.next.state, 'ready'); assert.equal(status.next.bytes, f.body.length); assert.equal(status.current.bytes, f.body.length);
+    const status = f.session.status(); assert.equal(status.next.state, 'ready'); assert.equal(status.next.bytes, f.body.length); assert.equal(status.current.bytes, 8);
     const category = await control.category(); assert.equal(category.name, '播放缓存与预载'); assert.match(category.stats[1].value, /预载完成/);
     assert(!JSON.stringify(category).includes('synthetic-token')); assert(!JSON.stringify(category).includes('/Videos/'));
     await control.close(); await f.session.close();

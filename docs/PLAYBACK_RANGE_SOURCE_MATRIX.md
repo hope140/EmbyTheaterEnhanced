@@ -36,9 +36,9 @@ Only redacted response capabilities are needed to decide whether a real source f
 | `preloadMB` | Confirmed choices 100/300/500 MB; default 300; this is a prefix budget, not a total disk quota |
 | Last actual video lifetime | Confirmed: no TTL; retain until another video actually starts; readers release before deletion |
 | Unplayed next prefix at exit | Confirmed: discard; browsing/preloading does not promote it |
-| `maxBytes` | Explicit trial hard media-byte limit across last, next and retiring readers. The normal settings page requires an explicit user value; there is no default, and it is separate from mpv RAM size |
-| `bytesPerSecond` | Explicit background-preload trial limit; foreground reads are not throttled by it. The normal page requires an explicit user rate; there is no default or implicit Wi-Fi/mobile policy |
-| `minFreeBytes` | Explicit engineering free-space safety reserve in the trial. Normal settings do not introduce a proactive reserve; actual-free-space/write-error handling remains, with minFreeBytes=0 |
+| `maxBytes` | Explicit trial hard media-byte limit across last, next and retiring readers. Bounded test/store input only. Ordinary activation is unavailable until the independent last-cache capacity/allocation is confirmed; no normal required input or default is added |
+| `bytesPerSecond` | Explicit background-preload trial limit; foreground reads are not throttled by it. Optional diagnostic limit. Normal automatic scheduling has no numeric MB/s default or required rate input; it uses one media/probe request, foreground preemption and cancellation |
+| `minFreeBytes` | Explicit engineering free-space safety reserve in the trial. Explicit bounded diagnostic/engineering input; ordinary capacity wiring is pending. No additional user-facing reserve setting or default is selected |
 | `timeoutMs` | Explicit engineering per-origin-request deadline, bounded by 30000 ms; no new user-facing timeout choice is implied |
 | Block size, outstanding-work bounds, index bound and ownership guard | Engineering constraints, not additional product cache preferences |
 

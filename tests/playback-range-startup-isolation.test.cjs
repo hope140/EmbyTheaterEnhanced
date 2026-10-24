@@ -88,7 +88,8 @@ async function runMain(f, argv, platform = 'win32', failSetPath) {
         }},
         './enhanced/playback-range-user-settings': {...require('../src/electronapp/enhanced/playback-range-user-settings'), createStore(options) {
             const store = require('../src/electronapp/enhanced/playback-range-user-settings').createStore(options);
-            return {...store, runtimeConfig() {const config = store.runtimeConfig(); calls.range.push({options, config}); return config;}};
+            calls.range.push({options, config: store.get()});
+            return store;
         }},
         './enhanced/cd2-service': {createService: () => ({})}, './native-helper/service': {resolveMode: () => 'native-helper'},
         './enhanced/mpv-kernel-store': {}, './enhanced/mpv-kernel-ipc': {},
@@ -162,12 +163,11 @@ test('failure while activating an isolated Electron path never falls through to 
     assert.equal(result.error && result.error.message, 'fixture-setPath-failure'); assert.equal(result.calls.bootstrap.length, 0); assert.deepEqual(snapshot(f.ordinary), before);
 });
 
-test('ordinary main consumes saved cache settings only from its selected profile with no trial path override', async t => {
+test('ordinary main retains confirmed choices but cannot activate pending capacity or redirect the profile', async t => {
     const f = fixture(t), settings = require('../src/electronapp/enhanced/playback-range-user-settings');
-    settings.createStore({profileRoot: f.userData}).save({schema: 1, enabled: true, progressPercent: 80, preloadMB: 500, maxBytes: 2000000, bytesPerSecond: 1234567});
+    settings.createStore({profileRoot: f.userData}).save({schema: 1, enabled: false, progressPercent: 80, preloadMB: 500});
     const result = await runMain(f, f.argv, 'win32'); assert.equal(result.error, undefined);
     assert.equal(result.calls.range.length, 1); const config = result.calls.range[0].config;
-    assert.equal(config.root, path.join(f.userData, 'playback-ranges')); assert.equal(config.progressPercent, 80); assert.equal(config.preloadMB, 500);
-    assert.equal(config.maxBytes, 2000000); assert.equal(config.bytesPerSecond, 1234567); assert.deepEqual(result.calls.setPath, []);
-    assert(!fs.existsSync(config.root), 'no media cache or HTTP service is opened by settings/startup alone');
+    assert.equal(config.enabled, false); assert.equal(config.progressPercent, 80); assert.equal(config.preloadMB, 500);
+    assert.deepEqual(result.calls.setPath, []); assert(!fs.existsSync(path.join(f.userData, 'playback-ranges')));
 });

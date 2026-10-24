@@ -25,9 +25,27 @@ async function createCache(options) {
     // No formal disk quota or bandwidth default is inferred from mpv's RAM buffer setting.
     const reader = createReader(options);
     const store = await createStore(options);
-    const routes = new Map(), opens = new Set(), openJobs = new Set(), background = new Set(), retiring = new Set();
+    const routes = new Map(), opens = new Set(), openJobs = new Set(), background = new Map(), retiring = new Set();
     let server, starting, closed = false, closing, foreground = 0, requests = 0;
-    function preempt() {for (const controller of background) controller.abort();}
+    function preempt() {for (const controller of background.keys()) controller.abort();}
+    async function foregroundRead(signal, action) {
+        foreground++; const pending = [...background.values()]; preempt();
+        try {
+            // HTTP reader settles only after physical request close, including aborts.
+            await Promise.allSettled(pending);
+            if (closed || signal.aborted) throw abortError();
+            return await action(signal);
+        } finally {foreground--;}
+    }
+    async function backgroundRead(signal, action) {
+        while (foreground || background.size) {if (closed) throw abortError(); await wait(25, signal);}
+        if (closed || signal.aborted) throw abortError();
+        const child = new AbortController(), cancel = () => child.abort(); let finish;
+        const done = new Promise(resolve => {finish = resolve;}); background.set(child, done);
+        signal.addEventListener('abort', cancel, {once: true});
+        try {return await action(child.signal);}
+        finally {signal.removeEventListener('abort', cancel); background.delete(child); finish();}
+    }
     async function listen() {
         if (starting) return starting;
         starting = new Promise((resolve, reject) => {
@@ -83,7 +101,8 @@ async function createCache(options) {
         let lease, transferred = false;
         try {
             // A fresh authorized URL and successful 206 probe are required even for a disk hit.
-            const proof = await reader.read({source, origin: identity.serverOrigin, start: 0, length: 1, signal: controller.signal});
+            const probe = signal => reader.read({source, origin: identity.serverOrigin, start: 0, length: 1, signal});
+            const proof = await (role === 'next' ? backgroundRead(controller.signal, probe) : foregroundRead(controller.signal, probe));
             if (closed || controller.signal.aborted || !isCurrent()) throw abortError();
             lease = await store.acquire(identity, proof, role);
             await listen();
@@ -104,16 +123,16 @@ async function createCache(options) {
                 if (lowPriority) {
                     if (backgroundSpent + length > budget) throw Error('range-prefetch-budget');
                     backgroundSpent += length; // Charge aborted attempts too: retries cannot run without bound.
-                } else {foreground++; preempt();}
-                try {
-                    const result = await reader.read({source, origin: identity.serverOrigin, start: offset, length,
-                        expected: proof, signal});
+                }
+                const read = scoped => reader.read({source, origin: identity.serverOrigin, start: offset, length, expected: proof, signal: scoped});
+                {
+                    const result = lowPriority ? await read(signal) : await foregroundRead(signal, read);
                     if (!active.current() || signal.aborted) throw abortError();
                     // Disk failure/pressure must not prevent valid foreground bytes from playing.
                     try {if (!cacheFailed) {const written = await lease.writeBlock(n, result.bytes); if (!written && lowPriority) throw Error('range-quota');}}
                     catch (_) {cacheFailed = true; if (lowPriority) throw Error('range-cache-unavailable');}
                     return result.bytes;
-                } finally {if (!lowPriority) foreground--;}
+                }
             };
             let stopping;
             const handle = {
@@ -121,24 +140,23 @@ async function createCache(options) {
                 status: () => lease.status(),
                 markPlaying: () => {if (!active.current()) return Promise.reject(abortError()); return lease.markPlaying();},
                 async prefetch({maxBytes, bytesPerSecond, signal, onProgress}) {
-                    if (!Number.isSafeInteger(maxBytes) || maxBytes <= 0 || !Number.isSafeInteger(bytesPerSecond) || bytesPerSecond <= 0 || !signal) throw Error('range-prefetch-limits-required');
+                    if (!Number.isSafeInteger(maxBytes) || maxBytes <= 0 || bytesPerSecond !== undefined && (!Number.isSafeInteger(bytesPerSecond) || bytesPerSecond <= 0) || !signal) throw Error('range-prefetch-limits-required');
                     let offset = 0;
                     while (offset < Math.min(maxBytes, lease.total)) {
                         if (!active.current() || signal.aborted) throw abortError();
                         const length = Math.min(lease.blockBytes, lease.total - offset);
                         if (offset + length > maxBytes) break;
                         if (foreground) {await wait(25, signal); continue;}
-                        const child = new AbortController(), cancel = () => child.abort();
-                        signal.addEventListener('abort', cancel, {once: true}); controller.signal.addEventListener('abort', cancel, {once: true}); background.add(child);
                         try {
-                            await active.block(Math.floor(offset / lease.blockBytes), child.signal, true, maxBytes);
+                            await backgroundRead(signal, scoped => active.block(Math.floor(offset / lease.blockBytes), scoped, true, maxBytes));
                             offset += length;
                             if (typeof onProgress === 'function') {try {onProgress({bytes: offset, targetBytes: Math.min(maxBytes, lease.total)});} catch (_) {}}
                         } catch (error) {
                             if (error.message === 'range-prefetch-budget') return {bytes: offset};
-                            if (!child.signal.aborted || signal.aborted || !active.current()) throw error;
-                        } finally {background.delete(child); signal.removeEventListener('abort', cancel); controller.signal.removeEventListener('abort', cancel);}
-                        await wait(Math.ceil(length * 1000 / bytesPerSecond), signal);
+                            if (signal.aborted || !active.current() || error.name !== 'AbortError') throw error;
+                            // A foreground miss retired only this background attempt.
+                        }
+                        await wait(bytesPerSecond === undefined ? 0 : Math.ceil(length * 1000 / bytesPerSecond), signal);
                     }
                     return {bytes: offset};
                 },

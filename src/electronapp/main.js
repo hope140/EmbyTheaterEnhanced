@@ -1024,9 +1024,9 @@
     var rangeSettingsStore = null;
     try {rangeSettingsStore = rangeSettingsModule.createStore({profileRoot: app.getPath('userData')});}
     catch (_) {enhancedLog({category: 'range-cache', event: 'settings-unavailable', details: {}});}
-    var rangeCacheRuntimeConfig = rangeCacheLaunch.enabled ? rangeCacheLaunch.config : rangeSettingsStore && rangeSettingsStore.runtimeConfig();
+    function getRangeCacheRuntimeConfig() {return rangeCacheLaunch.enabled ? rangeCacheLaunch.config : rangeSettingsStore && rangeSettingsStore.runtimeConfig();}
     unregisterRangeSettingsIpc = rangeSettingsModule.register({ipcMain: ipcMain, store: rangeSettingsStore, getWebContents: getWebContents,
-        getRuntimeStatus: function () {return nativeHelperService ? nativeHelperService.rangeStatus() : {enabled: !!rangeCacheRuntimeConfig};}});
+        getRuntimeStatus: function () {return nativeHelperService ? nativeHelperService.rangeStatus() : {enabled: !!getRangeCacheRuntimeConfig()};}});
     cd2Service = cd2ServiceModule.createService({config: strmConfigStore.getRuntimeConfig(), onDiagnostic: enhancedLog});
     unregisterCd2Ipc = require('./enhanced/cd2-ipc').register({
         ipcMain: ipcMain,
@@ -1099,7 +1099,7 @@
             mode: nativeHelperMode,
             kernelStore: mpvKernelStore,
             startupKernelSelection: startupSelection,
-            rangeCache: rangeCacheRuntimeConfig
+            getRangeCacheConfig: getRangeCacheRuntimeConfig
         });
         unregisterNativeHelperIpc = nativeHelperServiceModule.register({
             ipcMain: ipcMain,

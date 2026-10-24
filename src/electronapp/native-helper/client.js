@@ -86,6 +86,7 @@
             return call('begin-generation', request).then(function (result) {
                 if (destroyed || generationEpoch !== requestEpoch) throw new Error('generation-superseded');
                 currentGenerationId = result.generationId;
+                if (Object.prototype.hasOwnProperty.call(result, 'rangeCache')) self.rangeCache = result.rangeCache || null;
                 return result;
             });
         };
