@@ -6,6 +6,7 @@ const cp = require('node:child_process');
 const crypto = require('node:crypto');
 const host = require('./source-built-host-input.cjs');
 const verifier = require('./host-verifier-input.cjs');
+const {committedInputs, blobObjectId} = require('./build-input-contract.cjs');
 const sha = b => crypto.createHash('sha256').update(b).digest('hex');
 const COMMIT = '708fadc068cbf66ced6aece4a32f3e12bb2c4e13';
 const REPOSITORY = 'https://github.com/MediaBrowser/emby-theater-windows';
@@ -70,17 +71,26 @@ function newDirectory(out) {
 function write(out, rel, b) {
     const p = path.join(out, safeRelative(rel)); fs.mkdirSync(path.dirname(p), {recursive: true}); fs.writeFileSync(p, b, {flag: 'wx'});
 }
-function restoreSource(root, objectStore, out) {
-    const plan = createPlan(root); physical(objectStore);
+function readSourceBuffers(objectStore, plan) {
+    physical(objectStore);
     const git = args => cp.execFileSync('git', ['-C', objectStore, ...args], {maxBuffer: 16 * 1024 * 1024});
     if (git(['rev-parse', plan.commit + '^{commit}']).toString('utf8').trim() !== plan.commit) throw Error('Host recovery commit mismatch.');
+    const batch = committedInputs(objectStore, plan.commit, plan.sourceFiles.map(f => f.path));
     const buffers = plan.sourceFiles.map(f => {
         // No checkout, autocrlf conversion, hooks, LFS or source archive executables.
-        if (git(['rev-parse', plan.commit + ':' + f.path]).toString('utf8').trim() !== f.gitBlob) throw Error('Host recovery Git blob mismatch.');
-        const b = git(['cat-file', 'blob', f.gitBlob]);
+        const line = batch ? batch.lines.get(f.path) || '' : git(['ls-tree', plan.commit, '--', f.path]).toString('utf8').trim();
+        const entry = /^(100644|100755) blob ([a-f0-9]{40})\t(.+)$/.exec(line);
+        if (!entry || entry[2] !== f.gitBlob || entry[3] !== f.path) throw Error('Host recovery Git blob mismatch.');
+        const b = batch?.blobs.get(f.path) ?? git(['cat-file', 'blob', f.gitBlob]);
+        if (blobObjectId(b) !== f.gitBlob) throw Error('Host recovery Git blob mismatch.');
         if (b.length !== f.size || sha(b) !== f.sha256) throw Error('Host recovery source bytes mismatch: ' + f.path);
         return {f, b};
     });
+    return buffers;
+}
+function restoreSource(root, objectStore, out) {
+    const plan = createPlan(root);
+    const buffers = readSourceBuffers(objectStore, plan);
     out = newDirectory(out); for (const {f, b} of buffers) write(out, f.path, b);
     return {files: buffers.length, commit: plan.commit};
 }
@@ -105,7 +115,7 @@ function prepareVerificationInput(root, buildRoot) {
     return {purpose: 'controlled private-versus-omitted probe only; never product runtime', sha256: sha(value)};
 }
 // The CLI loads receipt staging, which imports these guards back from this module.
-module.exports = {COMMIT, REPOSITORY, KIT_FILES, KIT_INPUTS, safeRelative, physical, createPlan, verifyPackage, restoreSource, materializeKit, prepareVerificationInput};
+module.exports = {COMMIT, REPOSITORY, KIT_FILES, KIT_INPUTS, safeRelative, physical, createPlan, verifyPackage, readSourceBuffers, restoreSource, materializeKit, prepareVerificationInput};
 if (require.main === module) {
     try {
         const [command, root, a, b] = process.argv.slice(2);

@@ -5,12 +5,15 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const {hashTrackedTextFile} = require('./tracked-file-hash.cjs');
 const toolchains = require('./build-toolchains.cjs');
+const cp = require('node:child_process');
+const committed = require('./build-input-contract.cjs');
 
 const AUTHORITIES = [
     'vendor/windows-host-manifest.json', 'vendor/electron-runtime-manifest.json',
     'vendor/inherited-npm-manifest.json', 'vendor/native-helper-manifest.json',
     'vendor/toolchain-manifest.json', 'tools/build-toolchains.lock.json',
-    'docs/evidence/third-party-toolchains-20261009.json', 'tools/ci-build-input-plan.cjs'
+    'docs/evidence/third-party-toolchains-20261009.json', 'tools/ci-build-input-plan.cjs',
+    'tools/build-input-contract.cjs'
 ];
 
 function item(id, url, file, size, sha256, destination) {
@@ -60,8 +63,38 @@ function planFrom(values) {
 
 function createPlan(rootArg) {
     const root = path.resolve(rootArg);
-    for (const file of AUTHORITIES) hashTrackedTextFile(root, file);
-    const read = file => JSON.parse(fs.readFileSync(path.join(root, file), 'utf8'));
+    const head = cp.spawnSync('git', ['-C', root, 'rev-parse', 'HEAD'], {encoding: 'utf8'});
+    if (head.error || head.status !== 0 || !/^[a-f0-9]{40}$/.test(head.stdout.trim())) {
+        throw new Error('CI acquisition authority requires an exact HEAD.');
+    }
+    const sourceCommit = head.stdout.trim();
+    const batch = committed.committedInputs(root, sourceCommit, AUTHORITIES);
+    const validated = new Map();
+    for (const file of AUTHORITIES) {
+        const line = batch ? batch.lines.get(file) || '' : cp.execFileSync('git',
+            ['-C', root, 'ls-tree', sourceCommit, '--', file], {encoding: 'utf8', maxBuffer: 16 * 1024 * 1024}).trim();
+        const entry = /^(100644|100755) blob ([a-f0-9]{40})\t(.+)$/.exec(line);
+        if (!entry || entry[3] !== file) throw new Error('CI acquisition authority must be a committed regular blob: ' + file);
+        committed.physicalInput(root, file);
+        let blob = batch?.blobs.get(file);
+        if (blob === undefined) {
+            try {
+                blob = cp.execFileSync('git', ['-C', root, 'cat-file', 'blob', entry[2]], {maxBuffer: 16 * 1024 * 1024});
+            } catch {
+                throw new Error('Tracked generator is not committed: ' + file);
+            }
+        }
+        if (committed.blobObjectId(blob) !== entry[2]) throw new Error('CI acquisition Git blob identity mismatch: ' + file);
+        hashTrackedTextFile(root, file, blob);
+        // Parse the very same immutable bytes that were compared with this
+        // invocation's physical worktree, including when batch reads fall back.
+        validated.set(file, blob);
+    }
+    const current = cp.spawnSync('git', ['-C', root, 'rev-parse', 'HEAD'], {encoding: 'utf8'});
+    if (current.error || current.status !== 0 || current.stdout.trim() !== sourceCommit) {
+        throw new Error('CI acquisition HEAD changed during validation.');
+    }
+    const read = file => JSON.parse(validated.get(file).toString('utf8'));
     return planFrom({host: read(AUTHORITIES[0]), electron: read(AUTHORITIES[1]),
         inherited: read(AUTHORITIES[2]), native: read(AUTHORITIES[3]), tools: read(AUTHORITIES[4]),
         lock: read(AUTHORITIES[5]), evidence: read(AUTHORITIES[6])});

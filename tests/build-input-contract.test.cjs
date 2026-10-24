@@ -29,6 +29,8 @@ function git(root, args) {
     return result.stdout.trim();
 }
 function setup(t, temporaryRoot = os.tmpdir()) {
+    const started = performance.now();
+    const state = fixturePreparations++ === 0 ? 'first-in-process' : 'warm-in-process';
     // Windows TEMP may use an 8.3 alias; fixtures must start at their physical path.
     const base = fs.realpathSync.native(fs.mkdtempSync(path.join(temporaryRoot, 'build-input-contract-')));
     t.after(() => fs.rmSync(base, {recursive: true, force: true}));
@@ -36,6 +38,19 @@ function setup(t, temporaryRoot = os.tmpdir()) {
     const runtime = path.join(base, 'runtime');
     fs.mkdirSync(repo, {recursive: true});
     fs.mkdirSync(runtime, {recursive: true});
+    const mode = process.env.ETE_BUILD_INPUT_FIXTURE_MODE || 'seed';
+    if (!['seed', 'fresh'].includes(mode)) throw new Error('Unknown build input fixture preparation mode.');
+    const configBase = mode === 'fresh' ? populate(repo) : copySeed(repo);
+    const sourceCommit = git(repo, ['rev-parse', 'HEAD']);
+    t.diagnostic('CI_FIXTURE_PREP ' + JSON.stringify({mode, state, elapsedMs: performance.now() - started}));
+    return {base, repo, runtime, sourceCommit, configBase};
+}
+
+// Reuse only this file's pristine, committed synthetic inputs. Every test gets
+// physical copies of both the worktree and .git; runtime and results stay fresh.
+let fixtureSeed;
+let fixturePreparations = 0;
+function populate(repo) {
     git(repo, ['init', '-q']);
     git(repo, ['config', 'user.name', 'Build Input Test']);
     git(repo, ['config', 'user.email', 'build-input@example.invalid']);
@@ -51,8 +66,31 @@ function setup(t, temporaryRoot = os.tmpdir()) {
     write(repo, 'docs/UNRELATED.md', 'unrelated committed documentation\n');
     git(repo, ['add', '--all']);
     git(repo, ['commit', '-q', '-m', 'fixture']);
-    return {base, repo, runtime, sourceCommit: git(repo, ['rev-parse', 'HEAD']), configBase};
+    return configBase;
 }
+function copySeed(repo) {
+    if (!fixtureSeed) {
+        const base = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'build-input-seed-')));
+        const source = path.join(base, 'repo');
+        try {
+            fs.mkdirSync(source);
+            const configBase = populate(source);
+            fixtureSeed = {base, source, configBase};
+        } catch (error) {
+            fs.rmSync(base, {recursive: true, force: true});
+            throw error;
+        }
+    }
+    fs.cpSync(fixtureSeed.source, repo, {recursive: true, force: false, errorOnExist: true,
+        filter(source) {
+            if (fs.lstatSync(source).isSymbolicLink()) throw new Error('Fixture seed redirects forbidden.');
+            return true;
+        }});
+    return Buffer.from(fixtureSeed.configBase);
+}
+test.after(() => {
+    if (fixtureSeed) fs.rmSync(fixtureSeed.base, {recursive: true, force: true});
+});
 
 test('temporary parent aliases produce a physical build input fixture', t => {
     const parent = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'build-input-temp-alias-')));
@@ -523,4 +561,37 @@ test('failed combined tree read keeps the original per-path checks and errors', 
         assert.throws(() => contract.inspect(fixture.repo, fixture.sourceCommit),
             {message: 'Tracked generator differs from HEAD: ' + first});
     } finally { mock.mock.restore(); }
+});
+
+
+test('fixture seeds remain isolated from dirty files, new commits and runtime output', t => {
+    const a = setup(t), b = setup(t);
+    const file = contract.INPUT_PATHS[0];
+    const original = fs.readFileSync(path.join(b.repo, file));
+    const head = b.sourceCommit;
+    const tree = git(b.repo, ['rev-parse', 'HEAD^{tree}']);
+    const blob = git(b.repo, ['rev-parse', 'HEAD:' + file]);
+    fs.appendFileSync(path.join(a.repo, file), 'dirty isolation canary\n');
+    assert.throws(() => contract.inspect(a.repo, a.sourceCommit), /differs from HEAD/);
+    git(a.repo, ['add', file]);
+    git(a.repo, ['commit', '-qm', 'advance isolated copy']);
+    fs.unlinkSync(path.join(a.repo, 'docs/UNRELATED.md'));
+    write(a.runtime, 'canary', 'private runtime');
+    const c = setup(t);
+    for (const copy of [b, c]) {
+        assert.deepEqual(fs.readFileSync(path.join(copy.repo, file)), original);
+        assert.equal(git(copy.repo, ['rev-parse', 'HEAD']), copy.sourceCommit);
+        assert.equal(git(copy.repo, ['rev-parse', 'HEAD^{tree}']), tree);
+        assert.equal(git(copy.repo, ['rev-parse', 'HEAD:' + file]), blob);
+        assert.deepEqual(fs.readdirSync(copy.runtime), []);
+        assert.equal(fs.existsSync(path.join(copy.repo, '.git/objects/info/alternates')), false);
+        assert.equal(fs.existsSync(path.join(copy.repo, 'docs/UNRELATED.md')), true);
+        for (const relative of [file, '.git/HEAD', '.git/index', '.git/objects/' + blob.slice(0, 2) + '/' + blob.slice(2)]) {
+            const target = path.join(copy.repo, relative), stat = fs.lstatSync(target);
+            assert.equal(stat.isSymbolicLink(), false);
+            assert.equal(stat.nlink, 1);
+            assert.equal(fs.realpathSync.native(target), target);
+        }
+    }
+    assert.equal(git(b.repo, ['rev-parse', 'HEAD']), head);
 });

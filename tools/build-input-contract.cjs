@@ -3,6 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const cp = require('node:child_process');
+const crypto = require('node:crypto');
 const {hashTrackedTextFile} = require('./tracked-file-hash.cjs');
 const verifier = require('./host-verifier-input.cjs');
 
@@ -44,6 +45,7 @@ const INPUT_PATHS = Object.freeze([
     'native/windows-host/changes/Emby.Theater/App/ApplicationHost.cs', 'native/windows-host/changes/Emby.Theater/App/ElectronApp.cs',
     'tools/source-built-host-input.cjs', 'tools/host-json-input.cjs', 'tools/prepare-host-json.py', 'vendor/host-json-manifest.json', 'native/windows-host/json-zip-input.json',
     'tools/ci-source-built-host-plan.cjs', 'tools/ci-source-built-host.ps1', 'tools/runner-host-receipt.cjs',
+    'tools/ci-phase-timing.ps1',
     'tools/Test-SourceBuiltHost.ps1', 'tools/host-verifier-input.cjs', ...verifier.PATHS,
     'tools/windows-host-build/Build-UnifiedHost.ps1', 'tools/windows-host-build/Get-SourceIdentity.ps1',
     'tools/windows-host-build/New-VerifiedRuntime.ps1', 'tools/windows-host-build/EXPECTED-ASSEMBLY-REFERENCES.json',
@@ -97,20 +99,29 @@ function physicalInput(root, relativePath) {
     }
 }
 
-function committedInputs(root, sourceCommit) {
+function blobObjectId(bytes) {
+    return crypto.createHash('sha1').update('blob ' + bytes.length + '\0').update(bytes).digest('hex');
+}
+
+function committedInputs(root, sourceCommit, inputPaths = INPUT_PATHS) {
+    if (!/^[a-f0-9]{40}$/i.test(sourceCommit || '') || !Array.isArray(inputPaths) ||
+        new Set(inputPaths).size !== inputPaths.length || inputPaths.some(p => typeof p !== 'string' ||
+            !p || /[\\:\x00-\x1f]/.test(p) || p.startsWith('/') || p.split('/').some(s => !s || s === '.' || s === '..'))) {
+        throw new Error('Invalid committed input selection.');
+    }
     // Keep batches invocation-local. HEAD and every physical working path are
     // checked afresh by inspect; no successful validation is cached.
     let tree;
-    try { tree = git(root, ['ls-tree', '-z', sourceCommit, '--', ...INPUT_PATHS]); }
+    try { tree = git(root, ['ls-tree', '-z', sourceCommit, '--', ...inputPaths]); }
     catch { return null; }
     const lines = new Map();
     for (const line of tree.split('\0').filter(Boolean)) {
         const tab = line.indexOf('\t');
         const relativePath = line.slice(tab + 1);
-        if (tab < 0 || !INPUT_PATHS.includes(relativePath) || lines.has(relativePath)) return null;
+        if (tab < 0 || !inputPaths.includes(relativePath) || lines.has(relativePath)) return null;
         lines.set(relativePath, line);
     }
-    const regular = INPUT_PATHS.flatMap(relativePath => {
+    const regular = inputPaths.flatMap(relativePath => {
         const match = /^(100644|100755) blob ([0-9a-f]{40})\t(.+)$/.exec(lines.get(relativePath) || '');
         return match ? [{relativePath, objectId: match[2]}] : [];
     });
@@ -143,7 +154,10 @@ function committedInputs(root, sourceCommit) {
             offset + size >= output.length || output[offset + size] !== 0x0a) {
             return {lines, blobs: new Map()};
         }
-        blobs.set(entry.relativePath, output.subarray(offset, offset + size));
+        const bytes = output.subarray(offset, offset + size);
+        const objectId = blobObjectId(bytes);
+        if (objectId !== entry.objectId) return {lines, blobs: new Map()};
+        blobs.set(entry.relativePath, bytes);
         offset += size + 1;
     }
     if (offset !== output.length) return {lines, blobs: new Map()};
@@ -183,7 +197,7 @@ function materializeNotices(root, runtime, contract) {
     return require('./build-input-provenance.cjs').materializeNotices(root, runtime, contract);
 }
 
-module.exports = {INPUT_PATHS, NOTICE_PATHS, inspect, materializeNotices};
+module.exports = {INPUT_PATHS, NOTICE_PATHS, inspect, materializeNotices, committedInputs, physicalInput, blobObjectId};
 if (require.main === module) {
     const [root, sourceCommit] = process.argv.slice(2);
     process.stdout.write(JSON.stringify(inspect(root, sourceCommit)) + '\n');
