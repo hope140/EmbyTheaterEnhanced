@@ -124,6 +124,7 @@ function createFixture(root) {
     writeFile(path.join(officialElectron, 'electron.exe'), 'official-electron-44-fixture\n');
     writeFile(path.join(officialElectron, 'version'), '44.4.2\n');
     writeFile(path.join(officialElectron, 'locales', 'en-US.pak'), 'official-electron-locale-fixture\n');
+    require('./helpers/native-loader-fixture.cjs').create(root, officialElectron);
     const officialIdentity = electronRuntimeInput.treeIdentity(officialElectron);
     writeFile(path.join(root, 'vendor', 'electron-runtime-manifest.json'), JSON.stringify({
         schemaVersion: 1,
@@ -176,7 +177,7 @@ function createFixture(root) {
         'tools/patch-startup.cjs',
         'tools/copy-runtime-dependencies.cjs',
         'tools/copy-tracked-product-sources.cjs',
-        'tools/electron-runtime-input.cjs',
+        'tools/electron-runtime-input.cjs', 'tools/native-loader-input.cjs',
         'tools/tracked-file-hash.cjs',
         'tools/runtime-exclusions.cjs',
         'tools/web-snapshot-input.cjs',
@@ -192,7 +193,7 @@ function createFixture(root) {
     assert.equal(init.status, 0, init.stderr);
     childProcess.spawnSync('git', ['-C', root, 'config', 'user.name', 'ETE Test'], {encoding: 'utf8'});
     childProcess.spawnSync('git', ['-C', root, 'config', 'user.email', 'ete-test@example.invalid'], {encoding: 'utf8'});
-    const add = childProcess.spawnSync('git', ['-C', root, 'add', 'vendor/snapshot-history', smallRuntimeInput.DEFAULT_SOURCE_PATH, smallRuntimeInput.TRANSLATION_SOURCE_PATH, 'src/electronapp/some-normal-file.js', 'src/electronapp/enhanced/startup.svg', 'tools', 'package-lock.json', 'vendor/runtime-manifest.json', 'vendor/electron-runtime-manifest.json',webSnapshot.MANIFEST_PATH,windowsHost.MANIFEST_PATH,inheritedNpm.MANIFEST_PATH,templates.MANIFEST_PATH,libmpvInput.MANIFEST_PATH,compatibilityInput.MANIFEST_PATH,smallRuntimeInput.MANIFEST_PATH,modelInput.MANIFEST_PATH], {encoding: 'utf8'});
+    const add = childProcess.spawnSync('git', ['-C', root, 'add', 'native/windows-media/loader-input.json', 'vendor/snapshot-history', smallRuntimeInput.DEFAULT_SOURCE_PATH, smallRuntimeInput.TRANSLATION_SOURCE_PATH, 'src/electronapp/some-normal-file.js', 'src/electronapp/enhanced/startup.svg', 'tools', 'package-lock.json', 'vendor/runtime-manifest.json', 'vendor/electron-runtime-manifest.json',webSnapshot.MANIFEST_PATH,windowsHost.MANIFEST_PATH,inheritedNpm.MANIFEST_PATH,templates.MANIFEST_PATH,libmpvInput.MANIFEST_PATH,compatibilityInput.MANIFEST_PATH,smallRuntimeInput.MANIFEST_PATH,modelInput.MANIFEST_PATH], {encoding: 'utf8'});
     assert.equal(add.status, 0, add.stderr);
     const commit = childProcess.spawnSync('git', ['-C', root, 'commit', '-m', 'fixture'], {encoding: 'utf8'});
     assert.equal(commit.status, 0, commit.stderr);
@@ -209,6 +210,7 @@ function createRuntime(root, name) {
     fs.cpSync(path.join(root,inheritedNpm.INPUT_ROOT,'electronapp'),path.join(runtime,'electronapp'),{recursive:true});
     fs.cpSync(path.join(root, 'vendor', 'electron', '44.4.2', 'win32-x64'),
         path.join(runtime, 'x64', 'electron'), {recursive: true});
+    writeFile(path.join(runtime, 'electronapp/libmpv/x64/vulkan-1.dll'), fs.readFileSync(path.join(runtime, 'x64/electron/vulkan-1.dll')));
     writeFile(path.join(runtime, 'electronapp/libmpv/x64/mpv-1.dll'),
         fs.readFileSync(path.join(root,libmpvInput.INPUT_ROOT,'mpv-1.dll')));
     fs.cpSync(path.join(root,compatibilityInput.INPUT_ROOT),runtime,{recursive:true});
@@ -391,4 +393,19 @@ for (const checkout of ['lf', 'crlf']) test('Host projection is source-bound and
     assert.equal(changedRuntime.exitCode,1);
     assert.ok(changedRuntime.report.errors.includes('source-provenance-invalid'));
     assert.equal(fs.readFileSync(path.join(root,generatorPath),'utf8'),checkoutBytes.toString()+'\n// synthetic uncommitted content change\n');
+});
+
+for (const mutation of ['missing-target', 'changed-target', 'forged-relation']) test('packaging runtime provenance refuses native loader ' + mutation, () => {
+    const root = createTempRoot('ete-loader-provenance-');
+    try {
+        createFixture(root); const runtime = createRuntime(root, 'runtime');
+        assert.equal(runProvenance('write', root, runtime).exitCode, 0);
+        const file = path.join(runtime, 'runtime-provenance.json'), manifest = JSON.parse(fs.readFileSync(file));
+        assert.equal(manifest.nativeLoader.relation, 'byte-identical-standard-payload-copy');
+        if (mutation === 'missing-target') fs.unlinkSync(path.join(runtime, 'electronapp/libmpv/x64/vulkan-1.dll'));
+        if (mutation === 'changed-target') fs.appendFileSync(path.join(runtime, 'electronapp/libmpv/x64/vulkan-1.dll'), 'wrong');
+        if (mutation === 'forged-relation') {manifest.nativeLoader.relation = 'trusted-without-check'; fs.writeFileSync(file, JSON.stringify(manifest));}
+        const result = runProvenance('validate', root, runtime); assert.notEqual(result.exitCode, 0);
+        assert(result.report.errors.some(code => code.startsWith('native-loader-')));
+    } finally {fs.rmSync(root, {recursive: true, force: true});}
 });

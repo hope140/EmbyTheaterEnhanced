@@ -86,7 +86,11 @@ The Windows payload includes the complete official Electron 44.4.2 tree,
 Carnival Windows host and supporting binaries, offline Web baseline and assets,
 controlled overlays, the pinned libmpv DLL, and the source-built Native Helper.
 Electron's `LICENSE` and `LICENSES.chromium.html` are present in the audited
-payload. The retired Pepper `.node` input and historical Carnival Electron 18
+payload. The exact official `x64/electron/vulkan-1.dll` member is also copied
+byte-for-byte to `electronapp/libmpv/x64/vulkan-1.dll` for Native Helper dependency
+resolution, as locked in `native/windows-media/loader-input.json`. Its existing
+Electron and Chromium notice files remain at the original paths; no independent
+loader build or new download is claimed. The retired Pepper `.node` input and historical Carnival Electron 18
 tree are excluded from the production runtime.
 
 Original archives, prepared runtime trees and generated binaries remain

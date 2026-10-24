@@ -64,6 +64,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Runtime dependency copy failed.' }
 if ($LASTEXITCODE -ne 0) { throw 'PlaybackManager overlay failed.' }
 & node (Join-Path $root 'tools/libmpv-input.cjs') assemble $root $destination
 if ($LASTEXITCODE -ne 0) { throw 'Independent libmpv snapshot copy failed.' }
+& node (Join-Path $root 'tools/native-loader-input.cjs') assemble $root $destination
+if ($LASTEXITCODE -ne 0) { throw 'Locked native loader copy failed.' }
 & (Join-Path $root 'tools/build-native-helper.ps1') -SourceCommit $sourceCommit -RuntimeRoot $destination
 if ($LASTEXITCODE -ne 0) { throw 'Native helper build failed.' }
 & node (Join-Path $root 'tools/native-helper-provenance.cjs') $root $destination $sourceCommit

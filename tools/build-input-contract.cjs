@@ -12,6 +12,7 @@ const NOTICE_PATHS = Object.freeze([
     'LICENSE', 'THIRD_PARTY_NOTICES.md', 'src/electronapp/www/modules/emby-apiclient/LICENSE.md', 'native/windows-host/LICENSE.md', 'native/windows-host/LICENSE-Helpers-MIT.txt', 'native/windows-host/LICENSE-Newtonsoft-MIT.md', 'native/windows-host/README.md', 'docs/LICENSING.md', 'docs/SOURCE_MATERIALS.md', 'docs/WINDOWS_HOST_INPUT.md', 'docs/INHERITED_NPM_INPUT.md', 'docs/RUNTIME_TEMPLATES.md', 'docs/LIBMPV_INPUT.md', 'docs/COMPATIBILITY_RESOURCES_INPUT.md', 'docs/SMALL_RUNTIME_INPUT.md', 'docs/MODEL_COMPATIBILITY_INPUT.md'
 ]);
 const INPUT_PATHS = Object.freeze([
+    'native/windows-media/loader-input.json', 'tools/native-loader-input.cjs',
     'package.json', 'package-lock.json', 'src/web-api/selection.json', 'src/config/system-defaults.json',
     'src/localization/mpvplayer/zh-CN.json',
     'src/web-api/INPUT_MANIFEST.json',

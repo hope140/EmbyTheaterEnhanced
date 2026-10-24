@@ -10,6 +10,7 @@ const sourceProvenance = require('./source-provenance.cjs');
 const trackedFileHash = require('./tracked-file-hash.cjs');
 const runtimeExclusions = require('./runtime-exclusions.cjs');
 const electronRuntimeInput = require('./electron-runtime-input.cjs');
+const nativeLoader = require('./native-loader-input.cjs');
 
 const OVERLAY_RUNTIME_PATH = 'electronapp/www/modules/common/playback/playbackmanager.js';
 const OVERLAY_GENERATOR_PATH = 'tools/patch-playbackmanager.cjs';
@@ -207,6 +208,7 @@ function writeManifest(root, runtime, sourceCommit) {
         sourceProvenance: sourceProvenanceEntry,
         baselineIdentity: baselineIdentity(root),
         electronRuntime: electronRuntimeIdentity(root, runtime),
+        nativeLoader: nativeLoader.validateRuntime(root, runtime),
         runtimeExclusions: runtimeExclusionIdentity(root),
         validatedProductScope: {
             sourceRoot: 'src/electronapp',
@@ -354,6 +356,9 @@ function validateManifest(root, runtime, sourceCommit) {
     } catch (_) {
         errors.push('electron-runtime-invalid');
     }
+    try {
+        if (JSON.stringify(manifest.nativeLoader) !== JSON.stringify(nativeLoader.validateRuntime(root, runtime))) errors.push('native-loader-identity-mismatch');
+    } catch (_) {errors.push('native-loader-invalid');}
     const expectedRuntimeExclusions = runtimeExclusionIdentity(root);
     const actualRuntimeExclusions = manifest.runtimeExclusions;
     if (!actualRuntimeExclusions || actualRuntimeExclusions.generatorPath !== expectedRuntimeExclusions.generatorPath ||
