@@ -29,8 +29,8 @@ function routes(job, event, ref, benchmarkMode) {
             const equal = (compare[1] === 'event_name' ? event : ref) === compare[3];
             return compare[2] === '==' ? equal : !equal;
         }
-        assert.equal(clause, '!inputs.build_input_benchmark', 'unsupported route clause');
-        return !benchmarkMode;
+        assert.ok(['inputs.build_input_benchmark', '!inputs.build_input_benchmark'].includes(clause), 'unsupported route clause');
+        return clause.startsWith('!') ? !benchmarkMode : benchmarkMode;
     }).every(Boolean);
 }
 function assertPinnedSource(job) {
@@ -55,7 +55,7 @@ test('package job requires an explicit manual event and the MSBuild17-compatible
         for (const ref of ['refs/heads/main', 'refs/heads/perf/build-inputs', 'refs/tags/reviewed']) {
             for (const mode of [false, true]) {
                 assert.equal(routes(manual, event, ref, mode),
-                    event === 'workflow_dispatch' && ref !== 'refs/heads/perf/build-inputs' && !mode,
+                    event === 'workflow_dispatch' && !mode,
                     'package route: ' + JSON.stringify({event, ref, mode}));
             }
         }
@@ -81,12 +81,12 @@ test('artifact upload is restricted to the staged package and the shortest suppo
     assert.doesNotMatch(manual, /path: (?:\.|dist|vendor|\.work)(?:\/\*\*|$)/m);
 });
 
-test('benchmark is branch-scoped and conflicting modes or source SHAs stop before checkout', () => {
+test('explicit benchmark mode rejects conflicting release or source SHAs before checkout', () => {
     for (const event of ['push', 'pull_request', 'workflow_run', 'pull_request_target', 'workflow_dispatch']) {
         for (const ref of ['refs/heads/main', 'refs/heads/perf/build-inputs', 'refs/tags/reviewed']) {
             for (const mode of [false, true]) {
                 assert.equal(routes(benchmark, event, ref, mode),
-                    event === 'workflow_dispatch' && ref === 'refs/heads/perf/build-inputs',
+                    event === 'workflow_dispatch' && mode,
                     'benchmark route: ' + JSON.stringify({event, ref, mode}));
             }
         }
@@ -102,6 +102,28 @@ test('benchmark is branch-scoped and conflicting modes or source SHAs stop befor
     assert.match(guard, /if \(\$env:AB_ENABLED -ne 'true' -or \$env:AB_RELEASE_PACKAGE -eq 'true'\) \{\n +throw /);
     assert.match(guard, /if \(\$env:AB_EXPECTED_SHA -and \$env:AB_EXPECTED_SHA -cne \$env:GITHUB_SHA\) \{\n +throw /);
     assert.match(guard, /Unit tests: 0/);
+});
+
+test('default manual test and release dispatches preserve the normal package route', () => {
+    const setting = /^      build_input_benchmark:\n((?:        [^\n]*\n)+)/m.exec(workflow);
+    assert.ok(setting, 'benchmark input declaration required');
+    assert.match(setting[1], /^        type: boolean$/m);
+    const declaredDefault = /^        default: (true|false)$/m.exec(setting[1]);
+    assert.ok(declaredDefault, 'explicit boolean default required');
+    const defaultMode = declaredDefault[1] === 'true';
+    assert.equal(defaultMode, false, 'ordinary manual dispatch must remain the default');
+    assert.match(workflow, /release_package:\n +description: [^\n]+\n +type: boolean\n +default: false/);
+    assert.match(manual, /ETE_RELEASE_PACKAGE: \$\{\{ inputs\.release_package \}\}/);
+    assert.match(manual, /run: \.\/tools\/ci-windows-test-package\.ps1 -ReleasePackage:\(\$env:ETE_RELEASE_PACKAGE -eq 'true'\)/);
+    for (const ref of ['refs/heads/main', 'refs/heads/perf/build-inputs', 'refs/heads/reviewed-feature']) {
+        for (const releasePackage of [false, true]) {
+            const context = JSON.stringify({ref, releasePackage, benchmarkMode: defaultMode});
+            assert.equal(routes(manual, 'workflow_dispatch', ref, defaultMode), true, context);
+            assert.equal(routes(benchmark, 'workflow_dispatch', ref, defaultMode), false, context);
+            assert.equal(routes(manual, 'workflow_dispatch', ref, true), false, 'explicit benchmark cannot fall back: ' + context);
+            assert.equal(routes(benchmark, 'workflow_dispatch', ref, true), true, 'explicit benchmark gate must execute: ' + context);
+        }
+    }
 });
 
 test('benchmark retains pinned read-only inputs and uploads only bounded diagnostic output', () => {

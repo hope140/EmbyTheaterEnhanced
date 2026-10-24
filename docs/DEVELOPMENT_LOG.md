@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-24 — 恢复main正常手动打包默认值
+
+修复旧实验分支互锁：benchmark默认false，普通test／release按原入口运行；显式benchmark才skip包并进入短job，去掉两个job的分支硬编码。原权限／concurrency／固定SHA／release输入与完整包门禁均保持，release+benchmark冲突仍fail closed。相关测试从实际default取值，覆盖main／perf／其它ref和test／release而不是预期普通包被禁；旧配置在新测试复现3处红例。没有重做性能实验或完整包，未合main或引入详情／Native／Range功能。
+
 ## 2026-10-24 — 恢复workflow结构回归
 
 依据40087539201的两条精确失败日志，将原manual块截取改为按顶层job边界定位。原3项测试和3个action计数保留并加严到原精确pin；路由矩阵覆盖自动事件、目标／其它ref及benchmark模式，新增2项检查短基准的mode／SHA拒绝发生在checkout前、固定输入与诊断artifact边界。仅修改测试和文档，不改workflow／构建／缓存／并发。相关43项、零跳过；实际工作流与重排安全job通过，16个不安全／默认偏移变体拒绝；独立只读复审通过。正常push后的完整公共CI独立确认，未新增性能样本、打包、PR或main合并。

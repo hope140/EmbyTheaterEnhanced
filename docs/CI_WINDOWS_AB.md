@@ -45,14 +45,14 @@ node tools/benchmark-build-inputs.cjs fixtures <new-output-directory> --trials 4
 
 ## GitHub UI单次运行
 
-本实验分支在既有 [.github/workflows/public-ci.yml](../.github/workflows/public-ci.yml) 增加独立 `windows-build-input-benchmark` job。复用默认分支已存在的workflow路径，避免仅在非默认分支新建workflow没有正常UI手动按钮的问题；GitHub官方[手动运行说明](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)支持从按钮选择分支。本分支的完整打包job明确排除 `perf/build-inputs`，无效／漏填基准输入会失败，不能回退为全包。
+既有 [.github/workflows/public-ci.yml](../.github/workflows/public-ci.yml) 增加独立 `windows-build-input-benchmark` job。复用默认分支已存在的workflow路径，避免仅在非默认分支新建workflow没有正常UI手动按钮的问题；GitHub官方[手动运行说明](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)支持从按钮选择分支。**默认 `build_input_benchmark=false` 保留正常打包**：main、perf及其它审核分支的普通test／release dispatch均走原package job；只有显式true才跳过包并进入基准。benchmark与release同时启用时首步失败，不回退打包。
 
 1. 打开 [Public offline CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/workflows/public-ci.yml)，点击 `Run workflow`。
-2. 在 `Use workflow from / Branch` 选择 **perf/build-inputs**，确认分支后检查下列字段。
+2. 在 `Use workflow from / Branch` 选择已审核提交所在分支（合并前为 **perf/build-inputs**），确认分支后检查下列字段。
 3. `release_package=false`；`build_input_benchmark=true`；`benchmark_trials=4`；`benchmark_warm_calls=3`；将已审核的精确40位SHA填入 `benchmark_expected_sha`，必须与分支当前dispatch SHA完全相等。
 4. 只点击运行一次。目标job显示 **Windows build input A/B (0 unit tests)**；完整打包job应skipped。输出artifact名为 `build-input-ab-<sourceSHA>-<runID>-<attempt>`。
 
-`build_input_benchmark` 在此实验分支默认true，默认4／3。expected SHA留空时仍绑定本次dispatch的精确 `github.sha`，不会改用浮动ref，但安排时应显式填审核SHA以拒绝分支意外移动。上述成功run证明已执行该分支的真实workflow_dispatch；本记录不另声称登录UI表单的逐项视觉验收。若切分支后字段未更新，刷新页面再重新选择分支，仍缺字段则停止并报告UI限制，不伪造事件或改main绕过。
+`build_input_benchmark` 默认false；上面的短基准步骤必须显式选true，基准参数仍默认4／3。expected SHA留空时仍绑定本次dispatch的精确 `github.sha`，不会改用浮动ref，但安排时应显式填审核SHA以拒绝分支意外移动。上述c1c6e7dc成功run属于旧实验路由；当前按mode互斥选择的合并候选另受结构回归和公共CI约束，不把旧样本重标为新提交。若切分支后字段未更新，刷新页面再重新选择分支，仍缺字段则停止并报告UI限制，不伪造事件或改main绕过。
 
 基准job固定runner标签 `windows-2022` 和Node24.18.1，checkout固定 `github.sha`，完整历史、`persist-credentials: false`；actions仍为原固定SHA，权限仅 `contents: read`，不读取secret或扩大token。GitHub托管镜像具体构建版本仍可能轮换，session记录实际ImageOS／ImageVersion；只在同job内配对，不把跨镜像完整CI时长当收益。
 

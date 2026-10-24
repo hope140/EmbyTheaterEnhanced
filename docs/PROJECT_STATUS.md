@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-24 — 恢复main正常手动打包默认值
+
+合并就绪审查发现旧实验互锁会让main的默认普通／release dispatch跳过所有job。将build_input_benchmark默认改false，手动package仅在非benchmark模式运行，benchmark仅在显式模式运行，不再按perf ref禁包。release冲突和预期SHA不符仍在checkout前拒绝；原release输入转发、门禁、只读权限、固定工具和package并发保持。测试读取实际默认值验证main／perf／其它ref与release false／true，防止绿CI固化“普通包恒skip”。仅workflow／相关测试／文档改变，没有新性能实验、完整打包或客户端功能；合并由最终候选公共门禁及审核结果协调。
+
 ## 2026-10-24 — 恢复workflow结构回归
 
 修复 `tests/manual-windows-workflow.test.cjs` 的job范围：按同级job头截取，不再把后续benchmark算入package。保留原3项测试及权限／精确SHA／固定Node／artifact断言，每job仍3个固定action；用事件／分支／模式矩阵验证手动路由，新增checkout前mode／SHA拒绝、4／3默认值和独立诊断上传检查。原workflow与构建实现未改。本地相关43/43、零跳过；两个安全正例通过，16个保护删除／权限／来源／上传变体均拒绝，独立只读复审通过。完整公共门禁以最终提交的CI结果为准；没有新增性能实验或完整打包，未合main。

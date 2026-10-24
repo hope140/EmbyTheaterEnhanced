@@ -10,9 +10,9 @@ on:
         type: boolean
         default: false
       build_input_benchmark:
-        description: perf/build-inputs only - short A/B, 0 unit tests, no package
+        description: Run short A/B only (0 unit tests; never builds a package)
         type: boolean
-        default: true
+        default: false
       benchmark_expected_sha:
         description: Optional reviewed 40-hex SHA; must equal the selected branch dispatch SHA
         type: string
@@ -121,7 +121,7 @@ jobs:
         run: node tools/ci-change-scope.cjs summary
 
   manual-windows-test-package:
-    if: github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/perf/build-inputs' && !inputs.build_input_benchmark
+    if: github.event_name == 'workflow_dispatch' && !inputs.build_input_benchmark
     # Keep the existing VS2022/MSBuild17 contract; windows-2025 now selects VS2026.
     runs-on: windows-2022
     timeout-minutes: 60
@@ -159,7 +159,7 @@ jobs:
 
   windows-build-input-benchmark:
     name: Windows build input A/B (0 unit tests)
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/perf/build-inputs'
+    if: github.event_name == 'workflow_dispatch' && inputs.build_input_benchmark
     runs-on: windows-2022
     timeout-minutes: 15
     steps:
@@ -172,7 +172,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           if ($env:AB_ENABLED -ne 'true' -or $env:AB_RELEASE_PACKAGE -eq 'true') {
-            throw 'perf/build-inputs accepts only build_input_benchmark=true and release_package=false; no package fallback.'
+            throw 'Benchmark mode requires build_input_benchmark=true and release_package=false; no package fallback.'
           }
           if ($env:AB_EXPECTED_SHA -and $env:AB_EXPECTED_SHA -cne $env:GITHUB_SHA) {
             throw 'Reviewed benchmark SHA differs from this dispatch SHA.'

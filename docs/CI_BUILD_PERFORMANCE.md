@@ -2,6 +2,8 @@
 
 候选基于main `88578c91ab19d44eecddcfae096d37dc917ef1f4`，调整构建工具和测试准备；已完成下述本地对照，以及同一精确候选的单次Windows短A/B。Windows局部结果支持保留固定Git批读和文件内夹具复用；完整回归／打包／合并等待的提速幅度仍未测量。[定向入口](CI_WINDOWS_AB.md)与原公共回归分别记录。原测试发现规则／集合／串行参数、打包命令、runner规格、既有并发、缓存策略和发布行为保持。产品源码、固定材料与工具链版本未改。
 
+合并准备发现旧实验路由不兼容main：benchmark默认true、普通包要求非benchmark、短job又只允许perf，导致main默认普通／release dispatch三job全skip。现已恢复为默认false、仅显式mode才选benchmark；两个手动job互斥且不再硬编码分支。原release输入和脚本门禁／权限／package并发保持，冲突mode在checkout前拒绝。测试从实际workflow默认值推演main／perf／其它ref及test／release反例；最终以修复提交公共CI为准，先前绿CI只验证了旧分支策略。没有新增性能样本或完整打包。
+
 ## Windows已核验结果与取舍
 
 成功样本：[run40087708509／job120853913867](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40087708509/job/120853913867)，源码 `c1c6e7dc12ee999d9a34f11896482cea279c6abd`。job于2026-10-24 10:53:41–10:56:57 UTC运行；此区间只是本次job记录，不是前后性能对照。结果来自已核验的[artifact12557687964](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40087708509/artifacts/12557687964)：177,152字节，ZIP SHA256 `c3949bd0f59d7c69696573ef1c04366885f5a2a8982af9ab41a0a2ca4a4d10f3`，88项清单。GitHub元数据的源码、大小、digest与该核验记录一致；本节采用已核验内容摘要，不声称额外独立重解包。
