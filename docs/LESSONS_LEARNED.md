@@ -1,5 +1,7 @@
 # 维护注意事项
 
+- 辅助任务内部暂停与显式用户暂停须分别记录归属；恢复不仅检查播放request，还要检查最新用户命令revision。没有命令关联号的同值属性回报可能属于更早命令，不能据此释放最新意图；连续cycle及pause→unpause→pause都要覆盖迟到回报。无法证明归属时保守交还用户控制，不通过猜测目标或放宽代次检查掩盖竞态。
+
 - 跨平台测试须分开宿主存储路径和 Windows 客户端 Mount 身份。Linux 的 `/tmp` 不能通过放宽产品路径校验变为 Windows 本地媒体；使用精确 Windows 身份夹具，保留真实 Windows 文件系统覆盖。可移植 PowerShell helper 使用宿主已有可信 shell，缺失仍失败；Windows 专属集成按平台明确跳过，并实际检查 Windows 注册不被跳过，不能用 Linux PS7 代替 PS5.1 编码结论。
 
 - 构建跳过旧payload副本不等于可以省略其prepared输入，历史provenance仍可能回读旧Electron/Pepper。组装计划应从当前Git tree与overlay合同重算，按共同生产变换后的逐文件等价对照验证，再单独处理材料独立化；见[RUNTIME_BASE_ASSEMBLY.md](RUNTIME_BASE_ASSEMBLY.md)。

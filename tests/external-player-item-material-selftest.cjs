@@ -18,8 +18,8 @@ const MATERIAL = Object.freeze([
         sourcePath: 'vendor/web-snapshot/www/item/item.js',
         runtimePath: 'electronapp/www/item/item.js',
         sourceSha256: 'C8F51119365ECD2881B0A33F1F9E9DD6DA90E305572621188FB31A15FDCB4623',
-        outputSha256: '72311EB4FD8E2A151B280366218A44DE802DB1083BD71DA99F9EF1CB8CC3AB11',
-        transform: value => lifecycle.patchItemLifecycle(residue.patchItemText(value))
+        outputSha256: '208A314D6992ED3DA1C094563772087814A8B235FB507E4DD17A74B3A2EEADFE',
+        transform: value => lifecycle.patchDetailCache(lifecycle.patchItemLifecycle(residue.patchItemText(value)))
     }),
     Object.freeze({
         id: 'item-externalplayer-residue-template',

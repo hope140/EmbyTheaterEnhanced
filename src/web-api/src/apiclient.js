@@ -50,6 +50,12 @@ class ApiClient extends BaseApiClient {
         return this.fetchWithFailover(request, true, signal);
     }
 
+    // Retain the public ThumbnailSet contract and legacy no-thumbnails result.
+    getThumbnails(itemId, options, signal) {
+        if (!this.isMinServerVersion('4.1.0.26')) return Promise.resolve({ Thumbnails: [] });
+        return this.getJSON(this.getUrl(`Items/${id(itemId)}/ThumbnailSet`, options), signal);
+    }
+
     ajax(request, includeAccessToken) { return this.fetch(request, includeAccessToken, request?.signal); }
 
     fetchWithFailover(request, reconnect, signal) {

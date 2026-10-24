@@ -354,3 +354,259 @@ boundedTest('full AMD positive controls reach getStats, setProperties, and nativ
   assert.ok(stats.stats.some(item => item.label === '视频编码:' && item.value === 'h264'));
   assert.ok(stats.stats.some(item => item.label === '屏幕刷新率:' && item.value === '60 Hz'));
 });
+
+for (const outcome of ['success', 'failure']) {
+  boundedTest(`FPS ${outcome} preserves a pause requested before the native pause event`, async () => {
+    const h = await qualifiedPlayer({plans: {'electronrefreshrate://change?rate=120': [{pending: true}]}});
+    // Public pause intent arrives before the asynchronous native property event.
+    h.instance.pause();
+    const unpausesBefore = h.endpoint.pauseWrites.filter(value => value === false).length;
+    const work = h.instance._onEstimatedVfFpsChanged(24);
+    await drainMicrotasks();
+    if (outcome === 'failure') h.pendingXhrs[0].failLate();
+    else {
+      h.pendingXhrs[0].respondLate();
+      await drainMicrotasks();
+      h.clock.advance(3000);
+    }
+    await work;
+    assert.equal(h.endpoint.pauseWrites.filter(value => value === false).length, unpausesBefore,
+      'display completion cannot resume media the user paused');
+    assert.equal(h.endpoint.pauseWrites.at(-1), true);
+  });
+}
+
+for (const phase of ['pending change', 'stabilization']) {
+  boundedTest(`user pause during FPS ${phase} prevents its automatic resume`, async () => {
+    const h = await qualifiedPlayer({plans: {'electronrefreshrate://change?rate=120': [{pending: true}]}});
+    const work = h.instance._onEstimatedVfFpsChanged(24);
+    await drainMicrotasks();
+    if (phase === 'stabilization') {
+      h.pendingXhrs[0].respondLate();
+      await drainMicrotasks();
+    }
+    h.instance.pause();
+    h.instance._onPlayPause(true);
+    const unpausesBefore = h.endpoint.pauseWrites.filter(value => value === false).length;
+    if (phase === 'pending change') h.pendingXhrs[0].failLate();
+    else h.clock.advance(3000);
+    await work;
+    assert.equal(h.endpoint.pauseWrites.filter(value => value === false).length, unpausesBefore);
+    assert.equal(h.endpoint.pauseWrites.at(-1), true);
+  });
+}
+
+boundedTest('native paused state before FPS work is preserved without a new pause command', async () => {
+  const h = await qualifiedPlayer();
+  h.instance._onPlayPause(true);
+  const unpausesBefore = h.endpoint.pauseWrites.filter(value => value === false).length;
+  await runFps(h, 24);
+  assert.equal(h.endpoint.pauseWrites.filter(value => value === false).length, unpausesBefore);
+});
+
+for (const outcome of ['success', 'failure']) {
+  boundedTest(`explicit resume during FPS ${outcome} is applied once and supersedes task cleanup`, async () => {
+    const h = await qualifiedPlayer({plans: {'electronrefreshrate://change?rate=120': [{pending: true}]}});
+    h.instance.pause(); h.instance._onPlayPause(true);
+    const work = h.instance._onEstimatedVfFpsChanged(24);
+    await drainMicrotasks();
+    h.instance.unpause();
+    const unpausesAfterUser = h.endpoint.pauseWrites.filter(value => value === false).length;
+    assert.equal(h.endpoint.pauseWrites.at(-1), false, 'explicit resume is not delayed by display stabilization');
+    if (outcome === 'failure') h.pendingXhrs[0].failLate();
+    else {
+      h.pendingXhrs[0].respondLate();
+      await drainMicrotasks(); h.clock.advance(3000);
+    }
+    await work;
+    assert.equal(h.endpoint.pauseWrites.filter(value => value === false).length, unpausesAfterUser,
+      'display completion cannot add a stale automatic resume after explicit user control');
+  });
+}
+
+boundedTest('playPause retains native cycle ordering and retires FPS automatic resume', async () => {
+  const h = await qualifiedPlayer();
+  const work = h.instance._onEstimatedVfFpsChanged(24);
+  await drainMicrotasks();
+  h.instance._onPlayPause(true); // The task temporary pause is visible from native.
+  const writes = h.endpoint.pauseWrites.length;
+  const commands = h.endpoint.commands.length;
+  h.instance.playPause();
+  h.instance.playPause();
+  assert.deepEqual(h.endpoint.commands.slice(commands).map(command => Array.from(command)), [['cycle', 'pause'], ['cycle', 'pause']],
+    'rapid toggles retain their original native ordering');
+  assert.equal(h.endpoint.pauseWrites.length, writes, 'toggles are not replaced with property writes');
+  h.clock.advance(3000); await work;
+  assert.equal(h.endpoint.pauseWrites.length, writes, 'task completion cannot override explicit native cycles');
+});
+
+boundedTest('native toggle keeps display-pause ownership until explicit control, even after property replies', async () => {
+  const h = await qualifiedPlayer();
+  h.instance.playPause();
+  const writes = h.endpoint.pauseWrites.length;
+  await runFps(h, 24);
+  assert.equal(h.endpoint.pauseWrites.length, writes,
+    'display work cannot inject pause/resume around an unresolved native toggle');
+  h.instance._onPlayPause(true);
+  h.instance.playPause();
+  h.instance._onPlayPause(false);
+  const unpauses = h.endpoint.pauseWrites.filter(value => value === false).length;
+  await runFps(h, 36);
+  assert.equal(h.endpoint.pauseWrites.filter(value => value === false).length, unpauses,
+    'property replies do not identify cycles and cannot return display-pause ownership');
+  h.instance.unpause();
+  const afterExplicitResume = h.endpoint.pauseWrites.filter(value => value === false).length;
+  await runFps(h, 24);
+  assert.equal(h.endpoint.pauseWrites.filter(value => value === false).length, afterExplicitResume + 1,
+    'explicit resume returns known pause ownership for later display changes');
+});
+
+boundedTest('raw native updates cannot replace an explicit pause decision for the current Play', async () => {
+  const h = await qualifiedPlayer();
+  h.instance.pause();
+  h.instance._onPlayPause(true);
+  h.instance._onPlayPause(false);
+  const unpauses = h.endpoint.pauseWrites.filter(value => value === false).length;
+  await runFps(h, 24);
+  assert.equal(h.endpoint.pauseWrites.filter(value => value === false).length, unpauses,
+    'unassociated property events do not relinquish an explicit user pause');
+  h.instance.unpause();
+  const resumed = h.endpoint.pauseWrites.filter(value => value === false).length;
+  await runFps(h, 36);
+  assert.equal(h.endpoint.pauseWrites.filter(value => value === false).length, resumed + 1);
+});
+
+boundedTest('user pause survives coalesced FPS targets without an intermediate automatic resume', async () => {
+  const h = await qualifiedPlayer();
+  h.settings.set('mpv-displaysync_override', '120;144');
+  const work = h.instance._onEstimatedVfFpsChanged(24);
+  await drainMicrotasks();
+  h.instance.pause();
+  const unpausesBefore = h.endpoint.pauseWrites.filter(value => value === false).length;
+  h.instance._onEstimatedVfFpsChanged(36);
+  h.clock.advance(3000); await drainMicrotasks();
+  assert.deepEqual(changes(h), ['electronrefreshrate://change?rate=120', 'electronrefreshrate://change?rate=144']);
+  h.clock.advance(3000); await work;
+  assert.equal(h.endpoint.pauseWrites.filter(value => value === false).length, unpausesBefore);
+});
+
+for (const retireBy of ['Stop', 'Next']) {
+  boundedTest(`${retireBy} retires FPS user-pause ownership before a later Play`, async () => {
+    const h = await qualifiedPlayer();
+    const work = h.instance._onEstimatedVfFpsChanged(24);
+    await drainMicrotasks();
+    h.instance.pause();
+    const unpausesBefore = h.endpoint.pauseWrites.filter(value => value === false).length;
+    if (retireBy === 'Stop') await h.instance.stop(false);
+    await h.instance.play(options(2, {command: retireBy === 'Next' ? 'nextTrack' : undefined}));
+    h.instance._onPlayPause(false); // New native Play's own unpause observation.
+    h.clock.advance(3000); await work;
+    assert.equal(h.endpoint.pauseWrites.filter(value => value === false).length, unpausesBefore + 1,
+      'only the new Play unpauses, with no inherited old pause intent');
+    await runFps(h, 24);
+    assert.equal(h.endpoint.pauseWrites.filter(value => value === false).length, unpausesBefore + 2,
+      'the new Play retains normal automatic recovery after its own display change');
+  });
+}
+
+boundedTest('older native pause echoes cannot replace a newer explicit pause intent', async () => {
+  const h = await qualifiedPlayer();
+  h.instance.pause();
+  h.instance._onPlayPause(false);
+  const unpauses = h.endpoint.pauseWrites.filter(value => value === false).length;
+  await runFps(h, 24);
+  h.instance._onPlayPause(true);
+  h.instance._onPlayPause(false);
+  await runFps(h, 36);
+  assert.equal(h.endpoint.pauseWrites.filter(value => value === false).length, unpauses);
+});
+
+boundedTest('rapid explicit pause then resume keeps latest intent across unassociated native echoes', async () => {
+  const h = await qualifiedPlayer();
+  h.instance.pause();
+  h.instance.unpause();
+  h.instance._onPlayPause(true);
+  const unpauses = h.endpoint.pauseWrites.filter(value => value === false).length;
+  await runFps(h, 24);
+  assert.equal(h.endpoint.pauseWrites.filter(value => value === false).length, unpauses + 1);
+  h.instance._onPlayPause(false);
+  h.instance._onPlayPause(true);
+  const after = h.endpoint.pauseWrites.filter(value => value === false).length;
+  await runFps(h, 36);
+  assert.equal(h.endpoint.pauseWrites.filter(value => value === false).length, after + 1,
+    'only a new UI command or Play replaces the latest explicit resume decision');
+});
+
+boundedTest('rapid pause resume pause retains latest pause across old matching then opposing echoes', async () => {
+  const h = await qualifiedPlayer();
+  h.instance.pause(); h.instance.unpause(); h.instance.pause();
+  h.instance._onPlayPause(true); // Earlier pause echo has the same value as the latest command.
+  h.instance._onPlayPause(false); // Earlier resume echo cannot release the latest user ownership.
+  const unpauses = h.endpoint.pauseWrites.filter(value => value === false).length;
+  const work = h.instance._onEstimatedVfFpsChanged(24);
+  await drainMicrotasks();
+  h.instance._onPlayPause(true);
+  h.clock.advance(3000); await work;
+  assert.equal(h.endpoint.pauseWrites.filter(value => value === false).length, unpauses);
+});
+
+for (const cycles of [1, 2]) {
+  boundedTest(`${cycles} native cycles retain pause ownership across stale same-value echoes and later FPS work`, async () => {
+    const h = await qualifiedPlayer();
+    for (let i = 0; i < cycles; i++) h.instance.playPause();
+    h.instance._onPlayPause(false); // Old state, including an old same-value reply for two cycles.
+    const writes = h.endpoint.pauseWrites.length;
+    const work = h.instance._onEstimatedVfFpsChanged(24);
+    let settled = false;
+    work.then(() => { settled = true; });
+    await drainMicrotasks();
+    h.instance._onPlayPause(true); // Intermediate/native-cycle state while display work is active.
+    if (cycles === 2) h.instance._onPlayPause(false);
+    assert.deepEqual(changes(h), ['electronrefreshrate://change?rate=120'], 'display change still executes');
+    h.clock.advance(2999); await drainMicrotasks();
+    assert.equal(settled, false, 'the original 3000ms stabilization budget remains');
+    h.clock.advance(1); await work;
+    assert.equal(h.endpoint.pauseWrites.length, writes, 'display task cannot override native cycles');
+    await runFps(h, 36);
+    assert.deepEqual(changes(h), ['electronrefreshrate://change?rate=120', 'electronrefreshrate://change?rate=144']);
+    assert.equal(h.endpoint.pauseWrites.length, writes, 'later FPS work also leaves pause state with the user');
+  });
+}
+
+boundedTest('explicit pause and resume reestablish display control after native cycles', async () => {
+  const h = await qualifiedPlayer();
+  h.instance.playPause();
+  h.instance._onPlayPause(true);
+  h.instance.pause();
+  const writes = h.endpoint.pauseWrites.length;
+  await runFps(h, 24);
+  assert.equal(h.endpoint.pauseWrites.length, writes, 'explicit paused state is preserved');
+  h.instance.unpause();
+  const unpauses = h.endpoint.pauseWrites.filter(value => value === false).length;
+  await runFps(h, 36);
+  assert.equal(h.endpoint.pauseWrites.filter(value => value === false).length, unpauses + 1,
+    'explicit resume permits a later task to acquire and release its own pause');
+});
+
+boundedTest('a new Play resets native-cycle ownership for its own display work', async () => {
+  const h = await qualifiedPlayer();
+  h.instance.playPause();
+  h.instance._onPlayPause(true);
+  await h.instance.play(options(2));
+  h.instance._onPlayPause(false); // User intent reset; normal native observation owns the new request.
+  const unpauses = h.endpoint.pauseWrites.filter(value => value === false).length;
+  await runFps(h, 24);
+  assert.equal(h.endpoint.pauseWrites.filter(value => value === false).length, unpauses + 1);
+});
+
+boundedTest('without explicit UI intent, later native paused state remains the display-task baseline', async () => {
+  const h = await qualifiedPlayer();
+  await runFps(h, 24);
+  h.instance._onPlayPause(true);
+  const unpauses = h.endpoint.pauseWrites.filter(value => value === false).length;
+  await runFps(h, 36);
+  assert.equal(h.endpoint.pauseWrites.filter(value => value === false).length, unpauses);
+  h.instance._onPlayPause(false);
+  await runFps(h, 24);
+  assert.equal(h.endpoint.pauseWrites.filter(value => value === false).length, unpauses + 1);
+});

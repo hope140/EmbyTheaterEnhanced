@@ -7,22 +7,10 @@ const {NativeHelperClient, PROTOCOL_VERSION, validateIncoming} = require('../src
 const diagnosticsIpc = require('../src/electronapp/enhanced/diagnostics-ipc');
 
 function makeController(onDiagnostic) {
-  const client = Object.create(NativeHelperClient.prototype);
-  client.helperInstanceId = 'helper-current';
-  client.currentGenerationId = null;
-  client.currentLabel = null;
+  const client = new NativeHelperClient({helperPath: 'unused', libmpvPath: 'unused',
+    parentWindowHandle: '1', helperInstanceId: 'helper-current', onDiagnostic});
   client.generationCounter = 1000;
-  client.timeline = [];
-  client.state = {status: 'idle', path: null, playing: false, fileLoaded: false};
-  client.pending = new Map();
-  client.requestHistory = [];
-  client.transportTerminated = false;
-  client.exited = false;
-  client.protocolFailure = null;
-  client.closeOrdering = [];
-  client.onDiagnostic = onDiagnostic;
   client.onEvent = message => client.delivered.push(message);
-  client.onTerminal = () => {};
   client.delivered = [];
   client.commands = [];
   client.command = (method, params, generationId) => client.commands.push({method, params, generationId});

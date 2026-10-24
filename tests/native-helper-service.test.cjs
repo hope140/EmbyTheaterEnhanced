@@ -217,6 +217,23 @@ async function showSurface(service) {
   return {created, begun};
 }
 
+test('native restart position bypasses property subscriptions and remains scoped to the current generation', async () => {
+  const ClientClass = makeClientClass();
+  const {main, service} = makeService(ClientClass);
+  const {begun} = await showSurface(service);
+  const active = ClientClass.clients[0];
+  const restart = {name: 'playback-restart', generationId: begun.generationId, value: 0};
+  active.options.onEvent(restart);
+  assert.deepEqual(main.sent.at(-1), ['enhanced-native-helper-event', {
+    type: 'property_change', generationId: begun.generationId, data: {name: 'playback-restart', value: 0}
+  }]);
+  const count = main.sent.length;
+  active.options.onEvent({...restart, generationId: begun.generationId + 10});
+  active.options.onEvent({name: 'private-unobserved-property', generationId: begun.generationId, value: 20});
+  assert.equal(main.sent.length, count);
+  await service.destroy();
+});
+
 function deferred() {
   let resolve, reject;
   const promise = new Promise((yes, no) => { resolve = yes; reject = no; });
@@ -415,7 +432,7 @@ test('full destroy waits for a second renderer-owned client after the first clie
   assert.equal(killCallsA, 1);
 
   const createdB = await service.call('create');
-  assert.equal(createdB.endpointId, createdA.endpointId, 'A and B must share the renderer endpoint');
+  assert.notEqual(createdB.endpointId, createdA.endpointId, 'a replacement owns a fresh renderer endpoint');
   const clientB = ClientClass.clients[1];
   assert.equal(ClientClass.clients.length, 2);
   assert.notStrictEqual(clientB, clientA, 'B must be a distinct owned FakeClient instance');
@@ -465,7 +482,7 @@ test('full destroy waits for the current second client after a prior renderer de
   assert.equal(killCallsA, 1);
 
   const createdB = await service.call('create');
-  assert.equal(createdB.endpointId, createdA.endpointId);
+  assert.notEqual(createdB.endpointId, createdA.endpointId, 'old pending destroy must not own the replacement endpoint');
   const clientB = ClientClass.clients[1];
   assert.equal(ClientClass.clients.length, 2);
   assert.notStrictEqual(clientB, clientA, 'B must be a distinct current FakeClient instance');

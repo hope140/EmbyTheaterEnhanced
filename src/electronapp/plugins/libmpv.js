@@ -124,6 +124,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         var videoDialog;
         var libmpv;
         var mediaElementPromise;
+        var mediaElementDestroyPromise;
         var mediaElementEpoch = 0;
         var currentAspectRatio = 'auto';
 
@@ -213,7 +214,9 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 abortListener: null,
                 bridgeErrorListener: null,
                 corePlayingLogged: false,
-                nativeFallbackToastRequested: false
+                nativeFallbackToastRequested: false,
+                pauseIntent: null,
+                pauseIntentSequence: 0
             };
             activePlayRequest = request;
             if (enhancedRouteState) enhancedRouteState.begin(request);
@@ -339,6 +342,20 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 order: 7,
                 thumbImage: '',
                 icon: 'description',
+                settingsTheme: true,
+                adjustHeaderForEmbeddedScroll: true
+            });
+
+            routes.push({
+                path: 'mpvplayer/cache-management.html',
+                transition: 'slide',
+                controller: pluginManager.mapPath(self, 'mpvplayer/cache-management.js'),
+                type: 'settings',
+                title: '缓存管理',
+                category: 'General',
+                order: 7,
+                thumbImage: '',
+                icon: 'storage',
                 settingsTheme: true,
                 adjustHeaderForEmbeddedScroll: true
             });
@@ -653,7 +670,13 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             }
         }
 
-        function createMediaElement(options) {
+        function createMediaElement(options, request) {
+            if (mediaElementDestroyPromise) {
+                return mediaElementDestroyPromise.then(function () {
+                    assertCurrentPlayRequest(request);
+                    return createMediaElement(options, request);
+                });
+            }
             if (libmpv) return Promise.resolve();
             if (mediaElementPromise) return mediaElementPromise;
             var creationEpoch = ++mediaElementEpoch;
@@ -661,16 +684,18 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 var dlg = document.querySelector('.mpv-videoPlayerContainer');
                 var createdEndpoint = null;
                 function fail(error) {
+                    var cleanup;
                     if (createdEndpoint && typeof createdEndpoint.destroy === 'function') {
                         try {
-                            var destroyed = createdEndpoint.destroy();
-                            if (destroyed && typeof destroyed.catch === 'function') destroyed.catch(function () {});
+                            cleanup = createdEndpoint.destroy();
                         } catch (_) { }
                     }
                     if (libmpv === createdEndpoint) libmpv = null;
                     if (videoDialog === dlg) videoDialog = null;
                     if (dlg && dlg.parentNode) dlg.parentNode.removeChild(dlg);
-                    reject(error);
+                    // A stopped creation keeps its cleanup ownership until the
+                    // old helper exits; a replacement must not share that lease.
+                    Promise.resolve(cleanup).then(function () { reject(error); }, function () { reject(error); });
                 }
                 if (dlg && !libmpv) {
                     if (dlg.parentNode) dlg.parentNode.removeChild(dlg);
@@ -679,6 +704,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 }
                 if (!dlg) {
                     require(['css!./libmpv'], function () {
+                        if (creationEpoch !== mediaElementEpoch) { fail(supersededError()); return; }
                         dlg = document.createElement('div');
 
                         dlg.classList.add('mpv-videoPlayerContainer');
@@ -742,6 +768,14 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
             if (recv.data.type == 'property_change') {
                 switch (recv.data.data.name) {
+                    case 'playback-restart':
+                        var position = recv.data.data.value;
+                        if (!isCurrentPlayRequest(activePlayRequest) || typeof position !== 'number' ||
+                            !Number.isFinite(position) || position < 0) break;
+                        self._onTimeUpdate(toTicks(position));
+                        emitClientDiagnostic('info', 'playback', 'seek', requestDiagnosticDetails(activePlayRequest));
+                        events.trigger(self, 'seek');
+                        break
                     case 'time-pos':
                         self._onTimeUpdate(toTicks(recv.data.data.value))
                         break
@@ -814,7 +848,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 }
                 await displaySync(request);
                 assertCurrentPlayRequest(request);
-                await createMediaElement(options);
+                await createMediaElement(options, request);
                 assertCurrentPlayRequest(request);
                 corePlaying = waitForCorePlaying(request);
                 corePlaying.catch(function () { /* Awaited below; suppress early unhandled reporting on cancellation. */ });
@@ -1136,25 +1170,26 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         self.currentTime = function (val) {
 
             if (val != null) {
-                var request = activePlayRequest;
-                sendCommand(['seek', `${Math.floor(val / 1000)}`, 'absolute', 'exact']).then(function () {
-
-                    emitClientDiagnostic('info', 'playback', 'seek', requestDiagnosticDetails(request));
-                    events.trigger(self, 'seek');
-                });
-                return;
+                return submitSeek(['seek', String(val / 1000), 'absolute', 'exact']);
             }
 
             return (playerState.positionTicks || 0) / 10000;
         };
 
-        function seekRelative(offsetMs) {
+        function submitSeek(command) {
             var request = activePlayRequest;
-            sendCommand(['seek', `${Math.floor(offsetMs / 1000)}`, 'relative']).then(function () {
-
-                emitClientDiagnostic('info', 'playback', 'seek', requestDiagnosticDetails(request));
-                events.trigger(self, 'seek');
+            if (!isCurrentPlayRequest(request)) return;
+            sendCommand(command).then(function () {
+                if (!isCurrentPlayRequest(request)) return;
+                emitClientDiagnostic('info', 'playback', 'seek-command-accepted', requestDiagnosticDetails(request));
+            }).catch(function () {
+                if (!isCurrentPlayRequest(request)) return;
+                emitClientDiagnostic('warn', 'playback', 'seek-command-failed', requestDiagnosticDetails(request));
             });
+        }
+
+        function seekRelative(offsetMs) {
+            return submitSeek(['seek', String(offsetMs / 1000), 'relative']);
         }
 
         self.rewind = function (offsetMs) {
@@ -1220,16 +1255,35 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             return destroyInternal()
         };
 
-        self.playPause = function () {
+        function recordPauseIntent(paused) {
+            if (!activePlayRequest) return;
+            // Native property echoes have no command identity; retain the last
+            // explicit intent until another UI command or a new Play owns it.
+            activePlayRequest.pauseIntent = paused;
+            activePlayRequest.pauseIntentSequence++;
+        }
 
+        function currentPauseIntent() {
+            if (activePlayRequest && activePlayRequest.pauseIntent != null) return activePlayRequest.pauseIntent;
+            if (fpsDisplayWork && fpsDisplayWork.request === activePlayRequest) return fpsDisplayWork.pauseState;
+            return self.paused();
+        }
+
+        self.playPause = function () {
+            // Native owns cycle ordering. Property replies do not identify
+            // individual cycles, so only explicit pause/unpause or a new Play
+            // can return automatic display-pause ownership to this adapter.
+            recordPauseIntent('toggle');
             sendCommand(['cycle', 'pause']);
         };
 
         self.pause = function () {
+            recordPauseIntent(true);
             setProperty({ pause: true });
         };
 
         self.unpause = function () {
+            recordPauseIntent(false);
             setProperty({ pause: false });
         };
 
@@ -1468,7 +1522,8 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 fpsDisplayWork.pendingFps = fps;
                 return fpsDisplayWork.promise;
             }
-            var work = {request: ownerRequest, pendingFps: fps, promise: null, waitTimer: null, releaseWait: null};
+            var work = {request: ownerRequest, pendingFps: fps, promise: null, waitTimer: null, releaseWait: null,
+                pauseState: currentPauseIntent()};
             fpsDisplayWork = work;
             work.promise = Promise.resolve().then(async function () {
                 try {
@@ -1487,7 +1542,14 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                         }
                         var newRate = pos[0] ? pos[0] : calc[0];
                         if (!newRate || newRate == curRefreshRate) continue;
-                        self.pause();
+                        var pauseSequence = ownerRequest.pauseIntentSequence;
+                        var resumeAfterChange = currentPauseIntent() === false;
+                        // This pause belongs to display work, not a user command.
+                        if (resumeAfterChange) setProperty({pause: true});
+                        function restoreDisplayPause() {
+                            if (resumeAfterChange && fpsDisplayWork === work && isCurrentPlayRequest(ownerRequest) &&
+                                ownerRequest.pauseIntentSequence === pauseSequence) setProperty({pause: false});
+                        }
                         try {
                             var appliedRate = await setRefreshRate(newRate, {signal: ownerRequest.controller.signal});
                             if (!Number.isFinite(Number(appliedRate)) || Number(appliedRate) <= 0) {
@@ -1500,7 +1562,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                                 ownerRequest.displaySyncReady = false;
                                 curRefreshRate = undefined;
                                 emitClientDiagnostic('warn', 'display', 'display-change-unavailable', requestDiagnosticDetails(ownerRequest));
-                                self.unpause();
+                                restoreDisplayPause();
                             }
                             return;
                         }
@@ -1512,7 +1574,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                                 resolve();
                             }, 3000);
                         });
-                        if (fpsDisplayWork === work && isCurrentPlayRequest(ownerRequest)) self.unpause();
+                        restoreDisplayPause();
                     }
                 } finally {
                     // Release before the drain settles so a new FPS cannot join
@@ -1578,8 +1640,12 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         async function destroyInternal() {
 
             invalidatePlayRequest();
+            if (mediaElementDestroyPromise) return mediaElementDestroyPromise;
             mediaElementEpoch++;
+            var pendingCreation = mediaElementPromise;
+            var ownedEndpoint = libmpv;
             mediaElementPromise = null;
+            libmpv = null;
 
             embyRouter.setTransparency('none');
 
@@ -1594,14 +1660,22 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 videoDialog = null;
                 if (dlg.parentNode) dlg.parentNode.removeChild(dlg);
             }
-            if (libmpv) {
-                if (typeof libmpv.destroy === 'function') {
-                    try { await libmpv.destroy(); } catch (_) { }
+            // Publish one barrier before starting cleanup. New Play waits for
+            // the captured creation/endpoint; old completion cannot clear it.
+            var completion = Promise.resolve().then(async function () {
+                try {
+                    if (ownedEndpoint && typeof ownedEndpoint.destroy === 'function') {
+                        try { await ownedEndpoint.destroy(); } catch (_) { }
+                    }
+                    if (pendingCreation) {
+                        try { await pendingCreation; } catch (_) { }
+                    }
+                } finally {
+                    if (mediaElementDestroyPromise === completion) mediaElementDestroyPromise = null;
                 }
-                libmpv = null
-            }
-
-            return Promise.resolve()
+            });
+            mediaElementDestroyPromise = completion;
+            return completion;
         }
 
         function createClosedCaptionTrack(mediaSource, isVideo) {

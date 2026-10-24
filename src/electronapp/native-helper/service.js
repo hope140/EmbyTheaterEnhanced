@@ -518,7 +518,9 @@ function createService(options) {
           log('load-failed', {reason: 'mpv-end-file-error'});
           return;
         }
-        if (!observed.has(message.name)) return;
+        if (message.name === 'playback-restart') {
+          if (message.generationId !== owned.currentGenerationId) return;
+        } else if (!observed.has(message.name)) return;
         sendEvent({type: 'property_change', generationId: message.generationId, data: {name: message.name, value: message.value}});
       },
       onTerminal: function (terminal) {
@@ -684,14 +686,18 @@ function createService(options) {
         rendererEpoch = 0;
         presentationTokenHighWater = 0;
       }
+      const createdEndpointId = activeEndpointId;
       const active = await ensureClient();
-      return {status: 'ok', mode, endpointId: activeEndpointId, protocolVersion: PROTOCOL_VERSION, helperVersion: active.handshake.helperVersion, libmpvVersion: active.handshake.libmpvVersion};
+      requireEndpoint(createdEndpointId);
+      return {status: 'ok', mode, endpointId: createdEndpointId, protocolVersion: PROTOCOL_VERSION, helperVersion: active.handshake.helperVersion, libmpvVersion: active.handshake.libmpvVersion};
     }
     if (operation === 'status') return status();
     requireEndpoint(endpointId);
     if (operation === 'destroy') {
-      await destroyClient('renderer-destroy');
+      // Retire this endpoint before awaiting its process. A new create owns a
+      // different ID, and this completion must never revoke the replacement.
       activeEndpointId = null;
+      await destroyClient('renderer-destroy');
       return {status: 'ok'};
     }
     let beginEpoch;

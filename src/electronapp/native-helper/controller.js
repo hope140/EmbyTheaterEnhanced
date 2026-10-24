@@ -13,6 +13,8 @@ const MAX_INBOUND_FRAMES = 1024;
 const MAX_INBOUND_BYTES = 256 * 1024;
 const MAX_OUTBOUND_FRAMES = 128;
 const MAX_OUTBOUND_BYTES = 256 * 1024;
+const TIMELINE_CAPACITY = 4096;
+const REQUEST_HISTORY_CAPACITY = 1024;
 const ACTIVE_CLIENTS = new Set();
 let globalGenerationId = 100;
 
@@ -107,6 +109,38 @@ function monotonicMicros() {
   return Number(process.hrtime.bigint() / 1000n);
 }
 
+// Diagnostic history must not grow with playback duration. Overwrite the oldest
+// slot in constant time; only readers materialize an ordered ordinary array.
+class BoundedHistory {
+  constructor(capacity) {
+    this.capacity = capacity;
+    this.items = new Array(capacity);
+    this.start = 0;
+    this.length = 0;
+    this.droppedCount = 0;
+  }
+
+  push(item) {
+    this.items[(this.start + this.length) % this.capacity] = item;
+    if (this.length < this.capacity) this.length++;
+    else {
+      this.start = (this.start + 1) % this.capacity;
+      this.droppedCount++;
+    }
+  }
+
+  some(predicate) {
+    for (let offset = 0; offset < this.length; offset++) {
+      if (predicate(this.items[(this.start + offset) % this.capacity])) return true;
+    }
+    return false;
+  }
+
+  toArray() {
+    return Array.from({length: this.length}, (_, offset) => this.items[(this.start + offset) % this.capacity]);
+  }
+}
+
 class NativeHelperClient {
   constructor(options) {
     this.helperPath = options.helperPath;
@@ -124,8 +158,10 @@ class NativeHelperClient {
     this.currentGenerationId = null;
     this.currentLabel = null;
     this.state = { status: 'idle', path: null, playing: false, fileLoaded: false };
-    this.timeline = [];
-    this.requestHistory = [];
+    this._timeline = new BoundedHistory(TIMELINE_CAPACITY);
+    this._requestHistory = new BoundedHistory(REQUEST_HISTORY_CAPACITY);
+    this.generationEventWaiters = new Set();
+    this.readyReceived = false;
     this.operationErrors = [];
     this.closeOrdering = [];
     this.stderrChunks = [];
@@ -143,6 +179,9 @@ class NativeHelperClient {
     this.outboundBytes = 0;
     this.writeBlocked = false;
   }
+
+  get timeline() { return this._timeline.toArray(); }
+  get requestHistory() { return this._requestHistory.toArray(); }
 
   async start() {
     if (!/^\d+$/.test(this.parentWindowHandle)) throw new ProtocolFailure('invalid-parent-window-handle');
@@ -186,7 +225,7 @@ class NativeHelperClient {
     });
     try {
       await Promise.race([
-        this.waitFor(() => this.timeline.some(item => item.name === 'ready' && item.action === 'ACCEPT_HELPER_GLOBAL'), this.readyTimeoutMs, 'helper-ready'),
+        this.waitFor(() => this.readyReceived, this.readyTimeoutMs, 'helper-ready'),
         this.exitPromise.then(exit => { throw new Error(`helper-start-failed:${exit.error || exit.code || exit.signal || 'closed'}`); }),
       ]);
       if (!this.handshake || this.handshake.protocolVersion !== PROTOCOL_VERSION ||
@@ -258,6 +297,15 @@ class NativeHelperClient {
     } catch (_) { /* Observers cannot affect generation or event delivery. */ }
   }
 
+  recordTimeline(item) {
+    this._timeline.push(item);
+    if (item.action === 'ACCEPT') {
+      for (const waiter of this.generationEventWaiters) {
+        if (waiter.generationId === item.generationId && waiter.name === item.name) waiter.matched = true;
+      }
+    }
+  }
+
   dispatch(message) {
     const base = {
       atParentMicros: monotonicMicros(),
@@ -271,38 +319,38 @@ class NativeHelperClient {
       currentAuthoritativeGeneration: this.currentGenerationId
     };
     if (this.transportTerminated || this.exited || this.protocolFailure) {
-      this.timeline.push({ ...base, action: 'DROP_TRANSPORT_TERMINAL' });
+      this.recordTimeline({ ...base, action: 'DROP_TRANSPORT_TERMINAL' });
       this.diagnose(message.name, message.generationId, 'DROP_TRANSPORT_TERMINAL');
       return;
     }
     if (message.helperInstanceId !== this.helperInstanceId) {
-      this.timeline.push({ ...base, action: 'DROP_STALE_HELPER' });
+      this.recordTimeline({ ...base, action: 'DROP_STALE_HELPER' });
       this.diagnose(message.name, message.generationId, 'DROP_STALE_HELPER');
       return;
     }
     if (message.type === 'response' || message.type === 'error') {
       const pending = this.pending.get(message.requestId);
       if (!pending || pending.generationId !== message.generationId) {
-        this.timeline.push({ ...base, action: 'DROP_UNKNOWN_OR_TERMINAL_REQUEST' });
+        this.recordTimeline({ ...base, action: 'DROP_UNKNOWN_OR_TERMINAL_REQUEST' });
         return;
       }
       this.pending.delete(message.requestId);
       clearTimeout(pending.timer);
       const state = message.type === 'response' ? 'RESOLVED' : 'FAILED';
       this.finishRequest(pending, state, message.type === 'response' ? message.result : message.code);
-      this.timeline.push({ ...base, action: message.type === 'response' ? 'RESOLVE_REQUEST' : 'REJECT_REQUEST' });
+      this.recordTimeline({ ...base, action: message.type === 'response' ? 'RESOLVE_REQUEST' : 'REJECT_REQUEST' });
       return;
     }
     if (message.type === 'lifecycle' || message.scope === 'helper') {
       const action = message.name === 'unattributed-native-event' ? 'DROP_UNATTRIBUTED' : 'ACCEPT_HELPER_GLOBAL';
-      this.timeline.push({ ...base, action, reason: message.reason || null, detail: message.detail || null });
+      this.recordTimeline({ ...base, action, reason: message.reason || null, detail: message.detail || null });
       if (message.name === 'unattributed-native-event') this.diagnose(message.rawEventName, null, 'DROP_UNATTRIBUTED');
-      if (message.name === 'ready') this.handshake = message.detail || null;
+      if (message.name === 'ready') { this.readyReceived = true; this.handshake = message.detail || null; }
       return;
     }
     if (message.type === 'event') {
       if (message.generationId !== this.currentGenerationId) {
-        this.timeline.push({ ...base, action: 'DROP_STALE_GENERATION', value: message.value });
+        this.recordTimeline({ ...base, action: 'DROP_STALE_GENERATION', value: message.value });
         this.diagnose(message.name, message.generationId, 'DROP_STALE_GENERATION');
         return;
       }
@@ -317,11 +365,11 @@ class NativeHelperClient {
         };
         this.operationErrors.push(operationError);
         if (this.operationErrors.length > 64) this.operationErrors.shift();
-        this.timeline.push({ ...base, action: 'ACCEPT_OPERATION_ERROR', operation: message.operation, property: message.property || null, errorCode: message.errorCode });
+        this.recordTimeline({ ...base, action: 'ACCEPT_OPERATION_ERROR', operation: message.operation, property: message.property || null, errorCode: message.errorCode });
         try { this.onEvent(message); } catch (_) { /* consumer errors cannot corrupt transport state */ }
         return;
       }
-      this.timeline.push({ ...base, action: 'ACCEPT', value: message.value });
+      this.recordTimeline({ ...base, action: 'ACCEPT', value: message.value });
       this.diagnose(message.name, message.generationId, 'ACCEPT', {endReason: message.name === 'end-file' && message.value ? message.value.reason : null});
       if (message.name === 'start-file') this.state.status = 'loading';
       if (message.name === 'file-loaded') { this.state.fileLoaded = true; this.state.status = 'loaded'; }
@@ -338,7 +386,7 @@ class NativeHelperClient {
     this.currentGenerationId = this.allocateGenerationId();
     this.currentLabel = label;
     this.state = { status: 'loading', path: null, playing: false, fileLoaded: false };
-    this.timeline.push({ atParentMicros: monotonicMicros(), helperInstanceId: this.helperInstanceId, generationId: this.currentGenerationId, requestId: null, rawEventId: null, rawEventName: null, mediaIdentity: null, name: 'generation-begin', currentAuthoritativeGeneration: this.currentGenerationId, action: 'BEGIN_GENERATION', label });
+    this.recordTimeline({ atParentMicros: monotonicMicros(), helperInstanceId: this.helperInstanceId, generationId: this.currentGenerationId, requestId: null, rawEventId: null, rawEventName: null, mediaIdentity: null, name: 'generation-begin', currentAuthoritativeGeneration: this.currentGenerationId, action: 'BEGIN_GENERATION', label });
     this.diagnose('generation-begin', this.currentGenerationId, 'BEGIN_GENERATION', {label});
     this.command('activate-generation', { properties: observedProperties }, this.currentGenerationId);
     return this.currentGenerationId;
@@ -353,7 +401,7 @@ class NativeHelperClient {
       }
     }
     try { this.command('retire-generation', {}, retired); } catch (_) { /* local retirement remains authoritative */ }
-    this.timeline.push({ atParentMicros: monotonicMicros(), helperInstanceId: this.helperInstanceId, generationId: retired, requestId: null, rawEventId: null, rawEventName: null, mediaIdentity: null, name: 'generation-retired', currentAuthoritativeGeneration: null, action: 'RETIRE_GENERATION', reason });
+    this.recordTimeline({ atParentMicros: monotonicMicros(), helperInstanceId: this.helperInstanceId, generationId: retired, requestId: null, rawEventId: null, rawEventName: null, mediaIdentity: null, name: 'generation-retired', currentAuthoritativeGeneration: null, action: 'RETIRE_GENERATION', reason });
     this.currentGenerationId = null;
     this.currentLabel = null;
     this.diagnose('generation-retired', retired, 'RETIRE_GENERATION', {reason});
@@ -467,7 +515,7 @@ class NativeHelperClient {
     if (pending.terminalTransitions) return;
     pending.terminalTransitions++;
     pending.state = state;
-    this.requestHistory.push({ requestId: pending.requestId, generationId: pending.generationId, method: pending.method, state, detail, terminalTransitions: pending.terminalTransitions });
+    this._requestHistory.push({ requestId: pending.requestId, generationId: pending.generationId, method: pending.method, state, detail, terminalTransitions: pending.terminalTransitions });
     if (state === 'RESOLVED') pending.resolve(detail);
     else { const error = new Error(String(detail || state)); error.state = state; pending.reject(error); }
   }
@@ -505,7 +553,15 @@ class NativeHelperClient {
   }
 
   async waitForGenerationEvent(generationId, name, timeoutMs = 5000) {
-    await this.waitFor(() => this.timeline.some(item => item.generationId === generationId && item.name === name && item.action === 'ACCEPT'), timeoutMs, `${generationId}:${name}`);
+    // Retained history supports callers arriving after an event. A registered
+    // wait also remembers a match evicted before the next polling turn.
+    const waiter = {generationId, name, matched: this._timeline.some(item => item.generationId === generationId && item.name === name && item.action === 'ACCEPT')};
+    this.generationEventWaiters.add(waiter);
+    try {
+      await this.waitFor(() => waiter.matched, timeoutMs, `${generationId}:${name}`);
+    } finally {
+      this.generationEventWaiters.delete(waiter);
+    }
   }
 
   snapshot() {
@@ -517,6 +573,10 @@ class NativeHelperClient {
       state: { ...this.state },
       timeline: this.timeline.map(item => ({ ...item })),
       requestHistory: this.requestHistory.map(item => ({ ...item })),
+      timelineCapacity: this._timeline.capacity,
+      timelineDroppedCount: this._timeline.droppedCount,
+      requestHistoryCapacity: this._requestHistory.capacity,
+      requestHistoryDroppedCount: this._requestHistory.droppedCount,
       operationErrors: this.operationErrors.map(item => ({ ...item })),
       pendingRequestCount: this.pending.size,
       closeOrdering: this.closeOrdering.map(item => ({ ...item })),

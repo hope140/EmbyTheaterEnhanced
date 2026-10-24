@@ -20,7 +20,15 @@ STRM 按持久化 rules 的 cloud-first、mount-first 或 custom 顺序尝试 Di
 
 原恢复仍为fire-and-forget且不延迟Native销毁；先在共8000ms预算内观察current，同实例generation已变则跳过，第三值或不可观测不做补偿写。同值才沿原change恢复original，无效/不符回包只记固定unavailable，不重试也不声明硬件成功。该观察守卫不是原子事务或全局持有权，跨renderer同值及TOCTOU限制保持。
 
+后续独立修复将FPS任务临时暂停与显式用户意图分开：恢复只释放本任务取得且未被新显式命令接管的暂停。pause/unpause/playPause的最新意图归本次Play，未关联命令的属性回报只更新观测。native cycle仍由原生命令排序；cycle后FPS继续切率和原稳定等待，但在明确pause/unpause或新Play之前不再插入临时暂停/恢复。该请求级边界不改变原生实际状态事件，也不增加显示硬件事务或跨renderer持有权。
+
 About 校验固定 provenance/manifest 与二进制身份，实时运行状态独立读取；缺失信息保留 UNKNOWN/NOT AVAILABLE。诊断旁路复用 logger 与 sender 校验，不改变 source 或播放时序。
+
+独立软件更新候选沿 About 主动点击与 main-frame IPC，只读固定 GitHub 正式渠道；下载前从官方 Tag 重核验安装附件身份，连接失败可串行使用维护备用源。取消退休所属网络与页面，SHA／大小校验后无覆盖保存，Windows 保留 Internet zone；不执行安装，不恢复旧 Host 更新或介入 mpv 内核归属。候选范围与待验收见[手动软件更新](MANUAL_APP_UPDATE.md)。
+
+说明正文仅有限识别HTTP(S)内联／裸链接，main和AMD共用零依赖解析器；DOM保持文本及固定anchor，不解析HTML或加载图片。正文外链IPC独立验证主frame、参数和本次官方说明地址集合后交系统浏览器，原发布页白名单及校验下载路径不变；页面退休使迟到打开反馈失效。
+
+更新通道由main持有并仅持久化profile内stable/testing选择，默认正式；正式仍核固定Latest，测试完整分页后按SemVer选非draft最高版本。切换退休并收尾旧检查／候选，下载与目录选择阶段锁定通道，保存不自动检查；同版本、较低版本不进入下载。元数据始终官方直连、准确Tag身份重核验及独立校验保持。
 
 About 的 M01 状态模型分别展示已校验包内 libmpv 文件 SHA、编译期预期版本/API/SHA 和 ready Helper 握手报告的运行版本/API/受限能力子集。包内文件 SHA 不表示当前加载映像 SHA；当前映像哈希与 Native 属性回读仍为 UNKNOWN。固定 Native render path 为 gpu-next/D3D11，mpv-vo/mpv-gpuapi 设置页值不作为 Native property 应用。
 
@@ -46,6 +54,10 @@ Native Helper 的 transport 终态与 owned process 退出分别确认。有 PID
 
 服务端首页接线候选仍以原 HomeTab/BaseTab 为生命周期 owner，通过固定 HomeTab/app.js overlay 加载一个维护 controller。它复用现有 ApiClient 只读 HomeSections 和 Section Items，服务能力或布局不支持时回完整旧 homesections。renderer 保留原 CardBuilder、itemscontainer、focus/input、播放与Session归属；暂停/刷新/销毁取消请求，旧页面 stage 与迟到响应不能重新提交。接口、布局首批支持范围和验证边界见[服务端首页合同](SERVER_HOME_SECTIONS.md)。
 
+首页布局增加默认关闭的独立缓存适配：仅接在HomeSections安全投影之后，Section Items仍沿原GET；原CM/API事件、认证代次和页面票据检查控制隔离/失效，未包装共享API或接入内容/播放缓存。普通生产调用不传开关及TTL，实际保持关闭；显式测试CLI在bootstrap之前验证包内身份、分配全新临时profile并经prepared preload传入有限选项，不改Host/安装器或新增IPC。见[隔离测试启动](PAGE_CACHE_TEST_ENTRY.md)；页面真接线与合成验证边界见[首页布局缓存](PAGE_CACHE_HOME_ADAPTER.md)。
+
+同一独立分支另有默认 baseline 的界面流畅度实验，显式测试参数选择 retain／sections。它在原 Home owner 中复用同身份／查询 stage、重新读取内容，并逐区呈现；不新增全局缓存池。原生列表的窄提交钩子只对该 owner 生效，账号、导航、请求及延迟回调再次核对；精确组合哈希进入来源和隔离启动检查。范围、基线方法、未验视觉与原生组件边界见[首页界面流畅度](HOME_FLOW.md)。
+
 冷启动首页在同一 refresh epoch 内等待既有连接身份就绪，最长 3 秒；暂停/清理/销毁取消探测。失败状态显示通用文字，pending 仅去重所属进行中请求，成功 active 状态保留原去重。
 
 Windows 本地试验由 preload 提前捕获模块，原 play 入口传入原 PlaybackManager/events 幂等绑定。任务栏按钮、Web MediaSession 展示和可选 SMTC/DWM 共用原状态，命令仍经原 inputmanager。main-only 适配器校验 mainFrame、文档 token、sequence 与媒体代次，只捕获所属 video host，按需更新、最小化保帧、退出等待退休。固定 FFI 尚未进入正式构建，不改变 Native、Session 和窗口归属；见[当前记录](WINDOWS_MEDIA_CONTROLS.md)。
@@ -57,3 +69,13 @@ v0.3.5详情生命周期overlay仍由原ItemPage/BaseView拥有页面；加载�
 v0.3.5合批搜索保留两条原路由：标准ItemsView/ListController与电视SearchView/SearchResults。SearchFields保留500ms防抖并在输入、暂停及销毁时退休旧提交；标准列表仅在type=search安装维护helper，复用既有itemscontainer/virtual-scroller归属检查，电视结果按代次提交。ActionSheet仅给原无选择关闭拒绝加明确标记，EmbySelect只处理该标记；真实错误、多选关闭提交与原视频禁用展示保持。见[搜索与菜单合同](SEARCH_AND_MENU.md)。
 
 ActionSheet 空列表排版使用单独的固定源 `actionsheet.css` overlay；只清除空、非虚拟列表残留的末尾间距。原 ActionSheet JS、列表加载、按钮锚定、全屏、多选、选择/取消与播放远控归属保持。CSS 生成器和最终输出进入既有 build-input 与 provenance 合同，冻结输入只读。
+
+客户端设置独立页的[缓存管理](CACHE_MANAGEMENT.md)分别委托现有布局缓存 owner 和当前主窗口 session，不建立数据池。renderer 只汇总序列化计数并调用 owner 失效；main 的两个 HTTP IPC 复用包内主 frame 校验，仅允许 getCacheSize／clearCache，并把已开始的操作纳入 before-quit 收尾。登录／设置、保留 DOM、下载、播放及未知解码内存保持各自归属。
+
+首页流畅度候选对同身份返回保留卡片几何，仅暂遮易变进度／节目状态并禁交互；未知首批内容用同 scroller 的比例占位。原 native commit guard 继续检查身份、代次及请求归属，策略变更立即退休旧内容。真实组件与 CSS 的截图／帧序列证据同完整客户端体验分开，见[视觉回归合同](HOME_FLOW.md#返回闪空的视觉回归)。
+
+首页跨 route 实验只复用原 viewmanager 三 slot 内已有 owner，完整 URL 与首页身份／代次 guard 均通过后才恢复，不增加全局数据池；异步提交再核对，淘汰／原恢复失效仍冷加载。保留原 HomeView→TabbedView 销毁链，淘汰时由原 owner 释放对应 tab。独立缓存管理沿原客户端插件设置路由，分别委托布局与 HTTP owner，组合操作保留逐项结果及离页边界。
+
+详情持久 owner 独占 ete-detail-page-cache-v1 IndexedDB 与一字节 quarantine 标记；只保存四类静态投影，不拥有用户进度、权限、媒体源或播放会话。ItemPage 通过原生命周期接线，网络与持久读取并行，背景／提交按页面归属，原 PlaybackManager 完成类型翻译与真实播放校验。管理页只调用首页布局、详情 DTO、HTTP 各自 owner，不删除整个 profile 或其他数据库。见[详情缓存](DETAIL_PAGE_CACHE.md)。
+
+正常关窗另由详情缓存 close owner 在主 frame READY 后发有限 flush；只等待已开始 IndexedDB 事务，至多1秒，之后保留原关窗、窗口状态与其他 before-quit owner。不存在该 renderer owner 时不等待；文档重载必须重新 READY，缓存内容不经 IPC 传递。

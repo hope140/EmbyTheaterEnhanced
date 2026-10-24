@@ -30,6 +30,12 @@
     var disposeWindowsNativeMedia = function () { return Promise.resolve(); };
     var bundledVersions = require('./enhanced/bundled-versions');
 
+    // Explicit trial CLI is validated and isolated before bootstrap/identity/log writes.
+    var pageCacheTest = require('./enhanced/page-cache/test-session').prepare({
+        app: app, argv: process.argv, execPath: process.execPath, platform: process.platform,
+        environment: process.env, runtimeRoot: path.resolve(__dirname, '..')
+    });
+
     var appBootstrapState = appBootstrap.bootstrap({
         appDataPath: app.getPath('appData'),
         runtimeRoot: path.resolve(__dirname, '..')
@@ -120,6 +126,8 @@
     var unregisterStrmConfigIpc = function () {};
     var unregisterDiagnosticsIpc = function () {};
     var unregisterMaintenanceIpc = function () {};
+    var unregisterCacheManagementIpc = function () { return Promise.resolve(); };
+    var detailCacheCloseOwner = null;
     var unregisterRefreshRate = function () { return Promise.resolve(); };
     var unregisterNativeHelperIpc = function () { return Promise.resolve(); };
     var unregisterMpvKernelIpc = function () {
@@ -959,7 +967,12 @@
         }
     }
 
-    function onWindowClose() {
+    function onWindowClose(event) {
+        var closingWindow = mainWindow;
+        if (detailCacheCloseOwner && detailCacheCloseOwner.beforeClose(event, function (status) {
+            enhancedLog({level: status === 'flushed' ? 'info' : 'warn', category: 'app', event: 'detail-cache-flush', details: {status: status}});
+            if (closingWindow && !closingWindow.isDestroyed()) closingWindow.close();
+        })) return;
 
         if (hasAppLoaded) {
             var data = previousBounds
@@ -999,7 +1012,7 @@
 
     var commandLineOptions = parseCommandLine();
 
-    var userDataPath = commandLineOptions.userDataPath;
+    var userDataPath = pageCacheTest ? pageCacheTest.userDataPath : commandLineOptions.userDataPath;
     if (userDataPath) {
         app.setPath('userData', userDataPath);
     }
@@ -1043,9 +1056,17 @@
         dialog: electron.dialog,
         shell: electron.shell
     });
+    detailCacheCloseOwner = require('./enhanced/detail-cache/close-owner').register({ipcMain: ipcMain, getWebContents: getWebContents});
+    app.once('will-quit', function () { detailCacheCloseOwner.dispose(); });
+    unregisterCacheManagementIpc = require('./enhanced/cache-management-ipc').register({
+        ipcMain: ipcMain, getWebContents: getWebContents
+    });
     unregisterMaintenanceIpc = maintenanceIpc.register({
+        preferences: require('./enhanced/app-update-preferences').createStore(appBootstrapState.configDirectory),
         ipcMain: ipcMain,
         getWebContents: getWebContents,
+        getBrowserWindow: function () { return mainWindow; },
+        dialog: electron.dialog,
         getAppInfo: getCurrentEnhancedAppInfo,
         getPlatformInfo: getPlatformInfo,
         getDisplayInfo: getDisplayInfo,
@@ -1128,6 +1149,7 @@
         Promise.allSettled([
             runCleanup('diagnostics', function () { return unregisterDiagnosticsIpc(); }),
             runCleanup('maintenance', function () { return unregisterMaintenanceIpc(); }),
+            runCleanup('http-cache', function () { return unregisterCacheManagementIpc(); }),
             runCleanup('strm-config', function () { return unregisterStrmConfigIpc(); }),
             runCleanup('cd2', function () { return unregisterCd2Ipc(); }),
             runCleanup('refresh-rate', function () { return unregisterRefreshRate(); }),
@@ -1228,6 +1250,8 @@
 
             icon: nativeImage.createFromPath(path.join(__dirname, icon))
         };
+
+        if (pageCacheTest) windowOptions.webPreferences.additionalArguments = [pageCacheTest.rendererArgument];
 
         windowOptions.width = previousWindowInfo.width || 1280;
         windowOptions.height = previousWindowInfo.height || 720;

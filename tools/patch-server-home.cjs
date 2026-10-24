@@ -1,5 +1,12 @@
 'use strict';
 
+const CACHE_ALIAS = 'define("ete-home-layout-cache", ["./../enhanced/page-cache/home-layout-cache.js"], function(cache) { return cache; })';
+
+const DETAIL_CACHE_ALIAS='define("ete-detail-cache-store", ["./../enhanced/detail-cache/store.js"], function(cache) { return cache; })';
+// ItemPage consumes the AMD namespace (detailCache.default), unlike the Home
+// controller alias, whose consumer expects the unwrapped default directly.
+const DETAIL_PAGE_ALIAS='define("ete-detail-page-cache", ["./../enhanced/detail-cache/page.js"], function(cache) { return cache; })';
+
 function once(text, anchor, replacement) {
     if (text.split(anchor).length !== 2) throw new Error('Server home anchor mismatch.');
     return text.replace(anchor, replacement);
@@ -32,7 +39,63 @@ function patchHomeTab(text) {
 function patchApp(text) {
     if (text.includes('define("ete-server-home",')) throw new Error('Server home anchor mismatch.');
     return once(text, 'define("baseView", [], getDynamicImport("./modules/viewmanager/baseview.js")),',
-        'define("ete-server-home", [], getDynamicImport("./../enhanced/home/home-tab.js")),\n' +
+        CACHE_ALIAS + ',\n      ' + DETAIL_CACHE_ALIAS + ',\n      ' + DETAIL_PAGE_ALIAS + ',\n      define("ete-server-home", [], getDynamicImport("./../enhanced/home/home-tab.js")),\n' +
         '      define("baseView", [], getDynamicImport("./modules/viewmanager/baseview.js")),');
 }
-module.exports = {patchHomeTab, patchApp};
+function patchHomeView(text) {
+    if (text.includes('eteHomeRestoreState')) throw new Error('Home view anchor mismatch.');
+    text = once(text, 'HomeView.prototype.onPause=',
+        'HomeView.prototype.eteHomeRestoreState=function(){var tab=this.tabControllers&&this.tabControllers[0],owner=tab&&tab.eteHome;return owner&&owner.flowEnabled?{enabled:true,allowed:this.currentTabController===tab&&owner.canRestore()}:null},HomeView.prototype.onPause=');
+    return text;
+}
+// Select only from the native three-slot owner. No pinned view, copied DOM or data pool.
+function homeRestoreHelpers() {
+    function eteHomeRestoreIndex(options) {
+        if (!options || options.type !== 'home') return null;
+        var managed = false;
+        for (var index = allPages.length - 1; index >= 0; index--) {
+            var view = allPages[index];
+            if (!view || currentUrls[index] !== options.url || !view.controller || typeof view.controller.eteHomeRestoreState !== 'function') continue;
+            var state;
+            try { state = view.controller.eteHomeRestoreState(); }
+            catch (_) { state = {enabled: true, allowed: false}; }
+            if (!state || !state.enabled) continue;
+            managed = true;
+            if (view.allowRestore !== false && state.allowed) return index;
+        }
+        return managed ? -1 : null;
+    }
+    function eteHomeRestoreCheck(options, view) {
+        var index = eteHomeRestoreIndex(options);
+        if (index !== null && (index < 0 || allPages[index] !== view)) throw new Error('Home restore unavailable.');
+    }
+}
+function patchViewManager(text) {
+    if (text.includes('eteHomeRestoreIndex')) throw new Error('Home view manager anchor mismatch.');
+    text = once(text, 'function ViewManager(){}', homeRestoreHelpers.toString().replace(/\r\n/g, '\n').replace(/^function homeRestoreHelpers\(\) \{/, '').replace(/\}$/, '') +
+        'function ViewManager(){}ViewManager.prototype.canRestoreHome=function(options){var index=eteHomeRestoreIndex(options);return index!==null&&index>=0};');
+    text = once(text, 'index=currentUrls.indexOf(url);if(-1!==index)',
+        'index=eteHomeRestoreIndex(options);if(index===null)index=currentUrls.indexOf(url);if(-1!==index)');
+    return once(text, 'return setControllerClass(view,options).then(function(){eteCheck(epoch,signal);console.log',
+        'return setControllerClass(view,options).then(function(){eteCheck(epoch,signal);eteHomeRestoreCheck(options,view);console.log');
+}
+function patchRouter(text) {
+    if (text.includes('canRestoreHome(currentRequest)')) throw new Error('Home router anchor mismatch.');
+    return once(text, '              isBackNav\n                ? _viewmanager.default.tryRestoreView',
+        '              (isBackNav || route.type === "home" && typeof _viewmanager.default.canRestoreHome === "function" && _viewmanager.default.canRestoreHome(currentRequest))\n                ? _viewmanager.default.tryRestoreView');
+}
+function patchItemsContainer(text) {
+    if (text.includes('eteHomeFlowOwns')) throw new Error('Home flow anchor mismatch.');
+    // This opt-in hook belongs to the Home controller, not a transport/global
+    // cache. Other pages have no hook and retain their existing behavior.
+    text = once(text, 'function onDataFetched(result) {',
+        'function onDataFetched(result) {\n    if (this.eteHomeFlowOwns && !this.eteHomeFlowOwns(result)) return;');
+    return once(text, '          hasActiveElement &&',
+        '          if (this.eteHomeFlowOwns && !this.eteHomeFlowOwns(result)) return;\n          hasActiveElement && (!this.eteHomeFlowCanRestore || this.eteHomeFlowCanRestore(result)) &&');
+}
+function patchVirtualScroller(text) {
+    if (text.includes('eteHomeFlowOwns')) throw new Error('Home flow anchor mismatch.');
+    return once(text, '                var items = result.Items || result,',
+        '                if (instance.eteHomeFlowOwns && !instance.eteHomeFlowOwns(result)) return;\n                var items = result.Items || result,');
+}
+module.exports = {CACHE_ALIAS, DETAIL_CACHE_ALIAS, DETAIL_PAGE_ALIAS, patchHomeView, patchViewManager, patchRouter, patchHomeTab, patchApp, patchItemsContainer, patchVirtualScroller};

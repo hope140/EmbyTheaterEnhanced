@@ -582,4 +582,15 @@ replaceOnce('volume OSD failed initial load retirement',
     '                            retireEnhancedVolumeOsd(self, playOptions._etePlayRequestId);\n                            return;\n                          }\n' +
     '                          retireEnhancedVolumeOsd(self, playOptions._etePlayRequestId);');
 
+replaceOnce('seek completion report handler',
+    '    function onPlaybackPause(e) {',
+    '    function onPlaybackSeek(e) {\n' +
+    '      sendProgressUpdate(this, "seek");\n' +
+    '    }\n' +
+    '    function onPlaybackPause(e) {');
+replaceOnce('seek completion report binding',
+    '            _events.default.on(player, "timeupdate", onPlaybackTimeUpdate),',
+    '            _events.default.on(player, "timeupdate", onPlaybackTimeUpdate),\n' +
+    '            _events.default.on(player, "seek", onPlaybackSeek),');
+
 fs.writeFileSync(file, source, 'utf8');

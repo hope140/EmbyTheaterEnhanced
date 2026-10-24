@@ -46,8 +46,8 @@ test('runner builder exactly matches the Work-validated parameter/facade/metadat
     assert.match(s, /NoStdLib='true'/); assert.doesNotMatch(s, /'\/p:AssemblySearchPaths=/);
     assert.match(s, /\$machine=\[Reflection\.ImageFileMachine\]::I386/);
 });
-test('reviewed portable verifier retains all32 Git-delivered inputs and every input is source-bound', () => {
-    assert.deepEqual(verifier.validate(root), {files: 32, bytes: 196279});
+test('reviewed portable verifier retains prior inputs plus the servicing profile and every input is source-bound', () => {
+    assert.deepEqual(verifier.validate(root), {files: 33, bytes: 204015});
     const inputs = require('../tools/build-input-contract.cjs').INPUT_PATHS;
     for (const p of verifier.PATHS) {
         assert.ok(inputs.includes(p), 'missing build input ' + p);

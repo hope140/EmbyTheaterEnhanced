@@ -29,7 +29,7 @@ function createController() {
   const source = fs.readFileSync(path.join(__dirname, '..', 'src/electronapp/plugins/mpvplayer/about.js'), 'utf8');
   const context = {
     define(_dependencies, factory) {
-      AboutView = factory({show() {}, hide() {}}, BaseView);
+      AboutView = factory({show() {}, hide() {}}, BaseView, require('../src/electronapp/enhanced/release-note-links'));
     },
     window: {ipc: {invoke: async () => ({status: 'ok', candidates: [], selectedCandidateId: null})}},
     document: {createElement: (tag, options) => node(tag, options)}
@@ -147,7 +147,7 @@ test('About keeps import and select errors visible across status refresh, cancel
   let AboutView;
   const source = fs.readFileSync(path.join(__dirname, '..', 'src/electronapp/plugins/mpvplayer/about.js'), 'utf8');
   const context = {
-    define(_dependencies, factory) { AboutView = factory({show() {}, hide() {}}, BaseView); },
+    define(_dependencies, factory) { AboutView = factory({show() {}, hide() {}}, BaseView, require('../src/electronapp/enhanced/release-note-links')); },
     window: {ipc: {invoke: async channel => {
       invocations.push(channel);
       if (channel === 'enhanced-mpv-kernel-import') return importResult;
