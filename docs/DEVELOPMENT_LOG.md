@@ -1198,3 +1198,9 @@ The separate integration stage adds isolated launch paths, selected-ApiClient id
 
 
 The recovery/HTTP review adds standard If-Range mismatch responses, retry eligibility after a progress/seek race, and v2 OS-lifetime cache ownership. A root-scoped exclusive loopback guard replaces uncertain PID/file-lock reclamation; bind collisions skip the cache, and legacy v1 trial roots are not modified. An owned separate-process fixture verifies concurrent-writer exclusion and committed-range recovery after actual forced exit, including orphan cleanup. These are Linux/Node evidence; fixed Windows behavior remains a separate acceptance boundary.
+
+## 2026-10-24 - Range-source matrix and strict runner preflight
+
+Add small, private loopback fixtures for direct 206, same/cross-origin 302, header/cookie/token-dependent origins, missing/weak/date-only validators, ignored Range, 412/416, short bodies and seek cancellation. Assertions observe maintained service loadfile dispatch and physical request cleanup; mocked-helper fallback is separate from real decoder evidence. Keep all redirect and credential propagation behavior unchanged. Document confirmed product choices, explicit trial limits and remaining total-capacity/network policy decisions.
+
+Select only build-validation files from reviewed `6dc6c270723209b36499a5cb9a8e28de5cc4bbab` (the same strict policy ported by `e1b2a966`): exact Framework servicing evidence, early read-only preflight, finalizer source checks, verifier hashes and regressions. Do not import page-cache or manual-updater features. Preserve unknown-hash/source rejection and avoid system updates, alternative binaries or gate bypasses. Full-repository offline verification prepares the generated preload first; a missing generated input is recorded separately from product assertions. No Windows package or real-server acceptance is implied.
