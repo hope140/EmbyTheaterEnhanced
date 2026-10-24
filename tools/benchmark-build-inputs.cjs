@@ -71,14 +71,21 @@ function main() {
     if (!['plan', 'host', 'fixtures'].includes(suite) || !outputArg || suite === 'host' && !store) {
         throw new Error('Usage: node tools/benchmark-build-inputs.cjs <plan|host|fixtures> <new-output-directory> [existing-Host-object-store]');
     }
-    cp.execFileSync('git', ['-C', root, 'diff', '--quiet', 'HEAD', '--', 'tools', 'tests']);
-    assert.equal(git(['status', '--porcelain', '--', 'tools', 'tests']), '', 'commit all benchmark code and tests first');
+    cp.execFileSync('git', ['-C', root, 'diff', '--quiet', 'HEAD']);
+    assert.equal(git(['status', '--porcelain']), '', 'use a fully committed, clean source checkout');
     const output = path.resolve(outputArg);fs.mkdirSync(output, {recursive: false});
     const variants = suite === 'fixtures' ? ['fresh', 'seed'] : ['legacy', 'batch'];
     const report = {schemaVersion: 1, suite, sourceCommit: git(['rev-parse', 'HEAD']), baselineAlgorithmCommit: BASE,
         node: process.version, platform: process.platform, arch: process.arch,
         cacheScope: 'first measured call in a fresh process vs later calls; OS page cache is not flushed',
         trials: []};
+    report.inputIdentity = {
+        tree: git(['rev-parse', 'HEAD^{tree}']),
+        hostSourceIdentitySha256: require('./source-built-host-input.cjs').sourceIdentity(root).sha256,
+        hostManifestSha256: sha(fs.readFileSync(path.join(root, 'native/windows-host/upstream-source-manifest.json'))),
+        authorities: Object.fromEntries(require('./ci-build-input-plan.cjs').AUTHORITIES.map(file =>
+            [file, {objectId: git(['rev-parse', 'HEAD:' + file]), worktreeSha256: sha(fs.readFileSync(path.join(root, file)))}]))
+    };
     const env = {...process.env};delete env.NODE_TEST_CONTEXT;
     for (let trial = 0; trial < 3; trial++) {
         for (const variant of trial % 2 ? [...variants].reverse() : variants) {
@@ -129,6 +136,8 @@ function main() {
             }
         }
     }
+    assert.equal(git(['rev-parse', 'HEAD']), report.sourceCommit, 'source HEAD changed during A/B');
+    assert.equal(git(['status', '--porcelain']), '', 'source checkout changed during A/B');
     fs.writeFileSync(path.join(output, 'report.json'), JSON.stringify(report, null, 2) + '\n');
     console.log(JSON.stringify(report.statistics, null, 2));
 }

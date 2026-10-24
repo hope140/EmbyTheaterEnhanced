@@ -26,11 +26,13 @@ test('phase timing preserves captured values and failure propagation', () => {
     ].join('\n');
     const result = cp.spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-Command', script], {
         encoding: 'utf8', env: {...process.env, ETE_PHASE_HELPER: path.resolve(__dirname, '../tools/ci-phase-timing.ps1'),
-            ETE_TIMING_TOOL: path.resolve(__dirname, '../tools/ci-test-timing-summary.cjs')}
+            ETE_TIMING_TOOL: path.resolve(__dirname, '../tools/ci-test-timing-summary.cjs'),
+            GITHUB_SHA: 'c'.repeat(40), GITHUB_RUN_ID: '1234'}
     });
     assert.equal(result.status, 0, result.stderr || result.error?.message);
     const rows = result.stdout.split(/\r?\n/).filter(s => s.startsWith('CI_PHASE ')).map(s => JSON.parse(s.slice(9)));
     assert.equal(rows.length, 4);
+    assert.equal(rows[0].sourceCommit, 'c'.repeat(40));assert.equal(rows[0].runId, '1234');
     for (let i = 0; i < 4; i += 2) {
         assert.equal(rows[i].event, 'start');assert.equal(rows[i + 1].event, 'end');
         assert.equal(rows[i].id, rows[i + 1].id);assert.ok(rows[i + 1].elapsedMs >= 0);
