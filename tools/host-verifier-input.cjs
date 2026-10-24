@@ -151,7 +151,7 @@ const FILES = Object.freeze([
     {
         "path": "tools/windows-host-verifier/expected-candidate-files.json",
         "size": 9522,
-        "sha256": "58b3f69adad4d1d4539cb0c9cfaa04ba6744ecdc4dca696658d27d5c29e54936"
+        "sha256": "eff1cc96a65b21ca931149046bfae5ced46b1ec98ef38a37f3a688eb73b3ced2"
     },
     {
         "path": "tools/windows-host-verifier/fixtures-pending/emby-theater.zip",
@@ -166,7 +166,7 @@ const FILES = Object.freeze([
     {
         "path": "tools/windows-host-verifier/verifier-manifest.json",
         "size": 5237,
-        "sha256": "3d0d09a4e17f41729b98fcbd6cfa570ccf6be6bb33808fb65a4afdc2ec20658d"
+        "sha256": "2dd4459118417835f5c108e8bed6601e3dc2756b9047f41389891d978820a0a6"
     }
 ].map(Object.freeze));
 const PATHS = Object.freeze(FILES.map(f => f.path));

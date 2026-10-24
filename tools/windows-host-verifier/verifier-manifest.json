@@ -149,7 +149,7 @@
     {
       "path": "expected-candidate-files.json",
       "size": 9522,
-      "sha256": "58b3f69adad4d1d4539cb0c9cfaa04ba6744ecdc4dca696658d27d5c29e54936"
+      "sha256": "eff1cc96a65b21ca931149046bfae5ced46b1ec98ef38a37f3a688eb73b3ced2"
     },
     {
       "path": "fixtures-pending/emby-theater.zip",

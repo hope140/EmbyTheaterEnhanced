@@ -171,8 +171,8 @@
   },
   {
     "path": "Emby.Theater/Program.cs",
-    "size": 15471,
-    "sha256": "bbff261ac026ba55e39ebb91b767e7cc9ab237dc85538c1c8306ef06b30a2b36"
+    "size": 17077,
+    "sha256": "df2b936ec854f72009dd78f44295dc0ad6988ad22252a435a818eab06d8d3ad4"
   },
   {
     "path": "Emby.Theater/Properties/AssemblyInfo.cs",
