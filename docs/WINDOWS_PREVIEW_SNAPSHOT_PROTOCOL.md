@@ -183,3 +183,16 @@ node .\tools\windows-native-exit-probe.cjs C:\ETE-Probe\electron44\electron.exe 
 完整trial和native_helper_only都在生产owner前执行该回归。输出仅含受控fixture报告及其stdout／stderr／process记录，profile位于系统临时目录而非artifact树；不能从脚本存在、合成harness或Linux启动失败推断Windows结果。真实用户复验仍包括播放中退出、Stop后退出与捕获pending退出，确认没有JS弹窗且所属helper实际结束。
 
 当前画面阶梯变化的源码原因是1000ms捕获timer／950ms冷却，已有帧且2.5秒无DWM请求时暂停刷新，隐藏／最小化不捕获。只有视频像素且最大160×90，不合成字幕／OSD。低成本改善应先测hover首次请求延迟与暂停时重复采集；提高持续频率会增加libmpv screenshot／读回与CPU缩放开销，160×90只约束输出而非原始读回成本。没有CPU／GPU实测，不能声称代价可忽略；本次不改刷新率、分辨率或字幕合成。
+
+
+### 只运行生命周期诊断
+
+新reportVersion2逐步保存固定step、assertion operator／actual／expected和白名单相对栈，未知消息只保留摘要。先由Node控制进程启动固定Electron44.4.2；不要使用ELECTRON_RUN_AS_NODE直接执行这个GUI探针，也不要启动完整客户端。全新输出目录会生成lifecycle.json、stdout／stderr和实际进程状态；失败仍返回非零，必须读取报告定位，不能删断言凑通过。
+
+```text
+node.exe C:/ETE-Probe/source/tools/windows-native-exit-probe.cjs C:/ETE-Probe/electron44/electron.exe C:/ETE-Probe/source/src/electronapp/enhanced/windows-native-media.js C:/ETE-Probe/runs/exit-diagnostics-001
+```
+
+路径为示例，需替换为已校验固定Electron及全新独立源码checkout。源码工作树须保持Git blob字节（新checkout可用本次命令范围core.autocrlf=false，不修改现有用户Git配置）；报告toolSha256／adapterSha256应与本次交接精确源字节对应。此入口只创建show:false／focusable:false合成窗口和新临时profile，不加载媒体／账户，不装载Koffi或创建SMTC／helper、不调用本项目DWM捕获API；六场景仅验证Electron对象生命周期。不得修改已交付包或使用旧输出。真实SMTC、DWM、用户退出验收继续分别执行。
+
+固定[Electron44.4.2 WebContents源码](https://github.com/electron/electron/blob/v44.4.2/lib/browser/api/web-contents.ts#L544)自带render-process-gone监听。诊断另保存listenerBaseline，不能把未建模的系统监听误认作adapter泄漏；当前仍保留零总数断言，先取得真实失败step与计数，未按假设放宽门禁。

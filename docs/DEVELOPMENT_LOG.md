@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-24 — 生命周期失败保留精确断言诊断
+
+真实Windows短路线确认lifecycle在playing-close以AssertionError／ERR_ASSERTION退出1，未进入helper，原报告只保留name／code／stage，不能据此定位具体断言或归因产品。探针现在为每个断言与异步操作标记固定step，记录比较运算／安全actual与expected及允许列表内的相对工具／适配器／Node栈；未知消息仅摘要，不输出绝对profile／账户路径。保留已通过场景与closed事件内、close返回后的销毁状态，reportVersion2绑定工具和适配器SHA。
+
+全部原断言、六场景、超时／实际close／exit0和失败门禁保持，未修改产品代码、停止等待或调整预期。新增“closed事件发生但尚未销毁”合成用例仍明确失败并报告false／true；这证明诊断可用，不证明真实Windows首因。独立Node控制入口可在全新源码副本和固定Electron44.4.2运行，只创建隐藏合成窗口／新临时profile，不启动完整客户端、FFI或helper，不接触已有试验包。真实具体失败点仍待该精确工具回执，不能用Linux模拟或新脚本存在冒充复验完成。
+
+固定Electron44.4.2源码显示WebContents自带render-process-gone监听；带该监听的合成窗口可确定复现crash-listener-removed的actual1／expected0。探针仍保留原断言，并记录attach前listenerBaseline；这不是本次真实Windows首个失败点的证明，须由新step回执确认后再讨论正确的所属监听合同。定向67项／66pass／0fail／1平台skip，完整公开回归及语法／有限模式检查结果见本次交付。
+
 ## 2026-10-24 — 控制集中到SMTC并退役任务栏按钮
 
 按当前规格删除thumbar实现、main注册和两布尔renderer IPC，不改变透明主窗口、独立video surface或thumbnail／Peek owner取帧。SMTC仅暴露Play／Pause／Stop／Previous／Next；Play／Pause按实际暂停状态互斥，Previous／Next从原PlaybackManager同步队列索引／长度／repeat mode推导并在队列事件更新，空／无效队列禁用。Next遵守原RepeatOne重播、RepeatAll绕回行为，Previous首项不绕回，不改播放策略或新增控件。
