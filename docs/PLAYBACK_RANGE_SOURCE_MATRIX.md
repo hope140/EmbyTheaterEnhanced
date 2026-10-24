@@ -14,7 +14,7 @@ This document records local fixture evidence for the independent range-cache can
 | No ETag, weak ETag or Last-Modified alone | Dispatch original source | No date-based validator relaxation |
 | Initial Range ignored with full 200, 416 or short body | Dispatch original source | Actual strict reader and service source selection |
 | ETag changes, If-Match returns 412, Range later becomes 200/416, or later body is short | Fail that missing-range request; commit no new block | Previously validated blocks remain version-bound; this is not seamless original-source restart |
-| Seek cancels an in-progress range | Abort only that owned response/request; a new seek may read another range | Wait for physical origin close; cancelled block is not committed |
+| Seek cancels an in-progress range | Abort only that owned response/request; a new seek may read another range | Wait for physical origin/socket close; cancelled block is not committed |
 
 The header-dependent redirect fixtures first make a separate, explicitly synthetic control request to establish that the server would return 302 when the expected canaries are present. The production reader then sends none of these sensitive headers and declines the origin rather than guessing an authentication provider. Response Set-Cookie does not create a cookie jar; ad-hoc reader `headers` options are not forwarded. These assertions must not be interpreted as support for header-authenticated media.
 
@@ -53,3 +53,5 @@ node --test --test-concurrency=1 tests/*.test.cjs
 ```
 
 The first command prepares the repository's generated preload input; its absence is an input failure, not an implementation regression. Full-repository output and skipped platform tests must be reported separately from the focused matrix. The public runner uses its separately declared six material-test exclusions; a full local run does not silently inherit those exclusions. Windows build preflight is governed by [the strict Framework servicing profiles](FRAMEWORK_SERVICING_PROFILES.md); it neither installs a Framework nor accepts arbitrary signed hashes.
+
+Range fixtures canonicalize temporary roots before invoking the unchanged strict product path validator, so an inherited TEMP short-name alias cannot become an invalid product root. Server cleanup explicitly awaits each owned socket close as well as server close; a server callback alone is not used as physical-close evidence. These portability guards do not substitute for a Windows runtime run.

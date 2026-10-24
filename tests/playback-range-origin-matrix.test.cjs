@@ -13,7 +13,7 @@ const {parseContext} = require('../src/electronapp/enhanced/playback-range-sessi
 const deferred = () => {let resolve; const promise = new Promise(r => {resolve = r;}); return {promise, resolve};};
 const canary = {authorization: 'Bearer fixture-authorization-only', cookie: 'fixture-session=synthetic-cookie', token: 'fixture-token-header', query: 'fixture-url-grant'};
 async function fixture(t) {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-range-matrix-'));
+    const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'ete-range-matrix-')));
     const body = Buffer.from('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-');
     const rows = [], targetRows = [], peers = new Set(), held = deferred(), heldClosed = deferred();
     const mode = {value: 'direct', header: 'none', changed: false};
@@ -60,8 +60,9 @@ async function fixture(t) {
     t.after(async () => {
         try {for (const close of cleanups.reverse()) await close();}
         finally {
+            const socketCloses = [...peers].map(socket => new Promise(resolve => socket.once('close', resolve)));
             for (const server of [source, target]) server.closeAllConnections();
-            await Promise.all([source, target].map(server => new Promise(resolve => server.close(resolve))));
+            await Promise.all(socketCloses.concat([source, target].map(server => new Promise(resolve => server.close(resolve)))));
             await fs.rm(root, {recursive: true, force: true});
         }
         assert.equal(peers.size, 0, 'both explicitly owned fixture servers released their sockets');

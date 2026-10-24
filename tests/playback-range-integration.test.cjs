@@ -13,7 +13,7 @@ const {harness, storage} = require('./helpers/api-client-amd.cjs');
 const {create: createEndpoint} = require('../src/electronapp/native-helper/client');
 const flush = async () => {for (let i = 0; i < 20; i++) await new Promise(resolve => setImmediate(resolve));};
 async function fixture(t) {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-range-integration-')), rows = [], body = Buffer.from('abcdefghijklmnopqrstuvwxyz012345');
+    const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'ete-range-integration-'))), rows = [], body = Buffer.from('abcdefghijklmnopqrstuvwxyz012345');
     let editions = 1, holdMetadata = false, metadataResponse;
     const server = http.createServer((req, res) => {
         const url = new URL(req.url, 'http://fixture.invalid'); rows.push(req.url);
@@ -105,7 +105,7 @@ test('source parsing preserves representation fields and rejects transcode/cross
     for (const value of [{...c, container: 'm3u8'}, {...c, mode: 'Transcode'}, {...c, source: c.source.replace('Static=true', 'Static=false')}, {...c, source: c.source.replace('fixture.invalid', 'other.invalid')}]) assert.equal(parseContext(value), null);
 });
 test('trial launch is disabled without complete explicit limits and isolates child/application profile paths', async t => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-range-launch-')); t.after(() => fs.rm(root, {recursive: true, force: true}));
+    const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'ete-range-launch-'))); t.after(() => fs.rm(root, {recursive: true, force: true}));
     const profile = path.join(root, 'profile'), file = path.join(root, 'config.json'); await fs.mkdir(profile);
     assert.equal(launch.parseLaunch([]).enabled, false);
     const args = ['--ete-range-cache-trial', '--ete-range-cache-config=' + file, '--ete-range-cache-profile=' + profile];

@@ -12,7 +12,7 @@ const proof = {etag: '"v1"', total: 32};
 const identity = (extra = {}) => ({serverId: 'server', serverOrigin: 'http://fixture.invalid', accountId: 'account', itemId: 'video', mediaSourceId: 'edition', representation: 'static-file', ...extra});
 const deferred = () => {let resolve; const promise = new Promise(r => {resolve = r;}); return {promise, resolve};};
 async function storeFixture(t, extra = {}) {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-byte-ranges-'));
+    const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'ete-byte-ranges-')));
     t.after(() => fs.rm(root, {recursive: true, force: true}));
     const options = {root, blockBytes: 4, maxBytes: 32, minFreeBytes: 0, ...extra};
     const store = await createStore(options); return {store, root, options};
@@ -41,7 +41,7 @@ async function network(t, extra = {}) {
     });
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     const origin = 'http://127.0.0.1:' + server.address().port;
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-range-proxy-'));
+    const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'ete-range-proxy-')));
     const caches = new Set();
     t.after(async () => {
         try {for (const cache of caches) await cache.close();}
@@ -191,7 +191,7 @@ test('If-Range matches produce 206; mismatches ignore Range and return the full 
 
 test('OS ownership excludes another process, then recovers committed bytes and interrupted writes after its actual exit', {timeout: 10000}, async t => {
     const {spawn} = require('node:child_process'), {once} = require('node:events');
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-range-crash-'));
+    const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'ete-range-crash-')));
     let child, exited;
     t.after(async () => {if (child && child.exitCode === null && child.signalCode === null) child.kill('SIGKILL'); if (exited) await exited; await fs.rm(root, {recursive: true, force: true});});
     const modulePath = require.resolve('../src/electronapp/enhanced/playback-range-store');
