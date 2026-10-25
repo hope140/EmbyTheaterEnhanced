@@ -29,7 +29,7 @@ function createHandoff(options) {
         // Authenticated local IPC carries fixed shipped code and main-owned data.
         const bootstrap = "$ErrorActionPreference='Stop'; [Console]::Error.WriteLine('ETE_GUARD_STAGE start'); $p=[IO.Pipes.NamedPipeClientStream]::new('.', '" + pipe + "', [IO.Pipes.PipeDirection]::InOut); $p.Connect(30000); [Console]::Error.WriteLine('ETE_GUARD_STAGE connected'); " +
             "$r=[IO.StreamReader]::new($p,[Text.Encoding]::ASCII); $w=[IO.StreamWriter]::new($p,[Text.Encoding]::ASCII); $w.AutoFlush=$true; $w.WriteLine('" + secret + " '+$PID); " +
-            "$code=$r.ReadLine(); [Console]::Error.WriteLine('ETE_GUARD_STAGE source-read'); [Console]::SetIn($r); [Console]::SetOut($w); try { & ([ScriptBlock]::Create([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($code)))) } finally { try{$w.Dispose()}catch{};try{$r.Dispose()}catch{};try{$p.Dispose()}catch{} }";
+            "$code=$r.ReadLine(); [Console]::Error.WriteLine('ETE_GUARD_STAGE source-read'); $eteUpdateInput=$r; $eteUpdateOutput=$w; try { & ([ScriptBlock]::Create([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($code)))) } finally { try{$w.Dispose()}catch{};try{$r.Dispose()}catch{};try{$p.Dispose()}catch{} }";
         const relay = fs.readFileSync(path.join(__dirname, 'update-install-relay.cs')).toString('base64');
         const launch = "Add-Type -TypeDefinition ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + relay + "'))); exit [EteUpdateRelay]::Run()";
         return new Promise((resolve, reject) => {

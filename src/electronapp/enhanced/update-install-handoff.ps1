@@ -1,12 +1,17 @@
 # Loaded only for an explicit update click or confirmed-installed local cleanup.
 # Fixed source is passed by main; no execution-policy or language-mode override.
 $ErrorActionPreference = 'Stop'
+if (-not $eteUpdateInput) { $eteUpdateInput = [Console]::In }
+if (-not $eteUpdateOutput) { $eteUpdateOutput = [Console]::Out }
 try {
-    $line = [Console]::In.ReadLine()
+    [Console]::Error.WriteLine('ETE_GUARD_STAGE request-read')
+    $line = $eteUpdateInput.ReadLine()
+    [Console]::Error.WriteLine('ETE_GUARD_STAGE request-received')
     if (-not $line -or $line.Length -gt 32768) { throw 'invalid-input' }
     $request = $line | ConvertFrom-Json
     Add-Type -TypeDefinition $eteGuardSource
-    $guard = New-Object EteUpdateGuard($request.root, $request.rootIno, $request.rootDev, $request.directory, $request.directoryIno, ($request.mode -eq 'cleanup'))
+    [Console]::Error.WriteLine('ETE_GUARD_STAGE compiled')
+    $guard = [EteUpdateGuard]::new($request.root, $request.rootIno, $request.rootDev, $request.directory, $request.directoryIno, ($request.mode -eq 'cleanup'))
     try {
         if ($request.mode -eq 'cleanup') {
             $guard.ValidateCleanup([string[]]@($request.files | ForEach-Object { $_.name }))
@@ -14,8 +19,8 @@ try {
                 $guard.DeleteOwned($file.name, $file.ino, [long]$file.size, $file.sha256)
             }
             $guard.RemoveEmptyDirectory()
-            [Console]::Out.WriteLine('ETE_CLEANUP_DONE')
-            [Console]::Out.Flush()
+            $eteUpdateOutput.WriteLine('ETE_CLEANUP_DONE')
+            $eteUpdateOutput.Flush()
         } elseif ($request.mode -eq 'install') {
             # Capture the real parent process handle before signalling readiness.
             $parent = [Diagnostics.Process]::GetProcessById([int]$request.parentPid)
@@ -29,11 +34,11 @@ try {
                     $null = $hostProcess.Handle
                 } else { $possibleHost.Dispose() }
                 $guard.Prepare($request.name, $request.ino, [long]$request.size, $request.sha256, $request.zone)
-                [Console]::Out.WriteLine('ETE_INSTALL_READY')
-                [Console]::Out.Flush()
-                if ([Console]::In.ReadLine() -ne 'commit') { throw 'not-committed' }
-                [Console]::Out.WriteLine('ETE_INSTALL_ARMED')
-                [Console]::Out.Flush()
+                $eteUpdateOutput.WriteLine('ETE_INSTALL_READY')
+                $eteUpdateOutput.Flush()
+                if ($eteUpdateInput.ReadLine() -ne 'commit') { throw 'not-committed' }
+                $eteUpdateOutput.WriteLine('ETE_INSTALL_ARMED')
+                $eteUpdateOutput.Flush()
                 # Never terminate the client. An obstructed normal quit aborts
                 # this handoff; a later unrelated client exit cannot install.
                 $wait = [Diagnostics.Stopwatch]::StartNew()
