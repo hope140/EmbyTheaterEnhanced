@@ -32,8 +32,10 @@ function main() {
     if (fs.existsSync(directory)) throw Error('output-already-exists');
     fs.mkdirSync(directory, {recursive: true});
     const diagnostic = process.env.ETE_DIAGNOSTIC_NO_WIZARD === '1';
-    const selected = diagnostic ? TESTS.filter(name => name !== 'tests/update-install-controlled-wizard.test.cjs') : TESTS;
-    const result = cp.spawnSync(process.execPath, ['--test', '--test-concurrency=1', '--test-reporter=tap', ...selected], {
+    const focus = diagnostic && process.env.ETE_DIAGNOSTIC_FOCUS === '1';
+    const selected = focus ? ['tests/update-install-windows.test.cjs'] : diagnostic ? TESTS.filter(name => name !== 'tests/update-install-controlled-wizard.test.cjs') : TESTS;
+    const selection = focus ? ['--test-name-pattern=^actual Windows handoff locks Unicode'] : [];
+    const result = cp.spawnSync(process.execPath, ['--test', '--test-concurrency=1', '--test-reporter=tap', ...selection, ...selected], {
         cwd: root, encoding: 'utf8', timeout: 300000, maxBuffer: 4 * 1024 * 1024,
         env: {...process.env, ETE_MANAGED_UPDATE_WIZARD_TEST: diagnostic ? '0' : '1'}, windowsHide: true
     });
@@ -45,7 +47,7 @@ function main() {
     const passed = result.status === 0 && !result.error && counts && counts.tests > 0 && counts.pass === counts.tests && !counts.fail && !counts.cancelled && !counts.skipped;
     const receipt = {schemaVersion: 1, status: passed ? (diagnostic ? 'diagnostic-only' : 'passed') : 'failed', sourceCommit, tests: selected, counts,
         platform: process.platform, node: process.versions.node, runnerOS: process.env.RUNNER_OS,
-        controlledLocalAsInvokerProbe: !diagnostic, officialReleaseMetadata: 'synthetic fixture only',
+        controlledLocalAsInvokerProbe: !diagnostic, diagnosticFocus: focus, officialReleaseMetadata: 'synthetic fixture only',
         realApplicationExited: false, realSoftwareInstalled: false, uacValidated: false,
         securityWarningsBypassed: false, productionProfileAccessed: false};
     fs.writeFileSync(path.join(directory, 'receipt.json'), JSON.stringify(receipt, null, 2) + '\n', {flag: 'wx'});

@@ -6,6 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const cp = require('node:child_process');
+const net = require('node:net');
 const {createHandoff} = require('../src/electronapp/enhanced/update-install-handoff');
 const update = require('../src/electronapp/enhanced/manual-app-update');
 const windows = {skip: process.platform !== 'win32' && 'Windows handles / Windows PowerShell 5.1 only', timeout: 30000};
@@ -45,7 +46,18 @@ function fixture(t) {
     const identity = file => { const stat = fs.statSync(file, {bigint: true}); return {ino: String(stat.ino), dev: String(stat.dev)}; };
     const record = {root, rootId: identity(root), directory, directoryId: identity(directory), executable: process.execPath,
         fileId: identity(file), source: 'github', installer};
-    return {scratch, root, directory, file, bytes, record, handoff: createHandoff({spawn(exe, args, options) {
+    return {scratch, root, directory, file, bytes, record, handoff: createHandoff({createServer(handler) {
+        const server = net.createServer(connection => { process.stderr.write('ETE_NATIVE_DIAG pipe-connection\n'); handler(connection); });
+        const listen = server.listen.bind(server);
+        server.listen = (name, ready) => listen(name, () => {
+            process.stderr.write('ETE_NATIVE_DIAG pipe-listening hash=' + crypto.createHash('sha256').update(name).digest('hex').slice(0, 12) + '\n');
+            const probe = net.connect(name);
+            probe.on('connect', () => { process.stderr.write('ETE_NATIVE_DIAG node-pipe-connected\n'); probe.end('invalid-test-client\n'); });
+            probe.on('error', error => { process.stderr.write('ETE_NATIVE_DIAG node-pipe-error=' + error.code + '\n'); });
+            ready();
+        });
+        return server;
+    }, spawn(exe, args, options) {
         const diagnosticArgs = [...args];
         diagnosticArgs[4] = "[Console]::Error.WriteLine('ETE_NATIVE_SCRIPT_ENTERED');\n" + diagnosticArgs[4];
         const child = cp.spawn(exe, diagnosticArgs, {...options, stdio: ['pipe', 'pipe', 'pipe']});
