@@ -1,7 +1,16 @@
-# Fixed local compatibility-resource snapshot
+# Compatibility-resource retirement contract
 
-Current v2 selection: thirty-nine original shader resources remain at vendor/compatibility-resources/snapshot-v2. The nine reviewed retired bodies leave the current tree; the exact v1 manifest/hash and necessary notices remain. Kept bytes are unchanged, and normal build has no v1/old-package fallback. See [v2 migration](SNAPSHOT_V2_MIGRATION.md). Earlier 48-file/local-only/body-preservation statements below are historical.
+All 39 previously bundled Anime4K shader files (2,391,214 bytes) are removed from the active source tree and new packages. No other GLSL shader family or Lua plugin was present in the tracked baseline. The nine earlier retired presets, backup themes, font and BAT resources remain retired. libmpv, Native Helper, the player adapter, decoders, active startup images, normal settings and personal shaders are retained.
 
+`vendor/compatibility-resources-manifest.json` is a zero-file/zero-byte retirement record, not a recovery/copy list. Its original v1 manifest remains byte-identical at `vendor/snapshot-history/compatibility-resources-v1-manifest.json`, bound by SHA256. The loader permits zero entries only when every historical omission has an explicit retirement authority; it still rejects unapproved removals, changed history, stale bodies and redirected paths. No empty body directory needs to exist in a clean clone. `prepare.ps1` no longer requests a compatibility snapshot source. Assembly and provenance keep the zero output and historical identity visible and reject any of the 48 retired paths in generated runtime output.
+
+No default startup, maintained player or Native initialization source references the removed shader paths. Old `external/Presets/mpv.conf` and `Anime4K-off.conf` survive only as historical identities/docs and exclusion tests; their bodies and switching code were already removed. The existing maintained startup SVG and other Web imagery are separate inputs.
+
+Personal mpv configuration that explicitly references the old application-relative `external/Anime4K/shaders/` paths will no longer resolve on a clean installation or after those files are manually removed. Such a configuration can produce missing-shader errors. Users must manage their own shader files and paths; this change neither reads/edits personal configuration nor deletes personal shaders. Existing installations may retain old files because installer cleanup is deliberately unchanged; no automatic disk cleanup or prior Release rewrite is performed.
+
+The 37 embedded MIT and two AutoDownscalePre Unlicense texts remain available in the original Git trees, alongside original per-file identity/origin records. Existing notice/audit records are preserved without claiming newly verified revisions or historical redistribution clearance.
+
+Validation uses the ordinary locked toolchain, snapshot checks and regression route. `node --test tests/anime4k-resource-retirement.test.cjs tests/legacy-resource-retirement.test.cjs tests/compatibility-resources-input.test.cjs tests/snapshot-v2-migration.test.cjs tests/runtime-base-assembly.test.cjs` covers cold zero-body assembly, exact retired identities, stale-input/output rejection, history integrity, defaults and startup-image references. Full Windows package/GUI/playback evidence must be reported separately; Linux unit or fixture results are not a Windows build.
 
 ## Historical implementation stages
 
