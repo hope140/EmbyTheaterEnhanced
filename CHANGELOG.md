@@ -1,26 +1,35 @@
 # 变更记录
 
-## v0.4.2 — 测试版准备
+版本与渠道按实际 GitHub Release 记录；各版准备／核验文档保留当时来源和验证范围。当前下载入口见[README](README.md#下载安装)。
+
+## v0.4.3 — 2026-10-25 · 测试版
+
+- 保留 v0.4.2 的页面／详情缓存、缓存管理、手动更新与正式／测试通道。
+- 普通 Windows 安装启用系统媒体卡片及任务栏缩略图／Peek 的一秒视频预览；原任务栏两个控制按钮已移除。预览是低频截图，不合成字幕或承诺连续视频。
+- 系统媒体卡片控制播放、暂停、停止和真实队列上一项／下一项；具体卡片布局由 Windows 决定。
+- 修复退出时访问已销毁窗口的异常、主窗口关闭收尾及 Electron 退出后的 Host 残留。
+- 缓存清理按钮文字居中，设置展示名简化为“智能解析”，说明保留 STRM。
+- 已发布为 [Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.3)，Tag 为 `69e55b91a0cc6ba4b01ce60cb65d9aca41b0311e`，不替代 v0.4.0 Latest。本版不含下一集预加载、缓冲暂存或飞牛认证实验。
+
+## v0.4.2 — 2026-10-24 · 测试版
 
 - 增加详情页静态内容持久缓存及缓存管理，重新访问先显示有限静态信息并更新真实数据；登录、设置、用户进度与播放归属保持。
 - 增加主动更新检查／下载和可保存的正式／测试通道；不自动检查或安装，不提供降级下载，说明链接使用系统浏览器。
-- 沿用已验收第一批及v0.4.1修复，保留main构建输入提速与正常release路由；不混后续Native或视频缓存功能。
-- 按“v0.4.2 测试版”准备prerelease且不设Latest；已发布版本保持，最终新包及发布另由协调者完成。见[来源与核验](docs/V042_RELEASE_VERIFICATION.md)。
+- 保留 v0.4.1 修复与构建输入提速；缓存不替代服务器授权、最新进度或真实播放数据。
+- 已发布为 [Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.2)，为上一批测试版；[准备与核验记录](docs/V042_RELEASE_VERIFICATION.md)保留原范围。
 
-## v0.4.1 — 测试版准备
+## v0.4.1 — 2026-10-24 · 测试版
 
-- 组合已保留来源的九项修复：播放创建/停止清理、自动切率暂停意图、独立secrets恢复、有界诊断历史、EWT Seek精度/真实完成上报，以及无章节缩略图、实际版本绑定和旧响应取消隔离。
-- 固定Native Helper模式隐藏无效的视频渲染与图形接口选择及其说明，保留其它有效设置、历史值和实际gpu-next/D3D11路径。
-- 用户对415ddf88候选反馈其余通过；这不是所有服务器、多版本、双端或硬件矩阵的全面验收。最终UI/版本来源仍须独立Windows包核验，见[v0.4.1验收记录](docs/V041_RELEASE_VERIFICATION.md)。
-- 计划标题为“v0.4.1 测试版”、GitHub prerelease=true、不标Latest；仅准备版本与说明，当前正式v0.4.0及历史附件不改。
+- 修复播放创建／停止清理、自动切率暂停意图、STRM Token 重启恢复、诊断历史增长、EWT Seek 精度与真实完成进度，以及无章节缩略图、实际版本绑定和旧响应隔离。
+- 固定 Native Helper 模式隐藏无效的视频渲染与图形接口选择，保留实际 gpu-next／D3D11 路径及其他有效设置。
+- 已发布为 [Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.1)；有限用户反馈不代表所有服务器、多版本、双端或硬件组合通过，见[验收记录](docs/V041_RELEASE_VERIFICATION.md)。
 
-## v0.4.0 — 正式版准备
+## v0.4.0 — 2026-10-23 · 正式版
 
-- 汇总已验收的来源清理与维护：完整退役 CEC、旧 Host 自更新链和已批准的旧资源；保留普通 HDMI 音视频、刷新率、键鼠与服务器远控。
-- 从固定官方 Host 源码构建维护产物，使用已审 JSON／ZIP 实现；坏 JSON 明确报错，保留正常配置与消费合同。私有 System.Configuration、CEC、Sharp／ServiceStack 不进入运行投影，必要来源与声明保持。
-- 普通 API／连接传输维护源、默认配置和中文资源按独立来源合同组装；固定 libmpv 保持，不增加播放功能。
-- 干净 GitHub Windows 已完成来源恢复、Host 实际验证、1609项回归及测试安装器核验。此为版本准备前的测试包证据；v0.4.0 仍须从本版准确提交重新构建正式五附件，见[发行核验](docs/V040_RELEASE_VERIFICATION.md)。
-- 本版尚未发布；旧 v0.3.16 prerelease 与附件保持。Windows 控制、缓存／预加载与 FNConnect 等后续功能独立进行。
+- 完整退役 CEC、旧 Host 自更新链和已批准的旧资源；保留普通 HDMI 音视频、刷新率、键鼠与服务器远控。
+- 从固定官方 Host 源码构建维护产物，使用维护的 JSON／ZIP 实现；坏 JSON 明确报错，保留正常配置与消费合同。私有 System.Configuration、CEC、Sharp／ServiceStack 不进入运行投影，必要来源与声明保持。
+- 普通 API／连接传输维护源、默认配置和中文资源按独立来源合同组装；固定 libmpv 保持。
+- 已发布为[正式版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.0)，截至 2026-10-25 仍为 Latest。来源、五附件和实际验证范围见[发行核验](docs/V040_RELEASE_VERIFICATION.md)，不据云端构建或风险接受推断所有环境及许可问题均已闭合。
 
 ## v0.3.16 — 2026-10-22 · 测试版
 
