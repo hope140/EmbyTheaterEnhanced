@@ -46,9 +46,9 @@ function main() {
     let counts;
     try { counts = summary(stdout.replace(/\r/g, '')); } catch (_) { counts = null; }
     const passed = result.status === 0 && !result.error && counts && counts.tests > 0 && counts.pass === counts.tests && !counts.fail && !counts.cancelled && !counts.skipped;
-    const receipt = {schemaVersion: 1, status: passed ? (diagnostic ? 'diagnostic-only' : 'passed') : 'failed', sourceCommit, tests: selected, counts,
+    const receipt = {schemaVersion: 1, status: passed ? (diagnostic ? (focus ? 'diagnostic-only' : 'native-only-passed') : 'passed') : 'failed', sourceCommit, tests: selected, counts,
         platform: process.platform, node: process.versions.node, runnerOS: process.env.RUNNER_OS,
-        controlledLocalAsInvokerProbe: !diagnostic, diagnosticFocus: focus, officialReleaseMetadata: 'synthetic fixture only',
+        controlledLocalAsInvokerProbe: !diagnostic, diagnosticFocus: focus, interactiveInstallerValidation: diagnostic ? 'not-executed' : 'requires-complete-controlled-result', officialReleaseMetadata: 'synthetic fixture only',
         realApplicationExited: false, realSoftwareInstalled: false, uacValidated: false,
         securityWarningsBypassed: false, productionProfileAccessed: false};
     fs.writeFileSync(path.join(directory, 'receipt.json'), JSON.stringify(receipt, null, 2) + '\n', {flag: 'wx'});

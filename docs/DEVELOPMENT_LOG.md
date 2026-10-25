@@ -14,6 +14,8 @@ Windows短测发现分离启动不执行脚本及清理退出码误判，已采�
 
 修正后的完整Linux回归2189项（2165通过、0失败、24平台跳过），包内9项合成自检和12模块绑定／打包门禁投影7项通过。Windows实际句柄、身份／Zone／硬链接拒绝、缓存取消复用、版本确认清理与异常退出顺序共117项全部通过、零失败／取消／跳过（源码 `3a2756f50832c0a66f0672e9c3e9d6fc532b6979`，[独立短测](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40167813705)）。该回执仍是无执行阶段；受控asInvoker假安装器交接现恢复验证，不能据此声称真实安装／UAC通过。
 
+安装器交接边界已实测：无执行的relay／PowerShell生命周期在合成客户端自然退出后正常完成；完整受控运行119项中118通过、1失败，停在实际ShellExecute，可见窗口和SmartScreen进程存在，调用未返回，假安装器无启动标记（[0031027源码回执](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40168743383)）。不宣称具体窗口／策略根因，不接受安全提示或再自动尝试该入口。自动job改为原生／marker-only子集，明确标记 `native-only-passed`；完整安装交接、实际客户端和UAC仍需隔离有交互Windows验证。源码及包内自检、原生子集通过不等于安装器端到端验收通过。
+
 ## 2026-10-25 — 文档入口与当前发行状态
 
 已核对远端 main 与 v0.4.3 Tag 同为 `69e55b91a0cc6ba4b01ce60cb65d9aca41b0311e`（含 PR #77）。[v0.4.3](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.3) 于 2026-10-25 发布为测试版，Latest 正式版仍为 [v0.4.0](https://github.com/hope140/EmbyTheaterEnhanced/releases/latest)，v0.4.2 为上一批测试版。

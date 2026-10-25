@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   windows-managed-update-short:
-    name: Windows managed update short verification (no real install)
+    name: Windows updater native checks (interactive installer validation pending)
     if: github.head_ref == 'feature/managed-app-update-install' || github.ref == 'refs/heads/feature/managed-app-update-install'
     runs-on: windows-2022
     timeout-minutes: 8
@@ -23,10 +23,11 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24.18.1
-      - name: Verify real Windows handles and controlled asInvoker handoff
+      - name: Verify handles, cache and marker-only lifecycle (no ShellExecute)
         shell: pwsh
         env:
           ETE_EXPECTED_SOURCE: ${{ github.event.pull_request.head.sha || github.sha }}
+          ETE_DIAGNOSTIC_NO_WIZARD: '1'
         run: node tools/verify-managed-update-windows.cjs --expected-source $env:ETE_EXPECTED_SOURCE
       - name: Upload bounded independent validation receipt
         if: always()

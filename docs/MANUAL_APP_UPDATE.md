@@ -98,9 +98,11 @@ node --test tests/app-update-preferences.test.cjs tests/release-note-links.test.
 
 入口为 `node tools/verify-managed-update-windows.cjs --expected-source <精确40位SHA>`；只允许当前仓库的 GitHub 托管 Windows，拒绝本地／Work／self-hosted、错误源码 SHA 或未知参数。选择更新相关测试，要求完整且唯一的 TAP 汇总、零失败／取消／跳过，并保存绑定 sourceCommit 的 `receipt.json`、TAP及受限 stderr。结果上传独立、一天保留期的 artifact，不扩大 Release 五附件。
 
-真实 NTFS／Windows PowerShell5.1 用例覆盖目录和文件替换拒绝、卷／64位文件 ID、摘要／Zone／硬链接拒绝、取消后保留并复用好包、旧版启动保留，以及目标版确认后按句柄清理。
+当前自动 job 只执行不含 ShellExecute 的原生／合成子集，回执标为 `native-only-passed`，不能解释为完整安装交接验收。真实 NTFS／Windows PowerShell5.1 用例覆盖目录和文件替换拒绝、卷／64位文件 ID、摘要／Zone／硬链接拒绝、取消后保留并复用好包、旧版启动保留，以及目标版确认后按句柄清理。
 
-显式短 job 另启用 `update-install-controlled-wizard.test.cjs`：在一次性临时目录用系统已有 C# 编译器生成**只写标记和等待结束信号的 asInvoker 假安装器**。合成客户端通过真实缓存和交接源码提交后自然退出；真实 C# 守卫保持 Zone3和文件锁，真实 ShellExecute 无参数启动这个受控程序。断言客户端已退出、启动参数为空，捕获所属交接进程句柄并等其退出后，分别验证旧版保留和合成目标版本清理。官方发布元数据和安装后版本在此明确使用合成夹具；它不证明真实产品安装或 UAC。
+受控交接用例 `update-install-controlled-wizard.test.cjs` 仅曾在显式隔离短 job 启用，当前自动 job 不启用它：在一次性临时目录用系统已有 C# 编译器生成**只写标记和等待结束信号的 asInvoker 假安装器**。合成客户端通过真实缓存和交接源码提交后自然退出；真实 C# 守卫保持 Zone3和文件锁，真实 ShellExecute 无参数启动这个受控程序。断言客户端已退出、启动参数为空，捕获所属交接进程句柄并等其退出后，分别验证旧版保留和合成目标版本清理。官方发布元数据和安装后版本在此明确使用合成夹具；守卫源码只增加测试日志，没有改变锁、Zone或ShellExecute调用。它不证明真实产品安装或 UAC。
+
+2026-10-25 隔离结果：117项更新／实际Windows句柄回归通过。另以明确替换的只写标记守卫验证真实relay／PowerShell生命周期，合成客户端自然退出后守卫继续运行并正常退出；它没有ShellExecute，不能代替真实守卫启动安装器。包含受控asInvoker程序的完整119项运行有118通过、1失败：真实守卫已到达ShellExecute，但观察到守卫可见窗口及SmartScreen进程，启动调用未返回、程序未写启动标记。见[绑定源码0031027的回执](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40168743383)。未确定窗口具体内容，不将其写成具体策略拒绝或产品安装成功。停止该入口的自动重试，保持系统UI及策略，后续需隔离、有交互的Windows验收。原失败回执不被原生子集的绿色结果覆盖。
 
 不移除 Zone、不改变安全策略、不接受 UAC或点击安全警告。若系统拒绝／安全界面阻挡受控程序，门禁失败并保存现场，等待另行安排有交互的隔离验收，不换路规避。所有生成文件及进程归当前 CI VM，实际客户端／用户 profile／Downloads和已发布附件均不访问；真实 UAC与产品安装继续单独验收。
 
