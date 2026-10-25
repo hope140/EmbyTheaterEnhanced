@@ -32,7 +32,10 @@ const store = require('../../src/electronapp/enhanced/update-install-cache').cre
     const request = {currentVersion: '9.0.0', targetVersion: '9.1.0', tag: 'v9.1.0', signal: new AbortController().signal};
     const record = await store.download(installer, request);
     fs.writeFileSync(path.join(root, 'client-pid'), String(process.pid));
-    const lease = await store.prepare(record, request.signal); await lease.commit();
+    const lease = await store.prepare(record, request.signal);
+    const launched = JSON.parse(fs.readFileSync(path.join(root, 'helper-pid.json')));
+    fs.writeFileSync(path.join(root, 'helper-pid.json'), JSON.stringify({...launched, pid: lease.processId}));
+    await lease.commit();
     fs.writeFileSync(path.join(root, 'committed.json'), JSON.stringify({directory: record.directory, installer}));
     // Natural Node exit after the real handoff detaches; no forced exit/kill.
 })().catch(() => { process.stderr.write('Controlled client handoff failed.\n'); process.exitCode = 1; });

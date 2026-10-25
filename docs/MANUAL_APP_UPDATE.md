@@ -66,7 +66,9 @@
 
 每个附件使用随机 `update-<32hex>` 子目录，保存有限 schema 的 receipt、已创建临时文件的设备／文件 ID、附件官方身份、SHA／长度和目标版本。renderer 不能传路径、执行参数或摘要。磁盘预算先检查可用空间，实际 ENOSPC／配额／权限错误仍停止且保留旧好包；本地缓存不可用不会阻断只读版本检查和通道读取。网络失败／取消收尾原有 `.part`，空的受管尝试可复用；已完成好包重试前重新读取官方 Tag，再复核文件身份与完整 SHA，避免重复下载。新版本使用独立目录，成功启动新版本之前不替换／删除旧好包。
 
-最终交接使用系统 Windows PowerShell 5.1 的固定源码命令及包内 C# 文件守卫，不依赖已退役 Host 更新逻辑，不保持安装目录中的可执行映像或脚本文件句柄。命令源码来自本包，数据走独立 ASCII JSON stdin（Unicode 路径用 JSON 转义），没有 shell 插值、外部命令输入或网络能力。环境仅保留 Windows 和用户目录所需的明确字段，不继承 Token／代理／Node 注入环境；不改变 PowerShell 策略或语言模式，受系统限制时失败关闭。
+最终交接使用系统 Windows PowerShell 5.1 的固定源码命令及包内 C# 文件守卫，不依赖已退役 Host 更新逻辑，不保持安装目录中的可执行映像或脚本文件句柄。Windows实测发现 `detached:true` 会让该系统PowerShell返回0却不执行脚本；故使用普通隐藏启动的受管relay，.NET创建独立守卫。保留libuv原有作业归属，不修改job限制或申请breakaway／提权。relay持有守卫实际进程句柄，取消须终止并确认所属守卫退出；提交收到守卫确认后才放行其等待客户端退出。
+
+源码来自本包，通过随机本机named pipe传递；256位一次性令牌认证成功前不发送源码或附件身份，拒绝未知协议帧，设备路径／摘要只由main生成。数据用ASCII JSON（Unicode路径转义），没有renderer命令输入或外部网络能力。只用系统PowerShell支持的编码bootstrap承载固定源码，不改变策略或语言模式。环境只保留Windows／用户目录所需字段，不继承Token／代理／Node注入环境；外部job或系统策略阻止时失败关闭。清理必须同时有显式完成标记和所属进程退出，不能仅凭退出码0宣称成功。
 
 守卫逐级打开目录，拒绝 reparse point，禁止目录写入／重命名／删除；按卷序号和 64 位文件 ID 核对专用根和尝试目录。安装包只共享读取，拒绝多硬链接、写入和替换，**在持有同一文件句柄时**核对长度与官方 SHA；另锁定并回读原 Zone 3。只在准备成功并完成私有提交握手后才安排 `app.quit()`；保留现有 before-quit 资源 drain。交接捕获实际 Electron 进程及同安装目录 Host 的进程句柄，确认它们真实退出后才 `UseShellExecute=true`、无参数打开向导，保留 UAC／系统安全检查。准备限30秒、提交握手限5秒；正常退出若120秒仍受阻则交接放弃，不强杀客户端，也不等某次不相关的未来退出。准备取消须等所属子进程实际退出；提交后取消入口锁定。向导退出之前保持安装文件锁。
 
@@ -110,7 +112,7 @@ node --test tests/app-update-preferences.test.cjs tests/release-note-links.test.
 node .\electronapp\enhanced\manual-app-update-selftest.js
 ```
 
-入口执行9项合成检查，绑定11份更新模块（含缓存、交接源码和守卫）与包内 build-manifest，零真实网络、真实 profile、GUI 或安装执行。新增一项验证专用临时缓存复用与替换拒绝，不启动交接进程。`ci-windows-test-package.ps1` 在安装器编译前要求9项成功、sourceCommit一致及原零副作用条件；回执仍 `manual-app-update-selftest.json`，不扩大发布五附件。包内 manifest 绑定不等于独立签名。
+入口执行9项合成检查，绑定12份更新模块（含缓存、交接源码、relay和守卫）与包内 build-manifest，零真实网络、真实 profile、GUI 或安装执行。新增一项验证专用临时缓存复用与替换拒绝，不启动交接进程。`ci-windows-test-package.ps1` 在安装器编译前要求9项成功、sourceCommit一致及原零副作用条件；回执仍 `manual-app-update-selftest.json`，不扩大发布五附件。包内 manifest 绑定不等于独立签名。
 
 打包接线可复验：
 

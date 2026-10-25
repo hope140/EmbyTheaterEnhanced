@@ -22,7 +22,7 @@ function packageBinding() {
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
     assert.match(manifest.sourceCommit, /^[0-9a-f]{40}$/);
     for (const name of ['manual-app-update.js', 'maintenance.js', 'maintenance-ipc.js', 'renderer-boundary.js', 'release-note-links.js', 'app-update-preferences.js', 'manual-app-update-selftest.js',
-        'update-install-cache.js', 'update-install-handoff.js', 'update-install-handoff.ps1', 'update-install-guard.cs']) {
+        'update-install-cache.js', 'update-install-handoff.js', 'update-install-handoff.ps1', 'update-install-guard.cs', 'update-install-relay.cs']) {
         const relative = 'electronapp/enhanced/' + name;
         const entries = manifest.files.filter(entry => entry.path === relative);
         assert.equal(entries.length, 1);

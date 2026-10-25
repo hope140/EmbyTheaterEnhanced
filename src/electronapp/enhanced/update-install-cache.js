@@ -160,6 +160,7 @@ function createStore(options) {
         const lease = await settings.handoff.prepare({...current, root, directory: record.directory}, signal);
         let committed = false;
         return {
+            processId: lease.processId,
             async commit() {
                 if (signal && signal.aborted) { await lease.abort(); throw fail('cancelled'); }
                 try { await lease.commit(); committed = true; }
