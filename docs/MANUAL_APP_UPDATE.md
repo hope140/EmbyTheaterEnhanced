@@ -86,6 +86,8 @@ node --test tests/app-update-preferences.test.cjs tests/release-note-links.test.
 
 受控网络、合成非可执行文本、临时文件和模拟进程分别验证通道／官方重核验／代理、目录归属、重复点击、取消收尾、磁盘和执行失败、旧包保留、目标版本确认及篡改拒绝。`update-install-windows.test.cjs` 仅在 Windows 调用实际系统 PowerShell 5.1／C#／文件句柄，验证 Unicode 路径、锁、摘要／卷／文件 ID／Zone／硬链接拒绝、取消和按句柄清理；**不提交交接、不运行安装包或退出客户端**。Linux 明确跳过这些 Windows 原生用例，只编译 C#、解析 PowerShell 并测试受控状态机。
 
+`update-install-exit-order.test.cjs` 另外执行真实交接 PowerShell 脚本，但明确替换为只能写合成标记的 C# 测试守卫，等待自己创建的不可见 Node 进程退出，验证先 Electron／再同目录 Host 的顺序。Windows 同时断言非零退出绝不写标记；Unix 的 .NET 无法取得非子进程退出码，两个非零断言仅在 Windows 运行，不以 Unix 观测到的零冒充通过。该测试没有 ShellExecute、真实安装器或客户端进程。
+
 ## 独立测试包与实机交接
 
 新增 JS／PowerShell／C# 都在 `src/electronapp` 既有 Git blob／provenance 范围内，不修改 vendor、Host、安装器或发布附件数量。没有产品 mock URL／忽略 TLS／绕过校验开关。独立分支准确提交可由协调者使用既有 workflow_dispatch、`release_package=false` 构建独立测试 artifact；本次不自行 dispatch、安装、退出 Work 当前进程或发布。

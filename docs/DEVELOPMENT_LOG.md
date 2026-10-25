@@ -6,6 +6,8 @@
 
 没有重建Host自动更新、改管理员持久设置或代理认证行为。新增离线缓存与状态机测试、实际Windows无执行锁／清理测试，后者在Linux明确跳过；C#编译和PowerShell语法不代替Windows API、UAC／SmartScreen或实机安装。包内自检扩至9项、绑定11份模块，保留原零网络／真实profile／安装执行门禁。完整合同与交接见[手动更新](MANUAL_APP_UPDATE.md)；本轮不自行dispatch、运行软件安装包或退出Work现用进程。
 
+完整Linux回归2176项（2156通过、0失败、20跳过）；另运行新增真实PowerShell脚本的合成进程退出顺序（1通过、2个Windows专属退出码断言待验）。Unix非子进程退出码不可据此验证，未放宽产品零退出要求或把这两个断言记为通过。包内9项与11模块源码投影绑定、原打包门禁均通过；没有真实Windows GUI／安装证据。
+
 ## 2026-10-25 — 文档入口与当前发行状态
 
 已核对远端 main 与 v0.4.3 Tag 同为 `69e55b91a0cc6ba4b01ce60cb65d9aca41b0311e`（含 PR #77）。[v0.4.3](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.3) 于 2026-10-25 发布为测试版，Latest 正式版仍为 [v0.4.0](https://github.com/hope140/EmbyTheaterEnhanced/releases/latest)，v0.4.2 为上一批测试版。

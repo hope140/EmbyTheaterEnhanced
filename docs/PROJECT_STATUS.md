@@ -6,6 +6,8 @@
 
 已增加受管缓存／私有交接／Windows句柄守卫及不可执行文本回归，包内入口扩至9项、绑定11份更新模块。实现合同、复验命令与实机清单见[手动更新](MANUAL_APP_UPDATE.md)。本地受控验证与Windows原生／真实安装分开记录；本任务不操作现用客户端、不自行打包／安装、合main或发布。
 
+Linux完整回归2176项：2156通过、0失败、20平台跳过。另新增真实PowerShell交接脚本＋合成守卫顺序验证：1通过、2个Windows退出码用例待Windows运行；不执行安装器。包内9项离线自检通过，11份模块源码投影绑定及门禁通过。Windows句柄、系统警告、真实退出／安装与下次启动清理仍需单独验收。
+
 ## 2026-10-25 — 文档入口与当前发行状态
 
 已核对远端 main 与 v0.4.3 Tag 同为 `69e55b91a0cc6ba4b01ce60cb65d9aca41b0311e`（含 PR #77）。[v0.4.3](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.3) 于 2026-10-25 发布为测试版，Latest 正式版仍为 [v0.4.0](https://github.com/hope140/EmbyTheaterEnhanced/releases/latest)，v0.4.2 为上一批测试版。
