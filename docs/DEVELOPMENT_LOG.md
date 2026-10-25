@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-25 — 共享缓存Stop分段与隐藏页面前台调度
+
+保留原manager.stop→player.destroy顺序及promise，补前后标记和main destroy IPC进入／完成记录。Stop报告按本次调用和当前媒体有界等待，helper物理退出独立确认。隐藏harness读回backgroundThrottling=false作单变量调度实验，不动生产配置／窗口前台；app.quit仅观测，协调器实际exit／close仍是门禁。详见[Windows验收合同](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。
+
 ## 2026-10-25 — 共享缓存受限主frame求值与退出分段
 
 WebContents加载等待层是否造成该次unpause缺动作尚未实证。工具改用固定Electron公开WebFrameMain执行，前后绑定已加载同一可信frame，无产品／helper替身或节流改变；保留超时失败。实际恢复播放需pause=false之后基线及同代新鲜time-pos推进。记录cleanup与watchdog来源、窗口／protocol／回执／app.exit分段，helper与Electron退出不混同。详见[Windows验收合同](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。

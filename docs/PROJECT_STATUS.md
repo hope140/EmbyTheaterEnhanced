@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-25 — 共享缓存Stop与Electron退出短验准备
+
+最新真实前后seek及恢复播放推进均通过，Stop仍超时；helper退出与流关闭确认，Electron未自然退出。旧prefixStop未写stop动作标记，现补原函数及destroy IPC分段，不据缺标记推断未进入。下一短验只调整隐藏测试页面背景节流并读回，保留frame、超时、真实当前媒体stop报告／helper关闭／Electron退出要求，未改产品或原包。详见[Windows验收合同](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。
+
 ## 2026-10-25 — 共享缓存真实seek后unpause控制边界
 
 最新真实baseline的前向seek位置／restart／帧通过，unpause求值超时且无renderer动作记录；helper退出已确认，Electron整体退出未确认。仅工具使用已校验主frame公开API执行同一renderer命令，补实际pause=false及后续新鲜time-pos推进，细分退出日志；不以求值成功或旧seek事件冒充恢复播放。固定包与产品树不变，真实Windows新回执待执行。详见[Windows验收合同](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。

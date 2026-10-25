@@ -61,7 +61,14 @@ async function rendererBoot(input) {
         manager.nextTrack = function () {report('manager-next-track'); return originalNextTrack.apply(this, arguments);};
         registered.push(player); events.trigger(plugins, 'registered', [player]);
         const items = await Promise.all((input.itemIds || (input.singleItem ? ['A'] : ['A', 'B'])).map(id => api.getItem('anonymous', id)));
-        window.prefixStop = async () => {await manager.stop(); await player.destroy();};
+        window.prefixStop = async () => {
+            report('stop-stage', {operation: 'manager-start'});
+            await manager.stop();
+            report('stop-stage', {operation: 'manager-done'});
+            report('stop-stage', {operation: 'player-destroy-start'});
+            await player.destroy();
+            report('stop-stage', {operation: 'player-destroy-done'});
+        };
         window.prefixAction = async operation => {
             report('matrix-action', {operation});
             if (operation === 'pause') manager.pause();

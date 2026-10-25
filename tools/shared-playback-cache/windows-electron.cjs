@@ -43,7 +43,7 @@ async function main() {
     mainWindow, indexUrl, ownedSession, unregisterNative, unregisterCd2, unregisterSettings, lateEvents = 0, retiredAt = null;
   const receipt = {schema: 1, phase, productCommit: plan.productCommit, toolCommit: plan.tools.toolCommit,
     status: 'FAIL', scope, checks: {}, timingsMs: {}, firstFrameMeaning: 'decoded native preview; hidden carrier',
-    audio: 'NOT_TESTED_VIDEO_ONLY_FIXTURE', real115Requests: 0, helpers: [], seekObservations: []};
+    audio: 'NOT_TESTED_VIDEO_ONLY_FIXTURE', hiddenHarnessBackgroundThrottling: false, real115Requests: 0, helpers: [], seekObservations: []};
   function phaseOf(value) {stage = value; stages.push({stage, elapsedMs: now()});
     fs.writeFileSync(stagesFile, JSON.stringify(stages) + '\n', {mode: 0o600}); console.log('SHARED_CACHE_WORKER ' + value);}
   function record(type, data = {}) {
@@ -68,6 +68,7 @@ async function main() {
       destroyed: contents.isDestroyed()});
     return driver.within(() => driver.executeStableFrame(contents, indexUrl, script), Math.min(timeout, remaining), label + '-timeout');
   }
+  app.on('quit', () => phaseOf('app-quit'));
   const runtime = member => path.join(plan.runtime, 'electronapp', member);
   const get = member => require(runtime(member));
   function helperFacts() {
@@ -119,9 +120,10 @@ async function main() {
       focus() {throw Error('worker-window-focus-forbidden');}
     }
     mainWindow = new HiddenWindow({width: 320, height: 180, webPreferences: {session: ownedSession,
-      contextIsolation: true, nodeIntegration: false, sandbox: false,
+      contextIsolation: true, nodeIntegration: false, sandbox: false, backgroundThrottling: false,
       preload: path.join(plan.repo, 'tools/shared-playback-cache/windows-preload.cjs')}});
     mainWindow.setMenu(null);
+    need(mainWindow.webContents.getBackgroundThrottling() === false, 'worker-hidden-scheduling-not-applied');
     mainWindow.webContents.on('unresponsive', () => record('renderer-unresponsive'));
     mainWindow.webContents.on('responsive', () => record('renderer-responsive'));
     mainWindow.webContents.on('did-start-navigation', (_event, _url, _inPlace, mainFrame) => record('renderer-navigation', {mainFrame: !!mainFrame}));
@@ -164,7 +166,10 @@ async function main() {
       config: {enabled: true, origin: sources.cd2Endpoint, token: 'synthetic-only-token', rules: [rule], directUrlEnabled: true}});
     const boundary = get('enhanced/renderer-boundary');
     const observedIpc = {handle(channel, fn) {ipcMain.handle(channel, async (event, payload) => {
+      const observeDestroy = channel === 'enhanced-native-helper-call' && payload?.operation === 'destroy' && boundary.isTrusted(event, mainWindow.webContents);
+      if (observeDestroy) record('destroy-ipc', {operation: 'begin'});
       const result = await fn(event, payload);
+      if (observeDestroy) record('destroy-ipc', {operation: 'complete', ok: result?.status === 'ok'});
       if (boundary.isTrusted(event, mainWindow.webContents)) {
         if (channel === 'enhanced-native-helper-call' && result?.status !== 'error') {
           if (payload.operation === 'create') activeEndpoint = result.endpointId;
@@ -290,11 +295,18 @@ async function main() {
       await delay(300);
       phaseOf('cancel');
     }
-    const stopping = now();
+    const stopping = now(), stoppingItem = currentItem, stopTraceStart = trace.length;
     await evaluate('window.prefixStop()', 'stop-command');
     retiredAt = lastGeneration;
     receipt.timingsMs.stop = now() - stopping;
-    receipt.checks.stopped = true; phaseOf('stop');
+    phaseOf('stop-destroy-ipc');
+    await waitFor(() => trace.slice(stopTraceStart).some(r => r.type === 'destroy-ipc' && r.operation === 'complete' && r.ok === true), 'worker-stop-ipc-not-completed');
+    receipt.checks.stopIpcCompleted = true;
+    phaseOf('stop-native-exit');
+    await waitFor(() => clients.length > 0 && clients.every(c => c.exited && c.child.exitCode === 0 && c.closeSeen), 'worker-stop-native-not-closed');
+    phaseOf('stop-server-report');
+    await waitFor(() => trace.slice(stopTraceStart).some(r => r.type === 'server-report' && r.method === 'stop' && r.item === stoppingItem), 'worker-stop-server-report-missing');
+    receipt.checks.stopped = true; receipt.checks.stopNativeClosed = true; phaseOf('stop');
     if (phase === 'cancel') {await delay(150); receipt.checks.noObsoleteNativeEvents = lateEvents === 0;
       need(receipt.checks.noObsoleteNativeEvents, 'worker-obsolete-native-events');}
     receipt.status = 'PASS';

@@ -231,7 +231,9 @@ async function run({planFile}) {
       cases: results.map(r => ({phase: r.phase, exitCode: r.exitCode, timedOut: r.timedOut,
         workerStages: r.workerStages, code: r.receipt?.code || r.receipt?.cleanupCode || null,
         ownedHelpersClosed: r.receipt?.ownedHelpersClosed, checks: r.receipt?.checks,
-        receiptOrigin: r.receipt?.receiptOrigin || null, seekObservations: r.receipt?.seekObservations || [],
+        receiptOrigin: r.receipt?.receiptOrigin || null, hiddenHarnessBackgroundThrottling: r.receipt?.hiddenHarnessBackgroundThrottling,
+        stopTrace: (r.receipt?.trace || []).filter(e => ['stop-stage', 'destroy-ipc'].includes(e.type)).slice(-12)
+          .map(({type, operation, ok}) => ({type, operation, ok})), seekObservations: r.receipt?.seekObservations || [],
         rendererDispatch: (r.receipt?.trace || []).filter(e => e.type === 'renderer-dispatch').slice(-6)
           .map(({operation, loading, loadingMainFrame, backgroundThrottling, destroyed}) =>
             ({operation, loading, loadingMainFrame, backgroundThrottling, destroyed}))})), cleanup: report.sourceCleanup}));

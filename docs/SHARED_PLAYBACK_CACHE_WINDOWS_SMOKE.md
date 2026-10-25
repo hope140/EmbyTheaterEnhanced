@@ -129,3 +129,14 @@ CI的benchmark_expected_sha始终填新的精确工具SHA；三个artifact参数
 恢复播放须经原renderer→PlaybackManager→现有client／IPC→真实helper；求值返回本身不算成功。新增实际pause=false确认，随后读取原生time-pos作为新基线，再用同generation的新鲜原生读回证明继续前进，不使用排队的seek旧事件充数。清理细分主窗口销毁、其他窗口销毁、protocol移除、回执写入与app.exit请求；回执注明正常cleanup或watchdog来源，安全CI摘要直接含受控状态和seek事实。Electron仍须真正退出，外层超时不能通过。主frame单元不等于Windows实际控制已成功，下一次仍复用原包短验。
 
 本轮本地完整离线2672项：2659通过、0失败、13项既有平台跳过，约127.2秒。主frame／截止时间／现有工具定向22项通过；JS567、PowerShell53语法、有限凭据模式扫描及文档链接通过。独立审查确认未弱化来源／frame边界，实际Windows恢复播放及Electron退出仍待新短验。
+
+
+## Stop与隐藏页面调度的单变量短验
+
+45bab22真实baseline的前后seek及pause=false后的新鲜时间推进均通过，随后Stop超时；正常cleanup回执、helper退出0和流关闭均有证据，Electron则仍被外层终止。没有matrix-action stop不能判断Stop未执行：旧prefixStop根本没有该记录。现只在原renderer函数的manager.stop、player.destroy前后及主进程destroy IPC进入／完成处记录固定阶段，不改变调用顺序或原promise等待。
+
+下一轮保持同一frame API和40秒／120秒边界，仅对隐藏测试主页面设置backgroundThrottling=false并实际读回确认，用前台脚本调度语义执行受控播放；不显示／聚焦窗口，不改产品配置或Native。固定[Electron背景节流说明](https://www.electronjs.org/docs/latest/api/web-contents#contentssetbackgroundthrottlingallowed)解释这一试验变量；它是否为该次根因仍需真实短验，不能预称产品修复。
+
+Stop成功还须本次主进程destroy IPC的成功回执、当前媒体在本次Stop之后发出的原server stop报告，并确认真实helper退出0及streamsClosed；事件异步送达，因此显式有界等待，不借旧自然EOF报告通过。app quit仅增加观测阶段，最终仍以协调器收到Electron exit与流关闭为准，不能以helper退出、回执写入、app.exit请求或quit事件代替。原2e99cf2包、来源清单、身份和范围缓存逻辑均不变。
+
+本轮本地完整离线2674项：2661通过、0失败、13项既有平台跳过，约126.1秒；Stop分段2项及原工具22项定向通过，JS568／PowerShell53语法、有限凭据模式扫描及文档链接通过。独立审查未发现来源／Stop证据门禁弱化。以上仍不是新Windows短验通过或背景节流根因证明。
