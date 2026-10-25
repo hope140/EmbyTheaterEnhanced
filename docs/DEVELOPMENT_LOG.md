@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-25 — 无媒体IPC与OS退出的有限对照
+
+独立case验证六个固定值、四次顺序echo和Promise结算，窗口权限一致，仅执行API不同；bare独立检查基本退出。固定来源、owned profile、有限总界、进程与流证据、拒绝不重试保持。收集器已用确定性错误／超时／拒绝情景检验清理；无Windows实际运行宣称。见[无媒体复现](SHARED_PLAYBACK_CACHE_NO_MEDIA_PROBE.md)。
+
 ## 2026-10-25 — 共享缓存来源批读与分层存活证据
 
 本地审查确认反向unpause可能被剩余预算截断，renderer入口不等待Native IPC。Git源码对象改为严格cat-file批读并重算对象ID，维持原包身份及全部源／物理校验。进程收集器分别记录PID、exit／close和终止理由；表达式探针保持原Promise及异常。尚需独立Windows无媒体最小复现，暂不建议重排完整Native四阶段。见[系统性审查合同](SHARED_PLAYBACK_CACHE_LIVENESS.md)。

@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-25 — 共享缓存独立无媒体存活复现准备
+
+新增三个固定独立进程：bare、WebContents表达式／IPC、主frame相同表达式／IPC。每例35秒／总120秒，同源固定Electron／完整来源门禁；不启动播放器／helper／媒体或业务服务。严格PID与实际exit／流关闭判据，未知退出仍FAIL。复用已有UI双开关组合只进入新job，不改普通打包、单开关路线或产品；本地测试与真实Windows证据分开。见[无媒体复现](SHARED_PLAYBACK_CACHE_NO_MEDIA_PROBE.md)。
+
 ## 2026-10-25 — 共享缓存Windows系统性存活审查
 
 背景节流关闭未充分解释超时；不再逐项猜测后重复Native。分离来源复核预算、renderer求值／Promise与OS进程退出三条证据链。批量读取固定149个源码对象，保留全量哈希／provenance门禁；本地真实Node收集器与确定性单元区分quit、exit、管道关闭和日志超限，新增PID归属、有效预算及有界资源类型诊断。实际Windows根因仍未确定，不宣称产品修复。见[系统性审查合同](SHARED_PLAYBACK_CACHE_LIVENESS.md)。

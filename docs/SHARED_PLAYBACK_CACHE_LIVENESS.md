@@ -32,3 +32,5 @@
 完整离线2689项：2676通过、0失败、13项既有平台跳过；最后PID边界收紧后相关21项再通过。Git批读6项覆盖二进制／空blob、重复对象、SHA-1／SHA-256、非ASCII／错误头、短正文／多余字节及错误哈希；收集器6项覆盖quit／exit／延迟流close／deadline／输出上限／spawn失败；表达式2项验证原Promise身份与失败不变。语法和有限凭据模式／文档链接检查通过。本地受控Node进程另复现同样事件分类，原始报告保存在仓库外，不发布。
 
 这些证据支持工具门禁优化与诊断合同，不证明Windows Electron的运行或退出已修复。
+
+下一阶段已准备[独立无媒体复现](SHARED_PLAYBACK_CACHE_NO_MEDIA_PROBE.md)，不重排原Native四阶段。

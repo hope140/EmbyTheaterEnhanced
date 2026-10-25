@@ -168,14 +168,62 @@ test('shared cache smoke is explicit, independent and cannot fall through to pac
 
 
 test('bounded offline diagnostic mode cannot dispatch a package, native smoke or benchmark', () => {
-    const diagnostics = jobBlock('windows-shared-cache-diagnostics'), smoke = jobBlock('windows-shared-cache-smoke');
+    const diagnostics = jobBlock('windows-shared-cache-diagnostics'), smoke = jobBlock('windows-shared-cache-smoke'),
+        liveness = jobBlock('windows-shared-cache-liveness');
     assertPinnedSource(diagnostics);
     for (const event of ['push', 'pull_request', 'workflow_dispatch']) {
-        assert.equal(routes(diagnostics, event, 'refs/heads/experiment/shared-playback-cache', false, false, true), event === 'workflow_dispatch');
-        for (const job of [manual, benchmark, smoke]) assert.equal(routes(job, event, 'refs/heads/experiment/shared-playback-cache', true, true, true), false);
+        for (const benchmarkMode of [false, true]) for (const smokeMode of [false, true]) for (const diagnosticMode of [false, true]) {
+            const expectedLiveness = event === 'workflow_dispatch' && smokeMode && diagnosticMode;
+            assert.equal(routes(liveness, event, 'refs/heads/experiment/shared-playback-cache', benchmarkMode, smokeMode, diagnosticMode), expectedLiveness);
+            assert.equal(routes(diagnostics, event, 'refs/heads/experiment/shared-playback-cache', false, smokeMode, diagnosticMode),
+                event === 'workflow_dispatch' && diagnosticMode && !smokeMode);
+            assert.equal(routes(smoke, event, 'refs/heads/experiment/shared-playback-cache', false, smokeMode, diagnosticMode),
+                event === 'workflow_dispatch' && smokeMode && !diagnosticMode);
+            assert.equal(routes(manual, event, 'refs/heads/experiment/shared-playback-cache', benchmarkMode, smokeMode, diagnosticMode),
+                event === 'workflow_dispatch' && !benchmarkMode && !smokeMode && !diagnosticMode);
+            assert.equal(routes(benchmark, event, 'refs/heads/experiment/shared-playback-cache', benchmarkMode, smokeMode, diagnosticMode),
+                event === 'workflow_dispatch' && benchmarkMode && !smokeMode && !diagnosticMode);
+        }
     }
     assert.match(diagnostics, /timeout-minutes: 10/);
     assert.match(diagnostics, /windows-stability\.cjs/);
     assert.match(diagnostics, /SHARED_STABILITY_REPEATS: \$\{\{ inputs\.benchmark_trials \}\}/);
     assert.doesNotMatch(diagnostics, /GH_TOKEN|actions: read|ci-windows-test-package|windows-ci\.ps1|build\.ps1/);
+});
+
+test('combined smoke and diagnostics dispatch only the owned runtime liveness job', () => {
+    const liveness = jobBlock('windows-shared-cache-liveness');
+    const ciScript = fs.readFileSync(path.join(__dirname, '../tools/shared-playback-cache/windows-ci.ps1'), 'utf8').replace(/\r\n/g, '\n');
+    assertPinnedSource(liveness);
+    for (const event of ['push', 'pull_request', 'workflow_run', 'pull_request_target', 'workflow_dispatch']) {
+        for (const benchmarkMode of [false, true]) for (const smokeMode of [false, true]) for (const diagnosticMode of [false, true]) {
+            const selected = event === 'workflow_dispatch' && smokeMode && diagnosticMode;
+            assert.equal(routes(liveness, event, 'refs/heads/experiment/shared-playback-cache', benchmarkMode, smokeMode, diagnosticMode), selected);
+            assert.equal(routes(jobBlock('windows-shared-cache-smoke'), event, 'refs/heads/experiment/shared-playback-cache', benchmarkMode, smokeMode, diagnosticMode),
+                event === 'workflow_dispatch' && smokeMode && !diagnosticMode);
+            assert.equal(routes(jobBlock('windows-shared-cache-diagnostics'), event, 'refs/heads/experiment/shared-playback-cache', benchmarkMode, smokeMode, diagnosticMode),
+                event === 'workflow_dispatch' && diagnosticMode && !smokeMode);
+            assert.equal(routes(manual, event, 'refs/heads/experiment/shared-playback-cache', benchmarkMode, smokeMode, diagnosticMode),
+                event === 'workflow_dispatch' && !benchmarkMode && !smokeMode && !diagnosticMode);
+            assert.equal(routes(benchmark, event, 'refs/heads/experiment/shared-playback-cache', benchmarkMode, smokeMode, diagnosticMode),
+                event === 'workflow_dispatch' && benchmarkMode && !smokeMode && !diagnosticMode);
+        }
+    }
+    assert.match(liveness, /^    runs-on: windows-2022$/m);
+    assert.match(liveness, /^    timeout-minutes: 10$/m);
+    assert.match(liveness, /permissions:\n      contents: read\n      actions: read/);
+    assert.match(liveness, /group: ete-shared-cache-runtime-liveness/);
+    assert.match(liveness, /cancel-in-progress: false/);
+    assert.match(liveness, /GH_TOKEN: \$\{\{ github\.token \}\}/);
+    assert.match(liveness, /windows-ci\.ps1 .* -LivenessOnly/);
+    assert.doesNotMatch(liveness, /ci-windows-test-package|npm (?:ci|install)|build\.ps1/);
+    assert.match(liveness, /AUDIT_RELEASE: \$\{\{ inputs\.release_package \}\}/);
+    assert.match(liveness, /AUDIT_BENCHMARK: \$\{\{ inputs\.build_input_benchmark \}\}/);
+    assert.match(liveness, /AUDIT_TOOL_SHA: \$\{\{ inputs\.benchmark_expected_sha \}\}/);
+    assert.match(liveness, /if \(\$env:AUDIT_SMOKE -ne 'true' -or \$env:AUDIT_DIAGNOSTICS -ne 'true' -or \$env:AUDIT_BENCHMARK -eq 'true' -or \$env:AUDIT_RELEASE -eq 'true'/);
+    assert.match(liveness, /\$env:AUDIT_TOOL_SHA -cnotmatch '\^\[a-f0-9\]\{40\}\$' -or \$env:AUDIT_TOOL_SHA -cne \$env:GITHUB_SHA/);
+    assert.match(ciScript, /finally \{ \$headers\.Clear\(\); Remove-Item Env:GH_TOKEN -ErrorAction SilentlyContinue \}/);
+    const tokenRemoval = ciScript.indexOf('finally { $headers.Clear(); Remove-Item Env:GH_TOKEN -ErrorAction SilentlyContinue }');
+    const livenessInvocation = ciScript.indexOf("'windows-liveness.cjs'");
+    assert.ok(tokenRemoval >= 0 && livenessInvocation > tokenRemoval, 'artifact token must be cleared before liveness child launch');
 });
