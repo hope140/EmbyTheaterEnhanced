@@ -54,7 +54,7 @@ function identity(runtimeRoot, homeFlow) {
     const prepared = (manifest.preparedArtifacts || []).filter(row => row.runtimePath === 'electronapp/preload.js');
     if (prepared.length !== 1 || prepared[0].runtimeSha256 !== digest('electronapp/preload.js')) fail();
     for (const overlay of DETAIL_OVERLAYS) if (digest(overlay.path) !== overlay.sha256) fail();
-    if (homeFlow && homeFlow !== 'baseline') for (const overlay of FLOW_OVERLAYS) if (digest(overlay.path) !== overlay.sha256) fail();
+    for (const overlay of FLOW_OVERLAYS) if (digest(overlay.path) !== overlay.sha256) fail();
     return manifest.sourceCommit;
 }
 function prepare(options) {
