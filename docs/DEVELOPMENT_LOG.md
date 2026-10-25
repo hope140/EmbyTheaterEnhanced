@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-25 — 专用更新缓存与正常退出后的安装向导
+
+独立候选从已整合0.4.2／0.4.3的指定main `8745493d92fb4348d5af2d86d13797f0a8760e81` 开发，移除更新目录选择。用户点击后仍先从官方Tag重核附件；受管目录记录文件归属，已有好包复核后复用，新版本另存且失败不覆盖旧包。交接守卫锁定路径／文件并重算官方SHA及Zone，私有握手完成后排队原 `app.quit()`，确认实际Electron与同目录Host退出再以系统Shell无参数打开向导。下一次同位置目标／更新版本启动才做有限身份清理，旧版／失败／忙碌／未知文件保留。
+
+没有重建Host自动更新、改管理员持久设置或代理认证行为。新增离线缓存与状态机测试、实际Windows无执行锁／清理测试，后者在Linux明确跳过；C#编译和PowerShell语法不代替Windows API、UAC／SmartScreen或实机安装。包内自检扩至9项、绑定11份模块，保留原零网络／真实profile／安装执行门禁。完整合同与交接见[手动更新](MANUAL_APP_UPDATE.md)；本轮不自行dispatch、运行软件安装包或退出Work现用进程。
+
 ## 2026-10-25 — 文档入口与当前发行状态
 
 已核对远端 main 与 v0.4.3 Tag 同为 `69e55b91a0cc6ba4b01ce60cb65d9aca41b0311e`（含 PR #77）。[v0.4.3](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.3) 于 2026-10-25 发布为测试版，Latest 正式版仍为 [v0.4.0](https://github.com/hope140/EmbyTheaterEnhanced/releases/latest)，v0.4.2 为上一批测试版。

@@ -83,7 +83,9 @@ function harness(options = {}) {
         preferences: {read: options.read || (() => saved), save: async value => { saves++; if (options.saveFailure) throw Error('synthetic save failed'); saved = value; }},
         requestJson: (url, settings) => requester(url, settings), checkTimeoutMs: options.timeout || 30000,
         dialog: {showOpenDialog: async () => { picker++; return options.picker ? options.picker() : {canceled: true}; }},
-        downloadInstaller: async () => { download++; return {status: 'downloaded'}; }});
+        updateCache: {recovery: () => false,
+            download: async (_asset, settings) => { download++; return options.downloading ? options.downloading(settings) : {source: 'github'}; },
+            prepare: async () => ({commit() {}, abort() {}})}, quitForUpdate() {}});
     return {handlers, event, unregister, request(fn) { requester = fn; }, counts: () => ({saves, picker, download}),
         invoke: (channel, payload) => handlers.get(channel)(event, payload)};
 }
@@ -104,19 +106,19 @@ test('switching aborts and drains the old check, clears its candidate/links and 
     await h.unregister();
 });
 
-test('download locks the channel through revalidation/picker; after cancellation switching clears the candidate', async () => {
-    let chosen;
-    const h = harness({channel: 'testing', picker: () => new Promise(resolve => { chosen = resolve; })});
+test('download locks the channel through managed transfer; after cancellation switching clears the candidate', async () => {
+    let finishDownload;
+    const h = harness({channel: 'testing', downloading: () => new Promise(resolve => { finishDownload = resolve; })});
     assert.equal((await h.invoke(ipc.CHANNELS.CHECK_UPDATE)).latestVersion, '0.4.1');
     const downloading = h.invoke(ipc.CHANNELS.DOWNLOAD); await tick();
-    assert.equal(h.counts().picker, 1);
+    assert.equal(h.counts().picker, 0); assert.equal(h.counts().download, 1);
     assert.equal((await h.invoke(ipc.CHANNELS.SET_CHANNEL, {channel: 'stable'})).reason, 'busy');
     assert.equal((await h.invoke(ipc.CHANNELS.GET_CHANNEL)).channel, 'testing'); assert.equal(h.counts().saves, 0);
-    await h.invoke(ipc.CHANNELS.CANCEL); assert.equal((await downloading).status, 'cancelled');
-    chosen({filePaths: ['/late-selection']});
+    await h.invoke(ipc.CHANNELS.CANCEL); finishDownload({source: 'github'});
+    assert.equal((await downloading).status, 'cancelled');
     assert.equal((await h.invoke(ipc.CHANNELS.SET_CHANNEL, {channel: 'stable'})).status, 'saved');
     assert.equal((await h.invoke(ipc.CHANNELS.DOWNLOAD)).reason, 'verification-unavailable');
-    assert.equal(h.counts().download, 0); await h.unregister();
+    assert.equal(h.counts().download, 1); await h.unregister();
 });
 
 test('failed persistence keeps the previous channel but retires old candidate and link permissions', async () => {

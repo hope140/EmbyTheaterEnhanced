@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-25 — 独立更新缓存与安装交接候选
+
+`feature/managed-app-update-install` 直接基于 main `8745493d92fb4348d5af2d86d13797f0a8760e81`，不重合旧更新分支，不改0.4.3版本号／已发布Release。手动点击下载改用当前用户专用缓存，完整校验后正常退出并打开安装向导，下次同位置启动目标／更新版本才按已知文件身份清理。正式／测试通道、官方独立校验、代理边界和说明链接保持；无后台检查／下载、静默安装、目录设置或播放确认。
+
+已增加受管缓存／私有交接／Windows句柄守卫及不可执行文本回归，包内入口扩至9项、绑定11份更新模块。实现合同、复验命令与实机清单见[手动更新](MANUAL_APP_UPDATE.md)。本地受控验证与Windows原生／真实安装分开记录；本任务不操作现用客户端、不自行打包／安装、合main或发布。
+
 ## 2026-10-25 — 文档入口与当前发行状态
 
 已核对远端 main 与 v0.4.3 Tag 同为 `69e55b91a0cc6ba4b01ce60cb65d9aca41b0311e`（含 PR #77）。[v0.4.3](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.3) 于 2026-10-25 发布为测试版，Latest 正式版仍为 [v0.4.0](https://github.com/hope140/EmbyTheaterEnhanced/releases/latest)，v0.4.2 为上一批测试版。

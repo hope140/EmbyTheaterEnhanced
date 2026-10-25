@@ -31,6 +31,7 @@ function register(options) {
     let checkedNoteUrls = new Set();
     let channel = null, channelLoad = null, channelChange = null, channelRevision = 0;
     let unregisterPromise = null;
+    let installing = false;
 
     function currentChannel() {
         if (channel !== null) return Promise.resolve(channel);
@@ -43,7 +44,7 @@ function register(options) {
     }
 
     function operation(kind, work) {
-        if (closing || active || channelChange) return Promise.resolve({status: 'error', reason: closing ? 'closed' : 'busy'});
+        if (closing || active || channelChange || installing) return Promise.resolve({status: 'error', reason: closing ? 'closed' : 'busy'});
         const controller = new AbortController();
         const record = {kind, controller, done: null};
         const timer = kind === 'check' ? setTimeout(() => { record.timedOut = true; controller.abort(); }, settings.checkTimeoutMs || 30000) : null;
@@ -54,7 +55,9 @@ function register(options) {
                 return record.timedOut ? {status: 'error', reason: 'timeout'} : result;
             }
             catch (error) {
-                const reasons = new Set(['file-exists', 'directory-invalid', 'unsafe-redirect', 'http-rejected', 'encoding-rejected', 'size-mismatch', 'hash-mismatch', 'timeout']);
+                const reasons = new Set(['file-exists', 'directory-invalid', 'unsafe-redirect', 'http-rejected', 'encoding-rejected', 'size-mismatch', 'hash-mismatch', 'timeout', 'cache-unsafe', 'disk-full', 'installer-launch-failed']);
+                if (['ENOSPC', 'EDQUOT'].includes(error.code)) return {status: 'error', reason: 'disk-full'};
+                if (['EACCES', 'EPERM', 'EROFS'].includes(error.code)) return {status: 'error', reason: 'cache-unwritable'};
                 return record.timedOut ? {status: 'error', reason: 'timeout'} : controller.signal.aborted ? {status: 'cancelled'} :
                     {status: 'error', reason: reasons.has(error.code) ? error.code : 'maintenance_operation_failed'};
             } finally { if (timer) clearTimeout(timer); if (active === record) active = null; }
@@ -109,13 +112,14 @@ function register(options) {
         if (request !== undefined) return {status: 'error', reason: 'invalid-request'};
         if (channelChange) await channelChange.catch(() => {});
         if (closing) return {status: 'error', reason: 'closed'};
-        return {status: 'ok', channel: await currentChannel()};
+        const recovery = settings.updateCache ? await settings.updateCache.recovery() : false;
+        return {status: 'ok', channel: await currentChannel(), recovery};
     });
 
     registerHandler(CHANNELS.SET_CHANNEL, function (request) {
         if (!request || typeof request !== 'object' || Array.isArray(request) || Object.keys(request).length !== 1 ||
             !Object.hasOwn(request, 'channel') || !['stable', 'testing'].includes(request.channel)) return {status: 'error', reason: 'invalid-request'};
-        if (channelChange || (active && active.kind === 'download')) return {status: 'error', reason: 'busy'};
+        if (installing || channelChange || (active && active.kind === 'download')) return {status: 'error', reason: 'busy'};
         channelRevision++;
         candidate = null; checkedNoteUrls.clear();
         const previous = active;
@@ -156,6 +160,7 @@ function register(options) {
 
     registerHandler(CHANNELS.CANCEL, function (request) {
         if (request !== undefined) return {status: 'error', reason: 'invalid-request'};
+        if (installing) return {status: 'error', reason: 'busy'};
         if (active) active.controller.abort();
         return {status: 'cancelled'};
     });
@@ -179,19 +184,14 @@ function register(options) {
                 candidate = null;
                 return {status: 'error', reason: 'release-changed'};
             }
-            if (!settings.dialog || typeof settings.dialog.showOpenDialog !== 'function') return {status: 'error', reason: 'dialog-unavailable'};
-            const cancelled = new Promise(resolve => signal.addEventListener('abort', () => resolve({canceled: true}), {once: true}));
-            const chosen = await Promise.race([settings.dialog.showOpenDialog(settings.getBrowserWindow && settings.getBrowserWindow(), {
-                title: '选择软件更新下载目录', properties: ['openDirectory']
-            }), cancelled]);
-            if (signal.aborted || !chosen || chosen.canceled) return {status: 'cancelled'};
-            if (!Array.isArray(chosen.filePaths) || chosen.filePaths.length !== 1 || typeof chosen.filePaths[0] !== 'string') return {status: 'error', reason: 'directory-invalid'};
+            if (!settings.updateCache || typeof settings.quitForUpdate !== 'function') return {status: 'error', reason: 'installer-launch-failed'};
             const deadline = Date.now() + 10 * 60 * 1000;
             const downloadRecord = active;
             const timer = setTimeout(() => { downloadRecord.timedOut = true; downloadRecord.controller.abort(); }, 10 * 60 * 1000);
             let lastProgress = 0;
             try {
-                return await (settings.downloadInstaller || appUpdate.downloadInstaller)(fresh.installer, chosen.filePaths[0], {
+                const downloaded = await settings.updateCache.download(fresh.installer, {
+                    currentVersion: selected.currentVersion, targetVersion: fresh.latestVersion, tag: fresh.releaseTag,
                     signal, deadline, onProgress: function (progress) {
                         if (Date.now() - lastProgress < 150 && progress.bytes !== 0 && progress.bytes !== progress.total) return;
                         lastProgress = Date.now();
@@ -200,6 +200,19 @@ function register(options) {
                             rendererBoundary.isApplicationDocument(contents.mainFrame.url)) contents.send(CHANNELS.PROGRESS, progress);
                     }
                 });
+                if (signal.aborted) return {status: 'cancelled'};
+                const lease = await settings.updateCache.prepare(downloaded, signal);
+                try {
+                    if (signal.aborted) return {status: 'cancelled'};
+                    if (Date.now() >= deadline) throw Object.assign(Error('timeout'), {code: 'timeout'});
+                    await lease.commit();
+                    installing = true;
+                    // Queue normal quit after this IPC operation releases its owner,
+                    // so before-quit can drain maintenance without a self-deadlock.
+                    settings.quitForUpdate();
+                    return {status: 'installing', fileName: fresh.installer.name, sha256: fresh.installer.sha256,
+                        source: downloaded.source, directory: downloaded.directory, reused: downloaded.reused};
+                } finally { if (!installing) await lease.abort(); }
             } finally { clearTimeout(timer); }
         });
     });
@@ -230,7 +243,8 @@ function register(options) {
         checkedNoteUrls.clear();
         if (active) active.controller.abort();
         if (typeof ipcMain.removeHandler === 'function') registered.forEach(function (channel) { ipcMain.removeHandler(channel); });
-        unregisterPromise = Promise.allSettled([active && active.done, channelChange, channelLoad]).then(() => undefined);
+        unregisterPromise = Promise.allSettled([active && active.done, channelChange, channelLoad,
+            settings.updateCache && settings.updateCache.close && settings.updateCache.close()]).then(() => undefined);
         return unregisterPromise;
     };
 }

@@ -1,6 +1,6 @@
-# ETE 手动软件更新候选
+# ETE 手动软件更新
 
-本功能属于正式版之后的独立候选，分支 `feature/manual-app-update`。最初基于已验证的 `6858c71103605ff66c630f1cd7e1e9fdbdeab000` 开发；现已正常重基到指定 v0.4.0 main 提交 `88578c91ab19d44eecddcfae096d37dc917ef1f4`，沿用该基线的0.4.0版本字段，不另改版本。本文不将正式构建、Tag或Release的尚未执行步骤称为已完成；Host退役、发布五附件与来源检查保持。
+检查、通道、说明链接和校验下载已随 v0.4.2／v0.4.3 整合。本次下载／安装流程优化独立位于 `feature/managed-app-update-install`，直接基于 main `8745493d92fb4348d5af2d86d13797f0a8760e81`；没有重新合入旧更新分支，没有修改已发布版本或 Release。以下新交接合同尚需 Windows 实机验收；已发布包的旧流程见用户指南。
 
 ## 现有入口与最小行为
 
@@ -8,9 +8,9 @@
 
 现在仅用户点击“检查更新”请求官方元数据，原位显示当前版本、正式渠道版本和可展开的说明；不弹通知、不在进入页面或启动时检查。说明默认作为文本，有限识别 HTTP/HTTPS 链接，不执行 HTML、脚本或图片。当前版本高于正式渠道时明确显示“高于正式渠道”，不误称最新或提供降级下载。
 
-发现更高正式版且安装附件身份可用后才启用“下载更新”。点击后重新向官方确认准确 Tag 的附件身份，再由 main 打开目录选择器。主界面没有下载源菜单或自定义地址。进度和取消属于这次点击启动的操作；实际来源、文件名、保存目录和 SHA-256 在下载详情中展示。下载完成只给出正常退出客户端、用户自行运行安装器的说明；没有执行、提权、重启、替换安装、管理员持久设置或凭据操作。
+发现所选通道更高版本且安装附件身份可用后才启用“下载更新”。点击后重新向官方确认准确 Tag 的附件身份，自动使用当前用户 ETE profile 的专用 `updates` 缓存（默认 `%APPDATA%\EmbyTheaterEnhanced\updates`），不打开保存路径对话框，不增加目录设置。主界面没有下载源菜单或自定义地址。校验完整后准备独立交接，正常退出客户端后打开安装向导；不静默安装、不自动完成向导、不增加播放确认。进度、取消和实际来源详情保持。
 
-“取消检查”仅在本次检查进行中显示，“取消下载”覆盖本次下载的官方重核验、目录选择与传输阶段。点击后禁用以去重，仍等待原操作收尾；闲置、已是最新、完成、错误及页面退休时隐藏。离页继续取消所属操作、移除进度监听并使迟到回复失效。更新说明与下载详情保留原生 `details/summary`，局部统一箭头、间距、正文换行及明暗主题焦点；键盘 Tab 可达，Enter／Space 展开或收起，不引入额外菜单或弹窗。
+“取消检查”仅在检查进行中显示，“取消下载”覆盖官方重核验、传输、缓存复核和交接提交前的准备。点击后禁用以去重，等待原操作收尾；闲置、完成、错误及页面退休时隐藏。交接确认后隐藏取消并锁定更新动作，沿原正常退出收尾。离页取消尚未提交的操作，移除进度监听并退休迟到回复。原说明展开、主题、键盘及安全链接行为保持。
 
 说明中的 `[文字](http/https地址)` 显示简短可点击文字；裸 HTTP/HTTPS 链接也可点击，过长地址显示主机加省略号，完整目标保留在悬停提示及无障碍名称中。其余 Markdown（含标题）、HTML、图片语法均保持文本，不加入完整 Markdown 引擎、图片请求或网页预览。渲染仅创建文本节点及固定属性的 `a` 元素，不使用 `innerHTML`；main 与 renderer 共用同一受限解析器。正文上限仍为65536字符，URL最多2048字符，拒绝非法地址、控制／空白／反斜线、嵌入凭据和非HTTP(S)协议。
 
@@ -18,9 +18,9 @@
 
 ## 更新通道
 
-原生 EmbySelect 提供“正式通道”和“测试通道”，默认正式。选择保存在 ETE profile 的 config/app-update.json（schemaVersion=1，channel=stable/testing）；进入页面只读取本地选择，不发起版本请求。只有用户改变选择时才以同目录临时文件、原子替换保存；写入失败保留旧文件及原通道，未知配置格式／重定向路径拒绝，不静默覆盖。只持久化通道，不持久化查询结果、候选、URL、下载或凭据。
+原生 EmbySelect 提供“正式通道”和“测试通道”，默认正式。选择保存在 ETE profile 的 config/app-update.json（schemaVersion=1，channel=stable/testing）；进入页面只读取本地选择和未完成安装提示，不发起版本请求。选择变更仍原子保存；写入失败保留旧文件及原通道，未知配置格式／重定向路径拒绝。查询候选不持久化；专用更新缓存另外记录附件身份、所属文件 ID 和安装意图，不存凭据。
 
-检查期间切换通道会先退休页面代次，main 中止并等待旧检查收尾，清空旧候选及说明链接集合，再保存新选择；保存成功也须再次主动点击检查。下载期间（包括官方重核验与目录选择）禁用选择器，main 同样拒绝切换；先取消或完成下载后再更改。页面重入等待进行中的通道保存完成再读取，不让迟到查询／保存回复改写新状态。
+检查期间切换通道会先退休页面代次，main 中止并等待旧检查收尾，清空旧候选及说明链接集合，再保存新选择；保存成功也须再次主动点击检查。下载／交接期间禁用选择器，main 同样拒绝切换；取消并收尾后才能更改。页面重入等待进行中的通道保存完成再读取，不让迟到查询／保存回复改写新状态。
 
 ## 正式渠道与五附件
 
@@ -58,44 +58,60 @@
 - 最多 4 次重定向；只接受准确资产 URL、当前固定代理包装 URL，或官方 `release-assets.githubusercontent.com` / `objects.githubusercontent.com` HTTPS 资产主机。拒绝 HTTP 降级、用户信息、端口、fragment、未知主机；不跨元数据端点跟随跳转。来源详情记录发起此次完整下载的源，不记录带签名的 CDN 跳转 URL。
 - 从官方精确长度约束流，逐块 SHA-256。临时文件在选定绝对物理目录中以随机 `.part`、独占创建；保存目录和临时文件的设备／文件身份采用 BigInt，在写 Internet zone 和最终提交前复核，避免64位文件ID被Number舍入合并。最终使用原子 no-replace hard link 提交，同名已存在或提交时竞争均不覆盖已有文件。finally 仅尝试删除身份仍相符的本次临时文件，不清扫其它文件；路径被交换时拒绝提交并保留不再能安全定位的文件，不猜新路径删除。目录不支持所需文件系统操作时失败，不降级为覆盖写入。这些检查不等于对同权限恶意进程的完整原子文件系统隔离。
 - Windows 下载提交前写入并回读 `Zone.Identifier` 的 Internet Zone 3，保留固定公开来源；本机路径必须为磁盘路径，不接受 UNC 或重定向目录。ADS 不支持或被拒绝则不产出最终安装器。此步骤不关闭 Attachment Manager、SmartScreen 或浏览器警告；真实 Windows 文件系统与警告行为需单独验收。格式依据：[Microsoft Zone.Identifier](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/6e3f7352-d11c-4d76-8c39-2516a9df36e8)。
-- main 只持有一个检查/下载操作；重复请求返回 busy，不排队创建额外下载。取消中断网络，页面暂停退休代次、移除进度监听，迟到结果不得修改新页面。应用退出中断并等待所属网络/文件操作；原生目录对话框不能程序关闭，但退出不等待其 UI Promise，迟到选择不能重新下载。
+- main 只持有一个检查/下载操作；重复请求返回 busy，不排队创建额外下载。取消中断网络，页面暂停退休代次、移除进度监听，迟到结果不得修改新页面。应用退出中断并等待未提交的网络／文件／交接进程；已提交的交接等客户端退出后打开向导。
 - maintenance 的读取／复制／检查／下载／取消 IPC 均拒绝附加 payload；外链 IPC 只接受单字段字符串 `{url}`，安全出口仅为固定仓库的 releases 根页、latest 或合法版本 Tag 页面，不允许资产执行路径、认证信息、query 或 fragment。页面直接 destroy 即使未经 pause，也会取消更新并移除进度监听。
-- 仅保存用户选择的更新通道，不增加后台检查定时器、自动检查/下载、TTL、安装调度或内核管理功能。操作期限和进度节流仅属于用户点击后的请求。
+- 不增加后台版本检查、自动下载、TTL、静默安装或内核管理。启动时只做本地已安装版本与缓存记录对账；网络仍只能由用户点击触发。
+
+## 专用缓存与安装交接候选
+
+每个附件使用随机 `update-<32hex>` 子目录，保存有限 schema 的 receipt、已创建临时文件的设备／文件 ID、附件官方身份、SHA／长度和目标版本。renderer 不能传路径、执行参数或摘要。磁盘预算先检查可用空间，实际 ENOSPC／配额／权限错误仍停止且保留旧好包。网络失败／取消收尾原有 `.part`，空的受管尝试可复用；已完成好包重试前重新读取官方 Tag，再复核文件身份与完整 SHA，避免重复下载。新版本使用独立目录，成功启动新版本之前不替换／删除旧好包。
+
+最终交接使用系统 Windows PowerShell 5.1 的固定源码命令及包内 C# 文件守卫，不依赖已退役 Host 更新逻辑，不保持安装目录中的可执行映像或脚本文件句柄。命令源码来自本包，数据走独立 ASCII JSON stdin（Unicode 路径用 JSON 转义），没有 shell 插值、外部命令输入或网络能力。环境仅保留 Windows 和用户目录所需的明确字段，不继承 Token／代理／Node 注入环境；不改变 PowerShell 策略或语言模式，受系统限制时失败关闭。
+
+守卫逐级打开目录，拒绝 reparse point，禁止目录写入／重命名／删除；按卷序号和 64 位文件 ID 核对专用根和尝试目录。安装包只共享读取，拒绝多硬链接、写入和替换，**在持有同一文件句柄时**核对长度与官方 SHA；另锁定并回读原 Zone 3。只在准备成功并完成私有提交握手后才安排 `app.quit()`；保留现有 before-quit 资源 drain。交接捕获实际 Electron 进程及同安装目录 Host 的进程句柄，确认它们真实退出后才 `UseShellExecute=true`、无参数打开向导，保留 UAC／系统安全检查。准备限30秒、提交握手限5秒；正常退出若120秒仍受阻则交接放弃，不强杀客户端，也不等某次不相关的未来退出。准备取消须等所属子进程实际退出；提交后取消入口锁定。向导退出之前保持安装文件锁。
+
+向导取消、UAC拒绝或执行失败不会被记为安装成功。重新启动旧版时显示未完成更新提示；再点击检查／下载，官方身份仍一致才复用已校验包。新进程从实际运行包的 `app.getVersion()` 读取版本，只有同一 executable 位置、有效 SemVer 且版本达到／超过记录目标，才清理相应受管记录。**这表示该位置启动了目标或更新版本，不表示安装器返回成功、不表示 Authenticode 签名验证**。向导自行选择另一安装目录时，旧位置不会据此确认完成。
+
+清理经 Windows 句柄执行：只接受已记录的固定安装包名、受管 `.part` 和 receipt，检查卷／文件 ID／单硬链接，完整文件及 receipt 另核长度／SHA，通过 handle disposition 删除同一对象；只删空的受管尝试目录，不递归删除。路径交换、未知文件、损坏 receipt 或忙碌安装包均保留，不把 Downloads 文件纳入扫描。若安装器结束前启动了新版导致文件仍忙，本次保留，下次启动再核验。崩溃恰在创建文件与落账之间可能留下无法证明归属的文件；保守保留，不猜测清扫。该合同不声称能防御已控制同一用户进程／安装源码／全部收据的攻击者。
+
+API依据：[Windows文件共享与reparse规则](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilea)、[按句柄删除](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-setfileinformationbyhandle)、[系统Shell执行](https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.processstartinfo.useshellexecute?view=netframework-4.8.1)、[Electron正常退出](https://www.electronjs.org/docs/latest/api/app#appquit)、[libuv Windows卷／文件ID映射](https://github.com/libuv/libuv/blob/v1.x/src/win/fs.c)。
 
 ## 验证与待验收
 
-`node --test tests/app-update-preferences.test.cjs tests/release-note-links.test.cjs tests/manual-app-update*.test.cjs tests/settings-visual-system.test.cjs tests/settings-night-audit.test.cjs` 使用注入的受控 HTTPS 响应、合成非可执行文本、临时文件和 AMD 控制器模拟，覆盖通道持久化／切换竞态、draft及prerelease过滤、SemVer／分页、官方重核验、错误大小/哈希、危险重定向、证书失败、HTTP 拒绝不回退、串行备用、进度取消、同名保护、退出与迟到回复、受限说明链接及恶意内容、无自动安装。Windows 条件分支会在 Windows 测试中回读最终文件的 Internet-zone ADS；Linux 结果不替代该分支。
+仓库离线回归：
 
-真实在线证据、Windows 整包构建、GUI、系统安装、代理大文件与长期稳定性分别记录。单元测试成功不代表这些范围已通过。待完成：候选代理名单最终确认、Windows ADS/no-replace/目录对话框及实际 Electron UI 验证；不访问真实 NAS 或正式安装目录。
+```sh
+node --test tests/app-update-preferences.test.cjs tests/release-note-links.test.cjs tests/manual-app-update*.test.cjs tests/update-install*.test.cjs
+```
 
-## 独立测试包交接
+受控网络、合成非可执行文本、临时文件和模拟进程分别验证通道／官方重核验／代理、目录归属、重复点击、取消收尾、磁盘和执行失败、旧包保留、目标版本确认及篡改拒绝。`update-install-windows.test.cjs` 仅在 Windows 调用实际系统 PowerShell 5.1／C#／文件句柄，验证 Unicode 路径、锁、摘要／卷／文件 ID／Zone／硬链接拒绝、取消和按句柄清理；**不提交交接、不运行安装包或退出客户端**。Linux 明确跳过这些 Windows 原生用例，只编译 C#、解析 PowerShell 并测试受控状态机。
 
-产品接线为 About → maintenance IPC → 固定官方元数据/独立下载模块；`main.js` 已传入 Electron 目录选择器，新增维护模块由既有 `src/electronapp` Git blob 复制与 provenance 范围自动纳入，不需改 vendor 或扩大发布附件。没有产品环境的 mock URL/跳过 TLS/跳过校验开关；网络和 UI 的注入只存在于 Node 测试调用参数中，renderer 无权提供。
+## 独立测试包与实机交接
 
-协调者在独立分支准确提交上使用现有 `.github/workflows/public-ci.yml` 的 `workflow_dispatch`，**`release_package=false`**。原工作流会用 `github.sha` 精确 checkout、独立编译/验证 Host、全回归，再构建测试名安装器并只上传 artifact；不运行安装器、不发布 Release。runtime、安装器和 artifact 名含 sourceCommit/run/attempt，保留原不可覆盖门禁。无需修改工作流或版本号。
+新增 JS／PowerShell／C# 都在 `src/electronapp` 既有 Git blob／provenance 范围内，不修改 vendor、Host、安装器或发布附件数量。没有产品 mock URL／忽略 TLS／绕过校验开关。独立分支准确提交可由协调者使用既有 workflow_dispatch、`release_package=false` 构建独立测试 artifact；本次不自行 dispatch、安装、退出 Work 当前进程或发布。
 
-包内离线入口为 `electronapp/enhanced/manual-app-update-selftest.js`，不由 main／preload／renderer 导入，不接收任何参数，不提供 mock URL、凭据或安全绕过开关。使用已有、获准的 Node 可运行：
+包内无参数离线入口仍为：
 
 ```powershell
 node .\electronapp\enhanced\manual-app-update-selftest.js
 ```
 
-此入口只加载包内更新模块、生成不可执行的合成文本、在新建临时目录验证下载写入／校验／同名保护／取消／清理及匿名顺序源／IPC 拒绝，8项检查结束删除所属临时目录；真实网络请求为零，无应用 bootstrap、profile、Host、Electron GUI 或安装器执行。在 Windows 会实际写／回读该合成文件的 Zone 3。输出 `packageManifestBinding` 核对7份实际模块（含共享说明链接解析器及通道存储）与本包 build-manifest，并记录 sourceCommit；这是包内字节绑定，不是独立签名。仓库直接运行缺 manifest 时明确 `not-present / UNKNOWN`。
+入口执行9项合成检查，绑定11份更新模块（含缓存、交接源码和守卫）与包内 build-manifest，零真实网络、真实 profile、GUI 或安装执行。新增一项验证专用临时缓存复用与替换拒绝，不启动交接进程。`ci-windows-test-package.ps1` 在安装器编译前要求9项成功、sourceCommit一致及原零副作用条件；回执仍 `manual-app-update-selftest.json`，不扩大发布五附件。包内 manifest 绑定不等于独立签名。
 
-本分支的 `ci-windows-test-package.ps1` 已在完整runtime验证后、安装器编译前，用现有锁定 Node 自动调用此包内入口，要求 sourceCommit匹配、8项成功、零网络／profile／安装执行及临时文件清理；失败不继续打包。结果存为测试 artifact 的 `manual-app-update-selftest.json`，不增加用户 Release 的五附件合同。此接线尚待集中安排的真实Windows构建执行；Linux源文件或合成manifest试验不冒充已打出的Windows包。
-
-可复现的离线打包门禁回归：
+打包接线可复验：
 
 ```sh
 node --test tests/manual-app-update-package.test.cjs tests/manual-app-update-package-gate.test.cjs
 ```
 
-需要现有 Node 和 PowerShell 7（`pwsh`），不安装工具或获取网络材料。后一个回归从当前 HEAD 的 Git blobs 物化临时源码投影，以合成 manifest 执行打包脚本 AST 中原有的 Node 调用、回执条件及 JSON 写入语句；验证正常保存回执，以及 sourceCommit 不符、模块漂移和 manifest 缺失时不保存成功回执。此项覆盖 PowerShell／Node 接线，未执行完整 builder，不替代 Windows NTFS ADS、原生对话框、GUI 或安装器构建。
+后者从当前 HEAD Git blobs 物化合成源码投影，使用 PowerShell AST 执行原门禁及回执条件；源码须已提交。它不构建真实 Windows 安装器。
 
-最短人工范围（隔离 Windows 测试账户或 VM）：
+实机最短清单（另行安排隔离 Windows 测试账户／VM）：
 
-1. 核对 artifact/sourceCommit/provenance；先只解包核对，不安装到正式客户端目录。现有 profile 基于 `appData`，不能仅凭 Electron `--user-data-dir` 宣称已隔离真实配置。
-2. About 进入不检查；点击检查后仅原位显示官方正式版与纯文本说明；当前测试版本高于 Latest 时显示高于正式渠道，不启用降级下载；取消/返回无迟到改写。
-3. 真实更高稳定版可用时另行授权下载验收，确认目录选择、进度、取消、来源详情、同名不覆盖、官方 digest 一致和 Zone 3；不得把 mock 的下载通过写成这项已完成。安装始终由用户自行运行，本候选不执行。
+1. 核对准确分支 SHA／artifact／provenance；不要覆盖正式客户端。profile 使用 `appData`，仅传 Electron `--user-data-dir` 不足以隔离。使用单独 Windows 用户或现有经过来源校验的隔离启动入口，不修改 Work 现用配置。
+2. 进入 About 不联网；正式／测试通道、说明链接、取消和来源详情保持。测试包版本仍为基线0.4.3，不伪造更高公开版本或降低版本比较。完整真实下载／安装须有官方较高目标；缺少目标时明确无法完成端到端验收，不改生产URL或校验开关。
+3. 有合法更高目标后，点击下载不弹路径；验证进度／取消／断网／空间不足／快速重复点击。官方无法独立确认时停止。完成后应先正常退出 Electron 与同目录 Host，再出现可见安装向导，保留 UAC／SmartScreen，不静默安装。
+4. 取消向导或UAC、启动失败后重开旧版，检查更新再点下载应复核官方身份并复用好包；新版本另有缓存目录，不覆盖旧包。确认旧版启动不会清包。
+5. 在同位置完成安装并启动目标／更新版本后，仅对应受管文件清除；Downloads 中手动下载的同名文件保持。另选安装目录、仍忙碌的向导、改动的文件／receipt、未知文件都保留，不能误报清理成功。
 
-本分支不触发工作流或发布操作；由协调者在正式构建空闲后安排准确功能分支提交的独立测试包，以及后续其它已授权修复的独立测试集成。当前不合main，不把新功能混入正式发布构建。
+真实 Windows 安装／UAC／SmartScreen、完整客户端退出与 Host 实际退出顺序、代理大文件与长期稳定性仍需独立证据；受控自测不能替代这些结论。

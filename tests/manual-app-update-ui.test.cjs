@@ -86,11 +86,12 @@ test('download displays progress and actual source in details, cancels only on e
     assert.equal(h.view.querySelector('.btnCancelUpdate').hidden, true);
 });
 
-test('download completion provides manual instructions and never invokes shell or installation', async () => {
+test('verified handoff explains normal quit and wizard, with all update controls locked', async () => {
     const h = harness(), work = h.controller.downloadUpdate();
-    h.pending[0].resolve({status: 'downloaded', source: 'github', directory: '/test', fileName: 'fixture.exe', sha256: 'a'.repeat(64)}); await work;
-    assert.match(h.view.querySelector('.aboutUpdateState').textContent, /自行打开/);
-    assert.match(h.view.querySelector('.aboutUpdateState').textContent, /不代表数字签名/);
+    h.pending[0].resolve({status: 'installing', source: 'github', directory: '/test', fileName: 'fixture.exe', sha256: 'a'.repeat(64)}); await work;
+    assert.match(h.view.querySelector('.aboutUpdateState').textContent, /正常退出.*安装向导/);
+    assert.match(h.view.querySelector('.aboutUpdateState').textContent, /Windows 安全检查/);
+    for (const selector of ['.selectUpdateChannel', '.btnCheckUpdates', '.btnDownloadUpdate']) assert.equal(h.view.querySelector(selector).disabled, true);
     assert.equal(h.pending.length, 1); assert.equal(h.listeners.size, 0);
     assert.equal(h.view.querySelector('.btnCancelUpdate').hidden, true);
 });

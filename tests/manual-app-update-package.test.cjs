@@ -14,14 +14,15 @@ test('standalone package entry runs offline without application bootstrap or a p
     const result = await require('../src/electronapp/enhanced/manual-app-update-selftest').run();
     assert.equal(result.status, 'passed'); assert.equal(result.realNetworkRequests, 0); assert.equal(realRequests, 0);
     assert.equal(result.profileAccess, false); assert.equal(result.appBootstrap, false); assert.equal(result.installerExecuted, false);
-    assert.equal(result.temporaryFilesRemoved, true); assert.equal(result.checks.length, 8);
+    assert.equal(result.temporaryFilesRemoved, true); assert.equal(result.checks.length, 9);
 });
 
-test('unpacked-source fixture binds its seven modules to a synthetic manifest and refuses drift', t => {
+test('unpacked-source fixture binds its eleven modules to a synthetic manifest and refuses drift', t => {
     const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-package-entry-fixture-')));
     t.after(() => fs.rmSync(root, {recursive: true, force: true}));
     const directory = path.join(root, 'electronapp', 'enhanced'); fs.mkdirSync(directory, {recursive: true});
-    const names = ['manual-app-update.js', 'maintenance.js', 'maintenance-ipc.js', 'renderer-boundary.js', 'release-note-links.js', 'app-update-preferences.js', 'manual-app-update-selftest.js'];
+    const names = ['manual-app-update.js', 'maintenance.js', 'maintenance-ipc.js', 'renderer-boundary.js', 'release-note-links.js', 'app-update-preferences.js', 'manual-app-update-selftest.js',
+        'update-install-cache.js', 'update-install-handoff.js', 'update-install-handoff.ps1', 'update-install-guard.cs'];
     const files = names.map(name => {
         const bytes = fs.readFileSync(path.resolve(__dirname, '../src/electronapp/enhanced', name));
         fs.writeFileSync(path.join(directory, name), bytes);
