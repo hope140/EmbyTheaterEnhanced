@@ -1,10 +1,30 @@
 'use strict';
 const test = require('node:test'), assert = require('node:assert/strict');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path'), http = require('node:http');
+const {EventEmitter} = require('node:events');
 const hidden = require('../tools/playback-range-windows-hidden.cjs');
 const edl = require('../tools/playback-buffer-edl-probe.cjs');
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-async function settle(server) {const end = Date.now() + 3000; while (server.active.size || server.pendingWrites()) {if (Date.now() >= end) throw Error('owned-write-observation-timeout'); await delay(10);}}
+async function settle(server) {const end = Date.now() + 3000; while (!edl.physicalClosed(server.snapshot()) || server.pendingWrites()) {if (Date.now() >= end) throw Error('owned-write-observation-timeout'); await delay(10);}}
+test('close does not fabricate missing callbacks and late callbacks cannot rewrite the at-close snapshot', () => {
+    const response = new EventEmitter(), callbacks = []; response.write = (chunk, encoding, callback) => {callbacks.push(callback); return false;};
+    const row = {}; hidden.measureWrites(response, row); let forwarded = 0;
+    assert.equal(response.write(Buffer.alloc(3), () => {forwarded++;}), false);
+    response.write(Buffer.alloc(5), () => {forwarded++;}); callbacks[0]();
+    response.emit('close'); const atClose = JSON.stringify(row.closedWriteSnapshot);
+    assert.equal(row.pendingWriteCallbacks, 1); assert.deepEqual(row.flushedRanges, [[0, 3]]);
+    assert.deepEqual(row.pendingWriteRanges, [[3, 8]]); assert.equal(row.failedWriteCallbacks, 0);
+    callbacks[1](Error('synthetic-cancel')); callbacks[1](); response.emit('close');
+    assert.equal(forwarded, 2); assert.equal(row.pendingWriteCallbacks, 0); assert.equal(row.lateFailedCallbacks, 1);
+    assert.equal(JSON.stringify(row.closedWriteSnapshot), atClose); assert.deepEqual(row.flushedRanges, [[0, 3]]);
+});
+test('only a real late success adds a confirmed range, preserving closed unknown history', () => {
+    const response = new EventEmitter(); let complete; response.write = (chunk, encoding, callback) => {complete = callback; return true;};
+    const row = {}; hidden.measureWrites(response, row); response.write(Buffer.alloc(8)); response.emit('close');
+    const before = JSON.stringify(row.closedWriteSnapshot); assert.deepEqual(row.flushedRanges, []);
+    complete(); complete(); assert.deepEqual(row.flushedRanges, [[0, 8]]); assert.equal(row.lateSuccessfulCallbacks, 1);
+    assert.equal(row.pendingWriteCallbacks, 0); assert.equal(JSON.stringify(row.closedWriteSnapshot), before);
+});
 test('owned loopback aborted response can flush nonzero body while finish remains false', {timeout: 5000}, async t => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-write-observation-'));
     const size = 32 * 1024 * 1024; fs.writeFileSync(path.join(root, 'A.avi'), Buffer.alloc(size, 0x5a));
@@ -42,4 +62,13 @@ test('failed or pending write callbacks are never counted as confirmed payload',
     assert.throws(() => edl.network([{...base, writeMeasurementOverflow: true}], [[80, 120]], 200), /export-edl-input/);
     const old = edl.network([{method: 'GET', start: 80, bytesScheduled: 40, finished: false}], [[80, 120]], 200);
     assert.equal(old.writeCallbacksMeasured, false); assert.equal(old.callbackFlushedSavedPayloadBytes, null);
+});
+test('closed missing callback retains unknown payload while open missing callback remains a failure', () => {
+    const row = {method: 'GET', start: 80, bytesScheduled: 40, finished: false, writeMeasurement: true, closed: true,
+        bytesSubmitted: 40, pendingWriteCallbacks: 1, failedWriteCallbacks: 0, flushedRanges: [], pendingWriteRanges: [[0, 40]], writeMeasurementOverflow: false};
+    const result = edl.network([row], [[80, 120]], 200);
+    assert.equal(result.callbackUnknownSavedPayloadBytes, 40); assert.equal(result.callbackObservationsComplete, false);
+    assert.equal(result.transferAssessment, 'SAVED_PAYLOAD_DELIVERY_UNKNOWN_AFTER_CLOSE');
+    assert.equal(result.failedWriteCallbacks, 0); assert.equal(result.callbackFlushedSavedPayloadBytes, 0);
+    assert.throws(() => edl.network([{...row, closed: false}], [[80, 120]], 200), /export-edl-input/);
 });

@@ -31,16 +31,27 @@ function protectHiddenWindow(window) {
 }
 function measureWrites(response, row) {
     row.writeMeasurement = true; row.bytesSubmitted = 0; row.pendingWriteCallbacks = 0; row.failedWriteCallbacks = 0; row.flushedRanges = []; row.writeMeasurementOverflow = false;
+    row.closedWriteSnapshot = null; row.lateSuccessfulCallbacks = 0; row.lateFailedCallbacks = 0;
+    const pending = new Map(); let serial = 0, closed = false;
+    Object.defineProperty(row, 'pendingWriteRanges', {enumerable: true, get: () => [...pending.values()].map(range => [...range])});
+    response.once('close', () => {
+        closed = true;
+        row.closedWriteSnapshot = Object.freeze({pendingCallbacks: row.pendingWriteCallbacks,
+            unknownRanges: Object.freeze([...pending.values()].map(range => Object.freeze([...range])))});
+    });
     const original = response.write;
     response.write = function(chunk, encoding, callback) {
         if (typeof encoding === 'function') {callback = encoding; encoding = undefined;}
         const size = typeof chunk === 'string' ? Buffer.byteLength(chunk, encoding) : chunk.byteLength;
         const start = row.bytesSubmitted; row.bytesSubmitted += size; row.pendingWriteCallbacks++;
+        const id = ++serial;
+        if (pending.size < 4096) pending.set(id, [start, start + size]); else row.writeMeasurementOverflow = true;
         let settled = false;
         const complete = error => {
-            if (settled) return; settled = true; row.pendingWriteCallbacks--;
-            if (error) row.failedWriteCallbacks++;
+            if (settled) return; settled = true; row.pendingWriteCallbacks--; pending.delete(id);
+            if (error) {row.failedWriteCallbacks++; if (closed) row.lateFailedCallbacks++;}
             else if (size > 0) {
+                if (closed) row.lateSuccessfulCallbacks++;
                 if (row.flushedRanges.length < 4096) row.flushedRanges.push([start, start + size]); else row.writeMeasurementOverflow = true;
             }
             if (typeof callback === 'function') callback(error);
@@ -49,7 +60,7 @@ function measureWrites(response, row) {
     };
 }
 async function fixtureServer(plan, requestedPort = 0, observation = {}) {
-    const rows = [], sockets = new Set(), active = new Set(); let holdRule = null, held = null, closing = false;
+    const rows = [], sockets = new Set(), active = new Set(), streams = new Set(), rowSockets = new WeakMap(); let holdRule = null, held = null, closing = false;
     const server = http.createServer((req, res) => {
         if (closing || req.headers.authorization || req.headers.cookie || req.headers['x-emby-token']) {res.writeHead(403).end(); return;}
         const url = new URL(req.url, 'http://127.0.0.1'), matchName = /^\/Videos\/([AB])\/stream\.avi$/.exec(url.pathname);
@@ -63,6 +74,7 @@ async function fixtureServer(plan, requestedPort = 0, observation = {}) {
             start = +match[1]; end = match[2] ? Math.min(+match[2], end) : end;
         }
         const row = {item, start, end, method: req.method, status: match ? 206 : 200, closed: false, finished: false, held: false, bytesScheduled: 0}; rows.push(row); active.add(res);
+        rowSockets.set(row, req.socket); row.sourceStreamOpen = false;
         if (observation.measureWrites === true) measureWrites(res, row);
         const close = new Promise(resolve => res.once('close', () => {row.closed = true; active.delete(res); resolve();}));
         res.once('finish', () => {row.finished = true;});
@@ -73,6 +85,8 @@ async function fixtureServer(plan, requestedPort = 0, observation = {}) {
             res.writeHead(row.status, headers);
             if (req.method === 'HEAD') {res.end(); return;}
             const stream = fs.createReadStream(path.join(plan.out, proof.file), {start, end});
+            streams.add(stream); row.sourceStreamOpen = true;
+            stream.once('close', () => {streams.delete(stream); row.sourceStreamOpen = false;});
             stream.on('data', b => {row.bytesScheduled += b.length;}); stream.on('error', error => res.destroy(error));
             res.once('close', () => stream.destroy()); stream.pipe(res);
         }
@@ -80,14 +94,34 @@ async function fixtureServer(plan, requestedPort = 0, observation = {}) {
     });
     server.on('connection', socket => {sockets.add(socket); socket.once('close', () => sockets.delete(socket));});
     await new Promise((resolve, reject) => {server.once('error', reject); server.listen({host: '127.0.0.1', port: requestedPort, exclusive: true}, resolve);});
-    return {rows, active, origin: 'http://127.0.0.1:' + server.address().port, port: server.address().port,
+    const snapshot = (firstRequest = 0) => {
+        const summary = group => ({requests: group.length, activeResponses: group.filter(r => !r.closed).length,
+            pendingCallbacks: group.reduce((n, r) => n + (r.pendingWriteCallbacks || 0), 0),
+            pendingOpenCallbacks: group.filter(r => !r.closed).reduce((n, r) => n + (r.pendingWriteCallbacks || 0), 0),
+            pendingClosedCallbacks: group.filter(r => r.closed).reduce((n, r) => n + (r.pendingWriteCallbacks || 0), 0)});
+        return {resources: {activeResponses: active.size, openSockets: sockets.size, openSourceStreams: streams.size},
+            all: summary(rows), history: summary(rows.slice(0, firstRequest)), current: summary(rows.slice(firstRequest)),
+            requests: rows.slice(0, 128).map((r, ordinal) => ({ordinal, phase: ordinal < firstRequest ? 'history' : 'current', closed: r.closed, finished: r.finished,
+                socketOpen: sockets.has(rowSockets.get(r)), sourceStreamOpen: r.sourceStreamOpen, bytesScheduled: r.bytesScheduled,
+                bytesSubmitted: r.bytesSubmitted ?? null, pendingCallbacks: r.pendingWriteCallbacks ?? null, failedCallbacks: r.failedWriteCallbacks ?? null,
+                flushedBytes: r.flushedRanges?.reduce((n, [a, b]) => n + b - a, 0) ?? null,
+                pendingRanges: r.pendingWriteRanges?.slice(0, 8).map(range => [...range]) ?? null,
+                pendingAtClose: r.closedWriteSnapshot?.pendingCallbacks ?? null,
+                unknownRangesAtClose: r.closedWriteSnapshot?.unknownRanges.slice(0, 8).map(range => [...range]) ?? null,
+                rangeDetailsTruncated: (r.pendingWriteRanges?.length || 0) > 8 || (r.closedWriteSnapshot?.unknownRanges.length || 0) > 8,
+                writeOverflow: r.writeMeasurementOverflow === true,
+                lateSuccess: r.lateSuccessfulCallbacks ?? null, lateFailure: r.lateFailedCallbacks ?? null})),
+            requestDetailsTruncated: rows.length > 128};
+    };
+    return {rows, active, origin: 'http://127.0.0.1:' + server.address().port, port: server.address().port, snapshot,
         pendingWrites: () => rows.reduce((n, row) => n + (row.pendingWriteCallbacks || 0), 0),
         hold(rule) {if (held || holdRule) throw Error('fixture-already-holding'); holdRule = rule;}, held: () => held,
         async close() {
             closing = true;
             const closed = new Promise(resolve => server.close(resolve));
             const socketCloses = [...sockets].map(socket => new Promise(resolve => {socket.once('close', resolve); socket.destroy();}));
-            await Promise.all([closed, ...socketCloses]);
+            const streamCloses = [...streams].map(stream => new Promise(resolve => {stream.once('close', resolve); stream.destroy();}));
+            await Promise.all([closed, ...socketCloses, ...streamCloses]);
         }};
 }
 function cacheSnapshot(root, maxBytes) {

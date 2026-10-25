@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-25 — Resume bounded retention stop diagnostics
+
+Independent retention experiment continues; production/preload/core remain unchanged. The last native edl-stop timeout still lacks an actual active/pending diagnosis. Add bounded before/replied/deadline snapshots separating real responses/sockets/read-streams from historical/current missing write callbacks. Deterministic tests reproduce a physically closed historical response with a missing callback; do not claim that proves the previous Windows cause. Preserve raw unknown byte ranges and the original10sec deadline, reject any live resource, and require matching terminal receipts. Test seam frame/sample neighbors and owned excerpt/EDL retirement only after confirmed worker/helper exits and both file identities. Offline1985 tests completed:1975 pass/0 fail/10 platform skips, plus473-file syntax. No native rerun or dispatch has occurred; the coordinator must arrange the same pinned buffer-export-edl workflow. [Scope and evidence](PLAYBACK_BUFFER_RETENTION_CLOSEOUT.md).
+
 ## 2026-10-24 — Independent existing-buffer retention experiment
 
 This experiment is now closed for the current round, with no further runtime dispatch or source changes. [Closeout](PLAYBACK_BUFFER_RETENTION_CLOSEOUT.md) preserves positive bounded export/AV and one basic EDL handoff. Final run40114362940 failed the10sec post-Stop joint HTTP-close/write-callback wait; all3helpers exited0 with closed stdio, byte metrics remain null. The report lacks active/pending breakdown, so it establishes an unmet probe observation contract, not a proven mpv Stop defect or zero transfer. Keep the independent branch, do not include transparent retention in release, and leave reliable observation/net-benefit, full bounded lifecycle and media/auth/Session compatibility as explicit future work with qualitative effort only.

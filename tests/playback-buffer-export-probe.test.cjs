@@ -108,6 +108,21 @@ test('parent acceptance requires two actual exits, stdio close, native decode, b
         const bad = reportFixture(); mutate(bad); assert.throws(() => probe.validateReport(bad.report, bad.plan, bad.exit));
     }
 });
+test('test excerpt retirement waits for every native reader and worker closure, rejecting foreign paths', t => {
+    const dir = root(t), {report, plan, exit} = reportFixture(); plan.out = dir;
+    fs.writeFileSync(path.join(dir, 'owner'), 'ETE isolated finite buffer export v1\n');
+    const clip = Buffer.from('synthetic-owned-excerpt'); fs.writeFileSync(path.join(dir, 'excerpt.avi'), clip);
+    report.clip = {bytes: clip.length, sha256: require('node:crypto').createHash('sha256').update(clip).digest('hex')};
+    report.helpers[1].exited = false;
+    assert.throws(() => probe.retireProbeExcerpt(plan, report, exit)); assert(fs.existsSync(path.join(dir, 'excerpt.avi')));
+    report.helpers[1].exited = true; exit.streamsClosed = false;
+    assert.throws(() => probe.retireProbeExcerpt(plan, report, exit)); assert(fs.existsSync(path.join(dir, 'excerpt.avi')));
+    exit.streamsClosed = true; fs.writeFileSync(path.join(dir, 'owner'), 'other-owner');
+    assert.throws(() => probe.retireProbeExcerpt(plan, report, exit), /export-owner-drift/);
+    fs.writeFileSync(path.join(dir, 'owner'), 'ETE isolated finite buffer export v1\n');
+    const result = probe.retireProbeExcerpt(plan, report, exit); assert.deepEqual(result.removed, ['excerpt.avi']);
+    assert.equal(fs.existsSync(path.join(dir, 'excerpt.avi')), false); assert.equal(result.nativeReaders, 0);
+});
 test('AV acceptance additionally requires audio decode and a common source/local mapping', () => {
     const {report, plan, exit} = reportFixture(); plan.variant = 'av'; report.variant = 'av';
     for (const h of report.helpers) h.options.ao = ['null'];
@@ -119,15 +134,36 @@ test('AV acceptance additionally requires audio decode and a common source/local
     report.checks.audioDecoded = true; report.checks.seekMappingVerified = false; assert.throws(() => probe.validateReport(report, plan, exit));
     report.checks.seekMappingVerified = true; report.checks.clipReachedEOF = false; assert.throws(() => probe.validateReport(report, plan, exit));
 });
-test('EDL experiment requires a third normal helper and an explicit network assessment, including negative findings', () => {
+function edlReportFixture() {
     const {report, plan, exit} = reportFixture(); plan.variant = 'edl'; report.variant = 'edl';
     for (const h of report.helpers) h.options.ao = [{name: 'null', enabled: true, params: {}}];
     report.helpers.push({...structuredClone(report.helpers[0]), pid: 104});
     Object.assign(report.checks, {audioDecoded: true, seekMappingVerified: true, clipReachedEOF: true, edlTimelineAndTracks: true, unchangedAfterEDL: true});
-    report.audioMapping = {commonMappingWithinOneSample: true}; report.edl = {network: {assessment: 'COMPLETED_SAVED_PAYLOAD_REREAD'}};
+    report.audioMapping = {commonMappingWithinOneSample: true}; report.edl = {descriptor: {bytes: 100, sha256: 'b'.repeat(64)}, network: {assessment: 'COMPLETED_SAVED_PAYLOAD_REREAD'},
+        stop: {resolution: 'PHYSICAL_AND_CALLBACKS_SETTLED', legacyWaitTimedOut: false, snapshots: [{label: 'before-stop'}, {label: 'stop-replied'},
+            {label: 'settled', resources: {activeResponses: 0, openSockets: 0, openSourceStreams: 0}, all: {pendingCallbacks: 0, pendingOpenCallbacks: 0, pendingClosedCallbacks: 0}}]}};
+    return {report, plan, exit};
+}
+test('EDL experiment requires a third normal helper and an explicit network assessment, including negative findings', () => {
+    const {report, plan, exit} = edlReportFixture();
     probe.validateReport(report, plan, exit);
     report.helpers.pop(); assert.throws(() => probe.validateReport(report, plan, exit));
     report.helpers.push({...structuredClone(report.helpers[0]), pid: 104}); report.edl.network.assessment = 'assumed-efficient'; assert.throws(() => probe.validateReport(report, plan, exit));
+});
+test('EDL retirement validates both files before removing either and preserves source input', t => {
+    const dir = root(t), {report, plan, exit} = edlReportFixture(); plan.out = dir;
+    fs.writeFileSync(path.join(dir, 'owner'), 'ETE isolated finite buffer export v1\n');
+    const hash = data => require('node:crypto').createHash('sha256').update(data).digest('hex');
+    const clip = Buffer.from('owned-excerpt'), edl = Buffer.from('owned-edl');
+    fs.writeFileSync(path.join(dir, 'excerpt.avi'), clip); fs.writeFileSync(path.join(dir, 'retained.edl'), edl);
+    fs.writeFileSync(path.join(dir, 'A.avi'), 'preserve-source');
+    report.clip = {bytes: clip.length, sha256: hash(clip)}; report.edl.descriptor = {bytes: edl.length, sha256: hash(edl)};
+    fs.writeFileSync(path.join(dir, 'retained.edl'), 'other-edl');
+    assert.throws(() => probe.retireProbeExcerpt(plan, report, exit), /export-file-changed/);
+    assert(fs.existsSync(path.join(dir, 'excerpt.avi'))); assert(fs.existsSync(path.join(dir, 'retained.edl')));
+    fs.writeFileSync(path.join(dir, 'retained.edl'), edl);
+    assert.deepEqual(probe.retireProbeExcerpt(plan, report, exit).removed, ['excerpt.avi', 'retained.edl']);
+    assert.equal(fs.readFileSync(path.join(dir, 'A.avi'), 'utf8'), 'preserve-source');
 });
 test('only the isolated retention branch can run export; old branch modes keep their existing boundary', () => {
     route.validateDispatch('buffer-export', 'a'.repeat(40), route.PIN.repository, 'false', 'refs/heads/experiment/playback-buffer-retention');

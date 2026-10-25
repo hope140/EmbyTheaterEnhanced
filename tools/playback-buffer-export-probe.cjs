@@ -217,6 +217,9 @@ function validateReport(report, plan, exit) {
         report.audioMapping?.commonMappingWithinOneSample !== true)) throw Error('export-result-invalid');
     if (plan.variant === 'edl' && (report.checks.edlTimelineAndTracks !== true || report.checks.unchangedAfterEDL !== true ||
         !['COMPLETED_SAVED_PAYLOAD_REREAD', 'SCHEDULED_SAVED_PAYLOAD_REREAD_DELIVERY_UNCERTAIN', 'NO_SAVED_PAYLOAD_REREAD_OBSERVED'].includes(report.edl?.network?.assessment))) throw Error('export-result-invalid');
+    if (plan.variant === 'edl' && (!require('./playback-buffer-edl-probe.cjs').validStopObservation(report.edl?.stop) ||
+        !/^[a-f0-9]{64}$/.test(report.edl?.descriptor?.sha256 || '') || !Number.isSafeInteger(report.edl?.descriptor?.bytes) ||
+        report.edl.descriptor.bytes <= 0 || report.edl.descriptor.bytes > 16384)) throw Error('export-result-invalid');
     assert.deepEqual(report.identity, plan.identity);
 }
 async function worker(file) {
@@ -334,6 +337,19 @@ async function worker(file) {
         if (window && !window.isDestroyed()) window.destroy(); clearTimeout(timer); save(); app.exit(report.status === 'PASS' ? 0 : 1);
     }
 }
+function retireProbeExcerpt(plan, report, exit, save = () => {}) {
+    validateReport(report, plan, exit);
+    physical(plan.out);
+    if (fs.readFileSync(support.regular(path.join(plan.out, 'owner')), 'utf8') !== OWNER) throw Error('export-owner-drift');
+    const files = [path.join(plan.out, 'excerpt.avi')];
+    if (plan.variant === 'edl') files.push(path.join(plan.out, 'retained.edl'));
+    for (const file of files) support.regular(file);
+    const expected = [report.clip, report.edl?.descriptor];
+    for (const [index, file] of files.entries()) if (support.hashFile(file) !== expected[index].sha256 || fs.statSync(file).size !== expected[index].bytes) throw Error('export-file-changed');
+    const receipt = {scope: 'test-excerpt-retirement-only-NOT-product-cache-policy', removed: [], nativeReaders: 0}; save(receipt);
+    for (const file of files) {fs.unlinkSync(file); receipt.removed.push(path.basename(file)); save(receipt);}
+    return receipt;
+}
 async function run(file, execute) {
     if (execute !== true || process.platform !== 'win32' || process.arch !== 'x64') throw Error('export-explicit-Windows-required');
     const {plan, source} = readProbe(file);
@@ -348,7 +364,8 @@ async function run(file, execute) {
         timer = setTimeout(() => {timedOut = true; receipt.timedOut = true; save(); try {child.kill();} catch (_) {}}, 120000);
         const exit = await completion; Object.assign(receipt, exit, {timedOut}); save();
         if (timedOut) throw Error('export-native-not-established');
-        readProbe(file); validateReport(disk.boundedJson(path.join(plan.out, 'observations.json')), plan, exit);
+        readProbe(file); const observation = disk.boundedJson(path.join(plan.out, 'observations.json')); validateReport(observation, plan, exit);
+        receipt.excerptRetirement = retireProbeExcerpt(plan, observation, exit, value => {receipt.excerptRetirement = value; save();});
         Object.assign(receipt, {status: 'PASS', nativeOutcome: 'EXIT_AND_CLOSE_CONFIRMED'}); save(); return receipt;
     } catch (error) {receipt.failure = safeFailure(error, 'preflight'); save(); throw error;}
     finally {clearTimeout(timer); fs.closeSync(fd);}
@@ -360,4 +377,4 @@ if (isWorker) {
     console.error('mpv-buffer-export-failure:' + JSON.stringify(safeFailure(error, 'preflight'))); require('electron').app.exit(1);
     });
 }
-module.exports = {SCOPE, MAX_FILE, MAX_SLOTS, STAGES, OPTIONS, optionsFor, optionMatches, projectOptionStatus, applyOption, safeFailure, formatDiagnostic, physical, aviPackets, markedFixture, mapping, chooseWindow, sourceCounts, noExtraSource, prepare, readProbe, validateReport, run};
+module.exports = {SCOPE, MAX_FILE, MAX_SLOTS, STAGES, OPTIONS, optionsFor, optionMatches, projectOptionStatus, applyOption, safeFailure, formatDiagnostic, physical, aviPackets, markedFixture, mapping, chooseWindow, sourceCounts, noExtraSource, prepare, readProbe, validateReport, retireProbeExcerpt, run};
