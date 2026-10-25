@@ -60,11 +60,12 @@ function fixture(t) {
         });
         return server;
     }, spawn(exe, args, options) {
+        const began = Date.now();
         const diagnosticArgs = [...args];
         diagnosticArgs[4] = "[Console]::Error.WriteLine('ETE_NATIVE_SCRIPT_ENTERED');\n" + diagnosticArgs[4];
         const child = cp.spawn(exe, diagnosticArgs, {...options, stdio: ['pipe', 'pipe', 'pipe']});
         let diagnostics = '', output = '';
-        child.stderr.on('data', bytes => { diagnostics += bytes.toString(); });
+        child.stderr.on('data', bytes => { diagnostics += '[+' + (Date.now() - began) + 'ms] ' + bytes.toString(); });
         child.stdout.on('data', bytes => { output += bytes.toString(); });
         child.on('close', code => { process.stderr.write('ETE_NATIVE_DIAG exit=' + code + ' chars=' + diagnosticArgs[4].length +
             ' stdout=' + output.slice(0, 120).replace(/[\r\n]+/g, ' ') + ' stderr=' + diagnostics.slice(0, 5500).replace(/[\r\n]+/g, ' ') + '\n'); });
