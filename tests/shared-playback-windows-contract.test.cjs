@@ -116,7 +116,7 @@ test('schema-3 physical inventory without size fields binds installer, all Git s
     assert.match(result.helperSha256, /^[a-f0-9]{64}$/);
     assert.equal(Object.isFrozen(result), true);
     assert.ok(f.build.files.every(row => !Object.hasOwn(row, 'size')));
-    assert.equal(contract.PRODUCT_COMMIT, '929b68e32a5abd90ebfb777499ce9050bc6d145d');
+    assert.equal(contract.PRODUCT_COMMIT, '2e99cf2b861cb1f56367e5fbc79e45024c11ccec');
     assert.throws(() => contract.verifyCandidate(f.options), /windows-contract-candidate-commit-required/);
     assert.throws(() => contract.verifyCandidate({...f.options, candidateCommit: f.productCommit}), /windows-contract-git-read-failed/);
 });

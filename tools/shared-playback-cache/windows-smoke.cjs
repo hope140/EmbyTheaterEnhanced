@@ -214,7 +214,7 @@ function argumentsOf(argv) {
   const [mode, ...args] = argv, values = {};
   need(['prepare', 'run'].includes(mode), 'invalid-mode');
   const allowed = mode === 'prepare' ? ['repo', 'runtime', 'installer', 'installer-sha256', 'product-sha', 'out'] : ['plan'];
-  for (const arg of args) {const m = /^--([a-z-]+)=(.+)$/.exec(arg);
+  for (const arg of args) {const m = /^--([a-z][a-z0-9-]*)=(.+)$/.exec(arg);
     need(m && allowed.includes(m[1]) && !Object.hasOwn(values, m[1]), 'invalid-argument'); values[m[1]] = m[2];}
   need(allowed.every(k => values[k]), 'missing-argument');
   return {mode, values};

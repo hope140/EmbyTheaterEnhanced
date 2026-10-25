@@ -8,7 +8,7 @@ const crypto = require('node:crypto');
 const childProcess = require('node:child_process');
 const trial = require('../../src/electronapp/enhanced/shared-playback-cache/trial');
 
-const PRODUCT_COMMIT = '929b68e32a5abd90ebfb777499ce9050bc6d145d';
+const PRODUCT_COMMIT = '2e99cf2b861cb1f56367e5fbc79e45024c11ccec';
 const PRODUCT_PATHS = ['src', 'native', 'vendor', 'installer', ':(top,glob)package*.json'];
 const digest = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 const hashPattern = /^[a-f0-9]{64}$/i;

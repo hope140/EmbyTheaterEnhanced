@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-25 — 共享缓存工具CLI与独立来源绑定
+
+prepare必需的installer-sha256被字母／连字符正则拒绝，现只修工具解析，严格白名单不变。完整prepare含Windows路径的用例修前invalid-argument、修后通过。将已核验2e99cf2作为固定包基线，后续工具先证明产品树未变，分别记录两种SHA，原包来源及全清单门禁保留；不改产品／内核，不把Node验证当Native验收。详见[Windows验收合同](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。
+
 ## 共享自然切集有界稳定性与夹具前提
 
 4898b07无包Windows矩阵132/132通过，但完整push随后2555项2501通过／50失败／4跳过，不能排包。实际TEMP探针证明短名与物理根不等；只修app-trial夹具canonical根，不改隔离门禁。另一次B已代理但A可选冷tap未形成，现合成生命周期在select结束后确认A key及原有8B读取留存，再进70%；48B／代理／授权／25ms断言不变。诊断手动入口收敛为仅shared单例固定2/4/6/8次新Node（8s/次、80s总界），即时TAP与B probe／索引／选择耗时，不重试抹失败。Linux预检8/8、定向95及26、完整2660项2647通过／0失败／13既有跳过；Windows短稳定性与新完整CI尚待通过，旧B回退首因仍未知，不打包不dispatch。详见[Windows合成验收](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。

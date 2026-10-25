@@ -1,10 +1,10 @@
 # 共享播放缓存：独立Windows合成验收
 
-状态：仅工具／测试接线维护，本机未执行Windows Electron或helper，产品及内核文件仍保持225827a原字节。4898b07的9文件无包诊断132/132通过，但随后完整push CI仍失败，当前不能打包。下一步仅对不稳定的shared自然切集做有界重复；新的Windows完整CI与稳定性均通过后才构建一次独立候选。
+状态：2e99cf2的完整Windows公共CI（2555通过、0失败、4跳过）、8次固定自然切集稳定性及独立打包验证（2653通过、0失败、1个Unix跳过）通过。首次Native短验在prepare参数解析失败，未启动helper；当前仅修工具／测试，不改产品或内核。不得将这些结果当作真实Native、普通可见UI或115验收。
 
 ## 来源与执行边界
 
-`windows-contract.cjs`固定产品内容基线为`929b68e32a5abd90ebfb777499ce9050bc6d145d`。这是测试夹具修正提交，相对225827a的src/native/vendor/installer/package内容无变化。工具公开入口必须显式给candidateCommit，仅允许该基线或产品树相同的当前工具HEAD；不按名称、日期或最近成功包自动选来源。普通UI推荐把最终工具HEAD同时作为唯一新包来源，避免分支漂移和重复构建。
+`windows-contract.cjs`固定产品内容基线为`2e99cf2b861cb1f56367e5fbc79e45024c11ccec`，对应已经完成验证的独立包。相对225827a的src/native/vendor/installer/package内容无变化。工具公开入口必须显式给candidateCommit，仅允许该基线或产品树相同的当前工具HEAD；不按名称、日期或最近成功包自动选来源。CI入口固定复用此已审阅包；后续工具使用自己的精确HEAD，下载前证明基线为祖先且受保护产品树和工作区未改，包的来源及每项摘要仍绑定2e99cf2，不把旧包重标为新工具提交。
 
 门禁逐层绑定独立提供的installer SHA、schema1安装回执、schema3物理build-manifest、完整文件集合／payload摘要／可选size、三个provenance绑定、全部维护源码Git blob及native／固定Electron身份。Electron使用original-fs核物理ASAR，不忽略文件、不改原清单。工具、fixture、rendererBoot和workflow另记录精确工具提交／文件摘要。旧225包或过期162包没有替代入口。工具自身接受Git原字节或严格等价的CRLF checkout，分别记录来源／实际文件摘要；拒绝BOM、混合换行和正文改动。
 
@@ -46,7 +46,7 @@ shared_cache_diagnostics=false
 其余输入留默认
 ~~~
 
-拿到该SHA成功manual package的artifact ID、ZIP SHA256及installer SHA256后，保持同一工具ref，用正常UI单次选择：
+拿到上述固定2e99cf2成功manual package的artifact ID、ZIP SHA256及installer SHA256后，选择已经验证的最新工具ref，用正常UI单次选择：
 
 ~~~text
 release_package=false
@@ -98,3 +98,12 @@ Output必须是新目录。该命令不安装，不访问真实服务器，不�
 本地最终预检：有界8次shared单例全通过，B选择p50=3.78ms／最大4.20ms，probe p50=1.61ms／最大1.73ms，store.open p50=1.48ms／最大1.61ms；同一Linux机器、loopback、新临时根／新Node进程、OS缓存未清，原始回执在仓库外。这不是Windows稳定性或任意影片保证。相关应用／profile／adapter定向95项、工具／workflow定向26项通过；Windows有界8次仍等待父单次手动调度。本任务未重跑旧40分钟失败run、未自行dispatch或打包。
 
 本次稳定性工具及夹具修正后的Linux完整回归2660项：2647通过、0失败、13既有平台跳过，约122.6s。该结果不覆盖新的Windows完整回归或8次稳定性；当前仍不可排包。
+
+
+## prepare参数修正与原包复用
+
+首次Native调用在进入候选复核／profile生成之前报invalid-argument：prepare白名单包含installer-sha256，但参数名正则只允许字母和连字符，拒绝了数字256。现允许参数名中的数字，仍逐项严格白名单、拒绝未知／重复／空值；增加与真实PowerShell调用逐项比对的完整prepare命令回归，包含Windows空格路径。修前确定失败，修后通过；不引入原生fallback或放松任何profile／物理文件校验。Windows实际prepare与四阶段Native仍需新的短验，不能以Node解析通过代替。
+
+CI的benchmark_expected_sha始终填新的精确工具SHA；三个artifact参数继续填2e99cf2原包的ID和独立核验摘要。工具通过固定PRODUCT_COMMIT取得包身份，提前检查受保护产品树未变；工具来源与包来源分别记录。原安装器、manifest、payload、provenance和native字节均不修改，无需再完整打包。
+
+本次本地完整离线回归2662项：2649通过、0失败、13项既有平台跳过，约125.8s；JS565／PowerShell53语法、有限凭据模式扫描及文档链接通过。完整prepare参数修前失败、修后通过，另实际执行原PowerShell调用行完成Node argv往返。以上不是新的Windows Native通过证据。

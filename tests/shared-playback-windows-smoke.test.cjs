@@ -8,6 +8,44 @@ test('explicit Windows coordinator arguments reject incomplete, unknown and dupl
   for (const args of [[], ['run'], ['run', '--plan=x', '--plan=y'], ['run', '--plan=x', '--url=https://foreign'], ['prepare', '--out=x']])
     assert.throws(() => driver.argumentsOf(args));
 });
+test('complete PowerShell prepare argv accepts the exact SHA256 option and Windows path values', () => {
+  const values = {repo: String.raw`D:\a\Emby Theater\checkout`, runtime: String.raw`D:\owned\payload\{app}`,
+    installer: String.raw`D:\owned\bundle\cache-test-win-x64-setup.exe`,
+    'installer-sha256': '1e38c2b2ed440b112e23ec838f16ca2e5debd6a88be7dc87bb42864c30c6883d',
+    'product-sha': '2e99cf2b861cb1f56367e5fbc79e45024c11ccec', out: String.raw`D:\owned\fresh smoke`};
+  const argv = ['prepare', ...Object.entries(values).map(([key, value]) => '--' + key + '=' + value)];
+  assert.deepEqual(driver.argumentsOf(argv), {mode: 'prepare', values});
+  for (const extra of ['--sha256=abc', '--installer-sha256=duplicate', '--installer-sha257=abc'])
+    assert.throws(() => driver.argumentsOf([...argv, extra]), /invalid-argument/);
+  const wrapper = fs.readFileSync(path.join(__dirname, '../tools/shared-playback-cache/windows-run.ps1'), 'utf8');
+  const command = wrapper.split(/\r?\n/).find(line => line.startsWith('& node ') && line.includes(' prepare '));
+  assert.deepEqual([...command.matchAll(/"--([a-z0-9-]+)=/g)].map(match => match[1]), Object.keys(values),
+    'test covers every prepare argument actually emitted by the PowerShell wrapper');
+});
+test('the actual PowerShell prepare invocation preserves SHA256 and spaced paths through Node argv', t => {
+  const cp = require('node:child_process');
+  const root = require('./helpers/range-fixture-root.cjs').temporaryRoot('ete-smoke-argv-');
+  t.after(() => fs.rmSync(root, {recursive: true, force: true}));
+  const source = fs.readFileSync(path.join(__dirname, '../tools/shared-playback-cache/windows-run.ps1'), 'utf8');
+  const command = source.split(/\r?\n/).find(line => line.startsWith('& node ') && line.includes(' prepare '));
+  const bindings = {repo: String.raw`D:\owned checkout`, RuntimeRoot: String.raw`D:\owned payload\{app}`,
+    Installer: String.raw`D:\owned bundle\setup.exe`, InstallerSha256: 'a'.repeat(64),
+    ProductCommit: '2e99cf2b861cb1f56367e5fbc79e45024c11ccec', OutputRoot: String.raw`D:\owned fresh`};
+  const ps = value => "'" + value.replace(/'/g, "''") + "'";
+  fs.writeFileSync(path.join(root, 'windows-smoke.cjs'),
+    'const d=require(' + JSON.stringify(require.resolve('../tools/shared-playback-cache/windows-smoke.cjs')) + ');' +
+    'console.log(JSON.stringify(d.argumentsOf(process.argv.slice(2))));');
+  const script = path.join(root, 'invoke.ps1');
+  fs.writeFileSync(script, "$ErrorActionPreference='Stop';\n" +
+    Object.entries(bindings).map(([key, value]) => '$' + key + '=' + ps(value)).join('\n') + '\n' + command +
+    '\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\n');
+  const actual = cp.spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-File', script], {encoding: 'utf8', timeout: 10000,
+    env: {...process.env, PATH: path.dirname(process.execPath) + path.delimiter + process.env.PATH}});
+  assert.ifError(actual.error); assert.equal(actual.status, 0, actual.stderr);
+  assert.deepEqual(JSON.parse(actual.stdout), {mode: 'prepare', values: {repo: bindings.repo, runtime: bindings.RuntimeRoot,
+    installer: bindings.Installer, 'installer-sha256': bindings.InstallerSha256,
+    'product-sha': bindings.ProductCommit, out: bindings.OutputRoot}});
+});
 test('child environment isolates every media/profile directory and removes executable/proxy injection', () => {
   const root = path.resolve(os.tmpdir(), 'owned-windows-smoke');
   const env = driver.childEnvironment(root, {NODE_OPTIONS: '--require=unowned', ELECTRON_RUN_AS_NODE: '1', http_proxy: 'foreign', SystemRoot: 'owned-system'});

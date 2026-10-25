@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-25 — 共享缓存Native准备参数修正
+
+已核验2e99cf2独立包；首次Native短验在prepare解析拒绝必需installer-sha256，helper未启动。工具修正参数名数字合同并加入完整PowerShell参数红绿回归；固定复用已审阅2e99cf2包，工具SHA独立，保留祖先／产品树、安装器、物理清单、源码和native摘要门禁。产品字节不变，不重新打包；真实Windows四阶段仍待执行，未访问115。详见[Windows验收合同](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。
+
 ## 共享自然切集有界稳定性与夹具前提
 
 4898b07无包Windows矩阵132/132通过，但完整push随后2555项2501通过／50失败／4跳过，不能排包。实际TEMP探针证明短名与物理根不等；只修app-trial夹具canonical根，不改隔离门禁。另一次B已代理但A可选冷tap未形成，现合成生命周期在select结束后确认A key及原有8B读取留存，再进70%；48B／代理／授权／25ms断言不变。诊断手动入口收敛为仅shared单例固定2/4/6/8次新Node（8s/次、80s总界），即时TAP与B probe／索引／选择耗时，不重试抹失败。Linux预检8/8、定向95及26、完整2660项2647通过／0失败／13既有跳过；Windows短稳定性与新完整CI尚待通过，旧B回退首因仍未知，不打包不dispatch。详见[Windows合成验收](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。

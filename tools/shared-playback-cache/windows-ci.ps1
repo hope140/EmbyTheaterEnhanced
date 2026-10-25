@@ -12,10 +12,11 @@ $repo = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 if ($ArtifactId -cnotmatch '^[1-9][0-9]{0,17}$' -or $ZipSha256 -cnotmatch '^[a-f0-9]{64}$' -or $InstallerSha256 -cnotmatch '^[a-f0-9]{64}$' -or $ExpectedToolSha -cnotmatch '^[a-f0-9]{40}$') { throw 'Exact artifact/tool identities required.' }
 $actualToolSha = ([string](& git -C $repo rev-parse HEAD)).Trim()
 if ($LASTEXITCODE -ne 0 -or $actualToolSha -cne $ExpectedToolSha -or $env:GITHUB_SHA -cne $ExpectedToolSha -or $env:GITHUB_REPOSITORY -cne 'hope140/EmbyTheaterEnhanced') { throw 'Unexpected repository/tool checkout.' }
-# The normal UI selects the reviewed tooling ref; build that exact source once.
-# windows-contract additionally proves its protected product tree equals the
-# fixed reviewed baseline. No artifact of a different SHA is substituted.
-$productSha = $ExpectedToolSha
+# Reuse the one reviewed package; later tooling has its own exact checkout SHA.
+# Check protected product bytes/ancestry before acquiring anything. Candidate
+# provenance and every runtime hash remain bound to this fixed package SHA.
+$productSha = [string](& node -e "const c=require(process.argv[1]); console.log(c.reviewedCandidate({repo:process.argv[2],candidateCommit:c.PRODUCT_COMMIT}).productCommit);" (Join-Path $PSScriptRoot 'windows-contract.cjs') $repo)
+if ($LASTEXITCODE -ne 0 -or $productSha -cnotmatch '^[a-f0-9]{40}$') { throw 'Reviewed package compatibility failed.' }
 if (Test-Path -LiteralPath $OutputRoot) { throw 'Preserve previous smoke output.' }
 New-Item -ItemType Directory -Path $OutputRoot | Out-Null
 $safe = Join-Path $OutputRoot 'safe-receipts'
