@@ -11,6 +11,9 @@ const pluginRoot = process.env.ETE_VIDEO_SETTINGS_SOURCE_ROOT
     ? path.resolve(process.env.ETE_VIDEO_SETTINGS_SOURCE_ROOT) : path.join(root, 'src/electronapp/plugins/mpvplayer');
 const html = fs.readFileSync(path.join(pluginRoot, 'video.html'), 'utf8');
 const source = fs.readFileSync(path.join(pluginRoot, 'video.js'), 'utf8');
+const preloadSettings = require(path.join(pluginRoot, 'preload-settings.js'));
+const GET = 'enhanced-playback-range-settings-get', SAVE = 'enhanced-playback-range-settings-save';
+const preloadConfig = {schema: 1, enabled: false, progressPercent: 70, preloadMB: 300};
 const fixed = {status: 'ok', mode: 'native-helper', fixedNativeRenderPath: 'vo=gpu-next; gpu-api=d3d11'};
 function deferred() { let resolve; const promise = new Promise(yes => {resolve = yes;}); return {promise, resolve}; }
 function classList(text) { const values = new Set(text.split(/\s+/)); return {contains: c => values.has(c), toggle(c, enabled) {if (enabled) values.add(c); else values.delete(c);}}; }
@@ -18,18 +21,20 @@ function classList(text) { const values = new Set(text.split(/\s+/)); return {co
 // headless Chromium check. These nodes model DOM properties, not Emby's loader.
 function dom() {
     const nodes = new Map();
+    const events = () => ({listeners: {}, addEventListener(name, callback) {this.listeners[name] = callback;}, removeEventListener(name, callback) {if (this.listeners[name] === callback) delete this.listeners[name];}});
     for (const match of html.matchAll(/<div class="(selectContainer[^"]*)"[^>]*>\s*<select\b([^>]*)>([\s\S]*?)<\/select>/g)) {
         const name = match[2].match(/class="([^"]+)"/)[1].split(/\s+/)[0];
         const values = [...match[3].matchAll(/<option value="([^"]*)"/g)].map(m => m[1]);
         const row = {classList: classList(match[1])}; let value = values[0] || '';
-        nodes.set('.' + name, {disabled: /\bdisabled\b/.test(match[2]), closest(selector) {assert.equal(selector, '.selectContainer'); return row;},
+        nodes.set('.' + name, {...events(), disabled: /\bdisabled\b/.test(match[2]), closest(selector) {assert.equal(selector, '.selectContainer'); return row;},
             get value() {return value;}, set value(v) {value = values.includes(String(v)) ? String(v) : '';}});
     }
     for (const match of html.matchAll(/<input\b([^>]*)>/g)) {
         const name = match[1].match(/class="([^"]+)"/)[1].split(/\s+/)[0];
-        nodes.set('.' + name, {value: '', checked: false, disabled: false});
+        nodes.set('.' + name, {...events(), value: '', checked: false, disabled: /\bdisabled\b/.test(match[1])});
     }
     nodes.set('form', {addEventListener() {}});
+    nodes.set('.rangeSettingsState', {textContent: ''});
     return {querySelector(selector) {assert.ok(nodes.has(selector), selector); return nodes.get(selector);}, nodes};
 }
 function fixture(response = fixed, options = {}) {
@@ -38,13 +43,16 @@ function fixture(response = fixed, options = {}) {
     function BaseView(element) {this.view = element;}
     BaseView.prototype.onResume = function () {};
     BaseView.prototype.onPause = function () {};
+    BaseView.prototype.destroy = function () {this.view = null;};
     const ipc = options.noIpc ? null : {invoke(channel, request) {
         calls.push({channel, request});
+        if (channel === GET) return options.preloadRead || Promise.resolve({status: 'ok', config: preloadConfig});
+        if (channel === SAVE) return Promise.resolve({status: 'saved'});
         return options.reject ? Promise.reject(new Error('fixture unavailable')) : Promise.resolve(response);
     }};
     vm.runInNewContext(source, {window: {ipc}, Promise, Object, define(deps, factory) {
         dependencies = deps;
-        View = factory({hide() {}}, {}, {get: key => values.get(key), set(key, value) {values.set(key, value); writes.push(key);}}, BaseView, native);
+        View = factory({hide() {}}, {}, {get: key => values.get(key), set(key, value) {values.set(key, value); writes.push(key);}}, BaseView, native, preloadSettings);
     }});
     const controller = new View(view, {});
     return {view, values, writes, calls, controller, dependencies, node: selector => view.querySelector(selector)};
@@ -58,7 +66,9 @@ for (const state of ['stopped', 'starting', 'ready']) test('fixed Native render 
     assert.equal(f.node('.selectHwaMode').disabled, false);
     assert.equal(f.node('.selectHwaMode').closest('.selectContainer').classList.contains('hide'), false);
     assert.equal(f.node('.selectNominalRange').disabled, false);
-    assert.equal(f.calls.length, 1); assert.equal(f.calls[0].channel, native.CALL_CHANNEL); assert.equal(f.calls[0].request.operation, 'status');
+    assert.deepEqual(f.calls.map(call => call.channel), [native.CALL_CHANNEL, GET]);
+    assert.equal(f.calls[0].request.operation, 'status');
+    assert.equal(f.node('.chkRangeEnabled').disabled, false);
 });
 test('hidden legacy render values survive pause while effective hardware and range settings still save', async () => {
     const f = fixture(); await f.controller.onResume({refresh: true});
@@ -91,6 +101,33 @@ test('a reply after pause cannot reactivate controls or rewrite a later view', a
     const pending = f.controller.onResume({refresh: true}); f.controller.onPause();
     response.resolve({status: 'ok', mode: 'selectable-renderer'}); await pending;
     assert.equal(f.node('.selectVideoOut').disabled, true); assert.equal(f.values.get('mpv-vo'), 'historical-output');
+});
+test('pending preload reads only lock preload controls while ordinary video settings still save on pause', async () => {
+    const read = deferred(), f = fixture(fixed, {preloadRead: read.promise});
+    const pending = f.controller.onResume({refresh: true});
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(f.node('.chkRangeEnabled').disabled, true);
+    assert.equal(f.node('.selectHwaMode').disabled, false);
+    assert.equal(f.node('.selectNominalRange').disabled, false);
+    f.node('.selectHwaMode').value = 'no'; f.controller.onPause();
+    read.resolve({status: 'ok', config: {...preloadConfig, enabled: true}}); await pending;
+    assert.equal(f.values.get('mpv-hwdec'), 'no');
+    assert.equal(f.node('.chkRangeEnabled').checked, false);
+    assert.equal(f.calls.some(call => call.channel === SAVE), false);
+    assert.equal(f.writes.includes('mpv-vo'), false); assert.equal(f.writes.includes('mpv-gpuapi'), false);
+});
+test('integrated preload changes autosave through IPC without writing legacy render keys or restarting Native', async () => {
+    const f = fixture(); await f.controller.onResume({refresh: true});
+    f.node('.chkRangeEnabled').checked = true;
+    await f.node('.chkRangeEnabled').listeners.change();
+    const save = f.calls.find(call => call.channel === SAVE);
+    assert.deepEqual(save.request, {...preloadConfig, enabled: true});
+    assert.equal(f.writes.length, 0, 'preload does not write any appSettings key');
+    assert.deepEqual(f.calls.filter(call => call.channel === native.CALL_CHANNEL).map(call => call.request.operation), ['status']);
+    f.controller.onPause(); f.controller.destroy();
+    assert.equal(f.writes.includes('mpv-vo'), false); assert.equal(f.writes.includes('mpv-gpuapi'), false);
+    assert.equal(f.node('.chkRangeEnabled').listeners.change, undefined);
+    assert.equal(f.controller.view, null);
 });
 test('the production stopped service reports the fixed path without starting a helper', async () => {
     const service = createService({getMainWindow: () => null, electron: {BrowserWindow: function () {throw Error('status must not start a surface');}}});

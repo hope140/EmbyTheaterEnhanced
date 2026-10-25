@@ -369,12 +369,6 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             });
 
             routes.push({
-                path: 'mpvplayer/cache.html', transition: 'slide', controller: pluginManager.mapPath(self, 'mpvplayer/cache.js'),
-                type: 'settings', title: '下一集预载', category: 'Playback', order: 7.5, thumbImage: '', icon: 'cached',
-                settingsTheme: true, adjustHeaderForEmbeddedScroll: true
-            });
-
-            routes.push({
                 path: 'mpvplayer/about.html',
                 transition: 'slide',
                 controller: pluginManager.mapPath(self, 'mpvplayer/about.js'),
@@ -1146,7 +1140,8 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                     playbackManager: playbackManager, player: self, item: item, mediaSource: mediaSource, options: options, source: url,
                     signal: request.controller.signal,
                     isCurrent: function () {return activePlayRequest === request && libmpv === rangeEndpoint;},
-                    position: function () {return {positionTicks: playerState.positionTicks, durationTicks: playerState.durationTicks};}});
+                    position: function () {return {positionTicks: playerState.positionTicks, durationTicks: playerState.durationTicks};},
+                    onDiagnostic: function (value) {if (activePlayRequest === request) emitClientDiagnostic('info', 'preload', 'decision', value);}});
                 assertCurrentPlayRequest(request);
             }
             emitClientDiagnostic('info', 'playback', 'loadfile-requested', Object.assign(requestDiagnosticDetails(request), {
@@ -1355,25 +1350,20 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         };
 
         self.getStats = function () {
-
             var rangeRequest = activePlayRequest;
             return Promise.all([getMediaStats(), getVideoStats(), getAudioStats()]).then(async function (responses) {
-                if (activePlayRequest === rangeRequest && rangeRequest && rangeRequest.rangeCache) {
-                    var rangeStats = await rangeRequest.rangeCache.category();
-                    if (activePlayRequest === rangeRequest && rangeStats) responses.push(rangeStats);
-                }
-
+                var preloadCategory = null;
+                if (activePlayRequest === rangeRequest && rangeRequest && rangeRequest.rangeCache) preloadCategory = await rangeRequest.rangeCache.category();
                 var categories = [];
-
                 for (var i = 0, length = responses.length; i < length; i++) {
-                    if (responses[i] && (i !== 3 || activePlayRequest === rangeRequest)) categories.push(responses[i]);
+                    if (responses[i]) categories.push(responses[i]);
                 }
+                if (activePlayRequest !== rangeRequest || !rangeRequest) return {categories: categories};
+                if (!preloadCategory) preloadCategory = {stats: [{label: '预载:', value: libmpv && libmpv.rangeCache && libmpv.rangeCache.enabled ? '状态更新中' : '未启用'}]};
                 var enhancedCategory = enhancedRouteState && enhancedRouteState.category();
+                enhancedCategory = playbackRouteStats.mergePreload(enhancedCategory, preloadCategory);
                 if (enhancedCategory) categories.push(enhancedCategory);
-
-                return {
-                    categories: categories
-                };
+                return {categories: categories};
             });
         }
 

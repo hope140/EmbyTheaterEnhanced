@@ -2,6 +2,7 @@
 const crypto = require('node:crypto');
 const {createCache} = require('./playback-range-cache');
 const {selection} = require('./playback-range-policy');
+const diagnostics = require('./playback-range-diagnostics');
 const hash = value => crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const contextFields = ['source', 'serverOrigin', 'serverId', 'accountId', 'itemId', 'mediaSourceId', 'playSessionId', 'mode', 'mediaType', 'container', 'live'];
 function parseContext(value) {
@@ -20,11 +21,30 @@ function parseContext(value) {
         return Object.freeze({...value, identity});
     } catch (_) {return null;}
 }
+function contextDiagnostic(value, stage = 'current-context') {
+    let reason = 'source-invalid';
+    if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).some(k => !contextFields.includes(k))) reason = 'context-missing';
+    else if (value.mediaType !== 'Video') reason = 'media-unsupported';
+    else if (value.live === true) reason = 'live-unsupported';
+    else if (value.mode !== 'DirectPlay' && value.mode !== 'DirectStream') reason = 'mode-unsupported';
+    else if (['source','serverOrigin','serverId','accountId','itemId','mediaSourceId','playSessionId'].some(k => typeof value[k] !== 'string' || !value[k] || value[k].length > 8192)) reason = 'identity-missing';
+    else {
+        try {
+            const url = new URL(value.source), origin = new URL(value.serverOrigin).origin;
+            if (!['http:', 'https:'].includes(url.protocol)) reason = 'source-not-http';
+            else if (url.origin !== origin || value.serverOrigin !== origin) reason = 'source-cross-origin';
+            else if (url.username || url.password) reason = 'source-credentials';
+            else if (url.hash) reason = 'source-invalid';
+            else if (!['mp4','m4v','mkv','matroska','mov','avi','webm','mpg','mpeg','ts','m2ts'].includes(String(value.container).toLowerCase())) reason = 'container-unsupported';
+        } catch (_) {reason = 'source-invalid';}
+    }
+    return diagnostics.snapshot({stage, reason});
+}
 function playbackContext(value) {
     if (!value || Object.keys(value).some(k => !contextFields.includes(k)) || value.mediaType !== 'Video' || ['serverId', 'serverOrigin', 'accountId', 'itemId', 'mediaSourceId', 'playSessionId'].some(k => typeof value[k] !== 'string' || !value[k] || value[k].length > 2048)) return null;
     return {...value, identity: null};
 }
-function createSession({config, create = createCache}) {
+function createSession({config, create = createCache, onDiagnostic = () => {}}) {
     if (!config) return null;
     if (config.kind !== 'next-prefix') throw Error('next-prefix-required');
     const policy = selection(config), work = new Set();
@@ -32,6 +52,7 @@ function createSession({config, create = createCache}) {
     let cachePromise, current = null, next = null, epoch = 0, playedEpoch = 0, closed = false, closing, retirement = Promise.resolve();
     const ensure = () => cachePromise ||= Promise.resolve(create(config)).then(value => {cacheInstance = value; return value;});
     const track = promise => {work.add(promise); promise.finally(() => work.delete(promise)).catch(() => {}); return promise;};
+    function report(value) {const safe = diagnostics.snapshot(value); try {onDiagnostic(safe);} catch (_) {} return safe;}
     function retire(preserveNext = true) {
         ++epoch; const old = current, oldNext = next; current = next = null;
         nextProgress = {state: 'idle', bytes: 0, targetBytes: policy.prefetchBytes};
@@ -46,9 +67,10 @@ function createSession({config, create = createCache}) {
         return track((async () => {
             const ticket = epoch + 1; await retire();
             const parsed = parseContext(value) || playbackContext(value);
-            if (closed || epoch !== ticket || !parsed || helper.exited || helper.transportTerminated || helper.currentGenerationId !== generationId) return {state: 'unavailable'};
-            const record = {value: parsed, helper, generationId, epoch, controller: new AbortController(), handle: null, playing: false}; current = record;
-            return {state: 'ready'};
+            if (closed || epoch !== ticket || helper.exited || helper.transportTerminated || helper.currentGenerationId !== generationId) return {state: 'unavailable', diagnostic: diagnostics.snapshot({stage: 'lifecycle', reason: 'generation-retired'})};
+            if (!parsed) return {state: 'unavailable', diagnostic: report(contextDiagnostic(value))};
+            const record = {value: parsed, helper, generationId, epoch, controller: new AbortController(), handle: null, playing: false, diagnostic: parsed.identity ? null : report(contextDiagnostic(value))}; current = record;
+            return {state: 'ready', ...(record.diagnostic ? {diagnostic: record.diagnostic} : {})};
         })());
     }
     function owns(record) {return !closed && current === record && epoch === record.epoch && !record.controller.signal.aborted &&
@@ -62,7 +84,11 @@ function createSession({config, create = createCache}) {
             if (!owns(record)) {await handle.stop(); return null;}
             record.handle = handle;
             return {source: handle.source, canDispatch: () => owns(record), cancel: () => handle.stop()};
-        } catch (_) {return null;}
+        } catch (error) {if (owns(record)) record.diagnostic = report(diagnostics.fromError(error, 'current-probe', 'cache-unavailable')); return null;}
+    }
+    function unproxied(reason, helper, generationId) {
+        const record = current;
+        if (record && owns(record) && !record.diagnostic && record.helper === helper && record.generationId === generationId) record.diagnostic = report({stage: 'current-context', reason});
     }
     function started(helper, generationId) {
         const record = current;
@@ -80,9 +106,19 @@ function createSession({config, create = createCache}) {
     function preload(value, helper, generationId) {
         return track((async () => {
             const owner = current, parsed = parseContext(value);
-            if (!owner || !owner.handle || !owner.playing || !owns(owner) || owner.helper !== helper || owner.generationId !== generationId || !parsed ||
-                parsed.serverId !== owner.value.serverId || parsed.accountId !== owner.value.accountId || parsed.serverOrigin !== owner.value.serverOrigin ||
-                parsed.itemId === owner.value.itemId || parsed.playSessionId !== owner.value.playSessionId) return {state: 'unavailable'};
+            function refuse(diagnostic) {
+                const safe = diagnostics.snapshot(diagnostic);
+                if (owner && owns(owner) && owner.helper === helper && owner.generationId === generationId) {
+                    nextProgress = {state: 'unavailable', bytes: 0, targetBytes: policy.prefetchBytes, diagnostic: report(safe)};
+                }
+                return {state: 'unavailable', diagnostic: safe};
+            }
+            if (!owner || !owns(owner) || owner.helper !== helper || owner.generationId !== generationId) return refuse({stage: 'lifecycle', reason: 'generation-retired'});
+            if (!owner.handle) return refuse(owner.diagnostic || {stage: 'current-context', reason: 'current-proxy-required'});
+            if (!owner.playing) return refuse({stage: 'progress-check', reason: 'waiting-progress'});
+            if (!parsed) return refuse(contextDiagnostic(value, 'next-context'));
+            if (parsed.serverId !== owner.value.serverId || parsed.accountId !== owner.value.accountId || parsed.serverOrigin !== owner.value.serverOrigin ||
+                parsed.itemId === owner.value.itemId || parsed.playSessionId !== owner.value.playSessionId) return refuse({stage: 'next-context', reason: 'next-identity'});
             if (next) return {state: 'already-preparing'};
             const record = {controller: new AbortController(), handle: null}; next = record;
             nextProgress = {state: 'preparing', bytes: 0, targetBytes: policy.prefetchBytes};
@@ -95,9 +131,14 @@ function createSession({config, create = createCache}) {
                 nextProgress = {state: 'warming', bytes: 0, targetBytes: Math.min(size, policy.prefetchBytes)};
                 const result = await record.handle.prefetch({maxBytes: policy.prefetchBytes, bytesPerSecond: config.bytesPerSecond, signal: record.controller.signal,
                     onProgress(value) {if (valid()) nextProgress = {state: 'warming', bytes: value.bytes, targetBytes: value.targetBytes};}});
-                if (valid()) nextProgress = {...nextProgress, bytes: result.bytes, state: result.bytes >= nextProgress.targetBytes ? 'ready' : 'partial'};
-                return {state: valid() ? nextProgress.state : 'cancelled', bytes: result.bytes};
-            } catch (_) {if (valid()) nextProgress = {...nextProgress, state: 'unavailable'}; return {state: record.controller.signal.aborted ? 'cancelled' : 'unavailable'};}
+                if (valid()) nextProgress = {...nextProgress, bytes: result.bytes, state: result.bytes >= nextProgress.targetBytes ? 'ready' : 'partial',
+                    ...(result.bytes < nextProgress.targetBytes ? {diagnostic: report({stage: 'next-prefix', reason: 'cache-quota'})} : {})};
+                return {state: valid() ? nextProgress.state : 'cancelled', bytes: result.bytes, ...(valid() && nextProgress.diagnostic ? {diagnostic: nextProgress.diagnostic} : {})};
+            } catch (error) {
+                const diagnostic = diagnostics.fromError(error, record.handle ? 'next-prefix' : 'next-probe', 'cache-unavailable');
+                if (valid()) nextProgress = {...nextProgress, state: 'unavailable', diagnostic: report(diagnostic)};
+                return {state: record.controller.signal.aborted ? 'cancelled' : 'unavailable', diagnostic};
+            }
         })());
     }
     function cancelNext() {
@@ -108,11 +149,11 @@ function createSession({config, create = createCache}) {
             if (cachePromise) await (await cachePromise).discardNext();
         })());
     }
-    return {cancelNext, setContext, select: (...args) => track(select(...args)), started, preload, retire,
+    return {cancelNext, setContext, unproxied, select: (...args) => track(select(...args)), started, preload, retire,
         status: () => {
             let bytes = 0; try {if (current && current.handle && current.handle.status) bytes = current.handle.status().bytes;} catch (_) {}
             return {enabled: true, ...policy, kind: 'next-prefix', timeoutMs: config.timeoutMs,
-                current: {state: current ? current.handle ? current.playing ? 'active' : 'preparing' : 'original' : 'idle', bytes},
+                current: {state: current ? current.handle ? current.playing ? 'active' : 'preparing' : 'original' : 'idle', bytes, ...(current && current.diagnostic ? {diagnostic: diagnostics.snapshot(current.diagnostic)} : {})},
                 next: {...nextProgress}, diskBytes: cacheInstance ? cacheInstance.status().bytes : 0,
                 maxBytes: policy.prefetchBytes};
         },
@@ -121,4 +162,4 @@ function createSession({config, create = createCache}) {
             closing = (async () => {await retire(false); await Promise.allSettled([...work]); if (cachePromise) await (await cachePromise).close();})(); return closing;
         }};
 }
-module.exports = {createSession, parseContext};
+module.exports = {createSession, parseContext, contextDiagnostic};

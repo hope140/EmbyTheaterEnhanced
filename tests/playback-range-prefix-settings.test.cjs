@@ -5,12 +5,11 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const vm = require('node:vm');
 const {appUrl, eventFor} = require('./helpers/trusted-renderer.cjs');
 
 const settings = require('../src/electronapp/enhanced/playback-range-user-settings');
-const controllerPath = path.join(__dirname, '../src/electronapp/plugins/mpvplayer/cache.js');
-const htmlPath = path.join(__dirname, '../src/electronapp/plugins/mpvplayer/cache.html');
+const controllerPath = path.join(__dirname, '../src/electronapp/plugins/mpvplayer/preload-settings.js');
+const htmlPath = path.join(__dirname, '../src/electronapp/plugins/mpvplayer/video.html');
 const controllerSource = fs.readFileSync(controllerPath, 'utf8');
 const htmlSource = fs.readFileSync(htmlPath, 'utf8');
 const temporaryRoots = new Set();
@@ -100,81 +99,11 @@ test('IPC supports explicit enabled settings with next-play application and no r
     fixture.unregister();
 });
 
-class FakeNode {
-    constructor() {
-        this.value = '';
-        this.checked = false;
-        this.disabled = false;
-        this.hidden = false;
-        this.textContent = '';
-        this.listeners = Object.create(null);
-    }
-    addEventListener(name, callback) {this.listeners[name] = callback;}
-}
-
-function pageFixture() {
-    const selectors = ['form', '.chkRangeEnabled', '.selectRangeProgress', '.selectRangePreload',
-        '.rangeSettingsState', '.rangeRuntimeState'];
-    const nodes = Object.fromEntries(selectors.map(selector => [selector, new FakeNode()]));
-    const controls = [nodes['.chkRangeEnabled'], nodes['.selectRangeProgress'], nodes['.selectRangePreload'], new FakeNode()];
-    const view = {
-        querySelector(selector) {
-            if (!nodes[selector]) throw Error('unexpected selector ' + selector);
-            return nodes[selector];
-        },
-        querySelectorAll(selector) {
-            assert.equal(selector, 'input,select,button');
-            return controls;
-        }
-    };
-    return {view, nodes, controls};
-}
-
-function loadController(invoke) {
-    let Controller;
-    function BaseView() {}
-    BaseView.prototype.onResume = function () {};
-    BaseView.prototype.onPause = function () {};
-    BaseView.prototype.destroy = function () {};
-    const define = (_dependencies, factory) => {Controller = factory({hide() {}}, BaseView);};
-    define.amd = {};
-    vm.runInNewContext(controllerSource, {define, window: {ipc: {invoke}}}, {filename: controllerPath, timeout: 1000});
-    return Controller;
-}
-
-test('settings page exposes only next-episode controls, an enabled toggle, and strict source-boundary copy', () => {
-    assert.doesNotMatch(htmlSource, /最后一次实际播放|另一视频实际开始|最后播放缓存|maxBytes|bytesPerSecond|总磁盘预算|后台预载限速/);
-    assert.match(htmlSource, /class="chkRangeEnabled"/);
-    assert.doesNotMatch(htmlSource, /chkRangeEnabled[^>]*(?:disabled|hidden)/s);
-    assert.match(htmlSource, /下一集/);
-    assert.match(htmlSource, /同源|仅限.*来源|来源.*校验|不得.*URL/i);
+test('video settings contain the preload controls and use the existing next-play IPC contract', () => {
+    assert.match(htmlSource, /启用预载/);
+    assert.match(htmlSource, /下次播放生效/);
+    assert.doesNotMatch(htmlSource, /rangeRuntimeState|btnSaveRange|当前运行/);
+    assert.match(controllerSource, /enhanced-playback-range-settings-get/);
+    assert.match(controllerSource, /enhanced-playback-range-settings-save/);
     assert.doesNotMatch(controllerSource, /txtRangeBudget|txtRangeRate|maxBytes|bytesPerSecond/);
-});
-
-test('page loads and saves an enabled next-prefix preference without restart or capacity fields', async () => {
-    const calls = [];
-    const Controller = loadController(async (channel, value) => {
-        calls.push([channel, value]);
-        if (channel === settings.CHANNELS.GET) return {status: 'ok', config: config(), runtime: null};
-        return {status: 'saved', requiresRestart: false, applyMode: 'next-play',
-            config: value, runtime: {enabled: false}};
-    });
-    const fixture = pageFixture(), page = new Controller(fixture.view);
-    page.onResume();
-    await new Promise(resolve => setImmediate(resolve));
-    assert.equal(fixture.nodes['.chkRangeEnabled'].disabled, false);
-    assert.equal(fixture.nodes['.chkRangeEnabled'].hidden, false);
-    assert.equal(fixture.nodes['.selectRangeProgress'].value, '70');
-    assert.equal(fixture.nodes['.selectRangePreload'].value, '300');
-    fixture.nodes['.chkRangeEnabled'].checked = true;
-    fixture.nodes['.selectRangeProgress'].value = '80';
-    fixture.nodes['.selectRangePreload'].value = '500';
-    await page.save({preventDefault() {}});
-    assert.equal(calls[1][0], settings.CHANNELS.SAVE);
-    assert.deepEqual(JSON.parse(JSON.stringify(calls[1][1])), {
-        schema: 1, enabled: true, progressPercent: 80, preloadMB: 500
-    });
-    assert.equal(fixture.nodes['.rangeSettingsState'].textContent.includes('重启'), false);
-    assert.match(fixture.nodes['.rangeSettingsState'].textContent, /下次播放/);
-    assert.equal(fixture.nodes['.rangeRuntimeState'].textContent, '本次运行未启用。');
 });

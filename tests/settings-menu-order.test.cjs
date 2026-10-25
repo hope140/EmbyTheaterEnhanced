@@ -10,14 +10,14 @@ const expected = [
     ['mpvplayer/strm.html', 6, '智能解析', 'Playback', 'folder_open'],
     ['mpvplayer/diagnostics.html', 7, '诊断与日志', 'Playback', 'description'],
     ['mpvplayer/cache-management.html', 7, '缓存管理', 'General', 'storage'],
-    ['mpvplayer/cache.html', 7.5, '下一集预载', 'Playback', 'cached'],
     ['mpvplayer/about.html', 8, '关于 Enhanced', 'General', 'info']
 ];
 
-test('Enhanced settings retain native sort ranks and include the independent cache route', () => {
+test('Enhanced settings retain native sort ranks and keep the independent cache management route', () => {
     const routes = pluginRoutes(root);
     assert.equal(routes.length, expected.length);
     assert.equal(routes.some(route=>route.path.startsWith('cec/')),false);
+    assert.equal(routes.some(route => route.path === 'mpvplayer/cache.html'), false);
     for (const [routePath, order] of expected) assert.equal(routes.find(route => route.path === routePath).order, order, routePath);
 });
 

@@ -47,6 +47,14 @@
         return {type: 'enhanced', name: 'Emby Theater Enhanced', stats: stats};
     }
 
+    function mergePreload(category, preload) {
+        if (!category && !preload) return null;
+        var stats = category && Array.isArray(category.stats) ? category.stats.slice() : [];
+        if (preload && Array.isArray(preload.stats)) preload.stats.forEach(function (row) {
+            if (row && row.label === '预载:' && typeof row.value === 'string') stats.push({label: row.label, value: row.value});
+        });
+        return {type: 'enhanced', name: 'Emby Theater Enhanced', stats: stats};
+    }
     function create() {
         var activeRequest = null;
         var observation = null;
@@ -82,5 +90,5 @@
         };
     }
 
-    return {create: create, makeStats: makeStats};
+    return {create: create, makeStats: makeStats, mergePreload: mergePreload};
 }));

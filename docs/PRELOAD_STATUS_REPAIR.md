@@ -1,0 +1,29 @@
+# Preload settings and refusal diagnostics
+
+This repair starts from the exact independent next-prefix product `0fbb6f9c78320e83f2919c0324dc5db940310166`. It preserves the accepted 042 cache/update and 043 Native/Host source. Version remains 0.4.3. The old synthetic Native and ordinary-package receipts remain evidence for that source; they are not relabeled as execution of this repair.
+
+## Visible controls
+
+Preload controls now live in the existing video settings form under **预载**. The separate next-episode settings route and settings-only runtime display are removed. The toggle defaults off, progress defaults70% with50/60/70/80/90 choices, and P defaults300MB with100/300/500 choices. Changes save through the existing narrow IPC and apply on the next playback. Only the preload controls are locked until a successful read; ordinary Native render-capability guards and all other video preferences retain their existing behavior. Saves capture each user change, serialize accepted writes and prevent old read/save replies from updating a resumed page.
+
+The playback media-information panel has one **Emby Theater Enhanced** group. Its **预载:** row includes live state, committed MB/target when available and a concise fixed diagnostic when refused. Disabled and temporarily unavailable bindings are explicit rather than silently dropping the row. Candidate/generation/epoch/status sequence checks still discard late results. The stats view continues its existing timeupdate-driven refresh; pausing may stop refresh.
+
+## Fixed diagnostic contract
+
+Only a fixed `stage`, fixed `reason` and optional integer HTTP status100..599 may leave a failure path. Current-context/current-probe, next-metadata/next-context/next-probe/next-prefix, progress and lifecycle are distinguished. Examples include source-cross-origin, container-unsupported, file-options-unproxied, metadata identity/source-count/direct-stream refusals, redirects/auth/non206, bad range, missing/weak/invalid ETag, mismatched length/encoding/validator/representation, network interruption and timeout. Unknown exceptions become a fixed fallback. URL, Location, pathname, identity values, ETag, UA/header/cookie/token contents, response bodies and arbitrary exception text are not reported.
+
+Current-source failures stay attached to their request owner. A known current-proxy refusal is reported before fetching next metadata. Later unrelated errors cannot replace it. Cancel/retire/candidate replacement clears the owned diagnosis, and late failures cannot overwrite a new request. Frontend and main emit only these finite records through the existing diagnostics logger.
+
+## Proven code conditions and remaining field evidence
+
+The current strict chain receives the ordinary STRM resolver's final source. A final URL outside the Emby origin, a retained strm container, or extended file-local load options can leave the current stream unproxied. Next preloading requires the current proxy so foreground misses can physically cancel its background request. The next candidate currently uses its Emby static-stream metadata; actual later playback independently resolves its final source. Removing the current-handle check alone would break priority observation and could preload a different representation. This repair does not remove that check or guess that a redirect occurred.
+
+Same-origin exact206, strong ETag, conditional representation checks, single-background physical-close cancellation, shared P, original playback fallback and unplayed-prefix cleanup are retained. No redirects are followed and no new authentication/header forwarding or cross-origin origin whitelist is introduced. Real CD2/DirectUrl compatibility cannot be inferred from a synthetic source.
+
+The smallest field check is the new playback-information row or a fixed `preload/decision` record for one ordinary current playback, coordinated separately. It identifies the actual stage/reason without requiring URL or credentials. Before any direct-source/controlled-redirect adaptation, source/container/representation evidence and narrow ownership tests are required. A diagnostic/settings repair must not be called a successful real-server preloading acceptance while that evidence is still absent.
+
+## Validation boundaries
+
+Controlled HTTP tests classify failures while retaining exact bytes and request-close behavior. State tests cover the resolved-source prerequisite, file-local options, probe/prefix cause propagation, raw-error canaries and cancellation/generation retirement. The real Alameda integration still uses an explicitly synthetic helper/document: natural next, pending-at-EOF fallback, active cancel/preempt/replace/exit and merged-video next-play settings remain separate cases. The unsupported-source case now observes the actual finite refusal through the maintained diagnostics path, without issuing an unnecessary next Range request. No direct preload/tick/nextTrack call is substituted for the automatic integration.
+
+Current targeted runs passed376 checks, plus the corrected12-case Alameda integration and16 diagnostic/status checks after the last changes. These overlap; they are not an aggregate unique count. Full local public regression, Windows/current package, visible merged settings and the actual-server refusal remain separate outcomes. No main/tag/Release, version change, Work intervention or package dispatch is part of source preparation.

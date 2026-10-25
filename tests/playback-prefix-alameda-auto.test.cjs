@@ -128,6 +128,7 @@ async function automaticCase(t, scenario) {
             return result;
         }, send(channel, request) {
             if (channel === 'enhanced-native-helper-notify') service.notify(request.operation, request.payload, request.endpointId);
+            if (channel === 'enhanced-diagnostics-log' && request.category === 'preload') record('preload-diagnostic', request.details);
         }, listen(callback) {listener = callback;}, unlisten() {listener = null;}}};
     window.window = window; vm.createContext(window);
     document.createElement = name => {
@@ -149,17 +150,22 @@ async function automaticCase(t, scenario) {
         window.define('loading', [], () => ({hide() {}}));
         window.define('baseView', [], () => window.require(['modules/viewmanager/baseview.js']).then(values => values[0].default));
         for (const id of ['emby-select', 'emby-checkbox', 'emby-input', 'emby-button', 'emby-scroller']) window.define(id, [], () => ({}));
-        const Controller = (await window.require(['../plugins/mpvplayer/cache.js']))[0];
-        class Node extends EventTarget {constructor() {super(); this.value = ''; this.checked = false; this.disabled = false; this.textContent = '';}}
-        const nodes = Object.fromEntries(['form', '.chkRangeEnabled', '.selectRangeProgress', '.selectRangePreload', '.rangeSettingsState', '.rangeRuntimeState'].map(name => [name, new Node()]));
+        const Controller = (await window.require(['../plugins/mpvplayer/video.js']))[0];
+        class Node extends EventTarget {
+            constructor() {super(); this.value = ''; this.checked = false; this.disabled = false; this.textContent = ''; this.classList = {toggle() {}, add() {}, remove() {}};}
+            closest() {return {classList: this.classList};}
+        }
+        const html = fs.readFileSync(path.join(repo, 'src/electronapp/plugins/mpvplayer/video.html'), 'utf8');
+        const selectors = ['form', ...[...html.matchAll(/class="([^"]+)"/g)].map(match => '.' + match[1].split(/\s+/)[0])];
+        const nodes = Object.fromEntries(selectors.map(name => [name, new Node()]));
         const view = new Node(); view.getAttribute = () => null;
         view.querySelector = name => nodes[name] || null; view.querySelectorAll = () => [nodes['.chkRangeEnabled'], nodes['.selectRangeProgress'], nodes['.selectRangePreload']];
-        const page = new Controller(view); page.onResume();
-        await waitFor(() => page.loaded, details);
+        const page = new Controller(view); await page.onResume({refresh: true});
+        await waitFor(() => !nodes['.chkRangeEnabled'].disabled, details);
         assert.equal(nodes['.selectRangeProgress'].value, '70'); assert.equal(nodes['.selectRangePreload'].value, '300'); assert.equal(nodes['.chkRangeEnabled'].checked, false);
         assert(trace.some(row => row.type === 'synthetic-property' && row.name === 'core-idle' && row.value === false), details());
         const before = clients[0].currentGenerationId, userBefore = await (await fetch(origin.origin + '/Users/anonymous')).json();
-        nodes['.chkRangeEnabled'].checked = true; nodes.form.dispatchEvent(new Event('submit', {cancelable: true}));
+        nodes['.chkRangeEnabled'].checked = true; nodes['.chkRangeEnabled'].dispatchEvent(new Event('change'));
         await waitFor(() => nodes['.rangeSettingsState'].textContent.startsWith('已保存'), details);
         assert.deepEqual(preferences.get(), {schema: 1, enabled: true, progressPercent: 70, preloadMB: 300});
         assert.equal(service.rangeStatus().enabled, false); assert.equal(clients[0].currentGenerationId, before, 'Save does not retire the active native generation'); assert.equal(clients.length, 1); assert.equal(clients[0].exited, false);
@@ -216,7 +222,8 @@ async function automaticCase(t, scenario) {
         return;
     }
     if (scenario === 'unsupported') {
-        await waitFor(() => trace.some(row => row.type === 'preload-result' && row.state === 'unavailable'), details);
+        await waitFor(() => trace.some(row => row.type === 'preload-diagnostic' && row.stage === 'current-probe' && row.reason === 'etag-weak'), details);
+        assert(trace.some(row => row.type === 'synthetic-property' && row.name === 'time-pos' && row.value >= 5.6), details());
         assert(trace.find(row => row.type === 'load' && row.item === 'A').source.startsWith(origin.origin + '/Videos/A/'));
         assert.equal(service.rangeStatus().current.state, 'original'); assert.equal(service.rangeStatus().diskBytes, 0);
         assert(!trace.some(row => row.type === 'origin-media' && row.item === 'B'), details());

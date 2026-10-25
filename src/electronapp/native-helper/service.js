@@ -1,4 +1,5 @@
 'use strict';
+const preloadDiagnostics = require('../enhanced/playback-range-diagnostics');
 
 const previewSnapshot = require('./preview-snapshot');
 
@@ -124,9 +125,15 @@ function createService(options) {
   function readRangeConfig() {
     try {const config = typeof settings.getRangeCacheConfig === 'function' ? settings.getRangeCacheConfig() : settings.rangeCache; return config && config.kind === 'next-prefix' ? {...config} : null;} catch (_) {return null;}
   }
+  function reportPreload(value) {
+    const safe = preloadDiagnostics.snapshot(value);
+    try {if (typeof settings.logger === 'function') settings.logger({category: 'preload', event: 'decision', details: safe});} catch (_) {}
+    return safe;
+  }
+  function createRangeSession(config) {return require('../enhanced/playback-range-session').createSession({config, onDiagnostic: reportPreload});}
   function rangeKey(config) {return JSON.stringify(config && ['kind', 'root', 'blockBytes', 'timeoutMs', 'progressPercent', 'preloadMB', 'bytesPerSecond'].map(key => config[key] == null ? null : config[key]));}
   const initialRangeConfig = readRangeConfig();
-  let rangeSession = initialRangeConfig ? require('../enhanced/playback-range-session').createSession({config: initialRangeConfig}) : null;
+  let rangeSession = initialRangeConfig ? createRangeSession(initialRangeConfig) : null;
   let rangeConfigKey = rangeKey(initialRangeConfig), rangeApplyTail = Promise.resolve(), rangeCloseFailure = null;
   const electron = settings.electron;
   const BrowserWindow = electron && electron.BrowserWindow;
@@ -702,7 +709,7 @@ function createService(options) {
       if (destroyed || expectedEpoch !== generationEpoch) return;
       // Save can finish while the old readers close: publish only the latest config.
       const latest = readRangeConfig();
-      rangeSession = latest ? require('../enhanced/playback-range-session').createSession({config: latest}) : null;
+      rangeSession = latest ? createRangeSession(latest) : null;
       rangeConfigKey = rangeKey(latest);
     });
     rangeApplyTail = job.catch(function () {}); return job;
@@ -797,7 +804,12 @@ function createService(options) {
       if (!rangeSession) return {status: 'ok', value: {state: 'unavailable'}};
       // Queue cancellation/replacement can retire a candidate without changing generation.
       const generationId = active.currentGenerationId, candidateEpoch = ++rangePreloadEpoch, ownedRange = rangeSession;
-      const values = await Promise.all([active.getProperty('time-pos', 2000), active.getProperty('duration', 2000)]);
+      let values;
+      try {values = await Promise.all([active.getProperty('time-pos', 2000), active.getProperty('duration', 2000)]);}
+      catch (_) {
+        if (candidateEpoch !== rangePreloadEpoch || ownedRange !== rangeSession || destroyed || endpointId !== activeEndpointId || active !== client || active.currentGenerationId !== generationId) return {status: 'ok', value: {state: 'cancelled'}};
+        return {status: 'ok', value: {state: 'unavailable', diagnostic: reportPreload({stage: 'progress-check', reason: 'proxy-unavailable'})}};
+      }
       if (candidateEpoch !== rangePreloadEpoch || ownedRange !== rangeSession) return {status: 'ok', value: {state: 'cancelled'}};
       if (destroyed || endpointId !== activeEndpointId || active !== client || active.currentGenerationId !== generationId) return {status: 'ok', value: {state: 'unavailable'}};
       if (!Number.isFinite(values[0]) || !Number.isFinite(values[1]) || values[1] <= 0 ||
@@ -864,6 +876,7 @@ function createService(options) {
       requireGeneration(active, payload);
       if (args[0] === 'loadfile') {
         const loadEpoch = generationEpoch;
+        if (rangeSession && args.length !== 2) rangeSession.unproxied('file-options-unproxied', active, active.currentGenerationId);
         const selected = rangeSession && args.length === 2 ? await rangeSession.select(args[1], active, active.currentGenerationId) : null;
         if (destroyed || loadEpoch !== generationEpoch || active !== client || endpointId !== activeEndpointId || payload.generationId !== active.currentGenerationId) {
           if (selected) await selected.cancel();

@@ -4,6 +4,7 @@ const crypto = require('node:crypto');
 const {once} = require('node:events');
 const {createStore} = require('./playback-prefix-store');
 const {createReader, abortError} = require('./playback-range-http');
+const diagnostics = require('./playback-range-diagnostics');
 function parseRange(value, total) {
     if (value == null) return {start: 0, end: total - 1, partial: false};
     const match = /^bytes=(\d*)-(\d*)$/.exec(value);
@@ -127,7 +128,7 @@ async function createCache(options) {
                     }
                     return hit;
                 }
-                if (cacheFailed && lowPriority) throw Error('range-cache-unavailable');
+                if (cacheFailed && lowPriority) throw diagnostics.error('cache-io', 'range-cache-unavailable');
                 const offset = n * lease.blockBytes, length = Math.min(lease.blockBytes, lease.total - offset,
                     lowPriority ? budget - offset : Infinity);
                 if (lowPriority) {
@@ -139,8 +140,8 @@ async function createCache(options) {
                     const result = lowPriority ? await read(signal) : await foregroundRead(signal, read);
                     if (!active.current() || signal.aborted) throw abortError();
                     // Disk failure/pressure must not prevent valid foreground bytes from playing.
-                    try {if (!cacheFailed && lowPriority) {const written = await lease.writeBlock(n, result.bytes); if (!written && lowPriority) throw Error('range-quota');}}
-                    catch (_) {cacheFailed = true; if (lowPriority) throw Error('range-cache-unavailable');}
+                    try {if (!cacheFailed && lowPriority) {const written = await lease.writeBlock(n, result.bytes); if (!written && lowPriority) throw diagnostics.error('cache-quota', 'range-quota');}}
+                    catch (error) {cacheFailed = true; if (lowPriority) throw error && error.preloadReason ? error : diagnostics.error('cache-io', 'range-cache-unavailable');}
                     return result.bytes;
                 }
             };
