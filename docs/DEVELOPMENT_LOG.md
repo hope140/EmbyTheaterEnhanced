@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-25 — Preserve PCM success and add finite retained-window lifecycle
+
+Personally read run40158786872/job121065729106 at9d8f73a:PCMglobalsetup/EOF,45,999 samples each from46,000, seam80,000±4,800 exact, realcancel/replace0staleevents/Stop/latebytes,5helper+worker exit0/stdio and4filecleanup allpass. No longer list these as unfinished generic validation. Retain untimed/raw/PCM-only scope and knownpartialsource reread;no arbitraryfilm/device/fullapp restart claim.
+
+Implement experiment-private default-off Store with strong synthetic-only identity, physicalroot/lock binding, closed-export sameFSrename adoption, atomic manifest, active-generation token, query-vsactual lifecycle and reader leases. Do not duplicate media bytes or create a new network/cache layer. Preserve invalidation/temp/publication ownership through await/IO failures;livelease blocks publication and close, retired unlink is retryable, cleanup-pending publication explicit, foreign owner never erased, stale lock refuses withoutPIDquery. Actual file tests include separateNode reopen and deterministic rename/acquire/actual-switch/cleanup faults. New explicitmode integrates this state into source-helper-exit→newclip-helper lease read→EDL/PCM→allnativeexit→release;coordinator reopens state and retains only the verifiedmanagedwindow. No ordinaryservice/UI/renderer import or auth bypass, unchangedsourcefixture/core/timing/permissions/package pins. Normalapp and fullbuffer scopes documented separately, no invented user defaults.
+
+Validation:102 related tests passed,including17 store lifecycle/fault tests and source-to-managed retirement gates. Full public offline2027 tests:2017 passed,0 failed,10 platform skips.482 tracked JavaScript syntax,finite574-text credential-pattern scan,separate4-document UTF-8/newline/newlinks/privatepath/finite-pattern,workflow YAML and diff checks passed. Separate Node reopen and actual filesystem adoption are offline evidence;new fixed-Windows managed-path consumption remains pending,not inferred from the previous PCM run.
+
 ## 2026-10-25 — Correct probe AO suboption misuse after real cancel proof
 
 Read actual run40158039095/job121063518680:cancelGENERATION_RETIRED/replacePROBE_CANCELLED,oldrequestclosed/latebytes0/oldACCEPT0/oldStop0,replacement3→3.125sec survive;4startedhelper exit0/stdio-close,no outertimeout. PCM fails at ao setter -9 before samples. Archive positive cancellation and unknown audio separately.

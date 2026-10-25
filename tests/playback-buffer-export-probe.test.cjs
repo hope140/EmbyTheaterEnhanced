@@ -228,6 +228,28 @@ test('nonregular or redirected WAV is refused before deleting any experiment fil
     assert.throws(() => probe.retireProbeExcerpt(plan, report, exit));
     assert(fs.existsSync(path.join(dir, 'excerpt.avi'))); assert(fs.existsSync(path.join(dir, 'baseline.wav'))); assert(fs.existsSync(path.join(dir, 'other.wav')));
 });
+test('explicit retention sink keeps only the verified managed window after all readers exit', async t => {
+    const dir = root(t), {report, plan, exit} = seamReportFixture(); plan.out = dir; plan.retentionTrial = true;
+    plan.identity = report.identity = {libmpvSha256: 'c'.repeat(64)}; plan.fixture = {sha256: 'd'.repeat(64), size: 1024};
+    for (const [i, name] of ['baseline.wav', 'seam.wav'].entries()) report.helpers[i + 3].options = {...probe.optionsFor('seam', path.join(dir, name)), ao: [{name: 'pcm', enabled: true, params: {}}]};
+    fs.writeFileSync(path.join(dir, 'owner'), 'ETE isolated finite buffer export v1\n');
+    const hash = data => require('node:crypto').createHash('sha256').update(data).digest('hex');
+    for (const [file, row] of [['excerpt.avi', report.clip], ['retained.edl', report.edl.descriptor], ...report.pcm.captures.map(r => [r.file, r])]) {
+        const data = Buffer.from(file); fs.writeFileSync(path.join(dir, file), data); row.bytes = data.length; row.sha256 = hash(data);
+    }
+    const {Store, KIND} = require('../tools/playback-buffer-retention-store.cjs');
+    const media = {kind: KIND, sourceSha256: plan.fixture.sha256, sourceBytes: plan.fixture.size, coreSha256: plan.identity.libmpvSha256};
+    const store = Store.open({enabled: true, root: path.join(dir, 'retained-window'), create: true});
+    const token = store.beginActual(media, 101); await store.commit(token, path.join(dir, 'excerpt.avi'), {sourceStart: 1, sourceEnd: 2, localStart: 0}); store.close();
+    Object.assign(report.mapping, {sourceStartSeconds: 1, sourceEndExclusiveSeconds: 2, localStartSeconds: 0});
+    report.retention = {scope: 'owned-synthetic-retained-window-NOT-app-entry', sourceGeneration: 101, identity: media, stored: true, managerReopened: true, newHelperRead: true, leaseReleased: true, managerClosed: true, ...report.clip};
+    for (const flag of ['stored', 'managerReopened', 'newHelperRead', 'leaseReleased', 'managerClosed']) {
+        const bad = structuredClone(report); bad.retention[flag] = false; assert.throws(() => probe.validateReport(bad, plan, exit));
+    }
+    const result = probe.retireProbeExcerpt(plan, report, exit);
+    assert.equal(result.retained.length, 1); assert.deepEqual(result.removed, ['retained.edl', 'baseline.wav', 'seam.wav']);
+    assert(fs.existsSync(path.join(dir, 'retained-window', result.retained[0])));
+});
 test('only the isolated retention branch can run export; old branch modes keep their existing boundary', () => {
     route.validateDispatch('buffer-export', 'a'.repeat(40), route.PIN.repository, 'false', 'refs/heads/experiment/playback-buffer-retention');
     for (const ref of ['refs/heads/main', 'refs/heads/feature/playback-range-cache', 'refs/heads/verify/next-episode-auto']) assert.throws(() => route.validateDispatch('buffer-export', 'a'.repeat(40), route.PIN.repository, 'false', ref));

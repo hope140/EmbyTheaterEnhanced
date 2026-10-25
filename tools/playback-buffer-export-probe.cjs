@@ -10,16 +10,17 @@ const OWNER = 'ETE isolated finite buffer export v1\n';
 const MAX_FILE = 34 * 1024 * 1024;
 const MAX_SLOTS = 192 * 25;
 const STAGES = new Set(['preflight', 'app-ready', 'source-helper', 'source-load', 'source-advance', 'source-pause',
-    'source-stable', 'export', 'export-inspect', 'source-stop', 'source-exit', 'clip-helper', 'clip-load', 'clip-decode', 'clip-stop', 'edl-helper', 'edl-load', 'edl-cross', 'edl-stop', 'fallback-original', 'native-cancel', 'pcm-baseline', 'pcm-seam', 'pcm-inspect', 'complete']);
+    'source-stable', 'export', 'export-inspect', 'source-stop', 'source-exit', 'clip-helper', 'clip-load', 'clip-decode', 'clip-stop', 'edl-helper', 'edl-load', 'edl-cross', 'edl-stop', 'fallback-original', 'retention-state', 'native-cancel', 'pcm-baseline', 'pcm-seam', 'pcm-inspect', 'complete']);
 const CODES = new Set(['export-input-invalid', 'export-file-limit', 'export-avi-invalid', 'export-avi-format', 'export-packets-invalid',
     'export-window-unavailable', 'export-source-not-stable', 'export-extra-source-read', 'export-command-failed', 'export-file-changed',
     'export-mapping-invalid', 'export-native-deadline', 'export-stage-timeout', 'export-result-invalid', 'export-owned-path',
     'export-fresh-root', 'export-owner-drift', 'export-receipt-invalid', 'export-explicit-Windows-required', 'export-fixed-Electron-required',
-    'export-helper-exit', 'export-native-not-established']);
+    'export-helper-exit', 'export-retention-state', 'export-native-not-established']);
 CODES.add('export-av-format'); CODES.add('export-av-audio-mapping'); CODES.add('export-av-timeline-mismatch');
 CODES.add('export-option-set-failed'); CODES.add('export-option-get-failed'); CODES.add('export-option-readback-mismatch');
 CODES.add('export-edl-input'); CODES.add('export-edl-observation');
 for (const code of ['export-pcm-input', 'export-pcm-output', 'export-pcm-limit', 'export-cancel-observation', 'export-cancel-late-bytes', 'pcm-file-limit', 'pcm-file-changed', 'pcm-source-invalid', 'pcm-baseline-invalid', 'pcm-edl-invalid', 'pcm-seam-input-invalid', 'pcm-seam-outside-source', 'pcm-wav-truncated', 'pcm-wav-format-unsupported', 'pcm-wav-format-mismatch', 'pcm-wav-container', 'pcm-wav-format', 'pcm-wav-data-not-final', 'pcm-wav-data', 'pcm-wav-incomplete', 'pcm-wav-chunk-unsupported', 'export-fallback-input', 'export-fallback-observation', 'export-fallback-cancelled']) CODES.add(code);
+for (const code of ['retention-owned-path', 'retention-identity', 'retention-window', 'retention-file-limit', 'retention-manifest', 'retention-file-changed', 'retention-unknown-member', 'retention-closed', 'retention-owner', 'retention-lock-changed', 'retention-generation', 'retention-input-alias', 'retention-live-reader-or-work', 'retention-cleanup-pending']) CODES.add(code);
 const OPTIONS = Object.freeze({'cache': 'yes', 'cache-on-disk': false, 'demuxer-max-bytes': 4 * 1048576,
     'demuxer-max-back-bytes': 2 * 1048576, 'demuxer-donate-buffer': false, 'pause': false, 'volume': 0}); // Probe only, not product defaults.
 function optionsFor(variant, captureFile = null) {
@@ -173,8 +174,9 @@ function noExtraSource(before, after) {
     if (before.requests !== after.requests || before.scheduledBytes !== after.scheduledBytes) throw Error('export-extra-source-read');
     return {newRequests: 0, newScheduledSourceBytes: 0, completedBytesDelta: after.completedBytes - before.completedBytes};
 }
-function prepare(sourceFile, out, variant = 'video') {
+function prepare(sourceFile, out, variant = 'video', retentionTrial = false) {
     optionsFor(variant);
+    if (typeof retentionTrial !== 'boolean' || retentionTrial && variant !== 'seam') throw Error('export-input-invalid');
     sourceFile = fs.realpathSync(sourceFile);
     const source = support.readPlan(sourceFile);
     assert.deepEqual(support.verifyPlanRuntime(source, path.resolve(__dirname, '..')), source.identity);
@@ -185,13 +187,14 @@ function prepare(sourceFile, out, variant = 'video') {
     fs.mkdirSync(out); out = fs.realpathSync(out); fs.writeFileSync(path.join(out, 'owner'), OWNER, {flag: 'wx'});
     for (const dir of ['profile', 'local', 'mpv', 'tmp']) fs.mkdirSync(path.join(out, dir));
     const fixture = variant !== 'video' ? require('./playback-buffer-av-fixture.cjs').fixture(path.join(out, 'A.avi')) : markedFixture(path.join(out, 'A.avi'));
-    const plan = {schema: 1, scope: SCOPE, variant, out, sourceFile, sourcePlanSha256: support.hashFile(sourceFile),
+    const plan = {schema: 1, scope: SCOPE, variant, retentionTrial, out, sourceFile, sourcePlanSha256: support.hashFile(sourceFile),
         toolSha256: support.hashFile(__filename), identity: source.identity, fixture};
     support.writeNew(path.join(out, 'probe.json'), plan); return plan;
 }
 function readProbe(file) {
     const plan = disk.boundedJson(file, 65536);
     optionsFor(plan.variant);
+    if (typeof plan.retentionTrial !== 'boolean' || plan.retentionTrial && plan.variant !== 'seam') throw Error('export-input-invalid');
     if (plan.schema !== 1 || plan.scope !== SCOPE || path.resolve(file) !== path.join(plan.out, 'probe.json') || plan.toolSha256 !== support.hashFile(__filename)) throw Error('export-input-invalid');
     physical(plan.out);
     if (fs.readFileSync(support.regular(path.join(plan.out, 'owner')), 'utf8') !== OWNER || support.hashFile(support.regular(plan.sourceFile)) !== plan.sourcePlanSha256) throw Error('export-owner-drift');
@@ -233,6 +236,11 @@ function validateReport(report, plan, exit) {
         !Number.isFinite(report.fallback.duration) || Math.abs(report.fallback.duration - 8) > 1 / 24 ||
         !Number.isInteger(report.fallback.sourceRequests) || report.fallback.sourceRequests <= 0 || !require('./playback-buffer-edl-probe.cjs').physicalClosed(report.fallback.stop))) throw Error('export-result-invalid');
     if (plan.variant === 'seam' && (!require('./playback-buffer-cancel-probe.cjs').valid(report.cancellation) || !require('./playback-buffer-pcm-probe.cjs').valid(report.pcm))) throw Error('export-result-invalid');
+    if (plan.retentionTrial && (report.retention?.scope !== 'owned-synthetic-retained-window-NOT-app-entry' || report.retention.stored !== true || report.retention.managerReopened !== true ||
+        report.retention.newHelperRead !== true || report.retention.leaseReleased !== true || report.retention.managerClosed !== true || report.retention.bytes !== report.clip.bytes ||
+        report.retention.sha256 !== report.clip.sha256 || report.retention.identity?.kind !== 'owned-raw-avi-pcm48k-v1' ||
+        report.retention.identity.sourceSha256 !== plan.fixture?.sha256 || report.retention.identity.sourceBytes !== plan.fixture?.size ||
+        report.retention.identity.coreSha256 !== plan.identity.libmpvSha256 || !/^[a-f0-9]{64}$/.test(plan.identity.libmpvSha256 || '') || !Number.isSafeInteger(report.retention.sourceGeneration) || report.retention.sourceGeneration <= 0)) throw Error('export-result-invalid');
     assert.deepEqual(report.identity, plan.identity);
 }
 async function worker(file) {
@@ -245,12 +253,12 @@ async function worker(file) {
         identity: plan.identity, helpers: [], checks: {}, transparentRestore: 'NOT_ASSESSED', mapping: null};
     const save = () => fs.writeFileSync(path.join(plan.out, 'observations.json'), JSON.stringify(report, null, 2) + '\n');
     const stage = name => {report.stage = name; save();};
-    const owned = new Map(); let client, window, server, timer, fatal = false;
+    const owned = new Map(); let client, window, server, timer, fatal = false, retentionStore = null, retentionLease = null, retentionMedia = null;
     const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
     const check = () => {if (fatal) throw Error('export-native-deadline'); if (client?.operationErrors.length) throw Error('export-command-failed');};
     const until = async predicate => {const end = Date.now() + 10000; do {check(); if (await predicate()) return; await delay(25);} while (Date.now() < end); throw Error('export-stage-timeout');};
     const property = name => client.getProperty(name, 3000);
-    const output = path.join(plan.out, 'excerpt.avi');
+    let output = path.join(plan.out, 'excerpt.avi');
     const fingerprint = () => {support.regular(output); if (fs.statSync(output).size > MAX_FILE) throw Error('export-file-limit'); return {bytes: fs.statSync(output).size, sha256: support.hashFile(output)};};
     async function finish(thing) {
         const record = owned.get(thing);
@@ -272,7 +280,7 @@ async function worker(file) {
             const ready = client.start(); client.smokeClosePromise = new Promise(resolve => client.child.once('close', resolve)); record.pid = client.child.pid; save();
             await ready; record.handshake = client.handshake;
             assert.equal(client.handshake.libmpvVersion, require(path.join(source.runtime, 'electronapp/native-helper/service.js')).EXPECTED_LIBMPV_VERSION); save();
-            client.beginGeneration(label, ['core-idle', 'time-pos', 'duration']);
+            record.generationId = client.beginGeneration(label, ['core-idle', 'time-pos', 'duration']);
             const expected = optionsFor(plan.variant, captureFile);
             record.options = {};
             for (const [name, value] of Object.entries(expected)) {
@@ -305,6 +313,19 @@ async function worker(file) {
         stage('source-stop'); await client.stop(); await until(() => server.active.size === 0); assert.deepEqual(fingerprint(), report.clip); report.checks.unchangedAfterStop = true;
         stage('source-exit'); await finish(client); assert.deepEqual(fingerprint(), report.clip); report.checks.unchangedAfterExit = true;
         if (!['edl', 'seam'].includes(plan.variant)) {await server.close(); server = null;}
+        if (plan.retentionTrial) {
+            stage('retention-state');
+            const {Store, KIND} = require('./playback-buffer-retention-store.cjs'), root = path.join(plan.out, 'retained-window');
+            const media = retentionMedia = {kind: KIND, sourceSha256: plan.fixture.sha256, sourceBytes: plan.fixture.size, coreSha256: plan.identity.libmpvSha256};
+            report.retention = {scope: 'owned-synthetic-retained-window-NOT-app-entry', sourceGeneration: report.helpers[0].generationId, identity: media}; save();
+            retentionStore = Store.open({enabled: true, root, create: true});
+            const token = retentionStore.beginActual(media, report.retention.sourceGeneration);
+            const committed = await retentionStore.commit(token, output, {sourceStart: report.mapping.sourceStartSeconds, sourceEnd: report.mapping.sourceEndExclusiveSeconds, localStart: 0});
+            if (!committed.stored) throw Error('export-retention-state');
+            Object.assign(report.retention, committed); retentionStore.close(); retentionStore = Store.open({enabled: true, root}); report.retention.managerReopened = true;
+            retentionLease = retentionStore.acquire(media, report.mapping.sourceStartSeconds); if (!retentionLease) throw Error('export-retention-state');
+            output = retentionLease.path; assert.deepEqual(fingerprint(), report.clip); save();
+        }
         await start('clip-helper'); stage('clip-load'); await client.load(['loadfile', output]).promise;
         stage('clip-decode'); await until(async () => client.state.fileLoaded && await property('time-pos') >= 0.1);
         const video = await property('video-out-params'), vo = await property('current-vo'), duration = await property('duration');
@@ -318,7 +339,7 @@ async function worker(file) {
             report.decoded.audio = {samplerate: audio.samplerate, channels: audio['channel-count'], output: ao}; report.checks.audioDecoded = true;
         }
         assert(Number.isFinite(report.decoded.clipStartTime)); report.mapping.localStartSeconds = report.decoded.clipStartTime;
-        report.mapping.sourceMinusLocalSeconds = report.mapping.sourceStartSeconds - report.decoded.clipStartTime; report.checks.clipDecoded = true;
+        report.mapping.sourceMinusLocalSeconds = report.mapping.sourceStartSeconds - report.decoded.clipStartTime; report.checks.clipDecoded = true; if (plan.retentionTrial) {retentionStore.beginActual(retentionMedia, client.currentGenerationId); report.retention.newHelperRead = true;}
         if (plan.variant !== 'video') {
             client.setProperty('pause', true); assert.equal(await property('pause'), true);
             const target = duration / 2; client.submitCommand(['seek', String(target), 'absolute+exact']);
@@ -355,10 +376,16 @@ async function worker(file) {
             stage('pcm-inspect'); report.pcmFiles = ['baseline.wav', 'seam.wav'].map(name => ({file: name, bytes: fs.statSync(support.regular(path.join(plan.out, name))).size})); save();
             report.pcm = pcm.finish(plan.out, av.inspect(path.join(plan.out, 'A.avi')).audio.pcm, report.edl.range, captures);
         }
+        if (retentionLease) {retentionLease.release(); retentionLease = null; report.retention.leaseReleased = true;}
+        if (retentionStore) {retentionStore.close(); retentionStore = null; report.retention.managerClosed = true;}
         report.status = 'PASS'; stage('complete');
     } catch (error) {report.status = 'UNKNOWN'; report.failure = safeFailure(error, report.stage); console.error('mpv-buffer-export-failure:' + JSON.stringify(report.failure));}
     finally {
         for (const thing of [...owned.keys()]) {try {await finish(thing);} catch (_) {report.status = 'UNKNOWN'; report.cleanupFailure = 'export-helper-exit';}}
+        if (!owned.size) {
+            try {if (retentionLease) {retentionLease.release(); retentionLease = null;} if (retentionStore) {retentionStore.close(); retentionStore = null;}}
+            catch (_) {report.status = 'UNKNOWN'; report.cleanupFailure = 'retention-state-close';}
+        }
         if (owned.size) {report.status = 'UNKNOWN'; report.nativeOutcome = 'UNCERTAIN';}
         try {if (server) await server.close();} catch (_) {report.status = 'UNKNOWN'; report.cleanupFailure = 'origin-close';}
         if (window && !window.isDestroyed()) window.destroy(); clearTimeout(timer); save(); app.exit(report.status === 'PASS' ? 0 : 1);
@@ -368,20 +395,30 @@ function retireProbeExcerpt(plan, report, exit, save = () => {}) {
     validateReport(report, plan, exit);
     physical(plan.out);
     if (fs.readFileSync(support.regular(path.join(plan.out, 'owner')), 'utf8') !== OWNER) throw Error('export-owner-drift');
-    const files = [path.join(plan.out, 'excerpt.avi')];
+    if (plan.retentionTrial) {
+        const {Store} = require('./playback-buffer-retention-store.cjs');
+        const cache = Store.open({enabled: true, root: path.join(plan.out, 'retained-window')});
+        try {
+            const lease = cache.acquire(report.retention.identity, report.mapping.sourceStartSeconds);
+            if (!lease) throw Error('export-retention-state');
+            try {if (lease.window.sourceStart !== report.mapping.sourceStartSeconds || lease.window.sourceEnd !== report.mapping.sourceEndExclusiveSeconds || lease.window.localStart !== report.mapping.localStartSeconds) throw Error('export-retention-state');}
+            finally {lease.release();}
+        } finally {cache.close();}
+    }
+    const files = [plan.retentionTrial ? path.join(plan.out, 'retained-window', 'window-' + report.clip.sha256 + '.avi') : path.join(plan.out, 'excerpt.avi')];
     if (['edl', 'seam'].includes(plan.variant)) files.push(path.join(plan.out, 'retained.edl'));
     const expected = [report.clip, report.edl?.descriptor];
     if (plan.variant === 'seam') for (const row of report.pcm.captures) {files.push(path.join(plan.out, row.file)); expected.push(row);}
     for (const file of files) support.regular(file);
     for (const [index, file] of files.entries()) if (support.hashFile(file) !== expected[index].sha256 || fs.statSync(file).size !== expected[index].bytes) throw Error('export-file-changed');
-    const receipt = {scope: 'test-excerpt-retirement-only-NOT-product-cache-policy', removed: [], nativeReaders: 0}; save(receipt);
-    for (const file of files) {fs.unlinkSync(file); receipt.removed.push(path.basename(file)); save(receipt);}
+    const receipt = {scope: 'test-excerpt-retirement-only-NOT-product-cache-policy', removed: [], retained: [], nativeReaders: 0}; save(receipt);
+    for (const file of files) {if (plan.retentionTrial && file === files[0]) {receipt.retained.push(path.basename(file)); save(receipt); continue;} fs.unlinkSync(file); receipt.removed.push(path.basename(file)); save(receipt);}
     return receipt;
 }
 async function run(file, execute) {
     if (execute !== true || process.platform !== 'win32' || process.arch !== 'x64') throw Error('export-explicit-Windows-required');
     const {plan, source} = readProbe(file);
-    for (const name of ['observations.json', 'worker.log', 'run.json', 'excerpt.avi', 'retained.edl', 'baseline.wav', 'seam.wav']) if (fs.existsSync(path.join(plan.out, name))) throw Error('export-fresh-root');
+    for (const name of ['observations.json', 'worker.log', 'run.json', 'excerpt.avi', 'retained.edl', 'baseline.wav', 'seam.wav', 'retained-window']) if (fs.existsSync(path.join(plan.out, name))) throw Error('export-fresh-root');
     const fd = fs.openSync(path.join(plan.out, 'worker.log'), 'wx'), receipt = {scope: SCOPE, status: 'UNKNOWN', nativeOutcome: 'UNCERTAIN'};
     let timer, timedOut = false;
     const save = () => fs.writeFileSync(path.join(plan.out, 'run.json'), JSON.stringify(receipt, null, 2) + '\n');

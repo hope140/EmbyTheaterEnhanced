@@ -1,6 +1,27 @@
 # 播放缓冲暂存独立实验：阶段收尾与继续验证
 
 
+## 2026-10-25：合成音视频链成立，进入受限存取原型
+
+亲自核对正常日志 run `40158786872` / job `121065729106`、controls `9d8f73a0dad4779abd2987b9aa63c49289b2c7a8`：PCM全局选项回读、两份捕获与比较均通过。baseline/seam各92,066B、45,999样本，起始源样本46,000，接缝80,000附近9,600样本精确一致，assessment=`exact-source-samples-through-seam`。真实取消/替代保持旧ACCEPT/旧Stop/晚字节0，新播放3→3.125秒；五helper和worker均exit0/stdio关闭，无timeout，四个临时文件清理通过。协调者独立artifact回读两WAV同SHA256 `87b42e8783b8f72c7b1b16e2343c136e3fdab45eae3f68c0594ccb8fbb226240`；ZIP artifact `12584793847` SHA256 `8201ef0f576b8d89fdc7425edca31f56ebc468c1fcf8051065395febaaca7745`。这证明固定raw视频/mono48k PCM和untimed文件输出的样本序列，不泛化声卡、任意影片或字幕。
+
+**现在的决定：可继续做受限可用原型，无需改内核；普通产品入口仍不启用。** 有限已有buffer导出、不补抓、Stop与新helper解码、原时间映射/EDL接续、摘要失效回源、取消/替代、样本接缝和资源关闭都有具体肯定证据。不能再把它们统称为“尚待验证”。部分已存payload仍会被原源预取重发，没有同条件净流量收益保证。
+
+新增单窗口状态适配器只接收已验证合成AVI/PCM身份，默认不打开。生产者退出后同文件系统rename收下已闭合export，消除源别名，不再复制媒体字节；原子last.json、同profile根/锁实体绑定、hash/version隔离、显式实际播放代次和可重试清理。Stop/正常关闭保留；另一身份的查询不清理，只有beginActual确认其他视频实际开始才失效旧pointer，活lease延迟删文件。已提交状态可在独立Node进程重开；异步提交过期或插入旧lease不得发布。崩溃遗留writer锁拒绝使用并回原链，不查PID或绕过权限。
+
+明确的新输入`buffer-retention-state`在已有五helper流程中接该适配器：源helper真实退出后交接，manager关闭重开，再由原clip helper读取managed lease路径；后续EDL/PCM共用该lease，全部helper退出后才释放，父侧再次读状态/window/hash，保留一个managed片段，只删EDL/WAV。普通seam模式仍清理全部四个夹具。该新模式尚待固定Windows实测，不冒充完整应用重启：独立Node重开是存储证据，后续新native helper读取是另一项证据。移动后旧excerpt路径不存在，故本模式fallback兼含missing条件；原seam的stale-SHA独立证据保留。
+
+### 距离正常产品还需完成的具体接线
+
+| 工程项 | 当前状态与最小代价 |
+| --- | --- |
+| 应用播放/Stop归属 | 试验已接真实helper退出和下一helper读取，普通main/service/renderer未导入该Store。需窄主进程操作在当前generation仍有效时dump、保存后再Stop，并在可信core-idle实际播放事件绑定逻辑Item/MediaSource；浏览/准备不能clear。这是跨层顺序接线，不能用通用renderer命令替代 |
+| 真实源身份与重新鉴权 | 本原型只承认已知本地合成源hash，不能为真实HTTP下载全片求hash。产品须从已有PlaybackManager/main可信路径取得server/user/MediaSource/版本校验和fresh source；token/URL不落盘，失效/302/转码未知回原链。该适配未完成，未伪造提供者 |
+| 用户要的全部当时缓冲 | 现在只保存一个已验证有限窗口，绝不宣称已保存全部活跃packet队列。完整窗口/多范围、关键帧、超大同步导出成本与正常用户已有缓冲上限仍须接内核观测和原设置；不得换成累计下载或新总容量。原型34MiB文件界只是合成8秒输入合同，不是正式默认 |
+| 正常退出与崩溃恢复 | 正常close/重开、lease/失败清理已有离线真文件和跨进程证据。stale锁保持fail-closed，正式启动需借已有应用单实例所有权恢复，不能通过任意PID探测/删锁绕过 |
+
+因此最小可用范围是“明确试验开关、固定已知源/有限片段的受控保存与复用”。维护成本目前集中在一个小状态适配器和窄播放入口；若要求任意压缩格式/声卡实时无缝，则另有支持范围工作，不在本轮无上限铺矩阵。下一步只跑该一次状态交接短测，再接可信正常播放入口，不合main或发行。
+
 ## 2026-10-25：取消/替代已实证，PCM配置首错修正
 
 实际正常日志 run `40158039095` / job `121063518680`、controls `98e431d3f18e12b9609ab5ef999637320abba573` 已核对。两个真实挂起GET场景均完成：cancel为GENERATION_RETIRED、replace为PROBE_CANCELLED，旧请求关闭、迟到字节0、旧ACCEPT0、旧Stop0；替代播放保留并从3秒推进至3.125秒。前序有限导出/EDL/摘要回退继续通过。四个已启动helper均正常exit0/stdio关闭，外层无timeout。

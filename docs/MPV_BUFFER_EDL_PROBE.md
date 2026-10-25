@@ -103,3 +103,14 @@ run40158039095/job121063518680已实证Stop/替代两个挂起请求场景：旧
 固定源码证据链：[AO列表与global模式](https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/audio/out/ao.c)、[PCM前缀和文件初始化](https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/audio/out/ao_pcm.c)、[前缀组选项注册](https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/options/m_config_core.c)、[普通选项属性桥](https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/player/command.c)、[AO子选项拒绝](https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/options/m_option.c)。PCM的file/waveheader/append不带NOPROP或PRE_PARSE；全局file值由PCM实例初始化读取。通用子选项长度引用不适用于禁止子选项的AO。
 
 修正仅限首次media前的现有标量属性：先配置全局路径和两个布尔开关，全部读取匹配后单独选择PCM。路径不加CLI引用/百分号转义，不作为AO子参数；冒号/逗号/Unicode由原样字符串传输。AO getter必须是单个启用pcm、空inline params；额外driver/inline file/错误全局路径均拒绝。任何setter错误或readback不符仍失败，不改核心，不静默退其他输出。独立mock红绿回归重现原-9并检查新顺序，不能代替固定DLL后续实测。
+
+
+## 受限状态交接：buffer-retention-state
+
+固定Windows run40158786872的PCM exact样本、真实取消/替代和五helper退出已通过，详见[肯定证据与产品差距](PLAYBACK_BUFFER_RETENTION_CLOSEOUT.md)。新模式沿用相同源/内核/权限/时间上限，不加格式矩阵或新helper。
+
+只有该显式输入把retentionTrial=true写入精确工具绑定plan。源helper已退出/stdio闭合后，Store收下已验证export（rename，不copy/hardlink），关闭并重新读取原子manifest，以lease路径供后续clip/EDL/PCM。generation取真实NativeHelperClient返回值，源进度与解码门禁仍须先通过；逻辑源仍是同一A，未伪造另一个视频的实际播放事件。五helper全部退出后才释放和close，异常退出未确认则保持隔离不宣称已释放。coordinator再核Store identity/window/文件摘要后，只删除EDL及WAV，单份managed窗口留到所属试验目录结束，不上传媒体。
+
+Store仅实验私有，不被正常应用导入。identity严格是已知合成source/core hash及size，不接URL/token；真实媒体不能靠新增全量hash下载提供该identity。查询miss不改变last，actual播放改变才失效；lease保护退休文件。单writer绑定根/锁实体，遗留锁拒绝且不查PID；原子发布和失败追踪覆盖待提交期间切源/插入lease、foreign owner/lock、next冲突、unlink重试。先验证输入文件只有一个link且导出者确已退出，rename后不保留外部可写别名。正常Stop/close保留，不新增TTL或用户盘额。
+
+试验结果需分层读取：retention.stored/managerReopened/newHelperRead/leaseReleased/managerClosed和retainedWindows=1，仅证明受控有限窗口生命周期。另一个真实视频实际开始的应用事件接线、全当前buffer导出、可信Emby身份/重新鉴权和应用crash恢复仍是产品工程；不能把Node重开说成完整Electron重启，也不把该模式fallback说成纯stale-SHA（旧路径已被移动，missing亦成立）。

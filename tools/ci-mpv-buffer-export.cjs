@@ -30,7 +30,8 @@ function summary(plan) {
         exportMs: n(observation?.exportMs), clipBytes: n(observation?.clip?.bytes),
         pendingOption: Object.hasOwn(probe.optionsFor('av'), observation?.pendingOption) ? observation.pendingOption : ['audio-format', 'ao-pcm-file', 'ao-pcm-waveheader', 'ao-pcm-append'].includes(observation?.pendingOption) ? observation.pendingOption : null,
         optionStatus: probe.projectOptionStatus(observation?.optionStatus),
-        testExcerptRetirement: {nativeReaders: n(receipt?.excerptRetirement?.nativeReaders), removed: Array.isArray(receipt?.excerptRetirement?.removed) ? receipt.excerptRetirement.removed.filter(name => ['excerpt.avi', 'retained.edl', 'baseline.wav', 'seam.wav'].includes(name)) : []},
+        testExcerptRetirement: {retainedWindows: Array.isArray(receipt?.excerptRetirement?.retained) ? receipt.excerptRetirement.retained.filter(name => /^window-[a-f0-9]{64}\.avi$/.test(name)).length : 0, nativeReaders: n(receipt?.excerptRetirement?.nativeReaders), removed: Array.isArray(receipt?.excerptRetirement?.removed) ? receipt.excerptRetirement.removed.filter(name => ['excerpt.avi', 'retained.edl', 'baseline.wav', 'seam.wav'].includes(name)) : []},
+        retention: {scope: 'owned-synthetic-retained-window-NOT-app-entry', ...Object.fromEntries(['stored', 'managerReopened', 'newHelperRead', 'leaseReleased', 'managerClosed'].map(k => [k, boolean(observation?.retention?.[k])])), bytes: n(observation?.retention?.bytes), sourceGeneration: n(observation?.retention?.sourceGeneration)},
         clipFormat: Object.fromEntries(['ticksPerSecond', 'nonemptyPackets', 'emptyVideoSlots', 'containerSlots'].map(k => [k, n(observation?.clipFormat?.[k])])),
         checks: Object.fromEntries(['newRequests', 'newScheduledSourceBytes', 'completedBytesDelta'].map(k => [k, n(observation?.checks?.[k])]).concat(
             ['clipDecoded', 'audioDecoded', 'seekMappingVerified', 'clipReachedEOF', 'unchangedAfterStop', 'unchangedAfterExit', 'unchangedAfterReopen', 'edlTimelineAndTracks', 'unchangedAfterEDL'].map(k => [k, boolean(observation?.checks?.[k])]))),
@@ -77,7 +78,7 @@ function printSummary(plan) {console.log('mpv-buffer-export-summary:' + JSON.str
 async function run(file) {
     if (process.platform !== 'win32' || process.arch !== 'x64') throw Error('export-explicit-Windows-required');
     const ci = require('./ci-playback-range-smoke.cjs'), plan = ci.readPlan(file), repo = path.resolve(__dirname, '..');
-    if (!['buffer-export', 'buffer-export-av', 'buffer-export-edl', 'buffer-export-seam'].includes(plan.mode)) throw Error('export-input-invalid');
+    if (!['buffer-export', 'buffer-export-av', 'buffer-export-edl', 'buffer-export-seam', 'buffer-retention-state'].includes(plan.mode)) throw Error('export-input-invalid');
     ci.noCredentials(process.env);
     const inputs = ci.expandedInputs(plan), root = path.join(plan.root, 'buffer-export');
     if (fs.existsSync(root)) throw Error('export-fresh-root'); fs.mkdirSync(root);
@@ -89,7 +90,7 @@ async function run(file) {
         baseToolsCommit: ci.PIN.toolsCommit, baseSourceCommit: ci.PIN.sourceCommit, identity: derived.identity,
         loader: derived.identity.derivation.addition, originalPackageModified: false, transparentRestore: 'NOT_ASSESSED'});
     await support.entrySmoke(sourceFile, true);
-    probe.prepare(sourceFile, path.join(root, 'probe'), plan.mode === 'buffer-export-seam' ? 'seam' : plan.mode === 'buffer-export-edl' ? 'edl' : plan.mode === 'buffer-export-av' ? 'av' : 'video');
+    probe.prepare(sourceFile, path.join(root, 'probe'), ['buffer-export-seam', 'buffer-retention-state'].includes(plan.mode) ? 'seam' : plan.mode === 'buffer-export-edl' ? 'edl' : plan.mode === 'buffer-export-av' ? 'av' : 'video', plan.mode === 'buffer-retention-state');
     await probe.run(path.join(root, 'probe/probe.json'), true);
     trial.verifyRuntime(repo, derived.runtime, plan.paths.artifact, derived.descriptor); return summary(plan);
 }

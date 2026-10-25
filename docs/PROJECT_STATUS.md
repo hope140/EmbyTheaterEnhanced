@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-25 — Synthetic seam proven; explicit retained-window state prototype
+
+Actual run40158786872/job121065729106 at9d8f73a passes PCM global setup and exact9,600 samples through seam,45,999 samples/capture with same source start46,000, real cancel/replacement and5normalhelper exits/cleanup. These engineering boundaries are solved for the fixed raw/PCM/untimed fixture, not arbitrary films/devices. Continue one default-off buffer-retention-state trial:closed source-helper export is adopted by rename, atomic single-window state closes/reopens, next native helper consumes a lease, all readers exit before release, parent validates state/window/hash then keeps only the managed clip. New mode pendingWindows;offline actual-file/cross-Node lifecycle/race coverage exists. Production app owner hooks, trusted real source identity/reauth, all-current-buffer export and stale-lock recovery remain specific unconnected modules;no new user quota/TTL/download layer/core/main/release change. [Decision and scope](PLAYBACK_BUFFER_RETENTION_CLOSEOUT.md).
+
 ## 2026-10-25 — Native cancellation confirmed; correct PCM global-option setup
 
 Actual run40158039095/job121063518680 at98e431d confirms both held-request cancellation/replacement:old close/latebytes0/oldACCEPT0/oldStop0 and preserved3→3.125sec replacement. Four started helpers exit0/stdio-close. PCM setup fails before capture at ao/-9; no sample-continuity result exists. Fixed source rejects AO suboptions and registers separate ao-pcm-file/waveheader/append global properties. Correct only probe configuration to set/read these raw scalar values before selecting ao=pcm and first media load. Keep prior cancel implementation/evidence, production helper/core and all candidate/lifecycle limits unchanged. Fixed-DLL global readback and actual PCM capture still require one controlled retry. [Evidence and contract](PLAYBACK_BUFFER_RETENTION_CLOSEOUT.md).

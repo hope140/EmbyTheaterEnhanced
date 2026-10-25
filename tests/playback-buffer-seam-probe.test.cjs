@@ -4,6 +4,7 @@ const cancel = require('../tools/playback-buffer-cancel-probe.cjs'), pcm = requi
 const hidden = require('../tools/playback-range-windows-hidden.cjs');
 function root(t) {const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-seam-unit-')); t.after(() => fs.rmSync(dir, {recursive: true, force: true})); return dir;}
 test('seam dispatch is explicit, independent, nonrelease and present in actual job condition', () => {
+    route.validateDispatch('buffer-retention-state', 'a'.repeat(40), route.PIN.repository, 'false', 'refs/heads/experiment/playback-buffer-retention');
     route.validateDispatch('buffer-export-seam', 'a'.repeat(40), route.PIN.repository, 'false', 'refs/heads/experiment/playback-buffer-retention');
     for (const ref of ['refs/heads/main', 'refs/heads/feature/playback-range-cache']) assert.throws(() => route.validateDispatch('buffer-export-seam', 'a'.repeat(40), route.PIN.repository, 'false', ref));
     assert.throws(() => route.validateDispatch('buffer-export-seam', 'a'.repeat(40), route.PIN.repository, 'true', 'refs/heads/experiment/playback-buffer-retention'));
