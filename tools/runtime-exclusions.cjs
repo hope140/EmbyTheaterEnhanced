@@ -5,7 +5,49 @@ const path = require('path');
 
 // These inputs remain in the immutable Carnival archive inventory for
 // provenance, but are deliberately absent from every Enhanced runtime.
+const RETIRED_ANIME4K_PATHS = Object.freeze([
+  'external/Anime4K/shaders/Anime4K_AutoDownscalePre_x2.glsl',
+  'external/Anime4K/shaders/Anime4K_AutoDownscalePre_x4.glsl',
+  'external/Anime4K/shaders/Anime4K_Clamp_Highlights.glsl',
+  'external/Anime4K/shaders/Anime4K_Darken_Fast.glsl',
+  'external/Anime4K/shaders/Anime4K_Darken_HQ.glsl',
+  'external/Anime4K/shaders/Anime4K_Darken_VeryFast.glsl',
+  'external/Anime4K/shaders/Anime4K_Deblur_DoG.glsl',
+  'external/Anime4K/shaders/Anime4K_Deblur_Original.glsl',
+  'external/Anime4K/shaders/Anime4K_Denoise_Bilateral_Mean.glsl',
+  'external/Anime4K/shaders/Anime4K_Denoise_Bilateral_Median.glsl',
+  'external/Anime4K/shaders/Anime4K_Denoise_Bilateral_Mode.glsl',
+  'external/Anime4K/shaders/Anime4K_Restore_CNN_L.glsl',
+  'external/Anime4K/shaders/Anime4K_Restore_CNN_M.glsl',
+  'external/Anime4K/shaders/Anime4K_Restore_CNN_S.glsl',
+  'external/Anime4K/shaders/Anime4K_Restore_CNN_Soft_L.glsl',
+  'external/Anime4K/shaders/Anime4K_Restore_CNN_Soft_M.glsl',
+  'external/Anime4K/shaders/Anime4K_Restore_CNN_Soft_S.glsl',
+  'external/Anime4K/shaders/Anime4K_Restore_CNN_Soft_UL.glsl',
+  'external/Anime4K/shaders/Anime4K_Restore_CNN_Soft_VL.glsl',
+  'external/Anime4K/shaders/Anime4K_Restore_CNN_UL.glsl',
+  'external/Anime4K/shaders/Anime4K_Restore_CNN_VL.glsl',
+  'external/Anime4K/shaders/Anime4K_Thin_Fast.glsl',
+  'external/Anime4K/shaders/Anime4K_Thin_HQ.glsl',
+  'external/Anime4K/shaders/Anime4K_Thin_VeryFast.glsl',
+  'external/Anime4K/shaders/Anime4K_Upscale_CNN_x2_L.glsl',
+  'external/Anime4K/shaders/Anime4K_Upscale_CNN_x2_M.glsl',
+  'external/Anime4K/shaders/Anime4K_Upscale_CNN_x2_S.glsl',
+  'external/Anime4K/shaders/Anime4K_Upscale_CNN_x2_UL.glsl',
+  'external/Anime4K/shaders/Anime4K_Upscale_CNN_x2_VL.glsl',
+  'external/Anime4K/shaders/Anime4K_Upscale_Deblur_DoG_x2.glsl',
+  'external/Anime4K/shaders/Anime4K_Upscale_Deblur_Original_x2.glsl',
+  'external/Anime4K/shaders/Anime4K_Upscale_Denoise_CNN_x2_L.glsl',
+  'external/Anime4K/shaders/Anime4K_Upscale_Denoise_CNN_x2_M.glsl',
+  'external/Anime4K/shaders/Anime4K_Upscale_Denoise_CNN_x2_S.glsl',
+  'external/Anime4K/shaders/Anime4K_Upscale_Denoise_CNN_x2_UL.glsl',
+  'external/Anime4K/shaders/Anime4K_Upscale_Denoise_CNN_x2_VL.glsl',
+  'external/Anime4K/shaders/Anime4K_Upscale_DoG_x2.glsl',
+  'external/Anime4K/shaders/Anime4K_Upscale_DTD_x2.glsl',
+  'external/Anime4K/shaders/Anime4K_Upscale_Original_x2.glsl'
+]);
 const RETIRED_COMPATIBILITY_PATHS = Object.freeze([
+  ...RETIRED_ANIME4K_PATHS,
   'external/Anime4K/Anime4K-off.conf',
   'external/emby.disable/www/modules/layout.css',
   'external/emby.disable/www/modules/themes/darkgradient/theme.css',
@@ -89,4 +131,4 @@ if (require.main === module) {
   if (result.status !== 'passed') process.exitCode = 1;
 }
 
-module.exports = {RETIRED_RUNTIME_PATHS, RETIRED_CEC_RUNTIME_PATHS, RETIRED_COMPATIBILITY_PATHS, RETIRED_SMALL_RUNTIME_PATHS, RETIRED_WEB_PATHS, remove, runtimeFile, verify};
+module.exports = {RETIRED_ANIME4K_PATHS, RETIRED_RUNTIME_PATHS, RETIRED_CEC_RUNTIME_PATHS, RETIRED_COMPATIBILITY_PATHS, RETIRED_SMALL_RUNTIME_PATHS, RETIRED_WEB_PATHS, remove, runtimeFile, verify};

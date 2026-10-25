@@ -1,11 +1,11 @@
 # Repository restoration inputs
 
-The four active manifest selections below contain **757 files / 24,943,281 bytes**, including the two retained Web patch carriers. Earlier 775-file/v1 counts describe historical snapshots, not current input requirements.
+The three active body selections and the zero-input compatibility retirement record below contain **718 files / 22,552,067 bytes**, including the two retained Web patch carriers. Earlier 775-file/v1 counts describe historical snapshots, not current input requirements.
 
 | Root | Files | Bytes | Origin |
 | --- | ---: | ---: | --- |
 | vendor/web-snapshot | 715 | 22,122,241 | 713 historical Web members plus two retained patch carriers; exact upstream Web revision remains unresolved |
-| vendor/compatibility-resources/snapshot-v2 | 39 | 2,391,214 | Retained shader resources with existing notices and per-file origins |
+| compatibility-resources retirement metadata (no body root required) | 0 | 0 | All 39 Anime4K shaders retired; original identities/notices remain historical |
 | vendor/small-runtime/snapshot-v2 | 2 | 3,330 | Maintained default/configuration and translation seeds; inherited content remains attributed separately |
 | vendor/model-compatibility/snapshot-v1 | 1 | 426,496 | Pinned official Windows 3.0.20 Model; former variant remains in Git history |
 

@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-25 — Anime4K 额外画质资源退役候选
+
+从最新 main `8745493` 建立独立清理候选，删除仍随包的39份 Anime4K shader（2,391,214 bytes）及其专属 Git 属性规则；兼容活动清单归零，移除已无用途的准备参数／恢复请求，组装与来源校验保留历史身份及零输出。此前已退役的 preset、字体、主题备份和 BAT 不复活。libmpv、Native Helper、播放器适配、解码依赖、正常设置及活动启动图保持，版本不变。
+
+原始 v1 manifest/hash、37份 MIT 与2份 Unlicense 的历史正文和许可审计保留；不改旧 Release／Git 历史。默认源码无相关消费者；个人配置若引用旧包内 shader 路径，干净安装或手动清理旧文件后将失效，详见[退役合同](COMPATIBILITY_RESOURCES_INPUT.md)和[用户指南](USER_GUIDE.md#anime4k-资源与快捷键兼容)。不读取／改写个人 mpv 配置或 shader，安装器不新增旧文件清扫。
+
+Linux 锁定 Node24.18.1／PowerShell7.4.13：公开回归2055项，2042 pass／0 fail／13项明确平台 skip；其中定向50项通过。JavaScript／PowerShell语法、有限凭据模式及差异空白检查通过。真实固定组件完成基础装配756项（不含owner文件），兼容输出0、无GLSL／Lua／旧preset，退役文件门禁通过；这是基础组件装配，不是完整可运行Windows包。完整产品构建受当前来源绑定的已验证源码Host缺失阻止，未伪造锁或使用旧Host回退。Windows完整包、默认启动画面、真实播放和系统安装尚未验收；待后续标准构建验证，不合main／发布。
+
 ## 2026-10-25 — 文档入口与当前发行状态
 
 已核对远端 main 与 v0.4.3 Tag 同为 `69e55b91a0cc6ba4b01ce60cb65d9aca41b0311e`（含 PR #77）。[v0.4.3](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.3) 于 2026-10-25 发布为测试版，Latest 正式版仍为 [v0.4.0](https://github.com/hope140/EmbyTheaterEnhanced/releases/latest)，v0.4.2 为上一批测试版。

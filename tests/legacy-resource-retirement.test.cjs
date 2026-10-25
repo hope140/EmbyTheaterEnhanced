@@ -10,6 +10,45 @@ const exclusions = require('../tools/runtime-exclusions.cjs');
 const root = path.resolve(__dirname, '..');
 // Independent review boundary: every other manifest entry must survive unchanged.
 const approved = [
+    'external/Anime4K/shaders/Anime4K_AutoDownscalePre_x2.glsl',
+    'external/Anime4K/shaders/Anime4K_AutoDownscalePre_x4.glsl',
+    'external/Anime4K/shaders/Anime4K_Clamp_Highlights.glsl',
+    'external/Anime4K/shaders/Anime4K_Darken_Fast.glsl',
+    'external/Anime4K/shaders/Anime4K_Darken_HQ.glsl',
+    'external/Anime4K/shaders/Anime4K_Darken_VeryFast.glsl',
+    'external/Anime4K/shaders/Anime4K_Deblur_DoG.glsl',
+    'external/Anime4K/shaders/Anime4K_Deblur_Original.glsl',
+    'external/Anime4K/shaders/Anime4K_Denoise_Bilateral_Mean.glsl',
+    'external/Anime4K/shaders/Anime4K_Denoise_Bilateral_Median.glsl',
+    'external/Anime4K/shaders/Anime4K_Denoise_Bilateral_Mode.glsl',
+    'external/Anime4K/shaders/Anime4K_Restore_CNN_L.glsl',
+    'external/Anime4K/shaders/Anime4K_Restore_CNN_M.glsl',
+    'external/Anime4K/shaders/Anime4K_Restore_CNN_S.glsl',
+    'external/Anime4K/shaders/Anime4K_Restore_CNN_Soft_L.glsl',
+    'external/Anime4K/shaders/Anime4K_Restore_CNN_Soft_M.glsl',
+    'external/Anime4K/shaders/Anime4K_Restore_CNN_Soft_S.glsl',
+    'external/Anime4K/shaders/Anime4K_Restore_CNN_Soft_UL.glsl',
+    'external/Anime4K/shaders/Anime4K_Restore_CNN_Soft_VL.glsl',
+    'external/Anime4K/shaders/Anime4K_Restore_CNN_UL.glsl',
+    'external/Anime4K/shaders/Anime4K_Restore_CNN_VL.glsl',
+    'external/Anime4K/shaders/Anime4K_Thin_Fast.glsl',
+    'external/Anime4K/shaders/Anime4K_Thin_HQ.glsl',
+    'external/Anime4K/shaders/Anime4K_Thin_VeryFast.glsl',
+    'external/Anime4K/shaders/Anime4K_Upscale_CNN_x2_L.glsl',
+    'external/Anime4K/shaders/Anime4K_Upscale_CNN_x2_M.glsl',
+    'external/Anime4K/shaders/Anime4K_Upscale_CNN_x2_S.glsl',
+    'external/Anime4K/shaders/Anime4K_Upscale_CNN_x2_UL.glsl',
+    'external/Anime4K/shaders/Anime4K_Upscale_CNN_x2_VL.glsl',
+    'external/Anime4K/shaders/Anime4K_Upscale_Deblur_DoG_x2.glsl',
+    'external/Anime4K/shaders/Anime4K_Upscale_Deblur_Original_x2.glsl',
+    'external/Anime4K/shaders/Anime4K_Upscale_Denoise_CNN_x2_L.glsl',
+    'external/Anime4K/shaders/Anime4K_Upscale_Denoise_CNN_x2_M.glsl',
+    'external/Anime4K/shaders/Anime4K_Upscale_Denoise_CNN_x2_S.glsl',
+    'external/Anime4K/shaders/Anime4K_Upscale_Denoise_CNN_x2_UL.glsl',
+    'external/Anime4K/shaders/Anime4K_Upscale_Denoise_CNN_x2_VL.glsl',
+    'external/Anime4K/shaders/Anime4K_Upscale_DoG_x2.glsl',
+    'external/Anime4K/shaders/Anime4K_Upscale_DTD_x2.glsl',
+    'external/Anime4K/shaders/Anime4K_Upscale_Original_x2.glsl',
     'external/Anime4K/Anime4K-off.conf',
     'external/emby.disable/www/modules/layout.css',
     'external/emby.disable/www/modules/themes/darkgradient/theme.css',
@@ -37,12 +76,12 @@ function inventory(directory, prefix = '') {
         return entry.isDirectory() ? inventory(full, name + '/') : [name];
     }).sort();
 }
-test('only the eleven approved resources are retired; immutable input trees still validate', () => {
+test('only the fifty approved resources are retired; current input selections still validate', () => {
     assert.deepEqual([...exclusions.RETIRED_COMPATIBILITY_PATHS, ...exclusions.RETIRED_SMALL_RUNTIME_PATHS].sort(), [...approved].sort());
-    assert.equal(compatibility.validate(root).fileCount, 39);
+    assert.equal(compatibility.validate(root).fileCount, 0);
     assert.equal(small.validate(root).fileCount, 2);
 });
-test('clean assembly preserves 39 resources and applies only the two approved maintained replacements', t => {
+test('clean assembly omits all compatibility resources and applies the two maintained small outputs', t => {
     const output = runtime(t), expected = [];
     for (const input of [compatibility, small]) {
         const manifest = input.load(root), report = input.assemble(root, output);
@@ -63,7 +102,7 @@ test('clean assembly preserves 39 resources and applies only the two approved ma
         }
         assert.equal(input.validateRuntime(root, output).status, 'passed');
     }
-    assert.equal(expected.length, 41);
+    assert.equal(expected.length, 2);
     assert.deepEqual(inventory(output), expected.sort());
     assert.equal(exclusions.verify(output).status, 'passed');
     assert.equal(fs.existsSync(path.join(output, 'cec-driver/cancel')), false);

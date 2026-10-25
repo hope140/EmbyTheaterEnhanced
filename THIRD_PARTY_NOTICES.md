@@ -1,5 +1,7 @@
 # Third-party notices
 
+Anime4K retirement: new packages carry none of the 39 previously bundled shader bodies (37 MIT headers and two AutoDownscalePre Unlicense texts). Original file identities and source/notice distinctions remain in `vendor/snapshot-history/compatibility-resources-v1-manifest.json`; the original embedded texts remain in existing Git commits/tags. This is a current distribution change, not a rewrite of historical release or license evidence. Other applicable notices below remain preserved.
+
 The runtime-only npm projection preserves all locked source/recovery inputs and36 license-named members (35 under the earlier receipt naming rule, plus the retained emoji-regex/LICENSE-MIT.txt). The three additional retired Web files have no in-file notice header; necessary existing notices and historical identities remain. See docs/SCOPED_RUNTIME_PROJECTION.md.
 
 Snapshot-v2 update: the twenty reviewed old bodies are absent from the current source tree. Their original manifests/hashes, necessary notice texts and existing Git history remain preserved; earlier statements that the original snapshot bodies remain current describe the prior stage. The retired logo contained the observed lettering “by David & NoisyX”; source/permission scope remains unresolved. This removal does not establish new authorship or whole-project license clearance. See docs/SNAPSHOT_V2_MIGRATION.md.
