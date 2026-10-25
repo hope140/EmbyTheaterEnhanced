@@ -34,7 +34,7 @@ function main() {
     const diagnostic = process.env.ETE_DIAGNOSTIC_NO_WIZARD === '1';
     const focus = diagnostic && process.env.ETE_DIAGNOSTIC_FOCUS === '1';
     const selected = focus ? ['tests/update-install-windows.test.cjs'] : diagnostic ? TESTS.filter(name => name !== 'tests/update-install-controlled-wizard.test.cjs') : TESTS;
-    const selection = focus ? ['--test-name-pattern=^actual Windows handoff locks Unicode'] : [];
+    const selection = focus ? ['--test-name-pattern=' + (process.env.ETE_DIAGNOSTIC_CASE === 'compiler' ? '^Windows relay compiler diagnostic' : '^actual Windows handoff locks Unicode')] : [];
     const result = cp.spawnSync(process.execPath, ['--test', '--test-concurrency=1', '--test-reporter=tap', ...selection, ...selected], {
         cwd: root, encoding: 'utf8', timeout: 300000, maxBuffer: 4 * 1024 * 1024,
         env: {...process.env, ETE_MANAGED_UPDATE_WIZARD_TEST: diagnostic ? '0' : '1'}, windowsHide: true
