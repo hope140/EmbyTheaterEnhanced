@@ -30,6 +30,10 @@
     var bundledVersions = require('./enhanced/bundled-versions');
 
     // Explicit trial CLI is validated and isolated before bootstrap/identity/log writes.
+    var sharedCacheTrial = require('./enhanced/shared-playback-cache/trial').prepare({
+        app: app, argv: process.argv, execPath: process.execPath, platform: process.platform,
+        environment: process.env, runtimeRoot: path.resolve(__dirname, '..')
+    });
     var pageCacheTest = require('./enhanced/page-cache/test-session').prepare({
         app: app, argv: process.argv, execPath: process.execPath, platform: process.platform,
         environment: process.env, runtimeRoot: path.resolve(__dirname, '..')
@@ -1012,7 +1016,7 @@
 
     var commandLineOptions = parseCommandLine();
 
-    var userDataPath = pageCacheTest ? pageCacheTest.userDataPath : commandLineOptions.userDataPath;
+    var userDataPath = sharedCacheTrial ? sharedCacheTrial.userDataPath : pageCacheTest ? pageCacheTest.userDataPath : commandLineOptions.userDataPath;
     if (userDataPath) {
         app.setPath('userData', userDataPath);
     }
@@ -1034,7 +1038,15 @@
     var rangeSettingsStore = null;
     try {rangeSettingsStore = rangeSettingsModule.createStore({profileRoot: app.getPath('userData')});}
     catch (_) {enhancedLog({category: 'range-cache', event: 'settings-unavailable', details: {}});}
-    function getRangeCacheRuntimeConfig() {return rangeSettingsStore && rangeSettingsStore.runtimeConfig();}
+    function getRangeCacheRuntimeConfig() {
+        if (!rangeSettingsStore) return null;
+        if (sharedCacheTrial) {
+            var selected = rangeSettingsStore.get();
+            return selected.enabled ? {kind: 'shared-byte-trial', root: path.join(app.getPath('userData'), 'shared-playback-byte-cache-v2'),
+                progressPercent: selected.progressPercent, preloadMB: selected.preloadMB, timeoutMs: 30000} : null;
+        }
+        return rangeSettingsStore.runtimeConfig();
+    }
     unregisterRangeSettingsIpc = rangeSettingsModule.register({ipcMain: ipcMain, store: rangeSettingsStore, getWebContents: getWebContents,
         getRuntimeStatus: function () {return nativeHelperService ? nativeHelperService.rangeStatus() : {enabled: !!getRangeCacheRuntimeConfig()};}});
     cd2Service = cd2ServiceModule.createService({config: strmConfigStore.getRuntimeConfig(), onDiagnostic: enhancedLog, sourceAuthority: preloadSourceAuthority});

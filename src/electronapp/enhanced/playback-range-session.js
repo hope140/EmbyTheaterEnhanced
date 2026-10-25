@@ -44,9 +44,9 @@ function playbackContext(value) {
     if (!value || Object.keys(value).some(k => !contextFields.includes(k)) || value.mediaType !== 'Video' || ['serverId', 'serverOrigin', 'accountId', 'itemId', 'mediaSourceId', 'playSessionId'].some(k => typeof value[k] !== 'string' || !value[k] || value[k].length > 2048)) return null;
     return {...value, identity: null};
 }
-function createSession({config, create = createCache, onDiagnostic = () => {}, authorize}) {
+function createSession({config, create = createCache, onDiagnostic = () => {}, authorize, readCurrentBytes}) {
     if (!config) return null;
-    if (config.kind !== 'next-prefix') throw Error('next-prefix-required');
+    if (!['next-prefix', 'shared-byte-trial'].includes(config.kind)) throw Error('next-prefix-required');
     const policy = selection(config), work = new Set();
     let cacheInstance = null, nextProgress = {state: 'idle', bytes: 0, targetBytes: policy.prefetchBytes};
     let cachePromise, current = null, next = null, epoch = 0, playedEpoch = 0, closed = false, closing, retirement = Promise.resolve();
@@ -106,8 +106,34 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
             }
         }
         try {
-            const cache = await ensure(); if (!owns(record)) return null;
-            const handle = await cache.open({source, identity: record.value.identity, transport: record.value.transport, isCurrent: () => owns(record), signal: record.controller.signal});
+            let handle;
+            if (config.kind === 'shared-byte-trial') {
+                // Optional cache preparation must not hold loadfile behind a
+                // slow backend/property read. The original source stays owned.
+                const selection = new AbortController(), signal = AbortSignal.any([selection.signal, record.controller.signal]);
+                let timer;
+                const deadline = new Promise((_resolve, reject) => {timer = setTimeout(() => {
+                    selection.abort(); reject(diagnostics.error('timeout', 'range-shared-prepare-timeout'));
+                }, 25);});
+                const preparing = (async () => {
+                    if (typeof readCurrentBytes !== 'function') throw diagnostics.error('identity-missing', 'range-shared-budget-unavailable');
+                    const currentBytes = await readCurrentBytes(helper, generationId);
+                    if (!owns(record) || signal.aborted) throw diagnostics.error('generation-retired', 'range-shared-retired');
+                    record.currentBytes = currentBytes;
+                    const cache = await ensure();
+                    if (!owns(record) || signal.aborted) throw diagnostics.error('generation-retired', 'range-shared-retired');
+                    const value = await cache.open({source, identity: record.value.identity, transport: record.value.transport,
+                        currentBytes, isCurrent: () => owns(record) && !signal.aborted, signal});
+                    if (!owns(record) || signal.aborted) {await value.stop(); throw diagnostics.error('generation-retired', 'range-shared-retired');}
+                    return value;
+                })();
+                try {handle = await Promise.race([preparing, deadline]);}
+                catch (error) {selection.abort(); throw error;}
+                finally {clearTimeout(timer);}
+            } else {
+                const cache = await ensure(); if (!owns(record)) return null;
+                handle = await cache.open({source, identity: record.value.identity, transport: record.value.transport, isCurrent: () => owns(record), signal: record.controller.signal});
+            }
             if (!owns(record)) {await handle.stop(); return null;}
             record.handle = handle;
             return {source: handle.source, canDispatch: () => owns(record), cancel: () => handle.stop()};
@@ -127,7 +153,9 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
         return track((async () => {
             const cache = await ensure();
             if (promotion) await promotion;
-            if (playedEpoch === play) await cache.discardNext();
+            if (config.kind === 'shared-byte-trial') {
+                if (!promotion && playedEpoch === play && typeof cache.markUncachedPlaying === 'function') await cache.markUncachedPlaying(record.value, () => playedEpoch === play && owns(record));
+            } else if (playedEpoch === play) await cache.discardNext();
         })());
     }
     function preload(value, helper, generationId) {
@@ -155,7 +183,8 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
             const valid = () => next === record && owns(owner) && !record.controller.signal.aborted;
             try {
                 const cache = await ensure(); if (!valid()) throw Error('range-next-retired');
-                record.handle = await cache.open({source: parsed.source, identity: parsed.identity, transport: parsed.transport, role: 'next', isCurrent: valid, signal: record.controller.signal});
+                record.handle = await cache.open({source: parsed.source, identity: parsed.identity, transport: parsed.transport, role: 'next',
+                    ...(config.kind === 'shared-byte-trial' ? {currentBytes: owner.currentBytes} : {}), isCurrent: valid, signal: record.controller.signal});
                 if (!valid()) throw Error('range-next-retired');
                 const size = record.handle.status ? record.handle.status().total : policy.prefetchBytes;
                 nextProgress = {state: 'warming', bytes: 0, targetBytes: Math.min(size, policy.prefetchBytes)};
@@ -182,7 +211,7 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
     return {cancelNext, setContext, unproxied, select: (...args) => track(select(...args)), started, preload, retire,
         status: () => {
             let bytes = 0; try {if (current && current.handle && current.handle.status) bytes = current.handle.status().bytes;} catch (_) {}
-            return {enabled: true, ...policy, kind: 'next-prefix', timeoutMs: config.timeoutMs,
+            return {enabled: true, ...policy, kind: config.kind, timeoutMs: config.timeoutMs,
                 current: {state: current ? current.handle ? current.playing ? 'active' : 'preparing' : 'original' : 'idle', bytes, ...(current && current.diagnostic ? {diagnostic: diagnostics.snapshot(current.diagnostic)} : {})},
                 next: {...nextProgress}, diskBytes: cacheInstance ? cacheInstance.status().bytes : 0,
                 maxBytes: policy.prefetchBytes};

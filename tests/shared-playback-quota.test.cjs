@@ -64,6 +64,10 @@ test('quota CLI requires explicit run and fixes the two finite full-size scenari
   assert.deepEqual(parseArgs(['--run', '--out', '/tmp/fresh', '--legacy-4096']),
     {out: '/tmp/fresh', deadlineMs: 900000, legacy4096: true});
   assert.throws(() => parseArgs(['--run', '--out', '/tmp/fresh', '--legacy-4096', '--legacy-4096']), /explicit-run/);
+  assert.deepEqual(parseArgs(['--run', '--out', '/tmp/fresh', '--recovery-probe']),
+    {out: '/tmp/fresh', deadlineMs: 900000, recoveryProbe: true});
+  assert.throws(() => parseArgs(['--run', '--out', '/tmp/fresh', '--legacy-4096', '--recovery-probe']), /explicit-run/);
+  assert.throws(() => parseArgs(['--run', '--out', '/tmp/fresh', '--recovery-probe', '--recovery-probe']), /explicit-run/);
   const script = path.resolve(__dirname, '../tools/shared-playback-cache/quota.cjs');
   await assert.rejects(promisify(execFile)(process.execPath, [script]), error =>
     error.code === 1 && error.stdout === '' && error.stderr === 'explicit-run-and-fresh-private-output-required\n');

@@ -123,7 +123,7 @@ function normalizeStartupKernelSelection(value) {
 function createService(options) {
   const settings = options || {};
   function readRangeConfig() {
-    try {const config = typeof settings.getRangeCacheConfig === 'function' ? settings.getRangeCacheConfig() : settings.rangeCache; return config && config.kind === 'next-prefix' ? {...config} : null;} catch (_) {return null;}
+    try {const config = typeof settings.getRangeCacheConfig === 'function' ? settings.getRangeCacheConfig() : settings.rangeCache; return config && ['next-prefix', 'shared-byte-trial'].includes(config.kind) ? {...config} : null;} catch (_) {return null;}
   }
   function reportPreload(value) {
     const safe = preloadDiagnostics.snapshot(value);
@@ -137,7 +137,21 @@ function createService(options) {
     return authority.bind({sourceProof: value.sourceProof, source: value.source, principal: owner.principal, signal,
       ...(role === 'current' ? {requestId: owner.label} : {requestPrefix: owner.scope + '-next-'})});
   }
+  async function readSharedCurrentBytes(helper, generationId) {
+    const key = 'user-data/emby-theater-enhanced/diagnostics/cache-bytes';
+    const owns = () => !destroyed && helper === client && !helper.exited && !helper.transportTerminated && helper.currentGenerationId === generationId;
+    if (!owns()) throw Error('shared-cache-generation-retired');
+    // Existing exact mpv-text diagnostic path avoids the legacy int32 read.
+    helper.setProperty(key, '');
+    helper.submitCommand(['expand-properties', 'set', key, '${=demuxer-max-bytes}']);
+    const value = await helper.getProperty(key, 50);
+    if (!owns() || typeof value !== 'string' || !/^\d+$/.test(value)) throw Error('shared-cache-budget-unavailable');
+    const bytes = Number(value);
+    if (!Number.isSafeInteger(bytes) || bytes < 256 * 1024 || bytes > 3072 * 1024 * 1024) throw Error('shared-cache-budget-unavailable');
+    return bytes;
+  }
   function createRangeSession(config) {return require('../enhanced/playback-range-session').createSession({config, onDiagnostic: reportPreload,
+    ...(config.kind === 'shared-byte-trial' ? {create: require('../enhanced/shared-playback-cache/adapter').createCache, readCurrentBytes: readSharedCurrentBytes} : {}),
     authorize: settings.sourceAuthority ? authorizeRange : undefined});}
   function rangeKey(config) {return JSON.stringify(config && ['kind', 'root', 'blockBytes', 'timeoutMs', 'progressPercent', 'preloadMB', 'bytesPerSecond'].map(key => config[key] == null ? null : config[key]));}
   const initialRangeConfig = readRangeConfig();

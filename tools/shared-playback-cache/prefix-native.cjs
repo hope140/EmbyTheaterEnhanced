@@ -180,7 +180,7 @@ async function run({out, library, ffmpeg = '/usr/bin/ffmpeg', python = '/usr/bin
   const file = path.join(out, 'owned-400s.nut'), baseline = path.join(out, 'baseline-cache');
   let phase = 'setup';
   try {
-    for (const name of ['prefix-native.cjs', 'proxy.cjs', 'store.cjs', 'index.cjs', 'native-frame.py']) report.sourceSha256[name] = await digest(path.join(__dirname, name));
+    for (const name of ['prefix-native.cjs', 'proxy.cjs', 'store.cjs', 'index.cjs', '../../src/electronapp/enhanced/shared-playback-cache/store.js', '../../src/electronapp/enhanced/shared-playback-cache/index.js', '../../src/electronapp/enhanced/shared-playback-cache/proxy.js', 'native-frame.py']) report.sourceSha256[name] = await digest(path.join(__dirname, name));
     await save(path.join(out, 'policy.json'), report.policy);
     const version = await childRun(ffmpeg, ['-version'], {timeoutMs: 5000, signal});
     if (version.childExit !== 0 || !version.stdout.startsWith('ffmpeg version 7.1.5-')) throw problem('ffmpeg-version');

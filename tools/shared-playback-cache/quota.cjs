@@ -102,7 +102,7 @@ function validateConfig(config) {
   }
 }
 
-async function runScenario(root, config, {signal, deadlineMs = DEFAULT_DEADLINE_MS} = {}) {
+async function runScenario(root, config, {signal, deadlineMs = DEFAULT_DEADLINE_MS, recoveryProbe} = {}) {
   validateConfig(config);
   if (!Number.isSafeInteger(deadlineMs) || deadlineMs <= 0) throw failure('quota-deadline-invalid');
   await freshPrivateDirectory(root);
@@ -292,6 +292,12 @@ async function runScenario(root, config, {signal, deadlineMs = DEFAULT_DEADLINE_
     const beforeClose = await milestone('after-admission-refusals');
     await store.close(); closed = true; check();
     await milestone('closed-with-preload-discarded');
+    if (recoveryProbe) {
+      if (typeof recoveryProbe !== 'function') throw failure('quota-recovery-probe-invalid');
+      report.recoveryProbe = await recoveryProbe({root, actualKey: a, metadata,
+        currentBytes: config.currentBytes, nextBytes: config.nextBytes, expectedBlockSha256: expectedHash});
+      checkDeadline();
+    }
     store = await create(); closed = false; check();
     const reopened = await milestone('reopened-actual-A-only');
     if (reopened.currentKey !== a || reopened.current !== beforeClose.current || reopened.next !== 0 ||
@@ -325,14 +331,16 @@ async function runScenario(root, config, {signal, deadlineMs = DEFAULT_DEADLINE_
   }
 }
 
-async function run(out, {deadlineMs = DEFAULT_DEADLINE_MS, signal, scenarios = SCENARIOS} = {}) {
+async function run(out, {deadlineMs = DEFAULT_DEADLINE_MS, signal, scenarios = SCENARIOS, recoveryProbe} = {}) {
   if (!Number.isSafeInteger(deadlineMs) || deadlineMs <= 0 || deadlineMs > 30 * 60 * 1000) {
     throw failure('quota-deadline-invalid');
   }
   for (const config of scenarios) validateConfig(config);
   await freshPrivateDirectory(out);
   const started = performance.now();
-  const hashes = Object.fromEntries(await Promise.all(['quota.cjs', 'store.cjs', 'index.cjs'].map(async file =>
+  const hashes = Object.fromEntries(await Promise.all(['quota.cjs', 'store.cjs', 'index.cjs',
+    '../../src/electronapp/enhanced/shared-playback-cache/store.js', '../../src/electronapp/enhanced/shared-playback-cache/index.js',
+    '../../src/electronapp/enhanced/shared-playback-cache/proxy.js'].map(async file =>
     [file, crypto.createHash('sha256').update(await fs.readFile(path.join(__dirname, file))).digest('hex')])));
   const report = {schema: 'ete-shared-cache-quota-v1', node: process.version, sourceCodeSha256: hashes,
     deadlineMs, scenarioResults: [], scope: 'owned-local-real-disk-only-no-network-no-native-playback',
@@ -342,7 +350,7 @@ async function run(out, {deadlineMs = DEFAULT_DEADLINE_MS, signal, scenarios = S
     for (const config of scenarios) {
       const remaining = Math.floor(deadlineMs - (performance.now() - started));
       if (remaining <= 0) throw failure('quota-deadline');
-      const result = await runScenario(path.join(out, config.name), config, {deadlineMs: remaining, signal});
+      const result = await runScenario(path.join(out, config.name), config, {deadlineMs: remaining, signal, recoveryProbe});
       report.scenarioResults.push(result);
       report.peakOwnedCacheFileBytes = Math.max(report.peakOwnedCacheFileBytes,
         retainedClosedFileBytes + result.filePeaks.totalBytes);
@@ -363,18 +371,19 @@ async function run(out, {deadlineMs = DEFAULT_DEADLINE_MS, signal, scenarios = S
 function parseArgs(args) {
   const invalid = () => {throw failure('explicit-run-and-fresh-private-output-required');};
   if (args[0] !== '--run') invalid();
-  let out, deadlineMs = DEFAULT_DEADLINE_MS, deadlineSeen = false, legacy4096 = false;
+  let out, deadlineMs = DEFAULT_DEADLINE_MS, deadlineSeen = false, legacy4096 = false, recoveryProbe = false;
   for (let index = 1; index < args.length;) {
     const flag = args[index++];
     if (flag === '--legacy-4096' && !legacy4096) {legacy4096 = true; continue;}
+    if (flag === '--recovery-probe' && !recoveryProbe) {recoveryProbe = true; continue;}
     const value = args[index++];
     if (flag === '--out' && out === undefined && typeof value === 'string' && path.isAbsolute(value)) out = value;
     else if (flag === '--deadline-ms' && !deadlineSeen && /^[1-9]\d*$/.test(value || '') &&
         Number(value) <= 30 * 60 * 1000) {deadlineMs = Number(value); deadlineSeen = true;}
     else invalid();
   }
-  if (out === undefined) invalid();
-  return {out, deadlineMs, ...(legacy4096 ? {legacy4096: true} : {})};
+  if (out === undefined || legacy4096 && recoveryProbe) invalid();
+  return {out, deadlineMs, ...(legacy4096 ? {legacy4096: true} : {}), ...(recoveryProbe ? {recoveryProbe: true} : {})};
 }
 
 module.exports = {BLOCK, SCENARIOS, LEGACY_SCENARIO, assertBounds, inspectDisk, parseArgs, runScenario, run};
@@ -386,7 +395,8 @@ if (require.main === module) {
     const controller = new AbortController(), cancel = () => controller.abort();
     process.once('SIGINT', cancel); process.once('SIGTERM', cancel);
     run(options.out, {deadlineMs: options.deadlineMs, signal: controller.signal,
-      scenarios: options.legacy4096 ? [LEGACY_SCENARIO] : SCENARIOS}).then(report => {
+      scenarios: options.legacy4096 ? [LEGACY_SCENARIO] : options.recoveryProbe ? [SCENARIOS[1]] : SCENARIOS,
+      ...(options.recoveryProbe ? {recoveryProbe: require('./recovery.cjs').runRecoveryProbe} : {})}).then(report => {
       process.stdout.write(JSON.stringify({schema: report.schema, ok: report.ok,
         scenariosCompleted: report.scenarioResults.filter(row => row.ok).length,
         failure: report.failure || null}) + '\n');

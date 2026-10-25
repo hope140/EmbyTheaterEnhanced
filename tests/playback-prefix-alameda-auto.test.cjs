@@ -36,14 +36,14 @@ async function automaticCase(t, scenario) {
     });
     const record = (type, data = {}) => trace.push({seq: trace.length, type, ...data});
     const fixtures = ['A', 'B'].map(id => {const file = id + '.avi'; fs.writeFileSync(path.join(root, file), Buffer.from(id.repeat(40))); return {file, size: 40, etag: '"synthetic-' + id + '"'};});
-    const trustedCd2 = scenario.startsWith('trusted-cd2'), dateValidator = scenario === 'trusted-cd2-date-unproven', noValidator = scenario === 'trusted-cd2-no-validator';
+    const trustedCd2 = scenario.startsWith('trusted-cd2'), sharedCase = scenario === 'trusted-cd2-shared', dateValidator = scenario === 'trusted-cd2-date-unproven', noValidator = scenario === 'trusted-cd2-no-validator';
     const unsupported = scenario === 'unsupported' || scenario === 'trusted-cd2-unsupported' || noValidator || dateValidator;
     const unsupportedReason = dateValidator ? 'date-capability-unproven' : noValidator ? 'etag-missing' : 'etag-weak';
     const holding = scenario.startsWith('hold-'), orderedNatural = ['natural', 'explicit-queue-autoplay-off', 'trusted-cd2'].includes(scenario), pendingNatural = scenario === 'hold-natural-eof';
     const plan = {out: root, fixtures, autoPlay: !['autoplay-off', 'explicit-queue-autoplay-off'].includes(scenario)};
     origin = await tool.fixtureServer(plan, record, {holdNext: holding || orderedNatural, holdStart: 8, unsupported, trustedCd2});
     mediaOrigin = trustedCd2 ? await tool.fixtureServer(plan, record, {holdNext: orderedNatural, holdStart: 8, requireUserAgent: 'Synthetic-CD2', unsupported, dateValidator, noValidator}) : origin;
-    restoreRequests = holding || orderedNatural ? tool.observeOriginRequests(mediaOrigin.origin, record) : null;
+    restoreRequests = holding || orderedNatural || sharedCase ? tool.observeOriginRequests(mediaOrigin.origin, record) : null;
     const managerFile = path.join(root, 'playbackmanager.js');
     fs.copyFileSync(path.join(repo, 'vendor/web-snapshot/www/modules/common/playback/playbackmanager.js'), managerFile);
     execFileSync(process.execPath, [path.join(repo, 'tools/patch-playbackmanager.cjs'), managerFile]);
@@ -65,7 +65,17 @@ async function automaticCase(t, scenario) {
         beginGeneration() {this.currentGenerationId = ++generation; return generation;}
         allocateGenerationId() {return ++generation;}
         retireGeneration() {clearInterval(this.clock); this.currentGenerationId = null;}
-        command() {} submitCommand() {} setProperty(name, value) {this.properties[name] = value;}
+        command() {}
+        submitCommand(args) {
+            if (sharedCase && Array.isArray(args) && args.length === 4 && args[0] === 'expand-properties' && args[1] === 'set' &&
+                args[2] === 'user-data/emby-theater-enhanced/diagnostics/cache-bytes' && args[3] === '${=demuxer-max-bytes}') {
+                const value = String(300 * 1024 * 1024);
+                this.properties[args[2]] = value;
+                record('synthetic-M-source', {source: 'SyntheticClient.submitCommand/getProperty', bytes: Number(value),
+                    command: 'expand-properties/set/user-data/emby-theater-enhanced/diagnostics/cache-bytes/${=demuxer-max-bytes}'});
+            }
+        }
+        setProperty(name, value) {this.properties[name] = value;}
         async getProperty(name) {return this.properties[name] ?? false;}
         async request(method) {
             if (method !== 'preview-snapshot') return {attached: true};
@@ -104,6 +114,8 @@ async function automaticCase(t, scenario) {
                 this.clock = setInterval(() => {
                     if (this.currentGenerationId !== gen) {clearInterval(this.clock); return;}
                     if (trustedCd2) record('trusted-cache-occupancy', {bytes: service.rangeStatus().diskBytes});
+                    if (sharedCase) record('shared-cache-occupancy', {bytes: service.rangeStatus().diskBytes});
+                    if (sharedCase && position >= 7.6 && !trace.some(row => row.type === 'preload-result' && row.state === 'ready')) return;
                     if ((orderedNatural || pendingNatural) && position >= 7.6) {
                         // Synthetic clock precondition only; actual renderer/service/HTTP
                         // must still discover and warm the original queue candidate.
@@ -113,7 +125,7 @@ async function automaticCase(t, scenario) {
                             if (!trace.some(row => row.type === 'preload-result' && row.state === 'ready')) return;
                         }
                     }
-                    position = Math.min(orderedNatural || pendingNatural || scenario === 'autoplay-off' ? 8 : 7.6, position + 0.2); this.emit('time-pos', position);
+                    position = Math.min(orderedNatural || pendingNatural || sharedCase || scenario === 'autoplay-off' ? 8 : 7.6, position + 0.2); this.emit('time-pos', position);
                     if (position >= 8) {clearInterval(this.clock); this.emit('eof-reached', true);}
                 }, 10); timers.add(this.clock);
             })();
@@ -128,7 +140,8 @@ async function automaticCase(t, scenario) {
         sourceAuthority: authority,
         getMainWindow: () => main, getWebContents: () => main.webContents, execFile: (_file, _args, _options, callback) => {callback(null); return {kill() {}};},
         runtimeRoot: root, getRangeCacheConfig: settingsCase ? () => preferences.runtimeConfig() : undefined,
-        rangeCache: settingsCase ? undefined : {...tool.CONFIG, blockBytes: 8, root: path.join(root, 'prefix'), onPrefixRead: value => record('prefix-read', value)}});
+        rangeCache: settingsCase ? undefined : sharedCase ? {kind: 'shared-byte-trial', root: path.join(root, 'shared-byte-cache'),
+            progressPercent: 70, preloadMB: 100, timeoutMs: 1000} : {...tool.CONFIG, blockBytes: 8, root: path.join(root, 'prefix'), onPrefixRead: value => record('prefix-read', value)}});
     const trusted = require('./helpers/trusted-renderer.cjs');
     main.webContents.mainFrame = {url: trusted.appUrl};
     if (trustedCd2) {
@@ -311,6 +324,56 @@ async function automaticCase(t, scenario) {
         assert(!trace.some(row => row.type === 'manager-next-track'), details());
         return;
     }
+    if (sharedCase) {
+        await waitFor(() => trace.some(row => row.type === 'synthetic-read' && row.item === 'B'), details);
+        const threshold = trace.find(row => row.type === 'synthetic-property' && row.name === 'time-pos' && row.value >= 5.6);
+        const preload = trace.find(row => row.type === 'ipc' && row.operation === 'range-preload');
+        const ready = trace.find(row => row.type === 'preload-result' && row.state === 'ready');
+        const eof = trace.find(row => row.type === 'synthetic-property' && row.name === 'eof-reached');
+        const next = trace.find(row => row.type === 'manager-next-track');
+        const loads = trace.filter(row => row.type === 'load'), bLoad = loads.find(row => row.item === 'B');
+        assert(threshold && preload && ready && eof && next && bLoad, details());
+        assert(threshold.seq < preload.seq && preload.seq < ready.seq && ready.seq < eof.seq && eof.seq < next.seq && next.seq < bLoad.seq, details());
+        assert.equal(ready.bytes, 40);
+        assert.equal(loads.length, 2);
+        for (const load of loads) {
+            assert.deepEqual(Array.from(load.fileLocalOptions), ['replace', '-1', 'user-agent=Synthetic-CD2']);
+            const routed = new URL(load.source);
+            assert.equal(routed.hostname, '127.0.0.1');
+            assert.notEqual(routed.origin, mediaOrigin.origin, 'original Native loads receive the authorized local proxy URL');
+        }
+        const mReads = trace.filter(row => row.type === 'synthetic-M-source');
+        assert(mReads.length >= 2 && mReads.every(row => row.bytes === 300 * 1024 * 1024 &&
+            row.source === 'SyntheticClient.submitCommand/getProperty' &&
+            row.command === 'expand-properties/set/user-data/emby-theater-enhanced/diagnostics/cache-bytes/${=demuxer-max-bytes}'), details());
+        const overlap = trace.find(row => row.type === 'shared-cache-occupancy' && row.seq > ready.seq && row.seq < eof.seq && row.bytes === 48);
+        assert(overlap, 'the 8-byte A read and fully prepared 40-byte B coexist before ordinary EOF: ' + details());
+        const resolvedB = trace.find(row => row.type === 'synthetic-cd2-rpc' && row.item === 'B' && row.method === 'GetDownloadUrlPath');
+        const negotiation = trace.find(row => row.type === 'next-playback-info' && row.item === 'B');
+        assert(threshold.seq < negotiation.seq && negotiation.seq < resolvedB.seq && resolvedB.seq < preload.seq, details());
+        assert(trace.filter(row => row.type === 'cd2-resolve-result').every(row => row.status === 'hit' && row.sourceKind === 'direct-url' && row.privateProof), details());
+        assert(trace.filter(row => row.type === 'trusted-origin-headers').every(row => row.validUserAgent && row.anonymous), details());
+        const freshB = trace.filter(row => row.type === 'origin-media' && row.item === 'B' && row.seq > eof.seq);
+        assert(freshB.length > 0 && freshB.every(row => row.start === 0 && row.end === 0), details());
+        assert(!trace.some(row => row.type === 'origin-media' && row.item === 'B' && row.seq > eof.seq && !(row.start === 0 && row.end === 0)), details());
+        assert(!trace.some(row => row.type === 'prefix-read'), details());
+        assert.equal(trace.filter(row => row.type === 'manager-next-track').length, 1);
+        await waitFor(() => service.rangeStatus().diskBytes === 40, details);
+        await service.destroy();
+        const {createStore} = require('../src/electronapp/enhanced/shared-playback-cache/store');
+        const recovered = await createStore({root: path.join(root, 'shared-byte-cache'),
+            currentBytes: 300 * 1024 * 1024, nextBytes: 100000000, recoveryMode: 'on-demand'});
+        try {
+            assert.equal(recovered.status().current, 40);
+            assert.equal(recovered.status().next, 0);
+            const data = await recovered.read(recovered.status().currentKey, 0, 40);
+            assert.equal(data.toString(), 'B'.repeat(40), 'destroy/reopen retains only the last naturally played B');
+        } finally {await recovered.close();}
+        console.log(JSON.stringify({type: 'shared-byte-alameda-natural-result', scenario, syntheticHelper: true,
+            nativeDll: false, exactSyntheticCurrentBytes: 300 * 1024 * 1024, preloadBytes: ready.bytes,
+            overlapDiskBytes: overlap.bytes, freshActualBOriginRequests: freshB.length, persistedCurrentBytes: 40, nextBytesAfterReopen: 0}));
+        return;
+    }
     if (!orderedNatural && !pendingNatural) {
         await waitFor(() => trace.some(row => row.type === 'preload-result' && row.state === 'ready'), details);
         assert.equal(service.rangeStatus().diskBytes, 40);
@@ -380,4 +443,4 @@ async function automaticCase(t, scenario) {
     }
     console.log(JSON.stringify({type: 'next-prefix-node-chain-result', scenario, syntheticHelper: true, threshold: threshold.seq, preload: preload.seq, ready: ready.seq, eof: eof.seq, next: next.seq, bLoad: b.seq, bytes: ready.bytes}));
 }
-for (const scenario of ['natural', 'hold-natural-eof', 'remove-candidate', 'app-exit-before-next', 'hold-cancel', 'hold-preempt', 'hold-replace', 'hold-exit', 'unsupported', 'autoplay-off', 'explicit-queue-autoplay-off', 'settings-next-play', 'trusted-cd2', 'trusted-cd2-unsupported', 'trusted-cd2-date-unproven', 'trusted-cd2-no-validator']) test('real Alameda automatic next-prefix with synthetic helper/document: ' + scenario, {timeout: 8000}, t => automaticCase(t, scenario));
+for (const scenario of ['natural', 'hold-natural-eof', 'remove-candidate', 'app-exit-before-next', 'hold-cancel', 'hold-preempt', 'hold-replace', 'hold-exit', 'unsupported', 'autoplay-off', 'explicit-queue-autoplay-off', 'settings-next-play', 'trusted-cd2', 'trusted-cd2-unsupported', 'trusted-cd2-date-unproven', 'trusted-cd2-no-validator', 'trusted-cd2-shared']) test('real Alameda automatic next-prefix with synthetic helper/document: ' + scenario, {timeout: 8000}, t => automaticCase(t, scenario));

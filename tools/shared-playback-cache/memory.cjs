@@ -215,7 +215,7 @@ async function createOutputRoot(outputRoot, ownerText) {
 
 async function sourceHashes() {
   const hashes = {};
-  for (const file of ['memory.cjs', 'memory-child.cjs', 'proxy.cjs', 'store.cjs', 'index.cjs', 'fixture.cjs']) {
+  for (const file of ['memory.cjs', 'memory-child.cjs', 'proxy.cjs', 'store.cjs', 'index.cjs', '../../src/electronapp/enhanced/shared-playback-cache/store.js', '../../src/electronapp/enhanced/shared-playback-cache/index.js', '../../src/electronapp/enhanced/shared-playback-cache/proxy.js', 'fixture.cjs']) {
     hashes[file] = sha256(await fs.readFile(path.join(__dirname, file)));
   }
   return hashes;
