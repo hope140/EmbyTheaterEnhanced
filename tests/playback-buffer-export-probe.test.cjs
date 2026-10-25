@@ -170,6 +170,41 @@ test('EDL retirement validates both files before removing either and preserves s
     assert.deepEqual(probe.retireProbeExcerpt(plan, report, exit).removed, ['excerpt.avi', 'retained.edl']);
     assert.equal(fs.readFileSync(path.join(dir, 'A.avi'), 'utf8'), 'preserve-source');
 });
+function seamReportFixture() {
+    const {report, plan, exit} = edlReportFixture(); plan.variant = report.variant = 'seam'; plan.out = path.resolve('synthetic-owned-output');
+    for (let i = 0; i < 2; i++) report.helpers.push({...structuredClone(report.helpers[0]), pid: 105 + i, options: {...probe.optionsFor('seam', path.join(plan.out, ['baseline.wav', 'seam.wav'][i])), ao: [{name: 'pcm', enabled: true, params: {file: path.join(plan.out, ['baseline.wav', 'seam.wav'][i])}}]}});
+    report.cancellation = {scope: 'synthetic-held-request-cancel-and-replace', completed: true, cases: ['cancel', 'replace'].map(kind => ({kind, cancelled: true, terminal: 'GENERATION_RETIRED', oldRequestClosed: true,
+        lateBytes: 0, obsoleteAcceptedEvents: 0, obsoleteStopRequests: 0, replacementPreserved: true, landedSourceSeconds: 3, advancedSourceSeconds: 3.125}))};
+    report.pcm = {scope: 'fixed-PCM-AO-synthetic-seam-NOT-device-gaplessness', captures: ['baseline.wav', 'seam.wav'].map(file => ({file, bytes: 20000, sha256: 'a'.repeat(64), samples: 9000,
+        format: {sampleRate: 48000, channels: 1, bitsPerSample: 16, encoding: 's16le'}, observation: {reachedEOF: true, sampleRate: 48000, channels: 1, output: 'pcm', untimed: true}})), comparison: {ok: false, assessment: 'changed-edl'}};
+    return {report, plan, exit};
+}
+test('PCM setter uses fixed helper scalar transport and byte-length-quoted mpv file suboption', () => {
+    const file = path.resolve('synthetic,spáces:folder', 'baseline.wav'), expected = probe.optionsFor('seam', file).ao;
+    assert.equal(typeof expected, 'string'); assert.equal(expected, 'pcm:file=%' + Buffer.byteLength(file) + '%' + file);
+    const actual = [{name: 'pcm', enabled: true, params: {file}}]; assert(probe.optionMatches('ao', actual, expected));
+    assert.equal(probe.optionMatches('ao', actual, expected.replace(String(Buffer.byteLength(file)), '1')), false);
+    assert.equal(probe.optionMatches('ao', [{name: 'pcm', enabled: true, params: {file, append: 'yes'}}], expected), false);
+});
+test('seam variant requires five normal readers, strict owned PCM options and consistent measured evidence', () => {
+    const {report, plan, exit} = seamReportFixture(); probe.validateReport(report, plan, exit);
+    for (const mutate of [r => r.helpers.pop(), r => r.helpers[3].options.ao[0].name = 'wasapi', r => r.helpers[4].options.ao[0].params.file = path.join(plan.out, 'other.wav'),
+        r => r.helpers[4].diagnostics.streamsClosed = false, r => r.cancellation.cases[0].lateBytes = 1, r => r.pcm.comparison.ok = true]) {
+        const bad = structuredClone(report); mutate(bad); assert.throws(() => probe.validateReport(bad, plan, exit));
+    }
+});
+test('nonregular or redirected WAV is refused before deleting any experiment file', t => {
+    const dir = root(t), {report, plan, exit} = seamReportFixture(); plan.out = dir;
+    for (const [i, name] of ['baseline.wav', 'seam.wav'].entries()) report.helpers[i + 3].options = {...probe.optionsFor('seam', path.join(dir, name)), ao: [{name: 'pcm', enabled: true, params: {file: path.join(dir, name)}}]};
+    fs.writeFileSync(path.join(dir, 'owner'), 'ETE isolated finite buffer export v1\n');
+    const hash = data => require('node:crypto').createHash('sha256').update(data).digest('hex');
+    for (const [file, row] of [['excerpt.avi', report.clip], ['retained.edl', report.edl.descriptor], ...report.pcm.captures.map(r => [r.file, r])]) {
+        const data = Buffer.from(file); fs.writeFileSync(path.join(dir, file), data); row.bytes = data.length; row.sha256 = hash(data);
+    }
+    fs.renameSync(path.join(dir, 'seam.wav'), path.join(dir, 'other.wav')); if (process.platform === 'win32') fs.mkdirSync(path.join(dir, 'seam.wav')); else fs.symlinkSync(path.join(dir, 'other.wav'), path.join(dir, 'seam.wav'));
+    assert.throws(() => probe.retireProbeExcerpt(plan, report, exit));
+    assert(fs.existsSync(path.join(dir, 'excerpt.avi'))); assert(fs.existsSync(path.join(dir, 'baseline.wav'))); assert(fs.existsSync(path.join(dir, 'other.wav')));
+});
 test('only the isolated retention branch can run export; old branch modes keep their existing boundary', () => {
     route.validateDispatch('buffer-export', 'a'.repeat(40), route.PIN.repository, 'false', 'refs/heads/experiment/playback-buffer-retention');
     for (const ref of ['refs/heads/main', 'refs/heads/feature/playback-range-cache', 'refs/heads/verify/next-episode-auto']) assert.throws(() => route.validateDispatch('buffer-export', 'a'.repeat(40), route.PIN.repository, 'false', ref));
@@ -193,6 +228,7 @@ test('safe collection excludes media/profile/stderr and keeps bounded semantic r
     fs.writeFileSync(path.join(sub, 'observations.json'), JSON.stringify({stage: 'source-pause', privatePath: path.join(sub, 'profile'), url: 'http://127.0.0.1/private', token: 'private-canary'}));
     fs.writeFileSync(path.join(sub, 'excerpt.avi'), 'do not publish'); fs.writeFileSync(path.join(sub, 'worker.log'), 'private-canary');
     fs.writeFileSync(path.join(sub, 'retained.edl'), 'http://127.0.0.1/private-canary');
+    for (const name of ['baseline.wav', 'seam.wav']) fs.writeFileSync(path.join(sub, name), 'raw-synthetic-samples-do-not-publish');
     const rows = ci.collect({root: dir, toolsRoot: '/synthetic-tools'}, out);
     assert.equal(rows.length, 1); assert.equal(rows[0].name, 'export-observations.json'); assert.match(rows[0].publishedSha256, /^[a-f0-9]{64}$/);
     const content = fs.readFileSync(path.join(out, rows[0].name), 'utf8'); assert(!content.includes('private-canary')); assert(!content.includes('http://')); assert(!content.includes(dir));

@@ -10,7 +10,7 @@ const OWNER = 'ETE isolated finite buffer export v1\n';
 const MAX_FILE = 34 * 1024 * 1024;
 const MAX_SLOTS = 192 * 25;
 const STAGES = new Set(['preflight', 'app-ready', 'source-helper', 'source-load', 'source-advance', 'source-pause',
-    'source-stable', 'export', 'export-inspect', 'source-stop', 'source-exit', 'clip-helper', 'clip-load', 'clip-decode', 'clip-stop', 'edl-helper', 'edl-load', 'edl-cross', 'edl-stop', 'fallback-original', 'complete']);
+    'source-stable', 'export', 'export-inspect', 'source-stop', 'source-exit', 'clip-helper', 'clip-load', 'clip-decode', 'clip-stop', 'edl-helper', 'edl-load', 'edl-cross', 'edl-stop', 'fallback-original', 'native-cancel', 'pcm-baseline', 'pcm-seam', 'pcm-inspect', 'complete']);
 const CODES = new Set(['export-input-invalid', 'export-file-limit', 'export-avi-invalid', 'export-avi-format', 'export-packets-invalid',
     'export-window-unavailable', 'export-source-not-stable', 'export-extra-source-read', 'export-command-failed', 'export-file-changed',
     'export-mapping-invalid', 'export-native-deadline', 'export-stage-timeout', 'export-result-invalid', 'export-owned-path',
@@ -19,15 +19,26 @@ const CODES = new Set(['export-input-invalid', 'export-file-limit', 'export-avi-
 CODES.add('export-av-format'); CODES.add('export-av-audio-mapping'); CODES.add('export-av-timeline-mismatch');
 CODES.add('export-option-set-failed'); CODES.add('export-option-get-failed'); CODES.add('export-option-readback-mismatch');
 CODES.add('export-edl-input'); CODES.add('export-edl-observation');
-for (const code of ['export-fallback-input', 'export-fallback-observation', 'export-fallback-cancelled']) CODES.add(code);
+for (const code of ['export-pcm-input', 'export-pcm-output', 'export-pcm-limit', 'export-cancel-observation', 'export-cancel-late-bytes', 'pcm-file-limit', 'pcm-file-changed', 'pcm-source-invalid', 'pcm-baseline-invalid', 'pcm-edl-invalid', 'pcm-seam-input-invalid', 'pcm-seam-outside-source', 'pcm-wav-truncated', 'pcm-wav-format-unsupported', 'pcm-wav-format-mismatch', 'pcm-wav-container', 'pcm-wav-format', 'pcm-wav-data-not-final', 'pcm-wav-data', 'pcm-wav-incomplete', 'pcm-wav-chunk-unsupported', 'export-fallback-input', 'export-fallback-observation', 'export-fallback-cancelled']) CODES.add(code);
 const OPTIONS = Object.freeze({'cache': 'yes', 'cache-on-disk': false, 'demuxer-max-bytes': 4 * 1048576,
     'demuxer-max-back-bytes': 2 * 1048576, 'demuxer-donate-buffer': false, 'pause': false, 'volume': 0}); // Probe only, not product defaults.
-function optionsFor(variant) {
-    if (!['video', 'av', 'edl'].includes(variant)) throw Error('export-input-invalid');
+function optionsFor(variant, captureFile = null) {
+    if (!['video', 'av', 'edl', 'seam'].includes(variant)) throw Error('export-input-invalid');
+    if (captureFile !== null) {
+        if (variant !== 'seam' || !path.isAbsolute(captureFile) || /[\0\r\n]/.test(captureFile) || !['baseline.wav', 'seam.wav'].includes(path.basename(captureFile))) throw Error('export-pcm-input');
+        return {...OPTIONS, volume: 100, 'audio-format': 's16', ao: 'pcm:file=%' + Buffer.byteLength(captureFile, 'utf8') + '%' + captureFile};
+    }
     return variant !== 'video' ? {...OPTIONS, ao: 'null'} : OPTIONS;
 }
 function optionMatches(name, actual, expected) {
     if (name !== 'ao') return disk.sameOption(actual, expected);
+    if (typeof expected === 'string' && expected.startsWith('pcm:file=%')) {
+        const match = /^pcm:file=%([1-9][0-9]*)%([^\0\r\n]+)$/.exec(expected);
+        if (!match || Buffer.byteLength(match[2], 'utf8') !== Number(match[1]) || !path.isAbsolute(match[2])) return false;
+        const row = Array.isArray(actual) && actual.length === 1 ? actual[0] : null;
+        return !!row && Object.keys(row).sort().join(',') === 'enabled,name,params' && row.name === 'pcm' && row.enabled === true &&
+            !!row.params && Object.keys(row.params).join(',') === 'file' && row.params.file === match[2];
+    }
     if (expected !== 'null') return false;
     if (actual === 'null') return true;
     if (!Array.isArray(actual) || actual.length !== 1) return false;
@@ -40,7 +51,7 @@ function optionMatches(name, actual, expected) {
 }
 function projectOptionStatus(row) {
     const types = ['unread', 'null', 'string', 'boolean', 'number', 'object', 'string-list', 'object-list', 'array'];
-    return {name: Object.hasOwn(optionsFor('av'), row?.name) ? row.name : 'unavailable',
+    return {name: (Object.hasOwn(optionsFor('av'), row?.name) || row?.name === 'audio-format') ? row.name : 'unavailable',
         phase: ['set-property', 'get-property', 'readback-validation', 'confirmed'].includes(row?.phase) ? row.phase : 'unavailable',
         actualType: types.includes(row?.actualType) ? row.actualType : 'unread',
         entries: Number.isSafeInteger(row?.entries) && row.entries >= 0 ? row.entries : null,
@@ -200,8 +211,8 @@ function readProbe(file) {
     return {plan, source};
 }
 function validateReport(report, plan, exit) {
-    const expectedOptions = optionsFor(plan.variant);
-    const helperCount = plan.variant === 'edl' ? 3 : 2;
+    const expectedOptions = index => optionsFor(plan.variant, plan.variant === 'seam' && index >= 3 ? path.join(plan.out, ['baseline.wav', 'seam.wav'][index - 3]) : null);
+    const helperCount = plan.variant === 'seam' ? 5 : plan.variant === 'edl' ? 3 : 2;
     if (!exit.processExited || !exit.streamsClosed || exit.code !== 0 || exit.signal || exit.spawnError || exit.transportError ||
         report.schema !== 1 || report.scope !== SCOPE || report.variant !== plan.variant || report.status !== 'PASS' || report.workerPid !== exit.pid ||
         report.helpers?.length !== helperCount || new Set(report.helpers.map(h => h.pid)).size !== helperCount || report.helpers.some(h => !Number.isInteger(h.pid) || h.pid <= 0 || !h.exited || !h.handshake ||
@@ -213,21 +224,22 @@ function validateReport(report, plan, exit) {
         report.mapping.lastSourceFrame !== report.mapping.firstSourceFrame + report.mapping.packets - 1 || report.mapping.lastSourceFrame >= 192 ||
         !Number.isFinite(report.mapping.sourceMinusLocalSeconds) || report.decoded?.width !== 320 || report.decoded?.height !== 180 || report.decoded?.vo !== 'gpu-next' ||
         !/^[a-f0-9]{64}$/.test(report.clip?.sha256 || '') || !Number.isSafeInteger(report.clip?.bytes) || report.clip.bytes <= 0 || report.clip.bytes > MAX_FILE ||
-        report.helpers.some(h => !h.options || Object.keys(h.options).length !== Object.keys(expectedOptions).length || Object.entries(expectedOptions).some(([k, v]) => !optionMatches(k, h.options[k], v)))) throw Error('export-result-invalid');
+        report.helpers.some((h, index) => !h.options || Object.keys(h.options).length !== Object.keys(expectedOptions(index)).length || Object.entries(expectedOptions(index)).some(([k, v]) => !optionMatches(k, h.options[k], v)))) throw Error('export-result-invalid');
     if (plan.variant !== 'video' && (report.checks.audioDecoded !== true || report.checks.seekMappingVerified !== true || report.checks.clipReachedEOF !== true ||
         report.audioMapping?.commonMappingWithinOneSample !== true)) throw Error('export-result-invalid');
-    if (plan.variant === 'edl' && (report.checks.edlTimelineAndTracks !== true || report.checks.unchangedAfterEDL !== true ||
+    if (['edl', 'seam'].includes(plan.variant) && (report.checks.edlTimelineAndTracks !== true || report.checks.unchangedAfterEDL !== true ||
         !['COMPLETED_SAVED_PAYLOAD_REREAD', 'SCHEDULED_SAVED_PAYLOAD_REREAD_DELIVERY_UNCERTAIN', 'NO_SAVED_PAYLOAD_REREAD_OBSERVED'].includes(report.edl?.network?.assessment))) throw Error('export-result-invalid');
-    if (plan.variant === 'edl' && (!require('./playback-buffer-edl-probe.cjs').validStopObservation(report.edl?.stop) ||
+    if (['edl', 'seam'].includes(plan.variant) && (!require('./playback-buffer-edl-probe.cjs').validStopObservation(report.edl?.stop) ||
         !/^[a-f0-9]{64}$/.test(report.edl?.descriptor?.sha256 || '') || !Number.isSafeInteger(report.edl?.descriptor?.bytes) ||
         report.edl.descriptor.bytes <= 0 || report.edl.descriptor.bytes > 16384)) throw Error('export-result-invalid');
-    if (plan.variant === 'edl' && (report.fallback?.scope !== require('./playback-buffer-fallback-probe.cjs').SCOPE ||
+    if (['edl', 'seam'].includes(plan.variant) && (report.fallback?.scope !== require('./playback-buffer-fallback-probe.cjs').SCOPE ||
         report.fallback.decodeAndTimelinePassed !== true || report.fallback.reason !== 'excerpt-unavailable-or-changed' || report.fallback.startFiles !== 1 ||
         !Number.isFinite(report.fallback.targetSourceSeconds) || report.fallback.targetSourceSeconds < 0 || report.fallback.targetSourceSeconds >= 8 ||
         !Number.isFinite(report.fallback.landedSourceSeconds) || Math.abs(report.fallback.landedSourceSeconds - report.fallback.targetSourceSeconds) > 1 / 24 ||
         !Number.isFinite(report.fallback.advancedSourceSeconds) || report.fallback.advancedSourceSeconds <= report.fallback.landedSourceSeconds ||
         !Number.isFinite(report.fallback.duration) || Math.abs(report.fallback.duration - 8) > 1 / 24 ||
         !Number.isInteger(report.fallback.sourceRequests) || report.fallback.sourceRequests <= 0 || !require('./playback-buffer-edl-probe.cjs').physicalClosed(report.fallback.stop))) throw Error('export-result-invalid');
+    if (plan.variant === 'seam' && (!require('./playback-buffer-cancel-probe.cjs').valid(report.cancellation) || !require('./playback-buffer-pcm-probe.cjs').valid(report.pcm))) throw Error('export-result-invalid');
     assert.deepEqual(report.identity, plan.identity);
 }
 async function worker(file) {
@@ -258,9 +270,9 @@ async function worker(file) {
         window = new BrowserWindow({show: false, focusable: false, skipTaskbar: true, width: 320, height: 180, webPreferences: {sandbox: true, contextIsolation: true, nodeIntegration: false}});
         require('./playback-range-windows-hidden.cjs').protectHiddenWindow(window);
         const handle = window.getNativeWindowHandle(), hwnd = handle.length === 8 ? handle.readBigUInt64LE().toString() : String(handle.readUInt32LE());
-        server = await require('./playback-range-windows-hidden.cjs').fixtureServer({out: plan.out, fixtures: [plan.fixture]}, 0, {measureWrites: plan.variant === 'edl'});
+        server = await require('./playback-range-windows-hidden.cjs').fixtureServer({out: plan.out, fixtures: [plan.fixture]}, 0, {measureWrites: ['edl', 'seam'].includes(plan.variant)});
         const {NativeHelperClient} = require(path.join(source.runtime, 'electronapp/native-helper/controller.js'));
-        async function start(label) {
+        async function start(label, captureFile = null) {
             stage(label); readProbe(file);
             client = new NativeHelperClient({helperPath: path.join(source.runtime, 'electronapp/native-helper/ete-mpv-helper.exe'), libmpvPath: path.join(source.runtime, 'electronapp/libmpv/x64/mpv-1.dll'), parentWindowHandle: hwnd});
             const record = {pid: null, handshake: null, exited: false, outcome: 'UNCERTAIN'}; owned.set(client, record); report.helpers.push(record); save();
@@ -268,7 +280,7 @@ async function worker(file) {
             await ready; record.handshake = client.handshake;
             assert.equal(client.handshake.libmpvVersion, require(path.join(source.runtime, 'electronapp/native-helper/service.js')).EXPECTED_LIBMPV_VERSION); save();
             client.beginGeneration(label, ['core-idle', 'time-pos', 'duration']);
-            const expected = optionsFor(plan.variant);
+            const expected = optionsFor(plan.variant, captureFile);
             record.options = {};
             for (const [name, value] of Object.entries(expected)) {
                 record.options[name] = await applyOption(client, name, value, report, save);
@@ -299,7 +311,7 @@ async function worker(file) {
         if (report.mapping.sourceStartSeconds < report.window.cacheStart - 1 / 24 || report.mapping.sourceEndExclusiveSeconds > report.window.cacheEnd + 1 / 24) throw Error('export-mapping-invalid');
         stage('source-stop'); await client.stop(); await until(() => server.active.size === 0); assert.deepEqual(fingerprint(), report.clip); report.checks.unchangedAfterStop = true;
         stage('source-exit'); await finish(client); assert.deepEqual(fingerprint(), report.clip); report.checks.unchangedAfterExit = true;
-        if (plan.variant !== 'edl') {await server.close(); server = null;}
+        if (!['edl', 'seam'].includes(plan.variant)) {await server.close(); server = null;}
         await start('clip-helper'); stage('clip-load'); await client.load(['loadfile', output]).promise;
         stage('clip-decode'); await until(async () => client.state.fileLoaded && await property('time-pos') >= 0.1);
         const video = await property('video-out-params'), vo = await property('current-vo'), duration = await property('duration');
@@ -328,15 +340,27 @@ async function worker(file) {
         stage('clip-stop'); await client.stop(); await finish(client); assert.deepEqual(fingerprint(), report.clip); report.checks.unchangedAfterReopen = true;
         readProbe(file);
         if (plan.variant !== 'video' && !report.audioMapping.commonMappingWithinOneSample) throw Error('export-av-timeline-mismatch');
-        if (plan.variant === 'edl') {
+        if (['edl', 'seam'].includes(plan.variant)) {
             await start('edl-helper');
             report.edl = await require('./playback-buffer-edl-probe.cjs').run({client, property, until, delay, server, fixture: plan.fixture,
                 original: sourceAV, video: report.mapping, audio: report.audioMapping, duration, output, directory: plan.out,
                 checkpoint(name, result) {report.edl = result; stage(name);}});
             report.fallback = await require('./playback-buffer-fallback-probe.cjs').run({client, property, until, server, directory: plan.out, fixture: plan.fixture,
                 previous: report.edl, clip: report.clip, checkpoint(value) {report.fallback = value; stage('fallback-original');}});
+            if (plan.variant === 'seam') report.cancellation = await require('./playback-buffer-cancel-probe.cjs').run({client, property, until, delay, server, directory: plan.out, fixture: plan.fixture,
+                previous: report.edl, clip: report.clip, checkpoint(value) {report.cancellation = value; stage('native-cancel');}});
             await finish(client); assert.deepEqual(fingerprint(), report.clip); report.checks.unchangedAfterEDL = true;
             report.checks.edlTimelineAndTracks = report.edl.timelineAndTracksPassed === true; readProbe(file);
+        }
+        if (plan.variant === 'seam') {
+            const captures = [], pcm = require('./playback-buffer-pcm-probe.cjs');
+            for (const [label, name, sourcePath] of [['pcm-baseline', 'baseline.wav', server.origin + '/Videos/A/stream.avi'], ['pcm-seam', 'seam.wav', path.join(plan.out, 'retained.edl')]]) {
+                await start(label, path.join(plan.out, name));
+                captures.push(await pcm.capture({client, property, until, source: sourcePath, range: report.edl.range, output: path.join(plan.out, name)}));
+                await finish(client);
+            }
+            stage('pcm-inspect'); report.pcmFiles = ['baseline.wav', 'seam.wav'].map(name => ({file: name, bytes: fs.statSync(support.regular(path.join(plan.out, name))).size})); save();
+            report.pcm = pcm.finish(plan.out, av.inspect(path.join(plan.out, 'A.avi')).audio.pcm, report.edl.range, captures);
         }
         report.status = 'PASS'; stage('complete');
     } catch (error) {report.status = 'UNKNOWN'; report.failure = safeFailure(error, report.stage); console.error('mpv-buffer-export-failure:' + JSON.stringify(report.failure));}
@@ -352,9 +376,10 @@ function retireProbeExcerpt(plan, report, exit, save = () => {}) {
     physical(plan.out);
     if (fs.readFileSync(support.regular(path.join(plan.out, 'owner')), 'utf8') !== OWNER) throw Error('export-owner-drift');
     const files = [path.join(plan.out, 'excerpt.avi')];
-    if (plan.variant === 'edl') files.push(path.join(plan.out, 'retained.edl'));
-    for (const file of files) support.regular(file);
+    if (['edl', 'seam'].includes(plan.variant)) files.push(path.join(plan.out, 'retained.edl'));
     const expected = [report.clip, report.edl?.descriptor];
+    if (plan.variant === 'seam') for (const row of report.pcm.captures) {files.push(path.join(plan.out, row.file)); expected.push(row);}
+    for (const file of files) support.regular(file);
     for (const [index, file] of files.entries()) if (support.hashFile(file) !== expected[index].sha256 || fs.statSync(file).size !== expected[index].bytes) throw Error('export-file-changed');
     const receipt = {scope: 'test-excerpt-retirement-only-NOT-product-cache-policy', removed: [], nativeReaders: 0}; save(receipt);
     for (const file of files) {fs.unlinkSync(file); receipt.removed.push(path.basename(file)); save(receipt);}
@@ -363,7 +388,7 @@ function retireProbeExcerpt(plan, report, exit, save = () => {}) {
 async function run(file, execute) {
     if (execute !== true || process.platform !== 'win32' || process.arch !== 'x64') throw Error('export-explicit-Windows-required');
     const {plan, source} = readProbe(file);
-    for (const name of ['observations.json', 'worker.log', 'run.json', 'excerpt.avi', 'retained.edl']) if (fs.existsSync(path.join(plan.out, name))) throw Error('export-fresh-root');
+    for (const name of ['observations.json', 'worker.log', 'run.json', 'excerpt.avi', 'retained.edl', 'baseline.wav', 'seam.wav']) if (fs.existsSync(path.join(plan.out, name))) throw Error('export-fresh-root');
     const fd = fs.openSync(path.join(plan.out, 'worker.log'), 'wx'), receipt = {scope: SCOPE, status: 'UNKNOWN', nativeOutcome: 'UNCERTAIN'};
     let timer, timedOut = false;
     const save = () => fs.writeFileSync(path.join(plan.out, 'run.json'), JSON.stringify(receipt, null, 2) + '\n');

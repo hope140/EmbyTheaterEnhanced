@@ -81,3 +81,16 @@ run40155589157/job121056192702，controls5ec99bd：Stop返回/10秒截止时实�
 第三helper开启新generation，通过既有file-local `start`直接加载原匿名源，验证实际path、8秒时长、接近原目标位置且继续前进、320×180视频及mono48k/null音轨、一个新顶层start-file和新增源请求。EDL的事件/网络回执在此前冻结，fallback不会混入其流量统计。每次异步属性返回和后续副作用前校验generation；替代代次出现时，旧finally不stop新播放。单纯取消但仍属于本代次则Stop并等待物理关闭；失败不伪报成功或删诊断。原120/100/10秒不变。新fallback原生行为待协调者按精确提交运行，离线fake只验证编排，不代替native。
 
 PCM采样是另一项有界问题：固定[ao_pcm实现](https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/audio/out/ao_pcm.c)可以写WAV/raw，但它标记untimed；现有null输出/volume0条件不能直接用于采集音频。若下一步采样，应单独受控PCM输出与同条件原源对照，核实际格式、截断、边缘样本及文件最终关闭，媒体不上传；该条件仍不等于普通输出的听觉无缝。本批不更改音频输出或内核。
+
+
+## 下一项短测：buffer-export-seam
+
+原时间点fallback已在run40156520323/job121058979516实测通过：目标0.9479167、落点0.9583333、推进1.0833333秒、原时长8秒、一顶层start-file、7源请求及三正常helper退出。取消/替代与样本连续性不由这次通过推导。
+
+新显式输入仅在独立retention分支允许，release_package=false；旧buffer-export-edl保持原三helper语义。新输入先准备同一有限导出/EDL/fallback夹具，再在第三helper实际挂起一个GET，依次Stop取消与新generation替代到3秒。真实controller退休状态是GENERATION_RETIRED，绑定本次stop/superseded原因；观察从退休之前到全部收尾，拒绝旧代次ACCEPT、额外Stop、迟到发送字节或替代播放被停止。旧响应确已关闭才清理hold，保留原rows证据，不清pending计数。
+
+最后两个独立helper分别对原匿名源与本地EDL运行同一start/end，PCM AO仅写所属baseline.wav/seam.wav。选项为audio-format=s16、volume100、单一pcm/file输出；固定helper只接受标量setter，故以pcm:file=%UTF8字节数%路径传输（固定[m_option长度引用](https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/options/m_option.c)），get仍严格核map中的唯一file，无新协议；其他缓存/核心选项不改。先pause/load，load应答只代表命令/START_FILE，须明确等FILE_LOADED和PCM AO/mono48k后才能unpause至EOF。helper退出并关闭stdio后，严格核最终RIFF长度、mono48k/S16格式、固定PCM GUID、唯一fmt/data及4MiB文件读取上限；合成输入只有8秒，不循环，输出只选约1秒范围，采样不抓真实媒体或设备。
+
+两份捕获各自以唯一512字节起始标记映射原始PCM；检查整份为连续原样本，并对接缝前后各0.1秒（共9,600样本）逐样本比较。基线不匹配不能归罪EDL，位置/覆盖不足不能冒充连续。untimed文件输出不证明普通声卡的实时听感。新PCM/cancel模块均实验私有，不接生产API；不改service白名单。
+
+安全摘要`cancellation`明确phase/cases，`pcmAoSamples`给出限定assessment、源样本起点与数量/文件大小，五helper均须正常退出。比较否定结果允许作为完成测量发布，comparison.ok必须与成功assessment一致；流程PASS不表示接缝通过。WAV和媒体/EDL不进入artifact，只允许有界语义JSON；成功时四个固定临时文件均在五helper/worker实际退出、owner/实体文件/所有摘要检查后清理，任何重定向/改动在第一次删除前拒绝。artifact过期则停止，不换来源、不重打安装包。

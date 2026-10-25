@@ -20,7 +20,7 @@ function summary(plan) {
     const root = path.join(plan.root, 'buffer-export'), observation = read(path.join(root, 'probe/observations.json')), receipt = read(path.join(root, 'probe/run.json'));
     const n = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
     const boolean = value => typeof value === 'boolean' ? value : null;
-    return {scope: probe.SCOPE, variant: ['video', 'av', 'edl'].includes(observation?.variant) ? observation.variant : null,
+    return {scope: probe.SCOPE, variant: ['video', 'av', 'edl', 'seam'].includes(observation?.variant) ? observation.variant : null,
         status: observation?.status === 'PASS' && receipt?.status === 'PASS' ? 'PASS' : 'UNKNOWN',
         stage: probe.STAGES.has(observation?.stage) ? observation.stage : 'preflight',
         failure: observation?.failure ? probe.safeFailure({message: observation.failure.code, code: observation.failure.systemCode, avi: observation.failure.format}, observation.failure.stage) :
@@ -28,9 +28,9 @@ function summary(plan) {
                 readFailure(path.join(root, 'probe/worker.log')) || readFailure(path.join(plan.root, 'buffer-export-driver.stdout')),
         workerPid: n(receipt?.pid), exitCode: n(receipt?.code), streamsClosed: boolean(receipt?.streamsClosed), timedOut: boolean(receipt?.timedOut),
         exportMs: n(observation?.exportMs), clipBytes: n(observation?.clip?.bytes),
-        pendingOption: Object.hasOwn(probe.optionsFor('av'), observation?.pendingOption) ? observation.pendingOption : null,
+        pendingOption: Object.hasOwn(probe.optionsFor('av'), observation?.pendingOption) ? observation.pendingOption : observation?.pendingOption === 'audio-format' ? 'audio-format' : null,
         optionStatus: probe.projectOptionStatus(observation?.optionStatus),
-        testExcerptRetirement: {nativeReaders: n(receipt?.excerptRetirement?.nativeReaders), removed: Array.isArray(receipt?.excerptRetirement?.removed) ? receipt.excerptRetirement.removed.filter(name => ['excerpt.avi', 'retained.edl'].includes(name)) : []},
+        testExcerptRetirement: {nativeReaders: n(receipt?.excerptRetirement?.nativeReaders), removed: Array.isArray(receipt?.excerptRetirement?.removed) ? receipt.excerptRetirement.removed.filter(name => ['excerpt.avi', 'retained.edl', 'baseline.wav', 'seam.wav'].includes(name)) : []},
         clipFormat: Object.fromEntries(['ticksPerSecond', 'nonemptyPackets', 'emptyVideoSlots', 'containerSlots'].map(k => [k, n(observation?.clipFormat?.[k])])),
         checks: Object.fromEntries(['newRequests', 'newScheduledSourceBytes', 'completedBytesDelta'].map(k => [k, n(observation?.checks?.[k])]).concat(
             ['clipDecoded', 'audioDecoded', 'seekMappingVerified', 'clipReachedEOF', 'unchangedAfterStop', 'unchangedAfterExit', 'unchangedAfterReopen', 'edlTimelineAndTracks', 'unchangedAfterEDL'].map(k => [k, boolean(observation?.checks?.[k])]))),
@@ -51,6 +51,16 @@ function summary(plan) {
                     historyClosedPending: n(s.history?.pendingClosedCallbacks), currentClosedPending: n(s.current?.pendingClosedCallbacks)})) : []},
             clientConsumption: 'NOT_MEASURED',
             audioContinuity: 'NOT_SAMPLE_CAPTURED'},
+        cancellation: {completed: boolean(observation?.cancellation?.completed), phase: ['starting-held-load', 'held', 'retiring', 'waiting-retired-attempt', 'retired-attempt-observed', 'old-response-closed', 'replacement-ready', 'complete-case', 'complete'].includes(observation?.cancellation?.phase) ? observation.cancellation.phase : null,
+            activeCase: ['cancel', 'replace'].includes(observation?.cancellation?.activeCase) ? observation.cancellation.activeCase : null, cases: Array.isArray(observation?.cancellation?.cases) ? observation.cancellation.cases.slice(0, 2).map(r => ({
+            kind: ['cancel', 'replace'].includes(r.kind) ? r.kind : null, terminal: ['GENERATION_RETIRED', 'PROBE_CANCELLED'].includes(r.terminal) ? r.terminal : null,
+            ...Object.fromEntries(['cancelled', 'oldRequestClosed', 'replacementPreserved'].map(k => [k, boolean(r[k])])),
+            ...Object.fromEntries(['lateBytes', 'obsoleteAcceptedEvents', 'obsoleteStopRequests', 'landedSourceSeconds', 'advancedSourceSeconds'].map(k => [k, n(r[k])]))})) : []},
+        pcmAoSamples: {condition: 'untimed-file-output-NOT-device-gaplessness', ok: boolean(observation?.pcm?.comparison?.ok),
+            assessment: /^(exact-source-samples-through-seam|capture-start-mismatch|(?:unalignable|changed|duplicated-sample|missing-sample|capture-outside-source|insufficient-seam-coverage)-(?:baseline|edl)|changed-sample-at-seam)$/.test(observation?.pcm?.comparison?.assessment || '') ? observation.pcm.comparison.assessment : 'NOT_ASSESSED',
+            seamSample: n(observation?.pcm?.comparison?.seamSample), comparedSamples: n(observation?.pcm?.comparison?.comparedSamplesAroundSeam),
+            baselineStartSample: n(observation?.pcm?.comparison?.baseline?.sourceSample), edlStartSample: n(observation?.pcm?.comparison?.edl?.sourceSample),
+            files: (observation?.pcm?.captures || observation?.pcmFiles || []).slice(0, 2).map(r => ({file: ['baseline.wav', 'seam.wav'].includes(r.file) ? r.file : null, bytes: n(r.bytes), samples: n(r.samples)}))},
         fallback: {scope: 'synthetic-retention-preflight-fallback-NOT-product-authorization', reason: observation?.fallback?.reason === 'excerpt-unavailable-or-changed' ? observation.fallback.reason : null,
             decodeAndTimelinePassed: boolean(observation?.fallback?.decodeAndTimelinePassed),
             ...Object.fromEntries(['targetSourceSeconds', 'landedSourceSeconds', 'advancedSourceSeconds', 'duration', 'startFiles', 'sourceRequests'].map(k => [k, n(observation?.fallback?.[k])])),
@@ -59,7 +69,7 @@ function summary(plan) {
         audioMapping: {commonMappingWithinOneSample: boolean(observation?.audioMapping?.commonMappingWithinOneSample),
             ...Object.fromEntries(['samples', 'sourceStartSeconds', 'sourceEndSeconds', 'localStartSeconds', 'sourceMinusLocalSeconds', 'videoMinusLocalSeconds', 'offsetDeltaSeconds'].map(k => [k, n(observation?.audioMapping?.[k])]))},
         mapping: Object.fromEntries(['packets', 'firstSourceFrame', 'lastSourceFrame', 'sourceStartSeconds', 'sourceEndExclusiveSeconds', 'localStartSeconds', 'sourceMinusLocalSeconds', 'containerTicksPerSecond', 'emptyVideoSlots', 'containerSlots'].map(k => [k, n(observation?.mapping?.[k])])),
-        helpers: Array.isArray(observation?.helpers) ? observation.helpers.slice(0, 3).map(h => ({pid: n(h.pid), exited: boolean(h.exited),
+        helpers: Array.isArray(observation?.helpers) ? observation.helpers.slice(0, 5).map(h => ({pid: n(h.pid), exited: boolean(h.exited),
             exitCode: n(h.diagnostics?.processExitCode), streamsClosed: boolean(h.diagnostics?.streamsClosed)})) : [],
         transparentRestore: 'NOT_ASSESSED'};
 }
@@ -67,7 +77,7 @@ function printSummary(plan) {console.log('mpv-buffer-export-summary:' + JSON.str
 async function run(file) {
     if (process.platform !== 'win32' || process.arch !== 'x64') throw Error('export-explicit-Windows-required');
     const ci = require('./ci-playback-range-smoke.cjs'), plan = ci.readPlan(file), repo = path.resolve(__dirname, '..');
-    if (!['buffer-export', 'buffer-export-av', 'buffer-export-edl'].includes(plan.mode)) throw Error('export-input-invalid');
+    if (!['buffer-export', 'buffer-export-av', 'buffer-export-edl', 'buffer-export-seam'].includes(plan.mode)) throw Error('export-input-invalid');
     ci.noCredentials(process.env);
     const inputs = ci.expandedInputs(plan), root = path.join(plan.root, 'buffer-export');
     if (fs.existsSync(root)) throw Error('export-fresh-root'); fs.mkdirSync(root);
@@ -79,7 +89,7 @@ async function run(file) {
         baseToolsCommit: ci.PIN.toolsCommit, baseSourceCommit: ci.PIN.sourceCommit, identity: derived.identity,
         loader: derived.identity.derivation.addition, originalPackageModified: false, transparentRestore: 'NOT_ASSESSED'});
     await support.entrySmoke(sourceFile, true);
-    probe.prepare(sourceFile, path.join(root, 'probe'), plan.mode === 'buffer-export-edl' ? 'edl' : plan.mode === 'buffer-export-av' ? 'av' : 'video');
+    probe.prepare(sourceFile, path.join(root, 'probe'), plan.mode === 'buffer-export-seam' ? 'seam' : plan.mode === 'buffer-export-edl' ? 'edl' : plan.mode === 'buffer-export-av' ? 'av' : 'video');
     await probe.run(path.join(root, 'probe/probe.json'), true);
     trial.verifyRuntime(repo, derived.runtime, plan.paths.artifact, derived.descriptor); return summary(plan);
 }

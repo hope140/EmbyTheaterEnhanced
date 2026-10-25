@@ -116,6 +116,7 @@ async function fixtureServer(plan, requestedPort = 0, observation = {}) {
     return {rows, active, origin: 'http://127.0.0.1:' + server.address().port, port: server.address().port, snapshot,
         pendingWrites: () => rows.reduce((n, row) => n + (row.pendingWriteCallbacks || 0), 0),
         hold(rule) {if (held || holdRule) throw Error('fixture-already-holding'); holdRule = rule;}, held: () => held,
+        clearClosedHold() {if (!held || !held.row.closed) throw Error('fixture-held-still-open'); held = null;},
         async close() {
             closing = true;
             const closed = new Promise(resolve => server.close(resolve));
