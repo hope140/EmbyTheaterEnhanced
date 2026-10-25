@@ -191,3 +191,13 @@ test('date validators do not relax exact range, length or content encoding requi
         f.mode.headers = headers; await refused(f, reason);
     }
 });
+
+test('duplicate physical singleton dates are refused instead of trusting Node header de-duplication', async t => {
+    const f = await fixture(t);
+    for (const name of ['Date', 'Last-Modified']) {
+        const old = name === 'Date' ? DATE : LM;
+        f.mode.headers[name] = [old, old];
+        await refused(f, 'date-validator-invalid');
+        delete f.mode.headers[name];
+    }
+});

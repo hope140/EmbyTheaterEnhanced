@@ -40,6 +40,8 @@ function createReader({timeoutMs}) {
                 let reason, selected;
                 const missingTag = etag === undefined;
                 const modified = incoming.headers['last-modified'], generated = incoming.headers.date;
+                const duplicateDate = missingTag && allowLastModified && ['last-modified', 'date'].some(name =>
+                    (incoming.rawHeaders || []).filter((value, index) => index % 2 === 0 && value.toLowerCase() === name).length > 1);
                 if (missingTag && allowLastModified) {
                     selected = {lastModified: modified, date: generated};
                 } else selected = {etag};
@@ -53,6 +55,7 @@ function createReader({timeoutMs}) {
                 else if ((missingTag || etag === '') && !allowLastModified) reason = 'etag-missing';
                 else if (missingTag && (!Number.isSafeInteger(expectedTotal) || expectedTotal <= 0)) reason = 'file-size-unavailable';
                 else if (missingTag && expectedTotal !== total) reason = 'representation-changed';
+                else if (duplicateDate) reason = 'date-validator-invalid';
                 else if (missingTag && dateRefusal(modified, generated)) reason = dateRefusal(modified, generated);
                 else if (typeof etag === 'string' && etag.startsWith('W/')) reason = 'etag-weak';
                 else if (!missingTag && !strongTag(etag)) reason = 'etag-invalid';
