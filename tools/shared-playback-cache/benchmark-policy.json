@@ -4,11 +4,40 @@
   "pairedSamples": 20,
   "warmupPairs": 3,
   "order": "AB then BA alternating; no failed sample is dropped",
-  "latencySource": {"firstDelayMs": 20, "tailDelayMs": 100, "firstChunkBytes": 4096},
-  "throughputSource": {"firstDelayMs": 0, "tailDelayMs": 0, "chunkBytes": 65536, "paceMs": 8},
-  "gates": {"coldMedianAddedMs": 10, "coldP95AddedMs": 25, "hitMedianTtfbRatio": 0.75, "pacedThroughputMedianRatio": 0.90},
-  "resourceLimits": {"sourceResponses": 2, "backgroundResponses": 1, "localBodies": 2, "originWaiters": 4, "mediaReservationBytes": 8388608, "serializedIndexBytes": 2097152, "indexRows": 4096},
+  "latencySource": {
+    "firstDelayMs": 20,
+    "tailDelayMs": 100,
+    "firstChunkBytes": 4096
+  },
+  "throughputSource": {
+    "firstDelayMs": 0,
+    "tailDelayMs": 0,
+    "chunkBytes": 65536,
+    "paceMs": 8
+  },
+  "gates": {
+    "coldMedianAddedMs": 10,
+    "coldP95AddedMs": 25,
+    "hitMedianTtfbRatio": 0.75,
+    "pacedThroughputMedianRatio": 0.9
+  },
+  "resourceLimits": {
+    "sourceResponses": 2,
+    "backgroundResponses": 1,
+    "localBodies": 2,
+    "originWaiters": 4,
+    "mediaReservationBytes": 8388608,
+    "serializedIndexBytes": 2097152,
+    "indexRows": 4096,
+    "captureJobs": 8
+  },
   "sourceConcurrencyReason": "Normally one; a foreground response paused by player backpressure may coexist with one preload response. Foreground resume cancels and joins preload before consuming more source bytes. Changed before the first performance run, not after results.",
   "unpacedLoopback": "Diagnostic only, recorded separately; no claim of full LAN or native acceptance from the paced gate",
-  "unmeasured": ["native first decoded/presented frame", "actual native seek resume and stalling", "Windows private bytes", "production maximum cache window", "115/dian115/Emby accounts and media"]
+  "unmeasured": [
+    "native first decoded/presented frame",
+    "actual native seek resume and stalling",
+    "Windows private bytes",
+    "production maximum cache window",
+    "115/dian115/Emby accounts and media"
+  ]
 }

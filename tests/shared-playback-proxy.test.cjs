@@ -212,6 +212,7 @@ test('sequential warm playback reads each full cached block once instead of four
   const {proxy, origin} = await setup(t, {bytes: 256 * 1024, firstDelay: 0, tailDelay: 0}, io);
   const handle = await proxy.open(identity()); await handle.ready();
   await get(handle.url, 0, origin.data.length); await proxy.drain();
+  await handle.actual(); // The warm playback has now actually started.
   diskReadBytes = 0;
   const before = proxy.status().originRequests;
   const again = await get(handle.url, 0, origin.data.length);

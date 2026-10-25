@@ -27,7 +27,7 @@ async function benchmark(out) {
       network: 'source, proxy and client in same process; loopback; anonymous owned bytes',
       storage: 'real temporary files on host filesystem; OS page cache not flushed',
       media: 'deterministic binary range fixture, not decoded video'}, cases: [],
-    memory: {baseline: process.memoryUsage(), peak: {}}, resources: {peakSources: 0, peakBodies: 0, peakMediaReserved: 0, peakDiskBytes: 0},
+    memory: {baseline: process.memoryUsage(), peak: {}}, resources: {peakSources: 0, peakBodies: 0, peakMediaReserved: 0, peakDiskBytes: 0, peakWriteJobs: 0},
     sameMetadataReplacement: 'known undetectable risk, separately reproduced by regression',
     nativeFirstFrame: 'NOT_MEASURED', nativeSeekResume: 'NOT_MEASURED', windows: 'NOT_RUN'};
   report.sourceSha256 = {};
@@ -47,6 +47,7 @@ async function benchmark(out) {
     report.resources.peakSources = Math.max(report.resources.peakSources, s.peakOrigins);
     report.resources.peakBodies = Math.max(report.resources.peakBodies, s.peakBodies);
     report.resources.peakMediaReserved = Math.max(report.resources.peakMediaReserved, s.peakMediaReservedBytes);
+    report.resources.peakWriteJobs = Math.max(report.resources.peakWriteJobs, s.peakWriteJobs);
     report.resources.peakDiskBytes = Math.max(report.resources.peakDiskBytes, s.store.peak);
   }
   async function paired(name, setup, mode, start, length, gate, extra = {}) {
@@ -56,7 +57,7 @@ async function benchmark(out) {
       const wanted = mode === 'boundary' ? 65536 : length;
       const prepare = await get(warm.url, start, wanted);
       if (prepare.hash !== hash(setup.origin.data.subarray(start, start + wanted))) throw Error('warm-body-invalid');
-      await setup.proxy.drain();
+      await setup.proxy.drain(); await warm.actual();
     }
     const rows = [], warmups = [];
     async function sample(arm, iteration) {
@@ -90,7 +91,7 @@ async function benchmark(out) {
         warm = await setup.proxy.open(identity('boundary-' + name + '-' + n)); await warm.ready();
         const prepared = await get(warm.url, start, 65536);
         if (prepared.body.length !== 65536) throw Error('boundary-prepare-invalid');
-        await setup.proxy.drain();
+        await setup.proxy.drain(); await warm.actual();
       }
       const order = Math.abs(n) % 2 === 0 ? ['A', 'B'] : ['B', 'A']; const pair = {};
       for (const arm of order) pair[arm] = await sample(arm, n);
@@ -144,7 +145,8 @@ async function benchmark(out) {
       captureBytes: s.proxy.status().captureBytes, readReservedBytes: s.proxy.status().readReservedBytes,
       storeReaders: s.store.status().readers, pending: s.store.status().pending, closed: s.store.status().closed}));
     report.resourcesWithinLimits = report.resources.peakSources <= policy.resourceLimits.sourceResponses &&
-      report.resources.peakBodies <= policy.resourceLimits.localBodies && report.resources.peakMediaReserved <= policy.resourceLimits.mediaReservationBytes;
+      report.resources.peakBodies <= policy.resourceLimits.localBodies && report.resources.peakMediaReserved <= policy.resourceLimits.mediaReservationBytes &&
+      report.resources.peakWriteJobs <= policy.resourceLimits.captureJobs;
     report.afterCloseClean = report.afterClose.every(s => s.activeOrigins === 0 && s.activeBodies === 0 && s.captureBytes === 0 && s.readReservedBytes === 0 && s.storeReaders === 0 && s.pending === 0 && s.closed);
     for (const file of ['store.cjs', 'proxy.cjs', 'fixture.cjs', 'benchmark.cjs']) {
       if (report.sourceSha256[file] !== sha(await fs.readFile(path.join(__dirname, file)))) report.sourceDrift = true;

@@ -4,7 +4,8 @@ const crypto = require('node:crypto');
 const {performance} = require('node:perf_hooks');
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 const hash = data => crypto.createHash('sha256').update(data).digest('hex');
-async function source({bytes = 2 * 1024 * 1024, firstDelay = 20, tailDelay = 100, paceMs = 0, data: supplied, etag = false} = {}) {
+async function source({bytes = 2 * 1024 * 1024, firstDelay = 20, tailDelay = 100, paceMs = 0, chunkBytes = 65536, data: supplied, etag = false} = {}) {
+  if (!Number.isSafeInteger(chunkBytes) || chunkBytes < 4096 || chunkBytes > 1048576) throw Error('fixture-chunk-limit');
   let data = supplied || Buffer.allocUnsafe(bytes);
   if (!supplied) for (let n = 0; n < data.length; n++) data[n] = (n * 17 + (n >>> 9)) & 255;
   let allowed = true, modified = 'Wed, 21 Oct 2026 08:00:00 GMT', tag = '"fixture-v1"';
@@ -29,9 +30,9 @@ async function source({bytes = 2 * 1024 * 1024, firstDelay = 20, tailDelay = 100
     await delay(tailDelay);
     if (res.destroyed) return;
     row.tailAt = performance.now();
-    for (let offset = firstEnd; offset <= end; offset += 65536) {
+    for (let offset = firstEnd; offset <= end; offset += chunkBytes) {
       if (res.destroyed) return;
-      write(offset, Math.min(offset + 65536, end + 1));
+      write(offset, Math.min(offset + chunkBytes, end + 1));
       if (paceMs) await delay(paceMs);
     }
     if (!res.destroyed) res.end();
@@ -47,10 +48,10 @@ async function source({bytes = 2 * 1024 * 1024, firstDelay = 20, tailDelay = 100
     grow() {data = Buffer.concat([data, Buffer.alloc(65536)]);},
     close: async () => {for (const socket of sockets) socket.destroy(); await new Promise(resolve => server.close(resolve));}};
 }
-function get(url, start, length, {onFirst, signal, pauseAfterFirstMs = 0} = {}) {
+function get(url, start, length, {onFirst, signal, pauseAfterFirstMs = 0, openEnded = false} = {}) {
   const started = performance.now();
   return new Promise((resolve, reject) => {
-    const request = http.get(url, {headers: {Range: `bytes=${start}-${start + length - 1}`, Connection: 'close'}, agent: false, signal}, response => {
+    const request = http.get(url, {headers: {Range: `bytes=${start}-${openEnded ? '' : start + length - 1}`, Connection: 'close'}, agent: false, signal}, response => {
       let firstAt = null; const chunks = [];
       response.on('data', chunk => {if (firstAt === null) {firstAt = performance.now(); onFirst?.(firstAt);
         if (pauseAfterFirstMs) {response.pause(); setTimeout(() => response.resume(), pauseAfterFirstMs);}}

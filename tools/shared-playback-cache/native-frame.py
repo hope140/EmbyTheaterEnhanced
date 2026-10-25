@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Owned loopback software-frame timing; standard C API, no core build/export API."""
-import argparse, ctypes as C, hashlib, json, os, pathlib, platform, resource, select, sys, time, urllib.parse
+import argparse, ctypes as C, hashlib, json, os, pathlib, platform, math, resource, select, sys, time, urllib.parse
 
 EXPECTED_LIBRARY = 'f6fb466bbee5995f94b56505d331a34e26897c1f73b2c8982484c8bf071c45bc'
 
@@ -10,7 +10,12 @@ def main():
     parser.add_argument('--run', action='store_true'); parser.add_argument('--library', required=True)
     parser.add_argument('--url', required=True); parser.add_argument('--root', required=True)
     parser.add_argument('--managed-seek', action='store_true')
+    parser.add_argument('--seek-to', type=float, default=3)
+    parser.add_argument('--cache-bytes', type=int, default=1048576)
+    parser.add_argument('--report-first-frame', action='store_true')
     args = parser.parse_args()
+    assert 1048576 <= args.cache_bytes <= 3221225472, 'bounded-cache-test-required'
+    assert math.isfinite(args.seek_to) and 0 < args.seek_to <= 86400, 'bounded-seek-required'
     assert args.run and platform.system() == 'Linux', 'explicit-linux-experiment-required'
     address = urllib.parse.urlsplit(args.url)
     assert address.scheme == 'http' and address.hostname == '127.0.0.1' and address.port and not address.username and not address.password, 'owned-loopback-required'
@@ -44,7 +49,7 @@ def main():
     ctx = lib.mpv_create(); render = pointer(); phase = 'init'
     result = {'scope': 'Linux offscreen software-rendered decoded frame; NOT Windows/GPU/presented UI',
               'librarySha256': EXPECTED_LIBRARY, 'customExportApiUsed': False, 'profileIsolated': True,
-              'renderThreadClientApi': 'async-command/observe-property/nonblocking-wait-event', 'synchronousRuntimeQueries': 0}
+              'renderThreadClientApi': 'async-command/observe-property/nonblocking-wait-event', 'synchronousRuntimeQueries': 0, 'timelineNs': {}, 'seekTarget': args.seek_to, 'testDemuxBytes': args.cache_bytes}
 
     def check(code):
         if code < 0:
@@ -108,7 +113,7 @@ def main():
 
     try:
         for key, value in {'config': 'no', 'terminal': 'no', 'vo': 'libmpv', 'ao': 'null', 'audio': 'no',
-                           'pause': 'yes', 'cache': 'yes', 'demuxer-max-bytes': '1048576',
+                           'pause': 'yes', 'cache': 'yes', 'demuxer-max-bytes': str(args.cache_bytes),
                            'demuxer-max-back-bytes': '262144', 'osd-level': '0', 'keep-open': 'yes'}.items():
             check(lib.mpv_set_option_string(ctx, key.encode(), value.encode()))
         check(lib.mpv_initialize(ctx));
@@ -117,8 +122,11 @@ def main():
         phase = 'render-create'
         api = C.create_string_buffer(b'sw'); init = (Param * 2)(Param(1, C.cast(api, pointer)), Param(0, None))
         check(lib.mpv_render_context_create(C.byref(render), ctx, init))
-        phase = 'load'; began = time.perf_counter(); command('loadfile', args.url)
+        phase = 'load'; began = time.perf_counter(); result['timelineNs']['load'] = str(time.monotonic_ns()); command('loadfile', args.url)
         phase = 'first-frame'; result['firstFrame'] = frame(0, began)
+        result['timelineNs']['firstFrame'] = str(time.monotonic_ns())
+        if args.report_first_frame:
+            print(json.dumps({'event': 'first-frame'}), flush=True)
         phase = 'seek'; began = time.perf_counter()
         if args.managed_seek:
             print(json.dumps({'event': 'prepare-seek'}), flush=True)
@@ -134,8 +142,10 @@ def main():
             if sys.stdin.readline() != 'ready\n':
                 raise RuntimeError('seek-coordinator-invalid')
         seek_hint_pending = args.managed_seek
-        command('seek', '3', 'absolute+exact')
-        result['seekFrame'] = frame(3, began, result['firstFrame']['rgbSha256'])
+        result['timelineNs']['seek'] = str(time.monotonic_ns())
+        command('seek', str(args.seek_to), 'absolute+exact')
+        result['seekFrame'] = frame(args.seek_to, began, result['firstFrame']['rgbSha256'])
+        result['timelineNs']['seekFrame'] = str(time.monotonic_ns())
         result['differentFrames'] = result['firstFrame']['rgbSha256'] != result['seekFrame']['rgbSha256']
         assert result['differentFrames'], 'seek-frame-did-not-change'
         result['status'] = 'PASS'
@@ -146,6 +156,7 @@ def main():
         if render:
             lib.mpv_render_context_free(render)
         lib.mpv_terminate_destroy(ctx); result['contextTerminated'] = True
+        result['timelineNs']['terminated'] = str(time.monotonic_ns())
     result['peakRssBytes'] = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024
     print(json.dumps(result), flush=True)
     return 0 if result['status'] == 'PASS' else 1

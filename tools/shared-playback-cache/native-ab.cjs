@@ -10,14 +10,15 @@ const fixtures = {
   raw: '50296ffabdc3e1cce609897063a438730c4c58f0e7b09f1f038e032b28dcecf7',
   bframe: 'c89c8c79e80fccb244a4648776ff8b51c8156ded6af3b9225bed7be16da983c4'
 };
-async function run({out, media, variant, library, python = '/usr/bin/python3', seekMode = 'ordinary'}) {
-  if (!['ordinary', 'managed'].includes(seekMode) || process.platform !== 'linux' || !fixtures[variant] || !path.isAbsolute(out) || path.resolve(out) !== out ||
+async function run({out, media, variant, library, python = '/usr/bin/python3', seekMode = 'ordinary', readPolicy = 'sparse', cacheBytes = 1048576}) {
+  cacheBytes = Number(cacheBytes);
+  if (!Number.isSafeInteger(cacheBytes) || cacheBytes < 1048576 || cacheBytes > 3221225472 || !['sparse', 'coherent'].includes(readPolicy) || !['ordinary', 'managed'].includes(seekMode) || process.platform !== 'linux' || !fixtures[variant] || !path.isAbsolute(out) || path.resolve(out) !== out ||
       out.startsWith(path.resolve(__dirname, '../..') + path.sep)) throw Error('isolated-linux-experiment-required');
   const data = await fs.readFile(media);
   if (hash(data) !== fixtures[variant]) throw Error('synthetic-fixture-identity');
   await fs.mkdir(out, {mode: 0o700});
   const policy = {pairs: 20, warmupPairs: 3, order: 'alternating AB/BA, failures retained',
-    firstDelayMs: 20, tailDelayMs: 100, softwareFrameSize: [160, 90], seekMode,
+    firstDelayMs: 20, tailDelayMs: 100, softwareFrameSize: [160, 90], seekMode, readPolicy, testDemuxBytes: cacheBytes,
     seekCoordination: 'snapshot old foreground, submit existing async seek, await documented SEEK event, cancel snapshot; no production protocol change',
     gates: {addedMedianMs: 10, addedP95Ms: 25},
     scope: 'Linux software decoded RGB, standard C API of previously built experimental library. NOT Windows, visible presentation or ordinary app entry'};
@@ -29,7 +30,7 @@ async function run({out, media, variant, library, python = '/usr/bin/python3', s
     report.sourceSha256[name] = hash(await fs.readFile(path.join(__dirname, name)));
   const origin = await source({data, firstDelay: 20, tailDelay: 100});
   const store = await createStore({root: path.join(out, 'cache'), currentBytes: 16 * 1024 * 1024, nextBytes: 1024 * 1024});
-  const proxy = await createProxy({store, authorize: async () => origin.grant()});
+  const proxy = await createProxy({store, requestPolicy: readPolicy, authorize: async () => origin.grant()});
   let serial = 0;
   async function sample(arm, mode, item) {
     let handle;
@@ -39,10 +40,10 @@ async function run({out, media, variant, library, python = '/usr/bin/python3', s
       const managed = arm === 'B' && seekMode === 'managed';
       const result = await new Promise(resolve => {
         const args = [path.join(__dirname, 'native-frame.py'), '--run', '--library', library,
-          '--url', handle ? handle.url : origin.url, '--root', path.join(out, 'profile-' + (++serial)),
+          '--url', handle ? handle.url : origin.url, '--root', path.join(out, 'profile-' + (++serial)), '--cache-bytes', String(cacheBytes), '--report-first-frame',
           ...(managed ? ['--managed-seek'] : [])];
         const child = spawn(python, args, {stdio: ['pipe', 'pipe', 'pipe']});
-        let value, cancelOld, interruption, interruptResult, timedOut = false, stderrBytes = 0, bytes = 0;
+        let value, cancelOld, interruption, interruptResult, timedOut = false, stderrBytes = 0, bytes = 0, actualWork, actualFailed = false;
         const timeout = setTimeout(() => {timedOut = true; child.kill();}, 25000);
         const hardStop = setTimeout(() => {timedOut = true; child.kill('SIGKILL');}, 30000);
         child.stderr.on('data', data => {stderrBytes += data.length;});
@@ -52,7 +53,9 @@ async function run({out, media, variant, library, python = '/usr/bin/python3', s
           bytes += Buffer.byteLength(line);
           if (bytes > 128 * 1024) {child.kill(); return;}
           let row; try {row = JSON.parse(line);} catch {child.kill(); return;}
-          if (managed && row.event === 'prepare-seek' && !cancelOld) {
+          if (row.event === 'first-frame') {
+            if (handle) actualWork = handle.actual().catch(() => {actualFailed = true;});
+          } else if (managed && row.event === 'prepare-seek' && !cancelOld) {
             cancelOld = handle.prepareForegroundInterruption(); child.stdin.write('ready\n');
           } else if (managed && row.event === 'seek-started' && cancelOld && !interruption) {
             interruption = cancelOld().then(result => {interruptResult = result;}, () => {interruptResult = {failed: true};});
@@ -62,8 +65,9 @@ async function run({out, media, variant, library, python = '/usr/bin/python3', s
         child.once('close', async (code, signal) => {
           clearTimeout(timeout); clearTimeout(hardStop); lines.close();
           if (interruption) await interruption;
+          if (actualWork) await actualWork;
           const coordinationPassed = !managed || cancelOld && interruption && !interruptResult?.failed;
-          resolve({...value, status: value?.status === 'PASS' && coordinationPassed ? 'PASS' : 'FAIL',
+          resolve({...value, status: value?.status === 'PASS' && coordinationPassed && !actualFailed ? 'PASS' : 'FAIL',
             safeReason: value?.safeReason || (coordinationPassed ? undefined : 'seek-coordination-failed'),
             childExit: code, childSignal: signal, timedOut, stderrBytes,
             ...(managed ? {interruption: interruptResult || null} : {})});
@@ -140,6 +144,6 @@ module.exports = {run};
 if (require.main === module) {
   const args = process.argv.slice(2), options = {};
   if (args.shift() !== '--run') throw Error('explicit-run-required');
-  while (args.length) {const key = args.shift(), value = args.shift(); if (!['--out', '--media', '--variant', '--library', '--python', '--seek-mode'].includes(key) || !value) throw Error('arguments'); options[key.slice(2).replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())] = value;}
+  while (args.length) {const key = args.shift(), value = args.shift(); if (!['--out', '--media', '--variant', '--library', '--python', '--seek-mode', '--read-policy', '--cache-bytes'].includes(key) || !value) throw Error('arguments'); options[key.slice(2).replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())] = value;}
   run(options).catch(() => {console.error('shared-native-ab-failed; inspect private receipts'); process.exitCode = 1;});
 }

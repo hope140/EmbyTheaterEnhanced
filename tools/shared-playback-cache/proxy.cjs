@@ -6,6 +6,8 @@ const https = require('node:https');
 const crypto = require('node:crypto');
 const {once} = require('node:events');
 const BLOCK = 256 * 1024;
+const IO_HIGH_WATER = 256 * 1024;
+const CAPTURE_JOBS = 8;
 const strong = tag => typeof tag === 'string' && /^"[\x21\x23-\x7e]{1,255}"$/.test(tag);
 const problem = reason => Object.assign(new Error('shared-cache-' + reason), {reason});
 const cancelled = () => problem('cancelled');
@@ -43,14 +45,14 @@ async function waitDone(promise, signal) {
   try {await Promise.race([promise, aborted]);}
   finally {signal.removeEventListener('abort', stop);}
 }
-async function createProxy({store, authorize, timeoutMs = 5000, mediaBufferBytes = 8 * 1024 * 1024, cacheEnabled = true}) {
-  if (!store || typeof authorize !== 'function' || !Number.isSafeInteger(timeoutMs) || timeoutMs <= 0 || timeoutMs > 30000 ||
+async function createProxy({store, authorize, timeoutMs = 5000, mediaBufferBytes = 8 * 1024 * 1024, cacheEnabled = true, requestPolicy = 'sparse', onOriginChunk}) {
+  if (onOriginChunk !== undefined && typeof onOriginChunk !== 'function' || !['sparse', 'coherent'].includes(requestPolicy) || !store || typeof authorize !== 'function' || !Number.isSafeInteger(timeoutMs) || timeoutMs <= 0 || timeoutMs > 30000 ||
       !Number.isSafeInteger(mediaBufferBytes) || mediaBufferBytes < BLOCK) throw problem('configuration');
   const routes = new Map(), writes = new Set(), controls = new Set(), jobs = new Set(), openings = new Set(), pendingKeyRecords = new Set();
   const stats = {originRequests: 0, probeRequests: 0, attemptedBytes: 0, receivedBytes: 0, deliveredBytes: 0,
     hitBytes: 0, committedBytes: 0, skippedWrites: 0, captureBytes: 0, peakCaptureBytes: 0,
     activeOrigins: 0, peakOrigins: 0, activeBodies: 0, peakBodies: 0, queued: 0, peakQueued: 0,
-    readReservedBytes: 0, peakMediaReservedBytes: 0};
+    readReservedBytes: 0, peakMediaReservedBytes: 0, localWrites: 0, backpressureWrites: 0, originReadHighWaterMarkBytes: 0, localWriteHighWaterMarkBytes: 0, wholeResponseRequests: 0, partialPrefixBypasses: 0, bypassedPrefixBytes: 0, observerErrors: 0, peakWriteJobs: 0};
   let closed = false, closePromise, foregroundWaiters = 0;
   const active = new Set();
   const track = (set, promise) => {set.add(promise); promise.finally(() => set.delete(promise)).catch(() => {}); return promise;};
@@ -64,8 +66,14 @@ async function createProxy({store, authorize, timeoutMs = 5000, mediaBufferBytes
     record.pendingKeys = (record.pendingKeys || 0) + 1; pendingKeyRecords.add(record);
     const current = () => !closed && !record.retired && epoch === record.metadataEpoch;
     record.keyPromise = track(controls, store.open(record.identity, metadata, record.role,
-      {isCurrent: current, retainActualFrom: record.key ?? null}).then(key => {
-      if (!current()) throw cancelled(); record.key = key; record.ready = true; return key;
+      {isCurrent: current, retainActualFrom: record.key ?? null}).then(async key => {
+      if (!current()) throw cancelled();
+      if (record.coldAtOpen === undefined) {
+        const first = await store.span(key, 0), later = first ? null : await store.nextOffset(key, 0);
+        if (!current()) throw cancelled();
+        record.coldAtOpen = !first && later === null;
+      }
+      record.key = key; record.ready = true; return key;
     }).finally(() => {
       record.pendingKeys--; if (!record.pendingKeys) pendingKeyRecords.delete(record);
     }));
@@ -109,9 +117,10 @@ async function createProxy({store, authorize, timeoutMs = 5000, mediaBufferBytes
       active.add(ticket); return ticket;
     } finally {stats.queued--; if (kind === 'foreground') foregroundWaiters--;}
   }
-  function submit(record, start, data) {
+  function submit(record, start, data, defer) {
     const work = (async () => {
       try {
+        if (defer) await new Promise(setImmediate);
         const key = await record.keyPromise;
         if (record.retired || record.diskUnavailable) {stats.skippedWrites++; return;}
         if (await store.put(key, start, data)) stats.committedBytes += data.length;
@@ -119,7 +128,7 @@ async function createProxy({store, authorize, timeoutMs = 5000, mediaBufferBytes
       } catch {stats.skippedWrites++;}
       finally {stats.captureBytes -= data.length;}
     })();
-    track(writes, work);
+    track(writes, work); stats.peakWriteJobs = Math.max(stats.peakWriteJobs, writes.size);
   }
   async function fetchRange(record, start, length, {kind, signal, onData, save = true, probe = false}) {
     await refresh(record);
@@ -132,9 +141,9 @@ async function createProxy({store, authorize, timeoutMs = 5000, mediaBufferBytes
       const headers = {Range: `bytes=${start}-${start + length - 1}`, 'Accept-Encoding': 'identity', Connection: 'close'};
       if (record.grant.userAgent !== undefined) headers['User-Agent'] = record.grant.userAgent;
       if (strong(record.metadata.etag)) headers['If-Match'] = record.metadata.etag;
-      stats.originRequests++; if (probe) stats.probeRequests++;
+      stats.originRequests++; const requestId = stats.originRequests; if (probe) stats.probeRequests++;
       stats.attemptedBytes += length; stats.activeOrigins++; stats.peakOrigins = Math.max(stats.peakOrigins, stats.activeOrigins);
-      request = (record.grant.url.startsWith('https:') ? https : http).request(record.grant.url, {method: 'GET', headers, agent: false});
+      request = (record.grant.url.startsWith('https:') ? https : http).request(record.grant.url, {method: 'GET', headers, agent: false, highWaterMark: IO_HIGH_WATER});
       const incoming = new Promise((resolve, reject) => {request.once('response', resolve); request.once('error', reject);});
       requestClosed = new Promise(resolve => request.once('close', resolve));
       const abort = () => request.destroy(cancelled()); combined.addEventListener('abort', abort, {once: true});
@@ -143,6 +152,7 @@ async function createProxy({store, authorize, timeoutMs = 5000, mediaBufferBytes
       request.end();
       try {
         response = await incoming;
+        stats.originReadHighWaterMarkBytes = Math.max(stats.originReadHighWaterMarkBytes, response.readableHighWaterMark);
         arm();
         const m = /^bytes (\d+)-(\d+)\/(\d+)$/.exec(response.headers['content-range'] || '');
         if ([401, 403].includes(response.statusCode)) {retire(record); throw problem('access-refused');}
@@ -158,36 +168,75 @@ async function createProxy({store, authorize, timeoutMs = 5000, mediaBufferBytes
         if (typeof modified === 'string') nextMetadata.lastModified = modified;
         if (JSON.stringify(nextMetadata) !== JSON.stringify(record.metadata)) prepareKey(record, nextMetadata);
         record.accessChecked = true;
-        for await (const chunk of response) {
-          clearTimeout(timer);
-          if (combined.aborted) throw cancelled(); useRecord(record);
-          stats.receivedBytes += chunk.length;
-          if (count + chunk.length > length) throw problem('origin-long-body');
-          let consumed = 0;
-          while (consumed < chunk.length) {
-            if (!blockPosition) {
-              blockOffset = count; blockCapacity = Math.min(BLOCK, length - count);
-              if (save && cacheEnabled && !record.diskUnavailable &&
-                  2 * (stats.captureBytes + blockCapacity) + stats.readReservedBytes <= mediaBufferBytes && writes.size < 4) {
-                capture = Buffer.allocUnsafe(blockCapacity); stats.captureBytes += blockCapacity;
-                stats.peakCaptureBytes = Math.max(stats.peakCaptureBytes, stats.captureBytes);
-                stats.peakMediaReservedBytes = Math.max(stats.peakMediaReservedBytes, 2 * stats.captureBytes + stats.readReservedBytes);
-              } else if (save && cacheEnabled) stats.skippedWrites++;
-            }
-            const take = Math.min(chunk.length - consumed, blockCapacity - blockPosition);
-            if (capture) chunk.copy(capture, blockPosition, consumed, consumed + take);
-            count += take; blockPosition += take; consumed += take;
-            if (blockPosition === blockCapacity) {
-              if (capture) {const complete = capture; capture = null; submit(record, start + blockOffset, complete);}
-              blockPosition = 0;
-            }
-          }
-          // Disk never participates in this await. Only the player's own socket
-          // backpressure is permitted to delay the next origin chunk.
-          if (onData) await onData(chunk, ticket);
-          arm();
-        }
-        if (count !== length) throw problem('origin-short-body');
+        // Flowing events avoid the async iterator's per-chunk queue/Promise
+        // overhead. Exactly one chunk can wait for player drain; disk remains
+        // an optional bounded tap and never participates in that wait.
+        await new Promise((resolve, reject) => {
+          let done = false, ended = false, blocked = false;
+          const fail = error => {if (done) return; done = true; clearTimeout(timer); reject(error);};
+          const finish = () => {
+            if (done || !ended || blocked) return;
+            if (count !== length) {fail(problem('origin-short-body')); return;}
+            done = true; clearTimeout(timer); resolve();
+          };
+          response.on('error', fail);
+          response.once('aborted', () => fail(problem('origin-short-body')));
+          response.once('close', () => {if (!ended) fail(problem('origin-short-body'));});
+          response.once('end', () => {ended = true; finish();});
+          response.on('data', chunk => {
+            if (done) return;
+            try {
+              clearTimeout(timer);
+              if (combined.aborted) throw cancelled(); useRecord(record);
+              stats.receivedBytes += chunk.length;
+              if (count + chunk.length > length) throw problem('origin-long-body');
+              if (onOriginChunk) {
+                try {onOriginChunk({requestId, start: start + count, length: chunk.length, kind, probe});}
+                catch {stats.observerErrors++;}
+              }
+              // Deliver first, then tap for disk. Foreground store hashing and
+              // admission run after the current poll batch, within the same
+              // existing capture reservations and write-job limit.
+              const pending = onData && onData(chunk, ticket);
+              if (pending) {
+                blocked = true; response.pause();
+                Promise.resolve(pending).then(() => {
+                  blocked = false;
+                  if (done) return;
+                  if (combined.aborted) {fail(cancelled()); return;}
+                  if (ended) finish();
+                  else {arm(); response.resume();}
+                }, fail);
+              }
+              let consumed = 0;
+              while (consumed < chunk.length) {
+                if (!blockPosition) {
+                  blockOffset = count; blockCapacity = Math.min(BLOCK, length - count);
+                  if (save && cacheEnabled && !record.diskUnavailable &&
+                      2 * (stats.captureBytes + blockCapacity) + stats.readReservedBytes <= mediaBufferBytes && writes.size < CAPTURE_JOBS) {
+                    capture = Buffer.allocUnsafe(blockCapacity); stats.captureBytes += blockCapacity;
+                    stats.peakCaptureBytes = Math.max(stats.peakCaptureBytes, stats.captureBytes);
+                    stats.peakMediaReservedBytes = Math.max(stats.peakMediaReservedBytes, 2 * stats.captureBytes + stats.readReservedBytes);
+                  } else if (save && cacheEnabled) stats.skippedWrites++;
+                }
+                const take = Math.min(chunk.length - consumed, blockCapacity - blockPosition);
+                if (capture) chunk.copy(capture, blockPosition, consumed, consumed + take);
+                count += take; blockPosition += take; consumed += take;
+                if (blockPosition === blockCapacity) {
+                  if (capture) {
+                    const complete = capture; capture = null;
+                    // Two origins can have admitted partial blocks concurrently.
+                    // Recheck completion so the job bound remains strict.
+                    if (writes.size < CAPTURE_JOBS) submit(record, start + blockOffset, complete, kind === 'foreground');
+                    else {stats.captureBytes -= complete.length; stats.skippedWrites++;}
+                  }
+                  blockPosition = 0;
+                }
+              }
+              if (!pending) arm();
+            } catch (error) {fail(error);}
+          });
+        });
       } finally {combined.removeEventListener('abort', abort);}
     } catch (error) {
       if (error.reason === 'representation-changed') {
@@ -213,15 +262,19 @@ async function createProxy({store, authorize, timeoutMs = 5000, mediaBufferBytes
     const abort = () => controller.abort(); res.once('close', abort); req.once('aborted', abort);
     record.bodyControllers.add(controller);
     const responseClosed = new Promise(resolve => {res.once('finish', resolve); res.once('close', resolve);});
+    stats.localWriteHighWaterMarkBytes = Math.max(stats.localWriteHighWaterMarkBytes, res.writableHighWaterMark);
     stats.activeBodies++; stats.peakBodies = Math.max(stats.peakBodies, stats.activeBodies);
     const headers = {'Content-Type': 'application/octet-stream', 'Content-Length': range.end - range.start + 1,
       'Accept-Ranges': 'bytes', 'Cache-Control': 'no-store'};
     if (range.partial) headers['Content-Range'] = `bytes ${range.start}-${range.end}/${record.metadata.total}`;
-    const write = async (bytes, ticket) => {
+    const write = (bytes, ticket) => {
       useRecord(record); if (signal.aborted) throw cancelled();
       if (!res.headersSent) res.writeHead(range.partial ? 206 : 200, headers);
       stats.deliveredBytes += bytes.length;
+      stats.localWrites++;
       if (!res.write(bytes)) {
+        stats.backpressureWrites++;
+        return (async () => {
         if (ticket) {ticket.idle = true; ticket.idleAt = performance.now();}
         let drained = false;
         try {await once(res, 'drain', {signal}); drained = true;}
@@ -235,16 +288,36 @@ async function createProxy({store, authorize, timeoutMs = 5000, mediaBufferBytes
             }
           }
         }
+        })();
       }
     };
     const work = (async () => {
       try {
         if (req.method === 'HEAD') {res.writeHead(range.partial ? 206 : 200, headers); res.end(); return;}
+        // Experiment only: an open-ended request can choose one complete
+        // origin response rather than splice a cached prefix into a new gap.
+        // Latch before any body byte. This trades partial-preload acceleration
+        // for direct-like seeking; no bytes beyond the client range are read.
+        const openEnded = !req.headers.range || /^bytes=\d+-$/.test(req.headers.range);
+        if (requestPolicy === 'coherent' && openEnded) {
+          const coverage = cacheEnabled && record.ready && !record.diskUnavailable && await store.span(record.key, range.start);
+          if (!coverage || coverage.end <= range.end) {
+            stats.wholeResponseRequests++;
+            if (coverage) {stats.partialPrefixBypasses++; stats.bypassedPrefixBytes += Math.min(coverage.end, range.end + 1) - range.start;}
+            await fetchRange(record, range.start, range.end - range.start + 1, {kind: 'foreground', signal, onData: write});
+            res.end(); return;
+          }
+        }
+        // Latch per response. During a genuinely cold preparation, do not
+        // splice newly captured probe bytes back into this load: that can make
+        // the demuxer block at an artificial HTTP gap before a queued seek.
+        // Pre-existing/restored data and explicitly finished preloads stay live.
+        const readCache = cacheEnabled && (record.coldAtOpen === false || record.actualStarted || record.preloadReady);
         let offset = range.start;
         while (offset <= range.end) {
           useRecord(record); if (signal.aborted) throw cancelled();
           await refresh(record);
-          let span = cacheEnabled && record.ready && !record.diskUnavailable && await store.span(record.key, offset);
+          let span = readCache && record.ready && !record.diskUnavailable && await store.span(record.key, offset);
           if (span && !record.accessChecked) {
             await fetchRange(record, offset, 1, {kind: 'foreground', signal, save: false, probe: true});
             await record.keyPromise; continue;
@@ -266,7 +339,7 @@ async function createProxy({store, authorize, timeoutMs = 5000, mediaBufferBytes
             if (data) {stats.hitBytes += data.length; await write(data); offset += data.length; continue;}
             // Invalid/missing local data falls through to ordinary origin IO.
           }
-          const next = cacheEnabled && record.ready && await store.nextOffset(record.key, offset);
+          const next = readCache && record.ready && await store.nextOffset(record.key, offset);
           const length = Math.min(range.end - offset + 1, next === null || next === false ? Infinity : next - offset);
           if (!(length > 0)) throw problem('invalid-hole');
           await fetchRange(record, offset, length, {kind: 'foreground', signal, onData: write});
@@ -279,7 +352,7 @@ async function createProxy({store, authorize, timeoutMs = 5000, mediaBufferBytes
     })();
     track(jobs, track(record.bodyJobs, work));
   }
-  const server = http.createServer((req, res) => {serve(req, res).catch(() => res.destroy());});
+  const server = http.createServer({highWaterMark: IO_HIGH_WATER}, (req, res) => {serve(req, res).catch(() => res.destroy());});
   server.maxConnections = 8; server.headersTimeout = 10000; server.requestTimeout = 30000;
   await new Promise((resolve, reject) => {server.once('error', reject); server.listen(0, '127.0.0.1', resolve);});
   let actualRevision = 0;
@@ -292,7 +365,7 @@ async function createProxy({store, authorize, timeoutMs = 5000, mediaBufferBytes
     const grant = grantOf(await authorize(identity, {reason: 'open', signal: controller.signal}));
     if (closed || controller.signal.aborted) throw cancelled();
     const record = {identity, role, grant, metadata: {...grant.metadata}, controller, retired: false, metadataEpoch: 0,
-      ready: false, accessChecked: false, diskUnavailable: false, bodyControllers: new Set(), bodyJobs: new Set()};
+      ready: false, accessChecked: false, diskUnavailable: false, bodyControllers: new Set(), bodyJobs: new Set(), actualStarted: false, preloadReady: false};
     prepareKey(record, grant.metadata);
     const route = '/' + crypto.randomBytes(24).toString('hex'); routes.set(route, record);
     return {url: 'http://127.0.0.1:' + server.address().port + route,
@@ -311,11 +384,11 @@ async function createProxy({store, authorize, timeoutMs = 5000, mediaBufferBytes
             }
             useRecord(record); if (revision !== actualRevision) throw cancelled();
             if (epoch !== record.metadataEpoch) continue;
-            if (store.status().currentKey === key) {record.role = 'current'; return true;}
+            if (store.status().currentKey === key) {record.role = 'current'; record.actualStarted = true; return true;}
             const changed = await store.actual(key, {isCurrent: () => !closed && !record.retired && revision === actualRevision && epoch === record.metadataEpoch});
             useRecord(record); if (revision !== actualRevision) throw cancelled();
             if (epoch !== record.metadataEpoch) continue;
-            if (changed) record.role = 'current';
+            if (changed) {record.role = 'current'; record.actualStarted = true;}
             return changed;
           }
         })());
@@ -354,6 +427,8 @@ async function createProxy({store, authorize, timeoutMs = 5000, mediaBufferBytes
             await fetchRange(record, offset, length, {kind: 'background', signal: combined});
             await Promise.allSettled([...writes]); offset += length;
           }
+          useRecord(record); if (combined.aborted) throw cancelled();
+          record.preloadReady = true;
           return {spent};
         })();
         record.preloadJob = work;
