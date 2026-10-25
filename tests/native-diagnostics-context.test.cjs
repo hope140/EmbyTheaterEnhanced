@@ -106,7 +106,7 @@ test('legacy or malformed optional fields stay unavailable and never become HTTP
     assert.equal(h.records.at(-1).details.mediaSourceRef, 'UNAVAILABLE');
     h.begin(3, {serverId: 'S', itemId: 'x'.repeat(513), mediaSourceId: 'M'});
     assert.equal(h.records.at(-1).details.itemRef, 'UNAVAILABLE');
-    assert.doesNotMatch(JSON.stringify(h.records), /403|private-canary/);
+    assert.doesNotMatch(JSON.stringify(h.records), /HTTP|private-canary/);
 });
 
 test('JSONL and exported report preserve numeric evidence without raw media, secrets or mpv logs', async () => {
