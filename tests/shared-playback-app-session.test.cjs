@@ -8,13 +8,13 @@ const assert = require('node:assert/strict');
 const {EventEmitter} = require('node:events');
 const http = require('node:http');
 const fs = require('node:fs/promises');
-const os = require('node:os');
-const path = require('node:path');
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const crypto = require('node:crypto');
 const {performance} = require('node:perf_hooks');
 const {createAuthority} = require('../src/electronapp/enhanced/preload-source-authority');
 const {createSession} = require('../src/electronapp/enhanced/playback-range-session');
 const {createCache} = require('../src/electronapp/enhanced/shared-playback-cache/adapter');
+const diagnostics = require('../src/electronapp/enhanced/playback-range-diagnostics');
 
 const BLOCK = 256 * 1024;
 const MEDIA_BUFFER_BYTES = 512 * 1024;
@@ -22,6 +22,25 @@ const PRELOAD_MB = 100;
 const UA = 'OwnedSynthetic/1.0';
 const digest = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+function selectionMessage(session, events, error) {
+  const current = session.status().current?.diagnostic;
+  return JSON.stringify({current: current ? diagnostics.snapshot(current) : null,
+    events: events.map(value => diagnostics.snapshot(value)),
+    error: error ? diagnostics.fromError(error, 'current-probe', 'unexpected') : null});
+}
+async function requireSelected(fixture, selecting) {
+  let selected;
+  try {selected = await selecting;}
+  catch (error) {assert.fail(selectionMessage(fixture.session, fixture.selectionDiagnostics, error));}
+  assert.ok(selected, selectionMessage(fixture.session, fixture.selectionDiagnostics));
+  return selected;
+}
+async function cleanup(actions, remove) {
+  const results = await Promise.allSettled(actions.map(action => Promise.resolve().then(action)));
+  results.push(...await Promise.allSettled([Promise.resolve().then(remove)]));
+  const errors = results.filter(result => result.status === 'rejected').map(result => result.reason);
+  if (errors.length) throw new AggregateError(errors, 'owned-session-fixture-cleanup-failed');
+}
 
 async function localOrigin({aBytes = Buffer.alloc(BLOCK, 0x41), bBytes = Buffer.alloc(BLOCK, 0x42), delayMs = 0} = {}) {
   const objects = new Map([['A', aBytes], ['B', bBytes], ['C', aBytes]]);
@@ -55,21 +74,26 @@ async function localOrigin({aBytes = Buffer.alloc(BLOCK, 0x41), bBytes = Buffer.
 }
 
 async function freshRoot() {
-  return fs.mkdtemp(path.join(os.tmpdir(), 'ete-app-session-cache-'));
+  return temporaryRoot('ete-app-session-cache-', ['']);
 }
 
 async function fixture(t, options = {}) {
   const root = await freshRoot();
-  const origin = await localOrigin(options.origin);
-  const authority = createAuthority();
+  let origin, authority, session;
+  t.after(() => cleanup([() => session?.close(), () => authority?.close(), () => origin?.close()],
+    () => fs.rm(root, {recursive: true, force: true})));
+  origin = await localOrigin(options.origin);
+  authority = createAuthority();
   const webA = new EventEmitter(), webB = new EventEmitter();
   webA.isDestroyed = webB.isDestroyed = () => false;
   const principalA = authority.principalFor(webA), principalB = authority.principalFor(webB);
   const helper = {currentGenerationId: 1, exited: false, transportTerminated: false};
   let bindingPrincipal = principalA, currentRequestId = 'play-A', nextRequestPrefix = 'play-A-next-', cache, createCount = 0;
   const currentBytesReads = [];
+  const selectionDiagnostics = [];
   const config = {kind: 'shared-byte-trial', root, progressPercent: 50, preloadMB: PRELOAD_MB, timeoutMs: 1000};
-  const session = createSession({config,
+  session = createSession({config,
+    onDiagnostic(value) {selectionDiagnostics.push(diagnostics.snapshot(value));},
     async create(value) {
       createCount++;
       if (options.slowCreateMs) await delay(options.slowCreateMs);
@@ -85,7 +109,6 @@ async function fixture(t, options = {}) {
       if (options.slowCurrentBytesMs) await delay(options.slowCurrentBytesMs);
       return MEDIA_BUFFER_BYTES;
     }});
-  t.after(async () => {await session.close(); authority.close(); await origin.close(); await fs.rm(root, {recursive: true, force: true});});
 
   function candidate(item, {principal = principalA, accountId = 'account-A', requestId = 'play-A', playSessionId = 'session-A'} = {}) {
     const source = `${origin.origin}/${item}.mkv`;
@@ -99,7 +122,7 @@ async function fixture(t, options = {}) {
   const loadOptions = value => ['loadfile', value.source, 'replace', '-1', `user-agent=${UA}`];
   return {root, origin, authority, principalA, principalB, helper, session, config, candidate, loadOptions,
     webA, webB,
-    get cache() {return cache;}, get createCount() {return createCount;}, currentBytesReads,
+    get cache() {return cache;}, get createCount() {return createCount;}, currentBytesReads, selectionDiagnostics,
     setBindingPrincipal(value) {bindingPrincipal = value;}, setCurrentRequestId(value) {currentRequestId = value;},
     setNextRequestPrefix(value) {nextRequestPrefix = value;}};
 }
@@ -132,8 +155,7 @@ test('strict load binding replaces the source with the loopback cache route and 
   const altered = f.loadOptions(a).slice(); altered[4] = 'user-agent=Wrong/1.0';
   assert.equal(await f.session.select(a.source, f.helper, 1, altered), null);
   assert.equal(f.createCount, 0, 'mismatched load options cannot initialize the cache');
-  const selected = await f.session.select(a.source, f.helper, 1, f.loadOptions(a));
-  assert.ok(selected);
+  const selected = await requireSelected(f, f.session.select(a.source, f.helper, 1, f.loadOptions(a)));
   assert.notEqual(selected.source, a.source, 'the replacement source belongs to the loopback proxy');
   assert.equal(selected.canDispatch(), true);
   // This invokes the session callback directly. It is not a Native Helper/core-idle observation.
@@ -148,7 +170,7 @@ test('strict load binding replaces the source with the loopback cache route and 
 
 test('preparing B preserves A, actual B promotes its warmed bytes, and close discards unplayed C', async t => {
   const f = await fixture(t), a = f.candidate('A');
-  const selectedA = await selectCurrent(f, a); assert.ok(selectedA);
+  const selectedA = await requireSelected(f, selectCurrent(f, a));
   await f.session.started(f.helper, 1);
   assert.equal((await getRange(selectedA.source)).status, 206);
   assert.ok(await waitFor(() => f.cache.status().currentBytes >= BLOCK));
@@ -165,7 +187,7 @@ test('preparing B preserves A, actual B promotes its warmed bytes, and close dis
 
   await f.session.retire(); f.helper.currentGenerationId = 2; f.setCurrentRequestId('play-B'); f.setNextRequestPrefix('play-B-next-');
   const bCurrent = f.candidate('B', {requestId: 'play-B'});
-  const selectedB = await selectCurrent(f, bCurrent); assert.ok(selectedB);
+  const selectedB = await requireSelected(f, selectCurrent(f, bCurrent));
   assert.equal(digest((await getRange(selectedB.source)).body), digest(Buffer.alloc(BLOCK, 0x42)), 'B reuses its prepared cache bytes');
   await f.session.started(f.helper, 2);
   assert.ok(await waitFor(() => f.cache.status().currentBytes >= BLOCK && f.cache.status().nextBytes === 0));
@@ -179,14 +201,15 @@ test('preparing B preserves A, actual B promotes its warmed bytes, and close dis
   const {createStore} = require('../src/electronapp/enhanced/shared-playback-cache/store');
   const recovered = await createStore({root: f.root, currentBytes: MEDIA_BUFFER_BYTES,
     nextBytes: PRELOAD_MB * 1_000_000, recoveryMode: 'on-demand'});
-  assert.ok(recovered.status().current >= BLOCK);
-  assert.equal(recovered.status().next, 0);
-  await recovered.close();
+  try {
+    assert.ok(recovered.status().current >= BLOCK);
+    assert.equal(recovered.status().next, 0);
+  } finally {await recovered.close();}
 });
 
 test('document navigation revokes the transport and prevents a cached local hit', async t => {
   const f = await fixture(t), a = f.candidate('A');
-  const selected = await selectCurrent(f, a); assert.ok(selected);
+  const selected = await requireSelected(f, selectCurrent(f, a));
   await f.session.started(f.helper, 1);
   assert.equal((await getRange(selected.source)).status, 206);
   assert.ok(await waitFor(() => f.cache.status().currentBytes >= BLOCK));
@@ -201,7 +224,7 @@ test('document navigation revokes the transport and prevents a cached local hit'
 
 test('foreign principal proof and changed account identity cannot reuse A bytes', async t => {
   const f = await fixture(t), a = f.candidate('A');
-  const selectedA = await selectCurrent(f, a); assert.ok(selectedA);
+  const selectedA = await requireSelected(f, selectCurrent(f, a));
   await f.session.started(f.helper, 1);
   assert.equal((await getRange(selectedA.source)).status, 206);
   assert.ok(await waitFor(() => f.cache.status().currentBytes >= BLOCK));
@@ -214,7 +237,7 @@ test('foreign principal proof and changed account identity cannot reuse A bytes'
 
   const changedBody = Buffer.alloc(BLOCK, 0x5a); f.origin.replace('B', changedBody);
   const accountB = f.candidate('B', {principal: f.principalB, requestId: 'play-A', accountId: 'account-B'});
-  const selectedB = await selectCurrent(f, accountB); assert.ok(selectedB);
+  const selectedB = await requireSelected(f, selectCurrent(f, accountB));
   const result = await getRange(selectedB.source);
   assert.equal(result.status, 206);
   assert.equal(digest(result.body), digest(changedBody), 'account B gets current origin bytes, never A cached bytes');
@@ -253,18 +276,37 @@ test('shared-trial 25 ms deadline retires slow budget, cache initialization, and
 });
 
 test('default next-prefix session mode still selects a same-origin source route', async t => {
-  const root = await freshRoot(), origin = await localOrigin();
+  const root = await freshRoot();
+  let origin, session;
+  t.after(() => cleanup([() => session?.close(), () => origin?.close()], () => fs.rm(root, {recursive: true, force: true})));
+  origin = await localOrigin();
   const helper = {currentGenerationId: 1, exited: false, transportTerminated: false};
-  const session = createSession({config: {kind: 'next-prefix', root, progressPercent: 50, preloadMB: 100, timeoutMs: 1000}});
-  t.after(async () => {await session.close(); await origin.close(); await fs.rm(root, {recursive: true, force: true});});
+  const selectionDiagnostics = [];
+  session = createSession({config: {kind: 'next-prefix', root, progressPercent: 50, preloadMB: 100, timeoutMs: 1000},
+    onDiagnostic(value) {selectionDiagnostics.push(diagnostics.snapshot(value));}});
   const source = `${origin.origin}/A.mkv?Static=true`;
   const context = {source, serverOrigin: origin.origin, serverId: 'owned-server', accountId: 'account-A', itemId: 'A',
     mediaSourceId: 'media-A', playSessionId: 'session-A', mode: 'DirectStream', mediaType: 'Video', container: 'mkv', live: false};
   await session.setContext(context, helper, 1);
-  const selected = await session.select(source, helper, 1, ['loadfile', source]);
-  assert.ok(selected, JSON.stringify(session.status().current.diagnostic));
+  const selected = await requireSelected({session, selectionDiagnostics}, session.select(source, helper, 1, ['loadfile', source]));
   assert.notEqual(selected.source, source);
   const result = await getRange(selected.source, 0, 4096);
   assert.equal(result.status, 206);
   assert.equal(digest(result.body), digest(Buffer.alloc(4096, 0x41)));
+});
+
+test('selection assertion messages retain only known diagnostic reasons without source or error payloads', async () => {
+  const privateValue = 'PRIVATE_CANARY https://private.invalid/?proof=SECRET_TOKEN C:\\private\\source';
+  const fixture = {session: {status: () => ({current: {diagnostic: {
+    stage: 'current-probe', reason: 'timeout', source: privateValue}}, sourceProof: privateValue})},
+  selectionDiagnostics: [{stage: 'current-probe', reason: 'auth-required', source: privateValue}]};
+  const failure = Object.assign(Error(privateValue), {preloadReason: 'cache-unavailable'});
+  for (const selecting of [Promise.resolve(null), Promise.reject(failure)]) {
+    await assert.rejects(requireSelected(fixture, selecting), error => {
+      assert.match(error.message, /"reason":"timeout"/);
+      assert.match(error.message, /"reason":"auth-required"/);
+      assert.doesNotMatch(error.message, /PRIVATE_CANARY|SECRET_TOKEN|private\.invalid|C:\\private/);
+      return true;
+    });
+  }
 });

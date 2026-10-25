@@ -1,5 +1,9 @@
 # 项目状态
 
+## 共享缓存Windows测试夹具预检与失败收尾
+
+Windows首次CI出现失败，停止旧候选打包；实际错误栈尚待回读，不能以Linux通过宣称Windows修复。新增adapter/session/on-demand夹具现统一复用既有canonical临时根与固定guard端口预检，不重试EACCES、不改生产守卫；提前注册全部资源清理、保留真实close失败，readiness gate有界，选路失败增加脱敏reason。此提交只修测试／说明，不改产品、25ms期限、用户配置或包体。后续必须重新通过Windows CI再排新来源候选。
+
 ## 2026-10-25 — 共享缓存普通应用隔离接线与按需恢复
 
 唯一核心移至src，tools薄包装；普通入口仅显式owned profile启动flag加既有预载开关选择共享adapter。复用main authority/principal/generation与原解析，首版限品牌transport＋可信大小／206，其他来源回原播放；M用精确mpv-text，缓存选择25ms软期限，恢复后台进行。3GiB新进程对照verified8.93秒／114.4MiB，on-demand481ms／74.7MiB且启动媒体读取0B，首次读取才SHA，未验证数据仍占额度。真实Alameda/PM/CD2/service合成自然next通过：A8＋B40共存，B只1Bprobe不重取正文，退出恢复B；不是Native DLL证据。完整离线2596通过、0失败、13平台跳过。启动、来源限制、原P十进制MB与Windows准备见[普通入口试验](SHARED_PLAYBACK_CACHE_APP_TRIAL.md)。不打包、dispatch、访问真实115或合并发布。

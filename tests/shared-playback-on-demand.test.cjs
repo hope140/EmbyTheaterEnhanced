@@ -2,8 +2,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
-const os = require('node:os');
 const path = require('node:path');
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const {createStore} = require('../src/electronapp/enhanced/shared-playback-cache/store');
 const {createProxy} = require('../src/electronapp/enhanced/shared-playback-cache/proxy');
 const {source, get, identity, hash} = require('../tools/shared-playback-cache/fixture.cjs');
@@ -16,9 +16,14 @@ const metadata = {total: BLOCK, lastModified: 'Wed, 21 Oct 2026 08:00:00 GMT'};
 const payload = Buffer.alloc(BLOCK, 0x5a);
 
 async function ownedRoot(t) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-cache-ondemand-'));
-  t.after(() => fs.rm(root, {recursive: true, force: true}));
-  return root;
+  const root = temporaryRoot('ete-cache-ondemand-', ['']), actions = [];
+  t.after(async () => {
+    const results = await Promise.allSettled(actions.map(action => Promise.resolve().then(action)));
+    results.push(...await Promise.allSettled([fs.rm(root, {recursive: true, force: true})]));
+    const errors = results.filter(result => result.status === 'rejected').map(result => result.reason);
+    if (errors.length) throw new AggregateError(errors, 'owned-on-demand-fixture-cleanup-failed');
+  });
+  return {root, own: action => actions.push(action)};
 }
 
 function countMediaReads(root) {
@@ -32,8 +37,9 @@ function countMediaReads(root) {
   return {io, bytes: () => bytes};
 }
 
-async function seed(root, identityValue = identity()) {
+async function seed(root, own, identityValue = identity()) {
   const store = await createStore({root, currentBytes, nextBytes});
+  own(() => store.close());
   const key = await store.open(identityValue, metadata, 'current');
   await store.actual(key);
   assert.equal(await store.put(key, 0, payload), true);
@@ -42,12 +48,12 @@ async function seed(root, identityValue = identity()) {
 }
 
 test('on-demand reopen stats media blocks without reading them; read verifies before coverage is trusted', async t => {
-  const root = await ownedRoot(t);
-  const savedKey = await seed(root);
+  const {root, own} = await ownedRoot(t);
+  const savedKey = await seed(root, own);
   const counted = countMediaReads(root);
   const store = await createStore({root, currentBytes, nextBytes,
     recoveryMode: 'on-demand', io: counted.io});
-  t.after(() => store.close());
+  own(() => store.close());
 
   assert.equal(store.status().currentKey, savedKey);
   assert.equal(counted.bytes(), 0, 'startup must not read media payloads');
@@ -73,8 +79,8 @@ test('on-demand reopen stats media blocks without reading them; read verifies be
 });
 
 test('on-demand corrupt candidate is rejected before proxy delivery and falls back to the owned source', async t => {
-  const root = await ownedRoot(t);
-  const savedKey = await seed(root);
+  const {root, own} = await ownedRoot(t);
+  const savedKey = await seed(root, own);
   const blockDir = path.join(root, 'blocks');
   const names = await fs.readdir(blockDir);
   assert.equal(names.length, 1);
@@ -83,10 +89,12 @@ test('on-demand corrupt candidate is rejected before proxy delivery and falls ba
   await fs.writeFile(blockPath, corrupted);
 
   const origin = await source({bytes: BLOCK, firstDelay: 0, tailDelay: 0, data: payload});
+  own(() => origin.close());
   const counted = countMediaReads(root);
   const store = await createStore({root, currentBytes, nextBytes, recoveryMode: 'on-demand', io: counted.io});
+  own(() => store.close());
   const proxy = await createProxy({store, authorize: async () => origin.grant()});
-  t.after(async () => {await proxy.close(); await origin.close(); await store.close();});
+  own(() => proxy.close());
 
   assert.equal(store.status().currentKey, savedKey);
   assert.equal(store.status().unverifiedBytes, BLOCK);
@@ -118,8 +126,8 @@ test('on-demand corrupt candidate is rejected before proxy delivery and falls ba
 });
 
 test('fresh recovery children distinguish startup scan IO from first-read verification', async t => {
-  const root = await ownedRoot(t);
-  const savedKey = await seed(root);
+  const {root, own} = await ownedRoot(t);
+  const savedKey = await seed(root, own);
   const report = await runRecoveryProbe({root, actualKey: savedKey, metadata,
     currentBytes, nextBytes, expectedBlockSha256: hash(payload)});
   assert.deepEqual(report.modes.map(mode => mode.mode), ['verified', 'on-demand']);

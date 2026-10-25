@@ -4,8 +4,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const http = require('node:http');
 const fs = require('node:fs/promises');
-const os = require('node:os');
 const path = require('node:path');
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const {EventEmitter} = require('node:events');
 const {createAuthority} = require('../src/electronapp/enhanced/preload-source-authority');
 const {createCache} = require('../src/electronapp/enhanced/shared-playback-cache/adapter');
@@ -15,12 +15,25 @@ const {get, hash, delay} = require('../tools/shared-playback-cache/fixture.cjs')
 const gate = () => {let release; const wait = new Promise(resolve => {release = resolve;}); return {wait, release};};
 const identity = item => ({serverOrigin: 'http://owned-server.invalid', serverId: 'server', accountId: 'account',
     itemId: item, mediaSourceId: 'media-' + item, representation: 'representation-' + item});
+async function cleanup(actions, remove) {
+    const results = await Promise.allSettled(actions.map(action => Promise.resolve().then(action)));
+    results.push(...await Promise.allSettled([Promise.resolve().then(remove)]));
+    const errors = results.filter(result => result.status === 'rejected').map(result => result.reason);
+    if (errors.length) throw new AggregateError(errors, 'owned-adapter-fixture-cleanup-failed');
+}
 
 async function fixture(t, {etag = '"owned-v1"'} = {}) {
-    const parent = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-app-shared-'));
+    const parent = temporaryRoot('ete-app-shared-', ['cache']);
     const root = path.join(parent, 'cache'), data = Buffer.alloc(64 * 1024, 0x5a), requests = [];
+    const caches = [];
+    let server, authority;
+    t.after(() => cleanup([...caches.map(value => () => value.close()), () => authority?.close(), () => {
+        if (!server?.listening) return;
+        server.closeAllConnections();
+        return new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+    }], () => fs.rm(parent, {recursive: true, force: true})));
     let mode = 'normal', clock = 10000;
-    const server = http.createServer((req, res) => {
+    server = http.createServer((req, res) => {
         const row = {url: req.url, range: req.headers.range, cookie: req.headers.cookie,
             authorization: req.headers.authorization, agent: req.headers['user-agent'], closed: false};
         requests.push(row); res.once('close', () => {row.closed = true;});
@@ -39,9 +52,10 @@ async function fixture(t, {etag = '"owned-v1"'} = {}) {
     });
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     const url = `http://127.0.0.1:${server.address().port}/owned`;
-    const authority = createAuthority({now: () => clock}), web = new EventEmitter();
+    authority = createAuthority({now: () => clock});
+    const web = new EventEmitter();
     web.isDestroyed = () => false;
-    const principal = authority.principalFor(web), caches = [];
+    const principal = authority.principalFor(web);
     function source(item = 'A', extra = {}) {
         const owner = new AbortController(), requestId = 'play-' + item;
         const descriptor = {source: url, expectedSize: data.length, ...extra};
@@ -52,23 +66,17 @@ async function fixture(t, {etag = '"owned-v1"'} = {}) {
     }
     const config = {kind: 'shared-byte-trial', root, preloadMB: 100, progressPercent: 70, timeoutMs: 1000};
     async function cache(dependencies) {const value = await createCache(config, dependencies); caches.push(value); return value;}
-    t.after(async () => {
-        for (const value of caches) await value.close();
-        authority.close(); server.closeAllConnections();
-        await new Promise(resolve => server.close(resolve));
-        await fs.rm(parent, {recursive: true, force: true});
-    });
     return {root, data, requests, source, cache, config, web,
         mode: value => {mode = value;}, time: value => {clock = value;}, url};
 }
 
 test('deferred store never exposes hits or admits payload before recovery and rechecks queued ownership', async t => {
-    const parent = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-deferred-unit-')), blocked = gate();
-    let backend, live = true;
-    const store = createDeferredStore({root: path.join(parent, 'cache'), currentBytes: 1024, nextBytes: 1024}, {
+    const parent = temporaryRoot('ete-deferred-unit-', ['cache']), blocked = gate();
+    let store, backend, live = true;
+    t.after(async () => {blocked.release(); await cleanup([() => store?.close()], () => fs.rm(parent, {recursive: true, force: true}));});
+    store = createDeferredStore({root: path.join(parent, 'cache'), currentBytes: 1024, nextBytes: 1024}, {
         create: async options => {await blocked.wait; backend = await createStore(options); return backend;}
     });
-    t.after(async () => {blocked.release(); await store.close(); await fs.rm(parent, {recursive: true, force: true});});
     const id = {server: 'server', account: 'account', item: 'item', mediaSource: 'source', resource: 'resource', representation: 'original'};
     const opening = store.open(id, {total: 1024}, 'next', {isCurrent: () => live}).catch(error => error);
     assert.equal(await store.put('unknown', 0, Buffer.from('late')), false);
@@ -132,14 +140,22 @@ test('next preparation preserves actual bytes and discardNext only clears its ca
 test('an already recovered backend publishes a reopened preloaded route only after its first-hit metadata is ready', async t => {
     const blocked = gate(); t.after(blocked.release);
     const f = await fixture(t);
-    let hold = false, enter;
-    const entered = new Promise(resolve => {enter = resolve;});
-    const cache = await f.cache({createStore: options => createStore({...options, io: {...fs,
-        async writeFile(file, ...args) {
-            if (hold && path.basename(file).startsWith('.index-')) {enter(); await blocked.wait;}
-            return fs.writeFile(file, ...args);
-        }
-    }})});
+    let hold = false, enter, failGate;
+    const entered = new Promise((resolve, reject) => {enter = resolve; failGate = reject;});
+    entered.catch(() => {});
+    const cache = await f.cache({createStore: async options => {
+        try {
+            const backend = await createStore({...options, io: {...fs,
+                async writeFile(file, ...args) {
+                    if (hold && path.basename(file).startsWith('.index-')) {enter(); await blocked.wait;}
+                    return fs.writeFile(file, ...args);
+                }
+            }});
+            return {...backend, async open(...args) {
+                try {return await backend.open(...args);} catch (error) {failGate(error); throw error;}
+            }};
+        } catch (error) {failGate(error); throw error;}
+    }});
     const a = await cache.open(f.source('A'));
     await a.prefetch({maxBytes: f.data.length, signal: new AbortController().signal});
     await a.markPlaying();
@@ -151,7 +167,11 @@ test('an already recovered backend publishes a reopened preloaded route only aft
     let published = false;
     const before = f.requests.length;
     const reopening = cache.open(f.source('B')).then(value => {published = true; return value;});
-    await entered;
+    let timer;
+    try {
+        await Promise.race([entered, reopening.then(() => {throw Error('route-published-before-metadata-gate');}),
+            new Promise((_resolve, reject) => {timer = setTimeout(() => reject(Error('metadata-gate-timeout')), 2000);})]);
+    } finally {clearTimeout(timer);}
     assert.equal(published, false, 'a ready backend must establish existing coverage before publishing the URL');
     hold = false; blocked.release();
     const currentB = await reopening;
@@ -335,16 +355,16 @@ test('retired uncached intent waiting for initialization cannot clear recovered 
 });
 
 test('deferred close joins resource release and preserves an actual cleanup failure', async t => {
-    const parent = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-deferred-close-'));
+    const parent = temporaryRoot('ete-deferred-close-', ['cache']);
     const options = {root: path.join(parent, 'cache'), currentBytes: 1024, nextBytes: 1024};
-    let backend;
-    t.after(async () => {await backend?.close().catch(() => {}); await fs.rm(parent, {recursive: true, force: true});});
+    let backend, reopened;
+    t.after(() => cleanup([() => backend?.close(), () => reopened?.close()], () => fs.rm(parent, {recursive: true, force: true})));
     const store = createDeferredStore(options, {create: async value => {
         backend = await createStore(value);
         return {...backend, async close() {await backend.close(); throw Error('owned-close-failure');}};
     }});
     await assert.rejects(store.close(), /owned-close-failure/);
     assert.equal(backend.status().closed, true);
-    const reopened = await createStore(options);
+    reopened = await createStore(options);
     await reopened.close();
 });
