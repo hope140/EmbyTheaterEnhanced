@@ -6,56 +6,10 @@ const os = require('node:os');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const cp = require('node:child_process');
-const net = require('node:net');
 const {createHandoff} = require('../src/electronapp/enhanced/update-install-handoff');
 const update = require('../src/electronapp/enhanced/manual-app-update');
-const windows = {skip: process.platform !== 'win32' && 'Windows handles / Windows PowerShell 5.1 only', timeout: 30000};
+const windows = {skip: process.platform !== 'win32' && 'Windows handles / Windows PowerShell 5.1 only', timeout: 60000};
 
-test('Windows relay compiler diagnostic keeps the control input open without executing a program', {...windows, timeout: 160000}, async () => {
-    const exe = path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
-    const records = [];
-    for (const form of ['direct-system-module', 'analysis-cache']) {
-        const source = fs.readFileSync(path.resolve(__dirname, '../src/electronapp/enhanced/update-install-relay.cs')).toString('base64');
-        const command = (form === 'direct-system-module' ? "Import-Module ([IO.Path]::Combine($PSHOME,'Modules','Microsoft.PowerShell.Utility','Microsoft.PowerShell.Utility.psd1')) -ErrorAction Stop; " : '') + "[Console]::Error.WriteLine('COMPILER_ENTER'); Add-Type -TypeDefinition ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + source + "'))); [Console]::Error.WriteLine('COMPILER_DONE'); exit [EteUpdateRelay]::Run()";
-        const minimal = Object.fromEntries(['SystemRoot', 'WINDIR', 'TEMP', 'TMP', 'APPDATA', 'LOCALAPPDATA', 'USERPROFILE', 'ProgramData', 'ProgramFiles', 'ProgramFiles(x86)']
-            .filter(key => process.env[key] !== undefined).map(key => [key, process.env[key]]));
-        const env = form === 'analysis-cache' ? {...minimal, PSModuleAnalysisCachePath: process.env.PSModuleAnalysisCachePath} : minimal;
-        const began = Date.now();
-        const row = await new Promise(resolve => {
-            const child = cp.spawn(exe, ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', command], {env, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe']});
-            let stdout = '', stderr = '';
-            const timer = setTimeout(() => child.kill(), 45000);
-            child.stdout.on('data', bytes => { stdout += bytes; }); child.stderr.on('data', bytes => { stderr += '[' + (Date.now()-began) + 'ms]' + bytes; });
-            child.on('error', () => {}); child.on('close', code => { clearTimeout(timer); resolve({form, code, printed: stdout.includes('ETE_COMPILER_FINISHED'), elapsed: Date.now() - began, error: stderr.slice(0, 400)}); });
-            child.stdin.write(Buffer.from("[Console]::Out.WriteLine('ETE_COMPILER_FINISHED'); exit 7", 'utf16le').toString('base64') + '\n');
-        });
-        records.push(row);
-    }
-    process.stderr.write('ETE_NATIVE_DIAG compiler-matrix=' + JSON.stringify(records) + '\n');
-    assert.equal(records.length, 2);
-});
-
-test('Windows helper startup diagnostic uses only literal printing and owned processes', {...windows, timeout: 60000}, async () => {
-    const full = process.env;
-    const minimal = Object.fromEntries(['SystemRoot', 'WINDIR', 'TEMP', 'TMP', 'APPDATA', 'LOCALAPPDATA', 'USERPROFILE', 'ProgramData', 'ProgramFiles', 'ProgramFiles(x86)']
-        .filter(key => full[key] !== undefined).map(key => [key, full[key]]));
-    const exe = path.join(full.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
-    const records = [];
-    for (const [environment, env] of [['minimal', minimal], ['full', full]]) for (const detached of [false, true]) for (const long of [false, true]) {
-        const command = (long ? "$padding='" + 'x'.repeat(13431) + "'; " : '') + "[Console]::Out.WriteLine('ETE_PRINT_ONLY'); exit 7";
-        const result = await new Promise(resolve => {
-            const child = cp.spawn(exe, ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', command], {env, detached, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe']});
-            let stdout = '', stderr = '';
-            const timer = setTimeout(() => child.kill(), 5000);
-            child.stdout.on('data', bytes => { stdout += bytes.toString(); }); child.stderr.on('data', bytes => { stderr += bytes.toString(); });
-            child.on('error', () => {}); child.on('close', code => { clearTimeout(timer); resolve({code, printed: stdout.includes('ETE_PRINT_ONLY'), stderr: stderr.slice(0, 200)}); });
-            child.stdin.end();
-        });
-        records.push({environment, detached, long, ...result});
-    }
-    process.stderr.write('ETE_NATIVE_DIAG print-matrix=' + JSON.stringify(records) + '\n');
-    assert.ok(records.some(row => row.code === 7 && row.printed), 'at least the standard host control must execute');
-});
 function fixture(t) {
     const scratch = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-update-校验-')));
     t.after(() => fs.rmSync(scratch, {recursive: true, force: true}));
@@ -70,20 +24,7 @@ function fixture(t) {
     const identity = file => { const stat = fs.statSync(file, {bigint: true}); return {ino: String(stat.ino), dev: String(stat.dev)}; };
     const record = {root, rootId: identity(root), directory, directoryId: identity(directory), executable: process.execPath,
         fileId: identity(file), source: 'github', installer};
-    return {scratch, root, directory, file, bytes, record, handoff: createHandoff({createServer(handler) {
-        const server = net.createServer(connection => { process.stderr.write('ETE_NATIVE_DIAG pipe-connection\n'); handler(connection); });
-        const listen = server.listen.bind(server);
-        server.listen = (name, ready) => listen(name, () => {
-            process.stderr.write('ETE_NATIVE_DIAG pipe-listening hash=' + crypto.createHash('sha256').update(name).digest('hex').slice(0, 12) + '\n');
-            const probe = net.connect(name);
-            t.after(() => probe.destroy());
-            probe.resume(); probe.on('end', () => probe.destroy());
-            probe.on('connect', () => { process.stderr.write('ETE_NATIVE_DIAG node-pipe-connected\n'); probe.end('invalid-test-client\n'); });
-            probe.on('error', error => { process.stderr.write('ETE_NATIVE_DIAG node-pipe-error=' + error.code + '\n'); probe.destroy(); });
-            ready();
-        });
-        return server;
-    }, spawn(exe, args, options) {
+    return {scratch, root, directory, file, bytes, record, handoff: createHandoff({spawn(exe, args, options) {
         const began = Date.now();
         const diagnosticArgs = [...args];
         diagnosticArgs[4] = "[Console]::Error.WriteLine('ETE_NATIVE_SCRIPT_ENTERED');\n" + diagnosticArgs[4];

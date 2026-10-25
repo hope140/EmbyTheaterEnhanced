@@ -31,7 +31,9 @@ function createHandoff(options) {
             "$r=[IO.StreamReader]::new($p,[Text.Encoding]::ASCII); $w=[IO.StreamWriter]::new($p,[Text.Encoding]::ASCII); $w.AutoFlush=$true; $w.WriteLine('" + secret + " '+$PID); " +
             "$code=$r.ReadLine(); [Console]::Error.WriteLine('ETE_GUARD_STAGE source-read'); $eteUpdateInput=$r; $eteUpdateOutput=$w; try { & ([ScriptBlock]::Create([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($code)))) } finally { try{$w.Dispose()}catch{};try{$r.Dispose()}catch{};try{$p.Dispose()}catch{} }";
         const relay = fs.readFileSync(path.join(__dirname, 'update-install-relay.cs')).toString('base64');
-        const launch = "Add-Type -TypeDefinition ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + relay + "'))); exit [EteUpdateRelay]::Run()";
+        // Resolve the fixed inbox module directly. Autodiscovery without the
+        // host's module-analysis cache can consume the entire prepare budget.
+        const launch = "Import-Module ([IO.Path]::Combine($PSHOME,'Modules','Microsoft.PowerShell.Utility','Microsoft.PowerShell.Utility.psd1')) -ErrorAction Stop; Add-Type -TypeDefinition ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + relay + "'))); exit [EteUpdateRelay]::Run()";
         return new Promise((resolve, reject) => {
             let child, socket, server, ready = false, settled = false, committed = false, stopping = false, cleaned = false, disposed = false;
             let commitResolve, commitReject, commitTimer, commitDeadline, guardPid;

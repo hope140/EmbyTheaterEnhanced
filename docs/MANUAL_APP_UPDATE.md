@@ -68,7 +68,7 @@
 
 最终交接使用系统 Windows PowerShell 5.1 的固定源码命令及包内 C# 文件守卫，不依赖已退役 Host 更新逻辑，不保持安装目录中的可执行映像或脚本文件句柄。Windows实测发现 `detached:true` 会让该系统PowerShell返回0却不执行脚本；故使用普通隐藏启动的受管relay，.NET创建独立守卫。保留libuv原有作业归属，不修改job限制或申请breakaway／提权。relay持有守卫实际进程句柄，取消须终止并确认所属守卫退出；提交收到守卫确认后才放行其等待客户端退出。
 
-源码来自本包，通过随机本机named pipe传递；256位一次性令牌认证成功前不发送源码或附件身份，拒绝未知协议帧，设备路径／摘要只由main生成。数据用ASCII JSON（Unicode路径转义），没有renderer命令输入或外部网络能力。只用系统PowerShell支持的编码bootstrap承载固定源码，不改变策略或语言模式。环境只保留Windows／用户目录所需字段，不继承Token／代理／Node注入环境；外部job或系统策略阻止时失败关闭。清理必须同时有显式完成标记和所属进程退出，不能仅凭退出码0宣称成功。
+源码来自本包，通过随机本机named pipe传递；256位一次性令牌认证成功前不发送源码或附件身份，拒绝未知协议帧，设备路径／摘要只由main生成。数据用ASCII JSON（Unicode路径转义），没有renderer命令输入或外部网络能力。只用系统PowerShell支持的编码bootstrap承载固定源码，不改变策略或语言模式。启动器和守卫直接从 `$PSHOME` 的固定系统路径加载 Utility 模块，不搜索用户模块、不继承 runner 模块缓存，避免精简环境下模块自动发现耗尽准备预算。环境只保留Windows／用户目录所需字段，不继承Token／代理／Node注入环境；外部job或系统策略阻止时失败关闭。清理必须同时有显式完成标记和所属进程退出，不能仅凭退出码0宣称成功。
 
 守卫逐级打开目录，拒绝 reparse point，禁止目录写入／重命名／删除；按卷序号和 64 位文件 ID 核对专用根和尝试目录。安装包只共享读取，拒绝多硬链接、写入和替换，**在持有同一文件句柄时**核对长度与官方 SHA；另锁定并回读原 Zone 3。只在准备成功并完成私有提交握手后才安排 `app.quit()`；保留现有 before-quit 资源 drain。交接捕获实际 Electron 进程及同安装目录 Host 的进程句柄，确认它们真实退出后才 `UseShellExecute=true`、无参数打开向导，保留 UAC／系统安全检查。准备限30秒、提交握手限5秒；正常退出若120秒仍受阻则交接放弃，不强杀客户端，也不等某次不相关的未来退出。准备取消须等所属子进程实际退出；提交后取消入口锁定。向导退出之前保持安装文件锁。
 
@@ -94,7 +94,7 @@ node --test tests/app-update-preferences.test.cjs tests/release-note-links.test.
 
 ### 独立云 Windows 短验证
 
-`managed-update-validation.yml` 仅对本功能分支的普通 push／PR 执行独立 `windows-2022` job，不依赖手动 dispatch，不占用正式打包 job。checkout 精确 head SHA、固定 Node24.18.1、只读 token 且不保留 Git 凭据，无 npm 安装、发布或产品安装步骤。原 `public-ci.yml` 保持基线字节不变。
+`managed-update-validation.yml` 仅对本功能分支 PR 的新提交执行独立 `windows-2022` job，不依赖手动 dispatch，不占用正式打包 job。checkout 精确 head SHA、固定 Node24.18.1、只读 token 且不保留 Git 凭据，无 npm 安装、发布或产品安装步骤。原 `public-ci.yml` 保持基线字节不变。
 
 入口为 `node tools/verify-managed-update-windows.cjs --expected-source <精确40位SHA>`；只允许当前仓库的 GitHub 托管 Windows，拒绝本地／Work／self-hosted、错误源码 SHA 或未知参数。选择更新相关测试，要求完整且唯一的 TAP 汇总、零失败／取消／跳过，并保存绑定 sourceCommit 的 `receipt.json`、TAP及受限 stderr。结果上传独立、一天保留期的 artifact，不扩大 Release 五附件。
 

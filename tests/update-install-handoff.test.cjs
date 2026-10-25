@@ -53,6 +53,8 @@ test('private handoff uses fixed system executable, no inherited credentials/pol
     assert.equal(executable, 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe');
     assert.deepEqual(args.slice(0, 4), ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command']);
     assert.doesNotMatch(JSON.stringify(options.env), /secret-canary|TOKEN|NODE_OPTIONS|PROXY/);
+    assert.match(args[4], /Import-Module.*\$PSHOME.*Microsoft\.PowerShell\.Utility\.psd1/);
+    assert.equal(options.env.PSModuleAnalysisCachePath, undefined);
     assert.equal(options.shell, undefined); assert.equal(options.detached, false);
     assert.equal(lease.processId, 4321);
     assert.equal(f.payload().rootIno, '9007199254740993');

@@ -1,6 +1,7 @@
 # Loaded only for an explicit update click or confirmed-installed local cleanup.
 # Fixed source is passed by main; no execution-policy or language-mode override.
 $ErrorActionPreference = 'Stop'
+Import-Module ([IO.Path]::Combine($PSHOME,'Modules','Microsoft.PowerShell.Utility','Microsoft.PowerShell.Utility.psd1')) -ErrorAction Stop
 if (-not $eteUpdateInput) { $eteUpdateInput = [Console]::In }
 if (-not $eteUpdateOutput) { $eteUpdateOutput = [Console]::Out }
 try {
