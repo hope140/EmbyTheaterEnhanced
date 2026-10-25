@@ -28,7 +28,7 @@
     "originWaiters": 4,
     "mediaReservationBytes": 8388608,
     "serializedIndexBytes": 2097152,
-    "indexRows": 4096,
+    "indexRows": 16384,
     "captureJobs": 8
   },
   "sourceConcurrencyReason": "Normally one; a foreground response paused by player backpressure may coexist with one preload response. Foreground resume cancels and joins preload before consuming more source bytes. Changed before the first performance run, not after results.",

@@ -31,7 +31,7 @@ async function benchmark(out) {
     sameMetadataReplacement: 'known undetectable risk, separately reproduced by regression',
     nativeFirstFrame: 'NOT_MEASURED', nativeSeekResume: 'NOT_MEASURED', windows: 'NOT_RUN'};
   report.sourceSha256 = {};
-  for (const file of ['store.cjs', 'proxy.cjs', 'fixture.cjs', 'benchmark.cjs']) report.sourceSha256[file] = sha(await fs.readFile(path.join(__dirname, file)));
+  for (const file of ['store.cjs', 'index.cjs', 'proxy.cjs', 'fixture.cjs', 'benchmark.cjs']) report.sourceSha256[file] = sha(await fs.readFile(path.join(__dirname, file)));
   const memoryTimer = setInterval(() => {const now = process.memoryUsage();
     for (const key of ['rss', 'heapUsed', 'external', 'arrayBuffers']) report.memory.peak[key] = Math.max(report.memory.peak[key] || 0, now[key]);}, 5);
   const setups = [];
@@ -148,7 +148,7 @@ async function benchmark(out) {
       report.resources.peakBodies <= policy.resourceLimits.localBodies && report.resources.peakMediaReserved <= policy.resourceLimits.mediaReservationBytes &&
       report.resources.peakWriteJobs <= policy.resourceLimits.captureJobs;
     report.afterCloseClean = report.afterClose.every(s => s.activeOrigins === 0 && s.activeBodies === 0 && s.captureBytes === 0 && s.readReservedBytes === 0 && s.storeReaders === 0 && s.pending === 0 && s.closed);
-    for (const file of ['store.cjs', 'proxy.cjs', 'fixture.cjs', 'benchmark.cjs']) {
+    for (const file of ['store.cjs', 'index.cjs', 'proxy.cjs', 'fixture.cjs', 'benchmark.cjs']) {
       if (report.sourceSha256[file] !== sha(await fs.readFile(path.join(__dirname, file)))) report.sourceDrift = true;
     }
     await fs.writeFile(path.join(out, 'result.json'), JSON.stringify(report, null, 2) + '\n', {flag: 'wx'});

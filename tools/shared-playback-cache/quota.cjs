@@ -13,10 +13,12 @@ const MIB = 1024 * 1024;
 const DEFAULT_DEADLINE_MS = 15 * 60 * 1000;
 const SCENARIOS = Object.freeze([
   Object.freeze({name: 'm300-p100', currentBytes: 300 * MIB, nextBytes: 100 * MIB,
-    logicalBytes: 4 * 1024 * MIB, mode: 'budgets', maxEntries: 4096}),
-  Object.freeze({name: 'm3072-p500-row-limit', currentBytes: 3072 * MIB, nextBytes: 500 * MIB,
-    logicalBytes: 4 * 1024 * MIB, mode: 'admission', maxEntries: 4096}),
+    logicalBytes: 4 * 1024 * MIB, mode: 'budgets', maxEntries: 16384}),
+  Object.freeze({name: 'm3072-p500', currentBytes: 3072 * MIB, nextBytes: 500 * MIB,
+    logicalBytes: 4 * 1024 * MIB, mode: 'budgets', maxEntries: 16384}),
 ]);
+const LEGACY_SCENARIO = Object.freeze({name: 'legacy4096-m3072-p500', currentBytes: 3072 * MIB,
+  nextBytes: 500 * MIB, logicalBytes: 4 * 1024 * MIB, mode: 'admission', maxEntries: 4096});
 const failure = code => Object.assign(new Error(code), {code});
 const safeFailure = error => ['quota-cancelled', 'quota-deadline'].includes(error.code)
   ? error.code : 'quota-experiment-failed';
@@ -44,14 +46,23 @@ async function freshPrivateDirectory(root) {
       process.platform !== 'win32' && (stat.mode & 0o077)) throw failure('private-output-required');
 }
 
-async function inspectDisk(root) {
+async function inspectDisk(root, maxEntries = 16384) {
   const files = await fs.readdir(root);
   const blockFiles = await fs.readdir(path.join(root, 'blocks'));
-  const index = JSON.parse(await fs.readFile(path.join(root, 'index.json'), 'utf8'));
-  const result = {blockFiles: 0, blockBytes: 0, indexBytes: 0, ownerBytes: 0,
+  const {decodeCheckpoint, replayJournal} = require('./index.cjs');
+  const checkpoint = decodeCheckpoint(JSON.parse(await fs.readFile(path.join(root, 'index.json'), 'utf8')));
+  const checkpointEntryRows = checkpoint.entries.length;
+  const checkpointBlockRows = checkpoint.entries.reduce((sum, entry) => sum + entry.blocks.length, 0);
+  let journal;
+  try {journal = await fs.readFile(path.join(root, 'index.log'));}
+  catch (error) {if (error.code !== 'ENOENT') throw error; journal = Buffer.alloc(0);}
+  const replay = replayJournal(checkpoint, journal, {maxEntries}), index = replay.state;
+  const result = {blockFiles: 0, blockBytes: 0, indexBytes: 0, checkpointBytes: 0, journalBytes: 0, ownerBytes: 0,
     tempFiles: 0, tempBytes: 0, allocatedFileBytes: 0, indexEntryRows: index.entries.length,
     indexBlockRows: index.entries.reduce((sum, entry) => sum + entry.blocks.length, 0),
-    currentIndexedBytes: 0, nextIndexedBytes: 0};
+    currentIndexedBytes: 0, nextIndexedBytes: 0,
+    checkpointEntryRows, checkpointBlockRows,
+    journalRecords: replay.records, journalDiscardedTailBytes: replay.discardedTailBytes};
   const indexed = new Set();
   for (const entry of index.entries) for (const block of entry.blocks) {
     indexed.add(block.file);
@@ -68,7 +79,8 @@ async function inspectDisk(root) {
     for (const {file, inBlocks, stat} of rows) {
       if (Number.isFinite(stat.blocks)) result.allocatedFileBytes += stat.blocks * 512;
       if (inBlocks && indexed.has(file)) {result.blockFiles++; result.blockBytes += stat.size;}
-      else if (!inBlocks && file === 'index.json') result.indexBytes += stat.size;
+      else if (!inBlocks && file === 'index.json') {result.indexBytes += stat.size; result.checkpointBytes += stat.size;}
+      else if (!inBlocks && file === 'index.log') result.journalBytes += stat.size;
       else if (!inBlocks && file === '.owner') result.ownerBytes += stat.size;
       else if (/^\.(?:block|index)-[a-f0-9-]+\.tmp$/.test(file)) {result.tempFiles++; result.tempBytes += stat.size;}
       else throw failure('unexpected-owned-file');
@@ -76,7 +88,7 @@ async function inspectDisk(root) {
   }
   if (result.blockFiles !== indexed.size) throw failure('missing-indexed-block');
   result.indexRows = result.indexEntryRows + result.indexBlockRows;
-  result.totalFileBytes = result.blockBytes + result.indexBytes + result.ownerBytes + result.tempBytes;
+  result.totalFileBytes = result.blockBytes + result.checkpointBytes + result.journalBytes + result.ownerBytes + result.tempBytes;
   return result;
 }
 
@@ -85,7 +97,7 @@ function validateConfig(config) {
       ![config.currentBytes, config.nextBytes, config.logicalBytes].every(value =>
         Number.isSafeInteger(value) && value >= BLOCK && value % BLOCK === 0) ||
       config.logicalBytes < Math.max(config.currentBytes, config.nextBytes) + BLOCK ||
-      !Number.isSafeInteger(config.maxEntries) || config.maxEntries < 4 || config.maxEntries > 4096) {
+      !Number.isSafeInteger(config.maxEntries) || config.maxEntries < 4 || config.maxEntries > 16384) {
     throw failure('quota-scenario-invalid');
   }
 }
@@ -95,12 +107,40 @@ async function runScenario(root, config, {signal, deadlineMs = DEFAULT_DEADLINE_
   if (!Number.isSafeInteger(deadlineMs) || deadlineMs <= 0) throw failure('quota-deadline-invalid');
   await freshPrivateDirectory(root);
   const started = performance.now(), payload = Buffer.alloc(BLOCK, 0x5a);
-  const writes = {mediaBytes: 0, indexBytes: 0, ownerBytes: 0, mediaCalls: 0, indexCalls: 0};
+  const writes = {mediaBytes: 0, indexBytes: 0, checkpointBytes: 0, journalBytes: 0,
+    ownerBytes: 0, mediaCalls: 0, indexCalls: 0, checkpointCalls: 0, journalCalls: 0,
+    journalTruncations: 0};
   const report = {name: config.name, config: {...config}, blockBytes: BLOCK, maxPendingBytes: 2 * MIB,
-    logicalWriteAccounting: 'completed-writeFile-byte-lengths-not-device-physical-writes',
+    logicalWriteAccounting: 'completed-writeFile-and-journal-handle-write-bytes-not-device-physical-writes',
+    metadataAuthority: 'logical-total-only-no-validator',
     boundsContract: {payloadHardLimitBytes: config.currentBytes + config.nextBytes,
       roleChecksScope: 'sequential-quiescent-workload-without-read-leases', metadataCountedSeparately: true},
-    operationsChecked: 0, peakRssBytes: process.memoryUsage().rss, milestones: [], rejections: []};
+    operationsChecked: 0, peakRssBytes: process.memoryUsage().rss, milestones: [], rejections: [],
+    creates: [], coverage: [], readVerifications: [], indexSessions: [], indexTotals: {},
+    filePeaks: {scope: 'all-completed-owned-writeFile-journal-handle-write-truncate-rename-unlink-operations',
+      payloadBytes: 0, metadataBytes: 0, totalBytes: 0, payloadFiles: 0, metadataFiles: 0}};
+  const ownedFiles = new Map();
+  let payloadFileBytes = 0, metadataFileBytes = 0, payloadFileCount = 0, metadataFileCount = 0;
+  const rememberFile = (file, length) => {
+    const media = path.dirname(file) === path.join(root, 'blocks');
+    const previous = ownedFiles.get(file);
+    if (previous !== undefined) {
+      if (media) {payloadFileBytes -= previous; payloadFileCount--;}
+      else {metadataFileBytes -= previous; metadataFileCount--;}
+    }
+    if (length === null) ownedFiles.delete(file);
+    else {
+      ownedFiles.set(file, length);
+      if (media) {payloadFileBytes += length; payloadFileCount++;}
+      else {metadataFileBytes += length; metadataFileCount++;}
+    }
+    report.filePeaks.payloadBytes = Math.max(report.filePeaks.payloadBytes, payloadFileBytes);
+    report.filePeaks.metadataBytes = Math.max(report.filePeaks.metadataBytes, metadataFileBytes);
+    report.filePeaks.totalBytes = Math.max(report.filePeaks.totalBytes, payloadFileBytes + metadataFileBytes);
+    report.filePeaks.payloadFiles = Math.max(report.filePeaks.payloadFiles, payloadFileCount);
+    report.filePeaks.metadataFiles = Math.max(report.filePeaks.metadataFiles, metadataFileCount);
+    if (payloadFileBytes > config.currentBytes + config.nextBytes) throw failure('quota-payload-file-bound-failed');
+  };
   let store, closed = false, a, b;
   const checkDeadline = () => {
     if (signal?.aborted) throw failure('quota-cancelled');
@@ -116,25 +156,93 @@ async function runScenario(root, config, {signal, deadlineMs = DEFAULT_DEADLINE_
   const io = {...fs, async writeFile(file, data, ...args) {
     const result = await fs.writeFile(file, data, ...args);
     const length = Buffer.isBuffer(data) ? data.length : Buffer.byteLength(data);
+    rememberFile(file, args[0]?.flag === 'a' ? (ownedFiles.get(file) || 0) + length : length);
     const name = path.basename(file);
     if (name.startsWith('.block-')) {writes.mediaBytes += length; writes.mediaCalls++;}
-    else if (name.startsWith('.index-')) {writes.indexBytes += length; writes.indexCalls++;}
+    else if (name.startsWith('.index-')) {
+      writes.indexBytes += length; writes.indexCalls++;
+      writes.checkpointBytes += length; writes.checkpointCalls++;
+    }
     else if (name === '.owner') writes.ownerBytes += length;
+    return result;
+  }, async open(file, ...args) {
+    const handle = await fs.open(file, ...args);
+    if (path.basename(file) !== 'index.log') return handle;
+    if (!ownedFiles.has(file)) rememberFile(file, (await handle.stat()).size);
+    return new Proxy(handle, {get(target, property) {
+      if (property === 'write') return async (...writeArgs) => {
+        const result = await target.write(...writeArgs);
+        if (!Number.isSafeInteger(result.bytesWritten) || result.bytesWritten < 0) {
+          throw failure('quota-journal-write-accounting-invalid');
+        }
+        const previousLength = ownedFiles.get(file) || 0;
+        const position = Number.isSafeInteger(writeArgs[3]) ? writeArgs[3] : previousLength;
+        rememberFile(file, Math.max(previousLength, position + result.bytesWritten));
+        writes.journalBytes += result.bytesWritten; writes.journalCalls++;
+        writes.indexBytes += result.bytesWritten; writes.indexCalls++;
+        return result;
+      };
+      if (property === 'truncate') return async (length = 0) => {
+        const result = await target.truncate(length);
+        rememberFile(file, length);
+        writes.journalTruncations++;
+        return result;
+      };
+      const value = target[property];
+      return typeof value === 'function' ? value.bind(target) : value;
+    }});
+  }, async rename(from, to) {
+    const length = ownedFiles.get(from);
+    const result = await fs.rename(from, to);
+    rememberFile(from, null);
+    if (length !== undefined) rememberFile(to, length);
+    return result;
+  }, async unlink(file) {
+    const result = await fs.unlink(file);
+    rememberFile(file, null);
     return result;
   }};
   const metadata = {total: config.logicalBytes};
-  const create = () => createStore({root, currentBytes: config.currentBytes, nextBytes: config.nextBytes,
-    maxEntries: config.maxEntries, maxPendingBytes: 2 * MIB, io});
+  const create = async () => {
+    const createAt = performance.now(), rssBefore = process.memoryUsage().rss;
+    const instance = await createStore({root, currentBytes: config.currentBytes, nextBytes: config.nextBytes,
+      maxEntries: config.maxEntries, maxPendingBytes: 2 * MIB, io});
+    report.creates.push({phase: report.creates.length ? 'recovery' : 'initial',
+      elapsedMs: performance.now() - createAt, rssBeforeBytes: rssBefore,
+      rssAfterBytes: process.memoryUsage().rss,
+      indexMetricsAtOpen: instance.status().indexMetrics ? {...instance.status().indexMetrics} : null});
+    return instance;
+  };
+  const expectedHash = crypto.createHash('sha256').update(payload).digest('hex');
+  const verifyRead = async (key, offset, role, stage) => {
+    checkDeadline();
+    const data = await store.read(key, offset, BLOCK);
+    const actualHash = data && crypto.createHash('sha256').update(data).digest('hex');
+    if (!data || data.length !== BLOCK || actualHash !== expectedHash) throw failure('quota-read-hash-failed');
+    report.readVerifications.push({stage, role, offset, length: BLOCK, sha256: actualHash});
+    check();
+  };
   const barrier = async () => {await store.open(identity('A'), metadata, 'current'); check();};
   const milestone = async stage => {
     checkDeadline();
-    const status = check(), disk = await inspectDisk(root);
+    const status = check(), disk = await inspectDisk(root, config.maxEntries);
     if (disk.blockBytes !== status.committed || disk.currentIndexedBytes !== status.current ||
-        disk.nextIndexedBytes !== status.next || disk.tempFiles || disk.indexRows > config.maxEntries) {
+        disk.nextIndexedBytes !== status.next || disk.tempFiles || disk.indexRows > config.maxEntries ||
+        disk.checkpointBytes > 2 * MIB || disk.journalBytes > MIB || disk.journalDiscardedTailBytes) {
       throw failure('quota-disk-check-failed');
     }
     report.milestones.push({stage, elapsedMs: performance.now() - started,
-      rssBytes: process.memoryUsage().rss, status, disk, completedWrites: {...writes}});
+      rssBytes: process.memoryUsage().rss, status, disk, completedWrites: {...writes},
+      indexMetrics: status.indexMetrics || null});
+    if (status.closed && status.indexMetrics) {
+      report.indexSessions.push({stage, ...status.indexMetrics});
+      for (const field of ['checkpointWrites', 'checkpointWriteBytes', 'journalWrites',
+        'journalWriteBytes', 'compactions', 'replayedRecords', 'discardedTailBytes']) {
+        if (!Number.isSafeInteger(status.indexMetrics[field])) throw failure('quota-index-metrics-invalid');
+        report.indexTotals[field] = (report.indexTotals[field] || 0) + status.indexMetrics[field];
+      }
+    }
+    if (disk.totalFileBytes !== payloadFileBytes + metadataFileBytes) throw failure('quota-file-accounting-mismatch');
     return status;
   };
   const put = async (key, offset, role, limit) => {
@@ -166,6 +274,14 @@ async function runScenario(root, config, {signal, deadlineMs = DEFAULT_DEADLINE_
       }
       if (config.mode === 'budgets' && accepted * BLOCK !== limit) throw failure('quota-fill-incomplete');
       await milestone(role + '-fill');
+      const span = await store.span(key, 0);
+      report.coverage.push({role, filledBytes: accepted * BLOCK, span});
+      if (config.mode === 'budgets') {
+        if (!span || span.start !== 0 || span.end !== limit) throw failure('quota-coverage-incomplete');
+        for (const offset of new Set([0, Math.floor((limit / BLOCK - 1) / 2) * BLOCK, limit - BLOCK])) {
+          await verifyRead(key, offset, role, role + '-full-coverage');
+        }
+      }
     }
     if (config.mode === 'budgets') {
       const full = await milestone('both-budgets-full');
@@ -180,6 +296,7 @@ async function runScenario(root, config, {signal, deadlineMs = DEFAULT_DEADLINE_
     const reopened = await milestone('reopened-actual-A-only');
     if (reopened.currentKey !== a || reopened.current !== beforeClose.current || reopened.next !== 0 ||
         reopened.entries !== 1 || await store.span(b, 0) !== null) throw failure('quota-recovery-check-failed');
+    if (config.mode === 'budgets') await verifyRead(a, config.currentBytes - BLOCK, 'current', 'recovered-A-last-block');
     const c = await store.open(identity('C'), metadata, 'next'); check();
     if (store.status().currentKey !== a || store.status().current !== reopened.current) throw failure('quota-early-retirement');
     if (!await put(c, 0, 'next', config.nextBytes)) throw failure('quota-C-admission-failed');
@@ -215,16 +332,22 @@ async function run(out, {deadlineMs = DEFAULT_DEADLINE_MS, signal, scenarios = S
   for (const config of scenarios) validateConfig(config);
   await freshPrivateDirectory(out);
   const started = performance.now();
-  const hashes = Object.fromEntries(await Promise.all(['quota.cjs', 'store.cjs'].map(async file =>
+  const hashes = Object.fromEntries(await Promise.all(['quota.cjs', 'store.cjs', 'index.cjs'].map(async file =>
     [file, crypto.createHash('sha256').update(await fs.readFile(path.join(__dirname, file))).digest('hex')])));
   const report = {schema: 'ete-shared-cache-quota-v1', node: process.version, sourceCodeSha256: hashes,
-    deadlineMs, scenarioResults: [], scope: 'owned-local-real-disk-only-no-network-no-native-playback'};
+    deadlineMs, scenarioResults: [], scope: 'owned-local-real-disk-only-no-network-no-native-playback',
+    peakOwnedCacheFileBytes: 0};
+  let retainedClosedFileBytes = 0;
   try {
     for (const config of scenarios) {
       const remaining = Math.floor(deadlineMs - (performance.now() - started));
       if (remaining <= 0) throw failure('quota-deadline');
-      report.scenarioResults.push(await runScenario(path.join(out, config.name), config,
-        {deadlineMs: remaining, signal}));
+      const result = await runScenario(path.join(out, config.name), config, {deadlineMs: remaining, signal});
+      report.scenarioResults.push(result);
+      report.peakOwnedCacheFileBytes = Math.max(report.peakOwnedCacheFileBytes,
+        retainedClosedFileBytes + result.filePeaks.totalBytes);
+      retainedClosedFileBytes += result.milestones.at(-1).disk.totalFileBytes;
+      if (report.peakOwnedCacheFileBytes >= 5 * 1024 * MIB) throw failure('quota-total-file-bound-failed');
     }
     report.ok = true;
   } catch (error) {
@@ -238,15 +361,23 @@ async function run(out, {deadlineMs = DEFAULT_DEADLINE_MS, signal, scenarios = S
 }
 
 function parseArgs(args) {
-  if (args.length !== 3 && args.length !== 5 || args[0] !== '--run' || args[1] !== '--out' ||
-      !path.isAbsolute(args[2]) || args.length === 5 &&
-      (args[3] !== '--deadline-ms' || !/^[1-9]\d*$/.test(args[4]) || Number(args[4]) > 30 * 60 * 1000)) {
-    throw failure('explicit-run-and-fresh-private-output-required');
+  const invalid = () => {throw failure('explicit-run-and-fresh-private-output-required');};
+  if (args[0] !== '--run') invalid();
+  let out, deadlineMs = DEFAULT_DEADLINE_MS, deadlineSeen = false, legacy4096 = false;
+  for (let index = 1; index < args.length;) {
+    const flag = args[index++];
+    if (flag === '--legacy-4096' && !legacy4096) {legacy4096 = true; continue;}
+    const value = args[index++];
+    if (flag === '--out' && out === undefined && typeof value === 'string' && path.isAbsolute(value)) out = value;
+    else if (flag === '--deadline-ms' && !deadlineSeen && /^[1-9]\d*$/.test(value || '') &&
+        Number(value) <= 30 * 60 * 1000) {deadlineMs = Number(value); deadlineSeen = true;}
+    else invalid();
   }
-  return {out: args[2], deadlineMs: args.length === 5 ? Number(args[4]) : DEFAULT_DEADLINE_MS};
+  if (out === undefined) invalid();
+  return {out, deadlineMs, ...(legacy4096 ? {legacy4096: true} : {})};
 }
 
-module.exports = {BLOCK, SCENARIOS, assertBounds, inspectDisk, parseArgs, runScenario, run};
+module.exports = {BLOCK, SCENARIOS, LEGACY_SCENARIO, assertBounds, inspectDisk, parseArgs, runScenario, run};
 if (require.main === module) {
   let options;
   try {options = parseArgs(process.argv.slice(2));}
@@ -254,7 +385,8 @@ if (require.main === module) {
   if (options) {
     const controller = new AbortController(), cancel = () => controller.abort();
     process.once('SIGINT', cancel); process.once('SIGTERM', cancel);
-    run(options.out, {deadlineMs: options.deadlineMs, signal: controller.signal}).then(report => {
+    run(options.out, {deadlineMs: options.deadlineMs, signal: controller.signal,
+      scenarios: options.legacy4096 ? [LEGACY_SCENARIO] : SCENARIOS}).then(report => {
       process.stdout.write(JSON.stringify({schema: report.schema, ok: report.ok,
         scenariosCompleted: report.scenarioResults.filter(row => row.ok).length,
         failure: report.failure || null}) + '\n');

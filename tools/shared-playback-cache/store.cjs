@@ -6,12 +6,14 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const {acquireGuard} = require('../../src/electronapp/enhanced/playback-range-identity');
+const {MAX_ROWS, MAX_INDEX_BYTES, MAX_JOURNAL_BYTES, MAX_RECORDS,
+  packBlock, decodeCheckpoint, encodeCheckpoint, encodeFrame, replayJournal} = require('./index.cjs');
 
 const MAX_BLOCK = 256 * 1024;
 const OWNER = 'ete-shared-playback-cache-v1';
 const INDEX = 'index.json';
+const JOURNAL = 'index.log';
 const BLOCKS = 'blocks';
-const MAX_INDEX_BYTES = 2 * 1024 * 1024;
 const MAX_READ_BLOCKS = 128;
 const IDENTITY_FIELDS = ['server', 'account', 'item', 'mediaSource', 'resource', 'representation'];
 const META_FIELDS = ['etag', 'lastModified', 'version'];
@@ -74,14 +76,14 @@ function blockName(key, start, length, hash) {
   return `${key}-${start}-${length}-${hash}.bin`;
 }
 
-async function readIndexBounded(io, indexPath) {
+async function readMetadataBounded(io, indexPath, limit) {
   const pathStat = await io.lstat(indexPath);
   if (!pathStat.isFile() || pathStat.isSymbolicLink() || pathStat.nlink !== 1 ||
-      pathStat.size > MAX_INDEX_BYTES) throw new Error('unsafe cache index');
+      pathStat.size > limit) throw new Error('unsafe cache index');
   const handle = await io.open(indexPath, 'r');
   try {
     const stat = await handle.stat();
-    if (!stat.isFile() || stat.nlink !== 1 || stat.size > MAX_INDEX_BYTES ||
+    if (!stat.isFile() || stat.nlink !== 1 || stat.size > limit ||
         stat.dev !== pathStat.dev || stat.ino !== pathStat.ino) {
       throw new Error('unsafe cache index');
     }
@@ -92,7 +94,7 @@ async function readIndexBounded(io, indexPath) {
       if (!bytesRead) throw new Error('truncated cache index');
       position += bytesRead;
     }
-    return JSON.parse(data.toString('utf8'));
+    return data;
   } finally {
     await handle.close();
   }
@@ -103,7 +105,7 @@ async function createStore({
   currentBytes,
   nextBytes,
   maxPendingBytes = 2 * 1024 * 1024,
-  maxEntries = 4096,
+  maxEntries = MAX_ROWS,
   io = fs,
 } = {}) {
   if (typeof root !== 'string' || !path.isAbsolute(root)) {
@@ -113,13 +115,14 @@ async function createStore({
       !positiveSafeInteger(maxPendingBytes) || !positiveSafeInteger(maxEntries)) {
     throw new TypeError('cache limits must be positive safe integers');
   }
-  if (maxEntries > 4096) throw new TypeError('cache entry limit is too large');
+  if (maxEntries > MAX_ROWS) throw new TypeError('cache entry limit is too large');
   if (!Number.isSafeInteger(currentBytes + nextBytes)) {
     throw new TypeError('combined cache limit is unsafe');
   }
   const ownedRoot = path.resolve(root);
   const ownerPath = path.join(ownedRoot, '.owner');
   const indexPath = path.join(ownedRoot, INDEX);
+  const journalPath = path.join(ownedRoot, JOURNAL);
   const blocksPath = path.join(ownedRoot, BLOCKS);
   let rootStat;
   try {
@@ -156,7 +159,7 @@ async function createStore({
     throw new Error('unsafe cache owner marker');
   }
   for (const filename of await io.readdir(ownedRoot)) {
-    if (filename === '.owner' || filename === INDEX || filename === BLOCKS) continue;
+    if (filename === '.owner' || filename === INDEX || filename === JOURNAL || filename === BLOCKS) continue;
     if (!/^\.index-[a-f0-9-]+\.tmp$/.test(filename)) {
       throw new Error('unexpected file in cache root');
     }
@@ -234,6 +237,10 @@ async function createStore({
   let queue = Promise.resolve();
   let reclaimScheduled = false;
   let closePromise;
+  let sequence = 0, journalRecords = 0, journalBytes = 0, estimatedIndexBytes = 0;
+  const indexMetrics = {checkpointBytes: 0, journalBytes: 0, checkpointWrites: 0,
+    checkpointWriteBytes: 0, journalWrites: 0, journalWriteBytes: 0, compactions: 0,
+    replayedRecords: 0, discardedTailBytes: 0};
   const readJobs = new Set();
 
   function activeBytes(role) {
@@ -295,18 +302,90 @@ async function createStore({
   }
 
   async function persist(extra = null) {
+    if (extra) return appendMutation('add', extra.entry, extra.block);
     const temp = path.join(ownedRoot, `.index-${crypto.randomUUID()}.tmp`);
     try {
       await assertOwnedPaths();
-      const serialized = JSON.stringify(snapshot(extra));
-      if (Buffer.byteLength(serialized) > MAX_INDEX_BYTES) throw new Error('cache index limit');
+      const serialized = encodeCheckpoint(snapshot(), sequence);
       await io.writeFile(temp, serialized, {flag: 'wx', mode: 0o600});
+      indexMetrics.checkpointWrites++;
+      indexMetrics.checkpointWriteBytes += Buffer.byteLength(serialized);
       await io.rename(temp, indexPath);
+      // Rename commits the checkpoint first. A crash before reset leaves old
+      // frames, which recovery validates but skips through this sequence.
+      const journal = await openJournal(true);
+      try {
+        await journal.handle.truncate(0);
+        await verifyJournalHandle(journal.handle, journal.stat, 0);
+      } finally {await journal.handle.close();}
+      if (journalRecords) indexMetrics.compactions++;
+      journalBytes = 0; journalRecords = 0;
+      estimatedIndexBytes = Buffer.byteLength(serialized);
+      indexMetrics.checkpointBytes = estimatedIndexBytes;
+      indexMetrics.journalBytes = 0;
     } catch (error) {
       if (!await unlinkQuietly(temp)) indexOrphans.add(temp);
       faulted = true;
       throw error;
     }
+  }
+
+  async function verifyJournalHandle(handle, expected, size = expected.size) {
+    await assertOwnedPaths();
+    const opened = await handle.stat(), current = await io.lstat(journalPath);
+    for (const stat of [opened, current]) {
+      if (!stat.isFile() || stat.isSymbolicLink?.() || stat.nlink !== 1 || stat.size !== size ||
+          stat.dev !== expected.dev || stat.ino !== expected.ino || stat.size > MAX_JOURNAL_BYTES) {
+        throw new Error('unsafe cache journal');
+      }
+    }
+  }
+
+  async function openJournal(missing = false) {
+    await assertOwnedPaths();
+    let before;
+    try {before = await io.lstat(journalPath);}
+    catch (error) {if (!missing || error.code !== 'ENOENT') throw error;}
+    if (before && (!before.isFile() || before.isSymbolicLink() || before.nlink !== 1 || before.size > MAX_JOURNAL_BYTES)) {
+      throw new Error('unsafe cache journal');
+    }
+    // Never open an existing path with create/truncate/append flags. A swapped
+    // symlink must be rejected by fstat before ANY write reaches its target.
+    const handle = await io.open(journalPath, before ? 'r+' : 'wx', 0o600);
+    try {
+      before ||= await handle.stat();
+      await verifyJournalHandle(handle, before);
+      return {handle, stat: before};
+    } catch (error) {await handle.close(); throw error;}
+  }
+
+  async function appendMutation(op, entry, block) {
+    try {
+      if (!Number.isSafeInteger(sequence + 1)) throw new Error('cache journal sequence');
+      const frame = encodeFrame(sequence + 1, op, entry.key, block);
+      // Compact only already-published memory state BEFORE the next frame.
+      // put() publishes its new block only after this append has completed.
+      if (journalRecords >= MAX_RECORDS || journalBytes + frame.length > MAX_JOURNAL_BYTES) await persist();
+      const journal = await openJournal();
+      try {
+        if (journal.stat.size !== journalBytes) throw new Error('cache journal changed');
+        let written = 0;
+        while (written < frame.length) {
+          const {bytesWritten} = await journal.handle.write(frame, written, frame.length - written, journalBytes + written);
+          if (!Number.isSafeInteger(bytesWritten) || bytesWritten <= 0 || bytesWritten > frame.length - written) {
+            throw new Error('cache journal short write');
+          }
+          written += bytesWritten;
+        }
+        await verifyJournalHandle(journal.handle, journal.stat, journalBytes + frame.length);
+        indexMetrics.journalWrites++; indexMetrics.journalWriteBytes += frame.length;
+      } finally {await journal.handle.close();}
+      sequence++; journalRecords++; journalBytes += frame.length;
+      indexMetrics.journalBytes = journalBytes;
+      // An overestimate between checkpoints is intentional. Removes never free
+      // serialized capacity until compact; no full-index stringify per block.
+      if (op === 'add') estimatedIndexBytes += Buffer.byteLength(JSON.stringify(packBlock(block))) + 4;
+    } catch (error) {faulted = true; throw error;}
   }
 
   async function deleteRetired(block) {
@@ -339,9 +418,9 @@ async function createStore({
   async function removeCorruptBlock(block) {
     for (const entry of entries.values()) {
       if (!entry.blocks.includes(block)) continue;
+      await appendMutation('remove', entry, block);
       entry.blocks.splice(entry.blocks.indexOf(block), 1);
       retire(block, entry.role);
-      await persist();
       await drainRetired();
       return;
     }
@@ -361,11 +440,19 @@ async function createStore({
     const indexStat = await io.lstat(indexPath);
     if (!indexStat.isFile() || indexStat.isSymbolicLink() || indexStat.nlink !== 1 ||
         indexStat.size > MAX_INDEX_BYTES) throw new Error('unsafe cache index');
-    diskIndex = await readIndexBounded(io, indexPath);
+    diskIndex = decodeCheckpoint(JSON.parse((await readMetadataBounded(io, indexPath, MAX_INDEX_BYTES)).toString('utf8')));
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
-    diskIndex = {version: 1, actual: null, entries: []};
+    diskIndex = {version: 1, sequence: 0, actual: null, entries: []};
   }
+  let journalData;
+  try {journalData = await readMetadataBounded(io, journalPath, MAX_JOURNAL_BYTES);}
+  catch (error) {if (error.code !== 'ENOENT') throw error; journalData = Buffer.alloc(0);}
+  const replayed = replayJournal(diskIndex, journalData, {maxEntries});
+  diskIndex = replayed.state; sequence = replayed.sequence;
+  journalBytes = journalData.length; journalRecords = replayed.records;
+  indexMetrics.replayedRecords = replayed.replayedRecords;
+  indexMetrics.discardedTailBytes = replayed.discardedTailBytes;
   if (diskIndex.version !== 1 || !Array.isArray(diskIndex.entries) ||
       diskIndex.entries.length > maxEntries ||
       diskIndex.entries.reduce((count, entry) => count +
@@ -454,9 +541,9 @@ async function createStore({
       }
     }
     if (!victim) return false;
+    await appendMutation('remove', victimEntry, victim);
     victimEntry.blocks.splice(victimEntry.blocks.indexOf(victim), 1);
     retire(victim, role);
-    await persist();
     await deleteRetired(victim);
     return true;
   }
@@ -689,7 +776,7 @@ async function createStore({
         const file = blockName(key, start, copy.length, hash);
         if (retired.has(file)) return false;
         const block = {start, length: copy.length, hash, file, touched: Date.now(), readers: 0};
-        if (Buffer.byteLength(JSON.stringify(snapshot({entry: active, block}))) > MAX_INDEX_BYTES) {
+        if (estimatedIndexBytes + Buffer.byteLength(JSON.stringify(packBlock(block))) + 4 > MAX_INDEX_BYTES) {
           return false;
         }
         const temp = path.join(blocksPath, `.block-${crypto.randomUUID()}.tmp`);
@@ -762,6 +849,7 @@ async function createStore({
       blocks: blockCount(),
       faulted,
       closed,
+      indexMetrics: {...indexMetrics},
     };
   }
 

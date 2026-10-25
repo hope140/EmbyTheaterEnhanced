@@ -118,9 +118,24 @@ process.on('message', async message => {
       };
       const preloadIdentity = {...identity, item: 'preload-target'};
       config = {...cfg};
-      writeCounters = {mediaBlockTempWrites: 0, mediaBlockTempBytes: 0, indexWrites: 0, indexBytes: 0};
+      writeCounters = {mediaBlockTempWrites: 0, mediaBlockTempBytes: 0, indexWrites: 0, indexBytes: 0,
+        journalWriteCalls: 0, journalBytes: 0, journalTruncates: 0};
       writePressure = {peakPendingBytes: 0, peakPendingCount: 0};
-      const io = {...fs, async writeFile(file, data, ...args) {
+      const io = {...fs, async open(file, ...args) {
+        const handle = await fs.open(file, ...args);
+        if (path.basename(String(file)) !== 'index.log') return handle;
+        return new Proxy(handle, {get(target, property) {
+          if (property === 'write') return async (...args) => {
+            const result = await target.write(...args);
+            writeCounters.journalWriteCalls++; writeCounters.journalBytes += result.bytesWritten;
+            return result;
+          };
+          if (property === 'truncate') return async (...args) => {
+            const result = await target.truncate(...args); writeCounters.journalTruncates++; return result;
+          };
+          const value = target[property]; return typeof value === 'function' ? value.bind(target) : value;
+        }});
+      }, async writeFile(file, data, ...args) {
         await fs.writeFile(file, data, ...args);
         countWrite(file, data, writeCounters);
       }};

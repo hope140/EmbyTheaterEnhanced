@@ -26,7 +26,7 @@ async function run({out, media, variant, library, python = '/usr/bin/python3', s
   await fs.writeFile(path.join(out, 'policy.json'), JSON.stringify(policy, null, 2) + '\n', {flag: 'wx'});
   const report = {schema: 1, policy, fixture: {variant, sha256: hash(data), bytes: data.length}, cases: []};
   report.sourceSha256 = {};
-  for (const name of ['proxy.cjs', 'store.cjs', 'native-frame.py', 'native-ab.cjs', 'fixture.cjs'])
+  for (const name of ['proxy.cjs', 'store.cjs', 'index.cjs', 'native-frame.py', 'native-ab.cjs', 'fixture.cjs'])
     report.sourceSha256[name] = hash(await fs.readFile(path.join(__dirname, name)));
   const origin = await source({data, firstDelay: 20, tailDelay: 100});
   const store = await createStore({root: path.join(out, 'cache'), currentBytes: 16 * 1024 * 1024, nextBytes: 1024 * 1024});

@@ -37,7 +37,7 @@ function summary(values) {
     min: Math.min(...valid), max: Math.max(...valid)};
 }
 function sourceHashes() {
-  return Promise.all(['components.cjs', 'proxy.cjs', 'store.cjs', 'fixture.cjs'].map(async file =>
+  return Promise.all(['components.cjs', 'proxy.cjs', 'store.cjs', 'index.cjs', 'fixture.cjs'].map(async file =>
     [file, sha256(await fs.readFile(path.join(__dirname, file)))]));
 }
 async function createComponent(name, mode, origin, out) {

@@ -287,7 +287,10 @@ for (const currentBytes of [64, 8]) {
         const indexPath = path.join(root, 'index.json');
         const index = JSON.parse(await fs.readFile(indexPath, 'utf8'));
         const touchedByStart = new Map([[0, 50], [2, 40], [4, 20], [8, 30], [12, 10]]);
-        for (const block of index.entries[0].blocks) block.touched = touchedByStart.get(block.start);
+        for (const block of index.entries[0].blocks) {
+            if (Array.isArray(block)) block[3] = touchedByStart.get(block[0]);
+            else block.touched = touchedByStart.get(block.start); // Legacy v1 fixture.
+        }
         await fs.writeFile(indexPath, JSON.stringify(index));
 
         for (let reopen = 0; reopen < 2; reopen++) {

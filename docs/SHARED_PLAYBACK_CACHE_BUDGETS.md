@@ -1,5 +1,7 @@
 # 共享缓存：吞吐预算与真实落盘边界
 
+后续索引迭代已解决本页记录的1GiB截断与逐块全量重写，见[增量索引验证](SHARED_PLAYBACK_CACHE_INDEX.md)。本页保留 bd45926 阶段的历史测量；吞吐与默认队列结论未撤销。
+
 范围：experiment/shared-playback-cache 的独立本地原型。只使用自有合成数据；未改默认缓存预算、前缀复用／seek 策略、客户端配置或生产内核，未访问真实外部媒体。没有打包、安装或发布。此前首帧／seek 条件和未通过项仍见[原型说明](SHARED_PLAYBACK_CACHE_PROTOTYPE.md)。
 
 ## 是否需要为吞吐比例扩大队列
