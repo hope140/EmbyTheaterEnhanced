@@ -84,12 +84,17 @@ function patchDetailCache(value) {
         play: function(mode) { playCurrentItem(this, mode); }.bind(this),
         retry: function() { startDataLoad(this); consumeDetailReload(this, true); }.bind(this),
         canPlay: function(item) { return playbackManager.canPlay(item); },
+        presentation: function(dto, container, server) {
+          var item = Object.assign({}, dto, {ServerId:server, MediaType:"Video", ImageTags:{Primary:dto.PrimaryImageTag}});
+          return {tv:layoutManager.tv, graphic:enableTvDetailImageLayout(item), shape:imageLoader.getShape([item],{}), name:itemHelper.getDisplayName(item,{includeParentInfo:true}),
+            poster:function() { return cardBuilder.getCardsHtml([item], {shape:imageLoader.getShape([item],{}),fields:[],overlayText:true,action:"none",imageClass:"detailImage",imageWidthTestClass:container.className+" imageWidthTest",cardClass:"detailImageContainerCard",staticElement:true,defaultIcon:true,overlayPlayButton:false,multiSelect:false,contextMenu:false,ratingButton:false,playedButton:false,playedIndicator:false,typeIndicator:false,syncIndicator:false,timerIndicator:false,enableUserData:false,draggable:false,moreButton:false,programIndicators:false,randomDefaultBackground:false}); }};
+        },
         clearBackdrop: function() { backdrop.clear(); }
       })),`);
     once('instance.view === view && !!view;', 'instance.view === view && !!view && (!instance.eteDetail || instance.eteDetail.isCurrent());');
     once('    instance.dataPromise = Promise.all(', '    instance.eteDetail.begin(apiClient);\n    instance.dataPromise = Promise.all(');
     once('apiClient.getCurrentUser()]).then(', 'apiClient.getCurrentUser().then(function(user) { if (isCurrentDetail(instance, epoch, view)) instance.eteDetail.user(user); return user; })]).then(');
-    once('    var detailOwner = this, detailEpoch = this._eteDetailEpoch, detailView = this.view;', '    var detailOwner = this, detailEpoch = this._eteDetailEpoch, detailView = this.view;\n    this.eteDetail.ownsBackground();');
+    once('    var detailOwner = this, detailEpoch = this._eteDetailEpoch, detailView = this.view;', '    var detailOwner = this, detailEpoch = this._eteDetailEpoch, detailView = this.view;\n    this.eteDetail.prepare();\n    this.eteDetail.ownsBackground();');
     once('      return playbackMediaSourcesPromise.then(function (mediaSources) {', '      return playbackMediaSourcesPromise.then(function (mediaSources) {\n        if (!isCurrentDetail(instance, epoch, detailView)) throw retiredDetail();\n        instance.eteDetail.sources();');
     once('      var playbackMediaSourcesPromise', '      instance.eteDetail.item(item);\n      var playbackMediaSourcesPromise');
     once('      function (err) {\n        if (!isCurrentDetail(instance, epoch, view)) throw retiredDetail();',

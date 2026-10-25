@@ -174,7 +174,7 @@ test('TV, missing/unsupported parent and non-latest sections keep ordinary headi
     }
 });
 
-test('home refresh on return restores the corresponding new native title, without retaining content nodes', async () => {
+test('default Home return retains its native title while freshly reading layout and items', async () => {
     const f = fixture(); f.deps.layout.tv = false;
     let reads = 0;
     f.api.getJSON = request => Promise.resolve(request.route.endsWith('/HomeSections') && ++reads ? [
@@ -183,7 +183,7 @@ test('home refresh on return restores the corresponding new native title, withou
     await f.controller.resume(); const previous = f.root.querySelectorAll('a')[0];
     f.document.activeElement = previous; f.controller.pause(); await f.controller.resume({autoFocus: false});
     const current = f.root.querySelectorAll('a')[0];
-    assert.notEqual(previous, current); assert.equal(f.focus.at(-1), current);
+    assert.equal(previous, current); assert.equal(f.focus.at(-1), current);
     assert.equal(reads, 2);
     f.controller.dispose();
 });
@@ -197,7 +197,7 @@ test('title and native See All container block activation after pause, identity 
         await f.controller.resume(); const title = f.root.querySelectorAll('a')[0].parentElement;
         function activate() { const event = {preventDefault() { this.prevented = true; }, stopImmediatePropagation() { this.stopped = true; }}; title.events.click(event); return event; }
         assert.equal(activate().prevented, undefined);
-        if (action === 'user') f.user('other'); else if (action === 'switchClient') f.switchClient(); else await f.controller[action]();
+        if (action === 'user') f.user('other'); else if (action === 'switchClient') f.switchClient(); else if (action === 'refresh') { f.api.getJSON = () => new Promise(() => {}); f.controller.refresh(); } else await f.controller[action]();
         const rejected = activate(); assert.equal(rejected.prevented, true); assert.equal(rejected.stopped, true);
         f.controller.dispose();
     }
@@ -222,7 +222,7 @@ test('a See All target hidden by refreshed content restores focus to the visible
         {Id: 'latest', SectionType: 'latestmedia', Name: 'Latest', ParentItem: {Id: 'movie-library', CollectionType: 'movies'}}
     ] : {Items: [{Id: 'one'}]});
     await f.controller.resume(); f.document.activeElement = f.root.querySelector('.sectionSeeAllButton');
-    f.controller.pause(); hide = true; await f.controller.resume({autoFocus: false});
+    f.controller.pause(); hide = true; f.root.querySelector('.sectionSeeAllButton').classList.add('hide'); await f.controller.resume({autoFocus: false});
     assert.equal(f.focus.at(-1), f.root.querySelector('.sectionTitleTextButton')); f.controller.dispose();
 });
 test('old server uses complete legacy renderer and old user without new HomeSections request', async () => {
@@ -715,4 +715,66 @@ test('policy invalidation immediately retires retained content and supersedes an
     await flowFlush();
     assert.equal(f.root.children.length, 1); assert.equal(f.root.children[0].getAttribute('data-ete-home-source'), 'server');
     f.controller.dispose();
+});
+
+test('default Home keeps resident cards during fresh reads and reuses the native row on completion', async () => {
+    const f = fixture(); await f.controller.resume();
+    const stage = f.root.children[0], row = f.root.querySelector('.itemsContainer');
+    f.controller.pause(); assert.equal(f.controller.canRestore(), true);
+    let release, sectionReads = 0, itemReads = 0;
+    f.api.getJSON = request => {
+        if (request.route.endsWith('/HomeSections')) { sectionReads++; return Promise.resolve(sections()); }
+        itemReads++; return new Promise(resolve => { (release ||= []).push(() => resolve({Items: [{Id: 'fresh'}]})); });
+    };
+    const pending = f.controller.resume();
+    for (let i = 0; i < 20; i++) await Promise.resolve();
+    assert.equal(f.root.children[0], stage); assert.equal(row.children.length, 1); assert.equal(row.inert, true);
+    assert.equal(release.length, 2); release.forEach(done => done()); await pending;
+    assert.equal(f.root.children[0], stage); assert.equal(f.root.querySelector('.itemsContainer'), row);
+    assert.equal(row.children[0].getAttribute('data-id'), 'fresh'); assert.equal(row.inert, false);
+    assert.equal(sectionReads, 1); assert.equal(itemReads, 2);
+    f.controller.dispose();
+});
+for (const change of ['auth', 'locale', 'version', 'query']) test('default Home restore retires a resident stage after '+change+' changes', async () => {
+    const f = fixture(); await f.controller.resume(); const stage = f.root.children[0]; f.controller.pause();
+    if (change === 'auth') f.api._identityEpoch++;
+    if (change === 'locale') f.api.getCurrentLocale = () => 'en-US';
+    if (change === 'version') f.version('4.11.0.0');
+    if (change === 'query') f.owner.params = {context: 'changed'};
+    assert.equal(f.controller.canRestore(), false);
+    f.api.getJSON = () => new Promise(() => {}); const pending = f.controller.resume();
+    assert.equal(f.root.contains(stage), false); f.controller.pause(); await pending; f.controller.dispose();
+});
+test('default Home data and policy invalidations retire a paused resident stage', async () => {
+    for (const name of ['UserDataChanged', 'LibraryChanged', 'UserPolicyUpdated']) {
+        const f = fixture(null, null, {enabled: false}); await f.controller.resume(); f.controller.pause();
+        f.deps.events.trigger(f.api, 'message', [{MessageType: name}]);
+        assert.equal(f.root.children.length, 0); assert.equal(f.controller.canRestore(), false); f.controller.dispose();
+    }
+});
+for (const change of ['auth', 'logout', 'locale', 'version', 'query']) test('default retained Home rejects an in-flight '+change+' change without waiting for an identity event', async () => {
+    const f = fixture(); await f.controller.resume(); const stage = f.root.children[0]; f.controller.pause();
+    const held = []; f.api.getJSON = request => request.route.endsWith('/HomeSections') ? Promise.resolve(sections()) : new Promise(resolve => held.push(resolve));
+    const pending = f.controller.resume(); for (let i = 0; i < 20; i++) await Promise.resolve();
+    assert.equal(f.root.children[0], stage);
+    if (change === 'auth') f.api._identityEpoch++;
+    if (change === 'logout') f.api.isLoggedIn = () => false;
+    if (change === 'locale') f.api.getCurrentLocale = () => 'en-US';
+    if (change === 'version') f.version('4.11.0.0');
+    if (change === 'query') f.owner.params = {context: 'changed'};
+    held.forEach(resolve => resolve({Items: [{Id: 'retired'}]})); await pending;
+    assert.equal(f.root.children.length, 0); assert.equal(f.controller.canRestore(), false); f.controller.dispose();
+});
+
+for (const type of ['onnow', 'activerecordings']) test('default retained Home masks stale '+type+' program metadata until fresh delivery', async () => {
+    const f = fixture(); let held;
+    f.api.getJSON = request => Promise.resolve(request.route.endsWith('/HomeSections') ? [{Id: 'live', SectionType: type, Name: 'Live'}] : {Items: [{Id: 'old-program'}]});
+    await f.controller.resume(); const row = f.root.querySelector('.itemsContainer'); f.controller.pause();
+    f.api.getJSON = request => request.route.endsWith('/HomeSections') ? Promise.resolve([{Id: 'live', SectionType: type, Name: 'Live'}]) : new Promise(resolve => { held = resolve; });
+    const pending = f.controller.resume(); for (let i = 0; i < 20; i++) await Promise.resolve();
+    assert.equal(f.root.querySelector('.itemsContainer'), row);
+    assert.equal(row.classList.contains('eteHomeFlowProgramPending'), true);
+    held({Items: [{Id: 'fresh-program'}]}); await pending;
+    assert.equal(row.classList.contains('eteHomeFlowProgramPending'), false);
+    assert.equal(row.children[0].getAttribute('data-id'), 'fresh-program'); f.controller.dispose();
 });
