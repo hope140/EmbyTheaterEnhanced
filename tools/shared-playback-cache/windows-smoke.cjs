@@ -25,6 +25,17 @@ function within(task, timeoutMs, code) {
   const deadline = new Promise((_, reject) => {timer = setTimeout(() => reject(Error(code)), timeoutMs);});
   return Promise.race([Promise.resolve().then(task), deadline]).finally(() => clearTimeout(timer));
 }
+// Invoke only the already loaded trusted frame. WebContents.executeJavaScript
+// has an additional loading gate; this owned harness must observe its commands.
+async function executeStableFrame(contents, expectedUrl, script) {
+  need(contents && !contents.isDestroyed(), 'worker-frame-untrusted');
+  const frame = contents.mainFrame;
+  need(frame && !frame.isDestroyed() && !frame.detached && frame.url === expectedUrl, 'worker-frame-untrusted');
+  const result = await frame.executeJavaScript(script);
+  need(!contents.isDestroyed() && contents.mainFrame === frame && !frame.isDestroyed() &&
+    !frame.detached && frame.url === expectedUrl, 'worker-frame-retired');
+  return result;
+}
 function write(file, value, exclusive = true) {
   fs.writeFileSync(file, JSON.stringify(value, null, 2) + '\n', {flag: exclusive ? 'wx' : 'w', mode: 0o600});
 }
@@ -219,7 +230,11 @@ async function run({planFile}) {
       toolCommit: report.toolCommit, stage: report.stage || 'complete', code: report.code || null,
       cases: results.map(r => ({phase: r.phase, exitCode: r.exitCode, timedOut: r.timedOut,
         workerStages: r.workerStages, code: r.receipt?.code || r.receipt?.cleanupCode || null,
-        ownedHelpersClosed: r.receipt?.ownedHelpersClosed, checks: r.receipt?.checks})), cleanup: report.sourceCleanup}));
+        ownedHelpersClosed: r.receipt?.ownedHelpersClosed, checks: r.receipt?.checks,
+        receiptOrigin: r.receipt?.receiptOrigin || null, seekObservations: r.receipt?.seekObservations || [],
+        rendererDispatch: (r.receipt?.trace || []).filter(e => e.type === 'renderer-dispatch').slice(-6)
+          .map(({operation, loading, loadingMainFrame, backgroundThrottling, destroyed}) =>
+            ({operation, loading, loadingMainFrame, backgroundThrottling, destroyed}))})), cleanup: report.sourceCleanup}));
   }
   return report;
 }
@@ -232,7 +247,7 @@ function argumentsOf(argv) {
   need(allowed.every(k => values[k]), 'missing-argument');
   return {mode, values};
 }
-module.exports = {OWNER, PHASES, TOOL_FILES, watchdogDelay, within, prepare, readPlan, childEnvironment, safeFailure, argumentsOf, validateProfile, coloredFrame, validatePhaseEvidence, safeNativeTags, boundToolBytes};
+module.exports = {OWNER, PHASES, TOOL_FILES, watchdogDelay, within, executeStableFrame, prepare, readPlan, childEnvironment, safeFailure, argumentsOf, validateProfile, coloredFrame, validatePhaseEvidence, safeNativeTags, boundToolBytes};
 if (require.main === module) (async () => {
   const {mode, values: v} = argumentsOf(process.argv.slice(2));
   if (mode === 'prepare') {await prepare({repo: v.repo, runtime: v.runtime, installer: v.installer,

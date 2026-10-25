@@ -40,7 +40,7 @@ async function main() {
   const stages = [], trace = [], clients = [], contexts = new Map();
   const workerDeadline = workerStartedAt + availablePhaseMs - 1000;
   let stage = 'isolated', activeEndpoint, lastGeneration, currentItem, service, authority, cd2Service,
-    mainWindow, ownedSession, unregisterNative, unregisterCd2, unregisterSettings, lateEvents = 0, retiredAt = null;
+    mainWindow, indexUrl, ownedSession, unregisterNative, unregisterCd2, unregisterSettings, lateEvents = 0, retiredAt = null;
   const receipt = {schema: 1, phase, productCommit: plan.productCommit, toolCommit: plan.tools.toolCommit,
     status: 'FAIL', scope, checks: {}, timingsMs: {}, firstFrameMeaning: 'decoded native preview; hidden carrier',
     audio: 'NOT_TESTED_VIDEO_ONLY_FIXTURE', real115Requests: 0, helpers: [], seekObservations: []};
@@ -62,7 +62,11 @@ async function main() {
     phaseOf(label);
     const remaining = workerDeadline - now() - 5000; // Retain time for owned helper cleanup.
     need(remaining > 0, 'worker-operation-budget');
-    return driver.within(() => mainWindow.webContents.executeJavaScript(script), Math.min(timeout, remaining), label + '-timeout');
+    const contents = mainWindow.webContents;
+    record('renderer-dispatch', {operation: label, loading: contents.isLoading(),
+      loadingMainFrame: contents.isLoadingMainFrame(), backgroundThrottling: contents.getBackgroundThrottling(),
+      destroyed: contents.isDestroyed()});
+    return driver.within(() => driver.executeStableFrame(contents, indexUrl, script), Math.min(timeout, remaining), label + '-timeout');
   }
   const runtime = member => path.join(plan.runtime, 'electronapp', member);
   const get = member => require(runtime(member));
@@ -74,7 +78,7 @@ async function main() {
       protocolFailure: c.protocolFailure ? 'PROTOCOL_FAILURE' : null}));
   }
   let watchdog = setTimeout(() => {
-    receipt.status = 'FAIL'; receipt.code ||= 'worker-deadline'; receipt.stage ||= stage;
+    receipt.status = 'FAIL'; receipt.receiptOrigin = 'watchdog'; receipt.code ||= 'worker-deadline'; receipt.stage ||= stage;
     receipt.trace = trace; receipt.helpers = helperFacts();
     receipt.ownedHelpersClosed = clients.length > 0 && receipt.helpers.every(r => r.streamsClosed && r.exitCode === 0);
     receipt.helperExitAssessment = receipt.ownedHelpersClosed ? 'CONFIRMED' : 'UNCERTAIN';
@@ -89,7 +93,7 @@ async function main() {
     // readPlan already ran the complete physical/source gate in this process
     // before isolation/ready; do not repeat every Git blob acquisition here.
     ownedSession = session.fromPath(path.join(profile, 'session'), {cache: false});
-    const indexUrl = pathToFileURL(runtime('www/index.html')).href;
+    indexUrl = pathToFileURL(runtime('www/index.html')).href;
     const fileRoot = pathToFileURL(runtime('')).href;
     const allowedOrigins = new Set([sources.origin, sources.mediaOrigin]);
     ownedSession.webRequest.onBeforeRequest((request, callback) => {
@@ -118,6 +122,9 @@ async function main() {
       contextIsolation: true, nodeIntegration: false, sandbox: false,
       preload: path.join(plan.repo, 'tools/shared-playback-cache/windows-preload.cjs')}});
     mainWindow.setMenu(null);
+    mainWindow.webContents.on('unresponsive', () => record('renderer-unresponsive'));
+    mainWindow.webContents.on('responsive', () => record('renderer-responsive'));
+    mainWindow.webContents.on('did-start-navigation', (_event, _url, _inPlace, mainFrame) => record('renderer-navigation', {mainFrame: !!mainFrame}));
     authority = get('enhanced/preload-source-authority').createAuthority();
     const productClient = get('native-helper/controller').NativeHelperClient;
     class ObservedClient extends productClient {
@@ -222,7 +229,7 @@ async function main() {
     receipt.checks.decodedFrame = true; phaseOf('first-frame');
     async function seek(seconds, direction) {
       const label = 'seek-' + direction, facts = {direction, paused: false, commandCompleted: false,
-        position: false, restart: false, frame: false, unpaused: false};
+        position: false, restart: false, frame: false, unpaused: false, playbackAdvanced: false};
       receipt.seekObservations.push(facts);
       await evaluate("window.prefixAction('pause')", label + '-pause-command');
       phaseOf(label + '-pause-property');
@@ -241,7 +248,25 @@ async function main() {
       facts.restart = true;
       phaseOf(label + '-frame'); await frame(currentItem); facts.frame = true;
       const elapsed = now() - start;
-      await evaluate("window.prefixAction('unpause')", label + '-unpause-command'); facts.unpaused = true;
+      const pausedPosition = await clients.at(-1).getProperty('time-pos', 500);
+      need(typeof pausedPosition === 'number' && Number.isFinite(pausedPosition), 'worker-seek-paused-position');
+      need(lastGeneration === generation, 'worker-seek-generation-retired');
+      await evaluate("window.prefixAction('unpause')", label + '-unpause-command');
+      phaseOf(label + '-unpause-property');
+      await waitFor(async () => await clients.at(-1).getProperty('pause', 500) === false, 'worker-seek-unpause');
+      facts.unpaused = true;
+      const afterUnpause = await clients.at(-1).getProperty('time-pos', 500);
+      need(typeof afterUnpause === 'number' && Number.isFinite(afterUnpause), 'worker-seek-resumed-position');
+      const resumeBaseline = Math.max(pausedPosition, afterUnpause);
+      facts.pausedPosition = pausedPosition; facts.resumeBaseline = resumeBaseline;
+      phaseOf(label + '-unpause-progress');
+      await waitFor(async () => {
+        need(lastGeneration === generation && clients.at(-1).currentGenerationId === generation, 'worker-seek-generation-retired');
+        const position = await clients.at(-1).getProperty('time-pos', 500);
+        if (typeof position !== 'number' || !Number.isFinite(position) || position <= resumeBaseline + 0.05) return false;
+        facts.resumedPosition = position; return true;
+      }, 'worker-seek-resume-progress');
+      facts.playbackAdvanced = true;
       return elapsed;
     }
     if (phase === 'baseline' || phase === 'natural') {
@@ -304,17 +329,24 @@ async function main() {
       }
     } catch (error) {receipt.status = 'FAIL'; receipt.cleanupCode = driver.safeFailure(error);}
     try {
-      phaseOf('cleanup-windows');
+      phaseOf('cleanup-main-window');
       if (mainWindow && !mainWindow.isDestroyed()) mainWindow.destroy();
+      phaseOf('cleanup-main-destroyed');
       for (const window of BrowserWindow.getAllWindows()) {need(!window.isVisible(), 'worker-visible-window'); window.destroy();}
-      await ownedSession?.protocol.unhandle('file');
+      phaseOf('cleanup-windows-destroyed');
+      ownedSession?.protocol.unhandle('file');
+      phaseOf('cleanup-protocol-removed');
     } catch (_) {receipt.status = 'FAIL'; receipt.cleanupCode = 'worker-window-cleanup';}
     receipt.trace = trace; receipt.stage ||= stage;
+    receipt.receiptOrigin = 'cleanup';
+    phaseOf('receipt-write');
     fs.writeFileSync(file, JSON.stringify(receipt, null, 2) + '\n', {flag: 'wx', mode: 0o600});
+    phaseOf('receipt-written');
     clearTimeout(watchdog); watchdog = null;
     console.log('SHARED_CACHE_WORKER_RESULT ' + JSON.stringify({phase, status: receipt.status, stage: receipt.stage,
       code: receipt.code || receipt.cleanupCode || null, checks: receipt.checks, timingsMs: receipt.timingsMs,
       ownedHelpersClosed: receipt.ownedHelpersClosed}));
+    phaseOf('app-exit-requested');
     app.exit(receipt.status === 'PASS' ? 0 : 1);
   }
 }

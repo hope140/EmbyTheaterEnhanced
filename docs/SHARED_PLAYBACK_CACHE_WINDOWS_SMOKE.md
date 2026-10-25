@@ -118,3 +118,14 @@ CI的benchmark_expected_sha始终填新的精确工具SHA；三个artifact参数
 定向测试包含真实worker源码的受控VM时钟、12秒复核后剩余27秒watchdog、永不完成的求值拒绝并进入caller finally、迟到结果不改判定。它们不代替Windows实际seek／helper退出；仍使用原2e99cf2包，下一次仅更新工具SHA。
 
 本轮本地完整离线2667项：2654通过、0失败、13项既有平台跳过，约126.2秒；最后的VM磁盘存在性隔离修正后5项定向再通过。JS566／PowerShell53语法、有限凭据模式扫描及文档链接通过。新工具仍需Windows实际回执，不能以这些测试认定首帧后阻碍已解决。
+
+
+## 受限主frame控制与恢复播放证据
+
+6158d5e的真实baseline已通过暂停、前向seek位置／restart／解码帧，然后unpause求值超时，renderer没有对应matrix-action记录。helper退出0且streamsClosed，但Electron仍由外层终止；这两种退出事实分开处理，不能标整场通过。固定[Electron44.4.2的WebContents实现](https://github.com/electron/electron/blob/v44.4.2/lib/browser/api/web-contents.ts#L145-L163)先等待加载状态，再向renderer求值；这证明存在该等待层，尚未证明它是该次根因。
+
+仅工具改用[固定版本WebFrameMain公开API](https://github.com/electron/electron/blob/v44.4.2/docs/api/web-frame-main.md#frameexecutejavascriptcode-usergesture)，对已加载的精确index主frame执行原表达式，前后校验同一frame、URL及未销毁／未detach。求值失败仍失败，不调用main Native替代操作，不更改隐藏窗口节流、产品源码、内核或超时。记录求值前loading／loadingMainFrame等布尔状态，拒绝退休frame。
+
+恢复播放须经原renderer→PlaybackManager→现有client／IPC→真实helper；求值返回本身不算成功。新增实际pause=false确认，随后读取原生time-pos作为新基线，再用同generation的新鲜原生读回证明继续前进，不使用排队的seek旧事件充数。清理细分主窗口销毁、其他窗口销毁、protocol移除、回执写入与app.exit请求；回执注明正常cleanup或watchdog来源，安全CI摘要直接含受控状态和seek事实。Electron仍须真正退出，外层超时不能通过。主frame单元不等于Windows实际控制已成功，下一次仍复用原包短验。
+
+本轮本地完整离线2672项：2659通过、0失败、13项既有平台跳过，约127.2秒。主frame／截止时间／现有工具定向22项通过；JS567、PowerShell53语法、有限凭据模式扫描及文档链接通过。独立审查确认未弱化来源／frame边界，实际Windows恢复播放及Electron退出仍待新短验。

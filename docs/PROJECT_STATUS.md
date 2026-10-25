@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-25 — 共享缓存真实seek后unpause控制边界
+
+最新真实baseline的前向seek位置／restart／帧通过，unpause求值超时且无renderer动作记录；helper退出已确认，Electron整体退出未确认。仅工具使用已校验主frame公开API执行同一renderer命令，补实际pause=false及后续新鲜time-pos推进，细分退出日志；不以求值成功或旧seek事件冒充恢复播放。固定包与产品树不变，真实Windows新回执待执行。详见[Windows验收合同](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。
+
 ## 2026-10-25 — 共享缓存Native首帧后等待诊断
 
 准备门禁与隐藏真实解码首帧已过，baseline随后外层超时；helper退出未确认，其他阶段未跑。修正工具worker计时起点落后协调器的问题，共用原绝对截止时间并扣除复核；对renderer／predicate等待加有界诊断和前后seek子阶段，预留清理，兜底失败回执保留UNCERTAIN。首帧后的具体阻塞仍待Windows回读，不改产品／包／超时上限。详见[Windows验收合同](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。

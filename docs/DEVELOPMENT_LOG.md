@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-25 — 共享缓存受限主frame求值与退出分段
+
+WebContents加载等待层是否造成该次unpause缺动作尚未实证。工具改用固定Electron公开WebFrameMain执行，前后绑定已加载同一可信frame，无产品／helper替身或节流改变；保留超时失败。实际恢复播放需pause=false之后基线及同代新鲜time-pos推进。记录cleanup与watchdog来源、窗口／protocol／回执／app.exit分段，helper与Electron退出不混同。详见[Windows验收合同](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。
+
 ## 2026-10-25 — 共享缓存工具有界等待与回执
 
 原40秒协调器可能先于同步复核后才启动的worker watchdog终止进程。工具现传同一绝对deadline，细分seek／cleanup，限制renderer求值及predicate，失败按原service退休清理。watchdog仅保留失败和实际helper退出事实，不伪造成功；本地受控VM／迟到求值回归不当作真实Native证明。详见[Windows验收合同](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。
