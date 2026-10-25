@@ -38,7 +38,9 @@ class Probe { static int Main() {
         // On blocked OS security UI, leave the owned files for this disposable
         // job teardown. Never click/disable/accept a warning or kill system UI.
     });
-    assert.equal(await driverExit, 0, errors);
+    const driverCode=await driverExit;
+    if(driverCode!==0 && fs.existsSync(path.join(root,'relay-stderr'))) process.stderr.write('ETE_NATIVE_DIAG controlled-prepare='+fs.readFileSync(path.join(root,'relay-stderr'),'utf8').slice(0,4000).replace(/[\r\n]+/g,' ')+'\n');
+    assert.equal(driverCode, 0, errors);
     const deadline = Date.now() + 15000;
     while (!fs.existsSync(marker) && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 50));
     if (!fs.existsSync(marker)) {

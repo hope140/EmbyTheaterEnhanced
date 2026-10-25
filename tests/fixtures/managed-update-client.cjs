@@ -31,8 +31,9 @@ fs.readFileSync=function(file,...args){
     if(file===scriptPath){
         const destination=Buffer.from(path.join(root,'script-error'),'utf8').toString('base64');
         const boundary='} catch {\n    # Keep the verified';
-        if(value.split(boundary).length!==2)throw Error('exact-error-boundary-required');
-        return value.replace(boundary,"} catch {\n    $diagnostic=$_.Exception.GetType().FullName+'|'+$_.Exception.HResult; if($_.Exception.InnerException){$diagnostic+='|'+$_.Exception.InnerException.GetType().FullName+'|'+$_.Exception.InnerException.HResult}; [IO.File]::WriteAllText([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('"+destination+"')),$diagnostic)\n    # Keep the verified");
+        const normalized=value.replace(/\r\n/g,'\n');
+        if(normalized.split(boundary).length!==2)throw Error('exact-error-boundary-required');
+        return normalized.replace(boundary,"} catch {\n    $diagnostic=$_.Exception.GetType().FullName+'|'+$_.Exception.HResult; if($_.Exception.InnerException){$diagnostic+='|'+$_.Exception.InnerException.GetType().FullName+'|'+$_.Exception.InnerException.HResult}; [IO.File]::WriteAllText([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('"+destination+"')),$diagnostic)\n    # Keep the verified");
     }
     return value;
 };
@@ -40,7 +41,9 @@ const update = require('../../src/electronapp/enhanced/manual-app-update');
 const handoff = require('../../src/electronapp/enhanced/update-install-handoff').createHandoff({spawn(exe, args, options) {
     // Keep this test-owned orphan in the hosted runner's teardown ownership.
     // Production's credential/environment whitelist remains unchanged.
-    const child = cp.spawn(exe, args, {...options, env: {...options.env, RUNNER_TRACKING_ID: process.env.RUNNER_TRACKING_ID}});
+    const fd=fs.openSync(path.join(root,'relay-stderr'),'wx');
+    let child;
+    try { child=cp.spawn(exe,args,{...options,env:{...options.env,RUNNER_TRACKING_ID:process.env.RUNNER_TRACKING_ID},stdio:['pipe','ignore',fd]}); } finally { fs.closeSync(fd); }
     if (child.pid) fs.writeFileSync(path.join(root, 'helper-pid.json'), JSON.stringify({pid: child.pid, exe}));
     return child;
 }});
@@ -61,4 +64,4 @@ const store = require('../../src/electronapp/enhanced/update-install-cache').cre
     await lease.commit();
     fs.writeFileSync(path.join(root, 'committed.json'), JSON.stringify({directory: record.directory, installer}));
     // Natural Node exit after the real handoff detaches; no forced exit/kill.
-})().catch(() => { process.stderr.write('Controlled client handoff failed.\n'); process.exitCode = 1; });
+})().catch(error => { process.stderr.write('Controlled client handoff failed: '+String(error.code||error.message).slice(0,160)+'\n'); process.exitCode = 1; });
