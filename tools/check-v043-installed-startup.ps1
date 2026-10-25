@@ -67,11 +67,13 @@ public static class V043Window {
  [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr h);
  [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
  [DllImport("user32.dll")] static extern IntPtr GetWindow(IntPtr h, uint command);
+ [DllImport("user32.dll", EntryPoint="GetWindowLongPtrW")] static extern IntPtr GetWindowStyle(IntPtr h, int index);
  [DllImport("user32.dll", CharSet=CharSet.Unicode)] static extern int GetClassName(IntPtr h, StringBuilder value, int length);
  [DllImport("user32.dll", SetLastError=true)] static extern IntPtr SendMessageTimeout(IntPtr h,uint message,IntPtr w,IntPtr l,uint flags,uint timeout,out IntPtr result);
  public static IntPtr[] Visible(uint wanted) {
-  var list=new List<IntPtr>(); EnumWindows((h,p)=>{uint pid;GetWindowThreadProcessId(h,out pid);var kind=new StringBuilder(256);GetClassName(h,kind,kind.Capacity);if(pid==wanted&&IsWindowVisible(h)&&GetWindow(h,4)==IntPtr.Zero&&kind.ToString().StartsWith("Chrome_WidgetWin_",StringComparison.Ordinal))list.Add(h);return true;},IntPtr.Zero);return list.ToArray();
+  var list=new List<IntPtr>(); EnumWindows((h,p)=>{uint pid;GetWindowThreadProcessId(h,out pid);var kind=new StringBuilder(256);GetClassName(h,kind,kind.Capacity);if(pid==wanted&&IsWindowVisible(h)&&GetWindow(h,4)==IntPtr.Zero&&kind.ToString().StartsWith("Chrome_WidgetWin_",StringComparison.Ordinal)&&IsMainStyle(GetWindowStyle(h,-20).ToInt64()))list.Add(h);return true;},IntPtr.Zero);return list.ToArray();
  }
+ public static bool IsMainStyle(long extendedStyle) { return (extendedStyle & 0x08000000L)==0; }
  public static int[] VisibleKinds(uint wanted) {
   var counts=new int[3];EnumWindows((h,p)=>{uint pid;GetWindowThreadProcessId(h,out pid);if(pid==wanted&&IsWindowVisible(h)){var kind=new StringBuilder(256);GetClassName(h,kind,kind.Capacity);var name=kind.ToString();counts[name.StartsWith("Chrome_WidgetWin_",StringComparison.Ordinal)?0:name=="#32770"?1:2]++;}return true;},IntPtr.Zero);return counts;
  }
@@ -81,6 +83,7 @@ public static class V043Window {
 }
 if ($ContractSelfTest) {
     InitializeWindowsApi
+    Require ([V043Window]::IsMainStyle(0) -and -not [V043Window]::IsMainStyle(0x08000000)) 'SELFTEST_WINDOW_ROLE'
     Require ((SafeRelative 'electronapp/node_modules/@grpc/grpc-js/file.js') -ceq 'electronapp/node_modules/@grpc/grpc-js/file.js') 'SELFTEST_SAFE'
     foreach ($name in @('../escape', '/root', 'C:/escape', 'a\b', 'a/../b', 'a/./b', 'a:b', 'a.', 'a ', 'a/NUL.txt', 'a/COM1', 'a//b', '')) {
         $rejected = $false; try { SafeRelative $name | Out-Null } catch { $rejected = $true }

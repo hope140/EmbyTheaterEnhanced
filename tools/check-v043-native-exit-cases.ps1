@@ -76,7 +76,7 @@ function Invoke-NativeExitCases([string]$Target,$Shortcut,[string]$Profile,$Mani
                         $case.electronParentVerified=$true;$case.electronPid=[int]$mainRow.ProcessId
                         $windows=@([V043Window]::Visible($mainRow.ProcessId))
                         $case.visibleWindowObserved=$windows.Count -eq 1
-                        $helpers=@($all|Where-Object {$_.ExecutablePath -ieq (Join-Path $Target 'electronapp/native-helper/ete-mpv-helper.exe') -and $_.ParentProcessId -eq $mainRow.ProcessId})
+                        $helpers=@($all|Where-Object {$_.ExecutablePath -ieq (Join-Path $Target 'electronapp/native-helper/ete-mpv-helper.exe') -and $_.ParentProcessId -eq $mainRow.ProcessId -and $_.CommandLine -notmatch '--place-window-behind'})
                         if($helpers.Count -eq 1){$helperRow=$helpers[0];$case.helperStarted=$true;$case.helperPid=[int]$helperRow.ProcessId}
                     }
                     if(Test-Path -LiteralPath $report){try{$renderer=Get-Content -LiteralPath $report -Raw|ConvertFrom-Json}catch{$renderer=$null}}
