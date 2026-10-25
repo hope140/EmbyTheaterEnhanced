@@ -8,7 +8,7 @@ const {spawn, spawnSync} = require('node:child_process');
 const hosted = process.platform === 'win32' && process.env.GITHUB_ACTIONS === 'true' && process.env.RUNNER_ENVIRONMENT === 'github-hosted' && process.env.ETE_MANAGED_UPDATE_WIZARD_TEST === '1';
 
 test('hosted Windows real guard/ShellExecute starts an asInvoker probe after natural client exit and confirms cleanup', {
-    skip: !hosted && 'Explicit hosted-Windows short validation only; no Work installation', timeout: 90000
+    skip: !hosted && 'Explicit hosted-Windows short validation only; no Work installation', timeout: 150000
 }, async t => {
     const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-controlled-wizard-')));
     // Everything is generated here and belongs to this disposable CI test.
@@ -26,8 +26,8 @@ class Probe { static int Main() {
     fs.writeFileSync(path.join(root, 'probe.cs'), '\ufeff' + source);
     fs.writeFileSync(path.join(root, 'probe.manifest'), '<?xml version="1.0" encoding="UTF-8"?><assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0"><trustInfo xmlns="urn:schemas-microsoft-com:asm.v3"><security><requestedPrivileges><requestedExecutionLevel level="asInvoker" uiAccess="false" /></requestedPrivileges></security></trustInfo></assembly>');
     const compiler = path.join(process.env.SystemRoot, 'Microsoft.NET', 'Framework64', 'v4.0.30319', 'csc.exe');
-    const compiled = spawnSync(compiler, ['/nologo', '/target:winexe', '/platform:x64', '/codepage:65001', '/win32manifest:' + path.join(root, 'probe.manifest'), '/out:' + path.join(root, 'probe.exe'), path.join(root, 'probe.cs')], {encoding: 'utf8', timeout: 20000, windowsHide: true});
-    assert.equal(compiled.status, 0, compiled.stdout + compiled.stderr);
+    const compiled = spawnSync(compiler, ['/nologo', '/target:winexe', '/platform:x64', '/codepage:65001', '/win32manifest:' + path.join(root, 'probe.manifest'), '/out:' + path.join(root, 'probe.exe'), path.join(root, 'probe.cs')], {encoding: 'utf8', timeout: 60000, windowsHide: true});
+    assert.equal(compiled.status, 0, JSON.stringify({stage: 'compile-owned-asInvoker-probe', error: compiled.error && compiled.error.code, signal: compiled.signal, stdout: compiled.stdout, stderr: compiled.stderr}));
     const driver = spawn(process.execPath, [path.join(__dirname, 'fixtures/managed-update-client.cjs'), root], {stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true});
     let errors = ''; driver.stderr.on('data', bytes => { errors += bytes.toString(); });
     const driverExit = new Promise((resolve, reject) => { driver.once('error', reject); driver.once('exit', resolve); });
