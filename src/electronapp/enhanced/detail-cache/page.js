@@ -41,7 +41,7 @@ define(['exports','ete-detail-cache-store','modules/emby-apiclient/connectionman
             (record.sections||[]).forEach(section=>section.node.classList.remove('eteDetailVisualPending'));
         }
         function protectVisual(){
-            releaseVisual(visual);if(!active||!hasStatic||legacy||!fresh)return;
+            releaseVisual(visual);releaseSizing();if(!active||!hasStatic||legacy||!fresh)return;
             var record=visual={epoch:epoch,view:view,covers:[],targets:[],sections:[],listeners:[],observer:null,timer:null};
             record.timer=setTimeout(()=>releaseVisual(record),1000);
             var people=view.querySelector('.peopleItemsContainer');
