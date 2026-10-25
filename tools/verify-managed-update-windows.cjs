@@ -31,9 +31,11 @@ function main() {
     const directory = path.join(root, 'test-output', 'managed-update-windows');
     if (fs.existsSync(directory)) throw Error('output-already-exists');
     fs.mkdirSync(directory, {recursive: true});
-    const result = cp.spawnSync(process.execPath, ['--test', '--test-concurrency=1', '--test-reporter=tap', ...TESTS], {
+    const diagnostic = process.env.ETE_DIAGNOSTIC_NO_WIZARD === '1';
+    const selected = diagnostic ? TESTS.filter(name => name !== 'tests/update-install-controlled-wizard.test.cjs') : TESTS;
+    const result = cp.spawnSync(process.execPath, ['--test', '--test-concurrency=1', '--test-reporter=tap', ...selected], {
         cwd: root, encoding: 'utf8', timeout: 300000, maxBuffer: 4 * 1024 * 1024,
-        env: {...process.env, ETE_MANAGED_UPDATE_WIZARD_TEST: '1'}, windowsHide: true
+        env: {...process.env, ETE_MANAGED_UPDATE_WIZARD_TEST: diagnostic ? '0' : '1'}, windowsHide: true
     });
     const stdout = result.stdout || '', stderr = result.stderr || '';
     fs.writeFileSync(path.join(directory, 'tests.tap'), stdout, {flag: 'wx'});
@@ -41,13 +43,20 @@ function main() {
     let counts;
     try { counts = summary(stdout.replace(/\r/g, '')); } catch (_) { counts = null; }
     const passed = result.status === 0 && !result.error && counts && counts.tests > 0 && counts.pass === counts.tests && !counts.fail && !counts.cancelled && !counts.skipped;
-    const receipt = {schemaVersion: 1, status: passed ? 'passed' : 'failed', sourceCommit, tests: TESTS, counts,
+    const receipt = {schemaVersion: 1, status: passed ? (diagnostic ? 'diagnostic-only' : 'passed') : 'failed', sourceCommit, tests: selected, counts,
         platform: process.platform, node: process.versions.node, runnerOS: process.env.RUNNER_OS,
-        controlledLocalAsInvokerProbe: true, officialReleaseMetadata: 'synthetic fixture only',
+        controlledLocalAsInvokerProbe: !diagnostic, officialReleaseMetadata: 'synthetic fixture only',
         realApplicationExited: false, realSoftwareInstalled: false, uacValidated: false,
         securityWarningsBypassed: false, productionProfileAccessed: false};
     fs.writeFileSync(path.join(directory, 'receipt.json'), JSON.stringify(receipt, null, 2) + '\n', {flag: 'wx'});
     process.stdout.write(JSON.stringify(receipt) + '\n');
+    // Emit newly generated test failures through the ordinary job log. This
+    // does not retrieve or re-route any previous inaccessible artifact.
+    if (!passed) {
+        const blocks = stdout.replace(/\r/g, '').split(/(?=^# Subtest: )/m).filter(block => /^not ok /m.test(block));
+        for (const block of blocks) process.stdout.write(block.slice(0, 10000) + '\n');
+        if (stderr) process.stderr.write(stderr.slice(0, 4000));
+    }
     if (!passed) process.exitCode = 1;
 }
 module.exports = {requireInvocation, summary, TESTS};
