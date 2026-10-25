@@ -63,7 +63,7 @@ test('non-playing POST mirrors PlaybackInfo endpoint/options/profile and keeps t
     const f = fixture(), before = JSON.stringify(f.item); const result = await prepare(f.options);
     const request = f.calls[0].request, url = new URL(f.calls[0].url);
     assert.equal(url.pathname, '/Items/next/PlaybackInfo');
-    assert.deepEqual(Object.fromEntries(url.searchParams), {UserId: 'user', StartTimeTicks: '0', IsPlayback: 'false', AutoOpenLiveStream: 'false', CurrentPlaySessionId: 'current-owner', DirectPlayProtocols: 'File,Http'});
+    assert.deepEqual(Object.fromEntries(url.searchParams), {UserId: 'user', StartTimeTicks: '0', IsPlayback: 'false', AutoOpenLiveStream: 'false', DirectPlayProtocols: 'File,Http'});
     assert.equal(request.method, 'POST'); assert.equal(request.redirect, 'error'); assert.equal(request.credentials, 'same-origin'); assert.equal(request.signal, f.options.signal);
     assert.equal(request.headers['content-type'], 'application/json'); assert.equal(request.headers['X-Emby-Token'], 'secret-token');
     assert.deepEqual(JSON.parse(request.body), {DeviceProfile: {DirectPlayProfiles: [{Container: 'mkv'}]}});

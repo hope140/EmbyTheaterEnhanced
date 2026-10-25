@@ -78,7 +78,7 @@
             var fetcher = options.fetch || fetch;
             var profile = await player.getDeviceProfile(item);
             active(signal);
-            var params = {UserId: userId, StartTimeTicks: 0, IsPlayback: false, AutoOpenLiveStream: false, CurrentPlaySessionId: options.currentSessionId};
+            var params = {UserId: userId, StartTimeTicks: 0, IsPlayback: false, AutoOpenLiveStream: false};
             var protocols = typeof player.getDirectPlayProtocols === 'function' ? player.getDirectPlayProtocols() : ['File', 'Http'];
             if (typeof player.getDirectPlayProtocols === 'function') params.DirectPlayProtocols = protocols;
             if (player.enableMediaProbe && !player.enableMediaProbe(item)) params.EnableMediaProbe = false;
