@@ -27,9 +27,6 @@ jobs:
         shell: pwsh
         env:
           ETE_EXPECTED_SOURCE: ${{ github.event.pull_request.head.sha || github.sha }}
-          ETE_DIAGNOSTIC_NO_WIZARD: '1'
-          ETE_DIAGNOSTIC_FOCUS: '1'
-          ETE_DIAGNOSTIC_CASE: lifecycle
         run: node tools/verify-managed-update-windows.cjs --expected-source $env:ETE_EXPECTED_SOURCE
       - name: Upload bounded independent validation receipt
         if: always()
