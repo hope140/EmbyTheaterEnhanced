@@ -21,6 +21,9 @@ $guard=@($ast.FindAll({param($n)$n -is [Management.Automation.Language.CommandAs
 $branch=@($ast.FindAll({param($n)$n -is [Management.Automation.Language.IfStatementAst] -and $n.Extent.Text.StartsWith('if($testPackage)')},$true))
 if($guard.Count -ne 1 -or $branch.Count -ne 1){throw 'BINDING_GUARD_MISSING'}
 $cases=@(
+ @('1c79ec590dbdafcc5f751f18ff3e2acaf5e0f263','40164997486','EmbyTheaterEnhanced-0.4.3-test-1c79ec590dbd-40164997486-1-win-x64-setup.exe',$true),
+ @('1c79ec590dbdafcc5f751f18ff3e2acaf5e0f263','40164997487','EmbyTheaterEnhanced-0.4.3-test-1c79ec590dbd-40164997486-1-win-x64-setup.exe',$false),
+ @('1c79ec590dbdafcc5f751f18ff3e2acaf5e0f263','40164997486','EmbyTheaterEnhanced-0.4.3-test-0fbb6f9c7832-40164997486-1-win-x64-setup.exe',$false),
  @('0fbb6f9c78320e83f2919c0324dc5db940310166','40131038400','EmbyTheaterEnhanced-0.4.3-test-0fbb6f9c7832-40131038400-1-win-x64-setup.exe',$true),
  @('0fbb6f9c78320e83f2919c0324dc5db940310166','40131038400','EmbyTheaterEnhanced-0.4.3-test-b8938f4ba914-40131038400-1-win-x64-setup.exe',$false),
  @('b8938f4ba9149e700ea1437b3f5fbe3535a2f5e5','123','EmbyTheaterEnhanced-0.4.3-test-b8938f4ba914-123-1-win-x64-setup.exe',$true),
