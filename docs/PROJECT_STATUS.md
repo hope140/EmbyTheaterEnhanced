@@ -8,6 +8,8 @@
 
 最终Linux完整回归2181项：2159通过、0失败、22平台跳过；其中真实PowerShell交接脚本＋合成守卫正常顺序验证通过，Windows句柄与非子进程退出码断言待Windows运行，不执行安装器。缓存不可用仍可只读检查版本／通道，安装未完成与清理待重试分别提示。包内9项离线自检通过，11份模块源码投影绑定及门禁通过。Windows系统警告、真实退出／安装与下次启动清理仍需单独验收。
 
+后续追加独立托管Windows短门禁，不修改原公开CI／正式打包路由；真实句柄、缓存取消重试与版本清理，以及无提权假安装器的实际ShellExecute交接由单独job执行。入口精确绑定head SHA，只允许托管Windows且要求零跳过；本地49项相关检查38通过、11平台跳过，Windows结论以随后绑定源码的runner回执为准，不把假安装器写成真实安装／UAC证据。
+
 ## 2026-10-25 — 文档入口与当前发行状态
 
 已核对远端 main 与 v0.4.3 Tag 同为 `69e55b91a0cc6ba4b01ce60cb65d9aca41b0311e`（含 PR #77）。[v0.4.3](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.3) 于 2026-10-25 发布为测试版，Latest 正式版仍为 [v0.4.0](https://github.com/hope140/EmbyTheaterEnhanced/releases/latest)，v0.4.2 为上一批测试版。

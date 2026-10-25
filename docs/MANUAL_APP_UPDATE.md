@@ -90,6 +90,18 @@ node --test tests/app-update-preferences.test.cjs tests/release-note-links.test.
 
 ## 独立测试包与实机交接
 
+### 独立云 Windows 短验证
+
+`managed-update-validation.yml` 仅对本功能分支的普通 push／PR 执行独立 `windows-2022` job，不依赖手动 dispatch，不占用正式打包 job。checkout 精确 head SHA、固定 Node24.18.1、只读 token 且不保留 Git 凭据，无 npm 安装、发布或产品安装步骤。原 `public-ci.yml` 保持基线字节不变。
+
+入口为 `node tools/verify-managed-update-windows.cjs --expected-source <精确40位SHA>`；只允许当前仓库的 GitHub 托管 Windows，拒绝本地／Work／self-hosted、错误源码 SHA 或未知参数。选择更新相关测试，要求完整且唯一的 TAP 汇总、零失败／取消／跳过，并保存绑定 sourceCommit 的 `receipt.json`、TAP及受限 stderr。结果上传独立、一天保留期的 artifact，不扩大 Release 五附件。
+
+真实 NTFS／Windows PowerShell5.1 用例覆盖目录和文件替换拒绝、卷／64位文件 ID、摘要／Zone／硬链接拒绝、取消后保留并复用好包、旧版启动保留，以及目标版确认后按句柄清理。
+
+显式短 job 另启用 `update-install-controlled-wizard.test.cjs`：在一次性临时目录用系统已有 C# 编译器生成**只写标记和等待结束信号的 asInvoker 假安装器**。合成客户端通过真实缓存和交接源码提交后自然退出；真实 C# 守卫保持 Zone3和文件锁，真实 ShellExecute 无参数启动这个受控程序。断言客户端已退出、启动参数为空，捕获所属交接进程句柄并等其退出后，分别验证旧版保留和合成目标版本清理。官方发布元数据和安装后版本在此明确使用合成夹具；它不证明真实产品安装或 UAC。
+
+不移除 Zone、不改变安全策略、不接受 UAC或点击安全警告。若系统拒绝／安全界面阻挡受控程序，门禁失败并保存现场，等待另行安排有交互的隔离验收，不换路规避。所有生成文件及进程归当前 CI VM，实际客户端／用户 profile／Downloads和已发布附件均不访问；真实 UAC与产品安装继续单独验收。
+
 新增 JS／PowerShell／C# 都在 `src/electronapp` 既有 Git blob／provenance 范围内，不修改 vendor、Host、安装器或发布附件数量。没有产品 mock URL／忽略 TLS／绕过校验开关。独立分支准确提交可由协调者使用既有 workflow_dispatch、`release_package=false` 构建独立测试 artifact；本次不自行 dispatch、安装、退出 Work 当前进程或发布。
 
 包内无参数离线入口仍为：

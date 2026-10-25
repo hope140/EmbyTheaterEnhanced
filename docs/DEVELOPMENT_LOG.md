@@ -8,6 +8,8 @@
 
 最终完整Linux回归2181项（2159通过、0失败、22跳过），含真实PowerShell脚本的合成进程正常退出顺序；Windows句柄／非子进程退出码断言仍待验。Unix非子进程退出码不可据此验证，未放宽产品零退出要求或把这两个断言记为通过。另隔离缓存不可用与只读通道／版本检查，区分安装未完成和清理待重试提示。包内9项与11模块源码投影绑定、原打包门禁均通过；没有真实Windows GUI／安装证据。
 
+追加托管Windows独立短验证：原public-ci字节不改，固定actions／Node与准确head checkout，不装依赖或构建产品包。自有临时目录编译asInvoker标记程序，通过真实缓存、Zone3、C#句柄守卫和ShellExecute等待合成客户端自然退出，随后验证旧版保留／合成目标版清理；取消后复用另有真实Windows用例。入口拒绝Work／本地／self-hosted与SHA不符，runner零跳过才通过；不改策略或自动接受系统安全UI，受阻保留失败证据。相关本地49项38通过、11平台跳过，尚不宣称Windows实际执行或真实UAC／安装通过。
+
 ## 2026-10-25 — 文档入口与当前发行状态
 
 已核对远端 main 与 v0.4.3 Tag 同为 `69e55b91a0cc6ba4b01ce60cb65d9aca41b0311e`（含 PR #77）。[v0.4.3](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.3) 于 2026-10-25 发布为测试版，Latest 正式版仍为 [v0.4.0](https://github.com/hope140/EmbyTheaterEnhanced/releases/latest)，v0.4.2 为上一批测试版。

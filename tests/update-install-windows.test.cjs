@@ -61,3 +61,26 @@ test('actual Windows cleanup uses verified handles, refuses unknown files, and n
     await f.handoff.cleanup(payload);
     assert.equal(fs.existsSync(f.directory), false); assert.equal(fs.readFileSync(manual, 'utf8'), 'manual user file');
 });
+
+test('actual Windows managed cache retains cancelled verified bytes, retries, and cleans only after version confirmation', windows, async t => {
+    const f = fixture(t), profile = path.join(f.scratch, 'managed-profile'); fs.mkdirSync(profile);
+    let transfers = 0;
+    const store = require('../src/electronapp/enhanced/update-install-cache').createStore({profileRoot: profile, executable: process.execPath,
+        handoff: f.handoff, downloadInstaller: async (installer, directory) => {
+            transfers++;
+            const file = path.join(directory, installer.name); fs.copyFileSync(f.file, file);
+            fs.writeFileSync(file + ':Zone.Identifier', update.internetZone(installer.url), {flag: 'wx'});
+            return {source: 'github'};
+        }});
+    const installer = {...f.record.installer, id: 12};
+    // Match the official descriptor's stable key order for persisted identity.
+    const asset = {id: 12, name: installer.name, url: installer.url, size: installer.size, sha256: installer.sha256};
+    const request = {currentVersion: '9.0.0', targetVersion: '9.1.0', tag: 'v9.1.0', signal: new AbortController().signal};
+    const record = await store.download(asset, request), lease = await store.prepare(record, request.signal);
+    await lease.abort();
+    assert.deepEqual(fs.readFileSync(path.join(record.directory, asset.name)), f.bytes);
+    assert.equal((await store.download(asset, request)).reused, true); assert.equal(transfers, 1);
+    assert.equal((await store.reconcile('9.0.0')).removed, 0);
+    assert.deepEqual(await store.reconcile('9.1.0'), {removed: 1, retained: 0});
+    assert.equal(fs.existsSync(record.directory), false); assert.equal(fs.existsSync(f.file), true);
+});
