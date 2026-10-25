@@ -89,8 +89,17 @@ PCM采样是另一项有界问题：固定[ao_pcm实现](https://github.com/mpv-
 
 新显式输入仅在独立retention分支允许，release_package=false；旧buffer-export-edl保持原三helper语义。新输入先准备同一有限导出/EDL/fallback夹具，再在第三helper实际挂起一个GET，依次Stop取消与新generation替代到3秒。真实controller退休状态是GENERATION_RETIRED，绑定本次stop/superseded原因；观察从退休之前到全部收尾，拒绝旧代次ACCEPT、额外Stop、迟到发送字节或替代播放被停止。旧响应确已关闭才清理hold，保留原rows证据，不清pending计数。
 
-最后两个独立helper分别对原匿名源与本地EDL运行同一start/end，PCM AO仅写所属baseline.wav/seam.wav。选项为audio-format=s16、volume100、单一pcm/file输出；固定helper只接受标量setter，故以pcm:file=%UTF8字节数%路径传输（固定[m_option长度引用](https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/options/m_option.c)），get仍严格核map中的唯一file，无新协议；其他缓存/核心选项不改。先pause/load，load应答只代表命令/START_FILE，须明确等FILE_LOADED和PCM AO/mono48k后才能unpause至EOF。helper退出并关闭stdio后，严格核最终RIFF长度、mono48k/S16格式、固定PCM GUID、唯一fmt/data及4MiB文件读取上限；合成输入只有8秒，不循环，输出只选约1秒范围，采样不抓真实媒体或设备。
+最后两个独立helper分别对原匿名源与本地EDL运行同一start/end，PCM AO仅写所属baseline.wav/seam.wav。选项为audio-format=s16、volume100、单一pcm/file输出；固定helper只接受标量setter：使用独立ao-pcm-file原样绝对路径、ao-pcm-waveheader=true、ao-pcm-append=false，再ao=pcm；AO inline params必须为空，file另行逐项精确回读，无新协议；其他缓存/核心选项不改。先pause/load，load应答只代表命令/START_FILE，须明确等FILE_LOADED和PCM AO/mono48k后才能unpause至EOF。helper退出并关闭stdio后，严格核最终RIFF长度、mono48k/S16格式、固定PCM GUID、唯一fmt/data及4MiB文件读取上限；合成输入只有8秒，不循环，输出只选约1秒范围，采样不抓真实媒体或设备。
 
 两份捕获各自以唯一512字节起始标记映射原始PCM；检查整份为连续原样本，并对接缝前后各0.1秒（共9,600样本）逐样本比较。基线不匹配不能归罪EDL，位置/覆盖不足不能冒充连续。untimed文件输出不证明普通声卡的实时听感。新PCM/cancel模块均实验私有，不接生产API；不改service白名单。
 
 安全摘要`cancellation`明确phase/cases，`pcmAoSamples`给出限定assessment、源样本起点与数量/文件大小，五helper均须正常退出。比较否定结果允许作为完成测量发布，comparison.ok必须与成功assessment一致；流程PASS不表示接缝通过。WAV和媒体/EDL不进入artifact，只允许有界语义JSON；成功时四个固定临时文件均在五helper/worker实际退出、owner/实体文件/所有摘要检查后清理，任何重定向/改动在第一次删除前拒绝。artifact过期则停止，不换来源、不重打安装包。
+
+
+## PCM全局选项修正与真实取消结果
+
+run40158039095/job121063518680已实证Stop/替代两个挂起请求场景：旧连接关、晚字节/旧ACCEPT/旧Stop均0，新播放3→3.125秒保留，原四个helper正常退出。PCM尚未进入采样，在ao setter以-9失败，不能讨论接缝质量。
+
+固定源码证据链：[AO列表与global模式](https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/audio/out/ao.c)、[PCM前缀和文件初始化](https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/audio/out/ao_pcm.c)、[前缀组选项注册](https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/options/m_config_core.c)、[普通选项属性桥](https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/player/command.c)、[AO子选项拒绝](https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/options/m_option.c)。PCM的file/waveheader/append不带NOPROP或PRE_PARSE；全局file值由PCM实例初始化读取。通用子选项长度引用不适用于禁止子选项的AO。
+
+修正仅限首次media前的现有标量属性：先配置全局路径和两个布尔开关，全部读取匹配后单独选择PCM。路径不加CLI引用/百分号转义，不作为AO子参数；冒号/逗号/Unicode由原样字符串传输。AO getter必须是单个启用pcm、空inline params；额外driver/inline file/错误全局路径均拒绝。任何setter错误或readback不符仍失败，不改核心，不静默退其他输出。独立mock红绿回归重现原-9并检查新顺序，不能代替固定DLL后续实测。

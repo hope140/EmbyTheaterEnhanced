@@ -26,32 +26,25 @@ function optionsFor(variant, captureFile = null) {
     if (!['video', 'av', 'edl', 'seam'].includes(variant)) throw Error('export-input-invalid');
     if (captureFile !== null) {
         if (variant !== 'seam' || !path.isAbsolute(captureFile) || /[\0\r\n]/.test(captureFile) || !['baseline.wav', 'seam.wav'].includes(path.basename(captureFile))) throw Error('export-pcm-input');
-        return {...OPTIONS, volume: 100, 'audio-format': 's16', ao: 'pcm:file=%' + Buffer.byteLength(captureFile, 'utf8') + '%' + captureFile};
+        return {...OPTIONS, volume: 100, 'audio-format': 's16', 'ao-pcm-file': captureFile, 'ao-pcm-waveheader': true, 'ao-pcm-append': false, ao: 'pcm'};
     }
     return variant !== 'video' ? {...OPTIONS, ao: 'null'} : OPTIONS;
 }
 function optionMatches(name, actual, expected) {
     if (name !== 'ao') return disk.sameOption(actual, expected);
-    if (typeof expected === 'string' && expected.startsWith('pcm:file=%')) {
-        const match = /^pcm:file=%([1-9][0-9]*)%([^\0\r\n]+)$/.exec(expected);
-        if (!match || Buffer.byteLength(match[2], 'utf8') !== Number(match[1]) || !path.isAbsolute(match[2])) return false;
-        const row = Array.isArray(actual) && actual.length === 1 ? actual[0] : null;
-        return !!row && Object.keys(row).sort().join(',') === 'enabled,name,params' && row.name === 'pcm' && row.enabled === true &&
-            !!row.params && Object.keys(row.params).join(',') === 'file' && row.params.file === match[2];
-    }
-    if (expected !== 'null') return false;
-    if (actual === 'null') return true;
+    if (!['null', 'pcm'].includes(expected)) return false;
+    if (actual === 'null') return expected === 'null';
     if (!Array.isArray(actual) || actual.length !== 1) return false;
     const row = actual[0];
-    if (row === 'null') return true;
+    if (row === 'null') return expected === 'null';
     // Fixed mpv get_obj_settings_list returns ARRAY<MAP>, not ARRAY<STRING>.
     return !!row && typeof row === 'object' && !Array.isArray(row) &&
-        Object.keys(row).sort().join(',') === 'enabled,name,params' && row.name === 'null' && row.enabled === true &&
+        Object.keys(row).sort().join(',') === 'enabled,name,params' && row.name === expected && row.enabled === true &&
         !!row.params && typeof row.params === 'object' && !Array.isArray(row.params) && Object.keys(row.params).length === 0;
 }
 function projectOptionStatus(row) {
     const types = ['unread', 'null', 'string', 'boolean', 'number', 'object', 'string-list', 'object-list', 'array'];
-    return {name: (Object.hasOwn(optionsFor('av'), row?.name) || row?.name === 'audio-format') ? row.name : 'unavailable',
+    return {name: (Object.hasOwn(optionsFor('av'), row?.name) || ['audio-format', 'ao-pcm-file', 'ao-pcm-waveheader', 'ao-pcm-append'].includes(row?.name)) ? row.name : 'unavailable',
         phase: ['set-property', 'get-property', 'readback-validation', 'confirmed'].includes(row?.phase) ? row.phase : 'unavailable',
         actualType: types.includes(row?.actualType) ? row.actualType : 'unread',
         entries: Number.isSafeInteger(row?.entries) && row.entries >= 0 ? row.entries : null,

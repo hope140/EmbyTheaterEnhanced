@@ -28,7 +28,7 @@ function summary(plan) {
                 readFailure(path.join(root, 'probe/worker.log')) || readFailure(path.join(plan.root, 'buffer-export-driver.stdout')),
         workerPid: n(receipt?.pid), exitCode: n(receipt?.code), streamsClosed: boolean(receipt?.streamsClosed), timedOut: boolean(receipt?.timedOut),
         exportMs: n(observation?.exportMs), clipBytes: n(observation?.clip?.bytes),
-        pendingOption: Object.hasOwn(probe.optionsFor('av'), observation?.pendingOption) ? observation.pendingOption : observation?.pendingOption === 'audio-format' ? 'audio-format' : null,
+        pendingOption: Object.hasOwn(probe.optionsFor('av'), observation?.pendingOption) ? observation.pendingOption : ['audio-format', 'ao-pcm-file', 'ao-pcm-waveheader', 'ao-pcm-append'].includes(observation?.pendingOption) ? observation.pendingOption : null,
         optionStatus: probe.projectOptionStatus(observation?.optionStatus),
         testExcerptRetirement: {nativeReaders: n(receipt?.excerptRetirement?.nativeReaders), removed: Array.isArray(receipt?.excerptRetirement?.removed) ? receipt.excerptRetirement.removed.filter(name => ['excerpt.avi', 'retained.edl', 'baseline.wav', 'seam.wav'].includes(name)) : []},
         clipFormat: Object.fromEntries(['ticksPerSecond', 'nonemptyPackets', 'emptyVideoSlots', 'containerSlots'].map(k => [k, n(observation?.clipFormat?.[k])])),

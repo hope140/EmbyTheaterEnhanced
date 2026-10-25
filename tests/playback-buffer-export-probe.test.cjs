@@ -172,30 +172,53 @@ test('EDL retirement validates both files before removing either and preserves s
 });
 function seamReportFixture() {
     const {report, plan, exit} = edlReportFixture(); plan.variant = report.variant = 'seam'; plan.out = path.resolve('synthetic-owned-output');
-    for (let i = 0; i < 2; i++) report.helpers.push({...structuredClone(report.helpers[0]), pid: 105 + i, options: {...probe.optionsFor('seam', path.join(plan.out, ['baseline.wav', 'seam.wav'][i])), ao: [{name: 'pcm', enabled: true, params: {file: path.join(plan.out, ['baseline.wav', 'seam.wav'][i])}}]}});
+    for (let i = 0; i < 2; i++) report.helpers.push({...structuredClone(report.helpers[0]), pid: 105 + i, options: {...probe.optionsFor('seam', path.join(plan.out, ['baseline.wav', 'seam.wav'][i])), ao: [{name: 'pcm', enabled: true, params: {}}]}});
     report.cancellation = {scope: 'synthetic-held-request-cancel-and-replace', completed: true, cases: ['cancel', 'replace'].map(kind => ({kind, cancelled: true, terminal: 'GENERATION_RETIRED', oldRequestClosed: true,
         lateBytes: 0, obsoleteAcceptedEvents: 0, obsoleteStopRequests: 0, replacementPreserved: true, landedSourceSeconds: 3, advancedSourceSeconds: 3.125}))};
     report.pcm = {scope: 'fixed-PCM-AO-synthetic-seam-NOT-device-gaplessness', captures: ['baseline.wav', 'seam.wav'].map(file => ({file, bytes: 20000, sha256: 'a'.repeat(64), samples: 9000,
         format: {sampleRate: 48000, channels: 1, bitsPerSample: 16, encoding: 's16le'}, observation: {reachedEOF: true, sampleRate: 48000, channels: 1, output: 'pcm', untimed: true}})), comparison: {ok: false, assessment: 'changed-edl'}};
     return {report, plan, exit};
 }
-test('PCM setter uses fixed helper scalar transport and byte-length-quoted mpv file suboption', () => {
-    const file = path.resolve('synthetic,spáces:folder', 'baseline.wav'), expected = probe.optionsFor('seam', file).ao;
-    assert.equal(typeof expected, 'string'); assert.equal(expected, 'pcm:file=%' + Buffer.byteLength(file) + '%' + file);
-    const actual = [{name: 'pcm', enabled: true, params: {file}}]; assert(probe.optionMatches('ao', actual, expected));
-    assert.equal(probe.optionMatches('ao', actual, expected.replace(String(Buffer.byteLength(file)), '1')), false);
-    assert.equal(probe.optionMatches('ao', [{name: 'pcm', enabled: true, params: {file, append: 'yes'}}], expected), false);
+test('PCM uses independent global options before driver selection through existing scalar setters', () => {
+    const file = path.resolve('synthetic,spáces:folder', 'baseline.wav'), options = probe.optionsFor('seam', file);
+    assert.equal(options.ao, 'pcm'); assert.equal(options['ao-pcm-file'], file);
+    assert.equal(options['ao-pcm-waveheader'], true); assert.equal(options['ao-pcm-append'], false);
+    assert(Object.values(options).every(v => ['string', 'boolean', 'number'].includes(typeof v)));
+    const keys = Object.keys(options); assert(keys.indexOf('ao-pcm-file') < keys.indexOf('ao'));
+    assert(keys.indexOf('ao-pcm-waveheader') < keys.indexOf('ao')); assert(keys.indexOf('ao-pcm-append') < keys.indexOf('ao'));
+    const actual = [{name: 'pcm', enabled: true, params: {}}]; assert(probe.optionMatches('ao', actual, 'pcm'));
+    assert.equal(probe.optionMatches('ao', actual, 'pcm:file=' + file), false);
+    assert.equal(probe.optionMatches('ao', [{name: 'pcm', enabled: true, params: {file}}], 'pcm'), false);
+    assert.equal(probe.optionMatches('ao', [{name: 'wasapi', enabled: true, params: {}}], 'pcm'), false);
+});
+test('fixed AO global-option contract reproduces sub-option -9 then accepts separate scalar readbacks', async () => {
+    const file = path.resolve('synthetic,spáces:folder', 'baseline.wav');
+    const fake = () => {
+        const values = new Map(), operations = [];
+        return {operationErrors: [], currentGenerationId: 1, operations,
+            setProperty(name, value) {operations.push(name); assert(['string', 'number', 'boolean'].includes(typeof value));
+                if (name === 'ao' && value.includes(':')) {this.operationErrors.push({operation: 'set-property', property: name, generationId: 1, errorCode: -9}); return;}
+                if (name === 'ao' && value === 'pcm') {assert.equal(values.get('ao-pcm-file'), file); assert.equal(values.get('ao-pcm-waveheader'), true); assert.equal(values.get('ao-pcm-append'), false);}
+                values.set(name, value);},
+            async getProperty(name) {return name === 'ao' ? values.has('ao') ? [{name: values.get('ao'), enabled: true, params: {}}] : [] : values.get(name);}};
+    };
+    const broken = fake(), report = {};
+    await assert.rejects(probe.applyOption(broken, 'ao', 'pcm:file=%' + Buffer.byteLength(file) + '%' + file, report, () => {}), /export-option-set-failed/);
+    assert.equal(report.optionStatus.mpvErrorCode, -9); assert.equal(report.optionStatus.phase, 'set-property');
+    const supported = fake();
+    for (const [name, value] of Object.entries(probe.optionsFor('seam', file))) await probe.applyOption(supported, name, value, {}, () => {});
+    assert.equal(supported.operationErrors.length, 0); assert.equal(supported.operations.at(-1), 'ao');
 });
 test('seam variant requires five normal readers, strict owned PCM options and consistent measured evidence', () => {
     const {report, plan, exit} = seamReportFixture(); probe.validateReport(report, plan, exit);
-    for (const mutate of [r => r.helpers.pop(), r => r.helpers[3].options.ao[0].name = 'wasapi', r => r.helpers[4].options.ao[0].params.file = path.join(plan.out, 'other.wav'),
+    for (const mutate of [r => r.helpers.pop(), r => r.helpers[3].options.ao[0].name = 'wasapi', r => r.helpers[4].options['ao-pcm-file'] = path.join(plan.out, 'other.wav'),
         r => r.helpers[4].diagnostics.streamsClosed = false, r => r.cancellation.cases[0].lateBytes = 1, r => r.pcm.comparison.ok = true]) {
         const bad = structuredClone(report); mutate(bad); assert.throws(() => probe.validateReport(bad, plan, exit));
     }
 });
 test('nonregular or redirected WAV is refused before deleting any experiment file', t => {
     const dir = root(t), {report, plan, exit} = seamReportFixture(); plan.out = dir;
-    for (const [i, name] of ['baseline.wav', 'seam.wav'].entries()) report.helpers[i + 3].options = {...probe.optionsFor('seam', path.join(dir, name)), ao: [{name: 'pcm', enabled: true, params: {file: path.join(dir, name)}}]};
+    for (const [i, name] of ['baseline.wav', 'seam.wav'].entries()) report.helpers[i + 3].options = {...probe.optionsFor('seam', path.join(dir, name)), ao: [{name: 'pcm', enabled: true, params: {}}]};
     fs.writeFileSync(path.join(dir, 'owner'), 'ETE isolated finite buffer export v1\n');
     const hash = data => require('node:crypto').createHash('sha256').update(data).digest('hex');
     for (const [file, row] of [['excerpt.avi', report.clip], ['retained.edl', report.edl.descriptor], ...report.pcm.captures.map(r => [r.file, r])]) {

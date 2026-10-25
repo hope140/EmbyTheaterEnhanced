@@ -1,6 +1,16 @@
 # 播放缓冲暂存独立实验：阶段收尾与继续验证
 
 
+## 2026-10-25：取消/替代已实证，PCM配置首错修正
+
+实际正常日志 run `40158039095` / job `121063518680`、controls `98e431d3f18e12b9609ab5ef999637320abba573` 已核对。两个真实挂起GET场景均完成：cancel为GENERATION_RETIRED、replace为PROBE_CANCELLED，旧请求关闭、迟到字节0、旧ACCEPT0、旧Stop0；替代播放保留并从3秒推进至3.125秒。前序有限导出/EDL/摘要回退继续通过。四个已启动helper均正常exit0/stdio关闭，外层无timeout。
+
+该次失败严格定位在第四helper的PCM配置：pcm-baseline/export-option-set-failed，pending ao，set-property原生码-9，AO回读空列表；第五helper未启动，WAV/声音样本未采集。安全artifact `12585697274`，ZIP SHA256 `845649feed2c11f898c3bd7b5e25c6f372b91f730b5e008b819ddc1db34c180c`。不能把配置失败归为音频不连续。
+
+先前探针错误地把`pcm:file=...`子参数语法用于AO。固定mpv的ao_obj_list使用global options，并明确拒绝AO子选项；通用长度转义不能改变这条规则。正确链为首次媒体加载前设置/回读独立的ao-pcm-file（原样绝对路径）、ao-pcm-waveheader=true、ao-pcm-append=false，最后单独ao=pcm；getter只接受单个pcm且inline params为空。固定核心注册这些前缀全局选项，并把未标NOPROP的选项暴露为属性，PCM实例在初始化时读取该组；无须新helper命令、Node对象setter或协议/生产白名单扩展。
+
+本次只修上述探针合同和脱敏选项名诊断。静态固定来源与红绿合同回归已核对；尚待下一次同一buffer-export-seam固定DLL确认全局选项实际回读及PCM文件采样。已过的取消/替代实现和证据保持不改；音频结论仍NOT_ASSESSED。
+
 ## 2026-10-25：原时间点回退已实证，继续取消与采样
 
 实际正常日志 run `40156520323` / job `121058979516`、controls `0678b702546d15bb2c9639813c4b46acf6152670` 已核对。刻意陈旧片段摘要被拒绝，原目标0.9479167秒回源落在0.9583333秒并推进到1.0833333秒，原8秒时长、一个新start-file、7源请求及A/V解码门禁通过。三个helper正常exit0/stdio关闭，片段/EDL摘要与清理通过。EDL截止实际物理资源全0、closed callback3（历史2/本次1）；成功callback已存payload重叠仍1,581,512B，不追认零重读。音频只证明mono48k解码/轨道映射，取消与声音样本尚无此轮原生证据。安全artifact `12584424883`，ZIP SHA256 `1e82c53e7d8627682d35c65f1d498b772d8147b8bc3b03c43b93a75fb4e8cb3e`。

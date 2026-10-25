@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-25 — Native cancellation confirmed; correct PCM global-option setup
+
+Actual run40158039095/job121063518680 at98e431d confirms both held-request cancellation/replacement:old close/latebytes0/oldACCEPT0/oldStop0 and preserved3→3.125sec replacement. Four started helpers exit0/stdio-close. PCM setup fails before capture at ao/-9; no sample-continuity result exists. Fixed source rejects AO suboptions and registers separate ao-pcm-file/waveheader/append global properties. Correct only probe configuration to set/read these raw scalar values before selecting ao=pcm and first media load. Keep prior cancel implementation/evidence, production helper/core and all candidate/lifecycle limits unchanged. Fixed-DLL global readback and actual PCM capture still require one controlled retry. [Evidence and contract](PLAYBACK_BUFFER_RETENTION_CLOSEOUT.md).
+
 ## 2026-10-25 — Native fallback confirmed; bounded cancellation and PCM next
 
 Fixed-Windows run40156520323/job121058979516 at0678b70 confirms stale excerpt rejection then original-time fallback:target0.9479167/landed0.9583333/advanced1.0833333,8sec/onefreshstartfile/7sourceRequests,3normalhelper exits. No cancellation or audio-sample proof is inferred. Independent buffer-export-seam input prepares actual held-GET Stop/replacement checks and two extra fixed-helper PCM-file captures with original-source control. Explicit readiness, generation/resource ownership, strict bounded mono48k/S16 parsing, exact seam samples and five-reader cleanup are required. PCM output is untimed and never claims device gaplessness; negative measurements remain explicit. No production/core/permissions/concurrency/package changes; native seam result is pending. [Contracts](MPV_BUFFER_EDL_PROBE.md).

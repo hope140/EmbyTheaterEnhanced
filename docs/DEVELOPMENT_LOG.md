@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-25 — Correct probe AO suboption misuse after real cancel proof
+
+Read actual run40158039095/job121063518680:cancelGENERATION_RETIRED/replacePROBE_CANCELLED,oldrequestclosed/latebytes0/oldACCEPT0/oldStop0,replacement3→3.125sec survive;4startedhelper exit0/stdio-close,no outertimeout. PCM fails at ao setter -9 before samples. Archive positive cancellation and unknown audio separately.
+
+Root is probe misuse of pcm:file suboptions, not proven driver absence/continuity failure. Fixed AO list explicitly uses global options and rejects subopts; prefix registration and generic option-property bridge expose ao-pcm-file/waveheader/append before first decoder load, PCM init reads that group. Set/read raw owned path and explicit true/false flags, then only ao=pcm; AO getter inline params must be empty, global path checked separately. No escaping/Node setter/protocol/helper whitelist/kernel change. Regress original-9 versus supported ordered scalar contract;strictly rejectinlinefile/wrongpath/driver. Keep cancellation code intact;native PCM remains pending, not claimed by mock tests.
+
+Validation:84 related tests passed;full public offline2009 tests:1999 passed,0 failed,10 platform skips. Tracked480-file syntax,finite572-text-file credential-pattern scan,separate4-document UTF-8/newline/newlinks/privatepath/finite-pattern and diff checks passed. No native dispatch/production/helper/core/permission changes;next fixed-DLL run remains the same controlled seam input.
+
 ## 2026-10-25 — Prepare native cancel/replacement and controlled PCM sample proof
 
 Read actual run40156520323/job121058979516 at0678b70:invalid excerpt fallback target0.9479167/landed0.9583333/advanced1.0833333,8sec/onefreshstartfile/7sourceRequests and3normalhelper exits pass. Legacy closed-callback uncertainty and positive saved-payload flush overlap remain, with no zero-consumption, full-auth or audio-continuity claim.
