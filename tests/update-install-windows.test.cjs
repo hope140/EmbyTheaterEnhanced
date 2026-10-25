@@ -14,15 +14,15 @@ const windows = {skip: process.platform !== 'win32' && 'Windows handles / Window
 test('Windows relay compiler diagnostic keeps the control input open without executing a program', {...windows, timeout: 160000}, async () => {
     const exe = path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
     const records = [];
-    for (const form of ['system-modules', 'system-shell', 'system-complete']) {
+    for (const form of ['local-identity', 'full-safe']) {
         const source = fs.readFileSync(path.resolve(__dirname, '../src/electronapp/enhanced/update-install-relay.cs')).toString('base64');
         const command = "[Console]::Error.WriteLine('COMPILER_ENTER'); Add-Type -TypeDefinition ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + source + "'))); [Console]::Error.WriteLine('COMPILER_DONE'); exit [EteUpdateRelay]::Run()";
         const minimal = Object.fromEntries(['SystemRoot', 'WINDIR', 'TEMP', 'TMP', 'APPDATA', 'LOCALAPPDATA', 'USERPROFILE', 'ProgramData', 'ProgramFiles', 'ProgramFiles(x86)']
             .filter(key => process.env[key] !== undefined).map(key => [key, process.env[key]]));
-        const shell = {Path: path.join(process.env.SystemRoot,'System32') + ';' + process.env.SystemRoot,
-            ComSpec: path.join(process.env.SystemRoot,'System32','cmd.exe'), PATHEXT: '.COM;.EXE;.BAT;.CMD'};
-        const modules = {PSModulePath: path.join(process.env.SystemRoot,'System32','WindowsPowerShell','v1.0','Modules')};
-        const env = {...minimal, ...(form !== 'system-modules' ? shell : {}), ...(form !== 'system-shell' ? modules : {})};
+        const identity = Object.fromEntries(['USERNAME','USERDOMAIN','USERDOMAIN_ROAMINGPROFILE','COMPUTERNAME','SystemDrive','HOMEDRIVE','HOMEPATH','OS','PROCESSOR_ARCHITECTURE','NUMBER_OF_PROCESSORS']
+            .filter(key => process.env[key] !== undefined).map(key => [key, process.env[key]]));
+        const env = form === 'local-identity' ? {...minimal,...identity} : Object.fromEntries(Object.entries(process.env).filter(([key]) => !/TOKEN|SECRET|PASSWORD|KEY|AUTH|PROXY|PSExecutionPolicy|LOCKDOWN|NODE_OPTIONS/i.test(key)));
+        if(form==='full-safe') process.stderr.write('ETE_NATIVE_DIAG environment-names=' + JSON.stringify(Object.keys(env).filter(key => !Object.hasOwn(minimal,key)).sort()) + '\n');
         const began = Date.now();
         const row = await new Promise(resolve => {
             const child = cp.spawn(exe, ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', command], {env, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe']});
@@ -35,7 +35,7 @@ test('Windows relay compiler diagnostic keeps the control input open without exe
         records.push(row);
     }
     process.stderr.write('ETE_NATIVE_DIAG compiler-matrix=' + JSON.stringify(records) + '\n');
-    assert.equal(records.length, 3);
+    assert.equal(records.length, 2);
 });
 
 test('Windows helper startup diagnostic uses only literal printing and owned processes', {...windows, timeout: 60000}, async () => {
