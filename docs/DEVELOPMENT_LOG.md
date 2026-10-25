@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-25 — 观测原M请求而非放宽选择超时
+
+沿B的current-probe timeout和无fresh1B源事件核查，选择路径先等实际M，再进入adapter的授权／探测。增加只读observer，返回Native原本同一Promise，成功／同步抛错／异步拒绝均保留；观测callback异常不覆盖请求结果。CI安全摘要保留有限generation／item／阶段／耗时和纯shapeValid，不输出M原值、URL或错误负载；clear／expand／load共用原trace时钟。此轮不提前认定根因，不删fresh再授权，不增加25ms或重打包；实际时序仍需Windows回执。
+
 ## 2026-10-25 — 消除逐测试文件重复Windows系统预检
 
 沿公共CI首错定位到netsh spawnSync ETIMEDOUT发生于temporaryRoot、尚未开始媒体。原成功快照只在单个Node进程缓存，失败也会再次查询。新增仅测试用途的成功／失败锁存与整批父进程环境快照：公共runner及打包测试收集一次，文件子进程只读校验继承值，空／坏／超限值不能fallback。保留原guard派生、真实bind与全部碰撞断言；嵌套runner复制真实helper，VM明确平台／环境，避免意外触发宿主命令。确定性mock不冒充真实Windows查询；修复不涉及产品、账户、源请求、超时扩张或系统设置。

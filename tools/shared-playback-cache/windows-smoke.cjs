@@ -191,6 +191,24 @@ function childEnvironment(profile, inherited = process.env) {
     TMPDIR: path.join(profile, 'temp'), NO_PROXY: '127.0.0.1,localhost', no_proxy: '127.0.0.1,localhost'});
   return env;
 }
+function observeCacheBudgetRead(read, report, clock = () => performance.now()) {
+  const started = clock();
+  const emit = data => {try {report(data);} catch (_) { /* Observation cannot change the Native request. */ }};
+  emit({operation: 'read-begin'});
+  const requestState = error => {
+    try {const state = error?.state; return ['TIMED_OUT', 'GENERATION_RETIRED', 'HELPER_DIED', 'CANCELLED', 'REJECTED'].includes(state) ? state : null;}
+    catch (_) {return null;}
+  };
+  const settled = (outcome, shapeValid = false, state = null) => emit({operation: 'read-settled', outcome,
+    shapeValid, elapsedMs: Math.max(0, clock() - started), ...(state ? {requestState: state} : {})});
+  let pending;
+  try {pending = read();} catch (error) {settled('threw'); throw error;}
+  pending.then(value => settled('resolved', typeof value === 'string' && /^\d+$/.test(value) &&
+    Number.isSafeInteger(Number(value)) && Number(value) >= 256 * 1024 && Number(value) <= 3072 * 1024 * 1024),
+  error => settled('rejected', false, requestState(error)));
+  return pending;
+}
+
 function cacheSelectionSnapshot(status) {
   const currentStates = ['idle', 'original', 'preparing', 'active'];
   const nextStates = ['idle', 'preparing', 'warming', 'ready', 'partial', 'unavailable'];
@@ -328,7 +346,9 @@ async function run({planFile}) {
         ownedHelpersClosed: r.receipt?.ownedHelpersClosed, checks: r.receipt?.checks, afterHelper: r.receipt?.afterHelper,
         evaluations: r.receipt?.evaluations || [],
         cacheSelections: (r.receipt?.trace || []).filter(e => e.type === 'load' || e.type === 'preload').slice(-8)
-          .map(({type, item, generation, proxied, state, bytes, cache}) => ({type, item, generation, proxied, state, bytes, cache})),
+          .map(({type, item, generation, proxied, state, bytes, cache, at}) => ({type, item, generation, proxied, state, bytes, cache, at})),
+        cacheBudgetReads: (r.receipt?.trace || []).filter(e => e.type === 'cache-budget').slice(-12)
+          .map(({item, generation, operation, outcome, shapeValid, requestState, elapsedMs, at}) => ({item, generation, operation, outcome, shapeValid, requestState, elapsedMs, at})),
         serverReports: (r.receipt?.trace || []).filter(e => e.type === 'server-report').slice(-12)
           .map(({method, item, session, mediaSource}) => ({method, item, session, mediaSource})),
         receiptOrigin: r.receipt?.receiptOrigin || null, evaluationTrace: (r.receipt?.trace || []).filter(e => e.type === 'evaluation-probe').slice(-24)
@@ -350,7 +370,7 @@ function argumentsOf(argv) {
   need(allowed.every(k => values[k]), 'missing-argument');
   return {mode, values};
 }
-module.exports = {OWNER, PHASES, TOOL_FILES, watchdogDelay, within, executeStableFrame, observeExpression, voidCommandExpression, voidCommandAckExpression, executeAcknowledgedVoid, prepare, readPlan, childEnvironment, safeFailure, argumentsOf, validateProfile, coloredFrame, matchesStoppedReport, cacheSelectionSnapshot, validatePhaseEvidence, safeNativeTags, boundToolBytes};
+module.exports = {OWNER, PHASES, TOOL_FILES, watchdogDelay, within, executeStableFrame, observeExpression, voidCommandExpression, voidCommandAckExpression, executeAcknowledgedVoid, prepare, readPlan, childEnvironment, safeFailure, argumentsOf, validateProfile, coloredFrame, matchesStoppedReport, cacheSelectionSnapshot, observeCacheBudgetRead, validatePhaseEvidence, safeNativeTags, boundToolBytes};
 if (require.main === module) (async () => {
   const {mode, values: v} = argumentsOf(process.argv.slice(2));
   if (mode === 'prepare') {await prepare({repo: v.repo, runtime: v.runtime, installer: v.installer,

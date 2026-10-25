@@ -1,5 +1,17 @@
 # 共享播放缓存：独立Windows合成验收
 
+## 当前：B timeout已确认，测量预算回读的实际剩余时间
+
+[Windows40245606297](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40245606297)的baseline完整通过；natural已自然切B，但generation103的原load未选共享代理，固定拒绝为current-probe／timeout。resolver hit至原load约33.19ms，源事件没有该次选择的新0–0探测；预载此前的partial2,621,440B是另一条next-prefix／cache-quota记录。helper和Electron终态正常、无timeout；不把已修的退出链重新当作问题，不宣称后两阶段已过。
+
+原代码先用clear／expand／get读取实际demuxer-max-bytes（get本身50ms界），之后才创建授权路由并发fresh1B探测，而整个选择共25ms。没有发网只证明未完成前置阶段，不能据此断言M读取就是全部根因。本轮工具只记录原M命令提交与get开始／结算、原generation／synthetic item、同钟load时刻及纯值形状布尔；原Promise身份／结果／拒绝、命令参数、期限和媒体授权均不变。观测回调失败不能改变请求，不保留属性值或原始错误；最后十二条M记录与八条选择放入安全摘要。
+
+拒绝仅额外投影有限controller终态（TIMED_OUT／GENERATION_RETIRED等），未知错误不输出负载；clear／expand的新日志失败也不能阻止原super提交。确定性回归保留同一Promise、原同步异常／异步拒绝、观测异常和实际三个代理方法的参数／返回。原慢M回读用例明确核对选择超时之前及迟到之后均无HTTP探测、fixed current-probe／timeout；这只复现候选机制，不是Windows实际耗时证明。
+
+下一次仍同原包和原四阶段，只更新精确工具expected SHA，由父统一派发。读取B的cacheBudgetReads与cacheSelections时间：若M未在B load前完成，再验证提前实际预读／去重；若M已完成，应继续定位cache.open前置工作。无论哪一项，fresh来源授权、1B内容校验及物理关闭保持，不能直接加25ms或接受直连当缓存成功。6ec2后台漏存修复不在该原包内，待原因明确后再统一新产品身份。
+
+此独立观测工具最终完整离线2747项：2734通过、0失败、13项既有平台跳过，约62.1秒；最后40项定向通过、JS583／PowerShell53及有限677文件扫描通过。其后源码复核另发现Native实际NODE／INT64链可直接读M，不存在旧bridge的int32缩窄；那是单独产品候选方向，不纳入本只读工具或冒称已实测解决Windows超时。
+
 ## 当前前置：Windows测试端口快照只采一次
 
 [公共CI40242511191](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40242511191)唯一失败在夹具temporaryRoot读取netsh排除表，原十秒调用超时；媒体未开始。总2633项中2628通过、1失败、4跳过，无cancel，不能当作B拒绝证据或权限拒绝。原helper模块缓存只在单文件进程生效；本次仅修测试／CI，保留e5ca97f的安全选择摘要和原产品树。

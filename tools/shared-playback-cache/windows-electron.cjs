@@ -304,6 +304,26 @@ async function main() {
       }
       async start() {active(); const starting = super.start(); this.child?.once('close', () => {this.closeSeen = true;}); await starting; active();
         record('native-ready', {pid: this.child.pid}); return this;}
+      setProperty(name, value) {
+        if (name === 'user-data/emby-theater-enhanced/diagnostics/cache-bytes' && value === '') {
+          try {record('cache-budget', {operation: 'clear-submit', item: contexts.get(this.currentGenerationId), generation: this.currentGenerationId});} catch (_) {}
+        }
+        return super.setProperty(name, value);
+      }
+      submitCommand(args) {
+        if (Array.isArray(args) && args.length === 4 && args[0] === 'expand-properties' && args[1] === 'set' &&
+            args[2] === 'user-data/emby-theater-enhanced/diagnostics/cache-bytes' && args[3] === '${=demuxer-max-bytes}') {
+          try {record('cache-budget', {operation: 'expand-submit', item: contexts.get(this.currentGenerationId), generation: this.currentGenerationId});} catch (_) {}
+        }
+        return super.submitCommand(args);
+      }
+      getProperty(name, timeoutMs) {
+        if (name !== 'user-data/emby-theater-enhanced/diagnostics/cache-bytes') return super.getProperty(name, timeoutMs);
+        const generation = this.currentGenerationId, item = contexts.get(generation);
+        return driver.observeCacheBudgetRead(() => super.getProperty(name, timeoutMs), data => {
+          if (!receiptWritten) record('cache-budget', {generation, item, ...data});
+        });
+      }
       load(args) {
         active();
         const u = new URL(args[1]), item = contexts.get(this.currentGenerationId) || /^\/Videos\/([ABC])\//.exec(u.pathname)?.[1];

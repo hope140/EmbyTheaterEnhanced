@@ -249,8 +249,11 @@ test('shared-trial 25 ms deadline retires slow budget, cache initialization, and
     const started = performance.now();
     assert.equal(await selectCurrent(f, a), null);
     assert.ok(performance.now() - started < 75, 'selection returns on the soft deadline');
+    assert.equal(f.origin.requests.length, 0, 'a budget wait can exhaust selection before the fresh HTTP probe begins');
+    assert.deepEqual(f.session.status().current.diagnostic, {stage: 'current-probe', reason: 'timeout'});
     await delay(100);
     assert.equal(f.createCount, 0, 'late M resolution cannot continue to cache creation');
+    assert.equal(f.origin.requests.length, 0, 'a late budget read cannot issue a retired probe');
     assert.deepEqual(f.currentBytesReads, [1]);
   });
   await t.test('slow cache initialization', async st => {
