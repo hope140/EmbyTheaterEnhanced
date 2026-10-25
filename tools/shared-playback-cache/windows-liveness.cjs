@@ -106,7 +106,9 @@ function validateResult(r, name) {
 function validNative(p, name) {
   return !!p && typeof p === 'object' && p.suite === 'native' && p.native && p.native.created === true && p.native.closed === true &&
     p.ownedHelpersClosed === true && p.beforeHelper === 11 && p.afterHelper === 17 && Array.isArray(p.undefinedScripts) && p.undefinedScripts.length === 2 &&
-    p.undefinedScripts.every((row, i) => row && row.label === ['undefined-promise', 'undefined-timer'][i] && row.resultType === 'undefined') &&
+    p.undefinedScripts.every((row, i) => row && row.label === ['undefined-promise', 'undefined-timer'][i] && row.dispatched === true &&
+      row.rendererResultType === 'undefined' && row.completionAck === 21 + i &&
+      ['null', 'undefined', 'boolean', 'number', 'string', 'object', 'bigint', 'symbol', 'function'].includes(row.wireResultType)) &&
     Array.isArray(p.helpers) && p.helpers.length === 1 && p.helpers.every(h => h && Number.isSafeInteger(h.pid) && h.pid > 0 && h.ready === true && h.exited === true && h.exitCode === 0 && h.signal === false && h.streamsClosed === true && h.pendingRequests === 0 && h.protocolFailure === false && h.operationErrorCount === 0 && h.fatal === false) &&
     (name === 'helper-idle' ? p.native.loaded === false && p.previewCalls === 0 :
       p.native.loaded === true && p.native.playbackAdvanced === true &&

@@ -5,6 +5,7 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const vm = require('node:vm');
 const {spawnSync} = require('node:child_process');
 const {performance} = require('node:perf_hooks');
 const test = require('node:test');
@@ -43,8 +44,8 @@ function nativeReceipt(name, overrides = {}) {
     beforeHelper: 11, afterHelper: 17,
     previewCalls: preview ? 1 : 0, preview: preview ? {width: 64, height: 64, colored: true} : undefined,
     undefinedScripts: [
-      {label: 'undefined-promise', resultType: 'undefined'},
-      {label: 'undefined-timer', resultType: 'undefined'},
+      {label: 'undefined-promise', dispatched: true, wireResultType: 'null', rendererResultType: 'undefined', completionAck: 21},
+      {label: 'undefined-timer', dispatched: true, wireResultType: 'undefined', rendererResultType: 'undefined', completionAck: 22},
     ],
     helpers: [{pid: 9003, ready: true, exited: true, exitCode: 0, signal: false, streamsClosed: true,
       pendingRequests: 0, protocolFailure: false, operationErrorCount: 0, fatal: false}],
@@ -87,8 +88,18 @@ test('native validation requires one known helper with a confirmed clean exit an
     nativeReceipt('helper-preview', {previewCalls: 0}),
     nativeReceipt('helper-idle', {native: {...nativeReceipt('helper-idle').native, loaded: true}}),
     nativeReceipt('helper-playback', {native: {...nativeReceipt('helper-playback').native, playbackAdvanced: false}}),
-    nativeReceipt('helper-playback', {undefinedScripts: [{label: 'undefined-promise', resultType: 'number'},
-      {label: 'undefined-timer', resultType: 'undefined'}]}),
+    nativeReceipt('helper-playback', {undefinedScripts: [
+      {label: 'undefined-promise', dispatched: true, wireResultType: 'unknown', rendererResultType: 'undefined', completionAck: 21},
+      {label: 'undefined-timer', dispatched: true, wireResultType: 'undefined', rendererResultType: 'undefined', completionAck: 22}]}),
+    nativeReceipt('helper-playback', {undefinedScripts: [
+      {label: 'undefined-promise', dispatched: true, wireResultType: 'unknown', rendererResultType: 'undefined', completionAck: 21},
+      {label: 'undefined-timer', dispatched: true, wireResultType: 'undefined', rendererResultType: 'undefined', completionAck: 22}]}),
+    nativeReceipt('helper-playback', {undefinedScripts: [
+      {label: 'undefined-promise', dispatched: true, wireResultType: 'null', rendererResultType: 'number', completionAck: 21},
+      {label: 'undefined-timer', dispatched: true, wireResultType: 'undefined', rendererResultType: 'undefined', completionAck: 22}]}),
+    nativeReceipt('helper-playback', {undefinedScripts: [
+      {label: 'undefined-promise', dispatched: true, wireResultType: 'null', rendererResultType: 'undefined', completionAck: 22},
+      {label: 'undefined-timer', dispatched: true, wireResultType: 'undefined', rendererResultType: 'undefined', completionAck: 22}]}),
     nativeReceipt('helper-playback', {afterHelper: undefined}),
     nativeReceipt('helper-preview', {preview: {width: 0, height: 64, colored: true}}),
     nativeReceipt('helper-preview', {preview: {width: 64, height: 64, colored: false}}),
@@ -101,6 +112,52 @@ test('native validation requires one known helper with a confirmed clean exit an
   assert.equal(liveness.validateResult(resultFor('helper-playback', nativeReceipt('helper-playback'), {timedOut: true}), 'helper-playback'), false);
   assert.equal(liveness.validateResult(resultFor('helper-playback', nativeReceipt('helper-playback'), {streamsClosed: false}), 'helper-playback'), false);
   assert.equal(liveness.validateResult(resultFor('helper-playback', nativeReceipt('helper-playback'), {receipt: null}), 'helper-playback'), false);
+});
+
+test('void probes call their input once and require ordered renderer evidence before acknowledgement', async () => {
+  assert.equal(typeof nativeWorker.voidExpression, 'function');
+  assert.equal(typeof nativeWorker.voidAckExpression, 'function');
+  const window = {};
+  const context = vm.createContext({window});
+  const immediateCalls = {count: 0};
+  window.immediateCalls = immediateCalls;
+  const immediate = vm.runInContext(nativeWorker.voidExpression('(() => { window.immediateCalls.count++; return Promise.resolve(undefined); })()', 1),
+    vm.createContext({window, immediateCalls}));
+  assert.equal(await immediate, undefined);
+  assert.equal(immediateCalls.count, 1);
+  assert.equal(vm.runInContext(nativeWorker.voidAckExpression(1), context), 21);
+  assert.equal(window.__ownedVoidSequence, 1);
+  assert.equal(window.__ownedVoidResultType, 'undefined');
+
+  const timerCalls = {count: 0};
+  window.timerCalls = timerCalls;
+  const timed = vm.runInContext(nativeWorker.voidExpression('(() => { window.timerCalls.count++; return new Promise(resolve => setTimeout(() => resolve(undefined), 1)); })()', 2),
+    vm.createContext({window, timerCalls, setTimeout}));
+  assert.equal(await timed, undefined);
+  assert.equal(timerCalls.count, 1);
+  assert.equal(vm.runInContext(nativeWorker.voidAckExpression(2), context), 22);
+  assert.equal(window.__ownedVoidSequence, 2);
+  assert.equal(window.__ownedVoidResultType, 'undefined');
+});
+
+test('void probe rejects wrong sequence, non-void values, synchronous throws, and Promise rejection without acknowledgement', async () => {
+  const wrongOrderWindow = {__ownedVoidSequence: 1};
+  assert.throws(() => vm.runInNewContext(nativeWorker.voidExpression('Promise.resolve(undefined)', 1), {window: wrongOrderWindow}), /void-probe-sequence/);
+  assert.equal(vm.runInNewContext(nativeWorker.voidAckExpression(1), {window: wrongOrderWindow}), -1);
+
+  const nonVoidWindow = {};
+  const nonVoid = vm.runInNewContext(nativeWorker.voidExpression('Promise.resolve(42)', 1), {window: nonVoidWindow});
+  await assert.rejects(nonVoid);
+  assert.equal(vm.runInNewContext(nativeWorker.voidAckExpression(1), {window: nonVoidWindow}), -1);
+
+  const thrownWindow = {};
+  assert.throws(() => vm.runInNewContext(nativeWorker.voidExpression('(() => { throw Error("sync-probe-failure"); })()', 1), {window: thrownWindow}), /sync-probe-failure/);
+  assert.equal(vm.runInNewContext(nativeWorker.voidAckExpression(1), {window: thrownWindow}), -1);
+
+  const rejectedWindow = {};
+  const rejected = vm.runInNewContext(nativeWorker.voidExpression('Promise.reject(Error("async-probe-failure"))', 1), {window: rejectedWindow});
+  await assert.rejects(rejected, /async-probe-failure/);
+  assert.equal(vm.runInNewContext(nativeWorker.voidAckExpression(1), {window: rejectedWindow}), -1);
 });
 
 test('worker kill guard permits only a known active child and health distinguishes confirmed closure', () => {

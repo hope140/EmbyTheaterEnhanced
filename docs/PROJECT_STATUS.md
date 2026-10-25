@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-25 — Native对照的void序列化合同修正
+
+首轮三例因工具把跨进程void严格当undefined而立即失败，进入／返回／结算均完整，Electron自然退出2、helper退出0；播放推进与一次有色预览已证实，后续IPC仍未运行。固定Electron源码支持NONE转null，但原回执没记录实际返回类型，不追认实测null。工具改为renderer验证void、原表达式仅执行一次并写本次顺序副作用，再从同一frame独立读取固定ACK；保留24个标记、返回类型日志和原退出／来源／期限门禁。见[Native有限对照](SHARED_PLAYBACK_CACHE_NATIVE_LIVENESS.md)。
+
 ## 2026-10-25 — 无媒体已过，隔离Native与预览增量
 
 固定Electron的实际Windows无媒体三例均退出0／流关闭，两个IPC案例完整返回；不能再笼统归因为基础运行环境或一般Promise退出。准备helper空闲、仅本地播放、额外一次预览三个有限对照，另覆盖旧动作的undefined返回；保留35秒／120秒及来源门禁，不重跑完整四阶段、不动产品或原包。结果解释与准确UI输入见[Native存活对照](SHARED_PLAYBACK_CACHE_NATIVE_LIVENESS.md)。新三例尚未实际Windows运行。

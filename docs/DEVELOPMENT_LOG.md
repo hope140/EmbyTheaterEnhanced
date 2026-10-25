@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-25 — void完成与跨进程返回值分离
+
+直接核读Native三例首错，均非timeout；主进程严格undefined断言与固定Electron的base::Value返回路径不符。仅修工具：在renderer内验证原void并提交顺序完成标记，main记录跨进程类型并读取独立固定ACK，拒绝rejection、错误void值、旧标记和错误顺序；保持原六个IPC脚本、Native退出及全部来源门禁。没有修改原包或产品，也不把该探针错误归因为播放器死锁。参见[固定源码与证据](SHARED_PLAYBACK_CACHE_NATIVE_LIVENESS.md)。
+
 ## 2026-10-25 — 已过基础IPC后的Native分层对照
 
 直接读取无媒体Windows安全日志核验三个实际PID退出与流关闭、六个表达式及严格顺序echo。新工具只增加原service／carrier／helper、固定本地Y4M和一次preview的三进程阶梯，实际推进、Promise<void>返回、helper退出后renderer响应与OS退出分开判定。来源和产品身份、账户隔离、拒绝不重试、期限和原默认路线保持；不把已过基础测试当产品验收。见[范围与派发合同](SHARED_PLAYBACK_CACHE_NATIVE_LIVENESS.md)。

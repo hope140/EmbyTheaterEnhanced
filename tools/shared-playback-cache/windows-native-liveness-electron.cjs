@@ -70,6 +70,23 @@ function observeExpression(expression) {
   return '(() => { window.ownedLiveness.report("entered"); const value = (' + expression +
     '); window.ownedLiveness.report("returned"); Promise.resolve(value).then(() => window.ownedLiveness.report("settled"), () => window.ownedLiveness.report("rejected")); return value; })()';
 }
+// WebFrameMain marshals base::Value::NONE as null. Verify void inside the
+// renderer, retain the original void result across the boundary, and inspect
+// a separate fixed acknowledgement in the same frame. Never swallow failures.
+function voidExpression(expression, sequence) {
+  need(typeof expression === 'string' && [1, 2].includes(sequence), 'void-probe-invalid');
+  return '(() => { if ((window.__ownedVoidSequence || 0) !== ' + (sequence - 1) +
+    ') throw Error("void-probe-sequence"); return Promise.resolve((' + expression + ')).then(value => {' +
+    ' if (typeof value !== "undefined") throw Error("void-probe-not-void");' +
+    ' window.__ownedVoidSequence = ' + sequence + '; window.__ownedVoidResultType = typeof value; return value; }); })()';
+}
+function voidAckExpression(sequence) {
+  need([1, 2].includes(sequence), 'void-probe-invalid');
+  return '(window.__ownedVoidSequence === ' + sequence + ' && window.__ownedVoidResultType === "undefined") ? ' + (20 + sequence) + ' : -1';
+}
+function wireResultType(value) {
+  return value === null ? 'null' : typeof value;
+}
 async function run() {
   const started = Date.now();
   const args = parseArgs(process.argv.slice(2));
@@ -346,9 +363,12 @@ async function run() {
     for (const [label, expression] of [['undefined-promise', 'Promise.resolve(undefined)'], ['undefined-timer', 'new Promise(resolve => setTimeout(() => resolve(undefined), 25))']]) {
       stable();
       const record = {label, dispatched: true}; receipt.undefinedScripts.push(record); stage('undefined-script-dispatch');
-      const value = await within(() => frame.executeJavaScript(observeExpression(expression)), remaining(3000), 'undefined-script-timeout');
-      stable(); need(typeof value === 'undefined', 'undefined-script-result');
-      record.resultType = typeof value; stage('undefined-script-result');
+      const sequence = receipt.undefinedScripts.length;
+      const value = await within(() => frame.executeJavaScript(observeExpression(voidExpression(expression, sequence))), remaining(3000), 'undefined-script-timeout');
+      stable(); record.wireResultType = wireResultType(value); stage('undefined-script-returned');
+      record.completionAck = await within(() => frame.executeJavaScript(voidAckExpression(sequence)), remaining(3000), 'undefined-ack-timeout');
+      stable(); need(record.completionAck === 20 + sequence, 'undefined-completion-missing');
+      record.rendererResultType = 'undefined'; stage('undefined-script-result');
     }
     for (const [label, expression, expected] of SCRIPTS) {
       stable();
@@ -369,7 +389,7 @@ async function run() {
     await finish(true);
   } catch (error) { await finish(false, error); }
 }
-module.exports = {parseArgs, within, observeExpression, SCRIPTS, URL, run, helperHealthy, coloredFrame, verifyFixture, allowedKill};
+module.exports = {parseArgs, within, observeExpression, voidExpression, voidAckExpression, wireResultType, SCRIPTS, URL, run, helperHealthy, coloredFrame, verifyFixture, allowedKill};
 // Electron runs this as the application entry; require.main is not reliable there.
 if (process.versions.electron) run().catch(error => {
   const code = error && /^[a-z0-9-]{1,100}$/.test(error.message) ? error.message : 'worker-startup-failed';
