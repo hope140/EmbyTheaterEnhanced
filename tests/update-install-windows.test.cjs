@@ -24,10 +24,14 @@ function fixture(t) {
     const record = {root, rootId: identity(root), directory, directoryId: identity(directory), executable: process.execPath,
         fileId: identity(file), source: 'github', installer};
     return {scratch, root, directory, file, bytes, record, handoff: createHandoff({spawn(exe, args, options) {
-        const child = cp.spawn(exe, args, {...options, stdio: ['pipe', 'pipe', 'pipe']});
-        let diagnostics = '';
+        const diagnosticArgs = [...args];
+        diagnosticArgs[4] = "[Console]::Error.WriteLine('ETE_NATIVE_SCRIPT_ENTERED');\n" + diagnosticArgs[4];
+        const child = cp.spawn(exe, diagnosticArgs, {...options, stdio: ['pipe', 'pipe', 'pipe']});
+        let diagnostics = '', output = '';
         child.stderr.on('data', bytes => { diagnostics += bytes.toString(); });
-        child.on('close', code => { if (code !== 0) process.stderr.write('ETE_NATIVE_DIAG exit=' + code + ' ' + diagnostics.slice(0, 6000).replace(/[\r\n]+/g, ' ') + '\n'); });
+        child.stdout.on('data', bytes => { output += bytes.toString(); });
+        child.on('close', code => { process.stderr.write('ETE_NATIVE_DIAG exit=' + code + ' chars=' + diagnosticArgs[4].length +
+            ' stdout=' + output.slice(0, 120).replace(/[\r\n]+/g, ' ') + ' stderr=' + diagnostics.slice(0, 5500).replace(/[\r\n]+/g, ' ') + '\n'); });
         return child;
     }})};
 }
