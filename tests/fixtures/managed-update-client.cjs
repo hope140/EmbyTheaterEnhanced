@@ -13,6 +13,29 @@ const bytes = fs.readFileSync(path.join(root, 'probe.exe'));
 const name = 'EmbyTheaterEnhanced-9.1.0-win-x64-setup.exe';
 const installer = {id: 12, name, url: 'https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v9.1.0/' + name,
     size: bytes.length, sha256: crypto.createHash('sha256').update(bytes).digest('hex')};
+// Trace-only source instrumentation in this fixture; the real native guard,
+// locks, Zone3 and ShellExecute statement remain unchanged. No production hook.
+const nativePath=path.resolve(__dirname,'../../src/electronapp/enhanced/update-install-guard.cs');
+const scriptPath=path.resolve(__dirname,'../../src/electronapp/enhanced/update-install-handoff.ps1');
+const originalRead=fs.readFileSync;
+fs.readFileSync=function(file,...args){
+    const value=originalRead.call(fs,file,...args);
+    if(file===nativePath){
+        const source=value.toString();
+        const boundary='using (var process = Process.Start(start)) { Require(process != null); process.WaitForExit(); }';
+        if(source.split(boundary).length!==2)throw Error('exact-shell-boundary-required');
+        const log=name=>JSON.stringify(path.join(root,name));
+        const traced='File.WriteAllText('+log('shell-entered')+',"entered"); try { using (var process = Process.Start(start)) { Require(process != null); File.WriteAllText('+log('shell-started')+',process.Id.ToString()); process.WaitForExit(); File.WriteAllText('+log('shell-exited')+',process.ExitCode.ToString()); } } catch(Exception e) { var native=e as System.ComponentModel.Win32Exception; File.WriteAllText('+log('shell-error')+',e.GetType().FullName+"|"+e.HResult+"|"+(native==null?"none":native.NativeErrorCode.ToString())); throw; }';
+        return Buffer.from(source.replace(boundary,traced));
+    }
+    if(file===scriptPath){
+        const destination=Buffer.from(path.join(root,'script-error'),'utf8').toString('base64');
+        const boundary='} catch {\n    # Keep the verified';
+        if(value.split(boundary).length!==2)throw Error('exact-error-boundary-required');
+        return value.replace(boundary,"} catch {\n    $diagnostic=$_.Exception.GetType().FullName+'|'+$_.Exception.HResult; if($_.Exception.InnerException){$diagnostic+='|'+$_.Exception.InnerException.GetType().FullName+'|'+$_.Exception.InnerException.HResult}; [IO.File]::WriteAllText([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('"+destination+"')),$diagnostic)\n    # Keep the verified");
+    }
+    return value;
+};
 const update = require('../../src/electronapp/enhanced/manual-app-update');
 const handoff = require('../../src/electronapp/enhanced/update-install-handoff').createHandoff({spawn(exe, args, options) {
     // Keep this test-owned orphan in the hosted runner's teardown ownership.

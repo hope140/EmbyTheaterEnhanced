@@ -41,7 +41,12 @@ class Probe { static int Main() {
     assert.equal(await driverExit, 0, errors);
     const deadline = Date.now() + 15000;
     while (!fs.existsSync(marker) && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 50));
-    assert.equal(fs.existsSync(marker), true, 'OS did not launch the controlled probe; do not bypass any security UI');
+    if (!fs.existsSync(marker)) {
+        const stages={};
+        for(const name of ['shell-entered','shell-started','shell-exited','shell-error','script-error']) if(fs.existsSync(path.join(root,name))) stages[name]=fs.readFileSync(path.join(root,name),'utf8').slice(0,1000);
+        process.stderr.write('ETE_NATIVE_DIAG controlled-shell='+JSON.stringify(stages)+'\n');
+    }
+    assert.equal(fs.existsSync(marker), true, 'Controlled ShellExecute produced no marker; keep security UI unchanged and inspect fixed stage/error diagnostics');
     assert.equal(fs.readFileSync(marker, 'utf8'), 'exited|1', 'client must be gone and installer arguments must be empty');
     const helper = JSON.parse(fs.readFileSync(path.join(root, 'helper-pid.json')));
     const observerScript = '$ErrorActionPreference="Stop"; $p=[Diagnostics.Process]::GetProcessById([int]$env:ETE_PROBE_PID); $null=$p.Handle; if(-not [String]::Equals($p.MainModule.FileName,$env:ETE_PROBE_EXE,[StringComparison]::OrdinalIgnoreCase)){throw "owner-mismatch"}; [Console]::Out.WriteLine("HELD"); [Console]::Out.Flush(); if(-not $p.WaitForExit(15000)){throw "owner-not-exited"}; if($p.ExitCode -ne 0){throw "owner-failed"}; $p.Dispose()';
