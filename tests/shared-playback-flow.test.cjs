@@ -4,26 +4,30 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const http = require('node:http');
 const fs = require('node:fs/promises');
-const os = require('node:os');
 const path = require('node:path');
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const {createStore} = require('../tools/shared-playback-cache/store.cjs');
 const {createProxy} = require('../tools/shared-playback-cache/proxy.cjs');
 const {source, get, identity, hash, delay} = require('../tools/shared-playback-cache/fixture.cjs');
+async function cleanup(actions, remove) {
+  const results = await Promise.allSettled(actions.map(action => Promise.resolve().then(action)));
+  results.push(...await Promise.allSettled([Promise.resolve().then(remove)]));
+  const errors = results.filter(result => result.status === 'rejected').map(result => result.reason);
+  if (errors.length) throw new AggregateError(errors, 'owned-shared-flow-fixture-cleanup-failed');
+}
 
 async function setup(t, {policy = 'coherent', bytes = 512 * 1024, origin: supplied, onOriginChunk} = {}) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-shared-flow-'));
-  const origin = supplied || await source({bytes, firstDelay: 0, tailDelay: 0});
-  const store = await createStore({root, currentBytes: 2 * 1024 * 1024,
+  let root, origin = supplied, store, proxy;
+  t.after(() => cleanup([() => proxy?.close(), () => store?.close(), () => origin?.close()],
+    () => root && fs.rm(root, {recursive: true, force: true})));
+  root = temporaryRoot('ete-shared-flow-', ['']);
+  origin ||= await source({bytes, firstDelay: 0, tailDelay: 0});
+  store = await createStore({root, currentBytes: 2 * 1024 * 1024,
     nextBytes: 1024 * 1024, maxPendingBytes: 1024 * 1024});
   const options = {store, authorize: async () => origin.grant()};
   if (policy !== null) options.requestPolicy = policy;
   if (onOriginChunk !== undefined) options.onOriginChunk = onOriginChunk;
-  const proxy = await createProxy(options);
-  t.after(async () => {
-    await proxy.close();
-    await origin.close();
-    await fs.rm(root, {recursive: true, force: true});
-  });
+  proxy = await createProxy(options);
   return {origin, store, proxy};
 }
 
@@ -224,22 +228,20 @@ test('cancelling a player-paused coherent response releases the pending drain an
 test('a synchronous cache tap failure observes an already pending player drain rejection', async t => {
   // Create the origin before wrapping createServer, so only the proxy's local
   // response gets deterministic synthetic backpressure after its real write.
-  const origin = await source({bytes: 256 * 1024, firstDelay: 20, tailDelay: 100});
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-shared-tap-failure-'));
+  const root = temporaryRoot('ete-shared-tap-failure-', ['']);
   const originalCreateServer = http.createServer, originalAllocUnsafe = Buffer.allocUnsafe;
   const requestedBytes = 64 * 1024;
-  let store, proxy, forceBackpressure = true, inject = false, failures = 0;
+  let origin, store, proxy, forceBackpressure = true, inject = false, failures = 0;
   const restore = () => {
     http.createServer = originalCreateServer;
     Buffer.allocUnsafe = originalAllocUnsafe;
   };
   t.after(async () => {
     restore();
-    await proxy?.close();
-    await store?.close();
-    await origin.close();
-    await fs.rm(root, {recursive: true, force: true});
+    await cleanup([() => proxy?.close(), () => store?.close(), () => origin?.close()],
+      () => fs.rm(root, {recursive: true, force: true}));
   });
+  origin = await source({bytes: 256 * 1024, firstDelay: 20, tailDelay: 100});
   store = await createStore({root, currentBytes: 1024 * 1024, nextBytes: 256 * 1024});
   http.createServer = function(...args) {
     const listener = args.pop();
@@ -345,19 +347,17 @@ test('origin chunk observer reports actual contiguous bytes and separates access
 
 test('an already received two-MiB cold response survives a blocked disk tap for a later full cache hit', async t => {
   const bytes = 2 * 1024 * 1024;
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-shared-two-mib-capture-'));
-  const origin = await source({bytes, firstDelay: 0, tailDelay: 0});
+  const root = temporaryRoot('ete-shared-two-mib-capture-', ['']);
   let release, enter;
   const gate = new Promise(resolve => {release = resolve;});
   const entered = new Promise(resolve => {enter = resolve;});
-  let store, proxy;
+  let origin, store, proxy;
   t.after(async () => {
     release();
-    await proxy?.close();
-    await store?.close();
-    await origin.close();
-    await fs.rm(root, {recursive: true, force: true});
+    await cleanup([() => proxy?.close(), () => store?.close(), () => origin?.close()],
+      () => fs.rm(root, {recursive: true, force: true}));
   });
+  origin = await source({bytes, firstDelay: 0, tailDelay: 0});
   const io = {...fs, async writeFile(file, ...args) {
     if (path.basename(file).startsWith('.block-')) {enter(); await gate;}
     return fs.writeFile(file, ...args);
@@ -435,18 +435,16 @@ test('cold overlapping probes stay on one origin response until actual playback 
 
 test('a preload cancelled after origin close cannot publish readiness while final disk writes drain', async t => {
   const bytes = 64 * 1024;
-  const origin = await source({bytes, firstDelay: 0, tailDelay: 0});
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-shared-preload-cancel-'));
-  let release, enter, store, proxy;
+  const root = temporaryRoot('ete-shared-preload-cancel-', ['']);
+  let release, enter, origin, store, proxy;
   const gate = new Promise(resolve => {release = resolve;});
   const entered = new Promise(resolve => {enter = resolve;});
   t.after(async () => {
     release();
-    await proxy?.close();
-    await store?.close();
-    await origin.close();
-    await fs.rm(root, {recursive: true, force: true});
+    await cleanup([() => proxy?.close(), () => store?.close(), () => origin?.close()],
+      () => fs.rm(root, {recursive: true, force: true}));
   });
+  origin = await source({bytes, firstDelay: 0, tailDelay: 0});
   const io = {...fs, async writeFile(file, ...args) {
     if (path.basename(file).startsWith('.block-')) {enter(); await gate;}
     return fs.writeFile(file, ...args);

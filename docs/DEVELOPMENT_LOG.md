@@ -1,5 +1,9 @@
 # 维护记录
 
+## 共享缓存Windows诊断与Native短验工具
+
+只新增工具／测试／手动workflow入口，产品内容仍与225827a相同。本地最终完整2656项：2643通过、0失败、13既有平台跳过；Windows诊断尚未运行。固定Git来源、原清单与安装器／物理payload／源码／native摘要全门禁；工具CRLF严格绑定、owned profile逐段复核。先提供无包Windows逐文件TAP诊断（25s/file、150s总界），公共runner也即时TAP，不用force-exit掩盖挂起；旧Windows CI40分钟结束且无stack，未宣称已修好。真实helper短验另有本地生成AVI、稳定loopback HTTP＋gRPC、原renderer/authority链、四阶段复用／取消／关闭判据，但尚未运行。启动、来源和互斥inputs见[Windows合成验收](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)；旧包未派发，本任务不dispatch／安装／访问115／合并发布。
+
 ## 共享缓存Windows测试夹具预检与失败收尾
 
 Windows首次CI出现失败，停止旧候选打包；实际错误栈尚待回读，不能以Linux通过宣称Windows修复。新增adapter/session/on-demand夹具现统一复用既有canonical临时根与固定guard端口预检，不重试EACCES、不改生产守卫；提前注册全部资源清理、保留真实close失败，readiness gate有界，选路失败增加脱敏reason。此提交只修测试／说明，不改产品、25ms期限、用户配置或包体。后续必须重新通过Windows CI再排新来源候选。

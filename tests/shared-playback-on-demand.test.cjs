@@ -78,7 +78,7 @@ test('on-demand reopen stats media blocks without reading them; read verifies be
   assert.equal(store.status().readers, 0);
 });
 
-test('on-demand corrupt candidate is rejected before proxy delivery and falls back to the owned source', async t => {
+test('on-demand corrupt candidate is rejected before delivery and evicted when authorized refills are skipped', async t => {
   const {root, own} = await ownedRoot(t);
   const savedKey = await seed(root, own);
   const blockDir = path.join(root, 'blocks');
@@ -93,7 +93,10 @@ test('on-demand corrupt candidate is rejected before proxy delivery and falls ba
   const counted = countMediaReads(root);
   const store = await createStore({root, currentBytes, nextBytes, recoveryMode: 'on-demand', io: counted.io});
   own(() => store.close());
-  const proxy = await createProxy({store, authorize: async () => origin.grant()});
+  // Isolate rejection/eviction from the independently tested best-effort
+  // source refill: a successful refill may legitimately restore one verified
+  // block before this assertion, depending on completion ordering.
+  const proxy = await createProxy({store: {...store, put: async () => false}, authorize: async () => origin.grant()});
   own(() => proxy.close());
 
   assert.equal(store.status().currentKey, savedKey);

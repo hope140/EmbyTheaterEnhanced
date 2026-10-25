@@ -28,6 +28,27 @@ on:
         default: '3'
         options: ['3', '1', '5', '10']
 
+      shared_cache_smoke:
+        description: Run isolated shared-cache native smoke against an exact existing test artifact (no build)
+        type: boolean
+        default: false
+      shared_cache_diagnostics:
+        description: Run bounded per-file Windows TAP diagnostics only (no package or native helper)
+        type: boolean
+        default: false
+      shared_cache_artifact_id:
+        description: Exact unexpired successful manual-package artifact ID
+        type: string
+        default: ''
+      shared_cache_zip_sha256:
+        description: Reviewed artifact ZIP SHA256
+        type: string
+        default: ''
+      shared_cache_installer_sha256:
+        description: Reviewed installer SHA256 inside that artifact
+        type: string
+        default: ''
+
 permissions:
   contents: read
 
@@ -121,7 +142,7 @@ jobs:
         run: node tools/ci-change-scope.cjs summary
 
   manual-windows-test-package:
-    if: github.event_name == 'workflow_dispatch' && !inputs.build_input_benchmark
+    if: github.event_name == 'workflow_dispatch' && !inputs.build_input_benchmark && !inputs.shared_cache_smoke && !inputs.shared_cache_diagnostics
     # Keep the existing VS2022/MSBuild17 contract; windows-2025 now selects VS2026.
     runs-on: windows-2022
     timeout-minutes: 60
@@ -159,7 +180,7 @@ jobs:
 
   windows-build-input-benchmark:
     name: Windows build input A/B (0 unit tests)
-    if: github.event_name == 'workflow_dispatch' && inputs.build_input_benchmark
+    if: github.event_name == 'workflow_dispatch' && inputs.build_input_benchmark && !inputs.shared_cache_smoke && !inputs.shared_cache_diagnostics
     runs-on: windows-2022
     timeout-minutes: 15
     steps:
@@ -210,6 +231,104 @@ jobs:
           name: build-input-ab-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/ci-input-ab-${{ github.run_id }}-${{ github.run_attempt }}/artifact
           if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+          include-hidden-files: false
+
+
+  windows-shared-cache-smoke:
+    if: github.event_name == 'workflow_dispatch' && inputs.shared_cache_smoke && !inputs.shared_cache_diagnostics
+    runs-on: windows-2022
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    concurrency:
+      group: ete-shared-cache-native-smoke
+      cancel-in-progress: false
+    steps:
+      - name: Require isolated smoke mode and exact reviewed tool source
+        shell: pwsh
+        env:
+          SMOKE_BENCHMARK: ${{ inputs.build_input_benchmark }}
+          SMOKE_RELEASE: ${{ inputs.release_package }}
+          SMOKE_TOOL_SHA: ${{ inputs.benchmark_expected_sha }}
+        run: |
+          if ($env:SMOKE_BENCHMARK -eq 'true' -or $env:SMOKE_RELEASE -eq 'true' -or $env:SMOKE_TOOL_SHA -cnotmatch '^[a-f0-9]{40}$' -or $env:SMOKE_TOOL_SHA -cne $env:GITHUB_SHA) { throw 'Shared cache smoke requires exact reviewed tooling SHA with build, release and benchmark modes disabled.' }
+      - name: Check out exact smoke tooling source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up locked Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.1
+      - name: Install locked fixture dependencies without scripts
+        run: npm ci --ignore-scripts
+      - name: Run exact-artifact owned Windows shared cache smoke
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SMOKE_ARTIFACT_ID: ${{ inputs.shared_cache_artifact_id }}
+          SMOKE_ZIP_SHA: ${{ inputs.shared_cache_zip_sha256 }}
+          SMOKE_INSTALLER_SHA: ${{ inputs.shared_cache_installer_sha256 }}
+          SMOKE_TOOL_SHA: ${{ inputs.benchmark_expected_sha }}
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP ('ete-shared-smoke-' + $env:GITHUB_RUN_ID + '-' + $env:GITHUB_RUN_ATTEMPT)
+          ./tools/shared-playback-cache/windows-ci.ps1 -ArtifactId $env:SMOKE_ARTIFACT_ID -ZipSha256 $env:SMOKE_ZIP_SHA -InstallerSha256 $env:SMOKE_INSTALLER_SHA -ExpectedToolSha $env:SMOKE_TOOL_SHA -OutputRoot $out
+      - name: Upload only safe shared cache receipts
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: shared-cache-smoke-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ete-shared-smoke-${{ github.run_id }}-${{ github.run_attempt }}/safe-receipts/*
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 0
+          include-hidden-files: false
+
+
+  windows-shared-cache-diagnostics:
+    if: github.event_name == 'workflow_dispatch' && inputs.shared_cache_diagnostics
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - name: Require reviewed offline diagnostic mode only
+        shell: pwsh
+        env:
+          DIAG_NATIVE: ${{ inputs.shared_cache_smoke }}
+          DIAG_BENCHMARK: ${{ inputs.build_input_benchmark }}
+          DIAG_RELEASE: ${{ inputs.release_package }}
+          DIAG_TOOL_SHA: ${{ inputs.benchmark_expected_sha }}
+        run: |
+          if ($env:DIAG_NATIVE -eq 'true' -or $env:DIAG_BENCHMARK -eq 'true' -or $env:DIAG_RELEASE -eq 'true' -or $env:DIAG_TOOL_SHA -cnotmatch '^[a-f0-9]{40}$' -or $env:DIAG_TOOL_SHA -cne $env:GITHUB_SHA) { throw 'Offline diagnostics require exact tooling SHA and no native, package or benchmark mode.' }
+      - name: Check out exact diagnostic source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up locked Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.1
+      - name: Install locked offline fixture dependencies
+        run: npm ci --ignore-scripts
+      - name: Emit first assertion immediately with finite per-file owned deadlines
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP ('ete-shared-diagnostics-' + $env:GITHUB_RUN_ID + '-' + $env:GITHUB_RUN_ATTEMPT)
+          node tools/shared-playback-cache/windows-diagnostics.cjs "--out=$out"
+          if ($LASTEXITCODE -ne 0) { throw 'Offline Windows diagnostics failed; inspect first TAP assertion, not a longer timeout.' }
+      - name: Upload owned synthetic TAP and diagnostic summary
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: shared-cache-diagnostics-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ete-shared-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}/*
+          if-no-files-found: warn
           retention-days: 1
           compression-level: 0
           include-hidden-files: false

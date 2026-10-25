@@ -3,8 +3,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
-const os = require('node:os');
 const path = require('node:path');
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const crypto = require('node:crypto');
 const {execFile} = require('node:child_process');
 const {promisify} = require('node:util');
@@ -13,7 +13,7 @@ const {BLOCK, SCENARIOS, LEGACY_SCENARIO, assertBounds, inspectDisk, parseArgs, 
   require('../tools/shared-playback-cache/quota.cjs');
 
 async function fixture(t) {
-  const parent = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-quota-unit-'));
+  const parent = temporaryRoot('ete-quota-unit-', ['fresh', path.join('fresh', 'scaled-budgets')]);
   t.after(() => fs.rm(parent, {recursive: true, force: true}));
   return path.join(parent, 'fresh');
 }

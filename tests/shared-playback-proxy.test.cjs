@@ -1,16 +1,30 @@
 'use strict';
 const test = require('node:test'), assert = require('node:assert/strict');
-const fs = require('node:fs/promises'), os = require('node:os'), path = require('node:path');
+const fs = require('node:fs/promises'), path = require('node:path');
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const {createStore} = require('../tools/shared-playback-cache/store.cjs');
 const {createProxy} = require('../tools/shared-playback-cache/proxy.cjs');
 const {source, get, identity, hash, delay} = require('../tools/shared-playback-cache/fixture.cjs');
+async function cleanup(actions, remove = () => {}) {
+  const results = await Promise.allSettled(actions.map(action => Promise.resolve().then(action)));
+  results.push(...await Promise.allSettled([Promise.resolve().then(remove)]));
+  const errors = results.filter(result => result.status === 'rejected').map(result => result.reason);
+  if (errors.length) throw new AggregateError(errors, 'owned-shared-proxy-fixture-cleanup-failed');
+}
+function ownedRoot(t, prefix) {
+  const root = temporaryRoot(prefix, ['']), actions = [];
+  t.after(() => cleanup(actions, () => fs.rm(root, {recursive: true, force: true})));
+  return {root, own: action => actions.push(action)};
+}
 async function setup(t, sourceOptions = {}, io) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-shared-proxy-'));
+  const {root, own} = ownedRoot(t, 'ete-shared-proxy-');
   const origin = await source(sourceOptions);
+  own(() => origin.close());
   const store = await createStore({root, currentBytes: 2 * 1024 * 1024, nextBytes: 512 * 1024, maxPendingBytes: 256 * 1024, io});
+  own(() => store.close());
   let grants = 0;
   const proxy = await createProxy({store, authorize: async () => {grants++; return origin.grant();}});
-  t.after(async () => {await proxy.close(); await origin.close(); await fs.rm(root, {recursive: true, force: true});});
+  own(() => proxy.close());
   return {root, origin, store, proxy, grants: () => grants};
 }
 test('cold bytes stream before the delayed tail and before a slow disk commit', async t => {
@@ -94,11 +108,12 @@ for (const change of ['revoked', 'length']) test('observed ' + change + ' after 
 test('pending authorization is reserved, cancelled and joined before close; no late route can publish', async t => {
   let finish;
   const gate = new Promise(resolve => {finish = resolve;});
-  const origin = await source({bytes: 1024, firstDelay: 0, tailDelay: 0});
+  let origin, proxy;
+  t.after(async () => {finish(); await cleanup([() => proxy?.close(), () => origin?.close()]);});
+  origin = await source({bytes: 1024, firstDelay: 0, tailDelay: 0});
   let opens = 0;
   const fake = {open: async () => {opens++; return 'key';}, close: async () => {}, status: () => ({pending: 0})};
-  const proxy = await createProxy({store: fake, authorize: async () => {await gate; return origin.grant();}});
-  t.after(async () => {finish(); await proxy.close(); await origin.close();});
+  proxy = await createProxy({store: fake, authorize: async () => {await gate; return origin.grant();}});
   const pending = Array.from({length: 4}, (_, n) => proxy.open(identity(String(n))).catch(error => error));
   await assert.rejects(proxy.open(identity('fifth')), /route-limit/);
   let stopped = false; const closing = proxy.close().then(() => {stopped = true;});
@@ -108,30 +123,35 @@ test('pending authorization is reserved, cancelled and joined before close; no l
 });
 test('retired actual cannot act after its pending cache open completes', async t => {
   let finish; const gate = new Promise(resolve => {finish = resolve;});
-  const origin = await source({bytes: 1024, firstDelay: 0, tailDelay: 0}); let actuals = 0;
+  let origin, proxy, actuals = 0;
+  t.after(async () => {finish(); await cleanup([() => proxy?.close(), () => origin?.close()]);});
+  origin = await source({bytes: 1024, firstDelay: 0, tailDelay: 0});
   const fake = {open: async () => {await gate; return 'key';}, actual: async () => {actuals++;}, close: async () => {}, status: () => ({pending: 0})};
-  const proxy = await createProxy({store: fake, authorize: async () => origin.grant()});
-  t.after(async () => {finish(); await proxy.close(); await origin.close();});
+  proxy = await createProxy({store: fake, authorize: async () => origin.grant()});
   const a = await proxy.open(identity()); const actual = a.actual().catch(error => error); a.retire(); finish();
   assert.ok((await actual) instanceof Error); assert.equal(actuals, 0);
 });
 test('the authorized identity is an immutable snapshot, including later refresh', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-shared-alias-'));
+  const {root, own} = ownedRoot(t, 'ete-shared-alias-');
   const origin = await source({bytes: 1024, firstDelay: 0, tailDelay: 0});
+  own(() => origin.close());
   const store = await createStore({root, currentBytes: 4096, nextBytes: 4096});
+  own(() => store.close());
   const seen = [];
   const proxy = await createProxy({store, authorize: async value => {seen.push(value.account); assert.ok(Object.isFrozen(value)); return {...origin.grant(), expiresAt: Date.now() + 1};}});
-  t.after(async () => {await proxy.close(); await origin.close(); await fs.rm(root, {recursive: true, force: true});});
+  own(() => proxy.close());
   const value = identity(); const a = await proxy.open(value); value.account = 'different-account'; await delay(5);
   assert.equal((await get(a.url, 0, 32)).status, 206); assert.ok(seen.length > 1);
   assert.ok(seen.every(account => account === 'account-owned'));
 });
 test('a player-paused source survives beyond the network timeout and can coexist with one preload', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-shared-drain-'));
+  const {root, own} = ownedRoot(t, 'ete-shared-drain-');
   const origin = await source({bytes: 8 * 1024 * 1024, firstDelay: 0, tailDelay: 0});
+  own(() => origin.close());
   const store = await createStore({root, currentBytes: 1024 * 1024, nextBytes: 262144});
+  own(() => store.close());
   const proxy = await createProxy({store, timeoutMs: 100, authorize: async () => origin.grant()});
-  t.after(async () => {await proxy.close(); await origin.close(); await fs.rm(root, {recursive: true, force: true});});
+  own(() => proxy.close());
   const a = await proxy.open(identity('A')), b = await proxy.open(identity('B'), 'next'); await b.ready();
   const playing = get(a.url, 0, origin.data.length, {pauseAfterFirstMs: 400});
   const deadline = Date.now() + 2000;
@@ -143,10 +163,11 @@ test('a player-paused source survives beyond the network timeout and can coexist
   assert.equal(proxy.status().peakOrigins, 2); assert.ok(proxy.status().peakBodies <= 2);
 });
 test('learning response validators preserves the actual playback designation across reopen', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-shared-enrichment-'));
-  const origin = await source({bytes: 256 * 1024, firstDelay: 0, tailDelay: 0, etag: true});
+  const {root, own} = ownedRoot(t, 'ete-shared-enrichment-');
   let proxy, store;
-  t.after(async () => {await proxy?.close(); await store?.close(); await origin.close(); await fs.rm(root, {recursive: true, force: true});});
+  own(() => proxy?.close()); own(() => store?.close());
+  const origin = await source({bytes: 256 * 1024, firstDelay: 0, tailDelay: 0, etag: true});
+  own(() => origin.close());
   store = await createStore({root, currentBytes: 1024 * 1024, nextBytes: 256 * 1024});
   proxy = await createProxy({store, authorize: async () => ({...origin.grant(), metadata: {total: origin.data.length}})});
   const handle = await proxy.open(identity()); await handle.ready(); await handle.actual();
@@ -166,11 +187,13 @@ test('learning response validators preserves the actual playback designation acr
 test('retired routes keep admission charged until pending metadata settles', async t => {
   let release, queued = 0;
   const gate = new Promise(resolve => {release = resolve;}); t.after(release);
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-shared-admission-'));
+  const {root, own} = ownedRoot(t, 'ete-shared-admission-');
   const origin = await source({bytes: 65536, firstDelay: 0, tailDelay: 0});
+  own(() => origin.close());
   const store = await createStore({root, currentBytes: 1024 * 1024, nextBytes: 256 * 1024});
+  own(() => store.close());
   const proxy = await createProxy({store: {...store, async open(...args) {queued++; await gate; return store.open(...args);}}, authorize: async () => origin.grant()});
-  t.after(async () => {await proxy.close(); await origin.close(); await fs.rm(root, {recursive: true, force: true});});
+  own(() => proxy.close());
   for (let n = 0; n < 4; n++) (await proxy.open(identity('pending-' + n))).retire();
   await assert.rejects(proxy.open(identity('excess')), /route-limit/);
   assert.equal(queued, 4);
@@ -179,17 +202,19 @@ test('retired routes keep admission charged until pending metadata settles', asy
 });
 
 test('actual selection pending persistence follows learned metadata without losing ownership', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-shared-pending-actual-'));
-  const origin = await source({bytes: 256 * 1024, firstDelay: 0, tailDelay: 0, etag: true});
   let held = false, block = false, release;
   const gate = new Promise(resolve => {release = resolve;}); t.after(release);
+  const {root, own} = ownedRoot(t, 'ete-shared-pending-actual-');
+  const origin = await source({bytes: 256 * 1024, firstDelay: 0, tailDelay: 0, etag: true});
+  own(() => origin.close());
   const io = {...fs, async writeFile(file, ...args) {
     if (block && path.basename(file).startsWith('.index-')) {block = false; held = true; await gate;}
     return fs.writeFile(file, ...args);
   }};
   const store = await createStore({root, currentBytes: 1024 * 1024, nextBytes: 256 * 1024, io});
+  own(() => store.close());
   const proxy = await createProxy({store, authorize: async () => ({...origin.grant(), metadata: {total: origin.data.length}})});
-  t.after(async () => {await proxy.close(); await origin.close(); await fs.rm(root, {recursive: true, force: true});});
+  own(() => proxy.close());
   const handle = await proxy.open(identity()); await handle.ready();
   block = true; const selecting = handle.actual();
   const deadline = Date.now() + 1000; while (!held && Date.now() < deadline) await delay(1);
@@ -199,6 +224,7 @@ test('actual selection pending persistence follows learned metadata without losi
   assert.equal(store.status().currentKey, await handle.ready());
   await proxy.close();
   const recovered = await createStore({root, currentBytes: 1024 * 1024, nextBytes: 256 * 1024});
+  own(() => recovered.close());
   assert.equal(recovered.status().current, 65536); await recovered.close();
 });
 test('sequential warm playback reads each full cached block once instead of four times', async t => {

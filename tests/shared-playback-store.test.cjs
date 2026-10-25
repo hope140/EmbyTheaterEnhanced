@@ -3,18 +3,26 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
-const os = require('node:os');
 const path = require('node:path');
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const {createStore} = require('../tools/shared-playback-cache/store.cjs');
 
 const identity = (account = 'account-a', resource = 'resource-a') => ({
     server: 'server-a', account, item: 'item-a', mediaSource: 'source-a', resource, representation: 'original'
 });
 const metadata = values => ({total: 1024, ...values});
+async function cleanup(actions, remove) {
+    const results = await Promise.allSettled(actions.map(action => Promise.resolve().then(action)));
+    results.push(...await Promise.allSettled([Promise.resolve().then(remove)]));
+    const errors = results.filter(result => result.status === 'rejected').map(result => result.reason);
+    if (errors.length) throw new AggregateError(errors, 'owned-shared-store-fixture-cleanup-failed');
+}
 
 async function fixture(t, limits = {}, overrides = {}) {
-    const parent = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-shared-cache-test-'));
+    const parent = temporaryRoot('ete-shared-cache-test-', ['cache']);
     const root = path.join(parent, 'cache');
+    let store;
+    t.after(() => cleanup([() => store?.close()], () => fs.rm(parent, {recursive: true, force: true})));
     const io = new Proxy(fs, {
         get(target, property) {
             if (Object.hasOwn(overrides, property)) return overrides[property];
@@ -22,11 +30,7 @@ async function fixture(t, limits = {}, overrides = {}) {
             return typeof value === 'function' ? value.bind(target) : value;
         }
     });
-    const store = await createStore({root, currentBytes: 64, nextBytes: 64, ...limits, io});
-    t.after(async () => {
-        await store.close().catch(() => {});
-        await fs.rm(parent, {recursive: true, force: true});
-    });
+    store = await createStore({root, currentBytes: 64, nextBytes: 64, ...limits, io});
     return {parent, root, store};
 }
 
@@ -145,7 +149,7 @@ test('actual ownership retention requires a valid key for the same source identi
 });
 
 test('retired queued metadata enrichment cannot transfer actual ownership', async t => {
-    const blocked = gate();
+    const blocked = gate(); t.after(blocked.release);
     let holdWrite = false;
     const {store} = await fixture(t, {}, {
         async writeFile(file, data, options) {
@@ -180,7 +184,7 @@ test('retired queued metadata enrichment cannot transfer actual ownership', asyn
 });
 
 test('metadata enrichment cannot reclaim actual ownership from a preceding queued selection', async t => {
-    const blocked = gate();
+    const blocked = gate(); t.after(blocked.release);
     let holdWrite = false;
     const {store} = await fixture(t, {}, {
         async writeFile(file, data, options) {
@@ -241,9 +245,11 @@ test('open and preload preserve the last actual object until actual playback cha
 });
 
 test('close and reopen recover only the last actual object and discard preload', async t => {
-    const parent = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-shared-cache-reopen-'));
+    const parent = temporaryRoot('ete-shared-cache-reopen-', ['cache']);
     const root = path.join(parent, 'cache');
-    let store = await createStore({root, currentBytes: 64, nextBytes: 64});
+    let store;
+    t.after(() => cleanup([() => store?.close()], () => fs.rm(parent, {recursive: true, force: true})));
+    store = await createStore({root, currentBytes: 64, nextBytes: 64});
     const a = await store.open(identity('account-a', 'resource-a'), metadata(), 'next');
     await store.actual(a);
     const aBytes = Buffer.from('survives restart');
@@ -260,19 +266,15 @@ test('close and reopen recover only the last actual object and discard preload',
         assert.equal(await store.read(b, 0, 15), null);
     } finally {
         await store.close();
-        await fs.rm(parent, {recursive: true, force: true});
     }
 });
 
 for (const currentBytes of [64, 8]) {
     test(`recovery preserves forward spans and holes with out-of-order touches and a ${currentBytes}-byte quota`, async t => {
-        const parent = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-shared-cache-recovery-order-'));
+        const parent = temporaryRoot('ete-shared-cache-recovery-order-', ['cache']);
         const root = path.join(parent, 'cache');
         let store;
-        t.after(async () => {
-            await store?.close().catch(() => {});
-            await fs.rm(parent, {recursive: true, force: true});
-        });
+        t.after(() => cleanup([() => store?.close()], () => fs.rm(parent, {recursive: true, force: true})));
         store = await createStore({root, currentBytes: 64, nextBytes: 64});
         const key = await store.open(identity(), metadata(), 'current');
         await store.actual(key);
@@ -331,7 +333,7 @@ test('per-role budget rolls out the oldest committed block before retry', async 
 
 test('role changes cannot reuse disk budget still charged to leased retired blocks', async t => {
     for (const transition of ['open-current', 'actual']) await t.test(transition, async t => {
-        const blocked = gate();
+        const blocked = gate(); t.after(blocked.release);
         const leasedKeys = new Set();
         let entered = 0;
         const {store} = await fixture(t, {currentBytes: 4, nextBytes: 4}, blockHandleIo({
@@ -374,7 +376,7 @@ test('role changes cannot reuse disk budget still charged to leased retired bloc
 });
 
 test('slow disk admission reserves bounded bytes before queued writes can grow', async t => {
-    const blocked = gate();
+    const blocked = gate(); t.after(blocked.release);
     let hold = true;
     const overrides = {
         async writeFile(file, data, options) {
@@ -434,7 +436,7 @@ test('read rejects a block whose persisted bytes no longer match its hash', asyn
 });
 
 test('invalidated blocks stay on disk until an in-flight read lease releases', async t => {
-    const blocked = gate();
+    const blocked = gate(); t.after(blocked.release);
     let holdRead = false;
     const unlinkedBlocks = [];
     const overrides = {
@@ -471,24 +473,20 @@ test('invalidated blocks stay on disk until an in-flight read lease releases', a
 });
 
 test('same root is OS-guarded until its current store closes', async t => {
-    const parent = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-shared-cache-guard-'));
+    const parent = temporaryRoot('ete-shared-cache-guard-', ['cache']);
     const root = path.join(parent, 'cache');
-    let first;
-    try {
-        first = await createStore({root, currentBytes: 32, nextBytes: 32});
-        await assert.rejects(createStore({root, currentBytes: 32, nextBytes: 32}));
-        await first.close();
-        first = null;
-        const reopened = await createStore({root, currentBytes: 32, nextBytes: 32});
-        await reopened.close();
-    } finally {
-        await first?.close().catch(() => {});
-        await fs.rm(parent, {recursive: true, force: true});
-    }
+    let first, reopened;
+    t.after(() => cleanup([() => first?.close(), () => reopened?.close()], () => fs.rm(parent, {recursive: true, force: true})));
+    first = await createStore({root, currentBytes: 32, nextBytes: 32});
+    await assert.rejects(createStore({root, currentBytes: 32, nextBytes: 32}));
+    await first.close();
+    first = null;
+    reopened = await createStore({root, currentBytes: 32, nextBytes: 32});
+    await reopened.close();
 });
 
 test('close waits for a live reader and removes next-role blocks', async t => {
-    const blocked = gate();
+    const blocked = gate(); t.after(blocked.release);
     let holdRead = false;
     const {root, store} = await fixture(t, {}, blockHandleIo({beforeRead: async file => {
         if (holdRead && String(file).endsWith('.bin')) {
@@ -522,7 +520,7 @@ test('close waits for a live reader and removes next-role blocks', async t => {
 });
 
 test('retired same-name block cannot be replaced until its old read lease releases', async t => {
-    const blocked = gate();
+    const blocked = gate(); t.after(blocked.release);
     let holdRead = false;
     const {store} = await fixture(t, {}, blockHandleIo({beforeRead: async file => {
         if (holdRead && String(file).endsWith('.bin')) {
@@ -563,7 +561,7 @@ test('adjacent blocks form one span even when queried from the middle', async t 
 });
 
 test('only one capacity reclaim runs while delayed unlink is pending', async t => {
-    const blocked = gate();
+    const blocked = gate(); t.after(blocked.release);
     let holdUnlink = true;
     let blockUnlinks = 0;
     const overrides = {
@@ -595,7 +593,7 @@ test('only one capacity reclaim runs while delayed unlink is pending', async t =
 });
 
 test('retired queued open cannot invalidate the current representation or the following entry', async t => {
-    const blocked = gate();
+    const blocked = gate(); t.after(blocked.release);
     let holdWrite = false;
     const overrides = {
         async writeFile(file, data, options) {
@@ -638,7 +636,7 @@ test('retired queued open cannot invalidate the current representation or the fo
 });
 
 test('retired queued actual returns false without clearing the following preload', async t => {
-    const blocked = gate();
+    const blocked = gate(); t.after(blocked.release);
     let holdWrite = false;
     const overrides = {
         async writeFile(file, data, options) {

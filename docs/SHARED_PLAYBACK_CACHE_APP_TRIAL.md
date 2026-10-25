@@ -63,6 +63,8 @@ helper时钟与文档是合成的，不是Native DLL解码。测试曾真实复�
 
 ## Windows候选准备，尚未执行
 
+已补仅工具层的[真实helper合成短验流程](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。该流程不执行普通main bootstrap，首次Windows CI失败仍需新提交回归，未派发旧包。
+
 不需要额外构建参数来默认启用：源文件正常入包，普通启动仍关闭。候选必须是本提交新构建，保留正式版及既有artifact。试验必须使用独立profile；校验覆盖关键来源文件的runtime-provenance行、源码／runtime双摘要及实际exe／app路径。
 
 先用同提交checkout的固定Node准备全新profile（既有目录拒绝，未启动程序、未启用设置）：

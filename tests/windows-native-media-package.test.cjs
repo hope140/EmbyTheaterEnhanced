@@ -61,7 +61,25 @@ test('formal Windows wiring uses no trial flag and keeps one-second capture, mai
  for(const name of ['tools/build.ps1','tools/package.ps1'])assert.match(read(name),/windows-native-media-input.cjs/);
  const contract=require('../tools/build-input-contract.cjs');for(const name of tool.INPUTS)assert.ok(contract.INPUT_PATHS.includes(name));
  assert.equal(require('../package.json').version,'0.4.3');assertCheckoutBytes(fs.readFileSync(path.join(root,'src/config/system-defaults.json')),cp.execFileSync('git',['-C',root,'show','ff92bead:src/config/system-defaults.json']));
- assertCheckoutBytes(fs.readFileSync(path.join(root,'.github/workflows/public-ci.yml')),cp.execFileSync('git',['-C',root,'show','ff92bead:.github/workflows/public-ci.yml']));
+  // Preserve the exact formal workflow route after removing only the reviewed,
+ // opt-in shared-cache smoke extension (which has its own route/permission tests).
+ let workflow=fs.readFileSync(path.join(root,'.github/workflows/public-ci.yml'),'utf8');
+ const hasCrLf=workflow.includes('\r\n');
+ if(hasCrLf)assert.equal(workflow.replace(/\r\n/g,'').includes('\n'),false,'no mixed checkout line endings');
+ workflow=workflow.replace(/\r\n/g,'\n');
+ const extension=workflow.indexOf('\n\n  windows-shared-cache-smoke:\n');
+ assert.ok(extension>0,'one explicit isolated smoke extension required');
+ workflow=workflow.slice(0,extension);
+ const inputStart=workflow.indexOf('      shared_cache_smoke:\n'),inputEnd=workflow.indexOf('\npermissions:\n',inputStart);
+ assert.ok(inputStart>0&&inputEnd>inputStart);
+ const fields=workflow.slice(inputStart,inputEnd);
+ assert.deepEqual([...fields.matchAll(/^      ([a-z_0-9]+):$/gm)].map(m=>m[1]),['shared_cache_smoke','shared_cache_diagnostics','shared_cache_artifact_id','shared_cache_zip_sha256','shared_cache_installer_sha256']);
+ workflow=workflow.slice(0,inputStart)+workflow.slice(inputEnd+1);
+ assert.equal((workflow.match(/ && !inputs\.shared_cache_smoke/g)||[]).length,2);
+ workflow=workflow.replace(/ && !inputs\.shared_cache_smoke/g,'');
+ assert.equal((workflow.match(/ && !inputs\.shared_cache_diagnostics/g)||[]).length,2);
+ workflow=workflow.replace(/ && !inputs\.shared_cache_diagnostics/g,'');
+ assertCheckoutBytes(Buffer.from(workflow),cp.execFileSync('git',['-C',root,'show','ff92bead:.github/workflows/public-ci.yml']));
 });
 
 

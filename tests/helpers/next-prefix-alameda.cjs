@@ -36,7 +36,7 @@ async function rendererBoot(input) {
         reportPlaybackStart: info => (report('server-report', {method: 'start', item: info.ItemId}), Promise.resolve()),
         reportPlaybackProgress: info => (report('server-report', {method: 'progress', item: info.ItemId}), Promise.resolve()),
         reportPlaybackStopped: info => (report('server-report', {method: 'stop', item: info.ItemId}), Promise.resolve())};
-    const appSettings = {get: key => key === 'mpv-volume' ? '0' : key === 'mpv-demuxermaxbytes' && input.scenario === 'matrix-preempt' ? '1048576' : null, set: () => {}, maxStreamingBitrate: () => 200000000, enableAutomaticBitrateDetection: () => false};
+    const appSettings = {get: key => key === 'mpv-volume' ? '0' : key === 'mpv-demuxermaxbytes' && input.cacheBytes ? String(input.cacheBytes) : key === 'mpv-demuxermaxbytes' && input.scenario === 'matrix-preempt' ? '1048576' : null, set: () => {}, maxStreamingBitrate: () => 200000000, enableAutomaticBitrateDetection: () => false};
     const plugins = {ofType: type => registered.filter(plugin => plugin.type === type), mapPath: (_plugin, file) => file};
     stubs[aliases.appSettings] = {default: appSettings}; stubs[aliases.pluginManager] = {default: plugins};
     stubs[aliases.userSettings] = {default: {getSubtitleAppearanceSettings: () => ({}), enableCinemaMode: () => false, skipForwardLength: () => 30, skipBackLength: () => 10}};
@@ -60,7 +60,7 @@ async function rendererBoot(input) {
         const originalNextTrack = manager.nextTrack;
         manager.nextTrack = function () {report('manager-next-track'); return originalNextTrack.apply(this, arguments);};
         registered.push(player); events.trigger(plugins, 'registered', [player]);
-        const items = await Promise.all((input.singleItem ? ['A'] : ['A', 'B']).map(id => api.getItem('anonymous', id)));
+        const items = await Promise.all((input.itemIds || (input.singleItem ? ['A'] : ['A', 'B'])).map(id => api.getItem('anonymous', id)));
         window.prefixStop = async () => {await manager.stop(); await player.destroy();};
         window.prefixAction = async operation => {
             report('matrix-action', {operation});
@@ -72,7 +72,7 @@ async function rendererBoot(input) {
             else throw Error('matrix-action-invalid');
         };
         report('manager-play-invocation');
-        await manager.play({items, startIndex: 0, startPositionTicks: 0, fullscreen: false});
+        await manager.play({items, startIndex: 0, startPositionTicks: input.startPositionTicks || 0, fullscreen: false});
         if (manager.getCurrentPlayer() !== player || !player.currentSrc()) throw Error('initial-play-not-established');
         report('initial-play-resolved');
     } catch (error) {report('renderer-failure', {code: 'renderer-chain-failed', detail: String(error.message).slice(0, 180)});}

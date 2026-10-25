@@ -3,8 +3,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
-const os = require('node:os');
 const path = require('node:path');
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const crypto = require('node:crypto');
 const {spawnSync} = require('node:child_process');
 const {createStore} = require('../tools/shared-playback-cache/store.cjs');
@@ -23,10 +23,18 @@ const metadata = {total: 2048, version: 'crash-test'};
 const sha = value => crypto.createHash('sha256').update(value).digest('hex');
 
 async function freshRoot(t) {
-  const parent = await fs.mkdtemp(path.join(os.tmpdir(), 'ete-index-recovery-'));
+  const parent = temporaryRoot('ete-index-recovery-', ['cache']);
   const root = path.join(parent, 'cache');
-  t.after(() => fs.rm(parent, {recursive: true, force: true}));
-  return root;
+  const stores = new Set();
+  t.after(async () => {
+    const results = await Promise.allSettled([...stores].map(store => Promise.resolve().then(() => store.close())));
+    results.push(...await Promise.allSettled([fs.rm(parent, {recursive: true, force: true})]));
+    const errors = results.filter(result => result.status === 'rejected').map(result => result.reason);
+    if (errors.length) throw new AggregateError(errors, 'owned-shared-index-fixture-cleanup-failed');
+  });
+  return {root, async create(options) {
+    const store = await createStore({root, ...options}); stores.add(store); return store;
+  }};
 }
 
 function crash(mode, root) {
@@ -109,12 +117,11 @@ test('checkpoint, journal byte, and serialized row ceilings are enforced', () =>
 });
 
 test('abrupt process exit after a complete add frame reopens with matching bytes and span', async t => {
-  const root = await freshRoot(t);
+  const {root, create} = await freshRoot(t);
   crash('add-crash', root);
   const journal = await fs.readFile(path.join(root, 'index.log'));
   assert.equal(journal.toString().trim().split('\n').length, 1);
-  const store = await createStore({root, currentBytes: 2048, nextBytes: 2048});
-  t.after(() => store.close().catch(() => {}));
+  const store = await create({currentBytes: 2048, nextBytes: 2048});
   const key = await store.open(identity, metadata, 'current');
   const payload = Buffer.from('process-exit-committed-block');
   assert.equal(store.status().currentKey, key);
@@ -124,12 +131,11 @@ test('abrupt process exit after a complete add frame reopens with matching bytes
 });
 
 test('abrupt exit with a half final frame preserves earlier adds and records discarded tail bytes', async t => {
-  const root = await freshRoot(t);
+  const {root, create} = await freshRoot(t);
   crash('tail-crash', root);
   const tail = Buffer.from('{"sequence":3\tpartial');
   await fs.appendFile(path.join(root, 'index.log'), tail);
-  const store = await createStore({root, currentBytes: 2048, nextBytes: 2048});
-  t.after(() => store.close().catch(() => {}));
+  const store = await create({currentBytes: 2048, nextBytes: 2048});
   const key = await store.open(identity, metadata, 'current');
   assert.deepEqual(await store.read(key, 0, Buffer.byteLength('process-exit-committed-block')),
     Buffer.from('process-exit-committed-block'));
@@ -140,7 +146,7 @@ test('abrupt exit with a half final frame preserves earlier adds and records dis
 });
 
 test('checkpoint rename before journal reset crash skips old frames without duplicate blocks', async t => {
-  const root = await freshRoot(t);
+  const {root, create} = await freshRoot(t);
   crash('compact-crash', root);
   const checkpoint = JSON.parse(await fs.readFile(path.join(root, 'index.json'), 'utf8'));
   const oldLog = await fs.readFile(path.join(root, 'index.log'));
@@ -148,8 +154,7 @@ test('checkpoint rename before journal reset crash skips old frames without dupl
   assert.equal(checkpoint.entries[0].blocks.length, 512);
   assert.ok(oldLog.length > 0);
 
-  const store = await createStore({root, currentBytes: 2048, nextBytes: 2048, maxEntries: 2048});
-  t.after(() => store.close().catch(() => {}));
+  const store = await create({currentBytes: 2048, nextBytes: 2048, maxEntries: 2048});
   const key = await store.open(identity, metadata, 'current');
   assert.equal(store.status().blocks, 512, 'old journal frames are checkpointed, not applied twice');
   assert.equal(store.status().indexMetrics.replayedRecords, 0);
@@ -160,7 +165,7 @@ test('checkpoint rename before journal reset crash skips old frames without dupl
 });
 
 test('short successful journal append faults and never publishes the added block', async t => {
-  const root = await freshRoot(t);
+  const {root, create} = await freshRoot(t);
   let shorten = false, shortWriteCalls = 0;
   const io = new Proxy(fs, {get(target, property) {
     if (property === 'open') return async (file, flags, ...args) => {
@@ -185,8 +190,7 @@ test('short successful journal append faults and never publishes the added block
     const value = target[property];
     return typeof value === 'function' ? value.bind(target) : value;
   }});
-  const store = await createStore({root, currentBytes: 2048, nextBytes: 2048, io});
-  t.after(() => store.close().catch(() => {}));
+  const store = await create({currentBytes: 2048, nextBytes: 2048, io});
   const key = await store.open(identity, metadata, 'current');
   await store.actual(key);
   shorten = true;
@@ -202,7 +206,7 @@ for (const [mode, name] of [
   ['append-open-swap', 'append refuses a journal path swapped after open but before descriptor identity validation'],
   ['reset-lstat-swap', 'checkpoint reset refuses a journal symlink swapped after lstat and preserves the external sentinel'],
 ]) test(name, async t => {
-  const root = await freshRoot(t);
+  const {root, create} = await freshRoot(t);
   const sentinel = path.join(path.dirname(root), 'external-sentinel');
   await fs.writeFile(sentinel, SENTINEL, {mode: 0o600});
   crash(mode, root);
@@ -217,7 +221,7 @@ for (const [mode, name] of [
 });
 
 test('committed remove tombstone prevents block resurrection after pre-unlink process exit', async t => {
-  const root = await freshRoot(t);
+  const {root, create} = await freshRoot(t);
   crash('remove-crash', root);
   const journal = (await fs.readFile(path.join(root, 'index.log'), 'utf8')).trim().split('\n');
   assert.equal(journal.length, 2);
@@ -225,8 +229,7 @@ test('committed remove tombstone prevents block resurrection after pre-unlink pr
   assert.equal(JSON.parse(journal[1].slice(0, journal[1].lastIndexOf('\t'))).op, 'remove');
   assert.equal((await fs.readdir(path.join(root, 'blocks'))).length, 1, 'crash happened before physical unlink');
 
-  const store = await createStore({root, currentBytes: 8, nextBytes: 8});
-  t.after(() => store.close().catch(() => {}));
+  const store = await create({currentBytes: 8, nextBytes: 8});
   const key = await store.open(identity, {...metadata, total: 32}, 'current');
   assert.equal(store.status().currentKey, key);
   assert.equal(store.status().committed, 0);
@@ -236,8 +239,8 @@ test('committed remove tombstone prevents block resurrection after pre-unlink pr
 });
 
 test('legacy v1 checkpoint with object blocks migrates and reopens intact', async t => {
-  const root = await freshRoot(t);
-  let store = await createStore({root, currentBytes: 2048, nextBytes: 2048});
+  const {root, create} = await freshRoot(t);
+  let store = await create({currentBytes: 2048, nextBytes: 2048});
   const key = await store.open(identity, metadata, 'current');
   await store.actual(key);
   const payload = Buffer.from('legacy-checkpoint-payload');
@@ -250,19 +253,18 @@ test('legacy v1 checkpoint with object blocks migrates and reopens intact', asyn
       file: `${entry.key}-${start}-${length}-${hash}.bin`})),
   }))};
   await fs.writeFile(path.join(root, 'index.json'), JSON.stringify(legacy));
-  store = await createStore({root, currentBytes: 2048, nextBytes: 2048});
-  t.after(() => store.close().catch(() => {}));
+  store = await create({currentBytes: 2048, nextBytes: 2048});
   const reopened = await store.open(identity, metadata, 'current');
   assert.equal(reopened, key);
   assert.deepEqual(await store.read(reopened, 17, payload.length), payload);
 });
 
 test('bounded rolling window writes add and remove journal frames and keeps the final eight blocks across reopen', async t => {
-  const root = await freshRoot(t);
+  const {root, create} = await freshRoot(t);
   const blockBytes = 16, windowBlocks = 8, blockCount = 700;
   const currentBytes = blockBytes * windowBlocks, nextBytes = blockBytes;
   const meta = {total: blockBytes * blockCount, version: 'rolling-window'};
-  let store = await createStore({root, currentBytes, nextBytes, maxPendingBytes: 4 * blockBytes});
+  let store = await create({currentBytes, nextBytes, maxPendingBytes: 4 * blockBytes});
   const key = await store.open(identity, meta, 'current');
   await store.actual(key);
   const dataFor = index => {
@@ -301,8 +303,7 @@ test('bounded rolling window writes add and remove journal frames and keeps the 
   assert.deepEqual(await store.read(key, finalStart, expected.length), expected);
   await store.close();
 
-  store = await createStore({root, currentBytes, nextBytes, maxPendingBytes: 4 * blockBytes});
-  t.after(() => store.close().catch(() => {}));
+  store = await create({currentBytes, nextBytes, maxPendingBytes: 4 * blockBytes});
   const reopened = await store.open(identity, meta, 'current');
   assert.equal(reopened, key);
   assert.equal(store.status().current, currentBytes);

@@ -80,3 +80,30 @@ test('public runner preserves child status, missing status and spawn-error propa
         assert.equal(stderr, result.error ? 'Public test runner failed: fixture spawn failure\n' : '');
     }
 });
+
+
+test('TAP emits a failed test stack while the owned child still holds an event-loop resource', {timeout: 15000}, async t => {
+    const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-ci-failure-stack-')));
+    fs.mkdirSync(path.join(root, 'tools')); fs.mkdirSync(path.join(root, 'tests'));
+    fs.writeFileSync(path.join(root, 'tools', 'ci-public-tests.cjs'), runnerSource);
+    for (const file of runner.MATERIAL_REQUIRED) fs.writeFileSync(path.join(root, file), '');
+    fs.writeFileSync(path.join(root, 'tests', 'failure.test.cjs'), `
+const fs = require('node:fs'), test = require('node:test'), assert = require('node:assert/strict');
+const deadline = Date.now() + 7000;
+const timer = setInterval(() => {if (fs.existsSync('release-child') || Date.now() > deadline) clearInterval(timer);}, 20);
+test('owned immediate failure', () => assert.equal(1, 2, 'owned-first-failure-marker'));
+`);
+    const env = {...process.env}; delete env.NODE_TEST_CONTEXT;
+    const child = childProcess.spawn(process.execPath, ['tools/ci-public-tests.cjs'], {cwd: root, env, stdio: ['ignore', 'pipe', 'pipe']});
+    let text = '', released = false, closed = false;
+    t.after(() => {fs.writeFileSync(path.join(root, 'release-child'), ''); if (closed) fs.rmSync(root, {recursive: true, force: true});});
+    const see = data => {
+        text += data;
+        if (!released && /owned-first-failure-marker/.test(text) && /ERR_ASSERTION/.test(text) && /stack:/.test(text)) {
+            released = true; fs.writeFileSync(path.join(root, 'release-child'), '');
+        }
+    };
+    child.stdout.on('data', see); child.stderr.on('data', see);
+    const code = await new Promise((resolve, reject) => {child.once('error', reject); child.once('close', resolve);}); closed = true;
+    assert.equal(code, 1); assert.equal(released, true, 'failure stack must be visible before the child can complete');
+});

@@ -14,7 +14,7 @@ const waitFor = async (predicate, detail) => {
     assert(predicate(), detail());
 };
 async function automaticCase(t, scenario) {
-    const root = temporaryRoot('ete-alameda-next-', ['prefix', 'next-episode-prefix-v1']), trace = [], timers = new Set(), documentTimers = new Set();
+    const root = temporaryRoot('ete-alameda-next-', ['prefix', 'next-episode-prefix-v1', 'shared-byte-cache']), trace = [], timers = new Set(), documentTimers = new Set();
     let origin, mediaOrigin, restoreRequests, service, window, authority, unregisterCd2;
     // Own cleanup before server/settings setup: one failed path check must not
     // leave HTTP/timers alive or hide the first error behind a later hook.

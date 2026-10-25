@@ -36,7 +36,7 @@ function main() {
     for (const excludedPath of MATERIAL_REQUIRED) process.stdout.write('Excluded material-required: ' + excludedPath + '\n');
     process.stdout.write('Running ' + selected.length + ' discovered public tests.\n');
 
-    const result = childProcess.spawnSync(process.execPath, ['--test', '--test-concurrency=1', ...selected], {
+    const result = childProcess.spawnSync(process.execPath, ['--test', '--test-reporter=tap', '--test-concurrency=1', ...selected], {
         cwd: root,
         stdio: ['ignore', 'inherit', 'inherit']
     });

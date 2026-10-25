@@ -20,7 +20,7 @@ const benchmark = jobBlock('windows-build-input-benchmark');
 
 // Evaluate only this workflow's simple AND/string/boolean route clauses.
 // Unknown syntax fails rather than silently treating a broader route as safe.
-function routes(job, event, ref, benchmarkMode) {
+function routes(job, event, ref, benchmarkMode, sharedMode = false, diagnosticMode = false) {
     const conditions = [...job.matchAll(/^    if: (.+)$/gm)];
     assert.equal(conditions.length, 1, 'one top-level job condition required');
     return conditions[0][1].split(/\s+&&\s+/).map(clause => {
@@ -29,6 +29,10 @@ function routes(job, event, ref, benchmarkMode) {
             const equal = (compare[1] === 'event_name' ? event : ref) === compare[3];
             return compare[2] === '==' ? equal : !equal;
         }
+        if (clause === 'inputs.shared_cache_diagnostics') return diagnosticMode;
+        if (clause === '!inputs.shared_cache_diagnostics') return !diagnosticMode;
+        if (clause === 'inputs.shared_cache_smoke') return sharedMode;
+        if (clause === '!inputs.shared_cache_smoke') return !sharedMode;
         assert.ok(['inputs.build_input_benchmark', '!inputs.build_input_benchmark'].includes(clause), 'unsupported route clause');
         return clause.startsWith('!') ? !benchmarkMode : benchmarkMode;
     }).every(Boolean);
@@ -140,4 +144,37 @@ test('benchmark retains pinned read-only inputs and uploads only bounded diagnos
     assert.match(benchmark, /retention-days: 1/);
     assert.match(benchmark, /include-hidden-files: false/);
     assert.doesNotMatch(benchmark, /path: (?:\.|dist|vendor|\.work)(?:\/\*\*|$)/m);
+});
+
+
+test('shared cache smoke is explicit, independent and cannot fall through to package or benchmark', () => {
+    const smoke = jobBlock('windows-shared-cache-smoke');
+    assertPinnedSource(smoke);
+    for (const event of ['push', 'pull_request', 'workflow_dispatch']) for (const mode of [false, true]) {
+        assert.equal(routes(smoke, event, 'refs/heads/experiment/shared-playback-cache', false, mode), event === 'workflow_dispatch' && mode);
+        if (mode) {
+            assert.equal(routes(manual, event, 'refs/heads/experiment/shared-playback-cache', false, mode), false);
+            assert.equal(routes(benchmark, event, 'refs/heads/experiment/shared-playback-cache', true, mode), false);
+        }
+    }
+    assert.match(smoke, /permissions:\n      contents: read\n      actions: read/);
+    assert.match(smoke, /group: ete-shared-cache-native-smoke/);
+    assert.match(smoke, /cancel-in-progress: false/);
+    assert.match(smoke, /windows-ci\.ps1/);
+    assert.doesNotMatch(smoke, /ci-windows-test-package|prepare-ci-build-inputs|build\.ps1/);
+    assert.match(smoke, /safe-receipts\/\*/);
+    assert.match(workflow, /shared_cache_smoke:\n +description: [^\n]+\n +type: boolean\n +default: false/);
+});
+
+
+test('bounded offline diagnostic mode cannot dispatch a package, native smoke or benchmark', () => {
+    const diagnostics = jobBlock('windows-shared-cache-diagnostics'), smoke = jobBlock('windows-shared-cache-smoke');
+    assertPinnedSource(diagnostics);
+    for (const event of ['push', 'pull_request', 'workflow_dispatch']) {
+        assert.equal(routes(diagnostics, event, 'refs/heads/experiment/shared-playback-cache', false, false, true), event === 'workflow_dispatch');
+        for (const job of [manual, benchmark, smoke]) assert.equal(routes(job, event, 'refs/heads/experiment/shared-playback-cache', true, true, true), false);
+    }
+    assert.match(diagnostics, /timeout-minutes: 10/);
+    assert.match(diagnostics, /windows-diagnostics\.cjs/);
+    assert.doesNotMatch(diagnostics, /GH_TOKEN|actions: read|ci-windows-test-package|windows-ci\.ps1|build\.ps1/);
 });
