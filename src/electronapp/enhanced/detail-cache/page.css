@@ -1,7 +1,11 @@
+.itemView .detailMainContainer, .itemView .itemBackdropContainer { position:relative; }
+.eteDetailImageCover { position:absolute; object-fit:contain; pointer-events:none; z-index:1; border-radius:.6em; }
 .eteDetailPoster { width:100%; height:auto; max-height:28em; object-fit:contain; }
-.eteDetailHasPreview .details-additionalContent { display:none !important; }
+.eteDetailHasPreview .details-additionalContent { visibility:hidden; }
+.eteDetailVisualPending, .eteDetailSizing .detailMainContainer { visibility:hidden; }
+.detailImageContainer.eteDetailProtectImage.hide { display:flex !important; }
 .eteDetailCachePreview :is(.mediaInfo,.trackSelections,.detailLogoContainer,.detailResumeInfo),
-.eteDetailCachePreview .mainDetailButtons > :not(.eteDetailPreviewPlay) { display:none !important; }
+.eteDetailCachePreview .mainDetailButtons > :not(.eteDetailPreviewPlay) { visibility:hidden; }
 .eteDetailRefreshing :is(.detailResumeInfo,.btnResume,.btnPlaystate,.btnUserRating,.trackSelections,.audioVideoMediaInfo) { visibility:hidden; }
 .eteDetailRetired .itemMainScrollSlider { visibility:hidden; }
 .eteDetailRetired :is(.eteDetailCachePreview,.eteDetailCacheStatus) { visibility:visible; }

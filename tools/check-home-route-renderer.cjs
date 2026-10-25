@@ -18,13 +18,13 @@ async function main(args=process.argv.slice(2)){
     const pending=await p.evaluate(()=>({...trial.route.state(),sameView:trial.route.original===trial.route.manager.currentView(),sameStage:trial.route.originalStage===trial.route.homeTab().sectionsContainer.firstChild,
      visual:trial.route.visual(),progress:[...trial.route.manager.currentView().querySelectorAll('.itemProgressBar')].map(e=>getComputedStyle(e).visibility)}));
     await p.screenshot({path:path.join(out,name+'-settings-return.png')});
-    if(candidate&&mode!=='baseline'){assert.equal(pending.created,1);assert.equal(pending.sameView,true);assert.equal(pending.sameStage,true);assert.equal(pending.skeletons,0);assert.equal(pending.cards,16);assert.ok(pending.progress.every(x=>x==='hidden'));assert.equal(pending.visual.rows.length,2);for(let row=0;row<2;row++){assert.ok(pending.visual.rows[row].cards>0);assert.ok(Math.abs(pending.visual.rows[row].top-before.visual.rows[row].top)<1);assert.ok(Math.abs(pending.visual.rows[row].height-before.visual.rows[row].height)<1);}}
+    if(candidate){assert.equal(pending.created,1);assert.equal(pending.sameView,true);assert.equal(pending.sameStage,true);assert.equal(pending.skeletons,0);assert.equal(pending.cards,16);assert.ok(pending.progress.every(x=>x==='hidden'));assert.equal(pending.visual.rows.length,2);for(let row=0;row<2;row++){assert.ok(pending.visual.rows[row].cards>0);assert.ok(Math.abs(pending.visual.rows[row].top-before.visual.rows[row].top)<1);assert.ok(Math.abs(pending.visual.rows[row].height-before.visual.rows[row].height)<1);}}
     else{assert.equal(pending.created,2);assert.equal(pending.sameView,false);if(mode!=='baseline')assert.equal(pending.skeletons,2);}
     await p.evaluate(()=>{trial.config.holdAllItems=false;trial.release();});await p.evaluate(()=>trial.route.settleHome());
     assert.ok(await p.evaluate(()=>[...trial.route.manager.currentView().querySelectorAll('.itemProgressBarForeground')].every(e=>e.style.width==='20%')));
     const settled=await p.evaluate(()=>{trial.route.record=false;return {...trial.route.state(),visual:trial.route.visual(),frames:trial.route.frames};});
     const homeFrames=settled.frames.filter(frame=>frame.home),blankFrames=homeFrames.filter(frame=>frame.rows.length!==2||frame.rows.some(row=>row.cards===0)).length;
-    assert.ok(homeFrames.length>0);if(candidate&&mode!=='baseline')assert.equal(blankFrames,0,'resident cross-route return must retain visible card rails every sampled frame');else if(mode!=='baseline')assert.ok(blankFrames>0,'old cross-route control must reproduce visible skeleton frames');settled.blankFrames=blankFrames;await p.screenshot({path:path.join(out,name+'-response.png')});passed.push({name,before,pending,settled});
+    assert.ok(homeFrames.length>0);if(candidate)assert.equal(blankFrames,0,'resident cross-route return must retain visible card rails every sampled frame');else if(mode!=='baseline')assert.ok(blankFrames>0,'old cross-route control must reproduce visible skeleton frames');settled.blankFrames=blankFrames;await p.screenshot({path:path.join(out,name+'-response.png')});passed.push({name,before,pending,settled});
    }finally{await finish(p,errors);}
   }
   for(const mode of ['retain','sections']){
@@ -51,13 +51,29 @@ async function main(args=process.argv.slice(2)){
     await p.evaluate(()=>{trial.config.holdAllItems=false;trial.release();});await p.evaluate(()=>trial.route.settleHome());passed.push({name:'native-settings-click-and-cache-return-'+mode,first,back,layout});
    }finally{await finish(p,errors);}
   }
-  for(const reason of ['evicted','identity','native-invalidated']){
-   const {p,errors}=await page('sections',true);try{
+  // Default production mode: superseded Home returns must leave the native
+  // resident owner reusable and reject held responses from older navigations.
+  {
+   const {p,errors}=await page('baseline',true);try{
+    await p.evaluate(()=>trial.route.navigate('home'));await p.evaluate(()=>trial.route.settleHome());
+    await p.evaluate(()=>{trial.route.original=trial.route.manager.currentView();trial.route.originalStage=trial.route.homeTab().sectionsContainer.firstChild;});
+    for(let turn=0;turn<3;turn++){
+     await p.evaluate(()=>trial.route.navigate('settings'));
+     await p.evaluate(()=>{trial.bump();trial.config.holdAllItems=true;return trial.route.navigate('home');});
+     const pending=await p.evaluate(()=>({same:trial.route.original===trial.route.manager.currentView(),stage:trial.route.originalStage===trial.route.homeTab().sectionsContainer.firstChild,state:trial.route.state()}));
+     assert.equal(pending.same,true);assert.equal(pending.stage,true);assert.equal(pending.state.cards,16);assert.ok(pending.state.pages<=3);
+    }
+    await p.evaluate(()=>{trial.config.holdAllItems=false;trial.release();});await p.evaluate(()=>trial.route.settleHome());
+    const state=await p.evaluate(()=>trial.route.state());assert.equal(state.created,1);assert.equal(state.cards,16);passed.push({name:'default-rapid-settings-home',state});
+   }finally{await finish(p,errors);}
+  }
+  for(const mode of ['baseline','sections'])for(const reason of ['evicted','identity','native-invalidated']){
+   const {p,errors}=await page(mode,true);try{
     await p.evaluate(()=>trial.route.navigate('home'));await p.evaluate(()=>trial.route.settleHome());
     if(reason==='evicted'){for(const target of ['one','two','three'])await p.evaluate(target=>trial.route.navigate(target),target);const removed=await p.evaluate(()=>({state:trial.route.state(),oldTabs:trial.route.homes[0].tabControllers}));assert.equal(removed.state.destroyed,1);assert.equal(removed.state.tabbedDestroys,1);assert.equal(removed.oldTabs,null);}
     else {await p.evaluate(()=>trial.route.navigate('settings'));if(reason==='identity')await p.evaluate(()=>trial.setUser('other-synthetic-user'));else await p.evaluate(()=>trial.route.homes[0].view.allowRestore=false);}
-    await p.evaluate(()=>{trial.config.holdAllItems=true;return trial.route.navigate('home');});await p.waitForTimeout(30);const state=await p.evaluate(()=>trial.route.state());assert.equal(state.created,2);assert.equal(state.skeletons,2);assert.ok(state.pages<=3);
-    await p.evaluate(()=>{trial.config.holdAllItems=false;trial.release();});await p.evaluate(()=>trial.route.settleHome());passed.push({name:'cold-after-'+reason,state});
+    await p.evaluate(()=>{trial.config.holdAllItems=true;return trial.route.navigate('home');});await p.waitForTimeout(30);const state=await p.evaluate(()=>trial.route.state());assert.equal(state.created,2);assert.equal(state.skeletons,mode==='baseline'?0:2);assert.ok(state.pages<=3);
+    await p.evaluate(()=>{trial.config.holdAllItems=false;trial.release();});await p.evaluate(()=>trial.route.settleHome());passed.push({name:'cold-after-'+reason+'-'+mode,state});
    }finally{await finish(p,errors);}
   }
   const report={status:'passed',sourceBaseCommit:cp.execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),control,browser:browser.version(),scenarios:passed.length,passed,scope:'actual router init/content functions, composed viewmanager, HomeView/TabbedView/BaseView/HomeTab, native card/list/shortcuts/settings drawer, cache page and owner; controlled API, module/text loader, input/scroller/metadata boundaries; not full Windows/real service acceptance'};

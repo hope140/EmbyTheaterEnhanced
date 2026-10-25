@@ -30,14 +30,14 @@ const SOURCE_FILES = Object.freeze(['electronapp/main.js', 'electronapp/enhanced
 const FLOW_OVERLAYS = Object.freeze([
     Object.freeze({path: 'electronapp/www/modules/emby-elements/emby-itemscontainer/emby-itemscontainer.js', sha256: '4F3633D1B23CA2B15B6ACDF6AD013B0F704733D8BB17B37F4527EF310D52DFDA'}),
     Object.freeze({path: 'electronapp/www/modules/virtual-scroller/virtual-scroller.js', sha256: '4F7F014519217712350B156F86C710654CE1D48F39DA98B2811C8314BAB63DEC'}),
-    Object.freeze({path: 'electronapp/www/home/home.js', sha256: 'DA1F8BFF7BCC32C889018259A6D8DC14596FE9C45628E12A47DB185844FAD375'}),
+    Object.freeze({path: 'electronapp/www/home/home.js', sha256: 'BA337B1E152FF26787B2D612156A76263A9C41E2149F0504D9D01A7E575E8D5F'}),
     Object.freeze({path: 'electronapp/www/home/hometab.js', sha256: 'EE30D819DE898154D8D6727CE31FE86418F79761368FA4B7075F071DF56635CB'}),
     Object.freeze({path: 'electronapp/www/modules/viewmanager/viewmanager.js', sha256: 'AFAC86446F43B599A75E6AD7D619A3BFF0BB513105334A23EFF4C63FE237D4F4'}),
     Object.freeze({path: 'electronapp/www/modules/approuter.js', sha256: '364CF6818BA4D92D237943FFD1D59FDB8B533E944BE7E4AB06588F203A1E66C5'})
 ]);
 const DETAIL_OVERLAYS = Object.freeze([
     Object.freeze({path: 'electronapp/www/app.js', sha256: '02AC6C7D2206F5BD78F1709A1D1160AE490B2C71DE2C33E98DA40F2ADAF26BF2'}),
-    Object.freeze({path: 'electronapp/www/item/item.js', sha256: '208A314D6992ED3DA1C094563772087814A8B235FB507E4DD17A74B3A2EEADFE'})
+    Object.freeze({path: 'electronapp/www/item/item.js', sha256: '9336D92E4B2A7A9150F296E181651E3DC6EA8104C715333E52933FC2913FDA69'})
 ]);
 function identity(runtimeRoot, homeFlow) {
     const manifestPath = physical(path.join(runtimeRoot, 'runtime-provenance.json'), false);
@@ -54,7 +54,7 @@ function identity(runtimeRoot, homeFlow) {
     const prepared = (manifest.preparedArtifacts || []).filter(row => row.runtimePath === 'electronapp/preload.js');
     if (prepared.length !== 1 || prepared[0].runtimeSha256 !== digest('electronapp/preload.js')) fail();
     for (const overlay of DETAIL_OVERLAYS) if (digest(overlay.path) !== overlay.sha256) fail();
-    if (homeFlow && homeFlow !== 'baseline') for (const overlay of FLOW_OVERLAYS) if (digest(overlay.path) !== overlay.sha256) fail();
+    for (const overlay of FLOW_OVERLAYS) if (digest(overlay.path) !== overlay.sha256) fail();
     return manifest.sourceCommit;
 }
 function prepare(options) {

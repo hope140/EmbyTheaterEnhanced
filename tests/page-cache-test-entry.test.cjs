@@ -175,3 +175,5 @@ for (const relative of ['enhanced/cache-management-ipc.js', 'plugins/mpvplayer/c
 });
 
 for(const overlay of session.DETAIL_OVERLAYS)test('detail native binding refuses tampering before allocating a profile: '+overlay.path,t=>{const f=fixture(t);f.write(overlay.path,'tampered');assert.throws(f.prepare);assert.deepEqual(f.sets,[]);assert.deepEqual(fs.readdirSync(f.temp),[]);});
+
+for(const overlay of session.FLOW_OVERLAYS)test('default baseline Home source binding refuses old native components before profile allocation: '+overlay.path,t=>{const f=fixture(t);f.write(overlay.path,'old native Home component');assert.throws(f.prepare);assert.deepEqual(f.sets,[]);assert.deepEqual(fs.readdirSync(f.temp),[]);});
