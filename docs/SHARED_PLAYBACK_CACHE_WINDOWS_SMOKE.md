@@ -140,3 +140,6 @@ CI的benchmark_expected_sha始终填新的精确工具SHA；三个artifact参数
 Stop成功还须本次主进程destroy IPC的成功回执、当前媒体在本次Stop之后发出的原server stop报告，并确认真实helper退出0及streamsClosed；事件异步送达，因此显式有界等待，不借旧自然EOF报告通过。app quit仅增加观测阶段，最终仍以协调器收到Electron exit与流关闭为准，不能以helper退出、回执写入、app.exit请求或quit事件代替。原2e99cf2包、来源清单、身份和范围缓存逻辑均不变。
 
 本轮本地完整离线2674项：2661通过、0失败、13项既有平台跳过，约126.1秒；Stop分段2项及原工具22项定向通过，JS568／PowerShell53语法、有限凭据模式扫描及文档链接通过。独立审查未发现来源／Stop证据门禁弱化。以上仍不是新Windows短验通过或背景节流根因证明。
+
+
+当前转入[系统性存活审查](SHARED_PLAYBACK_CACHE_LIVENESS.md)：不再以零散求值入口／节流修改后重跑四阶段作为根因验证。新增批量Git全量校验、进程PID绑定、分层求值及退出证据仍需Windows最小复现；未宣布Native通过。

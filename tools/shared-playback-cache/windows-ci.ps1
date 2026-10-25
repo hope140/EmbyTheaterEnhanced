@@ -112,7 +112,7 @@ $smokeRoot = Join-Path $ownerRoot.Trim() 'smoke'
 try {
     & (Join-Path $PSScriptRoot 'windows-run.ps1') -RuntimeRoot (Join-Path $extracted '{app}') -Installer $installers[0].FullName -InstallerSha256 $InstallerSha256 -ProductCommit $productSha -OutputRoot $smokeRoot
 } finally {
-    foreach ($name in @('coordinator.json','baseline.json','baseline.stages.json','natural.json','natural.stages.json','reopen.json','reopen.stages.json','cancel.json','cancel.stages.json')) {
+    foreach ($name in @('coordinator.json','baseline.json','baseline.stages.json','natural.json','natural.stages.json','reopen.json','reopen.stages.json','cancel.json','cancel.stages.json','baseline.lifecycle.json','natural.lifecycle.json','reopen.lifecycle.json','cancel.lifecycle.json')) {
         $file = Join-Path $smokeRoot $name
         if (Test-Path -LiteralPath $file -PathType Leaf) { Copy-Item -LiteralPath $file -Destination (Join-Path $safe $name) }
     }

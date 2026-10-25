@@ -97,12 +97,36 @@ function physicalInventory(runtime, io = selectPhysicalFs()) {
     return rows.sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
 }
 const payloadSetSha256 = rows => digest(rows.map(row => row.path + '\0' + row.sha256 + '\n').join(''));
-function runGit(repo, args) {
+function runGit(repo, args, input) {
     const result = childProcess.spawnSync('git', ['-c', 'protocol.allow=never', '-c', 'core.fsmonitor=false', '-C', repo, ...args],
-        {encoding: null, windowsHide: true, maxBuffer: 64 * 1024 * 1024, timeout: 30000,
+        {encoding: null, input, windowsHide: true, maxBuffer: 64 * 1024 * 1024, timeout: 30000,
             env: {...process.env, GIT_NO_LAZY_FETCH: '1', GIT_TERMINAL_PROMPT: '0', GIT_OPTIONAL_LOCKS: '0'}});
     if (result.error || result.status !== 0) fail('git-read-failed');
     return result.stdout;
+}
+
+// One local Git process; preserve all bytes and validate every returned object.
+function readGitBlobBatch(repo, objectIds, {run = runGit} = {}) {
+    if (!Array.isArray(objectIds) || !objectIds.length || objectIds.length > 16384 ||
+        objectIds.some(id => typeof id !== 'string' || !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(id))) fail('git-batch-invalid');
+    const ids = [...new Set(objectIds)], limit = 64 * 1024 * 1024;
+    const bytes = run(repo, ['cat-file', '--batch'], Buffer.from(ids.join('\n') + '\n'));
+    if (!Buffer.isBuffer(bytes) || bytes.length > limit) fail('git-batch-invalid');
+    const blobs = new Map(); let offset = 0;
+    for (const id of ids) {
+        const end = bytes.indexOf(10, offset);
+        if (end < offset || end - offset > 128) fail('git-batch-invalid');
+        const header = /^(?:([a-f0-9]{40}|[a-f0-9]{64})) blob (0|[1-9][0-9]{0,8})$/.exec(bytes.subarray(offset, end).toString('latin1'));
+        if (!header || header[1] !== id) fail('git-batch-invalid');
+        const size = Number(header[2]); offset = end + 1;
+        if (size > limit || size > bytes.length - offset - 1 || bytes[offset + size] !== 10) fail('git-batch-invalid');
+        const blob = bytes.subarray(offset, offset + size); offset += size + 1;
+        const actual = crypto.createHash(id.length === 40 ? 'sha1' : 'sha256').update('blob ' + size + '\0').update(blob).digest('hex');
+        if (actual !== id) fail('git-batch-object-mismatch');
+        blobs.set(id, blob);
+    }
+    if (offset !== bytes.length) fail('git-batch-invalid');
+    return blobs;
 }
 
 // The factory permits a fresh synthetic Git repository in unit tests. Public
@@ -181,9 +205,10 @@ function createVerifier({productCommit = PRODUCT_COMMIT, io, git = runGit, trial
                 if (sourceRows.has(source.toLowerCase()) || runtimeRows.has(target.toLowerCase())) fail('runtime-source-duplicate', source);
                 sourceRows.set(source.toLowerCase(), row); runtimeRows.add(target.toLowerCase());
             }
+            const sourceBlobs = readGitBlobBatch(repo, expected.map(row => row.objectId), {run: git});
             for (const expectedRow of expected) {
                 const row = sourceRows.get(expectedRow.sourcePath.toLowerCase());
-                const sourceHash = digest(readGit(['cat-file', 'blob', expectedRow.objectId]));
+                const sourceHash = digest(sourceBlobs.get(expectedRow.objectId));
                 if (!row || row.sourcePath !== expectedRow.sourcePath || row.runtimePath !== expectedRow.runtimePath ||
                     row.sourceCommit !== productCommit || row.gitMode !== expectedRow.mode || row.gitBlobObjectId !== expectedRow.objectId ||
                     row.relation !== 'git-blob-copy' || row.sourceSha256?.toLowerCase() !== sourceHash ||
@@ -256,5 +281,5 @@ function verifyCandidate(options = {}) {
         fail('candidate-invalid');
     }
 }
-module.exports = {PRODUCT_COMMIT, verifyCandidate, createVerifier, reviewedCandidate, selectPhysicalFs,
+module.exports = {PRODUCT_COMMIT, readGitBlobBatch, verifyCandidate, createVerifier, reviewedCandidate, selectPhysicalFs,
     physical, hashFile, physicalInventory, payloadSetSha256};

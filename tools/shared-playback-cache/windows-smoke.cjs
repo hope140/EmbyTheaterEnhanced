@@ -36,6 +36,14 @@ async function executeStableFrame(contents, expectedUrl, script) {
     !frame.detached && frame.url === expectedUrl, 'worker-frame-retired');
   return result;
 }
+// Observe script entry, synchronous return and Promise settlement without
+// replacing its return value or swallowing its rejection.
+function observeExpression(script, label) {
+  need(typeof script === 'string' && /^[a-z-]{1,80}$/.test(label), 'worker-evaluation-invalid');
+  const probe = code => 'window.prefixHarness.report({type:"evaluation-probe",operation:' + JSON.stringify(label) + ',code:' + JSON.stringify(code) + '});';
+  return '(() => {' + probe('entered') + 'const value = (' + script + ');' + probe('returned') +
+    'Promise.resolve(value).then(() => {' + probe('settled') + '}, () => {' + probe('rejected') + '}); return value;})()';
+}
 function write(file, value, exclusive = true) {
   fs.writeFileSync(file, JSON.stringify(value, null, 2) + '\n', {flag: exclusive ? 'wx' : 'w', mode: 0o600});
 }
@@ -120,6 +128,8 @@ function coloredFrame(frame) {
 }
 function validatePhaseEvidence(result, events) {
   const phase = result.phase;
+  need(Number.isSafeInteger(result.spawnPid) && result.spawnPid > 0 && Number.isSafeInteger(result.coordinatorPid) && result.coordinatorPid > 0 && result.receipt?.workerPid === result.spawnPid &&
+    result.receipt?.workerParentPid === result.coordinatorPid && result.receipt?.workerType === 'browser', 'worker-pid-binding');
   need(PHASES.includes(phase) && result.exitCode === 0 && result.streamsClosed && !result.timedOut &&
     result.receipt?.status === 'PASS' && result.receipt.ownedHelpersClosed === true, 'worker-phase-failed');
   if (phase === 'natural') {
@@ -168,23 +178,36 @@ async function child(plan, phase, sessionFile, deadline) {
   return new Promise(resolve => {
     const owned = spawn(executable, args, {env: childEnvironment(profile), windowsHide: true, detached: false,
       shell: false, stdio: ['ignore', 'pipe', 'pipe']});
+    const spawnPid = owned.pid, coordinatorPid = process.pid, startedAt = Date.now(), processTimeline = [];
+    const mark = (event, facts = {}) => {if (processTimeline.length < 24) processTimeline.push({event, elapsedMs: Date.now() - startedAt, ...facts});};
+    let spawnSeen = false;
+    mark('spawn-requested', {pid: spawnPid || null});
+    owned.once('spawn', () => {spawnSeen = true; mark('spawn', {pid: owned.pid || null});});
+    let terminationReason = null;
     let timedOut = false, stderrBytes = 0, stdoutBytes = 0, exitCode = null, exitSignal = null, force, stdoutTail = ''; const workerStages = [];
-    const stop = () => {if (timedOut) return; timedOut = true; owned.kill(); force = setTimeout(() => {if (owned.exitCode === null) owned.kill('SIGKILL');}, 1000);};
-    const timer = setTimeout(stop, Math.max(1, phaseDeadlineAt - Date.now()));
+    const stop = reason => {if (timedOut) return; timedOut = true; terminationReason = reason;
+      mark('terminate', {reason, requested: owned.kill()});
+      force = setTimeout(() => {if (owned.exitCode === null) mark('force-terminate', {requested: owned.kill('SIGKILL')});}, 1000);};
+    const timer = setTimeout(() => stop('deadline'), Math.max(1, phaseDeadlineAt - Date.now()));
     owned.stdout.on('data', b => {
-      stdoutBytes += b.length; if (stdoutBytes > 128 * 1024) {stop(); return;}
+      stdoutBytes += b.length; if (stdoutBytes > 128 * 1024) {stop('stdout-limit'); return;}
       stdoutTail += b.toString('utf8'); const lines = stdoutTail.split(/\r?\n/); stdoutTail = lines.pop();
       for (const line of lines) {const match = /^SHARED_CACHE_WORKER ([a-z-]{1,100})$/.exec(line);
         if (match && workerStages.length < 64) workerStages.push(match[1]);}
-      if (stdoutTail.length > 8192) stop();
+      if (stdoutTail.length > 8192) stop('stdout-line-limit');
     });
-    owned.stderr.on('data', b => {stderrBytes += b.length; if (stderrBytes > 256 * 1024) stop();});
-    owned.on('error', () => {});
-    owned.once('exit', (code, signal) => {exitCode = code; exitSignal = signal;});
-    owned.once('close', () => {clearTimeout(timer); clearTimeout(force);
+    owned.stderr.on('data', b => {stderrBytes += b.length; if (stderrBytes > 256 * 1024) stop('stderr-limit');});
+    owned.stdout.once('close', () => mark('stdout-close'));
+    owned.stderr.once('close', () => mark('stderr-close'));
+    owned.on('error', error => {const reason = spawnSeen ? 'process-error' : 'spawn-error'; terminationReason ||= reason;
+      mark(reason, {code: /^[A-Z0-9_]{1,40}$/.test(error.code || '') ? error.code : null});});
+    owned.once('exit', (code, signal) => {exitCode = code; exitSignal = signal; mark('exit', {code, signal});});
+    owned.once('close', () => {mark('close'); clearTimeout(timer); clearTimeout(force);
       let receipt = null;
       try {receipt = JSON.parse(fs.readFileSync(path.join(plan.out, phase + '.json')));} catch (_) {}
-      resolve({phase, exitCode, exitSignal, streamsClosed: true, timedOut, stderrBytes, stdoutBytes, workerStages,
+      let lifecycle = null;
+      try {const bytes = fs.readFileSync(path.join(plan.out, phase + '.lifecycle.json')); if (bytes.length <= 32768) lifecycle = JSON.parse(bytes);} catch (_) {}
+      resolve({phase, spawnPid, coordinatorPid, processTimeline, terminationReason, lifecycle, exitCode, exitSignal, streamsClosed: true, timedOut, stderrBytes, stdoutBytes, workerStages,
         helperExitAssessment: timedOut ? 'UNCERTAIN' : receipt?.ownedHelpersClosed ? 'CONFIRMED' : 'UNCERTAIN', receipt});
     });
   });
@@ -228,15 +251,17 @@ async function run({planFile}) {
     // Safe receipt has no source URL, private path, token, or raw stderr.
     console.log('SHARED_CACHE_WINDOWS ' + JSON.stringify({status: report.status, productCommit: report.productCommit,
       toolCommit: report.toolCommit, stage: report.stage || 'complete', code: report.code || null,
-      cases: results.map(r => ({phase: r.phase, exitCode: r.exitCode, timedOut: r.timedOut,
+      cases: results.map(r => ({phase: r.phase, spawnPid: r.spawnPid, coordinatorPid: r.coordinatorPid,
+        processTimeline: r.processTimeline, terminationReason: r.terminationReason, lifecycle: r.lifecycle, exitCode: r.exitCode, timedOut: r.timedOut,
         workerStages: r.workerStages, code: r.receipt?.code || r.receipt?.cleanupCode || null,
         ownedHelpersClosed: r.receipt?.ownedHelpersClosed, checks: r.receipt?.checks,
-        receiptOrigin: r.receipt?.receiptOrigin || null, hiddenHarnessBackgroundThrottling: r.receipt?.hiddenHarnessBackgroundThrottling,
+        receiptOrigin: r.receipt?.receiptOrigin || null, evaluationTrace: (r.receipt?.trace || []).filter(e => e.type === 'evaluation-probe').slice(-24)
+          .map(({operation, code}) => ({operation, code})), hiddenHarnessBackgroundThrottling: r.receipt?.hiddenHarnessBackgroundThrottling,
         stopTrace: (r.receipt?.trace || []).filter(e => ['stop-stage', 'destroy-ipc'].includes(e.type)).slice(-12)
           .map(({type, operation, ok}) => ({type, operation, ok})), seekObservations: r.receipt?.seekObservations || [],
         rendererDispatch: (r.receipt?.trace || []).filter(e => e.type === 'renderer-dispatch').slice(-6)
-          .map(({operation, loading, loadingMainFrame, backgroundThrottling, destroyed}) =>
-            ({operation, loading, loadingMainFrame, backgroundThrottling, destroyed}))})), cleanup: report.sourceCleanup}));
+          .map(({operation, loading, loadingMainFrame, backgroundThrottling, destroyed, requestedMs, effectiveMs, remainingPhaseMs}) =>
+            ({operation, loading, loadingMainFrame, backgroundThrottling, destroyed, requestedMs, effectiveMs, remainingPhaseMs}))})), cleanup: report.sourceCleanup}));
   }
   return report;
 }
@@ -249,7 +274,7 @@ function argumentsOf(argv) {
   need(allowed.every(k => values[k]), 'missing-argument');
   return {mode, values};
 }
-module.exports = {OWNER, PHASES, TOOL_FILES, watchdogDelay, within, executeStableFrame, prepare, readPlan, childEnvironment, safeFailure, argumentsOf, validateProfile, coloredFrame, validatePhaseEvidence, safeNativeTags, boundToolBytes};
+module.exports = {OWNER, PHASES, TOOL_FILES, watchdogDelay, within, executeStableFrame, observeExpression, prepare, readPlan, childEnvironment, safeFailure, argumentsOf, validateProfile, coloredFrame, validatePhaseEvidence, safeNativeTags, boundToolBytes};
 if (require.main === module) (async () => {
   const {mode, values: v} = argumentsOf(process.argv.slice(2));
   if (mode === 'prepare') {await prepare({repo: v.repo, runtime: v.runtime, installer: v.installer,

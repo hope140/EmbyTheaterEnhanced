@@ -72,9 +72,16 @@ test('opaque black alpha is not a decoded color-frame success', () => {
   assert.equal(driver.coloredFrame({width: 1, height: 1, pixels: Buffer.from([15, 0, 3, 255])}), true);
   assert.equal(driver.coloredFrame({width: 2, height: 1, pixels: Buffer.from([15, 0, 3, 255])}), false);
 });
-const result = phase => ({phase, exitCode: 0, streamsClosed: true, timedOut: false,
-  receipt: {status: 'PASS', ownedHelpersClosed: true, checks: {preloaded: true},
+const result = phase => ({phase, spawnPid: 1001, coordinatorPid: 1000, exitCode: 0, streamsClosed: true, timedOut: false,
+  receipt: {status: 'PASS', workerPid: 1001, workerParentPid: 1000, workerType: 'browser', ownedHelpersClosed: true, checks: {preloaded: true},
     trace: [{type: 'load', item: 'B', proxied: true, wallClockMs: 100}]}});
+test('worker success cannot substitute a different launcher PID, parent PID or process role', () => {
+  for (const change of [r => {r.receipt.workerPid = 2002;}, r => {r.receipt.workerParentPid = 2002;},
+    r => {r.receipt.workerType = 'renderer';}]) {
+    const r = result('natural'); change(r);
+    assert.throws(() => driver.validatePhaseEvidence(r, []), /worker-pid-binding/);
+  }
+});
 test('natural next rejects a source body re-fetch despite successful native decoding', () => {
   const events = [{phase: 'natural', type: 'media-open', item: 'B', wallClockMs: 101, start: 0, end: 0}];
   assert.equal(driver.validatePhaseEvidence(result('natural'), events), null);

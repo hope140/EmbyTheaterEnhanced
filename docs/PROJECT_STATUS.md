@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-25 — 共享缓存Windows系统性存活审查
+
+背景节流关闭未充分解释超时；不再逐项猜测后重复Native。分离来源复核预算、renderer求值／Promise与OS进程退出三条证据链。批量读取固定149个源码对象，保留全量哈希／provenance门禁；本地真实Node收集器与确定性单元区分quit、exit、管道关闭和日志超限，新增PID归属、有效预算及有界资源类型诊断。实际Windows根因仍未确定，不宣称产品修复。见[系统性审查合同](SHARED_PLAYBACK_CACHE_LIVENESS.md)。
+
 ## 2026-10-25 — 共享缓存Stop与Electron退出短验准备
 
 最新真实前后seek及恢复播放推进均通过，Stop仍超时；helper退出与流关闭确认，Electron未自然退出。旧prefixStop未写stop动作标记，现补原函数及destroy IPC分段，不据缺标记推断未进入。下一短验只调整隐藏测试页面背景节流并读回，保留frame、超时、真实当前媒体stop报告／helper关闭／Electron退出要求，未改产品或原包。详见[Windows验收合同](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。

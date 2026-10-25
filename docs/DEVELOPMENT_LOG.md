@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-25 — 共享缓存来源批读与分层存活证据
+
+本地审查确认反向unpause可能被剩余预算截断，renderer入口不等待Native IPC。Git源码对象改为严格cat-file批读并重算对象ID，维持原包身份及全部源／物理校验。进程收集器分别记录PID、exit／close和终止理由；表达式探针保持原Promise及异常。尚需独立Windows无媒体最小复现，暂不建议重排完整Native四阶段。见[系统性审查合同](SHARED_PLAYBACK_CACHE_LIVENESS.md)。
+
 ## 2026-10-25 — 共享缓存Stop分段与隐藏页面前台调度
 
 保留原manager.stop→player.destroy顺序及promise，补前后标记和main destroy IPC进入／完成记录。Stop报告按本次调用和当前媒体有界等待，helper物理退出独立确认。隐藏harness读回backgroundThrottling=false作单变量调度实验，不动生产配置／窗口前台；app.quit仅观测，协调器实际exit／close仍是门禁。详见[Windows验收合同](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。

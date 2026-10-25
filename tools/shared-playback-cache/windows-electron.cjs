@@ -21,7 +21,8 @@ async function main() {
   for (const arg of process.argv.slice(2)) {const m = /^--(plan|plan-sha256|session|session-sha256|deadline-ms|phase)=(.+)$/.exec(arg);
     need(m && !Object.hasOwn(args, m[1]), 'worker-argument-invalid'); args[m[1]] = m[2];}
   need(Object.keys(args).length === 6 && driver.PHASES.includes(args.phase) && /^[1-9][0-9]{12}$/.test(args['deadline-ms']), 'worker-arguments-required');
-  const plan = driver.readPlan(args.plan, args['plan-sha256']), phase = args.phase;
+  const verificationStarted = now();
+  const plan = driver.readPlan(args.plan, args['plan-sha256']), phase = args.phase, verificationMs = now() - verificationStarted;
   const availablePhaseMs = Math.min(plan.limits.phaseDeadlineMs, Number(args['deadline-ms']) - workerStartedWall);
   need(availablePhaseMs > 1000, 'worker-deadline-invalid');
   need(process.platform === 'win32' && process.execPath.toLowerCase() === path.join(plan.runtime, 'x64/electron/electron.exe').toLowerCase(), 'worker-executable-invalid');
@@ -42,8 +43,22 @@ async function main() {
   let stage = 'isolated', activeEndpoint, lastGeneration, currentItem, service, authority, cd2Service,
     mainWindow, indexUrl, ownedSession, unregisterNative, unregisterCd2, unregisterSettings, lateEvents = 0, retiredAt = null;
   const receipt = {schema: 1, phase, productCommit: plan.productCommit, toolCommit: plan.tools.toolCommit,
-    status: 'FAIL', scope, checks: {}, timingsMs: {}, firstFrameMeaning: 'decoded native preview; hidden carrier',
+    status: 'FAIL', scope, workerPid: process.pid, workerParentPid: process.ppid, workerType: process.type,
+    checks: {}, timingsMs: {candidateVerification: verificationMs}, firstFrameMeaning: 'decoded native preview; hidden carrier',
     audio: 'NOT_TESTED_VIDEO_ONLY_FIXTURE', hiddenHarnessBackgroundThrottling: false, real115Requests: 0, helpers: [], seekObservations: []};
+  const lifecycleFile = path.join(plan.out, phase + '.lifecycle.json'), lifecycleEntries = [];
+  let lifecycleFailed = false;
+  need(!fs.existsSync(lifecycleFile), 'worker-preserve-lifecycle');
+  function lifecycle(event) {
+    if (lifecycleEntries.length >= 16) return;
+    const resources = {};
+    const types = typeof process.getActiveResourcesInfo === 'function' ? process.getActiveResourcesInfo().slice(0, 256) : [];
+    for (const type of types) if (/^[A-Za-z0-9_]{1,64}$/.test(type)) resources[type] = (resources[type] || 0) + 1;
+    lifecycleEntries.push({event, elapsedMs: now() - workerStartedAt, resources});
+    try {fs.writeFileSync(lifecycleFile, JSON.stringify({schema: 1, workerPid: process.pid, workerParentPid: process.ppid, entries: lifecycleEntries}) + '\n', {mode: 0o600});}
+    catch (_) {lifecycleFailed = true;}
+  }
+  lifecycle('worker-isolated');
   function phaseOf(value) {stage = value; stages.push({stage, elapsedMs: now()});
     fs.writeFileSync(stagesFile, JSON.stringify(stages) + '\n', {mode: 0o600}); console.log('SHARED_CACHE_WORKER ' + value);}
   function record(type, data = {}) {
@@ -65,10 +80,11 @@ async function main() {
     const contents = mainWindow.webContents;
     record('renderer-dispatch', {operation: label, loading: contents.isLoading(),
       loadingMainFrame: contents.isLoadingMainFrame(), backgroundThrottling: contents.getBackgroundThrottling(),
-      destroyed: contents.isDestroyed()});
-    return driver.within(() => driver.executeStableFrame(contents, indexUrl, script), Math.min(timeout, remaining), label + '-timeout');
+      destroyed: contents.isDestroyed(), requestedMs: timeout, effectiveMs: Math.min(timeout, remaining), remainingPhaseMs: workerDeadline - now()});
+    return driver.within(() => driver.executeStableFrame(contents, indexUrl, driver.observeExpression(script, label)), Math.min(timeout, remaining), label + '-timeout');
   }
-  app.on('quit', () => phaseOf('app-quit'));
+  app.on('quit', () => {lifecycle('app-quit'); phaseOf('app-quit');});
+  process.once?.('exit', () => {lifecycle('process-exit'); phaseOf('process-exit');});
   const runtime = member => path.join(plan.runtime, 'electronapp', member);
   const get = member => require(runtime(member));
   function helperFacts() {
@@ -312,6 +328,7 @@ async function main() {
     receipt.status = 'PASS';
   } catch (error) {receipt.code = driver.safeFailure(error); receipt.stage = stage;}
   finally {
+    lifecycle('before-cleanup');
     phaseOf('cleanup-native');
     try {
       if (unregisterNative) await unregisterNative(); else if (service) await service.destroy();
@@ -350,6 +367,8 @@ async function main() {
       phaseOf('cleanup-protocol-removed');
     } catch (_) {receipt.status = 'FAIL'; receipt.cleanupCode = 'worker-window-cleanup';}
     receipt.trace = trace; receipt.stage ||= stage;
+    lifecycle('before-receipt');
+    if (lifecycleFailed) {receipt.status = 'FAIL'; receipt.cleanupCode ||= 'worker-lifecycle-write-failed';}
     receipt.receiptOrigin = 'cleanup';
     phaseOf('receipt-write');
     fs.writeFileSync(file, JSON.stringify(receipt, null, 2) + '\n', {flag: 'wx', mode: 0o600});
@@ -358,6 +377,7 @@ async function main() {
     console.log('SHARED_CACHE_WORKER_RESULT ' + JSON.stringify({phase, status: receipt.status, stage: receipt.stage,
       code: receipt.code || receipt.cleanupCode || null, checks: receipt.checks, timingsMs: receipt.timingsMs,
       ownedHelpersClosed: receipt.ownedHelpersClosed}));
+    lifecycle('app-exit-requested');
     phaseOf('app-exit-requested');
     app.exit(receipt.status === 'PASS' ? 0 : 1);
   }
