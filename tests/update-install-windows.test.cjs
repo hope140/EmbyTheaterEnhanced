@@ -9,6 +9,28 @@ const cp = require('node:child_process');
 const {createHandoff} = require('../src/electronapp/enhanced/update-install-handoff');
 const update = require('../src/electronapp/enhanced/manual-app-update');
 const windows = {skip: process.platform !== 'win32' && 'Windows handles / Windows PowerShell 5.1 only', timeout: 30000};
+
+test('Windows helper startup diagnostic uses only literal printing and owned processes', {...windows, timeout: 60000}, async () => {
+    const full = process.env;
+    const minimal = Object.fromEntries(['SystemRoot', 'WINDIR', 'TEMP', 'TMP', 'APPDATA', 'LOCALAPPDATA', 'USERPROFILE', 'ProgramData', 'ProgramFiles', 'ProgramFiles(x86)']
+        .filter(key => full[key] !== undefined).map(key => [key, full[key]]));
+    const exe = path.join(full.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
+    const records = [];
+    for (const [environment, env] of [['minimal', minimal], ['full', full]]) for (const detached of [false, true]) for (const long of [false, true]) {
+        const command = (long ? "$padding='" + 'x'.repeat(13431) + "'; " : '') + "[Console]::Out.WriteLine('ETE_PRINT_ONLY'); exit 7";
+        const result = await new Promise(resolve => {
+            const child = cp.spawn(exe, ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', command], {env, detached, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe']});
+            let stdout = '', stderr = '';
+            const timer = setTimeout(() => child.kill(), 5000);
+            child.stdout.on('data', bytes => { stdout += bytes.toString(); }); child.stderr.on('data', bytes => { stderr += bytes.toString(); });
+            child.on('error', () => {}); child.on('close', code => { clearTimeout(timer); resolve({code, printed: stdout.includes('ETE_PRINT_ONLY'), stderr: stderr.slice(0, 200)}); });
+            child.stdin.end();
+        });
+        records.push({environment, detached, long, ...result});
+    }
+    process.stderr.write('ETE_NATIVE_DIAG print-matrix=' + JSON.stringify(records) + '\n');
+    assert.ok(records.some(row => row.code === 7 && row.printed), 'at least the standard host control must execute');
+});
 function fixture(t) {
     const scratch = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-update-校验-')));
     t.after(() => fs.rmSync(scratch, {recursive: true, force: true}));
