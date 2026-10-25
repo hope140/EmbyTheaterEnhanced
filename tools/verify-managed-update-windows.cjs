@@ -54,10 +54,10 @@ function main() {
     process.stdout.write(JSON.stringify(receipt) + '\n');
     // Emit newly generated test failures through the ordinary job log. This
     // does not retrieve or re-route any previous inaccessible artifact.
+    for (const line of stdout.split(/\r?\n/).filter(line => line.includes('ETE_NATIVE_DIAG'))) process.stdout.write(line.slice(0, 6500) + '\n');
     if (!passed) {
         const blocks = stdout.replace(/\r/g, '').split(/(?=^# Subtest: )/m).filter(block => /^not ok /m.test(block));
         for (const block of blocks) process.stdout.write(block.slice(0, 10000) + '\n');
-        for (const line of stdout.split(/\r?\n/).filter(line => line.includes('ETE_NATIVE_DIAG'))) process.stdout.write(line.slice(0, 6500) + '\n');
         if (stderr) process.stderr.write(stderr.slice(0, 4000));
     }
     if (!passed) process.exitCode = 1;
