@@ -117,23 +117,24 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
       active.add(ticket); return ticket;
     } finally {stats.queued--; if (kind === 'foreground') foregroundWaiters--;}
   }
-  function submit(record, start, data, defer) {
+  function submit(record, start, data, defer, required = false) {
     const work = (async () => {
       try {
         if (defer) await new Promise(setImmediate);
         const key = await waitDone(record.keyPromise, record.controller.signal);
-        if (record.retired || record.diskUnavailable) {stats.skippedWrites++; return;}
+        if (record.retired || record.diskUnavailable) throw problem('cache-io');
         if (await store.put(key, start, data)) stats.committedBytes += data.length;
-        else stats.skippedWrites++;
-      } catch {stats.skippedWrites++;}
+        else throw problem('cache-io');
+      } catch (error) {stats.skippedWrites++; if (required) throw error;}
       finally {stats.captureBytes -= data.length;}
     })();
     track(record.writeJobs, track(writes, work)); stats.peakWriteJobs = Math.max(stats.peakWriteJobs, writes.size);
+    return work;
   }
   async function fetchRange(record, start, length, {kind, signal, onData, save = true, probe = false}) {
     await refresh(record);
     const ticket = await acquire(kind, signal), combined = AbortSignal.any([signal, ticket.controller.signal, record.controller.signal]);
-    let request, response, requestClosed, timer, capture, count = 0, blockOffset = 0, blockPosition = 0, blockCapacity = 0;
+    let request, response, requestClosed, timer, capture, finalRequiredWrite, count = 0, blockOffset = 0, blockPosition = 0, blockCapacity = 0;
     const recordKeyPromise = record.keyPromise;
     try {
       useRecord(record);
@@ -180,6 +181,50 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
         if (typeof modified === 'string') nextMetadata.lastModified = modified;
         if (JSON.stringify(nextMetadata) !== JSON.stringify(record.metadata)) prepareKey(record, nextMetadata);
         record.accessChecked = true;
+        if (kind === 'background') {
+          // Background work has no player waiting for these bytes: throttle
+          // this one response to durable admission instead of dropping blocks
+          // and consuming a prefix that cannot subsequently be reused. Keep
+          // foreground's optional, nonblocking disk tap below unchanged.
+          for await (const chunk of response) {
+            clearTimeout(timer);
+            if (combined.aborted) throw cancelled(); useRecord(record);
+            stats.receivedBytes += chunk.length;
+            if (count + chunk.length > length) throw problem('origin-long-body');
+            if (onOriginChunk) {
+              try {onOriginChunk({requestId, start: start + count, length: chunk.length, kind, probe});}
+              catch {stats.observerErrors++;}
+            }
+            let consumed = 0;
+            while (consumed < chunk.length) {
+              if (!blockPosition) {
+                blockOffset = count; blockCapacity = Math.min(BLOCK, length - count);
+                const available = () => 2 * (stats.captureBytes + blockCapacity) + stats.readReservedBytes <= mediaBufferBytes && writes.size < CAPTURE_JOBS;
+                while (!available()) {
+                  if (!writes.size) throw problem('cache-io');
+                  await waitDone(Promise.race([...writes]), combined);
+                }
+                if (combined.aborted) throw cancelled(); useRecord(record);
+                if (!save || !cacheEnabled || record.diskUnavailable) throw problem('cache-io');
+                capture = Buffer.allocUnsafe(blockCapacity); stats.captureBytes += blockCapacity;
+                stats.peakCaptureBytes = Math.max(stats.peakCaptureBytes, stats.captureBytes);
+                stats.peakMediaReservedBytes = Math.max(stats.peakMediaReservedBytes, 2 * stats.captureBytes + stats.readReservedBytes);
+              }
+              const take = Math.min(chunk.length - consumed, blockCapacity - blockPosition);
+              chunk.copy(capture, blockPosition, consumed, consumed + take);
+              count += take; blockPosition += take; consumed += take;
+              if (blockPosition === blockCapacity) {
+                const complete = capture; capture = null; blockPosition = 0;
+                const writing = submit(record, start + blockOffset, complete, false, true);
+                if (count === length) finalRequiredWrite = writing;
+                else await waitDone(writing, combined);
+              }
+            }
+            arm();
+          }
+          clearTimeout(timer);
+          if (count !== length) throw problem('origin-short-body');
+        } else {
         // Flowing events avoid the async iterator's per-chunk queue/Promise
         // overhead. Exactly one chunk can wait for player drain; disk remains
         // an optional bounded tap and never participates in that wait.
@@ -249,6 +294,7 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
             } catch (error) {fail(error);}
           });
         });
+        }
       } finally {combined.removeEventListener('abort', abort);}
     } catch (error) {
       if (error.reason === 'representation-changed') {
@@ -262,6 +308,10 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
       if (request) {request.destroy(); await requestClosed; stats.activeOrigins--;}
       ticket.release();
     }
+    // Network ownership is released before the last durable write drains.
+    // Cancellation can therefore close/preempt a response independently of IO;
+    // readiness still cannot be published until the write actually succeeds.
+    if (finalRequiredWrite) await waitDone(finalRequiredWrite, combined);
   }
   async function serve(req, res) {
     const record = routes.get(req.url), expectedHost = '127.0.0.1:' + server.address().port;
@@ -432,6 +482,7 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
         const ranges = [{start: 0, end: head}, ...(head < budget ? [{start: total - (budget - head), end: total}] : [])];
         let spent = 0;
         const work = (async () => {
+          try {
           await waitDone(record.keyPromise, combined);
           for (const range of ranges) for (let offset = range.start; offset < range.end;) {
             useRecord(record); if (combined.aborted) throw cancelled();
@@ -447,6 +498,14 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
           useRecord(record); if (combined.aborted) throw cancelled();
           record.preloadReady = true;
           return {spent};
+          } catch (error) {
+            // A write/admission refusal ends this response, never retries its
+            // bytes, and retains the established partial-coverage contract.
+            // Only actual stored coverage can be reported by the adapter.
+            if (error.reason !== 'cache-io') throw error;
+            useRecord(record); if (combined.aborted) throw cancelled();
+            return {spent, ready: false, partial: true};
+          }
         })();
         record.preloadJob = work;
         work.then(() => {if (record.preloadJob === work) record.preloadJob = null;},

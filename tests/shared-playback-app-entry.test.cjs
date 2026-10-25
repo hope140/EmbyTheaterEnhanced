@@ -63,17 +63,15 @@ function exactBudgetReader(value, mutate) {
     vm.runInNewContext(service.slice(start, end) + '\nreader = readSharedCurrentBytes;', sandbox);
     return {calls, read: () => sandbox.reader(helper, 7)};
 }
-for (const bytes of [300 * 1024 * 1024, 3072 * 1024 * 1024]) test('actual service reads exact mpv-text budget without int32 narrowing: ' + bytes, async () => {
-    const f = exactBudgetReader(String(bytes)); assert.equal(await f.read(), bytes);
-    assert.equal(f.calls[0][1], 'user-data/emby-theater-enhanced/diagnostics/cache-bytes');
-    assert.equal(f.calls[0][2], '');
-    assert.deepEqual(Array.from(f.calls[1]).slice(1), ['expand-properties', 'set',
-        'user-data/emby-theater-enhanced/diagnostics/cache-bytes', '${=demuxer-max-bytes}']);
-    assert.deepEqual(Array.from(f.calls[2]).slice(1), ['user-data/emby-theater-enhanced/diagnostics/cache-bytes', 50]);
+for (const bytes of [256 * 1024, 300 * 1024 * 1024, 3072 * 1024 * 1024]) test('actual service reads precise Native NODE budget in one request: ' + bytes, async () => {
+    const f = exactBudgetReader(bytes); assert.equal(await f.read(), bytes);
+    assert.equal(f.calls.length, 1, 'no clear/expand commands may precede the Native property request');
+    assert.deepEqual(Array.from(f.calls[0]), ['get', 'demuxer-max-bytes', 50]);
 });
-for (const value of [-1073741824, 3221225472, '3GiB', '0', String(3072 * 1024 * 1024 + 1)]) test('actual service rejects unavailable or non-text cache budget: ' + value, async () => {
+for (const value of [-1073741824, 0, 262143, 3221225473, 262144.5, NaN, Infinity, null, true,
+    '3221225472', '3GiB', '0', String(3072 * 1024 * 1024 + 1)]) test('actual service rejects unavailable or non-Native-integer cache budget: ' + value, async () => {
     await assert.rejects(exactBudgetReader(value).read(), /budget-unavailable/);
 });
 test('actual service rejects a late exact budget reply from a retired generation', async () => {
-    await assert.rejects(exactBudgetReader('314572800', helper => {helper.currentGenerationId = 8;}).read(), /budget-unavailable/);
+    await assert.rejects(exactBudgetReader(314572800, helper => {helper.currentGenerationId = 8;}).read(), /budget-unavailable/);
 });

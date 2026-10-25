@@ -138,16 +138,12 @@ function createService(options) {
       ...(role === 'current' ? {requestId: owner.label} : {requestPrefix: owner.scope + '-next-'})});
   }
   async function readSharedCurrentBytes(helper, generationId) {
-    const key = 'user-data/emby-theater-enhanced/diagnostics/cache-bytes';
     const owns = () => !destroyed && helper === client && !helper.exited && !helper.transportTerminated && helper.currentGenerationId === generationId;
     if (!owns()) throw Error('shared-cache-generation-retired');
-    // Existing exact mpv-text diagnostic path avoids the legacy int32 read.
-    helper.setProperty(key, '');
-    helper.submitCommand(['expand-properties', 'set', key, '${=demuxer-max-bytes}']);
-    const value = await helper.getProperty(key, 50);
-    if (!owns() || typeof value !== 'string' || !/^\d+$/.test(value)) throw Error('shared-cache-budget-unavailable');
-    const bytes = Number(value);
-    if (!Number.isSafeInteger(bytes) || bytes < 256 * 1024 || bytes > 3072 * 1024 * 1024) throw Error('shared-cache-budget-unavailable');
+    // The production helper reads MPV_FORMAT_NODE and serializes safe INT64
+    // values without narrowing. No legacy bridge/text snapshot is involved.
+    const bytes = await helper.getProperty('demuxer-max-bytes', 50);
+    if (!owns() || !Number.isSafeInteger(bytes) || bytes < 256 * 1024 || bytes > 3072 * 1024 * 1024) throw Error('shared-cache-budget-unavailable');
     return bytes;
   }
   function createRangeSession(config) {return require('../enhanced/playback-range-session').createSession({config, onDiagnostic: reportPreload,

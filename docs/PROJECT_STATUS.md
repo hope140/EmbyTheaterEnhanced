@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-25 — 统一缓存实验已暂停，本地候选仅供恢复交接
+
+按用户要求暂停预载／暂存的实验、修复、CI、构建及验收。已有真实Windowsbaseline完整通过；natural的B仍以current-probe／timeout回原源，预载漏存为独立问题，reopen／cancel未完成。后台背压修复另有完整本地回归；暂停前的最小组合候选还将M改为生产Native NODE／INT64单次实际读取，保留25ms和generation守卫、fresh授权及HTTP探测。该最新组合仅44项定向通过，尚未完成最终全仓／Windows验证、工具适配或新包来源绑定，不作为交付包。所有改动本地保存，不新增推送、派发或包，等待用户明确恢复。
+
 ## 2026-10-25 — B拒绝确认为发网前timeout，保留原期限继续分段
 
 新Windows回执的baseline完整通过，natural沿原PM切B后current-probe／timeout退回原源；resolver至load约33.19ms，期间没有新的1B请求。预载partial／cache-quota是独立问题，不能用它解释B拒绝。代码将helper实际M回读（允许50ms）、cache准备及fresh probe串在同一个25ms选择界内；当前证据尚不能把耗时全部归给M回读。工具仅增加clear／expand提交、实际get请求开始／结算及同钟load时间，保留原Promise、命令、超时、身份再核验和HTTP探测，不记录属性值或原始异常。产品6ec2漏存候选继续另存，不以新诊断冒充产品修复。

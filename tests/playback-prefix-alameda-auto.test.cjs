@@ -93,7 +93,15 @@ async function automaticCase(t, scenario) {
             }
         }
         setProperty(name, value) {this.properties[name] = value;}
-        async getProperty(name) {return this.properties[name] ?? false;}
+        async getProperty(name) {
+            if (sharedCase && name === 'demuxer-max-bytes') {
+                // Native's MPV_FORMAT_NODE/INT64 path returns a JSON number.
+                const bytes = Number(this.properties[name]);
+                record('synthetic-M-source', {source: 'SyntheticClient.getProperty/Native-NODE', bytes, command: 'get/demuxer-max-bytes'});
+                return bytes;
+            }
+            return this.properties[name] ?? false;
+        }
         async request(method) {
             if (method !== 'preview-snapshot') return {attached: true};
             const frame = {ready: true, generationId: this.currentGenerationId, format: 'bgr24', width: 1, height: 1, pixels: Buffer.from([11, 22, 33]).toString('base64')};
@@ -245,7 +253,8 @@ async function automaticCase(t, scenario) {
         const member = new URL(script.src).pathname.split('/electronapp/')[1];
         queueMicrotask(() => {try {vm.runInContext(window.prefixHarness.source(member), window, {filename: member}); script.fire('load');} catch (error) {record('script-error', {member, error: error.message}); script.fire('error');}});
     }};
-    await vm.runInContext('(' + rendererBoot.toString() + ')(' + JSON.stringify({origin: origin.origin, windowId: '1', singleItem: scenario === 'autoplay-off', moduleBaseUrl: 'file:///fixture/electronapp/www/'}) + ')', window);
+    await vm.runInContext('(' + rendererBoot.toString() + ')(' + JSON.stringify({origin: origin.origin, windowId: '1', singleItem: scenario === 'autoplay-off', moduleBaseUrl: 'file:///fixture/electronapp/www/',
+        ...(sharedCase ? {cacheBytes: 300 * 1024 * 1024} : {})}) + ')', window);
     const details = () => JSON.stringify(trace.slice(-30));
     assert(!trace.some(row => row.type === 'renderer-failure'), details());
     if (scenario === 'trusted-cd2-stop-report') {
@@ -399,8 +408,8 @@ async function automaticCase(t, scenario) {
         }
         const mReads = trace.filter(row => row.type === 'synthetic-M-source');
         assert(mReads.length >= 2 && mReads.every(row => row.bytes === 300 * 1024 * 1024 &&
-            row.source === 'SyntheticClient.submitCommand/getProperty' &&
-            row.command === 'expand-properties/set/user-data/emby-theater-enhanced/diagnostics/cache-bytes/${=demuxer-max-bytes}'), details());
+            row.source === 'SyntheticClient.getProperty/Native-NODE' &&
+            row.command === 'get/demuxer-max-bytes'), details());
         const overlap = trace.find(row => row.type === 'shared-cache-occupancy' && row.seq > ready.seq && row.seq < eof.seq && row.bytes === 48);
         assert(overlap, 'the 8-byte A read and fully prepared 40-byte B coexist before ordinary EOF: ' + details());
         const resolvedB = trace.find(row => row.type === 'synthetic-cd2-rpc' && row.item === 'B' && row.method === 'GetDownloadUrlPath');

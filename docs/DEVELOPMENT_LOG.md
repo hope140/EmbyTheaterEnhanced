@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-25 — 安全保存统一缓存候选并暂停
+
+保留已独立验证的后台可靠落盘候选、旧包只读M时序工具和源码核证后的单次Native实际预算读取候选。后者拒绝非安全整数及越界值，不以renderer意图替代属性值、不修改helper／内核或授权协议；合成helper按明确测试配置模拟Native数字返回。暂停时已启动的44项定向检查自然通过，未追加全仓／Windows试验。当前组合为本地WIP，不沿用旧包身份、不声明B timeout已解决；恢复须先核对分支／未完成门禁和最新授权。
+
 ## 2026-10-25 — 观测原M请求而非放宽选择超时
 
 沿B的current-probe timeout和无fresh1B源事件核查，选择路径先等实际M，再进入adapter的授权／探测。增加只读observer，返回Native原本同一Promise，成功／同步抛错／异步拒绝均保留；观测callback异常不覆盖请求结果。CI安全摘要保留有限generation／item／阶段／耗时和纯shapeValid，不输出M原值、URL或错误负载；clear／expand／load共用原trace时钟。此轮不提前认定根因，不删fresh再授权，不增加25ms或重打包；实际时序仍需Windows回执。
