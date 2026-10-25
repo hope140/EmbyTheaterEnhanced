@@ -13,6 +13,18 @@ const TOOL_FILES = Object.freeze(['tools/shared-playback-cache/windows-smoke.cjs
   '.github/workflows/public-ci.yml', 'tests/helpers/next-prefix-alameda.cjs']);
 const sha = b => crypto.createHash('sha256').update(b).digest('hex');
 const need = (v, c) => {if (!v) throw Error(c);};
+// The coordinator's phase clock includes synchronous candidate verification.
+function watchdogDelay(startedAt, observedAt, phaseDeadlineMs) {
+  need([startedAt, observedAt, phaseDeadlineMs].every(Number.isFinite) && observedAt >= startedAt && phaseDeadlineMs > 1000,
+    'worker-clock-invalid');
+  return Math.max(1, phaseDeadlineMs - 1000 - (observedAt - startedAt));
+}
+function within(task, timeoutMs, code) {
+  need(typeof task === 'function' && Number.isFinite(timeoutMs) && timeoutMs > 0 && /^[a-z-]{1,100}$/.test(code), 'worker-wait-invalid');
+  let timer;
+  const deadline = new Promise((_, reject) => {timer = setTimeout(() => reject(Error(code)), timeoutMs);});
+  return Promise.race([Promise.resolve().then(task), deadline]).finally(() => clearTimeout(timer));
+}
 function write(file, value, exclusive = true) {
   fs.writeFileSync(file, JSON.stringify(value, null, 2) + '\n', {flag: exclusive ? 'wx' : 'w', mode: 0o600});
 }
@@ -137,16 +149,17 @@ function safeFailure(error) {
 }
 async function child(plan, phase, sessionFile, deadline) {
   const executable = path.join(plan.runtime, 'x64/electron/electron.exe');
+  const phaseDeadlineAt = Math.min(deadline, Date.now() + plan.limits.phaseDeadlineMs);
   const args = [path.join(plan.repo, 'tools/shared-playback-cache/windows-electron.cjs'),
     '--plan=' + path.join(plan.out, 'plan.json'), '--plan-sha256=' + sha(fs.readFileSync(path.join(plan.out, 'plan.json'))),
-    '--session=' + sessionFile, '--session-sha256=' + sha(fs.readFileSync(sessionFile)), '--phase=' + phase];
+    '--session=' + sessionFile, '--session-sha256=' + sha(fs.readFileSync(sessionFile)), '--deadline-ms=' + phaseDeadlineAt, '--phase=' + phase];
   const profile = validateProfile(plan, phase);
   return new Promise(resolve => {
     const owned = spawn(executable, args, {env: childEnvironment(profile), windowsHide: true, detached: false,
       shell: false, stdio: ['ignore', 'pipe', 'pipe']});
     let timedOut = false, stderrBytes = 0, stdoutBytes = 0, exitCode = null, exitSignal = null, force, stdoutTail = ''; const workerStages = [];
     const stop = () => {if (timedOut) return; timedOut = true; owned.kill(); force = setTimeout(() => {if (owned.exitCode === null) owned.kill('SIGKILL');}, 1000);};
-    const timer = setTimeout(stop, Math.max(1, Math.min(plan.limits.phaseDeadlineMs, deadline - Date.now())));
+    const timer = setTimeout(stop, Math.max(1, phaseDeadlineAt - Date.now()));
     owned.stdout.on('data', b => {
       stdoutBytes += b.length; if (stdoutBytes > 128 * 1024) {stop(); return;}
       stdoutTail += b.toString('utf8'); const lines = stdoutTail.split(/\r?\n/); stdoutTail = lines.pop();
@@ -219,7 +232,7 @@ function argumentsOf(argv) {
   need(allowed.every(k => values[k]), 'missing-argument');
   return {mode, values};
 }
-module.exports = {OWNER, PHASES, TOOL_FILES, prepare, readPlan, childEnvironment, safeFailure, argumentsOf, validateProfile, coloredFrame, validatePhaseEvidence, safeNativeTags, boundToolBytes};
+module.exports = {OWNER, PHASES, TOOL_FILES, watchdogDelay, within, prepare, readPlan, childEnvironment, safeFailure, argumentsOf, validateProfile, coloredFrame, validatePhaseEvidence, safeNativeTags, boundToolBytes};
 if (require.main === module) (async () => {
   const {mode, values: v} = argumentsOf(process.argv.slice(2));
   if (mode === 'prepare') {await prepare({repo: v.repo, runtime: v.runtime, installer: v.installer,

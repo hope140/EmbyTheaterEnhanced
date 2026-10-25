@@ -107,3 +107,14 @@ Output必须是新目录。该命令不安装，不访问真实服务器，不�
 CI的benchmark_expected_sha始终填新的精确工具SHA；三个artifact参数继续填2e99cf2原包的ID和独立核验摘要。工具通过固定PRODUCT_COMMIT取得包身份，提前检查受保护产品树未变；工具来源与包来源分别记录。原安装器、manifest、payload、provenance和native字节均不修改，无需再完整打包。
 
 本次本地完整离线回归2662项：2649通过、0失败、13项既有平台跳过，约125.8s；JS565／PowerShell53语法、有限凭据模式扫描及文档链接通过。完整prepare参数修前失败、修后通过，另实际执行原PowerShell调用行完成Node argv往返。以上不是新的Windows Native通过证据。
+
+
+## 首帧后超时的诊断合同
+
+后续真实Windows尝试已通过准备门禁，并取得隐藏HWND的实际解码首帧，随后baseline被外层终止；没有最终worker回执，helper退出保持UNCERTAIN。只有A源响应全部关闭、gRPC退出，不能据此说helper正常关闭或Native验收通过；其余三阶段未运行。该次证据不能确定首帧后哪项await卡住。
+
+工具修正一处已证实的截止时间错位：原worker在同步完整性复核后才启动39秒watchdog，可能晚于从spawn起算的40秒协调器。现由协调器传入同一个绝对截止时间，worker扣除启动及复核耗时；不延长40秒／120秒边界。renderer执行及predicate本身有界，给所属helper清理预留时间；前后seek分别记录pause命令／属性、模块及seek派发、位置、restart、帧、unpause和退出阶段。watchdog兜底只写FAIL及实际helper状态，未确认时仍UNCERTAIN，不把进程终止或源端归零当成功。若发生晚到renderer求值，原service退役和IPC移除仍隔离旧命令；没有新增Native或产品fallback。
+
+定向测试包含真实worker源码的受控VM时钟、12秒复核后剩余27秒watchdog、永不完成的求值拒绝并进入caller finally、迟到结果不改判定。它们不代替Windows实际seek／helper退出；仍使用原2e99cf2包，下一次仅更新工具SHA。
+
+本轮本地完整离线2667项：2654通过、0失败、13项既有平台跳过，约126.2秒；最后的VM磁盘存在性隔离修正后5项定向再通过。JS566／PowerShell53语法、有限凭据模式扫描及文档链接通过。新工具仍需Windows实际回执，不能以这些测试认定首帧后阻碍已解决。

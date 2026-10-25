@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-25 — 共享缓存Native首帧后等待诊断
+
+准备门禁与隐藏真实解码首帧已过，baseline随后外层超时；helper退出未确认，其他阶段未跑。修正工具worker计时起点落后协调器的问题，共用原绝对截止时间并扣除复核；对renderer／predicate等待加有界诊断和前后seek子阶段，预留清理，兜底失败回执保留UNCERTAIN。首帧后的具体阻塞仍待Windows回读，不改产品／包／超时上限。详见[Windows验收合同](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。
+
 ## 2026-10-25 — 共享缓存Native准备参数修正
 
 已核验2e99cf2独立包；首次Native短验在prepare解析拒绝必需installer-sha256，helper未启动。工具修正参数名数字合同并加入完整PowerShell参数红绿回归；固定复用已审阅2e99cf2包，工具SHA独立，保留祖先／产品树、安装器、物理清单、源码和native摘要门禁。产品字节不变，不重新打包；真实Windows四阶段仍待执行，未访问115。详见[Windows验收合同](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。

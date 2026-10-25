@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-25 — 共享缓存工具有界等待与回执
+
+原40秒协调器可能先于同步复核后才启动的worker watchdog终止进程。工具现传同一绝对deadline，细分seek／cleanup，限制renderer求值及predicate，失败按原service退休清理。watchdog仅保留失败和实际helper退出事实，不伪造成功；本地受控VM／迟到求值回归不当作真实Native证明。详见[Windows验收合同](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。
+
 ## 2026-10-25 — 共享缓存工具CLI与独立来源绑定
 
 prepare必需的installer-sha256被字母／连字符正则拒绝，现只修工具解析，严格白名单不变。完整prepare含Windows路径的用例修前invalid-argument、修后通过。将已核验2e99cf2作为固定包基线，后续工具先证明产品树未变，分别记录两种SHA，原包来源及全清单门禁保留；不改产品／内核，不把Node验证当Native验收。详见[Windows验收合同](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。

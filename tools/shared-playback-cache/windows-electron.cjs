@@ -13,14 +13,17 @@ const now = () => performance.now();
 const scope = 'real Electron IPC/main-frame, product authority/renderer/native; owned synthetic shell and sources; no ordinary main bootstrap/visible UI';
 
 async function main() {
+  const workerStartedAt = now(), workerStartedWall = Date.now();
   console.log('SHARED_CACHE_WORKER module');
   // The owned driver publishes/drains receipts before its explicit app.exit.
   app.on('window-all-closed', () => {});
   const args = {};
-  for (const arg of process.argv.slice(2)) {const m = /^--(plan|plan-sha256|session|session-sha256|phase)=(.+)$/.exec(arg);
+  for (const arg of process.argv.slice(2)) {const m = /^--(plan|plan-sha256|session|session-sha256|deadline-ms|phase)=(.+)$/.exec(arg);
     need(m && !Object.hasOwn(args, m[1]), 'worker-argument-invalid'); args[m[1]] = m[2];}
-  need(Object.keys(args).length === 5 && driver.PHASES.includes(args.phase), 'worker-arguments-required');
+  need(Object.keys(args).length === 6 && driver.PHASES.includes(args.phase) && /^[1-9][0-9]{12}$/.test(args['deadline-ms']), 'worker-arguments-required');
   const plan = driver.readPlan(args.plan, args['plan-sha256']), phase = args.phase;
+  const availablePhaseMs = Math.min(plan.limits.phaseDeadlineMs, Number(args['deadline-ms']) - workerStartedWall);
+  need(availablePhaseMs > 1000, 'worker-deadline-invalid');
   need(process.platform === 'win32' && process.execPath.toLowerCase() === path.join(plan.runtime, 'x64/electron/electron.exe').toLowerCase(), 'worker-executable-invalid');
   const sourceBytes = fs.readFileSync(args.session);
   need(sha(sourceBytes) === args['session-sha256'] && path.join(plan.out, 'sources.json') === args.session, 'worker-session-hash');
@@ -35,28 +38,52 @@ async function main() {
   const file = path.join(plan.out, phase + '.json'), stagesFile = path.join(plan.out, phase + '.stages.json');
   need(!fs.existsSync(file) && !fs.existsSync(stagesFile), 'worker-preserve-receipts');
   const stages = [], trace = [], clients = [], contexts = new Map();
+  const workerDeadline = workerStartedAt + availablePhaseMs - 1000;
   let stage = 'isolated', activeEndpoint, lastGeneration, currentItem, service, authority, cd2Service,
     mainWindow, ownedSession, unregisterNative, unregisterCd2, unregisterSettings, lateEvents = 0, retiredAt = null;
   const receipt = {schema: 1, phase, productCommit: plan.productCommit, toolCommit: plan.tools.toolCommit,
     status: 'FAIL', scope, checks: {}, timingsMs: {}, firstFrameMeaning: 'decoded native preview; hidden carrier',
-    audio: 'NOT_TESTED_VIDEO_ONLY_FIXTURE', real115Requests: 0, helpers: []};
+    audio: 'NOT_TESTED_VIDEO_ONLY_FIXTURE', real115Requests: 0, helpers: [], seekObservations: []};
   function phaseOf(value) {stage = value; stages.push({stage, elapsedMs: now()});
     fs.writeFileSync(stagesFile, JSON.stringify(stages) + '\n', {mode: 0o600}); console.log('SHARED_CACHE_WORKER ' + value);}
   function record(type, data = {}) {
     need(trace.length < 8192, 'worker-trace-limit'); trace.push({type, at: now(), wallClockMs: Date.now(), ...data});
   }
   async function waitFor(predicate, code, timeout = 5000) {
-    const deadline = Date.now() + timeout;
-    while (Date.now() < deadline) {
+    const deadline = Math.min(now() + timeout, workerDeadline - 5000);
+    while (now() < deadline) {
       need(!trace.some(r => r.type === 'renderer-failure' || r.type === 'bridge-failure'), 'renderer-or-helper-failure');
-      if (await predicate()) return;
+      if (await driver.within(predicate, Math.max(1, deadline - now()), code)) return;
       await delay(25);
     }
     throw Error(code);
   }
+  async function evaluate(script, label, timeout = 5000) {
+    phaseOf(label);
+    const remaining = workerDeadline - now() - 5000; // Retain time for owned helper cleanup.
+    need(remaining > 0, 'worker-operation-budget');
+    return driver.within(() => mainWindow.webContents.executeJavaScript(script), Math.min(timeout, remaining), label + '-timeout');
+  }
   const runtime = member => path.join(plan.runtime, 'electronapp', member);
   const get = member => require(runtime(member));
-  let watchdog = setTimeout(() => {receipt.code = 'worker-deadline'; app.exit(2);}, plan.limits.phaseDeadlineMs - 1000);
+  function helperFacts() {
+    return clients.map(c => ({pid: c.child?.pid || null, ready: !!c.handshake,
+      exitCode: c.child?.exitCode ?? null, streamsClosed: c.closeSeen === true,
+      pendingRequests: c.pending?.size || 0, stderrTags: driver.safeNativeTags(c.stderrChunks),
+      operationErrors: c.operationErrors.map(e => ({operation: e.operation, errorCode: e.errorCode})),
+      protocolFailure: c.protocolFailure ? 'PROTOCOL_FAILURE' : null}));
+  }
+  let watchdog = setTimeout(() => {
+    receipt.status = 'FAIL'; receipt.code ||= 'worker-deadline'; receipt.stage ||= stage;
+    receipt.trace = trace; receipt.helpers = helperFacts();
+    receipt.ownedHelpersClosed = clients.length > 0 && receipt.helpers.every(r => r.streamsClosed && r.exitCode === 0);
+    receipt.helperExitAssessment = receipt.ownedHelpersClosed ? 'CONFIRMED' : 'UNCERTAIN';
+    try {fs.writeFileSync(file, JSON.stringify(receipt, null, 2) + '\n', {flag: 'wx', mode: 0o600});}
+    catch (_) {console.log('SHARED_CACHE_WORKER deadline-receipt-unavailable');}
+    console.log('SHARED_CACHE_WORKER_RESULT ' + JSON.stringify({phase, status: 'FAIL', stage: receipt.stage, code: receipt.code,
+      ownedHelpersClosed: receipt.ownedHelpersClosed, checks: receipt.checks}));
+    app.exit(2);
+  }, driver.watchdogDelay(workerStartedAt, now(), availablePhaseMs));
   try {
     await app.whenReady(); phaseOf('app-ready');
     // readPlan already ran the complete physical/source gate in this process
@@ -98,7 +125,7 @@ async function main() {
         super({...options, onEvent: message => {
           const item = contexts.get(message.generationId);
           if (retiredAt !== null && message.generationId === retiredAt && ['playback-restart', 'core-idle', 'time-pos'].includes(message.name)) lateEvents++;
-          if (['playback-restart', 'time-pos', 'duration', 'core-idle', 'eof-reached', 'operation-error'].includes(message.name)) {
+          if (['playback-restart', 'time-pos', 'duration', 'pause', 'core-idle', 'eof-reached', 'operation-error'].includes(message.name)) {
             const value = ['number', 'boolean'].includes(typeof message.value) ? message.value : null;
             record('native', {generation: message.generationId, item, name: message.name, value});
           }
@@ -175,7 +202,7 @@ async function main() {
     const boot = require('../../tests/helpers/next-prefix-alameda.cjs').rendererBoot;
     const bootInput = {origin: sources.origin, windowId: String(mainWindow.id), moduleBaseUrl: pathToFileURL(runtime('www/')).href,
       cacheBytes: plan.limits.cacheBytes, itemIds: phase === 'reopen' ? ['B'] : ['A', 'B']};
-    await mainWindow.webContents.executeJavaScript('(' + boot.toString() + ')(' + JSON.stringify(bootInput) + ')');
+    await evaluate('(' + boot.toString() + ')(' + JSON.stringify(bootInput) + ')', 'renderer-boot', 12000);
     await waitFor(() => trace.some(row => row.type === 'load'), 'worker-load-missing', 12000);
     const load = trace.find(row => row.type === 'load');
     need(load.proxied === (phase !== 'baseline'), 'worker-shared-not-selected');
@@ -193,20 +220,33 @@ async function main() {
     receipt.frame = await frame(phase === 'reopen' ? 'B' : 'A');
     receipt.timingsMs.decodedFirstFrame = now() - load.at;
     receipt.checks.decodedFrame = true; phaseOf('first-frame');
-    async function seek(seconds) {
-      await mainWindow.webContents.executeJavaScript("window.prefixAction('pause')");
+    async function seek(seconds, direction) {
+      const label = 'seek-' + direction, facts = {direction, paused: false, commandCompleted: false,
+        position: false, restart: false, frame: false, unpaused: false};
+      receipt.seekObservations.push(facts);
+      await evaluate("window.prefixAction('pause')", label + '-pause-command');
+      phaseOf(label + '-pause-property');
       await waitFor(async () => await clients.at(-1).getProperty('pause', 500) === true, 'worker-seek-pause');
+      facts.paused = true;
       const start = now(), generation = lastGeneration, initial = trace.length;
-      await mainWindow.webContents.executeJavaScript("window.require(['playbackManager']).then(v => v[0].seek(" + (seconds * 10000000) + '))');
+      await evaluate("window.require(['playbackManager']).then(v => {window.prefixHarness.report({type:'seek-module',operation:'" + direction + "'});" +
+        'return Promise.resolve(v[0].seek(' + (seconds * 10000000) + ")).then(() => {window.prefixHarness.report({type:'seek-command',operation:'" + direction + "'}); return true;});})", label + '-dispatch');
+      facts.commandCompleted = true;
+      phaseOf(label + '-position');
       await waitFor(() => trace.slice(initial).some(r => r.type === 'native' && r.generation === generation &&
         r.name === 'time-pos' && typeof r.value === 'number' && Math.abs(r.value - seconds) < 0.6), 'worker-seek-position');
+      facts.position = true;
+      phaseOf(label + '-restart');
       await waitFor(() => trace.slice(initial).some(r => r.type === 'native' && r.generation === generation && r.name === 'playback-restart'), 'worker-seek-frame-restart');
-      await frame(currentItem); const elapsed = now() - start;
-      await mainWindow.webContents.executeJavaScript("window.prefixAction('unpause')"); return elapsed;
+      facts.restart = true;
+      phaseOf(label + '-frame'); await frame(currentItem); facts.frame = true;
+      const elapsed = now() - start;
+      await evaluate("window.prefixAction('unpause')", label + '-unpause-command'); facts.unpaused = true;
+      return elapsed;
     }
     if (phase === 'baseline' || phase === 'natural') {
-      receipt.timingsMs.seekForward = await seek(8);
-      receipt.timingsMs.seekBack = await seek(2);
+      receipt.timingsMs.seekForward = await seek(8, 'forward');
+      receipt.timingsMs.seekBack = await seek(2, 'back');
       receipt.checks.seek = true; phaseOf('seek');
     }
     if (phase === 'natural') {
@@ -226,7 +266,7 @@ async function main() {
       phaseOf('cancel');
     }
     const stopping = now();
-    await mainWindow.webContents.executeJavaScript('window.prefixStop()');
+    await evaluate('window.prefixStop()', 'stop-command');
     retiredAt = lastGeneration;
     receipt.timingsMs.stop = now() - stopping;
     receipt.checks.stopped = true; phaseOf('stop');
@@ -235,10 +275,11 @@ async function main() {
     receipt.status = 'PASS';
   } catch (error) {receipt.code = driver.safeFailure(error); receipt.stage = stage;}
   finally {
-    phaseOf('cleanup');
+    phaseOf('cleanup-native');
     try {
       if (unregisterNative) await unregisterNative(); else if (service) await service.destroy();
       unregisterCd2?.(); if (!unregisterCd2) cd2Service?.close(); unregisterSettings?.(); authority?.close();
+      phaseOf('cleanup-helper-exit');
       for (const c of clients) {
         await c.exitPromise;
         const deadline = Date.now() + 2000; while (!c.closeSeen && Date.now() < deadline) await delay(10);
@@ -251,6 +292,7 @@ async function main() {
       }
       receipt.ownedHelpersClosed = clients.length > 0 && receipt.helpers.every(r => r.streamsClosed && r.exitCode === 0);
       if (phase !== 'baseline') {
+        phaseOf('cleanup-store');
         const cacheRoot = path.join(profile, 'userdata/shared-playback-byte-cache-v2');
         const store = await get('enhanced/shared-playback-cache/store').createStore({root: cacheRoot,
           currentBytes: plan.limits.cacheBytes, nextBytes: 300000000, recoveryMode: 'on-demand'});
@@ -262,6 +304,7 @@ async function main() {
       }
     } catch (error) {receipt.status = 'FAIL'; receipt.cleanupCode = driver.safeFailure(error);}
     try {
+      phaseOf('cleanup-windows');
       if (mainWindow && !mainWindow.isDestroyed()) mainWindow.destroy();
       for (const window of BrowserWindow.getAllWindows()) {need(!window.isVisible(), 'worker-visible-window'); window.destroy();}
       await ownedSession?.protocol.unhandle('file');

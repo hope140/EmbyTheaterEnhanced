@@ -106,7 +106,7 @@ test('Electron imported CJS entry invokes module stage without require.main iden
       name === './windows-contract.cjs' ? {} : require(name);
   fakeRequire.main = {};
   const context = {require: fakeRequire, module: {}, console: {log: v => logs.push(v), error: v => logs.push(v)},
-    process: {versions: {electron: '44.4.2'}, argv: ['electron', 'driver', '--phase=baseline', '--plan=x', '--plan-sha256=x', '--session=x', '--session-sha256=x']},
+    process: {versions: {electron: '44.4.2'}, argv: ['electron', 'driver', '--phase=baseline', '--plan=x', '--plan-sha256=x', '--session=x', '--session-sha256=x', '--deadline-ms=' + (Date.now() + 40000)]},
     performance, Buffer, URL, setTimeout, clearTimeout};
   vm.runInNewContext(source, context);
   await new Promise(resolve => setImmediate(resolve));
