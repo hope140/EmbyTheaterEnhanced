@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-25 — 已过基础IPC后的Native分层对照
+
+直接读取无媒体Windows安全日志核验三个实际PID退出与流关闭、六个表达式及严格顺序echo。新工具只增加原service／carrier／helper、固定本地Y4M和一次preview的三进程阶梯，实际推进、Promise<void>返回、helper退出后renderer响应与OS退出分开判定。来源和产品身份、账户隔离、拒绝不重试、期限和原默认路线保持；不把已过基础测试当产品验收。见[范围与派发合同](SHARED_PLAYBACK_CACHE_NATIVE_LIVENESS.md)。
+
 ## 2026-10-25 — 无媒体IPC与OS退出的有限对照
 
 独立case验证六个固定值、四次顺序echo和Promise结算，窗口权限一致，仅执行API不同；bare独立检查基本退出。固定来源、owned profile、有限总界、进程与流证据、拒绝不重试保持。收集器已用确定性错误／超时／拒绝情景检验清理；无Windows实际运行宣称。见[无媒体复现](SHARED_PLAYBACK_CACHE_NO_MEDIA_PROBE.md)。

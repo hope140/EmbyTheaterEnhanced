@@ -8,6 +8,14 @@ function assertCheckoutBytes(actual,blob){
  const crlf=Buffer.from(blob.toString('utf8').replace(/(?<!\r)\n/g,'\r\n'));
  assert.ok(actual.equals(blob)||actual.equals(crlf),'checkout must equal committed bytes or exact CRLF checkout');
 }
+// Strip only the exact reviewed opt-in suite extension before comparing the
+// ordinary workflow with its frozen baseline. Defaults/routes remain guarded.
+const nativeWarmInput="      benchmark_warm_calls:\n        description: Benchmark warm calls; native-liveness only with smoke AND diagnostics\n        type: choice\n        default: '3'\n        options: ['3', '1', '5', '10', 'native-liveness']\n";
+const formalWarmInput="      benchmark_warm_calls:\n        description: Subsequent calls in each fresh process\n        type: choice\n        default: '3'\n        options: ['3', '1', '5', '10']\n";
+function removeReviewedNativeChoice(workflow){
+ assert.equal(workflow.split(nativeWarmInput).length,2,'exactly one reviewed Native suite input required');
+ return workflow.replace(nativeWarmInput,formalWarmInput);
+}
 function fixture(t){
  const base=fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(),'ete-native-media-package-')));t.after(()=>fs.rmSync(base,{recursive:true,force:true}));
  const root=path.join(base,'source'),runtime=path.join(base,'runtime'),prepared=path.join(base,'prepared');for(const dir of [root,runtime,prepared])fs.mkdirSync(dir);
@@ -67,6 +75,7 @@ test('formal Windows wiring uses no trial flag and keeps one-second capture, mai
  const hasCrLf=workflow.includes('\r\n');
  if(hasCrLf)assert.equal(workflow.replace(/\r\n/g,'').includes('\n'),false,'no mixed checkout line endings');
  workflow=workflow.replace(/\r\n/g,'\n');
+ workflow=removeReviewedNativeChoice(workflow);
  const extension=workflow.indexOf('\n\n  windows-shared-cache-smoke:\n');
  assert.ok(extension>0,'one explicit isolated smoke extension required');
  workflow=workflow.slice(0,extension);
@@ -80,6 +89,13 @@ test('formal Windows wiring uses no trial flag and keeps one-second capture, mai
  assert.equal((workflow.match(/ && !inputs\.shared_cache_diagnostics/g)||[]).length,2);
  workflow=workflow.replace(/ && !inputs\.shared_cache_diagnostics/g,'');
  assertCheckoutBytes(Buffer.from(workflow),cp.execFileSync('git',['-C',root,'show','ff92bead:.github/workflows/public-ci.yml']));
+});
+test('formal workflow guard removes only the exact opt-in suite declaration and rejects drift',()=>{
+ assert.equal(removeReviewedNativeChoice('before\n'+nativeWarmInput+'after\n'),'before\n'+formalWarmInput+'after\n');
+ for(const value of [formalWarmInput,nativeWarmInput+nativeWarmInput,
+  nativeWarmInput.replace("default: '3'","default: 'native-liveness'"),
+  nativeWarmInput.replace("'10', 'native-liveness'","'10', 'native-liveness', 'other'"),
+  nativeWarmInput.replace('type: choice','type: string')])assert.throws(()=>removeReviewedNativeChoice(value));
 });
 
 

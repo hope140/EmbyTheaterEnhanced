@@ -56,4 +56,6 @@ shared_cache_installer_sha256=1e38c2b2ed440b112e23ec838f16ca2e5debd6a88be7dc87bb
 
 ## 本地验证范围
 
+实际Windows三例现已通过，精确运行和与下一层实验的区别见[Native有限对照](SHARED_PLAYBACK_CACHE_NATIVE_LIVENESS.md)。以下为该次运行之前的本地验证记录，保持其原证据身份。
+
 完整离线2700项：2687通过、0失败、13项既有平台跳过，约128.3秒。无媒体合同／收集器／路由／正式字节守卫定向30项通过；JS576／PowerShell53语法、有限凭据模式扫描及文档链接通过。确定性收集器覆盖正常退出、quit但存活、仅管道未关闭、终止无效、EPERM／EACCES及监听器／计时器收尾；未知退出均失败。独立审查无阻塞。当前环境不能运行Windows Electron，以上不代表三例已实际通过。

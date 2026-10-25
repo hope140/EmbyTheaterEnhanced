@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-25 — 无媒体已过，隔离Native与预览增量
+
+固定Electron的实际Windows无媒体三例均退出0／流关闭，两个IPC案例完整返回；不能再笼统归因为基础运行环境或一般Promise退出。准备helper空闲、仅本地播放、额外一次预览三个有限对照，另覆盖旧动作的undefined返回；保留35秒／120秒及来源门禁，不重跑完整四阶段、不动产品或原包。结果解释与准确UI输入见[Native存活对照](SHARED_PLAYBACK_CACHE_NATIVE_LIVENESS.md)。新三例尚未实际Windows运行。
+
 ## 2026-10-25 — 共享缓存独立无媒体存活复现准备
 
 新增三个固定独立进程：bare、WebContents表达式／IPC、主frame相同表达式／IPC。每例35秒／总120秒，同源固定Electron／完整来源门禁；不启动播放器／helper／媒体或业务服务。严格PID与实际exit／流关闭判据，未知退出仍FAIL。复用已有UI双开关组合只进入新job，不改普通打包、单开关路线或产品；本地测试与真实Windows证据分开。见[无媒体复现](SHARED_PLAYBACK_CACHE_NO_MEDIA_PROBE.md)。

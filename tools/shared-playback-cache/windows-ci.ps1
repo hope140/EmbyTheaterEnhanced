@@ -4,10 +4,12 @@ param(
     [Parameter(Mandatory=$true)][string]$InstallerSha256,
     [Parameter(Mandatory=$true)][string]$ExpectedToolSha,
     [Parameter(Mandatory=$true)][string]$OutputRoot,
-    [switch]$LivenessOnly
+    [switch]$LivenessOnly,
+    [switch]$NativeLivenessOnly
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+if ($LivenessOnly -and $NativeLivenessOnly) { throw 'Select one exact liveness suite.' }
 if (-not $IsWindows -or $PSVersionTable.PSVersion.Major -lt 7) { throw 'Dedicated Windows PowerShell7 runner required.' }
 $repo = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 if ($ArtifactId -cnotmatch '^[1-9][0-9]{0,17}$' -or $ZipSha256 -cnotmatch '^[a-f0-9]{64}$' -or $InstallerSha256 -cnotmatch '^[a-f0-9]{64}$' -or $ExpectedToolSha -cnotmatch '^[a-f0-9]{40}$') { throw 'Exact artifact/tool identities required.' }
@@ -105,22 +107,25 @@ $extracted = Join-Path $OutputRoot 'payload'
 if ($LASTEXITCODE -ne 0) { throw 'Static installer extraction failed.' }
 $sourceReceipt = [ordered]@{schema=1;productCommit=$productSha;toolCommit=$actualToolSha;artifactId=$ArtifactId;runId=$runId;zipSha256=$ZipSha256;installerSha256=$InstallerSha256;installed=$false;source='exact successful manual package, static extraction'}
 $sourceReceipt | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $safe 'candidate-source.json') -Encoding utf8
-if ($LivenessOnly) {
-    # No sockets, service fixtures, media generation or Native helper in this mode.
+if ($LivenessOnly -or $NativeLivenessOnly) {
+    # Both suites avoid business servers. Native is an explicit separate suite
+    # using only one generated local file; default remains strictly no-media.
     $ownedRoot = [string](& node -e "console.log(require(process.argv[1]).temporaryRoot('ete-runtime-win-'));" (Join-Path $repo 'tests/helpers/range-fixture-root.cjs'))
     if ($LASTEXITCODE -ne 0) { throw 'Owned liveness root unavailable.' }
     $auditRoot = Join-Path $ownedRoot.Trim() 'audit'
     $auditExit = 1
     try {
-        & node (Join-Path $PSScriptRoot 'windows-liveness.cjs') "--repo=$repo" "--runtime=$(Join-Path $extracted '{app}')" "--installer=$($installers[0].FullName)" "--installer-sha256=$InstallerSha256" "--product-sha=$productSha" "--out=$auditRoot"
+        $suiteArgs = @()
+        if ($NativeLivenessOnly) { $suiteArgs = @('--suite=native') }
+        & node (Join-Path $PSScriptRoot 'windows-liveness.cjs') "--repo=$repo" "--runtime=$(Join-Path $extracted '{app}')" "--installer=$($installers[0].FullName)" "--installer-sha256=$InstallerSha256" "--product-sha=$productSha" "--out=$auditRoot" @suiteArgs
         $auditExit = $LASTEXITCODE
     } finally {
-        foreach ($name in @('liveness-summary.json','bare.json','bare.stages.json','contents.json','contents.stages.json','frame.json','frame.stages.json')) {
+        foreach ($name in @('liveness-summary.json','bare.json','bare.stages.json','contents.json','contents.stages.json','frame.json','frame.stages.json','helper-idle.json','helper-idle.stages.json','helper-playback.json','helper-playback.stages.json','helper-preview.json','helper-preview.stages.json')) {
             $file = Join-Path $auditRoot $name
             if (Test-Path -LiteralPath $file -PathType Leaf) { Copy-Item -LiteralPath $file -Destination (Join-Path $safe $name) }
         }
     }
-    if ($auditExit -ne 0) { throw 'No-media runtime liveness failed; no native fallback or retry.' }
+    if ($auditExit -ne 0) { throw 'Selected runtime liveness failed; no fallback or retry.' }
     return
 }
 # Read-only canonical/Windows excluded-port preflight selects a fresh fixture
