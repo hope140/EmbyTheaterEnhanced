@@ -67,3 +67,31 @@ for (const [name, mainCode, hostCode, opens] of [['normal', 0, 0, true], ['main-
         assert.equal(fs.existsSync(path.join(root, 'wizard-marker')), opens);
     });
 }
+
+test('Windows relay lifecycle diagnostic survives natural client exit with a marker-only guard', {
+    skip: !(process.platform === 'win32' && process.env.GITHUB_ACTIONS === 'true' && process.env.RUNNER_ENVIRONMENT === 'github-hosted') && 'Hosted Windows marker-only lifecycle diagnostic', timeout: 60000
+}, async t => {
+    const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-no-exec-lifecycle-')));
+    const fixture = owned(t, process.execPath, [path.join(__dirname,'fixtures/managed-update-no-exec-client.cjs'),root], {
+        env:{...process.env,ETE_MANAGED_UPDATE_NO_EXEC_LIFECYCLE:'1'},stdio:['ignore','ignore','pipe']});
+    let errors=''; fixture.child.stderr.on('data',bytes=>{errors+=bytes;});
+    const deadline=Date.now()+30000;
+    while(!fs.existsSync(path.join(root,'guard-pid')) && Date.now()<deadline && fixture.child.exitCode===null) await new Promise(resolve=>setTimeout(resolve,25));
+    assert.equal(fs.existsSync(path.join(root,'guard-pid')),true,errors);
+    const pid=fs.readFileSync(path.join(root,'guard-pid'),'utf8');
+    const shell=path.join(process.env.SystemRoot,'System32','WindowsPowerShell','v1.0','powershell.exe');
+    const command='$p=[Diagnostics.Process]::GetProcessById([int]$env:ETE_DIAG_PID);$null=$p.Handle;[Console]::Out.WriteLine("HELD");[Console]::Out.Flush();if(-not $p.WaitForExit(20000)){exit 2};[Console]::Out.WriteLine("GUARD_EXIT="+$p.ExitCode);$p.Dispose()';
+    const observer=owned(t,shell,['-NoLogo','-NoProfile','-NonInteractive','-Command',command],{env:{...process.env,ETE_DIAG_PID:pid},stdio:['ignore','pipe','pipe']});
+    let output='';observer.child.stdout.on('data',bytes=>{output+=bytes;});observer.child.stderr.resume();
+    const ready=Date.now()+10000;
+    while(!output.includes('HELD') && Date.now()<ready && observer.child.exitCode===null) await new Promise(resolve=>setTimeout(resolve,25));
+    assert.match(output,/HELD/);fs.writeFileSync(path.join(root,'allow-exit'),'go');
+    assert.equal(await fixture.exited,0,errors);
+    const observerCode=await observer.exited;
+    const trace=fs.existsSync(path.join(root,'trace'))?fs.readFileSync(path.join(root,'trace'),'utf8'):'';
+    const relay=fs.readFileSync(path.join(root,'relay-stderr'),'utf8');
+    process.stderr.write('ETE_NATIVE_DIAG no-exec-lifecycle='+JSON.stringify({observerCode,output,trace,relay:relay.slice(0,2000)})+'\n');
+    assert.equal(observerCode,0);assert.match(output,/GUARD_EXIT=0/);
+    assert.equal(fs.existsSync(path.join(root,'marker')),true);
+    fs.rmSync(root,{recursive:true});
+});
