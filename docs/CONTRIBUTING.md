@@ -48,7 +48,7 @@ git diff --check
 
 ## 源码检查与完整测试
 
-日常 PR／push 的完整公开路线使用以下检查；GitHub Actions 还验证仓库四份快照和固定 libmpv 原始归档，完整顺序见[公开 CI](PUBLIC_CI.md)。
+本地源码检查可使用以下命令。GitHub Actions 还验证仓库四份快照和固定 libmpv 原始归档，并用带事件 base 的 `ci-diff-check.cjs` 检查整个贡献范围的空白；本地 `git diff --check` 只检查未暂存差异。完整顺序和范围参数见[公开 CI](PUBLIC_CI.md)。
 
 ```powershell
 npm ci --ignore-scripts
