@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-25 — Separate Windows compiler path confirmed; core build input blocked
+
+The [independent cross-toolchain gate](../native/experiments/buffer-retention/WINDOWS_CROSS_GATE.md) now passes actual Windows10/D3D11 import/resource/C++20/AMD64 compile/link and Meson target-path isolation. It does not run Windows images or build mpv. Exact official Debian compiler packages/tree and nine dependency source commits are recorded, with a distinct MSVCRT experiment identity and no UCRT production parity claim. The fixed FFmpeg7.1.5 source archive is not obtained after an access denial; no retry through an alternate source, substitution with FFmpeg9 or use of an expired candidate occurred. Full target dependency lock/build, mpv feature configure, separate DLL/PE closure and actual Windows Helper remain the concrete next stages. Six dedicated Python checks pass; no production, main, preload or release changes.
+
+Final offline regression remains2087 tests/2077 passed/0 failed/10 platform skips;491 JavaScript syntax checks and finite credential-pattern scans pass. The new cross-toolchain result is separate from the383-packet Linux mapping proof below.
+
 ## 2026-10-25 — Isolated custom-core export mapping has a positive bounded result
 
 The fixed-source experiment now builds and validates a separate Linux headless libmpv; production DLL/manifest/helper/kernel selection remain unchanged. Five-file patch adds finite export IDs, exact source/submitted anchors, codec configuration fingerprints, final I/O failure propagation and bounded whole-stream packet sequence digests. Reopening the exported file verifies all383 packets for raw/PCM NUT and H264B-frame/two-AAC MP4, including sourceaudio2→mux1. A separate reader process maps source3.25seconds; a local owned-fixture oracle matches one decodedRGB frame and12,000PCM samples per case. No additional observed source requests/application write bytes, native async cancel/replacement report invalidation and FD4→4 are confirmed. Read the [source/build/result contract](../native/experiments/buffer-retention/README.md).

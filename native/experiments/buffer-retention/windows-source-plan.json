@@ -1,0 +1,209 @@
+{
+  "schema": 1,
+  "scope": "PARTIAL official source plan; NOT a completed Windows dependency/build closure",
+  "mpv": {
+    "url": "https://github.com/mpv-player/mpv.git",
+    "commit": "dd5d17d3285a095a0f712fa9d116e22a076492de",
+    "patch": "mpv-dd5d17d-export-map.patch",
+    "patchSha256": "e2164a2a08a10c55c621fa2c32cae4a6929ce037c1b1039f1a03fe4d137b545e"
+  },
+  "libplacebo": {
+    "url": "https://github.com/haasn/libplacebo.git",
+    "commit": "cee9b076f2c63104ccfd497fa79c39a867293ec4",
+    "submodules": [
+      {
+        "path": "3rdparty/fast_float",
+        "url": "https://github.com/fastfloat/fast_float.git",
+        "commit": "97b54ca9e75f5303507699d27c6b4f4efe4641a1"
+      },
+      {
+        "path": "3rdparty/Vulkan-Headers",
+        "url": "https://github.com/KhronosGroup/Vulkan-Headers",
+        "commit": "450bd2232225d6c7728a4108055ac2e37cef6475"
+      },
+      {
+        "path": "3rdparty/jinja",
+        "url": "https://github.com/pallets/jinja.git",
+        "commit": "15206881c006c79667fe5154fe80c01c65410679"
+      },
+      {
+        "path": "3rdparty/markupsafe",
+        "url": "https://github.com/pallets/markupsafe.git",
+        "commit": "297fc8e356e6836a62087949245d09a28e9f1b13"
+      }
+    ]
+  },
+  "verifiedGitInputs": [
+    {
+      "name": "shaderc",
+      "url": "https://github.com/google/shaderc.git",
+      "commit": "3362e24c42ab5bf7ad32c0fec64b0a0ddeb2fda1",
+      "acquisition": "exact official repository commit fetched; not compiled",
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        },
+        {
+          "path": "license-checker.cfg",
+          "sha256": "ff39f110e4b17c6a2e24eacc14a32674c2c1f2385828bdc23a0399d3475fffc8"
+        }
+      ]
+    },
+    {
+      "name": "spirv-cross",
+      "url": "https://github.com/KhronosGroup/SPIRV-Cross.git",
+      "commit": "2c32b6bf86f3c4a5539aa1f0bacbd59fe61759cf",
+      "acquisition": "exact official repository commit fetched; not compiled",
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        }
+      ]
+    },
+    {
+      "name": "harfbuzz",
+      "url": "https://github.com/harfbuzz/harfbuzz.git",
+      "commit": "ea6a172f84f2cbcfed803b5ae71064c7afb6b5c2",
+      "acquisition": "exact official repository commit fetched; not compiled",
+      "licenseFiles": [
+        {
+          "path": "COPYING",
+          "sha256": "ba8f810f2455c2f08e2d56bb49b72f37fcf68f1f4fade38977cfd7372050ad64"
+        }
+      ]
+    },
+    {
+      "name": "fribidi",
+      "url": "https://github.com/fribidi/fribidi.git",
+      "commit": "68162babff4f39c4e2dc164a5e825af93bda9983",
+      "acquisition": "exact official repository commit fetched; not compiled",
+      "licenseFiles": [
+        {
+          "path": "COPYING",
+          "sha256": "32434afcc8666ba060e111d715bfdb6c2d5dd8a35fa4d3ab8ad67d8f850d2f2b"
+        }
+      ]
+    },
+    {
+      "name": "libass",
+      "url": "https://github.com/libass/libass.git",
+      "commit": "e46aedea0a0d17da4c4ef49d84b94a7994664ab5",
+      "acquisition": "exact official repository commit fetched; not compiled",
+      "licenseFiles": [
+        {
+          "path": "COPYING",
+          "sha256": "f7e30699d02798351e7f839e3d3bfeb29ce65e44efa7735c225464c4fd7dfe9c"
+        }
+      ]
+    },
+    {
+      "name": "freetype",
+      "url": "https://github.com/freetype/freetype.git",
+      "commit": "42608f77f20749dd6ddc9e0536788eaad70ea4b5",
+      "acquisition": "exact official repository commit fetched; not compiled",
+      "licenseFiles": [
+        {
+          "path": "LICENSE.TXT",
+          "sha256": "2e3bbb7d7c5c396368dd0853a790ec29ce5b8647163dde42a0493fb0d6556b2b"
+        }
+      ]
+    },
+    {
+      "name": "glslang",
+      "url": "https://github.com/KhronosGroup/glslang.git",
+      "commit": "697683e6b8871420d7d942b1a2fe233242ab5608",
+      "acquisition": "exact official repository commit fetched; not compiled",
+      "licenseFiles": [
+        {
+          "path": "LICENSE.txt",
+          "sha256": "adb783e734e906d1f46db5df29991dbde84bdb0ceab502ac2febb44fe3c2b5f4"
+        },
+        {
+          "path": "license-checker.cfg",
+          "sha256": "e6ead88c5894007be86546cfd24d6c0b9fafcbf832fc27d8330eb7d46cedc84a"
+        }
+      ]
+    },
+    {
+      "name": "spirv-tools",
+      "url": "https://github.com/KhronosGroup/SPIRV-Tools.git",
+      "commit": "a62abcb402009b9ca5975e6167c09f237f630e0e",
+      "acquisition": "exact official repository commit fetched; not compiled",
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        }
+      ]
+    },
+    {
+      "name": "spirv-headers",
+      "url": "https://github.com/KhronosGroup/SPIRV-Headers.git",
+      "commit": "aa6cef192b8e693916eb713e7a9ccadf06062ceb",
+      "acquisition": "exact official repository commit fetched; not compiled",
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "ff04ae7e6a468587fe59434fee2e67c0e2a749b592c794b764ff80f30b94a084"
+        }
+      ]
+    }
+  ],
+  "ffmpeg": {
+    "version": "7.1.5",
+    "requestedUrl": "https://ffmpeg.org/releases/ffmpeg-7.1.5.tar.xz",
+    "acquisition": "NOT_OBTAINED; local access blocked, no alternate acquisition attempted",
+    "candidateUpstreamBytes": 11050340,
+    "candidateUpstreamSha256": "de668509caf9e35e3cd162473441fdb29538c6d96ed080292b3cf9e6fc5d558f",
+    "checksumSource": "https://deb.debian.org/debian-security/pool/updates/main/f/ffmpeg/ffmpeg_7.1.5-0+deb13u1.dsc",
+    "checksumAuthority": "HTTPS Debian signed-descriptor text; signature not verified here; original archive match still must be verified"
+  },
+  "buildToolCandidate": {
+    "name": "cmake-3.31.6-py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.whl",
+    "url": "https://files.pythonhosted.org/packages/1e/52/85550dfcadca90b59809a1225461bfaadfcbbcc8fe62fa24f75edbe6e0b1/cmake-3.31.6-py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.whl",
+    "bytes": 26820570,
+    "sha256": "2297e9591307d9c61e557efe737bcf4d7c13a30f1f860732f684a204fee24dca",
+    "publisher": "PyPI cmake / scikit-build",
+    "upstreamRepository": "https://github.com/Kitware/CMake",
+    "distributionRecipe": "https://github.com/scikit-build/cmake-python-distributions",
+    "acquisition": "wheel bytes verified and extracted; not used to compile a target dependency"
+  },
+  "shadercDependencies": {
+    "authority": "shaderc DEPS at fixed commit; optional testing-only repositories excluded by planned build flags",
+    "pathToName": {
+      "third_party/glslang": "glslang",
+      "third_party/spirv-tools": "spirv-tools",
+      "third_party/spirv-headers": "spirv-headers"
+    }
+  },
+  "featureContract": {
+    "required": [
+      "libmpv=true",
+      "cplayer=false",
+      "d3d11=enabled",
+      "d3d-hwaccel=enabled",
+      "shaderc=enabled",
+      "spirv-cross=enabled",
+      "libplacebo:d3d11=enabled"
+    ],
+    "plannedDisabled": [
+      "gl",
+      "vulkan",
+      "amf",
+      "subrandr",
+      "win32-smtc",
+      "d3d9-hwaccel"
+    ],
+    "targetScope": "raw/PCM and H264/AAC synthetic only; no general codec/product parity"
+  },
+  "nextStages": [
+    "Obtain and verify fixed FFmpeg source in an explicitly allowed environment; never substitute FFmpeg9 or expired Windows artifact",
+    "Build pinned minimal target dependencies with target-only pkg-config sysroot and no network fallback, then configure fixed mpv; preserve D3D11 capability errors",
+    "Build separate patched DLL; enumerate PE exports and recursive runtime import closure with source/license relationship, then hash new outputs",
+    "Build an isolated experimental helper binding without altering production build manifest, then actual Windows gpu-next/D3D11/helper mapping and lifecycle test"
+  ],
+  "productionEquivalent": false,
+  "releaseSuitable": "NOT_ASSESSED"
+}

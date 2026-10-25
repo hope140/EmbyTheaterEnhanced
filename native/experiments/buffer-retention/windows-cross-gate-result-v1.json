@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "scope": "Linux-hosted MinGW Windows cross compiler configure gate; not mpv, UCRT64 parity, native Windows or production",
+  "inputLockSha256": "a1f9a22cd4fca6d84d18766ea07c89a650af4e57e342484aa5f8db5448cec7cf",
+  "recipeSha256": "da74e767a70fbf6382d36f1456e9a983d609db8d1ffbd9b031cfa24d5ce02ab4",
+  "extractedTree": {
+    "algorithm": "sha256(JSON utf8 sorted paths rows sort_keys compact; file path/sha256/bytes or path/link)",
+    "files": 4375,
+    "bytes": 529390187,
+    "symlinks": 1693,
+    "sha256": "3d6857bb3e0ddf4c2a00525106424ef53deb2206287c6647bce0d58f9606c742"
+  },
+  "windows10HeadersAndImportsLinked": true,
+  "windresCompiled": true,
+  "cxx20Linked": true,
+  "peMachine": "AMD64",
+  "probeSha256": "41e355a6551e9db07ebd1d3e1f09d432ef1266c868d0bcdc85c308137c1092c4",
+  "bytes": 88691,
+  "nativeExecution": "NOT_RUN",
+  "mpvConfigure": "NOT_RUN",
+  "mpvBuild": "NOT_RUN",
+  "d3d11Device": "NOT_RUN",
+  "productionEquivalent": false,
+  "mesonIsolation": {
+    "scope": "small compile-only project NOT mpv configure",
+    "mesonVersion": "1.9.1",
+    "ninjaVersion": "1.13.0",
+    "ambientHostDependencyConfirmed": true,
+    "targetHostDependencyRejected": true,
+    "absolutePcPathRebasedAndHeaderCompiled": true,
+    "targetD3D11Linked": true,
+    "wrapMode": "nodownload",
+    "nativeExecution": "NOT_RUN"
+  }
+}
