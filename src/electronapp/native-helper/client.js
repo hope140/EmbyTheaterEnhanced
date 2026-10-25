@@ -42,6 +42,7 @@
         this.protocolVersion = metadata.protocolVersion;
         this.helperVersion = metadata.helperVersion;
         this.rangeCache = metadata.rangeCache || null;
+        this.rangeResolutionScope = null;
         this.libmpvVersion = metadata.libmpvVersion;
         this.style = {};
 
@@ -92,6 +93,7 @@
             return call('begin-generation', request).then(function (result) {
                 if (destroyed || generationEpoch !== requestEpoch) throw new Error('generation-superseded');
                 currentGenerationId = result.generationId;
+                self.rangeResolutionScope = result.rangeResolutionScope || null;
                 if (Object.prototype.hasOwnProperty.call(result, 'rangeCache')) self.rangeCache = result.rangeCache || null;
                 return result;
             });
@@ -101,6 +103,7 @@
             var requestEpoch = ++generationEpoch;
             var generationId = currentGenerationId;
             currentGenerationId = null;
+            self.rangeResolutionScope = null;
             if (!ipc || typeof ipc.send !== 'function') return;
             ipc.send(NOTIFY_CHANNEL, {operation: 'retire-generation', payload: {
                 reason: reason || 'retired', generationId: generationId, requestEpoch: requestEpoch

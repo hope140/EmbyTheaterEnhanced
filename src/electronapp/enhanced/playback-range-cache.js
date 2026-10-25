@@ -5,6 +5,7 @@ const {once} = require('node:events');
 const {createStore} = require('./playback-prefix-store');
 const {createReader, abortError} = require('./playback-range-http');
 const diagnostics = require('./playback-range-diagnostics');
+const sourceAuthority = require('./preload-source-authority');
 function parseRange(value, total) {
     if (value == null) return {start: 0, end: total - 1, partial: false};
     const match = /^bytes=(\d*)-(\d*)$/.exec(value);
@@ -95,18 +96,28 @@ async function createCache(options) {
         })();
         route.jobs.add(job); job.finally(() => route.jobs.delete(job)).catch(() => {});
     }
-    async function performOpen({source, identity, isCurrent, signal, role = 'candidate'}) {
+    async function performOpen({source, identity, isCurrent, signal, role = 'candidate', transport}) {
+        if (transport !== undefined && !sourceAuthority.isTransport(transport)) throw diagnostics.error('source-proof-invalid', 'range-source-proof-invalid');
+        if (transport) signal = AbortSignal.any([transport.signal].concat(signal ? [signal] : []));
         if (closed || routes.size >= 8 || typeof isCurrent !== 'function' || !isCurrent()) throw abortError();
         const controller = new AbortController(); opens.add(controller);
         const abort = () => controller.abort();
         if (signal) {signal.addEventListener('abort', abort, {once: true}); if (signal.aborted) abort();}
         let lease, transferred = false;
         try {
+            const readSource = async (scoped, range) => {
+                if (!transport) return reader.read({source, origin: identity.serverOrigin, ...range, signal: scoped});
+                const signal = AbortSignal.any([scoped, transport.signal]);
+                if (signal.aborted) throw abortError();
+                const access = await transport.access(signal);
+                if (signal.aborted) throw abortError();
+                return reader.read({source: access.source, origin: access.origin, userAgent: access.userAgent, ...range, signal});
+            };
             // A fresh authorized URL and successful 206 probe are required even for a disk hit.
-            const probe = signal => reader.read({source, origin: identity.serverOrigin, start: 0, length: 1, signal});
+            const probe = signal => readSource(signal, {start: 0, length: 1});
             const proof = await (role === 'next' ? backgroundRead(controller.signal, probe) : foregroundRead(controller.signal, probe));
             if (closed || controller.signal.aborted || !isCurrent()) throw abortError();
-            lease = await store.acquire(identity, proof, role);
+            lease = await store.acquire(transport ? {...identity, representation: transport.representation} : identity, proof, role);
             await listen();
             if (closed || routes.size >= 8 || controller.signal.aborted || !isCurrent()) throw abortError();
             const routePath = '/range/' + crypto.randomUUID();
@@ -121,6 +132,7 @@ async function createCache(options) {
                 if (!cacheFailed) {
                     try {hit = await lease.readBlock(n);} catch (_) {cacheFailed = true;}
                 }
+                if (!active.current() || signal.aborted || transport && transport.signal.aborted) throw abortError();
                 if (hit && hit.length > requiredOffset) {
                     if (!lowPriority && typeof options.onPrefixRead === 'function') {
                         try {options.onPrefixRead({itemId: identity.itemId, start: n * lease.blockBytes + requiredOffset,
@@ -135,7 +147,7 @@ async function createCache(options) {
                     if (backgroundSpent + length > budget) throw Error('range-prefetch-budget');
                     backgroundSpent += length; // Charge aborted attempts too: retries cannot run without bound.
                 }
-                const read = scoped => reader.read({source, origin: identity.serverOrigin, start: offset, length, expected: proof, signal: scoped});
+                const read = scoped => readSource(scoped, {start: offset, length, expected: proof});
                 {
                     const result = lowPriority ? await read(signal) : await foregroundRead(signal, read);
                     if (!active.current() || signal.aborted) throw abortError();

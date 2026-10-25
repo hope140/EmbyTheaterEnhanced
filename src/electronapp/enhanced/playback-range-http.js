@@ -8,7 +8,7 @@ function createReader({timeoutMs}) {
     if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0 || timeoutMs > 30000) throw Error('range-timeout-required');
     const active = new Set();
     let closed = false;
-    function read({source, origin, start, length, expected, signal}) {
+    function read({source, origin, start, length, expected, signal, userAgent}) {
         let url;
         try {url = new URL(source);} catch (_) {return Promise.reject(diagnostics.error('source-invalid', 'range-request-invalid'));}
         if (closed || signal && signal.aborted) return Promise.reject(abortError());
@@ -17,10 +17,12 @@ function createReader({timeoutMs}) {
         else if (url.origin !== origin) refusal = 'source-cross-origin';
         else if (url.username || url.password) refusal = 'source-credentials';
         else if (url.hash) refusal = 'source-invalid';
+        else if (userAgent !== undefined && (typeof userAgent !== 'string' || !userAgent.length || userAgent.length > 1024 || !/^[\x20-\x7e]+$/.test(userAgent) || /[,\\]/.test(userAgent))) refusal = 'source-options-changed';
         else if (!Number.isSafeInteger(start) || start < 0 || !Number.isSafeInteger(length) || length <= 0 || length > 1048576 || !Number.isSafeInteger(start + length)) refusal = 'range-invalid';
         if (refusal) return Promise.reject(diagnostics.error(refusal, 'range-request-invalid'));
         return new Promise((resolve, reject) => {
             const headers = {Range: 'bytes=' + start + '-' + (start + length - 1), 'Accept-Encoding': 'identity', Connection: 'close'};
+            if (userAgent !== undefined) headers['User-Agent'] = userAgent;
             if (expected) headers['If-Match'] = expected.etag;
             let result, failure, response, timer;
             const request = (url.protocol === 'https:' ? https : http).request(url, {method: 'GET', headers, agent: false});

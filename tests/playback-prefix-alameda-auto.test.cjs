@@ -15,7 +15,7 @@ const waitFor = async (predicate, detail) => {
 };
 async function automaticCase(t, scenario) {
     const root = temporaryRoot('ete-alameda-next-', ['prefix', 'next-episode-prefix-v1']), trace = [], timers = new Set(), documentTimers = new Set();
-    let origin, restoreRequests, service, window;
+    let origin, mediaOrigin, restoreRequests, service, window, authority, unregisterCd2;
     // Own cleanup before server/settings setup: one failed path check must not
     // leave HTTP/timers alive or hide the first error behind a later hook.
     t.after(async () => {
@@ -24,7 +24,10 @@ async function automaticCase(t, scenario) {
         for (const timer of [...timers, ...documentTimers]) clearInterval(timer);
         if (window?.prefixStop && scenario !== 'hold-exit') await settle(() => window.prefixStop());
         if (service) await settle(() => service.destroy());
+        if (unregisterCd2) await settle(() => unregisterCd2());
+        if (authority) await settle(() => authority.close());
         if (restoreRequests) restoreRequests();
+        if (mediaOrigin && mediaOrigin !== origin) await settle(() => mediaOrigin.close());
         if (origin) await settle(() => origin.close());
         const payload = path.join(root, scenario === 'settings-next-play' ? 'next-episode-prefix-v1' : 'prefix');
         if (fs.existsSync(payload)) await settle(() => assert.deepEqual(fs.readdirSync(payload), ['owner']));
@@ -33,19 +36,23 @@ async function automaticCase(t, scenario) {
     });
     const record = (type, data = {}) => trace.push({seq: trace.length, type, ...data});
     const fixtures = ['A', 'B'].map(id => {const file = id + '.avi'; fs.writeFileSync(path.join(root, file), Buffer.from(id.repeat(40))); return {file, size: 40, etag: '"synthetic-' + id + '"'};});
-    const holding = scenario.startsWith('hold-'), orderedNatural = ['natural', 'explicit-queue-autoplay-off'].includes(scenario), pendingNatural = scenario === 'hold-natural-eof';
-    origin = await tool.fixtureServer({out: root, fixtures, autoPlay: !['autoplay-off', 'explicit-queue-autoplay-off'].includes(scenario)}, record, {holdNext: holding || orderedNatural, holdStart: 8, unsupported: scenario === 'unsupported'});
-    restoreRequests = holding || orderedNatural ? tool.observeOriginRequests(origin.origin, record) : null;
+    const trustedCd2 = scenario === 'trusted-cd2' || scenario === 'trusted-cd2-unsupported';
+    const unsupported = scenario === 'unsupported' || scenario === 'trusted-cd2-unsupported';
+    const holding = scenario.startsWith('hold-'), orderedNatural = ['natural', 'explicit-queue-autoplay-off', 'trusted-cd2'].includes(scenario), pendingNatural = scenario === 'hold-natural-eof';
+    const plan = {out: root, fixtures, autoPlay: !['autoplay-off', 'explicit-queue-autoplay-off'].includes(scenario)};
+    origin = await tool.fixtureServer(plan, record, {holdNext: holding || orderedNatural, holdStart: 8, unsupported, trustedCd2});
+    mediaOrigin = trustedCd2 ? await tool.fixtureServer(plan, record, {holdNext: orderedNatural, holdStart: 8, requireUserAgent: 'Synthetic-CD2', unsupported}) : origin;
+    restoreRequests = holding || orderedNatural ? tool.observeOriginRequests(mediaOrigin.origin, record) : null;
     const managerFile = path.join(root, 'playbackmanager.js');
     fs.copyFileSync(path.join(repo, 'vendor/web-snapshot/www/modules/common/playback/playbackmanager.js'), managerFile);
     execFileSync(process.execPath, [path.join(repo, 'tools/patch-playbackmanager.cjs'), managerFile]);
     let listener, generation = 0;
-    const contexts = new Map(), clients = [], settingsHandlers = new Map();
+    const contexts = new Map(), clients = [], settingsHandlers = new Map(), ipcListeners = new Map();
     const settingsCase = scenario === 'settings-next-play';
     const settings = require('../src/electronapp/enhanced/playback-range-user-settings');
     const preferences = settingsCase ? settings.createStore({profileRoot: root}) : null;
     class Window extends EventEmitter {
-        constructor() {super(); this.webContents = {isDestroyed: () => false, send: (_channel, value) => listener?.(value)}; this.destroyed = false;}
+        constructor() {super(); this.webContents = Object.assign(new EventEmitter(), {isDestroyed: () => false, send: (_channel, value) => listener?.(value)}); this.destroyed = false;}
         getBounds() {return {x: 0, y: 0, width: 320, height: 180};} setBounds() {} setMenu() {} loadURL() {return Promise.resolve();}
         getNativeWindowHandle() {const value = Buffer.alloc(8); value.writeBigUInt64LE(1n); return value;}
         isDestroyed() {return this.destroyed;} isVisible() {return false;} isMinimized() {return false;} hide() {} showInactive() {} moveTop() {}
@@ -68,10 +75,17 @@ async function automaticCase(t, scenario) {
         emit(name, value) {this.properties[name] = value; const event = {generationId: this.currentGenerationId, name, value}; record('synthetic-property', event); this.options.onEvent(event);}
         load(args) {
             const id = contexts.get(this.currentGenerationId) || /\/Videos\/([ABC])\//.exec(new URL(args[1]).pathname)?.[1], gen = this.currentGenerationId;
-            record('load', {item: id, generation: gen, source: args[1]});
+            record('load', {item: id, generation: gen, source: args[1], ...(trustedCd2 ? {fileLocalOptions: args.slice(2)} : {})});
             const promise = (async () => {
                 const before = trace.length;
-                assert.equal(Buffer.from(await (await fetch(args[1], {headers: {Range: 'bytes=0-7'}})).arrayBuffer()).toString(), id.repeat(8));
+                const headers = {Range: 'bytes=0-7'};
+                if (trustedCd2) {
+                    // Model only the validated file-local UA from the original
+                    // Native loadfile call, including its unproxied fallback.
+                    assert.equal(args.length, 5); assert.equal(args[4], 'user-agent=Synthetic-CD2');
+                    headers['User-Agent'] = args[4].slice('user-agent='.length);
+                }
+                assert.equal(Buffer.from(await (await fetch(args[1], {headers})).arrayBuffer()).toString(), id.repeat(8));
                 record('synthetic-read', {item: id, before});
                 if (id === 'B' && pendingNatural) {
                     assert.equal(Buffer.from(await (await fetch(args[1], {headers: {Range: 'bytes=8-15'}})).arrayBuffer()).toString(), id.repeat(8));
@@ -82,12 +96,13 @@ async function automaticCase(t, scenario) {
                 let position = 0;
                 this.clock = setInterval(() => {
                     if (this.currentGenerationId !== gen) {clearInterval(this.clock); return;}
+                    if (trustedCd2) record('trusted-cache-occupancy', {bytes: service.rangeStatus().diskBytes});
                     if ((orderedNatural || pendingNatural) && position >= 7.6) {
                         // Synthetic clock precondition only; actual renderer/service/HTTP
                         // must still discover and warm the original queue candidate.
-                        if (!origin.held) return;
+                        if (!mediaOrigin.held) return;
                         if (orderedNatural) {
-                            if (!origin.held.completed) {record('synthetic-clock-boundary', {condition: 'complete-origin-before-eof'}); origin.completeHeld();}
+                            if (!mediaOrigin.held.completed) {record('synthetic-clock-boundary', {condition: 'complete-origin-before-eof'}); mediaOrigin.completeHeld();}
                             if (!trace.some(row => row.type === 'preload-result' && row.state === 'ready')) return;
                         }
                     }
@@ -101,12 +116,43 @@ async function automaticCase(t, scenario) {
         async kill() {await this.stop(); this.exited = true;}
     }
     const main = new Window();
+    if (trustedCd2) authority = require('../src/electronapp/enhanced/preload-source-authority').createAuthority();
     service = createService({electron: {BrowserWindow: Window}, NativeHelperClient: SyntheticClient, fs: {existsSync: () => true},
+        sourceAuthority: authority,
         getMainWindow: () => main, getWebContents: () => main.webContents, execFile: (_file, _args, _options, callback) => {callback(null); return {kill() {}};},
         runtimeRoot: root, getRangeCacheConfig: settingsCase ? () => preferences.runtimeConfig() : undefined,
         rangeCache: settingsCase ? undefined : {...tool.CONFIG, blockBytes: 8, root: path.join(root, 'prefix'), onPrefixRead: value => record('prefix-read', value)}});
     const trusted = require('./helpers/trusted-renderer.cjs');
     main.webContents.mainFrame = {url: trusted.appUrl};
+    if (trustedCd2) {
+        const cd2 = require('../src/electronapp/enhanced/cd2-service'), cd2Ipc = require('../src/electronapp/enhanced/cd2-ipc');
+        const rule = {id: 'synthetic-cloud', sourcePrefix: 'X:\\Media', mountPrefix: 'X:\\Media', cloudPrefix: '/cloud/media',
+            storageType: 'cloud-mount', strategy: 'cloud-first', order: ['direct-url', 'cd2-http', 'mount', 'native'], originState: 'USER', enabled: true};
+        const transport = {metadata: {}, status: {CANCELLED: 1, NOT_FOUND: 5, DEADLINE_EXCEEDED: 4, UNAVAILABLE: 14}, client: {
+            waitForReady(_deadline, callback) {callback(null);}, close() {record('synthetic-cd2-close');},
+            FindFileByPath(request, _metadata, _options, callback) {
+                const item = /([ABC])\.avi$/.exec(request.path)?.[1];
+                record('synthetic-cd2-rpc', {method: 'FindFileByPath', item});
+                assert(item, 'original CD2 mapping must retain the real AVI source path');
+                callback(null, {fullPathName: request.path, size: '40', fileType: 'File', isDirectory: false}); return {cancel() {}};
+            },
+            GetDownloadUrlPath(request, _metadata, _options, callback) {
+                const item = /([ABC])\.avi$/.exec(request.path)?.[1];
+                record('synthetic-cd2-rpc', {method: 'GetDownloadUrlPath', item, direct: request.get_direct_url});
+                callback(null, {directUrl: mediaOrigin.origin + '/Videos/' + item + '/stream.avi?sig=synthetic', userAgent: 'Synthetic-CD2', expiresIn: '60'});
+                return {cancel() {}};
+            }
+        }};
+        const cd2Service = cd2.createService({sourceAuthority: authority, transportFactory: () => transport,
+            config: {enabled: true, origin: mediaOrigin.origin, token: 'synthetic-memory-only', rules: [rule], directUrlEnabled: true}});
+        unregisterCd2 = cd2Ipc.register({sourceAuthority: authority, service: cd2Service, getWebContents: () => main.webContents,
+            ipcMain: {handle: (name, fn) => settingsHandlers.set(name, fn), on: (name, fn) => ipcListeners.set(name, fn),
+                removeHandler: name => settingsHandlers.delete(name), removeAllListeners: name => ipcListeners.delete(name)}});
+        settingsHandlers.set('enhanced-strm-config-get', () => {
+            record('resolver-config', {strategy: 'cloud-first'});
+            return {version: 1, enabled: true, cd2: {enabled: true, origin: mediaOrigin.origin, tokenConfigured: true, directUrlEnabled: true}, rules: [rule]};
+        });
+    }
     if (settingsCase) settings.register({ipcMain: {handle: (name, fn) => settingsHandlers.set(name, fn), removeHandler: name => settingsHandlers.delete(name)},
         store: preferences, getWebContents: () => main.webContents, getRuntimeStatus: () => service.rangeStatus()});
     const eventTarget = new EventTarget();
@@ -120,13 +166,19 @@ async function automaticCase(t, scenario) {
             if (member === 'www/modules/common/playback/playbackmanager.js') return fs.readFileSync(managerFile, 'utf8');
             return fs.readFileSync(path.join(repo, member.startsWith('www/') ? 'vendor/web-snapshot' : 'src/electronapp', member), 'utf8');
         }, async invoke(_channel, request) {
-            if (settingsHandlers.has(_channel)) return settingsHandlers.get(_channel)(trusted.eventFor(main.webContents), request);
+            if (settingsHandlers.has(_channel)) {
+                if (_channel === 'enhanced-cd2-resolve') record('cd2-resolve-ipc', {requestId: request.requestId, mode: request.mode});
+                const result = await settingsHandlers.get(_channel)(trusted.eventFor(main.webContents), request);
+                if (_channel === 'enhanced-cd2-resolve') record('cd2-resolve-result', {status: result.status, sourceKind: result.sourceKind, privateProof: typeof result.sourceProof === 'string'});
+                return result;
+            }
             record('ipc', {operation: request.operation});
             if (request.operation === 'range-context' && request.payload.context) contexts.set(request.payload.generationId, request.payload.context.itemId);
             const result = await service.call(request.operation, request.payload, request.endpointId);
             if (request.operation === 'range-preload') record('preload-result', result.value);
             return result;
         }, send(channel, request) {
+            if (ipcListeners.has(channel)) ipcListeners.get(channel)(trusted.eventFor(main.webContents), request);
             if (channel === 'enhanced-native-helper-notify') service.notify(request.operation, request.payload, request.endpointId);
             if (channel === 'enhanced-diagnostics-log' && request.category === 'preload') record('preload-diagnostic', request.details);
         }, listen(callback) {listener = callback;}, unlisten() {listener = null;}}};
@@ -221,12 +273,27 @@ async function automaticCase(t, scenario) {
         assert(!trace.some(row => row.type === 'manager-next-track'), details());
         return;
     }
-    if (scenario === 'unsupported') {
+    if (unsupported) {
         await waitFor(() => trace.some(row => row.type === 'preload-diagnostic' && row.stage === 'current-probe' && row.reason === 'etag-weak'), details);
         assert(trace.some(row => row.type === 'synthetic-property' && row.name === 'time-pos' && row.value >= 5.6), details());
-        assert(trace.find(row => row.type === 'load' && row.item === 'A').source.startsWith(origin.origin + '/Videos/A/'));
+        const load = trace.find(row => row.type === 'load' && row.item === 'A');
+        assert(load.source.startsWith(mediaOrigin.origin + '/Videos/A/'));
         assert.equal(service.rangeStatus().current.state, 'original'); assert.equal(service.rangeStatus().diskBytes, 0);
         assert(!trace.some(row => row.type === 'origin-media' && row.item === 'B'), details());
+        if (trustedCd2) {
+            assert.equal(load.source, mediaOrigin.origin + '/Videos/A/stream.avi?sig=synthetic');
+            assert.deepEqual(Array.from(load.fileLocalOptions), ['replace', '-1', 'user-agent=Synthetic-CD2']);
+            assert(trace.some(row => row.type === 'synthetic-read' && row.item === 'A'), details());
+            const threshold = trace.find(row => row.type === 'synthetic-property' && row.name === 'time-pos' && row.value >= 5.6);
+            const decision = trace.find(row => row.type === 'preload-diagnostic' && row.stage === 'current-probe' && row.reason === 'etag-weak');
+            assert(threshold.seq < decision.seq, details());
+            const headers = trace.filter(row => row.type === 'trusted-origin-headers');
+            assert(headers.length >= 2 && headers.every(row => row.validUserAgent && row.anonymous), details());
+            assert(!trace.some(row => row.type === 'unexpected-emby-media' || row.type === 'next-playback-info' || row.type === 'ipc' && row.operation === 'range-preload'), details());
+            assert.equal(trace.filter(row => row.type === 'load').length, 1);
+            assert(!trace.some(row => row.type === 'manager-next-track'), details());
+            console.log(JSON.stringify({type: 'next-prefix-node-chain-result', scenario, syntheticHelper: true, originalSourceAndUA: true, initialRead: true, reason: 'current-probe/etag-weak', nextOriginRequests: 0, diskBytes: 0}));
+        }
         return;
     }
     if (scenario === 'autoplay-off') {
@@ -284,6 +351,25 @@ async function automaticCase(t, scenario) {
     const fresh = trace.filter(row => row.type === 'origin-media' && row.item === 'B' && row.seq > eof.seq);
     assert(fresh.length > 0 && fresh.every(row => row.start === 0 && row.end === 0), details());
     assert(service.rangeStatus().diskBytes <= 100000000);
+    if (trustedCd2) {
+        const negotiation = trace.find(row => row.type === 'next-playback-info' && row.item === 'B');
+        const resolvedB = trace.find(row => row.type === 'synthetic-cd2-rpc' && row.item === 'B' && row.method === 'GetDownloadUrlPath');
+        assert(threshold.seq < negotiation.seq && negotiation.seq < resolvedB.seq && resolvedB.seq < preload.seq, details());
+        assert(trace.some(row => row.type === 'resolver-config' && row.strategy === 'cloud-first'), details());
+        assert(trace.filter(row => row.type === 'cd2-resolve-result').every(row => row.status === 'hit' && row.sourceKind === 'direct-url' && row.privateProof), details());
+        assert(trace.filter(row => row.type === 'synthetic-cd2-rpc' && row.method === 'GetDownloadUrlPath').every(row => row.direct), details());
+        for (const load of trace.filter(row => row.type === 'load')) {
+            assert.deepEqual(Array.from(load.fileLocalOptions), ['replace', '-1', 'user-agent=Synthetic-CD2']);
+            assert.match(new URL(load.source).pathname, /^\/range\//, 'both original Native loads use the authorized cache proxy');
+        }
+        const headers = trace.filter(row => row.type === 'trusted-origin-headers');
+        assert(headers.length > 0 && headers.every(row => row.validUserAgent && row.anonymous), details());
+        assert(!trace.some(row => row.type === 'unexpected-emby-media'), details());
+        assert(trace.filter(row => row.type === 'origin-client-open' && row.item !== 'A').every(row => row.backgroundActive <= 1), details());
+        assert(trace.filter(row => row.type === 'trusted-cache-occupancy').every(row => row.bytes >= 0 && row.bytes <= 100000000), details());
+        assert.equal(trace.filter(row => row.type === 'load').length, 2);
+        assert.equal(trace.filter(row => row.type === 'manager-next-track').length, 1);
+    }
     console.log(JSON.stringify({type: 'next-prefix-node-chain-result', scenario, syntheticHelper: true, threshold: threshold.seq, preload: preload.seq, ready: ready.seq, eof: eof.seq, next: next.seq, bLoad: b.seq, bytes: ready.bytes}));
 }
-for (const scenario of ['natural', 'hold-natural-eof', 'remove-candidate', 'app-exit-before-next', 'hold-cancel', 'hold-preempt', 'hold-replace', 'hold-exit', 'unsupported', 'autoplay-off', 'explicit-queue-autoplay-off', 'settings-next-play']) test('real Alameda automatic next-prefix with synthetic helper/document: ' + scenario, {timeout: 8000}, t => automaticCase(t, scenario));
+for (const scenario of ['natural', 'hold-natural-eof', 'remove-candidate', 'app-exit-before-next', 'hold-cancel', 'hold-preempt', 'hold-replace', 'hold-exit', 'unsupported', 'autoplay-off', 'explicit-queue-autoplay-off', 'settings-next-play', 'trusted-cd2', 'trusted-cd2-unsupported']) test('real Alameda automatic next-prefix with synthetic helper/document: ' + scenario, {timeout: 8000}, t => automaticCase(t, scenario));

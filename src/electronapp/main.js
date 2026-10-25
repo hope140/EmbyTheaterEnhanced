@@ -1019,6 +1019,8 @@
 
     var strmConfigStoreModule = require('./enhanced/strm-config-store');
     var cd2ServiceModule = require('./enhanced/cd2-service');
+    var preloadSourceAuthority = require('./enhanced/preload-source-authority').createAuthority();
+    app.once('will-quit', function () {preloadSourceAuthority.close();});
     var nativeHelperServiceModule = require('./native-helper/service');
     var nativeHelperMode = nativeHelperServiceModule.resolveMode(process.env.ETE_MPV_BRIDGE_MODE);
     var mpvKernelStoreModule = require('./enhanced/mpv-kernel-store');
@@ -1035,10 +1037,11 @@
     function getRangeCacheRuntimeConfig() {return rangeSettingsStore && rangeSettingsStore.runtimeConfig();}
     unregisterRangeSettingsIpc = rangeSettingsModule.register({ipcMain: ipcMain, store: rangeSettingsStore, getWebContents: getWebContents,
         getRuntimeStatus: function () {return nativeHelperService ? nativeHelperService.rangeStatus() : {enabled: !!getRangeCacheRuntimeConfig()};}});
-    cd2Service = cd2ServiceModule.createService({config: strmConfigStore.getRuntimeConfig(), onDiagnostic: enhancedLog});
+    cd2Service = cd2ServiceModule.createService({config: strmConfigStore.getRuntimeConfig(), onDiagnostic: enhancedLog, sourceAuthority: preloadSourceAuthority});
     unregisterCd2Ipc = require('./enhanced/cd2-ipc').register({
         ipcMain: ipcMain,
         service: cd2Service,
+        sourceAuthority: preloadSourceAuthority,
         getWebContents: getWebContents
     });
     unregisterStrmConfigIpc = require('./enhanced/strm-config-ipc').register({
@@ -1115,7 +1118,8 @@
             mode: nativeHelperMode,
             kernelStore: mpvKernelStore,
             startupKernelSelection: startupSelection,
-            getRangeCacheConfig: getRangeCacheRuntimeConfig
+            getRangeCacheConfig: getRangeCacheRuntimeConfig,
+            sourceAuthority: preloadSourceAuthority
         });
         unregisterNativeHelperIpc = nativeHelperServiceModule.register({
             ipcMain: ipcMain,

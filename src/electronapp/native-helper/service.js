@@ -130,7 +130,15 @@ function createService(options) {
     try {if (typeof settings.logger === 'function') settings.logger({category: 'preload', event: 'decision', details: safe});} catch (_) {}
     return safe;
   }
-  function createRangeSession(config) {return require('../enhanced/playback-range-session').createSession({config, onDiagnostic: reportPreload});}
+  function authorizeRange(value, role, signal, helper, generationId) {
+    const owner = rangeGenerationOwner, authority = settings.sourceAuthority;
+    if (!authority || !owner || owner.helper !== helper || owner.generationId !== generationId ||
+        owner.principal !== authority.principalFor(getWebContents())) throw preloadDiagnostics.error('source-proof-invalid', 'range-source-proof-invalid');
+    return authority.bind({sourceProof: value.sourceProof, source: value.source, principal: owner.principal, signal,
+      ...(role === 'current' ? {requestId: owner.label} : {requestPrefix: owner.scope + '-next-'})});
+  }
+  function createRangeSession(config) {return require('../enhanced/playback-range-session').createSession({config, onDiagnostic: reportPreload,
+    authorize: settings.sourceAuthority ? authorizeRange : undefined});}
   function rangeKey(config) {return JSON.stringify(config && ['kind', 'root', 'blockBytes', 'timeoutMs', 'progressPercent', 'preloadMB', 'bytesPerSecond'].map(key => config[key] == null ? null : config[key]));}
   const initialRangeConfig = readRangeConfig();
   let rangeSession = initialRangeConfig ? createRangeSession(initialRangeConfig) : null;
@@ -179,6 +187,7 @@ function createService(options) {
   let activeEndpointId = null;
   let generationEpoch = 0;
   let rangePreloadEpoch = 0;
+  let rangeGenerationOwner = null;
   let rendererEpoch = 0;
   let presentationEpoch = 0;
   let presentationTokenHighWater = 0;
@@ -691,7 +700,7 @@ function createService(options) {
   }
 
   function retireRangeSession() {
-    ++rangePreloadEpoch;
+    ++rangePreloadEpoch; rangeGenerationOwner = null;
     const owned = rangeSession; return owned ? owned.retire() : Promise.resolve();
   }
 
@@ -782,7 +791,10 @@ function createService(options) {
       }
       if (beginEpoch !== generationEpoch || active !== client || endpointId !== activeEndpointId ||
           active.currentGenerationId !== generationId) throw new Error('generation-superseded');
-      return {status: 'ok', generationId, rangeCache: rangeSession ? rangeSession.status() : null};
+      rangeGenerationOwner = rangeSession && settings.sourceAuthority ? {helper: active, generationId, label,
+        scope: crypto.randomUUID(), principal: settings.sourceAuthority.principalFor(getWebContents())} : null;
+      return {status: 'ok', generationId, rangeCache: rangeSession ? rangeSession.status() : null,
+        ...(rangeGenerationOwner ? {rangeResolutionScope: rangeGenerationOwner.scope} : {})};
     }
     if (operation === 'range-context') {
       requireGeneration(active, payload);
@@ -876,13 +888,12 @@ function createService(options) {
       requireGeneration(active, payload);
       if (args[0] === 'loadfile') {
         const loadEpoch = generationEpoch;
-        if (rangeSession && args.length !== 2) rangeSession.unproxied('file-options-unproxied', active, active.currentGenerationId);
-        const selected = rangeSession && args.length === 2 ? await rangeSession.select(args[1], active, active.currentGenerationId) : null;
+        const selected = rangeSession ? await rangeSession.select(args[1], active, active.currentGenerationId, args) : null;
         if (destroyed || loadEpoch !== generationEpoch || active !== client || endpointId !== activeEndpointId || payload.generationId !== active.currentGenerationId) {
           if (selected) await selected.cancel();
           throw new Error('stale-generation');
         }
-        const loadArgs = selected && selected.canDispatch() ? [args[0], selected.source] : args;
+        const loadArgs = selected && selected.canDispatch() ? [args[0], selected.source].concat(args.slice(2)) : args;
         const load = active.load(loadArgs);
         load.promise.catch(function (error) {
           if (client !== active || endpointId !== activeEndpointId || load.generationId !== active.currentGenerationId ||

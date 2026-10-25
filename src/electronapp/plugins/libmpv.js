@@ -1137,9 +1137,9 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             if (libmpv && libmpv.rangeCache && libmpv.rangeCache.enabled) {
                 var rangeEndpoint = libmpv, nextResolutionSequence = 0;
                 request.rangeCache = await playbackRangeRenderer.bind({endpoint: rangeEndpoint, connectionManager: connectionManager,
-                    playbackManager: playbackManager, player: self, item: item, mediaSource: mediaSource, options: options, source: url,
+                    playbackManager: playbackManager, player: self, item: item, mediaSource: mediaSource, options: options, source: url, sourceProof: resolverResult && resolverResult.sourceProof,
                     signal: request.controller.signal,
-                    nextRequestId: function () {return ('next-' + request.requestId).slice(0, 54) + '-' + (++nextResolutionSequence);},
+                    nextRequestId: function () {return rangeEndpoint.rangeResolutionScope ? rangeEndpoint.rangeResolutionScope + '-next-' + (++nextResolutionSequence) : ('next-' + request.requestId).slice(0, 54) + '-' + (++nextResolutionSequence);},
                     recoverIdentity: function (input) {return strmIdentityRecovery.recover(input);},
                     resolveSource: async function (context, pending) {
                         assertCurrentPlayRequest(request);

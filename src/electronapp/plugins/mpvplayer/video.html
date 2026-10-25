@@ -69,7 +69,7 @@
                 <select is="emby-select" disabled class="selectRangePreload" label="预载量">
                     <option value="100">100 MB</option><option value="300" selected>300 MB</option><option value="500">500 MB</option>
                 </select>
-                <div class="fieldDescription">仅支持可验证的同源静态 HTTP 视频；当前播放优先。预载量是临时媒体数据的总上限。</div>
+                <div class="fieldDescription">来源需支持可校验的分段读取；不支持时继续正常播放。当前播放优先，预载量是临时媒体数据的总上限。</div>
             </div>
             <div class="rangeSettingsState secondaryText" role="status" aria-live="polite"></div>
 

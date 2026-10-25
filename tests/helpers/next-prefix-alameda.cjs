@@ -80,8 +80,8 @@ async function rendererBoot(input) {
 async function fixtureServer(plan, record, options = {}) {
     const http = require('node:http'), active = new Set(), sockets = new Set(); let held = null, sequence = 0;
     function item(id) {return {Id: id, ServerId: 'prefix-server', Name: 'Synthetic ' + id, Type: 'Episode', MediaType: 'Video', SeriesId: 'synthetic-series',
-        Path: id + '.avi', RunTimeTicks: id === 'A' ? 160000000 : 80000000, MediaSources: [media(id)]};}
-    function media(id) {return {Id: id + '-avi', Container: 'avi', Protocol: 'Http', Path: id + '.avi', RunTimeTicks: id === 'A' ? 160000000 : 80000000, SupportsDirectPlay: false,
+        Path: options.trustedCd2 ? 'X:\\Media\\' + id + '.strm' : id + '.avi', RunTimeTicks: id === 'A' ? 160000000 : 80000000, MediaSources: [media(id)]};}
+    function media(id) {return {Id: id + '-avi', Container: options.trustedCd2 ? 'strm' : 'avi', Protocol: 'Http', Path: options.trustedCd2 ? 'X:\\Media\\' + id + '.avi' : id + '.avi', RunTimeTicks: id === 'A' ? 160000000 : 80000000, SupportsDirectPlay: false,
         SupportsDirectStream: true, SupportsTranscoding: false, DirectStreamUrl: 'Videos/' + id + '/stream.avi?Static=true&mediaSourceId=' + id + '-avi',
         MediaStreams: [{Index: 0, Type: 'Video', Codec: 'rawvideo', Width: 320, Height: 180, RealFrameRate: id === 'A' ? 12 : 24}], DefaultSubtitleStreamIndex: -1};}
     const server = http.createServer((req, res) => {
@@ -94,11 +94,17 @@ async function fixtureServer(plan, record, options = {}) {
         const metadata = /^\/Users\/anonymous\/Items\/([ABC])$/.exec(u.pathname), playback = /^\/Items\/([ABC])\/PlaybackInfo$/.exec(u.pathname);
         if (metadata) value = item(metadata[1]);
         if (u.pathname === '/Shows/synthetic-series/Episodes') value = {Items: ['A', 'B', 'C'].map(item)};
-        if (nextNegotiation) {record('next-playback-info', {nonPlaying: true, autoOpen: false}); req.resume();}
+        if (nextNegotiation) {record('next-playback-info', {item: playback[1], nonPlaying: true, autoOpen: false}); req.resume();}
         if (playback) value = {MediaSources: [media(playback[1])], PlaySessionId: 'synthetic-session-' + playback[1]};
         res.setHeader('Access-Control-Allow-Origin', '*');
         if (value) {res.writeHead(200, {'Content-Type': 'application/json'}); res.end(JSON.stringify(value)); return;}
         const match = /^\/Videos\/([ABC])\/stream\.avi$/.exec(u.pathname); if (!match) {res.writeHead(404); res.end(); return;}
+        if (options.trustedCd2) {record('unexpected-emby-media', {item: match[1]}); res.writeHead(403).end(); return;}
+        if (options.requireUserAgent) {
+            const valid = req.headers['user-agent'] === options.requireUserAgent;
+            record('trusted-origin-headers', {item: match[1], validUserAgent: valid, anonymous: true});
+            if (!valid) {res.writeHead(403).end(); return;}
+        }
         const proof = plan.fixtures[match[1] === 'A' ? 0 : 1], range = /^bytes=(\d+)-(\d*)$/.exec(req.headers.range || '');
         if (req.headers.range && !range) {res.writeHead(416); res.end(); return;}
         const start = range ? Number(range[1]) : 0, end = range && range[2] ? Number(range[2]) : proof.size - 1;

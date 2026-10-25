@@ -99,3 +99,10 @@ test('current owned status-query failure remains visible without arbitrary excep
     f.binding.status=async()=>{throw Error('private-transport-url-token');};controller.started();await controller.tick();await new Promise(setImmediate);
     const value=await controller.category();assert(value.stats[0].value.includes('proxy-unavailable'));assert(!JSON.stringify(value).includes('private-transport'));
 });
+
+test('a next Emby source never inherits the current CD2 source proof',async t=>{
+    const f=rendererFixture(t);f.input.sourceProof='current-only-opaque-proof';let selected;
+    f.binding.preload=async value=>{selected=value;return {value:{state:'ready'}};};
+    const controller=await renderer.bind(f.input);t.after(()=>controller.close());controller.started();await controller.tick();await new Promise(setImmediate);
+    assert(selected);assert.equal(Object.hasOwn(selected,'sourceProof'),false);
+});

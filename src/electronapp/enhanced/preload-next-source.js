@@ -125,7 +125,7 @@
             var selected = {source: result && text(result.source) ? result.source : nativeSource, mediaSourceId: mediaSource.Id, mode: mode, container: mediaSource.Container, live: false};
             // This returns resolver metadata, not authority to fetch that source.
             // The caller still owns strict source eligibility and request options.
-            if (result && text(result.source)) ['type', 'sourceKind', 'requestOptions', 'acquiredAt', 'expiresAt'].forEach(function (key) {
+            if (result && text(result.source)) ['type', 'sourceKind', 'sourceProof', 'requestOptions', 'acquiredAt', 'expiresAt'].forEach(function (key) {
                 if (result[key] !== undefined) selected[key] = clone(result[key]);
             });
             return selected;

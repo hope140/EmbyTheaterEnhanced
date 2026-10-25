@@ -7,6 +7,8 @@
     var labels = {
         disabled: '预载未启用', 'context-missing': '播放上下文不可用', 'identity-missing': '播放身份不可用',
         'media-unsupported': '媒体类型不支持', 'container-unsupported': '媒体容器不支持', 'mode-unsupported': '播放方式不支持', 'live-unsupported': '直播不支持预载',
+        'source-proof-invalid': '来源授权已失效或不匹配', 'source-expired': '来源直链已过期',
+        'source-refresh-failed': '来源直链刷新失败', 'source-origin-changed': '来源直链刷新后地址源已变化', 'source-options-changed': '来源专用请求选项不匹配',
         'source-invalid': '来源地址无效', 'source-not-http': '来源不是 HTTP', 'source-cross-origin': '来源与 Emby 不同源', 'source-credentials': '来源包含地址凭据',
         'current-proxy-required': '当前播放未建立预载代理', 'file-options-unproxied': '当前来源使用独立播放选项',
         'generation-retired': '播放请求已结束', 'request-cancelled': '预载请求已取消', 'no-next-episode': '队列中暂无下一集', 'waiting-progress': '等待播放进度',

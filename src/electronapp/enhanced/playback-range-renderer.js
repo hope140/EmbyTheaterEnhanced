@@ -3,13 +3,14 @@
     else if (typeof module === 'object' && module.exports) module.exports = factory(require('./playback-range-diagnostics'), require('./preload-next-source'));
 }(function (diagnostics, nextSource) {
     'use strict';
-    function capture(manager, item, mediaSource, options, source) {
+    function capture(manager, item, mediaSource, options, source, sourceProof) {
         var api, value, epoch, address;
         try {
             api = manager.getApiClient(item.ServerId); epoch = api._identityEpoch || 0; address = api.serverAddress();
             value = {source: source, serverOrigin: new URL(address).origin, serverId: api.serverId(), accountId: api.getCurrentUserId(),
                 itemId: item.Id, mediaSourceId: mediaSource.Id, playSessionId: options.playSessionId, mode: options.playMethod,
                 mediaType: item.MediaType, container: mediaSource.Container, live: !!mediaSource.LiveStreamId};
+            if (typeof sourceProof === 'string') value.sourceProof = sourceProof;
             if (value.serverId !== item.ServerId || !value.accountId || !value.mediaSourceId || !value.playSessionId) value = null;
         } catch (_) {value = null;}
         return function () {
@@ -61,7 +62,7 @@
     async function bind(options) {
         var endpoint = options.endpoint;
         if (options.signal.aborted || !endpoint || !endpoint.rangeCache || !endpoint.rangeCache.enabled) return null;
-        var binding = endpoint.createRangeBinding(), current = capture(options.connectionManager, options.item, options.mediaSource, options.options, options.source);
+        var binding = endpoint.createRangeBinding(), current = capture(options.connectionManager, options.item, options.mediaSource, options.options, options.source, options.sourceProof);
         var nextState = 'waiting', nextDiagnostic = null, lastReported = null, stateEpoch = 0, statusSequence = 0, nextCancellation = null;
         var closed = false, closing, ticking = false, ready = false, timer, candidateId = null, attemptId = null, nextController = null, job = null;
         function valid() {return !closed && !options.signal.aborted && options.isCurrent() && current();}
@@ -124,13 +125,16 @@
                         var finalUrl = new URL(source.source);
                         if (!/^https?:$/.test(finalUrl.protocol)) {refuse('source-not-http'); return;}
                         if (finalUrl.username || finalUrl.password) {refuse('source-credentials'); return;}
-                        if (finalUrl.origin !== context.serverOrigin) {refuse('source-cross-origin'); return;}
+                        if (!source.sourceProof && finalUrl.origin !== context.serverOrigin) {refuse('source-cross-origin'); return;}
                         // Resolver metadata alone grants no transport authority. Preserve the
                         // current strict source and file-local request-option boundaries.
-                        if (source.requestOptions) {refuse('file-options-unproxied'); return;}
+                        if (!source.sourceProof && source.requestOptions) {refuse('file-options-unproxied'); return;}
                         clearTimeout(deadline); deadline = null;
-                        var result = await binding.preload(Object.assign({}, context, {source: source.source, itemId: item.Id,
-                            mediaSourceId: source.mediaSourceId, mode: source.mode, container: source.container, live: false}));
+                        var nextContext = Object.assign({}, context, {source: source.source, itemId: item.Id,
+                            mediaSourceId: source.mediaSourceId, mode: source.mode, container: source.container, live: false});
+                        delete nextContext.sourceProof;
+                        if (source.sourceProof) nextContext.sourceProof = source.sourceProof;
+                        var result = await binding.preload(nextContext);
                         if (owns()) {nextDiagnostic = result && result.value && result.value.diagnostic ? report(result.value.diagnostic) : null; nextState = result && result.value && result.value.state || 'unavailable'; if (nextState === 'progress-pending') {attemptId = null; nextState = 'waiting';}}
                     } catch (error) {if (ownsCandidate()) {nextState = 'unavailable'; nextDiagnostic = report(timedOut ? {stage: 'next-metadata', reason: 'timeout'} : diagnostics.fromError(error, 'next-metadata', 'network-failed'));}}
                     finally {if (deadline) clearTimeout(deadline);}

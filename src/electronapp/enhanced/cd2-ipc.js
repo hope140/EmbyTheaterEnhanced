@@ -17,7 +17,9 @@ function register(options) {
 
     ipcMain.handle(RESOLVE_CHANNEL, function (event, request) {
         if (!isTrusted(event)) return {status: 'miss', reason: 'untrusted_sender'};
-        return service.resolve(request);
+        const authority = options.sourceAuthority;
+        const principal = authority ? authority.principalFor(getWebContents()) : undefined;
+        return service.resolve(request, principal);
     });
 
     ipcMain.on(CANCEL_CHANNEL, function (event, request) {
