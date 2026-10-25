@@ -87,12 +87,14 @@ async function fixtureServer(plan, record, options = {}) {
     const server = http.createServer((req, res) => {
         active.add(res); res.once('close', () => active.delete(res));
         const u = new URL(req.url, 'http://127.0.0.1');
-        if (req.method !== 'GET' || Object.keys(req.headers).some(key => /authorization|cookie|emby-token/i.test(key)) || u.searchParams.get('api_key')) {res.writeHead(403); res.end(); return;}
+        const nextNegotiation = req.method === 'POST' && /^\/Items\/[ABC]\/PlaybackInfo$/.test(u.pathname) && u.searchParams.get('IsPlayback') === 'false' && u.searchParams.get('AutoOpenLiveStream') === 'false';
+        if ((req.method !== 'GET' && !nextNegotiation) || Object.keys(req.headers).some(key => /authorization|cookie|emby-token/i.test(key)) || u.searchParams.get('api_key')) {res.writeHead(403); res.end(); return;}
         let value;
         if (u.pathname === '/Users/anonymous') value = {Id: 'anonymous', Configuration: {EnableNextEpisodeAutoPlay: plan.autoPlay !== false, ResumeRewindSeconds: 0}};
         const metadata = /^\/Users\/anonymous\/Items\/([ABC])$/.exec(u.pathname), playback = /^\/Items\/([ABC])\/PlaybackInfo$/.exec(u.pathname);
         if (metadata) value = item(metadata[1]);
         if (u.pathname === '/Shows/synthetic-series/Episodes') value = {Items: ['A', 'B', 'C'].map(item)};
+        if (nextNegotiation) {record('next-playback-info', {nonPlaying: true, autoOpen: false}); req.resume();}
         if (playback) value = {MediaSources: [media(playback[1])], PlaySessionId: 'synthetic-session-' + playback[1]};
         res.setHeader('Access-Control-Allow-Origin', '*');
         if (value) {res.writeHead(200, {'Content-Type': 'application/json'}); res.end(JSON.stringify(value)); return;}

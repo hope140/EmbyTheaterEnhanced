@@ -1135,10 +1135,24 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             await setProperty(Object.assign(playerOptions, audioDelay(), interlace(), createClosedCaptionTrack(mediaSource, isVideo), getMpvAudioOptions(mediaType)))
             assertCurrentPlayRequest(request);
             if (libmpv && libmpv.rangeCache && libmpv.rangeCache.enabled) {
-                var rangeEndpoint = libmpv;
+                var rangeEndpoint = libmpv, nextResolutionSequence = 0;
                 request.rangeCache = await playbackRangeRenderer.bind({endpoint: rangeEndpoint, connectionManager: connectionManager,
                     playbackManager: playbackManager, player: self, item: item, mediaSource: mediaSource, options: options, source: url,
                     signal: request.controller.signal,
+                    nextRequestId: function () {return ('next-' + request.requestId).slice(0, 54) + '-' + (++nextResolutionSequence);},
+                    recoverIdentity: function (input) {return strmIdentityRecovery.recover(input);},
+                    resolveSource: async function (context, pending) {
+                        assertCurrentPlayRequest(request);
+                        var config = null;
+                        if (strmResolver.isStrm(context)) config = await strmConfigClient.get();
+                        assertCurrentPlayRequest(request);
+                        if (pending.signal.aborted) throw Error('range-cancelled');
+                        var result = await strmResolver.resolveAsync(context, {fs: window.fs, config: config,
+                            signal: pending.signal, requestId: pending.requestId});
+                        assertCurrentPlayRequest(request);
+                        if (pending.signal.aborted) throw Error('range-cancelled');
+                        return result;
+                    },
                     isCurrent: function () {return activePlayRequest === request && libmpv === rangeEndpoint;},
                     position: function () {return {positionTicks: playerState.positionTicks, durationTicks: playerState.durationTicks};},
                     onDiagnostic: function (value) {if (activePlayRequest === request) emitClientDiagnostic('info', 'preload', 'decision', value);}});

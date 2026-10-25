@@ -1,7 +1,7 @@
 (function (factory) {
-    if (typeof define === 'function' && define.amd) define(['./playback-range-diagnostics.js'], factory);
-    else if (typeof module === 'object' && module.exports) module.exports = factory(require('./playback-range-diagnostics'));
-}(function (diagnostics) {
+    if (typeof define === 'function' && define.amd) define(['./playback-range-diagnostics.js', './preload-next-source.js'], factory);
+    else if (typeof module === 'object' && module.exports) module.exports = factory(require('./playback-range-diagnostics'), require('./preload-next-source'));
+}(function (diagnostics, nextSource) {
     'use strict';
     function capture(manager, item, mediaSource, options, source) {
         var api, value, epoch, address;
@@ -116,19 +116,21 @@
                         if (!owns()) return;
                         if (!item || item.ServerId && item.ServerId !== context.serverId || item.Id !== id || item.Type !== 'Episode' || item.SeriesId !== options.item.SeriesId) {refuse('next-identity'); return;}
                         if (item.MediaType !== 'Video') {refuse('media-unsupported'); return;}
-                        if (!Array.isArray(item.MediaSources) || item.MediaSources.length !== 1) {refuse('source-count'); return;}
-                        var source = item.MediaSources[0];
-                        if (!source || !source.Id) {refuse('identity-missing'); return;}
-                        if (!source.SupportsDirectStream) {refuse('directstream-required'); return;}
-                        if (source.LiveStreamId) {refuse('live-unsupported'); return;}
-                        if (!/^[a-z0-9]{1,12}$/i.test(source.Container || '')) {refuse('container-unsupported'); return;}
-                        var params = {Static: true, mediaSourceId: source.Id, deviceId: api.deviceId(), api_key: api.accessToken()};
-                        if (source.ETag) params.Tag = source.ETag;
-                        var url = source.DirectStreamUrl ? api.getUrl(source.DirectStreamUrl) : api.getUrl('Videos/' + encodeURIComponent(item.Id) + '/stream.' + source.Container.toLowerCase().replace('m4v', 'mp4'), params);
+                        var source = await nextSource.prepare({api: api, player: options.player, item: item,
+                            currentSessionId: context.playSessionId, signal: owner.signal, fetch: options.fetch || fetch,
+                            requestId: options.nextRequestId && options.nextRequestId(), recoverIdentity: options.recoverIdentity,
+                            resolveSource: options.resolveSource});
                         if (!owns()) return;
-                        if (new URL(url).origin !== context.serverOrigin) {refuse('source-cross-origin'); return;}
+                        var finalUrl = new URL(source.source);
+                        if (!/^https?:$/.test(finalUrl.protocol)) {refuse('source-not-http'); return;}
+                        if (finalUrl.username || finalUrl.password) {refuse('source-credentials'); return;}
+                        if (finalUrl.origin !== context.serverOrigin) {refuse('source-cross-origin'); return;}
+                        // Resolver metadata alone grants no transport authority. Preserve the
+                        // current strict source and file-local request-option boundaries.
+                        if (source.requestOptions) {refuse('file-options-unproxied'); return;}
                         clearTimeout(deadline); deadline = null;
-                        var result = await binding.preload(Object.assign({}, context, {source: url, itemId: item.Id, mediaSourceId: source.Id, mode: 'DirectStream', container: source.Container, live: false}));
+                        var result = await binding.preload(Object.assign({}, context, {source: source.source, itemId: item.Id,
+                            mediaSourceId: source.mediaSourceId, mode: source.mode, container: source.container, live: false}));
                         if (owns()) {nextDiagnostic = result && result.value && result.value.diagnostic ? report(result.value.diagnostic) : null; nextState = result && result.value && result.value.state || 'unavailable'; if (nextState === 'progress-pending') {attemptId = null; nextState = 'waiting';}}
                     } catch (error) {if (ownsCandidate()) {nextState = 'unavailable'; nextDiagnostic = report(timedOut ? {stage: 'next-metadata', reason: 'timeout'} : diagnostics.fromError(error, 'next-metadata', 'network-failed'));}}
                     finally {if (deadline) clearTimeout(deadline);}
