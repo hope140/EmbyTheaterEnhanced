@@ -28,7 +28,7 @@ test('preload is part of the original video form with confirmed defaults and no 
     assert.deepEqual([...choices('selectRangeProgress').matchAll(/value="(\d+)"/g)].map(m => Number(m[1])), [50, 60, 70, 80, 90]);
     assert.deepEqual([...choices('selectRangePreload').matchAll(/value="(\d+)"/g)].map(m => Number(m[1])), [100, 300, 500]);
     assert.match(choices('selectRangeProgress'), /value="70" selected/); assert.match(choices('selectRangePreload'), /value="300" selected/);
-    assert.doesNotMatch(html, /class="chkRangeEnabled"[^>]*checked/); assert.match(html, /同源/);
+    assert.doesNotMatch(html, /class="chkRangeEnabled"[^>]*checked/); assert.match(html, /来源需支持可校验的分段读取/); assert.match(html, /不支持时继续正常播放/);
 });
 
 test('GET unlocks only confirmed preload values and opening or leaving untouched settings never saves', async () => {
