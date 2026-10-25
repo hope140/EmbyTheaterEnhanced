@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-25 — Native 播放诊断最小补全（待统一发布）
+
+基于 main `2cb08e5` 补齐现有 mpv 数字错误码至诊断白名单及 renderer 错误链；同一 service 生命周期内以随机密钥 HMAC 关联 Item／MediaSource、request 与 generation，补充 loading／playing 阶段和明确 Stop 来源。旧字段缺失仍兼容，不从 error reason 推断 HTTP 状态或恢复丢失历史。播放策略、解码、超时、请求次数与回退／重试保持。隐私与字段合同见[Native Helper](NATIVE_HELPER_BRIDGE.md#有界诊断关联)。
+
+Linux Node24.18.1 公开回归2063项：2050 pass／0 fail／13项明确平台 skip；其中相关定向116项全部通过。JavaScript／PowerShell语法、有限凭据模式、差异空白、四份快照及固定 libmpv 归档校验通过。验证仅使用合成夹具与公开源码门禁；Windows 实际播放、真实媒体／服务与安装未验，不接触登录态。远端 CI 结果见对应 PR；版本不变，不单独打包或发布。
+
 ## 2026-10-25 — Anime4K 额外画质资源退役候选
 
 从最新 main `8745493` 建立独立清理候选，删除仍随包的39份 Anime4K shader（2,391,214 bytes）及其专属 Git 属性规则；兼容活动清单归零，移除已无用途的准备参数／恢复请求，组装与来源校验保留历史身份及零输出。此前已退役的 preset、字体、主题备份和 BAT 不复活。libmpv、Native Helper、播放器适配、解码依赖、正常设置及活动启动图保持，版本不变。

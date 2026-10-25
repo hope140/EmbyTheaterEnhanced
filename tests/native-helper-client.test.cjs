@@ -23,6 +23,22 @@ class FakeIpc extends EventEmitter {
 
 const CACHE_PROPERTY = 'user-data/emby-theater-enhanced/diagnostics/cache-bytes';
 
+test('bridge error preserves only optional numeric mpv evidence and accepts legacy messages', async () => {
+  const ipc = new FakeIpc();
+  const {endpoint} = await clientModule.create({ipc});
+  const messages = [];
+  endpoint.addEventListener('message', event => messages.push(event.data));
+  for (const mpvErrorCode of [-13, undefined, 'PRIVATE_ERROR_CANARY', Infinity, 2147483648]) {
+    ipc.emit(clientModule.EVENT_CHANNEL, {}, {type: 'bridge_error', reason: 'load-failed',
+      endReason: 4, mpvErrorCode, log: 'PRIVATE_LOG_CANARY'});
+  }
+  ipc.emit(clientModule.EVENT_CHANNEL, {}, {type: 'bridge_error', reason: 'load-failed'});
+  assert.deepEqual(messages.map(message => [message.data.endReason, message.data.mpvErrorCode]),
+    [[4, -13], [4, null], [4, null], [4, null], [4, null], [null, null]]);
+  assert.doesNotMatch(JSON.stringify(messages), /CANARY/);
+  await endpoint.destroy();
+});
+
 test('restart completion retains zero and rejects missing, stale and retired generations at the renderer boundary', async () => {
   const ipc = new FakeIpc();
   const {endpoint} = await clientModule.create({ipc});
