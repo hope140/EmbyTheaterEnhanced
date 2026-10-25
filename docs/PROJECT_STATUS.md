@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-25 — Native closure evidence; prepare synthetic fallback
+
+Fixed-Windows run40155589157/job121056192702 at5ec99bd passed. Stop reply and10sec deadline show responses/sockets/read-streams all0;5closed callbacks remain(history2/current3). This reproduces the old observer wait mismatch without inventing prior missing counts. EDL clocks/tracks and3normalhelper exits pass;1,581,512B saved payload has successful callback reread, so do not claim zero traffic, client consumption or net benefit. Two test excerpts retire only after all native exits/hash/owner checks. [Evidence](PLAYBACK_BUFFER_RETENTION_CLOSEOUT.md).
+
+Prepare one next same-scope fallback stage in the third helper: reject stale excerpt metadata, revalidate owned anonymous source immediately before load, preserve source time with file-local start and require native A/V decode/position advance/new event/request/physical closure. Guard cancellation/generation ownership so obsolete work cannot stop replacement playback. No production source/auth/Session adapter, core change or extra helper; native fallback and sample-level audio continuity remain unverified. Independent experiment stays out of release/preload.
+
 ## 2026-10-25 — Resume bounded retention stop diagnostics
 
 Independent retention experiment continues; production/preload/core remain unchanged. The last native edl-stop timeout still lacks an actual active/pending diagnosis. Add bounded before/replied/deadline snapshots separating real responses/sockets/read-streams from historical/current missing write callbacks. Deterministic tests reproduce a physically closed historical response with a missing callback; do not claim that proves the previous Windows cause. Preserve raw unknown byte ranges and the original10sec deadline, reject any live resource, and require matching terminal receipts. Test seam frame/sample neighbors and owned excerpt/EDL retirement only after confirmed worker/helper exits and both file identities. Offline1985 tests completed:1975 pass/0 fail/10 platform skips, plus473-file syntax. No native rerun or dispatch has occurred; the coordinator must arrange the same pinned buffer-export-edl workflow. [Scope and evidence](PLAYBACK_BUFFER_RETENTION_CLOSEOUT.md).

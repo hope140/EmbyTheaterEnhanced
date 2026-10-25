@@ -142,11 +142,16 @@ function edlReportFixture() {
     report.audioMapping = {commonMappingWithinOneSample: true}; report.edl = {descriptor: {bytes: 100, sha256: 'b'.repeat(64)}, network: {assessment: 'COMPLETED_SAVED_PAYLOAD_REREAD'},
         stop: {resolution: 'PHYSICAL_AND_CALLBACKS_SETTLED', legacyWaitTimedOut: false, snapshots: [{label: 'before-stop'}, {label: 'stop-replied'},
             {label: 'settled', resources: {activeResponses: 0, openSockets: 0, openSourceStreams: 0}, all: {pendingCallbacks: 0, pendingOpenCallbacks: 0, pendingClosedCallbacks: 0}}]}};
+    report.fallback = {scope: require('../tools/playback-buffer-fallback-probe.cjs').SCOPE, decodeAndTimelinePassed: true, reason: 'excerpt-unavailable-or-changed', startFiles: 1, sourceRequests: 1, targetSourceSeconds: 1, landedSourceSeconds: 1, advancedSourceSeconds: 1.1, duration: 8,
+        stop: {resources: {activeResponses: 0, openSockets: 0, openSourceStreams: 0}, all: {pendingOpenCallbacks: 0}}};
     return {report, plan, exit};
 }
 test('EDL experiment requires a third normal helper and an explicit network assessment, including negative findings', () => {
     const {report, plan, exit} = edlReportFixture();
     probe.validateReport(report, plan, exit);
+    for (const key of ['landedSourceSeconds', 'advancedSourceSeconds', 'targetSourceSeconds', 'duration']) {
+        const bad = structuredClone(report); delete bad.fallback[key]; assert.throws(() => probe.validateReport(bad, plan, exit));
+    }
     report.helpers.pop(); assert.throws(() => probe.validateReport(report, plan, exit));
     report.helpers.push({...structuredClone(report.helpers[0]), pid: 104}); report.edl.network.assessment = 'assumed-efficient'; assert.throws(() => probe.validateReport(report, plan, exit));
 });

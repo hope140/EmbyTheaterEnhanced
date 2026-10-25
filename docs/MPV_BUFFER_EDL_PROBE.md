@@ -1,6 +1,6 @@
 # 有限缓存片段尾端接回：最小 EDL 实验
 
-**2026-10-25恢复有界诊断验证，当前没有新的固定Windows结果。** 2026-10-24收尾及失败证据保留在[阶段结论](PLAYBACK_BUFFER_RETENTION_CLOSEOUT.md)；继续工作只修观察/测试生命周期，不改生产内核、正常播放或既有缓存限额。
+**2026-10-25固定Windows分项复验已完成，下一步为失效片段回退验证。** 2026-10-24收尾及失败证据保留在[阶段结论](PLAYBACK_BUFFER_RETENTION_CLOSEOUT.md)；继续工作只修观察/测试生命周期，不改生产内核、正常播放或既有缓存限额。
 
 ## 单轮问题与范围
 
@@ -70,3 +70,14 @@
 即使某次观察中成功callback为0，也不宣称零传输；`callbackObservationsComplete=false`或unknown范围必须一并解释。确认成功的迟到回调可更新当前观测，不能改写关闭当时的冻结快照。
 
 成功后由外层确认worker实际退出/stdio关闭，独立复核三个helper正常退出，再验证owner、普通物理文件、excerpt与EDL创建摘要/大小后删除两个固定夹具。所有文件先通过检查才开始删除；原合成输入保留。失败或未知运行不触发成功清理。`testExcerptRetirement`只是测试资源生命周期，绝不等于产品缓存保留功能已实现。
+
+
+## 固定Windows复验与下一项回退边界
+
+run40155589157/job121056192702，controls5ec99bd：Stop返回/10秒截止时实际响应、套接字、读取流全0，closed callback共5（历史2、本次3）；资源关闭与callback交付已分清，未知量仍保留。三个helper均正常退出0/stdio关闭，两个固定测试文件在全部读取者退出/摘要复核后删除。本次成功callback已覆盖1,581,512B已存payload，不能称零重读。完整数值与历史失败区别见[阶段结论](PLAYBACK_BUFFER_RETENTION_CLOSEOUT.md)。
+
+继续沿用同一`buffer-export-edl`输入，仅在已完成EDL Stop后增加一个探针私有preflight fallback阶段，不新开helper/输出窗口、不改生产service的命令白名单。固定原片段/EDL保持不变，传入刻意陈旧的片段摘要，拒绝其作为播放候选；缺失/篡改/越界选择另有离线回归。加载前重新核owner、原合成源摘要及原位置，不接受外部主机、query、凭据或失效源身份。
+
+第三helper开启新generation，通过既有file-local `start`直接加载原匿名源，验证实际path、8秒时长、接近原目标位置且继续前进、320×180视频及mono48k/null音轨、一个新顶层start-file和新增源请求。EDL的事件/网络回执在此前冻结，fallback不会混入其流量统计。每次异步属性返回和后续副作用前校验generation；替代代次出现时，旧finally不stop新播放。单纯取消但仍属于本代次则Stop并等待物理关闭；失败不伪报成功或删诊断。原120/100/10秒不变。新fallback原生行为待协调者按精确提交运行，离线fake只验证编排，不代替native。
+
+PCM采样是另一项有界问题：固定[ao_pcm实现](https://github.com/mpv-player/mpv/blob/dd5d17d3285a095a0f712fa9d116e22a076492de/audio/out/ao_pcm.c)可以写WAV/raw，但它标记untimed；现有null输出/volume0条件不能直接用于采集音频。若下一步采样，应单独受控PCM输出与同条件原源对照，核实际格式、截断、边缘样本及文件最终关闭，媒体不上传；该条件仍不等于普通输出的听觉无缝。本批不更改音频输出或内核。

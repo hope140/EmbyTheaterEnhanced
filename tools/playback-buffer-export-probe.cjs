@@ -10,7 +10,7 @@ const OWNER = 'ETE isolated finite buffer export v1\n';
 const MAX_FILE = 34 * 1024 * 1024;
 const MAX_SLOTS = 192 * 25;
 const STAGES = new Set(['preflight', 'app-ready', 'source-helper', 'source-load', 'source-advance', 'source-pause',
-    'source-stable', 'export', 'export-inspect', 'source-stop', 'source-exit', 'clip-helper', 'clip-load', 'clip-decode', 'clip-stop', 'edl-helper', 'edl-load', 'edl-cross', 'edl-stop', 'complete']);
+    'source-stable', 'export', 'export-inspect', 'source-stop', 'source-exit', 'clip-helper', 'clip-load', 'clip-decode', 'clip-stop', 'edl-helper', 'edl-load', 'edl-cross', 'edl-stop', 'fallback-original', 'complete']);
 const CODES = new Set(['export-input-invalid', 'export-file-limit', 'export-avi-invalid', 'export-avi-format', 'export-packets-invalid',
     'export-window-unavailable', 'export-source-not-stable', 'export-extra-source-read', 'export-command-failed', 'export-file-changed',
     'export-mapping-invalid', 'export-native-deadline', 'export-stage-timeout', 'export-result-invalid', 'export-owned-path',
@@ -19,6 +19,7 @@ const CODES = new Set(['export-input-invalid', 'export-file-limit', 'export-avi-
 CODES.add('export-av-format'); CODES.add('export-av-audio-mapping'); CODES.add('export-av-timeline-mismatch');
 CODES.add('export-option-set-failed'); CODES.add('export-option-get-failed'); CODES.add('export-option-readback-mismatch');
 CODES.add('export-edl-input'); CODES.add('export-edl-observation');
+for (const code of ['export-fallback-input', 'export-fallback-observation', 'export-fallback-cancelled']) CODES.add(code);
 const OPTIONS = Object.freeze({'cache': 'yes', 'cache-on-disk': false, 'demuxer-max-bytes': 4 * 1048576,
     'demuxer-max-back-bytes': 2 * 1048576, 'demuxer-donate-buffer': false, 'pause': false, 'volume': 0}); // Probe only, not product defaults.
 function optionsFor(variant) {
@@ -220,6 +221,13 @@ function validateReport(report, plan, exit) {
     if (plan.variant === 'edl' && (!require('./playback-buffer-edl-probe.cjs').validStopObservation(report.edl?.stop) ||
         !/^[a-f0-9]{64}$/.test(report.edl?.descriptor?.sha256 || '') || !Number.isSafeInteger(report.edl?.descriptor?.bytes) ||
         report.edl.descriptor.bytes <= 0 || report.edl.descriptor.bytes > 16384)) throw Error('export-result-invalid');
+    if (plan.variant === 'edl' && (report.fallback?.scope !== require('./playback-buffer-fallback-probe.cjs').SCOPE ||
+        report.fallback.decodeAndTimelinePassed !== true || report.fallback.reason !== 'excerpt-unavailable-or-changed' || report.fallback.startFiles !== 1 ||
+        !Number.isFinite(report.fallback.targetSourceSeconds) || report.fallback.targetSourceSeconds < 0 || report.fallback.targetSourceSeconds >= 8 ||
+        !Number.isFinite(report.fallback.landedSourceSeconds) || Math.abs(report.fallback.landedSourceSeconds - report.fallback.targetSourceSeconds) > 1 / 24 ||
+        !Number.isFinite(report.fallback.advancedSourceSeconds) || report.fallback.advancedSourceSeconds <= report.fallback.landedSourceSeconds ||
+        !Number.isFinite(report.fallback.duration) || Math.abs(report.fallback.duration - 8) > 1 / 24 ||
+        !Number.isInteger(report.fallback.sourceRequests) || report.fallback.sourceRequests <= 0 || !require('./playback-buffer-edl-probe.cjs').physicalClosed(report.fallback.stop))) throw Error('export-result-invalid');
     assert.deepEqual(report.identity, plan.identity);
 }
 async function worker(file) {
@@ -325,6 +333,8 @@ async function worker(file) {
             report.edl = await require('./playback-buffer-edl-probe.cjs').run({client, property, until, delay, server, fixture: plan.fixture,
                 original: sourceAV, video: report.mapping, audio: report.audioMapping, duration, output, directory: plan.out,
                 checkpoint(name, result) {report.edl = result; stage(name);}});
+            report.fallback = await require('./playback-buffer-fallback-probe.cjs').run({client, property, until, server, directory: plan.out, fixture: plan.fixture,
+                previous: report.edl, clip: report.clip, checkpoint(value) {report.fallback = value; stage('fallback-original');}});
             await finish(client); assert.deepEqual(fingerprint(), report.clip); report.checks.unchangedAfterEDL = true;
             report.checks.edlTimelineAndTracks = report.edl.timelineAndTracksPassed === true; readProbe(file);
         }
