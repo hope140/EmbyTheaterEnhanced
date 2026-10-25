@@ -52,8 +52,10 @@ function fixture(t) {
         server.listen = (name, ready) => listen(name, () => {
             process.stderr.write('ETE_NATIVE_DIAG pipe-listening hash=' + crypto.createHash('sha256').update(name).digest('hex').slice(0, 12) + '\n');
             const probe = net.connect(name);
+            t.after(() => probe.destroy());
+            probe.resume(); probe.on('end', () => probe.destroy());
             probe.on('connect', () => { process.stderr.write('ETE_NATIVE_DIAG node-pipe-connected\n'); probe.end('invalid-test-client\n'); });
-            probe.on('error', error => { process.stderr.write('ETE_NATIVE_DIAG node-pipe-error=' + error.code + '\n'); });
+            probe.on('error', error => { process.stderr.write('ETE_NATIVE_DIAG node-pipe-error=' + error.code + '\n'); probe.destroy(); });
             ready();
         });
         return server;
