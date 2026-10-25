@@ -652,7 +652,12 @@ async function createStore({
     const limit = role === 'current' ? currentBytes : nextBytes;
     // Keep one metadata row available to open the next actual route without
     // evicting the last played object's bytes during speculative open().
-    if (used(role) + data.length > limit || entries.size + blockCount() >= maxEntries - 1) {
+    // A role transfer can leave retired files charged to the destination while
+    // old read leases still own them. That does not free their original bytes
+    // for another role. Check the global disk admission before making a copy.
+    if (used(role) + data.length > limit ||
+        used('current') + used('next') + data.length > currentBytes + nextBytes ||
+        entries.size + blockCount() >= maxEntries - 1) {
       if (!reclaimScheduled) {
         reclaimScheduled = true;
         enqueue(async () => {

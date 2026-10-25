@@ -5,6 +5,8 @@
 // explicitly granted proxy and private store.
 const {createStore} = require('./store.cjs');
 const {createProxy} = require('./proxy.cjs');
+const fs = require('node:fs/promises');
+const path = require('node:path');
 
 function memory() {
   const value = process.memoryUsage();
@@ -25,10 +27,22 @@ function validGrant(grant) {
       !url.username && !url.password && !url.hash;
   } catch {return false;}
 }
+function countWrite(file, data, counters) {
+  const name = path.basename(file);
+  const bytes = Buffer.isBuffer(data) ? data.byteLength : Buffer.byteLength(String(data));
+  if (/^\.block-[a-f0-9-]+\.tmp$/.test(name)) {
+    counters.mediaBlockTempWrites++;
+    counters.mediaBlockTempBytes += bytes;
+  } else if (/^\.index-[a-f0-9-]+\.tmp$/.test(name)) {
+    counters.indexWrites++;
+    counters.indexBytes += bytes;
+  }
+}
 
 let proxy, current, next, sampling, stopped = false;
 let baseline, peak;
 let report = null;
+let config, writeCounters, writePressure;
 
 async function finish() {
   if (stopped) return;
@@ -36,6 +50,7 @@ async function finish() {
   clearInterval(sampling);
   if (proxy) {
     const before = proxy.status();
+    const storeBeforeClose = before.store;
     await proxy.close();
     const after = proxy.status();
     report = {
@@ -44,7 +59,19 @@ async function finish() {
         peakMediaBytes: before.peakMediaReservedBytes,
         peakCaptureBytes: before.peakCaptureBytes,
         peakStoreBytes: before.store.peak,
+        peakWriteJobs: before.peakWriteJobs || 0,
       },
+      disk: {
+        currentDiskBytes: config.currentDiskBytes,
+        nextDiskBytes: config.nextDiskBytes,
+        pendingWriteBytes: config.pendingWriteBytes,
+        committedBytes: storeBeforeClose.committed,
+        peakStoreBytes: storeBeforeClose.peak,
+        reservedBytesAtDrain: storeBeforeClose.reserved,
+        pendingBytesAtDrain: storeBeforeClose.pending,
+      },
+      completedLogicalWrites: {...writeCounters},
+      writePressure: {...writePressure},
       activity: {
         originRequests: before.originRequests,
         receivedBytes: before.receivedBytes,
@@ -54,8 +81,18 @@ async function finish() {
         activeOriginsAtClose: after.activeOrigins,
         activeBodiesAtClose: after.activeBodies,
         routesAtClose: after.routes,
+        openingsAtClose: after.openings,
+        pendingKeysAtClose: after.pendingKeys,
+        queuedAtClose: after.queued,
         writesAtClose: after.writes,
         jobsAtClose: after.jobs,
+        peakWriteJobs: before.peakWriteJobs || 0,
+        captureBytesAtClose: after.captureBytes,
+        readReservedBytesAtClose: after.readReservedBytes,
+        storeReservedBytesAtClose: after.store.reserved,
+        storePendingBytesAtClose: after.store.pending,
+        storePendingCountAtClose: after.store.pendingCount,
+        storeReadersAtClose: after.store.readers,
         storeClosed: after.store.closed,
       },
     };
@@ -80,9 +117,24 @@ process.on('message', async message => {
         mediaSource: 'single-representation', resource: 'fixture-bytes', representation: 'fixture-v1',
       };
       const preloadIdentity = {...identity, item: 'preload-target'};
-      const store = await createStore({root: cfg.root,
+      config = {...cfg};
+      writeCounters = {mediaBlockTempWrites: 0, mediaBlockTempBytes: 0, indexWrites: 0, indexBytes: 0};
+      writePressure = {peakPendingBytes: 0, peakPendingCount: 0};
+      const io = {...fs, async writeFile(file, data, ...args) {
+        await fs.writeFile(file, data, ...args);
+        countWrite(file, data, writeCounters);
+      }};
+      const store = await createStore({root: cfg.root, io,
         currentBytes: cfg.currentDiskBytes, nextBytes: cfg.nextDiskBytes,
         maxPendingBytes: cfg.pendingWriteBytes});
+      const storePut = store.put;
+      store.put = (...args) => {
+        const result = storePut(...args);
+        const pending = store.status();
+        writePressure.peakPendingBytes = Math.max(writePressure.peakPendingBytes, pending.pending);
+        writePressure.peakPendingCount = Math.max(writePressure.peakPendingCount, pending.pendingCount);
+        return result;
+      };
       proxy = await createProxy({store, cacheEnabled: cfg.mode === 'cache-enabled', mediaBufferBytes: cfg.mediaBufferBytes,
         authorize: async requested => {
           if (JSON.stringify(requested) !== JSON.stringify(identity) &&
@@ -115,6 +167,7 @@ process.on('message', async message => {
       return;
     }
     if (message?.type === 'status' && proxy) {
+      await proxy.drain();
       const s = proxy.status();
       send({type: 'status', hitBytes: s.hitBytes, receivedBytes: s.receivedBytes,
         originRequests: s.originRequests, committedBytes: s.committedBytes, peakMediaReservedBytes: s.peakMediaReservedBytes});

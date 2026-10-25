@@ -326,6 +326,50 @@ test('per-role budget rolls out the oldest committed block before retry', async 
     assert((await store.status()).peak <= 4);
 });
 
+test('role changes cannot reuse disk budget still charged to leased retired blocks', async t => {
+    for (const transition of ['open-current', 'actual']) await t.test(transition, async t => {
+        const blocked = gate();
+        const leasedKeys = new Set();
+        let entered = 0;
+        const {store} = await fixture(t, {currentBytes: 4, nextBytes: 4}, blockHandleIo({
+            beforeRead: async file => {
+                if (![...leasedKeys].some(key => path.basename(String(file)).startsWith(key + '-'))) return;
+                if (++entered === leasedKeys.size) blocked.entered();
+                await blocked.wait;
+            }
+        }));
+        const a = await store.open(identity('account-a', 'pinned-A'), metadata(), 'current');
+        await store.actual(a);
+        assert.equal(await store.put(a, 0, Buffer.from('AAAA')), true);
+        const bIdentity = identity('account-a', 'pinned-B');
+        const b = await store.open(bIdentity, metadata(), 'next');
+        assert.equal(await store.put(b, 0, Buffer.from('BBBB')), true);
+        const c = await store.open(identity('account-a', 'new-C'), metadata(), 'next');
+        leasedKeys.add(b);
+        if (transition === 'actual') leasedKeys.add(a);
+        const reads = [...leasedKeys].map(key => store.read(key, 0, 4));
+        try {
+            await blocked.ready;
+            if (transition === 'actual') assert.equal(await store.actual(b), true);
+            else assert.equal(await store.open(bIdentity, metadata(), 'current'), b);
+            assert.equal(store.status().current + store.status().next, 8);
+            const candidate = transition === 'actual'
+                ? await store.open(identity('account-a', 'new-C'), metadata(), 'next') : c;
+            // A role change does not free physical files held by old reads.
+            assert.equal(await store.put(candidate, 0, Buffer.from('CCCC')), false);
+            assert.ok(store.status().current + store.status().next <= 8);
+            assert.ok(store.status().peak <= 8);
+        } finally {
+            blocked.release();
+            await Promise.all(reads);
+        }
+        // actual() retires the old speculative C; reopen after leases drain.
+        const next = await store.open(identity('account-a', 'new-C'), metadata(), 'next');
+        assert.equal(await store.put(next, 0, Buffer.from('CCCC')), true);
+        assert.ok(store.status().current + store.status().next <= 8);
+    });
+});
+
 test('slow disk admission reserves bounded bytes before queued writes can grow', async t => {
     const blocked = gate();
     let hold = true;
