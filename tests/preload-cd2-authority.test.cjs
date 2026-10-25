@@ -143,3 +143,17 @@ test('only trusted CD2 IPC attaches a main document principal and renderer field
 });
 
 function contents() {const web = new EventEmitter(); web.isDestroyed = () => false; return web;}
+
+for (const freshSize of ['11', undefined]) test('URL renewal uses a new Find size instead of copying the old size: ' + freshSize, async t => {
+    let finds = 0;
+    const f = fixture(t, {FindFileByPath(call, callback) {
+        finds++;
+        callback(null, {fullPathName: call.request.path, fileType: 'File', isDirectory: false,
+            ...(finds === 1 ? {size: '10'} : freshSize === undefined ? {} : {size: freshSize})});
+    }});
+    const reply = await f.service.resolve(f.request, f.principal), {transport} = f.bind(reply);
+    assert.equal((await transport.access()).expectedSize, 10);
+    f.now(69500);
+    await assert.rejects(transport.access(), error => error.preloadReason === (freshSize === undefined ? 'source-refresh-failed' : 'representation-changed'));
+    assert.equal(finds, 2); assert.equal(f.issued.length, 1);
+});

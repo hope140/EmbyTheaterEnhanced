@@ -36,12 +36,13 @@ async function automaticCase(t, scenario) {
     });
     const record = (type, data = {}) => trace.push({seq: trace.length, type, ...data});
     const fixtures = ['A', 'B'].map(id => {const file = id + '.avi'; fs.writeFileSync(path.join(root, file), Buffer.from(id.repeat(40))); return {file, size: 40, etag: '"synthetic-' + id + '"'};});
-    const trustedCd2 = scenario === 'trusted-cd2' || scenario === 'trusted-cd2-unsupported';
-    const unsupported = scenario === 'unsupported' || scenario === 'trusted-cd2-unsupported';
-    const holding = scenario.startsWith('hold-'), orderedNatural = ['natural', 'explicit-queue-autoplay-off', 'trusted-cd2'].includes(scenario), pendingNatural = scenario === 'hold-natural-eof';
+    const trustedCd2 = scenario.startsWith('trusted-cd2'), dateValidator = scenario === 'trusted-cd2-date', noValidator = scenario === 'trusted-cd2-no-validator';
+    const unsupported = scenario === 'unsupported' || scenario === 'trusted-cd2-unsupported' || noValidator;
+    const unsupportedReason = noValidator ? 'last-modified-missing' : 'etag-weak';
+    const holding = scenario.startsWith('hold-'), orderedNatural = ['natural', 'explicit-queue-autoplay-off', 'trusted-cd2', 'trusted-cd2-date'].includes(scenario), pendingNatural = scenario === 'hold-natural-eof';
     const plan = {out: root, fixtures, autoPlay: !['autoplay-off', 'explicit-queue-autoplay-off'].includes(scenario)};
     origin = await tool.fixtureServer(plan, record, {holdNext: holding || orderedNatural, holdStart: 8, unsupported, trustedCd2});
-    mediaOrigin = trustedCd2 ? await tool.fixtureServer(plan, record, {holdNext: orderedNatural, holdStart: 8, requireUserAgent: 'Synthetic-CD2', unsupported}) : origin;
+    mediaOrigin = trustedCd2 ? await tool.fixtureServer(plan, record, {holdNext: orderedNatural, holdStart: 8, requireUserAgent: 'Synthetic-CD2', unsupported, dateValidator, noValidator}) : origin;
     restoreRequests = holding || orderedNatural ? tool.observeOriginRequests(mediaOrigin.origin, record) : null;
     const managerFile = path.join(root, 'playbackmanager.js');
     fs.copyFileSync(path.join(repo, 'vendor/web-snapshot/www/modules/common/playback/playbackmanager.js'), managerFile);
@@ -85,7 +86,13 @@ async function automaticCase(t, scenario) {
                     assert.equal(args.length, 5); assert.equal(args[4], 'user-agent=Synthetic-CD2');
                     headers['User-Agent'] = args[4].slice('user-agent='.length);
                 }
-                assert.equal(Buffer.from(await (await fetch(args[1], {headers})).arrayBuffer()).toString(), id.repeat(8));
+                const response = await fetch(args[1], {headers});
+                if (dateValidator) {
+                    assert.equal(response.status, 206); assert.equal(response.headers.get('etag'), null);
+                    assert.equal(response.headers.get('last-modified'), 'Wed, 01 Jan 2020 00:00:00 GMT');
+                    record('synthetic-date-response', {item: id, etagAbsent: true, lastModifiedPresent: true});
+                }
+                assert.equal(Buffer.from(await response.arrayBuffer()).toString(), id.repeat(8));
                 record('synthetic-read', {item: id, before});
                 if (id === 'B' && pendingNatural) {
                     assert.equal(Buffer.from(await (await fetch(args[1], {headers: {Range: 'bytes=8-15'}})).arrayBuffer()).toString(), id.repeat(8));
@@ -274,7 +281,7 @@ async function automaticCase(t, scenario) {
         return;
     }
     if (unsupported) {
-        await waitFor(() => trace.some(row => row.type === 'preload-diagnostic' && row.stage === 'current-probe' && row.reason === 'etag-weak'), details);
+        await waitFor(() => trace.some(row => row.type === 'preload-diagnostic' && row.stage === 'current-probe' && row.reason === unsupportedReason), details);
         assert(trace.some(row => row.type === 'synthetic-property' && row.name === 'time-pos' && row.value >= 5.6), details());
         const load = trace.find(row => row.type === 'load' && row.item === 'A');
         assert(load.source.startsWith(mediaOrigin.origin + '/Videos/A/'));
@@ -285,14 +292,14 @@ async function automaticCase(t, scenario) {
             assert.deepEqual(Array.from(load.fileLocalOptions), ['replace', '-1', 'user-agent=Synthetic-CD2']);
             assert(trace.some(row => row.type === 'synthetic-read' && row.item === 'A'), details());
             const threshold = trace.find(row => row.type === 'synthetic-property' && row.name === 'time-pos' && row.value >= 5.6);
-            const decision = trace.find(row => row.type === 'preload-diagnostic' && row.stage === 'current-probe' && row.reason === 'etag-weak');
+            const decision = trace.find(row => row.type === 'preload-diagnostic' && row.stage === 'current-probe' && row.reason === unsupportedReason);
             assert(threshold.seq < decision.seq, details());
             const headers = trace.filter(row => row.type === 'trusted-origin-headers');
             assert(headers.length >= 2 && headers.every(row => row.validUserAgent && row.anonymous), details());
             assert(!trace.some(row => row.type === 'unexpected-emby-media' || row.type === 'next-playback-info' || row.type === 'ipc' && row.operation === 'range-preload'), details());
             assert.equal(trace.filter(row => row.type === 'load').length, 1);
             assert(!trace.some(row => row.type === 'manager-next-track'), details());
-            console.log(JSON.stringify({type: 'next-prefix-node-chain-result', scenario, syntheticHelper: true, originalSourceAndUA: true, initialRead: true, reason: 'current-probe/etag-weak', nextOriginRequests: 0, diskBytes: 0}));
+            console.log(JSON.stringify({type: 'next-prefix-node-chain-result', scenario, syntheticHelper: true, originalSourceAndUA: true, initialRead: true, reason: 'current-probe/' + unsupportedReason, nextOriginRequests: 0, diskBytes: 0}));
         }
         return;
     }
@@ -369,7 +376,17 @@ async function automaticCase(t, scenario) {
         assert(trace.filter(row => row.type === 'trusted-cache-occupancy').every(row => row.bytes >= 0 && row.bytes <= 100000000), details());
         assert.equal(trace.filter(row => row.type === 'load').length, 2);
         assert.equal(trace.filter(row => row.type === 'manager-next-track').length, 1);
+        if (dateValidator) {
+            const conditions = trace.filter(row => row.type === 'date-origin-conditions');
+            assert(conditions.some(row => row.probe) && conditions.some(row => !row.probe), details());
+            assert(conditions.every(row => !row.ifMatchPresent && (row.probe ? !row.ifUnmodifiedSincePresent && !row.ifRangePresent :
+                row.ifUnmodifiedSincePresent && row.ifUnmodifiedSinceCorrect && row.ifRangePresent && row.ifRangeCorrect)), details());
+            assert(conditions.some(row => row.item === 'B' && row.probe && row.seq > eof.seq), 'B starts with a fresh unconditional date eligibility probe');
+            const responses = trace.filter(row => row.type === 'synthetic-date-response');
+            assert.deepEqual(responses.map(row => row.item), ['A', 'B']);
+            assert(responses.every(row => row.etagAbsent && row.lastModifiedPresent), details());
+        }
     }
     console.log(JSON.stringify({type: 'next-prefix-node-chain-result', scenario, syntheticHelper: true, threshold: threshold.seq, preload: preload.seq, ready: ready.seq, eof: eof.seq, next: next.seq, bLoad: b.seq, bytes: ready.bytes}));
 }
-for (const scenario of ['natural', 'hold-natural-eof', 'remove-candidate', 'app-exit-before-next', 'hold-cancel', 'hold-preempt', 'hold-replace', 'hold-exit', 'unsupported', 'autoplay-off', 'explicit-queue-autoplay-off', 'settings-next-play', 'trusted-cd2', 'trusted-cd2-unsupported']) test('real Alameda automatic next-prefix with synthetic helper/document: ' + scenario, {timeout: 8000}, t => automaticCase(t, scenario));
+for (const scenario of ['natural', 'hold-natural-eof', 'remove-candidate', 'app-exit-before-next', 'hold-cancel', 'hold-preempt', 'hold-replace', 'hold-exit', 'unsupported', 'autoplay-off', 'explicit-queue-autoplay-off', 'settings-next-play', 'trusted-cd2', 'trusted-cd2-unsupported', 'trusted-cd2-date', 'trusted-cd2-no-validator']) test('real Alameda automatic next-prefix with synthetic helper/document: ' + scenario, {timeout: 8000}, t => automaticCase(t, scenario));

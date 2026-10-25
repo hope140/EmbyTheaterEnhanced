@@ -317,8 +317,11 @@ function createService(options) {
 
     // Authority is minted only here, after mapping and regular-file validation.
     // Neither a renderer URL nor a resolver result supplied over IPC can mint it.
-    function authorizedHit(reason, source, details, principal, request, cloudPath, mode, mint) {
+    function authorizedHit(reason, source, details, principal, request, cloudPath, mode, mint, fileSize) {
         const response = result('hit', reason, source, details);
+        const parsedSize = typeof fileSize === 'number' || typeof fileSize === 'string' && /^[1-9][0-9]{0,15}$/.test(fileSize) ? Number(fileSize) : null;
+        const size = Number.isSafeInteger(parsedSize) && parsedSize > 0 ? {expectedSize: parsedSize} : {};
+        if (mint === false) return Object.assign(response, size);
         const authority = settings.sourceAuthority;
         if (!authority || !principal || mint === false || closed ||
             !/\.(mp4|m4v|mkv|mov|avi|webm|mpg|mpeg|ts|m2ts|mts|vob|wmv|flv)$/i.test(cloudPath)) return response;
@@ -341,7 +344,7 @@ function createService(options) {
                     return Object.assign({}, fresh, {resourceKey: resourceKey});
                 } finally {signal.removeEventListener('abort', abort);}
             };
-            response.sourceProof = authority.issue(Object.assign({}, details, {
+            response.sourceProof = authority.issue(Object.assign({}, details, size, {
                 principal: principal, requestId: request.requestId, source: source,
                 resourceKey: resourceKey, refresh: refresh
             }));
@@ -641,7 +644,7 @@ function createService(options) {
     }
 
     async function resolveModeInternal(request, principal, mint) {
-        function hit(reason, source, details) {return authorizedHit(reason, source, details, principal, request, cloudPath, mode, mint);}
+        function hit(reason, source, details) {return authorizedHit(reason, source, details, principal, request, cloudPath, mode, mint, fileResponse && fileResponse.size);}
         const requestId = request && request.requestId;
         const candidates = request && request.candidates;
         const mode = request && request.mode;
@@ -836,7 +839,7 @@ function createService(options) {
     }
 
     async function resolveLegacyInternal(request, principal, mint) {
-        function hit(reason, source, details) {return authorizedHit(reason, source, details, principal, request, cloudPath, null, mint);}
+        function hit(reason, source, details) {return authorizedHit(reason, source, details, principal, request, cloudPath, null, mint, verifiedFileSize);}
         const requestId = request && request.requestId;
         const candidates = request && request.candidates;
         let cloudPath;
@@ -846,6 +849,7 @@ function createService(options) {
         let reply;
         let directReason;
         let fallbackResponse;
+        let verifiedFileSize;
 
         if (config.error) return result('miss', config.error);
         if (typeof requestId !== 'string' || !REQUEST_ID_PATTERN.test(requestId)) return result('miss', 'invalid_request');
@@ -876,6 +880,7 @@ function createService(options) {
             directReason = classifyError(reply.error, getTransport().status);
             if (reply.error) return result('miss', directReason);
             if (!isRegularFile(reply.response)) return result('miss', 'invalid_file');
+            verifiedFileSize = reply.response.size;
 
             const getDownload = async function (getDirectUrl) {
                 const acquiredAt = now();

@@ -25,7 +25,8 @@ async function fixture(t, settings = {}) {
         const start = Number(match[1]), end = Number(match[2]);
         if (end >= body.length) {res.writeHead(416).end(); return;}
         const headers = {'Content-Range': `bytes ${start}-${end}/${body.length}`, 'Content-Length': end - start + 1};
-        if (mode.value !== 'no-etag') headers.ETag = mode.etag;
+        if (mode.value !== 'no-etag' && !mode.value.startsWith('date')) headers.ETag = mode.etag;
+        if (mode.value.startsWith('date')) headers['Last-Modified'] = mode.lastModified || 'Tue, 15 Nov 1994 12:45:26 GMT';
         res.writeHead(206, headers);
         if (mode.value === 'hold' && end > start) {
             heldResponse = res; res.write(body.subarray(start, start + 1));
@@ -112,7 +113,7 @@ test('prefix reuse follows the authorized resource representation and a fresh pr
     assert.equal(f.rows.length, count + 2, 'same Emby identity cannot override a different private resource representation');
 });
 
-for (const [mode, reason] of [['redirect', 'redirect'], ['auth', 'auth-required'], ['no-etag', 'etag-missing']]) test('authorized source still declines redirect/auth/missing strong ETag: ' + mode, async t => {
+for (const [mode, reason] of [['redirect', 'redirect'], ['auth', 'auth-required'], ['no-etag', 'file-size-unavailable']]) test('authorized source still declines redirect/auth/missing strong ETag: ' + mode, async t => {
     const f = await fixture(t); f.mode.value = mode;
     await assert.rejects(f.open(f.transport()), error => error.preloadReason === reason);
     assert.equal(f.rows.length, 1); assert.equal(f.embyRows.length, 0); assert.equal(f.cache.status().bytes, 0); assert.equal(f.cache.status().upstream, 0); anonymous(f.rows);
@@ -158,4 +159,59 @@ for (const userAgent of ['', 'line\nPRIVATE_CANARY', 'tab\tvalue', 'comma,value'
         assert.equal(error.preloadReason, 'source-options-changed'); assert.doesNotMatch(error.message, /PRIVATE_CANARY/); return true;
     });
     assert.equal(f.rows.length, 0);
+});
+
+
+test('authorized no-ETag date prefix is conditional, reused only after fresh proof, and never emits a synthetic ETag', async t => {
+    const f = await fixture(t); f.mode.value = 'date';
+    const next = await f.open(f.transport({expectedSize: f.body.length}), {role: 'next'});
+    await next.prefetch({maxBytes: 16, signal: new AbortController().signal});
+    assert.equal(f.cache.status().bytes, 16);
+    const conditional = f.rows.slice(1);
+    assert(conditional.length > 0);
+    for (const row of conditional) {
+        assert.equal(row.headers['if-match'], undefined);
+        assert.equal(row.headers['if-range'], 'Tue, 15 Nov 1994 12:45:26 GMT');
+        assert.equal(row.headers['if-unmodified-since'], row.headers['if-range']);
+    }
+    const before = f.rows.length, response = await fetch(next.source, {headers: {Range: 'bytes=0-15'}});
+    assert.equal(response.headers.get('etag'), null);
+    assert.equal(response.headers.get('last-modified'), 'Tue, 15 Nov 1994 12:45:26 GMT');
+    assert.deepEqual(Buffer.from(await response.arrayBuffer()), f.body.subarray(0, 16));
+    assert.equal(f.rows.length, before);
+    assert.equal((await range(next, 24, 31)).status, 206);
+    assert.equal(f.cache.status().bytes, 16);
+    await next.stop();
+    const count = f.rows.length;
+    const actual = await f.open(f.transport({source: f.origin + '/media?signature=fresh', expectedSize: f.body.length}));
+    assert.equal((await range(actual, 0, 15)).status, 206);
+    assert.equal(f.rows.length, count + 1, 'fresh real date proof, no prefix refetch');
+    anonymous(f.rows);
+});
+
+test('changed Last-Modified rejects an existing date prefix before another block commits', async t => {
+    const f = await fixture(t); f.mode.value = 'date';
+    const handle = await f.open(f.transport({expectedSize: f.body.length}), {role: 'next'});
+    await handle.prefetch({maxBytes: 8, signal: new AbortController().signal});
+    const before = f.cache.status().bytes; f.mode.lastModified = 'Wed, 16 Nov 1994 12:45:26 GMT';
+    await assert.rejects(handle.prefetch({maxBytes: 16, signal: new AbortController().signal}), error => error.preloadReason === 'validator-changed');
+    assert.equal(f.cache.status().bytes, before);
+});
+
+test('no ETag with no Last-Modified remains fail-closed even with an authorized matching file size', async t => {
+    const f = await fixture(t); f.mode.value = 'no-etag';
+    await assert.rejects(f.open(f.transport({expectedSize: f.body.length})), error => error.preloadReason === 'last-modified-missing');
+    assert.equal(f.cache.status().bytes, 0);
+});
+
+for (const renewedSize of [undefined, 41]) test('known file size cannot disappear or change during signed URL refresh: ' + renewedSize, async t => {
+    const f = await fixture(t); f.mode.value = 'date'; let refreshes = 0;
+    const transport = f.transport({expectedSize: f.body.length, acquiredAt: f.now(), expiresAt: f.now() + 10000, refresh: async () => {
+        refreshes++; return {source: f.origin + '/media?signature=renewed', sourceKind: 'cd2-url', resourceKey: 'synthetic:episode',
+            acquiredAt: f.now(), expiresAt: f.now() + 10000, ...(renewedSize === undefined ? {} : {expectedSize: renewedSize})};
+    }});
+    const handle = await f.open(transport); const count = f.rows.length; f.advance(10001);
+    assert.equal((await range(handle, 8, 15)).status, 502); assert.equal(refreshes, 1);
+    assert.equal(f.rows.length, count, 'changed metadata rejects renewal before HTTP');
+    assert.equal(f.cache.status().bytes, 0);
 });

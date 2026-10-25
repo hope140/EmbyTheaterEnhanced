@@ -20,8 +20,18 @@ function fixture(invoke) {
 }
 const turn = () => new Promise(resolve => setImmediate(resolve));
 
-test('preload is part of the original video form with confirmed defaults and no runtime display or save button', () => {
+test('preload appears once under the original video Advanced section with confirmed defaults and no runtime display or save button', () => {
     assert.equal((html.match(/<form\b/g) || []).length, 1);
+    assert.equal((html.match(/<\/form>/g) || []).length, 1);
+    const advanced = html.indexOf('<h1>${Advanced}</h1>'), preload = html.indexOf('<h1>预载</h1>');
+    assert(advanced >= 0 && advanced < preload, 'preload follows the existing Advanced heading');
+    assert.equal((html.match(/<h1>\$\{Advanced\}<\/h1>/g) || []).length, 1);
+    assert.equal((html.match(/<h1>预载<\/h1>/g) || []).length, 1);
+    for (const name of ['chkRangeEnabled', 'selectRangeProgress', 'selectRangePreload']) {
+        const marker = 'class="' + name + '"';
+        assert.equal(html.split(marker).length - 1, 1, name + ' is not duplicated');
+        assert(preload < html.indexOf(marker) && html.indexOf(marker) < html.indexOf('</form>'), name + ' remains in the original Advanced form');
+    }
     assert.match(html, /<h1>预载<\/h1>/); assert.match(html, /启用预载/); assert.match(html, /下次播放生效/);
     assert.doesNotMatch(html, /rangeRuntimeState|当前运行|btnSaveRange|type="submit"|maxBytes|bytesPerSecond/);
     const choices = name => html.match(new RegExp('class="' + name + '"[^>]*>([\\s\\S]*?)<\\/select>'))[1];

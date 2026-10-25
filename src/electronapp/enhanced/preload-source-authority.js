@@ -90,11 +90,12 @@ function createAuthority({now = Date.now} = {}) {
     function descriptor(value, currentTime, requireAcquired = false) {
         if (!value || !['cd2-url', 'direct-url'].includes(value.sourceKind)) throw failure('source-proof-invalid');
         const origin = parseSource(value.source), agent = userAgent(value.requestOptions);
+        if (value.expectedSize !== undefined && (!Number.isSafeInteger(value.expectedSize) || value.expectedSize <= 0)) throw failure('source-proof-invalid');
         if (requireAcquired || value.acquiredAt !== undefined || value.expiresAt !== undefined) {
             if (!Number.isSafeInteger(value.acquiredAt) || value.acquiredAt < 0 || value.acquiredAt > currentTime) throw failure('source-proof-invalid');
         }
         if (value.expiresAt !== undefined && (!Number.isSafeInteger(value.expiresAt) || value.expiresAt <= value.acquiredAt)) throw failure('source-proof-invalid');
-        return {source: value.source, origin, sourceKind: value.sourceKind, userAgent: agent, acquiredAt: value.acquiredAt, expiresAt: value.expiresAt};
+        return {source: value.source, origin, sourceKind: value.sourceKind, userAgent: agent, acquiredAt: value.acquiredAt, expiresAt: value.expiresAt, expectedSize: value.expectedSize};
     }
     function issue(value) {
         purge();
@@ -157,6 +158,7 @@ function createAuthority({now = Date.now} = {}) {
                     if (next.sourceKind !== record.descriptor.sourceKind || value.resourceKey !== undefined && value.resourceKey !== grant.resourceKey) throw failure('source-refresh-failed');
                     if (next.origin !== record.descriptor.origin) throw failure('source-origin-changed');
                     if (next.userAgent !== agent) throw failure('source-options-changed');
+                    if (record.descriptor.expectedSize !== undefined && next.expectedSize !== record.descriptor.expectedSize) throw failure('representation-changed');
                     if (next.expiresAt === undefined || next.expiresAt <= time() + EXPIRY_MARGIN_MS) throw failure('source-expired');
                     active(signal);
                     record.descriptor = next;
@@ -189,7 +191,7 @@ function createAuthority({now = Date.now} = {}) {
                     active(signal);
                 }
                 const source = record.descriptor;
-                return {source: source.source, origin: source.origin, ...(source.userAgent === undefined ? {} : {userAgent: source.userAgent})};
+                return {source: source.source, origin: source.origin, ...(source.expectedSize === undefined ? {} : {expectedSize: source.expectedSize}), ...(source.userAgent === undefined ? {} : {userAgent: source.userAgent})};
             },
             matchesLoadOptions(args) {
                 try {

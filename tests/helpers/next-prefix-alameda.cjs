@@ -79,6 +79,7 @@ async function rendererBoot(input) {
 }
 async function fixtureServer(plan, record, options = {}) {
     const http = require('node:http'), active = new Set(), sockets = new Set(); let held = null, sequence = 0;
+    const lastModified = 'Wed, 01 Jan 2020 00:00:00 GMT';
     function item(id) {return {Id: id, ServerId: 'prefix-server', Name: 'Synthetic ' + id, Type: 'Episode', MediaType: 'Video', SeriesId: 'synthetic-series',
         Path: options.trustedCd2 ? 'X:\\Media\\' + id + '.strm' : id + '.avi', RunTimeTicks: id === 'A' ? 160000000 : 80000000, MediaSources: [media(id)]};}
     function media(id) {return {Id: id + '-avi', Container: options.trustedCd2 ? 'strm' : 'avi', Protocol: 'Http', Path: options.trustedCd2 ? 'X:\\Media\\' + id + '.avi' : id + '.avi', RunTimeTicks: id === 'A' ? 160000000 : 80000000, SupportsDirectPlay: false,
@@ -110,12 +111,24 @@ async function fixtureServer(plan, record, options = {}) {
         const start = range ? Number(range[1]) : 0, end = range && range[2] ? Number(range[2]) : proof.size - 1;
         if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || start > end || end >= proof.size) {res.writeHead(416); res.end(); return;}
         const requestId = ++sequence; record('origin-media', {requestId, item: match[1], start, end});
+        if (options.dateValidator || options.noValidator) {
+            const probe = start === 0 && end === 0;
+            const conditions = {item: match[1], probe, ifUnmodifiedSincePresent: req.headers['if-unmodified-since'] !== undefined,
+                ifUnmodifiedSinceCorrect: req.headers['if-unmodified-since'] === lastModified,
+                ifRangePresent: req.headers['if-range'] !== undefined, ifRangeCorrect: req.headers['if-range'] === lastModified,
+                ifMatchPresent: req.headers['if-match'] !== undefined};
+            record('date-origin-conditions', conditions);
+            if (options.dateValidator && (conditions.ifMatchPresent || (probe ? conditions.ifUnmodifiedSincePresent || conditions.ifRangePresent :
+                !conditions.ifUnmodifiedSinceCorrect || !conditions.ifRangeCorrect))) {res.writeHead(412).end(); return;}
+        }
         res.setHeader('X-Fixture-Request', String(requestId));
         res.once('close', () => record('origin-closed', {requestId, item: match[1], start, end, complete: res.writableEnded}));
         if (options.unsupported && match[1] === 'A' && start === 0 && end === 0) {
-            record('origin-ineligible', {requestId, status: 206, weakETag: true});
+            record('origin-ineligible', {requestId, status: 206, weakETag: !options.noValidator, ...(options.noValidator ? {missingValidator: true} : {})});
         }
-        res.writeHead(range ? 206 : 200, {'Content-Type': 'video/x-msvideo', 'Content-Length': end - start + 1, ETag: options.unsupported && match[1] === 'A' ? 'W/' + proof.etag : proof.etag,
+        res.writeHead(range ? 206 : 200, {'Content-Type': 'video/x-msvideo', 'Content-Length': end - start + 1,
+            ...(!options.dateValidator && !options.noValidator ? {ETag: options.unsupported && match[1] === 'A' ? 'W/' + proof.etag : proof.etag} : {}),
+            ...(options.dateValidator ? {'Last-Modified': lastModified} : {}),
             'Accept-Ranges': 'bytes', ...(range ? {'Content-Range': `bytes ${start}-${end}/${proof.size}`} : {})});
         if (options.holdNext && match[1] === 'B' && start === (options.holdStart ?? 262144) && end > start && !held) {
             held = {requestId, response: res, start, end, file: path.join(plan.out, proof.file), completed: false}; const byte = Buffer.alloc(1), fd = fs.openSync(path.join(plan.out, proof.file), 'r');

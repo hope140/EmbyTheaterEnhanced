@@ -61,7 +61,7 @@ async function createStore(options) {
                 let released = false;
                 const assert = () => {if (released || entries.get(key) !== entry) throw Error('prefix-lease-retired');};
                 return {
-                    key, total: proof.total, etag: proof.etag, blockBytes,
+                    key, total: proof.total, etag: proof.etag, lastModified: proof.lastModified, blockBytes,
                     status() {assert(); return {bytes: [...entry.blocks.values()].reduce((n, r) => n + r.size, 0), total: proof.total};},
                     readBlock(n) {return serial(async () => {
                         assert(); const row = entry.blocks.get(n); if (!row) return null;
