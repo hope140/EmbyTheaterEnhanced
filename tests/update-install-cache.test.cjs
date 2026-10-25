@@ -39,7 +39,7 @@ test('managed cache is fixed below profile; a verified retry reuses only the sam
     assert.equal((await f.store.download(asset(), f.request())).reused, true);
     assert.equal(f.state.downloads, 1);
     const lease = await f.store.prepare(record, f.request().signal);
-    await lease.commit(); assert.equal(f.state.commits, 1); assert.equal(f.store.recovery(), true);
+    await lease.commit(); assert.equal(f.state.commits, 1); assert.equal(f.store.recovery(), 'pending-install');
     assert.equal((await f.store.reconcile('9.0.0')).removed, 0);
     assert.equal((await f.store.reconcile('invalid')).removed, 0);
     await f.store.reconcile('9.1.0'); assert.equal(f.state.cleaned.length, 1);
@@ -74,6 +74,7 @@ test('another installation location cannot confirm this cache; busy cleanup keep
     assert.equal((await elsewhere.reconcile('9.1.0')).removed, 0); assert.equal(f.state.cleaned.length, 0);
     f.settings.handoff.cleanup = async () => { throw Error('inert installer still busy'); };
     assert.deepEqual(await f.store.reconcile('9.1.0'), {removed: 0, retained: 1});
+    assert.equal(f.store.recovery('9.1.0'), 'cleanup-pending');
     assert.equal((await f.store.download(asset(), f.request())).reused, true);
     assert.equal(fs.existsSync(path.join(record.directory, asset().name)), true);
 });

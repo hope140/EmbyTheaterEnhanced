@@ -185,8 +185,16 @@ function createStore(options) {
         }
         return outcome;
     }
-    function recovery() {
-        return entries().some(directory => { try { return read(directory).state === 'armed'; } catch (_) { return false; } });
+    function recovery(version) {
+        let status = false;
+        for (const directory of entries()) {
+            try {
+                const record = read(directory), compared = maintenance.compareVersions(version, record.targetVersion);
+                if (compared === 0 || compared === 1) status = 'cleanup-pending';
+                else if (record.state === 'armed') return 'pending-install';
+            } catch (_) {}
+        }
+        return status;
     }
     return {download, prepare, reconcile, recovery};
 }

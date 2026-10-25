@@ -177,7 +177,9 @@ define(['loading', 'baseView', '../../enhanced/release-note-links.js', 'emby-but
             view.querySelector('.selectUpdateChannel').disabled = this.downloading || this.changingChannel || !!this.installing;
             view.querySelector('.btnCheckUpdates').disabled = this.updating || this.changingChannel || !!this.installing;
             view.querySelector('.about-update-channel').textContent = (result.channel === 'testing' ? '测试通道' : '正式通道') + ' · Windows x64';
-            if (result.recovery) setStatus(view.querySelector('.aboutUpdateState'), '上次更新尚未确认安装完成。可检查更新后重试，已校验的安装包会复用。', false);
+            if (result.recovery) setStatus(view.querySelector('.aboutUpdateState'), result.recovery === 'cleanup-pending' ?
+                '新版本已启动，更新缓存仍被占用或无法安全清理；下次启动会再次核验。' :
+                '上次更新尚未确认安装完成。可检查更新后重试，已校验的安装包会复用。', false);
         }.bind(this)).catch(function () {
             if (this.view && requestId === this.channelRequestId) setStatus(view.querySelector('.aboutUpdateState'), '无法读取更新通道，请重新进入本页重试。', true);
         }.bind(this));

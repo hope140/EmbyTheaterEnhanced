@@ -1072,7 +1072,7 @@
             return {
                 download: async function (installer, options) { await reconciled; return store.download(installer, options); },
                 prepare: function (record, signal) { return store.prepare(record, signal); },
-                recovery: async function () { await reconciled; return store.recovery(); },
+                recovery: async function () { await reconciled; return store.recovery(getAppVersion()); },
                 close: function () { return reconciled; }
             };
         })(),

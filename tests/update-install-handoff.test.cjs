@@ -45,6 +45,7 @@ test('cancellation before commit kills only the owned helper and never detaches 
     const lease = await f.handoff.prepare(record, controller.signal); controller.abort();
     assert.equal(f.child.killed, true); assert.equal(f.child.unreferenced, undefined);
     assert.throws(() => lease.commit(), /installer-launch-failed/);
+    await lease.abort(); assert.equal(f.child.exitCode, 1, 'cancel drains actual owned close');
 });
 
 test('a committed helper is independent of subsequent normal main shutdown cancellation', async () => {

@@ -92,6 +92,7 @@ test('verified handoff explains normal quit and wizard, with all update controls
     assert.match(h.view.querySelector('.aboutUpdateState').textContent, /正常退出.*安装向导/);
     assert.match(h.view.querySelector('.aboutUpdateState').textContent, /Windows 安全检查/);
     for (const selector of ['.selectUpdateChannel', '.btnCheckUpdates', '.btnDownloadUpdate']) assert.equal(h.view.querySelector(selector).disabled, true);
+    await h.controller.downloadUpdate(); await h.controller.checkUpdates(); await h.controller.changeChannel();
     assert.equal(h.pending.length, 1); assert.equal(h.listeners.size, 0);
     assert.equal(h.view.querySelector('.btnCancelUpdate').hidden, true);
 });
@@ -228,6 +229,15 @@ test('reading the saved channel is local only and does not start a check', async
     assert.equal(h.view.querySelector('.selectUpdateChannel').value, 'testing');
     assert.equal(h.pending.length, 1);
 });
+
+for (const [recovery, message] of [['pending-install', /尚未确认安装完成/], ['cleanup-pending', /新版本已启动.*无法安全清理/]]) {
+    test('local recovery distinguishes ' + recovery + ' without a check or popup', async () => {
+        const h = harness(), reading = h.controller.loadChannel();
+        h.pending[0].resolve({status: 'ok', channel: 'stable', recovery}); await reading;
+        assert.match(h.view.querySelector('.aboutUpdateState').textContent, message);
+        assert.equal(h.pending.length, 1);
+    });
+}
 
 test('switching while checking retires old results, saves the channel and requires another manual click', async () => {
     const h = harness(), old = h.controller.checkUpdates();
