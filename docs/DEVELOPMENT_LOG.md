@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-25 — 区分隐藏窗口和后台播放报告语义
+
+核读baseline Stop ACK、IPC、Native及Electron退出证据后，沿实际PM源码追到IsBackgroundPlayback早退。fixture不再用fullscreen:false代替物理隐藏；保留同一PM／adapter／service和OSD／窗口锁。新增同断言旧boot红／新boot绿回归，记录并匹配实际报告参数中的三项synthetic身份，原Stop回报门禁不删除。完整Native四阶段尚未通过，不用UI停止或callback冒充服务器HTTP验收。
+
 ## 2026-10-25 — 修正transport夹具端口取得顺序
 
 前置Windows首错发生在端口绑定，保留全部24项授权／版本／无ETag断言。测试先取得原根对应的真实OS guard再开临时HTTP，避免自身listen(0)先选中guard；顺序监听防止并行早拒绝遗留未结束启动。提前清理hook覆盖部分初始化，关闭失败聚合报告且不跳过剩余服务／socket／根目录释放。未改产品或原包、未重跑或取消旧CI，当前完整四阶段仍未派发。

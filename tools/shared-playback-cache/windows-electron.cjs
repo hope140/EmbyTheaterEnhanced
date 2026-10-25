@@ -364,6 +364,10 @@ async function main() {
       const data = {};
       // Never retain renderer source strings, tokens, exception messages or pixels.
       for (const k of ['item', 'operation', 'method', 'code']) if (typeof value[k] === 'string' && /^[A-Za-z0-9_-]{1,80}$/.test(value[k])) data[k] = value[k];
+      if (value.type === 'server-report') {
+        if (typeof value.session === 'string' && /^synthetic-session-[ABC]$/.test(value.session)) data.session = value.session;
+        if (typeof value.mediaSource === 'string' && /^[ABC]-avi$/.test(value.mediaSource)) data.mediaSource = value.mediaSource;
+      }
       record(value.type, data);
       if (['renderer-failure', 'bridge-failure'].includes(value.type)) {
         failed = true; receipt.code ||= 'renderer-or-helper-failure'; receipt.stage ||= stage;
@@ -477,7 +481,7 @@ async function main() {
     phaseOf('stop-native-exit');
     await waitFor(() => clients.length > 0 && clients.every(c => c.exited && c.child.exitCode === 0 && c.closeSeen), 'worker-stop-native-not-closed');
     phaseOf('stop-server-report');
-    await waitFor(() => trace.slice(stopTraceStart).some(r => r.type === 'server-report' && r.method === 'stop' && r.item === stoppingItem), 'worker-stop-server-report-missing');
+    await waitFor(() => trace.slice(stopTraceStart).some(r => driver.matchesStoppedReport(r, stoppingItem)), 'worker-stop-server-report-missing');
     receipt.checks.stopped = true; receipt.checks.stopNativeClosed = true; phaseOf('stop');
     if (phase === 'cancel') {await delay(150); active(); receipt.checks.noObsoleteNativeEvents = lateEvents === 0;
       need(receipt.checks.noObsoleteNativeEvents, 'worker-obsolete-native-events');}

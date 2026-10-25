@@ -150,6 +150,11 @@ function coloredFrame(frame) {
     Buffer.isBuffer(frame.pixels) && frame.pixels.length === frame.width * frame.height * 4 &&
     frame.pixels.some((n, i) => i % 4 !== 3 && n !== 0);
 }
+// Identity is the owned fixture's PlaybackInfo contract, never a real account.
+function matchesStoppedReport(row, item) {
+  return /^[ABC]$/.test(item || '') && row?.type === 'server-report' && row.method === 'stop' && row.item === item &&
+    row.session === 'synthetic-session-' + item && row.mediaSource === item + '-avi';
+}
 function validatePhaseEvidence(result, events) {
   const phase = result.phase;
   need(Number.isSafeInteger(result.spawnPid) && result.spawnPid > 0 && Number.isSafeInteger(result.coordinatorPid) && result.coordinatorPid > 0 && result.receipt?.workerPid === result.spawnPid &&
@@ -310,6 +315,8 @@ async function run({planFile}) {
         workerStages: r.workerStages, code: r.receipt?.code || r.receipt?.cleanupCode || null,
         ownedHelpersClosed: r.receipt?.ownedHelpersClosed, checks: r.receipt?.checks, afterHelper: r.receipt?.afterHelper,
         evaluations: r.receipt?.evaluations || [],
+        serverReports: (r.receipt?.trace || []).filter(e => e.type === 'server-report').slice(-12)
+          .map(({method, item, session, mediaSource}) => ({method, item, session, mediaSource})),
         receiptOrigin: r.receipt?.receiptOrigin || null, evaluationTrace: (r.receipt?.trace || []).filter(e => e.type === 'evaluation-probe').slice(-24)
           .map(({operation, code}) => ({operation, code})), hiddenHarnessBackgroundThrottling: r.receipt?.hiddenHarnessBackgroundThrottling,
         stopTrace: (r.receipt?.trace || []).filter(e => ['stop-stage', 'destroy-ipc'].includes(e.type)).slice(-12)
@@ -329,7 +336,7 @@ function argumentsOf(argv) {
   need(allowed.every(k => values[k]), 'missing-argument');
   return {mode, values};
 }
-module.exports = {OWNER, PHASES, TOOL_FILES, watchdogDelay, within, executeStableFrame, observeExpression, voidCommandExpression, voidCommandAckExpression, executeAcknowledgedVoid, prepare, readPlan, childEnvironment, safeFailure, argumentsOf, validateProfile, coloredFrame, validatePhaseEvidence, safeNativeTags, boundToolBytes};
+module.exports = {OWNER, PHASES, TOOL_FILES, watchdogDelay, within, executeStableFrame, observeExpression, voidCommandExpression, voidCommandAckExpression, executeAcknowledgedVoid, prepare, readPlan, childEnvironment, safeFailure, argumentsOf, validateProfile, coloredFrame, matchesStoppedReport, validatePhaseEvidence, safeNativeTags, boundToolBytes};
 if (require.main === module) (async () => {
   const {mode, values: v} = argumentsOf(process.argv.slice(2));
   if (mode === 'prepare') {await prepare({repo: v.repo, runtime: v.runtime, installer: v.installer,

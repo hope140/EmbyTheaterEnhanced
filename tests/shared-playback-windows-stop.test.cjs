@@ -5,8 +5,18 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const {matchesStoppedReport} = require('../tools/shared-playback-cache/windows-smoke.cjs');
 
 const helperPath = path.join(__dirname, 'helpers', 'next-prefix-alameda.cjs');
+test('Stop report must belong to the actual synthetic item, session and media version', () => {
+    const row = {type: 'server-report', method: 'stop', item: 'A', session: 'synthetic-session-A', mediaSource: 'A-avi'};
+    assert.equal(matchesStoppedReport(row, 'A'), true);
+    for (const changed of [null, {...row, method: 'start'}, {...row, item: 'B'}, {...row, session: 'synthetic-session-B'},
+        {...row, mediaSource: 'B-avi'}, {...row, session: undefined}, {...row, mediaSource: undefined}]) {
+        assert.equal(matchesStoppedReport(changed, 'A'), false);
+    }
+    assert.equal(matchesStoppedReport(row, 'B'), false);
+});
 
 function actualStopFunctionText(source) {
     const assignment = 'window.prefixStop =';

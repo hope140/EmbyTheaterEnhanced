@@ -1,5 +1,17 @@
 # 共享播放缓存：独立Windows合成验收
 
+## 当前：Stop已完成，修正测试播放的报告语义
+
+[四阶段40239466573](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40239466573)在baseline的server-stop确认失败；真实解码、前后seek、暂停解除后推进、Stop／destroy IPC及六个ACK均通过，helper退出0，Electron自然退出1／流关闭且无timeout。实际停止动作已完成，后三阶段未运行。
+
+原因可由固定PM源码和同链红绿回归定位：旧rendererBoot传`fullscreen:false`，PM将其识别为`IsBackgroundPlayback=true`，reportPlayback直接跳过Start／Progress／Stop。显示窗口是否hidden是另一归属。工具夹具现使用正常`fullscreen:true`，保留强制hidden、禁止show／focus、OSD stub和service对fullscreen的surface处理；不修改产品、vendor或原包，不放宽窗口限制。
+
+新Alameda用例通过原PM／adapter／service和synthetic helper播放A后调用原Stop，证明Start和Stop各一次，Item=A、PlaySessionId=synthetic-session-A、MediaSourceId=A-avi，且没有EOF或切B混入。相同断言切回旧Git来源的rendererBoot得到缺失正常Start的红例。Windows工具继续要求本次Stop之后的报告，并增加相同三项身份严格匹配；安全日志仅投影这些已知synthetic ID，旧／错媒体或会话不可通过。
+
+这里的server-report证据是原PM调用**合成ApiClient报告入口**，不是实际Emby HTTP已经发送／接收的证明。既有loopback metadata／媒体请求仍按原链真实执行；不连接真实服务器或115。下一轮继续原完整四阶段、原包和40秒／120秒工作预算，父单次派发，不重复打包。
+
+本地同断言旧boot红／新boot绿完成；相关Alameda全场景及Stop／工具检查35项通过。完整离线2733项：2720通过、0失败、13项既有平台跳过，约61.7秒；JS581／PowerShell53语法、有限模式和文档检查通过。产品／固定PM overlay／vendor字节未改；修正后的Windows四阶段尚待一次实际运行。
+
 ## 当前：将已验证的执行合同接回四阶段
 
 [Native有限对照40234836887](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40234836887)已实际三例全通过：helper空闲、本地播放、播放加一次64×64彩色预览；renderer中的void实际跨界为null，同frame ACK21／22、24个观察、六个脚本和四次IPC完整。三个Electron和helper均自然退出0、流关闭、无signal／timeout／kill。该结果排除“helper或preview必然阻塞”的判断，仍不包含下述四阶段或真实115。

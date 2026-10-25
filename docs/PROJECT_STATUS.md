@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-25 — 合成播放后台标志导致报告被原PM跳过
+
+Windows baseline已完成真实Stop／进程退出，但没有server-stop回报。固定PM将fixture的fullscreen:false解释为后台播放并跳过全部会话报告；同链红绿回归证实。仅fixture改正常播放语义，物理hidden／show禁令保持；Stop断言增加item／PlaySessionId／MediaSourceId匹配，不改产品或原包。证据是synthetic ApiClient入口回调，不冒称实际Emby HTTP。最新范围见[Windows合同](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。
+
 ## 2026-10-25 — 授权transport夹具先保留guard并覆盖setup失败清理
 
 Windows前置CI首次错误为no-ETag用例setup的EADDRINUSE，尚非fail-closed断言结果。静态夹具先两个HTTP listen(0)，后固定根guard；临时监听器可先占guard，且原hook注册太晚会在setup失败时漏清服务。仅调整测试为先真实cache／guard、后顺序HTTP监听，异步setup前注册全量清理，单项失败仍清其他资源；不改生产guard／端口／重试或无ETag拒绝。该轮实际端口占用者未记录，不能当作已确认owner；CI最终其他结果仍待回读。

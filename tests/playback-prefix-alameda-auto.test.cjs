@@ -6,6 +6,8 @@ const test = require('node:test'), assert = require('node:assert/strict');
 const fs = require('node:fs'), path = require('node:path'), os = require('node:os'), vm = require('node:vm');
 const {EventEmitter} = require('node:events'), {execFileSync} = require('node:child_process');
 const tool = require('./helpers/next-prefix-alameda.cjs');
+const rendererBoot = process.env.ETE_NEXT_PREFIX_RENDERER_BOOT_SOURCE ?
+    require(path.resolve(process.env.ETE_NEXT_PREFIX_RENDERER_BOOT_SOURCE)).rendererBoot : tool.rendererBoot;
 const {createService} = require('../src/electronapp/native-helper/service');
 const repo = path.resolve(__dirname, '..');
 const waitFor = async (predicate, detail) => {
@@ -243,9 +245,32 @@ async function automaticCase(t, scenario) {
         const member = new URL(script.src).pathname.split('/electronapp/')[1];
         queueMicrotask(() => {try {vm.runInContext(window.prefixHarness.source(member), window, {filename: member}); script.fire('load');} catch (error) {record('script-error', {member, error: error.message}); script.fire('error');}});
     }};
-    await vm.runInContext('(' + tool.rendererBoot.toString() + ')(' + JSON.stringify({origin: origin.origin, windowId: '1', singleItem: scenario === 'autoplay-off', moduleBaseUrl: 'file:///fixture/electronapp/www/'}) + ')', window);
+    await vm.runInContext('(' + rendererBoot.toString() + ')(' + JSON.stringify({origin: origin.origin, windowId: '1', singleItem: scenario === 'autoplay-off', moduleBaseUrl: 'file:///fixture/electronapp/www/'}) + ')', window);
     const details = () => JSON.stringify(trace.slice(-30));
     assert(!trace.some(row => row.type === 'renderer-failure'), details());
+    if (scenario === 'trusted-cd2-stop-report') {
+        await waitFor(() => trace.some(row => row.type === 'synthetic-property' && row.name === 'core-idle' && row.value === false), details);
+        await waitFor(() => trace.some(row => row.type === 'server-report' && row.method === 'start' && row.item === 'A'),
+            () => 'normal-play-start-report-missing: ' + details());
+        const managerStart = trace.find(row => row.type === 'stop-stage' && row.operation === 'manager-start');
+        assert.equal(managerStart, undefined, details());
+        await window.prefixStop();
+        const stopRequested = trace.find(row => row.type === 'stop-stage' && row.operation === 'manager-start');
+        const starts = trace.filter(row => row.type === 'server-report' && row.method === 'start' && row.item === 'A');
+        const stops = trace.filter(row => row.type === 'server-report' && row.method === 'stop' && row.item === 'A');
+        assert.equal(starts.length, 1, details());
+        assert.equal(stops.length, 1, details());
+        assert(stopRequested && stops[0].seq > stopRequested.seq, details());
+        for (const report of [...starts, ...stops]) {
+            assert.equal(report.session, 'synthetic-session-A');
+            assert.equal(report.mediaSource, 'A-avi');
+        }
+        assert(!trace.some(row => row.type === 'synthetic-property' && row.name === 'eof-reached'), details());
+        assert(!trace.some(row => row.type === 'manager-next-track'), details());
+        assert.equal(trace.filter(row => row.type === 'load' && row.item === 'A').length, 1);
+        assert.equal(trace.filter(row => row.type === 'load' && row.item === 'B').length, 0);
+        return;
+    }
     if (settingsCase) {
         window.navigator = {hardwareConcurrency: 4, deviceMemory: 1}; window.CSS = {supports: () => false};
         for (const id of ['modules/dom.js', 'modules/layoutmanager.js', 'modules/browser.js']) window.define(id, [], () => ({default: {tv: false}}));
@@ -484,4 +509,4 @@ async function automaticCase(t, scenario) {
     }
     console.log(JSON.stringify({type: 'next-prefix-node-chain-result', scenario, syntheticHelper: true, threshold: threshold.seq, preload: preload.seq, ready: ready.seq, eof: eof.seq, next: next.seq, bLoad: b.seq, bytes: ready.bytes}));
 }
-for (const scenario of ['natural', 'hold-natural-eof', 'remove-candidate', 'app-exit-before-next', 'hold-cancel', 'hold-preempt', 'hold-replace', 'hold-exit', 'unsupported', 'autoplay-off', 'explicit-queue-autoplay-off', 'settings-next-play', 'trusted-cd2', 'trusted-cd2-unsupported', 'trusted-cd2-date-unproven', 'trusted-cd2-no-validator', 'trusted-cd2-shared']) test('real Alameda automatic next-prefix with synthetic helper/document: ' + scenario, {timeout: 8000}, t => automaticCase(t, scenario));
+for (const scenario of ['natural', 'hold-natural-eof', 'remove-candidate', 'app-exit-before-next', 'hold-cancel', 'hold-preempt', 'hold-replace', 'hold-exit', 'unsupported', 'autoplay-off', 'explicit-queue-autoplay-off', 'settings-next-play', 'trusted-cd2', 'trusted-cd2-unsupported', 'trusted-cd2-date-unproven', 'trusted-cd2-no-validator', 'trusted-cd2-shared', 'trusted-cd2-stop-report']) test('real Alameda automatic next-prefix with synthetic helper/document: ' + scenario, {timeout: 8000}, t => automaticCase(t, scenario));

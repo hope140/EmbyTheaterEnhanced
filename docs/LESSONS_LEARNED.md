@@ -1,5 +1,7 @@
 # 维护注意事项
 
+- 隐藏测试窗口不应通过改变产品播放语义实现。PM的fullscreen:false会把播放标记为background并跳过会话上报；应保持正常播放参数，用owned隐藏窗口和OSD stub控制物理呈现。报告验收须核对本次Item／PlaySessionId／MediaSourceId，区分API入口回调与实际HTTP接收。
+
 - 测试夹具若会绑定根目录派生的固定guard，应先取得真实guard再启动listen(0)服务，否则临时端口可能先占guard。只读预检是快照，不是预留；不靠bind重试绕过冲突。清理hook要早于异步setup，监听串行或等全部启动结算，部分失败也必须关闭已创建服务和根目录。
 
 - 辅助任务内部暂停与显式用户暂停须分别记录归属；恢复不仅检查播放request，还要检查最新用户命令revision。没有命令关联号的同值属性回报可能属于更早命令，不能据此释放最新意图；连续cycle及pause→unpause→pause都要覆盖迟到回报。无法证明归属时保守交还用户控制，不通过猜测目标或放宽代次检查掩盖竞态。

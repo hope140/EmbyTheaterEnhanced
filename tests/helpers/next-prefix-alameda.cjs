@@ -33,9 +33,9 @@ async function rendererBoot(input) {
         getPlaybackInfo: id => get('Items/' + id + '/PlaybackInfo'), getEpisodes: series => get('Shows/' + series + '/Episodes'), getEndpointInfo: () => Promise.resolve({IsLocal: true, IsInNetwork: true}),
         getSavedEndpointInfo: () => ({IsLocal: true, IsInNetwork: true}), isMinServerVersion: () => false,
         setAuthorizationInfoIntoRequest: () => {}, stopActiveEncodings: () => Promise.resolve(),
-        reportPlaybackStart: info => (report('server-report', {method: 'start', item: info.ItemId}), Promise.resolve()),
-        reportPlaybackProgress: info => (report('server-report', {method: 'progress', item: info.ItemId}), Promise.resolve()),
-        reportPlaybackStopped: info => (report('server-report', {method: 'stop', item: info.ItemId}), Promise.resolve())};
+        reportPlaybackStart: info => (report('server-report', {method: 'start', item: info.ItemId, session: info.PlaySessionId, mediaSource: info.MediaSourceId}), Promise.resolve()),
+        reportPlaybackProgress: info => (report('server-report', {method: 'progress', item: info.ItemId, session: info.PlaySessionId, mediaSource: info.MediaSourceId}), Promise.resolve()),
+        reportPlaybackStopped: info => (report('server-report', {method: 'stop', item: info.ItemId, session: info.PlaySessionId, mediaSource: info.MediaSourceId}), Promise.resolve())};
     const appSettings = {get: key => key === 'mpv-volume' ? '0' : key === 'mpv-demuxermaxbytes' && input.cacheBytes ? String(input.cacheBytes) : key === 'mpv-demuxermaxbytes' && input.scenario === 'matrix-preempt' ? '1048576' : null, set: () => {}, maxStreamingBitrate: () => 200000000, enableAutomaticBitrateDetection: () => false};
     const plugins = {ofType: type => registered.filter(plugin => plugin.type === type), mapPath: (_plugin, file) => file};
     stubs[aliases.appSettings] = {default: appSettings}; stubs[aliases.pluginManager] = {default: plugins};
@@ -79,7 +79,9 @@ async function rendererBoot(input) {
             else throw Error('matrix-action-invalid');
         };
         report('manager-play-invocation');
-        await manager.play({items, startIndex: 0, startPositionTicks: input.startPositionTicks || 0, fullscreen: false});
+        // Normal PM reporting semantics. Physical visibility is owned separately
+        // by the hidden carrier/OSD harness, not the background-playback flag.
+        await manager.play({items, startIndex: 0, startPositionTicks: input.startPositionTicks || 0, fullscreen: true});
         if (manager.getCurrentPlayer() !== player || !player.currentSrc()) throw Error('initial-play-not-established');
         report('initial-play-resolved');
     } catch (error) {report('renderer-failure', {code: 'renderer-chain-failed', detail: String(error.message).slice(0, 180)});}
