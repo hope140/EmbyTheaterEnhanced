@@ -144,10 +144,12 @@ async function fixtureServer(plan, record, options = {}) {
         held.completed = true; held.response.end(bytes); record('matrix-held-completed', {requestId: held.requestId});
     }, releaseHeld() {const bytes = held && !held.response.destroyed ? 1 : 0; if (bytes) held.response.write(Buffer.from([0])); record('matrix-late-release', {bytes}); return bytes;}, async close() {const done = new Promise(resolve => server.close(resolve)); for (const socket of sockets) socket.destroy(); await done; need(active.size === 0, 'live-origin-response');}};
 }
-function observeOriginRequests(origin, record) {
+function observeOriginRequests(origin, record, {includeStringInputs = false} = {}) {
     const http = require('node:http'), original = http.request, background = new Set(); let sequence = 0;
     function observed(...args) {
-        const request = original.apply(this, args), url = args[0];
+        const request = original.apply(this, args);
+        let url = args[0];
+        if (includeStringInputs && typeof url === 'string') {try {url = new URL(url);} catch (_) {url = null;}}
         const item = url && url.origin === origin && /^\/Videos\/([ABC])\/stream\.avi$/.exec(url.pathname);
         const range = /^bytes=(\d+)-(\d+)$/.exec(args[1]?.headers?.Range || '');
         if (item && range) {

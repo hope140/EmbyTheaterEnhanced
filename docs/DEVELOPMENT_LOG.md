@@ -1,5 +1,9 @@
 # 维护记录
 
+## Windows暖切集回退定位
+
+2db8000的无包Windows诊断132项：131通过、1失败、无skip／timeout，9文件8通过；唯一失败是shared自然切集的代理URL断言。已到达B预载40B→EOF→next之后，故回退是暖B，不是首次模块加载；尚无具体reason，不能认定是25ms或磁盘。只给测试补B load的规范化诊断、1B探测物理关闭及真实store.open起止时序，不改产品、期限、鉴权或断言条件；本地自然链17项通过，下一次有界Windows诊断用于区分probe与暖索引等待。仍不打包／dispatch／发布。
+
 ## 共享缓存Windows诊断与Native短验工具
 
 只新增工具／测试／手动workflow入口，产品内容仍与225827a相同。本地最终完整2656项：2643通过、0失败、13既有平台跳过；Windows诊断尚未运行。固定Git来源、原清单与安装器／物理payload／源码／native摘要全门禁；工具CRLF严格绑定、owned profile逐段复核。先提供无包Windows逐文件TAP诊断（25s/file、150s总界），公共runner也即时TAP，不用force-exit掩盖挂起；旧Windows CI40分钟结束且无stack，未宣称已修好。真实helper短验另有本地生成AVI、稳定loopback HTTP＋gRPC、原renderer/authority链、四阶段复用／取消／关闭判据，但尚未运行。启动、来源和互斥inputs见[Windows合成验收](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)；旧包未派发，本任务不dispatch／安装／访问115／合并发布。

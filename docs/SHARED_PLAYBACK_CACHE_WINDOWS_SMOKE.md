@@ -86,3 +86,5 @@ GitHub token只给api.github.com，artifact302用另一个无认证客户端下�
 Output必须是新目录。该命令不安装，不访问真实服务器，不替用户准备真实账号；不能在Work前台执行。本轮没有运行以上Windows命令，也没有自行dispatch。
 
 本轮最终Linux串行完整回归2656项：2643通过、0失败、13项既有平台跳过；JS563／PowerShell53语法通过。一次本地回归发现坏块剔除用例与成功源回填并发的测试假设冲突，现明确跳过该用例的回填写，只测坏块拒绝／剔除，正文SHA与坏数据命中0B断言保持；不作为Windows首因。Windows平台的新诊断及真实helper短验均尚待父用普通UI单次运行，不能据此宣称Windows回归已修好。
+
+后续无包诊断run40213682632（2db8000）实际132项131通过、1失败、0skip，无timeout且流关闭；8文件通过，唯一shared自然切集在B已预载后回原source。未取得该选路的具体reason；追加的测试观测只输出媒体字母、规范化diagnostic、探测关闭与真实索引open起止，不改期限或成功断言。该Windows结果仍不是全仓／Native通过。

@@ -43,7 +43,22 @@ async function automaticCase(t, scenario) {
     const plan = {out: root, fixtures, autoPlay: !['autoplay-off', 'explicit-queue-autoplay-off'].includes(scenario)};
     origin = await tool.fixtureServer(plan, record, {holdNext: holding || orderedNatural, holdStart: 8, unsupported, trustedCd2});
     mediaOrigin = trustedCd2 ? await tool.fixtureServer(plan, record, {holdNext: orderedNatural, holdStart: 8, requireUserAgent: 'Synthetic-CD2', unsupported, dateValidator, noValidator}) : origin;
-    restoreRequests = holding || orderedNatural || sharedCase ? tool.observeOriginRequests(mediaOrigin.origin, record) : null;
+    restoreRequests = holding || orderedNatural || sharedCase ? tool.observeOriginRequests(mediaOrigin.origin, record, {includeStringInputs: sharedCase}) : null;
+    if (sharedCase) {
+        // Observe real metadata ownership without replacing results, auth, or IO.
+        const module = require('../src/electronapp/enhanced/shared-playback-cache/store'), original = module.createStore;
+        const observed = async options => {
+            const store = await original(options);
+            return {...store, async open(...args) {
+                const item = args[0]?.item, started = performance.now();
+                record('shared-store-open-start', {item});
+                try {const key = await store.open(...args); record('shared-store-open-end', {item, elapsedMs: performance.now() - started}); return key;}
+                catch (error) {record('shared-store-open-rejected', {item, elapsedMs: performance.now() - started}); throw error;}
+            }};
+        };
+        module.createStore = observed;
+        t.after(() => {if (module.createStore === observed) module.createStore = original;});
+    }
     const managerFile = path.join(root, 'playbackmanager.js');
     fs.copyFileSync(path.join(repo, 'vendor/web-snapshot/www/modules/common/playback/playbackmanager.js'), managerFile);
     execFileSync(process.execPath, [path.join(repo, 'tools/patch-playbackmanager.cjs'), managerFile]);
@@ -86,7 +101,7 @@ async function automaticCase(t, scenario) {
         emit(name, value) {this.properties[name] = value; const event = {generationId: this.currentGenerationId, name, value}; record('synthetic-property', event); this.options.onEvent(event);}
         load(args) {
             const id = contexts.get(this.currentGenerationId) || /\/Videos\/([ABC])\//.exec(new URL(args[1]).pathname)?.[1], gen = this.currentGenerationId;
-            record('load', {item: id, generation: gen, source: args[1], ...(trustedCd2 ? {fileLocalOptions: args.slice(2)} : {})});
+            record('load', {item: id, generation: gen, source: args[1], ...(sharedCase ? {cacheDecision: {state: service.rangeStatus().current.state, diagnostic: service.rangeStatus().current.diagnostic || null}} : {}), ...(trustedCd2 ? {fileLocalOptions: args.slice(2)} : {})});
             const promise = (async () => {
                 const before = trace.length;
                 const headers = {Range: 'bytes=0-7'};
@@ -138,6 +153,7 @@ async function automaticCase(t, scenario) {
     if (trustedCd2) authority = require('../src/electronapp/enhanced/preload-source-authority').createAuthority();
     service = createService({electron: {BrowserWindow: Window}, NativeHelperClient: SyntheticClient, fs: {existsSync: () => true},
         sourceAuthority: authority,
+        logger: value => {if (sharedCase && value.category === 'preload') record('service-preload-diagnostic', require('../src/electronapp/enhanced/playback-range-diagnostics').snapshot(value.details));},
         getMainWindow: () => main, getWebContents: () => main.webContents, execFile: (_file, _args, _options, callback) => {callback(null); return {kill() {}};},
         runtimeRoot: root, getRangeCacheConfig: settingsCase ? () => preferences.runtimeConfig() : undefined,
         rangeCache: settingsCase ? undefined : sharedCase ? {kind: 'shared-byte-trial', root: path.join(root, 'shared-byte-cache'),
@@ -340,7 +356,7 @@ async function automaticCase(t, scenario) {
             assert.deepEqual(Array.from(load.fileLocalOptions), ['replace', '-1', 'user-agent=Synthetic-CD2']);
             const routed = new URL(load.source);
             assert.equal(routed.hostname, '127.0.0.1');
-            assert.notEqual(routed.origin, mediaOrigin.origin, 'original Native loads receive the authorized local proxy URL');
+            assert.notEqual(routed.origin, mediaOrigin.origin, 'original Native loads receive the authorized local proxy URL: ' + JSON.stringify({item: load.item, decision: load.cacheDecision, stages: trace.filter(row => ['shared-store-open-start', 'shared-store-open-end', 'shared-store-open-rejected', 'service-preload-diagnostic', 'origin-client-open', 'origin-client-closed', 'origin-closed'].includes(row.type)).map(row => ({seq: row.seq, type: row.type, item: row.item, reason: row.reason, stage: row.stage, start: row.start, end: row.end, requestId: row.requestId, elapsedMs: row.elapsedMs, complete: row.complete}))}));
         }
         const mReads = trace.filter(row => row.type === 'synthetic-M-source');
         assert(mReads.length >= 2 && mReads.every(row => row.bytes === 300 * 1024 * 1024 &&
