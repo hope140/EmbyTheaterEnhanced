@@ -89,7 +89,7 @@
     {
       "path": "README.txt",
       "size": 3523,
-      "sha256": "cb9625182cc0450f36aceefc45c1f77fc622bcae55c37cd41cb4b11446fa7acb"
+      "sha256": "80ac27b26ab1cc5c4de37e01b2d6aae5199a6a0950d172783cecadddf5b6a172"
     },
     {
       "path": "Read-ExePdbMatch.ps1",
@@ -109,7 +109,7 @@
     {
       "path": "Run-Components.ps1",
       "size": 4443,
-      "sha256": "1831a388d95bbed7313e80f7a085efe46cd2d8ef64b62793c048041f8468b126"
+      "sha256": "34ee792daf1e6c4912bc8a0659777e7bbb5b3477e8544fa891be441622598d89"
     },
     {
       "path": "Run-Transport.ps1",
@@ -144,12 +144,12 @@
     {
       "path": "expected-build-contract.json",
       "size": 1618,
-      "sha256": "7b23387ef1a4123db7826fb1c8433766c249820793ba68aef3d12ff22c3efb9c"
+      "sha256": "4d78666dd51fb92796fc0771507d52bed27ce3f812ddccb79373b0c7f677f0e5"
     },
     {
       "path": "expected-candidate-files.json",
       "size": 9522,
-      "sha256": "58b3f69adad4d1d4539cb0c9cfaa04ba6744ecdc4dca696658d27d5c29e54936"
+      "sha256": "eff1cc96a65b21ca931149046bfae5ced46b1ec98ef38a37f3a688eb73b3ced2"
     },
     {
       "path": "fixtures-pending/emby-theater.zip",

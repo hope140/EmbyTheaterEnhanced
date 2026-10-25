@@ -1,0 +1,36 @@
+name: Host exit lifecycle source regression
+on:
+  push:
+    branches: [fix/host-electron-exit-v043]
+    paths:
+      - .github/workflows/host-exit-lifecycle.yml
+      - native/windows-host/changes/Emby.Theater/Program.cs
+      - tools/host-exit-harness.cjs
+      - tools/test-host-exit-lifecycle.ps1
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  framework-exit-lifecycle:
+    if: github.ref == 'refs/heads/fix/host-electron-exit-v043' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: windows-2022
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.1
+      - name: Run real Framework message-loop baseline and candidate
+        shell: powershell
+        run: ./tools/test-host-exit-lifecycle.ps1 -OutputRoot (Join-Path $env:RUNNER_TEMP ('host-exit-' + $env:GITHUB_RUN_ID))
+      - name: Preserve bounded source regression results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: host-exit-${{ github.sha }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/host-exit-${{ github.run_id }}/*.json
+          if-no-files-found: warn
+          retention-days: 1

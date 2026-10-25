@@ -1,5 +1,6 @@
 'use strict';
-// Exact files delivered by reviewed Git commit 0a8bf15; no generated evidence or binaries.
+// Exact verifier inputs; source-fingerprint bindings include the Host exit candidate.
+// No generated evidence or binaries are accepted.
 const fs = require('node:fs'), path = require('node:path'), crypto = require('node:crypto');
 const FILES = Object.freeze([
     {
@@ -90,7 +91,7 @@ const FILES = Object.freeze([
     {
         "path": "tools/windows-host-verifier/README.txt",
         "size": 3523,
-        "sha256": "cb9625182cc0450f36aceefc45c1f77fc622bcae55c37cd41cb4b11446fa7acb"
+        "sha256": "80ac27b26ab1cc5c4de37e01b2d6aae5199a6a0950d172783cecadddf5b6a172"
     },
     {
         "path": "tools/windows-host-verifier/Read-ExePdbMatch.ps1",
@@ -110,7 +111,7 @@ const FILES = Object.freeze([
     {
         "path": "tools/windows-host-verifier/Run-Components.ps1",
         "size": 4443,
-        "sha256": "1831a388d95bbed7313e80f7a085efe46cd2d8ef64b62793c048041f8468b126"
+        "sha256": "34ee792daf1e6c4912bc8a0659777e7bbb5b3477e8544fa891be441622598d89"
     },
     {
         "path": "tools/windows-host-verifier/Run-Transport.ps1",
@@ -145,12 +146,12 @@ const FILES = Object.freeze([
     {
         "path": "tools/windows-host-verifier/expected-build-contract.json",
         "size": 1618,
-        "sha256": "7b23387ef1a4123db7826fb1c8433766c249820793ba68aef3d12ff22c3efb9c"
+        "sha256": "4d78666dd51fb92796fc0771507d52bed27ce3f812ddccb79373b0c7f677f0e5"
     },
     {
         "path": "tools/windows-host-verifier/expected-candidate-files.json",
         "size": 9522,
-        "sha256": "58b3f69adad4d1d4539cb0c9cfaa04ba6744ecdc4dca696658d27d5c29e54936"
+        "sha256": "eff1cc96a65b21ca931149046bfae5ced46b1ec98ef38a37f3a688eb73b3ced2"
     },
     {
         "path": "tools/windows-host-verifier/fixtures-pending/emby-theater.zip",
@@ -165,7 +166,7 @@ const FILES = Object.freeze([
     {
         "path": "tools/windows-host-verifier/verifier-manifest.json",
         "size": 5237,
-        "sha256": "b1b5dfdda4287a22338039d636c985334360ebcdcf7b7058dc9d7de9091e3e6d"
+        "sha256": "2dd4459118417835f5c108e8bed6601e3dc2756b9047f41389891d978820a0a6"
     }
 ].map(Object.freeze));
 const PATHS = Object.freeze(FILES.map(f => f.path));
