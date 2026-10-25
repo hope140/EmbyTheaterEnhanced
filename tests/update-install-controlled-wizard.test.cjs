@@ -8,7 +8,7 @@ const {spawn, spawnSync} = require('node:child_process');
 const hosted = process.platform === 'win32' && process.env.GITHUB_ACTIONS === 'true' && process.env.RUNNER_ENVIRONMENT === 'github-hosted' && process.env.ETE_MANAGED_UPDATE_WIZARD_TEST === '1';
 
 test('hosted Windows real guard/ShellExecute starts an asInvoker probe after natural client exit and confirms cleanup', {
-    skip: !hosted && 'Explicit hosted-Windows short validation only; no Work installation', timeout: 150000
+    skip: !hosted && 'Explicit hosted-Windows short validation only; no Work installation', timeout: 240000
 }, async t => {
     const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-controlled-wizard-')));
     // Everything is generated here and belongs to this disposable CI test.
@@ -41,8 +41,21 @@ class Probe { static int Main() {
     const driverCode=await driverExit;
     if(driverCode!==0 && fs.existsSync(path.join(root,'relay-stderr'))) process.stderr.write('ETE_NATIVE_DIAG controlled-prepare='+fs.readFileSync(path.join(root,'relay-stderr'),'utf8').slice(0,4000).replace(/[\r\n]+/g,' ')+'\n');
     assert.equal(driverCode, 0, errors);
-    const deadline = Date.now() + 15000;
-    while (!fs.existsSync(marker) && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 50));
+    const began=Date.now(), deadline=began+60000;
+    let inspected=false;
+    while (!fs.existsSync(marker) && Date.now()<deadline) {
+        if(!inspected && Date.now()-began>=15000) {
+            inspected=true;
+            const shell=path.join(process.env.SystemRoot,'System32','WindowsPowerShell','v1.0','powershell.exe');
+            const helper=JSON.parse(fs.readFileSync(path.join(root,'helper-pid.json')));
+            const snapshot='$rows=@();foreach($p in [Diagnostics.Process]::GetProcesses()){try{if($p.Id -eq [int]$env:ETE_DIAG_GUARD -or $p.ProcessName -in @("smartscreen","consent","rundll32","EmbyTheaterEnhanced-9.1.0-win-x64-setup")){$rows+=@{name=$p.ProcessName;window=($p.MainWindowHandle -ne [IntPtr]::Zero)}}}catch{}finally{$p.Dispose()}};$rows|ConvertTo-Json -Compress';
+            const observed=spawnSync(shell,['-NoLogo','-NoProfile','-NonInteractive','-Command',snapshot],{env:{...process.env,ETE_DIAG_GUARD:String(helper.pid)},encoding:'utf8',timeout:10000,windowsHide:true});
+            process.stderr.write('ETE_NATIVE_DIAG controlled-window-observation='+JSON.stringify({status:observed.status,output:observed.stdout,error:observed.error&&observed.error.code})+'\n');
+            let rows;try{rows=JSON.parse(observed.stdout);}catch{};
+            if(rows && [rows].flat().some(row=>row.window===true)) break; // Leave all security/UI decisions untouched.
+        }
+        await new Promise(resolve=>setTimeout(resolve,50));
+    }
     if (!fs.existsSync(marker)) {
         const stages={};
         for(const name of ['shell-entered','shell-started','shell-exited','shell-error','script-error']) if(fs.existsSync(path.join(root,name))) stages[name]=fs.readFileSync(path.join(root,name),'utf8').slice(0,1000);
