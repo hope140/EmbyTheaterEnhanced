@@ -1,4 +1,4 @@
-define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter', 'appSettings', 'userSettings', 'require', 'connectionManager', '../resolvers/strm-resolver.js', '../resolvers/strm-config-client.js', '../resolvers/strm-identity-recovery.js', '../enhanced/playback-route-stats.js', '../enhanced/nexttrack-transition.js', '../native-helper/client.js', '../enhanced/playback-range-renderer.js'], function (globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, require, connectionManager, strmResolver, strmConfigClient, strmIdentityRecovery, playbackRouteStats, nextTrackTransition, nativeHelperClient, playbackRangeRenderer) {
+define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter', 'appSettings', 'userSettings', 'require', 'connectionManager', '../resolvers/strm-resolver.js', '../resolvers/strm-config-client.js', '../resolvers/strm-identity-recovery.js', '../enhanced/playback-route-stats.js', '../enhanced/nexttrack-transition.js', '../native-helper/client.js', '../enhanced/playback-range-renderer.js', '../enhanced/playback-retention-renderer.js'], function (globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, require, connectionManager, strmResolver, strmConfigClient, strmIdentityRecovery, playbackRouteStats, nextTrackTransition, nativeHelperClient, playbackRangeRenderer, playbackRetentionRenderer) {
     'use strict';
 
     function getTextTrackUrl(subtitleStream, serverId) {
@@ -829,6 +829,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 await corePlaying;
                 assertCurrentPlayRequest(request);
                 if (request.rangeCache) request.rangeCache.started();
+                if (request.retentionContext) request.retentionContext.started();
                 if (libmpv && options.mediaType === 'Video') {
                     libmpv.style.opacity = 1;
                 }
@@ -841,6 +842,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 if (window.enhancedDiagnostics) window.enhancedDiagnostics(libmpv, 'playing');
             } catch (error) {
                 if (request.rangeCache) await request.rangeCache.close();
+                if (request.retentionContext) await request.retentionContext.close();
                 cleanupCorePlaying(request);
                 nextTransition.playbackFailed(request.playbackRequestId);
                 if (!error || !error.playbackSuperseded) {
@@ -1105,6 +1107,13 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                     signal: request.controller.signal,
                     isCurrent: function () {return activePlayRequest === request && libmpv === rangeEndpoint;},
                     position: function () {return {positionTicks: playerState.positionTicks, durationTicks: playerState.durationTicks};}});
+                assertCurrentPlayRequest(request);
+            }
+            if (libmpv && libmpv.retentionContext && libmpv.retentionContext.enabled) {
+                var retentionEndpoint = libmpv;
+                request.retentionContext = await playbackRetentionRenderer.bind({endpoint: retentionEndpoint, connectionManager: connectionManager,
+                    item: item, mediaSource: mediaSource, options: options, source: url, signal: request.controller.signal,
+                    isCurrent: function () {return activePlayRequest === request && libmpv === retentionEndpoint;}});
                 assertCurrentPlayRequest(request);
             }
             emitClientDiagnostic('info', 'playback', 'loadfile-requested', Object.assign(requestDiagnosticDetails(request), {

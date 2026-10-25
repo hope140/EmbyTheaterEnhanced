@@ -72,7 +72,7 @@ async function runMain(f, argv, platform = 'win32', failSetPath) {
         electron, path, fs: mockFs,
         'is-windows': () => platform === 'win32', 'is-linux': () => platform === 'linux', 'detect-rpi': () => false,
         './package.json': {name: 'synthetic', productName: 'Synthetic'}, './product-identity': require('../src/electronapp/product-identity'),
-        './apphost-command': {}, './enhanced/external-url': {}, './enhanced/playback-range-launch': launch,
+        './apphost-command': {}, './enhanced/external-url': {}, './enhanced/playback-retention-launch': require('../src/electronapp/enhanced/playback-retention-launch'), './enhanced/playback-range-launch': launch,
         './enhanced/bootstrap': {bootstrap(options) {calls.bootstrap.push(options); return bootstrap.bootstrap(options);}},
         './device-identity': {getOrCreateDeviceId(file) {calls.identity.push(file); return identity.getOrCreateDeviceId(file, {crypto: {randomUUID: () => fixedId, randomBytes: n => Buffer.alloc(n)}});}},
         './enhanced/diagnostics': {createLogger: () => () => {}, hashIdentifier: () => 'synthetic-hash', configEvidence: () => ({})},
@@ -170,4 +170,42 @@ test('ordinary main retains confirmed choices but cannot activate pending capaci
     assert.equal(result.calls.range.length, 1); const config = result.calls.range[0].config;
     assert.equal(config.enabled, false); assert.equal(config.progressPercent, 80); assert.equal(config.preloadMB, 500);
     assert.deepEqual(result.calls.setPath, []); assert(!fs.existsSync(path.join(f.userData, 'playback-ranges')));
+});
+
+for (const hostFirst of [false, true]) test('context-only retention trial preserves full Windows startup isolation: host-first=' + hostFirst, async t => {
+    const f = fixture(t), before = snapshot(f.ordinary), flags = ['--ete-retention-context-trial', '--ete-retention-profile=' + f.profile];
+    const result = await runMain(f, [...f.argv, ...(hostFirst ? [...f.legacy, ...flags] : [...flags, ...f.legacy])]);
+    assert.equal(result.error, undefined); assert.equal(result.paths.userData, path.join(f.profile, 'electron'));
+    assert.equal(result.env.APPDATA, f.profile); assert.equal(result.env.LOCALAPPDATA, path.join(f.profile, 'local')); assert.equal(result.env.MPV_HOME, path.join(f.profile, 'mpv'));
+    assert.equal(result.env.TEMP, path.join(f.profile, 'tmp')); assert.equal(result.env.TMP, path.join(f.profile, 'tmp'));
+    assert.deepEqual(snapshot(f.ordinary), before); assert.equal(result.calls.bootstrap[0].appDataPath, f.profile);
+});
+for (const kind of ['missing-profile', 'unknown-flag', 'uppercase', 'wrong-owner', 'mixed-range', 'ordinary-profile', 'mixed-case-extra', 'bare-extra']) test('invalid explicit retention launch never bootstraps ordinary data: ' + kind, async t => {
+    const f = fixture(t), before = snapshot(f.ordinary); let flags = ['--ete-retention-context-trial', '--ete-retention-profile=' + f.profile];
+    if (kind === 'missing-profile') flags.pop();
+    if (kind === 'unknown-flag') flags.push('--ete-retention-unknown');
+    if (kind === 'uppercase') flags[0] = '--ETE-RETENTION-CONTEXT-TRIAL';
+    if (kind === 'wrong-owner') fs.writeFileSync(path.join(f.profile, 'ete-retention-context-trial-owner'), 'foreign');
+    if (kind === 'mixed-range') flags.push(...f.flags);
+    if (kind === 'mixed-case-extra') flags.push('--ETE-RETENTION-UNKNOWN=x');
+    if (kind === 'bare-extra') flags.push('--ete-retention');
+    if (kind === 'ordinary-profile') flags[1] = '--ete-retention-profile=' + f.userData;
+    const result = await runMain(f, [...f.argv, ...f.legacy, ...flags]);
+    assert.equal(result.error && result.error.message, 'retention-context-trial-launch-invalid'); assert.equal(result.calls.bootstrap.length, 0); assert.equal(result.calls.setPath.length, 0);
+    assert.deepEqual(snapshot(f.ordinary), before);
+});
+
+for (const field of ['appData', 'userData', 'sessionData', 'hostData']) test('retention trial rejects even an empty ordinary directory: ' + field, async t => {
+    const f = fixture(t); fs.unlinkSync(path.join(f[field], 'ordinary-canary.txt')); const before = snapshot(f.ordinary);
+    const result = await runMain(f, [...f.argv, ...f.legacy, '--ete-retention-context-trial', '--ete-retention-profile=' + f[field]]);
+    assert.equal(result.error && result.error.message, 'retention-context-trial-launch-invalid');
+    assert.equal(result.calls.bootstrap.length, 0); assert.equal(result.calls.setPath.length, 0); assert.deepEqual(snapshot(f.ordinary), before);
+});
+
+test('retention trial protects a missing Host profile below an existing directory alias', async t => {
+    const f = fixture(t), before = snapshot(f.ordinary), alias = path.join(f.base, 'ordinary-alias');
+    fs.symlinkSync(f.profile, alias, process.platform === 'win32' ? 'junction' : 'dir');
+    const host = path.join(alias, 'not-created-yet'), result = await runMain(f, [...f.argv, host, f.legacy[1], '--ete-retention-context-trial', '--ete-retention-profile=' + f.profile]);
+    assert.equal(result.error && result.error.message, 'retention-context-trial-launch-invalid');
+    assert.equal(result.calls.bootstrap.length, 0); assert.deepEqual(fs.readdirSync(f.profile), []); assert.deepEqual(snapshot(f.ordinary), before);
 });

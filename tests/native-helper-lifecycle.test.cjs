@@ -134,7 +134,7 @@ function makeNativeEndpoint() {
     return endpoint;
 }
 
-function loadPlayer(nativeClient, managerSetup, resolverOverride) {
+function loadPlayer(nativeClient, managerSetup, resolverOverride, fixtureOptions = {}) {
     let moduleFactory;
     const amdRequire = function (_dependencies, callback) {
         if (typeof callback === 'function') callback();
@@ -184,13 +184,13 @@ function loadPlayer(nativeClient, managerSetup, resolverOverride) {
     const embyRouter = {showVideoOsd() { return Promise.resolve(); }, setTransparency() { }};
     const appSettings = {get() { return undefined; }, set() { }};
     const userSettings = {getSubtitleAppearanceSettings() { return {}; }};
-    const connectionManager = {};
+    const connectionManager = fixtureOptions.connectionManager || {};
     const strmResolver = resolverOverride || {
         resolveAsync(info) { return Promise.resolve({type: 'native', source: info.nativeSource, reason: 'native_fallback'}); }
     };
     const Player = moduleFactory(globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings,
         amdRequire, connectionManager, strmResolver, undefined, undefined, undefined,
-        require('../src/electronapp/enhanced/nexttrack-transition'), nativeClient);
+        require('../src/electronapp/enhanced/nexttrack-transition'), nativeClient, require('../src/electronapp/enhanced/playback-range-renderer'), require('../src/electronapp/enhanced/playback-retention-renderer'));
     const player = {};
     if (managerSetup) managerSetup(playbackManager, player);
     Player.call(player);
@@ -457,4 +457,19 @@ test('native helper exit during replacement releases its presentation token', as
         'helper exit must release the replacement presentation token');
     await player.stop(true);
     assert.equal(endpoint.destroyedCount(), 1);
+});
+
+test('ordinary libmpv play entry captures current ApiClient identity for the opt-in context trial and preserves original source', async () => {
+    const endpoint = makeNativeEndpoint(), captured = []; endpoint.retentionContext = {enabled: true, canReuse: false};
+    endpoint.createRetentionContextBinding = () => ({async setContext(value) {captured.push(value);}, async sample() {endpoint.operations.push({type: 'retention-sample'});}, async retire() {endpoint.operations.push({type: 'retention-retire'});}});
+    const nativeClient = {async create() {return {mode: 'native-helper', endpoint};}};
+    const api = {_identityEpoch: 1, serverAddress: () => 'http://127.0.0.1:12345', serverId: () => 'mock-server', getCurrentUserId: () => 'mock-account'};
+    const {player} = loadPlayer(nativeClient, undefined, undefined, {connectionManager: {getApiClient(server) {assert.equal(server, 'mock-server'); return api;}}});
+    const options = playOptions(90); options.url = 'http://127.0.0.1:12345/Videos/A/stream.avi?Static=true&api_key=synthetic'; options.item.ServerId = 'mock-server';
+    options.mediaSource.Id = 'actual-selected-version'; options.mediaSource.Container = 'avi'; options.playSessionId = 'actual-request-session';
+    await player.play(options);
+    assert.equal(captured.length, 1); assert.equal(captured[0].accountId, api.getCurrentUserId()); assert.equal(captured[0].serverId, api.serverId());
+    assert.equal(captured[0].mediaSourceId, options.mediaSource.Id); assert.equal(captured[0].playSessionId, options.playSessionId);
+    assert.equal(endpoint.operations.find(row => row.type === 'load').url, options.url); assert(endpoint.operations.some(row => row.type === 'retention-sample'));
+    await player.stop(false); assert(endpoint.operations.some(row => row.type === 'retention-retire'));
 });

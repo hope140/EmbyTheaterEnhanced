@@ -21,8 +21,13 @@
     productIdentity.setAppName(app, productMetadata);
     var path = require('path');
     var rangeCacheLaunchModule = require('./enhanced/playback-range-launch');
+    var retentionContextLaunch = require('./enhanced/playback-retention-launch').prepareLaunch(process.argv,
+        ['appData', 'userData', 'sessionData'].map(function (name) {return app.getPath(name);}).concat(
+            process.platform === 'win32' ? process.argv.slice(2).filter(function (value) {return !value.startsWith('--') && path.isAbsolute(value);}) : []));
     var rangeCacheLaunch = rangeCacheLaunchModule.prepareLaunch(process.argv);
+    if (retentionContextLaunch.enabled) rangeCacheLaunch = retentionContextLaunch;
     rangeCacheLaunchModule.activateProfile(app, rangeCacheLaunch, process.env);
+    if (retentionContextLaunch.enabled) {process.env.TEMP = process.env.TMP = retentionContextLaunch.directories.tmp;}
     var appBootstrap = require('./enhanced/bootstrap');
     var deviceIdentity = require('./device-identity');
     var enhancedDiagnostics = require('./enhanced/diagnostics');
@@ -1099,7 +1104,8 @@
             mode: nativeHelperMode,
             kernelStore: mpvKernelStore,
             startupKernelSelection: startupSelection,
-            getRangeCacheConfig: getRangeCacheRuntimeConfig
+            getRangeCacheConfig: getRangeCacheRuntimeConfig,
+            retentionContextOnly: retentionContextLaunch.enabled
         });
         unregisterNativeHelperIpc = nativeHelperServiceModule.register({
             ipcMain: ipcMain,

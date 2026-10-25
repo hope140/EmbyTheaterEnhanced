@@ -184,6 +184,7 @@ function makeService(ClientClass, options) {
     getWebContents: () => main.webContents,
     execFile: placementExecutor,
     logger: typeof settings.logger === 'function' ? settings.logger : record => logs.push(record),
+    retentionContextOnly: settings.retentionContextOnly === true,
     runtimeRoot: 'C:\\fixture-runtime'
   });
   return {main, service, logs, placementExecutor};
@@ -1138,3 +1139,56 @@ for (const observerFailure of ['throw', 'reject']) {
     await service.destroy();
   });
 }
+
+test('explicit context-only app service binds fresh authorized source but never replaces it or changes the buffer', async t => {
+  const http = require('node:http'); let probes = 0;
+  const server = http.createServer((req, res) => {probes++; assert.equal(req.headers.range, 'bytes=0-0'); res.writeHead(206, {'Content-Range': 'bytes 0-0/100', 'Content-Length': 1, ETag: '"mock-version"'}); res.end('x');});
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve)); t.after(() => new Promise(resolve => server.close(resolve)));
+  const origin = 'http://127.0.0.1:' + server.address().port, source = origin + '/Videos/A/stream.avi?Static=true&api_key=mock-token';
+  const Clients = makeClientClass(), fixture = makeService(Clients, {retentionContextOnly: true}); t.after(() => fixture.service.destroy());
+  const created = await fixture.service.call('create', {}), endpoint = created.endpointId; assert.equal(created.retentionContext.canReuse, false);
+  const generation = (await fixture.service.call('begin-generation', {label: 'mock-live-api-context'}, endpoint)).generationId;
+  const helper = Clients.clients[0]; let sets = 0, loaded;
+  helper.setProperty = () => {sets++;}; helper.load = args => {loaded = args; return {generationId: generation, promise: Promise.resolve()};};
+  const values = {'demuxer-max-bytes': 3221225472, 'demuxer-max-back-bytes': 1024, 'demuxer-donate-buffer': true, 'cache-on-disk': false,
+    'demuxer-cache-state': {'fw-bytes': 64, 'total-bytes': 128, 'seekable-ranges': [{start: 0, end: 1}]}};
+  helper.getProperty = name => Promise.resolve(values[name]);
+  const context = {source, serverOrigin: origin, serverId: 'mock-server', accountId: 'mock-user', itemId: 'A', mediaSourceId: 'A-v1', playSessionId: 'mock-session', mode: 'DirectPlay', mediaType: 'Video', container: 'avi', live: false};
+  const ready = await fixture.service.call('retention-context', {generationId: generation, context}, endpoint); assert.equal(ready.value.state, 'identity-bound');
+  await fixture.service.call('command', {generationId: generation, data: ['loadfile', source]}, endpoint); assert.deepEqual(loaded, ['loadfile', source]);
+  helper.state = {playing: true}; helper.options.onEvent({name: 'core-idle', value: false, generationId: generation});
+  const sampled = await fixture.service.call('retention-sample', {generationId: generation}, endpoint);
+  assert.equal(sampled.value.state, 'buffer-observed'); assert.equal(sampled.value.forwardLimitBytes, 3221225472); assert.equal(sampled.value.canReuse, false);
+  assert.equal(sets, 0); assert.equal(probes, 1); assert(!JSON.stringify(sampled).includes('mock-token')); assert(!JSON.stringify(sampled).includes('mock-user'));
+  await fixture.service.call('command', {generationId: generation, data: 'stop'}, endpoint);
+  await assert.rejects(fixture.service.call('retention-sample', {generationId: generation}, endpoint), /stale-generation/);
+});
+test('an old context-trial Stop waits physical probe retirement and cannot stop a replacement generation', async t => {
+  const http = require('node:http'); let accepted; const entered = new Promise(resolve => {accepted = resolve;});
+  const server = http.createServer((_req, _res) => {accepted();});
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve)); t.after(() => new Promise(resolve => server.close(resolve)));
+  const origin = 'http://127.0.0.1:' + server.address().port, source = origin + '/Videos/A/stream.avi?Static=true&api_key=mock';
+  const Clients = makeClientClass(), fixture = makeService(Clients, {retentionContextOnly: true}); t.after(() => fixture.service.destroy());
+  const endpoint = (await fixture.service.call('create', {})).endpointId;
+  const old = (await fixture.service.call('begin-generation', {label: 'old', requestEpoch: 1}, endpoint)).generationId;
+  const helper = Clients.clients[0]; let stops = 0; helper.stop = async () => {stops++; helper.currentGenerationId = null;};
+  const context = {source, serverOrigin: origin, serverId: 'mock-server', accountId: 'mock-user', itemId: 'A', mediaSourceId: 'A-v1', playSessionId: 'session', mode: 'DirectPlay', mediaType: 'Video', container: 'avi', live: false};
+  const binding = fixture.service.call('retention-context', {generationId: old, context}, endpoint); await entered;
+  const stopping = fixture.service.call('command', {generationId: old, data: 'stop'}, endpoint);
+  const next = fixture.service.call('begin-generation', {label: 'replacement', requestEpoch: 2}, endpoint);
+  const [stopped, started] = await Promise.all([stopping, next, binding]);
+  assert.equal(stopped.stale, true); assert.equal(stops, 0); assert.equal(helper.currentGenerationId, started.generationId);
+});
+
+test('successful old renderer destroy cannot clear a replacement client endpoint before its first generation', async t => {
+  const Clients = makeClientClass(), {service} = makeService(Clients); t.after(() => service.destroy());
+  const first = await service.call('create'), helperA = Clients.clients[0], kill = deferred();
+  helperA.kill = () => kill.promise;
+  const retiring = service.call('destroy', {}, first.endpointId); await Promise.resolve();
+  const replacement = await service.call('create'), helperB = Clients.clients[1];
+  assert.equal(replacement.endpointId, first.endpointId); assert.notEqual(helperA, helperB);
+  let killsB = 0; const originalKill = helperB.kill.bind(helperB); helperB.kill = () => {killsB++; return originalKill();};
+  kill.resolve({code: 0}); await retiring;
+  const next = await service.call('begin-generation', {label: 'replacement'}, replacement.endpointId);
+  assert.equal(helperB.currentGenerationId, next.generationId); assert.equal(killsB, 0);
+});

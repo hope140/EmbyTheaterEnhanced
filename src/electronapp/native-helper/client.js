@@ -38,6 +38,7 @@
         this.protocolVersion = metadata.protocolVersion;
         this.helperVersion = metadata.helperVersion;
         this.rangeCache = metadata.rangeCache || null;
+        this.retentionContext = metadata.retentionContext || null;
         this.libmpvVersion = metadata.libmpvVersion;
         this.style = {};
 
@@ -117,6 +118,15 @@
         this.setProperties = function (properties) {
             var entries = Object.keys(properties || {}).map(function (name) { return {name: name, value: properties[name]}; });
             return call('set-properties', {entries: entries, generationId: currentGenerationId});
+        };
+        this.createRetentionContextBinding = function () {
+            var generationId = currentGenerationId;
+            function bound(operation, context) {
+                if (destroyed || generationId !== currentGenerationId) return Promise.reject(new Error('stale-generation'));
+                return call(operation, {generationId: generationId, context: context});
+            }
+            return {setContext: function (context) {return bound('retention-context', context);},
+                sample: function () {return bound('retention-sample');}, retire: function () {return bound('retention-context', null);}};
         };
         this.createRangeBinding = function () {
             var generationId = currentGenerationId;

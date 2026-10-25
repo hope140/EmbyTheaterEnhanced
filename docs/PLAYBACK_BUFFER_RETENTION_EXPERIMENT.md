@@ -1,5 +1,9 @@
 # 播放缓冲暂存：独立可行性实验
 
+## 当前阶段补充：有限状态通过，普通入口只做上下文校验
+
+起点/下文探针计划作为历史保留。最新固定Windows状态短测已通过，普通adapter/main/service现增加默认关闭的可信上下文入口；没有接普通缓存保存或复用。固定内核没有公开精确导出时间锚点，合成源payload映射不能泛化真实媒体。最新事实、入口参数与需单独确认的最小原生映射提案见[普通入口合同](PLAYBACK_RETENTION_APP_CONTEXT.md)。未改内核、正式profile或预载分支。
+
 ## 分支与范围
 
 本实验位于 `experiment/playback-buffer-retention`，起点为 `6f76954ea9710c1c87b987180d04d9a793fc0ed4`。起点保留既有研究、固定候选验证工具及预载源码，但本次不修改、集成或发布预载功能。生产 mpv 输入清单与核对时的 `origin/main` `ff92bead401a458f3cc83f3e450f48be97af31b2` 相同；helper 源码存在主线后续 seek 通知差异，本实验没有编译或运行该 helper，也不宣称整个分支等同主线。

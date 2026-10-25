@@ -120,9 +120,11 @@ function normalizeStartupKernelSelection(value) {
 function createService(options) {
   const settings = options || {};
   function readRangeConfig() {
+    if (settings.retentionContextOnly === true) return null;
     try {const config = typeof settings.getRangeCacheConfig === 'function' ? settings.getRangeCacheConfig() : settings.rangeCache; return config ? {...config} : null;} catch (_) {return null;}
   }
   function rangeKey(config) {return JSON.stringify(config && ['kind', 'root', 'maxBytes', 'minFreeBytes', 'blockBytes', 'timeoutMs', 'progressPercent', 'preloadMB', 'bytesPerSecond'].map(key => config[key] == null ? null : config[key]));}
+  const retentionContext = require('../enhanced/playback-retention-context').create({enabled: settings.retentionContextOnly === true});
   const initialRangeConfig = readRangeConfig();
   let rangeSession = initialRangeConfig ? require('../enhanced/playback-range-session').createSession({config: initialRangeConfig}) : null;
   let rangeConfigKey = rangeKey(initialRangeConfig), rangeApplyTail = Promise.resolve(), rangeCloseFailure = null;
@@ -517,6 +519,9 @@ function createService(options) {
       onDiagnostic: function (record) { diagnostic(Object.assign({}, record, {helperRun})); },
       onEvent: function (message) {
         if (client !== owned) return;
+        if (retentionContext && message.name === 'core-idle' && message.value === false) {
+          retentionContext.started(owned, message.generationId).catch(function () {log('retention-context-unavailable', {});});
+        }
         if (rangeSession && message.name === 'core-idle' && message.value === false) {
           rangeSession.started(owned, message.generationId).catch(function () {log('range-cache-unavailable', {});});
         }
@@ -534,6 +539,7 @@ function createService(options) {
       },
       onTerminal: function (terminal) {
         if (client !== owned) return;
+        if (retentionContext) retentionContext.retire().catch(function () {log('retention-context-unavailable', {});});
         if (rangeSession) retireRangeSession().catch(function () {log('range-cache-unavailable', {});});
         crashCount += terminal.name === 'process-exit-terminal' || terminal.name === 'stdout-end' ? 1 : 0;
         clearPresentation(presentation);
@@ -723,20 +729,24 @@ function createService(options) {
       }
       const active = await ensureClient();
       return {status: 'ok', mode, endpointId: activeEndpointId, protocolVersion: PROTOCOL_VERSION, helperVersion: active.handshake.helperVersion, libmpvVersion: active.handshake.libmpvVersion,
-        rangeCache: rangeSession ? rangeSession.status() : null};
+        rangeCache: rangeSession ? rangeSession.status() : null, ...(retentionContext ? {retentionContext: retentionContext.status()} : {})};
     }
     if (operation === 'status') return status();
     requireEndpoint(endpointId);
     if (operation === 'destroy') {
+      const destroyEpoch = generationEpoch, destroyingClient = client;
+      if (retentionContext) await retentionContext.retire();
       if (rangeSession) await retireRangeSession();
+      if (destroyEpoch !== generationEpoch || endpointId !== activeEndpointId || client !== destroyingClient) return {status: 'accepted', stale: true};
       await destroyClient('renderer-destroy');
-      activeEndpointId = null;
+      if (endpointId === activeEndpointId && generationEpoch === destroyEpoch + 1 && !client && !startingClient && !startPromise) activeEndpointId = null;
       return {status: 'ok'};
     }
     let beginEpoch;
     if (operation === 'begin-generation') {
       acceptRendererEpoch(payload);
       beginEpoch = ++generationEpoch;
+      if (retentionContext) await retentionContext.retire();
       if (rangeSession) await retireRangeSession();
       try {await applyRangeConfig(beginEpoch);} catch (_) {log('range-cache-unavailable', {});}
     }
@@ -766,6 +776,14 @@ function createService(options) {
       if (beginEpoch !== generationEpoch || active !== client || endpointId !== activeEndpointId ||
           active.currentGenerationId !== generationId) throw new Error('generation-superseded');
       return {status: 'ok', generationId, rangeCache: rangeSession ? rangeSession.status() : null};
+    }
+    if (operation === 'retention-context') {
+      requireGeneration(active, payload);
+      return {status: 'ok', value: retentionContext ? payload.context == null ? (await retentionContext.retire(), retentionContext.status()) : await retentionContext.setContext(payload.context, active, active.currentGenerationId) : {enabled: false}};
+    }
+    if (operation === 'retention-sample') {
+      requireGeneration(active, payload);
+      return {status: 'ok', value: retentionContext && active.state && active.state.playing ? await retentionContext.started(active, active.currentGenerationId) : retentionContext ? retentionContext.status() : {enabled: false}};
     }
     if (operation === 'range-context') {
       requireGeneration(active, payload);
@@ -860,6 +878,7 @@ function createService(options) {
           throw new Error('stale-generation');
         }
         const loadArgs = selected && selected.canDispatch() ? [args[0], selected.source] : args;
+        if (retentionContext) retentionContext.dispatched(args[1], active, active.currentGenerationId);
         const load = active.load(loadArgs);
         load.promise.catch(function (error) {
           if (client !== active || endpointId !== activeEndpointId || load.generationId !== active.currentGenerationId ||
@@ -873,7 +892,11 @@ function createService(options) {
         return {status: 'accepted'};
       }
       if (args[0] === 'stop') {
+        const stopEpoch = generationEpoch, stopGeneration = active.currentGenerationId;
+        if (retentionContext) await retentionContext.retire();
         if (rangeSession) await retireRangeSession();
+        if (destroyed || endpointId !== activeEndpointId || client !== active || generationEpoch !== stopEpoch || active.currentGenerationId !== stopGeneration ||
+            payload.presentationToken != null && (!ownsPresentation(presentation) || presentation.token !== payload.presentationToken)) return {status: 'accepted', stale: true};
         const retain = ownsPresentation(presentation) && presentation.token === payload.presentationToken &&
           validToken(presentation.holdId) && active.currentGenerationId === null;
         if (!retain) {
@@ -910,6 +933,7 @@ function createService(options) {
       // A newer endpoint epoch also cancels a begin whose ID has not returned to the renderer yet.
       if (client && (validToken(request.requestEpoch) || request.generationId === null || request.generationId === client.currentGenerationId)) {
         if (rangeSession) retireRangeSession().catch(function () {log('range-cache-unavailable', {});});
+        if (retentionContext) retentionContext.retire().catch(function () {log('retention-context-unavailable', {});});
         client.retireGeneration(request.reason || 'retired');
       }
     }
@@ -928,14 +952,19 @@ function createService(options) {
     surfaceWanted = false;
     syncSurfaceVisibility(reason);
     const owned = client;
-    client = null;
+    client = null; // detach before any retirement barrier can yield
+    const retiring = retentionContext ? retentionContext.retire() : Promise.resolve();
     if (owned) {
       owned.retireGeneration(reason);
-      const completion = owned.kill();
+      let killing;
+      try {killing = owned.kill();} catch (error) {killing = Promise.reject(error);}
+      const completion = Promise.allSettled([retiring, killing]).then(function (outcomes) {
+        const failure = outcomes.find(outcome => outcome.status === 'rejected'); if (failure) throw failure.reason;
+      });
       pendingClientDestructions.add(completion);
       try { await completion; }
       finally { pendingClientDestructions.delete(completion); }
-    }
+    } else await retiring;
   }
 
   function destroy() {
@@ -957,7 +986,7 @@ function createService(options) {
       }
       // One failed child must not let before-quit outrun other owned exits.
       const outcomes = await Promise.allSettled([destroyClient('service-destroy'), ...pendingDestructions,
-        rangeSession ? rangeSession.close() : Promise.resolve(), rangeApplyTail]);
+        rangeSession ? rangeSession.close() : Promise.resolve(), retentionContext ? retentionContext.close() : Promise.resolve(), rangeApplyTail]);
       const failure = outcomes.find(outcome => outcome.status === 'rejected') || (rangeCloseFailure ? {reason: rangeCloseFailure} : null);
       // Native failure does not transfer ownership of local window resources.
       // Attempt all releases, then preserve the original owned-client error.

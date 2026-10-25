@@ -273,3 +273,10 @@ test('presentation operations validate tokens and use their narrow request paylo
     {label: 'normal-null-token', requestEpoch: 2}, 'null means the optional presentation token is omitted');
   await created.endpoint.destroy();
 });
+
+test('retention context binding is generation-bound and stale retirement cannot clear its replacement', async () => {
+  const ipc = new FakeIpc((_, request) => request.operation === 'create' ? {status: 'ok', mode: 'native-helper', endpointId: 'trial', retentionContext: {enabled: true, mode: 'context-only', canReuse: false}} : undefined);
+  const {endpoint} = await clientModule.create({ipc}); await endpoint.beginGeneration('old'); const old = endpoint.createRetentionContextBinding();
+  await old.setContext({source: 'synthetic'}); await endpoint.beginGeneration('new'); const count = ipc.calls.length;
+  await assert.rejects(old.retire(), /stale-generation/); await assert.rejects(old.sample(), /stale-generation/); assert.equal(ipc.calls.length, count);
+});

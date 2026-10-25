@@ -1,5 +1,9 @@
 # 固定 DLL 有限缓冲导出：实测结果与下一步边界
 
+## 当前阶段补充：已继续受限状态与入口验证
+
+下文曾停止/未执行的说明保留为历史。实际run40161248912在a593607通过4268642B管理器重开、新helper lease读取和释放/关闭，nativeReaders0、PCM一致；当前新增普通入口为context-only，不执行dump/Store/缓存播放。详见[最新事实及精确时间映射阻碍](PLAYBACK_RETENTION_APP_CONTEXT.md)。有限导出和合成接续成立，真实媒体透明复用仍未成立，不合入发行。
+
 本轮实验已停止：[收尾结论](PLAYBACK_BUFFER_RETENTION_CLOSEOUT.md)保留基础导出/合成AV与一次基本接续通过，最后传输补证失败归档；不作为透明暂存功能并入发行，不继续排包或Native实验。
 
 ## 已读回的真实结果
