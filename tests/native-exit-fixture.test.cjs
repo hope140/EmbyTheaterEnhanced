@@ -1,6 +1,7 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),path=require('node:path'),fs=require('node:fs');
-const tool=require('../tools/native-exit-fixture.cjs');
+const tool=require(process.env.ETE_NATIVE_EXIT_FIXTURE_SOURCE||'../tools/native-exit-fixture.cjs');
+const {validateCommand}=require('../src/electronapp/native-helper/service');
 const configuration={config:path.resolve('synthetic-case.json'),report:path.resolve('synthetic-report.json'),clip:path.resolve('synthetic.y4m')};
 test('synthetic clip is generated locally and the stimulus is only an extra AMD script',()=>{
  const clip=tool.clip();assert.ok(clip.subarray(0,50).toString().startsWith('YUV4MPEG2 W32 H18 F2:1'));
@@ -8,8 +9,10 @@ test('synthetic clip is generated locally and the stimulus is only an extra AMD 
  assert.throws(()=>tool.build({...configuration,report:'relative'}),/ABSOLUTE/);
  const source=tool.build(configuration);new vm.Script(source);
  assert.doesNotMatch(source,/app\.quit|process\.exit|BrowserWindow|spawn\(|fetch\(|https?:|ELECTRON_RUN_AS_NODE|NATIVE_TRIAL/);
+ assert.throws(()=>validateCommand(['loadfile',configuration.clip,'replace']),/loadfile-shape-invalid/);
+ assert.deepEqual(validateCommand(['loadfile',configuration.clip]),['loadfile',configuration.clip]);
 });
-for(const mode of ['playing-close','stop-close'])test('stimulus waits for actual appready and requires decoded-frame properties before declaring '+mode+' ready',async()=>{
+for(const mode of ['playing-close','stop-close','rejected-command','private-command-error'])test('stimulus validates appready, decoded playback and safe command errors: '+mode,async()=>{
  const files=new Map(),calls=[],sent=[],listeners=new Map(),timers=new Map();let timerId=0;
  const object={};
  const ipc={async invoke(channel,packet){
@@ -17,6 +20,11 @@ for(const mode of ['playing-close','stop-close'])test('stimulus waits for actual
   calls.push(packet);
   if(packet.operation==='create')return{status:'ok',mode:'native-helper',endpointId:'01234567-1234-1234-1234-012345678901',helperVersion:'fixture',libmpvVersion:'fixture'};
   if(packet.operation==='begin-generation')return{status:'ok',generationId:101};
+  if(packet.operation==='command'){
+   if(mode==='rejected-command')return{status:'error',reason:'loadfile-shape-invalid'};
+   if(mode==='private-command-error')return{status:'error',reason:'PRIVATE_SYNTHETIC_PATH_CANARY'};
+   try{validateCommand(packet.payload.data);}catch(error){return{status:'error',reason:error.message};}
+  }
   if(packet.operation==='get-property')return{status:'ok',value:packet.payload.name==='time-pos'?1:packet.payload.name==='core-idle'?true:{w:32,h:18}};
   return{status:'accepted'};
  },send(channel,packet){sent.push({channel,packet});}};
@@ -26,8 +34,15 @@ for(const mode of ['playing-close','stop-close'])test('stimulus waits for actual
  await new Promise(resolve=>setImmediate(resolve));assert.equal(calls.length,0);assert.equal(timers.size,1);
  listeners.get('appready')();
  for(let i=0;i<20;i++)await new Promise(resolve=>setImmediate(resolve));
- const report=JSON.parse(files.get(configuration.report));assert.equal(report.status,'ready');assert.equal(report.readyForClose,true);assert.equal(report.realNativePlayback,true);assert.equal(report.stopConfirmed,mode==='stop-close');assert.equal(timers.size,0);
+ const report=JSON.parse(files.get(configuration.report));
+ if(mode==='rejected-command'||mode==='private-command-error'){
+  assert.equal(report.status,'failed');assert.equal(report.readyForClose,false);assert.equal(report.realNativePlayback,false);assert.equal(report.stage,'loadfile');
+  assert.equal(report.nativeErrorReason,mode==='rejected-command'?'loadfile-shape-invalid':'UNAVAILABLE');assert.equal(report.failedOperation,'command');
+  assert.equal(JSON.stringify(report).includes('PRIVATE_SYNTHETIC_PATH_CANARY'),false);return;
+ }
+ assert.equal(report.status,'ready');assert.equal(report.readyForClose,true);assert.equal(report.realNativePlayback,true);assert.equal(report.stopConfirmed,mode==='stop-close');assert.equal(timers.size,0);
  assert.equal(calls[0].operation,'create');assert.ok(calls.some(c=>c.operation==='get-property'&&c.payload.name==='video-out-params'));
+ assert.equal(calls.find(c=>c.operation==='command'&&c.payload.data[0]==='loadfile').payload.data.length,2);
  assert.ok(sent.some(s=>s.channel==='enhanced-windows-native-media-state'&&s.packet.active===true));
  if(mode==='stop-close')assert.ok(calls.some(c=>c.operation==='get-property'&&c.payload.name==='core-idle'&&c.payload.generationId===null));
 });

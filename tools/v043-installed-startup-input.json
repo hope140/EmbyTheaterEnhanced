@@ -1,5 +1,5 @@
 {
-  "enabled": true,
+  "enabled": false,
   "sourceCommit": "69e55b91a0cc6ba4b01ce60cb65d9aca41b0311e",
   "buildRunId": "40151393246",
   "installerFileName": "EmbyTheaterEnhanced-0.4.3-win-x64-setup.exe",

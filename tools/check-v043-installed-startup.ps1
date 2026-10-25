@@ -246,11 +246,15 @@ if(app)app.exit(0);
     $result.environmentReset.hostNodeOptionsAbsent=-not [Environment]::GetEnvironmentVariables('Process').Contains('NODE_OPTIONS')
     if($NativePlaybackCases) {
         Require $releaseMode 'NATIVE_CASES_REQUIRE_PUBLISHED_RELEASE'
+        $result.stage='native-playback-exit-cases'
         InitializeWindowsApi; $windowsApiReady=$true
         . (Join-Path $PSScriptRoot 'check-v043-native-exit-cases.ps1')
         $result.scope='ordinary-installed-host-native-ipc-play-close'
         $result.nativeExit=Invoke-NativeExitCases -Target $target -Shortcut $shortcut -Profile $profile -Manifest $manifest -Work $work
         $result.forcedTermination=$result.nativeExit.forcedCleanup
+        $result.hostStarted=@($result.nativeExit.cases|Where-Object {$_.hostStarted}).Count -gt 0
+        $result.electronParentVerified=@($result.nativeExit.cases|Where-Object {$_.electronParentVerified}).Count -gt 0
+        $result.visibleWindow=@($result.nativeExit.cases|Where-Object {$_.visibleWindowObserved}).Count -gt 0
         Require ($result.nativeExit.status -ceq 'passed') 'NATIVE_EXIT_CASES_FAILED'
         $result.hostStarted=$true;$result.electronParentVerified=$true;$result.visibleWindow=$true;$result.normalCloseRequested=$true;$result.ownedRemainingCount=0
         $lastCase=$result.nativeExit.cases[$result.nativeExit.cases.Count-1];$result.hostExitCode=$lastCase.hostExitCode;$result.electronExitCode=$lastCase.electronExitCode;$result.diagnosticLogPersisted=$lastCase.diagnosticLogPersisted

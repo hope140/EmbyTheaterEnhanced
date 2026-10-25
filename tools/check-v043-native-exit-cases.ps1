@@ -56,7 +56,7 @@ function Invoke-NativeExitCases([string]$Target,$Shortcut,[string]$Profile,$Mani
         Require ($LASTEXITCODE -eq 0) 'FIXTURE_GENERATION_FAILED'
         $fixtureHash=(Get-FileHash -LiteralPath $fixture -Algorithm SHA256).Hash.ToLowerInvariant();$summary.fixtureSha256=$fixtureHash
         foreach($spec in @(@('playing-close','playing-close'),@('stop-close','stop-close'),@('repeat-playing-close','playing-close'))) {
-            $case=[ordered]@{id=$spec[0];status='failed';stage='preflight';normalCloseRequested=$false;functionalExitPassed=$false;hostExitCode=$null;electronExitCode=$null;helperExitCode=$null;ownedRemaining=$null;diagnosticLogPersisted=$false;snapshots=@()}
+            $case=[ordered]@{id=$spec[0];status='failed';stage='preflight';hostStarted=$false;electronParentVerified=$false;visibleWindowObserved=$false;helperStarted=$false;normalCloseRequested=$false;functionalExitPassed=$false;hostExitCode=$null;electronExitCode=$null;helperExitCode=$null;ownedRemaining=$null;diagnosticLogPersisted=$false;snapshots=@()}
             $rows.Add($case);$hostProcess=$null;$electronProcess=$null;$helperProcess=$null
             try {
                 Require (@(Processes).Count -eq 0) 'OWNED_PROCESS_BEFORE_CASE'
@@ -64,6 +64,7 @@ function Invoke-NativeExitCases([string]$Target,$Shortcut,[string]$Profile,$Mani
                 $case.stage='ordinary-host-start';$start=[DateTime]::UtcNow
                 $hostProcess=Start-Process -FilePath $Shortcut.TargetPath -WorkingDirectory $Shortcut.WorkingDirectory -RedirectStandardOutput (Join-Path $Work ($spec[0]+'.host.stdout.log')) -RedirectStandardError (Join-Path $Work ($spec[0]+'.host.stderr.log')) -PassThru
                 $null=$hostProcess.Handle
+                $case.hostStarted=$true;$case.hostPid=$hostProcess.Id;$case.stage='await-real-native-playing'
                 $deadline=[DateTime]::UtcNow.AddSeconds(65);$renderer=$null;$mainRow=$null;$helperRow=$null;$windows=@()
                 do {
                     Require (-not $hostProcess.HasExited) 'HOST_EXITED_DURING_PLAY_START'
@@ -72,9 +73,11 @@ function Invoke-NativeExitCases([string]$Target,$Shortcut,[string]$Profile,$Mani
                     if($main.Count -eq 1) {
                         $mainRow=$main[0]
                         Require ($mainRow.CommandLine.Contains('"'+(Join-Path $Target 'electronapp')+'"') -and $mainRow.CommandLine -notmatch 'native-preview-trial|ete-page-cache-test') 'NON_ORDINARY_ARGUMENTS'
+                        $case.electronParentVerified=$true;$case.electronPid=[int]$mainRow.ProcessId
                         $windows=@([V043Window]::Visible($mainRow.ProcessId))
+                        $case.visibleWindowObserved=$windows.Count -eq 1
                         $helpers=@($all|Where-Object {$_.ExecutablePath -ieq (Join-Path $Target 'electronapp/native-helper/ete-mpv-helper.exe') -and $_.ParentProcessId -eq $mainRow.ProcessId})
-                        if($helpers.Count -eq 1){$helperRow=$helpers[0]}
+                        if($helpers.Count -eq 1){$helperRow=$helpers[0];$case.helperStarted=$true;$case.helperPid=[int]$helperRow.ProcessId}
                     }
                     if(Test-Path -LiteralPath $report){try{$renderer=Get-Content -LiteralPath $report -Raw|ConvertFrom-Json}catch{$renderer=$null}}
                     if($renderer -and $renderer.caseId -ceq $spec[0] -and $renderer.status -ceq 'failed'){$case.renderer=$renderer;throw 'NATIVE_RENDERER_FIXTURE_FAILED'}
@@ -111,6 +114,8 @@ function Invoke-NativeExitCases([string]$Target,$Shortcut,[string]$Profile,$Mani
             } catch {
                 $case.errorCode=if($_.Exception.Message -cmatch '^[A-Z_]{1,100}$'){$_.Exception.Message}else{'UNEXPECTED_CASE_EXCEPTION'}
                 $case.errorType=$_.Exception.GetType().Name;$case.scriptLine=$_.InvocationInfo.ScriptLineNumber
+                $case.hostExitedAtFailure=$null -ne $hostProcess -and $hostProcess.HasExited
+                if($case.hostExitedAtFailure){$case.hostExitCode=$hostProcess.ExitCode}
                 $hostText=(ReadBoundedText (Join-Path $Work ($spec[0]+'.host.stdout.log')))+[char]10+(ReadBoundedText (Join-Path $Work ($spec[0]+'.host.stderr.log')))
                 $case.hostText=ProjectHostText $hostText $Target
                 $case.remainingAtFailure=@(Snapshot @(Processes))

@@ -16,7 +16,7 @@ let endpointId=null,generationId=null,sequence=1000000,sessionToken=null;
 function write(){fs.writeFileSync(paths.report+'.tmp',JSON.stringify(result));fs.renameSync(paths.report+'.tmp',paths.report);}
 function requireValue(value,code){if(!value)throw Error(code);}
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-async function call(operation,payload={}){const value=await ipc.invoke('enhanced-native-helper-call',{operation,payload,endpointId});requireValue(value&&value.status!=='error','NATIVE_'+operation.toUpperCase().replace(/-/g,'_')+'_FAILED');return value;}
+async function call(operation,payload={}){const value=await ipc.invoke('enhanced-native-helper-call',{operation,payload,endpointId});if(value&&value.status==='error'){const known=['loadfile-shape-invalid','loadfile-options-invalid','loadfile-source-invalid','command-invalid','command-not-allowed','generation-superseded','stale-endpoint','stale-generation','native-helper-unavailable'];result.nativeErrorReason=known.includes(value.reason)?value.reason:'UNAVAILABLE';result.failedOperation=operation;}requireValue(value&&value.status!=='error','NATIVE_'+operation.toUpperCase().replace(/-/g,'_')+'_FAILED');return value;}
 async function property(name,generation=generationId){return (await call('get-property',{name,generationId:generation})).value;}
 function state(active,position){ipc.send('enhanced-windows-native-media-state',{version:4,nativeOwner:active?{endpointId,generationId}:null,playbackEpoch:1,active,paused:false,title:active?'Synthetic native exit check':'',mediaKey:active?'a'.repeat(64):'',mediaType:active?'Video':'',duration:60,position:active?Math.min(60,Math.max(0,position)):0,rate:1,sequence:++sequence,sessionToken,canPrevious:false,canNext:false});}
 async function run(){
@@ -24,9 +24,9 @@ async function run(){
  result.stage='native-create';write();const created=await call('create');endpointId=created.endpointId;
  requireValue(created.mode==='native-helper'&&typeof endpointId==='string','REAL_NATIVE_ENDPOINT_REQUIRED');
  result.helperVersion=created.helperVersion;result.libmpvVersion=created.libmpvVersion;
- generationId=(await call('begin-generation',{label:'synthetic-exit-check',requestEpoch:1000000})).generationId;
+ result.stage='begin-generation';write();generationId=(await call('begin-generation',{label:'synthetic-exit-check',requestEpoch:1000000})).generationId;
  requireValue(Number.isSafeInteger(generationId)&&generationId>0,'NATIVE_GENERATION_REQUIRED');
- await call('command',{data:['loadfile',paths.clip,'replace'],generationId});
+ result.stage='loadfile';write();await call('command',{data:['loadfile',paths.clip],generationId});
  ipc.send('enhanced-native-helper-notify',{operation:'set-visible',payload:{visible:true,generationId},endpointId});
  result.stage='await-decoded-playing';write();const deadline=Date.now()+20000;
  let position=null,params=null;
