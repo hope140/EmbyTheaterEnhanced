@@ -1,5 +1,21 @@
 # 共享播放缓存：独立Windows合成验收
 
+## 当前：将已验证的执行合同接回四阶段
+
+[Native有限对照40234836887](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40234836887)已实际三例全通过：helper空闲、本地播放、播放加一次64×64彩色预览；renderer中的void实际跨界为null，同frame ACK21／22、24个观察、六个脚本和四次IPC完整。三个Electron和helper均自然退出0、流关闭、无signal／timeout／kill。该结果排除“helper或preview必然阻塞”的判断，仍不包含下述四阶段或真实115。
+
+本轮只将这套完成确认和收尾接回原四阶段工具，产品、固定包与原身份门禁不变。boot／pause／unpause／Stop原表达式各执行一次，在renderer内验证void，写入递增序号并仍返回void；main记录wire类型，从同一捕获frame读取本次固定1000＋序号ACK。原动作与ACK共用一个原动作deadline，不能各拿一次完整等待；换frame、导航、退休、旧ACK、缺ACK和异常均失败。seek原返回true另严格验证。boot还需initial-play-resolved且无renderer-failure；pause／unpause仍需原native属性及推进，Stop仍需destroy IPC、真实helper exit／close和本次媒体server-stop回报，不能以ACK代替。
+
+清理共用一次Promise并锁定失败；来源读取计入原每worker40秒／播放协调工作120秒，截止前5秒进入失败清理，不放宽期限。Native销毁失败后仍独立确认每个helper退出／流关闭，未知不显式销毁其carrier、不进入下一阶段；退出已证实但renderer后续固定17不返回也失败。store检查只在原后端关闭后进行，超时或退休的迟到open必须关闭，未校验数据不作为成功。正常路径先关闭所属helper，再确认窗口销毁、写回执和app.exit；外层仍须看到实际PID退出0／无signal／流close／无进程错误。
+
+协调器移植同一有界收集方式，将最后2秒留在原120秒工作预算内；未知退出只写FAIL并停止后续阶段，EPERM／EACCES不反复终止。源服务仍走既有HTTP／gRPC物理收尾，gRPC原有3秒收尾界不变；不能把工作deadline描述为所有OS资源无条件在120秒硬退出。原四阶段尚未通过，旧driver本就没有严格undefined断言，故本轮不能声称已找到旧超时首因。
+
+下一次只选Public offline CI的原四阶段路线：smoke=true、diagnostics=false、release_package=false、build_input_benchmark=false；benchmark_warm_calls保留默认3，benchmark_trials默认4且本模式不用，expected_sha绑定新工具。继续复用artifact12609342891、原ZIP SHA89b1947dc7946ec3505d4f5fb780b81df21725517d8ed46f7e37f68382396150和installer SHA1e38c2b2ed440b112e23ec838f16ca2e5debd6a88be7dc87bb42864c30c6883d；下载前仍重核有效期和来源，禁止换包身份。不重新打包、自动dispatch或访问真实媒体。
+
+本轮完整离线2726项：2713通过、0失败、13项既有平台跳过，约61.6秒；ACK／收集器／deadline／迟到store／原四阶段门禁定向40项通过。JS580／PowerShell53语法、有限凭据模式及新增文档链接／补丁格式通过。确定性VM不代替Windows或真实helper；当前完整四阶段仍待一次实际运行。
+
+以下为历史准备与验证记录，不能把其待执行状态替代上述最新状态。
+
 状态：2e99cf2的完整Windows公共CI（2555通过、0失败、4跳过）、8次固定自然切集稳定性及独立打包验证（2653通过、0失败、1个Unix跳过）通过。首次Native短验在prepare参数解析失败，未启动helper；当前仅修工具／测试，不改产品或内核。不得将这些结果当作真实Native、普通可见UI或115验收。
 
 ## 来源与执行边界

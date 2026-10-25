@@ -27,10 +27,10 @@ function within(task, timeoutMs, code) {
 }
 // Invoke only the already loaded trusted frame. WebContents.executeJavaScript
 // has an additional loading gate; this owned harness must observe its commands.
-async function executeStableFrame(contents, expectedUrl, script) {
+async function executeStableFrame(contents, expectedUrl, script, expectedFrame) {
   need(contents && !contents.isDestroyed(), 'worker-frame-untrusted');
-  const frame = contents.mainFrame;
-  need(frame && !frame.isDestroyed() && !frame.detached && frame.url === expectedUrl, 'worker-frame-untrusted');
+  const frame = expectedFrame || contents.mainFrame;
+  need(frame && contents.mainFrame === frame && !frame.isDestroyed() && !frame.detached && frame.url === expectedUrl, 'worker-frame-untrusted');
   const result = await frame.executeJavaScript(script);
   need(!contents.isDestroyed() && contents.mainFrame === frame && !frame.isDestroyed() &&
     !frame.detached && frame.url === expectedUrl, 'worker-frame-retired');
@@ -43,6 +43,30 @@ function observeExpression(script, label) {
   const probe = code => 'window.prefixHarness.report({type:"evaluation-probe",operation:' + JSON.stringify(label) + ',code:' + JSON.stringify(code) + '});';
   return '(() => {' + probe('entered') + 'const value = (' + script + ');' + probe('returned') +
     'Promise.resolve(value).then(() => {' + probe('settled') + '}, () => {' + probe('rejected') + '}); return value;})()';
+}
+function voidCommandExpression(script, sequence) {
+  need(typeof script === 'string' && Number.isSafeInteger(sequence) && sequence > 0 && sequence <= 32, 'worker-void-invalid');
+  return '(() => { if ((window.__ownedSmokeVoidSequence || 0) !== ' + (sequence - 1) +
+    ') throw Error("worker-void-sequence"); return Promise.resolve((' + script + ')).then(value => {' +
+    ' if (typeof value !== "undefined") throw Error("worker-command-not-void");' +
+    ' window.__ownedSmokeVoidSequence = ' + sequence + '; window.__ownedSmokeVoidType = typeof value; return value; }); })()';
+}
+function voidCommandAckExpression(sequence) {
+  need(Number.isSafeInteger(sequence) && sequence > 0 && sequence <= 32, 'worker-void-invalid');
+  return '(window.__ownedSmokeVoidSequence === ' + sequence + ' && window.__ownedSmokeVoidType === "undefined") ? ' + (1000 + sequence) + ' : -1';
+}
+async function executeAcknowledgedVoid(contents, expectedUrl, script, label, sequence, timeoutMs, isActive = () => true) {
+  need(typeof isActive === 'function' && Number.isFinite(timeoutMs) && timeoutMs > 0 && /^[a-z-]{1,80}$/.test(label), 'worker-evaluation-invalid');
+  const deadline = Date.now() + timeoutMs;
+  const budget = () => {need(isActive(), 'worker-evaluation-retired'); const left = deadline - Date.now(); need(left > 0, label + '-timeout'); return left;};
+  need(contents && !contents.isDestroyed(), 'worker-frame-untrusted');
+  const frame = contents.mainFrame;
+  const expression = observeExpression(voidCommandExpression(script, sequence), label);
+  const value = await within(() => {budget(); return executeStableFrame(contents, expectedUrl, expression, frame);}, budget(), label + '-timeout');
+  const wireResultType = value === null ? 'null' : typeof value;
+  const completionAck = await within(() => {budget(); return executeStableFrame(contents, expectedUrl, voidCommandAckExpression(sequence), frame);}, budget(), label + '-ack-timeout');
+  budget(); need(completionAck === 1000 + sequence, 'worker-command-ack-missing');
+  return {wireResultType, completionAck, rendererResultType: 'undefined'};
 }
 function write(file, value, exclusive = true) {
   fs.writeFileSync(file, JSON.stringify(value, null, 2) + '\n', {flag: exclusive ? 'wx' : 'w', mode: 0o600});
@@ -130,8 +154,14 @@ function validatePhaseEvidence(result, events) {
   const phase = result.phase;
   need(Number.isSafeInteger(result.spawnPid) && result.spawnPid > 0 && Number.isSafeInteger(result.coordinatorPid) && result.coordinatorPid > 0 && result.receipt?.workerPid === result.spawnPid &&
     result.receipt?.workerParentPid === result.coordinatorPid && result.receipt?.workerType === 'browser', 'worker-pid-binding');
-  need(PHASES.includes(phase) && result.exitCode === 0 && result.streamsClosed && !result.timedOut &&
+  need(PHASES.includes(phase) && result.exitConfirmed === true && result.exitCode === 0 && result.exitSignal === null && result.terminationReason === null && result.streamsClosed && !result.timedOut &&
     result.receipt?.status === 'PASS' && result.receipt.ownedHelpersClosed === true, 'worker-phase-failed');
+  const expected = phase === 'baseline' || phase === 'natural' ? ['renderer-boot', 'seek-forward-pause-command',
+    'seek-forward-unpause-command', 'seek-back-pause-command', 'seek-back-unpause-command', 'stop-command'] : ['renderer-boot', 'stop-command'];
+  need(result.receipt.afterHelper === 17 && Array.isArray(result.receipt.evaluations) && result.receipt.evaluations.length === expected.length &&
+    result.receipt.evaluations.every((row, i) => row && row.operation === expected[i] && row.sequence === i + 1 &&
+      row.completionAck === 1001 + i && row.rendererResultType === 'undefined' &&
+      ['null', 'undefined', 'boolean', 'number', 'string', 'object', 'bigint', 'symbol', 'function'].includes(row.wireResultType)), 'worker-command-evidence-missing');
   if (phase === 'natural') {
     const loadB = result.receipt.trace.find(r => r.type === 'load' && r.item === 'B' && r.proxied);
     need(loadB && result.receipt.checks.preloaded && !events.some(r => r.phase === phase && r.type === 'media-open' && r.item === 'B' &&
@@ -150,7 +180,7 @@ function validatePhaseEvidence(result, events) {
 }
 function childEnvironment(profile, inherited = process.env) {
   const env = {...inherited};
-  for (const key of Object.keys(env)) if (/^(?:ELECTRON_RUN_AS_NODE|NODE_OPTIONS|NODE_PATH|NODE_USE_ENV_PROXY|HTTP_PROXY|HTTPS_PROXY|ALL_PROXY|NO_PROXY)$/i.test(key)) delete env[key];
+  for (const key of Object.keys(env)) if (/^(?:ELECTRON_RUN_AS_NODE|NODE_OPTIONS|NODE_PATH|NODE_USE_ENV_PROXY|HTTP_PROXY|HTTPS_PROXY|ALL_PROXY|NO_PROXY|GH_TOKEN|GITHUB_TOKEN|ACTIONS_RUNTIME_TOKEN|ACTIONS_ID_TOKEN_REQUEST_TOKEN)$/i.test(key)) delete env[key];
   Object.assign(env, {APPDATA: path.join(profile, 'appdata'), LOCALAPPDATA: path.join(profile, 'localappdata'),
     MPV_HOME: path.join(profile, 'mpv'), TMP: path.join(profile, 'temp'), TEMP: path.join(profile, 'temp'),
     TMPDIR: path.join(profile, 'temp'), NO_PROXY: '127.0.0.1,localhost', no_proxy: '127.0.0.1,localhost'});
@@ -170,7 +200,8 @@ function safeFailure(error) {
 }
 async function child(plan, phase, sessionFile, deadline) {
   const executable = path.join(plan.runtime, 'x64/electron/electron.exe');
-  const phaseDeadlineAt = Math.min(deadline, Date.now() + plan.limits.phaseDeadlineMs);
+  // Keep collection/termination inside the unchanged overall 120-second bound.
+  const phaseDeadlineAt = Math.min(deadline - 2000, Date.now() + plan.limits.phaseDeadlineMs);
   const args = [path.join(plan.repo, 'tools/shared-playback-cache/windows-electron.cjs'),
     '--plan=' + path.join(plan.out, 'plan.json'), '--plan-sha256=' + sha(fs.readFileSync(path.join(plan.out, 'plan.json'))),
     '--session=' + sessionFile, '--session-sha256=' + sha(fs.readFileSync(sessionFile)), '--deadline-ms=' + phaseDeadlineAt, '--phase=' + phase];
@@ -180,36 +211,58 @@ async function child(plan, phase, sessionFile, deadline) {
       shell: false, stdio: ['ignore', 'pipe', 'pipe']});
     const spawnPid = owned.pid, coordinatorPid = process.pid, startedAt = Date.now(), processTimeline = [];
     const mark = (event, facts = {}) => {if (processTimeline.length < 24) processTimeline.push({event, elapsedMs: Date.now() - startedAt, ...facts});};
-    let spawnSeen = false;
+    const listeners = [];
+    const listen = (target, event, fn, once = false) => {target[once ? 'once' : 'on'](event, fn); listeners.push({target, event, fn});};
+    function ignoreLateError() {}
+    let spawnSeen = false, denied = false, done = false, timer, force, final;
     mark('spawn-requested', {pid: spawnPid || null});
-    owned.once('spawn', () => {spawnSeen = true; mark('spawn', {pid: owned.pid || null});});
-    let terminationReason = null;
-    let timedOut = false, stderrBytes = 0, stdoutBytes = 0, exitCode = null, exitSignal = null, force, stdoutTail = ''; const workerStages = [];
-    const stop = reason => {if (timedOut) return; timedOut = true; terminationReason = reason;
-      mark('terminate', {reason, requested: owned.kill()});
-      force = setTimeout(() => {if (owned.exitCode === null) mark('force-terminate', {requested: owned.kill('SIGKILL')});}, 1000);};
-    const timer = setTimeout(() => stop('deadline'), Math.max(1, phaseDeadlineAt - Date.now()));
-    owned.stdout.on('data', b => {
+    listen(owned, 'spawn', () => {spawnSeen = true; mark('spawn', {pid: owned.pid || null});}, true);
+    let terminationReason = null, exitConfirmed = false;
+    let timedOut = false, stderrBytes = 0, stdoutBytes = 0, exitCode = null, exitSignal = null, stdoutTail = ''; const workerStages = [];
+    const finish = closed => {
+      if (done) return; done = true; clearTimeout(timer); clearTimeout(force); clearTimeout(final);
+      let receipt = null, lifecycle = null;
+      try {const bytes = fs.readFileSync(path.join(plan.out, phase + '.json')); if (bytes.length <= 256 * 1024) receipt = JSON.parse(bytes);} catch (_) {}
+      try {const bytes = fs.readFileSync(path.join(plan.out, phase + '.lifecycle.json')); if (bytes.length <= 32768) lifecycle = JSON.parse(bytes);} catch (_) {}
+      for (const {target, event, fn} of listeners) target.removeListener(event, fn);
+      if (!closed) {
+        for (const target of [owned, owned.stdout, owned.stderr]) target.on('error', ignoreLateError);
+        owned.stdout.destroy(); owned.stderr.destroy(); owned.unref();
+      } // Observation released after FAIL/unknown; never invent an exit/close.
+      resolve({phase, spawnPid, coordinatorPid, processTimeline, terminationReason, lifecycle, exitCode, exitSignal, exitConfirmed,
+        streamsClosed: closed, timedOut, stderrBytes, stdoutBytes, workerStages,
+        helperExitAssessment: receipt?.ownedHelpersClosed ? 'CONFIRMED' : 'UNCERTAIN', receipt});
+    };
+    const kill = signal => {
+      if (denied || exitConfirmed) return false;
+      try {return owned.kill(signal);} catch (error) {
+        denied ||= error.code === 'EPERM' || error.code === 'EACCES'; mark('terminate-error'); return false;
+      }
+    };
+    const stop = reason => {
+      if (timedOut || done) return; timedOut = true; terminationReason = reason;
+      mark('terminate', {reason, requested: kill()});
+      force = setTimeout(() => {if (!exitConfirmed && !denied) mark('force-terminate', {requested: kill('SIGKILL')});}, 1000);
+      final = setTimeout(() => {mark('collection-unconfirmed'); finish(false);}, Math.min(2000, Math.max(1, deadline - Date.now())));
+    };
+    listen(owned.stdout, 'data', b => {
       stdoutBytes += b.length; if (stdoutBytes > 128 * 1024) {stop('stdout-limit'); return;}
       stdoutTail += b.toString('utf8'); const lines = stdoutTail.split(/\r?\n/); stdoutTail = lines.pop();
       for (const line of lines) {const match = /^SHARED_CACHE_WORKER ([a-z-]{1,100})$/.exec(line);
         if (match && workerStages.length < 64) workerStages.push(match[1]);}
       if (stdoutTail.length > 8192) stop('stdout-line-limit');
     });
-    owned.stderr.on('data', b => {stderrBytes += b.length; if (stderrBytes > 256 * 1024) stop('stderr-limit');});
-    owned.stdout.once('close', () => mark('stdout-close'));
-    owned.stderr.once('close', () => mark('stderr-close'));
-    owned.on('error', error => {const reason = spawnSeen ? 'process-error' : 'spawn-error'; terminationReason ||= reason;
-      mark(reason, {code: /^[A-Z0-9_]{1,40}$/.test(error.code || '') ? error.code : null});});
-    owned.once('exit', (code, signal) => {exitCode = code; exitSignal = signal; mark('exit', {code, signal});});
-    owned.once('close', () => {mark('close'); clearTimeout(timer); clearTimeout(force);
-      let receipt = null;
-      try {receipt = JSON.parse(fs.readFileSync(path.join(plan.out, phase + '.json')));} catch (_) {}
-      let lifecycle = null;
-      try {const bytes = fs.readFileSync(path.join(plan.out, phase + '.lifecycle.json')); if (bytes.length <= 32768) lifecycle = JSON.parse(bytes);} catch (_) {}
-      resolve({phase, spawnPid, coordinatorPid, processTimeline, terminationReason, lifecycle, exitCode, exitSignal, streamsClosed: true, timedOut, stderrBytes, stdoutBytes, workerStages,
-        helperExitAssessment: timedOut ? 'UNCERTAIN' : receipt?.ownedHelpersClosed ? 'CONFIRMED' : 'UNCERTAIN', receipt});
+    listen(owned.stderr, 'data', b => {stderrBytes += b.length; if (stderrBytes > 256 * 1024) stop('stderr-limit');});
+    listen(owned.stdout, 'close', () => mark('stdout-close'), true);
+    listen(owned.stderr, 'close', () => mark('stderr-close'), true);
+    listen(owned, 'error', error => {
+      denied ||= error.code === 'EPERM' || error.code === 'EACCES';
+      const reason = spawnSeen ? 'process-error' : 'spawn-error'; terminationReason ||= reason;
+      mark(reason, {code: /^[A-Z0-9_]{1,40}$/.test(error.code || '') ? error.code : null});
     });
+    listen(owned, 'exit', (code, signal) => {exitConfirmed = true; exitCode = code; exitSignal = signal; mark('exit', {code, signal});}, true);
+    listen(owned, 'close', () => {mark('close'); finish(true);}, true);
+    timer = setTimeout(() => stop('deadline'), Math.max(1, phaseDeadlineAt - Date.now()));
   });
 }
 async function run({planFile}) {
@@ -227,7 +280,7 @@ async function run({planFile}) {
     const sessionFile = path.join(plan.out, 'sources.json');
     write(sessionFile, {schema: 1, origin: sources.origin, mediaOrigin: sources.mediaOrigin, cd2Endpoint: sources.cd2Endpoint});
     for (phase of PHASES) {
-      need(Date.now() < deadline, 'run-deadline');
+      need(Date.now() < deadline - 2000, 'run-deadline');
       sources.setHoldNext?.(phase === 'cancel' ? 'B' : null);
       const result = await child(plan, phase, sessionFile, deadline); results.push(result);
       const heldRequest = validatePhaseEvidence(result, events);
@@ -252,9 +305,11 @@ async function run({planFile}) {
     console.log('SHARED_CACHE_WINDOWS ' + JSON.stringify({status: report.status, productCommit: report.productCommit,
       toolCommit: report.toolCommit, stage: report.stage || 'complete', code: report.code || null,
       cases: results.map(r => ({phase: r.phase, spawnPid: r.spawnPid, coordinatorPid: r.coordinatorPid,
-        processTimeline: r.processTimeline, terminationReason: r.terminationReason, lifecycle: r.lifecycle, exitCode: r.exitCode, timedOut: r.timedOut,
+        processTimeline: r.processTimeline, terminationReason: r.terminationReason, lifecycle: r.lifecycle, exitCode: r.exitCode, exitSignal: r.exitSignal,
+        exitConfirmed: r.exitConfirmed, streamsClosed: r.streamsClosed, timedOut: r.timedOut,
         workerStages: r.workerStages, code: r.receipt?.code || r.receipt?.cleanupCode || null,
-        ownedHelpersClosed: r.receipt?.ownedHelpersClosed, checks: r.receipt?.checks,
+        ownedHelpersClosed: r.receipt?.ownedHelpersClosed, checks: r.receipt?.checks, afterHelper: r.receipt?.afterHelper,
+        evaluations: r.receipt?.evaluations || [],
         receiptOrigin: r.receipt?.receiptOrigin || null, evaluationTrace: (r.receipt?.trace || []).filter(e => e.type === 'evaluation-probe').slice(-24)
           .map(({operation, code}) => ({operation, code})), hiddenHarnessBackgroundThrottling: r.receipt?.hiddenHarnessBackgroundThrottling,
         stopTrace: (r.receipt?.trace || []).filter(e => ['stop-stage', 'destroy-ipc'].includes(e.type)).slice(-12)
@@ -274,7 +329,7 @@ function argumentsOf(argv) {
   need(allowed.every(k => values[k]), 'missing-argument');
   return {mode, values};
 }
-module.exports = {OWNER, PHASES, TOOL_FILES, watchdogDelay, within, executeStableFrame, observeExpression, prepare, readPlan, childEnvironment, safeFailure, argumentsOf, validateProfile, coloredFrame, validatePhaseEvidence, safeNativeTags, boundToolBytes};
+module.exports = {OWNER, PHASES, TOOL_FILES, watchdogDelay, within, executeStableFrame, observeExpression, voidCommandExpression, voidCommandAckExpression, executeAcknowledgedVoid, prepare, readPlan, childEnvironment, safeFailure, argumentsOf, validateProfile, coloredFrame, validatePhaseEvidence, safeNativeTags, boundToolBytes};
 if (require.main === module) (async () => {
   const {mode, values: v} = argumentsOf(process.argv.slice(2));
   if (mode === 'prepare') {await prepare({repo: v.repo, runtime: v.runtime, installer: v.installer,

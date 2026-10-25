@@ -48,8 +48,10 @@ test('the actual PowerShell prepare invocation preserves SHA256 and spaced paths
 });
 test('child environment isolates every media/profile directory and removes executable/proxy injection', () => {
   const root = path.resolve(os.tmpdir(), 'owned-windows-smoke');
-  const env = driver.childEnvironment(root, {NODE_OPTIONS: '--require=unowned', ELECTRON_RUN_AS_NODE: '1', http_proxy: 'foreign', SystemRoot: 'owned-system'});
+  const env = driver.childEnvironment(root, {NODE_OPTIONS: '--require=unowned', ELECTRON_RUN_AS_NODE: '1', http_proxy: 'foreign',
+    GH_TOKEN: 'synthetic-only', GITHUB_TOKEN: 'synthetic-only', ACTIONS_RUNTIME_TOKEN: 'synthetic-only', ACTIONS_ID_TOKEN_REQUEST_TOKEN: 'synthetic-only', SystemRoot: 'owned-system'});
   assert.equal(env.NODE_OPTIONS, undefined); assert.equal(env.http_proxy, undefined); assert.equal(env.ELECTRON_RUN_AS_NODE, undefined);
+  for (const key of ['GH_TOKEN', 'GITHUB_TOKEN', 'ACTIONS_RUNTIME_TOKEN', 'ACTIONS_ID_TOKEN_REQUEST_TOKEN']) assert.equal(env[key], undefined);
   assert.equal(env.APPDATA, path.join(root, 'appdata')); assert.equal(env.LOCALAPPDATA, path.join(root, 'localappdata'));
   assert.equal(env.MPV_HOME, path.join(root, 'mpv')); assert.equal(env.TEMP, path.join(root, 'temp'));
   assert.equal(env.NO_PROXY, '127.0.0.1,localhost'); assert.equal(env.SystemRoot, 'owned-system');
@@ -72,9 +74,23 @@ test('opaque black alpha is not a decoded color-frame success', () => {
   assert.equal(driver.coloredFrame({width: 1, height: 1, pixels: Buffer.from([15, 0, 3, 255])}), true);
   assert.equal(driver.coloredFrame({width: 2, height: 1, pixels: Buffer.from([15, 0, 3, 255])}), false);
 });
-const result = phase => ({phase, spawnPid: 1001, coordinatorPid: 1000, exitCode: 0, streamsClosed: true, timedOut: false,
+const result = phase => ({phase, spawnPid: 1001, coordinatorPid: 1000, exitCode: 0, exitSignal: null, exitConfirmed: true, terminationReason: null, streamsClosed: true, timedOut: false,
   receipt: {status: 'PASS', workerPid: 1001, workerParentPid: 1000, workerType: 'browser', ownedHelpersClosed: true, checks: {preloaded: true},
+    afterHelper: 17, evaluations: (phase === 'baseline' || phase === 'natural' ? ['renderer-boot', 'seek-forward-pause-command',
+      'seek-forward-unpause-command', 'seek-back-pause-command', 'seek-back-unpause-command', 'stop-command'] : ['renderer-boot', 'stop-command'])
+      .map((operation, i) => ({operation, sequence: i + 1, completionAck: 1001 + i, rendererResultType: 'undefined', wireResultType: 'null'})),
     trace: [{type: 'load', item: 'B', proxied: true, wallClockMs: 100}]}});
+test('phase PASS cannot replace acknowledged commands, post-helper response, or physical exit evidence', () => {
+  for (const change of [r => {r.exitConfirmed = false;}, r => {r.exitSignal = 'SIGTERM';}, r => {r.streamsClosed = false;}, r => {r.terminationReason = 'process-error';}]) {
+    const r = result('baseline'); change(r); assert.throws(() => driver.validatePhaseEvidence(r, []), /worker-phase-failed/);
+  }
+  for (const change of [r => {delete r.receipt.afterHelper;}, r => {r.receipt.evaluations = [];},
+    r => {r.receipt.evaluations[1].sequence = 1;}, r => {r.receipt.evaluations[1].completionAck = 1001;},
+    r => {r.receipt.evaluations[1].rendererResultType = 'number';}, r => {r.receipt.evaluations[1].wireResultType = 'private-value';}]) {
+    const r = result('baseline'); change(r); assert.throws(() => driver.validatePhaseEvidence(r, []), /worker-command-evidence-missing/);
+  }
+  assert.equal(driver.validatePhaseEvidence(result('baseline'), []), null);
+});
 test('worker success cannot substitute a different launcher PID, parent PID or process role', () => {
   for (const change of [r => {r.receipt.workerPid = 2002;}, r => {r.receipt.workerParentPid = 2002;},
     r => {r.receipt.workerType = 'renderer';}]) {

@@ -4,6 +4,8 @@
 
 ## 已证实的前提
 
+[修正版40234836887](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40234836887)三例实际全部PASS：rendererResultType为undefined、wireResultType为null，立即Promise和定时Promise的同frame ACK21／22均正确；24个观察、六个固定脚本和四次IPC完整。三个Electron约8.35／8.57／8.35秒自然退出0且流关闭，无signal或timeout；三个helper自然退出0、无kill／pending／操作错误。播放0→0.133秒，预览0→0.2秒且64×64有色帧通过。该实证不代表原四阶段验收通过；后续工具接回范围见[四阶段合同](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。
+
 [无媒体Windows运行40231087731](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40231087731)的bare、WebContents、主frame三例均通过。三个实际子进程分别约6.655、7.340、7.339秒，PID与回执／父进程绑定，退出0且流关闭，无signal或超时。固定Electron44.4.2；两个窗口案例六个脚本、四次顺序IPC与18个进入／返回／结算记录完整。来源复核约6.6秒；这个结果不代替媒体、Native或缓存验收。
 
 [首次Native对照40233940619](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40233940619)三例均在首个void表达式完成后1–2毫秒因工具的严格undefined断言失败；entered／returned／settled完整，尚未运行后续六个IPC脚本。三个Electron业务失败退出2但自然关闭，helper均退出0、流关闭、pending为0且无kill。播放例实际0→0.1秒，预览例实际0→0.1667秒并取得64×64有色帧。不是timeout或产品死锁证据；当时未记录跨进程返回类型，不能补称实测为null。
@@ -52,4 +54,4 @@ idle失败说明helper／carrier或其事件路径已足以引出问题；播放
 
 首版本地完整离线2708项，2695通过、0失败、13项既有平台跳过，约60.7秒。末次表达式标记细化后，收集器／suite／正式基线／工作流定向38项通过。JS578、PowerShell53语法及有限凭据模式扫描通过；新增文档链接与补丁格式检查通过。正式工作流守卫只剥离准确的实验选项声明后继续与固定基线逐字节比较，并拒绝默认值／类型／额外选项漂移。void合同修正版本的Windows结果尚待验证。
 
-void合同修正后，完整离线2710项：2697通过、0失败、13项既有平台跳过，约61.1秒；定向40项通过。新增VM验证仅证明表达式执行一次、正确顺序、renderer内void、副作用ACK以及同步异常／rejection／非void的拒绝，不证明实际Electron的wire类型。语法／有限模式／新增链接检查通过，产品及原包字节保持。
+void合同修正后，完整离线2710项：2697通过、0失败、13项既有平台跳过，约61.1秒；定向40项通过。新增VM验证仅证明表达式执行一次、正确顺序、renderer内void、副作用ACK以及同步异常／rejection／非void的拒绝；实际wire类型由上述新Windows运行证实。语法／有限模式／新增链接检查通过，产品及原包字节保持。

@@ -41,11 +41,11 @@ async function main() {
   const stages = [], trace = [], clients = [], contexts = new Map();
   const workerDeadline = workerStartedAt + availablePhaseMs - 1000;
   let stage = 'isolated', activeEndpoint, lastGeneration, currentItem, service, authority, cd2Service,
-    mainWindow, indexUrl, ownedSession, unregisterNative, unregisterCd2, unregisterSettings, lateEvents = 0, retiredAt = null;
+    mainWindow, indexUrl, originalFrame, ownedSession, unregisterNative, unregisterCd2, unregisterSettings, lateEvents = 0, retiredAt = null;
   const receipt = {schema: 1, phase, productCommit: plan.productCommit, toolCommit: plan.tools.toolCommit,
     status: 'FAIL', scope, workerPid: process.pid, workerParentPid: process.ppid, workerType: process.type,
     checks: {}, timingsMs: {candidateVerification: verificationMs}, firstFrameMeaning: 'decoded native preview; hidden carrier',
-    audio: 'NOT_TESTED_VIDEO_ONLY_FIXTURE', hiddenHarnessBackgroundThrottling: false, real115Requests: 0, helpers: [], seekObservations: []};
+    audio: 'NOT_TESTED_VIDEO_ONLY_FIXTURE', hiddenHarnessBackgroundThrottling: false, real115Requests: 0, helpers: [], seekObservations: [], evaluations: []};
   const lifecycleFile = path.join(plan.out, phase + '.lifecycle.json'), lifecycleEntries = [];
   let lifecycleFailed = false;
   need(!fs.existsSync(lifecycleFile), 'worker-preserve-lifecycle');
@@ -64,16 +64,23 @@ async function main() {
   function record(type, data = {}) {
     need(trace.length < 8192, 'worker-trace-limit'); trace.push({type, at: now(), wallClockMs: Date.now(), ...data});
   }
+  let finishing = false, failed = false, cleanupPromise, operationsComplete = false, voidSequence = 0, receiptWritten = false;
+  function active() {need(!finishing, 'worker-retired');}
   async function waitFor(predicate, code, timeout = 5000) {
     const deadline = Math.min(now() + timeout, workerDeadline - 5000);
     while (now() < deadline) {
+      active();
       need(!trace.some(r => r.type === 'renderer-failure' || r.type === 'bridge-failure'), 'renderer-or-helper-failure');
-      if (await driver.within(predicate, Math.max(1, deadline - now()), code)) return;
+      const found = await driver.within(predicate, Math.max(1, deadline - now()), code);
+      active();
+      if (found) return;
       await delay(25);
+      active();
     }
     throw Error(code);
   }
   async function evaluate(script, label, timeout = 5000) {
+    active();
     phaseOf(label);
     const remaining = workerDeadline - now() - 5000; // Retain time for owned helper cleanup.
     need(remaining > 0, 'worker-operation-budget');
@@ -81,7 +88,24 @@ async function main() {
     record('renderer-dispatch', {operation: label, loading: contents.isLoading(),
       loadingMainFrame: contents.isLoadingMainFrame(), backgroundThrottling: contents.getBackgroundThrottling(),
       destroyed: contents.isDestroyed(), requestedMs: timeout, effectiveMs: Math.min(timeout, remaining), remainingPhaseMs: workerDeadline - now()});
-    return driver.within(() => driver.executeStableFrame(contents, indexUrl, driver.observeExpression(script, label)), Math.min(timeout, remaining), label + '-timeout');
+    const value = await driver.within(() => {active(); return driver.executeStableFrame(contents, indexUrl, driver.observeExpression(script, label));}, Math.min(timeout, remaining), label + '-timeout');
+    active();
+    return value;
+  }
+  async function evaluateVoid(script, label, timeout = 5000) {
+    active(); phaseOf(label);
+    const remaining = workerDeadline - now() - 5000;
+    need(remaining > 0, 'worker-operation-budget');
+    const contents = mainWindow.webContents;
+    record('renderer-dispatch', {operation: label, loading: contents.isLoading(),
+      loadingMainFrame: contents.isLoadingMainFrame(), backgroundThrottling: contents.getBackgroundThrottling(),
+      destroyed: contents.isDestroyed(), requestedMs: timeout, effectiveMs: Math.min(timeout, remaining), remainingPhaseMs: workerDeadline - now()});
+    const sequence = ++voidSequence;
+    const facts = await driver.executeAcknowledgedVoid(contents, indexUrl, script, label, sequence, Math.min(timeout, remaining), () => !finishing);
+    active();
+    receipt.evaluations.push({operation: label, sequence, ...facts});
+    need(facts.completionAck === 1000 + sequence && facts.rendererResultType === 'undefined', 'worker-void-not-completed');
+    return facts;
   }
   app.on('quit', () => {lifecycle('app-quit'); phaseOf('app-quit');});
   process.once?.('exit', () => {lifecycle('process-exit'); phaseOf('process-exit');});
@@ -89,24 +113,142 @@ async function main() {
   const get = member => require(runtime(member));
   function helperFacts() {
     return clients.map(c => ({pid: c.child?.pid || null, ready: !!c.handshake,
-      exitCode: c.child?.exitCode ?? null, streamsClosed: c.closeSeen === true,
+      exitCode: c.child?.exitCode ?? null, exitSignal: c.child?.signalCode ?? null, streamsClosed: c.closeSeen === true,
       pendingRequests: c.pending?.size || 0, stderrTags: driver.safeNativeTags(c.stderrChunks),
       operationErrors: c.operationErrors.map(e => ({operation: e.operation, errorCode: e.errorCode})),
       protocolFailure: c.protocolFailure ? 'PROTOCOL_FAILURE' : null}));
   }
-  let watchdog = setTimeout(() => {
-    receipt.status = 'FAIL'; receipt.receiptOrigin = 'watchdog'; receipt.code ||= 'worker-deadline'; receipt.stage ||= stage;
-    receipt.trace = trace; receipt.helpers = helperFacts();
-    receipt.ownedHelpersClosed = clients.length > 0 && receipt.helpers.every(r => r.streamsClosed && r.exitCode === 0);
+  function writeReceipt(origin) {
+    receipt.trace = trace; receipt.helpers = helperFacts(); receipt.receiptOrigin = origin;
+    receipt.ownedHelpersClosed = clients.length > 0 && clients.every(c => c.exited && c.child.exitCode === 0 &&
+      c.child.signalCode === null && c.closeSeen && !c.protocolFailure && c.pending.size === 0);
     receipt.helperExitAssessment = receipt.ownedHelpersClosed ? 'CONFIRMED' : 'UNCERTAIN';
-    try {fs.writeFileSync(file, JSON.stringify(receipt, null, 2) + '\n', {flag: 'wx', mode: 0o600});}
-    catch (_) {console.log('SHARED_CACHE_WORKER deadline-receipt-unavailable');}
+    fs.writeFileSync(file, JSON.stringify(receipt, null, 2) + '\n', {flag: receiptWritten ? 'w' : 'wx', mode: 0o600});
+    receiptWritten = true;
+  }
+  async function inspectOwnedStore(options, timeoutMs, code, inspect, duringCleanup = false) {
+    let abandoned = false, resolvedStore, closePromise;
+    const close = store => closePromise ||= driver.within(() => store.close(),
+      Math.max(1, Math.min(1000, workerDeadline - now() - 250)), 'worker-store-close-timeout');
+    const opening = Promise.resolve().then(() => {
+      if (!duringCleanup) active();
+      return get('enhanced/shared-playback-cache/store').createStore(options);
+    }).then(store => {
+      resolvedStore = store;
+      if (abandoned || (!duringCleanup && finishing)) {
+        abandoned = true;
+        void close(store).catch(() => {failed = true; receipt.cleanupCode ||= 'worker-late-store-close-failed';});
+        throw Error('worker-store-open-retired');
+      }
+      return store;
+    });
+    let store;
+    try {store = await driver.within(() => opening, timeoutMs, code);}
+    catch (error) {
+      abandoned = true;
+      if (resolvedStore) void close(resolvedStore).catch(() => {failed = true; receipt.cleanupCode ||= 'worker-late-store-close-failed';});
+      throw error;
+    }
+    try {
+      if (!duringCleanup) active();
+      return inspect(store.status());
+    } finally {await close(store);}
+  }
+  function cleanup() {
+    if (cleanupPromise) return cleanupPromise;
+    finishing = true;
+    receipt.status = 'FAIL';
+    cleanupPromise = (async () => {
+      const budget = maximum => {
+        const remaining = workerDeadline - now() - 250;
+        need(remaining > 0, 'worker-cleanup-budget');
+        return Math.min(maximum, remaining);
+      };
+      const attempt = async task => {
+        try {await task();} catch (error) {failed = true; receipt.cleanupCode ||= driver.safeFailure(error);}
+      };
+      lifecycle('before-cleanup'); phaseOf('cleanup-native'); writeReceipt('cleanup-start');
+      let nativeDestroyComplete = false;
+      await attempt(async () => {
+        if (unregisterNative) await driver.within(() => unregisterNative(), budget(2500), 'worker-native-cleanup-timeout');
+        else if (service) await driver.within(() => service.destroy(), budget(2500), 'worker-native-cleanup-timeout');
+        nativeDestroyComplete = true;
+      });
+      phaseOf('cleanup-helper-exit');
+      for (const c of clients) await attempt(async () => {
+        need(c.exitPromise, 'worker-helper-exit-missing');
+        await driver.within(() => c.exitPromise, budget(1500), 'worker-helper-exit-timeout');
+        const deadline = now() + budget(1000);
+        while (!c.closeSeen) {need(now() < deadline, 'worker-helper-close-timeout'); await delay(10);}
+        need(c.exited && c.child.exitCode === 0 && c.child.signalCode === null && !c.protocolFailure && c.pending.size === 0, 'worker-helper-exit');
+      });
+      for (const teardown of [() => unregisterCd2 ? unregisterCd2() : cd2Service?.close(),
+        () => unregisterSettings?.(), () => authority?.close()]) {
+        await attempt(() => driver.within(teardown, budget(1000), 'worker-owned-teardown-timeout'));
+      }
+      if (phase !== 'baseline') await attempt(async () => {
+        need(nativeDestroyComplete, 'worker-store-live-backend');
+        phaseOf('cleanup-store');
+        const cacheRoot = path.join(profile, 'userdata/shared-playback-byte-cache-v2');
+        const status = await inspectOwnedStore({root: cacheRoot,
+          currentBytes: plan.limits.cacheBytes, nextBytes: 300000000, recoveryMode: 'on-demand'}, budget(1500), 'worker-store-open-timeout', value => value, true);
+        receipt.afterClose = {current: status.current, next: status.next,
+          pending: status.pending, readers: status.readers, reserved: status.reserved, entries: status.entries};
+        need(status.next === 0 && status.pending === 0 && status.readers === 0 && status.reserved === 0, 'worker-store-not-drained');
+        if (phase !== 'cancel') need(status.current > 0, 'worker-retention-empty');
+      });
+      writeReceipt('cleanup');
+      // Keep the carrier intact while any owned helper exit or pipe close is uncertain.
+      if (!clients.every(c => c.exited && c.closeSeen)) {
+        failed = true; receipt.cleanupCode ||= 'worker-helper-exit-unconfirmed'; writeReceipt('cleanup-uncertain');
+        return;
+      }
+      if (operationsComplete && !failed) await attempt(async () => {
+        phaseOf('after-helper-script');
+        const stable = () => need(mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed() &&
+          mainWindow.webContents.mainFrame === originalFrame && originalFrame && !originalFrame.detached &&
+          !originalFrame.isDestroyed() && originalFrame.url === indexUrl && mainWindow.webContents.getURL() === indexUrl, 'worker-after-helper-frame');
+        stable();
+        const value = await driver.within(() => originalFrame.executeJavaScript('17'), budget(1500), 'worker-after-helper-timeout');
+        stable(); need(value === 17, 'worker-after-helper-result'); receipt.afterHelper = 17;
+      });
+      await attempt(async () => {
+        phaseOf('cleanup-main-window');
+        if (mainWindow && !mainWindow.isDestroyed()) mainWindow.destroy();
+        phaseOf('cleanup-main-destroyed');
+        const ownedWindows = BrowserWindow.getAllWindows();
+        for (const window of ownedWindows) {need(!window.isVisible(), 'worker-visible-window'); window.destroy();}
+        need((!mainWindow || mainWindow.isDestroyed()) && ownedWindows.every(window => window.isDestroyed()) &&
+          BrowserWindow.getAllWindows().length === 0, 'worker-windows-not-destroyed');
+        phaseOf('cleanup-windows-destroyed');
+        ownedSession?.protocol.unhandle('file'); phaseOf('cleanup-protocol-removed');
+      });
+      lifecycle('before-receipt');
+      if (lifecycleFailed) {failed = true; receipt.cleanupCode ||= 'worker-lifecycle-write-failed';}
+      receipt.status = operationsComplete && !failed ? 'PASS' : 'FAIL';
+      receipt.stage ||= stage; phaseOf('receipt-write'); writeReceipt('cleanup'); phaseOf('receipt-written');
+      clearTimeout(watchdog); clearTimeout(softWatchdog);
+      console.log('SHARED_CACHE_WORKER_RESULT ' + JSON.stringify({phase, status: receipt.status, stage: receipt.stage,
+        code: receipt.code || receipt.cleanupCode || null, checks: receipt.checks, timingsMs: receipt.timingsMs,
+        ownedHelpersClosed: receipt.ownedHelpersClosed}));
+      lifecycle('app-exit-requested'); phaseOf('app-exit-requested');
+      app.exit(receipt.status === 'PASS' ? 0 : 1);
+    })();
+    return cleanupPromise;
+  }
+  const softWatchdog = setTimeout(() => {
+    failed = true; receipt.code ||= 'worker-deadline'; receipt.stage ||= stage;
+    void cleanup().catch(() => {receipt.cleanupCode ||= 'worker-cleanup-failed';});
+  }, Math.max(1, workerDeadline - now() - 5000));
+  const watchdog = setTimeout(() => {
+    failed = true; finishing = true; receipt.status = 'FAIL'; receipt.code ||= 'worker-deadline'; receipt.stage ||= stage;
+    try {writeReceipt('watchdog');} catch (_) {console.log('SHARED_CACHE_WORKER deadline-receipt-unavailable');}
     console.log('SHARED_CACHE_WORKER_RESULT ' + JSON.stringify({phase, status: 'FAIL', stage: receipt.stage, code: receipt.code,
       ownedHelpersClosed: receipt.ownedHelpersClosed, checks: receipt.checks}));
     app.exit(2);
   }, driver.watchdogDelay(workerStartedAt, now(), availablePhaseMs));
   try {
-    await app.whenReady(); phaseOf('app-ready');
+    await driver.within(() => app.whenReady(), Math.max(1, workerDeadline - now() - 5000), 'worker-ready-timeout'); active(); phaseOf('app-ready');
     // readPlan already ran the complete physical/source gate in this process
     // before isolation/ready; do not repeat every Git blob acquisition here.
     ownedSession = session.fromPath(path.join(profile, 'session'), {cache: false});
@@ -129,8 +271,10 @@ async function main() {
         return new Response(fs.readFileSync(member), {headers: {'content-type': member.endsWith('.js') ? 'text/javascript' : 'text/css'}});
       } catch (_) {return new Response('', {status: 404});}
     });
+    active();
     class HiddenWindow extends BrowserWindow {
-      constructor(options) {super({...options, show: false, focusable: false, skipTaskbar: true});}
+      constructor(options) {active(); super({...options, show: false, focusable: false, skipTaskbar: true,
+        webPreferences: {...options.webPreferences, session: ownedSession, backgroundThrottling: false}});}
       show() {throw Error('worker-window-show-forbidden');}
       showInactive() {throw Error('worker-window-show-forbidden');}
       focus() {throw Error('worker-window-focus-forbidden');}
@@ -147,6 +291,7 @@ async function main() {
     const productClient = get('native-helper/controller').NativeHelperClient;
     class ObservedClient extends productClient {
       constructor(options) {
+        active();
         super({...options, onEvent: message => {
           const item = contexts.get(message.generationId);
           if (retiredAt !== null && message.generationId === retiredAt && ['playback-restart', 'core-idle', 'time-pos'].includes(message.name)) lateEvents++;
@@ -157,9 +302,10 @@ async function main() {
           options.onEvent(message);
         }}); clients.push(this); this.closeSeen = false;
       }
-      async start() {const starting = super.start(); this.child?.once('close', () => {this.closeSeen = true;}); await starting;
+      async start() {active(); const starting = super.start(); this.child?.once('close', () => {this.closeSeen = true;}); await starting; active();
         record('native-ready', {pid: this.child.pid}); return this;}
       load(args) {
+        active();
         const u = new URL(args[1]), item = contexts.get(this.currentGenerationId) || /^\/Videos\/([ABC])\//.exec(u.pathname)?.[1];
         if (item) {contexts.set(this.currentGenerationId, item); currentItem = item; lastGeneration = this.currentGenerationId;}
         need(u.hostname === '127.0.0.1' && ['http:'].includes(u.protocol), 'worker-native-source-not-owned');
@@ -219,18 +365,27 @@ async function main() {
       // Never retain renderer source strings, tokens, exception messages or pixels.
       for (const k of ['item', 'operation', 'method', 'code']) if (typeof value[k] === 'string' && /^[A-Za-z0-9_-]{1,80}$/.test(value[k])) data[k] = value[k];
       record(value.type, data);
+      if (['renderer-failure', 'bridge-failure'].includes(value.type)) {
+        failed = true; receipt.code ||= 'renderer-or-helper-failure'; receipt.stage ||= stage;
+      }
     });
-    await mainWindow.loadURL(indexUrl);
+    await driver.within(() => mainWindow.loadURL(indexUrl), Math.max(1, workerDeadline - now() - 5000), 'worker-load-timeout'); active();
+    originalFrame = mainWindow.webContents.mainFrame;
     need(mainWindow.webContents.mainFrame.url === indexUrl, 'worker-frame-url');
     phaseOf('renderer');
-    const beforeStore = phase === 'reopen' ? await get('enhanced/shared-playback-cache/store').createStore({root: cacheRoot,
-      currentBytes: plan.limits.cacheBytes, nextBytes: 300000000, recoveryMode: 'on-demand'}) : null;
-    if (beforeStore) {receipt.beforeReopen = beforeStore.status(); await beforeStore.close();
-      need(receipt.beforeReopen.current > 0 && receipt.beforeReopen.next === 0, 'worker-reopen-no-retained-cache');}
+    if (phase === 'reopen') {
+      receipt.beforeReopen = await inspectOwnedStore({root: cacheRoot,
+        currentBytes: plan.limits.cacheBytes, nextBytes: 300000000, recoveryMode: 'on-demand'},
+      Math.max(1, workerDeadline - now() - 5000), 'worker-reopen-store-timeout', status => status);
+      active();
+      need(receipt.beforeReopen.current > 0 && receipt.beforeReopen.next === 0, 'worker-reopen-no-retained-cache');
+    }
     const boot = require('../../tests/helpers/next-prefix-alameda.cjs').rendererBoot;
     const bootInput = {origin: sources.origin, windowId: String(mainWindow.id), moduleBaseUrl: pathToFileURL(runtime('www/')).href,
       cacheBytes: plan.limits.cacheBytes, itemIds: phase === 'reopen' ? ['B'] : ['A', 'B']};
-    await evaluate('(' + boot.toString() + ')(' + JSON.stringify(bootInput) + ')', 'renderer-boot', 12000);
+    await evaluateVoid('(' + boot.toString() + ')(' + JSON.stringify(bootInput) + ')', 'renderer-boot', 12000);
+    await waitFor(() => trace.some(row => row.type === 'initial-play-resolved'), 'worker-initial-play-not-resolved', 12000);
+    need(!trace.some(row => row.type === 'renderer-failure' || row.type === 'bridge-failure'), 'renderer-or-helper-failure');
     await waitFor(() => trace.some(row => row.type === 'load'), 'worker-load-missing', 12000);
     const load = trace.find(row => row.type === 'load');
     need(load.proxied === (phase !== 'baseline'), 'worker-shared-not-selected');
@@ -252,13 +407,14 @@ async function main() {
       const label = 'seek-' + direction, facts = {direction, paused: false, commandCompleted: false,
         position: false, restart: false, frame: false, unpaused: false, playbackAdvanced: false};
       receipt.seekObservations.push(facts);
-      await evaluate("window.prefixAction('pause')", label + '-pause-command');
+      await evaluateVoid("window.prefixAction('pause')", label + '-pause-command');
       phaseOf(label + '-pause-property');
       await waitFor(async () => await clients.at(-1).getProperty('pause', 500) === true, 'worker-seek-pause');
       facts.paused = true;
       const start = now(), generation = lastGeneration, initial = trace.length;
-      await evaluate("window.require(['playbackManager']).then(v => {window.prefixHarness.report({type:'seek-module',operation:'" + direction + "'});" +
+      const seekResult = await evaluate("window.require(['playbackManager']).then(v => {window.prefixHarness.report({type:'seek-module',operation:'" + direction + "'});" +
         'return Promise.resolve(v[0].seek(' + (seconds * 10000000) + ")).then(() => {window.prefixHarness.report({type:'seek-command',operation:'" + direction + "'}); return true;});})", label + '-dispatch');
+      need(seekResult === true, 'worker-seek-command-result');
       facts.commandCompleted = true;
       phaseOf(label + '-position');
       await waitFor(() => trace.slice(initial).some(r => r.type === 'native' && r.generation === generation &&
@@ -269,21 +425,21 @@ async function main() {
       facts.restart = true;
       phaseOf(label + '-frame'); await frame(currentItem); facts.frame = true;
       const elapsed = now() - start;
-      const pausedPosition = await clients.at(-1).getProperty('time-pos', 500);
+      const pausedPosition = await clients.at(-1).getProperty('time-pos', 500); active();
       need(typeof pausedPosition === 'number' && Number.isFinite(pausedPosition), 'worker-seek-paused-position');
       need(lastGeneration === generation, 'worker-seek-generation-retired');
-      await evaluate("window.prefixAction('unpause')", label + '-unpause-command');
+      await evaluateVoid("window.prefixAction('unpause')", label + '-unpause-command');
       phaseOf(label + '-unpause-property');
       await waitFor(async () => await clients.at(-1).getProperty('pause', 500) === false, 'worker-seek-unpause');
       facts.unpaused = true;
-      const afterUnpause = await clients.at(-1).getProperty('time-pos', 500);
+      const afterUnpause = await clients.at(-1).getProperty('time-pos', 500); active();
       need(typeof afterUnpause === 'number' && Number.isFinite(afterUnpause), 'worker-seek-resumed-position');
       const resumeBaseline = Math.max(pausedPosition, afterUnpause);
       facts.pausedPosition = pausedPosition; facts.resumeBaseline = resumeBaseline;
       phaseOf(label + '-unpause-progress');
       await waitFor(async () => {
         need(lastGeneration === generation && clients.at(-1).currentGenerationId === generation, 'worker-seek-generation-retired');
-        const position = await clients.at(-1).getProperty('time-pos', 500);
+        const position = await clients.at(-1).getProperty('time-pos', 500); active();
         if (typeof position !== 'number' || !Number.isFinite(position) || position <= resumeBaseline + 0.05) return false;
         facts.resumedPosition = position; return true;
       }, 'worker-seek-resume-progress');
@@ -308,11 +464,11 @@ async function main() {
     if (phase === 'cancel') {
       await waitFor(() => service.rangeStatus().next.state === 'warming', 'worker-warming-missing', 20000);
       // Let the actual foreground-driven preload reach the owned held response.
-      await delay(300);
+      await delay(300); active();
       phaseOf('cancel');
     }
     const stopping = now(), stoppingItem = currentItem, stopTraceStart = trace.length;
-    await evaluate('window.prefixStop()', 'stop-command');
+    await evaluateVoid('window.prefixStop()', 'stop-command');
     retiredAt = lastGeneration;
     receipt.timingsMs.stop = now() - stopping;
     phaseOf('stop-destroy-ipc');
@@ -323,63 +479,10 @@ async function main() {
     phaseOf('stop-server-report');
     await waitFor(() => trace.slice(stopTraceStart).some(r => r.type === 'server-report' && r.method === 'stop' && r.item === stoppingItem), 'worker-stop-server-report-missing');
     receipt.checks.stopped = true; receipt.checks.stopNativeClosed = true; phaseOf('stop');
-    if (phase === 'cancel') {await delay(150); receipt.checks.noObsoleteNativeEvents = lateEvents === 0;
+    if (phase === 'cancel') {await delay(150); active(); receipt.checks.noObsoleteNativeEvents = lateEvents === 0;
       need(receipt.checks.noObsoleteNativeEvents, 'worker-obsolete-native-events');}
-    receipt.status = 'PASS';
-  } catch (error) {receipt.code = driver.safeFailure(error); receipt.stage = stage;}
-  finally {
-    lifecycle('before-cleanup');
-    phaseOf('cleanup-native');
-    try {
-      if (unregisterNative) await unregisterNative(); else if (service) await service.destroy();
-      unregisterCd2?.(); if (!unregisterCd2) cd2Service?.close(); unregisterSettings?.(); authority?.close();
-      phaseOf('cleanup-helper-exit');
-      for (const c of clients) {
-        await c.exitPromise;
-        const deadline = Date.now() + 2000; while (!c.closeSeen && Date.now() < deadline) await delay(10);
-        const code = c.child.exitCode;
-        receipt.helpers.push({pid: c.child.pid, ready: !!c.handshake, exitCode: code, streamsClosed: c.closeSeen,
-          stderrTags: driver.safeNativeTags(c.stderrChunks),
-          operationErrors: c.operationErrors.map(e => ({operation: e.operation, errorCode: e.errorCode})),
-          protocolFailure: c.protocolFailure ? 'PROTOCOL_FAILURE' : null});
-        need(c.exited && code === 0 && c.closeSeen && !c.protocolFailure, 'worker-helper-exit');
-      }
-      receipt.ownedHelpersClosed = clients.length > 0 && receipt.helpers.every(r => r.streamsClosed && r.exitCode === 0);
-      if (phase !== 'baseline') {
-        phaseOf('cleanup-store');
-        const cacheRoot = path.join(profile, 'userdata/shared-playback-byte-cache-v2');
-        const store = await get('enhanced/shared-playback-cache/store').createStore({root: cacheRoot,
-          currentBytes: plan.limits.cacheBytes, nextBytes: 300000000, recoveryMode: 'on-demand'});
-        const status = store.status(); receipt.afterClose = {current: status.current, next: status.next,
-          pending: status.pending, readers: status.readers, reserved: status.reserved, entries: status.entries};
-        await store.close();
-        need(status.next === 0 && status.pending === 0 && status.readers === 0 && status.reserved === 0, 'worker-store-not-drained');
-        if (phase !== 'cancel') need(status.current > 0, 'worker-retention-empty');
-      }
-    } catch (error) {receipt.status = 'FAIL'; receipt.cleanupCode = driver.safeFailure(error);}
-    try {
-      phaseOf('cleanup-main-window');
-      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.destroy();
-      phaseOf('cleanup-main-destroyed');
-      for (const window of BrowserWindow.getAllWindows()) {need(!window.isVisible(), 'worker-visible-window'); window.destroy();}
-      phaseOf('cleanup-windows-destroyed');
-      ownedSession?.protocol.unhandle('file');
-      phaseOf('cleanup-protocol-removed');
-    } catch (_) {receipt.status = 'FAIL'; receipt.cleanupCode = 'worker-window-cleanup';}
-    receipt.trace = trace; receipt.stage ||= stage;
-    lifecycle('before-receipt');
-    if (lifecycleFailed) {receipt.status = 'FAIL'; receipt.cleanupCode ||= 'worker-lifecycle-write-failed';}
-    receipt.receiptOrigin = 'cleanup';
-    phaseOf('receipt-write');
-    fs.writeFileSync(file, JSON.stringify(receipt, null, 2) + '\n', {flag: 'wx', mode: 0o600});
-    phaseOf('receipt-written');
-    clearTimeout(watchdog); watchdog = null;
-    console.log('SHARED_CACHE_WORKER_RESULT ' + JSON.stringify({phase, status: receipt.status, stage: receipt.stage,
-      code: receipt.code || receipt.cleanupCode || null, checks: receipt.checks, timingsMs: receipt.timingsMs,
-      ownedHelpersClosed: receipt.ownedHelpersClosed}));
-    lifecycle('app-exit-requested');
-    phaseOf('app-exit-requested');
-    app.exit(receipt.status === 'PASS' ? 0 : 1);
-  }
+    active(); operationsComplete = true;
+  } catch (error) {failed = true; receipt.code ||= driver.safeFailure(error); receipt.stage ||= stage;}
+  finally {await cleanup();}
 }
 if (process.versions.electron) main().catch(error => {console.log('SHARED_CACHE_WORKER startup-' + driver.safeFailure(error).slice(0, 90)); app.exit(1);});

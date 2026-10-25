@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-25 — Native有限对照通过，接回原四阶段
+
+真实Native三例均通过，wire null／renderer void与同frame ACK已实测；helper、播放推进、一次预览以及Electron正常退出都成立，不能当作原四阶段通过。工具将顺序ACK、单动作预算、固定frame、单次有界清理和实际exit／close要求接回原boot／pause／unpause／Stop；保留全部播放、自然切集、预载零正文重取、跨进程保留及取消断言。源服务收尾与工作deadline不混同，产品和原包不变。下一轮范围及派发见[四阶段合同](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。
+
 ## 2026-10-25 — Native对照的void序列化合同修正
 
 首轮三例因工具把跨进程void严格当undefined而立即失败，进入／返回／结算均完整，Electron自然退出2、helper退出0；播放推进与一次有色预览已证实，后续IPC仍未运行。固定Electron源码支持NONE转null，但原回执没记录实际返回类型，不追认实测null。工具改为renderer验证void、原表达式仅执行一次并写本次顺序副作用，再从同一frame独立读取固定ACK；保留24个标记、返回类型日志和原退出／来源／期限门禁。见[Native有限对照](SHARED_PLAYBACK_CACHE_NATIVE_LIVENESS.md)。

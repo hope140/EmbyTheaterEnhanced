@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-25 — 已验证ACK与退出合同迁回四阶段
+
+亲自核对Native三例真实回执后，最小迁移原动作的renderer void验证／连续ACK与同frame查询，所有原生属性、解码、Stop报告、自然next、重开和取消门禁保持。清理一次归属、分项确认helper、关闭迟到store和外层未知退出失败均加入确定性回归；不改产品、包或原期限，不把此工具增量声称为旧超时已定位。参见[当前Windows范围](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。
+
 ## 2026-10-25 — void完成与跨进程返回值分离
 
 直接核读Native三例首错，均非timeout；主进程严格undefined断言与固定Electron的base::Value返回路径不符。仅修工具：在renderer内验证原void并提交顺序完成标记，main记录跨进程类型并读取独立固定ACK，拒绝rejection、错误void值、旧标记和错误顺序；保持原六个IPC脚本、Native退出及全部来源门禁。没有修改原包或产品，也不把该探针错误归因为播放器死锁。参见[固定源码与证据](SHARED_PLAYBACK_CACHE_NATIVE_LIVENESS.md)。
