@@ -34,7 +34,7 @@ async function automaticCase(t, scenario) {
         await settle(() => fs.rmSync(root, {recursive: true, force: true}));
         if (failures.length) throw new AggregateError(failures, 'owned Alameda fixture cleanup failed');
     });
-    const record = (type, data = {}) => trace.push({seq: trace.length, type, ...data});
+    const record = (type, data = {}) => trace.push({seq: trace.length, atMs: performance.now(), type, ...data});
     const fixtures = ['A', 'B'].map(id => {const file = id + '.avi'; fs.writeFileSync(path.join(root, file), Buffer.from(id.repeat(40))); return {file, size: 40, etag: '"synthetic-' + id + '"'};});
     const trustedCd2 = scenario.startsWith('trusted-cd2'), sharedCase = scenario === 'trusted-cd2-shared', dateValidator = scenario === 'trusted-cd2-date-unproven', noValidator = scenario === 'trusted-cd2-no-validator';
     const unsupported = scenario === 'unsupported' || scenario === 'trusted-cd2-unsupported' || noValidator || dateValidator;
@@ -103,6 +103,14 @@ async function automaticCase(t, scenario) {
             const id = contexts.get(this.currentGenerationId) || /\/Videos\/([ABC])\//.exec(new URL(args[1]).pathname)?.[1], gen = this.currentGenerationId;
             record('load', {item: id, generation: gen, source: args[1], ...(sharedCase ? {cacheDecision: {state: service.rangeStatus().current.state, diagnostic: service.rangeStatus().current.diagnostic || null}} : {}), ...(trustedCd2 ? {fileLocalOptions: args.slice(2)} : {})});
             const promise = (async () => {
+                if (sharedCase && id === 'A') {
+                    // Lifecycle fixture only: product select/URL choice already
+                    // completed. A's first original read starts after its real
+                    // metadata key, so best-effort cold taps are not assumed.
+                    await waitFor(() => trace.some(row => row.type === 'shared-store-open-end' && row.item === 'A'),
+                        () => JSON.stringify({boundary: 'A-key-before-first-fixture-read', decision: service.rangeStatus().current.diagnostic || null}));
+                    record('synthetic-fixture-boundary', {condition: 'A-key-before-first-fixture-read'});
+                }
                 const before = trace.length;
                 const headers = {Range: 'bytes=0-7'};
                 if (trustedCd2) {
@@ -125,11 +133,16 @@ async function automaticCase(t, scenario) {
                 }
                 this.emit('duration', 8); this.emit('time-pos', 0); this.emit('core-idle', false);
                 if (id === 'B') return;
-                let position = 0;
+                let position = 0, aBufferConfirmed = false;
                 this.clock = setInterval(() => {
                     if (this.currentGenerationId !== gen) {clearInterval(this.clock); return;}
                     if (trustedCd2) record('trusted-cache-occupancy', {bytes: service.rangeStatus().diskBytes});
                     if (sharedCase) record('shared-cache-occupancy', {bytes: service.rangeStatus().diskBytes});
+                    if (sharedCase && position >= 5.4 && !aBufferConfirmed) {
+                        if (service.rangeStatus().diskBytes !== 8) return;
+                        aBufferConfirmed = true;
+                        record('synthetic-fixture-boundary', {condition: 'A-buffer-confirmed-before-70-percent', bytes: 8});
+                    }
                     if (sharedCase && position >= 7.6 && !trace.some(row => row.type === 'preload-result' && row.state === 'ready')) return;
                     if ((orderedNatural || pendingNatural) && position >= 7.6) {
                         // Synthetic clock precondition only; actual renderer/service/HTTP
@@ -210,6 +223,7 @@ async function automaticCase(t, scenario) {
             }
             record('ipc', {operation: request.operation});
             if (request.operation === 'range-context' && request.payload.context) contexts.set(request.payload.generationId, request.payload.context.itemId);
+            if (sharedCase && request.operation === 'command' && request.payload?.data?.[0] === 'loadfile') record('shared-select-start', {item: contexts.get(request.payload.generationId)});
             const result = await service.call(request.operation, request.payload, request.endpointId);
             if (request.operation === 'range-preload') record('preload-result', result.value);
             return result;
@@ -356,7 +370,7 @@ async function automaticCase(t, scenario) {
             assert.deepEqual(Array.from(load.fileLocalOptions), ['replace', '-1', 'user-agent=Synthetic-CD2']);
             const routed = new URL(load.source);
             assert.equal(routed.hostname, '127.0.0.1');
-            assert.notEqual(routed.origin, mediaOrigin.origin, 'original Native loads receive the authorized local proxy URL: ' + JSON.stringify({item: load.item, decision: load.cacheDecision, stages: trace.filter(row => ['shared-store-open-start', 'shared-store-open-end', 'shared-store-open-rejected', 'service-preload-diagnostic', 'origin-client-open', 'origin-client-closed', 'origin-closed'].includes(row.type)).map(row => ({seq: row.seq, type: row.type, item: row.item, reason: row.reason, stage: row.stage, start: row.start, end: row.end, requestId: row.requestId, elapsedMs: row.elapsedMs, complete: row.complete}))}));
+            assert.notEqual(routed.origin, mediaOrigin.origin, 'original Native loads receive the authorized local proxy URL: ' + JSON.stringify({item: load.item, decision: load.cacheDecision, stages: trace.filter(row => ['shared-store-open-start', 'shared-store-open-end', 'shared-store-open-rejected', 'service-preload-diagnostic', 'origin-client-open', 'origin-client-closed', 'origin-closed'].includes(row.type)).map(row => ({seq: row.seq, atMs: row.atMs, type: row.type, item: row.item, reason: row.reason, stage: row.stage, start: row.start, end: row.end, requestId: row.requestId, elapsedMs: row.elapsedMs, complete: row.complete}))}));
         }
         const mReads = trace.filter(row => row.type === 'synthetic-M-source');
         assert(mReads.length >= 2 && mReads.every(row => row.bytes === 300 * 1024 * 1024 &&
@@ -385,9 +399,20 @@ async function automaticCase(t, scenario) {
             const data = await recovered.read(recovered.status().currentKey, 0, 40);
             assert.equal(data.toString(), 'B'.repeat(40), 'destroy/reopen retains only the last naturally played B');
         } finally {await recovered.close();}
+        const selections = loads.map(load => {
+            const start = trace.filter(row => row.type === 'shared-select-start' && row.item === load.item && row.seq < load.seq).at(-1);
+            return {item: load.item, elapsedMs: start ? load.atMs - start.atMs : null, state: load.cacheDecision.state, diagnostic: load.cacheDecision.diagnostic};
+        });
+        const warmBStoreOpenMs = trace.filter(row => row.type === 'shared-store-open-end' && row.item === 'B' && row.seq > eof.seq).map(row => row.elapsedMs);
+        const warmBProbeMs = trace.filter(row => row.type === 'origin-client-open' && row.item === 'B' && row.start === 0 && row.end === 0 && row.seq > eof.seq).map(open => {
+            const close = trace.find(row => row.type === 'origin-client-closed' && row.clientRequest === open.clientRequest); return close ? close.atMs - open.atMs : null;
+        });
         console.log(JSON.stringify({type: 'shared-byte-alameda-natural-result', scenario, syntheticHelper: true,
             nativeDll: false, exactSyntheticCurrentBytes: 300 * 1024 * 1024, preloadBytes: ready.bytes,
-            overlapDiskBytes: overlap.bytes, freshActualBOriginRequests: freshB.length, persistedCurrentBytes: 40, nextBytesAfterReopen: 0}));
+            overlapDiskBytes: overlap.bytes, freshActualBOriginRequests: freshB.length, persistedCurrentBytes: 40, nextBytesAfterReopen: 0,
+            selectionMs: selections.find(value => value.item === 'B')?.elapsedMs ?? null,
+            probeMs: warmBProbeMs[0] ?? null, storeOpenMs: warmBStoreOpenMs[0] ?? null,
+            selections, warmBStoreOpenMs, warmBProbeMs}));
         return;
     }
     if (!orderedNatural && !pendingNatural) {

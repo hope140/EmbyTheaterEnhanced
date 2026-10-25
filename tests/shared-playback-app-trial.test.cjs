@@ -3,12 +3,12 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const os = require('node:os');
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const crypto = require('node:crypto');
 const trial = require('../src/electronapp/enhanced/shared-playback-cache/trial');
 
 function fixture(t) {
-    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-shared-trial-unit-'));
+    const directory = temporaryRoot('ete-shared-trial-unit-');
     t.after(() => fs.rmSync(directory, {recursive: true, force: true}));
     const runtimeRoot = path.join(directory, 'runtime'), root = path.join(directory, 'trial');
     const put = (file, bytes) => {fs.mkdirSync(path.dirname(file), {recursive: true}); fs.writeFileSync(file, bytes);};

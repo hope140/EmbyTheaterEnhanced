@@ -33,7 +33,7 @@ on:
         type: boolean
         default: false
       shared_cache_diagnostics:
-        description: Run bounded per-file Windows TAP diagnostics only (no package or native helper)
+        description: Run bounded shared-case Windows stability diagnostics only (no package or native helper)
         type: boolean
         default: false
       shared_cache_artifact_id:
@@ -316,11 +316,13 @@ jobs:
           node-version: 24.18.1
       - name: Install locked offline fixture dependencies
         run: npm ci --ignore-scripts
-      - name: Emit first assertion immediately with finite per-file owned deadlines
+      - name: Repeat only the shared synthetic case in bounded fresh processes
         shell: pwsh
+        env:
+          SHARED_STABILITY_REPEATS: ${{ inputs.benchmark_trials }}
         run: |
           $out = Join-Path $env:RUNNER_TEMP ('ete-shared-diagnostics-' + $env:GITHUB_RUN_ID + '-' + $env:GITHUB_RUN_ATTEMPT)
-          node tools/shared-playback-cache/windows-diagnostics.cjs "--out=$out"
+          node tools/shared-playback-cache/windows-stability.cjs "--out=$out" "--repeats=$env:SHARED_STABILITY_REPEATS"
           if ($LASTEXITCODE -ne 0) { throw 'Offline Windows diagnostics failed; inspect first TAP assertion, not a longer timeout.' }
       - name: Upload owned synthetic TAP and diagnostic summary
         if: always()

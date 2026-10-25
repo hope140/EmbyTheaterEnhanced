@@ -175,6 +175,7 @@ test('bounded offline diagnostic mode cannot dispatch a package, native smoke or
         for (const job of [manual, benchmark, smoke]) assert.equal(routes(job, event, 'refs/heads/experiment/shared-playback-cache', true, true, true), false);
     }
     assert.match(diagnostics, /timeout-minutes: 10/);
-    assert.match(diagnostics, /windows-diagnostics\.cjs/);
+    assert.match(diagnostics, /windows-stability\.cjs/);
+    assert.match(diagnostics, /SHARED_STABILITY_REPEATS: \$\{\{ inputs\.benchmark_trials \}\}/);
     assert.doesNotMatch(diagnostics, /GH_TOKEN|actions: read|ci-windows-test-package|windows-ci\.ps1|build\.ps1/);
 });

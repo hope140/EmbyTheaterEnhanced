@@ -6,14 +6,15 @@ const FILES = Object.freeze(['tests/shared-playback-app-adapter.test.cjs', 'test
   'tests/playback-prefix-alameda-auto.test.cjs', 'tests/shared-playback-on-demand.test.cjs',
   'tests/shared-playback-store.test.cjs', 'tests/shared-playback-proxy.test.cjs', 'tests/shared-playback-flow.test.cjs',
   'tests/shared-playback-index.test.cjs', 'tests/shared-playback-quota.test.cjs']);
-async function runFile({repo, file, output, timeoutMs = 25000, echo = true}) {
+async function runFile({repo, file, output, timeoutMs = 25000, echo = true, namePattern}) {
   if (!path.isAbsolute(repo) || !path.isAbsolute(output) || !/^tests\/[a-z0-9-]+\.test\.cjs$/.test(file)) throw Error('diagnostic-owned-path-required');
+  if (namePattern !== undefined && namePattern !== 'trusted-cd2-shared') throw Error('diagnostic-pattern-not-reviewed');
   const environment = {...process.env}; delete environment.NODE_TEST_CONTEXT; delete environment.NODE_OPTIONS; delete environment.NODE_PATH;
   // No Node test-file subprocess layer: deadline owns the exact process running
   // this file. Never --test-force-exit, which could conceal a leaked resource.
   const fd = fs.openSync(output, 'wx', 0o600);
   return new Promise(resolve => {
-    const child = spawn(process.execPath, ['--test', '--test-isolation=none', '--test-reporter=tap', '--test-concurrency=1', file],
+    const child = spawn(process.execPath, ['--test', '--test-isolation=none', '--test-reporter=tap', '--test-concurrency=1', ...(namePattern ? ['--test-name-pattern=' + namePattern] : []), file],
       {cwd: repo, env: environment, shell: false, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe']});
     let bytes = 0, timedOut = false, overflow = false, forced, code = null, signal = null;
     const started = Date.now();

@@ -1,6 +1,6 @@
 # 共享播放缓存：独立Windows合成验收
 
-状态：仅工具／测试接线已准备，本机未执行Windows Electron或helper。普通应用及内核文件保持原字节；`225827a`首次Windows CI已见失败，未打包，实际栈尚待读取。测试夹具另提交canonical目录／固定guard端口预检和失败清理；Linux通过不代表Windows问题已经解决。必须新的Windows CI通过后才构建一次独立候选。
+状态：仅工具／测试接线维护，本机未执行Windows Electron或helper，产品及内核文件仍保持225827a原字节。4898b07的9文件无包诊断132/132通过，但随后完整push CI仍失败，当前不能打包。下一步仅对不稳定的shared自然切集做有界重复；新的Windows完整CI与稳定性均通过后才构建一次独立候选。
 
 ## 来源与执行边界
 
@@ -18,7 +18,7 @@ worker使用候选真实BrowserWindow、原生IPC main-frame边界、Alameda／P
 
 使用已有`.github/workflows/public-ci.yml`／Public offline CI，选择本独立分支的最终工具SHA。
 
-当前先取Windows首错，不需要artifact或Native：
+当前已完成九文件首错诊断；下一轮只重复shared自然切集，不需要artifact或Native：
 
 ~~~text
 release_package=false
@@ -26,10 +26,13 @@ build_input_benchmark=false
 shared_cache_smoke=false
 shared_cache_diagnostics=true
 benchmark_expected_sha=<精确40位工具SHA>
+benchmark_trials=8
 artifact相关三项留空
 ~~~
 
-仅执行`windows-shared-cache-diagnostics`：固定9个相关文件，各自新Node进程、TAP即时输出、25s单文件／150s总界；任何失败或超时非零，未执行项不能算通过。不用test-force-exit，超时后的后代进程不冒称已确认关闭。无需Actions artifact读取权限／GitHub token、完整构建输入或媒体下载；只上传自有合成测试TAP与摘要，其中可含标准CI源码／临时目录栈，不含用户环境。先用独立失败与泄漏句柄夹具验证栈能在进程结束前输出、外层超时仍失败。
+仅执行`windows-shared-cache-diagnostics`，当前调用`windows-stability.cjs`：只匹配`trusted-cd2-shared`，固定2／4／6／8次（该技术模式复用benchmark_trials，普通benchmark本身关闭）；推荐本轮8次，每次新Node进程、8s单次／80s总界。预先确定次数，不因失败重试或删除失败；任何超时、退出／流状态错误、未执行、目标没有执行、TAP或指标不符都使总结果非零。即时输出受控TAP stack，不能把诊断留在不可读artifact中。保留每次文件及总摘要，不用test-force-exit。原九文件工具`windows-diagnostics.cjs --out=新目录`仍可复现历史矩阵，各文件25s／总150s；当前手动workflow不会再重复那九文件。
+
+成功也输出B从原command到load选择的耗时、新鲜1B探测物理关闭耗时、真实store.open耗时；保留25ms原软期限，不据结果放宽。此值不是首帧或seek性能。合成生命周期夹具明确在产品select完成后，等待实际A key再发原有一次8B读取，实际确认A8B留存才允许合成时钟到70%；不新增下载／put／授权，48B共存、代理选择和实际自然next断言不变。独立pending-recovery用例仍证明真实冷网络不必等待索引，不能把这一生命周期前提冒称冷首帧证明。
 
 前次[Windows CI 40209021958](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40209021958)最终40分钟取消；完整日志只有16个失败名，末条16:05:07，没有AssertionError／stack，不能认定首因是EACCES、路径或25ms期限。规范化目录和端口预检是补齐已知测试前提，不是已经得到Windows修复证据。新诊断先取得真实断言；公共runner也切TAP，保留原测试集合、非零结果及六项材料排除不变。
 
@@ -85,6 +88,13 @@ GitHub token只给api.github.com，artifact302用另一个无认证客户端下�
 
 Output必须是新目录。该命令不安装，不访问真实服务器，不替用户准备真实账号；不能在Work前台执行。本轮没有运行以上Windows命令，也没有自行dispatch。
 
-本轮最终Linux串行完整回归2656项：2643通过、0失败、13项既有平台跳过；JS563／PowerShell53语法通过。一次本地回归发现坏块剔除用例与成功源回填并发的测试假设冲突，现明确跳过该用例的回填写，只测坏块拒绝／剔除，正文SHA与坏数据命中0B断言保持；不作为Windows首因。Windows平台的新诊断及真实helper短验均尚待父用普通UI单次运行，不能据此宣称Windows回归已修好。
+2db8000交付时Linux串行完整回归2656项：2643通过、0失败、13项既有平台跳过；当时JS563／PowerShell53语法通过。一次本地回归发现坏块剔除用例与成功源回填并发的测试假设冲突，现明确跳过该用例的回填写，只测坏块拒绝／剔除，正文SHA与坏数据命中0B断言保持；不作为Windows首因。Windows平台的新诊断及真实helper短验均尚待父用普通UI单次运行，不能据此宣称Windows回归已修好。
 
 后续无包诊断run40213682632（2db8000）实际132项131通过、1失败、0skip，无timeout且流关闭；8文件通过，唯一shared自然切集在B已预载后回原source。未取得该选路的具体reason；追加的测试观测只输出媒体字母、规范化diagnostic、探测关闭与真实索引open起止，不改期限或成功断言。该Windows结果仍不是全仓／Native通过。
+
+
+最新完整push run40214559293／job121232783515（4898b07）自然失败：2555项2501通过、50失败、4跳过、无cancel。主要失败来自app-trial夹具在进入断言前的physical→createProfile拒绝；同run的TEMP探针明确rawMkdtemp resolvedEqualsNative=false／hasShortNameSegment=true，而physicalMkdtemp两项为true／false。现仅将该夹具改用既有canonical helper，产品拒绝alias／link的校验不变。另外shared B该次已用代理、索引open约4.52ms，失败的是A8B＋B40B共存采样；冷后台恢复可合法跳过首次可选tap，现明确上述生命周期夹具前提，未降低48B要求。先前B回原source的根因仍未知，不能用单次成功说已解决。
+
+本地最终预检：有界8次shared单例全通过，B选择p50=3.78ms／最大4.20ms，probe p50=1.61ms／最大1.73ms，store.open p50=1.48ms／最大1.61ms；同一Linux机器、loopback、新临时根／新Node进程、OS缓存未清，原始回执在仓库外。这不是Windows稳定性或任意影片保证。相关应用／profile／adapter定向95项、工具／workflow定向26项通过；Windows有界8次仍等待父单次手动调度。本任务未重跑旧40分钟失败run、未自行dispatch或打包。
+
+本次稳定性工具及夹具修正后的Linux完整回归2660项：2647通过、0失败、13既有平台跳过，约122.6s。该结果不覆盖新的Windows完整回归或8次稳定性；当前仍不可排包。

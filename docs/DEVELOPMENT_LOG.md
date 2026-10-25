@@ -1,5 +1,9 @@
 # 维护记录
 
+## 共享自然切集有界稳定性与夹具前提
+
+4898b07无包Windows矩阵132/132通过，但完整push随后2555项2501通过／50失败／4跳过，不能排包。实际TEMP探针证明短名与物理根不等；只修app-trial夹具canonical根，不改隔离门禁。另一次B已代理但A可选冷tap未形成，现合成生命周期在select结束后确认A key及原有8B读取留存，再进70%；48B／代理／授权／25ms断言不变。诊断手动入口收敛为仅shared单例固定2/4/6/8次新Node（8s/次、80s总界），即时TAP与B probe／索引／选择耗时，不重试抹失败。Linux预检8/8、定向95及26、完整2660项2647通过／0失败／13既有跳过；Windows短稳定性与新完整CI尚待通过，旧B回退首因仍未知，不打包不dispatch。详见[Windows合成验收](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。
+
 ## Windows暖切集回退定位
 
 2db8000的无包Windows诊断132项：131通过、1失败、无skip／timeout，9文件8通过；唯一失败是shared自然切集的代理URL断言。已到达B预载40B→EOF→next之后，故回退是暖B，不是首次模块加载；尚无具体reason，不能认定是25ms或磁盘。只给测试补B load的规范化诊断、1B探测物理关闭及真实store.open起止时序，不改产品、期限、鉴权或断言条件；本地自然链17项通过，下一次有界Windows诊断用于区分probe与暖索引等待。仍不打包／dispatch／发布。
