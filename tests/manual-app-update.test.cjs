@@ -453,3 +453,13 @@ for (const [code, reason] of [['ENOSPC', 'disk-full'], ['EDQUOT', 'disk-full'], 
         assert.equal(quits, 0); await h.unregister();
     });
 }
+
+test('unavailable cache does not disable reading the channel or manual official checks', async () => {
+    const h = ipcHarness({updateCache: {recovery() { throw Error('cache unavailable'); },
+        download() { throw Object.assign(Error('full'), {code: 'ENOSPC'}); }}});
+    const channel = await h.invoke(ipc.CHANNELS.GET_CHANNEL);
+    assert.equal(channel.status, 'ok'); assert.equal(channel.channel, 'stable'); assert.equal(channel.recovery, 'cache-unavailable');
+    assert.equal((await h.invoke(ipc.CHANNELS.CHECK_UPDATE)).status, 'update-available');
+    assert.equal((await h.invoke(ipc.CHANNELS.DOWNLOAD)).reason, 'disk-full');
+    await h.unregister();
+});

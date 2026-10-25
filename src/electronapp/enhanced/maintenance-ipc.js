@@ -112,7 +112,10 @@ function register(options) {
         if (request !== undefined) return {status: 'error', reason: 'invalid-request'};
         if (channelChange) await channelChange.catch(() => {});
         if (closing) return {status: 'error', reason: 'closed'};
-        const recovery = settings.updateCache ? await settings.updateCache.recovery() : false;
+        let recovery = false;
+        // Local cache faults must not disable read-only version/channel checks.
+        try { if (settings.updateCache) recovery = await settings.updateCache.recovery(); }
+        catch (_) { recovery = 'cache-unavailable'; }
         return {status: 'ok', channel: await currentChannel(), recovery};
     });
 

@@ -230,7 +230,7 @@ test('reading the saved channel is local only and does not start a check', async
     assert.equal(h.pending.length, 1);
 });
 
-for (const [recovery, message] of [['pending-install', /尚未确认安装完成/], ['cleanup-pending', /新版本已启动.*无法安全清理/]]) {
+for (const [recovery, message] of [['pending-install', /尚未确认安装完成/], ['cleanup-pending', /新版本已启动.*无法安全清理/], ['cache-unavailable', /缓存暂不可用.*仍可检查版本/]]) {
     test('local recovery distinguishes ' + recovery + ' without a check or popup', async () => {
         const h = harness(), reading = h.controller.loadChannel();
         h.pending[0].resolve({status: 'ok', channel: 'stable', recovery}); await reading;
