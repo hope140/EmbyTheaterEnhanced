@@ -1,5 +1,15 @@
 # 共享播放缓存：独立Windows合成验收
 
+## 当前前置：Windows测试端口快照只采一次
+
+[公共CI40242511191](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40242511191)唯一失败在夹具temporaryRoot读取netsh排除表，原十秒调用超时；媒体未开始。总2633项中2628通过、1失败、4跳过，无cancel，不能当作B拒绝证据或权限拒绝。原helper模块缓存只在单文件进程生效；本次仅修测试／CI，保留e5ca97f的安全选择摘要和原产品树。
+
+公共runner和打包回归入口在整批启动前各进行一次原有netsh／netstat只读采集，每命令仍十秒、有界输出；失败锁存并立即让本批失败。schema1的排除区间／去重占用端口经至多8KiB环境变量继承，不持久保存。每个文件进程严格校验字段、端口、重复值和长度，空／损坏／未知schema快照不能忽略或重新采集。非Windows不查系统命令；未使用批runner的独立调用仍在其进程内一次采集。快照不是预留或最新状态保证，实际固定guard和碰撞失败保持，无bind重试／提权／网络或系统设置变更。
+
+独立确定性覆盖包含一次采集／跨factory继承、成功失败锁存、无效／超限拒绝、Linux路径、真实guard派生避让、runner环境传递和首次预检失败禁止启动测试子进程；59项定向通过，不是实际Windows命令结果。后台产品修复6ec2c65另存，本诊断候选不含该产品改动；仍复用原2e99包仅取得B选择拒绝标签，不作为最终缓存验收。
+
+本地完整离线2741项：2728通过、0失败、13项既有平台跳过，约59.8秒；PowerShell53语法、有限676文件模式扫描及新增文档链接／格式通过。真实Windows批次采集、环境大小及新CI结果仍待执行；不得将模拟命令与PowerShell语法检查当作Windows系统查询成功。
+
 ## 当前：baseline完整通过，natural共享选择尚未通过
 
 [四阶段40241705325](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40241705325)的baseline首次完整通过：真实首帧、前后seek与恢复推进、原PM同item／session／MediaSource Stop回调、helper和Electron自然退出0。natural已从真实EOF沿原PM切B，但B的load仍为原源；预载仅报告partial，保留2,359,296B，不能用源端完整响应约11MB代替成功缓存。natural正常退出1／流关闭，无timeout；reopen和cancel未运行。
