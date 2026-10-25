@@ -107,11 +107,11 @@ function makeClientClass(options) {
       if (!settings.deferredStart) return Promise.resolve(this);
       return new Promise((resolve, reject) => { this.resolveStart = resolve; this.rejectStart = reject; });
     }
-    beginGeneration(label) {
+    beginGeneration(label, observedProperties, diagnosticIdentity) {
       this.currentGenerationId = ++nextGeneration;
       if (typeof this.options.onDiagnostic === 'function') {
         this.options.onDiagnostic({name: 'generation-begin', generationId: this.currentGenerationId,
-          disposition: 'BEGIN_GENERATION', currentGenerationId: this.currentGenerationId, label});
+          disposition: 'BEGIN_GENERATION', currentGenerationId: this.currentGenerationId, label, diagnosticIdentity});
       }
       return this.currentGenerationId;
     }
@@ -209,6 +209,33 @@ function makeIpcMain() {
     listenerCount(name) { return (listeners.get(name) || []).length; }
   };
 }
+
+test('native media failure keeps numeric evidence and anonymous request identity without changing failure policy', async () => {
+  const ClientClass = makeClientClass();
+  const {main, service, logs} = makeService(ClientClass);
+  const created = await service.call('create');
+  const {generationId} = await service.call('begin-generation', {label: 'play-1-1', diagnosticIdentity: {
+    serverId: 'SERVICE_SERVER_CANARY', itemId: 'SERVICE_ITEM_CANARY', mediaSourceId: 'SERVICE_SOURCE_CANARY'
+  }}, created.endpointId);
+  const active = ClientClass.clients[0];
+  const associated = logs.find(record => record.event === 'generation-begin').details;
+  assert.equal(associated.requestId, 'play-1-1');
+  assert.match(associated.itemRef, /^anon-[a-f0-9]{32}$/);
+  assert.match(associated.mediaSourceRef, /^anon-[a-f0-9]{32}$/);
+  const failure = error => active.options.onEvent({name: 'end-file', generationId, value: {reason: 4, error,
+    log: 'RAW_MPV_CANARY https://PRIVATE_URL_CANARY/?token=PRIVATE_TOKEN_CANARY'}});
+  for (const value of [-13, undefined, 'RAW_ERROR_CANARY', 2 ** 32]) failure(value);
+  const errors = main.sent.map(args => args[1]).filter(message => message.type === 'bridge_error');
+  assert.deepEqual(errors.map(message => [message.reason, message.endReason, message.mpvErrorCode]), [
+    ['load-failed', 4, -13], ['load-failed', 4, null], ['load-failed', 4, null], ['load-failed', 4, null]
+  ]);
+  active.options.onEvent({name: 'end-file', generationId: generationId + 1, value: {reason: 4, error: -12}});
+  assert.equal(main.sent.map(args => args[1]).filter(message => message.type === 'bridge_error').length, 4);
+  assert.equal(active.currentGenerationId, generationId);
+  assert.equal(ClientClass.clients.length, 1);
+  assert.doesNotMatch(JSON.stringify({logs, sent: main.sent}), /CANARY/);
+  await service.destroy();
+});
 
 async function showSurface(service) {
   const created = await service.call('create');

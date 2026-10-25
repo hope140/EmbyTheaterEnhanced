@@ -56,6 +56,14 @@ handshake 必须在 ready 前确认 protocol、helper version、libmpv runtime v
 - `FILE_LOADED` 只有 native state 中恰有一个 unique open mapped media identity 时才接受；否则 quarantine/drop，不猜 current generation。
 - B 成为 authoritative 后，A 的 event、response、error recovery 与 `core-idle=false` 均不能改变 B。已经在 A authoritative 时提交给 libmpv 的 load 不被错误描述为“从未发生”。
 
+## 有界诊断关联
+
+现有 `end-file {reason,error}` 的 `error` 仅以有符号32位整数 `mpvErrorCode` 进入 native 诊断与 renderer `playback-error`；缺失／非法值为 `null`。`endReason=4` 表示 mpv 的错误终态，不能据此推断 HTTP 403 或其它服务端状态。原 `load-failed` 与通用播放错误文案保持，字段为 schemaVersion 1 的可选增补，旧日志仍可读取。
+
+renderer 在既有 begin-generation IPC 中仅附带当前 Item 的 ServerId／Id 和 MediaSource.Id；main 的诊断投影使用内存内随机256位密钥与分域 HMAC-SHA256，截取128位生成 `itemRef`／`mediaSourceRef`。密钥不持久化、不导出，关联只在同一 service 生命周期内有效，重启／其它客户端不能稳定比对。MediaSource 引用同时绑定 server 和 Item；缺失身份为 `UNAVAILABLE`，不从路径、URL、片名或其它请求猜补。原始字段不写入诊断、controller timeline 或 helper 命令；沿用现有 sender 校验、64项 generation/request 关联表、有界 recorder、logger 脱敏和导出链。
+
+`playbackPhase` 从 `loading` 开始，仅所属 generation 的有效 `core-idle=false` 标为 `playing`，表示曾观测到 core-playing，不证明可见首帧或故障根因；暂停不会清除此阶段。旧 generation 保留自身关联，未知／过期关联与 stale helper 不借用当前媒体。renderer Stop 的固定 `stopSource` 区分 adapter-stop、adapter-stop-destroy 与 native-eof-reached，不能将 adapter 调用直接等同用户手动操作。不记录原始 mpv 日志、媒体地址、鉴权数据或原媒体标识；不新增请求、自动重试／回退、播放策略或超时改动。诊断受原容量／速率限制，缺失历史字段不能追溯恢复。
+
 ## Crash 与关闭
 
 helper crash/EOF/protocol failure 会原子终止该 helper 的全部 pending request；late response 只记录/drop。下一次合法 Play 可创建 H2，且 H2 identity 与 H1 不同；当前播放停止/报错，不重新启用旧 bridge。Electron parent 被强制终止时，继承 pipe EOF 使 helper 自行退出；当前 production implementation 不需要额外 Job Object。

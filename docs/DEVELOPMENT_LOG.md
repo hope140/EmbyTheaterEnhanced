@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-25 — Native 播放诊断最小补全
+
+从 main `2cb08e5` 独立分支补充 `mpvErrorCode` 数字投影、匿名 Item／MediaSource 引用、原 request/generation 关联与阶段／Stop 来源。复用既有受信 IPC 和有界日志导出，不使用可跨客户端稳定关联的裸媒体ID哈希；内存随机密钥不进入日志或持久化。`reason=4` 仅为 mpv 错误终态；不改变播放控制、解码、超时、回退或重试，不新增媒体／115请求。详见[字段合同](NATIVE_HELPER_BRIDGE.md#有界诊断关联)。
+
+合成回归覆盖不同集／不同媒体源／不同 server、重复媒体、随机密钥隔离、stale generation/helper、loading 与 playing 错误、非法／缺失数字字段、JSONL／导出敏感 canary 无残留及原失败控制行为。Linux Node24.18.1：相关定向116项全过，公开回归2063项中2050 pass／0 fail／13项平台 skip；JavaScript／PowerShell语法、有限凭据模式、差异空白、四份快照和固定 libmpv 归档校验通过。只做源码和合成验证；不进入真实客户端、用户登录态或安装环境，不恢复缺失历史错误。远端 CI 结果以本次 PR 为准，合 main 后等待统一版本，不创建 Tag／Release／安装包。
+
 ## 2026-10-25 — Anime4K 额外画质资源退役候选
 
 从最新 main `8745493` 建立独立清理候选，删除仍随包的39份 Anime4K shader（2,391,214 bytes）及其专属 Git 属性规则；兼容活动清单归零，移除已无用途的准备参数／恢复请求，组装与来源校验保留历史身份及零输出。此前已退役的 preset、字体、主题备份和 BAT 不复活。libmpv、Native Helper、播放器适配、解码依赖、正常设置及活动启动图保持，版本不变。

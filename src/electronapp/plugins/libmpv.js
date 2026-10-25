@@ -22,7 +22,8 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
     function requestDiagnosticDetails(request) {
         return {
             requestId: request && request.requestId,
-            playRequestId: request && request.playbackRequestId ? request.playbackRequestId : null
+            playRequestId: request && request.playbackRequestId ? request.playbackRequestId : null,
+            playbackPhase: request ? request.corePlayingLogged ? 'playing' : 'loading' : 'UNAVAILABLE'
         };
     }
 
@@ -767,7 +768,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             if (recv.data.type == 'bridge_error') {
                 var reason = recv.data.data && recv.data.data.reason || 'native-helper-terminated';
                 dispatchEvent(new CustomEvent('native-helper-error', {detail: {reason: reason}}));
-                self._onError({name: 'NativeHelperError', message: reason});
+                self._onError(recv.data.data);
                 return;
             }
             if (recv.data.type == 'ready') {
@@ -1127,7 +1128,11 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             }
 
             if (libmpv && typeof libmpv.beginGeneration === 'function') {
-                await libmpv.beginGeneration(request.requestId, nextTransition.loadingToken(request.playbackRequestId));
+                await libmpv.beginGeneration(request.requestId, nextTransition.loadingToken(request.playbackRequestId), {
+                    serverId: item && item.ServerId,
+                    itemId: item && item.Id,
+                    mediaSourceId: mediaSource && mediaSource.Id
+                });
                 assertCurrentPlayRequest(request);
             }
             await setProperty(Object.assign(playerOptions, audioDelay(), interlace(), createClosedCaptionTrack(mediaSource, isVideo), getMpvAudioOptions(mediaType)))
@@ -1254,7 +1259,9 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                     await sendCommand('stop');
                 }
             }
-            emitClientDiagnostic('info', 'playback', 'stop', requestDiagnosticDetails(request));
+            emitClientDiagnostic('info', 'playback', 'stop', Object.assign(requestDiagnosticDetails(request), {
+                stopSource: destroyPlayer ? 'adapter-stop-destroy' : 'adapter-stop'
+            }));
             self._onStopped(true)
         };
 
@@ -1469,10 +1476,13 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             playerState.demuxerCacheState = value;
         };
 
-        self._onError = function () {
+        self._onError = function (error) {
 
             emitClientDiagnostic('error', 'playback', 'playback-error', Object.assign(requestDiagnosticDetails(activePlayRequest), {
-                stage: 'player-event'
+                stage: 'player-event',
+                endReason: error && error.endReason === 4 ? 4 : null,
+                mpvErrorCode: error && Number.isInteger(error.mpvErrorCode) && error.mpvErrorCode >= -2147483648 &&
+                    error.mpvErrorCode <= 2147483647 ? error.mpvErrorCode : null
             }));
             events.trigger(self, 'error');
         };
@@ -1502,7 +1512,9 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
         self._onStopped = function (stopped) {
             if (stopped) {
-                if (activePlayRequest) emitClientDiagnostic('info', 'playback', 'stop', requestDiagnosticDetails(activePlayRequest));
+                if (activePlayRequest) emitClientDiagnostic('info', 'playback', 'stop', Object.assign(requestDiagnosticDetails(activePlayRequest), {
+                    stopSource: 'native-eof-reached'
+                }));
                 events.trigger(self, 'stopped');
             }
         };

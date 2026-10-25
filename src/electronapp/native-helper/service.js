@@ -9,7 +9,7 @@ const path = require('path');
 const crypto = require('crypto');
 const childProcess = require('node:child_process');
 const {NativeHelperClient, PROTOCOL_VERSION} = require('./controller');
-const {createNativeDiagnostics} = require('../enhanced/native-diagnostics');
+const {createNativeDiagnostics, mpvErrorCode} = require('../enhanced/native-diagnostics');
 
 const CALL_CHANNEL = 'enhanced-native-helper-call';
 const NOTIFY_CHANNEL = 'enhanced-native-helper-notify';
@@ -516,7 +516,8 @@ function createService(options) {
           clearPresentation(presentation);
           surfaceWanted = false;
           syncSurfaceVisibility('media-error');
-          sendEvent({type: 'bridge_error', reason: 'load-failed'});
+          sendEvent({type: 'bridge_error', reason: 'load-failed', endReason: 4,
+            mpvErrorCode: mpvErrorCode(message.value.error)});
           log('load-failed', {reason: 'mpv-end-file-error'});
           return;
         }
@@ -713,7 +714,7 @@ function createService(options) {
       requireEndpoint(endpointId);
       if (beginEpoch !== generationEpoch || active !== client) throw new Error('generation-superseded');
       const label = typeof payload.label === 'string' ? payload.label.slice(0, 128) : 'play';
-      const generationId = active.beginGeneration(label, [...observed]);
+      const generationId = active.beginGeneration(label, [...observed], payload.diagnosticIdentity);
       const record = presentation;
       if (ownsPresentation(record) && record.token === payload.presentationToken && validToken(record.holdId)) {
         record.targetGeneration = generationId;
