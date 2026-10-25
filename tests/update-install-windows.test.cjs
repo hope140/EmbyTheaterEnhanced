@@ -14,12 +14,15 @@ const windows = {skip: process.platform !== 'win32' && 'Windows handles / Window
 test('Windows relay compiler diagnostic keeps the control input open without executing a program', {...windows, timeout: 160000}, async () => {
     const exe = path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
     const records = [];
-    for (const form of ['minimal', 'system-path', 'full']) {
+    for (const form of ['system-modules', 'system-shell', 'system-complete']) {
         const source = fs.readFileSync(path.resolve(__dirname, '../src/electronapp/enhanced/update-install-relay.cs')).toString('base64');
         const command = "[Console]::Error.WriteLine('COMPILER_ENTER'); Add-Type -TypeDefinition ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + source + "'))); [Console]::Error.WriteLine('COMPILER_DONE'); exit [EteUpdateRelay]::Run()";
         const minimal = Object.fromEntries(['SystemRoot', 'WINDIR', 'TEMP', 'TMP', 'APPDATA', 'LOCALAPPDATA', 'USERPROFILE', 'ProgramData', 'ProgramFiles', 'ProgramFiles(x86)']
             .filter(key => process.env[key] !== undefined).map(key => [key, process.env[key]]));
-        const env = form === 'full' ? process.env : form === 'system-path' ? {...minimal, Path: path.join(process.env.SystemRoot,'System32') + ';' + process.env.SystemRoot} : minimal;
+        const shell = {Path: path.join(process.env.SystemRoot,'System32') + ';' + process.env.SystemRoot,
+            ComSpec: path.join(process.env.SystemRoot,'System32','cmd.exe'), PATHEXT: '.COM;.EXE;.BAT;.CMD'};
+        const modules = {PSModulePath: path.join(process.env.SystemRoot,'System32','WindowsPowerShell','v1.0','Modules')};
+        const env = {...minimal, ...(form !== 'system-modules' ? shell : {}), ...(form !== 'system-shell' ? modules : {})};
         const began = Date.now();
         const row = await new Promise(resolve => {
             const child = cp.spawn(exe, ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', command], {env, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe']});
