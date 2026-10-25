@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-10-25 — Isolated custom-core export mapping has a positive bounded result
+
+The fixed-source experiment now builds and validates a separate Linux headless libmpv; production DLL/manifest/helper/kernel selection remain unchanged. Five-file patch adds finite export IDs, exact source/submitted anchors, codec configuration fingerprints, final I/O failure propagation and bounded whole-stream packet sequence digests. Reopening the exported file verifies all383 packets for raw/PCM NUT and H264B-frame/two-AAC MP4, including sourceaudio2→mux1. A separate reader process maps source3.25seconds; a local owned-fixture oracle matches one decodedRGB frame and12,000PCM samples per case. No additional observed source requests/application write bytes, native async cancel/replacement report invalidation and FD4→4 are confirmed. Read the [source/build/result contract](../native/experiments/buffer-retention/README.md).
+
+This is restricted synthetic core evidence, not ordinary app/NAS/Windows acceptance or full-buffer transparent restart. The normal context still has canReuse=false. Unknown raw packing, codec/configuration mismatch and unverified sequence/timestamp transformations fail closed. The tool-only generation/path/lease binding does not add a production protocol or source override. Windows graphics-preserving dependency locking/DLL/actual Helper smoke and ordinary authenticated storage/replay remain separate engineering stages; no package, dispatch, main merge or release occurs.
+
+Final source checks:25 targeted passed; full offline2087 tests/2077 passed/0 failed/10 platform skips,491 JavaScript syntax checks and584-file finite credential-pattern scan. The [normalized native receipt](../native/experiments/buffer-retention/linux-result-v1.json) binds the patch, build recipe, input lock and separate Linux binary identities.
+
 ## 2026-10-25 — Ordinary-entry retention context; exact export map remains gated
 
 The actual a593607 state run40161248912 passed finite4268642B storage, manager reopen/new-helper lease consumption, release/close, zero native readers, PCM seam and five normal helper exits. It remains explicitly owned-synthetic evidence. Add a default-off isolated ordinary adapter context path from current ConnectionManager/Item/MediaSource/PlaySession to fresh same-origin206/strong-ETag authorization and read-only existing mpv buffer observation. Original source and budgets remain unchanged; canReuse stays false. Explicit invalid trial launches fail before bootstrap, and old Stop/destroy cannot act on a replacement generation/endpoint. No ordinary Store/dump or media replacement is enabled.

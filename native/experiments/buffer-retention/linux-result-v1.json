@@ -1,0 +1,183 @@
+{
+  "schema": 1,
+  "scope": "custom-linux-headless-core-NOT-app-Windows",
+  "buildReceipt": {
+    "schema": 1,
+    "scope": "Linux x86_64 headless source experiment; not Windows or production-equivalent",
+    "mpvCommit": "dd5d17d3285a095a0f712fa9d116e22a076492de",
+    "patchSha256": "e2164a2a08a10c55c621fa2c32cae4a6929ce037c1b1039f1a03fe4d137b545e",
+    "inputLockSha256": "764804242267707f4298bfa10d9ab29aa842717a4f83bb78baca579f048b3ea3",
+    "buildRecipeSha256": "0920d42cd2c6038a17ea58e597773d56126db2853db31533a6254c6127c6c2ac",
+    "librarySha256": "f6fb466bbee5995f94b56505d331a34e26897c1f73b2c8982484c8bf071c45bc",
+    "bytes": 9002776,
+    "elapsedSeconds": 23.851,
+    "productionEquivalent": false
+  },
+  "faultShim": {
+    "sourceSha256": "be3a38ced5af216da28f75b57aa37c72b5bc415776c2188f01747cf05d9f850a",
+    "librarySha256": "f5988d47caaea4b48459c60588e91f8ceb83b233b629190c41a28b36463c61d0",
+    "scope": "process-local-test-faults-NOT-product"
+  },
+  "fdBaseline": 4,
+  "fdAfter": 4,
+  "cases": [
+    {
+      "kind": "raw",
+      "sourceFormat": "BGR24/PCM NUT",
+      "cacheFileFormat": "NUT",
+      "bytes": 2881040,
+      "sha256": "2afb209115eb61bab99c28dc6aff6ca6d2eec3fbefbef6a75d651ba4a1131107",
+      "mapping": {
+        "schema": 1,
+        "exportId": 1,
+        "serializedClipMapVerified": true,
+        "sourceMinusClipSeconds": 2.2826666666666666,
+        "quantizationBoundSeconds": 4.166766666666667e-05,
+        "observedContainerShiftSeconds": 0,
+        "sourceAnchorStartSeconds": 2.2916666666666665,
+        "sourceAnchorEndSeconds": 4.778666666666666,
+        "scope": "verified-packet-sequence-NOT-device-gaplessness-HDR-or-preroll-guarantee"
+      },
+      "decodeOracle": {
+        "scope": "owned-fixture-check-NOT-a-product-source-lookup",
+        "sourceSeconds": 3.25,
+        "clipSeconds": 0.9673333333333334,
+        "rgb24FrameBytes": 43200,
+        "exactFrame": true,
+        "pcmSamples": 12000,
+        "exactPcm": true
+      },
+      "reader": {
+        "scope": "separate-process-headless-CAPI-NOT-production-helper",
+        "targetSourceSeconds": 3.25,
+        "landedClipSeconds": 0.9673258463541666,
+        "mappedSourceSeconds": 3.249992513020833,
+        "withinOneFixtureFrame": true,
+        "contextTerminated": true,
+        "workerExitCode": 0,
+        "streamsClosed": true
+      },
+      "newSourceRequests": 0,
+      "newSourceKnownWriteBytes": 0,
+      "historicalUnknownWriteUpperBound": 65536,
+      "sourceWritesQuiescent": true,
+      "unchangedAfterStopAndContextExit": true,
+      "faults": [
+        {
+          "mode": 1,
+          "observedError": -5,
+          "unavailable": true
+        },
+        {
+          "mode": 2,
+          "observedError": -5,
+          "unavailable": true
+        },
+        {
+          "mode": 3,
+          "observedError": -5,
+          "unavailable": true
+        }
+      ],
+      "lifecycle": {
+        "cancelledReply": -12,
+        "cancelledReportCleared": true,
+        "replacementLoaded": true,
+        "oldReportUnavailable": true
+      },
+      "duplicateIdRejected": true,
+      "negativeContainerRejected": true,
+      "streamIndexesAndPacketCounts": [
+        {
+          "source": 0,
+          "mux": 0,
+          "packets": 61
+        },
+        {
+          "source": 1,
+          "mux": 1,
+          "packets": 118
+        }
+      ]
+    },
+    {
+      "kind": "bframe",
+      "sourceFormat": "H264 B-frame + two AAC tracks MP4; selected second audio",
+      "cacheFileFormat": "MP4",
+      "bytes": 84904,
+      "sha256": "1049b95db84e21ee91751f0f6dfe0c9227a6c95eda2de0a7725147c7a72fd631",
+      "mapping": {
+        "schema": 1,
+        "exportId": 1,
+        "serializedClipMapVerified": true,
+        "sourceMinusClipSeconds": 1.984,
+        "quantizationBoundSeconds": 0.00016276141666666665,
+        "observedContainerShiftSeconds": 0,
+        "sourceAnchorStartSeconds": 2,
+        "sourceAnchorEndSeconds": 4.778666666666666,
+        "scope": "verified-packet-sequence-NOT-device-gaplessness-HDR-or-preroll-guarantee"
+      },
+      "decodeOracle": {
+        "scope": "owned-fixture-check-NOT-a-product-source-lookup",
+        "sourceSeconds": 3.25,
+        "clipSeconds": 1.266,
+        "rgb24FrameBytes": 43200,
+        "exactFrame": true,
+        "pcmSamples": 12000,
+        "exactPcm": true
+      },
+      "reader": {
+        "scope": "separate-process-headless-CAPI-NOT-production-helper",
+        "targetSourceSeconds": 3.25,
+        "landedClipSeconds": 1.2660319010416665,
+        "mappedSourceSeconds": 3.2500319010416665,
+        "withinOneFixtureFrame": true,
+        "contextTerminated": true,
+        "workerExitCode": 0,
+        "streamsClosed": true
+      },
+      "newSourceRequests": 0,
+      "newSourceKnownWriteBytes": 0,
+      "historicalUnknownWriteUpperBound": 65536,
+      "sourceWritesQuiescent": true,
+      "unchangedAfterStopAndContextExit": true,
+      "faults": [
+        {
+          "mode": 1,
+          "observedError": -5,
+          "unavailable": true
+        },
+        {
+          "mode": 2,
+          "observedError": -5,
+          "unavailable": true
+        },
+        {
+          "mode": 3,
+          "observedError": -5,
+          "unavailable": true
+        }
+      ],
+      "lifecycle": {
+        "cancelledReply": -12,
+        "cancelledReportCleared": true,
+        "replacementLoaded": true,
+        "oldReportUnavailable": true
+      },
+      "duplicateIdRejected": true,
+      "negativeContainerRejected": true,
+      "streamIndexesAndPacketCounts": [
+        {
+          "source": 0,
+          "mux": 0,
+          "packets": 72
+        },
+        {
+          "source": 2,
+          "mux": 1,
+          "packets": 132
+        }
+      ]
+    }
+  ]
+}

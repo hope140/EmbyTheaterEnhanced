@@ -1,5 +1,9 @@
 # 播放缓冲暂存独立实验：阶段收尾与继续验证
 
+## Current result: exact-map experiment positive within explicit limits
+
+A separate fixed-source Linux candidate now has the bounded metadata API, whole-packet sequence validation and positive new-process mapped reading/error/cancel evidence. [Actual source, identity and results](../native/experiments/buffer-retention/README.md) distinguish this from the original DLL and earlier synthetic hash-mapping stages. It supports continued restricted engineering; it is not a reason to enable arbitrary user-media retention or combine it with the preload release. Windows dependency/build/render acceptance and ordinary authenticated replay remain unimplemented. Earlier checkpoint recommendations retain their original timing.
+
 ## 当前阶段补充：状态短测通过；普通入口真实映射仍受限
 
 实际run40161248912/job121073089323在a593607通过所述单窗口状态交接、manager重开、新helper读取、lease释放和manager关闭，nativeReaders0；五helper/driver退出及PCM接缝继续通过。该输入不再待测。下一步的普通入口上下文已在源码接到当前ApiClient和选中MediaSource/PlaySession，只做新鲜206鉴权版本及现有buffer观测；未保存/替换普通播放源。

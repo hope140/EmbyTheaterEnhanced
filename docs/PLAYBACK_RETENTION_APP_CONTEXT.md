@@ -1,5 +1,9 @@
 # Playback retention: ordinary-entry context trial
 
+## Later stage: separate source-built experiment, ordinary context still disabled
+
+The independent [custom-core experiment](../native/experiments/buffer-retention/README.md) now supplies a finite report API and positive Linux synthetic mapping/error/cancel/new-process evidence. It does not change the bundled fixed production core or connect ordinary replay. The context-only checkpoint below remains its original scope; statements that no core was changed/built refer to that earlier checkpoint. The proposed bounded core work is now implemented only in the separate experiment patch/build, not in a Windows product kernel.
+
 ## Verified result and current capability
 
 Run [40161248912](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40161248912), job121073089323 at `a59360795baca4fcb1d23950b1342d80c53e9f65`, actually reports `PASS`: finite export18ms/4,268,642B, zero newly observed export source requests/scheduled/completed bytes, stored window, manager close/reopen, next-helper lease read, released lease, final closed manager and zero native readers. The EDL/WAV temporary files were removed while one managed clip remained. Five helpers and the driver exited0 with closed streams. The PCM comparison covers9,600 exact samples around the seam, untimed file output and this raw-video/PCM fixture only. Artifact12586458304 ZIP SHA256 `fe1a66604ec52caf4a1062fe8cf93e6c63896aa6e5ec75c9d5bdc3c33b2b13f0` is the published diagnostic identity; the actual job summary was independently read.

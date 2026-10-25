@@ -1,0 +1,716 @@
+diff --git a/common/recorder.c b/common/recorder.c
+index 1722887b6..237dcaef3 100644
+--- a/common/recorder.c
++++ b/common/recorder.c
+@@ -16,8 +16,11 @@
+  */
+
+ #include <math.h>
++#include <inttypes.h>
+
+ #include <libavformat/avformat.h>
++#include <libavutil/sha.h>
++#include <libavutil/pixdesc.h>
+
+ #include "common/av_common.h"
+ #include "common/common.h"
+@@ -59,6 +62,8 @@ struct mp_recorder {
+     // of the first packet of the current segment written to the output.
+     double rebase_ts;
+
++    bool export_report_enabled;
++    struct mp_recorder_export_report report;
+     AVFormatContext *mux;
+ };
+
+@@ -72,6 +77,8 @@ struct mp_recorder_sink {
+     bool proper_eof;
+     struct demux_packet **packets;
+     int num_packets;
++    int report_index;
++    struct AVSHA *sequence;
+ };
+
+ static int add_stream(struct mp_recorder *priv, struct sh_stream *sh)
+@@ -79,10 +86,11 @@ static int add_stream(struct mp_recorder *priv, struct sh_stream *sh)
+     enum AVMediaType av_type = mp_to_av_stream_type(sh->type);
+     int ret = -1;
+     AVCodecParameters *avp = NULL;
++    struct mp_recorder_sink *rst = NULL;
+     if (av_type == AVMEDIA_TYPE_UNKNOWN)
+         goto done;
+
+-    struct mp_recorder_sink *rst = talloc(priv, struct mp_recorder_sink);
++    rst = talloc(priv, struct mp_recorder_sink);
+     *rst = (struct mp_recorder_sink) {
+         .owner = priv,
+         .sh = sh,
+@@ -123,6 +131,7 @@ static int add_stream(struct mp_recorder *priv, struct sh_stream *sh)
+     MP_TARRAY_APPEND(priv, priv->streams, priv->num_streams, rst);
+
+ done:
++    if (ret < 0 && rst) mp_free_av_packet(&rst->avpkt);
+     if (avp)
+         avcodec_parameters_free(&avp);
+     return ret;
+@@ -237,6 +246,61 @@ static void flush_packets(struct mp_recorder *priv)
+     }
+ }
+
++void mp_recorder_enable_export_report(struct mp_recorder *priv)
++{
++    priv->export_report_enabled = true;
++    priv->report.timestamps_valid = true;
++    for (int n = 0; n < priv->num_streams; n++) {
++        struct mp_recorder_sink *rst = priv->streams[n];
++        rst->report_index = -1;
++        if (rst->sh->type != STREAM_VIDEO && rst->sh->type != STREAM_AUDIO) {
++            priv->report.overflow = true; // first trial excludes subtitles
++            continue;
++        }
++        if (priv->report.num_streams == MP_EXPORT_MAX_STREAMS) {
++            priv->report.overflow = true;
++            continue;
++        }
++        rst->report_index = priv->report.num_streams++;
++        rst->sequence = av_sha_alloc();
++        if (!rst->sequence || av_sha_init(rst->sequence, 256) < 0) {
++            av_freep(&rst->sequence);
++            priv->report.packet_error = AVERROR(ENOMEM);
++        }
++        priv->report.streams[rst->report_index] = (struct mp_export_stream) {
++            .source_index = rst->sh->index, .mux_index = rst->av_stream->index,
++            .codec_id = rst->av_stream->codecpar->codec_id,
++            .type = rst->sh->type, .dts_complete = true,
++            .timebase_num = rst->av_stream->time_base.num,
++            .timebase_den = rst->av_stream->time_base.den,
++        };
++        struct mp_export_stream *s = &priv->report.streams[rst->report_index];
++        const AVCodecParameters *input = rst->sh->codec->lav_codecpar;
++        if (!input || input->codec_id != s->codec_id || input->extradata_size < 0 ||
++            input->extradata_size > 1048576) continue;
++        s->source_width = input->width;
++        s->source_height = input->height;
++        s->source_sample_rate = input->sample_rate;
++        s->source_channels = input->ch_layout.nb_channels;
++        const char *format = s->type == STREAM_VIDEO
++            ? av_get_pix_fmt_name(input->format) : NULL;
++        if (format) snprintf(s->source_pixel_format, sizeof(s->source_pixel_format), "%s", format);
++        struct AVSHA *header = av_sha_alloc();
++        if (!header || av_sha_init(header, 256) < 0) {
++            av_free(header);
++            priv->report.packet_error = AVERROR(ENOMEM);
++            continue;
++        }
++        av_sha_update(header, input->extradata, input->extradata_size);
++        av_sha_final(header, s->source_extradata_sha256);
++        av_free(header);
++        s->source_params_known = s->type == STREAM_VIDEO
++            ? input->width > 0 && input->height > 0 &&
++              (format || (input->codec_id == AV_CODEC_ID_H264 && input->extradata_size > 0))
++            : input->sample_rate > 0 && input->ch_layout.nb_channels > 0;
++    }
++}
++
+ static void mux_packet(struct mp_recorder_sink *rst,
+                        struct demux_packet *pkt)
+ {
+@@ -259,11 +323,54 @@ static void mux_packet(struct mp_recorder_sink *rst,
+     AVPacket *new_packet = av_packet_clone(rst->avpkt);
+     if (!new_packet) {
+         MP_ERR(priv, "Failed to allocate packet.\n");
++        priv->report.packet_error = AVERROR(ENOMEM);
+         return;
+     }
+
+-    if (av_interleaved_write_frame(priv->mux, new_packet) < 0)
++    struct mp_export_anchor anchor = {0};
++    bool capture = priv->export_report_enabled && rst->report_index >= 0;
++    if (capture) {
++        anchor = (struct mp_export_anchor) {
++            .pts_valid = pkt->pts != MP_NOPTS_VALUE && isfinite(pkt->pts) &&
++                         rst->avpkt->pts != AV_NOPTS_VALUE,
++            .dts_valid = pkt->dts != MP_NOPTS_VALUE && isfinite(pkt->dts) &&
++                         rst->avpkt->dts != AV_NOPTS_VALUE,
++            .input_pts = pkt->pts, .input_dts = pkt->dts,
++            .mux_pts = rst->avpkt->pts, .mux_dts = rst->avpkt->dts,
++            .keyframe = !!(rst->avpkt->flags & AV_PKT_FLAG_KEY), .bytes = rst->avpkt->size,
++        };
++        struct AVSHA *sha = av_sha_alloc();
++        if (!sha || av_sha_init(sha, 256) < 0) {
++            priv->report.packet_error = AVERROR(ENOMEM);
++            capture = false;
++        } else {
++            av_sha_update(sha, rst->avpkt->data, rst->avpkt->size);
++            av_sha_final(sha, anchor.sha256);
++        }
++        av_free(sha);
++    }
++    int write_result = av_interleaved_write_frame(priv->mux, new_packet);
++    if (write_result < 0) {
+         MP_ERR(priv, "Failed writing packet.\n");
++        priv->report.packet_error = write_result;
++    } else if (capture) {
++        struct mp_export_stream *stream = &priv->report.streams[rst->report_index];
++        if (!stream->packets) stream->first = anchor;
++        stream->last = anchor;
++        stream->packets++;
++        stream->dts_complete &= anchor.dts_valid;
++        if (rst->sequence) {
++            char metadata[160];
++            int count = snprintf(metadata, sizeof(metadata),
++                "%d:%d:%"PRId64":%d:%"PRId64":%d:", anchor.bytes,
++                anchor.pts_valid, anchor.pts_valid ? anchor.mux_pts : 0,
++                anchor.dts_valid, anchor.dts_valid ? anchor.mux_dts : 0,
++                anchor.keyframe);
++            av_sha_update(rst->sequence, metadata, count);
++            av_sha_update(rst->sequence, anchor.sha256, 32);
++        }
++        priv->report.timestamps_valid &= anchor.pts_valid;
++    }
+
+     av_packet_free(&new_packet);
+ }
+@@ -314,6 +421,11 @@ static void check_restart(struct mp_recorder *priv)
+
+     priv->rebase_ts = rebase_ts;
+     priv->base_ts = min_ts;
++    if (priv->export_report_enabled) {
++        priv->report.segments++;
++        priv->report.base_ts = min_ts;
++        priv->report.rebase_ts = rebase_ts;
++    }
+
+     for (int n = 0; n < priv->num_streams; n++) {
+         struct mp_recorder_sink *rst = priv->streams[n];
+@@ -326,30 +438,53 @@ static void check_restart(struct mp_recorder *priv)
+         MP_WARN(priv, "Discontinuity at timestamp %f.\n", priv->rebase_ts);
+ }
+
+-void mp_recorder_destroy(struct mp_recorder *priv)
++void mp_recorder_finish(struct mp_recorder *priv,
++                        struct mp_recorder_export_report *report)
+ {
+     if (priv->opened) {
+         for (int n = 0; n < priv->num_streams; n++) {
+             struct mp_recorder_sink *rst = priv->streams[n];
+             mux_packets(rst);
+-            mp_free_av_packet(&rst->avpkt);
+         }
+
+-        if (av_write_trailer(priv->mux) < 0)
++        int result = av_write_trailer(priv->mux);
++        if (result < 0) {
++            priv->report.trailer_error = result;
+             MP_ERR(priv, "Writing trailer failed.\n");
++        }
++        if (priv->mux->pb && priv->mux->pb->error < 0)
++            priv->report.trailer_error = priv->mux->pb->error;
+     }
+
+     if (priv->mux) {
+-        if (avio_closep(&priv->mux->pb) < 0)
++        int result = avio_closep(&priv->mux->pb);
++        if (result < 0) {
++            priv->report.close_error = result;
+             MP_ERR(priv, "Closing file failed\n");
++        }
+
+         avformat_free_context(priv->mux);
+     }
+
++    for (int n = 0; n < priv->num_streams; n++) {
++        struct mp_recorder_sink *rst = priv->streams[n];
++        if (rst->sequence) {
++            av_sha_final(rst->sequence,
++                         priv->report.streams[rst->report_index].sequence_sha256);
++            av_freep(&rst->sequence);
++        }
++        mp_free_av_packet(&rst->avpkt);
++    }
+     flush_packets(priv);
++    if (report) *report = priv->report;
+     talloc_free(priv);
+ }
+
++void mp_recorder_destroy(struct mp_recorder *priv)
++{
++    mp_recorder_finish(priv, NULL);
++}
++
+ // This is called on a seek, or when recording was started mid-stream.
+ void mp_recorder_mark_discontinuity(struct mp_recorder *priv)
+ {
+@@ -412,12 +547,15 @@ void mp_recorder_feed_packet(struct mp_recorder_sink *rst,
+     if (rst->num_packets >= QUEUE_MAX_PACKETS) {
+         MP_ERR(priv, "Stream %d has too many queued packets; dropping.\n",
+                rst->av_stream->index);
++        if (priv->export_report_enabled) priv->report.packet_error = AVERROR(ENOBUFS);
+         return;
+     }
+
+     pkt = demux_copy_packet(rst->owner->packet_pool, pkt);
+-    if (!pkt)
++    if (!pkt) {
++        if (priv->export_report_enabled) priv->report.packet_error = AVERROR(ENOMEM);
+         return;
++    }
+     MP_TARRAY_APPEND(rst, rst->packets, rst->num_packets, pkt);
+
+     check_restart(priv);
+diff --git a/common/recorder.h b/common/recorder.h
+index e86d97806..a9c1908b4 100644
+--- a/common/recorder.h
++++ b/common/recorder.h
+@@ -1,6 +1,37 @@
+ #ifndef MP_RECORDER_H_
+ #define MP_RECORDER_H_
+
++#include <stdbool.h>
++#include <stdint.h>
++
++// Experimental bounded metadata. Submitted timestamps are not a serialized-file
++// verification: the caller must reopen and validate these packet fingerprints.
++#define MP_EXPORT_MAX_STREAMS 8
++struct mp_export_anchor {
++    bool pts_valid, dts_valid, keyframe;
++    double input_pts, input_dts;
++    int64_t mux_pts, mux_dts;
++    int bytes;
++    unsigned char sha256[32];
++};
++struct mp_export_stream {
++    int source_index, mux_index, codec_id, type, timebase_num, timebase_den;
++    bool dts_complete;
++    unsigned char sequence_sha256[32];
++    bool source_params_known;
++    int source_width, source_height, source_sample_rate, source_channels;
++    char source_pixel_format[32];
++    unsigned char source_extradata_sha256[32];
++    int64_t packets;
++    struct mp_export_anchor first, last;
++};
++struct mp_recorder_export_report {
++    int segments, num_streams;
++    bool overflow, timestamps_valid;
++    double base_ts, rebase_ts;
++    int packet_error, trailer_error, close_error;
++    struct mp_export_stream streams[MP_EXPORT_MAX_STREAMS];
++};
+ struct mp_recorder;
+ struct mpv_global;
+ struct demux_packet;
+@@ -15,6 +46,9 @@ struct mp_recorder *mp_recorder_create(struct mpv_global *global,
+                                        struct demux_attachment **demux_attachments,
+                                        int num_attachments);
+ void mp_recorder_destroy(struct mp_recorder *r);
++void mp_recorder_enable_export_report(struct mp_recorder *r);
++void mp_recorder_finish(struct mp_recorder *r,
++                        struct mp_recorder_export_report *report);
+ void mp_recorder_mark_discontinuity(struct mp_recorder *r);
+
+ struct mp_recorder_sink *mp_recorder_get_sink(struct mp_recorder *r,
+diff --git a/demux/demux.c b/demux/demux.c
+index f42808983..e61156505 100644
+--- a/demux/demux.c
++++ b/demux/demux.c
+@@ -284,6 +284,8 @@ struct demux_internal {
+
+     struct mp_recorder *dumper;
+     int dumper_status;
++    int64_t last_export_id;
++    struct demux_export_report export_report;
+
+     bool owns_stream;
+
+@@ -939,6 +941,7 @@ void demux_set_ts_offset(struct demuxer *demuxer, double offset)
+ {
+     struct demux_internal *in = demuxer->in;
+     mp_mutex_lock(&in->lock);
++    in->export_report = (struct demux_export_report){0};
+     in->ts_offset = offset;
+     mp_mutex_unlock(&in->lock);
+ }
+@@ -2051,6 +2054,7 @@ static void write_dump_packet(struct demux_internal *in, struct demux_packet *dp
+         mp_recorder_feed_packet(sink, dp);
+     } else {
+         MP_ERR(in, "New stream appeared; stopping recording.\n");
++        in->export_report.input_error = true;
+         in->dumper_status = CONTROL_ERROR;
+     }
+ }
+@@ -3916,6 +3920,7 @@ int demux_seek(demuxer_t *demuxer, double seek_pts, int flags)
+     mp_assert(demuxer == in->d_user);
+
+     mp_mutex_lock(&in->lock);
++    in->export_report = (struct demux_export_report){0};
+
+     if (!(flags & SEEK_FACTOR))
+         seek_pts = MP_ADD_PTS(seek_pts, -in->ts_offset);
+@@ -4130,6 +4135,7 @@ static bool select_track(struct demux_internal *in,
+     if (ds->selected == selected)
+         return false;
+     MP_VERBOSE(in, "%sselect track %d\n", selected ? "" : "de", stream->index);
++    in->export_report = (struct demux_export_report){0};
+     ds->selected = selected;
+     update_stream_selection_state(in, ds);
+     in->tracks_switched = true;
+@@ -4345,8 +4351,17 @@ static void update_cache(struct demux_internal *in)
+
+ static void dumper_close(struct demux_internal *in)
+ {
+-    if (in->dumper)
+-        mp_recorder_destroy(in->dumper);
++    if (in->dumper) {
++        if (in->export_report.export_id > 0) {
++            mp_recorder_finish(in->dumper, &in->export_report.recorder);
++            in->export_report.complete = true;
++            struct mp_recorder_export_report *r = &in->export_report.recorder;
++            if (r->packet_error || r->trailer_error || r->close_error)
++                in->dumper_status = CONTROL_ERROR;
++        } else {
++            mp_recorder_destroy(in->dumper);
++        }
++    }
+     in->dumper = NULL;
+     if (in->dumper_status == CONTROL_TRUE)
+         in->dumper_status = CONTROL_FALSE; // make abort equal to success
+@@ -4384,6 +4399,7 @@ static void dump_cache(struct demux_internal *in, double start, double end)
+         if (end != MP_NOPTS_VALUE && r->seek_start >= end)
+             continue;
+
++        in->export_report.ranges++;
+         mp_recorder_mark_discontinuity(in->dumper);
+
+         double pts = start;
+@@ -4440,6 +4456,7 @@ static void dump_cache(struct demux_internal *in, double start, double end)
+
+             struct demux_packet *dp = read_packet_from_cache(in, next);
+             if (!dp) {
++                in->export_report.input_error = true;
+                 in->dumper_status = CONTROL_ERROR;
+                 break;
+             }
+@@ -4475,8 +4492,8 @@ static void dump_cache(struct demux_internal *in, double start, double end)
+ // aborting is not asynchronous). On status change, the demuxer wakeup callback
+ // is invoked (except for this call).
+ // Returns whether dumping was logically started.
+-bool demux_cache_dump_set(struct demuxer *demuxer, double start, double end,
+-                          char *file)
++static bool cache_dump_set(struct demuxer *demuxer, double start, double end,
++                            char *file, int64_t export_id)
+ {
+     struct demux_internal *in = demuxer->in;
+     mp_assert(demuxer == in->d_user);
+@@ -4489,11 +4506,26 @@ bool demux_cache_dump_set(struct demuxer *demuxer, double start, double end,
+     end = MP_ADD_PTS(end, -in->ts_offset);
+
+     dumper_close(in);
++    in->export_report = (struct demux_export_report){0};
++    bool report_requested = export_id > 0;
++    if (report_requested && (export_id <= in->last_export_id ||
++        !isfinite(start) || !isfinite(end) || start == MP_NOPTS_VALUE ||
++        end == MP_NOPTS_VALUE || end <= start)) goto done;
++    if (report_requested) {
++        in->last_export_id = export_id;
++        in->export_report = (struct demux_export_report){
++            .export_id = export_id, .ts_offset = in->ts_offset, .finite = true,
++        };
++    }
+
+     if (file && file[0] && start != MP_NOPTS_VALUE) {
+         res = true;
+
+         in->dumper = recorder_create(in, file);
++        if (in->dumper && report_requested)
++            mp_recorder_enable_export_report(in->dumper);
++        if (!in->dumper && report_requested)
++            in->export_report.input_error = true;
+
+         // This is not asynchronous and will freeze the shit for a while if the
+         // user is unlucky. It could be moved to a thread with some effort.
+@@ -4504,11 +4536,30 @@ bool demux_cache_dump_set(struct demuxer *demuxer, double start, double end,
+         dump_cache(in, start, end);
+     }
+
++done:
+     mp_mutex_unlock(&in->lock);
+
+     return res;
+ }
+
++bool demux_cache_dump_set(struct demuxer *d, double start, double end, char *file)
++{
++    return cache_dump_set(d, start, end, file, 0);
++}
++
++bool demux_cache_dump_set_report(struct demuxer *d, double start, double end,
++                                 char *file, int64_t export_id)
++{
++    return cache_dump_set(d, start, end, file, export_id);
++}
++
++void demux_cache_export_report(struct demuxer *d, struct demux_export_report *r)
++{
++    mp_mutex_lock(&d->in->lock);
++    *r = d->in->export_report;
++    mp_mutex_unlock(&d->in->lock);
++}
++
+ // Returns one of CONTROL_*. CONTROL_TRUE means dumping is in progress.
+ int demux_cache_dump_get_status(struct demuxer *demuxer)
+ {
+diff --git a/demux/demux.h b/demux/demux.h
+index b300da653..17eeabcc6 100644
+--- a/demux/demux.h
++++ b/demux/demux.h
+@@ -26,6 +26,7 @@
+
+ #include "misc/bstr.h"
+ #include "common/common.h"
++#include "common/recorder.h"
+ #include "common/tags.h"
+ #include "packet.h"
+ #include "stheader.h"
+@@ -354,6 +355,16 @@ void demux_update(demuxer_t *demuxer, double playback_pts);
+ bool demux_cache_dump_set(struct demuxer *demuxer, double start, double end,
+                           char *file);
+ int demux_cache_dump_get_status(struct demuxer *demuxer);
++struct demux_export_report {
++    int64_t export_id;
++    double ts_offset;
++    int ranges;
++    bool complete, input_error, finite;
++    struct mp_recorder_export_report recorder;
++};
++bool demux_cache_dump_set_report(struct demuxer *d, double start, double end,
++                                 char *file, int64_t export_id);
++void demux_cache_export_report(struct demuxer *d, struct demux_export_report *r);
+
+ double demux_probe_cache_dump_target(struct demuxer *demuxer, double pts,
+                                      bool for_end);
+diff --git a/player/command.c b/player/command.c
+index a0dccf4a3..fcdbff55b 100644
+--- a/player/command.c
++++ b/player/command.c
+@@ -119,6 +119,7 @@ struct command_ctx {
+     struct ao_hotplug *hotplug;
+
+     struct mp_cmd_ctx *cache_dump_cmd; // in progress cache dumping
++    bool cache_dump_reporting;
+
+     char **script_props;
+     mpv_node udata;
+@@ -1559,6 +1560,101 @@ static int mp_property_demuxer_cache_idle(void *ctx, struct m_property *prop,
+     return m_property_bool_ro(action, arg, s.idle);
+ }
+
++static void export_anchor_node(struct mpv_node *node, struct mp_export_anchor *a)
++{
++    node_map_add_flag(node, "pts-valid", a->pts_valid);
++    node_map_add_flag(node, "dts-valid", a->dts_valid);
++    if (a->pts_valid) {
++        node_map_add_double(node, "input-pts", a->input_pts);
++        node_map_add_int64(node, "mux-pts", a->mux_pts);
++    }
++    if (a->dts_valid) {
++        node_map_add_double(node, "input-dts", a->input_dts);
++        node_map_add_int64(node, "mux-dts", a->mux_dts);
++    }
++    node_map_add_flag(node, "keyframe", a->keyframe);
++    node_map_add_int64(node, "bytes", a->bytes);
++    char sha[65];
++    for (int n = 0; n < 32; n++) snprintf(sha + n * 2, 3, "%02x", a->sha256[n]);
++    node_map_add_string(node, "sha256", sha);
++}
++
++static int mp_property_cache_export_report(void *ctx, struct m_property *prop,
++                                           int action, void *arg)
++{
++    MPContext *mpctx = ctx;
++    if (!mpctx->demuxer) return M_PROPERTY_UNAVAILABLE;
++    if (action == M_PROPERTY_GET_TYPE) {
++        *(struct m_option *)arg = (struct m_option){.type = CONF_TYPE_NODE};
++        return M_PROPERTY_OK;
++    }
++    if (action != M_PROPERTY_GET) return M_PROPERTY_NOT_IMPLEMENTED;
++    struct demux_export_report r;
++    demux_cache_export_report(mpctx->demuxer, &r);
++    struct mp_recorder_export_report *m = &r.recorder;
++    bool io_ok = r.complete && !r.input_error && !m->packet_error &&
++                 !m->trailer_error && !m->close_error;
++    bool mapped = io_ok && r.finite && r.ranges == 1 && m->segments == 1 &&
++                  !m->overflow && m->timestamps_valid && m->num_streams > 0 &&
++                  isfinite(m->base_ts) && isfinite(m->rebase_ts) &&
++                  isfinite(r.ts_offset);
++    for (int n = 0; n < m->num_streams; n++) {
++        struct mp_export_stream *s = &m->streams[n];
++        mapped &= s->packets > 0 && s->timebase_num > 0 && s->timebase_den > 0 &&
++                  s->dts_complete;
++        if (s->type == STREAM_VIDEO && s->codec_id != AV_CODEC_ID_RAWVIDEO)
++            mapped &= s->first.keyframe;
++    }
++    struct mpv_node *out = arg;
++    node_init(out, MPV_FORMAT_NODE_MAP, NULL);
++    node_map_add_int64(out, "schema", 1);
++    node_map_add_int64(out, "export-id", r.export_id);
++    node_map_add_flag(out, "complete", r.complete);
++    node_map_add_flag(out, "io-ok", io_ok);
++    node_map_add_flag(out, "internal-affine-map-known", mapped);
++    node_map_add_flag(out, "serialized-clip-map-verified", false);
++    node_map_add_int64(out, "ranges", r.ranges);
++    node_map_add_int64(out, "segments", m->segments);
++    node_map_add_flag(out, "input-error", r.input_error);
++    node_map_add_int64(out, "packet-error", m->packet_error);
++    node_map_add_int64(out, "trailer-error", m->trailer_error);
++    node_map_add_int64(out, "close-error", m->close_error);
++    if (mapped) {
++        node_map_add_double(out, "base-ts", m->base_ts);
++        node_map_add_double(out, "rebase-ts", m->rebase_ts);
++        node_map_add_double(out, "ts-offset", r.ts_offset);
++    }
++    struct mpv_node *streams = node_map_add(out, "streams", MPV_FORMAT_NODE_ARRAY);
++    for (int n = 0; n < m->num_streams; n++) {
++        struct mp_export_stream *s = &m->streams[n];
++        struct mpv_node *node = node_array_add(streams, MPV_FORMAT_NODE_MAP);
++        node_map_add_int64(node, "source-index", s->source_index);
++        node_map_add_int64(node, "mux-index", s->mux_index);
++        node_map_add_int64(node, "codec-id", s->codec_id);
++        node_map_add_flag(node, "dts-complete", s->dts_complete);
++        node_map_add_string(node, "type", s->type == STREAM_VIDEO ? "video" : "audio");
++        node_map_add_int64(node, "timebase-num", s->timebase_num);
++        node_map_add_int64(node, "timebase-den", s->timebase_den);
++        node_map_add_int64(node, "packets", s->packets);
++        char digest[65];
++        for (int i = 0; i < 32; i++)
++            snprintf(digest + i * 2, 3, "%02x", s->sequence_sha256[i]);
++        node_map_add_string(node, "packet-sequence-sha256", digest);
++        node_map_add_flag(node, "source-params-known", s->source_params_known);
++        node_map_add_int64(node, "source-width", s->source_width);
++        node_map_add_int64(node, "source-height", s->source_height);
++        node_map_add_int64(node, "source-sample-rate", s->source_sample_rate);
++        node_map_add_int64(node, "source-channels", s->source_channels);
++        node_map_add_string(node, "source-pixel-format", s->source_pixel_format);
++        for (int i = 0; i < 32; i++)
++            snprintf(digest + i * 2, 3, "%02x", s->source_extradata_sha256[i]);
++        node_map_add_string(node, "source-extradata-sha256", digest);
++        export_anchor_node(node_map_add(node, "first", MPV_FORMAT_NODE_MAP), &s->first);
++        export_anchor_node(node_map_add(node, "last", MPV_FORMAT_NODE_MAP), &s->last);
++    }
++    return M_PROPERTY_OK;
++}
++
+ static int mp_property_demuxer_cache_state(void *ctx, struct m_property *prop,
+                                            int action, void *arg)
+ {
+@@ -4660,6 +4756,7 @@ static const struct m_property mp_properties_base[] = {
+     {"demuxer-cache-idle", mp_property_demuxer_cache_idle},
+     {"demuxer-start-time", mp_property_demuxer_start_time},
+     {"demuxer-cache-state", mp_property_demuxer_cache_state},
++    {"cache-export-report", mp_property_cache_export_report},
+     {"cache-buffering-state", mp_property_cache_buffering},
+     {"paused-for-cache", mp_property_paused_for_cache},
+     {"demuxer-via-network", mp_property_demuxer_is_network},
+@@ -7303,7 +7400,8 @@ static void cache_dump_poll(struct MPContext *mpctx)
+     // Can't close demuxer without stopping dumping.
+     mp_assert(mpctx->demuxer);
+
+-    if (mp_cancel_test(cmd->abort->cancel)) {
++    bool cancelled = mp_cancel_test(cmd->abort->cancel);
++    if (cancelled) {
+         // Synchronous abort. In particular, the dump command shall not report
+         // completion to the user before the dump target file was closed.
+         demux_cache_dump_set(mpctx->demuxer, 0, 0, NULL);
+@@ -7312,7 +7410,7 @@ static void cache_dump_poll(struct MPContext *mpctx)
+
+     int status = demux_cache_dump_get_status(mpctx->demuxer);
+     if (status <= 0) {
+-        if (status < 0) {
++        if (status < 0 || (cancelled && ctx->cache_dump_reporting)) {
+             mp_cmd_msg(cmd, MSGL_ERR, "Cache dumping stopped due to error.");
+             cmd->success = false;
+         } else {
+@@ -7320,6 +7418,7 @@ static void cache_dump_poll(struct MPContext *mpctx)
+             cmd->success = true;
+         }
+         ctx->cache_dump_cmd = NULL;
++        ctx->cache_dump_reporting = false;
+         mp_cmd_ctx_complete(cmd);
+     }
+ }
+@@ -7335,7 +7434,7 @@ void mp_abort_cache_dumping(struct MPContext *mpctx)
+ }
+
+ static void run_dump_cmd(struct mp_cmd_ctx *cmd, double start, double end,
+-                         char *filename)
++                         char *filename, int64_t export_id)
+ {
+     struct MPContext *mpctx = cmd->mpctx;
+     struct command_ctx *ctx = mpctx->command_ctx;
+@@ -7352,7 +7451,11 @@ static void run_dump_cmd(struct mp_cmd_ctx *cmd, double start, double end,
+     char *path = mp_get_user_path(NULL, mpctx->global, filename);
+     mp_cmd_msg(cmd, MSGL_INFO, "Cache dumping started.");
+
+-    if (!demux_cache_dump_set(mpctx->demuxer, start, end, path)) {
++    bool started = export_id > 0
++        ? demux_cache_dump_set_report(mpctx->demuxer, start, end, path, export_id)
++        : demux_cache_dump_set(mpctx->demuxer, start, end, path);
++    if (!started) {
++        if (export_id > 0) cmd->success = false;
+         mp_cmd_msg(cmd, MSGL_INFO, "Cache dumping stopped.");
+         mp_cmd_ctx_complete(cmd);
+         talloc_free(path);
+@@ -7360,6 +7463,7 @@ static void run_dump_cmd(struct mp_cmd_ctx *cmd, double start, double end,
+     }
+
+     ctx->cache_dump_cmd = cmd;
++    ctx->cache_dump_reporting = export_id > 0;
+     cache_dump_poll(mpctx);
+     talloc_free(path);
+ }
+@@ -7368,7 +7472,22 @@ static void cmd_dump_cache(void *p)
+ {
+     struct mp_cmd_ctx *cmd = p;
+
+-    run_dump_cmd(cmd, cmd->args[0].v.d, cmd->args[1].v.d, cmd->args[2].v.s);
++    run_dump_cmd(cmd, cmd->args[0].v.d, cmd->args[1].v.d, cmd->args[2].v.s, 0);
++}
++
++static void cmd_dump_cache_report(void *p)
++{
++    struct mp_cmd_ctx *cmd = p;
++    int64_t id = cmd->args[3].v.i64;
++    if (id <= 0 || id > 9007199254740991LL) {
++        mp_abort_cache_dumping(cmd->mpctx);
++        if (cmd->mpctx->demuxer)
++            demux_cache_dump_set(cmd->mpctx->demuxer, 0, 0, NULL);
++        cmd->success = false;
++        mp_cmd_ctx_complete(cmd);
++        return;
++    }
++    run_dump_cmd(cmd, cmd->args[0].v.d, cmd->args[1].v.d, cmd->args[2].v.s, id);
+ }
+
+ static void cmd_dump_cache_ab(void *p)
+@@ -7377,7 +7496,7 @@ static void cmd_dump_cache_ab(void *p)
+     struct MPContext *mpctx = cmd->mpctx;
+
+     run_dump_cmd(cmd, mpctx->opts->ab_loop[0], mpctx->opts->ab_loop[1],
+-                 cmd->args[0].v.s);
++                 cmd->args[0].v.s, 0);
+ }
+
+ static void cmd_begin_vo_dragging(void *p)
+@@ -7949,6 +8068,12 @@ const struct mp_cmd_def mp_cmds[] = {
+         .can_abort = true,
+     },
+
++    { "dump-cache-report", cmd_dump_cache_report,
++        {{"start", OPT_TIME(v.d)}, {"end", OPT_TIME(v.d)},
++         {"filename", OPT_STRING(v.s)}, {"export_id", OPT_INT64(v.i64)}},
++        .exec_async = true, .can_abort = true,
++    },
++
+     { "ab-loop-dump-cache", cmd_dump_cache_ab, { {"filename", OPT_STRING(v.s)} },
+         .exec_async = true,
+         .can_abort = true,

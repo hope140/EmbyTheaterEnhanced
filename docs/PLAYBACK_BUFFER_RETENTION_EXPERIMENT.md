@@ -1,5 +1,9 @@
 # 播放缓冲暂存：独立可行性实验
 
+## Current result: bounded source-built mapping prototype
+
+The [independent custom-core patch/build/result](../native/experiments/buffer-retention/README.md) has verified whole exported packet sequences and actual map-based separate-process reads for two owned synthetic inputs, including failure/cancellation invalidation. This resolves the exact-public-anchor absence within that separate Linux candidate. The fixed production DLL still has no such API, and ordinary retention remains off. Earlier no-core and pending-probe statements below are historical. Windows render/Helper compatibility, ordinary fresh authorization/storage and full-buffer semantics are not claimed complete.
+
 ## 当前阶段补充：有限状态通过，普通入口只做上下文校验
 
 起点/下文探针计划作为历史保留。最新固定Windows状态短测已通过，普通adapter/main/service现增加默认关闭的可信上下文入口；没有接普通缓存保存或复用。固定内核没有公开精确导出时间锚点，合成源payload映射不能泛化真实媒体。最新事实、入口参数与需单独确认的最小原生映射提案见[普通入口合同](PLAYBACK_RETENTION_APP_CONTEXT.md)。未改内核、正式profile或预载分支。

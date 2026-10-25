@@ -81,3 +81,9 @@
 /tools/windows-host-verifier/README.txt whitespace=cr-at-eol,-blank-at-eof
 /tools/windows-host-verifier/Run-Components.ps1 whitespace=cr-at-eol,-blank-at-eof
 /tools/windows-host-verifier/Verify-UnifiedHost.ps1 whitespace=cr-at-eol,-blank-at-eof
+
+# Experimental source/build receipts bind exact text bytes across checkout platforms.
+/native/experiments/buffer-retention/*.patch text eol=lf
+/native/experiments/buffer-retention/*.json text eol=lf
+/native/experiments/buffer-retention/io-fault-shim.c text eol=lf
+/tools/experiments/*.py text eol=lf
