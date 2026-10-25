@@ -22,7 +22,10 @@ function fixture(mode = 'install') {
         if (input.includes('\ncommit\n')) setImmediate(() => child.stdout.write('ETE_INSTALL_ARMED\r\n'));
     });
     const handoff = createHandoff({platform: 'win32', environment: {SystemRoot: 'C:\\Windows', APPDATA: 'C:\\profile', GITHUB_TOKEN: 'secret-canary', NODE_OPTIONS: 'secret-canary', HTTPS_PROXY: 'secret-canary'},
-        spawn: (...args) => { calls.push(args); setImmediate(() => mode === 'install' ? child.stdout.write('ETE_INSTALL_READY\r\n') : child.emit('close', 0)); return child; }});
+        spawn: (...args) => { calls.push(args); setImmediate(() => {
+            if (mode === 'install') child.stdout.write('ETE_INSTALL_READY\r\n');
+            else { if (mode === 'cleanup') child.stdout.write('ETE_CLEANUP_DONE\r\n'); child.emit('close', 0); }
+        }); return child; }});
     return {handoff, child, calls, payload: () => JSON.parse(input.split('\n')[0])};
 }
 
@@ -57,6 +60,10 @@ test('a committed helper is independent of subsequent normal main shutdown cance
 test('cleanup is local-only and waits for helper exit', async () => {
     const f = fixture('cleanup'); await f.handoff.cleanup({...record, files: []});
     assert.equal(f.payload().mode, 'cleanup'); assert.equal(f.child.unreferenced, undefined);
+});
+
+test('zero helper exit without explicit cleanup completion cannot report deletion success', async () => {
+    const f = fixture('empty-exit'); await assert.rejects(f.handoff.cleanup({...record, files: []}), /installer-launch-failed/);
 });
 
 test('native guard compiles and handoff PowerShell parses without installing or invoking Windows APIs', () => {

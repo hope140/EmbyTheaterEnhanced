@@ -14,6 +14,8 @@ try {
                 $guard.DeleteOwned($file.name, $file.ino, [long]$file.size, $file.sha256)
             }
             $guard.RemoveEmptyDirectory()
+            [Console]::Out.WriteLine('ETE_CLEANUP_DONE')
+            [Console]::Out.Flush()
         } elseif ($request.mode -eq 'install') {
             # Capture the real parent process handle before signalling readiness.
             $parent = [Diagnostics.Process]::GetProcessById([int]$request.parentPid)

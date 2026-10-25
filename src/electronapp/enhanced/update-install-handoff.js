@@ -62,7 +62,7 @@ function createHandoff(options) {
                     confirmExit();
                     if (committed) return;
                     if (commitReject) { clearTimeout(commitTimer); commitReject(failure()); commitReject = null; }
-                    if (mode === 'cleanup' && code === 0) finish();
+                    if (mode === 'cleanup' && code === 0 && output.trim() === 'ETE_CLEANUP_DONE') finish();
                     else finish(signal && signal.aborted ? Object.assign(Error('cancelled'), {code: 'cancelled'}) : failure());
                 });
                 if (signal) signal.addEventListener('abort', abort, {once: true});

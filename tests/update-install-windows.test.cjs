@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const cp = require('node:child_process');
 const {createHandoff} = require('../src/electronapp/enhanced/update-install-handoff');
 const update = require('../src/electronapp/enhanced/manual-app-update');
 const windows = {skip: process.platform !== 'win32' && 'Windows handles / Windows PowerShell 5.1 only', timeout: 30000};
@@ -22,7 +23,13 @@ function fixture(t) {
     const identity = file => { const stat = fs.statSync(file, {bigint: true}); return {ino: String(stat.ino), dev: String(stat.dev)}; };
     const record = {root, rootId: identity(root), directory, directoryId: identity(directory), executable: process.execPath,
         fileId: identity(file), source: 'github', installer};
-    return {scratch, root, directory, file, bytes, record, handoff: createHandoff()};
+    return {scratch, root, directory, file, bytes, record, handoff: createHandoff({spawn(exe, args, options) {
+        const child = cp.spawn(exe, args, {...options, stdio: ['pipe', 'pipe', 'pipe']});
+        let diagnostics = '';
+        child.stderr.on('data', bytes => { diagnostics += bytes.toString(); });
+        child.on('close', code => { if (code !== 0) process.stderr.write('ETE_NATIVE_DIAG exit=' + code + ' ' + diagnostics.slice(0, 6000).replace(/[\r\n]+/g, ' ') + '\n'); });
+        return child;
+    }})};
 }
 
 test('actual Windows handoff locks Unicode paths, denies file/directory replacement, then cancels without executing', windows, async t => {
@@ -69,7 +76,8 @@ test('actual Windows managed cache retains cancelled verified bytes, retries, an
         handoff: f.handoff, downloadInstaller: async (installer, directory) => {
             transfers++;
             const file = path.join(directory, installer.name); fs.copyFileSync(f.file, file);
-            fs.writeFileSync(file + ':Zone.Identifier', update.internetZone(installer.url), {flag: 'wx'});
+            // Windows CopyFile preserves ADS; assert preservation, never replace it.
+            assert.equal(fs.readFileSync(file + ':Zone.Identifier', 'utf8'), update.internetZone(installer.url));
             return {source: 'github'};
         }});
     const installer = {...f.record.installer, id: 12};
