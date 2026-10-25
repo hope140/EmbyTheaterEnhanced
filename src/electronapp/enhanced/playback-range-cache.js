@@ -65,7 +65,7 @@ async function createCache(options) {
         if (!route.current()) {res.writeHead(410); res.end(); return;}
         if (requests >= 4) {res.writeHead(503); res.end(); return;}
         // RFC 9110 If-Range mismatch means ignore Range and send this full representation.
-        const rangeHeader = req.headers['if-range'] && req.headers['if-range'] !== (route.lease.etag || route.lease.lastModified) ? null : req.headers.range;
+        const rangeHeader = req.headers['if-range'] && req.headers['if-range'] !== route.lease.etag ? null : req.headers.range;
         const range = parseRange(rangeHeader, route.lease.total);
         if (!range) {res.writeHead(416, {'Content-Range': 'bytes */' + route.lease.total}); res.end(); return;}
         const controller = new AbortController(), abort = () => controller.abort();
@@ -73,8 +73,7 @@ async function createCache(options) {
         requests++; route.controllers.add(controller);
         const job = (async () => {
             const headers = {'Content-Type': 'application/octet-stream', 'Content-Length': range.end - range.start + 1,
-                'Accept-Ranges': 'bytes', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff',
-                ...(route.lease.etag ? {ETag: route.lease.etag} : {'Last-Modified': route.lease.lastModified})};
+                'Accept-Ranges': 'bytes', ETag: route.lease.etag, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'};
             if (range.partial) headers['Content-Range'] = 'bytes ' + range.start + '-' + range.end + '/' + route.lease.total;
             try {
                 if (req.method === 'HEAD') {res.writeHead(range.partial ? 206 : 200, headers); res.end(); return;}
@@ -112,8 +111,7 @@ async function createCache(options) {
                 if (signal.aborted) throw abortError();
                 const access = await transport.access(signal);
                 if (signal.aborted) throw abortError();
-                return reader.read({source: access.source, origin: access.origin, userAgent: access.userAgent,
-                    allowLastModified: true, expectedTotal: access.expectedSize, ...range, signal});
+                return reader.read({source: access.source, origin: access.origin, userAgent: access.userAgent, ...range, signal});
             };
             // A fresh authorized URL and successful 206 probe are required even for a disk hit.
             const probe = signal => readSource(signal, {start: 0, length: 1});

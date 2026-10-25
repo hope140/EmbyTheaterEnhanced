@@ -5,17 +5,13 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const net = require('node:net');
 const sha = value => crypto.createHash('sha256').update(value).digest('hex');
-const {strongTag, validator} = require('./playback-range-validator');
+const strongTag = value => typeof value === 'string' && /^"[\x21\x23-\x7e]{1,255}"$/.test(value);
 const integer = value => Number.isSafeInteger(value) && value > 0;
 function identityKey(identity, proof) {
     const fields = ['serverId', 'serverOrigin', 'accountId', 'itemId', 'mediaSourceId', 'representation'];
-    const selected = validator(proof);
     if (!identity || fields.some(k => typeof identity[k] !== 'string' || !identity[k] || identity[k].length > 2048) ||
-        !proof || !selected || !integer(proof.total)) throw Error('range-identity-invalid');
-    // Preserve the original ETag key. Date keys are explicitly typed and cannot
-    // collide with an ETag, nor be emitted as a made-up entity tag.
-    return sha(JSON.stringify(fields.map(k => identity[k]).concat(
-        selected.kind === 'etag' ? [selected.value, proof.total] : ['last-modified', selected.value, proof.total])));
+        !proof || !strongTag(proof.etag) || !integer(proof.total)) throw Error('range-identity-invalid');
+    return sha(JSON.stringify(fields.map(k => identity[k]).concat(proof.etag, proof.total)));
 }
 
 async function acquireGuard(root) {

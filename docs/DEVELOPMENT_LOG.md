@@ -1269,3 +1269,7 @@ Main-only one-use proof issuance follows existing mapped regular-file/video vali
 ### 2026-10-25 — Typed HTTP date validation for trusted CD2 sources
 
 Retain ETag as the preferred validator. Missing ETag can use canonical Last-Modified/Date only behind private resolver authorization, fresh Find size, conservative strong-date eligibility and conditional exact Range reads. Type-separate identity/store/proxy headers, preserve real LM instead of synthesizing ETag, and reject changed size on URL renewal. Distinguish missing/invalid/unsafe date evidence without exposing values. Move preload below existing Advanced heading. Tests distinguish synthetic parser/HTTP/cache/PM evidence from unrun real-source/runtime acceptance. No arbitrary no-validator fragment reuse, new kernel or persistent media cache.
+
+### 2026-10-25 — Fail closed without an attested content validator
+
+Withdraw the automatic date prototype after the independent clock/granularity review. Restore strong-ETag-only reader, identity and lease/proxy behavior; remove the date validator implementation and reject legacy date proofs before HTTP. Retain accurate finite refusal, Advanced placement and trusted resolver/UA/fresh-size binding. Replace date-positive tests with refusal plus original-source/UA/no-B/no-disk evidence, and retain a regression for the prior clock/mutation counterexample. Document single-response and whole-file≤P alternatives without silently implementing new handoff or seek semantics.

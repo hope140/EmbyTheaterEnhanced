@@ -118,13 +118,11 @@ async function fixtureServer(plan, record, options = {}) {
                 ifRangePresent: req.headers['if-range'] !== undefined, ifRangeCorrect: req.headers['if-range'] === lastModified,
                 ifMatchPresent: req.headers['if-match'] !== undefined};
             record('date-origin-conditions', conditions);
-            if (options.dateValidator && (conditions.ifMatchPresent || (probe ? conditions.ifUnmodifiedSincePresent || conditions.ifRangePresent :
-                !conditions.ifUnmodifiedSinceCorrect || !conditions.ifRangeCorrect))) {res.writeHead(412).end(); return;}
         }
         res.setHeader('X-Fixture-Request', String(requestId));
         res.once('close', () => record('origin-closed', {requestId, item: match[1], start, end, complete: res.writableEnded}));
         if (options.unsupported && match[1] === 'A' && start === 0 && end === 0) {
-            record('origin-ineligible', {requestId, status: 206, weakETag: !options.noValidator, ...(options.noValidator ? {missingValidator: true} : {})});
+            record('origin-ineligible', {requestId, status: 206, weakETag: !options.noValidator && !options.dateValidator, ...(options.dateValidator ? {unprovenDates: true} : {}), ...(options.noValidator ? {missingValidator: true} : {})});
         }
         res.writeHead(range ? 206 : 200, {'Content-Type': 'video/x-msvideo', 'Content-Length': end - start + 1,
             ...(!options.dateValidator && !options.noValidator ? {ETag: options.unsupported && match[1] === 'A' ? 'W/' + proof.etag : proof.etag} : {}),

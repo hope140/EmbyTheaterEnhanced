@@ -17,6 +17,7 @@
         'next-identity': '下一集身份不匹配', 'source-count': '下一集媒体来源数量不支持', 'directstream-required': '下一集不支持直接串流',
         redirect: '媒体请求发生重定向', 'auth-required': '媒体来源需要认证', 'status-not-206': '来源未返回部分内容',
         'range-invalid': '来源返回的字节范围无效', 'etag-missing': '来源未提供 ETag', 'etag-weak': '来源只提供弱 ETag', 'etag-invalid': '来源 ETag 无效',
+        'date-capability-unproven': '来源无强 ETag，日期校验能力未证实',
         'last-modified-missing': '来源无 ETag 且未提供修改日期', 'response-date-missing': '来源无 ETag 且未提供响应日期',
         'date-validator-invalid': '来源日期校验格式无效', 'date-validator-unsafe': '来源日期不足以安全校验', 'file-size-unavailable': '解析器未提供可核对的文件大小',
         'length-mismatch': '来源内容长度不匹配', 'encoding-unsupported': '来源内容编码不支持', 'validator-changed': '来源校验标记已变化', 'representation-changed': '来源内容大小已变化',
