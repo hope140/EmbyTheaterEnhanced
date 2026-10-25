@@ -36,6 +36,7 @@ $cases=@(
  @('0000000000000000000000000000000000000000','123','EmbyTheaterEnhanced-0.4.3-win-x64-setup.exe',$false))
 foreach($case in $cases){
  $source=$case[0];$buildRun=$case[1];$setupName=$case[2];$version='0.4.3';$ArtifactId='1';$ArtifactZipSha256='0'*64;$InstallerSha256='0'*64
+ $releaseMode=$false
  $testPackage=$source -cne 'abe1c7426f0c8d0b5d1f7febadd0d39fb9a80a1d';$accepted=$true
  try{. ([scriptblock]::Create($guard[0].Extent.Text));. ([scriptblock]::Create($branch[0].Extent.Text))}catch{$accepted=$false}
  if($accepted -ne $case[3]){throw 'BINDING_ACCEPTANCE_MISMATCH'}

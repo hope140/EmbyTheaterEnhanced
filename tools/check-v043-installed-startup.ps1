@@ -5,6 +5,9 @@ param(
     [string]$ExpectedSourceCommit,
     [string]$BuildRunId,
     [string]$InstallerFileName,
+    [string]$ReleaseId,
+    [string]$InstallerAssetId,
+    [switch]$NativePlaybackCases,
     [switch]$ContractSelfTest
 )
 $ErrorActionPreference = 'Stop'
@@ -106,11 +109,13 @@ if ($ContractSelfTest) {
 }
 Require ($IsWindows -and $env:GITHUB_ACTIONS -ceq 'true' -and $env:RUNNER_ENVIRONMENT -ceq 'github-hosted') 'HOSTED_WINDOWS_REQUIRED'
 Require ($env:GITHUB_REPOSITORY -ceq $repository) 'REPOSITORY_MISMATCH'
-Require ($source -cin @('abe1c7426f0c8d0b5d1f7febadd0d39fb9a80a1d','3a02339ab5011f2544df5b24b1da9b22d0df8d4a','ca7ae841af8748091580259db1853e3c5e1c471f','b8938f4ba9149e700ea1437b3f5fbe3535a2f5e5','0fbb6f9c78320e83f2919c0324dc5db940310166') -and $buildRun -match '^[1-9][0-9]{0,15}$' -and $ArtifactId -match '^[1-9][0-9]{0,15}$' -and $ArtifactZipSha256 -cmatch '^[a-f0-9]{64}$' -and $InstallerSha256 -cmatch '^[a-f0-9]{64}$') 'EXACT_INPUTS_REQUIRED'
-$testPackage=$source -cne 'abe1c7426f0c8d0b5d1f7febadd0d39fb9a80a1d'
+$releaseMode = -not [string]::IsNullOrEmpty($ReleaseId)
+Require ($source -cin @('abe1c7426f0c8d0b5d1f7febadd0d39fb9a80a1d','3a02339ab5011f2544df5b24b1da9b22d0df8d4a','ca7ae841af8748091580259db1853e3c5e1c471f','b8938f4ba9149e700ea1437b3f5fbe3535a2f5e5','0fbb6f9c78320e83f2919c0324dc5db940310166','69e55b91a0cc6ba4b01ce60cb65d9aca41b0311e') -and $buildRun -match '^[1-9][0-9]{0,15}$' -and ($releaseMode -or $ArtifactId -match '^[1-9][0-9]{0,15}$') -and ($releaseMode -or $ArtifactZipSha256 -cmatch '^[a-f0-9]{64}$') -and $InstallerSha256 -cmatch '^[a-f0-9]{64}$') 'EXACT_INPUTS_REQUIRED'
+$testPackage=$source -cnotin @('abe1c7426f0c8d0b5d1f7febadd0d39fb9a80a1d','69e55b91a0cc6ba4b01ce60cb65d9aca41b0311e')
 $setupName=$InstallerFileName
 if($testPackage){Require ($setupName -cmatch ('^EmbyTheaterEnhanced-0\.4\.3-test-'+$source.Substring(0,12)+'-'+$buildRun+'-[1-9][0-9]*-win-x64-setup\.exe$')) 'INSTALLER_NAME_MISMATCH'}
-else{Require ($buildRun -ceq '40110950621' -and $setupName -ceq ('EmbyTheaterEnhanced-'+$version+'-win-x64-setup.exe')) 'ORIGINAL_BINDING_MISMATCH'}
+else{Require ((($source -ceq 'abe1c7426f0c8d0b5d1f7febadd0d39fb9a80a1d' -and $buildRun -ceq '40110950621') -or ($source -ceq '69e55b91a0cc6ba4b01ce60cb65d9aca41b0311e' -and $buildRun -ceq '40151393246')) -and $setupName -ceq ('EmbyTheaterEnhanced-'+$version+'-win-x64-setup.exe')) 'ORIGINAL_BINDING_MISMATCH'}
+if($releaseMode){Require ($source -ceq '69e55b91a0cc6ba4b01ce60cb65d9aca41b0311e' -and $ReleaseId -ceq '423094961' -and $InstallerAssetId -ceq '673841569' -and $InstallerSha256 -ceq '0696b9f6f2c2ed845c9124771bea2a7462532908c2ddbb9ecdaca59271c6b266') 'EXPLICIT_RELEASE_BINDING_REQUIRED'}
 $work = Join-Path $env:RUNNER_TEMP ('v043-installed-' + $env:GITHUB_RUN_ID + '-' + $env:GITHUB_RUN_ATTEMPT)
 Require (-not (Test-Path -LiteralPath $work)) 'PRESERVE_EXISTING_OUTPUT'
 $reportDir = Join-Path $work 'report'
@@ -132,6 +137,27 @@ try {
     $api = 'https://api.github.com/repos/' + $repository
     $run = Invoke-RestMethod -Uri ($api + '/actions/runs/' + $buildRun) -Headers $headers
     Require ($run.head_sha -ceq $source -and $run.status -ceq 'completed' -and $run.conclusion -ceq 'success') 'BUILD_NOT_VERIFIED'
+    if($releaseMode) {
+        $release=Invoke-RestMethod -Uri ($api+'/releases/'+$ReleaseId) -Headers $headers
+        Require (-not $release.draft -and $release.tag_name -ceq 'v0.4.3' -and [string]$release.id -ceq $ReleaseId) 'PUBLISHED_RELEASE_MISMATCH'
+        $tag=Invoke-RestMethod -Uri ($api+'/git/ref/tags/v0.4.3') -Headers $headers
+        Require ($tag.object.type -ceq 'commit' -and $tag.object.sha -ceq $source) 'PUBLISHED_TAG_MISMATCH'
+        $payload=Join-Path $work 'attachments';[void][IO.Directory]::CreateDirectory($payload)
+        $wanted=@($setupName,($setupName+'.provenance.json'),($setupName+'.sha256'),'RELEASE_NOTES.md','SHA256SUMS.txt')
+        Require ($release.assets.Count -eq 5) 'PUBLISHED_ASSET_SET_MISMATCH'
+        foreach($name in $wanted) {
+            $asset=@($release.assets|Where-Object {$_.name -ceq $name})
+            Require ($asset.Count -eq 1 -and $asset[0].digest -cmatch '^sha256:[a-f0-9]{64}$' -and $asset[0].size -gt 0 -and $asset[0].size -le 200MB) 'PUBLISHED_ASSET_IDENTITY_MISMATCH'
+            if($name -ceq $setupName){Require ([string]$asset[0].id -ceq $InstallerAssetId -and $asset[0].digest -ceq ('sha256:'+$InstallerSha256) -and $asset[0].size -eq 162639580) 'PUBLISHED_INSTALLER_MISMATCH'}
+            $url='https://github.com/'+$repository+'/releases/download/v0.4.3/'+$name
+            Require ($asset[0].browser_download_url -ceq $url) 'PUBLISHED_ASSET_SOURCE_MISMATCH'
+            $destination=Join-Path $payload $name
+            Invoke-WebRequest -Uri $url -OutFile $destination -MaximumRedirection 5 -TimeoutSec 180
+            Require ((Get-Item -LiteralPath $destination).Length -eq $asset[0].size -and (HashMatches $destination $asset[0].digest.Substring(7))) 'PUBLISHED_ASSET_DIGEST_MISMATCH'
+        }
+        $headers.Clear();RemoveProcessVariable 'GH_TOKEN';RemoveProcessVariable 'GITHUB_TOKEN'
+        $result.releaseId=$ReleaseId;$result.installerAssetId=$InstallerAssetId
+    } else {
     $artifact = Invoke-RestMethod -Uri ($api + '/actions/artifacts/' + $ArtifactId) -Headers $headers
     Require (-not $artifact.expired -and [string]$artifact.workflow_run.id -ceq $buildRun -and $artifact.workflow_run.head_sha -ceq $source -and $artifact.digest -ceq ('sha256:' + $ArtifactZipSha256)) 'ARTIFACT_IDENTITY_MISMATCH'
     $archive = Join-Path $work 'original-artifact.zip'
@@ -154,6 +180,7 @@ try {
         }
         foreach ($name in $wanted) { Require (Test-Path -LiteralPath (Join-Path $payload $name) -PathType Leaf) 'ATTACHMENT_MISSING' }
     } finally { $zip.Dispose() }
+    }
     $setup = Join-Path $payload $setupName
     $receipt = Get-Content -LiteralPath ($setup + '.provenance.json') -Raw | ConvertFrom-Json
     Require (HashMatches $setup $InstallerSha256) 'INSTALLER_DIGEST_MISMATCH'
@@ -217,6 +244,19 @@ if(app)app.exit(0);
     } finally { RemoveProcessVariable 'ETE_ENV_NODE_PROBE_OUTPUT';RemoveProcessVariable 'ELECTRON_RUN_AS_NODE' }
     $result.environmentReset.hostNodeModeAbsent=-not [Environment]::GetEnvironmentVariables('Process').Contains('ELECTRON_RUN_AS_NODE')
     $result.environmentReset.hostNodeOptionsAbsent=-not [Environment]::GetEnvironmentVariables('Process').Contains('NODE_OPTIONS')
+    if($NativePlaybackCases) {
+        Require $releaseMode 'NATIVE_CASES_REQUIRE_PUBLISHED_RELEASE'
+        InitializeWindowsApi; $windowsApiReady=$true
+        . (Join-Path $PSScriptRoot 'check-v043-native-exit-cases.ps1')
+        $result.scope='ordinary-installed-host-native-ipc-play-close'
+        $result.nativeExit=Invoke-NativeExitCases -Target $target -Shortcut $shortcut -Profile $profile -Manifest $manifest -Work $work
+        $result.forcedTermination=$result.nativeExit.forcedCleanup
+        Require ($result.nativeExit.status -ceq 'passed') 'NATIVE_EXIT_CASES_FAILED'
+        $result.hostStarted=$true;$result.electronParentVerified=$true;$result.visibleWindow=$true;$result.normalCloseRequested=$true;$result.ownedRemainingCount=0
+        $lastCase=$result.nativeExit.cases[$result.nativeExit.cases.Count-1];$result.hostExitCode=$lastCase.hostExitCode;$result.electronExitCode=$lastCase.electronExitCode;$result.diagnosticLogPersisted=$lastCase.diagnosticLogPersisted
+        $result.functionalExitPassed=$true;$result.ownedExitConfirmed=$true;$result.status='passed';$result.stage='complete'
+        return
+    }
     $result.stage = 'ordinary-start'
     $launcher = Start-Process -FilePath $shortcut.TargetPath -WorkingDirectory $shortcut.WorkingDirectory -RedirectStandardOutput (Join-Path $work 'host.stdout.log') -RedirectStandardError (Join-Path $work 'host.stderr.log') -PassThru
     $result.hostStarted = $true
@@ -306,7 +346,7 @@ if(app)app.exit(0);
         } catch { $result.failureProjectionIncomplete=$true }
     }
     # Report only fixed fields. Raw installer/client logs and profiles stay on the disposable runner.
-    [IO.File]::WriteAllText((Join-Path $reportDir 'installed-startup.json'),($result | ConvertTo-Json -Depth 5) + "`n",[Text.UTF8Encoding]::new($false))
-    Write-Output ($result | ConvertTo-Json -Depth 5 -Compress)
+    [IO.File]::WriteAllText((Join-Path $reportDir 'installed-startup.json'),($result | ConvertTo-Json -Depth 12) + "`n",[Text.UTF8Encoding]::new($false))
+    Write-Output ($result | ConvertTo-Json -Depth 12 -Compress)
 }
 if ($result.status -cne 'passed') { exit 1 }

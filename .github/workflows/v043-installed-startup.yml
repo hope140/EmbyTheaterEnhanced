@@ -1,7 +1,7 @@
 name: v0.4.3 existing installer startup check
 on:
   push:
-    branches: [validation/v043-next-installed-startup]
+    branches: [validation/v043-native-exit]
     paths: [tools/v043-installed-startup-input.json, tools/check-v043-installed-startup.ps1]
   workflow_dispatch:
 permissions:
@@ -10,7 +10,7 @@ permissions:
 jobs:
   installed-startup:
     runs-on: windows-2022
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - name: Check out independent validation only
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -20,6 +20,11 @@ jobs:
           sparse-checkout: |
             tools/check-v043-installed-startup.ps1
             tools/v043-installed-startup-input.json
+            tools/check-v043-native-exit-cases.ps1
+            tools/native-exit-fixture.cjs
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.1
       - name: Check pure contracts without installation
         shell: pwsh
         run: ./tools/check-v043-installed-startup.ps1 -ContractSelfTest
@@ -30,7 +35,7 @@ jobs:
           $checkInput = Get-Content -LiteralPath tools/v043-installed-startup-input.json -Raw | ConvertFrom-Json
           if ($checkInput.enabled -isnot [bool]) { throw 'Boolean enable flag required.' }
           if ($checkInput.enabled) {
-            if ([string]$checkInput.artifactId -notmatch '^[1-9][0-9]{0,15}$' -or [string]$checkInput.artifactZipSha256 -cnotmatch '^[a-f0-9]{64}$' -or [string]$checkInput.installerSha256 -cnotmatch '^[a-f0-9]{64}$') { throw 'Exact reviewed artifact binding required.' }
+            if ([string]$checkInput.releaseId -cne '423094961' -or [string]$checkInput.installerAssetId -cne '673841569' -or $checkInput.nativePlaybackCases -isnot [bool] -or -not $checkInput.nativePlaybackCases -or [string]$checkInput.installerSha256 -cnotmatch '^[a-f0-9]{64}$') { throw 'Exact reviewed artifact binding required.' }
             'enabled=true' >> $env:GITHUB_OUTPUT
           } else {
             'enabled=false' >> $env:GITHUB_OUTPUT
@@ -43,7 +48,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $checkInput = Get-Content -LiteralPath tools/v043-installed-startup-input.json -Raw | ConvertFrom-Json
-          ./tools/check-v043-installed-startup.ps1 -ArtifactId $checkInput.artifactId -ArtifactZipSha256 $checkInput.artifactZipSha256 -InstallerSha256 $checkInput.installerSha256 -ExpectedSourceCommit $checkInput.sourceCommit -BuildRunId $checkInput.buildRunId -InstallerFileName $checkInput.installerFileName
+          ./tools/check-v043-installed-startup.ps1 -ArtifactId $checkInput.artifactId -ArtifactZipSha256 $checkInput.artifactZipSha256 -InstallerSha256 $checkInput.installerSha256 -ExpectedSourceCommit $checkInput.sourceCommit -BuildRunId $checkInput.buildRunId -InstallerFileName $checkInput.installerFileName -ReleaseId $checkInput.releaseId -InstallerAssetId $checkInput.installerAssetId -NativePlaybackCases:([bool]$checkInput.nativePlaybackCases)
       - name: Preserve bounded result only
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
