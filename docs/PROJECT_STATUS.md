@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-25 — 授权transport夹具先保留guard并覆盖setup失败清理
+
+Windows前置CI首次错误为no-ETag用例setup的EADDRINUSE，尚非fail-closed断言结果。静态夹具先两个HTTP listen(0)，后固定根guard；临时监听器可先占guard，且原hook注册太晚会在setup失败时漏清服务。仅调整测试为先真实cache／guard、后顺序HTTP监听，异步setup前注册全量清理，单项失败仍清其他资源；不改生产guard／端口／重试或无ETag拒绝。该轮实际端口占用者未记录，不能当作已确认owner；CI最终其他结果仍待回读。
+
+实际loopback红例仅将旧首个HTTP临时分配到根guard，第二个正常用0；证明两个HTTP成功后真实cache创建报EADDRINUSE。新顺序绿例与初始化失败／关闭错误清理5项通过，原24项断言保持。完整离线2731项：2718通过、0失败、13项既有平台跳过，约61.7秒；JS581／PowerShell53及有限模式／文档检查通过。该结果不是新的Windows前置或四阶段通过。
+
 ## 2026-10-25 — Native有限对照通过，接回原四阶段
 
 真实Native三例均通过，wire null／renderer void与同frame ACK已实测；helper、播放推进、一次预览以及Electron正常退出都成立，不能当作原四阶段通过。工具将顺序ACK、单动作预算、固定frame、单次有界清理和实际exit／close要求接回原boot／pause／unpause／Stop；保留全部播放、自然切集、预载零正文重取、跨进程保留及取消断言。源服务收尾与工作deadline不混同，产品和原包不变。下一轮范围及派发见[四阶段合同](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。

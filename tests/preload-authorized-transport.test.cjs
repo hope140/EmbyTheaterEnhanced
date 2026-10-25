@@ -12,10 +12,34 @@ const deferred = () => {let resolve; const promise = new Promise(done => {resolv
 async function fixture(t, settings = {}) {
     const root = temporaryRoot('ete-authorized-transport-', ['']), body = Buffer.from('0123456789abcdefghijklmnopqrstuvwxyzABCD');
     const rows = [], embyRows = [], handles = [], sockets = new Set(), mode = {value: 'direct', etag: '"representation"'};
-    const held = deferred(), heldClosed = deferred(); let heldResponse;
+    const held = deferred(), heldClosed = deferred(); let heldResponse, emby, target, cache, authority, controller;
+    // Own cleanup before any asynchronous setup: a failed bind must not leave
+    // the already-created guard, sibling server or temporary root alive.
+    t.after(async () => {
+        const errors = [];
+        const attempt = async task => {try {await task();} catch (error) {errors.push(error);}};
+        await attempt(() => controller?.abort()); await attempt(() => authority?.close());
+        for (const result of await Promise.allSettled(handles.map(handle => Promise.resolve().then(() => handle.stop())))) if (result.status === 'rejected') errors.push(result.reason);
+        await attempt(() => cache?.close());
+        await attempt(() => heldResponse?.destroy());
+        const closingSockets = [...sockets].map(socket => new Promise(resolve => {
+            if (socket.destroyed) {resolve(); return;} socket.once('close', resolve);
+        }));
+        for (const server of [emby, target].filter(Boolean)) await attempt(() => new Promise((resolve, reject) => {
+            server.close(error => error && error.code !== 'ERR_SERVER_NOT_RUNNING' ? reject(error) : resolve());
+            server.closeAllConnections();
+        }));
+        for (const socket of sockets) socket.destroy();
+        await Promise.all(closingSockets);
+        await attempt(() => fs.rm(root, {recursive: true, force: true}));
+        if (errors.length) throw new AggregateError(errors, 'authorized-transport-fixture-cleanup-failed');
+    });
+    // Acquire the real fixed OS guard before an ephemeral HTTP listener can
+    // choose that port. This is setup ordering, not a bind retry or guard stub.
+    cache = await createCache({kind: 'next-prefix', root, preloadMB: 100, timeoutMs: 1000, blockBytes: 8});
     function connect(server) {server.on('connection', socket => {sockets.add(socket); socket.once('close', () => sockets.delete(socket));});}
-    const emby = http.createServer((req, res) => {embyRows.push({url: req.url, headers: req.headers}); res.writeHead(500).end();});
-    const target = http.createServer((req, res) => {
+    emby = http.createServer((req, res) => {embyRows.push({url: req.url, headers: req.headers}); res.writeHead(500).end();});
+    target = http.createServer((req, res) => {
         const row = {url: req.url, headers: req.headers, closed: false, lateBytes: 0}; rows.push(row); res.once('close', () => {row.closed = true;});
         if (mode.value === 'redirect') {res.writeHead(302, {Location: embyOrigin + '/must-not-follow'}).end(); return;}
         if (mode.value === 'auth') {res.writeHead(401).end(); return;}
@@ -36,20 +60,13 @@ async function fixture(t, settings = {}) {
         res.end(body.subarray(start, end + 1));
     });
     connect(emby); connect(target);
-    await Promise.all([emby, target].map(server => new Promise((resolve, reject) => {server.once('error', reject); server.listen(0, '127.0.0.1', resolve);} )));
+    // No pending sibling listen may outlive a rejected setup Promise.
+    for (const server of [emby, target]) await new Promise((resolve, reject) => {server.once('error', reject); server.listen(0, '127.0.0.1', resolve);});
     const embyOrigin = 'http://127.0.0.1:' + emby.address().port, origin = 'http://127.0.0.1:' + target.address().port;
     let clock = 100000;
-    const authority = createAuthority({now: () => clock}), wc = new EventEmitter(); wc.isDestroyed = () => false;
-    const principal = authority.principalFor(wc), controller = new AbortController();
+    authority = createAuthority({now: () => clock}); const wc = new EventEmitter(); wc.isDestroyed = () => false;
+    const principal = authority.principalFor(wc); controller = new AbortController();
     const identity = {serverOrigin: embyOrigin, serverId: 'emby-server', accountId: 'account', itemId: 'episode', mediaSourceId: 'media', representation: 'emby-stream-identity'};
-    const cache = await createCache({kind: 'next-prefix', root, preloadMB: 100, timeoutMs: 1000, blockBytes: 8});
-    t.after(async () => {
-        controller.abort(); authority.close(); await Promise.allSettled(handles.map(handle => handle.stop())); await cache.close();
-        if (heldResponse) heldResponse.destroy();
-        await Promise.all([emby, target].map(server => new Promise(resolve => {server.close(resolve); server.closeAllConnections();})));
-        for (const socket of sockets) socket.destroy();
-        await fs.rm(root, {recursive: true, force: true});
-    });
     function transport(options = {}) {
         const source = options.source || origin + '/media?signature=initial', requestId = options.requestId || 'play-A';
         const issue = {principal, requestId, source, sourceKind: settings.userAgent ? 'direct-url' : 'cd2-url', resourceKey: 'synthetic:episode',
