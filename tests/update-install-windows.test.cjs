@@ -14,8 +14,10 @@ const windows = {skip: process.platform !== 'win32' && 'Windows handles / Window
 test('Windows relay compiler diagnostic keeps the control input open without executing a program', {...windows, timeout: 100000}, async () => {
     const exe = path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
     const records = [];
-    for (const form of ['closed', 'open']) {
-        const command = "[Console]::Error.WriteLine('COMPILER_ENTER'); Add-Type -TypeDefinition 'public class EteEmptyCompilerProbe {}'; [Console]::Out.WriteLine('ETE_COMPILER_FINISHED'); exit 7";
+    for (const form of ['compile-relay', 'run-relay']) {
+        const source = fs.readFileSync(path.resolve(__dirname, '../src/electronapp/enhanced/update-install-relay.cs')).toString('base64');
+        const command = "[Console]::Error.WriteLine('COMPILER_ENTER'); Add-Type -TypeDefinition ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + source + "'))); [Console]::Error.WriteLine('COMPILER_DONE'); " +
+            (form === 'compile-relay' ? "[Console]::Out.WriteLine('ETE_COMPILER_FINISHED'); exit 7" : "exit [EteUpdateRelay]::Run()");
         const began = Date.now();
         const row = await new Promise(resolve => {
             const child = cp.spawn(exe, ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', command], {windowsHide: true, stdio: ['pipe', 'pipe', 'pipe']});
@@ -23,7 +25,7 @@ test('Windows relay compiler diagnostic keeps the control input open without exe
             const timer = setTimeout(() => child.kill(), 45000);
             child.stdout.on('data', bytes => { stdout += bytes; }); child.stderr.on('data', bytes => { stderr += '[' + (Date.now()-began) + 'ms]' + bytes; });
             child.on('error', () => {}); child.on('close', code => { clearTimeout(timer); resolve({form, code, printed: stdout.includes('ETE_COMPILER_FINISHED'), elapsed: Date.now() - began, error: stderr.slice(0, 400)}); });
-            if (form === 'closed') child.stdin.end(); else child.stdin.write('controller-input-stays-open\n');
+            child.stdin.write(Buffer.from("[Console]::Out.WriteLine('ETE_COMPILER_FINISHED'); exit 7", 'utf16le').toString('base64') + '\n');
         });
         records.push(row);
     }
