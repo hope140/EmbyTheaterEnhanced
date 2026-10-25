@@ -11,25 +11,24 @@ const {createHandoff} = require('../src/electronapp/enhanced/update-install-hand
 const update = require('../src/electronapp/enhanced/manual-app-update');
 const windows = {skip: process.platform !== 'win32' && 'Windows handles / Windows PowerShell 5.1 only', timeout: 30000};
 
-test('Windows relay compiler diagnostic keeps the control input open without executing a program', {...windows, timeout: 30000}, async () => {
+test('Windows relay compiler diagnostic keeps the control input open without executing a program', {...windows, timeout: 100000}, async () => {
     const exe = path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
     const records = [];
-    for (const form of ['plain', 'assigned', 'empty-pipeline']) {
-        const add = "Add-Type -TypeDefinition 'public class EteEmptyCompilerProbe {}'";
-        const command = (form === 'assigned' ? '$null=' + add : form === 'empty-pipeline' ? '@() | ' + add : add) + "; [Console]::Out.WriteLine('ETE_COMPILER_FINISHED'); exit 7";
+    for (const form of ['closed', 'open']) {
+        const command = "[Console]::Error.WriteLine('COMPILER_ENTER'); Add-Type -TypeDefinition 'public class EteEmptyCompilerProbe {}'; [Console]::Out.WriteLine('ETE_COMPILER_FINISHED'); exit 7";
         const began = Date.now();
         const row = await new Promise(resolve => {
             const child = cp.spawn(exe, ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', command], {windowsHide: true, stdio: ['pipe', 'pipe', 'pipe']});
             let stdout = '', stderr = '';
-            const timer = setTimeout(() => child.kill(), 6000);
-            child.stdout.on('data', bytes => { stdout += bytes; }); child.stderr.on('data', bytes => { stderr += bytes; });
+            const timer = setTimeout(() => child.kill(), 45000);
+            child.stdout.on('data', bytes => { stdout += bytes; }); child.stderr.on('data', bytes => { stderr += '[' + (Date.now()-began) + 'ms]' + bytes; });
             child.on('error', () => {}); child.on('close', code => { clearTimeout(timer); resolve({form, code, printed: stdout.includes('ETE_COMPILER_FINISHED'), elapsed: Date.now() - began, error: stderr.slice(0, 400)}); });
-            child.stdin.write('controller-input-stays-open\n');
+            if (form === 'closed') child.stdin.end(); else child.stdin.write('controller-input-stays-open\n');
         });
         records.push(row);
     }
     process.stderr.write('ETE_NATIVE_DIAG compiler-matrix=' + JSON.stringify(records) + '\n');
-    assert.equal(records.length, 3);
+    assert.equal(records.length, 2);
 });
 
 test('Windows helper startup diagnostic uses only literal printing and owned processes', {...windows, timeout: 60000}, async () => {
