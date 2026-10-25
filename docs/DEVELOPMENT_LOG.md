@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-25 — 自然切集拒绝证据分段
+
+核读Windows原四阶段：baseline完整成功且退出0，natural正常切B后因未选共享代理失败并正常退出1，无timeout；后两场未跑。源B读取完整与仅九个256KiB块留存分开解释，后台tap存在队列满丢写路径，但不能据此推断B选择失败或磁盘配额满。工具只补真实load／preload时的安全状态快照和摘要，固定标签过滤未知／私密字段；不改产品、预算、期限、回源策略或验收断言。
+
 ## 2026-10-25 — 区分隐藏窗口和后台播放报告语义
 
 核读baseline Stop ACK、IPC、Native及Electron退出证据后，沿实际PM源码追到IsBackgroundPlayback早退。fixture不再用fullscreen:false代替物理隐藏；保留同一PM／adapter／service和OSD／窗口锁。新增同断言旧boot红／新boot绿回归，记录并匹配实际报告参数中的三项synthetic身份，原Stop回报门禁不删除。完整Native四阶段尚未通过，不用UI停止或callback冒充服务器HTTP验收。

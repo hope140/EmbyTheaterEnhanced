@@ -191,6 +191,18 @@ function childEnvironment(profile, inherited = process.env) {
     TMPDIR: path.join(profile, 'temp'), NO_PROXY: '127.0.0.1,localhost', no_proxy: '127.0.0.1,localhost'});
   return env;
 }
+function cacheSelectionSnapshot(status) {
+  const currentStates = ['idle', 'original', 'preparing', 'active'];
+  const nextStates = ['idle', 'preparing', 'warming', 'ready', 'partial', 'unavailable'];
+  const number = value => Number.isSafeInteger(value) && value >= 0 ? value : null;
+  const diagnostic = value => value ? require('../../src/electronapp/enhanced/playback-range-diagnostics').snapshot(value) : null;
+  return {current: {state: currentStates.includes(status?.current?.state) ? status.current.state : 'unknown',
+    diagnostic: diagnostic(status?.current?.diagnostic)},
+    next: {state: nextStates.includes(status?.next?.state) ? status.next.state : 'unknown',
+      bytes: number(status?.next?.bytes), targetBytes: number(status?.next?.targetBytes), diagnostic: diagnostic(status?.next?.diagnostic)},
+    diskBytes: number(status?.diskBytes)};
+}
+
 function safeNativeTags(chunks) {
   const text = Buffer.concat(chunks.filter(Buffer.isBuffer)).toString('utf8');
   const match = /helper-fatal:dll-load-failed:win32-(\d{1,10}):target-file-([01]):absolute-([01])/.exec(text);
@@ -315,6 +327,8 @@ async function run({planFile}) {
         workerStages: r.workerStages, code: r.receipt?.code || r.receipt?.cleanupCode || null,
         ownedHelpersClosed: r.receipt?.ownedHelpersClosed, checks: r.receipt?.checks, afterHelper: r.receipt?.afterHelper,
         evaluations: r.receipt?.evaluations || [],
+        cacheSelections: (r.receipt?.trace || []).filter(e => e.type === 'load' || e.type === 'preload').slice(-8)
+          .map(({type, item, generation, proxied, state, bytes, cache}) => ({type, item, generation, proxied, state, bytes, cache})),
         serverReports: (r.receipt?.trace || []).filter(e => e.type === 'server-report').slice(-12)
           .map(({method, item, session, mediaSource}) => ({method, item, session, mediaSource})),
         receiptOrigin: r.receipt?.receiptOrigin || null, evaluationTrace: (r.receipt?.trace || []).filter(e => e.type === 'evaluation-probe').slice(-24)
@@ -336,7 +350,7 @@ function argumentsOf(argv) {
   need(allowed.every(k => values[k]), 'missing-argument');
   return {mode, values};
 }
-module.exports = {OWNER, PHASES, TOOL_FILES, watchdogDelay, within, executeStableFrame, observeExpression, voidCommandExpression, voidCommandAckExpression, executeAcknowledgedVoid, prepare, readPlan, childEnvironment, safeFailure, argumentsOf, validateProfile, coloredFrame, matchesStoppedReport, validatePhaseEvidence, safeNativeTags, boundToolBytes};
+module.exports = {OWNER, PHASES, TOOL_FILES, watchdogDelay, within, executeStableFrame, observeExpression, voidCommandExpression, voidCommandAckExpression, executeAcknowledgedVoid, prepare, readPlan, childEnvironment, safeFailure, argumentsOf, validateProfile, coloredFrame, matchesStoppedReport, cacheSelectionSnapshot, validatePhaseEvidence, safeNativeTags, boundToolBytes};
 if (require.main === module) (async () => {
   const {mode, values: v} = argumentsOf(process.argv.slice(2));
   if (mode === 'prepare') {await prepare({repo: v.repo, runtime: v.runtime, installer: v.installer,

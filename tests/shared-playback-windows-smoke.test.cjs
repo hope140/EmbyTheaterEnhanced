@@ -2,6 +2,22 @@
 const test = require('node:test'), assert = require('node:assert/strict');
 const fs = require('node:fs'), path = require('node:path'), os = require('node:os'), vm = require('node:vm');
 const driver = require('../tools/shared-playback-cache/windows-smoke.cjs');
+
+test('cache selection snapshot retains the actual refusal and partial coverage without private fields', () => {
+  const status = {current: {state: 'original', diagnostic: {stage: 'current-probe', reason: 'timeout', source: 'private-source'}},
+    next: {state: 'partial', bytes: 2359296, targetBytes: 11065064,
+      diagnostic: {stage: 'next-prefix', reason: 'cache-quota', source: 'private-next'}}, diskBytes: 2359296,
+    source: 'private-source', account: 'private-account'};
+  assert.deepEqual(driver.cacheSelectionSnapshot(status), {
+    current: {state: 'original', diagnostic: {stage: 'current-probe', reason: 'timeout'}},
+    next: {state: 'partial', bytes: 2359296, targetBytes: 11065064,
+      diagnostic: {stage: 'next-prefix', reason: 'cache-quota'}}, diskBytes: 2359296});
+  const unknown = driver.cacheSelectionSnapshot({current: {state: 'private-state', diagnostic: {stage: 'private-stage', reason: 'private-reason'}},
+    next: {state: 'private-state', bytes: Infinity, targetBytes: -1}, diskBytes: 'private-path'});
+  assert.deepEqual(unknown, {current: {state: 'unknown', diagnostic: {stage: 'lifecycle', reason: 'unexpected'}},
+    next: {state: 'unknown', bytes: null, targetBytes: null, diagnostic: null}, diskBytes: null});
+  assert.doesNotMatch(JSON.stringify(unknown), /private/);
+});
 const trial = require('../src/electronapp/enhanced/shared-playback-cache/trial');
 test('explicit Windows coordinator arguments reject incomplete, unknown and duplicate inputs', () => {
   assert.equal(driver.argumentsOf(['run', '--plan=owned']).values.plan, 'owned');

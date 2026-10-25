@@ -309,7 +309,8 @@ async function main() {
         const u = new URL(args[1]), item = contexts.get(this.currentGenerationId) || /^\/Videos\/([ABC])\//.exec(u.pathname)?.[1];
         if (item) {contexts.set(this.currentGenerationId, item); currentItem = item; lastGeneration = this.currentGenerationId;}
         need(u.hostname === '127.0.0.1' && ['http:'].includes(u.protocol), 'worker-native-source-not-owned');
-        record('load', {item, generation: this.currentGenerationId, proxied: u.origin !== sources.mediaOrigin});
+        record('load', {item, generation: this.currentGenerationId, proxied: u.origin !== sources.mediaOrigin,
+          cache: driver.cacheSelectionSnapshot(service.rangeStatus())});
         return super.load(args);
       }
     }
@@ -339,7 +340,8 @@ async function main() {
             const context = payload.payload.context; contexts.set(payload.payload.generationId, context.itemId);
             currentItem = context.itemId; lastGeneration = payload.payload.generationId;
           }
-          if (payload.operation === 'range-preload') record('preload', {state: result.value?.state, bytes: result.value?.bytes || 0});
+          if (payload.operation === 'range-preload') record('preload', {state: result.value?.state, bytes: result.value?.bytes || 0,
+            cache: driver.cacheSelectionSnapshot(service.rangeStatus())});
         }
         if (channel === 'enhanced-cd2-resolve') record('resolved', {status: result?.status, proofPresent: typeof result?.sourceProof === 'string'});
       }

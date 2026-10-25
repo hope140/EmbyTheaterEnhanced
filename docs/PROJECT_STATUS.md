@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-25 — Windows基线通过，分离自然切集的两项缓存证据
+
+固定原包的真实baseline已通过首帧、前后seek、恢复推进、原PM Stop身份报告、helper和Electron正常退出。natural已沿原PM自然切到B，但B未选共享代理；预载源响应完整不等于落盘完整，本次仅保留2,359,296B。静态背景流同用可丢弃的前台磁盘tap，可产生这种差异；实际B拒绝原因仍缺失，partial不是代理选择的拒绝条件。仅工具补load／preload当时的有限状态、覆盖与固定stage／reason到公开安全摘要；保留25ms、身份和全部命中／零正文重取断言，不以正常直连冒充成功。产品／原包未改，背景背压红例独立准备中；reopen／cancel尚未执行。
+
 ## 2026-10-25 — 合成播放后台标志导致报告被原PM跳过
 
 Windows baseline已完成真实Stop／进程退出，但没有server-stop回报。固定PM将fixture的fullscreen:false解释为后台播放并跳过全部会话报告；同链红绿回归证实。仅fixture改正常播放语义，物理hidden／show禁令保持；Stop断言增加item／PlaySessionId／MediaSourceId匹配，不改产品或原包。证据是synthetic ApiClient入口回调，不冒称实际Emby HTTP。最新范围见[Windows合同](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)。

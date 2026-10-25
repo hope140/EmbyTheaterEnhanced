@@ -1,5 +1,15 @@
 # 共享播放缓存：独立Windows合成验收
 
+## 当前：baseline完整通过，natural共享选择尚未通过
+
+[四阶段40241705325](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40241705325)的baseline首次完整通过：真实首帧、前后seek与恢复推进、原PM同item／session／MediaSource Stop回调、helper和Electron自然退出0。natural已从真实EOF沿原PM切B，但B的load仍为原源；预载仅报告partial，保留2,359,296B，不能用源端完整响应约11MB代替成功缓存。natural正常退出1／流关闭，无timeout；reopen和cancel未运行。
+
+本轮仅增加工具可观察性：每次原load和range-preload返回时，保存当时的current state／固定stage、reason及next state／bytes／target和磁盘占用，并将最后八项放入安全CI摘要。未知标签规范化，不输出URL、账户、token或私密路径。partial本身没有禁止新代理open的门禁；25ms准备期限、fresh授权与探测、身份／请求选项各有可能导致原源回退，未取得实际diagnostic前不归因。所有原选择、ready、零正文重取、退出及期限断言保持，不重新打包或声称四阶段通过。
+
+静态另查到后台预载和前台共用可丢写tap：写队列满时仍接收源正文而放弃缓存，完整请求后不会补漏。这是需要独立受控红绿验证的产品问题，不能只改慢合成源掩盖，也不把partial的cache-quota标签当作实际配额已满。当前工具提交不包含产品改动，仍可按原输入复用2e99cf2包；若后续修产品，必须另有新包身份，不沿用本原包冒充。
+
+该工具增量的24项定向检查通过；已跟踪的完整离线2734项中2721通过、0失败、13项既有平台跳过，约62.2秒；JS581／PowerShell53、有限模式与新增文档链接／格式检查通过。独立新增的背景慢盘红例不纳入本工具提交或该通过数，其失败保留给后续产品修复，不能把这批通过当作预载丢块已解决。
+
 ## 当前：Stop已完成，修正测试播放的报告语义
 
 [四阶段40239466573](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40239466573)在baseline的server-stop确认失败；真实解码、前后seek、暂停解除后推进、Stop／destroy IPC及六个ACK均通过，helper退出0，Electron自然退出1／流关闭且无timeout。实际停止动作已完成，后三阶段未运行。
