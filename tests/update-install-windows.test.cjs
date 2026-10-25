@@ -14,15 +14,12 @@ const windows = {skip: process.platform !== 'win32' && 'Windows handles / Window
 test('Windows relay compiler diagnostic keeps the control input open without executing a program', {...windows, timeout: 160000}, async () => {
     const exe = path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
     const records = [];
-    for (const form of ['local-identity', 'full-safe']) {
+    for (const form of ['direct-system-module', 'analysis-cache']) {
         const source = fs.readFileSync(path.resolve(__dirname, '../src/electronapp/enhanced/update-install-relay.cs')).toString('base64');
-        const command = "[Console]::Error.WriteLine('COMPILER_ENTER'); Add-Type -TypeDefinition ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + source + "'))); [Console]::Error.WriteLine('COMPILER_DONE'); exit [EteUpdateRelay]::Run()";
+        const command = (form === 'direct-system-module' ? "Import-Module ([IO.Path]::Combine($PSHOME,'Modules','Microsoft.PowerShell.Utility','Microsoft.PowerShell.Utility.psd1')) -ErrorAction Stop; " : '') + "[Console]::Error.WriteLine('COMPILER_ENTER'); Add-Type -TypeDefinition ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + source + "'))); [Console]::Error.WriteLine('COMPILER_DONE'); exit [EteUpdateRelay]::Run()";
         const minimal = Object.fromEntries(['SystemRoot', 'WINDIR', 'TEMP', 'TMP', 'APPDATA', 'LOCALAPPDATA', 'USERPROFILE', 'ProgramData', 'ProgramFiles', 'ProgramFiles(x86)']
             .filter(key => process.env[key] !== undefined).map(key => [key, process.env[key]]));
-        const identity = Object.fromEntries(['USERNAME','USERDOMAIN','USERDOMAIN_ROAMINGPROFILE','COMPUTERNAME','SystemDrive','HOMEDRIVE','HOMEPATH','OS','PROCESSOR_ARCHITECTURE','NUMBER_OF_PROCESSORS']
-            .filter(key => process.env[key] !== undefined).map(key => [key, process.env[key]]));
-        const env = form === 'local-identity' ? {...minimal,...identity} : Object.fromEntries(Object.entries(process.env).filter(([key]) => !/TOKEN|SECRET|PASSWORD|KEY|AUTH|PROXY|PSExecutionPolicy|LOCKDOWN|NODE_OPTIONS/i.test(key)));
-        if(form==='full-safe') process.stderr.write('ETE_NATIVE_DIAG environment-names=' + JSON.stringify(Object.keys(env).filter(key => !Object.hasOwn(minimal,key)).sort()) + '\n');
+        const env = form === 'analysis-cache' ? {...minimal, PSModuleAnalysisCachePath: process.env.PSModuleAnalysisCachePath} : minimal;
         const began = Date.now();
         const row = await new Promise(resolve => {
             const child = cp.spawn(exe, ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', command], {env, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe']});
