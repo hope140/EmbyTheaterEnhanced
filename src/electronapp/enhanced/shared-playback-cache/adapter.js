@@ -200,6 +200,18 @@ async function createCache(config, dependencies = {}) {
                 if (record.signal.aborted) {await stop(); throw error('request-cancelled');}
                 const track = promise => {record.jobs.add(promise); promise.finally(() => record.jobs.delete(promise)).catch(() => {}); return promise;};
                 const handle = {source: route.url,
+                    ready: () => track((async () => {
+                        guard(record);
+                        await new Promise((resolve, reject) => {
+                            const abort = () => {record.signal.removeEventListener('abort', abort); reject(error('request-cancelled'));};
+                            record.signal.addEventListener('abort', abort, {once: true});
+                            Promise.resolve(route.ready()).then(value => {
+                                record.signal.removeEventListener('abort', abort); resolve(value);
+                            }, failure => {record.signal.removeEventListener('abort', abort); reject(failure);});
+                            if (record.signal.aborted) abort();
+                        });
+                        guard(record);
+                    })()),
                     status: () => ({bytes: record.bytes, total: record.total}),
                     markPlaying: () => track((async () => {
                         guard(record);

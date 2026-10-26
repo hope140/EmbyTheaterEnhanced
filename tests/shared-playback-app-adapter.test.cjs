@@ -366,3 +366,42 @@ test('deferred close joins resource release and preserves an actual cleanup fail
     reopened = await createStore(options);
     await reopened.close();
 });
+
+
+test('fresh-manager restored route readies metadata before its first foreground read without prefetch', async t => {
+    const f = await fixture(t), seeded = await f.cache();
+    const first = await seeded.open(f.source('B'));
+    await first.prefetch({maxBytes:f.data.length,signal:new AbortController().signal});
+    await first.markPlaying(); await seeded.close();
+    const blocked = gate(); let backend;
+    const reopened = await f.cache({createStore:async options => {
+        await blocked.wait; backend=await createStore(options); return backend;
+    }});
+    const before=f.requests.length, handle=await reopened.open(f.source('B'));
+    try {
+        assert.equal(backend,undefined);
+        assert.equal(typeof handle.ready,'function');
+        let ready=false; const preparing=handle.ready().then(()=>{ready=true;});
+        await new Promise(resolve=>setImmediate(resolve)); assert.equal(ready,false);
+        blocked.release(); await preparing;
+        assert.equal(reopened.status().currentBytes,f.data.length);
+        assert.equal((await get(handle.source,0,f.data.length)).hash,hash(f.data));
+        assert.equal(f.requests.length-before,1,'only fresh identity probe reaches the origin');
+        assert.equal(f.requests.at(-1).range,'bytes=0-0');
+    } finally {blocked.release();}
+});
+
+test('cancelled metadata readiness does not wait for blocked recovery or dispatch late hits', async t => {
+    const blocked=gate(),f=await fixture(t);
+    const cache=await f.cache({createStore:async options=>{await blocked.wait;return createStore(options);}});
+    const source=f.source('A'),handle=await cache.open(source);
+    try {
+        assert.equal(typeof handle.ready,'function');
+        const ready=handle.ready(); source.owner.abort();
+        await assert.rejects(ready,/request-cancelled|generation-retired/);
+        assert.equal(cache.status().initializing,true);
+        assert.equal(f.requests.length,1); assert.equal(f.requests[0].range,'bytes=0-0');
+    } finally {blocked.release();}
+    await handle.stop();
+    assert.equal(cache.status().routes,0);
+});

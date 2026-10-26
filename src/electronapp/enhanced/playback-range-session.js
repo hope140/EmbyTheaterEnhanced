@@ -129,8 +129,14 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
                     if (!owns(record) || signal.aborted) throw diagnostics.error('generation-retired', 'range-shared-retired');
                     const value = await cache.open({source, identity: record.value.identity, transport: record.value.transport,
                         currentBytes, isCurrent: () => owns(record) && !signal.aborted && budget.isCurrent(), signal});
-                    if (!owns(record) || signal.aborted || !budget.isCurrent()) {await value.stop(); throw diagnostics.error('generation-retired', 'range-shared-retired');}
-                    return value;
+                    try {
+                        // Publishing a proxy is not proof its restored metadata
+                        // is ready. Keep this wait inside the existing load cap;
+                        // cancellation retires late recovery without a cold body.
+                        if (typeof value.ready === 'function') await value.ready();
+                        if (!owns(record) || signal.aborted || !budget.isCurrent()) throw diagnostics.error('generation-retired', 'range-shared-retired');
+                        return value;
+                    } catch (error) {await value.stop(); throw error;}
                 })();
                 try {handle = await Promise.race([preparing, deadline]);}
                 catch (error) {selection.abort(); throw error;}
